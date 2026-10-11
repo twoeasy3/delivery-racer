@@ -177,8 +177,8 @@ export const OBSTACLE_MODELS = {
   },
   // a kangaroo, upright: big feet and a long tail behind, small arms, ears up
   kangaroo: () => {
-    const fur = lambert(0x9b6b43), pale = lambert(0xd9b48a), dark = lambert(0x3a2a1e);
-    return boxModel([
+    const fur = lambert(0xe08a38), pale = lambert(0xffe0b0), dark = lambert(0x4a2a14); // (bright orange-brown, against the grey road and green verge)
+    const roo = boxModel([
       [fur, 0.55, 1.0, 0.75, 0, 1.0, 0],          // body
       [pale, 0.4, 0.6, 0.1, 0, 0.95, 0.38],        // chest
       [fur, 0.32, 0.35, 0.55, 0, 1.65, 0.25],      // head
@@ -192,6 +192,8 @@ export const OBSTACLE_MODELS = {
       [dark, 0.16, 0.12, 0.7, 0.2, 0.06, 0.15],
       [fur, 0.16, 0.16, 1.1, 0, 0.45, -0.85],      // tail
     ]);
+    roo.scale.setScalar(1.5); // (half as big again: they were hard to see)
+    return roo;
   },
   // a portaloo: a plastic cabin (blue, green or orange), a pale roof, its door at the front with a
   // little vent, and a pipe out of the roof

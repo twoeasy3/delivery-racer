@@ -108,11 +108,16 @@ body.ideas-tab #garageUse { display: none !important; }
 /* ---- garage on a phone: the lot is drawn between the bar and the words and buttons (render/garage.js: bandOf), so
    nothing sits over a car. The stats are one line, cut short, until tapped; held in a landscape phone to a row ---- */
 @media (max-width: 760px), (max-height: 480px) {
+  /* (the selected car's name, then its figures on a line of their own, always: not only when comparing. A perk's
+     sentence is held back until the line is tapped) */
   body:not(.ideas-tab) #garageInfo { position: relative; pointer-events: auto; cursor: pointer; max-width: 100%; box-sizing: border-box;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 22px 0 4px; font-size: 14px; }
+    padding: 0 22px 0 4px; font-size: 14px; line-height: 1.25; }
   body:not(.ideas-tab) #garageInfo::after { content: '\25BE'; position: absolute; right: 4px; top: 0; opacity: .8; }
-  body:not(.ideas-tab) #garageInfo.open { white-space: normal; }
   body:not(.ideas-tab) #garageInfo.open::after { content: '\25B4'; }
+  body:not(.ideas-tab) #garageInfo .stats { display: block; font-size: 11.5px; font-weight: 600; opacity: .85; line-height: 1.3; }
+  body:not(.ideas-tab) #garageInfo .stats .perk { display: none; }
+  body:not(.ideas-tab) #garageInfo .sep { display: none; }
+  body:not(.ideas-tab) #garageInfo.open .stats .perk { display: inline; }
   #garageUi .pick { gap: 5px; width: 100%; }
   #garageUi .actions { width: 100%; max-width: 420px; }
   #garageUi .actions button { flex: 1 1 0; padding: 10px 12px; }

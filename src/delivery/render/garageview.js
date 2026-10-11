@@ -5,7 +5,7 @@
 // it always has, every car in order of its stars.
 import '../menus.css';
 import { Progress } from '../progress.js';
-import { blueStarsOpen, EARNED_CARS, carTier } from '../cars.js';
+import { blueStarsOpen, EARNED_CARS, carTier, isTeaser } from '../cars.js';
 
 // (by: how two cars compare; none: as the garage has them, by stars and then price)
 const SORTS = [
@@ -19,8 +19,8 @@ const SORTS = [
 const SHOWS = [
   { id: 'all', name: 'All', has: () => true },
   { id: 'owned', name: 'Owned', has: (car) => Progress.owns(car.id) },
-  { id: 'sale', name: 'For sale', has: (car) => !Progress.owns(car.id) },
-  { id: 'afford', name: 'Can afford', has: (car) => !Progress.owns(car.id) && Progress.data.money >= car.price },
+  { id: 'sale', name: 'For sale', has: (car) => !Progress.owns(car.id) && !isTeaser(car) },
+  { id: 'afford', name: 'Can afford', has: (car) => !Progress.owns(car.id) && !isTeaser(car) && Progress.data.money >= car.price },
   { id: 'amphibious', name: 'Amphibious', has: (car) => !!car.amphibious },
   { id: 'gold', name: 'Gold stars', has: (car) => !!car.tier && !car.blue && !car.amphibious && !car.earned, when: blueStarsOpen },
   { id: 'blue', name: 'Blue stars', has: (car) => !!car.blue, when: blueStarsOpen },
@@ -41,15 +41,18 @@ export const GarageView = {
   GarageView.sort = SORTS.find(s => s.id === params.get('sort')) || GarageView.sort;
   GarageView.show = SHOWS.find(s => s.id === params.get('show')) || GarageView.show;
 }
+// a level that restricts the car parks the cars of its tier, and still the next tier's silhouettes (nobody can pick those)
+const inTier = (car) => GarageView.restrictTier === null || carTier(car) === GarageView.restrictTier || isTeaser(car);
 // the cars to park, in order, out of the garage's own list (already in order of stars and price)
 export const arrange = (cars) => {
-  const shown = cars.filter(GarageView.show.has).filter(car => GarageView.restrictTier === null || carTier(car) === GarageView.restrictTier);
-  return GarageView.sort.by ? shown.sort(GarageView.sort.by) : shown; // (a stable sort: ties stay in star order)
+  const shown = cars.filter(GarageView.show.has).filter(inTier);
+  // (a stable sort: ties stay in star order. The silhouettes of the next tier go last: their stats are not shown, so no sort may place them by those)
+  return GarageView.sort.by ? [...shown.filter(car => !isTeaser(car)).sort(GarageView.sort.by), ...shown.filter(isTeaser)] : shown;
 };
 
 // How many cars an option parks (out of the garage's own list, under the tier a level restricts to)
 let carsOf = () => [];
-const countOf = (choice) => carsOf().filter(car => (GarageView.restrictTier === null || carTier(car) === GarageView.restrictTier) && (!choice.has || choice.has(car))).length;
+const countOf = (choice) => carsOf().filter(car => inTier(car) && (!choice.has || choice.has(car))).length;
 // The Show choices on offer: those the game has opened and that park at least one car (an option that returns no
 // cars is not listed; the one in use is, so long as it parks some)
 export const offered = () => SHOWS.filter(choice => (!choice.when || choice.when()) && countOf(choice) > 0);

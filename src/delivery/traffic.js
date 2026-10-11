@@ -2422,7 +2422,9 @@ export const Traffic = (() => {
         const settled = Math.abs(aimLat - car.lat) < 0.3;
         if (settled && car.pendingLane === null) car.signal = 0;
         car.hazards = ((car.pulledOver || car.punctured) && (car.hazards || settled)) || car.binStop > 0; // (or a bin lorry at a stop)
-        const drift = car.hesitant && !beside && !car.pulledOver ? Math.sin(car.wander += dt * 1.3) * H.wander
+        const drift = car.hesitant && !beside && !car.pulledOver ? (quirk.wobble // (a learner: a wide wobble, two drifts at once so it never repeats)
+          ? (Math.sin(car.wander += dt * 2.1) * 0.7 + Math.sin(car.wander * 0.37) * 0.3) * quirk.wobble
+          : Math.sin(car.wander += dt * 1.3) * H.wander)
           : quirk.sway && !car.pulledOver ? Math.sin(car.wander += dt * 1.7) * quirk.sway * Math.min(1, Math.abs(car.vs) / 12) : 0; // (a caravan, swaying)
         // (and nothing is ever steered into a median: not even after a rival who has gone in there)
         let aim = aimLat + drift + (beside ? 0 : car.squeeze * CONFIG.race.bully.squeeze); // (an evil racer leaning on a good one)
