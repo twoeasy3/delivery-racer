@@ -31,6 +31,7 @@ try {
   const { Radiation } = await g.load('radiation.js');
   const { Hazards } = await g.load('hazards.js');
   const { Progress } = await g.load('progress.js');
+  const { Pickups } = await g.load('pickups.js');
   const P = g.Player, G = g.Game, C = g.CONFIG, R = C.radiation, M = g.Message;
   const T = () => g.track.Track;
   const testbed = JSON.parse(readFileSync('src/delivery/levels/testbed.json', 'utf8'));
@@ -218,6 +219,7 @@ try {
     // into the back of an infected car: infected at once, the meter all but empty
     const ram = (setup) => {
       start(600, LANE, 28);
+      for (const p of Pickups.items) p.taken = true; // (the contact alone: a pickup on the way would put another power in the armour's place)
       const car = put('commuter', 612, LANE, 12, { infected: true });
       if (setup) setup(car);
       g.run(4, () => { quiet(); return Radiation.infected; });
@@ -227,7 +229,7 @@ try {
     check(Radiation.infected && Radiation.meter === 1, 'touching an infected car infects the player at once, whatever the meter read');
     check(said('INFECTED'), '...and it is said');
     ram(() => { P.armour = 60; });
-    check(!Radiation.infected && Radiation.meter < 0.1, 'touching one through the armour: not infected');  // (a little meter may come from a moment's dose after a pickup on the way cuts the armour short)
+    check(!Radiation.infected && Radiation.meter < 0.1, 'touching one through the armour: not infected');
     ram(() => { P.ghost = 60; });
     check(!Radiation.infected, 'a ghost drives through one: not infected');
     ram((car) => { car.infected = false; });
