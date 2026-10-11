@@ -10,6 +10,7 @@ import { CARS, SECRET_CARS, useLevelCar, selectCar, amphibiousCars, restrictedTi
 import { Tiers } from '../tiers.js';
 import { Progress } from '../progress.js';
 import { Game } from '../game.js';
+import { Replay } from '../replay.js';
 import { Garage } from './garage.js';
 import { Sound } from './audio.js';
 import './menuclick.js'; // (every click on a menu plays one sound)
@@ -160,7 +161,7 @@ next.addEventListener('click', () => Game.nextLevel());
 // when a run ends: the bank and the unlocked levels may have changed, and "Next level"
 // is only offered if there is one. (The menu comes back on the level just run, and so on its tab)
 Game.onFinish.push(() => {
-  next.style.display = LEVEL_INDEX >= 0 && nextOnTab(LEVEL) ? '' : 'none';
+  next.style.display = LEVEL_INDEX >= 0 && nextOnTab(LEVEL) && !Replay.playing ? '' : 'none'; // (not after a replay: render/replayui.js)
   if (LEVEL_INDEX >= 0) MenuStage.follow();
   else draw();
 });

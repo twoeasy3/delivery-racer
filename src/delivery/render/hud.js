@@ -9,6 +9,7 @@ import { Traffic } from '../traffic.js';
 import { SpeedCameras } from '../cameras.js';
 import { Radiation } from '../radiation.js';
 import { stickyIcon } from './hudIcons.js';
+import { Replay } from '../replay.js';
 
 // ---- HUD -------------------------------------------------------------------
 import { Social } from '../social.js';
@@ -248,12 +249,14 @@ export const updateHud = () => {
   syncSticky();
   // pause and exit: shown during a run and the screensaver
   runButtons.style.display = Game.state === 'playing' ? 'flex' : 'none';
+  const held = !!Replay.playing?.over; // (a replay held at its end, or where it drifted: its results say so, not PAUSED)
+  pauseBtn.style.display = held ? 'none' : '';
   const pauseLabel = Game.paused ? 'Resume' : 'Pause';
   if (pauseBtn.textContent !== pauseLabel) pauseBtn.textContent = pauseLabel;
   // the screensaver fades to black and back where one lap joins the next
   hudFade.style.opacity = Game.screensaver && !Game.raceWatch // (not in the race: a circuit has no seam to hide)
     ? 1 - Math.min(1, Math.min(Math.abs(Player.s), Math.abs(Track.length - Player.s)) / CONFIG.screensaver.fadeDistance) : 0;
-  hudBanner.style.display = Game.paused ? 'block' : 'none'; // (the only banner: paused)
+  hudBanner.style.display = Game.paused && !held ? 'block' : 'none'; // (the only banner: paused)
   // the two message lines (see messages.js): each up for its own time, fading away at the end
   const now = performance.now();
   Message.lines.forEach((line, i) => {

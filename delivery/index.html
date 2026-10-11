@@ -100,7 +100,8 @@
 <div id="raceBoard"></div>
 <div id="raceCaption"></div>
 <canvas id="raceMap" width="240" height="240"></canvas>
-<div id="runButtons"><button id="pauseBtn">Pause</button><button id="photoBtn" style="display:none" title="Photo mode (C)">Photo</button><button id="directorBtn" style="display:none">Race director</button><button id="exitBtn">Exit level</button></div>
+<div id="runButtons"><button id="pauseBtn">Pause</button><button id="photoBtn" style="display:none" title="Photo mode (C)">Photo</button><button id="directorBtn" style="display:none">Race director</button><button id="speedBtn" style="display:none" title="Replay speed">1x</button><button id="exitBtn">Exit level</button></div>
+<div id="replayBadge">REPLAY</div>
 <div id="photoBar" style="display:none"><span>Drag to look round, wheel to zoom</span><button id="photoInBtn">+</button><button id="photoOutBtn">&minus;</button><button id="photoSaveBtn">Save picture</button><button id="photoBackBtn">Back</button></div>
 <button id="throwBtnLeft" class="throw">THROW</button>
 <button id="throwBtn" class="throw">THROW</button>
@@ -196,6 +197,8 @@
   </div>
   <!-- what's on this road: the picked level's gimmicks, pickups and traffic, each with its model (render/levelcard3d.js builds it) -->
   <div id="roadCard" class="menu-sheet hidden"></div>
+  <!-- the level's replays: the last run and the best on each side, and those saved (render/menustage.js) -->
+  <div id="replaysCard" class="menu-sheet hidden"></div>
 </div>
 
 <div id="garageUi" class="hidden">
@@ -224,6 +227,8 @@
   <p id="resultNote"></p>
   <button id="restartBtn">Restart</button>
   <button id="nextBtn" class="level">Next level</button>
+  <button id="watchBtn" class="replay">Watch replay</button>
+  <button id="saveReplayBtn" class="replay">Save replay</button>
   <button id="menuBtn" class="level">Menu</button>
 </div>
 

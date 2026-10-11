@@ -125,7 +125,7 @@ export const Game = {
     for (const hook of this.onFinish) hook();
   },
   togglePause() {
-    if (this.state !== 'playing') return;
+    if (this.state !== 'playing' || Replay.playing?.over) return; // (a playback held at its end stays held)
     this.paused = !this.paused;
   },
   // the screensaver: its own level, no player car (the camera follows a ghost dolly), no
@@ -173,6 +173,7 @@ export const Game = {
     if (go && this.state === 'start') this.start();
   },
   start() {
+    if (Replay.playing && !Replay.starting) Replay.stop(); // (a run of the player's own after a playback: the save as it was)
     // an amphibious level is only driven in an amphibious car: with none owned, back to the menu, which says
     // which one to get (render/menu.js). With one owned it is driven in that, whatever car is in use
     if (!this.canStart) {
@@ -299,6 +300,12 @@ export const Game = {
       (Player.evil ? 'Evil' : 'Good') + '  |  Wrecked: ' + this.wrecks + '  |  Busted: ' + this.busts +
       '  |  Bank $' + Progress.data.money.toFixed(2);
     if (prize && !hadPrize && Progress.earned(prize)) resultNote.textContent += '  |  You earned the ' + prize.name + '!'; // (its par beaten on every side: it is in the garage)
+    // a playback's results: what the run came to, nothing banked or bettered (the save is put back as it was: replay.js)
+    if (Replay.playing) {
+      resultTitle.textContent = 'Replay: ' + resultTitle.textContent;
+      resultNote.textContent = (outcome === 'delivered' ? formatTime(this.remaining) + ' to spare  |  ' : '') + (Player.evil ? 'Evil' : 'Good') +
+        '  |  Wrecked: ' + this.wrecks + '  |  Busted: ' + this.busts + '  |  Recorded ' + new Date(Replay.playing.rec.header.date).toLocaleString();
+    }
     resultScreen.classList[outcome === 'delivered' ? 'remove' : 'add']('failed');
     // (a level delivered: first the cargo is set down at the kerb, and then the results, already fixed above: see delivery.js)
     const show = () => resultScreen.classList.remove('hidden');
@@ -348,6 +355,7 @@ export const Game = {
     if (this.state === 'start' || this.paused) return;
     if (this.step) Replay.afterStep(this.step); // (the state as the last step left it: fingerprinted now and then)
     Replay.beforeStep(this.step); // (a replay's controls and events for this step; or the player's, recorded)
+    if (this.paused) return; // (a playback held at the end of its recording: no step past it)
     this.step++; // (the logic steps of this run, counted: what a replay keys its inputs by; a pause is no step)
     if (this.raceWatch) { // the race screensaver: only the race
       this.time += dt;

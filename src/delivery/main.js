@@ -39,6 +39,8 @@ import { syncHazards } from './render/hazards.js';
 import { syncGambles } from './render/gambles.js';
 import { syncRadiation } from './render/radiation.js';
 import { Radiation } from './radiation.js';
+import { Replay } from './replay.js';
+import './render/replayui.js';
 import { syncBattle } from './render/battle.js';
 import { raceCamera, raceAudio, syncRaceWatch, auditCameras } from './render/racewatch.js';
 import { Fly, startFly, flyCamera } from './render/fly.js';
@@ -291,10 +293,12 @@ const frame = (now) => {
     // game logic, in steps of exactly CONFIG.maxStep (small, so fast head-ons can't tunnel; and all the same length,
     // so a run is the same every time from its seed and inputs: a replay, REPLAY-NOTES.md). The frame's time is
     // added to what is carried over, and as many whole steps taken as it holds (a hair under one counts, so a
-    // 60 Hz frame is two steps, not one or three); the rest waits for the next frame. Frozen while paused
+    // 60 Hz frame is two steps, not one or three); the rest waits for the next frame. Frozen while paused. A replay
+    // played at 2x or 4x takes that many steps for the time (replay.js speed)
     if (Game.paused) carry = 0;
     else {
-      carry = Math.min(carry + dt, 0.1);
+      const speed = Replay.playing ? Replay.speed : 1;
+      carry = Math.min(carry + dt * speed, 0.1 * speed);
       while (carry > CONFIG.maxStep * 0.98) { Game.update(CONFIG.maxStep); carry -= CONFIG.maxStep; }
       carry = Math.max(0, carry);
     }

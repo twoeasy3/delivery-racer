@@ -26,6 +26,10 @@ import { medalFor, medalNeeds } from '../levelinfo.js';
 import { Garage, makeShowCar, paintShowCar, IDEA_TAG } from './garage.js';
 import { standView, sharedRenderer, disposeViews, drawViews } from './modelviews.js';
 import { Sound } from './audio.js';
+import { ask } from './dialog.js';
+import { Replay } from '../replay.js';
+import { ReplayStore } from '../replaystore.js';
+import { watch } from './replayui.js';
 
 const money = (amount) => '$' + amount.toFixed(2);
 // each level's still, by level id (taken with ?cine: see main.js). The postcard album uses them too (render/album.js)
@@ -220,8 +224,11 @@ const drawStage = () => {
     needs ? make('p', 'needs' + (open && !Game.canStart ? ' warn' : ''), ...richTiers(needs)) : null,
     open && place ? make('p', 'prize', tierStarsNode(place.tier), ' medals ' + Tiers.tierMedals(place.tier) + '/' + Tiers.tiers[place.tier - 1].length * 2) : null,
     prizeLine ? make('p', 'prize', prizeLine) : null,
-    open && roadCard ? make('button', 'menu-chip road', 'What’s on this road') : null);
-  info.querySelector('.road')?.addEventListener('click', () => roadCard(level));
+    open && roadCard ? make('div', 'road', // (the card's chips: the row placed as the one chip was)
+      make('button', 'menu-chip road-btn', 'What’s on this road'),
+      ReplayStore.list(level.id).length ? make('button', 'menu-chip replays', 'Replays') : null) : null);
+  info.querySelector('.road-btn')?.addEventListener('click', () => roadCard(level));
+  info.querySelector('.replays')?.addEventListener('click', () => replaysCard(level));
   const arrows = [make('button', 'arrow prev', '‹'), make('button', 'arrow next', '›')];
   arrows[0].disabled = at <= 0;
   arrows[1].disabled = at >= list.length - 1;
@@ -520,6 +527,47 @@ const roadCard = async (level) => {
 
 // the keys. Heard ahead of the game's own (input.js: Enter is its "confirm", which starts a run), so that Enter
 // starts nothing while a level not open yet is on the stage
+// the level's replays (replaystore.js): the best and the last run on each side, and those saved, newest first; each
+// to watch, and the saved to delete (the others to save). One made under other rules, of a changed level or car, is
+// listed, saying so, but not played (replay.js check)
+const replaysBox = document.getElementById('replaysCard');
+const KIND_NAMES = { best: 'Best run', last: 'Last run', saved: 'Saved' };
+const OUTCOME_NAMES = { delivered: 'Delivered', late: 'Too late', timeout: 'Out of time', busted: 'Busted', left: 'Left part way' };
+const replaysCard = (level) => {
+  if (!menuUp()) return;
+  const fill = () => {
+    const closeBtn = make('button', 'menu-chip', 'Close');
+    closeBtn.addEventListener('click', closeSheet);
+    const rows = ReplayStore.list(level.id).map(({ kind, rec }) => {
+      const h = rec.header, can = Replay.check(rec);
+      const what = [h.evil ? 'Evil' : 'Good', OUTCOME_NAMES[h.outcome] || h.outcome,
+        h.outcome === 'delivered' && h.spare !== undefined ? formatTime(h.spare) + ' to spare' : formatTime(h.time || 0) + ' in',
+        new Date(h.date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })].join('  ·  ');
+      const watchBtn = make('button', 'menu-chip', 'Watch');
+      watchBtn.disabled = !can.ok;
+      watchBtn.addEventListener('click', () => { closeSheet(); watch(rec); });
+      const saved = kind !== 'saved' && ReplayStore.isSaved(rec);
+      const keepBtn = make('button', 'menu-chip', kind === 'saved' ? 'Delete' : saved ? 'Saved' : 'Save');
+      keepBtn.disabled = saved;
+      keepBtn.addEventListener('click', async () => {
+        if (kind === 'saved') {
+          if (!await ask({ title: 'Delete replay', lines: ['Delete this saved replay? It cannot be brought back.'], ok: 'Delete', danger: true })) return;
+          ReplayStore.remove(rec);
+        } else ReplayStore.save(rec);
+        if (sheet === replaysBox) fill();
+        draw();
+      });
+      return make('div', 'replay-row' + (can.ok ? '' : ' stale'),
+        make('div', 'replay-what', make('b', '', KIND_NAMES[kind]), make('span', '', what), can.ok ? null : make('small', '', can.why + ' It can no longer be played.')),
+        make('div', 'replay-do', watchBtn, keepBtn));
+    });
+    replaysBox.replaceChildren(make('div', 'sheet-box replays',
+      make('div', 'sheet-bar', make('h2', '', 'Replays', make('small', '', label(level) + '  ' + levelName(level))), closeBtn),
+      make('div', 'sheet-main', make('div', 'sheet-body', ...(rows.length ? rows : [make('p', 'road-wait', 'No replays of this level.')])))));
+  };
+  fill();
+  openSheet(replaysBox, () => replaysBox.replaceChildren());
+};
 const menuUp = () => Game.state === 'start' && !startScreen.classList.contains('hidden');
 window.addEventListener('keydown', (e) => {
   if (!menuUp() || e.ctrlKey || e.metaKey || e.altKey) return;
