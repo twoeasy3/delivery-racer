@@ -19,14 +19,15 @@ const tierName = (n) => (n <= 5 ? 'Gold ' + n + ' (' + '*'.repeat(n) + ')' : 'Bl
 
 const save = () => {
   const lines = Object.entries(data.tiers).map(([k, v]) => `    "${k}": ${JSON.stringify(v)}`).join(',\n');
-  writeFileSync(FILE, `{\n  "_about": ${JSON.stringify(data._about)},\n  "tiers": {\n${lines}\n  },\n  "outside": ${JSON.stringify(data.outside)}\n}\n`);
+  writeFileSync(FILE, `{\n  "_about": ${JSON.stringify(data._about)},\n  "tiers": {\n${lines}\n  },\n  "events": ${JSON.stringify(data.events || [])},\n  "outside": ${JSON.stringify(data.outside)}\n}\n`);
 };
 const problems = () => {
   const out = [], seen = new Map();
   const note = (id, where) => { if (!levelsById.has(id)) out.push(`"${id}" in ${where} is not a level`); else if (seen.has(id)) out.push(`${id} is in both ${seen.get(id)} and ${where}`); else seen.set(id, where); };
   for (const [n, list] of Object.entries(data.tiers)) { list.forEach(id => note(id, 'tier ' + n)); if (list.length !== 5) out.push(`tier ${n} has ${list.length} levels, not 5`); }
+  (data.events || []).forEach(id => note(id, 'events'));
   data.outside.forEach(id => note(id, 'outside'));
-  for (const id of levelsById.keys()) if (!seen.has(id)) out.push(`${id} is in no tier and not listed outside`);
+  for (const id of levelsById.keys()) if (!seen.has(id)) out.push(`${id} is in no tier and not listed in events or outside`);
   return out;
 };
 const print = () => {
@@ -34,6 +35,8 @@ const print = () => {
     console.log(`\nTier ${n}: ${tierName(Number(n))}`);
     list.forEach((id, i) => console.log(`  ${i + 1}. ${id.padEnd(18)} #${label(id).padEnd(3)} ${name(id)}`));
   }
+  console.log('\nEvents (the first group, always open, any car):');
+  (data.events || []).forEach(id => console.log(`  ${id.padEnd(18)} ${label(id).padEnd(4)} ${name(id)}`));
   console.log('\nOutside the tiers (open in this order after tier 10; amphibious by their own rule; races always):');
   data.outside.forEach(id => console.log(`  ${id.padEnd(18)} ${label(id).padEnd(4)} ${name(id)}`));
 };

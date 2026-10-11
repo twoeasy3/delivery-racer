@@ -23,6 +23,14 @@ const side = (evil) => { Tiers.sideIsEvil = () => evil; };
 
 check(Tiers.problems().length === 0, 'tiers.json is sound: ' + (Tiers.problems().join('; ') || 'every level in one tier or outside'));
 check(T.length === 10 && T.every(t => t.length === 5), 'ten tiers of five');
+// ---- the events (the owner, 11-Oct): the menu's first group, always open, any car, no Next level from one
+fresh();
+const xmas = L('christmas');
+check(Tiers.events.length === 1 && Tiers.isEvent(xmas) && Tiers.order[0] === xmas && !Tiers.place(xmas), 'Christmas Eve is the event, first in the menu\'s order, in no tier');
+check(Tiers.isOpen(xmas) && Tiers.restriction(xmas, false) === null && Tiers.restriction(xmas, true) === null && Tiers.next(xmas) === null,
+  'on a new save it is open, in any car, on either side, and leads to no next level');
+check(Tiers.place(L('rival-run'))?.tier === 7 && Tiers.place(L('rival-run')).pos === 1 && T[6].map(l => l.id).join() === 'rival-run,quarry-run,tokyo,backlot,moon',
+  'Rival Run in its place, tier 7 level 1, the rest of the tier where they were');
 // ---- inside a tier
 fresh();
 const [a, b, c, d, e] = T[0];
