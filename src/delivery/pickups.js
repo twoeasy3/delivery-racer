@@ -59,6 +59,7 @@ export const Targets = (() => {
   const items = [];
   const load = () => {
     items.length = 0;
+    if (LEVEL.noTankRage) return; // (TANK RAGE off on this level: no targets, no pieces)
     for (const t of LEVEL.targets || []) {
       const s = Track.place(t), side = t.side === 'left' ? -1 : 1, look = standing(t);
       const lat = side < 0 ? Track.lo(s) - look.offset : Track.hi(s) + look.offset;

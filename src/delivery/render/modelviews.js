@@ -141,6 +141,33 @@ const canvasOf = (v) => {
 // (see viewRenderer) or its context has been lost; true otherwise.
 // With prefers-reduced-motion nothing is moved on at all, and a picture is only drawn now and then: see STILL.
 const size = new THREE.Vector2();
+// A still: a model drawn once into `el` (a canvas of its own, the element's size), seen from `pose` ({ lift: rad from
+// level, angle: rad it is turned, close }), and left so: no frame draws it again (a row of event stage cards: the
+// special events' screen, render/menustage.js). Drawn whether it is on screen or not (a row that scrolls sideways is
+// mostly off it). False: no renderer, or no size yet
+export const drawStill = (renderer, el, model, pose) => {
+  if (!renderer || renderer.getContext().isContextLost()) return false;
+  const r = el.getBoundingClientRect(), ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.max(1, Math.round(r.width * ratio)), h = Math.max(1, Math.round(r.height * ratio));
+  if (!r.width || !r.height) return false;
+  const view = { el, ...standView({ model, spin: false, lift: pose.lift, angle: pose.angle, fitWidth: true }, pose.close) };
+  const canvas = canvasOf(view);
+  canvas.width = w; canvas.height = h;
+  renderer.getSize(size);
+  if (w > size.x || h > size.y) renderer.setSize(size.x = Math.max(size.x, w), size.y = Math.max(size.y, h), false);
+  renderer.setViewport(0, 0, w, h);
+  renderer.setScissor(0, 0, w, h);
+  renderer.clear();
+  view.camera.aspect = r.width / r.height;
+  if (view.reach) view.camera.zoom = Math.min(1, Math.tan(THREE.MathUtils.degToRad(view.camera.fov / 2)) * view.camera.aspect / view.reach);
+  view.camera.updateProjectionMatrix();
+  model.userData.animate?.(STILL.t);
+  renderer.render(view.scene, view.camera);
+  view.ctx.clearRect(0, 0, w, h);
+  view.ctx.drawImage(renderer.domElement, 0, size.y - h, w, h, 0, 0, w, h);
+  disposeViews([view]);
+  return true;
+};
 export const drawViews = (renderer, views, t, dt, within = null) => {
   if (!renderer || renderer.getContext().isContextLost()) return false;
   const still = stillViews(), clock = performance.now() / 1000;

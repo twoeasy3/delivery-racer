@@ -15,11 +15,12 @@
 //           path is the run as its clock ended up: a rewind never adds its ten seconds to a ghost (the owner, 11-Oct)
 //   checks  a fingerprint of where everything was every CHECK_EVERY steps: played back, a fingerprint that differs
 //           means the run has drifted (another browser's maths, a change the fingerprints missed): it stops, and says so
-// Only runs on a level of the menu are recorded (not a screensaver, a hidden level or the editor's).
+// Only runs on a level of the menu or a special event's stage are recorded (not a screensaver, a hidden level or the editor's).
 // ============================================================================
 import { Input } from './input.js';
 import { Game } from './game.js';
-import { LEVEL, LEVELS, LEVEL_INDEX, selectLevel, setRaceClass } from './levels.js';
+import { LEVEL, LEVELS, LEVEL_INDEX, selectLevel, selectSpecial, setRaceClass } from './levels.js';
+import { STAGE_LEVELS } from './events.js';
 import { CAR, pinCar, carById } from './cars.js';
 import { Player } from './player.js';
 import { Traffic } from './traffic.js';
@@ -46,7 +47,7 @@ const fnv = (items) => {
 // a level's fingerprint: its data as loaded, but not its car and grid, which the race class rewrites (recorded apart)
 const levelPrint = (level) => fnv([JSON.stringify(level, (k, v) => (k === 'car' || k === 'grid' ? undefined : v))]);
 // taken once, as every level was loaded, before any run could change one (a rival rewrites its level's grid)
-const LEVEL_PRINTS = new Map(LEVELS.map(level => [level.id, levelPrint(level)]));
+const LEVEL_PRINTS = new Map([...LEVELS, ...STAGE_LEVELS].map(level => [level.id, levelPrint(level)])); // (a special event's stages too: events.js)
 // a car's fingerprint: what it is (its figures, its model, its perks), not its words
 const carPrint = (car) => fnv([JSON.stringify(car, (k, v) => (typeof v === 'function' || k === 'name' || k === 'perk' ? undefined : v))]);
 // where everything is, as numbers: the clock, the player, every vehicle in play, every obstacle in play
@@ -71,7 +72,7 @@ export const Replay = {
   begin() {
     if (this.playing) return; // (a playback is not recorded again)
     this.recording = null;
-    if (Game.screensaver || Game.raceWatch || !LEVELS.includes(LEVEL)) return;
+    if (Game.screensaver || Game.raceWatch || !(LEVELS.includes(LEVEL) || STAGE_LEVELS.includes(LEVEL))) return;
     this.recording = {
       format: FORMAT,
       header: {
@@ -175,7 +176,9 @@ export const Replay = {
     this.speed = 1;
     Progress.noSave = true;
     Progress.data.tankPieces = h.tankPieces;
-    selectLevel(LEVELS.findIndex(level => level.id === h.level));
+    const stage = STAGE_LEVELS.find(level => level.id === h.level);
+    if (stage) selectSpecial(stage); // (a special event's stage: off the menu's list)
+    else selectLevel(LEVELS.findIndex(level => level.id === h.level));
     if (h.raceClass) setRaceClass(h.raceClass);
     Game.evil = h.evil;
     Game.rival = h.rival;

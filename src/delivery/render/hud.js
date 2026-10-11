@@ -211,8 +211,8 @@ Game.onFinish.push(() => {
   if (hudCamAlert) hudCamAlert.classList.add('hidden');
 });
 // back on the menu (main.js): the HUD is not drawn there, so what it last showed over the run is taken down (the
-// PAUSED banner of a run left paused would otherwise sit over the menu and the garage)
-export const clearHud = () => { hudBanner.style.display = 'none'; };
+// PAUSED banner of a run left paused, and the run's buttons, would otherwise sit over the menu and the garage)
+export const clearHud = () => { hudBanner.style.display = 'none'; runButtons.style.display = 'none'; }; // (and Pause / Exit level: the garage showed them)
 export const updateHud = () => {
   // the clock counts down; below zero is the tip countdown, with the tip draining away
   const left = Game.state === 'start' ? clockFor(LEVEL, false) : Game.remaining;
