@@ -2,7 +2,7 @@
   "id": "canberra",
   "theme": "canberra",
   "clock": { "good": 180, "evil": 128 },
-  "tip": 80,
+  "tip": 120,
   "lanes": { "north": 1, "south": 1 },
   "median": 1,
   "railway": { "every": { "min": 14, "max": 24 } },

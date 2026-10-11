@@ -7,7 +7,7 @@
   },
   "theme": "seabed",
   "clock": { "good": 210, "evil": 160 },
-  "tip": 255,
+  "tip": 260,
   "lanes": { "north": 3, "south": 1 },
   "helicopter": false,
   "cargo": { "good": "goldfish", "evil": "tentacle" },

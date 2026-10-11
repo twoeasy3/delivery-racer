@@ -2,11 +2,11 @@
   "_about": "The level tiers. Edit by hand, or: node scripts/tiers.mjs move <id> <tier> [position]. Tiers 1-5 are the gold-star tiers, 6-10 the Blue Star ones (Blue 1 is tier 6). A level appears once: in one tier, or in outside. Outside levels open in the order listed here (the first once tier 10 is cleared); an amphibious level opens by the rule in tiers.js amphibiousOpens; races are always open.",
   "tiers": {
     "1": ["expressway","back-roads","farm","big-business","hurricane"],
-    "2": ["canberra","night","monte-carlo","suburbs","mumbai"],
+    "2": ["mystery-meadows","night","monte-carlo","suburbs","mumbai"],
     "3": ["panorama-avenue","singapore","passage-du-gois","airport","the-hood"],
     "4": ["singapore-night","grand-pacific","construction","venice","cinder"],
     "5": ["tour-de-coast","mountain-pass","ring-road","rice","noon"],
-    "6": ["stelvio","hong-kong","mystery-meadows","leaks","toys"],
+    "6": ["stelvio","hong-kong","canberra","leaks","toys"],
     "7": ["christmas","quarry-run","tokyo","backlot","moon"],
     "8": ["speed-trap-alley","safari","iceroad","park","docks"],
     "9": ["outback-express","market-town","derby","morro","seaquake"],
