@@ -856,7 +856,8 @@ export const CONFIG = {
     range: 70,             // m short of it they slow
     pace: 0.35,            // share of their speed they slow to
     slowBelow: 0.4,        // share of its speed an evil driver counts as a jam...
-    patience: 3.5,         // ...for this many s before it takes to the shoulder
+    patience: 3.5,         // ...for this many s before it takes to the shoulder (or a better lane beside it, first)
+    heldWithin: 20,        // m: the jam counts only with a car this close in front of it in its lane
     policeSight: 90,       // m a police car sees a shoulder-runner from
     longest: 12,           // s at most up the shoulder
   },
