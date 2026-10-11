@@ -1,6 +1,6 @@
 # Special events: the plan (11-Oct)
 
-Status: built on the feature branch `claude/special-events` (phases 1 to 4 below); not merged until the owner says.
+Status: built on the feature branch `claude/special-events` (phases 1 to 4 below); merged in v1.1.9 (11-Oct).
 
 **What was built (11-Oct):** `events.json` (the one-level events moved there from tiers.json; the special events),
 `events.js` (the rules), the stage as a level of its own (`<event>-<n>`, the map's picture, words and cargo, its
