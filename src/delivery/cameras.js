@@ -3,7 +3,8 @@
 // pole on a shoulder or on the centre line (an obstacle: see Collision). The player passing one
 // faster than its limit is caught: the first time in a run it is a fine, taken off what the run
 // banks (Game.fines); every time after that, a bust. Running one over is no offence: it is gone,
-// and so is its film. A radar detector keeps the car from being caught at all, and nobody fines a tank.
+// and so is its film. A radar detector keeps the car from being caught at all, nobody fines a tank, and a ghost does
+// not show up on the film.
 // This is what they do; render/roadside.js draws the camera's lamp and the flash across the screen.
 // ============================================================================
 import { CONFIG } from './config.js';
@@ -47,7 +48,7 @@ export const SpeedCameras = {
       if (cam.passed || !(from < cam.s && to >= cam.s)) continue;
       cam.passed = true;
       if (cam.obstacle?.gone) continue; // (run over: no camera, no offence)
-      if (Player.speed <= cam.limit || Player.radar > 0 || Player.tank > 0) continue;
+      if (Player.speed <= cam.limit || Player.radar > 0 || Player.tank > 0 || Player.ghost > 0) continue; // (a ghost does not show up on the film)
       cam.flash = CONFIG.speedCamera.flash;
       sfx('camera');
       this.caught++;

@@ -21,6 +21,7 @@ export const CARDS = [
   { type: 'ghost', name: 'Ghost', time: CONFIG.ghostTime, says: says('powerups', 'ghost'), rules: [
     'Your car turns see-through: you pass straight through <strong>traffic and barriers</strong>.',
     'Bullets pass straight through you too: no damage, and no punctures.',
+    'Speed cameras cannot see you: no fine, no bust, however fast you go.',
     'The structure of a bridge and the splash of a package still get you.',
     'You only turn solid again once you are clear of every car.',
   ] },
