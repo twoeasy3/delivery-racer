@@ -25,8 +25,9 @@ site. This repo is the only copy to edit.
 | `scripts/circuit-from-osm.mjs` | Makes a circuit's level from its OpenStreetMap loop |
 | `vite.config.js` | `environments.client.build.rollupOptions.input` lists every page |
 
-- **It is committed and live.** Pushing to `main` deploys the site, the game with it, through
-  Cloudflare's Git integration. There is no staging step.
+- **It is committed and live.** This repository (`delivery-racer`) is its own static-assets Worker, `delivery`
+  (`wrangler.jsonc`), served at `delivery.pingmathehippo.com`. Pushing to `main` deploys it through Cloudflare's Git
+  integration. There is no staging step.
 - **Nothing on the site links to `/delivery/`.** The owner has not said where a link should go.
 - **About 56,000 lines** of code, level data and CSS, written between 2026-10-04 and 2026-10-10, much of it
   by several agents at once in git worktrees (`.claude/worktrees/`), merged into `main` one branch at a time.
