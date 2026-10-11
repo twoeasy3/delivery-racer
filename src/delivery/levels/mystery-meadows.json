@@ -1,0 +1,68 @@
+{
+  "id": "mystery-meadows",
+  "theme": "farm",
+  "clock": { "good": 234, "evil": 166 },
+  "traffic": { "lowrider": 0.35, "darkvan": 0.25, "commuter": 0.12, "van": 0.22, "bus": 0.03, "police": 0.03 },
+  "trafficCount": 16,
+  "oncomingCount": 13,
+  "tip": 80,
+  "segments": [
+    { "length": 300, "curve": 0, "grade": 0 },
+    { "length": 400, "curve": 0.0018, "grade": 0.03 },
+    { "length": 350, "curve": 0, "grade": -0.02 },
+    { "length": 450, "curve": -0.0022, "grade": 0 },
+    { "length": 300, "curve": 0, "grade": 0.035 },
+    { "length": 400, "curve": 0.0015, "grade": -0.035 },
+    { "length": 400, "curve": -0.001, "grade": 0 },
+    { "length": 70, "curve": 0 },
+    { "length": 70, "curve": 0, "grade": 0.18, "ease": 6 },
+    { "length": 70, "curve": 0, "grade": -0.18, "ease": 6 },
+    { "length": 190, "curve": 0, "ease": 6 }
+  ],
+  "narrows": [
+    { "from": 700, "to": 1300, "lanesPerSide": 1 },
+    { "from": 2000, "to": 2500, "lanesPerSide": 1 }
+  ],
+  "bridges": [],
+  "exits": [],
+  "obstacles": [
+    { "s": 300, "lane": 3, "kind": "bale" },
+    { "s": 1000, "lane": 2, "kind": "bale" },
+    { "s": 1900, "lane": 3, "kind": "bale" },
+    { "s": 2300, "lane": 2, "kind": "bale" },
+    { "s": 2850, "lane": 2, "kind": "bale" }
+  ],
+  "herds": [
+    { "from": 250, "to": 330, "count": 4, "kind": "cow" },
+    { "from": 1200, "to": 1280, "count": 4, "kind": "cow" },
+    { "from": 1650, "to": 1730, "count": 4, "kind": "cow" },
+    { "from": 2300, "to": 2380, "count": 4, "kind": "cow" },
+    { "from": 2700, "to": 2800, "count": 5, "kind": "cow" }
+  ],
+  "drifters": [
+    { "from": 350, "to": 600, "kind": "bale", "count": 3, "pattern": "sweep" },
+    { "from": 900, "to": 1150, "kind": "bale", "count": 3, "pattern": "sweep" },
+    { "from": 1500, "to": 1800, "kind": "bale", "count": 4, "pattern": "sweep" },
+    { "from": 2150, "to": 2450, "kind": "bale", "count": 3, "pattern": "sweep" },
+    { "from": 2550, "to": 2950, "kind": "bale", "count": 3, "pattern": "zigzag" }
+  ],
+  "tractors": [
+    { "s": 520, "lane": 2 },
+    { "s": 1820, "lane": 2 },
+    { "s": 2200, "lane": 2 }
+  ],
+  "pickups": [
+    { "type": "mystery", "s": 150, "lane": 2 },
+    { "type": "mystery", "s": 450, "lane": 3 },
+    { "type": "wrench", "s": 620, "lane": 2 },
+    { "type": "mystery", "s": 820, "lane": 2 },
+    { "type": "mystery", "s": 1120, "lane": 2 },
+    { "type": "mystery", "s": 1500, "lane": 3 },
+    { "type": "wrench", "s": 1660, "lane": 2 },
+    { "type": "mystery", "s": 1760, "lane": 3 },
+    { "type": "mystery", "s": 2100, "lane": 2 },
+    { "type": "mystery", "s": 2420, "lane": 2 },
+    { "type": "wrench", "s": 2620, "lane": 3 },
+    { "type": "mystery", "s": 2760, "lane": 3 }
+  ]
+}

@@ -1,0 +1,174 @@
+{
+  "id": "cattle",
+  "theme": "wildwest",
+  "clock": { "good": 255, "evil": 195 },
+  "tip": 320,
+  "lanes": { "north": 2, "south": 1 },
+  "cargo": { "good": "pancakes", "evil": "cannonball" },
+  "traffic": { "wagon": 0.2, "pickup": 0.18, "junker": 0.14, "jeep": 0.12, "caravan": 0.08, "van": 0.07, "hotrod": 0.06, "cargotruck": 0.06, "bus": 0.06, "police": 0.03 },
+  "trafficCount": 9,
+  "oncomingCount": 5,
+  "convoys": { "every": { "min": 34, "max": 52 }, "size": 3, "kind": "wagon" },
+  "processions": { "every": { "min": 55, "max": 85 } },
+  "segments": [
+    { "length": 300, "curve": 0 },
+    { "length": 300, "curve": 0.002 },
+    { "length": 350, "curve": 0 },
+    { "length": 300, "curve": -0.0025 },
+    { "length": 400, "curve": 0 },
+    { "length": 100, "curve": 0 },
+    { "length": 150, "curve": -0.004 },
+    { "length": 300, "curve": 0.004 },
+    { "length": 150, "curve": -0.004 },
+    { "length": 100, "curve": 0 },
+    { "length": 300, "curve": 0 },
+    { "length": 300, "curve": 0.0025 },
+    { "length": 400, "curve": 0 },
+    { "length": 280, "curve": -0.003 },
+    { "length": 150, "curve": 0 },
+    { "length": 100, "curve": 0 },
+    { "length": 150, "curve": -0.004 },
+    { "length": 300, "curve": 0.004 },
+    { "length": 150, "curve": -0.004 },
+    { "length": 100, "curve": 0 },
+    { "length": 320, "curve": 0 },
+    { "length": 300, "curve": 0.002 },
+    { "length": 320, "curve": 0 }
+  ],
+  "exits": [
+    { "exitAt": 1650, "mergeAt": 2450, "out": 70, "oncoming": false },
+    { "exitAt": 3880, "mergeAt": 4680, "out": 70, "oncoming": false }
+  ],
+  "fords": [
+    { "from": 1980, "to": 2070, "depth": 0.6 }
+  ],
+  "lowBridges": [
+    { "s": 4280 }
+  ],
+  "bridges": [
+    { "from": 1280, "to": 1420 }
+  ],
+  "narrows": [
+    { "from": 1260, "to": 1450, "lanesPerSide": 1, "side": "right" }
+  ],
+  "stampedes": [
+    { "from": 340, "to": 580, "count": 9, "kind": "cow" },
+    { "from": 3470, "to": 3710, "count": 11, "kind": "cow" },
+    { "from": 5030, "to": 5360, "count": 14, "kind": "cow" }
+  ],
+  "crossings": [
+    { "s": 800 },
+    { "s": 3260 }
+  ],
+  "washboards": [
+    { "from": 980, "to": 1220 },
+    { "from": 3300, "to": 3430 },
+    { "from": 5330, "to": 5530 }
+  ],
+  "ruts": [
+    { "from": 2480, "to": 2720 },
+    { "from": 4720, "to": 4960 }
+  ],
+  "herds": [
+    { "from": 2810, "to": 2930, "count": 5 },
+    { "from": 3750, "to": 3850, "count": 4 }
+  ],
+  "tractors": [
+    { "s": 420, "lane": 2 },
+    { "s": 2990, "lane": 1 },
+    { "s": 4940, "lane": 2 }
+  ],
+  "mud": [
+    { "from": 3090, "to": 3160 }
+  ],
+  "rockfall": [
+    { "from": 1770, "to": 1940, "count": 7, "side": "left", "height": 30, "out": 8 },
+    { "from": 300, "to": 480, "count": 6, "side": "right", "height": 30, "out": 8, "road": "side", "exit": 1 }
+  ],
+  "potholes": [
+    { "s": 150, "lane": 1, "r": 1.1 },
+    { "s": 205, "lane": 2, "r": 1 },
+    { "s": 690, "lane": 2, "r": 1.2 },
+    { "s": 4040, "lane": 1, "r": 1.1 },
+    { "s": 4500, "lane": 2, "r": 1.1 },
+    { "s": 260, "lane": 1, "r": 1.1, "road": "side", "exit": 0 },
+    { "s": 540, "lane": 0, "r": 1.1, "road": "side", "exit": 1 }
+  ],
+  "parked": [
+    { "s": 250, "side": "right" },
+    { "s": 2390, "side": "right" },
+    { "s": 5560, "side": "right" }
+  ],
+  "targets": [
+    { "s": 560, "side": "right" },
+    { "s": 1550, "side": "left" },
+    { "s": 3200, "side": "right" },
+    { "s": 5420, "side": "left" }
+  ],
+  "pickups": [
+    { "type": "cash5", "s": 110, "lane": 1 },
+    { "type": "cash5", "s": 110, "lane": 2 },
+    { "type": "turbo", "s": 230, "lane": 1 },
+    { "type": "cash10", "s": 450, "lane": 1 },
+    { "type": "cash20", "s": 450, "lane": 2 },
+    { "type": "wrench", "s": 640, "lane": 1 },
+    { "type": "cash20", "s": 770, "lane": "left" },
+    { "type": "cash10", "s": 770, "lane": 0 },
+    { "type": "cash10", "s": 770, "lane": 1 },
+    { "type": "armour", "s": 900, "lane": 2 },
+    { "type": "cash10", "s": 1100, "lane": 1 },
+    { "type": "cash10", "s": 1100, "lane": 2 },
+    { "type": "cash20", "s": 1100, "lane": "right" },
+    { "type": "cash20", "s": 1350, "lane": 0 },
+    { "type": "cash10", "s": 1350, "lane": 1 },
+    { "type": "timePlus", "s": 1600, "lane": 2 },
+    { "type": "mystery", "s": 1690, "lane": 1 },
+    { "type": "cash20", "s": 2025, "lane": 1 },
+    { "type": "cash20", "s": 2025, "lane": 2 },
+    { "type": "turbo", "s": 2260, "lane": 1 },
+    { "type": "cash10", "s": 180, "lane": 0, "road": "side", "exit": 0 },
+    { "type": "cash10", "s": 180, "lane": 1, "road": "side", "exit": 0 },
+    { "type": "wrench", "s": 420, "lane": 1, "road": "side", "exit": 0 },
+    { "type": "cash10", "s": 2610, "lane": 1 },
+    { "type": "cash20", "s": 2680, "lane": 1 },
+    { "type": "ghost", "s": 2610, "lane": 2 },
+    { "type": "cash20", "s": 2870, "lane": 0 },
+    { "type": "wrench", "s": 3070, "lane": 2 },
+    { "type": "cash10", "s": 3230, "lane": 1 },
+    { "type": "cash20", "s": 3230, "lane": 2 },
+    { "type": "timePlus", "s": 3380, "lane": 1 },
+    { "type": "cash10", "s": 3590, "lane": 2 },
+    { "type": "cash20", "s": 3590, "lane": "right" },
+    { "type": "armour", "s": 3800, "lane": 1 },
+    { "type": "mystery", "s": 3930, "lane": 2 },
+    { "type": "cash20", "s": 4280, "lane": 1 },
+    { "type": "turbo", "s": 4460, "lane": 2 },
+    { "type": "cash20", "s": 200, "lane": 0, "road": "side", "exit": 1 },
+    { "type": "cash20", "s": 200, "lane": 1, "road": "side", "exit": 1 },
+    { "type": "timePlus", "s": 400, "lane": 1, "road": "side", "exit": 1 },
+    { "type": "cash10", "s": 640, "lane": 1, "road": "side", "exit": 1 },
+    { "type": "cash20", "s": 4880, "lane": 2 },
+    { "type": "wrench", "s": 4880, "lane": 1 },
+    { "type": "cash10", "s": 5150, "lane": 1 },
+    { "type": "cash20", "s": 5150, "lane": 2 },
+    { "type": "turbo", "s": 5320, "lane": 1 },
+    { "type": "cash20", "s": 5430, "lane": "left" },
+    { "type": "cash10", "s": 5430, "lane": 1 },
+    { "type": "cash10", "s": 5430, "lane": 2 },
+    { "type": "cash20", "s": 5430, "lane": "right" },
+    { "type": "cash5", "s": 5580, "lane": 1 },
+    { "type": "cash5", "s": 5580, "lane": 2 }
+  ],
+  "obstacles": [
+    { "s": 340, "lane": 2, "kind": "bale" },
+    { "s": 550, "lane": 1, "kind": "bale" },
+    { "s": 1050, "lane": 2, "kind": "bale" },
+    { "s": 1160, "lane": 1, "kind": "bale" },
+    { "s": 2650, "lane": 2, "kind": "bale" },
+    { "s": 2390, "lane": 2, "kind": "bale" },
+    { "s": 3510, "lane": 1, "kind": "bale" },
+    { "s": 4920, "lane": 1, "kind": "bale" },
+    { "s": 5380, "lane": 2, "kind": "bale" },
+    { "s": 5490, "lane": 1, "kind": "bale" }
+  ]
+}

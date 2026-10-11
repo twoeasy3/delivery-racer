@@ -1,0 +1,86 @@
+{
+  "id": "the-hood",
+  "theme": "hood",
+  "clock": { "good": 304, "evil": 215 },
+  "tip": 170,
+  "drivers": { "evil": 0.65, "evilMood": { "happy": 0.2, "angry": 0.2 } },
+  "traffic": { "commuter": 0.22, "darkvan": 0.2, "lowrider": 0.2, "wagon": 0.13, "junker": 0.12, "driveby": 0.14 },
+  "trafficCount": 10,
+  "oncomingCount": 8,
+  "gunfire": [
+    { "from": 650, "to": 1550 },
+    { "from": 2250, "to": 3050 },
+    { "from": 3700, "to": 4500 }
+  ],
+  "segments": [
+    { "length": 350, "curve": 0 },
+    { "length": 250, "curve": 0.004 },
+    { "length": 300, "curve": 0 },
+    { "length": 200, "curve": -0.005 },
+    { "length": 350, "curve": 0 },
+    { "length": 250, "curve": 0.003 },
+    { "length": 300, "curve": 0 },
+    { "length": 250, "curve": -0.004 },
+    { "length": 300, "curve": 0 },
+    { "length": 200, "curve": 0.005 },
+    { "length": 300, "curve": 0 },
+    { "length": 250, "curve": -0.003 },
+    { "length": 300, "curve": 0 },
+    { "length": 300, "curve": 0.004 },
+    { "length": 300, "curve": 0 },
+    { "length": 250, "curve": -0.004 },
+    { "length": 350, "curve": 0 }
+  ],
+  "narrows": [
+    { "from": 1000, "to": 1400, "lanesPerSide": 1 }
+  ],
+  "obstacles": [
+    { "s": 300, "lane": 3, "kind": "cone" },
+    { "s": 312, "lane": 3, "kind": "cone" },
+    { "s": 1800, "lane": 2, "kind": "barrier" },
+    { "s": 1812, "lane": 2, "kind": "barrier" },
+    { "s": 3300, "lane": 3, "kind": "cone" },
+    { "s": 3312, "lane": 3, "kind": "cone" },
+    { "s": 4650, "lane": 2, "kind": "cone" },
+    { "s": 4662, "lane": 2, "kind": "cone" }
+  ],
+  "cushions": [
+    { "from": 1460, "to": 1595 }
+  ],
+  "pickups": [
+    { "type": "cash10", "s": 1482, "lane": 2 },
+    { "type": "cash10", "s": 1482, "lane": 3 },
+    { "type": "cash20", "s": 1572, "lane": 2 },
+    { "type": "armour", "s": 600, "lane": 2 },
+    { "type": "wrench", "s": 900, "lane": 3 },
+    { "type": "wrench", "s": 1150, "lane": 2 },
+    { "type": "ghost", "s": 1250, "lane": 2 },
+    { "type": "wrench", "s": 1450, "lane": 3 },
+    { "type": "turbo", "s": 1700, "lane": 3 },
+    { "type": "mystery", "s": 2000, "lane": 2 },
+    { "type": "armour", "s": 2200, "lane": 3 },
+    { "type": "wrench", "s": 2350, "lane": 3 },
+    { "type": "wrench", "s": 2600, "lane": 2 },
+    { "type": "wrench", "s": 2800, "lane": 2 },
+    { "type": "ghost", "s": 2900, "lane": 3 },
+    { "type": "wrench", "s": 3000, "lane": 3 },
+    { "type": "timePlus", "s": 3400, "lane": 2 },
+    { "type": "armour", "s": 3650, "lane": 3 },
+    { "type": "wrench", "s": 3900, "lane": 2 },
+    { "type": "ghost", "s": 4100, "lane": 3 },
+    { "type": "wrench", "s": 4300, "lane": 2 },
+    { "type": "mystery", "s": 4450, "lane": 3 }
+  ],
+  "targets": [
+    { "s": 1100, "side": "left" },
+    { "s": 2700, "side": "right" },
+    { "s": 4250, "side": "left" }
+  ],
+  "trafficZones": [
+    { "from": 0, "to": 550, "traffic": { "police": 0.67 } },
+    { "from": 1600, "to": 2150, "traffic": { "police": 0.83 } },
+    { "from": 3150, "to": 3600, "traffic": { "police": 0.67 } },
+    { "from": 4600, "to": 4800, "traffic": { "police": 0.67 } },
+    { "from": 3700, "to": 4500, "traffic": { "driveby": 0.28 } }
+  ]
+}

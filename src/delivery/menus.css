@@ -1,0 +1,151 @@
+/* The menus' newer parts, each brought in by the file that draws it: the save code panel
+   (render/savecode.js), and the garage's sorting and comparison (render/garageview.js, render/compare.js).
+   The rest is in style.css; the start screen is menu2.css. */
+
+/* ---- save codes ---- */
+.save-panel { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center;
+  padding: 16px; background: rgba(10, 13, 18, .8); font-family: system-ui, sans-serif; }
+.save-panel.hidden { display: none; }
+.save-box { display: flex; flex-direction: column; gap: 10px; width: min(520px, 100%); padding: 18px;
+  border-radius: 12px; background: #1b2029; color: #fff; box-shadow: 0 10px 40px rgba(0, 0, 0, .5); }
+.save-box strong { font-size: 20px; }
+.save-box p { margin: 0; line-height: 1.45; opacity: .9; }
+.save-box textarea { width: 100%; box-sizing: border-box; resize: vertical; padding: 8px; border: 0; border-radius: 8px;
+  background: #0f1319; color: #cfe3ff; font: 12px/1.4 ui-monospace, Consolas, monospace; word-break: break-all; }
+.save-buttons { display: flex; gap: 8px; justify-content: flex-end; }
+.save-buttons button { font: inherit; font-size: 15px; font-weight: 700; padding: 8px 16px; border: 0; border-radius: 8px;
+  background: #e9e9e9; color: #222; cursor: pointer; }
+.save-buttons button:first-child { background: #ffd23f; }
+
+/* ---- garage: the Sort and Show buttons, and the comparison card ---- */
+#garageUi .bar .view-btn { font-size: 14px; padding: 7px 12px; background: #e9e9e9; }
+/* ---- garage: its two tabs, and the Car ideas lot behind the second (render/ideaslot.js) ---- */
+#garageUi .tabs { display: flex; gap: 4px; }
+#garageUi .tabs .tab { background: rgba(255, 255, 255, .16); color: #fff; font-size: 18px; }
+#garageUi .tabs .tab.on { background: #fff; color: #222; }
+body.ideas-tab #garageUi .view-btn, body.ideas-tab #garageUi .compare { display: none !important; }
+body.ideas-tab #garageBank { visibility: hidden; }
+body.ideas-tab #garageInfo { max-width: 720px; margin: 0 auto; }
+body.ideas-tab #garageInfo strong { display: block; font-size: 19px; color: #ffd23f; }
+body.ideas-tab #garageInfo div { font-weight: 400; }
+#garageTip.idea { white-space: normal; width: max-content; max-width: min(360px, 84vw); font-weight: 400; }
+#garageTip.idea strong { display: block; color: #ffd23f; }
+body.ideas-studio #garageUi, body.ideas-studio #garageTip { display: none !important; }
+#garageUi .compare { pointer-events: none; padding: 10px 14px; border-radius: 10px; background: rgba(20, 24, 32, .88);
+  color: #fff; font-size: 13px; box-shadow: 0 4px 18px rgba(0, 0, 0, .4); max-width: calc(100vw - 24px); box-sizing: border-box; }
+/* (in the bottom left corner, clear of the cars; on a narrow screen, above the stats instead) */
+@media (min-width: 761px) and (min-height: 601px) { #garageUi .compare { position: fixed; left: 16px; bottom: 16px; } }
+#garageUi .compare strong { display: block; margin-bottom: 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; opacity: .7; }
+#garageUi .compare table { border-collapse: collapse; }
+#garageUi .compare th, #garageUi .compare td { padding: 2px 10px; text-align: right; white-space: nowrap; }
+#garageUi .compare th { font-size: 13px; color: #ffd23f; max-width: 130px; overflow: hidden; text-overflow: ellipsis; }
+#garageUi .compare td.stat { text-align: left; padding-left: 0; opacity: .8; }
+#garageUi .compare td.perk { white-space: normal; max-width: 130px; font-size: 11px; }
+#garageUi .compare td.better { color: #6fe08a; font-weight: 700; }
+#garageUi .compare td.worse { color: #ff7a6b; font-weight: 700; }
+#garageUi .compare td.same { opacity: .5; }
+/* (on a phone, at the same narrow width: not the table but one short strip over the stats, a cell a stat: a word,
+   a bar, the difference. px: padding 5 + 6, a line of 11 for the two names, 3, and the cells 30 (10 + 2 + 3 + 2 +
+   13): 55 tall, where the table was 200 to 230: under a tenth of 360x620, 390x700 and 430x760, 15% of 740x360.
+   As wide as the screen less the garage's padding, 420 at most; taps and drags pass through it) */
+#garageUi .compare .mini { display: none; }
+@media (max-width: 760px), (max-height: 600px) {
+  #garageUi .compare { width: 100%; max-width: 420px; padding: 5px 8px 6px; border-radius: 8px; font-size: 11px; }
+  #garageUi .compare > strong, #garageUi .compare > table { display: none; }
+  #garageUi .compare .mini { display: flex; flex-direction: column; gap: 3px; }
+  #garageUi .compare .mini em { font: 700 9px/11px system-ui, sans-serif; letter-spacing: .04em; opacity: .7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #garageUi .compare .cells { display: flex; gap: 4px; }
+  #garageUi .compare .cell { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  #garageUi .compare .cell small { font: 700 9px/10px system-ui, sans-serif; text-transform: uppercase; opacity: .8; white-space: nowrap; overflow: hidden; }
+  #garageUi .compare .cell .track { height: 3px; border-radius: 2px; background: rgba(255, 255, 255, .16); overflow: hidden; }
+  #garageUi .compare .cell .track i { display: block; height: 100%; background: #cfd6df; }
+  #garageUi .compare .cell b { font: 700 12px/13px system-ui, sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; opacity: .5; }
+  #garageUi .compare .cell.better b { color: #6fe08a; opacity: 1; }
+  #garageUi .compare .cell.worse b { color: #ff7a6b; opacity: 1; }
+  #garageUi .compare .cell.better .track i { background: #6fe08a; }
+  #garageUi .compare .cell.worse .track i { background: #ff7a6b; }
+}
+
+/* ---- the game's own dialog (render/dialog.js): a buy, a reset, a save replaced; over the menu and the garage ---- */
+.menu-dialog { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: rgba(5, 8, 12, .78); color: #fff; font-family: system-ui, sans-serif; }
+.menu-dialog .dialog-box { width: min(420px, 100%); max-height: 100%; overflow-y: auto; padding: 18px 20px 20px; border-radius: 14px; background: #171c27;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .14), 0 0 0 3px rgba(0, 0, 0, .4), 0 24px 70px rgba(0, 0, 0, .7); animation: dialog-in .16s ease-out; }
+@keyframes dialog-in { from { opacity: 0; transform: translateY(12px) scale(.985); } }
+.menu-dialog h2 { margin: 0 0 10px; font-size: 22px; letter-spacing: .02em; text-transform: none; opacity: 1; color: #ffd23f; }
+.menu-dialog p { margin: 0 0 8px; font-size: 16px; line-height: 1.35; }
+.menu-dialog p b { color: #ffd23f; }
+.menu-dialog p.short { color: #ff7a6b; }
+.menu-dialog .dialog-buttons { display: flex; gap: 10px; margin-top: 14px; }
+.menu-dialog .dialog-buttons button { flex: 1 1 0; min-height: 46px; padding: 10px 14px; border: 0; border-radius: 10px; font: 700 17px system-ui, sans-serif;
+  cursor: pointer; background: #ffd23f; color: #222; }
+.menu-dialog .dialog-buttons button.dialog-cancel { background: rgba(255, 255, 255, .14); color: #fff; }
+.menu-dialog .dialog-buttons button.danger { background: #ff7a6b; }
+.menu-dialog .dialog-buttons button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+@media (max-width: 360px) { .menu-dialog .dialog-buttons { flex-direction: column-reverse; } }
+
+/* ---- garage: the Good / Evil pair, and the Switch / Use pair under the stats ---- */
+#garageUi .seg { display: inline-flex; border-radius: 9px; overflow: hidden; background: rgba(255, 255, 255, .16); pointer-events: auto; }
+#garageUi .seg button { border-radius: 0; background: transparent; color: #fff; font-size: 16px; padding: 9px 16px; text-shadow: none; }
+#garageUi .seg button.on { background: #fff; color: #222; }
+#garageUi .seg button[data-side="evil"].on { background: #c8362b; color: #fff; }
+#garageUi .actions { display: flex; gap: 8px; }
+#garageUi #garageUse { background: #fff; }
+body.ideas-tab #garageUse { display: none !important; }
+
+/* ---- garage: the Sort and Show lists (render/garageview.js): a button that opens every choice, the one in use ticked ---- */
+#garageUi .view-pick { position: relative; display: inline-block; pointer-events: auto; }
+#garageUi .view-list { position: absolute; left: 0; top: calc(100% + 4px); z-index: 20; min-width: 100%; width: max-content; max-width: 80vw;
+  padding: 4px; border-radius: 10px; background: #171c27; box-shadow: 0 0 0 1px rgba(255, 255, 255, .16), 0 10px 30px rgba(0, 0, 0, .6);
+  display: flex; flex-direction: column; gap: 2px; text-shadow: none; }
+#garageUi .view-list.hidden { display: none; }
+#garageUi .view-item { display: grid; grid-template-columns: 1.1em 1fr auto; gap: 6px; align-items: center; text-align: left; min-height: 38px;
+  padding: 6px 12px 6px 6px; font-size: 15px; white-space: nowrap; background: transparent; color: #fff; border-radius: 7px; }
+#garageUi .view-item small { opacity: .6; font-size: 12px; font-variant-numeric: tabular-nums; }
+#garageUi .view-item.on { background: rgba(255, 210, 63, .22); color: #ffd23f; }
+#garageUi .view-item:hover, #garageUi .view-item:focus-visible { background: rgba(255, 255, 255, .16); outline: none; }
+
+/* ---- garage on a phone: the lot is drawn between the bar and the words and buttons (render/garage.js: bandOf), so
+   nothing sits over a car. The stats are one line, cut short, until tapped; held in a landscape phone to a row ---- */
+@media (max-width: 760px), (max-height: 480px) {
+  body:not(.ideas-tab) #garageInfo { position: relative; pointer-events: auto; cursor: pointer; max-width: 100%; box-sizing: border-box;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 22px 0 4px; font-size: 14px; }
+  body:not(.ideas-tab) #garageInfo::after { content: '\25BE'; position: absolute; right: 4px; top: 0; opacity: .8; }
+  body:not(.ideas-tab) #garageInfo.open { white-space: normal; }
+  body:not(.ideas-tab) #garageInfo.open::after { content: '\25B4'; }
+  #garageUi .pick { gap: 5px; width: 100%; }
+  #garageUi .actions { width: 100%; max-width: 420px; }
+  #garageUi .actions button { flex: 1 1 0; padding: 10px 12px; }
+  #garageUi .bar { gap: 8px; font-size: 18px; }
+  #garageUi .bar > button, #garageUi .seg button, #garageUi .view-btn { font-size: 14px; padding: 7px 10px; }
+}
+@media (max-height: 600px) and (min-width: 560px) {
+  #garageUi { padding: 8px 12px 10px; }
+  /* (a short, wide screen: the comparison strip at the left, and the stats over the buttons at its right) */
+  #garageUi .pick { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; justify-items: center; gap: 4px 14px; }
+  #garageUi .compare { grid-column: 1; grid-row: 1 / span 2; width: 420px; }
+  body:not(.ideas-tab) #garageInfo, #garageUi .actions { grid-column: 2; justify-self: stretch; }
+  body:not(.ideas-tab) #garageInfo { text-align: left; grid-row: 1; }
+  #garageUi .actions { grid-row: 2; width: auto; max-width: none; }
+  body.ideas-tab #garageUi .pick { display: flex; flex-direction: column; }
+}
+@media (max-width: 760px), (max-height: 600px) {
+  #garageUi .tabs .tab { font-size: 14px; padding: 7px 10px; }
+  #garageUi #garageBank { font-size: 15px; }
+}
+
+/* ---- garage: the level's car rule on the side on show (render/garage.js): a small note under the bar, in the menu's chip
+   language (panel, 1px line, 7px radius, an accent edge), sized to its text; a badge on a car that may not be driven,
+   and the reason as a caption under the disabled buttons ---- */
+#garageRule { flex: 1 1 100%; order: 99; display: flex; justify-content: flex-start; pointer-events: none; }
+#garageRule.hidden, #garageWhy.hidden { display: none; }
+#garageRule .rulechip { display: inline-flex; align-items: center; gap: 8px; max-width: min(36rem, 100%); box-sizing: border-box; padding: 6px 12px 6px 10px;
+  border-radius: 7px; font: 700 13px/1.3 system-ui, sans-serif; letter-spacing: .03em; color: #fff; background: rgba(34, 41, 56, .92);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .11), inset 3px 0 0 #6fe08a; }
+#garageRule.restricted .rulechip { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .11), inset 3px 0 0 #ffd23f; }
+#garageRule .rulechip::before { content: ""; flex: 0 0 auto; width: 11px; height: 13px; background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 13'%3E%3Cpath d='M2.5 6V4a3 3 0 0 1 6 0v2' fill='none' stroke='%23ffd23f' stroke-width='1.6'/%3E%3Crect x='0.5' y='6' width='10' height='6.5' rx='1.5' fill='%23ffd23f'/%3E%3C/svg%3E"); }
+#garageRule:not(.restricted) .rulechip::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 13'%3E%3Cpath d='M1 7l3 3 6-7' fill='none' stroke='%236fe08a' stroke-width='1.8'/%3E%3C/svg%3E"); height: 11px; }
+#garageUi .notallowed { color: #ffb4a8; font-weight: 700; }
+#garageWhy { flex: 1 1 100%; font: 600 12px/1.3 system-ui, sans-serif; letter-spacing: .03em; color: #ffb4a8; }
+#garageUi .actions { flex-wrap: wrap; }
+#garageUi .actions button:disabled { opacity: .5; cursor: not-allowed; }

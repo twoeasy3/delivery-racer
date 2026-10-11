@@ -1,0 +1,115 @@
+{
+  "id": "leaks",
+  "name": "Twenty Thousand Leaks",
+  "description": {
+    "good": "A glass tube along the sea bed, and it drips. Steer round the leaks, keep off the fresh tar, take the crest gently, and keep to your lane in the dark.",
+    "evil": "The tunnel is leaking and the best money sits in the puddles and on the wet tar. Fly the crest past the camera and let the whale be the only witness."
+  },
+  "theme": "seabed",
+  "clock": { "good": 210, "evil": 160 },
+  "tip": 300,
+  "lanes": { "north": 3, "south": 1 },
+  "helicopter": false,
+  "cargo": { "good": "goldfish", "evil": "tentacle" },
+  "traffic": { "commuter": 0.2, "semi": 0.1, "bus": 0.08, "van": 0.12, "cargotruck": 0.08, "taxi": 0.1, "suv": 0.1, "minivan": 0.08, "binlorry": 0.05, "wagon": 0.08, "police": 0.03 },
+  "trafficCount": 11,
+  "oncomingCount": 5,
+  "convoys": { "every": { "min": 30, "max": 50 }, "size": 3, "kind": "semi" },
+  "emergencies": { "every": { "min": 45, "max": 75 } },
+  "pursuits": { "every": { "min": 50, "max": 80 } },
+  "segments": [
+    { "length": 400, "curve": 0 },
+    { "length": 300, "curve": 0.0022, "grade": -0.03 },
+    { "length": 400, "curve": 0 },
+    { "length": 300, "curve": -0.003 },
+    { "length": 300, "curve": 0, "grade": 0.04 },
+    { "length": 90, "curve": 0, "grade": 0.2, "ease": 6 },
+    { "length": 90, "curve": 0, "grade": -0.2, "ease": 6 },
+    { "length": 120, "curve": 0, "ease": 6 },
+    { "length": 350, "curve": 0.0025, "grade": -0.04 },
+    { "length": 500, "curve": 0 },
+    { "length": 300, "curve": -0.0025 },
+    { "length": 450, "curve": 0 },
+    { "length": 300, "curve": 0.003, "grade": 0.03 },
+    { "length": 600, "curve": 0 }
+  ],
+  "tunnels": [
+    { "from": 60, "to": 220 },
+    { "from": 2450, "to": 2700 }
+  ],
+  "narrows": [
+    { "from": 2110, "to": 2310, "lanesPerSide": 2 }
+  ],
+  "drifters": [
+    { "from": 1150, "to": 1380, "kind": "crate", "count": 5, "pattern": "zigzag" }
+  ],
+  "cameras": [
+    { "s": 1620, "side": "right", "limit": 80 }
+  ],
+  "reversible": [
+    { "from": 2880, "to": 3140, "lane": 1 }
+  ],
+  "wideLoads": [
+    { "s": 3300, "lanes": [2, 3] }
+  ],
+  "tarmac": [
+    { "from": 3560, "to": 3860, "lane": 3 }
+  ],
+  "parked": [
+    { "s": 330, "side": "right" },
+    { "s": 2380, "side": "right" }
+  ],
+  "targets": [
+    { "s": 640, "side": "right" },
+    { "s": 1950, "side": "left" },
+    { "s": 3560, "side": "right" }
+  ],
+  "pickups": [
+    { "type": "cash5", "s": 140, "lane": 1 },
+    { "type": "cash5", "s": 140, "lane": 2 },
+    { "type": "cash5", "s": 140, "lane": 3 },
+    { "type": "turbo", "s": 300, "lane": 2 },
+    { "type": "cash10", "s": 555, "lane": 3 },
+    { "type": "cash20", "s": 792, "lane": 2 },
+    { "type": "wrench", "s": 905, "lane": 1 },
+    { "type": "cash10", "s": 905, "lane": 3 },
+    { "type": "cash20", "s": 1022, "lane": 1 },
+    { "type": "cash10", "s": 1265, "lane": 1 },
+    { "type": "timePlus", "s": 1265, "lane": 2 },
+    { "type": "cash10", "s": 1265, "lane": 3 },
+    { "type": "cash10", "s": 1560, "lane": 1 },
+    { "type": "cash10", "s": 1685, "lane": 2 },
+    { "type": "turbo", "s": 1685, "lane": 3 },
+    { "type": "cash20", "s": 1870, "lane": 2 },
+    { "type": "cash10", "s": 2210, "lane": 1 },
+    { "type": "cash10", "s": 2520, "lane": 1 },
+    { "type": "ghost", "s": 2520, "lane": 3 },
+    { "type": "cash20", "s": 2640, "lane": 2 },
+    { "type": "cash5", "s": 2640, "lane": 3 },
+    { "type": "wrench", "s": 2760, "lane": 2 },
+    { "type": "armour", "s": 2900, "lane": 3 },
+    { "type": "cash20", "s": 2960, "lane": 1 },
+    { "type": "cash20", "s": 3080, "lane": 1 },
+    { "type": "cash10", "s": 3335, "lane": 1 },
+    { "type": "timePlus", "s": 3430, "lane": 3 },
+    { "type": "cash10", "s": 3600, "lane": 2 },
+    { "type": "cash10", "s": 3600, "lane": 3 },
+    { "type": "cash20", "s": 3680, "lane": "right" },
+    { "type": "cash10", "s": 3750, "lane": 1 },
+    { "type": "cash20", "s": 3750, "lane": 2 },
+    { "type": "cash10", "s": 3750, "lane": 3 },
+    { "type": "cash20", "s": 3835, "lane": 3 },
+    { "type": "cash20", "s": 3992, "lane": 1 },
+    { "type": "cash20", "s": 4152, "lane": 2 },
+    { "type": "mystery", "s": 4312, "lane": 1 },
+    { "type": "cash20", "s": 4312, "lane": 3 },
+    { "type": "cash5", "s": 4430, "lane": 1 },
+    { "type": "cash5", "s": 4430, "lane": 2 },
+    { "type": "cash5", "s": 4430, "lane": 3 }
+  ],
+  "obstacles": [
+    { "s": 1910, "lane": 3, "kind": "crate" },
+    { "s": 1935, "lane": 1, "kind": "crate" },
+    { "s": 2590, "lane": 1, "kind": "barrier" }
+  ]
+}

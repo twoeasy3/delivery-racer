@@ -1,0 +1,160 @@
+{
+  "id": "morro",
+  "name": "Favela Heights",
+  "description": {
+    "good": "A record player for the party at the top. Up the hairpins and the bumps, past the carnival and the ice-cream van, over the ridge and down the far side, gently.",
+    "evil": "Fireworks for the hilltop, and the hill in the way. Round the parade, between the bumps, through burst mains, fly the ridge and never mind who is on the stairs."
+  },
+  "theme": "favela",
+  "clock": { "good": 220, "evil": 165 },
+  "tip": 300,
+  "lanes": { "north": 2, "south": 1 },
+  "shoulder": 2.5,
+  "cargo": { "good": "record", "evil": "fireworks" },
+  "traffic": { "lovebus": 0.18, "rickshaw": 0.14, "commuter": 0.14, "junker": 0.12, "taxi": 0.1, "keitruck": 0.1, "van": 0.08, "lowrider": 0.06, "boyracer": 0.05, "bus": 0.03, "police": 0.03 },
+  "trafficCount": 9,
+  "oncomingCount": 6,
+  "convoys": { "every": { "min": 35, "max": 55 }, "size": 3, "kind": "lovebus" },
+  "pursuits": { "every": { "min": 45, "max": 70 } },
+  "emergencies": { "every": { "min": 55, "max": 85 } },
+  "segments": [
+    { "length": 520, "curve": 0 },
+    { "length": 200, "curve": 0, "grade": 0.07 },
+    { "length": 126, "curve": -0.0249333, "grade": 0.04 },
+    { "length": 180, "curve": 0, "grade": 0.07 },
+    { "length": 32, "curve": 0.0490874, "grade": 0.04 },
+    { "length": 40, "curve": 0, "grade": 0.048 },
+    { "length": 32, "curve": 0.0490874, "grade": 0.04 },
+    { "length": 220, "curve": 0, "grade": 0.07 },
+    { "length": 126, "curve": -0.0249333, "grade": 0.04 },
+    { "length": 200, "curve": 0, "grade": 0.07 },
+    { "length": 32, "curve": 0.0490874, "grade": 0.04 },
+    { "length": 40, "curve": 0, "grade": 0.048 },
+    { "length": 32, "curve": 0.0490874, "grade": 0.04 },
+    { "length": 240, "curve": 0, "grade": 0.06 },
+    { "length": 126, "curve": -0.0249333, "grade": 0.04 },
+    { "length": 160, "curve": 0, "grade": 0.05 },
+    { "length": 300, "curve": 0.003 },
+    { "length": 100, "curve": 0 },
+    { "length": 80, "curve": 0, "grade": 0.16, "ease": 6 },
+    { "length": 80, "curve": 0, "grade": -0.16, "ease": 6 },
+    { "length": 100, "curve": 0, "ease": 6 },
+    { "length": 300, "curve": 0 },
+    { "length": 250, "curve": -0.003 },
+    { "length": 200, "curve": 0, "grade": -0.07 },
+    { "length": 126, "curve": 0.0249333, "grade": -0.04 },
+    { "length": 200, "curve": 0, "grade": -0.07 },
+    { "length": 32, "curve": -0.0490874, "grade": -0.04 },
+    { "length": 40, "curve": 0, "grade": -0.048 },
+    { "length": 32, "curve": -0.0490874, "grade": -0.04 },
+    { "length": 220, "curve": 0, "grade": -0.07 },
+    { "length": 126, "curve": 0.0249333, "grade": -0.04 },
+    { "length": 160, "curve": 0, "grade": -0.05 },
+    { "length": 260, "curve": 0 }
+  ],
+  "parades": [
+    { "s": 300 }
+  ],
+  "potholes": [
+    { "s": 560, "lane": 1, "r": 1 },
+    { "s": 620, "lane": 2, "r": 1.1 },
+    { "s": 680, "lane": 1, "r": 1.2 },
+    { "s": 2186, "lane": 2, "r": 1.1 },
+    { "s": 2246, "lane": 1, "r": 1 },
+    { "s": 4206, "lane": 1, "r": 1.1 },
+    { "s": 4266, "lane": 2, "r": 1.2 },
+    { "s": 4612, "lane": 1, "r": 1.1 }
+  ],
+  "iceCreamStops": [
+    { "s": 936, "lane": 2 }
+  ],
+  "trolleys": [
+    { "from": 1150, "to": 1330, "count": 6 },
+    { "from": 3531, "to": 3701, "count": 5 }
+  ],
+  "drifters": [
+    { "from": 3872, "to": 4017, "kind": "crate", "count": 5, "pattern": "dart" }
+  ],
+  "marathons": [
+    { "s": 1820, "lane": 2, "count": 9, "water": 1980 }
+  ],
+  "pelotons": [
+    { "s": 4176, "count": 8 }
+  ],
+  "balloons": [
+    { "s": 2456, "lanes": [1, 2] }
+  ],
+  "tunnels": [
+    { "from": 3016, "to": 3216 }
+  ],
+  "cushions": [
+    { "from": 1490, "to": 1670 }
+  ],
+  "parked": [
+    { "s": 480, "side": "right" },
+    { "s": 1805, "side": "right" },
+    { "s": 2346, "side": "right" },
+    { "s": 4702, "side": "right" }
+  ],
+  "targets": [
+    { "s": 640, "side": "right" },
+    { "s": 1576, "side": "left" },
+    { "s": 2636, "side": "right" },
+    { "s": 3952, "side": "left" }
+  ],
+  "pickups": [
+    { "type": "cash5", "s": 120, "lane": 1 },
+    { "type": "cash5", "s": 120, "lane": 2 },
+    { "type": "turbo", "s": 230, "lane": 1 },
+    { "type": "cash20", "s": 400, "lane": 0 },
+    { "type": "cash10", "s": 500, "lane": 1 },
+    { "type": "cash10", "s": 500, "lane": 2 },
+    { "type": "cash10", "s": 650, "lane": 2 },
+    { "type": "cash20", "s": 783, "lane": 2 },
+    { "type": "cash10", "s": 971, "lane": 1 },
+    { "type": "wrench", "s": 971, "lane": 2 },
+    { "type": "cash20", "s": 1078, "lane": 0 },
+    { "type": "cash10", "s": 1078, "lane": 1 },
+    { "type": "cash10", "s": 1225, "lane": 2 },
+    { "type": "timePlus", "s": 1310, "lane": 1 },
+    { "type": "cash20", "s": 1413, "lane": 2 },
+    { "type": "cash10", "s": 1512, "lane": 2 },
+    { "type": "cash10", "s": 1557, "lane": 1 },
+    { "type": "armour", "s": 1557, "lane": 2 },
+    { "type": "cash20", "s": 1602, "lane": "right" },
+    { "type": "cash20", "s": 1728, "lane": 0 },
+    { "type": "cash10", "s": 1905, "lane": 1 },
+    { "type": "cash10", "s": 1905, "lane": 2 },
+    { "type": "ghost", "s": 2005, "lane": 1 },
+    { "type": "cash20", "s": 2083, "lane": 2 },
+    { "type": "cash10", "s": 2281, "lane": 1 },
+    { "type": "turbo", "s": 2281, "lane": 2 },
+    { "type": "cash10", "s": 2526, "lane": 2 },
+    { "type": "timePlus", "s": 2666, "lane": 1 },
+    { "type": "cash20", "s": 2891, "lane": 1 },
+    { "type": "cash20", "s": 2891, "lane": 2 },
+    { "type": "cash10", "s": 3116, "lane": 0 },
+    { "type": "cash20", "s": 3116, "lane": 1 },
+    { "type": "cash10", "s": 3116, "lane": 2 },
+    { "type": "wrench", "s": 3316, "lane": 1 },
+    { "type": "cash10", "s": 3446, "lane": 2 },
+    { "type": "cash10", "s": 3646, "lane": 2 },
+    { "type": "cash20", "s": 3779, "lane": 1 },
+    { "type": "armour", "s": 3942, "lane": 1 },
+    { "type": "cash10", "s": 3942, "lane": 2 },
+    { "type": "cash20", "s": 4094, "lane": 0 },
+    { "type": "timePlus", "s": 4156, "lane": 2 },
+    { "type": "cash10", "s": 4346, "lane": 1 },
+    { "type": "cash10", "s": 4346, "lane": 2 },
+    { "type": "cash20", "s": 4429, "lane": 1 },
+    { "type": "cash10", "s": 4682, "lane": 1 },
+    { "type": "mystery", "s": 4682, "lane": 2 },
+    { "type": "cash5", "s": 4862, "lane": 1 },
+    { "type": "cash5", "s": 4862, "lane": 2 }
+  ],
+  "obstacles": [
+    { "s": 2926, "lane": 2, "kind": "crate" },
+    { "s": 3151, "lane": 1, "kind": "barrier" },
+    { "s": 2571, "lane": 1, "kind": "crate" }
+  ]
+}

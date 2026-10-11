@@ -1,0 +1,1063 @@
+diff --git a/scripts/.themes-check.mjs b/scripts/.themes-check.mjs
+new file mode 100644
+index 0000000..a77c288
+--- /dev/null
++++ b/scripts/.themes-check.mjs
+@@ -0,0 +1,148 @@
++// A check of the gimmicks that came with the themes of 10-Oct (src/delivery/extras.js: toys.js, air.js, ...), one
++// at a time, headless: for each, both sides of its gamble (the risky line pays when it is driven right and costs
++// when it is not), that the safe line always works, and that nothing forces a stop.
++//   node scripts/.themes-check.mjs [name ...]     (names: only those sections: marbles loops paws gravity ...)
++import { boot } from './delivery-headless.mjs';
++
++const ONLY = process.argv.slice(2);
++const g = await boot({ cars: ['commuter', 'sport', 'darkvan', 'floatvan', 'toybota', 'semi'] });
++let failures = 0;
++const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' : '  FAIL  ') + what); };
++const section = async (name, run) => { if (!ONLY.length || ONLY.includes(name)) { console.log('---- ' + name); await run(); } };
++try {
++  const { Toys } = await g.load('toys.js');
++  const { Air } = await g.load('air.js');
++  const { Hazards } = await g.load('hazards.js');
++  const { Progress } = await g.load('progress.js');
++  const P = g.Player, G = g.Game, C = g.CONFIG;
++  const T = () => g.track.Track;
++  const lane = (n, s) => T().laneOffset(n, s);
++  const quiet = () => { for (const car of g.Traffic.cars) if (!car.fixed) car.active = false; };
++  const said = (text) => g.said.some(line => line.includes(text));
++  // a fresh run in `car` on the level picked, set down at s in lane n doing v, no traffic in the way
++  const start = (s, n, v, { car = 'sport', ghost = false } = {}) => {
++    Progress.data.car = car;
++    P.testGhost = false;
++    G.evil = false;
++    g.said.length = 0;
++    G.start();
++    quiet();
++    Object.assign(P, { s, lat: lane(n, s), speed: v, launching: false, shield: 0 });
++    Hazards.lastS = Toys.lastS = s;
++    P.testGhost = ghost;
++    g.drive(1, 0);
++  };
++  // a traffic vehicle of a kind put at (s, lat) doing v the player's way, for a check
++  const put = (kind, s, lat, v) => {
++    const car = g.Traffic.cars.find(c => !c.active && c.dir > 0);
++    const type = C.vehicles[kind];
++    Object.assign(car, { active: true, fixed: true, kind, s, lat, lane: T().nearestLane(lat, s), vs: v, baseSpeed: v, hw: type.hw, hl: type.hl, height: type.height, mass: type.mass,
++      health: type.health, maxHealth: type.health, latVel: 0, yaw: 0, spin: 0, stun: 0, junction: null, parked: false, viaSide: false, evil: false });
++    return car;
++  };
++  // a level made for a check: a straight, level road with what is asked on it
++  const road = (extra, length = 2400) => g.select({ id: 'check', name: 'Check', clock: { good: 300, evil: 300 }, tip: 1, lanes: { north: 3, south: 2 }, traffic: { commuter: 1 }, trafficCount: 6, oncomingCount: 0,
++    segments: [{ length, curve: 0 }], ...extra });
++  const problems = () => T().problems.join(' | ') || 'none';
++
++  await section('marbles', () => {
++    const M = C.toys.marble;
++    road({ marbles: [{ from: 400, to: 401, count: 1 }] });
++    start(300, 3, 28);
++    check(!T().problems.length && Toys.marbles.length === 1, 'marbles: the level loads (' + problems() + '), with its marble');
++    // into the back of it, a van 150 m further up the same lane
++    const m = Toys.marbles[0];
++    Object.assign(P, { s: m.s - 60, lat: m.lat, speed: 28 });
++    Toys.lastS = P.s;
++    const van = put('darkvan', m.s + 150, m.lat, 12), health = P.health;
++    let shot = 0, slowest = Infinity, stopped = false;
++    g.run(12, () => { shot = Math.max(shot, m.vs); slowest = Math.min(slowest, P.speed); if (P.speed < 1) stopped = true; return van.health <= 0 || !van.active; });
++    check(shot >= M.shotMin, 'marbles, the risky line: run into from behind, the marble is shot up the road (' + shot.toFixed(0) + ' m/s)');
++    check(P.health < health && P.health > health - 12 && slowest > 15 && !stopped, 'marbles, its cost: a knock (' + (health - P.health).toFixed(0) + ' health) and some speed (down to ' + slowest.toFixed(0) + ' m/s), never a stop');
++    check(van.health <= 0 || !van.active, 'marbles, its pay: the van up the lane is bowled over (' + m.strikes + ' strike)');
++    check(said('shot the marble') && said('Strike'), 'marbles: it is said');
++    // round it: nothing happens
++    start(300, 3, 28);
++    const m2 = Toys.marbles[0], other = [2, 3, 4].find(n => Math.abs(lane(n, m2.s) - m2.lat) > 2);
++    Object.assign(P, { s: m2.s - 60, lat: lane(other, m2.s), speed: 28 });
++    Toys.lastS = P.s;
++    const h2 = P.health;
++    let most = 0;
++    g.run(6, () => { most = Math.max(most, m2.vs); return P.s > m2.s + 60; });
++    check(P.health === h2 && most <= M.roll + 0.01, 'marbles, the safe line: in the next lane the car passes untouched and the marble rolls on');
++  });
++
++  await section('loops', () => {
++    const L = C.toys.loop;
++    road({ loops: [{ s: 600, lane: 4 }], obstacles: [{ s: 612, lane: 4, kind: 'barrier' }, { s: 622, lane: 4, kind: 'barrier' }] });
++    start(480, 4, 30);
++    check(!T().problems.length && Toys.loops.length === 1, 'loops: the level loads (' + problems() + ')');
++    const need = Toys.loopNeed(Toys.loops[0]);
++    let top = 0, back = 0, upside = false, health = P.health, v0 = 0, after = 0, flew = 0, stopped = false;
++    g.run(12, () => {
++      if (Toys.ride) { top = Math.max(top, P.air); if (!v0) v0 = Toys.ride.v0; if (Math.cos(P.pitch) < -0.9) upside = true; back = Math.max(back, 600 + L.radius - P.s); }
++      if (Air.on) flew = Math.max(flew, P.air);
++      if (P.speed < 1) stopped = true;
++      if (P.s > 640 && !Air.on && !after) after = P.speed;
++      return P.s > 700;
++    });
++    check(top > L.radius * 1.9 && upside, 'loops, the risky line: at ' + v0.toFixed(0) + ' m/s (it asks ' + need.toFixed(0) + ') the car goes round, ' + top.toFixed(1) + ' m up and upside down at the top');
++    check(P.health === health && flew > C.air.clear && Air.longest > 15, 'loops, its pay: off the kicker it jumps ' + Air.longest.toFixed(0) + ' m, clean over the two barriers in its lane');
++    check(after > v0 && !stopped, 'loops, its pay: it comes out faster (' + v0.toFixed(0) + ' to ' + after.toFixed(0) + ' m/s), never stopped');
++    check(said('Loop ahead') && said('Looped the loop'), 'loops: it is said');
++    // too slow
++    start(540, 4, need - 6);
++    g.drive(0, 0);
++    const h1 = P.health;
++    let rode = false, least = Infinity;
++    g.run(4, () => { P.speed = Math.min(P.speed, need - 6); if (Toys.ride) rode = true; least = Math.min(least, P.speed); return P.s > 606; });
++    check(!rode && P.health < h1 && said('Too slow'), 'loops, its cost: at ' + (need - 6).toFixed(0) + ' m/s the car falls off (' + (h1 - P.health).toFixed(0) + ' health, down to ' + least.toFixed(0) + ' m/s)');
++    // the next lane: plain road
++    start(480, 3, 30);
++    const h2 = P.health;
++    let rode2 = false;
++    g.run(6, () => { if (Toys.ride || Air.on) rode2 = true; return P.s > 700; });
++    check(!rode2 && P.health === h2, 'loops, the safe line: the lane beside it is plain road');
++    // a loop not on straight, level road in the player's lanes is reported
++    road({ loops: [{ s: 600, lane: 1 }] });
++    start(100, 3, 20);
++    check(T().problems.some(p => p.includes('loop at 600')), 'loops: one in an oncoming lane is reported (' + problems() + ')');
++  });
++
++  await section('paws', () => {
++    const W = C.toys.paw, period = W.up + W.slam + W.down + W.lift;
++    road({ paws: [{ s: 800, side: 'right', lanes: [3, 4] }] });
++    // under it as it lands: the car is set down so as to be at the paw just as it comes down
++    const pass = (n, v, lead) => {
++      start(800 - v * lead, n, v);
++      const p = Toys.paws[0];
++      p.on = true; p.t = 0;
++      const health = P.health;
++      let least = Infinity;
++      g.run(lead + 3, () => { P.speed = Math.max(P.speed, 0); least = Math.min(least, P.speed); return P.s > 860; });
++      return { lost: health - P.health, least, t: G.time };
++    };
++    const flat = pass(4, 30, W.up + W.slam);
++    check(!T().problems.length, 'paws: the level loads (' + problems() + ')');
++    check(flat.lost >= W.damage * 0.9 && said('Swatted'), 'paws, the cost: under it as it lands, ' + flat.lost.toFixed(0) + ' health and down to ' + flat.least.toFixed(0) + ' m/s');
++    check(flat.least > 0.5, 'paws: even flattened, the car is never held (slowest ' + flat.least.toFixed(1) + ' m/s)');
++    const clean = pass(4, 30, W.up * 0.5);
++    check(clean.lost === 0 && clean.least >= 29, 'paws, the risky line driven right: under it while it is up, untouched');
++    const safe = pass(2, 30, W.up + W.slam);
++    check(safe.lost === 0, 'paws, the safe line: the lane out of its reach, as it lands: untouched');
++    // traffic under it is flattened
++    start(600, 2, 20);
++    const p = Toys.paws[0], van = put('darkvan', 800, lane(4, 800), 0);
++    p.on = true; p.t = W.up - 0.1;
++    g.run(1.5, () => { van.s = 800; van.vs = 0; return van.health <= 0; });
++    check(van.health <= 0 || !van.active, 'paws: a van under it as it lands is flattened too');
++    check(Math.abs(period - 4.62) < 2, 'paws: it bats every ' + period.toFixed(1) + ' s, up for ' + W.up + ' of them');
++    road({ paws: [{ s: 800, side: 'right', lanes: [2, 4] }] });
++    start(100, 3, 20);
++    check(T().problems.some(q => q.includes('paw at 800')), 'paws: one that leaves no lane out of its reach is reported');
++  });
++} finally {
++  await g.close();
++}
++console.log(failures ? failures + ' FAILED' : 'all checks passed');
++process.exit(failures ? 1 : 0);
+diff --git a/scripts/delivery-levels-check.mjs b/scripts/delivery-levels-check.mjs
+index 69c479b..786c911 100644
+--- a/scripts/delivery-levels-check.mjs
++++ b/scripts/delivery-levels-check.mjs
+@@ -36,8 +36,9 @@ try {
+   MAIN_LEVELS.forEach((l, i) => { if (isRace(l)) fail(l.id + ': a race among the main levels'); else if (labels[i] !== String(i + 1)) fail(l.id + ': labelled ' + labels[i]); });
+   RACE_LEVELS.forEach((l, k) => { if (labels[LEVELS.indexOf(l)] !== 'R' + (k + 1)) fail(l.id + ': labelled ' + labels[LEVELS.indexOf(l)] + ', not R' + (k + 1)); });
+   // (the special levels S1..., then the amphibious ones A1...)
+-  const amphibious = g.levels.AMPHIBIOUS_LEVELS || [];
+-  DELIVERY_LEVELS.slice(MAIN_LEVELS.length).filter(l => !amphibious.includes(l)).forEach((l, k) => { if (labels[LEVELS.indexOf(l)] !== 'S' + (k + 1)) fail(l.id + ': labelled ' + labels[LEVELS.indexOf(l)] + ', not S' + (k + 1)); });
++  const amphibious = g.levels.AMPHIBIOUS_LEVELS || [], themed = g.levels.THEME_LEVELS || [];
++  themed.forEach((l, k) => { if (labels[LEVELS.indexOf(l)] !== 'T' + (k + 1)) fail(l.id + ': labelled ' + labels[LEVELS.indexOf(l)] + ', not T' + (k + 1)); });
++  DELIVERY_LEVELS.slice(MAIN_LEVELS.length).filter(l => !amphibious.includes(l) && !themed.includes(l)).forEach((l, k) => { if (labels[LEVELS.indexOf(l)] !== 'S' + (k + 1)) fail(l.id + ': labelled ' + labels[LEVELS.indexOf(l)] + ', not S' + (k + 1)); });
+   amphibious.forEach((l, k) => { if (labels[LEVELS.indexOf(l)] !== 'A' + (k + 1)) fail(l.id + ': labelled ' + labels[LEVELS.indexOf(l)] + ', not A' + (k + 1)); if (!l.amphibious) fail(l.id + ': among the amphibious levels, but not "amphibious"'); });
+   for (const l of LEVELS) { const next = nextOnTab(l); if (next && isRace(next) !== isRace(l)) fail(l.id + ': its next level is on the other tab'); }
+   if (LEVELS.slice(-3).map(l => l.id).join() !== 'monza,spa,albert-park') fail('the circuits are not last in LEVELS: ' + LEVELS.slice(-3).map(l => l.id).join());
+diff --git a/src/delivery/air.js b/src/delivery/air.js
+new file mode 100644
+index 0000000..6aa4183
+--- /dev/null
++++ b/src/delivery/air.js
+@@ -0,0 +1,73 @@
++// ============================================================================
++// AIR - the car off the ground, thrown up by something (a toy loop's kicker, a bump in low gravity) and coming
++// down again under gravity; and how strong gravity is where it is: a level's "lowGravity" stretches (see
++// levels.js), in which it is `g` of the usual (CONFIG.air.lowGravity if not said). In the air there is
++// nothing to push against or brake on (its speed along the road is what it left with), it is over the heads of
++// the traffic and whatever stands on the road (Player.aloft: see Collision), and it comes down where it comes
++// down: on a clear road, or on somebody's roof.
++// Like Hazards and Gambles this runs after the player's own update (Extras.update) and puts its hand on the car
++// there; a drawbridge's jump (hazards.js) is its own affair, and is left alone.
++// ============================================================================
++import { CONFIG } from './config.js';
++import { LEVEL } from './levels.js';
++import { Track } from './track.js';
++import { Player } from './player.js';
++import { Hazards } from './hazards.js';
++import { sfx } from './physics.js';
++import { Game } from './game.js';
++
++export const Air = {
++  on: false,  // in the air (of this file's making)
++  y: 0,       // m above the road
++  vy: 0,      // m/s upwards
++  vx: 0,      // m/s along the road, held while it flies
++  far: 0,     // m flown so far, this jump
++  longest: 0, // the longest jump of the run (m)
++
++  // the share of the usual gravity at s (1: the usual): a level's "lowGravity" stretches, on the expressway
++  scale(s) {
++    if (!LEVEL.lowGravity || !Track.isMain(s)) return 1;
++    const z = LEVEL.lowGravity.find(z => s >= z.from && s <= z.to);
++    return z ? z.g ?? CONFIG.air.lowGravity : 1;
++  },
++  gravity(s) { return CONFIG.air.gravity * this.scale(s); },
++  reset() {
++    this.on = false;
++    this.y = this.vy = this.vx = this.far = this.longest = 0;
++    Player.aloft = false;
++  },
++  // thrown up at vy m/s (never more than CONFIG.air.most): only a car on the ground, on its own wheels
++  launch(vy) {
++    if (this.on || Hazards.jump || !Player.active || !(vy > 0)) return false;
++    this.on = true;
++    this.y = 0;
++    this.vy = Math.min(CONFIG.air.most, vy);
++    this.vx = Player.speed;
++    this.far = 0;
++    return true;
++  },
++  update(dt) {
++    const P = Player, A = CONFIG.air;
++    if (!this.on) return;
++    if (!P.active) { this.reset(); return; }
++    P.s -= (P.speed - this.vx) * dt; // (in the air there is nothing to push against, or brake on)
++    P.speed = this.vx;
++    this.far += this.vx * dt;
++    this.vy -= this.gravity(P.s) * dt;
++    this.y += this.vy * dt;
++    if (this.y <= 0) { // down again
++      const into = -this.vy;
++      this.on = false;
++      this.y = 0;
++      P.aloft = false;
++      P.air = P.pitch = 0;
++      this.longest = Math.max(this.longest, this.far);
++      Game.shake = Math.max(Game.shake, Math.min(1, into / A.shakeAt));
++      sfx('drop', Math.min(1, 0.3 + into / 12));
++      return;
++    }
++    P.air = this.y;
++    P.pitch = Math.atan2(this.vy, Math.max(this.vx, 8)) * A.pitch;
++    P.aloft = this.y > A.clear;
++  },
++};
+diff --git a/src/delivery/collision.js b/src/delivery/collision.js
+index c82644d..8393707 100644
+--- a/src/delivery/collision.js
++++ b/src/delivery/collision.js
+@@ -711,7 +711,7 @@ export const Collision = (() => {
+   const atRoadLevel = (o) => o.h - o.r < Player.height && o.h + o.r > 0;
+ 
+   const hitObstacles = () => {
+-    if (!Player.active || Player.shield > 0 || Player.ghost > 0) return;
++    if (!Player.active || Player.shield > 0 || Player.ghost > 0 || Player.aloft) return; // (aloft: over their heads, see air.js)
+     for (const o of obstacles) {
+       if (o.gone || Math.abs(o.s - Player.s) > CONFIG.broadPhaseDistance) continue;
+       if (o.kind === 'asteroid' && !atRoadLevel(o)) continue; // it passes over or under the car
+@@ -882,10 +882,10 @@ export const Collision = (() => {
+     for (let i = 0; i < bodies.length; i++) {
+       const a = bodies[i];
+       // (a freshly dropped or ghosted player, a car being arrested, or one off the road at a junction)
+-      if (!a.active || a.shield > 0 || a.ghost > 0 || a.arrest >= 0 || a.junction) continue;
++      if (!a.active || a.shield > 0 || a.ghost > 0 || a.aloft || a.arrest >= 0 || a.junction) continue; // (aloft: the player's car in the air, see air.js)
+       for (let j = i + 1; j < bodies.length; j++) {
+         const b = bodies[j];
+-        if (!b.active || b.shield > 0 || b.arrest >= 0 || b.junction) continue; // (a racer just set down: untouchable)
++        if (!b.active || b.shield > 0 || b.aloft || b.arrest >= 0 || b.junction) continue; // (a racer just set down: untouchable)
+         // broad phase: nearby along the track and within neighbouring lanes
+         if (Math.abs(b.s - a.s) > CONFIG.broadPhaseDistance ||
+             Math.abs(b.lat - a.lat) > CONFIG.laneWidth * 1.5) continue;
+diff --git a/src/delivery/config.js b/src/delivery/config.js
+index d964d62..642881e 100644
+--- a/src/delivery/config.js
++++ b/src/delivery/config.js
+@@ -1319,6 +1319,33 @@ export const CONFIG = {
+   // rad per m/s^2). Windsocks stand `ahead` m before the stretch and every sockEvery m along it
+   crosswind: { strength: 7, lull: 0.3, every: 6, length: 2.6, rise: 0.6, heightRef: 1.45, heightPower: 1.5, leeHeight: 2, leeReach: 5.5, lee: 0.1, shove: 2.4,
+     traffic: 0.35, lean: 0.006, ahead: 90, sockEvery: 150 },
++  // ---- the themes' gimmicks of 10-Oct (extras.js; each a field in the level, named below) ----
++  // the car in the air (air.js): gravity m/s^2; in a level's "lowGravity" stretch, lowGravity of that (or the
++  // stretch's own `g`). most: the hardest anything throws it up (m/s); clear: m up at which it is over the
++  // traffic's heads (Player.aloft); pitch: how much of its flight's slope its nose shows; shakeAt: the speed
++  // of coming down (m/s) that shakes the camera all the way
++  air: { gravity: 20, lowGravity: 0.3, most: 16, clear: 1.1, pitch: 0.6, shakeAt: 12 },
++  // the toy room's (toys.js):
++  // marbles ("marbles": { from, to, count }): glass marbles, r m in radius, rolling the player's way at `roll`
++  // m/s once the player is within `trigger` m. Run into from behind, one is shot up the road at `shot` times the
++  // car's speed (shotMin at least), the car keeping `keep` of its own and taking `damage`; off its middle it goes
++  // off at an angle (glance m/s across at most) and comes back off the track's lips (bounce). A shot marble
++  // slows by `drag` m/s^2, and while it is closing on a vehicle by more than `bowl` m/s it bowls it over (the
++  // marble keeping `through` of its speed each time)
++  // loops ("loops": { s, lane }): a loop of track `radius` m in radius standing in one lane. Driven into at
++  // `need` m/s or more (less in low gravity) the car goes round it (losing up to `slow` of its speed at the top),
++  // is `advance` m further on when it is down, `kick` m/s faster, and is thrown `launch` m/s up off the kicker
++  // at its foot: a jump over whatever is ahead. Slower than that it falls off: fallDamage, and fallKeep of its
++  // speed. A board `sign` m before it gives the speed
++  // paws ("paws": { s, side, lanes }): a cat asleep beside the road, batting at it: its paw is up for `up` s
++  // (its shadow on the road for the last `warn` of them), comes down in `slam` s, lies there `down` s and lifts
++  // away in `lift`: only while the player is within `notice` m. Under it as it lands: `damage`, `keep` of the
++  // speed, and stunned; run into while it lies there (hl m of road each way): softDamage, and softKeep; and it only crawls (crawl m/s) until it is out from under
++  toys: {
++    marble: { r: 1.15, roll: 4, trigger: 260, shot: 1.5, shotMin: 30, keep: 0.86, damage: 5, glance: 7, bounce: 0.8, drag: 5, bowl: 6, through: 0.85 },
++    loop: { radius: 7, need: 22, slow: 0.3, advance: 5, kick: 4, launch: 10, fallDamage: 14, fallKeep: 0.3, sign: 120 },
++    paw: { up: 2.8, warn: 1.2, slam: 0.22, down: 1.1, lift: 0.5, notice: 280, hl: 2.3, damage: 32, keep: 0.2, softDamage: 8, softKeep: 0.3, crawl: 7 },
++  },
+ 
+   // photo mode (render/photo.js): the camera starts start.far m from the car, start.yaw round from dead ahead of it
+   // and start.pitch up (rad); it comes no nearer than `near` nor goes further than `far`, between `low` and `high`
+diff --git a/src/delivery/extras.js b/src/delivery/extras.js
+new file mode 100644
+index 0000000..1f3ad3c
+--- /dev/null
++++ b/src/delivery/extras.js
+@@ -0,0 +1,24 @@
++// ============================================================================
++// EXTRAS - the gimmicks that came with the themes of 10-Oct (each a level field of its own, usable on any
++// level: see levels.js), gathered here so that Game has one thing to reset and one to update:
++//   toys.js   marbles, loops and paws (the toy room's)
++//   air.js    the car in the air, and low gravity ("lowGravity")
++// Each runs after the player's own update, as Hazards and Gambles do, and puts its hand on the car there.
++// render/extras.js draws them, the same way.
++// ============================================================================
++import { Traffic } from './traffic.js';
++import { Player } from './player.js';
++import { Air } from './air.js';
++import { Toys } from './toys.js';
++
++// (Air last: it has the last word on the car's height off the road)
++const PARTS = [Toys, Air];
++
++export const Extras = {
++  reset() { for (const part of PARTS) part.reset(); },
++  update(dt) {
++    if (Traffic.frozen) return; // (TRAFFIC FREEZE, a mystery: everything here stands still too)
++    Player.aloft = false;       // (over the traffic's heads: said afresh each step by whatever has it up there)
++    for (const part of PARTS) part.update(dt);
++  },
++};
+diff --git a/src/delivery/extrasCheck.js b/src/delivery/extrasCheck.js
+new file mode 100644
+index 0000000..b01130d
+--- /dev/null
++++ b/src/delivery/extrasCheck.js
+@@ -0,0 +1,42 @@
++// ============================================================================
++// The level fields that came with the themes of 10-Oct (see levels.js), checked as a level loads: called from
++// Track's own check with what it knows of the road. Each problem is a line for the HUD, as Track's are.
++//   road: { length, lanes (how many the expressway has), playerLanes(s): [first, last] going the player's way,
++//           straight(from, to), level(from, to), waters, tunnels, problems: [] }
++// ============================================================================
++import { CONFIG } from './config.js';
++
++export const checkExtras = (level, road) => {
++  const { length, problems } = road;
++  const main = (z) => z.from < z.to && z.from >= 0 && z.to <= length && z.road !== 'side';
++  const onMain = (item, s = item.s) => item.road !== 'side' && s >= 20 && s <= length - 20;
++  const ours = (lane, s) => { const [a, b] = road.playerLanes(s); return Number.isInteger(lane) && lane >= a && lane <= b; };
++  // ---- the toy room's (toys.js)
++  for (const z of level.marbles || []) {
++    if (!main(z)) problems.push('marbles at ' + z.from + ': from before to, on the expressway');
++    else if (z.count !== undefined && !(z.count >= 1 && z.count <= 40)) problems.push('marbles at ' + z.from + ': count is 1 to 40');
++  }
++  for (const l of level.loops || []) {
++    const R = CONFIG.toys.loop.radius + 10;
++    if (!onMain(l, l.s - R) || !onMain(l, l.s + R)) problems.push('loop at ' + l.s + ': on the expressway, clear of its ends');
++    else if (!ours(l.lane, l.s)) problems.push('loop at ' + l.s + ': in a lane going the player\'s way');
++    else if (!road.straight(l.s - R, l.s + R + 40)) problems.push('loop at ' + l.s + ': the road must run straight through it and on for the landing');
++    else if (!road.level(l.s - R, l.s + R + 40)) problems.push('loop at ' + l.s + ': on level road');
++    else if (road.tunnels.some(t => l.s > t.from - 30 && l.s < t.to + 30)) problems.push('loop at ' + l.s + ': not in a tunnel (it stands ' + CONFIG.toys.loop.radius * 2 + ' m tall)');
++  }
++  for (const p of level.paws || []) {
++    if (!onMain(p)) problems.push('paw at ' + p.s + ': on the expressway, clear of its ends');
++    else if (p.side !== 'left' && p.side !== 'right') problems.push('paw at ' + p.s + ': side is left or right (where the cat lies)');
++    else if (p.lanes !== undefined && !(Array.isArray(p.lanes) && p.lanes.length === 2 && p.lanes[0] <= p.lanes[1] && p.lanes[0] >= 0 && p.lanes[1] < road.lanes)) problems.push('paw at ' + p.s + ': lanes is [first, last], lanes of the road');
++    else {
++      const [a, b] = road.playerLanes(p.s), [f, l] = p.lanes || [a, b];
++      if (f <= a && l >= b && a === b) problems.push('paw at ' + p.s + ': it must leave the player a lane out of its reach (a road with one lane each way has none)');
++      else if (f <= a && l >= b) problems.push('paw at ' + p.s + ': lanes must leave a lane of the player\'s side out of its reach');
++    }
++  }
++  // ---- low gravity (air.js)
++  for (const z of level.lowGravity || []) {
++    if (!main(z)) problems.push('low gravity at ' + z.from + ': from before to, on the expressway');
++    else if (z.g !== undefined && !(z.g >= 0.1 && z.g <= 1)) problems.push('low gravity at ' + z.from + ': g is 0.1 to 1 (the share of the usual gravity)');
++  }
++};
+diff --git a/src/delivery/game.js b/src/delivery/game.js
+index 6cabbcb..3f66f62 100644
+--- a/src/delivery/game.js
++++ b/src/delivery/game.js
+@@ -23,6 +23,7 @@ import { RaceWatch } from './racewatch.js';
+ import { Site } from './site.js';
+ import { Hazards } from './hazards.js';
+ import { Gambles } from './gambles.js';
++import { Extras } from './extras.js';
+ import { Social } from './social.js';
+ import { Mysteries } from './mysteries.js';
+ import { Milestones } from './milestones.js';
+@@ -206,6 +207,7 @@ export const Game = {
+     StopGo.reset();
+     Hazards.reset();
+     Gambles.reset();
++    Extras.reset();
+     Milestones.reset();
+     WaterMains.reset();
+     if (LEVEL.battle) Message.say('events', 'battle');
+@@ -381,6 +383,7 @@ export const Game = {
+     if (playing) Site.update(dt);
+     if (playing) Hazards.update(dt);
+     if (playing) Gambles.update(dt); // (after Hazards: it has the last word on the car's height off the road)
++    if (playing) Extras.update(dt);  // (the themes' gimmicks of 10-Oct: see extras.js)
+     if (playing) Mysteries.update(dt);
+     if (playing) Milestones.update(dt); // (the counters watched each step: see milestones.js)
+     if (playing) Social.update(dt);
+diff --git a/src/delivery/levelSchema.js b/src/delivery/levelSchema.js
+index 71ea0c8..b9ef765 100644
+--- a/src/delivery/levelSchema.js
++++ b/src/delivery/levelSchema.js
+@@ -255,6 +255,14 @@ export const FIELDS = {
+     settings: { kind: pick('Kind', OBSTACLE_KINDS, { required: true, init: 'cone' }), every: num('One every (m)', { min: 1, max: 500, required: true, init: 12 }), side: pick('Side', ['left', 'right', 'both'], { default: 'both' }) } },
+   trolleys: { shape: 'stretch', group: 'hazards', label: 'Shopping trolleys', road: 'both', help: 'Rolling across the road with its camber.', settings: { count: count(6) } },
+   balloons: { shape: 'point', group: 'hazards', label: 'Hot-air balloon', road: 'both', help: 'Comes down on those lanes, sits, and lifts off again.', settings: { lanes: lanes('Lanes (first, last)', { span: true, required: true }) } },
++  // (the themes' gimmicks of 10-Oct: extras.js)
++  marbles: { shape: 'stretch', group: 'hazards', label: 'Marbles', span: 220, help: 'Glass marbles rolling slowly up the player\'s lanes. Run into the back of one and it is shot up the road, bowling over the traffic it reaches.', settings: { count: count(3, { max: 40 }) } },
++  loops: { shape: 'point', group: 'hazards', label: 'Loop the loop', rules: ['straight', 'level', 'clearOfEnds'], reach: () => (C.toys?.loop.radius ?? 7) + 30, help: 'A loop of toy track standing in one lane: fast enough, the car goes round it and jumps off its foot; too slow, it falls off.',
++    settings: { lane: lane('Lane', { required: true, player: true }) } },
++  paws: { shape: 'point', group: 'hazards', label: "Cat's paw", rules: ['clearOfEnds'], reach: () => C.toys?.paw.hl ?? 3, help: 'A cat asleep beside the road, batting at it: its paw comes down across those lanes every few seconds. Leave a lane of the player\'s side out of its reach.',
++    settings: { side: side(), lanes: lanes('Lanes (first, last)', { span: true, required: true }) } },
++  lowGravity: { shape: 'stretch', group: 'shape', label: 'Low gravity', span: 400, help: 'Gravity is a share of the usual: bumps and potholes become jumps, and the brakes and the tyres have that much less to work with.',
++    settings: { g: num('Gravity (share)', { min: 0.1, max: 1, step: 0.05, default: C.air?.lowGravity }) } },
+   drawbridges: { shape: 'point', group: 'hazards', label: 'Drawbridge', road: 'both', rules: ['straight'], reach: () => (C.drawbridge?.stopLine ?? 20) + 10, help: 'Two leaves that lift: jump the gap if you came fast enough, or stop short, or drop in.' },
+   wideLoads: { shape: 'point', group: 'hazards', label: 'Wide load', road: 'both', trigger: { default: () => C.wideLoad?.trigger }, help: 'A load two lanes wide crawling along, swinging from side to side.',
+     settings: { lanes: lanes('Lanes (n, n + 1)', { span: true, width: 2, required: true }) } },
+diff --git a/src/delivery/levelinfo.js b/src/delivery/levelinfo.js
+index 980874a..73973b2 100644
+--- a/src/delivery/levelinfo.js
++++ b/src/delivery/levelinfo.js
+@@ -65,6 +65,10 @@ const GIMMICKS = [
+   ['Trolleys', (l) => some(l.trolleys)],
+   ['Stampede', (l) => some(l.stampedes)],
+   ['Crosswind', (l) => some(l.crosswinds)],
++  ['Marbles', (l) => some(l.marbles)],
++  ['Loop the loop', (l) => some(l.loops)],
++  ["Cat's paw", (l) => some(l.paws)],
++  ['Low gravity', (l) => some(l.lowGravity)],
+   ['Cyclists', (l) => some(l.pelotons)],
+   ['Funerals', (l) => l.processions],
+   ['Ambulances', (l) => l.emergencies],
+diff --git a/src/delivery/levels.js b/src/delivery/levels.js
+index 78357cc..fdb42ec 100644
+--- a/src/delivery/levels.js
++++ b/src/delivery/levels.js
+@@ -75,7 +75,7 @@
+ //   pickups    { type, s, lane }   type: turbo | ghost | wrench | passenger | mystery | radarDetector | siren
+ //                                       | badGas | heavyMass | timePlus | timeMinus
+ //   theme      'city' (default), 'bathurst' (Mount Panorama: a mountain), 'panorama' (the same, as a road through the bush), 'montreal' (Circuit Gilles-Villeneuve's island: its landmarks 'river', 'basin',
+-//              'casino', 'biosphere', 'skyline'), 'sea' (open water, unmarked, the edges blocked by rocks and buoys), 'farm', 'beach', 'suburb', 'canberra', 'snow', 'singapore', 'singaporeNight', 'coast' (in zones), 'safari' (in zones: a dirt road, unmarked), 'airport', 'construction', 'flooded' (the city under flood water, in the rain), 'hell' or 'space': the look of the ground, sky and roadside.
++//              'casino', 'biosphere', 'skyline'), 'sea' (open water, unmarked, the edges blocked by rocks and buoys), 'farm', 'beach', 'suburb', 'canberra', 'snow', 'singapore', 'singaporeNight', 'coast' (in zones), 'safari' (in zones: a dirt road, unmarked), 'airport', 'construction', 'flooded' (the city under flood water, in the rain), 'toyroom' (the level at toy scale, on a playroom floor), 'hell' or 'space': the look of the ground, sky and roadside.
+ //              'snow' is a mountainside: land that climbs and falls with the road and fills in between its switchbacks.
+ //              In space there is no ground and no road surface, only the lane lines.
+ //   car        a special vehicle the level is driven in whatever is in the garage ('ufo', 'f1')
+@@ -288,6 +288,19 @@
+ //              `length` s (CONFIG.crosswind's if not said; strength: m/s^2 on a car as tall as the Commuter). A taller
+ //              car is pushed harder; beside a tall vehicle on the windward side there is shelter, and a shove on
+ //              clearing it. Windsocks before it and along it show which way and how hard, as it gusts
++//   (The themes' gimmicks of 10-Oct: see extras.js and CONFIG, each under its own name. Each works on any level, whatever
++//       its theme; like the road gambles, none stops the car and none busts it. On the expressway only)
++//   marbles    { from, to, count }: (the toy room's: toys.js) glass marbles rolling slowly up the player's lanes over that
++//              stretch. Run into the back of one and it is shot up the road, bowling over whatever traffic it reaches
++//              (a knock and some speed for a cleared lane); or steer round it
++//   loops      { s, lane }: a loop of toy track standing in that lane (one going the player's way), on straight, level
++//              road. At the speed on its board or faster the car goes round it and is thrown off the kicker at its
++//              foot, faster, over whatever is in the next stretch of that lane; slower, it falls off. The other
++//              lanes are plain road
++//   paws       { s, side: 'left' | 'right', lanes: [first, last] }: a cat asleep beside the road on that side, batting at
++//              it: its paw comes down across those lanes every few seconds (its shadow first) and flattens what is under
++//              it, traffic too. It must leave a lane of the player's side out of its reach: the safe one, and the full one
++//   lowGravity { from, to, g? }: a stretch where gravity is g of the usual (CONFIG.air.lowGravity if not said): see air.js
+ //   pelotons   { s, count, speed, trigger, dir }: cyclists two abreast by the kerb on the player's side,
+ //              setting off as the player comes near: obstacles, which only the player hits (see CONFIG.peloton).
+ //              dir -1: on the far side instead, riding towards the player (the bunch strung out behind
+@@ -370,6 +383,7 @@ import harbour from './levels/harbour.json';
+ import flood from './levels/flood.json';
+ import ford from './levels/ford.json';
+ import fjord from './levels/fjord.json';
++import toys from './levels/toys.json';
+ 
+ // the numbered levels, and the special ones (S1, S2...), which always come after them on the
+ // menu. All of them unlock in this order, each by delivering the one before, and saved progress
+@@ -385,7 +399,11 @@ export const AMPHIBIOUS_LEVELS = [slipway, harbour, flood, ford, fjord];
+ // last in LEVELS, after every delivery level (races are always open, so saved progress, which counts the
+ // delivery levels open by position, only has to know the amphibious levels went in ahead of them: see progress.js)
+ export const CIRCUIT_LEVELS = [monza, spa, albertPark];
+-export const LEVELS = [...MAIN_LEVELS, ...SPECIAL_LEVELS, ...AMPHIBIOUS_LEVELS, ...CIRCUIT_LEVELS];
++// ...and, between the two, the levels of the themes of 10-Oct (T1, T2...: the toy room and on), each with its theme's
++// own gimmick. They unlock in order like the rest, the first by delivering the last amphibious level; and a new one
++// goes at the end of the list, which disturbs no save (see progress.js). Short ids, as the amphibious levels'
++export const THEME_LEVELS = [toys];
++export const LEVELS = [...MAIN_LEVELS, ...SPECIAL_LEVELS, ...AMPHIBIOUS_LEVELS, ...THEME_LEVELS, ...CIRCUIT_LEVELS];
+ // The menu has two tabs: deliveries, and races. A race is any lapped level (its "laps"), wherever it sits in
+ // LEVELS (Marina Bay, Montreal and Mount Panorama are among the special levels); races are always open, and
+ // never lock the delivery level after them (see Progress and the menu)
+@@ -395,11 +413,12 @@ export const DELIVERY_LEVELS = LEVELS.filter(l => !isRace(l));
+ // the level after this one on its own tab (the next delivery, or the next race), or null at the end
+ export const nextOnTab = (level) => { const list = isRace(level) ? RACE_LEVELS : DELIVERY_LEVELS, k = list.indexOf(level); return k >= 0 && k + 1 < list.length ? list[k + 1] : null; };
+ // a level's number on the menu, by its position in LEVELS: '1'... for the main levels, 'S1'... for the special
+-// delivery levels, 'A1'... for the amphibious ones, 'R1'... for the races (each tab numbers its own)
++// delivery levels, 'A1'... for the amphibious ones, 'T1'... for the themed ones, 'R1'... for the races (each tab numbers its own)
+ export const levelLabel = (index) => {
+   const level = LEVELS[index];
+   if (isRace(level)) return 'R' + (RACE_LEVELS.indexOf(level) + 1);
+   if (AMPHIBIOUS_LEVELS.includes(level)) return 'A' + (AMPHIBIOUS_LEVELS.indexOf(level) + 1);
++  if (THEME_LEVELS.includes(level)) return 'T' + (THEME_LEVELS.indexOf(level) + 1);
+   return index < MAIN_LEVELS.length ? String(index + 1) : 'S' + (DELIVERY_LEVELS.indexOf(level) - MAIN_LEVELS.length + 1);
+ };
+ // the screensaver's level: not on the menu, driven round and round with no player car
+diff --git a/src/delivery/levels/toys.json b/src/delivery/levels/toys.json
+new file mode 100644
+index 0000000..e64f289
+--- /dev/null
++++ b/src/delivery/levels/toys.json
+@@ -0,0 +1,82 @@
++{
++  "id": "toys",
++  "name": "Toy Room",
++  "theme": "toyroom",
++  "clock": { "good": 170, "evil": 130 },
++  "tip": 280,
++  "lanes": { "north": 3, "south": 2 },
++  "cargo": { "good": "goldfish", "evil": "doll" },
++  "traffic": { "commuter": 0.2, "bus": 0.1, "taxi": 0.12, "lovebus": 0.1, "icecream": 0.06, "postvan": 0.1, "pickup": 0.1, "miata": 0.08, "learner": 0.06, "police": 0.03 },
++  "trafficCount": 13,
++  "oncomingCount": 8,
++  "segments": [
++    { "length": 500, "curve": 0 },
++    { "length": 300, "curve": 0.002 },
++    { "length": 400, "curve": 0 },
++    { "length": 300, "curve": -0.0022 },
++    { "length": 600, "curve": 0 },
++    { "length": 250, "curve": 0.0025 },
++    { "length": 450, "curve": 0 },
++    { "length": 300, "curve": -0.002 },
++    { "length": 600, "curve": 0 }
++  ],
++  "marbles": [
++    { "from": 260, "to": 480, "count": 3 },
++    { "from": 1540, "to": 1800, "count": 4 },
++    { "from": 2860, "to": 3080, "count": 3 }
++  ],
++  "loops": [
++    { "s": 1000, "lane": 4 },
++    { "s": 2600, "lane": 3 }
++  ],
++  "paws": [
++    { "s": 1950, "side": "right", "lanes": [3, 4] },
++    { "s": 3320, "side": "left", "lanes": [0, 3] }
++  ],
++  "tunnels": [
++    { "from": 2150, "to": 2330 }
++  ],
++  "tractors": [
++    { "s": 700, "lane": 3 },
++    { "s": 2420, "lane": 2 }
++  ],
++  "drifters": [
++    { "from": 1250, "to": 1450, "kind": "tyre", "count": 5, "pattern": "circle" }
++  ],
++  "balloons": [
++    { "s": 3520, "lanes": [2, 3] }
++  ],
++  "parked": [
++    { "s": 380, "side": "right" },
++    { "s": 2900, "side": "right" }
++  ],
++  "targets": [
++    { "s": 560, "side": "right" },
++    { "s": 1700, "side": "left" },
++    { "s": 3050, "side": "right" }
++  ],
++  "pickups": [
++    { "type": "turbo", "s": 180, "lane": 3 },
++    { "type": "cash10", "s": 520, "lane": 4 },
++    { "type": "turbo", "s": 880, "lane": 4 },
++    { "type": "cash20", "s": 1060, "lane": 4 },
++    { "type": "wrench", "s": 1200, "lane": 2 },
++    { "type": "mystery", "s": 1500, "lane": 3 },
++    { "type": "cash20", "s": 1990, "lane": 4 },
++    { "type": "timePlus", "s": 2010, "lane": 3 },
++    { "type": "wrench", "s": 2240, "lane": 2 },
++    { "type": "turbo", "s": 2480, "lane": 3 },
++    { "type": "cash20", "s": 2660, "lane": 3 },
++    { "type": "armour", "s": 3150, "lane": 4 },
++    { "type": "timePlus", "s": 3360, "lane": 2 },
++    { "type": "cash10", "s": 3600, "lane": 4 }
++  ],
++  "obstacles": [
++    { "s": 1012, "lane": 4, "kind": "barrier" },
++    { "s": 1022, "lane": 4, "kind": "barrier" },
++    { "s": 2612, "lane": 3, "kind": "barrier" },
++    { "s": 2622, "lane": 3, "kind": "barrier" },
++    { "s": 3440, "lane": 4, "kind": "crate" },
++    { "s": 3452, "lane": 4, "kind": "crate" }
++  ]
++}
+diff --git a/src/delivery/main.js b/src/delivery/main.js
+index 65521a5..f2e7ed9 100644
+--- a/src/delivery/main.js
++++ b/src/delivery/main.js
+@@ -35,6 +35,7 @@ import { syncSite } from './render/site.js';
+ import { syncRoadside } from './render/roadside.js';
+ import { syncHazards } from './render/hazards.js';
+ import { syncGambles } from './render/gambles.js';
++import { syncExtras } from './render/extras.js';
+ import { syncBattle } from './render/battle.js';
+ import { raceCamera, raceAudio, syncRaceWatch, auditCameras } from './render/racewatch.js';
+ import { Fly, startFly, flyCamera } from './render/fly.js';
+@@ -206,6 +207,7 @@ const frame = (now) => {
+     syncRoadside(dt);
+     syncHazards(now);
+     syncGambles(now, dt); // (after the car and the traffic are placed: it leans and shakes them)
++    syncExtras(now, dt); // (the themes' gimmicks of 10-Oct: render/extras.js)
+     syncTunnel(); // (after the roadside's fog bank: a tunnel only ever closes the fog in further)
+     syncWaterMains(dt);
+     syncReversible();
+diff --git a/src/delivery/messages.json b/src/delivery/messages.json
+index e92a3dc..e27aba3 100644
+--- a/src/delivery/messages.json
++++ b/src/delivery/messages.json
+@@ -62,6 +62,13 @@
+     "crosswind": ["Crosswind! Watch the windsocks: it gusts."],
+     "wrongWay": ["WRONG-WAY DRIVER!! Coming at you in the right-hand lane!"],
+     "tunnel": ["Tunnel! Lights on."],
++    "marble": ["You shot the marble! It bowls over whatever it reaches."],
++    "marbleStrike": ["Strike!"],
++    "loop": ["Loop ahead! Hit the speed on the board in its lane, or keep out of it."],
++    "loopDone": ["Looped the loop!"],
++    "loopSlow": ["Too slow for the loop!"],
++    "paw": ["The cat is batting at the road! Go under its paw while it's up, or keep out of its reach."],
++    "pawHit": ["Swatted!"],
+     "parade": ["Street parade ahead! The whole road's taken."],
+     "roadblock": ["POLICE ROADBLOCK ahead! Find the gap."],
+     "roadblockWaved": ["The police wave you through!"],
+diff --git a/src/delivery/progress.js b/src/delivery/progress.js
+index 726587e..61d4aca 100644
+--- a/src/delivery/progress.js
++++ b/src/delivery/progress.js
+@@ -19,7 +19,11 @@ const ONE_YEAR = 60 * 60 * 24 * 365;
+ // Order 26 put the five amphibious levels in at 41 to 45: after every delivery level there was, ahead only of the
+ // circuits, which are races and always open. A save from before that counted past 40 had delivered the last
+ // special level, and so has the first amphibious level open and no more: it is held at 41 ({ cap }).
+-const INSERTED_AT = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, { cap: 41 }]; // (for orders 2, 3, ...)
++// Order 27 put the themed levels (the toy room and on: THEME_LEVELS) in from 46: after the amphibious levels, again
++// ahead only of the circuits. A save from before that counted past 45 had delivered the last amphibious level, and so
++// has the first themed level open and no more: it is held at 46. (Themed levels added since go at the end of
++// their list, which needs nothing here.)
++const INSERTED_AT = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, { cap: 41 }, { cap: 46 }]; // (for orders 2, 3, ...)
+ const LEVEL_ORDER = INSERTED_AT.length + 1;
+ 
+ // races (the lapped levels, on the menu's Races tab) are always open, and never hold up the delivery levels: the
+diff --git a/src/delivery/render/extras.js b/src/delivery/render/extras.js
+new file mode 100644
+index 0000000..acb8b83
+--- /dev/null
++++ b/src/delivery/render/extras.js
+@@ -0,0 +1,7 @@
++// ---- EXTRAS: the themes' gimmicks of 10-Oct, drawn (what they do: ../extras.js). One call from the frame loop
++// (main.js), after the car and the traffic are placed.
++import { syncToys } from './toys.js';
++
++export const syncExtras = (now, dt) => {
++  syncToys(now, dt);
++};
+diff --git a/src/delivery/render/menu.js b/src/delivery/render/menu.js
+index 916d064..74d2219 100644
+--- a/src/delivery/render/menu.js
++++ b/src/delivery/render/menu.js
+@@ -2,7 +2,7 @@
+ // The start screen is only a menu. Picking a level just marks it; the level is built when
+ // a run starts (Game.start). Nothing here reloads the page.
+ import { CONFIG } from '../config.js';
+-import { LEVELS, LEVEL_INDEX, LEVEL, selectLevel, levelLabel, MAIN_LEVELS, AMPHIBIOUS_LEVELS, DELIVERY_LEVELS, RACE_LEVELS, isRace, nextOnTab, setRaceClass, RACE_CLASSES } from '../levels.js';
++import { LEVELS, LEVEL_INDEX, LEVEL, selectLevel, levelLabel, MAIN_LEVELS, AMPHIBIOUS_LEVELS, THEME_LEVELS, DELIVERY_LEVELS, RACE_LEVELS, isRace, nextOnTab, setRaceClass, RACE_CLASSES } from '../levels.js';
+ import { CARS, CAR, SECRET_CARS, useLevelCar, selectCar, earnedFor, amphibiousCars } from '../cars.js';
+ import { Progress } from '../progress.js';
+ import { Game, formatTime, clockFor } from '../game.js';
+@@ -69,9 +69,11 @@ const levelBox = document.getElementById('levels'), groupBox = document.getEleme
+ const TABS = { delivery: { list: DELIVERY_LEVELS, groups: [] }, race: { list: RACE_LEVELS, groups: [] } };
+ for (let i = 0; i < MAIN_LEVELS.length; i += 5) TABS.delivery.groups.push([i, Math.min(MAIN_LEVELS.length, i + 5)]);
+ { // (the special levels five at a time, then the amphibious ones, a group of their own)
+-  const specials = DELIVERY_LEVELS.length - AMPHIBIOUS_LEVELS.length;
++  // (...and after them the themed ones, five at a time, groups of their own too)
++  const themed = DELIVERY_LEVELS.length - THEME_LEVELS.length, specials = themed - AMPHIBIOUS_LEVELS.length;
+   for (let i = MAIN_LEVELS.length; i < specials; i += 5) TABS.delivery.groups.push([i, Math.min(specials, i + 5)]);
+-  for (let i = specials; i < DELIVERY_LEVELS.length; i += 5) TABS.delivery.groups.push([i, Math.min(DELIVERY_LEVELS.length, i + 5)]);
++  for (let i = specials; i < themed; i += 5) TABS.delivery.groups.push([i, Math.min(themed, i + 5)]);
++  for (let i = themed; i < DELIVERY_LEVELS.length; i += 5) TABS.delivery.groups.push([i, Math.min(DELIVERY_LEVELS.length, i + 5)]);
+ }
+ for (let i = 0; i < RACE_LEVELS.length; i += 5) TABS.race.groups.push([i, Math.min(RACE_LEVELS.length, i + 5)]);
+ let tab = isRace(LEVEL) ? 'race' : 'delivery'; // (the tab shown: the one with the level picked, to begin with)
+diff --git a/src/delivery/render/themes/toyroom.js b/src/delivery/render/themes/toyroom.js
+index f62ffe0..bc33599 100644
+--- a/src/delivery/render/themes/toyroom.js
++++ b/src/delivery/render/themes/toyroom.js
+@@ -94,7 +94,7 @@ export const toyroom = ({ add, flat, instances, sideStrip, offRoads, beside, inJ
+           const lat = at(9);
+           bases.push([s, lat, 0.5, 10, 1, 10]);
+           pegs.push([s, lat, 7, 1.2, 13, 1.2]);
+-          for (let k = 0; k < 5; k++) rings[(k + Math.floor(s)) % BRIGHT.length].push([s, lat, 2.2 + k * 2.4, 9 - k * 1.3, 6, 9 - k * 1.3]);
++          for (let k = 0; k < 5; k++) rings[(k + Math.abs(Math.floor(s))) % BRIGHT.length].push([s, lat, 2.2 + k * 2.4, 9 - k * 1.3, 6, 9 - k * 1.3]);
+         }
+       }
+     }
+diff --git a/src/delivery/render/toys.js b/src/delivery/render/toys.js
+new file mode 100644
+index 0000000..57def3a
+--- /dev/null
++++ b/src/delivery/render/toys.js
+@@ -0,0 +1,101 @@
++// ---- TOYS: the toy room's gimmicks, drawn (what they do: ../toys.js) ----
++// Marbles: glass, a twist of colour inside, turning as they roll. A loop: a ring of orange track standing in its
++// lane on blue stands, a yellow run-up painted into it and a board before it with the speed it asks. A paw: a
++// cat asleep beside the road, one foreleg lifting and coming down across the lanes, its shadow on the road
++// first.
++import * as THREE from 'three';
++import { CONFIG } from '../config.js';
++import { Track } from '../track.js';
++import { Game } from '../game.js';
++import { Toys } from '../toys.js';
++import { scene, tmp } from './scene.js';
++import { buildStrip } from './road.js';
++import { makeMarble, makeLoop, makeCat, makePaw } from './themes/toyModels.js';
++
++const group = new THREE.Group();
++scene.add(group);
++const lambert = (color) => new THREE.MeshLambertMaterial({ color });
++const paint = (color, opacity) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
++// a group set down on the road at (s, lat), facing along it (its local +z the player's way, +x to the left)
++const at = (s, lat, y = 0) => {
++  const g = new THREE.Group();
++  g.rotation.y = Track.toWorld(s, lat, tmp);
++  g.position.set(tmp.x, tmp.y + y, tmp.z);
++  group.add(g);
++  return g;
++};
++// words on a board (a canvas texture)
++export const board = (text, bg, fg, w, h) => {
++  const canvas = document.createElement('canvas');
++  canvas.width = 512;
++  canvas.height = Math.round(512 * h / w);
++  const c = canvas.getContext('2d');
++  c.fillStyle = bg;
++  c.fillRect(0, 0, canvas.width, canvas.height);
++  c.fillStyle = fg;
++  c.font = `bold ${Math.round(canvas.height * 0.55)}px system-ui, sans-serif`;
++  c.textAlign = 'center';
++  c.textBaseline = 'middle';
++  c.fillText(text, canvas.width / 2, canvas.height / 2 + 2);
++  return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), side: THREE.DoubleSide }));
++};
++
++let marbles = [], paws = [];
++
++Game.onLoad.push(() => {
++  group.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material?.map) o.material.map.dispose(); });
++  group.clear();
++  Toys.build(); // (its lists, for the level just loaded)
++  const LW = CONFIG.laneWidth, L = CONFIG.toys.loop, P = CONFIG.toys.paw;
++  marbles = Toys.marbles.map((m) => { const model = makeMarble(m.color, m.r); group.add(model); return model; });
++  for (const l of Toys.loops) {
++    at(l.s, l.lat).add(makeLoop(L.radius, LW - 0.4));
++    group.add(new THREE.Mesh(buildStrip(l.s - 45, l.s, (s) => Track.laneOffset(l.lane, s) - LW / 2 + 0.35, (s) => Track.laneOffset(l.lane, s) + LW / 2 - 0.35, 0.03, 3), paint(0xffe12b, 0.55)));
++    const kicker = new THREE.Mesh(new THREE.BoxGeometry(LW - 0.4, 0.5, 3), lambert(0x1f6fd0)); // (the kicker at its foot)
++    kicker.rotation.x = -0.16;
++    kicker.position.set(0, 0.2, L.advance - 1.5);
++    at(l.s, l.lat).add(kicker);
++    for (const side of [-1, 1]) { // a board each side of the road, well before it: the speed it asks
++      const s = Math.max(5, l.s - L.sign), post = at(s, side < 0 ? Track.lo(s) + 0.5 : Track.hi(s) - 0.5);
++      const pole = new THREE.Mesh(new THREE.BoxGeometry(0.16, 3.2, 0.16), lambert(0x8a9096));
++      pole.position.y = 1.6;
++      const sign = board('LOOP ' + Math.round(Toys.loopNeed(l) * 3.6) + '+', '#1f6fd0', '#fff', 3.4, 1.1);
++      sign.position.y = 3.6;
++      sign.rotation.y = Math.PI;
++      post.add(pole, sign);
++    }
++  }
++  paws = Toys.paws.map((p) => {
++    const edge = p.side > 0 ? Track.hi(p.s) : Track.lo(p.s), pivot = edge + p.side * 3;
++    const far = p.side > 0 ? p.lat0 : p.lat1, reach = Math.abs(pivot - far);
++    const cat = makeCat(), spot = at(p.s - 13, pivot + p.side * 9);
++    spot.add(cat);
++    const arm = at(p.s, pivot, 1.9), leg = makePaw(reach);
++    if (p.side < 0) arm.rotation.y += Math.PI; // (its local +x: towards the road)
++    arm.add(leg);
++    const shadow = new THREE.Mesh(buildStrip(p.s - P.hl, p.s + P.hl, p.lat0, p.lat1, 0.04, 2), paint(0x101018, 0));
++    group.add(shadow);
++    return { cat, leg, shadow };
++  });
++});
++
++export const syncToys = (now) => {
++  const t = now / 1000;
++  Toys.marbles.forEach((m, i) => {
++    const model = marbles[i];
++    if (!model) return;
++    model.visible = !m.gone;
++    if (m.gone) return;
++    model.rotation.y = Track.toWorld(m.s, m.lat, tmp);
++    model.position.copy(tmp);
++    model.userData.spin.rotation.x = m.turn;
++  });
++  Toys.paws.forEach((p, i) => {
++    const view = paws[i];
++    if (!view) return;
++    const up = Toys.pawUp(p);
++    view.leg.rotation.z = up * 0.95 + (p.on ? 0 : Math.sin(t * 0.8) * 0.04); // (asleep, with nobody near: only a twitch)
++    view.shadow.material.opacity = Toys.pawWarn(p) * 0.5;
++    view.cat.userData.animate(t);
++  });
++};
+diff --git a/src/delivery/toys.js b/src/delivery/toys.js
+new file mode 100644
+index 0000000..f9065ea
+--- /dev/null
++++ b/src/delivery/toys.js
+@@ -0,0 +1,213 @@
++// ============================================================================
++// TOYS - the toy room's gimmicks (see levels.js and CONFIG.toys), each a level field that works on any level:
++//   marbles   glass marbles rolling slowly up the lanes. Run into the back of one and it is shot up the road
++//             like a billiard ball, bowling over whatever traffic it reaches: a knock and some speed for a
++//             cleared lane, or steer round it
++//   loops     a loop of track standing in one lane. Fast enough, the car goes round it and is thrown off the
++//             kicker at its foot, faster and over the heads of the traffic; too slow, it falls off. The lanes
++//             beside it are plain road
++//   paws      a cat asleep beside the road, batting at it: the lanes under its paw are empty and quick for
++//             whoever times the gap, and a flattening for whoever doesn't; the lanes out of its reach are always
++//             safe, and full of everyone else
++// None stops the car and none busts it. What each does is here; render/toys.js draws it. This runs after the
++// player's own update (Extras.update) and puts its hand on the car there.
++// ============================================================================
++import { CONFIG } from './config.js';
++import { LEVEL } from './levels.js';
++import { Track } from './track.js';
++import { Player } from './player.js';
++import { Traffic } from './traffic.js';
++import { Message } from './messages.js';
++import { hurt, sfx, sfxAt } from './physics.js';
++import { Game } from './game.js';
++import { Air } from './air.js';
++
++const clamp01 = (u) => Math.max(0, Math.min(1, u));
++const COLOURS = [0x2f8fff, 0xe23b3b, 0x35a852, 0xf2c21c, 0x9a4fd0, 0xf27d1a];
++
++export const Toys = {
++  marbles: [],  // { s, lat, r, vs, vl (m/s across), on (rolling), turn (rad rolled), color, strikes, s0, lat0 }
++  loops: [],    // { s, lane, lat, need }
++  paws: [],     // { s, side (-1 left, 1 right), lat0, lat1 (what it lands on), t, on, hit }
++  ride: null,   // the player going round a loop: { loop, a (rad round it), v0 (the speed it came in at) }
++  said: {},
++  lastS: 0,
++
++  // the level's lists (as a level loads, for the drawing, and again as each run starts)
++  build() {
++    const C = CONFIG.toys, LW = CONFIG.laneWidth;
++    let seed = 13579;
++    const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
++    this.marbles = [];
++    for (const z of LEVEL.marbles || []) {
++      const n = z.count || 3;
++      for (let i = 0; i < n; i++) {
++        const s = z.from + (z.to - z.from) * (i + 0.2 + rand() * 0.6) / n;
++        const [first, last] = Track.laneRange(1, s), lane = first + Math.floor(rand() * (last - first + 1));
++        const lat = Track.laneOffset(lane, s);
++        this.marbles.push({ s, lat, s0: s, lat0: lat, r: C.marble.r, vs: 0, vl: 0, on: false, turn: 0, strikes: 0, color: COLOURS[this.marbles.length % COLOURS.length] });
++      }
++    }
++    this.loops = (LEVEL.loops || []).map(l => ({ s: l.s, lane: l.lane, lat: Track.laneOffset(l.lane, l.s) }));
++    this.paws = (LEVEL.paws || []).map((p) => {
++      const side = p.side === 'left' ? -1 : 1, [a, b] = p.lanes || Track.laneRange(1, p.s);
++      return { s: p.s, side, lat0: Track.laneOffset(a, p.s) - LW / 2, lat1: Track.laneOffset(b, p.s) + LW / 2, t: 0, on: false, hit: false };
++    });
++  },
++  reset() {
++    this.build();
++    this.ride = null;
++    this.said = {};
++    this.lastS = Player.s;
++  },
++  once(key) {
++    if (this.said[key]) return;
++    this.said[key] = true;
++    Message.say('events', key);
++  },
++
++  // ---- what each is doing, for the drawing (and the rules below) -------------------------------------
++  // the speed a loop asks for, where it stands (m/s): less in low gravity
++  loopNeed(l) { return CONFIG.toys.loop.need * Math.sqrt(Air.scale(l.s)); },
++  // how high a paw is, 1 (right up) .. 0 (lying on the road); and how much of its shadow shows, 0 .. 1
++  pawUp(p) {
++    const C = CONFIG.toys.paw;
++    if (!p.on) return 1;
++    const u = p.t % (C.up + C.slam + C.down + C.lift);
++    return u < C.up ? 1 : u < C.up + C.slam ? 1 - (u - C.up) / C.slam : u < C.up + C.slam + C.down ? 0 : (u - C.up - C.slam - C.down) / C.lift;
++  },
++  pawWarn(p) {
++    const C = CONFIG.toys.paw, u = p.t % (C.up + C.slam + C.down + C.lift);
++    return !p.on ? 0 : u < C.up ? clamp01((u - (C.up - C.warn)) / C.warn) : u < C.up + C.slam + C.down ? 1 : 0;
++  },
++  // is (s, lat), hl x hw either way, under a paw's pad?
++  underPaw(p, v) {
++    return Math.abs(v.s - p.s) < CONFIG.toys.paw.hl + v.hl && v.lat + v.hw > p.lat0 && v.lat - v.hw < p.lat1;
++  },
++
++  updateMarbles(dt, live) {
++    const M = CONFIG.toys.marble, P = Player;
++    for (const m of this.marbles) {
++      if (m.gone) continue;
++      if (!m.on && P.active && m.s - P.s < M.trigger && m.s - P.s > -30) m.on = true;
++      if (!m.on) continue;
++      m.vs = m.vs > M.roll ? Math.max(M.roll, m.vs - M.drag * dt) : M.roll;
++      m.vl *= Math.max(0, 1 - 0.5 * dt);
++      m.s += m.vs * dt;
++      m.lat += m.vl * dt;
++      m.turn += m.vs * dt / m.r;
++      const lo = Track.lo(m.s) + m.r, hi = Track.hi(m.s) - m.r;
++      if (m.lat < lo || m.lat > hi) { m.lat = m.lat < lo ? lo : hi; m.vl = -m.vl * M.bounce; } // (back off the track's lip)
++      if (m.s > Track.length + 60 || P.s - m.s > 150) { m.gone = true; continue; }
++      // bowling: whatever it is closing on fast enough goes over
++      if (m.vs > M.roll + M.bowl) {
++        for (const car of Traffic.cars) {
++          if (!car.active || car.junction || car.health <= 0 || Math.abs(car.s - m.s) > car.hl + m.r || Math.abs(car.lat - m.lat) > car.hw + m.r * 0.8) continue;
++          if (m.vs - car.vs * car.dir < M.bowl) continue;
++          car.health = 0; // (it blows up: Collision.check)
++          m.vs *= M.through;
++          m.strikes++;
++          sfxAt('crash', m.s, 0.7);
++          this.once('marbleStrike');
++        }
++      }
++      // the player's car: into the back of it, a shot; alongside, it is only nudged away
++      if (!live || P.aloft || Math.abs(P.s - m.s) > P.hl + m.r || Math.abs(P.lat - m.lat) > P.hw + m.r * 0.85) continue;
++      const off = (m.lat - P.lat) / (P.hw + m.r);
++      if (P.s < m.s && P.speed - m.vs > 1) {
++        m.vs = Math.max(M.shotMin, P.speed * M.shot);
++        m.vl = off * M.glance;
++        m.s = P.s + P.hl + m.r + 0.3;
++        if (P.tank <= 0) { P.speed *= M.keep; hurt(P, M.damage); }
++        Game.shake = Math.max(Game.shake, 0.5);
++        sfx('drop', 0.9);
++        this.once('marble');
++      } else m.vl = Math.sign(off || 1) * 4;
++    }
++  },
++
++  updateLoops(dt, from) {
++    const L = CONFIG.toys.loop, P = Player, R = L.radius;
++    if (this.ride) { // round it: up the far side, over the top upside down, and down again to where it came in
++      const r = this.ride;
++      if (!P.active) { this.ride = null; return; }
++      const v = r.v0 * (1 - L.slow * (1 - Math.cos(r.a)) / 2);
++      r.a += v / R * dt;
++      P.lat += (r.loop.lat - P.lat) * Math.min(1, 8 * dt);
++      P.latVel = 0;
++      if (r.a >= Math.PI * 2) { // down, and off the kicker at its foot
++        this.ride = null;
++        P.s = r.loop.s + L.advance;
++        P.air = P.pitch = 0;
++        P.speed = r.v0 + L.kick;
++        Air.launch(L.launch);
++        this.once('loopDone');
++        return;
++      }
++      P.s = r.loop.s + R * Math.sin(r.a) + L.advance * r.a / (Math.PI * 2);
++      P.speed = v;
++      P.air = R * (1 - Math.cos(r.a));
++      P.pitch = r.a;
++      P.aloft = P.air > CONFIG.air.clear;
++      return;
++    }
++    if (!P.active || Air.on || P.tank > 0) return;
++    for (const l of this.loops) {
++      if (l.s - P.s > 0 && l.s - P.s < L.sign + 80) this.once('loop');
++      if (!(from < l.s && P.s >= l.s && P.s - from < 30) || Math.abs(P.lat - l.lat) > CONFIG.laneWidth / 2) continue;
++      if (P.speed >= this.loopNeed(l)) {
++        this.ride = { loop: l, a: 0, v0: P.speed };
++        sfx('turbo', 0.6);
++      } else { // too slow: part of the way up, and off
++        if (P.shield <= 0 && P.ghost <= 0) hurt(P, L.fallDamage);
++        P.speed *= L.fallKeep;
++        P.stun = Math.max(P.stun, CONFIG.stunTime * 0.5);
++        Game.shake = 1;
++        sfx('crash', 0.8);
++        Air.launch(4);
++        this.once('loopSlow');
++      }
++    }
++  },
++
++  updatePaws(dt, live) {
++    const C = CONFIG.toys.paw, P = Player, period = C.up + C.slam + C.down + C.lift;
++    for (const p of this.paws) {
++      const ahead = p.s - P.s, near = P.active && ahead < C.notice && ahead > -60;
++      // (it starts with its paw up, and stops with it up: nothing happens where nobody is looking)
++      if (!p.on) { if (near) { p.on = true; p.t = 0; p.hit = false; this.once('paw'); } else continue; }
++      const before = p.t % period;
++      p.t += dt;
++      const u = p.t % period;
++      if (!near && u < C.up && before > u) { p.on = false; continue; }
++      const landed = before < C.up + C.slam && u >= C.up + C.slam, down = u >= C.up + C.slam && u < C.up + C.slam + C.down;
++      if (u < before) p.hit = false;
++      if (landed) {
++        if (Math.abs(ahead) < 300) sfxAt('drop', p.s, 1);
++        for (const car of Traffic.cars) if (car.active && !car.junction && car.health > 0 && this.underPaw(p, car)) car.health = 0;
++        if (Math.abs(ahead) < 40) Game.shake = Math.max(Game.shake, 0.6);
++      }
++      if (down) for (const car of Traffic.cars) if (car.active && !car.junction && car.health > 0 && this.underPaw(p, car)) car.health = 0;
++      if (!live || P.aloft || P.tank > 0 || !(landed || down) || !this.underPaw(p, P)) continue;
++      if (p.hit) { P.speed = Math.min(P.speed, C.crawl); continue; } // (under it still: it crawls out from under, never held)
++      p.hit = true;
++      const flat = landed || P.s > p.s - C.hl; // (under it as it came down; or only run into where it lies)
++      hurt(P, flat ? C.damage : C.softDamage);
++      P.speed *= flat ? C.keep : C.softKeep;
++      P.stun = Math.max(P.stun, CONFIG.stunTime * (flat ? 1 : 0.4));
++      Game.shake = 1;
++      sfx('crash', 1);
++      this.once('pawHit');
++    }
++  },
++
++  update(dt) {
++    const from = this.lastS;
++    this.lastS = Player.s;
++    const live = Player.active && Player.shield <= 0 && Player.ghost <= 0;
++    if (this.marbles.length) this.updateMarbles(dt, live);
++    if (this.loops.length) this.updateLoops(dt, from);
++    if (this.paws.length) this.updatePaws(dt, live);
++    if (this.ride) this.lastS = Player.s;
++  },
++};
+diff --git a/src/delivery/track.js b/src/delivery/track.js
+index 195fddf..7c452e6 100644
+--- a/src/delivery/track.js
++++ b/src/delivery/track.js
+@@ -1,5 +1,6 @@
+ import { CONFIG } from './config.js';
+ import { LEVEL } from './levels.js';
++import { checkExtras } from './extrasCheck.js';
+ 
+ // ============================================================================
+ // TRACK - path sampled by distance along track (s) and lateral offset (lat)
+@@ -1033,6 +1034,8 @@ const createTrack = () => {
+       else if (w.dir !== 'left' && w.dir !== 'right') problems.push('crosswind at ' + w.from + ': dir is left or right (the side it blows to)');
+       else if ([w.strength, w.every, w.length].some(v => v !== undefined && !(v > 0)) || (w.every ?? CONFIG.crosswind.every) < (w.length ?? CONFIG.crosswind.length)) problems.push('crosswind at ' + w.from + ': strength, every and length are more than 0, a gust no longer than the time between gusts');
+     }
++    // ---- the themes' gimmicks of 10-Oct (extras.js: see extrasCheck.js, and levels.js for each field) ----
++    checkExtras(LEVEL, { length, lanes: LANES, playerLanes: (s) => laneRange(1, s), straight, level: (a, b) => { for (let s = a; s <= b; s += STEP) if (Math.abs(gradeAt(s)) > 0.002) return false; return true; }, waters, tunnels, problems });
+     LEVEL.segments.forEach((seg, i) => { if (seg.ease !== undefined && !(seg.ease >= 2 && seg.ease <= 200)) problems.push('segment ' + (i + 1) + ': ease is 2 to 200 m'); });
+     for (const e of LEVEL.wreckage || []) {
+       const name = 'wreckage at ' + e.at;

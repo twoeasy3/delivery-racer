@@ -1,0 +1,51 @@
+{
+  "id": "expressway",
+  "cargo": { "good": "pizza", "evil": "parcel" },
+  "clock": { "good": 110, "evil": 85 },
+  "traffic": { "darkvan": 0.47, "commuter": 0.17, "van": 0.19, "bus": 0.12, "police": 0.05 },
+  "trafficCount": 11,
+  "oncomingCount": 8,
+  "tip": 50,
+  "segments": [
+    { "length": 600, "curve": 0 },
+    { "length": 400, "curve": 0.0012 },
+    { "length": 600, "curve": 0 },
+    { "length": 400, "curve": -0.002 }
+  ],
+  "narrows": [],
+  "bridges": [],
+  "exits": [],
+  "frogs": [],
+  "targets": [
+    { "s": 480, "side": "right" },
+    { "s": 1650, "side": "left" }
+  ],
+  "fords": [],
+  "pickups": [
+    { "type": "cash10", "s": 200, "lane": "right" },
+    { "type": "cash10", "s": 200, "lane": 2 },
+    { "type": "cash10", "s": 200, "lane": 3 },
+    { "type": "turbo", "s": 450, "lane": 3 },
+    { "type": "cash10", "s": 650, "lane": 2 },
+    { "type": "cash10", "s": 650, "lane": 3 },
+    { "type": "wrench", "s": 800, "lane": 2 },
+    { "type": "cash20", "s": 950, "lane": "right" },
+    { "type": "cash10", "s": 950, "lane": 2 },
+    { "type": "cash10", "s": 950, "lane": 3 },
+    { "type": "turbo", "s": 1150, "lane": 2 },
+    { "type": "cash10", "s": 1300, "lane": "right" },
+    { "type": "cash10", "s": 1300, "lane": 2 },
+    { "type": "wrench", "s": 1450, "lane": 3 },
+    { "type": "cash10", "s": 1600, "lane": 2 },
+    { "type": "cash10", "s": 1600, "lane": 3 },
+    { "type": "cash20", "s": 1600, "lane": "right" },
+    { "type": "turbo", "s": 1800, "lane": 2 }
+  ],
+  "obstacles": [
+    { "s": 350, "lane": 2 },
+    { "s": 750, "lane": 3 },
+    { "s": 1100, "lane": 2 },
+    { "s": 1400, "lane": 3 },
+    { "s": 1750, "lane": 3 }
+  ]
+}

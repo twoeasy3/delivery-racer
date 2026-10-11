@@ -1,0 +1,575 @@
+diff --git a/scripts/.tiers-check.mjs b/scripts/.tiers-check.mjs
+index 4c85f10..22db02c 100644
+--- a/scripts/.tiers-check.mjs
++++ b/scripts/.tiers-check.mjs
+@@ -1,5 +1,5 @@
+ // A check of the level tiers (src/delivery/tiers.js, tiers.json): the file is sound; what opens and when (levels 1
+-// and 2 with the tier, 3 on two medals, 4 on four, 5 on level 4, the next tier on level 5, Blue 1 after the
++// and 2 with the tier, 3 on two medals, 4 on three, 5 on level 4, the next tier on level 5, Blue 1 after the
+ // five-star tier's level 5, an amphibious level on a medal on every stage of its blue tier); the car rule
+ // (exactly that tier's cars on a medal not earned, any car once it is, null car with none owned, the player's own
+ // pick kept apart); a save from before keeps what it had open; and the switch off gives the old rule.
+@@ -36,9 +36,10 @@ check(Tiers.medals(a) === 2 && Tiers.isOpen(c), 'both medals of one level open l
+ check(!Tiers.isOpen(d), 'level 4 still closed on two halves');
+ fresh(); beat(a); beat(b);
+ check(Tiers.isOpen(c), 'level 3 opens on two halves from two levels (any two halves)');
+-check(!Tiers.isOpen(d), 'level 4 needs four halves');
+-beat(a, true); beat(b, true);
+-check(Tiers.isOpen(d) && !Tiers.isOpen(e), 'four halves open level 4, not level 5');
++check(!Tiers.isOpen(d), 'level 4 needs three halves: two do not open it');
++beat(a, true);
++check(Tiers.isOpen(d) && !Tiers.isOpen(e), 'three halves open level 4, not level 5');
++beat(b, true);
+ beat(d);
+ check(Tiers.isOpen(e), 'level 5 opens on level 4 beaten (either medal)');
+ check(!Tiers.isOpen(T[1][0]), 'tier 2 still closed before level 5 is beaten');
+@@ -223,6 +224,28 @@ check(Tiers.medals(g.levels.LEVELS[0]) === 1, 'its best times are its medals (a
+   localStorage.removeItem('delivery_racer_progress_backup');
+   Progress.noSave = true;
+ }
++// ---- the garage's view: the open tiers' cars, the next tier's as silhouettes, nothing further
++g.CONFIG.progression.tiers = true;
++{
++  const at = (n) => cars.CARS.filter(car => cars.carTier(car) === n);
++  const state = (n) => new Set(at(n).map(car => cars.carPreview(car)));
++  fresh();
++  check(state(1).size === 1 && state(1).has('show'), 'garage, a new save: tier 1 cars shown');
++  check(state(2).size === 1 && state(2).has('teaser') && at(2).every(car => cars.isTeaser(car)), 'garage, a new save: tier 2 cars are silhouettes');
++  check([3, 4, 5, 6, 7, 8, 9, 10].every(n => state(n).size === 1 && state(n).has('hide')), 'garage, a new save: tiers 3 to 10 are not there');
++  const lot = cars.garageCars();
++  check(at(3).every(car => !lot.includes(car)) && at(2).every(car => lot.includes(car)) && at(1).every(car => lot.includes(car)), 'garage, a new save: the lot has tiers 1 and 2 only');
++  check(cars.CARS.filter(car => cars.carTier(car) === null).every(car => cars.carPreview(car) === 'show'), 'garage: amphibious and tierless cars are shown as ever');
++  beatTier(1);
++  check(state(2).has('show') && state(2).size === 1 && state(3).has('teaser') && state(4).has('hide'), 'garage, tier 1 cleared: tier 2 shown, tier 3 silhouettes, tier 4 gone');
++  Progress.data.cars.push(at(5)[0].id);
++  check(cars.carPreview(at(5)[0]) === 'show', 'garage: a car owned from a far tier is shown');
++  for (let n = 1; n <= 4; n++) beatTier(n);
++  check(state(6).has('teaser') && state(7).has('hide') && state(5).has('show'), 'garage, tier 4 cleared: five stars shown, Blue 1 silhouettes, Blue 2 gone');
++  g.CONFIG.progression.tiers = false;
++  check(cars.carPreview(at(8)[0]) === null, 'garage, tiers off: no preview rule (the old Blue Star rule)');
++  g.CONFIG.progression.tiers = true;
++}
+ // ---- the switch
+ g.CONFIG.progression.tiers = false;
+ check(!Tiers.on() && Tiers.restriction(a, false) === null, 'the switch off: no tier rule');
+diff --git a/scripts/tier-money.mjs b/scripts/tier-money.mjs
+index 1b15457..70b9d58 100644
+--- a/scripts/tier-money.mjs
++++ b/scripts/tier-money.mjs
+@@ -13,9 +13,9 @@
+ //    the level's full tip: the best a rushed run can earn from it (a rush of the clock is not a rush of cash)
+ //  - the player buys, at each tier, only that tier's CHEAPEST car (Gold 1's is the free Commuter), before its first
+ //    level; nothing else is bought; no mystery or powerup money; cars from the earned/amphibious sets are not needed
+-//  - the rules of tiers.js: levels 1 and 2 open with the tier, 3 needs 2 medals in the tier, 4 needs 4, 5 needs
+-//    level 4 beaten, beating 5 opens the next tier. So a tier takes at least SIX plays: four medals (from
+-//    levels 1 to 3, the best four tips: a level's halves are two plays, one a side) then level 4 and level 5
++//  - the rules of tiers.js: levels 1 and 2 open with the tier, 3 needs 2 medals in the tier, 4 needs 3, 5 needs
++//    level 4 beaten, beating 5 opens the next tier. So a tier takes at least FIVE plays: three medals (from
++//    levels 1 to 3, the best three tips: a level's halves are two plays, one a side) then level 4 and level 5
+ //  - when the bank is short of the next tier's cheapest car the player replays (in any car: the medal is earned)
+ //    the best-tipping level they have already beaten, one play a time, until it is not
+ import { boot } from './delivery-headless.mjs';
+@@ -31,12 +31,12 @@ const tierCars = (n) => CARS.filter(c => !c.amphibious && !c.earned && c.tier ==
+ const money = (x) => '$' + Math.round(x);
+ const names = Object.keys(data.tiers).sort((a, b) => a - b);
+ 
+-// the four best medal plays out of levels 1 to 3 (each level's halves: two plays, one a side; level 3 needs two
++// the three best medal plays out of levels 1 to 3 (each level's halves: two plays, one a side; level 3 needs two
+ // halves from levels 1 and 2 before it opens), by trying every choice
+-const bestFour = (l1, l2, l3) => {
++const bestThree = (l1, l2, l3) => {
+   let best = null;
+   for (let a = 0; a <= 2; a++) for (let b = 0; b <= 2; b++) for (let c = 0; c <= 2; c++) {
+-    if (a + b + c !== 4 || (c > 0 && a + b < 2)) continue;
++    if (a + b + c !== 3 || (c > 0 && a + b < 2)) continue;
+     const sum = a * tipOf(l1) + b * tipOf(l2) + c * tipOf(l3);
+     if (!best || sum > best.sum) best = { a, b, c, sum };
+   }
+@@ -58,20 +58,20 @@ for (const n of names) {
+     bank += farmTip; farm++; plays++;
+   }
+   bank -= cheapest.price;
+-  const four = bestFour(l1, l2, l3);
+-  const mandatory = four.sum + tipOf(l4) + tipOf(l5);
++  const three = bestThree(l1, l2, l3);
++  const mandatory = three.sum + tipOf(l4) + tipOf(l5);
+   bank += mandatory;
+-  plays += 6;
++  plays += 5;
+   earnedTips.push(tipOf(l1), tipOf(l2), tipOf(l3), tipOf(l4), tipOf(l5));
+-  rows.push({ n: Number(n), cheapest, farm, mandatory, bank, plays, plan: `L1x${four.a} L2x${four.b} L3x${four.c} L4 L5`, levels });
++  rows.push({ n: Number(n), cheapest, farm, mandatory, bank, plays, plan: `L1x${three.a} L2x${three.b} L3x${three.c} L4 L5`, levels });
+ }
+ console.log('Tip money on a rushed run of the tiers (tiers.json; full on-time tips' + (cash ? ' + $' + cash + ' cash a level' : ', no cash pickups') + ')\n');
+ console.log('tier       cheapest car (price)            replays to afford it   plays in tier (tips earned)        bank after   plays so far');
+ for (const r of rows) {
+   const t = r.n <= 5 ? 'Gold ' + r.n : 'Blue ' + (r.n - 5);
+-  console.log(`${t.padEnd(10)} ${(r.cheapest.name + ' (' + money(r.cheapest.price) + ')').padEnd(31)} ${String(r.farm).padStart(6)}                 6 (${money(r.mandatory)}; ${r.plan})`.padEnd(112) + ` ${money(r.bank).padStart(6)}   ${String(r.plays).padStart(4)}`);
++  console.log(`${t.padEnd(10)} ${(r.cheapest.name + ' (' + money(r.cheapest.price) + ')').padEnd(31)} ${String(r.farm).padStart(6)}                 5 (${money(r.mandatory)}; ${r.plan})`.padEnd(112) + ` ${money(r.bank).padStart(6)}   ${String(r.plays).padStart(4)}`);
+ }
+-console.log('\nPlays of the cheapest path if nothing had to be replayed: ' + names.length * 6 + '; with the replays the bank needs: ' + rows[rows.length - 1].plays + ' (' + (rows[rows.length - 1].plays - names.length * 6) + ' replays).');
++console.log('\nPlays of the cheapest path if nothing had to be replayed: ' + names.length * 5 + '; with the replays the bank needs: ' + rows[rows.length - 1].plays + ' (' + (rows[rows.length - 1].plays - names.length * 5) + ' replays).');
+ console.log('Cars of each tier (cheapest first):');
+ for (const n of names) console.log('  tier ' + n + ': ' + tierCars(Number(n)).map(c => c.name + ' ' + money(c.price)).join(', '));
+ // the first car of the NEXT tier, against the bank at the end of this one: what is left before buying it
+diff --git a/src/delivery/SCRATCHPAD-garagetiers-12-Oct.md b/src/delivery/SCRATCHPAD-garagetiers-12-Oct.md
+new file mode 100644
+index 0000000..7daad09
+--- /dev/null
++++ b/src/delivery/SCRATCHPAD-garagetiers-12-Oct.md
+@@ -0,0 +1,23 @@
++# Scratchpad: garage tiers, back button, 4th level, phone stats (agent, stopped on the owner's stand-down)
++
++Branch `delivery-garagetiers`, worktree `.claude/worktrees/delivery-garagetiers` (node_modules is a junction: `cmd /c rmdir <wt>\node_modules` before deleting). Never pushed. No background jobs, no lock held.
++
++## Done (commits on the branch, newest last; see `git log main..delivery-garagetiers`)
++1. Item 3: the 4th level of a tier needs 3 medals (was 4): tiers.js `need()` and its header, scripts/tier-money.mjs model (now 5 plays a tier), scripts/.tiers-check.mjs asserts it. No user-facing words said "4".
++2. Item 1: garage hides cars of tiers beyond the next; next tier = black silhouettes (MeshBasicMaterial, no tag, card says "Locked car", stars, and what opens the tier; button "Locked", no Use, no buy, no compare). cars.js carPreview/isTeaser/garageCars, tiers.js `preview` hook, garageview.js (sale/afford exclude teasers, teasers sort last), garage.js. Owned cars always shown; tierless (earned, amphibious) always shown as before; car ideas lot untouched; tiers off = old Blue Star rule. Checks added to scripts/.tiers-check.mjs (new save, cleared tiers, owned far car, tiers off).
++3. Item 2: src/delivery/nav.js (history entry per screen: run, garage, options/road sheet, album, milestones; menu is the base so a first visit's back leaves the site). Hooks in game.js start/toMenu, garage.js open/close, menustage.js openSheet/closeSheet, album.js, milestones.js.
++4. Item 4: phone garage shows the selected car's figures on their own line under the name always (garage.js statsNode, menus.css); perk text only on tap.
++5. WIP commit: arrange()/countOf in garageview.js keep the next tier's silhouettes when a level restricts the car (otherwise a new player, whose level 1 restricts to one star, never saw them).
++
++## Not done / not verified
++- Item 2 was NEVER tried in a browser: back from level/results/garage/sheets, ?garage and ?autostart deep links (a deep link pushes an entry, so back goes to the menu first, then leaves), forward button, dialogs (buy sheet) and the Car ideas tab are not tracked. Only syntax and import checks.
++- Item 4 seen once at 390x700 (before the WIP change): stats line visible, car not blocked: scratchpad dir `...\scratchpad\a\g2.png`, `g3.png`. 360x640 shot `b\g3.png` taken, not read carefully.
++- Item 1 silhouette look NOT seen: the re-shoot after the WIP change (`a\g2.png`, `a\g4.png`, `b\g2.png` in the scratchpad dir, `index.html?garage&look=lovebus`) was taken but not read. Read them first: check black silhouettes visible against the tarmac, card text, and the rule chip.
++- Checks run: .tiers-check, .earned-check, .tank-check, .words-check, .bundle-check pass. .ideas-check fails "bubble delivered in 132 s" (unrelated gameplay sim; not compared against main). Smoke test not run; its Blue Star garage check (delivery-smoke.mjs ~2850) assumes the old rule and will likely need updating under tiers.
++
++## Next step
++Read the three stills above; open `index.html?garage` and `&look=lovebus` at 390x700 and 360x640 under the heavy lock; then test back button by hand (menu -> garage -> back; menu -> level -> back; options sheet -> back).
++
++## Traps
++- Pre-existing: the rule chip wraps badly at 390 wide ("Good: only / ★ cars until...").
++- The tool transport mangles backslashes in CSS content strings: check `'\25BE'` in menus.css after edits.
+diff --git a/src/delivery/cars.js b/src/delivery/cars.js
+index 55ec173..ab5f885 100644
+--- a/src/delivery/cars.js
++++ b/src/delivery/cars.js
+@@ -91,7 +91,12 @@ const forcedCar = (pick, tier) => {
+   return chosen || owned.sort((a, b) => b.price - a.price)[0] || nullCarFor(tier);
+ };
+ // the cars the garage shows now (an earned car only once it is earned: see EARNED_CARS)
+-export const garageCars = () => [...CARS.filter(car => !car.blue || blueStarsOpen()), ...EARNED_CARS.filter(car => Progress.earned(car))];
++// With the tiers on (tiers.js carPreview): a car of a tier beyond the next is not in the garage, a car of the next tier is
++// there as a black silhouette ('teaser': stars shown, no name, stats or price, and it cannot be bought or picked), and
++// an owned car, or one in no tier, is always there. With the tiers off: the old Blue Star rule.
++export const carPreview = (car) => tierHooks.preview?.(car) ?? null; // 'show' | 'teaser' | 'hide' | null (the tiers are off)
++export const isTeaser = (car) => carPreview(car) === 'teaser';
++export const garageCars = () => [...CARS.filter(car => { const p = carPreview(car); return p ? p !== 'hide' : (!car.blue || blueStarsOpen()); }), ...EARNED_CARS.filter(car => Progress.earned(car))];
+ // The amphibious cars (a car's "amphibious"): the garage's Amphibious section, there from the start, so an
+ // amphibious level can be played as soon as it is open (the cheapest costs about a level's tip)
+ const AMPHIBIOUS_PERK = 'Amphibious: it drives into the water and floats across';
+diff --git a/src/delivery/game.js b/src/delivery/game.js
+index 2740016..948a8a9 100644
+--- a/src/delivery/game.js
++++ b/src/delivery/game.js
+@@ -1,6 +1,7 @@
+ import { CONFIG } from './config.js';
+ import { LEVEL, LEVEL_INDEX, LEVELS, SCREENSAVER_LEVEL, selectLevel, selectSpecial, nextOnTab, isRace } from './levels.js';
+ import { Progress } from './progress.js';
++import { Nav } from './nav.js';
+ import { useLevelCar, returnCar, earnedFor, ownedAmphibious, carAllowed, restrictedTier } from './cars.js';
+ import { Tiers } from './tiers.js';
+ import { Input } from './input.js';
+@@ -92,6 +93,7 @@ export const Game = {
+   // back to the start screen, which is only a menu: nothing of the level is shown behind it
+   toMenu() {
+     this.state = 'start';
++    Nav.leave('run'); // (the back button's entry for the run)
+     this.paused = false;
+     Tiers.hold = null; // (the run's car rule is over: the menu goes by the player's own pick again)
+     returnCar(); // (a car lent by Car Swap goes back)
+@@ -169,6 +171,7 @@ export const Game = {
+     this.rivalsIn = 0;          // rivals over the line before the player
+     this.rivalAhead = new Map(); // for each, whether it was ahead of the player when last looked
+     if (this.loaded !== LEVEL) this.load(); // the level is only built when a run on it starts
++    Nav.enter('run', () => this.exit()); // (the back button leaves the run for the menu)
+     Tiers.hold = null;
+     Tiers.hold = { tier: restrictedTier() }; // (the car rule as the run starts it: held to the menu, whatever the delivery earns)
+     useLevelCar(LEVEL.car, LEVEL.amphibious); // a UFO on the space level, otherwise the garage's car (on an amphibious level, the player's amphibious one)
+diff --git a/src/delivery/menus.css b/src/delivery/menus.css
+index 9937c59..1f72065 100644
+--- a/src/delivery/menus.css
++++ b/src/delivery/menus.css
+@@ -108,11 +108,15 @@ body.ideas-tab #garageUse { display: none !important; }
+ /* ---- garage on a phone: the lot is drawn between the bar and the words and buttons (render/garage.js: bandOf), so
+    nothing sits over a car. The stats are one line, cut short, until tapped; held in a landscape phone to a row ---- */
+ @media (max-width: 760px), (max-height: 480px) {
++  /* (the selected car's name, then its figures on a line of their own, always: not only when comparing. A perk's
++     sentence is held back until the line is tapped) */
+   body:not(.ideas-tab) #garageInfo { position: relative; pointer-events: auto; cursor: pointer; max-width: 100%; box-sizing: border-box;
+-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 22px 0 4px; font-size: 14px; }
++    padding: 0 22px 0 4px; font-size: 14px; line-height: 1.25; }
+   body:not(.ideas-tab) #garageInfo::after { content: '\25BE'; position: absolute; right: 4px; top: 0; opacity: .8; }
+-  body:not(.ideas-tab) #garageInfo.open { white-space: normal; }
+   body:not(.ideas-tab) #garageInfo.open::after { content: '\25B4'; }
++  body:not(.ideas-tab) #garageInfo .stats { display: block; font-size: 11.5px; font-weight: 600; opacity: .85; line-height: 1.3; }
++  body:not(.ideas-tab) #garageInfo .stats .perk { display: none; }
++  body:not(.ideas-tab) #garageInfo.open .stats .perk { display: inline; }
+   #garageUi .pick { gap: 5px; width: 100%; }
+   #garageUi .actions { width: 100%; max-width: 420px; }
+   #garageUi .actions button { flex: 1 1 0; padding: 10px 12px; }
+diff --git a/src/delivery/nav.js b/src/delivery/nav.js
+new file mode 100644
+index 0000000..d03743b
+--- /dev/null
++++ b/src/delivery/nav.js
+@@ -0,0 +1,37 @@
++// ---- the back button (browser, phone): each screen the player opens from the menu pushes a history entry, and back
++// closes the top one, so back goes to the screen the player came from. The menu is the base: it has no entry of its
++// own, so on a first visit back leaves the site as it always did. Screens: 'run' (a level, its results, the
++// screensavers), 'garage', 'sheet' (options, "what's on this road"), 'album', 'milestones'.
++// enter(name, close): the screen opened; close() is what back does to it. leave(name): the screen was closed by its
++// own button (or Escape); its entry is taken off the history. Both are safe to call twice.
++const stack = [];   // [{ name, close, pushed }]
++let ignore = 0;     // popstates we caused ourselves (history.go): not a press of back
++const flush = () => {
++  if (ignore > 0) return; // (a history.go is on its way: pushing now would be undone by it)
++  stack.forEach((entry, i) => {
++    if (entry.pushed) return;
++    try { history.pushState({ dr: i + 1 }, ''); entry.pushed = true; } catch { /* (no history to use: the screen just has no back) */ }
++  });
++};
++export const Nav = {
++  enter(name, close) {
++    if (stack.some(entry => entry.name === name)) return;
++    stack.push({ name, close, pushed: false });
++    flush();
++  },
++  leave(name) {
++    const i = stack.findIndex(entry => entry.name === name);
++    if (i < 0) return;
++    const gone = stack.splice(i), n = gone.filter(entry => entry.pushed).length;
++    if (n) { ignore++; try { history.go(-n); } catch { ignore--; } }
++  },
++};
++window.addEventListener('popstate', (event) => {
++  if (ignore > 0) { ignore--; flush(); return; }
++  const target = Math.max(0, event.state?.dr ?? 0);
++  while (stack.length > target) {
++    const entry = stack.pop();
++    try { entry.close(); } catch (error) { console.error(error); }
++  }
++  flush();
++});
+diff --git a/src/delivery/render/album.js b/src/delivery/render/album.js
+index e3c1637..3759fab 100644
+--- a/src/delivery/render/album.js
++++ b/src/delivery/render/album.js
+@@ -6,6 +6,7 @@
+ import { LEVELS } from '../levels.js';
+ import { levelName } from '../levelText.js';
+ import { Progress } from '../progress.js';
++import { Nav } from '../nav.js';
+ import { Game, formatTime } from '../game.js';
+ import { LEVEL_SHOTS } from './menu.js';
+ 
+@@ -64,12 +65,14 @@ export const Album = {
+     build(pretend);
+     this.isOpen = true;
+     Game.inMenu = true; // (Enter must not start a run from here)
++    Nav.enter('album', () => this.close()); // (the back button closes it)
+     panel.classList.remove('hidden');
+     panel.scrollTop = 0;
+   },
+   close() {
+     if (!this.isOpen) return;
+     this.isOpen = false;
++    Nav.leave('album');
+     Game.inMenu = false;
+     panel.classList.add('hidden');
+     startScreen.classList.remove('hidden');
+diff --git a/src/delivery/render/garage.js b/src/delivery/render/garage.js
+index 64c0cd1..62b9e90 100644
+--- a/src/delivery/render/garage.js
++++ b/src/delivery/render/garage.js
+@@ -5,10 +5,11 @@
+ // other livery: buying a car buys both.
+ import * as THREE from 'three';
+ import { CONFIG } from '../config.js';
+-import { CAR, carInUse, selectCar, stars, starColour, STAR_COLOURS, blueStarsOpen, garageCars, restrictedTier, setViewSide, carAllowedOn } from '../cars.js';
+-import { Tiers, tierStarsNode } from '../tiers.js';
++import { CAR, carInUse, selectCar, stars, starColour, STAR_COLOURS, blueStarsOpen, garageCars, restrictedTier, setViewSide, carAllowedOn, carTier, isTeaser } from '../cars.js';
++import { Tiers, tierStarsNode, richTiers } from '../tiers.js';
+ import { Progress } from '../progress.js';
+ import { Game } from '../game.js';
++import { Nav } from '../nav.js';
+ import { renderer } from './scene.js';
+ import { makeCarMesh, shapeCarMesh, makeTankMesh } from './cars.js';
+ import { MODELS } from './models.js';
+@@ -42,7 +43,7 @@ const bulk = (car) => car.hw * car.hl * car.height; // how big a car is, to park
+ const rank = (car) => car.amphibious ? 50 + car.tier : (car.tier || 99) + (car.blue ? 0.5 : 0); // (a tier's Blue Star cars park after its gold ones)
+ // (the lot is built for the cars on show: it grows when the Blue Star cars arrive. See buildLot)
+ let order = [], COLS = 0, LOT_W = 0, parked = [], built = null;
+-const onShow = () => garageCars().length; // (what the lot was built for: it only ever grows)
++const onShow = () => { const cars = garageCars(); return cars.length + ':' + cars.filter(isTeaser).map(car => car.id).join(','); }; // (what the lot was built for: it only ever grows)
+ const colX = (col) => col * BAY_W;
+ 
+ const scene = new THREE.Scene();
+@@ -154,9 +155,11 @@ export const paintShowCar = (mesh, car, evil) => {
+ };
+ 
+ // ---- a car, parked in its bay: column by column --------------------------------------------------
++const SILHOUETTE = new THREE.MeshBasicMaterial({ color: 0x07080b });
+ const parkCar = (car, i) => {
+   if (!car) return null; // (a bay left empty: see buildLot)
+   const mesh = makeShowCar(car);
++  if (isTeaser(car)) mesh.traverse(part => { if (part.isMesh) part.material = SILHOUETTE; }); // (a car of the next tier: flat black, nothing of its paint)
+   mesh.position.set(colX(Math.floor(i / ROWS)), car.ufo ? 1 : 0, ROW_Z[i % ROWS]); // (a saucer hovers)
+   mesh.userData.car = car;
+   lot.add(mesh); // (moves it out of the game's scene, where makeCarMesh put it)
+@@ -165,6 +168,7 @@ const parkCar = (car, i) => {
+   tag.position.y = car.height + 1.5;
+   mesh.add(tag);
+   mesh.userData.tag = tag;
++  tag.visible = !isTeaser(car);
+   // its stars, painted on the tarmac at the front of its bay
+   if (car.tier) {
+     const plate = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.8), new THREE.MeshBasicMaterial({ map: label(stars(car), 256, 84, 60, starColour(car), '#3f444c') }));
+@@ -202,8 +206,16 @@ const useBtn = document.getElementById('garageUse');
+ const startScreen = document.getElementById('startScreen');
+ const money = (amount) => '$' + amount.toFixed(2);
+ const stats = (car) => 'Top speed ' + Math.round(car.maxSpeed * 3.6) + ' km/h  |  Acceleration ' +
+-  car.accel + '  |  Health ' + car.health + '  |  Crossing ' + Math.round((car.crossing ?? CONFIG.railCrossing.usual) * 100) + '%' +
+-    (car.perk ? '  |  ' + car.perk : ''); // (a perk of its own: see CARS' trait)
++  car.accel + '  |  Health ' + car.health + '  |  Crossing ' + Math.round((car.crossing ?? CONFIG.railCrossing.usual) * 100) + '%';
++// the stats as a node: the figures always (on a phone on a line of their own under the name), and a perk of its own
++// (see CARS' trait) after them, which a phone shows only when the line is tapped
++const statsNode = (car) => {
++  const span = document.createElement('span');
++  span.className = 'stats';
++  span.append(stats(car));
++  if (car.perk) { const perk = document.createElement('span'); perk.className = 'perk'; perk.textContent = '  |  ' + car.perk; span.append(perk); }
++  return span;
++};
+ 
+ let hovered = null; // the parked car mesh under the pointer
+ const raycaster = new THREE.Raycaster();
+@@ -218,6 +230,11 @@ const carAt = (event) => {
+   return object || null;
+ };
+ 
++// what a silhouette's card says: the tier it is in (as stars) and what opens that tier
++const teaserWhy = (car) => {
++  const t = carTier(car), first = Tiers.tiers[Tiers.tiers.length ? Math.min(t, Tiers.tiers.length) - 1 : 0]?.[0];
++  return first ? Tiers.lockedBecause(first) : 'Locked';
++};
+ const refresh = () => {
+   GarageView.refreshControls?.(); // (a Show choice that parks no car is not offered: money and purchases change that)
+   // (a secret vehicle in use has no bay, so no ring; nor has a car idea in this lot: its ring is in the Car ideas lot's)
+@@ -235,15 +252,16 @@ const refresh = () => {
+     : [sideWord + ': any car (medal earned)']));
+   ruleBanner.replaceChildren(chip);
+   for (const b of sideBtns) { const on = (b.dataset.side === 'evil') === Garage.evil; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }
+-  const shown = looking || inUse, owned = Progress.owns(shown.id);
++  const shown = looking || inUse, owned = Progress.owns(shown.id), teaser = isTeaser(shown);
+   const needs = restrictedTier(Garage.evil) ?? null;
+   const notAllowed = !IdeasLot.on && (shown.silhouette || (owned && !carAllowedOn(shown, Garage.evil)));
+   const reasonNode = () => needs !== null ? ['Not allowed on this level: needs ', tierStarsNode(needs)] : ['Not allowed on this level'];
+   const badge = document.createElement('span');
+   badge.className = 'notallowed';
+   badge.replaceChildren(...(shown.silhouette ? ['No car of this tier owned: buy one in the lot'] : reasonNode()));
+-  info.replaceChildren(...withStars(shown), ...(notAllowed && !shown.silhouette ? [' - ', badge] : []), '  -  ' + stats(shown));
+-  showComparison(inUse, shown); // (the car in use against the one looked at: see render/compare.js)
++  if (teaser) info.replaceChildren('Locked car  ', tierStarsNode(carTier(shown)), '  -  ', ...richTiers(teaserWhy(shown)));
++  else info.replaceChildren(...withStars(shown), ...(notAllowed && !shown.silhouette ? [' - ', badge] : []), '  -  ', statsNode(shown));
++  showComparison(inUse, teaser ? null : shown); // (the car in use against the one looked at: see render/compare.js)
+   // the button under the stats: what can be done with the car shown
+   // (the car in use, looked at in the other side's livery: the button takes that side)
+   const otherSide = shown === inUse && Garage.evil !== Game.evil;
+@@ -252,10 +270,11 @@ const refresh = () => {
+   action.disabled = (shown === inUse && !otherSide) || (!owned && Progress.data.money < shown.price);
+   // (the level's car rule on the side on show: a car not allowed there cannot be used, and "Use" is off with it)
+   const barred = shown.silhouette || (owned && !IdeasLot.on && !carAllowedOn(shown, Garage.evil));
+-  if (barred) { action.textContent = shown.silhouette ? 'Buy a car in the lot' : 'Not allowed here'; action.disabled = true; }
+-  useBtn.disabled = !!barred;
+-  whyEl.classList.toggle('hidden', !barred);
+-  whyEl.replaceChildren(...(barred ? (shown.silhouette ? ['No car of this tier owned: tap a car in the lot to buy one'] : reasonNode()) : []));
++  if (teaser) { action.textContent = 'Locked'; action.disabled = true; }
++  else if (barred) { action.textContent = shown.silhouette ? 'Buy a car in the lot' : 'Not allowed here'; action.disabled = true; }
++  useBtn.disabled = !!barred || teaser;
++  whyEl.classList.toggle('hidden', !barred && !teaser);
++  whyEl.replaceChildren(...(teaser ? ['Not for sale yet: ', ...richTiers(teaserWhy(shown))] : barred ? (shown.silhouette ? ['No car of this tier owned: tap a car in the lot to buy one'] : reasonNode()) : []));
+   action.title = owned ? 'Drive the ' + shown.name + ' as ' + sideName() + ', and stay in the garage' : '';
+   // (Use: the same, and back to the menu with it; a car not yet bought has none, only its Buy)
+   useBtn.style.display = owned ? '' : 'none';
+@@ -264,6 +283,7 @@ const refresh = () => {
+   lookRing.visible = !!looking && looking !== inUse;
+   for (const mesh of parked) {
+     const car = mesh.userData.car;
++    if (isTeaser(car)) continue; // (flat black, no ring, no tag)
+     paintShowCar(mesh, car, Garage.evil);
+     mesh.userData.tag.visible = !Progress.owns(car.id);
+     if (car === inUse) ring.position.set(mesh.position.x, 0.12, mesh.position.z);
+@@ -333,7 +353,7 @@ const take = async (leave) => {
+   // (on the Car ideas tab the button is that lot's "Drive it": the idea looked at there. It is free and always
+   // open, so there is nothing to buy; it becomes the car in use just as a garage car does)
+   const car = IdeasLot.on ? IdeasLot.looking : looking || CAR;
+-  if (!car) return;
++  if (!car || isTeaser(car)) return; // (a silhouette of the next tier: not for sale, not to be picked)
+   if (!carAllowedOn(car, Garage.evil)) { refresh(); return; } // (the level's car rule, on the side on show: guarded here, not only by the lot)
+   const same = car.id === carInUse().id && Garage.evil === Game.evil;
+   if (same && !leave) return;
+@@ -462,6 +482,7 @@ export const Garage = {
+     carAtOpen = CAR;
+     sideAtOpen = Game.evil;
+     Game.inMenu = true; // Enter must not start a run from here
++    Nav.enter('garage', () => this.close()); // (the back button closes it)
+     ui.classList.remove('hidden');
+     startScreen.classList.add('hidden');
+     document.body.classList.add('in-garage');
+@@ -475,6 +496,7 @@ export const Garage = {
+     measure();
+   },
+   close() {
++    Nav.leave('garage');
+     setViewSide(null); // (the car rule goes by the side being played again)
+     // a different car: tell the rest of the game (the player gets into it when a run starts)
+     window.dispatchEvent(new Event('carchange')); // (always: the side on show may have put the car in use under another rule than the one being played; the menu draws itself again)
+@@ -536,7 +558,8 @@ export const Garage = {
+ 
+     if (hovered) {
+       const car = hovered.userData.car, owned = Progress.owns(car.id);
+-      tip.replaceChildren(...withStars(car), '  -  ' + (
++      if (isTeaser(car)) tip.replaceChildren('Locked car  ', tierStarsNode(carTier(car)));
++      else tip.replaceChildren(...withStars(car), '  -  ' + (
+         car.id === Progress.data.car ? 'in use'
+           : owned ? 'owned, click for its stats'
+             : money(car.price) + ', click for its stats'));
+diff --git a/src/delivery/render/garageview.js b/src/delivery/render/garageview.js
+index 086f78f..47a20b6 100644
+--- a/src/delivery/render/garageview.js
++++ b/src/delivery/render/garageview.js
+@@ -5,7 +5,7 @@
+ // it always has, every car in order of its stars.
+ import '../menus.css';
+ import { Progress } from '../progress.js';
+-import { blueStarsOpen, EARNED_CARS, carTier } from '../cars.js';
++import { blueStarsOpen, EARNED_CARS, carTier, isTeaser } from '../cars.js';
+ 
+ // (by: how two cars compare; none: as the garage has them, by stars and then price)
+ const SORTS = [
+@@ -19,8 +19,8 @@ const SORTS = [
+ const SHOWS = [
+   { id: 'all', name: 'All', has: () => true },
+   { id: 'owned', name: 'Owned', has: (car) => Progress.owns(car.id) },
+-  { id: 'sale', name: 'For sale', has: (car) => !Progress.owns(car.id) },
+-  { id: 'afford', name: 'Can afford', has: (car) => !Progress.owns(car.id) && Progress.data.money >= car.price },
++  { id: 'sale', name: 'For sale', has: (car) => !Progress.owns(car.id) && !isTeaser(car) },
++  { id: 'afford', name: 'Can afford', has: (car) => !Progress.owns(car.id) && !isTeaser(car) && Progress.data.money >= car.price },
+   { id: 'amphibious', name: 'Amphibious', has: (car) => !!car.amphibious },
+   { id: 'gold', name: 'Gold stars', has: (car) => !!car.tier && !car.blue && !car.amphibious && !car.earned, when: blueStarsOpen },
+   { id: 'blue', name: 'Blue stars', has: (car) => !!car.blue, when: blueStarsOpen },
+@@ -41,15 +41,18 @@ export const GarageView = {
+   GarageView.sort = SORTS.find(s => s.id === params.get('sort')) || GarageView.sort;
+   GarageView.show = SHOWS.find(s => s.id === params.get('show')) || GarageView.show;
+ }
++// a level that restricts the car parks the cars of its tier, and still the next tier's silhouettes (nobody can pick those)
++const inTier = (car) => GarageView.restrictTier === null || carTier(car) === GarageView.restrictTier || isTeaser(car);
+ // the cars to park, in order, out of the garage's own list (already in order of stars and price)
+ export const arrange = (cars) => {
+-  const shown = cars.filter(GarageView.show.has).filter(car => GarageView.restrictTier === null || carTier(car) === GarageView.restrictTier);
+-  return GarageView.sort.by ? shown.sort(GarageView.sort.by) : shown; // (a stable sort: ties stay in star order)
++  const shown = cars.filter(GarageView.show.has).filter(inTier);
++  // (a stable sort: ties stay in star order. The silhouettes of the next tier go last: their stats are not shown, so no sort may place them by those)
++  return GarageView.sort.by ? [...shown.filter(car => !isTeaser(car)).sort(GarageView.sort.by), ...shown.filter(isTeaser)] : shown;
+ };
+ 
+ // How many cars an option parks (out of the garage's own list, under the tier a level restricts to)
+ let carsOf = () => [];
+-const countOf = (choice) => carsOf().filter(car => (GarageView.restrictTier === null || carTier(car) === GarageView.restrictTier) && (!choice.has || choice.has(car))).length;
++const countOf = (choice) => carsOf().filter(car => inTier(car) && (!choice.has || choice.has(car))).length;
+ // The Show choices on offer: those the game has opened and that park at least one car (an option that returns no
+ // cars is not listed; the one in use is, so long as it parks some)
+ export const offered = () => SHOWS.filter(choice => (!choice.when || choice.when()) && countOf(choice) > 0);
+diff --git a/src/delivery/render/menustage.js b/src/delivery/render/menustage.js
+index 44d1e4f..48666a3 100644
+--- a/src/delivery/render/menustage.js
++++ b/src/delivery/render/menustage.js
+@@ -19,6 +19,7 @@ import { cargoCircleView } from './cargoview.js';
+ import { CARS, CAR, useLevelCar, earnedFor, amphibiousCars, stars, starColour } from '../cars.js';
+ import { Progress } from '../progress.js';
+ import { Tiers, tierStarsNode, richTiers } from '../tiers.js';
++import { Nav } from '../nav.js';
+ import { Game, formatTime, clockFor } from '../game.js';
+ import { medalFor, medalNeeds } from '../levelinfo.js';
+ import { Garage, makeShowCar, paintShowCar, IDEA_TAG } from './garage.js';
+@@ -442,10 +443,12 @@ const openSheet = (node, onClose) => {
+   onSheetClose = onClose || null;
+   node.classList.remove('hidden');
+   Game.inMenu = true;
++  Nav.enter('sheet', closeSheet); // (the back button closes it)
+   blip('menuPick');
+ };
+ const closeSheet = () => {
+   if (!sheet) return;
++  Nav.leave('sheet');
+   sheet.classList.add('hidden');
+   sheet = null;
+   Game.inMenu = false;
+diff --git a/src/delivery/render/milestones.js b/src/delivery/render/milestones.js
+index 6bcd348..98ba9f0 100644
+--- a/src/delivery/render/milestones.js
++++ b/src/delivery/render/milestones.js
+@@ -4,6 +4,7 @@
+ // ?milestones opens it straight away; ?milestones&unlock lights every plaque, for a look.
+ import { CONFIG } from '../config.js';
+ import { Progress } from '../progress.js';
++import { Nav } from '../nav.js';
+ import { Game } from '../game.js';
+ import { Message } from '../messages.js';
+ 
+@@ -64,12 +65,14 @@ export const MilestonesWall = {
+     build(pretend);
+     this.isOpen = true;
+     Game.inMenu = true; // (Enter must not start a run from here)
++    Nav.enter('milestones', () => this.close()); // (the back button closes it)
+     panel.classList.remove('hidden');
+     panel.scrollTop = 0;
+   },
+   close() {
+     if (!this.isOpen) return;
+     this.isOpen = false;
++    Nav.leave('milestones');
+     Game.inMenu = false;
+     panel.classList.add('hidden');
+   },
+diff --git a/src/delivery/tiers.js b/src/delivery/tiers.js
+index 83001db..3eea61d 100644
+--- a/src/delivery/tiers.js
++++ b/src/delivery/tiers.js
+@@ -7,7 +7,7 @@
+ // time on that side (Progress.bestTime), so an old save's best times are its medals, and no save is lost.
+ //   - a tier opens when the one before is cleared (its last level delivered on either side). Tier 1 is open.
+ //     Blue 1 is tier 6: it opens when level 5 of the five-star tier is beaten.
+-//   - inside a tier: levels 1 and 2 are open with it; 3 needs 2 medals, in this tier; 4 needs 4 medals; 5 needs level 4 beaten (a level further on needs the one before it)
++//   - inside a tier: levels 1 and 2 are open with it; 3 needs 2 medals, in this tier; 4 needs 3 medals; 5 needs level 4 beaten (a level further on needs the one before it)
+ //   - a medal not yet earned can only be played in a car of EXACTLY that tier (the same stars and colour of
+ //     stars; none of the cars outside the tiers). Earned, the level can be replayed on that side in any car
+ //   - a level the owner has listed "outside" the tiers has no medal rule and no car rule. They open one after
+@@ -138,7 +138,7 @@ export const Tiers = {
+     const list = TIERS[place.index];
+     if (place.pos <= 2) return null;
+     if (place.pos === 3) return { medals: 2 };
+-    if (place.pos === 4) return { medals: 4 };
++    if (place.pos === 4) return { medals: 3 };
+     return { level: list[place.pos - 2] }; // (the one before it)
+   },
+   isOpen(level) {
+@@ -206,6 +206,16 @@ setTierHooks({
+   // (held for the whole of a run and its results: delivering a level earns its medal and ends the rule, which
+   // must not change the car the run's finish animation draws mid-way: Game.start sets `hold`, Game.toMenu clears it)
+   restricted: (evil) => { try { return Tiers.hold ? Tiers.hold.tier : Tiers.on() ? Tiers.restriction(currentLevel(), evil ?? Tiers.sideIsEvil()) : null; } catch { return null; } },
++  // the garage's view of a car (the owner, 11-Oct): the cars of the tiers open are shown; those of the very next tier are
++  // black silhouettes nobody can buy; those further on are not there. A car the player owns, or in no tier (earned,
++  // amphibious), is shown whatever its tier. null: the tiers are off
++  preview: (car) => {
++    if (!Tiers.on()) return null;
++    const t = carTier(car);
++    if (t === null || Progress.owns(car.id)) return 'show';
++    const open = TIER_NUMBERS.filter(n => Tiers.tierOpen(n)).pop() || 1;
++    return t <= open ? 'show' : t === open + 1 ? 'teaser' : 'hide';
++  },
+   blueOpen: () => Tiers.on() ? Tiers.tierOpen(6) || Tiers.legacy() > CONFIG.blueStarsAfter : null,
+ });
+ const currentLevel = () => LEVEL; // (the live binding: the level picked)

@@ -1,0 +1,82 @@
+{
+  "id": "flood",
+  "theme": "flooded",
+  "flow": "north",
+  "amphibious": true,
+  "clock": { "good": 225, "evil": 170 },
+  "tip": 280,
+  "lanes": 3,
+  "traffic": { "commuter": 0.22, "darkvan": 0.14, "taxi": 0.12, "van": 0.1, "bus": 0.08, "floatvan": 0.14, "toybota": 0.1, "nissank": 0.08, "dinghy": 0.34, "pedalo": 0.16, "barge": 0.16 },
+  "trafficCount": 16,
+  "oncomingCount": 0,
+  "trafficSpeed": { "min": 10, "max": 16 },
+  "segments": [
+    { "length": 500, "curve": 0 },
+    { "length": 300, "curve": -0.0025 },
+    { "length": 450, "curve": 0 },
+    { "length": 300, "curve": 0.003 },
+    { "length": 550, "curve": 0 },
+    { "length": 250, "curve": -0.002 },
+    { "length": 400, "curve": 0 },
+    { "length": 250, "curve": 0.0022 },
+    { "length": 300, "curve": 0 }
+  ],
+  "water": [
+    { "from": -100, "to": 640 },
+    { "from": 980, "to": 1720, "current": -2 },
+    { "from": 2200, "to": 2760, "current": 2.4 },
+    { "from": 3080, "to": 3500 }
+  ],
+  "waterMains": [
+    { "s": 760, "lane": 1 },
+    { "s": 880, "lane": 2 },
+    { "s": 1850, "lane": 0 },
+    { "s": 2020, "lane": 1 },
+    { "s": 2900, "lane": 2 }
+  ],
+  "potholes": [
+    { "s": 720, "lane": 2, "r": 1 },
+    { "s": 1800, "lane": 1, "r": 0.9 },
+    { "s": 1960, "lane": 2, "r": 1.1 },
+    { "s": 2860, "lane": 0, "r": 0.9 }
+  ],
+  "trolleys": [
+    { "from": 1780, "to": 2100, "count": 6 },
+    { "from": 2820, "to": 3020, "count": 4 }
+  ],
+  "wreckage": [
+    { "at": 2060, "kind": "containers", "lanes": [0, 0], "from": "left" }
+  ],
+  "parked": [
+    { "s": 700, "side": "right" },
+    { "s": 1900, "side": "left" },
+    { "s": 2950, "side": "right" }
+  ],
+  "targets": [
+    { "s": 820, "side": "left" },
+    { "s": 1900, "side": "right" },
+    { "s": 2940, "side": "left" }
+  ],
+  "pickups": [
+    { "type": "cash10", "s": 180, "lane": 1 },
+    { "type": "turbo", "s": 420, "lane": 2 },
+    { "type": "wrench", "s": 820, "lane": 0 },
+    { "type": "cash20", "s": 1120, "lane": 0 },
+    { "type": "mystery", "s": 1350, "lane": 1 },
+    { "type": "timePlus", "s": 1600, "lane": 2 },
+    { "type": "armour", "s": 1840, "lane": 2 },
+    { "type": "wrench", "s": 2140, "lane": 1 },
+    { "type": "cash20", "s": 2420, "lane": 0 },
+    { "type": "ghost", "s": 2620, "lane": 2 },
+    { "type": "turbo", "s": 2800, "lane": 1 },
+    { "type": "timePlus", "s": 3020, "lane": 0 },
+    { "type": "cash10", "s": 3260, "lane": 2 }
+  ],
+  "obstacles": [
+    { "s": 690, "lane": 0, "kind": "barrier" },
+    { "s": 930, "lane": 1, "kind": "sign" },
+    { "s": 1760, "lane": 2, "kind": "cone" },
+    { "s": 1772, "lane": 2, "kind": "cone" },
+    { "s": 3040, "lane": 1, "kind": "barrier" }
+  ]
+}

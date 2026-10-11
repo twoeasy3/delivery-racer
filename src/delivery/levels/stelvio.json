@@ -1,0 +1,111 @@
+{
+  "id": "stelvio",
+  "name": "Stelvio Pass",
+  "description": {
+    "good": "The great alpine pass in the cold: ice on the bends, rockfall off the walls and fog near the top. Slow in, slow out, parcel intact.",
+    "evil": "Ice, fog and half the mountain coming down on a road of careful drivers. Overtake every one of them on the outside."
+  },
+  "theme": "snow",
+  "clock": { "good": 300, "evil": 230 },
+  "tip": 220,
+  "lanes": 2,
+  "traffic": { "wagon": 0.25, "commuter": 0.25, "van": 0.2, "darkvan": 0.15, "suv": 0.15 },
+  "trafficZones": [
+    { "from": 0, "to": 1500, "traffic": { "police": 0.03 } },
+    { "from": 3200, "to": 4300, "traffic": { "police": 0.03 } }
+  ],
+  "trafficCount": 5,
+  "oncomingCount": 6,
+  "segments": [
+    { "length": 260, "curve": 0 },
+    { "length": 220, "curve": 0, "grade": 0.07 },
+    { "length": 56, "curve": -0.0560999, "grade": 0.04 },
+    { "length": 200, "curve": 0, "grade": 0.07 },
+    { "length": 56, "curve": 0.0560999, "grade": 0.04 },
+    { "length": 220, "curve": 0, "grade": 0.07 },
+    { "length": 56, "curve": -0.0560999, "grade": 0.04 },
+    { "length": 180, "curve": 0, "grade": 0.07 },
+    { "length": 56, "curve": 0.0560999, "grade": 0.04 },
+    { "length": 240, "curve": 0, "grade": 0.07 },
+    { "length": 56, "curve": -0.0560999, "grade": 0.04 },
+    { "length": 200, "curve": 0, "grade": 0.07 },
+    { "length": 56, "curve": 0.0560999, "grade": 0.04 },
+    { "length": 260, "curve": 0, "grade": 0.05 },
+    { "length": 300, "curve": 0.004 },
+    { "length": 220, "curve": 0, "grade": -0.07 },
+    { "length": 56, "curve": -0.0560999, "grade": -0.04 },
+    { "length": 200, "curve": 0, "grade": -0.07 },
+    { "length": 56, "curve": 0.0560999, "grade": -0.04 },
+    { "length": 220, "curve": 0, "grade": -0.07 },
+    { "length": 56, "curve": -0.0560999, "grade": -0.04 },
+    { "length": 180, "curve": 0, "grade": -0.07 },
+    { "length": 56, "curve": 0.0560999, "grade": -0.04 },
+    { "length": 240, "curve": 0, "grade": -0.07 },
+    { "length": 56, "curve": -0.0560999, "grade": -0.04 },
+    { "length": 220, "curve": 0, "grade": -0.06 },
+    { "length": 260, "curve": 0 }
+  ],
+  "ice": [
+    { "from": 560, "to": 600 },
+    { "from": 1130, "to": 1170, "lane": 1 },
+    { "from": 1700, "to": 1740 },
+    { "from": 2900, "to": 2940 },
+    { "from": 3480, "to": 3520, "lane": 0 },
+    { "from": 3760, "to": 3800 }
+  ],
+  "rockfall": [
+    { "from": 290, "to": 440, "count": 5, "side": "left" },
+    { "from": 570, "to": 700, "count": 5, "side": "right" },
+    { "from": 1100, "to": 1210, "count": 6, "side": "right" },
+    { "from": 1345, "to": 1500, "count": 6, "side": "left" },
+    { "from": 2985, "to": 3125, "count": 5, "side": "right" },
+    { "from": 3500, "to": 3660, "count": 6, "side": "right" }
+  ],
+  "fog": [
+    { "from": 2440, "to": 2760 }
+  ],
+  "crosswinds": [
+    { "from": 2120, "to": 2400, "dir": "left" }
+  ],
+  "targets": [
+    { "s": 1000, "side": "right" },
+    { "s": 2450, "side": "left" },
+    { "s": 3900, "side": "right" }
+  ],
+  "pickups": [
+    { "type": "turbo", "s": 180, "lane": 1 },
+    { "type": "armour", "s": 520, "lane": 1 },
+    { "type": "wrench", "s": 1000, "lane": 1 },
+    { "type": "ghost", "s": 1500, "lane": 1 },
+    { "type": "timePlus", "s": 1900, "lane": 1 },
+    { "type": "mystery", "s": 2300, "lane": 1 },
+    { "type": "wrench", "s": 2800, "lane": 1 },
+    { "type": "armour", "s": 3300, "lane": 1 },
+    { "type": "timePlus", "s": 3650, "lane": 1 },
+    { "type": "turbo", "s": 4000, "lane": 1 },
+    { "type": "timePlus", "s": 880, "lane": 0 },
+    { "type": "turbo", "s": 1700, "lane": 0 },
+    { "type": "passenger", "s": 2260, "lane": 0 },
+    { "type": "timePlus", "s": 3320, "lane": 0 },
+    { "type": "cash5", "s": 120, "lane": 1 },
+    { "type": "cash5", "s": 340, "lane": 1 },
+    { "type": "cash10", "s": 340, "lane": 0 },
+    { "type": "cash5", "s": 640, "lane": 1 },
+    { "type": "cash5", "s": 880, "lane": 1 },
+    { "type": "cash10", "s": 1160, "lane": 1 },
+    { "type": "cash10", "s": 1420, "lane": 0 },
+    { "type": "cash5", "s": 1420, "lane": 1 },
+    { "type": "cash5", "s": 1700, "lane": 1 },
+    { "type": "cash5", "s": 2020, "lane": 1 },
+    { "type": "cash10", "s": 2260, "lane": 1 },
+    { "type": "cash20", "s": 2380, "lane": 0 },
+    { "type": "cash10", "s": 2590, "lane": 1 },
+    { "type": "cash20", "s": 2800, "lane": 0 },
+    { "type": "cash10", "s": 3080, "lane": 0 },
+    { "type": "cash5", "s": 3320, "lane": 1 },
+    { "type": "cash20", "s": 3500, "lane": 0 },
+    { "type": "cash5", "s": 3850, "lane": 1 },
+    { "type": "cash10", "s": 3850, "lane": 0 },
+    { "type": "cash5", "s": 4120, "lane": 1 }
+  ]
+}

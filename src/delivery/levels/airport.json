@@ -1,0 +1,62 @@
+{
+  "id": "airport",
+  "theme": "airport",
+  "flow": "north",
+  "lanes": 4,
+  "shoulderTimer": false,
+  "clock": { "good": 210, "evil": 149 },
+  "tip": 260,
+  "traffic": { "darkvan": 0.3, "taxi": 0.2, "van": 0.15, "bus": 0.15, "commuter": 0.2 },
+  "trafficCount": 14,
+  "oncomingCount": 0,
+  "segments": [
+    { "length": 600, "curve": 0 },
+    { "length": 300, "curve": 0.001 },
+    { "length": 550, "curve": 0 },
+    { "length": 236, "curve": -0.0066559 },
+    { "length": 2014, "curve": 0 }
+  ],
+  "runway": { "from": 1686, "width": 16 },
+  "tower": { "at": 1450, "trigger": 230, "distance": 150, "stub": 360 },
+  "wreckage": [
+    { "at": 250, "kind": "blast", "lanes": [3, 3], "from": "right" },
+    { "at": 450, "kind": "containers", "lanes": [2, 3], "from": "right" },
+    { "at": 620, "kind": "blast", "lanes": [0, 0], "from": "left", "ahead": 2.2 },
+    { "at": 800, "kind": "tanker", "lanes": [0, 1], "from": "left" },
+    { "at": 980, "kind": "blast", "lanes": [2, 3], "from": "right" },
+    { "at": 1150, "kind": "hangar", "lanes": [1, 2], "from": "left" },
+    { "at": 1260, "kind": "blast", "lanes": [0, 1], "from": "left" },
+    { "at": 1350, "kind": "plane", "lanes": [2, 3], "from": "sky" },
+    { "at": 1880, "kind": "blast", "lanes": [0, 0], "from": "left", "distance": 30 },
+    { "at": 2050, "kind": "tanker", "lanes": [2, 3], "from": "right" },
+    { "at": 2250, "kind": "blast", "lanes": [3, 3], "from": "right", "distance": 30, "ahead": 2.2 },
+    { "at": 2450, "kind": "containers", "lanes": [0, 1], "from": "left" },
+    { "at": 2700, "kind": "blast", "lanes": [0, 1], "from": "left", "distance": 30 },
+    { "at": 3000, "kind": "airliner", "lanes": [1, 2], "from": "sky", "slide": 160, "trigger": 120 },
+    { "at": 3300, "kind": "blast", "lanes": [2, 3], "from": "right", "distance": 30 },
+    { "at": 3450, "kind": "hangar", "lanes": [0, 2], "from": "left" }
+  ],
+  "parkedPlanes": [
+    { "s": 300, "d": 40, "turn": 0.6 },
+    { "s": 650, "d": 45, "turn": -0.5 },
+    { "s": 1000, "d": 40, "turn": 0.8 }
+  ],
+  "targets": [
+    { "s": 500, "side": "left" },
+    { "s": 1200, "side": "right" },
+    { "s": 2300, "side": "left" },
+    { "s": 3300, "side": "right" }
+  ],
+  "pickups": [
+    { "type": "turbo", "s": 250, "lane": 1 },
+    { "type": "wrench", "s": 650, "lane": 2 },
+    { "type": "ghost", "s": 1000, "lane": 1 },
+    { "type": "timePlus", "s": 1600, "lane": 1 },
+    { "type": "wrench", "s": 1900, "lane": 0 },
+    { "type": "turbo", "s": 2080, "lane": 3 },
+    { "type": "mystery", "s": 2350, "lane": 2 },
+    { "type": "ghost", "s": 2750, "lane": 3 },
+    { "type": "timePlus", "s": 3200, "lane": 0 },
+    { "type": "turbo", "s": 3600, "lane": 1 }
+  ]
+}

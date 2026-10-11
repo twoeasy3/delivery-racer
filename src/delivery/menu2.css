@@ -1,0 +1,366 @@
+/* The start screen as a game's front end (render/menustage.js draws it; its markup is #startScreen in
+   delivery/index.html). One screen that fits the window: nothing in it scrolls but a sheet's own body.
+   Everything is under #startScreen, so none of it reaches the garage, the album or the results screen (which
+   keep style.css's .overlay look). The accent colour is Good's gold, or Evil's red (#startScreen.evil). */
+#startScreen {
+  --accent: #ffd23f; --accent-ink: #1c1500; --accent-glow: rgba(255, 210, 63, .42); --accent-dim: rgba(255, 210, 63, .14);
+  --panel: rgba(20, 25, 36, .9); --panel-2: rgba(34, 41, 56, .92); --line: rgba(255, 255, 255, .11); --ink-dim: rgba(255, 255, 255, .66);
+  --gold: #ffcf3a; --silver: #cfd6df; --bronze: #c9814a;
+  --display: "Bahnschrift", "DIN Alternate", "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
+  grid-template-columns: minmax(0, 1fr) clamp(250px, 27vw, 400px);
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  grid-template-areas: "top top" "groups side" "stage side" "strip side" "keys keys";
+  gap: 10px 14px; padding: 10px max(18px, env(safe-area-inset-right)) 8px max(18px, env(safe-area-inset-left));
+  align-items: stretch; justify-content: stretch; text-align: left; overflow: hidden; touch-action: manipulation;
+  background: #0b0f16; font-size: 14px;
+}
+#startScreen.evil { --accent: #ff4a33; --accent-ink: #fff; --accent-glow: rgba(255, 64, 40, .5); --accent-dim: rgba(255, 64, 40, .16); }
+#startScreen:not(.hidden) { display: grid; }
+#startScreen > * { position: relative; z-index: 1; min-width: 0; min-height: 0; }
+#startScreen button { font: inherit; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; color: inherit; cursor: pointer; }
+#startScreen a.menu-chip { text-decoration: none; cursor: pointer; }
+#startScreen button:disabled { cursor: default; }
+#startScreen :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+#startScreen p { margin: 0; max-width: none; opacity: 1; }
+
+/* ---- the backdrop: a dark road at night, light sweeping across it (CSS only: nothing of a level is built) ---- */
+#startScreen .menu-backdrop { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+#startScreen .menu-backdrop i { position: absolute; inset: -20%; }
+#startScreen .menu-backdrop i:first-child { background:
+  radial-gradient(60% 55% at 78% 8%, var(--accent-dim), transparent 70%),
+  radial-gradient(50% 60% at 6% 96%, rgba(60, 110, 220, .2), transparent 70%); }
+#startScreen .menu-backdrop i:last-child { background: repeating-linear-gradient(112deg, transparent 0 118px, rgba(255, 255, 255, .035) 118px 121px, transparent 121px 300px, rgba(255, 255, 255, .02) 300px 340px);
+  animation: menu-sweep 9s linear infinite; }
+@keyframes menu-sweep { to { transform: translateX(367px); } }
+
+/* ---- the top: the title, the tabs, the bank, the options ---- */
+#startScreen .menu-top { grid-area: top; display: flex; align-items: center; gap: 16px; }
+#startScreen h1 { margin: 0; font: italic 800 30px/1 var(--display); font-stretch: condensed; letter-spacing: .02em; text-transform: uppercase; white-space: nowrap;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, .5); }
+#startScreen h1 em { color: var(--accent); font-style: inherit; }
+#startScreen .menu-tabs { display: flex; gap: 4px; margin-left: 6px; }
+#startScreen .menu-tabs button { padding: 8px 22px 7px; font: italic 700 18px/1 var(--display); font-stretch: condensed; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-dim); background: var(--panel); clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
+#startScreen .menu-tabs button:hover { color: #fff; background: var(--panel-2); }
+#startScreen .menu-tabs button.current { background: var(--accent); color: var(--accent-ink); }
+#startScreen #bank { margin-left: auto; display: flex; align-items: baseline; gap: 8px; font: 700 22px/1 var(--display); color: var(--accent); font-variant-numeric: tabular-nums; }
+#startScreen #bank small { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); }
+#startScreen .menu-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px; border-radius: 7px; font-size: 13px; font-weight: 700; letter-spacing: .03em;
+  background: var(--panel-2); color: #fff; box-shadow: inset 0 0 0 1px var(--line); transition: background .15s, box-shadow .15s, transform .1s; }
+#startScreen .menu-chip:hover { background: #3a455c; box-shadow: inset 0 0 0 1px var(--accent); }
+#startScreen .menu-chip:active { transform: translateY(1px); }
+#startScreen .menu-chip i { font-style: normal; font-size: 15px; line-height: 1; }
+#startScreen .menu-chip.danger:hover { background: #7a1f1f; }
+
+/* ---- the groups: the tab's levels five at a time ---- */
+#startScreen .menu-groups { grid-area: groups; display: flex; gap: 5px; overflow-x: auto; scrollbar-width: none; touch-action: pan-x; padding: 2px 0; }
+#startScreen .menu-groups::-webkit-scrollbar { display: none; }
+#startScreen .menu-groups button { flex: 0 0 auto; min-width: 58px; padding: 6px 14px 5px; font: 700 15px/1 var(--display); letter-spacing: .04em; text-align: center; white-space: nowrap;
+  color: var(--ink-dim); background: var(--panel); box-shadow: inset 0 -2px 0 var(--line); border-radius: 5px; }
+#startScreen .menu-groups button:hover { color: #fff; background: var(--panel-2); }
+#startScreen .menu-groups button.current { color: #fff; background: var(--panel-2); box-shadow: inset 0 -3px 0 var(--accent); }
+#startScreen .menu-groups button.locked { opacity: .5; }
+
+/* ---- the stage: the level picked, large ---- */
+#startScreen .menu-stage { grid-area: stage; position: relative; overflow: hidden; border-radius: 14px; background: #161b26; touch-action: pan-y;
+  box-shadow: 0 0 0 1px var(--line), 0 14px 40px rgba(0, 0, 0, .55); display: flex; flex-direction: column; justify-content: flex-end; }
+#startScreen .menu-stage .shot { position: absolute; inset: 0; background: #1d2330 center / cover no-repeat; animation: stage-drift 24s ease-in-out infinite alternate; }
+#startScreen .menu-stage::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(8, 11, 17, .5) 0, transparent 26%, transparent 34%, rgba(8, 11, 17, .82) 66%, rgba(8, 11, 17, .96) 100%); }
+#startScreen .menu-stage > :not(.shot) { z-index: 2; }
+#startScreen .menu-stage.locked .shot { filter: grayscale(1) brightness(.5); }
+/* (a level with no picture yet: the road's own stripes, in the accent colour) */
+#startScreen .menu-stage .shot.none, #startScreen .menu-strip .thumb.none { background: repeating-linear-gradient(112deg, #1a2030 0 46px, #202839 46px 92px), #1a2030; }
+#startScreen .menu-stage .shot.none::after { content: ""; position: absolute; left: 50%; top: 8%; bottom: 30%; width: 8px; margin-left: -4px; background: repeating-linear-gradient(180deg, var(--accent) 0 34px, transparent 34px 70px); opacity: .5; transform: perspective(300px) rotateX(50deg); }
+@keyframes stage-drift { from { transform: scale(1.03) translateX(-.8%); } to { transform: scale(1.09) translateX(.8%); } }
+#startScreen .menu-stage.enter .shot { animation: stage-shot-in .28s ease-out, stage-drift 24s ease-in-out .28s infinite alternate; }
+#startScreen .menu-stage.enter .info, #startScreen .menu-stage.enter .plate, #startScreen .menu-stage.enter .ribbon, #startScreen .menu-stage.enter .cargo3d { animation: stage-in .24s ease-out; }
+#startScreen .menu-stage.flip .desc, #startScreen .menu-stage.flip .facts { animation: stage-in .2s ease-out; }
+@keyframes stage-in { from { opacity: 0; transform: translateX(18px); } }
+@keyframes stage-shot-in { from { opacity: .2; transform: scale(1.12); } }
+/* its number, on a plate in the corner */
+#startScreen .menu-stage .plate { position: absolute; top: 0; left: 0; display: flex; align-items: baseline; gap: 8px; padding: 8px 30px 7px 16px;
+  background: var(--accent); color: var(--accent-ink); clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%); font-family: var(--display); font-stretch: condensed; }
+#startScreen .menu-stage .plate small { font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+#startScreen .menu-stage .plate b { font-size: 26px; font-style: italic; line-height: 1; }
+/* its ribbon: two halves, Good's on the left and Evil's on the right, each with the medal its best time earned */
+#startScreen .menu-stage .ribbon { position: absolute; top: 10px; right: 12px; display: flex; border-radius: 8px; overflow: hidden; box-shadow: 0 0 0 1px var(--line), 0 4px 14px rgba(0, 0, 0, .5); }
+#startScreen .menu-stage .ribbon .half { display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; column-gap: 7px; align-items: center; padding: 5px 12px 5px 9px;
+  background: rgba(14, 18, 26, .86); font-variant-numeric: tabular-nums; }
+#startScreen .menu-stage .ribbon .half + .half { border-left: 1px solid var(--line); }
+#startScreen .menu-stage .ribbon .half.good { box-shadow: inset 0 3px 0 #ffd23f; }
+#startScreen .menu-stage .ribbon .half.evil { box-shadow: inset 0 3px 0 #ff4a33; }
+#startScreen .menu-stage .ribbon .medal { grid-row: 1 / 3; width: 20px; height: 20px; border-radius: 50%; background: rgba(255, 255, 255, .08); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .16); }
+#startScreen .menu-stage .ribbon small { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); line-height: 1.1; }
+#startScreen .menu-stage .ribbon b { font: 700 15px/1.1 var(--display); }
+#startScreen .menu-stage .ribbon .gold .medal, #startScreen .pips i.gold { background: radial-gradient(circle at 35% 30%, #fff3b0, var(--gold) 55%, #b98a00); box-shadow: 0 0 8px rgba(255, 207, 58, .6); }
+#startScreen .menu-stage .ribbon .silver .medal, #startScreen .pips i.silver { background: radial-gradient(circle at 35% 30%, #fff, var(--silver) 55%, #7d8794); box-shadow: none; }
+#startScreen .menu-stage .ribbon .bronze .medal, #startScreen .pips i.bronze { background: radial-gradient(circle at 35% 30%, #f3c39b, var(--bronze) 55%, #7a4420); box-shadow: none; }
+/* its cargo: the HUD's round window (cargohud.css: the rim, the glass), its name under it, below the ribbon */
+#startScreen .menu-stage .cargo3d { position: absolute; top: 60px; right: 62px; width: 128px; display: flex; flex-direction: column; align-items: center; gap: 5px; pointer-events: none; }
+#startScreen .menu-stage .cargo3d .ring { display: block; width: 104px; height: 104px; box-sizing: border-box; border-radius: 50%; overflow: hidden;
+  border: 3px solid rgba(255, 255, 255, .8); background: rgba(10, 14, 20, .5); box-shadow: 0 2px 8px rgba(0, 0, 0, .35); }
+#startScreen .menu-stage .cargo3d .cargo-name { font: 800 11px/1.15 system-ui, sans-serif; letter-spacing: .04em; text-transform: uppercase; text-align: center; text-shadow: 0 1px 3px rgba(0, 0, 0, .9); }
+/* its name, its description for the side picked, its figures */
+#startScreen .menu-stage .info { position: relative; display: flex; flex-direction: column; gap: 7px; padding: 0 58px 14px 20px; }
+#startScreen .menu-stage h2 { margin: 0; opacity: 1; font: italic 800 clamp(28px, 4.4vw, 58px)/.95 var(--display); font-stretch: condensed; letter-spacing: .01em; text-transform: uppercase;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, .55), 0 0 26px rgba(0, 0, 0, .6); }
+#startScreen .menu-stage .desc { max-width: 62ch; font-size: 15px; line-height: 1.38; color: #eef1f6; text-shadow: 0 1px 2px #000; border-left: 3px solid var(--accent); padding-left: 10px; }
+#startScreen .menu-stage .facts { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px 8px; margin-top: 2px; }
+#startScreen .menu-stage .fact { display: flex; flex-direction: column; gap: 1px; padding: 5px 12px 5px; border-radius: 7px; background: rgba(14, 18, 26, .78); box-shadow: inset 0 0 0 1px var(--line);
+  font: 700 17px/1.1 var(--display); font-variant-numeric: tabular-nums; }
+#startScreen .menu-stage .fact small { font: 700 10px/1.1 system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+#startScreen .menu-stage .needs, #startScreen .menu-stage .prize { font-size: 13px; font-weight: 600; color: #dfe5ee; text-shadow: 0 1px 2px #000; }
+#startScreen .menu-stage .needs::before { content: "\25B8\00a0"; color: var(--accent); }
+#startScreen .menu-stage .needs.warn { color: #ffb4a8; }
+#startScreen .menu-stage .prize::before { content: "\2605\00a0"; color: #ff5fd2; }
+#startScreen .menu-stage.locked .needs { font-size: 15px; }
+#startScreen .menu-stage .info .road { align-self: flex-start; margin-top: 2px; }
+/* a step to the level either side */
+#startScreen .menu-stage .arrow { position: absolute; top: 56px; width: 38px; height: 46px; border-radius: 8px; font: 700 34px/1 var(--display); color: #fff;
+  background: rgba(14, 18, 26, .6); box-shadow: inset 0 0 0 1px var(--line); transition: background .15s, transform .15s; }
+#startScreen .menu-stage .arrow.prev { left: 8px; }
+#startScreen .menu-stage .arrow.next { right: 8px; }
+#startScreen .menu-stage .arrow:hover:not(:disabled) { background: var(--accent); color: var(--accent-ink); }
+#startScreen .menu-stage .arrow:disabled { opacity: .18; }
+
+/* ---- the strip: the other levels of the group ---- */
+#startScreen .menu-strip { grid-area: strip; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; touch-action: pan-x; padding: 4px 2px 2px; scroll-snap-type: x proximity; }
+#startScreen .menu-strip::-webkit-scrollbar { display: none; }
+#startScreen .menu-strip .thumb { position: relative; flex: 1 1 0; min-width: 96px; max-width: 230px; height: clamp(58px, 12vh, 92px); overflow: hidden; border-radius: 9px; scroll-snap-align: center;
+  background: #1d2330 center / cover no-repeat; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .12); opacity: .78; transition: transform .15s, opacity .15s, box-shadow .15s; }
+#startScreen .menu-strip .thumb::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8, 11, 17, .15) 30%, rgba(8, 11, 17, .9)); }
+#startScreen .menu-strip .thumb:hover { opacity: 1; transform: translateY(-2px); }
+#startScreen .menu-strip .thumb.current { opacity: 1; transform: translateY(-3px); box-shadow: inset 0 0 0 3px var(--accent), 0 6px 18px var(--accent-glow); }
+#startScreen .menu-strip .thumb b { position: absolute; top: 0; left: 0; padding: 3px 12px 2px 8px; font: italic 700 15px/1.1 var(--display); background: rgba(14, 18, 26, .85);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+#startScreen .menu-strip .thumb.current b { background: var(--accent); color: var(--accent-ink); }
+#startScreen .menu-strip .thumb .name { position: absolute; left: 8px; right: 6px; bottom: 5px; font: 700 13px/1.1 var(--display); letter-spacing: .02em; text-transform: uppercase; text-align: left;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px #000; }
+#startScreen .menu-strip .thumb .pips { position: absolute; top: 6px; right: 7px; display: flex; gap: 3px; }
+#startScreen .menu-strip .thumb .pips i { width: 10px; height: 10px; border-radius: 50%; }
+#startScreen .menu-strip .thumb .pips i.none { background: rgba(0, 0, 0, .45); box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .5); }
+#startScreen .menu-strip .thumb.locked { filter: grayscale(1); opacity: .5; }
+#startScreen .menu-strip .thumb.locked::after { content: "LOCKED"; position: absolute; top: 5px; right: 7px; font: 700 10px/1 system-ui, sans-serif; letter-spacing: .12em; color: #fff; opacity: .85; }
+#startScreen .menu-strip .thumb.locked.current { opacity: .8; }
+
+/* ---- beside the stage: the car, the side, START ---- */
+#startScreen .menu-side { grid-area: side; display: flex; flex-direction: column; gap: 9px; padding: 10px; border-radius: 14px; background: var(--panel);
+  box-shadow: 0 0 0 1px var(--line), 0 14px 40px rgba(0, 0, 0, .45); }
+#startScreen .car-card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 7px; text-align: left; border-radius: 10px; overflow: hidden; background: var(--panel-2);
+  box-shadow: inset 0 0 0 1px var(--line); transition: box-shadow .15s, transform .1s; }
+#startScreen .car-card:hover { box-shadow: inset 0 0 0 2px var(--accent); }
+#startScreen .car-card .picture { position: relative; flex: 1 1 60px; min-height: 54px; background: #f2f2f2 center / contain no-repeat; box-shadow: inset 0 -18px 22px -18px rgba(0, 0, 0, .35); }
+/* (the car's own model, drawn live into a canvas over the picture's box: render/menustage.js drawCar. Out of the flow, so its size never sets the box's) */
+#startScreen .car-card .picture canvas { position: absolute; inset: 0; }
+#startScreen .car-card .words { display: flex; flex-direction: column; gap: 4px; padding: 0 11px; }
+#startScreen .car-card strong { font: italic 800 21px/1.1 var(--display); font-stretch: condensed; text-transform: uppercase; letter-spacing: .02em; }
+#startScreen .car-card .stars { font-style: normal; font-size: 14px; letter-spacing: 0; }
+#startScreen .car-card .stat { display: grid; grid-template-columns: 46px minmax(0, 1fr) 62px; align-items: center; gap: 7px; font-size: 12px; }
+#startScreen .car-card .stat small { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
+#startScreen .car-card .stat .track { height: 7px; border-radius: 2px; background: rgba(255, 255, 255, .12); overflow: hidden; transform: skewX(-18deg); }
+#startScreen .car-card .stat .track i { display: block; height: 100%; background: var(--accent); transition: width .25s; }
+#startScreen .car-card .stat b { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#startScreen .car-card .go { padding: 6px 11px; font: 700 12px/1 system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); background: rgba(0, 0, 0, .25); }
+#startScreen .car-card .go::after { content: " \203A"; }
+#startScreen #raceMenu { display: flex; flex-wrap: wrap; gap: 5px; }
+#startScreen:not(.races) #raceMenu { display: none; }
+#startScreen #raceMenu .menu-chip { flex: 1 1 auto; justify-content: center; padding: 6px 8px; font-size: 12px; }
+#startScreen .side-box { display: flex; flex-direction: column; gap: 5px; }
+#startScreen .side-switch { display: flex; padding: 3px; gap: 3px; border-radius: 9px; background: rgba(0, 0, 0, .4); box-shadow: inset 0 0 0 1px var(--line); }
+#startScreen .side-switch button { flex: 1 1 0; padding: 8px 6px 7px; border-radius: 7px; font: italic 800 19px/1 var(--display); font-stretch: condensed; letter-spacing: .1em; text-transform: uppercase; text-align: center;
+  color: var(--ink-dim); }
+#startScreen .side-switch button:hover:not(:disabled) { color: #fff; }
+#startScreen .side-switch button:disabled { opacity: .3; }
+#startScreen .side-switch button.current[data-side="good"] { background: #ffd23f; color: #1c1500; box-shadow: 0 0 14px rgba(255, 210, 63, .4); }
+#startScreen .side-switch button.current[data-side="evil"] { background: #c8241a; color: #fff; box-shadow: 0 0 14px rgba(255, 64, 40, .5); }
+#startScreen #sideNote { min-height: 2.6em; font-size: 12px; line-height: 1.3; color: var(--ink-dim); text-align: center; }
+#startScreen #startBtn { flex: 0 0 auto; padding: 13px 10px 11px; background: var(--accent); color: var(--accent-ink); text-align: center;
+  clip-path: polygon(16px 0, 100% 0, calc(100% - 16px) 100%, 0 100%); font: italic 800 34px/1 var(--display); font-stretch: condensed; letter-spacing: .14em; text-transform: uppercase;
+  transition: transform .1s, filter .15s; animation: start-pulse 1.6s ease-in-out infinite; }
+#startScreen #startBtn:hover:not(:disabled) { filter: brightness(1.12); transform: scale(1.02); }
+#startScreen #startBtn:active:not(:disabled) { transform: scale(.98); }
+#startScreen #startBtn:disabled { background: #39414f; color: rgba(255, 255, 255, .5); animation: none; }
+@keyframes start-pulse { 50% { filter: brightness(1.14) drop-shadow(0 0 10px var(--accent-glow)); } }
+
+/* ---- the keys, along the foot (where there is a keyboard) ---- */
+#startScreen .menu-keys { grid-area: keys; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; font-size: 12px; color: var(--ink-dim); max-height: 20px; overflow: hidden; }
+#startScreen .menu-keys kbd { display: inline-block; margin-right: 6px; padding: 1px 6px; border-radius: 4px; font: 700 11px/1.5 system-ui, sans-serif; color: #fff; background: var(--panel-2); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .4), inset 0 0 0 1px var(--line); }
+@media (pointer: coarse) { #startScreen .menu-keys { display: none; } }
+
+/* ---- a sheet over the menu: the options and extras; the road card ---- */
+#startScreen .menu-sheet { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; padding: 18px; background: rgba(5, 8, 12, .78); }
+#startScreen .menu-sheet.hidden { display: none; }
+#startScreen .sheet-box { display: flex; flex-direction: column; width: min(1040px, 100%); max-height: 100%; border-radius: 14px; background: #171c27; box-shadow: 0 0 0 1px var(--line), 0 0 0 3px rgba(0, 0, 0, .4), 0 24px 70px rgba(0, 0, 0, .7);
+  animation: sheet-in .18s ease-out; overflow: hidden; }
+@keyframes sheet-in { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+#startScreen .sheet-bar { flex: 0 0 auto; display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 18px; background: var(--panel-2); box-shadow: inset 0 -3px 0 var(--accent); }
+#startScreen .sheet-bar h2 { flex: 1 1 auto; margin: 0; opacity: 1; font: italic 800 24px/1 var(--display); font-stretch: condensed; letter-spacing: .04em; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#startScreen .sheet-bar h2 small { margin-left: 10px; font: 700 12px/1 system-ui, sans-serif; letter-spacing: .14em; color: var(--accent); }
+#startScreen .sheet-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding: 14px 18px 18px;
+  scrollbar-width: thin; scrollbar-color: #4a556b transparent; }
+#startScreen .options { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px 22px; }
+#startScreen .options section { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; }
+#startScreen .options h3 { flex: 0 0 100%; margin: 0 0 2px; font: 700 12px/1 system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+#startScreen .options .howto { grid-column: 1 / -1; }
+#startScreen .options .howto p { font-size: 13px; line-height: 1.55; color: #d5dbe5; columns: 2 320px; column-gap: 26px; }
+
+/* ---- a phone held upright, or a narrow window: one column (stage, strip, then the car and the side). Not a
+   phone on its side (wider than 520, no taller than 520: the short window's two columns, below) ---- */
+@media (max-width: 760px) and (min-height: 521px), (max-width: 519px) {
+  /* The heights, added up (px; H = the screen's height): padding 8 + 10; four gaps of 6 = 24; the top 65 (the
+     title's line 30 at most, a gap of 6, the tabs 29); the groups 32; the strip 56; the car, the side and START 102
+     (6 + a row of 44 + 6 + START 40 + 6). 297 in all, so the stage gets H - 297: 323 at 360x620, 403 at 390x700,
+     463 at 430x760 (31 less on the Races tab, which has a row of its own). It was 65, 145 and 200, and its words
+     (about 200 tall, anchored to its foot) ran off its top. The stage is never less than 210: on a screen too
+     short for that the menu scrolls, where it would have cut START off */
+  #startScreen { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(210px, 1fr) auto auto;
+    grid-template-areas: "top" "groups" "stage" "strip" "side"; gap: 6px; padding: 8px 10px max(26px, calc(env(safe-area-inset-bottom) + 14px)); /* (26 under START: the owner, 11-Oct) */
+    bottom: auto; height: 100vh; height: 100dvh; overflow-y: auto; } /* (dvh: what is left of the screen with the browser's bars showing) */
+  #startScreen .menu-keys { display: none; }
+  /* the top: the title, the bank (the figure alone) and the options on one line, the tabs on the next */
+  #startScreen .menu-top { flex-wrap: wrap; gap: 6px 8px; }
+  #startScreen h1 { font-size: 22px; }
+  #startScreen #bank { font-size: 17px; }
+  #startScreen #bank small { display: none; }
+  #startScreen #optionsBtn { padding: 6px 10px; font-size: 12px; }
+  #startScreen .menu-tabs { order: 5; flex: 0 0 100%; margin: 0; }
+  #startScreen .menu-tabs button { flex: 1 1 0; padding: 7px 8px 6px; font-size: 16px; text-align: center; }
+  #startScreen .menu-groups button { padding: 7px 12px 6px; }
+  /* the stage: its words between the arrows, which are at the middle of its edges; the description three lines at most */
+  #startScreen .menu-stage .cargo3d { top: 54px; right: 14px; width: 104px; }
+  #startScreen .menu-stage .cargo3d .ring { width: 80px; height: 80px; }
+  #startScreen .menu-stage .plate { padding: 6px 26px 5px 12px; }
+  #startScreen .menu-stage .plate b { font-size: 20px; }
+  #startScreen .menu-stage .ribbon { top: 6px; right: 6px; }
+  #startScreen .menu-stage .info { gap: 6px; padding: 0 32px 10px; }
+  #startScreen .menu-stage h2 { font-size: 28px; }
+  #startScreen .menu-stage .desc { font-size: 14px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+  #startScreen .menu-stage .facts { gap: 5px 6px; margin-top: 0; }
+  #startScreen .menu-stage .fact { flex-direction: row; align-items: baseline; gap: 6px; padding: 4px 9px; font-size: 15px; }
+  #startScreen .menu-stage .info .road { margin-top: 0; }
+  #startScreen .menu-stage .arrow { top: 50%; margin-top: -26px; width: 26px; height: 52px; font-size: 26px; }
+  #startScreen .menu-stage .arrow.prev { left: 0; border-radius: 0 8px 8px 0; }
+  #startScreen .menu-stage .arrow.next { right: 0; border-radius: 8px 0 0 8px; }
+  #startScreen .menu-strip { gap: 6px; }
+  #startScreen .menu-strip .thumb { flex: 1 1 0; min-width: 0; height: 50px; }
+  #startScreen .menu-strip .thumb .name { left: 6px; right: 4px; font-size: 12px; }
+  /* the car and the side: one row (the car a small button: its picture and its name; Good and Evil side by side;
+     no bars, no note), and START a slim bar under it */
+  #startScreen .menu-side { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-areas: "car side" "start start"; gap: 6px; padding: 6px; }
+  #startScreen.races .menu-side { grid-template-areas: "car side" "race race" "start start"; }
+  /* (the car row is 92 tall, not 44: the owner, 11-Oct, "the car barely gets any height" and then "you can do
+     more": its picture was a 64 x 44 thumbnail; now 112 x 92, and the stage gives up the 48) */
+  #startScreen .car-card { grid-area: car; flex-direction: row; align-items: center; gap: 8px; height: 92px; }
+  #startScreen .car-card .picture { flex: 0 0 112px; align-self: stretch; min-height: 0; box-shadow: none; }
+  #startScreen .car-card .words { flex: 1 1 0; min-width: 0; padding: 0 8px 0 0; }
+  #startScreen .car-card strong { font-size: 16px; line-height: 1.05; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+  #startScreen .car-card .stars { font-size: 11px; }
+  #startScreen .car-card .stat, #startScreen .car-card .go { display: none; }
+  #startScreen #raceMenu { grid-area: race; flex-wrap: nowrap; }
+  #startScreen #raceMenu .menu-chip { flex: 1 1 0; min-width: 0; display: block; padding: 6px 4px; font-size: 11px; line-height: 13px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #startScreen .side-box { grid-area: side; }
+  #startScreen .side-switch { flex: 1 1 auto; }
+  #startScreen .side-switch button { padding: 0 4px; font-size: 19px; }
+  #startScreen #sideNote { display: none; }
+  #startScreen #startBtn { grid-area: start; padding: 9px 10px 7px; font-size: 24px; }
+  #startScreen .menu-sheet { position: fixed; padding: 8px; } /* (fixed: over the screen even where the menu has scrolled) */
+}
+/* (a short phone: the description two lines; a narrow one: the options are their sign alone) */
+@media (max-width: 760px) and (max-height: 660px) {
+  #startScreen .menu-stage .desc { -webkit-line-clamp: 2; line-clamp: 2; }
+}
+@media (max-width: 400px) {
+  #startScreen #optionsBtn span { display: none; }
+}
+/* ---- a short window (a phone on its side): the two columns stay, everything closes up. At 740x360 (px): padding
+   6 + 6, three gaps of 6, the top 30, the groups 25, the strip 52: the stage gets 360 - 137 = 223, and the side
+   column 312 (the groups, the stage and the strip), of which the car has 210 ---- */
+@media (max-height: 520px) and (min-width: 520px) {
+  #startScreen { gap: 6px 10px; padding-top: 6px; padding-bottom: 6px; bottom: auto; height: 100vh; height: 100dvh; grid-template-areas: "top top" "groups side" "stage side" "strip side"; grid-template-rows: auto auto minmax(0, 1fr) auto; }
+  #startScreen .menu-keys { display: none; }
+  #startScreen h1 { font-size: 22px; }
+  #startScreen .menu-tabs button { padding: 6px 18px 5px; font-size: 15px; }
+  #startScreen .menu-groups button { padding: 4px 12px; font-size: 13px; }
+  #startScreen .menu-stage h2 { font-size: 30px; }
+  #startScreen .menu-stage .info { gap: 4px; padding-right: 40px; padding-bottom: 8px; } /* (the arrow is above the figures here) */
+  #startScreen .menu-stage .desc { font-size: 13px; line-height: 1.25; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+  #startScreen .menu-stage .fact { padding: 3px 9px; font-size: 14px; }
+  #startScreen .menu-stage .plate b { font-size: 20px; }
+  #startScreen .menu-stage .info .road { position: absolute; right: 12px; bottom: 8px; }
+  #startScreen .menu-stage .cargo3d { top: 54px; right: 58px; width: 116px; }
+  #startScreen .menu-stage .cargo3d .ring { width: 84px; height: 84px; }
+  /* (the figures a line each, the label beside the value, in two lines at most: clock, tip and cargo, then the best time
+     beside the chip, which is over the info's corner here. On a wide window the figures stop short of the chip) */
+  #startScreen .menu-stage .fact { flex-direction: row; align-items: baseline; gap: 5px; padding: 3px 7px; }
+  #startScreen .menu-stage .fact small { font-size: 9px; letter-spacing: .08em; }
+  #startScreen .menu-strip .thumb { height: 46px; }
+  #startScreen .menu-side { gap: 6px; padding: 7px; }
+  #startScreen .car-card { gap: 4px; }
+  #startScreen .car-card strong { font-size: 17px; }
+  #startScreen .car-card .go { padding: 4px 11px; }
+  #startScreen #sideNote { display: none; }
+  #startScreen .side-switch button { padding: 6px; font-size: 16px; }
+  #startScreen #startBtn { padding: 9px 10px 7px; font-size: 26px; }
+}
+/* (a very short window, a phone on its side: the circle small, its name beside it, clear of the title and the arrow) */
+@media (max-height: 420px) and (min-width: 520px) {
+  #startScreen .menu-stage .cargo3d { top: 52px; right: 50px; width: 140px; flex-direction: row; justify-content: flex-end; gap: 6px; }
+  #startScreen .menu-stage .cargo3d .ring { flex: 0 0 auto; width: 48px; height: 48px; }
+  #startScreen .menu-stage .cargo3d .cargo-name { font-size: 10px; text-align: left; }
+}
+@media (max-height: 520px) and (min-width: 860px), (max-height: 420px) and (min-width: 520px) {
+  #startScreen .menu-stage .facts { max-width: calc(100% - 140px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #startScreen .menu-backdrop i, #startScreen .menu-stage .shot, #startScreen #startBtn, #startScreen .menu-stage.enter *, #startScreen .menu-stage.flip *, #startScreen .sheet-box { animation: none !important; }
+}
+
+/* ---- "what's on this road" (render/levelcard3d.js): three groups of tiles, each tile a model and a line. Each
+   model is drawn in a small canvas of its own in the tile's .view (render/modelviews.js), so it scrolls with it ---- */
+#startScreen .sheet-main { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
+#startScreen .sheet-main .sheet-body { flex: 1 1 auto; }
+/* (a line in place of the card: on its way, or could not be had) */
+#startScreen .road-wait { margin: 0; font-size: 14px; color: var(--ink-dim); }
+#startScreen .road-notes { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+#startScreen .road-notes em, #startScreen .tile .pool em { font-style: normal; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--accent-dim); box-shadow: inset 0 0 0 1px var(--accent); }
+#startScreen .road-group + .road-group { margin-top: 16px; }
+#startScreen .road-group h3 { display: flex; align-items: baseline; gap: 9px; margin: 0 0 8px; padding-bottom: 5px; border-bottom: 1px solid var(--line);
+  font: italic 800 20px/1 var(--display); font-stretch: condensed; letter-spacing: .06em; text-transform: uppercase; }
+#startScreen .road-group h3 small { font: 700 12px/1 system-ui, sans-serif; color: var(--accent); }
+#startScreen .road-group h3 a { margin-left: auto; font: 700 12px/1 system-ui, sans-serif; letter-spacing: .04em; text-transform: none; color: var(--ink-dim); text-decoration: none; }
+#startScreen .road-group h3 a::after { content: " \203A"; }
+#startScreen .road-group h3 a:hover { color: var(--accent); }
+#startScreen .road-group .none { font-size: 13px; color: var(--ink-dim); }
+#startScreen .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 8px; }
+#startScreen .tile { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 10px; align-items: center; padding: 6px 10px 6px 6px; border-radius: 10px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line); }
+#startScreen .tile .view { height: 84px; border-radius: 7px; background: radial-gradient(circle at 50% 62%, var(--glow, rgba(255, 255, 255, .2)), rgba(10, 13, 19, .9) 72%); }
+#startScreen .tile .words { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+#startScreen .tile strong { font: 700 16px/1.1 var(--display); letter-spacing: .02em; }
+#startScreen .tile strong small { margin-left: 8px; padding: 1px 6px; border-radius: 4px; font: 700 11px/1.4 system-ui, sans-serif; color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); white-space: nowrap; }
+#startScreen .tile p { font-size: 12px; line-height: 1.35; color: #d5dbe5; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden; }
+#startScreen .tile p strong { font: inherit; font-weight: 700; color: #fff; }
+#startScreen .tile .pool { display: flex; flex-wrap: wrap; gap: 4px; }
+#startScreen .tile .pool em { font-size: 11px; padding: 2px 7px; }
+#startScreen .tile:has(.pool) { grid-column: 1 / -1; }
+@media (max-width: 760px) {
+  #startScreen .tiles { grid-template-columns: minmax(0, 1fr); }
+  #startScreen .tile { grid-template-columns: 96px minmax(0, 1fr); }
+  #startScreen .sheet-bar h2 small { display: block; margin: 4px 0 0; }
+}
+
+/* the level tiers (tiers.js): the group chips are stars, gold or blue; a level that wants a car the player has none of shows a dark outline of one */
+#startScreen .menu-groups button.gold { color: #ffd23f; }
+#startScreen .menu-groups button.blue { color: #4fa8ff; }
+#startScreen .car-card .picture.silhouette canvas { filter: brightness(0); opacity: .75; }
+#startScreen .car-card .picture.silhouette { background: #cfd4db; }
+
+/* a tier named in stars (tiers.js tierStarsNode): gold or blue, never a word */
+.tierstars { letter-spacing: .06em; }
+.tierstars.gold { color: #ffd23f; }
+.tierstars.blue { color: #4fa8ff; }
+#startScreen .menu-stage .plate small .tierstars { font-size: 13px; }
+/* a tiered level's plate is dark, so its stars show in their own colour (the plate is the accent colour otherwise: gold on gold) */
+#startScreen .menu-stage .plate.tiered { background: rgba(14, 18, 26, .9); color: #fff; }
+#startScreen .menu-stage .plate.tiered small .tierstars { font-size: 17px; letter-spacing: .1em; }

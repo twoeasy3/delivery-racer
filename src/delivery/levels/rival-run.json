@@ -1,0 +1,80 @@
+{
+  "id": "rival-run",
+  "theme": "farm",
+  "clock": { "good": 300, "evil": 285 },
+  "tip": 300,
+  "rival": "opposite",
+  "traffic": { "darkvan": 0.4, "commuter": 0.26, "van": 0.24, "bus": 0.04, "police": 0.06 },
+  "trafficCount": 10,
+  "oncomingCount": 9,
+  "segments": [
+    { "length": 300, "curve": 0 },
+    { "length": 250, "curve": 0.003, "grade": 0.02 },
+    { "length": 300, "curve": 0, "grade": 0.03 },
+    { "length": 200, "curve": -0.004 },
+    { "length": 250, "curve": 0, "grade": -0.03 },
+    { "length": 300, "curve": 0.002, "grade": -0.02 },
+    { "length": 350, "curve": 0 },
+    { "length": 200, "curve": -0.005, "grade": 0.04 },
+    { "length": 300, "curve": 0, "grade": 0.03 },
+    { "length": 250, "curve": 0.004, "grade": -0.02 },
+    { "length": 300, "curve": 0, "grade": -0.04 },
+    { "length": 200, "curve": -0.003 },
+    { "length": 300, "curve": 0, "grade": 0.02 },
+    { "length": 250, "curve": 0.005, "grade": 0.03 },
+    { "length": 300, "curve": 0, "grade": -0.03 },
+    { "length": 200, "curve": -0.004, "grade": -0.02 },
+    { "length": 70, "curve": 0 },
+    { "length": 80, "curve": 0, "grade": 0.18, "ease": 6 },
+    { "length": 80, "curve": 0, "grade": -0.18, "ease": 6 },
+    { "length": 70, "curve": 0, "ease": 6 },
+    { "length": 250, "curve": 0.003, "grade": 0.03 },
+    { "length": 300, "curve": 0, "grade": -0.02 },
+    { "length": 400, "curve": 0 }
+  ],
+  "narrows": [
+    { "from": 900, "to": 2100, "lanesPerSide": 1 },
+    { "from": 2800, "to": 3950, "lanesPerSide": 1 }
+  ],
+  "tractors": [
+    { "s": 1150, "lane": 2 },
+    { "s": 1700, "lane": 2 },
+    { "s": 3050, "lane": 2 },
+    { "s": 3550, "lane": 2 }
+  ],
+  "pickups": [
+    { "type": "turbo", "s": 250, "lane": 3 },
+    { "type": "mystery", "s": 600, "lane": 2 },
+    { "type": "wrench", "s": 1350, "lane": 2 },
+    { "type": "armour", "s": 1900, "lane": 2 },
+    { "type": "bigSplash", "s": 2300, "lane": 3 },
+    { "type": "wrench", "s": 2550, "lane": 2 },
+    { "type": "mystery", "s": 3200, "lane": 2 },
+    { "type": "turbo", "s": 3750, "lane": 2 },
+    { "type": "butterfingers", "s": 4150, "lane": 3 },
+    { "type": "timePlus", "s": 4500, "lane": 2 }
+  ],
+  "targets": [
+    { "s": 1500, "side": "right" },
+    { "s": 3400, "side": "left" }
+  ],
+  "obstacles": [
+    { "s": 450, "lane": 3, "kind": "bale" },
+    { "s": 700, "lane": 2, "kind": "barrier" },
+    { "s": 760, "lane": 3, "kind": "bale" },
+    { "s": 1050, "lane": 2, "kind": "bale" },
+    { "s": 1450, "lane": 2, "kind": "barrier" },
+    { "s": 1960, "lane": 2, "kind": "bale" },
+    { "s": 2250, "lane": 2, "kind": "barrier" },
+    { "s": 2400, "lane": 3, "kind": "bale" },
+    { "s": 2600, "lane": 2, "kind": "bale" },
+    { "s": 2950, "lane": 2, "kind": "bale" },
+    { "s": 3300, "lane": 2, "kind": "barrier" },
+    { "s": 3800, "lane": 2, "kind": "bale" },
+    { "s": 4250, "lane": 3, "kind": "barrier" },
+    { "s": 4600, "lane": 2, "kind": "bale" },
+    { "s": 4650, "lane": 3, "kind": "bale" },
+    { "s": 5000, "lane": 2, "kind": "barrier" },
+    { "s": 4428, "lane": 3, "kind": "bale" }
+  ]
+}

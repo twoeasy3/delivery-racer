@@ -1,0 +1,392 @@
+html, body { margin: 0; height: 100%; overflow: hidden; background: #000;
+  touch-action: none; overscroll-behavior: none; user-select: none; -webkit-user-select: none;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #fff; }
+canvas { display: block; width: 100%; height: 100%; }
+#hud { position: fixed; inset: 0; pointer-events: none;
+  padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
+  display: grid; grid-template-columns: auto 1fr; align-items: start; align-content: start; gap: 12px;
+  text-shadow: 0 1px 3px rgba(0,0,0,.7); font-variant-numeric: tabular-nums; }
+#timer { font-size: 28px; font-weight: 700; }
+#tip { font-size: 13px; font-weight: 700; }
+#resultScreen.failed #nextBtn { display: none; }
+#speed { font-size: 28px; font-weight: 700; text-align: right; }
+#speed small { font-size: 13px; font-weight: 400; opacity: .85; }
+#turbo { text-align: right; font-size: 15px; font-weight: 800; color: #29e0ff; }
+/* ?cine (a still for the level select): nothing but the road */
+/* photo mode (render/photo.js): only the scene, and its own bar of buttons */
+body.photo #hud, body.photo #runButtons, body.photo .throw, body.photo #messages, body.photo #sticky, body.photo #tankCorner, body.photo #banner,
+body.photo #touchControls, body.photo #copGlow, body.photo #cameraFlash, body.photo #behind { display: none !important; }
+#photoBar { position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; gap: 8px;
+  align-items: center; padding: 8px 12px; border-radius: 10px; background: rgba(10,14,20,.6); color: #fff; font-size: 13px; z-index: 6; white-space: nowrap; }
+#photoBar button { font: inherit; font-weight: 700; padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,.35);
+  background: rgba(10,14,20,.55); color: #fff; cursor: pointer; }
+#photoBar button:hover { background: rgba(10,14,20,.85); }
+body.photo canvas#game { cursor: grab; }
+@media (max-width: 560px) { #photoBar span { display: none; } }
+body.cinematic #hud, body.cinematic #runButtons, body.cinematic .throw, body.cinematic #messages, body.cinematic #sticky,
+body.cinematic #tankCorner, body.cinematic #banner, body.cinematic #touchControls { display: none !important; }
+/* the TANK RAGE corner (render/tankcorner.js): top right, under the speed */
+#tankCorner { display: none; position: fixed; width: 120px; height: 84px; pointer-events: none;
+  right: max(10px, env(safe-area-inset-right)); top: calc(max(12px, env(safe-area-inset-top)) + 62px); }
+body.in-garage #tankCorner { display: none !important; }
+#banner { display: none; position: fixed; left: 0; right: 0; top: 24%; text-align: center;
+  pointer-events: none; font-size: 34px; font-weight: 800; text-shadow: 0 2px 6px rgba(0,0,0,.8); }
+#banner small { display: block; font-size: 15px; font-weight: 400; }
+/* the strip along the top of the screen, between the meters' corner and the speed's: in the sky, clear of the
+   horizon and the road ahead. From the top: the two message lines, the speed camera's warning */
+#topStrip { position: fixed; top: max(8px, env(safe-area-inset-top)); left: calc(max(16px, env(safe-area-inset-left)) + 308px);
+  right: max(224px, min(324px, 100vw - 850px)); display: flex; flex-direction: column; align-items: center; gap: 5px; pointer-events: none; }
+/* a message (a powerup, a bust, a driver's reaction): two lines, a top one and a bottom one, see messages.js
+   (room is kept for both, so what is under them doesn't jump about; smaller on a phone, either way up) */
+#messages { text-align: center; pointer-events: none; }
+#messages .line { min-height: 1.25em; line-height: 1.25; font-size: clamp(14px, min(2.4vw, 4.4vh), 22px); font-weight: 800; text-shadow: 0 2px 6px rgba(0,0,0,.8); opacity: 0; }
+/* a sticky message (see messages.js) is said as any other, and then is an icon for as long as what it warns
+   of lasts: a round badge under the two gauges (in the meters' corner, off the road and the horizon), in rows
+   of a few; beside the gauges on a phone held upright. The ring round it drains as the condition runs out (a tyre being changed, an effect's time).
+   Its size, the gap and how many to a row are CONFIG.messageTimes.stickyIcons, by the screen's shape (render/hud.js
+   hands them over as --size-wide and so on); the pictures are render/hudIcons.js */
+#sticky { --size: var(--size-wide); --gap: var(--gap-wide); --across: var(--across-wide); --x: var(--shift-wide-x); --y: var(--shift-wide-y);
+  display: flex; flex-wrap: wrap; gap: var(--gap); width: max-content; max-width: calc(var(--across) * (var(--size) + var(--gap)));
+  margin-top: 6px; transform: translate(var(--x), var(--y)); }
+#sticky:empty { display: none; }
+#sticky .icon { flex: none; width: var(--size); height: var(--size); padding: 0; border: 0; border-radius: 50%; background: none; color: #ffb03a;
+  pointer-events: auto; touch-action: none; cursor: help; -webkit-tap-highlight-color: transparent; }
+#sticky .icon svg { display: block; width: 100%; height: 100%; overflow: visible; }
+#sticky .back { fill: rgba(14,18,26,.82); stroke: rgba(255,176,58,.3); stroke-width: 2.4; }
+#sticky .left { fill: none; stroke: #ffb03a; stroke-width: 2.4; }
+#sticky .art { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+#sticky .art .f { fill: currentColor; stroke-width: 1; }
+#sticky .art .t { stroke-width: 3.2; }
+#sticky .art .x { stroke: #ff5a4f; stroke-width: 2.4; }
+@media (orientation: portrait) {
+  /* (a phone held upright: beside the gauges, in the sky, since under them is the horizon and the road) */
+  #sticky { --size: var(--size-portrait); --gap: var(--gap-portrait); --across: var(--across-portrait); --x: var(--shift-portrait-x); --y: var(--shift-portrait-y);
+    position: absolute; left: calc(100% + 10px); bottom: 14px; margin: 0; flex-wrap: wrap-reverse; }
+}
+@media (orientation: landscape) and (max-height: 480px) {
+  #sticky { --size: var(--size-short); --gap: var(--gap-short); --across: var(--across-short); --x: var(--shift-short-x); --y: var(--shift-short-y); }
+}
+#messages .reaction { color: #ffffff; }
+#messages .pickup { color: #ffd23f; }
+#messages .rage { color: #ff3b30; }
+#messages .bust { color: #2160d8; }
+/* pause / exit during a run or the screensaver: at the foot of the screen, in the middle (the road behind the
+   car; with the on-screen controls up, the gap between the two pads: stacked, where that is too narrow for
+   them side by side). On a phone held upright the pads leave no gap: there they are top centre (see below),
+   as they are in the screensavers, whose captions take the foot of the screen */
+#runButtons { display: none; position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: max(10px, env(safe-area-inset-bottom)); gap: 6px; flex-wrap: wrap-reverse; justify-content: center; }
+body.touch-controls #runButtons { max-width: calc(100vw - 2 * var(--zone-w) - 8px); }
+body.screensaver #runButtons { bottom: auto; top: max(12px, env(safe-area-inset-top)); max-width: none; }
+#runButtons button { font: inherit; font-size: 12px; font-weight: 700; padding: 6px 11px; border-radius: 8px; white-space: nowrap;
+  border: 2px solid rgba(255,255,255,.4); background: rgba(10,14,20,.5); color: #fff; cursor: pointer; touch-action: none; }
+#runButtons button:hover { background: rgba(10,14,20,.8); }
+/* the screensaver: no HUD (the road is the show), and a fade to black between laps */
+#fade { position: fixed; inset: 0; background: #000; pointer-events: none; opacity: 0; }
+body.screensaver #hud, body.screensaver .throw, body.screensaver #touchControls, body.screensaver #messages, body.screensaver #sticky { display: none; }
+/* the race screensaver's graphics, TV style: the leaderboard down the left, a caption along the bottom */
+#raceBoard, #raceCaption { display: none; position: fixed; pointer-events: none; z-index: 5; color: #fff;
+  font-family: system-ui, sans-serif; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
+#raceBoard { left: 12px; top: 12px; width: 410px; background: rgba(10, 14, 28, .78); border-radius: 6px; padding: 6px 0;
+  font-size: 13px; max-height: calc(100vh - 24px); overflow: hidden; }
+#raceBoard.dense { font-size: 11px; padding: 4px 0; }
+body.racewatch #raceBoard { pointer-events: auto; } /* (a racer on it clicked to follow) */
+#raceBoard .row[data-i] { cursor: pointer; }
+#raceBoard .row[data-i]:hover { background: rgba(255, 255, 255, .12); }
+#raceBoard .row.pinned { box-shadow: inset 3px 0 #fff; }
+#raceBoard .head { cursor: pointer; user-select: none; } /* (a tap: collapse or expand) */
+/* collapsed: each driver's position, colour, three letters and places gained or lost, in one column */
+#raceBoard.collapsed { width: auto; font-size: clamp(7px, calc((100vh - 60px) / 50), 10px); padding: 4px 0; } /* (all 40 rows fit the screen's height) */
+#raceBoard .abbrs { display: flex; flex-direction: column; padding: 0 4px; }
+#raceBoard .cell .gain { width: 3em; text-align: right; }
+#raceBoard .cell .pos { text-align: right; }
+#raceBoard .cell { display: flex; align-items: center; gap: 4px; padding: 0 4px; line-height: 1.2; cursor: pointer; font-variant-numeric: tabular-nums; }
+#raceBoard .cell.focus { background: rgba(225, 6, 0, .55); }
+#raceBoard .cell.pinned { box-shadow: inset 2px 0 #fff; }
+#raceBoard .cell.out { opacity: .45; }
+#raceBoard .cell .pos { width: 16px; }
+#raceBoard .cell .dot { height: 10px; }
+#raceBoard .abbr { font-weight: 700; letter-spacing: .04em; width: 2.7em; } /* (every driver's letters as wide: the gains line up) */
+#raceBoard.collapsed .head { gap: 8px; padding: 2px 8px 4px; }
+#raceBoard.dense .row { padding: 0 10px; line-height: 1.3; }
+#raceBoard .labels { font-size: 10px; opacity: .6; font-weight: 700; }
+#raceBoard .head { display: flex; justify-content: space-between; padding: 2px 10px 6px; font-weight: 800; letter-spacing: .04em;
+  border-bottom: 2px solid #e10600; margin-bottom: 3px; }
+#raceBoard .head span { font-weight: 600; opacity: .85; }
+#raceBoard .row { display: flex; align-items: center; gap: 6px; padding: 2px 10px; }
+#raceBoard .row.focus { background: rgba(225, 6, 0, .55); }
+#raceBoard .row.out { opacity: .45; }
+#raceBoard .pos { width: 20px; text-align: right; font-weight: 800; }
+#raceBoard .side { width: 12px; display: flex; justify-content: center; }
+#raceBoard .side svg { display: block; }
+#raceBoard.dense .side svg { width: 10px; height: 10px; }
+#raceBoard .dot { width: 4px; height: 13px; border-radius: 1px; }
+#raceBoard .name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#raceBoard .gap { font-variant-numeric: tabular-nums; opacity: .9; }
+#raceBoard .kills, #raceBoard .wrecks { width: 20px; text-align: right; font-variant-numeric: tabular-nums; }
+#raceBoard .health { width: 34px; height: 5px; border-radius: 2px; background: rgba(255,255,255,.15); overflow: hidden; }
+#raceBoard .labels .health { height: auto; background: none; text-align: center; }
+#raceBoard .health i { display: block; height: 100%; }
+#raceBoard .mood { width: 14px; display: flex; justify-content: center; }
+#raceBoard .mood svg { display: block; }
+#raceBoard.dense .mood svg { width: 11px; height: 11px; }
+#raceBoard .mishap { width: 14px; text-align: center; font-size: .85em; }
+#raceBoard .mishap i { font-style: normal; animation: copFlash .6s steps(1) infinite; }
+#raceBoard .gain { width: 28px; text-align: right; font-size: .85em; font-weight: 700; font-variant-numeric: tabular-nums; opacity: .5; }
+#raceBoard .gain.up { color: #3ddc68; opacity: 1; }
+#raceBoard .gain.down { color: #ff5a4f; opacity: 1; }
+#raceCaption { left: 50%; bottom: 28px; transform: translateX(-50%); text-align: center; font-size: 18px; }
+#raceCaption b { background: #e10600; padding: 3px 9px; margin-right: 8px; border-radius: 3px; }
+#raceCaption i { margin-left: 10px; font-style: normal; font-size: 12px; opacity: .75; letter-spacing: .08em; }
+#raceCaption i.tow { color: #7fd8ff; opacity: 1; font-weight: 700; }
+#raceCaption i.tow.sling { color: #ffb03a; }
+#raceCaption .gaps { display: flex; justify-content: center; gap: 18px; margin-top: 8px; font-size: 13px; font-variant-numeric: tabular-nums; }
+#raceCaption .gaps span { background: rgba(10, 14, 28, .7); padding: 2px 8px; border-radius: 3px; }
+#raceCaption .news { margin-top: 8px; font-size: 16px; font-weight: 700; color: #ffd23f; }
+#raceMap { display: none; position: fixed; right: 12px; bottom: 12px; width: 240px; height: 240px; pointer-events: none; z-index: 5;
+  background: rgba(10, 14, 28, .6); border-radius: 8px; }
+body.racewatch #raceBoard, body.racewatch #raceCaption, body.racewatch #raceMap { display: block; }
+@media (max-width: 600px) { #raceMap { width: 150px; height: 150px; } #raceBoard { width: 316px; font-size: 11px; } #raceBoard.dense { font-size: 9px; } #raceCaption { font-size: 14px; bottom: 16px; } }
+/* on-screen controls (body.touch-controls: see render/touch.js): two big zones along the bottom,
+   steering on the left and the pedals on the right, each split in two, with a THROW button
+   above each */
+:root { --zone-h: clamp(80px, 28vh, 170px); --zone-w: 40vw; }
+#touchControls { display: none; }
+body.touch-controls #touchControls { display: block; }
+#touchControls .pad { position: fixed; bottom: 0; width: var(--zone-w); height: var(--zone-h); box-sizing: border-box;
+  display: flex; gap: 6px; padding-bottom: max(10px, env(safe-area-inset-bottom)); touch-action: none; }
+#touchControls .steer { left: 0; padding-left: max(10px, env(safe-area-inset-left)); }
+#touchControls .pedals { right: 0; padding-right: max(10px, env(safe-area-inset-right)); }
+#touchControls button { flex: 1; height: 100%; padding: 0; border-radius: 18px;
+  border: 2px solid rgba(255,255,255,.3); background: rgba(255,255,255,.08); color: rgba(255,255,255,.75);
+  font-size: 34px; pointer-events: none; /* (the pad takes the touch) */ }
+#touchControls button.down { background: rgba(255,255,255,.3); }
+.throw { display: none; position: fixed; width: 88px; height: 88px; border-radius: 50%;
+  bottom: calc(var(--zone-h) + 12px);
+  border: 3px solid rgba(255,255,255,.7); background: rgba(255,122,26,.55); color: #fff;
+  font: inherit; font-weight: 700; font-size: 16px; touch-action: none; }
+#throwBtnLeft { left: max(16px, env(safe-area-inset-left)); }
+#throwBtn { right: max(16px, env(safe-area-inset-right)); }
+body.touch-controls .throw { display: block; }
+/* the meters' corner (top left): the readouts in a column, the two round gauges beside them */
+#meters { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 14px; width: 308px; }
+#meters .readouts { width: 150px; }
+#flat, #levelProblems { flex-basis: 100%; }
+/* (the two gauges, and with them the sticky messages' icons, whose rules are above) */
+#gaugeColumn { position: relative; width: 136px; }
+#gauges { display: flex; gap: 8px; margin-top: 2px; }
+.gauge { width: 64px; text-align: center; font-size: 9px; font-weight: 800; letter-spacing: .05em; line-height: 1.2; }
+.gauge svg { display: block; width: 64px; height: 64px; margin-bottom: 2px; }
+.gauge .back { fill: rgba(10,14,20,.5); }
+.gauge .track { fill: none; stroke: rgba(255,255,255,.22); stroke-width: 5; }
+.gauge .fill { fill: none; stroke-width: 5; }
+.gauge text { fill: #fff; text-anchor: middle; font-weight: 800; }
+/* how far through the level: the ring fills, clockwise from the top and round to the flag there; the distance
+   left in the middle; on a lapped level a notch where each lap ends, and the lap under it */
+#progress .fill { stroke: #ffd23f; }
+#progress .flag rect { fill: #fff; stroke: rgba(0,0,0,.55); stroke-width: .6; }
+#progress .flag path { fill: #111; }
+#progressLaps path { stroke: #fff; stroke-width: 1.6; }
+#progressLeft { font-size: 15px; }
+#progressUnit { font-size: 8px; opacity: .85; }
+/* the shoulder's danger: a dial from 0 to the bust, the last quarter of it red. Always there: the needle
+   rests at 0 on the road, climbs on the shoulder and falls back off it (dim on a level with no shoulder rule) */
+#danger .track { stroke-linecap: round; }
+#danger .zone { fill: none; stroke: #ff3b30; stroke-width: 5; stroke-linecap: round; }
+#danger .fill { stroke: #ffb03a; opacity: .9; }
+#danger .ticks { stroke: #fff; stroke-width: 1.4; }
+#danger .needle { fill: #fff; stroke: rgba(0,0,0,.5); stroke-width: .5; }
+#danger .hub { fill: #fff; stroke: rgba(0,0,0,.5); stroke-width: .5; }
+#danger .zero, #danger .bust { font-size: 8px; opacity: .85; }
+#danger .bust { fill: #ff6a5a; opacity: 1; }
+#danger.hot { color: #ff6a5a; }
+#danger.hot .needle, #danger.hot .hub { fill: #ff3b30; }
+#danger.hot .fill { stroke: #ff3b30; }
+#danger.off { opacity: .45; }
+@media (orientation: portrait) {
+  :root { --zone-h: clamp(90px, 20vh, 170px); --zone-w: 50vw; }
+  #timer, #speed { font-size: 24px; }
+  /* a phone held upright: the gauges under the readouts (the corner is no wider than they are) */
+  #meters { flex-direction: column; flex-wrap: nowrap; width: 150px; }
+  /* ...Pause and Exit level top centre, small, between the two corners */
+  #runButtons { bottom: auto; top: max(10px, env(safe-area-inset-top)); flex-wrap: nowrap; }
+  body.touch-controls #runButtons { max-width: none; }
+  #runButtons button { font-size: 11px; padding: 5px 8px; }
+  /* ...the camera's warning under the corners (clear of the gauges' labels), short of the cargo's window on the right */
+  #topStrip { top: calc(max(12px, env(safe-area-inset-top)) + 212px); left: max(16px, env(safe-area-inset-left)); right: calc(max(14px, env(safe-area-inset-right)) + 100px); }
+  /* ...and the message lines at the foot of the screen, on the road behind the car: above the on-screen
+     controls and between the two THROW buttons, if those are up */
+  #messages { position: fixed; left: 16px; right: 16px; bottom: calc(64px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; justify-content: flex-end; }
+  #messages .line { min-height: 0; font-size: clamp(14px, 3.6vw, 20px); }
+  body.touch-controls #messages { left: 112px; right: 112px; bottom: calc(var(--zone-h) + 12px); }
+}
+.overlay { position: fixed; inset: 0; display: flex; flex-direction: column; gap: 14px;
+  align-items: center; justify-content: center; text-align: center; padding: 24px;
+  background: rgba(10,14,20,.72); }
+.overlay.hidden { display: none; }
+.overlay h1 { margin: 0; font-size: 34px; }
+.overlay p { margin: 0; max-width: 420px; line-height: 1.5; opacity: .9; }
+.overlay button { font: inherit; font-size: 20px; font-weight: 700; padding: 14px 36px;
+  border: 0; border-radius: 10px; background: #ffd23f; color: #222; cursor: pointer; }
+.overlay button.level { font-size: 15px; padding: 8px 16px; margin: 0 4px 6px; background: #e9e9e9; }
+.overlay button.level.current { background: #ffd23f; }
+/* a link to the screensaver's own address, styled as one of the small buttons */
+.overlay a.level { display: inline-block; font-size: 15px; font-weight: 700; padding: 8px 16px; margin: 0 4px 6px;
+  border-radius: 10px; background: #e9e9e9; color: #222; text-decoration: none; }
+.overlay.menu { justify-content: flex-start; overflow-y: auto; gap: 10px; background: #1b2029; touch-action: pan-y; }
+.overlay.menu > * { flex-shrink: 0; } /* (a panel scrolls; nothing in it is squashed to fit) */
+/* (the start screen itself, #startScreen, is menu2.css: one screen that fits, nothing of it scrolling) */
+.overlay h2 { margin: 6px 0 0; font-size: 15px; text-transform: uppercase; letter-spacing: .08em; opacity: .8; }
+#garageUi { position: fixed; inset: 0; pointer-events: none; display: flex; flex-direction: column;
+  justify-content: space-between; padding: 14px 16px 18px; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
+#garageUi.hidden { display: none; }
+#garageUi .bar { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; font-size: 22px; }
+#garageUi #garageBank { color: #ffd23f; font-weight: 700; margin-right: auto; }
+#garageUi button { pointer-events: auto; font: inherit; font-size: 16px; font-weight: 700; padding: 9px 18px;
+  border: 0; border-radius: 9px; background: #ffd23f; color: #222; cursor: pointer; }
+#garageUi .pick { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+#garageInfo { text-align: center; font-size: 16px; font-weight: 700; }
+#garageUi #garageAction:disabled { background: #8a8f99; color: #2a2d33; cursor: default; }
+#garageTip { display: none; position: fixed; transform: translate(-50%, -100%); pointer-events: none;
+  padding: 6px 12px; border-radius: 8px; background: rgba(15,18,24,.9); border: 2px solid #ffd23f;
+  font-size: 14px; font-weight: 700; white-space: nowrap; }
+body.in-garage #hud, body.in-garage .throw, body.in-garage #banner, body.in-garage #messages, body.in-garage #sticky { display: none; }
+#levelProblems { color: #ffb4a8; font-size: 12px; max-width: 40vw; margin-top: 6px; }
+#resultTime { font-size: 48px; font-weight: 700; font-variant-numeric: tabular-nums; }
+#health { width: 150px; max-width: 40vw; height: 10px; margin-top: 6px;
+  background: rgba(0,0,0,.4); border-radius: 5px; overflow: hidden; }
+#healthFill { height: 100%; width: 100%; background: #4caf50; }
+#busts { margin-top: 6px; font-size: 12px; font-weight: 700; white-space: pre-line; }
+/* a police car within sight of the player: red and blue lights, flashing in turn */
+#copWatch { display: none; margin-top: 8px; font-size: 12px; font-weight: 700; text-align: right; color: #fff;
+  text-shadow: 0 1px 2px #000; }
+#copWatch .lights { display: inline-flex; gap: 3px; margin-right: 6px; vertical-align: -2px; }
+#copWatch .lights i { width: 12px; height: 12px; border-radius: 3px; background: #ff2a2a; animation: copFlash .5s steps(1) infinite; }
+#copWatch .lights i + i { background: #2a6aff; animation-delay: .25s; }
+@keyframes copFlash { 50% { opacity: .25; } }
+/* ...and the screen's edges glow faintly red and blue in turn, in time with them (under the HUD) */
+#copGlow { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity .4s; }
+#copGlow.on { opacity: 1; }
+#copGlow i { position: absolute; inset: 0; box-shadow: inset 0 0 10vmin 1vmin rgba(255,42,42,.35); animation: copGlow .5s linear infinite; }
+#copGlow i + i { box-shadow: inset 0 0 10vmin 1vmin rgba(42,106,255,.35); animation-delay: -.25s; }
+#copGlow:not(.on) i { animation-play-state: paused; }
+@keyframes copGlow { 0%, 40% { opacity: 1; } 50%, 90% { opacity: 0; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { #copGlow i { animation: none; opacity: .5; } }
+body.cinematic #copGlow, body.in-garage #copGlow { display: none; }
+/* a speed camera catching the player: the screen flashes white (see render/roadside.js) */
+#cameraFlash { position: fixed; inset: 0; pointer-events: none; background: #fff; opacity: 0; }
+body.cinematic #cameraFlash, body.in-garage #cameraFlash { display: none; }
+/* speed camera warning HUD when approaching a camera */
+#camAlert { display: flex; align-items: center; gap: 10px; /* (in the top strip, under the messages: see #topStrip) */
+  background: rgba(14, 18, 26, 0.88); border: 2px solid rgba(255, 210, 63, 0.6);
+  border-radius: 12px; padding: 6px 14px; color: #fff; font-family: system-ui, -apple-system, sans-serif;
+  pointer-events: none; z-index: 5; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), inset 0 0 12px rgba(255, 210, 63, 0.15);
+  transition: border-color 0.2s, box-shadow 0.2s; white-space: nowrap; }
+#camAlert.hidden { display: none !important; }
+body.photo #camAlert, body.cinematic #camAlert, body.screensaver #camAlert, body.in-garage #camAlert { display: none !important; }
+#camAlert .cam-disc { width: 36px; height: 36px; border-radius: 50%; background: #fff;
+  border: 4px solid #e10600; display: flex; align-items: center; justify-content: center;
+  box-sizing: border-box; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4); flex-shrink: 0; }
+#camAlert .cam-disc #camLimit { color: #111; font-size: 16px; font-weight: 900; line-height: 1; }
+#camAlert .cam-body { display: flex; flex-direction: column; gap: 2px; }
+#camAlert .cam-header { display: flex; align-items: center; gap: 8px; }
+#camAlert .cam-title { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; opacity: 0.8; text-transform: uppercase; }
+#camAlert .cam-status { font-size: 11px; font-weight: 800; letter-spacing: 0.05em; padding: 1px 6px; border-radius: 4px; text-transform: uppercase; }
+#camAlert .cam-detail { display: flex; align-items: center; gap: 8px; }
+#camAlert .cam-arrow-wrap { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
+#camAlert .cam-arrow { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-bottom: 14px solid #ffd23f; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
+  transform-origin: 50% 60%; transition: transform 0.05s linear; }
+#camAlert .cam-dist { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
+#camAlert.speeding { border-color: #ff3b30; box-shadow: 0 4px 18px rgba(255, 59, 48, 0.4), inset 0 0 14px rgba(255, 59, 48, 0.2);
+  animation: camPulse 0.5s ease-in-out infinite alternate; }
+#camAlert.speeding .cam-status { background: #ff3b30; color: #fff; animation: camBlink .5s steps(1) infinite alternate; }
+#camAlert.speeding .cam-arrow { border-bottom-color: #ff3b30; }
+#camAlert.safe { border-color: #34c759; box-shadow: 0 4px 14px rgba(52, 199, 89, 0.3), inset 0 0 10px rgba(52, 199, 89, 0.15); }
+#camAlert.safe .cam-status { background: rgba(52, 199, 89, 0.25); color: #34c759; }
+#camAlert.safe .cam-arrow { border-bottom-color: #34c759; }
+#camAlert.radar { border-color: #27e7ff; box-shadow: 0 4px 14px rgba(39, 231, 255, 0.3), inset 0 0 10px rgba(39, 231, 255, 0.15); }
+#camAlert.radar .cam-status { background: rgba(39, 231, 255, 0.25); color: #27e7ff; }
+#camAlert.radar .cam-arrow { border-bottom-color: #27e7ff; }
+#camAlert.tank { border-color: #ff9500; box-shadow: 0 4px 14px rgba(255, 149, 0, 0.4), inset 0 0 10px rgba(255, 149, 0, 0.2); }
+#camAlert.tank .cam-status { background: #ff9500; color: #000; }
+#camAlert.tank .cam-arrow { border-bottom-color: #ff9500; }
+@keyframes camPulse { 0% { border-color: #ff3b30; box-shadow: 0 4px 18px rgba(255, 59, 48, 0.35); }
+  100% { border-color: #ff736a; box-shadow: 0 4px 24px rgba(255, 59, 48, 0.7); } }
+@keyframes camBlink { 50% { opacity: 0.6; } }
+@media (max-width: 500px) {
+  #camAlert { padding: 4px 10px; gap: 8px; }
+  #camAlert .cam-disc { width: 30px; height: 30px; border-width: 3px; }
+  #camAlert .cam-disc #camLimit { font-size: 13px; }
+  #camAlert .cam-dist { font-size: 13px; }
+}
+/* who is coming up behind (a race, or a rival courier): an arrow at the foot of the screen, pointing back at them */
+#behind { display: none; position: fixed; left: 50%; bottom: calc(52px + env(safe-area-inset-bottom)); transform: translateX(-50%); /* (above Pause and Exit level) */
+  text-align: center; pointer-events: none; z-index: 4; font-size: 13px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px #000; }
+#behind .arrow { width: 0; height: 0; margin: 0 auto 3px; border-left: 13px solid transparent; border-right: 13px solid transparent;
+  border-top: 18px solid rgba(255,255,255,.9); filter: drop-shadow(0 1px 2px rgba(0,0,0,.7)); transform-origin: 50% 30%; }
+#behind.close { color: #ff9f3a; }
+#behind.close .arrow { border-top-color: #ff9f3a; }
+/* (a rival: in its own colour, and bigger when it is close) */
+#behind[style*="--tint: #"] { color: var(--tint); }
+#behind[style*="--tint: #"] .arrow { border-top-color: var(--tint); }
+#behind.close[style*="--tint: #"] { font-size: 16px; }
+body.screensaver #behind, body.cinematic #behind { display: none !important; }
+#towing { display: none; margin-top: 8px; font-size: 12px; font-weight: 700; text-align: right; color: #7fd8ff; text-shadow: 0 1px 2px #000; }
+#towing .bar { width: 90px; height: 6px; margin: 3px 0 0 auto; background: rgba(0,0,0,.4); border-radius: 3px; overflow: hidden; }
+#towFill { height: 100%; background: #7fd8ff; }
+#towing.sling { color: #ffb03a; }
+#towing.sling #towFill { background: #ffb03a; }
+#flat { display: none; margin-top: 8px; font-size: 12px; font-weight: 700; color: #ffb03a; text-shadow: 0 1px 2px #000; }
+#flat .bar { width: 150px; max-width: 40vw; height: 8px; margin-top: 3px; background: rgba(0,0,0,.4); border-radius: 4px; overflow: hidden; }
+#flatFill { height: 100%; width: 0; background: #ffb03a; }
+/* a good player's social standing (see social.js): gold, and glowing once it protects the player */
+/* the radiation meter (radiation.js): a trefoil, the word, and a bar that fills green to yellow to red; shown only
+   on a level with radiation. .dosed: filling now (it glows); .infected: full for the run (red, the word INFECTED);
+   .kept: the armour is keeping it out (blue) */
+#radiation { display: none; margin-top: 8px; font-size: 12px; font-weight: 700; color: #b8ff5a; text-shadow: 0 1px 2px #000; }
+#radiation svg { display: inline-block; width: 13px; height: 13px; margin-right: 4px; vertical-align: -2px; fill: currentColor; }
+#radiation .bar { width: 150px; max-width: 40vw; height: 8px; margin-top: 3px; background: rgba(0,0,0,.4); border-radius: 4px; overflow: hidden; }
+#radiationFill { height: 100%; width: 0; background: linear-gradient(90deg, #7dff2a, #ffd23f 60%, #ff3b30); transition: width .1s linear; }
+#radiation.dosed { color: #d6ff5a; }
+#radiation.dosed .bar { box-shadow: 0 0 8px rgba(125,255,42,.8); }
+#radiation.infected { color: #ff6a5a; }
+#radiation.infected #radiationFill { background: #ff3b30; }
+#radiation.kept { color: #8fd0ff; }
+#radiation.kept .bar { box-shadow: 0 0 8px rgba(80,160,255,.8); }
+#social { display: none; margin-top: 8px; font-size: 12px; font-weight: 700; }
+#social .bar { width: 150px; max-width: 40vw; height: 8px; margin-top: 3px; background: rgba(0,0,0,.4); border-radius: 4px; overflow: hidden; }
+#socialFill { height: 100%; width: 0; background: #ffd23f; }
+#social.protected #socialFill { background: #fff3b0; box-shadow: 0 0 8px #ffd23f; }
+body.in-garage #touchControls { display: none; }
+
+/* ---- the panels over the start screen: the postcard album (render/album.js) and the milestones wall (render/milestones.js) ---- */
+.overlay.panel { z-index: 20; }
+.overlay.panel .bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center; font-size: 22px; }
+.overlay.panel .bar .count { font-size: 15px; opacity: .8; }
+.overlay.panel .bar button.level { margin: 0; }
+/* a postcard: the level's picture in a white border, a hand-written caption, a stamp in the corner; a blank until earned */
+.postcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 22px; width: 100%; max-width: 1100px; padding: 8px 4px 24px; }
+.postcard { position: relative; background: #fbf8ef; color: #2a2a2a; padding: 10px 10px 8px; border-radius: 3px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.45); transform: rotate(var(--tilt, 0deg)); text-align: left; }
+.postcard .photo { aspect-ratio: 600 / 267; background: #c9c4b6 center / cover; }
+.postcard .caption { margin-top: 8px; min-height: 2.6em; font: italic 600 16px/1.3 "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive; }
+.postcard .stamp { position: absolute; top: 16px; right: 16px; padding: 5px 8px; border: 2px dashed #fff; border-radius: 4px;
+  background: #b8862b; color: #fff; font-size: 12px; font-weight: 700; text-align: center; transform: rotate(6deg); box-shadow: 0 2px 5px rgba(0,0,0,.4); }
+.postcard .stamp small { display: block; font-weight: 400; }
+.postcard .stamp.good { background: #2f8f4e; }
+.postcard .stamp.evil { background: #7a1f1f; }
+.postcard.locked { background: #3a404b; color: #aab1bd; box-shadow: none; }
+.postcard.locked .photo { background: #2a2f38; }
+.postcard.locked .caption { font: 13px/1.4 system-ui, sans-serif; }
+/* the milestones wall: a row for each counter, its count and its plaques (lit once earned) */
+.overlay.panel .wall { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 900px; padding-bottom: 24px; }
+.overlay.panel .wall .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; background: #262c37; border-radius: 10px; padding: 10px; text-align: left; }
+.overlay.panel .wall .counter { flex: 0 0 150px; display: flex; flex-direction: column; justify-content: center; }
+.overlay.panel .wall .counter span { font-size: 26px; font-weight: 700; color: #ffd23f; }
+.overlay.panel .wall .plaques { flex: 1 1 300px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.overlay.panel .wall .plaque { display: flex; flex-direction: column; gap: 2px; justify-content: center; padding: 8px 10px; border-radius: 8px;
+  border: 2px solid #3a414e; background: #1b2029; color: #7d8594; }
+.overlay.panel .wall .plaque small { font-size: 12px; }
+.overlay.panel .wall .plaque.lit { border-color: #ffd23f; background: #4a3d12; color: #fff; }

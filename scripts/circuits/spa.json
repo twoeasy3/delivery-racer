@@ -1,0 +1,14 @@
+{
+  "id": "spa",
+  "name": "Spa-Francorchamps",
+  "bbox": [5.955,50.424,5.98,50.448],
+  "relation": 284560,
+  "start": {"lat":50.4440643,"lon":5.9651626},
+  "realLength": 7004,
+  "elevation": {"smooth":60},
+  "level": {"name":"Spa-Francorchamps","theme":"spa","laps":2},
+  "landmarks": [
+    {"kind":"stream","ways":[77352255,175054897,175175595,175375304,175375311,175691638,377298478],"every":8},
+    {"kind":"hotel","at":297343839}
+  ]
+}

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="/car-icon.svg">
+<title>Delivery Run Level Editor</title>
+</head>
+<body>
+<aside id="side">
+  <header>
+    <a class="back" href="./">&larr; Back to the game</a>
+    <h1>Level Editor</h1>
+  </header>
+  <section>
+    <label class="row">Open <select id="pick"></select></label>
+    <div class="buttons">
+      <button id="play" class="primary">Play it</button>
+      <button id="playEvil">Play as Evil</button>
+      <button id="playFrom" title="Then click the road: a run starts at that spot">Play from here</button>
+      <button id="workClock" title="Drives the level's clean run (a ghost, flat out, in the reference car) and sets its clock from it, as scripts/level-clocks.mjs does">Work out the clock</button>
+    </div>
+    <div class="buttons">
+      <button id="load" title="Open a level's .json file from this computer (or drop one on the page)">Load .json</button>
+      <button id="download">Download .json</button>
+      <button id="undo" title="Undo (Ctrl+Z)">&#8630; Undo</button>
+      <button id="redo" title="Redo (Ctrl+Y)">&#8631; Redo</button>
+      <input type="file" id="file" accept=".json,application/json" hidden>
+    </div>
+    <p class="note" id="status"></p>
+  </section>
+  <nav class="tabs" id="tabs">
+    <button data-tab="level">Level</button><button data-tab="road">Road</button><button data-tab="place">Place</button><button data-tab="list">List</button><button data-tab="json">JSON</button>
+  </nav>
+  <div class="tab" id="tab-level"></div>
+  <div class="tab" id="tab-road" hidden>
+    <section>
+      <h2>Segments <span class="small" id="length"></span></h2>
+      <table id="segments"><thead><tr><th>Length m</th><th>Bend &deg;</th><th>Slope %</th><th></th></tr></thead><tbody></tbody></table>
+      <div class="buttons"><button id="addSegment">+ Add a segment</button>
+        <label class="check" title="When a segment's length changes (or one is removed), everything further along the road moves with it, and what is on that segment is stretched with it"><input type="checkbox" id="carry" checked><span>Move what comes after</span></label></div>
+      <p class="note" id="loopNote"></p>
+      <div class="buttons"><button id="closeLoop" hidden title="Brings the road back to where it starts, facing the same way: a little taken off every bend, and two straights made longer or shorter">Close the loop</button></div>
+    </section>
+    <div id="roadFields"></div>
+  </div>
+  <div class="tab" id="tab-place" hidden>
+    <section>
+      <input id="search" type="search" placeholder="Search everything that can be placed..." aria-label="Search what can be placed">
+      <div class="tools" id="tools"></div>
+    </section>
+  </div>
+  <div class="tab" id="tab-list" hidden>
+    <section>
+      <h2>Shown on the map</h2>
+      <div class="buttons"><button id="showAll">Show all</button><button id="hideAll">Hide all</button><button id="hideScenery" title="Zones, run-off, gravel, stands, quarries and landmarks hidden">Hide scenery</button></div>
+      <div class="filters" id="filters"></div>
+    </section>
+    <section>
+      <h2>Everything in the level <span class="small" id="listCount"></span></h2>
+      <div id="everything"></div>
+    </section>
+  </div>
+  <div class="tab" id="tab-json" hidden>
+    <section>
+      <h2>The level as JSON <span class="small">advanced</span></h2>
+      <p class="note">The whole level, as it will be saved. Anything the forms lack can be typed here (see levels.js); it is applied as soon as it is valid.</p>
+      <textarea id="extra" class="json" spellcheck="false" aria-label="The level, as JSON"></textarea>
+      <div class="buttons"><button id="tidy">Tidy</button></div>
+      <p class="note" id="extraNote"></p>
+    </section>
+  </div>
+</aside>
+<main id="mapBox"><canvas id="map"></canvas>
+  <iframe id="view3d" title="The level in 3D" hidden></iframe>
+  <div class="hint" id="hint"></div>
+  <div class="viewButtons"><button id="fit">Fit</button><button id="show3d" class="primary">3D view</button><button id="refresh3d" hidden>Update with my edits</button><button id="reveal3d" hidden title="Landmines, drop bears, rockfalls and the airport's wreckage only appear as the player comes up to them. This shows them all as they end up (T in the view does the same).">Show what triggers later</button></div>
+  <aside id="inspector" hidden></aside>
+  <div id="problems" hidden></div>
+</main>
+<script type="module" src="/src/delivery/editor.js"></script>
+</body>
+</html>

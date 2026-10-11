@@ -1,0 +1,534 @@
+{
+  "expressway": {
+    "name": "Expressway",
+    "description": {
+      "good": "A short straight run up the expressway to learn the ropes. Keep to your side, go round the barriers, and pick up the cash lying in rows.",
+      "evil": "Two kilometres of commuters who have never met you. Introduce yourself with something on fire, and take the cash on the way through."
+    },
+    "cargo": { "good": "pizza", "evil": "parcel" }
+  },
+  "back-roads": {
+    "name": "Back Roads",
+    "description": {
+      "good": "A short hop out past the city limits. One exit round the slow traffic and back on again: signal early, smile often, and the tip is yours.",
+      "evil": "Quiet roads, slow vans, and nobody watching but the odd patrol car. Ideal conditions for a bad influence."
+    },
+    "cargo": { "good": "jumper", "evil": "cloud" }
+  },
+  "farm": {
+    "name": "Farm Lanes",
+    "description": {
+      "good": "Fresh air and country lanes. Give the cows room, be patient behind the tractors, and go round the hay bales, not through them.",
+      "evil": "Cows wander, tractors crawl and hay bales sit there asking for it. The countryside has never been delivered to this rudely."
+    },
+    "cargo": { "good": "cactus", "evil": "bees" }
+  },
+  "big-business": {
+    "name": "Big Business",
+    "description": {
+      "good": "One way through downtown, with turbos lined up like parking meters. Stay smooth, take the exit round the jam, and bank the cash.",
+      "evil": "Everyone is going your way, so everyone is in your way. A dozen turbos say you go through them."
+    },
+    "cargo": { "good": "bouquet", "evil": "lawyers" }
+  },
+  "hurricane": {
+    "name": "Hurricane",
+    "description": {
+      "good": "The beach road in a hurricane. Deck chairs, umbrellas and coolers slide across the lanes: watch where they are going and deliver dry.",
+      "evil": "A hurricane is throwing the beach at the road and cars through the air. For once you are not the worst thing out here. Fix that."
+    },
+    "cargo": { "good": "bonsai", "evil": "genie" }
+  },
+  "night": {
+    "name": "Night Drive",
+    "description": {
+      "good": "A late delivery under the street lights. Lowriders cruise and a police chase may come through: headlights on, eyes up, parcel safe.",
+      "evil": "A dark road, slow lowriders, and a getaway car screaming past with the law behind it. Nobody will notice one more troublemaker."
+    },
+    "cargo": { "good": "clock", "evil": "doll" }
+  },
+  "mystery-meadows": {
+    "name": "Mystery Meadows",
+    "description": {
+      "good": "Nine mystery boxes between the cows and the tractors. We cannot say what is in them. Please collect responsibly, and mind the roaming junk.",
+      "evil": "Nine mystery boxes: toads, earthquakes, air strikes, who knows. Grab every one and let the meadow sort itself out."
+    },
+    "cargo": { "good": "surfboard", "evil": "bees" }
+  },
+  "suburbs": {
+    "name": "City Suburbs",
+    "description": {
+      "good": "School-run country. Pull over for the ambulances, pick the bonus clocks and leave the penalty ones, and merge politely where the lanes close.",
+      "evil": "Quiet streets, tidy lawns, SUVs with nowhere to be. Race the ambulance, grab the bonus seconds and wake the whole neighbourhood."
+    },
+    "cargo": { "good": "casserole", "evil": "inlaws" }
+  },
+  "canberra": {
+    "name": "Australian Capital Territory",
+    "description": {
+      "good": "The capital's grand avenues, with a median to keep things civil. A bullet train shares the route: do look both ways.",
+      "evil": "Wide avenues, slow public servants and a bullet train that takes no prisoners. Be on the right side of it and enjoy the view."
+    },
+    "cargo": { "good": "books", "evil": "taxmen" }
+  },
+  "monte-carlo": {
+    "name": "Monte Carlo",
+    "description": {
+      "good": "A winter stage through the snow. Ice patches on the road and cars parked along it: gentle hands, early braking, warm delivery.",
+      "evil": "Snow, sheet ice and a row of parked cars that somebody loves. Slide wide, borrow the whole road and blame the conditions."
+    },
+    "cargo": { "good": "ramen", "evil": "egg" }
+  },
+  "singapore": {
+    "name": "Garden City",
+    "description": {
+      "good": "City streets, driving on the left. Ten junctions turn the route this way and that: follow the chevrons and wait your turn at the box.",
+      "evil": "Ten junctions full of taxis waiting their turn. You are not waiting for yours. Keep left, mostly."
+    },
+    "cargo": { "good": "cactus", "evil": "cooker" }
+  },
+  "singapore-night": {
+    "name": "Jewel of the East",
+    "description": {
+      "good": "The Lion City after dark: more junctions, two bridges and boy racers sitting on your bumper. Let them by and keep the parcel level.",
+      "evil": "Neon, bridges and boy racers who think this is their street. Show them whose it is, one flaming parcel at a time."
+    },
+    "cargo": { "good": "radio", "evil": "flytrap" }
+  },
+  "grand-pacific": {
+    "name": "Sydney to Kiama",
+    "description": {
+      "good": "Ten kilometres down the coast from Sydney to Kiama: city, bush, the Sea Cliff Bridge. Watch for kangaroos, drop bears and gusts off the sea.",
+      "evil": "A long coast road with caravans to bully, kangaroos to dodge and a cliff bridge in a crosswind. Scenic route, antisocial driver."
+    },
+    "cargo": { "good": "fruit", "evil": "barrel" }
+  },
+  "passage-du-gois": {
+    "name": "Passage du Gois",
+    "description": {
+      "good": "A causeway the sea covers twice a day, and the tide is coming in. Cross the Gois before the waves do, and keep to the dry lanes.",
+      "evil": "The tide is swallowing the causeway and the tourists are dawdling. Push through: the sea can have whoever is left."
+    },
+    "cargo": { "good": "goldfish", "evil": "tentacle" }
+  },
+  "safari": {
+    "name": "Safari",
+    "description": {
+      "good": "A one-way track through the reserve. The herds are migrating, the elephants have right of way and the hippos are not friendly. Drive kindly.",
+      "evil": "Wildebeest on the road, elephants flattening tourists, hippos charging out of the river. At last, a place that drives the way you do."
+    },
+    "cargo": { "good": "cake", "evil": "porcupine" }
+  },
+  "airport": {
+    "name": "Airport Apocalypse",
+    "description": {
+      "good": "The airport is having a very bad day. Tankers, hangars and an airliner are coming down on the perimeter road: deliver between the blasts.",
+      "evil": "Everything at the airport is exploding and none of it is your fault, yet. Thread the wreckage and add to the insurance claim."
+    },
+    "cargo": { "good": "bouquet", "evil": "wardens" }
+  },
+  "construction": {
+    "name": "Construction Site",
+    "description": {
+      "good": "Through a working building site: mud, trenches, machines on the move and portaloos that dance. Hard hat on, and leave the bad petrol alone.",
+      "evil": "Diggers swinging, sewage everywhere, portaloos dancing in the road. Knock over what you can: the mud will hide the evidence."
+    },
+    "cargo": { "good": "present", "evil": "skunk" }
+  },
+  "the-hood": {
+    "name": "The Hood",
+    "description": {
+      "good": "A delivery through a rough neighbourhood. Gang houses shoot at whatever passes and drive-by cars cruise: take the armour and keep moving.",
+      "evil": "Gang houses, drive-bys and bullets for anyone passing. They started it. Grab the armour and give the street something back."
+    },
+    "cargo": { "good": "kittens", "evil": "telemarketers" }
+  },
+  "panorama-avenue": {
+    "name": "Panorama Avenue",
+    "description": {
+      "good": "A long highway through the bush. Kangaroos cross without looking, semis thunder by and drop bears wait in the trees. Keep moving.",
+      "evil": "An empty highway, big trucks, bouncing wildlife and drop bears overhead. Out here nobody can hear the horn."
+    },
+    "cargo": { "good": "canary", "evil": "consultants" }
+  },
+  "speed-trap-alley": {
+    "name": "Speed Trap Alley",
+    "description": {
+      "good": "The limit is 100 and ten cameras are counting: round the shops, over the hill, in the fog. Ease off for each, or let the radar detector earn its keep.",
+      "evil": "Ten speed cameras, three jams to fly over and a getaway driver showing how it is done. Knock the cameras flat, or just smile for the photo."
+    },
+    "cargo": { "good": "teaset", "evil": "cooker" }
+  },
+  "mountain-pass": {
+    "name": "Mountain Pass",
+    "description": {
+      "good": "Over the pass in winter: ice on the bends, black ice in the shade, rocks off the walls and fog at the summit roadworks. Cut no corners; the clock is fragile.",
+      "evil": "A loose cannonball, four icy hairpins and half the mountain coming down. Cut every corner, squeeze past the roadworks and let the fog hide the rest."
+    },
+    "cargo": { "good": "clock", "evil": "cannonball" }
+  },
+  "outback-express": {
+    "name": "Outback Express",
+    "description": {
+      "good": "Dingo Flat roadhouse to the railhead: four crossings, a grain siding at each, a pub in the S, roos in the Emu Creek floodway. The train always wins.",
+      "evil": "Bells ringing, booms coming down, a wheat train due, a twenty lying just past the rails. You can make it. Probably. Leave the ruts to the caravans."
+    },
+    "cargo": { "good": "puppy", "evil": "egg" }
+  },
+  "tour-de-coast": {
+    "cargo": { "good": "bonsai", "evil": "band" }
+  },
+  "ring-road": {
+    "cargo": { "good": "coffee", "evil": "skunk" }
+  },
+  "market-town": {
+    "cargo": { "good": "puppy", "evil": "goose" }
+  },
+  "quarry-run": {
+    "name": "Quarry Run",
+    "description": {
+      "good": "Blasting day at the quarry. Mind the stop / go men, creep through the mud, duck the low bridge or take the haul road, and heed the sirens.",
+      "evil": "Sirens, blasts, boulders in the lanes, dump trucks crossing. Run the stop boards, wade the ford and be the second most dangerous thing in the quarry."
+    },
+    "cargo": { "good": "toolbox", "evil": "parcel" }
+  },
+  "hong-kong": {
+    "name": "Hong Kong Harbour",
+    "description": {
+      "good": "The harbour front by night, on the left: roadworks, cameras, fresh tar, the long tunnel, the sea over the low road, a second tunnel and home.",
+      "evil": "Taxis nose to tail, four cameras to ignore, wet tar, two tunnels and the harbour washing over the road. The best money is in the tram lane."
+    },
+    "cargo": { "good": "canary", "evil": "genie" }
+  },
+  "tokyo": {
+    "name": "Tokyo Expressway",
+    "description": {
+      "good": "An expressway with rules: an 80 limit, a lane that reverses, a police roadblock and trucks shedding their loads. Kei trucks set the pace.",
+      "evil": "Tunnels, cameras, a roadblock and a lane about to fill with oncoming cars. The kei trucks are in for a memorable commute."
+    },
+    "cargo": { "good": "lavalamp", "evil": "alien" }
+  },
+  "mumbai": {
+    "name": "Mumbai Monsoon",
+    "description": {
+      "good": "Monsoon season. Rickshaws swarm, water mains burst through the road, a parade fills the street and cows go where they please. Be kind.",
+      "evil": "Rickshaws, potholes, geysers in the road and a parade with nowhere to hide. The monsoon is the least of their problems."
+    },
+    "cargo": { "good": "surfboard", "evil": "teddy" }
+  },
+  "stelvio": {
+    "cargo": { "good": "sushi", "evil": "bats" }
+  },
+  "christmas": {
+    "name": "Christmas Eve",
+    "description": {
+      "good": "The last round before Christmas, in a gale that lifts cars off the road. Icy streets, post vans, an ice-cream van out of season. Deliver the joy.",
+      "evil": "Snow, ice and a street of last-minute shoppers queuing behind an ice-cream van. Somebody is getting coal, and it is arriving at speed."
+    },
+    "cargo": { "good": "cake", "evil": "doll" }
+  },
+  "toys": {
+    "cargo": { "good": "present", "evil": "teddy" }
+  },
+  "leaks": {
+    "cargo": { "good": "goldfish", "evil": "tentacle" }
+  },
+  "moon": {
+    "cargo": { "good": "globe", "evil": "alien" }
+  },
+  "backlot": {
+    "name": "Quiet on Set",
+    "description": {
+      "good": "Five film sets in one street: mind the cattle, the crew and the pyrotechnics, and get the trophy to its winner before the director calls cut.",
+      "evil": "Stampede through the Western, buzz the spaceship, blow through New York. Every take is a stunt, and the alien in the back is nearly awake."
+    },
+    "cargo": { "good": "trophy", "evil": "alien" }
+  },
+  "venice": {
+    "name": "Acqua Alta",
+    "description": {
+      "good": "A gelato run down the quay: hop three humped bridges, jump the drawbridge, ease past the carnival and keep it dry when the tide comes in.",
+      "evil": "A haunted mirror for a palazzo. Scatter the carnival, fly the bridges, and let the acqua alta take anyone too slow along the quay."
+    },
+    "cargo": { "good": "sundae", "evil": "mirror" }
+  },
+  "iceroad": {
+    "name": "Northern Lights",
+    "description": {
+      "good": "A snow globe across the frozen lake under the northern lights. Easy on the glare ice, hold your line in the wind, and give the trucks room.",
+      "evil": "A block of ice that must not thaw, a lake of glare ice, and truck convoys to bully. Take the ridge flat out and let the wind sort the rest."
+    },
+    "cargo": { "good": "snowglobe", "evil": "ice" }
+  },
+  "park": {
+    "name": "Thrill Park",
+    "description": {
+      "good": "A bunch of balloons through the park on its busiest day: mind the parade, the fun run and the park train, and smile for the rollercoaster.",
+      "evil": "A jack-in-the-box, wound tight, through a park full of queues: scatter the fun run, gatecrash the parade and fly both crests."
+    },
+    "cargo": { "good": "balloons", "evil": "jack" }
+  },
+  "cinder": {
+    "name": "Cinder Island",
+    "description": {
+      "good": "A lava lamp for the far side of the island: up the mountain and down, gently over the drawbridge, and do watch for falling rocks.",
+      "evil": "A pressure cooker across an island that is already boiling: geysers, lava bombs and a drawbridge over the lava. Jump it."
+    },
+    "cargo": { "good": "lavalamp", "evil": "cooker" }
+  },
+  "docks": {
+    "name": "Dock Run",
+    "description": {
+      "good": "A globe to the far end of the terminal: keep clear of the cranes and the forklifts, stop for the trains, and mind the 60 limit.",
+      "evil": "A leaking barrel through the docks: beat the trains, jump the bridge, and grab the cash under the stack before it comes down."
+    },
+    "cargo": { "good": "globe", "evil": "barrel" }
+  },
+  "noon": {
+    "name": "High Noon",
+    "description": {
+      "good": "A cactus for the far end of the territory. Mind the cattle on Main Street and the train at the crossing, and tip your hat to the sheriff.",
+      "evil": "A sack of snakes, six towns to scare. Scatter the herd down Main Street, fly the gulch and race the posse to the mine. This road ain't big enough."
+    },
+    "cargo": { "good": "cactus", "evil": "snakes" }
+  },
+  "morro": {
+    "cargo": { "good": "record", "evil": "fireworks" }
+  },
+  "rice": {
+    "name": "Emerald Steps",
+    "description": {
+      "good": "A sushi boat for the village below the terraces. Up to the temple gate, then down the steps of the hill: mind the buffalo, the tractors and the ford.",
+      "evil": "A cage of bats, a thousand paddies. Scatter the buffalo, jump the ridge, slide the hairpins through the spill and take the ford at full tilt."
+    },
+    "cargo": { "good": "sushi", "evil": "bats" }
+  },
+  "derby": {
+    "name": "Toy Box Derby",
+    "description": {
+      "good": "A four-lane slot track round the playroom, and two wind-up racers want your tip. Thread the bumps, hop the queue by the ramp and be first to the toy box.",
+      "evil": "Two clockwork couriers think this is their track. Fly the ramp over the traffic jam, flatten the farm set and leave them both under the bulldozer."
+    },
+    "cargo": { "good": "balloons", "evil": "jack" }
+  },
+  "seaquake": {
+    "name": "Seaquake",
+    "description": {
+      "good": "A quake has shaken the tunnel: roof falls, buckled plates and a jam behind each. Go round the rubble, ease over the bumps and mind the wet tar.",
+      "evil": "The sea bed is shaking and everyone has stopped to look. Take the transporter's ramps over the jam and the big notes from under the falling roof."
+    },
+    "cargo": { "good": "sushi", "evil": "piranhas" }
+  },
+  "farside": {
+    "name": "Far Side",
+    "description": {
+      "good": "The long haul to the far-side observatory: washboard dust, rover ruts, switchbacks and a meteor storm. Pick a rut, hold it, and keep the telescope level.",
+      "evil": "Nobody can see the far side from Earth. Rattle over the washboard flat out, jump the queue off the transporter and race the meteors to the last crater rim."
+    },
+    "cargo": { "good": "telescope", "evil": "reactor" }
+  },
+  "stunts": {
+    "name": "Stunt Double",
+    "description": {
+      "good": "Stunt day on the one-way backlot: rain machines, a ramp over the jam, a plane coming down and extras on parade. Coffees to the director, none spilt.",
+      "evil": "They are filming the big chase and you were not cast. Jump the queue, jump the drawbridge, drive through the explosion and steal the whole scene."
+    },
+    "cargo": { "good": "coffee", "evil": "fireworks" }
+  },
+  "ponti": {
+    "name": "Seven Bridges",
+    "description": {
+      "good": "The back alleys: seven humped bridges to hop, cobbles, wet paint and the bora off the lagoon. Fly each bridge straight and keep the tea set in one piece.",
+      "evil": "Seven bridges and a goose with a grudge. Skim the cobbles flat out, take the big notes off the wet tar and the quayside, and land every jump."
+    },
+    "cargo": { "good": "teaset", "evil": "goose" }
+  },
+  "glow": {
+    "name": "After Hours",
+    "description": {
+      "good": "A telescope for the night watchman, after closing. One way round the service road: thread the speed humps, mind the forklifts and duck the coaster.",
+      "evil": "A mimic chest through a park with nobody left to scream. Fly the ride transporter over the queue, plough the fresh tar and lose security in the ghost train."
+    },
+    "cargo": { "good": "telescope", "evil": "mimic" }
+  },
+  "erupt": {
+    "name": "Eruption Day",
+    "description": {
+      "good": "A canary to the last boat out. The mountain has gone up: keep with the evacuation, mind the cattle on the road, and watch the sky for lava bombs.",
+      "evil": "An egg that likes the heat, through an island on the run. Fly the jam off the transporter, rattle over the washboard, and let the lava bombs sort out the queue."
+    },
+    "cargo": { "good": "canary", "evil": "egg" }
+  },
+  "fallout": {
+    "name": "Hot Zone",
+    "description": {
+      "good": "A bonsai out of the exclusion zone. Through the checkpoint, past the plant's cooling towers and the dead village: keep out of the green, off the glowing cars.",
+      "evil": "A cloud for a client who glows in the dark. Run the hot stretches flat out, thread the infected traffic for the cash, and let the armour take the dose."
+    }
+  },
+  "cattle": {
+    "name": "Cattle Drive",
+    "description": {
+      "good": "Pancakes for the trail crew, still warm. Beat the train to both crossings, pick a wagon rut and keep to it, and take the bridge if the ford looks deep.",
+      "evil": "A cannonball for the cattle baron. Split the herds, race the train, wade the ford and duck the old trestle: the trail is long and the fuse is not."
+    },
+    "cargo": { "good": "pancakes", "evil": "cannonball" }
+  },
+  "thaw": {
+    "name": "Spring Thaw",
+    "description": {
+      "good": "The lake road in the thaw, by day: slush ruts, rippled ice, spray off the lorries and a meltwater ford. Pick a rut, skim the ripples, or take the bridge.",
+      "evil": "The ice is going and so is everyone's nerve. Fly the jam off the transporter, wade the ford for the big notes and leave the lorries blind in your spray."
+    }
+  },
+  "all-heck": {
+    "name": "All Heck",
+    "description": {
+      "good": "A hearse, a road through the underworld, and every single car coming straight at you. Down here you are the good one. Deliver anyway."
+    },
+    "cargo": { "good": "clock", "evil": "doll" }
+  },
+  "ufo": {
+    "name": "Mother Ship",
+    "description": {
+      "good": "Your delivery van is a flying saucer and the road runs through asteroid fields. Chain the ghost pickups and glide through the rocks.",
+      "evil": "A saucer, three asteroid fields and no traffic police for light years. Catch each ghost before the last one fades, or the rocks win."
+    },
+    "cargo": { "good": "cake", "evil": "ice" }
+  },
+  "marina-bay": {
+    "name": "Marina Bay",
+    "description": {
+      "good": "Three laps of the street circuit under the lights. The walls bite, the pack does not wait, and wrenches are the only help. Race clean.",
+      "evil": "Three laps between concrete walls with a full grid to lean on. No packages here: use the car. Less time, more elbows."
+    }
+  },
+  "oh-mine": {
+    "name": "Oh Mine!",
+    "description": {
+      "good": "By jetboat through a minefield, three hundred and more of them, some adrift. The trawlers are working: go round, gently, wake and all.",
+      "evil": "A jetboat, a sea full of mines and trawlers too slow to get out of the way. Something is going to go bang, and you are steering."
+    },
+    "cargo": { "good": "globe", "evil": "snakes" }
+  },
+  "montreal": {
+    "name": "Montreal",
+    "description": {
+      "good": "Three laps of the island circuit: long straights, hard stops and walls close on the exits. Brake early, pass cleanly, finish in time.",
+      "evil": "Long straights, big braking zones and a wall at every exit. Brake late, lean on whoever is alongside, and let the wall have them."
+    }
+  },
+  "bathurst": {
+    "name": "Mount Panorama",
+    "description": {
+      "good": "Two laps of the Mountain: up the hill, across the top between the walls, and flat out down the other side. Treat it with respect.",
+      "evil": "Two laps up and over the Mountain. The walls across the top are close enough to post somebody into. Do."
+    }
+  },
+  "rival-run": {
+    "name": "Rival Run",
+    "description": {
+      "good": "Another courier is after the same tip, and playing dirty. Beat them to the drop through the tractors and bales, fair and square.",
+      "evil": "A goody-two-shoes courier wants your tip. Farm lanes, tractors, a Big Splash pickup: make sure only one of you arrives."
+    },
+    "cargo": { "good": "toolbox", "evil": "subpoena" }
+  },
+  "showdown": {
+    "name": "Showdown",
+    "description": {
+      "good": "Night, a little roadster, and three evil couriers racing you to the drop. Every one that gets there first takes a share of the tip.",
+      "evil": "Three rival villains, one tip, one dark road. They are every bit as bad as you are: be worse, and be first."
+    },
+    "cargo": { "good": "record", "evil": "chainletter" }
+  },
+  "battlefield": {
+    "name": "Battlefield",
+    "description": {
+      "good": "Two armies at war along the road, and your 8x8 rolls with the green one. Mines, pillboxes, tanks head-on: the bigger vehicle wins. Get through."
+    }
+  },
+  "slipway": {
+    "name": "Slipway Beach",
+    "description": {
+      "good": "Down the slipway and across the bay, twice. Your car floats: steer round the pedal boats and the barge, and wave at the balloon.",
+      "evil": "Beach traffic queues at the water's edge while you drive straight in. The pedal boats make excellent speed bumps."
+    },
+    "cargo": { "good": "balloons", "evil": "recorders" }
+  },
+  "harbour": {
+    "name": "Harbour Lights",
+    "description": {
+      "good": "Three crossings of the harbour among ferries and barges, with a tunnel and potholed streets in between. Keep left, afloat or not.",
+      "evil": "Ferries, barges and dinghies, all slower than you would like. Leave a wake across the harbour and the potholes for everyone else."
+    },
+    "cargo": { "good": "coffee", "evil": "jack" }
+  },
+  "flood": {
+    "name": "High Water",
+    "description": {
+      "good": "The city is under water. Four flooded stretches to float across, burst mains, loose trolleys, falling containers. Somebody still needs their parcel.",
+      "evil": "A flooded city, traffic stranded at every waterline, and you sailing past in a car. Rub it in. Mind the falling containers."
+    },
+    "cargo": { "good": "telescope", "evil": "cloud" }
+  },
+  "ford": {
+    "name": "Hippo Ford",
+    "description": {
+      "good": "Five river crossings on safari. The hippos live here and the elephants are passing through: float quietly and give them the river.",
+      "evil": "Five fords, a river full of hippos and elephants on the bank. Whatever they flatten is one less car in your way."
+    },
+    "cargo": { "good": "trophy", "evil": "piranhas" }
+  },
+  "fjord": {
+    "name": "Fjord Crossing",
+    "description": {
+      "good": "Across the fjord and back among the ferries, then ice, rockfall and a tunnel on the far shore. Cold water, warm heart, dry parcel.",
+      "evil": "A ferry to cut up, ice to slide on, rocks coming down and fog to do it all in. Nobody will see a thing."
+    },
+    "cargo": { "good": "puppy", "evil": "glitter" }
+  },
+  "monza": {
+    "name": "Monza",
+    "description": {
+      "good": "Three laps of the temple of speed with thirty-nine others. Flat out, then the chicanes: miss one and the gravel keeps you.",
+      "evil": "Thirty-nine cars into the first chicane, and less time than any of them. Out-brake the lot: the gravel will catch whoever you push."
+    }
+  },
+  "spa": {
+    "name": "Spa-Francorchamps",
+    "description": {
+      "good": "Two laps, seven kilometres each, through the forest and over the hills. Smooth through the fast sweeps and stay out of the gravel.",
+      "evil": "Seven kilometres a lap of fast bends with gravel waiting on the outside. Put somebody in it at every corner."
+    }
+  },
+  "albert-park": {
+    "name": "Albert Park",
+    "description": {
+      "good": "Three laps round the lake in the park. Quick, flowing and lined with walls: keep it tidy and bring the car home.",
+      "evil": "A lap of the lake, three times, with walls on both sides and a grid in between. Shove first, apologise never."
+    }
+  },
+  "testbed": {
+    "name": "Test Track",
+    "cargo": { "good": "puppy", "evil": "doll" }
+  },
+  "grand-prix": {
+    "name": "Singapore Grand Prix"
+  },
+  "gimmick-road": {
+    "name": "Gimmick Road",
+    "cargo": { "good": "clock", "evil": "tentacle" }
+  },
+  "gimmick-road-2": {
+    "name": "Gimmick Road 2",
+    "cargo": { "good": "snowglobe", "evil": "bees" }
+  },
+  "gimmick-road-3": {
+    "name": "Gimmick Road 3",
+    "cargo": { "good": "pizza", "evil": "tentacle" }
+  },
+  "chaos": {
+    "name": "Pile-Up Parade",
+    "cargo": { "good": "pancakes", "evil": "piranhas" }
+  }
+}

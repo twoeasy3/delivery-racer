@@ -1,0 +1,67 @@
+{
+  "id": "christmas",
+  "cargo": { "good": "cake", "evil": "doll" },
+  "theme": "christmas",
+  "clock": { "good": 180, "evil": 135 },
+  "tip": 175,
+  "lanes": 4,
+  "traffic": { "wagon": 0.22, "minivan": 0.2, "commuter": 0.18, "suv": 0.14, "postvan": 0.12, "van": 0.08, "police": 0.04 },
+  "trafficCount": 9,
+  "oncomingCount": 8,
+  "drivers": { "happy": 0.5, "angry": 0.1 },
+  "segments": [
+    { "length": 450, "curve": 0 },
+    { "length": 300, "curve": 0.0025 },
+    { "length": 400, "curve": 0 },
+    { "length": 300, "curve": -0.003 },
+    { "length": 500, "curve": 0 },
+    { "length": 250, "curve": 0.003 },
+    { "length": 450, "curve": 0 },
+    { "length": 300, "curve": -0.002 },
+    { "length": 350, "curve": 0 }
+  ],
+  "storm": { "from": -100, "to": 3300, "count": 9, "seed": 25 },
+  "iceCreamStops": [
+    { "s": 1150, "lane": 3 },
+    { "s": 2450, "lane": 2, "wait": 10 }
+  ],
+  "ice": [
+    { "from": 600, "to": 650 },
+    { "from": 1400, "to": 1440, "lane": 2 },
+    { "from": 2100, "to": 2150 },
+    { "from": 2850, "to": 2890, "lane": 3 }
+  ],
+  "parked": [
+    { "s": 350, "side": "right" },
+    { "s": 1250, "side": "left" },
+    { "s": 1900, "side": "right" },
+    { "s": 2700, "side": "right" }
+  ],
+  "targets": [
+    { "s": 800, "side": "left" },
+    { "s": 1800, "side": "right" },
+    { "s": 2950, "side": "left" }
+  ],
+  "cushions": [
+    { "from": 1480, "to": 1615 }
+  ],
+  "pickups": [
+    { "type": "cash10", "s": 1502, "lane": 2 },
+    { "type": "cash10", "s": 1502, "lane": 3 },
+    { "type": "cash20", "s": 1592, "lane": 2 },
+    { "type": "turbo", "s": 200, "lane": 3 },
+    { "type": "wrench", "s": 550, "lane": 2 },
+    { "type": "ghost", "s": 950, "lane": 3 },
+    { "type": "passenger", "s": 1300, "lane": 2 },
+    { "type": "mystery", "s": 1650, "lane": 3 },
+    { "type": "timePlus", "s": 2000, "lane": 2 },
+    { "type": "wrench", "s": 2400, "lane": 3 },
+    { "type": "armour", "s": 2750, "lane": 2 },
+    { "type": "turbo", "s": 3050, "lane": 3 }
+  ],
+  "obstacles": [
+    { "s": 1000, "lane": 3, "kind": "bale" },
+    { "s": 1750, "lane": 2, "kind": "barrier" },
+    { "s": 2500, "lane": 3, "kind": "sign" }
+  ]
+}

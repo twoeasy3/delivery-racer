@@ -1,0 +1,497 @@
+diff --git a/src/delivery/IDEAS-prank-cargo-12-Oct.md b/src/delivery/IDEAS-prank-cargo-12-Oct.md
+new file mode 100644
+index 0000000..32124a5
+--- /dev/null
++++ b/src/delivery/IDEAS-prank-cargo-12-Oct.md
+@@ -0,0 +1,275 @@
++# Prank cargo: a draft of ideas for the owner's OK (K3, 12-Oct, revised)
++
++Ideas only. Nothing here is modelled, and no game code is changed.
++
++## The owner's wording (checklist K3, 11-Oct)
++
++> "Let's improve these, drop the ones in 14) and then let's do some prank-related items. I would want a draft
++> of ideas now before I OK the modelling. This was expensive for very poor effort".
++
++And of K2, the complaint this follows: "The new cargos are nowhere near as good as the previous ones", and
++"5a) The agent was really uninspired and just gave variations of the same concept, executed poorly."
++
++My reading: a batch of Evil cargo items on the theme of practical jokes (joke-shop goods and set-up pranks),
++each a different idea with its own silhouette, to the standard of the first fifty, drafted here for a yes or
++no per item before anyone builds one. "Improve these" and "drop the ones in 14)" are K2, done on
++`delivery-cargofix` (bailiffs, salesman and surprise party dropped), so they are not repeated here.
++
++## The three states, as the game has them
++
++Taken from `cargo.js`, `config.js` (`CONFIG.consignment`), `render/cargo.js`, `cargopage.js` and the model
++files. A **Good** item has no states: it idles. An **Evil** item has exactly three, in `CARGO_STATES`, numbered
++0, 1, 2, and every prank below is an Evil item.
++
++| # | State | When (the share of the run's clock left: `remaining / allowed`) | What the game does at the turn |
++|---|---|---|---|
++| 0 | **calm** | more than 50% of the clock left (`consignment.agitated: 0.5`) | the state the run starts in |
++| 1 | **agitated** | 50% of the clock left, or less | a tick sound, a flash round the HUD's round window, the label under it changes to the item's second phrase |
++| 2 | **furious** | 20% or less (`consignment.furious: 0.2`), **and all through the tip countdown** (the clock past zero, until the timeout) | the same tick and flash; the label changes to the third phrase |
++
++- The clock is the run's allowed time for the side being played (`Game.allowed`), so the turns come at the
++  same share of the clock on every level. The player's driving sets the state only by how long they take.
++- Each item names its three states as **short phrases in sentence case** in `cargoText.json` (`"states":
++  ["Rocking","Cracked","Hatched"]`); the phrase is what the HUD label shows. The item's name is Title Case.
++- The model eases from one state's pose to the next over **0.5 s** (`TRANSITION`); the HUD window reframes
++  on what each state takes up, so a calm item is not lost in the room its furious state needs.
++- **At the kerb** the state is frozen as the line was crossed (`Delivery.state`). The item is set down with a
++  puff of dust and a squash, then the game moves it the same way for every item: *calm* stands and animates;
++  *agitated* edges about with a hop now and then; *furious* runs round its spot, leaps, swells by a fifth,
++  throws red and yellow sparks, and the car beside it shakes. The item's own animation runs on top of that.
++
++**What changes between states, in the best existing items** (the standard: a different outline each time,
++a different rhythm of motion, and a colour or effect that turns):
++
++- **Porcupine** (Sniffing about / Balled up / Rabid, `cargoModels.js`): *calm* a long low oval, head out,
++  only the back quills showing and laid flat, sniffing along; *agitated* a ball, head and feet tucked away,
++  every quill out and bristling, trembling and rocking; *furious* a bigger oval reared up, head out again,
++  eyes red and grown, jaw open and foaming, the quills longer and jittering, hopping on the spot.
++- **Specimen Jar** (Coiled up / Lid lifting / Loose): *calm* a sealed jar of green liquid with one tentacle
++  coiled at the bottom, bubbles rising slowly; *agitated* the tentacle stands up through the neck and lifts
++  the lid, which tilts on it, an eye appears in the glass; *furious* the lid knocked off and spinning above,
++  three tentacles out and waving, the liquid purple, the skin and the eye red, the jar shaking.
++- **Egg in a Nest** (Rocking / Cracked / Hatched, `cargoModelsEvil2.js`): *calm* a whole egg rocking in its
++  nest; *agitated* a ring crack, the top lifted at the front, an eye looking out of the gap, jittering;
++  *furious* the top of the shell thrown off and lying against the nest, a dragon out of it flapping its wings
++  and breathing flame.
++
++So for each prank below the three states are written in that form: **the game's state name, the item's own
++phrase, then what the outline, the motion and the colour or effect are in that state.** Calm is a plain
++object with one tell; agitated is the prank arming; furious is the prank going off, over and over.
++
++## What a cargo item is for (so the ideas fit the slot)
++
++- A level carries one Good and one Evil item, the same every run. It is **only a sight: nothing in play goes
++  by it** (`cargo.js`). It turns in the HUD's round window, spins on the level card, and is set down at the
++  kerb when the level is delivered.
++- Pranks are **things**, not people in boxes, so they differ from the "malicious deliveries" (hands and
++  paper) and cannot become more "variations of the same concept".
++
++Near-neighbours already in the game, which the ideas stay clear of: Jack-in-the-Box (a thing on a spring out
++of a box), Glitter Bomb (an erupting gift), Ticking Parcel and Cannonball (a fuse), Sack of Snakes (so no
++spring-snake nut can), Skunk (so no stink bomb), Mimic Chest (teeth in a box), Cage of Bats and Crate of Bees,
++Marching Band (noise out of a box), Haunted Mirror, Cursed Doll and Possessed Teddy (haunted things),
++Bouquet in a Vase, Birthday Present.
++
++## The ideas (ten; each one its own idea and its own outline)
++
++For each: the concept; the silhouette (what reads in the 112 x 84 level-card tile and the HUD's round window,
++and at the kerb from the chase camera); the three states in the game's terms; the levels it suits. In play it
++does what every cargo does (above): the states turn with the clock and the kerb plays its frozen state.
++
++### P1. Whoopee Cushion
++
++- **Concept:** a giant inflated whoopee cushion, the classic, delivered to be sat on.
++- **Silhouette:** a wide plump red disc with a pinched flat nozzle out of one side, a yellow star-burst
++  printed on top. Low and round: nothing else in the set is a disc.
++- **Calm, "Plump":** fully inflated, a slow breathing swell of a few percent; the nozzle lifts and settles.
++- **Agitated, "Wheezing":** the disc sags to two-thirds height and refills in short puffs, the nozzle
++  flapping; a small ring of air lines pops from the nozzle at each puff; a shiver across the top.
++- **Furious, "Let rip":** it goes flat to a pancake with one long blast (a wide cone of wavy air lines out of
++  the nozzle), skids and spins half a turn on the recoil, then reinflates fast and does it again; the
++  star-burst flashes brighter at each blast. Three heights: plump, sagging, flat.
++- **Suits:** City Suburbs, Toy Box Derby, Thrill Park.
++
++### P2. Bucket on a Trip Wire
++
++- **Concept:** the bucket-over-the-door prank, packed ready: a brimming tin bucket balanced on a wedge, a taut
++  string from its handle to a peg.
++- **Silhouette:** a tall tapering galvanised bucket, handle up, a wedge under one edge and a string down to a
++  peg at the base. Tall with a lean: unlike any container in the set. The water is a flat blue disc at the
++  brim with the rim standing proud of it (not a coplanar face).
++- **Calm, "Balanced":** upright on its wedge, the string taut and humming (a tiny vibrato), the water disc
++  tilting a degree or two.
++- **Agitated, "Slopping":** the bucket rocks on the wedge through fifteen degrees, the water disc tilting
++  against it and sheets of water (flat blue slabs) slopping over the rim and dropping out of sight; the
++  string jerks.
++- **Furious, "Tipped":** the bucket lies on its side on the ground with a standing sheet of water frozen
++  mid-pour out of it, the wedge flung clear, the string slack and whipping; the bucket rolls back and forth
++  on its side, drips (small blue spheres) falling from the sheet. Upright, rocking, over: three outlines.
++- **Suits:** Farm Lanes, Construction Site, Cattle Drive.
++
++### P3. Squirting Flower
++
++- **Concept:** the lapel squirting flower, made huge: a daisy on a stalk with the rubber bulb and tube hanging
++  off it.
++- **Silhouette:** one big white-petalled daisy with a yellow heart on a green stalk, a pear-shaped black
++  rubber bulb hanging on a tube beside it. One flower with a bulb, wider than the bouquet is tall.
++- **Calm, "Innocent":** the petals nod in a slow breeze, the bulb swings gently on its tube.
++- **Agitated, "Pumping":** the bulb squeezes flat and round by itself, the heart bulges in time, a fat drop
++  hangs off the heart and falls; the stalk leans forward.
++- **Furious, "Squirting":** a long arc of water (a curved blue tube) out of the heart, the petals spinning
++  like a propeller, the bulb pumping hard, the whole flower whipping side to side so the arc sweeps. Still,
++  pulsing, spinning: three outlines.
++- **Suits:** Mystery Meadows, Garden City, Emerald Steps.
++
++### P4. Chattering Teeth
++
++- **Concept:** wind-up chattering teeth, the joke-shop kind, on the loose in the car.
++- **Silhouette:** a big set of white teeth on pink gums with a wind-up key out of one side, standing on a
++  small open crate (a flat black face across the opening, the teeth proud of it). The key is the tell; the
++  mimic's teeth are in a chest lid, these *are* the thing.
++- **Calm, "Wound":** teeth shut on the crate, the key turning slowly, one clack every couple of seconds (the
++  top jaw lifts and drops).
++- **Agitated, "Chattering":** fast clacking, hopping a hand's width on the spot, the key a blur, the crate
++  rocking under it.
++- **Furious, "Snapping":** the teeth leap clear of the crate and land back, bite the crate's rim and hang off
++  it, jaws wide; the crate scoots about; the gums flush red. On the crate, bouncing on it, off it: three
++  outlines.
++- **Suits:** Night Drive, After Hours, Thrill Park.
++
++### P5. Custard Pie Catapult
++
++- **Concept:** a pie-in-the-face machine: a spring-loaded paddle, set, with a cream pie sitting on it and a
++  stack of refills.
++- **Silhouette:** a flat hinged arm on a low base with a pie tin and a dome of white cream on the end, a short
++  stack of tins beside it. A cantilever: nothing else in the set is an arm on a base.
++- **Calm, "Set":** the arm held flat under tension and quivering, the cream dome wobbling, a cherry on top.
++- **Agitated, "Twitching":** the latch slips: the arm jerks up a few degrees and drops, the cream slides and
++  flat white splats appear on the base; the stack of tins shifts.
++- **Furious, "Firing":** the arm snaps upright and back, a pie flying off the end (up and gone, a fresh one
++  from the stack appearing on the paddle), cream splats on the base and arm, the base hopping on the recoil;
++  the stack shrinks and refills. Flat, jerking, upright: three outlines.
++- **Suits:** Quiet on Set, Stunt Double, Monte Carlo.
++
++### P6. Air Horn under a Cushion
++
++- **Concept:** a compressed-air horn wedged under a soft cushion, so the next person to sit sets it off.
++- **Silhouette:** a red can with a wide flared trumpet, a lumpy cushion squashed on top. A trumpet shape from
++  any side; the cushion is the tell that it is a trap.
++- **Calm, "Primed":** still; the cushion settles a little and lifts, as if someone is about to sit.
++- **Agitated, "Parping":** short blasts: the trumpet puffs out (scales up a tenth) and the cushion jumps an
++  inch with each, a ring of sound lines leaves the trumpet.
++- **Furious, "Blaring":** one long blast: the trumpet flared wide, big sound rings streaming, the horn riding
++  its own recoil in a circle, the cushion flung off and landing back on it; the can glows hot red. Cushion on,
++  cushion jumping, cushion off and the horn wide: three outlines.
++- **Suits:** Expressway, Speed Trap Alley, Rival Run.
++
++### P7. Bedsheet Ghost
++
++- **Concept:** the oldest costume: a sheet with two eyeholes, and someone under it who cannot keep still.
++- **Silhouette:** calm a folded square; furious a white draped cone with two black eyeholes and a wavy hem,
++  trainers showing beneath. The soft cone is unlike anything in the set (the genie is smoke, the doll a
++  figure).
++- **Calm, "Folded":** a neat folded square of sheet with the two eyeholes on top; it twitches now and then and
++  a corner lifts.
++- **Agitated, "Rising":** the sheet lifts into a short cone with the eyeholes at the front, swaying, a muffled
++  "boo" speech bubble popping up and sinking.
++- **Furious, "BOO":** full height, billowing, two arm-shapes out under the sheet, the trainers kicking below
++  the hem, leaping; "BOO!" in big letters above it; the eyeholes glow. Square, short cone, tall leaping cone.
++- **Suits:** Night Drive, All Heck, Mystery Meadows, Northern Lights.
++
++### P8. Boxes within Boxes
++
++- **Concept:** the nested-boxes gift: a huge present that opens on a smaller box, which opens on a smaller one,
++  down to a tiny box with a note that says GOTCHA.
++- **Silhouette:** calm one big brown box with a ribbon; furious a stepped tower of ever-smaller open boxes
++  with a tiny one on top. Each open box is a black face across its opening with the next box standing proud.
++  The Birthday Present stays one cube; this one becomes a pyramid.
++- **Calm, "Wrapped":** one box, ribbon tails fluttering, a soft thud inside that rocks it.
++- **Agitated, "Opening":** the lid tips up and a second box rises out of the black opening, then a third,
++  the two-tier tower rocking; lids clapping.
++- **Furious, "Gotcha":** the full tower, five or six boxes, the tiny top one open with a note flapping that
++  says GOTCHA, the whole stack swaying, every lid clapping, the bottom box hopping. One cube, two tiers, a
++  tower: three outlines.
++- **Suits:** Christmas Eve, City Suburbs, Big Business.
++
++### P9. Spider on a Fishing Line
++
++- **Concept:** the fake hairy spider dangled from a fishing rod, the kind lowered over a doorway.
++- **Silhouette:** a short rod on a stand with the line hanging and a fat black spider on the end, legs out
++  wide: a tall thin shape with a blob under it. Plainly rubber: a smooth body, bead eyes, a price tag on one
++  leg.
++- **Calm, "Hanging":** the spider turns slowly on the line, the rod's tip bending under it.
++- **Agitated, "Bobbing":** the rod jigs, the spider bouncing up and down on the line, legs flexing, the tag
++  flapping.
++- **Furious, "Dropped":** the line pays out and the spider lands and scuttles round the base, legs going,
++  the rod whipping; then it is reeled up fast and dropped again; the eyes glow red. Hanging high, bobbing in
++  the middle, on the ground: three outlines.
++- **Suits:** Mystery Meadows, All Heck, Safari, Farm Lanes.
++
++### P10. Disappearing Ink
++
++- **Concept:** a bottle of disappearing ink with a quill, splashing blots that fade away.
++- **Silhouette:** a fat round blue bottle with a cork and a long feather quill standing in it, on a blotter. A
++  bottle with a plume: the quill's tall diagonal is the tell (the genie's bottle is thin and smoky).
++- **Calm, "Corked":** the quill sways, the ink line sloshes, the cork sits tight.
++- **Agitated, "Blotting":** the cork pops off and hangs on its string, the quill dips and flicks, flat blue
++  blots land on the blotter and the bottle, each shrinking to nothing in a second or two.
++- **Furious, "Splashing":** the bottle tips and rights itself, a fan of blots in the air (small flat discs on
++  arcs), the blotter going blue and back to white in waves, the label's grin showing, the quill scribbling;
++  the ink itself turns from blue to clear. Corked and upright, open and flicking, tipping with a fan: three
++  outlines.
++- **Suits:** Australian Capital Territory, Big Business, Montreal.
++
++All ten fit three states: none needed fixing or dropping for that, since each has a natural armed stage
++between "a plain thing" and "going off".
++
++## Considered and left out
++
++Exploding cigar (a fuse again: the parcel and the cannonball); rubber chicken (limp and yellow, too near the
++goose and weak in two of three states); joy buzzer (its sparks are the reactor's); dribble glass (the bucket
++does water better); spring snakes in a nut can (the sack of snakes); stink bomb (the skunk); boxing glove in a
++box (the jack-in-the-box); itching and sneezing powder (no silhouette to speak of); fake dog mess (taste;
++the owner would have to ask for it).
++
++## Constraints for whoever models them (noted, not done)
++
++- A model is a group standing on y = 0, facing +z, about a metre tall (`render/cargoModels.js`), built with
++  `stated(group, pose(t, agitated, furious))` so the two weights ease over 0.5 s; it must read in the HUD's
++  round window, spinning on the level card, and at the kerb. All ten are far within a lane (3.5 m).
++- An open-topped container (P4's crate, P8's boxes) is only a flat black face across the opening with the
++  contents standing proud of it; no coplanar faces (P2's water disc sits below the rim); nothing passing
++  through anything else (P2's string and wedge, P5's arm and pies, P9's line, P8's nested lids need care).
++- Each state changes the **outline**, not just the colour, as the porcupine, jar and egg do; the "three
++  outlines" line on each idea above is that check.
++- Names in Title Case, states as short phrases in sentence case, in `cargoText.json` and `cargo.js`'s
++  `CARGO.evil`; suggested ids: `whoopee`, `bucket`, `squirter`, `teeth`, `piecatapult`, `airhorn`, `ghost`,
++  `nestedboxes`, `spider`, `ink`.
++- Build order if OK'd: P1, P6, P10 and P8 are boxes, cylinders and spheres (cheapest); P2, P5 and P9 have
++  thin parts (string, arm, line) that must not phase; P7's cloth cone and P3's petals are the most work.
++
++## Recommended top three
++
++1. **P1 Whoopee Cushion:** the most recognisable prank there is, a silhouette nothing else has, and its three
++   states are three heights of the same disc.
++2. **P5 Custard Pie Catapult:** a proper machine, a different outline per state, and cream is a particle the
++   game does not have yet.
++3. **P7 Bedsheet Ghost:** a square that becomes a cone that leaps; funny rather than scary, which keeps it
++   apart from the haunted things.
++
++Next in line if a fourth or fifth is wanted: P8 Boxes within Boxes, P2 Bucket on a Trip Wire.
++
++## For the owner's decision
++
++1. **Which of the ten to build** (a yes/no per item), and whether ten is the batch or fewer.
++2. **Should a furious prank do anything in play?** Today cargo is a sight only, and the kerb's furious
++   behaviour (running round, leaping, sparks, the car shaking) is the same for every item. If the owner wants
++   more, the fair version is cosmetic only: a splat of cream across the HUD's cargo window that wipes in two
++   seconds (P5), a honk that makes the nearest traffic car swerve a lane (P6), a blue blot on the corner that
++   fades (P10). None touches the player's car, stops it, or costs anything without counterplay. My
++   recommendation is **no**: keep cargo a sight, as the other sixty are.
++3. **A prank "going off at the door"** at the kerb (the pie fired at the customer's door, the bucket tipping
++   as the door opens) would need a small change to the delivery ending, which today only plays the generic
++   state behaviour plus the model's own animation. Not needed for any idea to read; the owner's call.
++4. **Level pairings:** the "Suits" lines are suggestions; the cargo per level lives in `levelText.json` and is
++   the owner's.
+diff --git a/src/delivery/cars.js b/src/delivery/cars.js
+index 875beee..f71c3a1 100644
+--- a/src/delivery/cars.js
++++ b/src/delivery/cars.js
+@@ -174,17 +174,19 @@ export const CARS = [
+   // between the Blue Stars of tier 3 (36 to 40 m/s, 10 to 14.8, 120 to 220) and of tier 5 (46.5 to 48, 13 to 18,
+   // 190 to 420), and under tier 5's gold cars at each of top speed, acceleration and health (46 / 22 / 360)
+   // (the sturdy one: bare steel. Slowest of the four off the line, and the most health)
+-  { id: 'gullwing', tier: 4, blue: true, name: 'Stainless Gullwing', price: 920, color: 0xb7bcc2, evilColor: 0x4b4e55, fixedLivery: true, model: 'gullwing',
++  // (the Evil liveries of the Blue Stars and the amphibious cars: darker than their Good ones, as every Evil livery
++  // is, but each a colour of its own, not black: blued steel, aubergine, blood red, deep teal)
++  { id: 'gullwing', tier: 4, blue: true, name: 'Stainless Gullwing', price: 920, color: 0xb7bcc2, evilColor: 0x2f3d5c, fixedLivery: true, model: 'gullwing',
+     maxSpeed: 42.5, accel: 12, crossing: 0.35, health: 330, mass: 1.4, hw: 0.93, hl: 2.13, height: 1.14 },
+   // (the all-rounder: quick, good grip, no weakness)
+-  { id: 'rearengine', tier: 4, blue: true, name: 'Rear-Engine Coupe', price: 960, color: 0xd8dadf, evilColor: 0x1b1b20, fixedLivery: true, model: 'rearengine',
++  { id: 'rearengine', tier: 4, blue: true, name: 'Rear-Engine Coupe', price: 960, color: 0xd8dadf, evilColor: 0x3b1f4f, fixedLivery: true, model: 'rearengine',
+     maxSpeed: 44.5, accel: 15.5, agility: 1.4, crossing: 0.4, health: 175, hw: 0.86, hl: 2.15, height: 1.32 },
+   // (fast and fragile: the best acceleration of the four, and the least health)
+-  { id: 'snake', tier: 4, blue: true, name: 'Snake Roadster', price: 1000, color: 0x1d3f96, evilColor: 0x17171b, fixedLivery: true, model: 'snake',
++  { id: 'snake', tier: 4, blue: true, name: 'Snake Roadster', price: 1000, color: 0x1d3f96, evilColor: 0x7a1220, fixedLivery: true, model: 'snake',
+     maxSpeed: 45, accel: 17, agility: 1.25, crossing: 0.25, health: 140, hw: 0.87, hl: 1.98, height: 1.2 },
+   // (the heavy one: tall and wide, strong in a straight line, good over rough ground and through water, and the
+   // slowest of any garage car to change lane)
+-  { id: 'polytruck', tier: 4, blue: true, name: 'Polygon Truck', price: 1060, color: 0xb4b8bd, evilColor: 0x26282c, fixedLivery: true, model: 'polytruck',
++  { id: 'polytruck', tier: 4, blue: true, name: 'Polygon Truck', price: 1060, color: 0xb4b8bd, evilColor: 0x1c4f4a, fixedLivery: true, model: 'polytruck',
+     maxSpeed: 44, accel: 14, agility: 0.9, crossing: 0.9, health: 290, mass: 2.3, hw: 1.02, hl: 2.84, height: 1.8 },
+   // ---- tier 5
+   // (a modern American muscle car: long, low and wide, heavy, a bonnet bulge and twin stripes)
+@@ -210,19 +212,19 @@ export const CARS = [
+   // In the garage from the start, in a section of their own (see the garage). Their perk is the water
+   // (the ids are short: each is in a full save's cookie. See progress.js)
+   // (May's Herald: a little sixties convertible under sail. Light, slow, and it turns on a sixpence)
+-  { id: 'herald', tier: 1, amphibious: true, name: 'Sailing Herald', price: 60, color: 0xd9c9a8, evilColor: 0x5a1f2a, fixedLivery: true, model: 'herald',
++  { id: 'herald', tier: 1, amphibious: true, name: 'Sailing Herald', price: 60, color: 0xd9c9a8, evilColor: 0x6b2a1a, fixedLivery: true, model: 'herald',
+     maxSpeed: 23, accel: 9, agility: 1.2, crossing: 0.5, health: 90, hw: 0.8, hl: 1.95, height: 1.0, draft: 0.5, shotBack: 1.5, perk: AMPHIBIOUS_PERK },
+   // (the Transporter: a square-nosed van lashed between two yellow floats. Wide, steady, tough for its tier)
+-  { id: 'floatvan', tier: 2, amphibious: true, name: 'Float Van', price: 180, color: 0x2f7fc4, evilColor: 0x7a2a2a, fixedLivery: true, model: 'transporter',
++  { id: 'floatvan', tier: 2, amphibious: true, name: 'Float Van', price: 180, color: 0x2f7fc4, evilColor: 0x7a4a10, fixedLivery: true, model: 'transporter',
+     maxSpeed: 26, accel: 8, crossing: 0.6, health: 160, mass: 1.3, hw: 1.3, hl: 2.3, height: 2.0, draft: 0.85, perk: AMPHIBIOUS_PERK },
+   // (the Toybota: a pickup with an outboard where its tailgate was. The all-rounder)
+-  { id: 'toybota', tier: 3, amphibious: true, name: 'Toybota', price: 310, color: 0xc8322b, evilColor: 0x23262b, fixedLivery: true, model: 'toybota',
++  { id: 'toybota', tier: 3, amphibious: true, name: 'Toybota', price: 310, color: 0xc8322b, evilColor: 0x1f5a4a, fixedLivery: true, model: 'toybota',
+     maxSpeed: 34, accel: 11, crossing: 0.9, health: 190, hw: 1.0, hl: 2.5, height: 1.6, perk: AMPHIBIOUS_PERK },
+   // (the Dampervan: a high-top camper built into a boat's hull. Slow off the line, and very hard to sink)
+-  { id: 'dampervan', tier: 4, amphibious: true, name: 'Dampervan', price: 470, color: 0x1f4d36, evilColor: 0x4a2a5e, fixedLivery: true, model: 'dampervan',
++  { id: 'dampervan', tier: 4, amphibious: true, name: 'Dampervan', price: 470, color: 0x1f4d36, evilColor: 0x5c2d78, fixedLivery: true, model: 'dampervan',
+     maxSpeed: 37, accel: 10, crossing: 0.7, health: 290, mass: 1.6, hw: 1.0, hl: 2.3, height: 2.7, draft: 0.72, perk: AMPHIBIOUS_PERK },
+   // (the Nissank: a pickup on two great pontoons with twin outboards. The quick one, and heavy with it)
+-  { id: 'nissank', tier: 5, amphibious: true, name: 'Nissank', price: 750, color: 0x2a55b8, evilColor: 0xb8881f, fixedLivery: true, model: 'nissank',
++  { id: 'nissank', tier: 5, amphibious: true, name: 'Nissank', price: 750, color: 0x2a55b8, evilColor: 0x8a6a14, fixedLivery: true, model: 'nissank',
+     maxSpeed: 44, accel: 14, crossing: 0.9, health: 310, mass: 2, hw: 1.35, hl: 2.6, height: 1.7, draft: 0.85, perk: AMPHIBIOUS_PERK },
+   { id: 'tank', name: 'Tank', price: 5000, color: 0x4b5a2a, evilColor: 0x2a2d33, tank: true, corner: true,
+     maxSpeed: 46, accel: 8, crossing: 1, health: 100, hw: 1.25, hl: 2.3, height: 1.9 }, // (TANK RAGE's top speed: CONFIG.tankMaxSpeed)
+@@ -294,8 +296,14 @@ export const SECRET_CARS = {
+ // extras, and each drives by the stats written for it here (a level's vehicle: as it does on its own
+ // level, unless a figure is given), held to no cap.
+ const earnedCar = (level, par, car, base) => ({ ...car, ...(base ? { id: 'earned-' + base.id, base } : {}), tier: 6, price: 0, earned: { level, par } });
++// The three built on a garage car's model are that car's SUPER version to look at (superKit: the body kit of
++// render/carExtras.js addSuperKit, with its stripe in each side's second colour, as the Super car it stands in
++// for has), since each garage car has a Super version in play (superOf): the Hell Rod is a Super Hot Rod, the
++// Courier Special a Super Sleeper Wagon, the Showdown Muscle a Super Muscle Car. The six that are a level's own
++// vehicle (the saucer, the race cars, the jetboat, the 8x8) have no Super version, and stay as they are.
+ export const EARNED_CARS = [
+   earnedCar('all-heck', { good: 39 }, { id: 'hellrod', name: 'Hell Rod', color: 0xff5a00, evilColor: 0x1a0608, model: 'hotrod',
++    superKit: true, stripe: 0x151515, evilStripe: 0xff5a00, // flame orange with black / soot with a flame stripe
+     maxSpeed: 50, accel: 18, crossing: 0.4, health: 200, hw: 0.9, hl: 2.1, height: 1.2, perk: 'Straight out of All Heck' }),
+   earnedCar('ufo', { good: 36, evil: 20 }, { ...LEVEL_CARS.ufo, name: 'Saucer', color: 0x9fe0c8, evilColor: 0x33184a }, LEVEL_CARS.ufo),
+   // (the three race cars are a little tamer on the road than on their circuits: about a tenth off the speed and the getaway)
+@@ -304,8 +312,10 @@ export const EARNED_CARS = [
+   earnedCar('montreal', { good: 87, evil: 49 }, { ...LEVEL_CARS.f1, name: 'Road F1', maxSpeed: 68, accel: 18, health: 80, color: 0x1d3f9c, evilColor: 0x7a1fa8 }, LEVEL_CARS.f1),
+   earnedCar('bathurst', { good: 90, evil: 51 }, { ...LEVEL_CARS.lmp, name: 'Road Prototype', maxSpeed: 68, accel: 18, health: 160, color: 0x18a35a, evilColor: 0x8a1a2a }, LEVEL_CARS.lmp),
+   earnedCar('rival-run', { good: 75, evil: 57 }, { id: 'courier', name: 'Courier Special', color: 0xffb400, evilColor: 0x2b1a3a, model: 'sleeper',
++    superKit: true, stripe: 0x151515, evilStripe: 0xffb400, // courier yellow with black / midnight with a yellow stripe
+     maxSpeed: 50, accel: 19, agility: 1.5, crossing: 0.6, health: 220, hw: 0.92, hl: 2.5, height: 1.45 }),
+   earnedCar('showdown', { good: 50, evil: 38 }, { id: 'showdown', name: 'Showdown Muscle', color: 0x8a1030, evilColor: 0x1a1f3a, model: 'muscle',
++    superKit: true, stripe: 0xf4f4f4, evilStripe: 0x8a1030, // claret with white / navy with a claret stripe
+     maxSpeed: 52, accel: 17, crossing: 0.45, health: 300, mass: 2, hw: 1.0, hl: 2.5, height: 1.35 }),
+   // (the toughest car there is)
+   earnedCar('battlefield', { good: 78 }, { ...LEVEL_CARS.apc, name: 'Road 8x8', health: 450, color: 0x6b6f5a, evilColor: 0x4a4e3a, perk: 'Its gun fires in place of packages' }, LEVEL_CARS.apc),
+diff --git a/src/delivery/render/garage.js b/src/delivery/render/garage.js
+index 64c0cd1..e7c8104 100644
+--- a/src/delivery/render/garage.js
++++ b/src/delivery/render/garage.js
+@@ -13,7 +13,7 @@ import { renderer } from './scene.js';
+ import { makeCarMesh, shapeCarMesh, makeTankMesh } from './cars.js';
+ import { MODELS } from './models.js';
+ import { makeIdeaModel } from './ideaModels.js';
+-import { makeUfo } from './carExtras.js';
++import { makeUfo, addSuperKit } from './carExtras.js';
+ import { GarageView, arrange, mountGarageView } from './garageview.js';
+ import { showComparison } from './compare.js';
+ import { IdeasLot } from './ideaslot.js';
+@@ -146,6 +146,7 @@ export const makeShowCar = (car) => {
+   if (car.idea) return makeIdeaModel(car); // (a car idea in use: its own model, ideas.js; one with none throws below, and the card shows no picture)
+   const mesh = car.tank ? makeTankMesh(car.color) : car.ufo ? makeUfo() : car.model ? MODELS[car.model](car) : makeCarMesh(car.color); // (ufo: the earned Saucer)
+   if (!car.tank && !car.ufo && !car.model) shapeCarMesh(mesh, car);
++  if (car.super || car.superKit) addSuperKit(mesh, car); // (an earned car built as its garage car's Super version: the body kit on, as in play)
+   return mesh;
+ };
+ export const paintShowCar = (mesh, car, evil) => {
+@@ -531,7 +532,10 @@ export const Garage = {
+     for (const mesh of parked) {
+       mesh.userData.tag.rotation.y = now / 500;
+       if (mesh.userData.animate) mesh.userData.animate(now / 1000); // animated models keep moving while parked
+-      mesh.position.y = mesh === hovered ? 0.25 : 0; // the hovered car lifts a little
++      // the hovered car lifts a little; a saucer hovers anyway, bobbing, its ring of lights turning (as in play: items.js)
++      const saucer = mesh.userData.car.ufo ? 1 + Math.sin(now / 300) * 0.15 : 0;
++      if (saucer) mesh.userData.lamps.rotation.y = now / 250;
++      mesh.position.y = saucer + (mesh === hovered ? 0.25 : 0);
+     }
+ 
+     if (hovered) {
+diff --git a/src/delivery/render/items.js b/src/delivery/render/items.js
+index 285fe40..2100727 100644
+--- a/src/delivery/render/items.js
++++ b/src/delivery/render/items.js
+@@ -34,7 +34,7 @@ const playerModels = {};
+ const playerModel = (car) => {
+   if (!playerModels[car.id]) {
+     const model = car.idea ? makeIdeaModel(car) : MODELS[car.model](car); // (a car idea's is its own: ideas.js, render/ideaModels.js)
+-    if (car.super) addSuperKit(model, car); // (a Super car: its base car's model with the body kit on)
++    if (car.super || car.superKit) addSuperKit(model, car); // (a Super car, or an earned car built as one: its base car's model with the body kit on)
+     model.userData.body.material.transparent = true; // (so it can go see-through as a ghost)
+     carMesh.add(model);
+     playerModels[car.id] = model;
+diff --git a/src/delivery/render/themes/volcano.js b/src/delivery/render/themes/volcano.js
+index b4ceddb..1417223 100644
+--- a/src/delivery/render/themes/volcano.js
++++ b/src/delivery/render/themes/volcano.js
+@@ -10,10 +10,11 @@
+ import * as THREE from 'three';
+ import { LEVEL } from '../../levels.js';
+ import { Track } from '../../track.js';
++import { scene } from '../scene.js';
+ import { everyFrame } from './sceneryClock.js';
+ import { makeVolcano, FRONDS, BOULDER, PUFF } from './volcanoModels.js';
+ 
+-export const volcano = ({ theme, add, instances, sideStrip, buildStrip, offRoads, beside, inJunction, exits, cube, tube, cone, levelGroup }) => {
++export const volcano = ({ theme, add, flat, instances, sideStrip, offRoads, beside, inJunction, exits, cube, tube, cone, levelGroup }) => {
+   // (laid out the same every time: a seed of the level's own)
+   let seed = 23 + (LEVEL.id || '').length * 613;
+   const erupting = !!theme.erupting;
+@@ -59,6 +60,27 @@ export const volcano = ({ theme, add, instances, sideStrip, buildStrip, offRoads
+   // `riverCore` colours (../../themes.js, render/hazards.js): so it is lava the car jumps when the leaves are up)
+   const clearOfLava = (s, side, d, pad = 2) => !rivers.some(([a, b, at, d0, d1]) => at === side && s > a - pad && s < b + pad && d > d0 - pad && d < d1 + pad) && !spanned(s, pad + 4);
+ 
++  // ---- the floor: the sand beside the road, so that what stands on it is seen to stand on something. The
++  // ground itself is as black as the boulders and the vents' mounds, and without this they hung in nothing.
++  // A verge of fine grey ash along the pavement, black sand a shade lighter than the ground out to 40 m beyond it
++  // (under the lava, which lies on top of it), and pale pumice stones scattered over the sand; in 20 m pieces,
++  // none over a bridge (the lava below is what is to be seen there) nor into a tunnel
++  const ASH = flat(0x4a4449), SAND = flat(0x343034);
++  const pumice = [];
++  for (let s = Track.start; s < Track.end; s += 20) {
++    const to = Math.min(Track.end, s + 20);
++    if (spanned(s, 2) || spanned(to, 2) || covered(s, 2) || covered(to, 2)) continue;
++    for (const side of [-1, 1]) {
++      add(sideStrip(s, to, (q) => beside(side, q, 0.2), (q) => beside(side, q, 3.4), 0.035, 5), ASH);
++      add(sideStrip(s, to, (q) => beside(side, q, 3.4), (q) => beside(side, q, 40), 0.03, 5), SAND);
++      for (let k = 0; k < 2; k++) {
++        const q = s + rand() * 18, d = 4 + rand() * 30, r = 0.25 + rand() * 0.4;
++        if (clearOfLava(q, side, d, r) && !inJunction(q)) pumice.push([q, beside(side, q, d), r * 0.25, r * 1.6, r * 0.5, r * 1.3]);
++      }
++    }
++  }
++  instances(BOULDER, 0x5e575c, pumice, false, 0.5);
++
+   // ---- the sea, off to the right beyond the land, and its line of surf (at the height of the sea, whatever
+   // the road is doing)
+   const sea = (a, b, y, color) => {
+@@ -199,9 +221,11 @@ export const volcano = ({ theme, add, instances, sideStrip, buildStrip, offRoads
+   const fountain = [];
+   if (erupting) {
+     for (const [color, wide, tall, beat] of [[0xff4a12, 21, 30, 2.3], [0xff8a1e, 13, 38, 3.1], [0xffd24a, 6, 45, 4.3]]) {
+-      const jet = new THREE.Mesh(new THREE.ConeGeometry(wide, tall, 12, 1, true).translate(0, tall / 2, 0), new THREE.MeshBasicMaterial({ color, fog: false, side: THREE.DoubleSide, transparent: true, depthTest: false }));
++      const jet = new THREE.Mesh(new THREE.ConeGeometry(wide, tall, 12, 1, true).translate(0, tall / 2, 0), new THREE.MeshBasicMaterial({ color, fog: false, side: THREE.DoubleSide, transparent: true }));
+       jet.position.y = HIGH - 3;
+-      jet.renderOrder = 6 + fountain.length; // (through its own smoke, which would hide it: the sky is all that is ever behind it)
++      // (drawn after its own smoke, which writes no depth, so the smoke never hides it; but it tests depth like
++      // anything else, so a nearer hill in front of the volcano hides it as it hides the volcano)
++      jet.renderOrder = 6 + fountain.length;
+       jet.userData.beat = beat;
+       mountain.add(jet);
+       fountain.push(jet);
+@@ -212,10 +236,31 @@ export const volcano = ({ theme, add, instances, sideStrip, buildStrip, offRoads
+   const a = {}, b = {};
+   Track.toWorld(0, 0, a); Track.toWorld(Track.length, 0, b);
+   const bearing = Math.atan2(b.x - a.x, b.z - a.z) + 0.3, FAR = erupting ? 500 : 540;
++  // The mountain is drawn without fog (it stands at the fog's far edge: fogged, it would never be seen), so it
++  // has to go into a fog bank, or a tunnel's dark, by itself: as the fog closes in (scene.fog.far comes down from
++  // the usual 520: render/roadside.js, tunnel.js) every colour of it goes to the fog's, and the see-through parts
++  // thin out, until it is gone. `seen`: 1 in the usual haze, 0 with the fog at 150 m or nearer
++  // (tinted: every material of it once, with its own colour and, for the halo and the fountain, its own opacity;
++  // the smoke's opacity is set afresh by animate every frame, so it is scaled after that, below)
++  const tinted = [], smoke = [];
++  mountain.traverse((m) => {
++    if (!m.isMesh || !m.material.color) return;
++    if (m.geometry === PUFF) smoke.push(m);
++    if (!tinted.some(x => x.mat === m.material)) tinted.push({ mat: m.material, base: m.material.color.clone(), opacity: m.material.transparent && m.geometry !== PUFF ? m.material.opacity : null });
++  });
+ 
+   everyFrame(levelGroup, (t, x, y, z) => {
+     mountain.position.set(x + Math.sin(bearing) * FAR, Math.max(0, y - 11) * 0.55 - 4, z + Math.cos(bearing) * FAR);
+     mountain.userData.animate(t);
++    const seen = Math.max(0, Math.min(1, (scene.fog.far - 150) / 250));
++    mountain.visible = seen > 0.01;
++    if (mountain.visible) {
++      for (const { mat, base, opacity } of tinted) {
++        mat.color.copy(base).lerp(scene.fog.color, 1 - seen);
++        if (opacity !== null) mat.opacity = opacity * seen;
++      }
++      for (const puff of smoke) puff.material.opacity *= seen;
++    }
+     for (const jet of fountain) { const b = jet.userData.beat, up = 0.78 + 0.22 * Math.sin(t * b) + 0.1 * Math.sin(t * b * 2.7 + 1); jet.scale.set(1 + 0.12 * Math.sin(t * b * 1.9), up, 1 + 0.12 * Math.sin(t * b * 1.9)); }
+     for (const fall of falls) {
+       const { layer, speed, BOX } = fall.userData, down = (t * speed + layer * BOX) % (BOX * 2);

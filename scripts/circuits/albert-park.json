@@ -1,0 +1,16 @@
+{
+  "id": "albert-park",
+  "name": "Albert Park",
+  "bbox": [144.955,-37.858,144.982,-37.835],
+  "relation": 280443,
+  "start": {"lat":-37.8500562,"lon":144.9689843},
+  "realLength": 5278,
+  "smooth": 8,
+  "elevation": false,
+  "runoff": {"street":true},
+  "level": {"name":"Albert Park","theme":"albert-park","laps":3},
+  "landmarks": [
+    {"kind":"lake","area":346429,"every":25},
+    {"kind":"skyline","lat":-37.8136,"lon":144.9631,"r":500}
+  ]
+}

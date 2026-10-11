@@ -1,0 +1,26 @@
+/* the cargo in the HUD (render/cargo.js): a round window on the right, under the TANK RAGE corner. The
+   item itself is drawn on the game's canvas behind this, in the patch this covers; this is its rim and
+   its label. Hidden wherever the HUD is (photo mode, a cine shot, the screensavers, the garage) */
+#cargoCorner { display: none; position: fixed; width: 92px; height: 92px; box-sizing: border-box; border-radius: 50%;
+  right: max(14px, env(safe-area-inset-right)); top: calc(max(12px, env(safe-area-inset-top)) + 160px);
+  border: 3px solid rgba(255,255,255,.8); box-shadow: 0 2px 8px rgba(0,0,0,.35); pointer-events: none; }
+#cargoCorner.on { display: block; }
+#cargoCorner[data-state="agitated"] { border-color: #ffb02e; }
+#cargoCorner[data-state="furious"] { border-color: #ff3b30; animation: cargoThrob .45s ease-in-out infinite alternate; }
+#cargoCorner.pulse { animation: cargoPulse .7s ease-out; }
+#cargoLabel { position: absolute; top: 100%; right: -4px; margin-top: 5px; white-space: nowrap; font-size: 11px; font-weight: 800;
+  letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+#cargoCorner[data-state="agitated"] #cargoLabel { color: #ffb02e; }
+#cargoCorner[data-state="furious"] #cargoLabel { color: #ff6a5a; }
+@keyframes cargoThrob { from { box-shadow: 0 0 0 0 rgba(255,59,48,.0); } to { box-shadow: 0 0 0 6px rgba(255,59,48,.55); } }
+@keyframes cargoPulse { 0% { box-shadow: 0 0 0 0 rgba(255,255,255,.95); transform: scale(1.18); } 100% { box-shadow: 0 0 0 26px rgba(255,255,255,0); transform: scale(1); } }
+/* a short screen (a phone on its side): smaller, beside the TANK RAGE corner, clear of the THROW button */
+@media (max-height: 480px) { #cargoCorner { width: 64px; height: 64px; top: calc(max(12px, env(safe-area-inset-top)) + 62px); right: calc(max(10px, env(safe-area-inset-right)) + 132px); }
+  #cargoLabel { font-size: 9px; } }
+body.photo #cargoCorner, body.cinematic #cargoCorner, body.screensaver #cargoCorner, body.in-garage #cargoCorner, body.delivering #cargoCorner { display: none !important; }
+/* the delivery at the kerb (delivery.js): nothing but the scene, and a line to say it can be skipped */
+body.delivering #hud, body.delivering .throw, body.delivering #messages, body.delivering #sticky, body.delivering #tankCorner, body.delivering #touchControls,
+body.delivering #behind, body.delivering #camAlert, body.delivering #copGlow, body.delivering #banner, body.delivering #resultScreen { display: none !important; }
+#deliveryHint { display: none; position: fixed; left: 0; right: 0; bottom: max(18px, env(safe-area-inset-bottom)); text-align: center; pointer-events: none;
+  font-size: 14px; font-weight: 700; text-shadow: 0 1px 4px rgba(0,0,0,.85); opacity: .9; padding: 0 12px; }
+body.delivering #deliveryHint { display: block; }

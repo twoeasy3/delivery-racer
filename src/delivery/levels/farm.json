@@ -1,0 +1,63 @@
+{
+  "id": "farm",
+  "cargo": { "good": "cactus", "evil": "bees" },
+  "theme": "farm",
+  "clock": { "good": 105, "evil": 80 },
+  "traffic": { "darkvan": 0.42, "commuter": 0.19, "van": 0.33, "bus": 0.03, "police": 0.03 },
+  "trafficCount": 11,
+  "oncomingCount": 8,
+  "tip": 70,
+  "segments": [
+    { "length": 300, "curve": 0, "grade": 0 },
+    { "length": 400, "curve": 0.0015, "grade": 0.04 },
+    { "length": 300, "curve": 0, "grade": 0 },
+    { "length": 500, "curve": -0.002, "grade": -0.035 },
+    { "length": 500, "curve": 0, "grade": 0 }
+  ],
+  "narrows": [
+    { "from": 250, "to": 1150, "lanesPerSide": 1 }
+  ],
+  "bridges": [],
+  "exits": [],
+  "obstacles": [
+    { "s": 180, "lane": 3, "kind": "bale" },
+    { "s": 460, "lane": 2, "kind": "bale" },
+    { "s": 880, "lane": 2, "kind": "bale" },
+    { "s": 1320, "lane": 3, "kind": "bale" },
+    { "s": 1430, "lane": 2, "kind": "bale" },
+    { "s": 1720, "lane": 2, "kind": "bale" },
+    { "s": 1900, "lane": 3, "kind": "bale" }
+  ],
+  "herds": [
+    { "from": 560, "to": 640, "count": 3, "kind": "cow" },
+    { "from": 1500, "to": 1600, "count": 3, "kind": "cow" }
+  ],
+  "tractors": [
+    { "s": 380, "lane": 2 },
+    { "s": 1250, "lane": 2 }
+  ],
+  "frogs": [],
+  "targets": [
+    { "s": 900, "side": "right" },
+    { "s": 1800, "side": "left" }
+  ],
+  "ruts": [],
+  "pickups": [
+    { "type": "turbo", "s": 120, "lane": 2 },
+    { "type": "cash10", "s": 300, "lane": 2 },
+    { "type": "cash5", "s": 300, "lane": "right" },
+    { "type": "cash10", "s": 720, "lane": 2 },
+    { "type": "cash5", "s": 720, "lane": "right" },
+    { "type": "wrench", "s": 800, "lane": 2 },
+    { "type": "cash20", "s": 1000, "lane": 2 },
+    { "type": "cash5", "s": 1000, "lane": "right" },
+    { "type": "turbo", "s": 1180, "lane": 2 },
+    { "type": "cash10", "s": 1350, "lane": "right" },
+    { "type": "cash10", "s": 1350, "lane": 2 },
+    { "type": "cash10", "s": 1350, "lane": 3 },
+    { "type": "wrench", "s": 1650, "lane": 2 },
+    { "type": "cash10", "s": 1800, "lane": "right" },
+    { "type": "cash20", "s": 1800, "lane": 2 },
+    { "type": "cash10", "s": 1800, "lane": 3 }
+  ]
+}

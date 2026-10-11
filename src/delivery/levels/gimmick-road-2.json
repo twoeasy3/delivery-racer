@@ -1,0 +1,68 @@
+{
+  "id": "gimmick-road-2",
+  "car": "miata",
+  "clock": { "good": 420, "evil": 320 },
+  "tip": 50,
+  "pursuits": { "every": { "min": 25, "max": 45 } },
+  "lanes": 6,
+  "traffic": { "commuter": 0.25, "darkvan": 0.15, "wagon": 0.15, "van": 0.12, "taxi": 0.1, "pickup": 0.1, "police": 0.08, "minivan": 0.05, "icecream": 0.08, "binlorry": 0.08, "learner": 0.08, "boyracer": 0.08, "caravan": 0.08 },
+  "trafficCount": 7,
+  "oncomingCount": 6,
+  "segments": [
+    { "length": 5400, "curve": 0 },
+    { "length": 100, "curve": 0, "grade": 0.03 },
+    { "length": 150, "curve": -0.004, "grade": 0.04 },
+    { "length": 300, "curve": 0.004, "grade": 0.04 },
+    { "length": 150, "curve": -0.004, "grade": 0.02 },
+    { "length": 100, "curve": 0 },
+    { "length": 600, "curve": 0, "grade": -0.03 }
+  ],
+  "exits": [
+    { "exitAt": 5400, "mergeAt": 6200, "out": 70, "bends": { "count": 2, "size": 6 }, "oncoming": false }
+  ],
+  "pickups": [
+    { "type": "wrench", "s": 2000, "lane": 3 },
+    { "type": "turbo", "s": 4480, "lane": 3 },
+    { "type": "wrench", "s": 4900, "lane": 3 }
+  ],
+  "waterMains": [
+    { "s": 300, "lane": 5 },
+    { "s": 420, "lane": 4 }
+  ],
+  "schoolCrossings": [
+    { "s": 800 }
+  ],
+  "trolleys": [
+    { "from": 1050, "to": 1350, "count": 8 }
+  ],
+  "marathons": [
+    { "s": 1600, "lane": 5, "count": 10, "water": 1850 }
+  ],
+  "balloons": [
+    { "s": 3550, "lanes": [3, 5] }
+  ],
+  "wideLoads": [
+    { "s": 3900, "lanes": [4, 5] }
+  ],
+  "drawbridges": [
+    { "s": 4700 }
+  ],
+  "wreckage": [
+    { "at": 5050, "kind": "roadtrain", "lanes": [4, 5], "from": "right" }
+  ],
+  "cameras": [
+    { "s": 150, "side": "right", "limit": 60, "road": "side" }
+  ],
+  "potholes": [
+    { "s": 250, "lane": 1, "road": "side" },
+    { "s": 285, "lane": 1, "r": 1.2, "road": "side" },
+    { "s": 320, "lane": 1, "road": "side" }
+  ],
+  "crossings": [
+    { "s": 450, "road": "side" }
+  ],
+  "stampedes": [
+    { "from": 600, "to": 760, "count": 8, "kind": "kangaroo", "road": "side" }
+  ],
+  "targets": []
+}

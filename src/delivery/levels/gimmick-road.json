@@ -1,0 +1,65 @@
+{
+  "id": "gimmick-road",
+  "car": "miata",
+  "clock": { "good": 504, "evil": 357 },
+  "tip": 50,
+  "lanes": 2,
+  "traffic": { "commuter": 0.25, "darkvan": 0.15, "wagon": 0.15, "van": 0.12, "taxi": 0.1, "pickup": 0.08, "police": 0.1, "minivan": 0.05, "cargotruck": 0.08 },
+  "trafficCount": 8,
+  "oncomingCount": 7,
+  "processions": { "every": { "min": 25, "max": 40 } },
+  "segments": [
+    { "length": 600, "curve": 0 },
+    { "length": 300, "curve": 0.002 },
+    { "length": 900, "curve": 0 },
+    { "length": 300, "curve": -0.003 },
+    { "length": 1200, "curve": 0 },
+    { "length": 400, "curve": 0.0025 },
+    { "length": 1300, "curve": 0 }
+  ],
+  "pickups": [
+    { "type": "turbo", "s": 200, "lane": 1 },
+    { "type": "wrench", "s": 1550, "lane": 1 },
+    { "type": "radarDetector", "s": 4150, "lane": 1 }
+  ],
+  "cameras": [
+    { "s": 400, "side": "right", "limit": 70 },
+    { "s": 540, "side": "centre", "limit": 60 },
+    { "s": 4450, "side": "centre" },
+    { "s": 4700, "side": "left" }
+  ],
+  "potholes": [
+    { "s": 1000, "lane": 1 }, { "s": 1030, "lane": 1, "r": 1.2 }, { "s": 1065, "lane": 0 },
+    { "s": 1090, "lane": 1, "r": 0.7 }, { "s": 1120, "lane": 1 }, { "s": 1150, "lane": 0, "r": 1.3 },
+    { "s": 1185, "lane": 1, "r": 1.1 }
+  ],
+  "siteWorks": [
+    { "kind": "trench", "from": 1250, "to": 1450, "side": "right" }
+  ],
+  "crossings": [
+    { "s": 1680 }
+  ],
+  "stopGo": [
+    { "from": 2250, "to": 2310 }
+  ],
+  "fog": [
+    { "from": 2550, "to": 3050 }
+  ],
+  "rockfall": [
+    { "from": 3320, "to": 3650, "count": 9, "side": "left" }
+  ],
+  "pelotons": [
+    { "s": 3900, "count": 8 }
+  ],
+  "parades": [
+    { "s": 4300 }
+  ],
+  "waterMains": [
+    { "s": 1500, "lane": 1 },
+    { "s": 2050, "lane": 1 }
+  ],
+  "tunnels": [
+    { "from": 2650, "to": 2950 }
+  ],
+  "targets": []
+}

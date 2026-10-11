@@ -1,0 +1,76 @@
+{
+  "id": "safari",
+  "cargo": { "good": "cake", "evil": "porcupine" },
+  "theme": "safari",
+  "flow": "north",
+  "lanes": 3,
+  "shoulderTimer": false,
+  "clock": { "good": 252, "evil": 179 },
+  "tip": 220,
+  "traffic": { "suv": 0.3, "pickup": 0.25, "wagon": 0.2, "van": 0.15, "lovebus": 0.1 },
+  "trafficCount": 12,
+  "oncomingCount": 0,
+  "segments": [
+    { "length": 400, "curve": 0 },
+    { "length": 400, "curve": 0.0012 },
+    { "length": 500, "curve": -0.001 },
+    { "length": 300, "curve": 0 },
+    { "length": 300, "curve": 0.002 },
+    { "length": 300, "curve": -0.002 },
+    { "length": 300, "curve": 0 },
+    { "length": 500, "curve": -0.0008 },
+    { "length": 500, "curve": 0 },
+    { "length": 500, "curve": 0.0008 },
+    { "length": 400, "curve": 0 }
+  ],
+  "zones": [
+    { "id": "savanna", "from": 0, "to": 1300, "scenery": "savanna", "ground": 12757082, "sky": 13032682 },
+    { "id": "kopjes", "from": 1300, "to": 2200, "scenery": "kopjes", "ground": 11901538, "sky": 13359586 },
+    { "id": "river", "from": 2200, "to": 3700, "scenery": "river", "ground": 10132056, "sky": 12572902 },
+    { "id": "plains", "from": 3700, "to": 4400, "scenery": "plains", "ground": 12100446, "sky": 13820136 }
+  ],
+  "narrows": [
+    { "from": 1400, "to": 2100, "lanesPerSide": 1 }
+  ],
+  "migration": [
+    { "from": 3800, "to": 4150, "count": 90, "kinds": { "wildebeest": 0.75, "zebra": 0.25 }, "dir": 1 }
+  ],
+  "elephants": [
+    { "from": 450, "to": 1200, "count": 4 },
+    { "from": 4180, "to": 4380, "count": 2 }
+  ],
+  "hippos": [
+    { "from": 2300, "to": 3600, "every": { "min": 1.5, "max": 3 } }
+  ],
+  "targets": [
+    { "s": 600, "side": "left" },
+    { "s": 1800, "side": "right" },
+    { "s": 3000, "side": "left" },
+    { "s": 4100, "side": "right" }
+  ],
+  "washboards": [
+    { "from": 2520, "to": 2980 }
+  ],
+  "dust": [
+    { "from": 3020, "to": 3480, "wind": "right" }
+  ],
+  "pickups": [
+    { "type": "cash10", "s": 3150, "lane": 1 },
+    { "type": "cash10", "s": 3150, "lane": 2 },
+    { "type": "cash10", "s": 2640, "lane": 1 },
+    { "type": "cash10", "s": 2640, "lane": 2 },
+    { "type": "cash5", "s": 2760, "lane": 2 },
+    { "type": "cash20", "s": 2880, "lane": 1 },
+    { "type": "turbo", "s": 300, "lane": 1 },
+    { "type": "wrench", "s": 800, "lane": 2 },
+    { "type": "timePlus", "s": 1150, "lane": 0 },
+    { "type": "mystery", "s": 1600, "lane": 1 },
+    { "type": "timePlus", "s": 2000, "lane": 1 },
+    { "type": "ghost", "s": 2250, "lane": 1 },
+    { "type": "wrench", "s": 2700, "lane": 0 },
+    { "type": "ghost", "s": 3000, "lane": 2 },
+    { "type": "timePlus", "s": 3300, "lane": 1 },
+    { "type": "wrench", "s": 3800, "lane": 1 },
+    { "type": "turbo", "s": 4000, "lane": 0 }
+  ]
+}

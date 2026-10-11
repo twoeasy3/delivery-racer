@@ -1,0 +1,247 @@
+diff --git a/src/delivery/SCRATCHPAD-ge-road-12-Oct.md b/src/delivery/SCRATCHPAD-ge-road-12-Oct.md
+new file mode 100644
+index 0000000..8feaaca
+--- /dev/null
++++ b/src/delivery/SCRATCHPAD-ge-road-12-Oct.md
+@@ -0,0 +1,35 @@
++# Scratchpad: Good/Evil ideas 5, 6, 7 (area B, road and camera), 12-Oct
++
++Branch: delivery-ge-road. Worktree: <repo>\.claude\worktrees\delivery-ge-road
++(node_modules is a junction: `cmd /c rmdir <worktree>\node_modules` before ever deleting the worktree).
++
++## DONE (code written, each its own commit, on branch only, nothing merged)
++- 074b9d5 src/delivery/sidecues.js, the shared `geOn(n)` switch (`?ge=5,6,7` or `?ge=all`).
++- 20996f1 idea 5, `?ge=5`: render/scene.js updateCamera. Good: fov +1.5 deg (wider); Evil: fov -1.5 deg, camera height -5%,
++  sine sway (0.08 m vertical, ~0.004 rad roll) growing with speed squared. Eased in over about a second. No allocation.
++- e9d8359 idea 6, `?ge=6`: new render/sidegrade.js (called from main.js after syncEmotes). One fixed click-through div,
++  radial gradient: Good edge +16% warm white, Evil edge 40% near-black (value change). Shown only while playing.
++- 49cdafe idea 7, `?ge=7`: render/emotes.js + render/faces.js. A Good traffic car (not police, emergency, racer) within 7 m
++  along and 1.4 to 8 m across of the player gets a 2 s face: Good player: happy face that rocks (wave); Evil player: new
++  "wary" face (raised brows, wavy mouth, orange) looking away. One greeting per 7 s globally. Did NOT reuse the
++  goodOnGood/evilOnGood lines: those are about packages thrown, not a greeting; only faces are used.
++
++## NOT done
++- NO stills taken at all (no before/after pairs, no phone 360x640 or 390x700 judgement, no storm or night check).
++  The heavy lock was busy for ~25 min (other agents); I won it only at the stand-down and released it unused.
++- Nothing was run in a browser: not even a load of the page with the switch on. Only `node --check` on emotes.js passed.
++- Not verified: ?ge=6 z-index 1 sits under the HUD and above the canvas (guess); the camera roll after lookAt
++  (rotation.z add) behaves; greeting actually triggers in traffic density of a level.
++
++## Next step for whoever resumes
++Take the heavy lock, then in the worktree:
++`node scripts/shots.mjs <dir> "a-good-off=@expressway&ghost&at=800&ff=6&car=commuter" "a-good-ge5=@expressway&ghost&at=800&ff=6&car=commuter&ge=5" ...`
++(`ge=` passes through untouched; Evil: add `&autostart=evil`; night level id `night`, storm `hurricane`, cars e.g.
++commuter, hearse, liftedtruck). Pairs for ge 5, 6, 7 (7: several `at` values, look for a face), then read each still.
++Phone: `--size=390x700`. Fix, commit, report.
++
++## Traps
++- Files are CRLF: edit with care (my Python edits kept CRLF).
++- Evil sway uses Math.sin of a time accumulator in scene.js (moodT), not random.
++- Background waiter script left at <TEMP>\claude\wait_lock_road.sh (finished; harmless).
++No extra worktrees, no running jobs, lock released.
+diff --git a/src/delivery/main.js b/src/delivery/main.js
+index d8ce7ef..36b457f 100644
+--- a/src/delivery/main.js
++++ b/src/delivery/main.js
+@@ -20,6 +20,7 @@ import { carMesh, syncTraffic } from './render/cars.js';
+ import { emitVehicleSmoke, updateEffects } from './render/effects.js';
+ import { syncPackages } from './render/packages.js';
+ import { syncEmotes } from './render/emotes.js';
++import { syncGrade } from './render/sidegrade.js';
+ import { syncPickups, syncTargets, syncToads } from './render/items.js';
+ import { syncHelicopter, syncArrests } from './render/helicopter.js';
+ import { syncHeadlights, syncTrafficBeams } from './render/headlights.js';
+@@ -347,6 +348,7 @@ const frame = (now) => {
+     syncMysteries(dt); // (after the camera: the earthquake bobs it)
+     syncRaceWatch(now);
+     syncEmotes(dt, now);
++    syncGrade(); // (?ge=6: the screen-edge grade)
+     if (hudCheck) hudCheck();
+     updateHud();
+     // the engine note follows the speed; silent once the run is over or the car is gone
+diff --git a/src/delivery/render/emotes.js b/src/delivery/render/emotes.js
+index 53f4c7a..0977811 100644
+--- a/src/delivery/render/emotes.js
++++ b/src/delivery/render/emotes.js
+@@ -3,6 +3,8 @@ import { CONFIG } from '../config.js';
+ import { Track } from '../track.js';
+ import { Collision } from '../collision.js';
+ import { Player } from '../player.js';
++import { Game } from '../game.js';
++import { geOn } from '../sidecues.js';
+ import { LEVEL } from '../levels.js';
+ import { scene, camera, tmp } from './scene.js';
+ import { FACE_COLORS, FEATURES, INK } from './faces.js';
+@@ -46,13 +48,18 @@ const makeFace = (mood) => {
+     emissive: 0xffffff, emissiveMap: map, emissiveIntensity: 0.2 });
+ };
+ const MOOD_FACES = { happy: makeFace('happy'), neutral: makeFace('neutral'), angry: makeFace('angry') };
++// idea 7 of IDEAS-good-evil-11-Oct.md (?ge=7): a driver passing alongside the player greets him: a wave (a happy face that
++// rocks) for Good, a wary look (raised brows, wavy mouth, glancing away) for Evil. Good drivers only, one at a time, at most
++// one in GREET.gap ms, and never one already showing a face.
++const GREET = { gap: 7000, along: 7, near: 1.4, far: 8 };
++let lastGreet = -1e9;
+ const emoteGeo = new THREE.SphereGeometry(0.5, 20, 14);
+ const look = new THREE.Matrix4(), camAt = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
+ const emotes = Collision.bodies.map(() => {
+   const mesh = new THREE.Mesh(emoteGeo, MOOD_FACES.neutral);
+   mesh.visible = false;
+   scene.add(mesh);
+-  return { mesh, wait: Math.random() * CONFIG.emoteEvery, show: 0, last: null };
++  return { mesh, wait: Math.random() * CONFIG.emoteEvery, show: 0, last: null, greet: null };
+ });
+ // ---- the rival courier's marker (a level's "rival"): a glowing magenta arrow hanging over it, pointing
+ // down at it, bobbing and turning; above where its mood face pops up (so never over it), and bigger the
+@@ -102,6 +109,17 @@ export const syncEmotes = (dt, now) => {
+     e.last = v.emotion;
+     if (v.showMood) { e.show = CONFIG.emoteTime; v.showMood = false; } // hit by a package
+     if (held && e.show <= 0) e.show = CONFIG.emoteTime;
++    if (e.show <= 0) e.greet = null;
++    if (e.show <= 0 && now - lastGreet > GREET.gap && geOn(7) && Game.state === 'playing' && Player.active && !v.evil && !v.racer && !v.emergency
++      && v.kind !== 'police' && Math.abs(v.s - Player.s) < GREET.along) {
++      const gap = Math.abs(v.lat - Player.lat);
++      if (gap > GREET.near && gap < GREET.far) {
++        if (!MOOD_FACES.wary) MOOD_FACES.wary = makeFace('wary');
++        e.greet = Player.evil ? 'wary' : 'happy';
++        e.show = CONFIG.emoteTime;
++        lastGreet = now;
++      }
++    }
+     if (e.show > 0) {
+       e.show -= dt;
+       if (held) e.show = Math.max(e.show, CONFIG.emoteTime - 0.25);
+@@ -113,7 +131,7 @@ export const syncEmotes = (dt, now) => {
+     if (!e.mesh.visible) continue;
+     Track.toWorld(v.s, v.lat, tmp);
+     const pop = Math.min(1, e.show * 6, (CONFIG.emoteTime - e.show) * 6); // pop in and out
+-    e.mesh.material = MOOD_FACES[v.emotion];
++    e.mesh.material = MOOD_FACES[e.greet || v.emotion];
+     e.mesh.scale.setScalar(Math.max(0.01, pop));
+     e.mesh.position.set(tmp.x, tmp.y + v.height + 1.0 + Math.sin(now / 250 + i) * 0.1, tmp.z);
+     // (turned to the camera in the scene's own terms, which a left-hand level mirrors)
+@@ -124,5 +142,7 @@ export const syncEmotes = (dt, now) => {
+     const swing = Math.max(0, 1 - (CONFIG.emoteTime - e.show) * 4);
+     e.mesh.rotateY((i % 2 ? 1 : -1) * 1.4 * swing * swing + Math.sin(now / 420 + i * 1.7) * 0.3);
+     e.mesh.rotateX(Math.sin(now / 530 + i * 2.3) * 0.15);
++    if (e.greet === 'happy') e.mesh.rotateZ(Math.sin(now / 90) * 0.35); // (a wave: the head rocks quickly)
++    else if (e.greet === 'wary') e.mesh.rotateY((Player.lat > v.lat ? 1 : -1) * 0.7 * (1 - swing)); // (looks away)
+   }
+ };
+diff --git a/src/delivery/render/faces.js b/src/delivery/render/faces.js
+index 787d772..ca44f10 100644
+--- a/src/delivery/render/faces.js
++++ b/src/delivery/render/faces.js
+@@ -2,12 +2,13 @@
+ // the cars (render/emotes.js), and as small icons on the race screensaver's board and the Good & Evil
+ // page. Drawn on a 24 x 24 grid with the face's middle at (12, 12); the eyes sit at y 10.
+ // The angry one bares a row of jagged teeth hanging from a crooked lip, as Road Wage's did.
+-export const FACE_COLORS = { happy: '#4caf50', neutral: '#ffd23f', angry: '#e53935' };
++export const FACE_COLORS = { happy: '#4caf50', neutral: '#ffd23f', angry: '#e53935', wary: '#ffb04a' };
+ export const INK = '#1c1c1c';
+ // the features, as SVG path data (Path2D takes the same)
+ export const FEATURES = {
+   happy: { mouth: 'M7 14 Q12 19 17 14' },
+   neutral: { mouth: 'M8 16 H16' },
++  wary: { mouth: 'M7.5 16 Q9.75 14 12 16 T16.5 16', brows: 'M5 7.5 L10 5 M19 7.5 L14 5' }, // (?ge=7: a driver wary of an Evil car; brows raised to the middle)
+   angry: {
+     brows: 'M5 5.5 L10 8 M19 5.5 L14 8',
+     // the lip, slanting up to the right, and the teeth hanging from it (the face showing between them)
+diff --git a/src/delivery/render/scene.js b/src/delivery/render/scene.js
+index d11d775..86d5f87 100644
+--- a/src/delivery/render/scene.js
++++ b/src/delivery/render/scene.js
+@@ -7,6 +7,7 @@ import { Game } from '../game.js';
+ import { CAR } from '../cars.js';
+ import { LEVEL } from '../levels.js';
+ import { Gambles } from '../gambles.js';
++import { geOn } from '../sidecues.js';
+ 
+ // ============================================================================
+ // RENDERING
+@@ -73,6 +74,10 @@ export const tmp2 = new THREE.Vector3();
+ 
+ // ---- chase camera ----------------------------------------------------------
+ let camLat = 0;
++// idea 5 of IDEAS-good-evil-11-Oct.md (?ge=5): Good has a camera 1.5 degrees wider and calm; Evil 1.5 degrees tighter,
++// 5% lower, with a slight hum of sway that grows with speed (a sine, not random, so it is smooth). Eased in over a second.
++const MOOD = { fov: 1.5, low: 0.05, sway: 0.08 };
++let moodT = 0, moodK = 0;
+ let camAir = 0; // (m the camera is up with the car off the road: see updateCamera)
+ // points the camera, placed in the game's own terms, at the target. On a left-hand level the scene
+ // is drawn mirrored (scale x -1, see road.js), so the camera goes to the mirror image of its place
+@@ -147,7 +152,10 @@ export const updateCamera = (dt, snap) => {
+   // (and coming up to a crest a car can fly, down behind the car, so the far side stays hidden: see Gambles.blind)
+   const blind = Game.screensaver ? 0 : Gambles.blind(Player.s) * (1 - inTunnel);
+   const camBack = baseBack + ((CONFIG.tunnel?.camBack ?? baseBack) - baseBack) * inTunnel + (CONFIG.crest.camBack - baseBack) * blind;
+-  const camHeight = baseH + ((CONFIG.tunnel?.camHeight ?? 5.5) - baseH) * inTunnel + (CONFIG.crest.camHeight - baseH) * blind;
++  const mood = geOn(5) && !Game.screensaver ? (Player.evil ? -1 : 1) : 0;
++  moodK += (mood - moodK) * (snap || !(dt > 0) ? 1 : damp(2.5, dt));
++  moodT += dt > 0 ? dt : 0;
++  const camHeight = baseH * (1 + (moodK < 0 ? moodK * MOOD.low : 0)) + ((CONFIG.tunnel?.camHeight ?? 5.5) - baseH) * inTunnel + (CONFIG.crest.camHeight - baseH) * blind;
+   Track.toWorld(Player.s - camBack, camLat, tmp);
+   const shake = CONFIG.hitShake * Game.shake;
+   camera.position.set(tmp.x + (Math.random() - 0.5) * shake,
+@@ -160,6 +168,11 @@ export const updateCamera = (dt, snap) => {
+   aim(tmp2);
+ 
+   const speedT = Math.min(1.3, Player.speed / CONFIG.camFovFullSpeed);
+-  camera.fov = baseFov + CONFIG.camFovSpeedBoost * speedT * speedT;
++  camera.fov = baseFov + CONFIG.camFovSpeedBoost * speedT * speedT + moodK * MOOD.fov;
++  if (moodK < -0.01) { // Evil: a little sway that grows with speed
++    const w = -moodK * MOOD.sway * speedT * speedT;
++    camera.position.y += Math.sin(moodT * 13.1) * w;
++    camera.rotation.z += Math.sin(moodT * 9.3) * w * 0.05;
++  }
+   camera.updateProjectionMatrix();
+ };
+diff --git a/src/delivery/render/sidegrade.js b/src/delivery/render/sidegrade.js
+new file mode 100644
+index 0000000..54bc1a5
+--- /dev/null
++++ b/src/delivery/render/sidegrade.js
+@@ -0,0 +1,26 @@
++import { geOn } from '../sidecues.js';
++import { Game } from '../game.js';
++import { Player } from '../player.js';
++
++// idea 6 of IDEAS-good-evil-11-Oct.md (?ge=6): a faint grade at the screen edge, by a change of VALUE (not hue): the edge
++// of the picture is a little darker for Evil, a little brighter for Good. One fixed, click-through div over the canvas,
++// made only with the switch on; syncGrade sets its look when the side changes and its opacity as the run starts or stops.
++const GRADE = {
++  good: 'radial-gradient(ellipse at 50% 50%, rgba(255,250,235,0) 52%, rgba(255,250,235,0.16) 100%)',
++  evil: 'radial-gradient(ellipse at 50% 50%, rgba(25,8,0,0) 42%, rgba(25,8,0,0.40) 100%)',
++};
++let box = null, side = -1, shown = false;
++export const syncGrade = () => {
++  if (!geOn(6)) return;
++  if (!box) {
++    box = document.createElement('div');
++    box.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:1;opacity:0;transition:opacity .8s';
++    document.body.appendChild(box);
++  }
++  const on = Game.state === 'playing' && !Game.screensaver && !Game.raceWatch;
++  if (on && side !== (Player.evil ? 1 : 0)) {
++    side = Player.evil ? 1 : 0;
++    box.style.background = side ? GRADE.evil : GRADE.good;
++  }
++  if (on !== shown) { shown = on; box.style.opacity = on ? '1' : '0'; }
++};
+diff --git a/src/delivery/sidecues.js b/src/delivery/sidecues.js
+new file mode 100644
+index 0000000..ab37c54
+--- /dev/null
++++ b/src/delivery/sidecues.js
+@@ -0,0 +1,13 @@
++// Good/Evil cue switches (12-Oct): ?ge=1,5,8 or ?ge=all turns ideas of IDEAS-good-evil-11-Oct.md on for a visit.
++let set = null;
++export function geOn(n) {
++  if (!set) {
++    set = new Set();
++    try {
++      const v = new URLSearchParams(location.search).get('ge');
++      if (v === 'all') for (let i = 1; i <= 12; i++) set.add(i);
++      else if (v) v.split(',').forEach((x) => { const k = parseInt(x, 10); if (k) set.add(k); });
++    } catch (e) { /* no location: all off */ }
++  }
++  return set.has(n);
++}

@@ -1,0 +1,16 @@
+{
+  "_about": "The level tiers. Edit by hand, or: node scripts/tiers.mjs move <id> <tier> [position]. Tiers 1-5 are the gold-star tiers, 6-10 the Blue Star ones (Blue 1 is tier 6). A level appears once: in one tier, or in outside. Outside levels open in the order listed here (the first once tier 10 is cleared); an amphibious level opens by the rule in tiers.js amphibiousOpens; races are always open.",
+  "tiers": {
+    "1": ["expressway","back-roads","farm","big-business","hurricane"],
+    "2": ["night","mystery-meadows","suburbs","canberra","monte-carlo"],
+    "3": ["singapore","singapore-night","grand-pacific","passage-du-gois","safari"],
+    "4": ["airport","construction","the-hood","panorama-avenue","speed-trap-alley"],
+    "5": ["mountain-pass","outback-express","tour-de-coast","ring-road","market-town"],
+    "6": ["quarry-run","hong-kong","tokyo","mumbai","stelvio"],
+    "7": ["christmas","toys","leaks","moon","backlot"],
+    "8": ["venice","iceroad","park","cinder","docks"],
+    "9": ["noon","morro","rice","derby","seaquake"],
+    "10": ["farside","stunts","ponti","glow","erupt"]
+  },
+  "outside": ["cattle","thaw","fallout","all-heck","ufo","oh-mine","rival-run","showdown","battlefield","slipway","harbour","flood","ford","fjord","marina-bay","montreal","bathurst","monza","spa","albert-park"]
+}

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="/car-icon.svg">
+<title>Delivery Racer</title>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="copGlow"><i></i><i></i></div>
+<div id="cameraFlash"></div>
+
+<div id="hud">
+  <!-- the meters' corner: the readouts, and beside them (under them on a phone held upright) two round
+       gauges: how far through the level, and the shoulder's danger (render/hud.js fills them all in) -->
+  <div id="meters">
+    <div class="readouts">
+      <div id="timer">0:00.0</div>
+      <div id="tip"></div>
+      <div id="health"><div id="healthFill"></div></div>
+      <div id="busts"></div>
+      <div id="social">SOCIAL STANDING<div class="bar"><div id="socialFill"></div></div></div>
+      <!-- the radiation meter (render/hud.js; what fills it: radiation.js): only on a level with radiation -->
+      <div id="radiation"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.9"/><path d="M9.75 8.1L7.25 3.77a9.5 9.5 0 0 1 9.5 0L14.25 8.1a4.5 4.5 0 0 0-4.5 0zM16.5 12h5a9.5 9.5 0 0 1-4.75 8.23l-2.5-4.33A4.5 4.5 0 0 0 16.5 12zM9.75 15.9l-2.5 4.33A9.5 9.5 0 0 1 2.5 12h5a4.5 4.5 0 0 0 2.25 3.9z"/></svg><span id="radiationLabel">RADIATION</span><div class="bar"><div id="radiationFill"></div></div></div>
+    </div>
+    <div id="gaugeColumn">
+    <div id="gauges">
+      <!-- the level: a ring that fills clockwise round to the flag at the top, the distance left in its middle -->
+      <div id="progress" class="gauge">
+        <svg viewBox="0 0 56 56" aria-hidden="true">
+          <circle class="back" cx="28" cy="28" r="27"/>
+          <circle class="track" cx="28" cy="28" r="22"/>
+          <circle id="progressFill" class="fill" cx="28" cy="28" r="22" pathLength="100" stroke-dasharray="0 100" transform="rotate(-90 28 28)"/>
+          <g id="progressLaps"></g>
+          <g class="flag"><rect x="24" y="2" width="8" height="8" rx="1"/><path d="M24 2h4v4h-4zM28 6h4v4h-4z"/></g>
+          <text id="progressLeft" x="28" y="32">0</text>
+          <text id="progressUnit" x="28" y="41">m</text>
+        </svg>
+        <span id="progressLabel">TO GO</span>
+      </div>
+      <!-- the shoulder: a dial, its needle at 0 on the road, climbing to the bust (the red zone) on the shoulder -->
+      <div id="danger" class="gauge">
+        <svg viewBox="0 0 56 56" aria-hidden="true">
+          <circle class="back" cx="28" cy="28" r="27"/>
+          <path class="track" d="M8.95 39A22 22 0 1 1 47.05 39"/>
+          <path class="zone" d="M47.05 17A22 22 0 0 1 47.05 39"/>
+          <path id="dangerFill" class="fill" d="M8.95 39A22 22 0 1 1 47.05 39" pathLength="100" stroke-dasharray="0 100"/>
+          <path class="ticks" d="M28 9v4" transform="rotate(-120 28 28)"/>
+          <path class="ticks" d="M28 9v4" transform="rotate(-60 28 28)"/>
+          <path class="ticks" d="M28 9v4"/>
+          <path class="ticks" d="M28 9v4" transform="rotate(60 28 28)"/>
+          <path class="ticks" d="M28 9v4" transform="rotate(120 28 28)"/>
+          <text class="zero" x="13" y="48">0</text>
+          <text class="bust" x="43" y="48">!</text>
+          <path id="dangerNeedle" class="needle" d="M26.6 31L28 8.5L29.4 31z" transform="rotate(-120 28 28)"/>
+          <circle class="hub" cx="28" cy="28" r="3.2"/>
+        </svg>
+        <span>SHOULDER</span>
+      </div>
+    </div>
+    <!-- the sticky messages' icons: one for each condition still on (see CONFIG.messageTimes.sticky; render/hud.js) -->
+    <div id="sticky"></div>
+    </div>
+    <div id="levelProblems"></div>
+    <div id="flat">FLAT TYRE - STOP TO CHANGE<div class="bar"><div id="flatFill"></div></div></div>
+  </div>
+  <div>
+    <div id="speed">0 <small>km/h</small></div>
+    <div id="turbo"></div>
+    <div id="copWatch"><span class="lights"><i></i><i></i></span>POLICE WATCHING</div>
+    <div id="towing"><span id="towLabel">SLIPSTREAM</span><div class="bar"><div id="towFill"></div></div></div>
+  </div>
+</div>
+
+<canvas id="tankCorner"></canvas>
+<div id="cargoCorner"><span id="cargoLabel"></span></div>
+<div id="deliveryHint"></div>
+<div id="fade"></div>
+<div id="banner">PAUSED<small>Resume, or press P</small></div>
+<!-- the strip along the top, between the two corners and clear of the horizon: the two message lines (at the
+     foot of the screen instead on a phone held upright: see style.css) and the speed camera's warning -->
+<div id="topStrip">
+<div id="messages"><div class="line"></div><div class="line"></div></div>
+<div id="camAlert" class="hidden">
+  <div class="cam-disc"><span id="camLimit">80</span></div>
+  <div class="cam-body">
+    <div class="cam-header">
+      <span class="cam-title">SPEED CAMERA</span>
+      <span id="camStatus" class="cam-status">SLOW DOWN</span>
+    </div>
+    <div class="cam-detail">
+      <div class="cam-arrow-wrap"><div id="camArrow" class="cam-arrow"></div></div>
+      <span id="camDist" class="cam-dist">150 m</span>
+    </div>
+  </div>
+</div>
+</div>
+<div id="behind"><div class="arrow"></div><span id="behindLabel"></span></div>
+<div id="raceBoard"></div>
+<div id="raceCaption"></div>
+<canvas id="raceMap" width="240" height="240"></canvas>
+<div id="runButtons"><button id="pauseBtn">Pause</button><button id="photoBtn" style="display:none" title="Photo mode (C)">Photo</button><button id="directorBtn" style="display:none">Race director</button><button id="exitBtn">Exit level</button></div>
+<div id="photoBar" style="display:none"><span>Drag to look round, wheel to zoom</span><button id="photoInBtn">+</button><button id="photoOutBtn">&minus;</button><button id="photoSaveBtn">Save picture</button><button id="photoBackBtn">Back</button></div>
+<button id="throwBtnLeft" class="throw">THROW</button>
+<button id="throwBtn" class="throw">THROW</button>
+<div id="touchControls">
+  <div class="pad steer" data-hold="left,right"><button>&#9664;</button><button>&#9654;</button></div>
+  <div class="pad pedals" data-hold="brake,gas"><button>&#9660;</button><button>&#9650;</button></div>
+</div>
+
+<!-- the start screen: one composed screen, nothing scrolls (render/menu.js, render/menustage.js, menu2.css).
+     Across the top the title, the tabs, the bank and the way into the options; under it the tab's level groups;
+     then the stage (the level picked, large), the strip (the other levels of its group), and beside them the
+     car, the side and START. The options and the "what's on this road" card are sheets over it. -->
+<div id="startScreen" class="overlay menu">
+  <div class="menu-backdrop" aria-hidden="true"><i></i><i></i></div>
+  <header class="menu-top">
+    <h1>Delivery <em>Run</em></h1>
+    <div id="tabs" class="menu-tabs"><button id="tabDelivery" class="current">Deliveries</button><button id="tabRaces">Races</button></div>
+    <div id="bank"></div>
+    <button id="optionsBtn" class="menu-chip" title="Options and extras (O)"><i>&#9776;</i><span>Options</span></button>
+  </header>
+  <nav id="levelGroups" class="menu-groups"></nav>
+  <section id="stage" class="menu-stage"></section>
+  <div id="levels" class="menu-strip"></div>
+  <aside class="menu-side">
+    <button id="shop" class="car-card"></button>
+    <div id="raceMenu">
+      <button id="raceClassBtn" class="menu-chip">Race cars: F1</button>
+      <button id="raceTrackBtn" class="menu-chip">Race track: Marina Bay</button>
+      <button id="raceWatchBtn" class="menu-chip">Race screensaver</button>
+    </div>
+    <div class="side-box">
+      <div id="sideBtn" class="side-switch" role="group" aria-label="The side to play on">
+        <button data-side="good">Good</button><button data-side="evil">Evil</button>
+      </div>
+      <p id="sideNote"></p>
+    </div>
+    <button id="startBtn"><span>Start</span></button>
+  </aside>
+  <footer id="menuKeys" class="menu-keys"></footer>
+
+  <!-- the options and extras: everything that is not picking a level, a car or a side -->
+  <div id="menuOptions" class="menu-sheet hidden">
+    <div class="sheet-box">
+      <div class="sheet-bar"><h2>Options &amp; extras</h2><button id="optionsCloseBtn" class="menu-chip">Close</button></div>
+      <div class="sheet-body options">
+        <section>
+          <h3>Settings</h3>
+          <button id="muteBtn" class="menu-chip">Sound: on</button>
+          <button id="touchBtn" class="menu-chip">On-screen controls: off</button>
+          <button id="autoGasBtn" class="menu-chip">Auto accelerate: off</button>
+        </section>
+        <section>
+          <h3>Extras</h3>
+          <button id="albumBtn" class="menu-chip">Postcards</button>
+          <button id="milestonesBtn" class="menu-chip">Milestones</button>
+          <button id="screensaverBtn" class="menu-chip">Screensaver</button>
+          <button id="raceWatchBtn2" class="menu-chip">Race screensaver</button>
+          <a id="screensaverLink" class="menu-chip" href="?screensaver" title="Opens the screensaver straight away: bookmark it or share it">Screensaver link</a>
+          <a class="menu-chip" href="?racewatch" title="Opens the race screensaver straight away: bookmark it or share it">Race screensaver link</a>
+        </section>
+        <section>
+          <h3>Guide</h3>
+          <a class="menu-chip" href="powerups.html">Power-ups</a>
+          <a class="menu-chip" href="gimmicks.html">Gimmicks</a>
+          <a class="menu-chip" href="cargo.html">Cargo</a>
+          <a class="menu-chip" href="sides.html">Good &amp; Evil</a>
+          <a class="menu-chip" href="police.html">Police</a>
+          <a class="menu-chip" href="editor.html">Level editor</a>
+        </section>
+        <section>
+          <h3>Save</h3>
+          <button id="exportBtn" class="menu-chip" title="Your progress as a code, to take to another browser">Export save</button>
+          <button id="importBtn" class="menu-chip" title="Bring in a save code from another browser">Import save</button>
+          <button id="completeBtn" class="menu-chip">Unlock everything</button>
+          <button id="resetBtn" class="menu-chip danger">Reset progress</button>
+        </section>
+        <section class="howto">
+          <h3>How to play</h3>
+          <p>Hold Left / Right (A / D) or drag sideways: steer<br>
+     Hold Up / Down (W / S) or drag up / down: accelerate / brake<br>
+     Space or THROW: a package at the nearest car (one behind you has to be a lot nearer than one ahead).<br>
+     On a phone or tablet there are on-screen buttons for all of it (the menu can switch them on or off).<br>
+     Reach the finish before the clock hits zero to keep the tip. After zero the tip drains
+     for 10 seconds, and the level is failed.<br>
+     Hitting anything damages your car, and if your health drops to zero your car is wrecked. Head-on collisions wreck you instantly.<br>
+     The shoulders are free of traffic, but stay too long and the police lift you off.<br>
+     Police cars bust you for bumping them, or for shoulder driving
+     while they are near. Three busts and it's over.<br>
+        </section>
+      </div>
+    </div>
+  </div>
+  <!-- what's on this road: the picked level's gimmicks, pickups and traffic, each with its model (render/levelcard3d.js builds it) -->
+  <div id="roadCard" class="menu-sheet hidden"></div>
+</div>
+
+<div id="garageUi" class="hidden">
+  <div class="bar">
+    <span class="tabs"><button id="garageTabBtn" class="tab on">Garage</button><button id="ideasTabBtn" class="tab">Car ideas</button></span>
+    <span id="garageBank"></span>
+    <span id="liveryBtn" class="seg" role="group" aria-label="Livery"><button data-side="good">Good</button><button data-side="evil">Evil</button></span>
+    <button id="garageBackBtn">Back</button>
+    <div id="garageRule" class="hidden" role="status"></div>
+  </div>
+  <div class="pick">
+    <div id="garageInfo"></div>
+    <span class="actions"><button id="garageAction"></button><button id="garageUse">Use</button><span id="garageWhy" class="hidden"></span></span>
+  </div>
+</div>
+<div id="garageTip"></div>
+
+<!-- the postcard album: a panel over the start screen (render/album.js builds it) -->
+<div id="album" class="overlay menu panel hidden"></div>
+<!-- and the milestones wall (render/milestones.js) -->
+<div id="milestones" class="overlay menu panel hidden"></div>
+
+<div id="resultScreen" class="overlay hidden">
+  <h1 id="resultTitle">Delivered!</h1>
+  <div id="resultTime"></div>
+  <p id="resultNote"></p>
+  <button id="restartBtn">Restart</button>
+  <button id="nextBtn" class="level">Next level</button>
+  <button id="menuBtn" class="level">Menu</button>
+</div>
+
+<script type="module" src="/src/delivery/main.js"></script>
+</body>
+</html>

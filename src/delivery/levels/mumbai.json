@@ -1,0 +1,72 @@
+{
+  "id": "mumbai",
+  "theme": "mumbai",
+  "drive": "left",
+  "clock": { "good": 230, "evil": 170 },
+  "tip": 180,
+  "lanes": 4,
+  "traffic": { "rickshaw": 0.38, "taxi": 0.15, "bus": 0.12, "commuter": 0.1, "darkvan": 0.1, "van": 0.08, "minivan": 0.04, "police": 0.03 },
+  "trafficCount": 12,
+  "oncomingCount": 10,
+  "trafficSpeed": { "min": 11, "max": 17 },
+  "segments": [
+    { "length": 400, "curve": 0 },
+    { "length": 250, "curve": 0.003 },
+    { "length": 450, "curve": 0 },
+    { "length": 300, "curve": -0.0025 },
+    { "length": 500, "curve": 0 },
+    { "length": 200, "curve": 0.004 },
+    { "length": 600, "curve": 0 },
+    { "length": 300, "curve": -0.002 },
+    { "length": 400, "curve": 0 }
+  ],
+  "parades": [
+    { "s": 2300 }
+  ],
+  "waterMains": [
+    { "s": 520, "lane": 2 },
+    { "s": 980, "lane": 3 },
+    { "s": 1500, "lane": 2 },
+    { "s": 1960, "lane": 3 },
+    { "s": 2450, "lane": 2 },
+    { "s": 2900, "lane": 3 }
+  ],
+  "herds": [
+    { "from": 1150, "to": 1350, "count": 3, "kind": "cow", "stay": true },
+    { "from": 2600, "to": 2800, "count": 4, "kind": "cow", "stay": true }
+  ],
+  "potholes": [
+    { "s": 700, "lane": 3, "r": 0.9 },
+    { "s": 1700, "lane": 2, "r": 1.1 },
+    { "s": 2200, "lane": 3, "r": 0.8 },
+    { "s": 3100, "lane": 2, "r": 1.0 }
+  ],
+  "targets": [
+    { "s": 800, "side": "right" },
+    { "s": 2100, "side": "left" },
+    { "s": 3200, "side": "right" }
+  ],
+  "spray": [
+    { "from": 1380, "to": 1950 }
+  ],
+  "pickups": [
+    { "type": "cash10", "s": 1600, "lane": 2 },
+    { "type": "cash10", "s": 1600, "lane": 3 },
+    { "type": "turbo", "s": 220, "lane": 3 },
+    { "type": "wrench", "s": 650, "lane": 2 },
+    { "type": "ghost", "s": 1100, "lane": 3 },
+    { "type": "timePlus", "s": 1400, "lane": 2 },
+    { "type": "mystery", "s": 1800, "lane": 3 },
+    { "type": "wrench", "s": 2300, "lane": 2 },
+    { "type": "passenger", "s": 2550, "lane": 3 },
+    { "type": "armour", "s": 2850, "lane": 2 },
+    { "type": "turbo", "s": 3150, "lane": 3 }
+  ],
+  "obstacles": [
+    { "s": 900, "lane": 3, "kind": "cone" },
+    { "s": 912, "lane": 3, "kind": "cone" },
+    { "s": 1250, "lane": 2, "kind": "bale" },
+    { "s": 2050, "lane": 3, "kind": "barrier" },
+    { "s": 2750, "lane": 2, "kind": "sign" }
+  ]
+}

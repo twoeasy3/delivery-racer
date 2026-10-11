@@ -1,0 +1,65 @@
+{
+  "id": "suburbs",
+  "theme": "suburb",
+  "clock": { "good": 35, "evil": 25 },
+  "tip": 85,
+  "traffic": { "suv": 0.4, "taxi": 0.3, "miata": 0.3 },
+  "trafficCount": 8,
+  "oncomingCount": 6,
+  "emergencies": { "every": { "min": 20, "max": 40 } },
+  "segments": [
+    { "length": 300, "curve": 0 },
+    { "length": 300, "curve": 0.003 },
+    { "length": 400, "curve": 0 },
+    { "length": 300, "curve": -0.004 },
+    { "length": 350, "curve": 0 },
+    { "length": 300, "curve": 0 },
+    { "length": 350, "curve": 0.003 },
+    { "length": 300, "curve": -0.003 },
+    { "length": 300, "curve": 0 },
+    { "length": 300, "curve": 0 }
+  ],
+  "narrows": [
+    { "from": 250, "to": 1250, "lanesPerSide": 1 },
+    { "from": 1650, "to": 2700, "lanesPerSide": 1 }
+  ],
+  "targets": [
+    { "s": 900, "side": "left" },
+    { "s": 2300, "side": "right" }
+  ],
+  "cushions": [
+    { "from": 1460, "to": 1600 }
+  ],
+  "pickups": [
+    { "type": "cash10", "s": 1482, "lane": 2 },
+    { "type": "cash10", "s": 1482, "lane": 3 },
+    { "type": "cash20", "s": 1620, "lane": 3 },
+    { "type": "timePlus", "s": 180, "lane": 3 },
+    { "type": "passenger", "s": 400, "lane": 2 },
+    { "type": "timePlus", "s": 520, "lane": 1 },
+    { "type": "wrench", "s": 700, "lane": 2 },
+    { "type": "timePlus", "s": 960, "lane": 1 },
+    { "type": "timeMinus", "s": 960, "lane": 2 },
+    { "type": "siren", "s": 1050, "lane": 2 },
+    { "type": "timePlus", "s": 1150, "lane": 2 },
+    { "type": "timePlus", "s": 1350, "lane": 3 },
+    { "type": "timePlus", "s": 1420, "lane": 3 },
+    { "type": "timeMinus", "s": 1420, "lane": 2 },
+    { "type": "ghost", "s": 1550, "lane": 3 },
+    { "type": "passenger", "s": 1780, "lane": 2 },
+    { "type": "timePlus", "s": 1900, "lane": 1 },
+    { "type": "timePlus", "s": 2100, "lane": 2 },
+    { "type": "siren", "s": 2250, "lane": 2 },
+    { "type": "timePlus", "s": 2400, "lane": 1 },
+    { "type": "timeMinus", "s": 2400, "lane": 2 },
+    { "type": "wrench", "s": 2550, "lane": 2 },
+    { "type": "timePlus", "s": 2800, "lane": 3 },
+    { "type": "timePlus", "s": 3000, "lane": 2 }
+  ],
+  "obstacles": [
+    { "s": 640, "lane": 2, "kind": "cone" },
+    { "s": 1300, "lane": 2, "kind": "cone" },
+    { "s": 2000, "lane": 2, "kind": "cone" },
+    { "s": 2900, "lane": 3, "kind": "cone" }
+  ]
+}

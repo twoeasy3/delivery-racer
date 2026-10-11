@@ -1,0 +1,149 @@
+{
+  "id": "gimmick-road-3",
+  "clock": { "good": 480, "evil": 370 },
+  "tip": 50,
+  "lanes": 6,
+  "traffic": { "commuter": 0.25, "darkvan": 0.15, "wagon": 0.15, "van": 0.14, "taxi": 0.1, "pickup": 0.1, "minivan": 0.05, "bus": 0.08, "semi": 0.08, "caravan": 0.06 },
+  "trafficCount": 7,
+  "oncomingCount": 6,
+  "segments": [
+    { "length": 1100, "curve": 0 },
+    { "length": 90, "curve": 0, "grade": 0.2, "ease": 6 },
+    { "length": 90, "curve": 0, "grade": -0.2, "ease": 6 },
+    { "length": 120, "curve": 0, "ease": 6 },
+    { "length": 90, "curve": 0, "grade": 0.2, "ease": 6 },
+    { "length": 90, "curve": 0, "grade": -0.2, "ease": 6 },
+    { "length": 120, "curve": 0, "ease": 6 },
+    { "length": 1200, "curve": 0 },
+    { "length": 300, "curve": 0.0015 },
+    { "length": 300, "curve": -0.0015 },
+    { "length": 500, "curve": 0 },
+    { "length": 100, "curve": 0 },
+    { "length": 150, "curve": -0.004 },
+    { "length": 300, "curve": 0.004 },
+    { "length": 150, "curve": -0.004 },
+    { "length": 100, "curve": 0 },
+    { "length": 500, "curve": 0 },
+    { "length": 100, "curve": 0 },
+    { "length": 150, "curve": -0.004 },
+    { "length": 300, "curve": 0.004 },
+    { "length": 150, "curve": -0.004 },
+    { "length": 100, "curve": 0 },
+    { "length": 600, "curve": 0 },
+    { "length": 100, "curve": 0 },
+    { "length": 150, "curve": -0.004 },
+    { "length": 300, "curve": 0.004 },
+    { "length": 150, "curve": -0.004 },
+    { "length": 100, "curve": 0 },
+    { "length": 400, "curve": 0 }
+  ],
+  "exits": [
+    { "exitAt": 4000, "mergeAt": 4800, "out": 150, "oncoming": false },
+    { "exitAt": 5300, "mergeAt": 6100, "out": 150, "oncoming": false },
+    { "exitAt": 6800, "mergeAt": 7600, "out": 150, "oncoming": false }
+  ],
+  "pickups": [
+    { "type": "wrench", "s": 1000, "lane": 3 },
+    { "type": "cash10", "s": 1040, "lane": 4 },
+    { "type": "cash10", "s": 1040, "lane": 5 },
+    { "type": "cash5", "s": 660, "lane": 5 },
+    { "type": "cash10", "s": 1235, "lane": 3 },
+    { "type": "cash10", "s": 1235, "lane": 5 },
+    { "type": "cash10", "s": 1800, "lane": 4 },
+    { "type": "cash10", "s": 1800, "lane": 5 },
+    { "type": "cash10", "s": 1900, "lane": 5 },
+    { "type": "cash20", "s": 2020, "lane": 5 },
+    { "type": "cash20", "s": 2462, "lane": 4 },
+    { "type": "cash10", "s": 2480, "lane": 3 },
+    { "type": "cash10", "s": 2480, "lane": 5 },
+    { "type": "wrench", "s": 2700, "lane": 3 },
+    { "type": "cash10", "s": 2760, "lane": 4 },
+    { "type": "cash10", "s": 2760, "lane": 5 },
+    { "type": "cash10", "s": 3160, "lane": 3 },
+    { "type": "cash10", "s": 3160, "lane": 5 },
+    { "type": "cash20", "s": 3240, "lane": 4 },
+    { "type": "cash10", "s": 3370, "lane": 3 },
+    { "type": "cash10", "s": 3370, "lane": 5 },
+    { "type": "cash10", "s": 3588, "lane": 3 },
+    { "type": "cash10", "s": 3588, "lane": 4 },
+    { "type": "cash10", "s": 3678, "lane": 4 },
+    { "type": "cash10", "s": 3678, "lane": 5 },
+    { "type": "wrench", "s": 3800, "lane": 3 },
+    { "type": "cash10", "s": 4425, "lane": 3 },
+    { "type": "cash10", "s": 4425, "lane": 4 },
+    { "type": "cash10", "s": 4425, "lane": 5 },
+    { "type": "cash5", "s": 400, "lane": 1, "road": "side", "exit": 0 },
+    { "type": "wrench", "s": 5100, "lane": 3 },
+    { "type": "cash10", "s": 5685, "lane": 3 },
+    { "type": "cash10", "s": 5685, "lane": 4 },
+    { "type": "cash20", "s": 5740, "lane": 4 },
+    { "type": "cash5", "s": 400, "lane": 1, "road": "side", "exit": 1 },
+    { "type": "cash10", "s": 4900, "lane": 3 },
+    { "type": "cash10", "s": 4900, "lane": 5 },
+    { "type": "cash20", "s": 4925, "lane": 4 },
+    { "type": "cash20", "s": 6330, "lane": 5 },
+    { "type": "cash5", "s": 6330, "lane": 4 },
+    { "type": "cash10", "s": 6600, "lane": 3 },
+    { "type": "cash10", "s": 6600, "lane": 4 },
+    { "type": "cash10", "s": 6600, "lane": 5 },
+    { "type": "cash10", "s": 7190, "lane": 3 },
+    { "type": "cash10", "s": 7190, "lane": 4 },
+    { "type": "cash20", "s": 7260, "lane": 4 }
+  ],
+  "obstacles": [
+    { "s": 1218, "lane": 4, "kind": "barrier" },
+    { "s": 1518, "lane": 3, "kind": "barrier" },
+    { "s": 1518, "lane": 5, "kind": "barrier" },
+    { "s": 3120, "lane": 4, "kind": "barrier" },
+    { "s": 3200, "lane": 3, "kind": "barrier" },
+    { "s": 3200, "lane": 5, "kind": "barrier" },
+    { "s": 3330, "lane": 4, "kind": "barrier" },
+    { "s": 6410, "lane": 5, "kind": "barrier" },
+    { "s": 5000, "lane": 4, "kind": "barrier" },
+    { "s": 6640, "lane": 4, "kind": "barrier" }
+  ],
+  "jamRamps": [
+    { "s": 2400, "lane": 4 }
+  ],
+  "shoulderRows": [
+    { "kind": "barrier", "from": 2390, "to": 2470, "every": 10, "side": "right" }
+  ],
+  "lowBridges": [
+    { "s": 4400 }
+  ],
+  "fords": [
+    { "from": 5650, "to": 5720, "depth": 0.6 },
+    { "from": 7150, "to": 7230, "depth": 0.2, "fills": { "to": 0.9, "over": 240 }, "underpass": true }
+  ],
+  "cushions": [
+    { "from": 3520, "to": 3700 }
+  ],
+  "shade": [
+    { "from": 6250, "to": 6450, "side": "right" }
+  ],
+  "ruts": [
+    { "from": 4830, "to": 5030 }
+  ],
+  "tarmac": [
+    { "from": 1750, "to": 2050, "lane": 5 }
+  ],
+  "spray": [
+    { "from": 2520, "to": 2880 }
+  ],
+  "tractors": [
+    { "s": 2640, "lane": 4 }
+  ],
+  "lowSun": [
+    { "from": 6470, "to": 6690 }
+  ],
+  "dust": [
+    { "from": 920, "to": 1080, "wind": "right" }
+  ],
+  "washboards": [
+    { "from": 2950, "to": 3450 }
+  ],
+  "crosswinds": [
+    { "from": 300, "to": 900, "dir": "left" }
+  ],
+  "targets": []
+}

@@ -1,0 +1,64 @@
+{
+  "id": "passage-du-gois",
+  "cargo": { "good": "goldfish", "evil": "tentacle" },
+  "theme": "coast",
+  "clock": { "good": 348, "evil": 247 },
+  "tip": 200,
+  "lanes": { "north": 3, "south": 2 },
+  "traffic": { "darkvan": 0.3, "commuter": 0.2, "wagon": 0.15, "lovebus": 0.12, "van": 0.1, "pickup": 0.08, "police": 0.05 },
+  "trafficCount": 10,
+  "oncomingCount": 9,
+  "segments": [
+    { "length": 400, "curve": 0 },
+    { "length": 300, "curve": 0.001 },
+    { "length": 700, "curve": -0.0008 },
+    { "length": 800, "curve": 0 },
+    { "length": 700, "curve": 0.001 },
+    { "length": 700, "curve": 0 },
+    { "length": 700, "curve": -0.0009 },
+    { "length": 600, "curve": 0 },
+    { "length": 300, "curve": 0.0012 },
+    { "length": 400, "curve": 0 }
+  ],
+  "zones": [
+    { "id": "beauvoir", "from": 0, "to": 700, "scenery": "marais", "ground": 8363100, "sky": 11127270 },
+    { "id": "gois", "from": 700, "to": 4900, "scenery": "gois", "ground": 12167036, "sky": 10467532 },
+    { "id": "noirmoutier", "from": 4900, "to": 5600, "scenery": "noirmoutier", "ground": 10135658, "sky": 11785198 }
+  ],
+  "tide": {
+    "from": 700, "to": 4900, "start": 1.2, "end": 3.4,
+    "waves": { "every": { "min": 6, "max": 9 }, "reach": { "min": 1.0, "max": 1.6 } },
+    "washUp": { "types": { "timePlus": 0.4, "wrench": 0.2, "turbo": 0.15, "ghost": 0.15, "mystery": 0.1 }, "count": { "min": 1, "max": 2 } }
+  },
+  "parked": [
+    { "s": 1700, "side": "right" },
+    { "s": 3000, "side": "right" },
+    { "s": 4300, "side": "right" }
+  ],
+  "targets": [
+    { "s": 500, "side": "left" },
+    { "s": 2000, "side": "left" },
+    { "s": 3500, "side": "left" },
+    { "s": 5300, "side": "right" }
+  ],
+  "lowSun": [
+    { "from": 1420, "to": 1980 }
+  ],
+  "pickups": [
+    { "type": "cash10", "s": 1600, "lane": 3 },
+    { "type": "cash10", "s": 1600, "lane": 4 },
+    { "type": "turbo", "s": 300, "lane": 3 },
+    { "type": "timePlus", "s": 900, "lane": 4 },
+    { "type": "ghost", "s": 1200, "lane": 2 },
+    { "type": "timePlus", "s": 1500, "lane": 4 },
+    { "type": "wrench", "s": 1900, "lane": 3 },
+    { "type": "timePlus", "s": 2300, "lane": 3 },
+    { "type": "mystery", "s": 2500, "lane": 2 },
+    { "type": "ghost", "s": 2800, "lane": 3 },
+    { "type": "timePlus", "s": 3200, "lane": 4 },
+    { "type": "wrench", "s": 3700, "lane": 2 },
+    { "type": "ghost", "s": 4100, "lane": 4 },
+    { "type": "wrench", "s": 4500, "lane": 3 },
+    { "type": "turbo", "s": 5100, "lane": 2 }
+  ]
+}

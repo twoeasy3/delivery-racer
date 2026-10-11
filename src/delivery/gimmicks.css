@@ -1,0 +1,11 @@
+/* the gimmicks page (delivery/gimmicks.html): the power-ups page's look (powerups.css), plus a row of
+   buttons to jump to each group, each group's heading across the grid, and the levels on each card */
+html { scroll-behavior: smooth; }
+.groups { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+.groups a { color: var(--text); background: var(--card); border: 1px solid var(--edge); border-radius: 999px;
+  padding: 4px 12px; font-size: 14px; font-weight: 700; text-decoration: none; }
+.groups a:hover { border-color: var(--accent); color: var(--accent); }
+.cards h2.group { grid-column: 1 / -1; margin: 18px 0 -6px; font-size: 22px; color: var(--accent); scroll-margin-top: 12px; }
+.card .levels { margin: 12px 0 0; font-size: 13px; color: var(--muted); border-top: 1px solid var(--edge); padding-top: 8px; }
+.card .levels span { display: inline-block; min-width: 1.6em; text-align: center; font-weight: 700; color: var(--bg);
+  background: var(--swatch); border-radius: 999px; padding: 0 6px; margin-right: 2px; }

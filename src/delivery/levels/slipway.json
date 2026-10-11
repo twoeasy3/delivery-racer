@@ -1,0 +1,60 @@
+{
+  "id": "slipway",
+  "theme": "beach",
+  "amphibious": true,
+  "clock": { "good": 165, "evil": 125 },
+  "tip": 220,
+  "lanes": 4,
+  "traffic": { "commuter": 0.28, "wagon": 0.14, "lovebus": 0.12, "toybota": 0.14, "herald": 0.1, "floatvan": 0.08, "dinghy": 0.3, "pedalo": 0.32, "barge": 0.1 },
+  "trafficCount": 12,
+  "oncomingCount": 10,
+  "trafficSpeed": { "min": 10, "max": 16 },
+  "segments": [
+    { "length": 400, "curve": 0 },
+    { "length": 250, "curve": 0.003 },
+    { "length": 500, "curve": 0 },
+    { "length": 300, "curve": -0.0025 },
+    { "length": 600, "curve": 0 },
+    { "length": 250, "curve": 0.002 },
+    { "length": 500, "curve": 0 }
+  ],
+  "water": [
+    { "from": 700, "to": 1050 },
+    { "from": 1500, "to": 2350, "current": 1.5 }
+  ],
+  "balloons": [
+    { "s": 1290, "lanes": [2, 2] }
+  ],
+  "parked": [
+    { "s": 330, "side": "right" },
+    { "s": 2520, "side": "right" }
+  ],
+  "targets": [
+    { "s": 560, "side": "left" },
+    { "s": 1400, "side": "right" },
+    { "s": 2600, "side": "left" }
+  ],
+  "pickups": [
+    { "type": "turbo", "s": 260, "lane": 2 },
+    { "type": "wrench", "s": 600, "lane": 3 },
+    { "type": "cash10", "s": 820, "lane": 3 },
+    { "type": "cash10", "s": 900, "lane": 2 },
+    { "type": "timePlus", "s": 1180, "lane": 3 },
+    { "type": "mystery", "s": 1420, "lane": 2 },
+    { "type": "ghost", "s": 1700, "lane": 3 },
+    { "type": "cash20", "s": 1900, "lane": 2 },
+    { "type": "wrench", "s": 2080, "lane": 3 },
+    { "type": "turbo", "s": 2420, "lane": 2 },
+    { "type": "passenger", "s": 2600, "lane": 3 }
+  ],
+  "obstacles": [
+    { "s": 420, "lane": 3, "kind": "umbrella" },
+    { "s": 470, "lane": 2, "kind": "cooler" },
+    { "s": 1130, "lane": 2, "kind": "surfboard" },
+    { "s": 1150, "lane": 3, "kind": "chair" },
+    { "s": 1380, "lane": 3, "kind": "umbrella" },
+    { "s": 2440, "lane": 3, "kind": "cooler" },
+    { "s": 2480, "lane": 2, "kind": "surfboard" },
+    { "s": 2650, "lane": 2, "kind": "umbrella" }
+  ]
+}

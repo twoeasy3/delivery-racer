@@ -1,0 +1,53 @@
+{
+  "id": "all-heck",
+  "cargo": { "good": "clock", "evil": "doll" },
+  "theme": "hell",
+  "car": "hearse",
+  "alwaysGood": true,
+  "flow": "south",
+  "lanes": 8,
+  "clock": { "good": 156, "evil": 111 },
+  "tip": 120,
+  "traffic": { "junker": 0.24, "wagon": 0.15, "sport": 0.15, "lovebus": 0.12, "darkvan": 0.12, "van": 0.1, "bus": 0.06, "police": 0.06 },
+  "segments": [
+    { "length": 700, "curve": 0 },
+    { "length": 350, "curve": 0.003 },
+    { "length": 650, "curve": 0 },
+    { "length": 350, "curve": -0.003 },
+    { "length": 650, "curve": 0 }
+  ],
+  "shoulderRows": [
+    { "kind": "cone", "from": 0, "to": 2700, "every": 7, "side": "both" }
+  ],
+  "targets": [
+    { "s": 600, "side": "right" },
+    { "s": 1700, "side": "left" }
+  ],
+  "pickups": [
+    { "type": "radarDetector", "s": 1300, "lane": 3 },
+    { "type": "wrench", "s": 2050, "lane": 4 },
+    { "type": "wrench", "s": 450, "lane": 6 },
+    { "type": "ghost", "s": 300, "lane": 4 },
+    { "type": "turbo", "s": 520, "lane": 6 },
+    { "type": "wrench", "s": 800, "lane": 3 },
+    { "type": "passenger", "s": 950, "lane": 7 },
+    { "type": "ghost", "s": 1150, "lane": 2 },
+    { "type": "turbo", "s": 1400, "lane": 5 },
+    { "type": "wrench", "s": 1650, "lane": 4 },
+    { "type": "ghost", "s": 1900, "lane": 6 },
+    { "type": "turbo", "s": 2100, "lane": 1 },
+    { "type": "wrench", "s": 2350, "lane": 5 },
+    { "type": "ghost", "s": 2500, "lane": 3 }
+  ],
+  "obstacles": [
+    { "s": 400, "lane": 5 },
+    { "s": 650, "lane": 2 },
+    { "s": 900, "lane": 6 },
+    { "s": 1250, "lane": 4 },
+    { "s": 1500, "lane": 1 },
+    { "s": 1750, "lane": 7 },
+    { "s": 2000, "lane": 3 },
+    { "s": 2250, "lane": 6 },
+    { "s": 2450, "lane": 0 }
+  ]
+}

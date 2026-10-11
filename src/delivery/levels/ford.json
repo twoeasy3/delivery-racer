@@ -1,0 +1,71 @@
+{
+  "id": "ford",
+  "theme": "safari",
+  "flow": "north",
+  "amphibious": true,
+  "shoulderTimer": false,
+  "clock": { "good": 215, "evil": 160 },
+  "tip": 300,
+  "lanes": 3,
+  "traffic": { "suv": 0.26, "pickup": 0.2, "wagon": 0.14, "van": 0.1, "toybota": 0.16, "nissank": 0.1, "dampervan": 0.08, "dinghy": 0.3, "barge": 0.2 },
+  "trafficCount": 13,
+  "oncomingCount": 0,
+  "segments": [
+    { "length": 450, "curve": 0 },
+    { "length": 350, "curve": 0.0015 },
+    { "length": 400, "curve": -0.0012 },
+    { "length": 300, "curve": 0 },
+    { "length": 300, "curve": 0.002 },
+    { "length": 500, "curve": 0 },
+    { "length": 300, "curve": -0.002 },
+    { "length": 400, "curve": 0 },
+    { "length": 300, "curve": 0.0012 },
+    { "length": 300, "curve": 0 }
+  ],
+  "zones": [
+    { "id": "savanna", "from": 0, "to": 1150, "scenery": "savanna", "ground": 12757082, "sky": 13032682 },
+    { "id": "river", "from": 1150, "to": 2700, "scenery": "river", "ground": 10132056, "sky": 12572902 },
+    { "id": "plains", "from": 2700, "to": 3600, "scenery": "plains", "ground": 12100446, "sky": 13820136 }
+  ],
+  "water": [
+    { "from": 420, "to": 580 },
+    { "from": 780, "to": 960 },
+    { "from": 1300, "to": 1900, "current": -2.6 },
+    { "from": 2620, "to": 2780 },
+    { "from": 3080, "to": 3300, "current": 2 }
+  ],
+  "elephants": [
+    { "from": 1000, "to": 1250, "count": 3 }
+  ],
+  "hippos": [
+    { "from": 1960, "to": 2560, "every": { "min": 2, "max": 4 } }
+  ],
+  "mud": [
+    { "from": 2830, "to": 3030 }
+  ],
+  "narrows": [
+    { "from": 1450, "to": 1750, "lanesPerSide": 1 }
+  ],
+  "targets": [
+    { "s": 660, "side": "right" },
+    { "s": 2100, "side": "left" },
+    { "s": 3400, "side": "right" }
+  ],
+  "pickups": [
+    { "type": "turbo", "s": 280, "lane": 1 },
+    { "type": "cash10", "s": 500, "lane": 2 },
+    { "type": "wrench", "s": 680, "lane": 0 },
+    { "type": "cash10", "s": 870, "lane": 0 },
+    { "type": "ghost", "s": 1040, "lane": 1 },
+    { "type": "timePlus", "s": 1270, "lane": 2 },
+    { "type": "cash20", "s": 1500, "lane": 0 },
+    { "type": "mystery", "s": 1700, "lane": 1 },
+    { "type": "wrench", "s": 1940, "lane": 1 },
+    { "type": "armour", "s": 2000, "lane": 0 },
+    { "type": "turbo", "s": 2300, "lane": 0 },
+    { "type": "timePlus", "s": 2590, "lane": 1 },
+    { "type": "wrench", "s": 2800, "lane": 2 },
+    { "type": "cash20", "s": 3190, "lane": 1 },
+    { "type": "turbo", "s": 3340, "lane": 0 }
+  ]
+}

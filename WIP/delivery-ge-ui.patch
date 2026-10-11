@@ -1,0 +1,327 @@
+diff --git a/src/delivery/SCRATCHPAD-ge-ui-12-Oct.md b/src/delivery/SCRATCHPAD-ge-ui-12-Oct.md
+new file mode 100644
+index 0000000..a3ac65b
+--- /dev/null
++++ b/src/delivery/SCRATCHPAD-ge-ui-12-Oct.md
+@@ -0,0 +1,33 @@
++# Scratchpad: Good/Evil cue ideas 8 to 12 (agent delivery-ge-ui), 12-Oct
++
++Branch: delivery-ge-ui. Worktree: .claude/worktrees/delivery-ge-ui (node_modules is a junction: `cmd /c rmdir <path>\node_modules` before deleting the worktree).
++Nothing merged or pushed. The owner has not yet chosen.
++
++## Done (switch `?ge=N`, off by default, via sidecues.js geOn)
++- 7f8ed78 sidecues.js (byte for byte as briefed)
++- f690be0 idea 8: halo/horns on the cargo corner's rim (render/cargo.js, render/sideglyph.js, cargohud.css)
++- 9626a2e idea 9: clock rim, pill for Good, cut corners for Evil (render/hud.js, style.css)
++- 81d0685 idea 10: badge on menu car picture and beside the car name in menu and garage (render/menustage.js, render/garage.js, menus.css)
++- 05f685c ideas 11 and 12 (one commit): engine voicing (render/audio.js Sound.engine 6th param `evil`; main.js passes Player.evil) and start-line cue (SYNTH startGood/startEvil, played from main.js when state becomes playing)
++- eae39dd stills
++
++## Not done
++Nothing unstarted among 8 to 12. Not tuned: sound levels. Not done: 360x640 phone stills (390x700 at 2x only); a true light-coloured car pair (see traps).
++
++## Seen / not seen
++Seen (src/delivery/geshots/): level/{commuter,hothatch,sixbysix}-{good,evil}-{off,8,9}.png (back-roads, at=300), phone/phone-hothatch-{good,evil}-{off,8,9}.png, menu/{menu,garage}-{good,evil}-{off,10}.png, menuphone/menu-{good,evil}-10.png and menu-good-off.png.
++NOT heard: ideas 11 and 12 (sound).
++Checked: node --check on audio.js and main.js only. No smoke test, no levels check, no eslint.
++
++## Traps
++- `?car=hothatch` showed Commuter (blue-star car not owned/open); `ghost` makes the car translucent. Pick an owned tier-1..3 car for real car pairs.
++- Menu name glyph truncates the car name on a phone ("COMMUT..."): consider dropping the name glyph on the menu card.
++- Idea 8 only exists on levels that carry cargo, and overflows the tile by about 10 px at the top.
++- I removed delivery-heavy.lock by rmdir after my own script had released it; it might have been another agent's.
++- Shot script used: scratchpad run.sh (not in repo); shots address form `@back-roads&evil&car=X&ghost&at=300&ff=2&ge=8`; menu `index.html?car=..&side=evil&ge=10`, garage `index.html?garage=evil&ge=10`.
++
++## Next step
++Owner looks at the stills and chooses ideas; then merge the chosen commits (cherry-pick, or merge and keep switches), turn the chosen switches on by default or remove the switch, tune sounds by ear. Drop eae39dd if the stills should not ship.
++
++## Left behind
++No background jobs, no extra worktrees, no locks held.
+diff --git a/src/delivery/cargohud.css b/src/delivery/cargohud.css
+index d654d58..5a4e419 100644
+--- a/src/delivery/cargohud.css
++++ b/src/delivery/cargohud.css
+@@ -24,3 +24,7 @@ body.delivering #behind, body.delivering #camAlert, body.delivering #copGlow, bo
+ #deliveryHint { display: none; position: fixed; left: 0; right: 0; bottom: max(18px, env(safe-area-inset-bottom)); text-align: center; pointer-events: none;
+   font-size: 14px; font-weight: 700; text-shadow: 0 1px 4px rgba(0,0,0,.85); opacity: .9; padding: 0 12px; }
+ body.delivering #deliveryHint { display: block; }
++/* idea 8 of IDEAS-good-evil-11-Oct.md (?ge=8): the side's halo or horns, on the tile's rim at the top */
++.cornerGlyph { position: absolute; left: 50%; top: -17px; width: 34px; height: 34px; margin-left: -17px; pointer-events: none; filter: drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
++.cornerGlyph svg { width: 100%; height: 100%; display: block; }
++@media (max-height: 480px) { .cornerGlyph { width: 26px; height: 26px; top: -13px; margin-left: -13px; } }
+diff --git a/src/delivery/main.js b/src/delivery/main.js
+index d8ce7ef..46d0699 100644
+--- a/src/delivery/main.js
++++ b/src/delivery/main.js
+@@ -1,5 +1,6 @@
+ // Entry point: loads the game logic, then the rendering, and runs the frame loop.
+ // Game logic (src/*.js) never imports rendering (src/render/*.js), so it can run headless.
++import { geOn } from './sidecues.js';
+ import './style.css';
+ import * as THREE from 'three';
+ import { CONFIG } from './config.js';
+@@ -356,7 +357,7 @@ const frame = (now) => {
+     const heard = Game.raceWatch && Game.state === 'playing' && !Game.paused ? raceAudio(dt) : null;
+     if (heard) Sound.engine(heard.speed, CAR.id, CAR.maxSpeed, heard.gain, heard.pitch);
+     else Sound.engine(live ? Player.speed : -1, Player.tank > 0 ? 'tank' : Player.afloat ? 'jetboat' : CAR.sound || CAR.base?.id || CAR.id, // (a Super car: its base car's engine, wound higher; a car idea: the engine of the car its `sound` names; afloat on a water stage, a boat's)
+-      Player.tank > 0 ? Player.rageTank?.maxSpeed ?? CONFIG.tankMaxSpeed : CAR.maxSpeed);
++      Player.tank > 0 ? Player.rageTank?.maxSpeed ?? CONFIG.tankMaxSpeed : CAR.maxSpeed, 1, 1, Player.evil);
+     Sound.pack(heard ? heard.pack : 0);
+     // the siren, louder the nearer the nearest police car or ambulance (the screensaver's too), and a radar
+     // ping as one comes near enough to bust you (nobody busts a tank)
+@@ -402,6 +403,7 @@ const frame = (now) => {
+   syncTankCorner(dt); // (it hides itself when there is no run)
+   // the studio (?cine=car): nothing but the car, its floor and the lights
+   if (Cinematic.studio) for (const o of scene.children) o.visible = o === carMesh || o.isLight || !!o.userData.studio;
++  if (prevState !== 'playing' && Game.state === 'playing' && !Game.screensaver && geOn(12)) Sound.play(Player.evil ? 'startEvil' : 'startGood', 0.8); // (idea 12: the cue as the run starts)
+   prevState = Game.state;
+   requestAnimationFrame(frame);
+ };
+diff --git a/src/delivery/menus.css b/src/delivery/menus.css
+index 9937c59..1d20a1b 100644
+--- a/src/delivery/menus.css
++++ b/src/delivery/menus.css
+@@ -149,3 +149,7 @@ body.ideas-tab #garageUse { display: none !important; }
+ #garageWhy { flex: 1 1 100%; font: 600 12px/1.3 system-ui, sans-serif; letter-spacing: .03em; color: #ffb4a8; }
+ #garageUi .actions { flex-wrap: wrap; }
+ #garageUi .actions button:disabled { opacity: .5; cursor: not-allowed; }
++/* idea 10 of IDEAS-good-evil-11-Oct.md (?ge=10): the side's halo or horns on the car in the menu and beside its name */
++.sideGlyph svg { width: 100%; height: 100%; display: block; }
++.nameGlyph { display: inline-block; width: 20px; height: 20px; vertical-align: -5px; margin-right: 5px; }
++.pictureGlyph { position: absolute; left: 6px; top: 6px; width: 30px; height: 30px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); pointer-events: none; }
+diff --git a/src/delivery/render/audio.js b/src/delivery/render/audio.js
+index 241983b..17faae0 100644
+--- a/src/delivery/render/audio.js
++++ b/src/delivery/render/audio.js
+@@ -10,6 +10,7 @@
+ // Browsers only allow sound after the player has clicked or pressed a key, so nothing is
+ // set up (or loaded) until then. M mutes; the choice is saved with the player's progress.
+ import { CONFIG } from '../config.js';
++import { geOn } from '../sidecues.js';
+ import { Progress } from '../progress.js';
+ 
+ let ctx = null, master = null, noiseBuffer = null;
+@@ -67,6 +68,7 @@ const SAMPLES = {
+   tick: '',           // each second of the tip countdown
+   win: '',
+   fail: '',                     // the level failed
++  startGood: null, startEvil: null, // (idea 12: synthesised only: see SYNTH)
+   drop: 'Collide1',              // the helicopter sets a car down
+   screech: 'Tire Screech 1',      // a car near the player spins out
+   brake: 'Tire Screech',      // the player's car brakes hard for a car ahead
+@@ -268,7 +270,7 @@ const loop = () => ({
+     if (!this.gain) {
+       this.gain = ctx.createGain();
+       this.gain.gain.value = 0;
+-      this.gain.connect(master);
++      this.gain.connect(this.out || master);
+     }
+     if (file !== this.file) {
+       if (volume > 0) load(file);
+@@ -297,6 +299,7 @@ const loop = () => ({
+   },
+ });
+ const engineLoop = loop(), packLoop = loop(), sirenLoop = loop(), heliLoop = loop(), frogLoop = loop(), warnLoop = loop(), ufoLoop = loop(), lowriderLoop = loop();
++let voice = null; // idea 11 (?ge=11): the engine's side voicing: a high shelf between the engine loop and the master, made when first wanted
+ let engineCar = null, engineFile = null; // the car the engine loop was picked for, and its WAV
+ 
+ // ---- the synthesised stand-ins: (volume 0..1) => void --------------------------------------------
+@@ -313,6 +316,9 @@ const SYNTH = {
+   turbo: (v) => { tone(220, 1100, 0.45, 0.25 * v, 'sawtooth'); noise(400, 3000, 0.45, 0.2 * v, 'bandpass'); },
+   tank: (v) => [55, 82.5, 110].forEach((f) => tone(f, f * 0.98, 1.1, 0.3 * v, 'sawtooth')), // a low power chord
+   siren: (v) => { for (let i = 0; i < 4; i++) tone(i % 2 ? 620 : 820, i % 2 ? 620 : 820, 0.22, 0.16 * v, 'square', i * 0.22); },
++  // idea 12 (?ge=12): the start line's cue, quiet: Good a soft two-note rising chime; Evil a low two-note falling sting
++  startGood: (v) => { tone(660, 660, 0.14, 0.09 * v, 'sine'); tone(990, 990, 0.3, 0.09 * v, 'sine', 0.1); },
++  startEvil: (v) => { tone(147, 147, 0.2, 0.16 * v, 'sawtooth'); tone(110, 104, 0.45, 0.16 * v, 'sawtooth', 0.17); noise(500, 120, 0.4, 0.06 * v, 'lowpass', 0.17); },
+   tick: (v) => tone(1000, 1000, 0.06, 0.25 * v, 'square'),
+   win: (v) => [523, 659, 784, 1047].forEach((f, i) => tone(f, f, 0.28, 0.22 * v, 'triangle', i * 0.12)),
+   fail: (v) => [392, 330, 262, 196].forEach((f, i) => tone(f, f * 0.97, 0.32, 0.22 * v, 'sawtooth', i * 0.16)),
+@@ -381,7 +387,7 @@ export const Sound = {
+   // speed in m/s, or a negative number for silence. car: the car's id in ENGINES ('tank' while
+   // in TANK RAGE); top: its top speed, which sets how high the engine is pitched. (The race
+   // screensaver's watched car, heard from the camera: gain, how loud from there; pitch, its Doppler shift)
+-  engine(speed, car = 'commuter', top = 30, gain = 1, pitch = 1) {
++  engine(speed, car = 'commuter', top = 30, gain = 1, pitch = 1, evil = false) {
+     if (!engine) return;
+     const now = ctx.currentTime, on = speed >= 0;
+     const e = ENGINES[car] || ENGINES.commuter;
+@@ -395,6 +401,19 @@ export const Sound = {
+     const even = buffers[engineFile] ? Math.min(4, ENGINE_LOUDNESS / loudness(engineFile)) : 1;
+     const volume = !on ? 0 : gain * even * (e.volume || 1) * (e.fixed ? 1 : ENGINE_IDLE + (1 - ENGINE_IDLE) * Math.min(1, pace));
+     if (engineFile && engineLoop.set(engineFile, volume, rate)) {
++      if (geOn(11) && on) { // idea 11: Good a hair brighter (+3 dB above 2 kHz, +20 cents); Evil a hair duller (-5 dB, -60 cents) with a slow rough growl (+-12 cents at 0.8 Hz, a 7% shiver in the volume at 11 Hz)
++        if (!voice) {
++          voice = ctx.createBiquadFilter();
++          voice.type = 'highshelf';
++          voice.frequency.value = 2000;
++          engineLoop.gain.disconnect();
++          engineLoop.gain.connect(voice).connect(master);
++        }
++        const t = now;
++        voice.gain.setTargetAtTime(evil ? -5 : 3, now, 0.1);
++        engineLoop.source.detune.setTargetAtTime(evil ? -60 + 12 * Math.sin(t * 5.0) : 20, now, 0.05);
++        if (evil) engineLoop.gain.gain.setTargetAtTime(volume * (1 + 0.07 * Math.sin(t * 69)), now, 0.03);
++      }
+       engine.gain.gain.setTargetAtTime(0, now, 0.05);
+       return;
+     }
+diff --git a/src/delivery/render/cargo.js b/src/delivery/render/cargo.js
+index cf2fa7c..586adcf 100644
+--- a/src/delivery/render/cargo.js
++++ b/src/delivery/render/cargo.js
+@@ -28,6 +28,8 @@ import { Sound } from './audio.js';
+ import { carMesh } from './cars.js';
+ import { Particles, Smoke, rnd } from './effects.js';
+ import { makeCargoModel } from './cargoModels.js';
++import { geOn } from '../sidecues.js';
++import { sideGlyph } from './sideglyph.js';
+ import { cornerFrames, addCornerLights, placeCornerCamera } from './cargoview.js';
+ 
+ const C = CONFIG.consignment, E = C.ending;
+@@ -79,6 +81,8 @@ export const drawCargoCorner = (dt, now) => {
+   if (shown !== cargo) { // a new run's item: in its window, as it starts out
+     shown = cargo;
+     shownState = -1;
++    box.querySelector('.sideGlyph')?.remove();
++    if (geOn(8)) box.appendChild(sideGlyph(Player.evil, 'sideGlyph cornerGlyph')); // (idea 8: the halo or the horns on the tile's rim)
+     turntable.clear();
+     turntable.add(model);
+     model.position.set(0, 0, 0);
+diff --git a/src/delivery/render/garage.js b/src/delivery/render/garage.js
+index 64c0cd1..667004e 100644
+--- a/src/delivery/render/garage.js
++++ b/src/delivery/render/garage.js
+@@ -3,6 +3,8 @@
+ // from the start, in a section of their own at the end of the tiers: see buildLot). Tap any car, owned or not, to see its stats; the button under them
+ // uses it, or buys it (hovering shows the price). The Good / Evil toggle swaps every car to its
+ // other livery: buying a car buys both.
++import { geOn } from '../sidecues.js';
++import { sideGlyph } from './sideglyph.js';
+ import * as THREE from 'three';
+ import { CONFIG } from '../config.js';
+ import { CAR, carInUse, selectCar, stars, starColour, STAR_COLOURS, blueStarsOpen, garageCars, restrictedTier, setViewSide, carAllowedOn } from '../cars.js';
+@@ -242,7 +244,7 @@ const refresh = () => {
+   const badge = document.createElement('span');
+   badge.className = 'notallowed';
+   badge.replaceChildren(...(shown.silhouette ? ['No car of this tier owned: buy one in the lot'] : reasonNode()));
+-  info.replaceChildren(...withStars(shown), ...(notAllowed && !shown.silhouette ? [' - ', badge] : []), '  -  ' + stats(shown));
++  info.replaceChildren(...(geOn(10) ? [sideGlyph(Garage.evil, 'sideGlyph nameGlyph')] : []), ...withStars(shown), ...(notAllowed && !shown.silhouette ? [' - ', badge] : []), '  -  ' + stats(shown));
+   showComparison(inUse, shown); // (the car in use against the one looked at: see render/compare.js)
+   // the button under the stats: what can be done with the car shown
+   // (the car in use, looked at in the other side's livery: the button takes that side)
+diff --git a/src/delivery/render/hud.js b/src/delivery/render/hud.js
+index 0d823d4..4fb2d5f 100644
+--- a/src/delivery/render/hud.js
++++ b/src/delivery/render/hud.js
+@@ -4,6 +4,7 @@ import { Track } from '../track.js';
+ import { Player } from '../player.js';
+ import { Packages } from '../packages.js';
+ import { Game, formatTime, clockFor } from '../game.js';
++import { geOn } from '../sidecues.js';
+ import { Message } from '../messages.js';
+ import { Traffic } from '../traffic.js';
+ import { SpeedCameras } from '../cameras.js';
+@@ -209,7 +210,13 @@ Game.onFinish.push(() => {
+   hudFade.style.opacity = 0;
+   if (hudCamAlert) hudCamAlert.classList.add('hidden');
+ });
++let rimSide = -1; // idea 9 (?ge=9): which rim the clock wears, -1 none yet, 0 Good, 1 Evil
+ export const updateHud = () => {
++  if (geOn(9) && rimSide !== +Player.evil) { // the side in the clock's rim: rounded for Good, notched corners for Evil
++    rimSide = +Player.evil;
++    hudTimer.classList.add('rim');
++    hudTimer.classList.toggle('rimEvil', Player.evil);
++  }
+   // the clock counts down; below zero is the tip countdown, with the tip draining away
+   const left = Game.state === 'start' ? clockFor(LEVEL, false) : Game.remaining;
+   const late = left < 0;
+diff --git a/src/delivery/render/menustage.js b/src/delivery/render/menustage.js
+index 44d1e4f..60f24f2 100644
+--- a/src/delivery/render/menustage.js
++++ b/src/delivery/render/menustage.js
+@@ -24,6 +24,8 @@ import { medalFor, medalNeeds } from '../levelinfo.js';
+ import { Garage, makeShowCar, paintShowCar, IDEA_TAG } from './garage.js';
+ import { standView, sharedRenderer, disposeViews, drawViews } from './modelviews.js';
+ import { Sound } from './audio.js';
++import { geOn } from '../sidecues.js';
++import { sideGlyph } from './sideglyph.js';
+ 
+ const money = (amount) => '$' + amount.toFixed(2);
+ // each level's still, by level id (taken with ?cine: see main.js). The postcard album uses them too (render/album.js)
+@@ -367,11 +369,13 @@ const drawCar = () => {
+     shop.title = 'This level needs a car of exactly its tier: open the garage to buy one (G)';
+     return;
+   }
++  picture.querySelector('.sideGlyph')?.remove();
++  if (geOn(10)) picture.appendChild(sideGlyph(evil, 'sideGlyph pictureGlyph')); // (idea 10: the side's badge on the car, the one the game's cargo corner wears)
+   const starSpan = make('span', 'stars', CAR.tier ? stars(CAR) : IDEA_TAG.text);
+   starSpan.style.color = CAR.tier ? starColour(CAR) : IDEA_TAG.colour;
+   shop.replaceChildren(picture,
+     make('span', 'words',
+-      make('strong', '', CAR.name + ' ', CAR.tier || CAR.idea ? starSpan : null),
++      make('strong', '', geOn(10) ? sideGlyph(evil, 'sideGlyph nameGlyph') : null, CAR.name + ' ', CAR.tier || CAR.idea ? starSpan : null),
+       bar('Speed', Math.round(CAR.maxSpeed * 3.6) + ' km/h', CAR.maxSpeed / MOST.speed),
+       bar('Accel', String(CAR.accel), CAR.accel / MOST.accel),
+       bar('Health', String(CAR.health), CAR.health / MOST.health)),
+diff --git a/src/delivery/render/sideglyph.js b/src/delivery/render/sideglyph.js
+new file mode 100644
+index 0000000..0eecb62
+--- /dev/null
++++ b/src/delivery/render/sideglyph.js
+@@ -0,0 +1,14 @@
++// The Good / Evil badge shapes (the halo and the horns of sides.js), as small SVG for the in-game and menu cues of
++// IDEAS-good-evil-11-Oct.md (8: the cargo corner, 10: the menu and garage). Shape carries the side, not hue: each has a dark outline
++// so it reads on any ground, and the two differ in outline (a flat ring, a pair of points).
++const HALO = '<ellipse cx="12" cy="12" rx="9" ry="4.2" fill="none" stroke="#000" stroke-opacity=".55" stroke-width="5"/><ellipse cx="12" cy="12" rx="9" ry="4.2" fill="none" stroke="#ffd23f" stroke-width="3"/>';
++const HORNS = '<path d="M3 21 Q2 9 8 3 Q7 12 11 19 Z M21 21 Q22 9 16 3 Q17 12 13 19 Z" fill="#ff5a4f" stroke="#000" stroke-opacity=".6" stroke-width="1.6" stroke-linejoin="round"/>';
++// an element holding the badge for a side; `cls` is its class
++export const sideGlyph = (evil, cls = 'sideGlyph') => {
++  const el = document.createElement('span');
++  el.className = cls;
++  el.dataset.side = evil ? 'evil' : 'good';
++  el.title = evil ? 'Evil' : 'Good';
++  el.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + (evil ? HORNS : HALO) + '</svg>';
++  return el;
++};
+diff --git a/src/delivery/sidecues.js b/src/delivery/sidecues.js
+new file mode 100644
+index 0000000..ab37c54
+--- /dev/null
++++ b/src/delivery/sidecues.js
+@@ -0,0 +1,13 @@
++// Good/Evil cue switches (12-Oct): ?ge=1,5,8 or ?ge=all turns ideas of IDEAS-good-evil-11-Oct.md on for a visit.
++let set = null;
++export function geOn(n) {
++  if (!set) {
++    set = new Set();
++    try {
++      const v = new URLSearchParams(location.search).get('ge');
++      if (v === 'all') for (let i = 1; i <= 12; i++) set.add(i);
++      else if (v) v.split(',').forEach((x) => { const k = parseInt(x, 10); if (k) set.add(k); });
++    } catch (e) { /* no location: all off */ }
++  }
++  return set.has(n);
++}
+diff --git a/src/delivery/style.css b/src/delivery/style.css
+index 07a0378..2cd5918 100644
+--- a/src/delivery/style.css
++++ b/src/delivery/style.css
+@@ -390,3 +390,18 @@ body.in-garage #touchControls { display: none; }
+   border: 2px solid #3a414e; background: #1b2029; color: #7d8594; }
+ .overlay.panel .wall .plaque small { font-size: 12px; }
+ .overlay.panel .wall .plaque.lit { border-color: #ffd23f; background: #4a3d12; color: #fff; }
++/* idea 9 of IDEAS-good-evil-11-Oct.md (?ge=9): a hairline rim round the clock, drawn outside its box so nothing moves.
++   Good: a pill. Evil: a box with its corners cut (the cut is the sign, not the colour) */
++#timer.rim { position: relative; width: fit-content; }
++#timer.rim::after { content: ""; position: absolute; inset: 1px -7px 0 -7px; pointer-events: none; color: rgba(255,255,255,.7); box-sizing: border-box; }
++#timer.rim:not(.rimEvil)::after { border: 1.5px solid currentColor; border-radius: 999px; }
++#timer.rimEvil::after { --n: 7px; --w: 1.5px;
++  background:
++    linear-gradient(currentColor, currentColor) var(--n) 0 / calc(100% - 2 * var(--n)) var(--w) no-repeat,
++    linear-gradient(currentColor, currentColor) var(--n) 100% / calc(100% - 2 * var(--n)) var(--w) no-repeat,
++    linear-gradient(currentColor, currentColor) 0 var(--n) / var(--w) calc(100% - 2 * var(--n)) no-repeat,
++    linear-gradient(currentColor, currentColor) 100% var(--n) / var(--w) calc(100% - 2 * var(--n)) no-repeat,
++    linear-gradient(to top left, transparent calc(50% - 1px), currentColor calc(50% - 1px), currentColor calc(50% + .5px), transparent calc(50% + .5px)) 0 0 / var(--n) var(--n) no-repeat,
++    linear-gradient(to top right, transparent calc(50% - 1px), currentColor calc(50% - 1px), currentColor calc(50% + .5px), transparent calc(50% + .5px)) 100% 0 / var(--n) var(--n) no-repeat,
++    linear-gradient(to bottom left, transparent calc(50% - 1px), currentColor calc(50% - 1px), currentColor calc(50% + .5px), transparent calc(50% + .5px)) 0 100% / var(--n) var(--n) no-repeat,
++    linear-gradient(to bottom right, transparent calc(50% - 1px), currentColor calc(50% - 1px), currentColor calc(50% + .5px), transparent calc(50% + .5px)) 100% 100% / var(--n) var(--n) no-repeat; }

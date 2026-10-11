@@ -1,0 +1,155 @@
+{
+  "id": "moon",
+  "name": "Tranquility Base",
+  "description": {
+    "good": "A delivery to the Moon base: craters for potholes, ruts in the dust, machines crossing, and meteors now and then. Lift for the crests and look up.",
+    "evil": "Nobody hears a crash in a vacuum. Thread the meteor showers, cut across the bulldozer, take the rut with the money and every crest at full speed."
+  },
+  "theme": "moon",
+  "clock": { "good": 230, "evil": 175 },
+  "tip": 320,
+  "lanes": { "north": 3, "south": 2 },
+  "cargo": { "good": "globe", "evil": "alien" },
+  "traffic": { "jeep": 0.2, "pickup": 0.14, "suv": 0.12, "van": 0.12, "semi": 0.1, "cargotruck": 0.06, "apc": 0.08, "keitruck": 0.08, "bus": 0.06, "police": 0.03 },
+  "trafficCount": 12,
+  "oncomingCount": 7,
+  "convoys": { "every": { "min": 30, "max": 50 }, "size": 3, "kind": "apc" },
+  "pursuits": { "every": { "min": 50, "max": 80 } },
+  "segments": [
+    { "length": 350, "curve": 0 },
+    { "length": 60, "curve": 0, "grade": 0.14, "ease": 6 },
+    { "length": 60, "curve": 0, "grade": -0.14, "ease": 6 },
+    { "length": 100, "curve": 0, "ease": 6 },
+    { "length": 300, "curve": 0.0025 },
+    { "length": 350, "curve": 0 },
+    { "length": 300, "curve": -0.003, "grade": 0.04 },
+    { "length": 100, "curve": 0 },
+    { "length": 150, "curve": -0.004 },
+    { "length": 300, "curve": 0.004 },
+    { "length": 150, "curve": -0.004 },
+    { "length": 100, "curve": 0 },
+    { "length": 200, "curve": 0 },
+    { "length": 90, "curve": 0, "grade": 0.2, "ease": 6 },
+    { "length": 90, "curve": 0, "grade": -0.2, "ease": 6 },
+    { "length": 120, "curve": 0, "ease": 6 },
+    { "length": 300, "curve": 0.003, "grade": -0.04 },
+    { "length": 450, "curve": 0 },
+    { "length": 300, "curve": -0.0025 },
+    { "length": 150, "curve": 0 },
+    { "length": 90, "curve": 0, "grade": 0.2, "ease": 6 },
+    { "length": 90, "curve": 0, "grade": -0.2, "ease": 6 },
+    { "length": 80, "curve": 0, "ease": 6 },
+    { "length": 90, "curve": 0, "grade": 0.2, "ease": 6 },
+    { "length": 90, "curve": 0, "grade": -0.2, "ease": 6 },
+    { "length": 120, "curve": 0, "ease": 6 },
+    { "length": 350, "curve": 0 }
+  ],
+  "exits": [
+    { "exitAt": 1520, "mergeAt": 2320, "out": 70, "oncoming": false }
+  ],
+  "potholes": [
+    { "s": 180, "lane": 3, "r": 1.1 },
+    { "s": 232, "lane": 4, "r": 1 },
+    { "s": 288, "lane": 2, "r": 1.2 },
+    { "s": 900, "lane": 2, "r": 1.1 },
+    { "s": 2385, "lane": 4, "r": 1.1 },
+    { "s": 2440, "lane": 3, "r": 1 },
+    { "s": 3600, "lane": 2, "r": 1.2 },
+    { "s": 3680, "lane": 4, "r": 1.1 },
+    { "s": 3765, "lane": 3, "r": 1.2 },
+    { "s": 260, "lane": 1, "r": 1.1, "road": "side" },
+    { "s": 540, "lane": 0, "r": 1.1, "road": "side" }
+  ],
+  "drifters": [
+    { "from": 2860, "to": 3100, "kind": "cone", "count": 6, "pattern": "zigzag" }
+  ],
+  "machinery": [
+    { "s": 960, "kind": "bulldozer" },
+    { "s": 3920, "kind": "dumpTruck" }
+  ],
+  "rockfall": [
+    { "from": 1040, "to": 1200, "count": 7, "side": "right", "height": 34, "out": 8 },
+    { "from": 300, "to": 520, "count": 5, "side": "right", "height": 34, "out": 8, "road": "side" },
+    { "from": 4620, "to": 4820, "count": 9, "side": "left", "height": 34, "out": 8 }
+  ],
+  "wreckage": [
+    { "at": 1900, "kind": "boulders", "lanes": [3, 4], "from": "sky" }
+  ],
+  "tunnels": [
+    { "from": 3180, "to": 3380 }
+  ],
+  "wideLoads": [
+    { "s": 3470, "lanes": [3, 4] }
+  ],
+  "tractors": [
+    { "s": 1250, "lane": 4 }
+  ],
+  "ruts": [
+    { "from": 620, "to": 820 }
+  ],
+  "parked": [
+    { "s": 520, "side": "right" },
+    { "s": 3140, "side": "right" }
+  ],
+  "targets": [
+    { "s": 700, "side": "right" },
+    { "s": 2450, "side": "left" },
+    { "s": 3800, "side": "right" }
+  ],
+  "pickups": [
+    { "type": "cash5", "s": 330, "lane": 2 },
+    { "type": "turbo", "s": 330, "lane": 3 },
+    { "type": "cash5", "s": 330, "lane": 4 },
+    { "type": "cash20", "s": 478, "lane": 2 },
+    { "type": "cash10", "s": 478, "lane": 3 },
+    { "type": "cash20", "s": 478, "lane": "right" },
+    { "type": "cash20", "s": 700, "lane": 3 },
+    { "type": "cash10", "s": 720, "lane": 2 },
+    { "type": "cash10", "s": 720, "lane": 4 },
+    { "type": "cash20", "s": 968, "lane": 3 },
+    { "type": "wrench", "s": 1120, "lane": 2 },
+    { "type": "cash10", "s": 1120, "lane": 4 },
+    { "type": "cash10", "s": 1330, "lane": 2 },
+    { "type": "timePlus", "s": 1420, "lane": 3 },
+    { "type": "cash20", "s": 200, "lane": 0, "road": "side" },
+    { "type": "cash20", "s": 420, "lane": 1, "road": "side" },
+    { "type": "cash20", "s": 640, "lane": 0, "road": "side" },
+    { "type": "cash10", "s": 640, "lane": 1, "road": "side" },
+    { "type": "ghost", "s": 1800, "lane": 2 },
+    { "type": "cash10", "s": 1975, "lane": 3 },
+    { "type": "cash10", "s": 1975, "lane": 4 },
+    { "type": "cash10", "s": 2495, "lane": 2 },
+    { "type": "turbo", "s": 2495, "lane": 3 },
+    { "type": "cash10", "s": 2495, "lane": 4 },
+    { "type": "cash20", "s": 2725, "lane": 3 },
+    { "type": "cash10", "s": 2980, "lane": 4 },
+    { "type": "cash10", "s": 3280, "lane": 2 },
+    { "type": "cash20", "s": 3280, "lane": 3 },
+    { "type": "cash10", "s": 3280, "lane": 4 },
+    { "type": "armour", "s": 3420, "lane": 2 },
+    { "type": "cash10", "s": 3505, "lane": 2 },
+    { "type": "cash10", "s": 3720, "lane": 2 },
+    { "type": "cash20", "s": 3720, "lane": 4 },
+    { "type": "cash20", "s": 3928, "lane": 2 },
+    { "type": "timePlus", "s": 3995, "lane": 2 },
+    { "type": "turbo", "s": 3995, "lane": 4 },
+    { "type": "cash20", "s": 4240, "lane": 3 },
+    { "type": "cash20", "s": 4490, "lane": 2 },
+    { "type": "cash20", "s": 4490, "lane": 4 },
+    { "type": "cash10", "s": 4720, "lane": 2 },
+    { "type": "cash20", "s": 4720, "lane": 3 },
+    { "type": "cash10", "s": 4720, "lane": 4 },
+    { "type": "mystery", "s": 4830, "lane": 3 },
+    { "type": "cash5", "s": 4870, "lane": 2 },
+    { "type": "cash5", "s": 4870, "lane": 4 }
+  ],
+  "obstacles": [
+    { "s": 385, "lane": 4, "kind": "cone" },
+    { "s": 470, "lane": 4, "kind": "barrier" },
+    { "s": 795, "lane": 3, "kind": "barrier" },
+    { "s": 2760, "lane": 2, "kind": "crate" },
+    { "s": 2790, "lane": 4, "kind": "crate" },
+    { "s": 3305, "lane": 3, "kind": "barrier" },
+    { "s": 4545, "lane": 3, "kind": "crate" }
+  ]
+}

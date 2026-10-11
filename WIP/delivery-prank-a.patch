@@ -1,0 +1,473 @@
+diff --git a/src/delivery/SCRATCHPAD-prank-a-12-Oct.md b/src/delivery/SCRATCHPAD-prank-a-12-Oct.md
+new file mode 100644
+index 0000000..5040c1f
+--- /dev/null
++++ b/src/delivery/SCRATCHPAD-prank-a-12-Oct.md
+@@ -0,0 +1,68 @@
++# Scratchpad: prank cargo P1 to P4 (delivery-prank-a), 12-Oct, suspended on the owner's stand-down
++
++- **Branch:** `delivery-prank-a` (from main at 82b320a). **Worktree:** `.claude/worktrees/delivery-prank-a`
++  (its `node_modules` is a junction to the main checkout's: `cmd /c rmdir <worktree>\node_modules` before any
++  recursive delete). Not merged with main yet; nothing pushed; no background jobs left; no other worktrees.
++- **Task:** model P1 Whoopee Cushion, P2 Bucket on a Trip Wire, P3 Squirting Flower, P4 Chattering Teeth
++  (IDEAS-prank-cargo-12-Oct.md at bcc7570) as Evil cargo, a sight only, three states, no in-play effect.
++
++## DONE (commit bf60b08, "WIP prank cargo P1-P4")
++
++All four are written, registered and worded; all four were begun before the stop order came, none after it.
++
++- `src/delivery/render/cargoModelsPrankA.js` (new): `PRANK_A_MODELS = { whoopee, bucket, squirter, teeth }`,
++  each `stated(group, pose(t, agitated, furious, dt))` as the older files, standing on y = 0, facing +z.
++- `render/cargoModels.js`: one import and `...PRANK_A_MODELS` in CARGO_MODELS (two lines).
++- `cargo.js` CARGO.evil: four entries after `band`, under a `// the pranks` comment.
++- `cargoText.json`: four entries after `band` (name, blurb, states: Plump / Wheezing / Let rip; Balanced /
++  Slopping / Tipped; Innocent / Pumping / Squirting; Wound / Chattering / Snapping). CRLF kept.
++- Nothing in levelText.json: no level names them (the draft's "Suits" lines are not wired). A level picks one
++  by `"cargo": { "evil": "<id>" }` in levelText.json; otherwise cargo.js deals the unnamed items to levels
++  that name none.
++
++## Seen (stills, read by the agent) and corrected
++
++Stills: `<scratchpad>\prankA\`
++(cargo page cards, calm / agitated / furious side by side; `--size=1100x1500`):
++- `front-t24.png` (turn 0, t 2.4), `quarter-t10.png` (turn 0.8, t 1.0), `side-t32.png` (turn 1.5, t 3.2),
++  `back-t05.png` (turn 3.1, t 0.5): whoopee, bucket, squirter (teeth below the fold on these).
++- `teeth-front-t10.png` (turn 0.3, t 1.0), `teeth-quarter-t26.png`, `teeth-side-t03.png`: the last two were
++  shot but NOT yet looked at. These three also carry the corrected whoopee and bucket (below).
++- What read well: the whoopee as a disc at three heights with its nozzle; the bucket upright on its wedge
++  with a taut string to the peg, rocking, and lying over with a standing sheet into a pool; the daisy with
++  its bulb, the drop, the sweeping arc; the teeth on the black face of their crate, chattering open, key out.
++- Corrected after the first stills (in bf60b08): the furious whoopee's air lines were too faint (now thicker
++  and whiter); the bucket's slop sheets read as floating squares (now smaller, closer to the rim, tilting).
++  These corrections are only in the `teeth-*` stills, unlooked-at except `teeth-front-t10.png` (whoopee there
++  is calm/wheezing/let-rip at t = 1.0: blast lines not in that frame).
++
++## NOT seen / NOT done (the exact next step)
++
++1. Look at `teeth-quarter-t26.png` and `teeth-side-t03.png` (the furious teeth hanging on the crate's front
++   rim, which `teeth-front-t10.png` catches only mid-flip; the corrected bucket slops; the whoopee blast at
++   t = 2.6 and t = 0.3). Shoot more if needed: take a heavy lock, then
++   `node scripts/shots.mjs <out> "x=cargo.html?side=evil&only=teeth&still&t=<s>&turn=<rad>" --size=1100x900 --wait=5000`
++   (furious teeth cycle is 1.43 s: on the rim for u 0.3-0.7 of it, i.e. t in 0.43-1.0, 1.86-2.43 ...).
++2. Not seen at all: the HUD round window (framing per state), the 112x84 level-card tile, the kerb set-down,
++   and the transitions. A run still: `node scripts/shots.mjs <out> "k=@<levelid>&ghost&at=<s>&ff=1&cargostate=2"`
++   but no level names these items, so the HUD shows them only on a level dealt one (see .cargo-check output
++   for which level carries which, or name one in levelText.json temporarily).
++3. Checks run: `node --check` on the model file (ok); `node scripts/.words-check.mjs` (only pre-existing
++   failures: junker / punctures blurbs over 70 characters, not this branch's); `node scripts/.cargo-check.mjs`
++   (all ok but "every item turns up", which fails for any new Evil item no level names; the orchestrator said
++   agent prank-c makes one exemption commit for all ten prank ids, so do NOT edit .cargo-check.mjs or name
++   these in levelText.json). Not run: lint, smoke (never without being asked), bundle check.
++4. `git merge main` into the branch (keep both sides of registry conflicts: cargoModels.js import/spread,
++   cargo.js CARGO.evil tail, cargoText.json tail: the other prank agents add lines in the same places),
++   rerun the two checks, then report.
++
++## Traps
++
++- cargoText.json is CRLF; append with the same line ends (a Python replace was used, not Edit).
++- The cargo page frames every state on the furious extent: the whoopee looks small there (its blast lines
++  reach out); the HUD frames per state, which has not been seen.
++- Squirter: the water arc is a child of the root, not of the leaning plant, so the pool stays level; its
++  position is recomputed each frame from the plant's rotation.
++- Teeth: the crate's black face is 6 cm below the rim (FACE = CH - 0.06) so the hanging-on-the-rim pose
++  (rig y 0.475, z 0.1925) keeps the jaws above the face; the feet were dropped for that reason.
++- Never `git --help` / `git help` (opens a browser): use `-h`.
+diff --git a/src/delivery/cargo.js b/src/delivery/cargo.js
+index 34e9694..8a2c2e7 100644
+--- a/src/delivery/cargo.js
++++ b/src/delivery/cargo.js
+@@ -87,6 +87,11 @@ export const CARGO = {
+     { id: 'consultants', name: 'Crate of Consultants', states: ['Laser dot', 'Pages flipping', 'Pie chart spinning'] },
+     { id: 'inlaws', name: "The In-Laws' Luggage", states: ['Neatly stacked', 'Bulging', 'Heaving apart'] },
+     { id: 'band', name: 'Marching Band in a Box', states: ['A faint oompah', 'Trombone out', 'Full blast'] },
++    // the pranks: joke-shop goods and set-up pranks, things not people (IDEAS-prank-cargo-12-Oct.md)
++    { id: 'whoopee', name: 'Whoopee Cushion', states: ['Plump', 'Wheezing', 'Let rip'] },
++    { id: 'bucket', name: 'Bucket on a Trip Wire', states: ['Balanced', 'Slopping', 'Tipped'] },
++    { id: 'squirter', name: 'Squirting Flower', states: ['Innocent', 'Pumping', 'Squirting'] },
++    { id: 'teeth', name: 'Chattering Teeth', states: ['Wound', 'Chattering', 'Snapping'] },
+   ],
+ };
+ // the names and the Evil states in cargoText.json come first, these the fallback (words.js: a bad entry is passed over)
+diff --git a/src/delivery/cargoText.json b/src/delivery/cargoText.json
+index ca7ba76..27b19a3 100644
+--- a/src/delivery/cargoText.json
++++ b/src/delivery/cargoText.json
+@@ -65,5 +65,9 @@
+   "wardens": { "name": "Parking Wardens", "blurb": "Parking wardens in a box.", "states": ["Cap on the box","Writing tickets","Tickets flying"] },
+   "consultants": { "name": "Crate of Consultants", "blurb": "A crate of consultants with their flip chart.", "states": ["Laser dot","Pages flipping","Pie chart spinning"] },
+   "inlaws": { "name": "The In-Laws' Luggage", "blurb": "The in-laws' luggage, a neat stack of it.", "states": ["Neatly stacked","Bulging","Heaving apart"] },
+-  "band": { "name": "Marching Band in a Box", "blurb": "A whole marching band in an open box.", "states": ["A faint oompah","Trombone out","Full blast"] }
++  "band": { "name": "Marching Band in a Box", "blurb": "A whole marching band in an open box.", "states": ["A faint oompah","Trombone out","Full blast"] },
++  "whoopee": { "name": "Whoopee Cushion", "blurb": "A giant whoopee cushion, waiting to be sat on.", "states": ["Plump","Wheezing","Let rip"] },
++  "bucket": { "name": "Bucket on a Trip Wire", "blurb": "A brimming bucket on a wedge, a trip wire to its handle.", "states": ["Balanced","Slopping","Tipped"] },
++  "squirter": { "name": "Squirting Flower", "blurb": "A lapel squirting flower, made huge, bulb and all.", "states": ["Innocent","Pumping","Squirting"] },
++  "teeth": { "name": "Chattering Teeth", "blurb": "Wind-up chattering teeth, loose in the back.", "states": ["Wound","Chattering","Snapping"] }
+ }
+diff --git a/src/delivery/render/cargoModels.js b/src/delivery/render/cargoModels.js
+index a0df4c6..bc580d8 100644
+--- a/src/delivery/render/cargoModels.js
++++ b/src/delivery/render/cargoModels.js
+@@ -13,6 +13,7 @@ import * as THREE from 'three';
+ import { GOOD2_MODELS } from './cargoModelsGood2.js';
+ import { EVIL2_MODELS } from './cargoModelsEvil2.js';
+ import { MORE_MODELS } from './cargoModels3.js';
++import { PRANK_A_MODELS } from './cargoModelsPrankA.js';
+ 
+ export const TRANSITION = 0.5; // s an Evil item takes from one state to the next
+ 
+@@ -585,6 +586,7 @@ export const CARGO_MODELS = {
+   porcupine: makePorcupine, parcel: makeParcel, bees: makeBees, doll: makeDoll, tentacle: makeTentacle,
+   ...EVIL2_MODELS,
+   ...MORE_MODELS,
++  ...PRANK_A_MODELS,
+ };
+ // the model for an id (a plain box if it is not one of them: a level naming an item nobody has drawn)
+ export const makeCargoModel = (id) => {
+diff --git a/src/delivery/render/cargoModelsPrankA.js b/src/delivery/render/cargoModelsPrankA.js
+new file mode 100644
+index 0000000..f069ece
+--- /dev/null
++++ b/src/delivery/render/cargoModelsPrankA.js
+@@ -0,0 +1,342 @@
++// ---- the prank cargo, P1 to P4: four more Evil cargo models ------------------------------------------
++// As cargoModelsEvil2.js's (cargoModels.js spreads these into CARGO_MODELS): each a group standing on y = 0,
++// facing +z, about a metre across when calm, with userData.animate(t) and userData.setState(0 | 1 | 2).
++// Plain three.js: nothing here touches the game. The ids are cargo.js's. Each is a joke-shop thing, not a
++// person in a box: calm is the plain thing with one tell, agitated is the prank arming, furious is the prank
++// going off, over and over. Each state is its own outline (IDEAS-prank-cargo-12-Oct.md: three heights of a
++// disc, a bucket upright / rocking / over, a flower still / pulsing / spinning, teeth on / bouncing on / off
++// their crate). An open crate is a flat black face across its opening with the contents standing proud of it.
++import * as THREE from 'three';
++
++const TRANSITION = 0.5; // s from one state to the next: as cargoModels.js's
++
++const lambert = (color, extra) => new THREE.MeshLambertMaterial({ color, ...extra });
++const glow = (color, extra) => new THREE.MeshBasicMaterial({ color, ...extra });
++const haze = (color, opacity = 0.5) => glow(color, { transparent: true, opacity, depthWrite: false });
++const sphere = (r, w = 12, h = 8) => new THREE.SphereGeometry(r, w, h);
++const cyl = (top, bottom, h, n = 14) => new THREE.CylinderGeometry(top, bottom, h, n);
++const cone = (r, h, n = 8) => new THREE.ConeGeometry(r, h, n);
++const torus = (r, t, n = 20, arc = Math.PI * 2) => new THREE.TorusGeometry(r, t, 6, n, arc);
++const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
++const mix = (a, b, k) => a + (b - a) * k;
++const clamp01 = (v) => Math.max(0, Math.min(1, v));
++const smooth = (u) => { const v = clamp01(u); return v * v * (3 - 2 * v); };
++const FLAT = Math.PI / 2;
++// a part of a model: a mesh at (x, y, z), optionally turned (rx, ry, rz)
++const part = (group, geometry, material, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) => {
++  const mesh = new THREE.Mesh(geometry, material);
++  mesh.position.set(x, y, z);
++  mesh.rotation.set(rx, ry, rz);
++  group.add(mesh);
++  return mesh;
++};
++const sub = (parent, x = 0, y = 0, z = 0) => { const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); return g; };
++// shown `k` of the way (0: gone, as near as a scale can be)
++const show = (object, k) => object.scale.setScalar(Math.max(0.001, k));
++// a material's colour, somewhere between two
++const shade = new THREE.Color();
++const tint = (material, from, to, k) => material.color.setHex(from).lerp(shade.setHex(to), clamp01(k));
++// a shake that never repeats in step: -1 .. 1
++const jitter = (t, k = 0) => Math.sin(t * 37.1 + k * 5.3) * Math.sin(t * 23.3 + k * 2.1);
++// things that go round and round a cycle (drops, sheets of water): fn(mesh, 0 .. 1, k)
++const cycle = (list, t, rate, fn) => list.forEach((m, k) => fn(m, (((t * rate + k / list.length) % 1) + 1) % 1, k));
++// a zigzag hanging down from where it starts: a wavy line of air
++const zigzag = (parent, material, n, len, w = 0.022) => {
++  const g = sub(parent);
++  let x = 0, y = 0;
++  for (let k = 0; k < n; k++) {
++    const s = k % 2 ? -1 : 1, dx = s * Math.sin(0.6) * len, dy = -Math.cos(0.6) * len;
++    part(g, box(w, len * 1.1, w), material, x + dx / 2, y + dy / 2, 0, 0, 0, s * 0.6);
++    x += dx; y += dy;
++  }
++  return g;
++};
++// a thin rod of unit length, laid from a to b (both in the rod's parent's frame)
++const UP = new THREE.Vector3(0, 1, 0), X = new THREE.Vector3(1, 0, 0), V = new THREE.Vector3();
++const rod = (parent, material, r = 0.006) => part(parent, new THREE.CylinderGeometry(r, r, 1, 5).translate(0, 0.5, 0), material);
++const lay = (mesh, a, b) => {
++  mesh.position.copy(a);
++  V.subVectors(b, a);
++  mesh.scale.set(1, Math.max(0.001, V.length()), 1);
++  mesh.quaternion.setFromUnitVectors(UP, V.normalize());
++};
++// an Evil item: pose(t, agitated, furious, dt), the two weights 0 .. 1 easing as its state changes
++const stated = (group, pose) => {
++  const w = [1, 0, 0];
++  let target = 0, last = null;
++  group.userData.state = 0;
++  group.userData.setState = (state, snap = false) => {
++    target = Math.max(0, Math.min(2, Math.round(state) || 0));
++    group.userData.state = target;
++    if (snap) for (let i = 0; i < 3; i++) w[i] = i === target ? 1 : 0;
++  };
++  group.userData.animate = (t) => {
++    const dt = last === null ? 0 : Math.min(0.1, Math.abs(t - last));
++    last = t;
++    for (let i = 0; i < 3; i++) w[i] += Math.max(-dt / TRANSITION, Math.min(dt / TRANSITION, (i === target ? 1 : 0) - w[i]));
++    pose(t, w[1], w[2], dt);
++  };
++  group.userData.animate(0);
++  return group;
++};
++
++// P1, a whoopee cushion: a wide plump red disc with a flat nozzle and a yellow star-burst on top, breathing /
++// sagging to two-thirds and refilling in short puffs, the nozzle flapping, rings of air popping off it / going
++// flat as a pancake in one long blast (a fan of wavy air lines), skidding and spinning on the recoil, the star
++// flashing, then refilling fast to do it again. Three heights: plump, sagging, flat
++const makeWhoopee = () => {
++  const group = new THREE.Group();
++  const rubber = lambert(0xd8262b), seam = lambert(0x8e141c), starMat = glow(0xffd23f), air = haze(0xf4faff, 0.9);
++  const all = sub(group);
++  const H = 0.32, R = 0.36, T = H / 2; // the pillow at full height: a cylinder with a rounded edge, and a seam round it
++  const pillow = sub(all);
++  part(pillow, cyl(R, R, H, 28), rubber, 0, T, 0);
++  part(pillow, torus(R, T, 32), rubber, 0, T, 0, FLAT);
++  part(pillow, torus(R + T, 0.012, 32), seam, 0, T, 0, FLAT);
++  // the star-burst printed on top, standing a little proud of it
++  const star = new THREE.Shape();
++  for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, r = k % 2 ? 0.11 : 0.26; if (k) star.lineTo(Math.cos(a) * r, Math.sin(a) * r); else star.moveTo(r, 0); }
++  star.closePath();
++  part(pillow, new THREE.ExtrudeGeometry(star, { depth: 0.012, bevelEnabled: false }), starMat, 0, H, 0, -FLAT);
++  // the nozzle: a flat pinched tongue out of the front, with a lip at its tip
++  const nozzle = sub(all, 0, T, R + T - 0.08);
++  const spout = part(nozzle, cone(0.12, 0.34, 4), rubber, 0, 0, 0.17, FLAT);
++  spout.scale.set(1.3, 1, 0.3);
++  const lip = part(nozzle, sphere(0.045, 8, 6), seam, 0, 0, 0.33);
++  lip.scale.set(1.3, 0.45, 0.6);
++  // the air: rings that pop off the tip (agitated), a fan of wavy lines (furious)
++  const rings = [0, 1, 2].map(k => part(nozzle, torus(0.05 + k * 0.045, 0.012, 16), air, 0, 0, 0.4 + k * 0.1));
++  const blast = sub(nozzle, 0, 0, 0.38);
++  const lines = [-2, -1, 0, 1, 2].map(k => {
++    const g = sub(blast);
++    g.rotation.y = k * 0.26;
++    const z = zigzag(g, air, 6, 0.11 + Math.abs(k) * 0.01, 0.03);
++    z.rotation.x = -FLAT; // (hanging down turned to run out along +z)
++    return g;
++  });
++  let spin = 0;
++  return stated(group, (t, wheeze, rip, dt) => {
++    const calm = clamp01(1 - wheeze - rip);
++    // agitated: sagging, refilled in short puffs; furious: one long blast to flat, a pause, a fast refill
++    const p = (t * 1.4) % 1, puff = p < 0.2 ? p / 0.2 : 1 - (p - 0.2) / 0.8;
++    const u = (t * 0.65) % 1, blastK = u < 0.4 ? Math.sin(Math.PI * u / 0.4) : 0;
++    const ripH = u < 0.3 ? mix(1, 0.2, smooth(u / 0.3)) : u < 0.6 ? 0.2 : mix(0.2, 1, smooth((u - 0.6) / 0.4));
++    const h = calm * (1 + Math.sin(t * 1.8) * 0.035) + wheeze * (0.6 + puff * 0.22) + rip * ripH;
++    const sy = Math.max(0.1, h), spread = 1 + (1 - sy) * 0.3;
++    pillow.scale.set(spread * (1 + wheeze * jitter(t, 1) * 0.012), sy, spread * (1 + wheeze * jitter(t, 2) * 0.012));
++    nozzle.position.set(0, T * sy, (R + T) * spread - 0.08);
++    nozzle.rotation.x = -(calm * (0.14 + Math.sin(t * 1.8 + 1) * 0.1) + wheeze * (0.1 + Math.sin(t * 14) * 0.25) + rip * (0.12 + Math.sin(t * 30) * 0.14 * blastK));
++    spout.scale.set(1.3 + rip * blastK * 0.5, 1, 0.3 + rip * blastK * 0.35);
++    const ringK = wheeze * (p < 0.3 ? Math.sin(Math.PI * p / 0.3) : 0);
++    rings.forEach((r, k) => { show(r, ringK); r.position.z = 0.4 + k * 0.1 + ringK * 0.15; });
++    const out = rip * blastK;
++    lines.forEach((g, k) => g.scale.set(Math.max(0.001, out), Math.max(0.001, out), Math.max(0.001, out * (1.2 - Math.abs(k) * 0.12))));
++    tint(starMat, 0xffd23f, 0xffffc0, out);
++    // the recoil: a skid, and a spin that the blast drives
++    spin += dt * rip * blastK * 7;
++    all.rotation.y = spin;
++    all.position.set(rip * blastK * 0.12, 0, 0);
++  });
++};
++
++// P2, a bucket on a trip wire: a brimming galvanised bucket on a wedge, a taut string from its handle down
++// to a peg. Balanced, the string humming / rocking on the wedge, the water tilting against it and sheets of
++// it slopping over the rim / tipped: the bucket on its side rolling about, a sheet of water frozen mid-pour
++// into a pool, drips, the wedge flung clear, the string slack and whipping. Upright, rocking, over
++const makeBucket = () => {
++  const group = new THREE.Group();
++  const zinc = lambert(0xaab3bb, { side: THREE.DoubleSide }), zincDark = lambert(0x6e767e), wood = lambert(0xb07a3c), water = lambert(0x3fa9f5), twine = lambert(0xe8dcc0);
++  const all = sub(group);
++  const RB = 0.22, RT = 0.3, HB = 0.58, LEAN = 0.12;
++  const bucket = sub(all);
++  part(bucket, new THREE.CylinderGeometry(RT, RB, HB, 22, 1, true), zinc, 0, HB / 2, 0);
++  part(bucket, cyl(RB - 0.004, RB - 0.004, 0.02, 20), zincDark, 0, 0.012, 0);
++  part(bucket, torus(RT, 0.02, 26), zincDark, 0, HB, 0, FLAT);
++  part(bucket, torus(RB + 0.012, 0.014, 22), zincDark, 0, 0.05, 0, FLAT);
++  for (const d of [-1, 1]) part(bucket, sphere(0.03, 8, 6), zincDark, d * RT, HB - 0.04, 0);
++  const handle = sub(bucket, 0, HB - 0.04, 0);
++  part(handle, torus(RT, 0.014, 26, Math.PI), zincDark);
++  // the water: a disc below the rim, inside the wall
++  const disc = part(bucket, cyl(RT - 0.035, RT - 0.035, 0.012, 20), water, 0, HB - 0.07, 0);
++  // the wedge under the +x edge (the bucket leans towards the peg), the peg, the string between
++  const shape = new THREE.Shape();
++  shape.moveTo(0, 0); shape.lineTo(0.22, 0); shape.lineTo(0.22, 0.06); shape.closePath();
++  const wedge = part(all, new THREE.ExtrudeGeometry(shape, { depth: 0.28, bevelEnabled: false }).translate(0, 0, -0.14), wood, 0.04, 0, 0);
++  const peg = part(all, cyl(0.018, 0.028, 0.22, 8), wood, -0.78, 0.1, 0.42, 0, 0, -0.18);
++  const pegTop = new THREE.Vector3(-0.76, 0.2, 0.42), tip = new THREE.Vector3(), rim = new THREE.Vector3();
++  const string = rod(all, twine);
++  const loop = part(all, torus(0.15, 0.007, 20, Math.PI * 1.5), twine, -0.62, 0.17, 0.4);
++  // the slop (agitated): sheets over the rim, falling; the pour (furious): a standing sheet into a pool, drips
++  const sheets = [0, 1, 2, 3].map(() => part(all, box(0.16, 0.01, 0.14), water));
++  const pour = sub(all);
++  part(pour, box(0.03, 0.74, 0.3), water, -0.79, 0.33, 0, 0, 0, -0.62);
++  const pool = part(pour, cyl(0.3, 0.3, 0.016, 20), water, -0.9, 0.008, 0);
++  pool.scale.x = 1.3;
++  const drips = [0, 1, 2, 3].map(() => part(pour, sphere(0.024, 6, 5), water));
++  return stated(group, (t, slop, over) => {
++    const calm = clamp01(1 - slop - over), up = clamp01(1 - over);
++    const rock = slop * Math.sin(t * 5.5) * 0.26, roll = over * Math.sin(t * 3) * 0.4;
++    // upright on the wedge, rocking on it / over on its side, rolling, the mouth towards the peg
++    bucket.position.set(mix(0, -0.03, over), mix(0.03 + slop * Math.abs(Math.sin(t * 5.5)) * 0.055, 0.245, over), 0);
++    bucket.rotation.set(rock * up + FLAT * over + roll, 0, mix(LEAN, FLAT - 0.11, over));
++    handle.rotation.x = -Math.PI * over + calm * Math.sin(t * 1.1) * 0.02;
++    disc.rotation.x = -rock * 0.55;
++    disc.position.y = HB - 0.07 - slop * 0.02;
++    // the string: taut from the handle's top to the peg, humming / jerking, then a slack loop whipping by the peg
++    tip.set(0, RT, 0).applyAxisAngle(X, handle.rotation.x).add(handle.position).applyEuler(bucket.rotation).add(bucket.position);
++    tip.x += calm * jitter(t, 1) * 0.004 + slop * jitter(t, 2) * 0.02;
++    lay(string, pegTop, tip);
++    show(string, up);
++    show(loop, over);
++    loop.rotation.set(over * jitter(t, 3) * 0.5, 0.4 + over * Math.sin(t * 7) * 0.6, over * jitter(t, 4) * 0.4);
++    // the wedge: under the edge / flung clear and skittering
++    wedge.position.set(mix(0.04, 0.5, over), over * Math.abs(Math.sin(t * 4.3)) * 0.03, mix(0, -0.3, over));
++    wedge.rotation.set(0, over * 1.1, over * Math.sin(t * 4.3) * 0.1);
++    peg.rotation.z = -0.18 - slop * Math.abs(jitter(t, 5)) * 0.04;
++    // sheets slopping over the rim on the rocking sides, dropping out of sight
++    cycle(sheets, t, 0.9, (m, u, k) => {
++      const side = k % 2 ? 1 : -1;
++      rim.set(0, HB - 0.01, side * (RT + 0.02)).applyEuler(bucket.rotation).add(bucket.position);
++      m.position.set(rim.x, rim.y - u * u * 0.35, rim.z + u * side * 0.12);
++      m.rotation.set(side * (0.4 + u * 1.3), 0, 0);
++      const k2 = slop * Math.sin(Math.PI * u) * 0.85;
++      m.scale.set(Math.max(0.001, k2), 1, Math.max(0.001, k2));
++    });
++    show(pour, over);
++    cycle(drips, t, 1.3, (m, u, k) => { m.position.set(-0.68 - k * 0.07 - u * 0.1, 0.5 - k * 0.09 - u * (0.45 - k * 0.09), (k % 2 ? 1 : -1) * 0.14); m.scale.setScalar(1 + u * 0.4); });
++  });
++};
++
++// P3, a squirting flower: the lapel kind made huge, one big daisy on a stalk, a black rubber bulb on a tube
++// beside it. Nodding in a breeze, the bulb swinging / the bulb squeezing itself, the heart bulging in time,
++// a fat drop forming and falling, the stalk leaning in / a long arc of water out of the heart sweeping side
++// to side as the flower whips about, the petals spinning like a propeller. Still, pulsing, spinning
++const makeSquirter = () => {
++  const group = new THREE.Group();
++  const green = lambert(0x3f9a3a), petalMat = lambert(0xfbfbf4, { side: THREE.DoubleSide }), heartMat = lambert(0xffc927), rubber = lambert(0x1f2226), water = lambert(0x3fa9f5);
++  const all = sub(group);
++  const plant = sub(all); // (it leans and whips from its base)
++  part(plant, cyl(0.03, 0.045, 0.5, 10), green, 0, 0.25, 0);
++  const upper = sub(plant, 0, 0.5, 0);
++  part(upper, cyl(0.026, 0.03, 0.3, 10), green, 0, 0.15, 0);
++  for (const [d, y] of [[1, 0.2], [-1, 0.34]]) { const leaf = part(plant, sphere(0.1, 10, 6), green, d * 0.12, y, 0); leaf.scale.set(1.4, 0.22, 0.6); leaf.rotation.z = d * 0.55; }
++  // the head: a yellow heart in a ring of petals, facing forward and up
++  const head = sub(upper, 0, 0.3, 0);
++  head.rotation.x = -0.55;
++  const heart = part(head, sphere(0.13, 14, 10), heartMat);
++  heart.scale.set(1, 1, 0.55);
++  part(head, sphere(0.09, 10, 7), green, 0, 0, -0.05).scale.z = 0.6;
++  const petals = sub(head, 0, 0, -0.01);
++  for (let k = 0; k < 10; k++) {
++    const a = k / 10 * Math.PI * 2, p = part(petals, sphere(0.1, 10, 6), petalMat, Math.cos(a) * 0.2, Math.sin(a) * 0.2, 0);
++    p.scale.set(0.4, 1.25, 0.18);
++    p.rotation.z = a - FLAT;
++  }
++  // the tube out of the back of the head, down to the bulb, which hangs off its end
++  const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0.78, -0.08), new THREE.Vector3(0.12, 0.7, -0.09), new THREE.Vector3(0.27, 0.56, -0.03), new THREE.Vector3(0.34, 0.44, 0.02)]);
++  part(plant, new THREE.TubeGeometry(curve, 16, 0.016, 6), rubber);
++  const bulb = sub(plant, 0.34, 0.44, 0.02);
++  part(bulb, cyl(0.02, 0.04, 0.07, 8), rubber, 0, -0.035, 0);
++  const pear = part(bulb, sphere(0.11, 12, 10), rubber, 0, -0.18, 0);
++  pear.scale.set(1, 1.25, 1);
++  // the drop (agitated) and the arc of water into a splash (furious), both from the heart
++  const drop = part(plant, sphere(0.035, 8, 6), water, 0, 0.84, 0.06);
++  const spray = sub(all, 0, 0.8, 0), heartAt = new THREE.Vector3(); // (the arc hangs off the heart wherever the lean puts it, but stays level)
++  const arc = [];
++  for (let u = 0; u <= 0.99; u += 0.03) arc.push(new THREE.Vector3(0, 0.04 + 0.3 * u - 1.15 * u * u, 0.08 + u));
++  part(spray, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(arc), 24, 0.026, 6), water);
++  part(spray, cyl(0.16, 0.16, 0.012, 16), water, 0, -0.794, 1.06);
++  const splashes = [0, 1, 2].map(k => part(spray, sphere(0.03, 6, 5), water, (k - 1) * 0.1, -0.78, 1.06 + (k % 2) * 0.08));
++  let prop = 0;
++  return stated(group, (t, pump, squirt, dt) => {
++    const calm = clamp01(1 - pump - squirt);
++    // a breeze / leaning in / whipping side to side
++    plant.rotation.set(calm * Math.sin(t * 1.3) * 0.04 + pump * 0.18 + squirt * 0.28, 0, squirt * Math.sin(t * 2.4) * 0.22);
++    head.rotation.set(-0.55 + calm * Math.sin(t * 1.7) * 0.07 + squirt * jitter(t, 1) * 0.08, calm * Math.sin(t * 0.9) * 0.1, 0);
++    // the bulb: swinging / squeezing itself flat and round / pumping hard; the heart bulges in time
++    const sq = pump * Math.max(0, Math.sin(t * 4)) + squirt * Math.max(0, Math.sin(t * 11));
++    bulb.rotation.z = calm * Math.sin(t * 1.5) * 0.12;
++    pear.scale.set(1 - sq * 0.38, 1.25 + sq * 0.25, 1 - sq * 0.38);
++    heart.scale.set(1 + sq * 0.15, 1 + sq * 0.15, 0.55 + sq * 0.35);
++    // the drop: forms on the heart, swells, falls
++    const d = (t * 1.1) % 1, grow = d < 0.3 ? d / 0.3 : 1, fall = d < 0.3 ? 0 : ((d - 0.3) / 0.7) ** 2;
++    drop.position.set(0, mix(0.84, 0.03, fall), 0.06 + fall * 0.08);
++    drop.scale.setScalar(Math.max(0.001, pump * grow * (fall > 0.95 ? (1 - fall) * 20 : 1)));
++    // the arc, sweeping; the petals spinning
++    show(spray, squirt);
++    spray.position.copy(heartAt.set(0, 0.8, 0).applyEuler(plant.rotation));
++    spray.rotation.y = Math.sin(t * 2.4) * 0.65;
++    splashes.forEach((s, k) => { s.position.y = -0.78 + Math.abs(Math.sin(t * 9 + k)) * 0.08; });
++    prop += dt * squirt * 15;
++    petals.rotation.z = prop;
++  });
++};
++
++// P4, chattering teeth: the wind-up joke-shop kind, a big set of white teeth on pink gums with a key out of
++// one side, standing in a small open crate (a black face across its opening, the teeth proud of it). The key
++// turning slowly, one clack every couple of seconds / clacking fast, hopping on the spot, the key a blur, the
++// crate rocking / leaping clear of the crate, flipping over to bite its front rim and hang off it, jaws working,
++// then flipping back in to snap on the spot; the crate scooting about; the gums flushed red. On, bouncing, off
++const makeTeeth = () => {
++  const group = new THREE.Group();
++  const slat = lambert(0xb07a3c), slatDark = lambert(0x8a5a2a), gum = lambert(0xf487b2), enamel = lambert(0xfbfbf4), brass = lambert(0xd3a84a);
++  const all = sub(group);
++  const mover = sub(all), crate = sub(mover);
++  const CW = 0.6, CH = 0.3, CD = 0.7, TH = 0.03, FACE = CH - 0.06;
++  part(crate, box(CW, 0.03, CD), slatDark, 0, 0.015, 0);
++  for (const d of [-1, 1]) {
++    part(crate, box(TH, CH, CD), slat, d * (CW / 2 - TH / 2), CH / 2, 0);
++    part(crate, box(CW - 2 * TH, CH, TH), slat, 0, CH / 2, d * (CD / 2 - TH / 2));
++  }
++  for (const y of [0.08, 0.2]) part(crate, box(CW + 0.012, 0.03, CD + 0.012), slatDark, 0, y, 0); // (the bands round it)
++  part(crate, box(CW - 2 * TH - 0.002, 0.004, CD - 2 * TH - 0.002), glow(0x000000), 0, FACE, 0);
++  // the teeth: the lower jaw, with the key and two little feet, and the upper jaw hinged at the back
++  const rig = sub(mover), teeth = sub(rig);
++  const R = 0.17, TB = 0.055, BITE = 0.135;
++  const jawOf = (parent, downward) => {
++    part(parent, torus(R, TB, 20, Math.PI), gum, 0, 0, 0, FLAT);
++    part(parent, box(2 * R + TB, TB * 1.8, 0.1), gum, 0, 0, -0.03);
++    for (let k = 0; k <= 6; k++) {
++      const a = k / 6 * Math.PI, wide = k > 1 && k < 5 ? 0.06 : 0.05, tall = k === 3 || k === 2 || k === 4 ? 0.08 : 0.07;
++      part(parent, box(wide, tall, 0.045), enamel, Math.cos(a) * R, downward ? -TB - tall / 2 + 0.003 : tall / 2 + TB - 0.003, Math.sin(a) * R, 0, FLAT - a);
++    }
++  };
++  const lower = sub(teeth);
++  jawOf(lower, false);
++  part(lower, sphere(0.07, 10, 7), lambert(0xd8304a), 0, 0.075, 0.03).scale.set(1.1, 0.5, 1.3); // (the tongue)
++  part(lower, cyl(0.014, 0.014, 0.1, 8), brass, R + TB + 0.045, 0.03, 0, 0, 0, FLAT);
++  const key = sub(lower, R + TB + 0.1, 0.03, 0);
++  part(key, box(0.012, 0.045, 0.2), brass);
++  for (const z of [-0.1, 0.1]) part(key, cyl(0.045, 0.045, 0.012, 12), brass, 0, 0, z, 0, 0, FLAT);
++  const upperJ = sub(teeth, 0, BITE, -R), upper = sub(upperJ, 0, 0, R);
++  const upGum = sub(upper, 0, 0.075 + TB, 0);
++  jawOf(upGum, true);
++  let keyA = 0;
++  return stated(group, (t, chatter, snap, dt) => {
++    const calm = clamp01(1 - chatter - snap);
++    tint(gum, 0xf487b2, 0xe0304a, snap);
++    keyA += dt * (calm * 1.3 + chatter * 28 + snap * 34);
++    key.rotation.x = keyA;
++    // the crate: still / rocking / scooting about and rocking
++    const rockK = chatter + snap;
++    crate.rotation.z = rockK * Math.sin(t * 9) * 0.06;
++    crate.position.y = rockK * Math.abs(Math.sin(t * 9)) * 0.018;
++    mover.position.set(snap * Math.sin(t * 2.1) * 0.12, 0, snap * Math.cos(t * 1.7) * 0.1);
++    // furious, round and round: a leap and a flip onto the front rim, hanging there biting, a flip back in, snapping
++    const u = (t * 0.7) % 1, y0 = FACE, z0 = -0.04, y1 = 0.475, z1 = 0.1925;
++    let fy = y0, fz = z0, frx = 0, biting = 0;
++    if (u < 0.3) { const s = u / 0.3; fy = mix(y0, y1, s) + Math.sin(Math.PI * s) * 0.42; fz = mix(z0, z1, s); frx = smooth(s) * (Math.PI * 2 + FLAT); }
++    else if (u < 0.7) { fy = y1 + jitter(t, 1) * 0.006; fz = z1; frx = FLAT; biting = 1; }
++    else if (u < 0.85) { const s = (u - 0.7) / 0.15; fy = mix(y1, y0, s) + Math.sin(Math.PI * s) * 0.35; fz = mix(z1, z0, s); frx = mix(FLAT, Math.PI * 2, smooth(s)); }
++    else fy = y0 + Math.abs(Math.sin(t * 14)) * 0.04;
++    const hop = chatter * Math.abs(Math.sin(t * 9)) * 0.1;
++    rig.position.set(0, mix(y0 + hop, fy, snap), mix(z0, fz, snap));
++    rig.rotation.set(frx * snap, chatter * Math.sin(t * 4.5) * 0.3, 0);
++    // the jaw: one clack every couple of seconds / clacking fast / snapping, or clamped on the rim
++    const c = (t * 0.5) % 1, clack = c < 0.12 ? Math.sin(Math.PI * c / 0.12) : 0;
++    const open = calm * clack * 0.35 + chatter * Math.abs(Math.sin(t * 18)) * 0.45 + snap * (biting ? 0.12 + Math.abs(Math.sin(t * 20)) * 0.1 : Math.abs(Math.sin(t * 20)) * 0.5);
++    upperJ.rotation.x = -open;
++  });
++};
++
++export const PRANK_A_MODELS = { whoopee: makeWhoopee, bucket: makeBucket, squirter: makeSquirter, teeth: makeTeeth };

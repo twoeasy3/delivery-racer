@@ -1,0 +1,49 @@
+{
+  "id": "singapore",
+  "theme": "singapore",
+  "drive": "left",
+  "clock": { "good": 132, "evil": 94 },
+  "tip": 115,
+  "traffic": { "taxi": 0.28, "darkvan": 0.24, "commuter": 0.14, "bus": 0.12, "van": 0.1, "sport": 0.07, "police": 0.05 },
+  "trafficCount": 10,
+  "oncomingCount": 9,
+  "segments": [
+    { "length": 260, "curve": 0 },
+    { "length": 24, "curve": 0.0654498 },
+    { "length": 300, "curve": 0 },
+    { "length": 24, "curve": -0.0654498 },
+    { "length": 300, "curve": 0 },
+    { "length": 24, "curve": 0.0654498 },
+    { "length": 300, "curve": 0 },
+    { "length": 24, "curve": -0.0654498 },
+    { "length": 300, "curve": 0 },
+    { "length": 24, "curve": 0.0654498 },
+    { "length": 340, "curve": 0 }
+  ],
+  "junctions": [
+    { "s": 260, "turn": "right" },
+    { "s": 424, "turn": "straight" },
+    { "s": 584, "turn": "left" },
+    { "s": 748, "turn": "straight" },
+    { "s": 908, "turn": "right" },
+    { "s": 1072, "turn": "straight" },
+    { "s": 1232, "turn": "left" },
+    { "s": 1396, "turn": "straight" },
+    { "s": 1556, "turn": "right" },
+    { "s": 1740, "turn": "straight" }
+  ],
+  "targets": [
+    { "s": 350, "side": "right" },
+    { "s": 1000, "side": "left" },
+    { "s": 1650, "side": "right" }
+  ],
+  "pickups": [
+    { "type": "turbo", "s": 150, "lane": 3 },
+    { "type": "wrench", "s": 500, "lane": 2 },
+    { "type": "siren", "s": 860, "lane": 3 },
+    { "type": "passenger", "s": 1150, "lane": 2 },
+    { "type": "mystery", "s": 1440, "lane": 3 },
+    { "type": "ghost", "s": 1700, "lane": 2 },
+    { "type": "radarDetector", "s": 1850, "lane": 3 }
+  ]
+}

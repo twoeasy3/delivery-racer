@@ -1,0 +1,251 @@
+{
+  "id": "testbed",
+  "clock": { "good": 1080, "evil": 765 },
+  "tip": 50,
+  "traffic": {
+    "darkvan": 0.2,
+    "commuter": 0.15,
+    "van": 0.12,
+    "bus": 0.06,
+    "police": 0.08,
+    "wagon": 0.08,
+    "taxi": 0.08,
+    "junker": 0.06,
+    "pickup": 0.06,
+    "lovebus": 0.05,
+    "minivan": 0.03,
+    "hearse": 0.03
+  },
+  "trafficCount": 12,
+  "oncomingCount": 8,
+  "emergencies": {
+    "every": {
+      "min": 45,
+      "max": 75
+    }
+  },
+  "segments": [
+    {
+      "length": 1600,
+      "curve": 0
+    },
+    {
+      "length": 400,
+      "curve": 0.002
+    },
+    {
+      "length": 500,
+      "curve": 0
+    },
+    {
+      "length": 250,
+      "curve": -0.006
+    },
+    {
+      "length": 1500,
+      "curve": 0
+    },
+    {
+      "length": 300,
+      "curve": 0.004
+    },
+    {
+      "length": 1000,
+      "curve": 0
+    }
+  ],
+  "targets": [
+    {
+      "s": 600,
+      "side": "right"
+    },
+    {
+      "s": 1300,
+      "side": "left"
+    },
+    {
+      "s": 2600,
+      "side": "right"
+    },
+    {
+      "s": 3600,
+      "side": "left"
+    },
+    {
+      "s": 4600,
+      "side": "right"
+    }
+  ],
+  "pickups": [
+    {
+      "type": "cash5",
+      "s": 150,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 230,
+      "lane": 3
+    },
+    {
+      "type": "cash20",
+      "s": 310,
+      "lane": 2
+    },
+    {
+      "type": "armour",
+      "s": 390,
+      "lane": 3
+    },
+    {
+      "type": "bigSplash",
+      "s": 470,
+      "lane": 2
+    },
+    {
+      "type": "butterfingers",
+      "s": 550,
+      "lane": 3
+    },
+    {
+      "type": "turbo",
+      "s": 630,
+      "lane": 2
+    },
+    {
+      "type": "ghost",
+      "s": 710,
+      "lane": 3
+    },
+    {
+      "type": "wrench",
+      "s": 790,
+      "lane": 2
+    },
+    {
+      "type": "passenger",
+      "s": 870,
+      "lane": 3
+    },
+    {
+      "type": "radarDetector",
+      "s": 950,
+      "lane": 2
+    },
+    {
+      "type": "siren",
+      "s": 1030,
+      "lane": 3
+    },
+    {
+      "type": "badGas",
+      "s": 1110,
+      "lane": 2
+    },
+    {
+      "type": "heavyMass",
+      "s": 1190,
+      "lane": 3
+    },
+    {
+      "type": "timePlus",
+      "s": 1270,
+      "lane": 2
+    },
+    {
+      "type": "timeMinus",
+      "s": 1350,
+      "lane": 3
+    },
+    {
+      "type": "mystery",
+      "s": 1430,
+      "lane": 2
+    },
+    {
+      "type": "cash5",
+      "s": 1710,
+      "lane": 3
+    },
+    {
+      "type": "cash10",
+      "s": 1830,
+      "lane": 2
+    },
+    {
+      "type": "cash20",
+      "s": 1950,
+      "lane": 3
+    },
+    {
+      "type": "armour",
+      "s": 2070,
+      "lane": 2
+    },
+    {
+      "type": "bigSplash",
+      "s": 2190,
+      "lane": 3
+    },
+    {
+      "type": "butterfingers",
+      "s": 2310,
+      "lane": 2
+    },
+    {
+      "type": "turbo",
+      "s": 2430,
+      "lane": 3
+    },
+    {
+      "type": "ghost",
+      "s": 2550,
+      "lane": 2
+    },
+    {
+      "type": "wrench",
+      "s": 2670,
+      "lane": 3
+    },
+    {
+      "type": "passenger",
+      "s": 2790,
+      "lane": 2
+    },
+    {
+      "type": "radarDetector",
+      "s": 2910,
+      "lane": 3
+    },
+    {
+      "type": "siren",
+      "s": 3030,
+      "lane": 2
+    },
+    {
+      "type": "badGas",
+      "s": 3150,
+      "lane": 3
+    },
+    {
+      "type": "heavyMass",
+      "s": 3270,
+      "lane": 2
+    },
+    {
+      "type": "timePlus",
+      "s": 3390,
+      "lane": 3
+    },
+    {
+      "type": "timeMinus",
+      "s": 3510,
+      "lane": 2
+    },
+    {
+      "type": "mystery",
+      "s": 3630,
+      "lane": 3
+    }
+  ]
+}

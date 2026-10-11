@@ -1,0 +1,451 @@
+diff --git a/scripts/.balance-check.mjs b/scripts/.balance-check.mjs
+index eda46e0..5f7dcf5 100644
+--- a/scripts/.balance-check.mjs
++++ b/scripts/.balance-check.mjs
+@@ -1,5 +1,8 @@
+ // A check of the Blue Star rule (src/delivery/cars.js): each Blue Star car's top speed, acceleration and health
+ // strictly below the best of the gold tier above its own (or, in the top tier, below NEXT_TIER_CAPS).
++// And of the two stats Delivery and Nerve (CONFIG.carStats): every car has both; Nerve is within its band and is
++// not by tier (no tier's average strays from the garage's); Delivery never falls from a tier to the next, and
++// the Evil packages it takes to wreck a car of one's own tier stay within the band, rising gently.
+ //   node scripts/.balance-check.mjs
+ import { boot } from './delivery-headless.mjs';
+ 
+@@ -19,6 +22,33 @@ for (let tier = 1; tier <= TIERS; tier++) {
+       (better ? '' : '  (note: no better than its own tier\'s gold cars at anything)'));
+   }
+ }
++{
++  const S = g.CONFIG.carStats, { EARNED_CARS, LEVEL_CARS, SECRET_CARS, deliveryOf, nerveOf, tierDelivery } = g.cars;
++  const note = (pass, what) => { if (!pass) failures++; console.log((pass ? '  ok    ' : '  FAIL  ') + what); };
++  const tiered = CARS.filter(c => c.tier), mean = (list) => list.reduce((a, b) => a + b, 0) / list.length, median = (list) => { const s = [...list].sort((a, b) => a - b); return (s[(s.length - 1) >> 1] + s[s.length >> 1]) / 2; };
++  console.log('Delivery and Nerve');
++  const missing = [...CARS, ...EARNED_CARS].filter(c => !(c.delivery > 0) || !(c.nerve > 0)).map(c => c.id);
++  note(!missing.length, 'every garage and earned car has a Delivery and a Nerve' + (missing.length ? ': not ' + missing.join(', ') : ''));
++  const out = [...CARS, ...EARNED_CARS].filter(c => c.nerve < S.nerve.min || c.nerve > S.nerve.max).map(c => c.id + ' ' + c.nerve);
++  note(!out.length, `every Nerve is within ${S.nerve.min} to ${S.nerve.max}` + (out.length ? ': not ' + out.join(', ') : ''));
++  const all = mean(tiered.map(nerveOf));
++  for (let tier = 1; tier <= TIERS; tier++) {
++    const mine = tiered.filter(c => c.tier === tier), m = mean(mine.map(nerveOf));
++    note(Math.abs(m - all) <= S.nerve.tierDrift, `tier ${tier}: Nerve averages ${m.toFixed(3)} over ${mine.length} cars (${Math.min(...mine.map(nerveOf))} to ${Math.max(...mine.map(nerveOf))}): within ${S.nerve.tierDrift} of the garage's ${all.toFixed(3)}, so not by tier`);
++  }
++  let last = 0, lastPackages = 0;
++  for (let tier = 1; tier <= TIERS; tier++) {
++    const mine = tiered.filter(c => c.tier === tier), line = tierDelivery(tier), health = median(mine.filter(c => !c.blue && !c.amphibious).map(c => c.health));
++    const lo = Math.min(...mine.map(deliveryOf)), hi = Math.max(...mine.map(deliveryOf)), packages = Math.ceil(health / (g.CONFIG.evilPackageDamage * line));
++    const worst = Math.max(...mine.map(c => Math.ceil(Math.max(...mine.map(o => o.health)) / (g.CONFIG.evilPackageDamage * deliveryOf(c))))), best = Math.min(...mine.map(c => Math.ceil(Math.min(...mine.map(o => o.health)) / (g.CONFIG.evilPackageDamage * deliveryOf(c)))));
++    note(line >= last && lo >= last - 1e-9 && packages >= lastPackages && packages >= S.delivery.packagesToWreck.min && packages <= S.delivery.packagesToWreck.max,
++      `tier ${tier}: Delivery ${line.toFixed(2)} (its cars ${lo} to ${hi}); its gold cars' typical health ${health}: ${packages} Evil packages wreck one (any of the tier's cars against any other: ${best} to ${worst}); never fewer than the tier before, within ${S.delivery.packagesToWreck.min} to ${S.delivery.packagesToWreck.max}`);
++    last = line; lastPackages = packages;
++  }
++  const others = [...Object.values(LEVEL_CARS), ...Object.values(SECRET_CARS), CARS.find(c => c.id === 'tank')];
++  note(others.every(c => deliveryOf(c) === 1 && nerveOf(c) === 1), 'a level\'s vehicle, a secret one and the tank have 1 and 1');
++  note(EARNED_CARS.every(c => nerveOf(c) === 1 && deliveryOf(c) === Math.round(tierDelivery(6) * 100) / 100), `an earned car has a Nerve of 1 and the next tier's Delivery (${tierDelivery(6).toFixed(2)})`);
++}
+ console.log(failures ? failures + ' FAILED' : 'all checks passed');
+ await g.close();
+ process.exit(failures ? 1 : 0);
+diff --git a/scripts/.carstats-check.mjs b/scripts/.carstats-check.mjs
+new file mode 100644
+index 0000000..5bf291f
+--- /dev/null
++++ b/scripts/.carstats-check.mjs
+@@ -0,0 +1,111 @@
++// A check of the two car stats that are not about driving, Delivery and Nerve (src/delivery/cars.js,
++// CONFIG.carStats): that each does what it says in a run. (That every car has them, and the rules their values
++// keep, is scripts/.balance-check.mjs.)
++//   node scripts/.carstats-check.mjs
++import { boot } from './delivery-headless.mjs';
++
++const g = await boot({ cars: ['commuter', 'postvan', 'towtruck', 'fullsize', 'hotrod'] });
++const { Packages } = await g.load('packages.js'), { Social } = await g.load('social.js');
++const { CONFIG, Player, Traffic, Game } = g, T = { hi: (s) => g.track.Track.hi(s) }; // (the Track is the level's: made when a run starts)
++let failures = 0;
++const ok = (pass, what) => { if (!pass) failures++; console.log((pass ? '  ok    ' : '  FAIL  ') + what); };
++const near = (a, b, by = 0.02) => Math.abs(a - b) <= by * Math.max(1, Math.abs(b));
++const step = 1 / 60;
++
++// a run in that car, on the first level, as that side; nothing busts or wrecks it
++const start = (car, evil) => {
++  g.select('expressway');
++  g.cars.selectCar(car);
++  Game.evil = evil;
++  Player.testGhost = false;
++  Game.start();
++  g.drive(0, 0);
++  Player.bust = () => {};
++  return g.cars.CAR;
++};
++
++// ---- Nerve: the shoulder's allowance ----
++console.log('Nerve');
++{
++  // s on the shoulder until the meter is empty, in that car
++  const empties = (car) => {
++    start(car, true); // (Evil: no standing to lengthen it)
++    const full = Social.dangerTime;
++    let t = 0;
++    for (; t < 30 && Player.danger > 0; t += step) {
++      Player.lat = T.hi(Player.s) - 0.6; // (kept out on the right shoulder)
++      Game.update(step);
++      g.FxQueue.length = 0;
++    }
++    return { full, t };
++  };
++  const plain = empties('commuter'), post = empties('postvan'), rod = empties('hotrod');
++  ok(near(plain.full, CONFIG.dangerTime), `the Commuter (a nerve of ${g.cars.nerveOf(g.cars.CARS.find(c => c.id === 'commuter'))}) is allowed ${plain.full} s: CONFIG.dangerTime`);
++  ok(near(post.full, CONFIG.dangerTime * 1.2), `the Post Van (1.2) is allowed ${post.full.toFixed(2)} s: 1.2 times as long`);
++  ok(near(rod.full, CONFIG.dangerTime * 0.8), `the Hot Rod (0.8) is allowed ${rod.full.toFixed(2)} s: 0.8 times as long`);
++  ok(near(post.t / plain.t, 1.2, 0.03) && near(rod.t / plain.t, 0.8, 0.03), `out on the shoulder the meter is empty after ${plain.t.toFixed(2)} s in the Commuter, ${post.t.toFixed(2)} s in the Post Van, ${rod.t.toFixed(2)} s in the Hot Rod`);
++  // with full standing (Good) the standing's share multiplies on top; and the cap holds
++  start('towtruck', false);
++  Social.level = 1;
++  const most = CONFIG.dangerTime * 1.3 * (1 + CONFIG.social.danger);
++  ok(near(Social.dangerTime, Math.min(most, CONFIG.carStats.dangerMost)), `the Tow Truck (1.3) in full standing is allowed ${Social.dangerTime.toFixed(2)} s (${most.toFixed(2)} s uncapped, never more than ${CONFIG.carStats.dangerMost} s)`);
++  const was = CONFIG.carStats.dangerMost;
++  CONFIG.carStats.dangerMost = 5;
++  ok(Social.dangerTime === 5, `with the most at 5 s it is allowed ${Social.dangerTime} s: the cap holds`);
++  CONFIG.carStats.dangerMost = was;
++  ok(g.cars.nerveOf({ nerve: 9 }) === CONFIG.carStats.nerve.max && g.cars.nerveOf({ nerve: 0.1 }) === CONFIG.carStats.nerve.min && g.cars.nerveOf({}) === 1 && g.cars.nerveOf(null) === 1,
++    'a nerve is held to its band whatever a car says, and a vehicle with none has 1');
++  // a level that switches the timer off still does (the stat multiplies an allowance: it does not make one)
++  start('hotrod', true);
++  g.levels.LEVEL.shoulderTimer = false;
++  for (let t = 0; t < 6; t += step) { Player.lat = T.hi(Player.s) - 0.6; Game.update(step); g.FxQueue.length = 0; }
++  ok(Player.danger === Social.dangerTime, 'on a level with no shoulder timer the meter stays full, in the Hot Rod too');
++  delete g.levels.LEVEL.shoulderTimer;
++}
++
++// ---- Delivery: what a package does ----
++console.log('Delivery');
++{
++  // one traffic vehicle held just ahead of the player's car, with that much health; packages thrown at it until
++  // it is wrecked (Evil), or one thrown (Good)
++  const held = (health, evil) => {
++    const car = Traffic.cars.find(c => c.active && c.kind !== 'police' && c.dir > 0);
++    Object.assign(car, { evil, maxHealth: health, health, mood: 0 });
++    return car;
++  };
++  const pin = (car) => { Object.assign(car, { s: Player.s + 12, lat: Player.lat, vs: 0, latVel: 0, spin: 0, wobble: 0, active: true, arrest: -1 }); };
++  const wrecks = (id) => {
++    const mine = start(id, true), car = held(320, false);
++    let thrown = 0;
++    for (let t = 0; t < 60 && car.health > 0; t += step) {
++      pin(car);
++      if (Packages.ready && !Packages.list.some(p => p.active)) { Packages.throwOne(); thrown++; }
++      const before = car.health;
++      Packages.update(step);
++      if (car.health < before && car.health > 0) car.spin = car.wobble = 0;
++    }
++    return { thrown, each: CONFIG.evilPackageDamage * g.cars.deliveryOf(mine), delivery: g.cars.deliveryOf(mine) };
++  };
++  const one = wrecks('commuter'), five = wrecks('fullsize');
++  ok(one.delivery === 1 && one.thrown === Math.ceil(320 / CONFIG.evilPackageDamage), `Evil, the Commuter (Delivery 1): ${one.thrown} packages wreck a vehicle of 320 health (${CONFIG.evilPackageDamage} each)`);
++  ok(five.thrown === Math.ceil(320 / five.each) && five.thrown < one.thrown, `Evil, the Full-Size (Delivery ${five.delivery}): ${five.thrown} packages (${five.each.toFixed(1)} each): fewer`);
++  const gift = (id) => {
++    const mine = start(id, false), car = held(320, false);
++    Social.level = 0;
++    for (let t = 0; t < 10 && Social.level === 0; t += step) {
++      pin(car);
++      if (Packages.ready && !Packages.list.some(p => p.active)) Packages.throwOne();
++      Packages.update(step);
++    }
++    return { standing: Social.level, mood: car.mood, health: car.health, delivery: g.cars.deliveryOf(mine) };
++  };
++  const a = gift('commuter'), b = gift('fullsize');
++  ok(near(a.standing, CONFIG.social.gift / 100) && near(a.mood, CONFIG.packageMoodBoost), `Good, the Commuter: a gift wins ${(a.standing * 100).toFixed(1)}% of standing and lifts the driver's mood by ${a.mood}`);
++  ok(near(b.standing, CONFIG.social.gift * b.delivery / 100) && near(b.mood, Math.min(1, CONFIG.packageMoodBoost * b.delivery)), `Good, the Full-Size (Delivery ${b.delivery}): ${(b.standing * 100).toFixed(1)}% and ${b.mood.toFixed(2)}: ${b.delivery} times as much`);
++  ok(a.health === b.health && a.health === 320 - CONFIG.packageDamage, `a Good package scratches the same from either car (${CONFIG.packageDamage})`);
++  ok(g.cars.deliveryOf(g.cars.LEVEL_CARS.ufo) === 1 && g.cars.deliveryOf(null) === 1 && g.cars.deliveryOf({}) === 1, 'a level\'s own vehicle, or one with no stat, has a Delivery of 1');
++}
++
++console.log(failures ? failures + ' FAILED' : 'all checks passed');
++await g.close();
++process.exit(failures ? 1 : 0);
+diff --git a/src/delivery/cars.js b/src/delivery/cars.js
+index 76fabb4..8e76eda 100644
+--- a/src/delivery/cars.js
++++ b/src/delivery/cars.js
+@@ -29,6 +29,11 @@
+ //              each star level, open from the start; an amphibious level (its "amphibious") is only driven in one
+ //   draft      m of an amphibious car that is under the water when it is afloat (default CONFIG.water.draft)
+ //   mass       how heavy it is in a shove (default 1): heavier knocks others aside and is knocked less
++//   delivery   what its packages do, against the Commuter's (1): an Evil package's damage, a Good one's happiness.
++//              Worked out below from its tier and its body (CHARACTER's haul: see CONFIG.carStats); 1 for a
++//              vehicle out of the tiers
++//   nerve      how long the shoulder's danger meter allows it, against the Commuter's (1). By the car's
++//              character, not its tier (CHARACTER, below; CONFIG.carStats.nerve is the band). 1 if not said
+ //   shotBack   (optional) how much further back the studio camera (?cine=car) stands for its picture, for
+ //              a vehicle whose wings reach past its hit box
+ // ============================================================================
+@@ -277,6 +282,41 @@ Progress.earnedCars = EARNED_CARS;
+ // the car a special level earns (undefined for a level with none)
+ export const earnedFor = (levelId) => EARNED_CARS.find(car => car.earned.level === levelId);
+ 
++// ---- Delivery and Nerve (see CONFIG.carStats) ----
++// Each car's character: [nerve, haul]. Nerve: small, quiet, ordinary cars and anything that belongs at a kerb or on
++// a verge (a post van, a taxi, a tow truck, an off-roader) are allowed longer on the shoulder; loud, low, flashy
++// ones less. It is NOT by tier: every tier has both kinds, and the tiers' averages are kept level. haul: 1 = a
++// van, a pickup or a truck (a load bay: its packages do a little more than its tier's), -1 = a two-seater (less).
++// A car not named here (a new one, a level's vehicle, an idea) has a nerve of 1 and its tier's Delivery
++const CHARACTER = {
++  // one star
++  commuter: [1, 0], junker: [1, 0], darkvan: [0.95, 1], postvan: [1.2, 1], keitruck: [1.15, 1], mini: [1.1, 0], herald: [1, 0],
++  // two
++  lovebus: [1.1, 1], wagon: [1.15, 0], sport: [0.9, -1], lowrider: [0.9, 0], hothatch: [0.95, 0], ute: [1.1, 1], buggy: [1.1, -1], liftedtruck: [1.05, 1], floatvan: [1.05, 1],
++  // three
++  hearse: [1.1, 0], minivan: [1.15, 1], pickup: [1.15, 1], hotrod: [0.8, -1], sleeper: [1.15, 0], rally: [1.1, 0], towtruck: [1.3, 1], rotary: [0.85, -1], toybota: [1.15, 1],
++  // four
++  taxi: [1.2, 0], suv: [1.05, 1], miata: [0.95, -1], dampervan: [1.05, 1], gullwing: [0.9, 0], rearengine: [0.95, 0], snake: [0.85, -1], polytruck: [1, 1],
++  // five
++  muscle: [0.85, 0], fullsize: [1.1, 0], evsaloon: [1.25, 0], superlowrider: [0.85, 0], classicgt: [0.9, -1], sixbysix: [1.15, 1], nissank: [1.1, 1],
++  // the car ideas (ideas.js: placeholders out of the tiers, so a Delivery of 1 whatever the body, until a balancing
++  // pass gives them tiers; their nerve by character like any car's)
++  bubble: [1.2, 0], threewheeler: [1.15, 0], tinsnail: [1.2, 0], twostroke: [1.1, 0], brickestate: [1.15, 0], woody: [1.1, 0], stately: [1, 0], limo: [0.85, 0],
++  milkfloat: [1.3, 0], pony: [0.9, 0], splitwindow: [0.9, 0], wedge: [0.8, 0], centreseat: [0.8, 0], pandacoupe: [0.95, 0], midnight: [0.9, 0], rallywedge: [1.05, 0],
++  safari: [1.15, 0], widetruck: [1.05, 0], monster: [0.85, 0], corrugated: [1.15, 0], foodtruck: [1.2, 0], motorhome: [1.05, 0], schoolbus: [1.1, 0],
++  doubledecker: [0.9, 0], fireengine: [1.25, 0],
++};
++// a tier's Delivery, and a car's (the tier's, and its body's share): to two places
++export const tierDelivery = (tier) => CONFIG.carStats.delivery.base + CONFIG.carStats.delivery.perTier * (tier - 1);
++for (const car of [...CARS, ...EARNED_CARS, ...IDEA_CARS]) {
++  const [nerve, haul] = (!car.earned && CHARACTER[car.id]) || [1, 0], S = CONFIG.carStats; // (an earned car is a prize, not a character: a nerve of 1, its tier's Delivery)
++  if (car.nerve === undefined) car.nerve = nerve;
++  if (car.delivery === undefined) car.delivery = car.tier ? Math.round((tierDelivery(car.tier) + haul * S.delivery.haul) * 100) / 100 : 1;
++}
++// the two stats of any vehicle at all (one out of the garage, a level's, an idea: 1), read here and nowhere else
++export const deliveryOf = (car) => (car && car.delivery) || 1;
++export const nerveOf = (car) => Math.min(CONFIG.carStats.nerve.max, Math.max(CONFIG.carStats.nerve.min, (car && car.nerve) || 1));
++
+ // The car in use. It is a live binding: every module that imports CAR sees the new car as
+ // soon as selectCar() changes it, so swapping cars needs no reload.
+ // (a car idea too: ideas.js. They come last, so an idea can never stand in for a car of the same id)
+diff --git a/src/delivery/config.js b/src/delivery/config.js
+index afd6815..d4a89d0 100644
+--- a/src/delivery/config.js
++++ b/src/delivery/config.js
+@@ -55,6 +55,20 @@ export const CONFIG = {
+ 
+   // shoulder policing
+   dangerTime: 3,           // s of shoulder driving allowed before the police step in
++  // The two car stats that are not about driving (see cars.js: deliveryOf, nerveOf). Each is a multiplier: 1 changes nothing.
++  //   Delivery: what a package of the car's does: an Evil package's damage, a Good one's happiness (the mood it
++  //     gives and the social standing it wins). By tier, as health is: base + perTier for each tier over the
++  //     first, and haul more for a van, a pickup or a truck, haul less for a two-seater. It rises more slowly than
++  //     a tier's health does, so the packages it takes to wreck a car of one's own tier still rise, gently, with
++  //     the tier (4 at one star, 7 at five: scripts/.balance-check.mjs holds it in packagesToWreck)
++  //   Nerve: the shoulder's danger meter allows that many times as long (on top of the standing's share). NOT by
++  //     tier: a knob a car, by its character, within the band; no tier's average may stray from the garage's by
++  //     more than tierDrift. dangerMost: s the meter never allows more than, whatever the car and the standing
++  carStats: {
++    delivery: { base: 1, perTier: 0.14, haul: 0.08, packagesToWreck: { min: 3, max: 8 } },
++    nerve: { min: 0.8, max: 1.3, tierDrift: 0.08 },
++    dangerMost: 8,
++  },
+   dangerCooldown: 0.75,    // s of allowance regained per second back in the lanes
+   dangerBeepSlow: 0.45,    // s between the meter's beeps on first touching the shoulder...
+   dangerBeepFast: 0.06,    // ...and just before the bust (the beeps speed up in between)
+diff --git a/src/delivery/menu2.css b/src/delivery/menu2.css
+index b034d5e..af5b83e 100644
+--- a/src/delivery/menu2.css
++++ b/src/delivery/menu2.css
+@@ -151,7 +151,7 @@
+ #startScreen .car-card .words { display: flex; flex-direction: column; gap: 4px; padding: 0 11px; }
+ #startScreen .car-card strong { font: italic 800 21px/1.1 var(--display); font-stretch: condensed; text-transform: uppercase; letter-spacing: .02em; }
+ #startScreen .car-card .stars { font-style: normal; font-size: 14px; letter-spacing: 0; }
+-#startScreen .car-card .stat { display: grid; grid-template-columns: 46px minmax(0, 1fr) 62px; align-items: center; gap: 7px; font-size: 12px; }
++#startScreen .car-card .stat { display: grid; grid-template-columns: 58px minmax(0, 1fr) 62px; align-items: center; gap: 7px; font-size: 12px; }
+ #startScreen .car-card .stat small { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
+ #startScreen .car-card .stat .track { height: 7px; border-radius: 2px; background: rgba(255, 255, 255, .12); overflow: hidden; transform: skewX(-18deg); }
+ #startScreen .car-card .stat .track i { display: block; height: 100%; background: var(--accent); transition: width .25s; }
+diff --git a/src/delivery/menus.css b/src/delivery/menus.css
+index b782e66..7df5aea 100644
+--- a/src/delivery/menus.css
++++ b/src/delivery/menus.css
+@@ -45,8 +45,10 @@ body.ideas-studio #garageUi, body.ideas-studio #garageTip { display: none !impor
+ #garageUi .compare td.worse { color: #ff7a6b; font-weight: 700; }
+ #garageUi .compare td.same { opacity: .5; }
+ /* (on a phone, at the same narrow width: not the table but one short strip over the stats, a cell a stat: a word,
+-   a bar, the difference. px: padding 5 + 6, a line of 11 for the two names, 3, and the cells 30 (10 + 2 + 3 + 2 +
+-   13): 55 tall, where the table was 200 to 230: under a tenth of 360x620, 390x700 and 430x760, 15% of 740x360.
++   a bar, the difference. px: padding 5 + 6, a line of 11 for the two names, 3, and the cells 28 (9 + 2 + 3 + 2 +
++   12): 53 tall, where the table was 200 to 230: under a tenth of 360x620, 390x700 and 430x760, 15% of 740x360.
++   Nine cells (Delivery and Nerve came after the first seven): at 360 wide the strip is 328, 312 inside its
++   padding, eight gaps of 3: 32 a cell, which the longest word (HEALTH, about 30 at 8 px) and figure fit.
+    As wide as the screen less the garage's padding, 420 at most; taps and drags pass through it) */
+ #garageUi .compare .mini { display: none; }
+ @media (max-width: 760px) {
+@@ -54,12 +56,12 @@ body.ideas-studio #garageUi, body.ideas-studio #garageTip { display: none !impor
+   #garageUi .compare > strong, #garageUi .compare > table { display: none; }
+   #garageUi .compare .mini { display: flex; flex-direction: column; gap: 3px; }
+   #garageUi .compare .mini em { font: 700 9px/11px system-ui, sans-serif; letter-spacing: .04em; opacity: .7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+-  #garageUi .compare .cells { display: flex; gap: 4px; }
++  #garageUi .compare .cells { display: flex; gap: 3px; }
+   #garageUi .compare .cell { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+-  #garageUi .compare .cell small { font: 700 9px/10px system-ui, sans-serif; text-transform: uppercase; opacity: .8; white-space: nowrap; overflow: hidden; }
++  #garageUi .compare .cell small { font: 700 8px/9px system-ui, sans-serif; text-transform: uppercase; opacity: .8; white-space: nowrap; overflow: hidden; }
+   #garageUi .compare .cell .track { height: 3px; border-radius: 2px; background: rgba(255, 255, 255, .16); overflow: hidden; }
+   #garageUi .compare .cell .track i { display: block; height: 100%; background: #cfd6df; }
+-  #garageUi .compare .cell b { font: 700 12px/13px system-ui, sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; opacity: .5; }
++  #garageUi .compare .cell b { font: 700 11px/12px system-ui, sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; opacity: .5; }
+   #garageUi .compare .cell.better b { color: #6fe08a; opacity: 1; }
+   #garageUi .compare .cell.worse b { color: #ff7a6b; opacity: 1; }
+   #garageUi .compare .cell.better .track i { background: #6fe08a; }
+diff --git a/src/delivery/packages.js b/src/delivery/packages.js
+index 4dc945b..fd6486a 100644
+--- a/src/delivery/packages.js
++++ b/src/delivery/packages.js
+@@ -11,7 +11,7 @@ import { Targets } from './pickups.js';
+ import { Game } from './game.js';
+ import { Message } from './messages.js';
+ import { Social } from './social.js';
+-import { CAR } from './cars.js';
++import { CAR, deliveryOf } from './cars.js';
+ 
+ // ============================================================================
+ // PACKAGES - thrown at the nearest car ahead within range; each flies an arc in
+@@ -296,8 +296,11 @@ export const Packages = (() => {
+   const deliver = (p, car) => {
+     Progress.count('packagesLanded'); // (a milestone counter: see milestones.js)
+     const boosted = Player.bigSplash > 0, B = CONFIG.bigSplash; // (Big Splash: harder hits)
++    // (the car's Delivery: an Evil package's damage, a Good one's happiness: see CONFIG.carStats. A Good package's
++    // own scratch of damage is the same from any car)
++    const share = deliveryOf(CAR);
+     if (p.kind === 'fire') { // an Evil player's package: real damage, and it makes enemies
+-      const damage = boosted ? B.fireDamage : CONFIG.evilPackageDamage;
++      const damage = (boosted ? B.fireDamage : CONFIG.evilPackageDamage) * share;
+       car.health -= damage;
+       car.mood = Math.max(-1, car.mood - damage * CONFIG.moodPerDamage);
+       maybeSpinOut(car, damage, CONFIG.packageSpinScale);
+@@ -332,8 +335,8 @@ export const Packages = (() => {
+       car.spite = true;
+       car.showMood = true;
+     } else {
+-      car.mood = Math.min(1, car.mood + CONFIG.packageMoodBoost);
+-      Social.gift(cop(car)); // (a good deed: the player's standing goes up, the more for a police car)
++      car.mood = Math.min(1, car.mood + CONFIG.packageMoodBoost * share);
++      Social.gift(cop(car), share); // (a good deed: the player's standing goes up, the more for a police car)
+     }
+     // (the driver's reaction, unless the package has destroyed the car outright: a spin-out or a
+     // critical hit still gets one)
+diff --git a/src/delivery/render/compare.js b/src/delivery/render/compare.js
+index 8c28624..ad052bb 100644
+--- a/src/delivery/render/compare.js
++++ b/src/delivery/render/compare.js
+@@ -7,6 +7,7 @@
+ // the difference. Both are built; the stylesheet shows one.
+ import '../menus.css';
+ import { CONFIG } from '../config.js';
++import { deliveryOf, nerveOf } from '../cars.js';
+ 
+ // (of: the stat's value for a car; say: how it is written; lower: true = the less the better)
+ const ROWS = [
+@@ -16,6 +17,8 @@ const ROWS = [
+   { name: 'Handling', short: 'Handle', of: (car) => Math.round((car.agility ?? 1) * 100), say: (v) => v + '%' },
+   { name: 'Weight', short: 'Weight', of: (car) => Math.round((car.mass ?? 1) * 100), say: (v) => v + '%' },
+   { name: 'Crossing', short: 'Cross', of: (car) => Math.round((car.crossing ?? CONFIG.railCrossing.usual) * 100), say: (v) => v + '%' },
++  { name: 'Delivery', short: 'Deliv', of: (car) => Math.round(deliveryOf(car) * 100), say: (v) => v + '%' }, // (what its packages do)
++  { name: 'Nerve', short: 'Nerve', of: (car) => Math.round(nerveOf(car) * 100), say: (v) => v + '%' },          // (how long the shoulder allows it)
+   { name: 'Price', short: 'Price', of: (car) => car.price, say: (v) => '$' + v, lower: true },
+ ];
+ 
+@@ -54,7 +57,9 @@ export const showComparison = (inUse, shown) => {
+     fill.style.width = Math.round(Math.max(0.04, Math.min(1, b / Math.max(a + b, 1e-9))) * 100) + '%';
+     const track = make('span', 'track');
+     track.append(fill);
+-    cell.append(make('small', '', row.short), track, make('b', '', diff === 0 ? '=' : (diff > 0 ? '+' : '-') + Math.abs(diff)));
++    // (nine cells across a phone: a difference of a thousand or more is written short, 1.2k)
++    const size = Math.abs(diff), brief = size >= 1000 ? Math.round(size / 100) / 10 + 'k' : String(size);
++    cell.append(make('small', '', row.short), track, make('b', '', diff === 0 ? '=' : (diff > 0 ? '+' : '-') + brief));
+     strip.append(cell);
+   }
+   if (inUse.perk || shown.perk) {
+diff --git a/src/delivery/render/garage.js b/src/delivery/render/garage.js
+index b5f89e0..f39d514 100644
+--- a/src/delivery/render/garage.js
++++ b/src/delivery/render/garage.js
+@@ -5,7 +5,7 @@
+ // other livery: buying a car buys both.
+ import * as THREE from 'three';
+ import { CONFIG } from '../config.js';
+-import { CAR, carInUse, selectCar, stars, starColour, STAR_COLOURS, blueStarsOpen, garageCars } from '../cars.js';
++import { CAR, carInUse, selectCar, stars, starColour, STAR_COLOURS, blueStarsOpen, garageCars, deliveryOf, nerveOf } from '../cars.js';
+ import { Progress } from '../progress.js';
+ import { Game } from '../game.js';
+ import { renderer } from './scene.js';
+@@ -197,6 +197,7 @@ const startScreen = document.getElementById('startScreen');
+ const money = (amount) => '$' + amount.toFixed(2);
+ const stats = (car) => 'Top speed ' + Math.round(car.maxSpeed * 3.6) + ' km/h  |  Acceleration ' +
+   car.accel + '  |  Health ' + car.health + '  |  Crossing ' + Math.round((car.crossing ?? CONFIG.railCrossing.usual) * 100) + '%' +
++  '  |  Delivery ' + Math.round(deliveryOf(car) * 100) + '%  |  Nerve ' + Math.round(nerveOf(car) * 100) + '%' + // (what its packages do, and how long the shoulder allows it: see CONFIG.carStats)
+     (car.perk ? '  |  ' + car.perk : ''); // (a perk of its own: see CARS' trait)
+ 
+ let hovered = null; // the parked car mesh under the pointer
+diff --git a/src/delivery/render/menustage.js b/src/delivery/render/menustage.js
+index 83bafcc..5b13383 100644
+--- a/src/delivery/render/menustage.js
++++ b/src/delivery/render/menustage.js
+@@ -13,7 +13,7 @@
+ // main.js); ?side=evil shows the Evil side for the visit; ?options opens the options; ?road the road card.
+ import '../menu2.css';
+ import { LEVELS, LEVEL, selectLevel, levelLabel, MAIN_LEVELS, AMPHIBIOUS_LEVELS, DELIVERY_LEVELS, RACE_LEVELS, isRace } from '../levels.js';
+-import { CARS, CAR, useLevelCar, earnedFor, amphibiousCars, stars, starColour } from '../cars.js';
++import { CARS, CAR, useLevelCar, earnedFor, amphibiousCars, stars, starColour, deliveryOf, nerveOf } from '../cars.js';
+ import { Progress } from '../progress.js';
+ import { Game, formatTime, clockFor } from '../game.js';
+ import { medalFor, medalNeeds } from '../levelinfo.js';
+@@ -217,7 +217,8 @@ const drawStrip = (first, last) => {
+ };
+ 
+ // the car: its picture, its name and stars, its figures as bars against the best in the garage; a tap opens the garage
+-const MOST = { speed: Math.max(...CARS.map(c => c.maxSpeed)), accel: Math.max(...CARS.map(c => c.accel)), health: Math.max(...CARS.map(c => c.health)) };
++const MOST = { speed: Math.max(...CARS.map(c => c.maxSpeed)), accel: Math.max(...CARS.map(c => c.accel)), health: Math.max(...CARS.map(c => c.health)),
++  delivery: Math.max(...CARS.map(deliveryOf)), nerve: Math.max(...CARS.map(nerveOf)) };
+ const bar = (name, value, share) => {
+   const fill = make('i');
+   fill.style.width = Math.round(Math.max(0.06, Math.min(1, share)) * 100) + '%';
+@@ -286,7 +287,9 @@ const drawCar = () => {
+       make('strong', '', CAR.name + ' ', CAR.tier || CAR.idea ? starSpan : null),
+       bar('Speed', Math.round(CAR.maxSpeed * 3.6) + ' km/h', CAR.maxSpeed / MOST.speed),
+       bar('Accel', String(CAR.accel), CAR.accel / MOST.accel),
+-      bar('Health', String(CAR.health), CAR.health / MOST.health)),
++      bar('Health', String(CAR.health), CAR.health / MOST.health),
++      bar('Delivery', Math.round(deliveryOf(CAR) * 100) + '%', deliveryOf(CAR) / MOST.delivery),
++      bar('Nerve', Math.round(nerveOf(CAR) * 100) + '%', nerveOf(CAR) / MOST.nerve)),
+     make('span', 'go', LEVEL.car ? 'This level’s own vehicle' : 'Garage'));
+   shop.title = LEVEL.car ? 'You must use this vehicle on this level. The garage car returns on other levels.' : 'Open the garage to change or buy cars (G)';
+ };
+diff --git a/src/delivery/social.js b/src/delivery/social.js
+index 3d09412..97c7d96 100644
+--- a/src/delivery/social.js
++++ b/src/delivery/social.js
+@@ -10,6 +10,7 @@
+ // ============================================================================
+ import { CONFIG } from './config.js';
+ import { Player } from './player.js';
++import { CAR, nerveOf } from './cars.js';
+ 
+ const C = CONFIG.social;
+ // the mysteries that are good for the player, and those that are bad (the rest are neither)
+@@ -37,8 +38,9 @@ export const Social = {
+     return caution;
+   },
+   // a gift landed: on a police car, or another good driver
+-  gift(cop) {
+-    if (this.on) this.level = Math.min(1, this.level + (cop ? C.copGift : C.gift) / 100);
++  // (share: the car's Delivery, by which a gift counts for more or less: see CONFIG.carStats)
++  gift(cop, share = 1) {
++    if (this.on) this.level = Math.min(1, this.level + (cop ? C.copGift : C.gift) * share / 100);
+   },
+   update(dt) {
+     if (!this.on) { this.level = 0; return; }
+@@ -62,7 +64,8 @@ export const Social = {
+   // how much happier every new driver starts
+   get moodLift() { return this.on ? C.moodLift * this.level : 0; },
+   // s of shoulder driving allowed before the police step in
+-  get dangerTime() { return CONFIG.dangerTime * (1 + (this.on ? C.danger * this.level : 0)); },
++  // (the car's Nerve stretches or shortens it; never more than CONFIG.carStats.dangerMost: the shoulder is no lane)
++  get dangerTime() { return Math.min(CONFIG.carStats.dangerMost, CONFIG.dangerTime * nerveOf(CAR) * (1 + (this.on ? C.danger * this.level : 0))); },
+   // s more (good) or less (bad) a powerup or mystery effect lasts
+   powerUpShift(type) {
+     const good = ['turbo', 'radarDetector', 'siren', 'ghost', 'passenger', 'armour', 'bigSplash', ...GOOD_MYSTERIES].includes(type);

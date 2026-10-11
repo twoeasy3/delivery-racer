@@ -1,0 +1,50 @@
+{
+  "id": "battlefield",
+  "clock": { "good": 312, "evil": 221 },
+  "tip": 80,
+  "lanes": 6,
+  "flow": "mixed",
+  "battle": true,
+  "pillboxes": true,
+  "landmines": [{ "from": 350, "to": 4400, "count": 70 }],
+  "car": "apc",
+  "theme": "battlefield",
+  "shoulderTimer": false,
+  "helicopter": false,
+  "hesitation": false,
+  "traffic": { "jeep": 0.5, "apc": 0.3, "tank": 0.2 },
+  "trafficCount": 7,
+  "oncomingCount": 18,
+  "segments": [
+    { "length": 700, "curve": 0 },
+    { "length": 400, "curve": 0.0015 },
+    { "length": 900, "curve": 0 },
+    { "length": 400, "curve": -0.0018 },
+    { "length": 1000, "curve": 0 },
+    { "length": 300, "curve": 0.0012 },
+    { "length": 800, "curve": 0 }
+  ],
+  "dust": [
+    { "from": 1750, "to": 2000, "wind": "left" }
+  ],
+  "pickups": [
+    { "type": "cash10", "s": 1900, "lane": 3 },
+    { "type": "cash10", "s": 1900, "lane": 4 },
+    { "type": "wrench", "s": 550, "lane": 2 },
+    { "type": "armour", "s": 850, "lane": 3 },
+    { "type": "wrench", "s": 1150, "lane": 1 },
+    { "type": "bigSplash", "s": 1300, "lane": 4 },
+    { "type": "armour", "s": 1450, "lane": 4 },
+    { "type": "wrench", "s": 1750, "lane": 0 },
+    { "type": "armour", "s": 2050, "lane": 5 },
+    { "type": "wrench", "s": 2350, "lane": 2 },
+    { "type": "armour", "s": 2650, "lane": 3 },
+    { "type": "wrench", "s": 2950, "lane": 1 },
+    { "type": "turbo", "s": 3250, "lane": 4 },
+    { "type": "bigSplash", "s": 3400, "lane": 0 },
+    { "type": "wrench", "s": 3550, "lane": 2 },
+    { "type": "armour", "s": 3850, "lane": 3 },
+    { "type": "wrench", "s": 4150, "lane": 1 }
+  ],
+  "targets": []
+}

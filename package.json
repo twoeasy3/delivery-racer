@@ -1,0 +1,25 @@
+{
+  "name": "delivery-racer",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Delivery Racer: a lane-based 3D delivery racer (three.js, Vite). Not deployed from this repository.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "check": "node scripts/delivery-tests.mjs --fast",
+    "test:delivery": "node scripts/delivery-smoke.mjs",
+    "test:delivery:quick": "node scripts/delivery-smoke.mjs --quick",
+    "lint": "eslint src/delivery scripts"
+  },
+  "dependencies": {
+    "three": "0.160.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "esbuild": "^0.27.3",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "vite": "^8.0.14"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "turbo": { "name": "Turbo", "blurb": "Pulls the car well past its top speed, foot off or not." },
+  "ghost": { "name": "Ghost", "blurb": "A see-through car: pass straight through traffic and barriers." },
+  "wrench": { "name": "Wrench", "blurb": "Repairs some of your car's health, on the spot." },
+  "passenger": { "name": "Inflatable Passenger", "blurb": "Makes the shoulder legal: nobody busts you for being on it." },
+  "radarDetector": { "name": "Radar Detector", "blurb": "The police can't bust you, for anything, while it lasts." },
+  "siren": { "name": "Siren", "blurb": "Cars just ahead in your lane pull aside to let you through." },
+  "badGas": { "name": "Bad Gas", "blurb": "Cheap fuel: top speed and acceleration drop until it wears off." },
+  "heavyMass": { "name": "1000 lb Weight", "blurb": "A weight in the car: slower, sluggish and harder to steer." },
+  "timePlus": { "name": "Time Plus", "blurb": "Puts seconds back on the clock." },
+  "timeMinus": { "name": "Time Minus", "blurb": "Takes seconds off the clock." },
+  "armour": { "name": "Armour", "blurb": "Your car takes less damage while it lasts." },
+  "bigSplash": { "name": "Big Splash", "blurb": "Packages catch every car near where they land." },
+  "butterfingers": { "name": "Butterfingers", "blurb": "You can't throw until it wears off." },
+  "cash5": { "name": "$5 Cash", "blurb": "Cash, banked with the tip if you deliver on time." },
+  "cash10": { "name": "$10 Cash", "blurb": "Cash, banked with the tip if you deliver on time." },
+  "cash20": { "name": "$20 Cash", "blurb": "Cash, banked with the tip if you deliver on time." },
+  "mystery": { "name": "Mystery", "blurb": "One of these, at random:" },
+  "target": { "name": "TANK RAGE Target", "blurb": "Land a package on it to find the next piece of the tank." }
+}

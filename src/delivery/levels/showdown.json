@@ -1,0 +1,85 @@
+{
+  "id": "showdown",
+  "theme": "night",
+  "car": "miata",
+  "clock": { "good": 200, "evil": 190 },
+  "tip": 500,
+  "rival": "evil",
+  "rivals": [
+    {
+      "name": "Venom",
+      "car": "miata",
+      "colors": [
+        "#4b1a7a",
+        "#9dff1f"
+      ]
+    },
+    {
+      "name": "Molten",
+      "car": "miata",
+      "colors": [
+        "#e2561b",
+        "#111111"
+      ],
+      "mark": "#ff8a1a"
+    },
+    {
+      "name": "Phantom",
+      "car": "miata",
+      "colors": [
+        "#2b2f36",
+        "#22e4ff"
+      ]
+    }
+  ],
+  "traffic": { "lowrider": 0.3, "darkvan": 0.3, "commuter": 0.2, "van": 0.14, "police": 0.06 },
+  "trafficCount": 11,
+  "oncomingCount": 9,
+  "segments": [
+    { "length": 350, "curve": 0 },
+    { "length": 300, "curve": 0.003 },
+    { "length": 300, "curve": 0 },
+    { "length": 250, "curve": -0.005 },
+    { "length": 300, "curve": 0 },
+    { "length": 250, "curve": 0.004 },
+    { "length": 400, "curve": 0 },
+    { "length": 300, "curve": -0.003 },
+    { "length": 250, "curve": 0 },
+    { "length": 300, "curve": 0.005 },
+    { "length": 350, "curve": 0 },
+    { "length": 250, "curve": -0.004 },
+    { "length": 300, "curve": 0 },
+    { "length": 300, "curve": 0.003 },
+    { "length": 300, "curve": 0 },
+    { "length": 250, "curve": -0.005 },
+    { "length": 450, "curve": 0 }
+  ],
+  "narrows": [
+    { "from": 2300, "to": 2900, "lanesPerSide": 1 }
+  ],
+  "obstacles": [
+    { "s": 600, "lane": 3, "kind": "cone" },
+    { "s": 615, "lane": 3, "kind": "cone" },
+    { "s": 1100, "lane": 2, "kind": "barrier" },
+    { "s": 1700, "lane": 3, "kind": "barrier" },
+    { "s": 2200, "lane": 3, "kind": "cone" },
+    { "s": 2215, "lane": 3, "kind": "cone" },
+    { "s": 2230, "lane": 3, "kind": "cone" },
+    { "s": 2600, "lane": 2, "kind": "barrier" },
+    { "s": 3300, "lane": 2, "kind": "cone" },
+    { "s": 3315, "lane": 2, "kind": "cone" },
+    { "s": 3900, "lane": 3, "kind": "barrier" },
+    { "s": 4500, "lane": 2, "kind": "barrier" }
+  ],
+  "pickups": [
+    { "type": "turbo", "s": 300, "lane": 2 },
+    { "type": "mystery", "s": 900, "lane": 3 },
+    { "type": "armour", "s": 1400, "lane": 2 },
+    { "type": "wrench", "s": 2000, "lane": 2 },
+    { "type": "bigSplash", "s": 2450, "lane": 2 },
+    { "type": "turbo", "s": 3050, "lane": 3 },
+    { "type": "mystery", "s": 3600, "lane": 2 },
+    { "type": "wrench", "s": 4100, "lane": 3 },
+    { "type": "turbo", "s": 4700, "lane": 2 }
+  ]
+}

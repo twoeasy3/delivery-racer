@@ -1,0 +1,15 @@
+{
+  "id": "monza",
+  "name": "Monza",
+  "bbox": [9.27,45.605,9.3,45.635],
+  "relation": 284565,
+  "start": {"lat":45.61897,"lon":9.28123},
+  "realLength": 5793,
+  "elevation": {"smooth":150},
+  "level": {"name":"Monza","theme":"monza","laps":3},
+  "landmarks": [
+    {"kind":"banking","ways":[19982933,34404730,725687994,725687995,1313097098,34404729]},
+    {"kind":"banking","ways":[19983025,34404638,231256009,1313098145,1313098146]},
+    {"kind":"oldStraight","ways":[231256008]}
+  ]
+}

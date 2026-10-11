@@ -1,0 +1,75 @@
+{
+  "id": "tokyo",
+  "theme": "tokyo",
+  "drive": "left",
+  "clock": { "good": 190, "evil": 140 },
+  "tip": 200,
+  "pursuits": { "every": { "min": 40, "max": 70 } },
+  "lanes": 4,
+  "speedLimit": 80,
+  "traffic": { "keitruck": 0.32, "taxi": 0.16, "commuter": 0.14, "darkvan": 0.1, "semi": 0.06, "cargotruck": 0.06, "sport": 0.08, "miata": 0.06, "police": 0.04 },
+  "trafficCount": 12,
+  "oncomingCount": 10,
+  "roadblocks": [
+    { "s": 2150 }
+  ],
+  "reversible": [
+    { "from": 2500, "to": 2950, "lane": 2 }
+  ],
+  "convoys": { "every": { "min": 18, "max": 32 }, "size": 4, "kind": "keitruck" },
+  "segments": [
+    { "length": 450, "curve": 0 },
+    { "length": 400, "curve": 0.0022 },
+    { "length": 300, "curve": 0 },
+    { "length": 500, "curve": -0.0018 },
+    { "length": 600, "curve": 0 },
+    { "length": 350, "curve": 0.0026 },
+    { "length": 450, "curve": 0 },
+    { "length": 400, "curve": -0.002 },
+    { "length": 300, "curve": 0.0015 },
+    { "length": 450, "curve": 0 }
+  ],
+  "tunnels": [
+    { "from": 1200, "to": 1650 },
+    { "from": 3000, "to": 3300 }
+  ],
+  "cameras": [
+    { "s": 800, "side": "centre" },
+    { "s": 2400, "side": "left" },
+    { "s": 3700, "side": "right" }
+  ],
+  "crosswinds": [
+    { "from": 1700, "to": 2250, "dir": "left" }
+  ],
+  "targets": [
+    { "s": 600, "side": "right" },
+    { "s": 2200, "side": "left" },
+    { "s": 3900, "side": "right" }
+  ],
+  "tarmac": [
+    { "from": 860, "to": 1140, "lane": 3 }
+  ],
+  "pickups": [
+    { "type": "cash10", "s": 910, "lane": 2 },
+    { "type": "cash10", "s": 910, "lane": 3 },
+    { "type": "cash20", "s": 1110, "lane": 3 },
+    { "type": "turbo", "s": 200, "lane": 3 },
+    { "type": "radarDetector", "s": 650, "lane": 2 },
+    { "type": "ghost", "s": 1000, "lane": 3 },
+    { "type": "wrench", "s": 1400, "lane": 2 },
+    { "type": "mystery", "s": 1900, "lane": 3 },
+    { "type": "siren", "s": 2250, "lane": 2 },
+    { "type": "timePlus", "s": 2700, "lane": 3 },
+    { "type": "armour", "s": 2900, "lane": 2 },
+    { "type": "wrench", "s": 3400, "lane": 3 },
+    { "type": "turbo", "s": 3800, "lane": 2 }
+  ],
+  "obstacles": [
+    { "s": 1500, "lane": 3, "kind": "cone" },
+    { "s": 1510, "lane": 3, "kind": "cone" },
+    { "s": 1520, "lane": 3, "kind": "barrier" },
+    { "s": 2600, "lane": 2, "kind": "barrier" },
+    { "s": 3150, "lane": 2, "kind": "cone" },
+    { "s": 3160, "lane": 2, "kind": "cone" }
+  ]
+}

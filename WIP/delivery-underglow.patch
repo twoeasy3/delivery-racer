@@ -1,0 +1,251 @@
+diff --git a/src/delivery/main.js b/src/delivery/main.js
+index d8ce7ef..8c6ee3d 100644
+--- a/src/delivery/main.js
++++ b/src/delivery/main.js
+@@ -22,6 +22,7 @@ import { syncPackages } from './render/packages.js';
+ import { syncEmotes } from './render/emotes.js';
+ import { syncPickups, syncTargets, syncToads } from './render/items.js';
+ import { syncHelicopter, syncArrests } from './render/helicopter.js';
++import { syncSideMarks } from './render/sidemarks.js';
+ import { syncHeadlights, syncTrafficBeams } from './render/headlights.js';
+ import { syncUfoStrike } from './render/ufostrike.js';
+ import { syncBulletTrain } from './render/bullettrain.js';
+@@ -306,6 +307,7 @@ const frame = (now) => {
+     // which otherwise shows it again.
+     if (Game.screensaver || Fly.on) carMesh.visible = false;
+     syncHeadlights();
++    syncSideMarks(now);
+     syncTraffic();
+     syncToads(now);
+     syncArrests(dt, now);
+diff --git a/src/delivery/render/cars.js b/src/delivery/render/cars.js
+index 6b3376c..a582f1a 100644
+--- a/src/delivery/render/cars.js
++++ b/src/delivery/render/cars.js
+@@ -5,6 +5,7 @@ import { Track } from '../track.js';
+ import { Player } from '../player.js';
+ import { Traffic } from '../traffic.js';
+ import { Mysteries } from '../mysteries.js';
++import { geOn } from '../sidecues.js';
+ import { scene, tmp } from './scene.js';
+ import { MODELS, FIXED_PAINT, makeLightBar, placeLightBar, flashLightBar } from './models.js';
+ import './trafficModels.js'; // (more of them, added to MODELS)
+@@ -144,6 +145,11 @@ const brakeMat = new THREE.MeshBasicMaterial({ color: 0xff1a1a });
+ const brakeHaloMat = new THREE.MeshBasicMaterial({ color: 0xff3020, transparent: true, opacity: 0.35, depthWrite: false });
+ const amberMat = new THREE.MeshBasicMaterial({ color: 0xffa21a });
+ const flashMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false });
++// idea 3 (?ge=3), the tail-light signature: round lamps for Good, narrow slits for Evil, and lit dimly even when the
++// car is not braking (then at their full red when it is): the shape tells the side, the colour need not
++const SIGNATURE = geOn(3);
++const discGeometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 14).rotateX(Math.PI / 2);
++const tailMat = new THREE.MeshBasicMaterial({ color: 0xb01515 });
+ const addLamps = (group) => {
+   const lamps = new THREE.Group();
+   const brakes = [0, 1].map(() => new THREE.Mesh(unitBox, brakeMat));
+@@ -162,7 +168,20 @@ export const syncLamps = (group, v, show, braking, turnX, hazards, flashing) =>
+   if (!show) return;
+   const w = v.hw * 2, l = v.hl * 2, y = Math.min(1.1, Math.max(0.55, v.height * 0.5));
+   const blink = Math.floor(performance.now() / 350) % 2 === 0;
+-  brakes.forEach((lamp, i) => {
++  if (SIGNATURE) {
++    const evil = !!v.evil, g = evil ? unitBox : discGeometry;
++    brakes.forEach((lamp, i) => {
++      const side = i ? 1 : -1;
++      lamp.visible = true;
++      halos[i].visible = braking;
++      lamp.material = braking ? brakeMat : tailMat;
++      lamp.geometry = halos[i].geometry = g;
++      if (evil) { lamp.scale.set(w * 0.4, 0.09, 0.06); halos[i].scale.set(w * 0.52, 0.2, 0.1); }
++      else { lamp.scale.set(w * 0.2, w * 0.2, 0.06); halos[i].scale.set(w * 0.36, w * 0.36, 0.1); }
++      lamp.position.set(side * w * 0.33, y, -(l / 2 + 0.04));
++      halos[i].position.set(side * w * 0.33, y, -(l / 2 + 0.1));
++    });
++  } else brakes.forEach((lamp, i) => {
+     const side = i ? 1 : -1;
+     lamp.visible = halos[i].visible = braking;
+     lamp.scale.set(w * 0.24, 0.18, 0.06);
+diff --git a/src/delivery/render/effects.js b/src/delivery/render/effects.js
+index 08e3be5..638465c 100644
+--- a/src/delivery/render/effects.js
++++ b/src/delivery/render/effects.js
+@@ -6,14 +6,15 @@ import { Player } from '../player.js';
+ import { Collision } from '../collision.js';
+ import { Game } from '../game.js';
+ import { scene, tmp } from './scene.js';
+-import { unitBox } from './cars.js';
++import { unitBox, carMesh } from './cars.js';
+ import { Sound } from './audio.js';
++import { geOn } from '../sidecues.js';
+ 
+ // ---- particles: smoke, fire and debris as instanced cubes ---------------------
+-const makeParticles = (MAX, material) => {
++const makeParticles = (MAX, material, geometry = unitBox) => {
+   const FIELDS = 12; // x y z vx vy vz life maxLife size grow gravity floor
+   const data = new Float32Array(MAX * FIELDS);
+-  const mesh = new THREE.InstancedMesh(unitBox, material, MAX);
++  const mesh = new THREE.InstancedMesh(geometry, material, MAX);
+   mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+   mesh.frustumCulled = false;
+   const color = new THREE.Color();
+@@ -209,7 +210,31 @@ const emitGravel = (v, dt) => {
+   }
+   if (Math.random() < 0.5) Smoke.emit(tmp.x + rnd(0.6), tmp.y + 0.4, tmp.z + rnd(0.6), rnd(1), 1 + Math.random(), rnd(1), 0.8, 0.6 + Math.random() * 0.5, 1.5, 0, 0xcdbb92);
+ };
++// idea 4 (?ge=4): the player's exhaust. Good leaves a thin pale puff every third of a second; Evil a darker, bigger one a
++// little more often, and now and then a spark. Only at speed; a damaged car's own smoke (emitSmoke) is another thing.
++const EXHAUST = geOn(4);
++// (round puffs, not cubes: low spheres of their own, made only when the switch is on)
++const Puffs = EXHAUST ? makeParticles(40, new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.6, depthWrite: false }), new THREE.IcosahedronGeometry(0.5, 1)) : null;
++let puffTimer = 0, sparkTimer = 0;
++const emitExhaust = (dt) => {
++  const v = Player;
++  const speed = Math.abs(v.vs ?? 0);
++  if (!v.active || speed < 8 || !carMesh.visible) return;
++  puffTimer += dt;
++  sparkTimer += dt;
++  const evil = v.evil, every = evil ? 0.22 : 0.32;
++  if (puffTimer < every) return;
++  puffTimer = 0;
++  const h = Track.toWorld(v.s - v.hl * 0.95, v.lat + v.hw * 0.55, tmp), bx = Math.sin(h) * speed * 0.15, bz = Math.cos(h) * speed * 0.15;
++  Puffs.emit(tmp.x + rnd(0.1), tmp.y + 0.4, tmp.z + rnd(0.1), -bx + rnd(0.3), 0.5 + Math.random() * 0.4, -bz + rnd(0.3),
++    evil ? 1.1 : 0.9, evil ? 0.7 : 0.5, evil ? 1.8 : 1.4, 0, evil ? 0x161616 : 0xf4f4f4);
++  if (evil && sparkTimer > 1.1 && Math.random() < 0.6) {
++    sparkTimer = 0;
++    Particles.emit(tmp.x, tmp.y + 0.35, tmp.z, -bx * 1.5 + rnd(1), 1.5 + Math.random(), -bz * 1.5 + rnd(1), 0.35, 0.1, 0.4, 6, 0xff7a1a, tmp.y);
++  }
++};
+ export const emitVehicleSmoke = (dt) => {
++  if (EXHAUST) emitExhaust(dt);
+   for (const v of Collision.bodies) if (v.active && !v.junction) { emitSmoke(v, dt); if (v.inGravel) emitGravel(v, dt); }
+ };
+ 
+@@ -227,5 +252,6 @@ export const updateEffects = (dt) => {
+   Particles.update(dt);
+   updateTyres(dt);
+   Smoke.update(dt);
++  if (Puffs) Puffs.update(dt);
+   Fire.update(dt);
+ };
+diff --git a/src/delivery/render/items.js b/src/delivery/render/items.js
+index 285fe40..0366c2b 100644
+--- a/src/delivery/render/items.js
++++ b/src/delivery/render/items.js
+@@ -50,7 +50,7 @@ const lambert = (color) => new THREE.MeshLambertMaterial({ color });
+ // given back afterwards. Colour changes meanwhile go to the part's own paint (paintOf).
+ const GHOST_MAT = new THREE.MeshLambertMaterial({ color: 0xdfe9ff, emissive: 0x4a6cff, transparent: true, opacity: 0.45 });
+ const ghostify = (group, on) => group.traverse((mesh) => {
+-  if (!mesh.isMesh) return;
++  if (!mesh.isMesh || mesh.userData.sideMark) return; // (the side cues' quads keep their own look: render/sidemarks.js)
+   if (on && !mesh.userData.solidMat) { mesh.userData.solidMat = mesh.material; mesh.material = GHOST_MAT; }
+   else if (!on && mesh.userData.solidMat) { mesh.material = mesh.userData.solidMat; mesh.userData.solidMat = null; }
+ });
+diff --git a/src/delivery/render/sidemarks.js b/src/delivery/render/sidemarks.js
+new file mode 100644
+index 0000000..cd28581
+--- /dev/null
++++ b/src/delivery/render/sidemarks.js
+@@ -0,0 +1,85 @@
++// ---- Good/Evil cues on the player's car, on the road (IDEAS-good-evil-11-Oct.md ideas 1 and 2; switches in sidecues.js) ----
++// Flat quads on the car, added to what is underneath like the traffic beams (render/headlights.js). Not lights:
++// no light is added, so three.js rebuilds nothing. Nothing is made unless its switch is on; nothing is allocated per frame.
++import * as THREE from 'three';
++import { carMesh } from './cars.js';
++import { Player } from '../player.js';
++import { geOn } from '../sidecues.js';
++
++const GOOD = 0xcfe6ff, EVIL = 0xff5a1a;
++const texture = (draw) => {
++  const canvas = document.createElement('canvas');
++  canvas.width = canvas.height = 128;
++  draw(canvas.getContext('2d'));
++  return new THREE.CanvasTexture(canvas);
++};
++const quad = (map, y) => {
++  const mat = new THREE.MeshBasicMaterial({ map, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false,
++    polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
++  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), mat);
++  mesh.position.y = y;
++  mesh.renderOrder = 1;
++  mesh.visible = false;
++  mesh.userData.sideMark = true;
++  carMesh.add(mesh);
++  return mesh;
++};
++
++// idea 2: a pool of light under the body: cool white for Good, an ember for Evil that pulses slowly
++const GLOW = { strength: 0.6, pulse: 0.4, period: 2.4, margin: 1.3 };
++const glow = geOn(2) && quad(texture((g) => {
++  const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
++  grad.addColorStop(0, 'rgba(255,255,255,0.85)');
++  grad.addColorStop(0.55, 'rgba(255,255,255,0.75)');
++  grad.addColorStop(1, 'rgba(255,255,255,0)');
++  g.fillStyle = grad;
++  g.fillRect(0, 0, 128, 128);
++}), 0.07);
++let glowSide = null;
++const syncGlow = (now) => {
++  glow.visible = carMesh.visible;
++  if (!glow.visible) return;
++  if (glowSide !== Player.evil) { glowSide = Player.evil; glow.material.color.setHex(glowSide ? EVIL : GOOD); }
++  glow.scale.set(2 * Player.hw + 2 * GLOW.margin, 1, 2 * Player.hl + 2 * GLOW.margin);
++  glow.material.opacity = GLOW.strength * (glowSide ? 1 - GLOW.pulse * (0.5 + 0.5 * Math.sin(now / 1000 * 2 * Math.PI / GLOW.period)) : 1);
++};
++
++// idea 1: a thin line of light laid on the road round the car: a full ring for Good, two short curved arcs (horns) at
++// the front for Evil: the shape differs, not only the colour
++const MARK = { strength: 0.8, margin: 1.0, pulse: 0.25, period: 2.4 };
++const ringTexture = (draw) => texture((g) => {
++  g.lineCap = 'round';
++  g.shadowColor = '#fff';
++  g.shadowBlur = 5;
++  g.strokeStyle = '#fff';
++  g.lineWidth = 7;
++  draw(g);
++});
++const rings = geOn(1) && [
++  ringTexture((g) => { g.beginPath(); g.arc(64, 64, 52, 0, 2 * Math.PI); g.stroke(); }),
++  ringTexture((g) => { // (the quad's front is the bottom of the picture)
++    for (const side of [-1, 1]) {
++      g.beginPath();
++      const mid = Math.PI / 2 + side * 0.8; // (+- 46 degrees off the nose)
++      g.lineWidth = 11;
++      g.arc(64, 64, 54, mid - 0.6, mid + 0.6);
++      g.stroke();
++    }
++  }),
++].map((map) => quad(map, 0.09));
++let ringSide = null;
++const syncRing = (now) => {
++  const evil = Player.evil ? 1 : 0, ring = rings[evil];
++  ring.visible = carMesh.visible;
++  rings[1 - evil].visible = false;
++  if (!ring.visible) return;
++  if (ringSide !== evil) { ringSide = evil; ring.material.color.setHex(evil ? 0xff2a10 : 0xfff0c8); }
++  ring.scale.set(2 * Player.hw + 2 * MARK.margin, 1, 2 * Player.hl + 2 * MARK.margin);
++  ring.material.opacity = MARK.strength * (evil ? 1 - MARK.pulse * (0.5 + 0.5 * Math.sin(now / 1000 * 2 * Math.PI / MARK.period)) : 1);
++};
++
++// every frame, once the car has been put where it is
++export const syncSideMarks = (now) => {
++  if (glow) syncGlow(now);
++  if (rings) syncRing(now);
++};
+diff --git a/src/delivery/sidecues.js b/src/delivery/sidecues.js
+new file mode 100644
+index 0000000..ab37c54
+--- /dev/null
++++ b/src/delivery/sidecues.js
+@@ -0,0 +1,13 @@
++// Good/Evil cue switches (12-Oct): ?ge=1,5,8 or ?ge=all turns ideas of IDEAS-good-evil-11-Oct.md on for a visit.
++let set = null;
++export function geOn(n) {
++  if (!set) {
++    set = new Set();
++    try {
++      const v = new URLSearchParams(location.search).get('ge');
++      if (v === 'all') for (let i = 1; i <= 12; i++) set.add(i);
++      else if (v) v.split(',').forEach((x) => { const k = parseInt(x, 10); if (k) set.add(k); });
++    } catch (e) { /* no location: all off */ }
++  }
++  return set.has(n);
++}

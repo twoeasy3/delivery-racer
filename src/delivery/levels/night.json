@@ -1,0 +1,39 @@
+{
+  "id": "night",
+  "cargo": { "good": "clock", "evil": "doll" },
+  "theme": "night",
+  "clock": { "good": 168, "evil": 119 },
+  "traffic": { "lowrider": 0.35, "darkvan": 0.3, "commuter": 0.15, "van": 0.15, "police": 0.05 },
+  "trafficCount": 10,
+  "oncomingCount": 8,
+  "tip": 40,
+  "pursuits": { "every": { "min": 30, "max": 50 } },
+  "segments": [
+    { "length": 400, "curve": 0 },
+    { "length": 350, "curve": 0.003 },
+    { "length": 300, "curve": 0 },
+    { "length": 300, "curve": -0.004 },
+    { "length": 400, "curve": 0.002 },
+    { "length": 300, "curve": -0.003 },
+    { "length": 500, "curve": 0 }
+  ],
+  "jamRamps": [
+    { "s": 2250, "lane": 3, "queue": 2 }
+  ],
+  "pickups": [
+    { "type": "turbo", "s": 2110, "lane": 3 },
+    { "type": "cash20", "s": 2296, "lane": 3 },
+    { "type": "cash10", "s": 2312, "lane": 2 },
+    { "type": "cash10", "s": 2312, "lane": 3 },
+    { "type": "siren", "s": 850, "lane": 3 },
+    { "type": "radarDetector", "s": 1200, "lane": 2 },
+    { "type": "mystery", "s": 120, "lane": 2 },
+    { "type": "turbo", "s": 700, "lane": 2 },
+    { "type": "wrench", "s": 1500, "lane": 3 }
+  ],
+  "obstacles": [
+    { "s": 1000, "lane": 3, "kind": "cone" },
+    { "s": 1015, "lane": 3, "kind": "cone" },
+    { "s": 1800, "lane": 2, "kind": "barrier" }
+  ]
+}
