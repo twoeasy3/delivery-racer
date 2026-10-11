@@ -212,7 +212,8 @@ Two quirks:
 - The controls are rounded to 1/64 as they are read (`input.js`), so what is recorded is what was driven; while a
   replay plays, the player's own controls and throws are not heard (`Input.fed`).
 - `replay.js` as described in its head. The fingerprints: the build's logic (`__BUILD__.logic`: a hash of the logic
-  source files, vite.config.js; a change to words, menus or pages leaves it alone), the level's data as loaded, the
+  source files and whatever they import, followed through: vite.config.js logicFiles; a change to words, menus, pages
+  or a model that is only drawn leaves it alone; a model a rule measured would be in it), the level's data as loaded, the
   car's figures; and the state every 1200 steps, played back against them (a recording that drifts stops: onDrift).
 - The build on the front screen, bottom right (under START on a phone): "v1.0.0 · <commit>" (`version.js`).
 - Checks: `scripts/.replay-record-check.mjs` (replay group): runs on expressway, tokyo, noon; night and Mystery Meadows
