@@ -207,6 +207,7 @@ export const Game = {
     Mysteries.reset(); // (before the player: a side swap or a giant left from the last run is not undone over this one)
     Social.reset(); // (before the player: its shoulder allowance goes by it)
     Player.reset();
+    Player.autoBrake = Progress.data.autoBrake ?? 1; // (the options' auto brake, for this run: a replay records it)
     Wreckage.reset(); // (before the traffic is dealt out: none goes where wreckage lies)
     Traffic.reset();
     Packages.reset();

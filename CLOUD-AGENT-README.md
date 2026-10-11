@@ -56,6 +56,11 @@ groups above, and the quick smoke only when asked. Syntax-check changed files wi
 - Merge with `git merge --no-ff`, main first: merge `main` into your branch, fix, check, then merge the branch into
   main. Commit each whole working piece at once, with a message that says what and why, ending with the
   `Co-Authored-By` line.
+- Version every merge (the owner, 11-Oct): the game's version is `1.1.<n>` in `package.json`, shown on the front
+  screen with the commit (`src/delivery/version.js`). A merge to `main` that changes the game (anything the player
+  could notice: code, levels, words, pictures, sounds) bumps the patch `<n>` by one, in the merge's branch before it
+  goes in, and the merge message starts with the new version ("v1.1.8: ..."). A merge of notes or checks only does not.
+  1.1.7 is the seventh merge after the one that put the version on the front screen (3f64b51).
 - Looking is part of finishing: take stills (scripts/shots.mjs) and READ them; say plainly what was seen and not seen.
   Do not chase metrics for an hour; land a working version and report.
 - Model quality: a new model has a distinct idea; a black face means an open top; no z-fighting (coplanar faces) and no

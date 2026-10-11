@@ -47,6 +47,7 @@ const fresh = () => ({
   muted: false,    // sound switched off
   touch: null,     // on-screen controls: true / false once chosen on the menu; null = on for touch screens
   autoGas: false,  // auto accelerate: the accelerator held down by itself, unless braking
+  autoBrake: 1,    // auto brake behind a slower car, off the accelerator: 1, 0.75, 0.5, 0.25 of its full strength, or 0 (off)
   raceClass: 'f1', // the cars every race is run in: 'f1', 'gt' (GT road cars) or 'lmp' (Le Mans prototypes)
   raceTrack: 'marina-bay', // the race screensaver's circuit: a lapped level's id, or 'all' (each in turn)
   tankPieces: 0,   // TANK RAGE pieces found so far (0-4), carried from one level to the next
@@ -122,7 +123,7 @@ const saveText = (data) => JSON.stringify({
 });
 // The cookie's share of the save (see BACKUP above): never over COOKIE_ROOM bytes as written, whatever the save
 // holds. Should even the list of cars be too long for it (hundreds of them), it goes down to the car in use
-const COOKIE_KEYS = ['money', 'unlocked', 'levelOrder', 'cars', 'car', 'claimed', 'tankPieces', 'evil', 'muted', 'touch', 'autoGas', 'raceClass', 'raceTrack'];
+const COOKIE_KEYS = ['money', 'unlocked', 'levelOrder', 'cars', 'car', 'claimed', 'tankPieces', 'evil', 'muted', 'touch', 'autoGas', 'autoBrake', 'raceClass', 'raceTrack'];
 const COOKIE_ROOM = 3600; // bytes of cookie value (the cap is 4096 for the name, the value and its attributes)
 const cookieText = (data) => {
   const short = Object.fromEntries(COOKIE_KEYS.map(key => [key, key === 'money' ? rounded(data.money, SAVE_STEP.money) : data[key]]));
@@ -158,6 +159,7 @@ const tidy = (saved) => {
       .filter(([id, t]) => typeof t === 'number' && isFinite(t) && LEVELS.some(level => level.id === id)));
   }
   for (const key of ['muted', 'autoGas', 'evil']) if (typeof saved[key] === 'boolean') clean[key] = saved[key];
+  if ([0, 0.25, 0.5, 0.75, 1].includes(saved.autoBrake)) clean.autoBrake = saved.autoBrake;
   if (typeof saved.touch === 'boolean') clean.touch = saved.touch;
   for (const key of ['raceClass', 'raceTrack']) if (word(saved[key])) clean[key] = saved[key];
   // (the counters: numbers by name, and no more of them than there could be)
