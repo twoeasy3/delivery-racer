@@ -7,7 +7,7 @@
   },
   "theme": "snow",
   "clock": { "good": 300, "evil": 230 },
-  "tip": 170,
+  "tip": 175,
   "lanes": 2,
   "traffic": { "wagon": 0.25, "commuter": 0.25, "van": 0.2, "darkvan": 0.15, "suv": 0.15 },
   "trafficZones": [
