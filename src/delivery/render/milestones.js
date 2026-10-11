@@ -4,6 +4,7 @@
 // ?milestones opens it straight away; ?milestones&unlock lights every plaque, for a look.
 import { CONFIG } from '../config.js';
 import { Progress } from '../progress.js';
+import { Nav } from '../nav.js';
 import { Game } from '../game.js';
 import { Message } from '../messages.js';
 
@@ -64,12 +65,14 @@ export const MilestonesWall = {
     build(pretend);
     this.isOpen = true;
     Game.inMenu = true; // (Enter must not start a run from here)
+    Nav.enter('milestones', () => this.close()); // (the back button closes it)
     panel.classList.remove('hidden');
     panel.scrollTop = 0;
   },
   close() {
     if (!this.isOpen) return;
     this.isOpen = false;
+    Nav.leave('milestones');
     Game.inMenu = false;
     panel.classList.add('hidden');
   },

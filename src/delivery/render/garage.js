@@ -3,6 +3,7 @@
 // from the start, in a section of their own at the end of the tiers: see buildLot). Tap any car, owned or not, to see its stats; the button under them
 // uses it, or buys it (hovering shows the price). The Good / Evil toggle swaps every car to its
 // other livery: buying a car buys both.
+import { Nav } from '../nav.js';
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { CAR, carInUse, selectCar, stars, starColour, STAR_COLOURS, blueStarsOpen, garageCars, restrictedTier, setViewSide, carAllowedOn } from '../cars.js';
@@ -462,6 +463,7 @@ export const Garage = {
     carAtOpen = CAR;
     sideAtOpen = Game.evil;
     Game.inMenu = true; // Enter must not start a run from here
+    Nav.enter('garage', () => this.close()); // (the back button closes it)
     ui.classList.remove('hidden');
     startScreen.classList.add('hidden');
     document.body.classList.add('in-garage');
@@ -475,6 +477,7 @@ export const Garage = {
     measure();
   },
   close() {
+    Nav.leave('garage');
     setViewSide(null); // (the car rule goes by the side being played again)
     // a different car: tell the rest of the game (the player gets into it when a run starts)
     window.dispatchEvent(new Event('carchange')); // (always: the side on show may have put the car in use under another rule than the one being played; the menu draws itself again)

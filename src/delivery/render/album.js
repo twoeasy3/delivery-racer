@@ -6,6 +6,7 @@
 import { LEVELS } from '../levels.js';
 import { levelName } from '../levelText.js';
 import { Progress } from '../progress.js';
+import { Nav } from '../nav.js';
 import { Game, formatTime } from '../game.js';
 import { LEVEL_SHOTS } from './menu.js';
 
@@ -64,12 +65,14 @@ export const Album = {
     build(pretend);
     this.isOpen = true;
     Game.inMenu = true; // (Enter must not start a run from here)
+    Nav.enter('album', () => this.close()); // (the back button closes it)
     panel.classList.remove('hidden');
     panel.scrollTop = 0;
   },
   close() {
     if (!this.isOpen) return;
     this.isOpen = false;
+    Nav.leave('album');
     Game.inMenu = false;
     panel.classList.add('hidden');
     startScreen.classList.remove('hidden');

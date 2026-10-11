@@ -19,6 +19,7 @@ import { cargoCircleView } from './cargoview.js';
 import { CARS, CAR, useLevelCar, earnedFor, amphibiousCars, stars, starColour } from '../cars.js';
 import { Progress } from '../progress.js';
 import { Tiers, tierStarsNode, richTiers } from '../tiers.js';
+import { Nav } from '../nav.js';
 import { Game, formatTime, clockFor } from '../game.js';
 import { medalFor, medalNeeds } from '../levelinfo.js';
 import { Garage, makeShowCar, paintShowCar, IDEA_TAG } from './garage.js';
@@ -457,10 +458,12 @@ const openSheet = (node, onClose) => {
   onSheetClose = onClose || null;
   node.classList.remove('hidden');
   Game.inMenu = true;
+  Nav.enter('sheet', closeSheet); // (the back button closes it)
   blip('menuPick');
 };
 const closeSheet = () => {
   if (!sheet) return;
+  Nav.leave('sheet');
   sheet.classList.add('hidden');
   sheet = null;
   Game.inMenu = false;

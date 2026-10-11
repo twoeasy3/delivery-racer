@@ -133,17 +133,13 @@ export const PICKUP_MODELS = {
   // block on a whole disc, not a gap.) As long as it was: 2.04 m, 1.5 times that on the road
   wrench: () => {
     const group = new THREE.Group(), wrench = new THREE.Group();
-    // (bright, with a little light of its own, and a dark rim standing out all round it between its two faces: so its
-    // outline shows on a pale road as on a dark one, where plain steel was grey on grey)
+    // (bright, with a little light of its own, where plain steel was grey on grey. It had a dark rim standing out all
+    // round it too: taken off, the owner, 11-Oct, "remove the black outline")
     const steel = new THREE.MeshPhongMaterial({ color: 0xe6ecf1, emissive: 0x59626b, shininess: 90, specular: 0x999999 }), orange = lambert(PICKUP_COLOR.wrench);
-    const rim = new THREE.MeshBasicMaterial({ color: 0x1c2128 }), RIM = 0.05;
     const DEPTH = 0.16, EDGE = 0.03; // (m thick, and the chamfer round every edge, each side of that)
     const solid = (shape) => {
       const geometry = new THREE.ExtrudeGeometry(shape, { depth: DEPTH, bevelEnabled: true, bevelThickness: EDGE, bevelSize: EDGE, bevelOffset: -EDGE, bevelSegments: 1, curveSegments: 9 });
       geometry.translate(0, 0, -DEPTH / 2);
-      const outline = new THREE.ExtrudeGeometry(shape, { depth: 0.06, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.01, bevelOffset: RIM, bevelSegments: 1, curveSegments: 9 });
-      outline.translate(0, 0, -0.03);
-      part(wrench, outline, rim, 0, 0, 0);
       return part(wrench, geometry, steel, 0, 0, 0);
     };
     // the head: a disc R across, cut off square at the prongs' tips (TIP from its middle), with a slot GAP wide
