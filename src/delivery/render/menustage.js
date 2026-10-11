@@ -168,6 +168,10 @@ const ribbonHalf = (level, evil) => {
   return half;
 };
 const fact = (name, value) => make('span', 'fact', make('small', '', name), value);
+// On a phone held upright the stage shows the level's figures (clock, tip, best time, what it needs, its medals) OR its
+// description, the "i" button at its foot switching between them (the owner, 11-Oct: there is no room for both).
+// Kept from level to level; elsewhere the button is not shown and both are (menu2.css)
+let showDesc = false;
 
 const drawStage = () => {
   const level = cursor, open = isOpen(level), evil = Game.evil && !oneSided(level);
@@ -223,9 +227,18 @@ const drawStage = () => {
   arrows[1].title = 'The next level (right)';
   arrows[0].addEventListener('click', () => step(-1));
   arrows[1].addEventListener('click', () => step(1));
-  stage.replaceChildren(shot, plate, ribbon, cargo, info, ...arrows);
+  const toggle = open && words ? make('button', 'info-toggle', 'i') : null; // (only where there is a description to show)
+  const paintToggle = () => {
+    stage.classList.add('has-toggle');
+    stage.classList.toggle('desc-view', showDesc);
+    toggle.setAttribute('aria-pressed', showDesc);
+    toggle.title = toggle.ariaLabel = showDesc ? 'Show the level’s figures' : 'Show the level’s description';
+  };
+  toggle?.addEventListener('click', () => { showDesc = !showDesc; blip('menuPick'); paintToggle(); });
+  stage.replaceChildren(shot, plate, ribbon, cargo, info, ...arrows, ...(toggle ? [toggle] : []));
   // (a new level slides in; the other side only swaps the words)
   stage.className = 'menu-stage' + (open ? '' : ' locked') + (drawn && !sameLevel ? ' enter' : drawn && drawn !== key ? ' flip' : '');
+  if (toggle) paintToggle();
   drawn = key;
 };
 
