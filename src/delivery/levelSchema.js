@@ -35,7 +35,7 @@
 // ============================================================================
 import { CONFIG } from './config.js';
 import { THEMES } from './themes.js';
-import { CARS, LEVEL_CARS } from './cars.js';
+import { CARS, LEVEL_CARS, EARNED_CARS, EVENT_CARS } from './cars.js';
 import { CARGO } from './cargo.js';
 
 // ---- the kinds the game has no table of its own for: these are the lists (render/pickupModels.js has a colour
@@ -58,7 +58,9 @@ export const OBSTACLE_KINDS = Object.keys(CONFIG.obstacleKinds);
 export const VEHICLE_KINDS = Object.keys(CONFIG.vehicles);
 export const WRECKAGE_KINDS = Object.keys(CONFIG.wreckage.kinds);
 export const THEME_NAMES = Object.keys(THEMES);
-export const CAR_IDS = [...Object.keys(LEVEL_CARS), ...CARS.map(c => c.id)];
+export const CAR_IDS = [...Object.keys(LEVEL_CARS), ...CARS.map(c => c.id), ...EARNED_CARS.map(c => c.id), ...EVENT_CARS.map(c => c.id)];
+// (the cars a level's allowedCars may name: any a player can own)
+const OWNABLE_IDS = [...CARS, ...EARNED_CARS, ...EVENT_CARS].map(c => c.id);
 export const RACE_KINDS = ['f1', 'gt', 'lmp'].filter(k => LEVEL_CARS[k]);
 const SIDES = ['left', 'right'];
 
@@ -127,7 +129,9 @@ export const FIELDS = {
     settings: { good: num('Good (s)', { min: 1, max: 100000, required: true, init: 150 }), evil: num('Evil (s)', { min: 1, max: 100000, required: true, init: 115 }) } },
   tip: { shape: 'number', group: 'basics', label: 'Tip ($)', min: 0, max: 100000, init: 50, help: 'The money earned for finishing before the clock reaches zero.' },
   theme: { shape: 'choice', group: 'look', label: 'Theme', choices: THEME_NAMES, default: 'city', help: 'The look of the ground, sky and roadside (themes.js). Rain, snow, night and an elevated road come with the theme.' },
-  car: { shape: 'choice', group: 'basics', label: 'Car', choices: CAR_IDS, help: 'A vehicle the level is driven in whatever is in the garage. Left out: the garage\'s.' },
+  car: { shape: 'choice', group: 'basics', label: 'Car', choices: CAR_IDS, help: 'A car lock: the vehicle the level is driven in, whatever is in the garage and whether it is owned or not (a level\'s own vehicle, a garage car, an earned or an event car). Left out: the garage\'s.' },
+  allowedCars: { shape: 'object', group: 'basics', label: 'Allowed cars', help: 'Only these cars may drive the level, and only if owned (cars.js listRule): the cars named, or any car of the tiers named (1 to 5 gold, 6 to 10 blue), no faster than the top speed if one is given. Always in force, in place of the tier rule. Left out: the tier rule, or any car. A car lock ("Car") comes first.',
+    settings: { cars: { type: 'list', label: 'Cars', item: pick('Car', OWNABLE_IDS) }, tiers: { type: 'list', label: 'Tiers', item: num('Tier', { min: 1, max: 10 }) }, maxSpeed: num('Top speed at most (m/s)', { min: 1, max: 200 }) } },
   cargo: { shape: 'object', group: 'basics', label: 'Cargo', help: 'What the player is delivering, for each side (only a sight). Left out, the level\'s place on the menu picks one.',
     settings: { good: pick('Good', CARGO.good.map(c => ({ value: c.id, label: c.name }))), evil: pick('Evil', CARGO.evil.map(c => ({ value: c.id, label: c.name }))) } },
 

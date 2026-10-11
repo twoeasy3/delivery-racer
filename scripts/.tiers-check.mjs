@@ -146,7 +146,7 @@ check(cars.CAR.id === 'commuter', 'on a level that allows it the pick comes back
     cars.useLevelCar(null, false);
     check(cars.carTier(cars.CAR) === 1 && Progress.data.car === 'sport', name + ': toggled to the restricted side: a tier 1 car is forced, the pick kept (' + cars.CAR.id + ')');
     g.Game.start();
-    check(cars.carTier(cars.CAR) === 1 && Tiers.hold && Tiers.hold.tier === 1, name + ': START on the restricted side: the run holds the forced car (' + cars.CAR.id + ')');
+    check(cars.carTier(cars.CAR) === 1 && Tiers.hold && Tiers.hold.rule?.tier === 1, name + ': START on the restricted side: the run holds the forced car (' + cars.CAR.id + ')');
     g.Game.toMenu();
     side(free); g.Game.evil = free;
     g.Game.start();

@@ -53,6 +53,8 @@ const sample = (t) => {
   return [a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k, a[3] + (b[3] - a[3]) * k, a[4] + (b[4] - a[4]) * k];
 };
 
+// back on the menu (main.js): no ghost, and no line about it
+export const clearGhost = () => { gap.style.display = 'none'; if (mesh) mesh.visible = false; runKey = ''; path = null; };
 // each frame (main.js), once the player's car is placed
 export const syncGhost = () => {
   const key = Game.state === 'playing' ? Game.seed + ':' + Game.loadSeed : '';

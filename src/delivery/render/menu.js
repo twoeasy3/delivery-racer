@@ -6,7 +6,7 @@
 import { CONFIG } from '../config.js';
 import { LEVELS, LEVEL_INDEX, LEVEL, selectLevel, nextOnTab, setRaceClass, RACE_CLASSES } from '../levels.js';
 import { levelName } from '../levelText.js';
-import { CARS, SECRET_CARS, useLevelCar, selectCar, amphibiousCars, restrictedTier } from '../cars.js';
+import { CARS, SECRET_CARS, useLevelCar, selectCar, amphibiousCars, carRule, ruleAllows } from '../cars.js';
 import { Tiers } from '../tiers.js';
 import { Progress } from '../progress.js';
 import { Game } from '../game.js';
@@ -28,9 +28,9 @@ window.addEventListener('carchange', () => { useLevelCar(LEVEL.car, LEVEL.amphib
 Game.onRefused.push(() => {
   draw();
   Garage.open();
-  const tier = restrictedTier(); // (a level whose tier rule allows only cars the player has none of: the cheapest of the tier)
-  const wanted = tier !== null ? Tiers.carsOfTier(tier) : amphibiousCars();
-  Garage.look(wanted.sort((a, b) => a.price - b.price)[0].id); // (the cheapest)
+  const rule = carRule(); // (a level whose car rule allows only cars the player has none of: the cheapest it allows)
+  const wanted = rule ? CARS.filter(car => ruleAllows(rule, car)) : amphibiousCars();
+  if (wanted.length) Garage.look(wanted.sort((a, b) => a.price - b.price)[0].id); // (the cheapest)
 });
 
 // sound on / off: this button, or the M key at any time

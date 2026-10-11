@@ -64,31 +64,58 @@ export const blueStarsOpen = () => tierHooks.blueOpen?.() ?? Progress.data.unloc
 // a car's tier number: 1 to 5 for the gold-star cars, 6 to 10 for the Blue Star ones (Blue 1 is 6); null for a car
 // outside the tiers (earned, amphibious, tierless, secret, a level's own vehicle)
 export const carTier = (car) => car && car.tier >= 1 && car.tier <= TIERS && !car.earned && !car.amphibious && !car.super && CARS.includes(car) ? car.tier + (car.blue ? 5 : 0) : null;
-// hooks tiers.js sets when it loads: restricted() the tier a car must be from on the level picked (null: any),
+// hooks tiers.js sets when it loads: rule() the car rule on the level picked (null: any car; see carRule below),
 // blueOpen() whether the Blue Star cars are in the garage (null: the old rule)
 const tierHooks = {};
 export const setTierHooks = (hooks) => Object.assign(tierHooks, hooks);
 // (evil: the side to ask for; left out, the side the garage is looking at while it is open, else the side being played)
 let viewSide = null;
 export const setViewSide = (evil) => { viewSide = evil === null || evil === undefined ? null : !!evil; };
-export const restrictedTier = (evil) => tierHooks.restricted?.(evil ?? viewSide) ?? null;
+// ---- the car rule: what may be driven on the level picked ----
+// null: any car. { tier, key, label }: only a car of that tier (tiers.js: a medal not yet earned). { list: true, test,
+// key, label }: only the cars a level's own "allowedCars" names (see listRule). Either way the car must be owned, and the
+// level's own vehicle ("car": a car lock) comes ahead of both. `label` says what is allowed, with {tier:n} tokens
+export const carRule = (evil) => tierHooks.rule?.(evil ?? viewSide) ?? null;
+export const restrictedTier = (evil) => carRule(evil)?.tier ?? null; // (the tier of a tier rule; null for none or a list)
+const tierRules = {};
+export const tierRule = (tier) => tierRules[tier] ||= { tier, key: String(tier), label: '{tier:' + tier + '} cars' };
+export const ruleAllows = (rule, car) => !rule || (!!car && (rule.tier ? carTier(car) === rule.tier : rule.test(car)));
 // may this car be driven on the level picked, on that side (or the garage's side)? A car in no tier, an earned or idea
 // car, is not allowed where a tier is wanted; the null car is never allowed
-export const carAllowedOn = (car, evil) => { const t = restrictedTier(evil); return !!car && !car.silhouette && (t === null || carTier(car) === t); };
-// the silhouette shown where the player has no car the level allows: the cheapest car of the tier, drawn dark
+export const carAllowedOn = (car, evil) => !!car && !car.silhouette && ruleAllows(carRule(evil), car);
+// A level's own list (levelSchema.js "allowedCars"): { cars: [ids], tiers: [n], maxSpeed: m/s }. A car is allowed if it
+// is one of `cars` or of one of `tiers` (neither given: any car), and no faster than maxSpeed if that is given. Always
+// in force on that level, medal or none, in place of the tier rule. (One rule object a level, so it can be compared)
+const listRules = new WeakMap();
+export const listRule = (level) => {
+  if (!level?.allowedCars) return null;
+  if (listRules.has(level)) return listRules.get(level);
+  const a = level.allowedCars, ids = new Set(a.cars || []), tiers = new Set(a.tiers || []), max = Number(a.maxSpeed) || 0;
+  const test = (car) => (!ids.size && !tiers.size || ids.has(car.id) || tiers.has(carTier(car))) && (!max || car.maxSpeed <= max);
+  const names = [...ids].map(id => carById(id)?.name || id);
+  const label = [names.length ? names.join(', ') : '', [...tiers].map(t => '{tier:' + t + '}').join(' '), max ? 'no faster than ' + Math.round(max * 3.6) + ' km/h' : '']
+    .filter(Boolean).join(names.length && tiers.size ? ' or ' : ', ') || 'any car';
+  const rule = { list: true, test, key: level.id, label: label + (names.length && !tiers.size && !max ? '' : ' cars') };
+  listRules.set(level, rule);
+  return rule;
+};
+// the cars a rule can be met with: the garage's, the earned and the event ones (an idea only where a list names it)
+const ruleCars = (rule) => [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...(rule.list ? IDEA_CARS : [])].filter(car => ruleAllows(rule, car));
+// the silhouette shown where the player has no car the level allows: the cheapest car it allows, drawn dark
 // (silhouette: true; id 'null-car'), never owned and never driven (Game.canStart is false while it is in use)
 const nullCars = {};
-export const nullCarFor = (tier) => nullCars[tier] ||= (() => {
-  const like = CARS.filter(car => carTier(car) === tier).sort((a, b) => a.price - b.price)[0] || CARS[0];
-  return { ...like, id: 'null-car', name: 'No car for this level', silhouette: true, tierNeeded: tier, price: 0 };
-})();
+export const nullCarFor = (rule) => (typeof rule === 'number' ? nullCarFor(tierRule(rule)) : nullCars[rule.key + (rule.list ? ':list' : '')] ||= (() => {
+  const like = ruleCars(rule).filter(car => CARS.includes(car)).sort((a, b) => a.price - b.price)[0] || ruleCars(rule)[0] || CARS[0];
+  return { ...like, id: 'null-car', name: 'No car for this level', silhouette: true, tierNeeded: rule.tier ?? null, ruleLabel: rule.label, price: 0 };
+})()); // (a tier number will do for a tier's rule)
 // the car the level's rule puts the player in: their pick if it is allowed; else the car they last chose for that
-// tier (Progress.data.tierCars) or the best they own of it; else the null car. The pick itself is not touched
-const forcedCar = (pick, tier) => {
-  if (tier === null || carTier(pick) === tier) return pick;
-  const owned = CARS.filter(car => carTier(car) === tier && Progress.owns(car.id));
-  const chosen = owned.find(car => car.id === Progress.data.tierCars?.[tier]);
-  return chosen || owned.sort((a, b) => b.price - a.price)[0] || nullCarFor(tier);
+// rule (Progress.data.tierCars, by the rule's key: its tier, or the level's id) or the best they own of it; else the
+// null car. The pick itself is not touched
+const forcedCar = (pick, rule) => {
+  if (!rule || ruleAllows(rule, pick)) return pick;
+  const owned = ruleCars(rule).filter(car => Progress.owns(car.id));
+  const chosen = owned.find(car => car.id === Progress.data.tierCars?.[rule.key]);
+  return chosen || owned.sort((a, b) => b.price - a.price)[0] || nullCarFor(rule);
 };
 // the cars the garage shows now (an earned car only once it is earned: see EARNED_CARS)
 // With the tiers on (tiers.js carPreview): a car of a tier beyond the next is not in the garage, a car of the next tier is
@@ -96,7 +123,8 @@ const forcedCar = (pick, tier) => {
 // an owned car, or one in no tier, is always there. With the tiers off: the old Blue Star rule.
 export const carPreview = (car) => tierHooks.preview?.(car) ?? null; // 'show' | 'teaser' | 'hide' | null (the tiers are off)
 export const isTeaser = (car) => carPreview(car) === 'teaser';
-export const garageCars = () => [...CARS.filter(car => { const p = carPreview(car); return p ? p !== 'hide' : (!car.blue || blueStarsOpen()); }), ...EARNED_CARS.filter(car => Progress.earned(car))];
+export const garageCars = () => [...CARS.filter(car => { const p = carPreview(car); return p ? p !== 'hide' : (!car.blue || blueStarsOpen()); }),
+  ...EARNED_CARS.filter(car => Progress.owns(car.id)), ...EVENT_CARS.filter(car => Progress.owns(car.id))]; // (an earned car once earned, or given by an event; an event's car once given)
 // The amphibious cars (a car's "amphibious"): the garage's Amphibious section, there from the start, so an
 // amphibious level can be played as soon as it is open (the cheapest costs about a level's tip)
 const AMPHIBIOUS_PERK = 'Amphibious: it drives into the water and floats across';
@@ -328,19 +356,24 @@ export const EARNED_CARS = [
   earnedCar('battlefield', { good: 78 }, { ...LEVEL_CARS.apc, name: 'Road 8x8', health: 450, color: 0x6b6f5a, evilColor: 0x4a4e3a, perk: 'Its gun fires in place of packages' }, LEVEL_CARS.apc),
 ];
 Progress.earnedCars = EARNED_CARS;
+// Cars only an event gives (tiers.json events, a "reward": { "car": id }): defined here, not with the event, so a car
+// given stays in the garage once the event is over and gone from the list. Any other car can be an event's reward too
+// (a garage car, an earned one). Owned once given (Progress.data.cars). A car here: as a garage car's entry, with an
+// id of its own and price 0; it is outside the tiers.
+export const EVENT_CARS = [];
 // the car a special level earns (undefined for a level with none)
 export const earnedFor = (levelId) => EARNED_CARS.find(car => car.earned.level === levelId && !car.off);
 
 // The car in use. It is a live binding: every module that imports CAR sees the new car as
 // soon as selectCar() changes it, so swapping cars needs no reload.
 // (a car idea too: ideas.js. They come last, so an idea can never stand in for a car of the same id)
-const find = () => [...CARS, ...EARNED_CARS, ...Object.values(SECRET_CARS), ...IDEA_CARS]
+const find = () => [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...Object.values(SECRET_CARS), ...IDEA_CARS]
   .find(car => car.id === Progress.data.car && Progress.owns(car.id)) || CARS[0];
 export let CAR = find();
 // the car in use as the save has it, whatever the level picked has put the player in (the garage's ring and words)
-export const carInUse = () => forcedCar(find(), restrictedTier());
-// can a run be started in what the level's rule puts the player in? (false: no car of the tier is owned)
-export const carAllowed = () => { const t = restrictedTier(); return t === null || forcedCar(find(), t).id !== 'null-car'; };
+export const carInUse = () => forcedCar(find(), carRule());
+// can a run be started in what the level's rule puts the player in? (false: no car it allows is owned)
+export const carAllowed = () => forcedCar(find(), carRule()).id !== 'null-car';
 
 // A level with a vehicle of its own puts the player in that; any other level gives back
 // the car picked in the garage. Called when a level is picked and when a run starts.
@@ -348,24 +381,24 @@ export const carAllowed = () => { const t = restrictedTier(); return t === null 
 // amphibious car the player owns. With none owned the car in use stays, and Game.start won't start the level)
 // a replay's car (replay.js): every run is in it, whatever the save and the level's rules say, until unpinned (null)
 let pinned = null;
-export const carById = (id) => LEVEL_CARS[id] || [...CARS, ...EARNED_CARS, ...Object.values(SECRET_CARS), ...IDEA_CARS].find(car => car.id === id) || null;
+export const carById = (id) => LEVEL_CARS[id] || [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...Object.values(SECRET_CARS), ...IDEA_CARS].find(car => car.id === id) || null;
 export const pinCar = (id) => { pinned = id ? carById(id) : null; };
 export const useLevelCar = (id, amphibious) => {
   if (pinned) { CAR = pinned; lent = null; return; }
-  CAR = (id && (LEVEL_CARS[id] || CARS.find(c => c.id === id))) || forcedCar(find(), amphibious ? null : restrictedTier()); // (a special vehicle, or one of the garage's, or what the level's tier rule allows)
+  CAR = (id && carById(id)) || forcedCar(find(), amphibious ? null : carRule()); // (the level's car lock: any car, owned or not; or what the level's car rule allows)
   if (amphibious && !id && !CAR.amphibious) CAR = ownedAmphibious() || CAR;
   lent = null;
 };
 
 // switch to a car the player owns (saved to their progress)
 export const selectCar = (id) => {
-  const tier = restrictedTier(), car = CARS.find(c => c.id === id);
-  if (tier !== null && car && carTier(car) === tier && Progress.owns(id)) { // (picked for a level that restricts the car: kept apart from the player's own pick)
-    (Progress.data.tierCars ||= {})[tier] = id;
-    // (a pick of that tier is what the rule puts the player in, ahead of tierCars: so it follows, or nothing changes)
-    if (carTier(find()) === tier) Progress.data.car = id;
+  const rule = carRule(), car = carById(id);
+  if (rule && car && ruleAllows(rule, car) && Progress.owns(id)) { // (picked for a level that restricts the car: kept apart from the player's own pick)
+    (Progress.data.tierCars ||= {})[rule.key] = id;
+    // (a pick the rule allows is what it puts the player in, ahead of tierCars: so it follows, or nothing changes)
+    if (ruleAllows(rule, find())) Progress.data.car = id;
     Progress.save();
-    CAR = forcedCar(find(), tier);
+    CAR = forcedCar(find(), rule);
     lent = null;
     return;
   }

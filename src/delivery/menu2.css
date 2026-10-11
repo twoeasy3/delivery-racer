@@ -115,6 +115,7 @@
 #startScreen .menu-stage .needs.warn { color: #ffb4a8; }
 #startScreen .menu-stage .prize::before { content: "\2605\00a0"; color: #ff5fd2; }
 #startScreen .menu-stage.locked .needs { font-size: 15px; }
+#startScreen .menu-stage .info .event-ends { margin: 0; font: 800 13px/1.2 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: #ff8a7a; }
 #startScreen .menu-stage .info .road { align-self: flex-start; margin-top: 2px; display: flex; flex-wrap: wrap; gap: 6px; }
 #startScreen .menu-stage .info-toggle { display: none; }
 /* the build, small, in the corner (src/delivery/version.js): which version is being played, for a report or a replay */
