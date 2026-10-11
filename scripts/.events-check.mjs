@@ -20,6 +20,7 @@ const at = (t) => { Events.now = () => t; };
 const state = (i) => Events.state(event, i);
 // a stage delivered: started (its car as the menu puts it in), and finished on time straight away
 const deliver = (i) => {
+  if (i > 3) at(day(i)); // (each later stage on its own day)
   const level = event.stages[i].level;
   levels.selectSpecial(level);
   cars.useLevelCar(level.car, level.amphibious);
@@ -34,7 +35,7 @@ const deliver = (i) => {
 try {
   Progress.reset(); Progress.noSave = true; Progress.data.tierBase = 1;
   check(Events.problems().length === 0, 'events.json sound: ' + (Events.problems().join('; ') || 'yes'));
-  check(event && event.stages.length === 4 && STAGE_LEVELS.length >= 4, 'The Comet Hunt: 4 stages');
+  check(event && event.stages.length === 8 && STAGE_LEVELS.length >= 8, 'The Comet Hunt: 8 stages');
   const [s1, s2, s3] = event.stages;
   check(s1.level.id === 'comet-hunt-1' && s1.level.stage.map === 'farm' && s2.level.clock.good === 150 && s2.level.allowedCars?.cars[0] === 'lovebus' && !s2.level.car
     && s3.level.car === 'silvercomet' && !s3.level.allowedCars, 'each stage a level of its own: its id, its map, its clock, its car (needed: a list; lent: a lock)');
@@ -75,15 +76,19 @@ try {
   check(state(3).open && Events.done(event) === 3 && !Progress.owns('silvercomet'), 'a week on: still stopped there, the event still on, no prize');
   // got it later (here, given): on from there, and the prize, once
   Progress.data.cars.push('towtruck');
-  check(deliver(3) === 'towtruck' && Events.done(event) === 4 && Events.prizeWon(event) && Progress.owns('silvercomet'), 'the Tow Truck got before the end: stage 4 done, and the Silver Comet won');
+  check(deliver(3) === 'towtruck' && Events.done(event) === 4 && !Events.prizeWon(event), 'the Tow Truck got before the end: stage 4 done, on from there');
+  // the rest: 5 needs the Sportscompact, 6 lends the Hell Rod, 7 any car, 8 needs the Junker
+  Progress.data.cars.push('sport', 'junker');
+  check([4, 5, 6, 7].map(deliver).join() === 'sport,hellrod,commuter,junker' && Events.done(event) === 8 && Events.prizeWon(event) && Progress.owns('silvercomet'),
+    'stages 5 to 8 (the Sportscompact, the Hell Rod lent, any car, the Junker): all done, and the Silver Comet won');
   const owned = Progress.data.cars.length, claims = Progress.data.claimed.length;
   deliver(3);
   check(Progress.data.cars.length === owned && Progress.data.claimed.length === claims, 'delivered again: no second prize');
-  check(Progress.importCode(Progress.exportCode()) && Progress.data.events['comet-hunt'] === 4 && Progress.owns('silvercomet'), 'the save code keeps the stages done and the prize');
+  check(Progress.importCode(Progress.exportCode()) && Progress.data.events['comet-hunt'] === 8 && Progress.owns('silvercomet'), 'the save code keeps the stages done and the prize');
   Progress.noSave = true;
   // the event over
   at(event.to + 1);
-  check(!Events.live(event) && [0, 1, 2, 3].every(i => !state(i).open && /over/.test(state(i).why)) && Events.done(event) === 4 && Progress.owns('silvercomet'),
+  check(!Events.live(event) && [0, 1, 2, 3, 7].every(i => !state(i).open && /over/.test(state(i).why)) && Events.done(event) === 8 && Progress.owns('silvercomet'),
     'the event over: every stage shut ("' + state(0).why + '"), what was done kept, the Silver Comet kept');
   check(!Events.liveSpecials().length && !Tiers.isOpen(s1.level), '...and off the menu');
   // a stage is recorded, and plays back, as a level of its own
