@@ -159,6 +159,18 @@ Progress.data.bestTime.good = Object.fromEntries(g.levels.LEVELS.slice(0, 11).ma
 check(Tiers.isOpen(g.levels.LEVELS[11]) && Tiers.isOpen(g.levels.LEVELS[0]) && Tiers.legacy() === 12, 'a save with 12 levels open keeps all 12 open under the tiers');
 check(Progress.data.tierBase === 12, 'and the count is kept in the save (tierBase)');
 check(Tiers.medals(g.levels.LEVELS[0]) === 1, 'its best times are its medals (a Good medal each)');
+// ---- why a level is locked (the menu's words): levels 1 and 2 of a shut tier say what opens the tier, levels 3 to 5
+// what they need inside their own tier
+fresh();
+{
+  const t2 = T[1], why = (level) => Tiers.lockedBecause(level);
+  check(why(t2[0]) === 'Earn a medal on level 5 of {tier:1} to open this tier' && why(t2[1]) === why(t2[0]), 'tier 2 shut, levels 1 and 2: ' + why(t2[0]));
+  check(why(t2[2]) === 'Earn 2 more medals in {tier:2}', 'tier 2 shut, level 3: ' + why(t2[2]));
+  check(why(t2[3]) === 'Earn 3 more medals in {tier:2}', 'tier 2 shut, level 4: ' + why(t2[3]));
+  check(why(t2[4]) === 'Earn a medal in {tier:2} level 4', 'tier 2 shut, level 5: ' + why(t2[4]));
+  beat(a);
+  check(why(c) === 'Earn 1 more medal in {tier:1}' && why(d) === 'Earn 2 more medals in {tier:1}', 'tier 1, one medal: ' + why(c) + ' / ' + why(d));
+}
 // ---- a replay on a side whose medal is earned: the start button says so (replayed), and the player is asked first
 // (askReplay) while level 4 of the tier is still shut
 fresh();
