@@ -244,7 +244,8 @@ const openBrowser = async () => {
   const profile = join(own, 'profile-' + (++opened)), temp = join(own, 'tmp');
   mkdirSync(profile, { recursive: true });
   mkdirSync(temp, { recursive: true });
-  const mine = child = spawn(browser, ['--headless=new', '--enable-unsafe-swiftshader', '--use-angle=swiftshader', '--hide-scrollbars', '--mute-audio', '--no-first-run', '--disable-extensions', '--disable-component-extensions-with-background-pages',
+  // (as root on Linux, a cloud agent's container, Chrome will not start without --no-sandbox)
+  const mine = child = spawn(browser, [...(process.platform === 'linux' && process.getuid?.() === 0 ? ['--no-sandbox'] : []), '--headless=new', '--enable-unsafe-swiftshader', '--use-angle=swiftshader', '--hide-scrollbars', '--mute-audio', '--no-first-run', '--disable-extensions', '--disable-component-extensions-with-background-pages',
     '--disable-component-update', '--disable-background-networking', // (no 74 MB of components fetched for a profile that lasts a minute)
     '--user-data-dir=' + profile, // (a profile of its own: with the everyday one, a browser already open takes the address and no picture is made)
     '--remote-debugging-port=0', `--window-size=${Math.max(500, width)},${height}`, 'about:blank'],
