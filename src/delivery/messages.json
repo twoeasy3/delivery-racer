@@ -190,6 +190,7 @@
     "speeding": ["Caught on camera speeding, AGAIN!!"],
     "cyclist": ["The police saw you knock a cyclist off!!"],
     "runner": ["The police saw you knock a runner down!!"],
+    "marcher": ["The police saw you plough into the marching band!!"],
     "school": ["You ran a school crossing!!"],
     "wideLoad": ["The escort saw you overtake a wide load!!"]
   },

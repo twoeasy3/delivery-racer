@@ -791,7 +791,7 @@ export const Collision = (() => {
       // (a cyclist goes up on its own, small, its wheels flying: the rest of the bunch rides on)
       FxQueue.push(o.ride ? { type: 'explode', s: o.s, lat: o.lat, vs: Player.speed, big: false, scale: 0.55, smoke: 0.5, tyres: true }
         : { type: 'explode', s: o.s, lat: o.lat, vs: Player.speed, big: false });
-      if ((o.kind === 'cyclist' || o.kind === 'runner' || o.kind === 'marcher') && Traffic.policeNear()) Player.bust(o.kind === 'marcher' ? 'cyclist' : o.kind); // (knocking a cyclist off, or a runner/bandsman down, in front of the police)
+      if ((o.kind === 'cyclist' || o.kind === 'runner' || o.kind === 'marcher') && Traffic.policeNear()) Player.bust(o.kind); // (knocking a cyclist off, or a runner or bandsman down, in front of the police: each its own words, messages.json busts)
     }
   };
   // a dancing portaloo, `t` s into its row's dance (every one in a row keeps time with the rest)
