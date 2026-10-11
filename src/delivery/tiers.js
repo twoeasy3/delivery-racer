@@ -178,7 +178,7 @@ export const Tiers = {
       if (need && need.level && !this.beaten(need.level)) return 'Earn a medal on ' + levelNameOf(need.level); // (the level before it, by name)
       if (!this.tierOpen(place.tier)) {
         const before = TIERS[TIER_NUMBERS.indexOf(place.tier) - 1] || [];
-        return before.length ? 'Earn a medal on level ' + before.length + ' of ' + this.tierName(place.tier - 1) + ' to open this tier' : 'Locked';
+        return before.length ? 'Earn a medal on ' + levelNameOf(before[before.length - 1]) + ' to open this tier' : 'Locked'; // (the last level of the tier before, by name)
       }
       return 'Locked';
     }
@@ -188,8 +188,8 @@ export const Tiers = {
     }
     const k = CHAIN.indexOf(level);
     if (k > 0) return 'Earn a medal on ' + levelNameOf(CHAIN[k - 1]);
-    const last = TIER_NUMBERS[TIER_NUMBERS.length - 1] || 10;
-    return 'Earn a medal on level ' + ((TIERS[TIER_NUMBERS.indexOf(last)] || []).length || 5) + ' of ' + this.tierName(last);
+    const lastTier = TIERS[TIERS.length - 1] || [];
+    return lastTier.length ? 'Earn a medal on ' + levelNameOf(lastTier[lastTier.length - 1]) : 'Locked'; // (the last level of the last tier, by name)
   },
   // the delivery level after this one in the menu's order (tiers, then the rest), or null
   next(level) {

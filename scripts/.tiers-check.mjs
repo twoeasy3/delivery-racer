@@ -164,7 +164,7 @@ check(Tiers.medals(g.levels.LEVELS[0]) === 1, 'its best times are its medals (a 
 fresh();
 {
   const t2 = T[1], why = (level) => Tiers.lockedBecause(level);
-  check(why(t2[0]) === 'Earn a medal on level 5 of {tier:1} to open this tier' && why(t2[1]) === why(t2[0]), 'tier 2 shut, levels 1 and 2: ' + why(t2[0]));
+  check(why(t2[0]) === 'Earn a medal on ' + g.levels.levelName(T[0][4]) + ' to open this tier' && why(t2[1]) === why(t2[0]), 'tier 2 shut, levels 1 and 2 name level 5 of tier 1: ' + why(t2[0]));
   check(why(t2[2]) === 'Earn 2 more medals in {tier:2}', 'tier 2 shut, level 3: ' + why(t2[2]));
   check(why(t2[3]) === 'Earn 3 more medals in {tier:2}', 'tier 2 shut, level 4: ' + why(t2[3]));
   check(why(t2[4]) === 'Earn a medal on ' + g.levels.levelName(t2[3]), 'tier 2 shut, level 5 names level 4: ' + why(t2[4]));
