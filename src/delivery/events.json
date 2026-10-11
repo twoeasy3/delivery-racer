@@ -5,17 +5,17 @@
   ],
   "special": [
     {
-      "id": "comet-hunt", "name": "The Comet Hunt", "short": "Comet Hunt", "from": "2026-10-11", "to": "2026-11-01",
+      "id": "comet-hunt", "name": "The Comet Hunt", "short": "Comet Hunt", "from": "2026-10-01", "to": "2026-11-01",
       "prize": { "car": "silvercomet" },
       "stages": [
-        { "level": "farm", "from": "2026-10-11", "clock": { "good": 105, "evil": 80 } },
-        { "level": "suburbs", "from": "2026-10-12", "car": "lovebus", "clock": { "good": 150, "evil": 100 } },
-        { "level": "night", "from": "2026-10-13", "car": "silvercomet", "free": true, "clock": { "good": 85, "evil": 65 } },
-        { "level": "tokyo", "from": "2026-10-14", "car": "towtruck", "clock": { "good": 170, "evil": 130 } },
-        { "level": "mumbai", "from": "2026-10-15", "car": "sport", "clock": { "good": 300, "evil": 300 } },
-        { "level": "airport", "from": "2026-10-16", "car": "hellrod", "free": true, "clock": { "good": 300, "evil": 300 } },
-        { "level": "singapore", "from": "2026-10-17", "clock": { "good": 300, "evil": 300 } },
-        { "level": "monte-carlo", "from": "2026-10-18", "car": "junker", "clock": { "good": 300, "evil": 300 } }
+        { "level": "farm", "from": "2026-10-01", "clock": { "good": 105, "evil": 80 } },
+        { "level": "suburbs", "from": "2026-10-02", "car": "lovebus", "clock": { "good": 150, "evil": 100 } },
+        { "level": "night", "from": "2026-10-03", "car": "silvercomet", "free": true, "clock": { "good": 85, "evil": 65 } },
+        { "level": "tokyo", "from": "2026-10-04", "car": "towtruck", "clock": { "good": 170, "evil": 130 } },
+        { "level": "mumbai", "from": "2026-10-05", "car": "sport", "clock": { "good": 300, "evil": 300 } },
+        { "level": "airport", "from": "2026-10-06", "car": "hellrod", "free": true, "clock": { "good": 300, "evil": 300 } },
+        { "level": "singapore", "from": "2026-10-07", "clock": { "good": 300, "evil": 300 } },
+        { "level": "monte-carlo", "from": "2026-10-08", "car": "junker", "clock": { "good": 300, "evil": 300 } }
       ]
     }
   ]
