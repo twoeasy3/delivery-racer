@@ -235,12 +235,14 @@ const makePizza = () => {
     b.rotation.y = [0.1, -0.16, 0.22, -0.08, 0.14, -0.2][k];
     if (k < 5) part(b, box(0.64, 0.095, 0.64), card, 0, 0.05, 0);
     else part(b, box(0.64, 0.05, 0.64), card, 0, 0.025, 0);
-    part(b, box(0.645, 0.03, 0.645), red, 0, 0.035, 0);
+    // (the band round the sides stops below the card's top: on the open box, whose base is 0.05 high, it once ended
+    // level with it, and the two tops fought)
+    part(b, box(0.645, 0.03, 0.645), red, 0, k < 5 ? 0.035 : 0.022, 0);
     boxes.push(b);
     parent = b;
   }
   const topBox = boxes[5];
-  part(topBox, cyl(0.27, 0.27, 0.03, 18), lambert(0xf2c14e), 0, 0.065, 0);
+  part(topBox, cyl(0.27, 0.27, 0.03, 18), lambert(0xf2c14e), 0, 0.066, 0); // (a hair above the base, not on it)
   for (let k = 0; k < 6; k++) part(topBox, cyl(0.045, 0.045, 0.012, 8), red, Math.sin(k * 1.05) * 0.16, 0.085, Math.cos(k * 1.05) * 0.16);
   part(topBox, new THREE.TorusGeometry(0.27, 0.025, 5, 18), lambert(0xc98a3c), 0, 0.07, 0, Math.PI / 2);
   const lid = sub(topBox, 0, 0.06, -0.32);
