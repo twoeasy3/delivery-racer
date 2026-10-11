@@ -163,3 +163,52 @@ kind, state that outlives a run:
 | The last contacts | `Collision`'s `tick` never went back to 0, and the player kept `sideTick`, `hitBy`, `hitAt` | **Fixed** in `Collision.resetObstacles` (it parted no run in the check, but it is the same fault) |
 
 After: all 53 replay exactly, and another seed gives another run on each.
+
+## The plan, with the owner's decisions (11-Oct)
+
+Design as (b) above: a recording is the run's seed and set-up plus the player's inputs, each tagged with the logic
+STEP it happened on (not the clock). About 0.2 KB a minute.
+
+The owner's decisions:
+1. A recording made before a level or the game changed is not played: it says so (a version stamp in its header). OK.
+2. Replays are kept when the player wants them: a "Save replay" on the results screen keeps the run (a list of saved
+   replays per level, each one deletable), besides the last run. The best run (most time to spare) is kept for the
+   ghost. Ghost trials are an extension of the replays, not a separate system.
+3. A ghost trial and the rewind mystery: the ghost follows the CLOCK (Game.time), and the best run's path is kept as
+   its clock had it: where that run was rewound, the ten seconds it undid are discarded, so a rewind never adds ten
+   seconds to the ghost's run. The player rewound in a trial goes back on the clock, and the ghost with it.
+
+Two quirks:
+- **Pause:** `Game.update` is not called while paused, so no step passes and nothing is recorded: a pause of any
+  length is not in the recording, and playback runs straight through it. The viewer may pause the playback.
+- **The rewind mystery** (mysteries.js: a ring of snapshots every 0.5 s, the oldest put back): logic, so it plays back
+  by itself from the same seed and inputs. It turns `Game.time` back but not the step count, which is why the inputs are
+  keyed by step. It does not restore the random stream, packages or gimmicks: no matter for a replay (the same partial
+  restore happens again); the ghost path, which is keyed by the clock, drops the undone samples (decision 3).
+
+### Phase A: the foundation (nothing for the player to see)
+1. The logic's own seeded random (`util.js` random / seedRandom): the 133 `Math.random` calls in 23 logic modules
+   use it; rendering keeps `Math.random`, so nothing drawn can change what happens. (Words picked for a message:
+   cosmetic, kept off the logic stream.)
+2. A fixed step in `main.js`: the logic in equal steps of CONFIG.maxStep with an accumulator (today a frame's time is cut
+   into unequal steps). It changes the feel of every run a little: the owner tries it on a phone; if it judders,
+   rendering interpolates between steps.
+3. No clock but the step: the logic checked for `Date.now` / `performance.now` and anything hanging on load timing.
+4. `replay.js`: a recorder (steer and throttle quantised, throws, skips; by step) and a player that feeds them back;
+   the header: level, side, car, tank pieces, social standing, rival, race class, the seed, the version stamp; a hash
+   of the state every 10 s, to tell a recording that has drifted (another browser's maths, say) and stop it kindly.
+5. Checks: headless, record through the real recorder and play back to the same state; in a browser, a run with a pause
+   and a forced rewind (`?mystery=rewind`) recorded and played back in the page to the same state.
+
+### Phase B: in the game
+6. The last run kept per level and side; "Save replay" on the results screen keeps it in a list (local storage, never
+   the save code: a few hundred bytes a minute each); the best run kept for the ghost.
+7. "Watch replay" (results) and "Replays" on the level card: playback with a REPLAY badge, pause, exit, 2x / 4x.
+   No seeking yet (it means simulating from the start).
+8. Playback changes nothing: no tip, medal, milestone, counter or save; the finish is held back.
+9. An out-of-date recording says so and is not played.
+
+### Phase C: extensions
+- Ghost time trials (CHECKLIST 30): the best run's path by the clock (decision 3), drawn as a see-through car.
+- A replay as a code to share (it may drift in another browser: the hashes catch it).
+- Seeking (checkpoints), more cameras.
