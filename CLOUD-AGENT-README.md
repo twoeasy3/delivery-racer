@@ -15,6 +15,9 @@ clock runs out, as Good or as Evil, through traffic that has moods and grudges. 
 37 cars in a garage with star tiers, cargo, gimmicks (hazards the levels throw), a level editor, two screensavers.
 The code is `src/delivery/` and the pages are `delivery/*.html`. The game needs no API and no database.
 
+The owner works from `CHECKLIST.md` at the repo root: it is the working list of ideas, what is done and what is
+verified. Read it first, and tick and annotate items there as you finish them.
+
 Documents to read, in order: `src/delivery/README.md`, `src/delivery/HANDOVER.md`,
 `src/delivery/HANDOVER-orchestrator-12-Oct.md` (the newest state of everything; section 5 is the owner's open
 questions), `src/delivery/OPEN-QUESTIONS-10-Oct.md` (22 to 30 are open or just closed), `src/delivery/TESTS.md`,

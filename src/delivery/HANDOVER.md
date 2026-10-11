@@ -3,7 +3,7 @@
 Updated on 2026-10-10 for whoever picks up the game in this repo. It covers where the game
 stands, how it is put together, how the owner likes changes made, and what is not verified.
 `README.md` beside this file has the file map, the address-bar shortcuts and the "adding content"
-recipes; read that too. `CHECKLIST.md` is the working list of ideas not yet built, and `CHECKLIST-10-Oct.md`
+recipes; read that too. `CHECKLIST.md` (at the repo root) is the working list of ideas not yet built, and `CHECKLIST-10-Oct.md`
 with `SCRATCHPAD-10-Oct.md` the record of the day most of what is below was added. `AUDIT-10-Oct.md` is a
 reading of the whole code for faults and waste, with a plan; `CIRCUITS-HANDOVER.md` and `REPLAY-NOTES.md`
 cover the real circuits and replays.
@@ -313,7 +313,7 @@ Known limits:
 
 ## Likely next steps
 
-- The ideas in `CHECKLIST.md`, and what is open in `CHECKLIST-10-Oct.md` (the level progression rework is
+- The ideas in `CHECKLIST.md` (repo root), and what is open in `CHECKLIST-10-Oct.md` (the level progression rework is
   specified there and waits on the owner's answers).
 - The findings in `AUDIT-10-Oct.md`: draw calls and what loads before the first run are the large ones.
 - Replay in the browser: a generator for the logic alone, a fixed step, recording inputs (`REPLAY-NOTES.md`).

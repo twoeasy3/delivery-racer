@@ -6,7 +6,7 @@ the clock runs out, as Good or as Evil, through traffic that has moods and holds
 earned, two screensavers and a level editor.
 
 `HANDOVER.md` beside this file covers how the game is put together, how the owner likes changes
-made, and what is not verified. `CHECKLIST.md` is the working list of ideas.
+made, and what is not verified. `CHECKLIST.md` at the repo root is the working list of ideas.
 
 ## Running it
 
