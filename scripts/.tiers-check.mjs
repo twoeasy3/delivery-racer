@@ -167,7 +167,7 @@ fresh();
   check(why(t2[0]) === 'Earn a medal on level 5 of {tier:1} to open this tier' && why(t2[1]) === why(t2[0]), 'tier 2 shut, levels 1 and 2: ' + why(t2[0]));
   check(why(t2[2]) === 'Earn 2 more medals in {tier:2}', 'tier 2 shut, level 3: ' + why(t2[2]));
   check(why(t2[3]) === 'Earn 3 more medals in {tier:2}', 'tier 2 shut, level 4: ' + why(t2[3]));
-  check(why(t2[4]) === 'Earn a medal in {tier:2} level 4', 'tier 2 shut, level 5: ' + why(t2[4]));
+  check(why(t2[4]) === 'Earn a medal on ' + g.levels.levelName(t2[3]), 'tier 2 shut, level 5 names level 4: ' + why(t2[4]));
   beat(a);
   check(why(c) === 'Earn 1 more medal in {tier:1}' && why(d) === 'Earn 2 more medals in {tier:1}', 'tier 1, one medal: ' + why(c) + ' / ' + why(d));
 }
