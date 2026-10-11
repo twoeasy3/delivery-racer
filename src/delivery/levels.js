@@ -576,6 +576,7 @@ let labelHook = null;
 export const setLabelHook = (fn) => { labelHook = fn; };
 export const levelLabel = (index) => {
   const level = LEVELS[index];
+  if (!level) return ''; // (a level not in the menu's lists: a special event's stage, a hidden one)
   const own = labelHook?.(level);
   if (own) return own;
   if (isRace(level)) return 'R' + (RACE_LEVELS.indexOf(level) + 1);

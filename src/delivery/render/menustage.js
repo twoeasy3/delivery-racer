@@ -483,7 +483,13 @@ export const draw = () => {
   startScreen.classList.toggle('eventview', !!special);
   if (special) {
     drawn = null;
+    const left = stage.querySelector('.event-row')?.scrollLeft || 0; // (the row where it was scrolled to: picking a card draws it again)
     stage.replaceChildren(eventPanel(special, cursor, Game.evil && !oneSided(cursor)));
+    const row = stage.querySelector('.event-row'), picked = row?.querySelector('.picked');
+    if (row) {
+      row.scrollLeft = left;
+      if (picked && (picked.offsetLeft < row.scrollLeft || picked.offsetLeft + picked.offsetWidth > row.scrollLeft + row.clientWidth)) row.scrollLeft = picked.offsetLeft - 8; // (the card picked in view)
+    }
   } else {
     drawStage();
     drawStrip(first, last);
@@ -634,9 +640,9 @@ const replaysCard = (level) => {
 // free try, a car needed, any car), and its state: READY, DONE, or what stops it. A card picks its stage; under the
 // row, the stage picked: its map, clock, tip, best time, what it is driven in; START plays it.
 const STILL_POSE = { lift: 0.3, angle: -0.64, close: 1 }; // (from a little above, in front, three-quarters on, the nose to the left: every card the same)
-const stills = new Map(); // car id + side -> the picture of it, once drawn
+const stills = new Map(); // car id + side + size -> the picture of it, once drawn (by size: one drawn small for the prize is not stretched over a card)
 const stillCar = (el, car, evil) => {
-  const key = car.id + (evil ? '/evil' : '/good');
+  const r = el.getBoundingClientRect(), key = car.id + (evil ? '/evil' : '/good') + '/' + Math.round(r.width / 20) + 'x' + Math.round(r.height / 20);
   if (stills.has(key)) { el.style.backgroundImage = `url("${stills.get(key)}")`; return; }
   try {
     const model = makeShowCar(car);
@@ -685,7 +691,27 @@ const eventPanel = (event, picked, evil) => {
     make('div', 'facts', fact('Clock', formatTime(clockFor(picked, evil))), fact('Tip', money(picked.tip)), fact('Best to spare', best === undefined ? 'Not delivered yet' : formatTime(best))),
     make('p', 'needs' + (open && !Game.canStart ? ' warn' : ''), stageLine(picked)),
     roadBtn || replaysBtn ? make('div', 'road', roadBtn, replaysBtn) : null);
-  const panel = make('div', 'event-panel', head, make('div', 'event-row', ...cards), detail);
+  // (the row scrolls sideways with no scroll bar: a swipe, the mouse wheel, or the arrows at its ends, a card at a time;
+  // an arrow shows only where there is more that way)
+  const row = make('div', 'event-row', ...cards), back = make('button', 'event-arrow back', '‹'), on = make('button', 'event-arrow on', '›');
+  const arrows = () => { back.hidden = row.scrollLeft < 4; on.hidden = row.scrollLeft + row.clientWidth > row.scrollWidth - 4; };
+  const by = (dir) => row.scrollBy({ left: dir * ((cards[0]?.offsetWidth || 200) + 10), behavior: 'smooth' });
+  back.addEventListener('click', () => by(-1));
+  on.addEventListener('click', () => by(1));
+  row.addEventListener('scroll', arrows, { passive: true });
+  row.addEventListener('wheel', (e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && row.scrollWidth > row.clientWidth) { row.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
+  // (a mouse swipes it too: held and dragged; a drag is not a click on the card it began on)
+  let drag = null;
+  row.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse' && e.button === 0) drag = { x: e.clientX, left: row.scrollLeft, moved: 0 }; });
+  window.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    drag.moved = Math.max(drag.moved, Math.abs(e.clientX - drag.x));
+    if (drag.moved > 5) { row.scrollLeft = drag.left - (e.clientX - drag.x); row.classList.add('dragging'); }
+  });
+  window.addEventListener('pointerup', () => { if (drag) setTimeout(() => { drag = null; row.classList.remove('dragging'); }, 0); });
+  row.addEventListener('click', (e) => { if (drag?.moved > 5) { e.stopPropagation(); e.preventDefault(); } }, true);
+  requestAnimationFrame(arrows);
+  const panel = make('div', 'event-panel', head, make('div', 'event-rowbox', row, back, on), detail);
   requestAnimationFrame(() => { for (const [el, car] of drawLater) stillCar(el, car, evil); }); // (once laid out)
   return panel;
 };

@@ -376,7 +376,18 @@
 #startScreen .event-prize strong { font: italic 800 clamp(15px, 1.2vw, 22px)/1.1 var(--display); text-transform: uppercase; }
 #startScreen .event-prize span { font-size: 11px; color: var(--ink-dim); }
 #startScreen .event-car { position: relative; width: 100%; aspect-ratio: 16 / 10; background: center / contain no-repeat; }
-#startScreen .event-row { flex: 1 1 auto; min-height: 220px; max-height: 400px; display: flex; align-items: stretch; gap: 10px; overflow-x: auto; overscroll-behavior-x: contain; touch-action: pan-x; scroll-snap-type: x proximity; padding: 2px 2px 6px; }
+#startScreen .event-rowbox { position: relative; flex: 1 1 auto; min-height: 220px; max-height: 400px; display: flex; }
+#startScreen .event-row::-webkit-scrollbar { display: none; }
+#startScreen .event-row.dragging { cursor: grabbing; scroll-snap-type: none; user-select: none; }
+#startScreen .event-row.dragging .event-stage { cursor: grabbing; }
+#startScreen .event-arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 40px; height: 56px; border: 0; border-radius: 8px; cursor: pointer;
+  font: 700 34px/1 var(--display); color: #fff; background: rgba(14, 18, 26, .78); box-shadow: inset 0 0 0 1px var(--line), 0 4px 14px rgba(0,0,0,.5); }
+#startScreen .event-arrow:hover { background: rgba(30, 38, 54, .95); }
+#startScreen .event-arrow[hidden] { display: none; }
+#startScreen .event-arrow.back { left: -6px; }
+#startScreen .event-arrow.on { right: -6px; }
+@media (pointer: coarse) { #startScreen .event-arrow { display: none; } }
+#startScreen .event-row { flex: 1 1 auto; min-width: 0; scrollbar-width: none; display: flex; align-items: stretch; gap: 10px; overflow-x: auto; overscroll-behavior-x: contain; touch-action: pan-x; scroll-snap-type: x proximity; padding: 2px 2px 6px; }
 #startScreen .event-stage { flex: 0 0 clamp(170px, 15vw, 300px); scroll-snap-align: start; position: relative; display: flex; flex-direction: column; gap: 5px; padding: 9px; border: 0; border-radius: 10px;
   color: #fff; text-align: left; cursor: pointer; overflow: hidden; background: #1d2433; box-shadow: inset 0 0 0 1px var(--line); font: inherit; }
 #startScreen .event-stage.picked { box-shadow: inset 0 0 0 3px var(--accent); }
@@ -404,7 +415,7 @@
   #startScreen .event-title h2 { font-size: 21px; }
   #startScreen .event-prize { flex: 1 1 auto; grid-template-columns: 90px 1fr; }
   #startScreen .event-stage { flex-basis: 42%; min-width: 140px; }
-  #startScreen .event-row { flex: 0 0 auto; min-height: 0; }
+  #startScreen .event-rowbox { flex: 0 0 auto; min-height: 0; }
   #startScreen .event-stage .event-car { flex: 0 0 auto; aspect-ratio: 16 / 11; min-height: 0; }
 }
 /* the level's replays (render/menustage.js replaysCard): a row each, what it was on the left, its buttons on the right */
