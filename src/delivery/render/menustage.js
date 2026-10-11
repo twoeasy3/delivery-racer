@@ -254,7 +254,7 @@ const drawStage = () => {
   const cargo = carried ? make('div', 'cargo3d', ring, make('span', 'cargo-name', carried.name)) : null;
   if (cargo) cargo.title = (evil ? 'What you are delivering as Evil: ' : 'What you are delivering as Good: ') + carried.name;
   wantCargo(carried, ring);
-  const event = Tiers.on() && Tiers.isEvent(level) ? Tiers.eventOf(level) : null, special = Events.stageOf(level);
+  const event = Tiers.on() && Tiers.isEvent(level) ? Tiers.eventOf(level) : null;
   const info = make('div', 'info',
     make('h2', '', levelName(level)),
     open && words ? make('p', 'desc', words) : null,
@@ -266,16 +266,11 @@ const drawStage = () => {
     // (an event: how long it is on for, and its reward)
     event?.to ? ends(event.to) : null,
     event?.reward ? make('p', 'prize', 'Reward: ' + Tiers.rewardWords(level) + (Tiers.rewardClaimed(level) ? ' (yours)' : ' for delivering it on time')) : null,
-    // (a special event's stage: its event, how far through it the player is, and how long it is on)
-    special ? make('p', 'event-of', special.event.name + '  ·  ' + Events.done(special.event) + '/' + special.event.stages.length + ' stages') : null,
-    special?.event.to ? ends(special.event.to) : null,
     open && place ? make('p', 'prize', tierStarsNode(place.tier), ' medals ' + Tiers.tierMedals(place.tier) + '/' + Tiers.tiers[place.tier - 1].length * 2) : null,
     prizeLine ? make('p', 'prize', prizeLine) : null,
-    (open && roadCard) || special ? make('div', 'road', // (the card's chips: the row placed as the one chip was)
-      special ? make('button', 'menu-chip stages-btn', 'All stages') : null,
-      open && roadCard ? make('button', 'menu-chip road-btn', 'What’s on this road') : null,
+    open && roadCard ? make('div', 'road', // (the card's chips: the row placed as the one chip was)
+      make('button', 'menu-chip road-btn', 'What’s on this road'),
       open && ReplayStore.list(level.id).length ? make('button', 'menu-chip replays', 'Replays') : null) : null);
-  info.querySelector('.stages-btn')?.addEventListener('click', () => eventCard(special.event));
   info.querySelector('.road-btn')?.addEventListener('click', () => roadCard(level));
   info.querySelector('.replays')?.addEventListener('click', () => replaysCard(level));
   const arrows = [make('button', 'arrow prev', '‹'), make('button', 'arrow next', '›')];
@@ -478,14 +473,21 @@ export const draw = () => {
       special ? special.short : events ? 'Events' : tierNo ? '★'.repeat(Tiers.tierStars(tierNo)) : label(list[a]) + (b - a > 1 ? '–' + label(list[b - 1]) : ''));
     button.title = tierNo ? Tiers.spoken(tierNo) + (isOpen(list[a]) ? '' : ': not open yet') : isOpen(list[a]) ? '' : 'Not open yet';
     if (tierNo) button.setAttribute('aria-label', Tiers.spoken(tierNo) + (isOpen(list[a]) ? '' : ', not open yet'));
-    button.addEventListener('click', () => { if (g !== shown) { blip('menuMove'); show(list[a]); } });
+    button.addEventListener('click', () => { if (g !== shown) { blip('menuMove'); show(special ? (Events.next(special) || special.stages[special.stages.length - 1]).level : list[a]); } }); // (an event: the stage to play next)
     return button;
   }));
   // (where the groups are a row to swipe along, the one shown is brought into it)
   const chip = groupBox.children[shown];
   if (chip && groupBox.scrollWidth > groupBox.clientWidth) groupBox.scrollTo({ left: chip.offsetLeft - (groupBox.clientWidth - chip.offsetWidth) / 2 });
-  drawStage();
-  drawStrip(first, last);
+  const special = Events.stageOf(cursor)?.event; // (a special event's stage picked: its screen, in place of the level card and the strip)
+  startScreen.classList.toggle('eventview', !!special);
+  if (special) {
+    drawn = null;
+    stage.replaceChildren(eventPanel(special, cursor, Game.evil && !oneSided(cursor)));
+  } else {
+    drawStage();
+    drawStrip(first, last);
+  }
   drawCar();
 
   // the side picked, and what it means
@@ -624,52 +626,68 @@ const replaysCard = (level) => {
   fill();
   openSheet(replaysBox, () => replaysBox.replaceChildren());
 };
-// ---- a special event's screen (events.js; EVENTS-NOTES.md): the event's name, how far through it the player is and
-// how long it is on; its grand prize at the left; and a row of its stages, one card each: STAGE n over its map's
-// picture, the car it is driven in drawn in 3D at one pose for every card (drawStill: the real model in the side's
-// livery, drawn once, not turning), what kind of car rule it is (a free try, a car needed, any car), and its state:
-// READY, DONE, or what stops it. A card picks its stage for the stage below; START plays it.
-const eventBox = document.getElementById('eventCard');
+// ---- a special event's screen (events.js; EVENTS-NOTES.md): with one of its stages picked, it takes the place of the
+// level card and the strip (the owner: the main way into an event). Its name, how far through it the player is and
+// how long it is on; its grand prize; a row of its stages, one card each: STAGE n over its map's picture, the car it
+// is driven in drawn in 3D at one pose for every card (drawStill: the real model in the side's livery, drawn once,
+// not turning; kept as a picture, so picking another card does not draw them again), what kind of car rule it is (a
+// free try, a car needed, any car), and its state: READY, DONE, or what stops it. A card picks its stage; under the
+// row, the stage picked: its map, clock, tip, best time, what it is driven in; START plays it.
 const STILL_POSE = { lift: 0.3, angle: -0.64, close: 1 }; // (from a little above, in front, three-quarters on, the nose to the left: every card the same)
+const stills = new Map(); // car id + side -> the picture of it, once drawn
 const stillCar = (el, car, evil) => {
+  const key = car.id + (evil ? '/evil' : '/good');
+  if (stills.has(key)) { el.style.backgroundImage = `url("${stills.get(key)}")`; return; }
   try {
     const model = makeShowCar(car);
     paintShowCar(model, car, evil);
-    drawStill(sharedRenderer(), el, model, STILL_POSE);
+    if (!drawStill(sharedRenderer(), el, model, STILL_POSE)) return;
+    const canvas = el.querySelector('canvas');
+    stills.set(key, canvas.toDataURL('image/png'));
+    canvas.remove();
+    el.style.backgroundImage = `url("${stills.get(key)}")`;
   } catch (error) { console.warn('No model for the stage card: ' + (error?.message || error)); }
 };
-const eventCard = (event) => {
-  if (!menuUp()) return;
-  const evil = Game.evil, done = Events.done(event), of = event.stages.length, prize = Events.prizeCar(event), won = Events.prizeWon(event);
-  const closeBtn = make('button', 'menu-chip', 'Close');
-  closeBtn.addEventListener('click', closeSheet);
+const eventPanel = (event, picked, evil) => {
+  const done = Events.done(event), of = event.stages.length, prize = Events.prizeCar(event), won = Events.prizeWon(event);
   const ring = make('div', 'event-ring', make('b', '', Math.round(done / of * 100) + '%'), make('small', '', 'progress'));
   ring.style.setProperty('--share', done / of);
   const prizeView = make('div', 'event-car');
-  const prizeBox = make('div', 'event-prize', make('small', '', 'Grand prize'), prizeView,
-    make('div', 'event-prize-words', make('strong', '', prize ? prize.name : 'No prize'), make('span', '', won ? 'Won!' : 'Finish all ' + of + ' stages')));
+  const head = make('div', 'event-head',
+    make('div', 'event-title', make('h2', '', event.name), make('p', '', done + '/' + of + ' stages done'), event.to ? ends(event.to) : null),
+    ring,
+    make('div', 'event-prize', make('small', '', 'Grand prize'), prizeView,
+      make('div', 'event-prize-words', make('strong', '', prize ? prize.name : 'No prize'), make('span', '', won ? 'Won!' : 'Finish all ' + of + ' stages'))));
+  const drawLater = [];
+  if (prize) drawLater.push([prizeView, prize]);
   const cards = event.stages.map((stage) => {
-    const st = Events.state(event, stage.index), car = stage.car ? carById(stage.car) : CAR, view = make('div', 'event-car');
-    const badge = stage.free ? make('span', 'event-badge free', 'Free try') : stage.car ? make('span', 'event-badge ' + (Progress.owns(stage.car) ? 'owned' : 'needed'), (Progress.owns(stage.car) ? '✔ ' : '🔒 ') + car.name)
+    const st = Events.state(event, stage.index), car = stage.car ? carById(stage.car) : carById(Progress.data.car) || CAR, view = make('div', 'event-car'); // (any car: the player's own, not one a picked stage lends)
+    const owned = stage.car && Progress.owns(stage.car);
+    const badge = stage.free ? make('span', 'event-badge free', 'Free try') : stage.car ? make('span', 'event-badge ' + (owned ? 'owned' : 'needed'), (owned ? '✔ ' : '🔒 ') + car.name)
       : make('span', 'event-badge any', 'Any car');
-    const label = st.done ? 'Done' : st.open && !st.needs ? 'Ready' : st.why;
-    const card = make('button', 'event-stage' + (st.done ? ' done' : st.open && !st.needs ? ' ready' : ' shut'),
+    const card = make('button', 'event-stage' + (st.done ? ' done' : st.open && !st.needs ? ' ready' : ' shut') + (stage.level === picked ? ' picked' : ''),
       make('span', 'event-stage-n', 'Stage ' + (stage.index + 1)), view, badge,
-      make('span', 'event-stage-state', label),
+      make('span', 'event-stage-state', st.done ? 'Done' : st.open && !st.needs ? 'Ready' : st.why),
       make('span', 'event-stage-map', levelName(stage.level)));
     if (LEVEL_SHOTS[stage.map]) card.style.setProperty('--shot', `url("${LEVEL_SHOTS[stage.map]}")`);
-    card.addEventListener('click', () => { closeSheet(); show(stage.level); });
-    return { card, view, car };
+    card.addEventListener('click', () => { if (stage.level !== cursor) { blip('menuMove'); show(stage.level); } });
+    if (car && !car.silhouette) drawLater.push([view, car]);
+    return card;
   });
-  eventBox.replaceChildren(make('div', 'sheet-box event',
-    make('div', 'sheet-bar', make('h2', '', event.name, make('small', '', done + '/' + of + ' stages' + (event.to ? '  ·  ends in ' + countdown(event.to - Tiers.now()) : ''))), closeBtn),
-    make('div', 'sheet-main', make('div', 'sheet-body event-body', make('div', 'event-side', ring, prizeBox), make('div', 'event-row', ...cards.map(c => c.card))))));
-  openSheet(eventBox, () => eventBox.replaceChildren());
-  // (the cars drawn once laid out: a still each, and the prize)
-  requestAnimationFrame(() => {
-    for (const c of cards) if (c.car && !c.car.silhouette) stillCar(c.view, c.car, evil);
-    if (prize) stillCar(prizeView, prize, evil);
-  });
+  // the stage picked
+  const at = Events.stageOf(picked), open = isOpen(picked), best = Progress.bestTime(picked.id, evil);
+  const roadBtn = open && roadCard ? make('button', 'menu-chip road-btn', 'What’s on this road') : null;
+  const replaysBtn = open && ReplayStore.list(picked.id).length ? make('button', 'menu-chip replays', 'Replays') : null;
+  roadBtn?.addEventListener('click', () => roadCard(picked));
+  replaysBtn?.addEventListener('click', () => replaysCard(picked));
+  const detail = make('div', 'event-detail',
+    make('h3', '', 'Stage ' + (at.stage.index + 1) + ': ' + levelName(picked)),
+    make('div', 'facts', fact('Clock', formatTime(clockFor(picked, evil))), fact('Tip', money(picked.tip)), fact('Best to spare', best === undefined ? 'Not delivered yet' : formatTime(best))),
+    make('p', 'needs' + (open && !Game.canStart ? ' warn' : ''), stageLine(picked)),
+    roadBtn || replaysBtn ? make('div', 'road', roadBtn, replaysBtn) : null);
+  const panel = make('div', 'event-panel', head, make('div', 'event-row', ...cards), detail);
+  requestAnimationFrame(() => { for (const [el, car] of drawLater) stillCar(el, car, evil); }); // (once laid out)
+  return panel;
 };
 const menuUp = () => Game.state === 'start' && !startScreen.classList.contains('hidden');
 window.addEventListener('keydown', (e) => {
