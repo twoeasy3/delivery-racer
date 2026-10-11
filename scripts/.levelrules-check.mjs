@@ -45,14 +45,32 @@ try {
   const code = Progress.exportCode();
   check(Progress.importCode(code) && Progress.data.tierCars['rule-both'] === 'ute', '...and kept through the save code (the tier cars were all dropped before: a lost backslash)');
   Progress.noSave = true;
+  // ---- the garage on a level with a list: every car it lists parked and drawn, owned or not; for sale only what the
+  // player could buy anyway (its tier open): a car of a tier not reached, an earned car, one switched off, drawn but
+  // not to be bought or picked (the owner, 11-Oct); an idea in the ideas lot, not here
+  fresh();
+  on(L('christmas'));
+  const lot = cars.garageCars(), has = (id) => lot.some(c => c.id === id), car_ = (id) => cars.carById(id);
+  check(['commuter', 'lovebus', 'sport', 'towtruck', 'sixbysix', 'floatvan', 'tank', 'hellrod', 'earned-ufo', 'courier'].every(has) && !has('milkfloat'),
+    'Christmas Eve\'s garage parks all it lists (the Milk Float, an idea, in the ideas lot): ' + L('christmas').allowedCars.cars.filter(has).join(' '));
+  check(['towtruck', 'sixbysix', 'hellrod', 'courier'].every(id => cars.carPreview(car_(id)) === 'show'), '...each drawn in full, a tier not reached or not (no silhouettes)');
+  const unsold = ['lovebus', 'towtruck', 'sixbysix', 'hellrod', 'earned-ufo', 'courier'].filter(id => cars.forSale(car_(id)));
+  check(cars.forSale(car_('junker')) && cars.forSale(car_('tank')) && !unsold.length,
+    'on a new save, for sale only what the garage sells anyway (tier 1, and the Tank, in no tier): not the Love Bus (tier 2), the Tow Truck (8), the 6x6 (10), the earned cars' + (unsold.length ? ' (for sale: ' + unsold.join(' ') + ')' : ''));
+  Progress.data.unlocked = 99; Progress.data.tierBase = 99; // (every tier open)
+  check(cars.forSale(car_('sixbysix')) && cars.forSale(car_('lovebus')) && !cars.forSale(car_('hellrod')), 'every tier open: the 6x6 and the Love Bus for sale; the Hell Rod never');
+  fresh();
+  levels.selectLevel(0); cars.useLevelCar(null, false);
+  check(!cars.garageCars().some(c => c.id === 'hellrod') && cars.carPreview(car_('sixbysix')) === 'hide', 'on Expressway (no list): neither parked, as before');
   // ---- the car lock: any car, owned or not, ahead of the list
   car = on({ ...only, id: 'lock-test', car: 'hellrod' });
   check(car.id === 'hellrod' && !Progress.owns('hellrod') && cars.carRule() === null && cars.carAllowed(), 'a car lock (the Hell Rod, not owned): driven in it, no car rule');
 
   // ---- the events: on the menu between from and to, by the clock; the reward, once, into the save
   fresh();
-  const xmas = L('christmas'), entry = Tiers.eventOf(xmas), now = Date.now(), clock = Tiers.now;
-  check(entry && Tiers.eventLive(xmas) && Tiers.isOpen(xmas), 'Christmas Eve, with no times: on, and open');
+  const xmas = L('christmas'), entry = Tiers.eventOf(xmas), now = Date.now(), clock = Tiers.now, times = { from: entry.from, to: entry.to };
+  Object.assign(entry, { from: null, to: null });
+  check(entry && Tiers.eventLive(xmas) && Tiers.isOpen(xmas), 'Christmas Eve, given no times: on, and open');
   Object.assign(entry, { from: now + 3600e3, to: now + 7200e3 });
   check(!Tiers.eventLive(xmas) && !Tiers.isOpen(xmas) && !Tiers.liveEvents().length, 'starting in an hour: not on yet, not open');
   Tiers.now = () => now + 5400e3;
@@ -81,7 +99,7 @@ try {
     'the event over and its entry gone: the Sport still owned, the claim kept (through the save code too)');
   Progress.noSave = true;
   Tiers.now = clock;
-  Object.assign(entry, { from: null, to: null });
+  Object.assign(entry, times);
 
   // ---- the labels outside the tiers: in the menu's order, one count a kind, no gaps
   const outside = Tiers.outside.filter(l => !levels.isRace(l)).map(l => levels.levelLabel(levels.LEVELS.indexOf(l)));

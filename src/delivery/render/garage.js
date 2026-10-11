@@ -6,7 +6,9 @@
 import { Nav } from '../nav.js';
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
-import { CAR, carInUse, selectCar, stars, starColour, STAR_COLOURS, blueStarsOpen, garageCars, carRule, ruleAllows, setViewSide, carAllowedOn, carTier, isTeaser } from '../cars.js';
+import { CAR, carInUse, selectCar, stars, starColour, STAR_COLOURS, blueStarsOpen, garageCars, carRule, ruleAllows, setViewSide, carAllowedOn, carTier, isTeaser, forSale, EVENT_CARS } from '../cars.js';
+import { levelName } from '../levelText.js';
+import { LEVELS } from '../levels.js';
 import { Tiers, tierStarsNode, richTiers } from '../tiers.js';
 import { Progress } from '../progress.js';
 import { Game } from '../game.js';
@@ -267,16 +269,17 @@ const refresh = () => {
   // the button under the stats: what can be done with the car shown
   // (the car in use, looked at in the other side's livery: the button takes that side)
   const otherSide = shown === inUse && Garage.evil !== Game.evil;
-  action.textContent = shown === inUse && !otherSide ? 'In use' : owned ? 'Switch'
+  const unsold = !owned && !forSale(shown) && !shown.silhouette; // (drawn for a level's list: not to be bought or picked)
+  action.textContent = shown === inUse && !otherSide ? 'In use' : owned ? 'Switch' : unsold ? 'Not for sale'
     : Progress.data.money >= shown.price ? 'Buy for ' + money(shown.price) : 'Need ' + money(shown.price);
-  action.disabled = (shown === inUse && !otherSide) || (!owned && Progress.data.money < shown.price);
+  action.disabled = (shown === inUse && !otherSide) || unsold || (!owned && Progress.data.money < shown.price);
   // (the level's car rule on the side on show: a car not allowed there cannot be used, and "Use" is off with it)
   const barred = shown.silhouette || (owned && !IdeasLot.on && !carAllowedOn(shown, Garage.evil));
   if (teaser) { action.textContent = 'Locked'; action.disabled = true; }
   else if (barred) { action.textContent = shown.silhouette ? 'Buy a car in the lot' : 'Not allowed here'; action.disabled = true; }
   useBtn.disabled = !!barred || teaser;
-  whyEl.classList.toggle('hidden', !barred && !teaser);
-  whyEl.replaceChildren(...(teaser ? ['Not for sale yet: ', ...richTiers(teaserWhy(shown))] : barred ? (shown.silhouette ? [noneOwned(carRule(Garage.evil)) + ': tap a car in the lot to buy one'] : reasonNode()) : []));
+  whyEl.classList.toggle('hidden', !barred && !teaser && !unsold);
+  whyEl.replaceChildren(...(teaser ? ['Not for sale yet: ', ...richTiers(teaserWhy(shown))] : unsold && !barred ? notForSale(shown) : barred ? (shown.silhouette ? [noneOwned(carRule(Garage.evil)) + ': tap a car in the lot to buy one'] : reasonNode()) : []));
   action.title = owned ? 'Drive the ' + shown.name + ' as ' + sideName() + ', and stay in the garage' : '';
   // (Use: the same, and back to the menu with it; a car not yet bought has none, only its Buy)
   useBtn.style.display = owned ? '' : 'none';
@@ -330,6 +333,7 @@ const pick = (mesh) => {
 // for a click that gets through anyway, as a bank that changed after the sheet was drawn); a purchase that
 // fails (Progress.buy throws, or the car is not owned after it) is said there too.
 const buy = async (car) => {
+  if (!forSale(car)) return false; // (an earned car, an event's: parked for a level's list, never sold)
   const have = Progress.data.money;
   if (have < car.price) {
     await tell({ title: 'Not enough money', ok: 'OK', lines: [
@@ -456,6 +460,15 @@ document.getElementById('garageBackBtn').addEventListener('click', () => Garage.
 const ruleReason = (rule) => !rule ? ['Not allowed on this level'] : rule.tier ? ['Not allowed on this level: needs ', tierStarsNode(rule.tier)]
   : ['Not allowed on this level: only ', ...richTiers(rule.label)];
 const noneOwned = (rule) => rule?.list ? 'No car this level allows owned' : 'No car of this tier owned';
+// why a car not owned cannot be bought, as nodes (a level's list parks it all the same: drawn, not to be picked)
+const notForSale = (car) => {
+  if (car.earned) {
+    const level = LEVELS.find(l => l.id === car.earned.level);
+    return [car.off ? 'Not to be had for now' : 'Earned on ' + (level ? levelName(level) : car.earned.level) + ', not for sale'];
+  }
+  if (EVENT_CARS.includes(car)) return ['An event\'s reward, not for sale'];
+  return carTier(car) ? ['Not for sale yet: a ', tierStarsNode(carTier(car)), ' car. ', ...richTiers(teaserWhy(car))] : ['Not for sale'];
+};
 
 const anchor = new THREE.Vector3();
 let carAtOpen = CAR; // the car in use when the garage was opened
@@ -571,7 +584,8 @@ export const Garage = {
       else tip.replaceChildren(...withStars(car), '  -  ' + (
         car.id === Progress.data.car ? 'in use'
           : owned ? 'owned, click for its stats'
-            : money(car.price) + ', click for its stats'));
+            : !forSale(car) ? 'not for sale, click for its stats'
+              : money(car.price) + ', click for its stats'));
       anchor.set(hovered.position.x, car.height + 2.6, hovered.position.z).project(camera);
       tip.style.left = (anchor.x + 1) / 2 * canvas.clientWidth + 'px';
       tip.style.top = (1 - anchor.y) / 2 * canvas.clientHeight + 'px';

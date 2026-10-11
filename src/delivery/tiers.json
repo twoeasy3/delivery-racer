@@ -12,6 +12,6 @@
     "9": ["outback-express","market-town","derby","morro","seaquake"],
     "10": ["farside","stunts","ponti","glow","erupt"]
   },
-  "events": ["christmas"],
+  "events": [{ "id": "christmas", "from": "2026-10-10", "to": "2026-12-26" }],
   "outside": ["cattle","thaw","fallout","all-heck","ufo","oh-mine","showdown","battlefield","slipway","harbour","flood","ford","fjord","marina-bay","montreal","bathurst","monza","spa","albert-park"]
 }

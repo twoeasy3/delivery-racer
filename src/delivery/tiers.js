@@ -30,7 +30,7 @@ import tierData from './tiers.json';
 import { CONFIG } from './config.js';
 import { LEVELS, LEVEL, AMPHIBIOUS_LEVELS, isRace, levelName as levelNameOf, setLabelHook } from './levels.js';
 import { Progress } from './progress.js';
-import { CARS, carTier, setTierHooks, tierRule, listRule, carById } from './cars.js';
+import { CARS, carTier, setTierHooks, tierRule, listRule, carById, carRule, ruleAllows } from './cars.js';
 
 const byId = new Map(LEVELS.map(level => [level.id, level]));
 const idsOf = (list) => (Array.isArray(list) ? list : []).map(String);
@@ -303,10 +303,19 @@ setTierHooks({
   // amphibious), is shown whatever its tier. null: the tiers are off
   preview: (car) => {
     if (!Tiers.on()) return null;
-    const t = carTier(car);
-    if (t === null || Progress.owns(car.id)) return 'show';
-    const open = TIER_NUMBERS.filter(n => Tiers.tierOpen(n)).pop() || 1;
-    return t <= open ? 'show' : t === open + 1 ? 'teaser' : 'hide';
+    const rule = carRule();
+    if (rule?.list && ruleAllows(rule, car)) return 'show'; // (a level that lists the car: drawn, whatever tiers are open; for sale only if its tier is: buyable)
+    return tierView(car);
   },
+  // can the car be bought now? Only once its tier is open (the owner, 11-Oct: a level's list never sells a car of a
+  // tier the player has not reached; it is drawn there, not to be picked). null: the tiers are off
+  buyable: (car) => (Tiers.on() ? tierView(car) === 'show' : null),
 });
 const currentLevel = () => LEVEL; // (the live binding: the level picked)
+// a car in the garage by the tiers alone: 'show' (its tier open, owned, or in no tier), 'teaser' (the next tier's), 'hide'
+const tierView = (car) => {
+  const t = carTier(car);
+  if (t === null || Progress.owns(car.id)) return 'show';
+  const open = TIER_NUMBERS.filter(n => Tiers.tierOpen(n)).pop() || 1;
+  return t <= open ? 'show' : t === open + 1 ? 'teaser' : 'hide';
+};

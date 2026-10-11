@@ -123,8 +123,17 @@ const forcedCar = (pick, rule) => {
 // an owned car, or one in no tier, is always there. With the tiers off: the old Blue Star rule.
 export const carPreview = (car) => tierHooks.preview?.(car) ?? null; // 'show' | 'teaser' | 'hide' | null (the tiers are off)
 export const isTeaser = (car) => carPreview(car) === 'teaser';
-export const garageCars = () => [...CARS.filter(car => { const p = carPreview(car); return p ? p !== 'hide' : (!car.blue || blueStarsOpen()); }),
-  ...EARNED_CARS.filter(car => Progress.owns(car.id)), ...EVENT_CARS.filter(car => Progress.owns(car.id))]; // (an earned car once earned, or given by an event; an event's car once given)
+// On a level with a list of its own (listRule) every car it allows is parked too, owned or not, drawn in full: one the
+// player could buy anyway is for sale; the rest (a car of a tier not open, an earned car, an event's) are not (forSale)
+export const garageCars = () => {
+  const rule = carRule();
+  return [...new Set([...CARS.filter(car => { const p = carPreview(car); return p ? p !== 'hide' : (!car.blue || blueStarsOpen()); }),
+    ...EARNED_CARS.filter(car => Progress.owns(car.id)), ...EVENT_CARS.filter(car => Progress.owns(car.id)), // (an earned car once earned, or given by an event; an event's car once given)
+    ...(rule?.list ? ruleCars(rule).filter(car => !IDEA_CARS.includes(car)) : [])])]; // (the ideas have a lot of their own)
+};
+// can it be bought in the garage now? A garage car (not an earned car, an event's or an idea) whose tier is open
+// (tiers.js buyable: a level's list parks a car of a later tier, drawn, but never sells it)
+export const forSale = (car) => CARS.includes(car) && (tierHooks.buyable?.(car) ?? true);
 // The amphibious cars (a car's "amphibious"): the garage's Amphibious section, there from the start, so an
 // amphibious level can be played as soon as it is open (the cheapest costs about a level's tip)
 const AMPHIBIOUS_PERK = 'Amphibious: it drives into the water and floats across';
