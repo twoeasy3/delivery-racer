@@ -10,8 +10,15 @@
 //   - inside a tier: levels 1 and 2 are open with it; 3 needs 2 medals, in this tier; 4 needs 3 medals; 5 needs level 4 beaten (a level further on needs the one before it)
 //   - a medal not yet earned can only be played in a car of EXACTLY that tier (the same stars and colour of
 //     stars; none of the cars outside the tiers). Earned, the level can be replayed on that side in any car
-//   - the events (tiers.json "events": the menu's first group, before the tiers; the owner, 11-Oct): always open, no
-//     medal rule and no car rule, and no Next level from one
+//   - the events (tiers.json "events": the menu's first group, before the tiers; the owner, 11-Oct): open while they
+//     are on, no medal rule and no tier car rule (a level's own allowedCars still holds), and no Next level from one.
+//     An entry is a level's id, or { "id", "from", "to", "reward" }: from / to, when it is on the menu ("2026-12-01":
+//     midnight on the player's device; or a time with its zone, "2026-12-01T00:00:00+08:00"; either left out: no
+//     limit that way), the level card counting down to its end; reward, what delivering it on time gives once:
+//     { "car": a car's id, "money": dollars, "id": a name for the reward (the event's id if left out: give a new one
+//     to give the reward again in a new run of the same event) }. A reward given is in the save (claimed, and a car
+//     in the cars owned), so it stays when the event is over and gone from the list. (The device's clock decides: it
+//     is only the menu, never a run or its replay.)
 //   - a level the owner has listed "outside" the tiers has no medal rule and no car rule. They open one after
 //     another in the order listed, the first once the last tier is cleared (the old rule, at the end of the game);
 //     the amphibious ones by amphibiousOpens below; races are always open
@@ -21,9 +28,9 @@
 // ============================================================================
 import tierData from './tiers.json';
 import { CONFIG } from './config.js';
-import { LEVELS, LEVEL, AMPHIBIOUS_LEVELS, isRace, levelName as levelNameOf } from './levels.js';
+import { LEVELS, LEVEL, AMPHIBIOUS_LEVELS, isRace, levelName as levelNameOf, setLabelHook } from './levels.js';
 import { Progress } from './progress.js';
-import { CARS, carTier, setTierHooks } from './cars.js';
+import { CARS, carTier, setTierHooks, tierRule, listRule, carById } from './cars.js';
 
 const byId = new Map(LEVELS.map(level => [level.id, level]));
 const idsOf = (list) => (Array.isArray(list) ? list : []).map(String);
@@ -31,7 +38,26 @@ const TIER_NUMBERS = Object.keys(tierData.tiers || {}).map(Number).filter(n => n
 // the tiers: [ [level...] ] by tier number - 1; ids that name no level are dropped here (the check says so)
 const TIERS = TIER_NUMBERS.map(n => idsOf(tierData.tiers[n]).map(id => byId.get(id)).filter(Boolean));
 const OUTSIDE = idsOf(tierData.outside).map(id => byId.get(id)).filter(Boolean);
-const EVENTS = idsOf(tierData.events).map(id => byId.get(id)).filter(Boolean);
+// the events, as entries: { id, level, from, to, reward } (from / to in ms, null for no limit, NaN if not a time)
+const when = (v) => {
+  if (v === undefined || v === null || v === '') return null;
+  const day = /^(\d{4})-(\d\d)-(\d\d)$/.exec(String(v));
+  const t = day ? new Date(+day[1], +day[2] - 1, +day[3]).getTime() : Date.parse(String(v));
+  return Number.isFinite(t) ? t : NaN;
+};
+const EVENT_LIST = (Array.isArray(tierData.events) ? tierData.events : []).map(e => (typeof e === 'string' ? { id: e } : e && typeof e === 'object' ? e : {}));
+const EVENT_ENTRIES = EVENT_LIST.map(e => ({ id: String(e.id), level: byId.get(String(e.id)), from: when(e.from), to: when(e.to), reward: e.reward && typeof e.reward === 'object' ? e.reward : null }))
+  .filter(e => e.level);
+const EVENTS = EVENT_ENTRIES.map(e => e.level);
+const entryOf = (level) => EVENT_ENTRIES.find(e => e.level === level) || null;
+// the labels of the levels outside the tiers (levels.js levelLabel), counted in the order tiers.json lists them, one count a kind: the
+// specials S1, S2... and the amphibious A1, A2... (no gaps, whatever moves in or out); the events E1, E2...
+const OUTSIDE_LABELS = new Map();
+{
+  let s = 0, a = 0;
+  for (const level of OUTSIDE) if (!isRace(level)) OUTSIDE_LABELS.set(level, level.amphibious || AMPHIBIOUS_LEVELS.includes(level) ? 'A' + ++a : 'S' + ++s);
+  EVENTS.forEach((level, i) => OUTSIDE_LABELS.set(level, 'E' + (i + 1)));
+}
 const placeOf = new Map();
 TIERS.forEach((list, t) => list.forEach((level, p) => placeOf.set(level, { tier: TIER_NUMBERS[t], index: t, pos: p + 1 })));
 // outside levels that open in a chain (not races, which are always open; not amphibious, which have a rule of their own)
@@ -65,6 +91,34 @@ export const Tiers = {
   events: EVENTS,
   order: ORDER,
   isEvent(level) { return EVENTS.includes(level); },
+  // a level's label outside the tiers ('S3', 'A1', 'E1'), or null (in a tier, or a race)
+  outsideLabel(level) { return OUTSIDE_LABELS.get(level) || null; },
+  now: () => Date.now(), // (the device's clock: the checks set it)
+  // an event's entry ({ id, level, from, to, reward }), or null
+  eventOf(level) { return entryOf(level); },
+  // is the event on now (on the menu, open)? A level that is no event: false
+  eventLive(level, t = this.now()) { const e = entryOf(level); return !!e && (e.from === null || e.from <= t) && (e.to === null || t < e.to); }, // (a time that is not one: never on)
+  liveEvents(t = this.now()) { return EVENTS.filter(level => this.eventLive(level, t)); },
+  // the key a reward is claimed by in the save (Progress.data.claimed)
+  rewardKey(level) { const e = entryOf(level); return e?.reward ? 'event-' + (e.reward.id || e.id) : null; },
+  rewardClaimed(level) { const k = this.rewardKey(level); return !!k && (Progress.data.claimed || []).includes(k); },
+  // the reward in words ("the Hot Hatch and $500"), or ''
+  rewardWords(level) {
+    const r = entryOf(level)?.reward;
+    if (!r) return '';
+    return [r.car ? 'the ' + (carById(r.car)?.name || r.car) : '', r.money > 0 ? '$' + r.money : ''].filter(Boolean).join(' and ');
+  },
+  // an event delivered on time (Game.finish): its reward, once, into the save. Its words, or '' (none, or had already)
+  claimReward(level) {
+    const r = entryOf(level)?.reward, key = this.rewardKey(level);
+    if (!r || this.rewardClaimed(level)) return '';
+    (Progress.data.claimed ||= []).push(key);
+    const car = r.car ? carById(r.car) : null;
+    if (car && !Progress.data.cars.includes(car.id)) Progress.data.cars.push(car.id); // (owned from now on, the event or no)
+    if (r.money > 0) Progress.data.money += r.money;
+    Progress.save();
+    return this.rewardWords(level);
+  },
   on() { return switched ?? !!CONFIG.progression?.tiers; },
   // which side is being played (the menu's pick): set by game.js, which owns it
   sideIsEvil: () => false,
@@ -82,7 +136,13 @@ export const Tiers = {
       idsOf(list).forEach(id => note(id, 'tier ' + n));
       if (idsOf(list).length !== 5) out.push('tier ' + n + ' has ' + idsOf(list).length + ' levels, not 5 (it works, but the rules assume five)');
     }
-    idsOf(tierData.events).forEach(id => note(id, 'events'));
+    EVENT_LIST.forEach((e, i) => {
+      note(String(e.id), 'events');
+      if (Number.isNaN(when(e.from)) || Number.isNaN(when(e.to))) out.push('event ' + (e.id ?? i) + ': "from" or "to" is not a time');
+      if (when(e.from) !== null && when(e.to) !== null && !(when(e.from) < when(e.to))) out.push('event ' + e.id + ': it ends before it starts');
+      if (e.reward?.car && !carById(e.reward.car)) out.push('event ' + e.id + ': its reward "' + e.reward.car + '" is not a car');
+      if (e.reward && !e.reward.car && !(e.reward.money > 0)) out.push('event ' + e.id + ': its reward gives nothing (a "car" or "money")');
+    });
     idsOf(tierData.outside).forEach(id => note(id, 'outside'));
     for (const level of LEVELS) if (!seen.has(level.id)) out.push(level.id + ' is in no tier and not listed in events or outside');
     return out;
@@ -148,7 +208,8 @@ export const Tiers = {
     return { level: list[place.pos - 2] }; // (the one before it)
   },
   isOpen(level) {
-    if (isRace(level) || EVENTS.includes(level)) return true;
+    if (isRace(level)) return true;
+    if (EVENTS.includes(level)) return this.eventLive(level); // (an event: while it is on)
     if (LEVELS.indexOf(level) < this.legacy()) return true; // (open before the rework)
     const place = placeOf.get(level);
     if (place) {
@@ -217,10 +278,25 @@ export const Tiers = {
   ownedOfTier(n) { return this.carsOfTier(n).filter(car => Progress.owns(car.id)); },
 };
 // (the Blue Star cars are in the garage once Blue 1 is open; and the garage and the car in use ask the rule)
+// (with the tiers on, every delivery level's label is the menu's: T7-1 for tier 7's first (the menu shows its stars and
+// 1), and the counts above outside the tiers; with them off, the old numbers: levels.js)
+setLabelHook((level) => (!Tiers.on() ? null : placeOf.has(level) ? 'T' + placeOf.get(level).tier + '-' + placeOf.get(level).pos : OUTSIDE_LABELS.get(level) || null));
 setTierHooks({
   // (held for the whole of a run and its results: delivering a level earns its medal and ends the rule, which
   // must not change the car the run's finish animation draws mid-way: Game.start sets `hold`, Game.toMenu clears it)
-  restricted: (evil) => { try { return Tiers.hold ? Tiers.hold.tier : Tiers.on() ? Tiers.restriction(currentLevel(), evil ?? Tiers.sideIsEvil()) : null; } catch { return null; } },
+  // the car rule (cars.js carRule): a level's own list ("allowedCars", always), else the tier rule (a medal not yet
+  // earned); none where the level has a vehicle of its own (a car lock)
+  rule: (evil) => {
+    try {
+      if (Tiers.hold) return Tiers.hold.rule;
+      const level = currentLevel();
+      if (!level || level.car) return null;
+      const list = listRule(level);
+      if (list) return list;
+      const t = Tiers.on() ? Tiers.restriction(level, evil ?? Tiers.sideIsEvil()) : null;
+      return t === null ? null : tierRule(t);
+    } catch { return null; }
+  },
   blueOpen: () => Tiers.on() ? Tiers.tierOpen(6) || Tiers.legacy() > CONFIG.blueStarsAfter : null,
   // the garage's view of a car (the owner, 11-Oct): the cars of the tiers open are shown; those of the very next tier are
   // black silhouettes nobody can buy; those further on are not there. A car the player owns, or in no tier (earned,

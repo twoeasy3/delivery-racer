@@ -2,7 +2,7 @@ import { CONFIG } from './config.js';
 import { LEVEL, LEVEL_INDEX, LEVELS, SCREENSAVER_LEVEL, selectLevel, selectSpecial, nextOnTab, isRace } from './levels.js';
 import { Progress } from './progress.js';
 import { Nav } from './nav.js';
-import { useLevelCar, returnCar, earnedFor, ownedAmphibious, carAllowed, restrictedTier } from './cars.js';
+import { useLevelCar, returnCar, earnedFor, ownedAmphibious, carAllowed, carRule } from './cars.js';
 import { Tiers } from './tiers.js';
 import { Input } from './input.js';
 import { Replay } from './replay.js';
@@ -201,7 +201,7 @@ export const Game = {
     this.step = 0;
     Nav.enter('run', () => this.exit()); // (the back button leaves the run, or its results, for the menu)
     Tiers.hold = null;
-    Tiers.hold = { tier: restrictedTier() }; // (the car rule as the run starts it: held to the menu, whatever the delivery earns)
+    Tiers.hold = { rule: carRule() }; // (the car rule as the run starts it: held to the menu, whatever the delivery earns)
     useLevelCar(LEVEL.car, LEVEL.amphibious); // a UFO on the space level, otherwise the garage's car (on an amphibious level, the player's amphibious one)
     Player.evil = this.evil && !LEVEL.battle && !LEVEL.alwaysGood; // (on the Battlefield the player is in the green army, the good one, whatever the side on the menu; a level can say so too)
     Mysteries.reset(); // (before the player: a side swap or a giant left from the last run is not undone over this one)
@@ -300,6 +300,10 @@ export const Game = {
       (Player.evil ? 'Evil' : 'Good') + '  |  Wrecked: ' + this.wrecks + '  |  Busted: ' + this.busts +
       '  |  Bank $' + Progress.data.money.toFixed(2);
     if (prize && !hadPrize && Progress.earned(prize)) resultNote.textContent += '  |  You earned the ' + prize.name + '!'; // (its par beaten on every side: it is in the garage)
+    // an event delivered on time: its reward, once (tiers.js claimReward: into the save, so it outlasts the event). Not
+    // in a replay being watched (its save is put back as it was when it ends)
+    const reward = outcome === 'delivered' && !Replay.playing ? Tiers.claimReward(LEVEL) : '';
+    if (reward) resultNote.textContent += '  |  Event reward: ' + reward + '!';
     // a playback's results: what the run came to, nothing banked or bettered (the save is put back as it was: replay.js)
     if (Replay.playing) {
       resultTitle.textContent = 'Replay: ' + resultTitle.textContent;

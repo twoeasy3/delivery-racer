@@ -33,13 +33,25 @@ try {
   if (ids.size !== all.length) fail('two levels share an id');
   const labels = LEVELS.map((l, i) => levelLabel(i));
   if (new Set(labels).size !== labels.length) fail('two levels share a label: ' + labels.join(' '));
-  MAIN_LEVELS.forEach((l, i) => { if (isRace(l)) fail(l.id + ': a race among the main levels'); else if (labels[i] !== String(i + 1)) fail(l.id + ': labelled ' + labels[i]); });
+  // (with the tiers on, the menu's labels: T<tier>-<place>, and outside the tiers S1..., A1..., E1... in the menu's order,
+  // tiers.js; with them off, the old numbers by the lists here)
+  const tiered = g.CONFIG.progression?.tiers;
+  if (tiered) {
+    const { Tiers } = await g.load('tiers.js');
+    Tiers.tiers.forEach((list, t) => list.forEach((l, p) => { const want = 'T' + (t + 1) + '-' + (p + 1); if (labels[LEVELS.indexOf(l)] !== want) fail(l.id + ': labelled ' + labels[LEVELS.indexOf(l)] + ', not ' + want); }));
+    for (const kind of ['S', 'A', 'E']) {
+      const got = labels.filter(x => new RegExp('^' + kind + '\\d+$').test(x)).map(x => Number(x.slice(1))).sort((a, b) => a - b);
+      if (!got.every((n, i) => n === i + 1)) fail('the ' + kind + ' labels have a gap: ' + got.join(' '));
+    }
+    MAIN_LEVELS.forEach((l) => { if (isRace(l)) fail(l.id + ': a race among the main levels'); });
+  }
+  if (!tiered) MAIN_LEVELS.forEach((l, i) => { if (isRace(l)) fail(l.id + ': a race among the main levels'); else if (labels[i] !== String(i + 1)) fail(l.id + ': labelled ' + labels[i]); });
   RACE_LEVELS.forEach((l, k) => { if (labels[LEVELS.indexOf(l)] !== 'R' + (k + 1)) fail(l.id + ': labelled ' + labels[LEVELS.indexOf(l)] + ', not R' + (k + 1)); });
   // (the special levels S1..., then the amphibious ones A1...)
   const amphibious = g.levels.AMPHIBIOUS_LEVELS || [], themed = g.levels.THEME_LEVELS || [];
   themed.forEach((l) => { if (!MAIN_LEVELS.includes(l)) fail(l.id + ': a themed level that is not among the numbered levels'); }); // (they are ordinary levels: 32, 33...)
-  DELIVERY_LEVELS.slice(MAIN_LEVELS.length).filter(l => !amphibious.includes(l) && !themed.includes(l)).forEach((l, k) => { if (labels[LEVELS.indexOf(l)] !== 'S' + (k + 1)) fail(l.id + ': labelled ' + labels[LEVELS.indexOf(l)] + ', not S' + (k + 1)); });
-  amphibious.forEach((l, k) => { if (labels[LEVELS.indexOf(l)] !== 'A' + (k + 1)) fail(l.id + ': labelled ' + labels[LEVELS.indexOf(l)] + ', not A' + (k + 1)); if (!l.amphibious) fail(l.id + ': among the amphibious levels, but not "amphibious"'); });
+  if (!tiered) DELIVERY_LEVELS.slice(MAIN_LEVELS.length).filter(l => !amphibious.includes(l) && !themed.includes(l)).forEach((l, k) => { if (labels[LEVELS.indexOf(l)] !== 'S' + (k + 1)) fail(l.id + ': labelled ' + labels[LEVELS.indexOf(l)] + ', not S' + (k + 1)); });
+  amphibious.forEach((l, k) => { if (!tiered && labels[LEVELS.indexOf(l)] !== 'A' + (k + 1)) fail(l.id + ': labelled ' + labels[LEVELS.indexOf(l)] + ', not A' + (k + 1)); if (!l.amphibious) fail(l.id + ': among the amphibious levels, but not "amphibious"'); });
   for (const l of LEVELS) { const next = nextOnTab(l); if (next && isRace(next) !== isRace(l)) fail(l.id + ': its next level is on the other tab'); }
   if (LEVELS.slice(-3).map(l => l.id).join() !== 'monza,spa,albert-park') fail('the circuits are not last in LEVELS: ' + LEVELS.slice(-3).map(l => l.id).join());
   console.log('races: ' + RACE_LEVELS.map(l => labels[LEVELS.indexOf(l)] + ' ' + g.levels.levelName(l)).join(', '));

@@ -25,7 +25,7 @@ const problems = () => {
   const out = [], seen = new Map();
   const note = (id, where) => { if (!levelsById.has(id)) out.push(`"${id}" in ${where} is not a level`); else if (seen.has(id)) out.push(`${id} is in both ${seen.get(id)} and ${where}`); else seen.set(id, where); };
   for (const [n, list] of Object.entries(data.tiers)) { list.forEach(id => note(id, 'tier ' + n)); if (list.length !== 5) out.push(`tier ${n} has ${list.length} levels, not 5`); }
-  (data.events || []).forEach(id => note(id, 'events'));
+  (data.events || []).forEach(e => note(typeof e === 'string' ? e : e?.id, 'events'));
   data.outside.forEach(id => note(id, 'outside'));
   for (const id of levelsById.keys()) if (!seen.has(id)) out.push(`${id} is in no tier and not listed in events or outside`);
   return out;
@@ -35,8 +35,8 @@ const print = () => {
     console.log(`\nTier ${n}: ${tierName(Number(n))}`);
     list.forEach((id, i) => console.log(`  ${i + 1}. ${id.padEnd(18)} #${label(id).padEnd(3)} ${name(id)}`));
   }
-  console.log('\nEvents (the first group, always open, any car):');
-  (data.events || []).forEach(id => console.log(`  ${id.padEnd(18)} ${label(id).padEnd(4)} ${name(id)}`));
+  console.log('\nEvents (the first group, open while on; see tiers.js for an entry\'s from, to and reward):');
+  (data.events || []).forEach(e => { const id = typeof e === 'string' ? e : e.id; console.log(`  ${id.padEnd(18)} ${label(id).padEnd(4)} ${name(id)}${e.from || e.to ? `  ${e.from || '...'} to ${e.to || '...'}` : ''}${e.reward ? '  reward ' + JSON.stringify(e.reward) : ''}`); });
   console.log('\nOutside the tiers (open in this order after tier 10; amphibious by their own rule; races always):');
   data.outside.forEach(id => console.log(`  ${id.padEnd(18)} ${label(id).padEnd(4)} ${name(id)}`));
 };

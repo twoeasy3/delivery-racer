@@ -78,7 +78,10 @@
 //              'casino', 'biosphere', 'skyline'), 'sea' (open water, unmarked, the edges blocked by rocks and buoys), 'farm', 'beach', 'suburb', 'canberra', 'snow', 'singapore', 'singaporeNight', 'coast' (in zones), 'safari' (in zones: a dirt road, unmarked), 'airport', 'construction', 'flooded' (the city under flood water, in the rain), 'toyroom' (the level at toy scale, on a playroom floor), 'seabed' (an underwater tunnel: the road in a glass tube on the sea bed), 'moon' (a moon base: regolith, craters, domes, the Earth in a black sky), 'hell' or 'space': the look of the ground, sky and roadside.
 //              'snow' is a mountainside: land that climbs and falls with the road and fills in between its switchbacks.
 //              In space there is no ground and no road surface, only the lane lines.
-//   car        a special vehicle the level is driven in whatever is in the garage ('ufo', 'f1')
+//   car        a car lock: the vehicle the level is driven in whatever is in the garage, owned or not ('ufo', 'f1', or
+//              any car's id: a garage, earned or event car)
+//   allowedCars only these cars may drive it, and only if owned: { cars: [ids], tiers: [1-10], maxSpeed: m/s } (the
+//              cars named or of the tiers named, none faster than maxSpeed); always, in place of the tier rule
 //   alwaysGood true = the player is Good on it, whatever the side picked on the menu (as on the Battlefield)
 //   cargo      { good, evil }: what the player is delivering, for each side (the ids of cargo.js: good 'pizza' |
 //              'cake' | 'goldfish' | 'cactus' | 'clock'; evil 'parcel' | 'porcupine' | 'bees' | 'doll' | 'tentacle').
@@ -566,8 +569,14 @@ export const DELIVERY_LEVELS = LEVELS.filter(l => !isRace(l));
 export const nextOnTab = (level) => { const list = isRace(level) ? RACE_LEVELS : DELIVERY_LEVELS, k = list.indexOf(level); return k >= 0 && k + 1 < list.length ? list[k + 1] : null; };
 // a level's number on the menu, by its position in LEVELS: '1'... for the main levels, 'S1'... for the special
 // delivery levels, 'A1'... for the amphibious ones, 'R1'... for the races (each tab numbers its own)
+// (tiers.js puts its own labels first where it has one: a level outside the tiers is numbered in the menu's order,
+// S1, S2... and A1, A2..., an event E1...: never by where it happens to sit in the lists here)
+let labelHook = null;
+export const setLabelHook = (fn) => { labelHook = fn; };
 export const levelLabel = (index) => {
   const level = LEVELS[index];
+  const own = labelHook?.(level);
+  if (own) return own;
   if (isRace(level)) return 'R' + (RACE_LEVELS.indexOf(level) + 1);
   if (AMPHIBIOUS_LEVELS.includes(level)) return 'A' + (AMPHIBIOUS_LEVELS.indexOf(level) + 1);
   return index < MAIN_LEVELS.length ? String(index + 1) : 'S' + (DELIVERY_LEVELS.indexOf(level) - MAIN_LEVELS.length + 1);

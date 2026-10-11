@@ -6,7 +6,7 @@
 import { Nav } from '../nav.js';
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
-import { CAR, carInUse, selectCar, stars, starColour, STAR_COLOURS, blueStarsOpen, garageCars, restrictedTier, setViewSide, carAllowedOn, carTier, isTeaser } from '../cars.js';
+import { CAR, carInUse, selectCar, stars, starColour, STAR_COLOURS, blueStarsOpen, garageCars, carRule, ruleAllows, setViewSide, carAllowedOn, carTier, isTeaser } from '../cars.js';
 import { Tiers, tierStarsNode, richTiers } from '../tiers.js';
 import { Progress } from '../progress.js';
 import { Game } from '../game.js';
@@ -245,23 +245,22 @@ const refresh = () => {
   // (a level that restricts the car, tiers.js: the lot shows only the cars of its tier, and the bar says so)
   bank.replaceChildren('Bank ' + money(Progress.data.money));
   // (the level's car rule on the side on show, said once above the lot: the side and the reason)
-  const sideNow = Garage.evil, sideWord = sideNow ? 'Evil' : 'Good', ruleNow = restrictedTier(sideNow) ?? null, ruleOther = restrictedTier(!sideNow) ?? null;
-  ruleBanner.classList.toggle('hidden', ruleNow === null && ruleOther === null);
-  ruleBanner.classList.toggle('restricted', ruleNow !== null);
+  const sideNow = Garage.evil, sideWord = sideNow ? 'Evil' : 'Good', ruleNow = carRule(sideNow), ruleOther = carRule(!sideNow);
+  ruleBanner.classList.toggle('hidden', !ruleNow && !ruleOther);
+  ruleBanner.classList.toggle('restricted', !!ruleNow);
   const chip = document.createElement('span');
   chip.className = 'rulechip';
-  chip.replaceChildren(...(ruleNow !== null
-    ? [sideWord + ': only ', tierStarsNode(ruleNow), ' cars until you earn this level’s ' + sideWord + ' medal']
+  chip.replaceChildren(...(ruleNow?.list ? ['This level: only ', ...richTiers(ruleNow.label)]
+    : ruleNow ? [sideWord + ': only ', tierStarsNode(ruleNow.tier), ' cars until you earn this level’s ' + sideWord + ' medal']
     : [sideWord + ': any car (medal earned)']));
   ruleBanner.replaceChildren(chip);
   for (const b of sideBtns) { const on = (b.dataset.side === 'evil') === Garage.evil; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }
   const shown = looking || inUse, owned = Progress.owns(shown.id), teaser = isTeaser(shown);
-  const needs = restrictedTier(Garage.evil) ?? null;
   const notAllowed = !IdeasLot.on && (shown.silhouette || (owned && !carAllowedOn(shown, Garage.evil)));
-  const reasonNode = () => needs !== null ? ['Not allowed on this level: needs ', tierStarsNode(needs)] : ['Not allowed on this level'];
+  const reasonNode = () => ruleReason(carRule(Garage.evil));
   const badge = document.createElement('span');
   badge.className = 'notallowed';
-  badge.replaceChildren(...(shown.silhouette ? ['No car of this tier owned: buy one in the lot'] : reasonNode()));
+  badge.replaceChildren(...(shown.silhouette ? [noneOwned(carRule(Garage.evil)) + ': buy one in the lot'] : reasonNode()));
   if (teaser) info.replaceChildren('Locked car  ', tierStarsNode(carTier(shown)), '  -  ', ...richTiers(teaserWhy(shown)));
   else info.replaceChildren(...withStars(shown), ...(notAllowed && !shown.silhouette ? [' - ', badge] : []), sepNode(), statsNode(shown));
   showComparison(inUse, teaser ? null : shown); // (the car in use against the one looked at: see render/compare.js)
@@ -277,7 +276,7 @@ const refresh = () => {
   else if (barred) { action.textContent = shown.silhouette ? 'Buy a car in the lot' : 'Not allowed here'; action.disabled = true; }
   useBtn.disabled = !!barred || teaser;
   whyEl.classList.toggle('hidden', !barred && !teaser);
-  whyEl.replaceChildren(...(teaser ? ['Not for sale yet: ', ...richTiers(teaserWhy(shown))] : barred ? (shown.silhouette ? ['No car of this tier owned: tap a car in the lot to buy one'] : reasonNode()) : []));
+  whyEl.replaceChildren(...(teaser ? ['Not for sale yet: ', ...richTiers(teaserWhy(shown))] : barred ? (shown.silhouette ? [noneOwned(carRule(Garage.evil)) + ': tap a car in the lot to buy one'] : reasonNode()) : []));
   action.title = owned ? 'Drive the ' + shown.name + ' as ' + sideName() + ', and stay in the garage' : '';
   // (Use: the same, and back to the menu with it; a car not yet bought has none, only its Buy)
   useBtn.style.display = owned ? '' : 'none';
@@ -451,8 +450,12 @@ mountGarageView(() => garageCars(), () => {
 });
 // the "Garage" and "Car ideas" tabs: the second lot is render/ideaslot.js's
 // (inUse: the id of the car in use; side: true when Evil is the side being played)
-IdeasLot.mount({ barred: () => { const t = restrictedTier(Garage.evil) ?? null; return t === null ? null : t; }, evil: () => Garage.evil, back: refresh, inUse: () => Progress.data.car, side: () => Game.evil });
+IdeasLot.mount({ barred: (car) => { const rule = carRule(Garage.evil); return ruleAllows(rule, car) ? null : ruleReason(rule); }, evil: () => Garage.evil, back: refresh, inUse: () => Progress.data.car, side: () => Game.evil });
 document.getElementById('garageBackBtn').addEventListener('click', () => Garage.close());
+// why a car is not allowed on the level picked (its car rule: a tier, or the level's own list), as nodes
+const ruleReason = (rule) => !rule ? ['Not allowed on this level'] : rule.tier ? ['Not allowed on this level: needs ', tierStarsNode(rule.tier)]
+  : ['Not allowed on this level: only ', ...richTiers(rule.label)];
+const noneOwned = (rule) => rule?.list ? 'No car this level allows owned' : 'No car of this tier owned';
 
 const anchor = new THREE.Vector3();
 let carAtOpen = CAR; // the car in use when the garage was opened
@@ -466,9 +469,9 @@ export const Garage = {
   setSide(evil, fresh = false) {
     this.evil = !!evil;
     setViewSide(this.evil);
-    const only = restrictedTier() ?? null;
-    const retiered = GarageView.restrictTier !== only;
-    GarageView.restrictTier = only;
+    const only = carRule();
+    const retiered = GarageView.rule !== only;
+    GarageView.rule = only;
     const emptied = GarageView.settle(); // (the Show choice may have fallen empty since: back to All)
     const rebuilt = built !== onShow() || retiered || emptied;
     if (rebuilt) buildLot(); // (the lot filtered to the tier the level allows) (first time in, or the Blue Star cars have just arrived, or a 6-star car has been earned)

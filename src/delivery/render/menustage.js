@@ -93,22 +93,44 @@ for (let i = 0; i < RACE_LEVELS.length; i += 5) TABS.race.groups.push([i, Math.m
 // (the level tiers, tiers.js: the delivery tab in the table's order: the events first, a group of their own, then a
 // group a tier, then the levels outside them in runs of one kind, five at most. A group's third item is its tier
 // number, or 'events')
-if (Tiers.on()) {
-  const list = [...Tiers.order, ...DELIVERY_LEVELS.filter(level => !Tiers.order.includes(level))], groups = [];
+// The events are those on now (tiers.js eventLive, by the device's clock): built again when that changes (draw). The
+// levels outside the tiers run in two kinds, the specials (S) and the amphibious (A)
+let liveKey = null;
+const buildDeliveryTab = () => {
+  if (!Tiers.on()) return;
+  const live = Tiers.liveEvents(), key = live.map(level => level.id).join();
+  if (key === liveKey) return;
+  liveKey = key;
+  const list = [...live, ...Tiers.order.filter(level => !Tiers.isEvent(level)), ...DELIVERY_LEVELS.filter(level => !Tiers.order.includes(level))], groups = [];
   let i = 0;
-  if (Tiers.events.length) { groups.push([0, Tiers.events.length, 'events']); i = Tiers.events.length; }
+  if (live.length) { groups.push([0, live.length, 'events']); i = live.length; }
   Tiers.tiers.forEach((tier, k) => { if (tier.length) { groups.push([i, i + tier.length, k + 1]); i += tier.length; } });
-  const kind = (level) => AMPHIBIOUS_LEVELS.includes(level) ? 2 : MAIN_LEVELS.includes(level) ? 0 : 1;
+  const kind = (level) => AMPHIBIOUS_LEVELS.includes(level) ? 2 : 1;
   while (i < list.length) { let j = i + 1; while (j < list.length && j - i < 5 && kind(list[j]) === kind(list[i])) j++; groups.push([i, j]); i = j; }
   TABS.delivery.list = list;
   TABS.delivery.groups = groups;
-}
+};
+buildDeliveryTab();
+// how long until an event ends, for its card: "3d 4h", "5h 12m", "9m 30s"
+const countdown = (ms) => {
+  const s = Math.max(0, Math.ceil(ms / 1000)), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+  return d ? d + 'd ' + h + 'h' : h ? h + 'h ' + m + 'm' : m + 'm ' + (s % 60) + 's';
+};
+const ends = (at) => { const p = make('p', 'event-ends countdown', 'Ends in ' + countdown(at - Tiers.now())); p.dataset.end = at; return p; };
+// (each second: the countdowns on the card; an event just over, and the menu is drawn again without it)
+setInterval(() => {
+  for (const node of document.querySelectorAll('#stage .countdown')) {
+    const left = Number(node.dataset.end) - Tiers.now();
+    if (left <= 0) { draw(); return; }
+    node.textContent = 'Ends in ' + countdown(left);
+  }
+}, 1000);
 const tabOf = (level) => isRace(level) ? 'race' : 'delivery';
 // (under the tiers a level's number is its place in its tier, 1 to 5; its kind says which tier)
 const label = (level) => Tiers.on() && Tiers.place(level) ? String(Tiers.place(level).pos)
-  : Tiers.on() && Tiers.isEvent(level) ? String(Tiers.events.indexOf(level) + 1) : levelLabel(LEVELS.indexOf(level));
+  : Tiers.on() && Tiers.isEvent(level) ? String(Math.max(0, Tiers.liveEvents().indexOf(level)) + 1) : levelLabel(LEVELS.indexOf(level)); // (outside the tiers: S1, A1... in the menu's order, tiers.js)
 // what kind of level it is, for the plate over its picture
-const kindOf = (level) => isRace(level) ? 'Race' : Tiers.on() && Tiers.isEvent(level) ? 'Event' : Tiers.on() && Tiers.place(level) ? tierStarsNode(Tiers.place(level).tier) : AMPHIBIOUS_LEVELS.includes(level) ? 'Amphibious' : MAIN_LEVELS.includes(level) ? 'Level' : 'Special';
+const kindOf = (level) => isRace(level) ? 'Race' : Tiers.on() && Tiers.isEvent(level) ? 'Event' : Tiers.on() && Tiers.outsideLabel(level)?.startsWith('S') ? 'Special' : Tiers.on() && Tiers.place(level) ? tierStarsNode(Tiers.place(level).tier) : AMPHIBIOUS_LEVELS.includes(level) ? 'Amphibious' : MAIN_LEVELS.includes(level) ? 'Level' : 'Special';
 // a race is always open; a delivery level once the one before it has been delivered
 const isOpen = (level) => isRace(level) || (Tiers.on() ? Tiers.isOpen(level) : LEVELS.indexOf(level) < Progress.data.unlocked);
 // a level played on one side only (the Battlefield, All Heck: always Good)
@@ -217,6 +239,7 @@ const drawStage = () => {
   const cargo = carried ? make('div', 'cargo3d', ring, make('span', 'cargo-name', carried.name)) : null;
   if (cargo) cargo.title = (evil ? 'What you are delivering as Evil: ' : 'What you are delivering as Good: ') + carried.name;
   wantCargo(carried, ring);
+  const event = Tiers.on() && Tiers.isEvent(level) ? Tiers.eventOf(level) : null;
   const info = make('div', 'info',
     make('h2', '', levelName(level)),
     open && words ? make('p', 'desc', words) : null,
@@ -225,6 +248,9 @@ const drawStage = () => {
       fact('Tip', money(level.tip)),
       fact('Best to spare', best === undefined ? 'Not delivered yet' : formatTime(best))) : null,
     needs ? make('p', 'needs' + (open && !Game.canStart ? ' warn' : ''), ...richTiers(needs)) : null,
+    // (an event: how long it is on for, and its reward)
+    event?.to ? ends(event.to) : null,
+    event?.reward ? make('p', 'prize', 'Reward: ' + Tiers.rewardWords(level) + (Tiers.rewardClaimed(level) ? ' (yours)' : ' for delivering it on time')) : null,
     open && place ? make('p', 'prize', tierStarsNode(place.tier), ' medals ' + Tiers.tierMedals(place.tier) + '/' + Tiers.tiers[place.tier - 1].length * 2) : null,
     prizeLine ? make('p', 'prize', prizeLine) : null,
     open && roadCard ? make('div', 'road', // (the card's chips: the row placed as the one chip was)
@@ -387,7 +413,7 @@ const drawCar = () => {
   // (a car idea, ideas.js, has no tier and so no stars: "Idea" stands where they would be)
   if (CAR.silhouette) { // (a car of the level's tier is to be bought: a dark outline of the cheapest, and no figures)
     shop.replaceChildren(picture,
-      make('span', 'words', make('strong', '', 'No car for this level'), make('span', 'stat', make('small', '', tierStarsNode(CAR.tierNeeded), ' only'))),
+      make('span', 'words', make('strong', '', 'No car for this level'), make('span', 'stat', make('small', '', ...(CAR.tierNeeded ? [tierStarsNode(CAR.tierNeeded)] : richTiers(CAR.ruleLabel || '')), ' only'))),
       make('span', 'go', 'Garage'));
     shop.title = 'This level needs a car of exactly its tier: open the garage to buy one (G)';
     return;
@@ -405,10 +431,15 @@ const drawCar = () => {
 };
 
 export const draw = () => {
+  buildDeliveryTab(); // (an event may have started or ended)
   // (the level picked may have changed behind the menu's back: a run's Next level, a save brought in. The stage
   // follows it, unless it is showing a level not open yet, which is never the level picked)
   if (isOpen(cursor) && cursor !== LEVEL && LEVELS.includes(LEVEL)) { cursor = LEVEL; tab = tabOf(LEVEL); }
-  if (!TABS[tab].list.includes(cursor)) cursor = lastOn[tab] || TABS[tab].list[0];
+  if (!TABS[tab].list.includes(cursor)) cursor = TABS[tab].list.includes(lastOn[tab]) ? lastOn[tab] : TABS[tab].list.find(isOpen) || TABS[tab].list[0];
+  if (Tiers.isEvent(LEVEL) && !Tiers.eventLive(LEVEL) && isOpen(cursor) && cursor !== LEVEL) { // (the level picked was an event, now over)
+    selectLevel(LEVELS.indexOf(cursor));
+    useLevelCar(cursor.car, cursor.amphibious);
+  }
   lastOn[tab] = cursor;
   if (Tiers.on() && isOpen(cursor)) useLevelCar(LEVEL.car, LEVEL.amphibious); // (the tier rule: it goes by the side and the medals, which change)
   const open = isOpen(cursor), evil = Game.evil && !oneSided(cursor);

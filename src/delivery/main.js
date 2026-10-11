@@ -41,7 +41,7 @@ import { syncRadiation } from './render/radiation.js';
 import { Radiation } from './radiation.js';
 import { Replay } from './replay.js';
 import './render/replayui.js';
-import { syncGhost } from './render/ghostcar.js';
+import { syncGhost, clearGhost } from './render/ghostcar.js';
 import { syncBattle } from './render/battle.js';
 import { raceCamera, raceAudio, syncRaceWatch, auditCameras } from './render/racewatch.js';
 import { Fly, startFly, flyCamera } from './render/fly.js';
@@ -56,7 +56,7 @@ import { syncReversible } from './render/reversible.js';
 import { syncMysteries } from './render/mysteries.js';
 import './render/pursuit.js';
 import { Mysteries } from './mysteries.js';
-import { updateHud } from './render/hud.js';
+import { updateHud, clearHud } from './render/hud.js';
 import './render/menu.js';
 import './render/touch.js';
 import './render/album.js';
@@ -411,7 +411,7 @@ const frame = (now) => {
     renderer.render(scene, camera);
     drawCargoCorner(dt, now); // (the cargo, in its corner of the HUD: over that patch of the frame)
   }
-  if (Game.state === 'start') silence(); // (back on the menu)
+  if (Game.state === 'start') { silence(); clearHud(); clearGhost(); } // (back on the menu: no sound, nothing of the run's HUD left over it)
   syncTankCorner(dt); // (it hides itself when there is no run)
   // the studio (?cine=car): nothing but the car, its floor and the lights
   if (Cinematic.studio) for (const o of scene.children) o.visible = o === carMesh || o.isLight || !!o.userData.studio;

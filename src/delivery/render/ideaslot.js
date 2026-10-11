@@ -14,7 +14,6 @@
 import * as THREE from 'three';
 import '../menus.css';
 import { IDEA_CARS } from '../ideas.js';
-import { tierStarsNode } from '../tiers.js';
 import { renderer } from './scene.js';
 import { makeIdeaModel } from './ideaModels.js';
 
@@ -291,11 +290,11 @@ export const IdeasLot = {
       : evil ? 'Drive it as Evil' : otherSide ? 'Drive it as Good' : 'Drive it';
     action.disabled = !looking || (using && !otherSide);
     // (a level that restricts the car, on the side on show: an idea has no tier, so it cannot be driven; said, not just greyed)
-    const need = host.barred?.() ?? null, why = document.getElementById('garageWhy');
-    if (need !== null && looking && !using) {
+    const need = looking ? host.barred?.(looking) ?? null : null, why = document.getElementById('garageWhy');
+    if (need && !using) {
       action.disabled = true;
       action.textContent = 'Not allowed here';
-      if (why) { why.classList.remove('hidden'); why.replaceChildren('Not allowed on this level: needs ', tierStarsNode(need)); }
+      if (why) { why.classList.remove('hidden'); why.replaceChildren(...need); }
     } else if (why) { why.classList.add('hidden'); why.replaceChildren(); }
     for (const mesh of [...parked, ...(studio ? studio.meshes : [])]) paint(mesh, evil);
     const mesh = parked.find(m => m.userData.car === looking), used = parked.find(m => m.userData.car.id === inUse);

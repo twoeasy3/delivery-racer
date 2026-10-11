@@ -5,7 +5,7 @@
 // it always has, every car in order of its stars.
 import '../menus.css';
 import { Progress } from '../progress.js';
-import { blueStarsOpen, EARNED_CARS, carTier, isTeaser } from '../cars.js';
+import { blueStarsOpen, EARNED_CARS, isTeaser, ruleAllows } from '../cars.js';
 
 // (by: how two cars compare; none: as the garage has them, by stars and then price)
 const SORTS = [
@@ -25,12 +25,12 @@ const SHOWS = [
   { id: 'gold', name: 'Gold stars', has: (car) => !!car.tier && !car.blue && !car.amphibious && !car.earned, when: blueStarsOpen },
   { id: 'blue', name: 'Blue stars', has: (car) => !!car.blue, when: blueStarsOpen },
   // (the 6-star cars, each earned on a special level: offered once there is one. See cars.js EARNED_CARS)
-  { id: 'earned', name: '6 stars', has: (car) => !!car.earned, when: () => EARNED_CARS.some(car => Progress.earned(car)) },
+  { id: 'earned', name: '6 stars', has: (car) => !!car.earned, when: () => EARNED_CARS.some(car => Progress.owns(car.id)) },
 ];
 
 export const GarageView = {
   sort: SORTS[0],
-  restrictTier: null, // a tier number: only the cars of that tier are parked (a level that restricts the car: see tiers.js)
+  rule: null, // a level's car rule (cars.js carRule): only the cars it allows are parked
   show: SHOWS[0],
   // true: parked as the garage always has them (so in each column the biggest goes at the back)
   get usual() { return this.sort === SORTS[0]; },
@@ -42,7 +42,7 @@ export const GarageView = {
   GarageView.show = SHOWS.find(s => s.id === params.get('show')) || GarageView.show;
 }
 // a level that restricts the car parks the cars of its tier, and still the next tier's silhouettes (nobody can pick those)
-const inTier = (car) => GarageView.restrictTier === null || carTier(car) === GarageView.restrictTier || isTeaser(car);
+const inTier = (car) => ruleAllows(GarageView.rule, car) || (!!GarageView.rule?.tier && isTeaser(car));
 // the cars to park, in order, out of the garage's own list (already in order of stars and price)
 export const arrange = (cars) => {
   const shown = cars.filter(GarageView.show.has).filter(inTier);
