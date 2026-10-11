@@ -35,6 +35,8 @@ export const CONFIG = {
       thick: 0.9,          // m thick each chevron's arms are, along the road
       sweep: 1.6,          // how far its arms sweep back: this many times half the wedge's width
       inset: 0.3,          // m its arms stop short of the solid lines
+      crossWidest: 0.5,    // m: the most grass between the two roads' pavements where the player may cross, merging:
+                           // only where they meet, the hatched wedge (Track.crossable); further back it is grass
     },
     laneTaper: 60,         // m over which a side road widens or narrows by its exit's "lanes"
     shapeLead: 130,        // m at each end of a side road an exit's own shape ("out", "bends") leaves alone...

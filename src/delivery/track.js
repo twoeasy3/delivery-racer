@@ -707,6 +707,10 @@ const createTrack = () => {
       } else if (wrongWay && kind === FLY_B && v.s >= x.flyB0 + FLY) {
         v.s = x.flyoverAt + (v.s - x.flyB0 - FLY);
         v.lat -= LSLOT;
+      } else if (v.isPlayer && kind === SIDE_ROAD && v.dir > 0 && v.lat < lo(v.s) && crossable(v.s) !== null && crossOver(v)) {
+        const m = crossOver(v); // (over the chevrons and on to the expressway, where it is: no jump)
+        v.s = m.s;
+        v.lat = m.lat;
       } else if (kind === SIDE_ROAD && v.dir > 0 && v.s >= x.sideEnd) {
         v.s = x.mergeAt + (v.s - x.sideEnd);
         v.lat += RSLOT - LW / 2;
@@ -801,6 +805,33 @@ const createTrack = () => {
     }
     h = toWorld(s, 0, c);
     return { s, lat: -(x - c.x) * Math.cos(h) + (z - c.z) * Math.sin(h) };
+  };
+
+  // Across the chevrons at a merge (the owner, 11-Oct): on a side road's last CONFIG.ramps.nose.reach m before it
+  // joins, the hatched wedge between it and the expressway is pavement, and the player may drive over it and on to
+  // the expressway there, not only at the end. crossable(s): how many m of wedge lie beyond the side road's inner
+  // edge at s, out to the expressway's own outer edge (0: the two pavements touch; null: no crossing here). The player's keepOnRoad lets it out that far,
+  // and transfer() puts it on the expressway once it is over the expressway's pavement (physics.js, below)
+  const crossAt = {};
+  const crossable = (s) => {
+    if (kindOf(s) !== SIDE_ROAD) return null;
+    const x = exitOf(s), q = x.sideEnd - s;
+    if (q < 0 || q > X.nose.reach || onBridge(s)) return null;
+    toWorld(s, lo(s), crossAt);
+    const m = fromWorld(crossAt.x, crossAt.z, x.mergeAt - q, 40);
+    if (!isMain(m.s) || onBridge(m.s)) return null;
+    const gap = m.lat - hi(m.s); // (the wedge's width there: the side road lies to the expressway's right)
+    return gap > X.nose.crossWidest ? null : Math.max(0, gap);
+  };
+  // the furthest left the player may be at side-road s, a car hw wide: the road's own edge, or out over the wedge
+  const crossLo = (s, hw) => { const c = crossable(s); return lo(s) - (c !== null ? c + 2 * hw + 0.2 : 0); };
+  // the player out on the wedge (or over the expressway's edge) at side-road s, lat: where that is on the expressway,
+  // if it is over its pavement by its own half-width (null: not yet)
+  const crossOver = (v) => {
+    const x = exitOf(v.s), q = x.sideEnd - v.s;
+    toWorld(v.s, v.lat, crossAt);
+    const m = fromWorld(crossAt.x, crossAt.z, x.mergeAt - q, 40);
+    return isMain(m.s) && m.lat <= hi(m.s) - v.hw ? m : null;
   };
 
   // ---- junctions (a level's "junctions": see CONFIG.junction) --------------------------------
@@ -1260,7 +1291,7 @@ const createTrack = () => {
     toWorld, fromWorld, grade, hilly, transfer, along, progress, finished, inBounds, spawnAt, place, isMain,
     laneOffset, openLane, nearestLane, laneRange, assistOffset, flyHeight,
     lanesOn, edge, extraLane, onBridge, icy, sprays, slicks, muddy, gravels, gravelBand, gravelAt, water, waters, foggy, tunnel, bend, onRails, junctions, zoneAt, lo, hi, laneLo, laneHi, shoulderOffset, onShoulder, rampLaneZone, sideOpen, sideWidth, sideLeft, sideOncoming,
-    flyPillar, sideDistance, mainDistance, exits,
+    flyPillar, sideDistance, mainDistance, exits, crossable, crossLo,
   };
 };
 
