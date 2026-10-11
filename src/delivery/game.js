@@ -149,6 +149,17 @@ export const Game = {
     selectLevel(LEVELS.indexOf(next));
     this.start();
   },
+  // Start (or Enter) on the menu: askStart, if set (render/menu.js), may ask the player first (a medal already
+  // earned): it answers true to play. A restart from the results screen is not asked
+  askStart: null,
+  async startAsked() {
+    if (this.state !== 'start' || !this.askStart) { this.start(); return; }
+    if (this.asking) return;
+    this.asking = true;
+    const go = await this.askStart().catch(() => false);
+    this.asking = false;
+    if (go && this.state === 'start') this.start();
+  },
   start() {
     // an amphibious level is only driven in an amphibious car: with none owned, back to the menu, which says
     // which one to get (render/menu.js). With one owned it is driven in that, whatever car is in use
@@ -450,7 +461,7 @@ export const formatTime = (t) => {
 
 const playing = () => Game.state === 'playing';
 Input.on('throw', () => playing() && !Game.paused && !Game.screensaver && Packages.throwOne());
-Input.on('confirm', () => Delivery.active ? Delivery.skip() : !playing() && !Game.inMenu && Game.start()); // (Enter during the delivery at the kerb skips it)
+Input.on('confirm', () => Delivery.active ? Delivery.skip() : !playing() && !Game.inMenu && Game.startAsked()); // (Enter during the delivery at the kerb skips it)
 Input.on('pause', () => Game.togglePause());
 
 const startScreen = document.getElementById('startScreen');

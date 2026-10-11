@@ -96,6 +96,14 @@ document.getElementById('completeBtn').addEventListener('click', async () => {
   draw();
 });
 
+// Start on a side whose medal is already earned, while level 4 of the tier is still shut: the replay wins only the
+// tip, so the player is asked first (the owner, 11-Oct; Tiers.askReplay says when, and the start button says so)
+Game.askStart = async () => {
+  if (!Tiers.askReplay(LEVEL, Game.evil)) return true;
+  const side = Game.evil && !LEVEL.battle && !LEVEL.alwaysGood ? 'Evil' : 'Good';
+  return ask({ title: 'Medal already earned', lines: ['You have already earned the ' + side + ' Medal for this level. Playing this again will only award you the cash. Play anyway?'], ok: 'Play anyway' });
+};
+
 // a secret: typing B U S on the start screen puts you in a city bus. It is yours from then
 // on (pick another car in the garage to get out of it; Reset progress takes it away).
 {

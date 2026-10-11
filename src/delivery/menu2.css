@@ -180,6 +180,8 @@
   transition: transform .1s, filter .15s; animation: start-pulse 1.6s ease-in-out infinite; }
 #startScreen #startBtn:hover:not(:disabled) { filter: brightness(1.12); transform: scale(1.02); }
 #startScreen #startBtn:active:not(:disabled) { transform: scale(.98); }
+#startScreen #startBtn .start-note { display: block; margin-top: 4px; font-size: 12px; font-style: normal; font-weight: 700; letter-spacing: .08em; opacity: .75; }
+#startScreen #startBtn .start-note.hidden { display: none; }
 #startScreen #startBtn:disabled { background: #39414f; color: rgba(255, 255, 255, .5); animation: none; }
 @keyframes start-pulse { 50% { filter: brightness(1.14) drop-shadow(0 0 10px var(--accent-glow)); } }
 

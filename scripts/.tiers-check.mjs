@@ -1,5 +1,5 @@
 // A check of the level tiers (src/delivery/tiers.js, tiers.json): the file is sound; what opens and when (levels 1
-// and 2 with the tier, 3 on two medals, 4 on four, 5 on level 4, the next tier on level 5, Blue 1 after the
+// and 2 with the tier, 3 on two medals, 4 on three, 5 on level 4, the next tier on level 5, Blue 1 after the
 // five-star tier's level 5, an amphibious level on a medal on every stage of its blue tier); the car rule
 // (exactly that tier's cars on a medal not earned, any car once it is, null car with none owned, the player's own
 // pick kept apart); a save from before keeps what it had open; and the switch off gives the old rule.
@@ -36,9 +36,10 @@ check(Tiers.medals(a) === 2 && Tiers.isOpen(c), 'both medals of one level open l
 check(!Tiers.isOpen(d), 'level 4 still closed on two halves');
 fresh(); beat(a); beat(b);
 check(Tiers.isOpen(c), 'level 3 opens on two halves from two levels (any two halves)');
-check(!Tiers.isOpen(d), 'level 4 needs four halves');
-beat(a, true); beat(b, true);
-check(Tiers.isOpen(d) && !Tiers.isOpen(e), 'four halves open level 4, not level 5');
+check(!Tiers.isOpen(d), 'level 4 needs three halves: two do not open it');
+beat(a, true);
+check(Tiers.isOpen(d) && !Tiers.isOpen(e), 'three halves open level 4, not level 5');
+beat(b, true);
 beat(d);
 check(Tiers.isOpen(e), 'level 5 opens on level 4 beaten (either medal)');
 check(!Tiers.isOpen(T[1][0]), 'tier 2 still closed before level 5 is beaten');
@@ -158,6 +159,23 @@ Progress.data.bestTime.good = Object.fromEntries(g.levels.LEVELS.slice(0, 11).ma
 check(Tiers.isOpen(g.levels.LEVELS[11]) && Tiers.isOpen(g.levels.LEVELS[0]) && Tiers.legacy() === 12, 'a save with 12 levels open keeps all 12 open under the tiers');
 check(Progress.data.tierBase === 12, 'and the count is kept in the save (tierBase)');
 check(Tiers.medals(g.levels.LEVELS[0]) === 1, 'its best times are its medals (a Good medal each)');
+// ---- a replay on a side whose medal is earned: the start button says so (replayed), and the player is asked first
+// (askReplay) while level 4 of the tier is still shut
+fresh();
+beat(a);
+check(Tiers.replayed(a, false) && !Tiers.replayed(a, true) && !Tiers.replayed(b, false), 'replayed: only the side whose medal is earned');
+check(Tiers.askReplay(a, false) && !Tiers.askReplay(a, true), 'asked first on that side while level 4 is shut');
+beat(b); beat(a, true);
+check(Tiers.isOpen(d) && Tiers.replayed(a, false) && !Tiers.askReplay(a, false), 'level 4 open (three medals): still marked, no longer asked');
+{
+  const outside = Tiers.outside.find(level => !g.levels.isRace(level)), race = g.levels.LEVELS.find(level => g.levels.isRace(level));
+  beat(outside);
+  check(Tiers.replayed(outside, false) && !Tiers.askReplay(outside, false), 'a level outside the tiers: marked, never asked (it has no level 4)');
+  check(!Tiers.replayed(race, false), 'a race is never marked');
+  g.CONFIG.progression.tiers = false;
+  check(!Tiers.replayed(a, false) && !Tiers.askReplay(a, false), 'the tiers off: no mark, no question');
+  g.CONFIG.progression.tiers = true;
+}
 // ---- "Unlock everything" (the menu's Complete save) on a save the tiers have already looked at
 fresh();
 Tiers.legacy();
@@ -165,7 +183,17 @@ Progress.complete({ levels: g.levels.LEVELS.length, cars: [], money: 0 });
 {
   const shut = g.levels.LEVELS.filter(level => !Tiers.isOpen(level));
   check(shut.length === 0, 'Unlock everything opens every level under the tiers' + (shut.length ? ' (shut: ' + shut.map(l => l.id).join(', ') + ')' : ''));
+  const deliveries = g.levels.LEVELS.filter(level => !g.levels.isRace(level));
+  const short = deliveries.filter(level => Tiers.medals(level) !== 2);
+  check(short.length === 0, 'and puts both medals on every delivery level' + (short.length ? ' (short: ' + short.map(l => l.id).join(', ') + ')' : ''));
+  check(deliveries.every(level => [false, true].every(evil => [0, undefined].includes(Progress.bestTime(level.id, evil)))) && Progress.bestTime(deliveries[0].id, false) === 0,
+    'as best times of 0:00 to spare');
+  check(!cars.EARNED_CARS.some(car => Progress.earned(car)), 'which earn no 6-star car');
 }
+fresh();
+Progress.data.bestTime.good[a.id] = 42;
+Progress.complete({ levels: g.levels.LEVELS.length, cars: [], money: 0 });
+check(Progress.bestTime(a.id, false) === 42 && Progress.bestTime(a.id, true) === 0, 'Unlock everything keeps a real best time, and fills in the side that had none');
 // ---- the owner's bug: an Idea Car picked, a restricted level forces the Commuter, and the run and its results
 // must stay in the Commuter even once the delivery earns the medal (which ends the rule); the pick comes back
 {
