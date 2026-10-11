@@ -3,7 +3,7 @@
 `main` of this repository is the owner's COMPLETED game work (a snapshot of his local main at 9ee71b6, game files only).
 The unfinished work lived on local branches and worktrees on the owner's machine; it is carried here as
 patches, one per branch (`git diff main...<branch>`, game paths and text files only), so nothing is merged and nothing conflicts at
-rest. The branches themselves do not exist in this repo. This repo is NOT deployed.
+rest. The branches themselves do not exist in this repo. This repo deploys on push to `main` (see CLOUD-AGENT-README.md).
 
 Apply one (from the repo root): `git apply --3way WIP/<branch>.patch`, then check, then commit it yourself. Every patch
 was tried on this tree with `git apply --3way`; results below. Each patch includes its own scratchpad .md
@@ -59,9 +59,9 @@ places for specials/amphibious/races. Rules: see CLOUD-AGENT-README.md.
 
 This repository is the game only, published as one snapshot commit (no history). The owner's car-collection site is
 not here: its React app, Worker, D1/R2 schema, collection data and backups, import scripts, server.py, start-dev.bat,
-`wrangler.jsonc`, `public/_redirects`, the site-only scripts and assets, and the three OpenStreetMap map caches
-under `scripts/circuits/cache` (`scripts/circuit-from-osm.mjs` refetches them). Nothing in the tree deploys:
-`package.json` has no deploy or wrangler script, `vite.config.js` has no Cloudflare plugin, there are no workflows.
+the site's `wrangler.jsonc` and `public/_redirects` (this repo has its own, for the game), the site-only scripts and assets, and the three OpenStreetMap map caches
+under `scripts/circuits/cache` (`scripts/circuit-from-osm.mjs` refetches them). The tree deploys as a static-assets Worker
+(`wrangler.jsonc`, `npm run deploy`); there are no workflows.
 The patches in this directory are against this tree: hunks outside the game paths do not exist (none were found).
 The local paths of the owner's machine in the original notes were replaced by placeholders (`<repo>`, `<TEMP>`,
 `<scratchpad>`, `<home>`).

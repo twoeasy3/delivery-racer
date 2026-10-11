@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 
 // Delivery Racer only. The pages are in delivery/ (served at /delivery/ by `vite`); the code is src/delivery.
-// No Cloudflare plugin, no Worker: this repository is not deployed.
+// Deployed as a static-assets Cloudflare Worker (wrangler.jsonc): no Worker script, so no Cloudflare plugin here.
 export default defineConfig({
   build: {
     rollupOptions: {
