@@ -170,16 +170,16 @@ export const Tiers = {
   lockedBecause(level) {
     const place = placeOf.get(level);
     if (place) {
+      // (levels 3 to 5 say what they need inside their own tier, even while the tier is shut; levels 1 and 2, which
+      // open with the tier, say what opens it: the owner, 11-Oct)
+      const need = this.need(level);
+      const more = need && need.medals ? need.medals - this.tierMedals(place.tier) : 0;
+      if (more > 0) return 'Earn ' + more + ' more medal' + (more === 1 ? '' : 's') + ' in ' + this.tierName(place.tier);
+      if (need && need.level && !this.beaten(need.level)) return 'Earn a medal in ' + this.tierName(place.tier) + ' level ' + (place.pos - 1);
       if (!this.tierOpen(place.tier)) {
         const before = TIERS[TIER_NUMBERS.indexOf(place.tier) - 1] || [];
         return before.length ? 'Earn a medal on level ' + before.length + ' of ' + this.tierName(place.tier - 1) + ' to open this tier' : 'Locked';
       }
-      const need = this.need(level);
-      if (need && need.medals) {
-        const more = need.medals - this.tierMedals(place.tier);
-        return 'Earn ' + more + ' more medal' + (more === 1 ? '' : 's') + ' in ' + this.tierName(place.tier) + ' (one for each side a level is delivered on)';
-      }
-      if (need && need.level) return 'Earn a medal on level ' + (place.pos - 1);
       return 'Locked';
     }
     if (level.amphibious || AMPHIBIOUS_LEVELS.includes(level)) {
