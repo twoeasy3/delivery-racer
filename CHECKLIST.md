@@ -48,6 +48,7 @@ Working list, from the owner's ideas of 2026-10-09. `[x]` done, `[~]` partly don
 - [x] 46. Grade under the quarry rock face: a hill now rises behind the benches to the top one's height, runs back and falls away, and slopes down past each end of the quarry (`CONFIG.quarry.hill`). Seen in two screenshots of Quarry Run; where two stretches of a quarry with different floors join, the hill has a step, as the benches do.
 - [x] 47. Re-run the level clocks (Quarry Run, Tour de Coast). Quarry Run's was already right (215 / 165); Tour de Coast's is now 210 / 160 (was 215 / 165).
 - [x] 48. Unify the screenshot scripts into `scripts/shots.mjs`: named shots, `--levels` and `--cars`. Named shots used and working; `--levels` and `--cars` were not run.
+- [x] 53. "Unlock everything" (Options, Save) left 62 of the 70 levels locked: it raised the old rule's open-level count, but the tiers (on by default) only read the count they took the first time they looked (`tierBase`). It now raises that too (`progress.js` `complete()`), as `?pick` already did. Checked headless (a new case in `scripts/.tiers-check.mjs`, which fails without the fix) and in a browser on a fresh save: 62 locked before, 0 after, still 0 after a reload. Not covered: the car rule is unchanged, so a level with no medal yet still asks for a car of its tier (every car is bought, so one is always there).
 
 ## Technical
 

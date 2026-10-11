@@ -260,6 +260,7 @@ export const Progress = {
   // (best times are only ever earned)
   complete({ levels, cars, money }) {
     this.data.unlocked = Math.max(this.data.unlocked, levels);
+    this.data.tierBase = Math.max(this.data.tierBase || 0, levels); // (the tiers, tiers.js: all open too)
     for (const id of cars) if (!this.data.cars.includes(id)) this.data.cars.push(id);
     this.data.money = Math.max(this.data.money, money);
     this.save();

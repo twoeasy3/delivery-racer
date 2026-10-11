@@ -158,6 +158,14 @@ Progress.data.bestTime.good = Object.fromEntries(g.levels.LEVELS.slice(0, 11).ma
 check(Tiers.isOpen(g.levels.LEVELS[11]) && Tiers.isOpen(g.levels.LEVELS[0]) && Tiers.legacy() === 12, 'a save with 12 levels open keeps all 12 open under the tiers');
 check(Progress.data.tierBase === 12, 'and the count is kept in the save (tierBase)');
 check(Tiers.medals(g.levels.LEVELS[0]) === 1, 'its best times are its medals (a Good medal each)');
+// ---- "Unlock everything" (the menu's Complete save) on a save the tiers have already looked at
+fresh();
+Tiers.legacy();
+Progress.complete({ levels: g.levels.LEVELS.length, cars: [], money: 0 });
+{
+  const shut = g.levels.LEVELS.filter(level => !Tiers.isOpen(level));
+  check(shut.length === 0, 'Unlock everything opens every level under the tiers' + (shut.length ? ' (shut: ' + shut.map(l => l.id).join(', ') + ')' : ''));
+}
 // ---- the owner's bug: an Idea Car picked, a restricted level forces the Commuter, and the run and its results
 // must stay in the Commuter even once the delivery earns the medal (which ends the rule); the pick comes back
 {
