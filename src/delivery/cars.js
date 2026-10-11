@@ -344,7 +344,12 @@ export const carAllowed = () => { const t = restrictedTier(); return t === null 
 // the car picked in the garage. Called when a level is picked and when a run starts.
 // (amphibious: the level is an amphibious one, its "amphibious": the car in use if it floats, or else the best
 // amphibious car the player owns. With none owned the car in use stays, and Game.start won't start the level)
+// a replay's car (replay.js): every run is in it, whatever the save and the level's rules say, until unpinned (null)
+let pinned = null;
+export const carById = (id) => LEVEL_CARS[id] || [...CARS, ...EARNED_CARS, ...Object.values(SECRET_CARS), ...IDEA_CARS].find(car => car.id === id) || null;
+export const pinCar = (id) => { pinned = id ? carById(id) : null; };
 export const useLevelCar = (id, amphibious) => {
+  if (pinned) { CAR = pinned; lent = null; return; }
   CAR = (id && (LEVEL_CARS[id] || CARS.find(c => c.id === id))) || forcedCar(find(), amphibious ? null : restrictedTier()); // (a special vehicle, or one of the garage's, or what the level's tier rule allows)
   if (amphibious && !id && !CAR.amphibious) CAR = ownedAmphibious() || CAR;
   lent = null;

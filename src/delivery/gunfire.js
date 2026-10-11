@@ -16,8 +16,9 @@ import { Player } from './player.js';
 import { Collision } from './collision.js';
 import { hurt, sfxAt } from './physics.js';
 import { Message } from './messages.js';
+import { random } from './util.js';
 
-const between = (range) => range.min + Math.random() * (range.max - range.min);
+const between = (range) => range.min + random() * (range.max - range.min);
 
 // The suburb's lots (see render/road.js: the suburb scenery), the same every run: on each side, one
 // every LOT m, and on most a house; where its front windows are, m out from the road's edge, or null
@@ -77,13 +78,13 @@ export const Gunfire = {
     const tv = target.isPlayer ? Player.speed * Player.dir : target.vs;
     const far = Math.hypot(target.s - from.s, target.lat - from.lat);
     const flight = far / G.speed;
-    let aimS = target.s + tv * flight + (Math.random() - 0.5) * 2 * G.spread;
-    const aimLat = target.lat + (Math.random() - 0.5) * 2 * G.spread;
+    let aimS = target.s + tv * flight + (random() - 0.5) * 2 * G.spread;
+    const aimLat = target.lat + (random() - 0.5) * 2 * G.spread;
     if (from.facing) { // (out of a window: within its arc)
       const most = Math.abs(aimLat - from.lat) * Math.tan(G.arc);
       aimS = from.s + Math.max(-most, Math.min(most, aimS - from.s));
     }
-    const aimY = 0.7 + Math.random() * 0.5;
+    const aimY = 0.7 + random() * 0.5;
     const ds = aimS - from.s, dl = aimLat - from.lat, dy = aimY - from.y, len = Math.hypot(ds, dl, dy) || 1;
     this.bullets.push({ s: from.s, lat: from.lat, y: from.y, vs: ds / len * G.speed, vl: dl / len * G.speed, vy: dy / len * G.speed,
       life: G.range / G.speed, owner, s0: from.s, lat0: from.lat, y0: from.y });
@@ -97,12 +98,12 @@ export const Gunfire = {
     if (v.isPlayer) {
       if (Player.shield > 0 || Player.ghost > 0) return false; // (it passes through: see the shield after a respawn, and the ghost)
       if (Player.tank <= 0) hurt(Player, G.damage);
-      if (Player.tank <= 0 && Math.random() < G.puncture) Player.punctureTyre(Math.random() < 0.5 ? -1 : 1);
+      if (Player.tank <= 0 && random() < G.puncture) Player.punctureTyre(random() < 0.5 ? -1 : 1);
     } else {
       hurt(v, G.damage);
       v.showMood = true;
       // (nothing without tyres; a tank's tracks only a blast breaks: see CONFIG.brokenTracks)
-      if (!v.courier && !v.racer && !CONFIG.vehicles[v.kind]?.noWheels && v.kind !== 'tank' && Math.random() < G.puncture) v.punctured = true;
+      if (!v.courier && !v.racer && !CONFIG.vehicles[v.kind]?.noWheels && v.kind !== 'tank' && random() < G.puncture) v.punctured = true;
     }
     return true;
   },
@@ -134,7 +135,7 @@ export const Gunfire = {
           });
           if (!inArc.length) continue;
           this.cool.set(key, between(zone?.every || G.every));
-          this.bursts.push({ ...w, target: inArc[Math.floor(Math.random() * inArc.length)], y: house.tall && Math.random() < 0.5 ? 4.4 : 1.6,
+          this.bursts.push({ ...w, target: inArc[Math.floor(random() * inArc.length)], y: house.tall && random() < 0.5 ? 4.4 : 1.6,
             left: Math.round(between(G.shots)), wait: 0 });
         }
       }
@@ -152,7 +153,7 @@ export const Gunfire = {
         });
         if (!inArc.length) return;
         this.cool.set(key, between(G.every));
-        this.bursts.push({ s: box.s, lat: box.lat, facing: box.facing, target: inArc[Math.floor(Math.random() * inArc.length)], y: 1.15 * CONFIG.battle.pillboxScale, // (out of its slit)
+        this.bursts.push({ s: box.s, lat: box.lat, facing: box.facing, target: inArc[Math.floor(random() * inArc.length)], y: 1.15 * CONFIG.battle.pillboxScale, // (out of its slit)
           left: Math.round(between(G.shots)), wait: 0 });
       });
     }

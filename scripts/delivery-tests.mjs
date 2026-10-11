@@ -85,10 +85,10 @@ const GROUPS = {
     files: [/src\/delivery\/render\//, /\.css$/],
   },
   replay: {
-    about: 'Determinism: every level replays exactly from a seed (a run hashed each second, twice the same, once another). Heavy.',
-    seconds: 300,
-    tests: [t('.replay-check.mjs', { heavy: true })],
-    files: [/game\.js|physics\.js|traffic\.js|config\.js|player\.js|collision\.js|track\.js|Math\.random/],
+    about: 'Determinism: every level replays exactly from its seeds (a run hashed each second, twice the same, once another); runs recorded and played back by replay.js (pause, rewind, refusals). Heavy.',
+    seconds: 360,
+    tests: [t('.replay-check.mjs', { heavy: true }), t('.replay-record-check.mjs', { heavy: true })],
+    files: [/game\.js|physics\.js|traffic\.js|config\.js|player\.js|collision\.js|track\.js|replay\.js|input\.js|util\.js|main\.js|random/],
   },
   'smoke-quick': {
     about: 'The whole quick smoke test: every level\'s checks (no full drive) and ~30 sections of mechanics (traffic, police, railway, tide, '

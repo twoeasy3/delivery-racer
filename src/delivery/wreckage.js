@@ -27,6 +27,7 @@ import { FxQueue, sfx, sfxAt } from './physics.js';
 import { Game } from './game.js';
 import { Message } from './messages.js';
 import { CAR } from './cars.js';
+import { random } from './util.js';
 
 export const Wreckage = {
   tower: null, // the level's control tower: { at, trigger, t (s since it went; -1 = standing), down }
@@ -85,7 +86,7 @@ export const Wreckage = {
   fireballs(s0, s1, lat0, lat1, count) {
     for (let k = 0; k < count; k++) {
       const u = (k + 0.5) / count;
-      FxQueue.push({ type: 'explode', s: s0 + (s1 - s0) * (count > 4 ? u : Math.random()), lat: lat0 + (lat1 - lat0) * (count > 4 ? Math.random() : u),
+      FxQueue.push({ type: 'explode', s: s0 + (s1 - s0) * (count > 4 ? u : random()), lat: lat0 + (lat1 - lat0) * (count > 4 ? random() : u),
         vs: 0, big: true, scale: 1.3, ...(k ? { sound: 'none' } : {}) });
     }
   },
@@ -129,7 +130,7 @@ export const Wreckage = {
           const want = Math.min(W.blastBalls, Math.ceil(W.blastBalls * (e.t - W.blastWarn) / W.blastTime));
           for (; e.swept < want; e.swept++) {
             const u = e.swept / (W.blastBalls - 1);
-            FxQueue.push({ type: 'explode', s: e.at + (Math.random() - 0.5) * e.depth * 0.5, lat: front + (far - front) * u, vs: 0, big: true,
+            FxQueue.push({ type: 'explode', s: e.at + (random() - 0.5) * e.depth * 0.5, lat: front + (far - front) * u, vs: 0, big: true,
               scale: 1.3 - 0.4 * u, ...(e.swept ? { sound: 'none' } : {}) });
           }
         }

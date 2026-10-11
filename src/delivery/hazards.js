@@ -17,8 +17,9 @@ import { Collision } from './collision.js';
 import { Message } from './messages.js';
 import { hurt, sfx, sfxAt } from './physics.js';
 import { Game } from './game.js';
+import { random } from './util.js';
 
-const between = (r) => r.min + Math.random() * (r.max - r.min);
+const between = (r) => r.min + random() * (r.max - r.min);
 const clamp01 = (u) => Math.max(0, Math.min(1, u));
 // how fast a car may go so as to stop at `line` (Infinity if it is past it, or far off)
 const stopAt = (car, line) => {

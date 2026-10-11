@@ -15,6 +15,7 @@ import { Player } from './player.js';
 import { Input } from './input.js';
 import { FxQueue } from './physics.js';
 import { selectCar } from './cars.js';
+import { swapDice } from './util.js';
 
 const LONGEST = 900; // s of driving before the run is given up
 // The dice for the run: the same every time for a given level (seeded from its id), so its clock is the same
@@ -34,9 +35,10 @@ const seeded = (text) => {
 // the level already picked (selectLevel / selectSpecial): { delivered, time, outcome, car, pluses, clock }
 // (seed: text added to the level's id for other dice, scripts/level-clocks.mjs --seed=)
 export const cleanRun = (seed = '') => {
-  const dice = Math.random;
-  Math.random = seeded(String(LEVEL.id || '') + seed);
-  try { return driven(); } finally { Math.random = dice; }
+  const dice = Math.random, run = seeded(String(LEVEL.id || '') + seed);
+  Math.random = run;
+  const logic = swapDice(run); // (the logic's own dice too: util.js random)
+  try { return driven(); } finally { Math.random = dice; swapDice(logic); }
 };
 const driven = () => {
   const level = LEVEL, C = CONFIG.clock, round = (t) => Math.max(C.round, Math.round(t / C.round) * C.round);

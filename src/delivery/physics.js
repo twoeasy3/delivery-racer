@@ -1,5 +1,5 @@
 import { CONFIG } from './config.js';
-import { clamp, damp } from './util.js';
+import { clamp, damp, random } from './util.js';
 import { Track } from './track.js';
 import { LEVEL } from './levels.js';
 
@@ -83,8 +83,8 @@ export const maybeSpinOut = (v, amount, scale = 1, crit = 1) => {
   const type = CONFIG.vehicles[v.kind];
   const chance = scale * CONFIG.spinPerDamage * (amount / v.maxHealth) * (1 + CONFIG.spinRamp * lost * lost) * (type?.spin ?? 1);
   // a critical hit: the car wobbles for a moment, then spins out whatever state it was in
-  if (!(v.wobble > 0) && Math.random() < CONFIG.critChance * scale * crit * (type?.crit ?? 1)) v.wobble = CONFIG.critWobbleTime;
-  if (Math.random() < chance && !type?.noSpin) spinOut(v); // (an 18-wheeler never spins)
+  if (!(v.wobble > 0) && random() < CONFIG.critChance * scale * crit * (type?.crit ?? 1)) v.wobble = CONFIG.critWobbleTime;
+  if (random() < chance && !type?.noSpin) spinOut(v); // (an 18-wheeler never spins)
 };
 // the car loses all control: it arcs away, turning a full circle, and then blows up
 export const spinOut = (v) => {
@@ -93,10 +93,10 @@ export const spinOut = (v) => {
   v.spinIce = false; // (one that skidded on ice says so itself: see Traffic)
   v.wobble = 0;
   v.spin = CONFIG.spinTime;
-  v.spinTurn = Math.random() < 0.5 ? -1 : 1; // which way the body rotates
+  v.spinTurn = random() < 0.5 ? -1 : 1; // which way the body rotates
   // its path will arc one way or the other from whatever its momentum is now
-  v.spinRate = (Math.random() < 0.5 ? -1 : 1) *
-    (CONFIG.spinTurnMin + Math.random() * (CONFIG.spinTurnMax - CONFIG.spinTurnMin));
+  v.spinRate = (random() < 0.5 ? -1 : 1) *
+    (CONFIG.spinTurnMin + random() * (CONFIG.spinTurnMax - CONFIG.spinTurnMin));
 };
 // one traffic car taking against another (see Traffic.update for what it then does)
 export const startRivalry = (car, other) => {

@@ -27,6 +27,7 @@ import { Pickups } from './pickups.js';
 import { Game } from './game.js';
 import { Message } from './messages.js';
 import { sfx } from './physics.js';
+import { random } from './util.js';
 
 const M = () => CONFIG.mystery;
 
@@ -47,7 +48,7 @@ const bounceTraffic = () => {
     const [first, last] = Track.laneRange(car.dir, car.s);
     const beside = [car.lane - 1, car.lane + 1].filter(l => l >= first && l <= last && Track.openLane(l, car.s) === l);
     if (!beside.length) continue;
-    const lane = beside[Math.floor(Math.random() * beside.length)];
+    const lane = beside[Math.floor(random() * beside.length)];
     car.latVel += Math.sign(lane - car.lane) * Q.kick;
     car.lane = lane;
     car.pendingLane = null;

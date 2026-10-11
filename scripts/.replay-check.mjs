@@ -26,6 +26,7 @@ Math.random = () => {
 const g = await boot({ cars: ['commuter', 'sport', 'floatvan'] }); // (the Float Van: an amphibious level starts in nothing else)
 const { Game: G, Player: P, Traffic, Collision, Input } = g;
 const { Progress } = await g.load('progress.js');
+const { random: logicRandom } = await g.load('util.js');
 let failures = 0;
 const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' : '  FAIL  ') + what); };
 
@@ -43,7 +44,7 @@ const snapshot = () => {
   const n = [G.time, G.state, G.wrecks, G.busts, G.lap || 0, P.s, P.lat, P.speed, P.health, P.active ? 1 : 0];
   for (const c of Traffic.cars) { n.push(c.active ? 1 : 0); if (c.active) n.push(c.s, c.lat, c.lane ?? 0, c.health ?? 0, c.kind, c.evil ? 1 : 0); }
   for (const o of Collision.obstacles) n.push(o.gone ? 1 : 0, o.s, o.lat);
-  n.push(Math.random()); // (and where the dice are: a draw more or fewer anywhere shows at once)
+  n.push(logicRandom()); // (and where the logic's dice are, util.js random: a draw more or fewer anywhere shows at once)
   return n;
 };
 // the scripted inputs: a pure function of the step number (what a recording of a real run would hold)
@@ -68,6 +69,10 @@ const play = (level, seedValue) => {
   // car, so the level starts in a car of its tier as a player's would: the rule is the game's own, only the garage is full)
   Progress.data.cars = [...new Set([...Progress.data.cars, ...g.cars.CARS.map(c => c.id)])];
   if (!KEEP_LEVEL) G.loaded = null;
+  // (the game's own seeds, as a replay hands them over: the run's, and the level load's; with --keep-level the level
+  // stays as the first run built it, and only the run's seed is given)
+  G.nextSeed = seedValue >>> 0;
+  if (!KEEP_LEVEL) G.nextLoadSeed = (seedValue ^ 0x9e3779b9) >>> 0;
   G.start();
   const hashes = [], perSecond = Math.round(1 / STEP);
   let stateBytes = 0, inputChanges = 0, last = '', busiest = 0;

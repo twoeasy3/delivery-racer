@@ -12,6 +12,7 @@
 import { CONFIG } from './config.js';
 import { LEVEL } from './levels.js';
 import { Track } from './track.js';
+import { random } from './util.js';
 
 // m either end of the works over which the traffic coming the other way moves over into the open lane, and back
 // out of it (traffic waits beyond it, both ways, so as not to meet the last coming through)
@@ -55,7 +56,7 @@ export const StopGo = {
       if (d < -0.5 || d > 80) continue;
       if (car.stopGoFor !== z) { // (whether this driver runs the STOP, decided once as it comes up to the works)
         car.stopGoFor = z;
-        car.stopGoRuns = car.evil && Math.random() < G.runChance;
+        car.stopGoRuns = car.evil && random() < G.runChance;
       }
       if (car.stopGoRuns) continue;
       if (z.t < 0.3 && car.vs * car.vs / (2 * CONFIG.junction.stopping) > d + 4) continue; // (too close to stop as it changed)

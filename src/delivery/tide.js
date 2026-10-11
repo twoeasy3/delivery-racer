@@ -21,14 +21,15 @@ import { sfx } from './physics.js';
 import { Player } from './player.js';
 import { Game } from './game.js';
 import { Pickups } from './pickups.js';
+import { random } from './util.js';
 
 const smooth = (t) => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
-const between = (range) => range.min + Math.random() * (range.max - range.min);
+const between = (range) => range.min + random() * (range.max - range.min);
 const W = () => CONFIG.tide;
 // one of a list's keys, by the shares its values give them
 const pick = (shares) => {
   const all = Object.entries(shares);
-  let r = Math.random() * all.reduce((sum, [, share]) => sum + share, 0);
+  let r = random() * all.reduce((sum, [, share]) => sum + share, 0);
   for (const [key, share] of all) if ((r -= share) < 0) return key;
   return all[0][0];
 };
@@ -169,12 +170,12 @@ export const Tide = {
       if (!p) continue;
       p.pending = true; // (spoken for, and out of sight, until the wave comes in)
       p.taken = true;
-      p.s = Math.min(wave.s1 - 30, at + 20 + Math.random() * 90);
+      p.s = Math.min(wave.s1 - 30, at + 20 + random() * 90);
       const [first, last] = Track.laneRange(1, p.s), deep = [];
       for (let lane = last; lane >= first; lane--) {
         if (this.depth(p.s, Track.laneOffset(lane, p.s), W().warning + W().rise, true) >= W().deep) deep.push(lane);
       }
-      const lane = deep.length ? deep[Math.floor(Math.random() * Math.min(2, deep.length))] : last;
+      const lane = deep.length ? deep[Math.floor(random() * Math.min(2, deep.length))] : last;
       p.lat = Track.laneOffset(lane, p.s);
       wave.gifts.push(p);
     }
