@@ -175,7 +175,7 @@ export const Tiers = {
       const need = this.need(level);
       const more = need && need.medals ? need.medals - this.tierMedals(place.tier) : 0;
       if (more > 0) return 'Earn ' + more + ' more medal' + (more === 1 ? '' : 's') + ' in ' + this.tierName(place.tier);
-      if (need && need.level && !this.beaten(need.level)) return 'Earn a medal in ' + this.tierName(place.tier) + ' level ' + (place.pos - 1);
+      if (need && need.level && !this.beaten(need.level)) return 'Earn a medal on ' + levelNameOf(need.level); // (the level before it, by name)
       if (!this.tierOpen(place.tier)) {
         const before = TIERS[TIER_NUMBERS.indexOf(place.tier) - 1] || [];
         return before.length ? 'Earn a medal on level ' + before.length + ' of ' + this.tierName(place.tier - 1) + ' to open this tier' : 'Locked';
