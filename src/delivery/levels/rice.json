@@ -2,7 +2,7 @@
   "id": "rice",
   "theme": "rice",
   "clock": { "good": 205, "evil": 155 },
-  "tip": 300,
+  "tip": 245,
   "lanes": { "north": 2, "south": 1 },
   "shoulder": 2.5,
   "cargo": { "good": "sushi", "evil": "bats" },

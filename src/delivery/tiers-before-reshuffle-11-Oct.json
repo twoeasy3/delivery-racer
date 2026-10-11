@@ -1,0 +1,17 @@
+{
+  "_about": "BACKUP (11-Oct): the tier order and the tips before the theme reshuffle (CHECKLIST item 64). Not loaded by the game: to go back, copy \"tiers\" from here into tiers.json, and set each level's \"tip\" (levels/<id>.json) from \"tips\". The level tiers. Edit by hand, or: node scripts/tiers.mjs move <id> <tier> [position]. Tiers 1-5 are the gold-star tiers, 6-10 the Blue Star ones (Blue 1 is tier 6). A level appears once: in one tier, or in outside. Outside levels open in the order listed here (the first once tier 10 is cleared); an amphibious level opens by the rule in tiers.js amphibiousOpens; races are always open.",
+  "tiers": {
+    "1": ["expressway","back-roads","farm","big-business","hurricane"],
+    "2": ["night","mystery-meadows","suburbs","canberra","monte-carlo"],
+    "3": ["singapore","singapore-night","grand-pacific","passage-du-gois","safari"],
+    "4": ["airport","construction","the-hood","panorama-avenue","speed-trap-alley"],
+    "5": ["mountain-pass","outback-express","tour-de-coast","ring-road","market-town"],
+    "6": ["quarry-run","hong-kong","tokyo","mumbai","stelvio"],
+    "7": ["christmas","toys","leaks","moon","backlot"],
+    "8": ["venice","iceroad","park","cinder","docks"],
+    "9": ["noon","morro","rice","derby","seaquake"],
+    "10": ["farside","stunts","ponti","glow","erupt"]
+  },
+  "outside": ["cattle","thaw","fallout","all-heck","ufo","oh-mine","rival-run","showdown","battlefield","slipway","harbour","flood","ford","fjord","marina-bay","montreal","bathurst","monza","spa","albert-park"],
+  "tips": {"expressway":50,"back-roads":40,"farm":70,"big-business":90,"hurricane":130,"night":40,"mystery-meadows":80,"suburbs":85,"canberra":95,"monte-carlo":120,"singapore":115,"singapore-night":180,"grand-pacific":300,"passage-du-gois":200,"safari":220,"airport":260,"construction":230,"the-hood":170,"panorama-avenue":160,"speed-trap-alley":150,"mountain-pass":160,"outback-express":180,"tour-de-coast":190,"ring-road":200,"market-town":170,"quarry-run":210,"hong-kong":190,"tokyo":200,"mumbai":180,"stelvio":220,"christmas":175,"toys":280,"leaks":300,"moon":320,"backlot":300,"venice":310,"iceroad":320,"park":260,"cinder":270,"docks":270,"noon":300,"morro":300,"rice":300,"derby":300,"seaquake":320,"farside":360,"stunts":320,"ponti":300,"glow":280,"erupt":320}
+}

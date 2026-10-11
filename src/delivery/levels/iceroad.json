@@ -2,7 +2,7 @@
   "id": "iceroad",
   "theme": "iceroad",
   "clock": { "good": 200, "evil": 150 },
-  "tip": 320,
+  "tip": 280,
   "lanes": { "north": 3, "south": 2 },
   "cargo": { "good": "snowglobe", "evil": "ice" },
   "traffic": { "semi": 0.2, "cargotruck": 0.08, "pickup": 0.22, "suv": 0.14, "darkvan": 0.1, "van": 0.08, "wagon": 0.06, "junker": 0.05, "caravan": 0.04, "police": 0.03 },

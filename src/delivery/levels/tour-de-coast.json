@@ -7,7 +7,7 @@
   },
   "theme": "coast",
   "clock": { "good": 210, "evil": 160 },
-  "tip": 190,
+  "tip": 180,
   "traffic": { "wagon": 0.2, "lovebus": 0.16, "pickup": 0.13, "commuter": 0.13, "van": 0.1, "suv": 0.08, "miata": 0.07, "minivan": 0.05, "darkvan": 0.05, "police": 0.03 },
   "trafficCount": 9,
   "oncomingCount": 7,

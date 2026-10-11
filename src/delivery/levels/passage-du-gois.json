@@ -3,7 +3,7 @@
   "cargo": { "good": "goldfish", "evil": "tentacle" },
   "theme": "coast",
   "clock": { "good": 348, "evil": 247 },
-  "tip": 200,
+  "tip": 230,
   "lanes": { "north": 3, "south": 2 },
   "traffic": { "darkvan": 0.3, "commuter": 0.2, "wagon": 0.15, "lovebus": 0.12, "van": 0.1, "pickup": 0.08, "police": 0.05 },
   "trafficCount": 10,

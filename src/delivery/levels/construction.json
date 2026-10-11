@@ -5,7 +5,7 @@
   "lanes": 3,
   "shoulderTimer": false,
   "clock": { "good": 246, "evil": 174 },
-  "tip": 230,
+  "tip": 105,
   "traffic": { "pickup": 0.5, "minivan": 0.5 },
   "trafficCount": 4,
   "oncomingCount": 0,

@@ -2,7 +2,7 @@
   "id": "docks",
   "theme": "port",
   "clock": { "good": 215, "evil": 160 },
-  "tip": 270,
+  "tip": 350,
   "lanes": 6,
   "speedLimit": 60,
   "cargo": { "good": "globe", "evil": "barrel" },

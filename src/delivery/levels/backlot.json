@@ -2,7 +2,7 @@
   "id": "backlot",
   "theme": "backlot",
   "clock": { "good": 200, "evil": 150 },
-  "tip": 300,
+  "tip": 295,
   "lanes": { "north": 3, "south": 2 },
   "cargo": { "good": "trophy", "evil": "alien" },
   "traffic": { "van": 0.16, "darkvan": 0.14, "pickup": 0.14, "taxi": 0.1, "semi": 0.07, "hotrod": 0.08, "lowrider": 0.06, "sport": 0.08, "lovebus": 0.06, "minivan": 0.08, "police": 0.03 },

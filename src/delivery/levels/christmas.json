@@ -3,7 +3,7 @@
   "cargo": { "good": "cake", "evil": "doll" },
   "theme": "christmas",
   "clock": { "good": 180, "evil": 135 },
-  "tip": 175,
+  "tip": 185,
   "lanes": 4,
   "traffic": { "wagon": 0.22, "minivan": 0.2, "commuter": 0.18, "suv": 0.14, "postvan": 0.12, "van": 0.08, "police": 0.04 },
   "trafficCount": 9,

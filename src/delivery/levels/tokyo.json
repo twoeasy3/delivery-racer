@@ -3,7 +3,7 @@
   "theme": "tokyo",
   "drive": "left",
   "clock": { "good": 190, "evil": 140 },
-  "tip": 200,
+  "tip": 260,
   "pursuits": { "every": { "min": 40, "max": 70 } },
   "lanes": 4,
   "speedLimit": 80,

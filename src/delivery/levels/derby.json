@@ -2,7 +2,7 @@
   "id": "derby",
   "theme": "toyroom",
   "clock": { "good": 155, "evil": 120 },
-  "tip": 300,
+  "tip": 280,
   "lanes": 4,
   "flow": "north",
   "rival": "opposite",

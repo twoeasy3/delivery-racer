@@ -2,7 +2,7 @@
   "id": "the-hood",
   "theme": "hood",
   "clock": { "good": 304, "evil": 215 },
-  "tip": 170,
+  "tip": 210,
   "drivers": { "evil": 0.65, "evilMood": { "happy": 0.2, "angry": 0.2 } },
   "traffic": { "commuter": 0.22, "darkvan": 0.2, "lowrider": 0.2, "wagon": 0.13, "junker": 0.12, "driveby": 0.14 },
   "trafficCount": 10,

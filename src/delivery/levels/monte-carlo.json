@@ -2,7 +2,7 @@
   "id": "monte-carlo",
   "theme": "snow",
   "clock": { "good": 174, "evil": 123 },
-  "tip": 120,
+  "tip": 85,
   "lanes": 2,
   "traffic": { "darkvan": 0.34, "commuter": 0.24, "wagon": 0.16, "van": 0.14, "bus": 0.06, "police": 0.02 },
   "trafficCount": 6,

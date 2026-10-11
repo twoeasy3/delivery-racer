@@ -2,7 +2,7 @@
   "id": "cinder",
   "theme": "volcano",
   "clock": { "good": 225, "evil": 170 },
-  "tip": 270,
+  "tip": 205,
   "lanes": { "north": 3, "south": 2 },
   "cargo": { "good": "lavalamp", "evil": "cooker" },
   "traffic": { "jeep": 0.2, "pickup": 0.18, "suv": 0.12, "commuter": 0.1, "lovebus": 0.1, "junker": 0.1, "bus": 0.06, "caravan": 0.06, "van": 0.05, "police": 0.03 },

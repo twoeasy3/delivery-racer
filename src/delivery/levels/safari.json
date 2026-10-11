@@ -6,7 +6,7 @@
   "lanes": 3,
   "shoulderTimer": false,
   "clock": { "good": 252, "evil": 179 },
-  "tip": 220,
+  "tip": 240,
   "traffic": { "suv": 0.3, "pickup": 0.25, "wagon": 0.2, "van": 0.15, "lovebus": 0.1 },
   "trafficCount": 12,
   "oncomingCount": 0,

@@ -2,7 +2,7 @@
   "id": "outback-express",
   "theme": "panorama",
   "clock": { "good": 225, "evil": 170 },
-  "tip": 180,
+  "tip": 310,
   "cargo": { "good": "puppy", "evil": "egg" },
   "traffic": { "semi": 0.3, "pickup": 0.2, "jeep": 0.1, "wagon": 0.1, "caravan": 0.08, "junker": 0.07, "van": 0.07, "commuter": 0.05, "police": 0.03 },
   "trafficCount": 8,

@@ -2,7 +2,7 @@
   "id": "mountain-pass",
   "theme": "snow",
   "clock": { "good": 195, "evil": 155 },
-  "tip": 160,
+  "tip": 140,
   "lanes": 2,
   "cargo": { "good": "clock", "evil": "cannonball" },
   "traffic": { "wagon": 0.22, "commuter": 0.18, "van": 0.15, "suv": 0.12, "lovebus": 0.1, "semi": 0.1, "darkvan": 0.08, "bus": 0.05 },

@@ -2,7 +2,7 @@
   "id": "venice",
   "theme": "venice",
   "clock": { "good": 185, "evil": 140 },
-  "tip": 310,
+  "tip": 180,
   "lanes": 4,
   "cargo": { "good": "sundae", "evil": "mirror" },
   "traffic": { "commuter": 0.2, "miata": 0.12, "sport": 0.08, "van": 0.12, "postvan": 0.12, "taxi": 0.1, "lovebus": 0.06, "icecream": 0.05, "bus": 0.06, "learner": 0.04, "police": 0.03 },

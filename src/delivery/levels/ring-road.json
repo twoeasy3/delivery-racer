@@ -4,7 +4,7 @@
   "description": { "good": "Rush hour round the city: estate, retail park, stadium, services. The limit is 90, a 20 lies past every camera, and each low bridge has an exit round it.", "evil": "Cameras, ambulances, a police chase and three low bridges between you and the city centre. Take the cash off the shoulder and vanish down an exit." },
   "theme": "city",
   "clock": { "good": 265, "evil": 200 },
-  "tip": 200,
+  "tip": 185,
   "cargo": { "good": "coffee", "evil": "skunk" },
   "pursuits": { "every": { "min": 40, "max": 70 } },
   "speedLimit": 90,
