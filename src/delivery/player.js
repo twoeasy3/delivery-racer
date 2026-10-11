@@ -565,7 +565,7 @@ export const Player = {
 
     // the car can't be turned into the roadside or the bridge structure: sideways speed
     // toward a side fades to nothing as the car reaches it, so it straightens up
-    const roomLeft = Math.max(0, this.lat - this.hw - Track.lo(this.s));
+    const roomLeft = Math.max(0, this.lat - this.hw - Track.crossLo(this.s, this.hw)); // (out over the chevrons, merging: Track.crossable)
     const roomRight = Math.max(0, Track.hi(this.s) - this.hw - this.lat);
     // (but where walls hurt, "wallDamage", nothing eases the car off them: it hits them, see keepOnRoad)
     if (!LEVEL.wallDamage) this.latVel = clamp(this.latVel, -roomLeft * CONFIG.edgeBrake, roomRight * CONFIG.edgeBrake);

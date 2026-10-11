@@ -30,7 +30,9 @@ export const updateYaw = (v, dt) => {
 };
 
 export const keepOnRoad = (v, bounce) => {
-  const lo = Track.lo(v.s) + v.hw, hi = Track.hi(v.s) - v.hw;
+  // (the player merging off a side road may go out over the chevrons, the whole wedge and a car's width more, on to
+  // the expressway's pavement: Track.crossable, and Track.transfer puts it on the expressway there)
+  const lo = (v.isPlayer && v.dir > 0 ? Track.crossLo(v.s, v.hw) : Track.lo(v.s)) + v.hw, hi = Track.hi(v.s) - v.hw;
   if (v.lat > hi || v.lat < lo) {
     // where walls hurt ("wallDamage"), going into one sideways hurts, the harder the more (once as it
     // hits: scraping along it after that, nothing more)
