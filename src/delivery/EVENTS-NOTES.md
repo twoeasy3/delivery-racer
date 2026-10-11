@@ -1,7 +1,21 @@
 # Special events: the plan (11-Oct)
 
-Status: PLAN ONLY. Nothing built; nothing merged (the owner: "hold the merges"). Answers to the questions at the
-end decide the details; the plan says what it assumes until then.
+Status: being built on the feature branch `claude/special-events`; not merged until the owner says.
+
+**The owner's answers (11-Oct):**
+1. Yes, in order.
+2. Either side, for now. A stage's clocks are written out in full (Good and Evil), worked out by hand for the stage:
+   never a multiple of the map's.
+3. A mix of existing maps and new levels.
+4. A stage pays its tip every time, as any level does (other rewards may change that later; money can be farmed
+   elsewhere anyway).
+5. The prize car can be anything: for now a car idea's model, defined as a car of its own.
+6. The device's clock is fine.
+7. A required car the player cannot get: too bad, that is their event over. The point is (a) to make players own
+   cars that are not very competitive, and (b) to bring in, slowly, a roster of cars that cannot be bought, which
+   will later be what other events require.
+8. The one-level events (Christmas Eve) stay a separate kind.
+9. No "Limited" label on the prize car in the garage.
 
 ## What the owner asked
 
@@ -78,11 +92,12 @@ All the events move here from `tiers.json` (whose `events` list goes): the plain
   - its required car is owned, or it is a free try. A stage whose car is not owned is shown, says what it needs,
     and its START opens the garage at that car. The car may be one the garage does not sell yet (a later tier):
     then it says so, and the stage waits, as Christmas Eve's list does.
-- **A stage is done** when it is delivered on time, on either side (assumed: question 2). Its tip is paid the first
-  time only (assumed: question 4).
+- **A stage is done** when it is delivered on time, on either side. Its tip is paid every time, as any level's.
+- **A stage's clock** (`clock`: Good and Evil) must be written in full in the stage; the check refuses a stage
+  without one.
 - **The grand prize** is given the moment the last stage is done: the event's `prize.car` is added to the cars
   owned, and the claim recorded in the save, so it stays when the event is gone. The prize car is in `EVENT_CARS`:
-  in the garage only for those who won it, labelled "Limited: <event name>", never for sale.
+  in the garage only for those who won it, never for sale (no label: the owner).
 - **The save** (`progress.js`): `events: { "<event id>": <stages done> }`. Stages are done in order, so one number
   per event is enough: a few bytes in the cookie. The prize is in `claimed`, as now.
 - **The clock** is the device's: there is no server. A player who sets their phone's date forward opens the stages
@@ -134,8 +149,7 @@ All the events move here from `tiers.json` (whose `events` list goes): the plain
    the end, and the save's round trip. The menu shows the stages as plain levels, not yet the screen.
 2. **The event screen:** the cards with their still 3D cars, the header and the prize panel. Seen in a browser at
    1000x620 and 390x760.
-3. **The prize car:** a limited car in `EVENT_CARS` (the owner names it and picks its look: question 5), and the
-   garage's "Limited" label.
+3. **The prize car:** a limited car in `EVENT_CARS`, on a car idea's model, a car of its own.
 4. **A test event:** four stages a day apart from the day it goes in, mixing a free try, a required car owned, a
    required car of a later tier (not for sale) and any car, with a prize. Played through headlessly with the clock
    moved on; looked at in a browser.
