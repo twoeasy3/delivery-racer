@@ -7,7 +7,7 @@
   },
   "theme": "moon",
   "clock": { "good": 230, "evil": 175 },
-  "tip": 320,
+  "tip": 350,
   "lanes": { "north": 3, "south": 2 },
   "cargo": { "good": "globe", "evil": "alien" },
   "traffic": { "jeep": 0.2, "pickup": 0.14, "suv": 0.12, "van": 0.12, "semi": 0.1, "cargotruck": 0.06, "apc": 0.08, "keitruck": 0.08, "bus": 0.06, "police": 0.03 },

@@ -7,7 +7,7 @@
   },
   "theme": "favela",
   "clock": { "good": 220, "evil": 165 },
-  "tip": 300,
+  "tip": 380,
   "lanes": { "north": 2, "south": 1 },
   "shoulder": 2.5,
   "cargo": { "good": "record", "evil": "fireworks" },

@@ -3,7 +3,7 @@
   "theme": "singaporeNight",
   "drive": "left",
   "clock": { "good": 210, "evil": 149 },
-  "tip": 180,
+  "tip": 115,
   "traffic": { "taxi": 0.28, "darkvan": 0.22, "commuter": 0.12, "bus": 0.1, "van": 0.08, "sport": 0.08, "miata": 0.06, "police": 0.06, "boyracer": 0.08 },
   "trafficCount": 12,
   "oncomingCount": 11,

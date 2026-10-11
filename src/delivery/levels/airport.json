@@ -5,7 +5,7 @@
   "lanes": 4,
   "shoulderTimer": false,
   "clock": { "good": 210, "evil": 149 },
-  "tip": 260,
+  "tip": 160,
   "traffic": { "darkvan": 0.3, "taxi": 0.2, "van": 0.15, "bus": 0.15, "commuter": 0.2 },
   "trafficCount": 14,
   "oncomingCount": 0,

@@ -2,7 +2,7 @@
   "id": "speed-trap-alley",
   "theme": "suburb",
   "clock": { "good": 240, "evil": 180 },
-  "tip": 150,
+  "tip": 220,
   "cargo": { "good": "teaset", "evil": "cooker" },
   "pursuits": { "every": { "min": 35, "max": 60 } },
   "speedLimit": 100,

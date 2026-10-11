@@ -2,7 +2,7 @@
   "id": "panorama-avenue",
   "theme": "panorama",
   "clock": { "good": 360, "evil": 255 },
-  "tip": 160,
+  "tip": 225,
   "traffic": { "darkvan": 0.33, "wagon": 0.15, "van": 0.14, "pickup": 0.14, "commuter": 0.14, "semi": 0.06, "police": 0.04 },
   "trafficCount": 12,
   "oncomingCount": 10,

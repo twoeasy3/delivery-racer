@@ -2,7 +2,7 @@
   "id": "seaquake",
   "theme": "seabed",
   "clock": { "good": 165, "evil": 120 },
-  "tip": 320,
+  "tip": 285,
   "drive": "left",
   "lanes": { "north": 2, "south": 2 },
   "helicopter": false,

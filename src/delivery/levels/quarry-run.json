@@ -2,7 +2,7 @@
   "id": "quarry-run",
   "theme": "construction",
   "clock": { "good": 215, "evil": 165 },
-  "tip": 210,
+  "tip": 285,
   "lanes": 2,
   "shoulderTimer": "mud",
   "cargo": { "good": "toolbox", "evil": "parcel" },

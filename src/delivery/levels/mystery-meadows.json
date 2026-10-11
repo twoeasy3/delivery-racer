@@ -5,7 +5,7 @@
   "traffic": { "lowrider": 0.35, "darkvan": 0.25, "commuter": 0.12, "van": 0.22, "bus": 0.03, "police": 0.03 },
   "trafficCount": 16,
   "oncomingCount": 13,
-  "tip": 80,
+  "tip": 135,
   "segments": [
     { "length": 300, "curve": 0, "grade": 0 },
     { "length": 400, "curve": 0.0018, "grade": 0.03 },

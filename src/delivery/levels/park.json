@@ -2,7 +2,7 @@
   "id": "park",
   "theme": "themepark",
   "clock": { "good": 225, "evil": 170 },
-  "tip": 260,
+  "tip": 340,
   "lanes": { "north": 3, "south": 2 },
   "cargo": { "good": "balloons", "evil": "jack" },
   "traffic": { "minivan": 0.15, "commuter": 0.13, "lovebus": 0.12, "bus": 0.11, "taxi": 0.1, "icecream": 0.08, "caravan": 0.08, "wagon": 0.08, "miata": 0.06, "learner": 0.06, "police": 0.03 },

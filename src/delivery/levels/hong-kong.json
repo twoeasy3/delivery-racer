@@ -9,7 +9,7 @@
   "theme": "hongkong",
   "drive": "left",
   "clock": { "good": 225, "evil": 165 },
-  "tip": 190,
+  "tip": 165,
   "lanes": { "north": 2, "south": 2 },
   "median": 1,
   "traffic": { "taxi": 0.26, "commuter": 0.12, "bus": 0.14, "darkvan": 0.08, "minivan": 0.1, "van": 0.11, "sport": 0.05, "suv": 0.06, "wagon": 0.05, "police": 0.03 },

@@ -3,7 +3,7 @@
   "theme": "mumbai",
   "drive": "left",
   "clock": { "good": 230, "evil": 170 },
-  "tip": 180,
+  "tip": 105,
   "lanes": 4,
   "traffic": { "rickshaw": 0.38, "taxi": 0.15, "bus": 0.12, "commuter": 0.1, "darkvan": 0.1, "van": 0.08, "minivan": 0.04, "police": 0.03 },
   "trafficCount": 12,

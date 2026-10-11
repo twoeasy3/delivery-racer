@@ -7,7 +7,7 @@
   },
   "theme": "toyroom",
   "clock": { "good": 215, "evil": 165 },
-  "tip": 280,
+  "tip": 275,
   "lanes": { "north": 3, "south": 2 },
   "cargo": { "good": "present", "evil": "teddy" },
   "traffic": { "commuter": 0.2, "bus": 0.1, "taxi": 0.12, "lovebus": 0.12, "icecream": 0.06, "postvan": 0.1, "pickup": 0.1, "miata": 0.08, "learner": 0.06, "keitruck": 0.06, "police": 0.03 },

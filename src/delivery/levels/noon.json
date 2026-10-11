@@ -2,7 +2,7 @@
   "id": "noon",
   "theme": "wildwest",
   "clock": { "good": 205, "evil": 155 },
-  "tip": 300,
+  "tip": 265,
   "lanes": 4,
   "cargo": { "good": "cactus", "evil": "snakes" },
   "traffic": { "pickup": 0.22, "junker": 0.16, "jeep": 0.14, "wagon": 0.12, "van": 0.08, "hotrod": 0.08, "caravan": 0.07, "cargotruck": 0.06, "bus": 0.04, "police": 0.03 },
