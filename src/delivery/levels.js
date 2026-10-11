@@ -80,6 +80,7 @@
 //              In space there is no ground and no road surface, only the lane lines.
 //   car        a car lock: the vehicle the level is driven in whatever is in the garage, owned or not ('ufo', 'f1', or
 //              any car's id: a garage, earned or event car)
+//   noTankRage TANK RAGE is off: no targets, no pieces found, the player's own pieces neither used nor lost
 //   allowedCars only these cars may drive it, and only if owned: { cars: [ids], tiers: [1-10], maxSpeed: m/s } (the
 //              cars named or of the tiers named, none faster than maxSpeed); always, in place of the tier rule
 //   alwaysGood true = the player is Good on it, whatever the side picked on the menu (as on the Battlefield)

@@ -442,7 +442,7 @@ const drawCar = () => {
   starSpan.style.color = CAR.tier ? starColour(CAR) : IDEA_TAG.colour;
   shop.replaceChildren(picture,
     make('span', 'words',
-      make('strong', '', CAR.name + ' ', CAR.tier || CAR.idea ? starSpan : null),
+      make('strong', '', CAR.name + ' ', CAR.tier || (CAR.idea && !CAR.event) ? starSpan : null),
       bar('Speed', Math.round(CAR.maxSpeed * 3.6) + ' km/h', CAR.maxSpeed / MOST.speed),
       bar('Accel', String(CAR.accel), CAR.accel / MOST.accel),
       bar('Health', String(CAR.health), CAR.health / MOST.health)),
@@ -630,7 +630,7 @@ const replaysCard = (level) => {
 // livery, drawn once, not turning), what kind of car rule it is (a free try, a car needed, any car), and its state:
 // READY, DONE, or what stops it. A card picks its stage for the stage below; START plays it.
 const eventBox = document.getElementById('eventCard');
-const STILL_POSE = { lift: 0.85, angle: 2.5, close: 0.92 }; // (from above and in front, three-quarters on: every card the same)
+const STILL_POSE = { lift: 0.3, angle: -0.64, close: 1 }; // (from a little above, in front, three-quarters on, the nose to the left: every card the same)
 const stillCar = (el, car, evil) => {
   try {
     const model = makeShowCar(car);

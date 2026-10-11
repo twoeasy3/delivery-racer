@@ -7,7 +7,9 @@
 //   - opens on its own date (from), once the stage before it is done; all of them shut when the event is over;
 //   - may need a car: owned (a one-car allowedCars), or lent (free: true, a car lock, as the special levels lend
 //     theirs). A player who cannot get the car is stopped there, until they do or the event is over;
-//   - has its clock written out in full (the owner: worked out by hand for the stage, never a share of the map's).
+//   - has its clock written out in full (the owner: an existing level reused, the event gives its clocks; worked out
+//     by hand for the stage, never a share of the map's);
+//   - has no TANK RAGE (the owner: the feature off: no targets, no pieces found, none carried in or out).
 // A stage is done when delivered on time, on either side; its tip is paid every time, as any level's. The last one
 // done gives the grand prize (a car: cars.js EVENT_CARS), once, into the save (`claimed`, and the cars owned), so it
 // is kept when the event is over and gone. The save keeps how many stages of each event are done (`events`).
@@ -39,7 +41,8 @@ const stageLevel = (event, stage, index) => {
   const map = MAPS.get(String(stage.level));
   if (!map) return null;
   const own = Object.fromEntries(Object.entries(stage).filter(([k]) => !OWN.has(k)));
-  const level = { ...map, ...own, id: event.id + '-' + (index + 1), name: levelName(map),
+  // (TANK RAGE is off in a stage, the owner: "noTankRage": false in the stage turns it on)
+  const level = { ...map, noTankRage: true, ...own, id: event.id + '-' + (index + 1), name: levelName(map),
     description: { good: levelDescription(map, false), evil: levelDescription(map, true) },
     cargo: { good: cargoFor(map, false)?.id, evil: cargoFor(map, true)?.id }, stage: { event: event.id, index, map: map.id } };
   if (!level.cargo.good) delete level.cargo; // (a map that carries nothing: a race)

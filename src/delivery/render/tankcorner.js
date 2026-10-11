@@ -41,7 +41,7 @@ for (const model of [tank, amphibian]) for (const list of model.userData.pieces)
 
 let shownPieces = -1, shown = null;
 export const syncTankCorner = (dt) => {
-  const show = Game.state === 'playing' && !Game.screensaver;
+  const show = Game.state === 'playing' && !Game.screensaver && !LEVEL.noTankRage; // (not where TANK RAGE is off)
   canvas.style.display = show ? 'block' : 'none';
   if (!show) return;
   // (a tank in TANK RAGE, the garage's included, is all there)

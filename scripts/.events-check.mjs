@@ -51,6 +51,15 @@ try {
   check(deliver(0) === 'commuter' && Events.done(event) === 1 && Progress.data.money > bank && Progress.bestTime('comet-hunt-1', false) !== undefined && Progress.bestTime('farm', false) === undefined,
     'stage 1 delivered in any car (the Commuter): done, its tip banked, its best time its own (not the Farm\'s)');
   check(deliver(0) === 'commuter' && Events.done(event) === 1, '...delivered again: still one done (its tip paid again, as any level\'s)');
+  // TANK RAGE is off in a stage: no targets, no pieces, the player's own neither used nor lost
+  const { Targets } = await g.load('pickups.js');
+  Progress.data.tankPieces = 3;
+  levels.selectSpecial(s1.level); cars.useLevelCar(null, false);
+  Game.start();
+  const offInRun = s1.level.noTankRage && Targets.items.length === 0 && Game.tankPieces === 0;
+  Game.finish('delivered'); Game.toMenu();
+  check(offInRun && Progress.data.tankPieces === 3 && (levels.LEVELS.find(l => l.id === 'farm').targets || []).length > 0,
+    'no TANK RAGE in a stage: no targets (the Farm has them), the run starts with no pieces, the save\'s 3 untouched after it');
   // stage 2 needs the Love Bus, owned
   check(state(1).open && state(1).needs?.id === 'lovebus' && deliver(1).startsWith('not started'), 'stage 2 needs the Love Bus: open, but no car to start in (' + state(1).why + ')');
   Progress.data.cars.push('lovebus');

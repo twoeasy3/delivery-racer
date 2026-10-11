@@ -34,7 +34,7 @@ export const IDEA_TAG = { text: 'Idea', colour: '#9fc0ee' };
 // a car's name and its stars, in their colour (gold or blue), as nodes to put in a line of text
 // (a car with no tier has no stars: the Tank, the City Bus; and a car idea, ideas.js, says "Idea" where they would be)
 export const withStars = (car) => {
-  if (!car.tier && !car.idea) return [car.name];
+  if (!car.tier && (!car.idea || car.event)) return [car.name]; // (an event's car, on an idea's model: no tag)
   const span = document.createElement('span');
   span.textContent = car.tier ? stars(car) : IDEA_TAG.text;
   span.style.color = car.tier ? starColour(car) : IDEA_TAG.colour;

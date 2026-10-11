@@ -230,7 +230,7 @@ export const Game = {
     this.paused = false;
     this.screensaver = false;
     this.raceWatch = false;
-    this.tankPieces = Progress.data.tankPieces || 0; // (the run's own, until it is settled)
+    this.tankPieces = LEVEL.noTankRage ? 0 : Progress.data.tankPieces || 0; // (the run's own, until it is settled; none where TANK RAGE is off)
     this.zone = null; // the level zone the player is in (see update)
     this.inFog = false; // in a fog bank (see update)
     this.inTunnel = false; // in a tunnel (see update)
@@ -266,7 +266,7 @@ export const Game = {
   // (a delivery, or a late one in the tip countdown), anything else (out of time, busted, a
   // quit) loses them; and a full set, once used, is gone either way
   settleTank(kept) {
-    if (this.screensaver || LEVEL_INDEX < 0) return; // (nor on a hidden level: see HIDDEN_LEVELS)
+    if (this.screensaver || LEVEL_INDEX < 0 || LEVEL.noTankRage) return; // (nor on a hidden level, nor a stage: see HIDDEN_LEVELS, events.js; nor where TANK RAGE is off)
     if (this.tankPieces >= CONFIG.tankPieces) Progress.data.tankPieces = 0;
     else if (kept) Progress.data.tankPieces = this.tankPieces;
     else return;

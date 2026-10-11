@@ -1,6 +1,21 @@
 # Special events: the plan (11-Oct)
 
-Status: being built on the feature branch `claude/special-events`; not merged until the owner says.
+Status: built on the feature branch `claude/special-events` (phases 1 to 4 below); not merged until the owner says.
+
+**What was built (11-Oct):** `events.json` (the one-level events moved there from tiers.json; the special events),
+`events.js` (the rules), the stage as a level of its own (`<event>-<n>`, the map's picture, words and cargo, its
+best times and replays its own, TANK RAGE off: a level field `noTankRage`), `Progress.data.events`,
+`Progress.stageDone`, the finish (done, tip, prize once), the menu (a group per live special event; a stage's card:
+the event, the stages done, the countdown, the car line, All stages), the event screen (`render/menustage.js`
+eventCard: the progress ring, the prize, the stage cards with their cars drawn still in 3D: `modelviews.js`
+drawStill), the prize car (the Silver Comet: `cars.js` EVENT_CARS, on the Centre-Seat idea's model; no tag), and a
+test event, The Comet Hunt (11 Oct to 1 Nov: Farm Lanes any car; City Suburbs needs the Love Bus; Night Drive a free
+try in the Silver Comet; Tokyo Expressway needs the Tow Truck, a blue tier a new player cannot buy). Its clocks worked
+out by hand from clean runs in each stage's car (`node scripts/events.mjs time`). Checked: `scripts/.events-check.mjs`
+(tiers group: dates, order, the cars, the prize, the save, a stage's replay, TANK RAGE off, the end); in a browser:
+the stage card, the event screen at 1000x620 and 390x760, the free try started in the Silver Comet, the Silver
+Comet in the garage once won. NOT seen: a whole event played by hand; the cards with many stages; at night (the
+cards' cars on a dark map picture).
 
 **The owner's answers (11-Oct):**
 1. Yes, in order.
@@ -16,6 +31,10 @@ Status: being built on the feature branch `claude/special-events`; not merged un
    will later be what other events require.
 8. The one-level events (Christmas Eve) stay a separate kind.
 9. No "Limited" label on the prize car in the garage.
+11. (later) An existing level reused as a stage: the event gives its clocks (each stage writes its own, in full).
+12. (later) No TANK RAGE in a stage: the feature off (no targets, no pieces found, none carried in or out).
+13. (later) The stage cards' pose: the picture's second and third cars (from a little above, the front three-quarters
+    on, the nose to the left), not the first's (from above).
 10. A player stopped by a car they cannot get yet is not out: the event is over only when its clock is. If they get
     the car (its tier opened, bought) before the end, they carry on from that stage.
 

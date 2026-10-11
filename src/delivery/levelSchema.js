@@ -174,6 +174,7 @@ export const FIELDS = {
 
   // ---- mode switches ----
   alwaysGood: { shape: 'flag', group: 'modes', label: 'Always Good', help: 'The player is Good on it, whatever the side picked on the menu.' },
+  noTankRage: { shape: 'flag', group: 'modes', label: 'No TANK RAGE', help: 'TANK RAGE is off: no targets, no pieces found, and the pieces the player has are neither used nor lost here. A special event\'s stages have it on by default.' },
   amphibious: { shape: 'flag', group: 'modes', label: 'Amphibious level', help: 'It can only be started in an amphibious car. Water stages need it.' },
   noPackages: { shape: 'flag', group: 'modes', label: 'No packages', help: 'Nobody throws packages.' },
   understeer: { shape: 'flag', group: 'modes', label: 'Understeer', help: 'Every car understeers in bends as on ice (and none slows for a bend by itself).' },
