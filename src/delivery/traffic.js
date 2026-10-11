@@ -547,6 +547,27 @@ export const Traffic = (() => {
     if (v.isPlayer || v.toad || v.racer || !Track.isMain(v.s)) return;
     wrecks.push({ s: v.s, lat: v.lat, t: CONFIG.rubberneck.linger });
   };
+  // the room ahead of car in a lane of its own way (m to the nearest car of its way in that lane, up to reach)
+  const roomIn = (car, lane, reach) => {
+    const lat = Track.laneOffset(lane, car.s);
+    let room = reach;
+    for (const o of cars) {
+      if (!o.active || o === car || o.dir !== car.dir || Math.abs(o.lat - lat) > o.hw + car.hw) continue;
+      const ahead = (o.s - car.s) * car.dir - o.hl - car.hl;
+      if (ahead > -2 && ahead < room) room = Math.max(0, ahead);
+    }
+    return room;
+  };
+  // a lane beside it, free to move into and with more room ahead than its own: it moves over into it (true)
+  const betterLane = (car) => {
+    const own = roomIn(car, car.lane, 80);
+    for (const d of [1, -1]) {
+      const lane = car.lane + d, [first, last] = Track.laneRange(car.dir, car.s);
+      if (lane < first || lane > last || roomIn(car, lane, 80) < own + 15) continue;
+      if (tryMove(car, d, false)) return true;
+    }
+    return false;
+  };
   // ...and an evil driver that has sat in the jam long enough goes up the shoulder, if it is clear, and is
   // arrested for it if a police car is near enough to see (as the player would be busted)
   const rubberneck = (car, target, dt) => {
@@ -558,9 +579,14 @@ export const Traffic = (() => {
     }
     if (slow && !car.shoulderRun) target = Math.min(target, car.baseSpeed * R.pace);
     if (car.evil && !car.racer && !car.parade && !car.convoy && !CONFIG.vehicles[car.kind].kerb) {
-      if (!car.shoulderRun && Math.abs(car.vs) < car.baseSpeed * R.slowBelow && Math.abs(car.s - Player.s) < CONFIG.spawnMax) car.patience += dt;
+      // (its patience runs out only while it is held up: slow, AND a car close in front of it in its lane. Slow for a
+      // look at a wreck with the road open ahead, it just looks)
+      if (!car.shoulderRun && Math.abs(car.vs) < car.baseSpeed * R.slowBelow && roomIn(car, car.lane, R.heldWithin + 1) <= R.heldWithin && Math.abs(car.s - Player.s) < CONFIG.spawnMax) car.patience += dt;
       else car.patience = Math.max(0, car.patience - dt);
-      if (car.patience > R.patience && !car.shoulderRun && !car.oncoming && shoulderClear(car, 60)) {
+      // (out of patience, it first takes a lane beside it that is free and moving better than its own; only a car boxed
+      // in on both sides goes up the shoulder: the owner, 11-Oct)
+      if (car.patience > R.patience && !car.shoulderRun && !car.oncoming && betterLane(car)) car.patience = 0;
+      else if (car.patience > R.patience && !car.shoulderRun && !car.oncoming && shoulderClear(car, 60)) {
         const [first, last] = Track.laneRange(car.dir, car.s);
         car.lane = car.dir > 0 ? last : first;
         car.shoulderRun = { for: 0, past: null, impatient: true };
@@ -571,7 +597,9 @@ export const Traffic = (() => {
       if (car.shoulderRun?.impatient) {
         target = Math.max(target, car.baseSpeed); // (no holding back, up the shoulder)
         if (car.shoulderRun.for > R.longest) { car.shoulderRun = null; car.signal = -kerbSide(car); }
-        else if (cars.some(o => o.active && o.kind === 'police' && !o.roadblock && Math.abs(o.s - car.s) < R.policeSight) && arrestNow(car)) {
+        // (arrested only once it is out on the shoulder, as the player is: not for having lost its patience, while it
+        // is still in its lane on its way over, nor if it gives up before it gets there)
+        else if (Track.onShoulder(car.lat, car.s) && cars.some(o => o.active && o.kind === 'police' && !o.roadblock && Math.abs(o.s - car.s) < R.policeSight) && arrestNow(car)) {
           if (Math.abs(car.s - Player.s) < 150) Message.say('events', 'shoulderBusted');
         }
       }
