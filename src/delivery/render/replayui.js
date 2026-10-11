@@ -21,6 +21,12 @@ const nextBtn = document.getElementById('nextBtn');
 const watchBtn = document.getElementById('watchBtn');
 const saveBtn = document.getElementById('saveReplayBtn');
 const speedBtn = document.getElementById('speedBtn');
+const ghostBtn = document.getElementById('ghostBtn');
+
+// the options' ghost switch (render/ghostcar.js: from the next run)
+const showGhostOption = () => { ghostBtn.textContent = 'Ghost of your best run: ' + (ReplayStore.ghostOn ? 'on' : 'off'); };
+ghostBtn.addEventListener('click', () => { ReplayStore.ghostOn = !ReplayStore.ghostOn; showGhostOption(); });
+showGhostOption();
 
 let shown = null; // the recording the results screen is about: the run just over, or the playback just watched
 

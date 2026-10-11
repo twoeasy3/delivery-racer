@@ -41,6 +41,7 @@ import { syncRadiation } from './render/radiation.js';
 import { Radiation } from './radiation.js';
 import { Replay } from './replay.js';
 import './render/replayui.js';
+import { syncGhost } from './render/ghostcar.js';
 import { syncBattle } from './render/battle.js';
 import { raceCamera, raceAudio, syncRaceWatch, auditCameras } from './render/racewatch.js';
 import { Fly, startFly, flyCamera } from './render/fly.js';
@@ -316,6 +317,7 @@ const frame = (now) => {
     // models, the tank, the UFO, the passenger), is hidden. This comes after the helicopter,
     // which otherwise shows it again.
     if (Game.screensaver || Fly.on) carMesh.visible = false;
+    syncGhost(); // (the best run's ghost, beside the player: render/ghostcar.js)
     syncHeadlights();
     syncTraffic();
     syncToads(now);

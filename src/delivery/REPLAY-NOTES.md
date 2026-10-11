@@ -252,6 +252,8 @@ Two quirks:
   Save replay, the sheet with the best and the saved, at 1000x620 and 390x760.
 
 ### Phase C: extensions
+**The ghost: done (11-Oct)** (render/ghostcar.js, CHECKLIST 76): the best run's path by the clock, the rewound seconds
+dropped (decision 3), drawn as a see-through car, with how far ahead or behind; off in the options.
 - Ghost time trials (CHECKLIST 30): the best run's path by the clock (decision 3), drawn as a see-through car.
 - A replay as a code to share (it may drift in another browser: the hashes catch it).
 - Seeking (checkpoints), more cameras.
