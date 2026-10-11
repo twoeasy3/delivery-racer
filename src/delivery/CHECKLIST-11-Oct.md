@@ -129,6 +129,8 @@ burst main, Q10 punctures card, Q9 as a card split only (open questions 23 and 2
 
 **12-Oct, LIVE COMMIT CORRECTION:** `origin/main` is `1077340` (pushed 11-Oct 02:22 per `git reflog show origin/main`), not `ceecc34` as the 11-Oct state block says; local `main` is 111 commits ahead (about 36 first-parent merges and notes), unpushed. Merged to local main since the stand-down: sweep `4181d06`, gimmicklogic (six items), tests, prank-c, prank-b, crests, Hong Kong (`delivery-rework-b`). Post-merge check results: pending (tests agent).
 
+**12-Oct, SYNTAX FIX AND NEW REPO PLAN:** `police.js` had two unescaped apostrophes (Q11, `bff1b2f`): `vite build` failed on main; fixed on local main as `9ee71b6` (front; gimmicklogic's `9f7cb2c` is the same change). The owner's plan for the cloud repo, third version: "In the new repo, just remove all non-delivery racer stuff": all of main with history, ONE removal commit (the car-collection site gone), ONE WIP commit (patches of the unmerged branches, INDEX.md, CLOUD-AGENT-README.md); history options (a) keep (private repo), (b) rewrite to drop those paths, (c) snapshot. Prepared by the history agent in a scratch clone; NOTHING pushed; waiting for the owner's URL and go and the private/not answer.
+
 ## Owner's direction, 11-Oct (goes in every level and theme brief)
 
 - "Good levels to follow are from level 32 onwards, with the exception of gimmick cramming." (Models for a
