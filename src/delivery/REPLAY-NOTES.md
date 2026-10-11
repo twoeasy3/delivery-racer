@@ -230,6 +230,27 @@ Two quirks:
 8. Playback changes nothing: no tip, medal, milestone, counter or save; the finish is held back.
 9. An out-of-date recording says so and is not played.
 
+**Phase B: done (11-Oct).** What it came to:
+- `replaystore.js`: local storage, key `delivery_replays` (never the save, its cookie or its code). Per level and side
+  the last run (one left in under 5 s is not kept) and the best (delivered, most time to spare; a best made under other
+  rules is replaced by the next delivery); up to 40 saved, the oldest going first. Nothing kept on a visit that saves
+  nothing (Progress.noSave).
+- The results screen: Watch replay, Save replay (then "Replay saved"). After a playback: Watch again, Menu; no
+  Restart or Next (Enter still starts a run of the player's own: the playback is ended first, the save as it was).
+- The level card: a Replays chip beside "What's on this road" when the level has any; the sheet lists the best and
+  last on each side and the saved, newest first: Watch, Save (Saved) / Delete (asked first). One out of date is
+  listed, saying why, its Watch off.
+- Playing: the REPLAY badge, a speed button beside Pause (1x, 2x, 4x: main.js takes that many steps), Pause, Exit;
+  no throw buttons or touch pads (the player's controls are not heard). At its finish the controls come back (to
+  skip the delivery at the kerb). A run left part way plays to its last step and is held there ("End of the
+  replay"); one that drifts is held where it does ("Replay stopped"); Pause cannot set either going again.
+- Nothing is changed by a playback: it plays with the run's own set-up, its TANK RAGE pieces included, and when it
+  ends the save is put back exactly as it was (the bank, bests, medals, counters, the pieces), nothing written while
+  it played.
+- Checks: `scripts/.replay-store-check.mjs` (replay group). In a browser: a run left at 6.6 s, the Replays sheet,
+  watched at 4x with its badge, held at its last step, the save untouched after; a delivered run's results buttons,
+  Save replay, the sheet with the best and the saved, at 1000x620 and 390x760.
+
 ### Phase C: extensions
 - Ghost time trials (CHECKLIST 30): the best run's path by the clock (decision 3), drawn as a see-through car.
 - A replay as a code to share (it may drift in another browser: the hashes catch it).

@@ -15,13 +15,14 @@
 // ============================================================================
 import { Input } from './input.js';
 import { Game } from './game.js';
-import { LEVEL, LEVELS, selectLevel, setRaceClass } from './levels.js';
+import { LEVEL, LEVELS, LEVEL_INDEX, selectLevel, setRaceClass } from './levels.js';
 import { CAR, pinCar, carById } from './cars.js';
 import { Player } from './player.js';
 import { Traffic } from './traffic.js';
 import { Collision } from './collision.js';
 import { Progress } from './progress.js';
 import { BUILD } from './version.js';
+import { ReplayStore } from './replaystore.js';
 
 const EVENTS = new Set(['throw', 'horn', 'confirm']);
 const CHECK_EVERY = 1200; // logic steps between fingerprints of the state (10 s at 120 a second)
@@ -54,9 +55,11 @@ const q = (v) => Math.round(v * 64); // (the controls, as whole 64ths: they are 
 
 export const Replay = {
   recording: null, // the run being recorded
-  last: null,      // the last run recorded, once over (Phase B keeps it, and saves it on request)
-  playing: null,   // the recording being played back: { rec, input, event, check, drifted }
-  onDrift: null,   // told when a playback drifts: (step)
+  last: null,      // the last run recorded, once over (kept in replaystore.js; "Save replay" keeps it for good)
+  playing: null,   // the recording being played back: { rec, input, event, drifted, over, ...what it put back }
+  speed: 1,        // a playback's speed: 1, 2 or 4 logic steps for each one of time (main.js)
+  starting: false, // (Game.start, called by play: any other start ends a playback first)
+  onOver: null,    // told when a playback stops before a finish of its own: ('end' | 'drift')
 
   // ---- recording ----
   // the run has started (Game.start, once everything is dealt): a recording begins, of a menu level only
@@ -99,19 +102,25 @@ export const Replay = {
     if (this.recording) this.recording.checks.push(print);
     else if (this.playing && !this.playing.drifted) {
       const want = this.playing.rec.checks[step / CHECK_EVERY - 1];
-      if (want !== undefined && want !== print) { this.playing.drifted = step; this.onDrift?.(step); }
+      if (want !== undefined && want !== print) { this.playing.drifted = step; this.halt('drift'); }
     }
   },
-  // the run is over (Game.finish, or left for the menu): the recording is closed
+  // the run is over (Game.finish, or left for the menu): the recording is closed, and kept (replaystore.js). A
+  // playback that reaches its finish: the player's controls back (to skip the delivery at the kerb), nothing more fed
   end(outcome) {
+    if (this.playing && outcome && !this.playing.over) { this.playing.over = 'finished'; Input.fed = null; }
     const rec = this.recording;
     this.recording = null;
     if (!rec) return;
     rec.header.steps = Game.step;
     rec.header.outcome = outcome || 'left';
     rec.header.time = Game.time;
+    if (outcome === 'delivered') rec.header.spare = Game.remaining;
+    rec.header.wrecks = Game.wrecks;
+    rec.header.busts = Game.busts;
     delete rec.at;
     this.last = rec;
+    ReplayStore.kept(rec);
   },
 
   // ---- playing back ----
@@ -133,7 +142,10 @@ export const Replay = {
     if (!this.check(rec).ok) return false;
     const h = rec.header;
     this.stop();
-    this.playing = { rec, input: 0, event: 0, drifted: 0, saved: JSON.stringify(Progress.data), noSave: Progress.noSave, raceClass: LEVEL.grid?.kind };
+    this.end(); // (a run under way is closed first)
+    this.playing = { rec, input: 0, event: 0, drifted: 0, over: '', saved: JSON.stringify(Progress.data), noSave: Progress.noSave,
+      raceClass: LEVEL.grid?.kind, levelIndex: LEVEL_INDEX, evil: Game.evil, rival: Game.rival, mystery: Player.nextMystery };
+    this.speed = 1;
     Progress.noSave = true;
     Progress.data.tankPieces = h.tankPieces;
     selectLevel(LEVELS.findIndex(level => level.id === h.level));
@@ -145,12 +157,32 @@ export const Replay = {
     Game.nextSeed = h.seed;
     Game.nextLoadSeed = h.loadSeed;
     Input.fed = { steer: 0, throttle: 0 };
-    Game.start();
+    this.starting = true;
+    try { Game.start(); } finally { this.starting = false; }
+    if (Game.state !== 'playing') { this.stop(); return false; } // (refused: see Game.canStart)
     return true;
+  },
+  // the player's way in (results, the level card): { ok } or { ok: false, why }, and played if it can be
+  watch(rec) {
+    const can = this.check(rec);
+    if (!can.ok) return can;
+    return this.play(rec) ? { ok: true } : { ok: false, why: 'This replay could not be started.' };
+  },
+  // a playback held where it is: its recording run out before a finish of its own (the run was left part way), or
+  // drifted from it. Held paused (Game.togglePause will not go on), the player's controls back, and the page told
+  halt(why) {
+    const p = this.playing;
+    if (!p || p.over) return;
+    p.over = why;
+    Input.fed = null;
+    Game.paused = true;
+    this.onOver?.(why);
   },
   // the controls and the events for step `step` (before it is taken)
   feed(step) {
     const p = this.playing, { inputs, events } = p.rec;
+    if (p.over) return;
+    if (step >= p.rec.header.steps) return this.halt('end'); // (no more was recorded)
     while (p.input < inputs.length && inputs[p.input][0] <= step) {
       const [, steer, throttle] = inputs[p.input++];
       Input.fed = { steer: steer / 64, throttle: throttle / 64 };
@@ -162,11 +194,20 @@ export const Replay = {
     const p = this.playing;
     if (!p) return;
     this.playing = null;
+    this.speed = 1;
     Input.fed = null;
     pinCar(null);
-    Object.assign(Progress.data, JSON.parse(p.saved));
+    // the save exactly as it was: whatever the playback did to it (the bank, the tank pieces found or lost, a best)
+    // goes, keys and all
+    const saved = JSON.parse(p.saved);
+    for (const key of Object.keys(Progress.data)) if (!(key in saved)) delete Progress.data[key];
+    Object.assign(Progress.data, saved);
     Progress.noSave = p.noSave;
     if (p.raceClass) setRaceClass(p.raceClass);
+    if (p.levelIndex >= 0) selectLevel(p.levelIndex);
+    Game.evil = p.evil;
+    Game.rival = p.rival;
+    Player.nextMystery = p.mystery;
   },
 };
 Input.tap = (action) => Replay.tap(action); // (every event passed on: recorded while a run is)

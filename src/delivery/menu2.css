@@ -115,7 +115,7 @@
 #startScreen .menu-stage .needs.warn { color: #ffb4a8; }
 #startScreen .menu-stage .prize::before { content: "\2605\00a0"; color: #ff5fd2; }
 #startScreen .menu-stage.locked .needs { font-size: 15px; }
-#startScreen .menu-stage .info .road { align-self: flex-start; margin-top: 2px; }
+#startScreen .menu-stage .info .road { align-self: flex-start; margin-top: 2px; display: flex; flex-wrap: wrap; gap: 6px; }
 #startScreen .menu-stage .info-toggle { display: none; }
 /* the build, small, in the corner (src/delivery/version.js): which version is being played, for a report or a replay */
 #startScreen .build-tag { position: fixed; right: 8px; bottom: 4px; z-index: 1; font: 600 10px/1 system-ui, sans-serif; letter-spacing: .04em; color: var(--ink-dim); opacity: .6; pointer-events: none; } /* (on a phone held upright, under START: see below) */
@@ -353,6 +353,16 @@
 #startScreen .sheet-main .sheet-body { flex: 1 1 auto; }
 /* (a line in place of the card: on its way, or could not be had) */
 #startScreen .road-wait { margin: 0; font-size: 14px; color: var(--ink-dim); }
+/* the level's replays (render/menustage.js replaysCard): a row each, what it was on the left, its buttons on the right */
+#startScreen .sheet-box.replays { width: min(720px, 100%); }
+#startScreen .replay-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+#startScreen .replay-row:last-child { border-bottom: 0; }
+#startScreen .replay-what { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+#startScreen .replay-what b { font: italic 800 15px/1 var(--display); letter-spacing: .04em; text-transform: uppercase; color: var(--accent); }
+#startScreen .replay-what small { color: #ff8a7a; }
+#startScreen .replay-row.stale .replay-what span { opacity: .6; }
+#startScreen .replay-do { flex: 0 0 auto; display: flex; gap: 6px; }
+#startScreen .replay-do button:disabled { opacity: .45; cursor: default; }
 #startScreen .road-notes { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 #startScreen .road-notes em, #startScreen .tile .pool em { font-style: normal; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--accent-dim); box-shadow: inset 0 0 0 1px var(--accent); }
 #startScreen .road-group + .road-group { margin-top: 16px; }
