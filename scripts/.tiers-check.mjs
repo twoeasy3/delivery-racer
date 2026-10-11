@@ -293,6 +293,28 @@ check(Progress.bestTime(a.id, false) === 42 && Progress.bestTime(a.id, true) ===
   localStorage.removeItem('delivery_racer_progress_backup');
   Progress.noSave = true;
 }
+// ---- the garage's view: the open tiers' cars, the next tier's as silhouettes, nothing further
+g.CONFIG.progression.tiers = true;
+{
+  const at = (n) => cars.CARS.filter(car => cars.carTier(car) === n);
+  const state = (n) => new Set(at(n).map(car => cars.carPreview(car)));
+  fresh();
+  check(state(1).size === 1 && state(1).has('show'), 'garage, a new save: tier 1 cars shown');
+  check(state(2).size === 1 && state(2).has('teaser') && at(2).every(car => cars.isTeaser(car)), 'garage, a new save: tier 2 cars are silhouettes');
+  check([3, 4, 5, 6, 7, 8, 9, 10].every(n => state(n).size === 1 && state(n).has('hide')), 'garage, a new save: tiers 3 to 10 are not there');
+  const lot = cars.garageCars();
+  check(at(3).every(car => !lot.includes(car)) && at(2).every(car => lot.includes(car)) && at(1).every(car => lot.includes(car)), 'garage, a new save: the lot has tiers 1 and 2 only');
+  check(cars.CARS.filter(car => cars.carTier(car) === null).every(car => cars.carPreview(car) === 'show'), 'garage: amphibious and tierless cars are shown as ever');
+  beatTier(1);
+  check(state(2).has('show') && state(2).size === 1 && state(3).has('teaser') && state(4).has('hide'), 'garage, tier 1 cleared: tier 2 shown, tier 3 silhouettes, tier 4 gone');
+  Progress.data.cars.push(at(5)[0].id);
+  check(cars.carPreview(at(5)[0]) === 'show', 'garage: a car owned from a far tier is shown');
+  for (let n = 1; n <= 4; n++) beatTier(n);
+  check(state(6).has('teaser') && state(7).has('hide') && state(5).has('show'), 'garage, tier 4 cleared: five stars shown, Blue 1 silhouettes, Blue 2 gone');
+  g.CONFIG.progression.tiers = false;
+  check(cars.carPreview(at(8)[0]) === null, 'garage, tiers off: no preview rule (the old Blue Star rule)');
+  g.CONFIG.progression.tiers = true;
+}
 // ---- the switch
 g.CONFIG.progression.tiers = false;
 check(!Tiers.on() && Tiers.restriction(a, false) === null, 'the switch off: no tier rule');

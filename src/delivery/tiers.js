@@ -216,5 +216,15 @@ setTierHooks({
   // must not change the car the run's finish animation draws mid-way: Game.start sets `hold`, Game.toMenu clears it)
   restricted: (evil) => { try { return Tiers.hold ? Tiers.hold.tier : Tiers.on() ? Tiers.restriction(currentLevel(), evil ?? Tiers.sideIsEvil()) : null; } catch { return null; } },
   blueOpen: () => Tiers.on() ? Tiers.tierOpen(6) || Tiers.legacy() > CONFIG.blueStarsAfter : null,
+  // the garage's view of a car (the owner, 11-Oct): the cars of the tiers open are shown; those of the very next tier are
+  // black silhouettes nobody can buy; those further on are not there. A car the player owns, or in no tier (earned,
+  // amphibious), is shown whatever its tier. null: the tiers are off
+  preview: (car) => {
+    if (!Tiers.on()) return null;
+    const t = carTier(car);
+    if (t === null || Progress.owns(car.id)) return 'show';
+    const open = TIER_NUMBERS.filter(n => Tiers.tierOpen(n)).pop() || 1;
+    return t <= open ? 'show' : t === open + 1 ? 'teaser' : 'hide';
+  },
 });
 const currentLevel = () => LEVEL; // (the live binding: the level picked)

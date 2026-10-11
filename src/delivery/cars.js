@@ -91,7 +91,12 @@ const forcedCar = (pick, tier) => {
   return chosen || owned.sort((a, b) => b.price - a.price)[0] || nullCarFor(tier);
 };
 // the cars the garage shows now (an earned car only once it is earned: see EARNED_CARS)
-export const garageCars = () => [...CARS.filter(car => !car.blue || blueStarsOpen()), ...EARNED_CARS.filter(car => Progress.earned(car))];
+// With the tiers on (tiers.js carPreview): a car of a tier beyond the next is not in the garage, a car of the next tier is
+// there as a black silhouette ('teaser': stars shown, no name, stats or price, and it cannot be bought or picked), and
+// an owned car, or one in no tier, is always there. With the tiers off: the old Blue Star rule.
+export const carPreview = (car) => tierHooks.preview?.(car) ?? null; // 'show' | 'teaser' | 'hide' | null (the tiers are off)
+export const isTeaser = (car) => carPreview(car) === 'teaser';
+export const garageCars = () => [...CARS.filter(car => { const p = carPreview(car); return p ? p !== 'hide' : (!car.blue || blueStarsOpen()); }), ...EARNED_CARS.filter(car => Progress.earned(car))];
 // The amphibious cars (a car's "amphibious"): the garage's Amphibious section, there from the start, so an
 // amphibious level can be played as soon as it is open (the cheapest costs about a level's tip)
 const AMPHIBIOUS_PERK = 'Amphibious: it drives into the water and floats across';

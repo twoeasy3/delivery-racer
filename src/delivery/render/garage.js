@@ -6,8 +6,8 @@
 import { Nav } from '../nav.js';
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
-import { CAR, carInUse, selectCar, stars, starColour, STAR_COLOURS, blueStarsOpen, garageCars, restrictedTier, setViewSide, carAllowedOn } from '../cars.js';
-import { Tiers, tierStarsNode } from '../tiers.js';
+import { CAR, carInUse, selectCar, stars, starColour, STAR_COLOURS, blueStarsOpen, garageCars, restrictedTier, setViewSide, carAllowedOn, carTier, isTeaser } from '../cars.js';
+import { Tiers, tierStarsNode, richTiers } from '../tiers.js';
 import { Progress } from '../progress.js';
 import { Game } from '../game.js';
 import { renderer } from './scene.js';
@@ -43,7 +43,7 @@ const bulk = (car) => car.hw * car.hl * car.height; // how big a car is, to park
 const rank = (car) => car.amphibious ? 50 + car.tier : (car.tier || 99) + (car.blue ? 0.5 : 0); // (a tier's Blue Star cars park after its gold ones)
 // (the lot is built for the cars on show: it grows when the Blue Star cars arrive. See buildLot)
 let order = [], COLS = 0, LOT_W = 0, parked = [], built = null;
-const onShow = () => garageCars().length; // (what the lot was built for: it only ever grows)
+const onShow = () => { const cars = garageCars(); return cars.length + ':' + cars.filter(isTeaser).map(car => car.id).join(','); }; // (what the lot was built for: it only ever grows)
 const colX = (col) => col * BAY_W;
 
 const scene = new THREE.Scene();
@@ -155,9 +155,11 @@ export const paintShowCar = (mesh, car, evil) => {
 };
 
 // ---- a car, parked in its bay: column by column --------------------------------------------------
+const SILHOUETTE = new THREE.MeshBasicMaterial({ color: 0x07080b });
 const parkCar = (car, i) => {
   if (!car) return null; // (a bay left empty: see buildLot)
   const mesh = makeShowCar(car);
+  if (isTeaser(car)) mesh.traverse(part => { if (part.isMesh) part.material = SILHOUETTE; }); // (a car of the next tier: flat black, nothing of its paint)
   mesh.position.set(colX(Math.floor(i / ROWS)), car.ufo ? 1 : 0, ROW_Z[i % ROWS]); // (a saucer hovers)
   mesh.userData.car = car;
   lot.add(mesh); // (moves it out of the game's scene, where makeCarMesh put it)
@@ -166,6 +168,7 @@ const parkCar = (car, i) => {
   tag.position.y = car.height + 1.5;
   mesh.add(tag);
   mesh.userData.tag = tag;
+  tag.visible = !isTeaser(car);
   // its stars, painted on the tarmac at the front of its bay
   if (car.tier) {
     const plate = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.8), new THREE.MeshBasicMaterial({ map: label(stars(car), 256, 84, 60, starColour(car), '#3f444c') }));
@@ -203,8 +206,16 @@ const useBtn = document.getElementById('garageUse');
 const startScreen = document.getElementById('startScreen');
 const money = (amount) => '$' + amount.toFixed(2);
 const stats = (car) => 'Top speed ' + Math.round(car.maxSpeed * 3.6) + ' km/h  |  Acceleration ' +
-  car.accel + '  |  Health ' + car.health + '  |  Crossing ' + Math.round((car.crossing ?? CONFIG.railCrossing.usual) * 100) + '%' +
-    (car.perk ? '  |  ' + car.perk : ''); // (a perk of its own: see CARS' trait)
+  car.accel + '  |  Health ' + car.health + '  |  Crossing ' + Math.round((car.crossing ?? CONFIG.railCrossing.usual) * 100) + '%';
+// the stats as a node: the figures always (on a phone on a line of their own under the name), and a perk of its own
+// (see CARS' trait) after them, which a phone shows only when the line is tapped
+const statsNode = (car) => {
+  const span = document.createElement('span');
+  span.className = 'stats';
+  span.append(stats(car));
+  if (car.perk) { const perk = document.createElement('span'); perk.className = 'perk'; perk.textContent = '  |  ' + car.perk; span.append(perk); }
+  return span;
+};
 
 let hovered = null; // the parked car mesh under the pointer
 const raycaster = new THREE.Raycaster();
@@ -219,6 +230,13 @@ const carAt = (event) => {
   return object || null;
 };
 
+// the dash between the name and the stats (a phone, the stats on a line of their own, has none: menus.css)
+const sepNode = () => { const span = document.createElement('span'); span.className = 'sep'; span.textContent = '  -  '; return span; };
+// what a silhouette's card says: the tier it is in (as stars) and what opens that tier
+const teaserWhy = (car) => {
+  const t = carTier(car), first = Tiers.tiers[Tiers.tiers.length ? Math.min(t, Tiers.tiers.length) - 1 : 0]?.[0];
+  return first ? Tiers.lockedBecause(first) : 'Locked';
+};
 const refresh = () => {
   GarageView.refreshControls?.(); // (a Show choice that parks no car is not offered: money and purchases change that)
   // (a secret vehicle in use has no bay, so no ring; nor has a car idea in this lot: its ring is in the Car ideas lot's)
@@ -236,15 +254,16 @@ const refresh = () => {
     : [sideWord + ': any car (medal earned)']));
   ruleBanner.replaceChildren(chip);
   for (const b of sideBtns) { const on = (b.dataset.side === 'evil') === Garage.evil; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }
-  const shown = looking || inUse, owned = Progress.owns(shown.id);
+  const shown = looking || inUse, owned = Progress.owns(shown.id), teaser = isTeaser(shown);
   const needs = restrictedTier(Garage.evil) ?? null;
   const notAllowed = !IdeasLot.on && (shown.silhouette || (owned && !carAllowedOn(shown, Garage.evil)));
   const reasonNode = () => needs !== null ? ['Not allowed on this level: needs ', tierStarsNode(needs)] : ['Not allowed on this level'];
   const badge = document.createElement('span');
   badge.className = 'notallowed';
   badge.replaceChildren(...(shown.silhouette ? ['No car of this tier owned: buy one in the lot'] : reasonNode()));
-  info.replaceChildren(...withStars(shown), ...(notAllowed && !shown.silhouette ? [' - ', badge] : []), '  -  ' + stats(shown));
-  showComparison(inUse, shown); // (the car in use against the one looked at: see render/compare.js)
+  if (teaser) info.replaceChildren('Locked car  ', tierStarsNode(carTier(shown)), '  -  ', ...richTiers(teaserWhy(shown)));
+  else info.replaceChildren(...withStars(shown), ...(notAllowed && !shown.silhouette ? [' - ', badge] : []), sepNode(), statsNode(shown));
+  showComparison(inUse, teaser ? null : shown); // (the car in use against the one looked at: see render/compare.js)
   // the button under the stats: what can be done with the car shown
   // (the car in use, looked at in the other side's livery: the button takes that side)
   const otherSide = shown === inUse && Garage.evil !== Game.evil;
@@ -253,10 +272,11 @@ const refresh = () => {
   action.disabled = (shown === inUse && !otherSide) || (!owned && Progress.data.money < shown.price);
   // (the level's car rule on the side on show: a car not allowed there cannot be used, and "Use" is off with it)
   const barred = shown.silhouette || (owned && !IdeasLot.on && !carAllowedOn(shown, Garage.evil));
-  if (barred) { action.textContent = shown.silhouette ? 'Buy a car in the lot' : 'Not allowed here'; action.disabled = true; }
-  useBtn.disabled = !!barred;
-  whyEl.classList.toggle('hidden', !barred);
-  whyEl.replaceChildren(...(barred ? (shown.silhouette ? ['No car of this tier owned: tap a car in the lot to buy one'] : reasonNode()) : []));
+  if (teaser) { action.textContent = 'Locked'; action.disabled = true; }
+  else if (barred) { action.textContent = shown.silhouette ? 'Buy a car in the lot' : 'Not allowed here'; action.disabled = true; }
+  useBtn.disabled = !!barred || teaser;
+  whyEl.classList.toggle('hidden', !barred && !teaser);
+  whyEl.replaceChildren(...(teaser ? ['Not for sale yet: ', ...richTiers(teaserWhy(shown))] : barred ? (shown.silhouette ? ['No car of this tier owned: tap a car in the lot to buy one'] : reasonNode()) : []));
   action.title = owned ? 'Drive the ' + shown.name + ' as ' + sideName() + ', and stay in the garage' : '';
   // (Use: the same, and back to the menu with it; a car not yet bought has none, only its Buy)
   useBtn.style.display = owned ? '' : 'none';
@@ -265,6 +285,7 @@ const refresh = () => {
   lookRing.visible = !!looking && looking !== inUse;
   for (const mesh of parked) {
     const car = mesh.userData.car;
+    if (isTeaser(car)) continue; // (flat black, no ring, no tag)
     paintShowCar(mesh, car, Garage.evil);
     mesh.userData.tag.visible = !Progress.owns(car.id);
     if (car === inUse) ring.position.set(mesh.position.x, 0.12, mesh.position.z);
@@ -334,7 +355,7 @@ const take = async (leave) => {
   // (on the Car ideas tab the button is that lot's "Drive it": the idea looked at there. It is free and always
   // open, so there is nothing to buy; it becomes the car in use just as a garage car does)
   const car = IdeasLot.on ? IdeasLot.looking : looking || CAR;
-  if (!car) return;
+  if (!car || isTeaser(car)) return; // (a silhouette of the next tier: not for sale, not to be picked)
   if (!carAllowedOn(car, Garage.evil)) { refresh(); return; } // (the level's car rule, on the side on show: guarded here, not only by the lot)
   const same = car.id === carInUse().id && Garage.evil === Game.evil;
   if (same && !leave) return;
@@ -539,7 +560,8 @@ export const Garage = {
 
     if (hovered) {
       const car = hovered.userData.car, owned = Progress.owns(car.id);
-      tip.replaceChildren(...withStars(car), '  -  ' + (
+      if (isTeaser(car)) tip.replaceChildren('Locked car  ', tierStarsNode(carTier(car)));
+      else tip.replaceChildren(...withStars(car), '  -  ' + (
         car.id === Progress.data.car ? 'in use'
           : owned ? 'owned, click for its stats'
             : money(car.price) + ', click for its stats'));
