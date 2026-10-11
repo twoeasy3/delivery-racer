@@ -2,13 +2,14 @@
 // REPLAY STORE - the replays kept in this browser (local storage, under its own key: never the save, its cookie or
 // its code). For each level and side: the last run (whatever became of it) and the best (delivered with the most
 // time to spare: the ghost's, REPLAY-NOTES.md Phase C); and the runs the player chose to keep ("Save replay"), up to
-// MOST_SAVED, each deletable. A recording is a few hundred bytes a minute (replay.js). A visit that saves nothing
+// MOST_SAVED, each deletable. And whether the best run's ghost is shown. A recording is a few hundred bytes a minute (replay.js). A visit that saves nothing
 // (Progress.noSave: a test address, a replay playing) keeps nothing here either.
 // ============================================================================
 import { Progress } from './progress.js';
 
 const KEY = 'delivery_replays';
 const MOST_SAVED = 40;
+const GHOST_KEY = 'delivery_ghost'; // 'off': no ghost of the best run (the options; on unless turned off)
 const SHORTEST = 600; // logic steps (5 s): a run left sooner than this is not kept as the last
 
 let data = null;
@@ -34,8 +35,9 @@ export const ReplayStore = {
     const h = rec.header;
     if (h.outcome === 'left' && h.steps < SHORTEST) return;
     const d = read(), k = slot(h), best = d.best[k];
-    d.last[k] = rec;
-    if (h.outcome === 'delivered' && (!best || best.header.logic !== h.logic || !(best.header.spare >= h.spare))) d.best[k] = rec;
+    const better = h.outcome === 'delivered' && (!best || best.header.logic !== h.logic || !(best.header.spare >= h.spare));
+    if (better) d.best[k] = rec;
+    d.last[k] = better ? rec : { ...rec, path: undefined }; // (the ghost's path kept with the best only: the last is to watch)
     write();
   },
   // "Save replay": kept until deleted (the oldest saved goes when there are MOST_SAVED)
@@ -65,5 +67,8 @@ export const ReplayStore = {
     return out;
   },
   best(levelId, evil) { return read().best[levelId + (evil ? ':evil' : ':good')] || null; },
+  // the ghost of the best run, in a run of the player's own (render/ghostcar.js): on unless turned off in the options
+  get ghostOn() { try { return localStorage.getItem(GHOST_KEY) !== 'off'; } catch { return true; } },
+  set ghostOn(on) { try { localStorage.setItem(GHOST_KEY, on ? 'on' : 'off'); } catch { /* (no storage: for this visit) */ } },
   forget() { data = null; }, // (read again from storage next time: the checks)
 };

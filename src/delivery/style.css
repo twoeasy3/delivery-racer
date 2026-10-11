@@ -13,6 +13,11 @@ canvas { display: block; width: 100%; height: 100%; }
 #replayBadge { display: none; position: fixed; left: 50%; top: max(12px, env(safe-area-inset-top)); transform: translateX(-50%); z-index: 5; pointer-events: none;
   padding: 4px 12px; border-radius: 6px; background: #c8102e; color: #fff; font: 800 13px/1.2 system-ui, sans-serif; letter-spacing: .18em; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
 body.replaying #replayBadge { display: block; }
+/* the ghost of the best run (render/ghostcar.js): how far ahead or behind, top centre */
+#ghostGap { display: none; position: fixed; left: 50%; top: max(12px, env(safe-area-inset-top)); transform: translateX(-50%); z-index: 4; pointer-events: none;
+  padding: 3px 10px; border-radius: 6px; background: rgba(10,14,20,.55); color: #bfefff; font: 700 13px/1.2 system-ui, sans-serif; white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,.7); font-variant-numeric: tabular-nums; }
+#ghostGap.ahead { color: #ffd23f; }
 body.replaying .throw, body.replaying #touchControls { display: none !important; }
 #resultScreen button.replay { font-size: 15px; padding: 8px 16px; margin: 0 4px 6px; background: #2a3242; color: #fff; }
 #resultScreen button.replay:disabled { opacity: .55; cursor: default; }
@@ -21,7 +26,7 @@ body.replaying .throw, body.replaying #touchControls { display: none !important;
 #turbo { text-align: right; font-size: 15px; font-weight: 800; color: #29e0ff; }
 /* ?cine (a still for the level select): nothing but the road */
 /* photo mode (render/photo.js): only the scene, and its own bar of buttons */
-body.photo #hud, body.photo #runButtons, body.photo .throw, body.photo #messages, body.photo #sticky, body.photo #tankCorner, body.photo #banner,
+body.photo #hud, body.photo #ghostGap, body.photo #runButtons, body.photo .throw, body.photo #messages, body.photo #sticky, body.photo #tankCorner, body.photo #banner,
 body.photo #touchControls, body.photo #copGlow, body.photo #cameraFlash, body.photo #behind { display: none !important; }
 #photoBar { position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; gap: 8px;
   align-items: center; padding: 8px 12px; border-radius: 10px; background: rgba(10,14,20,.6); color: #fff; font-size: 13px; z-index: 6; white-space: nowrap; }
@@ -30,7 +35,7 @@ body.photo #touchControls, body.photo #copGlow, body.photo #cameraFlash, body.ph
 #photoBar button:hover { background: rgba(10,14,20,.85); }
 body.photo canvas#game { cursor: grab; }
 @media (max-width: 560px) { #photoBar span { display: none; } }
-body.cinematic #hud, body.cinematic #runButtons, body.cinematic .throw, body.cinematic #messages, body.cinematic #sticky,
+body.cinematic #hud, body.cinematic #ghostGap, body.cinematic #runButtons, body.cinematic .throw, body.cinematic #messages, body.cinematic #sticky,
 body.cinematic #tankCorner, body.cinematic #banner, body.cinematic #touchControls { display: none !important; }
 /* the TANK RAGE corner (render/tankcorner.js): top right, under the speed */
 #tankCorner { display: none; position: fixed; width: 120px; height: 84px; pointer-events: none;
@@ -218,7 +223,7 @@ body.touch-controls .throw { display: block; }
   /* ...Pause and Exit level top centre, small, between the two corners */
   #runButtons { bottom: auto; top: max(10px, env(safe-area-inset-top)); flex-wrap: nowrap; }
   body.touch-controls #runButtons { max-width: none; }
-  #replayBadge { top: calc(max(10px, env(safe-area-inset-top)) + 34px); } /* (under Pause and Exit level) */
+  #replayBadge, #ghostGap { top: calc(max(10px, env(safe-area-inset-top)) + 34px); } /* (under Pause and Exit level) */
   #runButtons button { font-size: 11px; padding: 5px 8px; }
   /* ...the camera's warning under the corners (clear of the gauges' labels), short of the cargo's window on the right */
   #topStrip { top: calc(max(12px, env(safe-area-inset-top)) + 212px); left: max(16px, env(safe-area-inset-left)); right: calc(max(14px, env(safe-area-inset-right)) + 100px); }

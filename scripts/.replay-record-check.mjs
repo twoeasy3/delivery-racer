@@ -75,8 +75,17 @@ try {
   const paused = roundTrip({ id: 'night', k: 2, pauseAt: 1500, mystery: 'rewind', what: 'paused 3 s, and a rewind' });
   check(paused.recRewinds === 1 && paused.playRewinds === 1 && paused.rec.events.length === 21,
     `the rewind happened, and again played back (${paused.recRewinds} / ${paused.playRewinds}); the keys pressed while paused not recorded (${paused.rec.events.length} events)`);
+  // the ghost's path (replay.js mark, packed): by the clock, the rewound ten seconds dropped: its times only rise, a
+  // point every 0.2 s, and it ends where the clock did
+  const pathOk = ({ rec }) => {
+    const p = Replay.unpackPath(rec.path), rising = p.every((pt, i) => !i || pt[0] > p[i - 1][0]), end = p[p.length - 1][0];
+    return { ok: rising && Math.abs(end - rec.header.time) < 2e-3 && Math.abs(p.length - rec.header.time * 5) <= 3, n: p.length, end, time: rec.header.time };
+  };
+  const pp = pathOk(paused);
+  check(pp.ok, `the ghost's path of the rewound run: ${pp.n} points, rising, to ${pp.end} s (the clock ended at ${pp.time.toFixed(3)} s, ${paused.rec.header.steps / 120} s of steps)`);
   const meadows = roundTrip({ id: 'mystery-meadows', k: 0, pauseAt: 1500, mystery: 'rewind', what: 'paused 3 s, and a rewind' });
   check(meadows.recRewinds === 1 && meadows.playRewinds === 1, `the rewind there too (${meadows.recRewinds} / ${meadows.playRewinds})`);
+  check(pathOk(meadows).ok, 'and its path too (' + pathOk(meadows).n + ' points to ' + pathOk(meadows).end + ' s)');
   // a second run on the level already loaded: its recording holds the load's seed, and plays back as well
   roundTrip({ id: 'tokyo', k: 3, what: 'a second run on a level already loaded' });
   // refused: other rules, a changed level, a changed car

@@ -26,12 +26,21 @@ const saveNow = () => JSON.stringify(Progress.data);
 try {
   Progress.noSave = false;
   Progress.data.tankPieces = 2;
-  // a run of the player's own, to the end of Expressway, flat out down the middle
-  g.select('expressway');
-  Game.evil = false;
-  Game.start();
-  live = { steer: 0, throttle: 1 };
-  steps(120 * 200, () => Game.state !== 'playing');
+  // a run of the player's own, to the end of Expressway, flat out down the middle: the first of the seeds 1, 2, ...
+  // that gets there (so the check is the same every time)
+  let seed = 0;
+  do {
+    seed++;
+    if (Game.state !== 'start') Game.toMenu();
+    g.select('expressway');
+    Game.evil = false;
+    Game.nextSeed = seed;
+    Game.nextLoadSeed = seed;
+    Game.start();
+    live = { steer: 0, throttle: 1 };
+    steps(120 * 200, () => Game.state !== 'playing');
+  } while (Game.outcome !== 'delivered' && seed < 20);
+  console.log('  (seed ' + seed + ')');
   const run = Replay.last;
   check(Game.outcome === 'delivered' && run?.header.outcome === 'delivered' && run.header.spare > 0,
     `a run delivered (${Game.outcome}, ${run?.header.spare?.toFixed(1)} s to spare), its recording closed with its time to spare`);

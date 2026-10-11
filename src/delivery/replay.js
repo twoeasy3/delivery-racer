@@ -9,6 +9,10 @@
 //   inputs  [step, steer x 64, throttle x 64]: the controls each time they change (they are rounded to 1/64 as they
 //           are read: input.js, so what is recorded is what was driven)
 //   events  [step, 'throw' | 'horn' | 'confirm']: what the player did between steps, at the step it came after
+//   path    [time, s, lat, yaw, air] every PATH_EVERY steps: where the car was by the clock, for a ghost of the run;
+//           kept packed (packPath: whole numbers, each the change from the point before, as one string)
+//           (render/ghostcar.js). Where the run was rewound (the rewind mystery) what the rewind undid is dropped, so the
+//           path is the run as its clock ended up: a rewind never adds its ten seconds to a ghost (the owner, 11-Oct)
 //   checks  a fingerprint of where everything was every CHECK_EVERY steps: played back, a fingerprint that differs
 //           means the run has drifted (another browser's maths, a change the fingerprints missed): it stops, and says so
 // Only runs on a level of the menu are recorded (not a screensaver, a hidden level or the editor's).
@@ -26,6 +30,7 @@ import { ReplayStore } from './replaystore.js';
 
 const EVENTS = new Set(['throw', 'horn', 'confirm']);
 const CHECK_EVERY = 1200; // logic steps between fingerprints of the state (10 s at 120 a second)
+const PATH_EVERY = 24;   // logic steps between the path's points (0.2 s: the ghost is drawn between them)
 const FORMAT = 1;
 
 // FNV-1a over a list of numbers and words (numbers to 1e-3: what a replay would show)
@@ -75,9 +80,28 @@ export const Replay = {
         raceClass: LEVEL.grid && !LEVEL.grid.rival ? LEVEL.grid.kind || null : null, rival: Game.rival || null,
         mystery: Player.nextMystery || '', seed: Game.seed, loadSeed: Game.loadSeed, date: new Date().toISOString(),
       },
-      inputs: [], events: [], checks: [],
+      inputs: [], events: [], checks: [], path: [],
       at: { steer: 0, throttle: 0 },
     };
+    this.mark();
+  },
+  // a point of the path: where the car is now, by the clock (any points past the clock dropped first: rewound)
+  mark(path = this.recording.path) {
+    const r = (v, n) => Math.round(v * n) / n;
+    while (path.length && path[path.length - 1][0] > Game.time + 1e-6) path.pop();
+    path.push([r(Game.time, 1000), r(Player.s, 100), r(Player.lat, 1000), r(Player.yaw, 1000), r(Player.air, 100)]);
+  },
+  // a path as kept: each figure a whole number (ms, cm, mm, mrad, cm), the change from the point before, ',' between
+  packPath(path) {
+    const scale = [1000, 100, 1000, 1000, 100], was = [0, 0, 0, 0, 0], out = [];
+    for (const pt of path) for (let i = 0; i < 5; i++) { const v = Math.round(pt[i] * scale[i]); out.push(v - was[i]); was[i] = v; }
+    return out.join(',');
+  },
+  unpackPath(text) {
+    if (Array.isArray(text)) return text;
+    const scale = [1000, 100, 1000, 1000, 100], was = [0, 0, 0, 0, 0], path = [], n = text ? text.split(',').map(Number) : [];
+    for (let j = 0; j + 4 < n.length; j += 5) path.push(was.map((v, i) => (was[i] = v + n[j + i]) / scale[i]));
+    return path;
   },
   // an input event (input.js): kept with the step it came after. Not while paused: the game does nothing with them
   // then (Game, Horn), and played back where there is no pause they would
@@ -97,6 +121,7 @@ export const Replay = {
   },
   // after each logic step: every CHECK_EVERY steps, a fingerprint of where everything is
   afterStep(step) {
+    if (this.recording && step % PATH_EVERY === 0) this.mark();
     if (step % CHECK_EVERY !== 0) return;
     const print = stateNow();
     if (this.recording) this.recording.checks.push(print);
@@ -115,6 +140,8 @@ export const Replay = {
     rec.header.steps = Game.step;
     rec.header.outcome = outcome || 'left';
     rec.header.time = Game.time;
+    this.mark(rec.path); // (where it ended)
+    rec.path = this.packPath(rec.path);
     if (outcome === 'delivered') rec.header.spare = Game.remaining;
     rec.header.wrecks = Game.wrecks;
     rec.header.busts = Game.busts;
