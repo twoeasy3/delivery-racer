@@ -2307,13 +2307,16 @@ const buildRoad = () => {
       }
     };
     const nearLake = (s) => (LEVEL.bridges || []).some(b => s > b.from - 40 && s < b.to + 40);
+    // (clear of every other road, an exit's or a side road's, by `margin` m: on a level with exits, Back Roads say)
+    const clearAt = (s, lat, margin) => { Track.toWorld(s, lat, tmp); return offRoads(tmp.x, tmp.z, margin); };
     for (let s = Track.start; s < Track.end; s += 14) {
       if (nearLake(s)) continue;
       for (const side of [-1, 1]) {
         const roll = Math.random(), at = s + Math.random() * 10;
-        if (roll < 0.45) gum(at, beside(side, at, 4 + Math.random() * 50));
+        if (roll < 0.45) { const lat = beside(side, at, 4 + Math.random() * 50); if (clearAt(at, lat, 3)) gum(at, lat); }
         else if (roll < 0.5) { // a kangaroo or two, sitting up in the grass
           const lat = beside(side, at, 8 + Math.random() * 30);
+          if (!clearAt(at, lat, 1)) continue;
           roos.push([at, lat, 0.75, 0.7, 1.3, 0.8]);
           heads.push([at + 0.3, lat, 1.55, 0.35, 0.45, 0.5]);
         }
@@ -2323,6 +2326,7 @@ const buildRoad = () => {
       if (nearLake(s) || nearLake(s + 40)) continue;
       const side = k % 2 ? 1 : -1, w = 26 + Math.random() * 22, h = 8 + Math.random() * 7, d = 14 + Math.random() * 10;
       const lat = beside(side, s, 28 + d / 2 + Math.random() * 25);
+      if ([-0.5, -0.25, 0, 0.25, 0.5].some(f => !clearAt(s + f * w, lat, d / 2 + 2))) continue; // (all along it)
       blocks.push([s, lat, h / 2, d, h, w]);
       for (let y = 2.4; y < h - 1; y += 3) bands.push([s, lat, y, d + 0.1, 0.9, w + 0.1]); // (rows of windows)
     }

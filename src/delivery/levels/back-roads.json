@@ -1,5 +1,6 @@
 {
   "id": "back-roads",
+  "theme": "canberra",
   "clock": { "good": 115, "evil": 90 },
   "traffic": { "darkvan": 0.43, "commuter": 0.27, "van": 0.21, "bus": 0.04, "police": 0.05 },
   "trafficCount": 11,
