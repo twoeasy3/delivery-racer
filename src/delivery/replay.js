@@ -78,7 +78,7 @@ export const Replay = {
         logic: BUILD.logic, version: BUILD.version, level: LEVEL.id, levelPrint: LEVEL_PRINTS.get(LEVEL.id),
         car: CAR.id, carPrint: carPrint(CAR), evil: !!Game.evil, tankPieces: Progress.data.tankPieces || 0,
         raceClass: LEVEL.grid && !LEVEL.grid.rival ? LEVEL.grid.kind || null : null, rival: Game.rival || null,
-        mystery: Player.nextMystery || '', seed: Game.seed, loadSeed: Game.loadSeed, date: new Date().toISOString(),
+        mystery: Player.nextMystery || '', autoBrake: Player.autoBrake, seed: Game.seed, loadSeed: Game.loadSeed, date: new Date().toISOString(),
       },
       inputs: [], events: [], checks: [], path: [],
       at: { steer: 0, throttle: 0 },
@@ -180,6 +180,7 @@ export const Replay = {
     Game.evil = h.evil;
     Game.rival = h.rival;
     Player.nextMystery = h.mystery;
+    Progress.data.autoBrake = h.autoBrake ?? 1; // (as the run had it: the save is put back when the playback ends)
     pinCar(h.car);
     Game.nextSeed = h.seed;
     Game.nextLoadSeed = h.loadSeed;

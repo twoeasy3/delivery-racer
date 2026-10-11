@@ -49,9 +49,9 @@ const GROUPS = {
     files: [/tiers|progress\.js|milestones|menus|menu2|garage|cars\.js|levelSchema/],
   },
   cars: {
-    about: 'The cars: traits, the tank, the ideas as cars (thirty placeholders), mystery effects on the Super cars',
+    about: 'The cars: traits, the tank, the ideas as cars (thirty placeholders), mystery effects on the Super cars, the auto brake strength',
     seconds: 150,
-    tests: [t('.traits-check.mjs'), t('.tank-check.mjs'), t('.mysteries-check.mjs'), t('.ideas-check.mjs', { heavy: true })],
+    tests: [t('.traits-check.mjs'), t('.tank-check.mjs'), t('.mysteries-check.mjs'), t('.autobrake-check.mjs'), t('.ideas-check.mjs', { heavy: true })],
     files: [/cars\.js|ideas\.js|carText|player\.js/],
   },
   cargo: {

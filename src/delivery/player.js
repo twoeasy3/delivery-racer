@@ -36,6 +36,7 @@ export const Player = {
   shield: 0,           // s of invulnerability left after a helicopter drop
   launching: true,     // pulling away to startSpeed on its own
   braking: false,      // braking hard by itself for a car ahead (the tyres squeal as it starts)
+  autoBrake: 1,        // how hard it does so: a share of CONFIG.autoBrake, 0 (off) to 1 (the options; set as a run starts: Game.start)
   brakeLight: false,   // braking at all: the brake lights are on
   onIce: false,        // on an ice patch (see CONFIG.ice), or anything as slippery (see Track.icy)...
   onWater: false,      // ...and that being a burst main's water (see CONFIG.waterMain: its own share of the brakes and the steering)
@@ -444,11 +445,11 @@ export const Player = {
       this.speed = Math.max(Math.min(this.speed, this.puncture ? 0 : CONFIG.minSpeed), this.speed - CONFIG.mystery.noBrakes.coast * dt);
     }
     // off the accelerator, the car brakes by itself for a slower car ahead
-    const lead = throttle <= 0 && this.mystery !== 'noBrakes' ? this.carAhead() : null;
+    const lead = throttle <= 0 && this.mystery !== 'noBrakes' && this.autoBrake > 0 ? this.carAhead() : null;
     const hard = !!lead && this.speed - lead.vs > CONFIG.brakeScreech;
     if (hard && !this.braking) sfx('brake', 0.7);
     this.braking = hard;
-    if (lead) this.speed = Math.max(Math.max(0, lead.vs), this.speed - CONFIG.autoBrake * grip * dt);
+    if (lead) this.speed = Math.max(Math.max(0, lead.vs), this.speed - CONFIG.autoBrake * this.autoBrake * grip * dt);
     this.brakeLight = (throttle < 0 && this.speed > slowest) || !!lead;
   },
   // The screensaver's camera dolly: no car (nothing of the player is drawn), just this point

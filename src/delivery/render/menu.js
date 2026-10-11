@@ -53,6 +53,21 @@ autoGasBtn.addEventListener('click', () => {
   showAutoGas();
 });
 showAutoGas();
+// auto brake: how hard the car brakes by itself behind a slower car, off the accelerator (player.js): a tap steps
+// down from full strength to off, and round again
+const BRAKE_STEPS = [1, 0.75, 0.5, 0.25, 0];
+const autoBrakeBtn = document.getElementById('autoBrakeBtn');
+const showAutoBrake = () => {
+  const share = Progress.data.autoBrake ?? 1;
+  autoBrakeBtn.textContent = 'Auto brake: ' + (share ? Math.round(share * 100) + '%' : 'off');
+};
+autoBrakeBtn.addEventListener('click', () => {
+  const at = BRAKE_STEPS.indexOf(Progress.data.autoBrake ?? 1);
+  Progress.data.autoBrake = BRAKE_STEPS[(at + 1) % BRAKE_STEPS.length];
+  Progress.save();
+  showAutoBrake();
+});
+showAutoBrake();
 
 // the race class: every race (and the race screensaver) in F1 cars, or in GT road cars
 const raceClassBtn = document.getElementById('raceClassBtn');
@@ -127,6 +142,7 @@ document.getElementById('resetBtn').addEventListener('click', async () => {
   selectLevel(0);
   window.dispatchEvent(new Event('carchange')); // (the car in use may have been one that was bought)
   showAutoGas(); // (a reset forgets the choice)
+  showAutoBrake();
   showRaceClass();
   MenuStage.follow();
 });
@@ -141,6 +157,7 @@ window.addEventListener('progresschange', () => {
   window.dispatchEvent(new Event('carchange'));
   Sound.toggleMute(); toggleMute(); // (twice, so as it was saved: this sets the volume by it, and the button's words)
   showAutoGas();
+  showAutoBrake();
   showRaceClass();
   showRaceTrack();
   MenuStage.follow();
