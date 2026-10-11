@@ -340,6 +340,8 @@ export const selectCar = (id) => {
   const tier = restrictedTier(), car = CARS.find(c => c.id === id);
   if (tier !== null && car && carTier(car) === tier && Progress.owns(id)) { // (picked for a level that restricts the car: kept apart from the player's own pick)
     (Progress.data.tierCars ||= {})[tier] = id;
+    // (a pick of that tier is what the rule puts the player in, ahead of tierCars: so it follows, or nothing changes)
+    if (carTier(find()) === tier) Progress.data.car = id;
     Progress.save();
     CAR = forcedCar(find(), tier);
     lent = null;
