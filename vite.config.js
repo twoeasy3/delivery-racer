@@ -17,7 +17,7 @@ import { posix } from 'node:path'
 // that model joins the fingerprint by itself). Not the level files, which the level's own fingerprint covers.
 const NOT_RULES = new Set(['cargopage.js', 'editor.js', 'editorForms.js', 'gimmickspage.js', 'poweruppage.js', 'sides.js',
   'gimmicks.js', 'police.js', 'powerups.js', 'words.js', 'levelText.js', 'levelinfo.js', 'nav.js', 'main.js', 'messages.js',
-  'cargo.js', 'version.js', 'replay.js', 'replaystore.js'])
+  'cargo.js', 'version.js', 'replay.js', 'replaystore.js', 'events.js'])
 const LOGIC_DIR = 'src/delivery/'
 export const logicFiles = () => {
   const files = new Set(readdirSync(LOGIC_DIR).filter(f => f.endsWith('.js') && !NOT_RULES.has(f)))

@@ -27,6 +27,7 @@
 // (5c, for the later rebalance, NOT built: traffic will be made of the cars in the tier of its level)
 // ============================================================================
 import tierData from './tiers.json';
+import { when, PLAIN_EVENTS, Events } from './events.js';
 import { CONFIG } from './config.js';
 import { LEVELS, LEVEL, AMPHIBIOUS_LEVELS, isRace, levelName as levelNameOf, setLabelHook } from './levels.js';
 import { Progress } from './progress.js';
@@ -38,14 +39,9 @@ const TIER_NUMBERS = Object.keys(tierData.tiers || {}).map(Number).filter(n => n
 // the tiers: [ [level...] ] by tier number - 1; ids that name no level are dropped here (the check says so)
 const TIERS = TIER_NUMBERS.map(n => idsOf(tierData.tiers[n]).map(id => byId.get(id)).filter(Boolean));
 const OUTSIDE = idsOf(tierData.outside).map(id => byId.get(id)).filter(Boolean);
-// the events, as entries: { id, level, from, to, reward } (from / to in ms, null for no limit, NaN if not a time)
-const when = (v) => {
-  if (v === undefined || v === null || v === '') return null;
-  const day = /^(\d{4})-(\d\d)-(\d\d)$/.exec(String(v));
-  const t = day ? new Date(+day[1], +day[2] - 1, +day[3]).getTime() : Date.parse(String(v));
-  return Number.isFinite(t) ? t : NaN;
-};
-const EVENT_LIST = (Array.isArray(tierData.events) ? tierData.events : []).map(e => (typeof e === 'string' ? { id: e } : e && typeof e === 'object' ? e : {}));
+// the one-level events (events.json "events"), as entries: { id, level, from, to, reward } (from / to in ms, null
+// for no limit, NaN if not a time). The special events, a series of stages each, are events.js's
+const EVENT_LIST = PLAIN_EVENTS.map(e => (typeof e === 'string' ? { id: e } : e && typeof e === 'object' ? e : {}));
 const EVENT_ENTRIES = EVENT_LIST.map(e => ({ id: String(e.id), level: byId.get(String(e.id)), from: when(e.from), to: when(e.to), reward: e.reward && typeof e.reward === 'object' ? e.reward : null }))
   .filter(e => e.level);
 const EVENTS = EVENT_ENTRIES.map(e => e.level);
@@ -210,6 +206,7 @@ export const Tiers = {
   isOpen(level) {
     if (isRace(level)) return true;
     if (EVENTS.includes(level)) return this.eventLive(level); // (an event: while it is on)
+    if (Events.isStage(level)) return Events.isOpen(level); // (a special event's stage: events.js)
     if (LEVELS.indexOf(level) < this.legacy()) return true; // (open before the rework)
     const place = placeOf.get(level);
     if (place) {
@@ -280,7 +277,8 @@ export const Tiers = {
 // (the Blue Star cars are in the garage once Blue 1 is open; and the garage and the car in use ask the rule)
 // (with the tiers on, every delivery level's label is the menu's: T7-1 for tier 7's first (the menu shows its stars and
 // 1), and the counts above outside the tiers; with them off, the old numbers: levels.js)
-setLabelHook((level) => (!Tiers.on() ? null : placeOf.has(level) ? 'T' + placeOf.get(level).tier + '-' + placeOf.get(level).pos : OUTSIDE_LABELS.get(level) || null));
+setLabelHook((level) => (Events.isStage(level) ? 'Stage ' + (level.stage.index + 1) // (a special event's: its stage)
+  : !Tiers.on() ? null : placeOf.has(level) ? 'T' + placeOf.get(level).tier + '-' + placeOf.get(level).pos : OUTSIDE_LABELS.get(level) || null));
 setTierHooks({
   // (held for the whole of a run and its results: delivering a level earns its medal and ends the rule, which
   // must not change the car the run's finish animation draws mid-way: Game.start sets `hold`, Game.toMenu clears it)

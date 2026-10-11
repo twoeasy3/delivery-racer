@@ -1,5 +1,5 @@
 {
-  "_about": "The level tiers. Edit by hand, or: node scripts/tiers.mjs move <id> <tier> [position]. Tiers 1-5 are the gold-star tiers, 6-10 the Blue Star ones (Blue 1 is tier 6). A level appears once: in one tier, in events, or in outside. Events (the menu's first group, before the tiers) are open while on, with no tier car rule: an entry is an id, or {id, from, to, reward} (see tiers.js). Outside levels open in the order listed here (the first once tier 10 is cleared); an amphibious level opens by the rule in tiers.js amphibiousOpens; races are always open.",
+  "_about": "The level tiers. Edit by hand, or: node scripts/tiers.mjs move <id> <tier> [position]. Tiers 1-5 are the gold-star tiers, 6-10 the Blue Star ones (Blue 1 is tier 6). A level appears once: in one tier, in events, or in outside. The events are in events.json. Outside levels open in the order listed here (the first once tier 10 is cleared); an amphibious level opens by the rule in tiers.js amphibiousOpens; races are always open.",
   "tiers": {
     "1": ["expressway","back-roads","farm","big-business","hurricane"],
     "2": ["mystery-meadows","night","monte-carlo","suburbs","mumbai"],
@@ -12,6 +12,5 @@
     "9": ["outback-express","market-town","derby","morro","seaquake"],
     "10": ["farside","stunts","ponti","glow","erupt"]
   },
-  "events": [{ "id": "christmas", "from": "2026-10-10", "to": "2026-12-26" }],
   "outside": ["cattle","thaw","fallout","all-heck","ufo","oh-mine","showdown","battlefield","slipway","harbour","flood","ford","fjord","marina-bay","montreal","bathurst","monza","spa","albert-park"]
 }

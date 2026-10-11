@@ -1,0 +1,18 @@
+{
+  "_about": "The events (src/delivery/events.js; the plan: EVENTS-NOTES.md). events: the one-level events (the menu's Events group): an entry is a level's id, or { id, from, to, reward } (from / to: \"2026-12-01\" is midnight on the player's device, or a time with its zone; reward: { car, money, id }, given once). special: the special events, a series of stages played in turn: { id, name, short, from, to, prize: { car }, stages: [ { level, from, car, free, clock: { good, evil }, ... } ] }. A stage plays its level's map as a level of its own (id <event>-<n>); car: the car it needs (owned), or with free: true the car it lends (a free try); clock: written out in full for the stage (never a share of the map's); any other field of a level overrides the map's. Check: node scripts/events.mjs check.",
+  "events": [
+    { "id": "christmas", "from": "2026-10-10", "to": "2026-12-26" }
+  ],
+  "special": [
+    {
+      "id": "comet-hunt", "name": "The Comet Hunt", "short": "Comet Hunt", "from": "2026-10-11", "to": "2026-11-01",
+      "prize": { "car": "silvercomet" },
+      "stages": [
+        { "level": "farm", "from": "2026-10-11", "clock": { "good": 105, "evil": 80 } },
+        { "level": "suburbs", "from": "2026-10-12", "car": "lovebus", "clock": { "good": 150, "evil": 100 } },
+        { "level": "night", "from": "2026-10-13", "car": "silvercomet", "free": true, "clock": { "good": 85, "evil": 65 } },
+        { "level": "tokyo", "from": "2026-10-14", "car": "towtruck", "clock": { "good": 170, "evil": 130 } }
+      ]
+    }
+  ]
+}

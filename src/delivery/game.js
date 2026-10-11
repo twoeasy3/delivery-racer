@@ -4,6 +4,7 @@ import { Progress } from './progress.js';
 import { Nav } from './nav.js';
 import { useLevelCar, returnCar, earnedFor, ownedAmphibious, carAllowed, carRule } from './cars.js';
 import { Tiers } from './tiers.js';
+import { Events } from './events.js';
 import { Input } from './input.js';
 import { Replay } from './replay.js';
 import { clamp, seedRandom, newSeed } from './util.js';
@@ -283,7 +284,9 @@ export const Game = {
     // delivered on time: the tip goes in the bank, the time to spare may be a best, and the next level opens
     // (a hidden level, off the menu, banks nothing and records nothing: see HIDDEN_LEVELS)
     const prize = earnedFor(LEVEL.id), hadPrize = !!prize && Progress.earned(prize); // (a 6-star car this level earns, and whether it was earned before this run)
-    const record = outcome === 'delivered' && LEVEL_INDEX >= 0 && Progress.levelDone(LEVEL_INDEX, LEVEL.id, Math.max(0, this.tip + this.cash - this.fines), this.remaining, Player.evil);
+    const earnings = Math.max(0, this.tip + this.cash - this.fines), stage = Events.isStage(LEVEL); // (a special event's stage: banked and timed as a level is, opening nothing: events.js)
+    const record = outcome === 'delivered' && (LEVEL_INDEX >= 0 ? Progress.levelDone(LEVEL_INDEX, LEVEL.id, earnings, this.remaining, Player.evil)
+      : stage ? Progress.stageDone(LEVEL.id, earnings, this.remaining, Player.evil) : false);
     resultTitle.textContent = {
       delivered: !LEVEL.grid?.rival ? 'Delivered!'
         : !this.rivalsIn ? (LEVEL.grid.count > 1 ? 'Delivered first - you beat them all!' : 'Delivered - you beat your rival!')
@@ -297,7 +300,7 @@ export const Game = {
       : outcome === 'late' ? 'Tip ' + tip + ' of $' + LEVEL.tip
       : Math.floor(this.progress * 100) + '% of the way';
     resultNote.textContent = (outcome === 'delivered' ? formatTime(this.remaining) + ' to spare' +
-      (LEVEL_INDEX < 0 ? ' (test run: nothing saved)' : record ? ' (new best)' : ' (best ' + formatTime(Progress.bestTime(LEVEL.id, Player.evil)) + ')') + '  |  ' : '') +
+      (LEVEL_INDEX < 0 && !stage ? ' (test run: nothing saved)' : record ? ' (new best)' : ' (best ' + formatTime(Progress.bestTime(LEVEL.id, Player.evil)) + ')') + '  |  ' : '') +
       (Player.evil ? 'Evil' : 'Good') + '  |  Wrecked: ' + this.wrecks + '  |  Busted: ' + this.busts +
       '  |  Bank $' + Progress.data.money.toFixed(2);
     if (prize && !hadPrize && Progress.earned(prize)) resultNote.textContent += '  |  You earned the ' + prize.name + '!'; // (its par beaten on every side: it is in the garage)
@@ -305,6 +308,9 @@ export const Game = {
     // in a replay being watched (its save is put back as it was when it ends)
     const reward = outcome === 'delivered' && !Replay.playing ? Tiers.claimReward(LEVEL) : '';
     if (reward) resultNote.textContent += '  |  Event reward: ' + reward + '!';
+    // a special event's stage delivered: done, and the grand prize after the last (events.js)
+    const staged = outcome === 'delivered' && !Replay.playing ? Events.delivered(LEVEL) : null;
+    if (staged) resultNote.textContent += '  |  Stage ' + staged.stage + ' of ' + staged.of + ' done' + (staged.prize ? '  |  You won the ' + staged.prize + '!' : '');
     // a playback's results: what the run came to, nothing banked or bettered (the save is put back as it was: replay.js)
     if (Replay.playing) {
       resultTitle.textContent = 'Replay: ' + resultTitle.textContent;

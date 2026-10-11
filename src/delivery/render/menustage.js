@@ -12,13 +12,14 @@
 // For a picture: ?cursor=47 puts that level on the stage, open or not (?pick= opens them all first: see
 // main.js); ?side=evil shows the Evil side for the visit; ?options opens the options; ?road the road card.
 import '../menu2.css';
-import { LEVELS, LEVEL, selectLevel, levelLabel, MAIN_LEVELS, AMPHIBIOUS_LEVELS, DELIVERY_LEVELS, RACE_LEVELS, isRace } from '../levels.js';
+import { LEVELS, LEVEL, selectLevel, selectSpecial, levelLabel, MAIN_LEVELS, AMPHIBIOUS_LEVELS, DELIVERY_LEVELS, RACE_LEVELS, isRace } from '../levels.js';
 import { levelName, levelDescription } from '../levelText.js';
 import { cargoFor } from '../cargo.js';
 import { cargoCircleView } from './cargoview.js';
-import { CARS, CAR, useLevelCar, earnedFor, amphibiousCars, stars, starColour } from '../cars.js';
+import { CARS, CAR, useLevelCar, earnedFor, amphibiousCars, stars, starColour, carById } from '../cars.js';
 import { Progress } from '../progress.js';
 import { Tiers, tierStarsNode, richTiers } from '../tiers.js';
+import { Events } from '../events.js';
 import { Nav } from '../nav.js';
 import { buildLabel } from '../version.js';
 import { Game, formatTime, clockFor } from '../game.js';
@@ -98,12 +99,15 @@ for (let i = 0; i < RACE_LEVELS.length; i += 5) TABS.race.groups.push([i, Math.m
 let liveKey = null;
 const buildDeliveryTab = () => {
   if (!Tiers.on()) return;
-  const live = Tiers.liveEvents(), key = live.map(level => level.id).join();
+  const live = Tiers.liveEvents(), specials = Events.liveSpecials(), key = [...live, ...specials].map(x => x.id).join();
   if (key === liveKey) return;
   liveKey = key;
-  const list = [...live, ...Tiers.order.filter(level => !Tiers.isEvent(level)), ...DELIVERY_LEVELS.filter(level => !Tiers.order.includes(level))], groups = [];
+  // (the one-level events, a group; then each special event's stages, a group of its own: events.js)
+  const stages = specials.flatMap(e => e.stages.map(s => s.level).filter(Boolean));
+  const list = [...live, ...stages, ...Tiers.order.filter(level => !Tiers.isEvent(level)), ...DELIVERY_LEVELS.filter(level => !Tiers.order.includes(level))], groups = [];
   let i = 0;
   if (live.length) { groups.push([0, live.length, 'events']); i = live.length; }
+  for (const e of specials) { const n = e.stages.filter(s => s.level).length; if (n) { groups.push([i, i + n, 'special:' + e.id]); i += n; } }
   Tiers.tiers.forEach((tier, k) => { if (tier.length) { groups.push([i, i + tier.length, k + 1]); i += tier.length; } });
   const kind = (level) => AMPHIBIOUS_LEVELS.includes(level) ? 2 : 1;
   while (i < list.length) { let j = i + 1; while (j < list.length && j - i < 5 && kind(list[j]) === kind(list[i])) j++; groups.push([i, j]); i = j; }
@@ -111,6 +115,15 @@ const buildDeliveryTab = () => {
   TABS.delivery.groups = groups;
 };
 buildDeliveryTab();
+// the level picked: a menu level by its place; a special event's stage is not in the menu's lists (events.js)
+const pickLevel = (level) => { if (Events.isStage(level)) selectSpecial(level); else selectLevel(LEVELS.indexOf(level)); };
+// a special event's stage, said on its card: what stops it, or the car it is driven in (events.js)
+const stageLine = (level) => {
+  const { event, stage } = Events.stageOf(level), st = Events.state(event, stage.index), car = stage.car ? carById(stage.car) : null;
+  if (!st.open) return st.why;
+  if (st.needs) return 'Needs the ' + st.needs.name + ': own it to play this stage';
+  return stage.free ? 'Free try: driven in the ' + car.name + ', owned or not' : car ? 'Driven in your ' + car.name : 'Any car you own';
+};
 // how long until an event ends, for its card: "3d 4h", "5h 12m", "9m 30s"
 const countdown = (ms) => {
   const s = Math.max(0, Math.ceil(ms / 1000)), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
@@ -127,12 +140,12 @@ setInterval(() => {
 }, 1000);
 const tabOf = (level) => isRace(level) ? 'race' : 'delivery';
 // (under the tiers a level's number is its place in its tier, 1 to 5; its kind says which tier)
-const label = (level) => Tiers.on() && Tiers.place(level) ? String(Tiers.place(level).pos)
+const label = (level) => Events.isStage(level) ? String(level.stage.index + 1) : Tiers.on() && Tiers.place(level) ? String(Tiers.place(level).pos)
   : Tiers.on() && Tiers.isEvent(level) ? String(Math.max(0, Tiers.liveEvents().indexOf(level)) + 1) : levelLabel(LEVELS.indexOf(level)); // (outside the tiers: S1, A1... in the menu's order, tiers.js)
 // what kind of level it is, for the plate over its picture
-const kindOf = (level) => isRace(level) ? 'Race' : Tiers.on() && Tiers.isEvent(level) ? 'Event' : Tiers.on() && Tiers.outsideLabel(level)?.startsWith('S') ? 'Special' : Tiers.on() && Tiers.place(level) ? tierStarsNode(Tiers.place(level).tier) : AMPHIBIOUS_LEVELS.includes(level) ? 'Amphibious' : MAIN_LEVELS.includes(level) ? 'Level' : 'Special';
+const kindOf = (level) => isRace(level) ? 'Race' : Events.isStage(level) ? 'Stage' : Tiers.on() && Tiers.isEvent(level) ? 'Event' : Tiers.on() && Tiers.outsideLabel(level)?.startsWith('S') ? 'Special' : Tiers.on() && Tiers.place(level) ? tierStarsNode(Tiers.place(level).tier) : AMPHIBIOUS_LEVELS.includes(level) ? 'Amphibious' : MAIN_LEVELS.includes(level) ? 'Level' : 'Special';
 // a race is always open; a delivery level once the one before it has been delivered
-const isOpen = (level) => isRace(level) || (Tiers.on() ? Tiers.isOpen(level) : LEVELS.indexOf(level) < Progress.data.unlocked);
+const isOpen = (level) => isRace(level) || (Events.isStage(level) ? Events.isOpen(level) : Tiers.on() ? Tiers.isOpen(level) : LEVELS.indexOf(level) < Progress.data.unlocked);
 // a level played on one side only (the Battlefield, All Heck: always Good)
 const oneSided = (level) => !!(level.battle || level.alwaysGood);
 
@@ -151,7 +164,7 @@ const show = (level) => {
   tab = tabOf(level);
   lastOn[tab] = level;
   if (isOpen(level)) {
-    selectLevel(LEVELS.indexOf(level));
+    pickLevel(level);
     useLevelCar(level.car, level.amphibious); // (an amphibious level puts the player in their amphibious car)
   }
   draw();
@@ -220,7 +233,7 @@ const drawStage = () => {
   const prize = earnedFor(level.id);
   const place = Tiers.on() ? Tiers.place(level) : null, rule = Tiers.restriction(level, evil);
   const cheapest = rule !== null ? Tiers.carsOfTier(rule).sort((a, b) => a.price - b.price)[0] : null;
-  const needs = !open ? (Tiers.on() ? Tiers.lockedBecause(level) : 'Locked: deliver level ' + label(list[at - 1]) + ' on time to open it')
+  const needs = Events.isStage(level) ? stageLine(level) : !open ? (Tiers.on() ? Tiers.lockedBecause(level) : 'Locked: deliver level ' + label(list[at - 1]) + ' on time to open it')
     : rule !== null ? (CAR.silhouette ? 'You own no ' + Tiers.tierName(rule) + ' car: buy one in the garage to play this level (the cheapest is the ' + cheapest.name + ', ' + money(cheapest.price) + ')'
         : 'No medal on ' + (evil ? 'Evil' : 'Good') + ' yet: only ' + Tiers.tierName(rule) + ' cars may be driven. Earn it and any car will do on this side')
     : level.car ? 'Driven in the ' + CAR.name + ': the garage car returns on other levels'
@@ -436,8 +449,9 @@ export const draw = () => {
   // follows it, unless it is showing a level not open yet, which is never the level picked)
   if (isOpen(cursor) && cursor !== LEVEL && LEVELS.includes(LEVEL)) { cursor = LEVEL; tab = tabOf(LEVEL); }
   if (!TABS[tab].list.includes(cursor)) cursor = TABS[tab].list.includes(lastOn[tab]) ? lastOn[tab] : TABS[tab].list.find(isOpen) || TABS[tab].list[0];
-  if (Tiers.isEvent(LEVEL) && !Tiers.eventLive(LEVEL) && isOpen(cursor) && cursor !== LEVEL) { // (the level picked was an event, now over)
-    selectLevel(LEVELS.indexOf(cursor));
+  const over = (Tiers.isEvent(LEVEL) && !Tiers.eventLive(LEVEL)) || (Events.isStage(LEVEL) && !Events.live(Events.stageOf(LEVEL).event));
+  if (over && isOpen(cursor) && cursor !== LEVEL) { // (the level picked was an event or a stage of one, now over)
+    pickLevel(cursor);
     useLevelCar(cursor.car, cursor.amphibious);
   }
   lastOn[tab] = cursor;
@@ -451,9 +465,10 @@ export const draw = () => {
   const { list, groups } = TABS[tab], at = list.indexOf(cursor);
   const shown = Math.max(0, groups.findIndex(([a, b]) => at >= a && at < b)), [first, last] = groups[shown];
   groupBox.replaceChildren(...groups.map(([a, b], g) => {
-    const events = groups[g][2] === 'events', tierNo = events ? 0 : groups[g][2]; // (under the tiers: the stars of the tier, gold or blue)
-    const button = make('button', (g === shown ? 'current' : '') + (isOpen(list[a]) ? '' : ' locked') + (events ? ' events' : tierNo ? (Tiers.tierIsBlue(tierNo) ? ' blue' : ' gold') : ''),
-      events ? 'Events' : tierNo ? '★'.repeat(Tiers.tierStars(tierNo)) : label(list[a]) + (b - a > 1 ? '–' + label(list[b - 1]) : ''));
+    const special = String(groups[g][2]).startsWith('special:') ? Events.specials.find(e => 'special:' + e.id === groups[g][2]) : null;
+    const events = groups[g][2] === 'events' || !!special, tierNo = events ? 0 : groups[g][2]; // (under the tiers: the stars of the tier, gold or blue)
+    const button = make('button', (g === shown ? 'current' : '') + (isOpen(list[a]) || special ? '' : ' locked') + (events ? ' events' : tierNo ? (Tiers.tierIsBlue(tierNo) ? ' blue' : ' gold') : ''),
+      special ? special.short : events ? 'Events' : tierNo ? '★'.repeat(Tiers.tierStars(tierNo)) : label(list[a]) + (b - a > 1 ? '–' + label(list[b - 1]) : ''));
     button.title = tierNo ? Tiers.spoken(tierNo) + (isOpen(list[a]) ? '' : ': not open yet') : isOpen(list[a]) ? '' : 'Not open yet';
     if (tierNo) button.setAttribute('aria-label', Tiers.spoken(tierNo) + (isOpen(list[a]) ? '' : ', not open yet'));
     button.addEventListener('click', () => { if (g !== shown) { blip('menuMove'); show(list[a]); } });

@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { Game } from '../game.js';
 import { LEVEL, LEVELS } from '../levels.js';
+import { STAGE_LEVELS } from '../events.js';
 import { CAR, carById } from '../cars.js';
 import { Track } from '../track.js';
 import { Player } from '../player.js';
@@ -28,7 +29,7 @@ let mesh = null, meshCar = null, path = null, runKey = '';
 // the run has started: the ghost for it, if there is one to have
 const pick = () => {
   path = null;
-  if (!ReplayStore.ghostOn || Replay.playing || Game.screensaver || Game.raceWatch || !LEVELS.includes(LEVEL)) return;
+  if (!ReplayStore.ghostOn || Replay.playing || Game.screensaver || Game.raceWatch || !(LEVELS.includes(LEVEL) || STAGE_LEVELS.includes(LEVEL))) return;
   const best = ReplayStore.best(LEVEL.id, Game.evil);
   if (!best?.path?.length || !Replay.check(best).ok) return; // (one recorded before there were paths, or out of date)
   path = Replay.unpackPath(best.path);

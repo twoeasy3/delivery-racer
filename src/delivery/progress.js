@@ -55,6 +55,7 @@ const fresh = () => ({
   stats: {},       // milestone counters, by name (packagesLanded, copsOutrun, kmDriven...: see milestones.js), across every run
   levelOrder: LEVEL_ORDER, // the order of levels `unlocked` counts by
   tierBase: null,  // the levels open (by position) when the tiers (tiers.js) were first looked at: they stay open. null: not yet
+  events: {},      // the special events' stages done, by event: how many, in order (events.js)
   claimed: [],     // the rewards given ('event-<id>': tiers.js claimReward), kept when the event is gone
   tierCars: {},    // the car last picked for each tier's levels while their medal is not earned, by tier (the player's own pick, `car`, is kept apart)
 });
@@ -123,7 +124,7 @@ const saveText = (data) => JSON.stringify({
 });
 // The cookie's share of the save (see BACKUP above): never over COOKIE_ROOM bytes as written, whatever the save
 // holds. Should even the list of cars be too long for it (hundreds of them), it goes down to the car in use
-const COOKIE_KEYS = ['money', 'unlocked', 'levelOrder', 'cars', 'car', 'claimed', 'tankPieces', 'evil', 'muted', 'touch', 'autoGas', 'autoBrake', 'raceClass', 'raceTrack'];
+const COOKIE_KEYS = ['money', 'unlocked', 'levelOrder', 'cars', 'car', 'claimed', 'events', 'tankPieces', 'evil', 'muted', 'touch', 'autoGas', 'autoBrake', 'raceClass', 'raceTrack'];
 const COOKIE_ROOM = 3600; // bytes of cookie value (the cap is 4096 for the name, the value and its attributes)
 const cookieText = (data) => {
   const short = Object.fromEntries(COOKIE_KEYS.map(key => [key, key === 'money' ? rounded(data.money, SAVE_STEP.money) : data[key]]));
@@ -148,6 +149,8 @@ const tidy = (saved) => {
   clean.levelOrder = Math.floor(number(saved.levelOrder, 1) ?? 1);
   if (number(saved.tierBase, 1) !== undefined) clean.tierBase = Math.floor(number(saved.tierBase, 1));
   clean.tierCars = Object.fromEntries(Object.entries(saved.tierCars && typeof saved.tierCars === 'object' ? saved.tierCars : {}).filter(([k, v]) => /^(\d{1,2}|[a-z0-9-]{1,40})$/.test(k) && word(v)).slice(0, 60)); // (by tier, or by a level with a list of its own: cars.js carRule)
+  clean.events = Object.fromEntries(Object.entries(saved.events && typeof saved.events === 'object' && !Array.isArray(saved.events) ? saved.events : {})
+    .filter(([k, v]) => word(k) && Number.isInteger(v) && v >= 0 && v <= 99).slice(0, 100));
   clean.claimed = [...new Set((Array.isArray(saved.claimed) ? saved.claimed : []).filter(word))].slice(0, 100);
   clean.tankPieces = Math.floor(number(saved.tankPieces, 0) ?? 0);
   clean.cars = [...new Set(['commuter', ...(Array.isArray(saved.cars) ? saved.cars : []).filter(word)])].slice(0, 200);
@@ -216,6 +219,15 @@ export const Progress = {
     const record = !(side[id] >= spare);
     if (record) side[id] = spare;
     if (!isRace(LEVELS[index])) this.data.unlocked = Math.max(this.data.unlocked, pastRaces(index + 2)); // (a race won opens nothing)
+    this.save();
+    return record;
+  },
+  // a special event's stage delivered (events.js): its tip, and its best time; it opens nothing of the menu's
+  stageDone(id, tip, spare, evil) {
+    this.data.money += tip;
+    const side = this.data.bestTime[evil ? 'evil' : 'good'];
+    const record = !(side[id] >= spare);
+    if (record) side[id] = spare;
     this.save();
     return record;
   },

@@ -16,6 +16,8 @@ Status: being built on the feature branch `claude/special-events`; not merged un
    will later be what other events require.
 8. The one-level events (Christmas Eve) stay a separate kind.
 9. No "Limited" label on the prize car in the garage.
+10. A player stopped by a car they cannot get yet is not out: the event is over only when its clock is. If they get
+    the car (its tier opened, bought) before the end, they carry on from that stage.
 
 ## What the owner asked
 

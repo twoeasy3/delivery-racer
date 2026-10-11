@@ -369,7 +369,15 @@ Progress.earnedCars = EARNED_CARS;
 // given stays in the garage once the event is over and gone from the list. Any other car can be an event's reward too
 // (a garage car, an earned one). Owned once given (Progress.data.cars). A car here: as a garage car's entry, with an
 // id of its own and price 0; it is outside the tiers.
-export const EVENT_CARS = [];
+export const EVENT_CARS = [
+  // the first special event's grand prize (events.json comet-hunt): on the Centre-Seat Hypercar idea's model, but a car
+  // of its own (its id, name, livery and figures); `idea` only says it is drawn by its idea model (render/ideaModels.js)
+  (() => {
+    const base = IDEA_CARS.find(car => car.id === 'centreseat');
+    return { ...base, id: 'silvercomet', name: 'Silver Comet', basedOn: undefined, placeholder: false, idea: true, event: true, price: 0,
+      color: 0xc9d2dc, evilColor: 0x1d2433, maxSpeed: 46, accel: 19, health: 150, perk: 'The Comet Hunt\'s prize' };
+  })(),
+];
 // the car a special level earns (undefined for a level with none)
 export const earnedFor = (levelId) => EARNED_CARS.find(car => car.earned.level === levelId && !car.off);
 
