@@ -799,7 +799,7 @@ export const CONFIG = {
     icecream: { hw: 1.05, hl: 2.6, height: 2.4, mass: 1.6, health: 80, speed: 0.6, special: true, model: 'icecream', livery: 0xff9ec4, jingle: 2.6 },
     binlorry: { hw: 1.25, hl: 4.2, height: 3.2, mass: 4, health: 200, speed: 0.75, special: true, model: 'binlorry', livery: 0x2f8a4a, noSpin: true,
       stops: { every: { min: 7, max: 13 }, time: { min: 2.5, max: 4.5 } } },
-    learner: { hw: 0.85, hl: 1.9, height: 1.45, mass: 0.8, health: 45, speed: 0.6, special: true, model: 'learner', livery: 0xf4f4f4, learner: true },
+    learner: { hw: 0.85, hl: 1.9, height: 1.45, mass: 0.8, health: 45, speed: 1, wobble: 1.1, special: true, model: 'learner', livery: 0xf4f4f4, learner: true },
     boyracer: { hw: 0.9, hl: 1.95, height: 1.15, mass: 0.8, health: 45, speed: 1.35, model: 'boyracer', tailgates: true },
     caravan: { hw: 1.1, hl: 5.2, height: 2.6, mass: 2.2, health: 110, speed: 0.75, special: true, model: 'caravan', sway: 0.45 },
     // a drive-by car (The Hood): only ever evil (evilOnly), out for trouble: see CONFIG.driveBy

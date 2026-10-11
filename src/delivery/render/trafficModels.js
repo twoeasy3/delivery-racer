@@ -83,9 +83,12 @@ Object.assign(MODELS, {
     const group = new THREE.Group(), w = car.hw * 2, l = car.hl * 2, h = car.height;
     const body = saloon(group, lambert(car.color), w, l, h);
     const plate = (z, turn) => {
-      const white = box(group, lambert(0xf4f4f4), 0.42, 0.42, 0.04, w * 0.22, 0.3 + h * 0.3, z);
-      const red = box(group, lambert(0xd8262b), 0.1, 0.3, 0.05, w * 0.22 + turn * 0.07, 0.3 + h * 0.3, z);
-      box(group, lambert(0xd8262b), 0.22, 0.1, 0.05, w * 0.22 - turn * 0.02, 0.3 + h * 0.3 - 0.1, z);
+      // (the L reads the right way round to whoever looks at the plate: its stem on the viewer's left, the foot
+      // running to the viewer's right; turn is +1 on the plate seen from the front, -1 from behind)
+      const y = 0.3 + h * 0.3, x = w * 0.22;
+      const white = box(group, lambert(0xf4f4f4), 0.5, 0.5, 0.04, x, y, z);
+      const red = box(group, lambert(0xd8262b), 0.11, 0.36, 0.05, x - turn * 0.1, y, z);
+      box(group, lambert(0xd8262b), 0.28, 0.11, 0.05, x + turn * 0.02, y - 0.125, z);
       return [white, red];
     };
     plate(l / 2 + 0.03, 1);
