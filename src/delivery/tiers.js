@@ -10,6 +10,8 @@
 //   - inside a tier: levels 1 and 2 are open with it; 3 needs 2 medals, in this tier; 4 needs 3 medals; 5 needs level 4 beaten (a level further on needs the one before it)
 //   - a medal not yet earned can only be played in a car of EXACTLY that tier (the same stars and colour of
 //     stars; none of the cars outside the tiers). Earned, the level can be replayed on that side in any car
+//   - the events (tiers.json "events": the menu's first group, before the tiers; the owner, 11-Oct): always open, no
+//     medal rule and no car rule, and no Next level from one
 //   - a level the owner has listed "outside" the tiers has no medal rule and no car rule. They open one after
 //     another in the order listed, the first once the last tier is cleared (the old rule, at the end of the game);
 //     the amphibious ones by amphibiousOpens below; races are always open
@@ -29,12 +31,13 @@ const TIER_NUMBERS = Object.keys(tierData.tiers || {}).map(Number).filter(n => n
 // the tiers: [ [level...] ] by tier number - 1; ids that name no level are dropped here (the check says so)
 const TIERS = TIER_NUMBERS.map(n => idsOf(tierData.tiers[n]).map(id => byId.get(id)).filter(Boolean));
 const OUTSIDE = idsOf(tierData.outside).map(id => byId.get(id)).filter(Boolean);
+const EVENTS = idsOf(tierData.events).map(id => byId.get(id)).filter(Boolean);
 const placeOf = new Map();
 TIERS.forEach((list, t) => list.forEach((level, p) => placeOf.set(level, { tier: TIER_NUMBERS[t], index: t, pos: p + 1 })));
 // outside levels that open in a chain (not races, which are always open; not amphibious, which have a rule of their own)
 const CHAIN = OUTSIDE.filter(level => !isRace(level) && !level.amphibious && !AMPHIBIOUS_LEVELS.includes(level));
-// the delivery levels in the order the menu shows them: the tiers, then the others
-const ORDER = [...TIERS.flat(), ...OUTSIDE.filter(level => !isRace(level))];
+// the delivery levels in the order the menu shows them: the events, the tiers, then the others
+const ORDER = [...EVENTS, ...TIERS.flat(), ...OUTSIDE.filter(level => !isRace(level))];
 
 const switched = (() => {
   try { const v = new URLSearchParams(location.search).get('tiers'); return v === '1' ? true : v === '0' ? false : null; } catch { return null; }
@@ -59,7 +62,9 @@ export const richTiers = (text) => String(text).split(/(\{tier:\d+\})/).filter(B
 export const Tiers = {
   tiers: TIERS,                       // [[level]] by tier (tier number = index + 1 while the file counts from 1)
   outside: OUTSIDE,
+  events: EVENTS,
   order: ORDER,
+  isEvent(level) { return EVENTS.includes(level); },
   on() { return switched ?? !!CONFIG.progression?.tiers; },
   // which side is being played (the menu's pick): set by game.js, which owns it
   sideIsEvil: () => false,
@@ -77,8 +82,9 @@ export const Tiers = {
       idsOf(list).forEach(id => note(id, 'tier ' + n));
       if (idsOf(list).length !== 5) out.push('tier ' + n + ' has ' + idsOf(list).length + ' levels, not 5 (it works, but the rules assume five)');
     }
+    idsOf(tierData.events).forEach(id => note(id, 'events'));
     idsOf(tierData.outside).forEach(id => note(id, 'outside'));
-    for (const level of LEVELS) if (!seen.has(level.id)) out.push(level.id + ' is in no tier and not listed outside');
+    for (const level of LEVELS) if (!seen.has(level.id)) out.push(level.id + ' is in no tier and not listed in events or outside');
     return out;
   },
 
@@ -142,7 +148,7 @@ export const Tiers = {
     return { level: list[place.pos - 2] }; // (the one before it)
   },
   isOpen(level) {
-    if (isRace(level)) return true;
+    if (isRace(level) || EVENTS.includes(level)) return true;
     if (LEVELS.indexOf(level) < this.legacy()) return true; // (open before the rework)
     const place = placeOf.get(level);
     if (place) {
@@ -193,7 +199,7 @@ export const Tiers = {
   },
   // the delivery level after this one in the menu's order (tiers, then the rest), or null
   next(level) {
-    if (isRace(level)) return null;
+    if (isRace(level) || EVENTS.includes(level)) return null; // (an event leads nowhere: the tiers start on their own)
     const k = ORDER.indexOf(level);
     return k >= 0 && k + 1 < ORDER.length ? ORDER[k + 1] : null;
   },

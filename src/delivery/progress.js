@@ -243,6 +243,7 @@ export const Progress = {
   earnedCars: [],
   // true: the car's level has been delivered with at least its par's seconds to spare, on every side the par names
   earned(car) {
+    if (car.off) return false; // (a car not to be had for now: cars.js EARNED_CARS)
     const { level, par } = car.earned, best = this.data.bestTime;
     return (best.good[level] ?? -Infinity) >= par.good && (par.evil === undefined || (best.evil[level] ?? -Infinity) >= par.evil);
   },

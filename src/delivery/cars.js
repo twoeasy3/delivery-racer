@@ -316,7 +316,9 @@ export const EARNED_CARS = [
   earnedCar('oh-mine', { good: 66, evil: 37 }, { ...LEVEL_CARS.jetboat, name: 'Land Jetboat', color: 0xf2f2f2, evilColor: 0x2a4a3a, perk: 'It drives on land too, somehow' }, LEVEL_CARS.jetboat),
   earnedCar('montreal', { good: 87, evil: 49 }, { ...LEVEL_CARS.f1, name: 'Road F1', maxSpeed: 68, accel: 18, health: 80, color: 0x1d3f9c, evilColor: 0x7a1fa8 }, LEVEL_CARS.f1),
   earnedCar('bathurst', { good: 90, evil: 51 }, { ...LEVEL_CARS.lmp, name: 'Road Prototype', maxSpeed: 68, accel: 18, health: 160, color: 0x18a35a, evilColor: 0x8a1a2a }, LEVEL_CARS.lmp),
-  earnedCar('rival-run', { good: 75, evil: 57 }, { id: 'courier', name: 'Courier Special', color: 0xffb400, evilColor: 0x2b1a3a, model: 'sleeper',
+  // (off: not to be had for now, the owner 11-Oct: Rival Run is an ordinary level of tier 7, not a special one. Nobody
+  // has it, a player who had earned it included; take `off` away and it is back, by the best times, for all who earned it)
+  earnedCar('rival-run', { good: 75, evil: 57 }, { id: 'courier', name: 'Courier Special', off: true, color: 0xffb400, evilColor: 0x2b1a3a, model: 'sleeper',
     superKit: true, stripe: 0x151515, evilStripe: 0xffb400, // courier yellow with black / midnight with a yellow stripe
     maxSpeed: 50, accel: 19, agility: 1.5, crossing: 0.6, health: 220, hw: 0.92, hl: 2.5, height: 1.45 }),
   earnedCar('showdown', { good: 50, evil: 38 }, { id: 'showdown', name: 'Showdown Muscle', color: 0x8a1030, evilColor: 0x1a1f3a, model: 'muscle',
@@ -327,7 +329,7 @@ export const EARNED_CARS = [
 ];
 Progress.earnedCars = EARNED_CARS;
 // the car a special level earns (undefined for a level with none)
-export const earnedFor = (levelId) => EARNED_CARS.find(car => car.earned.level === levelId);
+export const earnedFor = (levelId) => EARNED_CARS.find(car => car.earned.level === levelId && !car.off);
 
 // The car in use. It is a live binding: every module that imports CAR sees the new car as
 // soon as selectCar() changes it, so swapping cars needs no reload.

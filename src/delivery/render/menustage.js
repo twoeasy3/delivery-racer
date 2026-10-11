@@ -90,11 +90,13 @@ for (let i = 0; i < MAIN_LEVELS.length; i += 5) TABS.delivery.groups.push([i, Ma
   for (let i = specials; i < DELIVERY_LEVELS.length; i += 5) TABS.delivery.groups.push([i, Math.min(DELIVERY_LEVELS.length, i + 5)]);
 }
 for (let i = 0; i < RACE_LEVELS.length; i += 5) TABS.race.groups.push([i, Math.min(RACE_LEVELS.length, i + 5)]);
-// (the level tiers, tiers.js: the delivery tab in the table's order, a group a tier, then the levels outside them in
-// runs of one kind, five at most. A group's third item is its tier number)
+// (the level tiers, tiers.js: the delivery tab in the table's order: the events first, a group of their own, then a
+// group a tier, then the levels outside them in runs of one kind, five at most. A group's third item is its tier
+// number, or 'events')
 if (Tiers.on()) {
   const list = [...Tiers.order, ...DELIVERY_LEVELS.filter(level => !Tiers.order.includes(level))], groups = [];
   let i = 0;
+  if (Tiers.events.length) { groups.push([0, Tiers.events.length, 'events']); i = Tiers.events.length; }
   Tiers.tiers.forEach((tier, k) => { if (tier.length) { groups.push([i, i + tier.length, k + 1]); i += tier.length; } });
   const kind = (level) => AMPHIBIOUS_LEVELS.includes(level) ? 2 : MAIN_LEVELS.includes(level) ? 0 : 1;
   while (i < list.length) { let j = i + 1; while (j < list.length && j - i < 5 && kind(list[j]) === kind(list[i])) j++; groups.push([i, j]); i = j; }
@@ -103,9 +105,10 @@ if (Tiers.on()) {
 }
 const tabOf = (level) => isRace(level) ? 'race' : 'delivery';
 // (under the tiers a level's number is its place in its tier, 1 to 5; its kind says which tier)
-const label = (level) => Tiers.on() && Tiers.place(level) ? String(Tiers.place(level).pos) : levelLabel(LEVELS.indexOf(level));
+const label = (level) => Tiers.on() && Tiers.place(level) ? String(Tiers.place(level).pos)
+  : Tiers.on() && Tiers.isEvent(level) ? String(Tiers.events.indexOf(level) + 1) : levelLabel(LEVELS.indexOf(level));
 // what kind of level it is, for the plate over its picture
-const kindOf = (level) => isRace(level) ? 'Race' : Tiers.on() && Tiers.place(level) ? tierStarsNode(Tiers.place(level).tier) : AMPHIBIOUS_LEVELS.includes(level) ? 'Amphibious' : MAIN_LEVELS.includes(level) ? 'Level' : 'Special';
+const kindOf = (level) => isRace(level) ? 'Race' : Tiers.on() && Tiers.isEvent(level) ? 'Event' : Tiers.on() && Tiers.place(level) ? tierStarsNode(Tiers.place(level).tier) : AMPHIBIOUS_LEVELS.includes(level) ? 'Amphibious' : MAIN_LEVELS.includes(level) ? 'Level' : 'Special';
 // a race is always open; a delivery level once the one before it has been delivered
 const isOpen = (level) => isRace(level) || (Tiers.on() ? Tiers.isOpen(level) : LEVELS.indexOf(level) < Progress.data.unlocked);
 // a level played on one side only (the Battlefield, All Heck: always Good)
@@ -417,9 +420,9 @@ export const draw = () => {
   const { list, groups } = TABS[tab], at = list.indexOf(cursor);
   const shown = Math.max(0, groups.findIndex(([a, b]) => at >= a && at < b)), [first, last] = groups[shown];
   groupBox.replaceChildren(...groups.map(([a, b], g) => {
-    const tierNo = groups[g][2]; // (under the tiers: the stars of the tier, gold or blue)
-    const button = make('button', (g === shown ? 'current' : '') + (isOpen(list[a]) ? '' : ' locked') + (tierNo ? (Tiers.tierIsBlue(tierNo) ? ' blue' : ' gold') : ''),
-      tierNo ? '★'.repeat(Tiers.tierStars(tierNo)) : label(list[a]) + (b - a > 1 ? '–' + label(list[b - 1]) : ''));
+    const events = groups[g][2] === 'events', tierNo = events ? 0 : groups[g][2]; // (under the tiers: the stars of the tier, gold or blue)
+    const button = make('button', (g === shown ? 'current' : '') + (isOpen(list[a]) ? '' : ' locked') + (events ? ' events' : tierNo ? (Tiers.tierIsBlue(tierNo) ? ' blue' : ' gold') : ''),
+      events ? 'Events' : tierNo ? '★'.repeat(Tiers.tierStars(tierNo)) : label(list[a]) + (b - a > 1 ? '–' + label(list[b - 1]) : ''));
     button.title = tierNo ? Tiers.spoken(tierNo) + (isOpen(list[a]) ? '' : ': not open yet') : isOpen(list[a]) ? '' : 'Not open yet';
     if (tierNo) button.setAttribute('aria-label', Tiers.spoken(tierNo) + (isOpen(list[a]) ? '' : ', not open yet'));
     button.addEventListener('click', () => { if (g !== shown) { blip('menuMove'); show(list[a]); } });

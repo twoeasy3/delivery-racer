@@ -1,5 +1,5 @@
 {
-  "_about": "The level tiers. Edit by hand, or: node scripts/tiers.mjs move <id> <tier> [position]. Tiers 1-5 are the gold-star tiers, 6-10 the Blue Star ones (Blue 1 is tier 6). A level appears once: in one tier, or in outside. Outside levels open in the order listed here (the first once tier 10 is cleared); an amphibious level opens by the rule in tiers.js amphibiousOpens; races are always open.",
+  "_about": "The level tiers. Edit by hand, or: node scripts/tiers.mjs move <id> <tier> [position]. Tiers 1-5 are the gold-star tiers, 6-10 the Blue Star ones (Blue 1 is tier 6). A level appears once: in one tier, in events, or in outside. Events (the menu's first group, before the tiers) are always open, in any car. Outside levels open in the order listed here (the first once tier 10 is cleared); an amphibious level opens by the rule in tiers.js amphibiousOpens; races are always open.",
   "tiers": {
     "1": ["expressway","back-roads","farm","big-business","hurricane"],
     "2": ["mystery-meadows","night","monte-carlo","suburbs","mumbai"],
@@ -7,10 +7,11 @@
     "4": ["singapore-night","grand-pacific","construction","venice","cinder"],
     "5": ["tour-de-coast","mountain-pass","ring-road","rice","noon"],
     "6": ["stelvio","hong-kong","canberra","leaks","toys"],
-    "7": ["christmas","quarry-run","tokyo","backlot","moon"],
+    "7": ["rival-run","quarry-run","tokyo","backlot","moon"],
     "8": ["speed-trap-alley","safari","iceroad","park","docks"],
     "9": ["outback-express","market-town","derby","morro","seaquake"],
     "10": ["farside","stunts","ponti","glow","erupt"]
   },
-  "outside": ["cattle","thaw","fallout","all-heck","ufo","oh-mine","rival-run","showdown","battlefield","slipway","harbour","flood","ford","fjord","marina-bay","montreal","bathurst","monza","spa","albert-park"]
+  "events": ["christmas"],
+  "outside": ["cattle","thaw","fallout","all-heck","ufo","oh-mine","showdown","battlefield","slipway","harbour","flood","ford","fjord","marina-bay","montreal","bathurst","monza","spa","albert-park"]
 }
