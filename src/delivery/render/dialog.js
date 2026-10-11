@@ -6,6 +6,7 @@
 // Phone: the buttons are large and stacked in a narrow screen; the box never wider than the screen.
 import '../menus.css';
 import { Game } from '../game.js';
+import { Nav } from '../nav.js';
 
 let open = null; // the dialog up: { close }
 export const ask = ({ title = '', lines = [], ok = 'OK', cancel = 'Cancel', danger = false } = {}) => new Promise((resolve) => {
@@ -57,6 +58,7 @@ export const ask = ({ title = '', lines = [], ok = 'OK', cancel = 'Cancel', dang
   const done = (value) => {
     if (open?.backdrop !== backdrop) return;
     open = null;
+    Nav.leave('dialog');
     window.removeEventListener('keydown', keys, true);
     window.removeEventListener('keyup', swallow, true);
     backdrop.remove();
@@ -71,6 +73,7 @@ export const ask = ({ title = '', lines = [], ok = 'OK', cancel = 'Cancel', dang
   window.addEventListener('keydown', keys, true);
   window.addEventListener('keyup', swallow, true);
   document.body.append(backdrop);
+  Nav.enter('dialog', () => done(false)); // (the back button is its Cancel)
   yes.focus();
 });
 export const tell = (options) => ask({ ...options, cancel: '' }).then(() => {});

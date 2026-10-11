@@ -244,13 +244,6 @@
   #startScreen .menu-stage .facts { gap: 5px 6px; margin-top: 0; }
   #startScreen .menu-stage .fact { flex-direction: row; align-items: baseline; gap: 6px; padding: 4px 9px; font-size: 15px; }
   #startScreen .menu-stage .info .road { margin-top: 0; }
-  /* the "i" at the stage's foot, on the right: the figures, or (pressed) the description in their place */
-  #startScreen .menu-stage .info-toggle { display: grid; place-items: center; position: absolute; right: 7px; bottom: 8px; z-index: 2; width: 26px; height: 26px; padding: 0;
-    border-radius: 50%; background: rgba(14, 18, 26, .85); color: #fff; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .55); font: italic 700 16px/1 Georgia, serif; }
-  #startScreen .menu-stage.desc-view .info-toggle { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
-  #startScreen .menu-stage.has-toggle:not(.desc-view) .desc { display: none; }
-  #startScreen .menu-stage.desc-view .facts, #startScreen .menu-stage.desc-view .needs, #startScreen .menu-stage.desc-view .prize, #startScreen .menu-stage.desc-view .info .road { display: none; }
-  #startScreen .menu-stage.desc-view .desc { -webkit-line-clamp: 7; line-clamp: 7; }
   #startScreen .menu-stage .arrow { top: 50%; margin-top: -26px; width: 26px; height: 52px; font-size: 26px; }
   #startScreen .menu-stage .arrow.prev { left: 0; border-radius: 0 8px 8px 0; }
   #startScreen .menu-stage .arrow.next { right: 0; border-radius: 8px 0 0 8px; }
@@ -282,6 +275,16 @@
   #startScreen #sideNote { display: none; }
   #startScreen #startBtn { grid-area: start; padding: 9px 10px 7px; font-size: 24px; }
   #startScreen .menu-sheet { position: fixed; padding: 8px; } /* (fixed: over the screen even where the menu has scrolled) */
+}
+/* the "i" at the stage's foot, on the right: the figures, or (pressed) the description in their place. On a phone
+   held upright only: the layout above AND a touch screen (the owner, 11-Oct), not a narrow window on a computer */
+@media (max-width: 760px) and (min-height: 521px) and (pointer: coarse), (max-width: 519px) and (pointer: coarse) {
+  #startScreen .menu-stage .info-toggle { display: grid; place-items: center; position: absolute; right: 7px; bottom: 8px; z-index: 2; width: 26px; height: 26px; padding: 0;
+    border-radius: 50%; background: rgba(14, 18, 26, .85); color: #fff; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .55); font: italic 700 16px/1 Georgia, serif; }
+  #startScreen .menu-stage.desc-view .info-toggle { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+  #startScreen .menu-stage.has-toggle:not(.desc-view) .desc { display: none; }
+  #startScreen .menu-stage.desc-view .facts, #startScreen .menu-stage.desc-view .needs, #startScreen .menu-stage.desc-view .prize, #startScreen .menu-stage.desc-view .info .road { display: none; }
+  #startScreen .menu-stage.desc-view .desc { -webkit-line-clamp: 7; line-clamp: 7; }
 }
 /* (a short phone: the description two lines; a narrow one: the options are their sign alone) */
 @media (max-width: 760px) and (max-height: 660px) {

@@ -1,6 +1,7 @@
 import { CONFIG } from './config.js';
 import { LEVEL, LEVEL_INDEX, LEVELS, SCREENSAVER_LEVEL, selectLevel, selectSpecial, nextOnTab, isRace } from './levels.js';
 import { Progress } from './progress.js';
+import { Nav } from './nav.js';
 import { useLevelCar, returnCar, earnedFor, ownedAmphibious, carAllowed, restrictedTier } from './cars.js';
 import { Tiers } from './tiers.js';
 import { Input } from './input.js';
@@ -92,6 +93,7 @@ export const Game = {
   // back to the start screen, which is only a menu: nothing of the level is shown behind it
   toMenu() {
     this.state = 'start';
+    Nav.leave('run'); // (the back button's entry for the run)
     this.paused = false;
     Tiers.hold = null; // (the run's car rule is over: the menu goes by the player's own pick again)
     returnCar(); // (a car lent by Car Swap goes back)
@@ -180,6 +182,7 @@ export const Game = {
     this.rivalsIn = 0;          // rivals over the line before the player
     this.rivalAhead = new Map(); // for each, whether it was ahead of the player when last looked
     if (this.loaded !== LEVEL) this.load(); // the level is only built when a run on it starts
+    Nav.enter('run', () => this.exit()); // (the back button leaves the run, or its results, for the menu)
     Tiers.hold = null;
     Tiers.hold = { tier: restrictedTier() }; // (the car rule as the run starts it: held to the menu, whatever the delivery earns)
     useLevelCar(LEVEL.car, LEVEL.amphibious); // a UFO on the space level, otherwise the garage's car (on an amphibious level, the player's amphibious one)
