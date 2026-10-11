@@ -2306,7 +2306,8 @@ const buildRoad = () => {
         leaves.push([at + Math.random() * 2 - 1, lat + Math.random() * 2 - 1, h * (0.7 + k * 0.15), size, size * 0.7, size]);
       }
     };
-    const nearLake = (s) => (LEVEL.bridges || []).some(b => s > b.from - 40 && s < b.to + 40);
+    const sights = LEVEL.sights !== false; // (the lake, the jet, Black Mountain, Parliament House: off on a level that borrows the look, Back Roads)
+    const nearLake = (s) => sights && (LEVEL.bridges || []).some(b => s > b.from - 40 && s < b.to + 40);
     // (clear of every other road, an exit's or a side road's, by `margin` m: on a level with exits, Back Roads say)
     const clearAt = (s, lat, margin) => { Track.toWorld(s, lat, tmp); return offRoads(tmp.x, tmp.z, margin); };
     for (let s = Track.start; s < Track.end; s += 14) {
@@ -2337,7 +2338,7 @@ const buildRoad = () => {
     instances(new THREE.SphereGeometry(0.5, 8, 6), 0x8a6a4a, roos);
     instances(new THREE.SphereGeometry(0.5, 8, 6), 0x7a5c3e, heads);
     // the lake under each bridge, out to either side, and the jet (a plume of spray) on the left
-    for (const b of LEVEL.bridges || []) {
+    for (const b of sights ? LEVEL.bridges || [] : []) {
       for (const side of [-1, 1]) {
         const lake = new THREE.Mesh(sideStrip(b.from - 20, b.to + 20, (q) => beside(side, q, 2), (q) => beside(side, q, 500), -0.02, 8),
           new THREE.MeshBasicMaterial({ color: 0x4f86a8, side: THREE.DoubleSide, depthWrite: false }));
@@ -2351,7 +2352,7 @@ const buildRoad = () => {
       levelGroup.add(jet);
     }
     // Black Mountain, with Telstra Tower on top: a third of the way along, off to the left
-    {
+    if (sights) {
       const at = Track.length / 3;
       Track.toWorld(at, beside(-1, at, 380), tmp);
       const hill = new THREE.Mesh(new THREE.ConeGeometry(160, 70, 16), new THREE.MeshLambertMaterial({ color: 0x5f7448 }));
@@ -2367,7 +2368,7 @@ const buildRoad = () => {
     }
     // Parliament House, just past the end of the road: a long low front, and the flag mast on its
     // four legs over the middle, flying the flag
-    {
+    if (sights) {
       const at = Track.end + 140, h = Track.toWorld(at, 0, tmp);
       const house = new THREE.Group();
       const white = new THREE.MeshLambertMaterial({ color: 0xece8de });

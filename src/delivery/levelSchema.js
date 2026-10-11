@@ -359,6 +359,7 @@ export const FIELDS = {
   // ---- scenery and sights ----
   parkedPlanes: { shape: 'point', group: 'scenery', label: 'Parked airliner', help: 'An airliner parked off the road on the left, turned a little.',
     settings: { d: num('Off the road (m)', { min: 0, max: 1000, required: true, init: 60 }), turn: num('Turned (rad)', { min: -7, max: 7, step: 0.05, init: 0 }) } },
+  sights: { shape: 'flag', group: 'scenery', label: 'Theme sights', default: true, help: 'Off: the theme\'s own landmarks are not drawn on this level (Canberra\'s lake and jet under the bridges, Black Mountain tower, Parliament House), only its everyday scenery.' },
   landmarks: { shape: 'world', group: 'scenery', label: 'Landmark', sub: 'kind', help: 'A landmark where it really is, in the world; r m round it is kept clear of the town. (A circuit\'s lakes and streams are drawn from "paths".)',
     settings: { kind: pick('Kind', LANDMARK_KINDS, { required: true, init: 'flyer' }), x: num('x (m)', { min: -1e5, max: 1e5 }), z: num('z (m)', { min: -1e5, max: 1e5 }),
       s: { type: 'metres', label: 'Or beside the road at (m)' }, off: num('...that far off it (m)', { min: -5000, max: 5000 }),
