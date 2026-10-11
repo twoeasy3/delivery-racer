@@ -196,6 +196,28 @@ Progress.complete({ levels: g.levels.LEVELS.length, cars: [], money: 0 });
   check(cars.CAR.id === idea.id, 'the tiers off: the Idea Car is driven everywhere');
   g.Game.toMenu();
 }
+// ---- the owner's bug (11-Oct): a new player delivers level 1, buys the Junker and switches to it (the garage's
+// Switch or Use) on level 2, still restricted to the gold one-star tier. The Commuter, their pick, is of that tier
+// too, so the Junker was only saved as the tier's car and the Commuter stayed in use
+{
+  fresh();
+  g.CONFIG.progression.tiers = true;
+  side(false);
+  g.select(a.id);
+  Progress.levelDone(g.levels.LEVEL_INDEX, a.id, 40, 5, false);
+  g.select(b.id);
+  cars.useLevelCar(null, false);
+  check(Tiers.restriction(b, false) === 1 && cars.CAR.id === 'commuter', 'new player on level 2: restricted to one star, in the Commuter');
+  check(Progress.buy(cars.CARS.find(x => x.id === 'junker')), 'the Junker is bought');
+  cars.selectCar('junker');
+  check(cars.CAR.id === 'junker' && cars.carInUse().id === 'junker', 'switching to the Junker on level 2 puts the player in it (was: ' + cars.CAR.id + ')');
+  cars.useLevelCar(null, false);
+  check(cars.CAR.id === 'junker', 'and the level keeps it when the menu asks for the car again');
+  g.select(a.id);
+  cars.useLevelCar(null, false);
+  check(cars.CAR.id === 'junker', 'back on level 1 (its Good medal earned, no rule) it is still the Junker');
+  side(false);
+}
 // a hand-made save from long ago (order 30, 25 levels open, a best time on each side of the first) read back
 {
   const old = { money: 321.5, unlocked: 25, levelOrder: 30, cars: ['hatch', 'lovebus'], car: 'lovebus', bestTime: { good: { expressway: 12, 'back-roads': 8 }, evil: { expressway: 6 } } };
