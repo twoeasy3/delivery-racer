@@ -595,7 +595,7 @@ export const GROUPS = [
     { name: 'Speed cameras', color: 0xf2c21c, has: (l) => l.cameras?.length, rules: [
       `A camera on its pole, on the shoulder or on the centre line, with a speed limit sign ${CONFIG.speedCamera.signAhead} m before it. You are warned of each ${CONFIG.speedCamera.warn} m out. Pass it over its limit (${CONFIG.speedCamera.limit} km/h unless it says otherwise) and the screen flashes white.`,
       `The first time in a run is a <strong>fine</strong>, taken off what you bank, by how far over you were: ${CONFIG.speedCamera.fines.map((f, i, all) => `$${f.fine}${i < all.length - 1 ? ` up to ${all[i + 1].over} km/h over` : ` beyond that`}`).join(', ')}. Every one after that is a <strong>bust</strong>.`,
-      'Run it over and there is no offence (just the knock); the sign is only a knock. A radar detector keeps you from being caught at all, but you are still warned.',
+      'Run it over and there is no offence (just the knock); the sign is only a knock. A radar detector keeps you from being caught at all, but you are still warned; so does being a ghost (it does not show up on the film).',
     ], build: () => {
       const g = road(9, 12), cam = ob('camera', { height: 4.2 });
       cam.position.set(0, 0, 0);

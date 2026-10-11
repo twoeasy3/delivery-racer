@@ -1143,11 +1143,14 @@ try {
     pass(cams[0], cams[0].limit * 1.3, { radar: 5 });
     const radar = SpeedCameras.caught;
     fresh(); clearRoad();
+    pass(cams[0], cams[0].limit * 1.3, { ghost: 5 });
+    const ghost = SpeedCameras.caught + Game.fines;
+    fresh(); clearRoad();
     cams[0].obstacle.gone = true;
     pass(cams[0], cams[0].limit * 1.3);
     const owed = SpeedCameras.fineFor(cams[0].limit * 0.3 * 3.6); // (30% over its limit)
-    check(slow === 0 && fined === owed && !busted1 && busted2 && radar === 0 && SpeedCameras.caught === 0,
-      `speed cameras: under the limit, nothing; over it, a $${fined} fine, then a bust at the next; with a radar detector, or the camera run over, nothing`);
+    check(slow === 0 && fined === owed && !busted1 && busted2 && radar === 0 && ghost === 0 && SpeedCameras.caught === 0,
+      `speed cameras: under the limit, nothing; over it, a $${fined} fine, then a bust at the next; with a radar detector, as a ghost, or the camera run over, nothing`);
     // the fine goes by how far over the limit: stepped (CONFIG.speedCamera.fines)
     const steps = [5, 15, 25, 45].map(over => SpeedCameras.fineFor(over));
     check(steps.join() === '20,50,80,120', `speed camera fines by how far over: 5 km/h $${steps[0]}, 15 $${steps[1]}, 25 $${steps[2]}, 45 $${steps[3]}`);
