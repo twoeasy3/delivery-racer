@@ -95,6 +95,8 @@
 //   understeer true = every car understeers in bends as on ice (and none slows for a bend by itself)
 //   wallDamage true = a car going sideways into the road's edge takes damage (see CONFIG.race)
 //   nudge      true = a car steering into another's side knocks it aside
+//   sights     false = the theme's own landmarks are left out (Canberra's lake and jet, Black Mountain, Parliament
+//              House): a level borrowing the look keeps only its everyday scenery (Back Roads)
 //   landmarks  { kind, x, z, r, rot }: landmarks where they really are, in the world (Singapore's look:
 //              'bay', 'flyer', 'mbs', 'esplanade', 'fullerton', 'merlion', 'padang', 'gardens',
 //              'artscience', 'helix' (r: half its length), 'float', 'cbd', 'suntec', 'gallery', 'domes'); r m
