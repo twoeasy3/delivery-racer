@@ -10,10 +10,11 @@
 import * as THREE from 'three';
 import { LEVEL } from '../../levels.js';
 import { Track } from '../../track.js';
+import { scene } from '../scene.js';
 import { everyFrame } from './sceneryClock.js';
 import { makeVolcano, FRONDS, BOULDER, PUFF } from './volcanoModels.js';
 
-export const volcano = ({ theme, add, instances, sideStrip, buildStrip, offRoads, beside, inJunction, exits, cube, tube, cone, levelGroup }) => {
+export const volcano = ({ theme, add, flat, instances, sideStrip, offRoads, beside, inJunction, exits, cube, tube, cone, levelGroup }) => {
   // (laid out the same every time: a seed of the level's own)
   let seed = 23 + (LEVEL.id || '').length * 613;
   const erupting = !!theme.erupting;
@@ -58,6 +59,27 @@ export const volcano = ({ theme, add, instances, sideStrip, buildStrip, offRoads
   // (a drawbridge has a river of its own under it, drawn with it from bank to bank, in this theme's `river` and
   // `riverCore` colours (../../themes.js, render/hazards.js): so it is lava the car jumps when the leaves are up)
   const clearOfLava = (s, side, d, pad = 2) => !rivers.some(([a, b, at, d0, d1]) => at === side && s > a - pad && s < b + pad && d > d0 - pad && d < d1 + pad) && !spanned(s, pad + 4);
+
+  // ---- the floor: the sand beside the road, so that what stands on it is seen to stand on something. The
+  // ground itself is as black as the boulders and the vents' mounds, and without this they hung in nothing.
+  // A verge of fine grey ash along the pavement, black sand a shade lighter than the ground out to 40 m beyond it
+  // (under the lava, which lies on top of it), and pale pumice stones scattered over the sand; in 20 m pieces,
+  // none over a bridge (the lava below is what is to be seen there) nor into a tunnel
+  const ASH = flat(0x4a4449), SAND = flat(0x343034);
+  const pumice = [];
+  for (let s = Track.start; s < Track.end; s += 20) {
+    const to = Math.min(Track.end, s + 20);
+    if (spanned(s, 2) || spanned(to, 2) || covered(s, 2) || covered(to, 2)) continue;
+    for (const side of [-1, 1]) {
+      add(sideStrip(s, to, (q) => beside(side, q, 0.2), (q) => beside(side, q, 3.4), 0.035, 5), ASH);
+      add(sideStrip(s, to, (q) => beside(side, q, 3.4), (q) => beside(side, q, 40), 0.03, 5), SAND);
+      for (let k = 0; k < 2; k++) {
+        const q = s + rand() * 18, d = 4 + rand() * 30, r = 0.25 + rand() * 0.4;
+        if (clearOfLava(q, side, d, r) && !inJunction(q)) pumice.push([q, beside(side, q, d), r * 0.25, r * 1.6, r * 0.5, r * 1.3]);
+      }
+    }
+  }
+  instances(BOULDER, 0x5e575c, pumice, false, 0.5);
 
   // ---- the sea, off to the right beyond the land, and its line of surf (at the height of the sea, whatever
   // the road is doing)
@@ -199,9 +221,11 @@ export const volcano = ({ theme, add, instances, sideStrip, buildStrip, offRoads
   const fountain = [];
   if (erupting) {
     for (const [color, wide, tall, beat] of [[0xff4a12, 21, 30, 2.3], [0xff8a1e, 13, 38, 3.1], [0xffd24a, 6, 45, 4.3]]) {
-      const jet = new THREE.Mesh(new THREE.ConeGeometry(wide, tall, 12, 1, true).translate(0, tall / 2, 0), new THREE.MeshBasicMaterial({ color, fog: false, side: THREE.DoubleSide, transparent: true, depthTest: false }));
+      const jet = new THREE.Mesh(new THREE.ConeGeometry(wide, tall, 12, 1, true).translate(0, tall / 2, 0), new THREE.MeshBasicMaterial({ color, fog: false, side: THREE.DoubleSide, transparent: true }));
       jet.position.y = HIGH - 3;
-      jet.renderOrder = 6 + fountain.length; // (through its own smoke, which would hide it: the sky is all that is ever behind it)
+      // (drawn after its own smoke, which writes no depth, so the smoke never hides it; but it tests depth like
+      // anything else, so a nearer hill in front of the volcano hides it as it hides the volcano)
+      jet.renderOrder = 6 + fountain.length;
       jet.userData.beat = beat;
       mountain.add(jet);
       fountain.push(jet);
@@ -212,10 +236,31 @@ export const volcano = ({ theme, add, instances, sideStrip, buildStrip, offRoads
   const a = {}, b = {};
   Track.toWorld(0, 0, a); Track.toWorld(Track.length, 0, b);
   const bearing = Math.atan2(b.x - a.x, b.z - a.z) + 0.3, FAR = erupting ? 500 : 540;
+  // The mountain is drawn without fog (it stands at the fog's far edge: fogged, it would never be seen), so it
+  // has to go into a fog bank, or a tunnel's dark, by itself: as the fog closes in (scene.fog.far comes down from
+  // the usual 520: render/roadside.js, tunnel.js) every colour of it goes to the fog's, and the see-through parts
+  // thin out, until it is gone. `seen`: 1 in the usual haze, 0 with the fog at 150 m or nearer
+  // (tinted: every material of it once, with its own colour and, for the halo and the fountain, its own opacity;
+  // the smoke's opacity is set afresh by animate every frame, so it is scaled after that, below)
+  const tinted = [], smoke = [];
+  mountain.traverse((m) => {
+    if (!m.isMesh || !m.material.color) return;
+    if (m.geometry === PUFF) smoke.push(m);
+    if (!tinted.some(x => x.mat === m.material)) tinted.push({ mat: m.material, base: m.material.color.clone(), opacity: m.material.transparent && m.geometry !== PUFF ? m.material.opacity : null });
+  });
 
   everyFrame(levelGroup, (t, x, y, z) => {
     mountain.position.set(x + Math.sin(bearing) * FAR, Math.max(0, y - 11) * 0.55 - 4, z + Math.cos(bearing) * FAR);
     mountain.userData.animate(t);
+    const seen = Math.max(0, Math.min(1, (scene.fog.far - 150) / 250));
+    mountain.visible = seen > 0.01;
+    if (mountain.visible) {
+      for (const { mat, base, opacity } of tinted) {
+        mat.color.copy(base).lerp(scene.fog.color, 1 - seen);
+        if (opacity !== null) mat.opacity = opacity * seen;
+      }
+      for (const puff of smoke) puff.material.opacity *= seen;
+    }
     for (const jet of fountain) { const b = jet.userData.beat, up = 0.78 + 0.22 * Math.sin(t * b) + 0.1 * Math.sin(t * b * 2.7 + 1); jet.scale.set(1 + 0.12 * Math.sin(t * b * 1.9), up, 1 + 0.12 * Math.sin(t * b * 1.9)); }
     for (const fall of falls) {
       const { layer, speed, BOX } = fall.userData, down = (t * speed + layer * BOX) % (BOX * 2);

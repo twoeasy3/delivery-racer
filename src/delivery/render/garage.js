@@ -14,7 +14,7 @@ import { renderer } from './scene.js';
 import { makeCarMesh, shapeCarMesh, makeTankMesh } from './cars.js';
 import { MODELS } from './models.js';
 import { makeIdeaModel } from './ideaModels.js';
-import { makeUfo } from './carExtras.js';
+import { makeUfo, addSuperKit } from './carExtras.js';
 import { GarageView, arrange, mountGarageView } from './garageview.js';
 import { showComparison } from './compare.js';
 import { IdeasLot } from './ideaslot.js';
@@ -147,6 +147,7 @@ export const makeShowCar = (car) => {
   if (car.idea) return makeIdeaModel(car); // (a car idea in use: its own model, ideas.js; one with none throws below, and the card shows no picture)
   const mesh = car.tank ? makeTankMesh(car.color) : car.ufo ? makeUfo() : car.model ? MODELS[car.model](car) : makeCarMesh(car.color); // (ufo: the earned Saucer)
   if (!car.tank && !car.ufo && !car.model) shapeCarMesh(mesh, car);
+  if (car.super || car.superKit) addSuperKit(mesh, car); // (an earned car built as its garage car's Super version: the body kit on, as in play)
   return mesh;
 };
 export const paintShowCar = (mesh, car, evil) => {
@@ -555,7 +556,10 @@ export const Garage = {
     for (const mesh of parked) {
       mesh.userData.tag.rotation.y = now / 500;
       if (mesh.userData.animate) mesh.userData.animate(now / 1000); // animated models keep moving while parked
-      mesh.position.y = mesh === hovered ? 0.25 : 0; // the hovered car lifts a little
+      // the hovered car lifts a little; a saucer hovers anyway, bobbing, its ring of lights turning (as in play: items.js)
+      const saucer = mesh.userData.car.ufo ? 1 + Math.sin(now / 300) * 0.15 : 0;
+      if (saucer) mesh.userData.lamps.rotation.y = now / 250;
+      mesh.position.y = saucer + (mesh === hovered ? 0.25 : 0);
     }
 
     if (hovered) {

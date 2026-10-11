@@ -179,17 +179,19 @@ export const CARS = [
   // between the Blue Stars of tier 3 (36 to 40 m/s, 10 to 14.8, 120 to 220) and of tier 5 (46.5 to 48, 13 to 18,
   // 190 to 420), and under tier 5's gold cars at each of top speed, acceleration and health (46 / 22 / 360)
   // (the sturdy one: bare steel. Slowest of the four off the line, and the most health)
-  { id: 'gullwing', tier: 4, blue: true, name: 'Stainless Gullwing', price: 920, color: 0xb7bcc2, evilColor: 0x4b4e55, fixedLivery: true, model: 'gullwing',
+  // (the Evil liveries of the Blue Stars and the amphibious cars: darker than their Good ones, as every Evil livery
+  // is, but each a colour of its own, not black: blued steel, aubergine, blood red, deep teal)
+  { id: 'gullwing', tier: 4, blue: true, name: 'Stainless Gullwing', price: 920, color: 0xb7bcc2, evilColor: 0x2f3d5c, fixedLivery: true, model: 'gullwing',
     maxSpeed: 42.5, accel: 12, crossing: 0.35, health: 330, mass: 1.4, hw: 0.93, hl: 2.13, height: 1.14 },
   // (the all-rounder: quick, good grip, no weakness)
-  { id: 'rearengine', tier: 4, blue: true, name: 'Rear-Engine Coupe', price: 960, color: 0xd8dadf, evilColor: 0x1b1b20, fixedLivery: true, model: 'rearengine',
+  { id: 'rearengine', tier: 4, blue: true, name: 'Rear-Engine Coupe', price: 960, color: 0xd8dadf, evilColor: 0x3b1f4f, fixedLivery: true, model: 'rearengine',
     maxSpeed: 44.5, accel: 15.5, agility: 1.4, crossing: 0.4, health: 175, hw: 0.86, hl: 2.15, height: 1.32 },
   // (fast and fragile: the best acceleration of the four, and the least health)
-  { id: 'snake', tier: 4, blue: true, name: 'Snake Roadster', price: 1000, color: 0x1d3f96, evilColor: 0x17171b, fixedLivery: true, model: 'snake',
+  { id: 'snake', tier: 4, blue: true, name: 'Snake Roadster', price: 1000, color: 0x1d3f96, evilColor: 0x7a1220, fixedLivery: true, model: 'snake',
     maxSpeed: 45, accel: 17, agility: 1.25, crossing: 0.25, health: 140, hw: 0.87, hl: 1.98, height: 1.2 },
   // (the heavy one: tall and wide, strong in a straight line, good over rough ground and through water, and the
   // slowest of any garage car to change lane)
-  { id: 'polytruck', tier: 4, blue: true, name: 'Polygon Truck', price: 1060, color: 0xb4b8bd, evilColor: 0x26282c, fixedLivery: true, model: 'polytruck',
+  { id: 'polytruck', tier: 4, blue: true, name: 'Polygon Truck', price: 1060, color: 0xb4b8bd, evilColor: 0x1c4f4a, fixedLivery: true, model: 'polytruck',
     maxSpeed: 44, accel: 14, agility: 0.9, crossing: 0.9, health: 290, mass: 2.3, hw: 1.02, hl: 2.84, height: 1.8 },
   // ---- tier 5
   // (a modern American muscle car: long, low and wide, heavy, a bonnet bulge and twin stripes)
@@ -215,19 +217,19 @@ export const CARS = [
   // In the garage from the start, in a section of their own (see the garage). Their perk is the water
   // (the ids are short: each is in a full save's cookie. See progress.js)
   // (May's Herald: a little sixties convertible under sail. Light, slow, and it turns on a sixpence)
-  { id: 'herald', tier: 1, amphibious: true, name: 'Sailing Herald', price: 60, color: 0xd9c9a8, evilColor: 0x5a1f2a, fixedLivery: true, model: 'herald',
+  { id: 'herald', tier: 1, amphibious: true, name: 'Sailing Herald', price: 60, color: 0xd9c9a8, evilColor: 0x6b2a1a, fixedLivery: true, model: 'herald',
     maxSpeed: 23, accel: 9, agility: 1.2, crossing: 0.5, health: 90, hw: 0.8, hl: 1.95, height: 1.0, draft: 0.5, shotBack: 1.5, perk: AMPHIBIOUS_PERK },
   // (the Transporter: a square-nosed van lashed between two yellow floats. Wide, steady, tough for its tier)
-  { id: 'floatvan', tier: 2, amphibious: true, name: 'Float Van', price: 180, color: 0x2f7fc4, evilColor: 0x7a2a2a, fixedLivery: true, model: 'transporter',
+  { id: 'floatvan', tier: 2, amphibious: true, name: 'Float Van', price: 180, color: 0x2f7fc4, evilColor: 0x7a4a10, fixedLivery: true, model: 'transporter',
     maxSpeed: 26, accel: 8, crossing: 0.6, health: 160, mass: 1.3, hw: 1.3, hl: 2.3, height: 2.0, draft: 0.85, perk: AMPHIBIOUS_PERK },
   // (the Toybota: a pickup with an outboard where its tailgate was. The all-rounder)
-  { id: 'toybota', tier: 3, amphibious: true, name: 'Toybota', price: 310, color: 0xc8322b, evilColor: 0x23262b, fixedLivery: true, model: 'toybota',
+  { id: 'toybota', tier: 3, amphibious: true, name: 'Toybota', price: 310, color: 0xc8322b, evilColor: 0x1f5a4a, fixedLivery: true, model: 'toybota',
     maxSpeed: 34, accel: 11, crossing: 0.9, health: 190, hw: 1.0, hl: 2.5, height: 1.6, perk: AMPHIBIOUS_PERK },
   // (the Dampervan: a high-top camper built into a boat's hull. Slow off the line, and very hard to sink)
-  { id: 'dampervan', tier: 4, amphibious: true, name: 'Dampervan', price: 470, color: 0x1f4d36, evilColor: 0x4a2a5e, fixedLivery: true, model: 'dampervan',
+  { id: 'dampervan', tier: 4, amphibious: true, name: 'Dampervan', price: 470, color: 0x1f4d36, evilColor: 0x5c2d78, fixedLivery: true, model: 'dampervan',
     maxSpeed: 37, accel: 10, crossing: 0.7, health: 290, mass: 1.6, hw: 1.0, hl: 2.3, height: 2.7, draft: 0.72, perk: AMPHIBIOUS_PERK },
   // (the Nissank: a pickup on two great pontoons with twin outboards. The quick one, and heavy with it)
-  { id: 'nissank', tier: 5, amphibious: true, name: 'Nissank', price: 750, color: 0x2a55b8, evilColor: 0xb8881f, fixedLivery: true, model: 'nissank',
+  { id: 'nissank', tier: 5, amphibious: true, name: 'Nissank', price: 750, color: 0x2a55b8, evilColor: 0x8a6a14, fixedLivery: true, model: 'nissank',
     maxSpeed: 44, accel: 14, crossing: 0.9, health: 310, mass: 2, hw: 1.35, hl: 2.6, height: 1.7, draft: 0.85, perk: AMPHIBIOUS_PERK },
   { id: 'tank', name: 'Tank', price: 5000, color: 0x4b5a2a, evilColor: 0x2a2d33, tank: true, corner: true,
     maxSpeed: 46, accel: 8, crossing: 1, health: 100, hw: 1.25, hl: 2.3, height: 1.9 }, // (TANK RAGE's top speed: CONFIG.tankMaxSpeed)
@@ -299,8 +301,14 @@ export const SECRET_CARS = {
 // extras, and each drives by the stats written for it here (a level's vehicle: as it does on its own
 // level, unless a figure is given), held to no cap.
 const earnedCar = (level, par, car, base) => ({ ...car, ...(base ? { id: 'earned-' + base.id, base } : {}), tier: 6, price: 0, earned: { level, par } });
+// The three built on a garage car's model are that car's SUPER version to look at (superKit: the body kit of
+// render/carExtras.js addSuperKit, with its stripe in each side's second colour, as the Super car it stands in
+// for has), since each garage car has a Super version in play (superOf): the Hell Rod is a Super Hot Rod, the
+// Courier Special a Super Sleeper Wagon, the Showdown Muscle a Super Muscle Car. The six that are a level's own
+// vehicle (the saucer, the race cars, the jetboat, the 8x8) have no Super version, and stay as they are.
 export const EARNED_CARS = [
   earnedCar('all-heck', { good: 39 }, { id: 'hellrod', name: 'Hell Rod', color: 0xff5a00, evilColor: 0x1a0608, model: 'hotrod',
+    superKit: true, stripe: 0x151515, evilStripe: 0xff5a00, // flame orange with black / soot with a flame stripe
     maxSpeed: 50, accel: 18, crossing: 0.4, health: 200, hw: 0.9, hl: 2.1, height: 1.2, perk: 'Straight out of All Heck' }),
   earnedCar('ufo', { good: 36, evil: 20 }, { ...LEVEL_CARS.ufo, name: 'Saucer', color: 0x9fe0c8, evilColor: 0x33184a }, LEVEL_CARS.ufo),
   // (the three race cars are a little tamer on the road than on their circuits: about a tenth off the speed and the getaway)
@@ -309,8 +317,10 @@ export const EARNED_CARS = [
   earnedCar('montreal', { good: 87, evil: 49 }, { ...LEVEL_CARS.f1, name: 'Road F1', maxSpeed: 68, accel: 18, health: 80, color: 0x1d3f9c, evilColor: 0x7a1fa8 }, LEVEL_CARS.f1),
   earnedCar('bathurst', { good: 90, evil: 51 }, { ...LEVEL_CARS.lmp, name: 'Road Prototype', maxSpeed: 68, accel: 18, health: 160, color: 0x18a35a, evilColor: 0x8a1a2a }, LEVEL_CARS.lmp),
   earnedCar('rival-run', { good: 75, evil: 57 }, { id: 'courier', name: 'Courier Special', color: 0xffb400, evilColor: 0x2b1a3a, model: 'sleeper',
+    superKit: true, stripe: 0x151515, evilStripe: 0xffb400, // courier yellow with black / midnight with a yellow stripe
     maxSpeed: 50, accel: 19, agility: 1.5, crossing: 0.6, health: 220, hw: 0.92, hl: 2.5, height: 1.45 }),
   earnedCar('showdown', { good: 50, evil: 38 }, { id: 'showdown', name: 'Showdown Muscle', color: 0x8a1030, evilColor: 0x1a1f3a, model: 'muscle',
+    superKit: true, stripe: 0xf4f4f4, evilStripe: 0x8a1030, // claret with white / navy with a claret stripe
     maxSpeed: 52, accel: 17, crossing: 0.45, health: 300, mass: 2, hw: 1.0, hl: 2.5, height: 1.35 }),
   // (the toughest car there is)
   earnedCar('battlefield', { good: 78 }, { ...LEVEL_CARS.apc, name: 'Road 8x8', health: 450, color: 0x6b6f5a, evilColor: 0x4a4e3a, perk: 'Its gun fires in place of packages' }, LEVEL_CARS.apc),

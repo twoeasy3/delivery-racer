@@ -34,7 +34,7 @@ const playerModels = {};
 const playerModel = (car) => {
   if (!playerModels[car.id]) {
     const model = car.idea ? makeIdeaModel(car) : MODELS[car.model](car); // (a car idea's is its own: ideas.js, render/ideaModels.js)
-    if (car.super) addSuperKit(model, car); // (a Super car: its base car's model with the body kit on)
+    if (car.super || car.superKit) addSuperKit(model, car); // (a Super car, or an earned car built as one: its base car's model with the body kit on)
     model.userData.body.material.transparent = true; // (so it can go see-through as a ghost)
     carMesh.add(model);
     playerModels[car.id] = model;
