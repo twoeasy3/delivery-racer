@@ -3,8 +3,10 @@
 This repository holds Delivery Racer only: a lane-based 3D delivery racer (three.js, Vite). It is a single snapshot of
 the owner's local main at 9ee71b6 (the owner's car-collection site and its data were removed; there is no earlier
 history here). The COMPLETED work is the tree; the UNCOMPLETED work is in `WIP/` as one patch per branch, with
-`WIP/INDEX.md` saying what each is, what was seen and not seen, and how to apply it. THIS REPOSITORY IS NOT DEPLOYED:
-there is no Worker, no Cloudflare configuration and no deploy script, and it must not be connected to one.
+`WIP/INDEX.md` saying what each is, what was seen and not seen, and how to apply it. THIS REPOSITORY IS DEPLOYED:
+it is a static-assets Cloudflare Worker (`wrangler.jsonc`, no Worker script, no database), built and deployed by
+Cloudflare from `main` and served at `delivery.pingmathehippo.com` (`/` redirects to `/delivery/`). Pushing to `main`
+deploys the game.
 
 ## What the game is
 
@@ -45,8 +47,9 @@ groups above, and the quick smoke only when asked. Syntax-check changed files wi
 
 ## Rules (the owner's)
 
-- Never connect this repository to Cloudflare or any host: it is not deployed. Pushing to the owner's old site repo
-  would deploy a live site: do not.
+- This repository deploys on push to `main` (Cloudflare builds `npm run build` and runs `npx wrangler deploy`): check
+  before merging to `main`. Never add bindings (database, buckets) or a Worker script without the owner. Pushing to
+  the owner's old site repo (`collection-site`) would deploy the live collection site: do not.
 - Merge with `git merge --no-ff`, main first: merge `main` into your branch, fix, check, then merge the branch into
   main. Commit each whole working piece at once, with a message that says what and why, ending with the
   `Co-Authored-By` line.

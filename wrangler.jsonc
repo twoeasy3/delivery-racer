@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Delivery Racer on its own: a static-assets Worker (no script, no database, no buckets).
+  // `npm run build` writes dist/; `npx wrangler deploy` uploads it. The game lives at /delivery/;
+  // public/_redirects sends / there.
+  "name": "delivery",
+  "compatibility_date": "2026-05-28",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  }
+}
