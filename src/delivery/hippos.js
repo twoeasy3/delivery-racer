@@ -16,8 +16,9 @@ import { Player } from './player.js';
 import { Traffic } from './traffic.js';
 import { Collision } from './collision.js';
 import { FxQueue, sfxAt } from './physics.js';
+import { random } from './util.js';
 
-const between = (range) => range.min + Math.random() * (range.max - range.min);
+const between = (range) => range.min + random() * (range.max - range.min);
 const smooth = (t) => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
 const box = { s: 0, lat: 0, yaw: 0, hl: 0, hw: 0 }; // the trampler's hitbox, for Collision.overlap
 

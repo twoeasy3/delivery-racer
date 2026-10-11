@@ -1,7 +1,7 @@
 import { CONFIG } from './config.js';
 import { LEVEL } from './levels.js';
 import { themedKind } from './themes.js';
-import { clamp } from './util.js';
+import { clamp, random } from './util.js';
 import { Track } from './track.js';
 import { FxQueue, startRivalry, hurt, sfx, sfxAt } from './physics.js';
 import { Player } from './player.js';
@@ -215,8 +215,8 @@ export const Collision = (() => {
       if (a.isPlayer) b.grudge = CONFIG.grudgeTime;
       if (b.isPlayer) a.grudge = CONFIG.grudgeTime;
       // traffic that collides with traffic tends to take it personally
-      if (Math.random() < CONFIG.rivalryChance) startRivalry(a, b);
-      if (Math.random() < CONFIG.rivalryChance) startRivalry(b, a);
+      if (random() < CONFIG.rivalryChance) startRivalry(a, b);
+      if (random() < CONFIG.rivalryChance) startRivalry(b, a);
       // (the player's car is knocked about less the heavier it is: see Player.mass)
       const stun = CONFIG.stunTime * clamp(impact / 10, 0.3, 1);
       a.stun = Math.max(a.stun, a.isPlayer ? stun / a.mass : a === courier ? stun * R.share : stun);
@@ -372,7 +372,7 @@ export const Collision = (() => {
       const P = CONFIG.peloton, dir = p.dir === -1 ? -1 : 1;
       for (let i = 0; i < p.count; i++) {
         const s = Track.place(p) - dir * Math.floor(i / 2) * P.spacing, row = i % 2; // (the bunch trailing back the way it rides from)
-        const ride = { s0: s, row, dir, speed: p.speed || P.speed, trigger: p.trigger || P.trigger, on: false, t: Math.random() * 9 };
+        const ride = { s0: s, row, dir, speed: p.speed || P.speed, trigger: p.trigger || P.trigger, on: false, t: random() * 9 };
         add('cyclist', s, kerbLat(ride, s), { ride, face: dir < 0 ? Math.PI : 0 });
       }
     }
@@ -385,7 +385,7 @@ export const Collision = (() => {
       for (let row = 0; row < P.rows; row++) {
         for (let k = 0; k < across; k++) {
           const s = s0 - CONFIG.vehicles.float.hl - P.gapBehind - row * P.spacing;
-          add('marcher', s, lo + (hi - lo) * k / (across - 1), { march: { id, s0: s, start: s0 - P.trigger, speed: p.speed || P.speed, on: false, t: Math.random() * 9 } });
+          add('marcher', s, lo + (hi - lo) * k / (across - 1), { march: { id, s0: s, start: s0 - P.trigger, speed: p.speed || P.speed, on: false, t: random() * 9 } });
         }
       }
     });
@@ -396,7 +396,7 @@ export const Collision = (() => {
     }
     for (const z of LEVEL.dropBears || []) { // (each somewhere in its stretch, anywhere across the road)
       for (let i = 0; i < (z.count || 3); i++) {
-        const s = Track.place({ s: z.from + Math.random() * (z.to - z.from), road: z.road, exit: z.exit });
+        const s = Track.place({ s: z.from + random() * (z.to - z.from), road: z.road, exit: z.exit });
         const o = { s, hw: 0.6, hl: 0.6, height: 1, kind: 'dropBear' };
         add('dropBear', s, anywhereAcross(o, s), { h: CONFIG.dropBear.height, fall: 0, near: 0 });
       }
@@ -433,11 +433,11 @@ export const Collision = (() => {
       const kinds = Object.entries(z.kinds || { wildebeest: 1 });
       const total = kinds.reduce((sum, [, share]) => sum + share, 0);
       for (let i = 0; i < z.count; i++) {
-        let r = Math.random() * total, kind = kinds[0][0];
+        let r = random() * total, kind = kinds[0][0];
         for (const [k, share] of kinds) if ((r -= share) < 0) { kind = k; break; }
-        const s = Track.place({ s: z.from + Math.random() * (z.to - z.from), road: z.road, exit: z.exit }), M = CONFIG.migration;
-        const lat0 = Track.lo(s) - M.beyond + Math.random() * (Track.hi(s) - Track.lo(s) + 2 * M.beyond);
-        add(kind, s, lat0, { yaw: Math.PI / 2, migrate: z.dir || 1, lat0, speed: M.speed.min + Math.random() * (M.speed.max - M.speed.min), hop: Math.random() * 9 });
+        const s = Track.place({ s: z.from + random() * (z.to - z.from), road: z.road, exit: z.exit }), M = CONFIG.migration;
+        const lat0 = Track.lo(s) - M.beyond + random() * (Track.hi(s) - Track.lo(s) + 2 * M.beyond);
+        add(kind, s, lat0, { yaw: Math.PI / 2, migrate: z.dir || 1, lat0, speed: M.speed.min + random() * (M.speed.max - M.speed.min), hop: random() * 9 });
       }
     }
     for (const z of LEVEL.herds || []) {
@@ -523,24 +523,25 @@ export const Collision = (() => {
         if (onRoad && !moves) resting.push({ s, lat, r });
       }
     });
+    for (const o of obstacles) o.start = startOf(o); // (as the load left it: every run starts from here: see resetObstacles)
     resetObstacles();
   };
   const anywhereAcross = (o, s) => {
     const lo = Track.lo(s) + o.hl, hi = Track.hi(s) - o.hl;
-    return lo + Math.random() * (hi - lo);
+    return lo + random() * (hi - lo);
   };
   // puts a drifter where its pattern has it at o.time, facing the way it is moving. The
   // pattern runs at the drifter's own pace, with its own slower wobble laid over it, both
   // along and across the road, so the path never quite repeats.
   // a darting drifter (see CONFIG.drifters): sitting, shivering, or darting, `dt` s on
-  const between = (r) => r.min + Math.random() * (r.max - r.min);
+  const between = (r) => r.min + random() * (r.max - r.min);
   const dartOn = (o, dt) => {
     const D = CONFIG.drifters, ease = (u) => u * u * (3 - 2 * u);
     const lo = (s) => Track.lo(s) + o.hw, hi = (s) => Track.hi(s) - o.hw;
     if (o.time === 0 || o.wait === undefined) { // (at the start: at home, sitting, each for its own while)
       o.restS = o.s = o.homeS;
       o.restLat = o.lat = clamp(o.homeLat, lo(o.s), hi(o.s));
-      o.wait = between(D.dartRest) * (0.3 + Math.random());
+      o.wait = between(D.dartRest) * (0.3 + random());
       o.dart = null;
       return;
     }
@@ -564,9 +565,9 @@ export const Collision = (() => {
     // off: anywhere within its reach of home, a long way or a short one (but never just a twitch)
     let s1, lat1, far = 0;
     for (let k = 0; k < 8 && far < D.dartMin; k++) {
-      s1 = o.homeS + (Math.random() * 2 - 1) * o.along;
+      s1 = o.homeS + (random() * 2 - 1) * o.along;
       if (o.from !== undefined) s1 = clamp(s1, o.from + o.hl, o.to - o.hl);
-      lat1 = clamp(o.across === Infinity ? lo(s1) + Math.random() * (hi(s1) - lo(s1)) : o.homeLat + (Math.random() * 2 - 1) * o.across, lo(s1), hi(s1));
+      lat1 = clamp(o.across === Infinity ? lo(s1) + random() * (hi(s1) - lo(s1)) : o.homeLat + (random() * 2 - 1) * o.across, lo(s1), hi(s1));
       far = Math.hypot(s1 - o.restS, lat1 - o.restLat);
     }
     o.dart = { s0: o.restS, lat0: o.restLat, s1, lat1, u: 0, time: Math.max(0.2, 1.5 * far / between(D.dartSpeed)) };
@@ -616,10 +617,10 @@ export const Collision = (() => {
           o.lat = o.fromLat + (o.toLat - o.fromLat) * o.t;
           o.h = CONFIG.frogHopHeight * 4 * o.t * (1 - o.t);
         } else if ((o.rest -= dt) <= 0) { // sat long enough: hop to anywhere on the road nearby
-          o.rest = CONFIG.frogRestMin + Math.random() * (CONFIG.frogRestMax - CONFIG.frogRestMin);
+          o.rest = CONFIG.frogRestMin + random() * (CONFIG.frogRestMax - CONFIG.frogRestMin);
           o.fromS = o.s;
           o.fromLat = o.lat;
-          o.toS = clamp(o.s + (Math.random() - 0.5) * 2 * CONFIG.frogHopMax, o.from, o.to);
+          o.toS = clamp(o.s + (random() - 0.5) * 2 * CONFIG.frogHopMax, o.from, o.to);
           o.toLat = anywhereAcross(o, o.toS);
           o.face = Math.atan2(o.toLat - o.fromLat, o.toS - o.fromS);
           o.t = 0;
@@ -687,7 +688,7 @@ export const Collision = (() => {
         if (o.lat > hi || o.lat < lo) { // reached the far side: stand, then head back
           o.lat = clamp(o.lat, lo, hi);
           o.dir = -o.dir;
-          o.rest = o.stay ? 0 : CONFIG.cowRestMin + Math.random() * (CONFIG.cowRestMax - CONFIG.cowRestMin);
+          o.rest = o.stay ? 0 : CONFIG.cowRestMin + random() * (CONFIG.cowRestMax - CONFIG.cowRestMin);
         }
       } else if (o.dance) {
         danceTo(o, (o.time = (o.time || 0) + dt));
@@ -820,11 +821,32 @@ export const Collision = (() => {
     if (landed && o.k === 0 && Math.abs(o.s - Player.s) < 80) sfxAt('crash', o.s, 0.4);
   };
   // back to how the level starts: everything standing, the movers somewhere in their stretches
+  // An obstacle as the level load left it (its own numbers, flags and words, and those of the settings objects it
+  // carries, a cyclist's ride, a marcher's march, a cow's charge, one level down): every run starts by putting it back
+  // so, and then each kind does its own resetting below. So no run starts from what the run before left (a load off a
+  // truck still where it slid, a cyclist part way round its ride, a cow mid charge): a run depends only on its own
+  // seed and the level load's, which is what a replay records (REPLAY-NOTES.md)
+  const plain = (v) => v !== null && typeof v === 'object' && Object.getPrototypeOf(v) === Object.prototype;
+  const startOf = (o) => {
+    const own = {}, inner = {};
+    for (const [k, v] of Object.entries(o)) {
+      if (k === 'start') continue;
+      if (typeof v !== 'object' || v === null) own[k] = v;
+      else if (plain(v)) inner[k] = Object.fromEntries(Object.entries(v).filter(([, w]) => typeof w !== 'object' || w === null));
+    }
+    return { own, inner };
+  };
+  const restart = (o) => {
+    if (!o.start) return;
+    Object.assign(o, o.start.own);
+    for (const [k, v] of Object.entries(o.start.inner)) if (plain(o[k])) Object.assign(o[k], v);
+  };
   const resetObstacles = () => {
     // (and the contacts of the run before forgotten: check() leaves these on whatever it touched, the player too)
     tick = 0;
     Player.sideTick = Player.hitBy = Player.hitAt = undefined;
     for (const o of obstacles) {
+      restart(o);
       o.gone = false;
       if (o.dance) { // back to the start of its dance
         o.time = 0;
@@ -844,7 +866,7 @@ export const Collision = (() => {
       if (o.kind === 'dropBear') { // back up its tree, to drop when the player is near (somewhere new each time)
         o.h = CONFIG.dropBear.height;
         o.fall = 0;
-        o.near = CONFIG.dropBear.near.min + Math.random() * (CONFIG.dropBear.near.max - CONFIG.dropBear.near.min);
+        o.near = CONFIG.dropBear.near.min + random() * (CONFIG.dropBear.near.max - CONFIG.dropBear.near.min);
         continue;
       }
       if (o.kind === 'rock' && !o.loose) { // back up the hillside (or wherever its stretch has it wait)
@@ -867,8 +889,7 @@ export const Collision = (() => {
         continue;
       }
       if (o.cargo) { // a load back on its truck, so to speak
-        o.gone = true;
-        o.slide = 0;
+        Object.assign(o, { gone: true, slide: 0, s: 0, lat: 0, face: 0, h: 0 }); // (where the pool made it: a run starts the same however the last one went)
         continue;
       }
       if (o.migrate) { // back to where it started out in the herd
@@ -890,11 +911,11 @@ export const Collision = (() => {
         continue;
       }
       if (o.from === undefined || o.hazard) continue; // barriers and bales stay where they were put (a hazard's: see Hazards.reset)
-      o.s = o.from + Math.random() * (o.to - o.from);
-      o.dir = Math.random() < 0.5 ? 1 : -1;
+      o.s = o.from + random() * (o.to - o.from);
+      o.dir = random() < 0.5 ? 1 : -1;
       o.h = 0;
       o.lat = anywhereAcross(o, o.s);
-      o.rest = Math.random() * 1.2;
+      o.rest = random() * 1.2;
       o.t = 1;
     }
   };

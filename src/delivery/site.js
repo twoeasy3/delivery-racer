@@ -24,8 +24,9 @@ import { Player } from './player.js';
 import { Collision } from './collision.js';
 import { hurt, sfx, sfxAt, FxQueue } from './physics.js';
 import { Game } from './game.js';
+import { random } from './util.js';
 
-const between = (range) => range.min + Math.random() * (range.max - range.min);
+const between = (range) => range.min + random() * (range.max - range.min);
 const sideOf = (w) => w.side === 'left' ? -1 : 1;
 const box = { s: 0, lat: 0, yaw: 0, hl: 0, hw: 0 };
 
@@ -44,7 +45,7 @@ export const Site = {
     const works = LEVEL.siteWorks || [];
     this.diggers = works.filter(w => w.kind === 'excavator').map(w => {
       const side = sideOf(w);
-      return { s: w.s, side, base: side < 0 ? Track.lo(w.s) - W.digOut : Track.hi(w.s) + W.digOut, t: Math.random() * W.swingPeriod, angle: 0, gone: false };
+      return { s: w.s, side, base: side < 0 ? Track.lo(w.s) - W.digOut : Track.hi(w.s) + W.digOut, t: random() * W.swingPeriod, angle: 0, gone: false };
     });
     this.stacks = works.filter(w => w.kind === 'pipes').map(w => ({ s: w.s, side: sideOf(w), every: w.every || W.pipeEvery, wait: 0 }));
     for (const o of Collision.obstacles) if (o.roll) o.roll.stack = this.stacks.find(st => st.s === o.roll.at) || null;
@@ -93,7 +94,7 @@ export const Site = {
         sfx('crash', 0.8);
         // (and maybe a flat tyre, on the trench's side)
         const trench = (LEVEL.siteWorks || []).find(w => w.kind === 'trench' && Player.s >= w.from && Player.s <= w.to);
-        if (trench && Math.random() < W.trenchPuncture) Player.punctureTyre(sideOf(trench));
+        if (trench && random() < W.trenchPuncture) Player.punctureTyre(sideOf(trench));
       }
       this.lastGap = gap;
       // potholes: the same jolt, a little less, and maybe a flat on the side that hit it
@@ -104,7 +105,7 @@ export const Site = {
         Player.stun = Math.max(Player.stun, 0.2);
         Game.shake = Math.max(Game.shake, 0.5);
         sfx('crash', 0.6);
-        if (Math.random() < W.potholePuncture) Player.punctureTyre(hole.lat < Player.lat ? -1 : 1);
+        if (random() < W.potholePuncture) Player.punctureTyre(hole.lat < Player.lat ? -1 : 1);
       }
       this.lastHole = hole;
     }
@@ -140,7 +141,7 @@ export const Site = {
       const pipe = Collision.obstacles.find(o => o.roll && o.roll.stack === st && o.gone);
       if (!pipe) continue;
       // off it rolls
-      Object.assign(pipe, { gone: false, s: st.s + (Math.random() - 0.5) * 6, h: 0 });
+      Object.assign(pipe, { gone: false, s: st.s + (random() - 0.5) * 6, h: 0 });
       pipe.lat = st.side < 0 ? Track.lo(pipe.s) - W.stackOut : Track.hi(pipe.s) + W.stackOut;
       pipe.roll.dir = -st.side;
       st.wait = between(st.every);

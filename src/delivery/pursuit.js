@@ -11,7 +11,7 @@
 // ============================================================================
 import { CONFIG } from './config.js';
 import { LEVEL } from './levels.js';
-import { clamp, damp } from './util.js';
+import { clamp, damp, random } from './util.js';
 import { Track } from './track.js';
 import { Player } from './player.js';
 import { Traffic } from './traffic.js';
@@ -20,7 +20,7 @@ import { CAR } from './cars.js';
 import { updateYaw, keepOnRoad } from './physics.js';
 
 const P = CONFIG.pursuit, D = P.driving;
-const between = (r) => r.min + Math.random() * (r.max - r.min);
+const between = (r) => r.min + random() * (r.max - r.min);
 
 // everything that can be in a car's way: the traffic on the road, and the player
 const inTheWay = (o) => o.isPlayer ? Player.active && !(Player.ghost > 0) && !(Player.shield > 0) && !Player.testGhost
@@ -115,7 +115,7 @@ export const Pursuit = (() => {
       if (Track.openLane(l, s0) === l && Traffic.cars.every(o => !o.active || o.lane !== l || o.s < s0 - P.gap - 30 || o.s > s0 + 30)) lanes.push(l);
     }
     if (!lanes.length) return false;
-    const lane = lanes[Math.floor(Math.random() * lanes.length)];
+    const lane = lanes[Math.floor(random() * lanes.length)];
     const getaway = take('getaway', s0, lane, flee), cop = getaway && take('interceptor', s0 - P.gap, lane, chase);
     if (!cop) { if (getaway) release(getaway); return false; }
     st = { getaway, cop, cruise: clamp(CAR.maxSpeed * P.pace, P.speed.min, P.speed.max) };

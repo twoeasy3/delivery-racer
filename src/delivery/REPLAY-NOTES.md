@@ -200,6 +200,28 @@ Two quirks:
 5. Checks: headless, record through the real recorder and play back to the same state; in a browser, a run with a pause
    and a forced rewind (`?mystery=rewind`) recorded and played back in the page to the same state.
 
+**Phase A: done (11-Oct).** What it came to:
+- `util.js` random / seedRandom (mulberry32): 112 calls in 21 logic files use it (`messages.js` keeps `Math.random`:
+  which words a message picks; `cleanrun.js` swaps both for its trial runs: swapDice). Two seeds: the level load's
+  (`Game.loadSeed`, what the track and its set pieces are dealt with) and the run's (`Game.seed`); a recording holds both.
+- `main.js` runs the logic in fixed steps of CONFIG.maxStep (1/120 s) from an accumulator (a frame's time carried, at
+  most 0.1 s; nothing carried over a pause). Not yet tried on a phone for judder.
+- No logic reads a clock (only the save's counter timing in progress.js, rendering, and the reference pages).
+- A run on a level already loaded starts as a fresh load would: obstacles back to their start (`collision.js` o.start /
+  restart), the cargo pool's places reset. Every level passes `.replay-check --keep-level`.
+- The controls are rounded to 1/64 as they are read (`input.js`), so what is recorded is what was driven; while a
+  replay plays, the player's own controls and throws are not heard (`Input.fed`).
+- `replay.js` as described in its head. The fingerprints: the build's logic (`__BUILD__.logic`: a hash of the logic
+  source files and whatever they import, followed through: vite.config.js logicFiles; a change to words, menus, pages
+  or a model that is only drawn leaves it alone; a model a rule measured would be in it), the level's data as loaded, the
+  car's figures; and the state every 1200 steps, played back against them (a recording that drifts stops: onDrift).
+- The build on the front screen, bottom right (under START on a phone): "v1.0.0 · <commit>" (`version.js`).
+- Checks: `scripts/.replay-record-check.mjs` (replay group): runs on expressway, tokyo, noon; night and Mystery Meadows
+  paused 3 s with keys held and a throw tried, and a forced rewind; a second run on a loaded level; recordings of
+  other rules, a changed level, a changed car refused. In a browser (once, Playwright, not a kept script): Mystery
+  Meadows driven with the keys, paused 2 s, rewound once, played back with the keys mashed: the same state at steps
+  600, 1200, 1800, no drift, no errors.
+
 ### Phase B: in the game
 6. The last run kept per level and side; "Save replay" on the results screen keeps it in a list (local storage, never
    the save code: a few hundred bytes a minute each); the best run kept for the ghost.

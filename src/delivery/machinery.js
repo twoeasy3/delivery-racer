@@ -14,8 +14,9 @@ import { Player } from './player.js';
 import { Collision } from './collision.js';
 import { hurt, FxQueue } from './physics.js';
 import { Game } from './game.js';
+import { random } from './util.js';
 
-const between = (range) => range.min + Math.random() * (range.max - range.min);
+const between = (range) => range.min + random() * (range.max - range.min);
 const box = { s: 0, lat: 0, yaw: 0, hl: 0, hw: 0 };
 // how each kind moves: across the road (the default), along a shoulder, or out onto one and back
 const MODE = { roller: 'along', forklift: 'poke' };
@@ -32,12 +33,12 @@ export const Machinery = {
     const M = CONFIG.machinery;
     this.list = (LEVEL.machinery || []).map(m => {
       const mode = MODE[m.kind] || 'cross', size = M.sizes[m.kind] || { hl: M.hl, hw: M.hw }, side = m.side === 'left' ? -1 : 1;
-      const it = { kind: m.kind, mode, side, from: m.from, to: m.to, dir: Math.random() < 0.5 ? 1 : -1, rest: 0, gone: false, tracks: 0, ...size };
-      if (mode === 'along') Object.assign(it, { s: m.from + Math.random() * (m.to - m.from), lat: shoulder(side, m.from) });
+      const it = { kind: m.kind, mode, side, from: m.from, to: m.to, dir: random() < 0.5 ? 1 : -1, rest: 0, gone: false, tracks: 0, ...size };
+      if (mode === 'along') Object.assign(it, { s: m.from + random() * (m.to - m.from), lat: shoulder(side, m.from) });
       else if (mode === 'poke') Object.assign(it, { s: m.s, lat: offRoad(side, m.s, M.pokeOut), dir: -side, rest: between(M.rest) });
       else {
         const lo = Track.lo(m.s) - M.beyond, hi = Track.hi(m.s) + M.beyond;
-        Object.assign(it, { s: m.s, lat: lo + Math.random() * (hi - lo) });
+        Object.assign(it, { s: m.s, lat: lo + random() * (hi - lo) });
       }
       return it;
     });

@@ -14,6 +14,7 @@ import { Track } from './track.js';
 import { Player } from './player.js';
 import { Traffic } from './traffic.js';
 import { Game } from './game.js';
+import { random } from './util.js';
 
 const CP = 25;          // m between checkpoints, for the splits
 const AFTER = 18;       // s the race runs on once the leader has finished, before the next starts
@@ -27,7 +28,7 @@ const NAMES = ['Turbo Tom Throttle', 'Skid Rowe', 'Wheelie Wilson', 'Brakey Blak
   'Diffy Diffuser', 'Doug Downforce', 'Mo Mentum'];
 const shuffle = (list) => {
   const a = [...list];
-  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   return a;
 };
 
@@ -101,7 +102,7 @@ export const RaceWatch = {
   pick() {
     const order = this.standings().filter(c => c.active && !c.done);
     if (!order.length && !this.pinned) return;
-    const roll = Math.random();
+    const roll = random();
     let next = this.pinned || order[0]; // (the viewer's choice, if they made one)
     if (this.pinned) { /* stays on it */ } else if (roll < 0.5) { // the closest battle in the top fifteen: the one chasing
       let best = Infinity;
@@ -109,10 +110,10 @@ export const RaceWatch = {
         const d = this.progress(order[i - 1]) - this.progress(order[i]);
         if (d < best) { best = d; next = order[i]; }
       }
-    } else if (roll > 0.75) next = order[Math.floor(Math.random() * order.length)];
+    } else if (roll > 0.75) next = order[Math.floor(random() * order.length)];
     this.focus = next;
-    this.focusFor = 7 + Math.random() * 5;
-    this.shot = ['trackside', 'trackside', 'trackside', 'chase', 'heli'][Math.floor(Math.random() * 5)];
+    this.focusFor = 7 + random() * 5;
+    this.shot = ['trackside', 'trackside', 'trackside', 'chase', 'heli'][Math.floor(random() * 5)];
     this.cut++;
   },
   update(dt) {

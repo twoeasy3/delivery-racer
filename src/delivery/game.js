@@ -5,7 +5,8 @@ import { Nav } from './nav.js';
 import { useLevelCar, returnCar, earnedFor, ownedAmphibious, carAllowed, restrictedTier } from './cars.js';
 import { Tiers } from './tiers.js';
 import { Input } from './input.js';
-import { clamp } from './util.js';
+import { Replay } from './replay.js';
+import { clamp, seedRandom, newSeed } from './util.js';
 import { Track, buildTrack } from './track.js';
 import { FxQueue, sfx } from './physics.js';
 import { Message } from './messages.js';
@@ -79,7 +80,14 @@ export const Game = {
 
   // Builds everything that depends on the level: roads, obstacles, pickups, targets, and
   // (through the onLoad hooks, which the rendering modules register) the scenery.
-  load() {
+  // The logic's dice (util.js random, REPLAY-NOTES.md): the level is built from a seed of its own (loadSeed: what a
+  // level load placed at random stays for every run on it, so a replay records it, and a replay of a run on another
+  // load builds the level again from that one), and each run starts from a seed of its own (seed). nextSeed /
+  // nextLoadSeed: the seeds the next start is to use (a replay's), else fresh ones
+  loadSeed: null, seed: null, nextSeed: null, nextLoadSeed: null, step: 0,
+  load(seed = newSeed()) {
+    this.loadSeed = seed;
+    seedRandom(seed);
     buildTrack();
     Gambles.build(); // (its lists: Traffic puts out a ramp's queue from them)
     Radiation.build(); // (its areas, for the drawing)
@@ -93,6 +101,8 @@ export const Game = {
   // back to the start screen, which is only a menu: nothing of the level is shown behind it
   toMenu() {
     this.state = 'start';
+    Replay.end(); // (a run left part way: its recording closed; a playback over: the save as it was)
+    Replay.stop();
     Nav.leave('run'); // (the back button's entry for the run)
     this.paused = false;
     Tiers.hold = null; // (the run's car rule is over: the menu goes by the player's own pick again)
@@ -181,7 +191,13 @@ export const Game = {
     } else if (!rivalSide && LEVEL.grid?.rival) delete LEVEL.grid;
     this.rivalsIn = 0;          // rivals over the line before the player
     this.rivalAhead = new Map(); // for each, whether it was ahead of the player when last looked
-    if (this.loaded !== LEVEL) this.load(); // the level is only built when a run on it starts
+    // the level is only built when a run on it starts (or again from a replay's own load seed)
+    if (this.loaded !== LEVEL || (this.nextLoadSeed !== null && this.nextLoadSeed !== this.loadSeed)) this.load(this.nextLoadSeed ?? undefined);
+    this.nextLoadSeed = null;
+    this.seed = this.nextSeed ?? newSeed();
+    this.nextSeed = null;
+    seedRandom(this.seed); // (from here on the run draws only from its own dice)
+    this.step = 0;
     Nav.enter('run', () => this.exit()); // (the back button leaves the run, or its results, for the menu)
     Tiers.hold = null;
     Tiers.hold = { tier: restrictedTier() }; // (the car rule as the run starts it: held to the menu, whatever the delivery earns)
@@ -239,6 +255,7 @@ export const Game = {
     this.state = 'playing';
     startScreen.classList.add('hidden');
     resultScreen.classList.add('hidden');
+    Replay.begin(); // (recorded from here: see replay.js)
   },
   // Only 'delivered' (over the line with time on the clock) is a pass. Crossing the line
   // during the tip countdown ('late') still fails the level, with whatever tip was left.
@@ -254,6 +271,7 @@ export const Game = {
   },
   finish(outcome) {
     this.state = 'finished';
+    Replay.end(outcome);
     if (Player.mystery === 'swapSides') Player.endMystery(); // (back on its own side: the results and the best time are that side's)
     returnCar(); // (a car lent by Car Swap goes back: the results are the player's own car's)
     this.settleTank(outcome === 'delivered' || outcome === 'late');
@@ -328,6 +346,9 @@ export const Game = {
     this.shake = Math.max(0, this.shake - dt / CONFIG.shakeTime);
     Message.settle(); // (a sticky message goes as its condition ends)
     if (this.state === 'start' || this.paused) return;
+    if (this.step) Replay.afterStep(this.step); // (the state as the last step left it: fingerprinted now and then)
+    Replay.beforeStep(this.step); // (a replay's controls and events for this step; or the player's, recorded)
+    this.step++; // (the logic steps of this run, counted: what a replay keys its inputs by; a pause is no step)
     if (this.raceWatch) { // the race screensaver: only the race
       this.time += dt;
       Traffic.update(dt);

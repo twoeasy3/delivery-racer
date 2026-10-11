@@ -1,6 +1,7 @@
 import { CONFIG } from './config.js';
 import { LEVEL } from './levels.js';
 import { levelName } from './levelText.js';
+import { random } from './util.js';
 
 // ============================================================================
 // TRACK - path sampled by distance along track (s) and lateral offset (lat)
@@ -765,7 +766,7 @@ const createTrack = () => {
     const sideOnly = dir < 0 && FLOW === 'north';
     if (!x) return sideOnly ? NaN : c;
     const playerOnIt = !isMain(playerS) && exitOf(playerS) === x;
-    if (sideOnly ? !playerOnIt && from > x.exitAt : !playerOnIt && !(from <= x.exitAt && Math.random() < X.trafficShare)) return sideOnly ? NaN : c;
+    if (sideOnly ? !playerOnIt && from > x.exitAt : !playerOnIt && !(from <= x.exitAt && random() < X.trafficShare)) return sideOnly ? NaN : c;
     if (dir < 0 && !x.oncoming) return sideOnly ? NaN : c; // (a one-way side road)
     const s = x.side0 + (c - x.exitAt) * x.length / x.span;
     // the side road's oncoming lane only exists between its ramps, from where its traffic turns oncoming, where it is that wide

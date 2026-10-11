@@ -1,7 +1,7 @@
 import { CONFIG } from './config.js';
 import { LEVEL } from './levels.js';
 import { CAR, CARS, lendCar, returnCar, superOf, rageTankFor } from './cars.js';
-import { clamp, damp } from './util.js';
+import { clamp, damp, random } from './util.js';
 import { Track } from './track.js';
 import { updateYaw, keepOnRoad, sfx, cornerSpeed } from './physics.js';
 import { Traffic } from './traffic.js';
@@ -261,7 +261,7 @@ export const Player = {
     // (a tank only ever gets the air strike)
     // (the good ones the likelier, the higher the player's standing: see Social)
     const weights = effects.map(e => Social.mysteryWeight(e));
-    let roll = Math.random() * weights.reduce((a, w) => a + w, 0), drawn = effects[effects.length - 1];
+    let roll = random() * weights.reduce((a, w) => a + w, 0), drawn = effects[effects.length - 1];
     for (let i = 0; i < effects.length; i++) if ((roll -= weights[i]) < 0) { drawn = effects[i]; break; }
     let effect = this.tank > 0 ? 'ufo'
       : [...effects, ...extraEffects].find(e => e.toLowerCase() === this.nextMystery.toLowerCase()) || drawn; // (?mystery=UFO works too, and picks from the unused pool)
@@ -286,7 +286,7 @@ export const Player = {
       // (on an amphibious level, only another amphibious car: the swap must float)
       // (a car idea in use, ideas.js, is swapped for a garage car as any other is, and given back after; none is ever what the swap deals)
       const others = CARS.includes(CAR) || CAR.idea ?CARS.filter(c => c !== CAR && !c.tank && !c.earned && (!LEVEL.amphibious || c.amphibious)) : [];
-      if (others.length) this.takeCar(() => lendCar(others[Math.floor(Math.random() * others.length)]));
+      if (others.length) this.takeCar(() => lendCar(others[Math.floor(random() * others.length)]));
     }
   },
   // the Jerk mechanic for `time` s, set off by something other than the mystery pickup (crashing a funeral
@@ -487,10 +487,10 @@ export const Player = {
     // ice: hitting it, the car slews round (the look of it only), with a squeal of tyres
     const patch = Track.icy(this.s, this.lat), icy = !!patch;
     if (icy && !this.onIce) {
-      this.yawVel += (Math.random() < 0.5 ? -1 : 1) * CONFIG.ice.yawKick * Math.min(1, this.speed / 25);
+      this.yawVel += (random() < 0.5 ? -1 : 1) * CONFIG.ice.yawKick * Math.min(1, this.speed / 25);
       if (this.speed > 8) sfx('brake', 0.5);
     }
-    if (icy) this.yawVel += (Math.random() - 0.5) * 8 * Math.min(1, this.speed / 25) * dt; // (and twitches about on it)
+    if (icy) this.yawVel += (random() - 0.5) * 8 * Math.min(1, this.speed / 25) * dt; // (and twitches about on it)
     this.onIce = icy;
     this.onWater = icy && !!patch.water; // (a burst main's water: slippery by its own numbers, see CONFIG.waterMain)
     // water leaves wet tyres: for wetAfter m past a burst main's water, its braking, steering and lane-change numbers fade back

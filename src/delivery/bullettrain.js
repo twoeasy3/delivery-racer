@@ -21,6 +21,7 @@ import { Player } from './player.js';
 import { Traffic } from './traffic.js';
 import { Collision } from './collision.js';
 import { FxQueue, sfx } from './physics.js';
+import { random } from './util.js';
 
 const box = { s: 0, lat: 0, yaw: 0, hl: 0, hw: 0 }; // one carriage's hitbox, for Collision.overlap
 
@@ -39,7 +40,7 @@ export const BulletTrain = {
   // s until the next train down the railway, counted from when the last one has gone
   wait() {
     const { min, max } = LEVEL.railway.every;
-    return min + Math.random() * (max - min);
+    return min + random() * (max - min);
   },
   // where carriage i is (0 = the nose's), into `out` ({ s, lat })
   carriage(i, out) {

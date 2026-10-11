@@ -278,7 +278,7 @@ const hudCheck = params.get('hudcheck') === null ? null : () => {
   for (const line of Message.lines) line.at = performance.now();
 };
 
-let last = performance.now();
+let last = performance.now(), carry = 0; // (carry: s of the logic not yet stepped, see below)
 let prevState = Game.state;
 const frame = (now) => {
   const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)) || 0.001; // (never less than nothing: a first frame's `now` can be before `last`, after ?ff)
@@ -288,9 +288,16 @@ const frame = (now) => {
     Garage.render(now); // the garage has a scene of its own
     silence();
   } else if (Game.state !== 'start') { // (on the start screen there is no level: it is only a menu)
-    // game logic, in small fixed-size steps so fast head-ons can't tunnel (frozen while paused)
-    const steps = Game.paused ? 0 : Math.ceil(dt / CONFIG.maxStep);
-    for (let i = 0; i < steps; i++) Game.update(dt / steps);
+    // game logic, in steps of exactly CONFIG.maxStep (small, so fast head-ons can't tunnel; and all the same length,
+    // so a run is the same every time from its seed and inputs: a replay, REPLAY-NOTES.md). The frame's time is
+    // added to what is carried over, and as many whole steps taken as it holds (a hair under one counts, so a
+    // 60 Hz frame is two steps, not one or three); the rest waits for the next frame. Frozen while paused
+    if (Game.paused) carry = 0;
+    else {
+      carry = Math.min(carry + dt, 0.1);
+      while (carry > CONFIG.maxStep * 0.98) { Game.update(CONFIG.maxStep); carry -= CONFIG.maxStep; }
+      carry = Math.max(0, carry);
+    }
 
     // then bring the scene up to date with it
     const heading = Track.toWorld(Player.s, Player.lat, tmp);

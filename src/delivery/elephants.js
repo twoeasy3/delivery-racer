@@ -10,8 +10,9 @@ import { CONFIG } from './config.js';
 import { LEVEL } from './levels.js';
 import { Track } from './track.js';
 import { trample } from './hippos.js';
+import { random } from './util.js';
 
-const between = (range) => range.min + Math.random() * (range.max - range.min);
+const between = (range) => range.min + random() * (range.max - range.min);
 
 export const Elephants = {
   list: [], // { s, lat, dir (1 = walking towards +lat), rest (s left of standing at the side), legs }
@@ -22,9 +23,9 @@ export const Elephants = {
     this.list = [];
     for (const z of LEVEL.elephants || []) {
       for (let i = 0; i < (z.count || 1); i++) {
-        const s = z.from + (z.to - z.from) * (i + 0.2 + Math.random() * 0.6) / (z.count || 1); // (spread out along it)
+        const s = z.from + (z.to - z.from) * (i + 0.2 + random() * 0.6) / (z.count || 1); // (spread out along it)
         const lo = Track.lo(s) - E.beyond, hi = Track.hi(s) + E.beyond;
-        this.list.push({ s, lat: lo + Math.random() * (hi - lo), dir: Math.random() < 0.5 ? 1 : -1, rest: 0, legs: 0 });
+        this.list.push({ s, lat: lo + random() * (hi - lo), dir: random() < 0.5 ? 1 : -1, rest: 0, legs: 0 });
       }
     }
   },

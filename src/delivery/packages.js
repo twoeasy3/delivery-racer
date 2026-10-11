@@ -1,7 +1,7 @@
 import { CONFIG } from './config.js';
 import { Progress } from './progress.js';
 import { LEVEL } from './levels.js';
-import { clamp } from './util.js';
+import { clamp, random } from './util.js';
 import { Track } from './track.js';
 import { FxQueue, maybeSpinOut, startRivalry, hurt, sfx, sfxAt } from './physics.js';
 import { Player } from './player.js';
@@ -27,7 +27,7 @@ export const Packages = (() => {
       vs: 0, vlat: 0, t: 0, flight: 1, yaw: 0, hw: 0.35, hl: 0.35 });
   }
   let cooldown = 0;
-  const spread = (range) => (Math.random() - 0.5) * 2 * range;
+  const spread = (range) => (random() - 0.5) * 2 * range;
   // how far apart two things { s, lat } are, in the world: not along the road and across it, by which what
   // is on the other side of a split (a level's "splits") or on another road at a fork would seem close by
   const pointA = {}, pointB = {};
@@ -197,7 +197,7 @@ export const Packages = (() => {
     const scatter = CONFIG.enemyThrowScatter;
     // (aim: 'escort', or a particular car to throw at: a rival courier clearing its way)
     let victim = aim && typeof aim === 'object' ? aim
-      : (car.grudge > 0 || car.offended > 0 || (car.spite && Math.random() < CONFIG.giftSpite)) && aim !== 'escort' ? Player : null;
+      : (car.grudge > 0 || car.offended > 0 || (car.spite && random() < CONFIG.giftSpite)) && aim !== 'escort' ? Player : null;
     if (!victim && aim === 'escort') {
       let best = CONFIG.enemyThrowCarRange;
       for (const o of Traffic.cars) {
@@ -218,15 +218,15 @@ export const Packages = (() => {
       launch(car, { s: victim.s + spread(scatter), lat: victim.lat + spread(scatter),
         vs: victim.vs, latVel: victim.latVel }, 'bomb');
     } else {
-      const s = car.s + car.dir * (10 + Math.random() * 30);
-      const lat = Track.laneLo(s) + Math.random() * (Track.laneHi(s) - Track.laneLo(s));
+      const s = car.s + car.dir * (10 + random() * 30);
+      const lat = Track.laneLo(s) + random() * (Track.laneHi(s) - Track.laneLo(s));
       launch(car, { s, lat, vs: 0, latVel: 0 }, 'bomb');
     }
   };
 
   // a blast breaking a traffic tank's track, chance of the time (see CONFIG.brokenTracks): it grinds to a halt
   const breakTrack = (v, chance) => {
-    if (v.isPlayer || v.kind !== 'tank' || v.tracksBroken || v.health <= 0 || Math.random() >= chance) return;
+    if (v.isPlayer || v.kind !== 'tank' || v.tracksBroken || v.health <= 0 || random() >= chance) return;
     v.tracksBroken = true;
     sfxAt('sideswipe', v.s); // (the track snapping)
   };

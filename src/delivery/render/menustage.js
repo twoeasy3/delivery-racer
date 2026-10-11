@@ -20,6 +20,7 @@ import { CARS, CAR, useLevelCar, earnedFor, amphibiousCars, stars, starColour } 
 import { Progress } from '../progress.js';
 import { Tiers, tierStarsNode, richTiers } from '../tiers.js';
 import { Nav } from '../nav.js';
+import { buildLabel } from '../version.js';
 import { Game, formatTime, clockFor } from '../game.js';
 import { medalFor, medalNeeds } from '../levelinfo.js';
 import { Garage, makeShowCar, paintShowCar, IDEA_TAG } from './garage.js';
@@ -563,6 +564,7 @@ window.addEventListener('keydown', (e) => {
 }
 
 // the keys, spelled out along the foot of the screen (where there is a keyboard)
+document.getElementById('buildTag').textContent = buildLabel(); // (the build, in the corner: version.js)
 document.getElementById('menuKeys').replaceChildren(...[['← →', 'Level'], ['↑ ↓', 'Group'], ['T', 'Tab'], ['E', 'Good / Evil'], ['G', 'Garage'], ['I', 'On this road'], ['O', 'Options'], ['Enter', 'Start']]
   .map(([key, does]) => make('span', '', make('kbd', '', key), does)));
 

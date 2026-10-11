@@ -24,6 +24,7 @@ import { Traffic } from './traffic.js';
 import { Collision } from './collision.js';
 import { Message } from './messages.js';
 import { sfx } from './physics.js';
+import { random } from './util.js';
 
 const STICKY = 'events.infected'; // (the message that stays as an icon: see CONFIG.messageTimes.sticky)
 
@@ -85,7 +86,7 @@ export const Radiation = {
   // (it is always put down well ahead of the player, or behind: never on top of it)
   deal(car) {
     if (!(this.share > 0) || !this.can(car)) return;
-    if (Math.random() < this.share && this.count() < CONFIG.radiation.most) car.infected = true;
+    if (random() < this.share && this.count() < CONFIG.radiation.most) car.infected = true;
   },
   // does anything keep radiation out of the player's car just now?
   shielded() {
@@ -108,7 +109,7 @@ export const Radiation = {
       let n = -1;
       for (const car of Traffic.cars) {
         if (!car.active || car.infected || car.junction || !this.at(car.s, car.lat) || !this.can(car)) continue;
-        if (Math.random() >= R.catch * dt) continue;
+        if (random() >= R.catch * dt) continue;
         if (n < 0) n = this.count();
         if (n++ < R.most) car.infected = true;
       }

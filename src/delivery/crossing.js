@@ -22,8 +22,9 @@ import { Collision } from './collision.js';
 import { Message } from './messages.js';
 import { hurt, sfx, sfxAt } from './physics.js';
 import { Game } from './game.js';
+import { random } from './util.js';
 
-const between = (r) => r.min + Math.random() * (r.max - r.min);
+const between = (r) => r.min + random() * (r.max - r.min);
 const box = { s: 0, lat: 0, yaw: Math.PI / 2, hl: 0, hw: 0 }; // a carriage, lying across the road
 const clamp01 = (u) => Math.max(0, Math.min(1, u));
 
@@ -86,7 +87,7 @@ export const Crossings = {
   start(c) {
     c.state = 'warn';
     c.t = 0;
-    c.dir = Math.random() < 0.5 ? 1 : -1;
+    c.dir = random() < 0.5 ? 1 : -1;
     c.broken = [false, false];
     if (!c.triggered) Message.say('events', 'crossing');
     c.triggered = true;

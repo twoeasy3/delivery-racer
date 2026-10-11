@@ -4,7 +4,14 @@
 export const Input = (() => {
   const listeners = {};
   const on = (action, fn) => (listeners[action] ||= []).push(fn);
-  const emit = (action) => (listeners[action] || []).forEach(fn => fn());
+  // (fromReplay: an event a replay plays back. While one plays, the player's own throws, horn and skips are not
+  // passed on, only the replay's; pausing still is. `tap` hears every event passed on: the recorder, replay.js)
+  const LOGIC = new Set(['throw', 'horn', 'confirm']);
+  const emit = (action, fromReplay = false) => {
+    if (Input.fed && !fromReplay && LOGIC.has(action)) return;
+    Input.tap?.(action);
+    (listeners[action] || []).forEach(fn => fn());
+  };
 
   const KEYS = { Enter: 'confirm', Space: 'throw', KeyP: 'pause', KeyH: 'horn' };
   // steer and throttle are held axes (-1 .. +1), not one-shot actions
@@ -63,12 +70,17 @@ export const Input = (() => {
   window.addEventListener('gesturestart', (e) => e.preventDefault());
 
   const clampAxis = (v) => Math.max(-1, Math.min(1, v));
+  // (read as whole 64ths: what a replay records is exactly what was driven, replay.js)
+  const q = (v) => Math.round(v * 64) / 64;
   return {
     on, emit, hold,
+    tap: null,  // told of every event passed on (replay.js records them)
+    fed: null,  // { steer, throttle }: a replay's controls, in place of the player's while it plays
     autoGas: false, // the accelerator held down by itself; braking still overrides it (a menu option)
-    get steer() { return clampAxis(keyAxis(STEER_KEYS) + touchSteer + pressed.right - pressed.left); },
+    get steer() { return this.fed ? this.fed.steer : q(clampAxis(keyAxis(STEER_KEYS) + touchSteer + pressed.right - pressed.left)); },
     get throttle() {
-      const throttle = clampAxis(keyAxis(THROTTLE_KEYS) + touchThrottle + pressed.gas - pressed.brake);
+      if (this.fed) return this.fed.throttle;
+      const throttle = q(clampAxis(keyAxis(THROTTLE_KEYS) + touchThrottle + pressed.gas - pressed.brake));
       return this.autoGas && throttle >= 0 ? 1 : throttle;
     },
   };

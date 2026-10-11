@@ -1,6 +1,6 @@
 import { CONFIG } from './config.js';
 import { LEVEL } from './levels.js';
-import { clamp, damp } from './util.js';
+import { clamp, damp, random } from './util.js';
 import { Track } from './track.js';
 import { updateYaw, keepOnRoad, emotionOf, startRivalry, spinOut, sfxAt, cornerSpeed, weightOf } from './physics.js';
 import { Player } from './player.js';
@@ -89,7 +89,7 @@ export const Traffic = (() => {
   const policeOnStation = () => !(LEVEL.traffic?.police > 0) && (LEVEL.trafficZones || []).some(z => z.traffic.police > 0);
   const pickKind = (s, dir) => {
     const kinds = mix(s, dir);
-    let r = Math.random() * kinds.reduce((sum, [, rate]) => sum + rate, 0);
+    let r = random() * kinds.reduce((sum, [, rate]) => sum + rate, 0);
     for (const [kind, rate] of kinds) {
       r -= rate;
       if (r < 0) return kind;
@@ -107,7 +107,7 @@ export const Traffic = (() => {
   // for every driver, and the share of evil ones)
   const drivers = () => LEVEL.drivers || {};
   const pickEmotion = (evil) => {
-    const d = drivers(), r = Math.random(), own = d[evil ? 'evilMood' : 'goodMood']; // (a side's own, if the level says)
+    const d = drivers(), r = random(), own = d[evil ? 'evilMood' : 'goodMood']; // (a side's own, if the level says)
     const chance = own ? { happy: own.happy || 0, angry: own.angry || 0 } : d.happy !== undefined || d.angry !== undefined
       ? { happy: d.happy || 0, angry: d.angry || 0 } : CONFIG.startMood[evil ? 'evil' : 'good'];
     return r < chance.happy ? 'happy' : r < chance.happy + chance.angry ? 'angry' : 'neutral';
@@ -122,7 +122,7 @@ export const Traffic = (() => {
     Player.s > car.s - 30 && Player.s < car.s + 12;
 
   const H = CONFIG.hesitation;
-  const between = (range) => range.min + Math.random() * (range.max - range.min);
+  const between = (range) => range.min + random() * (range.max - range.min);
   const hesitation = () => LEVEL.hesitation !== false;
 
   // puts the car on the road `distance` metres from the player (negative: behind), in a lane of
@@ -135,7 +135,7 @@ export const Traffic = (() => {
     const last = car.dir > 0 ? Math.max(first, Math.min(all, Tide.dryLane(car.s))) : all; // (none turns up in the tide's water)
     // (a vehicle that keeps to the kerb starts out there)
     const lane = CONFIG.vehicles[kind].kerb ? Track.openLane(kerbLane(car.dir, car.s), car.s)
-      : Track.openLane(first + Math.floor(Math.random() * (last - first + 1)), car.s);
+      : Track.openLane(first + Math.floor(random() * (last - first + 1)), car.s);
     if (!laneClear(car, lane, 25) || Wreckage.blocked(lane, car.s)) return false;
     outfit(car, kind, lane);
     Radiation.deal(car); // (a share of a radiated level's traffic comes infected: car.infected, which blank() puts back)
@@ -149,7 +149,7 @@ export const Traffic = (() => {
   const spawn = (car, minAhead, maxAhead) => {
     car.active = false;
     for (let tries = 0; tries < 5; tries++) {
-      if (!placeAt(car, minAhead + Math.random() * (maxAhead - minAhead))) continue;
+      if (!placeAt(car, minAhead + random() * (maxAhead - minAhead))) continue;
       if (hesitation() && car.dir === Player.dir && car.baseSpeed > H.above && !CONFIG.vehicles[car.kind].cruise) {
         car.hesitant = true;
         car.baseSpeed = between(H.pace);
@@ -248,7 +248,7 @@ export const Traffic = (() => {
   const outfit = (car, kind, lane) => {
     blank(car);
     car.fixed = false;
-    car.viaSide = Math.random() < CONFIG.ramps.trafficShare; // will take a ramp / flyover if it meets one
+    car.viaSide = random() < CONFIG.ramps.trafficShare; // will take a ramp / flyover if it meets one
     car.kind = kind;
     const type = CONFIG.vehicles[car.kind];
     car.hw = type.hw;
@@ -280,18 +280,18 @@ export const Traffic = (() => {
     // (one of the garage's cars cruises near its own top speed, unless it has a speed of its own;
     // anything else at the level's pace)
     const own = type.speed ? 0 : GARAGE_TOP[kind], P = CONFIG.garagePace;
-    car.baseSpeed = type.cruise ? type.cruise.min + Math.random() * (type.cruise.max - type.cruise.min)
-      : own ? own * (P.min + Math.random() * (P.max - P.min)) : type.speed * (min + Math.random() * (max - min));
+    car.baseSpeed = type.cruise ? type.cruise.min + random() * (type.cruise.max - type.cruise.min)
+      : own ? own * (P.min + random() * (P.max - P.min)) : type.speed * (min + random() * (max - min));
     car.vs = car.dir * car.baseSpeed;
     const evilShare = drivers().evil !== undefined ? drivers().evil : CONFIG.evilShare;
-    car.evil = !!type.evilOnly || (!type.special && Math.random() < Social.evilShare(evilShare)); // fixed for this car's life (fewer, the higher the player's standing)
+    car.evil = !!type.evilOnly || (!type.special && random() < Social.evilShare(evilShare)); // fixed for this car's life (fewer, the higher the player's standing)
     car.swung = false;
     if (swinging) swing(car); // (in a Mood Swing, a new driver turns up on the other side too)
-    car.defiant = car.evil && Math.random() < CONFIG.emergency.defiance; // won't give way to an ambulance
+    car.defiant = car.evil && random() < CONFIG.emergency.defiance; // won't give way to an ambulance
     // (and the higher the player's standing, the happier every driver starts out)
     car.mood = clamp(MOOD_START[pickEmotion(car.evil)] + Social.moodLift, -1, 1);
     car.emotion = emotionOf(car.mood);
-    car.paint = Math.floor(Math.random() * 1000);
+    car.paint = Math.floor(random() * 1000);
     car.showMood = false;
     if (LEVEL.battle) { // (the Battlefield: its side is its army's, by the way it is going; in its army's colours)
       const B = CONFIG.battle;
@@ -332,12 +332,12 @@ export const Traffic = (() => {
     car.pendingForced = false; // ...because its lane ends or it is taking a ramp
     car.signalTime = 0;     // s of signalling left before it moves over
     car.hesitant = !!type.learner; // hesitating (see CONFIG.hesitation; a learner driver, all the time)...
-    car.binWait = type.stops ? between(type.stops.every) * Math.random() : 0; // a bin lorry: s to its next stop...
+    car.binWait = type.stops ? between(type.stops.every) * random() : 0; // a bin lorry: s to its next stop...
     car.binStop = 0;        // ...and s left of the one it is making
-    car.jingleWait = Math.random() * 2; // an ice cream van: s to the next bar of its tune
+    car.jingleWait = random() * 2; // an ice cream van: s to the next bar of its tune
     car.tap = 0;            // ...s left of a touch of the brakes...
     car.tapWait = 0;        // ...s to the next
-    car.wander = Math.random() * 6; // (where it is in its drift about the lane)
+    car.wander = random() * 6; // (where it is in its drift about the lane)
     car.fromBehind = false; // came up from behind the player
     car.onIce = false;      // on an ice patch (see CONFIG.ice)
     car.racer = false;      // one of a race's grid (see placeFixed)
@@ -361,8 +361,8 @@ export const Traffic = (() => {
     car.driver = null;      // driven by another module (a police pursuit's cars: see pursuit.js): a function (car, dt) called from update in place of all a driver does...
     car.sirenOn = false;    // ...its siren going: traffic gives way to it as to an ambulance (see sirenFor)
     if (toads) makeToad(car);
-    car.throwTimer = CONFIG.enemyThrowMin + Math.random() * (CONFIG.enemyThrowMax - CONFIG.enemyThrowMin);
-    car.think = Math.random() * 2;
+    car.throwTimer = CONFIG.enemyThrowMin + random() * (CONFIG.enemyThrowMax - CONFIG.enemyThrowMin);
+    car.think = random() * 2;
     car.active = true;
   };
 
@@ -406,7 +406,7 @@ export const Traffic = (() => {
       car.dir = dir;
       car.bound = dir > 0 ? 'north' : 'south';
       car.s = Track.place(p);
-      let r = Math.random() * ordinary.reduce((sum, [, rate]) => sum + rate, 0), kind = 'commuter';
+      let r = random() * ordinary.reduce((sum, [, rate]) => sum + rate, 0), kind = 'commuter';
       for (const [k, rate] of ordinary) if ((r -= rate) < 0) { kind = k; break; }
       outfit(car, kind, side > 0 ? Track.laneCount - 1 : 0);
       Object.assign(car, { fixed: true, parked: true, parkSide: side, viaSide: false, evil: false, defiant: false,
@@ -462,7 +462,7 @@ export const Traffic = (() => {
     // the player's side at s but the gap (the roadblock's own, or one at random each run), lights going
     for (const r of LEVEL.roadblocks || []) {
       const s = Track.place(r), [first, last] = Track.laneRange(1, s), shared = { said: false, waved: false };
-      const gap = r.gap !== undefined ? r.gap : first + Math.floor(Math.random() * (last - first + 1));
+      const gap = r.gap !== undefined ? r.gap : first + Math.floor(random() * (last - first + 1));
       for (let lane = first; lane <= last; lane++) {
         if (lane === gap) continue;
         const car = spareNorth();
@@ -488,9 +488,9 @@ export const Traffic = (() => {
     const kind = L.kind && CONFIG.vehicles[L.kind] ? L.kind : pickKind(Player.s);
     const type = CONFIG.vehicles[kind];
     for (let tries = 0; tries < 4; tries++) {
-      const s0 = Track.spawnAt(Player.s, 150 + Math.random() * 150, dir);
+      const s0 = Track.spawnAt(Player.s, 150 + random() * 150, dir);
       if (Number.isNaN(s0) || !Track.inBounds(s0)) continue;
-      const [first, last] = Track.laneRange(dir, s0), lane = first + Math.floor(Math.random() * (last - first + 1));
+      const [first, last] = Track.laneRange(dir, s0), lane = first + Math.floor(random() * (last - first + 1));
       const spots = [];
       for (let k = 0; k < size; k++) spots.push(s0 - dir * k * (2 * type.hl + C.gap));
       if (!spots.every(s => Track.inBounds(s) && cars.every(o => !o.active || o.junction || o.lane !== lane || Math.abs(o.s - s) > 22))) continue;
@@ -619,7 +619,7 @@ export const Traffic = (() => {
     car.shedWait = between(C.every);
     const load = Collision.obstacles.find(o => o.cargo && (o.gone || o.s < Player.s - 300));
     if (!load) return;
-    Object.assign(load, { gone: false, s: car.s - car.hl - 1, lat: car.lat + (Math.random() - 0.5) * 2 * (car.hw + 0.6), slide: Math.max(0, Math.abs(car.vs) - 4), face: 0, h: 0 });
+    Object.assign(load, { gone: false, s: car.s - car.hl - 1, lat: car.lat + (random() - 0.5) * 2 * (car.hw + 0.6), slide: Math.max(0, Math.abs(car.vs) - 4), face: 0, h: 0 });
     sfxAt('cargoDrop', car.s, 0.7);
   };
 
@@ -641,7 +641,7 @@ export const Traffic = (() => {
     car.colors = who?.colors ? who.colors.map(hex) : null;
     car.markColor = who?.mark ? hex(who.mark) : car.colors ? car.colors[1] : null;
     Object.assign(car, { fixed: true, racer: true, evil, defiant: false, viaSide: false, hesitant: false,
-      vs: 0, baseSpeed: top * between(G.pace), throwTimer: Infinity, paint: Math.floor(Math.random() * 1000), laps: 0,
+      vs: 0, baseSpeed: top * between(G.pace), throwTimer: Infinity, paint: Math.floor(random() * 1000), laps: 0,
       nerve: between(CONFIG.race.nerve), attack: 0, sling: 0, slingLeft: 0, slingTotal: 0 });
     car.emotion = pickEmotion(car.evil);
     car.mood = MOOD_START[car.emotion];
@@ -657,7 +657,7 @@ export const Traffic = (() => {
     if (G.rival) car.maxHealth = car.health = CONFIG.rival.health; // and it has a great deal of health)
     if (G.rival && evil) {
       car.grudge = Infinity; // (an evil rival courier's never wears off: it is out to beat the player)
-      car.throwTimer = CONFIG.rival.firstThrow * (1 + Math.random());
+      car.throwTimer = CONFIG.rival.firstThrow * (1 + random());
     }
     return true;
   };
@@ -832,7 +832,7 @@ export const Traffic = (() => {
         const near = cars.filter(o => o !== car && o.active && o.dir === car.dir && o.kind !== 'police' && o.kind !== 'driveby' && !o.courier && !o.parked && !o.punctured &&
           Math.abs(o.s - car.s) < D.range);
         const pool = Player.active && Player.dir === car.dir ? [Player, Player, ...near] : near; // (the player more often than not)
-        if (pool.length) Object.assign(st, { state: 'stalk', victim: pool[Math.floor(Math.random() * pool.length)], t: 0 });
+        if (pool.length) Object.assign(st, { state: 'stalk', victim: pool[Math.floor(random() * pool.length)], t: 0 });
         else st.wait = between(D.every);
       }
       return target;
@@ -879,7 +879,7 @@ export const Traffic = (() => {
       p.rivalHad = true;
       const b = car.boosts || (car.boosts = { turbo: 0, armour: 0, slow: 0, slowBy: 1 });
       let type = p.type;
-      if (type === 'mystery') type = ['turbo', 'wrench', 'armour'][Math.floor(Math.random() * 3)];
+      if (type === 'mystery') type = ['turbo', 'wrench', 'armour'][Math.floor(random() * 3)];
       if (type === 'turbo') b.turbo = CONFIG.turboTime;
       else if (type === 'wrench') car.health = Math.min(car.maxHealth, car.health + car.maxHealth * CONFIG.wrenchRepair);
       else if (type === 'armour') b.armour = CONFIG.armour.time;
@@ -1078,7 +1078,7 @@ export const Traffic = (() => {
   const seekTow = (car, dt) => {
     const R = CONFIG.race;
     if (car.tow > 0.2 || car.pendingLane !== null || (car.seek = (car.seek || 0) - dt) > 0) return;
-    car.seek = R.seekEvery * (0.6 + Math.random() * 0.8);
+    car.seek = R.seekEvery * (0.6 + random() * 0.8);
     if (racingLine(car) < car.baseSpeed * 1.05) return; // (a bend coming: no time for it)
     let best = null, nearest = Infinity;
     for (const o of cars) {
@@ -1197,7 +1197,7 @@ export const Traffic = (() => {
     if (sirenFor(car)) return; // (no lane changes of its own with a siren behind it)
     if (LEVEL.battle && car.kind === 'tank') return; // (a tank changes lanes only to hunt or dodge: see battle)
     // angry evil drivers pick on whoever is nearest (a good one only fights back, when it is hit)
-    if (car.emotion === 'angry' && car.evil && !car.rival && !LEVEL.battle && Math.random() < CONFIG.rivalryPickChance) {
+    if (car.emotion === 'angry' && car.evil && !car.rival && !LEVEL.battle && random() < CONFIG.rivalryPickChance) {
       let best = null, bestGap = CONFIG.rivalryRange;
       for (const o of cars) {
         if (o === car || !o.active || o.junction || o.dir !== car.dir) continue;
@@ -1213,7 +1213,7 @@ export const Traffic = (() => {
     const inRange = Player.active && car.dir > 0 && ahead > 8 && ahead < CONFIG.attitudeRange;
     const near = Player.active && car.dir > 0 && Math.abs(ahead) < CONFIG.attitudeRange;
     const att = attitude(car), aside = () => {
-      const dir = Math.random() < 0.5 ? 1 : -1;
+      const dir = random() < 0.5 ? 1 : -1;
       tryMove(car, dir) || tryMove(car, -dir);
     };
     if (att === 'turf' && car.hunt > 0) return; // (hunting: see update)
@@ -1223,8 +1223,8 @@ export const Traffic = (() => {
       if (dir && tryMove(car, dir, true)) car.blockedPlayer = true; // (its move at the player: that was its block, whether or not the player is still there)
     } else if ((att === 'friendly' || att === 'wingman') && inRange && playerLane === car.lane) aside();
     else if (att === 'wary' && near && playerLane === car.lane) aside();
-    else if (att === 'sulky' && inRange) { /* it holds its lane */ } else if (!car.racer && Math.random() < CONFIG.laneChangeChance) { // (a racer picks its lane to race: see seekTow, and the overtakes in update)
-      const dir = Math.random() < 0.5 ? 1 : -1;
+    else if (att === 'sulky' && inRange) { /* it holds its lane */ } else if (!car.racer && random() < CONFIG.laneChangeChance) { // (a racer picks its lane to race: see seekTow, and the overtakes in update)
+      const dir = random() < 0.5 ? 1 : -1;
       // (one out to block the player that has had its go, with no grudge, never wanders back into its way)
       const blocker = (att === 'smug' || att === 'rage' || att === 'vigilante') && !mayBlock(car) && ahead > 0 && ahead < CONFIG.attitudeRange + 70;
       if (!(blocker && Math.sign(playerLane - car.lane) === dir)) tryMove(car, dir);
@@ -1240,13 +1240,13 @@ export const Traffic = (() => {
   const startEmergency = (dir) => {
     const car = cars.find(c => !c.active && c.unused);
     if (!car || !Player.active || !Track.isMain(Player.s)) return null;
-    const s = Player.s + (dir > 0 ? -E.behind : CONFIG.spawnMin + Math.random() * (CONFIG.spawnMax - CONFIG.spawnMin));
+    const s = Player.s + (dir > 0 ? -E.behind : CONFIG.spawnMin + random() * (CONFIG.spawnMax - CONFIG.spawnMin));
     if (!Track.inBounds(s)) return null;
     car.dir = dir;
     car.bound = dir > 0 ? 'north' : 'south';
     car.s = s;
     const [first, last] = Track.laneRange(dir, s), mine = Track.nearestLane(Player.lat, Player.s);
-    const lane = dir > 0 && mine >= first && mine <= last ? mine : first + Math.floor(Math.random() * (last - first + 1));
+    const lane = dir > 0 && mine >= first && mine <= last ? mine : first + Math.floor(random() * (last - first + 1));
     outfit(car, 'ambulance', Track.openLane(lane, s));
     if (car.toad) { // (set off in TOAD RAGE: an ambulance stays an ambulance)
       Object.assign(car, car.toad);
@@ -1267,16 +1267,16 @@ export const Traffic = (() => {
     const spare = cars.filter(c => !c.active && c.unused);
     if (spare.length < P.cars + 2 || !Player.active || !Track.isMain(Player.s) || !mix().length) return false;
     // its cars, end to end from the hearse at s0, up the road behind it (the way it has come)
-    const kinds = ['hearse', ...Array.from({ length: P.cars }, () => P.kinds[Math.floor(Math.random() * P.kinds.length)])];
+    const kinds = ['hearse', ...Array.from({ length: P.cars }, () => P.kinds[Math.floor(random() * P.kinds.length)])];
     const spots = (s0) => {
       const at = [s0];
       for (let k = 1; k < kinds.length; k++) at.push(at[k - 1] - dir * (CONFIG.vehicles[kinds[k - 1]].hl + CONFIG.vehicles[kinds[k]].hl + P.gap));
       return at;
     };
     for (let tries = 0; tries < 4; tries++) {
-      const s0 = Player.s + CONFIG.spawnMin + Math.random() * (CONFIG.spawnMax - CONFIG.spawnMin);
+      const s0 = Player.s + CONFIG.spawnMin + random() * (CONFIG.spawnMax - CONFIG.spawnMin);
       const [first, last] = Track.laneRange(dir, s0);
-      const lane = Track.openLane(first + Math.floor(Math.random() * (last - first + 1)), s0);
+      const lane = Track.openLane(first + Math.floor(random() * (last - first + 1)), s0);
       const at = spots(s0);
       // (room for all of it, clear of the traffic in that lane)
       if (!at.every(s => Track.inBounds(s) && cars.every(o => !o.active || o.junction || o.lane !== lane || Math.abs(o.s - s) > 20))) continue;
@@ -1374,10 +1374,10 @@ export const Traffic = (() => {
       // (out to get it, a hunter: only dodge of the time, decided once; anything else, always)
       if (car.dodging !== threat) {
         car.dodging = threat;
-        car.dodges = !beats(threat, car) || Math.random() < B.dodge;
+        car.dodges = !beats(threat, car) || random() < B.dodge;
       }
       if (car.dodges) {
-        for (const d of Math.random() < 0.5 ? [1, -1] : [-1, 1]) {
+        for (const d of random() < 0.5 ? [1, -1] : [-1, 1]) {
           if (!laneFree(car, car.lane + d, foes)) continue;
           car.lane += d;
           car.pendingLane = null;
@@ -1575,11 +1575,11 @@ export const Traffic = (() => {
         return v.s > car.s - J.clearBehind - Math.max(0, gain) && v.s < car.s + J.clearAhead + Math.max(0, -gain);
       };
       const across = cars.some(c => c.active && !c.junction && c.dir > 0 && beside(c)) || (Player.active && beside(Player));
-      if (oncoming || across || Math.random() >= jn.forward) return false;
+      if (oncoming || across || random() >= jn.forward) return false;
       path = [{ start, dir: jn.f0, length: jn.radius + jn.arms[0].length }];
     } else {
       const [, last] = Track.laneRange(1, car.s);
-      if (Track.openLane(car.lane, car.s) !== last || Math.random() >= jn.turnOff) return false;
+      if (Track.openLane(car.lane, car.s) !== last || random() >= jn.turnOff) return false;
       // a quarter turn to its side, into that arm's lane going away (as far out as it is now), then on down it
       const radius = Math.max(3, jn.half - Math.abs(car.lat)), arm = jn.arms[0];
       const turn = { start, dir: jn.f0, radius, turn: 1, length: radius * Math.PI / 2 };
@@ -1655,18 +1655,18 @@ export const Traffic = (() => {
     // now and then an emergency vehicle, either way (one at a time; if there is no room for it
     // just now, it tries again a second later)
     if (LEVEL.emergencies && !cars.some(c => c.active && c.emergency) && (nextEmergency -= dt) <= 0) {
-      const dir = Track.flow === 'north' ? 1 : Track.flow === 'south' ? -1 : Math.random() < 0.5 ? 1 : -1;
+      const dir = Track.flow === 'north' ? 1 : Track.flow === 'south' ? -1 : random() < 0.5 ? 1 : -1;
       nextEmergency = startEmergency(dir) ? between(LEVEL.emergencies.every) : 1;
     }
     // now and then a funeral procession, either way (one at a time; with no room for it just now,
     // it tries again a little later)
     if (LEVEL.processions && !cars.some(c => c.active && c.procession) && (nextProcession -= dt) <= 0) {
-      const dir = Track.flow === 'north' ? 1 : Track.flow === 'south' ? -1 : Math.random() < 0.6 ? 1 : -1;
+      const dir = Track.flow === 'north' ? 1 : Track.flow === 'south' ? -1 : random() < 0.6 ? 1 : -1;
       nextProcession = startProcession(dir) ? between(LEVEL.processions.every) : 2;
     }
     // now and then a convoy, either way (one at a time; with no room for it just now, it tries again a little later)
     if (LEVEL.convoys && !cars.some(c => c.active && c.convoy) && (nextConvoy -= dt) <= 0) {
-      const dir = Track.flow === 'north' ? 1 : Track.flow === 'south' ? -1 : Math.random() < 0.65 ? 1 : -1;
+      const dir = Track.flow === 'north' ? 1 : Track.flow === 'south' ? -1 : random() < 0.65 ? 1 : -1;
       nextConvoy = startConvoy(dir) ? between(LEVEL.convoys.every) : 2;
     }
     for (const w of wrecks) w.t -= dt; // (a wreck is worth a look for a while)
@@ -1696,11 +1696,11 @@ export const Traffic = (() => {
         // meets on it, so only its density's share do; the rest wait a while, then try again)
         const quiet = (LEVEL.quietZones || []).find(z => Player.s > z.from - CONFIG.spawnMax && Player.s < z.to);
         if (quiet && (car.quietWait = (car.quietWait || 0) - dt) > 0) continue;
-        if (quiet && Math.random() >= quiet.density) { car.quietWait = CONFIG.quietRetry; continue; }
+        if (quiet && random() >= quiet.density) { car.quietWait = CONFIG.quietRetry; continue; }
         if (!car.fixed && !car.unused && mix().length) {
           // (the Battlefield's green army: only ever from behind the player, coming by; with no room there yet, later)
           if (LEVEL.battle && car.dir > 0) { spawnBehind(car); continue; }
-          const behind = hesitation() && car.dir === Player.dir && Math.random() < H.behindChance && hesitantAhead();
+          const behind = hesitation() && car.dir === Player.dir && random() < H.behindChance && hesitantAhead();
           if (!(behind && spawnBehind(car))) spawn(car, CONFIG.spawnMin, CONFIG.spawnMax);
         }
         continue;
@@ -1723,7 +1723,7 @@ export const Traffic = (() => {
       const quiet = (LEVEL.quietZones || []).find(z => car.s >= z.from && car.s < z.to);
       if (quiet && car.quietRoll !== quiet && !car.fixed && !car.racer && !car.emergency && !car.procession && Math.abs(ahead) > CONFIG.quietCull) {
         car.quietRoll = quiet;
-        if (Math.random() >= quiet.density) gone = true;
+        if (random() >= quiet.density) gone = true;
       }
       if ((gone && !car.racer && !(car.hunt > 0) && !car.driver) || !Track.inBounds(car.s)) { // (a racer races on, wherever it is; so does a hunter; one driven from elsewhere is taken off by whatever drives it)
         car.active = false;
@@ -1804,7 +1804,7 @@ export const Traffic = (() => {
       // (not one that is parked, nor an ambulance)
       const icy = !!Track.icy(car.s, car.lat);
       if (icy && !car.onIce && !car.parked && !car.emergency && !(car.spin > 0) && !CONFIG.vehicles[car.kind].noSpin &&
-          Math.random() < CONFIG.ice.spinPerSpeed * Math.abs(car.vs) * (CONFIG.vehicles[car.kind].spin ?? 1)) {
+          random() < CONFIG.ice.spinPerSpeed * Math.abs(car.vs) * (CONFIG.vehicles[car.kind].spin ?? 1)) {
         spinOut(car);
         car.spinIce = true; // (it skidded: it isn't damaged, so it doesn't smoke for it)
       }
@@ -1952,7 +1952,7 @@ export const Traffic = (() => {
           const A = CONFIG.attitude;
           car.throwTimer -= dt * (att === 'turf' ? A.turfThrowRate : att === 'rage' ? A.rageThrowRate : 1);
           if (car.throwTimer <= 0) {
-            car.throwTimer = CONFIG.enemyThrowMin + Math.random() * (CONFIG.enemyThrowMax - CONFIG.enemyThrowMin);
+            car.throwTimer = CONFIG.enemyThrowMin + random() * (CONFIG.enemyThrowMax - CONFIG.enemyThrowMin);
             Packages.throwAtGround(car, att === 'wingman' ? 'escort' : null);
           }
         }
@@ -2046,7 +2046,7 @@ export const Traffic = (() => {
 
         car.think -= dt;
         if (car.think <= 0 && !car.wrongWay) { // (a wrong-way driver makes no plans: it keeps on down its lane)
-          car.think = 1 + Math.random() * 2;
+          car.think = 1 + random() * 2;
           think(car);
         }
         if (LEVEL.battle) battle(car, dt); // (at war: see battle)
@@ -2325,7 +2325,7 @@ export const Traffic = (() => {
         const committed = car.passing && car.attack > 0 && (blocker === car.passing || (blocker?.isPlayer && car.passing === Player));
         if ((car.racer || car.escaping) && blocker && !rival && !committed && (car.overtake = (car.overtake || 0) - dt) <= 0) {
           car.overtake = 0.6;
-          for (const d of Math.random() < 0.5 ? [1, -1] : [-1, 1]) {
+          for (const d of random() < 0.5 ? [1, -1] : [-1, 1]) {
             const lane = car.lane + d, free = blocker.isPlayer ? canMove(car, lane, true) && roomBy(car, lane) : canMove(car, lane, false);
             if (!free || !worthPassing(car, blocker, lane)) continue;
             car.lane += d;
@@ -2436,7 +2436,7 @@ export const Traffic = (() => {
 
       // an oncoming car passing close by may lean on its horn as it goes
       if (car.dir < 0 && !noHorn(car) && Player.active && car.s > Player.s && car.s + car.vs * dt <= Player.s &&
-          Math.abs(car.lat - Player.lat) < CONFIG.passByRange && Math.random() < CONFIG.passByChance) sfxAt('passBy', car.s);
+          Math.abs(car.lat - Player.lat) < CONFIG.passByRange && random() < CONFIG.passByChance) sfxAt('passBy', car.s);
       // understeer (a level with "understeer"): in a bend, what it asks of the tyres beyond the ice's
       // grip slides it to the outside, the more so the faster and heavier it is (as the player on ice)
       if (LEVEL.understeer && !(car.spin > 0)) {
