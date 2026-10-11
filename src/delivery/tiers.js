@@ -7,7 +7,7 @@
 // time on that side (Progress.bestTime), so an old save's best times are its medals, and no save is lost.
 //   - a tier opens when the one before is cleared (its last level delivered on either side). Tier 1 is open.
 //     Blue 1 is tier 6: it opens when level 5 of the five-star tier is beaten.
-//   - inside a tier: levels 1 and 2 are open with it; 3 needs 2 medals, in this tier; 4 needs 4 medals; 5 needs level 4 beaten (a level further on needs the one before it)
+//   - inside a tier: levels 1 and 2 are open with it; 3 needs 2 medals, in this tier; 4 needs 3 medals; 5 needs level 4 beaten (a level further on needs the one before it)
 //   - a medal not yet earned can only be played in a car of EXACTLY that tier (the same stars and colour of
 //     stars; none of the cars outside the tiers). Earned, the level can be replayed on that side in any car
 //   - a level the owner has listed "outside" the tiers has no medal rule and no car rule. They open one after
@@ -138,7 +138,7 @@ export const Tiers = {
     const list = TIERS[place.index];
     if (place.pos <= 2) return null;
     if (place.pos === 3) return { medals: 2 };
-    if (place.pos === 4) return { medals: 4 };
+    if (place.pos === 4) return { medals: 3 };
     return { level: list[place.pos - 2] }; // (the one before it)
   },
   isOpen(level) {
@@ -156,6 +156,15 @@ export const Tiers = {
     if (k < 0) return true; // (a level neither listed nor in a tier: the check says so; it is not locked away)
     if (k === 0) return TIERS.length === 0 || this.tierCleared(TIER_NUMBERS[TIER_NUMBERS.length - 1]);
     return this.beaten(CHAIN[k - 1]);
+  },
+  // a level played again on a side whose medal is already earned: only its tip is left to win there (the start button
+  // says so). (evil is the side picked on the menu: a level with no side to choose is its one medal, whatever it says)
+  replayed(level, evil) { return this.on() && !!level && !isRace(level) && this.medalEarned(level, !!evil && !oneSided(level)); },
+  // ...and the player is asked first while level 4 of its tier is not open yet: a medal still to earn elsewhere in
+  // the tier is what opens it (the owner, 11-Oct). Not on a level outside the tiers, nor once level 4 is open
+  askReplay(level, evil) {
+    const place = placeOf.get(level), fourth = place && TIERS[place.index][3];
+    return !!fourth && this.replayed(level, evil) && !this.isOpen(fourth);
   },
   // why a level is locked, in words for the menu (a tier is the token {tier:n}: star glyphs; and no word "ribbon")
   lockedBecause(level) {

@@ -69,7 +69,7 @@ const params = new URLSearchParams(location.search);
 const startScreen = document.getElementById('startScreen');
 const bank = document.getElementById('bank');
 const stage = document.getElementById('stage'), strip = document.getElementById('levels'), groupBox = document.getElementById('levelGroups');
-const shop = document.getElementById('shop'), startBtn = document.getElementById('startBtn');
+const shop = document.getElementById('shop'), startBtn = document.getElementById('startBtn'), startNote = startBtn.querySelector('.start-note');
 const sideBox = document.getElementById('sideBtn'), sideNote = document.getElementById('sideNote');
 
 // ---- the tabs and their groups ---------------------------------------------------------------------------
@@ -424,6 +424,8 @@ export const draw = () => {
   const noCar = Tiers.on() && CAR.silhouette; // (the level's tier rule allows only cars the player has none of)
   startBtn.disabled = !open || noCar;
   startBtn.firstElementChild.textContent = !open ? 'Locked' : noCar ? 'No car' : tab === 'race' ? 'Race' : 'Start';
+  // (the side's medal already earned: a replay wins only the tip. game.js asks first while the tier's level 4 is shut)
+  startNote.classList.toggle('hidden', !(open && !noCar && Tiers.replayed(cursor, evil)));
 };
 
 // ---- the controls ----------------------------------------------------------------------------------------

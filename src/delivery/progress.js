@@ -257,10 +257,15 @@ export const Progress = {
   },
   // a finished game, all at once: every level open and delivered for its full tip, every
   // car in the garage bought, and a full bank (the "Unlock everything" button on the menu)
-  // (best times are only ever earned)
+  // (and a medal on every side of every delivery level: a best time of 0:00 to spare where it has none, so no
+  // real best time is lost; a level played as Good only gets its Good one. A 6-star car's par is never met by it)
   complete({ levels, cars, money }) {
     this.data.unlocked = Math.max(this.data.unlocked, levels);
     this.data.tierBase = Math.max(this.data.tierBase || 0, levels); // (the tiers, tiers.js: all open too)
+    for (const level of LEVELS) {
+      if (isRace(level)) continue;
+      for (const side of level.battle || level.alwaysGood ? ['good'] : ['good', 'evil']) this.data.bestTime[side][level.id] ??= 0;
+    }
     for (const id of cars) if (!this.data.cars.includes(id)) this.data.cars.push(id);
     this.data.money = Math.max(this.data.money, money);
     this.save();
