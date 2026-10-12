@@ -79,9 +79,9 @@ const GROUPS = {
     files: [/water\.js|amphib|slipway|harbour|flood|ford|fjord/],
   },
   render: {
-    about: 'Drawing, without a browser: the shared model views (a stand-in renderer), dents',
-    seconds: 10,
-    tests: [t('.modelviews-check.mjs'), t('.dents-check.mjs')],
+    about: 'Drawing, without a browser: the shared model views (a stand-in renderer), dents, the car keys (the three models, the key card)',
+    seconds: 15,
+    tests: [t('.modelviews-check.mjs'), t('.dents-check.mjs'), t('.keys-check.mjs')],
     files: [/src\/delivery\/render\//, /\.css$/],
   },
   replay: {

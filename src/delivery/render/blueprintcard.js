@@ -3,7 +3,7 @@
 // card's RARITY colour (Common grey, Uncommon green, Epic purple, Legendary gold, Bespoke the rainbow), the car drawn
 // large in one of its three poses (carposes.js, carstill.js: the live-rendered still, never the old carshots photos);
 // the car's stars at the lower right of the picture (clear of the tab at any count); a black tab at the top right,
-// BLUEPRINT (or KEY for a Bespoke key card), with a green xN (card.n: how many of that card; every card is its own
+// BLUEPRINT (or CAR KEY for a Bespoke key card, whose picture is the KEY: keycard.js), with a green xN (card.n: how many of that card; every card is its own
 // today, so x1: packs.js revealCards); a black square at the lower left of the picture with the RARITY LETTER (C, U, E,
 // L, B: the card's rarity, packs.json, the same five the Shop shows); the name below in two lines: the small line what it
 // is based on (an idea/filler car's `basedOn`) or what kind of car it is, the big line its name in capitals. A NEW badge
@@ -14,6 +14,7 @@
 import '../blueprintcard.css';
 import { stars, starColour } from '../cars.js';
 import { Ecu } from '../ecu.js';
+import { keyPicture } from './keycard.js'; // (a KEY card's picture: the car's key, not the car)
 
 const make = (tag, className, ...inside) => {
   const node = document.createElement(tag);
@@ -42,10 +43,12 @@ export const blueprintCard = (car, card, { compact = false, chance = null, marks
   const pic = make('div', 'bp-pic');
   const st = car.tier ? make('span', 'bp-stars', stars(car)) : null; // (an event car has no stars: its small line says so)
   st?.style.setProperty('color', starColour(car));
-  const tab = make('span', 'bp-tab', make('b', '', card.key ? 'KEY' : 'BLUEPRINT'), card.n ? make('i', 'bp-x', '×' + card.n) : null);
+  const tab = make('span', 'bp-tab', make('b', '', card.key ? 'CAR KEY' : 'BLUEPRINT'), card.n ? make('i', 'bp-x', '×' + card.n) : null);
   const letter = make('span', 'bp-letter', RARITY_LETTER[rarity] || '?');
   letter.title = RARITY_WORD[rarity] || rarity;
-  const art = make('div', 'bp-art', pic, st, tab, letter,
+  // a KEY card shows the car's KEY (render/keycard.js draws it, lazily, by itself); the `pic` handed back is then a
+  // stand-in kept out of the page, so the caller's car still (carstill.js) is never drawn on a key card
+  const art = make('div', 'bp-art', card.key ? keyPicture(car, rarity) : pic, st, tab, letter,
     card.isNew && !card.key ? make('span', 'bp-new', 'NEW') : null,
     card.featured ? make('span', 'bp-featured', 'Featured') : null);
   const name = make('div', 'bp-name', make('small', '', makerLine(car, card.key)), make('strong', '', car.name));
