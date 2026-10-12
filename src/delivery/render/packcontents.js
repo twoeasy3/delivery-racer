@@ -78,7 +78,7 @@ const featuredRow = (f, base = 1) => {
   const amount = has !== null ? 'x' + (Array.isArray(has) ? has.join('-') : has) : '';
   const chips = [amount ? chip('amt', amount) : null, chip('wt', 'Weight ' + wt(f.weight))].filter(Boolean);
   const out = !f.inPlay;
-  const note = out ? 'out of the pool' : 'last slot ' + percent(f.lastSlot) + ' · ' + percent(f.chance) + ' a pack';
+  const note = out ? 'out of the pool' : 'last slot ' + percent(f.lastSlot); // (the big figure is its chance a pack)
   return cardRow(f.car, f.rarity, f.chance, { key: f.key, featured: true, chips, note, exhausted: f.exhausted, inPool: !out,
     n: amount ? (Array.isArray(has) ? has[1] : has) : 0 });
 };
@@ -105,7 +105,7 @@ export const openContents = (host, { kind, title, featured = [] }) => {
     const ratio = c.featured.map((f, i) => entryName(f) + ' ' + wt(c.weights[i])).join(' : ');
     const out = c.shifted.map(f => entryName(f) + ' (' + (f.exhausted === 'owned' ? 'Key obtained' : 'Car Maxed') + ')');
     sections.push(make('section', 'pc-group featured',
-      make('h3', '', make('span', 'shop-chip r-bespoke', 'Featured'), make('small', '', 'the last card is one, picked by weight')),
+      make('h3', '', make('span', 'shop-chip r-bespoke', 'Featured'), make('small', '', 'the last card is one, picked by weight · the big figure: its chance a pack')),
       make('p', 'pc-weights', make('b', '', 'Featured weights: '), ratio),
       out.length ? make('p', 'pc-shift', make('b', '', 'Weights shifted: '), out.join(', ') + ' out of the pool') : null,
       c.reverted ? make('p', 'pc-shift', make('b', '', 'Every featured car is maxed: '), 'they still drop as duplicates, at their declared weights') : null,

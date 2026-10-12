@@ -567,6 +567,28 @@ try {
     P.debugDouble(new URLSearchParams(''));
     check(Math.abs(dd.share - 0.5) < 0.02 && dd.ns.join() === '2,4' && Packs.doubleOverride === null, 'the debug &double=0.5&base=2: half the cards doubled, 2 or 4 (' + dd.ns + '); cleared after');
   }
+  // ---- the exhausted state is a SNAPSHOT taken once when a pack is opened (the owner, 12-Oct): a card of the pack
+  // that maxes the featured car does not take it out of the pack's last slot (the duplicate is kept as the count) ----
+  {
+    let asked = 0;
+    const later = () => asked++ > 0; // (not maxed when first asked; maxed from then on, as if the pack's own cards had maxed it)
+    const one = draw('special', { random: dice(41), featured: ['jetcar'], maxed: later, owned: () => false });
+    check(asked === 1 && one.at(-1).featured && one.at(-1).car === 'jetcar', 'draw() reads the maxed state once, before any card (asked ' + asked + ' time): the last slot keeps the featured car');
+    const jet = by('jetcar'), full = Ecu.max(jet) * Ecu.x(jet);
+    Packs.featuredOverride = P.featuredEntries(['jetcar']);
+    let found = null;
+    try {
+      for (let s = 0; s < 3000 && !found; s++) {
+        Progress.reset(); Progress.noSave = true;
+        (Progress.data.blueprints ||= {}).jetcar = full - 1; // (one short of its max: the first jetcar card maxes it)
+        const r = Packs.open('special', { free: true, random: dice(42e6 + s) });
+        const jets = r.cards.filter(c => c.featured && c.car === 'jetcar');
+        if (jets.length >= 2) found = { r, jets, given: Ecu.blueprints('jetcar') - (full - 1), sum: r.cards.filter(c => c.car === 'jetcar').reduce((n, c) => n + c.n, 0) };
+      }
+    } finally { Packs.featuredOverride = null; Progress.reset(); Progress.noSave = true; }
+    check(!!found && found.r.cards.at(-1).car === 'jetcar' && found.given === found.sum && P.maxedNow(jet) === false,
+      'a pack whose earlier featured slot maxes the car still has it in the last slot (' + (found ? found.jets.length + ' jetcar cards, ' + found.given + ' blueprints given = the slots\' n' : 'no such pack found') + ')');
+  }
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error.stack || error));

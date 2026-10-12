@@ -301,7 +301,9 @@ const baseWords = (spec, rarity, over) => { const v = over ?? spec?.amounts?.[ra
 // A pack drawn: its cards, nothing given. { rarity, car (its id), key (a Bespoke key card), featured, upgraded }.
 // random: the dice (0 <= n < 1); featured: the special pack's featured list (entries, car ids or car objects:
 // featuredEntries); owned / maxed: the save's (a check hands its own). The featured mechanic deals from the entries in
-// play (featuredLive: the exhausted ones out, the weights shifted); a key is dealt at most once a pack
+// play (featuredLive: the exhausted ones out, the weights shifted), a SNAPSHOT of the save read ONCE here, before any
+// card is dealt or given (the owner, 12-Oct: a card of this pack that maxes the car does not take it out of the last
+// slot; the duplicate is kept as the count); a key is dealt at most once a pack, and never one owned at the start
 // double / base: the doubling chance and the base amount put over the kind's (the debug &double= / &base=: Packs.doubleOverride,
 // baseOverride, for a visit)
 export const draw = (kind, { random = Math.random, cars, owned, maxed, featured = [], spec = packData.kinds[kind], double = Packs.doubleOverride ?? undefined, base = Packs.baseOverride ?? undefined } = {}) => {
