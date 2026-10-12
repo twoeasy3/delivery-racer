@@ -88,6 +88,13 @@ export const poolOf = (spec, { cars, owned } = {}) => {
 // a featured card's rarity: its car's own, else packs.json featuredRarity; never below Epic (it is the pack's Epic-or-better)
 const featuredRarity = (car) => higher(car.rarity && rank(car.rarity) >= 0 ? car.rarity : packData.featuredRarity || 'legendary', 'epic');
 
+// how many of a card a slot gives (the owner, 12-Oct: "don't hardcode it: packs that drop other amounts per slot"): a kind's `amounts` by
+// rarity, else its `amount`, else 1; a number, or [min, max] (a whole number in it by the dice). A key card is one key, always
+export const amountFor = (spec, rarity, random = Math.random) => {
+  const v = spec?.amounts?.[rarity] ?? spec?.amount ?? 1;
+  if (Array.isArray(v)) { const lo = Math.max(1, Math.floor(v[0] ?? 1)), hi = Math.max(lo, Math.floor(v[1] ?? lo)); return lo + Math.floor(random() * (hi - lo + 1)); }
+  return Math.max(1, Math.floor(Number(v) || 1));
+};
 // A pack drawn: its cards, nothing given. { rarity, car (its id), key (a Bespoke key card), featured, upgraded }.
 // random: the dice (0 <= n < 1); featured: the special pack's featured cars (car objects)
 export const draw = (kind, { random = Math.random, cars, owned, featured = [], spec = packData.kinds[kind] } = {}) => {
@@ -140,7 +147,7 @@ export const draw = (kind, { random = Math.random, cars, owned, featured = [], s
       slots[i] = { ...card(above || slots[i].rarity), upgraded: true };
     }
   }
-  return slots;
+  return slots.map(c => ({ ...c, n: c.key ? 1 : amountFor(spec, c.rarity, random) })); // (how many of it: the kind's amount, packs.json)
 };
 
 // What a pack can give, every card of it (the Shop's "What's inside" sheet, render/packcontents.js): read from the same
@@ -194,7 +201,7 @@ export const careerLevels = () => {
 // ---- a pack's cards as the reveal shows them (render/packs.js) ----
 // every card its own (the owner, 12-Oct: identical cards are NOT stacked; each shows x1 on its tab for now): { ...the
 // card, n: 1 }. n is the count the card's xN badge shows, kept so stacking can come back later
-export const revealCards = (cards) => (cards || []).map(c => ({ ...c, n: 1, featured: !!c.featured }));
+export const revealCards = (cards) => (cards || []).map(c => ({ ...c, n: c.n ?? 1, featured: !!c.featured })); // (n: the slot's amount, packs.json: 1 today)
 // the order they are turned in: as drawn, but the BEST card last (the owner, 12-Oct: "the featured card at the end of the
 // pack always, unless upgraded"): the highest rarity goes last; among equals a featured card; among those the later. So
 // a special pack's featured card (its guaranteed last slot) is last unless a slot upgraded to a HIGHER rarity than it
@@ -221,7 +228,7 @@ export const revealProgress = (cards, { owned = (id) => Progress.owns(id) } = {}
   const start = {}, keysNew = new Set();
   for (const c of cards || []) {
     if (c.key) { if (c.isNew) keysNew.add(c.car); continue; }
-    start[c.car] = (start[c.car] ?? Ecu.blueprints(c.car) ?? 0) - 1;
+    start[c.car] = (start[c.car] ?? Ecu.blueprints(c.car) ?? 0) - (c.n ?? 1);
   }
   const bp = { ...start }, hasKey = {};
   const at = (car, n, key) => {
@@ -238,7 +245,7 @@ export const revealProgress = (cards, { owned = (id) => Progress.owns(id) } = {}
     const n0 = bp[id] ?? Ecu.blueprints(id);
     const before = at(car, n0, key0);
     let n1 = n0, key1 = key0;
-    if (c.key) key1 = true; else n1 = n0 + 1;
+    if (c.key) key1 = true; else n1 = n0 + (c.n ?? 1);
     bp[id] = n1; hasKey[id] = key1;
     const after = at(car, n1, key1);
     return { before, after, unlocks: !before.unlocked && after.unlocked, ecuUp: after.ecu > before.ecu, maxed: after.ecu >= after.max };
@@ -308,7 +315,7 @@ export const Packs = {
       const before = Ecu.blueprints(c.car) || 0;
       c.maxed = !!car && Ecu.max(car) > 0 && Ecu.level(car) >= Ecu.max(car); // (already at its top: kept as a count, no further effect)
       c.isNew = before === 0 && !Progress.owns(c.car);
-      Ecu.addBlueprints(c.car, 1);
+      Ecu.addBlueprints(c.car, c.n ?? 1); // (the slot's amount)
       c.count = Ecu.blueprints(c.car);
     }
     const log = (Progress.data.packLog ||= []);

@@ -140,3 +140,15 @@
 @media (prefers-reduced-motion: reduce) {
   .bp-card .bp-art, .bp-card .bp-art::before, .bp-card .bp-art::after, .bp-card.kind-key.r-legendary, .bp-card.r-bespoke { animation: none !important; }
 }
+
+/* the count (the owner, 12-Oct: larger, and the slot's own amount): a round green badge on the picture's right edge, just under the tab
+   (the tab keeps the corner, the stars and the rarity word the lower edge), big enough to read at a glance */
+.bp-amount { position: absolute; z-index: 4; top: 12cqw; right: 3cqw; display: flex; align-items: baseline; justify-content: center; gap: .3cqw;
+  min-width: 17cqw; height: 17cqw; box-sizing: border-box; padding: 0 2.4cqw; border-radius: 99cqw; line-height: 17cqw;
+  background: linear-gradient(180deg, #43e57a, #1fb552); color: #04210f; box-shadow: 0 0 0 1cqw #0d0f14, 0 2px 6px rgba(0, 0, 0, .5);
+  font: italic 900 max(13px, 10.5cqw)/1 var(--display); letter-spacing: .01em; align-items: center; }
+.bp-amount small { font-size: .6em; font-weight: 800; }
+/* effects BEHIND the car picture / the car key (the owner, 12-Oct): the sweep sits under it, the glints and the floor shade too */
+.bp-card.r-epic .bp-art::before, .bp-card.r-legendary .bp-art::before, .bp-card.r-bespoke .bp-art::before { z-index: 0; }
+.bp-card .bp-art::after { z-index: 0; }
+.bp-card .bp-pic { z-index: 1; }
