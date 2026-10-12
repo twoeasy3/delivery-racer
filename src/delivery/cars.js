@@ -380,7 +380,7 @@ export const EVENT_CARS = [
     const base = IDEA_CARS.find(car => car.id === 'centreseat');
     return { ...base, id: 'silvercomet', name: 'Silver Comet', basedOn: undefined, placeholder: false, idea: true, event: true, price: 0,
       color: 0xc9d2dc, evilColor: 0x1d2433, maxSpeed: 46, accel: 19, health: 150, perk: 'The Comet Hunt\'s prize',
-      bespoke: true, rarity: 'legendary' }; // (the first BESPOKE key car: see BESPOKE_CARS below)
+      bespoke: true, rarity: 'legendary', keyModel: 'fob' }; // (the first BESPOKE key car: see BESPOKE_CARS below; keyModel: its key's style, always the same one)
   })(),
 ];
 // ---- the BESPOKE key cars (the owner, 12-Oct): one-of-a-kind showpieces --------------------------------------------
@@ -393,7 +393,11 @@ export const EVENT_CARS = [
 // lent by Car Swap, never dealt by "Unlock everything"; no price, no tier. Their only source is a Bespoke key card (no
 // event gives them). Figures: nudged from the idea's placeholders into the top of the range (`placeholder: true`: not
 // balanced), each a different way to drive, and are their MAXED ECU (ecus.json has the lower ones):
-const bespoke = (car) => ({ ...car, bespoke: true, rarity: 'legendary', placeholder: true, price: 0 });
+// each has ONE key style for good (the owner, 12-Oct: the key is always the same for a car, never drifting like the blueprint poses):
+// the three of render/keyModels.js are all in use. Modern flagship: fob (the Silver Comet); the old coachbuilt and the
+// 1930s: classic; the space-age and the solar: smart
+const KEY_STYLE = { rocketfin: 'smart', swancar: 'classic', solarracer: 'smart', moonrover: 'smart', monowheel: 'classic' };
+const bespoke = (car) => ({ ...car, bespoke: true, rarity: 'legendary', placeholder: true, price: 0, keyModel: KEY_STYLE[car.id] || 'fob' });
 export const BESPOKE_CARS = [
   // the all-rounder: quick, solid, a grand tourer
   bespoke({ id: 'rocketfin', name: 'Rocket Fin Coupe', basedOn: 'Lincoln Futura (1955 concept car)', model: 'rocketfin', color: 0xa8e0e4, evilColor: 0x4a1a5e,
