@@ -195,6 +195,31 @@
 .shop-feature-name { position: absolute; left: 0; right: 12px; bottom: 6px; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 2px 7px; text-align: right; }
 .shop-feature-name b { font: italic 800 18px/1 var(--display); font-stretch: condensed; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0, 0, 0, .7); }
 .shop-feature-name small { font-size: 11px; color: #ff7fd0; letter-spacing: .1em; }
+.shop-hero-cars[hidden] { display: none; }
+
+/* ---- a special pack's BANNER (render/packbanner.js): its featured cars in one scene over a warm, blurred backdrop
+   (after an Asphalt promo: a low sun in haze, soft blocks of buildings, the road), their names in pink labels ---- */
+.pack-banner { position: relative; overflow: hidden; isolation: isolate; background: #4a3f40; } /* (its backdrop: packbanner.js BANNER.backdrop, set on it) */
+.pack-banner-town { position: absolute; inset: -10px; pointer-events: none; z-index: 0; }
+.pack-banner-vignette { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.pack-banner-cars { position: absolute; inset: 0; z-index: 1; background: center / 100% 100% no-repeat; }
+.pack-banner-names { position: absolute; z-index: 3; left: 12px; bottom: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.pack-banner-names b { padding: 2px 8px 1px; background: #ff2e7e; color: #fff; font: italic 800 14px/1.05 var(--display); font-stretch: condensed;
+  text-transform: uppercase; letter-spacing: .02em; box-shadow: 0 2px 8px rgba(0, 0, 0, .35); white-space: nowrap; }
+.pack-banner-names b:first-child { font-size: 18px; }
+.shop-hero-art.banner { padding: 0; display: block; background: none; overflow: hidden; border-radius: inherit; }
+.shop-hero-art.banner .pack-banner { position: absolute; inset: 0; }
+.shop-tile.hero .shop-hero-art.banner .shop-packs { position: absolute; z-index: 4; left: 14px; bottom: 12px; width: 92px; height: 128px; transform: rotate(-6deg) scale(.82); transform-origin: bottom left; }
+.shop-tile.hero:hover .shop-hero-art.banner .shop-packs { transform: rotate(-6deg) scale(.86); }
+.shop-hero-art.banner .pack-banner-names { left: 104px; }
+@media (max-width: 699px) { /* (a phone: a taller banner, the pack small at its top right, the names smaller) */
+  .shop-tile.hero .shop-hero-art.banner { height: 250px; }
+  .shop-tile.hero .shop-hero-art.banner .shop-packs { left: auto; right: 10px; top: 10px; bottom: auto; width: 92px; height: 128px; transform: rotate(6deg) scale(.56); transform-origin: top right; }
+  .shop-hero-art.banner .pack-banner-names, .pack-banner-names { left: 10px; bottom: 10px; gap: 3px; }
+  .pack-banner-names b { font-size: 11px; padding: 2px 6px 1px; }
+  .pack-banner-names b:first-child { font-size: 14px; }
+}
+.pack-banner.pc-banner { height: clamp(180px, 30vw, 240px); margin: 0 0 10px; border-radius: 10px; }
 .hero .shop-tile-info h3 { font-size: 24px; }
 .hero .shop-tile-info p { font-size: 13px; }
 .shop-ends { font-size: 12px; color: var(--ink-dim); }
