@@ -170,6 +170,9 @@ export const IDEA_CARS = [
   { id: 'coach', name: 'Highway Coach', basedOn: 'GM Scenicruiser (1954)', model: 'coach', color: 0xc5cbd2, evilColor: 0x22252c,
     hw: 1.25, hl: 5.6, height: 3.3, note: 'A raised deck at the back, a glazed step up to it and fluted sides. It does not stop till the depot.',
     maxSpeed: 28, accel: 5, agility: 0.85, crossing: 0.7, health: 340, mass: 3, sound: 'bus' },
+  { id: 'horseshoe', name: 'Horseshoe Hypercar', basedOn: 'Bugatti Chiron (2016)', model: 'horseshoe', color: 0x1f4fa8, evilColor: 0x8a1420,
+    hw: 1.0, hl: 2.27, height: 1.21, note: 'A horseshoe in its nose, a big chrome C on each flank and a wing that rises out of its tail.',
+    maxSpeed: 48, accel: 20, agility: 1.35, crossing: 0.2, health: 150, mass: 1.4, sound: 'lmp' },
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
 export const IDEA_CAR = Object.fromEntries(IDEA_CARS.map(car => [car.id, car]));

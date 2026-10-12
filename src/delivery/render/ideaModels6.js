@@ -80,7 +80,7 @@ const tube = (parent, material, r, length, x, y, z, axis = 'y', seg = 10) => pla
   return geo;
 }), material, x, y, z);
 // a rounded lump: a ball squashed to rx, ry, rz
-const BALL = new THREE.SphereGeometry(1, 12, 8);
+const BALL = new THREE.SphereGeometry(1, 10, 6);
 const blob = (parent, material, rx, ry, rz, x, y, z) => {
   const mesh = place(parent, BALL, material, x, y, z);
   mesh.scale.set(rx, ry, rz);
@@ -244,4 +244,80 @@ export const IDEA_MODELS_6 = {
     group.userData = { body, animate: () => {} };
     return group;
   },
+  // A horseshoe-grilled hypercar (a Bugatti Chiron, 2016): wide, low and round-shouldered. The nose in bare carbon,
+  // a horseshoe of a grille in the middle of it, four little square lamps in a row in each headlamp; a big chrome C
+  // on each flank round an intake behind the door; a fin running from the roof down the middle of the tail to a
+  // stop lamp; a light bar the width of the tail over a black mesh and one wide exhaust; a wing on the tail that
+  // rises and falls
+  horseshoe: (car) => {
+    const group = new THREE.Group();
+    const w = car.hw * 2, L = car.hl, rr = 0.05, ZW = L * 0.6;
+    const paint = lambert(car.color), carbon = lambert(0x272b34), glass = lambert(GLASS), chrome = lambert(CHROME), trim = lambert(TRIM);
+    const body = curved(group, paint, w * 0.92, rounded([[-L + rr, 0.3], [L - 0.15, 0.27], [L - rr, 0.36], [L - rr, 0.5], [L * 0.88, 0.64], [L * 0.45, 0.76], [-L * 0.55, 0.9], [-L + rr, 0.9], [-L + rr, 0.45]]), rr);
+    // the front half, in carbon, back to the C: the body's front again, a centimetre proud of it all round
+    curved(group, carbon, w * 0.93, rounded([[-L * 0.013, 0.26], [L - 0.15, 0.26], [L - rr + 0.01, 0.355], [L - rr + 0.01, 0.505], [L * 0.88 + 0.005, 0.65], [L * 0.45, 0.77], [-L * 0.013, 0.836]]), rr);
+    // the cabin: one piece of glass, the roof, the fin from the roof down the tail, the engine's slats either side of it
+    prism(group, glass, w * 0.66, [[L * 0.47, 0.72], [L * 0.12, 1.15], [-L * 0.3, 1.17], [-L * 0.62, 0.94], [-L * 0.62, 0.84], [L * 0.47, 0.7]]);
+    box(group, paint, w * 0.6, 0.04, L * 0.4, 0, 1.17, -L * 0.09);
+    prism(group, paint, 0.05, [[L * 0.12, 1.16], [L * 0.05, 1.21], [-L * 0.3, 1.21], [-L * 0.95, 0.95], [-L * 0.95, 0.9], [-L * 0.3, 1.15]]);
+    merged(group, trim, [-1, 1].flatMap(side => [0.68, 0.75, 0.82, 0.89].map(f => bx(0.5, 0.012, 0.06, side * 0.33, 0.955, -L * f))));
+    // the horseshoe: a chrome one, the black mesh in it
+    const shoe = (s) => {
+      const shape = new THREE.Shape();
+      shape.moveTo(-0.17 * s, 0);
+      shape.lineTo(-0.17 * s, 0.12 * s);
+      shape.absarc(0, 0.12 * s, 0.17 * s, Math.PI, 0, true);
+      shape.lineTo(0.17 * s, 0);
+      shape.closePath();
+      return new THREE.ExtrudeGeometry(shape, { depth: 0.1, bevelEnabled: false, curveSegments: 6 });
+    };
+    place(group, shared('shoe1', () => shoe(1)), chrome, 0, 0.3, L - 0.06);
+    place(group, shared('shoe0.8', () => shoe(0.8)), trim, 0, 0.33, L - 0.055);
+    // the headlamps on the nose's slope: a dark housing each side, four little square lamps in a row in it
+    const lampPitch = 0.49, n = [Math.sin(lampPitch), Math.cos(lampPitch)];
+    const hz = L * 0.935, hy = 0.6;
+    for (const side of [-1, 1]) slab(group, trim, 0.44, 0.05, 0.2, side * 0.56, hy, hz, lampPitch);
+    merged(group, LAMP, [-1, 1].flatMap(side => [0.38, 0.5, 0.62, 0.74].map(x => bx(0.08, 0.03, 0.09, side * x, hy + n[1] * 0.02, hz + n[0] * 0.02, lampPitch))));
+    merged(group, AMBER, [-1, 1].map(side => bx(0.12, 0.04, 0.06, side * 0.72, 0.36, L - 0.02)));
+    for (const side of [-1, 1]) box(group, trim, 0.3, 0.12, 0.1, side * 0.42, 0.36, L - 0.02);
+    box(group, trim, w * 0.9, 0.04, 0.3, 0, 0.26, L - 0.15);
+    // the flanks: the C round an intake, a skirt along the sill, mirrors; a flare and a haunch over each wheel
+    const C = shared('chironC', () => new THREE.TorusGeometry(0.26, 0.025, 6, 14, Math.PI * 1.1).rotateZ(-Math.PI * 0.55).rotateY(Math.PI / 2));
+    for (const side of [-1, 1]) {
+      place(group, C, chrome, side * 0.94, 0.56, -0.11);
+      box(group, trim, 0.02, 0.32, 0.26, side * 0.925, 0.56, -0.2);
+      box(group, carbon, 0.16, 0.08, 0.1, side * 0.73, 0.95, L * 0.25);
+    }
+    merged(group, trim, [-1, 1].map(side => bx(0.02, 0.06, 1.5, side * 0.925, 0.32, 0)));
+    merged(group, carbon, [-1, 1].map(side => lip(0.38, 0.04, side * 0.95, 0.34, ZW)));     // (the front ones in the carbon,
+    merged(group, paint, [-1, 1].map(side => lip(0.4, 0.04, side * 0.95, 0.36, -ZW)));      // the back ones in the paint)
+    for (const side of [-1, 1]) {
+      blob(group, carbon, 0.12, 0.14, 0.6, side * 0.86, 0.72, ZW);
+      blob(group, paint, 0.13, 0.16, 0.66, side * 0.85, 0.76, -ZW);
+      wheel(group, 0.34, 0.26, side * 0.87, 0.34, ZW, lambert(0x9aa0a8));
+      wheel(group, 0.36, 0.3, side * 0.85, 0.36, -ZW, lambert(0x9aa0a8));
+    }
+    // the tail: the light bar, the black mesh, the exhaust, the diffuser, the stop lamp at the fin's end
+    box(group, TAIL, w * 0.82, 0.04, 0.03, 0, 0.84, -L - 0.005);
+    box(group, trim, w * 0.78, 0.3, 0.03, 0, 0.6, -L - 0.003);
+    box(group, chrome, 0.32, 0.12, 0.06, 0, 0.42, -L - 0.01);
+    box(group, trim, 0.26, 0.07, 0.02, 0, 0.42, -L - 0.045);                                // (its mouth)
+    box(group, trim, w * 0.7, 0.12, 0.3, 0, 0.3, -L + 0.08);
+    box(group, TAIL, 0.12, 0.03, 0.04, 0, 0.965, -L * 0.95 - 0.015);
+    // the wing, and its struts, which rise out of the tail together
+    const wing = new THREE.Group();
+    group.add(wing);
+    box(wing, paint, w * 0.8, 0.03, 0.32, 0, 1.015, -L * 0.86);
+    merged(wing, trim, [-1, 1].map(side => bx(0.03, 0.25, 0.12, side * 0.4, 0.89, -L * 0.86)));
+    group.userData = {
+      body,
+      animate: (t) => { // (down for most of the time; up, tilted, now and then)
+        const up = Math.max(0, Math.min(1, Math.sin(t * 0.5) * 3 - 1.5));
+        wing.position.y = up * 0.12;
+      },
+      livery: (evil) => carbon.color.setHex(evil ? 0x141416 : 0x272b34),
+    };
+    return group;
+  },
 };
+
