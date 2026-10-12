@@ -78,6 +78,6 @@ export const boot = async ({ cars = ['commuter', 'sport', 'floatvan'], ownAll = 
     },
   };
   if (!tiers) g.CONFIG.progression.tiers = false;
-  if (ownAll) g.progress.data.cars = g.cars.CARS.map(c => c.id);
+  if (ownAll) { g.progress.data.cars = g.cars.CARS.map(c => c.id); g.progress.data.maxed = [...g.progress.data.cars]; } // (each at its max ECU, as a save from before the ECUs: ecu.js)
   return g;
 };

@@ -1,4 +1,6 @@
 // ---- garage: the car shop, a 3D parking lot with a garage behind it ---------------------
+// Players know it as the CAR LOT, "Crazey Jim's Used Cars" (the owner, 12-Oct): the place to BUY cars. Cars are picked
+// in the showroom (render/showroom.js), which opens this lot from its own button; the code keeps the name garage.
 // Every car in CARS is parked in a bay (the Blue Star ones once they are open: see garageCars; the amphibious ones
 // from the start, in a section of their own at the end of the tiers: see buildLot). Tap any car, owned or not, to see its stats; the button under them
 // uses it, or buys it (hovering shows the price). The Good / Evil toggle swaps every car to its
@@ -6,6 +8,7 @@
 import { Nav } from '../nav.js';
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
+import { Ecu } from '../ecu.js';
 import { CAR, carInUse, selectCar, stars, starColour, STAR_COLOURS, garageCars, carRule, ruleAllows, setViewSide, carAllowedOn, carTier, isTeaser, forSale, EVENT_CARS } from '../cars.js';
 import { levelName } from '../levelText.js';
 import { LEVELS } from '../levels.js';
@@ -124,7 +127,7 @@ const buildLot = () => {
   box(roof, LOT_W + 5, 0.5, frontZ - backZ + 1.6, mid, H + 0.25, (frontZ + backZ) / 2);
   for (let i = 0; i <= COLS; i += 2) box(wall, 0.4, H, 0.4, left + i * BAY_W, H / 2, frontZ);
   box(trim, LOT_W + 5, 0.5, 0.3, mid, H + 0.25, frontZ + 0.8);
-  const garageSign = label('GARAGE', 512, 96, 64);
+  const garageSign = label('CRAZEY JIM\'S', 512, 96, 60); // (the car lot's name, as players see it)
   for (let x = mid - Math.floor(COLS / 8) * 8 * BAY_W / 2; x <= right; x += 8 * BAY_W) { // (one every eight bays)
     if (slipways.some(([from, cols]) => Math.abs(x - slipX(from, cols)) < 6.5 + slipW(cols) / 2)) continue; // (the Amphibious section's own sign is there)
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(12, 2.25), new THREE.MeshBasicMaterial({ map: garageSign }));
@@ -208,8 +211,13 @@ const whyEl = document.getElementById('garageWhy');
 const useBtn = document.getElementById('garageUse');
 const startScreen = document.getElementById('startScreen');
 const money = (amount) => '$' + amount.toFixed(2);
-const stats = (car) => 'Top speed ' + Math.round(car.maxSpeed * 3.6) + ' km/h  |  Acceleration ' +
-  car.accel + '  |  Health ' + car.health + '  |  Crossing ' + Math.round((car.crossing ?? CONFIG.railCrossing.usual) * 100) + '%';
+// (the figures of the ECU it has, or would have once its key or blueprints are had: ecu.js; and that ECU of its max)
+const stats = (car) => {
+  const e = Ecu.kind(car) ? Ecu.stats(car, Math.max(1, Ecu.reached(car))) : car;
+  return 'Top speed ' + Math.round(e.maxSpeed * 3.6) + ' km/h  |  Acceleration ' + e.accel + '  |  Health ' + e.health +
+    '  |  Crossing ' + Math.round((car.crossing ?? CONFIG.railCrossing.usual) * 100) + '%' +
+    (Ecu.kind(car) ? '  |  ECU ' + Ecu.level(car) + ' of ' + Ecu.max(car) + '  |  Respawn ' + e.respawn + ' s' : '');
+};
 // the stats as a node: the figures always (on a phone on a line of their own under the name), and a perk of its own
 // (see CARS' trait) after them, which a phone shows only when the line is tapped
 const statsNode = (car) => {
@@ -280,7 +288,9 @@ const refresh = () => {
   useBtn.disabled = !!barred || teaser;
   whyEl.classList.toggle('hidden', !barred && !teaser && !unsold);
   whyEl.replaceChildren(...(teaser ? ['Not for sale yet: ', ...richTiers(teaserWhy(shown))] : unsold && !barred ? notForSale(shown) : barred ? (shown.silhouette ? [noneOwned(carRule(Garage.evil)) + ': tap a car in the lot to buy one'] : reasonNode()) : []));
-  action.title = owned ? 'Drive the ' + shown.name + ' as ' + sideName() + ', and stay in the garage' : '';
+  // (a car that cannot be driven yet says why, in the words of the spec (ecu.js lockedWords): a car lot car not bought,
+  // "Purchase this car from the car lot"; a key car without its key, "You need the key to drive this car")
+  action.title = owned ? 'Drive the ' + shown.name + ' as ' + sideName() + ', and stay at Crazey Jim\'s' : shown.silhouette ? '' : Ecu.lockedWords(shown) || '';
   // (Use: the same, and back to the menu with it; a car not yet bought has none, only its Buy)
   useBtn.style.display = owned ? '' : 'none';
   useBtn.title = 'Drive the ' + shown.name + ' as ' + sideName() + ', and go back to the menu';
@@ -493,7 +503,9 @@ export const Garage = {
     }
     return rebuilt;
   },
-  open(evil = Game.evil) { // (evil: the livery to show the cars in; the side being played, unless told)
+  // back: what closing it goes back to (the showroom, when it was opened from there); none: the menu
+  open(evil = Game.evil, back = null) { // (evil: the livery to show the cars in; the side being played, unless told)
+    this.back = back;
     this.setSide(evil, true);
     this.isOpen = true;
     Game.inMenu = true; // Enter must not start a run from here
@@ -521,7 +533,9 @@ export const Garage = {
     hovered = null;
     ui.classList.add('hidden');
     tip.style.display = 'none';
-    startScreen.classList.remove('hidden');
+    const back = this.back;
+    this.back = null;
+    if (back) back(); else startScreen.classList.remove('hidden');
     document.body.classList.remove('in-garage');
     renderer.domElement.style.cursor = '';
   },
@@ -581,7 +595,7 @@ export const Garage = {
         car.id === Progress.data.car ? 'in use'
           : owned ? 'owned, click for its stats'
             : !forSale(car) ? 'not for sale, click for its stats'
-              : money(car.price) + ', click for its stats'));
+              : money(car.price) + ', click for its stats') + (owned ? '' : '  -  ' + (Ecu.lockedWords(car) || '')));
       anchor.set(hovered.position.x, car.height + 2.6, hovered.position.z).project(camera);
       tip.style.left = (anchor.x + 1) / 2 * canvas.clientWidth + 'px';
       tip.style.top = (1 - anchor.y) / 2 * canvas.clientHeight + 'px';

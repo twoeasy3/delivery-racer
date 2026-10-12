@@ -5,7 +5,7 @@ import { Track } from './track.js';
 import { updateYaw, keepOnRoad, emotionOf, startRivalry, spinOut, sfxAt, cornerSpeed, weightOf } from './physics.js';
 import { Player } from './player.js';
 import { Packages } from './packages.js';
-import { CARS, LEVEL_CARS, CAR } from './cars.js';
+import { CARS, LEVEL_CARS, CAR, carStats } from './cars.js';
 import { Message } from './messages.js';
 import { Tide } from './tide.js';
 import { Wreckage } from './wreckage.js';
@@ -630,7 +630,7 @@ export const Traffic = (() => {
   const addRacer = (s, lane, evil, who) => {
     const car = cars.find(c => !c.active && c.unused);
     if (!car) return false;
-    const G = LEVEL.grid, top = CARS_BY_ID[LEVEL.car]?.maxSpeed ?? CAR.maxSpeed;
+    const G = LEVEL.grid, top = CARS_BY_ID[LEVEL.car]?.maxSpeed ?? carStats(CAR).maxSpeed; // (the player's car at its ECU: ecu.js)
     car.dir = 1;
     car.bound = 'north';
     car.s = s;

@@ -2,9 +2,10 @@ import { CONFIG } from './config.js';
 import { LEVEL, LEVEL_INDEX, LEVELS, SCREENSAVER_LEVEL, selectLevel, selectSpecial, nextOnTab, isRace } from './levels.js';
 import { Progress } from './progress.js';
 import { Nav } from './nav.js';
-import { useLevelCar, returnCar, earnedFor, ownedAmphibious, carAllowed, carRule } from './cars.js';
+import { useLevelCar, returnCar, earnedFor, ownedAmphibious, carAllowed, carRule, carStats } from './cars.js';
 import { Tiers } from './tiers.js';
 import { Events } from './events.js';
+import { Packs } from './packs.js';
 import { Input } from './input.js';
 import { Replay } from './replay.js';
 import { clamp, seedRandom, newSeed } from './util.js';
@@ -55,6 +56,7 @@ export const Game = {
   allowed: 0,     // s on the clock for this run
   shake: 0,    // 1 -> 0, drives the camera shake
   respawn: -1, // s until the helicopter has delivered a new car, -1 = not waiting
+  respawnTotal: CONFIG.respawnTime, // s the helicopter takes with this one: the car's own respawn time (its ECU's: ecu.js; a race's, CONFIG.respawnTime)
   policeApproach: -1, // s until a busted, still-moving car is grabbed, -1 = not busted
   respawnKind: 'wreck', // wreck (new car delivered) | police (same car, held then dropped)
   grabLat: 0,  // where the car was when the helicopter was called
@@ -285,6 +287,7 @@ export const Game = {
     // (a hidden level, off the menu, banks nothing and records nothing: see HIDDEN_LEVELS)
     const prize = earnedFor(LEVEL.id), hadPrize = !!prize && Progress.earned(prize); // (a 6-star car this level earns, and whether it was earned before this run)
     const earnings = Math.max(0, this.tip + this.cash - this.fines), stage = Events.isStage(LEVEL); // (a special event's stage: banked and timed as a level is, opening nothing: events.js)
+    const firstTime = LEVEL_INDEX >= 0 && Progress.bestTime(LEVEL.id, false) === undefined && Progress.bestTime(LEVEL.id, true) === undefined; // (never delivered on either side: a Career pack, packs.js)
     const record = outcome === 'delivered' && (LEVEL_INDEX >= 0 ? Progress.levelDone(LEVEL_INDEX, LEVEL.id, earnings, this.remaining, Player.evil)
       : stage ? Progress.stageDone(LEVEL.id, earnings, this.remaining, Player.evil) : false);
     resultTitle.textContent = {
@@ -311,6 +314,9 @@ export const Game = {
     // a special event's stage delivered: done, and the grand prize after the last (events.js)
     const staged = outcome === 'delivered' && !Replay.playing ? Events.delivered(LEVEL) : null;
     if (staged) resultNote.textContent += '  |  Stage ' + staged.stage + ' of ' + staged.of + ' done' + (staged.prize ? '  |  You won the ' + staged.prize + '!' : '');
+    // card packs given (packs.js): a Career level's first delivery, a special event's stage or prize. Opened from the menu's Packs
+    const packs = [...(outcome === 'delivered' && !Replay.playing ? [Packs.levelDone(LEVEL, firstTime)] : []), ...(staged?.packs || [])].filter(Boolean);
+    if (packs.length) resultNote.textContent += '  |  ' + (packs.length > 1 ? packs.length + ' packs: ' + packs.join(', ') : 'A ' + packs[0]) + '! Open it from the menu\'s Packs';
     // a playback's results: what the run came to, nothing banked or bettered (the save is put back as it was: replay.js)
     if (Replay.playing) {
       resultTitle.textContent = 'Replay: ' + resultTitle.textContent;
@@ -330,7 +336,7 @@ export const Game = {
       return;
     }
     if (this.respawn < 0) {
-      this.respawn = CONFIG.respawnTime;
+      this.respawn = this.respawnTotal = carStats().respawn ?? CONFIG.respawnTime; // (the car's own: ecu.js)
       this.respawnKind = 'wreck';
       this.wrecks++;
       Radiation.wrecked(); // (the infection outlasts a wreck, unless CONFIG.radiation says a wreck cures it)

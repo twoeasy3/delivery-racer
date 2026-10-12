@@ -21,6 +21,7 @@ import { levelName, levelDescription } from './levelText.js';
 import { cargoFor } from './cargo.js';
 import { Progress } from './progress.js';
 import { carById } from './cars.js';
+import { Packs } from './packs.js';
 
 // a time in events.json: "2026-12-01" is midnight on the player's device; else a time with its zone. null: none
 // given; NaN: not a time
@@ -101,12 +102,14 @@ export const Events = {
   prizeWon(event) { return (Progress.data.claimed || []).includes(this.prizeKey(event)); },
   prizeCar(event) { return event.prize?.car ? carById(event.prize.car) : null; },
   // a stage delivered on time (Game.finish): done if it is the next one (a stage done before counts nothing more),
-  // and the prize after the last. { stage, of, prize } (prize: the car's name, once), or null for no stage
+  // and the prize after the last. { stage, of, prize, packs } (prize: the car's name, once; packs: the card packs it
+  // gave, by name: packs.js eventDone), or null for no stage
   delivered(level) {
     const at = this.stageOf(level);
     if (!at || !this.live(at.event)) return null;
     const { event, stage } = at;
-    if (stage.index === this.done(event)) (Progress.data.events ||= {})[event.id] = stage.index + 1;
+    const first = stage.index === this.done(event); // (the stage done for the first time)
+    if (first) (Progress.data.events ||= {})[event.id] = stage.index + 1;
     let prize = '';
     if (this.done(event) >= event.stages.length && event.prize && !this.prizeWon(event)) {
       (Progress.data.claimed ||= []).push(this.prizeKey(event));
@@ -114,8 +117,9 @@ export const Events = {
       if (car && !Progress.data.cars.includes(car.id)) Progress.data.cars.push(car.id); // (owned from now on, the event or no)
       prize = car ? car.name : '';
     }
+    const packs = Packs.eventDone(event.id, first, !!prize); // (card packs: packs.js, packs.json events; the featured cards are the event's)
     Progress.save();
-    return { stage: stage.index + 1, of: event.stages.length, prize };
+    return { stage: stage.index + 1, of: event.stages.length, prize, packs };
   },
   // what is wrong with events.json's special events, as lines (none: sound)
   problems() {
@@ -128,6 +132,7 @@ export const Events = {
       if (e.from !== null && e.to !== null && !(e.from < e.to)) say('it ends before it starts');
       if (!e.stages.length) say('it has no stages');
       if (e.prize && !this.prizeCar(e)) say('its prize "' + e.prize.car + '" is not a car');
+      if (e.raw.featured !== undefined && (!Array.isArray(e.raw.featured) || e.raw.featured.some(id => !carById(id)))) say('"featured" is not a list of cars (the special packs\' featured cards)');
       e.stages.forEach((s, i) => {
         const n = 'stage ' + (i + 1) + ': ';
         if (!s.level) say(n + '"' + s.map + '" is not a level');

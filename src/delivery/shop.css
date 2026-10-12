@@ -1,0 +1,240 @@
+/* The Shop (render/shop.js): a screen over the start screen, after a racing game's store. Phones first: one column
+   that scrolls, two tiles a row; wider, the rows spread out. Everything is under .shop-screen.
+   The rarities' colours: Common grey, Uncommon green, Epic purple, Legendary gold, Bespoke the magenta rainbow. */
+.shop-screen {
+  --c-common: #a3acb7; --c-uncommon: #3fd06f; --c-epic: #b45cff; --c-legendary: #ffbe2e; --c-bespoke: #ff3fae;
+  --rainbow: linear-gradient(115deg, #ff3fae, #ffbe2e 25%, #3fd06f 45%, #35c2ff 65%, #b45cff 85%, #ff3fae);
+  --ink-dim: rgba(255, 255, 255, .68); --panel: rgba(22, 28, 44, .92); --line: rgba(255, 255, 255, .1); --buy: #ffd23f; --buy-ink: #1c1500;
+  --display: "Bahnschrift", "DIN Alternate", "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
+  position: fixed; inset: 0; z-index: 30; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; touch-action: pan-y;
+  color: #fff; text-align: left; font-size: 14px; -webkit-tap-highlight-color: transparent;
+  background:
+    radial-gradient(90% 50% at 85% -5%, rgba(180, 92, 255, .28), transparent 70%),
+    radial-gradient(70% 40% at 0% 30%, rgba(53, 194, 255, .14), transparent 70%),
+    repeating-linear-gradient(112deg, transparent 0 120px, rgba(255, 255, 255, .025) 120px 123px, transparent 123px 300px),
+    #0a0e18;
+}
+.shop-screen.hidden { display: none; }
+.shop-screen * { box-sizing: border-box; }
+:where(.shop-screen) button { font: inherit; color: inherit; margin: 0; border: 0; cursor: pointer; background: none; padding: 0; }
+.shop-screen :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.shop-screen h1, .shop-screen h2, .shop-screen h3, .shop-screen p { margin: 0; max-width: none; opacity: 1; }
+
+/* ---- the top: back, the title, the wallet (sticky) ---- */
+.shop-top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: max(10px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 10px max(14px, env(safe-area-inset-left));
+  background: linear-gradient(rgba(8, 11, 20, .97), rgba(8, 11, 20, .88)); backdrop-filter: blur(6px); box-shadow: 0 1px 0 var(--line), 0 8px 24px rgba(0, 0, 0, .35); }
+.shop-back { display: inline-flex; align-items: center; gap: 4px; padding: 7px 12px 7px 9px; border-radius: 8px; font-weight: 700; font-size: 14px;
+  background: rgba(255, 255, 255, .08); box-shadow: inset 0 0 0 1px var(--line); }
+.shop-back span { font-size: 22px; line-height: 14px; margin-top: -3px; }
+.shop-back:hover { background: rgba(255, 255, 255, .16); }
+.shop-top h1 { font: italic 800 28px/1 var(--display); font-stretch: condensed; text-transform: uppercase; letter-spacing: .04em;
+  background: linear-gradient(#fff, #c9d2e6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.shop-wallet { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.shop-balance { display: flex; align-items: center; gap: 7px; padding: 5px 12px 5px 6px; border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 63, 174, .22), rgba(180, 92, 255, .18)); box-shadow: inset 0 0 0 1px rgba(255, 120, 210, .45); }
+.shop-balance b { font: 700 20px/1 var(--display); font-variant-numeric: tabular-nums; }
+.shop-balance small { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); }
+.shop-placeholder { padding: 3px 7px; border-radius: 4px; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  color: #1a1a1a; background: repeating-linear-gradient(135deg, #ffd23f 0 8px, #f0b400 8px 16px); }
+.shop-add { padding: 6px 10px; border-radius: 7px; font-size: 12px; font-weight: 700; background: #2c6e3f; box-shadow: inset 0 0 0 1px #5fd68a; }
+
+/* the gem: the placeholder currency's sign */
+.shop-gem { display: inline-block; flex: 0 0 auto; width: 20px; height: 20px; transform: rotate(45deg); border-radius: 4px;
+  background: linear-gradient(135deg, #ffb3e0, #ff3fae 45%, #8a2be2); box-shadow: 0 0 10px rgba(255, 63, 174, .7), inset 0 0 0 1px rgba(255, 255, 255, .5); }
+.shop-gem i { display: block; width: 45%; height: 45%; margin: 12% 0 0 12%; border-radius: 2px; background: rgba(255, 255, 255, .55); }
+
+/* ---- the body: the note, the sections ---- */
+.shop-body { width: min(1240px, 100%); margin: 0 auto; padding: 12px max(14px, env(safe-area-inset-right)) max(30px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
+.shop-note { margin: 2px 0 6px; padding: 8px 12px; border-radius: 8px; font-size: 12.5px; line-height: 1.4; color: #ffe9a6;
+  background: rgba(255, 210, 63, .08); box-shadow: inset 3px 0 0 #ffd23f; }
+.shop-section { margin-top: 18px; }
+.shop-section-head { display: flex; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.shop-section-head h2 { font: italic 800 22px/1 var(--display); font-stretch: condensed; text-transform: uppercase; letter-spacing: .05em;
+  padding-left: 10px; border-left: 4px solid var(--buy); }
+.shop-section-head p { font-size: 12.5px; color: var(--ink-dim); }
+.shop-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.s-featured .shop-row { grid-template-columns: minmax(0, 1fr); }
+
+/* ---- a tile ---- */
+.shop-tile { --tc: var(--c-common); position: relative; display: flex; flex-direction: column; overflow: hidden; border-radius: 12px; min-width: 0;
+  background: linear-gradient(170deg, color-mix(in srgb, var(--tc) 30%, #1a2133), #121826 60%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc) 45%, transparent), 0 6px 18px rgba(0, 0, 0, .4); }
+.shop-tile.r-uncommon { --tc: var(--c-uncommon); }
+.shop-tile.r-epic { --tc: var(--c-epic); }
+.shop-tile.r-legendary { --tc: var(--c-legendary); }
+.shop-tile.r-bespoke, .shop-tile.hero { --tc: var(--c-bespoke); }
+.shop-tile-art { position: relative; height: 150px; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(60% 70% at 50% 55%, color-mix(in srgb, var(--tc) 40%, transparent), transparent 70%),
+    repeating-linear-gradient(-60deg, transparent 0 14px, rgba(255, 255, 255, .03) 14px 16px); }
+.shop-tile-info { flex: 1 1 auto; display: flex; flex-direction: column; gap: 5px; padding: 8px 10px 6px; }
+.shop-tile-info h3 { font: italic 800 17px/1.05 var(--display); font-stretch: condensed; text-transform: uppercase; letter-spacing: .02em; }
+.shop-tile-info p { font-size: 12px; line-height: 1.3; color: var(--ink-dim); }
+.shop-kicker { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; background: var(--rainbow); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.shop-tile-buy { padding: 4px 10px 10px; }
+
+/* the price: the buy button */
+.shop-price { width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 10px; border-radius: 8px;
+  background: linear-gradient(#ffe066, var(--buy) 55%, #f0b400); color: var(--buy-ink); box-shadow: 0 3px 0 #a87b00, 0 6px 14px rgba(255, 190, 46, .25);
+  transition: transform .08s, box-shadow .08s; }
+.shop-price b { font: 800 19px/1 var(--display); font-variant-numeric: tabular-nums; }
+.shop-price s { font-size: 12px; font-weight: 700; opacity: .6; }
+.shop-price .shop-gem { width: 16px; height: 16px; }
+.shop-price:hover { filter: brightness(1.06); }
+.shop-price:active { transform: translateY(2px); box-shadow: 0 1px 0 #a87b00; }
+.shop-price.short { background: linear-gradient(#4b556b, #394256); color: rgba(255, 255, 255, .8); box-shadow: 0 3px 0 #232a38; }
+.shop-price.short s { opacity: .5; }
+
+/* the ribbons */
+.shop-ribbon { position: absolute; z-index: 3; top: 12px; left: -30px; width: 120px; padding: 4px 0; transform: rotate(-38deg); text-align: center;
+  font-size: 10.5px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; box-shadow: 0 2px 6px rgba(0, 0, 0, .4); }
+.shop-ribbon.rb-sale { background: #ff3b3b; color: #fff; }
+.shop-ribbon.rb-featured { background: var(--rainbow); color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
+.shop-ribbon.rb-new { background: #35c2ff; color: #04202e; }
+.shop-ribbon.rb-best { background: #ffd23f; color: #1c1500; }
+.hero .shop-ribbon { left: -34px; top: 18px; width: 140px; font-size: 12px; }
+
+/* the drop rates: one bar, a segment a rarity */
+.shop-odds { display: flex; gap: 2px; height: 6px; margin-top: auto; border-radius: 3px; overflow: hidden; }
+.shop-odds i { display: block; flex-basis: 0; }
+.shop-odds .r-common { background: var(--c-common); }
+.shop-odds .r-uncommon { background: var(--c-uncommon); }
+.shop-odds .r-epic { background: var(--c-epic); }
+.shop-odds .r-legendary { background: var(--c-legendary); }
+.shop-odds .r-bespoke { background: var(--rainbow); }
+
+/* a rarity's chip */
+.shop-chip { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10.5px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; color: #10131a; }
+.shop-chip.r-common { background: var(--c-common); }
+.shop-chip.r-uncommon { background: var(--c-uncommon); }
+.shop-chip.r-epic { background: var(--c-epic); color: #fff; }
+.shop-chip.r-legendary { background: linear-gradient(#ffe08a, var(--c-legendary)); }
+.shop-chip.r-bespoke { background: var(--rainbow); color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
+
+/* ---- the pack, drawn: foil, a crimped top, the mark ---- */
+.shop-packs { position: relative; width: 84px; height: 116px; }
+.shop-pack { --pc: var(--c-common); --pc2: #4a525e; position: absolute; inset: 0; overflow: hidden; border-radius: 6px 6px 9px 9px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center;
+  background:
+    linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, .22) 42%, transparent 55%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, .06) 0 3px, transparent 3px 9px),
+    linear-gradient(160deg, color-mix(in srgb, var(--pc) 85%, #fff), var(--pc) 35%, var(--pc2));
+  box-shadow: 0 8px 18px rgba(0, 0, 0, .55), inset 0 0 0 1px rgba(255, 255, 255, .35), inset 0 -10px 18px rgba(0, 0, 0, .25); }
+.shop-pack.r-uncommon { --pc: #2fbf62; --pc2: #0c4a2a; }
+.shop-pack.r-epic { --pc: #a24cf0; --pc2: #33105c; }
+.shop-pack.r-legendary { --pc: #ffbe2e; --pc2: #7a4a00; }
+.shop-pack.r-bespoke { --pc: #ff3fae; --pc2: #3b0a6b; }
+.shop-pack.r-bespoke { background:
+    linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, .3) 42%, transparent 55%),
+    conic-gradient(from 200deg at 30% 30%, #ff3fae, #ffbe2e, #3fd06f, #35c2ff, #b45cff, #ff3fae),
+    #ff3fae; }
+.pack-crimp { position: absolute; left: 0; right: 0; top: 0; height: 9px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .55) 0 2px, rgba(0, 0, 0, .25) 2px 4px); opacity: .8; }
+.pack-sheen { position: absolute; inset: -40% -60%; background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, .45) 50%, transparent 60%);
+  animation: shop-sheen 3.6s ease-in-out infinite; }
+@keyframes shop-sheen { 0%, 55% { transform: translateX(-60%); } 100% { transform: translateX(60%); } }
+.pack-brand { position: relative; display: flex; flex-direction: column; align-items: center; margin-top: 4px; line-height: .9;
+  font: italic 900 11px/0.95 var(--display); text-transform: uppercase; letter-spacing: .04em; text-shadow: 0 1px 2px rgba(0, 0, 0, .55); }
+.pack-brand i { color: #ffd23f; font-style: inherit; font-size: 14px; }
+.pack-mark { position: relative; padding: 2px 6px; border-radius: 3px; background: rgba(0, 0, 0, .45);
+  font: italic 900 16px/1 var(--display); font-stretch: condensed; text-transform: uppercase; letter-spacing: .02em; text-shadow: 0 1px 0 rgba(0, 0, 0, .5); }
+.k-ten .pack-mark { font-size: 30px; padding: 0 8px; color: #ffe08a; }
+.k-standard .pack-mark, .k-career .pack-mark, .k-special .pack-mark { max-width: 94%; font-size: 12.5px; letter-spacing: 0; padding: 2px 4px; }
+.pack-sub { position: relative; font-size: 8px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; opacity: .85; }
+.pack-count { position: absolute; right: 4px; bottom: 4px; padding: 2px 5px; border-radius: 4px; background: #ffd23f; color: #1c1500;
+  font: 900 13px/1 var(--display); box-shadow: 0 2px 4px rgba(0, 0, 0, .5); }
+/* more than one: fanned */
+.shop-packs.n2 .shop-pack:nth-child(1) { transform: translateX(-16px) rotate(-9deg); }
+.shop-packs.n2 .shop-pack:nth-child(2) { transform: translateX(12px) rotate(5deg); }
+.shop-packs.n3 .shop-pack:nth-child(1) { transform: translateX(-24px) rotate(-13deg) scale(.94); }
+.shop-packs.n3 .shop-pack:nth-child(2) { transform: translateX(22px) rotate(11deg) scale(.94); }
+.shop-packs.n3 .shop-pack:nth-child(3) { transform: translateY(2px); }
+.shop-tile:hover .shop-packs { transform: translateY(-3px) scale(1.03); }
+.shop-packs { transition: transform .2s; }
+
+/* ---- the featured tile: wide, the featured cars across it, the pack in front ---- */
+.shop-tile.hero { background:
+    radial-gradient(80% 90% at 70% 40%, rgba(255, 63, 174, .32), transparent 70%),
+    radial-gradient(60% 80% at 15% 100%, rgba(255, 190, 46, .18), transparent 70%),
+    linear-gradient(170deg, #2a1640, #121826 70%);
+  box-shadow: inset 0 0 0 1px rgba(255, 120, 210, .5), 0 8px 26px rgba(0, 0, 0, .5); }
+.shop-tile.hero::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 2px; pointer-events: none;
+  background: var(--rainbow); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; opacity: .8; }
+.shop-hero-art { position: relative; height: 210px; display: flex; align-items: flex-end; justify-content: flex-start; padding: 0 0 14px 18px;
+  background: repeating-linear-gradient(-60deg, transparent 0 18px, rgba(255, 255, 255, .03) 18px 20px); }
+.shop-hero-art .shop-packs { z-index: 2; width: 92px; height: 128px; transform: rotate(-6deg); }
+.shop-hero-cars { position: absolute; inset: 0 0 0 110px; display: flex; }
+.shop-feature { position: relative; flex: 1 1 0; min-width: 0; }
+.shop-car { position: absolute; inset: 6px 0 34px; background: center / contain no-repeat; filter: drop-shadow(0 10px 10px rgba(0, 0, 0, .55)); }
+.shop-car canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.shop-feature-name { position: absolute; left: 0; right: 12px; bottom: 6px; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 2px 7px; text-align: right; }
+.shop-feature-name b { font: italic 800 18px/1 var(--display); font-stretch: condensed; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0, 0, 0, .7); }
+.shop-feature-name small { font-size: 11px; color: #ff7fd0; letter-spacing: .1em; }
+.hero .shop-tile-info h3 { font-size: 24px; }
+.hero .shop-tile-info p { font-size: 13px; }
+.shop-ends { font-size: 12px; color: var(--ink-dim); }
+.shop-ends b { color: #fff; font-variant-numeric: tabular-nums; }
+.hero .shop-odds { margin-top: 4px; }
+
+/* ---- the rarities ---- */
+.shop-rarities { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.shop-rarity { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 10px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); }
+.shop-rarity p { font-size: 12px; line-height: 1.35; }
+.shop-rarity small { font-size: 11px; color: var(--ink-dim); }
+.shop-rarity.r-common { box-shadow: inset 3px 0 0 var(--c-common), inset 0 0 0 1px var(--line); }
+.shop-rarity.r-uncommon { box-shadow: inset 3px 0 0 var(--c-uncommon), inset 0 0 0 1px var(--line); }
+.shop-rarity.r-epic { box-shadow: inset 3px 0 0 var(--c-epic), inset 0 0 0 1px var(--line); }
+.shop-rarity.r-legendary { box-shadow: inset 3px 0 0 var(--c-legendary), inset 0 0 0 1px var(--line); }
+.shop-rarity.r-bespoke { box-shadow: inset 3px 0 0 var(--c-bespoke), inset 0 0 0 1px var(--line); }
+
+/* ---- bought: the packs, with Open now / Keep shopping ---- */
+.shop-bought { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(4, 6, 12, .78); }
+.shop-bought-box { position: relative; width: min(380px, 100%); display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 26px 20px 20px;
+  border-radius: 16px; text-align: center; background: linear-gradient(170deg, #2a1640, #121826 70%); box-shadow: inset 0 0 0 1px rgba(255, 120, 210, .5), 0 20px 50px rgba(0, 0, 0, .6);
+  animation: shop-pop .28s cubic-bezier(.2, 1.4, .4, 1); }
+@keyframes shop-pop { from { transform: scale(.85); opacity: 0; } }
+.shop-burst { position: absolute; left: 50%; top: 86px; width: 260px; height: 260px; margin: -130px 0 0 -130px; pointer-events: none;
+  background: repeating-conic-gradient(rgba(255, 210, 63, .22) 0 8deg, transparent 8deg 22deg); border-radius: 50%;
+  -webkit-mask: radial-gradient(closest-side, #000, transparent); mask: radial-gradient(closest-side, #000, transparent); animation: shop-spin 14s linear infinite; }
+@keyframes shop-spin { to { transform: rotate(360deg); } }
+.shop-bought .shop-packs { margin: 4px 0 8px; width: 100px; height: 138px; }
+.shop-bought h2 { font: italic 800 24px/1.05 var(--display); font-stretch: condensed; text-transform: uppercase; }
+.shop-bought p { font-size: 13px; color: var(--ink-dim); }
+.shop-bought-do { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 6px; }
+.shop-go, .shop-later { width: 100%; padding: 12px; border-radius: 9px; font-weight: 800; font-size: 16px; letter-spacing: .04em; text-transform: uppercase; }
+.shop-go { background: linear-gradient(#ffe066, #ffd23f 55%, #f0b400); color: #1c1500; box-shadow: 0 3px 0 #a87b00; }
+.shop-later { background: rgba(255, 255, 255, .1); box-shadow: inset 0 0 0 1px var(--line); }
+
+/* ---- the menu's way in (the chip beside the bank) ---- */
+#startScreen .shop-btn { flex: 0 0 auto; background: linear-gradient(180deg, rgba(255, 63, 174, .32), rgba(180, 92, 255, .26)); box-shadow: inset 0 0 0 1px rgba(255, 120, 210, .55); }
+#startScreen .shop-btn .shop-gem { flex: 0 0 auto; width: 13px; height: 13px; min-width: 13px; border-radius: 3px; }
+#startScreen .shop-btn:hover { background: linear-gradient(180deg, rgba(255, 63, 174, .5), rgba(180, 92, 255, .4)); }
+@media (max-width: 760px) and (min-height: 521px), (max-width: 519px) { #startScreen .shop-btn { padding: 6px 10px; font-size: 12px; } }
+@media (max-width: 430px) { #startScreen .shop-btn .shop-word { display: none; } #startScreen .shop-btn { padding: 6px 9px; } #startScreen .shop-btn .shop-gem { width: 15px; height: 15px; } }
+
+/* ---- wider: the rows spread out ---- */
+@media (min-width: 700px) {
+  .shop-row { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .shop-tile-art { height: 180px; }
+  .shop-packs { width: 100px; height: 138px; }
+  .k-standard .pack-mark, .k-career .pack-mark, .k-special .pack-mark { font-size: 15px; }
+  .shop-top h1 { font-size: 34px; }
+}
+@media (min-width: 900px) {
+  .s-featured .shop-row { grid-template-columns: minmax(0, 1fr); }
+  .shop-tile.hero { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(260px, 1fr); grid-template-rows: 1fr auto; min-height: 300px; }
+  .shop-tile.hero .shop-hero-art { grid-row: 1 / 3; height: auto; min-height: 300px; padding: 0 0 26px 30px; }
+  .shop-tile.hero .shop-hero-art .shop-packs { width: 120px; height: 166px; }
+  .shop-tile.hero .shop-hero-cars { left: 150px; }
+  .shop-tile.hero .shop-tile-info { justify-content: flex-end; padding: 24px 22px 8px; }
+  .shop-tile.hero .shop-tile-buy { padding: 8px 22px 22px; }
+  .hero .shop-tile-info h3 { font-size: 34px; }
+  .shop-feature-name b { font-size: 22px; }
+}
+@media (max-width: 400px) {
+  .shop-balance small { display: none; }
+  .shop-tile-art { height: 132px; }
+  .shop-hero-art { height: 190px; padding-left: 12px; }
+  .shop-hero-cars { left: 92px; }
+}
+@media (prefers-reduced-motion: reduce) { .pack-sheen, .shop-burst { animation: none; } .shop-bought-box { animation: none; } }
