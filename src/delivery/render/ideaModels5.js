@@ -151,7 +151,7 @@ export const IDEA_MODELS_5 = {
       const x = side * gx;
       prism(group, paint, 0.05, [[L * 0.3, 0.86], [L * 0.255, 0.86], [L * 0.025, 1.385], [L * 0.07, 1.385]], x - side * 0.015); // slim pillars: the windscreen's,
       box(group, paint, 0.05, 0.52, 0.09, x - side * 0.015, 1.13, -L * 0.14);              // the middle one,
-      prism(group, paint, 0.05, [[-L * 0.42, 1.385], [-L * 0.5, 1.385], [-L * 0.69, 0.86], [-L * 0.61, 0.86]], x - side * 0.015); // and the back one
+      prism(group, paint, 0.05, [[-L * 0.42, 1.385], [-L * 0.5, 1.385], [-L * 0.755, 0.86], [-L * 0.61, 0.86]], x - side * 0.015); // and the back one
       // a trumpet at the roof's back corner, with the turn signal in its mouth
       const trumpet = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.06, 0.2, 14), roofPaint);
       trumpet.rotation.x = Math.PI / 2; // (narrow end forward)
@@ -216,7 +216,7 @@ export const IDEA_MODELS_5 = {
     for (const side of [-1, 1]) {
       const x = side * gx;
       prism(group, chrome, 0.04, [[L * 0.3, 0.88], [L * 0.26, 0.88], [L * 0.05, 1.425], [L * 0.09, 1.425]], x - side * 0.01); // the windscreen's chrome pillars,
-      prism(group, roofPaint, 0.05, [[-L * 0.3, 1.425], [-L * 0.45, 1.425], [-L * 0.6, 0.88], [-L * 0.46, 0.88]], x); // the broad back pillars, in the roof's colour,
+      prism(group, roofPaint, 0.05, [[-L * 0.3, 1.425], [-L * 0.445, 1.425], [-L * 0.645, 0.88], [-L * 0.46, 0.88]], x); // the broad back pillars, in the roof's colour,
       box(group, chrome, 0.025, 0.5, 0.02, x, 1.15, -L * 0.1);                               // and only a chrome edge between the side windows
       // the lamps: round, under chrome hoods at the wings' tips
       disc(group, chrome, 0.125, 0.03, side * w * 0.4, 0.72, L + 0.005);
