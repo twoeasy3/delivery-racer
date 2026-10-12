@@ -49,7 +49,6 @@ const SHOT = { w: 600, h: 267, slack: 1.15 }; // (the small picture's size; and 
 // one is under it all the same: it shows until the large one has come, and if it never does
 // (A phone gets the large one too, as a desktop does: the owner asked for the high quality pictures there on 11-Oct,
 // reversing the small-only rule. phone() below still says whether the screen is a touch screen or a narrow window)
-const phone = () => !!window.matchMedia?.('(pointer: coarse), (max-width: 760px)').matches;
 // (a special event's stage shows its map's picture: events.js)
 const shotId = (level) => level.stage?.map || level.id;
 const stageShot = (id) => {

@@ -153,7 +153,7 @@ const spray = (s, lat, hw, hl, speed, dir) => {
 };
 
 let wasAfloat = false, rolled = false;
-export const syncWater = (now, dt) => {
+export const syncWater = (now) => {
   if (!sheets.length) {
     if (rolled) { carMesh.rotation.z = 0; rolled = false; }
     return;

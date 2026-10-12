@@ -40,13 +40,6 @@ const shade = new THREE.Color();
 const tint = (material, from, to, k) => material.color.setHex(from).lerp(shade.setHex(to), clamp01(k));
 // a shake that never repeats in step: -1 .. 1
 const jitter = (t, k = 0) => Math.sin(t * 37.1 + k * 5.3) * Math.sin(t * 23.3 + k * 2.1);
-// a chain of joints, each `step` up (or down) the last: a sleeve, a hose
-const chain = (parent, n, step, make) => {
-  const joints = [];
-  let p = parent;
-  for (let j = 0; j < n; j++) { const joint = sub(p, 0, j ? step : 0, 0); make(joint, j); joints.push(joint); p = joint; }
-  return joints;
-};
 // things that go round and round a cycle (sheets of paper, puffs of glitter): fn(mesh, 0 .. 1, k)
 const cycle = (list, t, rate, fn) => list.forEach((m, k) => fn(m, (((t * rate + k / list.length) % 1) + 1) % 1, k));
 // a word on a label (SEIZED, AUDIT, SURPRISE), as a material: plain `ground` where there is no canvas

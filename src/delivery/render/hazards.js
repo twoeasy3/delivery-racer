@@ -15,7 +15,6 @@ import { Player } from '../player.js';
 import { Hazards } from '../hazards.js';
 import { scene, tmp } from './scene.js';
 import { buildStrip } from './road.js';
-import { Particles, rnd } from './effects.js';
 import { makeWorker } from './siteModels.js';
 import { makePuddle, makeFountain } from './watermains.js';
 

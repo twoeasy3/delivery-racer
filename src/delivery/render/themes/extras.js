@@ -79,7 +79,7 @@ export const setsOf = (theme) => {
 // fence under a face that stands close to the road; a blast siren on its mast before every quarry blast (a
 // level's wreckage of kind 'blast' with rock: true) and at each end of every quarry
 const construction = (ctx) => {
-  const { add, flat, sideStrip, clearOfRoads, beside, cube, tube, cone } = ctx;
+  const { add, flat, sideStrip, clearOfRoads, beside, tube, cone } = ctx;
   const kit = makeKit(ctx), rand = seeded(31), Q = CONFIG.quarry;
   const YELLOW = 0xf2c21a, DARK = 0x2c3440, STEEL = 0x8a8f96, TYRE = 0x1c1c1c;
   const quarries = (LEVEL.quarries || []).map(q => ({ ...q, sg: q.side === 'left' ? -1 : 1, floorTo: q.floor ?? Q.floorTo }));
@@ -659,7 +659,7 @@ const bathurst = (ctx) => {
 // water and junks and sampans moored in rafts inside it; and the Peak behind the towers on the city side, a dark
 // ridge standing over them with lit windows up its lower slopes, the Peak Tower on top and the tram's lights up to it
 const hongkong = (ctx) => {
-  const { theme, beside, cube, tube, cone } = ctx;
+  const { theme, beside, cube, tube } = ctx;
   const kit = makeKit(ctx), rand = seeded(47);
   const SEA = theme.sea || 14, CITY = -1, HARBOUR = 1;
   const NEON = [0xff2d95, 0x27e7ff, 0xffe12b, 0x7cff3a, 0xff6a1e], AWNING = [0xd8262b, 0x2f8a4a, 0xf2c21a, 0x1f5fd0];

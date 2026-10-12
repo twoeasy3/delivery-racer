@@ -29,7 +29,7 @@ import { THEMES } from './themes.js';
 import { PICKUP_COLOR } from './render/pickupModels.js';
 import { closeLoop, roadEnd } from './levelSchema.js';
 import { FIELDS, GROUPS, RULES, isPlaced, isList, entriesOf, placeOf, spanOf, triggerOf, makeEntry, roadFacts, brokenRules, checkLevel, loadLevel, saveLevel,
-  asSetting, choiceValue, choiceLabel } from './levelSchema.js';
+  asSetting, choiceValue } from './levelSchema.js';
 import { h, fill, control, settingsForm } from './editorForms.js';
 
 const $ = (id) => document.getElementById(id);
@@ -114,14 +114,6 @@ const nearest = (x, y) => { // the road's nearest point to a map point: s along 
   const gap = apartAt(best.s);
   if (gap && lat < -HM() - gap / 2) { lat += gap; off = Math.abs(lat); } // (on the side that has parted)
   return { s: best.s, lat, off };
-};
-const nearestLane = (lat) => { // (or shoulder: 'left' | 'right')
-  const [a, b] = edges();
-  if (lat < a) return 'left';
-  if (lat > b) return 'right';
-  let best = 0;
-  for (let k = 1; k < laneCount(); k++) if (Math.abs(laneLat(k) - lat) < Math.abs(laneLat(best) - lat)) best = k;
-  return best;
 };
 // ---- the side roads: the level laid out by the game's own Track (see track.js), for what the editor doesn't
 // work out for itself: each exit's side road and flyovers, as the game will have them, and the problems the

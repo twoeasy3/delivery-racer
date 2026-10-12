@@ -539,14 +539,10 @@ export const roadFacts = (level) => {
   const segments = Array.isArray(level.segments) ? level.segments : [];
   const length = segments.reduce((sum, seg) => sum + (seg.length || 0), 0);
   const starts = [];
-  let at = 0, heading = 0, x = 0, z = 0;
+  let at = 0;
   for (const seg of segments) {
     starts.push(at);
     at += seg.length || 0;
-    // (where the road ends up: for a closed loop)
-    const c = seg.curve || 0, L = seg.length || 0;
-    if (c) { x += (Math.cos(heading) - Math.cos(heading + c * L)) / c; z += (Math.sin(heading + c * L) - Math.sin(heading)) / c; } else { x += Math.sin(heading) * L; z += Math.cos(heading) * L; }
-    heading += c * L;
   }
   const segAt = (s) => { for (let i = segments.length - 1; i >= 0; i--) if (s >= starts[i]) return segments[i]; return segments[0]; };
   const some = (a, b, test) => {
@@ -559,7 +555,6 @@ export const roadFacts = (level) => {
   const left = oneWay ? (flow === 'south' ? total : 0) : typeof L === 'object' && L ? L.south || 0 : Math.floor(L / 2);
   const right = oneWay ? (flow === 'north' ? total : 0) : total - left;
   const median = level.median || 0, R = CONFIG.ramps || {};
-  const turns = Math.abs(heading) / (Math.PI * 2);
   return {
     level, length, segments, starts, flow, oneWay, left, right, median, lanes: total + median,
     // (the lanes going the player's way: all of them on a one-way or a mixed level)

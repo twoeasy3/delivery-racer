@@ -116,7 +116,7 @@ export const fallout = ({ theme, add, instances, sideStrip, offRoads, beside, in
   }
 
   // ---- the sets along the road
-  const steelDark = 0x5a6066, steel = 0x8a9096, rust = 0x7a4a2a, concrete = 0xb9b6ae;
+  const steelDark = 0x5a6066, steel = 0x8a9096, concrete = 0xb9b6ae;
   for (const z of sets) {
     const mid = (z.from + z.to) / 2;
     if (z.set === 'pylons') { // a line of them along the left, 45 m out, wires strung from one to the next

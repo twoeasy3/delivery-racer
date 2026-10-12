@@ -164,7 +164,6 @@ let even, LAP; // (even: the points; LAP: the lap's length on the map, m)
   for (let i = 0; i < n; i++) even.push(at(s0 + i * LAP / n));
 }
 const NSEG = Math.round(LAP / 4), LENGTH = NSEG * 4;   // the level's lap: 4 m segments
-const DS = LAP / NSEG;                                  // what 4 m of the level is on the map
 const E = even.length, PER = E / NSEG;                  // (even points per segment: 8 or so)
 
 // the heading all the way round (anticlockwise from east, never jumping), smoothed
@@ -286,7 +285,7 @@ for (let i = 0; i < NSEG; i++) { const g = toGame([MAPL[i][0], MAPL[i][1]], 0); 
 // ---------------------------------------------------------------------------------------------------
 // heights: SRTM along the lap
 // ---------------------------------------------------------------------------------------------------
-let grades = new Array(NSEG).fill(0), heights = null, elevation = null;
+let grades = new Array(NSEG).fill(0), heights, elevation = null;
 if (CFG.elevation !== false) {
   const EL = { every: 40, smooth: 40, scale: 1, hold: 5, ...(CFG.elevation || {}) };
   const count = Math.round(LENGTH / EL.every), pts = [];
@@ -337,7 +336,7 @@ const APRON = (t) => !!t['area:highway'] || (t.highway === 'raceway' && t.area =
 const GRASS = (t) => t.landuse === 'grass' || t.landuse === 'meadow' || t.natural === 'grassland' || t.surface === 'grass' || t.landuse === 'greenfield';
 const HARD = (t) => (t.building && t.building !== 'no') || t.landuse === 'forest' || t.natural === 'wood' || t.natural === 'water' || t.natural === 'scrub' || t.natural === 'tree_row' || t.waterway || t.leisure === 'bleachers' || t.man_made === 'embankment' || t.natural === 'cliff';
 // each feature: { kind, id, tags, edges: [[ax, ay, bx, by], ...], closed, box }
-const lapNodes = new Set(chain), lapWays = new Set(lapIds);
+const lapWays = new Set(lapIds);
 const features = [];
 let trackBox = [Infinity, Infinity, -Infinity, -Infinity];
 for (const p of even) trackBox = [Math.min(trackBox[0], p[0]), Math.min(trackBox[1], p[1]), Math.max(trackBox[2], p[0]), Math.max(trackBox[3], p[1])];
@@ -358,7 +357,6 @@ const kindOf = (t, closed) => {
   if (!closed) return t.natural === 'tree_row' || t.waterway === 'river' || t.waterway === 'canal' || t.natural === 'cliff' || t.man_made === 'embankment' ? 'hardline' : null;
   return TRAP(t) ? 'trap' : APRON(t) ? 'apron' : HARD(t) ? 'hard' : GRASS(t) ? 'grass' : null;
 };
-const inRelation = new Set();
 for (const r of RELS.values()) {
   if (!r.tags || r.tags.type !== 'multipolygon') continue;
   const kind = kindOf(r.tags, true);

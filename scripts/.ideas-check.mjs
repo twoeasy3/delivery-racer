@@ -8,7 +8,7 @@
 import { boot } from './delivery-headless.mjs';
 
 const quick = process.argv.includes('--quick');
-const g = await boot({ cars: ['commuter'] });
+const g = await boot({ cars: ['commuter'], tiers: false }); // (tiers off: this is about what an idea does, and a tier level would put the player in the tier's car instead)
 let failures = 0;
 const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' : '  FAIL  ') + what); };
 try {
@@ -186,7 +186,8 @@ try {
   start('schoolbus');
   const bus = cars().CAR;
   mystery('soupedUp');
-  check(cars().CAR === bus && P.mystery === C.mystery.fallback, 'souped up: an idea has no Super version, and gets the fallback (' + C.mystery.fallback + ') in its place');
+  // (player.js startMystery: souped up in a car with no Super version upgrades nothing and says so, messages.json soupedUpNone; it is no longer swapped for the fallback)
+  check(cars().CAR === bus && P.mystery === '' && P.hl === bus.hl, 'souped up: an idea has no Super version, so nothing is upgraded (the car stays the ' + bus.name + ', no effect runs)');
   P.endMystery();
   mystery('carSwap');
   const lentCar = cars().CAR;

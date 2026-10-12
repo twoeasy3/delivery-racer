@@ -487,7 +487,7 @@ export const Gambles = {
     const centre = Track.laneOffset(Track.nearestLane(lat, s), s);
     return CONFIG.laneWidth / 2 - Math.abs(lat - centre) > this.cushionRoom(hw);
   },
-  updateCushions(dt) {
+  updateCushions() {
     const K = CONFIG.cushion, P = Player, was = this.rowS ?? P.s;
     this.rowS = P.s;
     if (!this.rows.length) return;

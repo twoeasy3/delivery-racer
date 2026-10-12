@@ -386,7 +386,7 @@ try {
   levels.selectLevel(0);
   check(Game.state === 'start' && Game.loaded !== levels.LEVEL, 'back on the menu, picking a level does not load it');
   Game.start();
-  check(Game.loaded === levels.LEVEL && track.Track.length === 3300, 'starting a run loads it (Expressway, 3300 m)');
+  check(Game.loaded === levels.LEVEL && track.Track.length === 2000, 'starting a run loads it (Expressway, 2000 m: shortened from 3300 by the beginner plan)');
 
   // collisions
   section('collisions');
@@ -642,7 +642,11 @@ try {
   // swapping cars takes effect at once, with no reload
   section('flyovers');
   {
+    // (no level has flyovers on an exit any more, the feature stands in track.js: so the first two-way level with an exit has them put
+    // on its exit for this check, and taken off again after)
     const n = levels.LEVELS.findIndex(l => (l.exits || []).length && !l.flow);
+    const exit0 = levels.LEVELS[n].exits[0], hadFlyovers = exit0.flyovers;
+    exit0.flyovers = true;
     levels.selectLevel(n);
     Game.start();
     const T = track.Track, x = T.exits[0], FLY = CONFIG.ramps.flyoverLength;
@@ -661,6 +665,7 @@ try {
     const order = [...seen].join(' > ');
     check(order === 'main > A > side > B' && Player.active && T.isMain(Player.s) && Player.s > x.flyoverAt,
       `${levels.levelName(levels.LEVEL)}: the player drives up flyover A from the left shoulder, along the side road's oncoming lane, over flyover B and back (${order})`);
+    if (hadFlyovers === undefined) delete exit0.flyovers; else exit0.flyovers = hadFlyovers;
   }
 
   section('busted');
@@ -963,7 +968,7 @@ try {
     let t = 0, carWrecked = false;
     // (watched as it goes: once wrecked, its slot in the pool may be dealt out again as a new car)
     while (Player.active && t < 8) { step(); t += 1 / 120; carWrecked ||= !car.active; }
-    const inLane = Collision.obstacles.find(o => o.s === 300), otherLane = Collision.obstacles.find(o => o.s === 500);
+    const inLane = Collision.obstacles.find(o => o.s === 350), otherLane = Collision.obstacles.find(o => o.s === 750); // (Expressway's lane-2 and lane-3 barriers; they were at 300 and 500 before it was shortened)
     const fastest = Math.max(...cars.CARS.map(c => c.maxSpeed), ...Object.values(cars.LEVEL_CARS).map(c => c.maxSpeed), ...Object.values(cars.SECRET_CARS).map(c => c.maxSpeed), CONFIG.tankMaxSpeed) + CONFIG.turboBoost;
     check(said && BulletTrain.lane === 2 && !Player.active && Math.abs(t - B.warning) < 0.5 && carWrecked &&
       inLane.gone && !otherLane.gone && B.speed > fastest * 1.5,
@@ -1769,7 +1774,7 @@ try {
     // pillboxes fire only at the other army: a red one at the player and the green army, a green one at the red
     fresh(); alone(); untake();
     const red = Gunfire.pillboxes.find(b => b.team < 0), green = Gunfire.pillboxes.find(b => b.team > 0 && b.s > red.s + 300);
-    const shotAt = (box, kinds) => {
+    const shotAt = (box) => {
       Gunfire.reset();
       Gunfire.pillboxes.length = 0;
       Gunfire.pillboxes.push(box);
@@ -2930,7 +2935,7 @@ try {
   Progress.reset();
   Progress.complete({ levels: levels.LEVELS.length, cars: cars.CARS.map(car => car.id), money: CONFIG.completeBank });
   check(Progress.data.unlocked === levels.LEVELS.length && cars.CARS.every(car => Progress.owns(car.id)) &&
-    !Progress.owns('bus') && Progress.data.money === CONFIG.completeBank && Progress.bestTime('expressway', false) === undefined,
+    !Progress.owns('bus') && Progress.data.money === CONFIG.completeBank && Progress.bestTime('expressway', false) === 0, // (a medal on every level, at 0:00 to spare: Progress.complete)
     `a complete savegame: ${Progress.data.unlocked} levels open, ${Progress.data.cars.length} cars owned, $${Progress.data.money} banked, the bus still secret`);
 } catch (error) {
   if (error !== 'levels only') { // (thrown to end a --levels run early)
