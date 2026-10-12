@@ -32,7 +32,20 @@ try {
   const real = pools();
   const inPool = Object.values(real.evergreen).flat();
   check(EVENT_CARS.every(c => !inPool.includes(c)) && EARNED_CARS.every(c => !inPool.includes(c)), 'no event car and no earned car in the evergreen pool (event cars come as featured cards)');
-  check(!real.keys.some(c => c.id === 'commuter') && real.keys.some(c => c.id === 'lovebus') && real.keys.every(c => !c.evergreen && CARS.includes(c)), 'the keys (Bespoke): garage cars not owned (' + real.keys.length + ')');
+  // (the Bespoke pool, 12-Oct: the keys of the Bespoke key cars not owned, never a garage car; their blueprints Legendary, never evergreen)
+  const BESPOKE = [...EVENT_CARS, ...(g.cars.BESPOKE_CARS || [])].filter(c => c.bespoke);
+  check(BESPOKE.length >= 2 && BESPOKE.some(c => c.id === 'silvercomet') && real.keys.length === BESPOKE.length && real.keys.every(c => c.bespoke && !CARS.includes(c)),
+    'the keys (Bespoke): exactly the Bespoke key cars not owned, no garage car (' + real.keys.map(c => c.id).join(' ') + ')');
+  check(BESPOKE.every(c => rarityOf(c) === 'legendary' && Ecu.rarity(c) === 'legendary' && real.bespoke.legendary.includes(c) && !inPool.includes(c)),
+    'a Bespoke key car\'s blueprints are Legendary cards, in the bespoke pool and never the evergreen one');
+  const ownsComet = pools({ owned: (id) => id === 'silvercomet' || id === 'commuter' });
+  check(!ownsComet.keys.some(c => c.id === 'silvercomet') && ownsComet.keys.length === BESPOKE.length - 1, 'a key owned is out of the Bespoke pool');
+  {
+    const std = P.poolOf(Packs.data.kinds.standard), car = P.poolOf(Packs.data.kinds.career), spc = P.poolOf(Packs.data.kinds.special);
+    const where = Object.keys(Packs.data.kinds).filter(k => Packs.data.kinds[k].bespokeBlueprints);
+    check(BESPOKE.every(c => std.legendary.includes(c) && std.bespoke.includes(c)) && BESPOKE.every(c => !car.legendary.includes(c) && !spc.legendary.includes(c)) && !car.bespoke && !spc.bespoke,
+      'the standard pack holds their keys and blueprints; career and special packs neither (packs.json bespokeBlueprints: ' + where.join(', ') + ')');
+  }
   for (const r of RARITIES.filter(r => r !== 'bespoke')) console.log('        ' + r.padEnd(10) + (real.evergreen[r] || []).map(c => c.id).join(' '));
   // a car's own rarity first; a 1-gold blueprint car is common; the roster read when drawn
   const fakes = [
@@ -41,7 +54,7 @@ try {
     { id: 'fake-coupe', name: 'Coupe', tier: 3, evergreen: true, rarity: 'epic', price: 0 },
   ];
   check(rarityOf(fakes[0]) === 'common' && rarityOf(fakes[1]) === 'legendary' && rarityOf(fakes[2]) === 'epic', 'a car\'s own rarity is read first; a 1-gold blueprint car is common');
-  const withFakes = [...CARS, ...fakes];
+  const withFakes = [...CARS, ...BESPOKE, ...fakes]; // (the Bespoke key cars too: their keys are the Bespoke rarity's cards)
   const fp = pools({ cars: withFakes, owned: (id) => id === 'commuter' });
   check(fp.evergreen.legendary.includes(fakes[1]) && fp.evergreen.common.includes(fakes[0]) && !fp.keys.some(c => c.evergreen), 'cars added to the roster are in the pool, never as keys');
 
@@ -233,7 +246,7 @@ try {
   for (const kind of Object.keys(Packs.data.kinds)) {
     const feats = kind === 'special' ? featuredFor('comet-hunt') : [];
     const c = contents(kind, { featured: feats }), pool = pools(), spec = Packs.data.kinds[kind];
-    const want = { ...pool.evergreen, ...(spec.pool === 'all' ? { bespoke: pool.keys } : {}) };
+    const want = Object.fromEntries(RARITIES.map(r => [r, [...(pool.evergreen[r] || []), ...(spec.bespokeBlueprints ? pool.bespoke[r] || [] : []), ...(r === 'bespoke' && spec.pool === 'all' ? pool.keys : [])]]));
     const listed = Object.fromEntries(c.groups.map(gr => [gr.rarity, gr.cards.map(x => x.car.id).sort()]));
     const exact = RARITIES.every(r => JSON.stringify(listed[r] || []) === JSON.stringify((want[r] || []).map(x => x.id).sort()));
     const sums = c.groups.map(gr => [gr.rarity, gr.cards.reduce((n, x) => n + x.chance, 0), gr.share]);

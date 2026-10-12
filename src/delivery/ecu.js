@@ -3,7 +3,7 @@
 // not driveable. Two kinds of car:
 //   KEY car        starts at ECU1 once its key is had (a car lot car: bought; an earned car: earned; an event's: given),
 //                  and climbs one ECU per X blueprints; blueprints collected before the key count (it then plays at the ECU
-//                  reached). Unselectable until the key. The garage's cars (CARS), the earned (special) cars, the event cars.
+//                  reached). Unselectable until the key. The garage's cars (CARS), the earned (special) cars, the event cars, the Bespoke key cars (BESPOKE_CARS).
 //   BLUEPRINT car  starts at ECU0, locked; its first X blueprints unlock it (ECU1), each X more raise it one ECU. The
 //                  evergreen filler cars (cars.js FILLER_CARS).
 // A car's max ECU follows the star ladder (LADDER below); the special (earned) cars and the 1-gold cars stop at ECU1. Each
@@ -19,7 +19,7 @@ import ECUS from './ecus.json';
 import { CONFIG } from './config.js';
 import { Progress } from './progress.js';
 import { LEVEL, isRace } from './levels.js';
-import { CARS, EARNED_CARS, EVENT_CARS, FILLER_CARS, setEcuHooks } from './cars.js';
+import { CARS, EARNED_CARS, EVENT_CARS, BESPOKE_CARS, FILLER_CARS, setEcuHooks } from './cars.js';
 
 // the ladder (decided, 12-Oct): max ECU by star tier, gold and blue, and the rarity of a key car's blueprint card
 export const LADDER = {
@@ -48,7 +48,7 @@ export const Ecu = {
   kind(car) {
     if (!car) return null;
     if (car.evergreen || listed(FILLER_CARS, car)) return 'blueprint';
-    if (listed(CARS, car) || listed(EARNED_CARS, car) || listed(EVENT_CARS, car)) return 'key';
+    if (car.bespoke || listed(CARS, car) || listed(EARNED_CARS, car) || listed(EVENT_CARS, car)) return 'key'; // (a Bespoke key car too: BESPOKE_CARS)
     return null;
   },
   isBlueprint(car) { return this.kind(car) === 'blueprint'; },
@@ -56,11 +56,11 @@ export const Ecu = {
   // special: today's magenta 6-star cars (EARNED_CARS): ECU1 only, no blueprints
   isSpecial(car) { return !!car && (!!car.earned || listed(EARNED_CARS, car)); },
   // the ladder's max for a car (what ecus.json was written with): special cars, tierless cars and the 1-gold cars 1;
-  // an event car with no tier of its own sits at the top (5); every other by its stars
+  // an event car or a Bespoke key car (no tier of its own) sits at the top (5); every other by its stars
   ladder(car) {
     if (!this.kind(car) || this.isSpecial(car)) return 1;
     const t = tierOf(car);
-    if (!t) return listed(EVENT_CARS, car) ? 5 : 1;
+    if (!t) return listed(EVENT_CARS, car) || car.bespoke ? 5 : 1;
     return LADDER[car.blue ? 'blue' : 'gold'][t];
   },
   // the max ECU: as ecus.json has it (the truth), else the ladder's
@@ -70,7 +70,8 @@ export const Ecu = {
   },
   // blueprints per ECU step
   x(car) { return (car && ECUS[car.id]?.x) || X_DEFAULT; },
-  // the rarity of its blueprint card: the car's own `rarity` if it has one (the evergreen cars), else the tier table;
+  // the rarity of its blueprint card: the car's own `rarity` if it has one (the evergreen cars; a Bespoke key car's,
+  // 'legendary': cars.js), else the tier table;
   // null: it has no cards (a 1-gold key car, a special car, a car with no ECU). A 1-gold blueprint car is common
   rarity(car) {
     if (!this.kind(car) || this.isSpecial(car)) return null;
@@ -151,7 +152,7 @@ export const Ecu = {
 };
 // (a car's own figures, as stats: read afresh each time, as a check may change a car's figures)
 const own = (car) => (car ? { maxSpeed: car.maxSpeed, accel: car.accel, health: car.health, respawn: CONFIG.respawnTime, ecu: null } : car);
-const byId = (id) => [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...FILLER_CARS].find(car => car.id === id) || null;
+const byId = (id) => [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...BESPOKE_CARS, ...FILLER_CARS].find(car => car.id === id) || null;
 
 // the hooks: cars.js asks for a run's figures; progress.js asks whether a blueprint car is owned (unlocked)
 setEcuHooks({ drive: (car, lent) => Ecu.drive(car, lent) });
