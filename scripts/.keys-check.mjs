@@ -66,6 +66,12 @@ try {
   const bn = all(b.node);
   check(/^BLUEPRINT/.test(bn.find(n => n.className === 'bp-tab')?.textContent || '') && bn.includes(b.pic) && !bn.some(n => /bp-keypic/.test(n.className)),
     'a blueprint card: BLUEPRINT, its own car picture, no key');
+  // each Bespoke key car has ONE key style for good (cars.js `keyModel`), and all three styles are in use (the owner, 12-Oct)
+  const carsMod = await g.load('cars.js');
+  const bespokeCars = [...carsMod.EVENT_CARS, ...carsMod.BESPOKE_CARS].filter(c => c.bespoke);
+  const styles = bespokeCars.map(c => c.id + ':' + c.keyModel).join(' ');
+  check(bespokeCars.length >= 6 && bespokeCars.every(c => KEY_MODELS.includes(c.keyModel)), 'every Bespoke key car has its own key style (' + styles + ')');
+  check(KEY_MODELS.every(m => bespokeCars.some(c => c.keyModel === m)), 'all three key styles (fob, classic, smart) are featured on some Bespoke car');
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error?.stack || error));

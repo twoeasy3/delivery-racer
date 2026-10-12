@@ -17,14 +17,15 @@ import { sharedRenderer, drawStill } from './modelviews.js';
 
 const params = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();
 // the key model the cards draw: ?keymodel= for a visit, else KEY_MODEL
-export const keyModelInUse = () => (KEY_MODELS.includes(params.get('keymodel')) ? params.get('keymodel') : KEY_MODEL);
+// (the car's own key style, `keyModel` in cars.js, always the same; ?keymodel= overrides it for a visit, to compare the three)
+export const keyModelInUse = (car) => (KEY_MODELS.includes(params.get('keymodel')) ? params.get('keymodel') : KEY_MODELS.includes(car?.keyModel) ? car.keyModel : KEY_MODEL);
 
 // the pose: the key turned a little and tipped across the picture (its head up and left, its blade down and right),
 // seen from a little above, framed tight (modelviews.js poseView)
 export const KEY_POSE = { lift: 0.2, angle: 0.38, fov: 30, margin: 0.98 }; // (a little more than a car: the corners of a tipped key's box are mostly empty)
 const TILT = { fob: -0.62, classic: -0.5, smart: -0.55 }; // (rad about the picture's axis: + turns the head left)
 // the key in its pose's wrapper (the wrapper has no animate: a still never sways)
-export const posedKey = (car, { model = keyModelInUse(), rarity = 'bespoke', tilt = TILT[model] ?? -0.55, turn = 0 } = {}) => {
+export const posedKey = (car, { model = keyModelInUse(car), rarity = 'bespoke', tilt = TILT[model] ?? -0.55, turn = 0 } = {}) => {
   const wrap = new THREE.Group(), key = makeKey(car, { model, rarity });
   key.rotation.y = turn;
   const tipped = new THREE.Group();
@@ -103,7 +104,7 @@ const poll = () => {
 };
 
 // the key card's picture element (blueprintcard.js puts it where the car's picture would be): drawn lazily by itself
-export const keyPicture = (car, rarity = 'bespoke', { model = keyModelInUse() } = {}) => {
+export const keyPicture = (car, rarity = 'bespoke', { model = keyModelInUse(car) } = {}) => {
   const el = document.createElement('div');
   el.className = 'bp-pic bp-keypic';
   el.dataset.keymodel = model;
