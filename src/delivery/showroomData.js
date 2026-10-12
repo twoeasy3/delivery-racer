@@ -117,6 +117,43 @@ export const carCard = (car, evil = false) => {
   };
 };
 
+// ---- the LOCKED-CARD OVERLAY: what a card that cannot be driven wears over its picture (the owner, 12-Oct, after an
+// Asphalt 9 locked card, "don't copy the text nor the colours"): a tint, a round badge with a thin ring and an icon, and a
+// short caption. Every locked card has exactly one kind; a card that can be driven (ready, or barred on this level) none.
+//   tier       a car of a tier not open yet (the silhouette, "Locked car"; or a car lot car its tier keeps off sale): a padlock
+//   blueprint  a blueprint car still at ECU0: its blueprints toward unlocking, with a bar
+//   unpurchased  a car lot car not bought, on sale: its price at Crazey Jim's
+//   key        a Key car (Bespoke, event) without its key: the key badge (it really needs its key: the owner, 12-Oct)
+//   earned     a special 6-star car not yet earned: a trophy, the level it is earned on. NEVER the word key (the owner)
+// The full reason stays in the full view's panel and the card's tooltip; these words are the card's, short.
+// Gives { kind, title, line, price?, have?, need? } or null. title / line may hold {tier:n} tokens (richTiers).
+export const OVERLAY_KINDS = ['key', 'earned', 'unpurchased', 'tier', 'blueprint'];
+const priceWords = (price) => '$' + (Number.isInteger(price) ? String(price) : price.toFixed(2));
+export const overlayOf = (card) => {
+  if (!card || card.unlocked) return null;
+  const car = card.car;
+  if (card.hidden) return { kind: 'tier', title: 'Tier locked', line: card.tier ? 'Opens with the {tier:' + card.tier + '} tier' : 'Opens with a later tier' };
+  if (card.blueprint) {
+    const need = card.perEcu, have = Math.max(0, Math.min(need, card.blueprints));
+    return { kind: 'blueprint', title: have + '/' + need + ' blueprints', line: 'From card packs', have, need };
+  }
+  if (CARS.includes(car) && !car.evergreen) {
+    if (card.forSale) return { kind: 'unpurchased', title: priceWords(car.price), line: 'At Crazey Jim’s', price: car.price };
+    return { kind: 'tier', title: 'Tier locked', line: card.tier ? 'Opens with the {tier:' + card.tier + '} tier' : 'Not for sale yet' };
+  }
+  if (car.earned || Object.values(SECRET_CARS).includes(car)) {
+    const level = car.earned && LEVELS.find(l => l.id === car.earned.level);
+    return { kind: 'earned', title: 'Earn it', line: level ? 'Beat par on ' + levelName(level) : 'Earn it on its level' };
+  }
+  return { kind: 'key', title: 'Needs its key', line: EVENT_CARS.includes(car) ? 'Win it at events or find it in packs' : 'Find it in Bespoke packs' };
+};
+// the card's tooltip: the spec's words (LOCKED_WORDS), but an earned car's never speaks of a key (the owner, 12-Oct)
+export const cardTip = (card) => {
+  const ov = overlayOf(card);
+  if (ov?.kind === 'earned') return ov.title + ': ' + ov.line;
+  return card.reason;
+};
+
 // the best figures on the floor, for the stat bars (by a car's MAXED figures, as the cars stand now)
 export const floorBest = () => {
   const cards = showroomCars().map(car => statsAt(car, safe(() => Ecu.max(car), 1)));

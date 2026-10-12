@@ -64,8 +64,12 @@
 .bp-foot { display: flex; align-items: center; gap: 2cqw; margin-top: auto; padding: 2.5cqw .5cqw 0; font-size: max(9px, 5.8cqw); color: #3a4150; }
 .bp-foot b { font: 800 max(10px, 6.6cqw)/1 var(--display); color: #10131a; white-space: nowrap; }
 
-/* compact: the "What's inside" sheet's tiles */
-.bp-card.compact { padding: 3%; border-radius: 8px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .8), 0 0 0 2.5px var(--rc), 0 6px 14px rgba(0, 0, 0, .45); }
+/* compact: the "What's inside" sheet's tiles and "Where to get it"'s cards (render/carsources.js). A THIN frame (the owner,
+   12-Oct: "the borders on those look too large"): half the old padding and one slim ring of the rarity colour */
+.bp-card.compact { padding: 1.5%; border-radius: 7px; box-shadow: 0 0 0 1.5px var(--rc), 0 5px 12px rgba(0, 0, 0, .42); }
+.bp-card.compact .bp-art { border-radius: 5.5px; }
+.bp-card.compact .bp-name { padding-top: 2.5cqw; }
+.bp-card.key.r-bespoke.compact { border-width: 1.5px; box-shadow: 0 5px 12px rgba(0, 0, 0, .42); } /* (its rainbow rim, thinner too: keycard.css) */
 .bp-card.compact .bp-art { aspect-ratio: 4 / 3; }
 .bp-card.compact .bp-name strong { font-size: max(12px, 9.5cqw); }
 .bp-foot.chance { flex-wrap: wrap; gap: 1.5cqw 2cqw; }

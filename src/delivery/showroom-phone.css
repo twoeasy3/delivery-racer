@@ -31,9 +31,9 @@
   #showroom .sr-bp-icon { font-size: 10px; }
   #showroom .sr-bp small { font-size: 10px; }
   #showroom .sr-badge { top: 22px; bottom: auto; left: 6px; padding: 2px 5px; font-size: 9px; }
-  #showroom .sr-lock { top: auto; bottom: 82px; left: 6px; right: 6px; max-width: none; gap: 5px; padding: 4px 6px; font-size: 10px; line-height: 1.2; }
-  #showroom .sr-lock span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  #showroom .sr-lock b { font-size: 12px; }
+  #showroom .sr-ov.inline { --b: 34px; bottom: 4px; max-width: calc(100% - 24px); padding: 4px 12px 4px 4px; }
+  #showroom .sr-ov.inline .sr-ov-title { font-size: 14px; }
+  #showroom .sr-ov.inline .sr-ov-line { font-size: 11px; }
 
   /* ---- the single-car screen ---- */
   #showroom .sr-detail.open { display: flex; flex-direction: column; overflow: hidden; touch-action: pan-y; }
