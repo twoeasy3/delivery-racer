@@ -15,10 +15,10 @@
   "goldOneBlueprint": "common",
   "featuredRarity": "legendary",
   "kinds": {
-    "standard": { "name": "Standard pack", "size": 5, "pool": "all", "bespokeBlueprints": true, "atLeast": { "uncommon": 1 } },
-    "ten": { "name": "10-pack", "size": 10, "pool": "all", "bespokeBlueprints": true, "atLeast": { "uncommon": 1, "epic": 1 } },
-    "career": { "name": "Career pack", "size": 5, "pool": "evergreen", "atLeast": { "uncommon": 1 } },
-    "special": { "name": "Special pack", "size": 5, "pool": "evergreen", "atLeast": { "uncommon": 1 }, "featured": { "upgradeChance": 0.25, "featuredChance": 0.2 } }
+    "standard": { "name": "Standard pack", "size": 5, "amount": 1, "pool": "all", "bespokeBlueprints": true, "atLeast": { "uncommon": 1 } },
+    "ten": { "name": "10-pack", "size": 10, "amount": 1, "pool": "all", "bespokeBlueprints": true, "atLeast": { "uncommon": 1, "epic": 1 } },
+    "career": { "name": "Career pack", "size": 5, "amount": 1, "pool": "evergreen", "atLeast": { "uncommon": 1 } },
+    "special": { "name": "Special pack", "size": 5, "amount": 1, "pool": "evergreen", "atLeast": { "uncommon": 1 }, "featured": { "upgradeChance": 0.25, "featuredChance": 0.2 } }
   },
   "career": { "every": 5, "levels": [] },
   "events": { "stage": "special", "prize": "special" },

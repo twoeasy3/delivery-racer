@@ -45,12 +45,13 @@ export const blueprintCard = (car, card, { compact = false, chance = null, marks
   const pic = make('div', 'bp-pic');
   const st = stars(car) ? make('span', 'bp-stars', stars(car)) : null; // (an event car has no stars: its small line says so)
   st?.style.setProperty('color', starColour(car));
-  const tab = make('span', 'bp-tab', make('b', '', card.key ? 'CAR KEY' : 'BLUEPRINT'), card.n ? make('i', 'bp-x', '×' + card.n) : null);
+  const tab = make('span', 'bp-tab', make('b', '', card.key ? 'CAR KEY' : 'BLUEPRINT'));
   const letter = make('span', 'bp-letter', RARITY_WORD[rarity] || rarity); // (the word, not a letter: Common, Uncommon...)
   letter.title = RARITY_WORD[rarity] || rarity;
   // a KEY card shows the car's KEY (render/keycard.js draws it, lazily, by itself); the `pic` handed back is then a
   // stand-in kept out of the page, so the caller's car still (carstill.js) is never drawn on a key card
-  const art = make('div', 'bp-art', card.key ? keyPicture(car, rarity) : pic, st, tab, letter,
+  const count = card.n ? make('span', 'bp-amount', make('small', '', '×'), make('b', '', String(card.n))) : null; // (how many of it the slot gave: the card's own data, packs.json)
+  const art = make('div', 'bp-art', card.key ? keyPicture(car, rarity) : pic, st, tab, letter, count,
     card.isNew && !card.key ? make('span', 'bp-new', 'NEW') : null,
     card.featured ? make('span', 'bp-featured', 'Featured') : null);
   const name = make('div', 'bp-name', make('small', '', makerLine(car, card.key)), make('strong', '', car.name));

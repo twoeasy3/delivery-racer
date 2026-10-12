@@ -270,6 +270,14 @@ try {
   const extra = { id: 'fake-new', name: 'New One', tier: 3, evergreen: true, rarity: 'epic', price: 0 };
   const withExtra = contents('career', { cars: [...P.roster(), extra] });
   check(withExtra.groups.find(gr => gr.rarity === 'epic').cards.some(x => x.car.id === 'fake-new') && withExtra.total === contents('career').total + 1, 'a car added to the roster is listed at once');
+  // the count a slot gives is data (packs.json `amount` / `amounts`), never fixed: a number, or [min, max]; a key card is always one
+  const Pk = await g.load('packs.js');
+  check(Pk.amountFor({ amount: 3 }, 'common') === 3 && Pk.amountFor({ amount: 2, amounts: { epic: 5 } }, 'epic') === 5 && Pk.amountFor({}, 'common') === 1,
+    'a slot\'s amount comes from the kind: its `amount`, a rarity\'s `amounts`, else 1');
+  const spread = new Set(Array.from({ length: 200 }, () => Pk.amountFor({ amount: [2, 4] }, 'common')));
+  check([...spread].every(n => n >= 2 && n <= 4) && spread.size === 3, 'an amount [2, 4] gives 2, 3 or 4 (all three seen)');
+  const drawn = Pk.draw('standard', { spec: { ...Pk.draw ? {} : {}, size: 5, pool: 'all', amount: 3 } });
+  check(drawn.every(c => c.key ? c.n === 1 : c.n === 3), 'a drawn pack carries each card\'s amount (3 here; a key is 1)');
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error.stack || error));
