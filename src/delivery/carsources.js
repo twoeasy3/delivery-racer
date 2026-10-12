@@ -167,6 +167,19 @@ const keySources = (car, t) => {
   return out;
 };
 
+// the name of a LIVE event that gives this car (a special event's grand prize, or a plain event's reward), or null: the card's overlay
+// names it while it is on (the owner, 12-Oct); not once the event is over, or before it starts, or its prize already won
+export const liveEventFor = (car, { t = Events.now() } = {}) => {
+  for (const event of Events.specials) {
+    if (event.prize?.car === car?.id && eventState(event.from, event.to, t).live && !Events.prizeWon(event)) return event.name;
+  }
+  for (const entry of PLAIN_EVENTS) {
+    if (!entry || typeof entry !== 'object' || entry.reward?.car !== car?.id) continue;
+    if (eventState(when(entry.from), when(entry.to), t).live) { const level = levelById(entry.id); return level ? levelName(level) : String(entry.id); }
+  }
+  return null;
+};
+
 export const sourcesOf = (car, { t = Events.now() } = {}) => {
   if (!car) return null;
   const kind = Ecu.kind(car);

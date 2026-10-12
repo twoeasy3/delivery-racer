@@ -12,6 +12,7 @@ import { Tiers } from './tiers.js';
 import { LEVELS } from './levels.js';
 import { levelName } from './levelText.js';
 import { Ecu } from './ecu.js';
+import { liveEventFor } from './carsources.js';
 
 // the words players see on a car that cannot be driven (the owner's, 12-Oct)
 export const LOCKED_WORDS = {
@@ -145,7 +146,8 @@ export const overlayOf = (card) => {
     const level = car.earned && LEVELS.find(l => l.id === car.earned.level);
     return { kind: 'earned', title: 'Earn it', line: level ? 'Beat par on ' + levelName(level) : 'Earn it on its level' };
   }
-  return { kind: 'key', title: 'Needs its key', line: EVENT_CARS.includes(car) ? 'Win it at events or find it in packs' : 'Find it in Bespoke packs' };
+  return { kind: 'key', title: 'Needs its key', line: EVENT_CARS.includes(car) ? (liveEventFor(car) ? 'Win it in ' + liveEventFor(car) : 'Win it at events or find it in packs') : 'Find it in Bespoke packs' };
+  // (an event car: the live event by name; else the general line; the other Bespoke cars have no event: packs only)
 };
 // the card's tooltip: the spec's words (LOCKED_WORDS), but an earned car's never speaks of a key (the owner, 12-Oct)
 export const cardTip = (card) => {
