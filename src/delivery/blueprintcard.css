@@ -18,6 +18,22 @@
   background: repeating-linear-gradient(135deg, var(--rc) 0 7cqw, var(--rc-deep) 7cqw 14cqw); }
 .bp-card.r-bespoke .bp-art { background: repeating-linear-gradient(135deg, rgba(255, 255, 255, .22) 0 7cqw, transparent 7cqw 14cqw),
   linear-gradient(125deg, #ff3fae, #ffbe2e 28%, #3fd06f 48%, #35c2ff 68%, #b45cff 88%); }
+/* the cards of a BLUEPRINT car (only ever got from blueprints) and of a KEY car (a Bespoke key's blueprints) look different from a garage
+   car's: a fine blueprint grid over the stripes (the stripes turned the other way), and for a Legendary one a slow shine; a Key car's
+   background is a sunburst of gold and magenta (the owner, 12-Oct: the player must see these work a bit differently) */
+.bp-card.kind-blueprint .bp-art { background:
+  linear-gradient(rgba(255, 255, 255, .22) 1px, transparent 1px) 0 0 / 6cqw 6cqw, linear-gradient(90deg, rgba(255, 255, 255, .22) 1px, transparent 1px) 0 0 / 6cqw 6cqw,
+  repeating-linear-gradient(45deg, var(--rc) 0 9cqw, var(--rc-deep) 9cqw 18cqw); }
+.bp-card.kind-blueprint.r-legendary .bp-art { background:
+  linear-gradient(rgba(255, 255, 255, .3) 1px, transparent 1px) 0 0 / 6cqw 6cqw, linear-gradient(90deg, rgba(255, 255, 255, .3) 1px, transparent 1px) 0 0 / 6cqw 6cqw,
+  linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, .45) 50%, transparent 62%) 0 0 / 250% 100% no-repeat,
+  repeating-linear-gradient(45deg, #ffbe2e 0 9cqw, #f08c00 9cqw 18cqw);
+  animation: bp-shine 3.2s linear infinite; }
+.bp-card.kind-key .bp-art { background:
+  repeating-conic-gradient(from 0deg at 50% 62%, rgba(255, 255, 255, .26) 0 6deg, transparent 6deg 15deg),
+  radial-gradient(circle at 50% 62%, #ffe27a 0, #ffbe2e 30%, #ff3fae 75%, #b01a86 100%); }
+@keyframes bp-shine { from { background-position: 0 0, 0 0, 130% 0, 0 0; } to { background-position: 0 0, 0 0, -90% 0, 0 0; } }
+@media (prefers-reduced-motion: reduce) { .bp-card.kind-blueprint.r-legendary .bp-art { animation: none; } }
 .bp-art::after { content: ''; position: absolute; inset: 0; pointer-events: none; /* (a sheen, and a floor shade under the car) */
   background: radial-gradient(60% 18% at 50% 84%, rgba(0, 0, 0, .28), transparent 70%), linear-gradient(180deg, rgba(255, 255, 255, .22), transparent 45%, rgba(0, 0, 0, .12)); }
 .bp-pic { position: absolute; inset: 0; z-index: 1; background: center / contain no-repeat; filter: drop-shadow(0 2cqw 2cqw rgba(0, 0, 0, .35)); }
