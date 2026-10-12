@@ -94,6 +94,7 @@ if (opt('levels', false) || opt('cars', false) || shots.some(([, address]) => ad
     'ring-road': '&at=4330&ff=1', // (the city centre's towers over the last stretch, the exit gantry ahead: its level's agent's frame)
     'albert-park': '&cineside=left&at=150' }); // (the tree again, further on)
   Object.assign(CINE, { thaw: '&at=3020&ff=1&cineside=left' }); // (Spring Thaw: the ford's sign, the bend and the meltwater, the side road leaving; the start is mostly empty sky)
+  Object.assign(CINE, { descent: '&at=2240&ff=1&cineup=14&cineside=left' }); // (Mudslide: a hairpin below the road, houses stacked up the hill, a speed-cushion sign ahead; the start is in the cloud)
   Object.assign(CINE, { 'hong-kong': '&at=400&ff=1&car=postvan' }); // (Hong Kong Harbour: the first ferry pier's clock tower and lanterns ahead on the promenade, the neon and the towers on the left; a tier-6 car, so the level starts)
   if (opt('levels', false)) {
     levels.LEVELS.forEach((level, i) => {

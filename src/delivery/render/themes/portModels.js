@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 
 const lambert = (color, extra) => new THREE.MeshLambertMaterial({ color, ...extra });
+const glowing = (color) => new THREE.MeshBasicMaterial({ color }); // (the night shift's lamps: lit whatever the light)
 const part = (parent, material, w, h, l, x, y, z) => {
   const mesh = new THREE.Mesh(BOX, material);
   mesh.scale.set(w, h, l);
@@ -20,7 +21,8 @@ const wheel = (parent, x, y, z, r = 0.8, w = 0.6) => { const tyre = new THREE.Me
 
 // a gantry crane over the road: a leg frame on wheels each side, `span` m apart, a pair of girders across at
 // `height` m, and a trolley that runs along them with a container hung under it (never lower than `clear` m)
-export const makeGantry = (span = 26, height = 19, k = 0, clear = 10) => {
+// (lit: the night shift: work lamps along the girders, a red beacon on each corner, the cab's window lit)
+export const makeGantry = (span = 26, height = 19, k = 0, clear = 10, lit = false) => {
   const g = new THREE.Group();
   const paint = lambert(0xf2b51c), dark = lambert(0x2f3338), white = lambert(0xe9ecef);
   for (const side of [-1, 1]) {
@@ -39,6 +41,12 @@ export const makeGantry = (span = 26, height = 19, k = 0, clear = 10) => {
   for (const side of [-1, 1]) part(g, paint, 1.1, 1.5, 11.1, side * (span / 2 + 0.6), height + 1.2, 0);
   part(g, white, 3, 2.4, 2.6, -span / 2 + 2.4, height - 1.2, 6.6);          // the driver's cab, under one end
   part(g, dark, 3.05, 1, 2.65, -span / 2 + 2.4, height - 0.9, 6.6);
+  if (lit) {
+    const lamp = glowing(0xfff0c0), red = glowing(0xff2a1a);
+    for (const z of [-5, 5]) for (let x = -span / 2 + 3; x <= span / 2 - 2; x += 4.5) part(g, lamp, 1.6, 0.3, 0.7, x, height + 0.35, z * 0.9);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) part(g, red, 0.6, 0.6, 0.6, sx * (span / 2 + 0.6), height + 2.2, sz * 5.4);
+    part(g, lamp, 3.05, 0.9, 0.1, -span / 2 + 2.4, height - 1, 7.95);
+  }
   const trolley = new THREE.Group();
   part(trolley, dark, 3.6, 1, 11.4, 0, height + 2.4, 0);
   const drop = height + 1.6 - clear - BOX_SIZE[1] - 0.5;
@@ -54,7 +62,7 @@ export const makeGantry = (span = 26, height = 19, k = 0, clear = 10) => {
 
 // a quay crane (ship to shore): a portal on four legs, a boom out over the water (local +x) and a shorter one
 // back over the quay, a machinery house, stays up to an A-frame; some 70 m to the top
-export const makeQuayCrane = (k = 0) => {
+export const makeQuayCrane = (k = 0, lit = false) => {
   const g = new THREE.Group();
   const paint = lambert([0xc9302c, 0x1f5fa8, 0xe0722a][k % 3]), white = lambert(0xe9ecef), dark = lambert(0x2f3338);
   const H = 40;
@@ -72,6 +80,13 @@ export const makeQuayCrane = (k = 0) => {
   for (const [x, y] of [[58, H + 2.5], [28, H + 2.5], [-28, H + 2.5]]) {
     const stay = part(g, dark, 0.3, Math.hypot(x - 4, H + 28 - y), 0.3, (x + 4) / 2, (H + 28 + y) / 2, 0);
     stay.rotation.z = Math.atan2(x - 4, H + 28 - y);
+  }
+  if (lit) {
+    const lamp = glowing(0xfff0c0), red = glowing(0xff2a1a);
+    for (let x = -24; x <= 56; x += 10) for (const z of [-3.2, 3.2]) part(g, lamp, 1.6, 0.3, 0.8, x, H + 1, z);
+    for (const z of [-11, 11]) part(g, red, 0.9, 0.9, 0.9, 8, H + 1.2, z);
+    part(g, red, 1.1, 1.1, 1.1, 4, H + 28.8, 0);     // the A-frame's beacon
+    part(g, lamp, 0.1, 1.6, 6.5, -10, H + 6, 0);        // the machinery house's window
   }
   const trolley = new THREE.Group();
   part(trolley, white, 4, 2.6, 5, 0, H - 0.4, 0);

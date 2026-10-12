@@ -16,11 +16,12 @@ const LANE = [3, 11];   // m off the pavement: the straddle carriers' lane, betw
 const STACKS = 13.5;    // ...where the stacks begin
 const QUAY = 50;        // ...and, on the right, the quay's edge
 
-export const port = ({ add, flat, instances, sideStrip, buildStrip, offRoads, beside, inJunction, exits, cube, tube, levelGroup }) => {
+export const port = ({ theme, add, flat, instances, sideStrip, buildStrip, offRoads, beside, inJunction, exits, cube, tube, levelGroup }) => {
   // (laid out the same every time: a seed of the level's own)
   let seed = 41 + (LEVEL.id || '').length * 389;
   const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const p = {};
+  const night = !!theme?.night; // (the night shift: the water dark, the cranes' lamps and beacons lit)
   const within = (list, s, pad, a = 'from', b = 'to') => (list || []).some(x => !x.road && x[a] !== undefined && s >= x[a] - pad && s <= x[b] + pad);
   const covered = (s, pad = 0) => within(LEVEL.tunnels, s, pad) || within(LEVEL.bridges, s, pad);
   // where the level has something of its own across the road or coming onto it from the side
@@ -74,8 +75,8 @@ export const port = ({ add, flat, instances, sideStrip, buildStrip, offRoads, be
   // straight enough for one to lie against it, two quay cranes over each
   add(sideStrip(Track.start, Track.end, (q) => beside(1, q, QUAY - 1.4), (q) => beside(1, q, QUAY), 0.25, 4), flat(0xc9ccd0));
   add(sideStrip(Track.start, Track.end, (q) => beside(1, q, QUAY - 2.2), (q) => beside(1, q, QUAY - 1.4), 0.03, 4), flat(0xe2b93b));
-  add(sideStrip(Track.start, Track.end, (q) => beside(1, q, QUAY), (q) => beside(1, q, QUAY + 560), -0.03, 8), new THREE.MeshBasicMaterial({ color: 0x41616b, side: THREE.DoubleSide }));
-  const sheen = new THREE.MeshBasicMaterial({ color: 0x5b7c85, side: THREE.DoubleSide });
+  add(sideStrip(Track.start, Track.end, (q) => beside(1, q, QUAY), (q) => beside(1, q, QUAY + 560), -0.03, 8), new THREE.MeshBasicMaterial({ color: night ? 0x16262e : 0x41616b, side: THREE.DoubleSide }));
+  const sheen = new THREE.MeshBasicMaterial({ color: night ? 0x2c4650 : 0x5b7c85, side: THREE.DoubleSide });
   const bollards = [], craneRails = [];
   for (let s = Track.start; s < Track.end; s += 18) {
     bollards.push([s, beside(1, s, QUAY - 0.7), 0.55, 0.7, 0.6, 0.7]);
@@ -96,7 +97,7 @@ export const port = ({ add, flat, instances, sideStrip, buildStrip, offRoads, be
     }
     if (!clear) continue;
     stand(makeShip(length, n), s, beside(1, s, QUAY + 19));
-    for (const at of [s - length * 0.2, s + length * 0.22]) stand(makeQuayCrane(n + (at > s ? 1 : 0)), at, beside(1, at, QUAY - 13.5), Math.PI);
+    for (const at of [s - length * 0.2, s + length * 0.22]) stand(makeQuayCrane(n + (at > s ? 1 : 0), night), at, beside(1, at, QUAY - 13.5), Math.PI);
     berths.push([s - length / 2, s + length / 2]);
     s += length + 90;
     n++;
@@ -156,7 +157,7 @@ export const port = ({ add, flat, instances, sideStrip, buildStrip, offRoads, be
     let at = null;
     for (const q of [s, s + 40, s - 40, s + 80]) if (!busy(q, 14) && !covered(q, 30) && !onRamps(q) && !within(LEVEL.reversible, q, 12) && !within(LEVEL.balloons, q, 40, 's', 's')) { at = q; break; }
     if (at === null) continue;
-    stand(makeGantry(Track.hi(at) - Track.lo(at) + 4.4, 19, k++), at, (Track.lo(at) + Track.hi(at)) / 2);
+    stand(makeGantry(Track.hi(at) - Track.lo(at) + 4.4, 19, k++, 10, night), at, (Track.lo(at) + Track.hi(at)) / 2);
   }
 
   // ---- reach stackers standing in the aisles; and straddle carriers running up and down their lane, each over
