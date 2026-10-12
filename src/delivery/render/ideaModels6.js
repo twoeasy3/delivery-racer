@@ -369,9 +369,7 @@ export const IDEA_MODELS_6 = {
       for (const dx of [-0.135, -0.045, 0.045, 0.135]) lamps.push(bx(0.07, 0.03, 0.08, dx, 0.02, 0, 0, 0, 0).applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(pitch, 0, roll))).translate(x, y, z));
     }
     merged(group, LAMP, lamps);
-    merged(group, AMBER, [-1, 1].map(side => bx(0.1, 0.03, 0.06, side * 0.66, 0.47, 2.0)));
-    merged(group, trim, [-1, 1].map(side => bx(0.3, 0.12, 0.2, side * 0.47, 0.38, 2.1)));                   // the intakes either side of it
-    box(group, carbon, 1.3, 0.035, 0.3, 0, 0.285, 2.0);                                                     // the splitter
+    merged(group, AMBER, [-1, 1].map(side => bx(0.1, 0.03, 0.08, side * 0.75, topY(1.86, 0.75) + 0.005, 1.86))); // the indicators, at the corners
     // the flanks: the C round an intake, mirrors on stalks
     const C = [];
     for (let i = 0; i <= 10; i++) {
@@ -384,7 +382,7 @@ export const IDEA_MODELS_6 = {
       tubeC.scale.x = side;
       box(group, trim, 0.03, 0.3, 0.24, side * (sideX(-0.22, 0.55) - 0.005), 0.55, -0.22);
     }
-    merged(group, carbon, [-1, 1].flatMap(side => [bx(0.16, 0.07, 0.11, side * 0.82, 0.92, 0.55), bx(0.16, 0.025, 0.04, side * 0.68, 0.89, 0.55)]));
+    merged(group, carbon, [-1, 1].flatMap(side => [bx(0.16, 0.07, 0.11, side * 0.82, 0.92, 0.55), bx(0.24, 0.025, 0.04, side * 0.62, 0.89, 0.55)]));
     // the wheels
     for (const side of [-1, 1]) {
       for (const [za, R, width, outer] of AXLES) wheel(group, R, width, side * (outer - width / 2), R, za, lambert(0x9aa0a8));
