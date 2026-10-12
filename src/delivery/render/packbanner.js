@@ -82,11 +82,7 @@ const overlap = (a, b) => {
   return true;
 };
 // the scene: { scene, camera, offset } for a picture of aspect w/h, or null (no car could be built)
-const TUNE = (() => { // (?bannertune=heading:0.3,fan:0.1: the numbers for this visit, for trying them; TEMPORARY)
-  const raw = new URLSearchParams(location.search).get('bannertune');
-  return raw ? Object.fromEntries(raw.split(',').map(kv => kv.split(':')).map(([k, v]) => [k, Number(v)])) : {};
-})();
-export const bannerScene = (cars, aspect, o = { ...BANNER, ...TUNE }) => {
+export const bannerScene = (cars, aspect, o = BANNER) => {
   const { blot: shadowTex, glow: glowTex, groundTex: floorTex } = textures();
   const scene = new THREE.Scene();
   // light: a low warm sky, a key from the camera's right, a strong warm RIM from behind (it outlines roofs and backs),
