@@ -73,15 +73,34 @@ const pump = () => {
   if (queue.length) pumping = requestAnimationFrame(pump);
 };
 const soon = (el, car, o) => { queue.push({ el, car, o }); if (!pumping) pumping = requestAnimationFrame(pump); };
-// drawn once its card comes near the screen (whatever scrolls it: the reveal, the contents sheet's body)
+// drawn once its card comes near the screen (whatever scrolls it: the reveal, the contents sheet's body). Queued once
+const start = (el) => {
+  const job = el._key;
+  if (!job || job.queued) return;
+  job.queued = true;
+  near?.unobserve(el);
+  pending.delete(el);
+  soon(el, job.car, job.o);
+};
 const near = typeof IntersectionObserver === 'function' ? new IntersectionObserver((entries) => {
-  for (const e of entries) {
-    if (!e.isIntersecting) continue;
-    near.unobserve(e.target);
-    const job = e.target._key;
-    if (job) soon(e.target, job.car, job.o);
-  }
+  for (const e of entries) if (e.isIntersecting) start(e.target);
 }, { rootMargin: '200px' }) : null;
+// and a look now and then for a picture on screen the observer has not told of (in headless Chromium it sometimes never
+// did, and the key card stayed blank): a picture connected and within 200 px of the window is drawn; one that was in the
+// page and has left it is forgotten
+const pending = new Set();
+let polling = 0;
+const poll = () => {
+  polling = 0;
+  const h = window.innerHeight, w = window.innerWidth;
+  for (const el of pending) {
+    if (!el.isConnected) { if (el._key.seen) pending.delete(el); continue; }
+    el._key.seen = true;
+    const r = el.getBoundingClientRect();
+    if (r.width && r.bottom > -200 && r.top < h + 200 && r.right > -200 && r.left < w + 200) start(el);
+  }
+  if (pending.size) polling = setTimeout(poll, 600);
+};
 
 // the key card's picture element (blueprintcard.js puts it where the car's picture would be): drawn lazily by itself
 export const keyPicture = (car, rarity = 'bespoke', { model = keyModelInUse() } = {}) => {
@@ -89,7 +108,10 @@ export const keyPicture = (car, rarity = 'bespoke', { model = keyModelInUse() } 
   el.className = 'bp-pic bp-keypic';
   el.dataset.keymodel = model;
   const o = { model, rarity };
-  if (near) { el._key = { car, o }; near.observe(el); } else if (typeof requestAnimationFrame === 'function') soon(el, car, o);
+  el._key = { car, o };
+  near?.observe(el);
+  pending.add(el);
+  if (!polling) polling = setTimeout(poll, 600);
   return el;
 };
 
