@@ -209,7 +209,7 @@
 
 <div id="garageUi" class="hidden">
   <div class="bar">
-    <span class="tabs"><button id="garageTabBtn" class="tab on">Garage</button><button id="ideasTabBtn" class="tab">Car ideas</button></span>
+    <span class="tabs"><button id="garageTabBtn" class="tab on" title="Crazey Jim’s Used Cars: the car lot, where cars are bought">Crazey Jim’s</button><button id="ideasTabBtn" class="tab">Car ideas</button></span>
     <span id="garageBank"></span>
     <span id="liveryBtn" class="seg" role="group" aria-label="Livery"><button data-side="good">Good</button><button data-side="evil">Evil</button></span>
     <button id="garageBackBtn">Back</button>
@@ -221,6 +221,9 @@
   </div>
 </div>
 <div id="garageTip"></div>
+
+<!-- the showroom: where a car is picked, a card for each car (render/showroom.js builds it; showroom.css) -->
+<div id="showroom" class="overlay showroom hidden" role="dialog" aria-label="Showroom"></div>
 
 <!-- the postcard album: a panel over the start screen (render/album.js builds it) -->
 <div id="album" class="overlay menu panel hidden"></div>
