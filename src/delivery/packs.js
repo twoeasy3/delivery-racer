@@ -38,7 +38,9 @@ export const rarityColour = (rarity) => packData.rarities[rarity]?.colour || '#f
 export const kindName = (kind) => packData.kinds[kind]?.name || kind;
 
 // the cars that can be on a card: the roster now (a car added to it is in the pool from then on)
-export const roster = () => [...new Set([...(Cars.CARS || []), ...(Cars.EVERGREEN_CARS || [])])];
+// (the evergreen blueprint cars are cars.js FILLER_CARS: read as EVERGREEN_CARS alone, a name cars.js never had, they
+// were left out of every pack until the contents sheet listed the pool, 12-Oct)
+export const roster = () => [...new Set([...(Cars.CARS || []), ...(Cars.FILLER_CARS || []), ...(Cars.EVERGREEN_CARS || [])])];
 // the rarity of a car's blueprint card, or null: it has none (a 1-gold starter, a car out of the tiers, the Tank)
 export const rarityOf = (car) => {
   if (!car || car.earned || car.super || car.tank || car.off) return null;
@@ -117,6 +119,33 @@ export const draw = (kind, { random = Math.random, cars, owned, featured = [], s
     }
   }
   return slots;
+};
+
+// What a pack can give, every card of it (the Shop's "What's inside" sheet, render/packcontents.js): read from the same
+// pools draw() picks from, at call time, so a car added to the roster is listed with no edit. For a PLAIN slot (one no
+// rule has rolled again): the share of each rarity the pool has cards of (packs.json odds among those), split evenly
+// over its cards, so a rarity's cards add up to its share. A special pack's FEATURED cards come first, each with its
+// chance to be in a pack (the last slot is always one of them; each other slot upgrades at upgradeChance, and then each
+// featured card is hit at featuredChance, one picked from those hit): 1 - (1 - 1/F)(1 - q)^(size-1), where
+// q = upgradeChance * (1 - (1 - featuredChance)^F) / F is a slot's chance to become that card.
+// { kind, name, size, total (cards listed), odds: [{ rarity, share }], groups: [{ rarity, share, cards: [{ car, chance,
+// key }] }], featured: [{ car, rarity, chance, lastSlot }], atLeast }
+export const contents = (kind, { featured = [], cars, owned, spec = packData.kinds[kind] } = {}) => {
+  if (!spec) return null;
+  const { evergreen, keys } = pools({ cars, owned });
+  const byRarity = { ...evergreen, ...(spec.pool === 'all' ? { bespoke: [...keys] } : {}) };
+  const present = RARITIES.filter(r => byRarity[r]?.length);
+  const weight = present.reduce((sum, r) => sum + (packData.odds[r] || 0), 0);
+  const odds = present.map(r => ({ rarity: r, share: weight > 0 ? (packData.odds[r] || 0) / weight : 1 / present.length }));
+  const groups = odds.map(({ rarity, share }) => ({ rarity, share,
+    cards: byRarity[rarity].map(car => ({ car, chance: share / byRarity[rarity].length, key: rarity === 'bespoke' })) }));
+  const size = Math.max(1, Math.floor(spec.size || 5));
+  const feats = spec.featured ? [...new Set(featured.filter(Boolean))] : [];
+  const F = feats.length, { upgradeChance = 0.25, featuredChance = 0.2 } = spec.featured || {};
+  const q = F ? upgradeChance * (1 - (1 - featuredChance) ** F) / F : 0;
+  const featuredList = feats.map(car => ({ car, rarity: featuredRarity(car), lastSlot: 1 / F, chance: 1 - (1 - 1 / F) * (1 - q) ** (size - 1) }));
+  const total = new Set([...groups.flatMap(g => g.cards.map(c => (c.key ? 'key:' : '') + c.car.id)), ...feats.map(c => c.id)]).size;
+  return { kind, name: kindName(kind), size, total, odds, groups, featured: featuredList, atLeast: { ...(spec.atLeast || {}) } };
 };
 
 // ---- the save: packs held (Progress.data.packs: a count by pack, 'kind' or 'kind:<event id>'), and the log ----

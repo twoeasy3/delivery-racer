@@ -136,6 +136,39 @@ try {
     g.Game.start(); g.Game.finish('delivered'); g.Game.toMenu();
     check(Packs.count('career') === 1, 'Hurricane delivered for the first time (Game.finish): a Career pack held');
   } else check(false, 'Hurricane would not start (' + g.cars.CAR.id + ')');
+
+  // ---- "What's inside" (contents(), the Shop's contents sheet): every card of the pool listed, no more, no fewer; a
+  // rarity's cards add up to its share of the odds; the shares add to 1; a special pack's featured cards at the top ----
+  const { contents } = P;
+  Progress.reset(); Progress.noSave = true;
+  const near = (a, b) => Math.abs(a - b) < 1e-9;
+  for (const kind of Object.keys(Packs.data.kinds)) {
+    const feats = kind === 'special' ? featuredFor('comet-hunt') : [];
+    const c = contents(kind, { featured: feats }), pool = pools(), spec = Packs.data.kinds[kind];
+    const want = { ...pool.evergreen, ...(spec.pool === 'all' ? { bespoke: pool.keys } : {}) };
+    const listed = Object.fromEntries(c.groups.map(gr => [gr.rarity, gr.cards.map(x => x.car.id).sort()]));
+    const exact = RARITIES.every(r => JSON.stringify(listed[r] || []) === JSON.stringify((want[r] || []).map(x => x.id).sort()));
+    const sums = c.groups.map(gr => [gr.rarity, gr.cards.reduce((n, x) => n + x.chance, 0), gr.share]);
+    const present = RARITIES.filter(r => want[r]?.length), weight = present.reduce((n, r) => n + Packs.data.odds[r], 0);
+    const shares = c.odds.every(o => near(o.share, Packs.data.odds[o.rarity] / weight)) && c.odds.length === present.length;
+    check(exact, kind + ': the cards listed are the pool exactly (' + c.total + ' cards: ' + c.groups.map(gr => gr.rarity + ' ' + gr.cards.length).join(', ') + ')');
+    check(sums.every(([, sum, share]) => near(sum, share)) && near(c.odds.reduce((n, o) => n + o.share, 0), 1) && shares,
+      kind + ': each rarity\'s cards add up to its share of the odds (' + sums.map(([r, sum]) => r + ' ' + (sum * 100).toFixed(2) + '%').join(', ') + ')');
+    check(kind === 'special' ? c.featured.length === feats.length && feats.length > 0 && c.featured.every(f => f.chance >= f.lastSlot && f.chance <= 1 && rank(f.rarity) >= rank('epic'))
+      : c.featured.length === 0, kind + ': featured cards ' + (kind === 'special' ? c.featured.map(f => f.car.id + ' ' + (f.chance * 100).toFixed(1) + '% a pack').join(', ') : 'none'));
+  }
+  // the featured chance, against packs drawn: about what contents() says
+  {
+    const feats = featuredFor('comet-hunt'), c = contents('special', { featured: feats }), roll = dice(77), N = 4000;
+    const seen = Object.fromEntries(feats.map(f => [f.id, 0]));
+    for (let i = 0; i < N; i++) { const ids = new Set(draw('special', { random: roll, featured: feats }).filter(x => x.featured).map(x => x.car)); for (const id of ids) seen[id]++; }
+    const ok = c.featured.every(f => Math.abs(seen[f.car.id] / N - f.chance) < 0.03);
+    check(ok, 'special: a featured card is in about the share of packs the sheet says (' + c.featured.map(f => f.car.id + ' ' + (seen[f.car.id] / N * 100).toFixed(1) + '% drawn, ' + (f.chance * 100).toFixed(1) + '% said').join('; ') + ')');
+  }
+  // a car added to the roster is listed with no edit (contents reads the roster when called)
+  const extra = { id: 'fake-new', name: 'New One', tier: 3, evergreen: true, rarity: 'epic', price: 0 };
+  const withExtra = contents('career', { cars: [...P.roster(), extra] });
+  check(withExtra.groups.find(gr => gr.rarity === 'epic').cards.some(x => x.car.id === 'fake-new') && withExtra.total === contents('career').total + 1, 'a car added to the roster is listed at once');
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error.stack || error));
