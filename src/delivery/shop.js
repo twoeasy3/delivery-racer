@@ -16,6 +16,7 @@ import { carById } from './cars.js';
 const found = Object.values(import.meta.glob('./packs.js', { eager: true }))[0] || null;
 let packs = found?.Packs || null;
 const featuredFor = found?.featuredFor || null;
+const featuredEntries = found?.featuredEntries || ((list) => list.map(id => carById(id)).filter(Boolean).map(car => ({ car, weight: 1, key: false })));
 
 export const CURRENCY = shopData.currency;
 export const SECTIONS = shopData.sections;
@@ -30,15 +31,15 @@ export const Shop = {
   data: shopData,
   // the placeholder balance
   balance() { return Math.max(0, Math.floor(Number(Progress.data.shopCash) || 0)); },
-  // an offer by id, with what the screen shows of it: { ...offer, event, endsAt, featured: [cars], ribbonName, off (share
-  // off, 0..1) }. null: no such offer
+  // an offer by id, with what the screen shows of it: { ...offer, event, endsAt, featured: [entries { car, weight, key,
+  // amount }: packs.js featuredEntries], ribbonName, off (share off, 0..1) }. null: no such offer
   offer(id) {
     const offer = OFFERS.find(o => o.id === id);
     if (!offer) return null;
     const event = eventOf(offer);
     const ids = Array.isArray(offer.featured) && offer.featured.length ? offer.featured : null;
-    const featured = ids ? ids.map(carById).filter(Boolean)
-      : offer.kind === 'special' ? (featuredFor ? featuredFor(offer.from || null) : event ? [Events.prizeCar(event)].filter(Boolean) : []) : [];
+    const featured = ids ? featuredEntries(ids)
+      : offer.kind === 'special' ? (featuredFor ? featuredFor(offer.from || null) : event ? featuredEntries([event.prize?.car].filter(Boolean)) : []) : [];
     return { ...offer, count: Math.max(1, Math.floor(offer.count || 1)), event, endsAt: event?.to ?? null, featured,
       ribbonName: RIBBONS[offer.ribbon] || null, off: offer.was > offer.price ? 1 - offer.price / offer.was : 0 };
   },
@@ -47,12 +48,15 @@ export const Shop = {
     return OFFERS.map(o => this.offer(o.id)).filter(o => !o.from || (o.event && Events.live(o.event, t)));
   },
   // can it be bought? { ok, why }: why 'unknown' (no such offer), 'over' (its event is over), 'packs' (no packs in
-  // this build), 'short' (not enough of the currency)
+  // this build), 'exhausted' (a special pack whose featured cards the player has all: every car maxed, every key owned;
+  // the owner, 12-Oct: "If a player has every featured card in a pack greyed out, don't allow them to purchase it". Only
+  // buying: a special pack an event gives is still given), 'short' (not enough of the currency)
   canBuy(id, t = Events.now()) {
     const offer = this.offer(id);
     if (!offer) return { ok: false, why: 'unknown' };
     if (offer.from && !(offer.event && Events.live(offer.event, t))) return { ok: false, why: 'over' };
     if (!packs) return { ok: false, why: 'packs' };
+    if ((offer.kind === 'special' || packs.data?.kinds?.[offer.kind]?.featured) && offer.featured.length && packs.featuredExhausted?.(offer.from || null, offer.featured)) return { ok: false, why: 'exhausted' };
     if (this.balance() < offer.price) return { ok: false, why: 'short', need: offer.price - this.balance() };
     return { ok: true };
   },

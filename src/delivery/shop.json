@@ -9,7 +9,7 @@
   ],
   "offers": [
     { "id": "comet-special", "section": "featured", "kind": "special", "from": "comet-hunt", "count": 1, "price": 450, "was": null, "ribbon": "featured",
-      "name": "Comet Hunt Special", "blurb": "5 cards. The last is always a featured card: Epic or better" },
+      "name": "Comet Hunt Special", "blurb": "5 cards. Guaranteed featured card" },
     { "id": "ten", "section": "packs", "kind": "ten", "count": 1, "price": 800, "was": 1000, "ribbon": "sale",
       "name": "10-pack", "blurb": "10 cards. At least one Epic or better" },
     { "id": "standard", "section": "packs", "kind": "standard", "count": 1, "price": 100, "was": null, "ribbon": null,

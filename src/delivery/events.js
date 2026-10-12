@@ -21,7 +21,7 @@ import { levelName, levelDescription } from './levelText.js';
 import { cargoFor } from './cargo.js';
 import { Progress } from './progress.js';
 import { carById } from './cars.js';
-import { Packs } from './packs.js';
+import { Packs, featuredProblems } from './packs.js';
 
 // a time in events.json: "2026-12-01" is midnight on the player's device; else a time with its zone. null: none
 // given; NaN: not a time
@@ -132,7 +132,7 @@ export const Events = {
       if (e.from !== null && e.to !== null && !(e.from < e.to)) say('it ends before it starts');
       if (!e.stages.length) say('it has no stages');
       if (e.prize && !this.prizeCar(e)) say('its prize "' + e.prize.car + '" is not a car');
-      if (e.raw.featured !== undefined && (!Array.isArray(e.raw.featured) || e.raw.featured.some(id => !carById(id)))) say('"featured" is not a list of cars (the special packs\' featured cards)');
+      for (const line of featuredProblems(e.raw.featured)) say(line + ' (the special packs\' featured cards: a car id, or { "car", "weight" > 0, "key": true for a Bespoke key car, "amount" })');
       e.stages.forEach((s, i) => {
         const n = 'stage ' + (i + 1) + ': ';
         if (!s.level) say(n + '"' + s.map + '" is not a level');
@@ -143,6 +143,7 @@ export const Events = {
         if (!c || !(c.good > 0) || !(c.evil > 0)) say(n + 'its clock is not written out in full ({ "good": s, "evil": s })');
       });
     }
+    for (const line of featuredProblems(Packs.data?.events?.featured)) out.push('packs.json events: ' + line); // (a special pack from no event)
     return out;
   },
 };
