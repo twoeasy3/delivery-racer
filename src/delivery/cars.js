@@ -51,7 +51,8 @@ export const TIERS = 5;
 // has none above it yet, so its Blue Stars are held under this: the room kept for a six-star gold tier, which
 // would top out here. The Classic GT (48 m/s) is the fastest car in the garage, and stays so until then: a
 // six-star tier would run from 49 to 52 m/s, still well short of the level cars (the UFO's 58, a GT racer's 62).
-// scripts/.balance-check.mjs checks every Blue Star against it.
+// (No longer enforced: the owner, 12-Oct, CHECKLIST item 115, dropped the rule with the ECUs; scripts/.balance-check.mjs
+// had its tier ceilings removed. Kept as a figure for reference)
 export const NEXT_TIER_CAPS = { maxSpeed: 52, accel: 24, health: 450 };
 export const stars = (car) => car.tier ? '★'.repeat(car.tier) : ''; // (only the stars it has: no empty ones)
 // (a 6-star car, earned rather than bought, has magenta stars: see EARNED_CARS)
@@ -63,7 +64,7 @@ export const blueStarsOpen = () => tierHooks.blueOpen?.() ?? Progress.data.unloc
 // ---- the level tiers (tiers.js): which tier a car is in, and the car rule on a level not yet beaten ----
 // a car's tier number: 1 to 5 for the gold-star cars, 6 to 10 for the Blue Star ones (Blue 1 is 6); null for a car
 // outside the tiers (earned, amphibious, tierless, secret, a level's own vehicle)
-export const carTier = (car) => car && car.tier >= 1 && car.tier <= TIERS && !car.earned && !car.amphibious && !car.super && CARS.includes(car) ? car.tier + (car.blue ? 5 : 0) : null;
+export const carTier = (car) => car && car.tier >= 1 && car.tier <= TIERS && !car.earned && !car.amphibious && !car.super && (CARS.includes(car) || FILLER_CARS.includes(car)) ? car.tier + (car.blue ? 5 : 0) : null; // (an evergreen blueprint car too)
 // hooks tiers.js sets when it loads: rule() the car rule on the level picked (null: any car; see carRule below),
 // blueOpen() whether the Blue Star cars are in the garage (null: the old rule)
 const tierHooks = {};
@@ -100,7 +101,7 @@ export const listRule = (level) => {
   return rule;
 };
 // the cars a rule can be met with: the garage's, the earned and the event ones (an idea only where a list names it)
-const ruleCars = (rule) => [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...(rule.list ? IDEA_CARS : [])].filter(car => ruleAllows(rule, car));
+const ruleCars = (rule) => [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...FILLER_CARS, ...(rule.list ? IDEA_CARS : [])].filter(car => ruleAllows(rule, car));
 // the silhouette shown where the player has no car the level allows: the cheapest car it allows, drawn dark
 // (silhouette: true; id 'null-car'), never owned and never driven (Game.canStart is false while it is in use)
 const nullCars = {};
@@ -129,7 +130,8 @@ export const garageCars = () => {
   const rule = carRule();
   return [...new Set([...CARS.filter(car => { const p = carPreview(car); return p ? p !== 'hide' : (!car.blue || blueStarsOpen()); }),
     ...EARNED_CARS.filter(car => Progress.owns(car.id)), ...EVENT_CARS.filter(car => Progress.owns(car.id)), // (an earned car once earned, or given by an event; an event's car once given)
-    ...(rule?.list ? ruleCars(rule).filter(car => !IDEA_CARS.includes(car)) : [])])]; // (the ideas have a lot of their own)
+    ...FILLER_CARS.filter(car => Progress.owns(car.id)), // (a blueprint car once unlocked: ecu.js)
+    ...(rule?.list ? ruleCars(rule).filter(car => !IDEA_CARS.includes(car) && (!FILLER_CARS.includes(car) || Progress.owns(car.id))) : [])])]; // (the ideas have a lot of their own; a locked blueprint car is not parked)
 };
 // can it be bought in the garage now? A garage car (not an earned car, an event's or an idea) whose tier is open
 // (tiers.js buyable: a level's list parks a car of a later tier, drawn, but never sells it)
@@ -378,13 +380,97 @@ export const EVENT_CARS = [
       color: 0xc9d2dc, evilColor: 0x1d2433, maxSpeed: 46, accel: 19, health: 150, perk: 'The Comet Hunt\'s prize' };
   })(),
 ];
+// ---- the evergreen (filler) cars: BLUEPRINT cars (BLUEPRINTS-NOTES.md, CHECKLIST item 115) --------------------------
+// Eighteen that were car ideas (ideas.js), promoted to the roster as the packs' filler. Each is a BLUEPRINT car: it starts
+// at ECU0, locked (not driveable), and its first X blueprints unlock it at ECU1 (ecu.js, ecus.json). Kept out of CARS
+// (which the garage's lot and its prices, traffic, Car Swap, "Unlock everything" and the balance checks go by): they are
+// never for sale, never lent by Car Swap and never dealt as owned by "Unlock everything" (only blueprints open them, or
+// the address bar's test switches). The lookups of the car in use (find, carById) and a level's list (ruleCars) look
+// here too, and an unlocked one is parked in the garage (garageCars). Their tier is a star rating as a garage car's
+// (carTier counts them), and gives their max ECU (ecu.js ladder); `rarity` is the rarity of their blueprint card (the
+// owner, 12-Oct: Epic, Legendary for the three named). Their models are still built by render/ideaModels*.js, registered
+// in MODELS by the same names (the end of render/models.js). Their figures are the idea's placeholders nudged into the
+// gold range of their tier (`placeholder: true`: not balanced), and are their MAXED ECU (ecus.json has the lower ones)
+const filler = (tier, car, rarity = 'epic') => ({ ...car, tier, evergreen: true, rarity, placeholder: true, price: 0 });
+export const FILLER_CARS = [
+  // ---- tier 1 (24 to 25 m/s, 8.5 to 10, 85 to 150 health)
+  filler(1, { id: 'bubble', name: 'Bubble Car', basedOn: 'BMW Isetta', model: 'bubble', color: 0x8fc9dd, evilColor: 0x8a1f2b,
+    hw: 0.69, hl: 1.15, height: 1.34, note: 'The whole front is the door. The smallest thing on the road.',
+    maxSpeed: 24, accel: 8.5, agility: 1.4, crossing: 0.4, health: 85, mass: 1, sound: 'mini' }),
+  filler(1, { id: 'milkfloat', name: 'Milk Float', basedOn: "Smith's / Wales & Edwards electric milk float", model: 'milkfloat', color: 0x2f67b1, evilColor: 0x7d1d1d,
+    hw: 0.8, hl: 1.85, height: 2.05, note: 'Electric, open-sided and stacked with crates. Slow, and it rattles.',
+    maxSpeed: 24, accel: 8.5, agility: 1, crossing: 0.5, health: 120, mass: 1.2, sound: 'keitruck' }),
+  filler(1, { id: 'tuktuk', name: 'Tuk-Tuk', basedOn: 'Bajaj RE auto-rickshaw', model: 'tuktuk', color: 0xf0c020, evilColor: 0x2b2b30,
+    hw: 0.7, hl: 1.5, height: 1.9, note: 'One wheel up front, a bench under a canvas roof, and the driver leaning on the bars.',
+    maxSpeed: 24.5, accel: 9, agility: 1.35, crossing: 0.3, health: 85, mass: 1, sound: 'mini' }),
+  // ---- tier 2 (24 to 31 m/s, 7 to 13, 80 to 165)
+  filler(2, { id: 'woody', name: 'Woody Wagon', basedOn: '1949 Ford "Woody" wagon', model: 'woody', color: 0x7a2432, evilColor: 0x1f3a2e,
+    hw: 0.91, hl: 2.6, height: 1.68, note: 'Timber down its sides and a surfboard on the roof.',
+    maxSpeed: 26, accel: 8, agility: 1, crossing: 0.55, health: 150, mass: 1.3, sound: 'wagon' }),
+  filler(2, { id: 'pandacoupe', name: 'Panda Coupe', basedOn: 'Toyota Sprinter Trueno AE86', model: 'pandacoupe', color: 0xf2f2ee, evilColor: 0xb81f24,
+    hw: 0.82, hl: 2.1, height: 1.33, note: 'White over black, lamps that pop up, and a cup of water on the dashboard.',
+    maxSpeed: 31, accel: 12, agility: 1.45, crossing: 0.4, health: 110, mass: 1, sound: 'hothatch' }),
+  filler(2, { id: 'keiroadster', name: 'Kei Roadster', basedOn: 'Honda Beat', model: 'keiroadster', color: 0xf2d21f, evilColor: 0x181820,
+    hw: 0.66, hl: 1.65, height: 1.15, note: 'A mid-engined two-seater that is barely wider than a door, with no roof to speak of.',
+    maxSpeed: 30.5, accel: 13, agility: 1.45, crossing: 0.3, health: 80, mass: 1, sound: 'miata' }),
+  // ---- tier 3 (32 to 38 m/s, 9 to 15, 110 to 215)
+  filler(3, { id: 'fireengine', name: 'Fire Engine', basedOn: 'American LaFrance pumper', model: 'fireengine', color: 0xc8161d, evilColor: 0x25252b,
+    hw: 1.25, hl: 4.5, height: 2.9, note: 'Red, with a ladder on top, hose reels, a pump panel and its lights going.',
+    maxSpeed: 32, accel: 9, agility: 0.9, crossing: 0.8, health: 215, mass: 3, sound: 'bus' }),
+  filler(3, { id: 'fieldscout', name: 'Field Scout', basedOn: 'Willys MB jeep', model: 'fieldscout', color: 0x5b6b3a, evilColor: 0x2a2a2e,
+    hw: 0.8, hl: 1.85, height: 1.5, note: 'Flat wings, a seven-slot grille, a screen that folds and a spare standing on the tail.',
+    maxSpeed: 33, accel: 10, agility: 1.15, crossing: 1, health: 140, mass: 1.2, sound: 'suv' }),
+  // (really 3.1 m wide, 5.5 m long and 3.2 m high: too wide for a lane, so it is driven, and shown, at 0.87 of that)
+  filler(3, { id: 'monster', name: 'Monster Truck', basedOn: 'Bigfoot (Ford F-250)', model: 'monster', color: 0x1f58c2, evilColor: 0x1c1c20,
+    real: { hw: 1.55, hl: 2.75, height: 3.2 }, scale: 0.87,
+    hw: 1.35, hl: 2.39, height: 2.78, note: 'A pickup on tyres taller than a car. It parks on top of things.',
+    maxSpeed: 32, accel: 9, agility: 1, crossing: 1, health: 215, mass: 3, sound: 'sixbysix' }),
+  // ---- tier 4 (37 to 42 m/s, 11 to 15, 135 to 300)
+  filler(4, { id: 'stately', name: 'Stately Saloon', basedOn: 'Rolls-Royce Silver Shadow', model: 'stately', color: 0x24365e, evilColor: 0x4a1622,
+    hw: 0.9, hl: 2.58, height: 1.52, note: 'A temple of a grille with a mascot on top, and two shades of paint.',
+    maxSpeed: 37, accel: 11, agility: 1, crossing: 0.45, health: 220, mass: 1.7, sound: 'hearse' }),
+  filler(4, { id: 'teardrop', name: 'Teardrop Streamliner', basedOn: 'Tatra 87', model: 'teardrop', color: 0x9aa8b4, evilColor: 0x5a1a22,
+    hw: 0.84, hl: 2.47, height: 1.52, note: 'Three headlamps, a roof that runs down into a teardrop tail, and a fin standing along it.',
+    maxSpeed: 38, accel: 11, agility: 1, crossing: 0.4, health: 180, mass: 1.5, sound: 'wagon' }),
+  filler(4, { id: 'pony', name: 'Pony Car', basedOn: '1965 Ford Mustang fastback', model: 'pony', color: 0x3f74b8, evilColor: 0x1f3d2a,
+    hw: 0.87, hl: 2.3, height: 1.3, note: 'A long bonnet, a short deck and a fastback roof.',
+    maxSpeed: 40, accel: 14, agility: 1.1, crossing: 0.4, health: 170, mass: 1.5, sound: 'muscle' }),
+  // ---- tier 5 (43 to 46 m/s, 12 to 22, 150 to 360)
+  filler(5, { id: 'midnight', name: 'Midnight Coupe', basedOn: 'Nissan Skyline GT-R (R34)', model: 'midnight', color: 0x1f4fb4, evilColor: 0x3a1f5c,
+    hw: 0.9, hl: 2.3, height: 1.36, note: 'Square shoulders, four round tail lamps and a wing as tall as its roof.',
+    maxSpeed: 46, accel: 18, agility: 1.35, crossing: 0.4, health: 180, mass: 1.4, sound: 'rotary' }),
+  filler(5, { id: 'splitwindow', name: 'Split-Window Coupe', basedOn: '1963 Chevrolet Corvette Sting Ray', model: 'splitwindow', color: 0xb9c2cc, evilColor: 0x7a1218,
+    hw: 0.88, hl: 2.22, height: 1.26, note: 'A pointed nose, lamps that pop up, and a spine through its rear window.',
+    maxSpeed: 43, accel: 15, agility: 1.2, crossing: 0.3, health: 150, mass: 1.3, sound: 'classicgt' }),
+  filler(5, { id: 'wedge', name: 'Wedge Supercar', basedOn: 'Lamborghini Countach', model: 'wedge', color: 0xd21f1f, evilColor: 0x131316,
+    hw: 1.0, hl: 2.07, height: 1.07, note: 'The poster on the bedroom wall: a flat wedge, doors that go up and a huge wing.',
+    maxSpeed: 46, accel: 17, agility: 1.3, crossing: 0.15, health: 150, mass: 1.2, sound: 'miata' }),
+  // ---- the three Legendary ones (the spec's "Epic evergreen", made Legendary by the owner, 12-Oct): five stars
+  filler(5, { id: 'jetcar', name: 'Jet Land-Speed Car', basedOn: 'ThrustSSC', model: 'jetcar', color: 0x1f5fbf, evilColor: 0x8a1c24,
+    hw: 1.0, hl: 3.9, height: 1.7, note: 'Two jet engines as big as cars, a needle between them and a fin. Its record is faster than sound.',
+    maxSpeed: 46, accel: 19, agility: 0.9, crossing: 0.15, health: 150, mass: 1.6, sound: 'miata' }, 'legendary'),
+  filler(5, { id: 'dragster', name: 'Slingshot Dragster', basedOn: 'front-engined top-fuel dragster', model: 'dragster', color: 0xd21f1f, evilColor: 0x131316,
+    hw: 0.95, hl: 3.6, height: 1.6, note: 'A rail with a blown engine, skinny wheels in front, huge slicks and a wing behind the driver.',
+    maxSpeed: 46, accel: 20, agility: 0.9, crossing: 0.15, health: 150, mass: 1.1, sound: 'muscle' }, 'legendary'),
+  filler(5, { id: 'flyingcar', name: 'Flying Car', basedOn: 'Terrafugia Transition', model: 'flyingcar', color: 0x2a5aa8, evilColor: 0x7a2a30,
+    hw: 1.0, hl: 2.95, height: 2.05, note: 'An aeroplane that drives home with its wings folded up, the propeller idling behind.',
+    maxSpeed: 43, accel: 12, agility: 1, crossing: 0.3, health: 150, mass: 1.2, sound: 'sport' }, 'legendary'),
+];
+applyNames('car', FILLER_CARS);
+// is a blueprint car unlocked (its first X blueprints, ecu.js)? Set by ecu.js when it loads (null: none is, but one in
+// the save's list of cars, put there by a test switch)
+const ecuHooks = {};
+export const setEcuHooks = (hooks) => Object.assign(ecuHooks, hooks);
+// the figures a car is driven with: its ECU's (ecu.js Ecu.drive: maxSpeed, accel, health, respawn), or, before ecu.js
+// is loaded or for a car with no ECU table, its own
+export const carStats = (car = CAR) => ecuHooks.drive?.(car, lent !== null) ?? car;
 // the car a special level earns (undefined for a level with none)
 export const earnedFor = (levelId) => EARNED_CARS.find(car => car.earned.level === levelId && !car.off);
 
 // The car in use. It is a live binding: every module that imports CAR sees the new car as
 // soon as selectCar() changes it, so swapping cars needs no reload.
 // (a car idea too: ideas.js. They come last, so an idea can never stand in for a car of the same id)
-const find = () => [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...Object.values(SECRET_CARS), ...IDEA_CARS]
+const find = () => [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...FILLER_CARS, ...Object.values(SECRET_CARS), ...IDEA_CARS]
   .find(car => car.id === Progress.data.car && Progress.owns(car.id)) || CARS[0];
 export let CAR = find();
 // the car in use as the save has it, whatever the level picked has put the player in (the garage's ring and words)
@@ -398,7 +484,7 @@ export const carAllowed = () => forcedCar(find(), carRule()).id !== 'null-car';
 // amphibious car the player owns. With none owned the car in use stays, and Game.start won't start the level)
 // a replay's car (replay.js): every run is in it, whatever the save and the level's rules say, until unpinned (null)
 let pinned = null;
-export const carById = (id) => LEVEL_CARS[id] || [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...Object.values(SECRET_CARS), ...IDEA_CARS].find(car => car.id === id) || null;
+export const carById = (id) => LEVEL_CARS[id] || [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...FILLER_CARS, ...Object.values(SECRET_CARS), ...IDEA_CARS].find(car => car.id === id) || null;
 export const pinCar = (id) => { pinned = id ? carById(id) : null; };
 export const useLevelCar = (id, amphibious) => {
   if (pinned) { CAR = pinned; lent = null; return; }
@@ -500,7 +586,7 @@ const supers = {}; // the Super versions built so far, by the base car's id
 // The Lowrider's is the garage's own Super Lowrider, as it stands there: its model, colours and figures, no kit
 const NO_KIT = { wing: false, scoop: false, exhausts: false, skirts: false, glow: false, stripe: false };
 export const superOf = (car) => {
-  if (!car || !car.tier || car.earned || car.super) return null;
+  if (!car || !car.tier || car.earned || car.super || car.evergreen) return null; // (an evergreen blueprint car has none: as an idea had none)
   if (!supers[car.id] && car.id === 'lowrider') {
     const own = CARS.find(c => c.id === 'superlowrider');
     supers[car.id] = { ...own, id: 'super-' + car.id, super: true, base: car, price: 0, kit: NO_KIT, stripe: own.color, evilStripe: own.evilColor };

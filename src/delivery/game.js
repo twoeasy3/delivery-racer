@@ -2,7 +2,7 @@ import { CONFIG } from './config.js';
 import { LEVEL, LEVEL_INDEX, LEVELS, SCREENSAVER_LEVEL, selectLevel, selectSpecial, nextOnTab, isRace } from './levels.js';
 import { Progress } from './progress.js';
 import { Nav } from './nav.js';
-import { useLevelCar, returnCar, earnedFor, ownedAmphibious, carAllowed, carRule } from './cars.js';
+import { useLevelCar, returnCar, earnedFor, ownedAmphibious, carAllowed, carRule, carStats } from './cars.js';
 import { Tiers } from './tiers.js';
 import { Events } from './events.js';
 import { Input } from './input.js';
@@ -55,6 +55,7 @@ export const Game = {
   allowed: 0,     // s on the clock for this run
   shake: 0,    // 1 -> 0, drives the camera shake
   respawn: -1, // s until the helicopter has delivered a new car, -1 = not waiting
+  respawnTotal: CONFIG.respawnTime, // s the helicopter takes with this one: the car's own respawn time (its ECU's: ecu.js; a race's, CONFIG.respawnTime)
   policeApproach: -1, // s until a busted, still-moving car is grabbed, -1 = not busted
   respawnKind: 'wreck', // wreck (new car delivered) | police (same car, held then dropped)
   grabLat: 0,  // where the car was when the helicopter was called
@@ -330,7 +331,7 @@ export const Game = {
       return;
     }
     if (this.respawn < 0) {
-      this.respawn = CONFIG.respawnTime;
+      this.respawn = this.respawnTotal = carStats().respawn ?? CONFIG.respawnTime; // (the car's own: ecu.js)
       this.respawnKind = 'wreck';
       this.wrecks++;
       Radiation.wrecked(); // (the infection outlasts a wreck, unless CONFIG.radiation says a wreck cures it)

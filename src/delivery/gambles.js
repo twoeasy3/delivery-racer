@@ -29,7 +29,7 @@
 // ============================================================================
 import { CONFIG } from './config.js';
 import { LEVEL } from './levels.js';
-import { CAR } from './cars.js';
+import { CAR, carStats } from './cars.js';
 import { Track } from './track.js';
 import { Player } from './player.js';
 import { Traffic } from './traffic.js';
@@ -596,7 +596,7 @@ export const Gambles = {
   // it (`clean` s from full), and the car's top speed is down by `slow` of itself with the tyres full: slower
   // than the queue. So it pays in short hops, and costs for a while after a long one
   onTar(s, lat) { return Track.isMain(s) ? this.tars.find(z => s >= z.from && s <= z.to && lat >= z.lo && lat <= z.hi) || null : null; },
-  tarPace(tar = this.tar) { return CAR.maxSpeed * (1 - CONFIG.tarmac.slow * tar); },
+  tarPace(tar = this.tar) { return carStats().maxSpeed * (1 - CONFIG.tarmac.slow * tar); },
   updateTar(dt) {
     const T = CONFIG.tarmac, P = Player;
     if (!this.tars.length) return;

@@ -4,7 +4,8 @@
 // fixed step (main.js). So a recording is a header and the inputs, each at the logic step it came in on (not the
 // clock: a pause is no step, and the rewind mystery turns the clock back but never the step count):
 //   header  the build's rules (version.js logic), the level and its fingerprint, the car and its fingerprint, the
-//           side, the tank pieces, the race class, a rival, a forced mystery, the two seeds; and once over, the steps
+//           side, the tank pieces, the race class, a rival, a forced mystery, the two seeds, the car's ECU (ecu.js: played
+//           back at it; a recording with none, from before the ECUs, plays at the car's max ECU); and once over, the steps
 //           it ran and how it ended
 //   inputs  [step, steer x 64, throttle x 64, auto]: the controls each time they change (auto: 1 where the accelerator is
 //           held by auto accelerate alone, so the auto brake may act: input.js) (they are rounded to 1/64 as they
@@ -22,7 +23,8 @@ import { Input } from './input.js';
 import { Game } from './game.js';
 import { LEVEL, LEVELS, LEVEL_INDEX, selectLevel, selectSpecial, setRaceClass } from './levels.js';
 import { STAGE_LEVELS } from './events.js';
-import { CAR, pinCar, carById } from './cars.js';
+import { CAR, pinCar, carById, carStats } from './cars.js';
+import { Ecu } from './ecu.js';
 import { Player } from './player.js';
 import { Traffic } from './traffic.js';
 import { Collision } from './collision.js';
@@ -78,7 +80,7 @@ export const Replay = {
       format: FORMAT,
       header: {
         logic: BUILD.logic, version: BUILD.version, level: LEVEL.id, levelPrint: LEVEL_PRINTS.get(LEVEL.id),
-        car: CAR.id, carPrint: carPrint(CAR), evil: !!Game.evil, tankPieces: Progress.data.tankPieces || 0,
+        car: CAR.id, carPrint: carPrint(CAR), ...(carStats(CAR)?.ecu ? { ecu: carStats(CAR).ecu } : {}), evil: !!Game.evil, tankPieces: Progress.data.tankPieces || 0,
         raceClass: LEVEL.grid && !LEVEL.grid.rival ? LEVEL.grid.kind || null : null, rival: Game.rival || null,
         mystery: Player.nextMystery || '', autoBrake: Player.autoBrake, seed: Game.seed, loadSeed: Game.loadSeed, date: new Date().toISOString(),
       },
@@ -186,6 +188,7 @@ export const Replay = {
     Player.nextMystery = h.mystery;
     Progress.data.autoBrake = h.autoBrake ?? 1; // (as the run had it: the save is put back when the playback ends)
     pinCar(h.car);
+    Ecu.pin({ car: h.car, ecu: h.ecu ?? null }); // (the ECU it was driven at; none recorded: its max, as every car drove before the ECUs)
     Game.nextSeed = h.seed;
     Game.nextLoadSeed = h.loadSeed;
     Input.fed = { steer: 0, throttle: 0, auto: false };
@@ -229,6 +232,7 @@ export const Replay = {
     this.speed = 1;
     Input.fed = null;
     pinCar(null);
+    Ecu.pin(null);
     // the save exactly as it was: whatever the playback did to it (the bank, the tank pieces found or lost, a best)
     // goes, keys and all
     const saved = JSON.parse(p.saved);

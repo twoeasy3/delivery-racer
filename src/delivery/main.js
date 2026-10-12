@@ -66,7 +66,7 @@ import './horn.js';
 import { Garage } from './render/garage.js';
 import { Sound } from './render/audio.js';
 import { Social } from './social.js';
-import { CAR, lendCar, superOf, ownedAmphibious } from './cars.js';
+import { CAR, lendCar, superOf, ownedAmphibious, carStats } from './cars.js';
 import { Message } from './messages.js';
 
 // ?autostart (or ?autostart=evil) in the address skips the start screen: handy when testing.
@@ -87,7 +87,9 @@ if (params.get('beaten')) {
     for (const s of side === 'both' ? ['good', 'evil'] : [side]) Progress.data.bestTime[s][id] = 10;
   }
 }
-if (params.get('owns')) for (const id of params.get('owns').split(',')) if (!Progress.data.cars.includes(id)) Progress.data.cars.push(id);
+// (a car a test switch gives is at its max ECU, ecu.js, as it drove before the ECUs: Progress.data.maxed)
+const lendForVisit = (id) => { if (!Progress.data.cars.includes(id)) Progress.data.cars.push(id); (Progress.data.maxed ||= []).push(id); };
+if (params.get('owns')) for (const id of params.get('owns').split(',')) lendForVisit(id);
 if (params.get('money')) Progress.data.money = Number(params.get('money')) || 0;
 if (params.get('beaten') || params.get('owns') || params.get('money')) window.dispatchEvent(new Event('carchange')); // (the menu draws itself again)
 // (before ?garage, so a garage opened with &pick is the picked level's) ?pick=41 shows the menu with that level picked, open or not (for a look at its card: nothing starts; the levels
@@ -114,7 +116,7 @@ const autostart = params.get('autostart');
 // ?car=bubble with no run started: the menu with that car in use for this visit, owned or not (a look at its card:
 // nothing is saved). With ?autostart it is driven: see below
 if (params.get('car') && autostart === null && !['hidden', 'test', 'edited', 'racewatch', 'screensaver'].some(key => params.get(key) !== null)) {
-  Progress.data.cars.push(params.get('car'));
+  lendForVisit(params.get('car'));
   Progress.data.car = params.get('car');
   window.dispatchEvent(new Event('carchange')); // (the menu puts the player in it, and draws itself again)
 }
@@ -185,11 +187,11 @@ if (params.get('racewatch') !== null) {
   }
   if (params.get('radcar') !== null) selectSpecial({ ...LEVEL, infectedTraffic: Math.min(1, Math.max(0, Number(params.get('radcar')) || 0.5)) });
   if (params.get('car')) { // ?car=lowrider: drive that car for this visit, owned or not (nothing is saved); ?car=super-sport: its Super version (cars.js superOf)
-    Progress.data.cars.push(params.get('car').replace(/^super-/, ''));
+    lendForVisit(params.get('car').replace(/^super-/, ''));
     Progress.data.car = params.get('car').replace(/^super-/, '');
   }
   // (an amphibious level straight from the address, with no amphibious car owned: one for this visit, as ?car gives)
-  if (LEVEL.amphibious && !ownedAmphibious()) Progress.data.cars.push(CONFIG.clock.amphibious);
+  if (LEVEL.amphibious && !ownedAmphibious()) lendForVisit(CONFIG.clock.amphibious);
   Game.start();
   if (params.get('car')?.startsWith('super-') && superOf(CAR)) Player.takeCar(() => lendCar(superOf(CAR)));
   if (params.get('at')) Player.s = Number(params.get('at'));
@@ -372,7 +374,7 @@ const frame = (now) => {
     const heard = Game.raceWatch && Game.state === 'playing' && !Game.paused ? raceAudio(dt) : null;
     if (heard) Sound.engine(heard.speed, CAR.id, CAR.maxSpeed, heard.gain, heard.pitch);
     else Sound.engine(live ? Player.speed : -1, Player.tank > 0 ? 'tank' : Player.afloat ? 'jetboat' : CAR.sound || CAR.base?.id || CAR.id, // (a Super car: its base car's engine, wound higher; a car idea: the engine of the car its `sound` names; afloat on a water stage, a boat's)
-      Player.tank > 0 ? Player.rageTank?.maxSpeed ?? CONFIG.tankMaxSpeed : CAR.maxSpeed);
+      Player.tank > 0 ? Player.rageTank?.maxSpeed ?? CONFIG.tankMaxSpeed : carStats(CAR).maxSpeed); // (its ECU's top speed: ecu.js)
     Sound.pack(heard ? heard.pack : 0);
     // the siren, louder the nearer the nearest police car or ambulance (the screensaver's too), and a radar
     // ping as one comes near enough to bust you (nobody busts a tank)

@@ -52,7 +52,7 @@ try {
   on(L('christmas'));
   const lot = cars.garageCars(), has = (id) => lot.some(c => c.id === id), car_ = (id) => cars.carById(id);
   check(['commuter', 'lovebus', 'sport', 'towtruck', 'sixbysix', 'floatvan', 'tank', 'hellrod', 'earned-ufo', 'courier'].every(has) && !has('milkfloat'),
-    'Christmas Eve\'s garage parks all it lists (the Milk Float, an idea, in the ideas lot): ' + L('christmas').allowedCars.cars.filter(has).join(' '));
+    'Christmas Eve\'s garage parks all it lists (but the Milk Float, a blueprint car still locked: ecu.js): ' + L('christmas').allowedCars.cars.filter(has).join(' '));
   check(['towtruck', 'sixbysix', 'hellrod', 'courier'].every(id => cars.carPreview(car_(id)) === 'show'), '...each drawn in full, a tier not reached or not (no silhouettes)');
   const unsold = ['lovebus', 'towtruck', 'sixbysix', 'hellrod', 'earned-ufo', 'courier'].filter(id => cars.forSale(car_(id)));
   check(cars.forSale(car_('junker')) && cars.forSale(car_('tank')) && !unsold.length,

@@ -60,6 +60,8 @@ const fresh = () => ({
   events: {},      // the special events' stages done, by event: how many, in order (events.js)
   claimed: [],     // the rewards given ('event-<id>': tiers.js claimReward), kept when the event is gone
   tierCars: {},    // the car last picked for each tier's levels while their medal is not earned, by tier (the player's own pick, `car`, is kept apart)
+  blueprints: {},  // blueprints collected, by car id (ecu.js: they raise a car's ECU, and unlock a blueprint car)
+  maxed: ['commuter'], // cars held at their MAX ECU whatever their blueprints (ecu.js): the starter car comes maxed; an old save's cars all are
 });
 
 // The save is kept in local storage (BACKUP: the store of record, read first, the whole save, as big as it
@@ -103,6 +105,11 @@ const restore = (saved) => {
     data.cars = [...new Set(data.cars.map(id => RENAMED[id] || id))];
     data.car = RENAMED[data.car] || data.car;
     delete data.best; // (best tips, no longer kept)
+    // (the ECUs, ecu.js: a save from before them, with no blueprints, has every car it owns at its MAX ECU, so nobody
+    // loses power: each counts as its key, maxed. A blueprint car it does not own stays locked)
+    data.blueprints = Object.fromEntries(Object.entries(saved.blueprints && typeof saved.blueprints === 'object' && !Array.isArray(saved.blueprints) ? saved.blueprints : {})
+      .filter(([, n]) => Number.isInteger(n) && n >= 0));
+    data.maxed = [...new Set(saved.blueprints === undefined ? ['commuter', ...data.cars] : Array.isArray(saved.maxed) ? saved.maxed.map(id => RENAMED[id] || id) : ['commuter'])];
     for (let order = saved.levelOrder || 1; order < LEVEL_ORDER; order++) {
       const at = INSERTED_AT[order - 1];
       const moved = (n) => typeof at === 'object' ? Math.min(n, at.cap) : n >= at ? n + 1 : n;
@@ -126,12 +133,17 @@ const saveText = (data) => JSON.stringify({
 });
 // The cookie's share of the save (see BACKUP above): never over COOKIE_ROOM bytes as written, whatever the save
 // holds. Should even the list of cars be too long for it (hundreds of them), it goes down to the car in use
-const COOKIE_KEYS = ['money', 'unlocked', 'levelOrder', 'cars', 'car', 'claimed', 'events', 'tankPieces', 'evil', 'muted', 'touch', 'autoGas', 'autoBrake', 'raceClass', 'raceTrack'];
+const COOKIE_KEYS = ['money', 'unlocked', 'levelOrder', 'cars', 'car', 'claimed', 'events', 'tankPieces', 'evil', 'muted', 'touch', 'autoGas', 'autoBrake', 'raceClass', 'raceTrack', 'blueprints', 'maxed'];
 const COOKIE_ROOM = 3600; // bytes of cookie value (the cap is 4096 for the name, the value and its attributes)
 const cookieText = (data) => {
   const short = Object.fromEntries(COOKIE_KEYS.map(key => [key, key === 'money' ? rounded(data.money, SAVE_STEP.money) : data[key]]));
-  for (const cars of [short.cars, [...new Set(['commuter', short.car])]]) {
-    const text = encodeURIComponent(JSON.stringify({ ...short, cars }));
+  // (the blueprints and the maxed cars go first if it is too long: a cookie without them reads as a save from before the
+  // ECUs, every car it owns maxed, which takes nothing away)
+  const bare = { ...short };
+  delete bare.blueprints;
+  delete bare.maxed;
+  for (const [base, cars] of [[short, short.cars], [bare, short.cars], [bare, [...new Set(['commuter', short.car])]]]) {
+    const text = encodeURIComponent(JSON.stringify({ ...base, cars }));
     if (text.length <= COOKIE_ROOM) return text;
   }
   return encodeURIComponent(JSON.stringify({ unlocked: short.unlocked, levelOrder: short.levelOrder })); // (a car or a class with an absurd name: what is open, at least)
@@ -157,6 +169,12 @@ const tidy = (saved) => {
   clean.tankPieces = Math.floor(number(saved.tankPieces, 0) ?? 0);
   clean.cars = [...new Set(['commuter', ...(Array.isArray(saved.cars) ? saved.cars : []).filter(word)])].slice(0, 200);
   clean.car = word(saved.car) ? saved.car : 'commuter';
+  // (the ECUs' blueprints and maxed cars, ecu.js: only if the code has them. A code from before has neither, and is
+  // restored as an old save: every car it owns maxed)
+  if (saved.blueprints && typeof saved.blueprints === 'object' && !Array.isArray(saved.blueprints)) {
+    clean.blueprints = Object.fromEntries(Object.entries(saved.blueprints).filter(([k, n]) => word(k) && Number.isInteger(n) && n >= 0 && n <= 1e6).slice(0, 300));
+    clean.maxed = [...new Set((Array.isArray(saved.maxed) ? saved.maxed : []).filter(word))].slice(0, 300);
+  }
   clean.bestTime = {};
   for (const side of ['good', 'evil']) { // (a time for a level there is, and no other)
     const times = saved.bestTime && typeof saved.bestTime === 'object' ? saved.bestTime[side] : null;
@@ -253,10 +271,12 @@ export const Progress = {
   // always: it is never written into `cars`, so the save, and its cookie, are no bigger for there being thirty)
   owns(carId) {
     return this.data.cars.includes(carId) || this.earnedCars.some(car => car.id === carId && this.earned(car)) ||
-      this.freeCars.some(car => car.id === carId);
+      this.freeCars.some(car => car.id === carId) || !!this.blueprintOwns?.(carId);
   },
   // the cars that are free and always open (set by cars.js: the car ideas, ideas.js)
   freeCars: [],
+  // is a blueprint car unlocked by its blueprints? (set by ecu.js; null: none is)
+  blueprintOwns: null,
   // the cars that are earned, not bought (set by cars.js: { id, earned: { level, par: { good, evil? } } })
   earnedCars: [],
   // true: the car's level has been delivered with at least its par's seconds to spare, on every side the par names
@@ -286,6 +306,7 @@ export const Progress = {
       for (const side of level.battle || level.alwaysGood ? ['good'] : ['good', 'evil']) this.data.bestTime[side][level.id] ??= 0;
     }
     for (const id of cars) if (!this.data.cars.includes(id)) this.data.cars.push(id);
+    this.data.maxed = [...new Set([...(this.data.maxed || []), ...cars])]; // (and every one at its max ECU: ecu.js. No blueprint car is dealt)
     this.data.money = Math.max(this.data.money, money);
     this.save();
   },
