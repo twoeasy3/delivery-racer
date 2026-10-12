@@ -18,13 +18,13 @@ import { sharedRenderer, STILL } from './modelviews.js';
 // the composition's numbers (radians, degrees, shares of the picture). Tuned on stills of several trios
 export const BANNER = {
   lift: 0.075,      // the camera's height: just above the bumpers
-  fov: 25,          // a little long: the cars keep their shapes, the nearest still clearly the biggest
-  heading: 0.6,     // the hero's nose turned this far to the right of straight at the camera (a front three-quarter)
-  fan: 0.55,        // each car further back turned this much less (the row reads as parked, not as a column)
-  row: 1.0,         // the row's line: from the hero back to the left, this far round from straight across the picture (rad)
-  gap: 0.3,         // the space between two cars of the row, beside each other (m, at their scaled size)
+  fov: 18,          // long: the cars further back stay nearly the hero's size (the owner: "further in front"), the hero still the biggest
+  heading: 0.55,    // the hero's nose turned this far to the right of straight at the camera (a front three-quarter)
+  fan: 0.4,         // each car further back turned this much less (the row reads as parked, not as a column)
+  row: 0.6,         // the row's line: from the hero back to the left, this far round from straight across the picture (rad)
+  gap: 0.9,         // the space between two cars of the row (m, at their scaled size): wide enough that every car's face shows
   weight: 0.6,      // 0: real sizes; 1: every car the same size (by length x height); between, part way
-  marginX: 0.94, marginY: 0.8, // the share of the picture's half width / height the whole group may take
+  marginX: 0.86, marginY: 0.8, // the share of the picture's half width / height the whole group may take
   shiftX: 0.1, shiftY: -0.2,  // the group's middle moved right / up by this share of the half picture
 };
 
