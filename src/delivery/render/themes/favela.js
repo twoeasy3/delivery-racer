@@ -182,6 +182,9 @@ export const favela = ({ instances, offRoads, beside, inJunction, cube, tube, le
   // (no wires over a brow or for 120 m before one: the camera rises there to see over it, see CONFIG.crest, and a wire
   // would hang right across its view)
   const height = (s) => { Track.toWorld(s, 0, q); return q.y; };
+  // (a level that comes DOWN the hill, the road ending well below where it started: the foot of the hill, with the city
+  // and the bay at it, is then at the end of the road and not at the start)
+  const descent = height(Track.end - 4) < height(Track.start) - 15;
   const brow = (s) => { for (let u = s - 70; u <= s + 130; u += 10) if (height(u) * 2 - height(u - 30) - height(u + 30) > 1.4) return true; return false; };
   const GAP = 28, wired = (s) => open(s) && open(s + GAP) && s + GAP < Track.end && !brow(s);
   for (let s = Track.start + 12, k = 0; s < Track.end - 6; s += GAP, k++) {
@@ -222,7 +225,7 @@ export const favela = ({ instances, offRoads, beside, inJunction, cube, tube, le
   let high = 0, top = -Infinity;
   for (let s = 0; s < Track.length; s += 10) { Track.toWorld(s, 0, p); if (p.y > top + 0.05) { top = p.y; high = s; } }
   const ends = [];
-  for (const [s, side, d] of [[Math.min(Track.length * 0.08, 380), -1, 16], [high, 1, 14]]) { Track.toWorld(s, beside(side, s, d), p); ends.push(new THREE.Vector3(p.x, land(p.x, p.z, p.y), p.z)); }
+  for (const [s, side, d] of [[descent ? Track.length - Math.min(Track.length * 0.08, 380) : Math.min(Track.length * 0.08, 380), -1, 16], [high, 1, 14]]) { Track.toWorld(s, beside(side, s, d), p); ends.push(new THREE.Vector3(p.x, land(p.x, p.z, p.y), p.z)); }
   const stops = [], cabins = [];
   if (top > 25) {
     const run = ends[0].distanceTo(ends[1]), n = Math.max(2, Math.round(run / 80)), white = new THREE.MeshLambertMaterial({ color: 0xeef0f2 }), steel = new THREE.MeshLambertMaterial({ color: 0x3a3c42 });
@@ -282,10 +285,11 @@ export const favela = ({ instances, offRoads, beside, inJunction, cube, tube, le
   // ---- far below and far off: the city's towers by the sea beside the start, a great dome of rock in the bay
   // beyond them, and a statue with its arms out on a green peak behind the hill
   const towers = [[], [], []], glass = [];
-  for (let s = Track.start - 60; s < Math.min(Track.length * 0.14, 700); s += 26) {
+  const foot = Math.min(Track.length * 0.14, 700), s0 = descent ? Track.end - foot : Track.start - 60;
+  for (let s = s0; s < (descent ? Track.end + 60 : foot); s += 26) {
     for (let d = 95; d < 330; d += 30) {
       if (rand() < 0.35) continue;
-      const w = 12 + rand() * 12, h = 22 + rand() * rand() * 70, at = s + rand() * 12, lat = beside(1, Math.max(Track.start, at), d + rand() * 14);
+      const w = 12 + rand() * 12, h = 22 + rand() * rand() * 70, at = Math.min(Track.end, s + rand() * 12), lat = beside(1, Math.max(Track.start, at), d + rand() * 14);
       Track.toWorld(Math.max(Track.start, at), lat, p);
       if (Track.mainDistance(p.x, p.z) < 80 || Math.abs(land(p.x, p.z, 0)) > 6) continue;
       towers[Math.floor(rand() * 3)].push([at, lat, h / 2 - 5, w, h, w * (0.7 + rand() * 0.6)]);
@@ -305,16 +309,16 @@ export const favela = ({ instances, offRoads, beside, inJunction, cube, tube, le
   };
   const dome = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), new THREE.MeshLambertMaterial({ color: 0x74695c }));
   dome.scale.set(70, 150, 95);
-  far(Track.start + 120, 1, 420, -10, dome);
+  far(descent ? Track.end - 120 : Track.start + 120, 1, 420, -10, dome);
   const skirt = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 8), new THREE.MeshLambertMaterial({ color: 0x4f8a4a }));
   skirt.scale.set(110, 40, 140);
-  far(Track.start + 120, 1, 420, -12, skirt);
+  far(descent ? Track.end - 120 : Track.start + 120, 1, 420, -12, skirt);
   if (top > 25) {
     const peak = new THREE.Mesh(new THREE.ConeGeometry(110, 150, 9), new THREE.MeshLambertMaterial({ color: 0x4f8a4a }));
     far(high, -1, 300, top + 5, peak);
     const statue = makeStatue(34);
     far(high, -1, 300, top + 78, statue);
-    Track.toWorld(Track.start, 0, p);
+    Track.toWorld(descent ? Track.end : Track.start, 0, p);
     statue.rotation.y = Math.atan2(p.x - statue.position.x, p.z - statue.position.z); // (it looks out over the bay)
   }
 

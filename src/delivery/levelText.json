@@ -366,6 +366,14 @@
       "evil": "A cloud for a client who glows in the dark. Run the hot stretches flat out, thread the infected traffic for the cash, and let the armour take the dose."
     }
   },
+  "monsoon": {
+    "name": "Monsoon",
+    "description": {
+      "good": "A tea set across the rainy valley. Keep left, hold the ruts, mind the spray off the lorries and the frogs, and take each ford or its bridge.",
+      "evil": "Piranhas for a flooded valley. Take the fords flat out, hide in the lorries' spray and let the cattle stampede sort out the queue."
+    },
+    "cargo": { "good": "teaset", "evil": "piranhas" }
+  },
   "cattle": {
     "name": "Cattle Drive",
     "description": {
@@ -530,5 +538,21 @@
   "chaos": {
     "name": "Pile-Up Parade",
     "cargo": { "good": "pancakes", "evil": "piranhas" }
+  },
+  "shift": {
+    "name": "Night Shift",
+    "description": {
+      "good": "Coffees for the night crew at the far gate: the terminal after dark, on the left, in fog. Spray, fresh tar and a height bar (the side road goes round).",
+      "evil": "A reactor core through the yard with half the lights out. Fly the jam off the transporter, plough the fresh tar and leave the lorries blind in your spray."
+    },
+    "cargo": { "good": "coffee", "evil": "reactor" }
+  },
+  "descent": {
+    "name": "Mudslide",
+    "description": {
+      "good": "A bouquet for the wedding at the foot of the hill, down nine hairpins in the rain. Spray, mud, falling rocks and a lane washed away.",
+      "evil": "A thundercloud in a jar, down the hill in a storm of its own. Nine hairpins, a landslide, half the road gone: never brake."
+    },
+    "cargo": { "good": "bouquet", "evil": "cloud" }
   }
 }
