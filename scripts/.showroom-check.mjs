@@ -108,12 +108,16 @@ async function filters(g, check) {
   const secret = (car) => Object.values(SECRET_CARS).includes(car);
   const magenta = (car) => !!car.earned || EVENT_CARS.includes(car) || secret(car) || !(car.tier >= 1 && car.tier <= 5);
   // what each chip means, said again from the cars
+  const bespokeCar = (car) => !!car.bespoke || EVENT_CARS.includes(car);
   const MEANS = {
-    tier: (id) => (c) => id === 'magenta' ? magenta(c.car) : id === 'sea' ? !magenta(c.car) && !!c.car.amphibious
-      : !magenta(c.car) && !c.car.amphibious && c.car.tier === Number(id[1]) && !!c.car.blue === (id[0] === 'b'),
+    stars: (id) => (c) => (c.car.tier >= 1 ? c.car.tier : 6) === Number(id),
+    colour: (id) => (c) => {
+      const car = c.car, mag = !!car.earned || !!car.evergreen || bespokeCar(car);
+      return id === 'magenta' ? mag : id === 'green' ? !mag && !!car.amphibious : id === 'blue' ? !mag && !car.amphibious && !!car.blue : !mag && !car.amphibious && !car.blue;
+    },
     rarity: (id) => (c) => c.rarity === id,
-    kind: (id) => (c) => id === 'event' ? EVENT_CARS.includes(c.car) : id === 'special' ? (!!c.car.earned || secret(c.car)) && !EVENT_CARS.includes(c.car)
-      : !EVENT_CARS.includes(c.car) && !c.car.earned && !secret(c.car) && (id === 'blueprint') === !!c.blueprint,
+    kind: (id) => (c) => id === 'key' ? bespokeCar(c.car) : id === 'special' ? !bespokeCar(c.car) && (!!c.car.earned || secret(c.car))
+      : !bespokeCar(c.car) && !c.car.earned && !secret(c.car) && (id === 'blueprint') === !!c.blueprint,
     state: (id) => (c) => id === 'ready' ? c.state === 'ready' : id === 'locked' ? !c.unlocked : id === 'barred' ? c.state === 'barred'
       : id === 'upgradable' ? c.upgradable && c.ecu < c.max : id === 'maxed' ? c.ecu >= c.max && c.ecu >= 1 : id === 'inuse' ? c.id === inUse : false,
   };
@@ -133,17 +137,17 @@ async function filters(g, check) {
     }
     said.push(group.id + ': ' + counts.join(', '));
     check(!wrong.length, 'every ' + group.name.toLowerCase() + ' chip gives exactly its cards' + (wrong.length ? ' (not: ' + wrong.join('; ') + ')' : ''));
-    if (group.id !== 'state') check(covered === all.length, 'the ' + group.name.toLowerCase() + ' chips share out the whole floor, each car once (' + covered + ' of ' + all.length + ')');
+    if (!['state', 'rarity'].includes(group.id)) check(covered === all.length, 'the ' + group.name.toLowerCase() + ' chips share out the whole floor, each car once (' + covered + ' of ' + all.length + ')');
   }
   console.log('        ' + said.join('\n        '));
   // OR within a group, AND across groups
-  const f1 = D.noFilter(); f1.tier = ['g2', 'b1'];
-  check(ids(D.filterCards(all, f1, inUse)) === ids(all.filter(c => MEANS.tier('g2')(c) || MEANS.tier('b1')(c))), 'two tier chips: the cars of either (gold 2 OR blue 1)');
-  const f2 = D.noFilter(); f2.tier = ['g2', 'g3', 'g4']; f2.state = ['locked']; f2.kind = ['key'];
-  const want2 = all.filter(c => ['g2', 'g3', 'g4'].some(t => MEANS.tier(t)(c)) && MEANS.state('locked')(c) && MEANS.kind('key')(c));
+  const f1 = D.noFilter(); f1.stars = ['2', '3']; f1.colour = ['gold'];
+  check(ids(D.filterCards(all, f1, inUse)) === ids(all.filter(c => (MEANS.stars('2')(c) || MEANS.stars('3')(c)) && MEANS.colour('gold')(c))), 'stars 2 or 3 AND the gold colour: the star colour adds to the star filter');
+  const f2 = D.noFilter(); f2.stars = ['2', '3', '4']; f2.state = ['locked']; f2.kind = ['garage'];
+  const want2 = all.filter(c => ['2', '3', '4'].some(t => MEANS.stars(t)(c)) && MEANS.state('locked')(c) && MEANS.kind('garage')(c));
   check(ids(D.filterCards(all, f2, inUse)) === ids(want2) && want2.length > 0, 'groups together: gold 2-4 AND locked AND key cars (' + want2.length + ')');
-  const f3 = D.noFilter(); f3.rarity = ['bespoke']; f3.state = ['inuse'];
-  check(D.filterCards(all, f3, inUse).every(c => c.rarity === 'bespoke' && c.id === inUse), 'a filter nothing matches gives nothing, not everything');
+  const f3 = D.noFilter(); f3.rarity = ['legendary']; f3.state = ['inuse'];
+  check(D.filterCards(all, f3, inUse).every(c => c.rarity === 'legendary' && c.id === inUse), 'a filter nothing matches gives nothing, not everything');
   // the sorts
   const sorted = (sort) => { const f = D.noFilter(); f.sort = sort; return D.filterCards(all, f, inUse); };
   const inOrder = (list, ok) => list.every((c, i) => i === 0 || ok(list[i - 1], c));
@@ -156,19 +160,19 @@ async function filters(g, check) {
   const r4 = D.filterCards(all, f4, inUse);
   check(r4.every(c => c.state === 'ready') && inOrder(r4, (a, b) => a.stats.maxSpeed >= b.stats.maxSpeed), 'a filter and a sort together: the ready cars, fastest first');
   // the address's &filter=, and a remembered filter that names chips no longer there
-  const parsed = D.parseFilter('tier:g3,b1;rarity:epic;state:ready;sort:speed');
-  check(JSON.stringify(parsed) === JSON.stringify({ tier: ['g3', 'b1'], rarity: ['epic'], kind: [], state: ['ready'], sort: 'speed' }), '&filter=tier:g3,b1;rarity:epic;state:ready;sort:speed is read');
-  const cleaned = D.cleanFilter({ tier: ['g9', 'g1'], rarity: 'epic', state: ['nope'], sort: 'colour' });
-  check(JSON.stringify(cleaned) === JSON.stringify({ tier: ['g1'], rarity: [], kind: [], state: [], sort: 'tier' }) && D.filterCount(parsed) === 4, 'a stale or broken filter keeps only what exists; the count of chips on');
+  const parsed = D.parseFilter('stars:3,4;colour:gold;rarity:epic;state:ready;sort:speed');
+  check(JSON.stringify(parsed) === JSON.stringify({ stars: ['3', '4'], colour: ['gold'], rarity: ['epic'], kind: [], state: ['ready'], sort: 'speed' }), '&filter=stars:3,4;colour:gold;rarity:epic;state:ready;sort:speed is read');
+  const cleaned = D.cleanFilter({ stars: ['9', '1'], rarity: 'epic', state: ['nope'], sort: 'colour' });
+  check(JSON.stringify(cleaned) === JSON.stringify({ stars: ['1'], colour: [], rarity: [], kind: [], state: [], sort: 'tier' }) && D.filterCount(parsed) === 5, 'a stale or broken filter keeps only what exists; the count of chips on');
   // next / previous in the full view: along the list AS FILTERED, round from the end
-  const f5 = D.noFilter(); f5.tier = ['g2', 'g3']; f5.sort = 'name';
+  const f5 = D.noFilter(); f5.stars = ['2', '3']; f5.colour = ['gold']; f5.sort = 'name';
   const list = D.filterCards(all, f5, inUse);
   let at = list[0].id;
   const seen = [at];
   for (let i = 1; i < list.length; i++) seen.push(at = D.stepIn(list, at, 1).id);
   check(seen.join(',') === ids(list) && D.stepIn(list, at, 1).id === list[0].id, 'next walks the filtered list in its order and goes round from the last to the first (' + list.length + ' cars)');
   check(D.stepIn(list, list[0].id, -1).id === list[list.length - 1].id && D.stepIn(list, list[2].id, -1).id === list[1].id, 'previous goes back, and from the first round to the last');
-  check(list.every(c => MEANS.tier('g2')(c) || MEANS.tier('g3')(c)), 'next / previous never leave the filter');
+  check(list.every(c => (MEANS.stars('2')(c) || MEANS.stars('3')(c)) && MEANS.colour('gold')(c)), 'next / previous never leave the filter');
   check(D.stepIn([], 'x', 1) === null && D.stepIn([list[0]], list[0].id, 1).id === list[0].id, 'an empty list: nothing; one car: itself');
 }
 

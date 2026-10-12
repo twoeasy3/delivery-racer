@@ -252,9 +252,8 @@ const buildSheet = () => {
     const b = make('button', 'sr-chip', label);
     b.dataset.group = groupId;
     b.dataset.chip = id;
-    if (groupId === 'tier' && /^[gb]\d$/.test(id)) b.style.setProperty('--chip', id[0] === 'g' ? STAR_COLOURS.gold : STAR_COLOURS.blue);
-    if (groupId === 'tier' && id === 'sea') b.style.setProperty('--chip', STAR_COLOURS.amphibious);
-    if (groupId === 'tier' && id === 'magenta') b.style.setProperty('--chip', STAR_COLOURS.earned);
+    if (groupId === 'colour') b.style.setProperty('--chip', { gold: STAR_COLOURS.gold, blue: STAR_COLOURS.blue, magenta: STAR_COLOURS.earned, green: STAR_COLOURS.amphibious }[id]);
+    if (groupId === 'stars') b.style.setProperty('--chip', STAR_COLOURS.gold);
     if (groupId === 'rarity') b.style.setProperty('--chip', RARITIES[id].colour);
     b.addEventListener('click', () => {
       if (single) filter.sort = id;
@@ -265,11 +264,7 @@ const buildSheet = () => {
   };
   for (const group of FILTER_GROUPS) {
     const chips = make('div', 'sr-chips');
-    if (group.id === 'tier') {
-      const gold = make('div', 'sr-chipline', make('small', '', 'Gold')), blue = make('div', 'sr-chipline', make('small', '', 'Blue')), more = make('div', 'sr-chipline');
-      for (const [id, label] of group.chips) (id[0] === 'g' && id.length === 2 ? gold : id[0] === 'b' && id.length === 2 ? blue : more).append(chip(group.id, id, label));
-      chips.append(gold, blue, more);
-    } else for (const [id, label] of group.chips) chips.append(chip(group.id, id, label));
+    for (const [id, label] of group.chips) chips.append(chip(group.id, id, label));
     body.append(make('section', 'sr-fgroup', make('h3', '', group.name), chips));
   }
   const sorts = make('div', 'sr-chips');
