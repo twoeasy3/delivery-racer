@@ -2,7 +2,7 @@
 // A screen over the start screen, reached by the Shop button at the top of the menu (beside the bank). After a
 // racing game's store: the wallet along the top (the PLACEHOLDER currency, Crazey Cash, and its balance), then rows
 // of big tiles, top to bottom: Featured (a special pack, its featured cars drawn on the tile as the special event's
-// cards draw theirs: carstill.js, the real model in one of its three poses, kept as a picture), Card packs, Bundles; then what each
+// cards draw theirs: carstill.js, the real model, kept as a picture; the three poses are the blueprint cards' only), Card packs, Bundles; then what each
 // rarity holds. A tile: its pack drawn in CSS (the foil in the colour of what it promises: grey Common, green
 // Uncommon, purple Epic, gold Legendary, the Bespoke rainbow), a ribbon (Featured, Sale with the share off, New, Best
 // value), what is in it, the drop rates as a bar, and the price on its button. Buying asks first, takes the price, and
@@ -19,7 +19,6 @@ import { Game } from '../game.js';
 import { stars } from '../cars.js';
 import { ask, tell } from './dialog.js';
 import { drawSoon as stillSoon } from './carstill.js';
-import { variedPoses } from '../carposes.js';
 import { packArt, KIND_LOOK } from './packart.js';
 import { openContents, closeContents } from './packcontents.js';
 
@@ -109,10 +108,10 @@ const ribbon = (offer) => offer.ribbonName
 
 const drawLater = [];
 const featuredTile = (offer) => {
-  const cars = offer.featured.slice(0, 3), poses = variedPoses(cars.map(c => c.id));
-  const carViews = cars.map((car, i) => {
+  const cars = offer.featured.slice(0, 3);
+  const carViews = cars.map((car) => {
     const view = make('div', 'shop-car');
-    drawLater.push([view, car, poses[i]]);
+    drawLater.push([view, car]);
     const rarity = packsModule?.rarityOf?.(car) && offer.kind !== 'special' ? packsModule.rarityOf(car) : 'legendary';
     return make('div', 'shop-feature', view, make('div', 'shop-feature-name', make('span', 'shop-chip r-' + rarity, 'Featured'), make('b', '', car.name),
       make('small', '', stars(car) || 'Event car')));
@@ -186,7 +185,7 @@ const draw = () => {
     make('header', 'shop-top', back, make('h1', '', 'Shop'), wallet()),
     make('div', 'shop-body', note, ...sections, rarityGuide()), ...kept);
   screen.scrollTop = keep;
-  for (const [el, car, pose] of drawLater) stillSoon(el, car, { side: 'good', pose }); // (always the Good livery; a few a frame, once laid out; kept, so a redraw costs nothing)
+  for (const [el, car] of drawLater) stillSoon(el, car, { side: 'good' }); // (always the Good livery; a few a frame, once laid out; kept, so a redraw costs nothing)
 };
 
 // ---- buying -----------------------------------------------------------------------------------------------------
