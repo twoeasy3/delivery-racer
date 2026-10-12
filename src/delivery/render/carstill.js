@@ -6,18 +6,23 @@
 // menu's ONE renderer (no WebGL context of its own); the picture is encoded off the main thread (canvas.toBlob) and
 // kept as an object URL, and the element shows it as its background (until then, the canvas drawn into it).
 // Kept by car, side, POSE and size (in steps of 20 px): a picture drawn small is never stretched over a bigger card.
-// Poses: STILL_POSE (the event cards' and showroom's one pose, framed as before), or one of the three of a blueprint card
-// (carposes.js: 'top', 'low', 'front'; POSES below), framed tight to the picture.
+// Poses: STILL_POSE (the event cards' and showroom's one pose, framed as before), or one of the five of a blueprint card
+// (carposes.js: 'top', 'hero', 'front', 'rear', 'side'; POSES below), framed tight to the picture.
 // Lazily: stillsIn(root) draws only the pictures scrolled into view (an IntersectionObserver), a few a frame.
 import { makeShowCar, paintShowCar } from './garage.js';
 import { sharedRenderer, drawStill } from './modelviews.js';
 
 export const STILL_POSE = { lift: 0.3, angle: -0.64, close: 1 }; // (from a little above, in front, three-quarters on, the nose to the left: the event cards)
-// the blueprint cards' three (a model's nose is +z; angle turns it, from facing the camera: + to the right, - to the left)
+// the blueprint cards' five (a model's nose is +z; angle turns it, from facing the camera: + to the right, - to the left).
+// margin: the share of the picture's half width and height the turned box may fill; marginX / marginY one way each, and
+// shiftY where its middle goes (a share of the half height, + up). hero, rear and side keep the whole box in the card's
+// free band, clear of the BLUEPRINT tab (top right, about the top 11%) and the rarity word and stars (the bottom 17%)
 export const POSES = {
   top: { lift: 1.08, angle: Math.PI - 0.62, fov: 30, margin: 0.88 },   // from above and a little behind, nose away up to the right
-  low: { lift: 0.07, angle: -0.78, fov: 54, margin: 0.9 },             // low, front three-quarter, a wide lens close in, nose to the left
+  hero: { lift: 0.035, angle: -0.36, fov: 40, marginX: 0.86, marginY: 0.72, shiftY: 0.05 },        // very low, nearly head-on
   front: { lift: 0.24, angle: 0.62, fov: 28, margin: 0.88 },           // eye height, front three-quarter, nose to the right
+  rear: { lift: 0.2, angle: Math.PI + 0.72, fov: 30, marginX: 0.86, marginY: 0.72, shiftY: 0.04 },  // rear three-quarter, tail to the left
+  side: { lift: 0.05, angle: -Math.PI / 2, fov: 16, marginX: 0.88, marginY: 0.66, shiftY: 0.04 },   // flat profile, a long lens, nose to the left
 };
 const poseOf = (pose) => (typeof pose === 'string' ? POSES[pose] || STILL_POSE : pose || STILL_POSE);
 const poseKey = (pose) => (typeof pose === 'string' ? pose : pose && pose !== STILL_POSE ? JSON.stringify(pose) : 'still');

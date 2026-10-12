@@ -1,6 +1,6 @@
 // ---- the SHOWROOM: where a car is picked (the owner, 12-Oct: "the new UI-based menu where cars are selected") ----------
 // A screen over the menu, opened by the car card (and G, and ?showroom). A card for every car (showroomData.js says what
-// is on it): its picture (its real model, drawn once as a still, the garage's own pose: render/carstill.js STILL_POSE; the three poses are the blueprint cards' only),
+// is on it): its picture (its real model, drawn once as a still, the garage's own pose: render/carstill.js STILL_POSE; the five poses are the blueprint cards' only),
 // its name and stars, its rarity as the colour of its frame, a pip for each ECU it can reach (filled up to the one it is
 // at), its blueprints toward the next ECU as a bar, and, greyed, why one that cannot be driven cannot.
 // FILTERS (the owner, 12-Oct): All / Ready / Locked in the header, and a Filters sheet of chips: tier (gold and blue

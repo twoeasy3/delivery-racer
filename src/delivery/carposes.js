@@ -1,12 +1,15 @@
-// ---- the three poses a car's still is drawn in (render/carstill.js, render/blueprintcard.js) ------------------------
-// After Asphalt 9's blueprint cards (the owner, 12-Oct: "Have three poses for the car, replicating one of these"):
+// ---- the five poses a car's still is drawn in on a BLUEPRINT CARD (render/carstill.js, render/blueprintcard.js) ------
+// After Asphalt 9's blueprint cards (the owner, 12-Oct: "Have three poses for the car, replicating one of these"; then,
+// from the pose experiment, CHECKLIST 164: hero replaces low, rear and side are added):
 //   top   from above and a little behind, the car seen mostly from the top with a slight tilt (the Venom F5 card)
-//   low   a low front three-quarter, a wide lens close in (the Rimac card)
+//   hero  very low and nearly head-on, a medium-wide lens (the bonnet and the lamps big)
 //   front a front three-quarter at about eye height, nose the other way (the LaFerrari card)
+//   rear  a rear three-quarter at about eye height, tail to the left
+//   side  a flat side profile through a long lens, nose to the left
 // The numbers of each (how high, how far round, the lens) are carstill.js POSES; here only the names, and which a car
 // gets: a STABLE pick by its id (the same car looks the same every time: the contents sheet, the showroom), and for a
 // pack's cards a pick that keeps NEIGHBOURS different. No three.js here, so a headless check can read it.
-export const POSE_NAMES = ['top', 'low', 'front'];
+export const POSE_NAMES = ['top', 'hero', 'front', 'rear', 'side'];
 
 // a small string hash (FNV-1a), the same every run
 const hash = (s) => {

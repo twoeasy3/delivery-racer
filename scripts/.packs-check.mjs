@@ -4,7 +4,7 @@
 // packs hold only evergreen cards, the odds come out about as packs.json has them (seeded dice, many packs), the
 // featured upgrade rate, and the packs held and the log in the save (a save code out and back, an old save); a pack given
 // is opened at once in the flows (Packs.revealer), a pending one once; the reveal's cards (each its own, x1), its order (the
-// best last), each card's progress bar before/after with the unlock and ECU-up flags; the three poses (carposes.js);
+// best last), each card's progress bar before/after with the unlock and ECU-up flags; the five poses (carposes.js);
 // FEATURED WEIGHTS (CHECKLIST 150): the last slot by weight, keys once and never owned, amounts per entry (x3 / x15),
 // exhausted entries out with the weights shifted, the sheet's exact chances against seeded packs, the packs' featured lists
 // checked (packProblems, through events.js problems()). ONE DEFINITION PER PACK (CHECKLIST 159): the packs by id
@@ -233,17 +233,17 @@ try {
       'a key car without its key: its blueprints take it up an ECU (1 to 2: ECU up), still locked (no key)');
     Packs.revealer = null;
   }
-  // the three poses: a stable pick by car id, and a pack's cards varied so neighbours differ
+  // the five poses (top, hero, front, rear, side; no low): a stable pick by car id, and a pack's cards varied so neighbours differ
   {
     const { POSE_NAMES, posePick, variedPoses } = await g.load('carposes.js');
     const roster = P.roster().map(c => c.id);
     const stable = roster.every(id => posePick(id) === posePick(id) && POSE_NAMES.includes(posePick(id)));
     const counts = Object.fromEntries(POSE_NAMES.map(p => [p, roster.filter(id => posePick(id) === p).length]));
-    check(stable && POSE_NAMES.length === 3 && Object.values(counts).every(n => n > 0), 'a car\'s pose is a stable pick by its id: ' + JSON.stringify(counts));
+    check(stable && POSE_NAMES.join() === 'top,hero,front,rear,side' && Object.values(counts).every(n => n > 0), 'a car\'s pose is a stable pick by its id: ' + JSON.stringify(counts));
     let differ = true;
     for (let i = 0; i < 200; i++) { const ids2 = draw('ten', { random: dice(6e6 + i) }).map(c => c.car), v = variedPoses(ids2); if (v.some((p, j) => j > 0 && p === v[j - 1])) differ = false; }
-    const same = variedPoses(['lovebus', 'lovebus', 'lovebus']);
-    check(differ && same[0] !== same[1] && same[1] !== same[2], 'a pack\'s cards: neighbouring cards never share a pose (200 10-packs; three of one car: ' + same.join(', ') + ')');
+    const same = variedPoses(['lovebus', 'lovebus', 'lovebus', 'lovebus', 'lovebus', 'lovebus']);
+    check(differ && same.every((p, j) => POSE_NAMES.includes(p) && (j === 0 || p !== same[j - 1])), 'a pack\'s cards: neighbouring cards never share a pose (200 10-packs; three of one car: ' + same.join(', ') + ')');
   }
 
   // the pack screens' pictures: every one asked for in the GOOD livery, never a side that follows the player (the
