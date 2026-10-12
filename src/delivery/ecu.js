@@ -91,13 +91,38 @@ export const DELIVERY = {
   // tiny novelties, record cars and racers: nowhere to keep a parcel (the worst)
   snocat: 1.1, hotdog: 1.4, bubble: 0.6, jetcar: 0.6, dragster: 0.6, solarracer: 0.6, monowheel: 0.6, 'earned-f1': 0.6, 'earned-lmp': 0.6,
 };
-// COMPOSURE at a car's MAXED ECU is its own `composure` field in cars.js (default 1 = CONFIG.dangerTime, 3 s). The slow
-// cars have more (CHECKLIST item 171: they take longer to get past traffic on the shoulder): every 1-star car 1.3,
-// every 2-star car 1.15, of any star colour (gold, blue, sea green), car lot or blueprint; 3 stars and up 1.0.
+// COMPOSURE at a car's MAXED ECU (the shoulder meter: CONFIG.dangerTime 3 s x it). THIS TABLE IS WHERE TO EDIT IT (a car's
+// own `composure` field in cars.js wins over it; then node scripts/ecu-tables.mjs --write). CHECKLIST item 171:
+//   base   by the car's STARS (any colour: gold, blue, sea green; car lot or blueprint car): the slow cars take longer to
+//          get past traffic on the shoulder. 1 star 1.3 (3.9 s), 2 stars 1.15 (3.45 s), 3 stars and up, and a car with
+//          no stars (Key, special, the Tank) 1 (3 s)
+//   bump   added to the base for about a third of each tier, where it fits the car's character (heavy, tough, calm,
+//          stately, a working or emergency vehicle, a tourer: the police give it a moment longer), in steps of 0.05 to
+//          0.2 (+0.1 = 0.3 s more; from 3 stars up at least +0.1, so 3 s becomes 3.3 to 3.6 s), never above 1.5. The twitchy sports and racing cars stay at their base: none is below it
+export const COMPOSURE = {
+  base: { 1: 1.3, 2: 1.15 }, // (any other: 1)
+  most: 1.5,
+  bump: {
+    // 1 star (base 1.3): the slowest milk round, the mail van, a heavy van
+    milkfloat: 0.15, postvan: 0.1, darkvan: 0.05,
+    // 2 stars (base 1.15): a bus, a family wagon, a big tough truck, an old wood-sided wagon
+    lovebus: 0.2, wagon: 0.1, liftedtruck: 0.1, woody: 0.05,
+    // 3 stars (base 1): a hearse (who would hurry it), a fire engine and a tow truck at work, a people carrier
+    hearse: 0.2, fireengine: 0.15, towtruck: 0.15, minivan: 0.1,
+    // 4 stars: a stately saloon, a taxi (the shoulder is its office), a luxury saloon, an SUV
+    stately: 0.2, taxi: 0.15, goddess: 0.1, suv: 0.1,
+    // 5 stars: an armoured-looking 6x6, a big comfortable full-size, a grand tourer, a calm silent EV
+    sixbysix: 0.2, fullsize: 0.15, classicgt: 0.1, evsaloon: 0.1,
+    // no stars (Key, Bespoke, special cars, the Tank): a coachbuilt tourer, an expedition snowcat, a promotional hot dog,
+    // and the armoured ones
+    swancar: 0.2, snocat: 0.15, hotdog: 0.1, tank: 0.2, 'earned-apc': 0.2,
+  },
+};
+export const composureOf = (car) => car.composure ?? Number(Math.min(COMPOSURE.most, (COMPOSURE.base[car.tier] ?? 1) + (COMPOSURE.bump[car.id] ?? 0)).toFixed(3));
 export const NEW_STATS = {
   agility: { of: (car) => car.agility ?? 1, scales: true },
   delivery: { of: (car) => car.delivery ?? DELIVERY[car.id] ?? 1, scales: true },
-  composure: { of: (car) => car.composure ?? 1, scales: true },
+  composure: { of: composureOf, scales: true },
   crossing: { of: (car) => car.crossing ?? CONFIG.railCrossing.usual, scales: true },
   weight: { of: (car) => car.mass ?? 1, scales: false },
 };

@@ -5,8 +5,8 @@
 // time, races and Car Swap untouched, and a replay recorded at an ECU played back identically (at that ECU, whatever the
 // save says by then), an old one (no ECU in its header) at the max. THE BUDGET (CHECKLIST item 171; ecu.js STEPS,
 // TOP_SPEED_CAP, FLOORS): every stat of every ECU by its per-stat step and floor, a higher ECU never worse, every ECU1 at
-// or above the floors, top speed ECU1 >= max / 1.25, the step sizes as designed, composure by tier (1 star 1.3, 2 stars
-// 1.15, the rest 1). The second set (CHECKLIST item 126): agility, delivery, composure, crossing by the ECU, weight flat; the
+// or above the floors, top speed ECU1 >= max / 1.25, the step sizes as designed, composure by tier (a base: 1 star 1.3, 2
+// stars 1.15, the rest 1; a bump of 0.05 to 0.2 for about a third of each tier; ecu.js COMPOSURE). The second set (CHECKLIST item 126): agility, delivery, composure, crossing by the ECU, weight flat; the
 // player's car takes them at its ECU (Player.agility / crossing / mass / delivery / composure, Social.dangerTime); a flaming
 // package's damage and a gift's standing scale with delivery; a shoulder run busts sooner at ECU1 than at the max.
 //   node scripts/.ecu-check.mjs
@@ -16,7 +16,7 @@ const g = await boot({ tiers: false }); // (tiers off: a tier level would put th
 let failures = 0;
 const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' : '  FAIL  ') + what); };
 try {
-  const { Ecu, LADDER, STEPS, RESPAWN, NEW_STATS, DELIVERY, FLOORS, TOP_SPEED_CAP } = await g.load('ecu.js');
+  const { Ecu, LADDER, STEPS, RESPAWN, NEW_STATS, DELIVERY, FLOORS, TOP_SPEED_CAP, COMPOSURE } = await g.load('ecu.js');
   const { Social } = await g.load('social.js');
   const { Packages } = await g.load('packages.js');
   const { Replay } = await g.load('replay.js');
@@ -46,7 +46,7 @@ try {
   // ---- THE BUDGET (ecu.js STEPS, TOP_SPEED_CAP, FLOORS; CHECKLIST item 171): from the maxed figures, per stat, ECU1 =
   // max x (1 - f (N - 1)) held to its floor, then equal steps to the max; respawn 5.5 s at ECU1, 0.5 s less each ECU
   const today = { maxSpeed: c => c.maxSpeed, accel: c => c.accel, health: c => c.health, agility: c => c.agility ?? 1, delivery: c => c.delivery ?? DELIVERY[c.id] ?? 1,
-    composure: c => c.composure ?? 1, crossing: c => c.crossing ?? C.railCrossing.usual, weight: c => c.mass ?? 1 };
+    composure: c => NEW_STATS.composure.of(c), crossing: c => c.crossing ?? C.railCrossing.usual, weight: c => c.mass ?? 1 };
   const tol = { maxSpeed: 0.051, accel: 0.051, health: 0.51 };
   const expect = (c, key, k, n) => {
     const max = today[key](c);
@@ -95,13 +95,22 @@ try {
     shares.muscle.map(v => Math.round(v * 100) + '%').join(' / ') + '; every stat steps more than top speed; a car lot car less than a blueprint car in every stat');
   check(Ecu.stats(car('sleeper'), 1).maxSpeed < Ecu.stats(car('sleeper'), 5).maxSpeed && Ecu.stats(car('bubble'), 1).maxSpeed === car('bubble').maxSpeed,
     'a sleeper wagon ECU1 ' + Ecu.stats(car('sleeper'), 1).maxSpeed + ' m/s, ECU5 ' + Ecu.stats(car('sleeper'), 5).maxSpeed + '; a Bubble Car (ECU1 only) at its figures');
-  // composure by tier (CHECKLIST item 171): the slow cars sit longer on the shoulder; every 1-star car 1.3, 2-star 1.15, 3 and up 1
-  const tiered = roster.filter(c => c.tier >= 1 && c.tier <= 5);
+  // composure by tier (CHECKLIST item 171; ecu.js COMPOSURE): a BASE by stars (1 star 1.3, 2 stars 1.15, the rest 1), and a bump
+  // for about a third of each tier (+0.05 to +0.2, never above 1.5); no car below its base
   const compOf = (c) => ECUS[c.id].ecus.at(-1).composure;
-  const compBad = tiered.filter(c => compOf(c) !== (c.tier === 1 ? 1.3 : c.tier === 2 ? 1.15 : 1)).map(c => c.id + ' ' + compOf(c));
-  const lowest = (t) => Math.min(...tiered.filter(c => c.tier === t).map(compOf)), highest = (t) => Math.max(...tiered.filter(c => c.tier === t).map(compOf));
-  check(!compBad.length && lowest(1) > highest(2) && lowest(2) > highest(3) && [3, 4, 5].every(t => highest(t) === 1) && roster.filter(c => !(c.tier >= 1 && c.tier <= 5)).every(c => compOf(c) === 1),
-    'composure at the max by tier: every 1-star car 1.3 (3.9 s), 2-star 1.15 (3.45 s), 3 to 5 stars and the Key / special cars 1 (3 s); tier 1 > tier 2 > the rest' + (compBad.length ? ': NOT ' + compBad.join(', ') : ''));
+  const baseOf = (c) => (c.tier === 1 ? 1.3 : c.tier === 2 ? 1.15 : 1);
+  const compBad = roster.filter(c => compOf(c) !== Number(Math.min(1.5, baseOf(c) + (COMPOSURE.bump[c.id] ?? 0)).toFixed(3)) || compOf(c) < baseOf(c) || compOf(c) > 1.5).map(c => c.id + ' ' + compOf(c));
+  const groups = { 1: c => c.tier === 1, 2: c => c.tier === 2, 3: c => c.tier === 3, 4: c => c.tier === 4, 5: c => c.tier === 5, 'Key/Bespoke': c => !(c.tier >= 1 && c.tier <= 5) && !EARNED_CARS.includes(c) && c.id !== 'tank' };
+  const spread = Object.entries(groups).map(([t, f]) => {
+    const cars = roster.filter(f), up = cars.filter(c => compOf(c) > baseOf(c));
+    return { t, n: cars.length, up: up.length, values: [...new Set(up.map(c => Math.round((compOf(c) - baseOf(c)) * 100) / 100))].length };
+  });
+  const bumps = Object.values(COMPOSURE.bump);
+  check(!compBad.length && COMPOSURE.base[1] === 1.3 && COMPOSURE.base[2] === 1.15 && bumps.every(v => v >= 0.05 && v <= 0.2) &&
+    spread.every(g => g.up >= Math.floor(g.n / 4) && g.up <= Math.ceil(g.n / 2) && (g.n < 6 || g.values >= 3)) &&
+    Math.min(...roster.filter(groups[1]).map(baseOf)) > Math.max(...roster.filter(groups[2]).map(baseOf)),
+  'composure at the max: the base by stars (1 star 1.3 = 3.9 s, 2 stars 1.15 = 3.45 s, 3+ and Key cars 1 = 3 s), plus a bump of 0.05 to 0.2 for about a third of each tier, none below its base, none above 1.5 (' +
+    spread.map(g => g.t + ': ' + g.up + ' of ' + g.n + ' raised').join(', ') + ')' + (compBad.length ? ': NOT ' + compBad.join(', ') : ''));
   const noDelivery = roster.filter(c => c.delivery == null && DELIVERY[c.id] == null);
   const deliveries = roster.map(c => NEW_STATS.delivery.of(c));
   check(!noDelivery.length && Math.min(...deliveries) >= 0.6 && Math.max(...deliveries) <= 1.6 && DELIVERY.postvan > DELIVERY.sport && DELIVERY.milkfloat > DELIVERY['earned-f1'],
