@@ -125,6 +125,13 @@ export const Radiation = {
       if (!near && Math.hypot(car.s - P.s, car.lat - P.lat) <= R.radius) near = car;
       if (!(car.arrest >= 0) && !(P.air > car.height) && Collision.overlap(P, car)) touched = true;
     }
+    // an infected player passes it on: a clean traffic vehicle it touches is infected at once (not through a shield)
+    if (this.infected && !this.shielded()) {
+      for (const car of Traffic.cars) {
+        if (!car.active || car.infected || car.junction || Math.abs(car.s - P.s) > R.radius + 1 || !this.can(car)) continue;
+        if (!(car.arrest >= 0) && !(P.air > car.height) && Collision.overlap(P, car)) car.infected = true;
+      }
+    }
     this.area = area;
     this.near = near;
     const dosed = !!(area || near);

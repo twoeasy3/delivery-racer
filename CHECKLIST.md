@@ -92,13 +92,13 @@ Working list, from the owner's ideas of 2026-10-09. `[x]` done, `[~]` partly don
 - [ ] 94. Speed camera info box is too large (the owner, 12-Oct).
 - [ ] 95. Change the more important events (messages) to a different colour (the owner, 12-Oct).
 - [ ] 96. Powerup base colour does not show where a level overlay is under it (washboard, runway, mud) (the owner, 12-Oct).
-- [ ] 97. An infected player does not infect traffic on contact (the owner, 12-Oct).
-- [ ] 98. An infected player should respawn non-infected (the owner, 12-Oct).
-- [ ] 99. Radiation should deal damage as a share (%) of the vehicle's health (the owner, 12-Oct).
+- [x] 97. An infected player does not infect traffic on contact (the owner, 12-Oct). Done: an infected player now infects a clean ordinary traffic car it touches (not through armour, not immune kinds). Checked: `.radiation-check` contact section; not seen in a browser.
+- [x] 98. An infected player should respawn non-infected (the owner, 12-Oct). Done: `CONFIG.radiation.wreckCures` is now true, so the new car after a wreck is clean. Checked: `.radiation-check` (meter section); not seen in a browser.
+- [x] 99. Radiation should deal damage as a share (%) of the vehicle's health (the owner, 12-Oct). Already so: `Radiation` ticks `tick`/`infectedTick` x the car's `maxHealth` a second, so it is a % of the vehicle's health for any car (the default car's feel unchanged). Checked by reading and `.radiation-check` (health lost as % of maxHealth); nothing changed.
 - [ ] 100. Potential understeer / loss of grip should show as a status, the meter showing its severity (the owner, 12-Oct).
 - [ ] 101. Allow the player to fly off the map when airborne; if they do, it is a destruction (the owner, 12-Oct).
 - [ ] 102. Lane reversal signs render their lights on the wrong side (the owner, 12-Oct).
-- [ ] 103. Cars keep too much steering while stationary or at very low speeds (the owner, 12-Oct).
+- [x] 103. Cars keep too much steering while stationary or at very low speeds (the owner, 12-Oct). Done: the sideways speed a steer asks for scales with speed below `CONFIG.steerFullSpeed` (4 m/s), full above. Checked: `.radiation-check` steering section (stationary ~5% of the sideways travel at speed, 1.5 m/s under half), `.traits-check`, `.autobrake-check`; not felt by hand.
 - [ ] 104. Move the gauges to the first element under the time, and put the statuses there (the owner, 12-Oct).
 - [ ] 105. Use a small icon to denote each meter's purpose, rather than a line of text (mobile) (the owner, 12-Oct).
 
