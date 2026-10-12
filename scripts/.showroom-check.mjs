@@ -1,6 +1,7 @@
 // A check of the showroom's cards (src/delivery/showroomData.js; drawn by render/showroom.js): every car is on the
 // floor once, the ECU pips are within the car's maximum, the blueprint bar within its step, and a car that cannot be
-// driven says why in the owner's words ("You need the key to drive this car", "Purchase this car from the car lot").
+// driven says why in the owner's words ("You need the key to drive this car", "Purchase this car from the car lot"), and
+// each locked card wears one overlay of its kind (key, earned, unpurchased, tier, blueprint: overlays() at the end).
 // It reads ecu.js (Ecu) through the cards, so it holds for the real tables, not a copy of them.
 //   node scripts/.showroom-check.mjs
 import { boot } from './delivery-headless.mjs';
@@ -32,7 +33,7 @@ try {
   check(!hotrod.unlocked && hotrod.reason === LOCKED_WORDS.lot, 'the Hot Rod (a car lot car not bought): "' + LOCKED_WORDS.lot + '"');
   const hellrod = carCard(carById('hellrod'));
   console.log('        ' + say(hellrod));
-  check(!hellrod.unlocked && hellrod.reason === LOCKED_WORDS.key && hellrod.max === 1 && !hellrod.upgradable && hellrod.rarity === 'special', 'the Hell Rod (a special car, not earned): "' + LOCKED_WORDS.key + '", ECU1 at most, no blueprints');
+  check(!hellrod.unlocked && hellrod.reason === LOCKED_WORDS.earn && hellrod.max === 1 && !hellrod.upgradable && hellrod.rarity === 'special', 'the Hell Rod (a special car, not earned): "' + LOCKED_WORDS.key + '", ECU1 at most, no blueprints');
   // blueprints for a locked car lot car count before its key (the owner, 12-Oct): the bar moves, the car stays locked
   (Progress.data.blueprints ||= {}).hotrod = 1;
   const hotrod1 = carCard(carById('hotrod'));
@@ -88,6 +89,8 @@ try {
   await filters(g, check);
   // ---- the PHONE showroom (render/showroomphone.js): two columns, and the single-car screen's vertical swipe
   await phone(g, check);
+  // ---- the LOCKED-CARD OVERLAYS (showroomData.js overlayOf, render/lockoverlay.js): one kind per locked card, none on a playable one
+  await overlays(g, check);
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error?.stack || error));
@@ -106,7 +109,6 @@ async function filters(g, check) {
   const inUse = g.cars.carInUse().id;
   const all = D.showroomCars().map(car => D.carCard(car, false));
   const secret = (car) => Object.values(SECRET_CARS).includes(car);
-  const magenta = (car) => !!car.earned || EVENT_CARS.includes(car) || secret(car) || !(car.tier >= 1 && car.tier <= 5);
   // what each chip means, said again from the cars
   const bespokeCar = (car) => !!car.bespoke || EVENT_CARS.includes(car);
   const MEANS = {
@@ -197,4 +199,45 @@ async function phone(g, check) {
   for (let i = 0; i < list.length; i++) at = D.stepIn(list, at, P.swipeOffset(0, -120, 150)).id;
   const down = D.stepIn(list, list[0].id, P.swipeOffset(0, 120, 150)).id;
   check(list.length > 2 && at === list[0].id && down === list[list.length - 1].id, list.length + ' swipes up go round the filtered list (' + list.length + ' locked cars) to the first again; a swipe down from the first: the last');
+}
+
+// The locked-card overlays (the owner, 12-Oct, after an Asphalt 9 locked card): every card that cannot be driven wears
+// exactly one kind (key, earned, unpurchased, tier, blueprint), worked out here again from the card's own fields; a card
+// that can be driven wears none; an EARNED (special) car's overlay and tooltip never speak of a key, nor use the key icon
+// (the owner: earned cars are earned on a level; only a Key car's needs its key); a Key car's keeps the key. With the
+// tiers on and a fresh save, so every kind is on the floor. The look is seen in stills, not here.
+async function overlays(g, check) {
+  const D = await g.load('showroomData.js');
+  const L = await g.load('render/lockoverlay.js');
+  const { Progress } = await g.load('progress.js');
+  const { CARS, EVENT_CARS, SECRET_CARS } = g.cars;
+  g.CONFIG.progression.tiers = true;
+  Progress.reset(); Progress.noSave = true; Progress.data.tierBase = 1;
+  const filler = D.showroomCars().find(car => car.evergreen && !D.carCard(car).hidden);
+  if (filler) (Progress.data.blueprints ||= {})[filler.id] = 2; // (a blueprint car part-way: its bar on the overlay)
+  const cards = D.showroomCars().map(car => D.carCard(car, false));
+  const want = (c) => c.unlocked ? null : c.hidden ? 'tier' : c.blueprint ? 'blueprint'
+    : CARS.includes(c.car) && !c.car.evergreen ? (c.forSale ? 'unpurchased' : 'tier')
+      : c.car.earned || Object.values(SECRET_CARS).includes(c.car) ? 'earned' : 'key';
+  const kindOf = (c) => D.overlayOf(c)?.kind ?? null;
+  const wrong = cards.filter(c => kindOf(c) !== want(c) || (kindOf(c) && !D.OVERLAY_KINDS.includes(kindOf(c))));
+  check(!wrong.length, 'every card has exactly its one overlay kind (none when it can be driven)' + (wrong.length ? ' (not: ' + wrong.map(c => c.id + ' ' + kindOf(c) + '/' + want(c)).join(', ') + ')' : ''));
+  const counts = {};
+  for (const c of cards) { const k = kindOf(c) || 'none'; counts[k] = (counts[k] || 0) + 1; }
+  console.log('        overlays: ' + Object.entries(counts).map(([k, n]) => k + ' ' + n).join(', '));
+  check([...D.OVERLAY_KINDS, 'none'].every(k => counts[k] > 0), 'all five kinds and "none" are on a fresh floor with the tiers on');
+  const say = (ov) => ov ? ov.title + ' / ' + ov.line : '';
+  const earned = cards.filter(c => kindOf(c) === 'earned');
+  check(earned.length > 0 && earned.every(c => !/\bkey/i.test(say(D.overlayOf(c)) + ' ' + D.cardTip(c))), 'an earned car\'s overlay and tooltip never say key (' + earned.slice(0, 2).map(c => '"' + say(D.overlayOf(c)) + '"').join(', ') + ')');
+  check(earned.every(c => !c.car.earned || /^Beat par on /.test(D.overlayOf(c).line)), 'an earned car names the level it is earned on');
+  check(L.ICONS.earned !== L.ICONS.key && Object.keys(L.ICONS).sort().join() === [...D.OVERLAY_KINDS].sort().join(), 'each kind its own icon; the earned one (a trophy) is not the key');
+  const keys = cards.filter(c => kindOf(c) === 'key');
+  check(keys.length > 0 && keys.every(c => (c.car.bespoke || EVENT_CARS.includes(c.car)) && /key/i.test(say(D.overlayOf(c)))), 'a Key car (Bespoke, event) keeps the key theme ("' + say(D.overlayOf(keys[0])) + '")');
+  const forSale = cards.filter(c => kindOf(c) === 'unpurchased');
+  check(forSale.every(c => D.overlayOf(c).title === '$' + (Number.isInteger(c.car.price) ? c.car.price : c.car.price.toFixed(2)) && /Crazey Jim/.test(D.overlayOf(c).line)), 'a car lot car not bought shows its price at Crazey Jim\'s ("' + say(D.overlayOf(forSale[0])) + '")');
+  const tier = cards.filter(c => kindOf(c) === 'tier');
+  check(tier.every(c => /\{tier:\d+\}|later tier|Not for sale/.test(D.overlayOf(c).line)) && tier.every(c => !c.hidden || c.name === 'Locked car'), 'a tier-locked card says which tier opens it, and a silhouette keeps its name hidden ("' + say(D.overlayOf(tier[0])) + '")');
+  const bp = cards.filter(c => kindOf(c) === 'blueprint');
+  check(bp.every(c => { const o = D.overlayOf(c); return o.have >= 0 && o.have <= o.need && o.title === o.have + '/' + o.need + ' blueprints'; }), 'a blueprint-locked card shows its blueprints toward unlocking ("' + say(D.overlayOf(bp.find(c => c.id === filler?.id) || bp[0])) + '")');
+  check(cards.every(c => !D.overlayOf(c) || !/You need the key|Purchase this car/.test(say(D.overlayOf(c)))), 'the overlays\' words are short, not the spec\'s sentences (those stay in the panel and the tooltip)');
 }

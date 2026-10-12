@@ -16,10 +16,7 @@ import { Tiers, tierStarsNode, richTiers } from '../tiers.js';
 import { Progress } from '../progress.js';
 import { Game } from '../game.js';
 import { renderer } from './scene.js';
-import { makeCarMesh, shapeCarMesh, makeTankMesh } from './cars.js';
-import { MODELS } from './models.js';
-import { makeIdeaModel } from './ideaModels.js';
-import { makeUfo, addSuperKit } from './carExtras.js';
+import { makeShowCar, paintShowCar } from './showcar.js';
 import { GarageView, arrange, mountGarageView } from './garageview.js';
 import { showComparison } from './compare.js';
 import { IdeasLot } from './ideaslot.js';
@@ -147,19 +144,9 @@ const buildLot = () => {
   parked = order.map(parkCar).filter(Boolean);
 };
 
-// ---- a car on show: its own model, and its paint for a side (the lot's cars, and the start screen's car card:
-// render/menustage.js). Whoever makes one adds it to a scene of their own: makeCarMesh puts it in the game's
-export const makeShowCar = (car) => {
-  if (car.idea) return makeIdeaModel(car); // (a car idea in use: its own model, ideas.js; one with none throws below, and the card shows no picture)
-  const mesh = car.tank ? makeTankMesh(car.color) : car.ufo ? makeUfo() : car.model ? MODELS[car.model](car) : makeCarMesh(car.color); // (ufo: the earned Saucer)
-  if (!car.tank && !car.ufo && !car.model) shapeCarMesh(mesh, car);
-  if (car.super || car.superKit) addSuperKit(mesh, car); // (an earned car built as its garage car's Super version: the body kit on, as in play)
-  return mesh;
-};
-export const paintShowCar = (mesh, car, evil) => {
-  mesh.userData.body?.material.color.setHex((evil ? car.evilColor : car.color) ?? car.color); // (a level's own vehicle may have one paint, or no body to paint)
-  mesh.userData.livery?.(evil);
-};
+// ---- a car on show: its own model, and its paint for a side (render/showcar.js; here too for those that import them
+// from the lot)
+export { makeShowCar, paintShowCar };
 
 // ---- a car, parked in its bay: column by column --------------------------------------------------
 const SILHOUETTE = new THREE.MeshBasicMaterial({ color: 0x07080b });
