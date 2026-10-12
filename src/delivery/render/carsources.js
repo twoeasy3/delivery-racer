@@ -6,7 +6,7 @@
 // its chance a pack, and where such packs come from. The pack kinds that can never hold the card are one muted line.
 // Its look is its own (a <style> put in once, under .cs-where), for the showroom's dark panel; short enough for a phone.
 // ============================================================================
-import { sourcesOf } from '../carsources.js';
+import { sourcesOf, ownWord } from '../carsources.js';
 import { rarityName, rarityColour } from '../packs.js';
 import { richTiers } from '../tiers.js';
 import shopData from '../shop.json';
@@ -107,9 +107,9 @@ export const renderSources = (car, opts) => {
   const needKey = !s.keyless && !s.keyOwned, needBp = !s.noBlueprints && !s.maxed;
   const noKey = needKey && !s.obtainable.key, noBp = needBp && !s.obtainable.blueprints, none = (needKey || needBp) && (!needKey || noKey) && (!needBp || noBp);
   const nothing = (on) => (on && !none ? make('p', 'cs-none', 'Not obtainable right now') : null);
-  const key = make('div', 'cs-group', make('h4', '', 'Key', s.keyless ? null : chip(s.keys.some(k => k.how === 'pack') ? 'bespoke' : null)), nothing(noKey),
-    ...(s.keyless ? [muted(s.keyless)] : s.keyOwned ? [make('div', 'cs-line ok', make('i', '', '✓'), make('span', '', make('b', '', 'You have its key')))]
-      : s.keys.length ? lines(s.keys, flags) : [muted('No way to get its key')]));
+  const word = ownWord(car), key = make('div', 'cs-group', make('h4', '', word.label, s.keyless ? null : chip(s.keys.some(k => k.how === 'pack') ? 'bespoke' : null)), nothing(noKey),
+    ...(s.keyless ? [muted(s.keyless)] : s.keyOwned ? [make('div', 'cs-line ok', make('i', '', '✓'), make('span', '', make('b', '', word.have)))]
+      : s.keys.length ? lines(s.keys, flags) : [muted(word.none)]));
   const bpRarity = s.blueprints.find(b => b.rarity)?.rarity || null;
   const bp = make('div', 'cs-group', make('h4', '', 'Blueprints', chip(bpRarity)), nothing(noBp),
     ...(s.noBlueprints ? [muted(s.noBlueprints)] : s.maxed ? [make('div', 'cs-line no', make('i', '', '✓'), make('span', '', make('b', '', 'Maxed'), make('small', '', 'At its max ECU: no more blueprints needed')))]
@@ -119,7 +119,7 @@ export const renderSources = (car, opts) => {
   // the summary, one line, open or shut: a tick or a cross for the key and the blueprints, or "Not obtainable right now"
   const state = (label, ok, done) => make('span', 'cs-state ' + (done || ok ? 'ok' : 'no'), (done || ok ? '✓ ' : '✕ ') + label + (done ? ' ' + done : ''));
   const summary = make('summary', '', make('h3', '', 'Where to get it'), none ? make('span', 'cs-none', 'Not obtainable right now')
-    : make('span', 'cs-states', s.keyless ? null : state('Key', s.obtainable.key, s.keyOwned ? 'owned' : ''),
+    : make('span', 'cs-states', s.keyless ? null : state(word.label, s.obtainable.key, s.keyOwned ? word.owned : ''),
       s.noBlueprints ? null : state('Blueprints', s.obtainable.blueprints, s.maxed ? 'maxed' : '')));
   box.append(...[summary, key, bp, flags.placeholder ? make('p', 'cs-note', '* Crazey Cash, the Shop\'s placeholder currency: nothing gives it yet') : null].filter(Boolean));
   return box;
