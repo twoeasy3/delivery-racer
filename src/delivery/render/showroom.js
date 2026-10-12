@@ -3,24 +3,27 @@
 // is on it): its picture (its real model, drawn once as a still: render/carstill.js, as the special event's cards are),
 // its name and stars, its rarity as the colour of its frame, a pip for each ECU it can reach (filled up to the one it is
 // at), its blueprints toward the next ECU as a bar, and, greyed, why one that cannot be driven cannot. The card picked
-// fills the DETAIL: its picture large, its figures at its ECU now beside its maxed ones, its respawn time, its perk, and
-// DRIVE (the car picked and back to the menu). A big button takes the player to the car lot, Crazey Jim's Used Cars
+// fills the DETAIL: the car itself LIVE in 3D (turning, and turned by a drag: render/showroomview.js), its figures at its
+// ECU now beside its maxed ones, its respawn time, its perk, and DRIVE (the car picked, as the side on show, and back to
+// the menu). GOOD / EVIL: one choice, switched in the header or the detail: the cards' and the live car's livery, the
+// side whose car rule marks the cards, and the side Drive drives as (it starts on the side being played). A big button takes the player to the car lot, Crazey Jim's Used Cars
 // (render/garage.js), where cars are bought; closing the lot comes back here.
 // The layout (showroom.css): on a desktop (or a phone on its side) the cards are ONE ROW scrolled sideways (a drag, the
 // wheel, the arrows at its ends, the arrow keys), as the menu's event row is, with the detail under it; on a phone
 // held upright they are a column scrolled down, and the detail is a sheet that slides up over it.
-// Keys: left / right (up / down in the column) the next card, Enter drive, Escape back (or the sheet closed).
-// For a picture: ?showroom opens it; &look=<car id> picks that card; &sheet opens its sheet on a phone;
-// &bp=sport:7,hotrod:3 gives those blueprints for the visit (nothing saved).
+// Keys: left / right (up / down in the column) the next card, Enter drive, E the other side, Escape back (or the sheet closed).
+// For a picture: ?showroom opens it; &side=evil plays Evil (render/menustage.js), and so it opens on Evil; &look=<car id> picks that card; &sheet opens
+// its sheet on a phone; &bp=sport:7,hotrod:3 gives those blueprints for the visit (nothing saved).
 import '../showroom.css';
-import { showroomCars, carCard, floorBest, RARITIES, CAR_LOT } from '../showroomData.js';
-import { CAR, carInUse, selectCar } from '../cars.js';
+import { showroomCars, carCard, floorBest, RARITIES, CAR_LOT, sideName, driveWords, barredWhy, driveAs } from '../showroomData.js';
+import { CAR, carInUse, setViewSide } from '../cars.js';
 import { Progress } from '../progress.js';
 import { Game } from '../game.js';
 import { Nav } from '../nav.js';
 import { richTiers, tierStarsNode } from '../tiers.js';
 import { Garage } from './garage.js';
 import { stillCar, stillReady } from './carstill.js';
+import { ShowroomView } from './showroomview.js';
 import { Sound } from './audio.js';
 
 const panel = document.getElementById('showroom');
@@ -58,7 +61,10 @@ const starsNode = (card) => {
 
 // ---- the stills: drawn a few at a time, those in sight first, while the showroom is up ----
 const queue = new Set();
-const evilNow = () => !!Game.evil;
+// the side on show (Good or Evil): one choice for the header's switch and the detail's, the cards' liveries and car
+// rules, the live car's paint, and the side DRIVE drives as. It starts on the side being played (Showroom.open)
+let side = false;
+const evilNow = () => side;
 const want = (el, car) => { if (!stillReady(el, car, evilNow())) queue.add(el); el.dataset.car = car.id; };
 const carOf = new WeakMap();
 let watcher = null;
@@ -108,7 +114,7 @@ const build = () => {
   const lot = make('button', 'sr-lot', make('span', 'sr-lot-sign', 'Crazey Jim’s'), make('small', '', 'Used Cars · buy cars'));
   lot.title = CAR_LOT + ': the car lot, where cars are bought';
   lot.addEventListener('click', () => toLot());
-  top.append(backBtn, make('div', 'sr-title', make('h1', '', 'Showroom'), make('p', '', 'Pick your car')), countEl, bankEl, seg, lot);
+  top.append(backBtn, make('div', 'sr-title', make('h1', '', 'Showroom'), make('p', '', 'Pick your car')), countEl, bankEl, sideSwitch('sr-side-top'), seg, lot);
 
   row = make('div', 'sr-row');
   back = make('button', 'sr-arrow back', '‹');
@@ -143,6 +149,33 @@ const build = () => {
   }, { root: null, rootMargin: '300px' }) : null;
 };
 
+// a Good / Evil switch (the header has one, the detail another: both show, and set, the one side)
+const sideSwitch = (extra) => {
+  const box = make('div', 'sr-side ' + extra);
+  box.setAttribute('role', 'group');
+  box.setAttribute('aria-label', 'Good or Evil: the livery, and the side to drive as');
+  for (const evil of [false, true]) {
+    const b = make('button', (evil === side ? 'on' : ''), sideName(evil));
+    b.dataset.side = evil ? 'evil' : 'good';
+    b.setAttribute('aria-pressed', String(evil === side));
+    b.title = 'Show the cars in their ' + sideName(evil) + ' livery, and drive as ' + sideName(evil);
+    b.addEventListener('click', (e) => { e.stopPropagation(); pickSide(evil); });
+    box.append(b);
+  }
+  return box;
+};
+const pickSide = (evil) => {
+  evil = !!evil;
+  if (evil === side) return;
+  side = evil;
+  blip('menuMove');
+  setViewSide(side); // (the car rule, and the car in use, of that side while the showroom shows it: as the car lot does)
+  panel.classList.toggle('evil', side);
+  for (const b of panel.querySelectorAll('.sr-side button')) { const on = (b.dataset.side === 'evil') === side; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }
+  ShowroomView.side(side); // (at once: the detail drawn again below keeps the same car)
+  fill(false);
+};
+
 // the row's arrows: only where there is more that way (a desktop's row; the column has none)
 const arrows = () => {
   if (!row) return;
@@ -153,8 +186,8 @@ const arrows = () => {
 const by = (dir) => row.scrollBy({ left: dir * Math.max(200, row.clientWidth * 0.8), behavior: 'smooth' });
 
 // the cards, for the filter chosen
-const fill = () => {
-  const evil = evilNow(), inUse = carInUse();
+const fill = (fresh = true) => {
+  const evil = evilNow(), inUse = carInUse(), scrolled = { left: row.scrollLeft, top: row.scrollTop };
   const all = showroomCars().map(car => carCard(car, evil));
   const shown = all.filter(c => filter === 'all' || (filter === 'ready' ? c.state === 'ready' : c.state !== 'ready'));
   countEl.replaceChildren(make('b', '', String(all.filter(c => c.unlocked).length)), ' / ' + all.length + ' cars');
@@ -163,7 +196,7 @@ const fill = () => {
   cards = shown.map((data) => {
     const pic = make('span', 'sr-pic' + (data.hidden ? ' silhouette' : ''));
     const badge = data.car === inUse || data.id === inUse.id ? make('span', 'sr-badge inuse', 'In use')
-      : data.state === 'barred' ? make('span', 'sr-badge barred', 'Not on this level') : null;
+      : data.state === 'barred' ? make('span', 'sr-badge barred', 'Not on this level' + (evil !== !!Game.evil ? ' as ' + sideName(evil) : '')) : null;
     const lock = data.state === 'locked' ? make('span', 'sr-lock', make('b', '', '🔒'), make('span', '', data.reason)) : null;
     const node = make('button', 'sr-card ' + data.rarity + ' ' + data.state + (data.id === picked ? ' picked' : ''),
       make('span', 'sr-tag', RARITIES[data.rarity].name), starsNode(data), pic, badge,
@@ -174,7 +207,7 @@ const fill = () => {
       lock);
     node.style.setProperty('--rar', RARITIES[data.rarity].colour);
     node.dataset.car = data.id;
-    node.title = data.state === 'locked' ? data.reason : data.state === 'barred' ? 'You can drive it, but not on the level picked' : data.name;
+    node.title = data.state === 'locked' ? data.reason : data.state === 'barred' ? 'You can drive it, but not on the level picked as ' + sideName(evil) : data.name;
     node.addEventListener('click', () => pick(data.id, true));
     node.addEventListener('dblclick', () => { if (data.state === 'ready') drive(data); });
     watch(pic, data.car);
@@ -183,6 +216,7 @@ const fill = () => {
   row.replaceChildren(...(cards.length ? cards.map(c => c.node) : [make('p', 'sr-empty', filter === 'ready' ? 'No car ready to drive here.' : 'Every car is yours.')]));
   if (!cards.some(c => c.data.id === picked)) picked = (cards.find(c => c.data.id === inUse.id) || cards[0])?.data.id ?? null;
   showDetail();
+  if (!fresh) { row.scrollLeft = scrolled.left; row.scrollTop = scrolled.top; } // (the side switched: the row stays where it was)
   requestAnimationFrame(arrows);
 };
 
@@ -200,8 +234,11 @@ const showDetail = () => {
   const card = cards.find(c => c.data.id === picked)?.data;
   if (!card) { detail.replaceChildren(make('p', 'sr-empty', 'No car here.')); return; }
   for (const c of cards) c.node.classList.toggle('picked', c.data.id === picked);
-  const inUse = carInUse(), using = card.id === inUse.id;
-  const pic = make('div', 'sr-dpic' + (card.hidden ? ' silhouette' : ''));
+  const inUse = carInUse(), using = card.id === inUse.id, evil = evilNow();
+  // (the live car: dark for a car of a tier not open yet; greyed for one locked that cannot be bought; in its colours
+  // for one at the car lot, as one that can be driven)
+  const pic = make('div', 'sr-dpic' + (card.hidden ? ' silhouette' : '') + (card.state === 'locked' && card.forSale && !card.hidden ? ' forsale' : ''));
+  pic.title = 'Drag to turn it';
   const s = card.stats, m = card.maxStats;
   const share = { speed: v => v / best.maxSpeed, accel: v => v / best.accel, health: v => v / best.health,
     respawn: v => best.respawnWorst > best.respawnBest ? 0.15 + 0.85 * (best.respawnWorst - v) / (best.respawnWorst - best.respawnBest) : 1 };
@@ -214,15 +251,14 @@ const showDetail = () => {
   // what can be done with it
   const go = make('button', 'sr-go');
   let why = null;
+  go.textContent = driveWords(card, evil);
   if (card.state === 'ready') {
-    go.textContent = using ? 'In use · Back' : 'Drive';
+    go.title = using && evil === !!Game.evil ? 'In use: back to the menu in it' : 'Drive the ' + card.name + ' as ' + sideName(evil);
     go.addEventListener('click', () => drive(card));
   } else if (card.state === 'barred') {
-    go.textContent = 'Not on this level';
     go.disabled = true;
-    why = make('p', 'sr-why', ...(card.rule?.tier ? ['The level picked needs a ', tierStarsNode(card.rule.tier), ' car (until its medal is earned)'] : card.rule?.label ? ['The level picked allows only ', ...richTiers(card.rule.label)] : ['Not allowed on the level picked']));
+    why = make('p', 'sr-why barred', ...barredWhy(card, evil).flatMap(part => typeof part === 'string' ? [part] : part.tier ? [tierStarsNode(part.tier)] : richTiers(part.rich)));
   } else {
-    go.textContent = card.forSale ? 'Buy at Crazey Jim’s' : 'Locked';
     go.disabled = !card.forSale;
     if (card.forSale) go.addEventListener('click', () => toLot(card.id));
     why = make('p', 'sr-why locked', make('b', '', card.reason), card.hint ? make('span', '', ...richTiers(card.hint)) : null);
@@ -241,10 +277,11 @@ const showDetail = () => {
       figures,
       card.perk && !card.hidden ? make('p', 'sr-perk', make('b', '', 'Perk '), card.perk) : null,
       why,
-      make('div', 'sr-actions', go)));
+      make('div', 'sr-actions', sideSwitch('sr-side-detail'), go)));
   detail.style.setProperty('--rar', RARITIES[card.rarity].colour);
   detail.className = 'sr-detail ' + card.rarity + ' ' + card.state + (detail.classList.contains('open') ? ' open' : '');
-  requestAnimationFrame(() => { if (Showroom.isOpen) stillCar(pic, card.car, evilNow()); }); // (once laid out: at its own, larger size)
+  // the car itself, live (turning, a drag turns it): render/showroomview.js; with no WebGL, its still
+  if (!ShowroomView.show(pic, card.car, { evil, dark: card.hidden })) requestAnimationFrame(() => { if (Showroom.isOpen) stillCar(pic, card.car, evilNow()); });
 };
 const pick = (id, tapped = false) => {
   if (id !== picked) blip('menuMove');
@@ -266,11 +303,9 @@ const closeSheet = () => {
   Nav.leave('showroomSheet');
 };
 // Drive: the car picked (and the menu, with it)
+// Drive: the car picked AND the side on show (showroomData.js driveAs), and back to the menu
 const drive = (card) => {
-  if (card.state !== 'ready') return;
-  // (a blueprint car unlocked by its blueprints is the player's: so the save says, where ecu.js has not written it)
-  if (card.unlocked && !Progress.owns(card.id)) { Progress.data.cars.push(card.id); Progress.save(); }
-  if (card.id !== carInUse().id) selectCar(card.id);
+  if (!driveAs(card, evilNow())) return;
   blip('menuPick');
   Showroom.close();
 };
@@ -278,7 +313,7 @@ const drive = (card) => {
 const toLot = (look) => {
   closeSheet();
   panel.classList.add('hidden');
-  Garage.open(Game.evil, () => Showroom.reshow());
+  Garage.open(side, () => Showroom.reshow()); // (the lot in the livery on show here)
   if (look) Garage.look(look);
 };
 // the next card along (the arrow keys)
@@ -298,6 +333,7 @@ window.addEventListener('keydown', (e) => {
     case 'ArrowRight': case 'KeyD': if (!column) step(1); else return; break;
     case 'ArrowUp': if (column) step(-1); else return; break;
     case 'ArrowDown': if (column) step(1); else return; break;
+    case 'KeyE': pickSide(!side); break;
     case 'Enter': {
       const focused = document.activeElement;
       if (focused && panel.contains(focused) && focused.matches('button:focus-visible') && !focused.classList.contains('sr-card')) return; // (a button reached by Tab: Enter presses it)
@@ -317,9 +353,11 @@ export const Showroom = {
     if (this.isOpen) return;
     this.isOpen = true;
     Game.inMenu = true; // (Enter must not start a run from here)
+    side = !!Game.evil; // (the side being played)
+    setViewSide(side);
     picked = (CAR && !CAR.silhouette ? CAR.id : null) || carInUse().id;
     build();
-    panel.classList.toggle('evil', !!Game.evil);
+    panel.classList.toggle('evil', side);
     panel.classList.remove('hidden');
     startScreen.classList.add('hidden');
     Nav.enter('showroom', () => this.close()); // (the back button closes it)
@@ -330,6 +368,7 @@ export const Showroom = {
   reshow() {
     if (!this.isOpen) { startScreen.classList.remove('hidden'); return; }
     Game.inMenu = true;
+    setViewSide(side); // (the car lot let go of its own side on closing)
     panel.classList.remove('hidden');
     startScreen.classList.add('hidden');
     fill();
@@ -342,10 +381,18 @@ export const Showroom = {
     Game.inMenu = false;
     queue.clear();
     watcher?.disconnect();
+    ShowroomView.stop();
+    setViewSide(null); // (the car rule goes by the side being played again)
     panel.classList.add('hidden');
     startScreen.classList.remove('hidden');
     window.dispatchEvent(new Event('carchange')); // (the menu's car card shows the car picked)
   },
   // for a picture or a check: pick that car's card (and on a phone its sheet)
+  // for a picture or a check: the side on show (as the switch does), and what the live view shows
+  side(evil) { pickSide(evil); },
+  get shown() { return { side: sideName(side), picked, live: ShowroomView.state, go: detail?.querySelector('.sr-go')?.textContent || null }; },
   look(id, sheet = false) { if (cards.some(c => c.data.id === id)) { pick(id); if (sheet && phone()) openSheet(); cards.find(c => c.data.id === id).node.scrollIntoView({ block: 'nearest', inline: 'center' }); } },
 };
+// the live car is drawn only while it can be seen: the showroom up (not under the car lot), and on a phone held upright
+// only while its sheet is up
+ShowroomView.when(() => Showroom.isOpen && !Garage.isOpen && !panel.classList.contains('hidden') && (!phone() || !!detail?.classList.contains('open')));

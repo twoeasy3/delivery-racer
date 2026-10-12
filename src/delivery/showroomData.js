@@ -5,8 +5,9 @@
 // Crazey Jim's Used Cars (render/garage.js). The ECU figures are ecu.js's (Ecu); anything it does not say about a
 // car (a secret one, an earned one it has no table for) falls back to the car's own figures, so a card never throws.
 import { CONFIG } from './config.js';
-import { CARS, EARNED_CARS, EVENT_CARS, FILLER_CARS, SECRET_CARS, stars, starColour, carTier, carPreview, forSale, carRule, ruleAllows } from './cars.js';
+import { CARS, EARNED_CARS, EVENT_CARS, FILLER_CARS, SECRET_CARS, stars, starColour, carTier, carPreview, forSale, carRule, ruleAllows, selectCar, carInUse } from './cars.js';
 import { Progress } from './progress.js';
+import { Game } from './game.js';
 import { Tiers } from './tiers.js';
 import { LEVELS } from './levels.js';
 import { levelName } from './levelText.js';
@@ -119,4 +120,33 @@ export const floorBest = () => {
   const cards = showroomCars().map(car => statsAt(car, safe(() => Ecu.max(car), 1)));
   return { maxSpeed: Math.max(...cards.map(s => s.maxSpeed)), accel: Math.max(...cards.map(s => s.accel)), health: Math.max(...cards.map(s => s.health)),
     respawnBest: Math.min(...cards.map(s => s.respawn)), respawnWorst: Math.max(...cards.map(s => s.respawn)) };
+};
+
+// ---- the side: Good or Evil, picked in the showroom (its header and its detail share the one choice) ---------------
+// It is the livery the cars are shown in, the side whose car rule marks the cards ("Not on this level"), and the side
+// DRIVE drives as (as the car lot's "Drive it as Evil": render/garage.js takeSide). It starts on the side being played.
+export const sideName = (evil) => evil ? 'Evil' : 'Good';
+// the words on the detail's big button, for a card made for that side (carCard(car, evil))
+export const driveWords = (card, evil) => card.state === 'ready' ? 'Drive as ' + sideName(evil)
+  : card.state === 'barred' ? 'Not on this level as ' + sideName(evil)
+    : card.forSale ? 'Buy at Crazey Jim’s' : 'Locked'; // (the car lot's sign: CAR_LOT)
+// why a barred card is barred on that side, in parts: a string, { tier: n } (a tier's stars) or { rich: s } (words with
+// {tier:n} tokens); render/showroom.js makes them nodes
+export const barredWhy = (card, evil) => {
+  const as = 'As ' + sideName(evil) + ', ';
+  return card.rule?.tier ? [as + 'the level picked needs a ', { tier: card.rule.tier }, ' car (until its medal is earned)']
+    : card.rule?.label ? [as + 'the level picked allows only ', { rich: card.rule.label }]
+      : [as + 'this car is not allowed on the level picked'];
+};
+// DRIVE: the car AND the side (remembered, as the menu's own Good / Evil button is: render/menustage.js pickSide).
+// The side first, so the car is picked under that side's car rule. False: the card cannot be driven on that side
+export const driveAs = (card, evil) => {
+  if (!card || card.state !== 'ready') return false;
+  evil = !!evil;
+  if (Game.evil !== evil) { Game.evil = evil; Progress.data.evil = evil; }
+  // (a blueprint car unlocked by its blueprints is the player's: so the save says, where ecu.js has not written it)
+  if (card.unlocked && !Progress.owns(card.id)) Progress.data.cars.push(card.id);
+  Progress.save();
+  if (card.id !== carInUse().id) selectCar(card.id);
+  return true;
 };
