@@ -1,0 +1,38 @@
+/* ---- the KEY CARD (render/keycard.js, render/blueprintcard.js: a card with `key`): after Asphalt 9's CAR KEY card.
+   The picture is the car's KEY on a diagonal gradient with light streaks (Bespoke: blue to purple), the card's rim the
+   rainbow (Bespoke), the maker line in a black strip. The rest is the blueprint card's (blueprintcard.css). */
+.bp-card.key .bp-art {
+  background:
+    linear-gradient(115deg, transparent 0 18%, rgba(255, 255, 255, .16) 18% 19.2%, transparent 19.2% 41%, rgba(255, 255, 255, .28) 41% 41.8%,
+      transparent 41.8% 47%, rgba(255, 255, 255, .1) 47% 50%, transparent 50% 71%, rgba(255, 255, 255, .22) 71% 71.7%, transparent 71.7%),
+    radial-gradient(70% 55% at 60% 45%, rgba(255, 255, 255, .22), transparent 70%),
+    linear-gradient(140deg, var(--rc), var(--rc-deep));
+}
+.bp-card.key.r-bespoke .bp-art {
+  background:
+    linear-gradient(115deg, transparent 0 18%, rgba(255, 255, 255, .16) 18% 19.2%, transparent 19.2% 41%, rgba(255, 255, 255, .3) 41% 41.8%,
+      transparent 41.8% 47%, rgba(255, 255, 255, .1) 47% 50%, transparent 50% 71%, rgba(255, 255, 255, .24) 71% 71.7%, transparent 71.7%),
+    radial-gradient(70% 55% at 60% 45%, rgba(170, 200, 255, .35), transparent 70%),
+    linear-gradient(140deg, #1d63ff 0%, #3b47f0 35%, #6a2cf0 70%, #9a1fe0 100%);
+}
+/* the rainbow rim round a Bespoke key card */
+.bp-card.key.r-bespoke { border: 3px solid transparent;
+  background: linear-gradient(180deg, #ffffff, #e9edf3) padding-box, linear-gradient(125deg, #ff3fae, #ffbe2e 25%, #3fd06f 45%, #35c2ff 65%, #b45cff 85%, #ff3fae) border-box;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, .5); }
+/* (the reveal's hue-turning of a Bespoke card would recolour the key, its brass and its car's colour: a key card keeps
+   its colours, the rainbow rim says Bespoke) */
+.pr-slot.shown.r-bespoke .bp-card.key { animation: none; }
+.bp-card.key .bp-keypic { filter: drop-shadow(0 2.5cqw 2.5cqw rgba(0, 0, 20, .45)); }
+.bp-card.key .bp-letter { background: var(--rc); color: #fff; box-shadow: inset 0 -1.2cqw 0 rgba(0, 0, 0, .25); }
+.bp-card.key .bp-name small { align-self: flex-start; max-width: 100%; padding: .8cqw 2.4cqw; border-radius: 1cqw; background: #0d0f14; color: #fff; }
+
+/* ?keys: the three keys side by side, large, and each from all sides (render/keycard.js) */
+.key-sheet { position: fixed; inset: 0; z-index: 100000; overflow: auto; padding: 16px; background: #d9dde3; color: #10131a;
+  font: 600 14px/1.3 system-ui, sans-serif; }
+.key-sheet h2 { margin: 0 0 10px; font-size: 18px; }
+.key-sheet-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.key-sheet figure { margin: 0; text-align: center; }
+.key-sheet-pic { position: relative; aspect-ratio: 1 / 1; background: #eef0f3 center / contain no-repeat; border-radius: 8px; }
+.key-sheet-views { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+.key-sheet-pic.small { aspect-ratio: 1 / 1.1; }
+.key-sheet-pic.small::after { content: attr(data-label); position: absolute; left: 6px; top: 4px; font-size: 11px; color: #5b6271; }
