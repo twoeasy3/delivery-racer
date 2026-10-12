@@ -62,6 +62,7 @@ import './render/touch.js';
 import './render/album.js';
 import './render/milestones.js';
 import './render/savecode.js';
+import './render/packs.js';
 import './horn.js';
 import { Garage } from './render/garage.js';
 import { Sound } from './render/audio.js';
