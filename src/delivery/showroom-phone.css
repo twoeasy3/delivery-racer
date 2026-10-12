@@ -31,7 +31,7 @@
   #showroom .sr-bp-icon { font-size: 10px; }
   #showroom .sr-bp small { font-size: 10px; }
   #showroom .sr-badge { top: 22px; bottom: auto; left: 6px; padding: 2px 5px; font-size: 9px; }
-  #showroom .sr-ov.inline { --b: 34px; bottom: 4px; max-width: calc(100% - 24px); padding: 4px 12px 4px 4px; }
+  #showroom .sr-ov.inline { --b: 34px; bottom: 34px; /* (clear of the down chevron under it) */ max-width: calc(100% - 24px); padding: 4px 12px 4px 4px; }
   #showroom .sr-ov.inline .sr-ov-title { font-size: 14px; }
   #showroom .sr-ov.inline .sr-ov-line { font-size: 11px; }
 

@@ -109,7 +109,6 @@ async function filters(g, check) {
   const inUse = g.cars.carInUse().id;
   const all = D.showroomCars().map(car => D.carCard(car, false));
   const secret = (car) => Object.values(SECRET_CARS).includes(car);
-  const magenta = (car) => !!car.earned || EVENT_CARS.includes(car) || secret(car) || !(car.tier >= 1 && car.tier <= 5);
   // what each chip means, said again from the cars
   const bespokeCar = (car) => !!car.bespoke || EVENT_CARS.includes(car);
   const MEANS = {
