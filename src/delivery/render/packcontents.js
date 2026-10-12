@@ -76,7 +76,7 @@ const wt = (w) => String(Math.round(w * 1000) / 1000);
 const featuredRow = (f, base = 1) => {
   const has = f.key ? null : f.amount ?? base; // (an entry with no amount of its own: the pack's base, never doubled)
   const amount = has !== null ? 'x' + (Array.isArray(has) ? has.join('-') : has) : '';
-  const chips = [amount ? chip('amt', amount) : null, chip('wt', 'Weight ' + wt(f.weight))].filter(Boolean);
+  const chips = [chip('wt', 'Weight ' + wt(f.weight))]; // (no x3 / x15 chip beside the chance: the badge on the card shows the amount; the chip read as part of the chance, the owner, 12-Oct)
   const out = !f.inPlay;
   const note = out ? 'out of the pool' : 'last slot ' + percent(f.lastSlot); // (the big figure is its chance a pack)
   return cardRow(f.car, f.rarity, f.chance, { key: f.key, featured: true, chips, note, exhausted: f.exhausted, inPool: !out,
