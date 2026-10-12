@@ -27,6 +27,7 @@ import { drawSoon as stillSoon } from './carstill.js';
 import { packArt, lookOf } from './packart.js';
 import { openContents, closeContents } from './packcontents.js';
 import { keyPicture } from './keycard.js';
+import { bannerCars, bannerArt } from './packbanner.js';
 
 // (packs.js, where the tree has it: see shop.js)
 const packsModule = Object.values(import.meta.glob('../packs.js', { eager: true }))[0] || null;
@@ -155,20 +156,31 @@ const featuredTile = (offer) => {
     const id = (f.key ? 'key:' : '') + f.car.id;
     if (!seen.has(id)) { seen.add(id); shown.push(f); }
   }
+  const trio = bannerCars(offer.featured), stills = [];
   const carViews = shown.slice(0, 3).map((f) => {
     const car = f.car;
     const view = make('div', 'shop-car' + (f.key ? ' key' : ''));
     if (f.key) view.append(keyPicture(car, 'bespoke'));
-    else drawLater.push([view, car]);
+    else stills.push([view, car]);
     const rarity = f.key ? 'bespoke' : packsModule?.featuredRarity?.(car) || 'legendary';
     return make('div', 'shop-feature', view, make('div', 'shop-feature-name', make('span', 'shop-chip r-' + rarity, f.key ? 'Key' : 'Featured'), make('b', '', car.name),
       make('small', '', f.key ? 'Bespoke key' : stars(car) || 'Event car')));
   });
   const exhausted = Shop.canBuy(offer.id).why === 'exhausted';
   const ends = offer.endsAt ? make('p', 'shop-ends', 'Ends in ', live(offer.endsAt)) : null;
-  return make('article', 'shop-tile hero k-' + offer.kind,
+  // two or three featured cars: the BANNER (render/packbanner.js: the cars in one scene, the first the hero), its names
+  // in labels; with no WebGL it gives way to the cars side by side (the art below, kept hidden till then)
+  const cars = make('div', 'shop-hero-cars n' + carViews.length, ...carViews);
+  const fallBack = () => { // (no banner after all: the cars side by side, drawn now)
+    banner?.remove(); cars.hidden = false; art.classList.remove('banner'); art.closest('.shop-tile')?.classList.remove('has-banner');
+    for (const [el, car] of stills) stillSoon(el, car, { side: 'good' });
+  };
+  const banner = trio ? bannerArt(trio, { onFail: fallBack }) : null;
+  if (banner) cars.hidden = true; else drawLater.push(...stills);
+  const art = make('div', 'shop-hero-art' + (banner ? ' banner' : ''), banner, cars, packArt(offer.kind, offer.count));
+  return make('article', 'shop-tile hero k-' + offer.kind + (banner ? ' has-banner' : ''),
     ribbon(offer),
-    make('div', 'shop-hero-art', make('div', 'shop-hero-cars n' + carViews.length, ...carViews), packArt(offer.kind, offer.count)),
+    art,
     make('div', 'shop-tile-info',
       offer.event ? make('small', 'shop-kicker', offer.event.name) : null,
       make('h3', '', offer.name), make('p', 'shop-blurb', offer.blurb), insideButton(offer), oddsBar(offer.pack, offer), ends, limitLine(offer),
