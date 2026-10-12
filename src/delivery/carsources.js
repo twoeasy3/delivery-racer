@@ -2,8 +2,8 @@
 // CAR SOURCES - where a car's KEY and its BLUEPRINTS can be had, worked out LIVE from the game's own data (never
 // written by hand per car): cars.js (the car lot: forSale, the tiers), the earned cars' pars, events.json (a special
 // event's prize, by Events.live and its dates; a one-level event's reward), packs.js (which pack kinds can hold the card,
-// and the chance: contents()), shop.json (the offers that sell those packs; a special offer only while its event is on;
-// the Shop's currency is a PLACEHOLDER), the Career packs (packs.js careerLevels(): the levels not yet delivered) and
+// and the chance: contents()), the Shop (shop.js: the offers that sell those packs, built from packs.json; a pack with an
+// event only while it is on; a purchase limit reached says so; the Shop's currency is a PLACEHOLDER), the Career packs (packs.js careerLevels(): the levels not yet delivered) and
 // the special events' packs (a pack a stage, one with the prize, while the event is on). The owner, 12-Oct: "When the
 // car is viewed in the garage, it should tell you sources of its blueprints or keys. Correctly identify if blueprints or
 // keys are not currently obtainable." The showroom shows it (render/carsources.js renderSources).
@@ -19,7 +19,8 @@ import { Ecu } from './ecu.js';
 import { Events, PLAIN_EVENTS, when } from './events.js';
 import { LEVELS, levelName } from './levels.js';
 import { Tiers } from './tiers.js';
-import { KINDS, contents, careerLevels, featuredFor, kindName, isBespokeCar, rarityOf, Packs } from './packs.js';
+import { PACKS, PACK_IDS, contents, careerLevels, careerPack, featuredOf, packName, isBespokeCar, rarityOf, Packs } from './packs.js';
+import { Shop } from './shop.js';
 import shopData from './shop.json';
 
 const day = (t) => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -57,30 +58,33 @@ const chanceIn = (kind, car, { key = false, featured = [] } = {}) => {
   return null;
 };
 
-// the ways to come by packs of a kind (from: a special pack's event id): shop offers, the Career levels left, an
-// event's stages and prize, the packs held
-const waysFor = (kind, from, t) => {
-  const ways = [];
-  const held = Packs.count(kind, from ?? undefined);
+// the ways to come by a pack (packs.json: its Shop offers, its own and the bundles of it; its givenBy: the Career
+// levels left, an event's stages and prize), and the packs of it held
+const waysFor = (id, t) => {
+  const ways = [], spec = PACKS[id] || {};
+  const held = Packs.count(id);
   if (held > 0) ways.push({ how: 'held', where: 'In your packs', available: true, why: null, detail: held + ' unopened' });
-  for (const offer of shopData.offers || []) {
-    if (offer.kind !== kind || (from && String(offer.from) !== String(from)) || (!from && offer.from)) continue;
-    const event = offer.from ? Events.specials.find(e => e.id === String(offer.from)) : null;
-    const state = offer.from ? (event ? eventState(event.from, event.to, t) : { live: false, why: 'Its event is not in the game' }) : { live: true, why: null };
-    ways.push({ how: 'shop', where: 'Shop: ' + offer.name, available: state.live, why: state.live ? null : 'Not on sale: ' + state.why.replace(/^./, c => c.toLowerCase()),
-      detail: CURRENCY.sign + ' ' + offer.price + ', ' + CASH + (event ? endsWords(event.to) : ''), placeholder: !!CURRENCY.placeholder });
+  for (const offer of Shop.raw) {
+    if (offer.pack !== id) continue;
+    const event = spec.event ? Events.specials.find(e => e.id === String(spec.event)) : null;
+    const state = spec.event ? (event ? eventState(event.from, event.to, t) : { live: false, why: 'Its event is not in the game' }) : { live: true, why: null };
+    const can = Shop.canBuy(offer.id, t), limit = can.why === 'limit' ? can : null; // (a purchase limit reached: sold out, or come back tomorrow)
+    ways.push({ how: 'shop', where: 'Shop: ' + offer.name, available: state.live && !limit, price: offer.price,
+      why: !state.live ? 'Not on sale: ' + state.why.replace(/^./, c => c.toLowerCase()) : limit ? limit.words : null,
+      detail: (offer.price === 0 ? 'free' : CURRENCY.sign + ' ' + offer.price + ', ' + CASH) + (Shop.limitsOf(id)?.daily ? ', ' + Shop.limitsOf(id).daily + ' a day' : '') + (event ? endsWords(event.to) : ''),
+      placeholder: offer.price > 0 && !!CURRENCY.placeholder });
   }
-  if (kind === 'career') {
+  if (spec.givenBy?.career && id === careerPack()) {
     const all = careerLevels(), left = careerLeft();
     ways.push({ how: 'career', where: 'Career levels', available: left.length > 0,
       why: left.length ? null : 'Every Career level that gives a pack is delivered already',
       detail: 'a pack on the first delivery of ' + all.length + ' levels: ' + left.length + ' left' });
   }
-  const give = Packs.data.events || {};
-  if (kind === 'special' || give.stage === kind || give.prize === kind) {
+  const give = spec.givenBy?.event;
+  if (give) {
     for (const event of Events.specials) {
-      if (from && event.id !== from) continue;
-      const stage = give.stage === kind, prize = give.prize === kind && !!event.prize;
+      if (event.id !== String(give.id ?? spec.event)) continue;
+      const stage = !!give.stage, prize = !!give.prize && !!event.prize;
       if (!stage && !prize) continue;
       const state = eventState(event.from, event.to, t), done = Events.done(event), left = event.stages.length - done;
       const more = (stage && left > 0) || (prize && !Events.prizeWon(event));
@@ -92,28 +96,26 @@ const waysFor = (kind, from, t) => {
   return ways;
 };
 
-// one source a pack kind (a special pack: one an event), for a key card or a blueprint card
+// one source a pack (packs.json: one definition each; a special pack is its own, with its event), for a key card or a
+// blueprint card
 const packSources = (car, what, t) => {
   const key = what === 'key', out = [];
-  for (const kind of KINDS) {
-    const spec = Packs.data.kinds[kind];
-    const froms = spec.featured ? Events.specials.map(e => e.id) : [null];
-    for (const from of froms) {
-      const featured = spec.featured ? featuredFor(from) : [];
-      const hit = chanceIn(kind, car, { key, featured });
-      const name = kindName(kind) + (from ? ': ' + (Events.specials.find(e => e.id === from)?.short || from) : '');
-      if (!hit) {
-        out.push({ what, how: 'pack', kind, from, where: name, available: false, chance: 0, rarity: null, ways: [], detail: '',
-          why: 'Cannot hold it: ' + (key ? (spec.pool === 'all' ? 'not in its pool' : 'no keys in it')
-            : spec.pool !== 'all' && !spec.featured ? 'evergreen cards only' : spec.featured ? 'evergreen cards and its featured cars only' : 'not in its pool') });
-        continue;
-      }
-      const ways = waysFor(kind, from, t), open = ways.filter(w => w.available);
-      out.push({ what, how: 'pack', kind, from, where: name, rarity: hit.rarity, chance: hit.chance,
-        available: open.length > 0, ways,
-        why: open.length ? null : (ways.find(w => w.how !== 'shop' && w.why) || ways.find(w => w.why))?.why || 'No way to get one', // (an event's or the Career's reason before the Shop's)
-        detail: 'about ' + pct(hit.chance) + ' a pack' + (hit.featured ? ' (a featured card)' : '') + (open.length ? ': ' + open.map(w => w.where).join(', ') : '') });
+  for (const kind of PACK_IDS) {
+    const spec = PACKS[kind], from = spec.event ?? null;
+    const featured = spec.featured ? featuredOf(kind) : [];
+    const hit = chanceIn(kind, car, { key, featured });
+    const name = packName(kind);
+    if (!hit) {
+      out.push({ what, how: 'pack', kind, from, where: name, available: false, chance: 0, rarity: null, ways: [], detail: '',
+        why: 'Cannot hold it: ' + (key ? (spec.pool === 'all' ? 'not in its pool' : 'no keys in it')
+          : spec.pool !== 'all' && !spec.featured ? 'evergreen cards only' : spec.featured ? 'evergreen cards and its featured cars only' : 'not in its pool') });
+      continue;
     }
+    const ways = waysFor(kind, t), open = ways.filter(w => w.available);
+    out.push({ what, how: 'pack', kind, from, where: name, rarity: hit.rarity, chance: hit.chance,
+      available: open.length > 0, ways,
+      why: open.length ? null : (ways.find(w => w.how !== 'shop' && w.why) || ways.find(w => w.why))?.why || 'No way to get one', // (an event's or the Career's reason before the Shop's)
+      detail: 'about ' + pct(hit.chance) + ' a pack' + (hit.featured ? ' (a featured card)' : '') + (open.length ? ': ' + open.map(w => w.where).join(', ') : '') });
   }
   return out;
 };

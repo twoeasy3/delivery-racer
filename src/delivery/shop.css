@@ -99,6 +99,24 @@
 .shop-ribbon.rb-featured { background: var(--rainbow); color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
 .shop-ribbon.rb-new { background: #35c2ff; color: #04202e; }
 .shop-ribbon.rb-best { background: #ffd23f; color: #1c1500; }
+.shop-ribbon.rb-free { background: #3fc46a; color: #04210e; }
+
+/* PURCHASE LIMITS and the FREE DAILY PACK (shop.js limits; render/shop.js): what is left, the Claim button, a claim's
+   countdown on the greyed button, the daily row (one wide tile), and the dot on the menu's Shop chip while one waits */
+.shop-limit { margin: 2px 0 0; font-size: 11.5px; font-weight: 800; letter-spacing: .02em; color: #ffd23f; }
+.shop-price.claim { background: linear-gradient(#7cf0a0, #3fc46a 55%, #2a9d50); color: #04210e; box-shadow: 0 3px 0 #1d6f38, 0 6px 14px rgba(63, 196, 106, .3); }
+.shop-price.claim b { letter-spacing: .06em; text-transform: uppercase; }
+.shop-price.claim:active { box-shadow: 0 1px 0 #1d6f38; }
+.shop-claimed { font-size: 13px; font-weight: 700; letter-spacing: .01em; }
+.shop-claimed b { font: 800 14px/1 var(--display); font-variant-numeric: tabular-nums; color: #fff; }
+.s-daily .shop-row { grid-template-columns: minmax(0, 1fr); }
+.s-daily .shop-tile { display: grid; grid-template-columns: 116px minmax(0, 1fr); grid-template-rows: 1fr auto; }
+.s-daily .shop-tile-art { grid-row: 1 / 3; height: auto; min-height: 150px; }
+.s-daily .shop-tile-info { padding-top: 12px; }
+@media (min-width: 700px) { .s-daily .shop-row { grid-template-columns: minmax(0, 520px); } }
+.shop-btn { position: relative; }
+.shop-dot { position: absolute; top: -3px; right: -3px; width: 9px; height: 9px; border-radius: 50%; background: #3fc46a; box-shadow: 0 0 0 2px #10151f, 0 0 6px rgba(63, 196, 106, .8); pointer-events: none; }
+.shop-dot[hidden] { display: none; }
 .hero .shop-ribbon { left: -34px; top: 18px; width: 140px; font-size: 12px; }
 
 /* the drop rates: one bar, a segment a rarity */
@@ -146,7 +164,7 @@
 .pack-mark { position: relative; padding: 2px 6px; border-radius: 3px; background: rgba(0, 0, 0, .45);
   font: italic 900 16px/1 var(--display); font-stretch: condensed; text-transform: uppercase; letter-spacing: .02em; text-shadow: 0 1px 0 rgba(0, 0, 0, .5); }
 .k-ten .pack-mark { font-size: 30px; padding: 0 8px; color: #ffe08a; }
-.k-standard .pack-mark, .k-career .pack-mark, .k-special .pack-mark { max-width: 94%; font-size: 12.5px; letter-spacing: 0; padding: 2px 4px; }
+.k-standard .pack-mark, .k-career .pack-mark, .k-special .pack-mark, .k-daily .pack-mark { max-width: 94%; font-size: 12.5px; letter-spacing: 0; padding: 2px 4px; }
 .pack-sub { position: relative; font-size: 8px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; opacity: .85; }
 .pack-count { position: absolute; right: 4px; bottom: 4px; padding: 2px 5px; border-radius: 4px; background: #ffd23f; color: #1c1500;
   font: 900 13px/1 var(--display); box-shadow: 0 2px 4px rgba(0, 0, 0, .5); }
@@ -206,7 +224,7 @@
   .shop-row { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
   .shop-tile-art { height: 180px; }
   .shop-packs { width: 100px; height: 138px; }
-  .k-standard .pack-mark, .k-career .pack-mark, .k-special .pack-mark { font-size: 15px; }
+  .k-standard .pack-mark, .k-career .pack-mark, .k-special .pack-mark, .k-daily .pack-mark { font-size: 15px; }
   .shop-top h1 { font-size: 34px; }
 }
 @media (min-width: 900px) {

@@ -15,12 +15,13 @@
 //     Bespoke pool was every garage car with a price: the car lot's cars are no longer key cards, the owner.) A Bespoke
 //     key car's BLUEPRINTS are cards of its own `rarity` (Legendary): never evergreen (a career pack has none); in the
 //     packs whose kind says `bespokeBlueprints: true` (packs.json), and as a special pack's featured card.
-//   - Kinds: career (evergreen only), special (a career pack with the featured cards: each slot but the last may
-//     upgrade, and when it does each featured card rolls its own chance; one card a slot, a hit is picked from those
-//     that came up BY WEIGHT; a slot that upgrades and hits none becomes a filler card of a higher rarity; the LAST slot
-//     is always a featured card, picked BY WEIGHT: a guaranteed featured card of its TRUE rarity (the owner, 12-Oct:
-//     a special pack promises a guaranteed featured card, not "Epic or better")), standard (5 cards) and ten (10, one
-//     Epic or better).
+//   - PACKS (one definition each, packs.json `packs`, by id: the owner, 12-Oct, PACK-DEFINITIONS-DRAFT.md): career
+//     (evergreen only), daily (the free daily pack: evergreen, claimed once a day in the Shop), standard (5 cards), ten
+//     (10, one Epic or better), and the special ones, each its own pack with its own event and featured cards (today
+//     comet-special: a career-like pack with the featured mechanic: each slot but the last may upgrade, and when it does
+//     each featured entry rolls its own chance; one card a slot, a hit picked from those that came up BY WEIGHT; a slot
+//     that upgrades and hits none becomes a filler card of a higher rarity; the LAST slot is always a featured card,
+//     picked BY WEIGHT: a guaranteed featured card of its TRUE rarity).
 //   - FEATURED WEIGHTS (the owner, 12-Oct: "declare featured weights and display them on the What's Inside"): a featured
 //     list holds car ids (weight 1) or { car, weight, key }: see featuredEntries below. In the FEATURED mechanic only, an
 //     entry the player has EXHAUSTED (a blueprint car at its max ECU: "Car Maxed"; a key owned: "Key obtained") is out of
@@ -28,10 +29,11 @@
 //     blueprint as a duplicate. A key never drops twice: an owned key nowhere, and at most once a pack.
 // A pack is not part of a run: it is drawn with Math.random (or the dice a check hands in), never the run's seeded
 // dice, and what an opened pack held is written into the save at once (its cards given, and a log of it).
-// Where packs come from: Packs.grant(kind). The first delivery of some Career levels (packs.json career), a special
-// event's stages and its grand prize (packs.json events; events.json `featured` names an event's featured cars, else
-// its prize car), the Shop (shop.js, a placeholder currency). A pack given is OPENED AT ONCE: Packs.revealNow asks the
-// reveal screen (render/packs.js) to open it; until it has, it is held in the save, and opened at the next menu.
+// Where packs come from: Packs.grant(id). Each pack's own `givenBy` says what gives it free: `career` (the first delivery
+// of some Career levels), `event` (a special event's stages and its grand prize); its `shop` block is its Shop offer
+// (shop.js: a placeholder currency, with optional purchase limits). A pack given is OPENED AT ONCE: Packs.revealNow asks
+// the reveal screen (render/packs.js) to open it; until it has, it is held in the save, and opened at the next menu.
+// The Shop's one-line words for a pack are GENERATED from its rules (describePack: never stale); a `blurb` overrides.
 // ============================================================================
 import packData from './packs.json';
 import eventData from './events.json';
@@ -40,9 +42,15 @@ import * as Cars from './cars.js';
 import { LEVELS, isRace } from './levels.js';
 import { Progress } from './progress.js';
 import { Ecu } from './ecu.js';
+import { packIdOf, migrateHeld } from './packid.js';
 
 export const RARITIES = Object.keys(packData.rarities); // (lowest first)
-export const KINDS = Object.keys(packData.kinds);
+export const PACKS = packData.packs;
+export const PACK_IDS = Object.keys(PACKS);
+export const BUNDLES = packData.bundles || {};
+// a pack's definition by id (an old key, 'special' or 'special:<event>', turned into today's id: packid.js); null: none
+export const packOf = (id, from = null) => PACKS[packIdOf(id, from)] || null;
+export { packIdOf };
 const rank = (rarity) => RARITIES.indexOf(rarity);
 // EVERY chance on the "What's inside" sheet, as words (the owner, 12-Oct): at most two decimals, trailing zeros dropped
 // ("0.41%", "33.33%", "100%"), a chance above 0 that rounds below 0.01% "<0.01%", exactly 0 "0%". p: a share, 0..1
@@ -54,7 +62,7 @@ export const percent = (p) => {
 };
 export const rarityName = (rarity) => packData.rarities[rarity]?.name || rarity;
 export const rarityColour = (rarity) => packData.rarities[rarity]?.colour || '#ffffff';
-export const kindName = (kind) => packData.kinds[kind]?.name || kind;
+export const packName = (id) => packOf(id)?.name || id;
 
 // the cars that can be on a card: the roster now (a car added to it is in the pool from then on)
 // (the evergreen blueprint cars are cars.js FILLER_CARS: read as EVERGREEN_CARS alone, a name cars.js never had, they
@@ -306,7 +314,7 @@ const baseWords = (spec, rarity, over) => { const v = over ?? spec?.amounts?.[ra
 // slot; the duplicate is kept as the count); a key is dealt at most once a pack, and never one owned at the start
 // double / base: the doubling chance and the base amount put over the kind's (the debug &double= / &base=: Packs.doubleOverride,
 // baseOverride, for a visit)
-export const draw = (kind, { random = Math.random, cars, owned, maxed, featured = [], spec = packData.kinds[kind], double = Packs.doubleOverride ?? undefined, base = Packs.baseOverride ?? undefined } = {}) => {
+export const draw = (kind, { random = Math.random, cars, owned, maxed, featured = [], spec = packOf(kind), double = Packs.doubleOverride ?? undefined, base = Packs.baseOverride ?? undefined } = {}) => {
   if (!spec) throw new Error('no such pack: ' + kind);
   const marks = { owned: owned || ownsNow, maxed: maxed || maxedNow };
   const byRarity = poolOf(spec, { cars, owned: marks.owned });
@@ -396,7 +404,7 @@ export const draw = (kind, { random = Math.random, cars, owned, maxed, featured 
 // chance, key, exhausted, stacks: [{ n, chance (TOTAL: the card's chance split by doubleChance), doubled }] }] }], featured: [{ car, rarity, key, weight, exhausted, chance, lastSlot, slot }], weights (the
 // declared ratio, tidied: weightRatio), shifted (the entries out of the pool, while others are in), reverted (every one
 // exhausted: the blueprint entries back at their declared weights), doubleChance, baseAmount, limited, atLeast }
-export const contents = (kind, { featured = [], cars, owned, maxed, spec = packData.kinds[kind], double = Packs.doubleOverride ?? undefined, base = Packs.baseOverride ?? undefined } = {}) => {
+export const contents = (kind, { featured = [], cars, owned, maxed, spec = packOf(kind), double = Packs.doubleOverride ?? undefined, base = Packs.baseOverride ?? undefined } = {}) => {
   if (!spec) return null;
   const marks = { owned: owned || ownsNow, maxed: maxed || maxedNow };
   const byRarity = poolOf(spec, { cars, owned: marks.owned });
@@ -439,35 +447,149 @@ export const contents = (kind, { featured = [], cars, owned, maxed, spec = packD
   });
   const shifted = reverted ? [] : featuredList.filter(f => f.exhausted);
   const total = new Set([...groups.flatMap(g => g.cards.filter(c => !c.exhausted).map(c => (c.key ? 'key:' : '') + c.car.id)), ...live.map(f => (f.key ? 'key:' : '') + f.car.id)]).size;
-  return { kind, name: kindName(kind), size, total, odds, groups, featured: featuredList, weights: weightRatio(declared.map(f => f.weight)), shifted, reverted,
+  return { kind, name: spec.name || packName(kind), size, total, odds, groups, featured: featuredList, weights: weightRatio(declared.map(f => f.weight)), shifted, reverted,
     doubleChance: twice, baseAmount: base ?? spec.baseAmount ?? 1, limited: !!spec.limited,
     atLeast: { ...(spec.atLeast || {}) } };
 };
 
-// ---- the save: packs held (Progress.data.packs: a count by pack, 'kind' or 'kind:<event id>'), and the log ----
-const packKey = (kind, from) => kind + (from ? ':' + from : '');
-const splitKey = (key) => { const [kind, from = null] = String(key).split(':'); return { kind, from }; };
+// ---- the featured entries of a pack ({ car, weight, key, amount }: featuredEntries, every one declared, exhausted or
+// not): its own `featured.entries`, else its event's prize car at weight 1, else every event car at weight 1. The debug
+// ?featured= (Packs.featuredOverride, for a visit, never saved) is put over any of them. id: a pack id (an old
+// 'special:<event>' key is turned into its pack). [] for a pack with no featured mechanic
 const eventEntry = (id) => (Array.isArray(eventData.special) ? eventData.special : []).find(e => String(e.id) === String(id)) || null;
-// the featured entries of a special pack ({ car, weight, key }: featuredEntries, every one declared, exhausted or not):
-// its event's (events.json featured, else its prize car at weight 1); a pack from no event: packs.json events.featured
-// if it has one, else every event car at weight 1. The debug ?featured= (Packs.featuredOverride, for a visit, never
-// saved) is put over any of them
-export const featuredFor = (from) => {
+export const featuredOf = (id) => {
+  const spec = packOf(id);
+  if (!spec?.featured) return [];
   if (Packs.featuredOverride) return Packs.featuredOverride;
-  const e = from ? eventEntry(from) : null;
-  const fallback = Array.isArray(packData.events?.featured) && packData.events.featured.length ? packData.events.featured : (Cars.EVENT_CARS || []).map(c => c.id);
-  const list = e ? (Array.isArray(e.featured) && e.featured.length ? e.featured : e.prize?.car ? [e.prize.car] : []) : fallback;
-  return featuredEntries(list);
+  const own = Array.isArray(spec.featured.entries) && spec.featured.entries.length ? spec.featured.entries : null;
+  const prize = eventEntry(spec.event)?.prize?.car;
+  return featuredEntries(own || (prize ? [prize] : (Cars.EVENT_CARS || []).map(c => c.id)));
 };
+// the special event a pack belongs to (its `event`: on sale and listed only while it is on), as events.json has it; null
+export const eventOf = (id) => (packOf(id)?.event ? eventEntry(packOf(id).event) : null);
+// the packs a special event gives (its stages, its grand prize): those whose givenBy.event names it (by its id, else the
+// pack's own event). [{ id, stage, prize }]
+export const eventPacks = (eventId) => PACK_IDS.map(id => ({ id, g: PACKS[id].givenBy?.event })).filter(({ id, g }) => g && String(g.id ?? PACKS[id].event) === String(eventId))
+  .map(({ id, g }) => ({ id, stage: !!g.stage, prize: !!g.prize }));
+// the pack the Career levels give (the first with givenBy.career); null: none
+export const careerPack = () => PACK_IDS.find(id => PACKS[id].givenBy?.career) || null;
 
 // the first delivery of these levels gives a career pack: every nth of the main list (the tiers in order, then the
-// levels outside them, no races and no events), and those packs.json names
+// levels outside them, no races and no events), and those the pack's givenBy.career names
 export const careerLevels = () => {
+  const rule = PACKS[careerPack()]?.givenBy?.career;
+  if (!rule) return [];
   const byId = new Map(LEVELS.map(l => [l.id, l]));
   const tiers = Object.keys(tierData.tiers || {}).map(Number).sort((a, b) => a - b).flatMap(n => tierData.tiers[n]);
   const main = [...tiers, ...(tierData.outside || [])].map(id => byId.get(id)).filter(l => l && !isRace(l));
-  const every = Math.floor(packData.career?.every || 0);
-  return [...new Set([...(every > 0 ? main.filter((_, i) => (i + 1) % every === 0).map(l => l.id) : []), ...(packData.career?.levels || [])])];
+  const every = Math.floor(rule.every || 0);
+  return [...new Set([...(every > 0 ? main.filter((_, i) => (i + 1) % every === 0).map(l => l.id) : []), ...(rule.levels || [])])];
+};
+
+// ---- GENERATED WORDS (no hand-typed blurb: the owner, 12-Oct, PACK-DEFINITIONS-DRAFT.md "Generated blurbs"): a pack's
+// one line, built from its rules, so it can never be stale. A pack's (or a bundle's) `blurb` overrides it.
+const NUMBER_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+const countWord = (n) => NUMBER_WORDS[n] || String(n);
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// an events.json time ("2026-11-01": midnight on the device; else a time with its zone) as "1 Nov" (as events.js when())
+const dayWords = (v) => {
+  const day = /^(\d{4})-(\d\d)-(\d\d)$/.exec(String(v ?? ''));
+  const t = day ? new Date(+day[1], +day[2] - 1, +day[3]) : new Date(Date.parse(String(v)));
+  return Number.isFinite(t.getTime()) ? t.getDate() + ' ' + MONTHS[t.getMonth()] : null;
+};
+// the at-least rules a pack promises, highest first, without those a higher one already makes true (at least one Epic
+// or better is at least one Uncommon or better): [[rarity, n]]
+export const guarantees = (spec) => {
+  const rules = Object.entries(spec?.atLeast || {}).filter(([r, n]) => rank(r) >= 0 && n > 0).sort((a, b) => rank(b[0]) - rank(a[0]));
+  return rules.filter(([, n], i) => !rules.slice(0, i).some(([, m]) => m >= n));
+};
+// a pack's line: its size (and its base amount above 1), its pool, every guarantee, a featured card, the keys, and an
+// event's end ("5 cards from every car with blueprints. At least one Uncommon or better. A key, now and then")
+export const describePack = (id) => {
+  const spec = packOf(id);
+  if (!spec) return '';
+  if (typeof spec.blurb === 'string' && spec.blurb.trim()) return spec.blurb.trim();
+  const size = Math.max(1, Math.floor(spec.size || 5)), base = Math.max(1, Math.floor(Number(Array.isArray(spec.baseAmount) ? spec.baseAmount[0] : spec.baseAmount) || 1));
+  const parts = [(spec.pool === 'all' ? size + ' cards from every car with blueprints' : size + ' evergreen cards') + (base > 1 ? ', x' + base + ' each' : '')];
+  for (const [r, n] of guarantees(spec)) parts.push('At least ' + countWord(n) + ' ' + rarityName(r) + ' or better');
+  if (spec.featured) parts.push('Guaranteed featured card');
+  if (spec.pool === 'all' && (packData.odds?.bespoke || 0) > 0) parts.push('A key, now and then');
+  const e = eventOf(id), end = e ? dayWords(e.to) : null;
+  if (end) parts.push('Limited: ends ' + end);
+  return parts.join('. ');
+};
+// a bundle's line: the packs and the cards in all, and each pack's guarantees ("3 packs, 30 cards. At least one Epic or
+// better in each")
+export const describeBundle = (bundle) => {
+  if (typeof bundle?.blurb === 'string' && bundle.blurb.trim()) return bundle.blurb.trim();
+  const spec = packOf(bundle?.pack);
+  if (!spec) return '';
+  const count = Math.max(1, Math.floor(bundle.count || 1)), size = Math.max(1, Math.floor(spec.size || 5));
+  const parts = [count + ' packs, ' + count * size + ' cards'];
+  for (const [r, n] of guarantees(spec)) parts.push('At least ' + countWord(n) + ' ' + rarityName(r) + ' or better in each');
+  if (spec.featured) parts.push('A featured card in each');
+  return parts.join('. ');
+};
+// a bundle's name: its own, else "3 Standard packs" / "3 10-packs"
+export const bundleName = (bundle) => bundle?.name || (Math.max(1, Math.floor(bundle?.count || 1)) + ' ' + packName(bundle?.pack) + 's');
+
+// what is wrong with packs.json, as lines (none: sound): every pack's featured list, its event, what gives it, its Shop
+// offer (a price; its section; its limits), every bundle's pack, count and price. events.js problems() reports them too
+export const packProblems = (data = packData) => {
+  const out = [], packs = data.packs || {}, events = new Set((Array.isArray(eventData.special) ? eventData.special : []).map(e => String(e.id)));
+  const sections = new Set((data.sections || []).map(s => s.id));
+  const whole = (v, least) => Number.isInteger(v) && v >= least;
+  if (data.kinds) out.push('packs.json: "kinds" is the old shape (before one definition per pack): its packs belong in "packs"');
+  for (const [id, p] of Object.entries(packs)) {
+    const say = (what) => out.push('pack ' + id + ': ' + what);
+    if (!/^[a-z0-9-]{1,40}$/.test(id)) say('its id is not lower-case letters, digits and dashes');
+    if (!p || typeof p !== 'object') { say('not an object'); continue; }
+    if (!p.name) say('it has no name');
+    if (!whole(p.size, 1)) say('its size is not a whole number of 1 or more');
+    if (!['all', 'evergreen'].includes(p.pool)) say('its pool is not "all" or "evergreen"');
+    for (const r of Object.keys(p.atLeast || {})) if (rank(r) < 0) say('atLeast names no rarity "' + r + '"');
+    if (p.event !== undefined && !events.has(String(p.event))) say('its event "' + p.event + '" is not a special event (events.json special)');
+    if (p.featured !== undefined) {
+      if (!p.featured || typeof p.featured !== 'object' || Array.isArray(p.featured)) say('"featured" is not { upgradeChance, featuredChance, entries }');
+      else for (const line of featuredProblems(p.featured.entries)) say(line + ' (a car id, or { "car", "weight" > 0, "key": true for a Bespoke key car, "amount" })');
+    }
+    const g = p.givenBy;
+    if (g !== undefined) {
+      const extra = Object.keys(g || {}).filter(k => !['career', 'event'].includes(k));
+      if (extra.length) say('givenBy: unknown ' + extra.join(', '));
+      if (g?.career && !(g.career.every === undefined || whole(g.career.every, 0))) say('givenBy.career.every is not a whole number');
+      for (const l of g?.career?.levels || []) if (!LEVELS.some(x => x.id === l)) say('givenBy.career names no level "' + l + '"');
+      if (g?.event) {
+        const ev = g.event.id ?? p.event;
+        if (ev === undefined) say('givenBy.event: no event (its own "event", or givenBy.event.id)');
+        else if (!events.has(String(ev))) say('givenBy.event: "' + ev + '" is not a special event');
+      }
+    }
+    if (p.shop !== undefined) {
+      const s = p.shop || {};
+      if (!whole(s.price, 0)) say('its shop block has no price (a whole number, 0 for free)');
+      if (s.was !== undefined && s.was !== null && !(s.was > s.price)) say('its old price ("was") is not above its price');
+      if (s.ribbon === 'sale' && !(s.was > s.price)) say('a sale with no old price');
+      if (!sections.has(s.section)) say('its shop section "' + s.section + '" is not a section');
+      if (s.limits !== undefined) {
+        const L = s.limits || {}, extra = Object.keys(L).filter(k => !['total', 'daily'].includes(k));
+        if (extra.length) say('limits: unknown ' + extra.join(', '));
+        for (const k of ['total', 'daily']) if (L[k] !== undefined && !whole(L[k], 1)) say('limits.' + k + ' is not a whole number of 1 or more');
+      }
+    }
+  }
+  for (const [id, b] of Object.entries(data.bundles || {})) {
+    const say = (what) => out.push('bundle ' + id + ': ' + what);
+    if (Object.hasOwn(packs, id)) say('its id is a pack\'s too');
+    if (!Object.hasOwn(packs, String(b?.pack))) { say('its pack "' + b?.pack + '" is not a pack'); continue; }
+    if (!whole(b.count, 2)) say('its count is not a whole number of 2 or more');
+    if (!whole(b.price, 0)) say('it has no price');
+    if (b.was !== undefined && b.was !== null && !(b.was > b.price)) say('its old price ("was") is not above its price');
+    if (b.ribbon === 'sale' && !(b.was > b.price)) say('a sale with no old price');
+    if (!sections.has(b.section ?? 'bundles')) say('its section "' + (b.section ?? 'bundles') + '" is not a section');
+    if (!packs[b.pack].shop) say('its pack ' + b.pack + ' is not sold on its own (no shop block)');
+  }
+  return out;
 };
 
 // ---- a pack's cards as the reveal shows them (render/packs.js) ----
@@ -583,28 +705,32 @@ export const revealProgress = (cards, { owned = (id) => Progress.owns(id) } = {}
 
 export const Packs = {
   data: packData,
-  // how many of a pack are held (kind alone: every pack of that kind, whatever event it is from)
-  count(kind, from) {
-    const held = Progress.data.packs || {};
-    if (from !== undefined) return held[packKey(kind, from)] || 0;
-    return Object.entries(held).filter(([k]) => splitKey(k).kind === kind).reduce((n, [, c]) => n + c, 0);
+  // the packs held, by pack id (an old save's 'special:<event>' keys turned into ids: packid.js migrateHeld; Progress
+  // restores a save so, and a check may write the old keys straight in)
+  heldMap() {
+    const raw = Progress.data.packs || {};
+    if (Object.keys(raw).some(k => !Object.hasOwn(PACKS, k))) Progress.data.packs = migrateHeld(raw);
+    return Progress.data.packs || {};
   },
-  // the packs held: [{ key, kind, from, count, name }]
+  // how many of a pack are held (id: a pack id; an old kind and event are turned into it)
+  count(id, from) { return this.heldMap()[packIdOf(id, from ?? null)] || 0; },
+  // the packs held: [{ key, id, kind (the id), from (its event, if any), count, name }], in packs.json's order
   held() {
-    return Object.entries(Progress.data.packs || {}).filter(([, c]) => c > 0).map(([key, count]) => {
-      const { kind, from } = splitKey(key), e = from ? eventEntry(from) : null;
-      return { key, kind, from, count, name: kindName(kind) + (e ? ': ' + (e.short || e.name || e.id) : '') };
-    }).sort((a, b) => KINDS.indexOf(a.kind) - KINDS.indexOf(b.kind));
+    return Object.entries(this.heldMap()).filter(([, c]) => c > 0).map(([id, count]) => ({ key: id, id, kind: id, from: PACKS[id]?.event ?? null, count, name: packName(id) }))
+      .sort((a, b) => PACK_IDS.indexOf(a.id) - PACK_IDS.indexOf(b.id));
   },
-  total() { return Object.values(Progress.data.packs || {}).reduce((n, c) => n + (c > 0 ? c : 0), 0); },
-  // an unopened pack given (from: the event a special pack is from). Its name, or '' (no such kind)
+  total() { return Object.values(this.heldMap()).reduce((n, c) => n + (c > 0 ? c : 0), 0); },
+  // an unopened pack given. id: a pack id (an old 'special' with { from: event } is turned into its pack). Its name, or
+  // '' (no such pack)
   grant(kind, { from = null, n = 1 } = {}) {
-    if (!packData.kinds[kind]) return '';
-    const held = (Progress.data.packs ||= {}), key = packKey(kind, from);
-    held[key] = (held[key] || 0) + n;
+    const id = packIdOf(kind, from);
+    if (!id) return '';
+    const held = this.heldMap();
+    held[id] = (held[id] || 0) + n;
+    Progress.data.packs = held;
     Progress.save();
     window.dispatchEvent?.(new Event('packschange'));
-    return kindName(kind);
+    return packName(id);
   },
   // ---- opened at once (the owner, 12-Oct: "when a pack is bought or earned it just opens immediately") ----
   // revealer: the screen's (render/packs.js), set when it loads: asked to show the packs held now, at once or as soon
@@ -615,7 +741,7 @@ export const Packs = {
   // the next pack held, opened (the first of held()): what open() gives, or null (none held)
   next(options = {}) {
     const first = this.held()[0];
-    return first ? this.open(first.kind, { from: first.from, ...options }) : null;
+    return first ? this.open(first.id, options) : null;
   },
   // KEY HOOK: a Bespoke card's key given. Ecu.grantKey if ecu.js has one; else a key is what owning a garage car is
   // today (Progress.data.cars: bought or won), so the car is put in the cars owned
@@ -624,28 +750,30 @@ export const Packs = {
     if (!Progress.data.cars.includes(carId)) Progress.data.cars.push(carId);
   },
   // A pack opened: drawn, and every card given (a blueprint each through Ecu.addBlueprints; a key through grantKey).
-  // free: true opens one not held (the debug route). { kind, from, cards } (each card with isNew, count, maxed), or
-  // null (none held)
-  // amountOf: (card, slot index) -> n or null, an amount put over the kind's (the debug ?amount=: debugAmounts), else
+  // free: true opens one not held (the debug route). { kind (the pack's id), id, from (its event, for the reveal's
+  // kicker), cards } (each card with isNew, count, maxed), or null (none held)
+  // amountOf: (card, slot index) -> n or null, an amount put over the pack's (the debug ?amount=: debugAmounts), else
   // Packs.amountOverride (set for a visit by the debug route; never saved)
   amountOverride: null,
   featuredOverride: null, // (the debug ?featured=: debugFeatured, for a visit; never saved)
   doubleOverride: null, baseOverride: null, // (the debug &double=0.5&base=2: debugDouble, for a visit; never saved)
   markMaxed: null, markOwned: null, // (the debug ?maxed= / ?owned=: debugMarks, for a visit; never saved)
   // every featured entry of a pack exhausted (the owner, 12-Oct: "If a player has every featured card in a pack greyed
-  // out, don't allow them to purchase it")? false for a pack with no featured list. list: the entries (else featuredFor)
-  featuredExhausted(from = null, list = featuredFor(from), marks = {}) {
+  // out, don't allow them to purchase it")? false for a pack with no featured list. list: the entries (else featuredOf)
+  featuredExhausted(id = null, list = featuredOf(id), marks = {}) {
     const declared = featuredEntries(list);
     return declared.length > 0 && declared.every(f => exhaustedOf(f, marks));
   },
   open(kind, { from = null, free = false, random = Math.random, amountOf = this.amountOverride } = {}) {
-    if (!packData.kinds[kind]) return null;
-    const held = (Progress.data.packs ||= {}), key = packKey(kind, from);
+    const id = packIdOf(kind, from);
+    if (!id) return null;
     if (!free) {
-      if (!(held[key] > 0)) return null;
-      if (--held[key] <= 0) delete held[key];
+      const held = this.heldMap();
+      if (!(held[id] > 0)) return null;
+      if (--held[id] <= 0) delete held[id];
     }
-    const cards = draw(kind, { random, featured: kind === 'special' || packData.kinds[kind].featured ? featuredFor(from) : [] });
+    const spec = PACKS[id];
+    const cards = draw(id, { random, featured: spec.featured ? featuredOf(id) : [] });
     if (amountOf) cards.forEach((c, i) => { const n = c.key ? null : amountOf(c, i); if (n >= 1) c.n = Math.floor(n); }); // (a key is always one)
     for (const c of cards) {
       const car = Cars.carById(c.car);
@@ -661,28 +789,32 @@ export const Packs = {
       c.count = Ecu.blueprints(c.car);
     }
     const log = (Progress.data.packLog ||= []);
-    log.unshift({ kind, ...(from ? { from } : {}), cards: cards.map(c => ({ car: c.car, rarity: c.rarity, ...(c.key ? { key: true } : {}), ...(c.featured ? { featured: true } : {}) })) });
+    log.unshift({ kind: id, cards: cards.map(c => ({ car: c.car, rarity: c.rarity, ...(c.key ? { key: true } : {}), ...(c.featured ? { featured: true } : {}) })) });
     log.length = Math.min(log.length, Math.max(0, packData.log ?? 20));
     Progress.save();
     window.dispatchEvent?.(new Event('packschange'));
-    return { kind, from, cards };
+    return { kind: id, id, from: spec.event ?? null, cards };
   },
   // a Career level delivered (Game.finish). firstTime: never delivered before, on either side. The pack's name, or ''
+  // (the pack: the one whose givenBy.career lists the level: careerPack)
   levelDone(level, firstTime) {
-    if (!level || !firstTime || !careerLevels().includes(level.id)) return '';
+    const id = careerPack();
+    if (!id || !level || !firstTime || !careerLevels().includes(level.id)) return '';
     const claim = 'pack-' + level.id;
     if ((Progress.data.claimed ||= []).includes(claim)) return '';
     Progress.data.claimed.push(claim);
-    const name = this.grant('career');
+    const name = this.grant(id);
     this.revealNow();
     return name;
   },
-  // a special event's stage done (events.js delivered): a pack for a stage done the first time, and one with the
-  // grand prize (packs.json events). The names given, as a list
+  // a special event's stage done (events.js delivered): the packs whose givenBy.event names the event, one for a stage
+  // done the first time (stage: true), one with the grand prize (prize: true). The names given, as a list
   eventDone(eventId, firstTime, prize) {
-    const out = [], { stage, prize: forPrize } = packData.events || {};
-    if (firstTime && stage) out.push(this.grant(stage, stage === 'special' ? { from: eventId } : {}));
-    if (prize && forPrize) out.push(this.grant(forPrize, forPrize === 'special' ? { from: eventId } : {}));
+    const out = [];
+    for (const p of eventPacks(eventId)) {
+      if (firstTime && p.stage) out.push(this.grant(p.id));
+      if (prize && p.prize) out.push(this.grant(p.id));
+    }
     if (out.some(Boolean)) this.revealNow();
     return out.filter(Boolean);
   },

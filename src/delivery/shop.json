@@ -1,24 +1,5 @@
 {
-  "_about": "The Shop (src/delivery/shop.js, render/shop.js; CHECKLIST item 115). PLACEHOLDER ECONOMY: the owner has not decided what buys card packs, so the currency here is a stand-in, named so nobody mistakes it for the game's money (the tips, the bank): it is its own balance in the save (Progress.data.shopCash), never the bank, and a new save has none. Nothing in the game gives it yet: ?shopcash=<n> sets it for a visit (nothing saved), and with ?debug the Shop shows a button that adds some (saved). currency: its name, a short name, a sign. sections: the Shop's rows, top to bottom. offers: id (unique), section, kind (a pack kind of packs.json: standard, ten, career, special), count (packs given), price (in the placeholder currency), was (an old price shown struck through, for a sale; null: none), ribbon ('featured', 'sale', 'new', 'best' or null), name, blurb; from (a special pack's event id, events.json special: the offer shows only while that event is on, its featured cars on the tile; featured: car ids to show instead of the event's own). Buying takes the price and gives the packs (Packs.grant) and opened at once (Packs.revealNow: the reveal, render/packs.js).",
+  "_about": "The Shop's CURRENCY only (src/delivery/shop.js, render/shop.js; CHECKLIST items 115 and 151). What is for sale, its price, its ribbon, its limits and its words are each pack's own (packs.json: a pack's `shop` block, and `bundles`; the Shop's rows are packs.json `sections`). PLACEHOLDER ECONOMY: the owner has not decided what buys card packs, so the currency here is a stand-in, named so nobody mistakes it for the game's money (the tips, the bank): it is its own balance in the save (Progress.data.shopCash), never the bank, and a new save has none. Nothing in the game gives it yet: ?shopcash=<n> sets it for a visit (nothing saved), and with ?debug the Shop shows a button that adds some (saved). currency: its name, a short name, a sign; debugGrant: what the debug button adds.",
   "currency": { "name": "Crazey Cash", "short": "CC", "sign": "◆", "placeholder": true },
-  "debugGrant": 1000,
-  "sections": [
-    { "id": "featured", "name": "Featured", "note": "Special packs: a featured card guaranteed in every one" },
-    { "id": "packs", "name": "Card packs", "note": "Blueprints for your cars. Every pack has an Uncommon or better" },
-    { "id": "bundles", "name": "Bundles", "note": "More packs, for less" }
-  ],
-  "offers": [
-    { "id": "comet-special", "section": "featured", "kind": "special", "from": "comet-hunt", "count": 1, "price": 450, "was": null, "ribbon": "featured",
-      "name": "Comet Hunt Special", "blurb": "5 cards. Guaranteed featured card" },
-    { "id": "ten", "section": "packs", "kind": "ten", "count": 1, "price": 800, "was": 1000, "ribbon": "sale",
-      "name": "10-pack", "blurb": "10 cards. At least one Epic or better" },
-    { "id": "standard", "section": "packs", "kind": "standard", "count": 1, "price": 100, "was": null, "ribbon": null,
-      "name": "Standard pack", "blurb": "5 cards, from every car with blueprints. A key, now and then" },
-    { "id": "career", "section": "packs", "kind": "career", "count": 1, "price": 80, "was": null, "ribbon": "new",
-      "name": "Career pack", "blurb": "5 evergreen cards: the cars always in the packs" },
-    { "id": "standard-3", "section": "bundles", "kind": "standard", "count": 3, "price": 270, "was": 300, "ribbon": "sale",
-      "name": "3 Standard packs", "blurb": "15 cards" },
-    { "id": "ten-3", "section": "bundles", "kind": "ten", "count": 3, "price": 2100, "was": 3000, "ribbon": "best",
-      "name": "3 10-packs", "blurb": "30 cards, three of them Epic or better" }
-  ]
+  "debugGrant": 1000
 }

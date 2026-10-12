@@ -4,6 +4,7 @@
 // the storage can be swapped (e.g. for Capacitor Preferences) without touching the game.
 // ============================================================================
 import { LEVELS, isRace } from './levels.js';
+import { migrateHeld } from './packid.js';
 const COOKIE = 'delivery_racer_progress';
 const ONE_YEAR = 60 * 60 * 24 * 365;
 // Saved progress counts unlocked levels by position (see LEVELS), so it remembers which order of
@@ -62,9 +63,10 @@ const fresh = () => ({
   tierCars: {},    // the car last picked for each tier's levels while their medal is not earned, by tier (the player's own pick, `car`, is kept apart)
   blueprints: {},  // blueprints collected, by car id (ecu.js: they raise a car's ECU, and unlock a blueprint car)
   maxed: ['commuter'], // cars held at their MAX ECU whatever their blueprints (ecu.js): the starter car comes maxed; an old save's cars all are
-  packs: {},       // card packs given and not yet opened (pending: the reveal opens them at once, or at the next menu): a count by pack ('career', 'special:<event id>'...: packs.js)
-  packLog: [],     // the packs opened last, newest first: { kind, from?, cards: [{ car, rarity, key?, featured? }] } (packs.js)
+  packs: {},       // card packs given and not yet opened (pending: the reveal opens them at once, or at the next menu): a count by pack id ('career', 'comet-special'...: packs.json; an old save's 'special:<event id>' is migrated: packid.js)
+  packLog: [],     // the packs opened last, newest first: { kind (the pack's id), cards: [{ car, rarity, key?, featured? }] } (packs.js)
   shopCash: 0,     // the Shop's PLACEHOLDER currency (shop.json, shop.js): its own balance, never the bank; nothing gives it yet
+  packBuys: {},    // the Shop's PURCHASE COUNTERS, by pack id (shop.js; a pack's packs.json shop.limits): { total (ever bought), day ('YYYY-MM-DD', the player's local day of the last buy), today (bought that day) }; a bundle counts each pack
 });
 
 // The save is kept in local storage (BACKUP: the store of record, read first, the whole save, as big as it
@@ -96,6 +98,12 @@ const read = () => {
     return fresh(); // an unreadable cookie counts as no progress
   }
 };
+// the Shop's purchase counters (shop.js), each checked: { [pack id]: { total, day: 'YYYY-MM-DD', today } }
+const cleanBuys = (buys) => Object.fromEntries(Object.entries(buys && typeof buys === 'object' && !Array.isArray(buys) ? buys : {})
+  .filter(([id, b]) => /^[a-z0-9-]{1,40}$/.test(id) && b && typeof b === 'object' && Number.isInteger(b.total) && b.total >= 0 && b.total <= 1e6)
+  .slice(0, 50)
+  .map(([id, b]) => [id, { total: b.total, day: typeof b.day === 'string' && /^\d{4}-\d\d-\d\d$/.test(b.day) ? b.day : '',
+    today: Number.isInteger(b.today) && b.today >= 0 && b.today <= b.total ? b.today : 0 }]));
 // a save as it was written (by any older version of the game), brought up to date
 const restore = (saved) => {
   {
@@ -103,7 +111,8 @@ const restore = (saved) => {
     data.bestTime = { good: {}, evil: {}, ...saved.bestTime }; // (a save from before best times has none)
     data.stats = { ...(saved.stats || {}) }; // (nor counters)
     data.tierCars = { ...(saved.tierCars && typeof saved.tierCars === 'object' ? saved.tierCars : {}) };
-    data.packs = { ...(saved.packs && typeof saved.packs === 'object' && !Array.isArray(saved.packs) ? saved.packs : {}) }; // (card packs: a save from before has none)
+    data.packs = migrateHeld(saved.packs); // (card packs: a save from before has none; one from before one definition per pack held 'special:<event>': packid.js)
+    data.packBuys = cleanBuys(saved.packBuys); // (the Shop's purchase counters: a save from before has none)
     data.packLog = Array.isArray(saved.packLog) ? saved.packLog : [];
     // (the Commuter and the Darkvan were saved as 'hatch' and 'coupe')
     const RENAMED = { hatch: 'commuter', coupe: 'darkvan' };
@@ -138,7 +147,7 @@ const saveText = (data) => JSON.stringify({
 });
 // The cookie's share of the save (see BACKUP above): never over COOKIE_ROOM bytes as written, whatever the save
 // holds. Should even the list of cars be too long for it (hundreds of them), it goes down to the car in use
-const COOKIE_KEYS = ['money', 'unlocked', 'levelOrder', 'cars', 'car', 'claimed', 'events', 'tankPieces', 'evil', 'muted', 'touch', 'autoGas', 'autoBrake', 'raceClass', 'raceTrack', 'blueprints', 'maxed', 'shopCash'];
+const COOKIE_KEYS = ['money', 'unlocked', 'levelOrder', 'cars', 'car', 'claimed', 'events', 'tankPieces', 'evil', 'muted', 'touch', 'autoGas', 'autoBrake', 'raceClass', 'raceTrack', 'blueprints', 'maxed', 'shopCash', 'packBuys'];
 const COOKIE_ROOM = 3600; // bytes of cookie value (the cap is 4096 for the name, the value and its attributes)
 const cookieText = (data) => {
   const short = Object.fromEntries(COOKIE_KEYS.map(key => [key, key === 'money' ? rounded(data.money, SAVE_STEP.money) : data[key]]));
@@ -196,7 +205,8 @@ const tidy = (saved) => {
     .filter(([key, n]) => word(key) && typeof n === 'number' && isFinite(n) && n >= 0).slice(0, 100));
   // (card packs, packs.js: the counts held by pack, and the log of those opened, each card checked)
   clean.packs = Object.fromEntries(Object.entries(saved.packs && typeof saved.packs === 'object' && !Array.isArray(saved.packs) ? saved.packs : {})
-    .filter(([k, n]) => /^[a-z]{1,20}(:[A-Za-z0-9_-]{1,40})?$/.test(k) && Number.isInteger(n) && n > 0 && n <= 9999).slice(0, 50));
+    .filter(([k, n]) => /^[a-z0-9-]{1,40}(:[A-Za-z0-9_-]{1,40})?$/.test(k) && Number.isInteger(n) && n > 0 && n <= 9999).slice(0, 50)); // (a pack id; an old code's 'special:<event>', migrated by restore)
+  clean.packBuys = cleanBuys(saved.packBuys); // (the Shop's purchase counters)
   clean.packLog = (Array.isArray(saved.packLog) ? saved.packLog : []).filter(p => p && typeof p === 'object' && word(p.kind) && Array.isArray(p.cards)).slice(0, 50)
     .map(p => ({ kind: p.kind, ...(word(p.from) ? { from: p.from } : {}), cards: p.cards.filter(c => c && word(c.car) && word(c.rarity)).slice(0, 20)
       .map(c => ({ car: c.car, rarity: c.rarity, ...(c.key === true ? { key: true } : {}), ...(c.featured === true ? { featured: true } : {}) })) }));
