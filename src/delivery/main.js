@@ -59,6 +59,7 @@ import { Mysteries } from './mysteries.js';
 import { updateHud, clearHud } from './render/hud.js';
 import './render/menu.js';
 import './render/touch.js';
+if (new URLSearchParams(location.search).has('poselab')) import('./render/poselab.js'); // (?poselab: the blueprint pose experiment, carposes.js; a debug page only)
 import './render/album.js';
 import './render/milestones.js';
 import './render/savecode.js';

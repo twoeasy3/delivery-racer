@@ -18,6 +18,17 @@ export const POSES = {
   top: { lift: 1.08, angle: Math.PI - 0.62, fov: 30, margin: 0.88 },   // from above and a little behind, nose away up to the right
   low: { lift: 0.07, angle: -0.78, fov: 54, margin: 0.9 },             // low, front three-quarter, a wide lens close in, nose to the left
   front: { lift: 0.24, angle: 0.62, fov: 28, margin: 0.88 },           // eye height, front three-quarter, nose to the right
+  // ---- EXPERIMENT, only with ?poses= (carposes.js CANDIDATE_POSES); the three above are the cards' own ----
+  // marginX / marginY: the share of the picture's half width / height the turned box may fill (margin: both);
+  // shiftY: where its middle goes (a share of the half height, + up). The card's free band, clear of the BLUEPRINT tab
+  // (top right, about the top 11%) and the rarity word and stars (about the bottom 17%), is NDC -0.66 to 0.78: a pose
+  // with marginY 0.66 and shiftY 0.06 keeps the whole box inside it.
+  wide: { lift: 0.24, angle: 0.62, fov: 28, marginX: 0.8, marginY: 0.66, shiftY: 0.06 },      // `front`, farther back, clear of the badges
+  rear: { lift: 0.2, angle: Math.PI + 0.72, fov: 30, marginX: 0.86, marginY: 0.72, shiftY: 0.04 }, // rear three-quarter, tail to the left
+  hero: { lift: 0.035, angle: -0.36, fov: 40, marginX: 0.86, marginY: 0.72, shiftY: 0.05 },  // very low, nearly head-on
+  side: { lift: 0.05, angle: -Math.PI / 2, fov: 16, marginX: 0.88, marginY: 0.66, shiftY: 0.04 }, // flat profile, nose to the left
+  overhead: { lift: 1.36, angle: -2.36, fov: 30, marginX: 0.84, marginY: 0.7, shiftY: 0.06 }, // nearly straight down, on a diagonal
+  tele: { lift: 0.42, angle: -0.72, fov: 13, marginX: 0.86, marginY: 0.7, shiftY: 0.05 },     // high three-quarter, a very long lens
 };
 const poseOf = (pose) => (typeof pose === 'string' ? POSES[pose] || STILL_POSE : pose || STILL_POSE);
 const poseKey = (pose) => (typeof pose === 'string' ? pose : pose && pose !== STILL_POSE ? JSON.stringify(pose) : 'still');
