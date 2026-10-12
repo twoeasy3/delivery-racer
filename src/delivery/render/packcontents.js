@@ -70,7 +70,7 @@ const cardRow = (car, rarity, chance, { key = false, featured = false, note = ''
     bubble?.classList.add('cycle');
     bubble?.replaceChildren(...stacks.map((st, i) => make('b', 'amt-phase' + (i ? ' alt' : ''), '×' + (Array.isArray(st.n) ? st.n.join('-') : st.n))));
   }
-  if (exhausted) node.querySelector('.bp-art')?.append(exhaustedOverlay(exhausted, inPool ? 'Drops as a duplicate' : 'Out of the pool'));
+  if (exhausted) node.querySelector('.bp-art')?.append(exhaustedOverlay(exhausted, 'Out of the pool'));
   const row = make('li', 'pc-card r-' + rarity + (featured ? ' featured' : '') + (exhausted ? ' exhausted' : ''), node);
   if (fading) row.title = car.name + ': ' + percent(chance) + ' a card (' + stacks.map(stackWords).join(', ') + ')';
   row._car = car; row._pic = pic; row._pose = pose;
@@ -114,7 +114,7 @@ export const openContents = (host, { kind, title, featured = [] }) => {
       make('h3', '', make('span', 'shop-chip r-bespoke', 'Featured'), make('small', '', 'the last card is one, picked by weight · the big figure: its chance a pack')),
       make('p', 'pc-weights', make('b', '', 'Featured weights: '), ratio),
       out.length ? make('p', 'pc-shift', make('b', '', 'Weights shifted: '), out.join(', ') + ' out of the pool') : null,
-      c.reverted ? make('p', 'pc-shift', make('b', '', 'Every featured car is maxed: '), 'they still drop as duplicates, at their declared weights') : null,
+      c.reverted ? null : (out.length && out.length === c.featured.length ? make('p', 'pc-shift', make('b', '', 'Every featured card is had: '), 'the featured slot is an ordinary card, and this pack cannot be bought') : null),
       make('ul', 'pc-list', c.featured.map(f => featuredRow(f, c.baseAmount)))));
   }
   for (const g of c.groups) {
