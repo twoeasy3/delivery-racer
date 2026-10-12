@@ -20,6 +20,7 @@ import { stars } from '../cars.js';
 import { ask, tell } from './dialog.js';
 import { makeShowCar, paintShowCar } from './garage.js';
 import { sharedRenderer, drawStill } from './modelviews.js';
+import { openContents, closeContents } from './packcontents.js';
 
 // (packs.js and the Packs screen, where the tree has them: see shop.js)
 const packsModule = Object.values(import.meta.glob('../packs.js', { eager: true }))[0] || null;
@@ -86,16 +87,30 @@ const oddsOf = (kind) => {
   const total = has.reduce((n, r) => n + odds[r], 0);
   return has.map(r => [r, odds[r] / total]);
 };
-const oddsBar = (kind) => {
+const oddsBar = (kind, offer) => {
   const odds = oddsOf(kind);
   if (!odds) return null;
-  const bar = make('div', 'shop-odds', ...odds.map(([r, share]) => {
+  const bar = make(packsModule?.contents ? 'button' : 'div', 'shop-odds', ...odds.map(([r, share]) => {
     const seg = make('i', 'r-' + r);
     seg.style.flexGrow = String(Math.max(share, 0.015));
     return seg;
   }));
   bar.title = 'A card’s chance: ' + odds.map(([r, share]) => RARITY_NAMES[r] + ' ' + pct(share)).join(', ');
+  if (offer && packsModule?.contents) {
+    bar.title += '. Tap for every card';
+    bar.setAttribute('aria-label', 'What’s inside: ' + bar.title);
+    bar.addEventListener('click', () => showContents(offer));
+  }
   return bar;
+};
+// "What's inside": every card the pack can give (render/packcontents.js), from the tile's info button or its odds bar
+const showContents = (offer) => openContents(screen, { kind: offer.kind, title: offer.name, featured: offer.featured || [] });
+const insideButton = (offer) => {
+  if (!packsModule?.contents || !packData?.kinds?.[offer.kind]) return null;
+  const button = make('button', 'shop-inside', make('i', '', 'i'), 'What’s inside');
+  button.setAttribute('aria-label', 'What’s inside the ' + offer.name + ': every card it can give');
+  button.addEventListener('click', () => showContents(offer));
+  return button;
 };
 const pct = (share) => (share >= 0.1 ? Math.round(share * 100) : Math.round(share * 1000) / 10) + '%';
 
@@ -142,13 +157,13 @@ const featuredTile = (offer) => {
     make('div', 'shop-hero-art', make('div', 'shop-hero-cars n' + carViews.length, ...carViews), packArt(offer.kind, offer.count)),
     make('div', 'shop-tile-info',
       offer.event ? make('small', 'shop-kicker', offer.event.name) : null,
-      make('h3', '', offer.name), make('p', '', offer.blurb), oddsBar(offer.kind), ends),
+      make('h3', '', offer.name), make('p', '', offer.blurb), insideButton(offer), oddsBar(offer.kind, offer), ends),
     make('div', 'shop-tile-buy', priceButton(offer)));
 };
 const tile = (offer) => make('article', 'shop-tile k-' + offer.kind + ' r-' + (KIND_LOOK[offer.kind] || 'common'),
   ribbon(offer),
   make('div', 'shop-tile-art', packArt(offer.kind, offer.count)),
-  make('div', 'shop-tile-info', make('h3', '', offer.name), make('p', '', offer.blurb), oddsBar(offer.kind)),
+  make('div', 'shop-tile-info', make('h3', '', offer.name), make('p', '', offer.blurb), insideButton(offer), oddsBar(offer.kind, offer)),
   make('div', 'shop-tile-buy', priceButton(offer)));
 
 const wallet = () => {
@@ -167,8 +182,25 @@ const rarityGuide = () => {
 };
 
 let isOpen = false, ticker = 0;
+// Never drawn again under a finger: a redraw replaces the screen's content, and a touch whose element is taken away
+// ends its scroll (on a phone it could leave the next touches going nowhere: CHECKLIST 117). While a touch is down on
+// the Shop, or it is still gliding after one, a redraw asked for by an event waits until it settles. The scroll is kept.
+let touching = 0, scrolledAt = 0, pending = 0;
+const SETTLE = 180; // (ms after the last scroll before the screen may be drawn again)
+const busy = () => touching > 0 || performance.now() - scrolledAt < SETTLE;
+const drawSoon = () => {
+  if (!busy()) { clearTimeout(pending); pending = 0; draw(); return; }
+  if (!pending) pending = setTimeout(function again() { pending = busy() ? setTimeout(again, SETTLE) : (draw(), 0); }, SETTLE);
+};
+screen.addEventListener('touchstart', (e) => { touching += e.changedTouches.length; }, { passive: true });
+const lift = (e) => { touching = e.touches.length ? Math.max(0, touching - e.changedTouches.length) : 0; };
+screen.addEventListener('touchend', lift, { passive: true });
+screen.addEventListener('touchcancel', lift, { passive: true });
+screen.addEventListener('scroll', () => { scrolledAt = performance.now(); }, { passive: true, capture: true });
 const draw = () => {
+  clearTimeout(pending); pending = 0;
   const keep = screen.scrollTop;
+  const kept = [...screen.querySelectorAll(':scope > .pack-contents, :scope > .shop-bought')]; // (a sheet or box up stays up)
   drawLater.length = 0;
   const back = make('button', 'shop-back', make('span', '', '‹'), 'Back');
   back.addEventListener('click', () => ShopScreen.close());
@@ -185,7 +217,7 @@ const draw = () => {
       + (Shop.hasPacks() ? '' : ' Packs are not in this build, so nothing can be bought.')) : null;
   screen.replaceChildren(
     make('header', 'shop-top', back, make('h1', '', 'Shop'), wallet()),
-    make('div', 'shop-body', note, ...sections, rarityGuide()));
+    make('div', 'shop-body', note, ...sections, rarityGuide()), ...kept);
   screen.scrollTop = keep;
   requestAnimationFrame(() => { for (const [el, car] of drawLater) stillCar(el, car); }); // (once laid out)
 };
@@ -235,7 +267,7 @@ export const ShopScreen = {
       ticker = setInterval(() => { // (the countdowns, each second; an offer just over, and the screen drawn again)
         for (const node of screen.querySelectorAll('.countdown')) {
           const left = Number(node.dataset.end) - Events.now();
-          if (left <= 0) { draw(); return; }
+          if (left <= 0) { drawSoon(); return; }
           node.textContent = countdown(left);
         }
       }, 1000);
@@ -251,6 +283,7 @@ export const ShopScreen = {
     Nav.leave('shop');
     Game.inMenu = false;
     screen.classList.add('hidden');
+    closeContents();
     screen.querySelector('.shop-bought')?.remove();
   },
 };
@@ -265,9 +298,9 @@ button.addEventListener('click', () => ShopScreen.open());
 window.addEventListener('keydown', (event) => { // (Escape: the "bought" box first, then the Shop. A dialog up takes its own)
   if (!isOpen || event.key !== 'Escape') return;
   const box = screen.querySelector('.shop-bought');
-  if (box) box.remove(); else ShopScreen.close();
+  if (box) box.remove(); else if (!closeContents()) ShopScreen.close();
 });
-for (const type of ['progresschange', 'packschange']) window.addEventListener(type, () => { if (isOpen) draw(); });
+for (const type of ['progresschange', 'packschange']) window.addEventListener(type, () => { if (isOpen) drawSoon(); });
 
 // ?shopcash=<n>: the balance for this visit, nothing saved; ?shop: open at once (for a look or a picture)
 if (params.get('shopcash') !== null) {
@@ -275,3 +308,5 @@ if (params.get('shopcash') !== null) {
   Progress.data.shopCash = Math.max(0, Math.floor(Number(params.get('shopcash')) || 0));
 }
 if (params.get('shop') !== null && Game.state === 'start') ShopScreen.open();
+// &inside=<offer id>: its "What's inside" sheet open too (for a look or a picture)
+if (ShopScreen.isOpen && params.get('inside')) { const offer = Shop.offer(params.get('inside')); if (offer) showContents(offer); }
