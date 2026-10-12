@@ -104,21 +104,23 @@ try {
     // hands off through the whole stretch at a steady 25 m/s: how far the car is carried
     const drift = (car, opts = {}) => {
       start(280, 4, 25, { car });
-      let most = 0, stopped = false;
+      let most = 0, stopped = false, early = 0;
       const lat0 = P.lat;
       g.run(40, (t) => {
         quiet();
         if (opts.each) opts.each();
         P.speed = 25;
         if (P.s > 300 && P.s < 900) most = Math.max(most, lat0 - P.lat);
+        if (P.s > 300 && P.s < 480) early = lat0 - P.lat; // (before the tall car reaches the road's edge: past it the edge, not the wind, is what limits how far it is carried)
         if (P.speed < 1) stopped = true;
         return P.s > 900;
       });
-      return { most, stopped, busted: P.busted, wrecks: G.wrecks };
+      return { most, early, stopped, busted: P.busted, wrecks: G.wrecks };
     };
     const low = drift('lowrider'), tall = drift('liftedtruck');
     check(said('Crosswind'), 'crosswind: it is announced');
-    check(tall.most > low.most * 2 && low.most > 0.3, 'crosswind: hands off, a tall car is carried further than a low one (Lifted Truck ' + tall.most.toFixed(1) + ' m, Lowrider ' + low.most.toFixed(1) + ' m)');
+    // (the wind was made stronger on purpose, 12-Oct Q14: the tall car now runs out of road, 18 m, before it can show the whole ratio, so the ratio is taken on the first 180 m)
+    check(tall.early > low.early * 2 && low.most > 0.3 && tall.most > low.most, 'crosswind: hands off, a tall car is carried further than a low one (Lifted Truck ' + tall.most.toFixed(1) + ' m, Lowrider ' + low.most.toFixed(1) + ' m; in the first 180 m ' + tall.early.toFixed(1) + ' and ' + low.early.toFixed(1) + ' m)');
     check(tall.most > C.laneWidth, 'crosswind, the cost: the tall car, hands off, is carried out of its lane (' + tall.most.toFixed(1) + ' m: a lane is ' + C.laneWidth + ' m)');
     // steering against it: taps hold the lane (the risky, fast line done right), flat out
     start(280, 4, 25, { car: 'liftedtruck' });
@@ -167,13 +169,13 @@ try {
     g.run(20, () => { for (const c of g.Traffic.cars) if (c !== semi && !c.fixed) c.active = false; P.speed = 0; if (!semi.active) return true; if (semi.s > 340 && semi.s < 880) off = Math.max(off, lane(5, semi.s) - semi.lat); return semi.s > 880; });
     check(off > 0.2 && off < 1.2, 'crosswind: a semi in it drifts ' + off.toFixed(2) + ' m downwind in its lane, and stays in it');
     // the safe line: a low car in the right-hand lane (the windward one: the most room), its driver only correcting
-    // once it is a metre off its line, never leaves that lane; and hands off for a whole gust it moves less than half a lane
+    // once it is a metre off its line, never leaves that lane; and hands off for a whole gust it moves less than a lane
     start(280, 5, 25, { car: 'lowrider' });
     let lazy = 0, slow = 99;
     const latL = P.lat;
     g.run(40, () => { quiet(); g.drive(1, P.lat < latL - 1 ? 1 : 0); if (P.s > 300) { lazy = Math.max(lazy, Math.abs(P.lat - latL)); slow = Math.min(slow, P.speed); } return P.s > 900; });
     const perGust = Math.abs(Gambles.windPush({ ...w(), every: 1, length: 1 }, g.cars.CARS.find(c => c.id === 'lowrider').height, 0.5)) / C.steerResponse * w().length;
-    check(lazy < C.laneWidth / 2 && slow > 20 && !P.busted && G.wrecks === 0 && perGust < C.laneWidth / 2,
+    check(lazy < C.laneWidth / 2 && slow > 20 && !P.busted && G.wrecks === 0 && perGust < C.laneWidth,
       'crosswind, the safe line: a low car in the windward lane, corrected only when a metre off its line, stays in its lane (' + lazy.toFixed(2) + ' m off at most; a whole gust hands off moves it ' + perGust.toFixed(1) + ' m), never slowed, no bust');
   });
 
@@ -379,22 +381,28 @@ try {
     const low = go('sport', 28, 4);
     check(low.hits === 0 && low.lost === 0 && !low.side && low.slowest > 27, 'low bridge, a car that fits (' + low.height + ' m): straight under, untouched, never slowed (' + low.t.toFixed(1) + ' s)');
     check(said('you fit under') && said(low.height.toFixed(1) + ' m under'), 'low bridge: it is told that it fits, and what it measures');
-    const hit = go('liftedtruck', 28, 4);
+    // (a bridge is two bars, one over each half of the player's side, 60 m apart: the middle lane, 4, sits on the line between
+    // them, so a tall car straight down it takes both knocks; the lanes either side, 3 and 5, are each under one bar only)
+    const hit = go('liftedtruck', 28, 3);
     check(hit.hits === 1 && hit.lost >= L.damage && hit.wrecks === 0 && hit.after < 28 * L.keep + 1 && hit.slowest > 5, 'low bridge, the risk taken by a car too tall (' + hit.height + ' m): it takes the knock (' + hit.lost.toFixed(0) + ' health, down to ' + Math.round(hit.after * 3.6) + ' km/h) and is through, never stopped (' + hit.t.toFixed(1) + ' s)');
     check(said('too tall') && said('CLANG'), 'low bridge: it is told it is too tall before the exit, and the knock is said');
+    const both = go('liftedtruck', 28, 4);
+    check(Gambles.bars.every(b => b.hits === 1) && both.lost >= 2 * L.damage && both.wrecks === 1 && !both.busted,
+      'low bridge, down the middle lane: a tall car takes both bars\' knocks (' + both.lost.toFixed(0) + ' health, more than the Lifted Truck\'s ' + g.cars.CARS.find(c => c.id === 'liftedtruck').health + ': wrecked, not busted; the slalom or the exit is the way round)');
     const round = go('liftedtruck', 28, 5, true);
     check(round.side && round.hits === 0 && round.lost === 0 && !round.busted && round.slowest > 15, 'low bridge, the safe line: the tall car takes the exit and comes back unhurt, never under ' + Math.round(round.slowest * 3.6) + ' km/h (' + round.t.toFixed(1) + ' s: ' + (round.t - low.t).toFixed(1) + ' s longer than under the bar)');
     // the oncoming side has no bar; a ghost goes through it
     const across = go('liftedtruck', 28, 2);
     check(across.hits === 0 && across.lost === 0, 'low bridge: the oncoming side is not barred');
-    // tall traffic takes the exit
+    // tall traffic is not troubled by a bar (config.js lowBridge: it goes through without a scratch, and does not take the exit; the
+    // sweep of 12-Oct made it so): a bus and a car in lanes 5 and 4 both go straight under, on the main road, unhurt
     start(3700, 3, 0);
     const bus = put('bus', 3800, lane(5, 3800), 18), van = put('commuter', 3800, lane(4, 3800), 18);
     bus.fixed = van.fixed = false; bus.viaSide = van.viaSide = false;
-    let under = false;
-    g.run(40, () => { for (const c of g.Traffic.cars) if (c !== bus && c !== van && !c.fixed) c.active = false; P.speed = 0; P.s = 3700; if (bus.active && T().isMain(bus.s) && bus.s > 4390 && bus.s < 4410) under = true; return !bus.active || (!T().isMain(bus.s)) || bus.s > 4500; });
-    if (under || !bus.active || T().isMain(bus.s) || van.viaSide) console.log('    (bus: under ' + under + ', active ' + bus.active + ', s ' + bus.s.toFixed(0) + ', lane ' + bus.lane + ', lat ' + bus.lat.toFixed(1) + ', viaSide ' + bus.viaSide + '; van viaSide ' + van.viaSide + ', s ' + van.s.toFixed(0) + ')');
-    check(!under && bus.active && !T().isMain(bus.s) && !van.viaSide, 'low bridge: a bus coming up to it, with room to move over, takes the exit (a car that fits is left to choose)');
+    let under = false, left = false;
+    g.run(40, () => { for (const c of g.Traffic.cars) if (c !== bus && c !== van && !c.fixed) c.active = false; P.speed = 0; P.s = 3700; if (bus.active && !T().isMain(bus.s)) left = true; if (bus.active && T().isMain(bus.s) && bus.s > 4390 && bus.s < 4410) under = true; return !bus.active || bus.s > 4500; });
+    if (!under || left || van.viaSide) console.log('    (bus: under ' + under + ', left the road ' + left + ', active ' + bus.active + ', s ' + bus.s.toFixed(0) + ', viaSide ' + bus.viaSide + '; van viaSide ' + van.viaSide + ')');
+    check(under && !left && !bus.viaSide, 'low bridge: a bus coming up to it goes straight under the bars on the main road, untroubled (tall traffic does not take the exit)');
     real('lowBridges', () => check(Gambles.bars.every(x => x.exit), '  its bar' + (Gambles.bars.length > 1 ? 's' : '') + ': ' + Gambles.bars.map(x => x.s + ' m, ' + x.clearance + ' m up, round by the exit at ' + x.exit?.exitAt).join('; ')));
   });
 
