@@ -57,6 +57,8 @@ export const DELIVERY = {
   moonrover: 1.2, monster: 1.1, fieldscout: 1.1, toybota: 1.15, nissank: 1.1,
   // estates, SUVs and big saloons: a boot and a passenger to throw
   wagon: 1.2, woody: 1.2, suv: 1.2, sleeper: 1.15, fullsize: 1.15, hearse: 1.1, stately: 1.0, swancar: 1.0,
+  // big comfortable saloons with a boot to lose a parcel in
+  goddess: 1.1, hardtop: 1.1,
   // everyday small cars: as today, or a little under
   commuter: 1.0, evsaloon: 1.0, teardrop: 0.95, mini: 0.9, hothatch: 0.9, pandacoupe: 0.9, herald: 0.9, tank: 0.9,
   showdown: 0.9, 'earned-ufo': 0.9,
