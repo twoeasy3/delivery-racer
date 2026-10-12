@@ -16,14 +16,6 @@ import { makeDigger, makeWorker } from './siteModels.js';
 
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 const flat = (color, offset) => new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: offset, polygonOffsetUnits: offset });
-const add = (group, geometry, material, x, y, z, rx = 0, ry = 0, rz = 0) => {
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(x, y, z);
-  mesh.rotation.set(rx, ry, rz);
-  group.add(mesh);
-  return mesh;
-};
-const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 
 
 const group = new THREE.Group();

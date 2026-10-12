@@ -6,7 +6,7 @@
 import { Nav } from '../nav.js';
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
-import { CAR, carInUse, selectCar, stars, starColour, STAR_COLOURS, blueStarsOpen, garageCars, carRule, ruleAllows, setViewSide, carAllowedOn, carTier, isTeaser, forSale, EVENT_CARS } from '../cars.js';
+import { CAR, carInUse, selectCar, stars, starColour, STAR_COLOURS, garageCars, carRule, ruleAllows, setViewSide, carAllowedOn, carTier, isTeaser, forSale, EVENT_CARS } from '../cars.js';
 import { levelName } from '../levelText.js';
 import { LEVELS } from '../levels.js';
 import { Tiers, tierStarsNode, richTiers } from '../tiers.js';
@@ -471,8 +471,6 @@ const notForSale = (car) => {
 };
 
 const anchor = new THREE.Vector3();
-let carAtOpen = CAR; // the car in use when the garage was opened
-let sideAtOpen = false; // (and the side being played then)
 export const Garage = {
   isOpen: false,
   evil: false, // which livery is on show
@@ -498,8 +496,6 @@ export const Garage = {
   open(evil = Game.evil) { // (evil: the livery to show the cars in; the side being played, unless told)
     this.setSide(evil, true);
     this.isOpen = true;
-    carAtOpen = CAR;
-    sideAtOpen = Game.evil;
     Game.inMenu = true; // Enter must not start a run from here
     Nav.enter('garage', () => this.close()); // (the back button closes it)
     ui.classList.remove('hidden');

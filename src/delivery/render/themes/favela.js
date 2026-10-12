@@ -14,7 +14,7 @@ import { makeGondola, makeGoal, makeStatue } from './favelaModels.js';
 const PAINT = [0xf2c14e, 0xe8684a, 0x4aa8d8, 0x6cc070, 0xf08ab0, 0xf4f0e6, 0xb5623c, 0xb5623c, 0x8a6fc0, 0x3cb8b0, 0xf59a3a];
 const FIRST = 3.2, ROW = 6.6, ROWS = 10; // m from the pavement to the first row of houses, from row to row, and how many rows
 
-export const favela = ({ instances, offRoads, beside, inJunction, cube, tube, cone, levelGroup }) => {
+export const favela = ({ instances, offRoads, beside, inJunction, cube, tube, levelGroup }) => {
   // (laid out the same every time: a seed of the level's own)
   let seed = 13 + (LEVEL.id || '').length * 173;
   const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;

@@ -271,7 +271,7 @@ const buildZones = (beside, instances, add, flat, { cube, tube, cone }, sideStri
   };
   // houses with hipped roofs, on their blocks
   const houses = (a, b, every, d0, sides = [-1, 1]) => {
-    const roof = thing('hip', new THREE.ConeGeometry(Math.SQRT1_2, 1, 4).rotateY(Math.PI / 4), 0x8c4a3a);
+    thing('hip', new THREE.ConeGeometry(Math.SQRT1_2, 1, 4).rotateY(Math.PI / 4), 0x8c4a3a);
     for (let s = a; s < b; s += every) for (const side of sides) {
       const d = d0 + Math.random() * 20, lat = beside(side, s, d);
       if (!clear(s, side, d - 6)) continue;
@@ -490,7 +490,7 @@ const buildZones = (beside, instances, add, flat, { cube, tube, cone }, sideStri
         const base = new THREE.Mesh(new THREE.BoxGeometry(60, 6, 120), podium);
         base.position.y = 3;
         house.add(base);
-        [[0, 34, 26], [0, 4, 22], [0, -24, 17], [18, 30, 13], [18, 6, 11]].forEach(([x, z0, r], k) => {
+        [[0, 34, 26], [0, 4, 22], [0, -24, 17], [18, 30, 13], [18, 6, 11]].forEach(([x, z0, r]) => {
           const sail = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 10, 0, Math.PI, 0, Math.PI / 2), white);
           sail.scale.set(0.75, 1.5, 1);
           sail.rotation.set(0, Math.PI / 2, 0);

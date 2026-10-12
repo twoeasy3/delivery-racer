@@ -10,7 +10,7 @@ try {
   for (const id of ['monza', 'spa']) {
     g.select(id);
     G.start();
-    const T = g.track.Track, GR = g.CONFIG.gravel;
+    const T = g.track.Track;
     check(!T.problems.length && T.gravels.length > 0, id + ': ' + T.gravels.length + ' pieces of gravel, no problems' + (T.problems.length ? ' (' + T.problems.join(' | ') + ')' : ''));
     // the widest bed, and a spot in the middle of it; and a spot on plain run-off as far out, where there is no gravel
     let best = null;

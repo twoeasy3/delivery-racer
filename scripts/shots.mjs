@@ -182,7 +182,7 @@ const removeRun = (folder, browsers = true, leaving = false) => {
 // one with no pid yet is a run between making it and writing it, or one that died there.)
 const deadRun = (name) => { const pid = Number(RUN.exec(name)[1]), since = age(join(ROOT, name, 'alive')) ?? age(join(ROOT, name)); return pid !== process.pid && since !== null && (!alive(pid) || since > STALE); };
 const deadSlot = (folder) => {
-  let pid = 0;
+  let pid;
   try { pid = Number(readFileSync(join(folder, 'pid'), 'utf8')); } catch { const since = age(folder); return since !== null && since > 60000; }
   const since = age(join(folder, 'pid'));
   return pid !== process.pid && since !== null && (!(pid > 0) || !alive(pid) || since > STALE);

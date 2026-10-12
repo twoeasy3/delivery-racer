@@ -1774,7 +1774,7 @@ try {
     // pillboxes fire only at the other army: a red one at the player and the green army, a green one at the red
     fresh(); alone(); untake();
     const red = Gunfire.pillboxes.find(b => b.team < 0), green = Gunfire.pillboxes.find(b => b.team > 0 && b.s > red.s + 300);
-    const shotAt = (box, kinds) => {
+    const shotAt = (box) => {
       Gunfire.reset();
       Gunfire.pillboxes.length = 0;
       Gunfire.pillboxes.push(box);

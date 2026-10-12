@@ -12,7 +12,7 @@
 // at once across all agents; the runner waits for a free one and removes it when the test ends. A lock older than 25 minutes is
 // taken to be left behind and removed. --no-lock skips this (only if nothing else is running).
 import { spawn, execFileSync } from 'node:child_process';
-import { mkdirSync, rmdirSync, statSync, readdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, rmdirSync, statSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -23,7 +23,6 @@ try {
     Object.assign(P, { s, lat: g.track.Track.laneOffset(lane, s), speed: v, launching: false, shield: 0 });
     g.drive(1, 0);
   };
-  const said = (text) => g.said.some(line => line.includes(text));
 
   // ---- the Rally Car and mud (Quarry Run has mud)
   const quarry = g.levels.LEVELS.find(l => l.id === 'quarry-run'), mud = quarry.mud[0];

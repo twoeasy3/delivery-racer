@@ -185,7 +185,7 @@ export const control = (S, get, set, ctx) => {
       return h('div', { class: 'group' }, h('span', { class: 'cap' }, S.label), h('textarea', { class: 'json small', spellcheck: false, value: get() === undefined ? '' : JSON.stringify(get()),
         oninput: (e) => {
           if (e.target.value.trim() === '') { set(undefined); note.textContent = ''; ctx.changed(); return; }
-          try { set(JSON.parse(e.target.value)); note.textContent = ''; ctx.changed(); } catch (error) { note.textContent = 'Not valid JSON yet'; }
+          try { set(JSON.parse(e.target.value)); note.textContent = ''; ctx.changed(); } catch { note.textContent = 'Not valid JSON yet'; }
         } }), note);
     }
   }

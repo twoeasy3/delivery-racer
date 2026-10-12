@@ -228,7 +228,6 @@ try {
   // ---- the side road: a camera, potholes, a level crossing and a stampede on it
   start(5300, 5, 30, { ghost: false });
   let onSide = false, crossingWent = false, seen = 0;
-  const x = g.track.Track.exits[0];
   g.run(60, () => {
     quiet();
     if (P.s > 5330 && P.s < 5420 && g.track.Track.isMain(P.s)) P.lat = g.track.Track.hi(P.s) - 1.2; // (out into the exit lane)

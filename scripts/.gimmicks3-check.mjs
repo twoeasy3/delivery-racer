@@ -44,7 +44,7 @@ try {
   const { Progress } = await g.load('progress.js');
   const P = g.Player, G = g.Game, C = g.CONFIG;
   const T = () => g.track.Track;
-  const level = g.select('gimmick-road-3');
+  g.select('gimmick-road-3');
   const lane = (n, s) => T().laneOffset(n, s);
   // the traffic taken off the road, and kept off: a slot only made inactive is dealt out again at the next step
   // (Traffic.update), 60 to some hundreds of metres ahead of the player, and is on the road for that one step: enough
@@ -106,7 +106,7 @@ try {
       start(280, 4, 25, { car });
       let most = 0, stopped = false, early = 0;
       const lat0 = P.lat;
-      g.run(40, (t) => {
+      g.run(40, () => {
         quiet();
         if (opts.each) opts.each();
         P.speed = 25;
@@ -414,7 +414,7 @@ try {
       start(5150, n, v, { car, ghost });
       const health = P.health, wades = Gambles.wades();
       let slowest = 99, side = false, wet = 0;
-      const t = g.run(200, (now) => {
+      const t = g.run(200, () => {
         quiet();
         P.speed = Math.min(P.speed, v);
         const main = T().isMain(P.s);

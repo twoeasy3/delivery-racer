@@ -25,7 +25,7 @@ const AWNING = [0xc0392b, 0x2f7f4f, 0x2d5f8a, 0xd9a441];
 const SALOONS = ['SALOON', 'SHERIFF', 'BANK', 'GENERAL STORE', 'HOTEL', 'LIVERY', 'UNDERTAKER', 'BARBER', 'ASSAY OFFICE', 'TELEGRAPH', 'DRY GOODS', 'JAIL'];
 const SHOPS = ['DELI', 'PIZZA', 'HOTEL', 'BAR', 'DINER', 'NEWS', 'LAUNDRY', 'BAGELS', 'PAWN', 'RECORDS', 'TAILOR', 'CAFE'];
 
-export const backlot = ({ add, flat, instances, sideStrip, buildStrip, offRoads, beside, cube, tube, cone, levelGroup }) => {
+export const backlot = ({ add, flat, instances, sideStrip, buildStrip, offRoads, beside, cube, tube, levelGroup }) => {
   // (laid out the same every time: a seed of the level's own)
   let seed = 11 + (LEVEL.id || '').length * 97;
   const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;

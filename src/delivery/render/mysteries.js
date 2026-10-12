@@ -40,7 +40,7 @@ const lightsBack = () => {
 };
 Game.onLoad.push(() => { dark = false; }); // (a level loads with its own sky and lights: see buildRoad)
 
-export const syncMysteries = (dt) => {
+export const syncMysteries = () => {
   // the giant: the car at twice its size (its hitbox is already: see Mysteries)
   const scale = Player.giant ? CONFIG.mystery.giant.scale : 1;
   if (carMesh.scale.x !== scale) carMesh.scale.setScalar(scale);
