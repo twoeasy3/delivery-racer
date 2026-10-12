@@ -342,12 +342,15 @@ export const Player = {
     Message.say('events', 'puncture');
     sfx('puncture');
   },
-  updateSpeed(dt, throttle, stopping) {
+  // auto: the accelerator is held down by auto accelerate alone (input.js auto): the player is not on it, so the car lets go
+  // of it for a slower car close ahead, and brakes by itself as it does off the accelerator (below)
+  updateSpeed(dt, throttle, stopping, auto = false) {
     if (stopping) {
       this.speed = Math.max(0, this.speed - CONFIG.brake * dt);
       this.brakeLight = this.speed > 0;
       return;
     }
+    if (auto && throttle > 0 && this.autoBrake > 0 && this.mystery !== 'noBrakes' && this.carAhead()) throttle = 0; // (auto accelerate: off the accelerator for the car ahead)
     // no brakes: braking only lifts off (it coasts down: see CONFIG.mystery.noBrakes), and no braking by itself, below
     const lifting = this.mystery === 'noBrakes' && throttle < 0;
     if (this.mystery === 'noBrakes') throttle = Math.max(0, throttle);
@@ -471,7 +474,7 @@ export const Player = {
     this.onShoulder = false;
     this.danger = Social.dangerTime;
   },
-  update(dt, throttle, steer, stopping) {
+  update(dt, throttle, steer, stopping, auto = false) {
     this.stun = Math.max(0, this.stun - dt);
     this.shield = Math.max(0, this.shield - dt);
     this.grace = Math.max(0, (this.grace || 0) - dt); // (after a caution: see bust)
@@ -516,7 +519,7 @@ export const Player = {
       if (sea.afloat) sfx('waveCrash', 0.5);
     }
     if (sea.damage && this.shield <= 0 && this.ghost <= 0) this.health -= sea.damage * this.damageScale * dt;
-    this.updateSpeed(dt, throttle, stopping);
+    this.updateSpeed(dt, throttle, stopping, auto);
     this.s += this.speed * dt;
     // on the right shoulder at the exit = taking the side road; at its end, back onto the expressway
     const latBefore = this.lat;

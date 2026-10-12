@@ -403,7 +403,7 @@ export const Game = {
     // (on a left-hand level, shown mirrored, steering left on screen is steering right in the game's own terms)
     const steer = playing ? Input.steer * (Track.mirrored ? -1 : 1) : 0;
     if (Delivery.on) Delivery.update(dt); // (the delivery at the kerb: the car pulls in by itself, and stays there)
-    else if (Player.active) Player.update(dt, playing ? Input.throttle : 0, steer, !playing);
+    else if (Player.active) Player.update(dt, playing ? Input.throttle : 0, steer, !playing, playing && Input.auto);
     else if (playing || this.over) this.updateRespawn(dt);
     // a police car that sees you on the shoulder busts you on the spot
     if (playing && Player.active && !Player.busted && Player.shield <= 0 &&
