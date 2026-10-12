@@ -274,6 +274,9 @@ const hudCheck = params.get('hudcheck') === null ? null : () => {
   if (mode === 'icons') { // (only one mystery runs at a time: the others' messages are held here for the picture)
     Message.conditions.mystery.on = () => true;
     for (const [path, condition] of Object.entries(CONFIG.messageTimes.sticky)) if (condition === 'mystery' && !held(path)) Message.say(...path.split('.'));
+    Message.conditions.airborne.on = Message.conditions.slipping.on = () => true; // (the air and the grip, held the same way; the grip ring at 70% lost)
+    Message.conditions.slipping.progress = () => 0.3;
+    for (const path of ['events.airborne', 'events.slipping']) if (!held(path)) Message.say(...path.split('.'));
   }
   Player.danger = Social.dangerTime * 0.3;
   Game.tankPieces = 2;
