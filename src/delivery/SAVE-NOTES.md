@@ -207,3 +207,12 @@ purpose), real support load. Not for a hobby game today.
 7. Do saves left on the old address (before the move to `delivery.pingmathehippo.com`) still need a hand-over?
 8. If (b): may a Worker script, a D1 binding and Turnstile be added to the `delivery` Worker, and which domain should own
    accounts (the subdomain, or `pingmathehippo.com` for passkeys later)?
+
+## Later note (12-Oct, CHECKLIST 154): the Shop's purchase limits trust the device clock
+
+The Shop now has purchase limits (packs.json `shop.limits: { total, daily }`) and a free Daily pack. The counters are in the
+progress save (`packBuys: { [packId]: { total, day: 'YYYY-MM-DD', today } }`, in the save code too), and the DAILY limit's day is
+the player's LOCAL calendar day by the DEVICE CLOCK (`Events.now()`, as the event windows). A player can move the clock forward to
+claim the Daily pack again, or edit the save. For a single-player game with a local save this is accepted for now (the same is
+true of the event windows); should packs or their currency ever be worth something online (a shared economy, trading, real
+money), the counters and the day must move server side (question 5 above).

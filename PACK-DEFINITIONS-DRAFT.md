@@ -1,7 +1,32 @@
-# DRAFT: one definition per pack (12-Oct)
+# One definition per pack (12-Oct): BUILT (CHECKLIST 154)
 
-Status: a DRAFT for the owner. Nothing here is built. It is to be built after the featured-weights agent's branch is merged (it
-edits the same code: packs.js, packs.json, shop.js, shop.json, events.json).
+Status: BUILT on top of v1.1.56 (the owner: "Thats nuts. Draft it then fix it after the agent is done"; the answers: ids as today's
+kinds "yes for now", prices stay with the pack, and purchase limits, total and daily, with a free daily pack). The draft below is
+kept as written; WHAT DIFFERS in the build:
+- MIGRATED AT ONCE, the old shape deleted (no loader for `kinds`: a one-release loader was not cheap across packs.js, shop.js,
+  carsources.js and the checks). packs.js `packProblems()` says so if `kinds` ever comes back. The SAVE is migrated, not the data:
+  `src/delivery/packid.js` turns an old save's held keys (`special:comet-hunt`, a bare `special`, an event no longer there: the first
+  featured pack) into today's ids on load and on a save code; the old `Packs.grant('special', { from })` and `?pack=special` still work.
+- The special pack's id is `comet-special` (one pack, one event); `special` is no longer an id. The tidy of a save code now accepts
+  ids with dashes.
+- `featured` is `{ upgradeChance, featuredChance, entries }` on the pack (entries: the featured-weights form). `featuredFor(event)` is
+  gone: `featuredOf(packId)`; `eventOf`, `eventPacks(eventId)`, `careerPack()` read `event` / `givenBy`.
+- `givenBy.event` may carry an `id` (a pack given by an event that is not its own `event`); without one it is the pack's `event`.
+- The Shop's rows (`sections`) moved to packs.json too (shop.json is the currency and the debug grant only). Bundles take an optional
+  `section` (default `bundles`), `name` (default "3 Standard packs") and `blurb`.
+- Generated words: "5 cards from every car with blueprints. At least one Uncommon or better. A key, now and then"; an at-least rule
+  made true by a higher one is not said twice (the 10-pack says only "At least one Epic or better"); an event's pack ends "Limited:
+  ends 1 Nov" (the draft said "until <end>": the event ends AT midnight starting 1 Nov, the wording the showroom already used).
+- NEW (the owner's answer 3): `shop.limits: { total, daily }` (either or both; absent: unlimited), counters in the save
+  (`Progress.data.packBuys: { [packId]: { total, day: 'YYYY-MM-DD', today } }`), the day the player's LOCAL day by the device clock
+  (`Events.now()`), reset at local midnight; a bundle counts each pack and is refused (why `limit`) if it would go over. A FREE DAILY
+  PACK: `daily` (price 0, `limits: { daily: 1 }`, a new top Shop row "Free daily pack"), its button 'Claim', claimed: "Claimed: next
+  in 7h 12m"; a dot on the menu's Shop chip while it waits. The device clock can be moved by the player: accepted for a single-player
+  game with a local save (SAVE-NOTES.md: server side only if the economy goes online).
+- Not built: `oddsBoost` / a per-pack `odds` (not needed by the balance fix); no shipped pack has a TOTAL limit yet (the owner picks:
+  `?limits=comet-special:t3` shows one for a visit).
+
+(The original draft follows.)
 
 ## The problem
 A pack is spread over three files today, and the shop's blurbs repeat facts from the rules:
