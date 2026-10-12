@@ -532,7 +532,7 @@ export const Player = {
     if (this.busted) {
       wantVel = 0;
     } else if (steer !== 0) {
-      wantVel = steer * CONFIG.steerSpeed * this.agility * seaSteer * (slippery ? slippery.laneSpeed : 1); // (afloat, it moves across more slowly; and on ice or a burst main's water)
+      wantVel = steer * CONFIG.steerSpeed * this.agility * seaSteer * (slippery ? slippery.laneSpeed : 1) * Math.min(1, Math.max(0, this.speed) / CONFIG.steerFullSpeed); // (afloat, it moves across more slowly; and on ice or a burst main's water)
     } else {
       // only a faint nudge, and only once the car is close to a lane line: within
       // laneAssistFree of the centre it stays exactly where it was left

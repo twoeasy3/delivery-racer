@@ -675,6 +675,7 @@ export const CONFIG = {
 
   // steering: free lateral movement, with a soft pull to the nearest lane centre
   steerSpeed: 9,           // m/s sideways at full steer
+  steerFullSpeed: 4,       // m/s: below it the sideways speed a steer asks for scales down with speed (none while stationary)
   steerResponse: 10,       // 1/s, how quickly sideways speed builds / dies
   edgeBrake: 6,            // 1/s, how firmly sideways speed is cut near the road's sides
   laneAssist: 0.4,         // 1/s: a faint pull back toward the lane when not steering, 0 = none
@@ -1532,7 +1533,7 @@ export const CONFIG = {
   // in one does it alone. Infected, the whole car lasts 90 s, less what its wrenches give back: a quarter each,
   // 23 s, and what an armour's 12 s stops)
   radiation: { tick: 0.019, meterTime: 13, meterFall: 120, high: 0.75, infectedTick: 0.011, radius: 7, share: 0.12, catch: 0.08, most: 5,
-    immune: ['police', 'ambulance', 'tank', 'interceptor', 'getaway'], wreckCures: false, click: { slow: 0.45, fast: 0.07, volume: 0.5 }, sign: 110 },
+    immune: ['police', 'ambulance', 'tank', 'interceptor', 'getaway'], wreckCures: true, click: { slow: 0.45, fast: 0.07, volume: 0.5 }, sign: 110 },
   // (traffic that one of these slows comes down to its pace over the `reach` m before: perMetre m/s more for each m short of it)
   gambleApproach: { reach: 60, perMetre: 0.25 },
   // the veil over the picture when something takes the view (spray, the sun, dust: see Gambles.veil): it closes

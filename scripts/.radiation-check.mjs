@@ -159,6 +159,14 @@ try {
     check(R.wreckCures || M.sticky.some(h => h.path === 'events.infected'), '...and its icon is back once the new car is down');
   });
 
+  // (not radiation: the steering at low speed, CONFIG.steerFullSpeed, CHECKLIST 103)
+  section('steering', () => {
+    const across = (v) => { start(600, LANE, v); const lat = P.lat; g.drive(0, 1); g.run(0.3, () => { quiet(); P.speed = v; }); g.drive(1, 0); return Math.abs(P.lat - lat); };
+    const still = across(0), slow = across(1.5), fast = across(C.steerFullSpeed + 6);
+    check(still < fast * 0.15, 'stationary, steering moves the car sideways by next to nothing (' + still.toFixed(3) + ' m in 0.3 s, against ' + fast.toFixed(2) + ' m at speed)');
+    check(slow < fast * 0.6, 'at 1.5 m/s it steers much less than at speed (' + slow.toFixed(2) + ' m against ' + fast.toFixed(2) + ' m)');
+  });
+
   section('shield', () => {
     // the Armour pickup: no dose, no meter, no infection
     start(400, LANE);
@@ -234,6 +242,19 @@ try {
     check(!Radiation.infected, 'a ghost drives through one: not infected');
     ram((car) => { car.infected = false; });
     check(!Radiation.infected && Radiation.meter === 0, 'touching a clean car infects nobody');
+    // an infected player passes it on to a clean car it touches
+    const spread = (setup) => {
+      start(600, LANE, 28);
+      for (const p of Pickups.items) p.taken = true;
+      Radiation.infected = true; Radiation.meter = 1;
+      const car = put('commuter', 612, LANE, 12);
+      if (setup) setup(car);
+      g.run(4, () => { quiet(); return car.infected; });
+      return car;
+    };
+    check(spread().infected, 'an infected player touching a clean car infects it');
+    check(!spread(() => { P.armour = 60; }).infected, '...not through the armour');
+    check(!spread((car) => { car.kind = 'police'; }).infected, '...nor a police car (immune kinds)');
   });
 
   section('traffic', () => {
