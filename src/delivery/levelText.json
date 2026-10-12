@@ -366,6 +366,14 @@
       "evil": "A cloud for a client who glows in the dark. Run the hot stretches flat out, thread the infected traffic for the cash, and let the armour take the dose."
     }
   },
+  "monsoon": {
+    "name": "Monsoon",
+    "description": {
+      "good": "A tea set across the rainy valley. Keep left, hold the ruts, mind the spray off the lorries and the frogs, and take each ford or its bridge.",
+      "evil": "Piranhas for a flooded valley. Take the fords flat out, hide in the lorries' spray and let the cattle stampede sort out the queue."
+    },
+    "cargo": { "good": "teaset", "evil": "piranhas" }
+  },
   "cattle": {
     "name": "Cattle Drive",
     "description": {
