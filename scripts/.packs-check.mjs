@@ -7,7 +7,7 @@
 // best last), each card's progress bar before/after with the unlock and ECU-up flags; the three poses (carposes.js);
 // FEATURED WEIGHTS (CHECKLIST 150): the last slot by weight, keys once and never owned, amounts per entry (x3 / x15),
 // exhausted entries out with the weights shifted, the sheet's exact chances against seeded packs, the packs' featured lists
-// checked (packProblems, through events.js problems()). ONE DEFINITION PER PACK (CHECKLIST 151): the packs by id
+// checked (packProblems, through events.js problems()). ONE DEFINITION PER PACK (CHECKLIST 154): the packs by id
 // (comet-special the Comet Hunt's), an old save's 'special:<event>' packs migrated, givenBy (career, event), the
 // GENERATED words naming every guarantee (and a blurb over them), the free Daily pack's draw.
 //   node scripts/.packs-check.mjs
@@ -522,7 +522,7 @@ try {
     } finally { fe.entries = keepF; delete ev.raw.featured; }
     check(Events.problems().length === 0, 'events.json and packs.json as shipped are sound');
   }
-  // ---- ONE DEFINITION PER PACK (CHECKLIST 151): what gives a pack is the pack's own givenBy; the GENERATED words name
+  // ---- ONE DEFINITION PER PACK (CHECKLIST 154): what gives a pack is the pack's own givenBy; the GENERATED words name
   // every guarantee of every pack and bundle (its size, each at-least rule not already made true by a higher one, a
   // featured card, an event's end); a `blurb` overrides them ----
   {

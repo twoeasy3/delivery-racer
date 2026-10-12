@@ -1,5 +1,5 @@
 // ============================================================================
-// PACK IDS - a pack's id is its key in packs.json `packs` (CHECKLIST 151: one definition per pack). The save counts
+// PACK IDS - a pack's id is its key in packs.json `packs` (CHECKLIST 154: one definition per pack). The save counts
 // the packs held by id, and keeps purchase counters by id. Saves from before (v1.1.53 and earlier) held packs by KIND,
 // a special pack as 'special:<event id>': packIdOf turns such a key into today's id (the pack whose `event` is that
 // event; a 'special' from no event: the first pack with featured cards), so an old save loads with its packs. Its own

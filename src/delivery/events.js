@@ -132,7 +132,7 @@ export const Events = {
       if (e.from !== null && e.to !== null && !(e.from < e.to)) say('it ends before it starts');
       if (!e.stages.length) say('it has no stages');
       if (e.prize && !this.prizeCar(e)) say('its prize "' + e.prize.car + '" is not a car');
-      if (e.raw.featured !== undefined) say('"featured" belongs on its pack now (packs.json: the pack whose "event" is ' + e.id + ', its featured.entries)'); // (one definition per pack: CHECKLIST 151)
+      if (e.raw.featured !== undefined) say('"featured" belongs on its pack now (packs.json: the pack whose "event" is ' + e.id + ', its featured.entries)'); // (one definition per pack: CHECKLIST 154)
       e.stages.forEach((s, i) => {
         const n = 'stage ' + (i + 1) + ': ';
         if (!s.level) say(n + '"' + s.map + '" is not a level');

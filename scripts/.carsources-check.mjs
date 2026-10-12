@@ -48,7 +48,7 @@ try {
   for (const id of careerLevels()) Progress.data.bestTime.good[id] = 30;
   check(!career().available && /already/.test(career().why), 'all delivered: not available (' + career().why + ')');
 
-  // ---- the free Daily pack (CHECKLIST 151): a Shop way, free, one a day; claimed today it is not to be had ("Come back
+  // ---- the free Daily pack (CHECKLIST 154): a Shop way, free, one a day; claimed today it is not to be had ("Come back
   // tomorrow"), and the next local day it is again ----
   fresh(); at(DURING);
   const { Shop } = await g.load('shop.js');

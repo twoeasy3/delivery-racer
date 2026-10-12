@@ -1,5 +1,5 @@
 // A check of the Shop (src/delivery/shop.js; its offers are BUILT FROM THE PACKS, packs.json, one definition per pack:
-// CHECKLIST items 115 and 151), headless: the offers are sound (each a pack with a shop block or a bundle of one, a
+// CHECKLIST items 115 and 154), headless: the offers are sound (each a pack with a shop block or a bundle of one, a
 // price, a section, generated words; a pack with an event is off the list outside it), packs.json's own problems (a shop
 // block with no price, a bundle of no pack, an event or givenBy that is not there: packs.js packProblems), buying takes
 // the price and gives the packs (through Packs.grant, a stand-in here so the check does not hang on packs.js) and asks the

@@ -1,5 +1,5 @@
 // ============================================================================
-// SHOP - card packs for sale (CHECKLIST items 115 and 151; the screen is render/shop.js). The offers are BUILT FROM THE
+// SHOP - card packs for sale (CHECKLIST items 115 and 154; the screen is render/shop.js). The offers are BUILT FROM THE
 // PACKS (packs.json: one definition per pack, PACK-DEFINITIONS-DRAFT.md): every pack with a `shop` block is an offer
 // (its id the pack's), and every entry of `bundles` (a pack x a count at a price) is one; the Shop's rows are packs.json
 // `sections`; an offer's words are generated from the pack's rules (packs.js describePack / describeBundle). shop.json
