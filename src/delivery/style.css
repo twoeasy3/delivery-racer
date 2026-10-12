@@ -78,10 +78,13 @@ body.in-garage #tankCorner { display: none !important; }
 @media (orientation: landscape) and (max-height: 480px) {
   #sticky { --size: var(--size-short); --gap: var(--gap-short); --across: var(--across-short); --x: var(--shift-short-x); --y: var(--shift-short-y); }
 }
+/* the message colours, least important first (rank in messages.js): reaction white (chatter), pickup yellow (a
+   powerup), rage red with a glow (TANK RAGE, a car destroyed), bust bright cyan with a glow (the most important:
+   the old dark blue was hard to read on the road and sky). The two top kinds are also bigger. */
 #messages .reaction { color: #ffffff; }
 #messages .pickup { color: #ffd23f; }
-#messages .rage { color: #ff3b30; }
-#messages .bust { color: #2160d8; }
+#messages .rage { color: #ff4a3d; font-size: 1.1em; text-shadow: 0 0 10px rgba(255,59,48,.7), 0 2px 6px rgba(0,0,0,.9); }
+#messages .bust { color: #3fd8ff; font-size: 1.15em; text-shadow: 0 0 12px rgba(63,216,255,.75), 0 2px 6px rgba(0,0,0,.9); }
 /* pause / exit during a run or the screensaver: at the foot of the screen, in the middle (the road behind the
    car; with the on-screen controls up, the gap between the two pads: stacked, where that is too narrow for
    them side by side). On a phone held upright the pads leave no gap: there they are top centre (see below),
@@ -290,27 +293,27 @@ body.cinematic #copGlow, body.in-garage #copGlow { display: none; }
 #cameraFlash { position: fixed; inset: 0; pointer-events: none; background: #fff; opacity: 0; }
 body.cinematic #cameraFlash, body.in-garage #cameraFlash { display: none; }
 /* speed camera warning HUD when approaching a camera */
-#camAlert { display: flex; align-items: center; gap: 10px; /* (in the top strip, under the messages: see #topStrip) */
+#camAlert { display: flex; align-items: center; gap: 7px; /* (in the top strip, under the messages: see #topStrip) */
   background: rgba(14, 18, 26, 0.88); border: 2px solid rgba(255, 210, 63, 0.6);
-  border-radius: 12px; padding: 6px 14px; color: #fff; font-family: system-ui, -apple-system, sans-serif;
+  border-radius: 9px; padding: 3px 9px; color: #fff; font-family: system-ui, -apple-system, sans-serif;
   pointer-events: none; z-index: 5; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), inset 0 0 12px rgba(255, 210, 63, 0.15);
   transition: border-color 0.2s, box-shadow 0.2s; white-space: nowrap; }
 #camAlert.hidden { display: none !important; }
 body.photo #camAlert, body.cinematic #camAlert, body.screensaver #camAlert, body.in-garage #camAlert { display: none !important; }
-#camAlert .cam-disc { width: 36px; height: 36px; border-radius: 50%; background: #fff;
-  border: 4px solid #e10600; display: flex; align-items: center; justify-content: center;
+#camAlert .cam-disc { width: 28px; height: 28px; border-radius: 50%; background: #fff;
+  border: 3px solid #e10600; display: flex; align-items: center; justify-content: center;
   box-sizing: border-box; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4); flex-shrink: 0; }
-#camAlert .cam-disc #camLimit { color: #111; font-size: 16px; font-weight: 900; line-height: 1; }
+#camAlert .cam-disc #camLimit { color: #111; font-size: 12px; font-weight: 900; line-height: 1; }
 #camAlert .cam-body { display: flex; flex-direction: column; gap: 2px; }
 #camAlert .cam-header { display: flex; align-items: center; gap: 8px; }
-#camAlert .cam-title { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; opacity: 0.8; text-transform: uppercase; }
-#camAlert .cam-status { font-size: 11px; font-weight: 800; letter-spacing: 0.05em; padding: 1px 6px; border-radius: 4px; text-transform: uppercase; }
+#camAlert .cam-title { display: none; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; opacity: 0.8; text-transform: uppercase; }
+#camAlert .cam-status { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; padding: 1px 6px; border-radius: 4px; text-transform: uppercase; }
 #camAlert .cam-detail { display: flex; align-items: center; gap: 8px; }
-#camAlert .cam-arrow-wrap { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
-#camAlert .cam-arrow { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent;
-  border-bottom: 14px solid #ffd23f; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
+#camAlert .cam-arrow-wrap { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; }
+#camAlert .cam-arrow { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent;
+  border-bottom: 10px solid #ffd23f; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
   transform-origin: 50% 60%; transition: transform 0.05s linear; }
-#camAlert .cam-dist { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums;
+#camAlert .cam-dist { font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
 #camAlert.speeding { border-color: #ff3b30; box-shadow: 0 4px 18px rgba(255, 59, 48, 0.4), inset 0 0 14px rgba(255, 59, 48, 0.2);
   animation: camPulse 0.5s ease-in-out infinite alternate; }
@@ -329,10 +332,10 @@ body.photo #camAlert, body.cinematic #camAlert, body.screensaver #camAlert, body
   100% { border-color: #ff736a; box-shadow: 0 4px 24px rgba(255, 59, 48, 0.7); } }
 @keyframes camBlink { 50% { opacity: 0.6; } }
 @media (max-width: 500px) {
-  #camAlert { padding: 4px 10px; gap: 8px; }
-  #camAlert .cam-disc { width: 30px; height: 30px; border-width: 3px; }
-  #camAlert .cam-disc #camLimit { font-size: 13px; }
-  #camAlert .cam-dist { font-size: 13px; }
+  #camAlert { padding: 2px 7px; gap: 6px; }
+  #camAlert .cam-disc { width: 24px; height: 24px; border-width: 3px; }
+  #camAlert .cam-disc #camLimit { font-size: 10px; }
+  #camAlert .cam-dist { font-size: 11px; }
 }
 /* who is coming up behind (a race, or a rival courier): an arrow at the foot of the screen, pointing back at them */
 #behind { display: none; position: fixed; left: 50%; bottom: calc(52px + env(safe-area-inset-bottom)); transform: translateX(-50%); /* (above Pause and Exit level) */
