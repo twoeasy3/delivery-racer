@@ -44,6 +44,7 @@ export const Player = {
   wading: 0,           // how deep the tide's water is where the car is (see Tide): 0 = dry, 1 = full depth
   afloat: false,       // afloat on a water stage (see Water), and how deep its water is where the car is: 0 = dry road .. 1
   waterDepth: 0,
+  gripLost: 0,         // 0 .. 1: how much of its steering's grip the car has lost to ice or water just now (only read: for the HUD's grip status; it changes nothing)
   dropOncoming: false, // the helicopter is setting the car down on the oncoming side (no dry lane on its own)
   turbo: 0,            // s of turbocharger left
   ghost: 0,            // s of passing through cars and barriers left
@@ -166,6 +167,7 @@ export const Player = {
     this.wading = 0;
     this.afloat = false;
     this.waterDepth = 0;
+    this.gripLost = 0;
     if (!keepHealth) this.health = this.maxHealth;
     this.smoke = 0;
     this.shield = CONFIG.respawnShield + (this.dropOncoming ? CONFIG.tide.oncomingShield : 0);
@@ -513,6 +515,9 @@ export const Player = {
     // doesn't float is damaged out in the channel
     const sea = Water.feel(this.s, Water.floats(CAR) || this.tank > 0), seaSteer = sea.steer, seaGrip = sea.grip;
     this.waterDepth = sea.depth;
+    // how much grip ice or water is costing it (the worst of the ice or a burst main's water and wet tyres, the tide, the sea): the HUD's grip status
+    this.gripLost = this.busted ? 0 : clamp(1 - Math.min(slippery ? slippery.steerGrip : 1, this.wading > CONFIG.tide.wet ? CONFIG.tide.steerGrip : 1, seaGrip), 0, 1);
+    if (this.gripLost > 0.02 && !Message.sticky.some(h => h.path === 'events.slipping')) Message.say('events', 'slipping');
     if (sea.afloat !== this.afloat) {
       this.afloat = sea.afloat;
       Message.say('events', sea.afloat ? 'afloat' : 'ashore');
@@ -612,6 +617,8 @@ Object.assign(Message.conditions, {
   puncture: { on: () => !!Player.puncture, progress: () => Math.min(1, Player.fixing / CONFIG.puncture.fixTime) }, // (its progress: the tyre being changed)
   beached: { on: () => Player.beached > 0, left: () => Player.beached }, // (left: s until it ends, which its icon shows draining)
   badGas: { on: () => Player.badGas > 0, left: () => Player.badGas },
+  airborne: { on: () => Player.air > 0.05 },
+  slipping: { on: () => Player.gripLost > 0.02, progress: () => 1 - Player.gripLost }, // (its ring shows the grip lost: the more, the fuller)
   heavy: { on: () => Player.heavy > 0, left: () => Player.heavy },
   butterfingers: { on: () => Player.butterfingers > 0, left: () => Player.butterfingers },
   mystery: { on: (effect) => Player.mystery === effect, left: () => Player.mysteryTime }, // (the effect the message is for: the last of its path)

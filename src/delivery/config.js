@@ -1170,6 +1170,8 @@ export const CONFIG = {
       'powerups.mystery.swapSides': 'mystery',       // ...on the other side: the packages do something else
       'powerups.mystery.blackout': 'mystery',        // ...the lights out
       'powerups.mystery.earthquake': 'mystery',      // ...the road heaving
+      'events.airborne': 'airborne',                 // in the air off a ramp or a gap: no steering until it is down
+      'events.slipping': 'slipping',                 // ice or water is costing the car grip: its ring shows how much
       'events.infected': 'infected',                 // infected with radiation (a full meter, or an infected car touched): for the rest of the run (radiation.js)
       // (the good ones are left to the pickup status, which names them while they run: toad, angel,
       // invincible, soupedUp, giant, magnet, trafficFreeze; and sundayDrivers, rushHour, carSwap, moodSwing)

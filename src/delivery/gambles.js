@@ -356,7 +356,7 @@ export const Gambles = {
         P.pitch = Math.atan2(F.vy, Math.max(P.speed, 6)) - Math.atan(Track.grade(P.s)); // (its nose the way it is flying: main.js adds the road's own slope)
         if (F.top <= C.hop && this.alt - ground > C.hop) this.flights++;
         F.top = Math.max(F.top, this.alt - ground);
-        if (F.t > C.sayAfter && F.top > C.hop) this.once('airborne');
+        if (!F.said && F.t > C.sayAfter && F.top > C.hop) { F.said = true; Message.say('events', 'airborne'); } // (each flight: its status icon lasts until it lands)
         return;
       }
       // down: hard, if it came down into the ground faster than landSoft

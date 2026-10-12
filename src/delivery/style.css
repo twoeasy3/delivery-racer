@@ -72,8 +72,7 @@ body.in-garage #tankCorner { display: none !important; }
 #sticky .art .x { stroke: #ff5a4f; stroke-width: 2.4; }
 @media (orientation: portrait) {
   /* (a phone held upright: beside the gauges, in the sky, since under them is the horizon and the road) */
-  #sticky { --size: var(--size-portrait); --gap: var(--gap-portrait); --across: var(--across-portrait); --x: var(--shift-portrait-x); --y: var(--shift-portrait-y);
-    position: absolute; left: calc(100% + 10px); bottom: 14px; margin: 0; flex-wrap: wrap-reverse; }
+  #sticky { --size: var(--size-portrait); --gap: var(--gap-portrait); --across: var(--across-portrait); --x: var(--shift-portrait-x); --y: var(--shift-portrait-y); }
 }
 @media (orientation: landscape) and (max-height: 480px) {
   #sticky { --size: var(--size-short); --gap: var(--gap-short); --across: var(--across-short); --x: var(--shift-short-x); --y: var(--shift-short-y); }
@@ -184,12 +183,16 @@ body.touch-controls #touchControls { display: block; }
 #throwBtn { right: max(16px, env(safe-area-inset-right)); }
 body.touch-controls .throw { display: block; }
 /* the meters' corner (top left): the readouts in a column, the two round gauges beside them */
-#meters { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 14px; width: 308px; }
+/* In this order: the time, the gauges with the statuses beside them, then the bars (health, busts, social standing) */
+#meters { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 308px; }
 #meters .readouts { width: 150px; }
-#flat, #levelProblems { flex-basis: 100%; }
+/* (a small icon for each bar: only where the words are left out, on a phone: see the media query at the foot of the file) */
+#meters .ico { display: none; flex: none; width: 16px; height: 16px; margin-right: 5px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+#meters #health .ico { fill: #4caf50; stroke: none; }
+#social .ico { fill: currentColor; stroke: none; }
 /* (the two gauges, and with them the sticky messages' icons, whose rules are above) */
-#gaugeColumn { position: relative; width: 136px; }
-#gauges { display: flex; gap: 8px; margin-top: 2px; }
+#gaugeRow { display: flex; align-items: flex-start; gap: 10px; }
+#gauges { display: flex; flex: none; gap: 8px; margin-top: 2px; }
 .gauge { width: 64px; text-align: center; font-size: 9px; font-weight: 800; letter-spacing: .05em; line-height: 1.2; }
 .gauge svg { display: block; width: 64px; height: 64px; margin-bottom: 2px; }
 .gauge .back { fill: rgba(10,14,20,.5); }
@@ -222,7 +225,7 @@ body.touch-controls .throw { display: block; }
   :root { --zone-h: clamp(90px, 20vh, 170px); --zone-w: 50vw; }
   #timer, #speed { font-size: 24px; }
   /* a phone held upright: the gauges under the readouts (the corner is no wider than they are) */
-  #meters { flex-direction: column; flex-wrap: nowrap; width: 150px; }
+  #meters { width: 250px; }
   /* ...Pause and Exit level top centre, small, between the two corners */
   #runButtons { bottom: auto; top: max(10px, env(safe-area-inset-top)); flex-wrap: nowrap; }
   body.touch-controls #runButtons { max-width: none; }
@@ -269,10 +272,10 @@ body.touch-controls .throw { display: block; }
 body.in-garage #hud, body.in-garage .throw, body.in-garage #banner, body.in-garage #messages, body.in-garage #sticky { display: none; }
 #levelProblems { color: #ffb4a8; font-size: 12px; max-width: 40vw; margin-top: 6px; }
 #resultTime { font-size: 48px; font-weight: 700; font-variant-numeric: tabular-nums; }
-#health { width: 150px; max-width: 40vw; height: 10px; margin-top: 6px;
-  background: rgba(0,0,0,.4); border-radius: 5px; overflow: hidden; }
+#health { display: flex; align-items: center; margin-top: 6px; }
+#health .barOuter { width: 150px; max-width: 40vw; height: 10px; background: rgba(0,0,0,.4); border-radius: 5px; overflow: hidden; }
 #healthFill { height: 100%; width: 100%; background: #4caf50; }
-#busts { margin-top: 6px; font-size: 12px; font-weight: 700; white-space: pre-line; }
+#busts { margin-top: 6px; font-size: 12px; font-weight: 700; }
 /* a police car within sight of the player: red and blue lights, flashing in turn */
 #copWatch { display: none; margin-top: 8px; font-size: 12px; font-weight: 700; text-align: right; color: #fff;
   text-shadow: 0 1px 2px #000; }
@@ -406,3 +409,25 @@ body.in-garage #touchControls { display: none; }
   border: 2px solid #3a414e; background: #1b2029; color: #7d8594; }
 .overlay.panel .wall .plaque small { font-size: 12px; }
 .overlay.panel .wall .plaque.lit { border-color: #ffd23f; background: #4a3d12; color: #fff; }
+
+/* a phone (held upright, or on its side): each bar has a small icon for what it is, and its words are left out */
+@media (orientation: portrait), (orientation: landscape) and (max-height: 480px) {
+  #meters .ico { display: inline-block; vertical-align: -3px; }
+  #health .ico { display: block; }
+  #meters .w { display: none; }
+}
+@media (orientation: portrait), (orientation: landscape) and (max-height: 480px) {
+  #social .bar { margin-top: 0; }
+}
+/* a phone on its side has no height to spare under the time, with the THROW button there: the bars stay beside the time, and the
+gauges and statuses (under the gauges) go to their right, as the corner was before */
+@media (orientation: landscape) and (max-height: 480px) {
+  #meters { display: grid; grid-template-columns: 150px auto; column-gap: 14px; row-gap: 0; width: auto; }
+  #timeBlock { grid-column: 1; grid-row: 1; }
+  #meters .readouts { grid-column: 1; grid-row: 2; }
+  #gaugeRow { grid-column: 2; grid-row: 1 / span 2; flex-direction: column; gap: 6px; }
+  #levelProblems, #flat { grid-column: 1 / span 2; }
+}
+@media (orientation: portrait), (orientation: landscape) and (max-height: 480px) {
+  #social:not([style*="none"]) { display: flex !important; align-items: center; } /* (the HUD shows it with an inline display) */
+}
