@@ -81,6 +81,8 @@ export const carCard = (car, evil = false) => {
   const unlocked = safe(() => Ecu.unlocked(car), owned);
   const preview = carPreview(car); // (the tiers: 'show' | 'teaser' | 'hide' | null)
   const hidden = !unlocked && !owned && bp === 0 && (preview === 'teaser' || preview === 'hide');
+  // blacked out: a tier not open yet, or a key car whose key cannot be had at the moment and no blueprint of it obtained
+  const dark = hidden || (!unlocked && !owned && bp === 0 && car.keyAvailable === false && !blueprint);
   // why it cannot be driven
   let reason = '', hint = '';
   if (!unlocked) {
@@ -105,7 +107,7 @@ export const carCard = (car, evil = false) => {
     car, id: car.id,
     name: hidden ? 'Locked car' : car.name,
     stars: stars(car), starColour: starColour(car), tier: tierOf(car),
-    rarity: rarityOf(car), hidden,
+    rarity: rarityOf(car), hidden, dark,
     ecu, max, maxed, upgradable, blueprint, key: !blueprint,
     blueprints: bp, perEcu: x, have: maxed ? toNext : have, toNext,
     owned, unlocked, barred,
