@@ -241,6 +241,7 @@ async function overlays(g, check) {
   const courier = cards.find(c => c.car.earned && c.car.off), cometCard = D.carCard(g.cars.carById('silvercomet'), false);
   const ovCourier = courier && D.overlayOf(courier);
   check(!!courier && ovCourier?.kind === 'unavailable' && /Not available/.test(ovCourier.title) && /at the moment/.test(ovCourier.line), 'the Courier Special (off, earned): "' + ovCourier?.title + ' ' + ovCourier?.line + '"');
+  check(courier.dark && !courier.hidden, 'the Courier Special is blacked out (dark)');
   check(D.overlayOf(cometCard)?.kind === 'key', 'a Key car keeps the key overlay, its key obtainable or not');
   // the Snowcat and the Hot Dog Car: Key cars with no key to be had for now (keyAvailable false): the key overlay, "Not available at the moment"
   const noKeyCars = ['snocat', 'hotdog'].map(id => D.carCard(g.cars.carById(id), false)), ovNo = noKeyCars.map(c => D.overlayOf(c));
