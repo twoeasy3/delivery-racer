@@ -62,6 +62,8 @@ const fresh = () => ({
   tierCars: {},    // the car last picked for each tier's levels while their medal is not earned, by tier (the player's own pick, `car`, is kept apart)
   blueprints: {},  // blueprints collected, by car id (ecu.js: they raise a car's ECU, and unlock a blueprint car)
   maxed: ['commuter'], // cars held at their MAX ECU whatever their blueprints (ecu.js): the starter car comes maxed; an old save's cars all are
+  packs: {},       // card packs held, unopened: a count by pack ('career', 'special:<event id>'...: packs.js)
+  packLog: [],     // the packs opened last, newest first: { kind, from?, cards: [{ car, rarity, key?, featured? }] } (packs.js)
 });
 
 // The save is kept in local storage (BACKUP: the store of record, read first, the whole save, as big as it
@@ -100,6 +102,8 @@ const restore = (saved) => {
     data.bestTime = { good: {}, evil: {}, ...saved.bestTime }; // (a save from before best times has none)
     data.stats = { ...(saved.stats || {}) }; // (nor counters)
     data.tierCars = { ...(saved.tierCars && typeof saved.tierCars === 'object' ? saved.tierCars : {}) };
+    data.packs = { ...(saved.packs && typeof saved.packs === 'object' && !Array.isArray(saved.packs) ? saved.packs : {}) }; // (card packs: a save from before has none)
+    data.packLog = Array.isArray(saved.packLog) ? saved.packLog : [];
     // (the Commuter and the Darkvan were saved as 'hatch' and 'coupe')
     const RENAMED = { hatch: 'commuter', coupe: 'darkvan' };
     data.cars = [...new Set(data.cars.map(id => RENAMED[id] || id))];
@@ -188,6 +192,12 @@ const tidy = (saved) => {
   // (the counters: numbers by name, and no more of them than there could be)
   clean.stats = Object.fromEntries(Object.entries(saved.stats && typeof saved.stats === 'object' && !Array.isArray(saved.stats) ? saved.stats : {})
     .filter(([key, n]) => word(key) && typeof n === 'number' && isFinite(n) && n >= 0).slice(0, 100));
+  // (card packs, packs.js: the counts held by pack, and the log of those opened, each card checked)
+  clean.packs = Object.fromEntries(Object.entries(saved.packs && typeof saved.packs === 'object' && !Array.isArray(saved.packs) ? saved.packs : {})
+    .filter(([k, n]) => /^[a-z]{1,20}(:[A-Za-z0-9_-]{1,40})?$/.test(k) && Number.isInteger(n) && n > 0 && n <= 9999).slice(0, 50));
+  clean.packLog = (Array.isArray(saved.packLog) ? saved.packLog : []).filter(p => p && typeof p === 'object' && word(p.kind) && Array.isArray(p.cards)).slice(0, 50)
+    .map(p => ({ kind: p.kind, ...(word(p.from) ? { from: p.from } : {}), cards: p.cards.filter(c => c && word(c.car) && word(c.rarity)).slice(0, 20)
+      .map(c => ({ car: c.car, rarity: c.rarity, ...(c.key === true ? { key: true } : {}), ...(c.featured === true ? { featured: true } : {}) })) }));
   return clean;
 };
 
