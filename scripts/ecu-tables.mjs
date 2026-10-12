@@ -1,7 +1,7 @@
 // Writes src/delivery/ecus.json: every car's figures at each of its ECUs (ecu.js; BLUEPRINTS-NOTES.md "Stats"), derived by
 // EQUAL STEPS from its maxed (current, cars.js) figures: ECU k of N = max * (1 - f * (N - k)), f = Ecu STEPS (0.03 per ECU
 // for a car lot car, 0.06 for a blueprint car or an event car), for maxSpeed (to 0.1 m/s), accel (to 0.1) and health (whole);
-// respawn 5.5 s at ECU1 and 0.5 s less for each ECU above it. The second set (CHECKLIST item 125; ecu.js NEW_STATS):
+// respawn 5.5 s at ECU1 and 0.5 s less for each ECU above it. The second set (CHECKLIST item 126; ecu.js NEW_STATS):
 // agility, delivery, cool and crossing by the same equal steps from the car's maxed figure (to 0.001), weight (its `mass`)
 // the same at every ECU. N = the ladder's max ECU (Ecu.ladder). x = blueprints per
 // ECU step (Ecu X_DEFAULT). The cars: the garage's (CARS, the amphibious ones and the Tank too), the evergreen blueprint

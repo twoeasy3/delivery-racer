@@ -3,7 +3,7 @@
 // blueprint car: X blueprints), the save round trip (the save code and the stored save), an old save's defaults (every
 // car it owns at its max ECU, a blueprint car it does not own locked), the figures a run drives with and its respawn
 // time, races and Car Swap untouched, and a replay recorded at an ECU played back identically (at that ECU, whatever the
-// save says by then), an old one (no ECU in its header) at the max. The second set (CHECKLIST item 125): agility, delivery,
+// save says by then), an old one (no ECU in its header) at the max. The second set (CHECKLIST item 126): agility, delivery,
 // cool and crossing by the same equal steps (a higher ECU never worse; the max = today's figures), weight flat; the
 // player's car takes them at its ECU (Player.agility / crossing / mass / delivery / cool, Social.dangerTime); a flaming
 // package's damage and a gift's standing scale with delivery; a shoulder run busts sooner at ECU1 than at the max.

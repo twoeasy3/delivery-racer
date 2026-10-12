@@ -9,7 +9,7 @@
 // A car's max ECU follows the star ladder (LADDER below); the special (earned) cars and the 1-gold cars stop at ECU1. Each
 // ECU's figures are SAVED, one entry per ECU, in ecus.json (by car id: { x, ecus: [{ maxSpeed, accel, health, respawn,
 // agility, delivery, cool, crossing, weight }] }, ECU1 first), written once by scripts/ecu-tables.mjs and the truth from
-// then on (edit it by hand). The second set (the owner, 12-Oct, CHECKLIST item 125; NEW_STATS below): agility (cars.js
+// then on (edit it by hand). The second set (the owner, 12-Oct, CHECKLIST item 126; NEW_STATS below): agility (cars.js
 // `agility`, steering), delivery (package efficacy: a Good gift's standing gain and an Evil flaming package's damage are
 // multiplied by it: packages.js; each car's own, DELIVERY below), cool (the shoulder meter's fuse: Social.dangerTime is multiplied by it, held to
 // CONFIG.coolFloor), crossing (cars.js `crossing`: rails, fords, mud, the tide) scale with the ECU like the first set;
@@ -40,7 +40,7 @@ export const RARITY = {
 export const STEPS = { lot: 0.03, blueprint: 0.06 };
 export const RESPAWN = { first: 5.5, step: 0.5 };
 export const X_DEFAULT = 5;
-// the second set of stats (CHECKLIST item 125): what each is at the MAXED ECU (a car's own field, else today's default),
+// the second set of stats (CHECKLIST item 126): what each is at the MAXED ECU (a car's own field, else today's default),
 // and whether it scales with the ECU (weight does not). The multipliers are rounded to 0.001 so each ECU stays above
 // the last even for a small figure (a crossing of 0.15)
 // DELIVERY at a car's MAXED ECU (the owner, 12-Oct: "cook up new stats for Delivery"): package efficacy, a share of

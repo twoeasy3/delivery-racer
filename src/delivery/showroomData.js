@@ -124,7 +124,7 @@ export const floorBest = () => {
   return { maxSpeed: most('maxSpeed'), accel: most('accel'), health: most('health'),
     respawnBest: Math.min(...cards.map(s => s.respawn)), respawnWorst: Math.max(...cards.map(s => s.respawn)) };
 };
-// the ratio stats (Agility, Delivery, Cool, Crossing, Weight: CHECKLIST item 125) are SHOWN as whole numbers on a 0-100
+// the ratio stats (Agility, Delivery, Cool, Crossing, Weight: CHECKLIST item 126) are SHOWN as whole numbers on a 0-100
 // scale, never as 0.X / 1.X (the owner, 12-Oct): shown = round(ratio x STAT_SCALE), held to 0..100, so 1.0 (today's
 // usual car) shows as 50. Change STAT_SCALE for another baseline. Only the showing: the game keeps the ratios
 export const STAT_SCALE = 50;
