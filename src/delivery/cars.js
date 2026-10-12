@@ -59,7 +59,7 @@ export const TIERS = 5;
 // (No longer enforced: the owner, 12-Oct, CHECKLIST item 115, dropped the rule with the ECUs; scripts/.balance-check.mjs
 // had its tier ceilings removed. Kept as a figure for reference)
 export const NEXT_TIER_CAPS = { maxSpeed: 52, accel: 24, health: 450 };
-export const stars = (car) => car.tier ? '★'.repeat(car.tier) : car.bespoke || car.event ? '★'.repeat(6) : ''; // (a Key car outside the tiers: the six magenta stars) // (only the stars it has: no empty ones)
+export const stars = (car) => car.tier ? '★'.repeat(car.tier) : ''; // (only the stars it has: no empty ones; a Key car has none, as an event car never had) // (only the stars it has: no empty ones)
 // (a 6-star car, earned rather than bought, has magenta stars: see EARNED_CARS)
 // (and an amphibious car's are sea green: a section of the garage of its own, see amphibiousCars)
 export const STAR_COLOURS = { gold: '#ffd23f', blue: '#4fa8ff', earned: '#ff5fd2', amphibious: '#35d6b4' };

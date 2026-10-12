@@ -202,8 +202,8 @@ export const parseFilter = (text) => {
 export const filterCount = (f) => FILTER_GROUPS.reduce((n, group) => n + (f[group.id]?.length || 0), 0);
 // a card's chip in each group
 const secret = (car) => Object.values(SECRET_CARS).includes(car);
-// the stars a card shows: the car's tier, or six for a car outside the tiers (a Key car, a special one: magenta)
-export const starCountOf = (card) => (card.car.tier >= 1 ? card.car.tier : 6);
+// the stars a card shows: the car's tier (an earned car's is 6); a Key car has none (the owner, 12-Oct: they need not have six)
+export const starCountOf = (card) => (card.car.tier >= 1 ? card.car.tier : 0);
 // the colour of those stars (cars.js starColour: magenta for the earned, Blueprint and Key cars)
 const COLOUR_IDS = { [STAR_COLOURS.gold]: 'gold', [STAR_COLOURS.blue]: 'blue', [STAR_COLOURS.earned]: 'magenta', [STAR_COLOURS.amphibious]: 'green' };
 export const colourOf = (card) => COLOUR_IDS[starColour(card.car)] || 'gold';

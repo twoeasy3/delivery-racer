@@ -110,7 +110,7 @@ async function filters(g, check) {
   // what each chip means, said again from the cars
   const bespokeCar = (car) => !!car.bespoke || EVENT_CARS.includes(car);
   const MEANS = {
-    stars: (id) => (c) => (c.car.tier >= 1 ? c.car.tier : 6) === Number(id),
+    stars: (id) => (c) => (c.car.tier >= 1 ? c.car.tier : 0) === Number(id),
     colour: (id) => (c) => {
       const car = c.car, mag = !!car.earned || !!car.evergreen || bespokeCar(car);
       return id === 'magenta' ? mag : id === 'green' ? !mag && !!car.amphibious : id === 'blue' ? !mag && !car.amphibious && !!car.blue : !mag && !car.amphibious && !car.blue;
@@ -137,7 +137,7 @@ async function filters(g, check) {
     }
     said.push(group.id + ': ' + counts.join(', '));
     check(!wrong.length, 'every ' + group.name.toLowerCase() + ' chip gives exactly its cards' + (wrong.length ? ' (not: ' + wrong.join('; ') + ')' : ''));
-    if (!['state', 'rarity'].includes(group.id)) check(covered === all.length, 'the ' + group.name.toLowerCase() + ' chips share out the whole floor, each car once (' + covered + ' of ' + all.length + ')');
+    if (!['state', 'rarity', 'stars'].includes(group.id)) check(covered === all.length, 'the ' + group.name.toLowerCase() + ' chips share out the whole floor, each car once (' + covered + ' of ' + all.length + ')');
   }
   console.log('        ' + said.join('\n        '));
   // OR within a group, AND across groups
