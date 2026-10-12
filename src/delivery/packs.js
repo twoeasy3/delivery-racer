@@ -222,13 +222,13 @@ export const flickPlan = (n, { reduced = false, seed = 1 } = {}) => {
   const copies = [];
   let launch = 0;
   for (let j = 0; j < extra; j++) {
-    const layer = Math.min(j, FLICK.layers - 1), side = j % 2 ? -1 : 1; // (thrown from alternate sides; the pile fans out to both)
+    const layer = Math.min(j, FLICK.layers - 1), side = 1; // (always thrown in from the RIGHT: the owner, 12-Oct; the pile peeks out on that side only)
     const deep = layer + 1;
     copies.push({
       copy: j + 2, badge: j + 2, layer: j < FLICK.layers ? layer : Math.floor(rnd() * FLICK.layers), fresh: j < FLICK.layers,
       launch: reduced ? 0 : Math.round(launch), land: reduced ? 0 : Math.round(launch) + flight,
       from: { x: side * (95 + rnd() * 30), y: -(18 + rnd() * 22), r: side * (14 + rnd() * 14) }, // (% of the card, deg: off to the side, a little above)
-      to: { x: side * (0.6 + deep * 0.55 + rnd() * 0.6), y: 0.8 + deep * 0.6 + rnd() * 0.5, r: side * (1.2 + deep * 0.75 + rnd() * 0.8) },
+      to: { x: side * (0.6 + deep * 0.55 + rnd() * 0.6), y: -(0.8 + deep * 0.6 + rnd() * 0.5), r: side * (1.2 + deep * 0.75 + rnd() * 0.8) }, // (the pile peeks out to the right and above, never below: the progress bar under the card stays clear)
     });
     launch += (gaps[j] || 0) * squeeze;
   }
