@@ -21,6 +21,7 @@ import { ask, tell } from './dialog.js';
 import { drawSoon as stillSoon } from './carstill.js';
 import { packArt, KIND_LOOK } from './packart.js';
 import { openContents, closeContents } from './packcontents.js';
+import { keyPicture } from './keycard.js';
 
 // (packs.js, where the tree has it: see shop.js)
 const packsModule = Object.values(import.meta.glob('../packs.js', { eager: true }))[0] || null;
@@ -96,6 +97,12 @@ document.body.append(screen);
 const gem = () => make('span', 'shop-gem', make('i'));
 const priceButton = (offer) => {
   const can = Shop.canBuy(offer.id);
+  if (can.why === 'exhausted') { // (every featured card had: not for sale, greyed; its What's inside still opens: the owner, 12-Oct)
+    const off = make('button', 'shop-price exhausted', make('b', '', 'Nothing new to feature'));
+    off.disabled = true;
+    off.setAttribute('aria-label', offer.name + ': not for sale, you have every featured card');
+    return off;
+  }
   const button = make('button', 'shop-price' + (can.ok ? '' : ' short'),
     offer.was > offer.price ? make('s', '', cash(offer.was).replace(CURRENCY.sign + ' ', '')) : null,
     gem(), make('b', '', Math.floor(offer.price).toLocaleString('en-GB')));
@@ -107,15 +114,25 @@ const ribbon = (offer) => offer.ribbonName
   ? make('span', 'shop-ribbon rb-' + offer.ribbon, offer.ribbon === 'sale' && offer.off ? 'Sale −' + Math.round(offer.off * 100) + '%' : offer.ribbonName) : null;
 
 const drawLater = [];
+// the featured entries (packs.js featuredEntries: { car, weight, key, amount }), one picture a CAR (a car with an x3 and
+// an x15 entry is one picture), at most three: a blueprint entry its car's still; a KEY entry the car's key (keycard.js,
+// as the key cards draw it), chipped "Key"
 const featuredTile = (offer) => {
-  const cars = offer.featured.slice(0, 3);
-  const carViews = cars.map((car) => {
-    const view = make('div', 'shop-car');
-    drawLater.push([view, car]);
-    const rarity = packsModule?.rarityOf?.(car) && offer.kind !== 'special' ? packsModule.rarityOf(car) : 'legendary';
-    return make('div', 'shop-feature', view, make('div', 'shop-feature-name', make('span', 'shop-chip r-' + rarity, 'Featured'), make('b', '', car.name),
-      make('small', '', stars(car) || 'Event car')));
+  const seen = new Set(), shown = [];
+  for (const f of offer.featured) {
+    const id = (f.key ? 'key:' : '') + f.car.id;
+    if (!seen.has(id)) { seen.add(id); shown.push(f); }
+  }
+  const carViews = shown.slice(0, 3).map((f) => {
+    const car = f.car;
+    const view = make('div', 'shop-car' + (f.key ? ' key' : ''));
+    if (f.key) view.append(keyPicture(car, 'bespoke'));
+    else drawLater.push([view, car]);
+    const rarity = f.key ? 'bespoke' : packsModule?.featuredRarity?.(car) || 'legendary';
+    return make('div', 'shop-feature', view, make('div', 'shop-feature-name', make('span', 'shop-chip r-' + rarity, f.key ? 'Key' : 'Featured'), make('b', '', car.name),
+      make('small', '', f.key ? 'Bespoke key' : stars(car) || 'Event car')));
   });
+  const exhausted = Shop.canBuy(offer.id).why === 'exhausted';
   const ends = offer.endsAt ? make('p', 'shop-ends', 'Ends in ', make('b', 'countdown', countdown(offer.endsAt - Events.now()))) : null;
   if (ends) ends.querySelector('.countdown').dataset.end = offer.endsAt;
   return make('article', 'shop-tile hero k-' + offer.kind,
@@ -123,13 +140,15 @@ const featuredTile = (offer) => {
     make('div', 'shop-hero-art', make('div', 'shop-hero-cars n' + carViews.length, ...carViews), packArt(offer.kind, offer.count)),
     make('div', 'shop-tile-info',
       offer.event ? make('small', 'shop-kicker', offer.event.name) : null,
-      make('h3', '', offer.name), make('p', '', offer.blurb), insideButton(offer), oddsBar(offer.kind, offer), ends),
+      make('h3', '', offer.name), make('p', '', offer.blurb), insideButton(offer), oddsBar(offer.kind, offer), ends,
+      exhausted ? make('p', 'shop-exhausted', 'You have every featured card') : null),
     make('div', 'shop-tile-buy', priceButton(offer)));
 };
 const tile = (offer) => make('article', 'shop-tile k-' + offer.kind + ' r-' + (KIND_LOOK[offer.kind] || 'common'),
   ribbon(offer),
   make('div', 'shop-tile-art', packArt(offer.kind, offer.count)),
-  make('div', 'shop-tile-info', make('h3', '', offer.name), make('p', '', offer.blurb), insideButton(offer), oddsBar(offer.kind, offer)),
+  make('div', 'shop-tile-info', make('h3', '', offer.name), make('p', '', offer.blurb), insideButton(offer), oddsBar(offer.kind, offer),
+    Shop.canBuy(offer.id).why === 'exhausted' ? make('p', 'shop-exhausted', 'You have every featured card') : null), // (a special pack outside the Featured row)
   make('div', 'shop-tile-buy', priceButton(offer)));
 
 const wallet = () => {
@@ -195,7 +214,7 @@ const buy = async (id) => {
   if (!can.ok) {
     const lines = can.why === 'short' ? ['This costs ' + cash(offer.price) + '. You have ' + cash(Shop.balance()) + '.',
       CURRENCY.placeholder ? CURRENCY.name + ' is a placeholder for now: nothing in the game gives it yet.' : '']
-      : can.why === 'packs' ? ['Card packs are not in this build yet.'] : can.why === 'over' ? ['This offer has ended.'] : ['This cannot be bought.'];
+      : can.why === 'packs' ? ['Card packs are not in this build yet.'] : can.why === 'exhausted' ? ['You have every featured card of this pack: nothing new to feature.'] : can.why === 'over' ? ['This offer has ended.'] : ['This cannot be bought.'];
     await tell({ title: can.why === 'short' ? 'Not enough ' + CURRENCY.name : 'Not for sale', lines: lines.filter(Boolean) });
     draw();
     return;
@@ -250,11 +269,21 @@ window.addEventListener('keydown', (event) => { // (Escape: the contents sheet f
 });
 for (const type of ['progresschange', 'packschange']) window.addEventListener(type, () => { if (isOpen) drawSoon(); });
 
+// ?featured=<list> (packs.js debugFeatured: id[!key][:weight[xamount]]) and ?maxed=<ids>&owned=<ids> (debugMarks): a
+// featured list and cars counted as maxed / keys owned, and &double= / &base= (debugDouble), for this visit, nothing saved
+if (packsModule?.debugFeatured && params.get('featured')) packsModule.Packs.featuredOverride = packsModule.debugFeatured(params);
+if (packsModule?.debugMarks && (params.get('maxed') || params.get('owned'))) { packsModule.debugMarks(params); Progress.noSave = true; }
+if (packsModule?.debugDouble && (params.get('double') || params.get('base'))) packsModule.debugDouble(params); // (&double=0.5&base=2: for the sheet, this visit)
 // ?shopcash=<n>: the balance for this visit, nothing saved; ?shop: open at once (for a look or a picture)
 if (params.get('shopcash') !== null) {
   Progress.noSave = true;
   Progress.data.shopCash = Math.max(0, Math.floor(Number(params.get('shopcash')) || 0));
 }
 if (params.get('shop') !== null && Game.state === 'start') ShopScreen.open();
-// &inside=<offer id>: its "What's inside" sheet open too (for a look or a picture)
-if (ShopScreen.isOpen && params.get('inside')) { const offer = Shop.offer(params.get('inside')); if (offer) showContents(offer); }
+// &inside=<offer id> (or a pack kind: its first offer, e.g. &inside=special): its "What's inside" sheet open too (for a
+// look or a picture)
+if (ShopScreen.isOpen && params.get('inside')) {
+  const want = params.get('inside'), offer = Shop.offer(want) || Shop.offers().find(o => o.kind === want) || null;
+  if (offer) showContents(offer);
+  else if (packData?.kinds?.[want]) openContents(screen, { kind: want, title: packsModule?.kindName?.(want), featured: packsModule?.featuredFor?.(null) || [] });
+}

@@ -84,6 +84,13 @@
 .shop-price:active { transform: translateY(2px); box-shadow: 0 1px 0 #a87b00; }
 .shop-price.short { background: linear-gradient(#4b556b, #394256); color: rgba(255, 255, 255, .8); box-shadow: 0 3px 0 #232a38; }
 .shop-price.short s { opacity: .5; }
+/* a special pack whose featured cards the player has all (shop.js why 'exhausted'): greyed, not a button to press */
+.shop-price.exhausted { background: linear-gradient(#3d4352, #313642); color: rgba(255, 255, 255, .55); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12); cursor: not-allowed; }
+.shop-price.exhausted b { font-size: 14px; letter-spacing: .02em; }
+.shop-price.exhausted:hover { filter: none; }
+.shop-price.exhausted:active { transform: none; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12); }
+.shop-exhausted { margin: 4px 0 0; font-size: 11.5px; font-weight: 700; color: #9fe2a8; }
+.shop-car.key .bp-keypic { position: absolute; inset: 0; }
 
 /* the ribbons */
 .shop-ribbon { position: absolute; z-index: 3; top: 12px; left: -30px; width: 120px; padding: 4px 0; transform: rotate(-38deg); text-align: center;
@@ -263,6 +270,36 @@ button.shop-odds { width: 100%; padding: 0; cursor: pointer; }
 .pc-card { min-width: 0; display: flex; }
 .pc-card > .bp-card { flex: 1 1 auto; }
 .pc-mark.key { background: var(--rainbow); color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .5); text-transform: none; letter-spacing: 0; }
+/* featured weights (the owner, 12-Oct): the declared ratio, the shifted note, and each entry's amount and weight chips */
+.pc-weights, .pc-shift { margin: -2px 0 8px; font-size: 12px; line-height: 1.4; color: var(--ink-dim); }
+.pc-weights b, .pc-shift b { color: #fff; font-weight: 800; }
+.pc-shift { color: #ffd98a; }
+.pc-mark.wt { background: #2c2140; color: #f2d9ff; }
+.pc-mark.amt { background: #1f6b35; color: #fff; }
+/* THE EXHAUSTED OVERLAY (packcontents.js exhaustedOverlay; after the showroom's locked-card overlay): a tint, a round dark
+   badge with a thin ring, a two-line caption. Car Maxed: gold, MAX; Key obtained: green, a tick */
+.pc-ov { --ov: #ffc83d; position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  background: linear-gradient(color-mix(in srgb, var(--ov) 18%, rgba(16, 19, 26, .55)), rgba(16, 19, 26, .62)); pointer-events: none; text-align: center; }
+.pc-ov.owned { --ov: #3fd36a; }
+.pc-ov-badge { width: max(26px, 24cqw); height: max(26px, 24cqw); border-radius: 50%; display: grid; place-items: center; color: var(--ov);
+  background: rgba(10, 12, 18, .85); box-shadow: inset 0 0 0 1.5px var(--ov), 0 2px 6px rgba(0, 0, 0, .5);
+  font: italic 800 max(9px, 8cqw)/1 var(--display); letter-spacing: .02em; }
+.pc-ov-badge svg { width: 60%; height: 60%; fill: currentColor; }
+.pc-ov-words { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 0 4px; }
+.pc-ov-words b { font: italic 800 max(10px, 9cqw)/1 var(--display); font-stretch: condensed; text-transform: uppercase; letter-spacing: .03em; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .9); }
+.pc-ov-words small { font-size: max(8.5px, 6.5cqw); font-weight: 700; color: color-mix(in srgb, var(--ov) 55%, #fff); text-shadow: 0 1px 3px rgba(0, 0, 0, .95); }
+.pc-card.exhausted .bp-pic, .pc-card.exhausted .bp-keypic { filter: grayscale(.85) brightness(.8); }
+.pc-card.exhausted .bp-foot > b { color: #8a909c; }
+/* a card's stacks (x1 / its doubled x2, each its total chance): a slow cross-fade on the chip only, about 1.6 s a phase */
+.pc-stacks { display: inline-grid; }
+.pc-stack { grid-area: 1 / 1; white-space: nowrap; animation: pc-stack 3.2s ease-in-out infinite; }
+.pc-stack.alt { animation-delay: -1.6s; }
+.pc-stack.doubled { color: #1f6b35; }
+@keyframes pc-stack { 0%, 40% { opacity: 1; } 50%, 90% { opacity: 0; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .pc-stacks { display: inline-flex; flex-wrap: wrap; gap: 0 6px; }
+  .pc-stack { grid-area: auto; animation: none; }
+}
 .pc-foot { margin: 16px 0 0; font-size: 11.5px; line-height: 1.4; color: var(--ink-dim); }
 @media (min-width: 700px) {
   .pack-contents { align-items: center; padding: 24px; }

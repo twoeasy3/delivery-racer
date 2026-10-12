@@ -42,17 +42,16 @@ export const careerLeft = () => careerLevels().filter(id => Progress.bestTime(id
   && !(Progress.data.claimed || []).includes('pack-' + id));
 
 // a card's chance in one pack of a kind: { chance (a pack), slot (a plain slot) } or null: the kind cannot hold it.
-// key: the car's key card (Bespoke); featured: the special pack's featured cars (packs.js featuredFor)
+// key: the car's key card (Bespoke); featured: the special pack's featured entries (packs.js featuredFor)
 const chanceIn = (kind, car, { key = false, featured = [] } = {}) => {
   // (a key is listed only while not owned: ask as if it were not, so a pack that CAN hold it says so)
   const c = contents(kind, { featured, owned: key ? (id) => id !== car.id && Progress.owns(id) : undefined });
   if (!c) return null;
-  if (!key) {
-    const f = c.featured.find(x => x.car.id === car.id);
-    if (f) return { chance: f.chance, slot: null, featured: true, rarity: f.rarity };
-  }
+  // (a featured entry of it, blueprint or key; a car may be several entries, x3 and x15: the chance of any of them, exact)
+  const f = c.featured.find(x => x.car.id === car.id && !!x.key === key);
+  if (f) return { chance: f.carChance, slot: null, featured: true, rarity: f.rarity };
   for (const group of c.groups) {
-    const card = group.cards.find(x => x.car.id === car.id && !!x.key === key);
+    const card = group.cards.find(x => x.car.id === car.id && !!x.key === key && !x.exhausted);
     if (card) return { chance: 1 - (1 - card.chance) ** c.size, slot: card.chance, featured: false, rarity: group.rarity };
   }
   return null;

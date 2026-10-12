@@ -19,8 +19,10 @@
 // (nothing saved), opened one after another as a player would see them. &reveal=all: every card turned at once (a tap).
 // &amount=3 (or 15), &amounts=3,15 (alternating by slot), &amounts=common:3,epic:15 (by rarity): every non-key slot gives
 // that many, for the visit (packs.js debugAmounts); &flick=0.5: each slot's flicks held 0.5 s in, for a still.
+// &featured=<list> (packs.js debugFeatured: id[!key][:weight[xamount]]) a special pack's featured list; &maxed=<ids>,
+// &owned=<ids> (debugMarks) cars counted as maxed / keys owned: all for the visit, never saved.
 import '../packs.css';
-import { Packs, kindName, KINDS, revealCards, revealOrder, revealProgress, RARITIES, flickPlan, debugAmounts } from '../packs.js';
+import { Packs, kindName, KINDS, revealCards, revealOrder, revealProgress, RARITIES, flickPlan, debugAmounts, debugFeatured, debugMarks, debugDouble } from '../packs.js';
 import { flickPile } from './flick.js';
 import { Progress } from '../progress.js';
 import { carById } from '../cars.js';
@@ -213,6 +215,9 @@ window.addEventListener('keydown', (event) => {
   const params = new URLSearchParams(location.search), kind = params.get('pack');
   if (kind !== null) { // ?pack=<kind> (&from=<event id>), ?pack&give=...: for a look, nothing saved
     Progress.noSave = true;
+    Packs.featuredOverride = debugFeatured(params); // (&featured=silvercomet:9x3,silvercomet:1x15,rocketfin!key:1: a special pack's featured list for this visit)
+    debugDouble(params); // (&double=0.5&base=2: the doubling chance and base amount, for this visit)
+    debugMarks(params); // (&maxed=<ids>&owned=<ids>: cars counted as maxed / keys owned, for this visit)
     Packs.amountOverride = debugAmounts(params); // (&amount=3, &amount=15, &amounts=3,15, &amounts=common:3,epic:15: every non-key slot that many, for this visit)
     const f = parseFloat(params.get('flick'));
     if (f >= 0) freezeAt = f; // (&flick=0.4: each slot's flicks held 0.4 s after its first throw, for a still)
