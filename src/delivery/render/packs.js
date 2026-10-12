@@ -11,12 +11,17 @@
 // beat each, a longer one and a glow for Epic and above, the last (the best card: packs.js revealOrder) given the most.
 // A tap anywhere during it turns all the rest at once; after that only Done (or Next pack) does anything. Under each
 // card its car's progress bar fills from before the card to after it, and glows on an unlock or an ECU up.
-// Every card is its own card (no stacking today; each tab shows x1). Escape and back close it (all is already given).
+// A slot that gives n copies of its card (packs.json amount / amounts) turns showing x1, then the n - 1 extra copies are
+// flicked onto a pile behind it one by one (render/flick.js, packs.js flickPlan), the badge and the bar going up one on
+// each; the next card turns as its last copy lands; a tap lands them all at once. Escape and back close it (all is already given).
 // ?pack=career|special|standard|ten opens one at once, for a look, and nothing of it is saved (Progress.noSave);
 // &from=<event id> makes a special pack that event's. ?pack&give=career,ten,special:comet-hunt: those packs given
 // (nothing saved), opened one after another as a player would see them. &reveal=all: every card turned at once (a tap).
+// &amount=3 (or 15), &amounts=3,15 (alternating by slot), &amounts=common:3,epic:15 (by rarity): every non-key slot gives
+// that many, for the visit (packs.js debugAmounts); &flick=0.5: each slot's flicks held 0.5 s in, for a still.
 import '../packs.css';
-import { Packs, kindName, KINDS, revealCards, revealOrder, revealProgress, RARITIES } from '../packs.js';
+import { Packs, kindName, KINDS, revealCards, revealOrder, revealProgress, RARITIES, flickPlan, debugAmounts } from '../packs.js';
+import { flickPile } from './flick.js';
 import { Progress } from '../progress.js';
 import { carById } from '../cars.js';
 import { Nav } from '../nav.js';
@@ -45,7 +50,10 @@ overlay.setAttribute('aria-label', 'Card pack');
 document.body.append(overlay);
 
 // TIMING (ms): the pack's burst; a card's beat; an Epic or better card's; the pause before the last card
-const T = { pack: 950, beat: 340, rare: 700, last: 650, flip: 420 };
+// a slot of many (n copies): its flicks start as the face settles (flicks), and the next card turns as its last copy
+// lands, a touch before (overlap)
+const T = { pack: 950, beat: 340, rare: 700, last: 650, flip: 420, flicks: 300, overlap: 80 };
+let freezeAt = null; // (the debug &flick=<s>: each slot's flicks held at that many seconds, for a still)
 let cur = null; // the pack on show: { result, slots: [{ slot, prog, card }], phase: 'pack' | 'cards' | 'done', timers, wasInMenu }
 
 const later = (ms, f) => { const id = setTimeout(f, still() ? Math.min(ms, 120) : ms); cur.timers.push(id); };
@@ -55,10 +63,16 @@ const turn = (i, instant = false) => {
   s.turned = true;
   s.slot.classList.remove('down');
   s.slot.classList.add('shown');
-  if (instant) { s.slot.classList.add('instant'); s.prog.land(true); return; }
+  if (freezeAt !== null) s.slot.classList.add('instant'); // (the debug still: turned with no flip, as a still's clock may not run it)
+  if (instant) { s.slot.classList.add('instant'); s.flick.complete(); s.prog.land(true); return; }
   if (rank(s.card.rarity) >= rank('epic')) blip('menuPick', 0.6); else blip('menuMove', 0.45);
   s.slot.scrollIntoView?.({ block: 'nearest', behavior: still() ? 'auto' : 'smooth' });
-  later(T.flip, () => s.prog.land(false));
+  later(T.flip, () => s.prog.step(1)); // (the first copy; a slot of many fills on with its flicks)
+  if (s.plan.copies.length) {
+    s.slot.classList.add('flicking'); // (above its neighbours while copies fly in)
+    later(T.flicks, () => (freezeAt !== null ? s.flick.freeze(freezeAt) : s.flick.start()));
+    if (freezeAt === null) later(T.flicks + s.plan.total, () => s.slot.classList.remove('flicking'));
+  }
 };
 const finish = () => {
   if (!cur || cur.phase === 'done') return;
@@ -83,7 +97,8 @@ const play = () => {
     const lastOne = i === n - 1 && n > 1;
     if (lastOne) { at += T.last; s.slot.classList.add('finale'); }
     later(at, () => turn(i));
-    at += rank(s.card.rarity) >= rank('epic') ? T.rare : T.beat;
+    const flicks = s.plan.copies.length ? T.flicks + s.plan.lastLand - T.overlap : 0; // (a slot of many: its copies land first)
+    at += Math.max(rank(s.card.rarity) >= rank('epic') ? T.rare : T.beat, flicks);
   });
   later(at + T.flip, finish);
 };
@@ -94,7 +109,7 @@ const revealAll = () => {
   cur.timers = [];
   overlay.classList.remove('opening');
   overlay.classList.add('dealing');
-  cur.slots.forEach((s, i) => { if (!s.turned) turn(i, true); else s.prog.land(true); });
+  cur.slots.forEach((s, i) => { if (!s.turned) turn(i, true); else { s.flick.complete(); s.prog.land(true); } }); // (every copy landed, the badge at xn)
   finish();
 };
 
@@ -107,10 +122,15 @@ const show = (result, { look = false } = {}) => {
     if (!car) return null;
     const { node, pic } = blueprintCard(car, card, { pose: poses[i] });
     const prog = progressBar(progress[i], card);
+    // n copies (card.n): the card turns at x1, then the rest flick onto its pile (render/flick.js), the badge and bar going up with each
+    const plan = flickPlan(card.n, { reduced: still(), seed: 1 + i * 7919 + [...String(card.car)].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) | 0, 0) });
     const back = make('div', 'pr-back', make('span', 'pr-back-mark', make('b', '', 'Delivery'), make('i', '', 'Run')));
-    const slot = make('div', 'pr-slot down r-' + card.rarity + (card.featured ? ' featured' : ''),
-      make('div', 'pr-flip', back, make('div', 'pr-face', node)), prog.node);
-    return { slot, prog, card, car, pic, pose: poses[i] };
+    const face = make('div', 'pr-face', node);
+    const slot = make('div', 'pr-slot down r-' + card.rarity + (card.featured ? ' featured' : '') + (plan.copies.length ? ' many-copies' : ''),
+      make('div', 'pr-flip', back, face), prog.node);
+    const flick = flickPile({ face, card: node, badge: node.querySelector('.bp-amount'), plan, schedule: (ms, f) => later(ms, f),
+      onLand: (k, instant) => { prog.step(k, instant); if (!instant) blip('menuMove', 0.22); } });
+    return { slot, prog, card, car, pic, pose: poses[i], plan, flick };
   }).filter(Boolean);
   const event = result.from ? Events.specials.find(e => String(e.id) === String(result.from)) : null;
   const kicker = look ? 'A look: nothing saved' : event ? event.name : 'Pack opened';
@@ -193,6 +213,9 @@ window.addEventListener('keydown', (event) => {
   const params = new URLSearchParams(location.search), kind = params.get('pack');
   if (kind !== null) { // ?pack=<kind> (&from=<event id>), ?pack&give=...: for a look, nothing saved
     Progress.noSave = true;
+    Packs.amountOverride = debugAmounts(params); // (&amount=3, &amount=15, &amounts=3,15, &amounts=common:3,epic:15: every non-key slot that many, for this visit)
+    const f = parseFloat(params.get('flick'));
+    if (f >= 0) freezeAt = f; // (&flick=0.4: each slot's flicks held 0.4 s after its first throw, for a still)
     const gives = (params.get('give') || '').split(',').filter(Boolean);
     for (const k of gives) { const [kind, from] = k.split(':'); Packs.grant(kind, { from: from || null }); }
     const all = params.get('reveal') === 'all'; // (&reveal=all: as a tap during it, every card turned at once: for a picture)

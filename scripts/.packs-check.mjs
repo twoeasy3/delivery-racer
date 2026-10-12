@@ -278,6 +278,77 @@ try {
   check([...spread].every(n => n >= 2 && n <= 4) && spread.size === 3, 'an amount [2, 4] gives 2, 3 or 4 (all three seen)');
   const drawn = Pk.draw('standard', { spec: { ...Pk.draw ? {} : {}, size: 5, pool: 'all', amount: 3 } });
   check(drawn.every(c => c.key ? c.n === 1 : c.n === 3), 'a drawn pack carries each card\'s amount (3 here; a key is 1)');
+
+  // ---- a slot of many copies (the owner, 12-Oct: "the extra cards need to animate and flick onto the pile. Each card that
+  // flicks on, increases the badge by 1"): flickPlan's schedule, a tap's complete state, reduced motion ----
+  {
+    const { flickPlan, flickState, FLICK } = Pk;
+    const one = flickPlan(1);
+    check(one.copies.length === 0 && one.total === 0 && flickState(one, Infinity).badge === 1, 'flicks: one copy (or a key) has none, the badge stays x1');
+    for (const n of [2, 3, 15, 40]) {
+      const p = flickPlan(n, { seed: 42 });
+      const c = p.copies, gaps = c.slice(1).map((x, i) => x.launch - c[i].launch);
+      const mono = c.every((x, i) => x.launch < x.land && (!i || (x.land > c[i - 1].land && x.launch > c[i - 1].launch)));
+      const badges = c.map(x => x.badge).join(',') === Array.from({ length: n - 1 }, (_, i) => i + 2).join(',');
+      const fresh = c.filter(x => x.fresh), layersOk = fresh.length === Math.min(n - 1, FLICK.layers) && new Set(fresh.map(x => x.layer)).size === fresh.length && c.every(x => x.layer < FLICK.layers);
+      const air = Math.max(0, ...Array.from({ length: Math.ceil(p.total / 5) }, (_, k) => flickState(p, k * 5).flying.length)); // (at most two copies in the air: two thrown clones)
+      check(mono && badges && layersOk && p.total < 2000 && air <= 2 && (n > 15 || gaps.every(gp => gp >= 80 && gp <= 130)),
+        'flicks: ' + n + ' copies: landings in order, the badge 2..' + n + ', at most ' + FLICK.layers + ' pile layers (' + fresh.length + '), at most two in the air (' + air + '), done in '
+        + p.total + ' ms' + (gaps.length ? ' (gaps ' + gaps[0] + ' down to ' + gaps.at(-1) + ' ms)' : ''));
+      const st = flickState(p, Infinity);
+      check(st.badge === n && st.landed === n - 1 && st.flying.length === 0, 'flicks: ' + n + ': a tap completes it: every copy landed, the badge x' + n);
+    }
+    const big = flickPlan(15, { seed: 3 });
+    check(big.total >= 1200 && big.total <= 1800, 'flicks: 15 copies take ' + big.total + ' ms (wanted about 1.2 to 1.8 s)');
+    const mid = flickState(big, 450);
+    check(mid.badge >= 3 && mid.badge <= 5 && mid.flying.length >= 1, 'flicks: 0.45 s in (the debug &flick=0.45 still): badge x' + mid.badge + ', ' + mid.flying.length + ' in the air');
+    check(JSON.stringify(flickPlan(15, { seed: 9 })) === JSON.stringify(flickPlan(15, { seed: 9 })), 'flicks: a slot\'s scatter is stable for its seed');
+    const still = flickPlan(15, { reduced: true });
+    check(still.total === 0 && still.copies.every(x => x.launch === 0 && x.land === 0) && flickState(still, 0).badge === 15, 'flicks: reduced motion: nothing thrown, the badge x15 at once');
+    // the reveal's source: transforms and opacity only, no layout read in the flicks
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../src/delivery/render/flick.js', import.meta.url), 'utf8').replace(/\/\/.*$/gm, '');
+    check(!/offset(Width|Height|Top|Left)|getBoundingClientRect|getComputedStyle|requestAnimationFrame/.test(src), 'flicks: render/flick.js reads no layout and runs no per-frame script');
+  }
+  // the debug amounts (?pack=ten&amount=3 ...): every non-key slot that many; alternating; by rarity
+  {
+    const { debugAmounts } = Pk, q = (s) => debugAmounts(new URLSearchParams(s));
+    const alt = q('amounts=3,15'), by = q('amounts=common:3,epic:15');
+    check(q('') === null && q('amount=3')({ rarity: 'epic' }, 4) === 3 && [0, 1, 2, 3].map(i => alt({}, i)).join() === '3,15,3,15'
+      && by({ rarity: 'common' }, 0) === 3 && by({ rarity: 'epic' }, 0) === 15 && by({ rarity: 'uncommon' }, 0) == null,
+    'debug amounts: &amount=3, &amounts=3,15 alternating, &amounts=common:3,epic:15 by rarity');
+  }
+  // opened for real: the amounts given through Ecu.addBlueprints, n each; a key is one; the reveal's bar steps copy by copy
+  {
+    Progress.reset(); Progress.noSave = true;
+    const kinds = Packs.data.kinds, keep = JSON.stringify(kinds.ten);
+    const sumBy = (cards) => cards.filter(c => !c.key).reduce((m, c) => ({ ...m, [c.car]: (m[c.car] || 0) + c.n }), {});
+    let ok = true, steps = true, seenN = new Set();
+    try {
+      kinds.ten.amount = [2, 4]; kinds.ten.amounts = { common: 3, epic: 15 };
+      for (let i = 0; i < 30; i++) {
+        const before = {}; for (const id of new Set([...P.roster(), ...EVENT_CARS, ...(g.cars.BESPOKE_CARS || [])].map(c => c.id))) before[id] = Ecu.blueprints(id) || 0;
+        const r = Packs.open('ten', { free: true, random: dice(900 + i) });
+        for (const c of r.cards) {
+          seenN.add(c.n);
+          if (c.key ? c.n !== 1 : c.rarity === 'common' ? c.n !== 3 : c.rarity === 'epic' ? c.n !== 15 : !(c.n >= 2 && c.n <= 4)) ok = false;
+        }
+        for (const [id, n] of Object.entries(sumBy(r.cards))) if ((Ecu.blueprints(id) || 0) - (before[id] || 0) !== n) ok = false;
+        const cards = P.revealOrder(P.revealCards(r.cards)), prog = P.revealProgress(cards);
+        prog.forEach((p, j) => {
+          if (!p.before) return;
+          const c = cards[j], s = p.steps;
+          if (c.key ? s.length !== 1 : s.length !== c.n || s.some((x, k) => x.bp !== p.before.bp + k + 1)) steps = false;
+          if (JSON.stringify(s.at(-1)) !== JSON.stringify(p.after)) steps = false;
+        });
+      }
+    } finally { kinds.ten = JSON.parse(keep); }
+    check(ok, 'opened with packs.json "amount": [2, 4], "amounts": { common: 3, epic: 15 }: each card that many (' + [...seenN].sort((a, b) => a - b).join(' ') + ' seen), given through Ecu.addBlueprints; keys one');
+    check(steps, 'the reveal\'s bar: one step a copy, each a blueprint more, the last where the slot leaves the car');
+    Progress.reset(); Progress.noSave = true;
+    const r = Packs.open('ten', { free: true, random: dice(5), amountOf: (c, i) => (i % 2 ? 15 : 3) });
+    check(r.cards.every((c, i) => c.key ? c.n === 1 : c.n === (i % 2 ? 15 : 3)), 'an amount put over the kind\'s (the debug route\'s amountOf): 3 and 15 by slot, a key still one');
+  }
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error.stack || error));

@@ -199,9 +199,63 @@ export const careerLevels = () => {
 };
 
 // ---- a pack's cards as the reveal shows them (render/packs.js) ----
-// every card its own (the owner, 12-Oct: identical cards are NOT stacked; each shows x1 on its tab for now): { ...the
-// card, n: 1 }. n is the count the card's xN badge shows, kept so stacking can come back later
+// every card its own (the owner, 12-Oct: identical cards are NOT stacked): { ...the card, n }. n is the slot's amount
+// (packs.json), the count the card's xN badge counts up to as its copies flick on
 export const revealCards = (cards) => (cards || []).map(c => ({ ...c, n: c.n ?? 1, featured: !!c.featured })); // (n: the slot's amount, packs.json: 1 today)
+// ---- a slot that gives n copies (the owner, 12-Oct: "when the card is flipped over, the extra cards need to animate and
+// flick onto the pile. Each card that flicks on, increases the badge by 1"). The card turns showing x1; then the n - 1
+// extra copies are thrown in one after another from the side and tucked onto the pile behind it, the badge going up one
+// on each landing. flickPlan(n) is the schedule (ms from the first throw; render/packs.js starts it as the card's face
+// settles): each copy's launch and landing, the badge after it lands (2 .. n), where it is thrown from and the pose it
+// settles in on the pile (a layer index: at most FLICK.layers drawn, a later copy lands on an existing layer). The gaps
+// start at FLICK.gap and shrink by FLICK.speedUp each copy down to FLICK.minGap (so a big amount speeds up), and the whole
+// is squeezed to fit FLICK.most. reduced (reduced motion): no throws, every copy at 0. seed: the slot's own scatter.
+export const FLICK = { flight: 160, gap: 125, minGap: 85, speedUp: 0.95, most: 1500, settle: 140, layers: 7 };
+export const flickPlan = (n, { reduced = false, seed = 1 } = {}) => {
+  const extra = Math.max(0, Math.floor(Number(n) || 1) - 1);
+  let s = (seed | 0) || 1;
+  const rnd = () => { s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const gaps = Array.from({ length: Math.max(0, extra - 1) }, (_, j) => Math.max(FLICK.minGap, FLICK.gap * FLICK.speedUp ** j));
+  const sum = gaps.reduce((a, b) => a + b, 0), room = FLICK.most - FLICK.flight;
+  const squeeze = sum > room ? room / sum : 1; // (a huge amount: the gaps shrink to fit...)
+  const flight = Math.min(FLICK.flight, Math.floor(2 * Math.min(Infinity, ...gaps) * squeeze)); // (...and each throw too: never more than two in the air)
+  const copies = [];
+  let launch = 0;
+  for (let j = 0; j < extra; j++) {
+    const layer = Math.min(j, FLICK.layers - 1), side = j % 2 ? -1 : 1; // (thrown from alternate sides; the pile fans out to both)
+    const deep = layer + 1;
+    copies.push({
+      copy: j + 2, badge: j + 2, layer: j < FLICK.layers ? layer : Math.floor(rnd() * FLICK.layers), fresh: j < FLICK.layers,
+      launch: reduced ? 0 : Math.round(launch), land: reduced ? 0 : Math.round(launch) + flight,
+      from: { x: side * (95 + rnd() * 30), y: -(18 + rnd() * 22), r: side * (14 + rnd() * 14) }, // (% of the card, deg: off to the side, a little above)
+      to: { x: side * (0.6 + deep * 0.55 + rnd() * 0.6), y: 0.8 + deep * 0.6 + rnd() * 0.5, r: side * (1.2 + deep * 0.75 + rnd() * 0.8) },
+    });
+    launch += (gaps[j] || 0) * squeeze;
+  }
+  for (const c of copies) if (!c.fresh) c.to = copies[c.layer].to; // (the pile is full: it lands square on a layer already there)
+  const lastLand = copies.length ? copies.at(-1).land : 0;
+  return { n: extra + 1, reduced, copies, lastLand, total: copies.length && !reduced ? lastLand + FLICK.settle : 0 };
+};
+// where a plan stands t ms after the first throw (Infinity: a tap, all landed): the copies landed, the badge, those in the air
+export const flickState = (plan, t) => {
+  const landed = plan.copies.filter(c => c.land <= t);
+  return { landed: landed.length, badge: 1 + landed.length, flying: plan.copies.filter(c => c.launch <= t && c.land > t) };
+};
+// the debug amounts (?pack=ten&amount=3, &amount=15, &amounts=3,15 alternating by slot, &amounts=common:3,epic:15 by
+// rarity): a function (card, slot index) -> n, or null (none asked). For a visit only: render/packs.js sets it on Packs
+export const debugAmounts = (params) => {
+  const one = (v) => { const n = Math.floor(Number(v)); return n >= 1 ? Math.min(n, 99) : null; };
+  const amount = one(params.get('amount'));
+  const list = (params.get('amounts') || '').split(',').map(x => x.trim()).filter(Boolean);
+  if (list.length && list.every(x => x.includes(':'))) {
+    const by = Object.fromEntries(list.map(x => x.split(':')).map(([r, v]) => [r.trim(), one(v)]).filter(([, v]) => v));
+    return (card) => by[card.rarity] ?? amount;
+  }
+  const seq = list.map(one).filter(Boolean);
+  if (seq.length) return (card, i) => seq[i % seq.length];
+  return amount ? () => amount : null;
+};
+
 // the order they are turned in: as drawn, but the BEST card last (the owner, 12-Oct: "the featured card at the end of the
 // pack always, unless upgraded"): the highest rarity goes last; among equals a featured card; among those the later. So
 // a special pack's featured card (its guaranteed last slot) is last unless a slot upgraded to a HIGHER rarity than it
@@ -248,7 +302,8 @@ export const revealProgress = (cards, { owned = (id) => Progress.owns(id) } = {}
     if (c.key) key1 = true; else n1 = n0 + (c.n ?? 1);
     bp[id] = n1; hasKey[id] = key1;
     const after = at(car, n1, key1);
-    return { before, after, unlocks: !before.unlocked && after.unlocked, ecuUp: after.ecu > before.ecu, maxed: after.ecu >= after.max };
+    const steps = c.key ? [after] : Array.from({ length: n1 - n0 }, (_, j) => at(car, n0 + j + 1, key1)); // (after each copy: the bar fills copy by copy as they flick on)
+    return { before, after, steps, unlocks: !before.unlocked && after.unlocked, ecuUp: after.ecu > before.ecu, maxed: after.ecu >= after.max };
   });
 };
 
@@ -297,7 +352,10 @@ export const Packs = {
   // A pack opened: drawn, and every card given (a blueprint each through Ecu.addBlueprints; a key through grantKey).
   // free: true opens one not held (the debug route). { kind, from, cards } (each card with isNew, count, maxed), or
   // null (none held)
-  open(kind, { from = null, free = false, random = Math.random } = {}) {
+  // amountOf: (card, slot index) -> n or null, an amount put over the kind's (the debug ?amount=: debugAmounts), else
+  // Packs.amountOverride (set for a visit by the debug route; never saved)
+  amountOverride: null,
+  open(kind, { from = null, free = false, random = Math.random, amountOf = this.amountOverride } = {}) {
     if (!packData.kinds[kind]) return null;
     const held = (Progress.data.packs ||= {}), key = packKey(kind, from);
     if (!free) {
@@ -305,6 +363,7 @@ export const Packs = {
       if (--held[key] <= 0) delete held[key];
     }
     const cards = draw(kind, { random, featured: kind === 'special' || packData.kinds[kind].featured ? featuredFor(from) : [] });
+    if (amountOf) cards.forEach((c, i) => { const n = c.key ? null : amountOf(c, i); if (n >= 1) c.n = Math.floor(n); }); // (a key is always one)
     for (const c of cards) {
       const car = Cars.carById(c.car);
       if (c.key) {
