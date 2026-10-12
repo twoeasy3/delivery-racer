@@ -173,6 +173,8 @@
 #showroom .ov-unpurchased, #showroom .sr-ov.unpurchased { --ov: #ff9a3c; }
 #showroom .ov-tier, #showroom .sr-ov.tier { --ov: #8fb3d9; }
 #showroom .ov-blueprint, #showroom .sr-ov.blueprint { --ov: #3f9dff; }
+#showroom .ov-unavailable, #showroom .sr-ov.unavailable { --ov: #9aa3b2; } /* (not available at the moment: a cool slate, an hourglass) */
+#showroom .ov-unavailable .sr-img { filter: grayscale(.85) brightness(.8); }
 #showroom .sr-card[class*=" ov-"] { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rar) 50%, transparent), 0 6px 18px rgba(0, 0, 0, .45);
   background: linear-gradient(165deg, color-mix(in srgb, var(--ov) 20%, #161c29) 0%, #121824 50%, #0c1018 100%); }
 #showroom .sr-card[class*=" ov-"]::after { background: radial-gradient(closest-side, color-mix(in srgb, var(--ov) 22%, transparent), transparent); }
