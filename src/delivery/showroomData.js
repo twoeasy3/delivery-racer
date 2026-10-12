@@ -105,7 +105,7 @@ export const carCard = (car, evil = false) => {
   const rule = carRule(evil), barred = unlocked && !!rule && !ruleAllows(rule, car);
   return {
     car, id: car.id,
-    name: hidden ? 'Locked car' : car.name,
+    name: dark ? 'Locked car' : car.name,
     stars: stars(car), starColour: starColour(car), tier: tierOf(car),
     rarity: rarityOf(car), hidden, dark,
     ecu, max, maxed, upgradable, blueprint, key: !blueprint,
