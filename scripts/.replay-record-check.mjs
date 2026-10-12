@@ -72,7 +72,9 @@ const roundTrip = ({ id, k = 0, seconds = 40, pauseAt = -1, mystery = '', what }
 };
 try {
   for (const id of ['expressway', 'tokyo', 'noon']) roundTrip({ id, what: 'a run' });
-  const paused = roundTrip({ id: 'night', k: 2, pauseAt: 1500, mystery: 'rewind', what: 'paused 3 s, and a rewind' });
+  // (the first scripted path that picks up the mystery box: a change to the steering moves the car a little, so which one does is not fixed)
+  let paused;
+  for (const k of [2, 0, 1, 3, 4, 5]) { paused = roundTrip({ id: 'night', k, pauseAt: 1500, mystery: 'rewind', what: 'paused 3 s, and a rewind (path ' + k + ')' }); if (paused.recRewinds === 1) break; }
   check(paused.recRewinds === 1 && paused.playRewinds === 1 && paused.rec.events.length === 21,
     `the rewind happened, and again played back (${paused.recRewinds} / ${paused.playRewinds}); the keys pressed while paused not recorded (${paused.rec.events.length} events)`);
   // the ghost's path (replay.js mark, packed): by the clock, the rewound ten seconds dropped: its times only rise, a
@@ -83,7 +85,8 @@ try {
   };
   const pp = pathOk(paused);
   check(pp.ok, `the ghost's path of the rewound run: ${pp.n} points, rising, to ${pp.end} s (the clock ended at ${pp.time.toFixed(3)} s, ${paused.rec.header.steps / 120} s of steps)`);
-  const meadows = roundTrip({ id: 'mystery-meadows', k: 0, pauseAt: 1500, mystery: 'rewind', what: 'paused 3 s, and a rewind' });
+  let meadows;
+  for (const k of [0, 1, 2, 3, 4, 5]) { meadows = roundTrip({ id: 'mystery-meadows', k, pauseAt: 1500, mystery: 'rewind', what: 'paused 3 s, and a rewind (path ' + k + ')' }); if (meadows.recRewinds === 1) break; }
   check(meadows.recRewinds === 1 && meadows.playRewinds === 1, `the rewind there too (${meadows.recRewinds} / ${meadows.playRewinds})`);
   check(pathOk(meadows).ok, 'and its path too (' + pathOk(meadows).n + ' points to ' + pathOk(meadows).end + ' s)');
   // a second run on the level already loaded: its recording holds the load's seed, and plays back as well
