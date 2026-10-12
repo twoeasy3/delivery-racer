@@ -40,7 +40,7 @@ export const posesFrom = (value) => {
 let active = null;
 export const activePoses = () => {
   if (active) return active;
-  let asked = null;
+  let asked;
   try { asked = typeof location !== 'undefined' ? posesFrom(new URLSearchParams(location.search).get('poses')) : null; } catch { asked = null; }
   return (active = asked || POSE_NAMES);
 };
