@@ -44,15 +44,19 @@ export const Input = (() => {
   const stick = (d) => Math.abs(d) < DEAD_PX ? 0
     : Math.max(-1, Math.min(1, (d - Math.sign(d) * DEAD_PX) / (FULL_PX - DEAD_PX)));
   let touchId = null, startX = 0, startY = 0;
-  // (the menus are left alone, so their lists can be scrolled)
+  // (the menus are left alone, so their lists can be scrolled. A touch is a menu's if it BEGAN on one: judged once, at its
+  // start, and kept by the finger's id: a menu drawn again under a finger (its element gone, so `closest` finds no menu) must
+  // not turn the rest of that touch into the driving stick, whose preventDefault would end the scroll and the touch)
   const isUi = (e) => e.target.closest && e.target.closest('button, .pad, .overlay, .shop-screen, #showroom, #packs');
+  const uiTouches = new Set();
   window.addEventListener('touchstart', (e) => {
-    if (isUi(e) || touchId !== null) return;
+    if (isUi(e)) { for (const t of e.changedTouches) uiTouches.add(t.identifier); return; }
+    if (touchId !== null) return;
     const t = e.changedTouches[0];
     touchId = t.identifier; startX = t.clientX; startY = t.clientY;
   }, { passive: true });
   window.addEventListener('touchmove', (e) => {
-    if (isUi(e)) return;
+    if ([...e.changedTouches].every(t => uiTouches.has(t.identifier))) return;
     e.preventDefault(); // no page scroll / pinch zoom during play
     for (const t of e.changedTouches) {
       if (t.identifier !== touchId) continue;
@@ -62,6 +66,7 @@ export const Input = (() => {
   }, { passive: false });
   const endTouch = (e) => {
     for (const t of e.changedTouches) {
+      uiTouches.delete(t.identifier);
       if (t.identifier === touchId) { touchId = null; touchSteer = 0; touchThrottle = 0; }
     }
   };
