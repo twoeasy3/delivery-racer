@@ -115,7 +115,6 @@ export const addSuperKit = (model, car) => {
   const R = tyres.length ? Math.max(...tyres.map(t => t.geometry.parameters.radiusTop)) : 0.35;
   const frontZ = tyres.length ? Math.max(...tyres.map(t => t.position.z)) : l * 0.3;
   const rearZ = tyres.length ? Math.min(...tyres.map(t => t.position.z)) : -l * 0.3;
-  const sideX = tyres.length ? Math.max(...tyres.map(t => Math.abs(t.position.x))) : w / 2 - 0.04;
   // the body's own box: its sill (how low the body hangs) and how far out its sides are
   const bodyBox = new THREE.Box3().setFromObject(model.userData.body);
   const sill = Math.max(0.12, bodyBox.min.y), side = Math.max(w / 2, bodyBox.max.x);

@@ -13,7 +13,7 @@ import { Game } from '../game.js';
 import { Player } from '../player.js';
 import { Crossings } from '../crossing.js';
 import { StopGo } from '../stopgo.js';
-import { Site } from '../site.js';
+import '../site.js'; // (for what it sets up when it loads)
 import { SpeedCameras } from '../cameras.js';
 import { scene, camera, tmp, tmp2 } from './scene.js';
 import { buildStrip } from './road.js';

@@ -29,7 +29,7 @@ export const Milestones = {
   },
   // each step of a run: a police car that was near (as Traffic.policeNear sees it) and then falls
   // `outrun` m behind the player without a bust is outrun, once each
-  update(dt) {
+  update() {
     const M = CONFIG.milestones;
     if (Game.screensaver) return; // (nobody is driving)
     if (Game.wrecks > this.wrecks) Progress.count('wrecks', Game.wrecks - this.wrecks);

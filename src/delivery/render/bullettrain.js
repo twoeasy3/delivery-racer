@@ -2,7 +2,6 @@
 // White carriages with a blue stripe and a dark band of windows, a long duck-billed nose at
 // each end, the front one lit. Each carriage sits on the road where it is, so the train bends
 // round curves and follows its lane where the road narrows.
-import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { Track } from '../track.js';
 import { BulletTrain } from '../bullettrain.js';

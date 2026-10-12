@@ -3,7 +3,6 @@
 // each on the road crossing it, turned the way it is going, its tracks or wheels turning; its
 // warning beacon flashing. Also the mud a car throws up, driving through it.
 import * as THREE from 'three';
-import { CONFIG } from '../config.js';
 import { LEVEL } from '../levels.js';
 import { Track } from '../track.js';
 import { Game } from '../game.js';
@@ -11,7 +10,7 @@ import { Player } from '../player.js';
 import { Machinery } from '../machinery.js';
 import { scene, tmp } from './scene.js';
 import { Particles, rnd } from './effects.js';
-import { makeMachine, add, BEACON_ON, BEACON_OFF } from './machineModels.js';
+import { makeMachine, BEACON_ON, BEACON_OFF } from './machineModels.js';
 
 
 const group = new THREE.Group();

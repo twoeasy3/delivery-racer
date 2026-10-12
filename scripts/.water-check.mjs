@@ -6,7 +6,7 @@
 import { boot } from './delivery-headless.mjs';
 
 const g = await boot({ cars: ['commuter', 'sport', 'floatvan'] });
-const { Water } = await g.load('water.js');
+await g.load('water.js');
 const { Progress } = await g.load('progress.js');
 const { AMPHIBIOUS_LEVELS } = g.levels;
 const CONFIG = g.CONFIG;

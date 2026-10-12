@@ -27,7 +27,7 @@ export { makeAirliner }; // (as before)
 
 // each kind of wreckage, w m across the road (local x) and d m along it (local z), resting on y = 0
 const MODELS = {
-  tanker: (w, d) => {
+  tanker: (w) => {
     const g = new THREE.Group();
     add(g, across(1.25, 1.25, w * 0.72), lambert(0xd8dadc), -w * 0.12, 1.55, 0);
     add(g, across(1.27, 1.27, w * 0.06), lambert(0xe0702a), -w * 0.12, 1.55, 0);          // (its stripe)

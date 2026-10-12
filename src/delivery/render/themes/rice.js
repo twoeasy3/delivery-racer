@@ -20,7 +20,7 @@ export const rice = ({ instances, offRoads, beside, inJunction, cube, tube, leve
   // (laid out the same every time: a seed of the level's own)
   let seed = 17 + (LEVEL.id || '').length * 191;
   const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const p = {}, q = {};
+  const p = {};
   const open = (s) => s > Track.start + 2 && s < Track.end - 2 && !inJunction(s) && !Track.onBridge(s) && !(Track.tunnel(s) > 0);
   const half = (s) => Math.max(Track.hi(s), -Track.lo(s));
   const land = (x, z, fallback = 0) => landAt ? landAt(x, z) : fallback;

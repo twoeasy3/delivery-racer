@@ -8,7 +8,7 @@
   "traffic": { "wagon": 0.22, "commuter": 0.18, "van": 0.15, "suv": 0.12, "lovebus": 0.1, "semi": 0.1, "darkvan": 0.08, "bus": 0.05 },
   "trafficZones": [
     { "from": 0, "to": 1500, "traffic": { "police": 0.03 } },
-    { "from": 2150, "to": 3618, "traffic": { "police": 0.03 } }
+    { "from": 2250, "to": 3618, "traffic": { "police": 0.03 } }
   ],
   "trafficCount": 5,
   "oncomingCount": 6,

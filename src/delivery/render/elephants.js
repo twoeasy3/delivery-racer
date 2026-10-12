@@ -2,7 +2,6 @@
 // A big grey elephant: a barrel of a body on four pillar legs, great flapping ears, a swinging
 // trunk and tusks. Also the dust the migration's herd kicks up as it streams across the road.
 import * as THREE from 'three';
-import { CONFIG } from '../config.js';
 import { LEVEL } from '../levels.js';
 import { Track } from '../track.js';
 import { Game } from '../game.js';
@@ -11,7 +10,7 @@ import { Collision } from '../collision.js';
 import { Elephants } from '../elephants.js';
 import { scene, tmp } from './scene.js';
 import { Particles, rnd } from './effects.js';
-import { makeElephant, add } from './elephantModel.js';
+import { makeElephant } from './elephantModel.js';
 
 
 const group = new THREE.Group();

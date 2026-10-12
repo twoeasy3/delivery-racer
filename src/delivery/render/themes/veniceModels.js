@@ -11,7 +11,7 @@ const part = (parent, geometry, material, x, y, z, sx = 1, sy = 1, sz = 1) => {
   parent.add(mesh);
   return mesh;
 };
-const BOX = new THREE.BoxGeometry(1, 1, 1), ROD = new THREE.CylinderGeometry(0.5, 0.5, 1, 12), CONE = new THREE.ConeGeometry(0.5, 1, 12), BALL = new THREE.SphereGeometry(0.5, 14, 10);
+const BOX = new THREE.BoxGeometry(1, 1, 1), ROD = new THREE.CylinderGeometry(0.5, 0.5, 1, 12), BALL = new THREE.SphereGeometry(0.5, 14, 10);
 const PYRAMID = new THREE.ConeGeometry(0.707, 1, 4).rotateY(Math.PI / 4), DOME = new THREE.SphereGeometry(0.5, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2);
 
 // a gondola: long, black and narrow, both ends swept up, the steel ferro at the bow, red seats; rowed: with its

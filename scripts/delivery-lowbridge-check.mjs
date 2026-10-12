@@ -21,7 +21,6 @@ try {
     }
     console.log(name.padEnd(22), 'health lost', (1000 - P.health).toFixed(0), 'hits', bars.map(b => b.hits).join('/'));
   };
-  const mid = bars[0].hi;
   trial('straight into bar A', () => (bars[0].lo + bars[0].hi) / 2);
   trial('straight into bar B', () => (bars[1].lo + bars[1].hi) / 2);
   trial('slalom (A clear, B clear)', (k) => { const c = bars[k].lo === bars[0].lo ? bars[1] : bars[0]; return (c.lo + c.hi) / 2; });

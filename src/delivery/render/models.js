@@ -988,7 +988,7 @@ export const MODELS = {
   buggy: (car) => {
     const group = new THREE.Group();
     const w = car.hw * 2, L = car.hl, Rf = 0.3, Rr = 0.36, zf = L * 0.64, zr = -L * 0.6;
-    const paint = lambert(car.color), glass = lambert(0x9fc6d8), trim = lambert(TRIM), chrome = lambert(CHROME);
+    const paint = lambert(car.color), glass = lambert(0x9fc6d8), chrome = lambert(CHROME);
     const rig = new THREE.Group(); group.add(rig);                                      // (everything the springs carry)
     const tub = new THREE.Shape();                                                      // the tub, side on
     tub.moveTo(-L * 0.82, 0.32);
@@ -1419,7 +1419,7 @@ export const MODELS = {
   herald: (car) => {
     const group = new THREE.Group();
     const w = car.hw * 2, l = car.hl * 2, R = 0.3;
-    const paint = lambert(car.color), glass = lambert(GLASS), trim = lambert(TRIM), sailCloth = lambert(0xf4f2ea);
+    const paint = lambert(car.color), glass = lambert(GLASS), sailCloth = lambert(0xf4f2ea);
     const body = box(group, paint, w, 0.45, l, 0, 0.55, 0);
     box(group, paint, w * 0.94, 0.12, l * 0.34, 0, 0.82, l * 0.32);                   // the long bonnet
     box(group, paint, w * 0.94, 0.1, l * 0.24, 0, 0.82, -l * 0.38);                   // the boot, its little fins

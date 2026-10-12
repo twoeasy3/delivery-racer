@@ -1,13 +1,12 @@
 // ---- HIPPOS: the hippos charging out of the river (their movement and the damage: ../hippos.js) ----
 // A big grey-pink barrel of a hippo on stumpy legs, its jaws thrown wide as it charges. Surfacing
 // it throws up a splash of water; charging over dry ground it kicks up dust.
-import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { Track } from '../track.js';
 import { Hippos } from '../hippos.js';
 import { scene, tmp } from './scene.js';
 import { Particles, rnd } from './effects.js';
-import { makeHippo, add } from './hippoModel.js';
+import { makeHippo } from './hippoModel.js';
 
 
 const pool = [];

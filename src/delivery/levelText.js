@@ -74,7 +74,8 @@ export const levelWords = (level) => {
 // editor opens, checks and downloads, so that a level's file from there stands by itself
 export const withWords = (level) => {
   const { name, description } = levelWords(level), cargo = levelCargo(level), out = {};
-  const { name: n, description: d, ...rest } = level;
+  const rest = { ...level };
+  delete rest.name; delete rest.description; // (the words are put back from the words file, below)
   const put = () => { out.name = name; if (description) out.description = description; if (cargo) out.cargo = cargo; };
   for (const [key, value] of Object.entries(rest)) {
     if (key === 'cargo' && cargo) continue; // (put with the words: the file's, over the level's own, a side at a time)

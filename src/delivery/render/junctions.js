@@ -96,7 +96,7 @@ const build = () => {
     slab(c.x - f0.x * half, c.z - f0.z * half, f0, 2 * half, -half, half, y, ASPHALT);
     const lanes = Math.max(Track.leftLanes, Track.rightLanes), edge = Track.medianHalf + lanes * LW;
     const toward = jn.way ? jn.out : f0; // (the way the road goes on from here)
-    jn.arms.forEach((arm, k) => {
+    jn.arms.forEach((arm) => {
       const d = arm.dir, mx = c.x + d.x * half, mz = c.z + d.z * half, run = arm.length - half;
       slab(mx, mz, d, run, -half, half, y, ASPHALT);
       // a zebra crossing at the mouth and a stop line behind it, across the lanes coming in (on the

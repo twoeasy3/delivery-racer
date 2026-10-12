@@ -93,7 +93,7 @@ try {
 
   const shapes = {};
   for (const def of Object.values(FIELDS)) shapes[def.shape] = (shapes[def.shape] || 0) + 1;
-  const count = (list) => Object.values(FIELDS).reduce((n, def) => n + Object.keys(def.settings || {}).length, 0);
+  const count = () => Object.values(FIELDS).reduce((n, def) => n + Object.keys(def.settings || {}).length, 0);
   console.log(`${Object.keys(FIELDS).length} fields in the schema (${Object.entries(shapes).map(([k, n]) => n + ' ' + k).join(', ')}), ${count()} settings; ` +
     `${used.size} fields used by ${levels.length} levels, ${documented.size} documented in levels.js`);
   console.log(`${levels.length} levels checked and round-tripped (${entries} entries, ${settings} settings read and written back); ${made} new entries made and checked`);

@@ -8,7 +8,7 @@ let failures = 0;
 const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' : '  FAIL  ') + what); };
 try {
   const { Progress } = await g.load('progress.js');
-  const { CARS, EARNED_CARS, NEXT_TIER_CAPS, earnedFor, garageCars, selectCar, stars, starColour, STAR_COLOURS, superOf, LEVEL_CARS } = g.cars;
+  const { CARS, EARNED_CARS, earnedFor, garageCars, selectCar, stars, starColour, STAR_COLOURS, superOf, LEVEL_CARS } = g.cars;
   const { SPECIAL_LEVELS, LEVELS } = g.levels;
   check(SPECIAL_LEVELS.every(l => EARNED_CARS.some(car => car.earned.level === l.id)) && EARNED_CARS.length === SPECIAL_LEVELS.length, 'a car for each of the ' + SPECIAL_LEVELS.length + ' special levels, and no other');
   // one off for now (Rival Run's Courier Special, the owner 11-Oct): not earned on its level, and nobody has it, a par beaten or not

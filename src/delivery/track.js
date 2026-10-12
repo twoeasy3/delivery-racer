@@ -799,7 +799,7 @@ const createTrack = () => {
       const d = Math.hypot(x - c.x, z - c.z);
       if (d < best) { best = d; s = at; }
     }
-    let h = 0;
+    let h;
     for (let i = 0; i < 3; i++) { // ...then slid along until the point is square to it
       h = toWorld(s, 0, c);
       s += (x - c.x) * Math.sin(h) + (z - c.z) * Math.cos(h);

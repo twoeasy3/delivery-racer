@@ -19,7 +19,6 @@ try {
   const P = g.Player, G = g.Game, T = () => g.track.Track, C = g.CONFIG.pursuit;
   const lane = (n, s) => T().laneOffset(n, s);
   const said = (text) => g.said.some(line => line.includes(text));
-  const quiet = () => { for (const car of g.Traffic.cars) if (!car.driver) car.active = false; };
   // a fresh run on a level, the car at s doing v; a pursuit set off `at` s in (null: left to the level's clock)
   const start = (level, { s = 1500, v = 22, evil = false, at = 0.1, n = 1 } = {}) => {
     reseed(seed0 + n * 7919);
