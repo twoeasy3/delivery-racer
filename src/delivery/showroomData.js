@@ -127,6 +127,9 @@ export const floorBest = () => {
 // It is the livery the cars are shown in, the side whose car rule marks the cards ("Not on this level"), and the side
 // DRIVE drives as (as the car lot's "Drive it as Evil": render/garage.js takeSide). It starts on the side being played.
 export const sideName = (evil) => evil ? 'Evil' : 'Good';
+// a click on a half of a Good / Evil switch (the owner, 12-Oct, every such switch in the game): the other half picks
+// that side, and the half already on flips it too. The side it leaves on
+export const sideClick = (current, clicked) => !!clicked === !!current ? !current : !!clicked;
 // the words on the detail's big button, for a card made for that side (carCard(car, evil))
 export const driveWords = (card, evil) => card.state === 'ready' ? 'Drive as ' + sideName(evil)
   : card.state === 'barred' ? 'Not on this level as ' + sideName(evil)
@@ -150,4 +153,88 @@ export const driveAs = (card, evil) => {
   Progress.save();
   if (card.id !== carInUse().id) selectCar(card.id);
   return true;
+};
+
+// ---- the FILTERS and the SORT of the showroom's cards (the owner, 12-Oct: "filters beyond All / Ready / Locked") -----
+// Pure: render/showroom.js draws the chips and remembers the choice; scripts/.showroom-check.mjs checks the cars each
+// gives. A filter is { tier: [], rarity: [], kind: [], state: [], sort }: within a group the chips picked are OR'd
+// (gold 3 OR blue 1), the groups AND'd (gold 3 AND epic AND ready); an empty group lets every card by.
+// The groups, their chips in order, and the words on them (a tier chip's stars are coloured by render/showroom.js)
+export const FILTER_GROUPS = [
+  { id: 'tier', name: 'Tier', chips: [
+    ['g1', '★1'], ['g2', '★2'], ['g3', '★3'], ['g4', '★4'], ['g5', '★5'],
+    ['b1', '★1'], ['b2', '★2'], ['b3', '★3'], ['b4', '★4'], ['b5', '★5'],
+    ['sea', 'Amphibious'], ['magenta', 'Event / special'],
+  ] },
+  { id: 'rarity', name: 'Rarity', chips: [['common', 'Common'], ['uncommon', 'Uncommon'], ['epic', 'Epic'], ['legendary', 'Legendary'], ['bespoke', 'Bespoke'], ['special', 'Special']] },
+  { id: 'kind', name: 'Kind', chips: [['key', 'Key cars'], ['blueprint', 'Blueprint cars'], ['special', 'Earned / special'], ['event', 'Event cars']] },
+  { id: 'state', name: 'State', chips: [['ready', 'Ready'], ['locked', 'Locked'], ['upgradable', 'Upgradable'], ['maxed', 'Maxed'], ['inuse', 'In use'], ['barred', 'Not on this level']] },
+];
+export const SORTS = [['tier', 'Tier'], ['rarity', 'Rarity'], ['ecu', 'ECU'], ['name', 'Name'], ['speed', 'Top speed']];
+export const RARITY_ORDER = ['common', 'uncommon', 'epic', 'legendary', 'bespoke', 'special'];
+export const noFilter = () => ({ tier: [], rarity: [], kind: [], state: [], sort: 'tier' });
+// a filter read from anywhere (the remembered one, an address): only chips and sorts that exist
+export const cleanFilter = (f) => {
+  const out = noFilter();
+  for (const group of FILTER_GROUPS) {
+    const told = Array.isArray(f?.[group.id]) ? f[group.id] : [];
+    out[group.id] = group.chips.map(([id]) => id).filter(id => told.includes(id));
+  }
+  if (SORTS.some(([id]) => id === f?.sort)) out.sort = f.sort;
+  return out;
+};
+// "tier:g3,b1;rarity:epic;state:ready;sort:speed" (the address's &filter=)
+export const parseFilter = (text) => {
+  const f = noFilter();
+  for (const part of String(text || '').split(/[;|]/)) {
+    const [key, value = ''] = part.split(':');
+    if (key === 'sort') f.sort = value;
+    else if (Array.isArray(f[key])) f[key] = value.split(',').filter(Boolean);
+  }
+  return cleanFilter(f);
+};
+export const filterCount = (f) => FILTER_GROUPS.reduce((n, group) => n + (f[group.id]?.length || 0), 0);
+// a card's chip in each group
+const secret = (car) => Object.values(SECRET_CARS).includes(car);
+export const tierGroup = (card) => {
+  const car = card.car;
+  if (car.earned || EVENT_CARS.includes(car) || secret(car) || !(car.tier >= 1 && car.tier <= 5)) return 'magenta';
+  if (car.amphibious) return 'sea';
+  return (car.blue ? 'b' : 'g') + car.tier;
+};
+export const kindOf = (card) => EVENT_CARS.includes(card.car) ? 'event'
+  : card.car.earned || secret(card.car) ? 'special'
+    : card.blueprint ? 'blueprint' : 'key';
+export const statesOf = (card, inUseId) => {
+  const states = [card.state]; // ready | locked | barred
+  if (card.upgradable && !card.maxed) states.push('upgradable');
+  if (card.maxed && card.ecu >= 1) states.push('maxed');
+  if (card.id === inUseId) states.push('inuse');
+  return states;
+};
+export const cardMatches = (card, f, inUseId) =>
+  (!f.tier.length || f.tier.includes(tierGroup(card)))
+  && (!f.rarity.length || f.rarity.includes(card.rarity))
+  && (!f.kind.length || f.kind.includes(kindOf(card)))
+  && (!f.state.length || statesOf(card, inUseId).some(s => f.state.includes(s)));
+// the cards a filter lets by, in its sort (the cards come in the floor's order, showroomCars, which 'tier' keeps; a
+// tie keeps it too). Rarity, ECU and speed: the most first; name: A to Z. A car of a tier not open yet (hidden) goes by
+// what its card shows: "Locked car", and no figures (so last by speed)
+const SORTERS = {
+  tier: () => 0,
+  rarity: (a, b) => RARITY_ORDER.indexOf(b.rarity) - RARITY_ORDER.indexOf(a.rarity),
+  ecu: (a, b) => b.ecu - a.ecu || b.max - a.max,
+  name: (a, b) => a.name.localeCompare(b.name),
+  speed: (a, b) => (b.hidden ? -1 : b.stats.maxSpeed) - (a.hidden ? -1 : a.stats.maxSpeed),
+};
+export const filterCards = (cards, f, inUseId) => {
+  const sorter = SORTERS[f.sort] || SORTERS.tier;
+  return cards.map((card, i) => [card, i]).filter(([card]) => cardMatches(card, f, inUseId))
+    .sort(([a, i], [b, j]) => sorter(a, b) || i - j).map(([card]) => card);
+};
+// the card before or after this one in a list (the full view's arrows): round from the last to the first
+export const stepIn = (list, id, dir) => {
+  if (!list.length) return null;
+  const i = list.findIndex(card => card.id === id);
+  return list[((i < 0 ? 0 : i + dir) % list.length + list.length) % list.length];
 };

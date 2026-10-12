@@ -119,7 +119,7 @@ if (params.get('garage') !== null) {
   if (params.get('click')) params.get('click').split('|').forEach((selector, i) => setTimeout(() => document.querySelector(selector)?.click(), 50 + i * 50)); // (several, with | between)
 }
 // ?showroom opens the showroom (render/showroom.js: where a car is picked; ?garage is the car lot, Crazey Jim's);
-// &look=sport picks that car's card (&sheet: and opens its sheet on a phone); &bp=sport:7,hotrod:3 gives those
+// &look=sport picks that car's card (&full or &sheet: and opens its full view); &filter=, &filters (render/showroom.js); &bp=sport:7,hotrod:3 gives those
 // blueprints for the visit (nothing is saved)
 if (params.get('showroom') !== null) {
   if (params.get('bp')) {
@@ -129,8 +129,11 @@ if (params.get('showroom') !== null) {
       (Progress.data.blueprints ||= {})[id] = Number(n) || 0;
     }
   }
+  if (params.get('filter') !== null) Showroom.useFilter(params.get('filter')); // (&filter=tier:g3,b1;state:ready;sort:speed: for the visit)
   Showroom.open();
-  if (params.get('look')) Showroom.look(params.get('look'), params.get('sheet') !== null);
+  const full = params.get('full') !== null || params.get('sheet') !== null; // (&full: the car's full view; &sheet, its old name)
+  if (params.get('look')) Showroom.look(params.get('look'), full); else if (full) Showroom.look(Showroom.shown.picked, true);
+  if (params.get('filters') !== null) Showroom.filters(true); // (&filters: the filter sheet open)
 }
 // ?screensaver starts the screensaver straight away (with ?ff=5 as above); ?racewatch the race one
 const autostart = params.get('autostart');
