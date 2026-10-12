@@ -100,3 +100,17 @@
   .pr-slot:not(.down) .pr-back { display: none; }
   .pack-reveal.opening .pr-pack .shop-packs, .pack-reveal.opening .pr-burst, .pr-hint, .pr-slot.shown.finale .pr-flip, .pr-slot.shown.r-bespoke .bp-card { animation: none; }
 }
+
+/* a slot of many copies (render/flick.js): the card turns at x1, the extra copies are thrown in and tucked onto a pile
+   behind it (at most seven plain card edges fanned out a little), the badge going up one on each. Transforms and opacity only */
+.pr-body { overflow-x: hidden; } /* (a copy thrown in from past the edge never makes the box scroll sideways) */
+.pr-slot.flicking { z-index: 2; }
+.pr-face > .bp-card:not(.pr-flier) { z-index: 2; }
+.pr-pile { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.pr-layer { position: absolute; inset: 0; border-radius: 9px; opacity: 0;
+  background: linear-gradient(180deg, #ffffff, #dfe4ec); box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .9), 0 0 0 3px var(--rc), 0 3px 8px rgba(0, 0, 0, .45); }
+.pr-layer.on { opacity: 1; }
+.pr-face > .pr-flier { position: absolute; inset: 0; z-index: 1; visibility: hidden; pointer-events: none; }
+.pr-face > .pr-flier.fly { visibility: visible; }
+.pr-flier, .pr-flier *, .pr-flier::before, .pr-flier::after, .pr-flier *::before, .pr-flier *::after { animation: none !important; } /* (a thrown copy: no shine of its own) */
+.pr-slot.many-copies .bp-amount { transform-origin: 50% 50%; }

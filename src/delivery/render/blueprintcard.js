@@ -71,8 +71,9 @@ export const blueprintCard = (car, card, { compact = false, chance = null, marks
 // lit. A car at its top shows MAX. p: packs.js revealProgress's entry for the card
 const fillOf = (s) => (s ? Math.round(Math.max(0, Math.min(1, s.have / s.toNext)) * 100) + '%' : '0%');
 export const progressBar = (p, card) => {
-  if (!p?.before) return { node: make('div', 'bp-prog none'), land() {} };
+  if (!p?.before) return { node: make('div', 'bp-prog none'), land() {}, step() {} };
   const { before, after } = p;
+  const steps = p.steps?.length ? p.steps : [after]; // (where it stands after each copy the slot gave: the bar fills copy by copy)
   const pips = make('span', 'bp-pips');
   for (let i = 1; i <= after.max; i++) pips.append(make('i', i <= before.ecu ? 'on' : ''));
   const fill = make('i');
@@ -82,29 +83,35 @@ export const progressBar = (p, card) => {
   const label = make('b', 'bp-up');
   const node = make('div', 'bp-prog' + (before.ecu >= before.max ? ' max' : ''), pips, make('span', 'bp-track', fill), count, label);
   node.title = card.key ? 'The key' : 'Blueprints toward the next ECU';
-  let landed = false;
-  return {
-    node,
-    land(instant = false) {
-      if (landed) return;
-      landed = true;
-      node.classList.toggle('instant', instant);
-      const wrapped = !instant && after.ecu > before.ecu && after.ecu < after.max; // (an ECU reached: the bar runs full, then starts the next)
-      const finish = () => {
-        fill.style.width = after.ecu >= after.max ? '100%' : fillOf(after);
-        count.textContent = words(after);
-        [...pips.children].forEach((pip, i) => pip.classList.toggle('on', i < after.ecu));
-        if (after.ecu > before.ecu) pips.children[after.ecu - 1]?.classList.add('new');
-        node.classList.toggle('max', after.ecu >= after.max);
-        if (p.unlocks || p.ecuUp) {
-          label.textContent = p.unlocks ? (card.key ? 'KEY: UNLOCKED!' : 'UNLOCKED!') : after.ecu >= after.max ? 'ECU ' + after.ecu + ' · MAX!' : 'ECU ' + after.ecu + '!';
-          node.classList.add('glow');
-        }
-      };
-      if (wrapped) {
-        fill.style.width = '100%';
-        setTimeout(() => { fill.style.transition = 'none'; fill.style.width = '0%'; void fill.offsetWidth; fill.style.transition = ''; finish(); }, 380);
-      } else requestAnimationFrame(finish);
-    },
+  let shown = 0, wrap = 0; // (copies on the bar so far; a pending wrap's timer)
+  const empty = () => { fill.style.transition = 'none'; fill.style.width = '0%'; void fill.offsetWidth; fill.style.transition = ''; }; // (once an ECU, not a frame)
+  // step(k): the bar to where it stands after k copies (land(): all of them). It glows from the copy that unlocks the car
+  // or takes it up an ECU (a slot of many: on the flick that crosses it), with the words of where it stands then
+  const step = (k, instant = false) => {
+    k = Math.min(steps.length, Math.max(0, k));
+    if (k <= shown) return;
+    const was = shown ? steps[shown - 1] : before, to = steps[k - 1];
+    shown = k;
+    if (wrap) { clearTimeout(wrap); wrap = 0; empty(); } // (a wrap still running: the bar starts the next ECU from empty now)
+    node.classList.toggle('instant', instant);
+    const wrapped = !instant && to.ecu > was.ecu && to.ecu < to.max; // (an ECU reached: the bar runs full, then starts the next)
+    const finish = () => {
+      fill.style.width = to.ecu >= to.max ? '100%' : fillOf(to);
+      count.textContent = words(to);
+      [...pips.children].forEach((pip, i) => pip.classList.toggle('on', i < to.ecu));
+      for (let i = before.ecu; i < to.ecu; i++) pips.children[i]?.classList.add('new');
+      node.classList.toggle('max', to.ecu >= to.max);
+      const unlocks = !before.unlocked && to.unlocked, up = to.ecu > before.ecu;
+      if (unlocks || up) {
+        label.textContent = unlocks ? (card.key ? 'KEY: UNLOCKED!' : 'UNLOCKED!') : to.ecu >= to.max ? 'ECU ' + to.ecu + ' · MAX!' : 'ECU ' + to.ecu + '!';
+        node.classList.add('glow');
+      }
+    };
+    if (wrapped) {
+      fill.style.width = '100%';
+      wrap = setTimeout(() => { wrap = 0; empty(); finish(); }, k < steps.length ? 150 : 380); // (mid-flicks: a short run to full)
+    } else if (instant) finish();
+    else requestAnimationFrame(finish);
   };
+  return { node, step, land: (instant = false) => step(steps.length, instant) };
 };
