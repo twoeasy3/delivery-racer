@@ -48,6 +48,14 @@
       },
       "shop": { "section": "featured", "price": 450, "ribbon": "featured" },
       "givenBy": { "event": { "stage": true, "prize": true } }
+    },
+    "supercar-special": {
+      "name": "Supercar Showdown", "limited": true, "size": 5, "baseAmount": 2, "pool": "evergreen", "atLeast": { "uncommon": 1 },
+      "featured": {
+        "upgradeChance": 0.25, "featuredChance": 0.2,
+        "entries": [ { "car": "wedge", "weight": 1, "amount": 3 }, { "car": "midnight", "weight": 1, "amount": 3 }, { "car": "splitwindow", "weight": 1, "amount": 3 } ]
+      },
+      "shop": { "section": "featured", "price": 400, "ribbon": "new", "limits": { "total": 10 } }
     }
   },
   "bundles": {
