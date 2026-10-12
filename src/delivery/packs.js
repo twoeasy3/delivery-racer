@@ -17,8 +17,15 @@
 //     packs whose kind says `bespokeBlueprints: true` (packs.json), and as a special pack's featured card.
 //   - Kinds: career (evergreen only), special (a career pack with the featured cards: each slot but the last may
 //     upgrade, and when it does each featured card rolls its own chance; one card a slot, a hit is picked from those
-//     that came up; a slot that upgrades and hits none becomes a filler card of a higher rarity; the LAST slot is
-//     always a featured card and is the pack's Epic-or-better), standard (5 cards) and ten (10, one Epic or better).
+//     that came up BY WEIGHT; a slot that upgrades and hits none becomes a filler card of a higher rarity; the LAST slot
+//     is always a featured card, picked BY WEIGHT: a guaranteed featured card of its TRUE rarity (the owner, 12-Oct:
+//     a special pack promises a guaranteed featured card, not "Epic or better")), standard (5 cards) and ten (10, one
+//     Epic or better).
+//   - FEATURED WEIGHTS (the owner, 12-Oct: "declare featured weights and display them on the What's Inside"): a featured
+//     list holds car ids (weight 1) or { car, weight, key }: see featuredEntries below. In the FEATURED mechanic only, an
+//     entry the player has EXHAUSTED (a blueprint car at its max ECU: "Car Maxed"; a key owned: "Key obtained") is out of
+//     the draw and the others' weights are shifted (renormalised); the regular slots may still give a maxed car's
+//     blueprint as a duplicate. A key never drops twice: an owned key nowhere, and at most once a pack.
 // A pack is not part of a run: it is drawn with Math.random (or the dice a check hands in), never the run's seeded
 // dice, and what an opened pack held is written into the save at once (its cards given, and a log of it).
 // Where packs come from: Packs.grant(kind). The first delivery of some Career levels (packs.json career), a special
@@ -37,7 +44,14 @@ import { Ecu } from './ecu.js';
 export const RARITIES = Object.keys(packData.rarities); // (lowest first)
 export const KINDS = Object.keys(packData.kinds);
 const rank = (rarity) => RARITIES.indexOf(rarity);
-const higher = (a, b) => (rank(a) >= rank(b) ? a : b);
+// EVERY chance on the "What's inside" sheet, as words (the owner, 12-Oct): at most two decimals, trailing zeros dropped
+// ("0.41%", "33.33%", "100%"), a chance above 0 that rounds below 0.01% "<0.01%", exactly 0 "0%". p: a share, 0..1
+export const percent = (p) => {
+  const v = Number(p) * 100;
+  if (!(v > 0)) return '0%';
+  if (v < 0.005) return '<0.01%';
+  return Number(v.toFixed(2)) + '%';
+};
 export const rarityName = (rarity) => packData.rarities[rarity]?.name || rarity;
 export const rarityColour = (rarity) => packData.rarities[rarity]?.colour || '#ffffff';
 export const kindName = (kind) => packData.kinds[kind]?.name || kind;
@@ -64,7 +78,7 @@ export const isKeyCar = (car) => !!car && !car.evergreen && !car.tank && !car.ea
 // the pools: { evergreen: { rarity: [car...] }, bespoke: { rarity: [car...] } (the Bespoke key cars' blueprints, by
 // their rarity: Legendary), keys: [car...] (the Bespoke key cars not owned) } (cars: a list in place of the roster, for
 // a check; owned: whether a car is owned, for the keys). An event car that is not Bespoke is in none (featured only)
-export const pools = ({ cars = roster(), owned = (id) => Progress.owns(id) } = {}) => {
+export const pools = ({ cars = roster(), owned = ownsNow } = {}) => {
   const evergreen = Object.fromEntries(RARITIES.filter(r => r !== 'bespoke').map(r => [r, []]));
   const bespoke = Object.fromEntries(RARITIES.filter(r => r !== 'bespoke').map(r => [r, []]));
   for (const car of cars) {
@@ -85,21 +99,220 @@ export const poolOf = (spec, { cars, owned } = {}) => {
   return out;
 };
 
-// a featured card's rarity: its car's own, else packs.json featuredRarity; never below Epic (it is the pack's Epic-or-better)
-const featuredRarity = (car) => higher(car.rarity && rank(car.rarity) >= 0 ? car.rarity : packData.featuredRarity || 'legendary', 'epic');
+// a featured blueprint card's rarity: its TRUE rarity (the owner, 12-Oct: "we should not promise 'Epic or better' in a
+// featured card pack, just 'Guaranteed feature card'"): the car's card rarity (its own `rarity`, else the ladder: rarityOf),
+// else packs.json featuredRarity (an event car with neither). A featured KEY card is Bespoke
+export const featuredRarity = (car) => (car.rarity && rank(car.rarity) >= 0 && car.rarity !== 'bespoke' ? car.rarity : rarityOf(car) || packData.featuredRarity || 'legendary');
 
-// how many of a card a slot gives (the owner, 12-Oct: "don't hardcode it: packs that drop other amounts per slot"): a kind's `amounts` by
-// rarity, else its `amount`, else 1; a number, or [min, max] (a whole number in it by the dice). A key card is one key, always
+// ---- the save, as the featured mechanic reads it: a key owned, a car at its max ECU. The debug marks (?owned=, ?maxed=:
+// Packs.markOwned / markMaxed, for a visit, never saved) count as well
+export const ownsNow = (id) => !!Packs.markOwned?.has(id) || Progress.owns(id);
+export const maxedNow = (car) => !!car && (!!Packs.markMaxed?.has(car.id) || (Ecu.max(car) > 0 && Ecu.reached(car) >= Ecu.max(car)));
+
+// ---- FEATURED ENTRIES (the owner, 12-Oct: "declare featured weights and display them on the What's Inside. If the
+// featured is Epic Legend Legend I would want them to be 1:1:1 so the Epics don't flood the packs. If the featured is
+// Legend Legend Legend Bespoke I would want to tune the key chances"). A featured list (events.json special[].featured,
+// packs.json events.featured, shop.json offers[].featured) holds, per entry, a car id (weight 1) or
+// { "car": id, "weight": n, "key": true }: weight a positive number, RELATIVE (1:1:1 is equal; 3:3:3:1 gives the
+// fourth a tenth); key: true makes the entry that car's Bespoke KEY card (a Bespoke key car only: cars.js `bespoke`),
+// so a list can mix blueprint cards and a key. Normalised to { car (object), weight, key }; an entry that is not
+// sound (no such car, a weight not > 0, a key of a car that is not Bespoke) is left out (events.js problems() says
+// so), and an entry listed twice counts once (its first). A car object (older callers) is weight 1.
+const entryOf = (x) => {
+  if (x === null || x === undefined) return null;
+  if (typeof x === 'string' || typeof x === 'number') { const car = Cars.carById(String(x)); return car ? { car, weight: 1, key: false } : null; }
+  if (typeof x !== 'object') return null;
+  if (!('car' in x) && x.id) return { car: x, weight: 1, key: false }; // (a car object)
+  const car = x.car && typeof x.car === 'object' ? x.car : Cars.carById(String(x.car));
+  const weight = x.weight === undefined ? 1 : Number(x.weight);
+  if (!car || !(weight > 0) || !Number.isFinite(weight)) return null;
+  if (x.key && !isBespokeCar(car)) return null;
+  if (!x.key && x.amount !== undefined && !amountSound(x.amount)) return null;
+  return { car, weight, key: !!x.key, ...(!x.key && x.amount !== undefined ? { amount: x.amount } : {}) };
+};
+// an entry's amount: a whole number >= 1, or [min, max] of them (as a pack kind's `amount`)
+const amountSound = (v) => (Number.isInteger(v) && v >= 1) || (Array.isArray(v) && v.length === 2 && v.every(n => Number.isInteger(n) && n >= 1) && v[0] <= v[1]);
+// an entry's own name: the car, "key" for a key, its amount when it has one ("Silver Comet x3")
+export const entryName = (f) => f.car.name + (f.key ? ' key' : f.amount !== undefined ? ' x' + (Array.isArray(f.amount) ? f.amount.join('-') : f.amount) : '');
+// one entry from another: a key by its car; a blueprint entry by its car and amount (the owner, 12-Oct: "multiple slots
+// for featured cards of the same car, but with different amounts": the same car may be several entries)
+const entryId = (f) => (f.key ? 'key:' + f.car.id : f.car.id + (f.amount !== undefined ? ':' + JSON.stringify(f.amount) : ''));
+export const featuredEntries = (list) => {
+  const out = [], seen = new Set();
+  for (const x of Array.isArray(list) ? list : []) {
+    const f = entryOf(x);
+    if (!f) continue;
+    const id = entryId(f);
+    if (seen.has(id)) continue;
+    seen.add(id); out.push(f);
+  }
+  return out;
+};
+// what is wrong with a featured list, as lines (none: sound). events.js problems() asks it
+export const featuredProblems = (list) => {
+  if (list === undefined) return [];
+  if (!Array.isArray(list)) return ['"featured" is not a list'];
+  const out = [], seen = new Set();
+  list.forEach((x, i) => {
+    const at = 'featured entry ' + (i + 1) + ': ';
+    const obj = !!x && typeof x === 'object';
+    const id = obj ? x.car : x;
+    const car = (typeof id === 'string' || typeof id === 'number') ? Cars.carById(String(id)) : null;
+    if (!car) { out.push(at + JSON.stringify(x) + ' is not a car'); return; }
+    if (obj) {
+      const w = x.weight === undefined ? 1 : x.weight;
+      if (typeof w !== 'number' || !Number.isFinite(w) || !(w > 0)) out.push(at + car.id + ': its weight ' + JSON.stringify(x.weight) + ' is not a number above 0');
+      if (x.key !== undefined && typeof x.key !== 'boolean') out.push(at + car.id + ': "key" is not true or false');
+      if (x.key && !isBespokeCar(car)) out.push(at + car.id + ' is not a Bespoke key car: it has no key card');
+      if (x.amount !== undefined && !amountSound(x.amount)) out.push(at + car.id + ': its amount ' + JSON.stringify(x.amount) + ' is not a whole number of 1 or more, nor [min, max] of them');
+      if (x.key && x.amount !== undefined && x.amount !== 1) out.push(at + car.id + ': a key is always one (its amount is not used)');
+      const extra = Object.keys(x).filter(k => !['car', 'weight', 'key', 'amount'].includes(k));
+      if (extra.length) out.push(at + car.id + ': unknown field(s) ' + extra.join(', '));
+    }
+    const k = obj && x.key ? 'key:' + car.id : car.id + (obj && x.amount !== undefined ? ':' + JSON.stringify(x.amount) : '');
+    if (seen.has(k)) out.push(at + k + ' is listed twice (its first counts)');
+    seen.add(k);
+  });
+  return out;
+};
+// the debug list (?featured=silvercomet:9x3,silvercomet:1x15,rocketfin:1,rocketfin!key:2: id[!key][:weight[xamount]])
+// as entries; null: none
+export const debugFeatured = (params) => {
+  const raw = params?.get?.('featured');
+  if (!raw) return null;
+  const list = raw.split(',').map(x => x.trim()).filter(Boolean).map((x) => {
+    const [head, tail = ''] = x.split(':'), key = /!key$/i.test(head);
+    const [w, a] = tail.split(/x/i);
+    return { car: head.replace(/!key$/i, ''), weight: w === undefined || w === '' ? 1 : Number(w), ...(key ? { key: true } : {}),
+      ...(!key && a !== undefined && a !== '' ? { amount: Math.floor(Number(a)) } : {}) };
+  });
+  const out = featuredEntries(list);
+  return out.length ? out : null;
+};
+// the debug marks (?maxed=silvercomet,swancar&owned=rocketfin): car ids counted as at their max ECU / their key owned,
+// for a visit (Packs.markMaxed / markOwned), never saved. Sets the marks; true when any was asked
+export const debugMarks = (params) => {
+  const ids = (name) => (params?.get?.(name) || '').split(',').map(x => x.trim()).filter(Boolean);
+  const maxed = ids('maxed'), owned = ids('owned');
+  Packs.markMaxed = maxed.length ? new Set(maxed) : null;
+  Packs.markOwned = owned.length ? new Set(owned) : null;
+  return !!(maxed.length || owned.length);
+};
+// the debug doubling (&double=0.5&base=2): the chance to double and the base amount put over every kind's, for a visit
+export const debugDouble = (params) => {
+  const d = parseFloat(params?.get?.('double')), b = Math.floor(Number(params?.get?.('base')));
+  Packs.doubleOverride = d >= 0 && d <= 1 ? d : null;
+  Packs.baseOverride = b >= 1 ? Math.min(b, 99) : null;
+  return Packs.doubleOverride !== null || Packs.baseOverride !== null;
+};
+// the declared weights as a tidy ratio: whole numbers divided by their common factor (2:2:2 -> 1:1:1); else as declared
+export const weightRatio = (weights) => {
+  const ws = weights.map(Number);
+  if (!ws.length || !ws.every(w => Number.isInteger(w) && w > 0)) return ws;
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+  const d = ws.reduce(gcd);
+  return ws.map(w => w / d);
+};
+// is a featured entry EXHAUSTED for the player (the owner, 12-Oct: "ONLY in the featured slot, if a player has one of
+// the cars maxed / key obtained ... the weights are shifted")? 'owned' (a key entry, its key had), 'maxed' (a blueprint
+// entry, its car at its max ECU), or null
+export const exhaustedOf = (f, { owned = ownsNow, maxed = maxedNow } = {}) => (f.key ? (owned(f.car.id) ? 'owned' : null) : (maxed(f.car) ? 'maxed' : null));
+// the entries in play: those not exhausted, at their declared weights (so the shares renormalise: 1:1:1 with one maxed
+// is 1:1). Every one exhausted: the blueprint entries come back at their declared weights (duplicates; a key never);
+// none left (all keys, all owned): none, and the last slot is a filler. { live, reverted }
+export const featuredLive = (declared, marks = {}) => {
+  const live = declared.filter(f => !exhaustedOf(f, marks));
+  if (live.length || !declared.length) return { live, reverted: false };
+  const back = declared.filter(f => !f.key);
+  return { live: back, reverted: back.length > 0 };
+};
+// an upgraded slot: each featured entry hit at featuredChance (its own roll), one picked from the hits BY WEIGHT. The
+// chance the slot becomes each entry, worked out exactly (every subset S of the others' hits:
+// c * sum over S of P(S) * w / (w + w(S))); past MAX_EXACT entries, the weighted share of "any hit" (an approximation)
+const MAX_EXACT = 12;
+export const slotShares = (list, c) => {
+  const F = list.length;
+  if (!F) return [];
+  if (F > MAX_EXACT) { const W = list.reduce((n, f) => n + f.weight, 0), any = 1 - (1 - c) ** F; return list.map(f => any * f.weight / W); }
+  return list.map((f, j) => {
+    const others = list.filter((_, k) => k !== j);
+    let e = 0;
+    for (let mask = 0; mask < 1 << others.length; mask++) {
+      let p = 1, w = f.weight;
+      for (let k = 0; k < others.length; k++) { if ((mask >> k) & 1) { p *= c; w += others[k].weight; } else p *= 1 - c; }
+      e += p * f.weight / w;
+    }
+    return c * e;
+  });
+};
+// each live entry's chance to be in a pack (and its car's: any of its entries), EXACTLY as draw() deals them: the last slot first (by weight), then each
+// other slot (upgradeChance, then the hits), a KEY dealt once and out of the later slots. With no key entry this is
+// 1 - (1 - w/W)(1 - q)^(size - 1), q = upgradeChance * slotShares; with one, the slots after the key is dealt differ, so
+// it is worked through every "which keys are out" state. [{ lastSlot (w/W), slot (q, before any key is out), chance }]
+export const featuredChances = (live, { size, upgradeChance = 0.25, featuredChance = 0.2 } = {}) => {
+  const W = live.reduce((n, f) => n + f.weight, 0);
+  const memo = new Map(); // (by the keys out: the entries still in and each one's chance an upgradeable slot becomes it)
+  const keyOf = (out) => [...out].sort().join();
+  const sharesFor = (out) => {
+    const k = keyOf(out);
+    if (!memo.has(k)) { const can = live.filter(f => !(f.key && out.has(f.car.id))); memo.set(k, { can, q: slotShares(can, featuredChance).map(x => x * upgradeChance) }); }
+    return memo.get(k);
+  };
+  const first = sharesFor(new Set());
+  // the chance a pack holds ANY of the entries `hit` says (one entry; or every entry of one car: its x3 and its x15)
+  const anyOf = (hit) => {
+    let states = new Map(); // keys out -> { out, p: the chance of that and the target not dealt yet }
+    const add = (map, out, p) => { const k = keyOf(out), s = map.get(k); if (s) s.p += p; else map.set(k, { out, p }); };
+    for (const f of live) if (!hit(f)) add(states, f.key ? new Set([f.car.id]) : new Set(), f.weight / W);
+    for (let slot = 0; slot < size - 1; slot++) {
+      const next = new Map();
+      for (const { out, p } of states.values()) {
+        const { can, q } = sharesFor(out);
+        let rest = 1;
+        can.forEach((f, j) => {
+          rest -= q[j];
+          if (!hit(f)) add(next, f.key ? new Set([...out, f.car.id]) : out, p * q[j]);
+        });
+        add(next, out, p * rest);
+      }
+      states = next;
+    }
+    return 1 - [...states.values()].reduce((n, s) => n + s.p, 0);
+  };
+  // (carChance: any entry of the same car and kind, blueprint or key: "Where to get it" asks it)
+  return live.map(target => ({ lastSlot: W > 0 ? target.weight / W : 0, slot: first.q[first.can.indexOf(target)] || 0, chance: anyOf(f => f === target),
+    carChance: anyOf(f => f.car === target.car && f.key === target.key) }));
+};
+
+// how many of a card a slot gives BEFORE any doubling (the owner, 12-Oct: "don't hardcode it: packs that drop other
+// amounts per slot"; then "a BASE AMOUNT per pack kind: 1 for the normal packs, 2 for the LIMITED packs"): a kind's
+// `amounts` by rarity (an optional override), else its `baseAmount`, else its older `amount`, else 1; a number, or
+// [min, max] (a whole number in it by the dice). A key card is one key, always. A featured entry's own amount is handed
+// in as { amount } (never doubled)
 export const amountFor = (spec, rarity, random = Math.random) => {
-  const v = spec?.amounts?.[rarity] ?? spec?.amount ?? 1;
+  const v = spec?.amounts?.[rarity] ?? spec?.baseAmount ?? spec?.amount ?? 1;
   if (Array.isArray(v)) { const lo = Math.max(1, Math.floor(v[0] ?? 1)), hi = Math.max(lo, Math.floor(v[1] ?? lo)); return lo + Math.floor(random() * (hi - lo + 1)); }
   return Math.max(1, Math.floor(Number(v) || 1));
 };
+// a pack kind's chance to DOUBLE a non-featured card's stack: the kind's `doubleChance`, else packs.json's, else 0 (over: a debug value)
+export const doubleOf = (spec, over) => Math.max(0, Math.min(1, Number(over ?? spec?.doubleChance ?? packData.doubleChance ?? 0) || 0));
+// a kind's base amount for a rarity, as words for the sheet (a number, or "2-4")
+const baseWords = (spec, rarity, over) => { const v = over ?? spec?.amounts?.[rarity] ?? spec?.baseAmount ?? spec?.amount ?? 1; return Array.isArray(v) ? v : Math.max(1, Math.floor(Number(v) || 1)); };
 // A pack drawn: its cards, nothing given. { rarity, car (its id), key (a Bespoke key card), featured, upgraded }.
-// random: the dice (0 <= n < 1); featured: the special pack's featured cars (car objects)
-export const draw = (kind, { random = Math.random, cars, owned, featured = [], spec = packData.kinds[kind] } = {}) => {
+// random: the dice (0 <= n < 1); featured: the special pack's featured list (entries, car ids or car objects:
+// featuredEntries); owned / maxed: the save's (a check hands its own). The featured mechanic deals from the entries in
+// play (featuredLive: the exhausted ones out, the weights shifted), a SNAPSHOT of the save read ONCE here, before any
+// card is dealt or given (the owner, 12-Oct: a card of this pack that maxes the car does not take it out of the last
+// slot; the duplicate is kept as the count); a key is dealt at most once a pack, and never one owned at the start
+// double / base: the doubling chance and the base amount put over the kind's (the debug &double= / &base=: Packs.doubleOverride,
+// baseOverride, for a visit)
+export const draw = (kind, { random = Math.random, cars, owned, maxed, featured = [], spec = packData.kinds[kind], double = Packs.doubleOverride ?? undefined, base = Packs.baseOverride ?? undefined } = {}) => {
   if (!spec) throw new Error('no such pack: ' + kind);
-  const byRarity = poolOf(spec, { cars, owned });
+  const marks = { owned: owned || ownsNow, maxed: maxed || maxedNow };
+  const byRarity = poolOf(spec, { cars, owned: marks.owned });
+  const entries = spec.featured ? featuredLive(featuredEntries(featured), marks).live : [];
+  const featuredKeys = new Set(entries.filter(f => f.key).map(f => f.car.id));
+  if (byRarity.bespoke && featuredKeys.size) byRarity.bespoke = byRarity.bespoke.filter(c => !featuredKeys.has(c.id)); // (a featured key comes only as the featured card: never twice)
   const have = () => RARITIES.filter(r => byRarity[r]?.length);
   const pick = (list) => list[Math.min(list.length - 1, Math.floor(random() * list.length))];
   // a rarity by the odds, among those the pool has cards of, at least `min` (none so high: the highest there is)
@@ -121,11 +334,32 @@ export const draw = (kind, { random = Math.random, cars, owned, featured = [], s
   const size = Math.max(1, Math.floor(spec.size || 5));
   const slots = Array.from({ length: size }, () => card(roll()));
   if (slots.some(c => !c)) return []; // (an empty pool: no cards at all)
-  const locked = new Set();
-  const feats = [...new Set(featured.filter(Boolean))];
-  const featuredCard = (car) => ({ rarity: featuredRarity(car), car: car.id, key: false, featured: true, upgraded: true });
-  // special: the last slot is a featured card (no featured cars: an Epic-or-better filler)
-  if (spec.featured) { slots[size - 1] = feats.length ? featuredCard(pick(feats)) : card(roll('epic')); locked.add(size - 1); }
+  const locked = new Set(), keysOut = new Set();
+  const byWeight = (list) => {
+    const total = list.reduce((n, f) => n + f.weight, 0);
+    let n = random() * total;
+    for (const f of list) { n -= f.weight; if (n < 0) return f; }
+    return list.at(-1);
+  };
+  const featuredCard = (f) => {
+    if (f.key) keysOut.add(f.car.id); // (a key once a pack)
+    return { rarity: f.key ? 'bespoke' : featuredRarity(f.car), car: f.car.id, key: f.key, featured: true, upgraded: true, ...(f.amount !== undefined ? { amount: f.amount } : {}) };
+  };
+  // special: the last slot is a featured card, picked by weight (nothing to feature: an Epic-or-better filler)
+  if (spec.featured) { slots[size - 1] = entries.length ? featuredCard(byWeight(entries)) : card(roll('epic')); locked.add(size - 1); }
+  // special: each slot but the last may upgrade; each featured entry in play rolls its own chance, one picked from the
+  // hits by weight (a key already dealt is out); none hit: a higher filler. Done BEFORE the at-least rule (12-Oct: a
+  // featured card keeps its true rarity now, so the rule counts it; a featured slot is locked, never rolled away)
+  if (spec.featured) {
+    const { upgradeChance = 0.25, featuredChance = 0.2 } = spec.featured;
+    for (let i = 0; i < size - 1; i++) {
+      if (!(random() < upgradeChance)) continue;
+      const hits = entries.filter(f => !(f.key && keysOut.has(f.car.id))).filter(() => random() < featuredChance);
+      if (hits.length) { slots[i] = featuredCard(byWeight(hits)); locked.add(i); continue; }
+      const above = have().find(r => rank(r) > rank(slots[i].rarity) && r !== 'bespoke');
+      slots[i] = { ...card(above || slots[i].rarity), upgraded: true };
+    }
+  }
   // at least n cards of a rarity or better: the last slots not already counted are rolled again, highest rule first
   for (const [min, n] of Object.entries(spec.atLeast || {}).sort((a, b) => rank(b[0]) - rank(a[0]))) {
     let count = slots.filter(c => rank(c.rarity) >= rank(min)).length;
@@ -136,56 +370,94 @@ export const draw = (kind, { random = Math.random, cars, owned, featured = [], s
       slots[i] = better; locked.add(i); count++;
     }
   }
-  // special: each slot but the last may upgrade; a featured card each rolls its own chance; none hit: a higher filler
-  if (spec.featured) {
-    const { upgradeChance = 0.25, featuredChance = 0.2 } = spec.featured;
-    for (let i = 0; i < size - 1; i++) {
-      if (!(random() < upgradeChance)) continue;
-      const hits = feats.filter(() => random() < featuredChance);
-      if (hits.length) { slots[i] = featuredCard(pick(hits)); continue; }
-      const above = have().find(r => rank(r) > rank(slots[i].rarity) && r !== 'bespoke');
-      slots[i] = { ...card(above || slots[i].rarity), upgraded: true };
-    }
-  }
-  return slots.map(c => ({ ...c, n: c.key ? 1 : amountFor(spec, c.rarity, random) })); // (how many of it: the kind's amount, packs.json)
+  // how many of it: a featured entry's own amount (never doubled); a key one (never doubled); every other card the kind's
+  // base (packs.json baseAmount, a rarity's `amounts` over it), DOUBLED at the pack's doubleChance (the owner, 12-Oct:
+  // "each non-featured card that drops has a chance to DOUBLE its stack": n = base x 2), one roll of the dice a slot
+  const twice = doubleOf(spec, double), baseSpec = base !== undefined ? { ...spec, amounts: undefined, baseAmount: base } : spec;
+  return slots.map(({ amount, ...c }) => {
+    if (c.key) return { ...c, n: 1 };
+    if (c.featured && amount !== undefined) return { ...c, n: amountFor({ amount }, c.rarity, random) };
+    if (c.featured) return { ...c, n: amountFor(baseSpec, c.rarity, random) }; // (a featured entry with no amount of its own: the base, never doubled)
+    const n = amountFor(baseSpec, c.rarity, random), doubled = random() < twice;
+    return { ...c, n: doubled ? n * 2 : n, ...(doubled ? { doubled: true } : {}) };
+  });
 };
 
 // What a pack can give, every card of it (the Shop's "What's inside" sheet, render/packcontents.js): read from the same
 // pools draw() picks from, at call time, so a car added to the roster is listed with no edit. For a PLAIN slot (one no
 // rule has rolled again): the share of each rarity the pool has cards of (packs.json odds among those), split evenly
-// over its cards, so a rarity's cards add up to its share. A special pack's FEATURED cards come first, each with its
-// chance to be in a pack (the last slot is always one of them; each other slot upgrades at upgradeChance, and then each
-// featured card is hit at featuredChance, one picked from those hit): 1 - (1 - 1/F)(1 - q)^(size-1), where
-// q = upgradeChance * (1 - (1 - featuredChance)^F) / F is a slot's chance to become that card.
-// { kind, name, size, total (cards listed), odds: [{ rarity, share }], groups: [{ rarity, share, cards: [{ car, chance,
-// key }] }], featured: [{ car, rarity, chance, lastSlot }], atLeast }
-export const contents = (kind, { featured = [], cars, owned, spec = packData.kinds[kind] } = {}) => {
+// over its cards, so a rarity's cards add up to its share. A key the player OWNS is listed too, exhausted ('owned',
+// chance 0: "Key obtained"), and the other keys' shares are as the pool really is (without it). A special pack's
+// FEATURED entries come first, each with its declared WEIGHT, its share of the last slot (its weight / the weights in
+// play) and its chance to be in a pack (featuredChances: worked out EXACTLY, 1 - (1 - w/W)(1 - q)^(size-1) with q the
+// slot's exact chance for it, through the keys-out states when a key is featured). An EXHAUSTED entry (a key owned, a
+// car maxed) is listed with exhausted set and chance 0; the others' shares are shifted.
+// { kind, name, size, total (cards a pack can give), odds: [{ rarity, share }], groups: [{ rarity, share, cards: [{ car,
+// chance, key, exhausted, stacks: [{ n, chance (TOTAL: the card's chance split by doubleChance), doubled }] }] }], featured: [{ car, rarity, key, weight, exhausted, chance, lastSlot, slot }], weights (the
+// declared ratio, tidied: weightRatio), shifted (the entries out of the pool, while others are in), reverted (every one
+// exhausted: the blueprint entries back at their declared weights), doubleChance, baseAmount, limited, atLeast }
+export const contents = (kind, { featured = [], cars, owned, maxed, spec = packData.kinds[kind], double = Packs.doubleOverride ?? undefined, base = Packs.baseOverride ?? undefined } = {}) => {
   if (!spec) return null;
-  const byRarity = poolOf(spec, { cars, owned });
+  const marks = { owned: owned || ownsNow, maxed: maxed || maxedNow };
+  const byRarity = poolOf(spec, { cars, owned: marks.owned });
+  const declared = spec.featured ? featuredEntries(featured) : [];
+  const { live, reverted } = featuredLive(declared, marks);
+  const featuredKeys = new Set(live.filter(f => f.key).map(f => f.car.id));
+  if (byRarity.bespoke && featuredKeys.size) byRarity.bespoke = byRarity.bespoke.filter(c => !featuredKeys.has(c.id)); // (as draw: the featured card only)
+  // a card's STACKS (the owner, 12-Oct): [{ n, chance }], the TOTAL chance of each: its base x (1 - doubleChance), its
+  // doubled stack x doubleChance, so they add up to the card's chance; a key one stack of 1
+  const twice = doubleOf(spec, double);
+  const stacksOf = (key, rarity, chance) => {
+    if (key) return [{ n: 1, chance }];
+    const b = baseWords(spec, rarity, base);
+    const dbl = Array.isArray(b) ? b.map(x => x * 2) : b * 2;
+    return twice > 0 ? [{ n: b, chance: chance * (1 - twice) }, { n: dbl, chance: chance * twice, doubled: true }] : [{ n: b, chance }];
+  };
   const present = RARITIES.filter(r => byRarity[r]?.length);
   const weight = present.reduce((sum, r) => sum + (packData.odds[r] || 0), 0);
   const odds = present.map(r => ({ rarity: r, share: weight > 0 ? (packData.odds[r] || 0) / weight : 1 / present.length }));
   const groups = odds.map(({ rarity, share }) => ({ rarity, share,
-    cards: byRarity[rarity].map(car => ({ car, chance: share / byRarity[rarity].length, key: rarity === 'bespoke' })) }));
+    cards: byRarity[rarity].map((car) => {
+      const chance = share / byRarity[rarity].length, key = rarity === 'bespoke';
+      return { car, chance, key, exhausted: null, stacks: stacksOf(key, rarity, chance) };
+    }) }));
+  // the keys owned: listed, exhausted (the owner, 12-Oct: "Keys in the regular packs should also carry this overlay")
+  if (spec.pool === 'all') {
+    const ownedKeys = (cars || roster()).filter(c => isBespokeCar(c) && marks.owned(c.id)).map(car => ({ car, chance: 0, key: true, exhausted: 'owned', stacks: [{ n: 1, chance: 0 }] }));
+    if (ownedKeys.length) {
+      const g = groups.find(x => x.rarity === 'bespoke');
+      if (g) g.cards.push(...ownedKeys); else groups.push({ rarity: 'bespoke', share: 0, cards: ownedKeys });
+    }
+  }
   const size = Math.max(1, Math.floor(spec.size || 5));
-  const feats = spec.featured ? [...new Set(featured.filter(Boolean))] : [];
-  const F = feats.length, { upgradeChance = 0.25, featuredChance = 0.2 } = spec.featured || {};
-  const q = F ? upgradeChance * (1 - (1 - featuredChance) ** F) / F : 0;
-  const featuredList = feats.map(car => ({ car, rarity: featuredRarity(car), lastSlot: 1 / F, chance: 1 - (1 - 1 / F) * (1 - q) ** (size - 1) }));
-  const total = new Set([...groups.flatMap(g => g.cards.map(c => (c.key ? 'key:' : '') + c.car.id)), ...feats.map(c => c.id)]).size;
-  return { kind, name: kindName(kind), size, total, odds, groups, featured: featuredList, atLeast: { ...(spec.atLeast || {}) } };
+  const { upgradeChance = 0.25, featuredChance = 0.2 } = spec.featured || {};
+  const chances = featuredChances(live, { size, upgradeChance, featuredChance });
+  const featuredList = declared.map((f) => {
+    const i = live.indexOf(f), o = chances[i];
+    return { car: f.car, key: f.key, weight: f.weight, ...(f.amount !== undefined ? { amount: f.amount } : {}), rarity: f.key ? 'bespoke' : featuredRarity(f.car), exhausted: exhaustedOf(f, marks),
+      inPlay: i >= 0, lastSlot: o ? o.lastSlot : 0, slot: o ? o.slot : 0, chance: o ? o.chance : 0, carChance: o ? o.carChance : 0 };
+  });
+  const shifted = reverted ? [] : featuredList.filter(f => f.exhausted);
+  const total = new Set([...groups.flatMap(g => g.cards.filter(c => !c.exhausted).map(c => (c.key ? 'key:' : '') + c.car.id)), ...live.map(f => (f.key ? 'key:' : '') + f.car.id)]).size;
+  return { kind, name: kindName(kind), size, total, odds, groups, featured: featuredList, weights: weightRatio(declared.map(f => f.weight)), shifted, reverted,
+    doubleChance: twice, baseAmount: base ?? spec.baseAmount ?? 1, limited: !!spec.limited,
+    atLeast: { ...(spec.atLeast || {}) } };
 };
 
 // ---- the save: packs held (Progress.data.packs: a count by pack, 'kind' or 'kind:<event id>'), and the log ----
 const packKey = (kind, from) => kind + (from ? ':' + from : '');
 const splitKey = (key) => { const [kind, from = null] = String(key).split(':'); return { kind, from }; };
 const eventEntry = (id) => (Array.isArray(eventData.special) ? eventData.special : []).find(e => String(e.id) === String(id)) || null;
-// the featured cars of a special pack: its event's (events.json featured, else its prize car); a pack from no event:
-// every event car
+// the featured entries of a special pack ({ car, weight, key }: featuredEntries, every one declared, exhausted or not):
+// its event's (events.json featured, else its prize car at weight 1); a pack from no event: packs.json events.featured
+// if it has one, else every event car at weight 1. The debug ?featured= (Packs.featuredOverride, for a visit, never
+// saved) is put over any of them
 export const featuredFor = (from) => {
+  if (Packs.featuredOverride) return Packs.featuredOverride;
   const e = from ? eventEntry(from) : null;
-  const ids = e ? (Array.isArray(e.featured) && e.featured.length ? e.featured : e.prize?.car ? [e.prize.car] : []) : (Cars.EVENT_CARS || []).map(c => c.id);
-  return ids.map(id => Cars.carById(id)).filter(Boolean);
+  const fallback = Array.isArray(packData.events?.featured) && packData.events.featured.length ? packData.events.featured : (Cars.EVENT_CARS || []).map(c => c.id);
+  const list = e ? (Array.isArray(e.featured) && e.featured.length ? e.featured : e.prize?.car ? [e.prize.car] : []) : fallback;
+  return featuredEntries(list);
 };
 
 // the first delivery of these levels gives a career pack: every nth of the main list (the tiers in order, then the
@@ -357,6 +629,15 @@ export const Packs = {
   // amountOf: (card, slot index) -> n or null, an amount put over the kind's (the debug ?amount=: debugAmounts), else
   // Packs.amountOverride (set for a visit by the debug route; never saved)
   amountOverride: null,
+  featuredOverride: null, // (the debug ?featured=: debugFeatured, for a visit; never saved)
+  doubleOverride: null, baseOverride: null, // (the debug &double=0.5&base=2: debugDouble, for a visit; never saved)
+  markMaxed: null, markOwned: null, // (the debug ?maxed= / ?owned=: debugMarks, for a visit; never saved)
+  // every featured entry of a pack exhausted (the owner, 12-Oct: "If a player has every featured card in a pack greyed
+  // out, don't allow them to purchase it")? false for a pack with no featured list. list: the entries (else featuredFor)
+  featuredExhausted(from = null, list = featuredFor(from), marks = {}) {
+    const declared = featuredEntries(list);
+    return declared.length > 0 && declared.every(f => exhaustedOf(f, marks));
+  },
   open(kind, { from = null, free = false, random = Math.random, amountOf = this.amountOverride } = {}) {
     if (!packData.kinds[kind]) return null;
     const held = (Progress.data.packs ||= {}), key = packKey(kind, from);

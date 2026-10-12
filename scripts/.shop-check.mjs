@@ -1,7 +1,7 @@
 // A check of the Shop (src/delivery/shop.js, shop.json; CHECKLIST item 115), headless: the offers are sound (each
 // names a pack kind, a price, a section; a special pack's event is real, and the offer is off the list outside it),
 // buying takes the price and gives the packs (through Packs.grant, a stand-in here so the check does not hang on
-// packs.js) and asks the reveal to open them at once (Packs.revealNow), nothing is bought without the balance (nothing taken, nothing given), and the placeholder balance goes
+// packs.js) and asks the reveal to open them at once (Packs.revealNow), nothing is bought without the balance (nothing taken, nothing given), nor a special pack whose featured cards are all had (why "exhausted"), and the placeholder balance goes
 // through the save and a save code and comes back. The screen (render/shop.js) is only seen in a browser.
 //   node scripts/.shop-check.mjs
 import { boot } from './delivery-headless.mjs';
@@ -43,7 +43,7 @@ try {
     check(Shop.offers(during + 1000).some(o => o.id === special.id), 'the ' + special.id + ' offer is on while its event is');
     check(after === null || !Shop.offers(after + 1000).some(o => o.id === special.id), '...and off once it is over');
     check(after === null || Shop.canBuy(special.id, after + 1000).why === 'over', '...and cannot be bought then');
-    check(Shop.offer(special.id).featured.length >= 1, '...and shows its featured car(s): ' + Shop.offer(special.id).featured.map(c => c.name).join(', '));
+    check(Shop.offer(special.id).featured.length >= 1, '...and shows its featured car(s): ' + Shop.offer(special.id).featured.map(f => f.car.name + (f.amount ? ' x' + f.amount : '') + ' (weight ' + f.weight + ')').join(', '));
   }
 
   // ---- buying (a stand-in for Packs.grant: what it was asked to give)
@@ -68,6 +68,26 @@ try {
   if (special) {
     const t = (Events.specials.find(e => e.id === special.from).from ?? Date.now()) + 1000;
     check(Shop.buy(special.id, t).ok && given.at(-1).kind === 'special' && given.at(-1).from === special.from, 'the special pack is given as its event\'s (' + special.from + ')');
+  }
+  // ---- a special pack whose featured cards the player has all (every car maxed, every key owned) is not for sale (the
+  // owner, 12-Oct: "If a player has every featured card in a pack greyed out, don't allow them to purchase it"); an
+  // event still gives one (Packs.grant)
+  if (special) {
+    const { Packs: real } = await g.load('packs.js');
+    stub.featuredExhausted = (from, list) => real.featuredExhausted(from, list);
+    const t = (Events.specials.find(e => e.id === special.from).from ?? Date.now()) + 1000;
+    Progress.data.shopCash = 5000;
+    const n0 = given.length, asked0 = revealed;
+    real.markMaxed = new Set(Shop.offer(special.id).featured.filter(f => !f.key).map(f => f.car.id));
+    real.markOwned = new Set(Shop.offer(special.id).featured.filter(f => f.key).map(f => f.car.id));
+    const r = Shop.buy(special.id, t);
+    check(!r.ok && r.why === 'exhausted' && Shop.canBuy(special.id, t).why === 'exhausted' && Shop.balance() === 5000 && given.length === n0 && revealed === asked0,
+      'every featured card of ' + special.id + ' maxed / owned: buying refused (why "exhausted"), nothing taken, nothing given, no reveal');
+    check(Shop.canBuy('ten', t).ok && Shop.canBuy('standard', t).ok, '...the other pack kinds are not affected');
+    check(real.featuredExhausted(special.from) && !!real.grant('special', { from: special.from }) && real.count('special', special.from) >= 1, '...and an event still GIVES the special pack (Packs.grant is not blocked)');
+    real.markMaxed = null; real.markOwned = null;
+    check(Shop.canBuy(special.id, t).ok && Shop.buy(special.id, t).ok && given.length === n0 + 1, 'with a featured card in play again: bought');
+    delete Progress.data.packs;
   }
   // ---- not without the balance
   Progress.data.shopCash = ten.price - 1;
