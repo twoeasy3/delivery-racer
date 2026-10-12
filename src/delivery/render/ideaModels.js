@@ -8,6 +8,7 @@
 // State-free: nothing here knows about the game. To make an idea a real car, move its builder to MODELS.
 import * as THREE from 'three';
 import { IDEA_MODELS_2 } from './ideaModels2.js'; // (the second batch of twenty ideas' models)
+import { IDEA_MODELS_4 } from './ideaModels4.js'; // (the fourth batch: ten unusual, retro-future and utility vehicles)
 
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 const box = (parent, material, w, h, l, x, y, z) => {
@@ -157,6 +158,7 @@ const lettered = (text, colour, ground, w = 256, h = 64) => {
 
 export const IDEA_MODELS = {
   ...IDEA_MODELS_2,
+  ...IDEA_MODELS_4,
   // A bubble car (a BMW Isetta): an egg on wheels. The whole front is its one door, hinged at the side, the
   // windscreen in it; a glass bubble over a bench seat; lamps in pods on its flanks; the two back wheels close
   // together under the pinched tail. It sits still
