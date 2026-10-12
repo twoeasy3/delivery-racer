@@ -5,7 +5,7 @@
 // Crazey Jim's Used Cars (render/garage.js). The ECU figures are ecu.js's (Ecu); anything it does not say about a
 // car (a secret one, an earned one it has no table for) falls back to the car's own figures, so a card never throws.
 import { CONFIG } from './config.js';
-import { CARS, EARNED_CARS, EVENT_CARS, SECRET_CARS, stars, starColour, carTier, carPreview, forSale, carRule, ruleAllows } from './cars.js';
+import { CARS, EARNED_CARS, EVENT_CARS, FILLER_CARS, SECRET_CARS, stars, starColour, carTier, carPreview, forSale, carRule, ruleAllows } from './cars.js';
 import { Progress } from './progress.js';
 import { Tiers } from './tiers.js';
 import { LEVELS } from './levels.js';
@@ -54,7 +54,7 @@ const statsAt = (car, level) => {
 // secret one owned (the City Bus)
 const rank = (car) => car.earned ? 80 : EVENT_CARS.includes(car) ? 70 : Object.values(SECRET_CARS).includes(car) ? 90
   : car.amphibious ? 50 + car.tier : (car.tier || 40) + (car.blue ? 5 : 0);
-export const showroomCars = () => [...CARS, ...EVENT_CARS, ...EARNED_CARS.filter(car => !car.off),
+export const showroomCars = () => [...CARS, ...(FILLER_CARS || []), ...EVENT_CARS, ...EARNED_CARS.filter(car => !car.off),
   ...Object.values(SECRET_CARS).filter(car => Progress.owns(car.id))]
   .sort((a, b) => rank(a) - rank(b) || (a.price || 0) - (b.price || 0));
 
@@ -66,7 +66,7 @@ const tierWhy = (car) => {
 
 // One card: everything the showroom shows of a car. evil: the side picked (a level's car rule is a side's)
 export const carCard = (car, evil = false) => {
-  const max = Math.max(1, safe(() => Ecu.max(car), 1)), ecu = Math.max(0, Math.min(max, safe(() => Ecu.level(car), 1)));
+  const max = Math.max(1, safe(() => Ecu.max(car), 1)), ecu = Math.max(0, Math.min(max, safe(() => Ecu.reached?.(car) ?? Ecu.level(car), 1))); // (reached: a locked key car shows the ECU its blueprints have got it to)
   const bp = safe(() => Ecu.blueprints(car.id), 0), x = Math.max(1, perEcu(car)), blueprint = blueprintCar(car);
   // blueprints toward the next ECU: a blueprint car's ECU k needs k*X; a key car's ECU k (k > 1) needs (k - 1)*X
   const told = safe(() => Ecu.progress?.(car), null);

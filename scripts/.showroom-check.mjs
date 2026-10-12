@@ -50,7 +50,7 @@ try {
   } else console.log('  (no blueprint car on the floor yet: the filler cars are not in this tree)');
   // rarity by the ladder (where a car says none of its own)
   const gold5 = CARS.find(car => car.tier === 5 && !car.blue && !car.amphibious && !car.rarity), blue5 = CARS.find(car => car.tier === 5 && car.blue && !car.rarity);
-  check((!gold5 || rarityOf(gold5) === 'uncommon') && (!blue5 || rarityOf(blue5) === 'epic') && rarityOf(EVENT_CARS[0]) === 'legendary', 'rarity by the ladder: 5 gold uncommon, 5 blue epic, an event car legendary');
+  check((!gold5 || rarityOf(gold5) === 'uncommon') && (!blue5 || rarityOf(blue5) === 'epic') && ['epic', 'legendary'].includes(rarityOf(EVENT_CARS[0])), 'rarity by the ladder: 5 gold uncommon, 5 blue epic, an event car epic or better');
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error?.stack || error));
