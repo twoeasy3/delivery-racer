@@ -184,7 +184,7 @@ async function filters(g, check) {
   const over = D.overlayOf(comet);
   Ev.now = realNow;
   check(live?.kind === 'key' && live.line === 'Win it in ' + hunt.name, 'a Key car\'s overlay names the live event: "' + live?.line + '"');
-  check(over?.line === 'Win it at events or find it in packs', 'once the event is over: "' + over?.line + '"');
+  check(over?.line === 'Win it at events', 'once the event is over: "' + over?.line + '"');
   check(D.stepIn([], 'x', 1) === null && D.stepIn([list[0]], list[0].id, 1).id === list[0].id, 'an empty list: nothing; one car: itself');
 }
 

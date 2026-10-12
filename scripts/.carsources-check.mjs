@@ -70,10 +70,12 @@ try {
   const hunt = ofHow(s.keys, 'event')[0];
   check(hunt?.available && hunt.where === 'The Comet Hunt' && /ends 1 Nov/.test(hunt.detail), 'while the Comet Hunt is on: its key is the grand prize (' + hunt?.detail + ')');
   const keyPacks = ofHow(s.keys, 'pack');
-  check(keyPacks.length >= 1 && keyPacks.every(x => x.rarity === 'bespoke' && x.chance > 0 && x.available) && keyPacks.map(x => x.kind).sort().join() === 'daily,standard,ten',
-    'a Bespoke key card in the packs with keys: ' + keyPacks.map(x => x.where + ' ' + x.detail.split(':')[0]).join('; '));
+  check(keyPacks.every(x => !(x.chance > 0 && x.available)), 'no regular pack holds its key (noPacks): ' + (keyPacks.map(x => x.where).join('; ') || 'none listed'));
+  const rf = sourcesOf(by('rocketfin')), rfKeys = ofHow(rf.keys, 'pack');
+  check(rfKeys.length >= 1 && rfKeys.every(x => x.rarity === 'bespoke' && x.chance > 0 && x.available) && rfKeys.map(x => x.kind).sort().join() === 'daily,standard,ten',
+    'another Bespoke key car (the Rocket Fin Coupe): its key in the packs with keys: ' + rfKeys.map(x => x.where + ' ' + x.detail.split(':')[0]).join('; '));
   const legendary = s.blueprints.filter(x => x.chance > 0);
-  check(legendary.length && legendary.every(x => x.rarity === 'legendary'), 'its blueprints are Legendary cards: ' + legendary.map(x => x.where).join(', '));
+  check(legendary.length === 1 && legendary[0].kind === 'comet-special' && legendary.every(x => x.rarity === 'legendary'), 'its blueprints are Legendary, in the Comet Hunt special pack only: ' + legendary.map(x => x.where).join(', '));
   const special = s.blueprints.find(x => x.kind === 'comet-special');
   check(special?.available && special.chance > 0.99 && special.ways.some(w => w.how === 'event' && w.available) && special.ways.some(w => w.how === 'shop' && w.available),
     'the Comet Hunt\'s special pack: a featured card in every one, from the stages and the Shop (' + special?.detail + ')');
