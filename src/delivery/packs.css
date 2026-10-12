@@ -114,3 +114,6 @@
 .pr-face > .pr-flier.fly { visibility: visible; }
 .pr-flier, .pr-flier *, .pr-flier::before, .pr-flier::after, .pr-flier *::before, .pr-flier *::after { animation: none !important; } /* (a thrown copy: no shine of its own) */
 .pr-slot.many-copies .bp-amount { transform-origin: 50% 50%; }
+
+/* the progress bar under a card sits ABOVE the pile's edges and reads clearly (the owner, 12-Oct) */
+.pr-slot .bp-prog { position: relative; z-index: 4; }
