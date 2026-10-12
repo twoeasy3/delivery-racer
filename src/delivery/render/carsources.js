@@ -9,11 +9,16 @@
 import { sourcesOf, ownWord } from '../carsources.js';
 import { rarityName, rarityColour } from '../packs.js';
 import { richTiers } from '../tiers.js';
+import { blueprintCard } from './blueprintcard.js';
+import { drawSoon } from './carstill.js';
+import { posePick } from '../carposes.js';
 import shopData from '../shop.json';
 
 const CURRENCY_SIGN = shopData.currency?.sign || '◆';
 
 const CSS = `
+.cs-cards { display: flex; gap: 10px; justify-content: center; align-items: flex-start; padding: 4px 0 2px; }
+.cs-cards .bp-card { width: 108px; flex: 0 0 auto; }
 .cs-where { display: flex; flex-direction: column; gap: 6px; padding: 7px 11px 8px; border-radius: 10px; background: rgba(0, 0, 0, .22);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1); font: 13px/1.3 system-ui, sans-serif; color: #e8edf5; text-align: left; }
 .cs-where > summary { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; cursor: pointer; list-style: none; }
@@ -121,6 +126,13 @@ export const renderSources = (car, opts) => {
   const summary = make('summary', '', make('h3', '', 'Where to get it'), none ? make('span', 'cs-none', 'Not obtainable right now')
     : make('span', 'cs-states', s.keyless ? null : state(word.label, s.obtainable.key, s.keyOwned ? word.owned : ''),
       s.noBlueprints ? null : state('Blueprints', s.obtainable.blueprints, s.maxed ? 'maxed' : '')));
-  box.append(...[summary, key, bp, flags.placeholder ? make('p', 'cs-note', '* Crazey Cash, the Shop\'s placeholder currency: nothing gives it yet') : null].filter(Boolean));
+  // the cards themselves (the owner, 12-Oct): its BLUEPRINT card, and, for a Key car, its KEY card: drawn as the packs draw them
+  const cards = [];
+  if (!s.noBlueprints) cards.push([blueprintCard(car, { rarity: car.rarity || bpRarity || 'common', key: false, n: 1 }, { compact: true, pose: posePick(car.id) }), true]);
+  if (!s.keyless && (car.bespoke || car.event)) cards.push([blueprintCard(car, { rarity: 'bespoke', key: true, n: 1 }, { compact: true }), false]);
+  const cardRow = cards.length ? make('div', 'cs-cards', ...cards.map(([c]) => c.node)) : null;
+  const drawCards = () => { for (const [c, needsPic] of cards) if (needsPic && c.pic) drawSoon(c.pic, car, { side: 'good', pose: posePick(car.id) }); };
+  if (cardRow) { box.addEventListener('toggle', () => { if (box.open) requestAnimationFrame(drawCards); }); if (box.open) requestAnimationFrame(drawCards); }
+  box.append(...[summary, cardRow, key, bp, flags.placeholder ? make('p', 'cs-note', '* Crazey Cash, the Shop\'s placeholder currency: nothing gives it yet') : null].filter(Boolean));
   return box;
 };
