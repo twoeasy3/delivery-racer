@@ -23,6 +23,8 @@
 #garageUi .tabs { display: flex; gap: 4px; }
 #garageUi .tabs .tab { background: rgba(255, 255, 255, .16); color: #fff; font-size: 18px; }
 #garageUi .tabs .tab.on { background: #fff; color: #222; }
+#garageUi .tabs .tab.page { display: none; margin-left: 4px; min-width: 2em; }
+body.ideas-tab #garageUi .tabs .tab.page { display: inline-block; }
 body.ideas-tab #garageUi .view-btn, body.ideas-tab #garageUi .compare { display: none !important; }
 body.ideas-tab #garageBank { visibility: hidden; }
 body.ideas-tab #garageInfo { max-width: 720px; margin: 0 auto; }

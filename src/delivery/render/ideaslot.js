@@ -17,18 +17,24 @@ import { IDEA_CARS } from '../ideas.js';
 import { renderer } from './scene.js';
 import { makeIdeaModel } from './ideaModels.js';
 
-// The lot: rows of ten bays (as many rows as the ideas fill: five for forty-five). The ten longest park in the back
-// row, whose bays are deep enough for a bus; the ten shortest in the front; each row otherwise in the order of the
-// list. A row is as deep as its longest idea needs (6.6 m at least), the front one's middle at z = 9 and the rest
-// stacked behind it
-const COLS = 10, BAY_W = 4.6;
-const ROWS = []; // front to back
-const BY_LENGTH = [...IDEA_CARS].sort((a, b) => a.hl - b.hl);
-for (let i = 0; i < BY_LENGTH.length; i += COLS) {
-  const longest = BY_LENGTH[Math.min(i + COLS, BY_LENGTH.length) - 1], depth = Math.max(6.6, longest.hl * 2 + 1.2), front = ROWS[ROWS.length - 1];
-  ROWS.push({ z: front ? front.z - front.depth / 2 - depth / 2 : 9, depth });
-}
-const LOT_W = COLS * BAY_W, FRONT = ROWS[0].z + ROWS[0].depth / 2, BACK = ROWS[ROWS.length - 1].z - ROWS[ROWS.length - 1].depth / 2;
+// The lot, a page at a time (PAGE ideas, in the order of the list; only the page on show is built and drawn, so the
+// lot stays light): rows of eleven bays, two rows a page. On a page the longest park in the back row, whose bays are
+// deep enough for a bus; the shortest in the front. A row is as deep as its longest idea needs (6.6 m at least), the
+// front one's middle at z = 9 and the rest stacked behind it
+const COLS = 11, BAY_W = 4.6, PAGE = 22;
+const PAGES = Math.ceil(IDEA_CARS.length / PAGE);
+const pageCars = (n) => IDEA_CARS.slice(n * PAGE, (n + 1) * PAGE);
+const pageOf = (id) => Math.max(0, Math.floor(IDEA_CARS.findIndex(car => car.id === id) / PAGE));
+let ROWS = [], BY_LENGTH = [], LOT_W = COLS * BAY_W, FRONT = 0, BACK = 0; // (the page on show: see layout)
+const layout = (n) => {
+  BY_LENGTH = pageCars(n).sort((a, b) => a.hl - b.hl);
+  ROWS = [];
+  for (let i = 0; i < BY_LENGTH.length; i += COLS) {
+    const longest = BY_LENGTH[Math.min(i + COLS, BY_LENGTH.length) - 1], depth = Math.max(6.6, longest.hl * 2 + 1.2), front = ROWS[ROWS.length - 1];
+    ROWS.push({ z: front ? front.z - front.depth / 2 - depth / 2 : 9, depth });
+  }
+  FRONT = ROWS[0].z + ROWS[0].depth / 2; BACK = ROWS[ROWS.length - 1].z - ROWS[ROWS.length - 1].depth / 2;
+};
 const colX = (col) => col * BAY_W;
 const metres = (v) => (Math.round(v * 10) / 10).toFixed(1);
 const sizeOf = (car) => metres(car.hl * 2) + ' m long, ' + metres(car.hw * 2) + ' m wide, ' + metres(car.height) + ' m high';
@@ -50,7 +56,7 @@ const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 const box = (material, w, h, d, x, y, z) => {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
   mesh.position.set(x, y, z);
-  scene.add(mesh);
+  lot.add(mesh);
   return mesh;
 };
 // a canvas texture with text on it
@@ -89,8 +95,12 @@ const paint = (mesh, evil) => {
 
 // ---- the lot, and the ideas parked in it: built the first time the tab is opened --------------------------
 const parked = [];
-const buildLot = () => {
-  const rows = ROWS.map((row, r) => IDEA_CARS.filter(car => Math.floor(BY_LENGTH.indexOf(car) / COLS) === r));
+let lot = null, page = -1; // lot: the group holding the page on show
+const buildLot = (n) => {
+  layout(n);
+  lot = new THREE.Group();
+  scene.add(lot);
+  const rows = ROWS.map((row, r) => BY_LENGTH.slice(r * COLS, (r + 1) * COLS));
   const mid = (LOT_W - BAY_W) / 2, left = -BAY_W / 2;
   // a drawing board's blue for the ground, the bays ruled on it in white
   box(lambert(0x2f4f80), LOT_W + 120, 0.2, 90, mid, -0.1, 0);
@@ -103,7 +113,7 @@ const buildLot = () => {
   const wallZ = BACK - 1.2, H = 3.2;
   box(lambert(0x3c5d92), LOT_W + 6, H, 0.4, mid, H / 2, wallZ);
   box(lambert(0xdfe9f7), LOT_W + 6, 0.25, 0.5, mid, H + 0.12, wallZ);
-  const sign = label('CAR IDEAS', 512, 96, 64, '#ffd23f', '#16233a');
+  const sign = label('CAR IDEAS' + (PAGES > 1 ? ' ' + (page + 1) + '/' + PAGES : ''), 512, 96, 64, '#ffd23f', '#16233a');
   const small = label('ideas to try: placeholder figures, no tier', 512, 56, 34, '#dfe9f7', '#16233a');
   for (const x of [mid - LOT_W / 3, mid, mid + LOT_W / 3]) {
     for (const side of [-1, 1]) box(lambert(0x16233a), 0.3, 3, 0.3, x + side * 5.4, H + 1.5, wallZ);
@@ -111,20 +121,31 @@ const buildLot = () => {
     board.position.set(x, H + 3.6, wallZ + 0.2);
     const under = new THREE.Mesh(new THREE.PlaneGeometry(12, 1.3), new THREE.MeshBasicMaterial({ map: small }));
     under.position.set(x, H + 1.85, wallZ + 0.2);
-    scene.add(board, under);
+    lot.add(board, under);
   }
   rows.forEach((cars, r) => cars.forEach((car, col) => {
     const mesh = model(car);
     mesh.position.set(colX(col), 0, ROWS[r].z - ROWS[r].depth / 2 + 0.9 + car.hl); // (its tail to the back of its bay)
     if (r < 2) mesh.position.z = ROWS[r].z;                                       // (the two front rows: in the middle of it)
-    scene.add(mesh);
+    lot.add(mesh);
     parked.push(mesh);
     // its name, painted at the front of its bay
     const plate = new THREE.Mesh(new THREE.PlaneGeometry(3.9, 0.62), new THREE.MeshBasicMaterial({ map: label(car.name, 384, 60, 40, '#dfe9f7', '#27426c') }));
     plate.rotation.x = -Math.PI / 2;
     plate.position.set(colX(col), 0.06, ROWS[r].z + ROWS[r].depth / 2 - 0.45);
-    scene.add(plate);
+    lot.add(plate);
   }));
+};
+// (a page left: everything of it freed)
+const dropLot = () => {
+  if (!lot) return;
+  scene.remove(lot);
+  lot.traverse((o) => {
+    o.geometry?.dispose();
+    for (const m of [].concat(o.material || [])) { m.map?.dispose(); m.dispose(); }
+  });
+  lot = null;
+  parked.length = 0;
 };
 const lookRing = new THREE.Mesh(new THREE.TorusGeometry(2.6, 0.12, 8, 40), new THREE.MeshBasicMaterial({ color: 0xffffff }));
 lookRing.rotation.x = Math.PI / 2;
@@ -183,6 +204,17 @@ const line = (tag, text) => { const node = document.createElement(tag); node.tex
 const about = (car) => [line('strong', car.name), line('div', 'Based on: ' + car.basedOn), line('div', size(car)), line('div', car.note)];
 // (under the lot, for the one looked at: its figures too)
 const aboutToDrive = (car) => [...about(car), line('div', figures(car))];
+
+// the page buttons, beside the tabs: shown on this tab only (menus.css)
+const pageBtns = [];
+for (let n = 0; n < PAGES && PAGES > 1; n++) {
+  const button = line('button', String(n + 1));
+  button.className = 'tab page';
+  button.title = 'Ideas ' + (n * PAGE + 1) + ' to ' + Math.min(IDEA_CARS.length, (n + 1) * PAGE);
+  button.addEventListener('click', () => IdeasLot.show(n));
+  tabs.ideas.parentNode.append(button);
+  pageBtns.push(button);
+}
 
 let hovered = null, looking = null, host = null; // host: what the garage handed over (see mount)
 const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
@@ -260,7 +292,7 @@ export const IdeasLot = {
     tabs.garage.addEventListener('click', () => { if (this.on) { this.leave(); host.back(); } });
   },
   enter() {
-    if (!parked.length) buildLot();
+    if (!parked.length) this.show(Math.max(page, 0), true);
     if (params.get('studio') && !studio) buildStudio(params.get('studio'));
     this.on = true;
     looking = hovered = null;
@@ -289,7 +321,7 @@ export const IdeasLot = {
   refresh() {
     const evil = host.evil(), inUse = host.inUse(), using = !!looking && looking.id === inUse;
     if (looking) info.replaceChildren(...aboutToDrive(looking));
-    else info.replaceChildren(IDEA_CARS.length + ' ideas to try: free, with no tier and placeholder figures. Tap one to read about it and drive it.');
+    else info.replaceChildren((PAGES > 1 ? 'Ideas ' + (page * PAGE + 1) + ' to ' + Math.min(IDEA_CARS.length, (page + 1) * PAGE) + ' of ' + IDEA_CARS.length : IDEA_CARS.length + ' ideas') + ' to try: free, with no tier and placeholder figures. Tap one to read about it and drive it.');
     // (as the garage's own button: the one in use, looked at in the other side's livery, takes that side)
     const otherSide = using && evil !== host.side();
     action.textContent = !looking ? 'Tap an idea to drive it' : using && !otherSide ? 'In use'
@@ -309,7 +341,20 @@ export const IdeasLot = {
     useRing.visible = !!used;
     if (used) useRing.position.set(used.position.x, 0.12, used.position.z);
   },
+  // a page of the lot on show: the one before freed, this one built
+  show(n, quiet) {
+    if (n === page && parked.length) return;
+    dropLot();
+    page = n;
+    buildLot(n);
+    pageBtns.forEach((button, i) => button.classList.toggle('on', i === n));
+    looking = hovered = null;
+    fling = 0;
+    scrollX = clampScroll(0);
+    if (!quiet) this.refresh();
+  },
   look(id) {
+    if (IDEA_CARS.some(car => car.id === id) && pageOf(id) !== page) this.show(pageOf(id), true);
     const mesh = parked.find(m => m.userData.car.id === id);
     if (!mesh) return;
     looking = mesh.userData.car;
@@ -317,6 +362,7 @@ export const IdeasLot = {
     this.refresh();
   },
   hover(id) {
+    if (IDEA_CARS.some(car => car.id === id) && pageOf(id) !== page) this.show(pageOf(id), true);
     hovered = parked.find(m => m.userData.car.id === id) || null;
     if (hovered) scrollX = clampScroll(hovered.position.x);
   },
