@@ -507,6 +507,7 @@ import cattle from './levels/cattle.json';
 import fallout from './levels/fallout.json';
 import shift from './levels/shift.json';
 import descent from './levels/descent.json';
+import monsoon from './levels/monsoon.json';
 
 // the numbered levels, and the special ones (S1, S2...), which always come after them on the
 // menu. All of them unlock in this order, each by delivering the one before, and saved progress
@@ -561,6 +562,7 @@ export const THEME_LEVELS = [
   fallout, // (Hot Zone, the fallout level, after Spring Thaw: order 48, INSERTED_AT 53 in progress.js)
   shift, // (Night Shift, the port at night, after Hot Zone: order 49, INSERTED_AT 54)
   descent, // (Mudslide, the favela in the rain, after Night Shift: order 50, INSERTED_AT 55)
+  monsoon, // (Monsoon, the second rice level, after Mudslide: order 51, INSERTED_AT 56)
 ];
 export const MAIN_LEVELS = [...FIRST_LEVELS, ...THEME_LEVELS]; // (every numbered level: 1, 2, 3...)
 export const LEVELS = [...MAIN_LEVELS, ...SPECIAL_LEVELS, ...AMPHIBIOUS_LEVELS, ...CIRCUIT_LEVELS];

@@ -33,7 +33,8 @@ const ONE_YEAR = 60 * 60 * 24 * 365;
 // amphibious ones: no save was made with it outside a developer's machine.)
 // Order 47: Spring Thaw at 52, after those three; order 48: Hot Zone (the fallout level) at 53, after it.
 // Orders 49 and 50: Night Shift (the port at night) and the favela descent at 54 and 55, after Hot Zone.
-const INSERTED_AT = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, { cap: 41 }, 32, 33, 34, 35, 36, 37, 35, 36, 37, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55]; // (for orders 2, 3, ...)
+// Order 51: Monsoon (the second rice level) at 56, after them.
+const INSERTED_AT = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, { cap: 41 }, 32, 33, 34, 35, 36, 37, 35, 36, 37, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56]; // (for orders 2, 3, ...)
 const LEVEL_ORDER = INSERTED_AT.length + 1;
 
 // races (the lapped levels, on the menu's Races tab) are always open, and never hold up the delivery levels: the

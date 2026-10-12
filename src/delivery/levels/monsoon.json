@@ -1,0 +1,907 @@
+{
+  "id": "monsoon",
+  "theme": "riceMonsoon",
+  "drive": "left",
+  "clock": { "good": 235, "evil": 175 },
+  "tip": 290,
+  "lanes": {
+    "north": 2,
+    "south": 1
+  },
+  "shoulder": 2.5,
+  "cargo": {
+    "good": "teaset",
+    "evil": "piranhas"
+  },
+  "traffic": {
+    "van": 0.18,
+    "keitruck": 0.17,
+    "rickshaw": 0.14,
+    "bus": 0.1,
+    "pickup": 0.1,
+    "commuter": 0.09,
+    "cargotruck": 0.07,
+    "minivan": 0.06,
+    "wagon": 0.04,
+    "police": 0.03
+  },
+  "trafficCount": 9,
+  "oncomingCount": 6,
+  "convoys": {
+    "every": {
+      "min": 42,
+      "max": 66
+    },
+    "size": 3,
+    "kind": "keitruck"
+  },
+  "pursuits": {
+    "every": {
+      "min": 65,
+      "max": 95
+    }
+  },
+  "segments": [
+    {
+      "length": 300,
+      "curve": 0
+    },
+    {
+      "length": 260,
+      "curve": 0.003
+    },
+    {
+      "length": 200,
+      "curve": 0
+    },
+    {
+      "length": 126,
+      "curve": -0.0125
+    },
+    {
+      "length": 250,
+      "curve": 0
+    },
+    {
+      "length": 126,
+      "curve": 0.0125
+    },
+    {
+      "length": 300,
+      "curve": 0
+    },
+    {
+      "length": 200,
+      "curve": 0
+    },
+    {
+      "length": 300,
+      "curve": 0
+    },
+    {
+      "length": 220,
+      "curve": 0
+    },
+    {
+      "length": 260,
+      "curve": 0
+    },
+    {
+      "length": 250,
+      "curve": -0.003
+    },
+    {
+      "length": 300,
+      "curve": 0
+    },
+    {
+      "length": 126,
+      "curve": 0.0125
+    },
+    {
+      "length": 250,
+      "curve": 0
+    },
+    {
+      "length": 126,
+      "curve": -0.0125
+    },
+    {
+      "length": 300,
+      "curve": 0
+    },
+    {
+      "length": 200,
+      "curve": 0.004
+    },
+    {
+      "length": 250,
+      "curve": 0
+    },
+    {
+      "length": 200,
+      "curve": -0.004
+    },
+    {
+      "length": 300,
+      "curve": 0
+    },
+    {
+      "length": 456,
+      "curve": 0
+    }
+  ],
+  "exits": [
+    {
+      "exitAt": 1330,
+      "mergeAt": 2130,
+      "out": 70,
+      "oncoming": false
+    },
+    {
+      "exitAt": 3500,
+      "mergeAt": 4350,
+      "out": 70,
+      "oncoming": false
+    }
+  ],
+  "fords": [
+    {
+      "from": 1580,
+      "to": 1660,
+      "depth": 0.5
+    },
+    {
+      "from": 3850,
+      "to": 3930,
+      "depth": 0.7
+    }
+  ],
+  "tractors": [
+    {
+      "s": 520,
+      "lane": 1
+    },
+    {
+      "s": 3720,
+      "lane": 2
+    }
+  ],
+  "herds": [
+    {
+      "from": 130,
+      "to": 240,
+      "count": 5
+    }
+  ],
+  "stampedes": [
+    {
+      "from": 2700,
+      "to": 2900,
+      "count": 9,
+      "kind": "cow"
+    },
+    {
+      "from": 5030,
+      "to": 5230,
+      "count": 11,
+      "kind": "cow"
+    }
+  ],
+  "ruts": [
+    {
+      "from": 2300,
+      "to": 2560
+    },
+    {
+      "from": 4540,
+      "to": 4780
+    }
+  ],
+  "spray": [
+    {
+      "from": 380,
+      "to": 780
+    },
+    {
+      "from": 3040,
+      "to": 3380
+    }
+  ],
+  "frogs": [
+    {
+      "from": 1760,
+      "to": 1940
+    },
+    {
+      "from": 4830,
+      "to": 4980
+    }
+  ],
+  "mud": [
+    {
+      "from": 900,
+      "to": 960
+    },
+    {
+      "from": 4100,
+      "to": 4160
+    }
+  ],
+  "potholes": [
+    {
+      "s": 430,
+      "lane": 1,
+      "r": 1.1
+    },
+    {
+      "s": 480,
+      "lane": 2,
+      "r": 1
+    },
+    {
+      "s": 1000,
+      "lane": 2,
+      "r": 1.1
+    },
+    {
+      "s": 1180,
+      "lane": 1,
+      "r": 1.2
+    },
+    {
+      "s": 2100,
+      "lane": 2,
+      "r": 1
+    },
+    {
+      "s": 3540,
+      "lane": 1,
+      "r": 1.1
+    },
+    {
+      "s": 4300,
+      "lane": 2,
+      "r": 1.2
+    },
+    {
+      "s": 5150,
+      "lane": 1,
+      "r": 1.1
+    }
+  ],
+  "waterMains": [
+    {
+      "s": 840,
+      "lane": 2
+    },
+    {
+      "s": 3660,
+      "lane": 1
+    }
+  ],
+  "fog": [
+    {
+      "from": 3980,
+      "to": 4260
+    }
+  ],
+  "parked": [
+    {
+      "s": 90,
+      "side": "right"
+    },
+    {
+      "s": 2630,
+      "side": "right"
+    },
+    {
+      "s": 5290,
+      "side": "right"
+    }
+  ],
+  "targets": [
+    {
+      "s": 420,
+      "side": "right"
+    },
+    {
+      "s": 1560,
+      "side": "left"
+    },
+    {
+      "s": 3200,
+      "side": "right"
+    },
+    {
+      "s": 4600,
+      "side": "left"
+    }
+  ],
+  "pickups": [
+    {
+      "type": "cash5",
+      "s": 110,
+      "lane": 1
+    },
+    {
+      "type": "cash5",
+      "s": 110,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 330,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 330,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 470,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 470,
+      "lane": 2
+    },
+    {
+      "type": "cash20",
+      "s": 640,
+      "lane": 1
+    },
+    {
+      "type": "cash20",
+      "s": 640,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 790,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 790,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 960,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 960,
+      "lane": 2
+    },
+    {
+      "type": "cash20",
+      "s": 1130,
+      "lane": 1
+    },
+    {
+      "type": "cash20",
+      "s": 1130,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 1330,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 1330,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 1500,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 1500,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 1860,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 1860,
+      "lane": 2
+    },
+    {
+      "type": "cash20",
+      "s": 2010,
+      "lane": 1
+    },
+    {
+      "type": "cash20",
+      "s": 2010,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 2190,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 2190,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 2620,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 2620,
+      "lane": 2
+    },
+    {
+      "type": "cash20",
+      "s": 2790,
+      "lane": 1
+    },
+    {
+      "type": "cash20",
+      "s": 2790,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 2960,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 2960,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 3130,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 3130,
+      "lane": 2
+    },
+    {
+      "type": "cash20",
+      "s": 3290,
+      "lane": 1
+    },
+    {
+      "type": "cash20",
+      "s": 3290,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 3430,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 3430,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 3600,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 3600,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 4010,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 4010,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 4420,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 4420,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 4940,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 4940,
+      "lane": 2
+    },
+    {
+      "type": "cash10",
+      "s": 5130,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 5130,
+      "lane": 2
+    },
+    {
+      "type": "cash20",
+      "s": 5260,
+      "lane": 1
+    },
+    {
+      "type": "cash20",
+      "s": 5260,
+      "lane": 2
+    },
+    {
+      "type": "cash20",
+      "s": 2340,
+      "lane": 2
+    },
+    {
+      "type": "cash20",
+      "s": 2400,
+      "lane": 2
+    },
+    {
+      "type": "cash20",
+      "s": 2460,
+      "lane": 2
+    },
+    {
+      "type": "cash20",
+      "s": 4580,
+      "lane": 2
+    },
+    {
+      "type": "cash20",
+      "s": 4650,
+      "lane": 2
+    },
+    {
+      "type": "cash20",
+      "s": 4720,
+      "lane": 2
+    },
+    {
+      "type": "cash20",
+      "s": 2540,
+      "lane": 0
+    },
+    {
+      "type": "cash10",
+      "s": 3200,
+      "lane": 0
+    },
+    {
+      "type": "cash10",
+      "s": 4800,
+      "lane": 0
+    },
+    {
+      "type": "turbo",
+      "s": 250,
+      "lane": 2
+    },
+    {
+      "type": "wrench",
+      "s": 700,
+      "lane": 1
+    },
+    {
+      "type": "timePlus",
+      "s": 1050,
+      "lane": 1
+    },
+    {
+      "type": "armour",
+      "s": 1210,
+      "lane": 2
+    },
+    {
+      "type": "mystery",
+      "s": 1780,
+      "lane": 1
+    },
+    {
+      "type": "ghost",
+      "s": 2270,
+      "lane": 1
+    },
+    {
+      "type": "timePlus",
+      "s": 2900,
+      "lane": 2
+    },
+    {
+      "type": "turbo",
+      "s": 3380,
+      "lane": 1
+    },
+    {
+      "type": "wrench",
+      "s": 3750,
+      "lane": 2
+    },
+    {
+      "type": "mystery",
+      "s": 4250,
+      "lane": 2
+    },
+    {
+      "type": "timePlus",
+      "s": 4880,
+      "lane": 1
+    },
+    {
+      "type": "armour",
+      "s": 3080,
+      "lane": 1
+    },
+    {
+      "type": "cash20",
+      "s": 90,
+      "lane": 1,
+      "road": "side",
+      "exit": 0
+    },
+    {
+      "type": "cash10",
+      "s": 90,
+      "lane": 0,
+      "road": "side",
+      "exit": 0
+    },
+    {
+      "type": "cash10",
+      "s": 220,
+      "lane": 1,
+      "road": "side",
+      "exit": 0
+    },
+    {
+      "type": "cash10",
+      "s": 220,
+      "lane": 0,
+      "road": "side",
+      "exit": 0
+    },
+    {
+      "type": "cash10",
+      "s": 360,
+      "lane": 1,
+      "road": "side",
+      "exit": 0
+    },
+    {
+      "type": "cash10",
+      "s": 360,
+      "lane": 0,
+      "road": "side",
+      "exit": 0
+    },
+    {
+      "type": "cash20",
+      "s": 500,
+      "lane": 1,
+      "road": "side",
+      "exit": 0
+    },
+    {
+      "type": "cash10",
+      "s": 500,
+      "lane": 0,
+      "road": "side",
+      "exit": 0
+    },
+    {
+      "type": "cash10",
+      "s": 640,
+      "lane": 1,
+      "road": "side",
+      "exit": 0
+    },
+    {
+      "type": "cash10",
+      "s": 640,
+      "lane": 0,
+      "road": "side",
+      "exit": 0
+    },
+    {
+      "type": "cash20",
+      "s": 90,
+      "lane": 1,
+      "road": "side",
+      "exit": 1
+    },
+    {
+      "type": "cash10",
+      "s": 90,
+      "lane": 0,
+      "road": "side",
+      "exit": 1
+    },
+    {
+      "type": "cash10",
+      "s": 220,
+      "lane": 1,
+      "road": "side",
+      "exit": 1
+    },
+    {
+      "type": "cash10",
+      "s": 220,
+      "lane": 0,
+      "road": "side",
+      "exit": 1
+    },
+    {
+      "type": "cash10",
+      "s": 360,
+      "lane": 1,
+      "road": "side",
+      "exit": 1
+    },
+    {
+      "type": "cash10",
+      "s": 360,
+      "lane": 0,
+      "road": "side",
+      "exit": 1
+    },
+    {
+      "type": "cash20",
+      "s": 500,
+      "lane": 1,
+      "road": "side",
+      "exit": 1
+    },
+    {
+      "type": "cash10",
+      "s": 500,
+      "lane": 0,
+      "road": "side",
+      "exit": 1
+    },
+    {
+      "type": "cash10",
+      "s": 640,
+      "lane": 1,
+      "road": "side",
+      "exit": 1
+    },
+    {
+      "type": "cash10",
+      "s": 640,
+      "lane": 0,
+      "road": "side",
+      "exit": 1
+    },
+    {
+      "type": "timePlus",
+      "s": 380,
+      "lane": 1,
+      "road": "side",
+      "exit": 0
+    },
+    {
+      "type": "wrench",
+      "s": 560,
+      "lane": 1,
+      "road": "side",
+      "exit": 1
+    }
+  ],
+  "obstacles": [
+    {
+      "s": 2380,
+      "lane": 1,
+      "kind": "crate"
+    },
+    {
+      "s": 2440,
+      "lane": 1,
+      "kind": "crate"
+    },
+    {
+      "s": 2500,
+      "lane": 1,
+      "kind": "crate"
+    },
+    {
+      "s": 4600,
+      "lane": 1,
+      "kind": "crate"
+    },
+    {
+      "s": 4660,
+      "lane": 1,
+      "kind": "crate"
+    },
+    {
+      "s": 4720,
+      "lane": 1,
+      "kind": "crate"
+    },
+    {
+      "s": 1030,
+      "lane": 2,
+      "kind": "crate"
+    },
+    {
+      "s": 2230,
+      "lane": 2,
+      "kind": "crate"
+    },
+    {
+      "s": 3440,
+      "lane": 2,
+      "kind": "crate"
+    },
+    {
+      "s": 3560,
+      "lane": 1,
+      "kind": "crate"
+    },
+    {
+      "s": 4900,
+      "lane": 2,
+      "kind": "crate"
+    },
+    {
+      "s": 200,
+      "lane": 1,
+      "road": "side",
+      "exit": 0,
+      "kind": "crate"
+    },
+    {
+      "s": 480,
+      "lane": 0,
+      "road": "side",
+      "exit": 0,
+      "kind": "crate"
+    },
+    {
+      "s": 300,
+      "lane": 1,
+      "road": "side",
+      "exit": 1,
+      "kind": "crate"
+    },
+    {
+      "s": 560,
+      "lane": 0,
+      "road": "side",
+      "exit": 1,
+      "kind": "crate"
+    }
+  ]
+}
