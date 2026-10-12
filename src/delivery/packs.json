@@ -53,7 +53,7 @@
       "name": "Supercar Showdown", "limited": true, "size": 5, "baseAmount": 2, "pool": "evergreen", "atLeast": { "uncommon": 1 },
       "featured": {
         "upgradeChance": 0.25, "featuredChance": 0.2,
-        "entries": [ { "car": "wedge", "weight": 1, "amount": 3 }, { "car": "midnight", "weight": 1, "amount": 3 }, { "car": "splitwindow", "weight": 1, "amount": 3 } ]
+        "entries": [ { "car": "wedge", "weight": 9, "amount": 3 }, { "car": "wedge", "weight": 1, "amount": 15 }, { "car": "midnight", "weight": 9, "amount": 3 }, { "car": "midnight", "weight": 1, "amount": 15 }, { "car": "splitwindow", "weight": 9, "amount": 3 }, { "car": "splitwindow", "weight": 1, "amount": 15 } ]
       },
       "shop": { "section": "featured", "price": 400, "ribbon": "new", "limits": { "total": 10 } }
     },
@@ -61,7 +61,7 @@
       "name": "Classic Road Trip", "limited": true, "size": 5, "baseAmount": 2, "pool": "evergreen", "atLeast": { "uncommon": 1 },
       "featured": {
         "upgradeChance": 0.25, "featuredChance": 0.2,
-        "entries": [ { "car": "gullwing", "weight": 1, "amount": 3 }, { "car": "classicgt", "weight": 1, "amount": 3 }, { "car": "snake", "weight": 1, "amount": 3 } ]
+        "entries": [ { "car": "gullwing", "weight": 9, "amount": 3 }, { "car": "gullwing", "weight": 1, "amount": 15 }, { "car": "classicgt", "weight": 9, "amount": 3 }, { "car": "classicgt", "weight": 1, "amount": 15 }, { "car": "snake", "weight": 9, "amount": 3 }, { "car": "snake", "weight": 1, "amount": 15 } ]
       },
       "shop": { "section": "featured", "price": 400, "ribbon": "new", "limits": { "total": 10 } }
     },
@@ -69,7 +69,7 @@
       "name": "Record Breakers", "limited": true, "size": 5, "baseAmount": 2, "pool": "evergreen", "atLeast": { "uncommon": 1 },
       "featured": {
         "upgradeChance": 0.25, "featuredChance": 0.2,
-        "entries": [ { "car": "jetcar", "weight": 1, "amount": 3 }, { "car": "dragster", "weight": 1, "amount": 3 }, { "car": "flyingcar", "weight": 1, "amount": 3 } ]
+        "entries": [ { "car": "jetcar", "weight": 9, "amount": 3 }, { "car": "jetcar", "weight": 1, "amount": 15 }, { "car": "dragster", "weight": 9, "amount": 3 }, { "car": "dragster", "weight": 1, "amount": 15 }, { "car": "flyingcar", "weight": 9, "amount": 3 }, { "car": "flyingcar", "weight": 1, "amount": 15 } ]
       },
       "shop": { "section": "featured", "price": 600, "ribbon": "new", "limits": { "total": 10 } }
     },
@@ -77,7 +77,7 @@
       "name": "Classic Cruisers", "limited": true, "size": 5, "baseAmount": 2, "pool": "evergreen", "atLeast": { "uncommon": 1 },
       "featured": {
         "upgradeChance": 0.25, "featuredChance": 0.2,
-        "entries": [ { "car": "goddess", "weight": 1, "amount": 3 }, { "car": "hardtop", "weight": 1, "amount": 3 }, { "car": "stately", "weight": 1, "amount": 3 } ]
+        "entries": [ { "car": "goddess", "weight": 9, "amount": 3 }, { "car": "goddess", "weight": 1, "amount": 15 }, { "car": "hardtop", "weight": 9, "amount": 3 }, { "car": "hardtop", "weight": 1, "amount": 15 }, { "car": "stately", "weight": 9, "amount": 3 }, { "car": "stately", "weight": 1, "amount": 15 } ]
       },
       "shop": { "section": "featured", "price": 500, "ribbon": "new", "limits": { "total": 10 } }
     }
