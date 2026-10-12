@@ -2,7 +2,9 @@
 // (the ladder by star tier, a car's own `rarity` first, event cars never in the pool, keys only for cars not owned),
 // a 10-pack always has an Epic or better, a special pack's last slot is a featured card and Epic or better, career
 // packs hold only evergreen cards, the odds come out about as packs.json has them (seeded dice, many packs), the
-// featured upgrade rate, and the packs held and the log in the save (a save code out and back, an old save).
+// featured upgrade rate, and the packs held and the log in the save (a save code out and back, an old save); a pack given
+// is opened at once in the flows (Packs.revealer), a pending one once; the reveal's cards (each its own, x1), its order (the
+// best last), each card's progress bar before/after with the unlock and ECU-up flags; the three poses (carposes.js).
 //   node scripts/.packs-check.mjs
 import { boot } from './delivery-headless.mjs';
 
@@ -136,6 +138,92 @@ try {
     g.Game.start(); g.Game.finish('delivered'); g.Game.toMenu();
     check(Packs.count('career') === 1, 'Hurricane delivered for the first time (Game.finish): a Career pack held');
   } else check(false, 'Hurricane would not start (' + g.cars.CAR.id + ')');
+
+  // ---- opened at once (the owner, 12-Oct: no Packs page; a pack bought or earned opens immediately) ----
+  // with a reveal (the screen's Packs.revealer; here a stand-in that opens what is held, as the screen does), a pack a
+  // flow gives is opened in the flow itself; with none (the page closed in between), it is held, and opened once later
+  Progress.reset(); Progress.noSave = true;
+  const opened = [];
+  Packs.revealer = () => { let r; while ((r = Packs.next())) opened.push(r); };
+  const log0 = (Progress.data.packLog || []).length;
+  check(Packs.levelDone(lvl, true) === 'Career pack' && Packs.total() === 0 && opened.length === 1 && opened[0].kind === 'career' && Progress.data.packLog.length === log0 + 1,
+    'a Career level\'s first delivery: its pack opened at once (none left held; ' + (opened[0]?.cards.length || 0) + ' cards given)');
+  opened.length = 0;
+  check(Packs.eventDone('comet-hunt', true, true).length === 2 && Packs.total() === 0 && opened.length === 2 && opened.every(r => r.kind === 'special' && r.from === 'comet-hunt'),
+    'a special event\'s stage and prize: both packs opened at once');
+  Packs.revealer = null;
+  Packs.grant('standard');
+  check(Packs.total() === 1, 'no reveal to hand (the page closed): the pack is held in the save, pending');
+  const bpBefore = JSON.stringify(Progress.data.blueprints || {});
+  const once = Packs.next(), again = Packs.next();
+  check(!!once && once.kind === 'standard' && again === null && Packs.total() === 0 && JSON.stringify(Progress.data.blueprints) !== bpBefore,
+    'a pending pack is opened ONCE: a second open (a double tap) finds none, and gives nothing');
+  // every card its own in the reveal (no stacking today): each shows x1
+  const twin = [{ car: 'lovebus', rarity: 'common' }, { car: 'lovebus', rarity: 'common' }, { car: 'hearse', rarity: 'common' }];
+  const rc = P.revealCards(twin);
+  check(rc.length === 3 && rc.every(c => c.n === 1), 'the reveal: identical cards are NOT stacked, each its own card with x1 (' + rc.map(c => c.car + ' x' + c.n).join(', ') + ')');
+  // the best card last: a featured card last unless a card of a HIGHER rarity came up; with no featured card, the best
+  const ids = (list) => P.revealOrder(list).map(c => c.car).join(' ');
+  check(ids([{ car: 'a', rarity: 'epic', featured: true }, { car: 'b', rarity: 'common' }, { car: 'c', rarity: 'uncommon' }]) === 'b c a'
+    && ids([{ car: 'b', rarity: 'common' }, { car: 'f', rarity: 'legendary', featured: true }, { car: 'c', rarity: 'epic' }]) === 'b c f'
+    && ids([{ car: 'u', rarity: 'legendary', upgraded: true }, { car: 'b', rarity: 'common' }, { car: 'f', rarity: 'epic', featured: true }]) === 'b f u'
+    && ids([{ car: 'x', rarity: 'common' }, { car: 'y', rarity: 'epic' }, { car: 'z', rarity: 'uncommon' }]) === 'x z y',
+  'the reveal order: the featured card last, unless a card upgraded above it (then that one); else the best card last');
+  {
+    let all = 0, ok = 0;
+    for (let i = 0; i < 300; i++) {
+      const cards = P.revealOrder(draw('special', { random: dice(8e6 + i), featured: featuredFor('comet-hunt') }));
+      const top = Math.max(...cards.map(c => rank(c.rarity))), last = cards.at(-1);
+      all++; if (rank(last.rarity) === top && (last.featured || !cards.some(c => c.featured && rank(c.rarity) === top))) ok++;
+    }
+    check(ok === all, 'special packs drawn: the last card turned is always the best (featured where it ties): ' + ok + ' of ' + all);
+  }
+  // each card's progress bar, before and after it, in the order turned: a later card of the same car starts where the
+  // earlier left it; the flags for an unlock and an ECU up
+  {
+    Progress.reset(); Progress.noSave = true;
+    const filler = (g.cars.FILLER_CARS || []).find(c => Ecu.max(c) >= 2) || (g.cars.FILLER_CARS || [])[0];
+    const keyCar = CARS.find(c => c.id === 'lovebus');
+    const x = Ecu.x(filler), xk = Ecu.x(keyCar);
+    Progress.data.blueprints = { [filler.id]: x - 2, [keyCar.id]: xk - 1 };
+    const pack = [{ car: filler.id, rarity: 'common' }, { car: keyCar.id, rarity: 'common' }, { car: filler.id, rarity: 'common' }, { car: filler.id, rarity: 'common' }];
+    for (const c of pack) Ecu.addBlueprints(c.car, 1); // (as open() gives them)
+    const pr = P.revealProgress(pack);
+    const chain = pr[0].after.bp === pr[2].before.bp && pr[2].after.bp === pr[3].before.bp && pr[0].before.bp === x - 2 && pr[3].after.bp === x + 1;
+    check(chain, 'progress per card in order: ' + filler.id + ' ' + pr.filter((_, i) => i !== 1).map(p => p.before.bp + '>' + p.after.bp).join(', ') + ' (X ' + x + ')');
+    check(!pr[0].unlocks && pr[2].unlocks && pr[2].ecuUp && pr[2].before.ecu === 0 && pr[2].after.ecu === 1 && !pr[3].unlocks && !pr[3].ecuUp && pr[3].after.have === 1,
+      'a blueprint car: the card that reaches X blueprints UNLOCKS it (ECU 0 to 1, the bar glows); the next does not');
+    check(pr[1].ecuUp && !pr[1].unlocks && pr[1].before.ecu === 1 && pr[1].after.ecu === 2 && !pr[1].after.unlocked,
+      'a key car without its key: its blueprints take it up an ECU (1 to 2: ECU up), still locked (no key)');
+    Packs.revealer = null;
+  }
+  // the three poses: a stable pick by car id, and a pack's cards varied so neighbours differ
+  {
+    const { POSE_NAMES, posePick, variedPoses } = await g.load('carposes.js');
+    const roster = P.roster().map(c => c.id);
+    const stable = roster.every(id => posePick(id) === posePick(id) && POSE_NAMES.includes(posePick(id)));
+    const counts = Object.fromEntries(POSE_NAMES.map(p => [p, roster.filter(id => posePick(id) === p).length]));
+    check(stable && POSE_NAMES.length === 3 && Object.values(counts).every(n => n > 0), 'a car\'s pose is a stable pick by its id: ' + JSON.stringify(counts));
+    let differ = true;
+    for (let i = 0; i < 200; i++) { const ids2 = draw('ten', { random: dice(6e6 + i) }).map(c => c.car), v = variedPoses(ids2); if (v.some((p, j) => j > 0 && p === v[j - 1])) differ = false; }
+    const same = variedPoses(['lovebus', 'lovebus', 'lovebus']);
+    check(differ && same[0] !== same[1] && same[1] !== same[2], 'a pack\'s cards: neighbouring cards never share a pose (200 10-packs; three of one car: ' + same.join(', ') + ')');
+  }
+
+  // the pack screens' pictures: every one asked for in the GOOD livery, never a side that follows the player (the
+  // owner, 12-Oct), and never the old carshots photos (a reading of the source: the screens are only seen in a browser)
+  {
+    const { readFileSync } = await import('node:fs');
+    const bad = [];
+    for (const f of ['render/packs.js', 'render/packcontents.js', 'render/shop.js']) {
+      const src = readFileSync(new URL('../src/delivery/' + f, import.meta.url), 'utf8');
+      const calls = [...src.matchAll(/\b(drawSoon|stillSoon|observer\.watch|stillCar|stillReady)\(([^)\n][^\n]*)/g)]; // (not the Shop's own drawSoon(): its redraw)
+      if (!calls.length && f !== 'render/shop.js') bad.push(f + ': no picture asked for');
+      for (const [, fn, rest] of calls) if (!/side: 'good'/.test(rest)) bad.push(f + ': ' + fn + '(' + rest.slice(0, 50));
+      if (/carshots/.test(src.replace(/\/\/.*$/gm, ''))) bad.push(f + ': uses carshots');
+    }
+    check(!bad.length, 'the pack screens (the reveal, What\'s inside, the Shop) ask for every picture in the Good livery, no old photos' + (bad.length ? ': ' + bad.join('; ') : ''));
+  }
 
   // ---- "What's inside" (contents(), the Shop's contents sheet): every card of the pool listed, no more, no fewer; a
   // rarity's cards add up to its share of the odds; the shares add to 1; a special pack's featured cards at the top ----

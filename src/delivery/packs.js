@@ -19,7 +19,8 @@
 // dice, and what an opened pack held is written into the save at once (its cards given, and a log of it).
 // Where packs come from: Packs.grant(kind). The first delivery of some Career levels (packs.json career), a special
 // event's stages and its grand prize (packs.json events; events.json `featured` names an event's featured cars, else
-// its prize car). Nothing sells them (the economy that buys packs is undecided).
+// its prize car), the Shop (shop.js, a placeholder currency). A pack given is OPENED AT ONCE: Packs.revealNow asks the
+// reveal screen (render/packs.js) to open it; until it has, it is held in the save, and opened at the next menu.
 // ============================================================================
 import packData from './packs.json';
 import eventData from './events.json';
@@ -170,6 +171,60 @@ export const careerLevels = () => {
   return [...new Set([...(every > 0 ? main.filter((_, i) => (i + 1) % every === 0).map(l => l.id) : []), ...(packData.career?.levels || [])])];
 };
 
+// ---- a pack's cards as the reveal shows them (render/packs.js) ----
+// every card its own (the owner, 12-Oct: identical cards are NOT stacked; each shows x1 on its tab for now): { ...the
+// card, n: 1 }. n is the count the card's xN badge shows, kept so stacking can come back later
+export const revealCards = (cards) => (cards || []).map(c => ({ ...c, n: 1, featured: !!c.featured }));
+// the order they are turned in: as drawn, but the BEST card last (the owner, 12-Oct: "the featured card at the end of the
+// pack always, unless upgraded"): the highest rarity goes last; among equals a featured card; among those the later. So
+// a special pack's featured card (its guaranteed last slot) is last unless a slot upgraded to a HIGHER rarity than it
+export const revealOrder = (cards) => {
+  const list = [...(cards || [])];
+  if (list.length < 2) return list;
+  let best = 0;
+  list.forEach((c, i) => {
+    const b = list[best], d = rank(c.rarity) - rank(b.rarity);
+    if (d > 0 || (d === 0 && (!!c.featured > !!b.featured || !!c.featured === !!b.featured))) best = i;
+  });
+  list.push(list.splice(best, 1)[0]);
+  return list;
+};
+
+// each card's progress bar, before it and after it, in the order the cards are TURNED (the owner, 12-Oct: "Under each
+// card obtained, it should show the player's progress bar. It should glow if Unlocking it or ECU Up"). The pack's
+// blueprints are already given (open()), so where each car stood before the pack is worked back (its blueprints now,
+// less this pack's cards of it), and the cards are then laid on one at a time: a later card of the same car starts where
+// the earlier one left it. Per card: { before, after, unlocks (the car became driveable: a blueprint car's first ECU, a
+// key car's key), ecuUp (an ECU more reached), maxed (at its top after) }, before/after = { bp, ecu, max, have, toNext,
+// unlocked } (have/toNext: the blueprints toward the next ECU)
+export const revealProgress = (cards, { owned = (id) => Progress.owns(id) } = {}) => {
+  const start = {}, keysNew = new Set();
+  for (const c of cards || []) {
+    if (c.key) { if (c.isNew) keysNew.add(c.car); continue; }
+    start[c.car] = (start[c.car] ?? Ecu.blueprints(c.car) ?? 0) - 1;
+  }
+  const bp = { ...start }, hasKey = {};
+  const at = (car, n, key) => {
+    const max = Math.max(1, Ecu.max(car) || 1), x = Math.max(1, Ecu.x(car) || 1), blueprint = Ecu.isBlueprint(car);
+    const steps = Math.floor(Math.max(0, n) / x);
+    const ecu = Ecu.maxed(car) ? max : Math.min(max, blueprint ? steps : 1 + steps);
+    const unlocked = blueprint ? ecu >= 1 || Progress.data.cars.includes(car.id) : key;
+    return { bp: n, ecu, max, toNext: x, have: ecu >= max ? x : Math.max(0, n) % x, unlocked };
+  };
+  return (cards || []).map((c) => {
+    const car = Cars.carById(c.car);
+    if (!car) return { before: null, after: null, unlocks: false, ecuUp: false, maxed: false };
+    const id = car.id, key0 = hasKey[id] ?? (owned(id) && !keysNew.has(id));
+    const n0 = bp[id] ?? Ecu.blueprints(id);
+    const before = at(car, n0, key0);
+    let n1 = n0, key1 = key0;
+    if (c.key) key1 = true; else n1 = n0 + 1;
+    bp[id] = n1; hasKey[id] = key1;
+    const after = at(car, n1, key1);
+    return { before, after, unlocks: !before.unlocked && after.unlocked, ecuUp: after.ecu > before.ecu, maxed: after.ecu >= after.max };
+  });
+};
+
 export const Packs = {
   data: packData,
   // how many of a pack are held (kind alone: every pack of that kind, whatever event it is from)
@@ -194,6 +249,17 @@ export const Packs = {
     Progress.save();
     window.dispatchEvent?.(new Event('packschange'));
     return kindName(kind);
+  },
+  // ---- opened at once (the owner, 12-Oct: "when a pack is bought or earned it just opens immediately") ----
+  // revealer: the screen's (render/packs.js), set when it loads: asked to show the packs held now, at once or as soon
+  // as it can (a run's results up, the menu back). Until it does they are held in the save (Progress.data.packs: a page
+  // closed in between keeps them, and they open at the next menu). None set (a check, a build with no screen): held.
+  revealer: null,
+  revealNow() { try { this.revealer?.(); } catch (error) { console.error(error); } },
+  // the next pack held, opened (the first of held()): what open() gives, or null (none held)
+  next(options = {}) {
+    const first = this.held()[0];
+    return first ? this.open(first.kind, { from: first.from, ...options }) : null;
   },
   // KEY HOOK: a Bespoke card's key given. Ecu.grantKey if ecu.js has one; else a key is what owning a garage car is
   // today (Progress.data.cars: bought or won), so the car is put in the cars owned
@@ -238,7 +304,9 @@ export const Packs = {
     const claim = 'pack-' + level.id;
     if ((Progress.data.claimed ||= []).includes(claim)) return '';
     Progress.data.claimed.push(claim);
-    return this.grant('career');
+    const name = this.grant('career');
+    this.revealNow();
+    return name;
   },
   // a special event's stage done (events.js delivered): a pack for a stage done the first time, and one with the
   // grand prize (packs.json events). The names given, as a list
@@ -246,6 +314,7 @@ export const Packs = {
     const out = [], { stage, prize: forPrize } = packData.events || {};
     if (firstTime && stage) out.push(this.grant(stage, stage === 'special' ? { from: eventId } : {}));
     if (prize && forPrize) out.push(this.grant(forPrize, forPrize === 'special' ? { from: eventId } : {}));
+    if (out.some(Boolean)) this.revealNow();
     return out.filter(Boolean);
   },
 };

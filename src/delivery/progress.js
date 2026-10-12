@@ -62,7 +62,7 @@ const fresh = () => ({
   tierCars: {},    // the car last picked for each tier's levels while their medal is not earned, by tier (the player's own pick, `car`, is kept apart)
   blueprints: {},  // blueprints collected, by car id (ecu.js: they raise a car's ECU, and unlock a blueprint car)
   maxed: ['commuter'], // cars held at their MAX ECU whatever their blueprints (ecu.js): the starter car comes maxed; an old save's cars all are
-  packs: {},       // card packs held, unopened: a count by pack ('career', 'special:<event id>'...: packs.js)
+  packs: {},       // card packs given and not yet opened (pending: the reveal opens them at once, or at the next menu): a count by pack ('career', 'special:<event id>'...: packs.js)
   packLog: [],     // the packs opened last, newest first: { kind, from?, cards: [{ car, rarity, key?, featured? }] } (packs.js)
   shopCash: 0,     // the Shop's PLACEHOLDER currency (shop.json, shop.js): its own balance, never the bank; nothing gives it yet
 });

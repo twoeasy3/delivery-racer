@@ -3,7 +3,8 @@
 // The currency is a PLACEHOLDER: the owner has not decided what buys packs (BLUEPRINTS-NOTES.md: "the economy that
 // buys packs is a separate economy and UNDECIDED"), so it is a stand-in with its own balance in the save
 // (Progress.data.shopCash), never the bank (the tips), and nothing in the game gives it yet. A pack bought is given
-// unopened, through Packs.grant(kind) (packs.js), and opened on the Packs screen like any other.
+// through Packs.grant(kind) (packs.js) and OPENED AT ONCE (Packs.revealNow: the reveal, render/packs.js; the owner,
+// 12-Oct: "when a pack is bought or earned it just opens immediately"). Held in the save until the reveal has opened it.
 // Packs are reached through import.meta.glob, so the Shop builds and is checked whether or not packs.js is in the
 // tree; without it nothing can be bought ("packs"). A check hands in its own: Shop.usePacks(stub).
 // ============================================================================
@@ -55,7 +56,7 @@ export const Shop = {
     if (this.balance() < offer.price) return { ok: false, why: 'short', need: offer.price - this.balance() };
     return { ok: true };
   },
-  // bought: the price taken, the packs given unopened (Packs.grant). { ok, why, offer, name } (name: the pack's)
+  // bought: the price taken, the packs given (Packs.grant) and opened at once (Packs.revealNow). { ok, why, offer, name } (name: the pack's)
   buy(id, t = Events.now()) {
     const can = this.canBuy(id, t);
     if (!can.ok) return can;
@@ -68,6 +69,7 @@ export const Shop = {
     }
     Progress.save();
     globalThis.window?.dispatchEvent?.(new Event('shopchange'));
+    packs.revealNow?.(); // (opened at once: the reveal over the Shop)
     return { ok: true, offer, name };
   },
   // DEBUG ONLY (?debug, or a check): some of the placeholder currency, saved

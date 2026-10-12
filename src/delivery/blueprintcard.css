@@ -1,0 +1,81 @@
+/* ---- the BLUEPRINT CARD (render/blueprintcard.js): after Asphalt 9's blueprint cards, in the game's own colours. Sized
+   by its own width (a container: cqw), so one card serves the pack reveal's grid and the "What's inside" sheet alike. */
+.bp-card {
+  --rc: #a3acb7; --rc-deep: #7d8693;
+  --display: "Bahnschrift", "DIN Alternate", "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
+  container-type: inline-size; position: relative; display: flex; flex-direction: column; min-width: 0; box-sizing: border-box;
+  padding: 3.5% 3.5% 3%; /* (%: of the card's width; its own cqw would be an ancestor's) */ border-radius: 9px; color: #10131a; text-align: left; font-size: 13px; line-height: 1.15;
+  background: linear-gradient(180deg, #ffffff, #e9edf3); box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .9), 0 0 0 3px var(--rc), 0 10px 22px rgba(0, 0, 0, .5);
+}
+.bp-card * { box-sizing: border-box; }
+.bp-card.r-uncommon { --rc: #3fd06f; --rc-deep: #24a352; }
+.bp-card.r-epic { --rc: #b45cff; --rc-deep: #8a35d8; }
+.bp-card.r-legendary { --rc: #ffbe2e; --rc-deep: #f08c00; }
+.bp-card.r-bespoke { --rc: #ff3fae; --rc-deep: #c41f86; }
+
+/* the picture: the car on diagonal stripes of its rarity */
+.bp-art { position: relative; overflow: hidden; aspect-ratio: 1 / .9; border-radius: 5px;
+  background: repeating-linear-gradient(135deg, var(--rc) 0 7cqw, var(--rc-deep) 7cqw 14cqw); }
+.bp-card.r-bespoke .bp-art { background: repeating-linear-gradient(135deg, rgba(255, 255, 255, .22) 0 7cqw, transparent 7cqw 14cqw),
+  linear-gradient(125deg, #ff3fae, #ffbe2e 28%, #3fd06f 48%, #35c2ff 68%, #b45cff 88%); }
+.bp-art::after { content: ''; position: absolute; inset: 0; pointer-events: none; /* (a sheen, and a floor shade under the car) */
+  background: radial-gradient(60% 18% at 50% 84%, rgba(0, 0, 0, .28), transparent 70%), linear-gradient(180deg, rgba(255, 255, 255, .22), transparent 45%, rgba(0, 0, 0, .12)); }
+.bp-pic { position: absolute; inset: 0; z-index: 1; background: center / contain no-repeat; filter: drop-shadow(0 2cqw 2cqw rgba(0, 0, 0, .35)); }
+.bp-pic canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bp-stars { position: absolute; z-index: 2; right: 3cqw; bottom: 3cqw; font-size: max(9px, 7cqw); letter-spacing: .5px; line-height: 1;
+  text-shadow: 0 0 2px #000, 0 1px 3px rgba(0, 0, 0, .8); }
+.bp-stars.none { color: #fff !important; font: italic 800 max(8px, 5.5cqw)/1 var(--display); letter-spacing: .08em; }
+.bp-tab { position: absolute; z-index: 2; top: 0; right: 0; display: flex; align-items: center; gap: 1.5cqw; padding: 1.6cqw 2cqw 1.8cqw 3cqw;
+  border-bottom-left-radius: 3cqw; background: #0d0f14; color: #fff; }
+.bp-tab b { font: italic 800 max(8px, 6.2cqw)/1 var(--display); font-stretch: condensed; letter-spacing: .05em; }
+.bp-x { padding: .6cqw 1.6cqw; border-radius: 1.5cqw; background: #2fd05f; color: #06210f; font: normal 800 max(8px, 6.2cqw)/1 var(--display); }
+.bp-letter { position: absolute; z-index: 2; left: 3cqw; bottom: 3cqw; display: grid; place-items: center; width: 15cqw; height: 15cqw; min-width: 16px; min-height: 16px;
+  background: #0d0f14; color: #fff; font: italic 900 max(11px, 11cqw)/1 var(--display); box-shadow: inset 0 -1.2cqw 0 var(--rc); border-radius: 1.5cqw; }
+.bp-new { position: absolute; z-index: 3; left: 2.5cqw; top: 2.5cqw; padding: 1cqw 2.4cqw; border-radius: 2cqw; background: #ff3f7a; color: #fff;
+  font: italic 900 max(9px, 6.5cqw)/1 var(--display); letter-spacing: .06em; transform: rotate(-6deg); box-shadow: 0 2px 6px rgba(0, 0, 0, .4); }
+.bp-featured { position: absolute; z-index: 2; top: 13cqw; left: 0; padding: 1cqw 2.5cqw 1cqw 3cqw; border-radius: 0 2cqw 2cqw 0; color: #fff;
+  font: 800 max(8px, 5.2cqw)/1 var(--display); letter-spacing: .1em; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0, 0, 0, .5);
+  background: linear-gradient(115deg, #ff3fae, #ffbe2e 30%, #3fd06f 55%, #35c2ff 80%, #b45cff); }
+
+/* the name: what it is based on, small; its name, big */
+.bp-name { display: flex; flex-direction: column; gap: .8cqw; padding: 3cqw .5cqw 0; min-height: 0; }
+.bp-name small { font-size: max(8.5px, 5.6cqw); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #5b6271;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bp-name strong { font: italic 800 max(12px, 10cqw)/1 var(--display); font-stretch: condensed; text-transform: uppercase; letter-spacing: .01em; color: #10131a;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+
+/* the foot: the chance (the contents sheet) */
+.bp-foot { display: flex; align-items: center; gap: 2cqw; margin-top: auto; padding: 2.5cqw .5cqw 0; font-size: max(9px, 5.8cqw); color: #3a4150; }
+.bp-foot b { font: 800 max(10px, 6.6cqw)/1 var(--display); color: #10131a; white-space: nowrap; }
+
+/* compact: the "What's inside" sheet's tiles */
+.bp-card.compact { padding: 3%; border-radius: 8px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .8), 0 0 0 2.5px var(--rc), 0 6px 14px rgba(0, 0, 0, .45); }
+.bp-card.compact .bp-art { aspect-ratio: 4 / 3; }
+.bp-card.compact .bp-name strong { font-size: max(12px, 9.5cqw); }
+.bp-foot.chance { flex-wrap: wrap; gap: 1.5cqw 2cqw; }
+.bp-foot.chance b { font-size: max(11px, 8cqw); }
+.bp-foot .pc-mark { line-height: 1.5; }
+
+/* the progress bar under a revealed card: ECU pips, the blueprints toward the next ECU, MAX; it GLOWS when the card
+   unlocked the car or took it up an ECU (render/blueprintcard.js progressBar) */
+.bp-prog { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 3px 6px; margin-top: 8px; padding: 5px 7px;
+  border-radius: 7px; background: rgba(255, 255, 255, .07); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1); color: #fff; font-size: 11px; text-align: left; }
+.bp-prog.none { visibility: hidden; }
+.bp-pips { display: flex; gap: 2px; }
+.bp-pips i { width: 6px; height: 9px; border-radius: 2px; background: rgba(255, 255, 255, .2); transition: background .3s, box-shadow .3s; }
+.bp-pips i.on { background: #ffd23f; }
+.bp-pips i.new { background: #fff; box-shadow: 0 0 8px #ffd23f, 0 0 2px #fff; }
+.bp-track { height: 6px; border-radius: 99px; background: rgba(255, 255, 255, .14); overflow: hidden; }
+.bp-track i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, #35c2ff, #6be0ff); transition: width .55s cubic-bezier(.2, .7, .3, 1); }
+.bp-count { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bp-prog.max .bp-track i { background: linear-gradient(90deg, #ffbe2e, #ff8a00); }
+.bp-prog.max .bp-count { color: #ffbe2e; }
+.bp-up { grid-column: 1 / -1; display: none; text-align: center; font: italic 900 13px/1 "Bahnschrift", "Roboto Condensed", "Arial Narrow", sans-serif; letter-spacing: .06em;
+  color: #fff; text-shadow: 0 0 8px #3fd06f, 0 0 2px #3fd06f; }
+.bp-prog.glow { box-shadow: inset 0 0 0 1.5px #6dffa0, 0 0 16px rgba(63, 208, 111, .75); animation: bp-glow 1.1s ease-in-out infinite alternate; }
+.bp-prog.glow .bp-up { display: block; animation: bp-pop .45s cubic-bezier(.2, 1.6, .4, 1); }
+.bp-prog.glow .bp-track i { background: linear-gradient(90deg, #3fd06f, #b6ffcf); }
+.bp-prog.instant, .bp-prog.instant * { transition: none !important; }
+@keyframes bp-glow { from { box-shadow: inset 0 0 0 1.5px #6dffa0, 0 0 8px rgba(63, 208, 111, .5); } to { box-shadow: inset 0 0 0 1.5px #b6ffcf, 0 0 22px rgba(63, 208, 111, .95); } }
+@keyframes bp-pop { from { transform: scale(.4); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .bp-prog.glow, .bp-prog.glow .bp-up { animation: none; } }

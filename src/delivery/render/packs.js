@@ -1,20 +1,32 @@
-// ---- the Packs screen: card packs held, and opened (packs.js) ---------------------------------------------
-// A panel over the start screen, as the milestones wall is, reached by the Packs button at the top of the menu (it
-// shows how many are held). Each pack held is a row with its count and OPEN. Opened, its cards are laid out face
-// down; a tap turns one (or NEXT the next, SHOW ALL the lot), each in its rarity's colour, with the car's picture,
-// its name and stars, and what it gave: "+1 blueprint" (with the count), NEW (the car's first), MAXED (a car already
-// at its top ECU: kept as a count), or THE KEY (a Bespoke card: the car is yours to drive).
+// ---- the PACK REVEAL: a pack opened the moment it is bought or earned (the owner, 12-Oct) ------------------------------
+// "The packing page is really clunky and ugly ... when a pack is bought or earned it just opens immediately." There is
+// no page of packs held any more: a pack given (the Shop's buy, a Career level's first delivery, a special event's stage
+// or prize) asks this screen to open it (Packs.revealer, packs.js), and it does at once where it can: over the Shop, over
+// the menu, or over a run's RESULTS as soon as they are up (a beat after, so they are read first). Until it has, the pack
+// is held in the save (Progress.data.packs), so a page closed in between opens it at the next menu. Packs.open gives the
+// blueprints once, as it opens; this screen only shows them (one pack at a time: no double open from a double tap).
+// The look is the Shop's and the Showroom's: a full-screen dark panel, the game's display font, the rarity colours.
+// The pack (the Shop's pack art) shakes and bursts; then its cards, BLUEPRINT CARDS (render/blueprintcard.js), each in
+// one of the car's three poses, the poses varied so neighbours differ, turn over ON THEIR OWN one after another: a short
+// beat each, a longer one and a glow for Epic and above, the last (the best card: packs.js revealOrder) given the most.
+// A tap anywhere during it turns all the rest at once; after that only Done (or Next pack) does anything. Under each
+// card its car's progress bar fills from before the card to after it, and glows on an unlock or an ECU up.
+// Every card is its own card (no stacking today; each tab shows x1). Escape and back close it (all is already given).
 // ?pack=career|special|standard|ten opens one at once, for a look, and nothing of it is saved (Progress.noSave);
-// &from=<event id> makes a special pack that event's (its featured cards). ?pack&give=career,ten,special:comet-hunt: the
-// list with those packs held (nothing saved either).
+// &from=<event id> makes a special pack that event's. ?pack&give=career,ten,special:comet-hunt: those packs given
+// (nothing saved), opened one after another as a player would see them. &reveal=all: every card turned at once (a tap).
 import '../packs.css';
-import { Packs, rarityName, rarityColour, kindName, KINDS } from '../packs.js';
+import { Packs, kindName, KINDS, revealCards, revealOrder, revealProgress, RARITIES } from '../packs.js';
 import { Progress } from '../progress.js';
-import { carById, stars, starColour } from '../cars.js';
+import { carById } from '../cars.js';
 import { Nav } from '../nav.js';
 import { Game } from '../game.js';
-import { makeShowCar, paintShowCar } from './garage.js';
-import { sharedRenderer, drawStill } from './modelviews.js';
+import { blueprintCard, progressBar } from './blueprintcard.js';
+import { packArt } from './packart.js';
+import { drawSoon } from './carstill.js';
+import { variedPoses } from '../carposes.js';
+import { Sound } from './audio.js';
+import { Events } from '../events.js';
 
 const make = (tag, className, ...inside) => {
   const node = document.createElement(tag);
@@ -22,153 +34,169 @@ const make = (tag, className, ...inside) => {
   node.append(...inside.flat().filter(x => x !== null && x !== undefined && x !== false));
   return node;
 };
-// the cars' pictures (carshots/<id>-good.jpg), and where a car has none its model drawn once, as the event cards do
-const CAR_SHOTS = Object.fromEntries(Object.entries(
-  import.meta.glob('../carshots/*.jpg', { eager: true, query: '?url', import: 'default' }))
-  .map(([path, url]) => [path.slice(path.lastIndexOf('/') + 1, -4), url]));
-const POSE = { lift: 0.3, angle: -0.64, close: 1 };
-const stills = new Map();
-const picture = (el, car) => {
-  const shot = CAR_SHOTS[car.id + '-good'];
-  if (shot) { el.style.backgroundImage = `url("${shot}")`; el.classList.add('photo'); return; }
-  if (stills.has(car.id)) { el.style.backgroundImage = `url("${stills.get(car.id)}")`; return; }
-  try {
-    const model = makeShowCar(car);
-    paintShowCar(model, car, false);
-    if (!drawStill(sharedRenderer(), el, model, POSE)) return;
-    const canvas = el.querySelector('canvas');
-    stills.set(car.id, canvas.toDataURL('image/png'));
-    canvas.remove();
-    el.style.backgroundImage = `url("${stills.get(car.id)}")`;
-  } catch (error) { console.warn('No model for the card: ' + (error?.message || error)); }
-};
+const rank = (r) => RARITIES.indexOf(r);
+const blip = (name, v = 0.5) => { try { Sound.play(name, v); } catch { /* (no sound: fine) */ } };
+const still = () => !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-const panel = make('div', 'overlay menu panel hidden');
-panel.id = 'packs';
-document.body.append(panel);
-// the button at the top of the menu, before Options
-const button = make('button', 'menu-chip packs-btn', make('i', '', '\u{1F0CF}'), make('span', '', 'Packs'), make('b', 'packs-count'));
-button.id = 'packsBtn';
-button.title = 'Card packs: blueprints for your cars';
-const optionsBtn = document.getElementById('optionsBtn');
-optionsBtn?.parentNode?.insertBefore(button, optionsBtn);
-const badge = () => {
-  const n = Packs.total();
-  button.querySelector('.packs-count').textContent = n ? String(n) : '';
-  button.classList.toggle('has', n > 0);
-};
+const overlay = make('div', 'pack-reveal hidden');
+overlay.id = 'packReveal';
+overlay.setAttribute('role', 'dialog');
+overlay.setAttribute('aria-label', 'Card pack');
+document.body.append(overlay);
 
-let opened = null; // the pack being revealed: { kind, from, cards }
-const cardNode = (c, i) => {
-  const car = carById(c.car);
-  const view = make('div', 'pack-car');
-  const what = c.key ? (c.isNew === false ? 'Key (already yours)' : 'The key: yours to drive!')
-    : c.maxed ? 'Maxed: +1 blueprint (' + c.count + ')' : '+1 blueprint' + (c.count ? ' (' + c.count + ')' : '');
-  const node = make('button', 'pack-card face-down r-' + c.rarity + (c.featured ? ' featured' : ''),
-    make('span', 'pack-back', make('b', '', '?')),
-    make('span', 'pack-face',
-      make('span', 'pack-rarity', (c.featured ? '★ ' : '') + rarityName(c.rarity) + (c.upgraded && !c.featured ? ' ↑' : '')), // (★ a featured card; ↑ a slot that upgraded)
-      c.featured ? make('span', 'pack-featured', 'Featured') : null,
-      view,
-      make('strong', 'pack-name', car?.name || c.car),
-      car?.tier ? make('span', 'pack-stars', stars(car)) : null,
-      make('span', 'pack-what', what)));
-  if (c.isNew && !c.key) view.append(make('span', 'pack-new', 'NEW')); // (on the picture's corner)
-  node.style.setProperty('--rarity', rarityColour(c.rarity));
-  node.querySelector('.pack-stars')?.style.setProperty('color', car ? starColour(car) : '');
-  node.setAttribute('aria-label', 'Card ' + (i + 1) + ', face down');
-  node.addEventListener('click', () => turn(node, car));
-  return node;
-};
-const turn = (node, car) => {
-  if (!node.classList.contains('face-down')) return;
-  node.classList.remove('face-down');
-  node.setAttribute('aria-label', node.querySelector('.pack-face').textContent);
-  if (car) requestAnimationFrame(() => picture(node.querySelector('.pack-car'), car)); // (the turn only fades: the card's box is its own size, to draw into)
-  draw(false);
-};
-const turnNext = () => { const next = panel.querySelector('.pack-card.face-down'); if (next) next.click(); };
-const turnAll = () => { for (const node of panel.querySelectorAll('.pack-card.face-down')) node.click(); };
+// TIMING (ms): the pack's burst; a card's beat; an Epic or better card's; the pause before the last card
+const T = { pack: 950, beat: 340, rare: 700, last: 650, flip: 420 };
+let cur = null; // the pack on show: { result, slots: [{ slot, prog, card }], phase: 'pack' | 'cards' | 'done', timers, wasInMenu }
 
-// the panel drawn: the reveal (a pack being opened), or the packs held
-const draw = (full = true) => {
-  badge();
-  const close = make('button', 'level', 'Close');
-  close.addEventListener('click', () => PacksScreen.close());
-  if (opened) {
-    const left = panel.querySelectorAll('.pack-card.face-down').length;
-    if (!full) { // (a card turned: only the buttons change)
-      panel.querySelector('.pack-do')?.replaceWith(doRow(left));
-      return;
-    }
-    const cards = make('div', 'pack-cards' + (opened.cards.length > 6 ? ' many' : ''), opened.cards.map(cardNode));
-    panel.replaceChildren(make('div', 'bar', make('strong', '', kindName(opened.kind) + (opened.free ? ' (a look: nothing saved)' : '')),
-      make('span', 'count', opened.cards.length + ' cards'), close),
-    opened.cards.length ? cards : make('p', '', 'This pack came out empty: there are no cards for it.'), doRow(opened.cards.length));
-    return;
-  }
-  const held = Packs.held();
-  const rows = held.map(p => {
-    const open = make('button', 'level', 'Open');
-    open.addEventListener('click', () => openPack(p.kind, p.from));
-    return make('div', 'pack-row r-' + p.kind, make('span', 'pack-icon', '\u{1F0CF}'), make('strong', '', p.name), make('span', 'count', '× ' + p.count), open);
+const later = (ms, f) => { const id = setTimeout(f, still() ? Math.min(ms, 120) : ms); cur.timers.push(id); };
+const turn = (i, instant = false) => {
+  const s = cur.slots[i];
+  if (!s || s.turned) return;
+  s.turned = true;
+  s.slot.classList.remove('down');
+  s.slot.classList.add('shown');
+  if (instant) { s.slot.classList.add('instant'); s.prog.land(true); return; }
+  if (rank(s.card.rarity) >= rank('epic')) blip('menuPick', 0.6); else blip('menuMove', 0.45);
+  s.slot.scrollIntoView?.({ block: 'nearest', behavior: still() ? 'auto' : 'smooth' });
+  later(T.flip, () => s.prog.land(false));
+};
+const finish = () => {
+  if (!cur || cur.phase === 'done') return;
+  cur.phase = 'done';
+  overlay.classList.remove('opening');
+  overlay.classList.add('done');
+  const done = overlay.querySelector('.pr-done');
+  done.textContent = Packs.total() > 0 ? 'Next pack (' + Packs.total() + ')' : 'Done';
+  done.hidden = false;
+  overlay.querySelector('.pr-hint').hidden = true;
+  done.focus({ preventScroll: true });
+};
+// the cards turn on their own, one after another
+const play = () => {
+  if (!cur || cur.phase !== 'pack') return;
+  cur.phase = 'cards';
+  overlay.classList.remove('opening');
+  overlay.classList.add('dealing');
+  const n = cur.slots.length;
+  let at = 120;
+  cur.slots.forEach((s, i) => {
+    const lastOne = i === n - 1 && n > 1;
+    if (lastOne) { at += T.last; s.slot.classList.add('finale'); }
+    later(at, () => turn(i));
+    at += rank(s.card.rarity) >= rank('epic') ? T.rare : T.beat;
   });
-  panel.replaceChildren(make('div', 'bar', make('strong', '', 'Card packs'), make('span', 'count', held.length ? Packs.total() + ' to open' : ''), close),
-    make('p', '', 'Every card is a blueprint for a car. Enough blueprints unlock a car or tune up its ECU. The rarest cards are keys.'),
-    rows.length ? make('div', 'pack-list', rows) : make('p', 'pack-none', 'No packs yet. Deliver Career levels for the first time and finish special event stages to earn them.'));
+  later(at + T.flip, finish);
 };
-const doRow = (left) => {
-  const next = make('button', 'level', 'Next card'), all = make('button', 'level', 'Show all'), back = make('button', 'level', Packs.total() ? 'Back to packs' : 'Done');
-  next.addEventListener('click', turnNext);
-  all.addEventListener('click', turnAll);
-  back.addEventListener('click', () => { opened = null; draw(); });
-  return make('div', 'pack-do', left ? next : null, left ? all : null, left ? null : back);
-};
-const openPack = (kind, from, free = false) => {
-  const result = Packs.open(kind, { from, free });
-  if (!result) return;
-  opened = { ...result, free };
-  draw();
+// a tap during it: every card turned at once, each bar at its end, with its glow
+const revealAll = () => {
+  if (!cur || cur.phase === 'done') return;
+  for (const id of cur.timers) clearTimeout(id);
+  cur.timers = [];
+  overlay.classList.remove('opening');
+  overlay.classList.add('dealing');
+  cur.slots.forEach((s, i) => { if (!s.turned) turn(i, true); else s.prog.land(true); });
+  finish();
 };
 
-export const PacksScreen = {
-  isOpen: false,
-  open() {
-    if (!this.isOpen) {
-      this.isOpen = true;
-      Game.inMenu = true; // (Enter must not start a run from here)
-      Nav.enter('packs', () => this.close()); // (the back button closes it)
-    }
-    if (!opened) draw();
-    panel.classList.remove('hidden');
-    panel.scrollTop = 0;
-  },
-  close() {
-    if (!this.isOpen) return;
-    this.isOpen = false;
-    opened = null;
-    Nav.leave('packs');
-    Game.inMenu = false;
-    panel.classList.add('hidden');
-    badge();
-  },
+const show = (result, { look = false } = {}) => {
+  const cards = revealOrder(revealCards(result.cards));
+  const progress = revealProgress(cards);
+  const poses = variedPoses(cards.map(c => c.car));
+  const slots = cards.map((card, i) => {
+    const car = carById(card.car);
+    if (!car) return null;
+    const { node, pic } = blueprintCard(car, card, { pose: poses[i] });
+    const prog = progressBar(progress[i], card);
+    const back = make('div', 'pr-back', make('span', 'pr-back-mark', make('b', '', 'Delivery'), make('i', '', 'Run')));
+    const slot = make('div', 'pr-slot down r-' + card.rarity + (card.featured ? ' featured' : ''),
+      make('div', 'pr-flip', back, make('div', 'pr-face', node)), prog.node);
+    return { slot, prog, card, car, pic, pose: poses[i] };
+  }).filter(Boolean);
+  const event = result.from ? Events.specials.find(e => String(e.id) === String(result.from)) : null;
+  const kicker = look ? 'A look: nothing saved' : event ? event.name : 'Pack opened';
+  const hint = make('p', 'pr-hint', 'Tap to reveal all');
+  const done = make('button', 'pr-done', 'Done');
+  done.hidden = true;
+  done.addEventListener('click', (e) => { e.stopPropagation(); close(); drain(); });
+  const shut = make('button', 'pr-close', '✕');
+  shut.setAttribute('aria-label', 'Close');
+  shut.addEventListener('click', (e) => { e.stopPropagation(); close(); });
+  const many = slots.length > 6;
+  overlay.replaceChildren(
+    make('div', 'pr-box',
+      make('header', 'pr-head', make('div', 'pr-title', make('small', '', kicker), make('h2', '', kindName(result.kind))),
+        make('span', 'pr-count', slots.length + (slots.length === 1 ? ' card' : ' cards')), shut),
+      make('div', 'pr-body',
+        make('div', 'pr-pack', make('div', 'pr-burst'), packArt(result.kind, 1)),
+        slots.length ? make('div', 'pr-cards' + (many ? ' many' : ''), slots.map(s => s.slot)) : make('p', 'pr-empty', 'This pack came out empty: there are no cards for it.')),
+      make('footer', 'pr-foot', hint, done)));
+  overlay.className = 'pack-reveal opening k-' + result.kind;
+  const wasInMenu = Game.inMenu;
+  Game.inMenu = true; // (Enter must not start a run from here)
+  cur = { result, slots, phase: 'pack', timers: [], wasInMenu };
+  Nav.enter('packreveal', () => close(true)); // (the back button closes it)
+  // the pictures: drawn while the pack bursts (the faces are laid out, turned away), a few a frame
+  for (const s of slots) drawSoon(s.pic, s.car, { side: 'good', pose: s.pose }); // (always the Good livery, whatever side is played)
+  blip('menuPick', 0.5);
+  if (!slots.length) { cur.phase = 'cards'; finish(); return; }
+  later(T.pack, play);
 };
+// closed: Done, ✕, Escape, back (fromBack: its history entry already gone). Everything was given when it opened
+const close = (fromBack = false) => {
+  if (!cur) return;
+  for (const id of cur.timers) clearTimeout(id);
+  Game.inMenu = cur.wasInMenu;
+  cur = null;
+  overlay.classList.add('hidden');
+  overlay.replaceChildren();
+  if (!fromBack) Nav.leave('packreveal');
+  window.dispatchEvent(new Event('packschange'));
+};
+overlay.addEventListener('click', () => { if (cur && cur.phase !== 'done') revealAll(); }); // (a tap anywhere during it: all at once)
 
-button.addEventListener('click', () => PacksScreen.open());
+// may a pack be opened now? Not during a run; over a run's results once they are up; over the menu and its screens
+const canShow = () => {
+  if (cur) return false;
+  if (Game.state === 'start') return true;
+  const results = document.getElementById('resultScreen');
+  return Game.state === 'finished' && !!results && !results.classList.contains('hidden');
+};
+// the next pack held, opened and shown (if one can be now)
+const drain = () => {
+  if (!canShow() || !Packs.total()) return;
+  const result = Packs.next();
+  if (result) show(result);
+};
+let soon = 0;
+const drainSoon = (ms = 500) => { clearTimeout(soon); soon = setTimeout(drain, ms); };
+Packs.revealer = () => { if (canShow()) drain(); else drainSoon(); }; // (a pack given: now, or once the results are up)
+// the results coming up, the menu coming back: a pack still held is opened (a beat after, so the results are read)
+for (const id of ['resultScreen', 'startScreen']) {
+  const el = document.getElementById(id);
+  if (el) new MutationObserver(() => { if (!el.classList.contains('hidden') && Packs.total()) drainSoon(700); }).observe(el, { attributes: true, attributeFilter: ['class'] });
+}
+
 window.addEventListener('keydown', (event) => {
-  if (!PacksScreen.isOpen) return;
-  if (event.key === 'Escape') PacksScreen.close();
-  else if (opened && (event.key === ' ' || event.key === 'ArrowRight')) { event.preventDefault(); turnNext(); }
-});
-for (const type of ['packschange', 'progresschange']) window.addEventListener(type, badge);
-badge();
-// ?pack=<kind> (&from=<event id>): one opened at once, nothing saved
+  if (!cur) return;
+  if (document.querySelector('.menu-dialog:not(.hidden)')) return;
+  if (event.key === 'Escape') close();
+  else if (event.key === ' ' || event.key === 'Enter' || event.key === 'ArrowRight') {
+    if (cur.phase !== 'done') revealAll();
+    else if (event.key !== 'ArrowRight' && document.activeElement?.classList.contains('pr-done')) return; // (the button takes its own Enter)
+  } else return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+}, true);
+
+// a pack held from before (the page closed before it opened): at the first menu
 {
   const params = new URLSearchParams(location.search), kind = params.get('pack');
-  if (kind !== null) {
+  if (kind !== null) { // ?pack=<kind> (&from=<event id>), ?pack&give=...: for a look, nothing saved
     Progress.noSave = true;
-    for (const k of (params.get('give') || '').split(',').filter(Boolean)) { const [kind, from] = k.split(':'); Packs.grant(kind, { from: from || null }); } // (&give=career,special:comet-hunt: packs held, for a look at the list)
-    PacksScreen.open();
-    if (KINDS.includes(kind)) openPack(kind, params.get('from') || null, true);
-  }
+    const gives = (params.get('give') || '').split(',').filter(Boolean);
+    for (const k of gives) { const [kind, from] = k.split(':'); Packs.grant(kind, { from: from || null }); }
+    const all = params.get('reveal') === 'all'; // (&reveal=all: as a tap during it, every card turned at once: for a picture)
+    if (KINDS.includes(kind)) setTimeout(() => { if (canShow()) { const r = Packs.open(kind, { from: params.get('from') || null, free: true }); if (r) { show(r, { look: true }); if (all) setTimeout(revealAll, 200); } } }, 300);
+    else drainSoon(300);
+  } else drainSoon(900);
 }
