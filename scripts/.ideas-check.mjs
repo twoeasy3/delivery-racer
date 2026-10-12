@@ -50,19 +50,15 @@ try {
   check(kinds.length === 0, 'none is a traffic kind' + (kinds.length ? ' (BUT these ids are also kinds of traffic: ' + kinds.join(', ') + ')' : ''));
   check(IDEA_CARS.every(c => Progress.owns(c.id)) && !Progress.data.cars.some(id => IDEA_CARS.some(c => c.id === id)), 'every one is open (owned) with none in the save\'s list of cars');
 
-  // ---- their figures: finite, and inside what the garage's cars span (the cars for sale, the 6-star ones and the City Bus)
-  const garage = [...CARS, ...EARNED_CARS, ...Object.values(SECRET_CARS)];
+  // ---- their figures: finite numbers (no minimum or maximum: the owner, 12-Oct, removed the check that they sit inside what the garage's cars span)
   const of = { maxSpeed: c => c.maxSpeed, accel: c => c.accel, agility: c => c.agility ?? 1, crossing: c => c.crossing ?? C.railCrossing.usual, health: c => c.health, mass: c => c.mass ?? 1 };
-  const span = Object.fromEntries(Object.entries(of).map(([key, f]) => [key, [Math.min(...garage.map(f)), Math.max(...garage.map(f))]]));
-  console.log('the garage\'s span: ' + Object.entries(span).map(([k, [lo, hi]]) => k + ' ' + lo + ' to ' + hi).join(', '));
+  const garage = [...CARS, ...EARNED_CARS, ...Object.values(SECRET_CARS)]; // (for the size limits below)
   const out = [];
-  for (const car of IDEA_CARS) for (const [key, f] of Object.entries(of)) {
+  for (const car of IDEA_CARS) for (const key of Object.keys(of)) {
     const v = car[key];
-    if (typeof v !== 'number' || !isFinite(v) || f(car) < span[key][0] || f(car) > span[key][1]) out.push(car.id + '.' + key + ' = ' + v);
+    if (typeof v !== 'number' || !isFinite(v)) out.push(car.id + '.' + key + ' = ' + v);
   }
-  check(out.length === 0, 'every figure a finite number inside the garage\'s span' + (out.length ? ': NOT ' + out.join(', ') : ''));
-  const forSale = Math.max(...CARS.map(c => c.maxSpeed)), slowest = Math.min(...CARS.map(c => c.maxSpeed));
-  check(IDEA_CARS.every(c => c.maxSpeed <= forSale && c.maxSpeed >= slowest), 'none quicker than the quickest car for sale (' + forSale + ' m/s), none slower than the slowest (' + slowest + ' m/s)');
+  check(out.length === 0, 'every figure a finite number' + (out.length ? ': NOT ' + out.join(', ') : ''));
   check(IDEA_CARS.every(c => [c.hw, c.hl, c.height].every(v => typeof v === 'number' && isFinite(v) && v > 0)), 'every size a finite number');
   const widest = Math.max(...CARS.map(c => c.hw)), longest = Math.max(...garage.map(c => c.hl)), tallest = Math.max(...garage.map(c => c.height));
   check(IDEA_CARS.every(c => c.hw <= widest), 'none wider than the widest garage car (' + widest * 2 + ' m; a lane is ' + C.laneWidth + ' m): the widest idea is ' + Math.max(...IDEA_CARS.map(c => c.hw)) * 2 + ' m');
