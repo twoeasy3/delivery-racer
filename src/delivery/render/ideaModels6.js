@@ -79,6 +79,15 @@ const tube = (parent, material, r, length, x, y, z, axis = 'y', seg = 10) => pla
   if (axis === 'z') geo.rotateX(Math.PI / 2);
   return geo;
 }), material, x, y, z);
+// a rounded lump: a ball squashed to rx, ry, rz
+const BALL = new THREE.SphereGeometry(1, 10, 6);
+const blob = (parent, material, rx, ry, rz, x, y, z) => {
+  const mesh = place(parent, BALL, material, x, y, z);
+  mesh.scale.set(rx, ry, rz);
+  return mesh;
+};
+// a material drawn a hair further back than its depth: for what a shell or panel lies close over, so the two never fight
+const behind = (material) => { material.polygonOffset = true; material.polygonOffsetFactor = 1; material.polygonOffsetUnits = 2; return material; };
 // a block that narrows (or grows) along the car: from the cross-section `a` to `b`, each [z, width, bottom, top],
 // its middle at x. A nose, a tail
 const taper = (parent, material, a, b, x = 0) => {
@@ -191,8 +200,8 @@ const loftCanopy = (group, material, CANOPY, n) => loft(group, material, CANOPY.
 }));
 const loftCover = (group, material, CANOPY, n, cover) => loft(group, material, CANOPY.filter(([z]) => z in cover).map(([z, wc, base, top]) => {
   const a = cover[z], arc = [0, 1, 2, 3].map(i => Math.PI / 2 - a * (1 - i / 4));
-  const out = arc.map(t => superTop(wc + 0.012, base, top + 0.012, t, n)), inn = arc.map(t => superTop(wc - 0.004, base, top - 0.004, t, n));
-  return [z, [...out, [0, top + 0.012], ...out.slice().reverse().map(([x, y]) => [-x, y]), ...inn.map(([x, y]) => [-x, y]), [0, top - 0.004], ...inn.slice().reverse()]];
+  const out = arc.map(t => superTop(wc + 0.016, base, top + 0.016, t, n)), inn = arc.map(t => superTop(wc - 0.004, base, top - 0.004, t, n));
+  return [z, [...out, [0, top + 0.016], ...out.slice().reverse().map(([x, y]) => [-x, y]), ...inn.map(([x, y]) => [-x, y]), [0, top - 0.004], ...inn.slice().reverse()]];
 }), false);
 
 export const IDEA_MODELS_6 = {
@@ -221,7 +230,7 @@ export const IDEA_MODELS_6 = {
     const body = box(group, paint, 0.84, 0.64, 1.22, 0, 0.82, 0.74);
     box(group, leather, 0.86, 0.52, 0.05, 0, 0.885, 0.78);
     box(group, chrome, 0.03, 0.015, 1.2, 0, 1.146, 0.74);                                   // (the bonnet's hinge, down its middle)
-    merged(group, trim, [-1, 1].flatMap(side => [1.0, 0.92, 0.84, 0.76].map(y => bx(0.012, 0.03, 0.38, side * 0.422, y, 1.07))));
+    merged(group, trim, [-1, 1].flatMap(side => [1.0, 0.92, 0.84, 0.76].map(y => bx(0.012, 0.03, 0.38, side * 0.424, y, 1.07))));
     taper(group, paint, [0.16, 0.86, 0.51, 1.15], [-0.12, 0.92, 0.51, 1.2]);
     box(group, paint, 0.9, 0.53, 1.45, 0, 0.765, -0.775);
     box(group, trim, 0.8, 0.02, 1.0, 0, 1.035, -0.65);
@@ -250,7 +259,7 @@ export const IDEA_MODELS_6 = {
       disc(group, LAMP, 0.11, 0.02, side * 0.36, 1.0, 1.725, 14);
     }
     // the spare wheel on the near flank, on its bracket; the exhaust down the other
-    wheel(group, R, 0.16, 0.53, 0.89, 0.4, wire);
+    wheel(group, R, 0.16, 0.535, 0.89, 0.4, wire);
     tube(group, chrome, 0.03, 0.2, 0.52, 0.89, 0.4, 'x');
     tube(group, iron, 0.045, 1.6, -0.49, 0.6, 0.15, 'z');
     // the tail: the fuel tank, its filler, two tail lamps, a stop lamp and the plate
@@ -332,6 +341,7 @@ export const IDEA_MODELS_6 = {
     const paint = lambert(car.color), carbon = lambert(0x3a4150), chrome = lambert(CHROME), trim = lambert(TRIM);
     const glass = lambert(GLASS);
     for (const m of [paint, carbon, glass]) m.side = THREE.DoubleSide;
+    behind(glass); // (the carbon shell lies close over it)
     const NU = 2.6, NC = 2.2; // (how square the body's and the canopy's shoulders are: 2 round, more squarer)
     const AXLES = [[1.27, 0.36, 0.26, 0.97], [-1.44, 0.375, 0.3, 1.0]];
     const { body, sideX, topY } = loftBody(group, paint, [
@@ -412,72 +422,60 @@ export const IDEA_MODELS_6 = {
     return group;
   },
 
-  // A tall electric city car (a BMW i3, 2013), lofted through cross-sections: short, narrow and upright on tall
-  // skinny tyres, its corners rounded and its sides leaning in a little; a short nose with a black bonnet, a black
-  // band across the face with two blanked-off nostrils and a U of light in each lamp; a long steep windscreen, a
-  // black roof, and black that sweeps down the back of the glasshouse into a tail all of black glass, with U-shaped
-  // lamps in it; a black dip along the belt under the back door's window; black sills and arch lips. It sits still
+  // A tall electric city car (a BMW i3, 2013): short, narrow and upright, on tall skinny tyres. A black bonnet; a
+  // black band across the face with two blanked-off nostrils and a U of light in each lamp; a long steep windscreen,
+  // a black roof, and a black belt that dips under the back door's window and sweeps up into a black tail, the
+  // whole tailgate black glass with U-shaped lamps in it; black sills and arch lips; doors that open from the middle.
+  // It sits still
   cityev: (car) => {
     const group = new THREE.Group();
-    const paint = lambert(car.color), black = lambert(0x1c1d21), glass = lambert(0x2c3a50), grey = lambert(0x4a5568), steel = lambert(0xb8bcc2);
-    for (const m of [paint, black, glass]) m.side = THREE.DoubleSide;
-    const R = 0.36, NU = 3.5, NC = 4;
-    const AXLES = [[1.28, R, 0.17, 0.89], [-1.28, R, 0.17, 0.89]];
-    const BODY = [
-      [-2.0, 0.78, 0.82, 0.96, 0.36, 0.72], [-1.92, 0.85, 0.84, 0.98, 0.34, 0.8], [-1.28, 0.87, 0.86, 1.0, 0.33, 0.84],
-      [-0.5, 0.86, 0.82, 0.98, 0.33, 0.84], [0.4, 0.86, 0.8, 0.96, 0.33, 0.84], [0.9, 0.86, 0.78, 0.94, 0.33, 0.84],
-      [1.28, 0.87, 0.78, 0.9, 0.33, 0.84], [1.7, 0.84, 0.74, 0.86, 0.34, 0.8], [1.9, 0.78, 0.7, 0.82, 0.36, 0.74], [2.0, 0.66, 0.66, 0.78, 0.4, 0.62],
-    ];
-    const { body, stations, section, sideX } = loftBody(group, paint, BODY, AXLES, NU, [-0.47, -0.4, -0.27, 0, 0.27, 0.4, 0.47]);
-    // the black bonnet: a shell over the nose's top, back to the windscreen
-    loft(group, black, stations.filter(z => z >= 0.9 && z <= 1.95).map(z => {
-      const { wHigh, yb, yTop } = section(z), arc = [0, 1, 2, 3].map(i => Math.PI / 2 - 1.1 * (1 - i / 4));
-      const out = arc.map(t => superTop(wHigh + 0.012, yb, yTop + 0.012, t, NU)), inn = arc.map(t => superTop(wHigh - 0.004, yb, yTop - 0.004, t, NU));
-      return [z, [...out, [0, yTop + 0.01], ...out.slice().reverse().map(([x, y]) => [-x, y]), ...inn.map(([x, y]) => [-x, y]), [0, yTop - 0.01], ...inn.slice().reverse()]];
-    }), false);
-    // the glasshouse, upright; the black roof over it, sweeping down its back into the black tail
-    const CANOPY = [[-2.02, 0.66, 0.9, 1.15], [-1.9, 0.72, 0.96, 1.4], [-1.6, 0.76, 0.97, 1.52], [-1.4, 0.765, 0.97, 1.54], [-1.2, 0.77, 0.97, 1.55], [-0.2, 0.78, 0.96, 1.55],
-      [0.2, 0.78, 0.95, 1.5], [0.6, 0.76, 0.93, 1.22], [0.88, 0.7, 0.91, 0.95]];
-    loftCanopy(group, glass, CANOPY, NC);
-    loftCover(group, black, CANOPY, NC, { '-2.02': 1.571, '-1.9': 1.571, '-1.6': 1.4, '-1.4': 0.9, '-1.2': 0.45, '-0.2': 0.45, 0.2: 0.45 });
-    box(group, black, 1.3, 0.34, 0.03, 0, 0.79, -2.008);                                    // the tailgate's black glass, down to the bumper
-    // the belt's black dip under the back door's window, the door line, the handles, the sills, the arch lips
-    const dip = new THREE.CatmullRomCurve3([[0, 0.95], [-0.5, 0.9], [-1.0, 0.89], [-1.35, 0.92], [-1.6, 1.0]].map(([z, y]) => new THREE.Vector3(sideX(z, y) + 0.012, y, z)));
-    for (const side of [-1, 1]) place(group, shared('i3dip', () => new THREE.TubeGeometry(dip, 5, 0.04, 3, false)), black, 0, 0, 0).scale.x = side;
+    const w = car.hw * 2, L = car.hl, R = 0.36, rr = 0.05, ZW = L * 0.64, S = w * 0.96 / 2;
+    const paint = lambert(car.color), black = lambert(0x1c1d21), glass = lambert(GLASS), grey = lambert(0x4a5568), steel = lambert(0xb8bcc2);
+    for (const m of [paint, glass]) behind(m); // (the black bonnet, roof and tail lie close over the paint and the glass)
+    const body = curved(group, paint, w * 0.96, rounded([[-L + rr, 0.33], [L - rr, 0.33], [L - rr, 0.74], [L * 0.8, 0.84], [L * 0.42, 0.92], [-L * 0.6, 0.96], [-L + rr, 0.96]]), rr);
+    prism(group, black, w * 0.9, [[L * 0.86, 0.78], [L * 0.86, 0.866], [L * 0.8, 0.9], [L * 0.42, 0.98], [L * 0.42, 0.85]]); // the black bonnet
+    // the glasshouse, the black roof over it, the black tail behind it, the pillars at the windscreen
+    prism(group, glass, w * 0.88, [[L * 0.44, 0.93], [L * 0.06, 1.5], [-L * 0.64, 1.52], [-L * 0.64, 0.93]]);
+    box(group, black, w * 0.86, 0.05, L * 0.7, 0, 1.53, -L * 0.29);
+    prism(group, black, w * 0.9, [[-L * 0.6, 0.94], [-L * 0.66, 1.54], [-L * 0.9, 1.5], [-L - 0.03, 1.1], [-L - 0.03, 0.94]]);
+    box(group, black, w * 0.8, 0.36, 0.03, 0, 0.8, -L - 0.015);                          // (the tailgate's glass on down, clear of the body's rounded corners)
+    for (const side of [-1, 1]) {
+      prism(group, black, 0.05, [[L * 0.45, 0.95], [L * 0.39, 0.95], [L * 0.03, 1.51], [L * 0.09, 1.51]], side * w * 0.43);
+      prism(group, black, 0.02, [[0, 0.965], [0, 0.945], [-L * 0.5, 0.82], [-L * 0.62, 0.82], [-L * 0.62, 0.965]], side * (S + 0.008)); // the belt's dip (its inner face 2 mm inside the flank, not on it)
+      box(group, black, 0.14, 0.09, 0.08, side * 0.84, 1.0, L * 0.36);                    // mirrors
+    }
     merged(group, black, [-1, 1].flatMap(side => [
-      bx(0.012, 0.42, 0.015, side * (sideX(-0.15, 0.65) + 0.004), 0.65, -0.15),
-      bx(0.02, 0.1, 1.5, side * (sideX(0, 0.42) + 0.006), 0.42, 0),
+      bx(0.012, 0.58, 0.015, side * (S + 0.004), 0.64, -L * 0.1),                          // (where the doors meet,
+      bx(0.03, 0.5, 0.015, side * w * 0.44, 1.2, -L * 0.1),                                // and in the glass over it)
+      bx(0.02, 0.1, L * 1.6, side * (S + 0.008), 0.38, 0),                                 // the sills
     ]));
-    merged(group, black, [-1, 1].flatMap(side => AXLES.map(([z]) => lip(R + 0.07, 0.03, side * 0.86, R, z))));
-    merged(group, steel, [-1, 1].map(side => bx(0.02, 0.025, 0.12, side * (sideX(0.15, 0.82) + 0.006), 0.82, 0.15)));
-    merged(group, AMBER, [-1, 1].map(side => bx(0.012, 0.03, 0.08, side * (sideX(1.0, 0.76) + 0.006), 0.76, 1.0)));      // side repeaters
-    box(group, black, 0.012, 0.12, 0.12, -(sideX(-1.6, 0.8) + 0.006), 0.8, -1.6);                                          // the charging flap
-    // mirrors on stalks
-    merged(group, black, [-1, 1].flatMap(side => [bx(0.14, 0.09, 0.08, side * 0.86, 1.02, 0.72), bx(0.16, 0.025, 0.04, side * 0.74, 1.0, 0.72)]));
+    merged(group, black, [-1, 1].flatMap(side => [lip(R + 0.05, 0.035, side * (S + 0.016), R, ZW), lip(R + 0.05, 0.035, side * (S + 0.016), R, -ZW)]));
+    merged(group, steel, [-1, 1].map(side => bx(0.02, 0.025, 0.12, side * (S + 0.008), 0.86, L * 0.1)));  // the door handles
+    merged(group, AMBER, [-1, 1].map(side => bx(0.012, 0.03, 0.08, side * (S + 0.004), 0.78, L * 0.5))); // side repeaters
+    box(group, black, 0.012, 0.12, 0.12, -(S + 0.004), 0.82, -L * 0.82);                  // the charging flap
+    blob(group, black, 0.04, 0.05, 0.12, 0, 1.555, -L * 0.55);                              // the aerial's fin
     // the face: the black band, the lamps in it, the nostrils, the intake, the plate
-    box(group, black, 1.2, 0.14, 0.03, 0, 0.66, 2.005);
+    box(group, black, 1.5, 0.15, 0.03, 0, 0.66, L + 0.005);
     merged(group, LAMP, [-1, 1].flatMap(side => [
-      bx(0.24, 0.022, 0.02, side * 0.42, 0.61, 2.025), bx(0.022, 0.09, 0.02, side * 0.31, 0.65, 2.025), bx(0.022, 0.09, 0.02, side * 0.53, 0.65, 2.025),
-      cyl(0.035, 0.02, side * 0.42, 0.665, 2.025, 'z', 10),
+      bx(0.26, 0.022, 0.02, side * 0.52, 0.61, L + 0.025), bx(0.022, 0.09, 0.02, side * 0.4, 0.65, L + 0.025), bx(0.022, 0.09, 0.02, side * 0.64, 0.65, L + 0.025),
+      cyl(0.035, 0.02, side * 0.52, 0.665, L + 0.025, 'z', 10),
     ]));
-    merged(group, AMBER, [-1, 1].map(side => bx(0.05, 0.03, 0.02, side * 0.57, 0.7, 2.025)));
-    merged(group, grey, [-1, 1].map(side => bx(0.13, 0.08, 0.02, side * 0.09, 0.68, 2.025)));
-    box(group, black, 0.8, 0.1, 0.04, 0, 0.47, 2.005);
-    box(group, WHITE, 0.4, 0.09, 0.02, 0, 0.49, 2.03);
+    merged(group, AMBER, [-1, 1].map(side => bx(0.06, 0.03, 0.02, side * 0.71, 0.7, L + 0.025)));
+    merged(group, grey, [-1, 1].map(side => bx(0.14, 0.09, 0.02, side * 0.09, 0.68, L + 0.025)));
+    box(group, black, 0.9, 0.12, 0.04, 0, 0.42, L + 0.005);
+    box(group, WHITE, 0.42, 0.1, 0.02, 0, 0.44, L + 0.03);
     // the tail: U lamps in the black glass, the stop lamp at the roof's end, reversing lamps, the diffuser, the plate
     merged(group, TAIL, [-1, 1].flatMap(side => [
-      bx(0.025, 0.2, 0.02, side * 0.58, 0.8, -2.03), bx(0.16, 0.025, 0.02, side * 0.5, 0.89, -2.03), bx(0.16, 0.025, 0.02, side * 0.5, 0.71, -2.03),
+      bx(0.025, 0.2, 0.02, side * 0.62, 0.92, -L - 0.035), bx(0.16, 0.025, 0.02, side * 0.54, 1.01, -L - 0.035), bx(0.16, 0.025, 0.02, side * 0.54, 0.83, -L - 0.035),
     ]));
-    box(group, TAIL, 0.36, 0.03, 0.03, 0, 1.36, -1.955);
-    merged(group, LAMP, [-1, 1].map(side => bx(0.12, 0.05, 0.02, side * 0.4, 0.52, -2.01)));
-    box(group, black, 0.9, 0.08, 0.06, 0, 0.42, -1.99);
-    box(group, WHITE, 0.4, 0.1, 0.02, 0, 0.7, -2.03);
+    box(group, TAIL, 0.4, 0.03, 0.04, 0, 1.52, -L * 0.9 - 0.02);
+    merged(group, LAMP, [-1, 1].map(side => bx(0.12, 0.05, 0.02, side * 0.45, 0.5, -L - 0.012)));
+    box(group, black, 1.1, 0.1, 0.06, 0, 0.38, -L + 0.01);
+    box(group, WHITE, 0.42, 0.11, 0.02, 0, 0.72, -L - 0.035);
     // tall, skinny wheels, a dark cap in each
-    for (const side of [-1, 1]) {
-      for (const [z] of AXLES) {
-        wheel(group, R, 0.17, side * (0.89 - 0.085), R, z, steel);
-        disc(group, black, 0.07, 0.02, side * 0.896, R, z, 8).rotation.set(0, Math.PI / 2, 0);
-      }
+    for (const side of [-1, 1]) for (const z of [ZW, -ZW]) {
+      wheel(group, R, 0.17, side * (w / 2 - 0.085), R, z, steel);
+      disc(group, black, 0.07, 0.02, side * (w / 2 + 0.006), R, z).rotation.set(0, Math.PI / 2, 0);
     }
     group.userData = { body, animate: () => {} };
     return group;
@@ -494,6 +492,7 @@ export const IDEA_MODELS_6 = {
     const paint = lambert(car.color), roofPaint = lambert(0x18181b), glass = lambert(GLASS), chrome = lambert(CHROME);
     const black = lambert(0x1c1d21), silver = lambert(0xb9bdc2), alloy = lambert(0xa8adb4);
     for (const m of [paint, roofPaint, glass]) m.side = THREE.DoubleSide;
+    behind(glass); // (the roof's shell lies close over it)
     const R = 0.4, NU = 3.4, NC = 3;
     const AXLES = [[1.33, R, 0.24, 0.95], [-1.33, R, 0.24, 0.95]];
     const { body, sideX, topY } = loftBody(group, paint, [
@@ -541,13 +540,13 @@ export const IDEA_MODELS_6 = {
     // the tail: lamps wrapping round it, reversing lamps, the black bumper, two exhausts, the plate
     const tailCurve = new THREE.CatmullRomCurve3([[0.4, -2.195], [0.62, -2.195], [0.76, -2.19], [0.85, -2.13], [0.915, -2.0]].map(([x, z]) => new THREE.Vector3(x, 1.02, z)));
     for (const side of [-1, 1]) place(group, shared('evoqueTail', () => new THREE.TubeGeometry(tailCurve, 6, 0.04, 3, false)), TAIL, 0, 0, 0).scale.x = side;
-    merged(group, LAMP, [-1, 1].map(side => bx(0.1, 0.05, 0.02, side * 0.35, 0.66, -2.19)));
+    merged(group, LAMP, [-1, 1].map(side => bx(0.1, 0.05, 0.02, side * 0.35, 0.66, -2.193)));
     box(group, black, 1.3, 0.14, 0.05, 0, 0.56, -2.19);
     merged(group, chrome, [-1, 1].map(side => cyl(0.045, 0.05, side * 0.5, 0.53, -2.215, 'z', 10)));
     box(group, WHITE, 0.4, 0.1, 0.02, 0, 0.84, -2.188);
     // black sills and arch lips; big alloys with a dark cap each; door handles
     merged(group, black, [-1, 1].map(side => bx(0.03, 0.12, 1.5, side * (sideX(0, 0.55) + 0.006), 0.55, 0)));
-    merged(group, black, [-1, 1].flatMap(side => AXLES.map(([z]) => lip(R + 0.07, 0.035, side * 0.93, R, z))));
+    merged(group, black, [-1, 1].flatMap(side => AXLES.map(([z]) => lip(R + 0.07, 0.035, side * 0.958, R, z)))); // (clear of the arch's edge)
     merged(group, silver, [-1, 1].map(side => bx(0.02, 0.025, 0.12, side * (sideX(-0.1, 1.0) + 0.004), 1.0, -0.1)));
     for (const side of [-1, 1]) {
       for (const [z] of AXLES) {
