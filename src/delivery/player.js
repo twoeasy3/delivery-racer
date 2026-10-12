@@ -74,14 +74,21 @@ export const Player = {
   speed: 0,
   health: CAR.health, maxHealth: CAR.health, smoke: 0, // (top speed, acceleration and health are the car's ECU's: see cars.js carStats, ecu.js)
   hw: CAR.hw, hl: CAR.hl, height: CAR.height, // hitbox half width / half length, body height
-  get mass() { return this.heavy > 0 ? CONFIG.heavyMass.mass : CAR.mass || 1; },
+  // (mass, crossing, agility, delivery and cool are the car's figures at its ECU: cars.js carStats, ecu.js; weight (its
+  // mass) is the same at every ECU, the rest are lower at a lower ECU)
+  get mass() { return this.heavy > 0 ? CONFIG.heavyMass.mass : carStats(CAR).weight ?? CAR.mass ?? 1; },
   // how heavy the car is, for sliding on ice: by its size, against the Commuter's, and its mass
   get weight() { return this.mass * Math.sqrt(this.hw * this.hl * this.height / CONFIG.ice.weightRef); },
   // how well the car takes a railway track, and wades through water: 1 = no bother, 0 = worst of all
   // (a tank, whatever it is, takes anything)
-  get crossing() { return this.tank > 0 ? 1 : CAR.crossing ?? CONFIG.railCrossing.usual; },
+  get crossing() { return this.tank > 0 ? 1 : carStats(CAR).crossing ?? CAR.crossing ?? CONFIG.railCrossing.usual; },
   // how quickly the car steers: its own agility, less under the weight
-  get agility() { return (CAR.agility || 1) * (this.heavy > 0 ? CONFIG.heavyMass.agility : 1); },
+  get agility() { return (carStats(CAR).agility ?? CAR.agility ?? 1) * (this.heavy > 0 ? CONFIG.heavyMass.agility : 1); },
+  // how well its packages work (DELIVERY, package efficacy: 1 = as they always did; less at a lower ECU): a Good gift's
+  // standing gain and an Evil flaming package's damage are multiplied by it (packages.js). Never below 0
+  get delivery() { return Math.max(0, carStats(CAR).delivery ?? 1); },
+  // its COOL: the shoulder meter's fuse, a share of the usual (1 = CONFIG.dangerTime; less at a lower ECU): Social.dangerTime
+  get cool() { return carStats(CAR).cool ?? 1; },
   get vs() { return this.speed; },
   set vs(v) { this.speed = v; },
 

@@ -44,7 +44,8 @@ export const rarityOf = (car) => {
 function safe(fn, fallback) { try { const v = fn(); return v === undefined || v === null || Number.isNaN(v) ? fallback : v; } catch { return fallback; } }
 const blueprintCar = (car) => safe(() => Ecu.isBlueprint(car), !!car.evergreen);
 const perEcu = (car) => safe(() => Ecu.x?.(car) ?? Ecu.perEcu?.(car), 5);
-const figures = (car) => ({ maxSpeed: car.maxSpeed, accel: car.accel, health: car.health, respawn: CONFIG.respawnTime });
+const figures = (car) => ({ maxSpeed: car.maxSpeed, accel: car.accel, health: car.health, respawn: CONFIG.respawnTime,
+  agility: car.agility ?? 1, delivery: car.delivery ?? 1, cool: car.cool ?? 1, crossing: car.crossing ?? CONFIG.railCrossing.usual, weight: car.mass ?? 1 });
 const statsAt = (car, level) => {
   const s = safe(() => Ecu.stats(car, level), null);
   return s ? { ...figures(car), ...s } : figures(car);
@@ -118,8 +119,12 @@ export const carCard = (car, evil = false) => {
 // the best figures on the floor, for the stat bars (by a car's MAXED figures, as the cars stand now)
 export const floorBest = () => {
   const cards = showroomCars().map(car => statsAt(car, safe(() => Ecu.max(car), 1)));
-  return { maxSpeed: Math.max(...cards.map(s => s.maxSpeed)), accel: Math.max(...cards.map(s => s.accel)), health: Math.max(...cards.map(s => s.health)),
-    respawnBest: Math.min(...cards.map(s => s.respawn)), respawnWorst: Math.max(...cards.map(s => s.respawn)) };
+  const most = (key) => Math.max(...cards.map(s => s[key] ?? 0));
+  return { maxSpeed: most('maxSpeed'), accel: most('accel'), health: most('health'),
+    respawnBest: Math.min(...cards.map(s => s.respawn)), respawnWorst: Math.max(...cards.map(s => s.respawn)),
+    // (the second set, CHECKLIST item 125: the best on the floor; cool shown as the shoulder's seconds, CONFIG.dangerTime)
+    agility: most('agility'), delivery: most('delivery'), cool: most('cool'), crossing: most('crossing'), weight: most('weight'),
+    fuse: CONFIG.dangerTime, coolFloor: CONFIG.coolFloor };
 };
 
 // ---- the side: Good or Evil, picked in the showroom (its header and its detail share the one choice) ---------------

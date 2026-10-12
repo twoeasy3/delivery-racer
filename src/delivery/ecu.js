@@ -7,8 +7,13 @@
 //   BLUEPRINT car  starts at ECU0, locked; its first X blueprints unlock it (ECU1), each X more raise it one ECU. The
 //                  evergreen filler cars (cars.js FILLER_CARS).
 // A car's max ECU follows the star ladder (LADDER below); the special (earned) cars and the 1-gold cars stop at ECU1. Each
-// ECU's figures are SAVED, one entry per ECU, in ecus.json (by car id: { x, ecus: [{ maxSpeed, accel, health, respawn }] },
-// ECU1 first), written once by scripts/ecu-tables.mjs and the truth from then on (edit it by hand). A car with no entry
+// ECU's figures are SAVED, one entry per ECU, in ecus.json (by car id: { x, ecus: [{ maxSpeed, accel, health, respawn,
+// agility, delivery, cool, crossing, weight }] }, ECU1 first), written once by scripts/ecu-tables.mjs and the truth from
+// then on (edit it by hand). The second set (the owner, 12-Oct, CHECKLIST item 125; NEW_STATS below): agility (cars.js
+// `agility`, steering), delivery (package efficacy: a Good gift's standing gain and an Evil flaming package's damage are
+// multiplied by it: packages.js), cool (the shoulder meter's fuse: Social.dangerTime is multiplied by it, held to
+// CONFIG.coolFloor), crossing (cars.js `crossing`: rails, fords, mud, the tide) scale with the ECU like the first set;
+// weight (cars.js `mass`) is the same at every ECU. A car with no entry
 // (a car idea, the City Bus, a level's own vehicle, a Super car) has no ECU and drives on its own figures.
 // RACES are a separate game: none of this applies there (drive(): own figures, CONFIG.respawnTime).
 // Saved: Progress.data.blueprints = { [carId]: count } and Progress.data.maxed = [carId]: the cars held at their MAX ECU
@@ -35,6 +40,16 @@ export const RARITY = {
 export const STEPS = { lot: 0.03, blueprint: 0.06 };
 export const RESPAWN = { first: 5.5, step: 0.5 };
 export const X_DEFAULT = 5;
+// the second set of stats (CHECKLIST item 125): what each is at the MAXED ECU (a car's own field, else today's default),
+// and whether it scales with the ECU (weight does not). The multipliers are rounded to 0.001 so each ECU stays above
+// the last even for a small figure (a crossing of 0.15)
+export const NEW_STATS = {
+  agility: { of: (car) => car.agility ?? 1, scales: true },
+  delivery: { of: (car) => car.delivery ?? 1, scales: true },
+  cool: { of: (car) => car.cool ?? 1, scales: true },
+  crossing: { of: (car) => car.crossing ?? CONFIG.railCrossing.usual, scales: true },
+  weight: { of: (car) => car.mass ?? 1, scales: false },
+};
 
 const tierOf = (car) => (car.tier >= 1 && car.tier <= 5 ? car.tier : null);
 const listed = (list, car) => list.some(c => c.id === car.id);
@@ -121,14 +136,15 @@ export const Ecu = {
   },
 
   // ---- the figures ----
-  // an ECU's figures: { maxSpeed, accel, health, respawn, ecu } (ecu: the level given, held to 1..max; 0 is shown as 1,
-  // what it would play at). A car with no table: its own figures, CONFIG.respawnTime, ecu null
+  // an ECU's figures: { maxSpeed, accel, health, respawn, agility, delivery, cool, crossing, weight, ecu } (ecu: the level
+  // given, held to 1..max; 0 is shown as 1, what it would play at). A car with no table: its own figures,
+  // CONFIG.respawnTime, ecu null. (An entry written before the second set: those fields from the car's own, maxed)
   stats(car, level = this.level(car)) {
     const entry = car && ECUS[car.id];
     if (!entry) return own(car);
     const ecu = Math.max(1, Math.min(entry.ecus.length, Math.round(level) || 1));
     const key = car.id + '|' + ecu;
-    if (!cache.has(key)) cache.set(key, Object.freeze({ ...entry.ecus[ecu - 1], ecu }));
+    if (!cache.has(key)) cache.set(key, Object.freeze({ ...ownNew(car), ...entry.ecus[ecu - 1], ecu }));
     return cache.get(key);
   },
   respawnTime(car, level) { return this.stats(car, level).respawn; },
@@ -150,7 +166,8 @@ export const Ecu = {
   get pinned() { return pinned; },
 };
 // (a car's own figures, as stats: read afresh each time, as a check may change a car's figures)
-const own = (car) => (car ? { maxSpeed: car.maxSpeed, accel: car.accel, health: car.health, respawn: CONFIG.respawnTime, ecu: null } : car);
+const ownNew = (car) => Object.fromEntries(Object.entries(NEW_STATS).map(([k, d]) => [k, d.of(car)]));
+const own = (car) => (car ? { maxSpeed: car.maxSpeed, accel: car.accel, health: car.health, respawn: CONFIG.respawnTime, ...ownNew(car), ecu: null } : car);
 const byId = (id) => [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...FILLER_CARS].find(car => car.id === id) || null;
 
 // the hooks: cars.js asks for a run's figures; progress.js asks whether a blueprint car is owned (unlocked)

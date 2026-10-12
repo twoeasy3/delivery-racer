@@ -220,15 +220,19 @@ const fill = (fresh = true) => {
   requestAnimationFrame(arrows);
 };
 
-// a stat line: the figure now, its bar, and (a car not maxed) the maxed figure and the bar's reach then
-const stat = (name, now, max, show, share) => {
+// a stat line: the figure now, its bar, and (a car not maxed) the maxed figure and the bar's reach then (a stat the ECU
+// does not change, Weight: max = now, so no ghost and no "max"). tip: what it is, on the name
+const stat = (name, now, max, show, share, tip) => {
   const bar = make('span', 'sr-stat-track'), fillNow = make('i', 'now'), fillMax = make('i', 'max');
   fillNow.style.width = Math.round(Math.max(0.04, Math.min(1, share(now))) * 100) + '%';
   fillMax.style.width = Math.round(Math.max(0.04, Math.min(1, share(max))) * 100) + '%';
   bar.append(fillMax, fillNow);
   const same = show(now) === show(max);
-  return make('div', 'sr-stat', make('small', '', name), bar, make('b', '', show(now)), make('span', 'sr-stat-max', same ? '' : 'max ' + show(max)));
+  const label = make('small', '', name);
+  if (tip) label.title = tip;
+  return make('div', 'sr-stat', label, bar, make('b', '', show(now)), make('span', 'sr-stat-max', same ? '' : 'max ' + show(max)));
 };
+const pct = (v) => Math.round(v * 100) + '%';
 const kmh = (v) => Math.round(v * 3.6) + ' km/h';
 const showDetail = () => {
   const card = cards.find(c => c.data.id === picked)?.data;
@@ -241,12 +245,19 @@ const showDetail = () => {
   pic.title = 'Drag to turn it';
   const s = card.stats, m = card.maxStats;
   const share = { speed: v => v / best.maxSpeed, accel: v => v / best.accel, health: v => v / best.health,
-    respawn: v => best.respawnWorst > best.respawnBest ? 0.15 + 0.85 * (best.respawnWorst - v) / (best.respawnWorst - best.respawnBest) : 1 };
+    respawn: v => best.respawnWorst > best.respawnBest ? 0.15 + 0.85 * (best.respawnWorst - v) / (best.respawnWorst - best.respawnBest) : 1,
+    of: (key) => v => (best[key] > 0 ? v / best[key] : 1) };
+  const fuse = (v) => (best.fuse * Math.max(best.coolFloor, v)).toFixed(1) + ' s'; // (cool: the shoulder's seconds)
   const figures = card.hidden ? make('p', 'sr-why', 'A car of a tier not open yet: its figures show once it is.')
     : make('div', 'sr-stats',
       stat('Top speed', s.maxSpeed, m.maxSpeed, kmh, share.speed),
       stat('Acceleration', s.accel, m.accel, v => String(Math.round(v * 10) / 10), share.accel),
       stat('Health', s.health, m.health, v => String(Math.round(v)), share.health),
+      stat('Agility', s.agility, m.agility, pct, share.of('agility'), 'How quickly it steers'),
+      stat('Delivery', s.delivery, m.delivery, pct, share.of('delivery'), 'Package efficacy: a gift\'s standing, a flaming package\'s damage'),
+      stat('Cool', s.cool, m.cool, fuse, share.of('cool'), 'How long it can sit on the shoulder before the police step in'),
+      stat('Crossing', s.crossing, m.crossing, pct, share.of('crossing'), 'How well it takes rails, fords, mud and the tide'),
+      stat('Weight', s.weight, s.weight, pct, share.of('weight'), 'How heavy it is in a shove (the same at every ECU)'),
       stat('Respawn', s.respawn, m.respawn, v => (Math.round(v * 10) / 10).toFixed(1) + ' s', share.respawn));
   // what can be done with it
   const go = make('button', 'sr-go');

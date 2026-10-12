@@ -30,6 +30,11 @@
 //              each star level, open from the start; an amphibious level (its "amphibious") is only driven in one
 //   draft      m of an amphibious car that is under the water when it is afloat (default CONFIG.water.draft)
 //   mass       how heavy it is in a shove (default 1): heavier knocks others aside and is knocked less
+//   delivery   (optional) its package efficacy, a share (default 1): a Good gift's standing gain and an Evil flaming
+//              package's damage are multiplied by it (packages.js)
+//   cool       (optional) its shoulder fuse, a share of CONFIG.dangerTime (default 1: Social.dangerTime)
+//   (maxSpeed, accel, health, agility, crossing, delivery and cool are the car's figures at its MAXED ECU: a lower ECU's
+//   are in ecus.json, lower; mass is the same at every ECU, as `weight` there. See ecu.js, carStats)
 //   shotBack   (optional) how much further back the studio camera (?cine=car) stands for its picture, for
 //              a vehicle whose wings reach past its hit box
 // ============================================================================
