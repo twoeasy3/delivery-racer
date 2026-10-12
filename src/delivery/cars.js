@@ -401,7 +401,7 @@ export const EVENT_CARS = [
 // each has ONE key style for good (the owner, 12-Oct: the key is always the same for a car, never drifting like the blueprint poses):
 // the three of render/keyModels.js are all in use. Modern flagship: fob (the Silver Comet); the old coachbuilt and the
 // 1930s: classic; the space-age and the solar: smart
-const KEY_STYLE = { rocketfin: 'smart', swancar: 'classic', solarracer: 'smart', moonrover: 'smart', monowheel: 'classic' };
+const KEY_STYLE = { rocketfin: 'smart', swancar: 'classic', solarracer: 'smart', moonrover: 'smart', monowheel: 'classic', snocat: 'classic', hotdog: 'fob' };
 const bespoke = (car) => ({ ...car, bespoke: true, rarity: 'legendary', placeholder: true, price: 0, keyModel: KEY_STYLE[car.id] || 'fob' });
 export const BESPOKE_CARS = [
   // the all-rounder: quick, solid, a grand tourer
@@ -424,6 +424,15 @@ export const BESPOKE_CARS = [
   bespoke({ id: 'monowheel', name: 'Monowheel', basedOn: 'Dynasphere monowheel (1932)', model: 'monowheel', color: 0xe8a317, evilColor: 0x6a3a8a,
     hw: 0.5, hl: 1.0, height: 2.0, note: 'One wheel taller than its rider, who sits inside it. It rolls; he does not.',
     maxSpeed: 44, accel: 21, agility: 1.8, crossing: 0.5, health: 100, mass: 1, sound: 'junker' }),
+  // (no key to be had for now: `keyAvailable: false`: in no pack's Bespoke pool and in no event; the owner, 12-Oct. Their blueprints still drop)
+  // the expedition: a glass cab on tracks, slow to start, takes the deep snow and shrugs off a crash
+  bespoke({ id: 'snocat', name: 'Snowcat', basedOn: 'Tucker Sno-Cat 443', model: 'snocat', color: 0xe8482a, evilColor: 0x1f4a6a, keyAvailable: false,
+    hw: 1.1, hl: 2.6, height: 2.7, note: 'A glass cab on four pontoons of track, with an exhaust stack and a spotlight. It is in no hurry.',
+    maxSpeed: 40, accel: 14, agility: 0.9, crossing: 1, health: 320, mass: 2.4, sound: 'sixbysix' }),
+  // the novelty: a sausage in a bun the length of a van, built to deliver
+  bespoke({ id: 'hotdog', name: 'Hot Dog Car', basedOn: 'Oscar Mayer Wienermobile', model: 'hotdog', color: 0xd99a4e, evilColor: 0x7a4426, keyAvailable: false,
+    hw: 1.08, hl: 3.4, height: 2.25, note: 'A sausage the length of a van in a bun, with mustard along the top.',
+    maxSpeed: 44, accel: 15, agility: 1, crossing: 0.4, health: 240, mass: 2.1, sound: 'postvan' }),
 ];
 applyNames('car', BESPOKE_CARS);
 // is it a Bespoke key car? (its key a Bespoke card, its blueprints Legendary; packs.js, carsources.js)
