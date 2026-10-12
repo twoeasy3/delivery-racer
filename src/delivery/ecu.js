@@ -159,6 +159,7 @@ export const Ecu = {
   lockedWords(car) {
     if (!car || this.unlocked(car)) return null;
     if (this.kind(car) === 'blueprint') return 'Collect ' + this.x(car) + ' blueprints to unlock this car';
+    if (car.earned) return 'Earn this car on its level';
     return listed(CARS, car) && !car.tank ? 'Purchase this car from the car lot' : 'You need the key to drive this car';
   },
 

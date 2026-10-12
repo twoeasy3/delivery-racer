@@ -123,19 +123,21 @@
 #showroom .sr-card { min-width: 0; min-height: 0; scroll-snap-align: start; position: relative; display: flex; flex-direction: column;
   padding: 0; border-radius: 12px; overflow: hidden; text-align: left;
   background: linear-gradient(165deg, color-mix(in srgb, var(--rar) 30%, #1a2232) 0%, #141a26 46%, #0d1119 100%);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--rar) 75%, transparent), 0 6px 18px rgba(0, 0, 0, .45);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--rar) 70%, transparent), 0 6px 18px rgba(0, 0, 0, .45);
   transition: transform .15s, box-shadow .15s, filter .15s; }
-#showroom .sr-card::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--rar); z-index: 2; }
+#showroom .sr-card::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--rar); z-index: 2; }
 #showroom .sr-card::after { content: ''; position: absolute; left: 10%; right: 10%; top: 44%; height: 26%; border-radius: 50%; z-index: 0;
   background: radial-gradient(closest-side, color-mix(in srgb, var(--rar) 35%, transparent), transparent); pointer-events: none; }
 #showroom .sr-card > * { position: relative; z-index: 1; }
 #showroom .sr-card:hover { transform: translateY(-3px); }
 #showroom .sr-card.picked { transform: translateY(-5px); box-shadow: inset 0 0 0 3px var(--accent), 0 0 0 2px var(--accent), 0 10px 26px var(--accent-glow); }
-#showroom .sr-tag { position: absolute; left: 0; top: 4px; z-index: 2; padding: 4px 14px 4px 9px; font: italic 800 11px/1 var(--display); letter-spacing: .1em; text-transform: uppercase;
+#showroom .sr-tag { position: absolute; left: 0; top: 3px; z-index: 2; padding: 4px 14px 4px 9px; font: italic 800 11px/1 var(--display); letter-spacing: .1em; text-transform: uppercase;
   background: var(--rar); color: #0b0f16; clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
 #showroom .sr-stars { position: absolute; right: 9px; top: 9px; z-index: 2; font-size: 14px; letter-spacing: .02em; text-shadow: 0 1px 2px rgba(0, 0, 0, .8); }
-#showroom .sr-pic { flex: 1 1 auto; min-height: 0; margin: 26px 6px 0; background: center 60% / contain no-repeat; }
-#showroom .sr-pic.silhouette, #showroom .sr-dpic.silhouette { filter: brightness(0) drop-shadow(0 0 1px rgba(255, 255, 255, .35)); }
+/* (the picture's box: its still on .sr-img, a locked card's overlay over it; a size container, so the overlay fits any card) */
+#showroom .sr-pic { flex: 1 1 auto; min-height: 0; margin: 26px 6px 0; position: relative; container-type: size; }
+#showroom .sr-img { position: absolute; inset: 0; background: center 60% / contain no-repeat; }
+#showroom .sr-img.silhouette, #showroom .sr-dpic.silhouette { filter: brightness(0) drop-shadow(0 0 1px rgba(255, 255, 255, .35)); }
 #showroom .sr-info { display: flex; flex-direction: column; gap: 6px; padding: 8px 11px 11px; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, .45)); }
 #showroom .sr-name { font: italic 800 17px/1.05 var(--display); font-stretch: condensed; letter-spacing: .02em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #showroom .sr-ecu { display: flex; align-items: center; gap: 6px; }
@@ -155,14 +157,52 @@
 #showroom .sr-badge { position: absolute; left: 8px; top: 30px; z-index: 2; padding: 3px 7px; border-radius: 4px; font: 800 10px/1.2 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
 #showroom .sr-badge.inuse { background: var(--accent); color: var(--accent-ink); }
 #showroom .sr-badge.barred { background: #7a2a1f; color: #ffd2c8; }
-/* a car that cannot be driven: grey, with the lock and the reason over its picture */
-#showroom .sr-card.locked .sr-pic { filter: grayscale(1) brightness(.55); }
-#showroom .sr-card.locked .sr-pic.silhouette { filter: brightness(0) drop-shadow(0 0 1px rgba(255, 255, 255, .3)); }
+/* a car that cannot be driven: its picture dimmed (still recognisable; a car of a tier not open yet stays a silhouette),
+   its frame quieter, and its OVERLAY over the picture (below) */
+#showroom .sr-card.locked .sr-img { filter: grayscale(.6) brightness(.6); }
+#showroom .sr-card.locked .sr-img.silhouette { filter: brightness(0) drop-shadow(0 0 1px rgba(255, 255, 255, .3)); }
 #showroom .sr-card.locked .sr-name { color: rgba(255, 255, 255, .72); }
-#showroom .sr-card.barred .sr-pic { filter: saturate(.5); }
-#showroom .sr-lock { position: absolute; left: 8px; right: 8px; top: 34%; z-index: 2; display: flex; align-items: center; gap: 7px; padding: 6px 8px; border-radius: 7px;
-  background: rgba(8, 10, 16, .82); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); font: 700 11px/1.25 system-ui, sans-serif; color: #e9edf3; }
-#showroom .sr-lock b { font-size: 15px; filter: grayscale(.3); }
+#showroom .sr-card.barred .sr-img { filter: saturate(.5); }
+
+/* ---- the LOCKED-CARD OVERLAY (render/lockoverlay.js; showroomData.js overlayOf): a tint in the kind's colour (--ov), a
+   round dark badge with a THIN ring and a flat icon, a two-line caption. One colour and icon per kind:
+   key (Bespoke magenta, a gold key), earned (gold, a trophy), unpurchased (amber, a price tag), tier (steel blue, a
+   padlock), blueprint (blue, a blueprint sheet and a bar). Sized by the picture's box (cqh), so a phone's card fits it */
+#showroom .ov-key, #showroom .sr-ov.key { --ov: #ff4fb8; }
+#showroom .ov-earned, #showroom .sr-ov.earned { --ov: #ffd23f; }
+#showroom .ov-unpurchased, #showroom .sr-ov.unpurchased { --ov: #ff9a3c; }
+#showroom .ov-tier, #showroom .sr-ov.tier { --ov: #8fb3d9; }
+#showroom .ov-blueprint, #showroom .sr-ov.blueprint { --ov: #3f9dff; }
+#showroom .sr-card[class*=" ov-"] { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rar) 50%, transparent), 0 6px 18px rgba(0, 0, 0, .45);
+  background: linear-gradient(165deg, color-mix(in srgb, var(--ov) 20%, #161c29) 0%, #121824 50%, #0c1018 100%); }
+#showroom .sr-card[class*=" ov-"]::after { background: radial-gradient(closest-side, color-mix(in srgb, var(--ov) 22%, transparent), transparent); }
+#showroom .sr-card[class*=" ov-"].picked { box-shadow: inset 0 0 0 3px var(--accent), 0 0 0 2px var(--accent), 0 10px 26px var(--accent-glow); }
+#showroom .sr-ov { --b: clamp(26px, 34cqh, 50px); position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: clamp(3px, 4cqh, 8px); pointer-events: none; text-align: center; border-radius: 8px;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--ov) 18%, rgba(6, 9, 15, .5)), rgba(6, 9, 15, .12)); }
+#showroom .sr-ov-badge { flex: 0 0 auto; width: var(--b); height: var(--b); border-radius: 50%; display: grid; place-items: center; color: var(--ov);
+  background: radial-gradient(circle at 50% 32%, #222c40, #0b0f17 72%);
+  box-shadow: 0 0 0 2px var(--ov), 0 0 0 3.5px rgba(6, 9, 15, .55), 0 0 16px color-mix(in srgb, var(--ov) 40%, transparent), 0 3px 8px rgba(0, 0, 0, .5); }
+#showroom .sr-ov.key .sr-ov-badge { color: #ffd76a; } /* (Bespoke: a gold key in a magenta ring) */
+#showroom .sr-ov-icon, #showroom .sr-ov-icon svg { display: block; width: calc(var(--b) * .54); height: calc(var(--b) * .54); fill: currentColor; }
+#showroom .sr-ov-words { display: flex; flex-direction: column; align-items: center; gap: 3px; max-width: 100%; padding: 0 6px; }
+#showroom .sr-ov-title { font: italic 800 clamp(12px, 13cqh, 17px)/1 var(--display); font-stretch: condensed; letter-spacing: .04em; text-transform: uppercase; color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .9); white-space: nowrap; }
+#showroom .sr-ov.unpurchased .sr-ov-title { color: #ffc27e; font-size: clamp(14px, 16cqh, 21px); letter-spacing: .02em; }
+#showroom .sr-ov-line { font: 700 clamp(9.5px, 9cqh, 11.5px)/1.2 system-ui, sans-serif; color: color-mix(in srgb, var(--ov) 45%, #fff); text-shadow: 0 1px 3px rgba(0, 0, 0, .95);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+#showroom .sr-ov-line .tierstars { letter-spacing: -.05em; }
+#showroom .sr-ov-bar { width: min(110px, 70cqw); height: 5px; border-radius: 3px; background: rgba(255, 255, 255, .16); overflow: hidden; box-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
+#showroom .sr-ov-bar i { display: block; height: 100%; min-width: 3px; border-radius: 3px; background: linear-gradient(90deg, #3f8cff, #6fd0ff); }
+@container (max-height: 84px) { #showroom .sr-ov-line { display: none; } } /* (a small card: the badge and its title) */
+/* the full view's: a pill under the live car (badge, then the words), clear of the drag */
+#showroom .sr-ov.inline { --b: 40px; inset: auto auto 12px 50%; transform: translateX(-50%); z-index: 2; flex-direction: row; gap: 10px; max-width: calc(100% - 120px);
+  padding: 6px 16px 6px 6px; border-radius: 999px; text-align: left; background: rgba(8, 11, 18, .84);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ov) 55%, transparent), 0 6px 18px rgba(0, 0, 0, .45); }
+#showroom .sr-ov.inline .sr-ov-words { align-items: flex-start; padding: 0; }
+#showroom .sr-ov.inline .sr-ov-title { font-size: 17px; }
+#showroom .sr-ov.inline .sr-ov-line { font-size: 12px; }
+#showroom .sr-ov.inline .sr-ov-bar { width: 120px; }
 #showroom .sr-empty { grid-row: 1 / -1; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; width: 340px; padding: 30px; color: var(--ink-dim); font-size: 15px; }
 
 /* ---- the FULL VIEW (the owner's Asphalt 9 reference): the whole screen the car picked, live and large in a showroom
@@ -291,8 +331,6 @@
   #showroom .sr-info { flex: 1 1 auto; min-width: 0; justify-content: center; padding: 22px 11px 10px 6px; background: none; }
   #showroom .sr-name { font-size: 17px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   #showroom .sr-badge { top: auto; bottom: 7px; left: 8px; }
-  #showroom .sr-lock { top: auto; bottom: 6px; left: 6px; right: auto; max-width: 44%; padding: 4px 6px; font-size: 10px; }
-  #showroom .sr-lock b { font-size: 12px; }
   #showroom .sr-card.locked .sr-badge { display: none; }
   /* the tools: All / Ready / Locked and Filters (the sort is in the filter sheet) */
   #showroom .sr-tools { order: 5; flex: 1 1 100%; }

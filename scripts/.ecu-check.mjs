@@ -95,7 +95,7 @@ try {
     Ecu.kind(car('bus')) === null && Ecu.kind(car('golfcart')) === null, 'kinds: garage, earned and event cars are key cars; the 18 evergreen cars blueprint cars; the bus and the ideas neither');
   check(Ecu.level(car('commuter')) === 1 && Ecu.unlocked(car('commuter')) && Ecu.maxed(car('commuter')), 'a new save: the starter (Commuter) is unlocked, maxed (ECU1 of 1)');
   check(Ecu.level(sport) === 0 && !Ecu.unlocked(sport) && Ecu.lockedWords(sport) === 'Purchase this car from the car lot', 'a car lot car not bought: ECU0, locked, "' + Ecu.lockedWords(sport) + '"');
-  check(Ecu.level(hellrod) === 0 && Ecu.lockedWords(hellrod) === 'You need the key to drive this car', 'an earned car not earned: locked, "' + Ecu.lockedWords(hellrod) + '"');
+  check(Ecu.level(hellrod) === 0 && Ecu.lockedWords(hellrod) === 'Earn this car on its level', 'an earned car not earned: locked, "' + Ecu.lockedWords(hellrod) + '"');
   check(Ecu.addBlueprints('sport', 5) === 2 && Ecu.level(sport) === 0 && !Progress.owns('sport'), 'a locked key car CAN be upgraded: 5 blueprints, ECU2 reached, still locked (no key)');
   selectCar('sport');
   check(g.cars.CAR.id !== 'sport', '...and not selectable without its key');

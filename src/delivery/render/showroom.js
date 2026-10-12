@@ -32,7 +32,7 @@
 import '../showroom.css';
 import '../showroom-phone.css';
 import { showroomCars, carCard, floorBest, statShown, RARITIES, CAR_LOT, sideName, sideClick, driveWords, barredWhy, driveAs,
-  FILTER_GROUPS, SORTS, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn } from '../showroomData.js';
+  FILTER_GROUPS, SORTS, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn, overlayOf, cardTip } from '../showroomData.js';
 import { CAR, carInUse, setViewSide, STAR_COLOURS } from '../cars.js';
 import { Progress } from '../progress.js';
 import { Game } from '../game.js';
@@ -45,6 +45,7 @@ import { swipeSwitch, PHONE_COLUMNS } from './showroomphone.js';
 import { Sound } from './audio.js';
 import { makerLine } from './blueprintcard.js';
 import { renderSources } from './carsources.js'; // ("Where to get it": the car's key and blueprint sources)
+import { overlayNode } from './lockoverlay.js'; // (a locked card's overlay: its kind's tint, badge and caption)
 
 const panel = document.getElementById('showroom');
 const startScreen = document.getElementById('startScreen');
@@ -344,22 +345,23 @@ const fill = (fresh = true) => {
   bankEl.replaceChildren(make('small', '', 'Bank'), money(Progress.data.money));
   watcher?.disconnect();
   cards = list.map((data) => {
-    const pic = make('span', 'sr-pic' + (data.hidden ? ' silhouette' : ''));
+    // the picture (its still on .sr-img) and, for a card that cannot be driven, its overlay over it (render/lockoverlay.js)
+    const img = make('span', 'sr-img' + (data.hidden ? ' silhouette' : ''));
+    const ov = overlayOf(data);
+    const pic = make('span', 'sr-pic', img, overlayNode(ov));
     const badge = data.car === inUse || data.id === inUse.id ? make('span', 'sr-badge inuse', 'In use')
       : data.state === 'barred' ? make('span', 'sr-badge barred', 'Not on this level' + (evil !== !!Game.evil ? ' as ' + sideName(evil) : '')) : null;
-    const lock = data.state === 'locked' ? make('span', 'sr-lock', make('b', '', '🔒'), make('span', '', data.reason)) : null;
-    const node = make('button', 'sr-card ' + data.rarity + ' ' + data.state + (data.id === picked ? ' picked' : ''),
+    const node = make('button', 'sr-card ' + data.rarity + ' ' + data.state + (ov ? ' ov-' + ov.kind : '') + (data.id === picked ? ' picked' : ''),
       make('span', 'sr-tag', RARITIES[data.rarity].name), starsNode(data), pic, badge,
       make('span', 'sr-info',
         make('strong', 'sr-name', data.name),
         make('span', 'sr-ecu', make('small', '', 'ECU'), pips(data), make('em', '', data.ecu + '/' + data.max)),
-        blueprintBar(data)),
-      lock);
+        blueprintBar(data)));
     node.style.setProperty('--rar', RARITIES[data.rarity].colour);
     node.dataset.car = data.id;
-    node.title = data.state === 'locked' ? data.reason : data.state === 'barred' ? 'You can drive it, but not on the level picked as ' + sideName(evil) : data.name;
+    node.title = data.state === 'locked' ? cardTip(data) : data.state === 'barred' ? 'You can drive it, but not on the level picked as ' + sideName(evil) : data.name;
     node.addEventListener('click', () => { pick(data.id); openFull(); });
-    watch(pic, data.car);
+    watch(img, data.car);
     return { data, node };
   });
   let empty = null;
@@ -450,7 +452,8 @@ const showDetail = () => {
     b.addEventListener('click', (e) => { e.stopPropagation(); goTo(dir); });
     return b;
   };
-  const stage = make('div', 'sr-stage', pic, arrow(-1), arrow(1));
+  // (a car that cannot be driven: its card's overlay as a pill under the car, the same kind, colour and icon)
+  const stage = make('div', 'sr-stage', pic, overlayNode(overlayOf(card), { inline: true }), arrow(-1), arrow(1));
   // its card's picture (the cached still) in the panel
   const cardPic = make('span', 'sr-dcard-pic' + (card.hidden ? ' silhouette' : ''));
   const dcard = make('div', 'sr-dcard', cardPic);

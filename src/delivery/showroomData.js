@@ -17,6 +17,7 @@ import { Ecu } from './ecu.js';
 export const LOCKED_WORDS = {
   key: 'You need the key to drive this car',
   lot: 'Purchase this car from the car lot',
+  earn: 'Earn this car on its level', // (an earned / special car: no key about it: the owner, 12-Oct)
 };
 export const CAR_LOT = 'Crazey Jim\'s Used Cars'; // (the car lot's name, as players see it: render/garage.js)
 
@@ -90,10 +91,10 @@ export const carCard = (car, evil = false) => {
       reason = LOCKED_WORDS.lot;
       hint = forSale(car) ? 'At ' + CAR_LOT + ' for $' + car.price.toFixed(2) : tierWhy(car) ? 'Not for sale yet: ' + tierWhy(car) : 'Not for sale yet';
     } else {
-      reason = LOCKED_WORDS.key;
+      reason = car.earned ? LOCKED_WORDS.earn : LOCKED_WORDS.key;
       if (car.earned) {
         const level = LEVELS.find(l => l.id === car.earned.level);
-        hint = 'The key: beat the par on ' + (level ? levelName(level) : car.earned.level);
+        hint = 'Beat the par on ' + (level ? levelName(level) : car.earned.level);
       } else if (EVENT_CARS.includes(car)) hint = 'The key: an event\'s grand prize' + (car.bespoke ? ', or a Bespoke card in packs' : '');
       else if (car.bespoke) hint = 'The key: a Bespoke card, in card packs';
     }
@@ -115,6 +116,43 @@ export const carCard = (car, evil = false) => {
     perk: car.perk || '',
     forSale: !owned && forSale(car),
   };
+};
+
+// ---- the LOCKED-CARD OVERLAY: what a card that cannot be driven wears over its picture (the owner, 12-Oct, after an
+// Asphalt 9 locked card, "don't copy the text nor the colours"): a tint, a round badge with a thin ring and an icon, and a
+// short caption. Every locked card has exactly one kind; a card that can be driven (ready, or barred on this level) none.
+//   tier       a car of a tier not open yet (the silhouette, "Locked car"; or a car lot car its tier keeps off sale): a padlock
+//   blueprint  a blueprint car still at ECU0: its blueprints toward unlocking, with a bar
+//   unpurchased  a car lot car not bought, on sale: its price at Crazey Jim's
+//   key        a Key car (Bespoke, event) without its key: the key badge (it really needs its key: the owner, 12-Oct)
+//   earned     a special 6-star car not yet earned: a trophy, the level it is earned on. NEVER the word key (the owner)
+// The full reason stays in the full view's panel and the card's tooltip; these words are the card's, short.
+// Gives { kind, title, line, price?, have?, need? } or null. title / line may hold {tier:n} tokens (richTiers).
+export const OVERLAY_KINDS = ['key', 'earned', 'unpurchased', 'tier', 'blueprint'];
+const priceWords = (price) => '$' + (Number.isInteger(price) ? String(price) : price.toFixed(2));
+export const overlayOf = (card) => {
+  if (!card || card.unlocked) return null;
+  const car = card.car;
+  if (card.hidden) return { kind: 'tier', title: 'Tier locked', line: card.tier ? 'Opens with the {tier:' + card.tier + '} tier' : 'Opens with a later tier' };
+  if (card.blueprint) {
+    const need = card.perEcu, have = Math.max(0, Math.min(need, card.blueprints));
+    return { kind: 'blueprint', title: have + '/' + need + ' blueprints', line: 'From card packs', have, need };
+  }
+  if (CARS.includes(car) && !car.evergreen) {
+    if (card.forSale) return { kind: 'unpurchased', title: priceWords(car.price), line: 'At Crazey Jim’s', price: car.price };
+    return { kind: 'tier', title: 'Tier locked', line: card.tier ? 'Opens with the {tier:' + card.tier + '} tier' : 'Not for sale yet' };
+  }
+  if (car.earned || Object.values(SECRET_CARS).includes(car)) {
+    const level = car.earned && LEVELS.find(l => l.id === car.earned.level);
+    return { kind: 'earned', title: 'Earn it', line: level ? 'Beat par on ' + levelName(level) : 'Earn it on its level' };
+  }
+  return { kind: 'key', title: 'Needs its key', line: EVENT_CARS.includes(car) ? 'Win it at events or find it in packs' : 'Find it in Bespoke packs' };
+};
+// the card's tooltip: the spec's words (LOCKED_WORDS), but an earned car's never speaks of a key (the owner, 12-Oct)
+export const cardTip = (card) => {
+  const ov = overlayOf(card);
+  if (ov?.kind === 'earned') return ov.title + ': ' + ov.line;
+  return card.reason;
 };
 
 // the best figures on the floor, for the stat bars (by a car's MAXED figures, as the cars stand now)

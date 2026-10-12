@@ -64,8 +64,12 @@
 .bp-foot { display: flex; align-items: center; gap: 2cqw; margin-top: auto; padding: 2.5cqw .5cqw 0; font-size: max(9px, 5.8cqw); color: #3a4150; }
 .bp-foot b { font: 800 max(10px, 6.6cqw)/1 var(--display); color: #10131a; white-space: nowrap; }
 
-/* compact: the "What's inside" sheet's tiles */
-.bp-card.compact { padding: 3%; border-radius: 8px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .8), 0 0 0 2.5px var(--rc), 0 6px 14px rgba(0, 0, 0, .45); }
+/* compact: the "What's inside" sheet's tiles and "Where to get it"'s cards (render/carsources.js). A THIN frame (the owner,
+   12-Oct: "the borders on those look too large"): half the old padding and one slim ring of the rarity colour */
+.bp-card.compact { padding: 1.5%; border-radius: 7px; box-shadow: 0 0 0 1.5px var(--rc), 0 5px 12px rgba(0, 0, 0, .42); }
+.bp-card.compact .bp-art { border-radius: 5.5px; }
+.bp-card.compact .bp-name { padding-top: 2.5cqw; }
+.bp-card.key.r-bespoke.compact { border-width: 1.5px; box-shadow: 0 5px 12px rgba(0, 0, 0, .42); } /* (its rainbow rim, thinner too: keycard.css) */
 .bp-card.compact .bp-art { aspect-ratio: 4 / 3; }
 .bp-card.compact .bp-name strong { font-size: max(12px, 9.5cqw); }
 .bp-foot.chance { flex-wrap: wrap; gap: 1.5cqw 2cqw; }
@@ -95,3 +99,44 @@
 @keyframes bp-glow { from { box-shadow: inset 0 0 0 1.5px #6dffa0, 0 0 8px rgba(63, 208, 111, .5); } to { box-shadow: inset 0 0 0 1.5px #b6ffcf, 0 0 22px rgba(63, 208, 111, .95); } }
 @keyframes bp-pop { from { transform: scale(.4); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .bp-prog.glow, .bp-prog.glow .bp-up { animation: none; } }
+
+/* ---- the shine of a card by what it is (the owner, 12-Oct) --------------------------------------------------------------
+   Epic cards and Legendary Blueprint cars shine (a bright diagonal sweep); a Legendary KEY car's card has a better one (a wider,
+   faster sweep, twinkling glints and a pulsing gold glow round the frame); a BESPOKE card (the key cards) the best (a holographic
+   rainbow that slides across it, two sweeps, glints in rainbow colours and a rainbow glow). Pure CSS; none with reduced motion. */
+.bp-card.r-epic .bp-art::before, .bp-card.r-legendary .bp-art::before, .bp-card.r-bespoke .bp-art::before {
+  content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; mix-blend-mode: screen;
+  background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, .5) 50%, transparent 60%) 0 0 / 260% 100% no-repeat;
+  animation: bp-sweep 3.4s ease-in-out infinite; }
+@keyframes bp-sweep { 0% { background-position: 130% 0; } 55%, 100% { background-position: -90% 0; } }
+/* (the Legendary Blueprint car already slides its own shine in its background: only the one sweep) */
+.bp-card.kind-blueprint.r-legendary .bp-art { animation: none; }
+/* Legendary KEY car: wider and faster, glints, a pulsing glow */
+.bp-card.kind-key.r-legendary .bp-art::before {
+  background: linear-gradient(115deg, transparent 32%, rgba(255, 244, 200, .65) 50%, transparent 68%) 0 0 / 260% 100% no-repeat; animation-duration: 2.4s; }
+.bp-card.kind-key.r-legendary .bp-art::after { background:
+  radial-gradient(circle at 18% 22%, rgba(255, 255, 255, .95) 0 1.1cqw, transparent 1.8cqw), radial-gradient(circle at 80% 30%, rgba(255, 244, 200, .95) 0 .9cqw, transparent 1.6cqw),
+  radial-gradient(circle at 66% 76%, rgba(255, 255, 255, .9) 0 1cqw, transparent 1.7cqw), radial-gradient(circle at 28% 70%, rgba(255, 244, 200, .9) 0 .8cqw, transparent 1.5cqw),
+  radial-gradient(60% 18% at 50% 84%, rgba(0, 0, 0, .28), transparent 70%), linear-gradient(180deg, rgba(255, 255, 255, .22), transparent 45%, rgba(0, 0, 0, .12));
+  animation: bp-twinkle 2.2s ease-in-out infinite; }
+@keyframes bp-twinkle { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+.bp-card.kind-key.r-legendary { animation: bp-glow-gold 2.6s ease-in-out infinite; }
+@keyframes bp-glow-gold { 0%, 100% { filter: drop-shadow(0 0 2px rgba(255, 190, 46, .35)); } 50% { filter: drop-shadow(0 0 9px rgba(255, 190, 46, .9)); } }
+/* BESPOKE (a key card): a holographic rainbow that slides over it, two sweeps, rainbow glints, a rainbow glow */
+.bp-card.r-bespoke .bp-art::before {
+  background:
+    linear-gradient(115deg, transparent 34%, rgba(255, 255, 255, .7) 50%, transparent 66%) 0 0 / 260% 100% no-repeat,
+    linear-gradient(100deg, rgba(255, 63, 174, .0), rgba(255, 190, 46, .35), rgba(63, 208, 111, .3), rgba(53, 194, 255, .35), rgba(180, 92, 255, .35), rgba(255, 63, 174, .0)) 0 0 / 300% 100% repeat-x;
+  animation: bp-holo 3s linear infinite; }
+@keyframes bp-holo { from { background-position: 130% 0, 0% 0; } 55% { background-position: -90% 0, 110% 0; } to { background-position: -90% 0, 300% 0; } }
+.bp-card.r-bespoke .bp-art::after { background:
+  radial-gradient(circle at 16% 24%, rgba(255, 255, 255, .95) 0 1.1cqw, transparent 1.8cqw), radial-gradient(circle at 84% 22%, rgba(255, 150, 220, .95) 0 1cqw, transparent 1.7cqw),
+  radial-gradient(circle at 70% 78%, rgba(150, 230, 255, .95) 0 1cqw, transparent 1.7cqw), radial-gradient(circle at 24% 74%, rgba(255, 240, 150, .95) 0 .9cqw, transparent 1.6cqw),
+  radial-gradient(60% 18% at 50% 84%, rgba(0, 0, 0, .28), transparent 70%), linear-gradient(180deg, rgba(255, 255, 255, .22), transparent 45%, rgba(0, 0, 0, .12));
+  animation: bp-twinkle 1.8s ease-in-out infinite; }
+.bp-card.r-bespoke { animation: bp-glow-rainbow 4s linear infinite; }
+@keyframes bp-glow-rainbow { 0% { filter: drop-shadow(0 0 8px rgba(255, 63, 174, .8)); } 25% { filter: drop-shadow(0 0 8px rgba(255, 190, 46, .8)); } 50% { filter: drop-shadow(0 0 8px rgba(63, 208, 111, .8)); }
+  75% { filter: drop-shadow(0 0 8px rgba(53, 194, 255, .8)); } 100% { filter: drop-shadow(0 0 8px rgba(255, 63, 174, .8)); } }
+@media (prefers-reduced-motion: reduce) {
+  .bp-card .bp-art, .bp-card .bp-art::before, .bp-card .bp-art::after, .bp-card.kind-key.r-legendary, .bp-card.r-bespoke { animation: none !important; }
+}
