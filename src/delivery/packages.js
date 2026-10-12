@@ -296,8 +296,12 @@ export const Packages = (() => {
   const deliver = (p, car) => {
     Progress.count('packagesLanded'); // (a milestone counter: see milestones.js)
     const boosted = Player.bigSplash > 0, B = CONFIG.bigSplash; // (Big Splash: harder hits)
+    // DELIVERY (package efficacy, the car's ECU's: Player.delivery, 1 at its max ECU, less below): it scales what a
+    // package is FOR, an Evil flaming package's damage (and so its spin-out and the driver's anger) and a Good gift's
+    // standing gain; not a gift's scratch, the moods it sets, the busts, Big Splash's reach or the pelting
+    const efficacy = Player.delivery;
     if (p.kind === 'fire') { // an Evil player's package: real damage, and it makes enemies
-      const damage = boosted ? B.fireDamage : CONFIG.evilPackageDamage;
+      const damage = (boosted ? B.fireDamage : CONFIG.evilPackageDamage) * efficacy;
       car.health -= damage;
       car.mood = Math.max(-1, car.mood - damage * CONFIG.moodPerDamage);
       maybeSpinOut(car, damage, CONFIG.packageSpinScale);
@@ -333,7 +337,7 @@ export const Packages = (() => {
       car.showMood = true;
     } else {
       car.mood = Math.min(1, car.mood + CONFIG.packageMoodBoost);
-      Social.gift(cop(car)); // (a good deed: the player's standing goes up, the more for a police car)
+      Social.gift(cop(car), efficacy); // (a good deed: the player's standing goes up, the more for a police car)
     }
     // (the driver's reaction, unless the package has destroyed the car outright: a spin-out or a
     // critical hit still gets one)

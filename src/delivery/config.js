@@ -56,7 +56,8 @@ export const CONFIG = {
   },
 
   // shoulder policing
-  dangerTime: 3,           // s of shoulder driving allowed before the police step in
+  dangerTime: 3,           // s of shoulder driving allowed before the police step in (at a car's max ECU: its COOL, a
+  coolFloor: 0.6,          // share of this, is lower at a lower ECU, never below this share: Social.dangerTime, ecu.js)
   dangerCooldown: 0.75,    // s of allowance regained per second back in the lanes
   dangerBeepSlow: 0.45,    // s between the meter's beeps on first touching the shoulder...
   dangerBeepFast: 0.06,    // ...and just before the bust (the beeps speed up in between)

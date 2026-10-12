@@ -44,7 +44,8 @@ export const rarityOf = (car) => {
 function safe(fn, fallback) { try { const v = fn(); return v === undefined || v === null || Number.isNaN(v) ? fallback : v; } catch { return fallback; } }
 const blueprintCar = (car) => safe(() => Ecu.isBlueprint(car), !!car.evergreen);
 const perEcu = (car) => safe(() => Ecu.x?.(car) ?? Ecu.perEcu?.(car), 5);
-const figures = (car) => ({ maxSpeed: car.maxSpeed, accel: car.accel, health: car.health, respawn: CONFIG.respawnTime });
+const figures = (car) => ({ maxSpeed: car.maxSpeed, accel: car.accel, health: car.health, respawn: CONFIG.respawnTime,
+  agility: car.agility ?? 1, delivery: car.delivery ?? 1, cool: car.cool ?? 1, crossing: car.crossing ?? CONFIG.railCrossing.usual, weight: car.mass ?? 1 });
 const statsAt = (car, level) => {
   const s = safe(() => Ecu.stats(car, level), null);
   return s ? { ...figures(car), ...s } : figures(car);
@@ -119,9 +120,15 @@ export const carCard = (car, evil = false) => {
 // the best figures on the floor, for the stat bars (by a car's MAXED figures, as the cars stand now)
 export const floorBest = () => {
   const cards = showroomCars().map(car => statsAt(car, safe(() => Ecu.max(car), 1)));
-  return { maxSpeed: Math.max(...cards.map(s => s.maxSpeed)), accel: Math.max(...cards.map(s => s.accel)), health: Math.max(...cards.map(s => s.health)),
+  const most = (key) => Math.max(...cards.map(s => s[key] ?? 0));
+  return { maxSpeed: most('maxSpeed'), accel: most('accel'), health: most('health'),
     respawnBest: Math.min(...cards.map(s => s.respawn)), respawnWorst: Math.max(...cards.map(s => s.respawn)) };
 };
+// the ratio stats (Agility, Delivery, Cool, Crossing, Weight: CHECKLIST item 126) are SHOWN as whole numbers on a 0-100
+// scale, never as 0.X / 1.X (the owner, 12-Oct): shown = round(ratio x STAT_SCALE), held to 0..100, so 1.0 (today's
+// usual car) shows as 50. Change STAT_SCALE for another baseline. Only the showing: the game keeps the ratios
+export const STAT_SCALE = 50;
+export const statShown = (ratio) => Math.max(0, Math.min(100, Math.round((ratio ?? 0) * STAT_SCALE)));
 
 // ---- the side: Good or Evil, picked in the showroom (its header and its detail share the one choice) ---------------
 // It is the livery the cars are shown in, the side whose car rule marks the cards ("Not on this level"), and the side
