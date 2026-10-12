@@ -35,6 +35,7 @@ import { showroomCars, carCard, floorBest, statShown, RARITIES, CAR_LOT, sideNam
   FILTER_GROUPS, SORTS, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn, overlayOf, cardTip } from '../showroomData.js';
 import { CAR, carInUse, setViewSide, STAR_COLOURS } from '../cars.js';
 import { Progress } from '../progress.js';
+import { ShopScreen } from './shop.js'; // (the Shop, reached from the header)
 import { Game } from '../game.js';
 import { Nav } from '../nav.js';
 import { richTiers, tierStarsNode } from '../tiers.js';
@@ -152,7 +153,7 @@ const build = () => {
   sortSel.addEventListener('change', () => { filter.sort = sortSel.value; applyFilter(); });
   const lot = lotButton('sr-lot');
   top.append(backBtn, make('div', 'sr-title', make('h1', '', 'Showroom'), make('p', '', 'Pick your car')), countEl, bankEl, sideSwitch('sr-side-top'),
-    make('div', 'sr-tools', seg, filterBtn, sortSel), lot);
+    make('div', 'sr-tools', seg, filterBtn, sortSel), shopButton('sr-shop'), lot);
 
   row = make('div', 'sr-row');
   row.style.setProperty('--sr-cols', String(PHONE_COLUMNS)); // (the phone's columns: showroom-phone.css)
@@ -214,6 +215,13 @@ const build = () => {
   watcher = window.IntersectionObserver ? new IntersectionObserver((entries) => {
     for (const entry of entries) if (entry.isIntersecting) { const car = carOf.get(entry.target); if (car) want(entry.target, car); }
   }, { root: null, rootMargin: '300px' }) : null;
+};
+// the Shop, reachable from here (the owner, 12-Oct): it opens over the showroom and its Back comes back to it
+const shopButton = (className) => {
+  const shop = make('button', className, make('span', 'sr-shop-gem'), make('span', 'sr-shop-word', 'Shop'));
+  shop.title = 'The Shop: card packs';
+  shop.addEventListener('click', (e) => { e.stopPropagation(); ShopScreen.open(); });
+  return shop;
 };
 const lotButton = (className) => {
   const lot = make('button', className, make('span', 'sr-lot-sign', 'Crazey Jim’s'), make('small', '', 'Used Cars · buy cars'));
@@ -441,7 +449,7 @@ const showDetail = () => {
   backBtn.addEventListener('click', () => closeFull());
   const at = list.indexOf(card);
   const bank = make('div', 'sr-bank', make('small', '', 'Bank'), money(Progress.data.money));
-  const ftop = make('div', 'sr-ftop', backBtn, make('div', 'sr-fpos', make('small', '', 'Showroom'), make('b', '', (at + 1) + ' / ' + list.length)), bank, lotButton('sr-lot sr-lot-full'));
+  const ftop = make('div', 'sr-ftop', backBtn, make('div', 'sr-fpos', make('small', '', 'Showroom'), make('b', '', (at + 1) + ' / ' + list.length)), bank, shopButton('sr-shop sr-shop-full'), lotButton('sr-lot sr-lot-full'));
   // the car on its stage, the round arrows at its sides
   const arrow = (dir) => {
     const b = make('button', 'sr-farrow ' + (dir < 0 ? 'prev' : 'next'), dir < 0 ? '‹' : '›');
