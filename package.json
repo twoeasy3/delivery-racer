@@ -1,7 +1,7 @@
 {
   "name": "delivery-racer",
   "private": true,
-  "version": "1.1.46",
+  "version": "1.1.47",
   "type": "module",
   "description": "Delivery Racer: a lane-based 3D delivery racer (three.js, Vite), deployed as a static-assets Cloudflare Worker.",
   "scripts": {

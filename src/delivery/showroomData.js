@@ -52,14 +52,13 @@ const statsAt = (car, level) => {
   return s ? { ...figures(car), ...s } : figures(car);
 };
 
-// every car on the showroom's floor, in its order: the tiers (each tier's gold cars, then its Blue Star ones, cheapest
-// first; a filler car in its tier), the amphibious ones, the event cars, the earned 6-star ones (not those off), and a
-// secret one owned (the City Bus)
-const rank = (car) => car.earned ? 80 : EVENT_CARS.includes(car) || BESPOKE_CARS.includes(car) ? 70 : Object.values(SECRET_CARS).includes(car) ? 90
-  : car.amphibious ? 50 + car.tier : (car.tier || 40) + (car.blue ? 5 : 0);
+// every car on the showroom's floor, in its order (not those earned cars that are off; a secret one owned, the City Bus, last)
+// the floor's order (the owner, 12-Oct: "the tier sort ... should just mix all"): by the number of STARS, whatever their colour (gold,
+// blue, sea green and magenta cars sit together, 1 star to 6), the cars with no stars (the Key cars) after them, a secret one last
+const rank = (car) => Object.values(SECRET_CARS).includes(car) ? 90 : car.tier >= 1 ? car.tier : 7;
 export const showroomCars = () => [...CARS, ...(FILLER_CARS || []), ...EVENT_CARS, ...BESPOKE_CARS, ...EARNED_CARS.filter(car => !car.off),
   ...Object.values(SECRET_CARS).filter(car => Progress.owns(car.id))]
-  .sort((a, b) => rank(a) - rank(b) || (a.price || 0) - (b.price || 0));
+  .sort((a, b) => rank(a) - rank(b) || (a.price || 0) - (b.price || 0) || a.name.localeCompare(b.name));
 
 // how the tiers stand toward a car of a tier not open yet (render/garage.js's silhouette words)
 const tierWhy = (car) => {
