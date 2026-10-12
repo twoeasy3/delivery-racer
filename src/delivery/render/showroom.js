@@ -354,7 +354,7 @@ const fill = (fresh = true) => {
   watcher?.disconnect();
   cards = list.map((data) => {
     // the picture (its still on .sr-img) and, for a card that cannot be driven, its overlay over it (render/lockoverlay.js)
-    const img = make('span', 'sr-img' + (data.hidden ? ' silhouette' : ''));
+    const img = make('span', 'sr-img' + (data.dark ? ' silhouette' : ''));
     const ov = overlayOf(data);
     const pic = make('span', 'sr-pic', img, overlayNode(ov));
     const badge = data.car === inUse || data.id === inUse.id ? make('span', 'sr-badge inuse', 'In use')
@@ -411,7 +411,7 @@ const showDetail = () => {
   const inUse = carInUse(), using = card.id === inUse.id, evil = evilNow();
   // (the live car: dark for a car of a tier not open yet; greyed for one locked that cannot be bought; in its colours
   // for one at the car lot, as one that can be driven)
-  const pic = make('div', 'sr-dpic' + (card.hidden ? ' silhouette' : '') + (card.state === 'locked' && card.forSale && !card.hidden ? ' forsale' : ''));
+  const pic = make('div', 'sr-dpic' + (card.dark ? ' silhouette' : '') + (card.state === 'locked' && card.forSale && !card.hidden ? ' forsale' : ''));
   pic.title = 'Drag to turn it';
   const s = card.stats, m = card.maxStats;
   const share = { speed: v => v / best.maxSpeed, accel: v => v / best.accel, health: v => v / best.health,
@@ -463,7 +463,7 @@ const showDetail = () => {
   // (a car that cannot be driven: its card's overlay as a pill under the car, the same kind, colour and icon)
   const stage = make('div', 'sr-stage', pic, overlayNode(overlayOf(card), { inline: true }), arrow(-1), arrow(1));
   // its card's picture (the cached still) in the panel
-  const cardPic = make('span', 'sr-dcard-pic' + (card.hidden ? ' silhouette' : ''));
+  const cardPic = make('span', 'sr-dcard-pic' + (card.dark ? ' silhouette' : ''));
   const dcard = make('div', 'sr-dcard', cardPic);
   dcard.style.setProperty('--rar', RARITIES[card.rarity].colour);
   detail.replaceChildren(
@@ -487,7 +487,7 @@ const showDetail = () => {
   slide = 0;
   requestAnimationFrame(() => { if (full && cardPic.isConnected) stillCar(cardPic, card.car, evilNow()); });
   // the car itself, live (a drag turns it; it lands: render/carbounce.js); with no WebGL, its still
-  if (!ShowroomView.show(pic, card.car, { evil, dark: card.hidden })) requestAnimationFrame(() => { if (Showroom.isOpen) stillCar(pic, card.car, evilNow()); });
+  if (!ShowroomView.show(pic, card.car, { evil, dark: card.dark })) requestAnimationFrame(() => { if (Showroom.isOpen) stillCar(pic, card.car, evilNow()); });
 };
 const pick = (id) => {
   if (id !== picked) blip('menuMove');
