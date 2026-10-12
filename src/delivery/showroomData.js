@@ -45,7 +45,7 @@ function safe(fn, fallback) { try { const v = fn(); return v === undefined || v 
 const blueprintCar = (car) => safe(() => Ecu.isBlueprint(car), !!car.evergreen);
 const perEcu = (car) => safe(() => Ecu.x?.(car) ?? Ecu.perEcu?.(car), 5);
 const figures = (car) => ({ maxSpeed: car.maxSpeed, accel: car.accel, health: car.health, respawn: CONFIG.respawnTime,
-  agility: car.agility ?? 1, delivery: car.delivery ?? 1, cool: car.cool ?? 1, crossing: car.crossing ?? CONFIG.railCrossing.usual, weight: car.mass ?? 1 });
+  agility: car.agility ?? 1, delivery: car.delivery ?? 1, composure: car.composure ?? 1, crossing: car.crossing ?? CONFIG.railCrossing.usual, weight: car.mass ?? 1 });
 const statsAt = (car, level) => {
   const s = safe(() => Ecu.stats(car, level), null);
   return s ? { ...figures(car), ...s } : figures(car);
@@ -124,7 +124,7 @@ export const floorBest = () => {
   return { maxSpeed: most('maxSpeed'), accel: most('accel'), health: most('health'),
     respawnBest: Math.min(...cards.map(s => s.respawn)), respawnWorst: Math.max(...cards.map(s => s.respawn)) };
 };
-// the ratio stats (Agility, Delivery, Cool, Crossing, Weight: CHECKLIST item 126) are SHOWN as whole numbers on a 0-100
+// the ratio stats (Agility, Delivery, Composure, Crossing, Weight: CHECKLIST item 126) are SHOWN as whole numbers on a 0-100
 // scale, never as 0.X / 1.X (the owner, 12-Oct): shown = round(ratio x STAT_SCALE), held to 0..100, so 1.0 (today's
 // usual car) shows as 50. Change STAT_SCALE for another baseline. Only the showing: the game keeps the ratios
 export const STAT_SCALE = 50;

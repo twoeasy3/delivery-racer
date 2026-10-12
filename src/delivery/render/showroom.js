@@ -390,7 +390,7 @@ const showDetail = () => {
       stat('Health', s.health, m.health, v => String(Math.round(v)), share.health),
       stat('Agility', s.agility, m.agility, score, scoreShare, 'How quickly it steers'),
       stat('Delivery', s.delivery, m.delivery, score, scoreShare, 'Package efficacy: a gift\'s standing, a flaming package\'s damage'),
-      stat('Cool', s.cool, m.cool, score, scoreShare, 'How long it can sit on the shoulder before the police step in'),
+      stat('Composure', s.composure, m.composure, score, scoreShare, 'How long it can sit on the shoulder before the police step in'),
       stat('Crossing', s.crossing, m.crossing, score, scoreShare, 'How well it takes rails, fords, mud and the tide'),
       stat('Weight', s.weight, s.weight, score, scoreShare, 'How heavy it is in a shove (the same at every ECU)'),
       stat('Respawn', s.respawn, m.respawn, v => (Math.round(v * 10) / 10).toFixed(1) + ' s', share.respawn));

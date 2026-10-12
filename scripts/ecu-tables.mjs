@@ -2,14 +2,14 @@
 // EQUAL STEPS from its maxed (current, cars.js) figures: ECU k of N = max * (1 - f * (N - k)), f = Ecu STEPS (0.03 per ECU
 // for a car lot car, 0.06 for a blueprint car or an event car), for maxSpeed (to 0.1 m/s), accel (to 0.1) and health (whole);
 // respawn 5.5 s at ECU1 and 0.5 s less for each ECU above it. The second set (CHECKLIST item 126; ecu.js NEW_STATS):
-// agility, delivery, cool and crossing by the same equal steps from the car's maxed figure (to 0.001), weight (its `mass`)
+// agility, delivery, composure and crossing by the same equal steps from the car's maxed figure (to 0.001), weight (its `mass`)
 // the same at every ECU. N = the ladder's max ECU (Ecu.ladder). x = blueprints per
 // ECU step (Ecu X_DEFAULT). The cars: the garage's (CARS, the amphibious ones and the Tank too), the evergreen blueprint
 // cars (FILLER_CARS), the event cars, the Bespoke key cars (BESPOKE_CARS) and the earned (special) cars (ECU1 only). Once written THE FILE IS THE TRUTH: edit
 // it by hand; this only writes it again when told.
 //   node scripts/ecu-tables.mjs             what it would write, against the file (nothing written)
 //   node scripts/ecu-tables.mjs --missing   add only the cars the file has no entry for (hand edits kept)
-//   node scripts/ecu-tables.mjs --stats     add the second set's fields (agility, delivery, cool, crossing, weight) to
+//   node scripts/ecu-tables.mjs --stats     add the second set's fields (agility, delivery, composure, crossing, weight) to
 //                                           every ECU of every car already in the file that lacks them, N being the
 //                                           file's own ECU count; fields already there are kept (hand edits kept)
 //   node scripts/ecu-tables.mjs --delivery  write every ECU's `delivery` anew from ecu.js DELIVERY (the maxed figure) by
@@ -79,7 +79,7 @@ try {
   console.log(cars.length + ' cars; ' + Object.keys(now).length + ' in the file; ' + differ.length + ' differ from the equal steps (or are missing): ' + (differ.join(', ') || 'none'));
   for (const car of cars) console.log('  ' + car.id.padEnd(14) + ' ' + Ecu.kind(car).padEnd(9) + ' max ECU ' + fresh[car.id].ecus.length + '  ' +
     fresh[car.id].ecus.map((e, i) => 'ECU' + (i + 1) + ' ' + e.maxSpeed + '/' + e.accel + '/' + e.health + '/' + e.respawn + 's' +
-      ' ag ' + e.agility + ' dl ' + e.delivery + ' cool ' + e.cool + ' x ' + e.crossing + ' wt ' + e.weight).join('  '));
+      ' ag ' + e.agility + ' dl ' + e.delivery + ' composure ' + e.composure + ' x ' + e.crossing + ' wt ' + e.weight).join('  '));
   if (mode !== 'dry') {
     // (one car a line, its ECUs inside it: easy to edit by hand)
     const text = '{\n' + Object.entries(out).map(([id, e]) => '  ' + JSON.stringify(id) + ': { "x": ' + e.x + ', "ecus": [' +

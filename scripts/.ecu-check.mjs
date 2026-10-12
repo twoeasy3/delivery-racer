@@ -4,8 +4,8 @@
 // car it owns at its max ECU, a blueprint car it does not own locked), the figures a run drives with and its respawn
 // time, races and Car Swap untouched, and a replay recorded at an ECU played back identically (at that ECU, whatever the
 // save says by then), an old one (no ECU in its header) at the max. The second set (CHECKLIST item 126): agility, delivery,
-// cool and crossing by the same equal steps (a higher ECU never worse; the max = today's figures), weight flat; the
-// player's car takes them at its ECU (Player.agility / crossing / mass / delivery / cool, Social.dangerTime); a flaming
+// composure and crossing by the same equal steps (a higher ECU never worse; the max = today's figures), weight flat; the
+// player's car takes them at its ECU (Player.agility / crossing / mass / delivery / composure, Social.dangerTime); a flaming
 // package's damage and a gift's standing scale with delivery; a shoulder run busts sooner at ECU1 than at the max.
 //   node scripts/.ecu-check.mjs
 import { boot } from './delivery-headless.mjs';
@@ -60,8 +60,8 @@ try {
   check(Ecu.stats(car('sleeper'), 1).maxSpeed < Ecu.stats(car('sleeper'), 5).maxSpeed && Ecu.stats(car('bubble'), 1).maxSpeed === car('bubble').maxSpeed,
     'a sleeper wagon ECU1 ' + Ecu.stats(car('sleeper'), 1).maxSpeed + ' m/s, ECU5 ' + Ecu.stats(car('sleeper'), 5).maxSpeed + '; a Bubble Car (ECU1 only) at its figures');
 
-  // ---- the second set: agility, delivery, cool, crossing (by the ECU), weight (flat)
-  const today = { agility: c => c.agility ?? 1, delivery: c => c.delivery ?? DELIVERY[c.id] ?? 1, cool: () => 1, crossing: c => c.crossing ?? C.railCrossing.usual, weight: c => c.mass ?? 1 };
+  // ---- the second set: agility, delivery, composure, crossing (by the ECU), weight (flat)
+  const today = { agility: c => c.agility ?? 1, delivery: c => c.delivery ?? DELIVERY[c.id] ?? 1, composure: () => 1, crossing: c => c.crossing ?? C.railCrossing.usual, weight: c => c.mass ?? 1 };
   const bad2 = [];
   for (const c of roster) {
     const list = ECUS[c.id].ecus, n = list.length, f = CARS.includes(c) ? STEPS.lot : STEPS.blueprint;
@@ -74,19 +74,19 @@ try {
       });
     }
   }
-  check(!bad2.length && Object.keys(NEW_STATS).join() === 'agility,delivery,cool,crossing,weight' && !NEW_STATS.weight.scales,
-    'the second set: agility, delivery, cool, crossing by equal steps, each ECU above the last, the max = the car\'s (agility, crossing, its DELIVERY figure, cool 1); weight (mass) the same at every ECU' +
+  check(!bad2.length && Object.keys(NEW_STATS).join() === 'agility,delivery,composure,crossing,weight' && !NEW_STATS.weight.scales,
+    'the second set: agility, delivery, composure, crossing by equal steps, each ECU above the last, the max = the car\'s (agility, crossing, its DELIVERY figure, composure 1); weight (mass) the same at every ECU' +
     (bad2.length ? ': NOT ' + bad2.slice(0, 8).join(', ') : ''));
   const noDelivery = roster.filter(c => c.delivery == null && DELIVERY[c.id] == null);
   const deliveries = roster.map(c => NEW_STATS.delivery.of(c));
   check(!noDelivery.length && Math.min(...deliveries) >= 0.6 && Math.max(...deliveries) <= 1.6 && DELIVERY.postvan > DELIVERY.sport && DELIVERY.milkfloat > DELIVERY['earned-f1'],
     'every roster car has a delivery figure of its own (ecu.js DELIVERY), 0.6 to 1.6 (vans best, racers worst)' + (noDelivery.length ? ': NOT ' + noDelivery.map(c => c.id).join(', ') : ''));
   const mid1 = Ecu.stats(car('midnight'), 1), mid5 = Ecu.stats(car('midnight'), 5);
-  console.log('        (the Midnight Coupe, a 5-ECU blueprint car: ECU1 agility ' + mid1.agility + ' delivery ' + mid1.delivery + ' cool ' + mid1.cool + ' crossing ' + mid1.crossing + ' weight ' + mid1.weight +
-    '; ECU5 ' + mid5.agility + ' / ' + mid5.delivery + ' / ' + mid5.cool + ' / ' + mid5.crossing + ' / ' + mid5.weight + ')');
+  console.log('        (the Midnight Coupe, a 5-ECU blueprint car: ECU1 agility ' + mid1.agility + ' delivery ' + mid1.delivery + ' composure ' + mid1.composure + ' crossing ' + mid1.crossing + ' weight ' + mid1.weight +
+    '; ECU5 ' + mid5.agility + ' / ' + mid5.delivery + ' / ' + mid5.composure + ' / ' + mid5.crossing + ' / ' + mid5.weight + ')');
   const bus = car('bus');
-  check(bus && Ecu.stats(bus).agility === (bus.agility ?? 1) && Ecu.stats(bus).weight === (bus.mass ?? 1) && Ecu.stats(bus).delivery === 1 && Ecu.stats(bus).cool === 1,
-    'a car with no ECU (the City Bus): its own agility and weight, delivery and cool 1');
+  check(bus && Ecu.stats(bus).agility === (bus.agility ?? 1) && Ecu.stats(bus).weight === (bus.mass ?? 1) && Ecu.stats(bus).delivery === 1 && Ecu.stats(bus).composure === 1,
+    'a car with no ECU (the City Bus): its own agility and weight, delivery and composure 1');
 
   // ---- the unlock rules
   Progress.reset();
@@ -187,7 +187,7 @@ try {
   g.cars.returnCar();
   Game.toMenu();
 
-  // ---- the second set, driven: the player's car takes them at its ECU; delivery scales a package, cool the shoulder
+  // ---- the second set, driven: the player's car takes them at its ECU; delivery scales a package, composure the shoulder
   Progress.reset();
   Progress.noSave = true;
   const mid = car('midnight');
@@ -203,9 +203,9 @@ try {
     Game.start();
     g.drive(1, 0);
     g.run(4);
-    const got = { ecu: carStats().ecu, agility: Player.agility, crossing: Player.crossing, mass: Player.mass, delivery: Player.delivery, cool: Player.cool, fuse: Social.dangerTime };
-    const same = got.ecu === ecu && got.agility === want.agility && got.crossing === want.crossing && got.mass === mid.mass && got.delivery === want.delivery && got.cool === want.cool &&
-      Math.abs(got.fuse - C.dangerTime * Math.max(C.coolFloor, want.cool)) < 1e-9;
+    const got = { ecu: carStats().ecu, agility: Player.agility, crossing: Player.crossing, mass: Player.mass, delivery: Player.delivery, composure: Player.composure, fuse: Social.dangerTime };
+    const same = got.ecu === ecu && got.agility === want.agility && got.crossing === want.crossing && got.mass === mid.mass && got.delivery === want.delivery && got.composure === want.composure &&
+      Math.abs(got.fuse - C.dangerTime * Math.max(C.composureFloor, want.composure)) < 1e-9;
     // an Evil flaming package landing on a car (not a police car): its damage
     const hit = (kind) => {
       const victim = Traffic.cars.find(v => v.active && v.kind !== 'police' && v.kind !== 'interceptor' && !v.emergency && !v.junction && !v.courier && !(v.arrest >= 0) && !v.toad && v.health > 40 && (kind === 'gift' ? !v.evil : true));
@@ -243,14 +243,14 @@ try {
   const ok1 = measure(1);
   Ecu.addBlueprints('midnight', 20); // (ECU5, its max)
   const ok5 = measure(5);
-  check(ok1 && ok5, 'the Midnight Coupe driven at ECU1 and ECU5: Player.agility, crossing, delivery, cool, Social.dangerTime are its ECU\'s, its mass the same (ECU1 agility ' +
+  check(ok1 && ok5, 'the Midnight Coupe driven at ECU1 and ECU5: Player.agility, crossing, delivery, composure, Social.dangerTime are its ECU\'s, its mass the same (ECU1 agility ' +
     at[1].agility + ', crossing ' + at[1].crossing + ', delivery ' + at[1].delivery + ', shoulder ' + at[1].fuse.toFixed(2) + ' s; ECU5 ' + at[5].agility + ', ' + at[5].crossing + ', ' + at[5].delivery + ', ' + at[5].fuse.toFixed(2) + ' s)');
   check(at[1].fire != null && at[5].fire != null && Math.abs(at[5].fire - C.evilPackageDamage * DELIVERY.midnight) < 1e-9 && Math.abs(at[1].fire - C.evilPackageDamage * at[1].delivery) < 1e-9,
     'delivery scales an Evil flaming package\'s damage: ECU1 ' + at[1].fire?.toFixed(2) + ', ECU5 ' + at[5].fire?.toFixed(2) + ' (x its delivery ' + at[1].delivery + ' / ' + at[5].delivery + ' of ' + C.evilPackageDamage + ')');
   check(at[1].gift != null && at[5].gift != null && Math.abs(at[5].gift - C.social.gift * DELIVERY.midnight) < 1e-9 && Math.abs(at[1].gift - C.social.gift * at[1].delivery) < 1e-9,
     '...and a Good gift\'s standing: ECU1 +' + at[1].gift?.toFixed(2) + '%, ECU5 +' + at[5].gift?.toFixed(2) + '% (x its delivery, of ' + C.social.gift + ')');
   check(at[1].bust > 0 && at[5].bust > 0 && at[1].bust < at[5].bust && Math.abs(at[5].bust - C.dangerTime) < 0.1 && Math.abs(at[1].bust - at[1].fuse) < 0.1,
-    'cool: held on the shoulder, its meter empty (the bust) after ' + at[1].bust?.toFixed(2) + ' s at ECU1, ' + at[5].bust?.toFixed(2) + ' s at ECU5 (today ' + C.dangerTime + ' s)');
+    'composure: held on the shoulder, its meter empty (the bust) after ' + at[1].bust?.toFixed(2) + ' s at ECU1, ' + at[5].bust?.toFixed(2) + ' s at ECU5 (today ' + C.dangerTime + ' s)');
 
   // ---- replays: recorded at an ECU, played back identically at it (whatever the save says by then)
   Progress.reset();
@@ -267,7 +267,7 @@ try {
   Game.evil = false;
   Player.testGhost = false;
   Game.start();
-  const ecuRun = carStats().ecu, healthRun = Player.maxHealth, secondRun = [Player.agility, Player.crossing, Player.mass, Player.delivery, Player.cool, Social.dangerTime].join(' ');
+  const ecuRun = carStats().ecu, healthRun = Player.maxHealth, secondRun = [Player.agility, Player.crossing, Player.mass, Player.delivery, Player.composure, Social.dangerTime].join(' ');
   for (let i = 0; i < 30 / STEP && Game.state === 'playing'; i++) {
     live = { throttle: 1, steer: Math.sin(i / 90) > 0.8 ? 0.5 : Math.sin(i / 90) < -0.8 ? -0.5 : 0 };
     Game.update(STEP);
@@ -282,7 +282,7 @@ try {
   const play = (r) => {
     live = { throttle: -1, steer: 1 }; // (the player's own hands, not heard while it plays)
     const ok = Replay.play(r);
-    const health = Player.maxHealth, second = [Player.agility, Player.crossing, Player.mass, Player.delivery, Player.cool, Social.dangerTime].join(' ');
+    const health = Player.maxHealth, second = [Player.agility, Player.crossing, Player.mass, Player.delivery, Player.composure, Social.dangerTime].join(' ');
     for (let i = 0; i < steps && Game.state === 'playing' && Replay.playing && !Replay.playing.over; i++) { Game.update(STEP); g.FxQueue.length = 0; }
     const out = where(), drifted = Replay.playing?.drifted;
     Game.toMenu();
@@ -291,7 +291,7 @@ try {
   };
   const back = play(rec);
   check(back.ok && back.out === recorded && !back.drifted && back.health === healthRun, 'played back at ECU1, identically: ' + back.out + (back.out === recorded ? '' : ' (recorded ' + recorded + ')'));
-  check(back.second === secondRun && Ecu.stats(car('hotrod'), 1).agility < Ecu.stats(car('hotrod'), 3).agility, '...with the second set at ECU1 too (agility, crossing, mass, delivery, cool, shoulder s: ' + back.second + ')');
+  check(back.second === secondRun && Ecu.stats(car('hotrod'), 1).agility < Ecu.stats(car('hotrod'), 3).agility, '...with the second set at ECU1 too (agility, crossing, mass, delivery, composure, shoulder s: ' + back.second + ')');
   check(Ecu.pinned === null && carStats(car('hotrod')).ecu === 3, '...and after it, the car is at its own ECU again (3)');
   const oldRec = JSON.parse(JSON.stringify(rec));
   delete oldRec.header.ecu;

@@ -8,11 +8,11 @@
 //                  evergreen filler cars (cars.js FILLER_CARS).
 // A car's max ECU follows the star ladder (LADDER below); the special (earned) cars and the 1-gold cars stop at ECU1. Each
 // ECU's figures are SAVED, one entry per ECU, in ecus.json (by car id: { x, ecus: [{ maxSpeed, accel, health, respawn,
-// agility, delivery, cool, crossing, weight }] }, ECU1 first), written once by scripts/ecu-tables.mjs and the truth from
+// agility, delivery, composure, crossing, weight }] }, ECU1 first), written once by scripts/ecu-tables.mjs and the truth from
 // then on (edit it by hand). The second set (the owner, 12-Oct, CHECKLIST item 126; NEW_STATS below): agility (cars.js
 // `agility`, steering), delivery (package efficacy: a Good gift's standing gain and an Evil flaming package's damage are
-// multiplied by it: packages.js; each car's own, DELIVERY below), cool (the shoulder meter's fuse: Social.dangerTime is multiplied by it, held to
-// CONFIG.coolFloor), crossing (cars.js `crossing`: rails, fords, mud, the tide) scale with the ECU like the first set;
+// multiplied by it: packages.js; each car's own, DELIVERY below), composure (the shoulder meter's fuse: Social.dangerTime is multiplied by it, held to
+// CONFIG.composureFloor), crossing (cars.js `crossing`: rails, fords, mud, the tide) scale with the ECU like the first set;
 // weight (cars.js `mass`) is the same at every ECU. A car with no entry
 // (a car idea, the City Bus, a level's own vehicle, a Super car) has no ECU and drives on its own figures.
 // RACES are a separate game: none of this applies there (drive(): own figures, CONFIG.respawnTime).
@@ -72,7 +72,7 @@ export const DELIVERY = {
 export const NEW_STATS = {
   agility: { of: (car) => car.agility ?? 1, scales: true },
   delivery: { of: (car) => car.delivery ?? DELIVERY[car.id] ?? 1, scales: true },
-  cool: { of: (car) => car.cool ?? 1, scales: true },
+  composure: { of: (car) => car.composure ?? 1, scales: true },
   crossing: { of: (car) => car.crossing ?? CONFIG.railCrossing.usual, scales: true },
   weight: { of: (car) => car.mass ?? 1, scales: false },
 };
@@ -163,7 +163,7 @@ export const Ecu = {
   },
 
   // ---- the figures ----
-  // an ECU's figures: { maxSpeed, accel, health, respawn, agility, delivery, cool, crossing, weight, ecu } (ecu: the level
+  // an ECU's figures: { maxSpeed, accel, health, respawn, agility, delivery, composure, crossing, weight, ecu } (ecu: the level
   // given, held to 1..max; 0 is shown as 1, what it would play at). A car with no table: its own figures,
   // CONFIG.respawnTime, ecu null. (An entry written before the second set: those fields from the car's own, maxed)
   stats(car, level = this.level(car)) {
