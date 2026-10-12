@@ -242,6 +242,9 @@ async function overlays(g, check) {
   const ovCourier = courier && D.overlayOf(courier);
   check(!!courier && ovCourier?.kind === 'unavailable' && /Not available/.test(ovCourier.title) && /at the moment/.test(ovCourier.line), 'the Courier Special (off, earned): "' + ovCourier?.title + ' ' + ovCourier?.line + '"');
   check(D.overlayOf(cometCard)?.kind === 'key', 'a Key car keeps the key overlay, its key obtainable or not');
+  // the Snowcat and the Hot Dog Car: Key cars with no key to be had for now (keyAvailable false): the key overlay, "Not available at the moment"
+  const noKeyCars = ['snocat', 'hotdog'].map(id => D.carCard(g.cars.carById(id), false)), ovNo = noKeyCars.map(c => D.overlayOf(c));
+  check(ovNo.every(o => o?.kind === 'key' && o.title === 'Needs its key' && o.line === 'Not available at the moment'), 'the Snowcat and the Hot Dog Car: Key cars with no key to be had: "' + ovNo.map(o => o?.title + ' / ' + o?.line).join('; ') + '"');
   const say = (ov) => ov ? ov.title + ' / ' + ov.line : '';
   const earned = cards.filter(c => kindOf(c) === 'earned');
   check(earned.length > 0 && earned.every(c => !/\bkey/i.test(say(D.overlayOf(c)) + ' ' + D.cardTip(c))), 'an earned car\'s overlay and tooltip never say key (' + earned.slice(0, 2).map(c => '"' + say(D.overlayOf(c)) + '"').join(', ') + ')');

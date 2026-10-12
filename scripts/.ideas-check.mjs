@@ -21,12 +21,12 @@ try {
   const STORE = 'delivery_racer_progress_backup', cookieNow = () => document.cookie.split(';')[0], inCookie = () => JSON.parse(decodeURIComponent(cookieNow().split('=')[1]));
 
   // ---- what they are: thirty, tierless, free, placeholders, and none of them a garage car
-  check(IDEA_CARS.length === 43, IDEA_CARS.length + ' car ideas (66 built: 26 originals, the second batch of twenty: render/ideaModels2.js, the third of ten: render/ideaModels3.js, and the fourth of ten: render/ideaModels4.js; less the 18 promoted to the roster and the 5 Bespoke key cars)');
+  check(IDEA_CARS.length === 41, IDEA_CARS.length + ' car ideas (66 built: 26 originals, the second batch of twenty: render/ideaModels2.js, the third of ten: render/ideaModels3.js, and the fourth of ten: render/ideaModels4.js; less the 18 promoted to the roster and the 7 Bespoke key cars)');
   // (five that were ideas are the Bespoke key cars now (cars.js BESPOKE_CARS, 12-Oct): in the roster, out of the lot, not in CARS, no price, no tier)
   {
     const { BESPOKE_CARS = [] } = g.cars;
-    check(BESPOKE_CARS.length === 5 && BESPOKE_CARS.every(c => c.bespoke && c.rarity === 'legendary' && !c.idea && !c.tier && c.price === 0 && !IDEA_CARS.some(i => i.id === c.id) && !CARS.includes(c)),
-      'the 5 Bespoke key cars are out of the ideas lot and not in CARS: ' + BESPOKE_CARS.map(c => c.id).join(', '));
+    check(BESPOKE_CARS.length === 7 && BESPOKE_CARS.every(c => c.bespoke && c.rarity === 'legendary' && !c.idea && !c.tier && c.price === 0 && !IDEA_CARS.some(i => i.id === c.id) && !CARS.includes(c)),
+      'the 7 Bespoke key cars are out of the ideas lot and not in CARS: ' + BESPOKE_CARS.map(c => c.id).join(', '));
   }
   // (eighteen that were ideas are evergreen BLUEPRINT cars now (cars.js FILLER_CARS, CHECKLIST item 115): in the roster, out of the lot)
   {

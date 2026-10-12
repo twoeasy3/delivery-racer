@@ -144,13 +144,7 @@ export const IDEA_CARS = [
   { id: 'snailcamper', name: 'Snail Camper', basedOn: 'snail art car (Burning Man)', model: 'snailcamper', color: 0xd88a3a, evilColor: 0x6a3f86,
     hw: 1.0, hl: 2.4, height: 2.75, note: 'The cab is the head, with lamps on its stalks. The camper is the shell, and the stove smokes.',
     maxSpeed: 23, accel: 5, agility: 0.9, crossing: 0.6, health: 200, mass: 2, sound: 'lovebus' },
-  { id: 'hotdog', name: 'Hot Dog Car', basedOn: 'Oscar Mayer Wienermobile', model: 'hotdog', color: 0xd99a4e, evilColor: 0x7a4426,
-    hw: 1.08, hl: 3.4, height: 2.25, note: 'A sausage the length of a van in a bun, with mustard along the top.',
-    maxSpeed: 28, accel: 7, agility: 0.95, crossing: 0.4, health: 200, mass: 2, sound: 'postvan' },
   // (the fourth batch of ten: unusual, retro-future and special-purpose vehicles; models in render/ideaModels4.js)
-  { id: 'snocat', name: 'Snowcat', basedOn: 'Tucker Sno-Cat 443', model: 'snocat', color: 0xe8482a, evilColor: 0x1f4a6a,
-    hw: 1.1, hl: 2.6, height: 2.7, note: 'A glass cab on four pontoons of track, with an exhaust stack and a spotlight. It is in no hurry.',
-    maxSpeed: 24, accel: 7, agility: 0.9, crossing: 1, health: 260, mass: 2.2, sound: 'sixbysix' },
   { id: 'duckwagon', name: 'Duck Lorry', basedOn: 'DUKW amphibious truck', model: 'duckwagon', color: 0x5a6b4a, evilColor: 0x3a3a52,
     hw: 1.2, hl: 4.7, height: 2.0, note: 'A boat with six wheels: a prow, an open cab, a well with canvas bows over it and a propeller at the stern.',
     maxSpeed: 25, accel: 6, agility: 0.9, crossing: 1, health: 330, mass: 2.8, sound: 'sixbysix' },
