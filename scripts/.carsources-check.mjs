@@ -98,7 +98,10 @@ try {
   check(s.noBlueprints && /special car/.test(s.noBlueprints) && s.blueprints.length === 0, 'an earned car (the Hell Rod): ' + s.noBlueprints);
   const par = ofHow(s.keys, 'level')[0];
   check(par && !par.available && /Level not open yet/.test(par.why) && !s.obtainable.key, 'its key: beat the par on ' + par?.where + ', not open yet (' + par?.why + ')');
-  check(/Key: not obtainable right now/.test(sourcesLine(by('hellrod'))) && /No blueprints/.test(sourcesLine(by('hellrod'))), 'nothing to be had now, said plainly: "' + sourcesLine(by('hellrod')) + '"');
+  // (a Garage car has no key: its first way in is Purchase; a Key car's is Key; an earned car's is Earn)
+  const lotWord = (await g.load('carsources.js')).ownWord;
+  check(lotWord(by('hotrod')).label === 'Purchase' && lotWord(by('silvercomet')).label === 'Key' && lotWord(by('hellrod')).label === 'Earn' && !/Key/.test(sourcesLine(by('hotrod'))), 'a Garage car says Purchase (never Key), a Key car Key, an earned car Earn: "' + sourcesLine(by('hotrod')) + '"');
+  check(/Earn: not obtainable right now/.test(sourcesLine(by('hellrod'))) && /No blueprints/.test(sourcesLine(by('hellrod'))), 'nothing to be had now, said plainly: "' + sourcesLine(by('hellrod')) + '"');
   // a 1-gold starter
   s = sourcesOf(by('commuter'));
   check(s.keyOwned && /1-gold starter/.test(s.noBlueprints || ''), 'a 1-gold starter: owned, ' + s.noBlueprints);

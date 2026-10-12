@@ -127,6 +127,11 @@ const noBlueprintsWhy = (car) => {
   return null;
 };
 
+// what getting the car itself is called (the owner, 12-Oct: a Garage car has no key): a Garage car is PURCHASED (Crazey Jim's), an earned
+// car EARNED, and only a Key car (Bespoke, event) has a KEY
+export const ownWord = (car) => car.bespoke || car.event ? { label: 'Key', have: 'You have its key', none: 'No way to get its key', again: 'You have its key already', owned: 'owned' }
+  : car.earned ? { label: 'Earn', have: 'You have earned it', none: 'No way to earn it', again: 'You have earned it already', owned: 'earned' }
+    : { label: 'Purchase', have: 'You own it', none: 'No way to buy it', again: 'You own it already', owned: 'owned' };
 // the key sources of a car (a key car): the car lot, a level's par, an event's prize, a Bespoke key card in packs
 const keySources = (car, t) => {
   const out = [];
@@ -167,7 +172,7 @@ export const sourcesOf = (car, { t = Events.now() } = {}) => {
   const keyOwned = kind === 'key' && Ecu.hasKey(car);
   const keyless = kind === 'blueprint' ? 'A blueprint car: no key, its first ' + Ecu.x(car) + ' blueprints unlock it' : kind ? null : 'Not a car of the roster';
   let keys = kind === 'key' ? keySources(car, t) : [];
-  if (keyOwned) keys = keys.map(s => ({ ...s, available: false, why: 'You have its key already' }));
+  if (keyOwned) keys = keys.map(s => ({ ...s, available: false, why: ownWord(car).again }));
   const noBlueprints = noBlueprintsWhy(car);
   let blueprints = noBlueprints ? [] : packSources(car, 'blueprints', t);
   const maxed = !noBlueprints && Ecu.reached(car) >= Ecu.max(car);
@@ -181,7 +186,7 @@ export const sourcesLine = (car, opts) => {
   const s = sourcesOf(car, opts);
   if (!s) return '';
   const list = (items) => [...new Set(items.filter(x => x.available).map(x => x.where))].join(', ');
-  const key = s.keyOwned ? 'Key: owned' : s.keyless ? '' : s.obtainable.key ? 'Key: ' + list(s.keys) : 'Key: not obtainable right now';
+  const w = ownWord(car).label, key = s.keyOwned ? w + ': owned' : s.keyless ? '' : s.obtainable.key ? w + ': ' + list(s.keys) : w + ': not obtainable right now';
   const bp = s.noBlueprints ? 'No blueprints' : s.maxed ? 'Blueprints: maxed' : s.obtainable.blueprints ? 'Blueprints: ' + list(s.blueprints) : 'Blueprints: not obtainable right now';
   return [key, bp].filter(Boolean).join(' · ');
 };
