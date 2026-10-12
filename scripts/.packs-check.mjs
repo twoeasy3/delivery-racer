@@ -569,8 +569,8 @@ try {
       'the 10-pack\'s words (the Uncommon rule made true by the Epic one, not said twice): "' + P.describePack('ten') + '"; its bundle "' + P.bundleName(Packs.data.bundles['ten-3']) + '"');
     // the free Daily pack draws as its rules say: 5 evergreen cards, an Uncommon or better, no keys, no featured
     let dailyOk = 0;
-    for (let i = 0; i < 2000; i++) { const cards = draw('daily', opts(44e6 + i)); if (cards.length === 5 && cards.every(c => !c.key && !c.featured && evergreenIds.has(c.car)) && cards.some(c => rank(c.rarity) >= rank('uncommon'))) dailyOk++; }
-    check(dailyOk === 2000, 'the Daily pack: 5 evergreen cards, an Uncommon or better, no keys, no featured (' + dailyOk + ' of 2000)');
+    for (let i = 0; i < 2000; i++) { const cards = draw('daily', opts(44e6 + i)); if (cards.length === 5 && cards.every(c => !c.featured && c.n === 1) && cards.some(c => rank(c.rarity) >= rank('uncommon'))) dailyOk++; }
+    check(dailyOk === 2000, 'the Daily pack is a Standard pack: 5 cards, every stack x1, an Uncommon or better, no featured, and no Epic guarantee (' + dailyOk + ' of 2000)');
   }
   // ---- the sheet's one format for a chance (the owner, 12-Oct): at most two decimals, "<0.01%", "0%" ----
   {

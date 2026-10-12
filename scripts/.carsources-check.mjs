@@ -70,7 +70,7 @@ try {
   const hunt = ofHow(s.keys, 'event')[0];
   check(hunt?.available && hunt.where === 'The Comet Hunt' && /ends 1 Nov/.test(hunt.detail), 'while the Comet Hunt is on: its key is the grand prize (' + hunt?.detail + ')');
   const keyPacks = ofHow(s.keys, 'pack');
-  check(keyPacks.length >= 1 && keyPacks.every(x => x.rarity === 'bespoke' && x.chance > 0 && x.available) && keyPacks.map(x => x.kind).sort().join() === 'standard,ten',
+  check(keyPacks.length >= 1 && keyPacks.every(x => x.rarity === 'bespoke' && x.chance > 0 && x.available) && keyPacks.map(x => x.kind).sort().join() === 'daily,standard,ten',
     'a Bespoke key card in the packs with keys: ' + keyPacks.map(x => x.where + ' ' + x.detail.split(':')[0]).join('; '));
   const legendary = s.blueprints.filter(x => x.chance > 0);
   check(legendary.length && legendary.every(x => x.rarity === 'legendary'), 'its blueprints are Legendary cards: ' + legendary.map(x => x.where).join(', '));
