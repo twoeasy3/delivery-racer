@@ -21,7 +21,7 @@ try {
   const STORE = 'delivery_racer_progress_backup', cookieNow = () => document.cookie.split(';')[0], inCookie = () => JSON.parse(decodeURIComponent(cookieNow().split('=')[1]));
 
   // ---- what they are: thirty, tierless, free, placeholders, and none of them a garage car
-  check(IDEA_CARS.length === 26, IDEA_CARS.length + ' car ideas');
+  check(IDEA_CARS.length === 46, IDEA_CARS.length + ' car ideas (26, and the second batch of twenty: render/ideaModels2.js)');
   // (four that were ideas are garage cars now: the Blue Stars at four stars. Bought, owned and saved as any other)
   {
     const four = ['gullwing', 'rearengine', 'snake', 'polytruck'].map(id => CARS.find(c => c.id === id));

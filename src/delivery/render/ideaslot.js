@@ -17,11 +17,18 @@ import { IDEA_CARS } from '../ideas.js';
 import { renderer } from './scene.js';
 import { makeIdeaModel } from './ideaModels.js';
 
-// The lot: three rows of ten bays. The ten longest park in the back row, whose bays are deep enough for a bus;
-// the ten shortest in the front; each row otherwise in the order of the list
+// The lot: rows of ten bays (as many rows as the ideas fill: five for forty-five). The ten longest park in the back
+// row, whose bays are deep enough for a bus; the ten shortest in the front; each row otherwise in the order of the
+// list. A row is as deep as its longest idea needs (6.6 m at least), the front one's middle at z = 9 and the rest
+// stacked behind it
 const COLS = 10, BAY_W = 4.6;
-const ROWS = [{ z: 9, depth: 6.6 }, { z: 2.4, depth: 6.6 }, { z: -6.9, depth: 12 }]; // front to back
-const LOT_W = COLS * BAY_W, FRONT = ROWS[0].z + ROWS[0].depth / 2, BACK = ROWS[2].z - ROWS[2].depth / 2;
+const ROWS = []; // front to back
+const BY_LENGTH = [...IDEA_CARS].sort((a, b) => a.hl - b.hl);
+for (let i = 0; i < BY_LENGTH.length; i += COLS) {
+  const longest = BY_LENGTH[Math.min(i + COLS, BY_LENGTH.length) - 1], depth = Math.max(6.6, longest.hl * 2 + 1.2), front = ROWS[ROWS.length - 1];
+  ROWS.push({ z: front ? front.z - front.depth / 2 - depth / 2 : 9, depth });
+}
+const LOT_W = COLS * BAY_W, FRONT = ROWS[0].z + ROWS[0].depth / 2, BACK = ROWS[ROWS.length - 1].z - ROWS[ROWS.length - 1].depth / 2;
 const colX = (col) => col * BAY_W;
 const metres = (v) => (Math.round(v * 10) / 10).toFixed(1);
 const sizeOf = (car) => metres(car.hl * 2) + ' m long, ' + metres(car.hw * 2) + ' m wide, ' + metres(car.height) + ' m high';
@@ -83,8 +90,7 @@ const paint = (mesh, evil) => {
 // ---- the lot, and the ideas parked in it: built the first time the tab is opened --------------------------
 const parked = [];
 const buildLot = () => {
-  const byLength = [...IDEA_CARS].sort((a, b) => a.hl - b.hl);
-  const rows = ROWS.map((row, r) => IDEA_CARS.filter(car => Math.floor(byLength.indexOf(car) / COLS) === r));
+  const rows = ROWS.map((row, r) => IDEA_CARS.filter(car => Math.floor(BY_LENGTH.indexOf(car) / COLS) === r));
   const mid = (LOT_W - BAY_W) / 2, left = -BAY_W / 2;
   // a drawing board's blue for the ground, the bays ruled on it in white
   box(lambert(0x2f4f80), LOT_W + 120, 0.2, 90, mid, -0.1, 0);
