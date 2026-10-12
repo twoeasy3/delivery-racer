@@ -60,6 +60,7 @@ const fresh = () => ({
   events: {},      // the special events' stages done, by event: how many, in order (events.js)
   claimed: [],     // the rewards given ('event-<id>': tiers.js claimReward), kept when the event is gone
   tierCars: {},    // the car last picked for each tier's levels while their medal is not earned, by tier (the player's own pick, `car`, is kept apart)
+  shopCash: 0,     // the Shop's PLACEHOLDER currency (shop.json, shop.js): its own balance, never the bank; nothing gives it yet
 });
 
 // The save is kept in local storage (BACKUP: the store of record, read first, the whole save, as big as it
@@ -126,7 +127,7 @@ const saveText = (data) => JSON.stringify({
 });
 // The cookie's share of the save (see BACKUP above): never over COOKIE_ROOM bytes as written, whatever the save
 // holds. Should even the list of cars be too long for it (hundreds of them), it goes down to the car in use
-const COOKIE_KEYS = ['money', 'unlocked', 'levelOrder', 'cars', 'car', 'claimed', 'events', 'tankPieces', 'evil', 'muted', 'touch', 'autoGas', 'autoBrake', 'raceClass', 'raceTrack'];
+const COOKIE_KEYS = ['money', 'unlocked', 'levelOrder', 'cars', 'car', 'claimed', 'events', 'tankPieces', 'evil', 'muted', 'touch', 'autoGas', 'autoBrake', 'raceClass', 'raceTrack', 'shopCash'];
 const COOKIE_ROOM = 3600; // bytes of cookie value (the cap is 4096 for the name, the value and its attributes)
 const cookieText = (data) => {
   const short = Object.fromEntries(COOKIE_KEYS.map(key => [key, key === 'money' ? rounded(data.money, SAVE_STEP.money) : data[key]]));
@@ -155,6 +156,7 @@ const tidy = (saved) => {
     .filter(([k, v]) => word(k) && Number.isInteger(v) && v >= 0 && v <= 99).slice(0, 100));
   clean.claimed = [...new Set((Array.isArray(saved.claimed) ? saved.claimed : []).filter(word))].slice(0, 100);
   clean.tankPieces = Math.floor(number(saved.tankPieces, 0) ?? 0);
+  clean.shopCash = Math.floor(number(saved.shopCash, 0) ?? 0); // (the Shop's placeholder currency)
   clean.cars = [...new Set(['commuter', ...(Array.isArray(saved.cars) ? saved.cars : []).filter(word)])].slice(0, 200);
   clean.car = word(saved.car) ? saved.car : 'commuter';
   clean.bestTime = {};

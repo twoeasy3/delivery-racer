@@ -62,6 +62,7 @@ import './render/touch.js';
 import './render/album.js';
 import './render/milestones.js';
 import './render/savecode.js';
+import './render/shop.js'; // (the Shop: card packs for a placeholder currency, ?shop / ?shopcash=<n> / ?debug)
 import './horn.js';
 import { Garage } from './render/garage.js';
 import { Sound } from './render/audio.js';
