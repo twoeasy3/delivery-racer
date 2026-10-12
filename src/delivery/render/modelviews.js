@@ -145,11 +145,70 @@ const size = new THREE.Vector2();
 // level, angle: rad it is turned, close }), and left so: no frame draws it again (a row of event stage cards: the
 // special events' screen, render/menustage.js). Drawn whether it is on screen or not (a row that scrolls sideways is
 // mostly off it). False: no renderer, or no size yet
+// A pose with a lens of its own ({ lift, angle, fov, margin }: carstill.js POSES, the blueprint cards' three) is
+// framed TIGHT: the corners of the model's box, turned as it stands, are fitted into the picture's own shape with
+// `margin` of it to spare (a bus, the Monster Truck, the dragster all whole, a small car as big), and centred.
+const corner = new THREE.Vector3();
+export const poseView = (model, pose, aspect) => {
+  const scene = lit();
+  model.userData.animate?.(STILL.t);
+  model.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(model), mid = box.getCenter(new THREE.Vector3());
+  const holder = new THREE.Group(), turn = new THREE.Group();
+  holder.position.set(-mid.x, -box.min.y, -mid.z);
+  holder.add(model);
+  turn.add(holder);
+  turn.rotation.y = pose.angle;
+  scene.add(turn);
+  const cos = Math.cos(pose.angle), sin = Math.sin(pose.angle), corners = [];
+  for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) {
+    const px = x - mid.x, pz = z - mid.z; // (turned about y as the turntable turns it)
+    corners.push(new THREE.Vector3(px * cos + pz * sin, y - box.min.y, -px * sin + pz * cos));
+  }
+  const height = box.max.y - box.min.y, size = box.getSize(new THREE.Vector3()).length();
+  const camera = new THREE.PerspectiveCamera(pose.fov, aspect, 0.05, 1000);
+  const target = new THREE.Vector3(0, height * 0.5, 0), dir = new THREE.Vector3(0, Math.sin(pose.lift), Math.cos(pose.lift));
+  const span = (d) => { // the picture's half spans the box takes from distance d, and the middle of it (NDC)
+    camera.position.copy(target).addScaledVector(dir, d);
+    camera.lookAt(target);
+    camera.updateMatrixWorld(true);
+    camera.updateProjectionMatrix();
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const c of corners) {
+      corner.copy(c).applyMatrix4(camera.matrixWorldInverse);
+      if (corner.z > -camera.near) return null; // (a corner behind the lens: too near)
+      corner.applyMatrix4(camera.projectionMatrix);
+      x0 = Math.min(x0, corner.x); x1 = Math.max(x1, corner.x); y0 = Math.min(y0, corner.y); y1 = Math.max(y1, corner.y);
+    }
+    return { w: (x1 - x0) / 2, h: (y1 - y0) / 2, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 };
+  };
+  const m = pose.margin ?? 0.86, fits = (s) => s && s.w <= m && s.h <= m;
+  let near = size * 0.05, far = size * 40;
+  for (let i = 0; i < 28; i++) { const d = (near + far) / 2; if (fits(span(d))) far = d; else near = d; }
+  const s = span(far);
+  return { scene, camera, offset: s ? { x: s.cx / 2, y: -s.cy / 2 } : { x: 0, y: 0 } }; // (offset: a share of the picture to slide the view by, so the box is centred)
+};
 export const drawStill = (renderer, el, model, pose) => {
   if (!renderer || renderer.getContext().isContextLost()) return false;
   const r = el.getBoundingClientRect(), ratio = Math.min(window.devicePixelRatio || 1, 2);
   const w = Math.max(1, Math.round(r.width * ratio)), h = Math.max(1, Math.round(r.height * ratio));
   if (!r.width || !r.height) return false;
+  if (pose.fov) { // (a pose with a lens of its own: framed tight, see poseView)
+    const view = { el, ...poseView(model, pose, r.width / r.height) };
+    const canvas = canvasOf(view);
+    canvas.width = w; canvas.height = h;
+    renderer.getSize(size);
+    if (w > size.x || h > size.y) renderer.setSize(size.x = Math.max(size.x, w), size.y = Math.max(size.y, h), false);
+    renderer.setViewport(0, 0, w, h);
+    renderer.setScissor(0, 0, w, h);
+    renderer.clear();
+    view.camera.setViewOffset(w, h, view.offset.x * w, view.offset.y * h, w, h);
+    renderer.render(view.scene, view.camera);
+    view.ctx.clearRect(0, 0, w, h);
+    view.ctx.drawImage(renderer.domElement, 0, size.y - h, w, h, 0, 0, w, h);
+    disposeViews([view]);
+    return true;
+  }
   const view = { el, ...standView({ model, spin: false, lift: pose.lift, angle: pose.angle, fitWidth: true }, pose.close) };
   const canvas = canvasOf(view);
   canvas.width = w; canvas.height = h;

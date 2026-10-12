@@ -2,11 +2,11 @@
 // A screen over the start screen, reached by the Shop button at the top of the menu (beside the bank). After a
 // racing game's store: the wallet along the top (the PLACEHOLDER currency, Crazey Cash, and its balance), then rows
 // of big tiles, top to bottom: Featured (a special pack, its featured cars drawn on the tile as the special event's
-// cards draw theirs: drawStill, the real model at one pose, kept as a picture), Card packs, Bundles; then what each
+// cards draw theirs: carstill.js, the real model in one of its three poses, kept as a picture), Card packs, Bundles; then what each
 // rarity holds. A tile: its pack drawn in CSS (the foil in the colour of what it promises: grey Common, green
 // Uncommon, purple Epic, gold Legendary, the Bespoke rainbow), a ribbon (Featured, Sale with the share off, New, Best
-// value), what is in it, the drop rates as a bar, and the price on its button. Buying asks first, takes the price and
-// gives the packs unopened; then "Open now" (the Packs screen, render/packs.js) or "Keep shopping".
+// value), what is in it, the drop rates as a bar, and the price on its button. Buying asks first, takes the price, and
+// the pack OPENS AT ONCE over the Shop (the reveal, render/packs.js; the owner, 12-Oct); Done comes back here.
 // Phones first: one column that scrolls, two tiles a row; wider, the rows spread out.
 // ?shop opens it at once; ?shopcash=<n> sets the balance for the visit (nothing saved); ?debug shows a button on the
 // wallet that adds some (saved). Neither is seen by a player who did not ask for it.
@@ -18,13 +18,13 @@ import { Nav } from '../nav.js';
 import { Game } from '../game.js';
 import { stars } from '../cars.js';
 import { ask, tell } from './dialog.js';
-import { makeShowCar, paintShowCar } from './garage.js';
-import { sharedRenderer, drawStill } from './modelviews.js';
+import { drawSoon as stillSoon } from './carstill.js';
+import { variedPoses } from '../carposes.js';
+import { packArt, KIND_LOOK } from './packart.js';
 import { openContents, closeContents } from './packcontents.js';
 
-// (packs.js and the Packs screen, where the tree has them: see shop.js)
+// (packs.js, where the tree has it: see shop.js)
 const packsModule = Object.values(import.meta.glob('../packs.js', { eager: true }))[0] || null;
-const packsScreen = Object.values(import.meta.glob('./packs.js', { eager: true }))[0]?.PacksScreen || null;
 const packData = Object.values(import.meta.glob('../packs.json', { eager: true, import: 'default' }))[0] || null;
 
 const RARITIES = ['common', 'uncommon', 'epic', 'legendary', 'bespoke'];
@@ -36,9 +36,6 @@ const RARITY_HOLDS = {
   legendary: 'Blueprints for the rarest cars, and featured cars',
   bespoke: 'A car’s key: it is yours to drive',
 };
-// the best a kind of pack promises, for its foil and its tile
-const KIND_LOOK = { career: 'common', standard: 'uncommon', ten: 'epic', special: 'bespoke' };
-const KIND_MARK = { career: 'Career', standard: 'Standard', ten: '10', special: 'Special' };
 
 const make = (tag, className, ...inside) => {
   const node = document.createElement(tag);
@@ -48,36 +45,6 @@ const make = (tag, className, ...inside) => {
 };
 const params = new URLSearchParams(location.search);
 const debug = params.get('debug') !== null;
-
-// ---- a car on a tile: its model drawn once at one pose, kept as a picture (as the special event's cards) ----------
-const POSE = { lift: 0.26, angle: -0.64, close: 1 };
-const stills = new Map();
-const stillCar = (el, car) => {
-  const r = el.getBoundingClientRect(), key = car.id + '/' + Math.round(r.width / 20) + 'x' + Math.round(r.height / 20);
-  if (stills.has(key)) { el.style.backgroundImage = `url("${stills.get(key)}")`; return; }
-  try {
-    const model = makeShowCar(car);
-    paintShowCar(model, car, false);
-    if (!drawStill(sharedRenderer(), el, model, POSE)) return;
-    const canvas = el.querySelector('canvas');
-    stills.set(key, canvas.toDataURL('image/png'));
-    canvas.remove();
-    el.style.backgroundImage = `url("${stills.get(key)}")`;
-  } catch (error) { console.warn('No model for the shop tile: ' + (error?.message || error)); }
-};
-
-// ---- a pack, drawn in CSS: foil in the colour of what it promises, a crimped top, the game's mark, what it is ------
-const packArt = (kind, count = 1) => {
-  const look = KIND_LOOK[kind] || 'common', shown = Math.min(3, count);
-  const one = (i) => make('div', 'shop-pack r-' + look + ' k-' + kind,
-    make('span', 'pack-crimp'), make('span', 'pack-sheen'),
-    make('span', 'pack-brand', make('b', '', 'Delivery'), make('i', '', 'Run')),
-    make('span', 'pack-mark', KIND_MARK[kind] || kind),
-    make('span', 'pack-sub', kind === 'ten' ? '10 cards' : 'Card pack'),
-    i === shown - 1 && count > 1 ? make('span', 'pack-count', '×' + count) : null);
-  const stack = make('div', 'shop-packs n' + shown, ...Array.from({ length: shown }, (_, i) => one(i)));
-  return stack;
-};
 
 // ---- the drop rates of a kind (packs.json odds, the rarities its pool has), as a bar --------------------------------
 const oddsOf = (kind) => {
@@ -142,10 +109,10 @@ const ribbon = (offer) => offer.ribbonName
 
 const drawLater = [];
 const featuredTile = (offer) => {
-  const cars = offer.featured.slice(0, 3);
-  const carViews = cars.map((car) => {
+  const cars = offer.featured.slice(0, 3), poses = variedPoses(cars.map(c => c.id));
+  const carViews = cars.map((car, i) => {
     const view = make('div', 'shop-car');
-    drawLater.push([view, car]);
+    drawLater.push([view, car, poses[i]]);
     const rarity = packsModule?.rarityOf?.(car) && offer.kind !== 'special' ? packsModule.rarityOf(car) : 'legendary';
     return make('div', 'shop-feature', view, make('div', 'shop-feature-name', make('span', 'shop-chip r-' + rarity, 'Featured'), make('b', '', car.name),
       make('small', '', stars(car) || 'Event car')));
@@ -200,7 +167,7 @@ screen.addEventListener('scroll', () => { scrolledAt = performance.now(); }, { p
 const draw = () => {
   clearTimeout(pending); pending = 0;
   const keep = screen.scrollTop;
-  const kept = [...screen.querySelectorAll(':scope > .pack-contents, :scope > .shop-bought')]; // (a sheet or box up stays up)
+  const kept = [...screen.querySelectorAll(':scope > .pack-contents')]; // (a sheet up stays up)
   drawLater.length = 0;
   const back = make('button', 'shop-back', make('span', '', '‹'), 'Back');
   back.addEventListener('click', () => ShopScreen.close());
@@ -219,7 +186,7 @@ const draw = () => {
     make('header', 'shop-top', back, make('h1', '', 'Shop'), wallet()),
     make('div', 'shop-body', note, ...sections, rarityGuide()), ...kept);
   screen.scrollTop = keep;
-  requestAnimationFrame(() => { for (const [el, car] of drawLater) stillCar(el, car); }); // (once laid out)
+  for (const [el, car, pose] of drawLater) stillSoon(el, car, { side: 'good', pose }); // (always the Good livery; a few a frame, once laid out; kept, so a redraw costs nothing)
 };
 
 // ---- buying -----------------------------------------------------------------------------------------------------
@@ -235,28 +202,12 @@ const buy = async (id) => {
     return;
   }
   const what = offer.count > 1 ? offer.name : 'one ' + offer.name;
-  if (!await ask({ title: 'Buy ' + offer.name, lines: [cash(offer.price) + ' for ' + what + ', unopened.', 'You will have ' + cash(Shop.balance() - offer.price) + ' left.'], ok: 'Buy' })) return;
+  if (!await ask({ title: 'Buy ' + offer.name, lines: [cash(offer.price) + ' for ' + what + '. It opens at once.', 'You will have ' + cash(Shop.balance() - offer.price) + ' left.'], ok: 'Buy' })) return;
   const done = Shop.buy(id);
   draw();
-  if (!done.ok) { await tell({ title: 'Not bought', lines: ['Nothing was taken.'] }); return; }
-  bought(done.offer);
+  if (!done.ok) await tell({ title: 'Not bought', lines: ['Nothing was taken.'] });
+  // (bought: the pack is opened at once, over the Shop: Shop.buy asked the reveal, render/packs.js)
 };
-// the packs just bought: open them now, or shop on
-const bought = (offer) => {
-  const open = packsScreen ? make('button', 'shop-go', 'Open now') : null, later = make('button', 'shop-later', 'Keep shopping');
-  const box = make('div', 'shop-bought', make('div', 'shop-bought-box',
-    make('div', 'shop-burst'), packArt(offer.kind, offer.count),
-    make('h2', '', offer.name + ': yours'),
-    make('p', '', (offer.count > 1 ? 'They are' : 'It is') + ' with your packs, unopened.'),
-    make('div', 'shop-bought-do', open, later)));
-  const shut = () => box.remove();
-  later.addEventListener('click', shut);
-  open?.addEventListener('click', () => { shut(); ShopScreen.close(); packsScreen.open(); });
-  box.addEventListener('pointerdown', (e) => { if (e.target === box) shut(); });
-  screen.append(box);
-  (open || later).focus();
-};
-
 export const ShopScreen = {
   get isOpen() { return isOpen; },
   open() {
@@ -284,7 +235,6 @@ export const ShopScreen = {
     Game.inMenu = false;
     screen.classList.add('hidden');
     closeContents();
-    screen.querySelector('.shop-bought')?.remove();
   },
 };
 
@@ -295,10 +245,9 @@ button.title = 'The Shop: card packs';
 button.setAttribute('aria-label', 'Shop');
 document.getElementById('bank')?.after(button);
 button.addEventListener('click', () => ShopScreen.open());
-window.addEventListener('keydown', (event) => { // (Escape: the "bought" box first, then the Shop. A dialog up takes its own)
+window.addEventListener('keydown', (event) => { // (Escape: the contents sheet first, then the Shop. A dialog or the reveal up takes its own)
   if (!isOpen || event.key !== 'Escape') return;
-  const box = screen.querySelector('.shop-bought');
-  if (box) box.remove(); else if (!closeContents()) ShopScreen.close();
+  if (!closeContents()) ShopScreen.close();
 });
 for (const type of ['progresschange', 'packschange']) window.addEventListener(type, () => { if (isOpen) drawSoon(); });
 

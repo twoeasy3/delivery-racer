@@ -1,6 +1,6 @@
 // ---- the SHOWROOM: where a car is picked (the owner, 12-Oct: "the new UI-based menu where cars are selected") ----------
 // A screen over the menu, opened by the car card (and G, and ?showroom). A card for every car (showroomData.js says what
-// is on it): its picture (its real model, drawn once as a still: render/carstill.js, as the special event's cards are),
+// is on it): its picture (its real model, drawn once as a still in its own pose, carposes.js posePick: render/carstill.js),
 // its name and stars, its rarity as the colour of its frame, a pip for each ECU it can reach (filled up to the one it is
 // at), its blueprints toward the next ECU as a bar, and, greyed, why one that cannot be driven cannot. The card picked
 // fills the DETAIL: the car itself LIVE in 3D (turning, and turned by a drag: render/showroomview.js), its figures at its
@@ -23,6 +23,7 @@ import { Nav } from '../nav.js';
 import { richTiers, tierStarsNode } from '../tiers.js';
 import { Garage } from './garage.js';
 import { stillCar, stillReady } from './carstill.js';
+import { posePick } from '../carposes.js';
 import { ShowroomView } from './showroomview.js';
 import { Sound } from './audio.js';
 
@@ -65,7 +66,7 @@ const queue = new Set();
 // rules, the live car's paint, and the side DRIVE drives as. It starts on the side being played (Showroom.open)
 let side = false;
 const evilNow = () => side;
-const want = (el, car) => { if (!stillReady(el, car, evilNow())) queue.add(el); el.dataset.car = car.id; };
+const want = (el, car) => { if (!stillReady(el, car, evilNow(), posePick(car.id))) queue.add(el); el.dataset.car = car.id; };
 const carOf = new WeakMap();
 let watcher = null;
 const watch = (el, car) => {
@@ -80,7 +81,7 @@ const pump = () => {
     queue.delete(el);
     if (!el.isConnected) continue;
     const car = carOf.get(el);
-    if (car && !stillCar(el, car, evilNow()) && !el.getBoundingClientRect().width) { queue.add(el); break; } // (not laid out yet: next frame)
+    if (car && !stillCar(el, car, evilNow(), posePick(car.id)) && !el.getBoundingClientRect().width) { queue.add(el); break; } // (not laid out yet: next frame)
     if (performance.now() - t0 > 24) break; // (a few each frame: the screen keeps moving while they come)
   }
 };
@@ -281,7 +282,7 @@ const showDetail = () => {
   detail.style.setProperty('--rar', RARITIES[card.rarity].colour);
   detail.className = 'sr-detail ' + card.rarity + ' ' + card.state + (detail.classList.contains('open') ? ' open' : '');
   // the car itself, live (turning, a drag turns it): render/showroomview.js; with no WebGL, its still
-  if (!ShowroomView.show(pic, card.car, { evil, dark: card.hidden })) requestAnimationFrame(() => { if (Showroom.isOpen) stillCar(pic, card.car, evilNow()); });
+  if (!ShowroomView.show(pic, card.car, { evil, dark: card.hidden })) requestAnimationFrame(() => { if (Showroom.isOpen) stillCar(pic, card.car, evilNow(), posePick(card.car.id)); });
 };
 const pick = (id, tapped = false) => {
   if (id !== picked) blip('menuMove');
