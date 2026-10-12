@@ -57,6 +57,9 @@ const syncRadiationMeter = () => {
   if (hudRadiationLabel.textContent !== label) hudRadiationLabel.textContent = label;
 };
 const hudBusts = document.getElementById('busts');
+// the busts line's small icons (a phone shows these for the words): a police light, and a flag for a race's place
+const ICON_BUSTS = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 20v-6a6 6 0 0 1 12 0v6zM4 20h16M12 3v2.5M4.6 6.2l1.8 1.6M19.4 6.2l-1.8 1.6"/></svg>';
+const ICON_POSITION = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V3M5 4h13l-2.5 4 2.5 4H5"/></svg>';
 // (racing a rival courier, the player's busts, as on any delivery level)
 const rivalLine = () => '\nBUSTS ' + Game.busts + ' / ' + CONFIG.maxBusts; // (on a line of its own: see style.css, #busts)
 // who is coming up behind, at the foot of the screen (see CONFIG.behind): an arrow pointing back
@@ -276,10 +279,15 @@ export const updateHud = () => {
   // (in a race, the player's place in it: one more than the racers ahead)
   // (round a lapped circuit, the laps count first)
   const raced = (laps, s) => (LEVEL.laps ? laps * Track.length : 0) + Track.along(s);
-  hudBusts.textContent = LEVEL.grid
-    ? 'POSITION ' + (1 + Traffic.cars.filter(c => c.racer && raced(c.laps || 0, c.s) > raced(Game.lap, Player.s)).length) + ' / ' + (LEVEL.grid.count + 1) +
-      (LEVEL.grid.rival ? rivalLine() : '') // (the lap is under the level's ring: see above)
-    : 'BUSTS ' + Game.busts + ' / ' + CONFIG.maxBusts;
+  // (the words on a desktop; on a phone a small icon in their place: style.css, .ico and .w)
+  const bustsLine = LEVEL.grid
+    ? ['POSITION ', (1 + Traffic.cars.filter(c => c.racer && raced(c.laps || 0, c.s) > raced(Game.lap, Player.s)).length) + ' / ' + (LEVEL.grid.count + 1) +
+      (LEVEL.grid.rival ? rivalLine() : '')] // (the lap is under the level's ring: see above)
+    : ['BUSTS ', Game.busts + ' / ' + CONFIG.maxBusts];
+  if (hudBusts.dataset.line !== bustsLine.join('')) {
+    hudBusts.dataset.line = bustsLine.join('');
+    hudBusts.innerHTML = (LEVEL.grid ? ICON_POSITION : ICON_BUSTS) + '<span class="w">' + bustsLine[0] + '</span>' + bustsLine[1].replace('\n', '<br>');
+  }
   syncBehind(raced);
   syncCamAlert();
   // a police car near enough to see what the player does (on the shoulder, a bust on the spot; not

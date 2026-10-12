@@ -59,12 +59,17 @@ try {
 
   // ---- each sticky message comes with its condition and goes with it
   // (what starts each one, and what ends it)
+  const hold = (k, v) => Object.defineProperty(P, k, { get: () => v, set() {}, configurable: true, enumerable: true });
+  const release = (k) => { delete P[k]; P[k] = 0; };
   const cases = {
     'events.puncture': [() => P.punctureTyre(1), () => { P.puncture = 0; }],
     'events.beached': [() => { P.beached = 1.5; Message.say('events', 'beached'); }, () => { P.beached = 0; }],
     'powerups.badGas': [() => { P.collect('badGas'); Message.say('powerups', 'badGas'); }, () => { P.badGas = 0; }],
     'powerups.heavyMass': [() => { P.collect('heavyMass'); Message.say('powerups', 'heavyMass'); }, () => { P.heavy = 0; }],
     'powerups.butterfingers': [() => { P.collect('butterfingers'); Message.say('powerups', 'butterfingers'); }, () => { P.butterfingers = 0; }],
+    // (the car's own steps reset these two, so they are held with a getter while the check runs)
+    'events.airborne': [() => { hold('air', 1); Message.say('events', 'airborne'); }, () => release('air')],
+    'events.slipping': [() => { hold('gripLost', 0.7); Message.say('events', 'slipping'); }, () => release('gripLost')],
     'events.infected': [() => Radiation.infect(), () => { Radiation.infected = false; }], // (radiation.js: a full meter, or an infected car touched)
   };
   for (const path of Object.keys(T.sticky)) {
@@ -124,6 +129,12 @@ try {
   const hudSource = readFileSync(new URL('../src/delivery/render/hud.js', import.meta.url), 'utf8'), css = readFileSync(new URL('../src/delivery/style.css', import.meta.url), 'utf8');
   check(hudSource.includes('stickyIcon(h)') && hudSource.includes("setAttribute('aria-label'") && !/line\.text;\s*\n?\s*row/.test(hudSource) && !hudSource.includes("className = 'row'") && !css.includes('#sticky .row') && T.stickyRows === undefined,
     'render/hud.js draws an icon for each (labelled), and no row of words: #sticky .row and stickyRows are gone');
+  // (the corner's order, top to bottom: the time, the gauges with the statuses beside them, then the bars; a phone's bars have an icon each)
+  const page = readFileSync(new URL('../delivery/index.html', import.meta.url), 'utf8'), at = (id) => page.indexOf(`id="${id}"`);
+  check(at('timer') < at('gauges') && at('gauges') < at('sticky') && at('sticky') < at('health') && at('health') < at('busts') && at('busts') < at('social'),
+    'the corner is the time, then the gauges and the statuses, then the health, busts and social bars');
+  check(/id="health"><svg class="ico"/.test(page) && /id="social"><svg class="ico"/.test(page) && hudSource.includes('ICON_BUSTS') && css.includes('#meters .w { display: none; }'),
+    'each bar has a small icon, shown instead of its words on a phone');
   const I = T.stickyIcons;
   check(['size', 'gap', 'across', 'shift'].every(k => ['wide', 'portrait', 'short'].every(shape => I?.[k]?.[shape] !== undefined)) && T.recall > 0 && !/#sticky[^}]*[\s{;](width|height|gap):\s*\d+px/.test(css),
     'the icons\' size, gap, row and place are in CONFIG.messageTimes.stickyIcons for each screen shape, not written into style.css');
