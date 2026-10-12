@@ -1,6 +1,7 @@
 import { CONFIG } from './config.js';
 import { LEVEL } from './levels.js';
-import { CAR, CARS, lendCar, returnCar, superOf, rageTankFor } from './cars.js';
+import { CAR, CARS, lendCar, returnCar, superOf, rageTankFor, carStats } from './cars.js';
+import './ecu.js'; // (the ECUs: the figures a car is driven with, carStats; and the blueprint cars' unlocking)
 import { clamp, damp, random } from './util.js';
 import { Track } from './track.js';
 import { updateYaw, keepOnRoad, sfx, cornerSpeed } from './physics.js';
@@ -71,7 +72,7 @@ export const Player = {
   camShift: 0,         // lat jump from changing road, for the camera to follow at once
   s: 0, lat: 0, latVel: 0, yaw: 0, yawVel: 0, stun: 0,
   speed: 0,
-  health: CAR.health, maxHealth: CAR.health, smoke: 0, // (top speed, acceleration and health are the car's: see cars.js)
+  health: CAR.health, maxHealth: CAR.health, smoke: 0, // (top speed, acceleration and health are the car's ECU's: see cars.js carStats, ecu.js)
   hw: CAR.hw, hl: CAR.hl, height: CAR.height, // hitbox half width / half length, body height
   get mass() { return this.heavy > 0 ? CONFIG.heavyMass.mass : CAR.mass || 1; },
   // how heavy the car is, for sliding on ice: by its size, against the Commuter's, and its mass
@@ -89,11 +90,12 @@ export const Player = {
   takeCar(swap) {
     const share = this.maxHealth > 0 ? this.health / this.maxHealth : 1;
     swap();
-    Object.assign(this, { maxHealth: CAR.health, health: CAR.health * share, hw: CAR.hw, hl: CAR.hl, height: CAR.height });
+    const health = carStats(CAR).health;
+    Object.assign(this, { maxHealth: health, health: health * share, hw: CAR.hw, hl: CAR.hl, height: CAR.height });
   },
   reset() {
     // take on whichever car is in use now: it may have been swapped in the garage
-    this.maxHealth = CAR.health;
+    this.maxHealth = carStats(CAR).health; // (its ECU's: ecu.js)
     this.hw = CAR.hw;
     this.hl = CAR.hl;
     this.height = CAR.height;
@@ -120,7 +122,7 @@ export const Player = {
       if (open.length) lane = open[0];
     }
     if (Tide.on) {
-      const later = CONFIG.respawnTime;
+      const later = carStats(CAR).respawn ?? CONFIG.respawnTime; // (the car's own respawn time: ecu.js)
       const dry = (l) => Tide.depth(this.s, Track.laneOffset(l, this.s), later, true) <= CONFIG.tide.wet; // (not trusting a sea gone out)
       const own = [];
       for (let l = first; l <= last; l++) own.push(l);
@@ -288,7 +290,7 @@ export const Player = {
     if (effect === 'carSwap') { // (any of the garage's cars but this one and the Tank; none for a level's own vehicle)
       // (on an amphibious level, only another amphibious car: the swap must float)
       // (a car idea in use, ideas.js, is swapped for a garage car as any other is, and given back after; none is ever what the swap deals)
-      const others = CARS.includes(CAR) || CAR.idea ?CARS.filter(c => c !== CAR && !c.tank && !c.earned && (!LEVEL.amphibious || c.amphibious)) : [];
+      const others = CARS.includes(CAR) || CAR.idea || CAR.evergreen ? CARS.filter(c => c !== CAR && !c.tank && !c.earned && (!LEVEL.amphibious || c.amphibious)) : [];
       if (others.length) this.takeCar(() => lendCar(others[Math.floor(random() * others.length)]));
     }
   },
@@ -366,12 +368,13 @@ export const Player = {
     const boosted = this.turbo > 0;
     this.turbo = Math.max(0, this.turbo - dt);
     // (the same turbo as a share of the car's own top speed: its bends are taken that much faster too)
-    const baseTop = this.tank > 0 ? (this.rageTank ? this.rageTank.maxSpeed : CONFIG.tankMaxSpeed) : CAR.maxSpeed;
+    const drives = carStats(CAR); // (the car's figures at its ECU: ecu.js)
+    const baseTop = this.tank > 0 ? (this.rageTank ? this.rageTank.maxSpeed : CONFIG.tankMaxSpeed) : drives.maxSpeed;
     const turboCorner = boosted && baseTop > 0 ? 1 + CONFIG.turboBoost / baseTop : 1;
     // (a turbo adds the same to every car's top speed: a slow car stays the slower one)
     // (bad gas and the weight hold the car back: a share of its top speed and acceleration)
     const held = this.badGas > 0 ? CONFIG.badGas : this.heavy > 0 ? CONFIG.heavyMass : null;
-    let top = ((this.tank > 0 ? (this.rageTank ? this.rageTank.maxSpeed : CONFIG.tankMaxSpeed) : CAR.maxSpeed) + (boosted ? CONFIG.turboBoost : 0)) * (held ? held.topSpeed : 1) *
+    let top = ((this.tank > 0 ? (this.rageTank ? this.rageTank.maxSpeed : CONFIG.tankMaxSpeed) : drives.maxSpeed) + (boosted ? CONFIG.turboBoost : 0)) * (held ? held.topSpeed : 1) *
       (this.puncture ? CONFIG.puncture.topSpeed : 1); // (and a flat tyre)
     // in a race, in another car's slipstream: faster (see CONFIG.race); and pulling out of it, flung on
     // past it: the slingshot, a kick on top of the tow's speed, both fading away (the longer, the more
@@ -441,7 +444,7 @@ export const Player = {
       // (or on washboard dirt: dragged down to its `most`)
       this.speed = Math.max(top, this.speed - (rails || wet || mud ? R.bite : afloat ? CONFIG.water.drag : board ? B.drag : CONFIG.brake * 0.5) * dt);
     } else if (drive > 0) {
-      this.speed = Math.min(top, this.speed + drive * (boosted ? CONFIG.turboAccel : CAR.accel * (held ? held.accel : 1)) * (this.puncture ? CONFIG.puncture.accel : 1) * seaAccel * dt);
+      this.speed = Math.min(top, this.speed + drive * (boosted ? CONFIG.turboAccel : drives.accel * (held ? held.accel : 1)) * (this.puncture ? CONFIG.puncture.accel : 1) * seaAccel * dt);
     } else if (drive < 0 && this.puncture) { // (a flat tyre: hard, and all the way down to a stop)
       this.speed = Math.max(0, this.speed + drive * CONFIG.brake * CONFIG.puncture.brake * grip * dt);
     } else if (drive < 0 && this.speed > slowest) {

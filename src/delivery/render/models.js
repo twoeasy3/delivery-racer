@@ -2343,11 +2343,17 @@ Object.assign(MODELS, {
 // Four garage cars (cars.js: the Blue Star cars at four stars) whose builders were drawn as car ideas and still
 // live with the ideas' (render/ideaModels.js, which knows nothing of the game): the same builder, by the same
 // name, with an animate as every model here has
-import { IDEA_MODELS } from './ideaModels.js';
+import { IDEA_MODELS, makeIdeaModel } from './ideaModels.js';
 for (const name of ['gullwing', 'rearengine', 'snake', 'polytruck']) {
   MODELS[name] = (car) => {
     const model = IDEA_MODELS[name](car);
     model.userData.animate = model.userData.animate || (() => {});
     return model;
   };
+}
+// ...and the eighteen evergreen blueprint cars (cars.js FILLER_CARS), which were car ideas too: built as the ideas lot
+// builds them (makeIdeaModel: at the vehicle's real size, and one too wide for a lane, the Monster Truck, scaled down)
+for (const name of ['bubble', 'milkfloat', 'tuktuk', 'woody', 'pandacoupe', 'keiroadster', 'fireengine', 'fieldscout', 'monster',
+  'stately', 'teardrop', 'pony', 'midnight', 'splitwindow', 'wedge', 'jetcar', 'dragster', 'flyingcar']) {
+  MODELS[name] = (car) => makeIdeaModel({ ...car, model: name });
 }

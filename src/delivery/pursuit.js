@@ -16,7 +16,7 @@ import { Track } from './track.js';
 import { Player } from './player.js';
 import { Traffic } from './traffic.js';
 import { Message } from './messages.js';
-import { CAR } from './cars.js';
+import { carStats } from './cars.js';
 import { updateYaw, keepOnRoad } from './physics.js';
 
 const P = CONFIG.pursuit, D = P.driving;
@@ -118,7 +118,7 @@ export const Pursuit = (() => {
     const lane = lanes[Math.floor(random() * lanes.length)];
     const getaway = take('getaway', s0, lane, flee), cop = getaway && take('interceptor', s0 - P.gap, lane, chase);
     if (!cop) { if (getaway) release(getaway); return false; }
-    st = { getaway, cop, cruise: clamp(CAR.maxSpeed * P.pace, P.speed.min, P.speed.max) };
+    st = { getaway, cop, cruise: clamp(carStats().maxSpeed * P.pace, P.speed.min, P.speed.max) };
     getaway.vs = cop.vs = st.cruise + P.rush;
     cop.sirenOn = true;
     Message.say('events', 'pursuit');

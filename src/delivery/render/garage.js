@@ -6,6 +6,7 @@
 import { Nav } from '../nav.js';
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
+import { Ecu } from '../ecu.js';
 import { CAR, carInUse, selectCar, stars, starColour, STAR_COLOURS, garageCars, carRule, ruleAllows, setViewSide, carAllowedOn, carTier, isTeaser, forSale, EVENT_CARS } from '../cars.js';
 import { levelName } from '../levelText.js';
 import { LEVELS } from '../levels.js';
@@ -208,8 +209,13 @@ const whyEl = document.getElementById('garageWhy');
 const useBtn = document.getElementById('garageUse');
 const startScreen = document.getElementById('startScreen');
 const money = (amount) => '$' + amount.toFixed(2);
-const stats = (car) => 'Top speed ' + Math.round(car.maxSpeed * 3.6) + ' km/h  |  Acceleration ' +
-  car.accel + '  |  Health ' + car.health + '  |  Crossing ' + Math.round((car.crossing ?? CONFIG.railCrossing.usual) * 100) + '%';
+// (the figures of the ECU it has, or would have once its key or blueprints are had: ecu.js; and that ECU of its max)
+const stats = (car) => {
+  const e = Ecu.kind(car) ? Ecu.stats(car, Math.max(1, Ecu.reached(car))) : car;
+  return 'Top speed ' + Math.round(e.maxSpeed * 3.6) + ' km/h  |  Acceleration ' + e.accel + '  |  Health ' + e.health +
+    '  |  Crossing ' + Math.round((car.crossing ?? CONFIG.railCrossing.usual) * 100) + '%' +
+    (Ecu.kind(car) ? '  |  ECU ' + Ecu.level(car) + ' of ' + Ecu.max(car) + '  |  Respawn ' + e.respawn + ' s' : '');
+};
 // the stats as a node: the figures always (on a phone on a line of their own under the name), and a perk of its own
 // (see CARS' trait) after them, which a phone shows only when the line is tapped
 const statsNode = (car) => {
@@ -280,7 +286,9 @@ const refresh = () => {
   useBtn.disabled = !!barred || teaser;
   whyEl.classList.toggle('hidden', !barred && !teaser && !unsold);
   whyEl.replaceChildren(...(teaser ? ['Not for sale yet: ', ...richTiers(teaserWhy(shown))] : unsold && !barred ? notForSale(shown) : barred ? (shown.silhouette ? [noneOwned(carRule(Garage.evil)) + ': tap a car in the lot to buy one'] : reasonNode()) : []));
-  action.title = owned ? 'Drive the ' + shown.name + ' as ' + sideName() + ', and stay in the garage' : '';
+  // (a car that cannot be driven yet says why, in the words of the spec (ecu.js lockedWords): a car lot car not bought,
+  // "Purchase this car from the car lot"; a key car without its key, "You need the key to drive this car")
+  action.title = owned ? 'Drive the ' + shown.name + ' as ' + sideName() + ', and stay in the garage' : shown.silhouette ? '' : Ecu.lockedWords(shown) || '';
   // (Use: the same, and back to the menu with it; a car not yet bought has none, only its Buy)
   useBtn.style.display = owned ? '' : 'none';
   useBtn.title = 'Drive the ' + shown.name + ' as ' + sideName() + ', and go back to the menu';
@@ -581,7 +589,7 @@ export const Garage = {
         car.id === Progress.data.car ? 'in use'
           : owned ? 'owned, click for its stats'
             : !forSale(car) ? 'not for sale, click for its stats'
-              : money(car.price) + ', click for its stats'));
+              : money(car.price) + ', click for its stats') + (owned ? '' : '  -  ' + (Ecu.lockedWords(car) || '')));
       anchor.set(hovered.position.x, car.height + 2.6, hovered.position.z).project(camera);
       tip.style.left = (anchor.x + 1) / 2 * canvas.clientWidth + 'px';
       tip.style.top = (1 - anchor.y) / 2 * canvas.clientHeight + 'px';

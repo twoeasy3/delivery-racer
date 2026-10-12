@@ -135,7 +135,7 @@ export const syncHelicopter = (dt, now) => {
   heliBeacon.visible = Game.respawnKind === 'police';
   if (Game.respawnKind === 'police') { syncPoliceGrab(now); return; }
 
-  const p = 1 - Game.respawn / CONFIG.respawnTime;         // 0 -> 1 over the delivery
+  const p = 1 - Game.respawn / (Game.respawnTotal || CONFIG.respawnTime);         // 0 -> 1 over the delivery
   const arrive = 1 - Math.pow(1 - Math.min(1, p / 0.5), 3); // fly in, easing to a hover
   const heading = Track.toWorld(Player.s + (1 - arrive) * 160, Player.lat, tmp);
   const heliY = HELI_HOVER + (1 - arrive) * 30;

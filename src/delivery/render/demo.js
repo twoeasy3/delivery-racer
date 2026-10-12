@@ -11,6 +11,7 @@ if (new URLSearchParams(location.search).get('demo') !== null) {
   Progress.data.unlocked = LEVELS.length - 2; // (the last two left locked, to see a locked card)
   Progress.data.money = CONFIG.completeBank;
   Progress.data.cars = CARS.filter((car, i) => i % 2 === 0).map(car => car.id);
+  Progress.data.maxed = [...Progress.data.cars]; // (each at its max ECU: ecu.js)
   LEVELS.forEach((level, i) => {
     // (a spread of medals: the share of the clock left to spare goes up and down the levels; one in four not delivered)
     if (i % 4 !== 3) Progress.data.bestTime.good[level.id] = level.clock.good * (0.04 + (i % 5) * 0.08);

@@ -49,10 +49,10 @@ const GROUPS = {
     files: [/tiers|progress\.js|milestones|menus|menu2|garage|cars\.js|levelSchema|events/],
   },
   cars: {
-    about: 'The cars: traits, the tank, the ideas as cars (thirty placeholders), mystery effects on the Super cars, the auto brake strength',
-    seconds: 150,
-    tests: [t('.traits-check.mjs'), t('.tank-check.mjs'), t('.mysteries-check.mjs'), t('.autobrake-check.mjs'), t('.ideas-check.mjs', { heavy: true })],
-    files: [/cars\.js|ideas\.js|carText|player\.js/],
+    about: 'The cars: traits, the tank, the ideas as cars (48 placeholders), mystery effects on the Super cars, the auto brake strength; the ECUs (ecu.js, ecus.json: the ladder, equal steps, respawn times, key and blueprint unlocking, the save, old saves, replays at an ECU)',
+    seconds: 180,
+    tests: [t('.traits-check.mjs'), t('.tank-check.mjs'), t('.mysteries-check.mjs'), t('.autobrake-check.mjs'), t('.ideas-check.mjs', { heavy: true }), t('.ecu-check.mjs', { heavy: true })],
+    files: [/cars\.js|ideas\.js|carText|player\.js|ecu\.js|ecus\.json|progress\.js|replay\.js/],
   },
   cargo: {
     about: 'Cargo and the delivery at the kerb: every level\'s item, the Evil thresholds, the ending',

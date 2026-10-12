@@ -21,7 +21,13 @@ try {
   const STORE = 'delivery_racer_progress_backup', cookieNow = () => document.cookie.split(';')[0], inCookie = () => JSON.parse(decodeURIComponent(cookieNow().split('=')[1]));
 
   // ---- what they are: thirty, tierless, free, placeholders, and none of them a garage car
-  check(IDEA_CARS.length === 66, IDEA_CARS.length + ' car ideas (26 originals, the second batch of twenty: render/ideaModels2.js, the third of ten: render/ideaModels3.js, and the fourth of ten: render/ideaModels4.js)');
+  check(IDEA_CARS.length === 48, IDEA_CARS.length + ' car ideas (66 built: 26 originals, the second batch of twenty: render/ideaModels2.js, the third of ten: render/ideaModels3.js, and the fourth of ten: render/ideaModels4.js; less the 18 promoted to the roster)');
+  // (eighteen that were ideas are evergreen BLUEPRINT cars now (cars.js FILLER_CARS, CHECKLIST item 115): in the roster, out of the lot)
+  {
+    const { FILLER_CARS } = g.cars;
+    check(FILLER_CARS.length === 18 && FILLER_CARS.every(c => c.evergreen && !c.idea && c.tier >= 1 && c.tier <= 5 && !IDEA_CARS.some(i => i.id === c.id) && !CARS.includes(c)),
+      'the 18 evergreen blueprint cars are out of the ideas lot and not in CARS: ' + FILLER_CARS.map(c => c.id + ' ' + c.tier).join(', '));
+  }
   // (four that were ideas are garage cars now: the Blue Stars at four stars. Bought, owned and saved as any other)
   {
     const four = ['gullwing', 'rearengine', 'snake', 'polytruck'].map(id => CARS.find(c => c.id === id));
@@ -131,7 +137,7 @@ try {
 
   // ---- driven: down the first level as a ghost, to its end
   const level = LEVELS[0];
-  const EXTREMES = ['bubble', 'limo', 'monster', 'schoolbus', 'doubledecker', 'milkfloat'];
+  const EXTREMES = ['golfcart', 'limo', 'widetruck', 'schoolbus', 'doubledecker', 'snailcamper'];
   let driven = 0;
   const lines = [];
   for (const car of IDEA_CARS) {
@@ -160,14 +166,14 @@ try {
   // ---- the rules that restrict the car still hold
   const amphibious = LEVELS.find(l => l.amphibious && !l.car);
   g.select(amphibious.id);
-  selectCar('monster');
+  selectCar('widetruck');
   check(!g.Game.canStart, 'an amphibious level (' + g.levels.levelName(amphibious) + ') is not started in an idea, with no amphibious car owned');
   g.Game.start();
   check(g.Game.state !== 'playing' || cars().CAR.amphibious, '...Game.start refuses it');
   Progress.data.cars.push(amphibiousCars()[0].id);
   check(g.Game.canStart, '...and with one owned it starts');
   g.Game.start();
-  check(cars().CAR.amphibious && !cars().CAR.idea && Progress.data.car === 'monster', '...in the amphibious car (' + cars().CAR.name + '), the idea still the car in use');
+  check(cars().CAR.amphibious && !cars().CAR.idea && Progress.data.car === 'widetruck', '...in the amphibious car (' + cars().CAR.name + '), the idea still the car in use');
   g.select('ufo');
   g.Game.start();
   check(cars().CAR === LEVEL_CARS.ufo, 'a level with a vehicle of its own (the UFO\'s) is driven in that');
@@ -199,11 +205,11 @@ try {
   g.run(3);
   P.endMystery();
   check([P.s, P.lat, P.speed].every(isFinite), 'swapped sides: it drives on');
-  start('bubble');
+  start('golfcart');
   g.Game.tankPieces = C.tankPieces;
   P.startTank();
   g.run(5);
-  check(P.tank > 0 && cars().CAR.id === 'bubble' && [P.s, P.speed, P.health].every(isFinite) && P.crossing === 1, 'TANK RAGE in the Bubble Car: it rages, at ' + P.speed.toFixed(1) + ' m/s');
+  check(P.tank > 0 && cars().CAR.id === 'golfcart' && [P.s, P.speed, P.health].every(isFinite) && P.crossing === 1, 'TANK RAGE in the Golf Cart: it rages, at ' + P.speed.toFixed(1) + ' m/s');
   // (the horn: each borrows a garage car's, one there is)
   const audio = (await import('node:fs')).readFileSync(new URL('../src/delivery/render/audio.js', import.meta.url), 'utf8');
   const horns = audio.slice(audio.indexOf('const HORNS'), audio.indexOf('const pick'));
