@@ -175,6 +175,16 @@ async function filters(g, check) {
   check(seen.join(',') === ids(list) && D.stepIn(list, at, 1).id === list[0].id, 'next walks the filtered list in its order and goes round from the last to the first (' + list.length + ' cars)');
   check(D.stepIn(list, list[0].id, -1).id === list[list.length - 1].id && D.stepIn(list, list[2].id, -1).id === list[1].id, 'previous goes back, and from the first round to the last');
   check(list.every(c => (MEANS.stars('2')(c) || MEANS.stars('3')(c)) && MEANS.colour('gold')(c)), 'next / previous never leave the filter');
+  // a Key car's overlay names the LIVE event that gives it (the owner, 12-Oct), else the general line
+  const { Events: Ev } = await g.load('events.js');
+  const hunt = Ev.specials.find(e => e.id === 'comet-hunt'), comet = D.carCard(g.cars.carById('silvercomet'), false), realNow = Ev.now;
+  Ev.now = () => hunt.from + 3600e3;
+  const live = D.overlayOf(comet);
+  Ev.now = () => hunt.to + 86400e3;
+  const over = D.overlayOf(comet);
+  Ev.now = realNow;
+  check(live?.kind === 'key' && live.line === 'Win it in ' + hunt.name, 'a Key car\'s overlay names the live event: "' + live?.line + '"');
+  check(over?.line === 'Win it at events or find it in packs', 'once the event is over: "' + over?.line + '"');
   check(D.stepIn([], 'x', 1) === null && D.stepIn([list[0]], list[0].id, 1).id === list[0].id, 'an empty list: nothing; one car: itself');
 }
 
