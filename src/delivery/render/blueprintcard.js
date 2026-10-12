@@ -4,9 +4,10 @@
 // large in one of its three poses (carposes.js, carstill.js: the live-rendered still, never the old carshots photos);
 // the car's stars at the lower right of the picture (clear of the tab at any count); a black tab at the top right,
 // BLUEPRINT (or KEY for a Bespoke key card), with a green xN (card.n: how many of that card; every card is its own
-// today, so x1: packs.js revealCards); a black square at the lower left of the picture with the RARITY LETTER (C, U, E,
-// L, B: the card's rarity, packs.json, the same five the Shop shows); the name below in two lines: the small line what it
-// is based on (an idea/filler car's `basedOn`) or what kind of car it is, the big line its name in capitals. A NEW badge
+// today, so x1: packs.js revealCards); a black strip at the lower left of the picture with the RARITY WORD (Common,
+// Uncommon, Epic, Legendary, Bespoke: the card's rarity, packs.json, the colours the Shop shows); the name below in two
+// lines: the small line what kind of car it is (Garage Car, Blueprint Car, Key Car, Car Key: makerLine), the big line its
+// name in capitals. A NEW badge
 // for a first copy, FEATURED for a special pack's featured card. The compact card (the "What's inside" sheet) has a foot
 // with its chance; the reveal puts progressBar() under each card.
 // blueprintCard(car, card, opts) gives { node, pic }: the caller draws the picture (carstill.js drawSoon / stillsIn) at
@@ -25,14 +26,15 @@ const safe = (f, fallback) => { try { return f(); } catch { return fallback; } }
 export const RARITY_LETTER = { common: 'C', uncommon: 'U', epic: 'E', legendary: 'L', bespoke: 'B' };
 const RARITY_WORD = { common: 'Common', uncommon: 'Uncommon', epic: 'Epic', legendary: 'Legendary', bespoke: 'Bespoke' };
 
-// the small line: what it is based on, else what kind of car it is
+// the small line over the name (the owner, 12-Oct): what KIND of car the card is for, never what it is based on:
+//   Garage Car   one the car lot sells (the garage's own cars)
+//   Blueprint Car  one that is only ever got from blueprints (the evergreen fillers)
+//   Key Car      a Bespoke key car (the Silver Comet and the like): the card is for its blueprints
+//   Car Key      the key card itself
 export const makerLine = (car, key = false) => {
-  const based = car.basedOn && String(car.basedOn).replace(/\s*\(.*?\)\s*/g, ' ').trim();
-  if (based) return based;
-  if (key) return 'Key to drive it';
-  if (car.event) return 'Event car';
-  if (car.earned) return 'Special car';
-  return safe(() => Ecu.isBlueprint(car), false) ? 'Blueprint car' : 'Key car';
+  if (key) return 'Car Key';
+  if (car.bespoke || car.event) return 'Key Car';
+  return safe(() => Ecu.isBlueprint(car), false) ? 'Blueprint Car' : 'Garage Car';
 };
 
 // card: { rarity, key, n (the xN; 0 or undefined: none), isNew, featured } ; opts: { compact (the contents sheet's),
@@ -43,7 +45,7 @@ export const blueprintCard = (car, card, { compact = false, chance = null, marks
   const st = car.tier ? make('span', 'bp-stars', stars(car)) : null; // (an event car has no stars: its small line says so)
   st?.style.setProperty('color', starColour(car));
   const tab = make('span', 'bp-tab', make('b', '', card.key ? 'KEY' : 'BLUEPRINT'), card.n ? make('i', 'bp-x', '×' + card.n) : null);
-  const letter = make('span', 'bp-letter', RARITY_LETTER[rarity] || '?');
+  const letter = make('span', 'bp-letter', RARITY_WORD[rarity] || rarity); // (the word, not a letter: Common, Uncommon...)
   letter.title = RARITY_WORD[rarity] || rarity;
   const art = make('div', 'bp-art', pic, st, tab, letter,
     card.isNew && !card.key ? make('span', 'bp-new', 'NEW') : null,
