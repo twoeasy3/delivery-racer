@@ -30,7 +30,9 @@
 // Eighteen have left this list (12-Oct, CHECKLIST item 115): the evergreen BLUEPRINT cars, now in the roster as
 // cars.js FILLER_CARS (their figures nudged into their tier's range; their models still built here, put in MODELS by
 // render/models.js). Five more left it the same day (the owner, 12-Oct): the BESPOKE key cars, cars.js BESPOKE_CARS
-// (the Rocket Fin Coupe, the Swan Car, the Solar Racer, the Moon Rover and the Monowheel). 43 ideas are left.
+// (the Rocket Fin Coupe, the Swan Car, the Solar Racer, the Moon Rover and the Monowheel). 43 ideas were left; two more
+// went (the Snowcat and the Hot Dog Car, CHECKLIST item 153), and two were added (the fifth batch: the Goddess Saloon and the
+// Fifties Hardtop, classic road cars): 43 again.
 // ============================================================================
 export const IDEA_CARS = [
   { id: 'threewheeler', name: 'Three-Wheeler', basedOn: 'Reliant Robin', model: 'threewheeler', color: 0xe0902a, evilColor: 0x3d4a2a,
@@ -160,6 +162,13 @@ export const IDEA_CARS = [
   { id: 'gameviewer', name: 'Game-Drive Truck', basedOn: 'Toyota Land Cruiser 79 game viewer', model: 'gameviewer', color: 0x9a8a5a, evilColor: 0x2e4a2e,
     hw: 0.95, hl: 2.85, height: 2.4, note: 'No doors, three rows of seats climbing under a canopy, and a chair for the tracker out on the bull bar.',
     maxSpeed: 28, accel: 8, agility: 0.95, crossing: 1, health: 240, mass: 2, sound: 'suv' },
+  // (the fifth batch of two: classic road cars, believable and recognisable; models in render/ideaModels5.js)
+  { id: 'goddess', name: 'Goddess Saloon', basedOn: 'Citroën DS (1968 on)', model: 'goddess', color: 0x6e8fae, evilColor: 0x16161a,
+    hw: 0.9, hl: 2.4, height: 1.47, note: 'A shark\'s nose, its back wheels under spats, and lamps that turn to look round the corner.',
+    maxSpeed: 31, accel: 8.5, agility: 1.1, crossing: 0.7, health: 180, mass: 1.5, sound: 'wagon' },
+  { id: 'hardtop', name: 'Fifties Hardtop', basedOn: '1957 Chevrolet Bel Air hardtop', model: 'hardtop', color: 0x3fb0a8, evilColor: 0x7a1020,
+    hw: 0.94, hl: 2.5, height: 1.48, note: 'Rockets on the bonnet, fins on the tail, chrome everywhere and no pillar between the windows.',
+    maxSpeed: 34, accel: 9.5, agility: 0.95, crossing: 0.5, health: 210, mass: 1.7, sound: 'lowrider' },
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
 export const IDEA_CAR = Object.fromEntries(IDEA_CARS.map(car => [car.id, car]));
