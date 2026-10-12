@@ -36,7 +36,7 @@
       "givenBy": { "career": { "every": 5, "levels": [] } }
     },
     "daily": {
-      "name": "Daily pack", "size": 5, "baseAmount": 1, "pool": "evergreen", "atLeast": { "uncommon": 1 },
+      "name": "Daily pack", "size": 5, "baseAmount": 1, "doubleChance": 0, "pool": "all", "bespokeBlueprints": true, "atLeast": { "uncommon": 1 },
       "shop": { "section": "daily", "price": 0, "limits": { "daily": 1 } }
     },
     "comet-special": {

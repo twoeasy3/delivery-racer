@@ -32,7 +32,7 @@
 import '../showroom.css';
 import '../showroom-phone.css';
 import { showroomCars, carCard, floorBest, statShown, RARITIES, CAR_LOT, sideName, sideClick, driveWords, barredWhy, driveAs,
-  FILTER_GROUPS, SORTS, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn, overlayOf, cardTip } from '../showroomData.js';
+  FILTER_GROUPS, SORTS, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn, overlayOf, cardTip, kindOf } from '../showroomData.js';
 import { CAR, carInUse, setViewSide, STAR_COLOURS } from '../cars.js';
 import { Progress } from '../progress.js';
 import { ShopScreen } from './shop.js'; // (the Shop, reached from the header)
@@ -472,7 +472,11 @@ const showDetail = () => {
     look.textContent = statsOff ? 'Stats' : 'Hide stats';
     look.setAttribute('aria-pressed', String(statsOff));
   });
-  const stage = make('div', 'sr-stage', pic, overlayNode(overlayOf(card), { inline: true }), arrow(-1), arrow(1), look);
+  // (a KEY car's key, spinning in the stage's corner: render/showroomview.js; not a blacked-out car's, which it would give
+  // away; a blacked-out one (no key to be had) shows none)
+  const keyEl = kindOf(card) === 'key' && !card.dark ? make('div', 'sr-fkey') : null;
+  if (keyEl) { keyEl.setAttribute('role', 'img'); keyEl.setAttribute('aria-label', card.name + "'s key"); keyEl.title = 'Its key'; }
+  const stage = make('div', 'sr-stage' + (keyEl ? ' has-key' : ''), pic, overlayNode(overlayOf(card), { inline: true }), keyEl, arrow(-1), arrow(1), look);
   // its card's picture (the cached still) in the panel
   const cardPic = make('span', 'sr-dcard-pic' + (card.dark ? ' silhouette' : ''));
   const dcard = make('div', 'sr-dcard', cardPic);
@@ -498,7 +502,7 @@ const showDetail = () => {
   slide = 0;
   requestAnimationFrame(() => { if (full && cardPic.isConnected) stillCar(cardPic, card.car, evilNow()); });
   // the car itself, live (a drag turns it; it lands: render/carbounce.js); with no WebGL, its still
-  if (!ShowroomView.show(pic, card.car, { evil, dark: card.dark })) requestAnimationFrame(() => { if (Showroom.isOpen) stillCar(pic, card.car, evilNow()); });
+  if (!ShowroomView.show(pic, card.car, { evil, dark: card.dark, keyEl })) requestAnimationFrame(() => { if (Showroom.isOpen) stillCar(pic, card.car, evilNow()); });
 };
 const pick = (id) => {
   if (id !== picked) blip('menuMove');
