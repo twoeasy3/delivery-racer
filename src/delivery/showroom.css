@@ -137,7 +137,8 @@
 /* (the picture's box: its still on .sr-img, a locked card's overlay over it; a size container, so the overlay fits any card) */
 #showroom .sr-pic { flex: 1 1 auto; min-height: 0; margin: 26px 6px 0; position: relative; container-type: size; }
 #showroom .sr-img { position: absolute; inset: 0; background: center 60% / contain no-repeat; }
-#showroom .sr-img.silhouette, #showroom .sr-dpic.silhouette { filter: brightness(0) drop-shadow(0 0 1px rgba(255, 255, 255, .35)); }
+#showroom .sr-img.silhouette { filter: brightness(0) drop-shadow(0 0 1px rgba(255, 255, 255, .35)); }
+#showroom .sr-dpic.silhouette { filter: brightness(0) blur(.7px) drop-shadow(0 0 2px rgba(255, 255, 255, .3)); }
 #showroom .sr-info { display: flex; flex-direction: column; gap: 6px; padding: 8px 11px 11px; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, .45)); }
 #showroom .sr-name { font: italic 800 17px/1.05 var(--display); font-stretch: condensed; letter-spacing: .02em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #showroom .sr-ecu { display: flex; align-items: center; gap: 6px; }
@@ -241,7 +242,7 @@
 #showroom .sr-dpic canvas { position: absolute; inset: 0; }
 #showroom .sr-detail.locked .sr-dpic { filter: grayscale(1) brightness(.6); }
 #showroom .sr-detail.locked .sr-dpic.forsale { filter: none; } /* (one at the car lot: in its colours, the lock words beside it) */
-#showroom .sr-detail.locked .sr-dpic.silhouette { filter: brightness(0) drop-shadow(0 0 1px rgba(255, 255, 255, .35)); }
+#showroom .sr-detail.locked .sr-dpic.silhouette { filter: brightness(0) blur(.7px) drop-shadow(0 0 2px rgba(255, 255, 255, .3)); } /* (the blur takes the stair-steps off the live canvas's edge, which the white glow had been tracing) */
 /* a key car's KEY, spinning in the stage's bottom-right corner (render/showroomview.js draws it); the pill under the car kept clear of it */
 #showroom .sr-fkey { position: absolute; z-index: 1; right: max(14px, env(safe-area-inset-right)); bottom: 6px; width: 112px; height: 160px; pointer-events: none;
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .45)); }
