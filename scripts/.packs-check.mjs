@@ -292,7 +292,7 @@ try {
       const badges = c.map(x => x.badge).join(',') === Array.from({ length: n - 1 }, (_, i) => i + 2).join(',');
       const fresh = c.filter(x => x.fresh), layersOk = fresh.length === Math.min(n - 1, FLICK.layers) && new Set(fresh.map(x => x.layer)).size === fresh.length && c.every(x => x.layer < FLICK.layers);
       const air = Math.max(0, ...Array.from({ length: Math.ceil(p.total / 5) }, (_, k) => flickState(p, k * 5).flying.length)); // (at most two copies in the air: two thrown clones)
-      check(mono && badges && layersOk && p.total < 2000 && air <= 2 && (n > 15 || gaps.every(gp => gp >= 80 && gp <= 130)),
+      check(mono && badges && layersOk && p.total < 2000 && air <= 2 && (n > 15 || gaps.every(gp => gp >= 80 && gp <= (n <= 4 ? 345 : 345 - (n - 4) * 20))),
         'flicks: ' + n + ' copies: landings in order, the badge 2..' + n + ', at most ' + FLICK.layers + ' pile layers (' + fresh.length + '), at most two in the air (' + air + '), done in '
         + p.total + ' ms' + (gaps.length ? ' (gaps ' + gaps[0] + ' down to ' + gaps.at(-1) + ' ms)' : ''));
       const st = flickState(p, Infinity);

@@ -210,15 +210,17 @@ export const revealCards = (cards) => (cards || []).map(c => ({ ...c, n: c.n ?? 
 // settles in on the pile (a layer index: at most FLICK.layers drawn, a later copy lands on an existing layer). The gaps
 // start at FLICK.gap and shrink by FLICK.speedUp each copy down to FLICK.minGap (so a big amount speeds up), and the whole
 // is squeezed to fit FLICK.most. reduced (reduced motion): no throws, every copy at 0. seed: the slot's own scatter.
-export const FLICK = { flight: 160, gap: 125, minGap: 85, speedUp: 0.95, most: 1500, settle: 140, layers: 7 };
+export const FLICK = { flight: 160, gap: 125, minGap: 85, speedUp: 0.95, most: 1500, settle: 140, layers: 7, slowGap: 340, slowFlight: 340 }; // (slowGap / slowFlight: a SMALL stack (x3) is thrown slower, easing to the fast pace by about x10: the owner, 12-Oct)
 export const flickPlan = (n, { reduced = false, seed = 1 } = {}) => {
   const extra = Math.max(0, Math.floor(Number(n) || 1) - 1);
   let s = (seed | 0) || 1;
   const rnd = () => { s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-  const gaps = Array.from({ length: Math.max(0, extra - 1) }, (_, j) => Math.max(FLICK.minGap, FLICK.gap * FLICK.speedUp ** j));
+  const slow = Math.max(0, Math.min(1, (10 - extra) / 8)); // (1 for a stack of 3 or fewer, 0 from about 10 up)
+  const gap0 = FLICK.gap + (FLICK.slowGap - FLICK.gap) * slow, flight0 = FLICK.flight + (FLICK.slowFlight - FLICK.flight) * slow;
+  const gaps = Array.from({ length: Math.max(0, extra - 1) }, (_, j) => Math.max(FLICK.minGap, gap0 * FLICK.speedUp ** j));
   const sum = gaps.reduce((a, b) => a + b, 0), room = FLICK.most - FLICK.flight;
   const squeeze = sum > room ? room / sum : 1; // (a huge amount: the gaps shrink to fit...)
-  const flight = Math.min(FLICK.flight, Math.floor(2 * Math.min(Infinity, ...gaps) * squeeze)); // (...and each throw too: never more than two in the air)
+  const flight = Math.min(Math.round(flight0), Math.floor(2 * Math.min(Infinity, ...gaps, flight0) * squeeze)); // (...and each throw too: never more than two in the air)
   const copies = [];
   let launch = 0;
   for (let j = 0; j < extra; j++) {
