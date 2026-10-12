@@ -7,7 +7,7 @@
 // blueprints once, as it opens; this screen only shows them (one pack at a time: no double open from a double tap).
 // The look is the Shop's and the Showroom's: a full-screen dark panel, the game's display font, the rarity colours.
 // The pack (the Shop's pack art) shakes and bursts; then its cards, BLUEPRINT CARDS (render/blueprintcard.js), each in
-// one of the car's three poses, the poses varied so neighbours differ, turn over ON THEIR OWN one after another: a short
+// one of the car's four poses, the poses varied so neighbours differ, turn over ON THEIR OWN one after another: a short
 // beat each, a longer one and a glow for Epic and above, the last (the best card: packs.js revealOrder) given the most.
 // A tap anywhere during it turns all the rest at once; after that only Done (or Next pack) does anything. Under each
 // card its car's progress bar fills from before the card to after it, and glows on an unlock or an ECU up.

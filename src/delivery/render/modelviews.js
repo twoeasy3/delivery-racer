@@ -147,7 +147,8 @@ const size = new THREE.Vector2();
 // mostly off it). False: no renderer, or no size yet
 // A pose with a lens of its own ({ lift, angle, fov, margin }: carstill.js POSES, the blueprint cards' three) is
 // framed TIGHT: the corners of the model's box, turned as it stands, are fitted into the picture's own shape with
-// `margin` of it to spare (a bus, the Monster Truck, the dragster all whole, a small car as big), and centred.
+// `margin` of it to spare (a bus, the Monster Truck, the dragster all whole, a small car as big), and centred
+// (marginX / marginY: a margin each way; shiftY: the box's middle moved up by that share of the half height).
 const corner = new THREE.Vector3();
 export const poseView = (model, pose, aspect) => {
   const scene = lit();
@@ -182,11 +183,11 @@ export const poseView = (model, pose, aspect) => {
     }
     return { w: (x1 - x0) / 2, h: (y1 - y0) / 2, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 };
   };
-  const m = pose.margin ?? 0.86, fits = (s) => s && s.w <= m && s.h <= m;
+  const m = pose.margin ?? 0.86, mx = pose.marginX ?? m, my = pose.marginY ?? m, fits = (s) => s && s.w <= mx && s.h <= my;
   let near = size * 0.05, far = size * 40;
   for (let i = 0; i < 28; i++) { const d = (near + far) / 2; if (fits(span(d))) far = d; else near = d; }
   const s = span(far);
-  return { scene, camera, offset: s ? { x: s.cx / 2, y: -s.cy / 2 } : { x: 0, y: 0 } }; // (offset: a share of the picture to slide the view by, so the box is centred)
+  return { scene, camera, offset: s ? { x: s.cx / 2, y: -(s.cy - (pose.shiftY || 0)) / 2 } : { x: 0, y: 0 } }; // (offset: a share of the picture to slide the view by, so the box is centred)
 };
 export const drawStill = (renderer, el, model, pose) => {
   if (!renderer || renderer.getContext().isContextLost()) return false;

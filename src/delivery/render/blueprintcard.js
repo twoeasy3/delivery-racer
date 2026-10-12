@@ -1,7 +1,7 @@
 // ---- the BLUEPRINT CARD: one car's card, after Asphalt 9's blueprint cards (the owner, 12-Oct), in this game's look ----
 // A light portrait card with a slim border and a drop shadow; the upper part a picture on diagonal stripes in the
 // card's RARITY colour (Common grey, Uncommon green, Epic purple, Legendary gold, Bespoke the rainbow), the car drawn
-// large in one of its three poses (carposes.js, carstill.js: the live-rendered still, never the old carshots photos);
+// large in one of its four poses (carposes.js, carstill.js: the live-rendered still, never the old carshots photos);
 // the car's stars at the lower right of the picture (clear of the tab at any count); a black tab at the top right,
 // BLUEPRINT (or CAR KEY for a Bespoke key card, whose picture is the KEY: keycard.js), with a green xN (card.n: how many of that card; every card is its own
 // today, so x1: packs.js revealCards); a black strip at the lower left of the picture with the RARITY WORD (Common,
