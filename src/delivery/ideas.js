@@ -30,7 +30,10 @@
 // Eighteen have left this list (12-Oct, CHECKLIST item 115): the evergreen BLUEPRINT cars, now in the roster as
 // cars.js FILLER_CARS (their figures nudged into their tier's range; their models still built here, put in MODELS by
 // render/models.js). Five more left it the same day (the owner, 12-Oct): the BESPOKE key cars, cars.js BESPOKE_CARS
-// (the Rocket Fin Coupe, the Swan Car, the Solar Racer, the Moon Rover and the Monowheel). 43 ideas are left.
+// (the Rocket Fin Coupe, the Swan Car, the Solar Racer, the Moon Rover and the Monowheel). 43 ideas were left; two more
+// went (the Snowcat and the Hot Dog Car, CHECKLIST item 153); the fifth batch (the Goddess Saloon and the Fifties Hardtop) was added and
+// promoted to the roster as tier-4 Legendary blueprint cars the same day (cars.js FILLER_CARS): 41 left.
+
 // ============================================================================
 export const IDEA_CARS = [
   { id: 'threewheeler', name: 'Three-Wheeler', basedOn: 'Reliant Robin', model: 'threewheeler', color: 0xe0902a, evilColor: 0x3d4a2a,

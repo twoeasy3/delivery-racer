@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { IDEA_MODELS_2 } from './ideaModels2.js'; // (the second batch of twenty ideas' models)
 import { IDEA_MODELS_3 } from './ideaModels3.js'; // (the third batch, ten more)
 import { IDEA_MODELS_4 } from './ideaModels4.js'; // (the fourth batch: ten unusual, retro-future and utility vehicles)
+import { IDEA_MODELS_5 } from './ideaModels5.js'; // (the fifth batch: two classic road cars)
 
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 const box = (parent, material, w, h, l, x, y, z) => {
@@ -161,6 +162,7 @@ export const IDEA_MODELS = {
   ...IDEA_MODELS_2,
   ...IDEA_MODELS_3,
   ...IDEA_MODELS_4,
+  ...IDEA_MODELS_5,
   // A bubble car (a BMW Isetta): an egg on wheels. The whole front is its one door, hinged at the side, the
   // windscreen in it; a glass bubble over a bench seat; lamps in pods on its flanks; the two back wheels close
   // together under the pinched tail. It sits still
