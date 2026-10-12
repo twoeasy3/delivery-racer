@@ -2353,7 +2353,7 @@ for (const name of ['gullwing', 'rearengine', 'snake', 'polytruck']) {
 }
 // ...and the eighteen evergreen blueprint cars (cars.js FILLER_CARS), which were car ideas too: built as the ideas lot
 // builds them (makeIdeaModel: at the vehicle's real size, and one too wide for a lane, the Monster Truck, scaled down)
-for (const name of ['bubble', 'milkfloat', 'tuktuk', 'woody', 'pandacoupe', 'keiroadster', 'fireengine', 'fieldscout', 'monster',
+for (const name of ['bubble', 'milkfloat', 'tuktuk', 'woody', 'pandacoupe', 'keiroadster', 'fireengine', 'monster',
   'stately', 'teardrop', 'pony', 'midnight', 'splitwindow', 'wedge', 'jetcar', 'dragster', 'flyingcar']) {
   MODELS[name] = (car) => makeIdeaModel({ ...car, model: name });
 }

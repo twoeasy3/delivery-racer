@@ -887,46 +887,6 @@ export const IDEA_MODELS_2 = {
     return group;
   },
 
-  // A field scout (a Willys MB jeep): a flat bonnet between flat wings, a seven-slot grille, an upright
-  // windscreen you could fold down, cut-away sides, seats on a bare floor, a spare wheel and a can at the back,
-  // a white roundel on the bonnet. No roof at all
-  fieldscout: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, L = car.hl, R = 0.33;
-    const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(CHROME), trim = lambert(TRIM), seat = lambert(0x6a5f3c), dark = lambert(0x3d4630), can = lambert(0x4e5a35);
-    const body = box(group, paint, w * 0.84, 0.5, L * 1.25, 0, 0.72, -L * 0.3);              // the tub, y 0.47 to 0.97
-    box(group, paint, w * 0.66, 0.34, L * 0.55, 0, 0.87, L * 0.7);                           // the bonnet
-    box(group, dark, w * 0.74, 0.03, L * 0.9, 0, 0.985, -L * 0.3);                           // the floor under the seats, darker
-    box(group, paint, w * 0.62, 0.3, 0.04, 0, 0.85, L * 0.975 + 0.02);                       // the grille's plate,
-    for (let i = -3; i <= 3; i++) box(group, trim, 0.03, 0.22, 0.05, i * w * 0.075, 0.85, L * 0.975 + 0.03);
-    box(group, paint, w * 0.9, 0.07, 0.06, 0, 0.5, L + 0.02);             // a bumper bar
-    for (const side of [-1, 1]) {
-      box(group, paint, 0.07, 0.26, L * 1.0, side * (w * 0.42 - 0.035), 1.1, -L * 0.28);   // the cut-away sides
-      box(group, paint, 0.3, 0.07, L * 0.62, side * (w / 2 - 0.15), 0.9, L * 0.66);          // the flat wings,
-      box(group, paint, 0.3, 0.07, L * 0.6, side * (w / 2 - 0.13), 0.85, -L * 0.62);        // front and back
-      headlamps(group, w, 0.96, L * 0.93, 0.08, 0.34);
-      box(group, trim, 0.03, 0.34, 0.03, side * w * 0.4, 1.1, L * 0.0 + 0.0);             // windscreen posts
-      rod(group, trim, 0.025, [side * w * 0.38, 1.0, L * 0.18], [side * w * 0.38, 1.45, L * 0.2]);
-      box(group, seat, w * 0.34, 0.12, L * 0.3, side * w * 0.19, 1.05, -L * 0.12);          // two seats
-      box(group, seat, w * 0.34, 0.34, 0.1, side * w * 0.19, 1.25, -L * 0.28);
-      wheel(group, R, 0.24, side * (w / 2 - 0.0), R, L * 0.62, lambert(0x6d7a52));
-      wheel(group, R, 0.24, side * (w / 2 - 0.0), R, -L * 0.62, lambert(0x6d7a52));
-      box(group, TAIL, 0.08, 0.1, 0.04, side * w * 0.38, 0.9, -L * 0.93 - 0.0);
-    }
-    box(group, seat, w * 0.74, 0.12, L * 0.2, 0, 1.05, -L * 0.62);                           // the rear bench,
-    box(group, seat, w * 0.74, 0.3, 0.08, 0, 1.2, -L * 0.74);
-    box(group, glass, w * 0.8, 0.3, 0.03, 0, 1.3, L * 0.19);                                 // the screen
-    box(group, trim, w * 0.84, 0.04, 0.05, 0, 1.47, L * 0.2);                                // its top frame
-    wheel(group, 0.3, 0.2, 0, 0.9, 0, STEEL).forEach(m => { m.rotation.set(Math.PI / 2, 0, 0); m.position.set(0, 0.95, -L - 0.12); }); // the spare, standing on the tail
-    box(group, can, 0.16, 0.36, 0.3, w * 0.3, 0.95, -L - 0.1);                               // a jerry can
-    tube(group, trim, 0.1, 0.03, 0, 1.25, L * 0.04, 'y').rotation.x = 0.5;                   // the wheel
-    rod(group, trim, 0.025, [0, 1.0, L * 0.08], [0, 1.2, L * 0.04]);
-    tube(group, WHITE, 0.15, 0.014, 0, 1.049, L * 0.68, 'y');                               // the roundel on the bonnet: white,
-    tube(group, dark, 0.1, 0.014, 0, 1.054, L * 0.68, 'y');                                  // with a green eye
-    group.userData = { body, animate: () => {} };
-    return group;
-  },
-
   // A scooter with a sidecar (a Vespa and a chair): a little round-nosed scooter on two small wheels with its
   // leg shield and handlebars, and bolted to its side a one-seat sidecar like a boat with a wheel of its own
   sidecar: (car) => {

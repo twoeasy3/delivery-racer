@@ -451,7 +451,8 @@ renderer.domElement.addEventListener('click', (event) => {
 });
 
 // The side on show changes the car rule (a level's medal is a side's): the lot is filtered again for the side now picked
-for (const b of sideBtns) b.addEventListener('click', () => Garage.setSide(b.dataset.side === 'evil'));
+// (either half is a toggle: the one already on flips to the other)
+for (const b of sideBtns) b.addEventListener('click', () => Garage.setSide((b.dataset.side === 'evil') === Garage.evil ? !Garage.evil : b.dataset.side === 'evil'));
 // the bar's Sort and Show buttons: the lot built again, from its first column (a car looked at that is no longer
 // parked is let go)
 mountGarageView(() => garageCars(), () => {

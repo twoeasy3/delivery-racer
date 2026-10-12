@@ -314,9 +314,10 @@ export const Game = {
     // a special event's stage delivered: done, and the grand prize after the last (events.js)
     const staged = outcome === 'delivered' && !Replay.playing ? Events.delivered(LEVEL) : null;
     if (staged) resultNote.textContent += '  |  Stage ' + staged.stage + ' of ' + staged.of + ' done' + (staged.prize ? '  |  You won the ' + staged.prize + '!' : '');
-    // card packs given (packs.js): a Career level's first delivery, a special event's stage or prize. Opened from the menu's Packs
+    // card packs given (packs.js): a Career level's first delivery, a special event's stage or prize. Opened at once over these
+    // results, a beat after they are up (the reveal, render/packs.js)
     const packs = [...(outcome === 'delivered' && !Replay.playing ? [Packs.levelDone(LEVEL, firstTime)] : []), ...(staged?.packs || [])].filter(Boolean);
-    if (packs.length) resultNote.textContent += '  |  ' + (packs.length > 1 ? packs.length + ' packs: ' + packs.join(', ') : 'A ' + packs[0]) + '! Open it from the menu\'s Packs';
+    if (packs.length) resultNote.textContent += '  |  ' + (packs.length > 1 ? packs.length + ' packs: ' + packs.join(', ') : 'A ' + packs[0]) + '! Opening...';
     // a playback's results: what the run came to, nothing banked or bettered (the save is put back as it was: replay.js)
     if (Replay.playing) {
       resultTitle.textContent = 'Replay: ' + resultTitle.textContent;

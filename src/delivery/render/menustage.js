@@ -518,7 +518,10 @@ export const draw = () => {
 // ---- the controls ----------------------------------------------------------------------------------------
 const tabBtns = { delivery: document.getElementById('tabDelivery'), race: document.getElementById('tabRaces') };
 for (const [name, button] of Object.entries(tabBtns)) button.addEventListener('click', () => showTab(name));
-for (const button of sideBox.querySelectorAll('button')) button.addEventListener('click', () => pickSide(button.dataset.side === 'evil'));
+for (const button of sideBox.querySelectorAll('button')) button.addEventListener('click', () => { // (either half is a toggle: the one already on flips to the other, unless the level is one-sided)
+  const evil = button.dataset.side === 'evil';
+  pickSide(evil === Game.evil ? (oneSided(cursor) ? Game.evil : !evil) : evil);
+});
 // (the car card: the showroom, where a car is picked; with no car the level allows, straight to the car lot to buy one)
 shop.addEventListener('click', () => { blip('menuPick'); if (Tiers.on() && CAR.silhouette) Garage.open(); else Showroom.open(); });
 startBtn.addEventListener('click', () => blip('menuPick'));

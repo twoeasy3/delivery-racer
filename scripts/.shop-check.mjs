@@ -1,7 +1,7 @@
 // A check of the Shop (src/delivery/shop.js, shop.json; CHECKLIST item 115), headless: the offers are sound (each
 // names a pack kind, a price, a section; a special pack's event is real, and the offer is off the list outside it),
 // buying takes the price and gives the packs (through Packs.grant, a stand-in here so the check does not hang on
-// packs.js), nothing is bought without the balance (nothing taken, nothing given), and the placeholder balance goes
+// packs.js) and asks the reveal to open them at once (Packs.revealNow), nothing is bought without the balance (nothing taken, nothing given), and the placeholder balance goes
 // through the save and a save code and comes back. The screen (render/shop.js) is only seen in a browser.
 //   node scripts/.shop-check.mjs
 import { boot } from './delivery-headless.mjs';
@@ -48,7 +48,8 @@ try {
 
   // ---- buying (a stand-in for Packs.grant: what it was asked to give)
   const given = [];
-  const stub = { grant: (kind, { from = null, n = 1 } = {}) => (kinds.includes(kind) ? (given.push({ kind, from, n }), kind + ' pack') : '') };
+  let revealed = 0; // (Packs.revealNow: the reveal asked to open what was just bought)
+  const stub = { grant: (kind, { from = null, n = 1 } = {}) => (kinds.includes(kind) ? (given.push({ kind, from, n }), kind + ' pack') : ''), revealNow: () => { revealed++; } };
   Progress.reset();
   Shop.usePacks(null);
   Progress.data.shopCash = 5000;
@@ -58,6 +59,7 @@ try {
   const ten = Shop.offer('ten');
   const r = Shop.buy('ten');
   check(r.ok && Shop.balance() === 5000 - ten.price && given.length === 1 && given[0].kind === 'ten' && given[0].n === 1, 'the 10-pack bought: ' + ten.price + ' taken, one 10-pack given');
+  check(revealed === 1, 'bought, it is opened at once: the reveal asked once (Packs.revealNow), not left for a Packs page');
   const bundle = data.offers.find(o => o.count > 1);
   if (bundle) {
     const before = Shop.balance();
@@ -69,8 +71,9 @@ try {
   }
   // ---- not without the balance
   Progress.data.shopCash = ten.price - 1;
-  const n = given.length, short = Shop.buy('ten');
+  const asked = revealed, n = given.length, short = Shop.buy('ten');
   check(!short.ok && short.why === 'short' && short.need === 1 && Shop.balance() === ten.price - 1 && given.length === n, 'one short of the price: not bought, nothing taken, nothing given');
+  check(revealed === asked, '...and nothing is revealed for a buy that failed');
   Progress.data.shopCash = 0;
   check(data.offers.every(o => !Shop.canBuy(o.id, Date.now()).ok), 'with nothing: no offer can be bought');
   check(Shop.buy('no-such-offer').why === 'unknown', 'an offer there is not: refused');

@@ -417,8 +417,8 @@ export const FILLER_CARS = [
   filler(3, { id: 'fireengine', name: 'Fire Engine', basedOn: 'American LaFrance pumper', model: 'fireengine', color: 0xc8161d, evilColor: 0x25252b,
     hw: 1.25, hl: 4.5, height: 2.9, note: 'Red, with a ladder on top, hose reels, a pump panel and its lights going.',
     maxSpeed: 32, accel: 9, agility: 0.9, crossing: 0.8, health: 215, mass: 3, sound: 'bus' }),
-  filler(3, { id: 'fieldscout', name: 'Field Scout', basedOn: 'Willys MB jeep', model: 'fieldscout', color: 0x5b6b3a, evilColor: 0x2a2a2e,
-    hw: 0.8, hl: 1.85, height: 1.5, note: 'Flat wings, a seven-slot grille, a screen that folds and a spare standing on the tail.',
+  filler(3, { id: 'fieldscout', name: 'Field Scout', basedOn: 'Willys MB jeep', model: 'jeep', color: 0x5b6b3a, evilColor: 0x2a2a2e,
+    hw: 0.95, hl: 2.0, height: 1.8, note: 'The army jeep of the Battlefield: open top, a roll bar, a gun post and a spare on the tail.',
     maxSpeed: 33, accel: 10, agility: 1.15, crossing: 1, health: 140, mass: 1.2, sound: 'suv' }),
   // (really 3.1 m wide, 5.5 m long and 3.2 m high: too wide for a lane, so it is driven, and shown, at 0.87 of that)
   filler(3, { id: 'monster', name: 'Monster Truck', basedOn: 'Bigfoot (Ford F-250)', model: 'monster', color: 0x1f58c2, evilColor: 0x1c1c20,
