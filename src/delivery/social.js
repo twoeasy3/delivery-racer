@@ -62,9 +62,9 @@ export const Social = {
   },
   // how much happier every new driver starts
   get moodLift() { return this.on ? C.moodLift * this.level : 0; },
-  // s of shoulder driving allowed before the police step in: CONFIG.dangerTime by the car's COOL (Player.cool, its ECU's:
-  // 1 at its max ECU, less below; held to CONFIG.coolFloor), longer with the standing
-  get dangerTime() { return CONFIG.dangerTime * Math.max(CONFIG.coolFloor, Player.cool) * (1 + (this.on ? C.danger * this.level : 0)); },
+  // s of shoulder driving allowed before the police step in: CONFIG.dangerTime by the car's COMPOSURE (Player.composure, its ECU's:
+  // 1 at its max ECU, less below; held to CONFIG.composureFloor), longer with the standing
+  get dangerTime() { return CONFIG.dangerTime * Math.max(CONFIG.composureFloor, Player.composure) * (1 + (this.on ? C.danger * this.level : 0)); },
   // s more (good) or less (bad) a powerup or mystery effect lasts
   powerUpShift(type) {
     const good = ['turbo', 'radarDetector', 'siren', 'ghost', 'passenger', 'armour', 'bigSplash', ...GOOD_MYSTERIES].includes(type);

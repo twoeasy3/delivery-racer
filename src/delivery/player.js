@@ -74,7 +74,7 @@ export const Player = {
   speed: 0,
   health: CAR.health, maxHealth: CAR.health, smoke: 0, // (top speed, acceleration and health are the car's ECU's: see cars.js carStats, ecu.js)
   hw: CAR.hw, hl: CAR.hl, height: CAR.height, // hitbox half width / half length, body height
-  // (mass, crossing, agility, delivery and cool are the car's figures at its ECU: cars.js carStats, ecu.js; weight (its
+  // (mass, crossing, agility, delivery and composure are the car's figures at its ECU: cars.js carStats, ecu.js; weight (its
   // mass) is the same at every ECU, the rest are lower at a lower ECU)
   get mass() { return this.heavy > 0 ? CONFIG.heavyMass.mass : carStats(CAR).weight ?? CAR.mass ?? 1; },
   // how heavy the car is, for sliding on ice: by its size, against the Commuter's, and its mass
@@ -87,8 +87,8 @@ export const Player = {
   // how well its packages work (DELIVERY, package efficacy: 1 = as they always did; less at a lower ECU): a Good gift's
   // standing gain and an Evil flaming package's damage are multiplied by it (packages.js). Never below 0
   get delivery() { return Math.max(0, carStats(CAR).delivery ?? 1); },
-  // its COOL: the shoulder meter's fuse, a share of the usual (1 = CONFIG.dangerTime; less at a lower ECU): Social.dangerTime
-  get cool() { return carStats(CAR).cool ?? 1; },
+  // its COMPOSURE: the shoulder meter's fuse, a share of the usual (1 = CONFIG.dangerTime; less at a lower ECU): Social.dangerTime
+  get composure() { return carStats(CAR).composure ?? 1; },
   get vs() { return this.speed; },
   set vs(v) { this.speed = v; },
 
