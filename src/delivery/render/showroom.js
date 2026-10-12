@@ -15,7 +15,7 @@
 // For a picture: ?showroom opens it; &side=evil plays Evil (render/menustage.js), and so it opens on Evil; &look=<car id> picks that card; &sheet opens
 // its sheet on a phone; &bp=sport:7,hotrod:3 gives those blueprints for the visit (nothing saved).
 import '../showroom.css';
-import { showroomCars, carCard, floorBest, RARITIES, CAR_LOT, sideName, driveWords, barredWhy, driveAs } from '../showroomData.js';
+import { showroomCars, carCard, floorBest, statShown, RARITIES, CAR_LOT, sideName, driveWords, barredWhy, driveAs } from '../showroomData.js';
 import { CAR, carInUse, setViewSide } from '../cars.js';
 import { Progress } from '../progress.js';
 import { Game } from '../game.js';
@@ -25,6 +25,7 @@ import { Garage } from './garage.js';
 import { stillCar, stillReady } from './carstill.js';
 import { ShowroomView } from './showroomview.js';
 import { Sound } from './audio.js';
+import { renderSources } from './carsources.js'; // ("Where to get it": the car's key and blueprint sources)
 
 const panel = document.getElementById('showroom');
 const startScreen = document.getElementById('startScreen');
@@ -232,7 +233,8 @@ const stat = (name, now, max, show, share, tip) => {
   if (tip) label.title = tip;
   return make('div', 'sr-stat', label, bar, make('b', '', show(now)), make('span', 'sr-stat-max', same ? '' : 'max ' + show(max)));
 };
-const pct = (v) => Math.round(v * 100) + '%';
+// (a ratio stat: a whole number, 0-100, 50 = today's usual car: showroomData.js STAT_SCALE; its bar the same share)
+const score = (v) => String(statShown(v)), scoreShare = (v) => statShown(v) / 100;
 const kmh = (v) => Math.round(v * 3.6) + ' km/h';
 const showDetail = () => {
   const card = cards.find(c => c.data.id === picked)?.data;
@@ -245,19 +247,17 @@ const showDetail = () => {
   pic.title = 'Drag to turn it';
   const s = card.stats, m = card.maxStats;
   const share = { speed: v => v / best.maxSpeed, accel: v => v / best.accel, health: v => v / best.health,
-    respawn: v => best.respawnWorst > best.respawnBest ? 0.15 + 0.85 * (best.respawnWorst - v) / (best.respawnWorst - best.respawnBest) : 1,
-    of: (key) => v => (best[key] > 0 ? v / best[key] : 1) };
-  const fuse = (v) => (best.fuse * Math.max(best.coolFloor, v)).toFixed(1) + ' s'; // (cool: the shoulder's seconds)
+    respawn: v => best.respawnWorst > best.respawnBest ? 0.15 + 0.85 * (best.respawnWorst - v) / (best.respawnWorst - best.respawnBest) : 1 };
   const figures = card.hidden ? make('p', 'sr-why', 'A car of a tier not open yet: its figures show once it is.')
     : make('div', 'sr-stats',
       stat('Top speed', s.maxSpeed, m.maxSpeed, kmh, share.speed),
       stat('Acceleration', s.accel, m.accel, v => String(Math.round(v * 10) / 10), share.accel),
       stat('Health', s.health, m.health, v => String(Math.round(v)), share.health),
-      stat('Agility', s.agility, m.agility, pct, share.of('agility'), 'How quickly it steers'),
-      stat('Delivery', s.delivery, m.delivery, pct, share.of('delivery'), 'Package efficacy: a gift\'s standing, a flaming package\'s damage'),
-      stat('Cool', s.cool, m.cool, fuse, share.of('cool'), 'How long it can sit on the shoulder before the police step in'),
-      stat('Crossing', s.crossing, m.crossing, pct, share.of('crossing'), 'How well it takes rails, fords, mud and the tide'),
-      stat('Weight', s.weight, s.weight, pct, share.of('weight'), 'How heavy it is in a shove (the same at every ECU)'),
+      stat('Agility', s.agility, m.agility, score, scoreShare, 'How quickly it steers'),
+      stat('Delivery', s.delivery, m.delivery, score, scoreShare, 'Package efficacy: a gift\'s standing, a flaming package\'s damage'),
+      stat('Cool', s.cool, m.cool, score, scoreShare, 'How long it can sit on the shoulder before the police step in'),
+      stat('Crossing', s.crossing, m.crossing, score, scoreShare, 'How well it takes rails, fords, mud and the tide'),
+      stat('Weight', s.weight, s.weight, score, scoreShare, 'How heavy it is in a shove (the same at every ECU)'),
       stat('Respawn', s.respawn, m.respawn, v => (Math.round(v * 10) / 10).toFixed(1) + ' s', share.respawn));
   // what can be done with it
   const go = make('button', 'sr-go');
@@ -288,6 +288,7 @@ const showDetail = () => {
       figures,
       card.perk && !card.hidden ? make('p', 'sr-perk', make('b', '', 'Perk '), card.perk) : null,
       why,
+      card.hidden ? null : renderSources(card.car, { open: phone() }), // (where its key and blueprints come from: render/carsources.js; shut on a desktop, a line)
       make('div', 'sr-actions', sideSwitch('sr-side-detail'), go)));
   detail.style.setProperty('--rar', RARITIES[card.rarity].colour);
   detail.className = 'sr-detail ' + card.rarity + ' ' + card.state + (detail.classList.contains('open') ? ' open' : '');

@@ -5,15 +5,17 @@
 // agility, delivery, cool and crossing by the same equal steps from the car's maxed figure (to 0.001), weight (its `mass`)
 // the same at every ECU. N = the ladder's max ECU (Ecu.ladder). x = blueprints per
 // ECU step (Ecu X_DEFAULT). The cars: the garage's (CARS, the amphibious ones and the Tank too), the evergreen blueprint
-// cars (FILLER_CARS), the event cars and the earned (special) cars (ECU1 only). Once written THE FILE IS THE TRUTH: edit
+// cars (FILLER_CARS), the event cars, the Bespoke key cars (BESPOKE_CARS) and the earned (special) cars (ECU1 only). Once written THE FILE IS THE TRUTH: edit
 // it by hand; this only writes it again when told.
 //   node scripts/ecu-tables.mjs             what it would write, against the file (nothing written)
 //   node scripts/ecu-tables.mjs --missing   add only the cars the file has no entry for (hand edits kept)
 //   node scripts/ecu-tables.mjs --stats     add the second set's fields (agility, delivery, cool, crossing, weight) to
 //                                           every ECU of every car already in the file that lacks them, N being the
 //                                           file's own ECU count; fields already there are kept (hand edits kept)
+//   node scripts/ecu-tables.mjs --delivery  write every ECU's `delivery` anew from ecu.js DELIVERY (the maxed figure) by
+//                                           the equal steps (only that field: the rest kept)
 //   node scripts/ecu-tables.mjs --write     write every entry anew (hand edits LOST)
-// --missing and --stats may be given together (after a merge that adds cars: both, in either order).
+// --missing, --stats and --delivery may be given together (after a merge that adds cars: --missing --stats).
 import { writeFileSync, readFileSync } from 'node:fs';
 import { boot } from './delivery-headless.mjs';
 
@@ -21,7 +23,7 @@ const FILE = new URL('../src/delivery/ecus.json', import.meta.url);
 const g = await boot();
 try {
   const { Ecu, STEPS, RESPAWN, X_DEFAULT, NEW_STATS } = await g.load('ecu.js');
-  const { CARS, FILLER_CARS, EVENT_CARS, EARNED_CARS } = g.cars;
+  const { CARS, FILLER_CARS, EVENT_CARS, BESPOKE_CARS = [], EARNED_CARS } = g.cars;
   const round = (v, step) => Math.round(v / step) * step;
   const fix = (v, step) => Number(round(v, step).toFixed(step < 1 ? 1 : 0));
   const stepOf = (car) => (CARS.includes(car) ? STEPS.lot : STEPS.blueprint);
@@ -39,11 +41,11 @@ try {
     }
     return { x: X_DEFAULT, ecus };
   };
-  const cars = [...CARS, ...FILLER_CARS, ...EVENT_CARS, ...EARNED_CARS];
+  const cars = [...CARS, ...FILLER_CARS, ...EVENT_CARS, ...BESPOKE_CARS, ...EARNED_CARS];
   const fresh = Object.fromEntries(cars.map(car => [car.id, entryFor(car)]));
   const now = JSON.parse(readFileSync(FILE, 'utf8'));
   const has = (flag) => process.argv.includes(flag);
-  const mode = has('--write') ? 'write' : [has('--missing') && 'missing', has('--stats') && 'stats'].filter(Boolean).join(' + ') || 'dry';
+  const mode = has('--write') ? 'write' : [has('--missing') && 'missing', has('--stats') && 'stats', has('--delivery') && 'delivery'].filter(Boolean).join(' + ') || 'dry';
   let out = mode === 'write' ? fresh : has('--missing') ? { ...now, ...Object.fromEntries(Object.entries(fresh).filter(([id]) => !now[id])) } : { ...now };
   if (has('--stats') && mode !== 'write') {
     // (each ECU of each car in the file: the second set's fields it lacks, by the file's own ECU count; kept if there)
@@ -59,6 +61,19 @@ try {
       }) }];
     }));
     console.log('--stats: ' + added + ' fields added');
+  }
+  if (has('--delivery') && mode !== 'write') {
+    let changed = 0;
+    out = Object.fromEntries(Object.entries(out).map(([id, e]) => {
+      const car = cars.find(c => c.id === id);
+      if (!car) return [id, e];
+      return [id, { ...e, ecus: e.ecus.map((s, i) => {
+        const delivery = newStats(car, i + 1, e.ecus.length).delivery;
+        if (s.delivery !== delivery) changed++;
+        return { ...s, delivery };
+      }) }];
+    }));
+    console.log('--delivery: ' + changed + ' ECUs changed');
   }
   const differ = Object.keys(fresh).filter(id => JSON.stringify(now[id]) !== JSON.stringify(fresh[id]));
   console.log(cars.length + ' cars; ' + Object.keys(now).length + ' in the file; ' + differ.length + ' differ from the equal steps (or are missing): ' + (differ.join(', ') || 'none'));

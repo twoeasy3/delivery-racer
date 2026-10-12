@@ -29,7 +29,8 @@
 // IDEA_MODELS to MODELS.
 // Eighteen have left this list (12-Oct, CHECKLIST item 115): the evergreen BLUEPRINT cars, now in the roster as
 // cars.js FILLER_CARS (their figures nudged into their tier's range; their models still built here, put in MODELS by
-// render/models.js). 48 ideas are left.
+// render/models.js). Five more left it the same day (the owner, 12-Oct): the BESPOKE key cars, cars.js BESPOKE_CARS
+// (the Rocket Fin Coupe, the Swan Car, the Solar Racer, the Moon Rover and the Monowheel). 43 ideas are left.
 // ============================================================================
 export const IDEA_CARS = [
   { id: 'threewheeler', name: 'Three-Wheeler', basedOn: 'Reliant Robin', model: 'threewheeler', color: 0xe0902a, evilColor: 0x3d4a2a,
@@ -128,9 +129,6 @@ export const IDEA_CARS = [
     hw: 0.85, hl: 1.25, height: 1.6, note: 'A scooter with a boat of a chair bolted to its side, and a wheel for each.',
     maxSpeed: 25, accel: 7, agility: 1.3, crossing: 0.3, health: 80, mass: 1, sound: 'mini' },
   // (the third batch of ten, each an idea no other vehicle in the game has: models in render/ideaModels3.js)
-  { id: 'monowheel', name: 'Monowheel', basedOn: 'Dynasphere monowheel (1932)', model: 'monowheel', color: 0xe8a317, evilColor: 0x6a3a8a,
-    hw: 0.5, hl: 1.0, height: 2.0, note: 'One wheel taller than its rider, who sits inside it. It rolls; he does not.',
-    maxSpeed: 30, accel: 9, agility: 0.95, crossing: 0.5, health: 90, mass: 1, sound: 'junker' },
   { id: 'bathtub', name: 'Bathtub Racer', basedOn: 'Ed China\'s motorised bathtub', model: 'bathtub', color: 0xc8304a, evilColor: 0x3b4a7a,
     hw: 0.8, hl: 1.6, height: 1.65, note: 'A roll-top bath on clawed feet, full to the brim, with the driver in the suds.',
     maxSpeed: 28, accel: 8, agility: 1.2, crossing: 0.4, health: 100, mass: 1.2, sound: 'buggy' },
@@ -149,13 +147,7 @@ export const IDEA_CARS = [
   { id: 'hotdog', name: 'Hot Dog Car', basedOn: 'Oscar Mayer Wienermobile', model: 'hotdog', color: 0xd99a4e, evilColor: 0x7a4426,
     hw: 1.08, hl: 3.4, height: 2.25, note: 'A sausage the length of a van in a bun, with mustard along the top.',
     maxSpeed: 28, accel: 7, agility: 0.95, crossing: 0.4, health: 200, mass: 2, sound: 'postvan' },
-  { id: 'swancar', name: 'Swan Car', basedOn: 'Brooke Swan Car (1910)', model: 'swancar', color: 0xf2efe6, evilColor: 0x4a4562,
-    hw: 0.9, hl: 2.6, height: 2.22, note: 'A tourer carved as a swan, its neck over the bonnet and its eyes lit. The beak sprayed water.',
-    maxSpeed: 27, accel: 8, agility: 1, crossing: 0.5, health: 160, mass: 1.6, sound: 'classicgt' },
   // (the fourth batch of ten: unusual, retro-future and special-purpose vehicles; models in render/ideaModels4.js)
-  { id: 'rocketfin', name: 'Rocket Fin Coupe', basedOn: 'Lincoln Futura (1955 concept car)', model: 'rocketfin', color: 0xa8e0e4, evilColor: 0x4a1a5e,
-    hw: 0.98, hl: 2.75, height: 1.35, note: 'A jet-age dream car: twin bubble canopies, two cones for a nose, tail fins and a jet nozzle at the back.',
-    maxSpeed: 40, accel: 13, agility: 1.05, crossing: 0.3, health: 170, mass: 1.6, sound: 'muscle' },
   { id: 'snocat', name: 'Snowcat', basedOn: 'Tucker Sno-Cat 443', model: 'snocat', color: 0xe8482a, evilColor: 0x1f4a6a,
     hw: 1.1, hl: 2.6, height: 2.7, note: 'A glass cab on four pontoons of track, with an exhaust stack and a spotlight. It is in no hurry.',
     maxSpeed: 24, accel: 7, agility: 0.9, crossing: 1, health: 260, mass: 2.2, sound: 'sixbysix' },
@@ -171,15 +163,9 @@ export const IDEA_CARS = [
   { id: 'cabledrum', name: 'Cable Drum Lorry', basedOn: 'Scania P-series flatbed with a cable drum', model: 'cabledrum', color: 0x4a7ab8, evilColor: 0x6a1a1a,
     hw: 1.2, hl: 4.2, height: 3.4, note: 'A flatbed with a wooden cable drum taller than its cab chocked on the back.',
     maxSpeed: 27, accel: 7, agility: 0.9, crossing: 0.8, health: 320, mass: 2.8, sound: 'sixbysix' },
-  { id: 'solarracer', name: 'Solar Racer', basedOn: 'World Solar Challenge car (Nuna)', model: 'solarracer', color: 0x2ab0d8, evilColor: 0xd0341f,
-    hw: 0.9, hl: 2.5, height: 0.8, note: 'A wafer covered in solar cells with a bubble for the driver on one side. Lower than anything.',
-    maxSpeed: 33, accel: 9, agility: 1.2, crossing: 0.2, health: 80, mass: 1, sound: 'miata' },
   { id: 'gameviewer', name: 'Game-Drive Truck', basedOn: 'Toyota Land Cruiser 79 game viewer', model: 'gameviewer', color: 0x9a8a5a, evilColor: 0x2e4a2e,
     hw: 0.95, hl: 2.85, height: 2.4, note: 'No doors, three rows of seats climbing under a canopy, and a chair for the tracker out on the bull bar.',
     maxSpeed: 28, accel: 8, agility: 0.95, crossing: 1, health: 240, mass: 2, sound: 'suv' },
-  { id: 'moonrover', name: 'Moon Rover', basedOn: 'Apollo Lunar Roving Vehicle', model: 'moonrover', color: 0xd9c89a, evilColor: 0x3a3a44,
-    hw: 0.95, hl: 1.6, height: 1.65, note: 'An open frame on wire wheels with two bucket seats, a T-handle to steer by and a dish on a mast.',
-    maxSpeed: 23, accel: 7, agility: 1.3, crossing: 0.9, health: 80, mass: 1, sound: 'mini' },
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
 export const IDEA_CAR = Object.fromEntries(IDEA_CARS.map(car => [car.id, car]));

@@ -106,7 +106,7 @@ export const listRule = (level) => {
   return rule;
 };
 // the cars a rule can be met with: the garage's, the earned and the event ones (an idea only where a list names it)
-const ruleCars = (rule) => [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...FILLER_CARS, ...(rule.list ? IDEA_CARS : [])].filter(car => ruleAllows(rule, car));
+const ruleCars = (rule) => [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...BESPOKE_CARS, ...FILLER_CARS, ...(rule.list ? IDEA_CARS : [])].filter(car => ruleAllows(rule, car));
 // the silhouette shown where the player has no car the level allows: the cheapest car it allows, drawn dark
 // (silhouette: true; id 'null-car'), never owned and never driven (Game.canStart is false while it is in use)
 const nullCars = {};
@@ -134,7 +134,7 @@ export const isTeaser = (car) => carPreview(car) === 'teaser';
 export const garageCars = () => {
   const rule = carRule();
   return [...new Set([...CARS.filter(car => { const p = carPreview(car); return p ? p !== 'hide' : (!car.blue || blueStarsOpen()); }),
-    ...EARNED_CARS.filter(car => Progress.owns(car.id)), ...EVENT_CARS.filter(car => Progress.owns(car.id)), // (an earned car once earned, or given by an event; an event's car once given)
+    ...EARNED_CARS.filter(car => Progress.owns(car.id)), ...EVENT_CARS.filter(car => Progress.owns(car.id)), ...BESPOKE_CARS.filter(car => Progress.owns(car.id)), // (an earned car once earned, or given by an event; an event's car once given)
     ...FILLER_CARS.filter(car => Progress.owns(car.id)), // (a blueprint car once unlocked: ecu.js)
     ...(rule?.list ? ruleCars(rule).filter(car => !IDEA_CARS.includes(car) && (!FILLER_CARS.includes(car) || Progress.owns(car.id))) : [])])]; // (the ideas have a lot of their own; a locked blueprint car is not parked)
 };
@@ -382,9 +382,46 @@ export const EVENT_CARS = [
   (() => {
     const base = IDEA_CARS.find(car => car.id === 'centreseat');
     return { ...base, id: 'silvercomet', name: 'Silver Comet', basedOn: undefined, placeholder: false, idea: true, event: true, price: 0,
-      color: 0xc9d2dc, evilColor: 0x1d2433, maxSpeed: 46, accel: 19, health: 150, perk: 'The Comet Hunt\'s prize' };
+      color: 0xc9d2dc, evilColor: 0x1d2433, maxSpeed: 46, accel: 19, health: 150, perk: 'The Comet Hunt\'s prize',
+      bespoke: true, rarity: 'legendary' }; // (the first BESPOKE key car: see BESPOKE_CARS below)
   })(),
 ];
+// ---- the BESPOKE key cars (the owner, 12-Oct): one-of-a-kind showpieces --------------------------------------------
+// A car flagged `bespoke: true` is a Bespoke key car: its KEY is a Bespoke card (the top rarity: the keys themselves),
+// dropped by the packs whose pool has keys (packs.js), and its BLUEPRINTS are Legendary cards (`rarity`). It is a KEY
+// car (ecu.js): driveable once its key is had, and on the event cars' ladder (no tier: max ECU 5, the 0.06 step of
+// scripts/ecu-tables.mjs). The Silver Comet (EVENT_CARS, the Comet Hunt's prize too) was the first; these five were car
+// ideas (ideas.js), moved out of the ideas lot into the roster as the fillers were: their models are still built by
+// render/ideaModels*.js (put in MODELS by the same names, render/models.js). Kept out of CARS: never for sale, never
+// lent by Car Swap, never dealt by "Unlock everything"; no price, no tier. Their only source is a Bespoke key card (no
+// event gives them). Figures: nudged from the idea's placeholders into the top of the range (`placeholder: true`: not
+// balanced), each a different way to drive, and are their MAXED ECU (ecus.json has the lower ones):
+const bespoke = (car) => ({ ...car, bespoke: true, rarity: 'legendary', placeholder: true, price: 0 });
+export const BESPOKE_CARS = [
+  // the all-rounder: quick, solid, a grand tourer
+  bespoke({ id: 'rocketfin', name: 'Rocket Fin Coupe', basedOn: 'Lincoln Futura (1955 concept car)', model: 'rocketfin', color: 0xa8e0e4, evilColor: 0x4a1a5e,
+    hw: 0.98, hl: 2.75, height: 1.35, note: 'A jet-age dream car: twin bubble canopies, two cones for a nose, tail fins and a jet nozzle at the back.',
+    maxSpeed: 47, accel: 17, agility: 1.15, crossing: 0.3, health: 220, mass: 1.6, sound: 'muscle' }),
+  // the heavyweight: slow to get going, shrugs off a crash and shoves traffic aside
+  bespoke({ id: 'swancar', name: 'Swan Car', basedOn: 'Brooke Swan Car (1910)', model: 'swancar', color: 0xf2efe6, evilColor: 0x4a4562,
+    hw: 0.9, hl: 2.6, height: 2.22, note: 'A tourer carved as a swan, its neck over the bonnet and its eyes lit. The beak sprayed water.',
+    maxSpeed: 42, accel: 13, agility: 1, crossing: 0.5, health: 380, mass: 2.4, sound: 'classicgt' }),
+  // the glass cannon: the highest top speed, slow off the line, made of nothing
+  bespoke({ id: 'solarracer', name: 'Solar Racer', basedOn: 'World Solar Challenge car (Nuna)', model: 'solarracer', color: 0x2ab0d8, evilColor: 0xd0341f,
+    hw: 0.9, hl: 2.5, height: 0.8, note: 'A wafer covered in solar cells with a bubble for the driver on one side. Lower than anything.',
+    maxSpeed: 50, accel: 14, agility: 1.25, crossing: 0.15, health: 90, mass: 1, sound: 'miata' }),
+  // the off-roader: takes rails and rough at full tilt, nimble, light
+  bespoke({ id: 'moonrover', name: 'Moon Rover', basedOn: 'Apollo Lunar Roving Vehicle', model: 'moonrover', color: 0xd9c89a, evilColor: 0x3a3a44,
+    hw: 0.95, hl: 1.6, height: 1.65, note: 'An open frame on wire wheels with two bucket seats, a T-handle to steer by and a dish on a mast.',
+    maxSpeed: 41, accel: 18, agility: 1.6, crossing: 1, health: 150, mass: 1, sound: 'mini' }),
+  // the weaver: narrower than anything, the quickest getaway and the quickest sideways, fragile
+  bespoke({ id: 'monowheel', name: 'Monowheel', basedOn: 'Dynasphere monowheel (1932)', model: 'monowheel', color: 0xe8a317, evilColor: 0x6a3a8a,
+    hw: 0.5, hl: 1.0, height: 2.0, note: 'One wheel taller than its rider, who sits inside it. It rolls; he does not.',
+    maxSpeed: 44, accel: 21, agility: 1.8, crossing: 0.5, health: 100, mass: 1, sound: 'junker' }),
+];
+applyNames('car', BESPOKE_CARS);
+// is it a Bespoke key car? (its key a Bespoke card, its blueprints Legendary; packs.js, carsources.js)
+export const isBespoke = (car) => !!car && !!car.bespoke && !car.off;
 // ---- the evergreen (filler) cars: BLUEPRINT cars (BLUEPRINTS-NOTES.md, CHECKLIST item 115) --------------------------
 // Eighteen that were car ideas (ideas.js), promoted to the roster as the packs' filler. Each is a BLUEPRINT car: it starts
 // at ECU0, locked (not driveable), and its first X blueprints unlock it at ECU1 (ecu.js, ecus.json). Kept out of CARS
@@ -475,7 +512,7 @@ export const earnedFor = (levelId) => EARNED_CARS.find(car => car.earned.level =
 // The car in use. It is a live binding: every module that imports CAR sees the new car as
 // soon as selectCar() changes it, so swapping cars needs no reload.
 // (a car idea too: ideas.js. They come last, so an idea can never stand in for a car of the same id)
-const find = () => [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...FILLER_CARS, ...Object.values(SECRET_CARS), ...IDEA_CARS]
+const find = () => [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...BESPOKE_CARS, ...FILLER_CARS, ...Object.values(SECRET_CARS), ...IDEA_CARS]
   .find(car => car.id === Progress.data.car && Progress.owns(car.id)) || CARS[0];
 export let CAR = find();
 // the car in use as the save has it, whatever the level picked has put the player in (the garage's ring and words)
@@ -489,7 +526,7 @@ export const carAllowed = () => forcedCar(find(), carRule()).id !== 'null-car';
 // amphibious car the player owns. With none owned the car in use stays, and Game.start won't start the level)
 // a replay's car (replay.js): every run is in it, whatever the save and the level's rules say, until unpinned (null)
 let pinned = null;
-export const carById = (id) => LEVEL_CARS[id] || [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...FILLER_CARS, ...Object.values(SECRET_CARS), ...IDEA_CARS].find(car => car.id === id) || null;
+export const carById = (id) => LEVEL_CARS[id] || [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...BESPOKE_CARS, ...FILLER_CARS, ...Object.values(SECRET_CARS), ...IDEA_CARS].find(car => car.id === id) || null;
 export const pinCar = (id) => { pinned = id ? carById(id) : null; };
 export const useLevelCar = (id, amphibious) => {
   if (pinned) { CAR = pinned; lent = null; return; }
