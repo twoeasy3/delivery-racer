@@ -7,8 +7,13 @@
 //   BLUEPRINT car  starts at ECU0, locked; its first X blueprints unlock it (ECU1), each X more raise it one ECU. The
 //                  evergreen filler cars (cars.js FILLER_CARS).
 // A car's max ECU follows the star ladder (LADDER below); the special (earned) cars and the 1-gold cars stop at ECU1. Each
-// ECU's figures are SAVED, one entry per ECU, in ecus.json (by car id: { x, ecus: [{ maxSpeed, accel, health, respawn }] },
-// ECU1 first), written once by scripts/ecu-tables.mjs and the truth from then on (edit it by hand). A car with no entry
+// ECU's figures are SAVED, one entry per ECU, in ecus.json (by car id: { x, ecus: [{ maxSpeed, accel, health, respawn,
+// agility, delivery, cool, crossing, weight }] }, ECU1 first), written once by scripts/ecu-tables.mjs and the truth from
+// then on (edit it by hand). The second set (the owner, 12-Oct, CHECKLIST item 126; NEW_STATS below): agility (cars.js
+// `agility`, steering), delivery (package efficacy: a Good gift's standing gain and an Evil flaming package's damage are
+// multiplied by it: packages.js; each car's own, DELIVERY below), cool (the shoulder meter's fuse: Social.dangerTime is multiplied by it, held to
+// CONFIG.coolFloor), crossing (cars.js `crossing`: rails, fords, mud, the tide) scale with the ECU like the first set;
+// weight (cars.js `mass`) is the same at every ECU. A car with no entry
 // (a car idea, the City Bus, a level's own vehicle, a Super car) has no ECU and drives on its own figures.
 // RACES are a separate game: none of this applies there (drive(): own figures, CONFIG.respawnTime).
 // Saved: Progress.data.blueprints = { [carId]: count } and Progress.data.maxed = [carId]: the cars held at their MAX ECU
@@ -35,6 +40,42 @@ export const RARITY = {
 export const STEPS = { lot: 0.03, blueprint: 0.06 };
 export const RESPAWN = { first: 5.5, step: 0.5 };
 export const X_DEFAULT = 5;
+// the second set of stats (CHECKLIST item 126): what each is at the MAXED ECU (a car's own field, else today's default),
+// and whether it scales with the ECU (weight does not). The multipliers are rounded to 0.001 so each ECU stays above
+// the last even for a small figure (a crossing of 0.15)
+// DELIVERY at a car's MAXED ECU (the owner, 12-Oct: "cook up new stats for Delivery"): package efficacy, a share of
+// today's (1 = a gift's standing and a flaming package's damage as they always were). THIS TABLE IS WHERE TO EDIT THEM
+// (a car's own `delivery` field in cars.js wins over it; a car in neither: 1), then run
+// `node scripts/ecu-tables.mjs --delivery` to write each ECU's figure into ecus.json by the equal steps.
+export const DELIVERY = {
+  // mail, courier and delivery vehicles: built to hand things over (the best)
+  postvan: 1.6, courier: 1.6, milkfloat: 1.55, keitruck: 1.5, floatvan: 1.5, 'earned-apc': 1.45, dampervan: 1.4,
+  // vans and people carriers: a big side door, room to reach the parcels
+  darkvan: 1.35, minivan: 1.35, lovebus: 1.3, tuktuk: 1.3,
+  // trucks, utes and working machines: a load bed and a crew
+  ute: 1.3, pickup: 1.3, sixbysix: 1.3, fireengine: 1.3, towtruck: 1.25, polytruck: 1.25, taxi: 1.25, liftedtruck: 1.2,
+  moonrover: 1.2, monster: 1.1, fieldscout: 1.1, toybota: 1.15, nissank: 1.1,
+  // estates, SUVs and big saloons: a boot and a passenger to throw
+  wagon: 1.2, woody: 1.2, suv: 1.2, sleeper: 1.15, fullsize: 1.15, hearse: 1.1, stately: 1.0, swancar: 1.0,
+  // everyday small cars: as today, or a little under
+  commuter: 1.0, evsaloon: 1.0, teardrop: 0.95, mini: 0.9, hothatch: 0.9, pandacoupe: 0.9, herald: 0.9, tank: 0.9,
+  showdown: 0.9, 'earned-ufo': 0.9,
+  // style over space: low, loud, two seats or a cramped cockpit
+  rally: 0.85, lowrider: 0.85, gullwing: 0.85, pony: 0.85, muscle: 0.85, superlowrider: 0.8, classicgt: 0.8, buggy: 0.8,
+  midnight: 0.8, splitwindow: 0.8, flyingcar: 0.8, rocketfin: 0.8, hellrod: 0.8, 'earned-jetboat': 0.8,
+  // a wreck that drops things, and pure sports cars: no room, no aim at speed
+  junker: 0.75, sport: 0.75, rotary: 0.75, rearengine: 0.75, silvercomet: 0.75, hotrod: 0.7, miata: 0.7, 'earned-gt': 0.7,
+  snake: 0.65, keiroadster: 0.65, wedge: 0.65,
+  // tiny novelties, record cars and racers: nowhere to keep a parcel (the worst)
+  bubble: 0.6, jetcar: 0.6, dragster: 0.6, solarracer: 0.6, monowheel: 0.6, 'earned-f1': 0.6, 'earned-lmp': 0.6,
+};
+export const NEW_STATS = {
+  agility: { of: (car) => car.agility ?? 1, scales: true },
+  delivery: { of: (car) => car.delivery ?? DELIVERY[car.id] ?? 1, scales: true },
+  cool: { of: (car) => car.cool ?? 1, scales: true },
+  crossing: { of: (car) => car.crossing ?? CONFIG.railCrossing.usual, scales: true },
+  weight: { of: (car) => car.mass ?? 1, scales: false },
+};
 
 const tierOf = (car) => (car.tier >= 1 && car.tier <= 5 ? car.tier : null);
 const listed = (list, car) => list.some(c => c.id === car.id);
@@ -122,14 +163,15 @@ export const Ecu = {
   },
 
   // ---- the figures ----
-  // an ECU's figures: { maxSpeed, accel, health, respawn, ecu } (ecu: the level given, held to 1..max; 0 is shown as 1,
-  // what it would play at). A car with no table: its own figures, CONFIG.respawnTime, ecu null
+  // an ECU's figures: { maxSpeed, accel, health, respawn, agility, delivery, cool, crossing, weight, ecu } (ecu: the level
+  // given, held to 1..max; 0 is shown as 1, what it would play at). A car with no table: its own figures,
+  // CONFIG.respawnTime, ecu null. (An entry written before the second set: those fields from the car's own, maxed)
   stats(car, level = this.level(car)) {
     const entry = car && ECUS[car.id];
     if (!entry) return own(car);
     const ecu = Math.max(1, Math.min(entry.ecus.length, Math.round(level) || 1));
     const key = car.id + '|' + ecu;
-    if (!cache.has(key)) cache.set(key, Object.freeze({ ...entry.ecus[ecu - 1], ecu }));
+    if (!cache.has(key)) cache.set(key, Object.freeze({ ...ownNew(car), ...entry.ecus[ecu - 1], ecu }));
     return cache.get(key);
   },
   respawnTime(car, level) { return this.stats(car, level).respawn; },
@@ -151,7 +193,8 @@ export const Ecu = {
   get pinned() { return pinned; },
 };
 // (a car's own figures, as stats: read afresh each time, as a check may change a car's figures)
-const own = (car) => (car ? { maxSpeed: car.maxSpeed, accel: car.accel, health: car.health, respawn: CONFIG.respawnTime, ecu: null } : car);
+const ownNew = (car) => Object.fromEntries(Object.entries(NEW_STATS).map(([k, d]) => [k, d.of(car)]));
+const own = (car) => (car ? { maxSpeed: car.maxSpeed, accel: car.accel, health: car.health, respawn: CONFIG.respawnTime, ...ownNew(car), ecu: null } : car);
 const byId = (id) => [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...BESPOKE_CARS, ...FILLER_CARS].find(car => car.id === id) || null;
 
 // the hooks: cars.js asks for a run's figures; progress.js asks whether a blueprint car is owned (unlocked)

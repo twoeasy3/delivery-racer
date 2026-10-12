@@ -3,7 +3,10 @@
 // blueprint car: X blueprints), the save round trip (the save code and the stored save), an old save's defaults (every
 // car it owns at its max ECU, a blueprint car it does not own locked), the figures a run drives with and its respawn
 // time, races and Car Swap untouched, and a replay recorded at an ECU played back identically (at that ECU, whatever the
-// save says by then), an old one (no ECU in its header) at the max.
+// save says by then), an old one (no ECU in its header) at the max. The second set (CHECKLIST item 126): agility, delivery,
+// cool and crossing by the same equal steps (a higher ECU never worse; the max = today's figures), weight flat; the
+// player's car takes them at its ECU (Player.agility / crossing / mass / delivery / cool, Social.dangerTime); a flaming
+// package's damage and a gift's standing scale with delivery; a shoulder run busts sooner at ECU1 than at the max.
 //   node scripts/.ecu-check.mjs
 import { boot } from './delivery-headless.mjs';
 
@@ -11,7 +14,9 @@ const g = await boot({ tiers: false }); // (tiers off: a tier level would put th
 let failures = 0;
 const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' : '  FAIL  ') + what); };
 try {
-  const { Ecu, LADDER, STEPS, RESPAWN } = await g.load('ecu.js');
+  const { Ecu, LADDER, STEPS, RESPAWN, NEW_STATS, DELIVERY } = await g.load('ecu.js');
+  const { Social } = await g.load('social.js');
+  const { Packages } = await g.load('packages.js');
   const { Replay } = await g.load('replay.js');
   const ECUS = Ecu.table;
   const { Progress } = await g.load('progress.js');
@@ -54,6 +59,34 @@ try {
     'respawn: ECU1 5.5 s, 0.5 s less each ECU above (ECU5 3.5 s)' + (respawnBad.length ? ': NOT ' + respawnBad.slice(0, 6).join(', ') : ''));
   check(Ecu.stats(car('sleeper'), 1).maxSpeed < Ecu.stats(car('sleeper'), 5).maxSpeed && Ecu.stats(car('bubble'), 1).maxSpeed === car('bubble').maxSpeed,
     'a sleeper wagon ECU1 ' + Ecu.stats(car('sleeper'), 1).maxSpeed + ' m/s, ECU5 ' + Ecu.stats(car('sleeper'), 5).maxSpeed + '; a Bubble Car (ECU1 only) at its figures');
+
+  // ---- the second set: agility, delivery, cool, crossing (by the ECU), weight (flat)
+  const today = { agility: c => c.agility ?? 1, delivery: c => c.delivery ?? DELIVERY[c.id] ?? 1, cool: () => 1, crossing: c => c.crossing ?? C.railCrossing.usual, weight: c => c.mass ?? 1 };
+  const bad2 = [];
+  for (const c of roster) {
+    const list = ECUS[c.id].ecus, n = list.length, f = CARS.includes(c) ? STEPS.lot : STEPS.blueprint;
+    for (const [key, of] of Object.entries(today)) {
+      if (list[n - 1][key] !== of(c)) bad2.push(c.id + ' max ECU ' + key + ' ' + list[n - 1][key] + ' (today ' + of(c) + ')');
+      list.forEach((e, i) => {
+        if (typeof e[key] !== 'number') bad2.push(c.id + ' ECU' + (i + 1) + ' has no ' + key);
+        else if (key === 'weight' ? e[key] !== of(c) : Math.abs(e[key] - of(c) * (1 - f * (n - i - 1))) > 0.0006) bad2.push(c.id + ' ECU' + (i + 1) + ' ' + key + ' ' + e[key]);
+        if (i && key !== 'weight' && !(e[key] > list[i - 1][key])) bad2.push(c.id + ' ECU' + (i + 1) + ' ' + key + ' not above ECU' + i);
+      });
+    }
+  }
+  check(!bad2.length && Object.keys(NEW_STATS).join() === 'agility,delivery,cool,crossing,weight' && !NEW_STATS.weight.scales,
+    'the second set: agility, delivery, cool, crossing by equal steps, each ECU above the last, the max = the car\'s (agility, crossing, its DELIVERY figure, cool 1); weight (mass) the same at every ECU' +
+    (bad2.length ? ': NOT ' + bad2.slice(0, 8).join(', ') : ''));
+  const noDelivery = roster.filter(c => c.delivery == null && DELIVERY[c.id] == null);
+  const deliveries = roster.map(c => NEW_STATS.delivery.of(c));
+  check(!noDelivery.length && Math.min(...deliveries) >= 0.6 && Math.max(...deliveries) <= 1.6 && DELIVERY.postvan > DELIVERY.sport && DELIVERY.milkfloat > DELIVERY['earned-f1'],
+    'every roster car has a delivery figure of its own (ecu.js DELIVERY), 0.6 to 1.6 (vans best, racers worst)' + (noDelivery.length ? ': NOT ' + noDelivery.map(c => c.id).join(', ') : ''));
+  const mid1 = Ecu.stats(car('midnight'), 1), mid5 = Ecu.stats(car('midnight'), 5);
+  console.log('        (the Midnight Coupe, a 5-ECU blueprint car: ECU1 agility ' + mid1.agility + ' delivery ' + mid1.delivery + ' cool ' + mid1.cool + ' crossing ' + mid1.crossing + ' weight ' + mid1.weight +
+    '; ECU5 ' + mid5.agility + ' / ' + mid5.delivery + ' / ' + mid5.cool + ' / ' + mid5.crossing + ' / ' + mid5.weight + ')');
+  const bus = car('bus');
+  check(bus && Ecu.stats(bus).agility === (bus.agility ?? 1) && Ecu.stats(bus).weight === (bus.mass ?? 1) && Ecu.stats(bus).delivery === 1 && Ecu.stats(bus).cool === 1,
+    'a car with no ECU (the City Bus): its own agility and weight, delivery and cool 1');
 
   // ---- the unlock rules
   Progress.reset();
@@ -154,6 +187,71 @@ try {
   g.cars.returnCar();
   Game.toMenu();
 
+  // ---- the second set, driven: the player's car takes them at its ECU; delivery scales a package, cool the shoulder
+  Progress.reset();
+  Progress.noSave = true;
+  const mid = car('midnight');
+  const { Traffic, track: { Track } } = g;
+  Ecu.addBlueprints('midnight', 5); // (ECU1 of 5)
+  const at = {};
+  const measure = (ecu) => {
+    const want = Ecu.stats(mid, ecu);
+    g.select(level.id);
+    selectCar('midnight');
+    Game.evil = true; // (no standing: the shoulder's time is the car's alone)
+    Player.testGhost = true;
+    Game.start();
+    g.drive(1, 0);
+    g.run(4);
+    const got = { ecu: carStats().ecu, agility: Player.agility, crossing: Player.crossing, mass: Player.mass, delivery: Player.delivery, cool: Player.cool, fuse: Social.dangerTime };
+    const same = got.ecu === ecu && got.agility === want.agility && got.crossing === want.crossing && got.mass === mid.mass && got.delivery === want.delivery && got.cool === want.cool &&
+      Math.abs(got.fuse - C.dangerTime * Math.max(C.coolFloor, want.cool)) < 1e-9;
+    // an Evil flaming package landing on a car (not a police car): its damage
+    const hit = (kind) => {
+      const victim = Traffic.cars.find(v => v.active && v.kind !== 'police' && v.kind !== 'interceptor' && !v.emergency && !v.junction && !v.courier && !(v.arrest >= 0) && !v.toad && v.health > 40 && (kind === 'gift' ? !v.evil : true));
+      if (!victim) return null;
+      Player.bigSplash = 0;
+      Game.evil = Player.evil = kind === 'fire';
+      Social.standing = 0;
+      const p = Packages.list.find(q => !q.active);
+      Object.assign(p, { active: true, owner: Player, kind, s: victim.s, lat: victim.lat, h: 1, endH: 0.6, arc: 0, vs: 0, vlat: 0, t: 0, flight: 1, hw: 0.35, hl: 0.35 });
+      const before = victim.health;
+      Packages.update(1e-6);
+      const out = kind === 'fire' ? before - victim.health : Social.standing * 100;
+      p.active = false;
+      return out;
+    };
+    got.fire = hit('fire');
+    got.gift = hit('gift');
+    Game.evil = Player.evil = true;
+    // on the shoulder until its meter runs out (held there; the test's ghost is never busted, so the meter's empty moment
+    // is the bust's: Player.update busts at danger 0)
+    Social.standing = 0;
+    g.drive(0.4, 0);
+    let t = null;
+    g.run(15, (time) => {
+      Player.lat = Track.shoulderOffset(1, Player.s);
+      Player.latVel = 0;
+      if (Player.onShoulder && Player.danger === 0) { t = time; return true; }
+      return false;
+    });
+    got.bust = t;
+    Game.toMenu();
+    at[ecu] = got;
+    return same;
+  };
+  const ok1 = measure(1);
+  Ecu.addBlueprints('midnight', 20); // (ECU5, its max)
+  const ok5 = measure(5);
+  check(ok1 && ok5, 'the Midnight Coupe driven at ECU1 and ECU5: Player.agility, crossing, delivery, cool, Social.dangerTime are its ECU\'s, its mass the same (ECU1 agility ' +
+    at[1].agility + ', crossing ' + at[1].crossing + ', delivery ' + at[1].delivery + ', shoulder ' + at[1].fuse.toFixed(2) + ' s; ECU5 ' + at[5].agility + ', ' + at[5].crossing + ', ' + at[5].delivery + ', ' + at[5].fuse.toFixed(2) + ' s)');
+  check(at[1].fire != null && at[5].fire != null && Math.abs(at[5].fire - C.evilPackageDamage * DELIVERY.midnight) < 1e-9 && Math.abs(at[1].fire - C.evilPackageDamage * at[1].delivery) < 1e-9,
+    'delivery scales an Evil flaming package\'s damage: ECU1 ' + at[1].fire?.toFixed(2) + ', ECU5 ' + at[5].fire?.toFixed(2) + ' (x its delivery ' + at[1].delivery + ' / ' + at[5].delivery + ' of ' + C.evilPackageDamage + ')');
+  check(at[1].gift != null && at[5].gift != null && Math.abs(at[5].gift - C.social.gift * DELIVERY.midnight) < 1e-9 && Math.abs(at[1].gift - C.social.gift * at[1].delivery) < 1e-9,
+    '...and a Good gift\'s standing: ECU1 +' + at[1].gift?.toFixed(2) + '%, ECU5 +' + at[5].gift?.toFixed(2) + '% (x its delivery, of ' + C.social.gift + ')');
+  check(at[1].bust > 0 && at[5].bust > 0 && at[1].bust < at[5].bust && Math.abs(at[5].bust - C.dangerTime) < 0.1 && Math.abs(at[1].bust - at[1].fuse) < 0.1,
+    'cool: held on the shoulder, its meter empty (the bust) after ' + at[1].bust?.toFixed(2) + ' s at ECU1, ' + at[5].bust?.toFixed(2) + ' s at ECU5 (today ' + C.dangerTime + ' s)');
+
   // ---- replays: recorded at an ECU, played back identically at it (whatever the save says by then)
   Progress.reset();
   Progress.noSave = true;
@@ -169,7 +267,7 @@ try {
   Game.evil = false;
   Player.testGhost = false;
   Game.start();
-  const ecuRun = carStats().ecu, healthRun = Player.maxHealth;
+  const ecuRun = carStats().ecu, healthRun = Player.maxHealth, secondRun = [Player.agility, Player.crossing, Player.mass, Player.delivery, Player.cool, Social.dangerTime].join(' ');
   for (let i = 0; i < 30 / STEP && Game.state === 'playing'; i++) {
     live = { throttle: 1, steer: Math.sin(i / 90) > 0.8 ? 0.5 : Math.sin(i / 90) < -0.8 ? -0.5 : 0 };
     Game.update(STEP);
@@ -184,20 +282,22 @@ try {
   const play = (r) => {
     live = { throttle: -1, steer: 1 }; // (the player's own hands, not heard while it plays)
     const ok = Replay.play(r);
-    const health = Player.maxHealth;
+    const health = Player.maxHealth, second = [Player.agility, Player.crossing, Player.mass, Player.delivery, Player.cool, Social.dangerTime].join(' ');
     for (let i = 0; i < steps && Game.state === 'playing' && Replay.playing && !Replay.playing.over; i++) { Game.update(STEP); g.FxQueue.length = 0; }
     const out = where(), drifted = Replay.playing?.drifted;
     Game.toMenu();
     Replay.stop();
-    return { ok, health, out, drifted };
+    return { ok, health, out, drifted, second };
   };
   const back = play(rec);
   check(back.ok && back.out === recorded && !back.drifted && back.health === healthRun, 'played back at ECU1, identically: ' + back.out + (back.out === recorded ? '' : ' (recorded ' + recorded + ')'));
+  check(back.second === secondRun && Ecu.stats(car('hotrod'), 1).agility < Ecu.stats(car('hotrod'), 3).agility, '...with the second set at ECU1 too (agility, crossing, mass, delivery, cool, shoulder s: ' + back.second + ')');
   check(Ecu.pinned === null && carStats(car('hotrod')).ecu === 3, '...and after it, the car is at its own ECU again (3)');
   const oldRec = JSON.parse(JSON.stringify(rec));
   delete oldRec.header.ecu;
   const oldBack = play(oldRec);
-  check(oldBack.ok && oldBack.health === car('hotrod').health, 'an old replay (no ECU in its header) plays at the max ECU (health ' + oldBack.health + ' of ' + car('hotrod').health + ')');
+  const hr = car('hotrod'), todayHr = [hr.agility ?? 1, hr.crossing ?? C.railCrossing.usual, hr.mass ?? 1, DELIVERY.hotrod, 1, C.dangerTime].join(' ');
+  check(oldBack.ok && oldBack.health === car('hotrod').health && oldBack.second === todayHr, 'an old replay (no ECU in its header) plays at the max ECU (health ' + oldBack.health + ' of ' + car('hotrod').health + '; the second set its maxed: ' + oldBack.second + ')');
 } catch (e) {
   failures++;
   console.log('THREW ' + (e.stack || e));

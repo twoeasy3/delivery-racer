@@ -5,7 +5,7 @@
 // Crazey Jim's Used Cars (render/garage.js). The ECU figures are ecu.js's (Ecu); anything it does not say about a
 // car (a secret one, an earned one it has no table for) falls back to the car's own figures, so a card never throws.
 import { CONFIG } from './config.js';
-import { CARS, EARNED_CARS, EVENT_CARS, BESPOKE_CARS, FILLER_CARS, SECRET_CARS, stars, starColour, carTier, carPreview, forSale, carRule, ruleAllows, selectCar, carInUse } from './cars.js';
+import { CARS, EARNED_CARS, EVENT_CARS, BESPOKE_CARS, FILLER_CARS, SECRET_CARS, stars, starColour, STAR_COLOURS, carTier, carPreview, forSale, carRule, ruleAllows, selectCar, carInUse } from './cars.js';
 import { Progress } from './progress.js';
 import { Game } from './game.js';
 import { Tiers } from './tiers.js';
@@ -44,7 +44,8 @@ export const rarityOf = (car) => {
 function safe(fn, fallback) { try { const v = fn(); return v === undefined || v === null || Number.isNaN(v) ? fallback : v; } catch { return fallback; } }
 const blueprintCar = (car) => safe(() => Ecu.isBlueprint(car), !!car.evergreen);
 const perEcu = (car) => safe(() => Ecu.x?.(car) ?? Ecu.perEcu?.(car), 5);
-const figures = (car) => ({ maxSpeed: car.maxSpeed, accel: car.accel, health: car.health, respawn: CONFIG.respawnTime });
+const figures = (car) => ({ maxSpeed: car.maxSpeed, accel: car.accel, health: car.health, respawn: CONFIG.respawnTime,
+  agility: car.agility ?? 1, delivery: car.delivery ?? 1, cool: car.cool ?? 1, crossing: car.crossing ?? CONFIG.railCrossing.usual, weight: car.mass ?? 1 });
 const statsAt = (car, level) => {
   const s = safe(() => Ecu.stats(car, level), null);
   return s ? { ...figures(car), ...s } : figures(car);
@@ -119,9 +120,15 @@ export const carCard = (car, evil = false) => {
 // the best figures on the floor, for the stat bars (by a car's MAXED figures, as the cars stand now)
 export const floorBest = () => {
   const cards = showroomCars().map(car => statsAt(car, safe(() => Ecu.max(car), 1)));
-  return { maxSpeed: Math.max(...cards.map(s => s.maxSpeed)), accel: Math.max(...cards.map(s => s.accel)), health: Math.max(...cards.map(s => s.health)),
+  const most = (key) => Math.max(...cards.map(s => s[key] ?? 0));
+  return { maxSpeed: most('maxSpeed'), accel: most('accel'), health: most('health'),
     respawnBest: Math.min(...cards.map(s => s.respawn)), respawnWorst: Math.max(...cards.map(s => s.respawn)) };
 };
+// the ratio stats (Agility, Delivery, Cool, Crossing, Weight: CHECKLIST item 126) are SHOWN as whole numbers on a 0-100
+// scale, never as 0.X / 1.X (the owner, 12-Oct): shown = round(ratio x STAT_SCALE), held to 0..100, so 1.0 (today's
+// usual car) shows as 50. Change STAT_SCALE for another baseline. Only the showing: the game keeps the ratios
+export const STAT_SCALE = 50;
+export const statShown = (ratio) => Math.max(0, Math.min(100, Math.round((ratio ?? 0) * STAT_SCALE)));
 
 // ---- the side: Good or Evil, picked in the showroom (its header and its detail share the one choice) ---------------
 // It is the livery the cars are shown in, the side whose car rule marks the cards ("Not on this level"), and the side
@@ -157,22 +164,21 @@ export const driveAs = (card, evil) => {
 
 // ---- the FILTERS and the SORT of the showroom's cards (the owner, 12-Oct: "filters beyond All / Ready / Locked") -----
 // Pure: render/showroom.js draws the chips and remembers the choice; scripts/.showroom-check.mjs checks the cars each
-// gives. A filter is { tier: [], rarity: [], kind: [], state: [], sort }: within a group the chips picked are OR'd
-// (gold 3 OR blue 1), the groups AND'd (gold 3 AND epic AND ready); an empty group lets every card by.
+// gives. A filter is { stars: [], colour: [], rarity: [], kind: [], state: [], sort }: within a group the chips picked are OR'd
+// (3 stars OR 4), the groups AND'd (3 stars AND gold AND epic AND ready); an empty group lets every card by.
 // The groups, their chips in order, and the words on them (a tier chip's stars are coloured by render/showroom.js)
 export const FILTER_GROUPS = [
-  { id: 'tier', name: 'Tier', chips: [
-    ['g1', '★1'], ['g2', '★2'], ['g3', '★3'], ['g4', '★4'], ['g5', '★5'],
-    ['b1', '★1'], ['b2', '★2'], ['b3', '★3'], ['b4', '★4'], ['b5', '★5'],
-    ['sea', 'Amphibious'], ['magenta', 'Event / special'],
-  ] },
-  { id: 'rarity', name: 'Rarity', chips: [['common', 'Common'], ['uncommon', 'Uncommon'], ['epic', 'Epic'], ['legendary', 'Legendary'], ['bespoke', 'Bespoke'], ['special', 'Special']] },
-  { id: 'kind', name: 'Kind', chips: [['key', 'Key cars'], ['blueprint', 'Blueprint cars'], ['special', 'Earned / special'], ['event', 'Event cars']] },
+  // the stars a car has (1 to 6: a car outside the tiers, a Key car or a special one, has six), and, a separate choice that adds
+  // to it, the colour of those stars (gold, blue, magenta, sea green)
+  { id: 'stars', name: 'Stars', chips: [['1', '★1'], ['2', '★2'], ['3', '★3'], ['4', '★4'], ['5', '★5'], ['6', '★6']] },
+  { id: 'colour', name: 'Star colour', chips: [['gold', 'Gold'], ['blue', 'Blue'], ['magenta', 'Magenta'], ['green', 'Sea green']] },
+  { id: 'rarity', name: 'Rarity', chips: [['common', 'Common'], ['uncommon', 'Uncommon'], ['epic', 'Epic'], ['legendary', 'Legendary']] },
+  { id: 'kind', name: 'Kind', chips: [['garage', 'Garage'], ['blueprint', 'Blueprint'], ['key', 'Key'], ['special', 'Special']] },
   { id: 'state', name: 'State', chips: [['ready', 'Ready'], ['locked', 'Locked'], ['upgradable', 'Upgradable'], ['maxed', 'Maxed'], ['inuse', 'In use'], ['barred', 'Not on this level']] },
 ];
 export const SORTS = [['tier', 'Tier'], ['rarity', 'Rarity'], ['ecu', 'ECU'], ['name', 'Name'], ['speed', 'Top speed']];
 export const RARITY_ORDER = ['common', 'uncommon', 'epic', 'legendary', 'bespoke', 'special'];
-export const noFilter = () => ({ tier: [], rarity: [], kind: [], state: [], sort: 'tier' });
+export const noFilter = () => ({ stars: [], colour: [], rarity: [], kind: [], state: [], sort: 'tier' });
 // a filter read from anywhere (the remembered one, an address): only chips and sorts that exist
 export const cleanFilter = (f) => {
   const out = noFilter();
@@ -183,7 +189,7 @@ export const cleanFilter = (f) => {
   if (SORTS.some(([id]) => id === f?.sort)) out.sort = f.sort;
   return out;
 };
-// "tier:g3,b1;rarity:epic;state:ready;sort:speed" (the address's &filter=)
+// "stars:3,4;colour:gold;rarity:epic;state:ready;sort:speed" (the address's &filter=)
 export const parseFilter = (text) => {
   const f = noFilter();
   for (const part of String(text || '').split(/[;|]/)) {
@@ -196,15 +202,16 @@ export const parseFilter = (text) => {
 export const filterCount = (f) => FILTER_GROUPS.reduce((n, group) => n + (f[group.id]?.length || 0), 0);
 // a card's chip in each group
 const secret = (car) => Object.values(SECRET_CARS).includes(car);
-export const tierGroup = (card) => {
-  const car = card.car;
-  if (car.earned || EVENT_CARS.includes(car) || secret(car) || !(car.tier >= 1 && car.tier <= 5)) return 'magenta';
-  if (car.amphibious) return 'sea';
-  return (car.blue ? 'b' : 'g') + car.tier;
-};
-export const kindOf = (card) => EVENT_CARS.includes(card.car) ? 'event'
+// the stars a card shows: the car's tier (an earned car's is 6); a Key car has none (the owner, 12-Oct: they need not have six)
+export const starCountOf = (card) => (card.car.tier >= 1 ? card.car.tier : 0);
+// the colour of those stars (cars.js starColour: magenta for the earned, Blueprint and Key cars)
+const COLOUR_IDS = { [STAR_COLOURS.gold]: 'gold', [STAR_COLOURS.blue]: 'blue', [STAR_COLOURS.earned]: 'magenta', [STAR_COLOURS.amphibious]: 'green' };
+export const colourOf = (card) => COLOUR_IDS[starColour(card.car)] || 'gold';
+// the kinds of car (the owner, 12-Oct): Garage (the car lot's own), Blueprint (only ever got from blueprints), Key (a Bespoke key car:
+// the Silver Comet and the like) and Special (the earned cars)
+export const kindOf = (card) => card.car.bespoke || EVENT_CARS.includes(card.car) ? 'key'
   : card.car.earned || secret(card.car) ? 'special'
-    : card.blueprint ? 'blueprint' : 'key';
+    : card.blueprint ? 'blueprint' : 'garage';
 export const statesOf = (card, inUseId) => {
   const states = [card.state]; // ready | locked | barred
   if (card.upgradable && !card.maxed) states.push('upgradable');
@@ -213,7 +220,8 @@ export const statesOf = (card, inUseId) => {
   return states;
 };
 export const cardMatches = (card, f, inUseId) =>
-  (!f.tier.length || f.tier.includes(tierGroup(card)))
+  (!f.stars.length || f.stars.includes(String(starCountOf(card))))
+  && (!f.colour.length || f.colour.includes(colourOf(card)))
   && (!f.rarity.length || f.rarity.includes(card.rarity))
   && (!f.kind.length || f.kind.includes(kindOf(card)))
   && (!f.state.length || statesOf(card, inUseId).some(s => f.state.includes(s)));

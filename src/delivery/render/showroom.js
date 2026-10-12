@@ -31,7 +31,7 @@
 // (not remembered); &filters opens the filter sheet; &bp=sport:7,hotrod:3 gives those blueprints for the visit.
 import '../showroom.css';
 import '../showroom-phone.css';
-import { showroomCars, carCard, floorBest, RARITIES, CAR_LOT, sideName, sideClick, driveWords, barredWhy, driveAs,
+import { showroomCars, carCard, floorBest, statShown, RARITIES, CAR_LOT, sideName, sideClick, driveWords, barredWhy, driveAs,
   FILTER_GROUPS, SORTS, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn } from '../showroomData.js';
 import { CAR, carInUse, setViewSide, STAR_COLOURS } from '../cars.js';
 import { Progress } from '../progress.js';
@@ -252,9 +252,8 @@ const buildSheet = () => {
     const b = make('button', 'sr-chip', label);
     b.dataset.group = groupId;
     b.dataset.chip = id;
-    if (groupId === 'tier' && /^[gb]\d$/.test(id)) b.style.setProperty('--chip', id[0] === 'g' ? STAR_COLOURS.gold : STAR_COLOURS.blue);
-    if (groupId === 'tier' && id === 'sea') b.style.setProperty('--chip', STAR_COLOURS.amphibious);
-    if (groupId === 'tier' && id === 'magenta') b.style.setProperty('--chip', STAR_COLOURS.earned);
+    if (groupId === 'colour') b.style.setProperty('--chip', { gold: STAR_COLOURS.gold, blue: STAR_COLOURS.blue, magenta: STAR_COLOURS.earned, green: STAR_COLOURS.amphibious }[id]);
+    if (groupId === 'stars') b.style.setProperty('--chip', STAR_COLOURS.gold);
     if (groupId === 'rarity') b.style.setProperty('--chip', RARITIES[id].colour);
     b.addEventListener('click', () => {
       if (single) filter.sort = id;
@@ -265,11 +264,7 @@ const buildSheet = () => {
   };
   for (const group of FILTER_GROUPS) {
     const chips = make('div', 'sr-chips');
-    if (group.id === 'tier') {
-      const gold = make('div', 'sr-chipline', make('small', '', 'Gold')), blue = make('div', 'sr-chipline', make('small', '', 'Blue')), more = make('div', 'sr-chipline');
-      for (const [id, label] of group.chips) (id[0] === 'g' && id.length === 2 ? gold : id[0] === 'b' && id.length === 2 ? blue : more).append(chip(group.id, id, label));
-      chips.append(gold, blue, more);
-    } else for (const [id, label] of group.chips) chips.append(chip(group.id, id, label));
+    for (const [id, label] of group.chips) chips.append(chip(group.id, id, label));
     body.append(make('section', 'sr-fgroup', make('h3', '', group.name), chips));
   }
   const sorts = make('div', 'sr-chips');
@@ -359,15 +354,20 @@ const fill = (fresh = true) => {
   requestAnimationFrame(arrows);
 };
 
-// a stat line: the figure now, its bar, and (a car not maxed) the maxed figure as a ghost bar beyond it
-const stat = (name, now, max, show, share) => {
+// a stat line: the figure now, its bar, and (a car not maxed) the maxed figure and the bar's reach then (a stat the ECU
+// does not change, Weight: max = now, so no ghost and no "max"). tip: what it is, on the name
+const stat = (name, now, max, show, share, tip) => {
   const bar = make('span', 'sr-stat-track'), fillNow = make('i', 'now'), fillMax = make('i', 'max');
   fillNow.style.width = Math.round(Math.max(0.04, Math.min(1, share(now))) * 100) + '%';
   fillMax.style.width = Math.round(Math.max(0.04, Math.min(1, share(max))) * 100) + '%';
   bar.append(fillMax, fillNow);
   const same = show(now) === show(max);
-  return make('div', 'sr-stat', make('small', '', name), bar, make('b', '', show(now)), make('span', 'sr-stat-max', same ? '' : 'max ' + show(max)));
+  const label = make('small', '', name);
+  if (tip) label.title = tip;
+  return make('div', 'sr-stat', label, bar, make('b', '', show(now)), make('span', 'sr-stat-max', same ? '' : 'max ' + show(max)));
 };
+// (a ratio stat: a whole number, 0-100, 50 = today's usual car: showroomData.js STAT_SCALE; its bar the same share)
+const score = (v) => String(statShown(v)), scoreShare = (v) => statShown(v) / 100;
 const kmh = (v) => Math.round(v * 3.6) + ' km/h';
 // the FULL VIEW of the car picked (drawn only while it is up: the cards just mark the one picked)
 const showDetail = () => {
@@ -388,6 +388,11 @@ const showDetail = () => {
       stat('Top speed', s.maxSpeed, m.maxSpeed, kmh, share.speed),
       stat('Acceleration', s.accel, m.accel, v => String(Math.round(v * 10) / 10), share.accel),
       stat('Health', s.health, m.health, v => String(Math.round(v)), share.health),
+      stat('Agility', s.agility, m.agility, score, scoreShare, 'How quickly it steers'),
+      stat('Delivery', s.delivery, m.delivery, score, scoreShare, 'Package efficacy: a gift\'s standing, a flaming package\'s damage'),
+      stat('Cool', s.cool, m.cool, score, scoreShare, 'How long it can sit on the shoulder before the police step in'),
+      stat('Crossing', s.crossing, m.crossing, score, scoreShare, 'How well it takes rails, fords, mud and the tide'),
+      stat('Weight', s.weight, s.weight, score, scoreShare, 'How heavy it is in a shove (the same at every ECU)'),
       stat('Respawn', s.respawn, m.respawn, v => (Math.round(v * 10) / 10).toFixed(1) + ' s', share.respawn));
   // what can be done with it
   const go = make('button', 'sr-go');

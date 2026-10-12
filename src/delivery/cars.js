@@ -30,6 +30,11 @@
 //              each star level, open from the start; an amphibious level (its "amphibious") is only driven in one
 //   draft      m of an amphibious car that is under the water when it is afloat (default CONFIG.water.draft)
 //   mass       how heavy it is in a shove (default 1): heavier knocks others aside and is knocked less
+//   delivery   (optional) its package efficacy, a share (default 1): a Good gift's standing gain and an Evil flaming
+//              package's damage are multiplied by it (packages.js)
+//   cool       (optional) its shoulder fuse, a share of CONFIG.dangerTime (default 1: Social.dangerTime)
+//   (maxSpeed, accel, health, agility, crossing, delivery and cool are the car's figures at its MAXED ECU: a lower ECU's
+//   are in ecus.json, lower; mass is the same at every ECU, as `weight` there. See ecu.js, carStats)
 //   shotBack   (optional) how much further back the studio camera (?cine=car) stands for its picture, for
 //              a vehicle whose wings reach past its hit box
 // ============================================================================
@@ -54,7 +59,7 @@ export const TIERS = 5;
 // (No longer enforced: the owner, 12-Oct, CHECKLIST item 115, dropped the rule with the ECUs; scripts/.balance-check.mjs
 // had its tier ceilings removed. Kept as a figure for reference)
 export const NEXT_TIER_CAPS = { maxSpeed: 52, accel: 24, health: 450 };
-export const stars = (car) => car.tier ? '★'.repeat(car.tier) : car.bespoke || car.event ? '★'.repeat(6) : ''; // (a Key car outside the tiers: the six magenta stars) // (only the stars it has: no empty ones)
+export const stars = (car) => car.tier ? '★'.repeat(car.tier) : ''; // (only the stars it has: no empty ones; a Key car has none, as an event car never had) // (only the stars it has: no empty ones)
 // (a 6-star car, earned rather than bought, has magenta stars: see EARNED_CARS)
 // (and an amphibious car's are sea green: a section of the garage of its own, see amphibiousCars)
 export const STAR_COLOURS = { gold: '#ffd23f', blue: '#4fa8ff', earned: '#ff5fd2', amphibious: '#35d6b4' };

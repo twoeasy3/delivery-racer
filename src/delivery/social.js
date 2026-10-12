@@ -37,8 +37,9 @@ export const Social = {
     return caution;
   },
   // a gift landed: on a police car, or another good driver
-  gift(cop) {
-    if (this.on) this.level = Math.min(1, this.level + (cop ? C.copGift : C.gift) / 100);
+  // (by the car's DELIVERY, its package efficacy: Player.delivery, 1 at its max ECU)
+  gift(cop, efficacy = 1) {
+    if (this.on) this.level = Math.min(1, this.level + (cop ? C.copGift : C.gift) * Math.max(0, efficacy) / 100);
   },
   update(dt) {
     if (!this.on) { this.level = 0; return; }
@@ -61,8 +62,9 @@ export const Social = {
   },
   // how much happier every new driver starts
   get moodLift() { return this.on ? C.moodLift * this.level : 0; },
-  // s of shoulder driving allowed before the police step in
-  get dangerTime() { return CONFIG.dangerTime * (1 + (this.on ? C.danger * this.level : 0)); },
+  // s of shoulder driving allowed before the police step in: CONFIG.dangerTime by the car's COOL (Player.cool, its ECU's:
+  // 1 at its max ECU, less below; held to CONFIG.coolFloor), longer with the standing
+  get dangerTime() { return CONFIG.dangerTime * Math.max(CONFIG.coolFloor, Player.cool) * (1 + (this.on ? C.danger * this.level : 0)); },
   // s more (good) or less (bad) a powerup or mystery effect lasts
   powerUpShift(type) {
     const good = ['turbo', 'radarDetector', 'siren', 'ghost', 'passenger', 'armour', 'bigSplash', ...GOOD_MYSTERIES].includes(type);
