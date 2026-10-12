@@ -41,6 +41,10 @@
   /* the car: large, the chevrons (the round arrows, turned) at the top and the bottom of its area */
   #showroom .sr-stage { flex: 1 1 42vh; min-height: 34vh; height: auto; margin: 0; } /* (the car takes what the panel leaves) */
   #showroom .sr-dpic { inset: 30px 0; }
+  #showroom .sr-look { display: block; position: absolute; right: 10px; top: 36px; z-index: 3; padding: 6px 12px; border: 0; border-radius: 15px; font: inherit; font-size: 12px; font-weight: 700;
+    color: #fff; background: rgba(14, 18, 26, .6); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22); }
+  #showroom .sr-detail.statsoff .sr-dwords { display: none; } /* (the car takes the whole panel; the stage already flexes) */
+  #showroom .sr-detail.statsoff .sr-stage { min-height: 0; }
   #showroom .sr-farrow { left: 50%; right: auto; top: auto; width: 54px; height: 28px; margin: 0 0 0 -27px; border-radius: 14px; padding: 0;
     font-size: 0; background: rgba(14, 18, 26, .6); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22); } /* (the glyph hidden: a chevron drawn by a border, the same on every phone) */
   #showroom .sr-farrow.prev { left: 50%; top: 0; }

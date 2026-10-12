@@ -122,6 +122,7 @@ let cards = [];      // [{ data, node }]: the cards shown, in the filter's order
 let list = [];       // their data (the full view's arrows go along it)
 let picked = null;   // the car id picked
 let full = false;    // the full view up
+let statsOff = false; // (phone: the stats panel hidden to look at the car; kept from car to car)
 let best = null;     // the best figures on the floor (the stat bars)
 let row, rowBox, detail, countEl, bankEl, back, on, seg, sortSel, filterBtn, sheet, sheetShade;
 
@@ -461,7 +462,17 @@ const showDetail = () => {
     return b;
   };
   // (a car that cannot be driven: its card's overlay as a pill under the car, the same kind, colour and icon)
-  const stage = make('div', 'sr-stage', pic, overlayNode(overlayOf(card), { inline: true }), arrow(-1), arrow(1));
+  const look = make('button', 'sr-look', statsOff ? 'Stats' : 'Hide stats');
+  look.setAttribute('aria-pressed', String(statsOff));
+  look.title = 'Hide or show the stats, to look at the car (phone)';
+  look.addEventListener('click', (e) => {
+    e.stopPropagation();
+    statsOff = !statsOff;
+    detail.classList.toggle('statsoff', statsOff);
+    look.textContent = statsOff ? 'Stats' : 'Hide stats';
+    look.setAttribute('aria-pressed', String(statsOff));
+  });
+  const stage = make('div', 'sr-stage', pic, overlayNode(overlayOf(card), { inline: true }), arrow(-1), arrow(1), look);
   // its card's picture (the cached still) in the panel
   const cardPic = make('span', 'sr-dcard-pic' + (card.dark ? ' silhouette' : ''));
   const dcard = make('div', 'sr-dcard', cardPic);
@@ -483,7 +494,7 @@ const showDetail = () => {
       card.hidden ? null : renderSources(card.car, { open: true })), // (where its key and blueprints come from: render/carsources.js; shut on a desktop, a line)
     make('div', 'sr-actions', sideSwitch('sr-side-detail'), go));
   detail.style.setProperty('--rar', RARITIES[card.rarity].colour);
-  detail.className = 'sr-detail ' + card.rarity + ' ' + card.state + ' open' + (slide > 0 ? ' from-next' : slide < 0 ? ' from-prev' : '');
+  detail.className = 'sr-detail ' + card.rarity + ' ' + card.state + ' open' + (statsOff ? ' statsoff' : '') + (slide > 0 ? ' from-next' : slide < 0 ? ' from-prev' : '');
   slide = 0;
   requestAnimationFrame(() => { if (full && cardPic.isConnected) stillCar(cardPic, card.car, evilNow()); });
   // the car itself, live (a drag turns it; it lands: render/carbounce.js); with no WebGL, its still
@@ -637,6 +648,7 @@ export const Showroom = {
       list: list.map(c => c.id), live: ShowroomView.state, go: full ? detail?.querySelector('.sr-go')?.textContent || null : null };
   },
   // pick that car's card (and with full, open its full view)
+  hideStats(on = true) { statsOff = !!on; }, // (a visit's debug: ?showroom&full&nostats)
   look(id, open = false) {
     if (!cards.some(c => c.data.id === id)) return;
     pick(id);
