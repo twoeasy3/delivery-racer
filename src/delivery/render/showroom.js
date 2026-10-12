@@ -19,14 +19,18 @@
 // Drive drives as (it starts on the side being played). A big button takes the player to the car lot, Crazey Jim's Used
 // Cars (render/garage.js), where cars are bought; closing the lot comes back here.
 // The layout (showroom.css): on a desktop the cards are TWO ROWS scrolled sideways (a drag, the wheel, the arrows at its
-// ends, the arrow keys); a phone on its side, one row; a phone held upright, a column scrolled down (isPhone()). The
-// full view is the whole screen on each (a phone upright: the car on top, its panel under it).
+// ends, the arrow keys); a phone on its side, one row. A PHONE HELD UPRIGHT (isPhone(); showroom-phone.css and
+// render/showroomphone.js): the cards in TWO COLUMNS scrolled down, and the full view is its single-car screen: the car
+// large on top, its panel under it, nothing of it scrolling but the words on a small phone; a swipe UP or DOWN outside
+// the car (or the up / down chevrons above and below it, the arrows turned) switches to the next / previous car (goTo,
+// sliding the way the list went), and back leaves the list scrolled where it was.
 // Keys: left / right (up / down in the column, and between the two rows) the next card, Enter the full view (in it:
 // drive), E the other side, F the filters, Escape back.
 // For a picture: ?showroom opens it; &side=evil plays Evil (render/menustage.js), and so it opens on Evil; &look=<car id>
 // picks that card; &full (or &sheet) opens its full view; &filter=tier:g3,b1;state:ready;sort:speed filters for the visit
 // (not remembered); &filters opens the filter sheet; &bp=sport:7,hotrod:3 gives those blueprints for the visit.
 import '../showroom.css';
+import '../showroom-phone.css';
 import { showroomCars, carCard, floorBest, RARITIES, CAR_LOT, sideName, sideClick, driveWords, barredWhy, driveAs,
   FILTER_GROUPS, SORTS, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn } from '../showroomData.js';
 import { CAR, carInUse, setViewSide, STAR_COLOURS } from '../cars.js';
@@ -37,6 +41,7 @@ import { richTiers, tierStarsNode } from '../tiers.js';
 import { Garage } from './garage.js';
 import { stillCar, stillReady } from './carstill.js';
 import { ShowroomView } from './showroomview.js';
+import { swipeSwitch, PHONE_COLUMNS } from './showroomphone.js';
 import { Sound } from './audio.js';
 
 const panel = document.getElementById('showroom');
@@ -89,6 +94,7 @@ const watch = (el, car) => {
 const pump = () => {
   requestAnimationFrame(pump);
   if (!Showroom.isOpen || Garage.isOpen || !queue.size) return;
+  if (full && isPhone()) return; // (the phone's single-car screen covers the cards: its live car has the frames)
   const t0 = performance.now();
   for (const el of queue) {
     queue.delete(el);
@@ -146,6 +152,7 @@ const build = () => {
     make('div', 'sr-tools', seg, filterBtn, sortSel), lot);
 
   row = make('div', 'sr-row');
+  row.style.setProperty('--sr-cols', String(PHONE_COLUMNS)); // (the phone's columns: showroom-phone.css)
   back = make('button', 'sr-arrow back', '‹');
   on = make('button', 'sr-arrow on', '›');
   back.setAttribute('aria-label', 'Scroll back');
@@ -170,6 +177,8 @@ const build = () => {
   detail = make('section', 'sr-detail');
   detail.setAttribute('role', 'dialog');
   swipeOn(detail);
+  // the phone's single-car screen: a vertical swipe outside the live car switches car (render/showroomphone.js)
+  swipeSwitch(detail, { skip: (target) => !isPhone() || !full || !!target.closest?.('.sr-dpic'), go: (offset) => goTo(offset) });
   sheet = buildSheet();
   sheetShade = make('div', 'sr-shade');
   sheetShade.addEventListener('click', () => closeFilters());
@@ -432,7 +441,8 @@ const showDetail = () => {
       why),
     make('div', 'sr-actions', sideSwitch('sr-side-detail'), go));
   detail.style.setProperty('--rar', RARITIES[card.rarity].colour);
-  detail.className = 'sr-detail ' + card.rarity + ' ' + card.state + ' open';
+  detail.className = 'sr-detail ' + card.rarity + ' ' + card.state + ' open' + (slide > 0 ? ' from-next' : slide < 0 ? ' from-prev' : '');
+  slide = 0;
   requestAnimationFrame(() => { if (full && cardPic.isConnected) stillCar(cardPic, card.car, evilNow()); });
   // the car itself, live (a drag turns it; it lands: render/carbounce.js); with no WebGL, its still
   if (!ShowroomView.show(pic, card.car, { evil, dark: card.hidden })) requestAnimationFrame(() => { if (Showroom.isOpen) stillCar(pic, card.car, evilNow()); });
@@ -461,20 +471,22 @@ const closeFull = () => {
   detail.replaceChildren();
   Nav.leave('showroomFull');
   const node = cards.find(c => c.data.id === picked)?.node;
-  node?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  if (!isPhone()) node?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); // (a phone: the list exactly where it was)
   try { node?.focus({ preventScroll: true }); } catch { /* (an old browser: no focus options) */ }
 };
 // the previous / next car of the list as filtered, round from the last to the first: the full view's arrows, the
 // arrow keys, a swipe (and the phone's own ways): every layout goes through here
+let slide = 0; // (the way the last switch went: the full view slides its car and words in from there)
 export const goTo = (offset) => {
   const next = stepIn(list, picked, offset);
   if (!next || next.id === picked) return;
+  slide = Math.sign(offset);
   pick(next.id);
 };
 // a swipe sideways on a touch screen, outside the live car (which a drag turns), goes to the previous / next car
 const swipeOn = (el) => {
   let start = null;
-  el.addEventListener('pointerdown', (e) => { start = e.pointerType !== 'mouse' && !e.target.closest('.sr-dpic, button') ? { x: e.clientX, y: e.clientY, id: e.pointerId } : null; });
+  el.addEventListener('pointerdown', (e) => { start = e.pointerType !== 'mouse' && !isPhone() && !e.target.closest('.sr-dpic, button') ? { x: e.clientX, y: e.clientY, id: e.pointerId } : null; });
   const end = (e) => {
     if (!start || e.pointerId !== start.id) return;
     const dx = e.clientX - start.x, dy = e.clientY - start.y;
@@ -513,10 +525,10 @@ window.addEventListener('keydown', (e) => {
   const column = isPhone(), rows = perColumn();
   switch (e.code) {
     case 'Escape': if (sheet.classList.contains('open')) closeFilters(); else if (full) closeFull(); else Showroom.close(); break;
-    case 'ArrowLeft': case 'KeyA': if (full) goTo(-1); else if (!column) step(-rows); else return; break;
-    case 'ArrowRight': case 'KeyD': if (full) goTo(1); else if (!column) step(rows); else return; break;
-    case 'ArrowUp': if (full) return; if (column || rows > 1) step(-1); else return; break;
-    case 'ArrowDown': if (full) return; if (column || rows > 1) step(1); else return; break;
+    case 'ArrowLeft': case 'KeyA': if (full) goTo(-1); else step(column ? -1 : -rows); break;
+    case 'ArrowRight': case 'KeyD': if (full) goTo(1); else step(column ? 1 : rows); break;
+    case 'ArrowUp': if (full) { if (column) goTo(-1); else return; } else if (column) step(-PHONE_COLUMNS); else if (rows > 1) step(-1); else return; break;
+    case 'ArrowDown': if (full) { if (column) goTo(1); else return; } else if (column) step(PHONE_COLUMNS); else if (rows > 1) step(1); else return; break;
     case 'KeyE': pickSide(!side); break;
     case 'KeyF': if (full) return; toggleFilters(); break;
     case 'Enter': {
@@ -594,6 +606,11 @@ export const Showroom = {
   filters(open = true) { if (open) openFilters(); else closeFilters(); },
   goTo,
   back() { if (full) closeFull(); },
+  // for a check: the phone's layout (the list's columns as laid out, the list's scroll, the screen up)
+  get phoneState() {
+    if (!row) return null;
+    return { phone: isPhone(), columns: getComputedStyle(row).gridTemplateColumns.split(' ').filter(Boolean).length, scrollTop: row.scrollTop, full };
+  },
 };
 // the live car is drawn only while it can be seen: the showroom up (not under the car lot) with the full view up
 ShowroomView.when(() => Showroom.isOpen && full && !Garage.isOpen && !panel.classList.contains('hidden'));

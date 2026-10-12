@@ -86,6 +86,8 @@ try {
     'Good / Evil switch: a click on the other half picks it; a click on the half already on flips to the other');
   // ---- the FILTERS and the SORT (render/showroom.js draws them; the logic is showroomData.js's)
   await filters(g, check);
+  // ---- the PHONE showroom (render/showroomphone.js): two columns, and the single-car screen's vertical swipe
+  await phone(g, check);
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error?.stack || error));
@@ -168,4 +170,27 @@ async function filters(g, check) {
   check(D.stepIn(list, list[0].id, -1).id === list[list.length - 1].id && D.stepIn(list, list[2].id, -1).id === list[1].id, 'previous goes back, and from the first round to the last');
   check(list.every(c => MEANS.tier('g2')(c) || MEANS.tier('g3')(c)), 'next / previous never leave the filter');
   check(D.stepIn([], 'x', 1) === null && D.stepIn([list[0]], list[0].id, 1).id === list[0].id, 'an empty list: nothing; one car: itself');
+}
+
+// The phone showroom held upright (render/showroomphone.js, showroom-phone.css; the owner, 12-Oct: "Two columns of
+// cards, then a screen when clicking in. Swipe/tap up or down to switch cars"): the list's columns, which finger moves
+// switch car and which way, and a run of swipes along a filtered list going round its ends (through stepIn, the one
+// switch the desktop's arrows use too). The layout and the touches themselves are seen in a browser, not here.
+async function phone(g, check) {
+  const P = await g.load('render/showroomphone.js');
+  const D = await g.load('showroomData.js');
+  check(P.PHONE_COLUMNS === 2, 'the phone\'s list: two columns of cards');
+  const { min, ratio, time } = P.SWIPE;
+  check(P.swipeOffset(0, -min - 10, 200) === 1 && P.swipeOffset(5, min + 10, 200) === -1, 'a swipe UP: the next car; a swipe DOWN: the one before');
+  check(P.swipeOffset(0, -(min - 5), 200) === 0 && P.swipeOffset(0, 0, 50) === 0, 'a short move or a tap: no switch');
+  check(P.swipeOffset(-(min + 40) * ratio, -(min + 40), 200) === 0 && P.swipeOffset(200, -60, 200) === 0, 'a move as much sideways as up: no switch (a sideways one is the car\'s or the page\'s)');
+  check(P.swipeOffset(0, -200, time + 50) === 0, 'a slow drag (over ' + time + ' ms): no switch');
+  // swipes along a filtered list: up the whole list comes round to the start; down from the first goes to the last
+  const all = D.showroomCars().map(car => D.carCard(car, false));
+  const f = D.noFilter(); f.state = ['locked'];
+  const list = D.filterCards(all, f, g.cars.carInUse().id);
+  let at = list[0].id;
+  for (let i = 0; i < list.length; i++) at = D.stepIn(list, at, P.swipeOffset(0, -120, 150)).id;
+  const down = D.stepIn(list, list[0].id, P.swipeOffset(0, 120, 150)).id;
+  check(list.length > 2 && at === list[0].id && down === list[list.length - 1].id, list.length + ' swipes up go round the filtered list (' + list.length + ' locked cars) to the first again; a swipe down from the first: the last');
 }
