@@ -21,6 +21,7 @@ import { Nav } from '../nav.js';
 import { stillsIn } from './carstill.js';
 import { blueprintCard } from './blueprintcard.js';
 import { posePick } from '../carposes.js';
+import { bannerCars, bannerArt } from './packbanner.js';
 
 const make = (tag, className, ...inside) => {
   const node = document.createElement(tag);
@@ -110,7 +111,10 @@ export const openContents = (host, { kind, title, featured = [] }) => {
   if (c.featured.length) {
     const ratio = c.featured.map((f, i) => entryName(f) + ' ' + wt(c.weights[i])).join(' : ');
     const out = c.shifted.map(f => entryName(f) + ' (' + (f.exhausted === 'owned' ? 'Key obtained' : 'Car Maxed') + ')');
-    sections.push(make('section', 'pc-group featured',
+    // two or three featured cars: the pack's BANNER over them (render/packbanner.js; no WebGL: none, the cards say it all)
+    const trio = bannerCars(c.featured);
+    const banner = trio ? bannerArt(trio, { className: 'pc-banner', onFail: () => banner.remove() }) : null;
+    sections.push(make('section', 'pc-group featured', banner,
       make('h3', '', make('span', 'shop-chip r-bespoke', 'Featured'), make('small', '', 'the last card is one, picked by weight · the big figure: its chance a pack')),
       make('p', 'pc-weights', make('b', '', 'Featured weights: '), ratio),
       out.length ? make('p', 'pc-shift', make('b', '', 'Weights shifted: '), out.join(', ') + ' out of the pool') : null,
