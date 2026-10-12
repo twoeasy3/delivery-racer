@@ -115,8 +115,40 @@ const cyl = (r, length, x, y, z, axis = 'y', seg = 10) => {
 const lip = (r, t, x, y, z) => new THREE.TorusGeometry(r, t, 4, 10, Math.PI).rotateY(Math.PI / 2).translate(x, y, z);
 // the top half of a thin disc on a flank (a dark wheel well behind a wheel)
 const well = (r, x, y, z) => new THREE.CylinderGeometry(r, r, 0.01, 14, 1, false, 0, Math.PI).rotateZ(Math.PI / 2).translate(x, y, z);
-const merged = (parent, material, geos) => place(parent, mergeGeometries(geos.map(g => (g.index ? g : g)), false), material, 0, 0, 0);
+const merged = (parent, material, geos) => place(parent, mergeGeometries(geos, false), material, 0, 0, 0);
 
+// a body lofted through cross-sections along the car: `rings` is a list of [z, points] going nose-ward or tail-ward,
+// each points a closed loop of [x, y] (as many in every ring, in the same order); both ends closed with a fan to their
+// middle. Its material should be double-sided (the winding is not looked after)
+const loft = (parent, material, rings) => {
+  const n = rings[0][1].length, pos = [], idx = [];
+  for (const [z, pts] of rings) for (const [x, y] of pts) pos.push(x, y, z);
+  for (let r = 0; r + 1 < rings.length; r++) {
+    for (let i = 0; i < n; i++) {
+      const a = r * n + i, b = r * n + (i + 1) % n, c = (r + 1) * n + i, d = (r + 1) * n + (i + 1) % n;
+      idx.push(a, b, d, a, d, c);
+    }
+  }
+  for (const r of [0, rings.length - 1]) {
+    const [z, pts] = rings[r], mid = pos.length / 3;
+    pos.push(pts.reduce((t, p) => t + p[0], 0) / n, pts.reduce((t, p) => t + p[1], 0) / n, z);
+    for (let i = 0; i < n; i++) idx.push(mid, r * n + i, r * n + (i + 1) % n);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  return place(parent, geo, material, 0, 0, 0);
+};
+// linear interpolation through keys [z, ...values] (sorted by z) at z
+const along = (keys, z) => {
+  if (z <= keys[0][0]) return keys[0].slice(1);
+  for (let i = 1; i < keys.length; i++) {
+    const [z1, ...b] = keys[i], [z0, ...a] = keys[i - 1];
+    if (z <= z1) { const t = (z - z0) / (z1 - z0); return a.map((v, j) => v + (b[j] - v) * t); }
+  }
+  return keys[keys.length - 1].slice(1);
+};
 export const IDEA_MODELS_6 = {
   // A blown vintage tourer (a 1929 Bentley 4½ Litre "Blower"): open, long and upright. A supercharger drum juts
   // out under a tall radiator with a mesh stone guard; two big lamps on a bar between cycle wings; a long louvred
@@ -244,81 +276,142 @@ export const IDEA_MODELS_6 = {
     group.userData = { body, animate: () => {} };
     return group;
   },
-  // A horseshoe-grilled hypercar (a Bugatti Chiron, 2016): wide, low and round-shouldered. The nose in bare carbon,
-  // a horseshoe of a grille in the middle of it, four little square lamps in a row in each headlamp; a big chrome C
-  // on each flank round an intake behind the door; a fin running from the roof down the middle of the tail to a
-  // stop lamp; a light bar the width of the tail over a black mesh and one wide exhaust; a wing on the tail that
-  // rises and falls
+  // A horseshoe-grilled hypercar (a Bugatti Chiron, 2016): low, wide and rounded, lofted through cross-sections: a
+  // domed nose round a big horseshoe grille, a waist at the cabin and big rounded haunches over the wheels (the back
+  // ones wider), a bubble of a canopy whose top and engine cover are in carbon, with a fin down its middle to a stop
+  // lamp; a chrome C round an intake on each flank; four little square lamps in each headlamp; a tucked-in tail with
+  // a light bar following its curve over a black mesh and one round exhaust; a wing that rises out of the tail
   horseshoe: (car) => {
     const group = new THREE.Group();
-    const w = car.hw * 2, L = car.hl, rr = 0.05, ZW = L * 0.6;
-    const paint = lambert(car.color), carbon = lambert(0x272b34), glass = lambert(GLASS), chrome = lambert(CHROME), trim = lambert(TRIM);
-    const body = curved(group, paint, w * 0.92, rounded([[-L + rr, 0.3], [L - 0.15, 0.27], [L - rr, 0.36], [L - rr, 0.5], [L * 0.88, 0.64], [L * 0.45, 0.76], [-L * 0.55, 0.9], [-L + rr, 0.9], [-L + rr, 0.45]]), rr);
-    // the front half, in carbon, back to the C: the body's front again, a centimetre proud of it all round
-    curved(group, carbon, w * 0.93, rounded([[-L * 0.013, 0.26], [L - 0.15, 0.26], [L - rr + 0.01, 0.355], [L - rr + 0.01, 0.505], [L * 0.88 + 0.005, 0.65], [L * 0.45, 0.77], [-L * 0.013, 0.836]]), rr);
-    // the cabin: one piece of glass, the roof, the fin from the roof down the tail, the engine's slats either side of it
-    prism(group, glass, w * 0.66, [[L * 0.47, 0.72], [L * 0.12, 1.15], [-L * 0.3, 1.17], [-L * 0.62, 0.94], [-L * 0.62, 0.84], [L * 0.47, 0.7]]);
-    box(group, paint, w * 0.6, 0.04, L * 0.4, 0, 1.17, -L * 0.09);
-    prism(group, paint, 0.05, [[L * 0.12, 1.16], [L * 0.05, 1.21], [-L * 0.3, 1.21], [-L * 0.95, 0.95], [-L * 0.95, 0.9], [-L * 0.3, 1.15]]);
-    merged(group, trim, [-1, 1].flatMap(side => [0.68, 0.75, 0.82, 0.89].map(f => bx(0.5, 0.012, 0.06, side * 0.33, 0.955, -L * f))));
-    // the horseshoe: a chrome one, the black mesh in it
-    const shoe = (s) => {
-      const shape = new THREE.Shape();
-      shape.moveTo(-0.17 * s, 0);
-      shape.lineTo(-0.17 * s, 0.12 * s);
-      shape.absarc(0, 0.12 * s, 0.17 * s, Math.PI, 0, true);
-      shape.lineTo(0.17 * s, 0);
-      shape.closePath();
-      return new THREE.ExtrudeGeometry(shape, { depth: 0.1, bevelEnabled: false, curveSegments: 6 });
+    const paint = lambert(car.color), carbon = lambert(0x3a4150), chrome = lambert(CHROME), trim = lambert(TRIM);
+    const glass = lambert(GLASS);
+    for (const m of [paint, carbon, glass]) m.side = THREE.DoubleSide;
+    const NU = 2.6, NC = 2.2; // (how square the body's and the canopy's shoulders are: 2 round, more squarer)
+    // the body: [z, half width at its widest, the height of that, the height of the deck on the middle, the floor, the sill's half width]
+    const BODY = [
+      [-2.27, 0.72, 0.62, 0.8, 0.34, 0.66], [-2.15, 0.93, 0.66, 0.9, 0.3, 0.84], [-1.9, 1.0, 0.72, 0.95, 0.27, 0.9],
+      [-1.44, 1.02, 0.74, 0.96, 0.27, 0.9], [-1.0, 0.99, 0.7, 0.96, 0.27, 0.9], [-0.5, 0.92, 0.62, 0.93, 0.26, 0.88],
+      [0.0, 0.9, 0.6, 0.88, 0.26, 0.86], [0.6, 0.93, 0.6, 0.82, 0.26, 0.87], [1.27, 0.99, 0.64, 0.75, 0.26, 0.88],
+      [1.8, 0.95, 0.58, 0.68, 0.26, 0.84], [2.12, 0.8, 0.52, 0.64, 0.27, 0.72], [2.27, 0.55, 0.46, 0.58, 0.3, 0.5],
+    ];
+    const AXLES = [[1.27, 0.36, 0.26, 0.97], [-1.44, 0.375, 0.3, 1.0]]; // [z, radius, width, the tyre's outer face]
+    // a cross-section's figures at z: under the haunches the side is cut back to clear the wheel, up to an arch
+    const section = (z) => {
+      let [wHigh, yb, yTop, y0, wLow] = along(BODY, z), yLip = yb - 0.12;
+      for (const [za, R, width, outer] of AXLES) {
+        const dz = Math.abs(z - za), Ra = R + 0.07;
+        if (dz < 0.42) {
+          wLow = outer - width - 0.02;
+          yLip = dz < Ra ? R + Math.sqrt(Ra * Ra - dz * dz) : y0 + 0.1;
+          yb = Math.max(yb, yLip + 0.04);
+        }
+      }
+      return { wHigh, yb, yTop, y0, wLow, yLip };
     };
-    place(group, shared('shoe1', () => shoe(1)), chrome, 0, 0.3, L - 0.06);
-    place(group, shared('shoe0.8', () => shoe(0.8)), trim, 0, 0.33, L - 0.055);
-    // the headlamps on the nose's slope: a dark housing each side, four little square lamps in a row in it
-    const lampPitch = 0.49, n = [Math.sin(lampPitch), Math.cos(lampPitch)];
-    const hz = L * 0.935, hy = 0.6;
-    for (const side of [-1, 1]) slab(group, trim, 0.44, 0.05, 0.2, side * 0.56, hy, hz, lampPitch);
-    merged(group, LAMP, [-1, 1].flatMap(side => [0.38, 0.5, 0.62, 0.74].map(x => bx(0.08, 0.03, 0.09, side * x, hy + n[1] * 0.02, hz + n[0] * 0.02, lampPitch))));
-    merged(group, AMBER, [-1, 1].map(side => bx(0.12, 0.04, 0.06, side * 0.72, 0.36, L - 0.02)));
-    for (const side of [-1, 1]) box(group, trim, 0.3, 0.12, 0.1, side * 0.42, 0.36, L - 0.02);
-    box(group, trim, w * 0.9, 0.04, 0.3, 0, 0.26, L - 0.15);
-    // the flanks: the C round an intake, a skirt along the sill, mirrors; a flare and a haunch over each wheel
-    const C = shared('chironC', () => new THREE.TorusGeometry(0.26, 0.025, 6, 14, Math.PI * 1.1).rotateZ(-Math.PI * 0.55).rotateY(Math.PI / 2));
+    const upper = (w, yb, yTop, t, n) => [w * Math.pow(Math.abs(Math.cos(t)), 2 / n), yb + (yTop - yb) * Math.pow(Math.max(0, Math.sin(t)), 2 / n)];
+    const ANG = [0, 1, 2, 3, 4, 5].map(i => i * Math.PI / 12);
+    const ring = (z) => {
+      const { wHigh, yb, yTop, y0, wLow, yLip } = section(z);
+      const side = [[wLow - 0.08, y0], [wLow, y0 + 0.06], [wLow, Math.max(y0 + 0.08, yLip - 0.02)], [wHigh - 0.02, yLip], ...ANG.map(t => upper(wHigh, yb, yTop, t, NU))];
+      return [[0, y0], ...side, [0, yTop], ...side.slice().reverse().map(([x, y]) => [-x, y])];
+    };
+    const zs = new Set(BODY.map(k => k[0]));
+    for (const [za] of AXLES) for (const dz of [-0.47, -0.4, -0.27, 0, 0.27, 0.4, 0.47]) zs.add(Math.round((za + dz) * 1000) / 1000);
+    const body = loft(group, paint, [...zs].sort((a, b) => a - b).map(z => [z, ring(z)]));
+    // where the body's side is at (z, y), and its top at (z, x): for parts to sit on it
+    const sideX = (z, y) => {
+      const { wHigh, yb, yTop, wLow, yLip } = section(z);
+      if (y >= yb) { const sn = Math.pow(Math.min(1, (y - yb) / (yTop - yb)), NU / 2); return wHigh * Math.pow(Math.sqrt(1 - sn * sn), 2 / NU); }
+      return y >= yLip ? wHigh - 0.02 + 0.02 * (y - yLip) / (yb - yLip) : wLow;
+    };
+    const topY = (z, x) => {
+      const { wHigh, yb, yTop } = section(z);
+      const c = Math.pow(Math.min(1, Math.abs(x) / wHigh), NU / 2);
+      return yb + (yTop - yb) * Math.pow(Math.sqrt(1 - c * c), 2 / NU);
+    };
+    // the canopy: [z, half width, the height of its foot, the height of its top]
+    const CANOPY = [[-1.85, 0.28, 0.92, 0.95], [-1.5, 0.46, 0.92, 0.99], [-1.1, 0.6, 0.9, 1.08], [-0.7, 0.69, 0.88, 1.17], [-0.3, 0.72, 0.84, 1.21],
+      [0.1, 0.72, 0.8, 1.15], [0.45, 0.68, 0.76, 1.02], [0.75, 0.6, 0.72, 0.86], [0.95, 0.42, 0.7, 0.73]];
+    loft(group, glass, CANOPY.map(([z, wc, base, top]) => {
+      const side = [[wc * 0.97, base - 0.1], ...ANG.map(t => upper(wc, base, top, t, NC))];
+      return [z, [[0, base - 0.1], ...side, [0, top], ...side.slice().reverse().map(([x, y]) => [-x, y])]];
+    }));
+    // its top and the engine cover in carbon: a shell over the canopy, reaching further down its sides towards the tail
+    const COVER = { 0.45: 0.4, 0.1: 0.55, '-0.3': 0.6, '-0.7': 0.95, '-1.1': 1.45, '-1.5': 1.571, '-1.85': 1.571 };
+    loft(group, carbon, CANOPY.filter(([z]) => z <= 0.45).map(([z, wc, base, top]) => {
+      const a = COVER[String(z)], arc = [0, 1, 2, 3].map(i => Math.PI / 2 - a * (1 - i / 4));
+      const out = arc.map(t => upper(wc + 0.012, base, top + 0.012, t, NC)), inn = arc.map(t => upper(wc - 0.004, base, top - 0.004, t, NC));
+      return [z, [...out, [0, top + 0.012], ...out.slice().reverse().map(([x, y]) => [-x, y]), ...inn.map(([x, y]) => [-x, y]), [0, top - 0.004], ...inn.slice().reverse()]];
+    }));
+    // the fin down the middle, from the roof to the tail, and the stop lamp at its end
+    prism(group, carbon, 0.05, [[0.1, 1.2], [-0.3, 1.26], [-0.7, 1.22], [-1.1, 1.13], [-1.5, 1.04], [-1.85, 0.99], [-2.1, 0.95],
+      [-2.1, 0.88], [-1.85, 0.92], [-1.5, 0.96], [-1.1, 1.05], [-0.7, 1.14], [-0.3, 1.18], [0.1, 1.12]]);
+    box(group, TAIL, 0.1, 0.03, 0.04, 0, 0.935, -2.115);
+    // the horseshoe, big in the middle of the nose: a chrome one, the black mesh in it
+    const shoe = (k) => {
+      const shape = new THREE.Shape();
+      shape.moveTo(-0.17 * k, 0);
+      shape.lineTo(-0.17 * k, 0.12 * k);
+      shape.absarc(0, 0.12 * k, 0.17 * k, Math.PI, 0, true);
+      shape.lineTo(0.17 * k, 0);
+      shape.closePath();
+      return new THREE.ExtrudeGeometry(shape, { depth: 0.18, bevelEnabled: false, curveSegments: 6 });
+    };
+    place(group, shared('shoe1.25', () => shoe(1.25)), chrome, 0, 0.29, 2.12);
+    place(group, shared('shoe1.0', () => shoe(1.0)), trim, 0, 0.32, 2.125);
+    // the headlamps, tucked into the nose's corners: a dark housing on the curve, four little square lamps in a row
+    const lamps = [];
     for (const side of [-1, 1]) {
-      place(group, C, chrome, side * 0.94, 0.56, -0.11);
-      box(group, trim, 0.02, 0.32, 0.26, side * 0.925, 0.56, -0.2);
-      box(group, carbon, 0.16, 0.08, 0.1, side * 0.73, 0.95, L * 0.25);
+      const x = side * 0.53, z = 1.98, y = topY(z, x) + 0.005;
+      const pitch = Math.atan2(topY(z - 0.08, x) - topY(z + 0.08, x), 0.16), roll = Math.atan2(topY(z, x + 0.06) - topY(z, x - 0.06), 0.12);
+      const housing = box(group, trim, 0.4, 0.04, 0.18, x, y, z);
+      housing.rotation.set(pitch, 0, roll);
+      for (const dx of [-0.135, -0.045, 0.045, 0.135]) lamps.push(bx(0.07, 0.03, 0.08, dx, 0.02, 0, 0, 0, 0).applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(pitch, 0, roll))).translate(x, y, z));
     }
-    merged(group, trim, [-1, 1].map(side => bx(0.02, 0.06, 1.5, side * 0.925, 0.32, 0)));
-    merged(group, carbon, [-1, 1].map(side => lip(0.38, 0.04, side * 0.95, 0.34, ZW)));     // (the front ones in the carbon,
-    merged(group, paint, [-1, 1].map(side => lip(0.4, 0.04, side * 0.95, 0.36, -ZW)));      // the back ones in the paint)
+    merged(group, LAMP, lamps);
+    merged(group, AMBER, [-1, 1].map(side => bx(0.1, 0.03, 0.06, side * 0.66, 0.47, 2.0)));
+    merged(group, trim, [-1, 1].map(side => bx(0.3, 0.12, 0.2, side * 0.47, 0.38, 2.1)));                   // the intakes either side of it
+    box(group, carbon, 1.3, 0.035, 0.3, 0, 0.285, 2.0);                                                     // the splitter
+    // the flanks: the C round an intake, mirrors on stalks
+    const C = [];
+    for (let i = 0; i <= 10; i++) {
+      const f = -0.55 * Math.PI + i * 0.11 * Math.PI, z = -0.25 - 0.24 * Math.cos(f), y = 0.55 + 0.24 * Math.sin(f);
+      C.push(new THREE.Vector3(sideX(z, y) + 0.012, y, z));
+    }
+    const curveC = new THREE.CatmullRomCurve3(C);
     for (const side of [-1, 1]) {
-      blob(group, carbon, 0.12, 0.14, 0.6, side * 0.86, 0.72, ZW);
-      blob(group, paint, 0.13, 0.16, 0.66, side * 0.85, 0.76, -ZW);
-      wheel(group, 0.34, 0.26, side * 0.87, 0.34, ZW, lambert(0x9aa0a8));
-      wheel(group, 0.36, 0.3, side * 0.85, 0.36, -ZW, lambert(0x9aa0a8));
+      const tubeC = place(group, shared('chironC2', () => new THREE.TubeGeometry(curveC, 12, 0.025, 4, false)), chrome, 0, 0, 0);
+      tubeC.scale.x = side;
+      box(group, trim, 0.03, 0.3, 0.24, side * (sideX(-0.22, 0.55) - 0.005), 0.55, -0.22);
     }
-    // the tail: the light bar, the black mesh, the exhaust, the diffuser, the stop lamp at the fin's end
-    box(group, TAIL, w * 0.82, 0.04, 0.03, 0, 0.84, -L - 0.005);
-    box(group, trim, w * 0.78, 0.3, 0.03, 0, 0.6, -L - 0.003);
-    box(group, chrome, 0.32, 0.12, 0.06, 0, 0.42, -L - 0.01);
-    box(group, trim, 0.26, 0.07, 0.02, 0, 0.42, -L - 0.045);                                // (its mouth)
-    box(group, trim, w * 0.7, 0.12, 0.3, 0, 0.3, -L + 0.08);
-    box(group, TAIL, 0.12, 0.03, 0.04, 0, 0.965, -L * 0.95 - 0.015);
+    merged(group, carbon, [-1, 1].flatMap(side => [bx(0.16, 0.07, 0.11, side * 0.82, 0.92, 0.55), bx(0.16, 0.025, 0.04, side * 0.68, 0.89, 0.55)]));
+    // the wheels
+    for (const side of [-1, 1]) {
+      for (const [za, R, width, outer] of AXLES) wheel(group, R, width, side * (outer - width / 2), R, za, lambert(0x9aa0a8));
+    }
+    // the tail: the light bar along its curve, the black mesh, the exhaust, the diffuser
+    const bar = new THREE.CatmullRomCurve3([[-0.88, -2.15], [-0.74, -2.225], [-0.5, -2.28], [0, -2.285], [0.5, -2.28], [0.74, -2.225], [0.88, -2.15]].map(([x, z]) => new THREE.Vector3(x, 0.76, z)));
+    place(group, new THREE.TubeGeometry(bar, 14, 0.022, 4, false), TAIL, 0, 0, 0);
+    box(group, trim, 1.0, 0.22, 0.02, 0, 0.5, -2.276);
+    disc(group, chrome, 0.075, 0.06, 0, 0.4, -2.28);
+    disc(group, trim, 0.055, 0.02, 0, 0.4, -2.305);
+    box(group, trim, 1.0, 0.08, 0.3, 0, 0.33, -2.12);
     // the wing, and its struts, which rise out of the tail together
     const wing = new THREE.Group();
     group.add(wing);
-    box(wing, paint, w * 0.8, 0.03, 0.32, 0, 1.015, -L * 0.86);
-    merged(wing, trim, [-1, 1].map(side => bx(0.03, 0.25, 0.12, side * 0.4, 0.89, -L * 0.86)));
+    box(wing, carbon, 1.3, 0.03, 0.3, 0, 0.985, -1.97);                                    // (at rest it lies in the engine cover)
+    merged(wing, trim, [-1, 1].map(side => bx(0.03, 0.22, 0.1, side * 0.35, 0.87, -1.97)));
     group.userData = {
       body,
-      animate: (t) => { // (down for most of the time; up, tilted, now and then)
+      animate: (t) => { // (down for most of the time; up now and then)
         const up = Math.max(0, Math.min(1, Math.sin(t * 0.5) * 3 - 1.5));
-        wing.position.y = up * 0.12;
+        wing.position.y = up * 0.14;
       },
-      livery: (evil) => carbon.color.setHex(evil ? 0x141416 : 0x272b34),
+      livery: (evil) => carbon.color.setHex(evil ? 0x1c1d22 : 0x3a4150),
     };
     return group;
   },
+
   // A tall electric city car (a BMW i3, 2013): short, narrow and upright, on tall skinny tyres. A black bonnet; a
   // black band across the face with two blanked-off nostrils and a U of light in each lamp; a long steep windscreen,
   // a black roof, and a black belt that dips under the back door's window and sweeps up into a black tail, the
