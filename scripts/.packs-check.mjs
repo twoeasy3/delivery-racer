@@ -38,13 +38,16 @@ try {
   const inPool = Object.values(real.evergreen).flat();
   check(EVENT_CARS.every(c => !inPool.includes(c)) && EARNED_CARS.every(c => !inPool.includes(c)), 'no event car and no earned car in the evergreen pool (event cars come as featured cards)');
   // (the Bespoke pool, 12-Oct: the keys of the Bespoke key cars not owned, never a garage car; their blueprints Legendary, never evergreen)
-  const BESPOKE = [...EVENT_CARS, ...(g.cars.BESPOKE_CARS || [])].filter(c => c.bespoke);
-  check(BESPOKE.length >= 2 && BESPOKE.some(c => c.id === 'silvercomet') && real.keys.length === BESPOKE.filter(c => c.keyAvailable !== false).length && real.keys.every(c => c.bespoke && !CARS.includes(c) && c.keyAvailable !== false),
+  const ALLBESPOKE = [...EVENT_CARS, ...(g.cars.BESPOKE_CARS || [])].filter(c => c.bespoke);
+  const BESPOKE = ALLBESPOKE.filter(c => !c.noPacks); // (noPacks: the Silver Comet, Snowcat, Hot Dog Car: in no regular pack, key or blueprints; the owner, 12-Oct)
+  check(BESPOKE.length >= 2 && ALLBESPOKE.some(c => c.id === 'silvercomet') && real.keys.length === BESPOKE.filter(c => c.keyAvailable !== false).length && real.keys.every(c => c.bespoke && !CARS.includes(c) && c.keyAvailable !== false),
     'the keys (Bespoke): exactly the Bespoke key cars with a key to be had (not the Snowcat and Hot Dog Car: keyAvailable false) not owned, no garage car (' + real.keys.map(c => c.id).join(' ') + ')');
   check(BESPOKE.every(c => rarityOf(c) === 'legendary' && Ecu.rarity(c) === 'legendary' && real.bespoke.legendary.includes(c) && !inPool.includes(c)),
     'a Bespoke key car\'s blueprints are Legendary cards, in the bespoke pool and never the evergreen one');
-  const ownsComet = pools({ owned: (id) => id === 'silvercomet' || id === 'commuter' });
-  check(!ownsComet.keys.some(c => c.id === 'silvercomet') && ownsComet.keys.length === BESPOKE.filter(c => c.keyAvailable !== false).length - 1, 'a key owned is out of the Bespoke pool');
+  check(['silvercomet', 'snocat', 'hotdog'].every(id => ALLBESPOKE.find(c => c.id === id)?.noPacks) && Object.values(P.poolOf(Packs.data.packs.standard)).flat().every(c => !c.noPacks) && Object.values(P.poolOf(Packs.data.packs.ten)).flat().every(c => !c.noPacks), 'the Silver Comet, the Snowcat and the Hot Dog Car are in no regular pack: no key, no blueprints (the Comet Hunt still features the Comet)');
+  const owned1 = BESPOKE.find(c => c.keyAvailable !== false);
+  const ownsComet = pools({ owned: (id) => id === owned1.id || id === 'commuter' });
+  check(!ownsComet.keys.some(c => c.id === owned1.id) && ownsComet.keys.length === BESPOKE.filter(c => c.keyAvailable !== false).length - 1, 'a key owned is out of the Bespoke pool');
   {
     const std = P.poolOf(Packs.data.packs.standard), car = P.poolOf(Packs.data.packs.career), spc = P.poolOf(Packs.data.packs['comet-special']);
     const where = Object.keys(Packs.data.packs).filter(k => Packs.data.packs[k].bespokeBlueprints);

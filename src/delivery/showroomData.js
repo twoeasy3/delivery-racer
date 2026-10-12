@@ -97,7 +97,7 @@ export const carCard = (car, evil = false) => {
       if (car.earned) {
         const level = LEVELS.find(l => l.id === car.earned.level);
         hint = 'Beat the par on ' + (level ? levelName(level) : car.earned.level);
-      } else if (EVENT_CARS.includes(car)) hint = 'The key: an event\'s grand prize' + (car.bespoke ? ', or a Bespoke card in packs' : '');
+      } else if (EVENT_CARS.includes(car)) hint = 'The key: an event\'s grand prize' + (car.bespoke && !car.noPacks ? ', or a Bespoke card in packs' : '');
       else if (car.bespoke) hint = 'The key: a Bespoke card, in card packs';
     }
   }
@@ -151,7 +151,7 @@ export const overlayOf = (card) => {
     const level = car.earned && LEVELS.find(l => l.id === car.earned.level);
     return { kind: 'earned', title: 'Earn it', line: level ? 'Beat par on ' + levelName(level) : 'Earn it on its level' };
   }
-  return { kind: 'key', title: 'Needs its key', line: EVENT_CARS.includes(car) ? (liveEventFor(car) ? 'Win it in ' + liveEventFor(car) : 'Win it at events or find it in packs') : car.keyAvailable === false ? 'Not available at the moment' : 'Find it in Bespoke packs' };
+  return { kind: 'key', title: 'Needs its key', line: EVENT_CARS.includes(car) ? (liveEventFor(car) ? 'Win it in ' + liveEventFor(car) : 'Win it at events') : car.keyAvailable === false ? 'Not available at the moment' : 'Find it in Bespoke packs' };
   // (an event car: the live event by name; else the general line; the other Bespoke cars have no event: packs only)
 };
 // the card's tooltip: the spec's words (LOCKED_WORDS), but an earned car's never speaks of a key (the owner, 12-Oct)

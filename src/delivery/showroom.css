@@ -137,8 +137,8 @@
 /* (the picture's box: its still on .sr-img, a locked card's overlay over it; a size container, so the overlay fits any card) */
 #showroom .sr-pic { flex: 1 1 auto; min-height: 0; margin: 26px 6px 0; position: relative; container-type: size; }
 #showroom .sr-img { position: absolute; inset: 0; background: center 60% / contain no-repeat; }
-#showroom .sr-img.silhouette { filter: brightness(0) drop-shadow(0 0 1px rgba(255, 255, 255, .35)); }
-#showroom .sr-dpic.silhouette { filter: brightness(0) blur(.7px) drop-shadow(0 0 2px rgba(255, 255, 255, .3)); }
+#showroom .sr-img.silhouette { filter: brightness(0); }
+#showroom .sr-dpic.silhouette { filter: brightness(0); }
 #showroom .sr-info { display: flex; flex-direction: column; gap: 6px; padding: 8px 11px 11px; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, .45)); }
 #showroom .sr-name { font: italic 800 17px/1.05 var(--display); font-stretch: condensed; letter-spacing: .02em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #showroom .sr-ecu { display: flex; align-items: center; gap: 6px; }
@@ -161,7 +161,7 @@
 /* a car that cannot be driven: its picture dimmed (still recognisable; a car of a tier not open yet stays a silhouette),
    its frame quieter, and its OVERLAY over the picture (below) */
 #showroom .sr-card.locked .sr-img { filter: grayscale(.6) brightness(.6); }
-#showroom .sr-card.locked .sr-img.silhouette { filter: brightness(0) drop-shadow(0 0 1px rgba(255, 255, 255, .3)); }
+#showroom .sr-card.locked .sr-img.silhouette { filter: brightness(0); }
 #showroom .sr-card.locked .sr-name { color: rgba(255, 255, 255, .72); }
 #showroom .sr-card.barred .sr-img { filter: saturate(.5); }
 
@@ -242,7 +242,7 @@
 #showroom .sr-dpic canvas { position: absolute; inset: 0; }
 #showroom .sr-detail.locked .sr-dpic { filter: grayscale(1) brightness(.6); }
 #showroom .sr-detail.locked .sr-dpic.forsale { filter: none; } /* (one at the car lot: in its colours, the lock words beside it) */
-#showroom .sr-detail.locked .sr-dpic.silhouette { filter: brightness(0) blur(.7px) drop-shadow(0 0 2px rgba(255, 255, 255, .3)); } /* (the blur takes the stair-steps off the live canvas's edge, which the white glow had been tracing) */
+#showroom .sr-detail.locked .sr-dpic.silhouette { filter: brightness(0); } /* (the blur takes the stair-steps off the live canvas's edge, which the white glow had been tracing) */
 /* a key car's KEY, spinning in the stage's bottom-right corner (render/showroomview.js draws it); the pill under the car kept clear of it */
 #showroom .sr-fkey { position: absolute; z-index: 1; right: max(14px, env(safe-area-inset-right)); bottom: 6px; width: 112px; height: 160px; pointer-events: none;
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .45)); }
@@ -262,7 +262,7 @@
   background: linear-gradient(165deg, color-mix(in srgb, var(--rar) 32%, #1a2232) 0%, #121822 100%); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--rar) 75%, transparent); }
 #showroom .sr-dcard::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--rar); }
 #showroom .sr-dcard-pic { position: absolute; inset: 8px 2px 4px; background: center / contain no-repeat; }
-#showroom .sr-dcard-pic.silhouette { filter: brightness(0) drop-shadow(0 0 1px rgba(255, 255, 255, .35)); }
+#showroom .sr-dcard-pic.silhouette { filter: brightness(0); }
 #showroom .sr-detail.locked .sr-dcard-pic:not(.silhouette) { filter: grayscale(1) brightness(.6); }
 #showroom .sr-dname { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 6px; }
 #showroom .sr-dhead { display: flex; align-items: center; gap: 10px; }

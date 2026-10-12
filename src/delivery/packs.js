@@ -91,11 +91,11 @@ export const pools = ({ cars = roster(), owned = ownsNow } = {}) => {
   const bespoke = Object.fromEntries(RARITIES.filter(r => r !== 'bespoke').map(r => [r, []]));
   for (const car of cars) {
     const r = rarityOf(car);
-    if (!r || !evergreen[r]) continue;
+    if (!r || !evergreen[r] || car.noPacks) continue; // (noPacks: a car in no regular pack, blueprints or key: the owner, 12-Oct)
     if (isBespokeCar(car)) bespoke[r].push(car);
     else if (!(Cars.EVENT_CARS || []).includes(car)) evergreen[r].push(car);
   }
-  const keys = cars.filter(car => isBespokeCar(car) && car.keyAvailable !== false && !owned(car.id)); // (keyAvailable: false: no key to be had for now: in no pack's Bespoke pool)
+  const keys = cars.filter(car => isBespokeCar(car) && car.keyAvailable !== false && !car.noPacks && !owned(car.id)); // (keyAvailable: false: no key to be had for now: in no pack's Bespoke pool)
   return { evergreen, bespoke, keys };
 };
 // a pack kind's cards by rarity, as draw() picks from them: the evergreen cards; with the kind's `bespokeBlueprints`

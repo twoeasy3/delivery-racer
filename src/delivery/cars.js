@@ -385,7 +385,7 @@ export const EVENT_CARS = [
     const base = IDEA_CARS.find(car => car.id === 'centreseat');
     return { ...base, id: 'silvercomet', name: 'Silver Comet', basedOn: undefined, placeholder: false, idea: true, event: true, price: 0,
       color: 0xc9d2dc, evilColor: 0x1d2433, maxSpeed: 46, accel: 19, health: 150, perk: 'The Comet Hunt\'s prize',
-      bespoke: true, rarity: 'legendary', keyModel: 'fob' }; // (the first BESPOKE key car: see BESPOKE_CARS below; keyModel: its key's style, always the same one)
+      bespoke: true, rarity: 'legendary', keyModel: 'fob', noPacks: true }; // (noPacks: in no regular pack, key or blueprints: the Comet Hunt's featured card only; the owner, 12-Oct) (the first BESPOKE key car: see BESPOKE_CARS below; keyModel: its key's style, always the same one)
   })(),
 ];
 // ---- the BESPOKE key cars (the owner, 12-Oct): one-of-a-kind showpieces --------------------------------------------
@@ -426,11 +426,11 @@ export const BESPOKE_CARS = [
     maxSpeed: 44, accel: 21, agility: 1.8, crossing: 0.5, health: 100, mass: 1, sound: 'junker' }),
   // (no key to be had for now: `keyAvailable: false`: in no pack's Bespoke pool and in no event; the owner, 12-Oct. Their blueprints still drop)
   // the expedition: a glass cab on tracks, slow to start, takes the deep snow and shrugs off a crash
-  bespoke({ id: 'snocat', name: 'Snowcat', basedOn: 'Tucker Sno-Cat 443', model: 'snocat', color: 0xe8482a, evilColor: 0x1f4a6a, keyAvailable: false,
+  bespoke({ id: 'snocat', name: 'Snowcat', basedOn: 'Tucker Sno-Cat 443', model: 'snocat', color: 0xe8482a, evilColor: 0x1f4a6a, keyAvailable: false, noPacks: true,
     hw: 1.1, hl: 2.6, height: 2.7, note: 'A glass cab on four pontoons of track, with an exhaust stack and a spotlight. It is in no hurry.',
     maxSpeed: 40, accel: 14, agility: 0.9, crossing: 1, health: 320, mass: 2.4, sound: 'sixbysix' }),
   // the novelty: a sausage in a bun the length of a van, built to deliver
-  bespoke({ id: 'hotdog', name: 'Hot Dog Car', basedOn: 'Oscar Mayer Wienermobile', model: 'hotdog', color: 0xd99a4e, evilColor: 0x7a4426, keyAvailable: false,
+  bespoke({ id: 'hotdog', name: 'Hot Dog Car', basedOn: 'Oscar Mayer Wienermobile', model: 'hotdog', color: 0xd99a4e, evilColor: 0x7a4426, keyAvailable: false, noPacks: true,
     hw: 1.08, hl: 3.4, height: 2.25, note: 'A sausage the length of a van in a bun, with mustard along the top.',
     maxSpeed: 44, accel: 15, agility: 1, crossing: 0.4, health: 240, mass: 2.1, sound: 'postvan' }),
 ];
