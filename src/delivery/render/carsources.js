@@ -84,8 +84,8 @@ const line = (s, flags) => {
     const open = (s.ways || []).filter(w => w.available);
     if (open.some(w => w.placeholder)) flags.placeholder = true;
     // (the Shop's offers as one: its cheapest price)
-    const shop = open.filter(w => w.how === 'shop'), price = Math.min(...shop.map(w => Number(w.detail.match(/(\d+)/)?.[1]) || Infinity));
-    const ways = [...(shop.length ? ['Shop, from ' + CURRENCY_SIGN + ' ' + price + (shop.some(w => w.placeholder) ? '*' : '')] : []), ...open.filter(w => w.how !== 'shop').map(short)];
+    const shop = open.filter(w => w.how === 'shop'), price = Math.min(...shop.map(w => (Number.isFinite(w.price) ? w.price : Number(w.detail.match(/(\d+)/)?.[1]) || Infinity)));
+    const ways = [...(shop.length ? [price === 0 ? 'Shop, free daily' : 'Shop, from ' + CURRENCY_SIGN + ' ' + price + (shop.some(w => w.placeholder) ? '*' : '')] : []), ...open.filter(w => w.how !== 'shop').map(short)];
     detail = ok ? 'about ' + s.detail.match(/about ([^ ]+) a pack/)?.[1] + ' a pack · ' + ways.join(' · ') : null;
   } else detail = s.detail;
   return make('div', 'cs-line ' + (ok ? 'ok' : 'no'), make('i', '', ok ? '✓' : '✕'),

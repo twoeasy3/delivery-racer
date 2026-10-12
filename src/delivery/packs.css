@@ -46,7 +46,7 @@
 .pr-pack .shop-packs { position: absolute; left: -66px; top: -92px; width: 132px; height: 184px; }
 .pr-pack .k-ten .pack-mark { font-size: 44px; }
 .pr-pack .pack-brand { font-size: 15px; } .pr-pack .pack-brand i { font-size: 19px; }
-.pr-pack .k-standard .pack-mark, .pr-pack .k-career .pack-mark, .pr-pack .k-special .pack-mark { font-size: 18px; }
+.pr-pack .k-standard .pack-mark, .pr-pack .k-career .pack-mark, .pr-pack .k-special .pack-mark, .pr-pack .k-daily .pack-mark { font-size: 18px; }
 .pr-pack .pack-sub { font-size: 10px; }
 .pr-burst { position: absolute; left: -170px; top: -170px; width: 340px; height: 340px; border-radius: 50%; opacity: 0;
   background: repeating-conic-gradient(rgba(255, 210, 63, .3) 0 8deg, transparent 8deg 22deg);

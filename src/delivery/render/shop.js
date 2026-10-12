@@ -1,17 +1,22 @@
 // ---- the Shop: card packs for sale (shop.js, shop.json; CHECKLIST item 115) ----------------------------------
 // A screen over the start screen, reached by the Shop button at the top of the menu (beside the bank). After a
 // racing game's store: the wallet along the top (the PLACEHOLDER currency, Crazey Cash, and its balance), then rows
-// of big tiles, top to bottom: Featured (a special pack, its featured cars drawn on the tile as the special event's
+// of big tiles, top to bottom (packs.json sections; the offers are the packs' own: shop.js): the FREE DAILY PACK (its
+// button 'Claim', a 'Free' ribbon; claimed, a greyed 'Claimed: next in 7h 12m' counting down to local midnight; the
+// menu's Shop chip wears a small dot while it waits), Featured (a special pack, its featured cars drawn on the tile as the special event's
 // cards draw theirs: carstill.js, the real model, kept as a picture; the three poses are the blueprint cards' only), Card packs, Bundles; then what each
 // rarity holds. A tile: its pack drawn in CSS (the foil in the colour of what it promises: grey Common, green
 // Uncommon, purple Epic, gold Legendary, the Bespoke rainbow), a ribbon (Featured, Sale with the share off, New, Best
 // value), what is in it, the drop rates as a bar, and the price on its button. Buying asks first, takes the price, and
 // the pack OPENS AT ONCE over the Shop (the reveal, render/packs.js; the owner, 12-Oct); Done comes back here.
 // Phones first: one column that scrolls, two tiles a row; wider, the rows spread out.
+// A pack with PURCHASE LIMITS (packs.json shop.limits) says what is left on its tile ('Limited: 2 left', '1 left today');
+// none left, its button greys ('Sold out', 'Come back tomorrow'), one reason at a time (a limit before the featured cards).
+// ?limits=ten:t3,standard:d2 and ?shopbuys=daily:1,ten:2 set limits and today's purchases for a visit (nothing saved).
 // ?shop opens it at once; ?shopcash=<n> sets the balance for the visit (nothing saved); ?debug shows a button on the
 // wallet that adds some (saved). Neither is seen by a player who did not ask for it.
 import '../shop.css';
-import { Shop, CURRENCY, SECTIONS, cash } from '../shop.js';
+import { Shop, CURRENCY, SECTIONS, cash, debugLimits, debugBuys } from '../shop.js';
 import { Progress } from '../progress.js';
 import { Events } from '../events.js';
 import { Nav } from '../nav.js';
@@ -19,13 +24,14 @@ import { Game } from '../game.js';
 import { stars } from '../cars.js';
 import { ask, tell } from './dialog.js';
 import { drawSoon as stillSoon } from './carstill.js';
-import { packArt, KIND_LOOK } from './packart.js';
+import { packArt, lookOf } from './packart.js';
 import { openContents, closeContents } from './packcontents.js';
 import { keyPicture } from './keycard.js';
 
 // (packs.js, where the tree has it: see shop.js)
 const packsModule = Object.values(import.meta.glob('../packs.js', { eager: true }))[0] || null;
 const packData = Object.values(import.meta.glob('../packs.json', { eager: true, import: 'default' }))[0] || null;
+const packName = (id) => packsModule?.packName?.(id) || packData?.packs?.[id]?.name || id;
 
 const RARITIES = ['common', 'uncommon', 'epic', 'legendary', 'bespoke'];
 const RARITY_NAMES = { common: 'Common', uncommon: 'Uncommon', epic: 'Epic', legendary: 'Legendary', bespoke: 'Bespoke' };
@@ -48,7 +54,7 @@ const debug = params.get('debug') !== null;
 
 // ---- the drop rates of a kind (packs.json odds, the rarities its pool has), as a bar --------------------------------
 const oddsOf = (kind) => {
-  const odds = packData?.odds, spec = packData?.kinds?.[kind];
+  const odds = packData?.odds, spec = packData?.packs?.[kind];
   if (!odds || !spec) return null;
   const has = RARITIES.filter(r => odds[r] > 0 && !(r === 'bespoke' && spec.pool !== 'all'));
   const total = has.reduce((n, r) => n + odds[r], 0);
@@ -71,9 +77,9 @@ const oddsBar = (kind, offer) => {
   return bar;
 };
 // "What's inside": every card the pack can give (render/packcontents.js), from the tile's info button or its odds bar
-const showContents = (offer) => openContents(screen, { kind: offer.kind, title: offer.name, featured: offer.featured || [] });
+const showContents = (offer) => openContents(screen, { kind: offer.pack, title: offer.name, featured: offer.featured || [] });
 const insideButton = (offer) => {
-  if (!packsModule?.contents || !packData?.kinds?.[offer.kind]) return null;
+  if (!packsModule?.contents || !packData?.packs?.[offer.pack]) return null;
   const button = make('button', 'shop-inside', make('i', '', 'i'), 'What’s inside');
   button.setAttribute('aria-label', 'What’s inside the ' + offer.name + ': every card it can give');
   button.addEventListener('click', () => showContents(offer));
@@ -95,13 +101,29 @@ screen.setAttribute('aria-label', 'Shop');
 document.body.append(screen);
 
 const gem = () => make('span', 'shop-gem', make('i'));
+// a greyed button, not one to press (the 'Nothing new to feature' look: shop.css .shop-price.exhausted); inside: its words
+const greyed = (label, ...inside) => {
+  const off = make('button', 'shop-price exhausted', ...inside);
+  off.disabled = true;
+  off.setAttribute('aria-label', label);
+  return off;
+};
+// a live countdown to a time (the Shop's ticker updates it each second, and draws the Shop again when it runs out)
+const live = (end) => { const b = make('b', 'countdown', countdown(end - Events.now())); b.dataset.end = end; return b; };
 const priceButton = (offer) => {
   const can = Shop.canBuy(offer.id);
-  if (can.why === 'exhausted') { // (every featured card had: not for sale, greyed; its What's inside still opens: the owner, 12-Oct)
-    const off = make('button', 'shop-price exhausted', make('b', '', 'Nothing new to feature'));
-    off.disabled = true;
-    off.setAttribute('aria-label', offer.name + ': not for sale, you have every featured card');
-    return off;
+  // a purchase limit reached (shop.js why 'limit'): greyed, one reason (said before the featured cards'). A free daily
+  // pack claimed: "Claimed: next in 7h 12m", counting down to the player's local midnight
+  if (can.why === 'limit') {
+    if (offer.free && can.limit === 'daily' && !can.left) return greyed(offer.name + ': claimed today, the next one after midnight', make('span', 'shop-claimed', 'Claimed: next in ', live(can.next)));
+    return greyed(offer.name + ': ' + can.words, make('b', '', can.words));
+  }
+  if (can.why === 'exhausted') return greyed(offer.name + ': not for sale, you have every featured card', make('b', '', 'Nothing new to feature')); // (every featured card had: the owner, 12-Oct)
+  if (offer.free) { // (a FREE pack, the Daily pack: claimed, not bought)
+    const claim = make('button', 'shop-price claim' + (can.ok ? '' : ' short'), make('b', '', 'Claim'));
+    claim.setAttribute('aria-label', 'Claim the ' + offer.name + ': free');
+    claim.addEventListener('click', () => buy(offer.id));
+    return claim;
   }
   const button = make('button', 'shop-price' + (can.ok ? '' : ' short'),
     offer.was > offer.price ? make('s', '', cash(offer.was).replace(CURRENCY.sign + ' ', '')) : null,
@@ -110,8 +132,18 @@ const priceButton = (offer) => {
   button.addEventListener('click', () => buy(offer.id));
   return button;
 };
-const ribbon = (offer) => offer.ribbonName
-  ? make('span', 'shop-ribbon rb-' + offer.ribbon, offer.ribbon === 'sale' && offer.off ? 'Sale −' + Math.round(offer.off * 100) + '%' : offer.ribbonName) : null;
+// what a pack's limits leave (shop.js limits): "Limited: 2 left", "1 left today" (a pack with no limits, or a free daily
+// pack, whose button says it: nothing). A bundle counts its packs: the pack's own figures
+const limitLine = (offer) => {
+  if (!offer.limits) return null;
+  const left = Shop.left(offer.pack), out = [];
+  if (left.total === 0 || left.today === 0) return null; // (none left: the greyed button says so, one reason at a time)
+  if (left.total !== null) out.push('Limited: ' + left.total + ' left');
+  if (left.today !== null && !(offer.free && offer.limits.daily === 1)) out.push(left.today + ' left today');
+  return out.length ? make('p', 'shop-limit', out.join(' · ')) : null;
+};
+const ribbon = (offer) => (offer.free ? make('span', 'shop-ribbon rb-free', 'Free') : offer.ribbonName
+  ? make('span', 'shop-ribbon rb-' + offer.ribbon, offer.ribbon === 'sale' && offer.off ? 'Sale −' + Math.round(offer.off * 100) + '%' : offer.ribbonName) : null);
 
 const drawLater = [];
 // the featured entries (packs.js featuredEntries: { car, weight, key, amount }), one picture a CAR (a car with an x3 and
@@ -133,21 +165,20 @@ const featuredTile = (offer) => {
       make('small', '', f.key ? 'Bespoke key' : stars(car) || 'Event car')));
   });
   const exhausted = Shop.canBuy(offer.id).why === 'exhausted';
-  const ends = offer.endsAt ? make('p', 'shop-ends', 'Ends in ', make('b', 'countdown', countdown(offer.endsAt - Events.now()))) : null;
-  if (ends) ends.querySelector('.countdown').dataset.end = offer.endsAt;
+  const ends = offer.endsAt ? make('p', 'shop-ends', 'Ends in ', live(offer.endsAt)) : null;
   return make('article', 'shop-tile hero k-' + offer.kind,
     ribbon(offer),
     make('div', 'shop-hero-art', make('div', 'shop-hero-cars n' + carViews.length, ...carViews), packArt(offer.kind, offer.count)),
     make('div', 'shop-tile-info',
       offer.event ? make('small', 'shop-kicker', offer.event.name) : null,
-      make('h3', '', offer.name), make('p', '', offer.blurb), insideButton(offer), oddsBar(offer.kind, offer), ends,
+      make('h3', '', offer.name), make('p', 'shop-blurb', offer.blurb), insideButton(offer), oddsBar(offer.pack, offer), ends, limitLine(offer),
       exhausted ? make('p', 'shop-exhausted', 'You have every featured card') : null),
     make('div', 'shop-tile-buy', priceButton(offer)));
 };
-const tile = (offer) => make('article', 'shop-tile k-' + offer.kind + ' r-' + (KIND_LOOK[offer.kind] || 'common'),
+const tile = (offer) => make('article', 'shop-tile k-' + offer.kind + ' r-' + lookOf(offer.pack) + (offer.free ? ' free' : ''),
   ribbon(offer),
   make('div', 'shop-tile-art', packArt(offer.kind, offer.count)),
-  make('div', 'shop-tile-info', make('h3', '', offer.name), make('p', '', offer.blurb), insideButton(offer), oddsBar(offer.kind, offer),
+  make('div', 'shop-tile-info', make('h3', '', offer.name), make('p', 'shop-blurb', offer.blurb), insideButton(offer), oddsBar(offer.pack, offer), limitLine(offer),
     Shop.canBuy(offer.id).why === 'exhausted' ? make('p', 'shop-exhausted', 'You have every featured card') : null), // (a special pack outside the Featured row)
   make('div', 'shop-tile-buy', priceButton(offer)));
 
@@ -214,9 +245,17 @@ const buy = async (id) => {
   if (!can.ok) {
     const lines = can.why === 'short' ? ['This costs ' + cash(offer.price) + '. You have ' + cash(Shop.balance()) + '.',
       CURRENCY.placeholder ? CURRENCY.name + ' is a placeholder for now: nothing in the game gives it yet.' : '']
-      : can.why === 'packs' ? ['Card packs are not in this build yet.'] : can.why === 'exhausted' ? ['You have every featured card of this pack: nothing new to feature.'] : can.why === 'over' ? ['This offer has ended.'] : ['This cannot be bought.'];
-    await tell({ title: can.why === 'short' ? 'Not enough ' + CURRENCY.name : 'Not for sale', lines: lines.filter(Boolean) });
+      : can.why === 'packs' ? ['Card packs are not in this build yet.'] : can.why === 'exhausted' ? ['You have every featured card of this pack: nothing new to feature.'] : can.why === 'over' ? ['This offer has ended.']
+        : can.why === 'limit' ? [can.limit === 'total' ? (can.left ? 'Only ' + can.left + ' left of the ' + packName(offer.pack) + ': too few for this.' : 'Sold out: there are no more of the ' + packName(offer.pack) + '.')
+          : (can.left ? 'Only ' + can.left + ' more today.' : offer.free ? 'Claimed today. The next one is free after midnight.' : 'None left today. Come back tomorrow.')] : ['This cannot be bought.'];
+    await tell({ title: can.why === 'short' ? 'Not enough ' + CURRENCY.name : can.why === 'limit' ? can.words : 'Not for sale', lines: lines.filter(Boolean) });
     draw();
+    return;
+  }
+  if (offer.free) { // (a FREE pack, the Daily pack: claimed at once, no asking; it opens over the Shop)
+    const done = Shop.buy(id);
+    draw();
+    if (!done.ok) await tell({ title: 'Not claimed', lines: ['Try again in a moment.'] });
     return;
   }
   const what = offer.count > 1 ? offer.name : 'one ' + offer.name;
@@ -263,6 +302,19 @@ button.title = 'The Shop: card packs';
 button.setAttribute('aria-label', 'Shop');
 document.getElementById('bank')?.after(button);
 button.addEventListener('click', () => ShopScreen.open());
+// a FREE pack waiting (the Daily pack not claimed today): a small dot on the chip (unobtrusive), checked on any change
+// and each minute (the local day turning at midnight brings it back)
+const dot = make('span', 'shop-dot');
+dot.hidden = true;
+button.append(dot);
+const markWaiting = () => {
+  const waiting = Shop.claimable();
+  dot.hidden = !waiting.length;
+  button.title = 'The Shop: card packs' + (waiting.length ? '. A free ' + waiting[0].name + ' is waiting' : '');
+  button.setAttribute('aria-label', 'Shop' + (waiting.length ? ': a free pack is waiting' : ''));
+};
+for (const type of ['shopchange', 'progresschange', 'packschange']) window.addEventListener(type, markWaiting);
+setInterval(markWaiting, 60e3);
 window.addEventListener('keydown', (event) => { // (Escape: the contents sheet first, then the Shop. A dialog or the reveal up takes its own)
   if (!isOpen || event.key !== 'Escape') return;
   if (!closeContents()) ShopScreen.close();
@@ -279,11 +331,16 @@ if (params.get('shopcash') !== null) {
   Progress.noSave = true;
   Progress.data.shopCash = Math.max(0, Math.floor(Number(params.get('shopcash')) || 0));
 }
+// ?limits=ten:t3,standard:d2 (a pack's total / daily purchase limit) and ?shopbuys=daily:1,ten:2 (so many of a pack
+// bought today): for this visit, nothing saved (for a look or a picture of a limited, sold-out or claimed tile)
+if (params.get('limits')) Shop.limitsOverride = debugLimits(params.get('limits'));
+if (params.get('shopbuys')) { Progress.noSave = true; debugBuys(params.get('shopbuys')); }
+markWaiting();
 if (params.get('shop') !== null && Game.state === 'start') ShopScreen.open();
-// &inside=<offer id> (or a pack kind: its first offer, e.g. &inside=special): its "What's inside" sheet open too (for a
-// look or a picture)
+// &inside=<offer id> (or a pack id; the old 'special': its pack): its "What's inside" sheet open too (for a look or a picture)
 if (ShopScreen.isOpen && params.get('inside')) {
-  const want = params.get('inside'), offer = Shop.offer(want) || Shop.offers().find(o => o.kind === want) || null;
+  const want = params.get('inside'), id = packsModule?.packIdOf?.(want) || want;
+  const offer = Shop.offer(want) || Shop.offers().find(o => o.pack === id) || null;
   if (offer) showContents(offer);
-  else if (packData?.kinds?.[want]) openContents(screen, { kind: want, title: packsModule?.kindName?.(want), featured: packsModule?.featuredFor?.(null) || [] });
+  else if (packData?.packs?.[id]) openContents(screen, { kind: id, title: packsModule?.packName?.(id), featured: packsModule?.featuredOf?.(id) || [] });
 }
