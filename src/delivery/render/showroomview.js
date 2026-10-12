@@ -124,8 +124,10 @@ const draw = (now) => {
   }
   v.turn.rotation.y = yaw;
   // landing: the drop and the bounce (render/carbounce.js), the shadow with it; a silhouette or reduced motion: a fade
-  v.landAt ??= now;
-  const since = (now - v.landAt) / 1000 / ShowroomView.slow, o = bounceOffset(since, still || v.dark);
+  // (its clock moves at most a 30th of a second a frame: a slow first frame, the new model's own hitch on a phone,
+  // never swallows the drop; the bounce plays out over the frames actually drawn)
+  if (v.landAt === null || v.landAt === undefined) { v.landAt = now; v.landT = 0; } else v.landT += Math.min(dt, 1 / 30);
+  const since = v.landT / ShowroomView.slow, o = bounceOffset(since, still || v.dark);
   v.body.position.y = o.y;
   v.body.rotation.set(o.pitch, 0, o.roll);
   v.shadow.scale.set(v.shadowScale[0] * o.shadow, v.shadowScale[1] * o.shadow, 1);
@@ -223,5 +225,5 @@ export const ShowroomView = {
     if (v) { v.car = null; v.canvas?.remove(); v.el = null; }
   },
   // for a check or a picture: what is shown
-  get state() { return v?.scene ? { car: v.car.id, evil: v.evil, dark: v.dark, yaw, running: !!raf, landing: !!v.landing, lift: v.lift || 0, since: v.landAt == null ? null : (performance.now() - v.landAt) / 1000 / this.slow, pitch: v.body.rotation.x } : null; },
+  get state() { return v?.scene ? { car: v.car.id, evil: v.evil, dark: v.dark, yaw, running: !!raf, landing: !!v.landing, lift: v.lift || 0, since: v.landAt == null ? null : v.landT / this.slow, pitch: v.body.rotation.x } : null; },
 };
