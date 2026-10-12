@@ -6,7 +6,10 @@
 // is opened at once in the flows (Packs.revealer), a pending one once; the reveal's cards (each its own, x1), its order (the
 // best last), each card's progress bar before/after with the unlock and ECU-up flags; the three poses (carposes.js);
 // FEATURED WEIGHTS (CHECKLIST 150): the last slot by weight, keys once and never owned, amounts per entry (x3 / x15),
-// exhausted entries out with the weights shifted, the sheet's exact chances against seeded packs, the events.json check.
+// exhausted entries out with the weights shifted, the sheet's exact chances against seeded packs, the packs' featured lists
+// checked (packProblems, through events.js problems()). ONE DEFINITION PER PACK (CHECKLIST 151): the packs by id
+// (comet-special the Comet Hunt's), an old save's 'special:<event>' packs migrated, givenBy (career, event), the
+// GENERATED words naming every guarantee (and a blurb over them), the free Daily pack's draw.
 //   node scripts/.packs-check.mjs
 import { boot } from './delivery-headless.mjs';
 
@@ -14,7 +17,7 @@ const g = await boot({ cars: ['commuter'] });
 let failures = 0;
 const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' : '  FAIL  ') + what); };
 const P = await g.load('packs.js');
-const { Packs, RARITIES, rarityOf, pools, draw, careerLevels, featuredFor, featuredRarity } = P;
+const { Packs, RARITIES, rarityOf, pools, draw, careerLevels, featuredOf, featuredRarity } = P;
 const { Progress } = await g.load('progress.js');
 const { Ecu } = await g.load('ecu.js');
 const { CARS, EVENT_CARS, EARNED_CARS, carById } = g.cars;
@@ -43,8 +46,8 @@ try {
   const ownsComet = pools({ owned: (id) => id === 'silvercomet' || id === 'commuter' });
   check(!ownsComet.keys.some(c => c.id === 'silvercomet') && ownsComet.keys.length === BESPOKE.length - 1, 'a key owned is out of the Bespoke pool');
   {
-    const std = P.poolOf(Packs.data.kinds.standard), car = P.poolOf(Packs.data.kinds.career), spc = P.poolOf(Packs.data.kinds.special);
-    const where = Object.keys(Packs.data.kinds).filter(k => Packs.data.kinds[k].bespokeBlueprints);
+    const std = P.poolOf(Packs.data.packs.standard), car = P.poolOf(Packs.data.packs.career), spc = P.poolOf(Packs.data.packs['comet-special']);
+    const where = Object.keys(Packs.data.packs).filter(k => Packs.data.packs[k].bespokeBlueprints);
     check(BESPOKE.every(c => std.legendary.includes(c) && std.bespoke.includes(c)) && BESPOKE.every(c => !car.legendary.includes(c) && !spc.legendary.includes(c)) && !car.bespoke && !spc.bespoke,
       'the standard pack holds their keys and blueprints; career and special packs neither (packs.json bespokeBlueprints: ' + where.join(', ') + ')');
   }
@@ -76,7 +79,7 @@ try {
   const comet = EVENT_CARS[0], feats = [comet, by('classicgt')];
   let lastOk = 0, featuredSlots = 0, upgraded = 0, slots = 0, foreign = 0, higherOk = true;
   for (let i = 0; i < N; i++) {
-    const cards = draw('special', opts(3e6 + i, { featured: feats }));
+    const cards = draw('comet-special', opts(3e6 + i, { featured: feats }));
     const last = cards.at(-1);
     if (cards.length === 5 && last.featured && feats.some(c => c.id === last.car && last.rarity === featuredRarity(c))) lastOk++;
     for (const c of cards.slice(0, -1)) {
@@ -88,11 +91,11 @@ try {
   }
   check(lastOk === N, 'a special pack: its last slot is a featured card, of its true rarity (' + lastOk + ' of ' + N + ')');
   check(foreign === 0, 'featured cards only from the featured list');
-  const spec = Packs.data.kinds.special.featured, wantUp = spec.upgradeChance, wantFeat = spec.upgradeChance * (1 - (1 - spec.featuredChance) ** feats.length);
+  const spec = Packs.data.packs['comet-special'].featured, wantUp = spec.upgradeChance, wantFeat = spec.upgradeChance * (1 - (1 - spec.featuredChance) ** feats.length);
   check(Math.abs(upgraded / slots - wantUp) < 0.02, 'slots upgraded: ' + (upgraded / slots * 100).toFixed(1) + '% (packs.json ' + wantUp * 100 + '%)');
   check(Math.abs(featuredSlots / slots - wantFeat) < 0.015, 'slots that turned featured (2 featured cars, 20% each when a slot upgrades): ' + (featuredSlots / slots * 100).toFixed(1) + '% (wanted ' + (wantFeat * 100).toFixed(1) + '%)');
   check(higherOk, 'an upgraded slot with no featured hit is a higher-rarity filler card');
-  const noFeat = draw('special', opts(42, { featured: [] }));
+  const noFeat = draw('comet-special', opts(42, { featured: [] }));
   check(noFeat.length === 5 && rank(noFeat.at(-1).rarity) >= rank('epic') && !noFeat.at(-1).featured, 'a special pack with no featured cars: its last slot is an Epic-or-better filler');
   // the odds: a standard pack's first slot (never rolled again by a guarantee) against packs.json, over the rarities the pool has
   const M = 40000, seen = Object.fromEntries(RARITIES.map(r => [r, 0]));
@@ -107,15 +110,15 @@ try {
 
   // ---- given and opened, in the save ----
   Progress.reset(); Progress.noSave = true;
-  check(Packs.grant('career') === 'Career pack' && Packs.grant('special', { from: 'comet-hunt' }) && Packs.grant('ten', { n: 2 }) && Packs.grant('nonsense') === '', 'packs granted (and an unknown kind refused)');
-  check(Packs.count('career') === 1 && Packs.count('special') === 1 && Packs.count('ten') === 2 && Packs.total() === 4 && Packs.held().length === 3, 'held: ' + JSON.stringify(Progress.data.packs));
-  check(featuredFor('comet-hunt').map(f => f.car.id + ' x' + f.amount + ' w' + f.weight).join() === 'silvercomet x3 w9,silvercomet x15 w1', 'the Comet Hunt\'s featured entries: events.json featured (' + featuredFor('comet-hunt').map(f => f.car.id + ' x' + f.amount + ' w' + f.weight) + ')');
+  check(Packs.grant('career') === 'Career pack' && Packs.grant('comet-special') && Packs.grant('ten', { n: 2 }) && Packs.grant('nonsense') === '', 'packs granted (and an unknown kind refused)');
+  check(Packs.count('career') === 1 && Packs.count('comet-special') === 1 && Packs.count('ten') === 2 && Packs.total() === 4 && Packs.held().length === 3, 'held: ' + JSON.stringify(Progress.data.packs));
+  check(featuredOf('comet-special').map(f => f.car.id + ' x' + f.amount + ' w' + f.weight).join() === 'silvercomet x3 w9,silvercomet x15 w1', 'the Comet Hunt\'s featured entries: the pack\'s own featured.entries (' + featuredOf('comet-special').map(f => f.car.id + ' x' + f.amount + ' w' + f.weight) + ')');
   const before = { ...(Progress.data.blueprints || {}) };
-  const res = Packs.open('special', { from: 'comet-hunt', random: dice(7) });
+  const res = Packs.open('comet-special', { random: dice(7) });
   const added = {};
   for (const c of res?.cards || []) if (!c.key) added[c.car] = (added[c.car] || 0) + c.n;
   check(!!res && Object.entries(added).every(([id, n]) => Ecu.blueprints(id) === (before[id] || 0) + n) && res.cards.at(-1).car === 'silvercomet', 'a special pack opened: each card a blueprint (Ecu.addBlueprints), its last the Silver Comet: ' + res?.cards.map(c => c.car + '/' + c.rarity).join(' '));
-  check(Packs.count('special') === 0 && Packs.open('special', { from: 'comet-hunt' }) === null, 'opened, it is gone; none left to open');
+  check(Packs.count('comet-special') === 0 && Packs.open('comet-special') === null, 'opened, it is gone; none left to open');
   check(Progress.data.packLog.length === 1 && Progress.data.packLog[0].cards.length === 5, 'the opened pack is in the log');
   // a Bespoke key: the car is owned
   const keyRun = (() => { for (let s = 0; s < 500; s++) { const d = dice(9e6 + s), probe = draw('ten', { random: dice(9e6 + s) }); if (probe.some(c => c.key)) return d; } return null; })();
@@ -135,14 +138,29 @@ try {
   check(JSON.stringify(Progress.data.packs) === '{"career":2}' && JSON.stringify(Progress.data.packLog) === '[{"kind":"career","cards":[{"car":"lovebus","rarity":"common"}]}]', 'a code with junk packs is tidied: ' + JSON.stringify(Progress.data.packs));
   Progress.importCode('DR1.' + btoa(JSON.stringify({ unlocked: 3, cars: ['commuter'] }))); Progress.noSave = true;
   check(JSON.stringify(Progress.data.packs) === '{}' && Array.isArray(Progress.data.packLog), 'a save from before packs: none held');
+  // a save from before ONE DEFINITION PER PACK (v1.1.53: packs held by kind, a special pack as 'special:<event>'): its
+  // packs are migrated to today's ids (packid.js), the old log kept, and the purchase counters empty
+  Progress.importCode('DR1.' + btoa(JSON.stringify({ unlocked: 3, cars: ['commuter'], packs: { 'special:comet-hunt': 2, special: 1, 'special:an-old-event': 1, career: 1, ten: 2 },
+    packLog: [{ kind: 'special', from: 'comet-hunt', cards: [{ car: 'silvercomet', rarity: 'legendary', featured: true }] }] })));
+  Progress.noSave = true;
+  check(JSON.stringify(Progress.data.packs) === '{"comet-special":4,"career":1,"ten":2}' && Progress.data.packLog[0]?.kind === 'special' && JSON.stringify(Progress.data.packBuys) === '{}',
+    'an old save\'s packs (special:comet-hunt 2, special 1, special:an-old-event 1, career 1, ten 2) load as ' + JSON.stringify(Progress.data.packs) + ', its log kept, no purchase counters');
+  check(Packs.total() === 7 && Packs.held().map(h => h.id + ':' + h.count + (h.from ? '@' + h.from : '')).join() === 'ten:2,career:1,comet-special:4@comet-hunt' && !!Packs.next() && Packs.count('comet-special') + Packs.count('ten') + Packs.count('career') === 6,
+    '...held in packs.json\'s order (' + Packs.held().map(h => h.id + ':' + h.count).join(', ') + '), and they open');
+  Progress.reset(); Progress.noSave = true;
+  Progress.data.packs = { 'special:comet-hunt': 1 }; // (written straight in, as an old copy of the save could be)
+  check(Packs.count('comet-special') === 1 && Packs.count('special', 'comet-hunt') === 1 && Packs.grant('special', { from: 'comet-hunt' }) === 'Comet Hunt Special' && JSON.stringify(Progress.data.packs) === '{"comet-special":2}'
+    && P.packIdOf('special') === 'comet-special' && P.packIdOf('nonsense') === null,
+    'an old key read straight from the save is migrated; the old Packs.grant(\'special\', { from: event }) gives its pack (the debug ?pack=special too)');
+  Progress.reset(); Progress.noSave = true;
 
   // ---- where packs come from ----
   const list = careerLevels();
   check(list.length >= 10 && list.includes('hurricane') && list.includes('erupt'), 'career packs on every 5th level of the main list (' + list.length + ': ' + list.slice(0, 4).join(', ') + '...)');
   const lvl = g.levels.LEVELS.find(l => l.id === 'hurricane'), other = g.levels.LEVELS.find(l => l.id === 'expressway');
   check(Packs.levelDone(lvl, true) === 'Career pack' && Packs.levelDone(lvl, true) === '' && Packs.levelDone(other, true) === '' && Packs.levelDone(g.levels.LEVELS.find(l => l.id === 'erupt'), false) === '', 'a Career pack once, on a listed level\'s first delivery only');
-  const g0 = Packs.count('special');
-  check(Packs.eventDone('comet-hunt', true, false).length === 1 && Packs.eventDone('comet-hunt', false, false).length === 0 && Packs.eventDone('comet-hunt', false, true).length === 1 && Packs.count('special', 'comet-hunt') === g0 + 2, 'a special event: a pack for a stage done the first time, one with the prize');
+  const g0 = Packs.count('comet-special');
+  check(Packs.eventDone('comet-hunt', true, false).length === 1 && Packs.eventDone('comet-hunt', false, false).length === 0 && Packs.eventDone('comet-hunt', false, true).length === 1 && Packs.count('comet-special') === g0 + 2, 'a special event: a pack for a stage done the first time, one with the prize');
   // the game's own path: a Career level delivered for the first time gives its pack, and says so
   Progress.reset(); Progress.noSave = true; Progress.data.unlocked = 99; Progress.data.tierBase = 99;
   Progress.data.cars.push(...CARS.filter(c => c.tier === 1 && !c.blue && !c.amphibious).map(c => c.id));
@@ -164,7 +182,7 @@ try {
   check(Packs.levelDone(lvl, true) === 'Career pack' && Packs.total() === 0 && opened.length === 1 && opened[0].kind === 'career' && Progress.data.packLog.length === log0 + 1,
     'a Career level\'s first delivery: its pack opened at once (none left held; ' + (opened[0]?.cards.length || 0) + ' cards given)');
   opened.length = 0;
-  check(Packs.eventDone('comet-hunt', true, true).length === 2 && Packs.total() === 0 && opened.length === 2 && opened.every(r => r.kind === 'special' && r.from === 'comet-hunt'),
+  check(Packs.eventDone('comet-hunt', true, true).length === 2 && Packs.total() === 0 && opened.length === 2 && opened.every(r => r.kind === 'comet-special' && r.from === 'comet-hunt'),
     'a special event\'s stage and prize: both packs opened at once');
   Packs.revealer = null;
   Packs.grant('standard');
@@ -187,7 +205,7 @@ try {
   {
     let all = 0, ok = 0;
     for (let i = 0; i < 300; i++) {
-      const cards = P.revealOrder(draw('special', { random: dice(8e6 + i), featured: featuredFor('comet-hunt') }));
+      const cards = P.revealOrder(draw('comet-special', { random: dice(8e6 + i), featured: featuredOf('comet-special') }));
       const top = Math.max(...cards.map(c => rank(c.rarity))), last = cards.at(-1);
       all++; if (rank(last.rarity) === top && (last.featured || !cards.some(c => c.featured && rank(c.rarity) === top))) ok++;
     }
@@ -245,9 +263,9 @@ try {
   const { contents } = P;
   Progress.reset(); Progress.noSave = true;
   const near = (a, b) => Math.abs(a - b) < 1e-9;
-  for (const kind of Object.keys(Packs.data.kinds)) {
-    const feats = kind === 'special' ? featuredFor('comet-hunt') : [];
-    const c = contents(kind, { featured: feats }), pool = pools(), spec = Packs.data.kinds[kind];
+  for (const kind of Object.keys(Packs.data.packs)) {
+    const feats = featuredOf(kind); // (the pack's own featured entries: [] for a pack with none)
+    const c = contents(kind, { featured: feats }), pool = pools(), spec = Packs.data.packs[kind];
     const want = Object.fromEntries(RARITIES.map(r => [r, [...(pool.evergreen[r] || []), ...(spec.bespokeBlueprints ? pool.bespoke[r] || [] : []), ...(r === 'bespoke' && spec.pool === 'all' ? pool.keys : [])]]));
     const listed = Object.fromEntries(c.groups.map(gr => [gr.rarity, gr.cards.map(x => x.car.id).sort()]));
     const exact = RARITIES.every(r => JSON.stringify(listed[r] || []) === JSON.stringify((want[r] || []).map(x => x.id).sort()));
@@ -257,15 +275,15 @@ try {
     check(exact, kind + ': the cards listed are the pool exactly (' + c.total + ' cards: ' + c.groups.map(gr => gr.rarity + ' ' + gr.cards.length).join(', ') + ')');
     check(sums.every(([, sum, share]) => near(sum, share)) && near(c.odds.reduce((n, o) => n + o.share, 0), 1) && shares,
       kind + ': each rarity\'s cards add up to its share of the odds (' + sums.map(([r, sum]) => r + ' ' + (sum * 100).toFixed(2) + '%').join(', ') + ')');
-    check(kind === 'special' ? c.featured.length === feats.length && feats.length > 0 && c.featured.every(f => f.chance >= f.lastSlot && f.chance <= 1 && f.rarity === featuredRarity(f.car))
-      : c.featured.length === 0, kind + ': featured cards ' + (kind === 'special' ? c.featured.map(f => f.car.id + ' ' + (f.chance * 100).toFixed(1) + '% a pack').join(', ') : 'none'));
+    check(Packs.data.packs[kind].featured ? c.featured.length === feats.length && feats.length > 0 && c.featured.every(f => f.chance >= f.lastSlot && f.chance <= 1 && f.rarity === featuredRarity(f.car))
+      : c.featured.length === 0, kind + ': featured cards ' + (Packs.data.packs[kind].featured ? c.featured.map(f => f.car.id + ' ' + (f.chance * 100).toFixed(1) + '% a pack').join(', ') : 'none'));
   }
   // the featured chance, against packs drawn: about what contents() says
   {
-    const feats = featuredFor('comet-hunt'), c = contents('special', { featured: feats }), roll = dice(77), N = 4000;
+    const feats = featuredOf('comet-special'), c = contents('comet-special', { featured: feats }), roll = dice(77), N = 4000;
     const seen = c.featured.map(() => 0); // (by entry: the x3 and the x15 of the same car apart, by the slot's n)
     for (let i = 0; i < N; i++) {
-      const cards = draw('special', { random: roll, featured: feats }).filter(x => x.featured);
+      const cards = draw('comet-special', { random: roll, featured: feats }).filter(x => x.featured);
       c.featured.forEach((f, j) => { if (cards.some(x => x.car === f.car.id && x.n === f.amount)) seen[j]++; });
     }
     const ok = c.featured.every((f, j) => Math.abs(seen[j] / N - f.chance) < 0.03);
@@ -326,7 +344,7 @@ try {
   // opened for real: the amounts given through Ecu.addBlueprints, n each; a key is one; the reveal's bar steps copy by copy
   {
     Progress.reset(); Progress.noSave = true;
-    const kinds = Packs.data.kinds, keep = JSON.stringify(kinds.ten);
+    const kinds = Packs.data.packs, keep = JSON.stringify(kinds.ten);
     const sumBy = (cards) => cards.filter(c => !c.key).reduce((m, c) => ({ ...m, [c.car]: (m[c.car] || 0) + c.n }), {});
     let ok = true, steps = true, seenN = new Set();
     try {
@@ -360,12 +378,12 @@ try {
   {
     const { featuredEntries, featuredChances, contents: sheet } = P;
     const NW = 6000, none = () => false;
-    const tally = (list, seed, { owned = none, maxed = none, kind = 'special' } = {}) => {
+    const tally = (list, seed, { owned = none, maxed = none, kind = 'comet-special' } = {}) => {
       const last = {}, inPack = {}, keyTwice = { n: 0 }, ns = new Set(), all = [];
       for (let i = 0; i < NW; i++) {
         const cards = draw(kind, { random: dice(seed + i), featured: list, owned, maxed });
         all.push(cards);
-        const l = cards.at(-1), id = (c) => (c.key ? 'key:' : '') + c.car + (c.featured && !c.key && c.n !== Packs.data.kinds.special.baseAmount ? ':' + c.n : '');
+        const l = cards.at(-1), id = (c) => (c.key ? 'key:' : '') + c.car + (c.featured && !c.key && c.n !== Packs.data.packs['comet-special'].baseAmount ? ':' + c.n : '');
         if (l.featured) last[id(l)] = (last[id(l)] || 0) + 1; else last.filler = (last.filler || 0) + 1;
         for (const k of new Set(cards.filter(c => c.featured).map(id))) inPack[k] = (inPack[k] || 0) + 1;
         const keys = cards.filter(c => c.key).map(c => c.car);
@@ -384,7 +402,7 @@ try {
     check(t1.all.every(cards => cards.filter(c => c.featured).every(c => c.rarity === (c.car === 'gullwing' ? 'epic' : 'legendary'))),
       'a featured card keeps its true rarity (gullwing Epic, jetcar/dragster Legendary)');
     // a featured Uncommon is Uncommon (no lift to Epic: the owner, 12-Oct)
-    const unc = draw('special', { random: dice(5), featured: ['postvan'] }).at(-1);
+    const unc = draw('comet-special', { random: dice(5), featured: ['postvan'] }).at(-1);
     check(unc.featured && unc.car === 'postvan' && unc.rarity === 'uncommon', 'a featured Uncommon (postvan) is shown as Uncommon, featured (' + unc.rarity + ')');
     // (b) Legendary x3 + a Bespoke key, 3:3:3:1: the key about a tenth of the last slots; a key never twice; an owned key never
     const llb = [{ car: 'rocketfin', weight: 3 }, { car: 'swancar', weight: 3 }, { car: 'solarracer', weight: 3 }, { car: 'monowheel', weight: 1, key: true }];
@@ -401,7 +419,7 @@ try {
       'a key already owned never drops; the weights shift to 3:3:3 (' + ['rocketfin', 'swancar', 'solarracer'].map(id => pctS(share(t4, id))).join(', ') + ')');
     // (c) the sheet's chances (worked out exactly) against the simulation: the last slot's share and the chance a pack
     const agree = (list, t, marks = {}) => {
-      const c = sheet('special', { featured: list, owned: marks.owned || none, maxed: marks.maxed || none });
+      const c = sheet('comet-special', { featured: list, owned: marks.owned || none, maxed: marks.maxed || none });
       const bad = [];
       for (const f of c.featured) {
         const k = (f.key ? 'key:' : '') + f.car.id + (f.key || !f.amount ? '' : ':' + f.amount);
@@ -415,21 +433,21 @@ try {
       check(a.ok, 'the sheet\'s chances match ' + NW + ' seeded packs (' + name + '): ' + (a.ok ? a.line : a.bad.join('; ')));
     }
     {
-      const c = sheet('special', { featured: llb, owned: ownedKey, maxed: none }), k = c.featured.find(f => f.key);
+      const c = sheet('comet-special', { featured: llb, owned: ownedKey, maxed: none }), k = c.featured.find(f => f.key);
       check(k.exhausted === 'owned' && k.chance === 0 && !k.inPlay && c.shifted.length === 1 && c.weights.join(':') === '3:3:3:1', 'the sheet: an owned key entry listed as obtained, chance 0, the declared ratio kept 3:3:3:1, the shift named');
-      const tidy = sheet('special', { featured: [{ car: 'jetcar', weight: 2 }, { car: 'dragster', weight: 2 }, { car: 'gullwing', weight: 2 }], owned: none, maxed: none });
+      const tidy = sheet('comet-special', { featured: [{ car: 'jetcar', weight: 2 }, { car: 'dragster', weight: 2 }, { car: 'gullwing', weight: 2 }], owned: none, maxed: none });
       check(tidy.weights.join(':') === '1:1:1', 'the declared ratio is tidied where it can be: 2:2:2 reads 1:1:1');
       // the formula with no key: 1 - (1 - w/W)(1 - q)^(size - 1)
       const live = featuredEntries(ell), fc = featuredChances(live, { size: 5, upgradeChance: 0.25, featuredChance: 0.2 });
       check(fc.every(o => Math.abs(o.chance - (1 - (1 - o.lastSlot) * (1 - o.slot) ** 4)) < 1e-12), 'with no key the exact chance is 1 - (1 - w/W)(1 - q)^(size - 1)');
     }
     // amounts: the Comet Hunt's x3 at 9 and x15 at 1: the last slots about 9:1, the slot's n 3 or 15
-    const comet = featuredFor('comet-hunt');
+    const comet = featuredOf('comet-special');
     const t5 = tally(comet, 15e6);
     const r = (t5.last['silvercomet:3'] || 0) / Math.max(1, t5.last['silvercomet:15'] || 0);
     check(Math.abs(share(t5, 'silvercomet:3') - 0.9) < 0.015 && r > 7.5 && r < 11 && [...t5.ns].every(n => n === 3 || n === 15),
       'the Comet Hunt (silvercomet x3 weight 9, x15 weight 1): last slots ' + pctS(share(t5, 'silvercomet:3')) + ' x3, ' + pctS(share(t5, 'silvercomet:15')) + ' x15 (' + r.toFixed(1) + ':1), a featured slot\'s n only 3 or 15');
-    { const cc = sheet('special', { featured: comet, owned: none, maxed: none }); check(cc.featured.every(f => near(f.carChance, 1)), 'the Silver Comet (any of its x3 / x15 entries) is in every Comet Hunt pack: carChance 1'); }
+    { const cc = sheet('comet-special', { featured: comet, owned: none, maxed: none }); check(cc.featured.every(f => near(f.carChance, 1)), 'the Silver Comet (any of its x3 / x15 entries) is in every Comet Hunt pack: carChance 1'); }
     { const a = agree(comet, t5); check(a.ok, 'the sheet\'s chances match ' + NW + ' seeded packs (Comet Hunt x3/x15): ' + (a.ok ? a.line : a.bad.join('; '))); }
     // exhausted: a car maxed takes ALL its entries out (x3 and x15), the others shift; the regular slots still give it
     const mixed = [...comet, { car: 'jetcar', weight: 1 }, { car: 'dragster', weight: 1 }];
@@ -459,17 +477,17 @@ try {
       'Packs.featuredExhausted: true only when every entry is exhausted (a list with none: false)');
     // the debug marks (?maxed= / ?owned=) count, for the visit
     P.debugMarks(new URLSearchParams('maxed=silvercomet&owned=rocketfin'));
-    check(Packs.featuredExhausted('comet-hunt') && P.ownsNow('rocketfin') && P.maxedNow(by('silvercomet')), 'the debug marks (&maxed=silvercomet&owned=rocketfin) count as maxed / owned');
+    check(Packs.featuredExhausted('comet-special') && P.ownsNow('rocketfin') && P.maxedNow(by('silvercomet')), 'the debug marks (&maxed=silvercomet&owned=rocketfin) count as maxed / owned');
     P.debugMarks(new URLSearchParams(''));
-    check(!Packs.featuredExhausted('comet-hunt') && !P.ownsNow('rocketfin'), '...and are gone when cleared');
+    check(!Packs.featuredExhausted('comet-special') && !P.ownsNow('rocketfin'), '...and are gone when cleared');
     // the debug list: id[!key][:weight[xamount]]
     const dbg = P.debugFeatured(new URLSearchParams('featured=silvercomet:9x3,silvercomet:1x15,rocketfin:1,rocketfin!key:2'));
     check(dbg.map(f => (f.key ? 'key:' : '') + f.car.id + ':' + f.weight + (f.amount ? 'x' + f.amount : '')).join() === 'silvercomet:9x3,silvercomet:1x15,rocketfin:1,key:rocketfin:2',
       'the debug list ?featured=silvercomet:9x3,silvercomet:1x15,rocketfin:1,rocketfin!key:2 reads as four entries');
     // (d) old plain-id lists are weight 1, the kind's amount: the same draws as { car, weight: 1 }
-    const same = Array.from({ length: 300 }, (_, i) => JSON.stringify(draw('special', { random: dice(21e6 + i), featured: ['silvercomet'] })) === JSON.stringify(draw('special', { random: dice(21e6 + i), featured: [{ car: 'silvercomet', weight: 1 }] }))).every(Boolean);
+    const same = Array.from({ length: 300 }, (_, i) => JSON.stringify(draw('comet-special', { random: dice(21e6 + i), featured: ['silvercomet'] })) === JSON.stringify(draw('comet-special', { random: dice(21e6 + i), featured: [{ car: 'silvercomet', weight: 1 }] }))).every(Boolean);
     const plain = featuredEntries(['silvercomet']);
-    check(same && plain.length === 1 && plain[0].weight === 1 && plain[0].amount === undefined && draw('special', { random: dice(3), featured: ['silvercomet'] }).at(-1).n === Packs.data.kinds.special.baseAmount,
+    check(same && plain.length === 1 && plain[0].weight === 1 && plain[0].amount === undefined && draw('comet-special', { random: dice(3), featured: ['silvercomet'] }).at(-1).n === Packs.data.packs['comet-special'].baseAmount,
       'a plain car id is weight 1 and the kind\'s base amount (the limited special: x2, never doubled): the same packs as { car, weight: 1 }');
     // the regular packs' keys: an owned key listed as obtained (chance 0), the others' chances as the pool is (a simulation)
     {
@@ -487,18 +505,72 @@ try {
           'a regular pack\'s key owned: listed as obtained, chance 0, never drawn; the other keys\' chances match ' + M2 + ' seeded first slots (' + liveKeys.map(x => x.car.id + ' ' + pctS((seenK[x.car.id] || 0) / M2) + '/' + pctS(x.chance)).join(', ') + ')');
       } finally { odds.bespoke = keep; }
     }
-    // (e) events.js reports a bad featured list
+    // (e) a bad featured list is reported (the list is the PACK's now: packs.json comet-special featured.entries; packs.js
+    // packProblems, which events.js problems() reports too); events.json naming featured cards is reported
     const { Events } = await g.load('events.js');
-    const ev = Events.specials.find(e => e.id === 'comet-hunt'), keepF = ev.raw.featured;
+    const fe = Packs.data.packs['comet-special'].featured, keepF = fe.entries;
+    const ev = Events.specials.find(e => e.id === 'comet-hunt');
     try {
       const bad = [{ car: 'silvercomet', weight: 0 }, { car: 'jetcar', weight: -2 }, { car: 'dragster', weight: 'x' }, { car: 'nocar' }, { car: 'gullwing', key: true },
         { car: 'swancar', amount: 0 }, { car: 'swancar', amount: [5, 2] }, { car: 'rocketfin', amount: 2.5 }];
-      const lines = bad.map(x => { ev.raw.featured = [x]; return Events.problems().join(' | '); });
-      ev.raw.featured = [{ car: 'silvercomet', weight: 9, amount: 3 }, { car: 'silvercomet', weight: 1, amount: [10, 15] }, { car: 'monowheel', key: true, weight: 0.5 }];
+      const lines = bad.map(x => { fe.entries = [x]; return Events.problems().join(' | '); });
+      fe.entries = [{ car: 'silvercomet', weight: 9, amount: 3 }, { car: 'silvercomet', weight: 1, amount: [10, 15] }, { car: 'monowheel', key: true, weight: 0.5 }];
       const good = Events.problems();
-      check(lines.every(l => /featured entry 1/.test(l)) && !good.length, 'events.js reports each bad featured entry (weight 0, -2, "x", no car, a key of a non-Bespoke car, amount 0, [5, 2], 2.5), and a sound list passes: ' + lines.map(l => l.replace(/^event comet-hunt: /, '').replace(/ \(the special.*$/, '')).join('; '));
-    } finally { ev.raw.featured = keepF; }
-    check(Events.problems().length === 0, 'events.json as shipped is sound');
+      check(lines.every(l => /pack comet-special: featured entry 1/.test(l)) && !good.length, 'events.js (through packProblems) reports each bad featured entry of a pack (weight 0, -2, "x", no car, a key of a non-Bespoke car, amount 0, [5, 2], 2.5), and a sound list passes: ' + lines.map(l => l.replace(/^packs\.json: pack comet-special: /, '').replace(/ \(a car id.*$/, '')).join('; '));
+      ev.raw.featured = ['silvercomet'];
+      check(/event comet-hunt: "featured" belongs on its pack now/.test(Events.problems().join(' | ')), 'an event that still names featured cards (the old events.json shape) is reported: they belong on its pack');
+    } finally { fe.entries = keepF; delete ev.raw.featured; }
+    check(Events.problems().length === 0, 'events.json and packs.json as shipped are sound');
+  }
+  // ---- ONE DEFINITION PER PACK (CHECKLIST 151): what gives a pack is the pack's own givenBy; the GENERATED words name
+  // every guarantee of every pack and bundle (its size, each at-least rule not already made true by a higher one, a
+  // featured card, an event's end); a `blurb` overrides them ----
+  {
+    const PK = Packs.data.packs;
+    check(P.careerPack() === 'career' && JSON.stringify(P.eventPacks('comet-hunt')) === '[{"id":"comet-special","stage":true,"prize":true}]' && P.eventPacks('no-such-event').length === 0,
+      'givenBy: the Career levels give the career pack; the Comet Hunt\'s stages and prize give comet-special (and nothing names another event)');
+    check(Object.keys(PK).every(id => !PK[id].featured || P.featuredOf(id).length > 0) && P.featuredOf('standard').length === 0 && P.eventOf('comet-special')?.id === 'comet-hunt' && P.eventOf('ten') === null,
+      'the featured entries and the event live on the pack (featuredOf, eventOf)');
+    const names = (spec, text) => {
+      const miss = [];
+      if (!text.includes(String(spec.size))) miss.push('size ' + spec.size);
+      const rules = Object.entries(spec.atLeast || {});
+      for (const [r, n] of rules) {
+        const said = new RegExp('at least ' + (n === 1 ? 'one' : n === 2 ? 'two' : n === 3 ? 'three' : String(n)) + ' ' + P.rarityName(r) + ' or better', 'i').test(text);
+        const implied = rules.some(([r2, m]) => RARITIES.indexOf(r2) > RARITIES.indexOf(r) && m >= n && new RegExp(P.rarityName(r2) + ' or better', 'i').test(text));
+        if (!said && !implied) miss.push('at least ' + n + ' ' + r);
+      }
+      if (!!spec.featured !== /Guaranteed featured card|A featured card in each/.test(text)) miss.push('featured');
+      if (spec.baseAmount > 1 && !text.includes('x' + spec.baseAmount)) miss.push('x' + spec.baseAmount);
+      return miss;
+    };
+    const bad = [];
+    for (const id of Object.keys(PK)) {
+      const text = P.describePack(id), miss = names(PK[id], text);
+      if (PK[id].event && !/Limited: ends \d+ \w{3}/.test(text)) miss.push('its event\'s end');
+      if (miss.length || !text) bad.push(id + ' (' + miss.join(', ') + '): ' + text);
+    }
+    for (const b of Object.values(Packs.data.bundles)) {
+      const text = P.describeBundle(b), spec = PK[b.pack], miss = names({ ...spec, size: b.count * spec.size, baseAmount: 1 }, text);
+      if (!text.includes(b.count + ' packs')) miss.push(b.count + ' packs');
+      if (miss.length) bad.push(b.pack + ' x' + b.count + ' (' + miss.join(', ') + '): ' + text);
+    }
+    check(!bad.length, 'every generated blurb names every guarantee: ' + (bad.length ? bad.join(' | ') : Object.keys(PK).map(id => id + ' "' + P.describePack(id) + '"').join('; ')));
+    const keep = JSON.stringify(PK.career);
+    try {
+      PK.career.atLeast = { uncommon: 3, epic: 2 }; PK.career.size = 7; PK.career.baseAmount = 2;
+      const t = P.describePack('career');
+      check(!names(PK.career, t).length && /At least two Epic or better/.test(t) && /At least three Uncommon or better/.test(t) && /^7 evergreen cards, x2 each/.test(t),
+        'the words follow the rules when they change (7 cards, x2, at least three Uncommon and two Epic: both said): "' + t + '"');
+      PK.career.blurb = 'The owner\'s own words';
+      check(P.describePack('career') === 'The owner\'s own words', 'a pack\'s `blurb` overrides the generated words');
+    } finally { PK.career = JSON.parse(keep); }
+    check(P.describePack('ten') === '10 cards from every car with blueprints. At least one Epic or better. A key, now and then' && P.bundleName(Packs.data.bundles['ten-3']) === '3 10-packs',
+      'the 10-pack\'s words (the Uncommon rule made true by the Epic one, not said twice): "' + P.describePack('ten') + '"; its bundle "' + P.bundleName(Packs.data.bundles['ten-3']) + '"');
+    // the free Daily pack draws as its rules say: 5 evergreen cards, an Uncommon or better, no keys, no featured
+    let dailyOk = 0;
+    for (let i = 0; i < 2000; i++) { const cards = draw('daily', opts(44e6 + i)); if (cards.length === 5 && cards.every(c => !c.key && !c.featured && evergreenIds.has(c.car)) && cards.some(c => rank(c.rarity) >= rank('uncommon'))) dailyOk++; }
+    check(dailyOk === 2000, 'the Daily pack: 5 evergreen cards, an Uncommon or better, no keys, no featured (' + dailyOk + ' of 2000)');
   }
   // ---- the sheet's one format for a chance (the owner, 12-Oct): at most two decimals, "<0.01%", "0%" ----
   {
@@ -522,25 +594,25 @@ try {
       }
       return { share: doubled / slots, ns: [...ns].sort((a, b) => a - b), fns: [...fns].sort((a, b) => a - b), featuredDoubled, keysOff };
     };
-    check(d === 0.15 && Packs.data.kinds.special.limited && Packs.data.kinds.special.baseAmount === 2 && ['standard', 'ten', 'career'].every(k => Packs.data.kinds[k].baseAmount === 1),
+    check(d === 0.15 && Packs.data.packs['comet-special'].limited && Packs.data.packs['comet-special'].baseAmount === 2 && ['standard', 'ten', 'career'].every(k => Packs.data.packs[k].baseAmount === 1),
       'packs.json: doubleChance 0.15; baseAmount 1 for standard, ten and career; the special pack LIMITED with baseAmount 2');
     const s1 = tallyN('standard', 30e6);
     check(Math.abs(s1.share - d) < 0.012 && s1.ns.join() === '1,2', 'a standard pack: ' + (s1.share * 100).toFixed(1) + '% of its cards doubled (wanted ' + d * 100 + '%), n only 1 or 2 (' + s1.ns + ')');
     const t1 = tallyN('ten', 31e6);
     check(t1.keysOff === 0 && t1.ns.join() === '1,2', 'a 10-pack: keys always 1, never doubled; the other cards 1 or 2');
-    const o1 = tallyN('career', 32e6, { spec: { ...Packs.data.kinds.career, doubleChance: 0.4 } });
+    const o1 = tallyN('career', 32e6, { spec: { ...Packs.data.packs.career, doubleChance: 0.4 } });
     check(Math.abs(o1.share - 0.4) < 0.015, 'a kind\'s own doubleChance (0.4) is used over packs.json\'s: ' + (o1.share * 100).toFixed(1) + '% doubled');
-    const l1 = tallyN('special', 33e6, { featured: featuredFor('comet-hunt') });
+    const l1 = tallyN('comet-special', 33e6, { featured: featuredOf('comet-special') });
     check(l1.ns.join() === '2,4' && Math.abs(l1.share - d) < 0.012 && l1.featuredDoubled === 0 && l1.fns.join() === '3,15',
       'a LIMITED (special) pack: its other cards give 2 or 4 (' + l1.ns + ', ' + (l1.share * 100).toFixed(1) + '% doubled); featured cards never doubled, their own amounts (' + l1.fns + ')');
-    const l2 = tallyN('special', 34e6, { featured: ['jetcar'] });
+    const l2 = tallyN('comet-special', 34e6, { featured: ['jetcar'] });
     check(l2.fns.join() === '2' && l2.featuredDoubled === 0, 'a featured entry with no amount of its own: the base (2), never doubled');
     // the blueprints given equal n (opened for real)
     Progress.reset(); Progress.noSave = true;
     let given = true;
     for (let i = 0; i < 40; i++) {
       const before = {}; for (const c of [...P.roster(), ...EVENT_CARS]) before[c.id] = Ecu.blueprints(c.id) || 0;
-      const r = Packs.open(i % 2 ? 'special' : 'standard', { free: true, from: 'comet-hunt', random: dice(35e6 + i) });
+      const r = Packs.open(i % 2 ? 'comet-special' : 'standard', { free: true, random: dice(35e6 + i) });
       const sum = {}; for (const c of r.cards) if (!c.key) sum[c.car] = (sum[c.car] || 0) + c.n;
       for (const [id, n] of Object.entries(sum)) if ((Ecu.blueprints(id) || 0) - (before[id] || 0) !== n) given = false;
     }
@@ -551,7 +623,7 @@ try {
     check(plainCards.every(x => x.stacks.length === 2 && x.stacks[0].n === 1 && x.stacks[1].n === 2 && near(x.stacks[0].chance + x.stacks[1].chance, x.chance) && near(x.stacks[1].chance, x.chance * d))
       && c.groups.flatMap(gr => gr.cards.filter(x => x.key)).every(x => x.stacks.length === 1 && x.stacks[0].n === 1),
     'the sheet: each card\'s stacks x1 and x2, their total chances adding up to the card\'s (x2 = its chance x ' + d + '); a key one stack of 1');
-    const lim = P.contents('special', { featured: featuredFor('comet-hunt') });
+    const lim = P.contents('comet-special', { featured: featuredOf('comet-special') });
     check(lim.limited && lim.baseAmount === 2 && lim.groups.flatMap(gr => gr.cards).every(x => x.stacks[0].n === 2 && x.stacks[1].n === 4), 'a limited pack\'s sheet: stacks x2 and x4');
     const M3 = 30000, seenS = {};
     for (let i = 0; i < M3; i++) { const x = draw('standard', { random: dice(36e6 + i), owned: (id) => id === 'commuter' })[0]; seenS[x.rarity + ':' + x.n] = (seenS[x.rarity + ':' + x.n] || 0) + 1; }
@@ -572,7 +644,7 @@ try {
   {
     let asked = 0;
     const later = () => asked++ > 0; // (not maxed when first asked; maxed from then on, as if the pack's own cards had maxed it)
-    const one = draw('special', { random: dice(41), featured: ['jetcar'], maxed: later, owned: () => false });
+    const one = draw('comet-special', { random: dice(41), featured: ['jetcar'], maxed: later, owned: () => false });
     check(asked === 1 && one.at(-1).featured && one.at(-1).car === 'jetcar', 'draw() reads the maxed state once, before any card (asked ' + asked + ' time): the last slot keeps the featured car');
     const jet = by('jetcar'), full = Ecu.max(jet) * Ecu.x(jet);
     Packs.featuredOverride = P.featuredEntries(['jetcar']);
@@ -581,7 +653,7 @@ try {
       for (let s = 0; s < 3000 && !found; s++) {
         Progress.reset(); Progress.noSave = true;
         (Progress.data.blueprints ||= {}).jetcar = full - 1; // (one short of its max: the first jetcar card maxes it)
-        const r = Packs.open('special', { free: true, random: dice(42e6 + s) });
+        const r = Packs.open('comet-special', { free: true, random: dice(42e6 + s) });
         const jets = r.cards.filter(c => c.featured && c.car === 'jetcar');
         if (jets.length >= 2) found = { r, jets, given: Ecu.blueprints('jetcar') - (full - 1), sum: r.cards.filter(c => c.car === 'jetcar').reduce((n, c) => n + c.n, 0) };
       }
