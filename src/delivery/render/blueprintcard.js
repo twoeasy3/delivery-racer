@@ -42,7 +42,7 @@ export const makerLine = (car, key = false) => {
 export const blueprintCard = (car, card, { compact = false, chance = null, marks = [], pose = 'front' } = {}) => {
   const rarity = card.rarity || 'common';
   const pic = make('div', 'bp-pic');
-  const st = car.tier ? make('span', 'bp-stars', stars(car)) : null; // (an event car has no stars: its small line says so)
+  const st = stars(car) ? make('span', 'bp-stars', stars(car)) : null; // (an event car has no stars: its small line says so)
   st?.style.setProperty('color', starColour(car));
   const tab = make('span', 'bp-tab', make('b', '', card.key ? 'KEY' : 'BLUEPRINT'), card.n ? make('i', 'bp-x', '×' + card.n) : null);
   const letter = make('span', 'bp-letter', RARITY_WORD[rarity] || rarity); // (the word, not a letter: Common, Uncommon...)
@@ -52,7 +52,8 @@ export const blueprintCard = (car, card, { compact = false, chance = null, marks
     card.featured ? make('span', 'bp-featured', 'Featured') : null);
   const name = make('div', 'bp-name', make('small', '', makerLine(car, card.key)), make('strong', '', car.name));
   const foot = compact ? make('div', 'bp-foot chance', chance !== null ? make('b', '', chance) : null, ...marks) : null;
-  const node = make('div', 'bp-card r-' + rarity + (compact ? ' compact' : '') + (card.key ? ' key' : '') + (card.featured ? ' featured' : '') + ' pose-' + pose,
+  const kind = card.key ? '' : car.bespoke || car.event ? ' kind-key' : safe(() => Ecu.isBlueprint(car), false) ? ' kind-blueprint' : ''; // (a card of a Blueprint car or a Key car: a background of its own, so it reads as working differently)
+  const node = make('div', 'bp-card r-' + rarity + kind + (compact ? ' compact' : '') + (card.key ? ' key' : '') + (card.featured ? ' featured' : '') + ' pose-' + pose,
     art, name, foot);
   node.dataset.car = car.id;
   node.setAttribute('aria-label', (RARITY_WORD[rarity] || rarity) + ' ' + (card.key ? 'key' : 'blueprint') + ': ' + car.name + (card.n > 1 ? ', ×' + card.n : '') + (card.isNew ? ', new' : ''));

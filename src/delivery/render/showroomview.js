@@ -10,7 +10,11 @@
 // side picked (paintShowCar: `color` / `evilColor` and the model's own `userData.livery`), animated (`userData.animate`)
 // and, a car of a tier not open yet, flat black (the lot's silhouette). With prefers-reduced-motion it does not turn
 // by itself and its parts stand still (modelviews.js STILL); a drag still turns it.
+// It LANDS when it comes on screen (a new car: the full view opened, or the next / previous car): a 0.05 m drop onto
+// the floor and a damped bounce on its springs, the shadow tightening as it lands (render/carbounce.js, about 0.8 s;
+// the whole body moves, as most models have no separate wheels). Reduced motion, or a dark silhouette: only a fade-in.
 import * as THREE from 'three';
+import { bounceOffset, bounceDone } from './carbounce.js';
 import { sharedRenderer, lit, stillViews, STILL } from './modelviews.js';
 import { makeShowCar, paintShowCar } from './garage.js';
 
@@ -55,8 +59,9 @@ const build = () => {
   paintShowCar(model, v.car, v.evil);
   if (v.dark) model.traverse((part) => { if (part.isMesh) part.material = SILHOUETTE; });
   const scene = lit();
-  const turn = new THREE.Group();
-  turn.add(model);
+  const turn = new THREE.Group(), body = new THREE.Group(); // (body: what lands and bounces, the model in it)
+  body.add(model);
+  turn.add(body);
   scene.add(turn);
   // its size over the whole of its animation (a part that moves must not go out of the picture)
   model.updateMatrixWorld(true);
@@ -81,7 +86,7 @@ const build = () => {
   shadow.renderOrder = -1;
   turn.add(shadow);
   const camera = new THREE.PerspectiveCamera(FOV, 1.6, 0.1, 400);
-  Object.assign(v, { scene, turn, model, camera, floor, shadow, extra: [floorGeometry, floorMaterial, shadowMaterial], rxz, height: size.y });
+  Object.assign(v, { scene, turn, body, model, camera, floor, shadow, shadowScale: [size.x * 1.25, size.z * 1.2], extra: [floorGeometry, floorMaterial, shadowMaterial], rxz, height: size.y });
 };
 
 // the camera stood back far enough for the whole car, whichever way it has turned, in a picture of this shape
@@ -118,6 +123,15 @@ const draw = (now) => {
     else if (!still && now - idleAt > 1200) yaw += SPIN * dt;
   }
   v.turn.rotation.y = yaw;
+  // landing: the drop and the bounce (render/carbounce.js), the shadow with it; a silhouette or reduced motion: a fade
+  v.landAt ??= now;
+  const since = (now - v.landAt) / 1000 / ShowroomView.slow, o = bounceOffset(since, still || v.dark);
+  v.body.position.y = o.y;
+  v.body.rotation.set(o.pitch, 0, o.roll);
+  v.shadow.scale.set(v.shadowScale[0] * o.shadow, v.shadowScale[1] * o.shadow, 1);
+  v.shadow.material.opacity = 0.75 * Math.min(1, Math.max(0.4, 1 - 6 * o.y));
+  v.landing = !bounceDone(since);
+  v.lift = o.y;
   const t = still ? STILL.t : now / 1000;
   v.model.userData.animate?.(t);
   if (v.model.userData.lamps && v.car.ufo) v.model.userData.lamps.rotation.y = t * 4; // (the saucer's ring of lights)
@@ -129,7 +143,9 @@ const draw = (now) => {
   renderer.clear();
   renderer.render(v.scene, v.camera);
   v.ctx.clearRect(0, 0, w, h);
+  v.ctx.globalAlpha = o.alpha;
   v.ctx.drawImage(renderer.domElement, 0, size.y - h, w, h, 0, 0, w, h);
+  v.ctx.globalAlpha = 1;
 };
 
 // a drag turns it (a mouse or a finger, in the picture only: the sheet around it still scrolls)
@@ -182,7 +198,7 @@ export const ShowroomView = {
     }
     if (fresh) {
       drop();
-      Object.assign(v, { car, evil, dark });
+      Object.assign(v, { car, evil, dark, landAt: null, landing: true, lift: 0 }); // (landAt: its first frame drawn)
       try { build(); } catch (error) { console.warn('No model for the showroom: ' + (error?.message || error)); drop(); v.car = null; return false; }
       if (!held) { yaw = -0.64; spinBy = 0; idleAt = performance.now(); } // (a new car: from the cards' pose, then turning)
     } else if (v.evil !== evil) this.side(evil);
@@ -195,6 +211,7 @@ export const ShowroomView = {
     v.evil = !!evil;
     if (!v.dark) paintShowCar(v.model, v.car, v.evil);
   },
+  slow: 1, // (a check's slow motion of the landing: 10 = ten times slower; 1 always in play)
   // whether the view is in sight now (render/showroom.js says)
   when(fn) { visible = fn; },
   // done: the loop ended and the model let go (the 2D canvas is kept for next time)
@@ -206,5 +223,5 @@ export const ShowroomView = {
     if (v) { v.car = null; v.canvas?.remove(); v.el = null; }
   },
   // for a check or a picture: what is shown
-  get state() { return v?.scene ? { car: v.car.id, evil: v.evil, dark: v.dark, yaw, running: !!raf } : null; },
+  get state() { return v?.scene ? { car: v.car.id, evil: v.evil, dark: v.dark, yaw, running: !!raf, landing: !!v.landing, lift: v.lift || 0, since: v.landAt == null ? null : (performance.now() - v.landAt) / 1000 / this.slow, pitch: v.body.rotation.x } : null; },
 };

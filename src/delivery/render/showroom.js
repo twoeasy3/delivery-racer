@@ -2,21 +2,34 @@
 // A screen over the menu, opened by the car card (and G, and ?showroom). A card for every car (showroomData.js says what
 // is on it): its picture (its real model, drawn once as a still, the garage's own pose: render/carstill.js STILL_POSE; the three poses are the blueprint cards' only),
 // its name and stars, its rarity as the colour of its frame, a pip for each ECU it can reach (filled up to the one it is
-// at), its blueprints toward the next ECU as a bar, and, greyed, why one that cannot be driven cannot. The card picked
-// fills the DETAIL: the car itself LIVE in 3D (turning, and turned by a drag: render/showroomview.js), its figures at its
-// ECU now beside its maxed ones, its respawn time, its perk, and DRIVE (the car picked, as the side on show, and back to
-// the menu). GOOD / EVIL: one choice, switched in the header or the detail: the cards' and the live car's livery, the
-// side whose car rule marks the cards, and the side Drive drives as (it starts on the side being played). A big button takes the player to the car lot, Crazey Jim's Used Cars
-// (render/garage.js), where cars are bought; closing the lot comes back here.
-// The layout (showroom.css): on a desktop (or a phone on its side) the cards are ONE ROW scrolled sideways (a drag, the
-// wheel, the arrows at its ends, the arrow keys), as the menu's event row is, with the detail under it; on a phone
-// held upright they are a column scrolled down, and the detail is a sheet that slides up over it.
-// Keys: left / right (up / down in the column) the next card, Enter drive, E the other side, Escape back (or the sheet closed).
-// For a picture: ?showroom opens it; &side=evil plays Evil (render/menustage.js), and so it opens on Evil; &look=<car id> picks that card; &sheet opens
-// its sheet on a phone; &bp=sport:7,hotrod:3 gives those blueprints for the visit (nothing saved).
+// at), its blueprints toward the next ECU as a bar, and, greyed, why one that cannot be driven cannot.
+// FILTERS (the owner, 12-Oct): All / Ready / Locked in the header, and a Filters sheet of chips: tier (gold and blue
+// stars, amphibious, event / special), rarity, kind (key, blueprint, earned / special, event cars), state (ready,
+// locked, upgradable, maxed, in use, not on this level), several at once (OR within a group, AND across groups), a sort
+// (tier, rarity, ECU, name, top speed), how many cars it leaves, and Clear all. Remembered for the next visit (local
+// storage; nothing in the save). The logic is showroomData.js's (filterCards), checked by scripts/.showroom-check.mjs.
+// A card clicked opens the FULL VIEW (the owner's Asphalt 9 reference): the whole screen is that car, LIVE in 3D and
+// large (render/showroomview.js: a drag turns it; it lands with a little drop and bounce, render/carbounce.js), its
+// panel at the left (its card, name, stars, rarity, ECU pips and blueprints, its figures at its ECU now with the maxed
+// ones as a ghost bar, respawn, perk, why it is locked), Good / Evil, and DRIVE (or Buy at Crazey Jim's, or the lock).
+// Round arrows at the car's sides (and the arrow keys, and a swipe on a phone outside the car) go to the previous / next
+// car OF THE LIST AS FILTERED (round from the last to the first: goTo). Back (the chevron, Escape, the browser's back)
+// returns to the cards where they were. GOOD / EVIL: one choice, switched in the header or the full view (a click on
+// either half flips it): the cards' and the live car's livery, the side whose car rule marks the cards, and the side
+// Drive drives as (it starts on the side being played). A big button takes the player to the car lot, Crazey Jim's Used
+// Cars (render/garage.js), where cars are bought; closing the lot comes back here.
+// The layout (showroom.css): on a desktop the cards are TWO ROWS scrolled sideways (a drag, the wheel, the arrows at its
+// ends, the arrow keys); a phone on its side, one row; a phone held upright, a column scrolled down (isPhone()). The
+// full view is the whole screen on each (a phone upright: the car on top, its panel under it).
+// Keys: left / right (up / down in the column, and between the two rows) the next card, Enter the full view (in it:
+// drive), E the other side, F the filters, Escape back.
+// For a picture: ?showroom opens it; &side=evil plays Evil (render/menustage.js), and so it opens on Evil; &look=<car id>
+// picks that card; &full (or &sheet) opens its full view; &filter=tier:g3,b1;state:ready;sort:speed filters for the visit
+// (not remembered); &filters opens the filter sheet; &bp=sport:7,hotrod:3 gives those blueprints for the visit.
 import '../showroom.css';
-import { showroomCars, carCard, floorBest, RARITIES, CAR_LOT, sideName, driveWords, barredWhy, driveAs } from '../showroomData.js';
-import { CAR, carInUse, setViewSide } from '../cars.js';
+import { showroomCars, carCard, floorBest, RARITIES, CAR_LOT, sideName, sideClick, driveWords, barredWhy, driveAs,
+  FILTER_GROUPS, SORTS, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn } from '../showroomData.js';
+import { CAR, carInUse, setViewSide, STAR_COLOURS } from '../cars.js';
 import { Progress } from '../progress.js';
 import { Game } from '../game.js';
 import { Nav } from '../nav.js';
@@ -25,6 +38,7 @@ import { Garage } from './garage.js';
 import { stillCar, stillReady } from './carstill.js';
 import { ShowroomView } from './showroomview.js';
 import { Sound } from './audio.js';
+import { makerLine } from './blueprintcard.js';
 import { renderSources } from './carsources.js'; // ("Where to get it": the car's key and blueprint sources)
 
 const panel = document.getElementById('showroom');
@@ -37,9 +51,10 @@ const make = (tag, className, ...children) => {
 };
 const money = (amount) => '$' + amount.toFixed(2);
 const blip = (name) => Sound.play(name, 0.5);
-const phone = () => window.matchMedia?.('(max-width: 760px) and (min-height: 521px), (max-width: 519px)').matches;
+// a phone held upright (or a narrow window): the cards a column. The phone's own code is behind this
+export const isPhone = () => !!window.matchMedia?.('(max-width: 760px) and (min-height: 521px), (max-width: 519px)').matches;
 
-// ---- the ECU pips and the blueprint bar (a card's, and the detail's, larger) ----
+// ---- the ECU pips and the blueprint bar (a card's, and the full view's, larger) ----
 const pips = (card) => {
   const row = make('span', 'sr-pips');
   row.setAttribute('aria-label', 'ECU ' + card.ecu + ' of ' + card.max);
@@ -50,7 +65,7 @@ const blueprintBar = (card, long = false) => {
   if (!card.upgradable) return make('span', 'sr-bp none', long ? (card.car.earned ? 'A special car: no blueprints, it stays at ECU1' : 'Comes maxed: no blueprints') : 'No blueprints');
   const fill = make('i');
   fill.style.width = Math.round(card.have / card.toNext * 100) + '%';
-  const words = card.maxed ? (long ? 'Maxed out' + (card.blueprints ? ' (' + card.blueprints + ' blueprints)' : '') : 'MAX')
+  const words = card.maxed ? (long ? 'Maxed out' + (card.blueprints ? ' (' + card.blueprints + ' blueprint' + (card.blueprints === 1 ? '' : 's') + ')' : '') : 'MAX')
     : card.have + '/' + card.toNext + (long ? ' blueprints to ' + (card.ecu === 0 ? 'unlock it' : 'ECU' + (card.ecu + 1)) : '');
   return make('span', 'sr-bp' + (card.maxed ? ' maxed' : ''), make('b', 'sr-bp-icon', '▤'), make('span', 'sr-bp-track', fill), make('small', '', words));
 };
@@ -62,7 +77,7 @@ const starsNode = (card) => {
 
 // ---- the stills: drawn a few at a time, those in sight first, while the showroom is up ----
 const queue = new Set();
-// the side on show (Good or Evil): one choice for the header's switch and the detail's, the cards' liveries and car
+// the side on show (Good or Evil): one choice for the header's switch and the full view's, the cards' liveries and car
 // rules, the live car's paint, and the side DRIVE drives as. It starts on the side being played (Showroom.open)
 let side = false;
 const evilNow = () => side;
@@ -87,14 +102,22 @@ const pump = () => {
 };
 requestAnimationFrame(pump);
 
-// ---- building it ----
-let cards = [];      // [{ data, node }]
-let picked = null;   // the car id picked
-let filter = 'all';  // 'all' | 'ready' | 'locked'
-let best = null;     // the best figures on the floor (the stat bars)
-let row, rowBox, detail, sheetShade, countEl, bankEl, back, on;
+// ---- the filter: remembered for the next visit (local storage, as a convenience: never in the save) ----
+const STORE = 'delivery_showroom_filter';
+const loadFilter = () => { try { return cleanFilter(JSON.parse(localStorage.getItem(STORE))); } catch { return noFilter(); } };
+const saveFilter = () => { if (visitOnly) return; try { localStorage.setItem(STORE, JSON.stringify(filter)); } catch { /* (no storage: for this visit) */ } };
+let filter = loadFilter();
+let visitOnly = false; // (a filter given by the address: not remembered)
 
-const FILTERS = [['all', 'All'], ['ready', 'Ready'], ['locked', 'Locked']];
+// ---- building it ----
+let cards = [];      // [{ data, node }]: the cards shown, in the filter's order
+let list = [];       // their data (the full view's arrows go along it)
+let picked = null;   // the car id picked
+let full = false;    // the full view up
+let best = null;     // the best figures on the floor (the stat bars)
+let row, rowBox, detail, countEl, bankEl, back, on, seg, sortSel, filterBtn, sheet, sheetShade;
+
+const QUICK = [['all', 'All', []], ['ready', 'Ready', ['ready']], ['locked', 'Locked', ['locked']]];
 const build = () => {
   best ||= floorBest();
   const top = make('header', 'sr-top');
@@ -103,19 +126,26 @@ const build = () => {
   backBtn.addEventListener('click', () => Showroom.close());
   bankEl = make('div', 'sr-bank');
   countEl = make('div', 'sr-count');
-  const seg = make('div', 'sr-filter');
+  seg = make('div', 'sr-filter');
   seg.setAttribute('role', 'group');
   seg.setAttribute('aria-label', 'Show');
-  for (const [id, label] of FILTERS) {
-    const b = make('button', id === filter ? 'on' : '', label);
+  for (const [id, label, state] of QUICK) {
+    const b = make('button', '', label);
     b.dataset.filter = id;
-    b.addEventListener('click', () => { filter = id; for (const x of seg.children) x.classList.toggle('on', x === b); fill(); });
+    b.addEventListener('click', () => { filter.state = [...state]; applyFilter(); });
     seg.append(b);
   }
-  const lot = make('button', 'sr-lot', make('span', 'sr-lot-sign', 'Crazey Jim’s'), make('small', '', 'Used Cars · buy cars'));
-  lot.title = CAR_LOT + ': the car lot, where cars are bought';
-  lot.addEventListener('click', () => toLot());
-  top.append(backBtn, make('div', 'sr-title', make('h1', '', 'Showroom'), make('p', '', 'Pick your car')), countEl, bankEl, sideSwitch('sr-side-top'), seg, lot);
+  filterBtn = make('button', 'sr-fbtn', make('span', 'sr-fbtn-icon', '☰'), make('span', 'sr-fbtn-w', 'Filters'), make('b', 'sr-fbadge'));
+  filterBtn.title = 'Filter and sort the cars (F)';
+  filterBtn.setAttribute('aria-haspopup', 'dialog');
+  filterBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleFilters(); });
+  sortSel = make('select', 'sr-sort');
+  sortSel.setAttribute('aria-label', 'Sort by');
+  for (const [id, label] of SORTS) { const o = make('option', '', 'Sort: ' + label); o.value = id; sortSel.append(o); }
+  sortSel.addEventListener('change', () => { filter.sort = sortSel.value; applyFilter(); });
+  const lot = lotButton('sr-lot');
+  top.append(backBtn, make('div', 'sr-title', make('h1', '', 'Showroom'), make('p', '', 'Pick your car')), countEl, bankEl, sideSwitch('sr-side-top'),
+    make('div', 'sr-tools', seg, filterBtn, sortSel), lot);
 
   row = make('div', 'sr-row');
   back = make('button', 'sr-arrow back', '‹');
@@ -125,7 +155,7 @@ const build = () => {
   back.addEventListener('click', () => by(-1));
   on.addEventListener('click', () => by(1));
   row.addEventListener('scroll', arrows, { passive: true });
-  // (a vertical wheel scrolls the row sideways; in the column, the column scrolls as ever)
+  // (a vertical wheel scrolls the rows sideways; in the column, the column scrolls as ever)
   row.addEventListener('wheel', (e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && row.scrollWidth > row.clientWidth + 2) { row.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
   // (a mouse drags it too; a drag is not a click on the card it began on)
   let drag = null;
@@ -140,17 +170,27 @@ const build = () => {
   rowBox = make('div', 'sr-rowbox', row, back, on);
 
   detail = make('section', 'sr-detail');
+  detail.setAttribute('role', 'dialog');
+  swipeOn(detail);
+  sheet = buildSheet();
   sheetShade = make('div', 'sr-shade');
-  sheetShade.addEventListener('click', () => closeSheet());
-  panel.replaceChildren(make('div', 'sr-backdrop'), top, make('div', 'sr-body', rowBox, detail), sheetShade);
+  sheetShade.addEventListener('click', () => closeFilters());
+  panel.replaceChildren(make('div', 'sr-backdrop'), top, make('div', 'sr-body', rowBox), sheetShade, sheet, detail);
 
   watcher?.disconnect();
   watcher = window.IntersectionObserver ? new IntersectionObserver((entries) => {
     for (const entry of entries) if (entry.isIntersecting) { const car = carOf.get(entry.target); if (car) want(entry.target, car); }
   }, { root: null, rootMargin: '300px' }) : null;
 };
+const lotButton = (className) => {
+  const lot = make('button', className, make('span', 'sr-lot-sign', 'Crazey Jim’s'), make('small', '', 'Used Cars · buy cars'));
+  lot.title = CAR_LOT + ': the car lot, where cars are bought';
+  lot.addEventListener('click', () => toLot());
+  return lot;
+};
 
-// a Good / Evil switch (the header has one, the detail another: both show, and set, the one side)
+// a Good / Evil switch (the header has one, the full view another: both show, and set, the one side). A click on
+// either half flips it when that half is already on (the owner, 12-Oct: every Good / Evil switch in the game)
 const sideSwitch = (extra) => {
   const box = make('div', 'sr-side ' + extra);
   box.setAttribute('role', 'group');
@@ -159,8 +199,8 @@ const sideSwitch = (extra) => {
     const b = make('button', (evil === side ? 'on' : ''), sideName(evil));
     b.dataset.side = evil ? 'evil' : 'good';
     b.setAttribute('aria-pressed', String(evil === side));
-    b.title = 'Show the cars in their ' + sideName(evil) + ' livery, and drive as ' + sideName(evil);
-    b.addEventListener('click', (e) => { e.stopPropagation(); pickSide(evil); });
+    b.title = 'Show the cars in their ' + sideName(evil) + ' livery, and drive as ' + sideName(evil) + ' (click again: the other side)';
+    b.addEventListener('click', (e) => { e.stopPropagation(); pickSide(sideClick(side, evil)); });
     box.append(b);
   }
   return box;
@@ -173,11 +213,11 @@ const pickSide = (evil) => {
   setViewSide(side); // (the car rule, and the car in use, of that side while the showroom shows it: as the car lot does)
   panel.classList.toggle('evil', side);
   for (const b of panel.querySelectorAll('.sr-side button')) { const on = (b.dataset.side === 'evil') === side; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }
-  ShowroomView.side(side); // (at once: the detail drawn again below keeps the same car)
+  ShowroomView.side(side); // (at once: the full view drawn again below keeps the same car)
   fill(false);
 };
 
-// the row's arrows: only where there is more that way (a desktop's row; the column has none)
+// the rows' arrows: only where there is more that way (a desktop's rows; the column has none)
 const arrows = () => {
   if (!row) return;
   const sideways = row.scrollWidth > row.clientWidth + 2;
@@ -186,15 +226,97 @@ const arrows = () => {
 };
 const by = (dir) => row.scrollBy({ left: dir * Math.max(200, row.clientWidth * 0.8), behavior: 'smooth' });
 
+// ---- the filter sheet: chips by group, the sort, the count, Clear all (a drop-down on a desktop, a sheet on a phone) ----
+const buildSheet = () => {
+  const box = make('div', 'sr-fsheet');
+  box.setAttribute('role', 'dialog');
+  box.setAttribute('aria-label', 'Filter and sort');
+  box.addEventListener('click', (e) => e.stopPropagation());
+  const head = make('div', 'sr-fhead', make('strong', '', 'Filter & sort'), make('span', 'sr-fresult'));
+  const clear = make('button', 'sr-fclear', 'Clear all');
+  clear.addEventListener('click', () => { const sort = filter.sort; filter = noFilter(); filter.sort = sort; applyFilter(); });
+  const done = make('button', 'sr-fdone', 'Done');
+  done.addEventListener('click', () => closeFilters());
+  head.append(clear, done);
+  const body = make('div', 'sr-fbody');
+  const chip = (groupId, id, label, single = false) => {
+    const b = make('button', 'sr-chip', label);
+    b.dataset.group = groupId;
+    b.dataset.chip = id;
+    if (groupId === 'tier' && /^[gb]\d$/.test(id)) b.style.setProperty('--chip', id[0] === 'g' ? STAR_COLOURS.gold : STAR_COLOURS.blue);
+    if (groupId === 'tier' && id === 'sea') b.style.setProperty('--chip', STAR_COLOURS.amphibious);
+    if (groupId === 'tier' && id === 'magenta') b.style.setProperty('--chip', STAR_COLOURS.earned);
+    if (groupId === 'rarity') b.style.setProperty('--chip', RARITIES[id].colour);
+    b.addEventListener('click', () => {
+      if (single) filter.sort = id;
+      else { const at = filter[groupId]; filter[groupId] = at.includes(id) ? at.filter(x => x !== id) : [...at, id]; }
+      applyFilter();
+    });
+    return b;
+  };
+  for (const group of FILTER_GROUPS) {
+    const chips = make('div', 'sr-chips');
+    if (group.id === 'tier') {
+      const gold = make('div', 'sr-chipline', make('small', '', 'Gold')), blue = make('div', 'sr-chipline', make('small', '', 'Blue')), more = make('div', 'sr-chipline');
+      for (const [id, label] of group.chips) (id[0] === 'g' && id.length === 2 ? gold : id[0] === 'b' && id.length === 2 ? blue : more).append(chip(group.id, id, label));
+      chips.append(gold, blue, more);
+    } else for (const [id, label] of group.chips) chips.append(chip(group.id, id, label));
+    body.append(make('section', 'sr-fgroup', make('h3', '', group.name), chips));
+  }
+  const sorts = make('div', 'sr-chips');
+  for (const [id, label] of SORTS) sorts.append(chip('sort', id, label, true));
+  body.append(make('section', 'sr-fgroup', make('h3', '', 'Sort by'), sorts));
+  box.append(head, body);
+  return box;
+};
+const toggleFilters = () => sheet.classList.contains('open') ? closeFilters() : openFilters();
+const openFilters = () => {
+  if (!sheet || sheet.classList.contains('open')) return;
+  sheet.classList.add('open');
+  panel.classList.add('filters-up');
+  filterBtn.setAttribute('aria-expanded', 'true');
+  Nav.enter('showroomFilters', () => closeFilters());
+};
+const closeFilters = () => {
+  if (!sheet?.classList.contains('open')) return;
+  sheet.classList.remove('open');
+  panel.classList.remove('filters-up');
+  filterBtn.setAttribute('aria-expanded', 'false');
+  Nav.leave('showroomFilters');
+};
+window.addEventListener('pointerdown', (e) => { if (sheet?.classList.contains('open') && !sheet.contains(e.target) && !filterBtn.contains(e.target) && !isPhone()) closeFilters(); });
+// the controls show the filter as it is
+const showFilter = (all) => {
+  const n = filterCount(filter), quick = filter.state.length === 0 ? 'all' : filter.state.length === 1 && ['ready', 'locked'].includes(filter.state[0]) && n === 1 ? filter.state[0] : null;
+  for (const b of seg.children) b.classList.toggle('on', b.dataset.filter === quick);
+  filterBtn.classList.toggle('on', n > 0);
+  filterBtn.querySelector('.sr-fbadge').textContent = n ? String(n) : '';
+  sortSel.value = filter.sort;
+  for (const b of sheet.querySelectorAll('.sr-chip')) {
+    const id = b.dataset.chip, g = b.dataset.group, on = g === 'sort' ? filter.sort === id : filter[g].includes(id);
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', String(on));
+  }
+  sheet.querySelector('.sr-fresult').textContent = list.length + ' of ' + all + ' cars';
+  sheet.querySelector('.sr-fclear').disabled = !n;
+};
+const applyFilter = () => {
+  blip('menuMove');
+  saveFilter();
+  fill();
+};
+
 // the cards, for the filter chosen
 const fill = (fresh = true) => {
   const evil = evilNow(), inUse = carInUse(), scrolled = { left: row.scrollLeft, top: row.scrollTop };
   const all = showroomCars().map(car => carCard(car, evil));
-  const shown = all.filter(c => filter === 'all' || (filter === 'ready' ? c.state === 'ready' : c.state !== 'ready'));
-  countEl.replaceChildren(make('b', '', String(all.filter(c => c.unlocked).length)), ' / ' + all.length + ' cars');
+  list = filterCards(all, filter, inUse.id);
+  const filtered = filterCount(filter) > 0;
+  countEl.replaceChildren(...(filtered ? [make('b', '', String(list.length)), ' of ' + all.length + ' shown']
+    : [make('b', '', String(all.filter(c => c.unlocked).length)), ' / ' + all.length + ' cars']));
   bankEl.replaceChildren(make('small', '', 'Bank'), money(Progress.data.money));
   watcher?.disconnect();
-  cards = shown.map((data) => {
+  cards = list.map((data) => {
     const pic = make('span', 'sr-pic' + (data.hidden ? ' silhouette' : ''));
     const badge = data.car === inUse || data.id === inUse.id ? make('span', 'sr-badge inuse', 'In use')
       : data.state === 'barred' ? make('span', 'sr-badge barred', 'Not on this level' + (evil !== !!Game.evil ? ' as ' + sideName(evil) : '')) : null;
@@ -209,19 +331,26 @@ const fill = (fresh = true) => {
     node.style.setProperty('--rar', RARITIES[data.rarity].colour);
     node.dataset.car = data.id;
     node.title = data.state === 'locked' ? data.reason : data.state === 'barred' ? 'You can drive it, but not on the level picked as ' + sideName(evil) : data.name;
-    node.addEventListener('click', () => pick(data.id, true));
-    node.addEventListener('dblclick', () => { if (data.state === 'ready') drive(data); });
+    node.addEventListener('click', () => { pick(data.id); openFull(); });
     watch(pic, data.car);
     return { data, node };
   });
-  row.replaceChildren(...(cards.length ? cards.map(c => c.node) : [make('p', 'sr-empty', filter === 'ready' ? 'No car ready to drive here.' : 'Every car is yours.')]));
+  let empty = null;
+  if (!cards.length) {
+    const clear = make('button', 'sr-fclear', 'Clear the filters');
+    clear.addEventListener('click', () => { filter = noFilter(); applyFilter(); });
+    empty = make('div', 'sr-empty', make('p', '', 'No car matches these filters.'), filtered ? clear : null);
+  }
+  row.replaceChildren(...(cards.length ? cards.map(c => c.node) : [empty]));
   if (!cards.some(c => c.data.id === picked)) picked = (cards.find(c => c.data.id === inUse.id) || cards[0])?.data.id ?? null;
+  showFilter(all.length);
   showDetail();
-  if (!fresh) { row.scrollLeft = scrolled.left; row.scrollTop = scrolled.top; } // (the side switched: the row stays where it was)
+  if (!fresh) { row.scrollLeft = scrolled.left; row.scrollTop = scrolled.top; } // (the side switched: the cards stay where they were)
+  else { row.scrollLeft = 0; row.scrollTop = 0; }
   requestAnimationFrame(arrows);
 };
 
-// a stat line: the figure now, its bar, and (a car not maxed) the maxed figure and the bar's reach then
+// a stat line: the figure now, its bar, and (a car not maxed) the maxed figure as a ghost bar beyond it
 const stat = (name, now, max, show, share) => {
   const bar = make('span', 'sr-stat-track'), fillNow = make('i', 'now'), fillMax = make('i', 'max');
   fillNow.style.width = Math.round(Math.max(0.04, Math.min(1, share(now))) * 100) + '%';
@@ -231,10 +360,12 @@ const stat = (name, now, max, show, share) => {
   return make('div', 'sr-stat', make('small', '', name), bar, make('b', '', show(now)), make('span', 'sr-stat-max', same ? '' : 'max ' + show(max)));
 };
 const kmh = (v) => Math.round(v * 3.6) + ' km/h';
+// the FULL VIEW of the car picked (drawn only while it is up: the cards just mark the one picked)
 const showDetail = () => {
-  const card = cards.find(c => c.data.id === picked)?.data;
-  if (!card) { detail.replaceChildren(make('p', 'sr-empty', 'No car here.')); return; }
   for (const c of cards) c.node.classList.toggle('picked', c.data.id === picked);
+  if (!full) return;
+  const card = list.find(c => c.id === picked);
+  if (!card) { closeFull(); return; }
   const inUse = carInUse(), using = card.id === inUse.id, evil = evilNow();
   // (the live car: dark for a car of a tier not open yet; greyed for one locked that cannot be bought; in its colours
   // for one at the car lot, as one that can be driven)
@@ -254,7 +385,7 @@ const showDetail = () => {
   let why = null;
   go.textContent = driveWords(card, evil);
   if (card.state === 'ready') {
-    go.title = using && evil === !!Game.evil ? 'In use: back to the menu in it' : 'Drive the ' + card.name + ' as ' + sideName(evil);
+    go.title = using && evil === !!Game.evil ? 'In use: back to the menu in it' : 'Drive the ' + card.name + ' as ' + sideName(evil) + ' (Enter)';
     go.addEventListener('click', () => drive(card));
   } else if (card.state === 'barred') {
     go.disabled = true;
@@ -264,63 +395,116 @@ const showDetail = () => {
     if (card.forSale) go.addEventListener('click', () => toLot(card.id));
     why = make('p', 'sr-why locked', make('b', '', card.reason), card.hint ? make('span', '', ...richTiers(card.hint)) : null);
   }
-  const close = make('button', 'sr-sheet-close', '✕');
-  close.setAttribute('aria-label', 'Close');
-  close.addEventListener('click', () => closeSheet());
+  // the top: back, where in the list, the bank, the car lot
+  const backBtn = make('button', 'sr-fback', '‹');
+  backBtn.setAttribute('aria-label', 'Back to the cards (Escape)');
+  backBtn.title = 'Back to the cards (Escape)';
+  backBtn.addEventListener('click', () => closeFull());
+  const at = list.indexOf(card);
+  const bank = make('div', 'sr-bank', make('small', '', 'Bank'), money(Progress.data.money));
+  const ftop = make('div', 'sr-ftop', backBtn, make('div', 'sr-fpos', make('small', '', 'Showroom'), make('b', '', (at + 1) + ' / ' + list.length)), bank, lotButton('sr-lot sr-lot-full'));
+  // the car on its stage, the round arrows at its sides
+  const arrow = (dir) => {
+    const b = make('button', 'sr-farrow ' + (dir < 0 ? 'prev' : 'next'), dir < 0 ? '‹' : '›');
+    const other = stepIn(list, card.id, dir);
+    b.setAttribute('aria-label', (dir < 0 ? 'Previous' : 'Next') + ' car' + (other ? ': ' + other.name : ''));
+    b.title = (dir < 0 ? 'Previous' : 'Next') + (other ? ': ' + other.name : '') + (dir < 0 ? ' (←)' : ' (→)');
+    b.disabled = list.length < 2;
+    b.addEventListener('click', (e) => { e.stopPropagation(); goTo(dir); });
+    return b;
+  };
+  const stage = make('div', 'sr-stage', pic, arrow(-1), arrow(1));
+  // its card's picture (the cached still) in the panel
+  const cardPic = make('span', 'sr-dcard-pic' + (card.hidden ? ' silhouette' : ''));
+  const dcard = make('div', 'sr-dcard', cardPic);
+  dcard.style.setProperty('--rar', RARITIES[card.rarity].colour);
   detail.replaceChildren(
-    close,
-    pic,
+    make('div', 'sr-fhall'),
+    ftop,
+    stage,
     make('div', 'sr-dwords',
-      make('div', 'sr-dhead', make('span', 'sr-dtag', RARITIES[card.rarity].name), starsNode(card), using ? make('span', 'sr-badge inuse', 'In use') : null),
-      make('h2', '', card.name),
-      make('div', 'sr-decu', make('small', '', 'ECU'), pips(card), make('b', '', card.ecu + ' of ' + card.max), card.blueprint ? make('span', 'sr-kind', 'Blueprint car') : make('span', 'sr-kind', 'Key car')),
+      make('div', 'sr-dtop', dcard, make('div', 'sr-dname',
+        make('div', 'sr-dhead', make('span', 'sr-dtag', RARITIES[card.rarity].name), starsNode(card), using ? make('span', 'sr-badge inuse', 'In use') : null),
+        make('h2', '', card.name),
+        make('span', 'sr-kind', makerLine(card.car)))),
+      make('div', 'sr-decu', make('small', '', 'ECU'), pips(card), make('b', '', card.ecu + ' of ' + card.max)),
       blueprintBar(card, true),
       figures,
       card.perk && !card.hidden ? make('p', 'sr-perk', make('b', '', 'Perk '), card.perk) : null,
       why,
-      card.hidden ? null : renderSources(card.car, { open: phone() }), // (where its key and blueprints come from: render/carsources.js; shut on a desktop, a line)
-      make('div', 'sr-actions', sideSwitch('sr-side-detail'), go)));
+      card.hidden ? null : renderSources(card.car, { open: matchMedia('(max-width: 700px)').matches })), // (where its key and blueprints come from: render/carsources.js; shut on a desktop, a line)
+    make('div', 'sr-actions', sideSwitch('sr-side-detail'), go));
   detail.style.setProperty('--rar', RARITIES[card.rarity].colour);
-  detail.className = 'sr-detail ' + card.rarity + ' ' + card.state + (detail.classList.contains('open') ? ' open' : '');
-  // the car itself, live (turning, a drag turns it): render/showroomview.js; with no WebGL, its still
+  detail.className = 'sr-detail ' + card.rarity + ' ' + card.state + ' open';
+  requestAnimationFrame(() => { if (full && cardPic.isConnected) stillCar(cardPic, card.car, evilNow()); });
+  // the car itself, live (a drag turns it; it lands: render/carbounce.js); with no WebGL, its still
   if (!ShowroomView.show(pic, card.car, { evil, dark: card.hidden })) requestAnimationFrame(() => { if (Showroom.isOpen) stillCar(pic, card.car, evilNow()); });
 };
-const pick = (id, tapped = false) => {
+const pick = (id) => {
   if (id !== picked) blip('menuMove');
   picked = id;
   showDetail();
-  if (tapped && phone()) openSheet();
 };
-// the sheet (a phone held upright: the detail slides up over the column)
-const openSheet = () => {
-  if (detail.classList.contains('open')) return;
-  detail.classList.add('open');
-  panel.classList.add('sheet-up');
-  Nav.enter('showroomSheet', () => closeSheet());
+// the full view, opened on the card picked; back keeps the cards where they were (scrolled to the car looked at last
+// only if it is out of sight)
+const openFull = () => {
+  if (full || !list.some(c => c.id === picked)) return;
+  closeFilters();
+  full = true;
+  panel.classList.add('full-up');
+  Nav.enter('showroomFull', () => closeFull());
+  showDetail();
 };
-const closeSheet = () => {
-  if (!detail?.classList.contains('open')) return;
+const closeFull = () => {
+  if (!full) return;
+  full = false;
   detail.classList.remove('open');
-  panel.classList.remove('sheet-up');
-  Nav.leave('showroomSheet');
+  panel.classList.remove('full-up');
+  ShowroomView.stop(); // (the live car let go: nothing drawn while the cards are up)
+  detail.replaceChildren();
+  Nav.leave('showroomFull');
+  const node = cards.find(c => c.data.id === picked)?.node;
+  node?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  try { node?.focus({ preventScroll: true }); } catch { /* (an old browser: no focus options) */ }
 };
-// Drive: the car picked (and the menu, with it)
+// the previous / next car of the list as filtered, round from the last to the first: the full view's arrows, the
+// arrow keys, a swipe (and the phone's own ways): every layout goes through here
+export const goTo = (offset) => {
+  const next = stepIn(list, picked, offset);
+  if (!next || next.id === picked) return;
+  pick(next.id);
+};
+// a swipe sideways on a touch screen, outside the live car (which a drag turns), goes to the previous / next car
+const swipeOn = (el) => {
+  let start = null;
+  el.addEventListener('pointerdown', (e) => { start = e.pointerType !== 'mouse' && !e.target.closest('.sr-dpic, button') ? { x: e.clientX, y: e.clientY, id: e.pointerId } : null; });
+  const end = (e) => {
+    if (!start || e.pointerId !== start.id) return;
+    const dx = e.clientX - start.x, dy = e.clientY - start.y;
+    start = null;
+    if (e.type === 'pointerup' && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) goTo(dx < 0 ? 1 : -1); // (mostly sideways: a scroll of the panel is not one)
+  };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+};
 // Drive: the car picked AND the side on show (showroomData.js driveAs), and back to the menu
 const drive = (card) => {
   if (!driveAs(card, evilNow())) return;
   blip('menuPick');
   Showroom.close();
 };
-// the car lot (Crazey Jim's): closing it comes back here
+// the car lot (Crazey Jim's): closing it comes back here (the full view as it was)
 const toLot = (look) => {
-  closeSheet();
+  closeFilters();
+  ShowroomView.stop();
   panel.classList.add('hidden');
   Garage.open(side, () => Showroom.reshow()); // (the lot in the livery on show here)
   if (look) Garage.look(look);
 };
-// the next card along (the arrow keys)
+// the next card along in the cards (the arrow keys): two rows on a desktop, so left / right a column, up / down a row
+const perColumn = () => cards.length > 1 && cards[1].node.offsetLeft === cards[0].node.offsetLeft && !isPhone() ? 2 : 1;
 const step = (dir) => {
-  const i = cards.findIndex(c => c.data.id === picked), next = cards[Math.max(0, Math.min(cards.length - 1, i + dir))];
+  const i = cards.findIndex(c => c.data.id === picked), next = cards[i + dir] || (i < 0 ? cards[0] : null);
   if (!next) return;
   pick(next.data.id);
   next.node.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
@@ -328,18 +512,22 @@ const step = (dir) => {
 window.addEventListener('keydown', (e) => {
   if (!Showroom.isOpen || Garage.isOpen || panel.classList.contains('hidden') || e.ctrlKey || e.metaKey || e.altKey) return;
   if (document.querySelector('.menu-dialog:not(.hidden)')) return; // (a dialog's own keys)
-  const column = phone();
+  if (e.target?.matches?.('select') && e.code !== 'Escape') return; // (the sort list's own keys)
+  const column = isPhone(), rows = perColumn();
   switch (e.code) {
-    case 'Escape': if (detail.classList.contains('open')) closeSheet(); else Showroom.close(); break;
-    case 'ArrowLeft': case 'KeyA': if (!column) step(-1); else return; break;
-    case 'ArrowRight': case 'KeyD': if (!column) step(1); else return; break;
-    case 'ArrowUp': if (column) step(-1); else return; break;
-    case 'ArrowDown': if (column) step(1); else return; break;
+    case 'Escape': if (sheet.classList.contains('open')) closeFilters(); else if (full) closeFull(); else Showroom.close(); break;
+    case 'ArrowLeft': case 'KeyA': if (full) goTo(-1); else if (!column) step(-rows); else return; break;
+    case 'ArrowRight': case 'KeyD': if (full) goTo(1); else if (!column) step(rows); else return; break;
+    case 'ArrowUp': if (full) return; if (column || rows > 1) step(-1); else return; break;
+    case 'ArrowDown': if (full) return; if (column || rows > 1) step(1); else return; break;
     case 'KeyE': pickSide(!side); break;
+    case 'KeyF': if (full) return; toggleFilters(); break;
     case 'Enter': {
       const focused = document.activeElement;
-      if (focused && panel.contains(focused) && focused.matches('button:focus-visible') && !focused.classList.contains('sr-card')) return; // (a button reached by Tab: Enter presses it)
-      const card = cards.find(c => c.data.id === picked)?.data;
+      if (!full && focused?.matches?.('.sr-card') && panel.contains(focused)) { pick(focused.dataset.car); openFull(); break; } // (a card with the focus: its full view)
+      if (focused && panel.contains(focused) && focused.matches('button:focus-visible')) return; // (a button reached by Tab: Enter presses it)
+      if (!full) { openFull(); break; }
+      const card = list.find(c => c.id === picked);
       if (card) drive(card);
       break;
     }
@@ -358,26 +546,28 @@ export const Showroom = {
     side = !!Game.evil; // (the side being played)
     setViewSide(side);
     picked = (CAR && !CAR.silhouette ? CAR.id : null) || carInUse().id;
+    full = false;
     build();
     panel.classList.toggle('evil', side);
-    panel.classList.remove('hidden');
+    panel.classList.remove('hidden', 'full-up', 'filters-up');
     startScreen.classList.add('hidden');
     Nav.enter('showroom', () => this.close()); // (the back button closes it)
     fill();
     requestAnimationFrame(() => cards.find(c => c.data.id === picked)?.node.scrollIntoView({ block: 'nearest', inline: 'center' }));
   },
-  // back from the car lot: everything as it is now (a car bought there is ready to drive)
+  // back from the car lot: everything as it is now (a car bought there is ready to drive), the full view too
   reshow() {
     if (!this.isOpen) { startScreen.classList.remove('hidden'); return; }
     Game.inMenu = true;
     setViewSide(side); // (the car lot let go of its own side on closing)
     panel.classList.remove('hidden');
     startScreen.classList.add('hidden');
-    fill();
+    fill(false);
   },
   close() {
     if (!this.isOpen) return;
-    closeSheet();
+    closeFilters();
+    closeFull();
     this.isOpen = false;
     Nav.leave('showroom');
     Game.inMenu = false;
@@ -389,12 +579,24 @@ export const Showroom = {
     startScreen.classList.remove('hidden');
     window.dispatchEvent(new Event('carchange')); // (the menu's car card shows the car picked)
   },
-  // for a picture or a check: pick that car's card (and on a phone its sheet)
-  // for a picture or a check: the side on show (as the switch does), and what the live view shows
+  // for a picture or a check: the side on show (as the switch does), and what is shown
   side(evil) { pickSide(evil); },
-  get shown() { return { side: sideName(side), picked, live: ShowroomView.state, go: detail?.querySelector('.sr-go')?.textContent || null }; },
-  look(id, sheet = false) { if (cards.some(c => c.data.id === id)) { pick(id); if (sheet && phone()) openSheet(); cards.find(c => c.data.id === id).node.scrollIntoView({ block: 'nearest', inline: 'center' }); } },
+  get shown() {
+    return { side: sideName(side), picked, full, filters: !!sheet?.classList.contains('open'), filter: JSON.parse(JSON.stringify(filter)),
+      list: list.map(c => c.id), live: ShowroomView.state, go: full ? detail?.querySelector('.sr-go')?.textContent || null : null };
+  },
+  // pick that car's card (and with full, open its full view)
+  look(id, open = false) {
+    if (!cards.some(c => c.data.id === id)) return;
+    pick(id);
+    cards.find(c => c.data.id === id).node.scrollIntoView({ block: 'nearest', inline: 'center' });
+    if (open) openFull();
+  },
+  // a filter for this visit only (the address's &filter=: not remembered), before or after opening
+  useFilter(text) { filter = parseFilter(text); visitOnly = true; if (this.isOpen) fill(); },
+  filters(open = true) { if (open) openFilters(); else closeFilters(); },
+  goTo,
+  back() { if (full) closeFull(); },
 };
-// the live car is drawn only while it can be seen: the showroom up (not under the car lot), and on a phone held upright
-// only while its sheet is up
-ShowroomView.when(() => Showroom.isOpen && !Garage.isOpen && !panel.classList.contains('hidden') && (!phone() || !!detail?.classList.contains('open')));
+// the live car is drawn only while it can be seen: the showroom up (not under the car lot) with the full view up
+ShowroomView.when(() => Showroom.isOpen && full && !Garage.isOpen && !panel.classList.contains('hidden'));

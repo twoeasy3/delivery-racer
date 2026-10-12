@@ -54,11 +54,13 @@ export const TIERS = 5;
 // (No longer enforced: the owner, 12-Oct, CHECKLIST item 115, dropped the rule with the ECUs; scripts/.balance-check.mjs
 // had its tier ceilings removed. Kept as a figure for reference)
 export const NEXT_TIER_CAPS = { maxSpeed: 52, accel: 24, health: 450 };
-export const stars = (car) => car.tier ? '★'.repeat(car.tier) : ''; // (only the stars it has: no empty ones)
+export const stars = (car) => car.tier ? '★'.repeat(car.tier) : car.bespoke || car.event ? '★'.repeat(6) : ''; // (a Key car outside the tiers: the six magenta stars) // (only the stars it has: no empty ones)
 // (a 6-star car, earned rather than bought, has magenta stars: see EARNED_CARS)
 // (and an amphibious car's are sea green: a section of the garage of its own, see amphibiousCars)
 export const STAR_COLOURS = { gold: '#ffd23f', blue: '#4fa8ff', earned: '#ff5fd2', amphibious: '#35d6b4' };
-export const starColour = (car) => car.earned ? STAR_COLOURS.earned : car.amphibious ? STAR_COLOURS.amphibious : car.blue ? STAR_COLOURS.blue : STAR_COLOURS.gold;
+// (the Blueprint cars (evergreen) and the Key cars (Bespoke, event) have magenta stars like the earned ones: the owner, 12-Oct)
+export const isMagentaCar = (car) => !!car && (car.earned || car.evergreen || car.bespoke || car.event);
+export const starColour = (car) => isMagentaCar(car) ? STAR_COLOURS.earned : car.amphibious ? STAR_COLOURS.amphibious : car.blue ? STAR_COLOURS.blue : STAR_COLOURS.gold;
 // the Blue Star cars are in the garage once level CONFIG.blueStarsAfter is delivered (which opens the next)
 export const blueStarsOpen = () => tierHooks.blueOpen?.() ?? Progress.data.unlocked > CONFIG.blueStarsAfter;
 // ---- the level tiers (tiers.js): which tier a car is in, and the car rule on a level not yet beaten ----
