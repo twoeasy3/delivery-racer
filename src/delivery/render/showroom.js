@@ -163,7 +163,30 @@ const build = () => {
   on.addEventListener('click', () => by(1));
   row.addEventListener('scroll', arrows, { passive: true });
   // (a vertical wheel scrolls the rows sideways; in the column, the column scrolls as ever)
-  row.addEventListener('wheel', (e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && row.scrollWidth > row.clientWidth + 2) { row.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
+  // (smooth: each notch adds to a target the row eases towards, with the snap off while it moves: with the snap on, small
+  // steps were pulled back to the card's edge and the wheel felt stuck; a line-mode wheel counts as lines; a trackpad's sideways
+  // swipe is left to the browser)
+  let wheelTo = null, wheelRaf = 0, wheelIdle = 0;
+  let wheelAt = 0;
+  const easeWheel = (now) => {
+    const max = row.scrollWidth - row.clientWidth, goal = Math.max(0, Math.min(max, wheelTo)), gap = goal - row.scrollLeft;
+    const dt = Math.min(200, now - (wheelAt || now - 16)); // (by the clock, not the frame: the same on a slow screen)
+    wheelAt = now;
+    if (Math.abs(gap) < 0.5) { row.scrollLeft = goal; wheelRaf = 0; wheelAt = 0; return; }
+    row.scrollLeft += gap * (1 - Math.exp(-dt / 70));
+    wheelRaf = requestAnimationFrame(easeWheel);
+  };
+  row.addEventListener('wheel', (e) => {
+    if (!(Math.abs(e.deltaY) > Math.abs(e.deltaX) && row.scrollWidth > row.clientWidth + 2)) return;
+    e.preventDefault();
+    const dy = e.deltaMode === 1 ? e.deltaY * 40 : e.deltaMode === 2 ? e.deltaY * row.clientWidth : e.deltaY;
+    wheelTo = Math.max(0, Math.min(row.scrollWidth - row.clientWidth, (wheelRaf && wheelTo !== null ? wheelTo : row.scrollLeft) + dy * 1.6));
+    row.classList.add('wheeling'); // (the snap off first: it pulled a small step straight back)
+    row.scrollLeft += dy * 1.6 * 0.3; // (a share at once, so it answers on the instant; the rest eases in)
+    clearTimeout(wheelIdle);
+    wheelIdle = setTimeout(() => row.classList.remove('wheeling'), 220);
+    if (!wheelRaf) wheelRaf = requestAnimationFrame(easeWheel);
+  }, { passive: false });
   // (a mouse drags it too; a drag is not a click on the card it began on)
   let drag = null;
   row.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse' && e.button === 0 && row.scrollWidth > row.clientWidth + 2) drag = { x: e.clientX, left: row.scrollLeft, moved: 0 }; });
