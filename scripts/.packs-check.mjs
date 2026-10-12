@@ -443,13 +443,13 @@ try {
     const plainJet = t7.all.reduce((n, cards) => n + cards.filter(c => c.car === 'jetcar' && !c.featured).length, 0);
     check(!t7.all.some(cards => cards.some(c => c.featured && c.car === 'jetcar')) && plainJet > 0,
       'a maxed car is out of the featured slots only: its blueprint still drops in the regular slots (' + plainJet + ' times in ' + NW + ' packs)');
-    // every one exhausted: blueprint entries back at their declared weights; keys never; nothing left: a filler
+    // every one exhausted: nothing featured drops (no duplicates, no key); the last slot is an ordinary filler
     const allMax = () => true;
     const t8 = tally(ell, 18e6, { maxed: allMax });
-    check(['gullwing', 'jetcar', 'dragster'].every(id => Math.abs(share(t8, id) - 1 / 3) < 0.025) && !t8.last.filler,
-      'every featured car maxed: they still drop (duplicates), at their declared weights (' + ['gullwing', 'jetcar', 'dragster'].map(id => pctS(share(t8, id))).join(', ') + ')');
+    check(t8.last.filler === NW && !t8.all.some(cards => cards.some(c => c.featured)),
+      'every featured car maxed: nothing featured drops (no duplicates); the last slot is an ordinary filler');
     const t9 = tally(llb, 19e6, { maxed: allMax, owned: ownedKey });
-    check(!t9.all.some(cards => cards.some(c => c.key)) && ['rocketfin', 'swancar', 'solarracer'].every(id => Math.abs(share(t9, id) - 1 / 3) < 0.025), 'every entry exhausted, a key among them: the blueprint entries back at their weights, the key never');
+    check(t9.last.filler === NW && !t9.all.some(cards => cards.some(c => c.key || c.featured)), 'every entry exhausted, a key among them: no featured card, no key; the last slot a filler');
     const keysOnly = [{ car: 'monowheel', key: true }, { car: 'swancar', key: true, weight: 2 }];
     const t10 = tally(keysOnly, 20e6, { owned: () => true });
     check(t10.last.filler === NW && !t10.all.some(cards => cards.some(c => c.key || c.featured)) && t10.all.every(cards => rank(cards.at(-1).rarity) >= rank('epic')),

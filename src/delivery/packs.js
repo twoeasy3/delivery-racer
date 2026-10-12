@@ -218,14 +218,9 @@ export const weightRatio = (weights) => {
 // entry, its car at its max ECU), or null
 export const exhaustedOf = (f, { owned = ownsNow, maxed = maxedNow } = {}) => (f.key ? (owned(f.car.id) ? 'owned' : null) : (maxed(f.car) ? 'maxed' : null));
 // the entries in play: those not exhausted, at their declared weights (so the shares renormalise: 1:1:1 with one maxed
-// is 1:1). Every one exhausted: the blueprint entries come back at their declared weights (duplicates; a key never);
-// none left (all keys, all owned): none, and the last slot is a filler. { live, reverted }
-export const featuredLive = (declared, marks = {}) => {
-  const live = declared.filter(f => !exhaustedOf(f, marks));
-  if (live.length || !declared.length) return { live, reverted: false };
-  const back = declared.filter(f => !f.key);
-  return { live: back, reverted: back.length > 0 };
-};
+// is 1:1). Every one exhausted: NONE is in play and the featured slot is an ordinary filler card (the owner, 12-Oct: dropping
+// maxed cars "as duplicates" was "categorically untrue"; such a pack cannot be bought either). { live, reverted } (reverted: always false now)
+export const featuredLive = (declared, marks = {}) => ({ live: declared.filter(f => !exhaustedOf(f, marks)), reverted: false });
 // an upgraded slot: each featured entry hit at featuredChance (its own roll), one picked from the hits BY WEIGHT. The
 // chance the slot becomes each entry, worked out exactly (every subset S of the others' hits:
 // c * sum over S of P(S) * w / (w + w(S))); past MAX_EXACT entries, the weighted share of "any hit" (an approximation)
