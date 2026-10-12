@@ -3,8 +3,10 @@
 // blueprint car: X blueprints), the save round trip (the save code and the stored save), an old save's defaults (every
 // car it owns at its max ECU, a blueprint car it does not own locked), the figures a run drives with and its respawn
 // time, races and Car Swap untouched, and a replay recorded at an ECU played back identically (at that ECU, whatever the
-// save says by then), an old one (no ECU in its header) at the max. The second set (CHECKLIST item 126): agility, delivery,
-// composure and crossing by the same equal steps (a higher ECU never worse; the max = today's figures), weight flat; the
+// save says by then), an old one (no ECU in its header) at the max. THE BUDGET (CHECKLIST item 171; ecu.js STEPS,
+// TOP_SPEED_CAP, FLOORS): every stat of every ECU by its per-stat step and floor, a higher ECU never worse, every ECU1 at
+// or above the floors, top speed ECU1 >= max / 1.25, the step sizes as designed, composure by tier (1 star 1.3, 2 stars
+// 1.15, the rest 1). The second set (CHECKLIST item 126): agility, delivery, composure, crossing by the ECU, weight flat; the
 // player's car takes them at its ECU (Player.agility / crossing / mass / delivery / composure, Social.dangerTime); a flaming
 // package's damage and a gift's standing scale with delivery; a shoulder run busts sooner at ECU1 than at the max.
 //   node scripts/.ecu-check.mjs
@@ -14,7 +16,7 @@ const g = await boot({ tiers: false }); // (tiers off: a tier level would put th
 let failures = 0;
 const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' : '  FAIL  ') + what); };
 try {
-  const { Ecu, LADDER, STEPS, RESPAWN, NEW_STATS, DELIVERY } = await g.load('ecu.js');
+  const { Ecu, LADDER, STEPS, RESPAWN, NEW_STATS, DELIVERY, FLOORS, TOP_SPEED_CAP } = await g.load('ecu.js');
   const { Social } = await g.load('social.js');
   const { Packages } = await g.load('packages.js');
   const { Replay } = await g.load('replay.js');
@@ -41,42 +43,65 @@ try {
     Ecu.rarity(car('gullwing')) === 'epic' && Ecu.rarity(car('pony')) === 'epic' && Ecu.rarity(car('jetcar')) === 'legendary' && Ecu.rarity(car('hellrod')) === null,
   'card rarity: none for a 1-gold key car or a special car, common 2-4 gold, uncommon 5 gold and 1-3 blue, epic 4-5 blue, the evergreen cars their own (epic; legendary for three)');
 
-  // ---- equal steps from the maxed figures, and the respawn of each ECU
-  const bad = [], respawnBad = [];
+  // ---- THE BUDGET (ecu.js STEPS, TOP_SPEED_CAP, FLOORS; CHECKLIST item 171): from the maxed figures, per stat, ECU1 =
+  // max x (1 - f (N - 1)) held to its floor, then equal steps to the max; respawn 5.5 s at ECU1, 0.5 s less each ECU
+  const today = { maxSpeed: c => c.maxSpeed, accel: c => c.accel, health: c => c.health, agility: c => c.agility ?? 1, delivery: c => c.delivery ?? DELIVERY[c.id] ?? 1,
+    composure: c => c.composure ?? 1, crossing: c => c.crossing ?? C.railCrossing.usual, weight: c => c.mass ?? 1 };
+  const tol = { maxSpeed: 0.051, accel: 0.051, health: 0.51 };
+  const expect = (c, key, k, n) => {
+    const max = today[key](c);
+    if (key === 'weight' || n <= 1) return max;
+    const fl = FLOORS[key] || {};
+    const first = Math.min(max, Math.max(max * (1 - (CARS.includes(c) ? STEPS.lot : STEPS.blueprint)[key] * (n - 1)), fl.min ?? -Infinity, max * (fl.share ?? 0)));
+    return first + (max - first) * (k - 1) / (n - 1);
+  };
+  const bad = [], respawnBad = [], worse = [], floorBad = [], capBad = [];
   for (const c of roster) {
-    const list = ECUS[c.id].ecus, n = list.length, f = CARS.includes(c) ? STEPS.lot : STEPS.blueprint;
-    const top = list[n - 1];
-    if (top.maxSpeed !== c.maxSpeed || top.accel !== c.accel || top.health !== c.health) bad.push(c.id + ' max ECU is not its figures');
+    const list = ECUS[c.id].ecus, n = list.length;
     list.forEach((e, i) => {
-      const m = 1 - f * (n - (i + 1));
-      if (Math.abs(e.maxSpeed - c.maxSpeed * m) > 0.051 || Math.abs(e.accel - c.accel * m) > 0.051 || Math.abs(e.health - c.health * m) > 0.51) bad.push(c.id + ' ECU' + (i + 1));
+      for (const key of Object.keys(today)) {
+        if (typeof e[key] !== 'number') { bad.push(c.id + ' ECU' + (i + 1) + ' has no ' + key); continue; }
+        if (Math.abs(e[key] - expect(c, key, i + 1, n)) > (tol[key] ?? 0.0006)) bad.push(c.id + ' ECU' + (i + 1) + ' ' + key + ' ' + e[key] + ' (want ' + expect(c, key, i + 1, n).toFixed(3) + ')');
+        if (i && e[key] < list[i - 1][key]) worse.push(c.id + ' ECU' + (i + 1) + ' ' + key);
+      }
       if (e.respawn !== RESPAWN.first - RESPAWN.step * i) respawnBad.push(c.id + ' ECU' + (i + 1) + ' ' + e.respawn);
-      if (i && !(e.maxSpeed > list[i - 1].maxSpeed && e.respawn < list[i - 1].respawn)) bad.push(c.id + ' ECU' + (i + 1) + ' not above ECU' + i);
+      if (i && !(e.respawn < list[i - 1].respawn)) worse.push(c.id + ' ECU' + (i + 1) + ' respawn');
     });
+    for (const key of Object.keys(today)) if (list[n - 1][key] !== today[key](c)) bad.push(c.id + ' max ECU ' + key + ' ' + list[n - 1][key] + ' (its own ' + today[key](c) + ')');
+    const e1 = list[0];
+    for (const [key, fl] of Object.entries(FLOORS)) {
+      const lowest = Math.min(today[key](c), Math.max(fl.min ?? -Infinity, today[key](c) * (fl.share ?? 0)));
+      if (e1[key] < lowest - (tol[key] ?? 0.0006)) floorBad.push(c.id + ' ECU1 ' + key + ' ' + e1[key] + ' < ' + lowest);
+    }
+    if (e1.maxSpeed * TOP_SPEED_CAP < c.maxSpeed - 1e-9) capBad.push(c.id + ' ' + e1.maxSpeed + ' of ' + c.maxSpeed);
   }
-  check(!bad.length, 'equal steps: ECU k of N = max x (1 - f (N - k)), f ' + STEPS.lot + ' (car lot) / ' + STEPS.blueprint + ' (blueprint, event); the max ECU = today\'s figures; each ECU above the last' + (bad.length ? ': NOT ' + bad.slice(0, 8).join(', ') : ''));
+  check(!bad.length && Object.keys(NEW_STATS).join() === 'agility,delivery,composure,crossing,weight' && !NEW_STATS.weight.scales,
+    'the budget: every ECU of every car is its max x (1 - f (N - 1)) at ECU1 (f per stat and kind, held to the floors), equal steps to the max; the max ECU = the car\'s own figures (its DELIVERY, its composure); weight flat' +
+    (bad.length ? ': NOT ' + bad.slice(0, 8).join(', ') : ''));
+  check(!worse.length, 'a higher ECU is NEVER worse in any stat (each figure at or above the last ECU\'s; respawn strictly shorter)' + (worse.length ? ': NOT ' + worse.slice(0, 8).join(', ') : ''));
+  check(!floorBad.length, 'every ECU1 at or above the floors (health ' + FLOORS.health.min + ', accel ' + FLOORS.accel.min + ', agility ' + FLOORS.agility.min + ', composure ' + FLOORS.composure.min + ' = CONFIG.composureFloor ' + C.composureFloor + ')' +
+    (floorBad.length ? ': NOT ' + floorBad.slice(0, 8).join(', ') : ''));
+  check(!capBad.length && TOP_SPEED_CAP === 1.25 && FLOORS.composure.min === C.composureFloor, 'top speed: every car\'s ECU1 at least its max / ' + TOP_SPEED_CAP + ' (the owner\'s 25% limit)' + (capBad.length ? ': NOT ' + capBad.join(', ') : ''));
   check(!respawnBad.length && Ecu.respawnTime(car('muscle'), 1) === 5.5 && Ecu.respawnTime(car('muscle'), 5) === 3.5 && Ecu.respawnTime(car('sport'), 2) === 5,
     'respawn: ECU1 5.5 s, 0.5 s less each ECU above (ECU5 3.5 s)' + (respawnBad.length ? ': NOT ' + respawnBad.slice(0, 6).join(', ') : ''));
+  // the steps as designed: a 5-ECU blueprint/key car's ECU1 at 82% of its top speed and 60% of its accel (68% agility); a 5-ECU car lot car's 88% and 80%
+  const share = (id, key) => Ecu.stats(car(id), 1)[key] / Ecu.stats(car(id), Ecu.max(car(id)))[key];
+  const shares = { mid: [share('midnight', 'maxSpeed'), share('midnight', 'accel'), share('midnight', 'agility'), share('midnight', 'composure')], muscle: [share('muscle', 'maxSpeed'), share('muscle', 'accel'), share('muscle', 'agility')] };
+  check(STEPS.blueprint.maxSpeed === 0.045 && STEPS.blueprint.accel === 0.1 && STEPS.lot.maxSpeed === 0.03 && STEPS.lot.accel === 0.05 &&
+    Math.abs(shares.mid[0] - 0.82) < 0.005 && Math.abs(shares.mid[1] - 0.6) < 0.005 && Math.abs(shares.mid[2] - 0.68) < 0.005 && Math.abs(shares.mid[3] - 0.6) < 0.005 &&
+    Math.abs(shares.muscle[0] - 0.88) < 0.005 && Math.abs(shares.muscle[1] - 0.8) < 0.005 && Math.abs(shares.muscle[2] - 0.84) < 0.005 &&
+    Object.values(STEPS).every(s => Object.keys(s).every(k => k === 'maxSpeed' || s[k] > s.maxSpeed)) && Object.keys(STEPS.lot).every(k => STEPS.lot[k] < STEPS.blueprint[k]),
+  'step sizes as designed: the Midnight Coupe (blueprint, 5 ECUs) at ECU1 ' + shares.mid.map(v => Math.round(v * 100) + '%').join(' / ') + ' of its max (top speed / accel / agility / composure); the Muscle Car (car lot, 5) ' +
+    shares.muscle.map(v => Math.round(v * 100) + '%').join(' / ') + '; every stat steps more than top speed; a car lot car less than a blueprint car in every stat');
   check(Ecu.stats(car('sleeper'), 1).maxSpeed < Ecu.stats(car('sleeper'), 5).maxSpeed && Ecu.stats(car('bubble'), 1).maxSpeed === car('bubble').maxSpeed,
     'a sleeper wagon ECU1 ' + Ecu.stats(car('sleeper'), 1).maxSpeed + ' m/s, ECU5 ' + Ecu.stats(car('sleeper'), 5).maxSpeed + '; a Bubble Car (ECU1 only) at its figures');
-
-  // ---- the second set: agility, delivery, composure, crossing (by the ECU), weight (flat)
-  const today = { agility: c => c.agility ?? 1, delivery: c => c.delivery ?? DELIVERY[c.id] ?? 1, composure: () => 1, crossing: c => c.crossing ?? C.railCrossing.usual, weight: c => c.mass ?? 1 };
-  const bad2 = [];
-  for (const c of roster) {
-    const list = ECUS[c.id].ecus, n = list.length, f = CARS.includes(c) ? STEPS.lot : STEPS.blueprint;
-    for (const [key, of] of Object.entries(today)) {
-      if (list[n - 1][key] !== of(c)) bad2.push(c.id + ' max ECU ' + key + ' ' + list[n - 1][key] + ' (today ' + of(c) + ')');
-      list.forEach((e, i) => {
-        if (typeof e[key] !== 'number') bad2.push(c.id + ' ECU' + (i + 1) + ' has no ' + key);
-        else if (key === 'weight' ? e[key] !== of(c) : Math.abs(e[key] - of(c) * (1 - f * (n - i - 1))) > 0.0006) bad2.push(c.id + ' ECU' + (i + 1) + ' ' + key + ' ' + e[key]);
-        if (i && key !== 'weight' && !(e[key] > list[i - 1][key])) bad2.push(c.id + ' ECU' + (i + 1) + ' ' + key + ' not above ECU' + i);
-      });
-    }
-  }
-  check(!bad2.length && Object.keys(NEW_STATS).join() === 'agility,delivery,composure,crossing,weight' && !NEW_STATS.weight.scales,
-    'the second set: agility, delivery, composure, crossing by equal steps, each ECU above the last, the max = the car\'s (agility, crossing, its DELIVERY figure, composure 1); weight (mass) the same at every ECU' +
-    (bad2.length ? ': NOT ' + bad2.slice(0, 8).join(', ') : ''));
+  // composure by tier (CHECKLIST item 171): the slow cars sit longer on the shoulder; every 1-star car 1.3, 2-star 1.15, 3 and up 1
+  const tiered = roster.filter(c => c.tier >= 1 && c.tier <= 5);
+  const compOf = (c) => ECUS[c.id].ecus.at(-1).composure;
+  const compBad = tiered.filter(c => compOf(c) !== (c.tier === 1 ? 1.3 : c.tier === 2 ? 1.15 : 1)).map(c => c.id + ' ' + compOf(c));
+  const lowest = (t) => Math.min(...tiered.filter(c => c.tier === t).map(compOf)), highest = (t) => Math.max(...tiered.filter(c => c.tier === t).map(compOf));
+  check(!compBad.length && lowest(1) > highest(2) && lowest(2) > highest(3) && [3, 4, 5].every(t => highest(t) === 1) && roster.filter(c => !(c.tier >= 1 && c.tier <= 5)).every(c => compOf(c) === 1),
+    'composure at the max by tier: every 1-star car 1.3 (3.9 s), 2-star 1.15 (3.45 s), 3 to 5 stars and the Key / special cars 1 (3 s); tier 1 > tier 2 > the rest' + (compBad.length ? ': NOT ' + compBad.join(', ') : ''));
   const noDelivery = roster.filter(c => c.delivery == null && DELIVERY[c.id] == null);
   const deliveries = roster.map(c => NEW_STATS.delivery.of(c));
   check(!noDelivery.length && Math.min(...deliveries) >= 0.6 && Math.max(...deliveries) <= 1.6 && DELIVERY.postvan > DELIVERY.sport && DELIVERY.milkfloat > DELIVERY['earned-f1'],
