@@ -53,11 +53,11 @@ const statsAt = (car, level) => {
   return s ? { ...figures(car), ...s } : figures(car);
 };
 
-// every car on the showroom's floor, in its order (not those earned cars that are off; a secret one owned, the City Bus, last)
+// every car on the showroom's floor, in its order (the earned cars that are OFF too, with the "Not available" overlay; a secret one owned, the City Bus, last)
 // the floor's order (the owner, 12-Oct: "the tier sort ... should just mix all"): by the number of STARS, whatever their colour (gold,
 // blue, sea green and magenta cars sit together, 1 star to 6), the cars with no stars (the Key cars) after them, a secret one last
 const rank = (car) => Object.values(SECRET_CARS).includes(car) ? 90 : car.tier >= 1 ? car.tier : 7;
-export const showroomCars = () => [...CARS, ...(FILLER_CARS || []), ...EVENT_CARS, ...BESPOKE_CARS, ...EARNED_CARS.filter(car => !car.off),
+export const showroomCars = () => [...CARS, ...(FILLER_CARS || []), ...EVENT_CARS, ...BESPOKE_CARS, ...EARNED_CARS,
   ...Object.values(SECRET_CARS).filter(car => Progress.owns(car.id))]
   .sort((a, b) => rank(a) - rank(b) || (a.price || 0) - (b.price || 0) || a.name.localeCompare(b.name));
 
@@ -128,11 +128,14 @@ export const carCard = (car, evil = false) => {
 //   earned     a special 6-star car not yet earned: a trophy, the level it is earned on. NEVER the word key (the owner)
 // The full reason stays in the full view's panel and the card's tooltip; these words are the card's, short.
 // Gives { kind, title, line, price?, have?, need? } or null. title / line may hold {tier:n} tokens (richTiers).
-export const OVERLAY_KINDS = ['key', 'earned', 'unpurchased', 'tier', 'blueprint'];
+export const OVERLAY_KINDS = ['key', 'earned', 'unpurchased', 'tier', 'blueprint', 'unavailable'];
 const priceWords = (price) => '$' + (Number.isInteger(price) ? String(price) : price.toFixed(2));
+// unavailable: genuinely unobtainable (the owner, 12-Oct): "Not available at the moment": an earned car that is OFF (the Courier Special:
+// no way to earn it for now). A Key car whose key can't be had now keeps the KEY overlay (the owner: they "should use the key overlay")
 export const overlayOf = (card) => {
   if (!card || card.unlocked) return null;
   const car = card.car;
+  if (car.earned && car.off) return { kind: 'unavailable', title: 'Not available', line: 'at the moment' };
   if (card.hidden) return { kind: 'tier', title: 'Tier locked', line: card.tier ? 'Opens with the {tier:' + card.tier + '} tier' : 'Opens with a later tier' };
   if (card.blueprint) {
     const need = card.perEcu, have = Math.max(0, Math.min(need, card.blueprints));

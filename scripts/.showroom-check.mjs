@@ -18,7 +18,7 @@ try {
   const floor = showroomCars(), ids = floor.map(car => car.id);
   check(new Set(ids).size === ids.length, 'every car on the floor once (' + ids.length + ')');
   check(CARS.every(car => ids.includes(car.id)) && EVENT_CARS.every(car => ids.includes(car.id)), 'every garage car and event car is there');
-  check(EARNED_CARS.every(car => ids.includes(car.id) === !car.off), 'the earned cars, but not one that is off (the Courier Special)');
+  check(EARNED_CARS.every(car => ids.includes(car.id)), 'the earned cars, including the one that is off (the Courier Special: shown, not available at the moment)');
   // every card: pips within the maximum, blueprints within the step, a reason exactly when it is locked
   const cards = floor.map(car => carCard(car));
   const bad = cards.filter(c => !(c.max >= 1 && c.ecu >= 0 && c.ecu <= c.max && c.have >= 0 && c.have <= c.toNext && c.toNext >= 1)
@@ -226,7 +226,7 @@ async function overlays(g, check) {
   const filler = D.showroomCars().find(car => car.evergreen && !D.carCard(car).hidden);
   if (filler) (Progress.data.blueprints ||= {})[filler.id] = 2; // (a blueprint car part-way: its bar on the overlay)
   const cards = D.showroomCars().map(car => D.carCard(car, false));
-  const want = (c) => c.unlocked ? null : c.hidden ? 'tier' : c.blueprint ? 'blueprint'
+  const want = (c) => c.unlocked ? null : c.car.earned && c.car.off ? 'unavailable' : c.hidden ? 'tier' : c.blueprint ? 'blueprint'
     : CARS.includes(c.car) && !c.car.evergreen ? (c.forSale ? 'unpurchased' : 'tier')
       : c.car.earned || Object.values(SECRET_CARS).includes(c.car) ? 'earned' : 'key';
   const kindOf = (c) => D.overlayOf(c)?.kind ?? null;
@@ -235,7 +235,13 @@ async function overlays(g, check) {
   const counts = {};
   for (const c of cards) { const k = kindOf(c) || 'none'; counts[k] = (counts[k] || 0) + 1; }
   console.log('        overlays: ' + Object.entries(counts).map(([k, n]) => k + ' ' + n).join(', '));
-  check([...D.OVERLAY_KINDS, 'none'].every(k => counts[k] > 0), 'all five kinds and "none" are on a fresh floor with the tiers on');
+  check([...D.OVERLAY_KINDS.filter(k => k !== 'unavailable'), 'none'].every(k => counts[k] > 0), 'all five kinds and "none" are on a fresh floor with the tiers on');
+  // "Not available at the moment" (the owner, 12-Oct): a genuinely unobtainable car, the Courier Special (an earned car that is off); a Key car
+  // whose key cannot be had now keeps the KEY overlay
+  const courier = cards.find(c => c.car.earned && c.car.off), cometCard = D.carCard(g.cars.carById('silvercomet'), false);
+  const ovCourier = courier && D.overlayOf(courier);
+  check(!!courier && ovCourier?.kind === 'unavailable' && /Not available/.test(ovCourier.title) && /at the moment/.test(ovCourier.line), 'the Courier Special (off, earned): "' + ovCourier?.title + ' ' + ovCourier?.line + '"');
+  check(D.overlayOf(cometCard)?.kind === 'key', 'a Key car keeps the key overlay, its key obtainable or not');
   const say = (ov) => ov ? ov.title + ' / ' + ov.line : '';
   const earned = cards.filter(c => kindOf(c) === 'earned');
   check(earned.length > 0 && earned.every(c => !/\bkey/i.test(say(D.overlayOf(c)) + ' ' + D.cardTip(c))), 'an earned car\'s overlay and tooltip never say key (' + earned.slice(0, 2).map(c => '"' + say(D.overlayOf(c)) + '"').join(', ') + ')');

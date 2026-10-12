@@ -173,6 +173,8 @@
 #showroom .ov-unpurchased, #showroom .sr-ov.unpurchased { --ov: #ff9a3c; }
 #showroom .ov-tier, #showroom .sr-ov.tier { --ov: #8fb3d9; }
 #showroom .ov-blueprint, #showroom .sr-ov.blueprint { --ov: #3f9dff; }
+#showroom .ov-unavailable, #showroom .sr-ov.unavailable { --ov: #9aa3b2; } /* (not available at the moment: a cool slate, an hourglass) */
+#showroom .ov-unavailable .sr-img { filter: grayscale(.85) brightness(.8); }
 #showroom .sr-card[class*=" ov-"] { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rar) 50%, transparent), 0 6px 18px rgba(0, 0, 0, .45);
   background: linear-gradient(165deg, color-mix(in srgb, var(--ov) 20%, #161c29) 0%, #121824 50%, #0c1018 100%); }
 #showroom .sr-card[class*=" ov-"]::after { background: radial-gradient(closest-side, color-mix(in srgb, var(--ov) 22%, transparent), transparent); }
@@ -397,3 +399,11 @@
 @media (prefers-reduced-motion: reduce) {
   #showroom .sr-card, #showroom .sr-detail, #showroom .sr-shade { transition: none; }
 }
+
+/* the Shop button in the header and the full view (the owner, 12-Oct): the Shop's magenta, a gem and the word */
+#showroom .sr-shop { display: flex; align-items: center; gap: 8px; padding: 0 16px; min-height: 40px; border: 0; border-radius: 10px; cursor: pointer; color: #fff;
+  background: linear-gradient(135deg, #e0309f, #7a2bd8); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25), 0 3px 10px rgba(0, 0, 0, .4); font: italic 900 17px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; }
+#showroom .sr-shop:hover { filter: brightness(1.12); }
+#showroom .sr-shop:active { transform: translateY(1px); }
+#showroom .sr-shop-gem { width: 14px; height: 14px; border-radius: 3px; transform: rotate(45deg); background: linear-gradient(135deg, #ffd0f0, #ff6fd0); box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .55); }
+@media (max-width: 700px) { #showroom .sr-shop { order: 5; padding: 0 12px; min-height: 40px; } #showroom .sr-shop-word { font-size: 15px; } #showroom .sr-shop-full { order: 0; padding: 0 10px; } #showroom .sr-shop-full .sr-shop-word { display: none; } }
