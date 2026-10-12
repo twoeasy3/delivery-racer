@@ -4,7 +4,7 @@
 // wheels (held on the floor), squashed parts (on the floor, stretched upright) and the sprung body, and then landed at
 // the bounce's compression (0.16 s) and rebound (0.31 s) peaks: the lowest point of its wheels must not move (planted),
 // and its body must move by about the bounce's offset (down, then up). Each car is listed with what was found and how
-// (wheels / wheels+squash / squash / named / rigid). No picture: what it looks like is only seen in a browser
+// (wheels / wheels+squash / named; none: a vehicle with no springs, which does not bounce at all). No picture: what it looks like is only seen in a browser
 // (?showroom&look=<id>&full&bounce=0.16).
 //   node scripts/.suspension-check.mjs            (add a car id to see only that car's parts)
 import { createServer } from 'vite';
@@ -84,13 +84,13 @@ try {
     const r = at(rest), d = at(down), u = at(up), f = at(fall), r1 = at(rest);
     if (only) console.log(JSON.stringify({ r, d, u, f, r1, ground: s.ground }));
     tally[s.how] = (tally[s.how] || 0) + 1;
-    if (!s.wheels) noWheels.push(car.id + ' (' + s.how + ')');
-    const planted0 = !planted.length || Math.abs(d.w - r.w) < 1e-4 && Math.abs(u.w - r.w) < 1e-4 && Math.abs(f.w - r.w - fall.y) < 1e-4;
+    if (s.how === 'none') noWheels.push(car.id);
+    const planted0 = s.how === 'none' || !planted.length || Math.abs(d.w - r.w) < 1e-4 && Math.abs(u.w - r.w) < 1e-4 && Math.abs(f.w - r.w - fall.y) < 1e-4;
     // the body: its middle down and up by the offset (as eased by a low body's bump stop), and never into the floor; one
-    // with nothing to bounce on (rigid) squashed onto the floor instead
-    const body0 = s.how === 'rigid' ? Math.abs(d.b - r.b) < 1e-4 && u.b - r.b > 0.01 && d.m < r.m
+    // with no springs (no wheels on the floor, or its model's noBounce) not moved at all
+    const body0 = s.how === 'none' ? [d, u, f].every(x => x.b === r.b && x.m === r.m && x.w === r.w && !x.y && !x.pitch)
       : Math.abs(d.m - r.m - d.y) < 0.012 && Math.abs(u.m - r.m - u.y) < 0.012 && d.y < -0.003 && u.y > 0.01 && d.b > -0.002;
-    const back0 = Math.abs(r1.w - r.w) < 1e-6 && Math.abs(r1.b - r.b) < 1e-6 && s.planted.every(node => node.matrixAutoUpdate) && body.scale.y === 1;
+    const back0 = Math.abs(r1.w - r.w) < 1e-6 && Math.abs(r1.b - r.b) < 1e-6 && s.planted.every(node => node.matrixAutoUpdate);
     const line = car.id.padEnd(16) + ' ' + s.how.padEnd(13) + ' wheels ' + String(s.wheels).padStart(2) + ', planted ' + String(s.planted.length).padStart(2)
       + ' nodes (' + planted.length + ' meshes), squashed ' + s.squash.length + ', sprung ' + sprung.length + ' | body travel ' + (d.m - r.m).toFixed(3) + ' / +' + (u.m - r.m).toFixed(3)
       + ' (clearance ' + s.clearance.toFixed(2) + ', lowest at compression ' + d.b.toFixed(3) + '), wheels ' + (d.w - r.w).toFixed(4);
@@ -103,8 +103,8 @@ try {
       for (const part of s.squash) console.log('          squash:  ' + part.node.geometry?.type + (part.stretch ? ' (stretched)' : ' (rides)') + ' top ' + part.top.toFixed(2));
     }
   }
-  console.log('        how: ' + JSON.stringify(tally) + (noWheels.length ? '; no wheels found: ' + noWheels.join(', ') : ''));
-  check(!bad.length, 'every car: its wheels stay on the floor at the compression and rebound peaks and fall with it before it lands, its body moves by about the offset, all as before at rest' + (bad.length ? ' (not: ' + bad.join('; ') + ')' : ''));
+  console.log('        how: ' + JSON.stringify(tally) + (noWheels.length ? '; no bounce: ' + noWheels.join(', ') : ''));
+  check(!bad.length, 'every car: none moves if it has no springs; the rest: its wheels stay on the floor at the compression and rebound peaks and fall with it before it lands, its body moves by about the offset, all as before at rest' + (bad.length ? ' (not: ' + bad.join('; ') + ')' : ''));
 } finally {
   await server.close();
 }

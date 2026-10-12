@@ -308,7 +308,7 @@ export const IDEA_MODELS_3 = {
       rod(group, trim, 0.018, [side * 0.24, y, z], [side * 0.22, 0.86, z * 2.4]);
     }
     group.userData = {
-      body, planted: [], // (no springs: the carriage hangs from rollers on the hoop's rims, so it lands as one piece: render/carsuspension.js)
+      body, noBounce: true, // (no springs: the carriage hangs from rollers on the hoop's rims; it lands with no bounce: render/carsuspension.js)
       animate: (t) => { hoopGroup.rotation.x = t * 1.6; driver.position.y = 0.96 + Math.abs(Math.sin(t * 3.2)) * 0.012; },
     };
     return group;

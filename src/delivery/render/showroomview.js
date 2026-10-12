@@ -13,7 +13,8 @@
 // It LANDS when it comes on screen (a new car: the full view opened, or the next / previous car): a 0.05 m drop onto
 // the floor and a damped bounce on its springs, the shadow tightening as it lands (render/carbounce.js, about 0.8 s):
 // the BODY sinks onto its wheels and rises off them while the wheels stay on the floor (render/carsuspension.js, which
-// finds every model's wheels however it was built). Reduced motion, or a dark silhouette: only a fade-in.
+// finds every model's wheels however it was built). Reduced motion, a dark silhouette, or a vehicle with no springs (no
+// wheels on the floor, or the model's noBounce: the Monowheel, the hovercraft, the snowcat...): only a fade-in.
 import * as THREE from 'three';
 import { bounceOffset, bounceDone } from './carbounce.js';
 import { prepareSuspension, applySuspension } from './carsuspension.js';
@@ -65,7 +66,7 @@ const build = () => {
   body.add(model);
   turn.add(body);
   scene.add(turn);
-  prepareSuspension(model); // (its wheels and its sprung body found, once, as it was built: render/carsuspension.js)
+  const springs = prepareSuspension(model); // (its wheels and its sprung body found, once, as it was built: render/carsuspension.js)
   // its size over the whole of its animation (a part that moves must not go out of the picture)
   model.updateMatrixWorld(true);
   const bounds = new THREE.Box3().setFromObject(model);
@@ -89,7 +90,7 @@ const build = () => {
   shadow.renderOrder = -1;
   turn.add(shadow);
   const camera = new THREE.PerspectiveCamera(FOV, 1.6, 0.1, 400);
-  Object.assign(v, { scene, turn, body, model, camera, floor, shadow, shadowScale: [size.x * 1.25, size.z * 1.2], extra: [floorGeometry, floorMaterial, shadowMaterial], rxz, height: size.y });
+  Object.assign(v, { scene, turn, body, model, camera, still: springs.how === 'none', floor, shadow, shadowScale: [size.x * 1.25, size.z * 1.2], extra: [floorGeometry, floorMaterial, shadowMaterial], rxz, height: size.y });
 };
 
 // the camera stood back far enough for the whole car, whichever way it has turned, in a picture of this shape
@@ -131,7 +132,7 @@ const draw = (now) => {
   // never swallows the drop; the bounce plays out over the frames actually drawn)
   if (v.landAt === null || v.landAt === undefined) { v.landAt = now; v.landT = 0; } else v.landT += Math.min(dt, 1 / 30);
   const hold = ShowroomView.hold, since = hold >= 0 ? Math.min(hold, v.landT / ShowroomView.slow) : v.landT / ShowroomView.slow;
-  const o = bounceOffset(since, still || v.dark);
+  const o = bounceOffset(since, still || v.dark || v.still); // (v.still: a vehicle with no springs, e.g. the Monowheel: a fade-in only)
   const t = still ? STILL.t : now / 1000;
   v.model.userData.animate?.(t);
   applySuspension(v.model, v.body, o); // (the body on its springs, the wheels kept on the floor: render/carsuspension.js)

@@ -9,11 +9,13 @@
 //   WHEELS (planted): a mesh that touches the floor and is a disc on its side (as high as it is long, thinner across:
 //     a tyre, whatever made it: the models' wheel() helpers, a CylinderGeometry of a model's own, a torus), with every
 //     mesh inside that disc (hub, spokes, whitewall, tread blocks); a flat decal lying on the floor (an underglow) too.
-//     A model may name them instead: userData.planted = [nodes]; [] lands it as one piece (the Monowheel: its carriage
-//     hangs from rollers on the hoop's rims, and would part from them or run into them on springs).
-//   SQUASHED: anything else that stands on the floor (a hovercraft's skirt, a snowcat's tracks, an awning's poles, a
-//     boat's hull, a saucer's feet): kept on the floor at its foot and stretched or squashed upright so its top goes with
-//     the body; what is inside it (a track's road wheels) rides at its height. No gap and nothing through the floor.
+//     A model may name them instead: userData.planted = [nodes].
+//   NO BOUNCE (how 'none'): a vehicle with no springs to show: one with no wheels on the floor (the hovercraft, the
+//     snowcat on its tracks, the saucer, the jetboat) or one whose model says so, userData.noBounce (the Monowheel: its
+//     carriage hangs from rollers on the hoop's rims). It does not move at all: the caller lands it as reduced motion
+//     does, with a plain fade-in (render/showroomview.js), and applySuspension leaves it be.
+//   SQUASHED: anything else on a wheeled car that stands on the floor (the camper's awning poles): kept on the floor at
+//     its foot and stretched or squashed upright so its top goes with the body; what is inside it rides at its height.
 //   SPRUNG: the rest, which moves with `body`.
 // What is moved is the highest node whose meshes are all planted (a wheel's own group, which animate() may spin): its
 // matrix is set from its own position, rotation and scale (as animate leaves them) with the body's motion taken back off,
@@ -97,10 +99,10 @@ export const prepareSuspension = (model) => {
   for (const node of nodes) for (let up = node.parent; up && up !== model; up = up.parent) if (nodes.has(up)) nodes.delete(node); // (one inside another: the outer one)
   const sprungMeshes = meshes.filter(m => !planted.has(m.node) && !squashed.has(m.node)), sprung = sprungMeshes.map(m => m.node);
   const clearance = Math.min(...sprungMeshes.map(m => m.box.min.y)) - ground; // (how far its body is off the floor)
-  const how = named ? (named.length ? 'named' : 'rigid') : wheels.length ? (feet.length ? 'wheels+squash' : 'wheels') : feet.length ? 'squash' : 'rigid';
+  const how = model.userData.noBounce || !wheels.length ? 'none' : named ? 'named' : feet.length ? 'wheels+squash' : 'wheels';
   return (model.userData.suspension = {
     planted: [...nodes], squash, sprung, wheels: wheels.length, plantedMeshes: [...planted], how,
-    ground, clearance, height: all.max.y - ground, half: (all.max.z - all.min.z) / 2, active: false, y: 0, pitch: 0, // (y, pitch: the body's, as last applied)
+    ground, clearance, half: (all.max.z - all.min.z) / 2, active: false, y: 0, pitch: 0, // (y, pitch: the body's, as last applied)
   });
 };
 
@@ -120,21 +122,14 @@ const hold = (node, wheelY, ground, k) => {
 
 export const applySuspension = (model, body, o) => {
   const s = prepareSuspension(model);
+  if (s.how === 'none') { body.position.y = body.rotation.x = body.rotation.z = s.y = s.pitch = 0; return; } // (no bounce)
   // a long car pitches less (its ends move no more than a 3 m car's), and its body never goes down onto the floor: the
   // travel down is eased off short of it (a bump stop) where the body hangs low
   const pitch = o.pitch * Math.min(1, 1.6 / s.half);
   let y = o.y;
-  if (y < 0 && s.how !== 'rigid') { const room = Math.max(0.004, s.clearance - 0.01 - Math.abs(pitch) * s.half); y = -room * Math.tanh(-y / room); }
+  if (y < 0) { const room = Math.max(0.004, s.clearance - 0.01 - Math.abs(pitch) * s.half); y = -room * Math.tanh(-y / room); }
   body.position.y = s.y = y;
   body.rotation.set(s.pitch = pitch, 0, o.roll);
-  body.scale.y = 1;
-  if (s.how === 'rigid') body.rotation.set(s.pitch = 0, 0, 0); // (nothing to pitch on)
-  if (s.how === 'rigid' && y < 0) { // (nothing to bounce on: squashed a touch upright onto the floor instead of into it)
-    const ground = v1.set(0, s.ground, 0).applyMatrix4(model.matrix).y, k = 1 + o.y / s.height;
-    body.scale.y = k;
-    body.position.y = ground * (1 - k);
-    s.y = o.y;
-  }
   const still = !o.y && !o.pitch && !o.roll && !o.wheelY;
   if (still) {
     if (s.active) { for (const node of s.planted) node.matrixAutoUpdate = true; for (const part of s.squash) part.node.matrixAutoUpdate = true; s.active = false; }
