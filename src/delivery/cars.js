@@ -32,7 +32,9 @@
 //   mass       how heavy it is in a shove (default 1): heavier knocks others aside and is knocked less
 //   delivery   (optional) its package efficacy, a share (default 1): a Good gift's standing gain and an Evil flaming
 //              package's damage are multiplied by it (packages.js)
-//   composure       (optional) its shoulder fuse, a share of CONFIG.dangerTime (default 1: Social.dangerTime)
+//   composure  (optional) its shoulder fuse, a share of CONFIG.dangerTime (default 1: Social.dangerTime). The slow cars
+//              sit longer (CHECKLIST item 171: they take longer to get past traffic on the shoulder): every 1-star car
+//              1.3, every 2-star car 1.15 (gold, blue or sea green; car lot or blueprint car); 3 stars and up none (1)
 //   (maxSpeed, accel, health, agility, crossing, delivery and composure are the car's figures at its MAXED ECU: a lower ECU's
 //   are in ecus.json, lower; mass is the same at every ECU, as `weight` there. See ecu.js, carStats)
 //   shotBack   (optional) how much further back the studio camera (?cine=car) stands for its picture, for
@@ -161,37 +163,37 @@ export const CARS = [
   // them; the Commuter and Darkvan were 'hatch' and 'coupe': see Progress)
   // ---- tier 1
   { id: 'commuter', tier: 1, name: 'Commuter', price: 0, color: 0xff7a1a, evilColor: 0x151515, fixedLivery: true, model: 'commuter',
-    maxSpeed: 24, accel: 10, crossing: 0.6, health: 85, hw: 0.85, hl: 1.85, height: 1.45 },
+    composure: 1.3, maxSpeed: 24, accel: 10, crossing: 0.6, health: 85, hw: 0.85, hl: 1.85, height: 1.45 },
   { id: 'junker', tier: 1, name: 'Junker', price: 30, color: 0x6b7343, evilColor: 0x8a4a2a, fixedLivery: true, model: 'junker',
-    maxSpeed: 25, accel: 9.5, crossing: 0.7, health: 100, hw: 1.0, hl: 2.5, height: 1.95 },
+    composure: 1.3, maxSpeed: 25, accel: 9.5, crossing: 0.7, health: 100, hw: 1.0, hl: 2.5, height: 1.95 },
   { id: 'darkvan', tier: 1, name: 'Darkvan', price: 80, color: 0x9be37a, evilColor: 0x161616, fixedLivery: true, model: 'darkvan',
-    maxSpeed: 24, accel: 8.5, crossing: 0.65, health: 150, hw: 1.05, hl: 2.45, height: 2.4 },
+    composure: 1.3, maxSpeed: 24, accel: 8.5, crossing: 0.65, health: 150, hw: 1.05, hl: 2.45, height: 2.4 },
   // ---- tier 1, Blue Stars
   { id: 'postvan', tier: 1, blue: true, name: 'Post Van', price: 270, color: 0xd8262b, evilColor: 0xe0a81c, fixedLivery: true, model: 'postvan',
-    maxSpeed: 24.5, accel: 9, crossing: 0.65, health: 160, hw: 0.9, hl: 2.1, height: 1.85 },
+    composure: 1.3, maxSpeed: 24.5, accel: 9, crossing: 0.65, health: 160, hw: 0.9, hl: 2.1, height: 1.85 },
   { id: 'keitruck', tier: 1, blue: true, name: 'Kei Truck', price: 290, color: 0xf2f2ee, evilColor: 0x6cb4d8, fixedLivery: true, model: 'keitruck',
-    maxSpeed: 24.5, accel: 10, agility: 1.3, crossing: 0.75, health: 120, hw: 0.74, hl: 1.7, height: 1.75 },
+    composure: 1.3, maxSpeed: 24.5, accel: 10, agility: 1.3, crossing: 0.75, health: 120, hw: 0.74, hl: 1.7, height: 1.75 },
   { id: 'mini', tier: 1, blue: true, name: 'Mini', price: 320, color: 0xc0212b, evilColor: 0xe8731c, fixedLivery: true, model: 'mini',
-    maxSpeed: 25.5, accel: 12, agility: 1.4, crossing: 0.4, health: 95, hw: 0.74, hl: 1.5, height: 1.35,
+    composure: 1.3, maxSpeed: 25.5, accel: 12, agility: 1.4, crossing: 0.4, health: 95, hw: 0.74, hl: 1.5, height: 1.35,
     trait: 'slim', perk: 'Slips through gaps: scraping down the side of another car costs it nothing' },
   // ---- tier 2
   { id: 'lovebus', tier: 2, name: 'Love Bus', price: 130, color: 0x3fae4a, evilColor: 0xd8262b, fixedLivery: true, model: 'lovebus',
-    maxSpeed: 24, accel: 7, crossing: 0.55, health: 165, hw: 1.0, hl: 2.3, height: 2.1 },
+    composure: 1.15, maxSpeed: 24, accel: 7, crossing: 0.55, health: 165, hw: 1.0, hl: 2.3, height: 2.1 },
   { id: 'wagon', tier: 2, name: 'Family Wagon', price: 160, color: 0x8cc8f0, evilColor: 0xf28cc0, fixedLivery: true, model: 'wagon',
-    maxSpeed: 26, accel: 9, crossing: 0.6, health: 140, hw: 1.05, hl: 2.4, height: 1.9 },
+    composure: 1.15, maxSpeed: 26, accel: 9, crossing: 0.6, health: 140, hw: 1.05, hl: 2.4, height: 1.9 },
   { id: 'sport', tier: 2, name: 'Sportscompact', price: 190, color: 0x39ff14, evilColor: 0x151515, fixedLivery: true, model: 'sport',
-    maxSpeed: 31, accel: 13, crossing: 0.35, health: 80, hw: 0.85, hl: 1.9, height: 1.1 },
+    composure: 1.15, maxSpeed: 31, accel: 13, crossing: 0.35, health: 80, hw: 0.85, hl: 1.9, height: 1.1 },
   { id: 'lowrider', tier: 2, name: 'Lowrider', price: 220, color: 0xb026ff, evilColor: 0x2fd6c6, fixedLivery: true, model: 'lowrider',
-    maxSpeed: 27, accel: 9, crossing: 0.15, health: 120, hw: 1.0, hl: 2.5, height: 1.1 },
+    composure: 1.15, maxSpeed: 27, accel: 9, crossing: 0.15, health: 120, hw: 1.0, hl: 2.5, height: 1.1 },
   // ---- tier 2, Blue Stars
   { id: 'hothatch', tier: 2, blue: true, name: 'Hot Hatch', price: 420, color: 0xf2f2f2, evilColor: 0xf2c418, fixedLivery: true, model: 'hothatch',
-    maxSpeed: 32, accel: 14, agility: 1.3, crossing: 0.4, health: 105, hw: 0.86, hl: 2.0, height: 1.42 },
+    composure: 1.15, maxSpeed: 32, accel: 14, agility: 1.3, crossing: 0.4, health: 105, hw: 0.86, hl: 2.0, height: 1.42 },
   { id: 'ute', tier: 2, blue: true, name: 'Ute', price: 440, color: 0x1f4f9a, evilColor: 0x8fd13a, fixedLivery: true, model: 'ute',
-    maxSpeed: 31.5, accel: 11, crossing: 0.8, health: 175, mass: 1.3, hw: 0.95, hl: 2.45, height: 1.45 },
+    composure: 1.15, maxSpeed: 31.5, accel: 11, crossing: 0.8, health: 175, mass: 1.3, hw: 0.95, hl: 2.45, height: 1.45 },
   { id: 'buggy', tier: 2, blue: true, name: 'Beach Buggy', price: 460, color: 0x1fb5c9, evilColor: 0x7a2fb8, fixedLivery: true, model: 'buggy',
-    maxSpeed: 31.5, accel: 13, agility: 1.35, crossing: 0.95, health: 100, hw: 0.85, hl: 1.75, height: 1.3 },
+    composure: 1.15, maxSpeed: 31.5, accel: 13, agility: 1.35, crossing: 0.95, health: 100, hw: 0.85, hl: 1.75, height: 1.3 },
   { id: 'liftedtruck', tier: 2, blue: true, name: 'Lifted Truck', price: 490, color: 0x1d5bbf, evilColor: 0xc9a66b, fixedLivery: true, model: 'liftedtruck',
-    maxSpeed: 30.5, accel: 10, crossing: 0.95, health: 190, mass: 1.6, hw: 1.12, hl: 2.75, height: 2.65 },
+    composure: 1.15, maxSpeed: 30.5, accel: 10, crossing: 0.95, health: 190, mass: 1.6, hw: 1.12, hl: 2.75, height: 2.65 },
   // ---- tier 3
   { id: 'hearse', tier: 3, name: 'Hearse', price: 260, color: 0x151515, evilColor: 0xf2f2f2, fixedLivery: true, model: 'hearse',
     maxSpeed: 33, accel: 10, crossing: 0.4, health: 170, hw: 1.0, hl: 2.8, height: 1.65 },
@@ -264,10 +266,10 @@ export const CARS = [
   // (the ids are short: each is in a full save's cookie. See progress.js)
   // (May's Herald: a little sixties convertible under sail. Light, slow, and it turns on a sixpence)
   { id: 'herald', tier: 1, amphibious: true, name: 'Sailing Herald', price: 60, color: 0xd9c9a8, evilColor: 0x6b2a1a, fixedLivery: true, model: 'herald',
-    maxSpeed: 23, accel: 9, agility: 1.2, crossing: 0.5, health: 90, hw: 0.8, hl: 1.95, height: 1.0, draft: 0.5, shotBack: 1.5, perk: AMPHIBIOUS_PERK },
+    composure: 1.3, maxSpeed: 23, accel: 9, agility: 1.2, crossing: 0.5, health: 90, hw: 0.8, hl: 1.95, height: 1.0, draft: 0.5, shotBack: 1.5, perk: AMPHIBIOUS_PERK },
   // (the Transporter: a square-nosed van lashed between two yellow floats. Wide, steady, tough for its tier)
   { id: 'floatvan', tier: 2, amphibious: true, name: 'Float Van', price: 180, color: 0x2f7fc4, evilColor: 0x7a4a10, fixedLivery: true, model: 'transporter',
-    maxSpeed: 26, accel: 8, crossing: 0.6, health: 160, mass: 1.3, hw: 1.3, hl: 2.3, height: 2.0, draft: 0.85, perk: AMPHIBIOUS_PERK },
+    composure: 1.15, maxSpeed: 26, accel: 8, crossing: 0.6, health: 160, mass: 1.3, hw: 1.3, hl: 2.3, height: 2.0, draft: 0.85, perk: AMPHIBIOUS_PERK },
   // (the Toybota: a pickup with an outboard where its tailgate was. The all-rounder)
   { id: 'toybota', tier: 3, amphibious: true, name: 'Toybota', price: 310, color: 0xc8322b, evilColor: 0x1f5a4a, fixedLivery: true, model: 'toybota',
     maxSpeed: 34, accel: 11, crossing: 0.9, health: 190, hw: 1.0, hl: 2.5, height: 1.6, perk: AMPHIBIOUS_PERK },
@@ -453,23 +455,23 @@ export const FILLER_CARS = [
   // ---- tier 1 (24 to 25 m/s, 8.5 to 10, 85 to 150 health)
   filler(1, { id: 'bubble', name: 'Bubble Car', basedOn: 'BMW Isetta', model: 'bubble', color: 0x8fc9dd, evilColor: 0x8a1f2b,
     hw: 0.69, hl: 1.15, height: 1.34, note: 'The whole front is the door. The smallest thing on the road.',
-    maxSpeed: 24, accel: 8.5, agility: 1.4, crossing: 0.4, health: 85, mass: 1, sound: 'mini' }),
+    composure: 1.3, maxSpeed: 24, accel: 8.5, agility: 1.4, crossing: 0.4, health: 85, mass: 1, sound: 'mini' }),
   filler(1, { id: 'milkfloat', name: 'Milk Float', basedOn: "Smith's / Wales & Edwards electric milk float", model: 'milkfloat', color: 0x2f67b1, evilColor: 0x7d1d1d,
     hw: 0.8, hl: 1.85, height: 2.05, note: 'Electric, open-sided and stacked with crates. Slow, and it rattles.',
-    maxSpeed: 24, accel: 8.5, agility: 1, crossing: 0.5, health: 120, mass: 1.2, sound: 'keitruck' }),
+    composure: 1.3, maxSpeed: 24, accel: 8.5, agility: 1, crossing: 0.5, health: 120, mass: 1.2, sound: 'keitruck' }),
   filler(1, { id: 'tuktuk', name: 'Tuk-Tuk', basedOn: 'Bajaj RE auto-rickshaw', model: 'tuktuk', color: 0xf0c020, evilColor: 0x2b2b30,
     hw: 0.7, hl: 1.5, height: 1.9, note: 'One wheel up front, a bench under a canvas roof, and the driver leaning on the bars.',
-    maxSpeed: 24.5, accel: 9, agility: 1.35, crossing: 0.3, health: 85, mass: 1, sound: 'mini' }),
+    composure: 1.3, maxSpeed: 24.5, accel: 9, agility: 1.35, crossing: 0.3, health: 85, mass: 1, sound: 'mini' }),
   // ---- tier 2 (24 to 31 m/s, 7 to 13, 80 to 165)
   filler(2, { id: 'woody', name: 'Woody Wagon', basedOn: '1949 Ford "Woody" wagon', model: 'woody', color: 0x7a2432, evilColor: 0x1f3a2e,
     hw: 0.91, hl: 2.6, height: 1.68, note: 'Timber down its sides and a surfboard on the roof.',
-    maxSpeed: 26, accel: 8, agility: 1, crossing: 0.55, health: 150, mass: 1.3, sound: 'wagon' }),
+    composure: 1.15, maxSpeed: 26, accel: 8, agility: 1, crossing: 0.55, health: 150, mass: 1.3, sound: 'wagon' }),
   filler(2, { id: 'pandacoupe', name: 'Panda Coupe', basedOn: 'Toyota Sprinter Trueno AE86', model: 'pandacoupe', color: 0xf2f2ee, evilColor: 0xb81f24,
     hw: 0.82, hl: 2.1, height: 1.33, note: 'White over black, lamps that pop up, and a cup of water on the dashboard.',
-    maxSpeed: 31, accel: 12, agility: 1.45, crossing: 0.4, health: 110, mass: 1, sound: 'hothatch' }),
+    composure: 1.15, maxSpeed: 31, accel: 12, agility: 1.45, crossing: 0.4, health: 110, mass: 1, sound: 'hothatch' }),
   filler(2, { id: 'keiroadster', name: 'Kei Roadster', basedOn: 'Honda Beat', model: 'keiroadster', color: 0xf2d21f, evilColor: 0x181820,
     hw: 0.66, hl: 1.65, height: 1.15, note: 'A mid-engined two-seater that is barely wider than a door, with no roof to speak of.',
-    maxSpeed: 30.5, accel: 13, agility: 1.45, crossing: 0.3, health: 80, mass: 1, sound: 'miata' }),
+    composure: 1.15, maxSpeed: 30.5, accel: 13, agility: 1.45, crossing: 0.3, health: 80, mass: 1, sound: 'miata' }),
   // ---- tier 3 (32 to 38 m/s, 9 to 15, 110 to 215)
   filler(3, { id: 'fireengine', name: 'Fire Engine', basedOn: 'American LaFrance pumper', model: 'fireengine', color: 0xc8161d, evilColor: 0x25252b,
     hw: 1.25, hl: 4.5, height: 2.9, note: 'Red, with a ladder on top, hose reels, a pump panel and its lights going.',
