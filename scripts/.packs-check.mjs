@@ -243,7 +243,7 @@ try {
     let differ = true;
     for (let i = 0; i < 200; i++) { const ids2 = draw('ten', { random: dice(6e6 + i) }).map(c => c.car), v = variedPoses(ids2); if (v.some((p, j) => j > 0 && p === v[j - 1])) differ = false; }
     const same = variedPoses(['lovebus', 'lovebus', 'lovebus', 'lovebus', 'lovebus', 'lovebus']);
-    check(differ && same.every((p, j) => POSE_NAMES.includes(p) && (j === 0 || p !== same[j - 1])), 'a pack\'s cards: neighbouring cards never share a pose (200 10-packs; three of one car: ' + same.join(', ') + ')');
+    check(differ && same.every((p, j) => POSE_NAMES.includes(p) && (j === 0 || p !== same[j - 1])), 'a pack\'s cards: neighbouring cards never share a pose (200 10-packs; six of one car: ' + same.join(', ') + ')');
   }
 
   // the pack screens' pictures: every one asked for in the GOOD livery, never a side that follows the player (the
