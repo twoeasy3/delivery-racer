@@ -129,7 +129,8 @@ const noBlueprintsWhy = (car) => {
 
 // what getting the car itself is called (the owner, 12-Oct: a Garage car has no key): a Garage car is PURCHASED (Crazey Jim's), an earned
 // car EARNED, and only a Key car (Bespoke, event) has a KEY
-export const ownWord = (car) => car.bespoke || car.event ? { label: 'Key', have: 'You have its key', none: 'No way to get its key', again: 'You have its key already', owned: 'owned' }
+export const ownWord = (car) => car.evergreen ? { label: 'Unlock', have: 'You have unlocked it', none: 'No way to unlock it', again: 'You have unlocked it already', owned: 'unlocked' }
+  : car.bespoke || car.event ? { label: 'Key', have: 'You have its key', none: 'No way to get its key', again: 'You have its key already', owned: 'owned' }
   : car.earned ? { label: 'Earn', have: 'You have earned it', none: 'No way to earn it', again: 'You have earned it already', owned: 'earned' }
     : { label: 'Purchase', have: 'You own it', none: 'No way to buy it', again: 'You own it already', owned: 'owned' };
 // the key sources of a car (a key car): the car lot, a level's par, an event's prize, a Bespoke key card in packs
