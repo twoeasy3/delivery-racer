@@ -43,10 +43,10 @@ const GROUPS = {
     files: [/src\/delivery\/levels\/.*\.json$/],
   },
   tiers: {
-    about: 'Level tiers and progression: what opens and when, the car rule (a tier, a level\'s own list, a car lock), events (their times and rewards), labels, medals, saves, milestones, card packs (pools, odds, awards, the save), the Shop (its offers, buying), the Blue Star and earned cars\' figures',
+    about: 'Level tiers and progression: what opens and when, the car rule (a tier, a level\'s own list, a car lock), events (their times and rewards), labels, medals, saves, milestones, card packs (pools, odds, awards, the save), the Shop (its offers, buying), the showroom\'s cards, the Blue Star and earned cars\' figures',
     seconds: 110,
-    tests: [t('.tiers-check.mjs'), t('.levelrules-check.mjs'), t('.events-check.mjs'), t('.earned-check.mjs'), t('.balance-check.mjs'), t('.save-check.mjs'), t('.milestones-check.mjs'), t('.packs-check.mjs'), t('.shop-check.mjs')],
-    files: [/tiers|progress\.js|milestones|menus|menu2|garage|cars\.js|levelSchema|events|packs|ecu|shop/],
+    tests: [t('.tiers-check.mjs'), t('.levelrules-check.mjs'), t('.events-check.mjs'), t('.earned-check.mjs'), t('.balance-check.mjs'), t('.save-check.mjs'), t('.milestones-check.mjs'), t('.packs-check.mjs'), t('.shop-check.mjs'), t('.showroom-check.mjs')],
+    files: [/tiers|progress\.js|milestones|menus|menu2|garage|cars\.js|levelSchema|events|packs|ecu|shop|showroom/],
   },
   cars: {
     about: 'The cars: traits, the tank, the ideas as cars (48 placeholders), mystery effects on the Super cars, the auto brake strength; the ECUs (ecu.js, ecus.json: the ladder, equal steps, respawn times, key and blueprint unlocking, the save, old saves, replays at an ECU)',

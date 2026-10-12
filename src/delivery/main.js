@@ -66,6 +66,7 @@ import './render/packs.js';
 import './render/shop.js'; // (the Shop: card packs for a placeholder currency, ?shop / ?shopcash=<n> / ?debug)
 import './horn.js';
 import { Garage } from './render/garage.js';
+import { Showroom } from './render/showroom.js';
 import { Sound } from './render/audio.js';
 import { Social } from './social.js';
 import { CAR, lendCar, superOf, ownedAmphibious, carStats } from './cars.js';
@@ -112,6 +113,20 @@ if (params.get('garage') !== null) {
   // &click=<selector>: that control pressed once the garage is up (&click=%23garageAction on an unowned car: its buy
   // sheet; &click=.view-pick%20.view-btn: the Sort list), for a picture of what it opens
   if (params.get('click')) params.get('click').split('|').forEach((selector, i) => setTimeout(() => document.querySelector(selector)?.click(), 50 + i * 50)); // (several, with | between)
+}
+// ?showroom opens the showroom (render/showroom.js: where a car is picked; ?garage is the car lot, Crazey Jim's);
+// &look=sport picks that car's card (&sheet: and opens its sheet on a phone); &bp=sport:7,hotrod:3 gives those
+// blueprints for the visit (nothing is saved)
+if (params.get('showroom') !== null) {
+  if (params.get('bp')) {
+    Progress.noSave = true;
+    for (const token of params.get('bp').split(',')) {
+      const [id, n] = token.split(':');
+      (Progress.data.blueprints ||= {})[id] = Number(n) || 0;
+    }
+  }
+  Showroom.open();
+  if (params.get('look')) Showroom.look(params.get('look'), params.get('sheet') !== null);
 }
 // ?screensaver starts the screensaver straight away (with ?ff=5 as above); ?racewatch the race one
 const autostart = params.get('autostart');

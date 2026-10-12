@@ -1,0 +1,237 @@
+/* The showroom (render/showroom.js): where a car is picked. A desktop (or a phone on its side): a header, one ROW of car
+   cards scrolled sideways, and the detail of the card picked under it. A phone held upright: a COLUMN of cards scrolled
+   down, and the detail a sheet that slides up over it. A card's frame is its rarity's colour (--rar). Everything is
+   under #showroom; the accent is Good's gold or Evil's red, as on the menu. */
+#showroom {
+  --accent: #ffd23f; --accent-ink: #1c1500; --accent-glow: rgba(255, 210, 63, .45);
+  --panel: rgba(20, 25, 36, .92); --panel-2: rgba(34, 41, 56, .94); --line: rgba(255, 255, 255, .12); --ink-dim: rgba(255, 255, 255, .64);
+  --display: "Bahnschrift", "DIN Alternate", "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
+  --rar: #9fb0c4;
+  z-index: 20; display: flex; flex-direction: column; gap: 10px; align-items: stretch; justify-content: flex-start; text-align: left;
+  padding: 10px max(18px, env(safe-area-inset-right)) 12px max(18px, env(safe-area-inset-left));
+  background: #0a0e15; color: #fff; overflow: hidden; font-size: 14px; touch-action: manipulation;
+}
+#showroom.hidden { display: none; }
+#showroom.evil { --accent: #ff4a33; --accent-ink: #fff; --accent-glow: rgba(255, 64, 40, .5); }
+#showroom > * { position: relative; z-index: 1; min-width: 0; min-height: 0; }
+#showroom button { font: inherit; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; color: inherit; cursor: pointer; }
+#showroom button:disabled { cursor: default; }
+#showroom :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+#showroom p { margin: 0; max-width: none; opacity: 1; line-height: 1.35; }
+#showroom h1, #showroom h2 { margin: 0; }
+
+/* the backdrop: a showroom floor, lit from above */
+#showroom .sr-backdrop { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  background:
+    radial-gradient(70% 45% at 50% 0%, rgba(120, 150, 210, .22), transparent 70%),
+    radial-gradient(40% 40% at 90% 100%, rgba(255, 210, 63, .08), transparent 70%),
+    repeating-linear-gradient(90deg, transparent 0 140px, rgba(255, 255, 255, .025) 140px 142px),
+    linear-gradient(180deg, #121826 0%, #0a0e15 60%, #07090e 100%); }
+#showroom.evil .sr-backdrop { background:
+    radial-gradient(70% 45% at 50% 0%, rgba(220, 70, 50, .2), transparent 70%),
+    repeating-linear-gradient(90deg, transparent 0 140px, rgba(255, 255, 255, .025) 140px 142px),
+    linear-gradient(180deg, #1a1012 0%, #0c0a0e 60%, #07090e 100%); }
+
+/* ---- the header: back, the title, how many cars, the bank, the filter, and the way to the car lot ---- */
+#showroom .sr-top { flex: 0 0 auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+#showroom .sr-back { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px 0 10px; border-radius: 8px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line);
+  font: 700 14px/1 system-ui, sans-serif; }
+#showroom .sr-back span:first-child { font: 700 26px/1 var(--display); margin-top: -3px; }
+#showroom .sr-back:hover { box-shadow: inset 0 0 0 1px var(--accent); }
+#showroom .sr-title h1 { font: italic 800 34px/1 var(--display); font-stretch: condensed; letter-spacing: .03em; text-transform: uppercase; text-shadow: 0 2px 0 rgba(0, 0, 0, .5); }
+#showroom .sr-title p { font: 700 11px/1.2 system-ui, sans-serif; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); margin-top: 3px; }
+#showroom .sr-count { margin-left: auto; font: 700 14px/1 var(--display); color: var(--ink-dim); letter-spacing: .04em; }
+#showroom .sr-count b { font-size: 22px; color: #fff; }
+#showroom .sr-bank { display: flex; align-items: baseline; gap: 6px; font: 700 22px/1 var(--display); color: var(--accent); font-variant-numeric: tabular-nums; }
+#showroom .sr-bank small { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); }
+#showroom .sr-filter { display: flex; gap: 2px; padding: 3px; border-radius: 8px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); }
+#showroom .sr-filter button { padding: 7px 12px; border-radius: 6px; font: 700 12px/1 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); }
+#showroom .sr-filter button.on { background: var(--accent); color: var(--accent-ink); }
+#showroom .sr-lot { position: relative; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 7px 18px 7px 16px; min-height: 46px;
+  background: linear-gradient(100deg, #e8341c, #ff8a1c); color: #fff; clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+  box-shadow: 0 4px 18px rgba(255, 90, 30, .35); transition: filter .15s, transform .1s; }
+#showroom .sr-lot:hover { filter: brightness(1.12); }
+#showroom .sr-lot:active { transform: translateY(1px); }
+#showroom .sr-lot-sign { font: italic 900 21px/1 var(--display); letter-spacing: .02em; text-transform: uppercase; text-shadow: 0 2px 0 rgba(120, 20, 0, .6); }
+#showroom .sr-lot small { font: 700 10px/1 system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; opacity: .92; }
+
+/* ---- the body: the row of cards, and the detail under it ---- */
+#showroom .sr-body { flex: 1 1 auto; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+#showroom .sr-rowbox { position: relative; flex: 0 0 auto; display: flex; }
+#showroom .sr-row { flex: 1 1 auto; min-width: 0; display: flex; align-items: stretch; gap: 12px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
+  scrollbar-width: none; scroll-snap-type: x proximity; padding: 10px 4px 12px; touch-action: pan-x; }
+#showroom .sr-row::-webkit-scrollbar { display: none; }
+#showroom .sr-row.dragging { cursor: grabbing; scroll-snap-type: none; user-select: none; }
+#showroom .sr-row.dragging .sr-card { cursor: grabbing; }
+#showroom .sr-arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; width: 42px; height: 64px; border-radius: 8px;
+  font: 700 36px/1 var(--display); color: #fff; background: rgba(14, 18, 26, .82); box-shadow: inset 0 0 0 1px var(--line), 0 4px 14px rgba(0, 0, 0, .5); }
+#showroom .sr-arrow:hover { background: rgba(30, 38, 54, .96); box-shadow: inset 0 0 0 1px var(--accent), 0 4px 14px rgba(0, 0, 0, .5); }
+#showroom .sr-arrow[hidden] { display: none; }
+#showroom .sr-arrow.back { left: -8px; }
+#showroom .sr-arrow.on { right: -8px; }
+
+/* a card: the rarity's frame and glow, its tag at the top left, the stars at the top right, the car, then its name,
+   ECU pips and blueprints */
+#showroom .sr-card { --h: clamp(250px, 34vh, 330px); flex: 0 0 calc(var(--h) * .78); height: var(--h); scroll-snap-align: start; position: relative; display: flex; flex-direction: column;
+  padding: 0; border-radius: 12px; overflow: hidden; text-align: left;
+  background: linear-gradient(165deg, color-mix(in srgb, var(--rar) 30%, #1a2232) 0%, #141a26 46%, #0d1119 100%);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--rar) 75%, transparent), 0 6px 18px rgba(0, 0, 0, .45);
+  transition: transform .15s, box-shadow .15s, filter .15s; }
+#showroom .sr-card::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--rar); z-index: 2; }
+#showroom .sr-card::after { content: ''; position: absolute; left: 10%; right: 10%; top: 44%; height: 26%; border-radius: 50%; z-index: 0;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--rar) 35%, transparent), transparent); pointer-events: none; }
+#showroom .sr-card > * { position: relative; z-index: 1; }
+#showroom .sr-card:hover { transform: translateY(-3px); }
+#showroom .sr-card.picked { transform: translateY(-5px); box-shadow: inset 0 0 0 3px var(--accent), 0 0 0 2px var(--accent), 0 10px 26px var(--accent-glow); }
+#showroom .sr-tag { position: absolute; left: 0; top: 4px; z-index: 2; padding: 4px 14px 4px 9px; font: italic 800 11px/1 var(--display); letter-spacing: .1em; text-transform: uppercase;
+  background: var(--rar); color: #0b0f16; clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+#showroom .sr-stars { position: absolute; right: 9px; top: 9px; z-index: 2; font-size: 14px; letter-spacing: .02em; text-shadow: 0 1px 2px rgba(0, 0, 0, .8); }
+#showroom .sr-pic { flex: 1 1 auto; min-height: 0; margin: 26px 6px 0; background: center 60% / contain no-repeat; }
+#showroom .sr-pic.silhouette, #showroom .sr-dpic.silhouette { filter: brightness(0) drop-shadow(0 0 1px rgba(255, 255, 255, .35)); }
+#showroom .sr-info { display: flex; flex-direction: column; gap: 6px; padding: 8px 11px 11px; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, .45)); }
+#showroom .sr-name { font: italic 800 17px/1.05 var(--display); font-stretch: condensed; letter-spacing: .02em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#showroom .sr-ecu { display: flex; align-items: center; gap: 6px; }
+#showroom .sr-ecu small { font: 800 10px/1 system-ui, sans-serif; letter-spacing: .12em; color: var(--ink-dim); }
+#showroom .sr-ecu em { margin-left: auto; font: 700 12px/1 var(--display); font-style: normal; color: var(--ink-dim); }
+#showroom .sr-pips { display: flex; gap: 3px; }
+#showroom .sr-pips i { width: 15px; height: 8px; transform: skewX(-20deg); background: rgba(255, 255, 255, .1); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .28); }
+#showroom .sr-pips i.on { background: color-mix(in srgb, var(--rar) 70%, #fff); box-shadow: 0 0 6px color-mix(in srgb, var(--rar) 70%, transparent); }
+#showroom .sr-bp { display: flex; align-items: center; gap: 6px; font: 700 11px/1 system-ui, sans-serif; color: var(--ink-dim); }
+#showroom .sr-bp.none { font-weight: 600; font-style: italic; opacity: .7; }
+#showroom .sr-bp-icon { font-size: 12px; color: #6fb6ff; }
+#showroom .sr-bp-track { flex: 1 1 auto; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+#showroom .sr-bp-track i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #3f8cff, #6fd0ff); }
+#showroom .sr-bp.maxed .sr-bp-track i { background: linear-gradient(90deg, var(--accent), #fff3b0); }
+#showroom .sr-bp.maxed small { color: var(--accent); }
+#showroom .sr-bp small { flex: 0 0 auto; font-size: 11px; font-variant-numeric: tabular-nums; }
+#showroom .sr-badge { position: absolute; left: 8px; top: 30px; z-index: 2; padding: 3px 7px; border-radius: 4px; font: 800 10px/1.2 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+#showroom .sr-badge.inuse { background: var(--accent); color: var(--accent-ink); }
+#showroom .sr-badge.barred { background: #7a2a1f; color: #ffd2c8; }
+/* a car that cannot be driven: grey, with the lock and the reason over its picture */
+#showroom .sr-card.locked .sr-pic { filter: grayscale(1) brightness(.55); }
+#showroom .sr-card.locked .sr-pic.silhouette { filter: brightness(0) drop-shadow(0 0 1px rgba(255, 255, 255, .3)); }
+#showroom .sr-card.locked .sr-name { color: rgba(255, 255, 255, .72); }
+#showroom .sr-card.barred .sr-pic { filter: saturate(.5); }
+#showroom .sr-lock { position: absolute; left: 8px; right: 8px; top: 34%; z-index: 2; display: flex; align-items: center; gap: 7px; padding: 6px 8px; border-radius: 7px;
+  background: rgba(8, 10, 16, .82); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); font: 700 11px/1.25 system-ui, sans-serif; color: #e9edf3; }
+#showroom .sr-lock b { font-size: 15px; filter: grayscale(.3); }
+#showroom .sr-empty { padding: 30px; color: var(--ink-dim); font-size: 15px; }
+
+/* ---- the detail: the car picked, large, its figures, and DRIVE ---- */
+#showroom .sr-detail { flex: 1 1 auto; min-height: 0; position: relative; display: grid; grid-template-columns: minmax(240px, 46%) minmax(0, 1fr); gap: 4px 22px; align-items: center;
+  padding: 14px 20px; border-radius: 14px; overflow: hidden auto;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--rar) 16%, #141b29) 0%, rgba(17, 22, 33, .95) 55%); box-shadow: inset 0 0 0 1px var(--line), inset 4px 0 0 var(--rar); }
+#showroom .sr-sheet-close { display: none; }
+#showroom .sr-dpic { align-self: stretch; min-height: 160px; background: center / contain no-repeat;
+  background-color: transparent; border-radius: 10px; position: relative; }
+#showroom .sr-dpic::before { content: ''; position: absolute; left: 6%; right: 6%; bottom: 8%; height: 22%; border-radius: 50%; z-index: -1;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--rar) 40%, transparent), transparent); }
+#showroom .sr-detail.locked .sr-dpic { filter: grayscale(1) brightness(.6); }
+#showroom .sr-detail.locked .sr-dpic.silhouette { filter: brightness(0) drop-shadow(0 0 1px rgba(255, 255, 255, .35)); }
+#showroom .sr-dwords { display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+#showroom .sr-dhead { display: flex; align-items: center; gap: 10px; }
+#showroom .sr-dtag { padding: 4px 14px 4px 9px; font: italic 800 12px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; background: var(--rar); color: #0b0f16;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+#showroom .sr-dhead .sr-stars { position: static; font-size: 18px; }
+#showroom .sr-dhead .sr-badge { position: static; }
+#showroom .sr-detail h2 { font: italic 800 clamp(26px, 3vw, 44px)/1 var(--display); font-stretch: condensed; letter-spacing: .02em; text-transform: uppercase; }
+#showroom .sr-decu { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+#showroom .sr-decu small { font: 800 12px/1 system-ui, sans-serif; letter-spacing: .14em; color: var(--ink-dim); }
+#showroom .sr-decu .sr-pips i { width: 26px; height: 12px; }
+#showroom .sr-decu b { font: 700 16px/1 var(--display); }
+#showroom .sr-kind { padding: 3px 8px; border-radius: 4px; font: 700 10px/1.2 system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; background: rgba(255, 255, 255, .08); color: var(--ink-dim); }
+#showroom .sr-dwords > .sr-bp { max-width: 420px; font-size: 12px; }
+#showroom .sr-dwords > .sr-bp small { font-size: 12px; }
+#showroom .sr-dwords > .sr-bp .sr-bp-track { height: 8px; }
+#showroom .sr-stats { display: grid; grid-template-columns: auto minmax(80px, 1fr) auto auto; gap: 6px 10px; align-items: center; max-width: 560px; }
+#showroom .sr-stat { display: contents; }
+#showroom .sr-stat small { font: 700 11px/1 system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
+#showroom .sr-stat-track { position: relative; height: 8px; border-radius: 4px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+#showroom .sr-stat-track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; }
+#showroom .sr-stat-track i.max { background: repeating-linear-gradient(135deg, rgba(255, 255, 255, .22) 0 4px, rgba(255, 255, 255, .1) 4px 8px); }
+#showroom .sr-stat-track i.now { background: linear-gradient(90deg, color-mix(in srgb, var(--rar) 60%, #fff), var(--rar)); }
+#showroom .sr-stat b { font: 700 15px/1 var(--display); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+#showroom .sr-stat-max { font: 600 11px/1 system-ui, sans-serif; color: var(--ink-dim); white-space: nowrap; }
+#showroom .sr-perk { font-size: 13px; color: #dfe6f0; }
+#showroom .sr-perk b { color: var(--accent); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+#showroom .sr-why { display: block; font-size: 13px; color: #ffb4a8; }
+#showroom .sr-why.locked b, #showroom .sr-why.locked span { display: block; }
+#showroom .sr-why.locked span { margin-top: 3px; }
+#showroom .sr-why.locked b { font-size: 15px; color: #fff; }
+#showroom .sr-why.locked span { color: var(--ink-dim); }
+#showroom .sr-actions { display: flex; gap: 10px; margin-top: 4px; }
+#showroom .sr-go { min-width: 200px; padding: 13px 30px 12px; font: italic 900 22px/1 var(--display); letter-spacing: .06em; text-transform: uppercase;
+  background: var(--accent); color: var(--accent-ink); clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); box-shadow: 0 4px 18px var(--accent-glow); transition: filter .15s; }
+#showroom .sr-go:hover:not(:disabled) { filter: brightness(1.1); }
+#showroom .sr-go:disabled { background: #3a4252; color: rgba(255, 255, 255, .55); }
+#showroom .sr-detail.locked .sr-go:not(:disabled) { background: linear-gradient(100deg, #e8341c, #ff8a1c); color: #fff; }
+#showroom .sr-shade { display: none; }
+
+/* ---- a phone held upright (or a narrow window): a column of cards, the detail a sheet ---- */
+@media (max-width: 760px) and (min-height: 521px), (max-width: 519px) {
+  #showroom { padding: 8px 12px 0; gap: 8px; }
+  #showroom .sr-top { gap: 8px 10px; }
+  #showroom .sr-back { height: 36px; padding: 0 10px 0 8px; }
+  #showroom .sr-back-w { display: none; }
+  #showroom .sr-title h1 { font-size: 26px; }
+  #showroom .sr-title p { font-size: 9px; }
+  #showroom .sr-count { font-size: 12px; }
+  #showroom .sr-count b { font-size: 17px; }
+  #showroom .sr-bank { font-size: 17px; }
+  #showroom .sr-filter { order: 5; }
+  #showroom .sr-lot { order: 6; flex: 1 1 auto; min-height: 40px; align-items: center; flex-direction: row; gap: 8px; }
+  #showroom .sr-lot-sign { font-size: 18px; }
+  #showroom .sr-body { gap: 0; z-index: auto; } /* (no stacking of its own: the sheet goes over the shade) */
+  #showroom .sr-rowbox { flex: 1 1 auto; min-height: 0; }
+  #showroom .sr-row { flex-direction: column; overflow-x: hidden; overflow-y: auto; scroll-snap-type: y proximity; overscroll-behavior: contain; touch-action: pan-y;
+    gap: 9px; padding: 4px 2px 24px; }
+  #showroom .sr-arrow { display: none; }
+  /* a card: the car on the left, the words on the right */
+  #showroom .sr-card { --h: auto; flex: 0 0 auto; height: 118px; width: 100%; flex-direction: row; align-items: stretch; }
+  #showroom .sr-card:hover, #showroom .sr-card.picked { transform: none; }
+  #showroom .sr-card::after { left: 2%; right: 54%; top: 50%; height: 34%; }
+  #showroom .sr-pic { flex: 0 0 46%; margin: 18px 0 2px 4px; }
+  #showroom .sr-info { flex: 1 1 auto; min-width: 0; justify-content: center; padding: 22px 11px 10px 6px; background: none; }
+  #showroom .sr-name { font-size: 17px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  #showroom .sr-badge { top: auto; bottom: 7px; left: 8px; }
+  #showroom .sr-lock { top: auto; bottom: 6px; left: 6px; right: auto; max-width: 44%; padding: 4px 6px; font-size: 10px; }
+  #showroom .sr-lock b { font-size: 12px; }
+  #showroom .sr-card.locked .sr-badge { display: none; }
+  /* the sheet */
+  #showroom .sr-detail { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; max-height: 86vh; display: flex; flex-direction: column; align-items: stretch; gap: 8px;
+    padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); border-radius: 18px 18px 0 0; overflow-y: auto; overscroll-behavior: contain;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--rar) 22%, #161d2b) 0%, #10151f 40%); box-shadow: 0 -10px 40px rgba(0, 0, 0, .6), inset 0 3px 0 var(--rar);
+    transform: translateY(105%); transition: transform .28s cubic-bezier(.2, .8, .2, 1); }
+  #showroom .sr-detail.open { transform: none; }
+  #showroom .sr-detail::before { content: ''; align-self: center; flex: 0 0 auto; width: 44px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .3); }
+  #showroom .sr-sheet-close { display: block; position: absolute; right: 10px; top: 10px; z-index: 2; width: 34px; height: 34px; border-radius: 50%; background: rgba(255, 255, 255, .1); font-size: 16px; }
+  #showroom .sr-dpic { flex: 0 0 auto; min-height: 0; height: 30vh; max-height: 230px; }
+  #showroom .sr-detail h2 { font-size: 28px; }
+  #showroom .sr-stats { grid-template-columns: auto minmax(60px, 1fr) auto; }
+  #showroom .sr-stat-max { display: none; }
+  #showroom .sr-go { flex: 1 1 auto; min-width: 0; }
+  #showroom .sr-shade { display: block; position: fixed; inset: 0; z-index: 5; background: rgba(0, 0, 0, .55); opacity: 0; pointer-events: none; transition: opacity .25s; }
+  #showroom.sheet-up .sr-shade { opacity: 1; pointer-events: auto; }
+}
+/* the maxed figure is said in the bar on a phone; a phone's sheet shows it as "max" in the bar's stripes only */
+@media (max-width: 760px) and (min-height: 521px) and (min-width: 400px), (max-width: 519px) and (min-width: 400px) {
+  #showroom .sr-stats { grid-template-columns: auto minmax(60px, 1fr) auto auto; }
+  #showroom .sr-stat-max { display: inline; }
+}
+/* ---- a short window (a phone on its side): the row smaller, the detail closer ---- */
+@media (max-height: 520px) and (min-width: 520px) {
+  #showroom { padding-top: 6px; padding-bottom: 6px; gap: 6px; }
+  #showroom .sr-title h1 { font-size: 24px; }
+  #showroom .sr-title p { display: none; }
+  #showroom .sr-lot { min-height: 36px; padding: 4px 14px; }
+  #showroom .sr-lot-sign { font-size: 16px; }
+  #showroom .sr-card { --h: 190px; }
+  #showroom .sr-name { font-size: 15px; }
+  #showroom .sr-detail { grid-template-columns: minmax(180px, 38%) minmax(0, 1fr); padding: 8px 14px; }
+  #showroom .sr-detail h2 { font-size: 24px; }
+  #showroom .sr-dwords { gap: 5px; }
+  #showroom .sr-go { padding: 9px 22px; font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #showroom .sr-card, #showroom .sr-detail, #showroom .sr-shade { transition: none; }
+}

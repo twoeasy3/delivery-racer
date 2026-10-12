@@ -2,12 +2,12 @@
 // One screen, nothing scrolls. The level picked is the STAGE: its picture large, its number and name, its
 // description for the side picked, its clock, tip and best times with their medals, and (in the HUD's round window) the cargo it carries. Under it the STRIP: the
 // levels of its group, to step through; over it the groups, and over those the tabs (Deliveries, Races): the
-// same control one level up each time. Beside the stage the car (a way into the garage), the side (Good or
+// same control one level up each time. Beside the stage the car (a way into the showroom), the side (Good or
 // Evil: Evil recolours the screen) and START.
 // Still only a menu: stepping to a level marks it (selectLevel); the level is built when a run starts
 // (Game.start), and nothing here reloads the page. A level not open yet can be stepped to and looked at, but
 // it is never the level picked, and START is off while it is on the stage.
-// Keys: left / right (A / D) a level, up / down a group, T the other tab, E the other side, G the garage,
+// Keys: left / right (A / D) a level, up / down a group, T the other tab, E the other side, G the showroom,
 // I what's on this road, O the options, Enter start. Touch: swipe the stage sideways, or tap the strip.
 // For a picture: ?cursor=47 puts that level on the stage, open or not (?pick= opens them all first: see
 // main.js); ?side=evil shows the Evil side for the visit; ?options opens the options; ?road the road card.
@@ -25,7 +25,9 @@ import { buildLabel } from '../version.js';
 import { Game, formatTime, clockFor } from '../game.js';
 import { medalFor, medalNeeds } from '../levelinfo.js';
 import { Garage, makeShowCar, paintShowCar, IDEA_TAG } from './garage.js';
-import { standView, sharedRenderer, disposeViews, drawViews, drawStill } from './modelviews.js';
+import { standView, sharedRenderer, disposeViews, drawViews } from './modelviews.js';
+import { stillCar } from './carstill.js';
+import { Showroom } from './showroom.js';
 import { Sound } from './audio.js';
 import { ask } from './dialog.js';
 import { Replay } from '../replay.js';
@@ -235,11 +237,11 @@ const drawStage = () => {
   const place = Tiers.on() ? Tiers.place(level) : null, rule = Tiers.restriction(level, evil);
   const cheapest = rule !== null ? Tiers.carsOfTier(rule).sort((a, b) => a.price - b.price)[0] : null;
   const needs = Events.isStage(level) ? stageLine(level) : !open ? (Tiers.on() ? Tiers.lockedBecause(level) : 'Locked: deliver level ' + label(list[at - 1]) + ' on time to open it')
-    : rule !== null ? (CAR.silhouette ? 'You own no ' + Tiers.tierName(rule) + ' car: buy one in the garage to play this level (the cheapest is the ' + cheapest.name + ', ' + money(cheapest.price) + ')'
+    : rule !== null ? (CAR.silhouette ? 'You own no ' + Tiers.tierName(rule) + ' car: buy one at Crazey Jim’s to play this level (the cheapest is the ' + cheapest.name + ', ' + money(cheapest.price) + ')'
         : 'No medal on ' + (evil ? 'Evil' : 'Good') + ' yet: only ' + Tiers.tierName(rule) + ' cars may be driven. Earn it and any car will do on this side')
-    : level.car ? 'Driven in the ' + CAR.name + ': the garage car returns on other levels'
+    : level.car ? 'Driven in the ' + CAR.name + ': your own car returns on other levels'
       : level.amphibious ? (CAR.amphibious ? 'Amphibious cars only: you drive your ' + CAR.name
-        : 'Needs an amphibious car: get the ' + cheapestAmphibious().name + ' (' + money(cheapestAmphibious().price) + ') in the garage')
+        : 'Needs an amphibious car: get the ' + cheapestAmphibious().name + ' (' + money(cheapestAmphibious().price) + ') at Crazey Jim’s')
         : null;
   // (a special level's 6-star car, and the time to spare that earns it: see cars.js EARNED_CARS)
   const prizeLine = open && prize ? '6-star car: ' + prize.name + (Progress.earned(prize) ? ' (earned)'
@@ -428,8 +430,8 @@ const drawCar = () => {
   if (CAR.silhouette) { // (a car of the level's tier is to be bought: a dark outline of the cheapest, and no figures)
     shop.replaceChildren(picture,
       make('span', 'words', make('strong', '', 'No car for this level'), make('span', 'stat', make('small', '', ...(CAR.tierNeeded ? [tierStarsNode(CAR.tierNeeded)] : richTiers(CAR.ruleLabel || '')), ' only'))),
-      make('span', 'go', 'Garage'));
-    shop.title = 'This level needs a car of exactly its tier: open the garage to buy one (G)';
+      make('span', 'go', 'Crazey Jim’s'));
+    shop.title = 'This level needs a car of exactly its tier: buy one at Crazey Jim’s Used Cars';
     return;
   }
   const starSpan = make('span', 'stars', CAR.tier ? stars(CAR) : IDEA_TAG.text);
@@ -440,8 +442,8 @@ const drawCar = () => {
       bar('Speed', Math.round(CAR.maxSpeed * 3.6) + ' km/h', CAR.maxSpeed / MOST.speed),
       bar('Accel', String(CAR.accel), CAR.accel / MOST.accel),
       bar('Health', String(CAR.health), CAR.health / MOST.health)),
-    make('span', 'go', LEVEL.car ? 'This level’s own vehicle' : 'Garage'));
-  shop.title = LEVEL.car ? 'You must use this vehicle on this level. The garage car returns on other levels.' : 'Open the garage to change or buy cars (G)';
+    make('span', 'go', LEVEL.car ? 'This level’s own vehicle' : 'Showroom'));
+  shop.title = LEVEL.car ? 'You must use this vehicle on this level. Your own car returns on other levels.' : 'Open the showroom to pick a car (G)';
 };
 
 export const draw = () => {
@@ -517,7 +519,8 @@ export const draw = () => {
 const tabBtns = { delivery: document.getElementById('tabDelivery'), race: document.getElementById('tabRaces') };
 for (const [name, button] of Object.entries(tabBtns)) button.addEventListener('click', () => showTab(name));
 for (const button of sideBox.querySelectorAll('button')) button.addEventListener('click', () => pickSide(button.dataset.side === 'evil'));
-shop.addEventListener('click', () => { blip('menuPick'); Garage.open(); });
+// (the car card: the showroom, where a car is picked; with no car the level allows, straight to the car lot to buy one)
+shop.addEventListener('click', () => { blip('menuPick'); if (Tiers.on() && CAR.silhouette) Garage.open(); else Showroom.open(); });
 startBtn.addEventListener('click', () => blip('menuPick'));
 
 // the sheets over the menu (the options; the road card): one open at a time, closed by its button, Escape or a
@@ -638,21 +641,7 @@ const replaysCard = (level) => {
 // not turning; kept as a picture, so picking another card does not draw them again), what kind of car rule it is (a
 // free try, a car needed, any car), and its state: READY, DONE, or what stops it. A card picks its stage; under the
 // row, the stage picked: its map, clock, tip, best time, what it is driven in; START plays it.
-const STILL_POSE = { lift: 0.3, angle: -0.64, close: 1 }; // (from a little above, in front, three-quarters on, the nose to the left: every card the same)
-const stills = new Map(); // car id + side + size -> the picture of it, once drawn (by size: one drawn small for the prize is not stretched over a card)
-const stillCar = (el, car, evil) => {
-  const r = el.getBoundingClientRect(), key = car.id + (evil ? '/evil' : '/good') + '/' + Math.round(r.width / 20) + 'x' + Math.round(r.height / 20);
-  if (stills.has(key)) { el.style.backgroundImage = `url("${stills.get(key)}")`; return; }
-  try {
-    const model = makeShowCar(car);
-    paintShowCar(model, car, evil);
-    if (!drawStill(sharedRenderer(), el, model, STILL_POSE)) return;
-    const canvas = el.querySelector('canvas');
-    stills.set(key, canvas.toDataURL('image/png'));
-    canvas.remove();
-    el.style.backgroundImage = `url("${stills.get(key)}")`;
-  } catch (error) { console.warn('No model for the stage card: ' + (error?.message || error)); }
-};
+// (stillCar: render/carstill.js, which the showroom's cards share)
 const eventPanel = (event, picked, evil) => {
   const done = Events.done(event), of = event.stages.length, prize = Events.prizeCar(event), won = Events.prizeWon(event);
   const ring = make('div', 'event-ring', make('b', '', Math.round(done / of * 100) + '%'), make('small', '', 'progress'));
@@ -736,7 +725,7 @@ window.addEventListener('keydown', (e) => {
     case 'ArrowDown': stepGroup(1); break;
     case 'KeyT': showTab(tab === 'race' ? 'delivery' : 'race'); break;
     case 'KeyE': if (!oneSided(cursor)) pickSide(!Game.evil); break;
-    case 'KeyG': Garage.open(); break;
+    case 'KeyG': Showroom.open(); break;
     case 'KeyI': if (roadCard && isOpen(cursor)) roadCard(cursor); break;
     case 'KeyO': openSheet(options); break;
     default: return;
@@ -759,7 +748,7 @@ window.addEventListener('keydown', (e) => {
 
 // the keys, spelled out along the foot of the screen (where there is a keyboard)
 document.getElementById('buildTag').textContent = buildLabel(); // (the build, in the corner: version.js)
-document.getElementById('menuKeys').replaceChildren(...[['← →', 'Level'], ['↑ ↓', 'Group'], ['T', 'Tab'], ['E', 'Good / Evil'], ['G', 'Garage'], ['I', 'On this road'], ['O', 'Options'], ['Enter', 'Start']]
+document.getElementById('menuKeys').replaceChildren(...[['← →', 'Level'], ['↑ ↓', 'Group'], ['T', 'Tab'], ['E', 'Good / Evil'], ['G', 'Showroom'], ['I', 'On this road'], ['O', 'Options'], ['Enter', 'Start']]
   .map(([key, does]) => make('span', '', make('kbd', '', key), does)));
 
 // ---- for a picture (see the top of the file) -------------------------------------------------------------
