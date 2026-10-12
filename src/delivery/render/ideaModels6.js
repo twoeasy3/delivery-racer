@@ -112,7 +112,7 @@ const cyl = (r, length, x, y, z, axis = 'y', seg = 10) => {
   return geo.translate(x, y, z);
 };
 // the top half of a ring lying flat on a flank (a wheel arch's lip), its middle at (x, y, z)
-const lip = (r, t, x, y, z) => new THREE.TorusGeometry(r, t, 4, 10, Math.PI).rotateY(Math.PI / 2).translate(x, y, z);
+const lip = (r, t, x, y, z) => new THREE.TorusGeometry(r, t, 3, 9, Math.PI).rotateY(Math.PI / 2).translate(x, y, z);
 // the top half of a thin disc on a flank (a dark wheel well behind a wheel)
 const well = (r, x, y, z) => new THREE.CylinderGeometry(r, r, 0.01, 14, 1, false, 0, Math.PI).rotateZ(Math.PI / 2).translate(x, y, z);
 const merged = (parent, material, geos) => place(parent, mergeGeometries(geos, false), material, 0, 0, 0);
@@ -120,7 +120,7 @@ const merged = (parent, material, geos) => place(parent, mergeGeometries(geos, f
 // a body lofted through cross-sections along the car: `rings` is a list of [z, points] going nose-ward or tail-ward,
 // each points a closed loop of [x, y] (as many in every ring, in the same order); both ends closed with a fan to their
 // middle. Its material should be double-sided (the winding is not looked after)
-const loft = (parent, material, rings) => {
+const loft = (parent, material, rings, caps = true) => {
   const n = rings[0][1].length, pos = [], idx = [];
   for (const [z, pts] of rings) for (const [x, y] of pts) pos.push(x, y, z);
   for (let r = 0; r + 1 < rings.length; r++) {
@@ -129,7 +129,7 @@ const loft = (parent, material, rings) => {
       idx.push(a, b, d, a, d, c);
     }
   }
-  for (const r of [0, rings.length - 1]) {
+  for (const r of caps ? [0, rings.length - 1] : []) {
     const [z, pts] = rings[r], mid = pos.length / 3;
     pos.push(pts.reduce((t, p) => t + p[0], 0) / n, pts.reduce((t, p) => t + p[1], 0) / n, z);
     for (let i = 0; i < n; i++) idx.push(mid, r * n + i, r * n + (i + 1) % n);
@@ -149,6 +149,64 @@ const along = (keys, z) => {
   }
   return keys[keys.length - 1].slice(1);
 };
+// ---- a lofted car body (for the curvy ones): cross-sections along the car, each a rounded shoulder over a side
+// that is cut back under the haunches to clear the wheels, up to an arch.
+//   BODY   [z, half width at its widest, the height of that, the height of the deck on the middle, the floor, the sill's half width]
+//   AXLES  [z, wheel radius, tyre width, the tyre's outer face]
+//   n      how square the shoulders are (2 round, more squarer)
+// Returns the body mesh, and sideX(z, y) / topY(z, x): where its side and its top are, for parts to sit on them.
+const superTop = (w, yb, yTop, t, n) => [w * Math.pow(Math.abs(Math.cos(t)), 2 / n), yb + (yTop - yb) * Math.pow(Math.max(0, Math.sin(t)), 2 / n)];
+const SHOULDER = [0, 1, 2, 3, 4].map(i => i * Math.PI / 10);
+const loftBody = (group, material, BODY, AXLES, n) => {
+  const section = (z) => {
+    let [wHigh, yb, yTop, y0, wLow] = along(BODY, z), yLip = yb - 0.12;
+    for (const [za, R, width, outer] of AXLES) {
+      const dz = Math.abs(z - za), Ra = R + 0.07;
+      if (dz < 0.42) {
+        wLow = outer - width - 0.02;
+        yLip = dz < Ra ? R + Math.sqrt(Ra * Ra - dz * dz) : y0 + 0.1;
+        yb = Math.max(yb, yLip + 0.04);
+      }
+    }
+    return { wHigh, yb, yTop, y0, wLow, yLip };
+  };
+  const ring = (z) => {
+    const { wHigh, yb, yTop, y0, wLow, yLip } = section(z);
+    const side = [[wLow - 0.08, y0], [wLow, y0 + 0.06], [wLow, Math.max(y0 + 0.08, yLip - 0.02)], [wHigh - 0.02, yLip], ...SHOULDER.map(t => superTop(wHigh, yb, yTop, t, n))];
+    return [[0, y0], ...side, [0, yTop], ...side.slice().reverse().map(([x, y]) => [-x, y])];
+  };
+  const zs = new Set(BODY.map(k => k[0]));
+  for (const [za] of AXLES) for (const dz of [-0.47, -0.4, -0.3, -0.15, 0, 0.15, 0.3, 0.4, 0.47]) zs.add(Math.round((za + dz) * 1000) / 1000);
+  const body = loft(group, material, [...zs].sort((a, b) => a - b).map(z => [z, ring(z)]));
+  const sideX = (z, y) => {
+    const { wHigh, yb, yTop, wLow, yLip } = section(z);
+    if (y >= yb) { const sn = Math.pow(Math.min(1, (y - yb) / (yTop - yb)), n / 2); return wHigh * Math.pow(Math.sqrt(1 - sn * sn), 2 / n); }
+    return y >= yLip ? wHigh - 0.02 + 0.02 * (y - yLip) / (yb - yLip) : wLow;
+  };
+  const topY = (z, x) => {
+    const { wHigh, yb, yTop } = section(z);
+    const c = Math.pow(Math.min(1, Math.abs(x) / wHigh), n / 2);
+    return yb + (yTop - yb) * Math.pow(Math.sqrt(1 - c * c), 2 / n);
+  };
+  return { body, sideX, topY };
+};
+// a canopy (glass) lofted through [z, half width, the height of its foot, the height of its top]; and a shell over
+// its top in another material, reaching `cover[i]` radians down its sides from the top at the i-th of `zs`
+const loftCanopy = (group, material, CANOPY, n) => loft(group, material, CANOPY.map(([z, wc, base, top]) => {
+  const side = [[wc * 0.97, base - 0.1], ...SHOULDER.map(t => superTop(wc, base, top, t, n))];
+  return [z, [[0, base - 0.1], ...side, [0, top], ...side.slice().reverse().map(([x, y]) => [-x, y])]];
+}));
+const loftCover = (group, material, CANOPY, n, cover) => loft(group, material, CANOPY.filter(([z]) => z in cover).map(([z, wc, base, top]) => {
+  const a = cover[z], arc = [0, 1, 2, 3].map(i => Math.PI / 2 - a * (1 - i / 4));
+  const out = arc.map(t => superTop(wc + 0.012, base, top + 0.012, t, n)), inn = arc.map(t => superTop(wc - 0.004, base, top - 0.004, t, n));
+  return [z, [...out, [0, top + 0.012], ...out.slice().reverse().map(([x, y]) => [-x, y]), ...inn.map(([x, y]) => [-x, y]), [0, top - 0.004], ...inn.slice().reverse()]];
+}), false);
+// where a canopy's side is at (z, y)
+const canopyX = (CANOPY, n, z, y) => {
+  const [wc, base, top] = along(CANOPY, z), sn = Math.pow(Math.min(1, Math.max(0, (y - base) / (top - base))), n / 2);
+  return wc * Math.pow(Math.sqrt(1 - sn * sn), 2 / n);
+};
+
 export const IDEA_MODELS_6 = {
   // A blown vintage tourer (a 1929 Bentley 4½ Litre "Blower"): open, long and upright. A supercharger drum juts
   // out under a tall radiator with a mesh stone guard; two big lamps on a bar between cycle wings; a long louvred
@@ -287,62 +345,18 @@ export const IDEA_MODELS_6 = {
     const glass = lambert(GLASS);
     for (const m of [paint, carbon, glass]) m.side = THREE.DoubleSide;
     const NU = 2.6, NC = 2.2; // (how square the body's and the canopy's shoulders are: 2 round, more squarer)
-    // the body: [z, half width at its widest, the height of that, the height of the deck on the middle, the floor, the sill's half width]
-    const BODY = [
+    const AXLES = [[1.27, 0.36, 0.26, 0.97], [-1.44, 0.375, 0.3, 1.0]];
+    const { body, sideX, topY } = loftBody(group, paint, [
       [-2.27, 0.72, 0.62, 0.8, 0.34, 0.66], [-2.15, 0.93, 0.66, 0.9, 0.3, 0.84], [-1.9, 1.0, 0.72, 0.95, 0.27, 0.9],
       [-1.44, 1.02, 0.74, 0.96, 0.27, 0.9], [-1.0, 0.99, 0.7, 0.96, 0.27, 0.9], [-0.5, 0.92, 0.62, 0.93, 0.26, 0.88],
       [0.0, 0.9, 0.6, 0.88, 0.26, 0.86], [0.6, 0.93, 0.6, 0.82, 0.26, 0.87], [1.27, 0.99, 0.64, 0.75, 0.26, 0.88],
       [1.8, 0.95, 0.58, 0.68, 0.26, 0.84], [2.12, 0.8, 0.52, 0.64, 0.27, 0.72], [2.27, 0.55, 0.46, 0.58, 0.3, 0.5],
-    ];
-    const AXLES = [[1.27, 0.36, 0.26, 0.97], [-1.44, 0.375, 0.3, 1.0]]; // [z, radius, width, the tyre's outer face]
-    // a cross-section's figures at z: under the haunches the side is cut back to clear the wheel, up to an arch
-    const section = (z) => {
-      let [wHigh, yb, yTop, y0, wLow] = along(BODY, z), yLip = yb - 0.12;
-      for (const [za, R, width, outer] of AXLES) {
-        const dz = Math.abs(z - za), Ra = R + 0.07;
-        if (dz < 0.42) {
-          wLow = outer - width - 0.02;
-          yLip = dz < Ra ? R + Math.sqrt(Ra * Ra - dz * dz) : y0 + 0.1;
-          yb = Math.max(yb, yLip + 0.04);
-        }
-      }
-      return { wHigh, yb, yTop, y0, wLow, yLip };
-    };
-    const upper = (w, yb, yTop, t, n) => [w * Math.pow(Math.abs(Math.cos(t)), 2 / n), yb + (yTop - yb) * Math.pow(Math.max(0, Math.sin(t)), 2 / n)];
-    const ANG = [0, 1, 2, 3, 4, 5].map(i => i * Math.PI / 12);
-    const ring = (z) => {
-      const { wHigh, yb, yTop, y0, wLow, yLip } = section(z);
-      const side = [[wLow - 0.08, y0], [wLow, y0 + 0.06], [wLow, Math.max(y0 + 0.08, yLip - 0.02)], [wHigh - 0.02, yLip], ...ANG.map(t => upper(wHigh, yb, yTop, t, NU))];
-      return [[0, y0], ...side, [0, yTop], ...side.slice().reverse().map(([x, y]) => [-x, y])];
-    };
-    const zs = new Set(BODY.map(k => k[0]));
-    for (const [za] of AXLES) for (const dz of [-0.47, -0.4, -0.27, 0, 0.27, 0.4, 0.47]) zs.add(Math.round((za + dz) * 1000) / 1000);
-    const body = loft(group, paint, [...zs].sort((a, b) => a - b).map(z => [z, ring(z)]));
-    // where the body's side is at (z, y), and its top at (z, x): for parts to sit on it
-    const sideX = (z, y) => {
-      const { wHigh, yb, yTop, wLow, yLip } = section(z);
-      if (y >= yb) { const sn = Math.pow(Math.min(1, (y - yb) / (yTop - yb)), NU / 2); return wHigh * Math.pow(Math.sqrt(1 - sn * sn), 2 / NU); }
-      return y >= yLip ? wHigh - 0.02 + 0.02 * (y - yLip) / (yb - yLip) : wLow;
-    };
-    const topY = (z, x) => {
-      const { wHigh, yb, yTop } = section(z);
-      const c = Math.pow(Math.min(1, Math.abs(x) / wHigh), NU / 2);
-      return yb + (yTop - yb) * Math.pow(Math.sqrt(1 - c * c), 2 / NU);
-    };
-    // the canopy: [z, half width, the height of its foot, the height of its top]
+    ], AXLES, NU);
+    // the canopy, its top and the engine cover in carbon (reaching further down its sides towards the tail)
     const CANOPY = [[-1.85, 0.28, 0.92, 0.95], [-1.5, 0.46, 0.92, 0.99], [-1.1, 0.6, 0.9, 1.08], [-0.7, 0.69, 0.88, 1.17], [-0.3, 0.72, 0.84, 1.21],
       [0.1, 0.72, 0.8, 1.15], [0.45, 0.68, 0.76, 1.02], [0.75, 0.6, 0.72, 0.86], [0.95, 0.42, 0.7, 0.73]];
-    loft(group, glass, CANOPY.map(([z, wc, base, top]) => {
-      const side = [[wc * 0.97, base - 0.1], ...ANG.map(t => upper(wc, base, top, t, NC))];
-      return [z, [[0, base - 0.1], ...side, [0, top], ...side.slice().reverse().map(([x, y]) => [-x, y])]];
-    }));
-    // its top and the engine cover in carbon: a shell over the canopy, reaching further down its sides towards the tail
-    const COVER = { 0.45: 0.4, 0.1: 0.55, '-0.3': 0.6, '-0.7': 0.95, '-1.1': 1.45, '-1.5': 1.571, '-1.85': 1.571 };
-    loft(group, carbon, CANOPY.filter(([z]) => z <= 0.45).map(([z, wc, base, top]) => {
-      const a = COVER[String(z)], arc = [0, 1, 2, 3].map(i => Math.PI / 2 - a * (1 - i / 4));
-      const out = arc.map(t => upper(wc + 0.012, base, top + 0.012, t, NC)), inn = arc.map(t => upper(wc - 0.004, base, top - 0.004, t, NC));
-      return [z, [...out, [0, top + 0.012], ...out.slice().reverse().map(([x, y]) => [-x, y]), ...inn.map(([x, y]) => [-x, y]), [0, top - 0.004], ...inn.slice().reverse()]];
-    }));
+    loftCanopy(group, glass, CANOPY, NC);
+    loftCover(group, carbon, CANOPY, NC, { 0.45: 0.4, 0.1: 0.55, '-0.3': 0.6, '-0.7': 0.95, '-1.1': 1.45, '-1.5': 1.571, '-1.85': 1.571 });
     // the fin down the middle, from the roof to the tail, and the stop lamp at its end
     prism(group, carbon, 0.05, [[0.1, 1.2], [-0.3, 1.26], [-0.7, 1.22], [-1.1, 1.13], [-1.5, 1.04], [-1.85, 0.99], [-2.1, 0.95],
       [-2.1, 0.88], [-1.85, 0.92], [-1.5, 0.96], [-1.1, 1.05], [-0.7, 1.14], [-0.3, 1.18], [0.1, 1.12]]);
@@ -467,53 +481,77 @@ export const IDEA_MODELS_6 = {
     return group;
   },
 
-  // A coupe crossover (a Range Rover Evoque, 2011): a tall body on big wheels with a waist that climbs to the tail
-  // while the roof falls to meet it, leaving a slit of side glass; a floating roof in a second colour, with a spoiler
-  // and a stop lamp at its end; thin lamps that wrap round the corners with a strip of light along their tops, a
-  // grille between them, a skid plate under the nose; a clamshell bonnet with vents; black sills and arch lips;
-  // lamps that wrap round the tail, two exhausts. It sits still
+  // A coupe crossover (a Range Rover Evoque, 2011), lofted through cross-sections: a tall body with rounded corners and
+  // sides that lean in, big rounded shoulders over big wheels; a waist that climbs to the tail while the roof falls
+  // to meet it, leaving a slit of side glass under a floating roof in a second colour, with a spoiler and a stop lamp
+  // at its end; thin lamps that wrap round the corners with a strip of light along their tops, a grille between
+  // them, an intake and a skid plate; bonnet vents; black sills and arch lips; lamps that wrap round the tail, two
+  // exhausts. It sits still
   coupecross: (car) => {
     const group = new THREE.Group();
-    const w = car.hw * 2, L = car.hl, R = 0.4, rr = 0.05, ZW = L * 0.61, S = w * 0.96 / 2;
-    const paint = lambert(car.color), roofPaint = lambert(0x18181b), glass = lambert(GLASS), trim = lambert(TRIM), chrome = lambert(CHROME);
+    const paint = lambert(car.color), roofPaint = lambert(0x18181b), glass = lambert(GLASS), chrome = lambert(CHROME);
     const black = lambert(0x1c1d21), silver = lambert(0xb9bdc2), alloy = lambert(0xa8adb4);
-    const body = curved(group, paint, w * 0.96, rounded([[-L + rr, 0.45], [L - rr, 0.45], [L - rr, 0.82], [L * 0.82, 0.96], [L * 0.34, 1.04], [-L * 0.62, 1.16], [-L * 0.9, 1.2], [-L + rr, 1.09]]), rr);
-    // the slit of glass, the floating roof and its spoiler, the pillars
-    prism(group, glass, w * 0.84, [[L * 0.36, 1.02], [L * 0.06, 1.54], [-L * 0.62, 1.48], [-L * 0.9, 1.22], [-L * 0.9, 1.14], [-L * 0.62, 1.12], [L * 0.36, 0.99]]);
-    prism(group, roofPaint, w * 0.86, [[L * 0.1, 1.51], [L * 0.06, 1.57], [-L * 0.62, 1.515], [-L * 0.7, 1.45], [-L * 0.6, 1.45], [L * 0.06, 1.51]]);
+    for (const m of [paint, roofPaint, glass]) m.side = THREE.DoubleSide;
+    const R = 0.4, NU = 3.4, NC = 3;
+    const AXLES = [[1.33, R, 0.24, 0.95], [-1.33, R, 0.24, 0.95]];
+    const { body, sideX, topY } = loftBody(group, paint, [
+      [-2.18, 0.78, 0.96, 1.12, 0.5, 0.72], [-2.08, 0.9, 0.98, 1.17, 0.45, 0.86], [-1.85, 0.93, 1.0, 1.2, 0.42, 0.9],
+      [-1.33, 0.95, 0.98, 1.18, 0.42, 0.9], [-0.6, 0.92, 0.94, 1.12, 0.42, 0.89], [0.2, 0.91, 0.9, 1.06, 0.42, 0.89],
+      [0.75, 0.93, 0.86, 1.02, 0.42, 0.89], [1.33, 0.95, 0.84, 0.97, 0.42, 0.9], [1.85, 0.92, 0.8, 0.92, 0.44, 0.86],
+      [2.08, 0.84, 0.76, 0.88, 0.46, 0.78], [2.18, 0.7, 0.72, 0.84, 0.48, 0.64],
+    ], AXLES, NU);
+    // the slit of glass, and the floating roof over it, a spoiler and a stop lamp at its end
+    const CANOPY = [[-1.95, 0.62, 1.12, 1.17], [-1.6, 0.74, 1.12, 1.4], [-1.2, 0.78, 1.1, 1.48], [-0.4, 0.8, 1.06, 1.54], [0.2, 0.79, 1.02, 1.57],
+      [0.5, 0.77, 1.0, 1.34], [0.8, 0.72, 0.96, 1.03]];
+    loftCanopy(group, glass, CANOPY, NC);
+    loftCover(group, roofPaint, CANOPY, NC, { '-1.6': 0.55, '-1.2': 0.6, '-0.4': 0.6, 0.2: 0.6 });
+    box(group, roofPaint, 0.95, 0.03, 0.2, 0, 1.415, -1.66);
+    box(group, TAIL, 0.3, 0.025, 0.03, 0, 1.39, -1.75);
+    // the pillars: the windscreen's in the roof's colour, the middle ones blacked out
+    const onCanopy = (z, t) => { const [wc, base, top] = along(CANOPY, z), [x, y] = superTop(wc + 0.006, base, top + 0.006, t, NC); return new THREE.Vector3(x, y, z); };
+    const pillarA = new THREE.CatmullRomCurve3([0.8, 0.65, 0.5, 0.35, 0.2].map(z => onCanopy(z, 0.4)));
+    const pillarB = new THREE.CatmullRomCurve3([0.15, 0.4, 0.65, 0.9].map(t => onCanopy(-0.25, t)));
     for (const side of [-1, 1]) {
-      prism(group, roofPaint, 0.05, [[L * 0.37, 1.04], [L * 0.32, 1.04], [L * 0.03, 1.54], [L * 0.08, 1.54]], side * w * 0.42);
-      box(group, paint, 0.16, 0.1, 0.1, side * 0.87, 1.16, L * 0.3);                       // mirrors
+      place(group, shared('evoqueA', () => new THREE.TubeGeometry(pillarA, 5, 0.03, 3, false)), roofPaint, 0, 0, 0).scale.x = side;
+      place(group, shared('evoqueB', () => new THREE.TubeGeometry(pillarB, 3, 0.035, 3, false)), black, 0, 0, 0).scale.x = side;
     }
-    merged(group, black, [-1, 1].map(side => bx(0.03, 0.4, 0.08, side * w * 0.42, 1.31, -L * 0.12))); // the middle pillars, blacked out
-    box(group, TAIL, 0.3, 0.025, 0.03, 0, 1.44, -L * 0.68);                                 // the stop lamp, under the spoiler
-    box(group, black, 0.03, 0.03, 0.4, 0, 1.24, -L * 0.88).rotation.x = -0.75;              // the rear wiper
-    // the face: the lamps, wrapping round the corners, their strips of light; the grille; the intake and the skid plate
-    merged(group, trim, [-1, 1].flatMap(side => [bx(0.42, 0.09, 0.2, side * 0.6, 0.83, L - 0.07), bx(0.04, 0.08, 0.25, side * (S - 0.005), 0.84, L - 0.15)]));
-    merged(group, LAMP, [-1, 1].flatMap(side => [bx(0.36, 0.02, 0.02, side * 0.6, 0.855, L + 0.035), bx(0.08, 0.05, 0.02, side * 0.48, 0.815, L + 0.035)]));
-    merged(group, AMBER, [-1, 1].map(side => bx(0.012, 0.03, 0.12, side * (S + 0.019), 0.83, L - 0.15)));
-    box(group, black, 0.74, 0.12, 0.04, 0, 0.82, L + 0.005);
-    merged(group, silver, [0.79, 0.84].map(y => bx(0.7, 0.012, 0.02, 0, y, L + 0.028)));
-    box(group, black, 1.2, 0.16, 0.04, 0, 0.58, L + 0.005);
-    box(group, silver, 0.7, 0.05, 0.25, 0, 0.46, L - 0.05);
-    box(group, WHITE, 0.42, 0.1, 0.02, 0, 0.68, L + 0.03);
-    // the bonnet: its clamshell edge down each flank, two vents on top
-    const shut = Math.atan2(0.07, 1.26);
-    merged(group, black, [-1, 1].map(side => bx(0.01, 0.012, 1.26, side * (S + 0.004), 0.935, 1.37, shut)));
-    merged(group, black, [-1, 1].map(side => bx(0.16, 0.012, 0.3, side * 0.55, 1.047, L * 0.6, Math.atan2(0.08, 1.05))));
-    merged(group, silver, [-1, 1].map(side => bx(0.02, 0.025, 0.12, side * (S + 0.01), 1.02, -L * 0.05)));  // the door handles
+    // mirrors on stalks
+    merged(group, paint, [-1, 1].flatMap(side => [bx(0.16, 0.1, 0.1, side * 0.88, 1.12, 0.62), bx(0.2, 0.025, 0.05, side * 0.74, 1.1, 0.62)]));
+    // the face: the lamps, thin and wrapping round the corners, a strip of light along their tops; the grille, the
+    // intake, the skid plate, the plate
+    const lampCurve = new THREE.CatmullRomCurve3([[0.36, 2.19], [0.6, 2.17], [0.78, 2.11], [0.88, 1.98]].map(([x, z]) => new THREE.Vector3(x, 0.79, z)));
+    const stripCurve = new THREE.CatmullRomCurve3([[0.38, 2.21], [0.6, 2.19], [0.79, 2.13], [0.89, 2.0]].map(([x, z]) => new THREE.Vector3(x, 0.81, z)));
+    for (const side of [-1, 1]) {
+      place(group, shared('evoqueLamp', () => new THREE.TubeGeometry(lampCurve, 6, 0.045, 3, false)), black, 0, 0, 0).scale.x = side;
+      place(group, shared('evoqueStrip', () => new THREE.TubeGeometry(stripCurve, 6, 0.014, 3, false)), LAMP, 0, 0, 0).scale.x = side;
+    }
+    merged(group, AMBER, [-1, 1].map(side => bx(0.03, 0.04, 0.08, side * 0.9, 0.78, 1.95)));
+    box(group, black, 0.6, 0.12, 0.04, 0, 0.7, 2.19);
+    merged(group, silver, [0.68, 0.72].map(y => bx(0.56, 0.012, 0.02, 0, y, 2.212)));
+    box(group, black, 1.0, 0.12, 0.04, 0, 0.56, 2.19);
+    box(group, silver, 0.6, 0.04, 0.22, 0, 0.47, 2.12);
+    box(group, WHITE, 0.4, 0.09, 0.02, 0, 0.635, 2.205);
+    // the bonnet's vents, lying on it
+    merged(group, black, [-1, 1].map(side => {
+      const x = side * 0.5, z = 1.45, pitch = Math.atan2(topY(z - 0.1, x) - topY(z + 0.1, x), 0.2);
+      return bx(0.16, 0.012, 0.3, x, topY(z, x) + 0.003, z, pitch);
+    }));
     // the tail: lamps wrapping round it, reversing lamps, the black bumper, two exhausts, the plate
-    merged(group, TAIL, [-1, 1].flatMap(side => [bx(0.36, 0.1, 0.03, side * 0.6, 1.04, -L - 0.012), bx(0.02, 0.1, 0.16, side * (S - 0.004), 1.04, -L + 0.16)]));
-    merged(group, LAMP, [-1, 1].map(side => bx(0.1, 0.05, 0.02, side * 0.35, 0.68, -L - 0.012)));
-    box(group, black, 1.6, 0.18, 0.05, 0, 0.54, -L - 0.01);
-    merged(group, chrome, [-1, 1].map(side => cyl(0.05, 0.06, side * 0.6, 0.48, -L - 0.02, 'z', 10)));
-    box(group, WHITE, 0.42, 0.11, 0.02, 0, 0.84, -L - 0.011);
-    // black sills and arch lips; big alloys with a cap each
-    merged(group, black, [-1, 1].map(side => bx(0.03, 0.12, L * 0.62, side * (S + 0.006), 0.51, 0)));
-    merged(group, black, [-1, 1].flatMap(side => [lip(R + 0.06, 0.05, side * (S + 0.02), R, ZW), lip(R + 0.06, 0.05, side * (S + 0.02), R, -ZW)]));
-    for (const side of [-1, 1]) for (const z of [ZW, -ZW]) {
-      wheel(group, R, 0.24, side * (w / 2 - 0.12), R, z, alloy);
-      disc(group, black, 0.06, 0.02, side * (w / 2 + 0.01), R, z).rotation.set(0, Math.PI / 2, 0);
+    const tailCurve = new THREE.CatmullRomCurve3([[0.4, -2.195], [0.62, -2.195], [0.76, -2.19], [0.85, -2.13], [0.915, -2.0]].map(([x, z]) => new THREE.Vector3(x, 1.02, z)));
+    for (const side of [-1, 1]) place(group, shared('evoqueTail', () => new THREE.TubeGeometry(tailCurve, 6, 0.04, 3, false)), TAIL, 0, 0, 0).scale.x = side;
+    merged(group, LAMP, [-1, 1].map(side => bx(0.1, 0.05, 0.02, side * 0.35, 0.66, -2.19)));
+    box(group, black, 1.3, 0.14, 0.05, 0, 0.56, -2.19);
+    merged(group, chrome, [-1, 1].map(side => cyl(0.045, 0.05, side * 0.5, 0.53, -2.215, 'z', 10)));
+    box(group, WHITE, 0.4, 0.1, 0.02, 0, 0.84, -2.188);
+    // black sills and arch lips; big alloys with a dark cap each; door handles
+    merged(group, black, [-1, 1].map(side => bx(0.03, 0.12, 1.5, side * (sideX(0, 0.55) + 0.006), 0.55, 0)));
+    merged(group, black, [-1, 1].flatMap(side => AXLES.map(([z]) => lip(R + 0.07, 0.035, side * 0.93, R, z))));
+    merged(group, silver, [-1, 1].map(side => bx(0.02, 0.025, 0.12, side * (sideX(-0.1, 1.0) + 0.004), 1.0, -0.1)));
+    for (const side of [-1, 1]) {
+      for (const [z] of AXLES) {
+        wheel(group, R, 0.24, side * (0.95 - 0.12), R, z, alloy);
+        disc(group, black, 0.06, 0.02, side * 0.96, R, z).rotation.set(0, Math.PI / 2, 0);
+      }
     }
     group.userData = { body, animate: () => {}, livery: (evil) => roofPaint.color.setHex(evil ? 0xc9ccd2 : 0x18181b) };
     return group;
