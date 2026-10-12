@@ -492,6 +492,13 @@ export const FILLER_CARS = [
   filler(4, { id: 'pony', name: 'Pony Car', basedOn: '1965 Ford Mustang fastback', model: 'pony', color: 0x3f74b8, evilColor: 0x1f3d2a,
     hw: 0.87, hl: 2.3, height: 1.3, note: 'A long bonnet, a short deck and a fastback roof.',
     maxSpeed: 40, accel: 14, agility: 1.1, crossing: 0.4, health: 170, mass: 1.5, sound: 'muscle' }),
+  // (the fifth batch of two idea cars, promoted the same day (the owner, 12-Oct: "give these cars a tier, top of their class stats for the tier, then make them legendaries in packs"): tier 4, the tier's ceiling in top speed, acceleration and health)
+  filler(4, { id: 'goddess', name: 'Goddess Saloon', basedOn: 'Citroën DS (1968 on)', model: 'goddess', color: 0x6e8fae, evilColor: 0x16161a,
+    hw: 0.9, hl: 2.4, height: 1.47, note: 'A shark\'s nose, its back wheels under spats, and lamps that turn to look round the corner.',
+    maxSpeed: 42, accel: 15, agility: 1.2, crossing: 0.7, health: 300, mass: 1.5, sound: 'wagon' }, 'legendary'),
+  filler(4, { id: 'hardtop', name: 'Fifties Hardtop', basedOn: '1957 Chevrolet Bel Air hardtop', model: 'hardtop', color: 0x3fb0a8, evilColor: 0x7a1020,
+    hw: 0.94, hl: 2.5, height: 1.48, note: 'Rockets on the bonnet, fins on the tail, chrome everywhere and no pillar between the windows.',
+    maxSpeed: 42, accel: 15, agility: 1.1, crossing: 0.5, health: 300, mass: 1.7, sound: 'lowrider' }, 'legendary'),
   // ---- tier 5 (43 to 46 m/s, 12 to 22, 150 to 360)
   filler(5, { id: 'midnight', name: 'Midnight Coupe', basedOn: 'Nissan Skyline GT-R (R34)', model: 'midnight', color: 0x1f4fb4, evilColor: 0x3a1f5c,
     hw: 0.9, hl: 2.3, height: 1.36, note: 'Square shoulders, four round tail lamps and a wing as tall as its roof.',

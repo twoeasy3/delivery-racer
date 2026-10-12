@@ -21,7 +21,7 @@ try {
   const STORE = 'delivery_racer_progress_backup', cookieNow = () => document.cookie.split(';')[0], inCookie = () => JSON.parse(decodeURIComponent(cookieNow().split('=')[1]));
 
   // ---- what they are: thirty, tierless, free, placeholders, and none of them a garage car
-  check(IDEA_CARS.length === 41, IDEA_CARS.length + ' car ideas (66 built: 26 originals, the second batch of twenty: render/ideaModels2.js, the third of ten: render/ideaModels3.js, and the fourth of ten: render/ideaModels4.js; less the 18 promoted to the roster and the 7 Bespoke key cars)');
+  check(IDEA_CARS.length === 41, IDEA_CARS.length + ' car ideas (68 built: 26 originals, the second batch of twenty: render/ideaModels2.js, the third of ten: render/ideaModels3.js, the fourth of ten: render/ideaModels4.js, and the fifth of two: render/ideaModels5.js; less the 20 promoted to the roster and the 7 Bespoke key cars)');
   // (five that were ideas are the Bespoke key cars now (cars.js BESPOKE_CARS, 12-Oct): in the roster, out of the lot, not in CARS, no price, no tier)
   {
     const { BESPOKE_CARS = [] } = g.cars;
@@ -31,8 +31,8 @@ try {
   // (eighteen that were ideas are evergreen BLUEPRINT cars now (cars.js FILLER_CARS, CHECKLIST item 115): in the roster, out of the lot)
   {
     const { FILLER_CARS } = g.cars;
-    check(FILLER_CARS.length === 18 && FILLER_CARS.every(c => c.evergreen && !c.idea && c.tier >= 1 && c.tier <= 5 && !IDEA_CARS.some(i => i.id === c.id) && !CARS.includes(c)),
-      'the 18 evergreen blueprint cars are out of the ideas lot and not in CARS: ' + FILLER_CARS.map(c => c.id + ' ' + c.tier).join(', '));
+    check(FILLER_CARS.length === 20 && FILLER_CARS.every(c => c.evergreen && !c.idea && c.tier >= 1 && c.tier <= 5 && !IDEA_CARS.some(i => i.id === c.id) && !CARS.includes(c)),
+      'the 20 evergreen blueprint cars are out of the ideas lot and not in CARS: ' + FILLER_CARS.map(c => c.id + ' ' + c.tier).join(', '));
   }
   // (four that were ideas are garage cars now: the Blue Stars at four stars. Bought, owned and saved as any other)
   {
