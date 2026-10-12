@@ -11,12 +11,14 @@
 // and, a car of a tier not open yet, flat black (the lot's silhouette). With prefers-reduced-motion it does not turn
 // by itself and its parts stand still (modelviews.js STILL); a drag still turns it.
 // It LANDS when it comes on screen (a new car: the full view opened, or the next / previous car): a 0.05 m drop onto
-// the floor and a damped bounce on its springs, the shadow tightening as it lands (render/carbounce.js, about 0.8 s;
-// the whole body moves, as most models have no separate wheels). Reduced motion, or a dark silhouette: only a fade-in.
+// the floor and a damped bounce on its springs, the shadow tightening as it lands (render/carbounce.js, about 0.8 s):
+// the BODY sinks onto its wheels and rises off them while the wheels stay on the floor (render/carsuspension.js, which
+// finds every model's wheels however it was built). Reduced motion, or a dark silhouette: only a fade-in.
 import * as THREE from 'three';
 import { bounceOffset, bounceDone } from './carbounce.js';
+import { prepareSuspension, applySuspension } from './carsuspension.js';
 import { sharedRenderer, lit, stillViews, STILL } from './modelviews.js';
-import { makeShowCar, paintShowCar } from './garage.js';
+import { makeShowCar, paintShowCar } from './showcar.js';
 
 const SILHOUETTE = new THREE.MeshBasicMaterial({ color: 0x07080b }); // (as the car lot's: render/garage.js)
 const LIFT = 0.3, FOV = 30, SPIN = 0.35; // (rad looked down from level; the camera's height of view, deg; rad/s turning by itself)
@@ -63,6 +65,7 @@ const build = () => {
   body.add(model);
   turn.add(body);
   scene.add(turn);
+  prepareSuspension(model); // (its wheels and its sprung body found, once, as it was built: render/carsuspension.js)
   // its size over the whole of its animation (a part that moves must not go out of the picture)
   model.updateMatrixWorld(true);
   const bounds = new THREE.Box3().setFromObject(model);
@@ -120,22 +123,22 @@ const draw = (now) => {
   const still = stillViews();
   if (!held) {
     if (Math.abs(spinBy) > 0.02) { yaw += spinBy * dt; spinBy *= Math.pow(0.05, dt); }
-    else if (!still && now - idleAt > 1200) yaw += SPIN * dt;
+    else if (!still && !(ShowroomView.hold >= 0) && now - idleAt > 1200) yaw += SPIN * dt; // (held for a picture: not turning either)
   }
   v.turn.rotation.y = yaw;
   // landing: the drop and the bounce (render/carbounce.js), the shadow with it; a silhouette or reduced motion: a fade
   // (its clock moves at most a 30th of a second a frame: a slow first frame, the new model's own hitch on a phone,
   // never swallows the drop; the bounce plays out over the frames actually drawn)
   if (v.landAt === null || v.landAt === undefined) { v.landAt = now; v.landT = 0; } else v.landT += Math.min(dt, 1 / 30);
-  const since = v.landT / ShowroomView.slow, o = bounceOffset(since, still || v.dark);
-  v.body.position.y = o.y;
-  v.body.rotation.set(o.pitch, 0, o.roll);
+  const hold = ShowroomView.hold, since = hold >= 0 ? Math.min(hold, v.landT / ShowroomView.slow) : v.landT / ShowroomView.slow;
+  const o = bounceOffset(since, still || v.dark);
+  const t = still ? STILL.t : now / 1000;
+  v.model.userData.animate?.(t);
+  applySuspension(v.model, v.body, o); // (the body on its springs, the wheels kept on the floor: render/carsuspension.js)
   v.shadow.scale.set(v.shadowScale[0] * o.shadow, v.shadowScale[1] * o.shadow, 1);
   v.shadow.material.opacity = 0.75 * Math.min(1, Math.max(0.4, 1 - 6 * o.y));
   v.landing = !bounceDone(since);
   v.lift = o.y;
-  const t = still ? STILL.t : now / 1000;
-  v.model.userData.animate?.(t);
   if (v.model.userData.lamps && v.car.ufo) v.model.userData.lamps.rotation.y = t * 4; // (the saucer's ring of lights)
   frame(r.width / r.height);
   renderer.getSize(size);
@@ -145,7 +148,7 @@ const draw = (now) => {
   renderer.clear();
   renderer.render(v.scene, v.camera);
   v.ctx.clearRect(0, 0, w, h);
-  v.ctx.globalAlpha = o.alpha;
+  v.ctx.globalAlpha = ShowroomView.hold >= 0 ? 1 : o.alpha; // (held for a picture: not faded)
   v.ctx.drawImage(renderer.domElement, 0, size.y - h, w, h, 0, 0, w, h);
   v.ctx.globalAlpha = 1;
 };
@@ -214,6 +217,7 @@ export const ShowroomView = {
     if (!v.dark) paintShowCar(v.model, v.car, v.evil);
   },
   slow: 1, // (a check's slow motion of the landing: 10 = ten times slower; 1 always in play)
+  hold: -1, // (a picture's: the landing stopped that many seconds in, e.g. 0.16 the body down on its springs; ?bounce=0.16)
   // whether the view is in sight now (render/showroom.js says)
   when(fn) { visible = fn; },
   // done: the loop ended and the model let go (the 2D canvas is kept for next time)

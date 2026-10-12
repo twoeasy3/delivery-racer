@@ -68,6 +68,7 @@ import './horn.js';
 import { Garage } from './render/garage.js';
 import { Events, when as eventTime } from './events.js';
 import { Showroom } from './render/showroom.js';
+import { ShowroomView } from './render/showroomview.js';
 import { Sound } from './render/audio.js';
 import { Social } from './social.js';
 import { CAR, lendCar, superOf, ownedAmphibious, carStats } from './cars.js';
@@ -120,8 +121,10 @@ if (params.get('garage') !== null) {
 }
 // ?showroom opens the showroom (render/showroom.js: where a car is picked; ?garage is the car lot, Crazey Jim's);
 // &look=sport picks that car's card (&full or &sheet: and opens its full view); &filter=, &filters (render/showroom.js); &bp=sport:7,hotrod:3 gives those
-// blueprints for the visit (nothing is saved)
+// blueprints for the visit (nothing is saved); &bounce=0.2: the full view's car stopped that many seconds into its landing
+// (0.16: the body down on its springs over its wheels, 0.31: up off them; render/carbounce.js), for a picture of it
 if (params.get('showroom') !== null) {
+  if (params.get('bounce') !== null) ShowroomView.hold = Math.max(0, Number(params.get('bounce')) || 0);
   if (params.get('bp')) {
     Progress.noSave = true;
     for (const token of params.get('bp').split(',')) {
