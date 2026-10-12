@@ -133,6 +133,7 @@ if (params.get('showroom') !== null) {
     }
   }
   if (params.get('filter') !== null) Showroom.useFilter(params.get('filter')); // (&filter=tier:g3,b1;state:ready;sort:speed: for the visit)
+  if (params.get('evil') !== null) Game.evil = true; // (&evil: the showroom opens on the Evil side)
   if (params.get('nostats') !== null) Showroom.hideStats(true); // (&nostats: the phone's full view with the stats hidden)
   Showroom.open();
   const full = params.get('full') !== null || params.get('sheet') !== null; // (&full: the car's full view; &sheet, its old name)
