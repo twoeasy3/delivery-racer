@@ -1,36 +1,119 @@
-// ---- a car's still: its real model, in a side's livery, drawn ONCE at one pose and kept as a picture ----------------
-// The special event's cards (render/menustage.js) and the showroom's (render/showroom.js) show their cars this way:
-// drawStill (render/modelviews.js) renders the model into the element's own size by the menu's one renderer, the
-// picture is kept as a data URL, and the element shows it as its background. Kept by car, side AND size (in steps of
-// 20 px): a picture drawn small (the event's grand prize) is never stretched over a bigger card, where it was blurry.
+// ---- a car's still: its real model, in a side's livery, drawn ONCE at a pose and kept as a picture ------------------
+// Every car picture in the menus is drawn this way (the owner, 12-Oct: the pre-rendered carshots/*.jpg are "ugly as
+// hell. Only use the newer style"): the special event's cards (render/menustage.js), the showroom's (render/showroom.js),
+// the Shop's featured tile (render/shop.js), the blueprint cards of a pack reveal and of "What's inside"
+// (render/blueprintcard.js). drawStill (render/modelviews.js) renders the model into the element's own size by the
+// menu's ONE renderer (no WebGL context of its own); the picture is encoded off the main thread (canvas.toBlob) and
+// kept as an object URL, and the element shows it as its background (until then, the canvas drawn into it).
+// Kept by car, side, POSE and size (in steps of 20 px): a picture drawn small is never stretched over a bigger card.
+// Poses: STILL_POSE (the event cards' and showroom's one pose, framed as before), or one of the three of a blueprint card
+// (carposes.js: 'top', 'low', 'front'; POSES below), framed tight to the picture.
+// Lazily: stillsIn(root) draws only the pictures scrolled into view (an IntersectionObserver), a few a frame.
 import { makeShowCar, paintShowCar } from './garage.js';
 import { sharedRenderer, drawStill } from './modelviews.js';
 
-export const STILL_POSE = { lift: 0.3, angle: -0.64, close: 1 }; // (from a little above, in front, three-quarters on, the nose to the left: every card the same)
-const stills = new Map(); // car id + side + size -> the picture of it, once drawn
-const keyOf = (el, car, evil) => {
+export const STILL_POSE = { lift: 0.3, angle: -0.64, close: 1 }; // (from a little above, in front, three-quarters on, the nose to the left: the event cards)
+// the blueprint cards' three (a model's nose is +z; angle turns it, from facing the camera: + to the right, - to the left)
+export const POSES = {
+  top: { lift: 1.08, angle: Math.PI - 0.62, fov: 30, margin: 0.88 },   // from above and a little behind, nose away up to the right
+  low: { lift: 0.07, angle: -0.78, fov: 54, margin: 0.9 },             // low, front three-quarter, a wide lens close in, nose to the left
+  front: { lift: 0.24, angle: 0.62, fov: 28, margin: 0.88 },           // eye height, front three-quarter, nose to the right
+};
+const poseOf = (pose) => (typeof pose === 'string' ? POSES[pose] || STILL_POSE : pose || STILL_POSE);
+const poseKey = (pose) => (typeof pose === 'string' ? pose : pose && pose !== STILL_POSE ? JSON.stringify(pose) : 'still');
+
+const stills = new Map(); // car id + side + pose + size -> the object URL of its picture, once encoded
+const keyOf = (el, car, evil, pose) => {
   const r = el.getBoundingClientRect();
-  return car.id + (evil ? '/evil' : '/good') + '/' + Math.round(r.width / 20) + 'x' + Math.round(r.height / 20);
+  return car.id + (evil ? '/evil/' : '/good/') + poseKey(pose) + '/' + Math.round(r.width / 20) + 'x' + Math.round(r.height / 20);
+};
+const show = (el, url) => {
+  el.style.backgroundImage = `url("${url}")`;
+  el.querySelector(':scope > canvas.still-draw')?.remove();
 };
 // already drawn for this element's size: shown at once (true); false: it is still to be drawn
-export const stillReady = (el, car, evil) => {
-  const url = stills.get(keyOf(el, car, evil));
-  if (url) el.style.backgroundImage = `url("${url}")`;
+export const stillReady = (el, car, evil, pose) => {
+  const url = stills.get(keyOf(el, car, evil, pose));
+  if (url) show(el, url);
   return !!url;
 };
+const waiting = new Map(); // key -> { canvas (the one drawn), els (to show it on once it is encoded) }
 // drawn now if it is not yet (a model built, painted, rendered, and given back). False: nothing could be drawn (no
 // renderer, no size yet, no model for the car)
-export const stillCar = (el, car, evil) => {
-  if (stillReady(el, car, evil)) return true;
-  const key = keyOf(el, car, evil);
+export const stillCar = (el, car, evil, pose) => {
+  if (stillReady(el, car, evil, pose)) return true;
+  const key = keyOf(el, car, evil, pose);
+  const w = waiting.get(key);
+  if (w) { // (being encoded: a copy of the one drawn until it is, so a second card of the car is never blank)
+    if (!w.els.has(el)) {
+      w.els.add(el);
+      if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+      el.querySelector(':scope > canvas.still-draw')?.remove();
+      const copy = document.createElement('canvas');
+      copy.width = w.canvas.width; copy.height = w.canvas.height;
+      copy.className = 'still-draw';
+      copy.style.cssText = 'display:block;position:absolute;inset:0;width:100%;height:100%;pointer-events:none';
+      copy.getContext('2d').drawImage(w.canvas, 0, 0);
+      el.append(copy);
+    }
+    return true;
+  }
   try {
     const model = makeShowCar(car);
     paintShowCar(model, car, evil);
-    if (!drawStill(sharedRenderer(), el, model, STILL_POSE)) return false;
-    const canvas = el.querySelector('canvas');
-    stills.set(key, canvas.toDataURL('image/png'));
-    canvas.remove();
-    el.style.backgroundImage = `url("${stills.get(key)}")`;
+    if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+    el.querySelector(':scope > canvas.still-draw')?.remove(); // (one drawn for another size or pose)
+    if (!drawStill(sharedRenderer(), el, model, poseOf(pose))) return false;
+    const canvas = el.querySelector(':scope > canvas:last-of-type');
+    canvas.classList.add('still-draw');
+    canvas.style.position = 'absolute'; canvas.style.inset = '0';
+    const els = new Set([el]);
+    waiting.set(key, { canvas, els });
+    const done = (url) => { waiting.delete(key); stills.set(key, url); for (const e of els) show(e, url); };
+    if (canvas.toBlob) canvas.toBlob((blob) => done(blob ? URL.createObjectURL(blob) : canvas.toDataURL('image/png')), 'image/png');
+    else done(canvas.toDataURL('image/png'));
     return true;
   } catch (error) { console.warn('No model for the card: ' + (error?.message || error)); return false; }
+};
+
+// ---- lazily: only the pictures in view, a few a frame (a budget of time, so the screen keeps moving) ----
+const BUDGET = 12; // ms of drawing a frame, at most
+let queue = [], pumping = 0;
+const pump = () => {
+  pumping = 0;
+  const t0 = performance.now();
+  while (queue.length && performance.now() - t0 < BUDGET) {
+    const job = queue.shift();
+    if (!job.el.isConnected || job.el.dataset.still === job.key) continue;
+    if (stillReady(job.el, job.car, job.evil, job.pose)) { job.el.dataset.still = job.key; continue; }
+    if (stillCar(job.el, job.car, job.evil, job.pose)) job.el.dataset.still = job.key;
+    else if (job.el.isConnected && !job.el.getBoundingClientRect().width && (job.tries = (job.tries || 0) + 1) < 30) { queue.push(job); break; } // (not laid out yet: a later frame)
+  }
+  if (queue.length) pumping = requestAnimationFrame(pump);
+};
+// side: 'good' or 'evil', the livery (the pack screens always ask 'good': the owner, 12-Oct, "Render all card pack images in Good colours")
+export const drawSoon = (el, car, { side = 'good', pose } = {}) => {
+  const evil = side === 'evil';
+  const job = { el, car, evil, pose, key: car.id + '/' + (evil ? 'e' : 'g') + '/' + poseKey(pose) };
+  if (el.dataset.still === job.key) return;
+  if (stillReady(el, car, evil, pose)) { el.dataset.still = job.key; return; } // (cached: at once, no frame)
+  queue.push(job);
+  if (!pumping) pumping = requestAnimationFrame(pump);
+};
+// the pictures of a scrolling box (root: the box, or null for the screen): watch(el, car, { side, pose }) draws it
+// once it comes within `margin` of view; stop() when the box goes
+export const stillsIn = (root = null, margin = '160px') => {
+  const of = new WeakMap();
+  const io = typeof IntersectionObserver === 'function' ? new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      io.unobserve(e.target);
+      const [car, opts] = of.get(e.target) || [];
+      if (car) drawSoon(e.target, car, opts);
+    }
+  }, { root, rootMargin: margin }) : null;
+  return {
+    watch(el, car, opts = {}) { if (io) { of.set(el, [car, opts]); io.observe(el); } else drawSoon(el, car, opts); },
+    stop() { io?.disconnect(); queue = queue.filter(j => j.el.isConnected); },
+  };
 };
