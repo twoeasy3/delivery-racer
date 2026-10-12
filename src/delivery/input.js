@@ -75,13 +75,19 @@ export const Input = (() => {
   return {
     on, emit, hold,
     tap: null,  // told of every event passed on (replay.js records them)
-    fed: null,  // { steer, throttle }: a replay's controls, in place of the player's while it plays
+    fed: null,  // { steer, throttle, auto }: a replay's controls, in place of the player's while it plays
     autoGas: false, // the accelerator held down by itself; braking still overrides it (a menu option)
     get steer() { return this.fed ? this.fed.steer : q(clampAxis(keyAxis(STEER_KEYS) + touchSteer + pressed.right - pressed.left)); },
     get throttle() {
       if (this.fed) return this.fed.throttle;
       const throttle = q(clampAxis(keyAxis(THROTTLE_KEYS) + touchThrottle + pressed.gas - pressed.brake));
       return this.autoGas && throttle >= 0 ? 1 : throttle;
+    },
+    // the accelerator is held down by auto accelerate alone: the player is not pressing it (the auto brake may then act,
+    // player.js: with the accelerator held by the player it never does). A replay is fed it too (replay.js)
+    get auto() {
+      if (this.fed) return !!this.fed.auto;
+      return this.autoGas && q(clampAxis(keyAxis(THROTTLE_KEYS) + touchThrottle + pressed.gas - pressed.brake)) === 0;
     },
   };
 })();

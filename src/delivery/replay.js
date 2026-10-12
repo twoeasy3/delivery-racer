@@ -6,7 +6,8 @@
 //   header  the build's rules (version.js logic), the level and its fingerprint, the car and its fingerprint, the
 //           side, the tank pieces, the race class, a rival, a forced mystery, the two seeds; and once over, the steps
 //           it ran and how it ended
-//   inputs  [step, steer x 64, throttle x 64]: the controls each time they change (they are rounded to 1/64 as they
+//   inputs  [step, steer x 64, throttle x 64, auto]: the controls each time they change (auto: 1 where the accelerator is
+//           held by auto accelerate alone, so the auto brake may act: input.js) (they are rounded to 1/64 as they
 //           are read: input.js, so what is recorded is what was driven)
 //   events  [step, 'throw' | 'horn' | 'confirm']: what the player did between steps, at the step it came after
 //   path    [time, s, lat, yaw, air] every PATH_EVERY steps: where the car was by the clock, for a ghost of the run;
@@ -82,7 +83,7 @@ export const Replay = {
         mystery: Player.nextMystery || '', autoBrake: Player.autoBrake, seed: Game.seed, loadSeed: Game.loadSeed, date: new Date().toISOString(),
       },
       inputs: [], events: [], checks: [], path: [],
-      at: { steer: 0, throttle: 0 },
+      at: { steer: 0, throttle: 0, auto: 0 },
     };
     this.mark();
   },
@@ -114,10 +115,10 @@ export const Replay = {
     if (this.playing) return this.feed(step);
     const rec = this.recording;
     if (!rec) return;
-    const steer = q(Input.steer), throttle = q(Input.throttle);
-    if (steer !== rec.at.steer || throttle !== rec.at.throttle) {
-      rec.inputs.push([step, steer, throttle]);
-      rec.at = { steer, throttle };
+    const steer = q(Input.steer), throttle = q(Input.throttle), auto = Input.auto ? 1 : 0;
+    if (steer !== rec.at.steer || throttle !== rec.at.throttle || auto !== rec.at.auto) {
+      rec.inputs.push(auto ? [step, steer, throttle, 1] : [step, steer, throttle]);
+      rec.at = { steer, throttle, auto };
     }
   },
   // after each logic step: every CHECK_EVERY steps, a fingerprint of where everything is
@@ -187,7 +188,7 @@ export const Replay = {
     pinCar(h.car);
     Game.nextSeed = h.seed;
     Game.nextLoadSeed = h.loadSeed;
-    Input.fed = { steer: 0, throttle: 0 };
+    Input.fed = { steer: 0, throttle: 0, auto: false };
     this.starting = true;
     try { Game.start(); } finally { this.starting = false; }
     if (Game.state !== 'playing') { this.stop(); return false; } // (refused: see Game.canStart)
@@ -215,8 +216,8 @@ export const Replay = {
     if (p.over) return;
     if (step >= p.rec.header.steps) return this.halt('end'); // (no more was recorded)
     while (p.input < inputs.length && inputs[p.input][0] <= step) {
-      const [, steer, throttle] = inputs[p.input++];
-      Input.fed = { steer: steer / 64, throttle: throttle / 64 };
+      const [, steer, throttle, auto] = inputs[p.input++];
+      Input.fed = { steer: steer / 64, throttle: throttle / 64, auto: !!auto };
     }
     while (p.event < events.length && events[p.event][0] <= step) Input.emit(events[p.event++][1], true);
   },
