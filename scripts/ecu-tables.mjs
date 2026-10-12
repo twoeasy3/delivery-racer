@@ -3,7 +3,7 @@
 // for a car lot car, 0.06 for a blueprint car or an event car), for maxSpeed (to 0.1 m/s), accel (to 0.1) and health (whole);
 // respawn 5.5 s at ECU1 and 0.5 s less for each ECU above it. N = the ladder's max ECU (Ecu.ladder). x = blueprints per
 // ECU step (Ecu X_DEFAULT). The cars: the garage's (CARS, the amphibious ones and the Tank too), the evergreen blueprint
-// cars (FILLER_CARS), the event cars and the earned (special) cars (ECU1 only). Once written THE FILE IS THE TRUTH: edit
+// cars (FILLER_CARS), the event cars, the Bespoke key cars (BESPOKE_CARS) and the earned (special) cars (ECU1 only). Once written THE FILE IS THE TRUTH: edit
 // it by hand; this only writes it again when told.
 //   node scripts/ecu-tables.mjs             what it would write, against the file (nothing written)
 //   node scripts/ecu-tables.mjs --missing   add only the cars the file has no entry for (hand edits kept)
@@ -15,7 +15,7 @@ const FILE = new URL('../src/delivery/ecus.json', import.meta.url);
 const g = await boot();
 try {
   const { Ecu, STEPS, RESPAWN, X_DEFAULT } = await g.load('ecu.js');
-  const { CARS, FILLER_CARS, EVENT_CARS, EARNED_CARS } = g.cars;
+  const { CARS, FILLER_CARS, EVENT_CARS, BESPOKE_CARS = [], EARNED_CARS } = g.cars;
   const round = (v, step) => Math.round(v / step) * step;
   const fix = (v, step) => Number(round(v, step).toFixed(step < 1 ? 1 : 0));
   const entryFor = (car) => {
@@ -27,7 +27,7 @@ try {
     }
     return { x: X_DEFAULT, ecus };
   };
-  const cars = [...CARS, ...FILLER_CARS, ...EVENT_CARS, ...EARNED_CARS];
+  const cars = [...CARS, ...FILLER_CARS, ...EVENT_CARS, ...BESPOKE_CARS, ...EARNED_CARS];
   const fresh = Object.fromEntries(cars.map(car => [car.id, entryFor(car)]));
   const now = JSON.parse(readFileSync(FILE, 'utf8'));
   const mode = process.argv.includes('--write') ? 'write' : process.argv.includes('--missing') ? 'missing' : 'dry';

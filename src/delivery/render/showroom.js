@@ -25,6 +25,7 @@ import { Garage } from './garage.js';
 import { stillCar, stillReady } from './carstill.js';
 import { ShowroomView } from './showroomview.js';
 import { Sound } from './audio.js';
+import { renderSources } from './carsources.js'; // ("Where to get it": the car's key and blueprint sources)
 
 const panel = document.getElementById('showroom');
 const startScreen = document.getElementById('startScreen');
@@ -277,6 +278,7 @@ const showDetail = () => {
       figures,
       card.perk && !card.hidden ? make('p', 'sr-perk', make('b', '', 'Perk '), card.perk) : null,
       why,
+      card.hidden ? null : renderSources(card.car, { open: phone() }), // (where its key and blueprints come from: render/carsources.js; shut on a desktop, a line)
       make('div', 'sr-actions', sideSwitch('sr-side-detail'), go)));
   detail.style.setProperty('--rar', RARITIES[card.rarity].colour);
   detail.className = 'sr-detail ' + card.rarity + ' ' + card.state + (detail.classList.contains('open') ? ' open' : '');

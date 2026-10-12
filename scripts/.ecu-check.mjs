@@ -21,7 +21,7 @@ try {
   const car = (id) => carById(id);
 
   // ---- the ladder
-  const roster = [...CARS, ...FILLER_CARS, ...EVENT_CARS, ...EARNED_CARS];
+  const roster = [...CARS, ...FILLER_CARS, ...EVENT_CARS, ...(g.cars.BESPOKE_CARS || []), ...EARNED_CARS];
   check(roster.every(c => ECUS[c.id]), 'every roster car has its ECUs in ecus.json (' + roster.length + ' cars; ' + Object.keys(ECUS).length + ' entries)');
   const off = roster.filter(c => Ecu.max(c) !== Ecu.ladder(c));
   check(!off.length, 'each car\'s max ECU in the file is the ladder\'s' + (off.length ? ': NOT ' + off.map(c => c.id).join(', ') : ''));

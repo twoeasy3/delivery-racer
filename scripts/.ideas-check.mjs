@@ -21,7 +21,13 @@ try {
   const STORE = 'delivery_racer_progress_backup', cookieNow = () => document.cookie.split(';')[0], inCookie = () => JSON.parse(decodeURIComponent(cookieNow().split('=')[1]));
 
   // ---- what they are: thirty, tierless, free, placeholders, and none of them a garage car
-  check(IDEA_CARS.length === 48, IDEA_CARS.length + ' car ideas (66 built: 26 originals, the second batch of twenty: render/ideaModels2.js, the third of ten: render/ideaModels3.js, and the fourth of ten: render/ideaModels4.js; less the 18 promoted to the roster)');
+  check(IDEA_CARS.length === 43, IDEA_CARS.length + ' car ideas (66 built: 26 originals, the second batch of twenty: render/ideaModels2.js, the third of ten: render/ideaModels3.js, and the fourth of ten: render/ideaModels4.js; less the 18 promoted to the roster and the 5 Bespoke key cars)');
+  // (five that were ideas are the Bespoke key cars now (cars.js BESPOKE_CARS, 12-Oct): in the roster, out of the lot, not in CARS, no price, no tier)
+  {
+    const { BESPOKE_CARS = [] } = g.cars;
+    check(BESPOKE_CARS.length === 5 && BESPOKE_CARS.every(c => c.bespoke && c.rarity === 'legendary' && !c.idea && !c.tier && c.price === 0 && !IDEA_CARS.some(i => i.id === c.id) && !CARS.includes(c)),
+      'the 5 Bespoke key cars are out of the ideas lot and not in CARS: ' + BESPOKE_CARS.map(c => c.id).join(', '));
+  }
   // (eighteen that were ideas are evergreen BLUEPRINT cars now (cars.js FILLER_CARS, CHECKLIST item 115): in the roster, out of the lot)
   {
     const { FILLER_CARS } = g.cars;
@@ -47,7 +53,7 @@ try {
     check(g.cars.CAR.id === 'polytruck' && inCookie().cars.length === 5 && document.cookie.length <= 4096, '...and one in use is there after the save is read again (the cookie: ' + document.cookie.length + ' bytes)');
     Progress.reset();
   }
-  const others = [...CARS, ...EARNED_CARS, ...Object.values(SECRET_CARS), ...Object.values(LEVEL_CARS)];
+  const others = [...CARS, ...EARNED_CARS, ...(g.cars.BESPOKE_CARS || []), ...Object.values(SECRET_CARS), ...Object.values(LEVEL_CARS)];
   check(new Set([...others, ...IDEA_CARS].map(c => c.id)).size === others.length + IDEA_CARS.length, 'every id its own, among the ideas and against every other car');
   check(IDEA_CARS.every(c => c.placeholder === true && c.idea === true), 'every one flagged a placeholder');
   check(IDEA_CARS.every(c => c.tier === undefined && c.price === 0 && !c.blue && !c.amphibious && !c.earned && !c.trait && !c.perk && !c.tank && stars(c) === ''), 'tierless: no tier, no stars, no price, no season, not amphibious, not earned, no trait or perk');

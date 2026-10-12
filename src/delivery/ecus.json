@@ -67,5 +67,10 @@
   "earned-lmp": { "x": 5, "ecus": [{"maxSpeed":68,"accel":18,"health":160,"respawn":5.5}] },
   "courier": { "x": 5, "ecus": [{"maxSpeed":50,"accel":19,"health":220,"respawn":5.5}] },
   "showdown": { "x": 5, "ecus": [{"maxSpeed":52,"accel":17,"health":300,"respawn":5.5}] },
-  "earned-apc": { "x": 5, "ecus": [{"maxSpeed":32,"accel":9,"health":450,"respawn":5.5}] }
+  "earned-apc": { "x": 5, "ecus": [{"maxSpeed":32,"accel":9,"health":450,"respawn":5.5}] },
+  "rocketfin": { "x": 5, "ecus": [{"maxSpeed":35.7,"accel":12.9,"health":167,"respawn":5.5}, {"maxSpeed":38.5,"accel":13.9,"health":180,"respawn":5}, {"maxSpeed":41.4,"accel":15,"health":194,"respawn":4.5}, {"maxSpeed":44.2,"accel":16,"health":207,"respawn":4}, {"maxSpeed":47,"accel":17,"health":220,"respawn":3.5}] },
+  "swancar": { "x": 5, "ecus": [{"maxSpeed":31.9,"accel":9.9,"health":289,"respawn":5.5}, {"maxSpeed":34.4,"accel":10.7,"health":312,"respawn":5}, {"maxSpeed":37,"accel":11.4,"health":334,"respawn":4.5}, {"maxSpeed":39.5,"accel":12.2,"health":357,"respawn":4}, {"maxSpeed":42,"accel":13,"health":380,"respawn":3.5}] },
+  "solarracer": { "x": 5, "ecus": [{"maxSpeed":38,"accel":10.6,"health":68,"respawn":5.5}, {"maxSpeed":41,"accel":11.5,"health":74,"respawn":5}, {"maxSpeed":44,"accel":12.3,"health":79,"respawn":4.5}, {"maxSpeed":47,"accel":13.2,"health":85,"respawn":4}, {"maxSpeed":50,"accel":14,"health":90,"respawn":3.5}] },
+  "moonrover": { "x": 5, "ecus": [{"maxSpeed":31.2,"accel":13.7,"health":114,"respawn":5.5}, {"maxSpeed":33.6,"accel":14.8,"health":123,"respawn":5}, {"maxSpeed":36.1,"accel":15.8,"health":132,"respawn":4.5}, {"maxSpeed":38.5,"accel":16.9,"health":141,"respawn":4}, {"maxSpeed":41,"accel":18,"health":150,"respawn":3.5}] },
+  "monowheel": { "x": 5, "ecus": [{"maxSpeed":33.4,"accel":16,"health":76,"respawn":5.5}, {"maxSpeed":36.1,"accel":17.2,"health":82,"respawn":5}, {"maxSpeed":38.7,"accel":18.5,"health":88,"respawn":4.5}, {"maxSpeed":41.4,"accel":19.7,"health":94,"respawn":4}, {"maxSpeed":44,"accel":21,"health":100,"respawn":3.5}] }
 }
