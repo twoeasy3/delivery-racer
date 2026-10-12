@@ -35,7 +35,7 @@
 // ============================================================================
 import { CONFIG } from './config.js';
 import { THEMES } from './themes.js';
-import { CARS, LEVEL_CARS, EARNED_CARS, EVENT_CARS, FILLER_CARS } from './cars.js';
+import { CARS, LEVEL_CARS, EARNED_CARS, EVENT_CARS, BESPOKE_CARS, FILLER_CARS } from './cars.js';
 import { IDEA_CARS } from './ideas.js';
 import { CARGO } from './cargo.js';
 
@@ -61,7 +61,7 @@ export const WRECKAGE_KINDS = Object.keys(CONFIG.wreckage.kinds);
 export const THEME_NAMES = Object.keys(THEMES);
 export const CAR_IDS = [...Object.keys(LEVEL_CARS), ...CARS.map(c => c.id), ...EARNED_CARS.map(c => c.id), ...EVENT_CARS.map(c => c.id)];
 // (the cars a level's allowedCars may name: any a player can own)
-const OWNABLE_IDS = [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...FILLER_CARS, ...IDEA_CARS].map(c => c.id);
+const OWNABLE_IDS = [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...BESPOKE_CARS, ...FILLER_CARS, ...IDEA_CARS].map(c => c.id);
 export const RACE_KINDS = ['f1', 'gt', 'lmp'].filter(k => LEVEL_CARS[k]);
 const SIDES = ['left', 'right'];
 

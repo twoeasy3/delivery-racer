@@ -1,0 +1,111 @@
+// A check of where a car's key and blueprints come from (src/delivery/carsources.js sourcesOf, the showroom's "Where to
+// get it": render/carsources.js), worked out live from the game's data: a garage car (bought at the car lot once its
+// tier is open; blueprints from packs, the Career ones counting down as their levels are delivered), the Silver Comet
+// (its key the Comet Hunt's prize while the event is on, and not after; a Bespoke key card in packs; Legendary
+// blueprints, its special pack only while the event is on), a Bespoke key car from the idea lot (its key from packs
+// only), a filler (blueprints only, no key), an earned car (no blueprints), a key owned, a car maxed, and a car with
+// nothing to be had now.
+//   node scripts/.carsources-check.mjs
+import { boot } from './delivery-headless.mjs';
+
+const g = await boot({ cars: ['commuter'] });
+let failures = 0;
+const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' : '  FAIL  ') + what); };
+try {
+  const { sourcesOf, sourcesLine, careerLeft } = await g.load('carsources.js');
+  const { Progress } = await g.load('progress.js');
+  const { Events, when } = await g.load('events.js');
+  const { careerLevels } = await g.load('packs.js');
+  const { Ecu } = await g.load('ecu.js');
+  const by = (id) => g.cars.carById(id);
+  const DURING = when('2026-10-12'), AFTER = when('2026-11-05'), BEFORE = when('2026-09-20');
+  const at = (t) => { Events.now = () => t; };
+  const fresh = () => { Progress.reset(); Progress.noSave = true; };
+  const say = (s) => [...s.keys, ...s.blueprints].map(x => (x.available ? '+' : '-') + x.what[0] + ':' + x.where).join(', ');
+  const ofHow = (list, how) => list.filter(x => x.how === how);
+
+  // ---- a garage car: bought at the car lot (once its tier is open); blueprints from packs ----
+  fresh(); at(DURING);
+  let s = sourcesOf(by('lovebus'));
+  const lot0 = ofHow(s.keys, 'lot')[0];
+  check(lot0 && !lot0.available && /Not for sale yet/.test(lot0.why), 'a garage car of a tier not open: the car lot, not for sale yet (' + lot0?.why + ')');
+  Progress.data.unlocked = 99; Progress.data.tierBase = 99;
+  s = sourcesOf(by('lovebus'));
+  const lot = ofHow(s.keys, 'lot')[0];
+  check(lot?.available && lot.where.includes('Crazey Jim') && lot.detail.includes('$130') && s.keys.length === 1, 'its tier open: bought at Crazey Jim\'s (' + lot?.detail + '), its only key source');
+  const kinds = s.blueprints.filter(x => x.available).map(x => x.kind);
+  check(s.blueprints.every(x => x.how === 'pack') && ['standard', 'ten', 'career'].every(k => kinds.includes(k)) && s.blueprints.every(x => x.rarity === null || x.rarity === 'common'),
+    'its blueprints: Common cards in packs (' + s.blueprints.filter(x => x.available).map(x => x.where + ' ' + x.detail.split(':')[0]).join('; ') + ')');
+  const shop = s.blueprints.find(x => x.kind === 'standard').ways.find(w => w.how === 'shop');
+  check(shop?.available && shop.placeholder && /Crazey Cash \(placeholder: nothing gives it yet\)/.test(shop.detail), 'a Shop offer: on sale, flagged a placeholder (' + shop?.detail + ')');
+  // the Career packs: the levels not yet delivered, counting down
+  const career = () => sourcesOf(by('lovebus')).blueprints.find(x => x.kind === 'career').ways.find(w => w.how === 'career');
+  const all = careerLevels().length, left0 = careerLeft().length;
+  check(left0 === all && career().available && career().detail.endsWith(all + ' left'), 'Career packs: ' + career().detail);
+  Progress.data.bestTime.good[careerLevels()[0]] = 30;
+  Progress.data.bestTime.evil[careerLevels()[1]] = 30;
+  check(careerLeft().length === all - 2 && career().detail.endsWith((all - 2) + ' left'), 'two of those levels delivered: ' + career().detail);
+  for (const id of careerLevels()) Progress.data.bestTime.good[id] = 30;
+  check(!career().available && /already/.test(career().why), 'all delivered: not available (' + career().why + ')');
+
+  // ---- the Silver Comet: the first Bespoke key car ----
+  fresh(); at(DURING);
+  const comet = by('silvercomet');
+  check(comet.bespoke && Ecu.rarity(comet) === 'legendary' && Ecu.max(comet) === 5 && comet.model === 'centreseat', 'the Silver Comet: Bespoke, Legendary blueprints, ECU max 5, still on the Centre-Seat Hypercar model');
+  s = sourcesOf(comet);
+  const hunt = ofHow(s.keys, 'event')[0];
+  check(hunt?.available && hunt.where === 'The Comet Hunt' && /ends 1 Nov/.test(hunt.detail), 'while the Comet Hunt is on: its key is the grand prize (' + hunt?.detail + ')');
+  const keyPacks = ofHow(s.keys, 'pack');
+  check(keyPacks.length >= 1 && keyPacks.every(x => x.rarity === 'bespoke' && x.chance > 0 && x.available) && keyPacks.map(x => x.kind).sort().join() === 'standard,ten',
+    'a Bespoke key card in the packs with keys: ' + keyPacks.map(x => x.where + ' ' + x.detail.split(':')[0]).join('; '));
+  const legendary = s.blueprints.filter(x => x.chance > 0);
+  check(legendary.length && legendary.every(x => x.rarity === 'legendary'), 'its blueprints are Legendary cards: ' + legendary.map(x => x.where).join(', '));
+  const special = s.blueprints.find(x => x.kind === 'special');
+  check(special?.available && special.chance > 0.99 && special.ways.some(w => w.how === 'event' && w.available) && special.ways.some(w => w.how === 'shop' && w.available),
+    'the Comet Hunt\'s special pack: a featured card in every one, from the stages and the Shop (' + special?.detail + ')');
+  check(s.blueprints.find(x => x.kind === 'career')?.available === false && /Cannot hold it/.test(s.blueprints.find(x => x.kind === 'career').why), 'never in a Career pack (' + s.blueprints.find(x => x.kind === 'career')?.why + ')');
+  at(AFTER);
+  s = sourcesOf(comet);
+  const over = ofHow(s.keys, 'event')[0], spOver = s.blueprints.find(x => x.kind === 'special');
+  check(over && !over.available && /^Event over \(ended 1 Nov\)/.test(over.why), 'the event over: the prize is not obtainable (' + over?.why + ')');
+  check(spOver && !spOver.available && spOver.ways.every(w => !w.available) && /Event over/.test(spOver.why), '...nor its special pack, from the stages or the Shop (' + spOver?.why + ')');
+  check(ofHow(s.keys, 'pack').every(x => x.available), '...its key still in the packs with keys (bought in the Shop)');
+  at(BEFORE);
+  s = sourcesOf(comet);
+  check(/^Not yet open: starts 1 Oct/.test(ofHow(s.keys, 'event')[0]?.why || ''), 'before the event: "' + ofHow(s.keys, 'event')[0]?.why + '"');
+  at(DURING);
+  Progress.data.claimed = ['event-comet-hunt'];
+  check(/Prize already won/.test(ofHow(sourcesOf(comet).keys, 'event')[0]?.why || ''), 'its prize won: "Prize already won"');
+  Progress.data.cars.push('silvercomet');
+  s = sourcesOf(comet);
+  check(s.keyOwned && s.keys.every(x => !x.available && x.why === 'You have its key already') && s.obtainable.blueprints, 'the key owned: every key source says so; its blueprints still to be had');
+  Progress.data.blueprints = { silvercomet: 99 };
+  s = sourcesOf(comet);
+  check(s.maxed && s.blueprints.every(x => !x.available && /max ECU/.test(x.why)), 'at its max ECU: no blueprints needed (' + s.blueprints[0]?.why + ')');
+
+  // ---- a Bespoke key car from the idea lot: its key from packs only ----
+  fresh(); at(DURING);
+  s = sourcesOf(by('rocketfin'));
+  check(s.keys.length >= 1 && s.keys.every(x => x.how === 'pack' && x.rarity === 'bespoke') && s.blueprints.filter(x => x.chance > 0).every(x => x.rarity === 'legendary') && !s.blueprints.find(x => x.kind === 'special').chance,
+    'the Rocket Fin Coupe: its key only a Bespoke card in packs, its blueprints Legendary, in no special pack (' + say(s) + ')');
+
+  // ---- a filler: blueprints only ----
+  s = sourcesOf(by('bubble'));
+  check(s.keyless && s.keys.length === 0 && s.obtainable.blueprints && s.blueprints.filter(x => x.available).length >= 3, 'a filler (the Bubble Car): no key, ' + s.keyless + '; blueprints: ' + s.blueprints.filter(x => x.available).map(x => x.where).join(', '));
+
+  // ---- an earned car: no blueprints; its key a level's par; not obtainable while the level is shut ----
+  s = sourcesOf(by('hellrod'));
+  check(s.noBlueprints && /special car/.test(s.noBlueprints) && s.blueprints.length === 0, 'an earned car (the Hell Rod): ' + s.noBlueprints);
+  const par = ofHow(s.keys, 'level')[0];
+  check(par && !par.available && /Level not open yet/.test(par.why) && !s.obtainable.key, 'its key: beat the par on ' + par?.where + ', not open yet (' + par?.why + ')');
+  check(/Key: not obtainable right now/.test(sourcesLine(by('hellrod'))) && /No blueprints/.test(sourcesLine(by('hellrod'))), 'nothing to be had now, said plainly: "' + sourcesLine(by('hellrod')) + '"');
+  // a 1-gold starter
+  s = sourcesOf(by('commuter'));
+  check(s.keyOwned && /1-gold starter/.test(s.noBlueprints || ''), 'a 1-gold starter: owned, ' + s.noBlueprints);
+} catch (error) {
+  failures++;
+  console.log('  FAIL  ' + (error.stack || error));
+}
+await g.close();
+console.log(failures ? failures + ' FAILED' : 'all passed');
+process.exit(failures ? 1 : 0);

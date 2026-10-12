@@ -24,6 +24,7 @@ import { GarageView, arrange, mountGarageView } from './garageview.js';
 import { showComparison } from './compare.js';
 import { IdeasLot } from './ideaslot.js';
 import { ask, tell } from './dialog.js';
+import { sourcesLine } from '../carsources.js';
 
 // The lot: three rows of bays, a long covered garage along the back, the cars parked strictly column by
 // column in order of their stars and price, cheapest first (one with no stars, the Tank, last), and in
@@ -273,6 +274,7 @@ const refresh = () => {
   badge.replaceChildren(...(shown.silhouette ? [noneOwned(carRule(Garage.evil)) + ': buy one in the lot'] : reasonNode()));
   if (teaser) info.replaceChildren('Locked car  ', tierStarsNode(carTier(shown)), '  -  ', ...richTiers(teaserWhy(shown)));
   else info.replaceChildren(...withStars(shown), ...(notAllowed && !shown.silhouette ? [' - ', badge] : []), sepNode(), statsNode(shown));
+  info.title = teaser || IdeasLot.on ? '' : Tiers.plain(sourcesLine(shown)); // (its info line's tooltip: where its key and blueprints come from, carsources.js)
   showComparison(inUse, teaser ? null : shown); // (the car in use against the one looked at: see render/compare.js)
   // the button under the stats: what can be done with the car shown
   // (the car in use, looked at in the other side's livery: the button takes that side)
@@ -478,6 +480,7 @@ const notForSale = (car) => {
     return [car.off ? 'Not to be had for now' : 'Earned on ' + (level ? levelName(level) : car.earned.level) + ', not for sale'];
   }
   if (EVENT_CARS.includes(car)) return ['An event\'s reward, not for sale'];
+  if (car.bespoke) return ['A Bespoke key car: its key comes in card packs, not for sale'];
   return carTier(car) ? ['Not for sale yet: a ', tierStarsNode(carTier(car)), ' car. ', ...richTiers(teaserWhy(car))] : ['Not for sale'];
 };
 

@@ -10,7 +10,11 @@
 //     the ladder, the evergreen blueprint cars by their rarity), in every rarity but Bespoke. The roster is read when a
 //     pack is drawn (cars.js CARS, and EVERGREEN_CARS should cars.js keep them apart), so a car added there is in the
 //     pool with no edit here. Event cars (cars.js EVENT_CARS) are never evergreen: they come as FEATURED cards.
-//   - BESPOKE cards are keys: a garage (key) car the player does not own yet. Only in the packs whose pool is 'all'.
+//   - BESPOKE cards are keys: the key of a BESPOKE KEY CAR (a car flagged `bespoke: true`: cars.js BESPOKE_CARS, and the
+//     Silver Comet of EVENT_CARS) the player does not own yet. Only in the packs whose pool is 'all'. (Until 12-Oct the
+//     Bespoke pool was every garage car with a price: the car lot's cars are no longer key cards, the owner.) A Bespoke
+//     key car's BLUEPRINTS are cards of its own `rarity` (Legendary): never evergreen (a career pack has none); in the
+//     packs whose kind says `bespokeBlueprints: true` (packs.json), and as a special pack's featured card.
 //   - Kinds: career (evergreen only), special (a career pack with the featured cards: each slot but the last may
 //     upgrade, and when it does each featured card rolls its own chance; one card a slot, a hit is picked from those
 //     that came up; a slot that upgrades and hits none becomes a filler card of a higher rarity; the LAST slot is
@@ -40,7 +44,10 @@ export const kindName = (kind) => packData.kinds[kind]?.name || kind;
 // the cars that can be on a card: the roster now (a car added to it is in the pool from then on)
 // (the evergreen blueprint cars are cars.js FILLER_CARS: read as EVERGREEN_CARS alone, a name cars.js never had, they
 // were left out of every pack until the contents sheet listed the pool, 12-Oct)
-export const roster = () => [...new Set([...(Cars.CARS || []), ...(Cars.FILLER_CARS || []), ...(Cars.EVERGREEN_CARS || [])])];
+// (and the Bespoke key cars: the cards of their keys and their Legendary blueprints)
+export const isBespokeCar = (car) => !!car && !!car.bespoke && !car.off;
+export const roster = () => [...new Set([...(Cars.CARS || []), ...(Cars.FILLER_CARS || []), ...(Cars.EVERGREEN_CARS || []),
+  ...(Cars.EVENT_CARS || []).filter(isBespokeCar), ...(Cars.BESPOKE_CARS || [])])];
 // the rarity of a car's blueprint card, or null: it has none (a 1-gold starter, a car out of the tiers, the Tank)
 export const rarityOf = (car) => {
   if (!car || car.earned || car.super || car.tank || car.off) return null;
@@ -53,13 +60,28 @@ export const rarityOf = (car) => {
 // true) has no key: its first blueprints unlock it (ecu.js)
 export const isKeyCar = (car) => !!car && !car.evergreen && !car.tank && !car.earned && !car.super && car.tier >= 1;
 
-// the pools: { evergreen: { rarity: [car...] }, keys: [car...] } (cars: a list in place of the roster, for a check;
-// owned: whether a car is owned, for the keys)
+// the pools: { evergreen: { rarity: [car...] }, bespoke: { rarity: [car...] } (the Bespoke key cars' blueprints, by
+// their rarity: Legendary), keys: [car...] (the Bespoke key cars not owned) } (cars: a list in place of the roster, for
+// a check; owned: whether a car is owned, for the keys). An event car that is not Bespoke is in none (featured only)
 export const pools = ({ cars = roster(), owned = (id) => Progress.owns(id) } = {}) => {
   const evergreen = Object.fromEntries(RARITIES.filter(r => r !== 'bespoke').map(r => [r, []]));
-  for (const car of cars) { const r = rarityOf(car); if (r && evergreen[r]) evergreen[r].push(car); }
-  const keys = cars.filter(car => isKeyCar(car) && car.price > 0 && !owned(car.id));
-  return { evergreen, keys };
+  const bespoke = Object.fromEntries(RARITIES.filter(r => r !== 'bespoke').map(r => [r, []]));
+  for (const car of cars) {
+    const r = rarityOf(car);
+    if (!r || !evergreen[r]) continue;
+    if (isBespokeCar(car)) bespoke[r].push(car);
+    else if (!(Cars.EVENT_CARS || []).includes(car)) evergreen[r].push(car);
+  }
+  const keys = cars.filter(car => isBespokeCar(car) && !owned(car.id));
+  return { evergreen, bespoke, keys };
+};
+// a pack kind's cards by rarity, as draw() picks from them: the evergreen cards; with the kind's `bespokeBlueprints`
+// the Bespoke key cars' blueprints too (each in its rarity); with pool 'all' the keys (the Bespoke rarity)
+export const poolOf = (spec, { cars, owned } = {}) => {
+  const { evergreen, bespoke, keys } = pools({ cars, owned });
+  const out = Object.fromEntries(Object.entries(evergreen).map(([r, list]) => [r, [...list, ...(spec?.bespokeBlueprints ? bespoke[r] : [])]]));
+  if (spec?.pool === 'all') out.bespoke = [...keys];
+  return out;
 };
 
 // a featured card's rarity: its car's own, else packs.json featuredRarity; never below Epic (it is the pack's Epic-or-better)
@@ -69,8 +91,7 @@ const featuredRarity = (car) => higher(car.rarity && rank(car.rarity) >= 0 ? car
 // random: the dice (0 <= n < 1); featured: the special pack's featured cars (car objects)
 export const draw = (kind, { random = Math.random, cars, owned, featured = [], spec = packData.kinds[kind] } = {}) => {
   if (!spec) throw new Error('no such pack: ' + kind);
-  const { evergreen, keys } = pools({ cars, owned });
-  const byRarity = { ...evergreen, ...(spec.pool === 'all' ? { bespoke: [...keys] } : {}) };
+  const byRarity = poolOf(spec, { cars, owned });
   const have = () => RARITIES.filter(r => byRarity[r]?.length);
   const pick = (list) => list[Math.min(list.length - 1, Math.floor(random() * list.length))];
   // a rarity by the odds, among those the pool has cards of, at least `min` (none so high: the highest there is)
@@ -132,8 +153,7 @@ export const draw = (kind, { random = Math.random, cars, owned, featured = [], s
 // key }] }], featured: [{ car, rarity, chance, lastSlot }], atLeast }
 export const contents = (kind, { featured = [], cars, owned, spec = packData.kinds[kind] } = {}) => {
   if (!spec) return null;
-  const { evergreen, keys } = pools({ cars, owned });
-  const byRarity = { ...evergreen, ...(spec.pool === 'all' ? { bespoke: [...keys] } : {}) };
+  const byRarity = poolOf(spec, { cars, owned });
   const present = RARITIES.filter(r => byRarity[r]?.length);
   const weight = present.reduce((sum, r) => sum + (packData.odds[r] || 0), 0);
   const odds = present.map(r => ({ rarity: r, share: weight > 0 ? (packData.odds[r] || 0) / weight : 1 / present.length }));

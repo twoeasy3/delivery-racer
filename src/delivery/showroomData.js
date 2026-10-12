@@ -5,7 +5,7 @@
 // Crazey Jim's Used Cars (render/garage.js). The ECU figures are ecu.js's (Ecu); anything it does not say about a
 // car (a secret one, an earned one it has no table for) falls back to the car's own figures, so a card never throws.
 import { CONFIG } from './config.js';
-import { CARS, EARNED_CARS, EVENT_CARS, FILLER_CARS, SECRET_CARS, stars, starColour, carTier, carPreview, forSale, carRule, ruleAllows, selectCar, carInUse } from './cars.js';
+import { CARS, EARNED_CARS, EVENT_CARS, BESPOKE_CARS, FILLER_CARS, SECRET_CARS, stars, starColour, carTier, carPreview, forSale, carRule, ruleAllows, selectCar, carInUse } from './cars.js';
 import { Progress } from './progress.js';
 import { Game } from './game.js';
 import { Tiers } from './tiers.js';
@@ -53,9 +53,9 @@ const statsAt = (car, level) => {
 // every car on the showroom's floor, in its order: the tiers (each tier's gold cars, then its Blue Star ones, cheapest
 // first; a filler car in its tier), the amphibious ones, the event cars, the earned 6-star ones (not those off), and a
 // secret one owned (the City Bus)
-const rank = (car) => car.earned ? 80 : EVENT_CARS.includes(car) ? 70 : Object.values(SECRET_CARS).includes(car) ? 90
+const rank = (car) => car.earned ? 80 : EVENT_CARS.includes(car) || BESPOKE_CARS.includes(car) ? 70 : Object.values(SECRET_CARS).includes(car) ? 90
   : car.amphibious ? 50 + car.tier : (car.tier || 40) + (car.blue ? 5 : 0);
-export const showroomCars = () => [...CARS, ...(FILLER_CARS || []), ...EVENT_CARS, ...EARNED_CARS.filter(car => !car.off),
+export const showroomCars = () => [...CARS, ...(FILLER_CARS || []), ...EVENT_CARS, ...BESPOKE_CARS, ...EARNED_CARS.filter(car => !car.off),
   ...Object.values(SECRET_CARS).filter(car => Progress.owns(car.id))]
   .sort((a, b) => rank(a) - rank(b) || (a.price || 0) - (b.price || 0));
 
@@ -93,7 +93,8 @@ export const carCard = (car, evil = false) => {
       if (car.earned) {
         const level = LEVELS.find(l => l.id === car.earned.level);
         hint = 'The key: beat the par on ' + (level ? levelName(level) : car.earned.level);
-      } else if (EVENT_CARS.includes(car)) hint = 'The key: an event\'s grand prize';
+      } else if (EVENT_CARS.includes(car)) hint = 'The key: an event\'s grand prize' + (car.bespoke ? ', or a Bespoke card in packs' : '');
+      else if (car.bespoke) hint = 'The key: a Bespoke card, in card packs';
     }
   }
   // a car that can be driven, but not on the level picked (its car rule, on the side picked)

@@ -66,6 +66,7 @@ import './render/packs.js';
 import './render/shop.js'; // (the Shop: card packs for a placeholder currency, ?shop / ?shopcash=<n> / ?debug)
 import './horn.js';
 import { Garage } from './render/garage.js';
+import { Events, when as eventTime } from './events.js';
 import { Showroom } from './render/showroom.js';
 import { Sound } from './render/audio.js';
 import { Social } from './social.js';
@@ -79,6 +80,9 @@ import { Message } from './messages.js';
 // With it, ?level=3 picks the level (locked or not), ?at=1650 starts that many metres along
 // the expressway and ?ff=5 runs the game for that many seconds before the first frame is drawn.
 const params = new URLSearchParams(location.search);
+// ?eventsnow=2026-11-05: the events' clock (Events.now) set to that day for the visit (a look at an event over, or not
+// yet open: the menu, the Shop, the showroom's "Where to get it"); nothing saved
+if (params.get('eventsnow')) { const at = eventTime(params.get('eventsnow')); if (Number.isFinite(at)) Events.now = () => at; }
 // A visit with any of these is a test, not play: it lends cars and opens levels, so none of it is saved
 // (Progress.noSave: the save stays as it was before the visit, whatever is delivered, bought or counted in it)
 if (['autostart', 'hidden', 'test', 'edited', 'pick', 'car', 'ghost', 'mystery', 'theme', 'beaten', 'owns'].some(key => params.get(key) !== null)) Progress.noSave = true;
