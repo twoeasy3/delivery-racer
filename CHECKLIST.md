@@ -89,8 +89,8 @@ Working list, from the owner's ideas of 2026-10-09. `[x]` done, `[~]` partly don
 - [ ] 91. Airborne effect should be a status icon (HUD status, not a message/other element) (the owner, 12-Oct).
 - [ ] 92. High Noon has floating rockfall (the owner, 12-Oct).
 - [ ] 93. Allow obstacle placements between lanes, and obstacles that span multiple lanes (the owner, 12-Oct).
-- [ ] 94. Speed camera info box is too large (the owner, 12-Oct).
-- [ ] 95. Change the more important events (messages) to a different colour (the owner, 12-Oct).
+- [x] 94. Speed camera info box smaller (the title row is hidden, the disc, arrow, padding and type are smaller; desktop and phone rules both). Checked: `--group words` (includes `.hud-check`) passes; the box was NOT seen in a browser.
+- [x] 95. More important messages in a clearer colour: bust is bright cyan (was a dark blue hard to read) and rage red, both with a glow and slightly bigger; scheme documented in a comment in `style.css`. Checked: `--group words` passes; NOT seen in a browser.
 - [ ] 96. Powerup base colour does not show where a level overlay is under it (washboard, runway, mud) (the owner, 12-Oct).
 - [ ] 97. An infected player does not infect traffic on contact (the owner, 12-Oct).
 - [ ] 98. An infected player should respawn non-infected (the owner, 12-Oct).
