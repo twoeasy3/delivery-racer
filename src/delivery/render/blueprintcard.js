@@ -45,6 +45,7 @@ export const blueprintCard = (car, card, { compact = false, chance = null, marks
   const pic = make('div', 'bp-pic');
   const st = stars(car) ? make('span', 'bp-stars', stars(car)) : null; // (an event car has no stars: its small line says so)
   st?.style.setProperty('color', starColour(car));
+  st?.setAttribute('data-n', String(stars(car).length)); // (five or six stars: set a size smaller so they clear the rarity word)
   const tab = make('span', 'bp-tab', make('b', '', card.key ? 'CAR KEY' : 'BLUEPRINT'));
   const letter = make('span', 'bp-letter', RARITY_WORD[rarity] || rarity); // (the word, not a letter: Common, Uncommon...)
   letter.title = RARITY_WORD[rarity] || rarity;

@@ -38,8 +38,12 @@
   background: radial-gradient(60% 18% at 50% 84%, rgba(0, 0, 0, .28), transparent 70%), linear-gradient(180deg, rgba(255, 255, 255, .22), transparent 45%, rgba(0, 0, 0, .12)); }
 .bp-pic { position: absolute; inset: 0; z-index: 1; background: center / contain no-repeat; filter: drop-shadow(0 2cqw 2cqw rgba(0, 0, 0, .35)); }
 .bp-pic canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.bp-stars { position: absolute; z-index: 2; right: 3cqw; bottom: 3cqw; font-size: max(9px, 7cqw); letter-spacing: .5px; line-height: 1;
-  text-shadow: 0 0 2px #000, 0 1px 3px rgba(0, 0, 0, .8); }
+.bp-stars { position: absolute; z-index: 3; right: 3cqw; bottom: 3cqw; font-size: max(12px, 9.6cqw); letter-spacing: .06em; line-height: 1;
+  padding: 1.3cqw 2.4cqw 1.6cqw 2.8cqw; border-radius: 1.5cqw; background: #0d0f14; box-shadow: inset 0 -1.2cqw 0 rgba(255, 255, 255, .08); /* (on a dark strip like the rarity word: readable on any stripe) */
+  text-shadow: 0 0 1.5cqw currentColor; -webkit-font-smoothing: antialiased; }
+.bp-stars[data-n="5"], .bp-stars[data-n="6"] { font-size: max(10px, 7.2cqw); letter-spacing: .01em; padding: 1.2cqw 1.8cqw 1.5cqw 2cqw; }
+.bp-card.compact .bp-stars[data-n="5"], .bp-card.compact .bp-stars[data-n="6"] { font-size: max(9px, 6.4cqw); }
+.bp-card.compact .bp-stars { font-size: max(10px, 8cqw); letter-spacing: .02em; padding: 1cqw 1.8cqw 1.3cqw 2cqw; }
 .bp-stars.none { color: #fff !important; font: italic 800 max(8px, 5.5cqw)/1 var(--display); letter-spacing: .08em; }
 .bp-tab { position: absolute; z-index: 2; top: 0; right: 0; display: flex; align-items: center; gap: 1.5cqw; padding: 1.6cqw 2cqw 1.8cqw 3cqw;
   border-bottom-left-radius: 3cqw; background: #0d0f14; color: #fff; }
