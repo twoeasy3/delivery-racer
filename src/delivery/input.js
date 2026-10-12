@@ -45,7 +45,7 @@ export const Input = (() => {
     : Math.max(-1, Math.min(1, (d - Math.sign(d) * DEAD_PX) / (FULL_PX - DEAD_PX)));
   let touchId = null, startX = 0, startY = 0;
   // (the menus are left alone, so their lists can be scrolled)
-  const isUi = (e) => e.target.closest && e.target.closest('button, .pad, .overlay');
+  const isUi = (e) => e.target.closest && e.target.closest('button, .pad, .overlay, .shop-screen, #showroom, #packs');
   window.addEventListener('touchstart', (e) => {
     if (isUi(e) || touchId !== null) return;
     const t = e.changedTouches[0];
