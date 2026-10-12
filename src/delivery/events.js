@@ -21,7 +21,7 @@ import { levelName, levelDescription } from './levelText.js';
 import { cargoFor } from './cargo.js';
 import { Progress } from './progress.js';
 import { carById } from './cars.js';
-import { Packs, featuredProblems } from './packs.js';
+import { Packs, packProblems } from './packs.js';
 
 // a time in events.json: "2026-12-01" is midnight on the player's device; else a time with its zone. null: none
 // given; NaN: not a time
@@ -117,7 +117,7 @@ export const Events = {
       if (car && !Progress.data.cars.includes(car.id)) Progress.data.cars.push(car.id); // (owned from now on, the event or no)
       prize = car ? car.name : '';
     }
-    const packs = Packs.eventDone(event.id, first, !!prize); // (card packs: packs.js, packs.json events; the featured cards are the event's)
+    const packs = Packs.eventDone(event.id, first, !!prize); // (card packs: packs.js; the packs whose givenBy.event names this event)
     Progress.save();
     return { stage: stage.index + 1, of: event.stages.length, prize, packs };
   },
@@ -132,7 +132,7 @@ export const Events = {
       if (e.from !== null && e.to !== null && !(e.from < e.to)) say('it ends before it starts');
       if (!e.stages.length) say('it has no stages');
       if (e.prize && !this.prizeCar(e)) say('its prize "' + e.prize.car + '" is not a car');
-      for (const line of featuredProblems(e.raw.featured)) say(line + ' (the special packs\' featured cards: a car id, or { "car", "weight" > 0, "key": true for a Bespoke key car, "amount" })');
+      if (e.raw.featured !== undefined) say('"featured" belongs on its pack now (packs.json: the pack whose "event" is ' + e.id + ', its featured.entries)'); // (one definition per pack: CHECKLIST 159)
       e.stages.forEach((s, i) => {
         const n = 'stage ' + (i + 1) + ': ';
         if (!s.level) say(n + '"' + s.map + '" is not a level');
@@ -143,7 +143,7 @@ export const Events = {
         if (!c || !(c.good > 0) || !(c.evil > 0)) say(n + 'its clock is not written out in full ({ "good": s, "evil": s })');
       });
     }
-    for (const line of featuredProblems(Packs.data?.events?.featured)) out.push('packs.json events: ' + line); // (a special pack from no event)
+    for (const line of packProblems()) out.push('packs.json: ' + line); // (the packs: their featured cards, the events they name, what gives them, their Shop offers)
     return out;
   },
 };

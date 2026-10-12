@@ -3,7 +3,7 @@
 // tier is open; blueprints from packs, the Career ones counting down as their levels are delivered), the Silver Comet
 // (its key the Comet Hunt's prize while the event is on, and not after; a Bespoke key card in packs; Legendary
 // blueprints, its special pack only while the event is on), a Bespoke key car from the idea lot (its key from packs
-// only), a filler (blueprints only, no key), an earned car (no blueprints), a key owned, a car maxed, and a car with
+// only), the free Daily pack (a Shop way; claimed today, "Come back tomorrow"), a filler (blueprints only, no key), an earned car (no blueprints), a key owned, a car maxed, and a car with
 // nothing to be had now.
 //   node scripts/.carsources-check.mjs
 import { boot } from './delivery-headless.mjs';
@@ -48,6 +48,20 @@ try {
   for (const id of careerLevels()) Progress.data.bestTime.good[id] = 30;
   check(!career().available && /already/.test(career().why), 'all delivered: not available (' + career().why + ')');
 
+  // ---- the free Daily pack (CHECKLIST 159): a Shop way, free, one a day; claimed today it is not to be had ("Come back
+  // tomorrow"), and the next local day it is again ----
+  fresh(); at(DURING);
+  const { Shop } = await g.load('shop.js');
+  const dailyWay = () => sourcesOf(by('lovebus')).blueprints.find(x => x.kind === 'daily')?.ways.find(w => w.how === 'shop');
+  const w0 = dailyWay();
+  check(w0?.available && w0.price === 0 && /^free, 1 a day/.test(w0.detail) && !w0.placeholder, 'the Daily pack: a Shop way, free (' + w0?.detail + ')');
+  const claimed = Shop.buy('daily', DURING);
+  const w1 = dailyWay();
+  check(claimed.ok && w1 && !w1.available && w1.why === 'Come back tomorrow', '...claimed today: not to be had (' + w1?.why + ')');
+  at(DURING + 86400e3);
+  check(dailyWay()?.available, '...the next day: to be had again');
+  at(DURING);
+
   // ---- the Silver Comet: the first Bespoke key car ----
   fresh(); at(DURING);
   const comet = by('silvercomet');
@@ -60,13 +74,13 @@ try {
     'a Bespoke key card in the packs with keys: ' + keyPacks.map(x => x.where + ' ' + x.detail.split(':')[0]).join('; '));
   const legendary = s.blueprints.filter(x => x.chance > 0);
   check(legendary.length && legendary.every(x => x.rarity === 'legendary'), 'its blueprints are Legendary cards: ' + legendary.map(x => x.where).join(', '));
-  const special = s.blueprints.find(x => x.kind === 'special');
+  const special = s.blueprints.find(x => x.kind === 'comet-special');
   check(special?.available && special.chance > 0.99 && special.ways.some(w => w.how === 'event' && w.available) && special.ways.some(w => w.how === 'shop' && w.available),
     'the Comet Hunt\'s special pack: a featured card in every one, from the stages and the Shop (' + special?.detail + ')');
   check(s.blueprints.find(x => x.kind === 'career')?.available === false && /Cannot hold it/.test(s.blueprints.find(x => x.kind === 'career').why), 'never in a Career pack (' + s.blueprints.find(x => x.kind === 'career')?.why + ')');
   at(AFTER);
   s = sourcesOf(comet);
-  const over = ofHow(s.keys, 'event')[0], spOver = s.blueprints.find(x => x.kind === 'special');
+  const over = ofHow(s.keys, 'event')[0], spOver = s.blueprints.find(x => x.kind === 'comet-special');
   check(over && !over.available && /^Event over \(ended 1 Nov\)/.test(over.why), 'the event over: the prize is not obtainable (' + over?.why + ')');
   check(spOver && !spOver.available && spOver.ways.every(w => !w.available) && /Event over/.test(spOver.why), '...nor its special pack, from the stages or the Shop (' + spOver?.why + ')');
   check(ofHow(s.keys, 'pack').every(x => x.available), '...its key still in the packs with keys (bought in the Shop)');
@@ -86,7 +100,7 @@ try {
   // ---- a Bespoke key car from the idea lot: its key from packs only ----
   fresh(); at(DURING);
   s = sourcesOf(by('rocketfin'));
-  check(s.keys.length >= 1 && s.keys.every(x => x.how === 'pack' && x.rarity === 'bespoke') && s.blueprints.filter(x => x.chance > 0).every(x => x.rarity === 'legendary') && !s.blueprints.find(x => x.kind === 'special').chance,
+  check(s.keys.length >= 1 && s.keys.every(x => x.how === 'pack' && x.rarity === 'bespoke') && s.blueprints.filter(x => x.chance > 0).every(x => x.rarity === 'legendary') && !s.blueprints.find(x => x.kind === 'comet-special').chance,
     'the Rocket Fin Coupe: its key only a Bespoke card in packs, its blueprints Legendary, in no special pack (' + say(s) + ')');
 
   // ---- a filler: blueprints only ----

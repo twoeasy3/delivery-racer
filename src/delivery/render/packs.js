@@ -14,15 +14,15 @@
 // A slot that gives n copies of its card (packs.json amount / amounts) turns showing x1, then the n - 1 extra copies are
 // flicked onto a pile behind it one by one (render/flick.js, packs.js flickPlan), the badge and the bar going up one on
 // each; the next card turns as its last copy lands; a tap lands them all at once. Escape and back close it (all is already given).
-// ?pack=career|special|standard|ten opens one at once, for a look, and nothing of it is saved (Progress.noSave);
-// &from=<event id> makes a special pack that event's. ?pack&give=career,ten,special:comet-hunt: those packs given
+// ?pack=<pack id> (career, daily, standard, ten, comet-special: packs.json) opens one at once, for a look, and nothing of
+// it is saved (Progress.noSave); the old ?pack=special(&from=<event id>) opens that event's pack. ?pack&give=career,ten,comet-special: those packs given
 // (nothing saved), opened one after another as a player would see them. &reveal=all: every card turned at once (a tap).
 // &amount=3 (or 15), &amounts=3,15 (alternating by slot), &amounts=common:3,epic:15 (by rarity): every non-key slot gives
 // that many, for the visit (packs.js debugAmounts); &flick=0.5: each slot's flicks held 0.5 s in, for a still.
 // &featured=<list> (packs.js debugFeatured: id[!key][:weight[xamount]]) a special pack's featured list; &maxed=<ids>,
 // &owned=<ids> (debugMarks) cars counted as maxed / keys owned: all for the visit, never saved.
 import '../packs.css';
-import { Packs, kindName, KINDS, revealCards, revealOrder, revealProgress, RARITIES, flickPlan, debugAmounts, debugFeatured, debugMarks, debugDouble } from '../packs.js';
+import { Packs, packName, packIdOf, revealCards, revealOrder, revealProgress, RARITIES, flickPlan, debugAmounts, debugFeatured, debugMarks, debugDouble } from '../packs.js';
 import { flickPile } from './flick.js';
 import { Progress } from '../progress.js';
 import { carById } from '../cars.js';
@@ -146,7 +146,7 @@ const show = (result, { look = false } = {}) => {
   const many = slots.length > 6;
   overlay.replaceChildren(
     make('div', 'pr-box',
-      make('header', 'pr-head', make('div', 'pr-title', make('small', '', kicker), make('h2', '', kindName(result.kind))),
+      make('header', 'pr-head', make('div', 'pr-title', make('small', '', kicker), make('h2', '', packName(result.kind))),
         make('span', 'pr-count', slots.length + (slots.length === 1 ? ' card' : ' cards')), shut),
       make('div', 'pr-body',
         make('div', 'pr-pack', make('div', 'pr-burst'), packArt(result.kind, 1)),
@@ -224,7 +224,8 @@ window.addEventListener('keydown', (event) => {
     const gives = (params.get('give') || '').split(',').filter(Boolean);
     for (const k of gives) { const [kind, from] = k.split(':'); Packs.grant(kind, { from: from || null }); }
     const all = params.get('reveal') === 'all'; // (&reveal=all: as a tap during it, every card turned at once: for a picture)
-    if (KINDS.includes(kind)) setTimeout(() => { if (canShow()) { const r = Packs.open(kind, { from: params.get('from') || null, free: true }); if (r) { show(r, { look: true }); if (all) setTimeout(revealAll, 200); } } }, 300);
+    const id = packIdOf(kind, params.get('from') || null); // (a pack id; the old ?pack=special&from=comet-hunt still opens its pack)
+    if (id) setTimeout(() => { if (canShow()) { const r = Packs.open(id, { free: true }); if (r) { show(r, { look: true }); if (all) setTimeout(revealAll, 200); } } }, 300);
     else drainSoon(300);
   } else drainSoon(900);
 }

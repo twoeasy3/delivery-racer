@@ -2,9 +2,13 @@
 // mark, what it is. The Shop's tiles (render/shop.js) and the pack reveal (render/packs.js) both show it
 import '../shop.css';
 
-// the best a kind of pack promises, for its foil
-export const KIND_LOOK = { career: 'common', standard: 'uncommon', ten: 'epic', special: 'bespoke' };
-const KIND_MARK = { career: 'Career', standard: 'Standard', ten: '10', special: 'Special' };
+// the best a pack promises, for its foil, by pack id (packs.json). A pack with featured cards (an event's special pack:
+// comet-special) is drawn as a SPECIAL pack (its look, its mark, the k-special class), whatever its id
+const packData = Object.values(import.meta.glob('../packs.json', { eager: true, import: 'default' }))[0] || null;
+export const KIND_LOOK = { career: 'common', daily: 'uncommon', standard: 'uncommon', ten: 'epic', special: 'bespoke' };
+const KIND_MARK = { career: 'Career', daily: 'Daily', standard: 'Standard', ten: '10', special: 'Special' };
+export const artKind = (id) => (KIND_LOOK[id] ? id : packData?.packs?.[id]?.featured ? 'special' : id);
+export const lookOf = (id) => KIND_LOOK[artKind(id)] || 'common';
 
 const make = (tag, className, ...inside) => {
   const node = document.createElement(tag);
@@ -12,8 +16,8 @@ const make = (tag, className, ...inside) => {
   node.append(...inside.flat().filter(x => x !== null && x !== undefined && x !== false));
   return node;
 };
-export const packArt = (kind, count = 1) => {
-  const look = KIND_LOOK[kind] || 'common', shown = Math.min(3, count);
+export const packArt = (id, count = 1) => {
+  const kind = artKind(id), look = KIND_LOOK[kind] || 'common', shown = Math.min(3, count);
   const one = (i) => make('div', 'shop-pack r-' + look + ' k-' + kind,
     make('span', 'pack-crimp'), make('span', 'pack-sheen'),
     make('span', 'pack-brand', make('b', '', 'Delivery'), make('i', '', 'Run')),
