@@ -39,16 +39,16 @@ try {
   check(EVENT_CARS.every(c => !inPool.includes(c)) && EARNED_CARS.every(c => !inPool.includes(c)), 'no event car and no earned car in the evergreen pool (event cars come as featured cards)');
   // (the Bespoke pool, 12-Oct: the keys of the Bespoke key cars not owned, never a garage car; their blueprints Legendary, never evergreen)
   const BESPOKE = [...EVENT_CARS, ...(g.cars.BESPOKE_CARS || [])].filter(c => c.bespoke);
-  check(BESPOKE.length >= 2 && BESPOKE.some(c => c.id === 'silvercomet') && real.keys.length === BESPOKE.length && real.keys.every(c => c.bespoke && !CARS.includes(c)),
-    'the keys (Bespoke): exactly the Bespoke key cars not owned, no garage car (' + real.keys.map(c => c.id).join(' ') + ')');
+  check(BESPOKE.length >= 2 && BESPOKE.some(c => c.id === 'silvercomet') && real.keys.length === BESPOKE.filter(c => c.keyAvailable !== false).length && real.keys.every(c => c.bespoke && !CARS.includes(c) && c.keyAvailable !== false),
+    'the keys (Bespoke): exactly the Bespoke key cars with a key to be had (not the Snowcat and Hot Dog Car: keyAvailable false) not owned, no garage car (' + real.keys.map(c => c.id).join(' ') + ')');
   check(BESPOKE.every(c => rarityOf(c) === 'legendary' && Ecu.rarity(c) === 'legendary' && real.bespoke.legendary.includes(c) && !inPool.includes(c)),
     'a Bespoke key car\'s blueprints are Legendary cards, in the bespoke pool and never the evergreen one');
   const ownsComet = pools({ owned: (id) => id === 'silvercomet' || id === 'commuter' });
-  check(!ownsComet.keys.some(c => c.id === 'silvercomet') && ownsComet.keys.length === BESPOKE.length - 1, 'a key owned is out of the Bespoke pool');
+  check(!ownsComet.keys.some(c => c.id === 'silvercomet') && ownsComet.keys.length === BESPOKE.filter(c => c.keyAvailable !== false).length - 1, 'a key owned is out of the Bespoke pool');
   {
     const std = P.poolOf(Packs.data.packs.standard), car = P.poolOf(Packs.data.packs.career), spc = P.poolOf(Packs.data.packs['comet-special']);
     const where = Object.keys(Packs.data.packs).filter(k => Packs.data.packs[k].bespokeBlueprints);
-    check(BESPOKE.every(c => std.legendary.includes(c) && std.bespoke.includes(c)) && BESPOKE.every(c => !car.legendary.includes(c) && !spc.legendary.includes(c)) && !car.bespoke && !spc.bespoke,
+    check(BESPOKE.every(c => std.legendary.includes(c) && (c.keyAvailable === false ? !std.bespoke.includes(c) : std.bespoke.includes(c))) && BESPOKE.every(c => !car.legendary.includes(c) && !spc.legendary.includes(c)) && !car.bespoke && !spc.bespoke,
       'the standard pack holds their keys and blueprints; career and special packs neither (packs.json bespokeBlueprints: ' + where.join(', ') + ')');
   }
   for (const r of RARITIES.filter(r => r !== 'bespoke')) console.log('        ' + r.padEnd(10) + (real.evergreen[r] || []).map(c => c.id).join(' '));

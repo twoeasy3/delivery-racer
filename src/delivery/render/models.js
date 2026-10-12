@@ -2355,6 +2355,6 @@ for (const name of ['gullwing', 'rearengine', 'snake', 'polytruck']) {
 // builds them (makeIdeaModel: at the vehicle's real size, and one too wide for a lane, the Monster Truck, scaled down)
 for (const name of ['bubble', 'milkfloat', 'tuktuk', 'woody', 'pandacoupe', 'keiroadster', 'fireengine', 'monster',
   'stately', 'teardrop', 'pony', 'midnight', 'splitwindow', 'wedge', 'jetcar', 'dragster', 'flyingcar',
-  'rocketfin', 'swancar', 'solarracer', 'moonrover', 'monowheel']) { // (the last five: the Bespoke key cars, cars.js BESPOKE_CARS)
+  'rocketfin', 'swancar', 'solarracer', 'moonrover', 'monowheel', 'snocat', 'hotdog']) { // (the last seven: the Bespoke key cars, cars.js BESPOKE_CARS)
   MODELS[name] = (car) => makeIdeaModel({ ...car, model: name });
 }

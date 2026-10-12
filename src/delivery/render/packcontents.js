@@ -58,12 +58,18 @@ const chip = (className, text) => make('span', 'pc-mark ' + className, text);
 // motion: both side by side). One stack: just its chance
 const stackWords = (s) => 'x' + (Array.isArray(s.n) ? s.n.join('-') : s.n) + ' · ' + percent(s.chance);
 const stackChip = (stacks) => (stacks?.length > 1
-  ? make('span', 'pc-stacks', ...stacks.map((s, i) => make('span', 'pc-stack' + (s.doubled ? ' doubled' : '') + (i ? ' alt' : ''), stackWords(s)))) : null);
+  ? make('span', 'pc-stacks', ...stacks.map((s, i) => make('span', 'pc-stack' + (s.doubled ? ' doubled' : '') + (i ? ' alt' : ''), percent(s.chance)))) : null); // (just the chance: the stack's size is in the bubble)
 const cardRow = (car, rarity, chance, { key = false, featured = false, note = '', chips = [], exhausted = null, inPool = !exhausted, n = 0, stacks = null } = {}) => {
   const pose = posePick(car.id);
   const fading = inPool ? stackChip(stacks) : null;
-  const { node, pic } = blueprintCard(car, { rarity, key, featured, n }, { compact: true, pose,
+  const bubbleN = fading && !key ? 1 : n; // (a card with stacks: the bubble is drawn below with the base amount, then its number fades)
+  const { node, pic } = blueprintCard(car, { rarity, key, featured, n: bubbleN }, { compact: true, pose,
     chance: fading || (inPool ? percent(chance) : '0%'), marks: [...chips, ...marks(car, key), note ? make('small', 'pc-note', note) : null].filter(Boolean) });
+  if (fading && !key && stacks?.length > 1) { // the bubble shows the stack's size, fading between the base and the doubled one in step with the chances
+    const bubble = node.querySelector('.bp-amount');
+    bubble?.classList.add('cycle');
+    bubble?.replaceChildren(...stacks.map((st, i) => make('b', 'amt-phase' + (i ? ' alt' : ''), '×' + (Array.isArray(st.n) ? st.n.join('-') : st.n))));
+  }
   if (exhausted) node.querySelector('.bp-art')?.append(exhaustedOverlay(exhausted, inPool ? 'Drops as a duplicate' : 'Out of the pool'));
   const row = make('li', 'pc-card r-' + rarity + (featured ? ' featured' : '') + (exhausted ? ' exhausted' : ''), node);
   if (fading) row.title = car.name + ': ' + percent(chance) + ' a card (' + stacks.map(stackWords).join(', ') + ')';
@@ -76,7 +82,7 @@ const wt = (w) => String(Math.round(w * 1000) / 1000);
 const featuredRow = (f, base = 1) => {
   const has = f.key ? null : f.amount ?? base; // (an entry with no amount of its own: the pack's base, never doubled)
   const amount = has !== null ? 'x' + (Array.isArray(has) ? has.join('-') : has) : '';
-  const chips = [amount ? chip('amt', amount) : null, chip('wt', 'Weight ' + wt(f.weight))].filter(Boolean);
+  const chips = [chip('wt', 'Weight ' + wt(f.weight))]; // (no x3 / x15 chip beside the chance: the badge on the card shows the amount; the chip read as part of the chance, the owner, 12-Oct)
   const out = !f.inPlay;
   const note = out ? 'out of the pool' : 'last slot ' + percent(f.lastSlot); // (the big figure is its chance a pack)
   return cardRow(f.car, f.rarity, f.chance, { key: f.key, featured: true, chips, note, exhausted: f.exhausted, inPool: !out,

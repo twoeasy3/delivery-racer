@@ -326,3 +326,9 @@ button.shop-odds { width: 100%; padding: 0; cursor: pointer; }
   .pc-body { padding: 6px 20px 24px; }
   .pc-list { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
 }
+
+/* a card's bubble cycling between its stacks (What's inside: x2 then x4), in step with the chance under it */
+.bp-amount.cycle { display: inline-grid; align-items: center; justify-items: center; }
+.bp-amount.cycle .amt-phase { grid-area: 1 / 1; white-space: nowrap; animation: pc-stack 3.2s ease-in-out infinite; }
+.bp-amount.cycle .amt-phase.alt { animation-delay: -1.6s; }
+@media (prefers-reduced-motion: reduce) { .bp-amount.cycle .amt-phase { animation: none; } .bp-amount.cycle .amt-phase.alt { display: none; } }
