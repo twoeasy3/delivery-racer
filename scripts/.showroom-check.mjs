@@ -51,6 +51,35 @@ try {
   // rarity by the ladder (where a car says none of its own)
   const gold5 = CARS.find(car => car.tier === 5 && !car.blue && !car.amphibious && !car.rarity), blue5 = CARS.find(car => car.tier === 5 && car.blue && !car.rarity);
   check((!gold5 || rarityOf(gold5) === 'uncommon') && (!blue5 || rarityOf(blue5) === 'epic') && ['epic', 'legendary'].includes(rarityOf(EVENT_CARS[0])), 'rarity by the ladder: 5 gold uncommon, 5 blue epic, an event car epic or better');
+  // ---- the side (Good / Evil, one choice in the header and the detail): the cards' car rule is that side's, the
+  // button says the side, and DRIVE sets the car AND the side, as the car lot's "Drive it as Evil" does
+  const { driveWords, barredWhy, driveAs, sideName } = await g.load('showroomData.js');
+  const { Tiers } = await g.load('tiers.js');
+  const { Game } = g;
+  g.CONFIG.progression.tiers = true;
+  Progress.reset(); Progress.noSave = true; Progress.data.tierBase = 1;
+  Progress.data.cars.push('sport');
+  const first = Tiers.tiers[0][0];
+  g.select(first.id);
+  Progress.data.bestTime.good[first.id] = 5; // (Good's medal earned there: Good free, Evil still held to a tier 1 car)
+  Game.evil = false;
+  const sportCar = carById('sport'), commuterCar = carById('commuter');
+  const onGood = carCard(sportCar, false), onEvil = carCard(sportCar, true);
+  console.log('        ' + first.id + ': sport on Good ' + onGood.state + ' ("' + driveWords(onGood, false) + '"), on Evil ' + onEvil.state + ' ("' + driveWords(onEvil, true) + '")');
+  check(sideName(false) === 'Good' && sideName(true) === 'Evil', 'the sides are called Good and Evil');
+  check(onGood.state === 'ready' && driveWords(onGood, false) === 'Drive as Good', 'Good free: the Sportscompact is ready, the button says "Drive as Good"');
+  check(onEvil.state === 'barred' && onEvil.rule?.tier === 1 && driveWords(onEvil, true) === 'Not on this level as Evil', 'Evil held to tier 1: the same car is barred on Evil, "Not on this level as Evil"');
+  const why = barredWhy(onEvil, true);
+  console.log('        why: ' + why.map(p => typeof p === 'string' ? p : JSON.stringify(p)).join(''));
+  check(/^As Evil, the level picked needs a /.test(why[0]) && why[1]?.tier === 1, 'the barred words name the side and the tier wanted');
+  check(driveAs(onEvil, true) === false && Game.evil === false, 'DRIVE on the barred side does nothing (the side played stays Good)');
+  const commuterEvil = carCard(commuterCar, true);
+  check(commuterEvil.state === 'ready' && driveWords(commuterEvil, true) === 'Drive as Evil', 'the Commuter (tier 1) on Evil: ready, "Drive as Evil"');
+  check(driveAs(commuterEvil, true) === true && Game.evil === true && Progress.data.evil === true && g.cars.carInUse().id === 'commuter', 'DRIVE as Evil: the side played is Evil (and saved), the Commuter in use');
+  const sportGood = carCard(sportCar, false);
+  check(driveAs(sportGood, false) === true && Game.evil === false && Progress.data.evil === false && g.cars.carInUse().id === 'sport', 'DRIVE as Good: back to Good, the Sportscompact in use');
+  const lockedCard = carCard(carById('hotrod'), false);
+  check(lockedCard.state === 'locked' && driveAs(lockedCard, false) === false && /^(Buy at|Locked)/.test(driveWords(lockedCard, false)), 'a locked car: DRIVE does nothing, the button says buy or locked ("' + driveWords(lockedCard, false) + '")');
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error?.stack || error));
