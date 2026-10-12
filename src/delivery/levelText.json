@@ -530,5 +530,21 @@
   "chaos": {
     "name": "Pile-Up Parade",
     "cargo": { "good": "pancakes", "evil": "piranhas" }
+  },
+  "shift": {
+    "name": "Night Shift",
+    "description": {
+      "good": "Coffees for the night crew at the far gate: the terminal after dark, on the left, in fog. Spray, fresh tar and a height bar (the side road goes round).",
+      "evil": "A reactor core through the yard with half the lights out. Fly the jam off the transporter, plough the fresh tar and leave the lorries blind in your spray."
+    },
+    "cargo": { "good": "coffee", "evil": "reactor" }
+  },
+  "descent": {
+    "name": "Mudslide",
+    "description": {
+      "good": "A bouquet for the wedding at the foot of the hill, down nine hairpins in the rain. Spray, mud, falling rocks and a lane washed away.",
+      "evil": "A thundercloud in a jar, down the hill in a storm of its own. Nine hairpins, a landslide, half the road gone: never brake."
+    },
+    "cargo": { "good": "bouquet", "evil": "cloud" }
   }
 }
