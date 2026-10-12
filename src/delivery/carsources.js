@@ -43,7 +43,7 @@ export const careerLeft = () => careerLevels().filter(id => Progress.bestTime(id
   && !(Progress.data.claimed || []).includes('pack-' + id));
 
 // a card's chance in one pack of a kind: { chance (a pack), slot (a plain slot) } or null: the kind cannot hold it.
-// key: the car's key card (Bespoke); featured: the special pack's featured entries (packs.js featuredFor)
+// key: the car's key card (Bespoke); featured: the special pack's featured entries (packs.js featuredOf)
 const chanceIn = (kind, car, { key = false, featured = [] } = {}) => {
   // (a key is listed only while not owned: ask as if it were not, so a pack that CAN hold it says so)
   const c = contents(kind, { featured, owned: key ? (id) => id !== car.id && Progress.owns(id) : undefined });

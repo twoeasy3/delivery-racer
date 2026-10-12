@@ -119,8 +119,8 @@ export const maxedNow = (car) => !!car && (!!Packs.markMaxed?.has(car.id) || (Ec
 
 // ---- FEATURED ENTRIES (the owner, 12-Oct: "declare featured weights and display them on the What's Inside. If the
 // featured is Epic Legend Legend I would want them to be 1:1:1 so the Epics don't flood the packs. If the featured is
-// Legend Legend Legend Bespoke I would want to tune the key chances"). A featured list (events.json special[].featured,
-// packs.json events.featured, shop.json offers[].featured) holds, per entry, a car id (weight 1) or
+// Legend Legend Legend Bespoke I would want to tune the key chances"). A featured list (a pack's own featured.entries in
+// packs.json, or the debug ?featured=) holds, per entry, a car id (weight 1) or
 // { "car": id, "weight": n, "key": true }: weight a positive number, RELATIVE (1:1:1 is equal; 3:3:3:1 gives the
 // fourth a tenth); key: true makes the entry that car's Bespoke KEY card (a Bespoke key car only: cars.js `bespoke`),
 // so a list can mix blueprint cards and a key. Normalised to { car (object), weight, key }; an entry that is not
