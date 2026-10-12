@@ -11,6 +11,7 @@
 // as the background of a layer over the CSS backdrop (shop.css .pack-banner). No WebGL: bannerArt calls its onFail and
 // the caller keeps its old art.
 import * as THREE from 'three';
+import '../shop.css';
 import { makeShowCar, paintShowCar } from './showcar.js';
 import { sharedRenderer, STILL } from './modelviews.js';
 
