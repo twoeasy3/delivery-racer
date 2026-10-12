@@ -9,6 +9,7 @@ import { levelName } from '../levelText.js';
 import { CARS, SECRET_CARS, useLevelCar, selectCar, amphibiousCars, carRule, ruleAllows } from '../cars.js';
 import { Tiers } from '../tiers.js';
 import { Progress } from '../progress.js';
+import { Shop } from '../shop.js';
 import { Game } from '../game.js';
 import { Replay } from '../replay.js';
 import { Garage } from './garage.js';
@@ -111,6 +112,16 @@ document.getElementById('completeBtn').addEventListener('click', async () => {
   });
   draw();
 });
+
+// the Shop's placeholder currency (shop.json), 100,000 of it a press, saved: for trying the Shop until the real economy is chosen
+{
+  const cash = document.getElementById('cashBtn'), label = cash.textContent;
+  cash.addEventListener('click', () => {
+    Shop.addCash(100000);
+    cash.textContent = 'Crazey Cash: ' + Shop.balance().toLocaleString('en-US');
+    setTimeout(() => { cash.textContent = label; }, 2200);
+  });
+}
 
 // Start on a side whose medal is already earned, while level 4 of the tier is still shut: the replay wins only the
 // tip, so the player is asked first (the owner, 11-Oct; Tiers.askReplay says when, and the start button says so)
