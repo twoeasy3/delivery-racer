@@ -675,7 +675,7 @@ export const SUPER_LIVERIES = {
   liftedtruck: { good: [0x1d5bbf, 0xd0d4da], evil: [0xd2b07a, 0x151515], kit: { lights: true, bullbar: true, snorkel: true } }, // royal blue with silver / desert tan with black
   hearse: { good: [0x101010, 0xd4a52a], evil: [0xf2f2f2, 0x6a2bb3] },                   // black with gold / white with purple
   minivan: { good: [0xe0cfa0, 0x6b4a2a], evil: [0x3a4a5e, 0xf08a2a], kit: { lights: true, bullbar: true } }, // champagne with brown / slate with orange
-  pickup: { good: [0xd0621c, 0xf4e8c8], evil: [0x2f5a2a, 0xc8a86a], kit: { bullbar: true, snorkel: true } }, // burnt orange with cream / forest with tan
+  pickup: { good: [0xd0621c, 0xf4e8c8], evil: [0x2f5a2a, 0xc8a86a], kit: { snorkel: true } }, // burnt orange with cream / forest with tan (it has a bull bar of its own)
   hotrod: { good: [0x7a2fd0, 0xff8a1a], evil: [0x4b5320, 0xc81e1e] },                   // purple with flame orange / olive drab with red
   sleeper: { good: [0x6a2030, 0x8a8a8a], evil: [0xd2cab8, 0x151515] },                  // maroon with grey / beige with black (still a sleeper)
   rally: { good: [0x1d3f9e, 0xf2d21f], evil: [0xe24a8c, 0xf4f4f4] },                    // blue with yellow / pink with white

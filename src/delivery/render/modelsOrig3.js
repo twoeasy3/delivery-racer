@@ -204,18 +204,18 @@ const wear = () => texture('wear', 64, 64, (ctx, w, h) => {
   ctx.clearRect(0, 0, w, h);
   let seed = 7;
   const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-  for (let i = 0; i < 26; i++) { // sun-bleached blotches
-    ctx.fillStyle = 'rgba(255,244,220,' + (0.12 + rnd() * 0.16).toFixed(2) + ')';
+  for (let i = 0; i < 14; i++) { // sun-bleached blotches
+    ctx.fillStyle = 'rgba(255,244,220,' + (0.06 + rnd() * 0.08).toFixed(2) + ')';
     ctx.beginPath(); ctx.ellipse(rnd() * w, rnd() * h, 2 + rnd() * 7, 1.5 + rnd() * 4, rnd() * 3, 0, Math.PI * 2); ctx.fill();
   }
-  ctx.strokeStyle = 'rgba(255,240,215,0.42)'; // the ghost of the decal: two stripes down it, a ring between
+  ctx.strokeStyle = 'rgba(255,240,215,0.16)'; // the ghost of the decal: two stripes down it, a ring between
   ctx.lineWidth = 4;
   for (const x of [22, 42]) { ctx.beginPath(); ctx.moveTo(x, 2); ctx.lineTo(x, 26); ctx.moveTo(x, 40); ctx.lineTo(x, 62); ctx.stroke(); }
   ctx.lineWidth = 3;
   ctx.beginPath(); ctx.arc(32, 33, 9, 0, Math.PI * 2); ctx.stroke();
   ctx.lineWidth = 1;
-  for (let i = 0; i < 18; i++) { // scratches, light and dark
-    ctx.strokeStyle = i % 3 ? 'rgba(255,240,220,0.45)' : 'rgba(30,18,10,0.45)';
+  for (let i = 0; i < 8; i++) { // scratches, light and dark
+    ctx.strokeStyle = i % 3 ? 'rgba(255,240,220,0.28)' : 'rgba(30,18,10,0.3)';
     const x = rnd() * w, y = rnd() * h, a = rnd() * Math.PI, l = 4 + rnd() * 10;
     ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); ctx.stroke();
   }
@@ -481,9 +481,9 @@ export const ORIG3_MODELS = {
       box(group, AMBER, 0.012, 0.07, 0.14, X, 1.38, 2.3);                                     // side markers
       box(group, TAIL, 0.012, 0.07, 0.14, s * (w / 2 + 0.003), 1.4, -2.38);
       // the front: square lamps in chrome bezels, an indicator under each
-      box(group, chrome, 0.32, 0.26, 0.03, s * 0.74, 1.28, 2.53);
-      box(group, LAMP, 0.24, 0.2, 0.03, s * 0.74, 1.28, 2.543);
-      box(group, AMBER, 0.28, 0.08, 0.03, s * 0.74, 1.08, 2.53);
+      box(group, chrome, 0.32, 0.26, 0.03, s * 0.74, 1.28, 2.58);
+      box(group, LAMP, 0.24, 0.2, 0.03, s * 0.74, 1.28, 2.593);
+      box(group, AMBER, 0.28, 0.08, 0.03, s * 0.74, 1.08, 2.58);
       // the tail: tall lamps on the bed's corners (tail, brake, reversing) and an indicator
       box(group, TAIL, 0.1, 0.16, 0.03, s * 0.98, 1.44, -2.56);
       box(group, BRAKE, 0.1, 0.12, 0.03, s * 0.98, 1.29, -2.56);
@@ -503,9 +503,9 @@ export const ORIG3_MODELS = {
     }
     box(group, bar, 1.82, 0.08, 0.08, 0, 2.15, -0.82);
     // the grille: chrome framed, dark, a bar across it
-    box(group, chrome, 0.98, 0.32, 0.03, 0, 1.26, 2.53);
-    box(group, dark, 0.92, 0.26, 0.03, 0, 1.26, 2.54);
-    box(group, chrome, 0.9, 0.03, 0.02, 0, 1.26, 2.555);
+    box(group, chrome, 0.98, 0.32, 0.03, 0, 1.26, 2.58);
+    box(group, dark, 0.92, 0.26, 0.03, 0, 1.26, 2.59);
+    box(group, chrome, 0.9, 0.03, 0.02, 0, 1.26, 2.605);
     // the bull bar: a heavy bumper with uprights and a hoop over the grille
     box(group, bar, w + 0.12, 0.28, 0.22, 0, 0.98, 2.66);
     for (const x of [-0.42, 0.42]) box(group, bar, 0.08, 0.62, 0.08, x, 1.34, 2.72);
