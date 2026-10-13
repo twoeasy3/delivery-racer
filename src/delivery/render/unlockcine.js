@@ -251,7 +251,7 @@ const keyShots = (s, k) => {
     { from: 3.1, to: 3.6, cam: (u) => [v3(0.55, 0.3, 1.9 - u * 0.15).add(P), v3(0, 0, 0.3).add(P), 32] }, // THE TURN: the lock, close
     { from: 3.6, to: 5.0, cam: (u) => [v3(1.0 + u * 0.2, 0.55 + u * 0.15, 3.6 + u * 0.6).add(P), v3(0, -0.6, -3).add(P), 46] }, // BURST: past the lock to the car
     { from: 5.0, to: 6.7, cam: (u) => [v3(2.6 * k - u * 0.6, 0.42, (L / 2 + 5.2) * k - u * 0.6), v3(0, H * 0.5, 0), 40] }, // RESOLVE: low and wide
-    { from: 6.7, to: 9.0, cam: (u) => { const d = lerp(9.8, 8.0, easeOut(u)) * k * tall; return [v3(-d * 0.62, 1.35 + H * 0.3, d * 0.78), v3(0, H * 0.42, 0), 32, 0.18]; } }, // HERO (the other side; high in the picture)
+    { from: 6.7, to: 9.0, cam: (u) => { const d = lerp(10.8, 9.0, easeOut(u)) * k * tall; return [v3(-d * 0.62, 1.35 + H * 0.3, d * 0.78), v3(0, H * 0.42, 0), 32, 0.15]; } }, // HERO (the other side; high in the picture)
   ];
 };
 
