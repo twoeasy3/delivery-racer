@@ -183,7 +183,7 @@ function carHunt() {
 // from Monday 12 Oct 2026, `days`), each day its own run: its featured concept car (a free try at the player's own ECU),
 // its tasks (each paid up to its limit a day, the counters starting again the next day), its pack (packs.json
 // concept-strike-<day>, featuring the day's car); the featured car delivered at its max ECU gives its key. Every weekday
-// tried by a fake clock, Sunday too, in the first run and a later one.
+// tried by a fake clock, Sunday too, in the first run and a later one. Each day plays its own level (days[].level: CHECKLIST 224).
 function SL(strike) { Events.syncDay(strike); return strike.stages[0].level; } // (the stage's level on the day the check's clock is at)
 async function conceptStrike() {
   const strike = Events.specials.find(e => e.id === 'concept-strike');
