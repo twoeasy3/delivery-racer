@@ -163,11 +163,12 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined' && document
     // ?keys: every key car with its OWN key (cars.js keyModel); ?keys=<car id>: every key model tinted by that car.
     // &card: the keys at card size only (some 100 px, as What's inside shows them), no views from the sides
     import('../cars.js').then((Cars) => {
-      const ordinary = params.get('keys') === 'ordinary'; // (?keys=ordinary: every ORDINARY key, tinted by a plain car: KEY-IDEAS.md)
+      const everyKey = params.get('keys') === 'all'; // (?keys=all: the nine Bespoke AND every ordinary key, tinted by a plain car)
+      const ordinary = everyKey || params.get('keys') === 'ordinary'; // (?keys=ordinary: every ORDINARY key, tinted by a plain car: KEY-IDEAS.md)
       const one = ordinary ? Cars.carById?.('commuter') : params.get('keys') ? Cars.carById?.(params.get('keys')) : null;
       const keyCars = [...(Cars.EVENT_CARS || []), ...(Cars.BESPOKE_CARS || [])].filter(c => c && (c.bespoke || c.keyModel));
       const only = (params.get('only') || '').split(',').filter(Boolean); // (&only=<model>,...: those keys only)
-      const tiles = (one ? (ordinary ? ORDINARY_MODELS : KEY_MODELS).map(model => [one, model]) : keyCars.map(car => [car, keyModelInUse(car)])).filter(([, m]) => !only.length || only.includes(m));
+      const tiles = (one ? (everyKey ? [...KEY_MODELS, ...ORDINARY_MODELS] : ordinary ? ORDINARY_MODELS : KEY_MODELS).map(model => [one, model]) : keyCars.map(car => [car, keyModelInUse(car)])).filter(([, m]) => !only.length || only.includes(m));
       if (!tiles.length) return;
       const card = params.has('card');
       const sheet = document.createElement('div');
