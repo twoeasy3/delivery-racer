@@ -234,15 +234,17 @@ export const Ecu = {
   // the figures a run drives the car with (cars.js carStats, on every use):
   //   a race (a separate game), or a car with no table: its own figures and CONFIG.respawnTime
   //   a car lent by Car Swap, a level's own vehicle (its car lock), a Super car: MAXED, as they always drove
+  //   a free try at the player's own ECU (the level's `ownEcu`: a rotating event's featured car): its reached ECU, key or none
   //   a replay playing back: the ECU its header recorded (an old one, with none: maxed)
   //   else: the car's ECU (a car driven at ECU0, which only a test switch can do: ECU1)
   drive(car, lent = false) {
     if (!car) return car;
     if (!ECUS[car.id] || (LEVEL && isRace(LEVEL))) return own(car);
     const max = this.max(car);
-    if (lent || (LEVEL && LEVEL.car === car.id)) return this.stats(car, max);
+    const tried = !!LEVEL?.ownEcu && LEVEL.car === car.id; // (a FREE TRY at the player's own ECU: a rotating event's featured car, events.js; CHECKLIST 211)
+    if (lent || (LEVEL && LEVEL.car === car.id && !tried)) return this.stats(car, max);
     if (pinned) return this.stats(car, pinned.car === car.id && pinned.ecu ? pinned.ecu : max);
-    return this.stats(car, Math.max(1, this.level(car)));
+    return this.stats(car, Math.max(1, tried ? this.reached(car) : this.level(car))); // (a free try: what its blueprints reach, the key or none)
   },
   // a replay's ECU, while it plays back (replay.js): { car, ecu } (ecu null: maxed), or null when it is over
   pin(value) { pinned = value && value.car ? { car: value.car, ecu: Number(value.ecu) || null } : null; },

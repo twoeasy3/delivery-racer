@@ -475,7 +475,10 @@ export const eventOf = (id) => (packOf(id)?.event ? eventEntry(packOf(id).event)
 // the packs a special event gives (its stages, its grand prize, every delivery): those whose givenBy.event names it (by
 // its id, else the pack's own event). [{ id, stage, prize, every }]
 export const eventPacks = (eventId) => PACK_IDS.map(id => ({ id, g: PACKS[id].givenBy?.event })).filter(({ id, g }) => g && String(g.id ?? PACKS[id].event) === String(eventId))
-  .map(({ id, g }) => ({ id, stage: !!g.stage, prize: !!g.prize, every: !!g.every }));
+  .map(({ id, g }) => ({ id, stage: !!g.stage, prize: !!g.prize, every: !!g.every, day: Number(g.day) || 0 }));
+// the pack a rotating event's day gives (its tasks pay it: events.js payTasks): the pack whose givenBy.event names the event
+// and that day (`day`: 1 = the run's first day), or null
+export const dayPack = (eventId, day) => PACK_IDS.find(id => { const g = PACKS[id].givenBy?.event; return !!g && String(g.id ?? PACKS[id].event) === String(eventId) && Number(g.day) === Number(day); }) || null;
 // the pack the Career levels give (the first with givenBy.career); null: none
 export const careerPack = () => PACK_IDS.find(id => PACKS[id].givenBy?.career) || null;
 
@@ -522,6 +525,7 @@ export const describePack = (id) => {
   const e = eventOf(id), end = e ? dayWords(e.to) : null;
   if (end) parts.push('Limited: ends ' + end);
   if (e?.repeat && spec.givenBy?.event?.every) parts.push('One for every ' + (e.name || e.id) + ' run'); // (a recurring event's pack: the Car Hunt's)
+  if (e?.days && spec.givenBy?.event?.day) parts.push('Earned by the ' + (e.name || e.id) + '\'s tasks'); // (a rotating event's day: the Concept Strike's)
   return parts.join('. ');
 };
 // a bundle's line: the packs and the cards in all, and each pack's guarantees ("3 packs, 30 cards. At least one Epic or
@@ -564,10 +568,11 @@ export const packProblems = (data = packData) => {
     if (g !== undefined) {
       const extra = Object.keys(g || {}).filter(k => !['career', 'event'].includes(k));
       if (extra.length) say('givenBy: unknown ' + extra.join(', '));
-      const extraEv = g?.event && typeof g.event === 'object' ? Object.keys(g.event).filter(k => !['stage', 'prize', 'every', 'id'].includes(k)) : [];
+      const extraEv = g?.event && typeof g.event === 'object' ? Object.keys(g.event).filter(k => !['stage', 'prize', 'every', 'id', 'day'].includes(k)) : [];
       if (extraEv.length) say('givenBy.event: unknown ' + extraEv.join(', '));
       if (g?.career && !(g.career.every === undefined || whole(g.career.every, 0))) say('givenBy.career.every is not a whole number');
       for (const l of g?.career?.levels || []) if (!LEVELS.some(x => x.id === l)) say('givenBy.career names no level "' + l + '"');
+      if (g?.event?.day !== undefined && !whole(g.event.day, 1)) say('givenBy.event.day is not a whole number of 1 or more (the day of a rotating event\'s run whose tasks give it)');
       if (g?.event) {
         const ev = g.event.id ?? p.event;
         if (ev === undefined) say('givenBy.event: no event (its own "event", or givenBy.event.id)');
