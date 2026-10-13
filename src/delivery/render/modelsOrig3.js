@@ -62,6 +62,16 @@ const side = (parent, material, w, points, round, x = 0, segments = 4) => {
 };
 // a straight-sided solid whose side view is `points`, `w` wide, its middle at x (a window, a flame)
 const prism = (parent, material, w, points, x = 0) => side(parent, material, w, points, 0, x);
+// a block that narrows (or grows) along the car: from the cross-section `a` to `b`, each [z, width, bottom, top]
+const taper = (parent, material, a, b, x = 0) => {
+  const corners = [];
+  for (const [z, w, y0, y1] of [a[0] < b[0] ? a : b, a[0] < b[0] ? b : a]) corners.push([-w / 2, y0, z], [w / 2, y0, z], [w / 2, y1, z], [-w / 2, y1, z]);
+  const faces = [4, 5, 6, 4, 6, 7, 0, 2, 1, 0, 3, 2, 3, 7, 6, 3, 6, 2, 0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 0, 7, 3, 0, 4, 7];
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(faces.flatMap(i => [corners[i][0] + x, corners[i][1], corners[i][2]]), 3));
+  geo.computeVertexNormals(); // (no shared corners: each face flat)
+  return place(parent, geo, material);
+};
 // a round thing along the car (a lamp), across it (an axle) or upright (a post)
 const rod = (parent, material, r, length, x, y, z, axis = 'z', segments = 12, r2 = r) => {
   const geo = new THREE.CylinderGeometry(r, r2, length, segments);
@@ -70,8 +80,9 @@ const rod = (parent, material, r, length, x, y, z, axis = 'z', segments = 12, r2
   return place(parent, geo, material, x, y, z);
 };
 // a flat picture (a decal, a curtained window): w by h, facing 'x' (+x), '-x', 'z', '-z' or 'y' (up)
-const decal = (parent, material, w, h, x, y, z, facing) => {
-  const geo = new THREE.PlaneGeometry(w, h);
+const decal = (parent, material, w, h, x, y, z, facing, u = [0, 1]) => {
+  const geo = new THREE.PlaneGeometry(w, h), uv = geo.attributes.uv;
+  for (let i = 0; i < uv.count; i++) uv.setX(i, u[0] + uv.getX(i) * (u[1] - u[0])); // (a part of the picture: u from u[0] to u[1])
   if (facing === 'x') geo.rotateY(Math.PI / 2);
   if (facing === '-x') geo.rotateY(-Math.PI / 2);
   if (facing === '-z') geo.rotateY(Math.PI);
@@ -167,6 +178,26 @@ const curtains = (key, cloth) => texture('curtains-' + key, 64, 32, (ctx, w, h) 
   ctx.restore();
 });
 
+// flames for a flank, licking back from the front (u 0) to their tips (u 1): five tongues, each in three colours
+// (fire: [outer, middle, core]), clear between them
+const flames = (key, fire) => texture('flames-' + key, 128, 64, (ctx, w, h) => {
+  ctx.clearRect(0, 0, w, h);
+  // [top, bottom of its root at the front edge, reach (share of the picture)]: fat roots, each curling up to its tip
+  const tongues = [[2, 28, 0.82], [14, 42, 1], [28, 54, 0.7], [40, 64, 0.52]];
+  fire.forEach((colour, k) => {
+    ctx.fillStyle = colour;
+    ctx.beginPath();
+    for (const [y0, y1, reach] of tongues) {
+      const a = y0 + k * 4, b = y1 - k * 4, tip = w * reach * (1 - k * 0.2), ty = Math.max(1, a - 8 + k * 2);
+      ctx.moveTo(0, b);
+      ctx.bezierCurveTo(tip * 0.35, b + 4, tip * 0.7, b - 4, tip, ty);
+      ctx.bezierCurveTo(tip * 0.72, ty + 12, tip * 0.4, a - 4, 0, a);
+      ctx.closePath();
+    }
+    ctx.fill();
+  });
+});
+
 export const ORIG3_MODELS = {
   // The Hearse: a long seventies funeral coach in deep indigo (white for an Evil driver). A long, flat bonnet with
   // a chrome-framed upright grille of vertical bars between four round lamps in chrome bezels; a tall, long coach
@@ -244,6 +275,89 @@ export const ORIG3_MODELS = {
         cloth.map = evil ? curtains('dark', ['#6a3290', '#3a1850']) : curtains('pale', ['#e4dff0', '#b5adc8']);
         chrome.color.setHex(evil ? 0x8a919b : CHROME); // (on a white body bright chrome is lost: a darker steel shows its lines)
       },
+    };
+    group.userData.livery(false);
+    return group;
+  },
+
+  // The Hot Rod: a chopped thirties five-window coupe on its frame with no wings (a highboy), purple with flames. A tall
+  // chrome grille shell up front with its bars, a long narrow bonnet with louvres, flames licking back along it from the
+  // grille, big lamps in chrome buckets on posts, a beam axle and its spring out in the open; a small cab with a
+  // chopped, blue-tinted windscreen; fat tyres at the back and skinny ones at the front. The whole body shakes on its
+  // springs as the engine idles. (Also the earned Hell Rod's model, in flames of its own colours.)
+  hotrod: (car) => {
+    const group = new THREE.Group(), shell = new THREE.Group();
+    group.add(shell);
+    const L = car.hl, RR = 0.5, RF = 0.34, bw = 1.16;
+    const paint = lambert(car.color), glass = lambert(0x2c4470), chrome = lambert(CHROME), trim = lambert(TRIM), dark = lambert(0x121418);
+    const plate = lambert(0xf2d21f);
+    const hell = car.id === 'hellrod';
+    const palette = (evil) => hell ? (evil ? ['good', ['#d8261c', '#ff8a1a', '#ffd23f']] : ['soot', ['#120604', '#5a0d0a', '#c81e1e']])
+      : evil ? ['evil', ['#5a0a0a', '#c81e1e', '#ff6a1a']] : ['good', ['#d8261c', '#ff8a1a', '#ffd23f']];
+    const fire = new THREE.MeshLambertMaterial({ alphaTest: 0.5 });
+    // the body: a tub from the cowl back, its tail rounded down over the rear axle
+    side(shell, paint, bw, [[-1.92, 0.52, 0.04], [0.48, 0.52], [0.48, 0.9], [-0.8, 0.9], [-1.6, 0.89, 0.26], [-1.92, 0.76, 0.12]], 0.04);
+    taper(shell, paint, [0.46, bw - 0.04, 0.52, 0.92], [0.66, 0.74, 0.56, 0.95]);              // the cowl, narrowing to the bonnet
+    side(shell, paint, 0.72, [[0.62, 0.56], [1.62, 0.56], [1.62, 0.92, 0.05], [0.62, 0.95]], 0.04); // the long, narrow bonnet
+    // the cab, chopped: a low roof over a short windscreen
+    side(shell, paint, 1.06, [[0.42, 0.88], [0.4, 1.12, 0.03], [-0.5, 1.15, 0.12], [-0.8, 1.0, 0.12], [-0.82, 0.88]], 0.05);
+    box(shell, glass, 0.88, 0.17, 0.02, 0, 1.03, 0.46);                                          // the windscreen,
+    box(shell, chrome, 0.94, 0.025, 0.03, 0, 1.125, 0.465);                                       // its chrome top,
+    slab(shell, glass, 0.5, 0.02, 0.16, 0, 1.12, -0.77, -0.75);                                    // and a little rear window
+    // the grille shell: chrome, tall and upright, dark behind its bars, a mascot on top
+    prism(shell, chrome, 0.62, [[1.6, 0.44], [1.78, 0.44], [1.78, 1.0, 0.06], [1.6, 1.04, 0.04]]);
+    box(shell, dark, 0.48, 0.48, 0.02, 0, 0.73, 1.785);
+    for (let i = -4; i <= 4; i++) box(shell, chrome, 0.018, 0.46, 0.02, i * 0.05, 0.73, 1.795);
+    rod(shell, chrome, 0.025, 0.08, 0, 1.08, 1.7, 'y', 6);
+    for (const s of [-1, 1]) {
+      const x = s * (bw / 2 + 0.006);
+      prism(shell, glass, 0.02, [[0.3, 0.95], [0.3, 1.09], [-0.3, 1.11], [-0.3, 0.95]], x);          // the door's window
+      prism(shell, glass, 0.02, [[-0.4, 0.95], [-0.4, 1.1], [-0.56, 1.08], [-0.68, 0.95]], x);       // and the quarter window
+      for (const z of [0.4, -0.34]) box(shell, trim, 0.012, 0.34, 0.014, s * (bw / 2 + 0.003), 0.72, z); // the door's shut lines
+      box(shell, chrome, 0.03, 0.03, 0.12, s * (bw / 2 + 0.012), 0.84, -0.24);                      // its handle
+      box(shell, chrome, 0.12, 0.025, 0.025, s * (bw / 2 + 0.05), 0.95, 0.36);                     // a mirror on its stalk
+      box(shell, chrome, 0.03, 0.07, 0.09, s * (bw / 2 + 0.11), 0.98, 0.36);
+      // the bonnet's flank: flames from the grille back, louvres over their tips, headers out under them
+      decal(shell, fire, 1.0, 0.34, s * 0.366, 0.75, 1.12, s > 0 ? 'x' : '-x', s > 0 ? [0, 0.66] : [0.66, 0]);
+      decal(shell, fire, 0.62, 0.32, x + s * 0.002, 0.72, 0.13, s > 0 ? 'x' : '-x', s > 0 ? [0.68, 1] : [1, 0.68]);
+      for (let i = 0; i < 6; i++) box(shell, dark, 0.012, 0.016, 0.16, s * 0.367, 0.9 - (i % 2) * 0.035, 0.62 + 0.14 + Math.floor(i / 2) * 0.2);
+      for (let i = 0; i < 3; i++) rod(shell, chrome, 0.025, 0.2, s * 0.4, 0.5, 0.82 + i * 0.16, 'x', 6);
+      rod(shell, chrome, 0.045, 1.4, s * 0.52, 0.44, 0.18, 'z', 8);                                // the side pipes, under the doors
+      // lamps in chrome buckets on posts by the grille, an indicator on each post
+      rod(shell, chrome, 0.02, 0.4, s * 0.48, 0.7, 1.62, 'y', 6);
+      rod(shell, chrome, 0.12, 0.16, s * 0.48, 0.92, 1.64, 'z', 12, 0.07);
+      rod(shell, LAMP, 0.1, 0.02, s * 0.48, 0.92, 1.72, 'z', 12);
+      rod(shell, AMBER, 0.035, 0.05, s * 0.48, 0.66, 1.65, 'z', 8);
+      // the tail: round tail lamps over brake lamps on the back panel, an indicator and a reversing lamp
+      rod(shell, TAIL, 0.055, 0.04, s * 0.42, 0.66, -1.96, 'z', 10);
+      rod(shell, BRAKE, 0.045, 0.04, s * 0.29, 0.66, -1.96, 'z', 10);
+      box(shell, AMBER, 0.08, 0.035, 0.03, s * 0.42, 0.575, -1.965);
+      box(shell, REVERSE, 0.07, 0.035, 0.03, s * 0.29, 0.575, -1.965);
+      box(shell, trim, 0.1, 0.1, 3.5, s * 0.36, 0.44, -0.12);                                      // the frame rails
+    }
+    box(shell, trim, 0.82, 0.06, 0.06, 0, 0.6, 1.62);                                              // the lamps' cross bar
+    box(shell, chrome, 0.56, 0.05, 0.05, 0, 0.42, 2.0);                                            // a nerf bar in front,
+    for (const s of [-1, 1]) box(shell, chrome, 0.04, 0.04, 0.24, s * 0.26, 0.42, 1.88);
+    box(shell, chrome, 0.9, 0.06, 0.06, 0, 0.44, -2.02);                                           // and one behind
+    for (const s of [-1, 1]) box(shell, chrome, 0.04, 0.04, 0.16, s * 0.4, 0.44, -1.94);
+    box(shell, plate, 0.3, 0.12, 0.02, 0, 0.64, -1.965);                                           // the number plate
+    // the front axle out in the open: a dropped beam and the spring across over it
+    box(shell, trim, 1.36, 0.07, 0.07, 0, RF + 0.02, L * 0.66);
+    box(shell, chrome, 0.9, 0.04, 0.09, 0, 0.5, L * 0.66);
+    const keep = new Set();
+    const rear = wheelGeo(RR, 0.42, 0.5), front = wheelGeo(RF, 0.2, 0.6), tyre = lambert(0x141414);
+    for (const s of [-1, 1]) {
+      for (const part of wheel(group, rear, s * 0.82, RR, -L * 0.6, tyre, chrome, chrome)) keep.add(part);   // fat ones at the back,
+      for (const part of wheel(group, front, s * 0.756, RF, L * 0.66, tyre, chrome, chrome)) keep.add(part); // skinny ones in front
+    }
+    const merged = mergeByMaterial(shell, keep);
+    group.userData = {
+      body: merged.get(paint),
+      animate: (t) => { // (a lumpy idle: the body shakes on its springs)
+        shell.rotation.z = Math.sin(t * 31) * 0.005;
+        shell.position.y = Math.abs(Math.sin(t * 15.5)) * 0.008;
+      },
+      livery: (evil) => { const [key, colours] = palette(evil); fire.map = flames(key, colours); fire.needsUpdate = true; },
     };
     group.userData.livery(false);
     return group;

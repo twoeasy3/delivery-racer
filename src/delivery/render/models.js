@@ -2155,51 +2155,8 @@ export const MODELS = {
     return group;
   },
 
-  // A Ford lo-boy hot rod: no fenders, a long narrow bonnet with the engine out in the open
-  // (chrome stacks and all), big wheels at the back, skinny ones up front, and a chopped
-  // windscreen over an open cockpit. The engine shakes as it idles.
-  hotrod: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, RR = 0.5, RF = 0.34;
-    const paint = lambert(car.color), chrome = lambert(CHROME), trim = lambert(TRIM), glass = lambert(GLASS);
-    box(group, trim, w * 0.5, 0.12, l * 0.9, 0, 0.42, 0);                          // frame rails
-    const body = box(group, paint, w * 0.78, 0.55, l * 0.36, 0, 0.78, -l * 0.12);   // the tub
-    box(group, trim, w * 0.6, 0.2, l * 0.2, 0, 0.98, -l * 0.15);                    // cockpit and seat
-    box(group, paint, w * 0.52, 0.32, l * 0.3, 0, 0.82, l * 0.2);                   // bonnet
-    box(group, paint, w * 0.5, 0.62, 0.14, 0, 0.88, l * 0.36);                      // grille shell
-    box(group, chrome, w * 0.38, 0.48, 0.04, 0, 0.88, l * 0.44);                    // grille bars
-    box(group, glass, w * 0.7, 0.22, 0.04, 0, 1.18, l * 0.06);                      // chopped windscreen
-    box(group, chrome, w * 0.74, 0.04, 0.06, 0, 1.3, l * 0.06);                     // its frame
-    box(group, trim, w * 0.9, 0.08, 0.1, 0, 0.42, l * 0.33);                        // dropped front axle
-    box(group, chrome, w * 0.5, 0.12, 0.1, 0, 0.42, -l / 2 + 0.05);                 // rear nerf bar
-    const engine = new THREE.Group(); // (it shakes)
-    engine.position.set(0, 1.0, l * 0.22);
-    group.add(engine);
-    box(engine, lambert(0x5a5e66), w * 0.4, 0.22, 0.6, 0, 0, 0);                    // the block, showing
-    box(engine, chrome, w * 0.3, 0.2, 0.4, 0, 0.2, 0);                              // blower
-    box(engine, lambert(0x8d9096), w * 0.24, 0.08, 0.3, 0, 0.34, -0.02);           // its scoop
-    for (const side of [-1, 1]) {
-      for (const z of [-0.15, 0.05, 0.25]) { // stacks
-        const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.3, 8), chrome);
-        stack.position.set(side * w * 0.27, 0.12, z);
-        engine.add(stack);
-      }
-      box(group, chrome, 0.07, 0.07, l * 0.55, side * w * 0.3, 0.55, -l * 0.05);   // side pipes
-      disc(group, LAMP, 0.13, 0.12, side * w * 0.33, 1.02, l * 0.38);              // headlights on a bar
-      box(group, chrome, 0.04, 0.24, 0.04, side * w * 0.33, 0.86, l * 0.38);
-      box(group, TAIL, 0.12, 0.12, 0.06, side * w * 0.3, 0.72, -l * 0.3 - 0.01);
-      wheel(group, RR, 0.42, side * (w / 2 - 0.08), RR, -l * 0.3);                  // big ones at the back
-      wheel(group, RF, 0.2, side * w * 0.42, RF, l * 0.33);                         // skinny ones up front
-    }
-    group.userData = {
-      body,
-      animate: (t) => {
-        engine.rotation.z = Math.sin(t * 38) * 0.04;
-        engine.position.y = 1.0 + Math.abs(Math.sin(t * 19)) * 0.02;
-      },
-    };
-    return group;
-  },
+  // The Hot Rod: render/modelsOrig3.js
+  hotrod: ORIG3_MODELS.hotrod,
 };
 MODELS.superlowrider = MODELS.lowrider; // (the lowrider builder makes both: see it)
 
