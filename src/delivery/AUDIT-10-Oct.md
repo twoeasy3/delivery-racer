@@ -28,7 +28,7 @@ So 16 of 32 are done (10 on main, 6 on the branch), 2 partly, 14 open. **For the
 
 Of the plan (section 4): **stage 0** in part on main (one runner with groups, `npm run check`, ESLint; no build-size
 report, picture-diff or level hash yet). **Stage 1**: the 15 MB of map downloads are already gone from this
-repository; the one unused sound (`Explosion Large.wav`, 16 KB) removed on the branch; the Super pictures are in
+repository; the one unused sound (`Explosion Large.wav`, 16 KB) was removed and PUT BACK at the owner's word (never remove .wav assets); the Super pictures are in
 use (Q7); the Lowrider tracks and the rounding of run-off widths not done. **Stage 2**: Q7's exports done on the
 branch; the field reference from the schema (B7) not done. **Stage 4** (one water-main system): done on main (C1).
 Stages 3, 5, 6, 7, 8 and 9 not started.

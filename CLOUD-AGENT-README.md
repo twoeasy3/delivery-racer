@@ -50,6 +50,7 @@ groups above, and the quick smoke only when asked. Syntax-check changed files wi
 
 ## Rules (the owner's)
 
+- Never remove `.wav` (or any sound) assets, even when nothing seems to use them (the owner, 13-Oct).
 - This repository deploys on push to `main` (Cloudflare builds `npm run build` and runs `npx wrangler deploy`): check
   before merging to `main`. Never add bindings (database, buckets) or a Worker script without the owner. Pushing to
   the owner's old site repo (`collection-site`) would deploy the live collection site: do not.
