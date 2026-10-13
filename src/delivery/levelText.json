@@ -565,5 +565,16 @@
       "good": "goldfish",
       "evil": "porcupine"
     }
+  },
+  "solstice-cliffs": {
+    "name": "Solstice Cliffs",
+    "description": {
+      "good": "A midsummer cake along the coast with the top down: through the bush, over the headland in one leap, across the Sea Cliff Bridge in the wind and into the bay with the sun in your eyes.",
+      "evil": "A box of angry bees on the longest day. Leap the headland, ride the gusts on the cliff bridge, and let the low sun hide you from the patrol cars on the way into town."
+    },
+    "cargo": {
+      "good": "cake",
+      "evil": "bees"
+    }
   }
 }

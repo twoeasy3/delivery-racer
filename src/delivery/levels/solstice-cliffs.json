@@ -1,0 +1,89 @@
+{
+  "id": "solstice-cliffs",
+  "theme": "coast",
+  "clock": { "good": 90, "evil": 70 },
+  "tip": 140,
+  "cargo": { "good": "cake", "evil": "bees" },
+  "traffic": { "wagon": 0.2, "lovebus": 0.16, "miata": 0.14, "pickup": 0.12, "commuter": 0.12, "caravan": 0.08, "suv": 0.08, "van": 0.07, "police": 0.03 },
+  "trafficCount": 8,
+  "oncomingCount": 7,
+  "segments": [
+    { "length": 160, "curve": 0 },
+    { "length": 180, "curve": 0.003 },
+    { "length": 180, "curve": -0.003 },
+    { "length": 150, "curve": 0, "grade": 0.03 },
+    { "length": 80, "curve": 0, "grade": 0.2, "ease": 4 },
+    { "length": 80, "curve": 0, "grade": -0.2, "ease": 4 },
+    { "length": 150, "curve": 0, "ease": 6 },
+    { "length": 400, "curve": 0.0015 },
+    { "length": 250, "curve": -0.002 },
+    { "length": 250, "curve": 0 },
+    { "length": 80, "curve": 0 }
+  ],
+  "zones": [
+    { "id": "solsticeHeadland", "from": 0, "to": 560, "scenery": "bush", "ground": 8227410, "sky": 11784418 },
+    { "id": "solsticeCliffs", "from": 560, "to": 1420, "scenery": "seacliff", "ground": 7047758, "sky": 9225966, "sea": 3 },
+    { "id": "solsticeBay", "from": 1420, "to": 1960, "scenery": "kiama", "ground": 8368986, "sky": 11130098, "sea": 8 }
+  ],
+  "bridges": [
+    { "from": 1000, "to": 1360, "style": "seacliff" }
+  ],
+  "crosswinds": [
+    { "from": 1000, "to": 1360, "dir": "left" }
+  ],
+  "quietZones": [
+    { "from": 980, "to": 1380, "density": 0.5 }
+  ],
+  "lowSun": [
+    { "from": 1640, "to": 1860 }
+  ],
+  "dropBears": [
+    { "from": 200, "to": 480, "count": 4 }
+  ],
+  "pelotons": [
+    { "s": 280, "count": 6 },
+    { "s": 1480, "count": 8 },
+    { "s": 1700, "count": 6, "dir": -1 }
+  ],
+  "shoulderRows": [
+    { "kind": "umbrella", "from": 1480, "to": 1620, "every": 14, "side": "right" }
+  ],
+  "pickups": [
+    { "type": "cash10", "s": 60, "lane": 2 },
+    { "type": "cash10", "s": 60, "lane": 3 },
+    { "type": "turbo", "s": 150, "lane": 3 },
+    { "type": "cash10", "s": 260, "lane": 2 },
+    { "type": "cash10", "s": 260, "lane": 3 },
+    { "type": "cash20", "s": 420, "lane": 2 },
+    { "type": "cash20", "s": 420, "lane": 3 },
+    { "type": "wrench", "s": 520, "lane": 2 },
+    { "type": "cash10", "s": 620, "lane": 2 },
+    { "type": "cash10", "s": 620, "lane": 3 },
+    { "type": "cash20", "s": 740, "lane": 2 },
+    { "type": "cash20", "s": 740, "lane": 3 },
+    { "type": "cash10", "s": 900, "lane": 2 },
+    { "type": "cash10", "s": 900, "lane": 3 },
+    { "type": "cash10", "s": 900, "lane": "right" },
+    { "type": "mystery", "s": 960, "lane": 3 },
+    { "type": "cash10", "s": 1100, "lane": 2 },
+    { "type": "cash10", "s": 1100, "lane": 3 },
+    { "type": "cash20", "s": 1260, "lane": 2 },
+    { "type": "cash20", "s": 1260, "lane": 3 },
+    { "type": "turbo", "s": 1420, "lane": 2 },
+    { "type": "cash10", "s": 1560, "lane": 2 },
+    { "type": "cash10", "s": 1560, "lane": 3 },
+    { "type": "wrench", "s": 1640, "lane": 3 },
+    { "type": "cash10", "s": 1760, "lane": 2 },
+    { "type": "cash10", "s": 1760, "lane": 3 },
+    { "type": "cash20", "s": 1900, "lane": 2 },
+    { "type": "cash20", "s": 1900, "lane": 3 },
+    { "type": "cash20", "s": 1900, "lane": "right" }
+  ],
+  "obstacles": [
+    { "s": 340, "lane": 3, "kind": "cooler" },
+    { "s": 600, "lane": 2, "kind": "surfboard" },
+    { "s": 1520, "lane": 3, "kind": "cooler" },
+    { "s": 1690, "lane": 2, "kind": "surfboard" },
+    { "s": 1820, "lane": 3, "kind": "chair" }
+  ]
+}

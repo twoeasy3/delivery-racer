@@ -126,6 +126,9 @@
     }
   },
   "zones": {
+    "solsticeHeadland": ["The headland - top down"],
+    "solsticeCliffs": ["The Sea Cliff Bridge"],
+    "solsticeBay": ["Into the bay"],
     "pocketLilyLane": ["Lily Lane - mind the humps"],
     "pocketHighStreet": ["The High Street"],
     "pocketMarket": ["Market day in the square"],

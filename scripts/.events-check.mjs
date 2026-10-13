@@ -184,7 +184,7 @@ function carHunt() {
 // its tasks (each paid up to its limit a day, the counters starting again the next day), its pack (packs.json
 // concept-strike-<day>, featuring the day's car); the featured car delivered at its max ECU gives its key. Every weekday
 // tried by a fake clock, Sunday too, in the first run and a later one.
-const SL = (strike) => { Events.syncDay(strike); return strike.stages[0].level; }; // (the stage's level on the day the check's clock is at)
+function SL(strike) { Events.syncDay(strike); return strike.stages[0].level; } // (the stage's level on the day the check's clock is at)
 async function conceptStrike() {
   const strike = Events.specials.find(e => e.id === 'concept-strike');
   const { Ecu } = await g.load('ecu.js');
@@ -211,7 +211,7 @@ async function conceptStrike() {
   });
   Events.syncDay(strike, from + 6 * D + 5 * H);
   check(strike.stages[0].level === strike.days[0].level, 'Sunday (shut): the stage shows Monday\'s level (' + strike.stages[0].level?.id + ')');
-  Events.syncDay(strike, from + 1 * D + 5 * H);
+  at(from + 1 * D + 5 * H);
   check(Events.offDay(strike.days[0].level) && !Events.offDay(strike.days[1].level) && !Events.isOpen(strike.days[0].level) && Events.isOpen(strike.days[1].level), 'Tuesday: Monday\'s level is off its day (not open), Tuesday\'s open');
   check(C224.car === 'sport', '(the clock reference)');
   const want = [['fishbowl', 2, 4, 'Mon', 2], ['midsummer', 3, 3, 'Tue', 2], ['sixteen', 4, 3, 'Wed', 3], ['quadturbo', 5, 3, 'Thu', 4], ['knifeedge', 5, 3, 'Fri', 5], ['windsong', 5, 3, 'Sat', 5]] // (the last: task 1's stars; the owner, 13-Oct, Tue, Wed, Thu one star below the day's car);
