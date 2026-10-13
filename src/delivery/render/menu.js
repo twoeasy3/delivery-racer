@@ -20,6 +20,16 @@ import { Input } from '../input.js';
 import { draw, MenuStage } from './menustage.js';
 export { LEVEL_SHOTS } from './menustage.js'; // (the postcard album's pictures: render/album.js)
 
+// The menu's height on a phone (menu2.css, the phone's media queries: height var(--menu-h, 100dvh)): the window's inner height,
+// what is left of the screen with the browser's address bar showing, kept as the bar comes and goes and the phone turns. Where
+// 100vh is the screen without the bar (older iOS Safari, Chrome before dvh) the menu's foot, START and the build tag, sat under
+// the bar. Only the phone's rules read it; the desktop's and the tablet's menu is the window (inset: 0) as before.
+const menuHeight = () => document.documentElement.style.setProperty('--menu-h', window.innerHeight + 'px');
+menuHeight();
+window.addEventListener('resize', menuHeight);
+window.addEventListener('orientationchange', () => { menuHeight(); setTimeout(menuHeight, 300); }); // (the new height can come late)
+window.visualViewport?.addEventListener('resize', menuHeight);
+
 draw();
 // a car picked in the garage shows on its card (unless the level has a vehicle of its own; and on an amphibious
 // level only if it is an amphibious one: otherwise the player's amphibious car stays)

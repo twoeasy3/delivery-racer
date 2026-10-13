@@ -227,11 +227,16 @@
      (about 200 tall, anchored to its foot) ran off its top. The stage is never less than 210: on a screen too
      short for that the menu scrolls, where it would have cut START off */
   #startScreen { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(210px, 1fr) auto auto;
-    grid-template-areas: "top" "groups" "stage" "strip" "side"; gap: 6px; padding: 8px 10px max(26px, calc(env(safe-area-inset-bottom) + 14px)); /* (26 under START: the owner, 11-Oct) */
-    bottom: auto; height: 100vh; height: 100dvh; overflow-y: auto; } /* (dvh: what is left of the screen with the browser's bars showing) */
+    grid-template-areas: "top" "groups" "stage" "strip" "side"; gap: 6px; --foot: max(26px, calc(env(safe-area-inset-bottom) + 24px)); padding: 8px 10px var(--foot); /* (26 under START: the owner, 11-Oct) */
+    /* (the screen's height WITH the padding in it: content-box, the menu was 100dvh plus its 34 px of padding, so its foot, START
+       and the build tag, sat 34 px under the screen's edge. The height: what is left of the screen with the browser's bars showing:
+       --menu-h, window.innerHeight kept by render/menu.js as the bars come and go; 100dvh, then 100vh, where that is not set) */
+    box-sizing: border-box; bottom: auto; height: 100vh; height: 100dvh; height: var(--menu-h, 100dvh); overflow-y: auto; }
   #startScreen .menu-keys { display: none; }
-  /* the build (version.js): under START, in the menu's flow (fixed to the screen it sat on START where the menu scrolls) */
-  #startScreen .build-tag { position: static; grid-row: 6; justify-self: end; margin-top: -2px; }
+  /* the build (version.js; the owner, 13-Oct: "the version number has never been visible"): fixed in the 26 px under START, its
+     right edge on the menu's, over the safe area and over the event card's sticky foot (z 4); it stays there when the menu scrolls.
+     Placed from the top by --menu-h, as the menu is, so where the address bar is over a page laid out at 100vh it is still above it */
+  #startScreen .build-tag { right: max(12px, env(safe-area-inset-right)); bottom: auto; top: calc(var(--menu-h, 100dvh) - var(--foot) + 8px); z-index: 6; font-size: 11px; opacity: .9; }
   /* the top: the title, the bank (the figure alone) and the options on one line, the tabs on the next */
   #startScreen .menu-top { flex-wrap: wrap; gap: 6px 8px; }
   #startScreen h1 { font-size: 22px; }
@@ -313,8 +318,14 @@
    6 + 6, three gaps of 6, the top 30, the groups 25, the strip 52: the stage gets 360 - 137 = 223, and the side
    column 312 (the groups, the stage and the strip), of which the car has 210 ---- */
 @media (max-height: 520px) and (min-width: 520px) {
-  #startScreen { gap: 6px 10px; padding-top: 6px; padding-bottom: 6px; bottom: auto; height: 100vh; height: 100dvh; grid-template-areas: "top top" "groups side" "stage side" "strip side"; grid-template-rows: auto auto minmax(0, 1fr) auto; }
+  /* (border-box and --menu-h: as held upright, above; it was 12 px taller than the screen, the strip's names cut and START on the edge) */
+  #startScreen { gap: 6px 10px; padding-top: 6px; padding-bottom: max(6px, env(safe-area-inset-bottom)); box-sizing: border-box; bottom: auto; height: 100vh; height: 100dvh; height: var(--menu-h, 100dvh);
+    grid-template-areas: "top top" "groups side" "stage side" "strip side"; grid-template-rows: auto auto minmax(0, 1fr) auto; }
   #startScreen .menu-keys { display: none; }
+  /* (the build tag under START, in the right-hand column: the column ends 16 px short (its car's card gives them up, not the stage),
+     the tag in them. In the screen's corner it sat ON START, grey on the yellow) */
+  #startScreen .menu-side { margin-bottom: 16px; }
+  #startScreen .build-tag { right: max(18px, env(safe-area-inset-right)); bottom: auto; top: calc(var(--menu-h, 100dvh) - max(6px, env(safe-area-inset-bottom)) - 13px); z-index: 6; font-size: 11px; opacity: .9; }
   #startScreen h1 { font-size: 22px; }
   #startScreen .menu-tabs button { padding: 6px 18px 5px; font-size: 15px; }
   #startScreen .menu-groups button { padding: 4px 12px; font-size: 13px; }
