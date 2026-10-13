@@ -1515,51 +1515,9 @@ export const MODELS = {
     return group;
   },
 
-  // The Darkvan: a full-size panel van with lifted suspension (the A-Team's, more or less):
-  // big off-road tyres, a bull bar, a roof spoiler and a short nose. In its Evil livery it is
-  // the A-Team's own: black over grey with the red stripe and red wheels; in its Good one,
-  // plain light green.
+  // The Darkvan: rebuilt (13-Oct) after the owner's older game's picture, in render/modelsOrig2.js (see it)
   darkvan: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.5;
-    const paint = lambert(car.color), glass = lambert(GLASS), trim = lambert(TRIM);
-    const grey = lambert(0x8d9096), red = lambert(0xc8102e), chrome = lambert(CHROME);
-    const body = box(group, paint, w, 1.3, l * 0.8, 0, 1.6, -l * 0.1);            // the box
-    box(group, paint, w * 0.96, 0.62, l * 0.2, 0, 1.25, l * 0.4);                 // short nose
-    screen(group, glass, w * 0.9, 0.05, 0.8, 0, 1.86, l * 0.32, 0.5);               // windscreen
-    box(group, trim, w * 0.6, 0.1, 0.5, 0, 2.3, -l * 0.43);                       // roof spoiler
-    box(group, trim, w * 0.7, 0.14, l * 0.86, 0, 0.82, -l * 0.04);                // the lifted chassis, showing
-    box(group, trim, w * 0.5, 0.36, 0.06, 0, 1.2, l / 2 + 0.01);                  // grille
-    // the bull bar
-    box(group, trim, w * 0.9, 0.08, 0.08, 0, 1.0, l / 2 + 0.22);
-    box(group, trim, w * 0.9, 0.08, 0.08, 0, 1.45, l / 2 + 0.22);
-    for (const x of [-0.3, 0.3]) box(group, trim, 0.08, 0.53, 0.08, x * w, 1.22, l / 2 + 0.22);
-    box(group, trim, w + 0.1, 0.22, 0.18, 0, 0.98, -l / 2 - 0.05);                // rear bumper
-    const evilOnly = [], hubs = [];
-    for (const side of [-1, 1]) {
-      box(group, glass, 0.02, 0.42, l * 0.16, side * (w / 2 + 0.005), 1.9, l * 0.22); // cab windows
-      box(group, glass, 0.02, 0.36, l * 0.16, side * (w / 2 + 0.005), 1.9, -l * 0.34); // little rear windows
-      box(group, trim, 0.14, 0.12, 0.12, side * (w / 2 + 0.07), 1.75, l * 0.32);       // mirrors
-      box(group, trim, 0.22, 0.06, l * 0.4, side * (w / 2 + 0.1), 0.92, l * 0.02);     // side steps
-      disc(group, LAMP, 0.14, 0.08, side * w * 0.36, 1.32, l / 2 + 0.02);             // round headlights
-      box(group, TAIL, 0.14, 0.4, 0.08, side * w * 0.43, 1.6, -l / 2 - 0.01);
-      evilOnly.push(
-        box(group, grey, 0.02, 0.5, l * 0.98, side * (w / 2 + 0.006), 1.2, 0),           // grey lower panels
-        slab(group, red, 0.02, 0.14, l * 0.62, side * (w / 2 + 0.012), 1.58, -l * 0.02, -0.12)); // the red stripe
-      for (const z of [0.3, -0.3]) {
-        hubs.push(wheel(group, R, 0.42, side * (w / 2 - 0.02), R, l * z, chrome)[1]);
-        box(group, trim, 0.06, 0.5, 0.06, side * w * 0.36, 0.72, l * z);           // lift kit: the long shocks
-      }
-    }
-    group.userData = {
-      body,
-      animate: () => {},
-      livery: (evil) => { // (the A-Team's grey, stripe and red wheels are the Evil livery's)
-        for (const part of evilOnly) part.visible = evil;
-        for (const hub of hubs) hub.material = evil ? red : chrome;
-      },
-    };
-    group.userData.livery(false);
+    const group = ORIG2_MODELS.darkvan(car);
     return group;
   },
 
@@ -1781,98 +1739,10 @@ export const MODELS = {
     return group;
   },
 
-  // A long, low car on hydraulics: the front end rises and falls in a smooth, endless bob,
-  // pivoting about the rear axle. The front wheels hang on their suspension: they lift only
-  // part of the way with the nose, so as it rises they droop below the body.
-  // The Super Lowrider (model 'superlowrider') is the same car taken to extremes: flames licking
-  // back along its flanks, gold wire wheels on whitewalls, a chrome continental kit on the tail, a
-  // hood ornament, and neon glowing underneath, cycling through the colours; and it hops far higher,
-  // rocking side to side as it goes (three-wheel motion)
+  // The Lowrider (and the Super Lowrider, model 'superlowrider': the same car taken to extremes): rebuilt (13-Oct)
+  // after the owner's older game's picture, in render/modelsOrig2.js (see it)
   lowrider: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.36, extreme = car.model === 'superlowrider';
-    const rearZ = -l * 0.3, frontZ = l * 0.32;
-
-    // everything that rises with the front end hangs off this, whose origin is the rear axle
-    const chassis = new THREE.Group();
-    chassis.position.set(0, R, rearZ);
-    group.add(chassis);
-    const at = (z) => z - rearZ; // a position along the car, measured from the pivot
-
-    const paint = lambert(car.color);
-    const body = box(chassis, paint, w, 0.42, l, 0, 0.18, at(0));
-    box(chassis, lambert(0xd8d8d8), w + 0.06, 0.07, l * 0.92, 0, 0.1, at(0));          // chrome strip
-    box(chassis, paint, w * 0.86, 0.1, l * 0.3, 0, 0.44, at(l * 0.3));                  // bonnet bulge
-    box(chassis, lambert(0x23262d), w * 0.8, 0.36, l * 0.34, 0, 0.56, at(-l * 0.06));   // low cabin
-    box(chassis, paint, w * 0.82, 0.06, l * 0.3, 0, 0.77, at(-l * 0.06));               // roof
-    const chrome = lambert(CHROME), gold = lambert(0xe6c15a);
-    screen(chassis, lambert(0x23262d), w * 0.78, 0.05, 0.6, 0, 0.56, at(l * 0.15), 0.62); // windscreen
-    box(chassis, chrome, w + 0.1, 0.11, 0.13, 0, 0.03, at(l / 2 + 0.03));               // chrome bumpers
-    box(chassis, chrome, w + 0.1, 0.11, 0.13, 0, 0.03, at(-l / 2 - 0.03));
-    box(chassis, chrome, w * 0.4, 0.14, 0.06, 0, 0.22, at(l / 2 + 0.02));               // grille
-    const lamp = LAMP, tail = TAIL;
-    const frontAxle = new THREE.Group(); // (not part of the chassis: see animate)
-    frontAxle.position.set(0, R, frontZ);
-    group.add(frontAxle);
-    for (const side of [-1, 1]) {
-      box(chassis, paint, 0.09, 0.2, l * 0.24, side * (w / 2 - 0.045), 0.49, at(-l * 0.38)); // tail fins
-      box(chassis, gold, 0.02, 0.04, l * 0.84, side * (w / 2 + 0.005), 0.3, at(0));     // pinstripe
-      box(chassis, paint, 0.09, 0.36, 0.09, side * w * 0.38, 0.56, at(-l * 0.22));      // rear pillars
-      box(chassis, chrome, 0.12, 0.08, 0.1, side * (w / 2 + 0.05), 0.46, at(l * 0.12)); // mirrors
-      box(chassis, lamp, w * 0.2, 0.16, 0.1, side * w * 0.33, 0.22, at(l / 2 + 0.01));
-      box(chassis, tail, w * 0.24, 0.1, 0.1, side * w * 0.3, 0.24, at(-l / 2 - 0.01));
-      wheel(frontAxle, R, 0.3, side * (w / 2 - 0.05), 0, 0, extreme ? gold : undefined); // front wheels, on their suspension
-      wheel(group, R, 0.3, side * (w / 2 - 0.05), R, rearZ, extreme ? gold : undefined);  // rear wheels stay planted
-      if (extreme) {
-        for (const [parent, y, z] of [[frontAxle, 0, 0], [group, R, rearZ]]) {          // whitewalls
-          const wall = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.8, R * 0.8, 0.31, 16), lambert(0xf4f4f4));
-          wall.rotation.z = Math.PI / 2;
-          wall.position.set(side * (w / 2 - 0.05), y, z);
-          parent.add(wall);
-        }
-        const flame = (colour, x, scale) => prism(chassis, lambert(colour), 0.02, [        // flames, licking back from the nose
-          [l * 0.48, 0.1], [l * 0.48, 0.3], [l * 0.3, 0.36], [l * 0.24, 0.26], [l * 0.1, 0.34], [l * 0.04, 0.22],
-          [-l * 0.1, 0.3], [-l * 0.2, 0.17], [l * 0.1, 0.12],
-        ].map(([z, y]) => [at(z * scale + l * 0.48 * (1 - scale)), 0.2 + (y - 0.2) * scale]), x);
-        flame(0xff7a1a, side * (w / 2 + 0.01), 1);
-        flame(0xffd23f, side * (w / 2 + 0.02), 0.7);
-      }
-    }
-    let glow = null;
-    if (extreme) {
-      box(chassis, chrome, 0.06, 0.12, 0.2, 0, 0.47, at(l * 0.44));                         // the hood ornament
-      const spare = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.16, 16), lambert(0x141414)); // the continental kit:
-      spare.rotation.x = Math.PI / 2;
-      spare.position.set(0, 0.22, at(-l / 2 - 0.16));
-      chassis.add(spare);
-      disc(chassis, chrome, 0.24, 0.18, 0, 0.22, at(-l / 2 - 0.17));                       // the spare in its chrome cover
-      const fade = document.createElement('canvas');                                       // (a soft pool of light: bright in the
-      fade.width = fade.height = 64;                                                      // middle, fading out to nothing)
-      const ctx = fade.getContext('2d'), pool = ctx.createRadialGradient(32, 32, 4, 32, 32, 32);
-      pool.addColorStop(0, 'rgba(255,255,255,1)');
-      pool.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = pool;
-      ctx.fillRect(0, 0, 64, 64);
-      glow = new THREE.MeshBasicMaterial({ color: 0x00e5ff, map: new THREE.CanvasTexture(fade), transparent: true, depthWrite: false }); // the neon underneath, lighting
-      const neon = new THREE.Mesh(new THREE.PlaneGeometry(w * 1.45, l * 1.1), glow);            // the road out past the body
-      neon.rotation.x = -Math.PI / 2;
-      neon.position.set(0, 0.02, 0);
-      group.add(neon);
-    }
-
-    group.userData = {
-      body,
-      animate: (t) => {
-        const tilt = (extreme ? 0.5 : 0.27) * (1 - Math.cos(t * 4)) / 2; // 0 (level) .. 0.27 rad (0.5 hopped up), and back, smoothly
-        chassis.rotation.x = -tilt; // (negative pitch lifts the nose)
-        if (extreme) {
-          chassis.rotation.z = Math.sin(t * 2) * 0.12;                                    // rocking side to side,
-          glow.color.setHSL((t * 0.15) % 1, 1, 0.55);                                     // the neon cycling round
-        }
-        // the front wheels rise only a third as far as the nose does
-        frontAxle.position.y = R + Math.sin(tilt) * (frontZ - rearZ) * 0.3;
-      },
-    };
+    const group = ORIG2_MODELS.lowrider(car);
     return group;
   },
 
@@ -1935,97 +1805,21 @@ export const MODELS = {
     return group;
   },
 
-  // A small, low sports coupe: wedge nose, a centre stripe, a wing on the back.
+  // The Sportscompact: rebuilt (13-Oct) after the owner's older game's picture, in render/modelsOrig2.js (see it)
   sport: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.36;
-    const paint = lambert(car.color), dark = lambert(0x1c1f25), white = lambert(0xf4f4f4);
-    const body = box(group, paint, w, 0.36, l, 0, 0.52, 0);
-    box(group, paint, w * 0.94, 0.12, l * 0.3, 0, 0.72, l * 0.3);                 // low bonnet
-    box(group, dark, w * 0.8, 0.32, l * 0.36, 0, 0.86, -l * 0.06);                // cabin
-    box(group, paint, w * 0.76, 0.05, l * 0.26, 0, 1.04, -l * 0.08);              // roof
-    box(group, white, w * 0.16, 0.02, l * 0.3, 0, 0.79, l * 0.3);                 // stripe: bonnet,
-    box(group, white, w * 0.16, 0.02, l * 0.26, 0, 1.075, -l * 0.08);             // roof,
-    box(group, white, w * 0.16, 0.02, l * 0.2, 0, 0.71, -l * 0.39);               // and boot
-    for (const side of [-1, 1]) box(group, dark, 0.06, 0.2, 0.08, side * w * 0.36, 0.84, -l * 0.44); // wing posts
-    box(group, paint, w * 1.02, 0.05, 0.3, 0, 0.96, -l * 0.45);                   // wing
-    box(group, dark, w * 0.9, 0.1, 0.12, 0, 0.4, l / 2 + 0.02);                   // splitter
-    const lamp = new THREE.MeshBasicMaterial({ color: 0xfff3c4 }), tail = new THREE.MeshBasicMaterial({ color: 0xff2a2a });
-    for (const side of [-1, 1]) {
-      box(group, lamp, w * 0.22, 0.1, 0.1, side * w * 0.33, 0.6, l / 2 + 0.01);
-      box(group, tail, w * 0.3, 0.08, 0.1, side * w * 0.3, 0.62, -l / 2 - 0.01);
-      wheel(group, R, 0.3, side * (w / 2 - 0.04), R, l * 0.3);
-      wheel(group, R, 0.32, side * (w / 2 - 0.04), R, -l * 0.31);
-    }
-    group.userData = { body, animate: () => {} };
+    const group = ORIG2_MODELS.sport(car);
     return group;
   },
 
-  // A big, boxy family 4x4: tall glasshouse, roof rails, a spare wheel on the back.
+  // The Family Wagon: rebuilt (13-Oct) after the owner's older game's picture, in render/modelsOrig2.js (see it)
   wagon: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.46;
-    const paint = lambert(car.color), dark = lambert(0x20242b), trim = lambert(0x2a2a2a);
-    const body = box(group, paint, w, 0.7, l, 0, 0.95, 0);
-    box(group, trim, w + 0.06, 0.2, l + 0.04, 0, 0.66, 0);                        // lower cladding
-    box(group, paint, w * 0.96, 0.6, l * 0.64, 0, 1.6, -l * 0.12);                // upper body
-    box(group, dark, w * 0.98, 0.36, l * 0.56, 0, 1.62, -l * 0.12);               // side windows
-    box(group, dark, w * 0.84, 0.36, l * 0.66, 0, 1.62, -l * 0.12);               // screens, front and back
-    for (const side of [-1, 1]) box(group, trim, 0.06, 0.06, l * 0.5, side * w * 0.38, 1.95, -l * 0.12); // roof rails
-    box(group, lambert(0xcfd3d8), w * 0.5, 0.2, 0.06, 0, 1.0, l / 2 + 0.02);      // grille
-    const lamp = new THREE.MeshBasicMaterial({ color: 0xfff3c4 }), tail = new THREE.MeshBasicMaterial({ color: 0xff2a2a });
-    for (const side of [-1, 1]) {
-      box(group, lamp, w * 0.18, 0.2, 0.1, side * w * 0.37, 1.0, l / 2 + 0.01);
-      box(group, tail, w * 0.12, 0.34, 0.1, side * w * 0.42, 1.05, -l / 2 - 0.01);
-      wheel(group, R, 0.34, side * (w / 2 - 0.04), R, l * 0.3);
-      wheel(group, R, 0.34, side * (w / 2 - 0.04), R, -l * 0.3);
-    }
-    const spare = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.26, 16), lambert(0x141414));
-    spare.rotation.x = Math.PI / 2; // flat against the tailgate
-    spare.position.set(0, 1.1, -l / 2 - 0.16);
-    group.add(spare);
-    group.userData = { body, animate: () => {} };
+    const group = ORIG2_MODELS.wagon(car);
     return group;
   },
 
-  // A split-colour camper bus: painted below, white above, a V on its flat nose, big round
-  // headlights, a surfboard on the roof, and its spare tyre carried on the nose. It sways gently as it goes.
+  // The Love Bus: rebuilt (13-Oct) after the owner's older game's picture, in render/modelsOrig2.js (see it)
   lovebus: (car) => {
-    const group = new THREE.Group(), shell = new THREE.Group();
-    group.add(shell);
-    const w = car.hw * 2, l = car.hl * 2, R = 0.4;
-    const paint = lambert(car.color), white = lambert(0xf6f3ea), dark = lambert(0x23262d);
-    const body = box(shell, paint, w, 0.75, l, 0, 0.85, 0);
-    box(shell, white, w * 0.99, 0.85, l * 0.99, 0, 1.65, 0);                      // upper half
-    box(shell, dark, w * 1.01, 0.4, l * 0.78, 0, 1.68, -l * 0.04);                // side windows
-    box(shell, dark, w * 0.84, 0.42, 0.06, 0, 1.7, l / 2);                        // split windscreen
-    box(shell, white, 0.06, 0.44, 0.08, 0, 1.7, l / 2 + 0.01);
-    for (const side of [-1, 1]) { // the V on the nose, in the body colour's opposite
-      const arm = box(shell, white, 0.12, 0.62, 0.05, side * w * 0.14, 0.92, l / 2 + 0.01);
-      arm.rotation.z = side * 0.42;
-    }
-    box(shell, lambert(0xd8d8d8), w + 0.08, 0.12, 0.12, 0, 0.5, l / 2 + 0.03);    // chrome bumpers
-    box(shell, lambert(0xd8d8d8), w + 0.08, 0.12, 0.12, 0, 0.5, -l / 2 - 0.03);
-    box(shell, lambert(0xff7eb6), w * 0.3, 0.07, l * 0.8, w * 0.18, 2.16, -l * 0.02); // surfboard
-    disc(shell, lambert(0x141414), 0.3, 0.2, 0, 0.62, l / 2 + 0.16);              // the spare tyre, on the bumper...
-    disc(shell, lambert(CHROME), 0.15, 0.22, 0, 0.62, l / 2 + 0.16);              // ...and its hubcap
-    const lamp = new THREE.MeshBasicMaterial({ color: 0xfff3c4 }), tail = new THREE.MeshBasicMaterial({ color: 0xff2a2a });
-    for (const side of [-1, 1]) {
-      const light = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.08, 14), lamp);
-      light.rotation.x = Math.PI / 2;
-      light.position.set(side * w * 0.33, 0.92, l / 2 + 0.03);
-      shell.add(light);
-      box(shell, tail, w * 0.1, 0.24, 0.1, side * w * 0.4, 0.9, -l / 2 - 0.01);
-      wheel(group, R, 0.3, side * (w / 2 - 0.04), R, l * 0.32);
-      wheel(group, R, 0.3, side * (w / 2 - 0.04), R, -l * 0.32);
-    }
-    group.userData = {
-      body,
-      animate: (t) => { // a slow, easy sway
-        shell.rotation.z = Math.sin(t * 2.2) * 0.025;
-        shell.position.y = Math.sin(t * 4.4) * 0.015;
-      },
-    };
+    const group = ORIG2_MODELS.lovebus(car);
     return group;
   },
 
@@ -2175,6 +1969,8 @@ export const MODELS = {
   },
 };
 MODELS.superlowrider = MODELS.lowrider; // (the lowrider builder makes both: see it)
+// (the four original cars rebuilt on 13-Oct: the Lowrider, the Sportscompact, the Family Wagon and the Love Bus)
+import { ORIG2_MODELS } from './modelsOrig2.js';
 
 // ---- the Battlefield's armies (CONFIG.vehicles: jeep, apc, tank; the player's 8x8: LEVEL_CARS.apc) ------
 // Each in its army's colours (the paint: userData.body; a darker second colour on its trim), with a gun that
