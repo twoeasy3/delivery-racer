@@ -1540,51 +1540,9 @@ export const MODELS = {
     return group;
   },
 
-  // The Darkvan: a full-size panel van with lifted suspension (the A-Team's, more or less):
-  // big off-road tyres, a bull bar, a roof spoiler and a short nose. In its Evil livery it is
-  // the A-Team's own: black over grey with the red stripe and red wheels; in its Good one,
-  // plain light green.
+  // The Darkvan: rebuilt (13-Oct) after the owner's older game's picture, in render/modelsOrig2.js (see it)
   darkvan: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.5;
-    const paint = lambert(car.color), glass = lambert(GLASS), trim = lambert(TRIM);
-    const grey = lambert(0x8d9096), red = lambert(0xc8102e), chrome = lambert(CHROME);
-    const body = box(group, paint, w, 1.3, l * 0.8, 0, 1.6, -l * 0.1);            // the box
-    box(group, paint, w * 0.96, 0.62, l * 0.2, 0, 1.25, l * 0.4);                 // short nose
-    screen(group, glass, w * 0.9, 0.05, 0.8, 0, 1.86, l * 0.32, 0.5);               // windscreen
-    box(group, trim, w * 0.6, 0.1, 0.5, 0, 2.3, -l * 0.43);                       // roof spoiler
-    box(group, trim, w * 0.7, 0.14, l * 0.86, 0, 0.82, -l * 0.04);                // the lifted chassis, showing
-    box(group, trim, w * 0.5, 0.36, 0.06, 0, 1.2, l / 2 + 0.01);                  // grille
-    // the bull bar
-    box(group, trim, w * 0.9, 0.08, 0.08, 0, 1.0, l / 2 + 0.22);
-    box(group, trim, w * 0.9, 0.08, 0.08, 0, 1.45, l / 2 + 0.22);
-    for (const x of [-0.3, 0.3]) box(group, trim, 0.08, 0.53, 0.08, x * w, 1.22, l / 2 + 0.22);
-    box(group, trim, w + 0.1, 0.22, 0.18, 0, 0.98, -l / 2 - 0.05);                // rear bumper
-    const evilOnly = [], hubs = [];
-    for (const side of [-1, 1]) {
-      box(group, glass, 0.02, 0.42, l * 0.16, side * (w / 2 + 0.005), 1.9, l * 0.22); // cab windows
-      box(group, glass, 0.02, 0.36, l * 0.16, side * (w / 2 + 0.005), 1.9, -l * 0.34); // little rear windows
-      box(group, trim, 0.14, 0.12, 0.12, side * (w / 2 + 0.07), 1.75, l * 0.32);       // mirrors
-      box(group, trim, 0.22, 0.06, l * 0.4, side * (w / 2 + 0.1), 0.92, l * 0.02);     // side steps
-      disc(group, LAMP, 0.14, 0.08, side * w * 0.36, 1.32, l / 2 + 0.02);             // round headlights
-      box(group, TAIL, 0.14, 0.4, 0.08, side * w * 0.43, 1.6, -l / 2 - 0.01);
-      evilOnly.push(
-        box(group, grey, 0.02, 0.5, l * 0.98, side * (w / 2 + 0.006), 1.2, 0),           // grey lower panels
-        slab(group, red, 0.02, 0.14, l * 0.62, side * (w / 2 + 0.012), 1.58, -l * 0.02, -0.12)); // the red stripe
-      for (const z of [0.3, -0.3]) {
-        hubs.push(wheel(group, R, 0.42, side * (w / 2 - 0.02), R, l * z, chrome)[1]);
-        box(group, trim, 0.06, 0.5, 0.06, side * w * 0.36, 0.72, l * z);           // lift kit: the long shocks
-      }
-    }
-    group.userData = {
-      body,
-      animate: () => {},
-      livery: (evil) => { // (the A-Team's grey, stripe and red wheels are the Evil livery's)
-        for (const part of evilOnly) part.visible = evil;
-        for (const hub of hubs) hub.material = evil ? red : chrome;
-      },
-    };
-    group.userData.livery(false);
+    const group = ORIG2_MODELS.darkvan(car);
     return group;
   },
 
