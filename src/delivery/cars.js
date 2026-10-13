@@ -426,8 +426,8 @@ export const BESPOKE_CARS = [
     hw: 0.98, hl: 2.75, height: 1.35, note: 'A jet-age dream car: twin bubble canopies, two cones for a nose, tail fins and a jet nozzle at the back.',
     maxSpeed: 47, accel: 17, agility: 1.15, crossing: 0.3, health: 220, mass: 1.6, sound: 'muscle' }),
   // the heavyweight: slow to get going, shrugs off a crash and shoves traffic aside
-  bespoke({ id: 'swancar', name: 'Swan Car', basedOn: 'Brooke Swan Car (1910)', model: 'swancar', color: 0xf2efe6, evilColor: 0x4a4562,
-    hw: 0.9, hl: 2.6, height: 2.22, note: 'A tourer carved as a swan, its neck over the bonnet and its eyes lit. The beak sprayed water.',
+  bespoke({ id: 'swancar', name: 'Swan Car', basedOn: 'Talbot-Lago Teardrop (1938)', model: 'swancar', color: 0xf2efe6, evilColor: 0x4a4562,
+    hw: 0.9, hl: 2.6, height: 1.61, note: 'A pearl-white teardrop coupe with swan lines: a breast nose, wings sweeping back over the wheels and a beak-orange grille.',
     maxSpeed: 42, accel: 13, agility: 1, crossing: 0.5, health: 380, mass: 2.4, sound: 'classicgt' }),
   // the glass cannon: the highest top speed, slow off the line, made of nothing
   bespoke({ id: 'solarracer', name: 'Solar Racer', basedOn: 'World Solar Challenge car (Nuna)', model: 'solarracer', color: 0x2ab0d8, evilColor: 0xd0341f,
