@@ -110,7 +110,8 @@
   grid-auto-columns: calc(var(--h) * .78); gap: 12px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
   scrollbar-width: none; scroll-snap-type: x proximity; padding: 10px 4px 12px; touch-action: pan-x pan-y; }
 #showroom .sr-row::-webkit-scrollbar { display: none; }
-#showroom .sr-row.dragging, #showroom .sr-row.wheeling { cursor: grabbing; scroll-snap-type: none; user-select: none; }
+#showroom .sr-row.dragging, #showroom .sr-row.wheeling, #showroom .sr-row.panning { cursor: grabbing; scroll-snap-type: none; user-select: none; }
+#showroom .sr-row.panning { cursor: default; }
 #showroom .sr-row.wheeling { cursor: default; }
 #showroom .sr-row.dragging .sr-card { cursor: grabbing; }
 #showroom .sr-arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; width: 42px; height: 64px; border-radius: 8px;

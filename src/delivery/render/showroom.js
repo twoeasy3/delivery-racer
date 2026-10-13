@@ -43,6 +43,7 @@ import { Garage } from './garage.js';
 import { stillCar, stillReady } from './carstill.js';
 import { ShowroomView } from './showroomview.js';
 import { swipeSwitch, PHONE_COLUMNS } from './showroomphone.js';
+import { panAt, panTo, panStep, PAN_MS } from './showroompan.js';
 import { Sound } from './audio.js';
 import { makerLine } from './blueprintcard.js';
 import { renderSources } from './carsources.js'; // ("Where to get it": the car's key and blueprint sources)
@@ -175,6 +176,7 @@ const build = () => {
   let wheelTo = null, wheelRaf = 0, wheelIdle = 0;
   let wheelAt = 0;
   const easeWheel = (now) => {
+    if (pan) { wheelRaf = 0; wheelAt = 0; return; } // (an arrow pressed: its pan takes over)
     const max = row.scrollWidth - row.clientWidth, goal = Math.max(0, Math.min(max, wheelTo)), gap = goal - row.scrollLeft;
     const dt = Math.min(200, now - (wheelAt || now - 16)); // (by the clock, not the frame: the same on a slow screen)
     wheelAt = now;
@@ -185,6 +187,7 @@ const build = () => {
   row.addEventListener('wheel', (e) => {
     if (!(Math.abs(e.deltaY) > Math.abs(e.deltaX) && row.scrollWidth > row.clientWidth + 2)) return;
     e.preventDefault();
+    stopPan(); // (the wheel takes over from an arrows' pan)
     const dy = e.deltaMode === 1 ? e.deltaY * 40 : e.deltaMode === 2 ? e.deltaY * row.clientWidth : e.deltaY;
     wheelTo = Math.max(0, Math.min(row.scrollWidth - row.clientWidth, (wheelRaf && wheelTo !== null ? wheelTo : row.scrollLeft) + dy * 1.6));
     row.classList.add('wheeling'); // (the snap off first: it pulled a small step straight back)
@@ -195,6 +198,8 @@ const build = () => {
   }, { passive: false });
   // (a mouse drags it too; a drag is not a click on the card it began on)
   let drag = null;
+  row.addEventListener('pointerdown', () => stopPan()); // (a finger or the mouse on the row takes over from an arrows' pan)
+  row.addEventListener('touchstart', () => stopPan(), { passive: true });
   row.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse' && e.button === 0 && row.scrollWidth > row.clientWidth + 2) drag = { x: e.clientX, left: row.scrollLeft, moved: 0 }; });
   window.addEventListener('pointermove', (e) => {
     if (!drag) return;
@@ -269,7 +274,32 @@ const arrows = () => {
   back.hidden = !sideways || row.scrollLeft < 4;
   on.hidden = !sideways || row.scrollLeft + row.clientWidth > row.scrollWidth - 4;
 };
-const by = (dir) => row.scrollBy({ left: dir * Math.max(200, row.clientWidth * 0.8), behavior: 'smooth' });
+// the arrows' pan of the row (and the arrow keys'): ours, not the browser's smooth scroll, so a tap during a pan carries it
+// on from where it is (render/showroompan.js); the snap is off while it moves (the class the wheel uses) and the pan
+// ends on a column's start, so the snap has nothing to pull when it comes back
+let pan = null, panRaf = 0;
+const stopPan = () => { if (panRaf) cancelAnimationFrame(panRaf); panRaf = 0; pan = null; row?.classList.remove('panning'); };
+const panFrame = (now) => {
+  const at = panAt(pan, now);
+  row.scrollLeft = at.x;
+  if (at.done) { stopPan(); return; }
+  panRaf = requestAnimationFrame(panFrame);
+};
+const panRow = (to) => {
+  const now = performance.now();
+  pan = panTo(pan, row.scrollLeft, to, now, matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : PAN_MS);
+  row.classList.add('panning');
+  if (!panRaf) panRaf = requestAnimationFrame(panFrame);
+};
+// the columns' scroll positions (a card's left edge at the row's: where the snap puts it)
+const columnStarts = () => {
+  const left = row.getBoundingClientRect().left - row.scrollLeft;
+  return [...new Set([...row.children].map(c => Math.round(c.getBoundingClientRect().left - left)))].sort((a, b) => a - b);
+};
+const by = (dir) => {
+  const max = row.scrollWidth - row.clientWidth;
+  panRow(panStep(pan ? pan.to : row.scrollLeft, dir, Math.max(200, row.clientWidth * 0.8), columnStarts(), max));
+};
 
 // ---- the filter sheet: chips by group, the sort, the count, Clear all (a drop-down on a desktop, a sheet on a phone) ----
 const buildSheet = () => {
@@ -389,6 +419,7 @@ const fill = (fresh = true) => {
   if (!cards.some(c => c.data.id === picked)) picked = (cards.find(c => c.data.id === inUse.id) || cards[0])?.data.id ?? null;
   showFilter(all.length);
   showDetail();
+  stopPan();
   if (!fresh) { row.scrollLeft = scrolled.left; row.scrollTop = scrolled.top; } // (the side switched: the cards stay where they were)
   else { row.scrollLeft = 0; row.scrollTop = 0; }
   requestAnimationFrame(arrows);
@@ -588,7 +619,12 @@ const step = (dir) => {
   const i = cards.findIndex(c => c.data.id === picked), next = cards[i + dir] || (i < 0 ? cards[0] : null);
   if (!next) return;
   pick(next.data.id);
-  next.node.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+  if (isPhone() || row.scrollWidth <= row.clientWidth + 2) { next.node.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }); return; }
+  // (sideways: the card to the middle by the row's pan, onto the column start nearest, so quick presses carry on)
+  const box = next.node.getBoundingClientRect(), rowBox = row.getBoundingClientRect();
+  const centre = row.scrollLeft + box.left + box.width / 2 - rowBox.left - row.clientWidth / 2, starts = columnStarts();
+  const to = starts.length ? starts.reduce((a, b) => Math.abs(b - centre) < Math.abs(a - centre) ? b : a) : centre;
+  panRow(Math.max(0, Math.min(row.scrollWidth - row.clientWidth, to)));
 };
 window.addEventListener('keydown', (e) => {
   if (!Showroom.isOpen || Garage.isOpen || panel.classList.contains('hidden') || e.ctrlKey || e.metaKey || e.altKey) return;
