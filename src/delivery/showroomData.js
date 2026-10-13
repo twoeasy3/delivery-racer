@@ -5,7 +5,7 @@
 // Crazey Jim's Used Cars (render/garage.js). The ECU figures are ecu.js's (Ecu); anything it does not say about a
 // car (a secret one, an earned one it has no table for) falls back to the car's own figures, so a card never throws.
 import { CONFIG } from './config.js';
-import { CARS, EARNED_CARS, EVENT_CARS, BESPOKE_CARS, FILLER_CARS, SECRET_CARS, stars, starColour, STAR_COLOURS, carTier, carPreview, forSale, carRule, carFocus, ruleAllows, selectCar, carInUse } from './cars.js';
+import { CARS, EARNED_CARS, EVENT_CARS, BESPOKE_CARS, FILLER_CARS, SECRET_CARS, stars, starColour, STAR_COLOURS, carTier, carPreview, forSale, carRule, carFocus, carLent, carPicked, ruleAllows, selectCar, carInUse } from './cars.js';
 import { Progress } from './progress.js';
 import { Game } from './game.js';
 import { Tiers } from './tiers.js';
@@ -111,6 +111,9 @@ export const carCard = (car, evil = false) => {
   // a car that can be driven, but not on the level picked (its car rule, on the side picked)
   const rule = carRule(evil), barred = unlocked && !!rule && !ruleAllows(rule, car), allowed = !rule || ruleAllows(rule, car);
   const focus = !!carFocus()?.test(car); // (a rotating event's day points the showroom at it: a view, not a rule)
+  // LENT by the level picked (a rotating event's free try of its day's car, not owned: the owner, 13-Oct "players ECU up the
+  // car they don't own, and only get the key when they max it out"): drivable, at the ECU its blueprints reach (ECU1 with none)
+  const loan = !unlocked ? carLent(car) : null, lent = loan ? { ecu: loan.ecu, max: loan.max } : null;
   return {
     car, id: car.id,
     name: dark ? 'Locked car' : car.name,
@@ -118,8 +121,8 @@ export const carCard = (car, evil = false) => {
     rarity: rarityOf(car), hidden, dark, hunt,
     ecu, max, maxed, upgradable, blueprint, key: !blueprint,
     blueprints: bp, perEcu: x, have: maxed ? toNext : have, toNext,
-    owned, unlocked, barred, allowed, focus,
-    state: !unlocked ? 'locked' : barred ? 'barred' : 'ready',
+    owned, unlocked, barred, allowed, focus, lent,
+    state: lent ? 'ready' : !unlocked ? 'locked' : barred ? 'barred' : 'ready',
     reason, hint,
     rule: barred ? rule : null,
     stats: statsAt(car, Math.max(1, ecu)), maxStats: statsAt(car, max),
@@ -143,7 +146,7 @@ const priceWords = (price) => '$' + (Number.isInteger(price) ? String(price) : p
 // unavailable: genuinely unobtainable (the owner, 12-Oct): "Not available at the moment": an earned car that is OFF (the Courier Special:
 // no way to earn it for now). A Key car whose key can't be had now keeps the KEY overlay (the owner: they "should use the key overlay")
 export const overlayOf = (card) => {
-  if (!card || card.unlocked) return null;
+  if (!card || card.unlocked || card.lent) return null; // (a free try is drivable: its card says so with a badge, render/showroom.js)
   const car = card.car;
   if (car.earned && car.off) return { kind: 'unavailable', title: 'Not available', line: 'at the moment' };
   if (card.blueprint && car.noPacks && card.blueprints === 0 && !card.hunt) return { kind: 'unavailable', title: 'Not available', line: 'at the moment' }; // (a blueprint car in no pack for now: nothing to collect)
@@ -164,6 +167,8 @@ export const overlayOf = (card) => {
   return { kind: 'key', title: 'Needs its key', line: EVENT_CARS.includes(car) ? (liveEventFor(car) ? 'Win it in ' + liveEventFor(car) : 'Win it at events') : car.keyAvailable === false ? 'Not available at the moment' : 'Find it in packs' }; // (the owner, 13-Oct: not 'Bespoke packs')
   // (an event car: the live event by name; else the general line; the other Bespoke cars have no event: packs only)
 };
+// a lent card's words (a rotating event's free try): the badge's, and the full view's line
+export const lentWords = (card) => card?.lent ? 'Free try · ECU ' + card.lent.ecu + '/' + card.lent.max : '';
 // the card's tooltip: the spec's words (LOCKED_WORDS), but an earned car's never speaks of a key (the owner, 12-Oct)
 export const cardTip = (card) => {
   const ov = overlayOf(card);
@@ -193,7 +198,7 @@ export const sideName = (evil) => evil ? 'Evil' : 'Good';
 // that side, and the half already on flips it too. The side it leaves on
 export const sideClick = (current, clicked) => !!clicked === !!current ? !current : !!clicked;
 // the words on the detail's big button, for a card made for that side (carCard(car, evil))
-export const driveWords = (card, evil) => card.state === 'ready' ? 'Drive as ' + sideName(evil)
+export const driveWords = (card, evil) => card.state === 'ready' ? 'Drive as ' + sideName(evil) + (card.lent ? ' · Free try' : '')
   : card.state === 'barred' ? 'Not on this level as ' + sideName(evil)
     : card.forSale ? 'Buy at Crazey Jim’s' : 'Locked'; // (the car lot's sign: CAR_LOT)
 // why a barred card is barred on that side, in parts: a string, { tier: n } (a tier's stars) or { rich: s } (words with
@@ -213,7 +218,8 @@ export const driveAs = (card, evil) => {
   // (a blueprint car unlocked by its blueprints is the player's: so the save says, where ecu.js has not written it)
   if (card.unlocked && !Progress.owns(card.id)) Progress.data.cars.push(card.id);
   Progress.save();
-  if (card.id !== carInUse().id) selectCar(card.id);
+  if (!card.lent && card.id !== carInUse().id) selectCar(card.id); // (a free try is lent, never the player's pick: nothing saved)
+  carPicked(card.id); // (a rotating event's stage: its free try on for the day's car, off for another, so Start drives the pick)
   return true;
 };
 

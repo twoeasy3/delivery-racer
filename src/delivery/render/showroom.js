@@ -32,7 +32,7 @@
 import '../showroom.css';
 import '../showroom-phone.css';
 import { showroomCars, carCard, floorBest, statShown, RARITIES, CAR_LOT, sideName, sideClick, driveWords, barredWhy, driveAs,
-  FILTER_GROUPS, SORTS, imposedFilter, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn, overlayOf, cardTip, kindOf } from '../showroomData.js';
+  FILTER_GROUPS, SORTS, imposedFilter, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn, overlayOf, cardTip, kindOf, lentWords } from '../showroomData.js';
 import { CAR, carInUse, setViewSide, STAR_COLOURS, carRule, carFocus } from '../cars.js';
 import { Progress } from '../progress.js';
 import { ShopScreen } from './shop.js'; // (the Shop, reached from the header)
@@ -139,6 +139,8 @@ const build = () => {
   backBtn.addEventListener('click', () => Showroom.close());
   bankEl = make('div', 'sr-bank');
   countEl = make('div', 'sr-count');
+  // (a phone: the count and the imposed filter are one line cut short; a tap shows it whole, another cuts it short again)
+  countEl.addEventListener('click', () => { const open = countEl.classList.toggle('open'); countEl.setAttribute('aria-expanded', String(open)); });
   seg = make('div', 'sr-filter');
   seg.setAttribute('role', 'group');
   seg.setAttribute('aria-label', 'Show');
@@ -169,6 +171,13 @@ const build = () => {
   back.addEventListener('click', () => by(-1));
   on.addEventListener('click', () => by(1));
   row.addEventListener('scroll', arrows, { passive: true });
+  // (a phone held upright: the header's third line, the count and Crazey Jim's, folds away once the list is scrolled and
+  // comes back at its top; two thresholds, so it never flickers: showroom-phone.css .sr-top.compact)
+  row.addEventListener('scroll', () => {
+    const y = row.scrollTop, folded = top.classList.contains('compact');
+    if (!folded && y > 48 && isPhone()) { top.classList.add('compact'); countEl.classList.remove('open'); }
+    else if (folded && (y < 8 || !isPhone())) top.classList.remove('compact');
+  }, { passive: true });
   // (a vertical wheel scrolls the rows sideways; in the column, the column scrolls as ever)
   // (smooth: each notch adds to a target the row eases towards, with the snap off while it moves: with the snap on, small
   // steps were pulled back to the card's edge and the wheel felt stuck; a line-mode wheel counts as lines; a trackpad's sideways
@@ -198,6 +207,7 @@ const build = () => {
   }, { passive: false });
   // (a mouse drags it too; a drag is not a click on the card it began on)
   let drag = null;
+  row.addEventListener('pointerdown', () => { if (!isPhone()) countEl.classList.remove('open'); }); // (a phone on its side: the count's line, dropped over the cards, goes)
   row.addEventListener('pointerdown', () => stopPan()); // (a finger or the mouse on the row takes over from an arrows' pan)
   row.addEventListener('touchstart', () => stopPan(), { passive: true });
   row.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse' && e.button === 0 && row.scrollWidth > row.clientWidth + 2) drag = { x: e.clientX, left: row.scrollLeft, moved: 0 }; });
@@ -382,9 +392,11 @@ const fill = (fresh = true) => {
   const all = showroomCars().map(car => carCard(car, evil));
   list = filterCards(all, filter, inUse.id);
   const filtered = filterCount(filter) > 0;
-  countEl.replaceChildren(...(filtered ? [make('b', '', String(list.length)), ' of ' + all.length + ' shown']
+  // (the words a phone leaves out of its one line, " shown" and "Today's event: ", in spans of their own: showroom-phone.css)
+  countEl.replaceChildren(...(filtered ? [make('b', '', String(list.length)), ' of ' + all.length, make('span', 'sr-count-w', ' shown')]
     : [make('b', '', String(all.filter(c => c.unlocked).length)), ' / ' + all.length + ' cars']),
-  ...(imposed && filtered ? [make('span', 'sr-imposed', imposed.focus ? 'Today\u2019s event: ' : 'This level: ', ...richTiers(imposed.label))] : []));
+  ...(imposed && filtered ? [make('span', 'sr-imposed', make('span', 'sr-imposed-w', imposed.focus ? 'Today\u2019s event: ' : 'This level: '), ...richTiers(imposed.label))] : []));
+  countEl.title = countEl.textContent; // (the whole line, where a phone cuts it short)
   const eventChip = sheet?.querySelector('[data-chip="event"]');
   if (eventChip) eventChip.style.display = imposed?.focus || filter.state.includes('event') ? '' : 'none'; // (only where a day points at cars) // (the level's car rule, imposed; replaceChildren would write a null as "null")
   bankEl.replaceChildren(make('small', '', 'Bank'), money(Progress.data.money));
@@ -394,7 +406,8 @@ const fill = (fresh = true) => {
     const img = make('span', 'sr-img' + (data.dark ? ' silhouette' : ''));
     const ov = overlayOf(data);
     const pic = make('span', 'sr-pic', img, overlayNode(ov));
-    const badge = data.car === inUse || data.id === inUse.id ? make('span', 'sr-badge inuse', 'In use')
+    const badge = data.lent ? make('span', 'sr-badge lent', lentWords(data)) // (a rotating event's free try: lent, not owned)
+      : data.car === inUse || data.id === inUse.id ? make('span', 'sr-badge inuse', 'In use')
       : data.state === 'barred' ? make('span', 'sr-badge barred', 'Not on this level' + (evil !== !!Game.evil ? ' as ' + sideName(evil) : '')) : null;
     const node = make('button', 'sr-card ' + data.rarity + ' ' + data.state + (ov ? ' ov-' + ov.kind : '') + (data.id === picked ? ' picked' : ''),
       make('span', 'sr-tag', RARITIES[data.rarity].name), starsNode(data), pic, badge,
@@ -404,7 +417,8 @@ const fill = (fresh = true) => {
         blueprintBar(data)));
     node.style.setProperty('--rar', RARITIES[data.rarity].colour);
     node.dataset.car = data.id;
-    node.title = data.state === 'locked' ? cardTip(data) : data.state === 'barred' ? 'You can drive it, but not on the level picked as ' + sideName(evil) : data.name;
+    node.title = data.lent ? 'Today\u2019s free try: lent at your ECU ' + data.lent.ecu + ' of ' + data.lent.max + ' (its blueprints raise it; its key at ECU ' + data.lent.max + ')'
+      : data.state === 'locked' ? cardTip(data) : data.state === 'barred' ? 'You can drive it, but not on the level picked as ' + sideName(evil) : data.name;
     node.addEventListener('click', () => { pick(data.id); openFull(); });
     watch(img, data.car);
     return { data, node };
@@ -470,8 +484,11 @@ const showDetail = () => {
   let why = null;
   go.textContent = driveWords(card, evil);
   if (card.state === 'ready') {
-    go.title = using && evil === !!Game.evil ? 'In use: back to the menu in it' : 'Drive the ' + card.name + ' as ' + sideName(evil) + ' (Enter)';
+    go.title = using && evil === !!Game.evil ? 'In use: back to the menu in it' : 'Drive the ' + card.name + ' as ' + sideName(evil) + (card.lent ? ', a free try' : '') + ' (Enter)';
     go.addEventListener('click', () => drive(card));
+    // (a free try: lent for today's event at the player's own ECU; its key comes at the max ECU)
+    if (card.lent) why = make('p', 'sr-why lent', make('b', '', lentWords(card)), make('span', '', 'Lent for today\u2019s event at your ECU ' + card.lent.ecu + ' of ' + card.lent.max
+      + '. Its blueprints raise it; deliver it at ECU ' + card.lent.max + ' to win its key.'));
   } else if (card.state === 'barred') {
     go.disabled = true;
     why = make('p', 'sr-why barred', ...barredWhy(card, evil).flatMap(part => typeof part === 'string' ? [part] : part.tier ? [tierStarsNode(part.tier)] : richTiers(part.rich)));
@@ -524,7 +541,7 @@ const showDetail = () => {
     stage,
     make('div', 'sr-dwords',
       make('div', 'sr-dtop', dcard, make('div', 'sr-dname',
-        make('div', 'sr-dhead', make('span', 'sr-dtag', RARITIES[card.rarity].name), starsNode(card), using ? make('span', 'sr-badge inuse', 'In use') : null),
+        make('div', 'sr-dhead', make('span', 'sr-dtag', RARITIES[card.rarity].name), starsNode(card), card.lent ? make('span', 'sr-badge lent', lentWords(card)) : using ? make('span', 'sr-badge inuse', 'In use') : null),
         make('h2', '', card.name),
         make('span', 'sr-kind', makerLine(card.car)))),
       make('div', 'sr-decu', make('small', '', 'ECU'), pips(card), make('b', '', card.ecu + ' of ' + card.max)),

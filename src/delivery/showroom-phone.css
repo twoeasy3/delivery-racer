@@ -78,3 +78,119 @@
   #showroom .sr-detail.from-next .sr-stage, #showroom .sr-detail.from-next .sr-dwords,
   #showroom .sr-detail.from-prev .sr-stage, #showroom .sr-detail.from-prev .sr-dwords { animation: none; }
 }
+
+/* ---- THE LIST'S HEADER on a phone held upright: three slim lines, so the cards get the screen (the owner, 13-Oct: "On
+   mobile showroom, the wrapping around takes too much screen real estate"; it had wrapped into six lines, about 260 px of
+   an 844 px screen, the event's line and Filters running off the right edge). Line 1: back, SHOWROOM (no subtitle), the
+   bank as a chip, the Shop. Line 2: All / Ready / Locked (scrolled sideways if a phone is too narrow), Good / Evil, the
+   Filters button (its count on its corner). Line 3: how many cars are shown and the event's or the level's filter on ONE
+   line, cut short with an ellipsis (a tap shows it whole: render/showroom.js), and Crazey Jim's as a chip. Once the
+   list is scrolled, line 3 folds away (class compact, render/showroom.js) and comes back at the top. Every control is
+   40 px tall. The desktop, the tablet and the phone on its side keep showroom.css's header. */
+@media (max-width: 760px) and (min-height: 521px), (max-width: 519px) {
+  #showroom .sr-top { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 8px; }
+  #showroom .sr-top::before, #showroom .sr-top::after { content: ''; flex: 0 0 100%; height: 0; } /* (the line breaks: each a line of its own, no height) */
+  #showroom .sr-top::before { order: 4; }
+  #showroom .sr-top::after { order: 7; }
+  #showroom .sr-top > * { flex: 0 0 auto; min-width: 0; }
+  #showroom .sr-top .sr-back { order: 0; width: 40px; height: 40px; padding: 0; justify-content: center; }
+  #showroom .sr-top .sr-title { order: 1; flex: 1 1 0; overflow: hidden; }
+  #showroom .sr-title h1 { font-size: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 2px; }
+  #showroom .sr-title p { display: none; }
+  #showroom .sr-top .sr-bank { order: 2; align-items: center; height: 32px; padding: 0 9px; border-radius: 16px; font-size: 14px; background: rgba(0, 0, 0, .35); box-shadow: inset 0 0 0 1px var(--line); }
+  #showroom .sr-top .sr-bank small { display: none; }
+  #showroom .sr-top .sr-shop { order: 3; min-height: 40px; height: 40px; padding: 0 12px; gap: 8px; border-radius: 10px; }
+  #showroom .sr-top .sr-shop-word { font-size: 14px; }
+  /* line 2 */
+  #showroom .sr-top .sr-tools { order: 5; flex: 1 1 0; min-width: 0; gap: 8px; }
+  #showroom .sr-filter { flex: 1 1 auto; min-width: 0; height: 40px; padding: 2px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior-x: contain; touch-action: pan-x; }
+  #showroom .sr-filter::-webkit-scrollbar { display: none; }
+  #showroom .sr-filter button { flex: 1 0 auto; height: 36px; padding: 0 7px; letter-spacing: .03em; }
+  #showroom .sr-fbtn { flex: 0 0 auto; width: 44px; height: 40px; padding: 0; justify-content: center; margin-left: 0; }
+  #showroom .sr-fbtn-w { display: none; }
+  #showroom .sr-fbtn-icon { font-size: 17px; }
+  #showroom .sr-fbadge { position: absolute; top: -5px; right: -5px; min-width: 18px; font-size: 12px; box-shadow: 0 0 0 2px #0a0e15; }
+  #showroom .sr-top .sr-side-top { order: 6; height: 40px; padding: 2px; gap: 2px; }
+  #showroom .sr-side-top button { height: 36px; min-width: 0; padding: 0 8px; font-size: 13px; letter-spacing: .05em; }
+  /* line 3: the count and the imposed filter on one line (a tap opens it), Crazey Jim's */
+  #showroom .sr-top .sr-count { order: 8; flex: 1 1 0; margin: 0; min-height: 40px; line-height: 40px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+    font-size: 12px; transition: max-height .2s, min-height .2s, opacity .2s; max-height: 40px; }
+  #showroom .sr-count b { font-size: 16px; }
+  #showroom .sr-count .sr-imposed { margin-left: 6px; padding: 0; background: none; box-shadow: none; font-size: 12px; color: #ffcf6a; }
+  #showroom .sr-count .sr-imposed::before { content: '\00b7'; margin-right: 6px; color: var(--ink-dim); }
+  #showroom .sr-top .sr-count.open { white-space: normal; line-height: 1.35; padding: 4px 0; max-height: 200px; }
+  #showroom .sr-count:not(.open) .sr-count-w, #showroom .sr-count:not(.open) .sr-imposed-w { display: none; } /* (the one line: "9 of 89 · ★★ cars..."; whole when open) */
+  #showroom .sr-count.open .sr-imposed { white-space: normal; }
+  #showroom .sr-top .sr-lot { order: 9; flex: 0 0 auto; min-height: 40px; height: 40px; padding: 0 16px 0 14px; transition: max-height .2s, min-height .2s, height .2s, opacity .2s; max-height: 40px; }
+  #showroom .sr-top .sr-lot small { display: none; }
+  #showroom .sr-top .sr-lot-sign { font-size: 14px; white-space: nowrap; }
+  /* the list scrolled: line 3 folds away (back at the top of the list) */
+  /* (the single-car screen's top bar had the same trouble: at 390 px the back chevron was squeezed off the left and
+     Crazey Jim's ran off the right; nothing shrinks now but the position, and the bank's word goes) */
+  #showroom .sr-ftop { gap: 8px; }
+  #showroom .sr-ftop > * { flex-shrink: 0; }
+  #showroom .sr-ftop .sr-fpos { flex-shrink: 1; min-width: 0; overflow: hidden; }
+  #showroom .sr-fpos b { white-space: nowrap; }
+  #showroom .sr-ftop .sr-bank small { display: none; }
+  #showroom .sr-ftop .sr-lot-full { padding: 4px 14px 4px 12px; }
+  #showroom .sr-ftop .sr-lot-full .sr-lot-sign { font-size: 14px; }
+  #showroom .sr-top.compact .sr-count, #showroom .sr-top.compact .sr-lot { min-height: 0; max-height: 0; height: 0; padding-top: 0; padding-bottom: 0; opacity: 0; overflow: hidden; pointer-events: none; }
+}
+/* a narrower phone: the Shop's gem alone (its word in its title) so line 1 keeps the title */
+@media (max-width: 419px) {
+  #showroom .sr-top .sr-shop { width: 44px; padding: 0; justify-content: center; }
+  #showroom .sr-top .sr-shop-word { display: none; }
+  #showroom .sr-ftop { gap: 5px; padding-left: 10px; padding-right: 8px; }
+  #showroom .sr-fpos small { display: none; }
+  #showroom .sr-ftop .sr-bank { font-size: 14px; }
+  #showroom .sr-ftop .sr-shop-full { padding: 0 8px; }
+  #showroom .sr-ftop .sr-lot-full { padding: 4px 10px 4px 8px; }
+  #showroom .sr-ftop .sr-lot-full .sr-lot-sign { font-size: 13px; }
+}
+
+/* ---- THE LIST'S HEADER on a phone on its side: ONE slim bar (the owner, 13-Oct; it had been two to three lines, a third
+   of a 390 px screen with an event on): back, SHOWROOM over the count and the imposed filter (one line, cut short, a tap
+   shows it whole), the bank, Good / Evil, All / Ready / Locked, Filters (the sort is in its sheet), the Shop, Crazey Jim's. */
+@media (max-height: 520px) and (min-width: 520px) {
+  #showroom .sr-top { z-index: 3; /* (over the cards: the count's line drops down over them) */ display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto minmax(0, auto) auto auto; grid-template-rows: auto auto; align-items: center; column-gap: 8px; row-gap: 0; }
+  #showroom .sr-top > * { min-width: 0; grid-row: 1 / span 2; }
+  #showroom .sr-top .sr-back { grid-column: 1; width: 40px; height: 40px; padding: 0; justify-content: center; }
+  #showroom .sr-top .sr-back-w { display: none; }
+  #showroom .sr-top .sr-title { grid-column: 2; grid-row: 1; align-self: end; overflow: hidden; }
+  #showroom .sr-title h1 { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 2px; }
+  #showroom .sr-top .sr-count { grid-column: 2; grid-row: 2; align-self: start; margin: 0; font-size: 12px; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+  #showroom .sr-count b { font-size: 14px; }
+  #showroom .sr-count .sr-imposed { margin-left: 6px; padding: 0; background: none; box-shadow: none; font-size: 12px; color: #ffcf6a; }
+  #showroom .sr-count .sr-imposed::before { content: '\00b7'; margin-right: 6px; color: var(--ink-dim); }
+  #showroom .sr-count:not(.open) .sr-count-w, #showroom .sr-count:not(.open) .sr-imposed-w { display: none; }
+  /* (open: the whole line drops down over the cards, the bar stays one line) */
+  #showroom .sr-top .sr-count.open { position: absolute; z-index: 6; left: 48px; top: calc(100% + 2px); max-width: min(560px, calc(100% - 56px)); padding: 6px 10px; border-radius: 8px;
+    white-space: normal; line-height: 1.35; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line), 0 6px 18px rgba(0, 0, 0, .5); }
+  #showroom .sr-count.open .sr-imposed { white-space: normal; }
+  #showroom .sr-top .sr-bank { grid-column: 3; font-size: 17px; }
+  #showroom .sr-top .sr-bank small { display: none; }
+  #showroom .sr-top .sr-side-top { grid-column: 4; height: 40px; padding: 2px; gap: 2px; }
+  #showroom .sr-side-top button { height: 36px; min-width: 0; padding: 0 8px; font-size: 13px; letter-spacing: .05em; }
+  #showroom .sr-top .sr-tools { grid-column: 5; gap: 8px; }
+  #showroom .sr-filter { min-width: 0; height: 40px; padding: 2px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+  #showroom .sr-filter::-webkit-scrollbar { display: none; }
+  #showroom .sr-filter button { flex: 1 0 auto; height: 36px; padding: 0 7px; letter-spacing: .03em; }
+  #showroom .sr-sort { display: none; }
+  #showroom .sr-fbtn { flex: 0 0 auto; width: 44px; height: 40px; padding: 0; justify-content: center; }
+  #showroom .sr-fbtn-w { display: none; }
+  #showroom .sr-fbtn-icon { font-size: 17px; }
+  #showroom .sr-fbadge { position: absolute; top: -5px; right: -5px; font-size: 12px; box-shadow: 0 0 0 2px #0a0e15; }
+  #showroom .sr-top .sr-shop { grid-column: 6; order: 0; width: 44px; min-height: 40px; height: 40px; padding: 0; justify-content: center; }
+  #showroom .sr-top .sr-shop-word { display: none; }
+  #showroom .sr-top .sr-lot { grid-column: 7; min-height: 40px; height: 40px; padding: 0 16px 0 14px; }
+  #showroom .sr-top .sr-lot small { display: none; }
+  #showroom .sr-top .sr-lot-sign { font-size: 14px; white-space: nowrap; }
+}
+/* a shorter phone on its side (under 800 px wide): the bar does not fit on one line, so All / Ready / Locked and Filters
+   go on a second line under it (two lines, about 86 px) */
+@media (max-height: 520px) and (min-width: 520px) and (max-width: 799px) {
+  #showroom .sr-top { grid-template-columns: auto minmax(0, 1fr) auto auto auto auto; grid-template-rows: auto auto auto; row-gap: 0; }
+  #showroom .sr-top .sr-shop { grid-column: 5; }
+  #showroom .sr-top .sr-lot { grid-column: 6; }
+  #showroom .sr-top .sr-tools { grid-column: 1 / -1; grid-row: 3; justify-self: start; margin-top: 6px; }
+}
