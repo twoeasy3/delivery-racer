@@ -1649,9 +1649,6 @@ export const MODELS = {
     return group;
   },
 
-  // The Sportscar: a little two-seat roadster (a first Mazda Miata), top down, pop-up
-  // headlamps up, twin racing stripes over the bonnet and boot: white on red in the Good
-  // livery, black on yellow in the Evil one.
   // A modern American muscle car: long, low and wide; a long flat bonnet with a power bulge and a scoop,
   // the glasshouse set well back under a short roof, quad round headlamps set in a wide dark grille, a
   // full-width tail lamp bar, twin stripes over it nose to tail, fat tyres
@@ -1771,37 +1768,8 @@ export const MODELS = {
     return group;
   },
 
-  miata: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.32;
-    const paint = lambert(car.color), glass = lambert(GLASS), trim = lambert(TRIM);
-    const stripe = lambert(0xf4f4f4), white = 0xf4f4f4, black = 0x151515;
-    const body = box(group, paint, w, 0.42, l, 0, 0.55, 0);
-    box(group, paint, w * 0.92, 0.06, l * 0.34, 0, 0.78, l * 0.3);               // bonnet
-    box(group, paint, w * 0.92, 0.06, l * 0.22, 0, 0.8, -l * 0.36);              // boot
-    box(group, trim, w * 0.8, 0.12, l * 0.3, 0, 0.72, -l * 0.06);                 // the cockpit
-    screen(group, glass, w * 0.82, 0.04, 0.36, 0, 0.92, l * 0.1, 0.9);              // small windscreen
-    for (const side of [-1, 1]) {
-      box(group, trim, 0.32, 0.36, 0.1, side * w * 0.2, 0.95, -l * 0.18);          // seat backs
-      box(group, paint, w * 0.18, 0.12, 0.3, side * w * 0.3, 0.86, l * 0.38);      // pop-up headlamps, up...
-      box(group, LAMP, w * 0.16, 0.09, 0.02, side * w * 0.3, 0.86, l * 0.38 + 0.16); // ...and lit
-      box(group, stripe, w * 0.08, 0.02, l * 0.34, side * w * 0.1, 0.815, l * 0.3); // racing stripes:
-      box(group, stripe, w * 0.08, 0.02, l * 0.22, side * w * 0.1, 0.835, -l * 0.36); // bonnet and boot
-      box(group, trim, 0.11, 0.08, 0.1, side * (w / 2 + 0.05), 0.85, l * 0.08);    // mirrors
-      box(group, TAIL, w * 0.24, 0.1, 0.06, side * w * 0.3, 0.62, -l / 2 - 0.01);
-      wheel(group, R, 0.28, side * (w / 2 - 0.04), R, l * 0.32, lambert(0xb8bcc4));
-      wheel(group, R, 0.28, side * (w / 2 - 0.04), R, -l * 0.31, lambert(0xb8bcc4));
-    }
-    box(group, trim, w * 0.4, 0.08, 0.04, 0, 0.5, l / 2 + 0.02);                  // the little mouth
-    box(group, trim, w + 0.04, 0.12, 0.12, 0, 0.36, -l / 2 - 0.02);
-    group.userData = {
-      body,
-      animate: () => {},
-      livery: (evil) => { stripe.color.setHex(evil ? black : white); },
-      stripe: (hex) => stripe.color.setHex(hex), // (a scheme of its own: see Traffic, a rival courier)
-    };
-    return group;
-  },
+  // The Sportscar: a small two-seat coupe with twin racing stripes (rebuilt: render/modelsOrig4.js)
+  miata: (car) => ORIG4_MODELS.miata(car),
 
   // The Pick Up: a lifted square-body pickup (a Chevy C-10): a boxy cab and an open bed with
   // its tailgate, a wide chrome grille with square headlamps, big off-road tyres and the
