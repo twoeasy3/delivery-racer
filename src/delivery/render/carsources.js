@@ -47,6 +47,9 @@ const CSS = `
 .cs-none { margin: 0; font: 800 12px/1.2 system-ui, sans-serif; color: #ffb4a8; }
 .cs-note { margin: 0; font-size: 11px; color: rgba(255, 255, 255, .45); }
 .cs-where .tierstars { letter-spacing: -.05em; }
+/* a blacked-out car's cards (showroomData.js carCard dark): the car / the key a black silhouette, its name withheld; the
+   card's rarity colour, stripes and frame stay */
+.cs-cards .bp-card.dark .bp-pic.silhouette { filter: brightness(0); }
 `;
 let styled = false;
 let chosen = null; // (the player's last open / shut; ?sourcesopen: open from the start, for a still)
@@ -77,7 +80,7 @@ const short = (w) => w.how === 'career' ? 'Career levels (' + (w.detail.match(/(
   : w.how === 'held' ? w.detail + ' in your packs' : w.where;
 
 // one source's line
-const line = (s, flags) => {
+const line = (s, flags, hide) => {
   const ok = s.available;
   let detail;
   if (s.how === 'pack') {
@@ -89,15 +92,28 @@ const line = (s, flags) => {
     detail = ok ? 'about ' + s.detail.match(/about ([^ ]+) a pack/)?.[1] + ' a pack · ' + ways.join(' · ') : null;
   } else detail = s.detail;
   return make('div', 'cs-line ' + (ok ? 'ok' : 'no'), make('i', '', ok ? '✓' : '✕'),
-    make('span', '', make('b', '', s.where), // (its rarity: the group's chip)
-      make('small', '', ...(ok ? words(detail) : ['Not obtainable now: ', ...words(s.why)]))));
+    make('span', '', make('b', '', hide(s.where)), // (its rarity: the group's chip)
+      make('small', '', ...(ok ? words(hide(detail)) : ['Not obtainable now: ', ...words(hide(s.why))]))));
 };
-// a group's lines: the sources, and the pack kinds that can never hold the card as one muted line
-const lines = (list, flags) => {
-  const never = list.filter(s => s.how === 'pack' && !s.chance);
-  const shown = list.filter(s => !never.includes(s)).sort((a, b) => Number(b.available) - Number(a.available));
-  return [...shown.map(s => line(s, flags)), never.length ? make('div', 'cs-line muted', make('i', '', '–'), make('span', '', 'Never in: ' + never.map(s => s.where).join(', '))) : null];
+// a source that can NEVER give the car (the owner, 13-Oct: "don't name where it can't be obtained. That's pointless"): a
+// pack that cannot hold it, or one whose every way is shut for good; an event over, a prize won, sold out. Not listed.
+// A source shut for a while (its day: Monday, between runs, not yet open, not for sale yet, come back tomorrow) is.
+const FOR_GOOD = /^(Not on sale: )?(cannot hold it|event over|its event is not in the game|its level is not in the game|prize already won|every stage done|every career level|sold out|no way to get one)/i;
+export const neverGives = (s) => s.how === 'pack' ? !s.chance || (!s.available && (!s.ways?.length || s.ways.every(w => FOR_GOOD.test(w.why || ''))))
+  : !s.available && FOR_GOOD.test(s.why || '');
+// a blacked-out car's words (showroomData.js carCard dark): its name, its id and the name's first word (a pack named after
+// it: 'Fishbowl Strike pack') withheld, as the blacked-out card withholds its name
+const COMMON_WORDS = new Set(['the', 'car', 'city', 'classic', 'silver', 'highway', 'coupe', 'hot']);
+const hider = (car, dark) => {
+  if (!dark || !car) return (text) => text;
+  const esc = (w) => String(w).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const first = String(car.name || '').split(/[\s-]+/)[0];
+  const names = [car.name, car.id, ...(first.length >= 4 && !COMMON_WORDS.has(first.toLowerCase()) ? [first] : [])].filter(Boolean).map(esc);
+  const re = new RegExp('\\b(' + names.join('|') + ')\\b', 'gi');
+  return (text) => (text === null || text === undefined ? text : String(text).replace(re, '???'));
 };
+// a group's lines: the sources that can give the card, now or later (none that never can: neverGives)
+const lines = (list, flags, hide) => list.filter(s => !neverGives(s)).sort((a, b) => Number(b.available) - Number(a.available)).map(s => line(s, flags, hide));
 
 // the section for a car: "Where to get it", its key and its blueprints
 export const renderSources = (car, opts) => {
@@ -112,13 +128,18 @@ export const renderSources = (car, opts) => {
   const needKey = !s.keyless && !s.keyOwned, needBp = !s.noBlueprints && !s.maxed;
   const noKey = needKey && !s.obtainable.key, noBp = needBp && !s.obtainable.blueprints, none = (needKey || needBp) && (!needKey || noKey) && (!needBp || noBp);
   const nothing = (on) => (on && !none ? make('p', 'cs-none', 'Not obtainable right now') : null);
-  const word = ownWord(car), key = make('div', 'cs-group', make('h4', '', word.label, s.keyless ? null : chip(s.keys.some(k => k.how === 'pack') ? 'bespoke' : null)), nothing(noKey),
+  const hide = hider(car, opts?.dark); // (a blacked-out car: its name withheld everywhere in the section)
+  const keyLines = s.keyless || s.keyOwned ? [] : lines(s.keys, flags, hide), bpLines = s.noBlueprints || s.maxed ? [] : lines(s.blueprints, flags, hide);
+  // (a group with no source that can give it: one neutral line, and when nothing at all can be had, no group: the summary's
+  // "Not obtainable right now" is the one line)
+  const word = ownWord(car), key = make('div', 'cs-group', make('h4', '', word.label, s.keyless ? null : chip(s.keys.some(k => k.how === 'pack' && !neverGives(k)) ? 'bespoke' : null)), nothing(noKey),
     ...(s.keyless ? [muted(s.keyless)] : s.keyOwned ? [make('div', 'cs-line ok', make('i', '', '✓'), make('span', '', make('b', '', word.have)))]
-      : s.keys.length ? lines(s.keys, flags) : [muted(word.none)]));
+      : keyLines.length ? keyLines : [muted(word.none)]));
   const bpRarity = s.blueprints.find(b => b.rarity)?.rarity || null;
   const bp = make('div', 'cs-group', make('h4', '', 'Blueprints', chip(bpRarity)), nothing(noBp),
     ...(s.noBlueprints ? [muted(s.noBlueprints)] : s.maxed ? [make('div', 'cs-line no', make('i', '', '✓'), make('span', '', make('b', '', 'Maxed'), make('small', '', 'At its max ECU: no more blueprints needed')))]
-      : lines(s.blueprints, flags)));
+      : bpLines.length ? bpLines : [muted('No way to get its blueprints')]));
+  const keyShown = !(none && needKey && !keyLines.length), bpShown = !(none && needBp && !bpLines.length);
   // (nothing to be had now, of either: said once, plainly, at the top; a key already owned, or a car maxed, is not
   // "nothing"; one of the two alone: said in its group)
   // the summary, one line, open or shut: a tick or a cross for the key and the blueprints, or "Not obtainable right now"
@@ -128,11 +149,13 @@ export const renderSources = (car, opts) => {
       s.noBlueprints ? null : state('Blueprints', s.obtainable.blueprints, s.maxed ? 'maxed' : '')));
   // the cards themselves (the owner, 12-Oct): its BLUEPRINT card, and, for a Key car, its KEY card: drawn as the packs draw them
   const cards = [];
-  if (!s.noBlueprints) cards.push([blueprintCard(car, { rarity: car.rarity || bpRarity || 'common', key: false, n: 1 }, { compact: true, pose: posePick(car.id) }), true]);
-  if (!s.keyless && (car.bespoke || car.event)) cards.push([blueprintCard(car, { rarity: 'bespoke', key: true, n: 1 }, { compact: true }), false]);
+  // (a blacked-out car's: the car and the key a black silhouette, the name withheld: blueprintcard.js dark)
+  const dark = !!opts?.dark;
+  if (!s.noBlueprints) cards.push([blueprintCard(car, { rarity: car.rarity || bpRarity || 'common', key: false, n: 1 }, { compact: true, pose: posePick(car.id), dark }), true]);
+  if (!s.keyless && (car.bespoke || car.event)) cards.push([blueprintCard(car, { rarity: 'bespoke', key: true, n: 1 }, { compact: true, dark }), false]);
   const cardRow = cards.length ? make('div', 'cs-cards', ...cards.map(([c]) => c.node)) : null;
   const drawCards = () => { for (const [c, needsPic] of cards) if (needsPic && c.pic) drawSoon(c.pic, car, { side: 'good', pose: posePick(car.id) }); };
   if (cardRow) { box.addEventListener('toggle', () => { if (box.open) requestAnimationFrame(drawCards); }); if (box.open) requestAnimationFrame(drawCards); }
-  box.append(...[summary, cardRow, key, bp, flags.placeholder ? make('p', 'cs-note', '* Crazey Cash, the Shop\'s placeholder currency: nothing gives it yet') : null].filter(Boolean));
+  box.append(...[summary, cardRow, keyShown ? key : null, bpShown ? bp : null, flags.placeholder ? make('p', 'cs-note', '* Crazey Cash, the Shop\'s placeholder currency: nothing gives it yet') : null].filter(Boolean));
   return box;
 };

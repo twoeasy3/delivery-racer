@@ -14,6 +14,7 @@ import { levelName } from './levelText.js';
 import { Ecu } from './ecu.js';
 import { packName } from './packs.js';
 import { liveEventFor, huntEventFor } from './carsources.js';
+import { weekdayName } from './events.js'; // (a Concept Strike car's day by name, not a date: the owner, 13-Oct)
 
 // the words players see on a car that cannot be driven (the owner's, 12-Oct)
 export const LOCKED_WORDS = {
@@ -103,7 +104,7 @@ export const carCard = (car, evil = false) => {
         const level = LEVELS.find(l => l.id === car.earned.level);
         hint = 'Beat the par on ' + (level ? levelName(level) : car.earned.level);
       } else if (EVENT_CARS.includes(car)) hint = 'The key: an event\'s grand prize' + (car.bespoke && !car.noPacks ? ', or a Bespoke card in packs' : '');
-      else if (car.concept && hunt) hint = 'The key: deliver it at its max ECU on its ' + hunt.event.name + ' day' + (hunt.live ? ' (today: a free try)' : ' (back ' + new Date(hunt.next).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ')') + '. Blueprints: its ' + packName(hunt.pack);
+      else if (car.concept && hunt) hint = 'The key: deliver it at its max ECU on its ' + hunt.event.name + ' day' + (hunt.live ? ' (today: a free try)' : ' (' + weekdayName(hunt.next) + 's)') + '. Blueprints: its ' + packName(hunt.pack);
       else if (car.bespoke) hint = car.keyAvailable === false || car.noPacks ? 'No key to be had at the moment' : 'The key: a Bespoke card, in card packs';
     }
   }
@@ -162,8 +163,8 @@ export const overlayOf = (card) => {
     const level = car.earned && LEVELS.find(l => l.id === car.earned.level);
     return { kind: 'earned', title: 'Earn it', line: level ? 'Beat par on ' + levelName(level) : 'Earn it on its level' };
   }
-  if (car.concept && card.hunt) return { kind: 'key', title: 'Needs its key', line: (card.hunt.live ? 'Win it in the ' : 'From the ') + card.hunt.event.name }; // (a concept car: CHECKLIST 211)
-  return { kind: 'key', title: 'Needs its key', line: EVENT_CARS.includes(car) ? (liveEventFor(car) ? 'Win it in ' + liveEventFor(car) : 'Win it at events') : car.keyAvailable === false ? 'Not available at the moment' : 'Find it in Bespoke packs' };
+  if (car.concept && card.hunt) return { kind: 'key', title: 'Needs its key', line: (card.hunt.live ? 'Win it in the ' : 'From ') + card.hunt.event.name }; // (a concept car: CHECKLIST 211; 'From Concept Strike', the owner 13-Oct)
+  return { kind: 'key', title: 'Needs its key', line: EVENT_CARS.includes(car) ? (liveEventFor(car) ? 'Win it in ' + liveEventFor(car) : 'Win it at events') : car.keyAvailable === false ? 'Not available at the moment' : 'Find it in packs' }; // (the owner, 13-Oct: not 'Bespoke packs')
   // (an event car: the live event by name; else the general line; the other Bespoke cars have no event: packs only)
 };
 // a lent card's words (a rotating event's free try): the badge's, and the full view's line

@@ -549,7 +549,7 @@ const showDetail = () => {
       figures,
       card.perk && !card.hidden ? make('p', 'sr-perk', make('b', '', 'Perk '), card.perk) : null,
       why,
-      card.hidden ? null : renderSources(card.car, { open: true })), // (where its key and blueprints come from: render/carsources.js; shut on a desktop, a line)
+      card.hidden ? null : renderSources(card.car, { open: true, dark: card.dark })), // (a blacked-out car's: the cards silhouetted, its name withheld; where its key and blueprints come from: render/carsources.js; shut on a desktop, a line)
     make('div', 'sr-actions', sideSwitch('sr-side-detail'), go));
   detail.style.setProperty('--rar', RARITIES[card.rarity].colour);
   detail.className = 'sr-detail ' + card.rarity + ' ' + card.state + ' open' + (statsOff ? ' statsoff' : '') + (slide > 0 ? ' from-next' : slide < 0 ? ' from-prev' : '');
