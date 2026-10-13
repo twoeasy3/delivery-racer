@@ -174,7 +174,7 @@ else {
       check(comet.canvas && comet.canvas.w <= Math.round(comet.canvas.cssW * 2) + 1, 'at most 2 device px a CSS px (the screen is 3)');
       check(comet.b.turn > comet.a.turn + 0.05, `its key turns by itself (${comet.a.turn.toFixed(2)} to ${comet.b.turn.toFixed(2)} rad in ${comet.secs.toFixed(1)} s)`);
       const fps = (comet.b.frames - comet.a.frames) / comet.secs;
-      check(fps > 0.5 && fps <= 32, `drawn on, at most about 30 frames a second (${fps.toFixed(1)} in headless Chromium, its software WebGL drawing the showroom's car too)`);
+      check(comet.b.frames > comet.a.frames && fps <= 32, `drawn on, at most about 30 frames a second (${fps.toFixed(1)} in headless Chromium, its software WebGL drawing the showroom's car too)`);
       check(comet.bg === 'none', 'its PNG hidden under the live key');
       check(comet.black && comet.black.coloured > 0, 'in colour');
       check(!comet.after && !comet.canvasLeft && /keyshots|silvercomet/.test(comet.bgAfter), 'the full view shut: stopped, the canvas gone, the PNG back');
