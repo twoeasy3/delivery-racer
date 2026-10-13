@@ -21,7 +21,11 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
-export const KEY_MODELS = ['fob', 'classic', 'smart', 'fin', 'wheel', 'solar', 'lunar', 'snowboot', 'bun'];
+// (and since 13-Oct the six CONCEPT keys, CHECKLIST 211: made as ordinary keys (render/keyModelsOrd*.js, which build them and
+// register them: their builders are there only once render/keyModelsOrdinary.js is loaded, as render/keycard.js does), each now
+// the key of one concept key car (cars.js KEY_STYLE): key models, no longer ordinary ones)
+export const CONCEPT_KEYS = ['keikey', 'wing', 'artisan', 'carbonfob', 'wedgefob', 'startfob'];
+export const KEY_MODELS = ['fob', 'classic', 'smart', 'fin', 'wheel', 'solar', 'lunar', 'snowboot', 'bun', ...CONCEPT_KEYS];
 // the one a car with no keyModel of its own gets (?keymodel=<any of KEY_MODELS> picks another for a visit: render/keycard.js)
 export const KEY_MODEL = 'fob';
 
@@ -577,7 +581,7 @@ export const KEY_BUILDERS = { fob, classic, smart, fin, wheel, solar, lunar, sno
 // its own file (render/keyModelsOrd*.js), builds with the same kit the nine Bespoke keys use (KEY_KIT) and registers itself with registerKey(name, builder).
 // They are NOT in KEY_MODELS (the nine, one per Bespoke car: .keys-check) but in ORDINARY_MODELS; makeKey(car, { model }) builds either.
 export const ORDINARY_MODELS = [];
-export const registerKey = (name, builder) => { KEY_BUILDERS[name] = builder; if (!ORDINARY_MODELS.includes(name)) ORDINARY_MODELS.push(name); };
+export const registerKey = (name, builder) => { KEY_BUILDERS[name] = builder; if (!ORDINARY_MODELS.includes(name) && !KEY_MODELS.includes(name)) ORDINARY_MODELS.push(name); }; // (a concept key: a key model, not ordinary)
 export const KEY_KIT = { THREE, RIM, lambert, metal, glow, add, box, disc, grow, outline, circle, slab, band, rimMaterial, rainbow, glyph, paintOf, inkOn, idle, plainBlade, merged, initialOf };
 // a key for a car: the model named (else KEY_MODEL), tinted by the car, lit by the rarity
 export const makeKey = (car, { model = KEY_MODEL, rarity = 'bespoke' } = {}) => {

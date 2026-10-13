@@ -91,6 +91,7 @@ export const DELIVERY = {
   junker: 0.75, sport: 0.75, rotary: 0.75, rearengine: 0.75, silvercomet: 0.75, hotrod: 0.7, miata: 0.7, 'earned-gt': 0.7,
   snake: 0.65, keiroadster: 0.65, wedge: 0.65,
   // tiny novelties, record cars and racers: nowhere to keep a parcel (the worst)
+  fishbowl: 1.0, sixteen: 0.85, midsummer: 0.7, quadturbo: 0.6, knifeedge: 0.6, windsong: 0.6, // (the concept key cars: CHECKLIST 211)
   snocat: 1.1, hotdog: 1.4, bubble: 0.6, jetcar: 0.6, dragster: 0.6, solarracer: 0.6, monowheel: 0.6, 'earned-f1': 0.6, 'earned-lmp': 0.6,
 };
 // COMPOSURE at a car's MAXED ECU (the shoulder meter: CONFIG.dangerTime 3 s x it). THIS TABLE IS WHERE TO EDIT IT (a car's

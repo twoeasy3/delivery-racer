@@ -12,9 +12,14 @@ let failures = 0;
 const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' : '  FAIL  ') + what); };
 try {
   const THREE = await import('three');
-  const { KEY_MODELS, KEY_MODEL, KEY_BUILDERS, makeKey, initialOf } = await g.load('render/keyModels.js');
-  check(KEY_MODELS.length === 9 && new Set(KEY_MODELS).size === 9 && KEY_MODELS.every(m => typeof KEY_BUILDERS[m] === 'function') && KEY_MODELS.includes(KEY_MODEL),
-    'nine key models (' + KEY_MODELS.join(', ') + '), the default ' + KEY_MODEL + ' among them');
+  const { KEY_MODELS, KEY_MODEL, KEY_BUILDERS, makeKey, initialOf, CONCEPT_KEYS } = await g.load('render/keyModels.js');
+  await g.load('render/keyModelsOrdinary.js'); // (the six concept keys are built in the ordinary keys' files: CHECKLIST 211)
+  check(KEY_MODELS.length === 15 && new Set(KEY_MODELS).size === 15 && KEY_MODELS.every(m => typeof KEY_BUILDERS[m] === 'function') && KEY_MODELS.includes(KEY_MODEL),
+    'fifteen key models, the nine Bespoke and the six concept keys (' + KEY_MODELS.join(', ') + '), the default ' + KEY_MODEL + ' among them');
+  {
+    const { ORDINARY_MODELS } = await g.load('render/keyModels.js');
+    check(CONCEPT_KEYS.length === 6 && CONCEPT_KEYS.every(m => KEY_MODELS.includes(m) && !ORDINARY_MODELS.includes(m)), 'the six concept keys are key models, not ordinary ones (' + CONCEPT_KEYS.join(', ') + ')');
+  }
   const cars = [g.cars.carById('silvercomet'), g.cars.carById('commuter'), { id: 'x', name: '9 Lives', color: 0x101010 }].filter(Boolean);
   check(cars.length === 3, 'the Silver Comet and a garage car to tint them by');
   for (const model of KEY_MODELS) {
@@ -48,7 +53,7 @@ try {
   {
     await g.load('render/keyModelsOrdinary.js');
     const { ORDINARY_MODELS } = await g.load('render/keyModels.js');
-    check(['roundhead', 'wing', 'flipkey', 'rugged'].every(m => ORDINARY_MODELS.includes(m)) && !ORDINARY_MODELS.some(m => KEY_MODELS.includes(m)),
+    check(['roundhead', 'flipkey', 'rugged'].every(m => ORDINARY_MODELS.includes(m)) && KEY_MODELS.includes('wing') && !ORDINARY_MODELS.some(m => KEY_MODELS.includes(m)), // (wing: the Midsummer Roadster's key now, CHECKLIST 211)
       'the ordinary keys are registered apart from the nine (' + ORDINARY_MODELS.join(', ') + ')');
     for (const model of ORDINARY_MODELS) {
       let why = '';
@@ -76,7 +81,7 @@ try {
     const { ORDINARY_MODELS } = await g.load('render/keyModels.js');
     await g.load('render/keyModelsOrdC.js');
     const batchC = ['crystal', 'carbonfob', 'wedgefob', 'leaper'];
-    check(batchC.every(m => ORDINARY_MODELS.includes(m) && !KEY_MODELS.includes(m) && typeof KEY_BUILDERS[m] === 'function'), 'batch C registered as ordinary keys (' + batchC.join(', ') + ')');
+    check(batchC.every(m => (CONCEPT_KEYS.includes(m) ? KEY_MODELS.includes(m) && !ORDINARY_MODELS.includes(m) : ORDINARY_MODELS.includes(m) && !KEY_MODELS.includes(m)) && typeof KEY_BUILDERS[m] === 'function'), 'batch C registered: ordinary keys, but carbonfob and wedgefob, concept cars\' keys now (' + batchC.join(', ') + ')');
     for (const model of batchC) {
       let ok = true, why = '';
       for (const car of cars) for (const rarity of ['bespoke', 'epic', 'common']) {
@@ -168,7 +173,7 @@ try {
     const { ORDINARY_MODELS } = await g.load('render/keyModels.js');
     await g.load('render/keyModelsOrdD.js');
     for (const model of ['startfob', 'artisan', 'lottag', 'keikey']) {
-      let ok = ORDINARY_MODELS.includes(model) && !KEY_MODELS.includes(model), why = ok ? '' : ' (not registered as ordinary)';
+      let ok = CONCEPT_KEYS.includes(model) ? KEY_MODELS.includes(model) && !ORDINARY_MODELS.includes(model) : ORDINARY_MODELS.includes(model) && !KEY_MODELS.includes(model), why = ok ? '' : ' (not registered as ordinary, or a concept key not a key model)';
       for (const car of cars) for (const rarity of ['bespoke', 'common']) {
         const key = makeKey(car, { model, rarity });
         key.updateMatrixWorld(true);
