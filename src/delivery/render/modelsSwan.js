@@ -193,7 +193,7 @@ SWAN_MODELS.swancar = (car) => {
   const rearGlass = back.filter(([, y]) => y > 1.1 && y < TOP - 0.02);
   parts(group, k + 'glass', GLASS, () => [
     slopeGlass([zAt(WS, 1.04), 1.04], WS[1], CH, TAPER, CBEV + 0.03, [0.02, 0.04], LIFT),
-    ...rearGlass.slice(1).map((p, i) => slopeGlass(rearGlass[i], p, CH, TAPER, CBEV + 0.08, [0, 0], LIFT)),
+    slopeGlass(rearGlass[0], rearGlass.at(-1), CH, TAPER, CBEV + 0.08, [0, 0], LIFT + 0.02), // (one pane on the curve's chord, lifted clear of its bulge)
     ...sideGlass([[[zAt(WS, SY) - 0.1, SY], [backAt(SY) + 0.3, SY], [backAt(top(-0.8)) + 0.12, top(-0.8)],
       [-0.4, top(-0.4)], [zAt(WS, top(-0.02)) - 0.08, top(-0.02)]]], CH, TAPER, 0.006),
   ]);
@@ -208,7 +208,7 @@ SWAN_MODELS.swancar = (car) => {
   ]);
   parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => blob(0.11, 0.1, 0.06, s * fx, LY, LZ + 0.05, 0, 0, [8, 5])));
   // the tail: a feather-long lamp up each rear wing's lifted tail, a brake lamp at the body's tail
-  parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => tear(0.06, 0.04, 0.17, s * fx, 0.62, TAILZ - 0.06, -1.1, 0)));
+  parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => tear(0.055, 0.04, 0.15, s * fx, 0.6, TAILZ - 0.08, -1.75, 0)));
   parts(group, k + 'stop', STOP, () => [blob(0.14, 0.04, 0.04, 0, 0.7, TAILZ - 0.1, 0, 0, [8, 4])]);
   for (const side of [-1, 1]) for (const z of [AF, AR]) wheel(group, k, R, 0.24, side * (W - 0.17), z, 0.22, HUB);
   const accent = (hex) => beak.color.setHex(hex);
