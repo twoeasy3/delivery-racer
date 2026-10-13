@@ -45,16 +45,21 @@ const hudTowing = document.getElementById('towing'), hudTowFill = document.getEl
 const hudSocial = document.getElementById('social'), hudSocialFill = document.getElementById('socialFill');
 // the radiation meter (radiation.js): on a level with radiation only; the word says what it is doing
 const hudRadiation = document.getElementById('radiation'), hudRadiationFill = document.getElementById('radiationFill'), hudRadiationLabel = document.getElementById('radiationLabel');
+// (P9 of the audit: a write to the page only where the value changed. Reading these back costs nothing, and a
+// value the browser writes back in another form, a colour say, is simply written again as before)
+const setText = (el, value) => { value = String(value); if (el.textContent !== value) el.textContent = value; };
+const setStyle = (el, prop, value) => { value = String(value); if (el.style[prop] !== value) el.style[prop] = value; };
+const setAttr = (el, name, value) => { value = String(value); if (el.getAttribute(name) !== value) el.setAttribute(name, value); };
 const syncRadiationMeter = () => {
   const shown = Game.state === 'playing' && Player.active && !Game.screensaver && Radiation.on;
-  hudRadiation.style.display = shown ? 'block' : 'none';
+  setStyle(hudRadiation, 'display', shown ? 'block' : 'none');
   if (!shown) return;
-  hudRadiationFill.style.width = (Radiation.meter * 100).toFixed(1) + '%';
+  setStyle(hudRadiationFill, 'width', (Radiation.meter * 100).toFixed(1) + '%');
   hudRadiation.classList.toggle('infected', Radiation.infected);
   hudRadiation.classList.toggle('dosed', !!Radiation.source && !Radiation.infected);
   hudRadiation.classList.toggle('kept', Radiation.kept);
   const label = Radiation.kept ? 'RADIATION KEPT OUT' : Radiation.infected ? 'INFECTED' : Radiation.source ? 'RADIATION: DOSING' : 'RADIATION';
-  if (hudRadiationLabel.textContent !== label) hudRadiationLabel.textContent = label;
+  setText(hudRadiationLabel, label);
 };
 const hudBusts = document.getElementById('busts');
 // the busts line's small icons (a phone shows these for the words): a police light, and a flag for a race's place
@@ -81,16 +86,16 @@ const syncBehind = (raced) => {
       const place = 2 + Traffic.cars.filter(c => c.racer && raced(c.laps || 0, c.s) > me).length; // (its place: the one after the player's)
       const across = (shown.lat - Player.lat) * (Track.mirrored ? -1 : 1); // (m to the right of the player, as seen)
       const turn = Math.atan2(across, Math.max(gap, 4));
-      hudBehind.style.transform = `translateX(calc(-50% + ${Math.max(-B.slide, Math.min(B.slide, across * B.slidePerM))}px))`;
-      hudBehindArrow.style.transform = `rotate(${-turn}rad)`;
-      hudBehindLabel.textContent = (LEVEL.grid.rival ? (shown.rivalName || 'rival').toUpperCase() + '  ' : 'P' + place + '  ') + Math.round(gap) + ' m';
+      setStyle(hudBehind, 'transform', `translateX(calc(-50% + ${Math.max(-B.slide, Math.min(B.slide, across * B.slidePerM))}px))`);
+      setStyle(hudBehindArrow, 'transform', `rotate(${-turn}rad)`);
+      setText(hudBehindLabel, (LEVEL.grid.rival ? (shown.rivalName || 'rival').toUpperCase() + '  ' : 'P' + place + '  ') + Math.round(gap) + ' m');
       hudBehind.classList.toggle('close', gap < B.close);
       // (a rival in its own colour)
       const tint = shown.markColor ?? (LEVEL.grid.rival ? 0xff2bd6 : null);
       hudBehind.style.setProperty('--tint', tint === null ? '' : '#' + tint.toString(16).padStart(6, '0'));
     }
   }
-  hudBehind.style.display = shown ? 'block' : 'none';
+  setStyle(hudBehind, 'display', shown ? 'block' : 'none');
 };
 // upcoming speed camera proximity warning (see CONFIG.speedCamera)
 const syncCamAlert = () => {
@@ -121,26 +126,26 @@ const syncCamAlert = () => {
 
   const gap = minGap;
   const distM = Math.max(0, Math.round(gap));
-  if (hudCamDist) hudCamDist.textContent = `${distM} m`;
+  if (hudCamDist) setText(hudCamDist, `${distM} m`);
 
   const limitKmh = Math.round(targetCam.limit * 3.6);
-  if (hudCamLimit) hudCamLimit.textContent = limitKmh;
+  if (hudCamLimit) setText(hudCamLimit, limitKmh);
 
   const playerKmh = Math.round(Player.speed * 3.6);
   const over = playerKmh - limitKmh;
 
   if (hudCamStatus) {
     if (Player.tank > 0) {
-      hudCamStatus.textContent = 'RAM IT!';
+      setText(hudCamStatus, 'RAM IT!');
       hudCamAlert.className = 'active tank';
     } else if (Player.radar > 0) {
-      hudCamStatus.textContent = 'RADAR JAMMED';
+      setText(hudCamStatus, 'RADAR JAMMED');
       hudCamAlert.className = 'active radar';
     } else if (over > 0) {
-      hudCamStatus.textContent = `SLOW DOWN (+${over})`;
+      setText(hudCamStatus, `SLOW DOWN (+${over})`);
       hudCamAlert.className = 'active speeding';
     } else {
-      hudCamStatus.textContent = 'SPEED OK';
+      setText(hudCamStatus, 'SPEED OK');
       hudCamAlert.className = 'active safe';
     }
   }
@@ -150,9 +155,9 @@ const syncCamAlert = () => {
   const turn = Math.atan2(across, Math.max(gap, 4));
 
   const slide = Math.max(-120, Math.min(120, across * 14));
-  hudCamAlert.style.transform = `translateX(${slide.toFixed(1)}px)`; // (from the middle of the top strip, where it sits)
+  setStyle(hudCamAlert, 'transform', `translateX(${slide.toFixed(1)}px)`); // (from the middle of the top strip, where it sits)
 
-  if (hudCamArrow) hudCamArrow.style.transform = `rotate(${turn.toFixed(3)}rad)`;
+  if (hudCamArrow) setStyle(hudCamArrow, 'transform', `rotate(${turn.toFixed(3)}rad)`);
 };
 const hudDangerFill = document.getElementById('dangerFill'), hudDangerNeedle = document.getElementById('dangerNeedle');
 // the sticky messages' icons (see messages.js; the pictures are render/hudIcons.js): one for each condition
@@ -220,18 +225,20 @@ export const updateHud = () => {
   // the clock counts down; below zero is the tip countdown, with the tip draining away
   const left = Game.state === 'start' ? clockFor(LEVEL, false) : Game.remaining;
   const late = left < 0;
-  hudTimer.textContent = formatTime(left);
-  hudTimer.style.color = hudTip.style.color = late ? '#ff5a4f' : '';
-  hudTip.textContent = (late ? 'TIP COUNTDOWN  $' : 'TIP $') + (Game.state === 'start' ? LEVEL.tip : Game.tip).toFixed(2);
-  hudSpeed.firstChild.nodeValue = kmh(Player.speed) + ' ';
+  setText(hudTimer, formatTime(left));
+  setStyle(hudTimer, 'color', late ? '#ff5a4f' : '');
+  setStyle(hudTip, 'color', late ? '#ff5a4f' : '');
+  setText(hudTip, (late ? 'TIP COUNTDOWN  $' : 'TIP $') + (Game.state === 'start' ? LEVEL.tip : Game.tip).toFixed(2));
+  const speedText = kmh(Player.speed) + ' ';
+  if (hudSpeed.firstChild.nodeValue !== speedText) hudSpeed.firstChild.nodeValue = speedText;
   // the level's ring, and the distance left in it (in km down to the last one, then in m)
-  hudProgress.setAttribute('stroke-dasharray', (Game.progress * 100).toFixed(2) + ' 100');
+  setAttr(hudProgress, 'stroke-dasharray', (Game.progress * 100).toFixed(2) + ' 100');
   const togo = Math.max(0, Game.state === 'start' ? 0 : Game.distanceLeft);
   const figure = togo >= 1000 ? (togo / 1000).toFixed(1) : String(Math.round(togo)), unit = togo >= 1000 ? 'km' : 'm';
-  if (hudProgressLeft.textContent !== figure) hudProgressLeft.textContent = figure;
-  if (hudProgressUnit.textContent !== unit) hudProgressUnit.textContent = unit;
+  setText(hudProgressLeft, figure);
+  setText(hudProgressUnit, unit);
   const lapLabel = LEVEL.laps ? 'LAP ' + Math.min(LEVEL.laps, Game.lap + 1) + '/' + LEVEL.laps : 'TO GO';
-  if (hudProgressLabel.textContent !== lapLabel) hudProgressLabel.textContent = lapLabel;
+  setText(hudProgressLabel, lapLabel);
   let effects = '';
   if (Player.active) {
     if (Player.turbo > 0) effects += 'TURBO ' + Player.turbo.toFixed(1) + '  ';
@@ -244,37 +251,37 @@ export const updateHud = () => {
     if (Player.mystery) effects += Player.mysteryName.toUpperCase() + ' ' + Player.mysteryTime.toFixed(1) + '  '; // (the effect by name: "EARTHQUAKE 7.2")
     if (Player.tank > 0) effects += 'TANK RAGE';
   }
-  hudTurbo.textContent = effects;
+  setText(hudTurbo, effects);
   const throwOpacity = Packages.ready ? 1 : 0.4;
   const throwLabel = Player.tank > 0 ? 'FIRE' : 'THROW';
   for (const button of throwBtns) {
-    button.style.display = LEVEL.noPackages ? 'none' : '';
-    button.style.opacity = throwOpacity;
-    if (button.textContent !== throwLabel) button.textContent = throwLabel;
+    setStyle(button, 'display', LEVEL.noPackages ? 'none' : '');
+    setStyle(button, 'opacity', throwOpacity);
+    setText(button, throwLabel);
   }
   syncSticky();
   // pause and exit: shown during a run and the screensaver
-  runButtons.style.display = Game.state === 'playing' ? 'flex' : 'none';
+  setStyle(runButtons, 'display', Game.state === 'playing' ? 'flex' : 'none');
   const held = !!Replay.playing?.over; // (a replay held at its end, or where it drifted: its results say so, not PAUSED)
-  pauseBtn.style.display = held ? 'none' : '';
+  setStyle(pauseBtn, 'display', held ? 'none' : '');
   const pauseLabel = Game.paused ? 'Resume' : 'Pause';
-  if (pauseBtn.textContent !== pauseLabel) pauseBtn.textContent = pauseLabel;
+  setText(pauseBtn, pauseLabel);
   // the screensaver fades to black and back where one lap joins the next
-  hudFade.style.opacity = Game.screensaver && !Game.raceWatch // (not in the race: a circuit has no seam to hide)
-    ? 1 - Math.min(1, Math.min(Math.abs(Player.s), Math.abs(Track.length - Player.s)) / CONFIG.screensaver.fadeDistance) : 0;
-  hudBanner.style.display = Game.paused && !held ? 'block' : 'none'; // (the only banner: paused)
+  setStyle(hudFade, 'opacity', Game.screensaver && !Game.raceWatch // (not in the race: a circuit has no seam to hide)
+    ? 1 - Math.min(1, Math.min(Math.abs(Player.s), Math.abs(Track.length - Player.s)) / CONFIG.screensaver.fadeDistance) : 0);
+  setStyle(hudBanner, 'display', Game.paused && !held ? 'block' : 'none'); // (the only banner: paused)
   // the two message lines (see messages.js): each up for its own time, fading away at the end
   const now = performance.now();
   Message.lines.forEach((line, i) => {
     const el = hudMessages[i];
     if (line.id !== shownIds[i]) {
       shownIds[i] = line.id;
-      el.textContent = line.text;
+      setText(el, line.text);
       el.className = 'line ' + line.kind;
     }
     const age = (now - line.at) / 1000;
-    el.style.opacity = Game.paused || Game.state !== 'playing' || !line.text ? 0
-      : Math.min(1, Math.max(0, (line.time - age) / CONFIG.messageTimes.fade));
+    setStyle(el, 'opacity', Game.paused || Game.state !== 'playing' || !line.text ? 0
+      : Math.min(1, Math.max(0, (line.time - age) / CONFIG.messageTimes.fade)));
   });
   // (in a race, the player's place in it: one more than the racers ahead)
   // (round a lapped circuit, the laps count first)
@@ -294,38 +301,38 @@ export const updateHud = () => {
   // on a level without the shoulder rule, nor for a tank, which nobody busts)
   const watchable = Game.state === 'playing' && Player.active && !Game.screensaver && LEVEL.shoulderTimer !== false && Player.tank <= 0;
   const watched = watchable && Traffic.policeNear();
-  hudCopWatch.style.display = watched ? 'block' : 'none';
+  setStyle(hudCopWatch, 'display', watched ? 'block' : 'none');
   // (and the screen's edges flash red and blue, from a little further out: CONFIG.copGlowMargin)
   hudCopGlow.classList.toggle('on', watchable && Traffic.policeNear(CONFIG.copGlowMargin));
   // in a car's slipstream, and how deep in it (a race)
   // (or, just out of it, the slingshot, and how much of it is left)
   const flung = Player.slingTime > 0 && !(Player.tow > 0);
   const towing = Player.active && !Game.screensaver && (Player.tow > 0 || flung);
-  hudTowing.style.display = towing ? 'block' : 'none';
+  setStyle(hudTowing, 'display', towing ? 'block' : 'none');
   hudTowing.classList.toggle('sling', flung);
   if (towing) {
-    hudTowLabel.textContent = flung ? 'SLINGSHOT!' : 'SLIPSTREAM';
-    hudTowFill.style.width = (flung ? Player.slingTime / Player.slingTotal : Player.tow) * 100 + '%';
+    setText(hudTowLabel, flung ? 'SLINGSHOT!' : 'SLIPSTREAM');
+    setStyle(hudTowFill, 'width', (flung ? Player.slingTime / Player.slingTotal : Player.tow) * 100 + '%');
   }
   // a good player's social standing (none on a level with no packages, nor in the screensaver)
   const social = Game.state === 'playing' && Player.active && !Game.screensaver && Social.on && !LEVEL.noPackages;
-  hudSocial.style.display = social ? 'block' : 'none';
+  setStyle(hudSocial, 'display', social ? 'block' : 'none');
   if (social) {
-    hudSocialFill.style.width = Social.level * 100 + '%';
+    setStyle(hudSocialFill, 'width', Social.level * 100 + '%');
     hudSocial.classList.toggle('protected', Social.protected);
   }
   syncRadiationMeter();
   // the shoulder's dial: 0 on the road, up to the bust on the shoulder (always there; dim where no shoulder rule applies)
   const danger = Player.active ? Math.max(0, Math.min(1, 1 - Player.danger / Social.dangerTime)) : 0;
-  hudDangerNeedle.setAttribute('transform', `rotate(${(-120 + danger * 240).toFixed(1)} 28 28)`);
-  hudDangerFill.setAttribute('stroke-dasharray', (danger * 100).toFixed(1) + ' 100');
+  setAttr(hudDangerNeedle, 'transform', `rotate(${(-120 + danger * 240).toFixed(1)} 28 28)`);
+  setAttr(hudDangerFill, 'stroke-dasharray', (danger * 100).toFixed(1) + ' 100');
   hudDanger.classList.toggle('hot', danger >= 0.75);
   hudDanger.classList.toggle('off', LEVEL.shoulderTimer === false);
   // a flat tyre: stop, and the bar fills as the tyre is changed (said by its sticky message, where that is one:
   // this line only if it has been taken out of CONFIG.messageTimes.sticky)
-  hudFlat.style.display = Player.active && Player.puncture && !Message.sticky.some(h => h.condition === 'puncture') ? 'block' : 'none';
-  hudFlatFill.style.width = Math.min(1, (Player.fixing || 0) / CONFIG.puncture.fixTime) * 100 + '%';
+  setStyle(hudFlat, 'display', Player.active && Player.puncture && !Message.sticky.some(h => h.condition === 'puncture') ? 'block' : 'none');
+  setStyle(hudFlatFill, 'width', Math.min(1, (Player.fixing || 0) / CONFIG.puncture.fixTime) * 100 + '%');
   const health = Math.max(0, Player.health / Player.maxHealth);
-  hudHealth.style.width = health * 100 + '%';
-  hudHealth.style.background = health > 0.5 ? '#4caf50' : health > 0.25 ? '#ffd23f' : '#ff3b30';
+  setStyle(hudHealth, 'width', health * 100 + '%');
+  setStyle(hudHealth, 'background', health > 0.5 ? '#4caf50' : health > 0.25 ? '#ffd23f' : '#ff3b30');
 };
