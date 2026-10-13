@@ -290,13 +290,14 @@ const drawStage = () => {
   const extras = single ? eventExtras(single, level, open) : null;
   const info = make('div', 'info',
     extras?.tags,
-    make('h2', '', levelName(level)),
+    make('h2', '', single ? single.name : levelName(level)), // (the event's name, as the strip says it; its road under it)
+    single ? make('p', 'cx-road', 'On ' + levelName(level)) : null,
     open && words ? make('p', 'desc', words) : null,
     open ? make('div', 'facts',
       fact('Clock', formatTime(clockFor(level, evil)) + (oneSided(level) ? ' (always Good)' : '')),
       fact('Tip', money(level.tip)),
       fact('Best to spare', best === undefined ? 'Not delivered yet' : formatTime(best))) : null,
-    needs ? make('p', 'needs' + (open && !Game.canStart ? ' warn' : ''), ...richTiers(needs)) : null,
+    needs ? make('p', 'needs' + (open && !Game.canStart ? ' warn' : '') + (extras?.ruleLine && open ? ' cx-rule' : ''), ...richTiers(needs)) : null, // (cx-rule: said by the card's rule badge too; a phone leaves the line out)
     // (an event: how long it is on for, and its reward)
     event?.to ? ends(event.to) : null,
     single ? eventCount(Events.countdownOf(single)) : null,
@@ -792,7 +793,7 @@ const extrasOf = (event) => {
     odds = lines.length ? lines.map(f => 'x' + (f.amount ?? 1) + ' ' + percent(f.lastSlot)).join(' · ') : 'Car maxed';
   }
   const first = event.stages[0], rule = first?.level?.allowedCars && !first.car ? listRule(first.level) : null;
-  const r = event.repeat, often = r ? (r.every === 7 ? r.live + ' days every week' : r.live + ' days every ' + r.every) : '';
+  const r = event.repeat, often = r ? (r.every === 7 ? r.live + ' days a week' : r.live + ' days every ' + r.every) : '';
   return { give, car: hunted || Events.prizeCar(event), hunt: !!hunted, odds, rule, often };
 };
 // a pack's art as a button, and its What's inside: both open the pack's sheet (render/packcontents.js)
@@ -835,6 +836,7 @@ const huntHead = (event, drawLater) => {
 //     its art tilted over the car's corner with a ribbon ("Every run" for a pack on every delivery), a tap or its
 //     What's inside opening the pack's sheet.
 // { node, tags, car, draw } (draw: the car's still, once laid out)
+const PRIZE_POSE = { lift: 0.3, angle: -0.64, fov: 30, margin: 0.94 }; // (the event cards' pose, carstill.js STILL_POSE, framed tight: the car fills its picture)
 const eventExtras = (event, level, open) => {
   const { give, car, hunt, odds, rule, often } = extrasOf(event);
   const st = Events.state(event, level.stage.index);
@@ -844,8 +846,8 @@ const eventExtras = (event, level, open) => {
     often ? make('span', 'cx-tag often', '↻ ' + often) : null);
   const view = car ? make('div', 'event-car cx-still') : null;
   const prize = car ? make('div', 'cx-car',
-    make('small', 'cx-label', hunt ? 'Hunt car' : 'Grand prize'),
     view,
+    make('small', 'cx-label', hunt ? 'Hunt car' : 'Grand prize'),
     make('div', 'cx-name', make('strong', '', car.name), car.tier || car.rating ? make('span', 'cx-stars', stars(car)) : null),
     make('span', 'cx-odds', hunt ? 'Blueprints ' + odds : Events.prizeWon(event) ? 'Won!' : 'Deliver it on time to win it')) : null;
   prize?.querySelector('.cx-stars')?.style.setProperty('color', starColour(car));
@@ -858,7 +860,7 @@ const eventExtras = (event, level, open) => {
         make('span', '', give.every ? 'Every run: a ' + packName(give.id) : describePack(give.id)), link));
   }
   const node = make('div', 'card-extras' + (open ? '' : ' shut'), prize, pack);
-  return { node, tags, car, draw: () => { if (view && node.isConnected) stillCar(view, car, false); } }; // (its Good livery, whatever the side)
+  return { node, tags, car, ruleLine: !!rule && !st.needs, draw: () => { if (view && node.isConnected) stillCar(view, car, false, PRIZE_POSE); } }; // (its Good livery, whatever the side)
 };
 // a pack's What's inside over the menu (render/packcontents.js, as the Shop opens it); Enter starts nothing while it is up,
 // Escape closes it

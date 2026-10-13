@@ -529,8 +529,8 @@
   background: radial-gradient(closest-side, rgba(255, 226, 140, .30), rgba(255, 210, 63, .08) 60%, transparent); }
 #startScreen .cx-still { width: 100%; aspect-ratio: 16 / 9; filter: drop-shadow(0 12px 10px rgba(0, 0, 0, .55)); }
 #startScreen .cx-label { font: 800 10px/1 system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
-#startScreen .cx-car > .cx-label { position: absolute; left: -2px; top: calc(var(--cx-w) * .2 + 9px); z-index: 1; }
-#startScreen .cx-name { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 0 7px; margin-top: -4px; }
+#startScreen .cx-car > .cx-label { margin-top: -2px; }
+#startScreen .cx-name { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 0 7px; margin-top: 2px; }
 #startScreen .cx-name strong { font: italic 800 clamp(17px, 1.6vw, 24px)/1.05 var(--display); text-transform: uppercase; text-shadow: 0 2px 4px rgba(0, 0, 0, .7); }
 #startScreen .cx-stars { font-size: 15px; letter-spacing: .06em; }
 #startScreen .cx-odds { margin-top: 3px; font-size: 11px; font-weight: 600; color: #c9d2df; }
@@ -547,15 +547,28 @@
 #startScreen .cx-pack-words > span { font-size: 11px; color: #c9d2df; }
 #startScreen .cx-pack-words .event-inside { margin-top: 5px; }
 #startScreen .menu-stage.no-car .card-extras::before { top: 0; }
+/* (the cargo on a card with extras: its circle smaller, its name beside it, under the medals (clear of the arrow), where the
+   prize's car rises) */
+#startScreen .menu-stage.has-extras .cargo3d { top: 58px; right: 60px; width: 200px; flex-direction: row; justify-content: flex-end; gap: 8px; }
+#startScreen .menu-stage.has-extras .cargo3d .ring { flex: 0 0 auto; width: 56px; height: 56px; }
+#startScreen .menu-stage.has-extras .cargo3d .cargo-name { order: -1; text-align: right; }
 @media (prefers-reduced-motion: reduce) { #startScreen .cx-tag.live::before { animation: none; } }
 /* (a phone held upright, a narrow window: the prize a row over the words, the car on the left, the pack on the right) */
 @media (max-width: 760px) and (min-height: 521px), (max-width: 519px) {
   #startScreen .menu-stage.has-extras .info { padding-right: 32px; }
   #startScreen .card-extras { position: relative; right: auto; bottom: auto; width: auto; margin: 0 10px 8px; padding: 0 8px 8px; flex-direction: row; align-items: flex-end; gap: 8px; }
   #startScreen .card-extras::before { top: 34px; }
-  #startScreen .cx-car { flex: 1 1 56%; min-width: 0; }
+  #startScreen .cx-car { flex: 1 1 60%; min-width: 0; }
   #startScreen .cx-still { aspect-ratio: 16 / 9; }
-  #startScreen .cx-car > .cx-label { top: 42px; left: 0; }
+  #startScreen .menu-stage.has-extras .desc { -webkit-line-clamp: 2; line-clamp: 2; }
+  #startScreen .menu-stage .needs.cx-rule { display: none; }
+  #startScreen .menu-stage .cx-tags { flex-wrap: nowrap; gap: 4px; }
+  #startScreen .cx-tag { padding: 3px 6px 2px; font-size: 10px; letter-spacing: .05em; gap: 4px; }
+  #startScreen .cx-tag .tierstars { font-size: 11px; }
+  /* (the cargo small, its name beside it, under the medals: the prize row is where its circle was) */
+  #startScreen .menu-stage.has-extras .cargo3d { top: 47px; right: 10px; width: 150px; flex-direction: row; justify-content: flex-end; gap: 6px; }
+  #startScreen .menu-stage.has-extras .cargo3d .ring { flex: 0 0 auto; width: 40px; height: 40px; }
+  #startScreen .menu-stage.has-extras .cargo3d .cargo-name { order: 0; font-size: 10px; text-align: left; }
   #startScreen .cx-name strong { font-size: 16px; }
   #startScreen .cx-stars { font-size: 12px; }
   #startScreen .cx-odds { font-size: 10px; }
@@ -565,7 +578,7 @@
   #startScreen .cx-art .event-pack-art .shop-packs { transform: scale(.69); }
   #startScreen .cx-ribbon { bottom: 12px; font-size: 10px; }
   #startScreen .cx-pack-words { align-items: center; }
-  #startScreen .cx-pack-words > small, #startScreen .cx-pack-words > span { display: none; }
+  #startScreen .cx-pack-words > small, #startScreen .cx-pack-words > span, #startScreen .cx-pack-words strong { display: none; }
   #startScreen .cx-pack-words strong { font-size: 13px; }
   #startScreen .cx-pack-words .event-inside { margin-top: 2px; padding: 3px 8px; font-size: 11px; }
 }
@@ -580,3 +593,4 @@
   #startScreen .cx-ribbon { font-size: 9px; bottom: 10px; }
   #startScreen .menu-stage.has-extras .info .road { right: calc(var(--cx-w) + 20px); }
 }
+#startScreen .menu-stage .cx-road { margin: -2px 0 0; font: 800 13px/1.2 system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); text-shadow: 0 1px 2px #000; }
