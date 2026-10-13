@@ -203,7 +203,7 @@ export const CARS = [
   { id: 'liftedtruck', tier: 2, blue: true, name: 'Lifted Truck', price: 490, color: 0x1d5bbf, evilColor: 0xc9a66b, fixedLivery: true, model: 'liftedtruck',
     maxSpeed: 30.5, accel: 10, crossing: 0.95, health: 190, mass: 1.6, hw: 1.12, hl: 2.75, height: 2.65 },
   // ---- tier 3
-  { id: 'hearse', tier: 3, name: 'Hearse', price: 260, color: 0x151515, evilColor: 0xf2f2f2, fixedLivery: true, model: 'hearse',
+  { id: 'hearse', tier: 3, name: 'Hearse', price: 260, color: 0x2a2d6e, evilColor: 0xf2f2f2, fixedLivery: true, model: 'hearse',
     maxSpeed: 33, accel: 10, crossing: 0.4, health: 170, hw: 1.0, hl: 2.8, height: 1.65 },
   { id: 'minivan', tier: 3, name: 'Minivan', price: 290, color: 0xd8c8a0, evilColor: 0x3a4a5e, fixedLivery: true, model: 'minivan',
     maxSpeed: 32, accel: 9, crossing: 0.6, health: 200, hw: 1.05, hl: 2.45, height: 2.0 },

@@ -139,6 +139,7 @@ const hull = (parent, material, plan, y, height) => {
   parent.add(mesh);
   return mesh;
 };
+import { ORIG3_MODELS } from './modelsOrig3.js'; // (the Hearse, the Hot Rod, the Minivan and the Pick-Up, rebuilt)
 const CHROME_MAT = () => lambert(CHROME);
 export const MODELS = {
   // A Formula 1 car: a long, low nose and monocoque in the livery, sidepods, the engine cover with
@@ -1616,37 +1617,8 @@ export const MODELS = {
     return group;
   },
 
-  // The Hearse: long and low, a long glasshouse running back over the coffin deck, curtains
-  // drawn in the rear windows, chrome landau bars on the rear quarters and a chrome grille.
-  hearse: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.36;
-    const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(CHROME), curtain = lambert(0x4a2a4a);
-    const body = box(group, paint, w, 0.62, l, 0, 0.66, 0);
-    box(group, paint, w * 0.95, 0.06, l * 0.26, 0, 1.0, l * 0.36);               // long bonnet
-    box(group, paint, w * 0.9, 0.62, l * 0.6, 0, 1.28, -l * 0.17);               // the long roofed body
-    box(group, paint, w * 0.92, 0.07, l * 0.6, 0, 1.62, -l * 0.17);              // roof
-    screen(group, glass, w * 0.86, 0.05, 0.6, 0, 1.26, l * 0.18, 0.45);            // windscreen
-    box(group, curtain, w * 0.7, 0.45, 0.02, 0, 1.3, -l / 2 + 0.02);              // curtained back door
-    for (const side of [-1, 1]) {
-      box(group, glass, 0.02, 0.42, l * 0.14, side * (w * 0.45 + 0.005), 1.3, l * 0.06); // front side windows
-      box(group, curtain, 0.02, 0.38, l * 0.16, side * (w * 0.45 + 0.005), 1.3, -l * 0.14); // curtained rear windows
-      // the landau bar: an S of chrome on the blind rear quarter
-      slab(group, chrome, 0.03, 0.05, 0.6, side * (w * 0.45 + 0.02), 1.32, -l * 0.36, 0.5);
-      slab(group, chrome, 0.03, 0.05, 0.6, side * (w * 0.45 + 0.02), 1.32, -l * 0.36, -0.5);
-      box(group, chrome, 0.02, 0.05, l * 0.94, side * (w / 2 + 0.006), 0.72, 0);   // chrome side trim
-      box(group, chrome, 0.12, 0.08, 0.1, side * (w / 2 + 0.05), 1.05, l * 0.2);    // mirrors
-      box(group, LAMP, w * 0.2, 0.14, 0.08, side * w * 0.34, 0.78, l / 2 + 0.01);
-      box(group, TAIL, 0.12, 0.34, 0.08, side * w * 0.42, 0.8, -l / 2 - 0.01);       // tall tail lamps
-      wheel(group, R, 0.3, side * (w / 2 - 0.04), R, l * 0.3, chrome);
-      wheel(group, R, 0.3, side * (w / 2 - 0.04), R, -l * 0.3, chrome);
-    }
-    box(group, chrome, w * 0.6, 0.26, 0.06, 0, 0.78, l / 2 + 0.02);               // chrome grille
-    box(group, chrome, w + 0.1, 0.16, 0.16, 0, 0.42, l / 2 + 0.04);               // bumpers
-    box(group, chrome, w + 0.1, 0.16, 0.16, 0, 0.42, -l / 2 - 0.04);
-    group.userData = { body, animate: () => {} };
-    return group;
-  },
+  // The Hearse: render/modelsOrig3.js
+  hearse: ORIG3_MODELS.hearse,
 
   // The Sportscar: a little two-seat roadster (a first Mazda Miata), top down, pop-up
   // headlamps up, twin racing stripes over the bonnet and boot: white on red in the Good
