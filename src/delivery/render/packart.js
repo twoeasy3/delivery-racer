@@ -11,7 +11,7 @@ export const KIND_LOOK = { career: 'common', daily: 'uncommon', standard: 'uncom
 const KIND_MARK = { career: 'Career', daily: 'Daily', standard: 'Standard', ten: '10', special: 'Special' };
 // a pack that features ONE car (the Car Hunt packs, the Comet Hunt's) has that car drawn on it (the owner, 13-Oct: "draw the car on the pack as
 // well"): its Good-livery still, under the pack's mark; drawn once the art is laid out (carstill.js drawSoon)
-const PACK_POSE = { lift: 0.22, angle: -0.6, fov: 30, margin: 0.9 };
+export const PACK_POSE = { lift: 0.22, angle: -0.6, fov: 30, margin: 0.9 };
 export const featuredCarOf = (id) => {
   const f = packData?.packs?.[id]?.featured, tie = f?.sameCarAs && packData.packs[f.sameCarAs]?.featured; // (sameCarAs: the car of the pack it is tied to, packs.js featuredOf)
   const ids = [...new Set(((tie || f)?.entries || []).filter(e => !e.key).map(e => e.car))];
