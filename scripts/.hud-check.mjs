@@ -80,10 +80,11 @@ try {
     begin();
     g.run(0.5);
     const up = sticky(path), text = up?.line.text;
-    // (its words are an ordinary message: up now, for the time the table gives any message of its kind...)
-    const said = !!up && showing(text) && up.line.time === timeFor(...path.split('.'));
-    // (...and gone after that time, the condition still on and its icon with it)
-    clock += up ? up.line.time * 1000 + 50 : 0;
+    // (a status: its icon only, never its words on a message line (the owner, 13-Oct: "I'm seeing the airborne
+    // message instead of the icon"), on a desktop as on a phone: the HUD has one rule for both)
+    const said = !!up && !!text && !showing(text) && !Message.lines.includes(up.line) && !T.stickyWords;
+    // (...and still none some seconds on, the condition still on and its icon with it)
+    clock += timeFor(...path.split('.')) * 1000 + 50;
     g.run(0.2);
     const wordsGone = !showing(text), iconStays = !!sticky(path) && icons().length === 1;
     // (ordinary messages don't push it out: four more said, and it is still held)
@@ -93,8 +94,8 @@ try {
     end();
     g.run(0.1);
     const ok = said && wordsGone && iconStays && kept && !sticky(path) && !icons().length;
-    check(ok, `sticky ${path}: said as a message ("${text}", ${up?.line.time} s), its words gone after that with the condition still on and its icon up, the icon gone when it ends` +
-      (ok ? '' : ` [said ${said}, words gone ${wordsGone}, icon stays ${iconStays}, kept ${kept}, gone ${!sticky(path)}]`));
+    check(ok, `sticky ${path}: an icon only ("${text}" kept for a recall, never put on a message line), still so with the condition on, the icon gone when it ends` +
+      (ok ? '' : ` [icon only ${said}, no words later ${wordsGone}, icon stays ${iconStays}, kept ${kept}, gone ${!sticky(path)}]`));
   }
   // ---- several at once: an icon each, and no words left once their messages have had their time
   start();
@@ -105,8 +106,8 @@ try {
   const five = Message.sticky.map(h => h.line.text), wordsUp = five.filter(showing).length;
   clock += Math.max(...Message.sticky.map(h => h.line.time)) * 1000 + 50;
   g.run(0.2);
-  check(five.length === 5 && wordsUp <= Message.lines.length && icons().length === 5 && new Set(icons()).size === 5 && !five.some(showing),
-    `five conditions at once: five icons, each its own; never more words than the ${Message.lines.length} message lines (${wordsUp} at first), none after their time`);
+  check(five.length === 5 && wordsUp === 0 && icons().length === 5 && new Set(icons()).size === 5 && !five.some(showing),
+    `five conditions at once: five icons, each its own, and none of their words on a message line (${wordsUp})`);
   // (the icon of one with time left drains: half way through the bad gas, about half its ring)
   g.run(g.CONFIG.badGas.time / 2 - 0.5);
   const half = sticky('powerups.badGas')?.progress;
@@ -133,8 +134,13 @@ try {
   const page = readFileSync(new URL('../delivery/index.html', import.meta.url), 'utf8'), at = (id) => page.indexOf(`id="${id}"`);
   check(at('timer') < at('gauges') && at('gauges') < at('sticky') && at('sticky') < at('health') && at('health') < at('busts') && at('busts') < at('social'),
     'the corner is the time, then the gauges and the statuses, then the health, busts and social bars');
-  check(/id="health"><svg class="ico"/.test(page) && /id="social"><svg class="ico"/.test(page) && hudSource.includes('ICON_BUSTS') && css.includes('#meters .w { display: none; }'),
-    'each bar has a small icon, shown instead of its words on a phone');
+  // (the bars' icons and the statuses on a desktop as on a phone, the owner 13-Oct: no rule of a phone's media queries
+  // turns them on, and none of them turns them off)
+  const mediaBlocks = [...css.matchAll(/@media[^{]*\{((?:[^{}]*\{[^}]*\})*)\s*\}/g)].map(m => m[1]).join('\n');
+  check(/id="health" title="[^"]+"><svg class="ico"/.test(page) && /id="social" title="[^"]+"><svg class="ico"/.test(page) && hudSource.includes('ICON_BUSTS') && hudSource.includes('hudBusts.title')
+    && /^#meters \.w \{ display: none; \}/m.test(css) && /^#meters \.ico \{ display: inline-block;/m.test(css)
+    && !/#meters \.w \{[^}]*display: (?!none)/.test(css) && !/(#meters \.ico|#sticky)[^{]*\{[^}]*display: none/.test(mediaBlocks),
+    'each bar has a small icon instead of its words (the words its tooltip), and the statuses an icon, on a desktop as on a phone');
   const I = T.stickyIcons;
   check(['size', 'gap', 'across', 'shift'].every(k => ['wide', 'portrait', 'short'].every(shape => I?.[k]?.[shape] !== undefined)) && T.recall > 0 && !/#sticky[^}]*[\s{;](width|height|gap):\s*\d+px/.test(css),
     'the icons\' size, gap, row and place are in CONFIG.messageTimes.stickyIcons for each screen shape, not written into style.css');

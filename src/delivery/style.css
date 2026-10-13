@@ -52,8 +52,8 @@ body.in-garage #tankCorner { display: none !important; }
    (room is kept for both, so what is under them doesn't jump about; smaller on a phone, either way up) */
 #messages { text-align: center; pointer-events: none; }
 #messages .line { min-height: 1.25em; line-height: 1.25; font-size: clamp(14px, min(2.4vw, 4.4vh), 22px); font-weight: 800; text-shadow: 0 2px 6px rgba(0,0,0,.8); opacity: 0; }
-/* a sticky message (see messages.js) is said as any other, and then is an icon for as long as what it warns
-   of lasts: a round badge under the two gauges (in the meters' corner, off the road and the horizon), in rows
+/* a sticky message (see messages.js), a status, is an icon for as long as what it warns of lasts, on a desktop as
+   on a phone (its words only as its tooltip and when it is touched or clicked: never a message line of their own): a round badge under the two gauges (in the meters' corner, off the road and the horizon), in rows
    of a few; beside the gauges on a phone held upright. The ring round it drains as the condition runs out (a tyre being changed, an effect's time).
    Its size, the gap and how many to a row are CONFIG.messageTimes.stickyIcons, by the screen's shape (render/hud.js
    hands them over as --size-wide and so on); the pictures are render/hudIcons.js */
@@ -70,6 +70,10 @@ body.in-garage #tankCorner { display: none !important; }
 #sticky .art .f { fill: currentColor; stroke-width: 1; }
 #sticky .art .t { stroke-width: 3.2; }
 #sticky .art .x { stroke: #ff5a4f; stroke-width: 2.4; }
+/* (a status just come on: a short pop and glow, so it is seen without its words on a message line) */
+#sticky .icon.new { animation: stickyPop .7s ease-out; }
+@keyframes stickyPop { 0% { transform: scale(.4); filter: drop-shadow(0 0 0 #ffb03a); } 40% { transform: scale(1.25); filter: drop-shadow(0 0 6px #ffb03a); } 100% { transform: scale(1); filter: none; } }
+@media (prefers-reduced-motion: reduce) { #sticky .icon.new { animation: none; } }
 @media (orientation: portrait) {
   /* (a phone held upright: beside the gauges, in the sky, since under them is the horizon and the road) */
   #sticky { --size: var(--size-portrait); --gap: var(--gap-portrait); --across: var(--across-portrait); --x: var(--shift-portrait-x); --y: var(--shift-portrait-y); }
@@ -186,8 +190,15 @@ body.touch-controls .throw { display: block; }
 /* In this order: the time, the gauges with the statuses beside them, then the bars (health, busts, social standing) */
 #meters { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 308px; }
 #meters .readouts { width: 150px; }
-/* (a small icon for each bar: only where the words are left out, on a phone: see the media query at the foot of the file) */
-#meters .ico { display: none; flex: none; width: 16px; height: 16px; margin-right: 5px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* (a small icon for each bar in place of its words, on a desktop as on a phone (the owner, 13-Oct); the words are
+   the bar's tooltip (its title). A desktop's icon is a little larger: 18 px, 16 on a phone (the foot of the file)) */
+#meters .ico { display: inline-block; vertical-align: -4px; flex: none; width: 18px; height: 18px; margin-right: 6px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+#meters #health .ico { display: block; }
+#meters .w { display: none; }
+#social .bar { margin-top: 0; }
+#social:not([style*="none"]) { display: flex !important; align-items: center; } /* (the HUD shows it with an inline display) */
+/* (with a mouse, the bars take the pointer, for their tooltips; never on a touch screen, where under them is the stick) */
+@media (hover: hover) and (pointer: fine) { #health, #busts, #social { pointer-events: auto; cursor: help; } }
 #meters #health .ico { fill: #4caf50; stroke: none; }
 #social .ico { fill: currentColor; stroke: none; }
 /* (the two gauges, and with them the sticky messages' icons, whose rules are above) */
@@ -410,14 +421,9 @@ body.in-garage #touchControls { display: none; }
 .overlay.panel .wall .plaque small { font-size: 12px; }
 .overlay.panel .wall .plaque.lit { border-color: #ffd23f; background: #4a3d12; color: #fff; }
 
-/* a phone (held upright, or on its side): each bar has a small icon for what it is, and its words are left out */
+/* a phone (held upright, or on its side): the bars' icons (above: on a desktop too) a little smaller */
 @media (orientation: portrait), (orientation: landscape) and (max-height: 480px) {
-  #meters .ico { display: inline-block; vertical-align: -3px; }
-  #health .ico { display: block; }
-  #meters .w { display: none; }
-}
-@media (orientation: portrait), (orientation: landscape) and (max-height: 480px) {
-  #social .bar { margin-top: 0; }
+  #meters .ico { width: 16px; height: 16px; margin-right: 5px; vertical-align: -3px; }
 }
 /* a phone on its side has no height to spare under the time, with the THROW button there: the bars stay beside the time, and the
 gauges and statuses (under the gauges) go to their right, as the corner was before */
@@ -427,7 +433,4 @@ gauges and statuses (under the gauges) go to their right, as the corner was befo
   #meters .readouts { grid-column: 1; grid-row: 2; }
   #gaugeRow { grid-column: 2; grid-row: 1 / span 2; flex-direction: column; gap: 6px; }
   #levelProblems, #flat { grid-column: 1 / span 2; }
-}
-@media (orientation: portrait), (orientation: landscape) and (max-height: 480px) {
-  #social:not([style*="none"]) { display: flex !important; align-items: center; } /* (the HUD shows it with an inline display) */
 }
