@@ -189,9 +189,18 @@ export const poseView = (model, pose, aspect) => {
   const s = span(far);
   return { scene, camera, offset: s ? { x: s.cx / 2, y: -(s.cy - (pose.shiftY || 0)) / 2 } : { x: 0, y: 0 } }; // (offset: a share of the picture to slide the view by, so the box is centred)
 };
+// An element's OWN laid-out size (CSS px), without the transforms on it or its parents: getBoundingClientRect is the
+// box on screen, which a pack shaking (packs.css pr-shake: scale .6 to 1.7, turned) makes another size and shape than
+// the element, so a still drawn from it was framed for the wrong shape and, shown at its own pixel size, cut off
+// (CHECKLIST 201). Falls back to the box on screen for an element with no offset size (an SVG one)
+export const boxOf = (el) => {
+  if (el.offsetWidth !== undefined && (el.offsetWidth || el.offsetHeight)) return { width: el.offsetWidth, height: el.offsetHeight };
+  const r = el.getBoundingClientRect();
+  return { width: r.width, height: r.height };
+};
 export const drawStill = (renderer, el, model, pose) => {
   if (!renderer || renderer.getContext().isContextLost()) return false;
-  const r = el.getBoundingClientRect(), ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const r = boxOf(el), ratio = Math.min(window.devicePixelRatio || 1, 2);
   const w = Math.max(1, Math.round(r.width * ratio)), h = Math.max(1, Math.round(r.height * ratio));
   if (!r.width || !r.height) return false;
   if (pose.fov) { // (a pose with a lens of its own: framed tight, see poseView)
