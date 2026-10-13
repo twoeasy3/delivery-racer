@@ -64,14 +64,15 @@ export const boot = async ({ cars = ['commuter', 'sport', 'floatvan'], ownAll = 
       Object.defineProperty(g.Input, 'steer', { get: () => steer, configurable: true });
     },
     // run the game for `seconds`, calling each(t) after every step (return true to stop). Messages said on
-    // the way are gathered in g.said
+    // the way (the statuses too) are gathered in g.said
     said: [],
     run(seconds, each) {
       const step = 1 / 60;
       for (let t = 0; t < seconds; t += step) {
         g.Game.update(step);
         g.FxQueue.length = 0;
-        for (const line of g.Message.lines) if (line.text && !g.said.includes(line.text)) g.said.push(line.text);
+        // (and the statuses, CONFIG.messageTimes.sticky: said as an icon, their words kept for a recall, never on a line)
+        for (const line of [...g.Message.lines, ...g.Message.sticky.map(h => h.line)]) if (line.text && !g.said.includes(line.text)) g.said.push(line.text);
         if (each && each(t)) return t;
       }
       return seconds;

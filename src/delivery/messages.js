@@ -7,10 +7,12 @@
 // in place of the less important of the two (or, of two as important, the older). Only one
 // driver's reaction is ever up: a new one takes the place of one already showing. A message
 // the same as one still showing (another car destroyed) doesn't take a line: that one stays up longer.
-// A sticky message (CONFIG.messageTimes.sticky: a flat tyre, no brakes) is said the same way and for the
-// same time, and is also kept in Message.sticky for as long as its condition lasts (Message.conditions,
-// which player.js fills in): the HUD shows a small icon for each of those (never its words again, unless
-// the icon is touched: Message.recall).
+// A sticky message (CONFIG.messageTimes.sticky: a flat tyre, no brakes, airborne) is a STATUS: it is kept in
+// Message.sticky for as long as its condition lasts (Message.conditions, which player.js fills in), and the HUD
+// shows a small icon for each of those, on a desktop as on a phone. Its words never take a message line when it is
+// said (the owner, 13-Oct: "I'm seeing the airborne message instead of the icon"); they show only when the icon
+// is touched or clicked (Message.recall), and as the icon's tooltip. (CONFIG.messageTimes.stickyWords: true
+// puts back the old way, the words said on a line first and then the icon.)
 // ============================================================================
 import MESSAGES from './messages.json';
 import { CONFIG } from './config.js';
@@ -56,6 +58,11 @@ export const Message = {
     const text = this.pick(group, ...keys);
     if (!text) return null;
     const now = performance.now(), [top, bottom] = this.lines;
+    // (a status: its icon only, the words kept for a recall; see the head of this file)
+    const path = [group, ...keys].join('.');
+    if (CONFIG.messageTimes.sticky[path] && !CONFIG.messageTimes.stickyWords) {
+      return this.hold({ text, kind: kindOf(group, keys[0]), at: now, time: CONFIG.messageTimes.recall, id: nextId++ }, group, keys);
+    }
     const free = (line) => !line.text || now - line.at >= line.time * 1000;
     const outranks = (a, b) => RANK[a.kind] > RANK[b.kind] || (RANK[a.kind] === RANK[b.kind] && a.at > b.at);
     const kind = kindOf(group, keys[0]);
@@ -76,8 +83,8 @@ export const Message = {
     this.sticky.push({ line, path, condition, key: keys[keys.length - 1], progress: 0, total: 0, id: nextId++ });
     return line;
   },
-  // a sticky message's words again, for a moment (CONFIG.messageTimes.recall), as the ordinary message they
-  // were: the player has touched its icon. On the line it is still on, else a free one, else the older
+  // a sticky message's words, for a moment (CONFIG.messageTimes.recall), as an ordinary message: the player
+  // has touched or clicked its icon. On the line it is still on, else a free one, else the older
   recall(path) {
     const held = this.sticky.find(h => h.path === path);
     if (!held) return null;

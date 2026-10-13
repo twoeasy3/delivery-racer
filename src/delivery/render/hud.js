@@ -160,9 +160,11 @@ const syncCamAlert = () => {
   if (hudCamArrow) setStyle(hudCamArrow, 'transform', `rotate(${turn.toFixed(3)}rad)`);
 };
 const hudDangerFill = document.getElementById('dangerFill'), hudDangerNeedle = document.getElementById('dangerNeedle');
-// the sticky messages' icons (see messages.js; the pictures are render/hudIcons.js): one for each condition
-// still on, under the gauges, the oldest first. The words themselves were an ordinary message and have gone
-// as one; the ring round an icon drains as its condition runs out. Sizes and place: CONFIG.messageTimes.stickyIcons
+// the sticky messages' icons, the statuses (see messages.js; the pictures are render/hudIcons.js): one for each
+// condition still on, beside the gauges, the oldest first, on a desktop as on a phone. Their words are never a
+// message line of their own: the icon's tooltip, and a touch or a click of it (Message.recall), give them. A new
+// one comes in with a short pop (style.css, #sticky .icon.new) so it is seen; the ring round an icon drains as its
+// condition runs out. Sizes and place: CONFIG.messageTimes.stickyIcons
 const hudSticky = document.getElementById('sticky');
 for (const [name, byShape] of Object.entries(CONFIG.messageTimes.stickyIcons)) {
   for (const [shape, value] of Object.entries(byShape)) {
@@ -176,11 +178,12 @@ const syncSticky = () => {
   const held = Game.state === 'playing' && !Game.screensaver ? Message.sticky : [];
   const key = held.map(h => h.id).join('|');
   if (key !== stickyShown) {
+    const before = new Set(stickyShown.split('|'));
     stickyShown = key;
     hudSticky.textContent = '';
     for (const h of held) {
       const icon = document.createElement('button'), name = stickyName(h);
-      icon.className = 'icon';
+      icon.className = before.has(String(h.id)) ? 'icon' : 'icon new';
       icon.type = 'button';
       icon.tabIndex = -1; // (never the keyboard's: the keys drive the car)
       icon.title = name;
@@ -197,7 +200,7 @@ const syncSticky = () => {
     if (ring.dataset.left !== left) ring.setAttribute('stroke-dasharray', (ring.dataset.left = left) + ' 100');
   });
 };
-// a touch of an icon, or the pointer over it: its message again, briefly, as the ordinary message it was
+// a touch or a click of an icon, or the pointer over it: its words, briefly, as an ordinary message
 const recallSticky = (e) => {
   const icon = e.target.closest?.('.icon');
   if (!icon) return;
@@ -286,13 +289,14 @@ export const updateHud = () => {
   // (in a race, the player's place in it: one more than the racers ahead)
   // (round a lapped circuit, the laps count first)
   const raced = (laps, s) => (LEVEL.laps ? laps * Track.length : 0) + Track.along(s);
-  // (the words on a desktop; on a phone a small icon in their place: style.css, .ico and .w)
+  // (a small icon in place of the words, on a desktop as on a phone: style.css, .ico and .w; the words are its tooltip)
   const bustsLine = LEVEL.grid
     ? ['POSITION ', (1 + Traffic.cars.filter(c => c.racer && raced(c.laps || 0, c.s) > raced(Game.lap, Player.s)).length) + ' / ' + (LEVEL.grid.count + 1) +
       (LEVEL.grid.rival ? rivalLine() : '')] // (the lap is under the level's ring: see above)
     : ['BUSTS ', Game.busts + ' / ' + CONFIG.maxBusts];
   if (hudBusts.dataset.line !== bustsLine.join('')) {
     hudBusts.dataset.line = bustsLine.join('');
+    hudBusts.title = LEVEL.grid ? 'Position' : 'Busts';
     hudBusts.innerHTML = (LEVEL.grid ? ICON_POSITION : ICON_BUSTS) + '<span class="w">' + bustsLine[0] + '</span>' + bustsLine[1].replace('\n', '<br>');
   }
   syncBehind(raced);
