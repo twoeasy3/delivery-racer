@@ -277,4 +277,38 @@ async function conceptStrike() {
   at(mon + 5 * D); // (Saturday's run: its counters are the save's now, Tuesday's gone)
   P.noSave = false; P.save(); const code = P.exportCode(); P.data.eventRuns = {}; P.importCode(code);
   check(P.data.eventRuns?.['concept-strike']?.n?.join() === '1,0,0' && Events.tasks(strike)[0].count === 1, 'the counters come back through a save code (Export / Import save): ' + JSON.stringify(P.data.eventRuns));
+  await strikeShowroom(strike, level, from);
+}
+
+// THE CONCEPT STRIKE IN THE SHOWROOM (the owner, 13-Oct: "Concept Strike should filter the showroom to the stars requirement
+// AND the free try car"): clicking in from the stage, the showroom's imposed filter lets by EXACTLY the cars of task 1's
+// stars (events.js starsOf: gold tier and Blueprint cars, key cars by rating), the day's featured car (owned or not: lent),
+// and task 2's car (the day before's) if owned (else only by its stars); every weekday of a later run, by the fake clock; Sunday nothing.
+// A VIEW: the stage's car rule stays none (any car the player owns may still be driven)
+async function strikeShowroom(strike, level, from) {
+  const { showroomCars, carCard, imposedFilter, filterCards } = await g.load('showroomData.js');
+  const { starsOf } = await g.load('events.js');
+  const D = 86400e3, mon = from + 21 * D + 5 * 3600e3;
+  levels.selectSpecial(level);
+  Events.setFreeTry(strike, false);
+  const owned = (id) => Progress.owns(id);
+  for (let d = 0; d < 7; d++) {
+    at(mon + d * D);
+    const name = new Date(Events.now()).toString().slice(0, 3), day = Events.dayOf(strike), focus = g.cars.carFocus();
+    if (d === 6) {
+      check(name === 'Sun' && focus === null && g.cars.carRule(false) === null, 'showroom, Sun: nothing imposed (no run on)');
+      continue;
+    }
+    const stars = day.tasks[0].stars, prevCar = day.tasks.find(x => x.car)?.car || null;
+    const floor = showroomCars().map(car => carCard(car, false));
+    const forced = focus && imposedFilter({ list: true, test: focus.test }, floor, 'event');
+    const got = forced ? filterCards(floor, forced, null).map(c => c.id) : [];
+    const want = floor.filter(c => starsOf(c.car) === stars || c.id === day.car || (c.id === prevCar && owned(prevCar))).map(c => c.id);
+    const nStar = floor.filter(c => starsOf(c.car) === stars).length, bp = floor.filter(c => c.blueprint && starsOf(c.car) === stars).length;
+    check(name === ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d] && got.length === want.length && want.every(id => got.includes(id)) && got.includes(day.car)
+      && (!prevCar || got.includes(prevCar) === (owned(prevCar) || starsOf(g.cars.carById(prevCar)) === stars)) && g.cars.carRule(false) === null && g.cars.carRule(true) === null,
+      'showroom, ' + name + ': exactly ' + got.length + ' cars (' + nStar + ' of ' + stars + ' stars, ' + bp + ' of them Blueprint cars; the ' + day.car + ' free try'
+      + (prevCar ? '; the ' + prevCar + (owned(prevCar) ? ' owned: in' : starsOf(g.cars.carById(prevCar)) === stars ? ' not owned, in by its stars' : ' not owned: out') : '') + '), filter ' + JSON.stringify({ stars: forced?.stars, colour: forced?.colour, state: forced?.state })
+      + ', "' + focus?.label + '"; no car rule (any car still drivable)');
+  }
 }

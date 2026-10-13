@@ -295,6 +295,8 @@ setTierHooks({
       return t === null ? null : tierRule(t);
     } catch { return null; }
   },
+  // the showroom's focus (cars.js carFocus): a rotating event's day (events.js showroomFocus), else none
+  focus: () => { try { return Events.showroomFocus(currentLevel()); } catch { return null; } },
   blueOpen: () => Tiers.on() ? Tiers.tierOpen(6) || Tiers.legacy() > CONFIG.blueStarsAfter : null,
   // the garage's view of a car (the owner, 11-Oct): the cars of the tiers open are shown; those of the very next tier are
   // black silhouettes nobody can buy; those further on are not there. A car the player owns, or in no tier (earned,

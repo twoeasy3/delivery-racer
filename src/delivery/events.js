@@ -274,6 +274,23 @@ export const Events = {
     return { car, on: tryOn, ecu: Math.max(1, Ecu.reached(car)), max: Ecu.max(car), owned: Progress.owns(car.id) };
   },
   setFreeTry(event, on) { tryOn = !!on; this.syncTry(event); },
+  // the cars a rotating event's stage points the showroom at today (the owner, 13-Oct: "Concept Strike should filter the
+  // showroom to the stars requirement AND the free try car"): any car of the stars of the day's first stars task (starsOf:
+  // a gold tier's, the Blueprint cars' too, or a key car's rating), the day's featured car (lent: owned or not), and the car of
+  // a task that names one (the day before's concept car, 2 packs) when it is owned. A VIEW only: the stage still takes any
+  // car the player owns (render/showroom.js imposes it as a filter for the visit, as a car rule's). { test(car), label }
+  // ({tier:n} tokens: tiers.js richTiers), or null (no rotating event's stage, no run on: Sunday)
+  showroomFocus(level, t = this.now()) {
+    const event = this.stageOf(level)?.event, day = event?.days ? this.dayOf(event, t) : null;
+    if (!day?.live) return null;
+    const stars = day.tasks.find(task => task.stars && !task.car && !task.featured)?.stars || null;
+    const featured = carById(day.car), named = day.tasks.map(task => task.car).filter(id => id && id !== day.car && Progress.owns(id));
+    const ids = new Set([featured?.id, ...named].filter(Boolean));
+    const test = (car) => !!car && !car.silhouette && (ids.has(car.id) || (!!stars && starsOf(car) === stars));
+    const names = [...(featured ? ['the ' + featured.name + ' (free try)'] : []), ...named.map(id => 'your ' + (carById(id)?.name || id))];
+    const label = [stars ? '{tier:' + stars + '} cars' : '', ...names].filter(Boolean).join(', ').replace(/, ([^,]*)$/, ' or $1');
+    return { test, label, ids: [...ids], stars };
+  },
   // the stage's car lock follows the free try and the day (called as the menu draws): the day's car lent at the player's own
   // ECU (level.ownEcu: ecu.js), or no lock (any car the player owns)
   syncTry(event, t = this.now()) {
