@@ -197,8 +197,8 @@ const flames = (key, fire) => texture('flames-' + key, 128, 64, (ctx, w, h) => {
   });
 });
 
-// a worn bonnet: faded, sun-bleached patches, scratches, and the ghost of a peeled-off decal (a pair of stripes and a
-// ring). Neutral pale and dark marks, part see-through, so it suits any paint under it
+// worn paint (the bonnet and the roof): faded, sun-bleached patches and scratches. Neutral pale and dark marks, part
+// see-through, so it suits any paint under it
 const wear = () => texture('wear', 64, 64, (ctx, w, h) => {
   ctx.clearRect(0, 0, w, h);
   let seed = 7;
@@ -207,11 +207,6 @@ const wear = () => texture('wear', 64, 64, (ctx, w, h) => {
     ctx.fillStyle = 'rgba(255,244,220,' + (0.06 + rnd() * 0.08).toFixed(2) + ')';
     ctx.beginPath(); ctx.ellipse(rnd() * w, rnd() * h, 2 + rnd() * 7, 1.5 + rnd() * 4, rnd() * 3, 0, Math.PI * 2); ctx.fill();
   }
-  ctx.strokeStyle = 'rgba(255,240,215,0.16)'; // the ghost of the decal: two stripes down it, a ring between
-  ctx.lineWidth = 4;
-  for (const x of [22, 42]) { ctx.beginPath(); ctx.moveTo(x, 2); ctx.lineTo(x, 26); ctx.moveTo(x, 40); ctx.lineTo(x, 62); ctx.stroke(); }
-  ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.arc(32, 33, 9, 0, Math.PI * 2); ctx.stroke();
   ctx.lineWidth = 1;
   for (let i = 0; i < 8; i++) { // scratches, light and dark
     ctx.strokeStyle = i % 3 ? 'rgba(255,240,220,0.28)' : 'rgba(30,18,10,0.3)';
@@ -448,7 +443,7 @@ export const ORIG3_MODELS = {
   },
 
   // The Pick-Up: a lifted seventies square-body pickup, orange, worked hard. A big dark bull bar across its nose, a
-  // wide grille between square lamps, a worn bonnet (sun-bleached, scratched, the ghost of a decal); a square cab with a
+  // wide grille between square lamps, a worn bonnet and roof (sun-bleached, scratched); a square cab with a
   // sports bar of spot lamps over its roof; an open bed with wheel tubs, a tailgate and tall tail lamps; black flares
   // over chunky tyres, and the lift showing beneath: the frame, the axles and long shocks.
   pickup: (car) => {
@@ -465,7 +460,8 @@ export const ORIG3_MODELS = {
     const rise = Math.atan2(0.52, 0.4);
     slab(group, glass, ucw - 0.16, 0.02, 0.54, 0, 1.722 + 0.04, 0.64 + 0.04, rise);          // the windscreen
     box(group, glass, ucw - 0.4, 0.3, 0.02, 0, 1.76, -0.636);                                 // the back window
-    decal(group, worn, w - 0.22, 1.56, 0, 1.556, 1.66, 'y');                                  // the worn bonnet
+    decal(group, worn, w - 0.22, 1.56, 0, 1.556, 1.66, 'y');                                  // the worn bonnet,
+    decal(group, worn, ucw - 0.16, 0.8, 0, 2.054, -0.03, 'y', [0.2, 0.8]);                    // and roof
     // the bed: its sides (arches cut), the headboard, floor, wheel tubs and tailgate
     for (const s of [-1, 1]) side(group, paint, 0.1, [[-0.66, 0.95], [-0.66, 1.56, 0.03], [-2.55, 1.56, 0.03], [-2.55, 0.95], ...arch(RZ)], 0.02, s * (w / 2 - 0.05));
     box(group, paint, w - 0.2, 0.56, 0.08, 0, 1.25, -0.7);
