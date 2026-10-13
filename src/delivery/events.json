@@ -32,7 +32,7 @@
         { "car": "fishbowl", "level": "pocket-town", "clock": { "good": 95, "evil": 75 }, "tasks": [ { "stars": 2, "packs": 1, "limit": 3 }, { "stars": 2, "side": "good", "packs": 1, "limit": 3 }, { "stars": 2, "side": "evil", "packs": 1, "limit": 3 }, { "featured": true, "maxed": true, "key": true } ] },
         { "car": "midsummer", "level": "solstice-cliffs", "clock": { "good": 90, "evil": 70 }, "tasks": [ { "stars": 2, "packs": 1, "limit": 3 }, { "car": "fishbowl", "packs": 2, "limit": 3 }, { "featured": true, "maxed": true, "key": true } ] },
         { "car": "sixteen", "level": "grand-boulevard", "clock": { "good": 95, "evil": 75 }, "tasks": [ { "stars": 3, "packs": 1, "limit": 3 }, { "car": "midsummer", "packs": 2, "limit": 3 }, { "featured": true, "maxed": true, "key": true } ] },
-        { "car": "quadturbo", "tasks": [ { "stars": 4, "packs": 1, "limit": 3 }, { "car": "sixteen", "packs": 2, "limit": 3 }, { "featured": true, "maxed": true, "key": true } ] },
+        { "car": "quadturbo", "level": "turbo-quay", "clock": { "good": 95, "evil": 75 }, "tasks": [ { "stars": 4, "packs": 1, "limit": 3 }, { "car": "sixteen", "packs": 2, "limit": 3 }, { "featured": true, "maxed": true, "key": true } ] },
         { "car": "knifeedge", "tasks": [ { "stars": 5, "packs": 1, "limit": 3 }, { "car": "quadturbo", "packs": 2, "limit": 3 }, { "featured": true, "maxed": true, "key": true } ] },
         { "car": "windsong", "tasks": [ { "stars": 5, "packs": 1, "limit": 3 }, { "car": "knifeedge", "packs": 2, "limit": 3 }, { "featured": true, "maxed": true, "key": true } ] }
       ],

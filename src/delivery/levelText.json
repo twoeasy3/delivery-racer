@@ -587,5 +587,16 @@
       "good": "trophy",
       "evil": "lawyers"
     }
+  },
+  "turbo-quay": {
+    "name": "Turbo Quay",
+    "description": {
+      "good": "A globe for the harbour master, flat out down the container quay: a slalom of barriers through the S-bends, a freight train at the crossing, the tunnel under the stacks and a crane dropping its load at the end.",
+      "evil": "A crate of fireworks through a port full of semis. Thread the barrier chicane, beat the container train, and let the cranes rain boxes on everyone behind you."
+    },
+    "cargo": {
+      "good": "globe",
+      "evil": "fireworks"
+    }
   }
 }

@@ -98,6 +98,7 @@ if (opt('levels', false) || opt('cars', false) || shots.some(([, address]) => ad
   Object.assign(CINE, { 'pocket-town': '&at=660&ff=2&car=fishbowl' }); // (the Concept Strike's Monday, an event map: market day in the square, the Fishbowl in it)
   Object.assign(CINE, { 'solstice-cliffs': '&at=1000&ff=2&car=midsummer' }); // (Tuesday's: the Sea Cliff Bridge, the Midsummer on it)
   Object.assign(CINE, { 'grand-boulevard': '&at=1120&ff=2&car=sixteen' }); // (Wednesday's: the lake bridge, the wide load and the Sixteen on it)
+  Object.assign(CINE, { 'turbo-quay': '&at=1250&ff=2&car=quadturbo' }); // (Thursday's: the quay, a gantry crane over the level crossing, the Quad-Turbo)
   Object.assign(CINE, { 'hong-kong': '&at=400&ff=1&car=postvan' }); // (Hong Kong Harbour: the first ferry pier's clock tower and lanterns ahead on the promenade, the neon and the towers on the left; a tier-6 car, so the level starts)
   if (opt('levels', false)) {
     levels.LEVELS.forEach((level, i) => {
