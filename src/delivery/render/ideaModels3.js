@@ -602,7 +602,7 @@ export const IDEA_MODELS_3 = {
     const body = curved(group, paint, bw, rounded([[L * 0.97, 0.36], [L * 0.99, 0.68], [L * 0.62, 0.84], [L * 0.32, 1.4], [-L * 0.1, 1.44], [-L * 0.48, 1.08], [-L * 0.62, 0.86], [-L * 0.62, 0.36]], 0.14), 0.1);
     taper(group, paint, [-L * 0.6, bw * 0.8, 0.5, 1.12], [-L * 0.82, 0.3, 0.86, 1.04]);   // the tail cone, to the propeller
     curved(group, glass, bw + 0.02, rounded([[L * 0.3, 0.92], [L * 0.2, 1.3], [-L * 0.08, 1.34], [-L * 0.4, 0.98]], 0.1), 0.01); // the side glass,
-    slab(group, glass, bw * 0.8, 0.03, 0.66, 0, 1.18, L * 0.44, 0.95);                    // the windscreen
+    slab(group, glass, bw * 0.8, 0.03, 0.9, 0, 1.2, L * 0.47 + 0.05, 0.564);              // the windscreen (along the body's slope, from its bonnet line to its roof, stood just off the surface)
     box(group, paint, bw + 0.03, 0.4, 0.07, 0, 1.13, -L * 0.03);                           // and the pillar between
     box(group, wing, bw + 0.02, 0.07, L * 1.1, 0, 0.84, L * 0.05);                         // a cheat line down each side
     // the nose: lamps, a grille, a bumper, and the front wheels in their wings

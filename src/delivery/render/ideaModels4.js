@@ -237,8 +237,8 @@ export const IDEA_MODELS_4 = {
     shell.lineTo(tip[0], 0.36);
     const body = curved(group, paint, w * 0.92, shell, 0.06);
     curved(group, glass, w * 0.94, rounded([[L * 0.27, 0.98], [L * 0.1, 1.38], [-L * 0.4, 1.38], [-L * 0.58, 1.08], [-L * 0.58, 0.98]], 0.05), 0.01); // the side glass
-    screen(group, glass, w * 0.62, 0.03, 0.5, 0, 1.19, L * 0.21 + 0.03, 0.81);              // the windscreen,
-    slab(group, paint, 0.05, 0.05, 0.52, 0, 1.19, L * 0.21 + 0.035, 0.81);                 // split down the middle
+    screen(group, glass, w * 0.62, 0.03, 0.5, 0, 1.19 + 0.034, L * 0.21 + 0.03 + 0.036, 0.81);  // the windscreen (stood off the body's surface, which it was inside),
+    slab(group, paint, 0.05, 0.05, 0.52, 0, 1.19 + 0.034, L * 0.21 + 0.035 + 0.036, 0.81);                 // split down the middle
     prism(group, paint, 0.06, [[roof[0] + 0.02, roof[1] + 0.02], [-L * 0.6, 1.4], [-L * 0.985, 0.92], [-L * 0.985, 0.62]]); // the dorsal fin
     for (let i = 0; i < 4; i++) {                                                          // louvres across the tail, each side of the fin
       const [z, y] = bend(roof, bulge, tip, 0.5 + i * 0.1);
