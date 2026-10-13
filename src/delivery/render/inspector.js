@@ -107,7 +107,11 @@ const mountUi = () => {
   const views = el('div', 'ins-views', ...ORDER.map((id) => { const v = VIEWS[id]; const b = button('', v.name, v.name + ' view'); b.dataset.view = id; return b; }));
   const stats = el('div', 'ins-stats'), hint = el('div', 'ins-hint', window.matchMedia?.('(pointer: coarse)').matches
     ? 'Drag to turn  ·  pinch to zoom  ·  double-tap to reset' : 'Drag to turn  ·  wheel to zoom  ·  double-click to reset');
-  const top = el('div', 'ins-top', back, title, side), bottom = el('div', 'ins-bottom', views, stats, hint);
+  // (the model editor on this car, in a tab of its own: delivery/modeleditor.html; its address is made as it is opened)
+  const edit = el('a', 'ins-edit', 'Edit model');
+  edit.target = '_blank'; edit.rel = 'noopener'; edit.title = 'Edit this model, part by part (the model editor)'; edit.href = 'modeleditor.html';
+  edit.addEventListener('click', () => { edit.href = 'modeleditor.html?car=' + encodeURIComponent(car?.id || '') + (evil ? '&evil' : ''); });
+  const top = el('div', 'ins-top', back, title, edit, side), bottom = el('div', 'ins-bottom', views, stats, hint);
   root = el('div', 'overlay inspector hidden', stage, top, prev, next, bottom);
   root.id = 'inspector';
   root.setAttribute('role', 'dialog');

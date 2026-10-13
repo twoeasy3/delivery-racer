@@ -16,6 +16,7 @@ import '../menus.css';
 import { IDEA_CARS } from '../ideas.js';
 import { renderer } from './scene.js';
 import { makeIdeaModel } from './ideaModels.js';
+import { patchModel } from './modelpatchapply.js';
 
 // The lot, a page at a time (PAGE ideas, in the order of the list; only the page on show is built and drawn, so the
 // lot stays light): rows of eleven bays, two rows a page. On a page the longest park in the back row, whose bays are
@@ -84,7 +85,7 @@ const block = (car) => {
   return group;
 };
 const model = (car) => {
-  const mesh = makeIdeaModel(car) || block(car); // (as it is driven: see makeIdeaModel)
+  const mesh = patchModel(makeIdeaModel(car), car) || block(car); // (as it is driven: see makeIdeaModel; its model patch, if any)
   mesh.userData.car = car;
   return mesh;
 };

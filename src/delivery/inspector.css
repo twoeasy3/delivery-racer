@@ -17,6 +17,9 @@
 #inspector .ins-top > * { pointer-events: auto; }
 #inspector .ins-back { background: #1d2430; color: #fff; }
 #inspector .ins-back:hover { background: #2b3546; }
+#inspector .ins-edit { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 10px; background: rgba(255, 255, 255, .7); color: #1d2430;
+  font: 700 14px/1 system-ui, sans-serif; text-decoration: none; white-space: nowrap; box-shadow: 0 1px 4px rgba(20, 30, 45, .22); }
+#inspector .ins-edit:hover { background: #fff; }
 #inspector .ins-title { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; pointer-events: none; }
 #inspector .ins-title b { font: 800 20px/1.15 system-ui, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #inspector .ins-title small { font: 600 12px/1.2 system-ui, sans-serif; letter-spacing: .04em; text-transform: uppercase; opacity: .62; }

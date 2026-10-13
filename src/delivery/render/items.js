@@ -22,6 +22,7 @@ import { damageShare, dentModel, scorch } from './dents.js';
 import { SpeedCameras } from '../cameras.js';
 import { Hazards } from '../hazards.js';
 import { Delivery } from '../delivery.js';
+import { patchModel } from './modelpatchapply.js';
 
 // Everything here that belongs to the loaded level (bridges, obstacles, pickups, targets)
 // lives in this group and is rebuilt by buildItems() each time a level is loaded.
@@ -35,6 +36,7 @@ const playerModel = (car) => {
   if (!playerModels[car.id]) {
     const model = car.idea ? makeIdeaModel(car) : MODELS[car.model](car); // (a car idea's is its own: ideas.js, render/ideaModels.js)
     if (car.super || car.superKit) addSuperKit(model, car); // (a Super car, or an earned car built as one: its base car's model with the body kit on)
+    patchModel(model, car); // (its model patch, if it has one: render/modelpatchapply.js)
     model.userData.body.material.transparent = true; // (so it can go see-through as a ghost)
     carMesh.add(model);
     playerModels[car.id] = model;

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="/car-icon.svg">
+<title>Delivery Run Model Editor</title>
+</head>
+<body class="model-editor">
+<aside id="side">
+  <header>
+    <a class="back" href="./">&larr; Back to the game</a>
+    <a class="back other" href="editor.html">Level Editor</a>
+    <h1>Model Editor</h1>
+  </header>
+  <section>
+    <label class="row">Car <select id="pick"></select></label>
+    <div class="buttons">
+      <span class="seg" role="group" aria-label="Side"><button id="good" class="on">Good</button><button id="evil">Evil</button></span>
+      <button id="undo" title="Undo (Ctrl+Z)">&#8630; Undo</button>
+      <button id="redo" title="Redo (Ctrl+Y)">&#8631; Redo</button>
+    </div>
+    <div class="buttons">
+      <button id="download" class="primary" title="The patch as src/delivery/modelpatches/&lt;car id&gt;.json">Download patch</button>
+      <button id="load" title="Open a patch .json (or drop one on the page)">Load patch</button>
+      <button id="reset" title="Throw away every edit of this car">Reset car</button>
+      <a id="preview" class="button" target="_blank" title="The garage's inspector with this patch (?modelpatch=local)">See in game</a>
+      <input type="file" id="file" accept=".json,application/json" hidden>
+    </div>
+    <p class="note" id="status"></p>
+  </section>
+  <nav class="tabs" id="tabs">
+    <button data-tab="parts">Parts</button><button data-tab="part">Part</button><button data-tab="json">JSON</button>
+  </nav>
+  <div class="tab" id="tab-parts">
+    <section>
+      <input id="search" type="search" placeholder="Search parts: name, role, kind, id..." aria-label="Search the parts">
+      <div class="buttons add"><span class="cap">Add</span><button data-add="box">Box</button><button data-add="cylinder">Cylinder</button><button data-add="sphere">Sphere</button><button data-add="cone">Cone</button>
+        <button id="showAll" title="Show every part (the eyes and solo only change this view, not the patch)">Show all</button></div>
+      <div id="parts" class="parts" role="listbox" aria-label="The model's parts"></div>
+    </section>
+  </div>
+  <div class="tab" id="tab-part" hidden>
+    <section id="partBox"><p class="note">Tap a part in the view or the list.</p></section>
+  </div>
+  <div class="tab" id="tab-json" hidden>
+    <section>
+      <h2>The patch as JSON <span class="small">src/delivery/modelpatches/<span id="jsonCar"></span>.json</span></h2>
+      <p class="note">Edits over the model the code builds: by part id. Applied as soon as it is valid.</p>
+      <textarea id="json" class="json" spellcheck="false" aria-label="The patch, as JSON"></textarea>
+      <div class="buttons"><button id="tidy">Tidy</button><button id="copy">Copy</button></div>
+      <p class="note" id="jsonNote"></p>
+    </section>
+  </div>
+</aside>
+<main id="viewBox">
+  <canvas id="game" aria-label="The car's model"></canvas>
+  <div class="viewButtons top">
+    <span class="seg" role="group" aria-label="View"><button data-view="front">Front</button><button data-view="rear">Rear</button><button data-view="left">Left</button><button data-view="right">Right</button><button data-view="top">Top</button><button data-view="34" class="on">3/4</button></span>
+  </div>
+  <div class="viewButtons tools">
+    <span class="seg" role="group" aria-label="Gizmo"><button data-mode="translate" class="on" title="Move (G)">Move</button><button data-mode="rotate" title="Rotate (R)">Rotate</button><button data-mode="scale" title="Scale (S)">Scale</button></span>
+    <label class="check"><input type="checkbox" id="snap"><span>Snap</span></label>
+    <label class="check"><input type="checkbox" id="wire"><span>Wire</span></label>
+    <label class="check"><input type="checkbox" id="bbox"><span>Bounds</span></label>
+    <label class="check"><input type="checkbox" id="hitbox"><span>Hitbox</span></label>
+    <label class="check"><input type="checkbox" id="wheels"><span>Wheels</span></label>
+  </div>
+  <button id="panelToggle" class="panelToggle" aria-label="Show or hide the panel">Panel</button>
+  <div class="stats" id="stats"></div>
+</main>
+<script type="module" src="/src/delivery/modeleditor.js"></script>
+</body>
+</html>

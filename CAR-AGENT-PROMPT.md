@@ -65,6 +65,13 @@ wheel arches. A defect you do not look for will be there. Fix, re-render, repeat
 (delete it before finishing) and keep scratch scripts out of the repo (use a unique name; do not reuse a name another
 agent may have used).
 
+A quicker look, and small fixes without code: the MODEL EDITOR (`/delivery/modeleditor.html?car=<id>`) shows any
+car's model part by part (shapes, triangles, the draw calls against the budget above, the hitbox, the wheels). Its
+edits are a PATCH (`src/delivery/modelpatches/<car id>.json`, applied by the game over your code), NOT a replacement
+for modelling: fix a model in its code; when you change a model that has a patch, run
+`node scripts/model-patch.mjs --all --check` (a part the patch names that your change removed is reported as
+unmatched: tell the owner, do not delete the patch).
+
 ## Wiring and checks
 - Follow the ideas.js conventions (entry fields, `model` name, the note/tooltip rules in the README); update the idea
   count in scripts/.ideas-check.mjs and the ideas.js header.
