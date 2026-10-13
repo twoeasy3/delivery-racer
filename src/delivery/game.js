@@ -511,6 +511,8 @@ export const formatTime = (t) => {
 };
 
 const playing = () => Game.state === 'playing';
+// (a touch is the driving stick only while a level is played: every screen else scrolls and swipes untouched, input.js)
+Input.inPlay = () => playing() && !Game.inMenu;
 Input.on('throw', () => playing() && !Game.paused && !Game.screensaver && Packages.throwOne());
 Input.on('confirm', () => Delivery.active ? Delivery.skip() : !playing() && !Game.inMenu && Game.startAsked()); // (Enter during the delivery at the kerb skips it)
 Input.on('pause', () => Game.togglePause());

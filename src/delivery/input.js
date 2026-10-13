@@ -44,18 +44,23 @@ export const Input = (() => {
   const stick = (d) => Math.abs(d) < DEAD_PX ? 0
     : Math.max(-1, Math.min(1, (d - Math.sign(d) * DEAD_PX) / (FULL_PX - DEAD_PX)));
   let touchId = null, startX = 0, startY = 0;
-  // (the menus are left alone, so their lists can be scrolled. A touch is a menu's if it BEGAN on one: judged once, at its
-  // start, and kept by the finger's id: a menu drawn again under a finger (its element gone, so `closest` finds no menu) must
-  // not turn the rest of that touch into the driving stick, whose preventDefault would end the scroll and the touch)
-  const isUi = (e) => e.target.closest && e.target.closest('button, .pad, .overlay, .shop-screen, #showroom, .pack-reveal, .pack-contents');
+  // The stick is the RUN's only: a touch is the stick's when a level is being played (Input.inPlay, told by game.js) and the
+  // touch did not begin on a control or a screen over the road (a pause, a button). Every other touch (any menu, the Shop,
+  // the showroom, a sheet, the album, a What's inside, before a run or after one) is left entirely alone: no stick and no
+  // preventDefault, so every screen scrolls and swipes as the browser does it (the owner, 13-Oct: "just allow all UI screens
+  // to swipe"). Judged once, at the touch's start, and kept by the finger's id: a screen drawn again under a finger must not
+  // turn the rest of that touch into the stick, whose preventDefault would end the scroll and the touch.
+  const isUi = (e) => e.target.closest && e.target.closest('button, .pad, .overlay, .shop-screen, #showroom, .pack-reveal, .pack-contents, .menu-dialog');
   const uiTouches = new Set();
+  const inPlay = () => !!Input.inPlay?.();
   window.addEventListener('touchstart', (e) => {
-    if (isUi(e)) { for (const t of e.changedTouches) uiTouches.add(t.identifier); return; }
+    if (!inPlay() || isUi(e)) { for (const t of e.changedTouches) uiTouches.add(t.identifier); return; }
     if (touchId !== null) return;
     const t = e.changedTouches[0];
     touchId = t.identifier; startX = t.clientX; startY = t.clientY;
   }, { passive: true });
   window.addEventListener('touchmove', (e) => {
+    if (!inPlay() && touchId === null) return; // (no run: nothing of the stick's, nothing stopped)
     if ([...e.changedTouches].every(t => uiTouches.has(t.identifier))) return;
     e.preventDefault(); // no page scroll / pinch zoom during play
     for (const t of e.changedTouches) {
@@ -72,7 +77,7 @@ export const Input = (() => {
   };
   window.addEventListener('touchend', endTouch);
   window.addEventListener('touchcancel', endTouch);
-  window.addEventListener('gesturestart', (e) => e.preventDefault());
+  window.addEventListener('gesturestart', (e) => { if (inPlay()) e.preventDefault(); });
 
   const clampAxis = (v) => Math.max(-1, Math.min(1, v));
   // (read as whole 64ths: what a replay records is exactly what was driven, replay.js)
@@ -80,6 +85,7 @@ export const Input = (() => {
   return {
     on, emit, hold,
     tap: null,  // told of every event passed on (replay.js records them)
+    inPlay: null, // () => a level is being played (game.js): only then is a touch the stick's
     fed: null,  // { steer, throttle, auto }: a replay's controls, in place of the player's while it plays
     autoGas: false, // the accelerator held down by itself; braking still overrides it (a menu option)
     get steer() { return this.fed ? this.fed.steer : q(clampAxis(keyAxis(STEER_KEYS) + touchSteer + pressed.right - pressed.left)); },

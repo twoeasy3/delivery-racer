@@ -108,7 +108,7 @@
 /* (a card's height: half the room the rows have, by container units; the screen's height where they are not known) */
 #showroom .sr-row { --h: clamp(150px, calc(50dvh - 70px), 330px); --h: clamp(150px, calc(50cqh - 23px), 340px); flex: 1 1 auto; min-width: 0; display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, var(--h));
   grid-auto-columns: calc(var(--h) * .78); gap: 12px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
-  scrollbar-width: none; scroll-snap-type: x proximity; padding: 10px 4px 12px; touch-action: pan-x; }
+  scrollbar-width: none; scroll-snap-type: x proximity; padding: 10px 4px 12px; touch-action: pan-x pan-y; }
 #showroom .sr-row::-webkit-scrollbar { display: none; }
 #showroom .sr-row.dragging, #showroom .sr-row.wheeling { cursor: grabbing; scroll-snap-type: none; user-select: none; }
 #showroom .sr-row.wheeling { cursor: default; }
