@@ -69,3 +69,4 @@ window.addEventListener('popstate', (event) => {
   }
   flush();
 });
+window.__navDebug = () => ({ stack: stack.map(e => e.name + (e.pushed ? '' : '?')), ignore: pending }); // PROBE-ONLY
