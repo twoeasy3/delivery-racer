@@ -35,6 +35,7 @@
 // promoted to the roster as tier-4 Legendary blueprint cars the same day (cars.js FILLER_CARS): 41 left.
 // The sixth batch, five more (CHECKLIST item 171): two older vehicles (a blown vintage tourer, a split-level highway
 // coach) and three modern ones (a horseshoe-grilled hypercar, a tall electric city car, a coupe crossover): 46 ideas.
+// One concept car more (CHECKLIST item 301): a small open roadster after the Pontiac Solstice concept (2002).
 
 // ============================================================================
 export const IDEA_CARS = [
@@ -165,6 +166,10 @@ export const IDEA_CARS = [
   { id: 'gameviewer', name: 'Game-Drive Truck', basedOn: 'Toyota Land Cruiser 79 game viewer', model: 'gameviewer', color: 0x9a8a5a, evilColor: 0x2e4a2e,
     hw: 0.95, hl: 2.85, height: 2.4, note: 'No doors, three rows of seats climbing under a canopy, and a chair for the tracker out on the bull bar.',
     maxSpeed: 28, accel: 8, agility: 0.95, crossing: 1, health: 240, mass: 2, sound: 'suv' },
+  // (a concept car: model in render/ideaModels9.js)
+  { id: 'midsummer', name: 'Midsummer Roadster', basedOn: 'Pontiac Solstice concept (2002)', model: 'midsummer', color: 0xd2401f, evilColor: 0x2b2d33,
+    hw: 0.9, hl: 1.97, height: 1.12, note: 'A short, round two-seater with its wheels out at the corners and a hump behind each seat.',
+    maxSpeed: 36, accel: 12, agility: 1.3, crossing: 0.3, health: 110, mass: 1, sound: 'miata' },
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
 export const IDEA_CAR = Object.fromEntries(IDEA_CARS.map(car => [car.id, car]));
