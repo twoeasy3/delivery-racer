@@ -251,4 +251,102 @@ export const IDEA_MODELS_7 = {
     group.userData = { body, animate: () => {} };
     return group;
   },
+
+  // A sixteen-cylinder grand coupe (a Cadillac Sixteen, 2003): huge and long and stately. A tall upright shield of a
+  // grille in an upright face, a tall slab of lamps at each corner; a bonnet half the car long in bright metal with a
+  // hinge down its middle and vents for the sixteen cylinders behind each front wheel; a straight crease nose to
+  // tail; a short glasshouse set far back under a flat roof, falling into a long fastback; a tall slab of red at
+  // each corner of the tail; enormous many-spoked wheels. It sits still
+  sixteen: (car) => {
+    const group = new THREE.Group();
+    const paint = lambert(car.color), glass = lambert(GLASS), trim = lambert(TRIM), chrome = lambert(CHROME), bonnet = lambert(0xd3d6da);
+    for (const m of [paint, glass, bonnet]) m.side = THREE.DoubleSide;
+    const AXLES = [[1.92, 0.43, 0.27, 0.98], [-1.64, 0.43, 0.29, 0.99]];
+    // the body, section by section: [z, floor, sill's half width, its height, the crease's (the widest), its height,
+    // the shoulder's, its height, the deck's edge, its height, the middle's height]
+    const KEYS = [
+      [-2.84, 0.4, 0.74, 0.44, 0.84, 0.8, 0.8, 0.86, 0.6, 0.88, 0.89],
+      [-2.7, 0.33, 0.86, 0.38, 0.93, 0.86, 0.9, 0.91, 0.72, 0.94, 0.95],
+      [-2.2, 0.27, 0.92, 0.33, 0.97, 0.92, 0.94, 0.96, 0.78, 0.98, 0.99],
+      [-1.64, 0.24, 0.94, 0.32, 0.99, 0.95, 0.97, 0.99, 0.8, 1.0, 1.01],
+      [-0.8, 0.22, 0.93, 0.3, 0.98, 0.95, 0.96, 0.99, 0.8, 1.02, 1.04],
+      [0.3, 0.22, 0.94, 0.3, 0.99, 0.96, 0.97, 1.0, 0.82, 1.04, 1.06],
+      [1.92, 0.24, 0.94, 0.32, 0.99, 0.95, 0.97, 0.99, 0.82, 1.02, 1.04],
+      [2.72, 0.28, 0.92, 0.34, 0.97, 0.93, 0.95, 0.98, 0.8, 1.01, 1.03],
+      [2.84, 0.34, 0.82, 0.38, 0.87, 0.9, 0.85, 0.95, 0.72, 0.98, 1.0],
+    ];
+    const half = (z) => {
+      const [y0, ws, ys, wc, yc, wsh, ysh, wd, yd, yt] = along(KEYS, z);
+      const h = [[0, y0], [ws - 0.05, y0], [ws, ys], [wc, yc], [wsh, ysh], [wd, yd], [0, yt]];
+      const a = archAt(AXLES, z, 0.05);
+      if (a) {
+        h[1][0] = Math.min(h[1][0], a.inner - 0.02); h[2][0] = Math.min(h[2][0], a.inner); h[2][1] = Math.max(h[2][1], a.lip);
+        for (let i = 3; i <= 5; i++) h[i][1] = Math.max(h[i][1], h[i - 1][1] + (i === 3 ? 0.03 : 0.012));
+      }
+      return h;
+    };
+    const body = place(group, loftGeo(stationsOf(KEYS, AXLES, 0.05).map(z => [z, mirror(half(z))]), true, true), paint, 0, 0, 0);
+    const { sideX, topY } = surface(half);
+    // the bonnet, a plate of bright metal lying on the top from the face to the windscreen, the hinge down its middle
+    const lid = (z) => { const h = half(z), x = h[5][0] - 0.04, y = h[5][1] + (h[6][1] - h[5][1]) * 0.04 / h[5][0]; return [z, mirror([[0, h[6][1] - 0.02], [x, y - 0.02], [x, y + 0.008], [0, h[6][1] + 0.01]])]; };
+    place(group, loftGeo([2.82, 2.72, 2.3, 1.92, 1.5, 1.0, 0.6, 0.48].map(lid), true, true), bonnet, 0, 0, 0);
+    const hinge = [0.55, 2.7].map(z => half(z)[6][1] + 0.01 + 0.012);
+    merged(group, chrome, [bx(0.035, 0.02, 2.15, 0, (hinge[0] + hinge[1]) / 2, 1.625, Math.atan2(hinge[0] - hinge[1], 2.15))]);
+    // the glasshouse: [z, half width at its foot, the foot's height, half width at the roof, the roof's height]. Glass
+    // from the windscreen to the end of the side windows; the roof over it and the fastback behind in the paint
+    const CAB = [[-2.62, 0.5, 0.94, 0.26, 0.96], [-2.1, 0.64, 0.97, 0.4, 1.12], [-1.45, 0.72, 0.99, 0.5, 1.3], [-0.95, 0.75, 1.0, 0.54, 1.385],
+      [-0.3, 0.77, 1.02, 0.55, 1.4], [0.05, 0.78, 1.03, 0.52, 1.28], [0.5, 0.76, 1.03, 0.42, 1.05]];
+    const cabRing = (z, grow) => {
+      const [wb, yb, wt, yt] = along(CAB, z), m = 0.5 * (wb + wt) + 0.06;
+      return [z, mirror([[0, yb - 0.1], [wb + grow, yb - 0.1], [wb + grow, yb], [m + grow, (yb + yt) / 2 + grow], [wt + grow, yt + grow], [0, yt + 0.015 + grow]])];
+    };
+    place(group, loftGeo([0.5, 0.05, -0.3, -0.95, -1.45].map(z => cabRing(z, 0)), true, true), glass, 0, 0, 0);
+    place(group, loftGeo([-1.38, -1.45, -2.1, -2.62].map(z => cabRing(z, 0.012)), true, true), paint, 0, 0, 0);
+    // the glass roof: a rail down each edge of it and a spine down its middle, two bars across; and the windscreen's
+    // pillars, from the scuttle to the roof
+    const onCab = (z, k) => { const [, , wt, yt] = along(CAB, z); return new THREE.Vector3(wt * k, yt + 0.015 * (1 - k), z); };
+    const rail = new THREE.CatmullRomCurve3([-0.3, -0.6, -0.95, -1.2, -1.42].map(z => onCab(z, 0.96)));
+    const spine = new THREE.CatmullRomCurve3([-0.3, -0.6, -0.95, -1.2, -1.42].map(z => onCab(z, 0)));
+    const pillar = (k) => { const [wb, yb] = along(CAB, 0.5), [, , wt, yt] = along(CAB, -0.3); return new THREE.Vector3(wb + (wt * 0.96 - wb) * k, yb + (yt - yb) * k, 0.5 - 0.8 * k); };
+    const A = new THREE.LineCurve3(pillar(0), pillar(1));
+    for (const side of [-1, 1]) {
+      place(group, shared('sixteenA', () => new THREE.TubeGeometry(A, 1, 0.032, 4, false)), paint, 0, 0, 0).scale.x = side;
+      place(group, shared('sixteenRail', () => new THREE.TubeGeometry(rail, 6, 0.032, 4, false)), paint, 0, 0, 0).scale.x = side;
+    }
+    place(group, new THREE.TubeGeometry(spine, 6, 0.025, 4, false), paint, 0, 0, 0);
+    merged(group, paint, [-0.3, -0.95].map(z => { const [, , wt, yt] = along(CAB, z); return bx(wt * 2, 0.04, 0.06, 0, yt + 0.008, z); }));
+    // the face: the tall shield of a grille (a chrome frame, the black in it, a crate of bright bars), a slab of lamps
+    // at each corner, the black slot under it all
+    const ZN = 2.84;
+    merged(group, chrome, [facing([[-0.34, 0.96], [0.34, 0.96], [0.24, 0.4], [-0.24, 0.4]], 0.05, ZN + 0.02)]);
+    merged(group, trim, [facing([[-0.3, 0.93], [0.3, 0.93], [0.21, 0.43], [-0.21, 0.43]], 0.05, ZN + 0.03)]);
+    merged(group, chrome, [
+      ...[0.53, 0.63, 0.73, 0.83].map(y => bx(0.42 + (y - 0.43) * 0.18, 0.018, 0.02, 0, y, ZN + 0.035)),
+      ...[-0.12, 0, 0.12].map(x => bx(0.018, 0.48, 0.02, x, 0.68, ZN + 0.035)),
+    ]);
+    merged(group, trim, [-1, 1].map(side => bx(0.16, 0.44, 0.06, side * 0.66, 0.7, ZN - 0.005)));
+    merged(group, LAMP, [-1, 1].flatMap(side => [0.62, 0.7].map(x => bx(0.05, 0.38, 0.02, side * x, 0.71, ZN + 0.032))));
+    merged(group, AMBER, [-1, 1].map(side => bx(0.03, 0.12, 0.06, side * (sideX(2.6, 0.75) - 0.004), 0.75, 2.6)));
+    merged(group, trim, [bx(1.3, 0.1, 0.05, 0, 0.36, ZN - 0.01)]);
+    // the flanks: the vents behind each front wheel, a bright sill, mirrors
+    const vents = [];
+    for (const side of [-1, 1]) for (const k of [0, 1, 2]) {
+      const z = 1.3 - k * 0.12, y = 0.7;
+      vents.push(bx(0.02, 0.3, 0.035, side * (sideX(z, y) + 0.004), y, z));
+    }
+    merged(group, chrome, vents);
+    merged(group, chrome, [-1, 1].map(side => bx(0.02, 0.04, 2.6, side * (sideX(0.14, 0.36) + 0.006), 0.36, 0.14)));
+    merged(group, paint, [-1, 1].flatMap(side => [bx(0.2, 0.1, 0.13, side * 0.92, 1.12, 0.3), bx(0.16, 0.025, 0.05, side * 0.8, 1.09, 0.3)]));
+    // the tail: a tall slab of red at each corner, the stop lamp at the roof's end, reversing lamps, two exhausts, the plate
+    const ZT = -2.84;
+    merged(group, TAIL, [-1, 1].map(side => bx(0.07, 0.36, 0.03, side * 0.66, 0.66, ZT - 0.012)));
+    merged(group, trim, [-1, 1].map(side => bx(0.11, 0.4, 0.02, side * 0.66, 0.66, ZT - 0.002)));
+    box(group, TAIL, 0.36, 0.03, 0.02, 0, along(CAB, -2.62)[3] - 0.005, -2.632);                // (in the fastback's end)
+    merged(group, LAMP, [-1, 1].map(side => bx(0.12, 0.05, 0.02, side * 0.42, 0.52, ZT - 0.006)));
+    merged(group, chrome, [bx(1.0, 0.03, 0.03, 0, 0.8, ZT - 0.006), ...[-1, 1].map(side => cyl(0.05, 0.08, side * 0.3, 0.42, ZT - 0.01, 'z', 10))]);
+    box(group, WHITE, 0.42, 0.1, 0.02, 0, 0.62, ZT - 0.008);
+    alloys(group, AXLES, chrome, 8, trim);
+    group.userData = { body, animate: () => {}, livery: (evil) => bonnet.color.setHex(evil ? 0x4a4e56 : 0xd3d6da) };
+    return group;
+  },
 };

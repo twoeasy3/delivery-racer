@@ -169,6 +169,9 @@ export const IDEA_CARS = [
   { id: 'knifeedge', name: 'Knife-Edge Supercar', basedOn: 'Cadillac Cien (2002 concept car)', model: 'knifeedge', color: 0xaab3be, evilColor: 0x7a1830,
     hw: 1.0, hl: 2.23, height: 1.13, note: 'All flat facets and sharp creases, with lamps stacked up its wings like blades and its engine behind you.',
     maxSpeed: 47, accel: 19, agility: 1.35, crossing: 0.2, health: 150, mass: 1.2, sound: 'lmp' },
+  { id: 'sixteen', name: 'Sixteen-Cylinder Coupe', basedOn: 'Cadillac Sixteen (2003 concept car)', model: 'sixteen', color: 0x9aa1a9, evilColor: 0x25262e,
+    hw: 1.0, hl: 2.84, height: 1.4, note: 'A bonnet half the car long over sixteen cylinders, wheels nearly as tall as a child, and the cabin far back where it belongs.',
+    maxSpeed: 40, accel: 14, agility: 0.95, crossing: 0.3, health: 280, mass: 1.9, sound: 'classicgt' },
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
 export const IDEA_CAR = Object.fromEntries(IDEA_CARS.map(car => [car.id, car]));
