@@ -405,7 +405,7 @@ export const EVENT_CARS = [
 const KEY_STYLE = { horseshoe: 'smart', rocketfin: 'smart', swancar: 'classic', solarracer: 'smart', moonrover: 'smart', monowheel: 'classic', snocat: 'classic', hotdog: 'fob' };
 // the Key cars' star ratings (the owner, 12-Oct: "add star ratings to the current key cars too"): magenta stars as a mark of how strong the
 // car is against the tiers, NOT a tier (`rating`, not `tier`: no level rule, no ECU ladder (a key car's max stays 5) reads it)
-const KEY_RATING = { horseshoe: 5, rocketfin: 5, solarracer: 5, monowheel: 4, hotdog: 4, moonrover: 4, swancar: 4, snocat: 3 };
+const KEY_RATING = { horseshoe: 5, rocketfin: 5, solarracer: 5, monowheel: 3, hotdog: 4, moonrover: 4, swancar: 4, snocat: 3 };
 const bespoke = (car) => ({ ...car, rating: KEY_RATING[car.id] || 0, bespoke: true, rarity: 'legendary', placeholder: true, price: 0, keyModel: KEY_STYLE[car.id] || 'fob' });
 export const BESPOKE_CARS = [
   // the all-rounder: quick, solid, a grand tourer
@@ -427,7 +427,7 @@ export const BESPOKE_CARS = [
   // the weaver: narrower than anything, the quickest getaway and the quickest sideways, fragile
   bespoke({ id: 'monowheel', name: 'Monowheel', basedOn: 'Dynasphere monowheel (1932)', model: 'monowheel', color: 0xe8a317, evilColor: 0x6a3a8a,
     hw: 0.5, hl: 1.0, height: 2.0, note: 'One wheel taller than its rider, who sits inside it. It rolls; he does not.',
-    maxSpeed: 44, accel: 21, agility: 1.8, crossing: 0.5, health: 100, mass: 1, sound: 'junker' }),
+    maxSpeed: 38, accel: 15, agility: 1.8, crossing: 0.5, health: 110, mass: 1, sound: 'junker' }),
   // (no key to be had for now: `keyAvailable: false`: in no pack's Bespoke pool and in no event; the owner, 12-Oct. Their blueprints still drop)
   // the expedition: a glass cab on tracks, slow to start, takes the deep snow and shrugs off a crash
   bespoke({ id: 'snocat', name: 'Snowcat', basedOn: 'Tucker Sno-Cat 443', model: 'snocat', color: 0xe8482a, evilColor: 0x1f4a6a, keyAvailable: false, noPacks: true,
