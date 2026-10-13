@@ -2056,47 +2056,8 @@ export const MODELS = {
   // A Checker Marathon cab (rebuilt: render/modelsOrig4.js)
   taxi: (car) => ORIG4_MODELS.taxi(car),
 
-  // A 2002 Jeep Liberty: tall and square, round headlights either side of the seven-slot
-  // grille, black arch flares, roof rails and a spare wheel on the tailgate. It rocks a
-  // little on its soft springs.
-  suv: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.42;
-    const shell = new THREE.Group(); // (what rocks on the springs: everything but the wheels)
-    group.add(shell);
-    const paint = lambert(car.color), glass = lambert(GLASS), trim = lambert(TRIM), chrome = lambert(CHROME);
-    const body = box(shell, paint, w, 0.75, l, 0, 0.78, 0);
-    box(shell, paint, w * 0.96, 0.1, l * 0.24, 0, 1.18, l * 0.37);                // bonnet
-    box(shell, glass, w * 0.9, 0.5, l * 0.6, 0, 1.42, -l * 0.08);                 // glasshouse
-    box(shell, paint, w * 0.92, 0.08, l * 0.62, 0, 1.7, -l * 0.08);               // roof
-    screen(shell, glass, w * 0.88, 0.05, 0.62, 0, 1.4, l * 0.25, 0.55);             // windscreen
-    box(shell, paint, w * 0.56, 0.4, 0.06, 0, 0.9, l / 2 + 0.02);                 // grille...
-    for (let i = 0; i < 7; i++) box(shell, trim, 0.06, 0.3, 0.04, (i - 3) * w * 0.075, 0.9, l / 2 + 0.05); // ...its seven slots
-    box(shell, trim, w + 0.1, 0.24, 0.18, 0, 0.5, l / 2 + 0.05);                  // bumpers
-    box(shell, trim, w + 0.1, 0.24, 0.18, 0, 0.5, -l / 2 - 0.05);
-    // the spare wheel on the tailgate
-    disc(shell, lambert(0x141414), 0.38, 0.24, 0, 1.0, -l / 2 - 0.15);
-    disc(shell, lambert(0x8d9096), 0.2, 0.26, 0, 1.0, -l / 2 - 0.15);
-    for (const side of [-1, 1]) {
-      disc(shell, LAMP, 0.15, 0.08, side * w * 0.38, 0.98, l / 2 + 0.03);         // round headlights
-      box(shell, TAIL, 0.14, 0.42, 0.1, side * w * 0.43, 1.0, -l / 2 - 0.01);       // tall tail lights
-      for (const z of [0.18, -0.08, -0.36]) box(shell, paint, 0.09, 0.5, 0.1, side * w * 0.45, 1.42, l * z); // pillars
-      box(shell, trim, 0.06, 0.06, l * 0.56, side * w * 0.4, 1.78, -l * 0.08);      // roof rails
-      box(shell, trim, 0.14, 0.1, 0.12, side * (w / 2 + 0.07), 1.22, l * 0.2);      // mirrors
-      for (const z of [0.3, -0.3]) box(shell, trim, 0.1, 0.12, 1.1, side * (w / 2 + 0.03), R * 2 + 0.08, l * z); // arch flares
-      box(shell, chrome, 0.02, 0.05, l * 0.3, side * (w / 2 + 0.005), 0.98, 0);    // door handles strip
-      wheel(group, R, 0.32, side * (w / 2 - 0.05), R, l * 0.3);
-      wheel(group, R, 0.32, side * (w / 2 - 0.05), R, -l * 0.3);
-    }
-    group.userData = {
-      body,
-      animate: (t) => {
-        shell.rotation.z = Math.sin(t * 1.7) * 0.012;
-        shell.position.y = Math.sin(t * 3.4) * 0.012;
-      },
-    };
-    return group;
-  },
+  // A boxy 4x4 (rebuilt: render/modelsOrig4.js)
+  suv: (car) => ORIG4_MODELS.suv(car),
 
   // A Ford lo-boy hot rod: no fenders, a long narrow bonnet with the engine out in the open
   // (chrome stacks and all), big wheels at the back, skinny ones up front, and a chopped

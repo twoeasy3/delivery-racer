@@ -425,3 +425,108 @@ ORIG4_MODELS.miata = (car) => {
   };
   return group;
 };
+
+// a wheel arch's flare, side on: a half ring round the arch (centre [z, y], radius r inside, `t` wide), `depth` across
+const flare = (z, y, r, t, depth, x) => {
+  const shape = new THREE.Shape();
+  shape.moveTo(z - r - t, y);
+  shape.absarc(z, y, r + t, Math.PI, 0, true);
+  shape.lineTo(z + r, y);
+  shape.absarc(z, y, r, 0, Math.PI, false);
+  shape.closePath();
+  const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 5 });
+  geo.rotateY(-Math.PI / 2);
+  return geo.translate(x + depth / 2, 0, 0);
+};
+
+// ---- the SUV --------------------------------------------------------------------------------------------------------
+// A boxy 4x4 of the eighties and nineties (a Jeep Cherokee): a tall, squared body on big tyres; a flat bonnet to an
+// upright windscreen; a long flat roof under a rack (its rails and bars in the livery's second colour: silver for Good,
+// navy for Evil) down to a near-upright tailgate; three windows a side. A chunky grille of chrome bars on black between
+// rectangular headlamps in chrome bezels, amber indicators under them; black bumpers, black wheel-arch flares and black
+// cladding along the sills (its one strong colour break). Tall tail lamps up the rear corners (tail over brake over
+// indicator), reversing lamps, the plate on the tailgate; chunky tyres on silver hubs. It rocks a little on its soft
+// springs (everything but the wheels).
+ORIG4_MODELS.suv = (car) => {
+  const group = new THREE.Group();
+  const shell = new THREE.Group(); // (what rocks on the springs: everything but the wheels)
+  group.add(shell);
+  const W = car.hw, L = car.hl, R = 0.42; // (as before: radius 0.42, the axles at ±0.3 of the length)
+  const k = 'suv' + [W, L].join(',');
+  const paint = lambert(car.color), rack = lambert(0xc8ccd2);
+  const AX = 0.6 * L, BW = W * 2, BEV = 0.05, SX = BW / 2;
+  const ARCH = R + 0.12, AY = R - 0.02;
+  const NOSE = L - 0.06, TAILZ = -L + 0.06, BELT = 1.1;
+  const bodyOutline = [
+    [NOSE - 0.04, 0.44], [NOSE, 0.5], [NOSE + 0.01, 1.0], [NOSE - 0.04, BELT - 0.01], [AX - 0.3, BELT],
+    [TAILZ + 0.02, BELT], [TAILZ, 1.0], [TAILZ, 0.5], [TAILZ + 0.04, 0.44],
+    [-AX - ARCH - 0.03, 0.42], ['arc', -AX, AY, ARCH], [AX - ARCH, 0.4], ['arc', AX, AY, ARCH], [AX + ARCH + 0.03, 0.42],
+  ];
+  const CW = BW - 0.12, CBEV = 0.04, TAPER = [1.15, 1.73, 0.06];
+  const WS = [[AX - 0.33, BELT - 0.01], [AX - 0.88, 1.69]], BL = [[TAILZ + 0.02, BELT - 0.01], [TAILZ + 0.08, 1.69]];
+  const cabinOutline = [WS[0], WS[1], [WS[1][0] - 0.1, 1.73], [BL[1][0] + 0.1, 1.73], BL[1], BL[0]];
+  const body = place(shell, shared(k + 'body', () => merge([
+    extrudeSide(bodyOutline, BW, BEV),
+    extrudeSide(cabinOutline, CW, CBEV, TAPER),
+  ])), paint);
+  // the glass: windscreen, the tailgate's window, three windows a side (front door, rear door, the load bay)
+  const CH = CW / 2, LIFT = CBEV + 0.006, foot = BELT + CBEV + 0.06, top = 1.66;
+  const aAt = (y) => WS[0][0] + (WS[1][0] - WS[0][0]) * (y - WS[0][1]) / (WS[1][1] - WS[0][1]); // (the windscreen's edge at y)
+  parts(shell, k + 'glass', GLASS, () => [
+    slopeGlass(WS[0], WS[1], CH, TAPER, 0.08, [0.1, 0.05], LIFT),
+    slopeGlass(BL[0], BL[1], CH, TAPER, 0.1, [0.18, 0.06], LIFT),
+    ...sideGlass([
+      [[aAt(foot) - 0.1, foot], [0.02, foot], [0.02, top], [aAt(top) - 0.1, top]],
+      [[-0.08, foot], [-0.98, foot], [-0.98, top], [-0.08, top]],
+      [[-1.08, foot], [TAILZ + 0.2, foot], [TAILZ + 0.22, top], [-1.08, top]],
+    ], CH, TAPER, 0.006),
+  ]);
+  const FZ = NOSE + BEV + 0.01, RZ = TAILZ - BEV;
+  // black: the grille's backing, the bumpers, the flares, the sill cladding, the mirrors, the wells, the rack's feet
+  parts(shell, k + 'black', TRIM, () => {
+    const g = [bx(1.0, 0.3, 0.03, 0, 0.86, FZ - 0.008)];
+    for (const [z, s] of [[FZ + 0.06, 1], [RZ - 0.06, -1]]) {
+      g.push(bx(BW + 0.06, 0.24, 0.16, 0, 0.55, z));                                                // a chunky bumper...
+      for (const side of [-1, 1]) g.push(bx(0.12, 0.24, 0.34, side * (SX - 0.03), 0.55, z - s * 0.14)); // ...wrapping round
+    }
+    for (const z of [AX, -AX]) g.push(bx(BW - 0.6, 0.6, ARCH * 2 - 0.12, 0, 0.66, z));             // the wells, inboard
+    for (const side of [-1, 1]) {
+      for (const z of [AX, -AX]) g.push(flare(z, AY, ARCH - 0.04, 0.1, 0.1, side > 0 ? SX - 0.04 : -SX - 0.06));
+      g.push(bx(0.05, 0.18, 2 * AX - 2 * ARCH - 0.1, side * (SX + 0.01), 0.52, 0));                 // the sill cladding
+      g.push(bx(0.06, 0.03, 0.08, side * (SX + 0.01), BELT + 0.08, AX - 0.45));                     // a mirror's foot...
+      g.push(bx(0.07, 0.15, 0.16, side * (SX + 0.07), BELT + 0.16, AX - 0.45));                     // ...and its head
+      for (const z of [0.6, -1.7]) g.push(bx(0.08, 0.06, 0.1, side * 0.74, 1.79, z));             // the rack's feet
+    }
+    return g;
+  });
+  // the roof rack: two rails and four bars (the livery's second colour)
+  parts(shell, k + 'rack', rack, () => [
+    ...[-1, 1].map(side => bx(0.06, 0.05, 2.5, side * 0.74, 1.84, -0.55)),
+    ...[0.4, -0.3, -1.0, -1.6].map(z => bx(1.52, 0.035, 0.06, 0, 1.85, z)),
+  ]);
+  // chrome: the grille's frame and bars, the lamps' bezels
+  parts(shell, k + 'chrome', CHROME, () => {
+    const g = [bx(1.04, 0.05, 0.05, 0, 1.03, FZ), bx(1.04, 0.05, 0.05, 0, 0.69, FZ)];
+    for (let i = 0; i < 3; i++) g.push(bx(0.98, 0.035, 0.04, 0, 0.775 + i * 0.085, FZ));            // its bars
+    for (const x of [-0.5, -0.17, 0.17, 0.5]) g.push(bx(0.04, 0.3, 0.04, x, 0.86, FZ));
+    for (const side of [-1, 1]) g.push(bx(0.36, 0.24, 0.04, side * 0.76, 0.88, FZ - 0.006));       // the lamps' bezels
+    return g;
+  });
+  parts(shell, k + 'lamp', LAMP, () => [-1, 1].map(side => bx(0.3, 0.17, 0.03, side * 0.76, 0.9, FZ + 0.012)));
+  parts(shell, k + 'amber', AMBER, () => [-1, 1].flatMap(side => [bx(0.3, 0.05, 0.03, side * 0.76, 0.735, FZ + 0.006), bx(0.16, 0.08, 0.03, side * 0.84, 0.72, RZ - 0.01)]));
+  parts(shell, k + 'tail', TAIL, () => [-1, 1].map(side => bx(0.16, 0.18, 0.03, side * 0.84, 1.02, RZ - 0.01)));
+  parts(shell, k + 'stop', STOP, () => [-1, 1].map(side => bx(0.16, 0.14, 0.03, side * 0.84, 0.86, RZ - 0.01)));
+  parts(shell, k + 'rev', REVERSE, () => [-1, 1].map(side => bx(0.16, 0.06, 0.03, side * 0.84, 0.645, RZ - 0.01)));
+  parts(shell, k + 'plate', PLATE, () => [bx(0.42, 0.14, 0.02, 0, 0.84, RZ - 0.01), bx(0.42, 0.12, 0.02, 0, 0.55, FZ + 0.145)]);
+  // the wheels: chunky tyres on silver hubs
+  for (const side of [-1, 1]) for (const z of [AX, -AX]) wheel(group, k, R, 0.32, side * (W - 0.08), z, 0.25, SILVER, TRIM);
+  group.userData = {
+    body,
+    animate: (t) => {
+      shell.rotation.z = Math.sin(t * 1.7) * 0.012;
+      shell.position.y = Math.sin(t * 3.4) * 0.012;
+    },
+    livery: (evil) => rack.color.setHex(evil ? 0x1f3f8f : 0xc8ccd2),
+  };
+  return group;
+};
