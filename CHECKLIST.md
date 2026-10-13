@@ -249,8 +249,8 @@ Working list, from the owner's ideas of 2026-10-09. `[x]` done, `[~]` partly don
     | Day | Featured car (stars) | Task 1 | Task 2 | Task 3 | Task 4 | Pack (featured: x1 90%, x3 10%) |
     |---|---|---|---|---|---|---|
     | Mon | Fishbowl Runabout (2) | any 2-star car: 1 pack, 3 a day | any 2-star car as Good: 1 pack, 3 a day | any 2-star car as Evil: 1 pack, 3 a day | the Fishbowl at max ECU (5): its key | Fishbowl Strike pack |
-    | Tue | Midsummer Roadster (3) | any 3-star car: 1 pack, 3 a day | the Fishbowl: 2 packs, 3 a day | the Midsummer at max ECU: its key | | Midsummer Strike pack |
-    | Wed | Sixteen-Cylinder Coupe (4) | any 4-star car: 1, x3 | the Midsummer: 2, x3 | the Sixteen at max ECU: its key | | Sixteen Strike pack |
+    | Tue | Midsummer Roadster (3) | any 4-star car (the owner, 13-Oct: bumped by 1): 1 pack, 3 a day | the Fishbowl: 2 packs, 3 a day | the Midsummer at max ECU: its key | | Midsummer Strike pack |
+    | Wed | Sixteen-Cylinder Coupe (4) | any 5-star car (bumped by 1): 1, x3 | the Midsummer: 2, x3 | the Sixteen at max ECU: its key | | Sixteen Strike pack |
     | Thu | Quad-Turbo Supercar (5) | any 5-star car: 1, x3 | the Sixteen: 2, x3 | the Quad-Turbo at max ECU: its key | | Quad-Turbo Strike pack |
     | Fri | Knife-Edge Supercar (5) | any 5-star car: 1, x3 | the Quad-Turbo: 2, x3 | the Knife-Edge at max ECU: its key | | Knife-Edge Strike pack |
     | Sat | Wind-Song Racer (5) | any 5-star car: 1, x3 | the Knife-Edge: 2, x3 | the Wind-Song at max ECU: its key | | Wind-Song Strike pack |

@@ -196,7 +196,7 @@ async function conceptStrike() {
   const level = strike.stages[0].level;
   check(level.id === 'concept-strike-1' && level.stage.map === 'back-roads' && level.clock.good === 300 && level.clock.evil === 300 && !level.allowedCars && !level.car,
     'its stage: Back Roads as concept-strike-1, a 300 s TEST clock both sides, any car (no car rule, no lock)');
-  const want = [['fishbowl', 2, 4, 'Mon'], ['midsummer', 3, 3, 'Tue'], ['sixteen', 4, 3, 'Wed'], ['quadturbo', 5, 3, 'Thu'], ['knifeedge', 5, 3, 'Fri'], ['windsong', 5, 3, 'Sat']];
+  const want = [['fishbowl', 2, 4, 'Mon', 2], ['midsummer', 3, 3, 'Tue', 4], ['sixteen', 4, 3, 'Wed', 5], ['quadturbo', 5, 3, 'Thu', 5], ['knifeedge', 5, 3, 'Fri', 5], ['windsong', 5, 3, 'Sat', 5]] // (the last: task 1's stars; the owner, 13-Oct, bumped Tue, Wed by 1);
   const prev = [null, 'fishbowl', 'midsummer', 'sixteen', 'quadturbo', 'knifeedge'];
   for (const week of [0, 3]) for (let d = 0; d < 7; d++) {
     const t = from + (week * 7 + d) * D + 5 * H, name = new Date(t).toString().slice(0, 3), day = Events.dayOf(strike, t), c = Events.countdownOf(strike, t);
@@ -206,8 +206,8 @@ async function conceptStrike() {
         'week ' + (week + 1) + ' Sun: no event (listed, shut, "' + Events.state(strike, 0, t).why + '"), Next in Monday (the Fishbowl)');
       continue;
     }
-    const [car, stars, n, wd] = want[d], tasks = Events.tasks(strike, t), C = g.cars.carById(car);
-    const shape = tasks.length === n && tasks[0].task.stars === stars && tasks[0].task.packs === 1 && tasks[0].limit === 3
+    const [car, stars, n, wd, task1] = want[d], tasks = Events.tasks(strike, t), C = g.cars.carById(car);
+    const shape = tasks.length === n && tasks[0].task.stars === task1 && tasks[0].task.packs === 1 && tasks[0].limit === 3
       && (d === 0 ? tasks[1].task.side === 'good' && tasks[2].task.side === 'evil' && tasks[1].task.stars === 2 && tasks[2].task.stars === 2 : tasks[1].task.car === prev[d] && tasks[1].task.packs === 2 && tasks[1].limit === 3)
       && tasks[n - 1].task.key && tasks[n - 1].task.maxed && tasks[n - 1].task.featured && tasks[n - 1].limit === 1;
     check(name === wd && Events.live(strike, t) && day.live && day.car === car && C?.concept && C.rating === stars && day.pack === 'concept-strike-' + (d + 1)
@@ -216,7 +216,7 @@ async function conceptStrike() {
   }
   // playing it: Monday of the third run
   Progress.reset(); Progress.noSave = true; Progress.data.tierBase = 1;
-  const two = g.cars.CARS.find(c => g.cars.carTier(c) === 2), three = g.cars.CARS.find(c => g.cars.carTier(c) === 3);
+  const two = g.cars.CARS.find(c => g.cars.carTier(c) === 2), three = g.cars.CARS.find(c => g.cars.carTier(c) === 4);
   Progress.data.cars.push(two.id, three.id);
   const P = Progress, held = (k) => (P.data.packs || {})['concept-strike-' + k] || 0;
   const run = (evil, carId = null) => {
@@ -241,7 +241,7 @@ async function conceptStrike() {
   run(false, two.id); run(true, two.id);
   check(held(1) === 9 && Events.tasks(strike).slice(0, 3).every(x => x.done && x.count === 3), 'every pack task at its limit: nothing more this run (9 packs)');
   run(false, three.id);
-  check(held(1) === 9, 'a 3-star car on Monday pays nothing');
+  check(held(1) === 9, 'a 4-star car on Monday pays nothing');
   // the free try: the Fishbowl lent at the player's own ECU (none: ECU1); not maxed, so no key
   Events.setFreeTry(strike, true);
   const tryRun = run(false);
@@ -258,7 +258,7 @@ async function conceptStrike() {
   check(Events.tasks(strike).every(x => x.count === 0) && Events.dayOf(strike).car === 'midsummer', 'Tuesday: a new run, every counter at 0, the Midsummer Roadster featured');
   run(false, three.id);
   const fish = [1, 2, 3, 4].map(() => { run(false, 'fishbowl'); return held(2); });
-  check(held(1) === 9 && fish.join() === '3,5,7,7', 'Tuesday: a 3-star car 1 pack; the Fishbowl 2 packs a time, 3 times (' + fish.join(', ') + ' Midsummer packs held)');
+  check(held(1) === 9 && fish.join() === '3,5,7,7', 'Tuesday: a 4-star car 1 pack; the Fishbowl 2 packs a time, 3 times (' + fish.join(', ') + ' Midsummer packs held)');
   check(JSON.stringify(P.data.eventRuns['concept-strike']) === JSON.stringify({ day: new Date(mon + D - 5 * H).toISOString().length && Events.window(strike).start && (() => { const x = new Date(Events.window(strike).start); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); })(), n: [1, 3, 0] }),
     'the save holds the run\'s counters: ' + JSON.stringify(P.data.eventRuns['concept-strike']));
   // a 5-star day (Saturday): any 5-star car, the Knife-Edge, the Wind-Song's key
