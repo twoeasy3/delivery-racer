@@ -53,25 +53,28 @@ optgroup('Car ideas', ideas);
 // ---- the view --------------------------------------------------------------------------------------------------
 const canvas = $('game'); // (the game's one renderer draws on it: render/scene.js; pixels capped at 2x, 1.5x on a touch screen)
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xcfd5de);
 const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 200);
 scene.add(new THREE.HemisphereLight(0xffffff, 0x6b7280, 1.4));
 const sun = new THREE.DirectionalLight(0xfff4e2, 2.0);
 sun.position.set(5, 10, 6);
-sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.radius = 6;
-Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 1, far: 30 });
 scene.add(sun);
 const fill = new THREE.DirectionalLight(0xdfe8ff, 0.7);
 fill.position.set(-6, 4, -5);
 scene.add(fill);
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.ShadowMaterial({ opacity: 0.25 }));
+// the car's soft shadow: a blurred dark patch the size of its footprint (no shadow map: cheap on a tablet)
+const shadowTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d'), grad = g.createRadialGradient(64, 64, 8, 64, 64, 64);
+  grad.addColorStop(0, 'rgba(0,0,0,0.55)'); grad.addColorStop(0.6, 'rgba(0,0,0,0.3)'); grad.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+})();
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }));
 ground.rotation.x = -Math.PI / 2;
-ground.receiveShadow = true;
+ground.position.y = 0.003;
+ground.renderOrder = -1;
 scene.add(ground);
 const grid = new THREE.GridHelper(20, 40, 0x8a94a6, 0xaab3c2);
 grid.material.transparent = true; grid.material.opacity = 0.55;
@@ -129,8 +132,9 @@ const rebuild = () => {
   const { parts, nodes, base } = extractParts(model);
   S.model = model; S.parts = parts; S.nodes = nodes;
   if (!S.base) S.base = base;
-  model.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = false; } });
   scene.add(model);
+  const foot = new THREE.Box3().setFromObject(model, true).getSize(new THREE.Vector3());
+  ground.scale.set(Math.max(0.5, foot.x * 1.5), Math.max(0.5, foot.z * 1.35), 1);
   applyViewFlags();
   select(keep && nodes.has(keep) ? keep : null, false);
   renderList(); renderStats(); renderJson();
@@ -302,8 +306,11 @@ const select = (id, show = true) => {
   hoverBox.visible = false;
   document.querySelectorAll('.prow').forEach(r => r.classList.toggle('sel', r.dataset.id === S.sel));
   if (show) {
-    const row = document.querySelector('.prow.sel');
-    row?.scrollIntoView({ block: 'nearest' });
+    const row = document.querySelector('.prow.sel'), list = $('parts');
+    if (row && list.scrollHeight > list.clientHeight) { // (the list scrolls, not the panel)
+      const top = row.offsetTop;
+      if (top < list.scrollTop || top + row.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = top - list.clientHeight / 2;
+    }
     renderPart();
     syncUrl();
   }
@@ -545,5 +552,5 @@ patchesReady.then(() => {
   if (params.get('tab')) showTab(params.get('tab'));
   frame(view);
   loop();
-  window.__modelEditor = S; // (for the checks and a curious console)
+  window.__modelEditor = Object.assign(S, { three: { camera, scene, gizmo, renderer, THREE }, api: { select, commit, undo, mirror, duplicate, remove } }); // (for the checks and a curious console)
 });
