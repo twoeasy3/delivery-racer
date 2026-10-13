@@ -564,7 +564,7 @@ export const ORIG2_MODELS = {
 
   // A squared, aggressive 1980s panel van on a lift (the A-Team's, more or less): a slab of a box with a short nose,
   // the windscreen raked back over it, a big square front with a chrome barred grille between rectangular lamps,
-  // tinted cab windows, a round speaker on each flank, a racing stripe up the nose, over the roof and down the back, and slanting up each flank (white
+  // tinted cab windows, a round porthole window high on each flank toward the back, a racing stripe up the nose, over the roof and down the back, and slanting up each flank (white
   // on a Good one, red on an Evil one: userData.livery), wide tyres on plain silver hubs. It sits still
   darkvan: (car) => {
     const group = new THREE.Group();
@@ -587,9 +587,9 @@ export const ORIG2_MODELS = {
       // the racing stripe, slanting up the flank from behind the cab to the tail
       const s0 = [L * 0.28, 1.22], s1 = [-L + 0.1, 1.86], t = 0.2;
       P.add(stripe, flankPane([[s0[0], s0[1]], [s0[0], s0[1] + t], [s1[0], s1[1] + t], [s1[0], s1[1]]], sx, () => half + 0.002));
-      // a round speaker on each flank, at the front of the side panel just behind the cab, where the stripe starts
-      P.add(STEEL, dsc(0.22, 0.03, 0, 0, 0, 14).rotateY(Math.PI / 2).translate(sx * (half + 0.006), 1.5, L * 0.3));
-      P.add(TRIM, dsc(0.165, 0.03, 0, 0, 0, 14).rotateY(Math.PI / 2).translate(sx * (half + 0.014), 1.5, L * 0.3));
+      // a big round porthole window high on each flank, toward the back (a chrome ring round dark glass)
+      P.add(CHROME, dsc(0.3, 0.03, 0, 0, 0, 20).rotateY(Math.PI / 2).translate(sx * (half + 0.006), 1.8, -L * 0.3));
+      P.add(VANGLASS, dsc(0.25, 0.03, 0, 0, 0, 20).rotateY(Math.PI / 2).translate(sx * (half + 0.014), 1.8, -L * 0.3));
       // black mirrors on the doors
       P.add(TRIM, bx(0.08, 0.24, 0.16, sx * (half + 0.08), 1.78, aLine(1.7) - 0.05));
       // rectangular lamps each side of the grille; tall tail lamps, the brake lamp on top
