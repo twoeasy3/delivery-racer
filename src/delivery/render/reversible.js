@@ -60,10 +60,11 @@ const build = () => {
         post.position.set(x - (lo + hi) / 2, 3.3, 0);
         gantry.add(post);
       }
-      // (the sign hangs under the beam over the lane, facing back down the road at the player)
+      // (the sign hangs under the beam over the lane, facing back down the road at the player: turned by the
+      // road's heading, the gantry's +z is down the road and its +x is to the LEFT, -lat, so the lane's place
+      // across is negated, and the face is the box's -z one, unturned)
       const sign = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 0.12), [steel, steel, steel, steel, steel, ARROW]);
-      sign.position.set(Track.laneOffset(r.lane, s) - (lo + hi) / 2, 5.3, 0);
-      sign.rotation.y = Math.PI;
+      sign.position.set((lo + hi) / 2 - Track.laneOffset(r.lane, s), 5.3, 0);
       gantry.add(sign);
       group.add(gantry);
       signs.push({ mesh: sign, i });
