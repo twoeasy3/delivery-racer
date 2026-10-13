@@ -177,7 +177,7 @@ export const ORIG3_MODELS = {
     const L = car.hl, w = car.hw * 2, R = 0.36, WX = w / 2 - 0.12, WZ = L * 0.6, cw = w * 0.9;
     const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(CHROME), trim = lambert(TRIM), dark = lambert(0x121418);
     const cloth = new THREE.MeshLambertMaterial({ map: curtains('pale', ['#e4dff0', '#b5adc8']), alphaTest: 0.5 });
-    const plate = lambert(0xece6cc), vinyl = lambert(0x16161a);
+    const plate = lambert(0xece6cc);
     // the body below the waist: a long slab with its arches cut out round the wheels
     const arch = (zc) => {
       const pts = [], ra = R + 0.1;
@@ -233,9 +233,6 @@ export const ORIG3_MODELS = {
     box(group, plate, 0.46, 0.13, 0.02, 0, 0.66, -L - 0.005);                              // the number plate
     decal(group, cloth, cw * 0.62, 0.36, 0, 1.18, -2.7 - 0.05 - 0.006, '-z');                // the rear door's curtained window
     box(group, chrome, 0.16, 0.03, 0.03, 0, 0.88, -L - 0.01);                              // its handle
-    // (an Evil one, in white, has a black vinyl roof over the coach: the landau look)
-    box(group, vinyl, cw - 0.1, 0.02, 2.66, 0, 1.645, -1.08);
-    for (const s of [-1, 1]) box(group, vinyl, 0.02, 0.5, 0.66, s * (cw / 2 + 0.003), 1.33, -2.2);
     const keep = new Set();
     const geo = wheelGeo(R, 0.28), tyre = lambert(0x141414), hub = lambert(0xc4c8ce);
     for (const s of [-1, 1]) for (const z of [WZ, -WZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub, chrome)) keep.add(part);
@@ -245,7 +242,7 @@ export const ORIG3_MODELS = {
       animate: () => {},
       livery: (evil) => {
         cloth.map = evil ? curtains('dark', ['#6a3290', '#3a1850']) : curtains('pale', ['#e4dff0', '#b5adc8']);
-        merged.get(vinyl).visible = evil;
+        chrome.color.setHex(evil ? 0x8a919b : CHROME); // (on a white body bright chrome is lost: a darker steel shows its lines)
       },
     };
     group.userData.livery(false);
