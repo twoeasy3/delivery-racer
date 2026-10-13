@@ -313,7 +313,8 @@ export const Game = {
     if (reward) resultNote.textContent += '  |  Event reward: ' + reward + '!';
     // a special event's stage delivered: done, and the grand prize after the last (events.js)
     const staged = outcome === 'delivered' && !Replay.playing ? Events.delivered(LEVEL) : null;
-    if (staged) resultNote.textContent += '  |  Stage ' + staged.stage + ' of ' + staged.of + ' done' + (staged.prize ? '  |  You won the ' + staged.prize + '!' : '');
+    if (staged && !staged.repeat) resultNote.textContent += '  |  Stage ' + staged.stage + ' of ' + staged.of + ' done' + (staged.prize ? '  |  You won the ' + staged.prize + '!' : '');
+    if (staged?.repeat) resultNote.textContent += '  |  ' + staged.name + ' run done'; // (a recurring event, played again and again: its pack below, every time)
     // card packs given (packs.js): a Career level's first delivery, a special event's stage or prize. Opened at once over these
     // results, a beat after they are up (the reveal, render/packs.js)
     const packs = [...(outcome === 'delivered' && !Replay.playing ? [Packs.levelDone(LEVEL, firstTime)] : []), ...(staged?.packs || [])].filter(Boolean);

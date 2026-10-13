@@ -12,7 +12,8 @@ import { Tiers } from './tiers.js';
 import { LEVELS } from './levels.js';
 import { levelName } from './levelText.js';
 import { Ecu } from './ecu.js';
-import { liveEventFor } from './carsources.js';
+import { packName } from './packs.js';
+import { liveEventFor, huntEventFor } from './carsources.js';
 
 // the words players see on a car that cannot be driven (the owner's, 12-Oct)
 export const LOCKED_WORDS = {
@@ -82,13 +83,16 @@ export const carCard = (car, evil = false) => {
   const preview = carPreview(car); // (the tiers: 'show' | 'teaser' | 'hide' | null)
   const hidden = !unlocked && !owned && bp === 0 && (preview === 'teaser' || preview === 'hide');
   // blacked out: a tier not open yet, or a car that cannot be had at the moment (a key car whose key is not to be had, an earned car that is off) with none owned and no blueprint
-  const dark = hidden || (!unlocked && !owned && bp === 0 && ((car.keyAvailable === false && !blueprint) || !!(car.earned && car.off) || !!(blueprint && car.noPacks)));
+  // (a blueprint car in no regular pack that an event's pack features, the Car Hunt's Blower Tourer: obtainable, not dark)
+  const hunt = blueprint && car.noPacks ? huntEventFor(car) : null;
+  const dark = hidden || (!unlocked && !owned && bp === 0 && ((car.keyAvailable === false && !blueprint) || !!(car.earned && car.off) || !!(blueprint && car.noPacks && !hunt)));
   // why it cannot be driven
   let reason = '', hint = '';
   if (!unlocked) {
     if (blueprint) {
       reason = 'Collect ' + Math.max(0, x - bp) + ' more blueprint' + (x - bp === 1 ? '' : 's') + ' to unlock this car';
-      hint = 'Blueprints come in card packs';
+      hint = hunt ? 'Blueprints come in the ' + packName(hunt.pack) + ': one for every ' + hunt.event.name + ' run' + (hunt.live ? '' : ' (back ' + new Date(hunt.next).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ')')
+        : 'Blueprints come in card packs';
     } else if (CARS.includes(car) && !car.evergreen) {
       reason = LOCKED_WORDS.lot;
       hint = forSale(car) ? 'At ' + CAR_LOT + ' for $' + car.price.toFixed(2) : tierWhy(car) ? 'Not for sale yet: ' + tierWhy(car) : 'Not for sale yet';
@@ -107,7 +111,7 @@ export const carCard = (car, evil = false) => {
     car, id: car.id,
     name: dark ? 'Locked car' : car.name,
     stars: stars(car), starColour: starColour(car), tier: tierOf(car),
-    rarity: rarityOf(car), hidden, dark,
+    rarity: rarityOf(car), hidden, dark, hunt,
     ecu, max, maxed, upgradable, blueprint, key: !blueprint,
     blueprints: bp, perEcu: x, have: maxed ? toNext : have, toNext,
     owned, unlocked, barred,
@@ -138,11 +142,11 @@ export const overlayOf = (card) => {
   if (!card || card.unlocked) return null;
   const car = card.car;
   if (car.earned && car.off) return { kind: 'unavailable', title: 'Not available', line: 'at the moment' };
-  if (card.blueprint && car.noPacks && card.blueprints === 0) return { kind: 'unavailable', title: 'Not available', line: 'at the moment' }; // (a blueprint car in no pack for now: nothing to collect)
+  if (card.blueprint && car.noPacks && card.blueprints === 0 && !card.hunt) return { kind: 'unavailable', title: 'Not available', line: 'at the moment' }; // (a blueprint car in no pack for now: nothing to collect)
   if (card.hidden) return { kind: 'tier', title: 'Tier locked', line: card.tier ? 'Opens with the {tier:' + card.tier + '} tier' : 'Opens with a later tier' };
   if (card.blueprint) {
     const need = card.perEcu, have = Math.max(0, Math.min(need, card.blueprints));
-    return { kind: 'blueprint', title: have + '/' + need + ' blueprints', line: 'From card packs', have, need };
+    return { kind: 'blueprint', title: have + '/' + need + ' blueprints', line: card.hunt ? (card.hunt.live ? 'Win it in the ' : 'From the ') + card.hunt.event.name : 'From card packs', have, need }; // (the Car Hunt's car: its event, by name)
   }
   if (CARS.includes(car) && !car.evergreen) {
     if (card.forSale) return { kind: 'unpurchased', title: priceWords(car.price), line: 'At Crazey Jim’s', price: car.price };

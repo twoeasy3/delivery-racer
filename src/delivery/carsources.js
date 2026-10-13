@@ -36,6 +36,14 @@ const eventState = (from, to, t) => {
   if (from !== null && Number.isFinite(from) && t < from) return { live: false, why: 'Not yet open: starts ' + day(from) };
   return { live: true, why: null };
 };
+// a special event's state now (a recurring one: on in a run, or between runs, saying when it is back; it is
+// never "over" while it recurs)
+const specialState = (event, t) => {
+  if (!event.repeat) return eventState(event.from, event.to, t);
+  const w = Events.window(event, t);
+  if (!w) return { live: false, why: 'Event over' + (event.to !== null ? ' (ended ' + day(event.to) + ')' : '') };
+  return w.live ? { live: true, why: null, recurring: true, end: w.end } : { live: false, why: 'Between runs: back ' + day(w.start), recurring: true, next: w.start };
+};
 const endsWords = (to) => (to !== null && Number.isFinite(to) ? ', ends ' + day(to) : '');
 
 // the Career levels whose first delivery still gives a pack (not delivered on either side, the pack not claimed)
@@ -67,7 +75,7 @@ const waysFor = (id, t) => {
   for (const offer of Shop.raw) {
     if (offer.pack !== id) continue;
     const event = spec.event ? Events.specials.find(e => e.id === String(spec.event)) : null;
-    const state = spec.event ? (event ? eventState(event.from, event.to, t) : { live: false, why: 'Its event is not in the game' }) : { live: true, why: null };
+    const state = spec.event ? (event ? specialState(event, t) : { live: false, why: 'Its event is not in the game' }) : { live: true, why: null };
     const can = Shop.canBuy(offer.id, t), limit = can.why === 'limit' ? can : null; // (a purchase limit reached: sold out, or come back tomorrow)
     ways.push({ how: 'shop', where: 'Shop: ' + offer.name, available: state.live && !limit, price: offer.price,
       why: !state.live ? 'Not on sale: ' + state.why.replace(/^./, c => c.toLowerCase()) : limit ? limit.words : null,
@@ -84,9 +92,14 @@ const waysFor = (id, t) => {
   if (give) {
     for (const event of Events.specials) {
       if (event.id !== String(give.id ?? spec.event)) continue;
-      const stage = !!give.stage, prize = !!give.prize && !!event.prize;
-      if (!stage && !prize) continue;
-      const state = eventState(event.from, event.to, t), done = Events.done(event), left = event.stages.length - done;
+      const stage = !!give.stage, prize = !!give.prize && !!event.prize, every = !!give.every;
+      if (!stage && !prize && !every) continue;
+      const state = specialState(event, t), done = Events.done(event), left = event.stages.length - done;
+      if (every) { // (a recurring event's pack: one for every delivery while it is on, again and again)
+        ways.push({ how: 'event', where: event.name, available: state.live, recurring: !!state.recurring, why: state.why,
+          detail: 'one for every delivery of ' + (event.stages.length === 1 ? 'its stage' : 'a stage') + ', as often as you like' + (state.recurring ? (state.live ? ', ends ' + day(state.end) : '') : endsWords(event.to)) });
+        continue;
+      }
       const more = (stage && left > 0) || (prize && !Events.prizeWon(event));
       ways.push({ how: 'event', where: event.name, available: state.live && more,
         why: !state.live ? state.why : more ? null : 'Every stage done and its prize won',
@@ -153,7 +166,7 @@ const keySources = (car, t) => {
   }
   for (const event of Events.specials) {
     if (event.prize?.car !== car.id) continue;
-    const state = eventState(event.from, event.to, t), won = Events.prizeWon(event);
+    const state = specialState(event, t), won = Events.prizeWon(event);
     out.push({ what: 'key', how: 'event', where: event.name, rarity: null, ways: [], available: state.live && !won,
       why: won ? 'Prize already won' : state.why,
       detail: 'the grand prize for all ' + event.stages.length + ' stages' + endsWords(event.to) });
@@ -172,11 +185,29 @@ const keySources = (car, t) => {
 // names it while it is on (the owner, 12-Oct); not once the event is over, or before it starts, or its prize already won
 export const liveEventFor = (car, { t = Events.now() } = {}) => {
   for (const event of Events.specials) {
-    if (event.prize?.car === car?.id && eventState(event.from, event.to, t).live && !Events.prizeWon(event)) return event.name;
+    if (event.prize?.car === car?.id && specialState(event, t).live && !Events.prizeWon(event)) return event.name;
   }
   for (const entry of PLAIN_EVENTS) {
     if (!entry || typeof entry !== 'object' || entry.reward?.car !== car?.id) continue;
     if (eventState(when(entry.from), when(entry.to), t).live) { const level = levelById(entry.id); return level ? levelName(level) : String(entry.id); }
+  }
+  return null;
+};
+
+// the special event whose packs (givenBy.event) FEATURE this car, and are still to be had from it (it is on, or it recurs:
+// the Car Hunt and its Blower Tourer, the owner 13-Oct): { event, pack, live, next } (next: a recurring one's next run
+// when it is between runs), or null. A car in no regular pack (`noPacks`) with such an event is obtainable: the showroom
+// does not black it out (showroomData.js)
+export const huntEventFor = (car, { t = Events.now() } = {}) => {
+  if (!car) return null;
+  for (const id of PACK_IDS) {
+    const spec = PACKS[id], give = spec.givenBy?.event;
+    if (!give || !spec.featured) continue;
+    if (!featuredOf(id).some(f => f.car.id === car.id && !f.key)) continue;
+    const event = Events.specials.find(e => e.id === String(give.id ?? spec.event));
+    if (!event) continue;
+    const state = specialState(event, t);
+    if (state.live || state.recurring) return { event, pack: id, live: state.live, next: state.next ?? null };
   }
   return null;
 };

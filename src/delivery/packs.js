@@ -462,10 +462,10 @@ export const featuredOf = (id) => {
 };
 // the special event a pack belongs to (its `event`: on sale and listed only while it is on), as events.json has it; null
 export const eventOf = (id) => (packOf(id)?.event ? eventEntry(packOf(id).event) : null);
-// the packs a special event gives (its stages, its grand prize): those whose givenBy.event names it (by its id, else the
-// pack's own event). [{ id, stage, prize }]
+// the packs a special event gives (its stages, its grand prize, every delivery): those whose givenBy.event names it (by
+// its id, else the pack's own event). [{ id, stage, prize, every }]
 export const eventPacks = (eventId) => PACK_IDS.map(id => ({ id, g: PACKS[id].givenBy?.event })).filter(({ id, g }) => g && String(g.id ?? PACKS[id].event) === String(eventId))
-  .map(({ id, g }) => ({ id, stage: !!g.stage, prize: !!g.prize }));
+  .map(({ id, g }) => ({ id, stage: !!g.stage, prize: !!g.prize, every: !!g.every }));
 // the pack the Career levels give (the first with givenBy.career); null: none
 export const careerPack = () => PACK_IDS.find(id => PACKS[id].givenBy?.career) || null;
 
@@ -541,6 +541,7 @@ export const packProblems = (data = packData) => {
     if (!p || typeof p !== 'object') { say('not an object'); continue; }
     if (!p.name) say('it has no name');
     if (!whole(p.size, 1)) say('its size is not a whole number of 1 or more');
+    if (p.featured && typeof p.featured === 'object') for (const k of ['upgradeChance', 'featuredChance']) if (p.featured[k] !== undefined && !(typeof p.featured[k] === 'number' && p.featured[k] >= 0 && p.featured[k] <= 1)) say('featured.' + k + ' is not a chance from 0 to 1');
     if (!['all', 'evergreen'].includes(p.pool)) say('its pool is not "all" or "evergreen"');
     for (const r of Object.keys(p.atLeast || {})) if (rank(r) < 0) say('atLeast names no rarity "' + r + '"');
     if (p.event !== undefined && !events.has(String(p.event))) say('its event "' + p.event + '" is not a special event (events.json special)');
@@ -552,6 +553,8 @@ export const packProblems = (data = packData) => {
     if (g !== undefined) {
       const extra = Object.keys(g || {}).filter(k => !['career', 'event'].includes(k));
       if (extra.length) say('givenBy: unknown ' + extra.join(', '));
+      const extraEv = g?.event && typeof g.event === 'object' ? Object.keys(g.event).filter(k => !['stage', 'prize', 'every', 'id'].includes(k)) : [];
+      if (extraEv.length) say('givenBy.event: unknown ' + extraEv.join(', '));
       if (g?.career && !(g.career.every === undefined || whole(g.career.every, 0))) say('givenBy.career.every is not a whole number');
       for (const l of g?.career?.levels || []) if (!LEVELS.some(x => x.id === l)) say('givenBy.career names no level "' + l + '"');
       if (g?.event) {
@@ -802,11 +805,13 @@ export const Packs = {
     this.revealNow();
     return name;
   },
-  // a special event's stage done (events.js delivered): the packs whose givenBy.event names the event, one for a stage
-  // done the first time (stage: true), one with the grand prize (prize: true). The names given, as a list
+  // a special event's stage done (events.js delivered: only while the event is on): the packs whose givenBy.event names
+  // the event, one for a stage done the first time (stage: true), one with the grand prize (prize: true), one for EVERY
+  // delivery (every: true: the Car Hunt, infinitely grindable: no claimed-once mark, no cap). The names given, as a list
   eventDone(eventId, firstTime, prize) {
     const out = [];
     for (const p of eventPacks(eventId)) {
+      if (p.every) out.push(this.grant(p.id));
       if (firstTime && p.stage) out.push(this.grant(p.id));
       if (prize && p.prize) out.push(this.grant(p.id));
     }
