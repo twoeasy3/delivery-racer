@@ -23,10 +23,9 @@ const keep = (m) => { m.userData.shared = true; return m; };
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 const basic = (color) => new THREE.MeshBasicMaterial({ color });
 const TYRE = keep(lambert(0x161616)), CHROME = keep(lambert(0xd9dce0)), SILVER = keep(lambert(0xb4b8bf));
-const TRIM = keep(lambert(0x26282d)), PLATE = keep(lambert(0xf2f0e6));
+const TRIM = keep(lambert(0x26282d));
 const GLASS = keep(new THREE.MeshLambertMaterial({ color: 0x1f2633, side: THREE.DoubleSide }));
-const LAMP = keep(basic(0xfff3c4)), TAIL = keep(basic(0xb5121b)), STOP = keep(basic(0xff3030)), AMBER = keep(basic(0xffa31a));
-const REVERSE = keep(basic(0xf4f4f0));
+const LAMP = keep(basic(0xfff3c4)), TAIL = keep(basic(0xc8141c));
 
 // ---- shared geometry ---------------------------------------------------------------------------------------------
 const SHARED = new Map();
@@ -129,11 +128,11 @@ const slopeGlass = ([z0, y0], [z1, y1], half, taper, inset, ends, lift) => {
 // the side windows: each a polygon of [z, y] in the side view, laid on the cabin's (narrowed) flank, `lift` out
 const sideGlass = (windows, half, taper, lift) => windows.flatMap(win => pair(win.map(([z, y]) => [narrowAt(half, y, taper) + lift, y, z])));
 
-// a wheel: tyre, hub and its centre, each a mesh of its own (the tyre a disc on its side: the suspension finds it)
-const wheel = (parent, key, R, width, x, z, hubR, hubMat, capMat) => {
+// a wheel, chunky as the rest of the roster's (render/models.js wheel): a fat dark tyre and a plain light hub, each a mesh
+// of its own (the tyre a disc on its side, the hub inside it: the suspension finds and plants both)
+const wheel = (parent, key, R, width, x, z, hubMat) => {
   const tyre = place(parent, shared(key + 'tyre', () => new THREE.CylinderGeometry(R, R, width, 16).rotateZ(Math.PI / 2)), TYRE, x, R, z);
-  place(parent, shared(key + 'hub', () => new THREE.CylinderGeometry(hubR, hubR, width + 0.012, 12).rotateZ(Math.PI / 2)), hubMat, x, R, z);
-  place(parent, shared(key + 'cap', () => new THREE.CylinderGeometry(hubR * 0.36, hubR * 0.36, width + 0.03, 8).rotateZ(Math.PI / 2)), capMat, x, R, z);
+  place(parent, shared(key + 'hub', () => new THREE.CylinderGeometry(R * 0.55, R * 0.55, width + 0.04, 12).rotateZ(Math.PI / 2)), hubMat, x, R, z);
   return tyre;
 };
 
@@ -181,10 +180,10 @@ export const ORIG4_MODELS = {};
 // ---- the Taxi ---------------------------------------------------------------------------------------------------------
 // A Checker Marathon cab: a long, upright four-door saloon with big round wheel arches and a flat bonnet and boot; a tall
 // glasshouse with an upright windscreen, a thick C pillar with a small quarter window; quad round headlamps in chrome
-// bezels either side of a wide chrome multi-bar grille, amber parking lamps under them; big chrome bumpers with
-// overriders, front and back; a checker band down each flank (black and white, or black and yellow for Evil); a lit
-// TAXI sign on the roof; chrome round mirrors, little hub caps. No panel lines: the flanks are left clean (the owner's rule). Tail lamps up the rear corners: the tail
-// lamp over the brake lamp over an amber indicator, a reversing lamp, the plate between them.
+// bezels either side of a wide chrome multi-bar grille; big chrome bumpers with overriders, front and back; a checker
+// band down each flank (black and white, or black and yellow for Evil); a lit TAXI sign on the roof; chrome round
+// mirrors, plain chrome hubs; a tall red tail lamp up each rear corner (the game lays its brake lamps and indicators
+// over the tail: render/cars.js). No panel lines, handles or small clusters: the surfaces are left clean (the owner).
 ORIG4_MODELS.taxi = (car) => {
   const group = new THREE.Group();
   const W = car.hw, L = car.hl, R = 0.38; // (as before: the wheels at ±0.3 of the length, radius 0.38)
@@ -253,10 +252,9 @@ ORIG4_MODELS.taxi = (car) => {
     }
     return g;
   });
-  // the dark parts: behind the grille, the wheel wells, the mirrors' glass, the sign's foot
+  // the dark parts: behind the grille, the mirrors' glass, the sign's foot
   parts(group, k + 'dark', TRIM, () => {
     const g = [bx(0.9, 0.3, 0.03, 0, 0.722, FZ - 0.003)];                                          // behind the grille
-    for (const z of [AX, -AX]) g.push(bx(BW - 0.5, 0.5, ARCH * 2 - 0.06, 0, 0.62, z));             // the wells, inboard
     for (const side of [-1, 1]) {
       g.push(dsc(0.047, 0.01, side * (SX + 0.085), BELT + 0.15, AX - 0.64, 10));                    // mirror glass
     }
@@ -283,19 +281,11 @@ ORIG4_MODELS.taxi = (car) => {
     return g;
   });
   place(group, bandGeo, checker);
-  // the lamps: quad round headlamps, amber parking lamps under them; at the back the tail lamps up the corners
+  // the lamps: quad round headlamps; at the back a tail lamp up each corner
   parts(group, k + 'lamp', LAMP, () => [-1, 1].flatMap(side => [0.62, 0.84].map(x => dsc(0.082, 0.04, side * x, 0.77, FZ + 0.02, 14))));
-  parts(group, k + 'amber', AMBER, () => [-1, 1].flatMap(side => [
-    bx(0.24, 0.06, 0.03, side * 0.73, 0.6, FZ + 0.01),
-    bx(0.2, 0.07, 0.03, side * 0.8, 0.6, RZ - 0.01),
-  ]));
-  parts(group, k + 'tail', TAIL, () => [-1, 1].map(side => bx(0.26, 0.14, 0.03, side * 0.8, 0.88, RZ - 0.01)));
-  parts(group, k + 'stop', STOP, () => [-1, 1].map(side => bx(0.26, 0.12, 0.03, side * 0.8, 0.74, RZ - 0.01)));
-  parts(group, k + 'rev', REVERSE, () => [-1, 1].map(side => bx(0.12, 0.06, 0.03, side * 0.46, 0.62, RZ - 0.01)));
-  // the plates, front (on the bumper) and back (between the lamps)
-  parts(group, k + 'plate', PLATE, () => [bx(0.42, 0.12, 0.02, 0, 0.44, FZ + 0.145), bx(0.42, 0.14, 0.02, 0, 0.7, RZ - 0.01)]);
-  // the wheels: black tyres, chrome hub caps with dark centres
-  for (const side of [-1, 1]) for (const z of [AX, -AX]) wheel(group, k, R, 0.26, side * (W - 0.07), z, 0.24, CHROME, TRIM);
+  parts(group, k + 'tail', TAIL, () => [-1, 1].map(side => bx(0.26, 0.3, 0.03, side * 0.8, 0.8, RZ - 0.01)));
+  // the wheels: black tyres on plain chrome hubs
+  for (const side of [-1, 1]) for (const z of [AX, -AX]) wheel(group, k, R, 0.26, side * (W - 0.07), z, CHROME);
   group.userData = {
     body,
     animate: () => {},
@@ -325,21 +315,13 @@ const ribbon = (path, d, x0, x1) => {
   }
   return g;
 };
-// an alloy wheel's face: its rim and `spokes` spokes, in one geometry (a dark disc a hair wider stands in the rim,
-// inside its lip, so the spokes show against it)
-const alloy = (r, width, spokes) => {
-  const g = [new THREE.CylinderGeometry(r, r, width - 0.008, 12).rotateZ(Math.PI / 2)];
-  for (let i = 0; i < spokes; i++) g.push(new THREE.BoxGeometry(width, r * 0.8, 0.05).translate(0, r * 0.4, 0).rotateX(i * Math.PI * 2 / spokes));
-  g.push(new THREE.CylinderGeometry(r * 0.26, r * 0.26, width + 0.01, 8).rotateZ(Math.PI / 2));
-  return merge(g);
-};
 
 // ---- the Sportscar --------------------------------------------------------------------------------------------------
 // A small, low two-seat sports coupe: a wedge of a nose over a front spoiler, the bonnet rising to a raised scoop, a
 // steeply raked windscreen under a short roof and a fastback down to a ducktail; twin racing stripes from the spoiler's
 // lip over the nose, the bonnet, the roof and the boot (white on red for Good, black on yellow for Evil; userData.stripe
-// for a rival courier's own colour); faired-in headlamps at the nose's corners, a dark intake, amber indicators; fat
-// tyres on five-spoke silver alloys; tail and brake lamps across the tail's corners, twin exhausts under a dark diffuser.
+// for a rival courier's own colour); faired-in headlamps at the nose's corners, a dark intake; fat
+// tyres on plain silver hubs; a tail lamp across each of the tail's corners over a dark diffuser.
 ORIG4_MODELS.miata = (car) => {
   const group = new THREE.Group();
   const W = car.hw, L = car.hl, R = 0.32; // (as before: radius 0.32, the axles at +0.32 and -0.31 of the length)
@@ -386,13 +368,12 @@ ORIG4_MODELS.miata = (car) => {
     slopeGlass([BL[0][0], BL[0][1] - 0.03], BL[1], CH, TAPER, 0.09, [0.12, 0.06], LIFT),
     ...sideGlass([[[0.29, foot], [-1.0, foot], [-0.7, top], [-0.12, top]]], CH, TAPER, 0.006),
   ]);
-  // the dark parts: the intake, the lamps' surrounds, the scoop's mouth, the wells, the mirrors, the diffuser
+  // the dark parts: the intake, the lamps' surrounds, the scoop's mouth, the mirrors, the diffuser
   const FZ = NOSE + BEV, RZ = TAILZ - BEV;
   const lampPitch = Math.atan2(0.08, 0.18); // (the nose's slope where the lamps sit: on it, beyond the bevel)
   const LZ = NOSE - 0.18 + Math.sin(lampPitch) * BEV, LY = 0.54 + Math.cos(lampPitch) * BEV;
   parts(group, k + 'dark', TRIM, () => {
     const g = [bx(0.8, 0.07, 0.03, 0, 0.3, FZ - 0.004), bx(0.3, 0.05, 0.03, 0, 0.795, 1.115)];
-    for (const z of [AF, AR]) g.push(bx(BW - 0.56, 0.36, ARCH * 2 - 0.2, 0, 0.41, z));             // the wells, inboard (under the bonnet)
     for (const side of [-1, 1]) {
       g.push(bx(0.3, 0.012, 0.17, side * 0.62, LY, LZ, lampPitch));                                 // the lamps' surrounds
       g.push(bx(0.1, 0.03, 0.06, side * (SX - 0.03), 0.84, 0.4));                                   // a mirror's foot...
@@ -401,21 +382,10 @@ ORIG4_MODELS.miata = (car) => {
     g.push(bx(BW - 0.3, 0.08, 0.06, 0, 0.21, RZ + 0.025));                                          // the diffuser
     return g;
   });
-  parts(group, k + 'chrome', CHROME, () => [-1, 1].map(side => dsc(0.05, 0.12, side * 0.5, 0.22, RZ - 0.03, 10)));
   parts(group, k + 'lamp', LAMP, () => [-1, 1].map(side => bx(0.26, 0.012, 0.13, side * 0.62, LY + 0.007, LZ + 0.003, lampPitch)));
-  parts(group, k + 'amber', AMBER, () => [-1, 1].flatMap(side => [bx(0.12, 0.05, 0.02, side * 0.62, 0.4, FZ + 0.004), bx(0.07, 0.12, 0.02, side * 0.84, 0.6, RZ - 0.004)]));
-  parts(group, k + 'tail', TAIL, () => [-1, 1].map(side => bx(0.32, 0.08, 0.02, side * 0.6, 0.65, RZ - 0.004)));
-  parts(group, k + 'stop', STOP, () => [-1, 1].map(side => bx(0.32, 0.06, 0.02, side * 0.6, 0.56, RZ - 0.004)));
-  parts(group, k + 'rev', REVERSE, () => [-1, 1].map(side => bx(0.08, 0.05, 0.02, side * 0.36, 0.56, RZ - 0.004)));
-  parts(group, k + 'plate', PLATE, () => [bx(0.36, 0.11, 0.02, 0, 0.45, RZ - 0.004)]);
-  // the wheels: fat tyres on five-spoke silver alloys, set in dark discs
-  const face = shared(k + 'alloy', () => alloy(0.225, 0.272, 5));
-  for (const side of [-1, 1]) for (const z of [AF, AR]) {
-    const x = side * (W - 0.06);
-    place(group, shared(k + 'tyre', () => new THREE.CylinderGeometry(R, R, 0.26, 16).rotateZ(Math.PI / 2)), TYRE, x, R, z);
-    place(group, shared(k + 'well', () => new THREE.CylinderGeometry(0.19, 0.19, 0.268, 10).rotateZ(Math.PI / 2)), TRIM, x, R, z);
-    place(group, face, SILVER, x, R, z);
-  }
+  parts(group, k + 'tail', TAIL, () => [-1, 1].map(side => bx(0.34, 0.14, 0.02, side * 0.6, 0.61, RZ - 0.004)));
+  // the wheels: fat tyres on plain silver hubs
+  for (const side of [-1, 1]) for (const z of [AF, AR]) wheel(group, k, R, 0.26, side * (W - 0.06), z, SILVER);
   const colour = (hex) => stripe.color.setHex(hex);
   group.userData = {
     body,
@@ -426,26 +396,12 @@ ORIG4_MODELS.miata = (car) => {
   return group;
 };
 
-// a wheel arch's flare, side on: a half ring round the arch (centre [z, y], radius r inside, `t` wide), `depth` across
-const flare = (z, y, r, t, depth, x) => {
-  const shape = new THREE.Shape();
-  shape.moveTo(z - r - t, y);
-  shape.absarc(z, y, r + t, Math.PI, 0, true);
-  shape.lineTo(z + r, y);
-  shape.absarc(z, y, r, 0, Math.PI, false);
-  shape.closePath();
-  const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 5 });
-  geo.rotateY(-Math.PI / 2);
-  return geo.translate(x + depth / 2, 0, 0);
-};
-
 // ---- the SUV --------------------------------------------------------------------------------------------------------
 // A boxy 4x4 of the eighties and nineties (a Jeep Cherokee): a tall, squared body on big tyres; a flat bonnet to an
 // upright windscreen; a long flat roof under a rack (its rails and bars in the livery's second colour: silver for Good,
 // navy for Evil) down to a near-upright tailgate; three windows a side. A chunky grille of chrome bars on black between
-// rectangular headlamps in chrome bezels, amber indicators under them; black bumpers, black wheel-arch flares and black
-// cladding along the sills (its one strong colour break). Tall tail lamps up the rear corners (tail over brake over
-// indicator), reversing lamps, the plate on the tailgate; chunky tyres on silver hubs. It rocks a little on its soft
+// rectangular headlamps in chrome bezels; black bumpers and black cladding along the
+// sills (its one strong colour break); plain shallow arches. Tall tail lamps up the rear corners; chunky tyres on silver hubs. It rocks a little on its soft
 // springs (everything but the wheels).
 ORIG4_MODELS.suv = (car) => {
   const group = new THREE.Group();
@@ -455,7 +411,7 @@ ORIG4_MODELS.suv = (car) => {
   const k = 'suv' + [W, L].join(',');
   const paint = lambert(car.color), rack = lambert(0xc8ccd2);
   const AX = 0.6 * L, BW = W * 2, BEV = 0.05, SX = BW / 2;
-  const ARCH = R + 0.12, AY = R - 0.02;
+  const ARCH = R + 0.07, AY = R - 0.02;
   const NOSE = L - 0.06, TAILZ = -L + 0.06, BELT = 1.1;
   const bodyOutline = [
     [NOSE - 0.04, 0.44], [NOSE, 0.5], [NOSE + 0.01, 1.0], [NOSE - 0.04, BELT - 0.01], [AX - 0.3, BELT],
@@ -482,16 +438,14 @@ ORIG4_MODELS.suv = (car) => {
     ], CH, TAPER, 0.006),
   ]);
   const FZ = NOSE + BEV + 0.01, RZ = TAILZ - BEV;
-  // black: the grille's backing, the bumpers, the flares, the sill cladding, the mirrors, the wells, the rack's feet
+  // black: the grille's backing, the bumpers, the sill cladding, the mirrors, the rack's feet
   parts(shell, k + 'black', TRIM, () => {
     const g = [bx(1.0, 0.3, 0.03, 0, 0.86, FZ - 0.008)];
     for (const [z, s] of [[FZ + 0.06, 1], [RZ - 0.06, -1]]) {
       g.push(bx(BW + 0.06, 0.24, 0.16, 0, 0.55, z));                                                // a chunky bumper...
       for (const side of [-1, 1]) g.push(bx(0.12, 0.24, 0.34, side * (SX - 0.03), 0.55, z - s * 0.14)); // ...wrapping round
     }
-    for (const z of [AX, -AX]) g.push(bx(BW - 0.6, 0.6, ARCH * 2 - 0.12, 0, 0.66, z));             // the wells, inboard
     for (const side of [-1, 1]) {
-      for (const z of [AX, -AX]) g.push(flare(z, AY, ARCH - 0.04, 0.1, 0.1, side > 0 ? SX - 0.04 : -SX - 0.06));
       g.push(bx(0.05, 0.18, 2 * AX - 2 * ARCH - 0.1, side * (SX + 0.01), 0.52, 0));                 // the sill cladding
       g.push(bx(0.06, 0.03, 0.08, side * (SX + 0.01), BELT + 0.08, AX - 0.45));                     // a mirror's foot...
       g.push(bx(0.07, 0.15, 0.16, side * (SX + 0.07), BELT + 0.16, AX - 0.45));                     // ...and its head
@@ -513,13 +467,9 @@ ORIG4_MODELS.suv = (car) => {
     return g;
   });
   parts(shell, k + 'lamp', LAMP, () => [-1, 1].map(side => bx(0.3, 0.17, 0.03, side * 0.76, 0.9, FZ + 0.012)));
-  parts(shell, k + 'amber', AMBER, () => [-1, 1].flatMap(side => [bx(0.3, 0.05, 0.03, side * 0.76, 0.735, FZ + 0.006), bx(0.16, 0.08, 0.03, side * 0.84, 0.72, RZ - 0.01)]));
-  parts(shell, k + 'tail', TAIL, () => [-1, 1].map(side => bx(0.16, 0.18, 0.03, side * 0.84, 1.02, RZ - 0.01)));
-  parts(shell, k + 'stop', STOP, () => [-1, 1].map(side => bx(0.16, 0.14, 0.03, side * 0.84, 0.86, RZ - 0.01)));
-  parts(shell, k + 'rev', REVERSE, () => [-1, 1].map(side => bx(0.16, 0.06, 0.03, side * 0.84, 0.645, RZ - 0.01)));
-  parts(shell, k + 'plate', PLATE, () => [bx(0.42, 0.14, 0.02, 0, 0.84, RZ - 0.01), bx(0.42, 0.12, 0.02, 0, 0.55, FZ + 0.145)]);
+  parts(shell, k + 'tail', TAIL, () => [-1, 1].map(side => bx(0.18, 0.36, 0.03, side * 0.83, 0.92, RZ - 0.01)));
   // the wheels: chunky tyres on silver hubs
-  for (const side of [-1, 1]) for (const z of [AX, -AX]) wheel(group, k, R, 0.32, side * (W - 0.08), z, 0.25, SILVER, TRIM);
+  for (const side of [-1, 1]) for (const z of [AX, -AX]) wheel(group, k, R, 0.32, side * (W - 0.08), z, SILVER);
   group.userData = {
     body,
     animate: (t) => {
