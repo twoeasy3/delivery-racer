@@ -1,40 +1,53 @@
 // ---- UNLOCK CINEMATICS: a new car's reveal, and a more dramatic one for a car's KEY (the owner, 13-Oct: "a cinematic
 // unlock animation, and a more dramatic one for a key unlock", "only viewable from link for now"; then "different camera
-// shots", "the car unlock exactly 5 seconds"). Reached ONLY by the address for now (main.js loads this file only then);
-// nothing in the menus or in play starts one yet.
-//   ?unlockcine=car:<id>   the CAR unlock, 5.0 s, four shots:
+// shots", "the car unlock exactly 5 seconds"; 14-Oct: tap to dismiss at the end, a real ignition, more shots of the car,
+// a fob that unlocks the car for the keys with no blade). Reached ONLY by the address for now (main.js loads this file
+// only then); nothing in the menus or in play starts one yet.
+//   ?unlockcine=car:<id>   the CAR unlock, 5.0 s, four shots, then held:
 //       0.00-1.25 SILHOUETTE  a low wide hero shot from the front left, in the dark: a spotlight beam sweeps across
-//                              behind the car, a glow rises behind it, the car is a black shape with a rim of light
-//       1.25-2.25 DETAIL      a close-up of the front wheel and lamp, tracking forward, the key light sweeping on
-//       2.25-3.35 TRACKING    a side shot tracking along the car, lit; at 2.55 a FLARE in the rarity's colour (a
-//                              burst of sparks, a horizontal lens streak)
-//       3.35-5.00 HERO        the front three-quarter reveal, pushing in; NEW CAR, the name, the stars (each in turn),
-//                              the rarity banner; a short settle, a fade out over the last 0.25 s
-//   ?unlockcine=key:<id>   the KEY unlock, 9.0 s, six shots:
-//       0.00-1.60 DARKNESS    black; a thin light from above finds the car's key (its own model, render/keyModels.js),
-//                              standing, turning slowly, dust in the light
-//       1.60-3.10 APPROACH    a side shot: the key, level, slides into a lock barrel in slow motion; three tumbler
-//                              lights come on with a click each (2.35, 2.60, 2.85)
-//       3.10-3.60 THE TURN    a close-up on the lock: the key turns a quarter, and at 3.30 the CLICK: camera shake,
-//                              a white flash going to the rarity's colour, a thud
-//       3.60-5.00 BURST       a slow-motion wide shot from in front of the lock: sparks and rays spreading slowly,
-//                              and far behind it the car's silhouette, backlit
-//       5.00-6.70 RESOLVE     a low wide shot of the car: a black shape, then a light sweeping across brings it out
-//       6.70-9.00 HERO        the front three-quarter, pushing in; KEY UNLOCKED, the name, the stars, the rarity
-//                              banner; a fade out over the last 0.3 s
-//   &evil      the Evil livery          &loop      play it again and again
+//                              behind the car, a glow rises behind it, the car a black shape with a rim of light
+//       1.25-2.25 DETAIL      the front corner (lamp and grille), close, tracking across: the headlamps flicker on
+//                              (1.40, 1.50), the key light sweeps on
+//       2.25-3.35 TRACKING    a side shot along the car, lit; at 2.55 a FLARE in the rarity's colour (sparks, a lens
+//                              streak, rays)
+//       3.35-5.00 HERO        the front three-quarter, pushing in; NEW CAR, the name, the stars (each in turn), the
+//                              rarity banner; at 4.7 "Tap to continue", and the last frame HELD until a tap or a key
+//   ?unlockcine=key:<id>   the KEY unlock, 10.0 s, eight shots, then held. Two openings, by the car's key:
+//     a key with a BLADE (an IGNITION):
+//       0.00-1.40 DARKNESS    black; a small light finds the car's key (its own model, render/keyModels.js), standing,
+//                              turning slowly, dust in the light
+//       1.40-2.80 INSERT      from the side: the key, its blade level and its teeth DOWN, slides along the barrel's axis
+//                              into the vertical slot; three tumbler clicks (1.90, 2.15, 2.40)
+//       2.80-3.50 THE TURN    the barrel's face, from the driver's seat: a quarter turn CLOCKWISE (2.90-3.10), LOCK ->
+//                              ACC -> ON lighting round the barrel, and at 3.10 the CLICK: shake, a white flash going to
+//                              the rarity's colour, a thud
+//     a FOB with no blade (FOB_ONLY below: smart, snowboot, carbonfob, wedgefob, startfob, artisan; the Horseshoe
+//     Hypercar, the Snowcat, the Quad-Turbo, the Knife-Edge, the Windsong, the Sixteen-Cylinder Coupe):
+//       0.00-1.40 DARKNESS    the fob, standing, turning slowly in a small light
+//       1.40-2.50 PRESS       the fob held up to the camera; at 2.10 its button pressed (a nudge, a pulse of light, a click)
+//       2.50-3.50 CHIRP       the car in the dark, wide and low: indicators and headlamps blink twice with a chirp each
+//                              (2.65, 3.00), the second with a small shake and a flash
+//     then both:
+//       3.50-4.60 BURST       slow motion past the lock (or the fob) to the car: sparks and rays spreading, the car a
+//                              silhouette behind, its edges lit by the burst; a dip to black
+//       4.60-5.60 LAMPS       a close-up of the front corner: the headlamp flickers (4.85) and powers on (5.00)
+//       5.60-6.60 SIDE        a sweep along the side as the light comes across it
+//       6.60-7.60 REAR        a low rear three-quarter: the tail lamps light (6.80)
+//       7.60-10.0 HERO        the front three-quarter, pushing in; KEY UNLOCKED, the name, the stars, the rarity; at 9.3
+//                              "Tap to continue", and the last frame HELD
+//   &evil      the Evil livery          &loop      play it again and again (no hold)
 //   &still=<s> that moment of it, held (for stills; no sound)
-// Skipped by a tap or click, Escape, Space or Enter (it closes; with &loop the looping stops too).
+// A tap or click, Escape, Space or Enter while it plays jumps to the held last frame; at the held frame it closes.
 // Reduced motion (prefers-reduced-motion) or any ?lite= switch: a short fade-only version (the final shot, still, fading
-// in with its words, held, fading out: 2.6 s).
+// in with its words, then held).
 // THE COST (the owner's tablet flickers: CHECKLIST 212 / 215): everything is drawn in ONE WebGL canvas (its own renderer,
 // made when it starts and given back, context and all, when it ends): no CSS blur, backdrop-filter, filters, isolation or
 // big see-through layers. The flash, the vignette, the letterbox bars and the fades are drawn in the same canvas; only
 // the words are page elements (small, opaque text, no shadow but a hard 1 px one). Pixels: the screen's at most 1.5x
-// (1.25x on a touch screen) and never more than about 1.3 million; no shadow maps, a few hundred points.
+// (1.25x on a touch screen) and never more than about 1.3 million; no shadow maps, a few hundred points. Held, nothing
+// is drawn at all (the loop stops).
 // Sound: the game's own (render/audio.js Sound.play, existing WAVs and synthesised stand-ins only). A browser plays
-// none until the page has been tapped or a key pressed, so a first play straight from the address is silent; with
-// &loop, the plays after a tap are heard (a tap skips: use a key that is not Esc / Space / Enter, e.g. Shift).
+// none until the page has been tapped or a key pressed, so a first play straight from the address is silent.
 // No game state: nothing is saved, nothing is read but the car's data (cars.js, showroomData.js).
 import * as THREE from 'three';
 import { carById, stars, starColour } from '../cars.js';
@@ -48,7 +61,11 @@ import { Sound } from './audio.js';
 
 const params = new URLSearchParams(location.search);
 const LEN = 4.4; // (every car scaled to this length, so the shots fit any car)
-const DURATION = { car: 5.0, key: 9.0, lite: 2.6 };
+const DURATION = { car: 5.0, key: 10.0, lite: 1.3 };
+const HINT = { car: 4.7, key: 9.3, lite: 1.0 }; // (when "Tap to continue" shows: the banner settled)
+// the key models with NO BLADE (render/keyModels.js smart, snowboot; render/keyModelsOrdC.js carbonfob, wedgefob;
+// render/keyModelsOrdD.js startfob, artisan): their cars get the fob unlocking the car, not the ignition
+export const FOB_ONLY = new Set(['smart', 'snowboot', 'carbonfob', 'wedgefob', 'startfob', 'artisan']);
 
 // ---- little helpers ----
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -59,6 +76,7 @@ const easeOut = (u) => 1 - Math.pow(1 - u, 3);
 const easeIn = (u) => u * u * u;
 const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const rand = (seed) => { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); };
+const WHITE = new THREE.Color(0xffffff);
 
 // soft round patch / vertical gradient / rays, drawn once on a canvas
 const texture = (draw, w = 128, h = 128) => {
@@ -74,6 +92,59 @@ const radial = (stops) => texture((g, w, h) => {
   for (const [at, colour] of stops) grad.addColorStop(at, colour);
   g.fillStyle = grad; g.fillRect(0, 0, w, h);
 });
+const shown = (node) => { for (let n = node; n; n = n.parent) if (!n.visible) return false; return true; };
+
+// ---- the car's LAMPS: its headlamps, tail lamps and indicators found by their look and place (as the model editor
+// guesses them: render/modelpatch.js), each with an "off" copy of its material (dimmed) and a glow sprite at it. A car
+// whose lamps are not found gets glows where they would be (the front and rear corners).
+const findLamps = (s) => {
+  const { model, carRig, W, H, L, keep } = s;
+  carRig.updateMatrixWorld(true);
+  const found = { head: [], tail: [], amber: [] }, box = new THREE.Box3(), c = v3(), size = v3(), hsl = {};
+  model.traverse((node) => {
+    if (!node.isMesh || !shown(node)) return;
+    const mat = [].concat(node.material)[0];
+    if (!mat?.color) return;
+    box.setFromObject(node); box.getCenter(c); box.getSize(size);
+    if (size.length() > L * 0.3) return;
+    mat.color.getHSL(hsl);
+    const glow = mat.type === 'MeshBasicMaterial' || (mat.emissive && mat.emissive.getHex() > 0 && (mat.emissiveIntensity ?? 1) > 0);
+    if (!(glow || hsl.l > 0.8)) return;
+    const front = c.z > L / 2 - L * 0.16, rear = c.z < -L / 2 + L * 0.16;
+    const red = (hsl.h < 0.04 || hsl.h > 0.94) && hsl.s > 0.5, amber = hsl.h > 0.04 && hsl.h < 0.13 && hsl.s > 0.5;
+    const kind = front && !red ? (amber ? 'amber' : 'head') : rear && (red || amber) ? (amber ? 'amber' : 'tail') : null;
+    if (!kind) return;
+    const off = keep(mat.clone());
+    off.color.multiplyScalar(kind === 'head' ? 0.16 : 0.22);
+    if (off.emissive) off.emissive.setHex(0);
+    found[kind].push({ node, on: node.material, off, at: c.clone() });
+  });
+  const corners = (z, y) => [-1, 1].map((x) => ({ at: v3(x * W * 0.34, y, z) }));
+  const lamps = {
+    head: found.head.length ? found.head : corners(L / 2 + 0.02, H * 0.36),
+    tail: found.tail.length ? found.tail : corners(-L / 2 - 0.02, H * 0.42),
+    amber: found.amber.length ? found.amber : [...corners(L / 2 + 0.02, H * 0.3), ...corners(-L / 2 - 0.02, H * 0.36)],
+  };
+  // the glows (a few a kind: their places merged two by two at most for a car with many small lamp parts)
+  const soft = s.soft, colours = { head: 0xfff1cc, tail: 0xff2a1a, amber: 0xffa21a };
+  for (const kind of Object.keys(lamps)) {
+    const list = lamps[kind].slice(0, 8);
+    lamps[kind].glows = list.map((l) => {
+      const sprite = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: soft, color: colours[kind], transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })));
+      sprite.position.copy(l.at).add(v3(0, 0, Math.sign(l.at.z) * 0.06));
+      sprite.scale.setScalar(kind === 'head' ? 0.75 : 0.55);
+      s.scene.add(sprite);
+      return sprite;
+    });
+  }
+  return lamps;
+};
+// a kind of lamp on (1) or off (0): the material swapped (on from half way), the glow by the level
+const setLamp = (lamps, kind, level, glow = 1) => {
+  const list = lamps[kind];
+  for (const l of list) if (l.node) l.node.material = level > 0.5 ? l.on : l.off;
+  for (const g of list.glows) g.material.opacity = clamp(level) * glow * (kind === 'head' ? 0.75 : 0.65);
+};
 
 // ---- the stage: one scene for both sequences (the car at the middle, facing +z; the lock in front of it) ----
 const build = (car, evil, mode) => {
@@ -107,7 +178,7 @@ const build = (car, evil, mode) => {
   const additive = (map, colour, opacity = 1) => keep(new THREE.MeshBasicMaterial({ map, color: colour, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
   const soft = keep(radial([[0, 'rgba(255,255,255,1)'], [0.35, 'rgba(255,255,255,0.45)'], [1, 'rgba(255,255,255,0)']]));
   const plane = keep(new THREE.PlaneGeometry(1, 1));
-  const pool = new THREE.Mesh(plane, additive(soft, accent.clone().lerp(new THREE.Color(0xffffff), 0.5), 0));
+  const pool = new THREE.Mesh(plane, additive(soft, accent.clone().lerp(WHITE, 0.5), 0));
   pool.rotation.x = -Math.PI / 2; pool.position.y = 0.01; pool.scale.set(L * 1.7, L * 1.7, 1);
   scene.add(pool);
   const shadowTx = keep(radial([[0, 'rgba(0,0,0,0.9)'], [1, 'rgba(0,0,0,0)']]));
@@ -116,7 +187,7 @@ const build = (car, evil, mode) => {
   scene.add(shadow);
 
   // the glow behind the car (what makes it a silhouette), and the spotlight's beam that sweeps across
-  const backGlow = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: soft, color: accent.clone().lerp(new THREE.Color(0xffffff), 0.35), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })));
+  const backGlow = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: soft, color: accent.clone().lerp(WHITE, 0.35), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })));
   backGlow.position.set(0, H * 0.55, -L * 0.95); backGlow.scale.set(L * 2.6, H * 2.8 + 1.2, 1);
   scene.add(backGlow);
   const beamTx = keep(texture((g, w, h) => {
@@ -138,7 +209,7 @@ const build = (car, evil, mode) => {
   // the lights (all set per frame)
   const hemi = new THREE.HemisphereLight(0xc8d6ff, 0x20222a, 0);
   const keyLight = new THREE.DirectionalLight(0xffffff, 0);
-  const rim = new THREE.DirectionalLight(accent.clone().lerp(new THREE.Color(0xffffff), 0.4), 0);
+  const rim = new THREE.DirectionalLight(accent.clone().lerp(WHITE, 0.4), 0);
   rim.position.set(-0.6, 1.1, -8); // (from straight behind: an edge of light, the sides the camera sees left dark)
   const rim2 = new THREE.DirectionalLight(0xbfd0ff, 0);
   rim2.position.set(2.5, 0.9, -8);
@@ -158,7 +229,7 @@ const build = (car, evil, mode) => {
     seeds.push({ dir: v3(Math.sin(b) * Math.cos(a), Math.cos(b), Math.sin(b) * Math.sin(a)), speed: 0.4 + r() * 1, hue: r(), late: r() * 0.25, wob: r() * 6, kind: i < 150 ? 'burst' : 'dust' });
   }
   // the lens streak and the rays (the flare)
-  const streak = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: soft, color: accent.clone().lerp(new THREE.Color(0xffffff), 0.3), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })));
+  const streak = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: soft, color: accent.clone().lerp(WHITE, 0.3), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })));
   const flareCore = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: soft, color: 0xffffff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })));
   const raysTx = keep(texture((g, w, h) => {
     g.translate(w / 2, h / 2);
@@ -171,30 +242,46 @@ const build = (car, evil, mode) => {
       g.beginPath(); g.moveTo(0, -1.5 - rr() * 2); g.lineTo(len, 0); g.lineTo(0, 1.5 + rr() * 2); g.fill();
     }
   }, 256, 256));
-  const rays = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: raysTx, color: accent.clone().lerp(new THREE.Color(0xffffff), 0.45), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })));
+  const rays = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: raysTx, color: accent.clone().lerp(WHITE, 0.45), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })));
   scene.add(streak, flareCore, rays);
 
-  const stage = { scene, own, keep, model, carRig, W, H, L, accent, rarity, hemi, keyLight, rim, rim2, floor, pool, shadow, backGlow, beam, beamMat, spotPool, sparks, sparkGeo, seeds, streak, flareCore, rays };
+  const stage = { scene, own, keep, soft, model, carRig, W, H, L, accent, rarity, hemi, keyLight, rim, rim2, floor, pool, shadow, backGlow, beam, beamMat, spotPool, sparks, sparkGeo, seeds, streak, flareCore, rays };
+  stage.lamps = findLamps(stage);
   if (mode === 'key') buildLock(stage, car);
   return stage;
 };
 
-// the key and its lock, in front of the car (the lock facing +z, the camera's way; the key comes in from +z)
+// the key and its lock, in front of the car. THE IGNITION: the barrel's axis along z, its face toward +z (the driver,
+// and the camera), its slot VERTICAL; the key goes in along the axis, its blade's flat sides facing sideways and its
+// teeth (the blade's right edge as keyModels.js builds it) DOWN, and turns a quarter CLOCKWISE seen from the driver
+// (about +z by -90 degrees): LOCK (12 o'clock) -> ACC -> ON (3 o'clock). A fob (FOB_ONLY) has no lock: it is held up.
 const buildLock = (s, car) => {
   const { keep, scene, H, L, accent } = s;
   const lockAt = v3(0, H * 0.5 + 0.45, L / 2 + 6.5);
-  // the key: the car's own model at Bespoke, scaled to 1.1 long, its middle at the rig's origin
-  const key = makeKey(car, { model: keyModelInUse(car), rarity: 'bespoke' });
+  const model = keyModelInUse(car), fob = FOB_ONLY.has(model);
+  // the key: the car's own model at Bespoke, scaled to 1.1 long; its BLADE's middle (the lowest part's) on the rig's
+  // axis, so it turns about the blade as a key in a barrel does (a fob: about its own middle)
+  const key = makeKey(car, { model, rarity: 'bespoke' });
   key.updateMatrixWorld(true);
   const kb = new THREE.Box3().setFromObject(key), ks = kb.getSize(v3()), km = kb.getCenter(v3());
+  let axis = km.clone();
+  if (!fob) {
+    let lowest = null, low = Infinity;
+    const b = new THREE.Box3();
+    key.traverse((node) => { if (node.isMesh && shown(node)) { b.setFromObject(node); if (b.min.y < low - 1e-4) { low = b.min.y; lowest = b.getCenter(v3()); } } });
+    if (lowest) axis = v3(lowest.x, km.y, lowest.z);
+  }
   const kScale = 1.1 / Math.max(ks.y, 0.01);
-  key.position.set(-km.x, -km.y, -km.z);
+  key.position.set(-axis.x, -km.y, -axis.z);
   const keyScaled = new THREE.Group(); keyScaled.add(key); keyScaled.scale.setScalar(kScale);
-  const keyLevel = new THREE.Group(); keyLevel.add(keyScaled); // (orientation: standing, or blade forward)
+  const keyLevel = new THREE.Group(); keyLevel.add(keyScaled); // (orientation: standing, or in the barrel)
   const keyRig = new THREE.Group(); keyRig.add(keyLevel); // (where it is, and its turn)
   scene.add(keyRig);
   const keyHalf = ks.y * kScale / 2;
-  // the lock: a chrome barrel, a dark face with the slot, a ring of tumbler lights, a glow ring
+  // in the barrel: the key's -y (the blade) along -z, its +x (the teeth) down (-y), so its face (+z) toward -x
+  const inBarrel = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(v3(0, -1, 0), v3(0, 0, 1), v3(-1, 0, 0)));
+  // the lock: a chrome barrel, a dark face with the vertical slot and an index mark (they turn with the key), the
+  // LOCK / ACC / ON marks round it, a glow ring
   const lock = new THREE.Group();
   lock.position.copy(lockAt);
   const chrome = keep(new THREE.MeshStandardMaterial({ color: 0xc9ced8, metalness: 0.9, roughness: 0.28 }));
@@ -202,23 +289,22 @@ const buildLock = (s, car) => {
   const barrel = new THREE.Mesh(keep(new THREE.CylinderGeometry(0.42, 0.46, 0.6, 32)), chrome);
   barrel.rotation.x = Math.PI / 2; barrel.position.z = -0.3;
   const bezel = new THREE.Mesh(keep(new THREE.TorusGeometry(0.42, 0.06, 10, 40)), chrome);
-  bezel.position.z = 0.0;
   const face = new THREE.Mesh(keep(new THREE.CircleGeometry(0.37, 36)), dark);
   face.position.z = 0.012;
-  const slotMat = keep(new THREE.MeshBasicMaterial({ color: 0x000000 }));
-  const slot = new THREE.Mesh(keep(new THREE.PlaneGeometry(0.07, 0.42)), slotMat);
+  const slot = new THREE.Mesh(keep(new THREE.PlaneGeometry(0.075, 0.44)), keep(new THREE.MeshBasicMaterial({ color: 0x000000 })));
   slot.position.z = 0.016;
-  const faceTurn = new THREE.Group(); faceTurn.add(face, slot); // (the face turns with the key)
+  const index = new THREE.Mesh(keep(new THREE.PlaneGeometry(0.035, 0.07)), keep(new THREE.MeshBasicMaterial({ color: 0xd8dce6 })));
+  index.position.set(0, 0.3, 0.017); // (the face's mark: at 12 o'clock, LOCK, with the slot upright)
+  const faceTurn = new THREE.Group(); faceTurn.add(face, slot, index);
   const pips = [];
-  for (let i = 0; i < 3; i++) {
+  [Math.PI / 2, Math.PI / 4, 0].forEach((a, i) => { // LOCK, ACC, ON: clockwise from 12 o'clock to 3 seen from the driver
     const m = keep(new THREE.MeshBasicMaterial({ color: 0x222630 }));
-    const pip = new THREE.Mesh(keep(new THREE.CircleGeometry(0.045, 16)), m);
-    const a = Math.PI / 2 + (i - 1) * 0.55;
-    pip.position.set(Math.cos(a) * 0.6, Math.sin(a) * 0.6, 0.02);
+    const pip = new THREE.Mesh(keep(new THREE.CircleGeometry(i === 2 ? 0.06 : 0.045, 16)), m);
+    pip.position.set(Math.cos(a) * 0.62, Math.sin(a) * 0.62, 0.02);
     pips.push(m);
     lock.add(pip);
-  }
-  const plate = new THREE.Mesh(keep(new THREE.CircleGeometry(0.78, 40)), keep(new THREE.MeshStandardMaterial({ color: 0x1b1e26, metalness: 0.6, roughness: 0.45 })));
+  });
+  const plate = new THREE.Mesh(keep(new THREE.CircleGeometry(0.8, 40)), keep(new THREE.MeshStandardMaterial({ color: 0x1b1e26, metalness: 0.6, roughness: 0.45 })));
   plate.position.z = -0.01;
   const glowRing = new THREE.Mesh(keep(new THREE.RingGeometry(0.47, 0.56, 48)), keep(new THREE.MeshBasicMaterial({ color: accent, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })));
   glowRing.position.z = 0.02;
@@ -227,31 +313,40 @@ const buildLock = (s, car) => {
   // a small light of its own over the key (the car far behind is not lit by it)
   const keySpot = new THREE.PointLight(0xffffff, 0, 4.5, 1.6);
   scene.add(keySpot);
-  Object.assign(s, { lockAt, keyRig, keyLevel, keyHalf, lock, faceTurn, pips, glowRing, keySpot, keyMaterials: [] });
+  Object.assign(s, { fob, lockAt, keyRig, keyLevel, keyHalf, inBarrel, lock, faceTurn, pips, glowRing, keySpot });
 };
 
-// ---- the camera's shots: each { from, to, at (seconds), cam(u) => [position, target, fov] } ----
-// (k: wider screens need less, narrow ones more: distances are stretched by it)
+// ---- the camera's shots: each { from, to, cam(u) => [position, target, fov, lift] } ----
+// (k: wider screens need less, narrow ones more: distances are stretched by it; lift: the picture slid down by that
+// share of its height, so the car stands high and the words go under it)
 const carShots = (s, k) => {
   const { W, H, L } = s;
   const tall = Math.max(1, H / 1.6); // (a tall car, a van or a bus: the hero shot stands further back)
   return [
     { from: 0, to: 1.25, cam: (u) => [v3(-3.6 * k + u * 0.4, 0.38, 6.4 * k - u * 0.9), v3(0, H * 0.48, 0), 40] }, // SILHOUETTE: low, wide, front left
-    { from: 1.25, to: 2.25, cam: (u) => [v3(W * 0.95 - u * 0.5, H * 0.42, L / 2 + 1.35 - u * 0.15), v3(W * 0.22 - u * 0.2, H * 0.4, L / 2 - 0.1), 38] }, // DETAIL: the front corner, lamp and grille, low and close, tracking across
+    { from: 1.25, to: 2.25, cam: (u) => [v3(W * 0.95 - u * 0.5, H * 0.42, L / 2 + 1.35 - u * 0.15), v3(W * 0.22 - u * 0.2, H * 0.4, L / 2 - 0.1), 38] }, // DETAIL: the front corner
     { from: 2.25, to: 3.35, cam: (u) => [v3(-6.2 * k, H * 0.62, -2.0 + u * 3.0), v3(0, H * 0.42, -0.9 + u * 2.2), 34] }, // TRACKING: the side
-    { from: 3.35, to: 5.0, cam: (u) => { const d = lerp(9.6, 8.1, easeOut(u)) * k * tall; return [v3(d * 0.62, 1.35 + H * 0.3, d * 0.78), v3(0, H * 0.42, 0), 32, 0.17]; } }, // HERO (the car high in the picture: the words under it)
+    { from: 3.35, to: 5.0, cam: (u) => { const d = lerp(9.6, 8.1, easeOut(u)) * k * tall; return [v3(d * 0.62, 1.35 + H * 0.3, d * 0.78), v3(0, H * 0.42, 0), 32, 0.17]; } }, // HERO
   ];
 };
 const keyShots = (s, k) => {
-  const { lockAt: P, H, L } = s;
+  const { lockAt: P, W, H, L, fob } = s;
   const tall = Math.max(1, H / 1.6);
+  const opening = fob ? [
+    { from: 1.4, to: 2.5, cam: (u) => [v3(-0.1 + u * 0.1, 0.12, 2.0 + 2.5 - u * 0.3).add(P), v3(0, 0.02, 2.0).add(P), 34] }, // PRESS: the fob held up
+    { from: 2.5, to: 3.5, cam: (u) => [v3(-2.4 * k + u * 0.3, 0.55, (L / 2 + 5.0) * k - u * 0.4), v3(0, H * 0.45, 0), 40] }, // CHIRP: the car, wide and low
+  ] : [
+    { from: 1.4, to: 2.8, cam: (u) => [v3(-(2.8 - u * 0.3) * Math.sqrt(k), 0.45, 1.0 - u * 0.2).add(P), v3(0, 0, 0.6 - u * 0.25).add(P), 38] }, // INSERT: from the side
+    { from: 2.8, to: 3.5, cam: (u) => [v3(0.32, 0.22, 2.25 - u * 0.2).add(P), v3(0, 0, 0.25).add(P), 34] }, // THE TURN: the barrel's face, from the driver
+  ];
   return [
-    { from: 0, to: 1.6, cam: (u) => [v3(0.15, 0.08 - u * 0.05, 2.0 + 2.9 - u * 0.35).add(P), v3(0, 0, 2.0).add(P), 34] }, // DARKNESS: the key, close
-    { from: 1.6, to: 3.1, cam: (u) => [v3((2.8 - u * 0.3) * Math.sqrt(k), 0.5, 1.0 - u * 0.15).add(P), v3(0, 0, 0.65 - u * 0.25).add(P), 38] }, // APPROACH: from the side
-    { from: 3.1, to: 3.6, cam: (u) => [v3(0.55, 0.3, 1.9 - u * 0.15).add(P), v3(0, 0, 0.3).add(P), 32] }, // THE TURN: the lock, close
-    { from: 3.6, to: 5.0, cam: (u) => [v3(1.0 + u * 0.2, 0.55 + u * 0.15, 3.6 + u * 0.6).add(P), v3(0, -0.6, -3).add(P), 46] }, // BURST: past the lock to the car
-    { from: 5.0, to: 6.7, cam: (u) => [v3(2.6 * k - u * 0.6, 0.42, (L / 2 + 5.2) * k - u * 0.6), v3(0, H * 0.5, 0), 40] }, // RESOLVE: low and wide
-    { from: 6.7, to: 9.0, cam: (u) => { const d = lerp(10.8, 9.0, easeOut(u)) * k * tall; return [v3(-d * 0.62, 1.35 + H * 0.3, d * 0.78), v3(0, H * 0.42, 0), 32, 0.15]; } }, // HERO (the other side; high in the picture)
+    { from: 0, to: 1.4, cam: (u) => [v3(0.15, 0.08 - u * 0.05, 2.0 + 2.9 - u * 0.35).add(P), v3(0, 0, 2.0).add(P), 34] }, // DARKNESS: the key, close
+    ...opening,
+    { from: 3.5, to: 4.6, cam: (u) => [v3(1.0 + u * 0.2, 0.55 + u * 0.15, 3.6 + u * 0.6).add(P), v3(0, -0.6, -3).add(P), 46] }, // BURST: past the lock to the car
+    { from: 4.6, to: 5.6, cam: (u) => [v3(W * 0.95 - u * 0.45, H * 0.4, L / 2 + 1.3 - u * 0.1), v3(W * 0.25 - u * 0.15, H * 0.38, L / 2 - 0.1), 38] }, // LAMPS: the front corner, close
+    { from: 5.6, to: 6.6, cam: (u) => [v3(-6.0 * k, H * 0.55, -2.4 + u * 3.2), v3(0, H * 0.42, -1.2 + u * 2.4), 34] }, // SIDE: a sweep along it
+    { from: 6.6, to: 7.6, cam: (u) => [v3((W / 2 + 2.6 - u * 0.4) * Math.sqrt(k), H * 0.38, -(L / 2 + 3.4 - u * 0.5) * Math.sqrt(k)), v3(0, H * 0.42, -L * 0.15), 38] }, // REAR: low three-quarter
+    { from: 7.6, to: 10.0, cam: (u) => { const d = lerp(10.8, 9.0, easeOut(u)) * k * tall; return [v3(-d * 0.62, 1.35 + H * 0.3, d * 0.78), v3(0, H * 0.42, 0), 32, 0.15]; } }, // HERO (the other side)
   ];
 };
 
@@ -260,7 +355,7 @@ const css = `
 .ucine{position:fixed;inset:0;z-index:10000;background:#000;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none}
 .ucine canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .ucine-words{position:absolute;left:0;right:0;bottom:7%;text-align:center;pointer-events:none;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
-.ucine-words>*{opacity:0;will-change:auto}
+.ucine-words>*{opacity:0}
 .ucine-tag{font-size:clamp(12px,1.6vw,17px);letter-spacing:.42em;font-weight:700;text-transform:uppercase;margin-bottom:.35em;text-shadow:0 1px 0 #000}
 .ucine-big{font-size:clamp(26px,5.2vw,64px);letter-spacing:.18em;font-weight:900;text-transform:uppercase;line-height:1.05;margin-bottom:.12em;text-shadow:0 2px 0 #000}
 .ucine-name{font-size:clamp(22px,4vw,48px);font-weight:800;line-height:1.1;text-shadow:0 2px 0 #000}
@@ -268,6 +363,7 @@ const css = `
 .ucine-stars span{display:inline-block;opacity:0}
 .ucine-rarity{display:inline-block;padding:.3em 1.4em;font-size:clamp(12px,1.5vw,16px);font-weight:800;letter-spacing:.3em;text-transform:uppercase;color:#0b0c10;border-radius:3px}
 .ucine-skip{position:absolute;right:14px;top:10px;font:600 12px system-ui,sans-serif;color:#8a90a0;letter-spacing:.1em;pointer-events:none}
+.ucine-hint{position:absolute;left:0;right:0;text-align:center;font:600 13px system-ui,sans-serif;color:#c3c8d4;letter-spacing:.28em;text-transform:uppercase;pointer-events:none;opacity:0}
 `;
 
 // ---- one play ----
@@ -295,19 +391,19 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
   const rarityInfo = RARITIES[mode === 'key' && car.bespoke ? 'bespoke' : s.rarity] || RARITIES.common;
   // the words' elements
   const words = Object.assign(document.createElement('div'), { className: 'ucine-words' });
-  const tag = Object.assign(document.createElement('div'), { className: 'ucine-tag', textContent: mode === 'key' ? 'The key is yours' : (evil ? 'New ride' : 'New car') });
+  const tag = Object.assign(document.createElement('div'), { className: 'ucine-tag', textContent: evil ? 'New ride' : 'New car' });
   tag.style.color = '#' + s.accent.getHexString();
   const big = Object.assign(document.createElement('div'), { className: 'ucine-big', textContent: 'Key unlocked' });
   const name = Object.assign(document.createElement('div'), { className: 'ucine-name', textContent: car.name || car.id });
   const starRow = Object.assign(document.createElement('div'), { className: 'ucine-stars' });
   starRow.style.color = starColour(car);
-  const starText = stars(car);
-  for (const ch of starText) starRow.append(Object.assign(document.createElement('span'), { textContent: ch }));
+  for (const ch of stars(car)) starRow.append(Object.assign(document.createElement('span'), { textContent: ch }));
   const pill = Object.assign(document.createElement('div'), { className: 'ucine-rarity', textContent: rarityInfo.name });
   pill.style.background = rarityInfo.colour;
   if (mode === 'key') words.append(big, name, starRow, pill); else words.append(tag, name, starRow, pill);
   const skipNote = Object.assign(document.createElement('div'), { className: 'ucine-skip', textContent: still === null ? 'TAP TO SKIP' : '' });
-  root.append(words, skipNote);
+  const hint = Object.assign(document.createElement('div'), { className: 'ucine-hint', textContent: 'Tap to continue' });
+  root.append(words, skipNote, hint);
 
   // the overlay drawn over the scene in the same canvas: vignette, flash, letterbox bars, fade
   const ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 2);
@@ -341,12 +437,14 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     barTop.scale.set(1, bar, 1); barTop.position.y = 1 - bar;
     barBottom.scale.set(1, bar, 1); barBottom.position.y = -1 + bar;
     words.style.bottom = (bar * 50 + 4) + '%';
+    hint.style.bottom = Math.max(1, bar * 50 - 3.2) + '%';
   };
   resize();
 
   const total = lite ? DURATION.lite : DURATION[mode];
-  // the words' timings: [element, appears at, fades at] (fade with the whole at the end)
-  const reveal = mode === 'key' ? { tag: 6.85, big: 6.95, name: 7.25, stars: 7.5, pill: 7.85 } : { tag: 3.5, name: 3.62, stars: 3.88, pill: 4.12 };
+  const hintAt = lite ? HINT.lite : HINT[mode];
+  // the words' timings
+  const reveal = mode === 'key' ? { tag: 7.75, big: 7.8, name: 8.1, stars: 8.35, pill: 8.65 } : { tag: 3.5, name: 3.62, stars: 3.88, pill: 4.12 };
   const setWords = (t) => {
     const at = lite ? { tag: 0.35, big: 0.35, name: 0.45, stars: 0.55, pill: 0.65 } : reveal;
     const show = (el, t0, rise = 14) => {
@@ -370,12 +468,13 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     const p = span(t, at.pill, at.pill + 0.35);
     pill.style.opacity = p > 0 ? '1' : '0';
     pill.style.clipPath = lite ? '' : `inset(0 ${((1 - easeOut(p)) * 50).toFixed(1)}% 0 ${((1 - easeOut(p)) * 50).toFixed(1)}%)`;
-    const out = lite ? span(t, total - 0.4, total) : span(t, total - (mode === 'key' ? 0.3 : 0.25), total);
-    words.style.opacity = (1 - out).toFixed(3);
+    hint.style.opacity = loop ? '0' : (0.85 * span(t, hintAt, hintAt + 0.3)).toFixed(3);
+    skipNote.style.opacity = t >= hintAt ? '0' : '1';
   };
 
   // sparks: where each is at time t
   const sparkPos = s.sparkGeo.attributes.position, sparkCol = s.sparkGeo.attributes.color, col = new THREE.Color();
+  const rainbow = mode === 'key' && !!car.bespoke;
   const setSparks = (t, origin, t0, slow, power, show, dustOn) => {
     let n = 0;
     for (const sd of s.seeds) {
@@ -386,35 +485,38 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
         if (age < life) {
           const d = power * sd.speed * (1 - Math.exp(-age / slow));
           p = v3(origin.x + sd.dir.x * d, origin.y + sd.dir.y * d * 0.8 + age * 0.15, origin.z + sd.dir.z * d);
-          const fadeU = 1 - age / life;
-          if (s.accentRainbow) col.setHSL((sd.hue + t * 0.1) % 1, 0.85, 0.62); else col.copy(s.accent).lerp(new THREE.Color(0xffffff), sd.hue * 0.5);
-          col.multiplyScalar(fadeU);
+          if (rainbow) col.setHSL((sd.hue + t * 0.1) % 1, 0.85, 0.62); else col.copy(s.accent).lerp(WHITE, sd.hue * 0.5);
+          col.multiplyScalar(1 - age / life);
         }
       } else if (sd.kind === 'dust' && dustOn > 0) {
-        const c = dustOn;
         p = v3(origin.x + (sd.dir.x * 1.6) + Math.sin(t * 0.3 + sd.wob) * 0.25, origin.y + sd.dir.y * 1.2 + Math.sin(t * 0.21 + sd.wob * 2) * 0.2, origin.z + sd.dir.z * 1.2);
-        col.setRGB(0.55 * c, 0.58 * c, 0.65 * c).multiplyScalar(0.5 + 0.5 * Math.sin(t * 1.3 + sd.wob));
+        col.setRGB(0.55 * dustOn, 0.58 * dustOn, 0.65 * dustOn).multiplyScalar(0.5 + 0.5 * Math.sin(t * 1.3 + sd.wob));
       }
       if (p) { sparkPos.setXYZ(n, p.x, p.y, p.z); sparkCol.setXYZ(n, col.r, col.g, col.b); n++; }
     }
     s.sparkGeo.setDrawRange(0, n);
     sparkPos.needsUpdate = true; sparkCol.needsUpdate = true;
   };
-  s.accentRainbow = mode === 'key' && !!car.bespoke;
 
   const shake = (t, t0, amount) => {
     if (t < t0) return v3(0, 0, 0);
     const e = Math.exp(-(t - t0) * 7) * amount;
     return v3(Math.sin(t * 71) * e, Math.sin(t * 53 + 1) * e, Math.sin(t * 47 + 2) * e * 0.5);
   };
-
-  // ---- the state of everything at time t ----
-  const setCar = (t) => {
-    const lt = lite ? 99 : t; // (the lite version: everything as at the end)
+  const shotAt = (t) => {
     const shot = lite ? shots[shots.length - 1] : shots.find(x => t < x.to) || shots[shots.length - 1];
     const u = lite ? 1 : span(t, shot.from, shot.to);
     const [pos, target, fov, lift = 0] = shot.cam(smooth(u) * 0.5 + u * 0.5);
     view.lift = lift * Math.min(1, aspect); // (a tall screen has room under the car as it is)
+    return [pos, target, fov];
+  };
+  // a flicker then on: 0 before a, a short blink at a, steady from b
+  const powerOn = (t, a, b) => (t >= b ? 1 : t >= a && t < a + 0.06 ? 1 : 0);
+
+  // ---- the state of everything at time t ----
+  const setCar = (t) => {
+    const lt = lite ? 99 : t; // (the lite version: everything as at the end)
+    const [pos, target, fov] = shotAt(t);
     camera.position.copy(pos); camera.fov = fov; camera.lookAt(target);
     const { W, H, L } = s;
     // lights: dark, a rim, then the key light sweeping on in the detail shot, full from the side shot
@@ -427,6 +529,10 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     s.rim2.intensity = 0.8 * smooth(span(lt, 0.3, 1.0)) + on * 0.6;
     s.backGlow.material.opacity = 0.75 * smooth(span(lt, 0.0, 0.7)) * (1 - 0.55 * on);
     s.pool.material.opacity = 0.15 + 0.35 * on;
+    // the lamps: off in the dark, the headlamps flickering on in the detail shot, the tail lamps with the light
+    setLamp(s.lamps, 'head', powerOn(lt, 1.4, 1.5), 1 - 0.5 * on);
+    setLamp(s.lamps, 'tail', powerOn(lt, 2.25, 2.3), 0.8);
+    setLamp(s.lamps, 'amber', 0);
     // the beam's sweep (the silhouette shot), then gone
     const b = span(lt, 0, 1.3);
     s.beam.position.set(lerp(-L * 0.9, L * 0.9, smooth(b)), 7.5, -L * 0.55);
@@ -446,91 +552,112 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     s.sparks.material.size = 0.11;
     s.model.userData.animate?.(lt === 99 ? 2.4 : t);
     flashMat.opacity = lite ? 0 : 0.35 * (t >= fT ? Math.exp(-(t - fT) * 9) : 0);
-    flashMat.color.copy(s.accent).lerp(new THREE.Color(0xffffff), 0.5);
-    // fades: in from black, out at the end
-    const fadeIn = lite ? span(t, 0, 0.5) : span(t, 0, 0.35);
-    const fadeOut = lite ? span(t, total - 0.4, total) : span(t, total - 0.25, total);
-    fadeMat.opacity = Math.max(1 - fadeIn, fadeOut);
+    flashMat.color.copy(s.accent).lerp(WHITE, 0.5);
+    fadeMat.opacity = 1 - (lite ? span(t, 0, 0.5) : span(t, 0, 0.35)); // (in from black; no fade out: the end is held)
   };
 
+  const CLICK = s.fob ? 3.0 : 3.1; // (the moment: the ignition's click, or the fob's second chirp)
   const setKey = (t) => {
     const lt = lite ? 99 : t;
-    const shot = lite ? shots[shots.length - 1] : shots.find(x => t < x.to) || shots[shots.length - 1];
-    const u = lite ? 1 : span(t, shot.from, shot.to);
-    const [pos, target, fov, lift = 0] = shot.cam(smooth(u) * 0.5 + u * 0.5);
-    view.lift = lift * Math.min(1, aspect); // (a tall screen has room under the car as it is)
-    const CLICK = 3.3;
-    camera.position.copy(pos).add(lite ? v3(0, 0, 0) : shake(t, CLICK, 0.07));
+    const [pos, target, fov] = shotAt(t);
+    camera.position.copy(pos).add(lite ? v3(0, 0, 0) : shake(t, CLICK, s.fob ? 0.04 : 0.07));
     camera.fov = fov; camera.lookAt(target);
     const { H, L, lockAt: P } = s;
-    // the key: standing and turning slowly (the first shot), then level, blade into the lock, and the turn
-    if (t < 1.6 && !lite) {
-      s.keyLevel.rotation.set(0, 0, 0);
-      s.keyRig.position.set(P.x, P.y + Math.sin(t * 1.1) * 0.03, P.z + 2.0);
-      s.keyRig.rotation.set(0, 0.6 - t * 0.35, -0.12);
-      s.keyRig.visible = true;
+    const opening = !lite && t < 4.6; // (the key's part)
+    // the key: standing and turning slowly (the first shot); then the blade in the barrel and the turn, or the fob held up
+    s.keyRig.visible = opening;
+    s.lock.visible = opening && !s.fob && t >= 1.4;
+    if (t < 1.4 || s.fob) {
+      s.keyLevel.quaternion.identity();
+      if (t < 1.4) {
+        s.keyRig.position.set(P.x, P.y + Math.sin(t * 1.1) * 0.03, P.z + 2.0);
+        s.keyRig.rotation.set(0, 0.6 - t * 0.35, -0.12);
+      } else if (t < 3.5) { // (the fob held up to the camera; pressed at 2.10: pushed back a little and tipped)
+        const press = t >= 2.1 ? Math.exp(-(t - 2.1) * 9) : 0;
+        s.keyRig.position.set(P.x, P.y + 0.02 + Math.sin(t * 1.3) * 0.015, P.z + 2.0 - press * 0.06);
+        s.keyRig.rotation.set(0.1 + press * 0.08, 0.18 - (t - 1.4) * 0.05, -0.05); // (its face tipped a little down, out of the light's glare)
+      } else { // (the burst: the fob at the lock's place, in front of the car)
+        s.keyRig.position.set(P.x, P.y, P.z);
+        s.keyRig.rotation.set(0, 0.25 + (t - 3.5) * 0.15, 0);
+      }
     } else {
-      // level: blade (-y) toward -z, its face up (+y)
-      s.keyLevel.rotation.set(Math.PI / 2, 0, 0);
-      const inU = smooth(span(t, 1.6, 2.95)); // (slow in, slow home)
-      const tipZ = lerp(1.7, -0.32, inU); // (the blade's tip, from the lock's face: in at last)
+      s.keyLevel.quaternion.copy(s.inBarrel);
+      const tipZ = lerp(1.8, -0.32, smooth(span(t, 1.4, 2.75))); // (the blade's tip, from the barrel's face: in at last)
       s.keyRig.position.set(P.x, P.y, P.z + tipZ + s.keyHalf);
-      const turn = easeIn(span(t, 3.12, CLICK)) * Math.PI / 2;
+      const turn = -easeIn(span(t, 2.9, CLICK)) * Math.PI / 2; // (clockwise seen from the driver: about +z, negative)
       s.keyRig.rotation.set(0, 0, turn);
-      s.keyRig.visible = lt < 5.0 || lite ? !lite : false;
     }
-    s.faceTurn.rotation.z = s.keyRig.rotation.z * (t >= 1.6 ? 1 : 0);
-    // the tumbler lights, one by one, then all the rarity's colour at the click
-    s.pips.forEach((m, i) => { const lit = t >= 2.35 + i * 0.25; m.color.set(lit ? (t >= CLICK ? s.accent : new THREE.Color(0xfff2c8)) : new THREE.Color(0x222630)); });
+    s.faceTurn.rotation.z = s.fob || t < 1.4 ? 0 : s.keyRig.rotation.z;
+    // the barrel's marks: LOCK lit as the key is home, ACC half way round, ON (the rarity's colour) at the click
+    if (!s.fob) {
+      const turnU = span(t, 2.9, CLICK);
+      const lit = [t >= 2.75, turnU >= 0.5, t >= CLICK];
+      s.pips.forEach((m, i) => m.color.set(!lit[i] ? 0x222630 : i === 2 ? s.accent : 0xfff2c8));
+    }
     const ringPulse = t >= CLICK ? Math.exp(-(t - CLICK) * 1.6) : 0;
-    s.glowRing.material.opacity = lite ? 0 : 0.2 * span(t, 2.3, 3.1) + ringPulse * 0.9;
-    s.lock.visible = !lite && t >= 1.6 && t < 5.0; // (not in the dark first shot: only the key)
+    s.glowRing.material.opacity = lite || s.fob ? 0 : 0.2 * span(t, 1.9, 2.8) + ringPulse * 0.9;
     // the key's own little light
-    s.keySpot.position.set(P.x + 0.5, P.y + 0.9, P.z + 2.9);
-    s.keySpot.intensity = lite ? 0 : 9 * smooth(span(t, 0.3, 1.2)) * (t < 5.0 ? 1 : 0) + 10 * ringPulse;
-    // the car: a silhouette far behind the lock, then the light sweeping across it (RESOLVE), full in the hero shot
-    const on = smooth(span(lt, 5.35, 6.4));
-    s.hemi.intensity = 0.05 + on * 1.35;
+    if (s.fob || t < 1.4) s.keySpot.position.set(P.x + 0.5, P.y + 0.9, P.z + 2.9);
+    else if (t < 2.8) s.keySpot.position.set(P.x - 1.0, P.y + 0.7, P.z + 1.5); // (the insert, seen from the left: lit from the left)
+    else s.keySpot.position.set(P.x + 0.3, P.y + 0.6, P.z + 1.7);
+    const press = !lite && s.fob && t >= 2.1 && t < 2.5 ? Math.exp(-(t - 2.1) * 6) : 0; // (the fob's button: a pulse of light)
+    s.keySpot.intensity = !opening ? 0 : 9 * smooth(span(t, 0.3, 1.2)) + 10 * ringPulse;
+    // the car's lights. Dark until the burst; its edges lit by the burst (a glimpse); a little fill as the headlamp
+    // comes on (LAMPS); the key light sweeping across (SIDE); full from the rear shot on
+    const on = smooth(span(lt, 5.6, 6.4));
+    const blinkA = s.fob && t >= 2.65 && t < 2.83, blinkB = s.fob && t >= 3.0 && t < 3.18; // (the fob's two chirps)
+    const blink = !lite && (blinkA || blinkB);
+    s.hemi.intensity = 0.03 + (blink ? 0.35 : 0) + 0.3 * smooth(span(lt, 4.6, 5.0)) * (1 - on) + on * 1.35;
     s.keyLight.intensity = on * 2.5;
-    const sweep = lerp(1.3, -0.5, smooth(span(lt, 5.2, 6.5)));
+    const sweep = lerp(-1.4, 0.6, smooth(span(lt, 5.6, 6.5)));
     s.keyLight.position.set(Math.sin(sweep) * 8, 6, Math.cos(sweep) * 8);
-    s.rim.intensity = 2.6 * smooth(span(lt, 3.3, 4.6));
-    s.rim2.intensity = 1.2 * smooth(span(lt, 3.6, 5.0)) + on * 0.5;
-    s.backGlow.material.opacity = 0.85 * smooth(span(lt, 3.35, 4.6)) * (1 - 0.6 * on);
+    const glimpse = !lite && t >= CLICK && t < 4.6 ? 1.6 * Math.exp(-((t - CLICK - 0.4) ** 2) * 3) : 0;
+    s.rim.intensity = 2.6 * smooth(span(lt, CLICK + 0.2, 4.4)) + glimpse;
+    s.rim2.intensity = 1.2 * smooth(span(lt, CLICK + 0.5, 4.6)) + on * 0.5 + glimpse * 0.8;
+    s.backGlow.material.opacity = 0.85 * smooth(span(lt, CLICK + 0.05, 4.2)) * (1 - 0.6 * on);
     s.pool.material.opacity = 0.05 + 0.4 * on;
     s.beamMat.opacity = 0; s.spotPool.material.opacity = 0;
-    // the light burst at the click: core, streak, rays (slow motion), sparks; in the hero shot, a soft one behind the car
-    const origin = t < 5.0 ? v3(P.x, P.y, P.z + 0.05) : v3(0, H * 0.55, -L * 0.2);
+    // the lamps: the fob's blinks (indicators and headlamps); the headlamp flickering on (LAMPS); the tail lamps (REAR)
+    setLamp(s.lamps, 'amber', blink ? 1 : 0, 1.4);
+    setLamp(s.lamps, 'head', blink ? 1 : powerOn(lt, 4.85, 5.0), blink ? 1.3 : 1 - 0.5 * on);
+    setLamp(s.lamps, 'tail', blink ? 1 : powerOn(lt, 6.75, 6.8), 0.9);
+    // the light burst at the moment: core, streak, rays (slow motion), sparks; in the hero shot, a soft one behind the car
+    const origin = t < 4.6 ? (s.fob ? v3(P.x, P.y, P.z - 0.5) : v3(P.x, P.y, P.z + 0.05)) : v3(0, H * 0.55, -L * 0.2);
     s.flareCore.position.copy(origin); s.streak.position.copy(origin); s.rays.position.copy(origin);
-    const pulse = !lite && t >= CLICK && t < 5.0 ? Math.exp(-(t - CLICK) * 0.9) : 0;
-    const settle = !lite && t >= 6.7 ? 0.4 * Math.exp(-(t - 6.7) * 1.2) : 0;
-    s.flareCore.material.opacity = Math.min(1, pulse * 1.1 + settle); s.flareCore.scale.setScalar(1.2 + pulse * 2.4 + settle * 6);
+    const fromLock = s.fob ? t >= 3.5 : t >= CLICK; // (the fob's burst: from the cut to it)
+    const pulse = !lite && fromLock && t < 4.6 ? Math.exp(-(t - (s.fob ? 3.5 : CLICK)) * 0.9) : 0;
+    const settle = !lite && t >= 7.6 ? 0.4 * Math.exp(-(t - 7.6) * 1.2) : 0;
+    if (press) { origin.set(P.x, P.y - 0.22, P.z + 2.12); s.flareCore.position.copy(origin); } // (by its buttons)
+    s.flareCore.material.opacity = Math.min(1, pulse * 1.1 + settle + press * 0.45); s.flareCore.scale.setScalar(press ? 0.18 + press * 0.12 : 1.2 + pulse * 2.4 + settle * 6);
     s.streak.material.opacity = pulse * 0.9 + settle; s.streak.scale.set(7 + (1 - pulse) * 5, 0.12, 1);
-    s.rays.material.opacity = pulse * 0.55 + settle * 0.6; s.rays.scale.setScalar(2.5 + (t - CLICK) * 0.9); s.rays.material.rotation = t * 0.08;
-    if (t < 5.0) setSparks(t, origin, CLICK, 1.1, 2.2, !lite, lite ? 0 : smooth(span(t, 0.2, 1.0)) * (t < 1.6 ? 1 : 0));
-    else setSparks(t, origin, 6.7, 0.6, Math.max(s.W, L) * 0.6, !lite, 0);
-    s.sparks.material.size = t < 5.0 ? 0.045 : 0.1;
+    s.rays.material.opacity = pulse * 0.55 + settle * 0.6; s.rays.scale.setScalar(2.5 + Math.max(0, t - CLICK) * 0.9); s.rays.material.rotation = t * 0.08;
+    if (t < 4.6) setSparks(t, origin, s.fob ? 3.5 : CLICK, 1.1, 2.2, !lite && !press, lite ? 0 : smooth(span(t, 0.2, 1.0)) * (t < 1.4 ? 1 : 0));
+    else setSparks(t, origin, 7.6, 0.6, Math.max(s.W, L) * 0.6, !lite, 0);
+    s.sparks.material.size = t < 4.6 ? 0.045 : 0.1;
     s.model.userData.animate?.(lt === 99 ? 2.4 : t);
-    // the flash at the click: white, going to the rarity's colour
-    if (!lite && t >= CLICK && t < 4.2) {
+    // the flash at the moment: white, going to the rarity's colour (the fob's: smaller)
+    if (!lite && t >= CLICK && t < CLICK + 0.9) {
       const a = t - CLICK;
-      flashMat.opacity = a < 0.06 ? 1 : Math.exp(-(a - 0.06) * 3.5) * 0.85;
-      flashMat.color.set(0xffffff).lerp(s.accent, clamp(a / 0.35));
+      flashMat.opacity = (a < 0.06 ? 1 : Math.exp(-(a - 0.06) * 6) * 0.75) * (s.fob ? 0.1 : 1); // (short: the key turned home shows through it)
+      flashMat.color.set(0xffffff).lerp(s.accent, clamp(a / (s.fob ? 0.1 : 0.35)));
     } else flashMat.opacity = 0;
     const fadeIn = lite ? span(t, 0, 0.5) : span(t, 0, 0.6);
-    const fadeOut = lite ? span(t, total - 0.4, total) : span(t, total - 0.3, total);
-    // (a dip to black on the cut to the car: from the light of the burst into the dark room)
-    const dip = lite ? 0 : Math.max(span(t, 4.75, 5.0) * (t < 5.0 ? 1 : 0), t >= 5.0 ? 1 - span(t, 5.0, 5.3) : 0);
-    fadeMat.opacity = Math.max(1 - fadeIn, fadeOut, dip);
+    // (a dip to black on the cut to the car's lamps: from the light of the burst into the dark)
+    const dip = lite ? 0 : Math.max(span(t, 4.4, 4.6) * (t < 4.6 ? 1 : 0), t >= 4.6 ? 1 - span(t, 4.6, 4.85) : 0);
+    fadeMat.opacity = Math.max(1 - fadeIn, dip);
   };
 
   // sound cues: [time, name, volume]
   const CUES = lite ? [] : mode === 'key'
-    ? [[0.15, 'rumble', 0.6], [1.7, 'throw', 0.5], [2.35, 'camera', 0.8], [2.6, 'camera', 0.8], [2.85, 'camera', 0.9], [3.28, 'crash', 0.9], [3.3, 'drum', 1], [3.34, 'burst', 0.7], [5.05, 'turbo', 0.6], [6.95, 'bell', 0.8], [7.85, 'menuPick', 0.7]]
-    : [[0.05, 'rumble', 0.35], [1.25, 'throw', 0.45], [2.55, 'drum', 0.9], [2.56, 'turbo', 0.5], [3.62, 'menuPick', 0.7], [4.12, 'bell', 0.7]];
+    ? [[0.15, 'rumble', 0.6],
+      ...(s.fob
+        ? [[2.1, 'camera', 0.8], [2.65, 'bell', 0.7], [3.0, 'bell', 0.8], [3.02, 'drum', 0.7], [3.5, 'burst', 0.5]]
+        : [[1.5, 'throw', 0.5], [1.9, 'camera', 0.8], [2.15, 'camera', 0.8], [2.4, 'camera', 0.9], [3.08, 'crash', 0.9], [3.1, 'drum', 1], [3.14, 'burst', 0.7]]),
+      [4.85, 'camera', 0.5], [5.0, 'turbo', 0.6], [6.8, 'drum', 0.5], [7.8, 'bell', 0.8], [8.65, 'menuPick', 0.7]]
+    : [[0.05, 'rumble', 0.35], [1.25, 'throw', 0.45], [1.5, 'camera', 0.4], [2.55, 'drum', 0.9], [2.56, 'turbo', 0.5], [3.62, 'menuPick', 0.7], [4.12, 'bell', 0.7]];
 
   // ---- the loop ----
-  let raf = 0, startAt = 0, lastT = -1, done = false;
+  let raf = 0, startAt = 0, lastT = -1, done = false, held = false;
   const frame = (t) => {
     if (mode === 'key') setKey(t); else setCar(t);
     camera.aspect = aspect;
@@ -543,13 +670,19 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     renderer.clearDepth();
     renderer.render(over, ortho);
   };
+  // the end: the last frame drawn once and HELD (nothing more drawn) until a tap or a key
+  const hold = () => {
+    held = true;
+    cancelAnimationFrame(raf); raf = 0;
+    frame(total);
+  };
   const tick = (now) => {
-    if (done) return;
+    if (done || held) return;
     raf = requestAnimationFrame(tick);
     if (!startAt) startAt = now;
     let t = (now - startAt) / 1000;
     if (t >= total) {
-      if (!loop) { close(); return; }
+      if (!loop) { hold(); return; }
       startAt = now; t = 0; lastT = -1;
     }
     for (const [at, nameOf, vol] of CUES) if (lastT < at && t >= at) Sound.play(nameOf, vol);
@@ -568,17 +701,19 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     renderer.dispose();
     renderer.forceContextLoss();
   };
-  const onResize = () => { resize(); if (still !== null) frame(still); };
+  // a tap or a key: while it plays, to the held end; at the end (or a still), closed
+  const skip = () => { if (held || still !== null) close(); else hold(); };
+  const onResize = () => { resize(); if (still !== null) frame(still); else if (held) frame(total); };
   const onKey = (e) => {
-    if (['Escape', 'Space', 'Enter', 'NumpadEnter'].includes(e.code) || ['Escape', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); close(); }
+    if (['Escape', 'Space', 'Enter', 'NumpadEnter'].includes(e.code) || ['Escape', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); skip(); }
   };
-  root.addEventListener('click', (e) => { e.stopPropagation(); close(); }); // (on the click, the last of a tap's events: nothing under it gets the tap)
+  root.addEventListener('click', (e) => { e.stopPropagation(); skip(); }); // (on the click, the last of a tap's events: nothing under it gets the tap)
   addEventListener('resize', onResize);
   addEventListener('keydown', onKey, true);
 
   if (still !== null) { const t = clamp(still, 0, total); requestAnimationFrame(() => { resize(); frame(t); }); }
   else raf = requestAnimationFrame(tick);
-  return { close, get done() { return done; }, total };
+  return { close, skip, get done() { return done; }, get held() { return held; }, total };
 };
 
 // ---- the address: ?unlockcine=car:<id> | key:<id> [&evil] [&loop] [&still=<s>] ----

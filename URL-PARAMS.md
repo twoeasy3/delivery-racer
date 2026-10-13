@@ -181,16 +181,18 @@ Also need `autostart` (or a hidden level).
 
 A full-screen reveal over the menu, drawn in one canvas of its own (render/unlockcine.js). Not the `cine` stills of
 section 2 (those are a frozen camera on a run): these are short played sequences. Nothing in the game starts one yet.
-A tap or click, Escape, Space or Enter skips (closes) it. Reduced motion, or any `?lite=` switch: a 2.6 s fade-only
-version. Sound plays only once the page has been tapped or a key pressed (a browser rule), so a first play straight from
-the address is silent; with `&loop` the plays after that are heard (press a key other than Esc/Space/Enter, e.g. Shift).
+A tap or click, Escape, Space or Enter while it plays skips to its end; the end is HELD (the last frame, with "Tap to
+continue") until a tap or one of those keys closes it. Reduced motion, or any `?lite=` switch: a short fade-only version
+(1.3 s, then held). Sound plays only once the page has been tapped or a key pressed (a browser rule), so a first play
+straight from the address is silent; with `&loop` the plays after that are heard (press a key other than Esc/Space/Enter,
+e.g. Shift).
 
 | Param | Values | What it does | Example | Saves? | Tried |
 |---|---|---|---|---|---|
-| `unlockcine` | `car:<car id>` | The CAR unlock, 5.0 s: a dark silhouette under a sweeping spotlight (low, wide), a close-up of the front corner as the light comes on, a tracking side shot with a flare in the rarity's colour, the front three-quarter hero shot with NEW CAR, the name, the stars and the rarity. Any car id. | `/delivery/?unlockcine=car:hearse` | Normal (it writes nothing) | yes (stills, CHECKLIST 237) |
-| `unlockcine` | `key:<car id>` | The KEY unlock, 9.0 s: the car's own key in the dark, sliding into a lock in slow motion (three tumbler clicks), the turn and CLICK (shake, flash), a slow-motion burst with the car's silhouette behind, the car brought out of the dark by a sweeping light, then KEY UNLOCKED, the name, the stars and the rarity. Any car id (a car with no key of its own gets the plain fob). | `/delivery/?unlockcine=key:swancar` | Normal | yes (stills) |
+| `unlockcine` | `car:<car id>` | The CAR unlock, 5.0 s, then held: a dark silhouette under a sweeping spotlight (low, wide), the front corner close as the headlamps flicker on, a tracking side shot with a flare in the rarity's colour, the front three-quarter hero shot with NEW CAR, the name, the stars and the rarity. Any car id. | `/delivery/?unlockcine=car:hearse` | Normal (it writes nothing) | yes (stills, CHECKLIST 237, 238) |
+| `unlockcine` | `key:<car id>` | The KEY unlock, 10.0 s, then held: the car's own key in the dark; then, for a key with a blade, the IGNITION (from the side, the key slides into the vertical slot teeth down, three tumbler clicks; then the barrel's face: a quarter turn clockwise to ON, the CLICK with shake and flash), or for a FOB with no blade (the Horseshoe, Snowcat, Quad-Turbo, Knife-Edge, Windsong, Sixteen) the fob's button pressed and the car's lamps blinking twice with a chirp; then a slow-motion burst with the car's silhouette behind, the headlamp powering on (close), a side sweep, a rear three-quarter as the tail lamps light, and KEY UNLOCKED, the name, the stars and the rarity. Any car id (a car with no key of its own gets the plain fob key, which has a blade). | `/delivery/?unlockcine=key:swancar` (ignition), `/delivery/?unlockcine=key:horseshoe` (fob) | Normal | yes (stills) |
 | `evil` | bare | With `unlockcine`: the Evil livery (and "New ride" for a car). | `/delivery/?unlockcine=car:sixteen&evil` | Normal | yes |
-| `loop` | bare | With `unlockcine`: plays again and again (until skipped). | `/delivery/?unlockcine=key:swancar&loop` | Normal | untried |
+| `loop` | bare | With `unlockcine`: plays again and again, no hold (until skipped). | `/delivery/?unlockcine=key:swancar&loop` | Normal | untried |
 | `still` | seconds | With `unlockcine`: that moment of it, held (no sound), for pictures. | `/delivery/?unlockcine=key:swancar&still=3.4` | Normal | yes |
 
 ## 8. Performance: the tablet flicker bisect (`lite`)
