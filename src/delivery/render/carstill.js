@@ -10,7 +10,7 @@
 // (carposes.js: 'top', 'hero', 'front', 'rear'; POSES below), framed tight to the picture.
 // Lazily: stillsIn(root) draws only the pictures scrolled into view (an IntersectionObserver), a few a frame.
 import { makeShowCar, paintShowCar } from './garage.js';
-import { sharedRenderer, drawStill } from './modelviews.js';
+import { sharedRenderer, drawStill, boxOf } from './modelviews.js';
 
 export const STILL_POSE = { lift: 0.3, angle: -0.64, close: 1 }; // (from a little above, in front, three-quarters on, the nose to the left: the event cards)
 // the blueprint cards' four (a model's nose is +z; angle turns it, from facing the camera: + to the right, - to the left).
@@ -28,11 +28,18 @@ const poseKey = (pose) => (typeof pose === 'string' ? pose : pose && pose !== ST
 
 const stills = new Map(); // car id + side + pose + size -> the object URL of its picture, once encoded
 const keyOf = (el, car, evil, pose) => {
-  const r = el.getBoundingClientRect();
+  const r = boxOf(el); // (its own laid-out size, not the box on screen a transform makes of it: modelviews.js boxOf)
   return car.id + (evil ? '/evil/' : '/good/') + poseKey(pose) + '/' + Math.round(r.width / 20) + 'x' + Math.round(r.height / 20);
 };
+// the picture fills the element, whole, whatever its pixel size (drawn at the device's pixel ratio, so twice the element at
+// 2x): an element whose CSS gives the background no size of its own gets `contain`, centred (a pack's car had none and
+// showed its picture at its pixel size, cut off: CHECKLIST 201)
 const show = (el, url) => {
   el.style.backgroundImage = `url("${url}")`;
+  const cs = getComputedStyle(el);
+  if (cs.backgroundSize === 'auto' || cs.backgroundSize === 'auto auto') {
+    el.style.backgroundSize = 'contain'; el.style.backgroundPosition = 'center'; el.style.backgroundRepeat = 'no-repeat';
+  }
   el.querySelector(':scope > canvas.still-draw')?.remove();
 };
 // already drawn for this element's size: shown at once (true); false: it is still to be drawn
@@ -91,17 +98,21 @@ const pump = () => {
     if (!job.el.isConnected || job.el.dataset.still === job.key) continue;
     if (stillReady(job.el, job.car, job.evil, job.pose)) { job.el.dataset.still = job.key; continue; }
     if (stillCar(job.el, job.car, job.evil, job.pose)) job.el.dataset.still = job.key;
-    else if (job.el.isConnected && !job.el.getBoundingClientRect().width && (job.tries = (job.tries || 0) + 1) < 30) { queue.push(job); break; } // (not laid out yet: a later frame)
+    else if (job.el.isConnected && !boxOf(job.el).width && (job.tries = (job.tries || 0) + 1) < 30) { queue.push(job); break; } // (not laid out yet: a later frame)
   }
   if (queue.length) pumping = requestAnimationFrame(pump);
 };
 // side: 'good' or 'evil', the livery (the pack screens always ask 'good': the owner, 12-Oct, "Render all card pack images in Good colours")
-export const drawSoon = (el, car, { side = 'good', pose } = {}) => {
+// first: drawn NOW if laid out, else ahead of the queue (a picture on screen now: the big pack of a reveal, which is up for
+// under a second, before the cards' that are turned away)
+export const drawSoon = (el, car, { side = 'good', pose, first = false } = {}) => {
   const evil = side === 'evil';
   const job = { el, car, evil, pose, key: car.id + '/' + (evil ? 'e' : 'g') + '/' + poseKey(pose) };
   if (el.dataset.still === job.key) return;
   if (stillReady(el, car, evil, pose)) { el.dataset.still = job.key; return; } // (cached: at once, no frame)
-  queue.push(job);
+  queue = queue.filter(j => j.el !== el); // (one job an element: a redraw at a new size replaces one not yet done)
+  if (first && boxOf(el).width && stillCar(el, car, evil, pose)) { el.dataset.still = job.key; return; } // (first, laid out: drawn now)
+  if (first) queue.unshift(job); else queue.push(job);
   if (!pumping) pumping = requestAnimationFrame(pump);
 };
 // the pictures of a scrolling box (root: the box, or null for the screen): watch(el, car, { side, pose }) draws it

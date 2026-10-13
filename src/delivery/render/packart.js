@@ -11,7 +11,7 @@ export const KIND_LOOK = { career: 'common', daily: 'uncommon', standard: 'uncom
 const KIND_MARK = { career: 'Career', daily: 'Daily', standard: 'Standard', ten: '10', special: 'Special' };
 // a pack that features ONE car (the Car Hunt packs, the Comet Hunt's) has that car drawn on it (the owner, 13-Oct: "draw the car on the pack as
 // well"): its Good-livery still, under the pack's mark; drawn once the art is laid out (carstill.js drawSoon)
-const PACK_POSE = { lift: 0.22, angle: -0.6, fov: 30, margin: 0.9 };
+export const PACK_POSE = { lift: 0.22, angle: -0.6, fov: 30, margin: 0.9 };
 export const featuredCarOf = (id) => {
   const f = packData?.packs?.[id]?.featured, tie = f?.sameCarAs && packData.packs[f.sameCarAs]?.featured; // (sameCarAs: the car of the pack it is tied to, packs.js featuredOf)
   const ids = [...new Set(((tie || f)?.entries || []).filter(e => !e.key).map(e => e.car))];
@@ -26,9 +26,25 @@ const make = (tag, className, ...inside) => {
   node.append(...inside.flat().filter(x => x !== null && x !== undefined && x !== false));
   return node;
 };
+// drawn at the span's OWN laid-out size (not the box on screen: the reveal's big pack shakes and grows, packs.css pr-shake),
+// shown whole (`contain`: carstill.js show), first in the queue (the big pack is on screen for under a second, before the
+// cards that are turned away), and drawn again when its size changes (a window resized, a tablet turned): a
+// ResizeObserver, which also waits for the span to be laid out (CHECKLIST 201: the Comet cut off on the big pack)
 const packCar = (car) => {
   const el = make('span', 'pack-car');
-  requestAnimationFrame(() => drawSoon(el, car, { side: 'good', pose: PACK_POSE }));
+  const opts = { side: 'good', pose: PACK_POSE, first: true };
+  let drawnAt = '';
+  const redraw = (w, h) => {
+    const at = Math.round(w / 20) + 'x' + Math.round(h / 20); // (carstill.js keeps stills in steps of 20 px)
+    if (!w || !h || at === drawnAt) return;
+    drawnAt = at;
+    delete el.dataset.still;
+    drawSoon(el, car, opts);
+  };
+  drawSoon(el, car, opts); // (not laid out yet: first in the queue, so the next frame draws it before anything queued after it, the reveal's cards)
+  if (typeof ResizeObserver === 'function') {
+    new ResizeObserver((entries) => { const r = entries[entries.length - 1].contentRect; redraw(r.width, r.height); }).observe(el);
+  }
   return el;
 };
 export const packArt = (id, count = 1) => {

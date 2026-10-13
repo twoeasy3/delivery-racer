@@ -381,4 +381,4 @@ button.shop-odds { width: 100%; padding: 0; cursor: pointer; }
 .shop-pack.has-car { justify-content: flex-start; padding-top: 6px; }
 .shop-pack.has-car .pack-mark { display: none; }
 .shop-pack.has-car .pack-sub { position: absolute; left: 0; right: 0; bottom: 7px; }
-.shop-pack .pack-car { position: absolute; left: 1%; right: 1%; top: 42%; height: 36%; pointer-events: none; z-index: 2; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .55)); }
+.shop-pack .pack-car { background: center / contain no-repeat; position: absolute; left: 1%; right: 1%; top: 42%; height: 36%; pointer-events: none; z-index: 2; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .55)); }
