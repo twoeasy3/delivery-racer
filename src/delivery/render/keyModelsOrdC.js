@@ -140,3 +140,64 @@ const carbonfob = (car, { rarity = 'bespoke' } = {}) => {
 };
 
 registerKey('carbonfob', carbonfob);
+
+// ---- (11) the STEALTH-WEDGE fob: a faceted, angular wedge (a folded-paper fighter's look), a hexagonal ring hole ----
+const poly = (points, path = new THREE.Shape()) => { points.forEach(([x, y], i) => (i ? path.lineTo(x, y) : path.moveTo(x, y))); path.closePath(); return path; };
+const hexagon = (cx, cy, r, turn = 0) => Array.from({ length: 6 }, (_, i) => [cx + r * Math.cos(turn + i * Math.PI / 3), cy + r * Math.sin(turn + i * Math.PI / 3)]);
+// a flat-shaded material (each facet its own tone)
+const faceted = (color, shininess = 60) => new THREE.MeshPhongMaterial({ color, specular: 0xffffff, shininess, flatShading: true });
+// a ridge on the face: a long low diamond whose two long sides rise to a crease (h high) from y0 to y1, w wide at its
+// waist (yw); its base at z = 0 (placed by `z`)
+const ridge = (parent, material, y0, y1, yw, w, h, inset, z) => {
+  const B = [[0, y0, 0], [w / 2, yw, 0], [0, y1, 0], [-w / 2, yw, 0]], R0 = [0, y0 + inset, h], R1 = [0, y1 - inset, h];
+  const tris = [[B[0], B[1], R0], [B[1], R1, R0], [B[1], B[2], R1], [B[0], R0, B[3]], [B[3], R0, R1], [B[3], R1, B[2]]];
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(tris.flat(2), 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(new Array(tris.length * 6).fill(0), 2));
+  geo.computeVertexNormals();
+  return add(parent, geo, material, 0, 0, z);
+};
+const wedgefob = (car, { rarity = 'bespoke' } = {}) => {
+  const group = new THREE.Group(), k = new THREE.Group();
+  const paint = paintOf(car);
+  const BODY = faceted(0x3b4049, 90), CREASE = faceted(paint.getHex(), 100), BUTTON = faceted(0x5d636d, 50), CHROME = faceted(0xd4d8de, 110);
+  const RING = metal(0xc9ced5, 110), INK = metal(0x16181d, 60), WHITE = glow(0xe8ecf2);
+  // the wedge: an arrowhead, its nose down; the face (a flat table) the outline itself, its edges cut back in one broad
+  // chamfer each side (the outline grown 0.2 at the middle), so every side is a facet of its own
+  const P = [[0, -1.75], [0.55, -0.9], [0.8, 0.55], [0.62, 1.25], [0.2, 1.55], [-0.2, 1.55], [-0.62, 1.25], [-0.8, 0.55], [-0.55, -0.9]];
+  const HOLE = [0, 0.98];
+  const shape = poly(P);
+  shape.holes.push(poly(hexagon(HOLE[0], HOLE[1], 0.4, Math.PI / 6).reverse(), new THREE.Path())); // (a hexagon, a point up: countersunk by the chamfer)
+  const D = 0.1, BT = 0.16, FRONT = D / 2 + BT; // (the face at z = 0.21)
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: D, bevelEnabled: true, bevelThickness: BT, bevelSize: 0.2, bevelSegments: 1, curveSegments: 1 });
+  geo.translate(0, 0, -D / 2);
+  add(k, geo, BODY);
+  // the rarity's lit rim, inset on the face
+  rainbow(band(k, rimMaterial(rarity), P, 0.02, -0.13, -0.08, 0.04, FRONT + 0.005, 1), 0, 0);
+  // the hole's chrome hexagon round its edge, half sunk in each face
+  for (const z of [FRONT, -FRONT]) add(k, new THREE.TorusGeometry(0.43, 0.04, 4, 6), CHROME, HOLE[0], HOLE[1], z).rotation.z = Math.PI / 6;
+  // the crease: a ridge of the car's colour down the face to the nose, front and back
+  for (const s of [1, -1]) ridge(k, CREASE, -1.5, -0.12, -0.8, 0.3, 0.09, 0.18, s * (FRONT - 0.005)).rotation.y = s > 0 ? 0 : Math.PI;
+  // the badge: a chrome hexagon below the hole, the initial on it
+  const BY = 0.2;
+  const badge = new THREE.CylinderGeometry(0.22, 0.22, 0.06, 6);
+  badge.rotateX(Math.PI / 2);
+  add(k, badge, CHROME, 0, BY, FRONT + 0.01);
+  glyph(k, INK, initialOf(car), 0.22, FRONT + 0.035, FRONT + 0.06, 0, BY);
+  // two triangular buttons either side of the crease: lock (pointing up), unlock (down), a white tick on each
+  for (const [x, turn] of [[-0.36, Math.PI / 2], [0.36, -Math.PI / 2]]) {
+    const b = new THREE.CylinderGeometry(0.17, 0.17, 0.08, 3);
+    b.rotateX(Math.PI / 2);
+    b.rotateZ(turn);
+    add(k, b, BUTTON, x, -0.4, FRONT + 0.01);
+    box(k, WHITE, 0.1, 0.03, 0.02, x, -0.4, FRONT + 0.055);
+  }
+  // the back: a chrome hexagon (the battery's cover)
+  add(k, badge.clone(), CHROME, 0, BY, -FRONT - 0.01);
+  // the ring: a hexagon of steel through the hole and round the top edge (across the key)
+  const R = 0.56, ring = add(k, new THREE.TorusGeometry(R, 0.05, 4, 6), RING, HOLE[0], HOLE[1] + R * Math.cos(Math.PI / 6), 0);
+  ring.rotation.set(0, Math.PI / 2, 0);
+  return idle(group, merged(k));
+};
+
+registerKey('wedgefob', wedgefob);
