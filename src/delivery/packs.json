@@ -58,6 +58,14 @@
       },
       "givenBy": { "event": { "every": true } }
     },
+    "car-hunt-5": {
+      "name": "Car Hunt 5-pack", "size": 5, "baseAmount": 1, "pool": "evergreen", "atLeast": { "uncommon": 1 },
+      "featured": {
+        "upgradeChance": 0, "featuredChance": 0,
+        "entries": [ { "car": "blower", "weight": 9, "amount": 3 }, { "car": "blower", "weight": 1, "amount": 15 } ]
+      },
+      "shop": { "section": "packs", "price": 250, "ribbon": "new" }
+    },
     "supercar-special": {
       "name": "Supercar Showdown", "limited": true, "size": 5, "baseAmount": 2, "pool": "evergreen", "atLeast": { "uncommon": 1 },
       "featured": {
