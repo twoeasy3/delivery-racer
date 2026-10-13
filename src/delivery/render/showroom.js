@@ -529,8 +529,9 @@ const showDetail = () => {
     look.setAttribute('aria-pressed', String(statsOff));
   });
   // (a KEY car's key, spinning in the stage's corner: render/showroomview.js; a blacked-out one's too, as a black
-  // silhouette (the owner, 13-Oct), its element naming no car: card.name is 'Locked car'; a car with no key, none)
-  const keyEl = kindOf(card) === 'key' ? make('div', 'sr-fkey' + (card.dark ? ' silhouette' : '')) : null;
+  // silhouette (the owner, 13-Oct), its element naming no car: card.name is 'Locked car'; a car with no key, and a car of
+  // a tier not open yet (card.hidden), none)
+  const keyEl = kindOf(card) === 'key' && !card.hidden ? make('div', 'sr-fkey' + (card.dark ? ' silhouette' : '')) : null;
   if (keyEl) { keyEl.setAttribute('role', 'img'); keyEl.setAttribute('aria-label', card.name + "'s key"); keyEl.title = 'Its key'; }
   const stage = make('div', 'sr-stage' + (keyEl ? ' has-key' : ''), pic, overlayNode(overlayOf(card), { inline: true }), keyEl, arrow(-1), arrow(1), look);
   // its card's picture (the cached still) in the panel

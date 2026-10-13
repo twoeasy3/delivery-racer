@@ -13,6 +13,14 @@
 //     at most 2 device px a CSS px, no more than about 30 frames a second, its PNG hidden under it; the Hot Dog Car's (a
 //     blacked-out car) live and black: the canvas's pixels all black, and nothing in the page names it (its name, its id)
 //     in an attribute or a URL in the key card; the full view shut: stopped, the canvas gone, the PNG back.
+// (3) THE STAGE CORNER'S KEY (render/showroomview.js, CHECKLIST 160; the owner, 13-Oct: "I wanted THIS key to be spinning
+//     when the car is blacked out"): in the source, a blacked-out key car's corner key built dark (every mesh the same flat
+//     black SILHOUETTE_KEY, the lights off), at most 30 frames a second, not under a sheet, on the shared renderer; in the
+//     browser, for EVERY blacked-out key car on a fresh save (carCard dark, kindOf 'key', not tier-hidden): `?showroom&look=
+//     <id>&full`: the corner key there, dark, turning by itself, its canvas's drawn pixels all black at four turns, at most
+//     about 30 frames a second, nothing in the corner's element or the stage's key canvas naming the car (name, id,
+//     keyshots/); reduced motion: standing still. The Silver Comet's corner key: in colour, turning, as before; a car
+//     with no key (the Commuter; a blacked-out blueprint car, the City EV) and a tier-hidden key car: no corner key.
 //   node scripts/.keyspin-check.mjs [--browser=<path>]
 import { createServer } from 'vite';
 import { spawn } from 'node:child_process';
@@ -45,6 +53,12 @@ check(/k\.stash = bg; k\.el\.style\.backgroundImage = 'none'/.test(code) && /k\.
 check(/release\(k\.s\)/.test(code) && /geometry\?\.dispose\(\)/.test(code), 'its geometry and materials are given back');
 check(/'\.sr-dpic, \.cs-keyspin'/.test(room) && /'\.sr-dpic, \.cs-keyspin, button'/.test(room), 'a drag on the key is not a swipe to the next car (phone and tablet)');
 check(/SILHOUETTE_KEY = new THREE\.MeshBasicMaterial\(\{ color: 0x000000 \}\)/.test(code) && /node\.material = SILHOUETTE_KEY/.test(code), 'a blacked-out key: every mesh one flat black material');
+const view = src('render/showroomview.js'), viewCode = view.split('\n').filter(l => !l.trim().startsWith('//')).join('\n');
+check(/kindOf\(card\) === 'key' && !card\.hidden \? make\('div', 'sr-fkey' \+ \(card\.dark \? ' silhouette' : ''\)\)/.test(room), 'the stage corner: a key for every key car, a blacked-out one included (classed silhouette), none for a tier-hidden car');
+check(/import \{ SILHOUETTE_KEY \} from '\.\/keyspin\.js'/.test(viewCode) && /buildKey\(car, keyEl, dark\)/.test(viewCode) && /if \(node\.isMesh\) node\.material = SILHOUETTE_KEY;/.test(viewCode) && /node\.isLight\) node\.visible = false/.test(viewCode), 'the corner key of a blacked-out car: every mesh the flat black SILHOUETTE_KEY of keyspin.js, the rest hidden, the lights off');
+check(/DARK_KEY_FPS = 30\b/.test(viewCode) && /k\.dark && k\.drawnAt && now - k\.drawnAt < 1000 \/ DARK_KEY_FPS/.test(viewCode), 'the blacked-out corner key drawn at most 30 times a second');
+check(/!keyVisible\(\)\) return;/.test(viewCode) && /ShowroomView\.keyWhen\(\(\) => !sheetUp\(\)\)/.test(room), 'the corner key not drawn under a sheet (lite.js sheetUp)');
+check(!/new\s+THREE\.WebGLRenderer|getContext\(['"]webgl/.test(viewCode) && /material !== SILHOUETTE_KEY\) \{ material\.map\?\.dispose\(\)/.test(viewCode), 'the corner key on the shared renderer, its own materials given back (the shared black kept)');
 
 // ---- (2) in a browser
 const browser = opt('browser', null) || ['/opt/pw-browsers/chromium-1194/chrome-linux/chrome', '/usr/bin/chromium', '/usr/bin/google-chrome',
@@ -188,6 +202,60 @@ else {
       check(!/hot ?dog|hotdog|keyshots\//i.test(dog.words), 'nothing in its key card names it (no name, id or keyshots/ address in any text, attribute or URL)');
       check(!dog.after && !dog.canvasLeft && /^url\("blob:/.test(dog.bgAfter), 'shut: stopped, the black PNG (a blob: address) back');
     }
+
+    // (c) the stage corner's key: every blacked-out key car's black and spinning, unnamed; the normal car's in colour
+    const darkCars = await evaluate(`(async () => {
+      const D = await import('/src/delivery/showroomData.js');
+      return D.showroomCars().map(c => D.carCard(c)).filter(c => c.dark && !c.hidden && D.kindOf(c) === 'key').map(c => ({ id: c.car.id, name: c.car.name }));
+    })()`);
+    check(darkCars.length >= 3, `blacked-out key cars on a fresh save: ${darkCars.map(c => c.id).join(', ')}`);
+    const corner = async (id, reads = 4) => {
+      await open(`index.html?showroom&look=${id}&full`);
+      return evaluate(`(async () => {
+        const { ShowroomView } = await import('/src/delivery/render/showroomview.js');
+        const wait = (ms) => new Promise(r => setTimeout(r, ms));
+        let el = null;
+        for (let i = 0; i < 60 && !(document.querySelector('.sr-stage')); i++) await wait(150);
+        await wait(1500);
+        el = document.querySelector('.sr-stage .sr-fkey');
+        if (!el) return { none: true, state: ShowroomView.state };
+        const shots = [];
+        for (let i = 0; i < ${reads}; i++) {
+          const s = ShowroomView.state, canvas = el.querySelector('canvas'), t = performance.now();
+          let drawn = 0, coloured = 0;
+          if (canvas) { const px = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data; for (let j = 0; j < px.length; j += 4) if (px[j + 3] > 8) { drawn++; if (px[j] || px[j + 1] || px[j + 2]) coloured++; } }
+          shots.push({ turn: s?.key?.turn, frames: s?.key?.frames, dark: s?.key?.dark, t, drawn, coloured, w: canvas?.width, h: canvas?.height });
+          await wait(700);
+        }
+        return { shots, html: el.outerHTML, cls: el.className, label: el.getAttribute('aria-label'), cssW: el.clientWidth };
+      })()`);
+    };
+    for (const car of darkCars) {
+      const r = await corner(car.id);
+      if (r.none) { check(false, `${car.id}: a corner key in the stage (none found)`); continue; }
+      const turns = r.shots.map(x => x.turn), first = r.shots[0], end = r.shots.at(-1);
+      const fps = (end.frames - first.frames) / ((end.t - first.t) / 1000);
+      check(r.shots.every(x => x.dark), `${car.id}: the corner key there, dark (${r.cls})`);
+      check(new Set(turns.map(t => t.toFixed(2))).size === turns.length, `${car.id}: spinning by itself (turns ${turns.map(t => t.toFixed(2)).join(', ')})`);
+      check(r.shots.every(x => x.drawn > 200 && x.coloured === 0), `${car.id}: black only at every read (${r.shots.map(x => x.drawn + '/' + x.coloured).join(', ')} drawn/coloured px)`);
+      check(end.frames > first.frames && fps <= 32, `${car.id}: drawn on, at most about 30 a second (${fps.toFixed(1)})`);
+      check(r.shots.every(x => x.w <= Math.round(r.cssW * 2) + 1), `${car.id}: at most 2 device px a CSS px`);
+      const names = [car.id, car.name, car.name.split(' ')[0]].map(x => x.toLowerCase());
+      check(!names.some(n => r.html.toLowerCase().includes(n)) && !/keyshots|data-/.test(r.html), `${car.id}: nothing in the corner names it (${r.label})`);
+    }
+    const normal = await corner('silvercomet', 3);
+    if (normal.none) check(false, 'silvercomet: a corner key');
+    else {
+      check(normal.shots.every(x => x.dark === false && x.coloured > x.drawn * 0.5), `silvercomet: the corner key in colour, as before (${normal.shots.map(x => x.drawn + '/' + x.coloured).join(', ')})`);
+      check(normal.shots[2].turn !== normal.shots[0].turn && /Silver Comet's key/.test(normal.label) && !/silhouette/.test(normal.cls), 'silvercomet: turning, named as before, not a silhouette');
+    }
+    for (const id of ['commuter', 'cityev']) check((await corner(id, 1)).none, `${id}: no key, no corner key`);
+    const hiddenKey = await evaluate(`(async () => { const D = await import('/src/delivery/showroomData.js'); return D.showroomCars().map(c => D.carCard(c)).find(c => c.hidden && D.kindOf(c) === 'key')?.car.id || null; })()`);
+    if (hiddenKey) check((await corner(hiddenKey, 1)).none, `${hiddenKey} (tier-hidden key car): no corner key`);
+    await page('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+    const still = await corner(darkCars[0]?.id || 'hotdog', 2);
+    check(!still.none && still.shots.every(x => Math.abs(x.turn - 0.55) < 1e-6 && x.coloured === 0 && x.drawn > 200), `reduced motion: ${darkCars[0]?.id}'s black corner key stands still (turn ${still.shots?.map(x => x.turn?.toFixed(2)).join(', ')})`);
+    await page('Emulation.setEmulatedMedia', { features: [] });
   } catch (error) {
     check(false, 'the browser part: ' + (error?.message || error));
   } finally {
