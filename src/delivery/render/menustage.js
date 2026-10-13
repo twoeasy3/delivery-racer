@@ -21,6 +21,7 @@ import { CARS, CAR, useLevelCar, earnedFor, amphibiousCars, stars, starColour, c
 import { Progress } from '../progress.js';
 import { Tiers, tierStarsNode, richTiers } from '../tiers.js';
 import { Events } from '../events.js';
+import { Ecu } from '../ecu.js';
 import { eventPacks, featuredOf, packName, describePack, contents, percent } from '../packs.js';
 import { packArt } from './packart.js';
 import { openContents, closeContents } from './packcontents.js';
@@ -478,16 +479,18 @@ const drawCar = () => {
     shop.title = 'This level needs a car of exactly its tier: buy one at Crazey Jim’s Used Cars';
     return;
   }
+  const fig = LEVEL.ownEcu && LEVEL.car === CAR.id ? Ecu.drive(CAR) : CAR; // (a free try: the figures it is driven with, at the player's ECU; else the car's own, as ever)
   const starSpan = make('span', 'stars', CAR.tier ? stars(CAR) : IDEA_TAG.text);
   starSpan.style.color = CAR.tier ? starColour(CAR) : IDEA_TAG.colour;
   shop.replaceChildren(picture,
     make('span', 'words',
       make('strong', '', CAR.name + ' ', CAR.tier || (CAR.idea && !CAR.event) ? starSpan : null),
-      bar('Speed', Math.round(CAR.maxSpeed * 3.6) + ' km/h', CAR.maxSpeed / MOST.speed),
-      bar('Accel', String(CAR.accel), CAR.accel / MOST.accel),
-      bar('Health', String(CAR.health), CAR.health / MOST.health)),
-    make('span', 'go', LEVEL.car ? (LEVEL.ownEcu ? 'Free try at your ECU' : 'This level’s own vehicle') : 'Showroom'));
-  shop.title = LEVEL.car ? 'You must use this vehicle on this level. Your own car returns on other levels.' : 'Open the showroom to pick a car (G)';
+      bar('Speed', Math.round(fig.maxSpeed * 3.6) + ' km/h', fig.maxSpeed / MOST.speed),
+      bar('Accel', String(Math.round(fig.accel * 10) / 10), fig.accel / MOST.accel),
+      bar('Health', String(Math.round(fig.health)), fig.health / MOST.health)),
+    make('span', 'go', LEVEL.car ? (LEVEL.ownEcu ? 'Free try · ECU ' + Math.max(1, Ecu.reached(CAR)) + '/' + Ecu.max(CAR) : 'This level’s own vehicle') : 'Showroom'));
+  shop.title = LEVEL.ownEcu ? 'Today\u2019s free try, lent at your ECU: open the showroom to drive your own car instead (G)'
+    : LEVEL.car ? 'You must use this vehicle on this level. Your own car returns on other levels.' : 'Open the showroom to pick a car (G)';
 };
 
 export const draw = () => {
