@@ -17,13 +17,14 @@
 // front, the side, the back and above (for stills).
 import '../keycard.css';
 import * as THREE from 'three';
-import { makeKey, KEY_MODEL, KEY_MODELS } from './keyModels.js';
+import { makeKey, KEY_MODEL, KEY_MODELS, ORDINARY_MODELS } from './keyModels.js';
+import './keyModelsOrdinary.js'; // (the ordinary keys register themselves: KEY-IDEAS.md)
 import { sharedRenderer, drawStill } from './modelviews.js';
 
 const params = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();
 // the key model the cards draw: ?keymodel= for a visit, else KEY_MODEL
 // (the car's own key, `keyModel` in cars.js, always the same; ?keymodel= overrides it for a visit, to compare them)
-export const keyModelInUse = (car) => (KEY_MODELS.includes(params.get('keymodel')) ? params.get('keymodel') : KEY_MODELS.includes(car?.keyModel) ? car.keyModel : KEY_MODEL);
+export const keyModelInUse = (car) => ((KEY_MODELS.includes(params.get('keymodel')) || ORDINARY_MODELS.includes(params.get('keymodel'))) ? params.get('keymodel') : KEY_MODELS.includes(car?.keyModel) ? car.keyModel : KEY_MODEL);
 
 // the pose: the key turned a little and tipped across the picture (its head up and left, its blade down and right),
 // seen from a little above, framed tight (modelviews.js poseView)
@@ -162,10 +163,11 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined' && document
     // ?keys: every key car with its OWN key (cars.js keyModel); ?keys=<car id>: every key model tinted by that car.
     // &card: the keys at card size only (some 100 px, as What's inside shows them), no views from the sides
     import('../cars.js').then((Cars) => {
-      const one = params.get('keys') ? Cars.carById?.(params.get('keys')) : null;
+      const ordinary = params.get('keys') === 'ordinary'; // (?keys=ordinary: every ORDINARY key, tinted by a plain car: KEY-IDEAS.md)
+      const one = ordinary ? Cars.carById?.('commuter') : params.get('keys') ? Cars.carById?.(params.get('keys')) : null;
       const keyCars = [...(Cars.EVENT_CARS || []), ...(Cars.BESPOKE_CARS || [])].filter(c => c && (c.bespoke || c.keyModel));
       const only = (params.get('only') || '').split(',').filter(Boolean); // (&only=<model>,...: those keys only)
-      const tiles = (one ? KEY_MODELS.map(model => [one, model]) : keyCars.map(car => [car, keyModelInUse(car)])).filter(([, m]) => !only.length || only.includes(m));
+      const tiles = (one ? (ordinary ? ORDINARY_MODELS : KEY_MODELS).map(model => [one, model]) : keyCars.map(car => [car, keyModelInUse(car)])).filter(([, m]) => !only.length || only.includes(m));
       if (!tiles.length) return;
       const card = params.has('card');
       const sheet = document.createElement('div');
