@@ -532,29 +532,47 @@ export const ORIG3_MODELS = {
     const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(0xc4c7cb), dark = lambert(0x121418);
     const roof = lambert(0x4f5532), bumper = lambert(0x7d8794), plate = lambert(0xece6cc);
     const cover = new THREE.MeshLambertMaterial();
-    // the body: one flat-sided slab from the face to the tailgate, the bonnet sloping a little up to the cab, the bed's
-    // sides level behind it; the wheels stand at its corners
-    side(shell, paint, car.hw * 2, [[2.42, 0.46], [2.44, 1.1, 0.03], [1.1, 1.18], [-2.45, 1.18, 0.03], [-2.45, 0.46]], 0.04, 0, 3);
+    // the body: one flat-sided slab from the nose (its face leaning back at the bottom) to the tailgate, low in front
+    // where the bonnet and the wings sit on it, the bed's sides level behind the cab; the wheels stand at its corners
+    side(shell, paint, car.hw * 2, [[2.32, 0.46], [2.38, 0.92], [1.1, 0.92], [1.1, 1.18], [-2.45, 1.18, 0.03], [-2.45, 0.46]], 0.04, 0, 3);
+    // the front: the wings, raised a little over the bonnet's edges and rounded down at the front; between them the
+    // bonnet, crowned (higher down its middle), its front edge hanging over the grille
+    for (const s of [-1, 1]) side(shell, paint, 0.38, [[1.1, 0.9], [2.3, 0.9], [2.34, 1.02, 0.08], [2.16, 1.2, 0.16], [1.1, 1.21]], 0.06, s * 0.81, 3);
+    const crown = new THREE.ExtrudeGeometry(outline([[-0.64, 0.92], [0.64, 0.92], [0.64, 1.1, 0.08], [0, 1.22, 0.6], [-0.64, 1.1, 0.08]]),
+      { depth: 1.36, curveSegments: 4, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.02, bevelSegments: 1 });
+    place(shell, crown.translate(0, 0, 1.12), roof);                                            // (in the darker shade)
     // the cab: square, close behind the bonnet, its windscreen raked, a flat roof overhanging it in a darker shade
     side(shell, paint, 1.9, [[1.12, 1.14], [0.78, 1.74], [-0.38, 1.74], [-0.38, 1.14]], 0.03);
     box(shell, roof, 1.98, 0.05, 1.3, 0, 1.79, 0.19);
-    box(shell, roof, 1.6, 0.012, 1.2, 0, 1.187, 1.75).rotation.x = 0.06;                        // (and a darker top to the bonnet)
     const rake = Math.atan2(0.6, 0.34);
     slab(shell, glass, 1.66, 0.02, 0.62, 0, 1.44 + 0.03 * Math.cos(rake), 0.95 + 0.03 * Math.sin(rake), rake); // big dark glass:
     for (const s of [-1, 1]) prism(shell, glass, 0.02, [[0.98, 1.24], [0.76, 1.64], [-0.28, 1.64], [-0.28, 1.24]], s * 0.956);
     box(shell, glass, 1.3, 0.3, 0.02, 0, 1.45, -0.42);
-    // the face: a stacked pair of round lamps at each corner, a chrome grille of upright bars between, a low bumper
-    box(shell, chrome, 1.02, 0.44, 0.03, 0, 0.84, 2.49);
-    box(shell, dark, 0.92, 0.36, 0.03, 0, 0.84, 2.5);
-    for (let i = -5; i <= 5; i++) box(shell, chrome, 0.03, 0.34, 0.03, i * 0.08, 0.84, 2.515);
-    box(shell, bumper, 2.06, 0.16, 0.16, 0, 0.44, 2.54);
+    // the face: a chrome-framed grille of upright bars, a shield raked forward a little, its top up under the bonnet's
+    // edge; round pods either side standing out from it, two lamps stacked in each; a bumper bar wrapping the corners
+    const grille = new THREE.Group();
+    grille.position.set(0, 0.82, 2.42);
+    grille.rotation.x = 0.1;
+    box(grille, chrome, 0.98, 0.6, 0.04, 0, 0, 0);
+    box(grille, dark, 0.86, 0.5, 0.04, 0, 0, 0.01);
+    for (let i = -4; i <= 4; i++) box(grille, chrome, 0.035, 0.48, 0.03, i * 0.09, 0, 0.03);
+    grille.updateMatrix();
+    for (const mesh of mergeByMaterial(grille, new Set()).values()) { mesh.geometry.applyMatrix4(grille.matrix); shell.add(mesh); } // (into the shell, to be merged with its like)
+    const pod = new THREE.ExtrudeGeometry(outline([[-0.17, 0.58, 0.16], [0.17, 0.58, 0.16], [0.17, 1.14, 0.16], [-0.17, 1.14, 0.16]]),
+      { depth: 0.24, curveSegments: 4, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.03, bevelSegments: 1 });
+    pod.translate(0, 0, 2.26);
+    box(shell, bumper, 1.5, 0.16, 0.16, 0, 0.44, 2.56);
+    for (const s of [-1, 1]) {
+      place(shell, s > 0 ? pod : pod.clone(), paint, s * 0.8);
+      box(shell, bumper, 0.44, 0.16, 0.16, s * 0.88, 0.44, 2.42).rotation.y = s * 0.7;      // (the bumper's ends, round the corners)
+    }
     box(shell, bumper, 2.0, 0.16, 0.16, 0, 0.44, -2.52);
     for (const s of [-1, 1]) {
-      for (const y of [0.98, 0.74]) {
-        rod(shell, chrome, 0.105, 0.04, s * 0.77, y, 2.49, 'z', 10);
-        rod(shell, LAMP, 0.08, 0.04, s * 0.77, y, 2.5, 'z', 10);
+      for (const y of [1.0, 0.74]) {
+        rod(shell, chrome, 0.11, 0.04, s * 0.8, y, 2.56, 'z', 10);
+        rod(shell, LAMP, 0.085, 0.04, s * 0.8, y, 2.57, 'z', 10);
       }
-      box(shell, AMBER, 0.14, 0.06, 0.03, s * 0.77, 0.58, 2.49);                               // indicators
+      box(shell, AMBER, 0.14, 0.05, 0.03, s * 0.5, 0.58, 2.42);                                // indicators
       box(shell, dark, 0.05, 0.16, 0.12, s * 1.0, 1.4, 1.0);                                   // mirrors
       // the tail: tall lamps at the corners (tail lamp over brake lamp)
       box(shell, TAIL, 0.14, 0.14, 0.03, s * 0.84, 1.02, -2.495);
@@ -567,7 +585,8 @@ export const ORIG3_MODELS = {
       const X = s * 1.006, f = s > 0 ? 'x' : '-x';
       decal(shell, rusty, 1.2, 0.5, X, 0.72, 0.3, f, s > 0 ? [0, 0.8] : [0.2, 1]);
       for (const z of [1.55, -1.5]) decal(shell, rusty, 1.1, 0.16, X, 1.07, z, f, [0.1, 0.9]);
-      for (const z of [2.24, -2.24]) decal(shell, rusty, 0.34, 0.56, X, 0.76, z, f, [0.5, 0.8]);
+      decal(shell, rusty, 0.26, 0.4, X, 0.68, -2.24, f, [0.5, 0.8]);
+      decal(shell, rusty, 0.8, 0.26, X, 1.06, 1.9, f, [0.2, 0.8]);                               // (over the wings too)
     }
     // the load: one long tent of a tarpaulin, peaked, higher than the cab, wider than the bed, soft at its ends
     const ridge = new THREE.ExtrudeGeometry(outline([[-1.06, 1.17], [1.06, 1.17, 0.06], [0.58, 1.66, 0.2], [0.04, 2.04, 0.3], [-0.6, 1.64, 0.2]]),
