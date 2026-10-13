@@ -109,5 +109,72 @@ const wing = (car, { rarity = 'bespoke' } = {}) => {
   return idle(group, merged(k));
 };
 
+// ---- (3) the FLIP key (the 2000s switchblade key): a remote whose blade folds out of it on a pivot ----
+const flipkey = (car, { rarity = 'bespoke' } = {}) => {
+  const group = new THREE.Group(), k = new THREE.Group();
+  const paint = paintOf(car);
+  const BODY = metal(0x1a1c21, 45), CHROME = metal(0xd4d8de, 110), RUBBER = lambert(0x34373e), WHITE = glow(0xe8ecf2);
+  const BLADE = metal(0xc3c8cf, 80), CUT = metal(0x7d848d, 60), BADGE = metal(paint.getHex(), 70), INK = lambert(inkOn(paint));
+  // the body: wider at the button end (up), narrowing toward the pivot (down); the ring hole in its top corner
+  const P = [[-0.55, -1.3, 0.34], [0.55, -1.3, 0.34], [0.68, 0.95, 0.5], [-0.68, 0.95, 0.5]];
+  const HOLE = [-0.25, 0.7];
+  const D = 0.36, B = 0.07, FRONT = D / 2 + B; // (the face at z = 0.25)
+  const shape = outline(P, 0.4);
+  shape.holes.push(circle(HOLE[0], HOLE[1], 0.11));
+  slab(k, BODY, shape, D, B, 0, 4);
+  for (const z of [FRONT, -FRONT]) add(k, new THREE.TorusGeometry(0.14, 0.035, 4, 10), CHROME, HOLE[0], HOLE[1], z);
+  rainbow(band(k, rimMaterial(rarity), P, 0.4, -0.15, -0.1, 0.04, FRONT + 0.005, 4), 0, -0.2);
+  // the badge (the car's colour, the initial) in a chrome ring, and a chrome strip under it across the face
+  const EY = 0.5, EX = 0.22;
+  disc(k, CHROME, 0.27, FRONT - 0.03, FRONT + 0.03, EX, EY, 16);
+  disc(k, BADGE, 0.22, FRONT - 0.02, FRONT + 0.05, EX, EY, 16);
+  glyph(k, INK, initialOf(car), 0.26, FRONT + 0.04, FRONT + 0.08, EX, EY);
+  box(k, CHROME, 0.86, 0.06, 0.04, 0, 0.13, FRONT);
+  // three buttons down the face: lock, unlock, boot, each a rubber pad with a white mark
+  [[-0.2, 'lock'], [-0.56, 'unlock'], [-0.9, 'boot']].forEach(([y, what]) => {
+    const x = -0.12;
+    box(k, RUBBER, 0.5, 0.28, 0.08, x, y, FRONT + 0.005);
+    const z = FRONT + 0.045;
+    if (what === 'boot') { box(k, WHITE, 0.24, 0.07, 0.02, x, y - 0.04, z); box(k, WHITE, 0.13, 0.06, 0.02, x - 0.03, y + 0.03, z); return; }
+    const open = what === 'unlock';
+    box(k, WHITE, 0.14, 0.1, 0.02, x, y - 0.04, z);
+    add(k, new THREE.TorusGeometry(0.045, 0.014, 3, 8, Math.PI), WHITE, x + (open ? 0.04 : 0), y + 0.01 + (open ? 0.03 : 0), z).rotation.z = open ? 0.4 : 0;
+  });
+  // the back: the battery cover (a shallow raised panel) and its slot
+  box(k, metal(0x24272d, 35), 0.92, 1.3, 0.05, 0, -0.1, -FRONT - 0.01);
+  box(k, CUT, 0.3, 0.05, 0.04, 0, -0.65, -FRONT - 0.04);
+  // the pivot, off to one side near the bottom: the chrome release button on the face (a plain cap behind)
+  const PV = [0.2, -1.12];
+  disc(k, CHROME, 0.15, FRONT - 0.03, FRONT + 0.06, PV[0], PV[1], 14);
+  disc(k, RUBBER, 0.1, FRONT + 0.03, FRONT + 0.08, PV[0], PV[1], 10);
+  disc(k, CHROME, 0.14, -FRONT - 0.04, -FRONT + 0.03, PV[0], PV[1], 12);
+  merged(k);
+  // the blade on its carrier, built about the pivot so it can fold (up into the body, which hides it: the real slot)
+  const fold = new THREE.Group();
+  fold.position.set(PV[0], PV[1], 0);
+  box(fold, CHROME, 0.34, 0.5, 0.22, 0, -0.2, 0);
+  const W = 0.36, Y0 = -0.36, Y1 = -1.98; // (the blade's root and tip, from the pivot)
+  flat(fold, BLADE, [[-W / 2, Y0], [W / 2, Y0], [W / 2, Y1 + 0.2], [0.03, Y1], [-W / 2, Y1 + 0.12]], 0.13);
+  // the laser-cut track down both faces: a zigzag of short bars, each sunk into the blade and standing proud of it
+  const ys = [-0.72, -1.0, -1.28, -1.55, -1.76], xs = [-0.04, 0.06, -0.06, 0.05, -0.02];
+  for (const sz of [1, -1]) for (let i = 0; i < ys.length - 1; i++) {
+    const dx = xs[i + 1] - xs[i], dy = ys[i + 1] - ys[i];
+    box(fold, CUT, 0.07, Math.hypot(dx, dy) + 0.06, 0.035, (xs[i] + xs[i + 1]) / 2, (ys[i] + ys[i + 1]) / 2, sz * 0.065).rotation.z = Math.atan2(-dx, dy);
+  }
+  merged(fold);
+  k.add(fold);
+  idle(group, k);
+  // a live view: the sway, and every 8 s the blade folds away into the body and flicks out again (open at rest: t = 0)
+  const sway = group.userData.animate;
+  group.userData.animate = (t) => {
+    sway(t);
+    const c = ((t % 8) + 8) % 8, ease = (u) => u * u * (3 - 2 * u);
+    const shut = c < 4.6 ? 0 : c < 5.4 ? ease((c - 4.6) / 0.8) : c < 6.8 ? 1 : c < 7 ? 1 - ease((c - 6.8) / 0.2) : 0;
+    fold.rotation.z = shut * Math.PI;
+  };
+  return group;
+};
+
 registerKey('roundhead', roundhead);
 registerKey('wing', wing);
+registerKey('flipkey', flipkey);
