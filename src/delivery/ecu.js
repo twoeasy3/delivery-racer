@@ -8,8 +8,8 @@
 //                  evergreen filler cars (cars.js FILLER_CARS).
 // A car's max ECU follows the star ladder (LADDER below); the special (earned) cars and the 1-gold cars stop at ECU1. Each
 // ECU's figures are SAVED, one entry per ECU, in ecus.json (by car id: { x, ecus: [{ maxSpeed, accel, health, respawn,
-// agility, delivery, composure, crossing, weight }] }, ECU1 first), written once by scripts/ecu-tables.mjs and the truth from
-// then on (edit it by hand). The second set (the owner, 12-Oct, CHECKLIST item 126; NEW_STATS below): agility (cars.js
+// agility, delivery, composure, crossing, weight }] }, ECU1 first), written by scripts/ecu-tables.mjs from the budget below
+// (STEPS, TOP_SPEED_CAP, FLOORS) and the truth from then on (a hand edit is lost to --write: see the script's header). The second set (the owner, 12-Oct, CHECKLIST item 126; NEW_STATS below): agility (cars.js
 // `agility`, steering), delivery (package efficacy: a Good gift's standing gain and an Evil flaming package's damage are
 // multiplied by it: packages.js; each car's own, DELIVERY below), composure (the shoulder meter's fuse: Social.dangerTime is multiplied by it, held to
 // CONFIG.composureFloor), crossing (cars.js `crossing`: rails, fords, mud, the tide) scale with the ECU like the first set;
@@ -35,9 +35,29 @@ export const RARITY = {
   gold: { 1: null, 2: 'common', 3: 'common', 4: 'common', 5: 'uncommon' }, // (1 gold: no cards, the starters)
   blue: { 1: 'uncommon', 2: 'uncommon', 3: 'uncommon', 4: 'epic', 5: 'epic' },
 };
-// the equal-steps rule the table was first written by (scripts/ecu-tables.mjs): ECU k of N = max * (1 - f * (N - k)),
-// f by kind; respawn RESPAWN.first s at ECU1, RESPAWN.step s less for each ECU above it; X blueprints per ECU step
-export const STEPS = { lot: 0.03, blueprint: 0.06 };
+// THE ECU BUDGET: the rule scripts/ecu-tables.mjs writes ecus.json by (the owner, 12-Oct: "the stat difference between
+// an ECU1 and ECU5 is too small"; "Keep the 25% limit for Top Speed only"; CHECKLIST item 171). From each car's MAXED
+// figures (its own, never moved), by EQUAL STEPS PER STAT: ECU1 = max x (1 - f x (N - 1)), held to the stat's FLOOR,
+// then ECU k of N = ECU1 + (max - ECU1) x (k - 1) / (N - 1) (unfloored, that is the old max x (1 - f (N - k))). f is per
+// ECU step, by the car's kind (lot: the car lot's cars, CARS; blueprint: the evergreen fillers, the event cars, the
+// Bespoke key cars) and by stat: top speed steps small (a 5-ECU car's ECU1 at 82% of its max, under the cap below), the
+// stats that are felt (accel, health, delivery, composure, crossing) big (ECU1 at 60% of max), agility a little less
+// (68%: it scales the lane change straight, the cornering by its square root). The car lot's cars gain about half
+// (the owner: lot cars gain less per ECU). Weight does not scale. Respawn: RESPAWN below.
+export const STEPS = {
+  lot: { maxSpeed: 0.03, accel: 0.05, health: 0.05, agility: 0.04, delivery: 0.05, composure: 0.05, crossing: 0.05 },
+  blueprint: { maxSpeed: 0.045, accel: 0.1, health: 0.1, agility: 0.08, delivery: 0.1, composure: 0.1, crossing: 0.1 },
+};
+// the TOP SPEED CAP (the owner, 12-Oct): a car's max top speed is at most this many times its ECU1's (ECU1 >= max / 1.25)
+export const TOP_SPEED_CAP = 1.25;
+// the FLOORS: no ECU1 below these (a floor above a car's max: its max, flat). share: of the car's max; min: absolute.
+// Health 80 and accel 7 are the lowest maxed figures of any car lot car (the Sportscompact, the Love Bus), so a fresh
+// car is never feebler than the weakest car one can buy; composure stops at CONFIG.composureFloor (below it the
+// shoulder meter would not change, so a step would be lost); agility 0.5 (half the usual lane change)
+export const FLOORS = {
+  maxSpeed: { share: 1 / TOP_SPEED_CAP }, accel: { min: 7 }, health: { min: 80 }, agility: { min: 0.5 },
+  composure: { min: CONFIG.composureFloor },
+};
 export const RESPAWN = { first: 5.5, step: 0.5 };
 export const X_DEFAULT = 5;
 // the second set of stats (CHECKLIST item 126): what each is at the MAXED ECU (a car's own field, else today's default),
@@ -59,6 +79,8 @@ export const DELIVERY = {
   wagon: 1.2, woody: 1.2, suv: 1.2, sleeper: 1.15, fullsize: 1.15, hearse: 1.1, stately: 1.0, swancar: 1.0,
   // big comfortable saloons with a boot to lose a parcel in
   goddess: 1.1, hardtop: 1.1,
+  // the sixth batch: a roomy coach, a quiet city EV and crossover, an open two-seater tourer, a hypercar with no room
+  coach: 1.2, cityev: 1.0, coupecross: 1.0, blower: 0.8, horseshoe: 0.6,
   // everyday small cars: as today, or a little under
   commuter: 1.0, evsaloon: 1.0, teardrop: 0.95, mini: 0.9, hothatch: 0.9, pandacoupe: 0.9, herald: 0.9, tank: 0.9,
   showdown: 0.9, 'earned-ufo': 0.9,
@@ -71,10 +93,40 @@ export const DELIVERY = {
   // tiny novelties, record cars and racers: nowhere to keep a parcel (the worst)
   snocat: 1.1, hotdog: 1.4, bubble: 0.6, jetcar: 0.6, dragster: 0.6, solarracer: 0.6, monowheel: 0.6, 'earned-f1': 0.6, 'earned-lmp': 0.6,
 };
+// COMPOSURE at a car's MAXED ECU (the shoulder meter: CONFIG.dangerTime 3 s x it). THIS TABLE IS WHERE TO EDIT IT (a car's
+// own `composure` field in cars.js wins over it; then node scripts/ecu-tables.mjs --write). CHECKLIST item 171:
+//   base   by the car's STARS (any colour: gold, blue, sea green; car lot or blueprint car): the slow cars take longer to
+//          get past traffic on the shoulder. 1 star 1.3 (3.9 s), 2 stars 1.15 (3.45 s), 3 stars and up, and a car with
+//          no stars (Key, special, the Tank) 1 (3 s)
+//   bump   added to the base for about a third of each tier, where it fits the car's character (heavy, tough, calm,
+//          stately, a working or emergency vehicle, a tourer: the police give it a moment longer), in steps of 0.05 to
+//          0.2 (+0.1 = 0.3 s more; from 3 stars up at least +0.1, so 3 s becomes 3.3 to 3.6 s), never above 1.5. The twitchy sports and racing cars stay at their base: none is below it
+export const COMPOSURE = {
+  base: { 1: 1.3, 2: 1.15 }, // (any other: 1)
+  most: 1.5,
+  bump: {
+    // 1 star (base 1.3): the slowest milk round, the mail van, a heavy van
+    milkfloat: 0.15, postvan: 0.1, darkvan: 0.05,
+    // 2 stars (base 1.15): a bus, a family wagon, a big tough truck, an old wood-sided wagon
+    lovebus: 0.2, wagon: 0.1, liftedtruck: 0.1, woody: 0.05,
+    // 3 stars (base 1): a hearse (who would hurry it), a fire engine and a tow truck at work, a people carrier
+    hearse: 0.2, fireengine: 0.15, towtruck: 0.15, minivan: 0.1,
+    // 4 stars: a stately saloon, a taxi (the shoulder is its office), a luxury saloon, an SUV
+    stately: 0.2, taxi: 0.15, goddess: 0.1, suv: 0.1,
+    // 5 stars: an armoured-looking 6x6, a big comfortable full-size, a grand tourer, a calm silent EV
+    sixbysix: 0.2, fullsize: 0.15, classicgt: 0.1, evsaloon: 0.1,
+    // no stars (Key, Bespoke, special cars, the Tank): a coachbuilt tourer, an expedition snowcat, a promotional hot dog,
+    // and the armoured ones
+    swancar: 0.2, snocat: 0.15, hotdog: 0.1, tank: 0.2, 'earned-apc': 0.2,
+    // the sixth batch: a calm long-distance coach, a tall calm crossover
+    coach: 0.2, coupecross: 0.1,
+  },
+};
+export const composureOf = (car) => car.composure ?? Number(Math.min(COMPOSURE.most, (COMPOSURE.base[car.tier] ?? 1) + (COMPOSURE.bump[car.id] ?? 0)).toFixed(3));
 export const NEW_STATS = {
   agility: { of: (car) => car.agility ?? 1, scales: true },
   delivery: { of: (car) => car.delivery ?? DELIVERY[car.id] ?? 1, scales: true },
-  composure: { of: (car) => car.composure ?? 1, scales: true },
+  composure: { of: composureOf, scales: true },
   crossing: { of: (car) => car.crossing ?? CONFIG.railCrossing.usual, scales: true },
   weight: { of: (car) => car.mass ?? 1, scales: false },
 };

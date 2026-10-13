@@ -32,7 +32,8 @@
 //   mass       how heavy it is in a shove (default 1): heavier knocks others aside and is knocked less
 //   delivery   (optional) its package efficacy, a share (default 1): a Good gift's standing gain and an Evil flaming
 //              package's damage are multiplied by it (packages.js)
-//   composure       (optional) its shoulder fuse, a share of CONFIG.dangerTime (default 1: Social.dangerTime)
+//   composure  (optional) its shoulder fuse, a share of CONFIG.dangerTime (Social.dangerTime). Without it: ecu.js
+//              COMPOSURE, by its stars and a bump for some cars (CHECKLIST item 171; edit it there)
 //   (maxSpeed, accel, health, agility, crossing, delivery and composure are the car's figures at its MAXED ECU: a lower ECU's
 //   are in ecus.json, lower; mass is the same at every ECU, as `weight` there. See ecu.js, carStats)
 //   shotBack   (optional) how much further back the studio camera (?cine=car) stands for its picture, for
@@ -59,7 +60,7 @@ export const TIERS = 5;
 // (No longer enforced: the owner, 12-Oct, CHECKLIST item 115, dropped the rule with the ECUs; scripts/.balance-check.mjs
 // had its tier ceilings removed. Kept as a figure for reference)
 export const NEXT_TIER_CAPS = { maxSpeed: 52, accel: 24, health: 450 };
-export const stars = (car) => car.tier ? '★'.repeat(car.tier) : ''; // (only the stars it has: no empty ones; a Key car has none, as an event car never had) // (only the stars it has: no empty ones)
+export const stars = (car) => car.tier ? '★'.repeat(car.tier) : car.rating ? '★'.repeat(car.rating) : ''; // (only the stars it has: no empty ones; a Key car has none, as an event car never had) // (only the stars it has: no empty ones)
 // (a 6-star car, earned rather than bought, has magenta stars: see EARNED_CARS)
 // (and an amphibious car's are sea green: a section of the garage of its own, see amphibiousCars)
 export const STAR_COLOURS = { gold: '#ffd23f', blue: '#4fa8ff', earned: '#ff5fd2', amphibious: '#35d6b4' };
@@ -385,7 +386,7 @@ export const EVENT_CARS = [
     const base = IDEA_CARS.find(car => car.id === 'centreseat');
     return { ...base, id: 'silvercomet', name: 'Silver Comet', basedOn: undefined, placeholder: false, idea: true, event: true, price: 0,
       color: 0xc9d2dc, evilColor: 0x1d2433, maxSpeed: 46, accel: 19, health: 150, perk: 'The Comet Hunt\'s prize',
-      bespoke: true, rarity: 'legendary', keyModel: 'fob', noPacks: true }; // (noPacks: in no regular pack, key or blueprints: the Comet Hunt's featured card only; the owner, 12-Oct) (the first BESPOKE key car: see BESPOKE_CARS below; keyModel: its key's style, always the same one)
+      bespoke: true, rarity: 'legendary', keyModel: 'fob', noPacks: true, rating: 5 }; // (noPacks: in no regular pack, key or blueprints: the Comet Hunt's featured card only; the owner, 12-Oct) (the first BESPOKE key car: see BESPOKE_CARS below; keyModel: its key's style, always the same one)
   })(),
 ];
 // ---- the BESPOKE key cars (the owner, 12-Oct): one-of-a-kind showpieces --------------------------------------------
@@ -401,8 +402,11 @@ export const EVENT_CARS = [
 // each has ONE key style for good (the owner, 12-Oct: the key is always the same for a car, never drifting like the blueprint poses):
 // the three of render/keyModels.js are all in use. Modern flagship: fob (the Silver Comet); the old coachbuilt and the
 // 1930s: classic; the space-age and the solar: smart
-const KEY_STYLE = { rocketfin: 'smart', swancar: 'classic', solarracer: 'smart', moonrover: 'smart', monowheel: 'classic', snocat: 'classic', hotdog: 'fob' };
-const bespoke = (car) => ({ ...car, bespoke: true, rarity: 'legendary', placeholder: true, price: 0, keyModel: KEY_STYLE[car.id] || 'fob' });
+const KEY_STYLE = { horseshoe: 'smart', rocketfin: 'smart', swancar: 'classic', solarracer: 'smart', moonrover: 'smart', monowheel: 'classic', snocat: 'classic', hotdog: 'fob' };
+// the Key cars' star ratings (the owner, 12-Oct: "add star ratings to the current key cars too"): magenta stars as a mark of how strong the
+// car is against the tiers, NOT a tier (`rating`, not `tier`: no level rule, no ECU ladder (a key car's max stays 5) reads it)
+const KEY_RATING = { horseshoe: 5, rocketfin: 5, solarracer: 5, monowheel: 4, hotdog: 4, moonrover: 4, swancar: 4, snocat: 3 };
+const bespoke = (car) => ({ ...car, rating: KEY_RATING[car.id] || 0, bespoke: true, rarity: 'legendary', placeholder: true, price: 0, keyModel: KEY_STYLE[car.id] || 'fob' });
 export const BESPOKE_CARS = [
   // the all-rounder: quick, solid, a grand tourer
   bespoke({ id: 'rocketfin', name: 'Rocket Fin Coupe', basedOn: 'Lincoln Futura (1955 concept car)', model: 'rocketfin', color: 0xa8e0e4, evilColor: 0x4a1a5e,
@@ -433,6 +437,10 @@ export const BESPOKE_CARS = [
   bespoke({ id: 'hotdog', name: 'Hot Dog Car', basedOn: 'Oscar Mayer Wienermobile', model: 'hotdog', color: 0xd99a4e, evilColor: 0x7a4426, keyAvailable: false, noPacks: true,
     hw: 1.08, hl: 3.4, height: 2.25, note: 'A sausage the length of a van in a bun, with mustard along the top.',
     maxSpeed: 44, accel: 15, agility: 1, crossing: 0.4, health: 240, mass: 2.1, sound: 'postvan' }),
+  // the sixth batch's key car (the owner, 12-Oct: a new Key car, unattainable at the moment): the fastest, light and brittle
+  bespoke({ id: 'horseshoe', name: 'Horseshoe Hypercar', basedOn: 'Bugatti Chiron (2016)', model: 'horseshoe', color: 0x1f4fa8, evilColor: 0x8a1420, keyAvailable: false, noPacks: true,
+    hw: 1.0, hl: 2.27, height: 1.21, note: 'A horseshoe in its nose, a big chrome C on each flank and a wing that rises out of its tail.',
+    maxSpeed: 47.5, accel: 19, agility: 1.35, crossing: 0.2, health: 190, mass: 1.4, sound: 'lmp' }),
 ];
 applyNames('car', BESPOKE_CARS);
 // is it a Bespoke key car? (its key a Bespoke card, its blueprints Legendary; packs.js, carsources.js)
@@ -519,6 +527,21 @@ export const FILLER_CARS = [
   filler(5, { id: 'flyingcar', name: 'Flying Car', basedOn: 'Terrafugia Transition', model: 'flyingcar', color: 0x2a5aa8, evilColor: 0x7a2a30,
     hw: 1.0, hl: 2.95, height: 2.05, note: 'An aeroplane that drives home with its wings folded up, the propeller idling behind.',
     maxSpeed: 43, accel: 12, agility: 1, crossing: 0.3, health: 150, mass: 1.2, sound: 'sport' }, 'legendary'),
+  // ---- the sixth batch (the owner, 12-Oct: "make them all Legendary ... all unattainable at the moment"): four blueprint cars,
+  // Legendary, in NO pack for now (`noPacks`: no blueprints drop, so they stay blacked out in the showroom); the fifth, the
+  // Horseshoe Hypercar, is a Bespoke key car (BESPOKE_CARS) with no key to be had. Their models are render/ideaModels6.js
+  filler(3, { id: 'blower', name: 'Blower Tourer', basedOn: 'Bentley 4½ Litre "Blower" (1929)', model: 'blower', color: 0x1d4a2c, evilColor: 0x5a1418,
+    hw: 0.85, hl: 2.03, height: 1.4, note: 'A supercharger out in front of the radiator, a strap round the bonnet and the wind in your face.',
+    maxSpeed: 34, accel: 10, agility: 0.95, crossing: 0.6, health: 160, mass: 1.6, sound: 'hotrod', noPacks: true }, 'legendary'),
+  filler(3, { id: 'coach', name: 'Highway Coach', basedOn: 'GM Scenicruiser (1954)', model: 'coach', color: 0xc5cbd2, evilColor: 0x22252c,
+    hw: 1.25, hl: 5.45, height: 3.3, note: 'A raised deck at the back, a glazed step up to it and fluted sides. It does not stop till the depot.',
+    maxSpeed: 32, accel: 8.5, agility: 0.8, crossing: 0.8, health: 215, mass: 3, sound: 'bus', noPacks: true }, 'legendary'),
+  filler(3, { id: 'cityev', name: 'City EV', basedOn: 'BMW i3 (2013)', model: 'cityev', color: 0xe2611c, evilColor: 0x6e1a2a,
+    hw: 0.89, hl: 2.0, height: 1.6, note: 'Tall, narrow and silent on skinny tyres, with a black band that dips under the back window.',
+    maxSpeed: 36, accel: 14, agility: 1.3, crossing: 0.4, health: 120, mass: 1.1, sound: 'evsaloon', noPacks: true }, 'legendary'),
+  filler(4, { id: 'coupecross', name: 'Coupe Crossover', basedOn: 'Range Rover Evoque (2011)', model: 'coupecross', color: 0xa8232b, evilColor: 0x16171b,
+    hw: 0.95, hl: 2.18, height: 1.6, note: 'A waist that climbs, a roof that falls and a slit of glass between them.',
+    maxSpeed: 38, accel: 12, agility: 1.1, crossing: 0.8, health: 230, mass: 1.6, sound: 'suv', noPacks: true }, 'legendary'),
 ];
 applyNames('car', FILLER_CARS);
 // is a blueprint car unlocked (its first X blueprints, ecu.js)? Set by ecu.js when it loads (null: none is, but one in

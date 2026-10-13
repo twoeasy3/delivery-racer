@@ -33,6 +33,8 @@
 // (the Rocket Fin Coupe, the Swan Car, the Solar Racer, the Moon Rover and the Monowheel). 43 ideas were left; two more
 // went (the Snowcat and the Hot Dog Car, CHECKLIST item 153); the fifth batch (the Goddess Saloon and the Fifties Hardtop) was added and
 // promoted to the roster as tier-4 Legendary blueprint cars the same day (cars.js FILLER_CARS): 41 left.
+// The sixth batch, five more (CHECKLIST item 171): two older vehicles (a blown vintage tourer, a split-level highway
+// coach) and three modern ones (a horseshoe-grilled hypercar, a tall electric city car, a coupe crossover): 46 ideas.
 
 // ============================================================================
 export const IDEA_CARS = [

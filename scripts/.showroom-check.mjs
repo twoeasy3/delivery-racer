@@ -226,7 +226,7 @@ async function overlays(g, check) {
   const filler = D.showroomCars().find(car => car.evergreen && !D.carCard(car).hidden);
   if (filler) (Progress.data.blueprints ||= {})[filler.id] = 2; // (a blueprint car part-way: its bar on the overlay)
   const cards = D.showroomCars().map(car => D.carCard(car, false));
-  const want = (c) => c.unlocked ? null : c.car.earned && c.car.off ? 'unavailable' : c.hidden ? 'tier' : c.blueprint ? 'blueprint'
+  const want = (c) => c.unlocked ? null : (c.car.earned && c.car.off) || (c.blueprint && c.car.noPacks && c.blueprints === 0) ? 'unavailable' : c.hidden ? 'tier' : c.blueprint ? 'blueprint'
     : CARS.includes(c.car) && !c.car.evergreen ? (c.forSale ? 'unpurchased' : 'tier')
       : c.car.earned || Object.values(SECRET_CARS).includes(c.car) ? 'earned' : 'key';
   const kindOf = (c) => D.overlayOf(c)?.kind ?? null;
