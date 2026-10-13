@@ -14,6 +14,12 @@
 // done gives the grand prize (a car: cars.js EVENT_CARS), once, into the save (`claimed`, and the cars owned), so it
 // is kept when the event is over and gone. The save keeps how many stages of each event are done (`events`).
 // The one-level events (Christmas Eve) are tiers.js's (their list is events.json "events" too).
+// A RECURRING event (the Car Hunt, the owner 13-Oct: "This will be a recurring event"): `repeat: { every, live }` in
+// days: from its `from` (the anchor: midnight on the device for a bare date), it is ON for `live` days, then off until
+// `every` days after the last start, and so on for ever (or until its `to`). Between runs it stays on the menu (the
+// events tab says "Next in ..."); its stages are shut then. Its stages never count as "done for good": a stage done is
+// open again at once, to play again and again (repeat events give their packs on EVERY delivery: packs.js eventDone,
+// givenBy.event.every). Events.window(event, t) is the run on now or the next one: { live, start, end, next }.
 // ============================================================================
 import eventData from './events.json';
 import { LEVELS, HIDDEN_LEVELS } from './levels.js';
@@ -54,7 +60,7 @@ const stageLevel = (event, stage, index) => {
 
 export const SPECIALS = (Array.isArray(eventData.special) ? eventData.special : []).map(e => {
   const event = { id: String(e.id), name: String(e.name || e.id), short: String(e.short || e.name || e.id), from: when(e.from), to: when(e.to),
-    prize: e.prize && typeof e.prize === 'object' ? e.prize : null, raw: e };
+    prize: e.prize && typeof e.prize === 'object' ? e.prize : null, repeat: repeatOf(e.repeat), raw: e };
   event.stages = (Array.isArray(e.stages) ? e.stages : []).map((s, i) => ({
     index: i, from: when(s.from), car: s.car || null, free: !!s.free, map: String(s.level), level: stageLevel(event, s, i), raw: s,
   }));
@@ -62,6 +68,30 @@ export const SPECIALS = (Array.isArray(eventData.special) ? eventData.special : 
 });
 // every stage's level (replay.js fingerprints them; the menu lists the live ones)
 export const STAGE_LEVELS = SPECIALS.flatMap(e => e.stages.map(s => s.level).filter(Boolean));
+
+// a recurring event's rule ({ every, live }: whole days, 1 <= live <= every), or null (none, or not sound: problems() says)
+function repeatOf(r) {
+  if (!r || typeof r !== 'object') return null;
+  const every = Number(r.every), live = Number(r.live);
+  return Number.isInteger(every) && Number.isInteger(live) && every >= 1 && live >= 1 && live <= every ? { every, live } : null;
+}
+// t moved on by n calendar days on the device (the same time of day: a clock change in between does not shift it)
+const addDays = (t, n) => { const d = new Date(t); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()).getTime(); };
+// the run of a recurring event on at t, or the next one: { live, start, end, next } (start / end: the run on, or the next
+// one; next: when the one after starts); null: not recurring, or no run left (its `to` passed)
+export const windowOf = (event, t) => {
+  const r = event?.repeat;
+  if (!r || event.from === null || Number.isNaN(event.from)) return null;
+  const cap = (x) => (event.to !== null && x > event.to ? event.to : x);
+  let k = Math.max(0, Math.floor((t - event.from) / (r.every * 86400000)));
+  while (k > 0 && addDays(event.from, k * r.every) > t) k--; // (a clock change: the guess one out either way)
+  while (addDays(event.from, (k + 1) * r.every) <= t) k++;
+  let start = addDays(event.from, k * r.every), end = cap(addDays(start, r.live));
+  if (t >= end) { start = addDays(event.from, (k + 1) * r.every); end = cap(addDays(start, r.live)); }
+  if (event.to !== null && start >= event.to) return null;
+  const live = start <= t && t < end;
+  return { live, start, end, next: live ? addDays(start, r.every) : start };
+};
 
 const dayName = (t) => new Date(t).toLocaleDateString([], { day: 'numeric', month: 'short' });
 
@@ -75,9 +105,22 @@ export const Events = {
     return event ? { event, stage: event.stages[at.index] } : null;
   },
   isStage(level) { return !!level?.stage && STAGE_LEVELS.includes(level); },
-  // is the event on? (from / to: a time not one: never)
-  live(event, t = this.now()) { return (event.from === null || event.from <= t) && (event.to === null || t < event.to); },
+  // is the event on? (from / to: a time not one: never; a recurring one: in one of its runs)
+  live(event, t = this.now()) {
+    if (event.repeat) return !!windowOf(event, t)?.live;
+    return (event.from === null || event.from <= t) && (event.to === null || t < event.to);
+  },
   liveSpecials(t = this.now()) { return SPECIALS.filter(e => this.live(e, t)); },
+  // the events the menu lists: those on, and a recurring one between its runs too (the owner: it stays in the events tab)
+  shownSpecials(t = this.now()) { return SPECIALS.filter(e => this.live(e, t) || !!windowOf(e, t)); },
+  // a recurring event's run now or next (windowOf); null for a one-off
+  window(event, t = this.now()) { return windowOf(event, t); },
+  // the countdown on an event's card: { words: 'Ends in' | 'Next in', at } (at: the time it counts to), or null (none)
+  countdownOf(event, t = this.now()) {
+    const w = windowOf(event, t);
+    if (w) return w.live ? { words: 'Ends in', at: w.end } : { words: 'Next in', at: w.start };
+    return event.to !== null && this.live(event, t) ? { words: 'Ends in', at: event.to } : null;
+  },
   // how many of its stages are done (in order: the first n)
   done(event) { return Math.max(0, Math.floor(Progress.data.events?.[event.id] || 0)); },
   // a stage's state: { open, done, why, needs } (why: what stops it, for its card; needs: a car it needs and the
@@ -88,6 +131,11 @@ export const Events = {
     if (!stage?.level) return { open: false, done: false, why: 'Not in the game' };
     if (event.to !== null && !(t < event.to)) return { open: false, done: index < done, why: 'The event is over' };
     if (event.from !== null && t < event.from) return { open: false, done: false, why: 'Starts ' + dayName(event.from) };
+    if (event.repeat) { // (a recurring event: shut between its runs; a stage done stays open, to play again)
+      const w = windowOf(event, t);
+      if (!w) return { open: false, done: index < done, why: 'The event is over' };
+      if (!w.live) return { open: false, done: index < done, why: 'Back ' + dayName(w.start) };
+    }
     if (stage.from !== null && t < stage.from) return { open: false, done: false, why: 'Opens ' + dayName(stage.from) };
     if (index > done) return { open: false, done: false, why: 'Finish stage ' + (done + 1) + ' first' };
     const car = stage.car && !stage.free ? carById(stage.car) : null;
@@ -102,8 +150,9 @@ export const Events = {
   prizeWon(event) { return (Progress.data.claimed || []).includes(this.prizeKey(event)); },
   prizeCar(event) { return event.prize?.car ? carById(event.prize.car) : null; },
   // a stage delivered on time (Game.finish): done if it is the next one (a stage done before counts nothing more),
-  // and the prize after the last. { stage, of, prize, packs } (prize: the car's name, once; packs: the card packs it
-  // gave, by name: packs.js eventDone), or null for no stage
+  // and the prize after the last. { stage, of, prize, packs, repeat } (prize: the car's name, once; packs: the card packs
+  // it gave, by name: packs.js eventDone; a recurring event's on EVERY delivery while it is on; repeat: a recurring
+  // event's), or null for no stage, or an event not on
   delivered(level) {
     const at = this.stageOf(level);
     if (!at || !this.live(at.event)) return null;
@@ -117,9 +166,9 @@ export const Events = {
       if (car && !Progress.data.cars.includes(car.id)) Progress.data.cars.push(car.id); // (owned from now on, the event or no)
       prize = car ? car.name : '';
     }
-    const packs = Packs.eventDone(event.id, first, !!prize); // (card packs: packs.js; the packs whose givenBy.event names this event)
+    const packs = Packs.eventDone(event.id, first, !!prize); // (card packs: packs.js; the packs whose givenBy.event names this event; `every`: each delivery)
     Progress.save();
-    return { stage: stage.index + 1, of: event.stages.length, prize, packs };
+    return { stage: stage.index + 1, of: event.stages.length, prize, packs, repeat: !!event.repeat, name: event.name };
   },
   // what is wrong with events.json's special events, as lines (none: sound)
   problems() {
@@ -130,6 +179,9 @@ export const Events = {
       ids.add(e.id);
       if (Number.isNaN(e.from) || Number.isNaN(e.to)) say('"from" or "to" is not a time');
       if (e.from !== null && e.to !== null && !(e.from < e.to)) say('it ends before it starts');
+      if (e.raw.repeat !== undefined && !e.repeat) say('"repeat" is not { "every": days, "live": days } (whole numbers, 1 <= live <= every)');
+      if (e.repeat && e.from === null) say('a recurring event needs "from" (the start of its first run)');
+      if (e.repeat && e.raw.repeat && Object.keys(e.raw.repeat).some(k => !['every', 'live'].includes(k))) say('"repeat": unknown field(s) ' + Object.keys(e.raw.repeat).filter(k => !['every', 'live'].includes(k)).join(', '));
       if (!e.stages.length) say('it has no stages');
       if (e.prize && !this.prizeCar(e)) say('its prize "' + e.prize.car + '" is not a car');
       if (e.raw.featured !== undefined) say('"featured" belongs on its pack now (packs.json: the pack whose "event" is ' + e.id + ', its featured.entries)'); // (one definition per pack: CHECKLIST 159)
