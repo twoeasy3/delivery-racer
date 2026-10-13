@@ -24,8 +24,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import './editor.css';
 import './modeleditor.css';
-import { carById } from './cars.js';
-import { showroomCars } from './showroomData.js';
+import { carById, CARS, FILLER_CARS, EVENT_CARS, BESPOKE_CARS, EARNED_CARS, SECRET_CARS } from './cars.js'; // (not showroomData.js: it pulls in the game's own page code, which wants the game's buttons)
 import { IDEA_CARS } from './ideas.js';
 import { buildInspectModel } from './render/inspectmodel.js';
 import { renderer } from './render/scene.js';
@@ -38,7 +37,7 @@ const params = new URLSearchParams(location.search);
 const DEG = 180 / Math.PI;
 
 // ---- the cars --------------------------------------------------------------------------------------------------
-const roster = [...new Map(showroomCars().filter(Boolean).map(c => [c.id, c])).values()];
+const roster = [...new Map([...CARS, ...(FILLER_CARS || []), ...EVENT_CARS, ...BESPOKE_CARS, ...EARNED_CARS, ...Object.values(SECRET_CARS)].filter(Boolean).map(c => [c.id, c])).values()];
 const ideas = IDEA_CARS.filter(c => !roster.some(r => r.id === c.id));
 const pick = $('pick');
 const optgroup = (label, cars) => {
