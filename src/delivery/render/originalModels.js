@@ -23,7 +23,7 @@ const lambert = (color, more) => new THREE.MeshLambertMaterial({ color, side: TH
 const basic = (color) => keep(new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide }));
 const MAT = {
   glass: keep(lambert(0x232a35)), dark: keep(lambert(0x1d1f24)), trim: keep(lambert(0x2f3238)), chrome: keep(lambert(0xd4d6d8)),
-  alloy: keep(lambert(0xc3c7cc)), tyre: keep(lambert(0x151515)), white: keep(lambert(0xeeeeea)), steel: keep(lambert(0x8d9096)),
+  alloy: keep(lambert(0xd3d7dc)), tyre: keep(lambert(0x151515)), white: keep(lambert(0xeeeeea)), steel: keep(lambert(0x8d9096)),
   lamp: basic(0xfff3c4), tail: basic(0xff2a2a), brake: basic(0xb3101a), amber: basic(0xffa31a), reverse: basic(0xf4f4f0),
 };
 
@@ -119,7 +119,7 @@ const loft = (rings, caps = true, uv = false) => {
   geo.dispose();
   return uv ? textured(out) : out;
 };
-const CREASE = 0.7;
+const CREASE = 0.6;
 // linear interpolation through keys [z, ...values] (sorted by z) at z
 const along = (keys, z) => {
   if (z <= keys[0][0]) return keys[0].slice(1);
@@ -138,7 +138,7 @@ const along = (keys, z) => {
 // Returns its geometry, and sideX(z, y) / topY(z, x): where its side and its top are, for parts to sit on them.
 const superTop = (w, yb, yTop, t, n) => [w * Math.pow(Math.abs(Math.cos(t)), 2 / n), yb + (yTop - yb) * Math.pow(Math.max(0, Math.sin(t)), 2 / n)];
 const SHOULDER = [0, 1, 2, 3].map(i => i * Math.PI / 8);
-const loftBody = (BODY, AXLES, n, extra = [], around = [-0.47, -0.27, 0, 0.27, 0.47], arch = 0.07) => {
+const loftBody = (BODY, AXLES, n, extra = [], { around = [-0.47, -0.27, 0, 0.27, 0.47], arch = 0.07, archLift = 0.08 } = {}) => {
   const section = (z) => {
     let [wHigh, yb, yTop, y0, wLow] = along(BODY, z), yLip = yb - 0.1;
     for (const [za, R, width, outer] of AXLES) {
@@ -146,7 +146,7 @@ const loftBody = (BODY, AXLES, n, extra = [], around = [-0.47, -0.27, 0, 0.27, 0
       if (dz < Ra) {
         wLow = Math.min(wLow, outer - width - 0.02);
         yLip = R + Math.sqrt(Ra * Ra - dz * dz);
-        yb = Math.max(yb, yLip + 0.08);
+        yb = Math.max(yb, yLip + archLift);
       }
     }
     return { wHigh, yb, yTop, y0, wLow, yLip };
@@ -277,110 +277,106 @@ const assemble = (group, geos, paint, own = {}) => {
   return body;
 };
 
-// ==== the Commuter: a modern small five-door hatchback (orange for a Good driver): a rounded body, a short nose
-// sloping to a long raked windscreen, a big dark glasshouse with a split rear side window under a level roof, an
-// upright hatch with a lip spoiler; swept headlamps, a dark mouth with a fog lamp, vents in the bonnet, silver alloys
+// a rounded lump: a ball squashed to rx, ry, rz, at (x, y, z) (a lamp half sunk in a rounded body reads as one shape)
+const blob = (rx, ry, rz, x, y, z, w = 10, h = 6, yaw = 0, pitch = 0) => {
+  const geo = new THREE.SphereGeometry(1, w, h).scale(rx, ry, rz);
+  if (pitch) geo.rotateX(pitch);
+  if (yaw) geo.rotateY(yaw);
+  return geo.translate(x, y, z);
+};
+// a bumper: a slab whose plan is a rounded rectangle (w across, l along, corners of r), `h` tall from y, its middle at z
+const pod = (w, l, r, h, y, z) => {
+  const pts = roundRect(w, l, 0, 0, r, 3);
+  const geo = new THREE.ExtrudeGeometry(new THREE.Shape(pts.map(([x, zz]) => new THREE.Vector2(x, zz))), { depth: h, bevelEnabled: false });
+  geo.rotateX(Math.PI / 2); // (the plan's y along -z... turned so the slab lies flat, its top at y + h)
+  return geo.translate(0, y + h, z);
+};
+
+// ==== the Commuter: a little five-door city hatchback after a Nissan March / Micra K12, orange for a Good driver (the
+// owner's reference): round, tall and short; one smooth body, its high, bulbous bonnet sweeping up into a big raked
+// windscreen; a short blunt nose with big almond headlamps wrapped round into the wings, a small oval grille over a
+// wider one in the bumper; a tall glasshouse under a curved roof that drops to a short hatch; fat arches, silver
+// hubcaps; the paint shaded darker low down, a black sill. No panel lines: the shape is what makes it
 const commuterParts = (car) => {
   const L = car.hl, R = 0.3, AX = 0.31 * car.hl * 2, TX = car.hw - 0.04, TW = 0.26;
   const P = bag();
-  // ---- the body
+  // ---- the body: round shoulders, its ends rounded off in plan and in profile, the bonnet high and full
   const BODY = [
-    [-L - 0.03, 0.64, 0.74, 0.86, 0.3, 0.6],
-    [-L + 0.01, 0.8, 0.79, 0.92, 0.25, 0.76],
-    [-L + 0.08, 0.87, 0.82, 0.95, 0.22, 0.85],
-    [-L + 0.26, 0.9, 0.84, 0.97, 0.2, 0.88],
-    [-0.4, 0.91, 0.81, 0.95, 0.19, 0.89],
-    [1.0, 0.91, 0.78, 0.92, 0.19, 0.89],
-    [L - 0.26, 0.9, 0.62, 0.76, 0.19, 0.88],
-    [L - 0.08, 0.87, 0.57, 0.7, 0.2, 0.85],
-    [L + 0.0, 0.82, 0.52, 0.63, 0.21, 0.79],
-    [L + 0.03, 0.7, 0.46, 0.56, 0.24, 0.67],
+    [-L - 0.02, 0.64, 0.66, 0.86, 0.32, 0.635],
+    [-L + 0.06, 0.82, 0.7, 0.92, 0.24, 0.815],
+    [-L + 0.2, 0.9, 0.72, 0.94, 0.2, 0.895],
+    [-L + 0.4, 0.92, 0.72, 0.95, 0.19, 0.915],
+    [1.1, 0.92, 0.72, 0.97, 0.19, 0.915],
+    [L - 0.4, 0.91, 0.66, 0.9, 0.19, 0.905],
+    [L - 0.2, 0.88, 0.62, 0.85, 0.2, 0.875],
+    [L - 0.06, 0.81, 0.56, 0.8, 0.24, 0.805],
+    [L + 0.02, 0.66, 0.5, 0.74, 0.3, 0.655],
   ];
   const AXLES = [[AX, R, TW, TX + TW / 2], [-AX, R, TW, TX + TW / 2]];
-  const { geo, section, topY, patch } = loftBody(BODY, AXLES, 3, [L - 0.2, -L + 0.2]);
+  const { geo, topY } = loftBody(BODY, AXLES, 2.2, [], { around: [-0.47, -0.24, 0, 0.24, 0.47], archLift: 0.03 });
   P.add('paint', geo);
-  // a lamp's outline on the flat end of the nose or the tail (at z): from x0 to x1 out, from y0 up to just under the
-  // end's own rounded top (by gap)
-  const faceOutline = (z, side, x0, x1, y0, gap) => {
-    const top = [0, 1, 2, 3].map(i => x0 + (x1 - x0) * i / 3).map(x => [side * x, topY(z, x) - gap]);
-    return side > 0 ? [[x0, y0], [x1, y0], ...top.reverse()] : [[-x1, y0], [-x0, y0], ...top].map(([x, y]) => [x, y]);
-  };
-  // ---- the glasshouse: its sides lean in from 0.8 m out at the belt to 0.62 m at the roof
-  const xAt = (y) => 0.8 - (y - 0.88) * 0.34;
-  const beltAt = (z) => topY(z, xAt(0.9)) + 0.005;
-  const zs = [1.0, 0.15, -0.35, -1.2, -1.5, -L + 0.06];
-  const KEYS = zs.map((z, i) => {
-    const b = beltAt(z);
-    return [z, b, [b + 0.005, 1.36, 1.38, 1.32, 1.2, b + 0.02][i], [b + 0.01, 1.43, 1.47, 1.42, 1.29, b + 0.05][i]];
-  }).sort((a, b) => a[0] - b[0]);
-  const { glass, skin } = glasshouse(KEYS, xAt, 0.15, -1.5);
+  // ---- the glasshouse: tall, its sides leaning in a little, the windscreen carrying on the bonnet's sweep, the roof
+  // crowned and curving down to the hatch
+  const xAt = (y) => 0.8 - (y - 0.92) * 0.32;
+  const beltAt = (z) => topY(z, xAt(0.94)) + 0.005;
+  const KEYS = [[1.12, 0, 0.005, 0.01], [0.3, 0, 1.35, 1.45], [-0.4, 0, 1.37, 1.47], [-1.05, 0, 1.3, 1.4], [-1.48, 0, 1.1, 1.19],
+    [-L + 0.12, 0, 0.02, 0.05]].map(([z, , e, c]) => { const b = beltAt(z); return [z, b, e > 0.5 ? e : b + e, c > 0.5 ? c : b + c]; })
+    .sort((a, b) => a[0] - b[0]);
+  const { glass, skin } = glasshouse(KEYS, xAt, 0.3, -1.48, 2.5);
   P.add('glass', glass);
   P.add('paint', skin);
-  // the window frames: the side, round the windows (a door window, a split rear door and quarter window), in the
-  // paint, and a black B pillar
+  // the side round the windows, in the paint (a front door window, a rear one, a tidy quarter light), a black B pillar
   const edge = (z) => along(KEYS, z)[1], belt = (z) => along(KEYS, z)[0];
   for (const side of [-1, 1]) {
-    const outline = [[1.0, belt(1.0) - 0.06], [0.15, edge(0.15)], [-0.35, edge(-0.35)], [-1.2, edge(-1.2)], [-1.5, edge(-1.5)],
-      [-L + 0.06, belt(-L + 0.06) - 0.06]];
-    const top = (z) => edge(z) - 0.05, sill = (z) => belt(z) + 0.035;
-    const front = [[0.86, sill(0.86)], [0.16, top(0.16)], [-0.4, top(-0.4)], [-0.4, sill(-0.4)]];
-    const bPillar = [[-0.4, sill(-0.4) - 0.02], [-0.4, top(-0.4)], [-0.52, top(-0.52)], [-0.52, sill(-0.52) - 0.02]];
-    const rear = [[-0.52, sill(-0.52)], [-0.52, top(-0.52)], [-0.98, top(-0.98)], [-0.98, sill(-0.98)]];
-    const quarter = [[-1.04, sill(-1.04)], [-1.04, top(-1.04)], [-1.22, top(-1.22)], [-1.4, sill(-1.4) + 0.06], [-1.4, sill(-1.4)]];
+    const outline = [[1.12, belt(1.12) - 0.06], [0.3, edge(0.3)], [-0.4, edge(-0.4)], [-1.05, edge(-1.05)], [-1.48, edge(-1.48)],
+      [-L + 0.12, belt(-L + 0.12) - 0.06]];
+    const top = (z) => edge(z) - 0.06, sill = (z) => belt(z) + 0.04;
+    const front = [[0.98, sill(0.98)], [0.34, top(0.34)], [-0.34, top(-0.34)], [-0.34, sill(-0.34)]];
+    const bPillar = [[-0.34, sill(-0.34) - 0.03], [-0.34, top(-0.34)], [-0.48, top(-0.48)], [-0.48, sill(-0.48) - 0.03]];
+    const rear = [[-0.48, sill(-0.48)], [-0.48, top(-0.48)], [-0.98, top(-0.98)], [-0.98, sill(-0.98)]];
+    const quarter = [[-1.06, sill(-1.06)], [-1.06, top(-1.06)], [-1.1, top(-1.1)], [-1.38, sill(-1.38) + 0.05], [-1.38, sill(-1.38)]];
     P.add('paint', sidePanel(xAt, side, outline, [front, bPillar, rear, quarter]));
     P.add('dark', sidePanel(xAt, side, bPillar));
-    // the door mirror: an arm out from the window's foot to a housing in the paint
-    P.add('dark', bx(0.14, 0.05, 0.08, side * (xAt(0.97) + 0.06), 0.97, 0.88));
-    P.add('paint', bx(0.1, 0.12, 0.17, side * (xAt(0.97) + 0.15), 1.02, 0.86, 0, side * 0.12));
-    P.add('dark', bx(0.012, 0.09, 0.14, side * (xAt(0.97) + 0.15), 1.02, 0.78, 0, side * 0.12)); // (the glass, behind it)
-    // ---- the body side: shut lines of two doors, handles, a black sill between the arches
-    const sx = (z, y) => { const s = section(z); return y > s.yLip ? s.wHigh : s.wLow; };
-    for (const [z, y0, y1] of [[0.74, 0.34, 0.82], [-0.46, 0.3, 0.86], [-0.84, 0.66, 0.88]]) {
-      const x = Math.max(sx(z, y0 + 0.02), sx(z, y1 - 0.08)) + 0.004;
-      P.add('dark', bx(0.012, y1 - y0, 0.014, side * x, (y0 + y1) / 2, z));
-    }
-    for (const z of [0.14, -0.86]) P.add('dark', bx(0.03, 0.035, 0.14, side * (section(z).wLow + 0.012), 0.8, z));
-    P.add('dark', bx(0.04, 0.1, 2 * AX - 2 * (R + 0.1), side * (section(0).wLow - 0.005), 0.25, 0));
-    // ---- the nose: a headlamp swept back round each corner (on the body's own curve), an indicator behind it, a
-    // fog lamp low in the mouth
-    P.add('lamp', patch(L - 0.2, L + 0.03, 3, 5, 0.01, side));
-    P.add('lamp', plate(faceOutline(L + 0.03, side, 0.3, 0.66, 0.42, 0.015), 0.02, L + 0.03));
-    P.add('dark', plate(faceOutline(L + 0.03, side, 0.27, 0.69, 0.4, 0.004), 0.012, L + 0.03));
-    P.add('amber', bx(0.02, 0.05, 0.1, side * (section(L - 0.33).wHigh + 0.004), section(L - 0.33).yb - 0.04, L - 0.33));
-    P.add(side < 0 ? 'lamp' : 'dark', cyl(0.05, 0.03, side * 0.48, 0.33, L + 0.04, 'z', 10));
-    // the bonnet's vents: three slats a side
-    for (let i = 0; i < 3; i++) {
-      const z = 1.36 - i * 0.075, x = side * 0.42, y = topY(z, 0.42), slope = Math.atan2(topY(z + 0.1, 0.42) - topY(z - 0.1, 0.42), 0.2);
-      P.add('dark', bx(0.26, 0.012, 0.035, x, y + 0.002, z, -slope, -side * 0.12));
-    }
-    // ---- the tail: lamps wrapped round the corners (a tail lamp over a brake lamp), an indicator and a reversing
-    // lamp on the tail's face
-    P.add('tail', patch(-L - 0.03, -L + 0.2, 3, 5, 0.01, side));
-    P.add('brake', patch(-L - 0.03, -L + 0.2, 2, 3, 0.01, side));
-    P.add('tail', plate(faceOutline(-L - 0.03, side, 0.38, 0.62, 0.77, 0.015), 0.02, -L - 0.03, -1));
-    P.add('dark', plate(faceOutline(-L - 0.03, side, 0.35, 0.635, 0.68, 0.004), 0.012, -L - 0.03, -1));
-    P.add('reverse', bx(0.13, 0.05, 0.02, side * 0.42, 0.715, -L - 0.04));
-    P.add('amber', bx(0.09, 0.05, 0.02, side * 0.56, 0.715, -L - 0.04));
+    P.add('paint', blob(0.05, 0.07, 0.1, side * (xAt(1.0) + 0.1), 1.0, 0.98, 8, 5));   // a rounded mirror on its stalk
+    P.add('paint', bx(0.1, 0.035, 0.05, side * (xAt(1.0) + 0.04), 0.98, 1.0));
+    // ---- big almond headlamps, sunk in the nose's corners and sweeping back up into the wings
+    P.add('lamp', blob(0.25, 0.1, 0.2, side * 0.58, 0.74, L - 0.17, 8, 6, side * 0.55, 0.3));
+    // tall tail lamps beside the hatch, a brake lamp under each
+    P.add('tail', blob(0.1, 0.19, 0.1, side * 0.55, 0.84, -L + 0.12, 8, 5));
+    P.add('brake', blob(0.08, 0.06, 0.07, side * 0.55, 0.65, -L + 0.08, 6, 4));
+    // a black sill between the arches
+    P.add('dark', bx(0.05, 0.1, 2 * AX - 0.86, side * 0.87, 0.24, 0));
   }
-  // ---- the nose's middle: the dark mouth, a slot over it, the plate, and the chin under it
-  P.add('dark', plate(roundRect(1.0, 0.25, 0, 0.35, 0.1), 0.045, L));
-  P.add('dark', bx(0.56, 0.05, 0.04, 0, 0.5, L + 0.025));
-  P.add('white', bx(0.4, 0.1, 0.02, 0, 0.35, L + 0.05));
-  P.add('dark', bx(1.3, 0.1, 0.06, 0, 0.21, L + 0.01));
-  // ---- the tail's middle: the hatch's lip spoiler and its brake lamp, the plate, the bumper's black foot, a pipe
-  P.add('paint', bx(1.0, 0.05, 0.14, 0, 1.25, -1.56, 0.3));
-  P.add('brake', bx(0.3, 0.035, 0.03, 0, 1.24, -1.632, 0.3));
-  P.add('white', bx(0.44, 0.11, 0.03, 0, 0.6, -L - 0.035));
-  P.add('dark', plate(roundRect(1.4, 0.13, 0, 0.32, 0.05), 0.065, -L + 0.02, -1));
-  P.add('chrome', cyl(0.035, 0.24, -0.42, 0.3, -L - 0.03, 'z', 8));
-  return P.merge();
+  // ---- the face: a small oval grille up by the badge, a wider one low in the bumper with the plate on it
+  P.add('dark', blob(0.15, 0.05, 0.06, 0, 0.66, L - 0.0, 10, 5));
+  P.add('dark', blob(0.42, 0.085, 0.08, 0, 0.41, L - 0.0, 12, 5));
+  P.add('white', bx(0.3, 0.08, 0.03, 0, 0.41, L + 0.065));
+  // ---- the tail: the plate, a high brake lamp, a black lip under each end
+  P.add('white', bx(0.38, 0.1, 0.03, 0, 0.6, -L - 0.03));
+  P.add('brake', bx(0.28, 0.04, 0.06, 0, 1.2, -1.47, 0.5));
+  P.add('dark', pod(1.5, 0.26, 0.12, 0.08, 0.2, L - 0.1));
+  P.add('dark', pod(1.5, 0.26, 0.12, 0.08, 0.22, -L + 0.1));
+  const merged = P.merge();
+  // (the paint shaded darker and redder low down: a colour on each vertex, which the paint's own colour multiplies)
+  const pos = merged.paint.attributes.position, shade = [];
+  for (let i = 0; i < pos.count; i++) {
+    const k = Math.min(1, Math.max(0, (pos.getY(i) - 0.22) / 0.6));
+    shade.push(0.84 + 0.16 * k, 0.62 + 0.38 * k, 0.58 + 0.42 * k);
+  }
+  merged.paint.setAttribute('color', new THREE.Float32BufferAttribute(shade, 3));
+  return merged;
 };
+
+// a plain wheel: a silver disc a little proud of the tyre each side, and a hub cap (one geometry)
+const discGeo = (R, width, rim = 0.68) => cached('disc' + [R, width, rim], () => ({
+  geo: mergeGeometries([cyl(R * rim, width + 0.012, 0, 0, 0, 'x', 12), cyl(R * 0.22, width + 0.04, 0, 0, 0, 'x', 8)].map(clean), false),
+})).geo;
 const commuter = (car) => {
   const group = new THREE.Group();
-  const paint = lambert(car.color);
+  const paint = lambert(car.color, { vertexColors: true });
   const geos = cached('commuter' + [car.hw, car.hl, car.height], () => commuterParts(car));
   const body = assemble(group, geos, paint);
-  const AX = 0.31 * car.hl * 2, alloy = alloyGeo(0.3, 0.26, 5);
+  const AX = 0.31 * car.hl * 2, alloy = alloyGeo(0.3, 0.26, 4, 0.76);
   for (const side of [-1, 1]) for (const z of [AX, -AX]) addWheel(group, 0.3, 0.26, side * (car.hw - 0.04), z, alloy);
   group.userData = { body, animate: () => {} };
   return group;
