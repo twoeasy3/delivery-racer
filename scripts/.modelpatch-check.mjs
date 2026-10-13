@@ -67,44 +67,44 @@ try {
   check(!bad.length && built > 50, 'every car\'s parts extracted (' + built + ' models of ' + cars.length + ' cars): every node once, the meshes and triangles the model\'s own count, an empty patch changes nothing' + (bad.length ? '\n          ' + bad.slice(0, 12).join('\n          ') : ''));
 
   // ---- one car's edits: exactly that part
-  const car = carById('commuter');
+  const car = carById('bus');
   const fresh = () => { const m = buildInspectModel(car, false); MP.applyPatch(m, null); return m; };
   const base = fresh(), baseSnap = snap(base);
   const { parts } = MP.extractParts(base);
   const body = parts.find(p => p.role === 'body'), tyre = parts.find(p => p.role === 'tyre'), other = parts.find(p => p.type === 'mesh' && p !== body && p.role !== 'tyre' && p.editable && Math.abs(p.position[0]) > 0.2);
   const run = (patch) => { const m = buildInspectModel(car, false); const r = MP.applyPatch(m, patch); return { m, r, s: snap(m) }; };
   const changedIds = (s) => diff(baseSnap, s).map(r => r.split('|')[0]);
-  let patch = MP.withSet(MP.emptyPatch('commuter', MP.modelSignature(base)), other, { position: [other.position[0] + 0.3, other.position[1], other.position[2]] });
+  let patch = MP.withSet(MP.emptyPatch('bus', MP.modelSignature(base)), other, { position: [other.position[0] + 0.3, other.position[1], other.position[2]] });
   let t = run(patch);
   check(new Set(changedIds(t.s)).size === 1 && changedIds(t.s)[0] === other.id && !t.r.unmatched.length, 'a move changes that part only (' + other.id + ')');
-  patch = MP.withSet(MP.emptyPatch('commuter'), tyre, { color: '#ff00ff' });
+  patch = MP.withSet(MP.emptyPatch('bus'), tyre, { color: '#ff00ff' });
   t = run(patch);
   check(new Set(changedIds(t.s)).size === 1 && changedIds(t.s)[0] === tyre.id, 'a colour changes that part only (a tyre; the others keep the shared tyre material)');
   check(snap(fresh()).join() === baseSnap.join(), 'a fresh build after a colour patch is as before (no shared material changed)');
   const baseNodes = MP.extractParts(base).nodes, uses = new Map();
   for (const n of baseNodes.values()) if (n.isMesh) uses.set(n.material, (uses.get(n.material) || 0) + 1);
   const sharer = parts.find(p => p.type === 'mesh' && uses.get(baseNodes.get(p.id).material) > 1);
-  patch = MP.withSet(MP.emptyPatch('commuter'), sharer, { color: '#ff00ff', shareMat: true });
+  patch = MP.withSet(MP.emptyPatch('bus'), sharer, { color: '#ff00ff', shareMat: true });
   t = run(patch);
   const magenta = []; t.m.traverse(n => n.isMesh && n.material.color?.getHexString() === 'ff00ff' && magenta.push(n));
   check(magenta.length > 1 && new Set(magenta.map(n => n.material)).size === 1, 'a shared colour goes to every part sharing the material, as ONE copy (' + magenta.length + ' parts, one draw call)');
-  t = run(MP.withDelete(MP.emptyPatch('commuter'), other));
+  t = run(MP.withDelete(MP.emptyPatch('bus'), other));
   const removed = diff(baseSnap, t.s);
   check(t.s.length === baseSnap.length - 1 && removed.length === 1 && removed[0].startsWith(other.id + '|'), 'a delete removes that part only, and the other ids still find their parts');
-  const added = MP.withAdd(MP.emptyPatch('commuter'), 'cylinder', { position: [0, 2, 0] });
+  const added = MP.withAdd(MP.emptyPatch('bus'), 'cylinder', { position: [0, 2, 0] });
   t = run(added.patch);
   check(t.s.length === baseSnap.length + 1 && diff(baseSnap, t.s).length === 1 && t.s.some(r => r.startsWith(added.id + '|Mesh')), 'an add makes one new part (' + added.id + ') and changes nothing else');
-  t = run(MP.withSet(MP.emptyPatch('commuter'), body, { params: { height: body.params.height * 2 } }));
+  t = run(MP.withSet(MP.emptyPatch('bus'), body, { params: { height: body.params.height * 2 } }));
   const bodyNode = MP.extractParts(t.m).nodes.get(body.id);
   check(Math.abs(bodyNode.geometry.parameters.height - body.params.height * 2) < 1e-6 && bodyNode.geometry !== MP.extractParts(base).nodes.get(body.id).geometry, 'a plain box\'s size is set by its parameters (a geometry of its own)');
 
   // ---- stale
   let threw = null;
-  try { t = run({ car: 'commuter', base: 'nope', ops: [{ id: '99.9', sig: 'M:Nothing:0:0', set: { position: [0, 0, 0] } }, { id: '0', sig: 'M:Wrong', delete: true }, null, { add: { id: 'x', from: '77' } }], evil: [{ id: '42', sig: 'zz', set: { color: '#000' } }] }); } catch (e) { threw = e; }
+  try { t = run({ car: 'bus', base: 'nope', ops: [{ id: '99.9', sig: 'M:Nothing:0:0', set: { position: [0, 0, 0] } }, { id: '0', sig: 'M:Wrong', delete: true }, null, { add: { id: 'x', from: '77' } }], evil: [{ id: '42', sig: 'zz', set: { color: '#000' } }] }); } catch (e) { threw = e; }
   check(!threw && t.r.unmatched.length === 3 && t.r.stale && t.s.length === baseSnap.length, 'a stale patch is reported (3 unmatched ids, the base changed, an add from a missing part) and nothing is thrown or changed' + (threw ? ': ' + threw.message : ''));
 
   // ---- undo / redo: the same patch, the same model
-  const history = [MP.emptyPatch('commuter')];
+  const history = [MP.emptyPatch('bus')];
   history.push(MP.withSet(history.at(-1), other, { position: [0.1, 1, 0.2], rotation: [0, 0.5, 0] }));
   history.push(MP.withSet(history.at(-1), body, { color: '#123456' }));
   history.push(MP.withDelete(history.at(-1), tyre));
@@ -114,7 +114,7 @@ try {
   check(again.every(([i, s]) => s === snaps[i]) && new Set(snaps).size === snaps.length, 'undo / redo: each patch of a history gives the same model every time it is applied (and each step differs)');
 
   // ---- mirror
-  const mp = MP.withMirror(MP.emptyPatch('commuter'), other);
+  const mp = MP.withMirror(MP.emptyPatch('bus'), other);
   t = run(mp.patch);
   const { nodes } = MP.extractParts(t.m);
   const src = nodes.get(other.id), copy = nodes.get(mp.id);
@@ -131,7 +131,7 @@ try {
   check(MP.withMirror(mp.patch, other).patch.ops.length === mp.patch.ops.length, 'mirror again: the same copy, not a second one');
 
   // ---- Evil paint
-  const evilPatch = MP.withSet(MP.emptyPatch('commuter'), body, { color: '#00ff00' }, { evil: true });
+  const evilPatch = MP.withSet(MP.emptyPatch('bus'), body, { color: '#00ff00' }, { evil: true });
   const em = buildInspectModel(car, false); MP.applyPatch(em, evilPatch, { evil: false });
   const bodyOf = (m) => MP.extractParts(m).nodes.get(body.id).material.color.getHexString();
   const goodColour = bodyOf(em);
@@ -140,13 +140,13 @@ try {
 
   // ---- the game's side: once per model, none without a patch
   apply.setModelPatching(true);
-  apply.PATCHES.commuter = MP.withSet(MP.emptyPatch('commuter'), other, { visible: false });
+  apply.PATCHES.bus = MP.withSet(MP.emptyPatch('bus'), other, { visible: false });
   const g = buildInspectModel(car, false); // (makeShowCar: patched as it is built)
   check(g.userData.patched && MP.extractParts(g).nodes.get(other.id).visible === false, 'the game applies the car\'s patch as the model is built (makeShowCar)');
   const before2 = snap(g).join(); apply.patchModel(g, car); check(snap(g).join() === before2, 'a model already patched is left (one patch per build)');
   const other2 = buildInspectModel(carById(IDEA_CARS[0].id), false);
   check(!other2.userData.patched, 'a car with no patch is built as its code builds it');
-  delete apply.PATCHES.commuter;
+  delete apply.PATCHES.bus;
 
   // ---- the fingerprint
   const { logicFiles } = await import('../vite.config.js');
