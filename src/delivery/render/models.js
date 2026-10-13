@@ -1836,98 +1836,10 @@ export const MODELS = {
     return group;
   },
 
-  // A long, low car on hydraulics: the front end rises and falls in a smooth, endless bob,
-  // pivoting about the rear axle. The front wheels hang on their suspension: they lift only
-  // part of the way with the nose, so as it rises they droop below the body.
-  // The Super Lowrider (model 'superlowrider') is the same car taken to extremes: flames licking
-  // back along its flanks, gold wire wheels on whitewalls, a chrome continental kit on the tail, a
-  // hood ornament, and neon glowing underneath, cycling through the colours; and it hops far higher,
-  // rocking side to side as it goes (three-wheel motion)
+  // The Lowrider (and the Super Lowrider, model 'superlowrider': the same car taken to extremes): rebuilt (13-Oct)
+  // after the owner's older game's picture, in render/modelsOrig2.js (see it)
   lowrider: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.36, extreme = car.model === 'superlowrider';
-    const rearZ = -l * 0.3, frontZ = l * 0.32;
-
-    // everything that rises with the front end hangs off this, whose origin is the rear axle
-    const chassis = new THREE.Group();
-    chassis.position.set(0, R, rearZ);
-    group.add(chassis);
-    const at = (z) => z - rearZ; // a position along the car, measured from the pivot
-
-    const paint = lambert(car.color);
-    const body = box(chassis, paint, w, 0.42, l, 0, 0.18, at(0));
-    box(chassis, lambert(0xd8d8d8), w + 0.06, 0.07, l * 0.92, 0, 0.1, at(0));          // chrome strip
-    box(chassis, paint, w * 0.86, 0.1, l * 0.3, 0, 0.44, at(l * 0.3));                  // bonnet bulge
-    box(chassis, lambert(0x23262d), w * 0.8, 0.36, l * 0.34, 0, 0.56, at(-l * 0.06));   // low cabin
-    box(chassis, paint, w * 0.82, 0.06, l * 0.3, 0, 0.77, at(-l * 0.06));               // roof
-    const chrome = lambert(CHROME), gold = lambert(0xe6c15a);
-    screen(chassis, lambert(0x23262d), w * 0.78, 0.05, 0.6, 0, 0.56, at(l * 0.15), 0.62); // windscreen
-    box(chassis, chrome, w + 0.1, 0.11, 0.13, 0, 0.03, at(l / 2 + 0.03));               // chrome bumpers
-    box(chassis, chrome, w + 0.1, 0.11, 0.13, 0, 0.03, at(-l / 2 - 0.03));
-    box(chassis, chrome, w * 0.4, 0.14, 0.06, 0, 0.22, at(l / 2 + 0.02));               // grille
-    const lamp = LAMP, tail = TAIL;
-    const frontAxle = new THREE.Group(); // (not part of the chassis: see animate)
-    frontAxle.position.set(0, R, frontZ);
-    group.add(frontAxle);
-    for (const side of [-1, 1]) {
-      box(chassis, paint, 0.09, 0.2, l * 0.24, side * (w / 2 - 0.045), 0.49, at(-l * 0.38)); // tail fins
-      box(chassis, gold, 0.02, 0.04, l * 0.84, side * (w / 2 + 0.005), 0.3, at(0));     // pinstripe
-      box(chassis, paint, 0.09, 0.36, 0.09, side * w * 0.38, 0.56, at(-l * 0.22));      // rear pillars
-      box(chassis, chrome, 0.12, 0.08, 0.1, side * (w / 2 + 0.05), 0.46, at(l * 0.12)); // mirrors
-      box(chassis, lamp, w * 0.2, 0.16, 0.1, side * w * 0.33, 0.22, at(l / 2 + 0.01));
-      box(chassis, tail, w * 0.24, 0.1, 0.1, side * w * 0.3, 0.24, at(-l / 2 - 0.01));
-      wheel(frontAxle, R, 0.3, side * (w / 2 - 0.05), 0, 0, extreme ? gold : undefined); // front wheels, on their suspension
-      wheel(group, R, 0.3, side * (w / 2 - 0.05), R, rearZ, extreme ? gold : undefined);  // rear wheels stay planted
-      if (extreme) {
-        for (const [parent, y, z] of [[frontAxle, 0, 0], [group, R, rearZ]]) {          // whitewalls
-          const wall = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.8, R * 0.8, 0.31, 16), lambert(0xf4f4f4));
-          wall.rotation.z = Math.PI / 2;
-          wall.position.set(side * (w / 2 - 0.05), y, z);
-          parent.add(wall);
-        }
-        const flame = (colour, x, scale) => prism(chassis, lambert(colour), 0.02, [        // flames, licking back from the nose
-          [l * 0.48, 0.1], [l * 0.48, 0.3], [l * 0.3, 0.36], [l * 0.24, 0.26], [l * 0.1, 0.34], [l * 0.04, 0.22],
-          [-l * 0.1, 0.3], [-l * 0.2, 0.17], [l * 0.1, 0.12],
-        ].map(([z, y]) => [at(z * scale + l * 0.48 * (1 - scale)), 0.2 + (y - 0.2) * scale]), x);
-        flame(0xff7a1a, side * (w / 2 + 0.01), 1);
-        flame(0xffd23f, side * (w / 2 + 0.02), 0.7);
-      }
-    }
-    let glow = null;
-    if (extreme) {
-      box(chassis, chrome, 0.06, 0.12, 0.2, 0, 0.47, at(l * 0.44));                         // the hood ornament
-      const spare = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.16, 16), lambert(0x141414)); // the continental kit:
-      spare.rotation.x = Math.PI / 2;
-      spare.position.set(0, 0.22, at(-l / 2 - 0.16));
-      chassis.add(spare);
-      disc(chassis, chrome, 0.24, 0.18, 0, 0.22, at(-l / 2 - 0.17));                       // the spare in its chrome cover
-      const fade = document.createElement('canvas');                                       // (a soft pool of light: bright in the
-      fade.width = fade.height = 64;                                                      // middle, fading out to nothing)
-      const ctx = fade.getContext('2d'), pool = ctx.createRadialGradient(32, 32, 4, 32, 32, 32);
-      pool.addColorStop(0, 'rgba(255,255,255,1)');
-      pool.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = pool;
-      ctx.fillRect(0, 0, 64, 64);
-      glow = new THREE.MeshBasicMaterial({ color: 0x00e5ff, map: new THREE.CanvasTexture(fade), transparent: true, depthWrite: false }); // the neon underneath, lighting
-      const neon = new THREE.Mesh(new THREE.PlaneGeometry(w * 1.45, l * 1.1), glow);            // the road out past the body
-      neon.rotation.x = -Math.PI / 2;
-      neon.position.set(0, 0.02, 0);
-      group.add(neon);
-    }
-
-    group.userData = {
-      body,
-      animate: (t) => {
-        const tilt = (extreme ? 0.5 : 0.27) * (1 - Math.cos(t * 4)) / 2; // 0 (level) .. 0.27 rad (0.5 hopped up), and back, smoothly
-        chassis.rotation.x = -tilt; // (negative pitch lifts the nose)
-        if (extreme) {
-          chassis.rotation.z = Math.sin(t * 2) * 0.12;                                    // rocking side to side,
-          glow.color.setHSL((t * 0.15) % 1, 1, 0.55);                                     // the neon cycling round
-        }
-        // the front wheels rise only a third as far as the nose does
-        frontAxle.position.y = R + Math.sin(tilt) * (frontZ - rearZ) * 0.3;
-      },
-    };
+    const group = ORIG2_MODELS.lowrider(car);
     return group;
   },
 
@@ -2230,6 +2142,8 @@ export const MODELS = {
   },
 };
 MODELS.superlowrider = MODELS.lowrider; // (the lowrider builder makes both: see it)
+// (the four original cars rebuilt on 13-Oct: the Lowrider, the Sportscompact, the Family Wagon and the Love Bus)
+import { ORIG2_MODELS } from './modelsOrig2.js';
 
 // ---- the Battlefield's armies (CONFIG.vehicles: jeep, apc, tank; the player's 8x8: LEVEL_CARS.apc) ------
 // Each in its army's colours (the paint: userData.body; a darker second colour on its trim), with a gun that

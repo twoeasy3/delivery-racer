@@ -191,7 +191,7 @@ export const CARS = [
     maxSpeed: 26, accel: 9, crossing: 0.6, health: 140, hw: 1.05, hl: 2.4, height: 1.9 },
   { id: 'sport', tier: 2, name: 'Sportscompact', price: 190, color: 0x39ff14, evilColor: 0x151515, fixedLivery: true, model: 'sport',
     maxSpeed: 31, accel: 13, crossing: 0.35, health: 80, hw: 0.85, hl: 1.9, height: 1.1 },
-  { id: 'lowrider', tier: 2, name: 'Lowrider', price: 220, color: 0xb026ff, evilColor: 0x2fd6c6, fixedLivery: true, model: 'lowrider',
+  { id: 'lowrider', tier: 2, name: 'Lowrider', price: 220, color: 0x8030e8, evilColor: 0x2fd6c6, fixedLivery: true, model: 'lowrider',
     maxSpeed: 27, accel: 9, crossing: 0.15, health: 120, hw: 1.0, hl: 2.5, height: 1.1 },
   // ---- tier 2, Blue Stars
   { id: 'hothatch', tier: 2, blue: true, name: 'Hot Hatch', price: 420, color: 0xf2f2f2, evilColor: 0xf2c418, fixedLivery: true, model: 'hothatch',
