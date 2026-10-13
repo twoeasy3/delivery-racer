@@ -573,6 +573,12 @@ const bun = (car, { rarity = 'bespoke' } = {}) => {
 };
 
 export const KEY_BUILDERS = { fob, classic, smart, fin, wheel, solar, lunar, snowboot, bun };
+// ---- the ORDINARY keys (KEY-IDEAS.md: "normal" looking real-world keys and fobs, for cars that are not Bespoke; no home chosen yet): each lives in
+// its own file (render/keyModelsOrd*.js), builds with the same kit the nine Bespoke keys use (KEY_KIT) and registers itself with registerKey(name, builder).
+// They are NOT in KEY_MODELS (the nine, one per Bespoke car: .keys-check) but in ORDINARY_MODELS; makeKey(car, { model }) builds either.
+export const ORDINARY_MODELS = [];
+export const registerKey = (name, builder) => { KEY_BUILDERS[name] = builder; if (!ORDINARY_MODELS.includes(name)) ORDINARY_MODELS.push(name); };
+export const KEY_KIT = { THREE, RIM, lambert, metal, glow, add, box, disc, grow, outline, circle, slab, band, rimMaterial, rainbow, glyph, paintOf, inkOn, idle, plainBlade, merged, initialOf };
 // a key for a car: the model named (else KEY_MODEL), tinted by the car, lit by the rarity
 export const makeKey = (car, { model = KEY_MODEL, rarity = 'bespoke' } = {}) => {
   const group = (KEY_BUILDERS[model] || KEY_BUILDERS[KEY_MODEL])(car, { rarity });
