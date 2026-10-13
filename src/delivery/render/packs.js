@@ -84,6 +84,8 @@ const finish = () => {
   const done = overlay.querySelector('.pr-done');
   done.textContent = Packs.total() > 0 ? 'Next pack (' + Packs.total() + ')' : 'Done';
   done.hidden = false;
+  const a = Packs.again, again = overlay.querySelector('.pr-again');
+  if (again && a && Packs.total() === 0 && a.can()) { again.textContent = a.label; again.hidden = false; }
   overlay.querySelector('.pr-hint').hidden = true;
   done.focus({ preventScroll: true });
 };
@@ -140,6 +142,11 @@ const show = (result, { look = false } = {}) => {
   const done = make('button', 'pr-done', 'Done');
   done.hidden = true;
   done.addEventListener('click', (e) => { e.stopPropagation(); close(); drain(); });
+  // BUY ANOTHER (the owner, 13-Oct: "after buying a pack, add an option to buy another one"): offered at the end of the LAST pack of a purchase made in the
+  // Shop (render/shop.js sets Packs.again: its label, whether it can be bought, and how); one tap closes this and buys it, which opens at once
+  const again = make('button', 'pr-again', '');
+  again.hidden = true;
+  again.addEventListener('click', (e) => { e.stopPropagation(); const a = Packs.again; close(); if (a?.can()) a.buy(); });
   const shut = make('button', 'pr-close', '✕');
   shut.setAttribute('aria-label', 'Close');
   shut.addEventListener('click', (e) => { e.stopPropagation(); close(); });
@@ -151,7 +158,7 @@ const show = (result, { look = false } = {}) => {
       make('div', 'pr-body',
         make('div', 'pr-pack', make('div', 'pr-burst'), packArt(result.kind, 1)),
         slots.length ? make('div', 'pr-cards' + (many ? ' many' : ''), slots.map(s => s.slot)) : make('p', 'pr-empty', 'This pack came out empty: there are no cards for it.')),
-      make('footer', 'pr-foot', hint, done)));
+      make('footer', 'pr-foot', hint, again, done)));
   overlay.className = 'pack-reveal opening k-' + result.kind;
   const wasInMenu = Game.inMenu;
   Game.inMenu = true; // (Enter must not start a run from here)
@@ -168,6 +175,7 @@ const close = (fromBack = false) => {
   if (!cur) return;
   for (const id of cur.timers) clearTimeout(id);
   Game.inMenu = cur.wasInMenu;
+  if (Packs.total() === 0) Packs.again = null; // (used or let go: a later pack, an event's, is not one to buy again)
   cur = null;
   overlay.classList.add('hidden');
   overlay.replaceChildren();
@@ -229,3 +237,5 @@ window.addEventListener('keydown', (event) => {
     else drainSoon(300);
   } else drainSoon(900);
 }
+// ?again (with ?pack=standard&reveal=all): the Buy another button, for a picture (it buys nothing)
+if (new URLSearchParams(location.search).has('again')) Packs.again = { label: 'Buy another · 100', can: () => true, buy: () => {} };
