@@ -184,6 +184,7 @@ function carHunt() {
 // its tasks (each paid up to its limit a day, the counters starting again the next day), its pack (packs.json
 // concept-strike-<day>, featuring the day's car); the featured car delivered at its max ECU gives its key. Every weekday
 // tried by a fake clock, Sunday too, in the first run and a later one.
+const SL = (strike) => { Events.syncDay(strike); return strike.stages[0].level; }; // (the stage's level on the day the check's clock is at)
 async function conceptStrike() {
   const strike = Events.specials.find(e => e.id === 'concept-strike');
   const { Ecu } = await g.load('ecu.js');
@@ -193,11 +194,26 @@ async function conceptStrike() {
   if (!strike) return;
   const H = 3600e3, D = 86400e3, from = strike.from;
   check(new Date(from).getDay() === 1 && new Date(from).getHours() === 0, 'its first run starts on a Monday, at midnight on the device (' + new Date(from).toString().slice(0, 24) + ')');
-  const level = strike.stages[0].level;
+  check(strike.stages[0].own?.stage.map === 'back-roads' && strike.stages[0].own.clock.good === 300, 'the stage\'s own map (a day with no level of its own plays it): Back Roads, 300 s');
   const firstTry = Events.freeTry(strike, from + 2 * D + 5 * H); // (before anything has set it: as a fresh visit has it)
   check(firstTry?.on === true && firstTry.car.id === 'sixteen' && firstTry.ecu === 1, 'the free try is ON by default while a day is live (the owner, 13-Oct): Wednesday the Sixteen, ECU ' + firstTry?.ecu);
-  check(level.id === 'concept-strike-1' && level.stage.map === 'back-roads' && level.clock.good === 300 && level.clock.evil === 300 && !level.allowedCars && !level.car,
-    'its stage: Back Roads as concept-strike-1, a 300 s TEST clock both sides, any car (no car rule, no lock)');
+  // THE DAYS' OWN LEVELS (CHECKLIST 224, the owner 13-Oct: "exclusive levels for Concept Strike"): each day's stage is a level of
+  // its own (concept-strike-d<n>) on a map of the event's (levels.js EVENT_MAPS: in no menu list, tier, medal or milestone count),
+  // on the day's clock (written out, not the 300 s test cap), any car (no rule, no lock), the stage's level that day
+  const C224 = (await g.load('config.js')).CONFIG.clock, { Tiers: T224 } = await g.load('tiers.js');
+  strike.days.forEach((day, i) => {
+    const t = from + i * D + 5 * H, lv = (Events.syncDay(strike, t), strike.stages[0].level), map = levels.EVENT_MAPS[day.map];
+    const raw = strike.raw.days[i];
+    check(!!day.level && lv === day.level && lv.id === 'concept-strike-d' + (i + 1) && lv.stage.map === raw.level && lv.stage.day === i && !!map && levels.HIDDEN_LEVELS[raw.level] === map
+      && !levels.LEVELS.includes(map) && !levels.LEVELS.some(l => l.id === raw.level) && !T224.order.some(l => l.id === raw.level) && STAGE_LEVELS.includes(lv) && Events.isStage(lv)
+      && lv.clock.good === raw.clock.good && lv.clock.evil === raw.clock.evil && lv.clock.good < 300 && lv.clock.good >= lv.clock.evil && !lv.allowedCars && lv.noTankRage,
+      'day ' + (i + 1) + ' (' + new Date(t).toString().slice(0, 3) + '): its own level ' + lv?.id + ' on "' + raw.level + '" (an event map: on no menu list, in no tier), clock ' + JSON.stringify(lv?.clock) + ', any car');
+  });
+  Events.syncDay(strike, from + 6 * D + 5 * H);
+  check(strike.stages[0].level === strike.days[0].level, 'Sunday (shut): the stage shows Monday\'s level (' + strike.stages[0].level?.id + ')');
+  Events.syncDay(strike, from + 1 * D + 5 * H);
+  check(Events.offDay(strike.days[0].level) && !Events.offDay(strike.days[1].level) && !Events.isOpen(strike.days[0].level) && Events.isOpen(strike.days[1].level), 'Tuesday: Monday\'s level is off its day (not open), Tuesday\'s open');
+  check(C224.car === 'sport', '(the clock reference)');
   const want = [['fishbowl', 2, 4, 'Mon', 2], ['midsummer', 3, 3, 'Tue', 2], ['sixteen', 4, 3, 'Wed', 3], ['quadturbo', 5, 3, 'Thu', 4], ['knifeedge', 5, 3, 'Fri', 5], ['windsong', 5, 3, 'Sat', 5]] // (the last: task 1's stars; the owner, 13-Oct, Tue, Wed, Thu one star below the day's car);
   const prev = [null, 'fishbowl', 'midsummer', 'sixteen', 'quadturbo', 'knifeedge'];
   for (const week of [0, 3]) for (let d = 0; d < 7; d++) {
@@ -222,11 +238,11 @@ async function conceptStrike() {
   Progress.data.cars.push(two.id, three.id);
   const P = Progress, held = (k) => (P.data.packs || {})['concept-strike-' + k] || 0;
   const run = (evil, carId = null) => {
-    if (carId) { P.data.car = carId; Events.pickFor(level, carId); } // (a car picked: the showroom's Drive, which turns the free try off for another car)
+    if (carId) { P.data.car = carId; Events.pickFor(SL(strike), carId); } // (a car picked: the showroom's Drive, which turns the free try off for another car)
     Events.syncTry(strike);
-    levels.selectSpecial(level);
+    levels.selectSpecial(SL(strike));
     Game.evil = evil;
-    g.cars.useLevelCar(level.car, level.amphibious);
+    g.cars.useLevelCar(SL(strike).car, SL(strike).amphibious);
     if (!Game.canStart) return 'no start';
     Game.start();
     const clock = Game.allowed, driven = g.cars.CAR.id, ecu = g.cars.carStats(g.cars.CAR)?.ecu;
@@ -254,7 +270,7 @@ async function conceptStrike() {
   const maxed = run(true);
   check(maxed.ecu === Ecu.max(g.cars.carById('fishbowl')) && P.owns('fishbowl') && Events.tasks(strike)[3].done, '20 blueprints: at its max ECU (' + maxed.ecu + ') the free try delivered gives the Fishbowl\'s KEY');
   Events.setFreeTry(strike, false);
-  check(!level.car && !level.ownEcu, 'the free try off: no car lock again');
+  check(!SL(strike).car && !SL(strike).ownEcu, 'the free try off: no car lock again');
   // Tuesday: the counters start again; the Fishbowl (now owned) pays 2 packs, 3 times
   at(mon + D);
   check(Events.tasks(strike).every(x => x.count === 0) && Events.dayOf(strike).car === 'midsummer', 'Tuesday: a new run, every counter at 0, the Midsummer Roadster featured');
@@ -274,13 +290,13 @@ async function conceptStrike() {
   at(mon + 6 * D);
   const before = JSON.stringify(P.data.packs);
   run(false, two.id);
-  check(JSON.stringify(P.data.packs) === before && Events.delivered(level, { car: two, ecu: 1, evil: false }) === null, 'Sunday: a delivery pays nothing (no run on)');
+  check(JSON.stringify(P.data.packs) === before && Events.delivered(SL(strike), { car: two, ecu: 1, evil: false }) === null, 'Sunday: a delivery pays nothing (no run on)');
   // the counters survive a save code
   at(mon + 5 * D); // (Saturday's run: its counters are the save's now, Tuesday's gone)
   P.noSave = false; P.save(); const code = P.exportCode(); P.data.eventRuns = {}; P.importCode(code);
   check(P.data.eventRuns?.['concept-strike']?.n?.join() === '1,0,0' && Events.tasks(strike)[0].count === 1, 'the counters come back through a save code (Export / Import save): ' + JSON.stringify(P.data.eventRuns));
-  await strikeShowroom(strike, level, from);
-  await strikeFreeTry(strike, level, from);
+  await strikeShowroom(strike, from);
+  await strikeFreeTry(strike, from);
 }
 
 // THE CONCEPT STRIKE IN THE SHOWROOM (the owner, 13-Oct: "Concept Strike should filter the showroom to the stars requirement
@@ -288,11 +304,11 @@ async function conceptStrike() {
 // stars (events.js starsOf: gold tier and Blueprint cars, key cars by rating), the day's featured car (owned or not: lent),
 // and task 2's car (the day before's) if owned (else only by its stars); every weekday of a later run, by the fake clock; Sunday nothing.
 // A VIEW: the stage's car rule stays none (any car the player owns may still be driven)
-async function strikeShowroom(strike, level, from) {
+async function strikeShowroom(strike, from) {
   const { showroomCars, carCard, imposedFilter, filterCards } = await g.load('showroomData.js');
   const { starsOf } = await g.load('events.js');
   const D = 86400e3, mon = from + 21 * D + 5 * 3600e3;
-  levels.selectSpecial(level);
+  levels.selectSpecial(SL(strike));
   Events.setFreeTry(strike, false);
   const owned = (id) => Progress.owns(id);
   for (let d = 0; d < 7; d++) {
@@ -324,7 +340,7 @@ async function strikeShowroom(strike, level, from) {
 // Drive back on. Then the chain on a Monday: the day's packs' blueprints raise the ECU of the car not owned (1 + a step
 // each 5), each step driven as the free try; below the max no key; delivered at ECU5 its key, the car owned, its card no
 // longer lent but the player's own (driven at its own ECU5). The Car Hunt is untouched (its stage never lent).
-async function strikeFreeTry(strike, level, from) {
+async function strikeFreeTry(strike, from) {
   const { showroomCars, carCard, driveAs, driveWords, overlayOf, imposedFilter, filterCards } = await g.load('showroomData.js');
   const { Ecu } = await g.load('ecu.js');
   const { Packs } = await g.load('packs.js');
@@ -332,9 +348,9 @@ async function strikeFreeTry(strike, level, from) {
   // a run started as the menu's Start does (the car lock as the menu draws it), finished delivered
   const start = (evil = false) => {
     Events.syncTry(strike);
-    levels.selectSpecial(level);
+    levels.selectSpecial(SL(strike));
     Game.evil = evil;
-    g.cars.useLevelCar(level.car, level.amphibious);
+    g.cars.useLevelCar(SL(strike).car, SL(strike).amphibious);
     if (!Game.canStart) return { driven: 'no start' };
     Game.start();
     const out = { driven: g.cars.CAR.id, ecu: g.cars.carStats(g.cars.CAR)?.ecu, speed: g.cars.carStats(g.cars.CAR)?.maxSpeed };
@@ -346,12 +362,12 @@ async function strikeFreeTry(strike, level, from) {
     at(mon + d * D);
     P.reset(); P.noSave = true; P.data.tierBase = 1;
     Events.setFreeTry(strike, true); // (a fresh visit: the default, checked above)
-    levels.selectSpecial(level);
+    levels.selectSpecial(SL(strike));
     Events.syncTry(strike);
     const day = Events.dayOf(strike), car = g.cars.carById(day.car), wd = new Date(Events.now()).toString().slice(0, 3);
     const card = carCard(car, false), focus = g.cars.carFocus();
     const shown = focus ? filterCards(showroomCars().map(c => carCard(c, false)), imposedFilter({ list: true, test: focus.test }, showroomCars().map(c => carCard(c, false)), 'event'), null).map(c => c.id) : [];
-    check(level.car === day.car && level.ownEcu && !P.owns(day.car) && card.state === 'ready' && card.lent?.ecu === 1 && card.lent.max === 5 && !card.unlocked && overlayOf(card) === null
+    check(SL(strike).car === day.car && SL(strike).ownEcu && !P.owns(day.car) && card.state === 'ready' && card.lent?.ecu === 1 && card.lent.max === 5 && !card.unlocked && overlayOf(card) === null
       && /Free try/.test(driveWords(card, false)) && shown.includes(day.car),
       wd + ' (fresh save): the ' + car.name + ' lent by default (the stage’s lock), its showroom card drivable "' + driveWords(card, false) + '" at ECU ' + card.lent?.ecu + '/' + card.lent?.max + ', no lock overlay, in the day’s view');
     const picked = driveAs(card, false);
@@ -360,9 +376,9 @@ async function strikeFreeTry(strike, level, from) {
       wd + ': its Drive keeps it lent (not owned, the pick still the commuter) and Start drives the ' + car.name + ' at ECU1 (' + r.speed + ' m/s, maxed ' + Ecu.stats(car, 5).maxSpeed + '); delivered, no key');
     driveAs(carCard(g.cars.carById('commuter'), false), false);
     const own = start();
-    check(own.driven === 'commuter' && !level.car && !Events.freeTry(strike).on, wd + ': Drive on the commuter turns the free try off: the run in the commuter, no car lock');
+    check(own.driven === 'commuter' && !SL(strike).car && !Events.freeTry(strike).on, wd + ': Drive on the commuter turns the free try off: the run in the commuter, no car lock');
     driveAs(carCard(car, false), false);
-    check(Events.freeTry(strike).on && level.car === day.car && start().driven === day.car, wd + ': Drive on the ' + car.name + ' again: the free try back on, the run in it');
+    check(Events.freeTry(strike).on && SL(strike).car === day.car && start().driven === day.car, wd + ': Drive on the ' + car.name + ' again: the free try back on, the run in it');
   }
   // THE CHAIN, a Monday (the Fishbowl): blueprints from its packs -> ECU of a car not owned -> driven at it -> key at ECU5
   at(mon + 7 * D);
@@ -401,5 +417,5 @@ async function strikeFreeTry(strike, level, from) {
     Events.pickFor(hl, 'commuter');
     check(Events.freeTry(strike).on, '...and a pick on the Car Hunt’s stage leaves the Concept Strike’s free try alone');
   }
-  levels.selectSpecial(level);
+  levels.selectSpecial(SL(strike));
 }

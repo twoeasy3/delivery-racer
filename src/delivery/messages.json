@@ -126,6 +126,10 @@
     }
   },
   "zones": {
+    "pocketLilyLane": ["Lily Lane - mind the humps"],
+    "pocketHighStreet": ["The High Street"],
+    "pocketMarket": ["Market day in the square"],
+    "pocketPark": ["Duck Pond Park"],
     "ringEstate": ["Northfield estate"],
     "ringRetail": ["Ringway Retail Park"],
     "ringStadium": ["City Stadium - match day"],

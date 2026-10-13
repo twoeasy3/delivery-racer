@@ -463,6 +463,8 @@ import marketTown from './levels/market-town.json';
 import quarryRun from './levels/quarry-run.json';
 import gimmickRoad2 from './levels/gimmick-road-2.json';
 import gimmickRoad3 from './levels/gimmick-road-3.json';
+// the Concept Strike's own levels (events.json concept-strike days[].level; CHECKLIST 224): one a day, Monday to Saturday
+import pocketTown from './levels/pocket-town.json';
 import hongKong from './levels/hong-kong.json';
 import tokyo from './levels/tokyo.json';
 import mumbai from './levels/mumbai.json';
@@ -604,7 +606,12 @@ export const SCREENSAVER_LEVEL = chaos;
 // crossing, shopping trolleys, a marathon, a hot-air balloon, a wide load, a
 // drawbridge and a road train jackknifing; and on its side road a camera, potholes, a level crossing and a stampede
 // Gimmick Road 3 (?hidden=gimmick-road-3): the road gambles (see gambles.js), each a risk the player can take or leave
-export const HIDDEN_LEVELS = { testbed, 'grand-prix': grandPrix, 'gimmick-road': gimmickRoad, 'gimmick-road-2': gimmickRoad2, 'gimmick-road-3': gimmickRoad3 };
+// EVENT LEVELS (the owner, 13-Oct: "exclusive levels for Concept Strike"): maps that only an event's stage plays (events.json:
+// the Concept Strike's days' "level"), never on the menu's lists, in no tier, no level number, medals or milestones. Kept with
+// the hidden levels, so they are checked as every level is and can be tried from the address (?hidden=pocket-town, a run
+// that banks nothing); played for real only as the event's stage (events.js: a level of its own, id concept-strike-d<n>)
+export const EVENT_MAPS = { 'pocket-town': pocketTown };
+export const HIDDEN_LEVELS = { testbed, 'grand-prix': grandPrix, 'gimmick-road': gimmickRoad, 'gimmick-road-2': gimmickRoad2, 'gimmick-road-3': gimmickRoad3, ...EVENT_MAPS };
 // the class every race is run in: 'f1', 'gt' (GT road cars) or 'lmp' (Le Mans prototypes): the player's car
 // and the grid (the menu's Race cars button; ?gt or ?lmp for that class whatever it says)
 export const RACE_CLASSES = { f1: 'F1', gt: 'GT', lmp: 'LMP' };

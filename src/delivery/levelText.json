@@ -554,5 +554,16 @@
       "evil": "A thundercloud in a jar, down the hill in a storm of its own. Nine hairpins, a landslide, half the road gone: never brake."
     },
     "cargo": { "good": "bouquet", "evil": "cloud" }
+  },
+  "pocket-town": {
+    "name": "Pocket Town",
+    "description": {
+      "good": "A goldfish across the smallest town on the map: speed humps, the high street, market day, the level crossing by the park. Small car, small streets, four corners, no time to dawdle.",
+      "evil": "A porcupine loose in a toy-sized town. Trolleys across the high street, café tables in the square, an ice-cream van in your lane and a train to beat: tiny car, big trouble."
+    },
+    "cargo": {
+      "good": "goldfish",
+      "evil": "porcupine"
+    }
   }
 }
