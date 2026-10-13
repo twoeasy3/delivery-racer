@@ -290,7 +290,7 @@ const drawStage = () => {
   const extras = single ? eventExtras(single, level, open) : null;
   const info = make('div', 'info',
     extras?.tags,
-    make('h2', '', single ? single.name : levelName(level)), // (the event's name, as the strip says it; its road under it)
+    make('h2', '', single ? (single.title || single.name) : levelName(level)), // (the event's name, as the strip says it; its road under it)
     single ? make('p', 'cx-road', 'On ' + levelName(level)) : null,
     open && words ? make('p', 'desc', words) : null,
     open ? make('div', 'facts',
