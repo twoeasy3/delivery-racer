@@ -30,6 +30,21 @@
 import * as THREE from 'three';
 
 export const PATCH_VERSION = 1;
+// A side view extruded across the car, as the car models draw their bodies: `points` is the outline seen from the left,
+// [[z, y], ...] (z along the car, y up; at least three), `width` across the car (centred on x = 0), `round` the rounding of
+// its edges (grows the outline by that much all round). The editor's "Extrude" part: its points are edited as a list.
+export class SideExtrudeGeometry extends THREE.ExtrudeGeometry {
+  constructor(width = 0.5, round = 0.03, points = [[-0.5, 0], [0.5, 0], [0.5, 0.25], [0.15, 0.4], [-0.3, 0.4], [-0.5, 0.25]]) {
+    const pts = (points || []).filter(q => Array.isArray(q) && q.length >= 2 && isFinite(q[0]) && isFinite(q[1]));
+    const shape = new THREE.Shape((pts.length >= 3 ? pts : [[-0.5, 0], [0.5, 0], [0, 0.4]]).map(([z, y]) => new THREE.Vector2(z, y)));
+    const r = Math.max(0, Math.min(round, width / 2 - 0.001));
+    super(shape, { depth: Math.max(0.002, width - 2 * r), curveSegments: 8, bevelEnabled: r > 0, bevelThickness: r, bevelSize: r, bevelSegments: 1 });
+    this.rotateY(-Math.PI / 2);
+    this.translate(width / 2 - r, 0, 0);
+    this.type = 'SideExtrudeGeometry';
+    this.parameters = { width, round, points: pts.map(q => [q[0], q[1]]) };
+  }
+}
 // A wedge (or any tapered block): a base `width` x `depth`, a top `topWidth` x `topDepth` (0 = a sharp edge) whose centre is
 // `topShift` along the depth (z) from the base's, `height` up. topDepth 0 with topShift = depth / 2 is a ramp rising to a
 // vertical face at +z; topWidth < width tapers it in plan. Flat shaded, like a box. Made here so the editor can rebuild it.
@@ -67,18 +82,20 @@ export const PRIMITIVES = {
   TorusGeometry: ['radius', 'tube', 'radialSegments', 'tubularSegments', 'arc'],
   PlaneGeometry: ['width', 'height', 'widthSegments', 'heightSegments'],
   CircleGeometry: ['radius', 'segments', 'thetaStart', 'thetaLength'],
+  SideExtrudeGeometry: ['width', 'round', 'points'],
   WedgeGeometry: ['width', 'height', 'depth', 'topWidth', 'topDepth', 'topShift'],
 };
 export const ADDABLE = {
   box: { kind: 'BoxGeometry', params: { width: 0.4, height: 0.3, depth: 0.4, widthSegments: 1, heightSegments: 1, depthSegments: 1 } },
   cylinder: { kind: 'CylinderGeometry', params: { radiusTop: 0.15, radiusBottom: 0.15, height: 0.4, radialSegments: 12, heightSegments: 1, openEnded: false, thetaStart: 0, thetaLength: Math.PI * 2 } },
   sphere: { kind: 'SphereGeometry', params: { radius: 0.2, widthSegments: 12, heightSegments: 8, phiStart: 0, phiLength: Math.PI * 2, thetaStart: 0, thetaLength: Math.PI } },
+  extrude: { kind: 'SideExtrudeGeometry', params: { width: 0.5, round: 0.03, points: [[-0.5, 0], [0.5, 0], [0.5, 0.25], [0.15, 0.4], [-0.3, 0.4], [-0.5, 0.25]] } },
   wedge: { kind: 'WedgeGeometry', params: { width: 0.4, height: 0.3, depth: 0.6, topWidth: 0.4, topDepth: 0, topShift: 0.3 } },
   cone: { kind: 'ConeGeometry', params: { radius: 0.2, height: 0.4, radialSegments: 12, heightSegments: 1, openEnded: false, thetaStart: 0, thetaLength: Math.PI * 2 } },
 };
 export const makeGeometry = (kind, params) => {
   const keys = PRIMITIVES[kind];
-  const Ctor = kind === 'WedgeGeometry' ? WedgeGeometry : THREE[kind];
+  const Ctor = kind === 'WedgeGeometry' ? WedgeGeometry : kind === 'SideExtrudeGeometry' ? SideExtrudeGeometry : THREE[kind];
   if (!keys || !Ctor) return null;
   return new Ctor(...keys.map(k => params?.[k]));
 };
@@ -180,7 +197,7 @@ export const extractParts = (root) => {
       id: node.userData.patchId || node.userData.patchPath || path, path, sig: node.userData.patchSig || sigOf(node), type: node.isMesh ? 'mesh' : node.isGroup ? 'group' : node.type.toLowerCase(),
       name: node.name || hook || '', role, hook: hook || null,
       kind: geo ? geo.type : null,
-      params: geo?.parameters && PRIMITIVES[geo.type] ? { ...geo.parameters } : null,
+      params: geo?.parameters && PRIMITIVES[geo.type] ? JSON.parse(JSON.stringify(geo.parameters)) : null,
       editable: !!(geo && pristine(geo)),
       verts: geo?.attributes.position?.count || 0, tris: triangles(node),
       color: mat?.color ? hex(mat.color) : null, emissive: mat?.emissive ? hex(mat.emissive) : null,
@@ -418,7 +435,7 @@ const nextId = (p, prefix) => { let n = 1; const used = new Set(p.ops.filter(o =
 export const withAdd = (patch, what, at = {}) => {
   const p = clonePatch(patch);
   const spec = ADDABLE[what];
-  const add = { id: nextId(p, 'n'), kind: spec.kind, params: { ...spec.params }, color: at.color || '#9aa3b2', parent: at.parent || '', position: at.position || [0, 1, 0], rotation: [0, 0, 0], scale: [1, 1, 1], name: what, role: 'part' };
+  const add = { id: nextId(p, 'n'), kind: spec.kind, params: JSON.parse(JSON.stringify(spec.params)), color: at.color || '#9aa3b2', parent: at.parent || '', position: at.position || [0, 1, 0], rotation: [0, 0, 0], scale: [1, 1, 1], name: what, role: 'part' };
   p.ops.push({ add });
   return { patch: p, id: add.id };
 };

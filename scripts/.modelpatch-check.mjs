@@ -105,6 +105,14 @@ try {
   check(outward, 'a wedge\'s faces all face out');
   const flat = run(MP.withSet(wedge.patch, wPart, { params: { topDepth: 0.2 } }));
   check(MP.triangles(MP.extractParts(flat.m).nodes.get(wedge.id)) === 12, 'a flat top (topDepth 0.2) makes the wedge a twelve-triangle block');
+  // an extruded shape drawn by the editor: its outline is a list of [z, y] points, editable, and a patch of it survives JSON
+  const ext = MP.withAdd(MP.emptyPatch('bus'), 'extrude', { position: [0, 2, 0] });
+  t = run(JSON.parse(JSON.stringify(ext.patch)));
+  const ePart = MP.extractParts(t.m).parts.find(p => p.id === ext.id), eNode = MP.extractParts(t.m).nodes.get(ext.id);
+  check(eNode.geometry.type === 'SideExtrudeGeometry' && ePart.editable && ePart.params.points.length === 6 && MP.triangles(eNode) > 12, 'an extruded shape is added from a six-point outline and is editable');
+  const tall = run(MP.withSet(ext.patch, ePart, { params: { points: [[-1, 0], [1, 0], [1, 1], [-1, 1]], width: 0.8 } }));
+  const tb = new THREE.Box3().setFromObject(MP.extractParts(tall.m).nodes.get(ext.id)).getSize(new THREE.Vector3());
+  check(Math.abs(tb.y - (1 + 0.06)) < 0.05 && Math.abs(tb.z - 2.06) < 0.05 && Math.abs(tb.x - 0.8) < 0.05, 'new points and a new width reshape it (' + tb.x.toFixed(2) + ' x ' + tb.y.toFixed(2) + ' x ' + tb.z.toFixed(2) + ')');
   t = run(MP.withSet(MP.emptyPatch('bus'), body, { params: { height: body.params.height * 2 } }));
   const bodyNode = MP.extractParts(t.m).nodes.get(body.id);
   check(Math.abs(bodyNode.geometry.parameters.height - body.params.height * 2) < 1e-6 && bodyNode.geometry !== MP.extractParts(base).nodes.get(body.id).geometry, 'a plain box\'s size is set by its parameters (a geometry of its own)');

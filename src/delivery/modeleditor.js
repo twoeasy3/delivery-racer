@@ -383,6 +383,24 @@ document.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click',
 
 // ---- the selected part's properties ------------------------------------------------------------------------------
 const num = (v, step = 0.01) => '<input type="number" step="' + step + '" value="' + (Math.round(v * 1000) / 1000) + '">';
+// the outline of an extruded shape ("Extrude"): its side view as a drawing whose points are dragged (nose to the right, as in the Left view),
+// and the same points as a list (z along the car, y up) to type, add after, or remove
+const SVG_W = 300, SVG_H = 190, PAD = 22;
+const outlineFit = (pts) => {
+  const zs = pts.map(q => q[0]), ys = pts.map(q => q[1]), z0 = Math.min(...zs), z1 = Math.max(...zs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const k = Math.min((SVG_W - 2 * PAD) / Math.max(0.2, z1 - z0), (SVG_H - 2 * PAD) / Math.max(0.2, y1 - y0));
+  return { k, x: (z) => SVG_W / 2 + (z - (z0 + z1) / 2) * k, y: (y) => SVG_H / 2 - (y - (y0 + y1) / 2) * k, z: (px) => (px - SVG_W / 2) / k + (z0 + z1) / 2, v: (py) => -(py - SVG_H / 2) / k + (y0 + y1) / 2 };
+};
+const pointsEditor = (pts) => {
+  const f = outlineFit(pts);
+  return '<h2 style="margin-top:12px">Outline <span class="small">side view, nose to the right: drag a point, or type it</span></h2>'
+    + '<svg id="outline" viewBox="0 0 ' + SVG_W + ' ' + SVG_H + '" style="width:100%;max-width:340px;background:#1b2330;border-radius:8px;touch-action:none">'
+    + '<polygon id="outlinePoly" points="' + pts.map(q => f.x(q[0]).toFixed(1) + ',' + f.y(q[1]).toFixed(1)).join(' ') + '" fill="#3b4a63" stroke="#ffd23f" stroke-width="1.5"/>'
+    + pts.map((q, i) => '<circle data-pt="' + i + '" cx="' + f.x(q[0]).toFixed(1) + '" cy="' + f.y(q[1]).toFixed(1) + '" r="8" fill="#ffd23f" fill-opacity="0.85"/><text x="' + (f.x(q[0]) + 10).toFixed(1) + '" y="' + (f.y(q[1]) - 8).toFixed(1) + '" font-size="10" fill="#cbd5e1">' + i + '</text>').join('')
+    + '</svg>'
+    + '<div class="pts">' + pts.map((q, i) => '<div class="vec" data-row="' + i + '"><span>' + i + '</span>' + num(q[0], 0.05) + num(q[1], 0.05)
+      + '<button data-ptadd="' + i + '" title="A point after this one">+</button><button data-ptdel="' + i + '" title="Remove this point"' + (pts.length <= 3 ? ' disabled' : '') + '>×</button></div>').join('') + '</div>';
+};
 const renderPart = () => {
   const box = $('partBox');
   const p = S.sel && partOf(S.sel);
@@ -396,6 +414,7 @@ const renderPart = () => {
       + p[k].map(v => num(k === 'rotation' ? v * DEG : v, k === 'rotation' ? 5 : k === 'scale' ? 0.05 : 0.01)).join('') + '</div>').join('')
     + (geo ? '<h2 style="margin-top:12px">Sizes ' + (p.editable ? '' : '<span class="small">set in its code (move or scale the part instead)</span>') + '</h2><div class="params">'
       + geo.filter(k => typeof p.params[k] === 'number').map(k => '<label class="param">' + k + '<input type="number" data-param="' + k + '" step="' + (/Segments|segments/.test(k) ? 1 : 0.01) + '" value="' + (Math.round(p.params[k] * 1000) / 1000) + '"' + (p.editable ? '' : ' disabled') + '></label>').join('') + '</div>' : '')
+    + (p.kind === 'SideExtrudeGeometry' && p.editable ? pointsEditor(p.params.points) : '')
     + (p.color ? '<div class="paint"><label>Colour <input type="color" id="pColor" value="' + p.color + '"></label>'
       + (p.emissive ? '<label>Glow <input type="color" id="pEmissive" value="' + p.emissive + '"></label>' : '')
       + '<label>Opacity <input type="range" id="pOpacity" min="0.05" max="1" step="0.05" value="' + p.opacity + '"></label></div>'
@@ -410,6 +429,31 @@ const renderPart = () => {
     set({ [k]: k === 'rotation' ? vals.map(v => Math.round(v / DEG * 1000) / 1000) : vals }, (p.name || p.role) + ': ' + k + ' set.');
   }));
   box.querySelectorAll('[data-param]').forEach(i => i.addEventListener('change', () => set({ params: { [i.dataset.param]: +i.value } }, (p.name || p.role) + ': ' + i.dataset.param + ' set.')));
+  if (p.kind === 'SideExtrudeGeometry' && p.editable) {
+    const pts = p.params.points.map(q => q.slice()), setPts = (next, words) => set({ params: { points: next.map(q => [Math.round(q[0] * 1000) / 1000, Math.round(q[1] * 1000) / 1000]) } }, (p.name || p.role) + ': ' + words);
+    box.querySelectorAll('[data-row]').forEach(row => row.addEventListener('change', () => {
+      const next = pts.map(q => q.slice()), [a, b] = [...row.querySelectorAll('input')].map(i => +i.value || 0);
+      next[+row.dataset.row] = [a, b]; setPts(next, 'point ' + row.dataset.row + ' set.');
+    }));
+    box.querySelectorAll('[data-ptadd]').forEach(b => b.addEventListener('click', () => {
+      const i = +b.dataset.ptadd, a = pts[i], c = pts[(i + 1) % pts.length], next = pts.map(q => q.slice());
+      next.splice(i + 1, 0, [(a[0] + c[0]) / 2, (a[1] + c[1]) / 2]); setPts(next, 'a point added.');
+    }));
+    box.querySelectorAll('[data-ptdel]').forEach(b => b.addEventListener('click', () => { if (pts.length > 3) setPts(pts.filter((_, i) => i !== +b.dataset.ptdel), 'a point removed.'); }));
+    const svg = $('outline'), f = outlineFit(pts);
+    svg.querySelectorAll('[data-pt]').forEach(c => c.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); c.setPointerCapture(e.pointerId);
+      const i = +c.dataset.pt, next = pts.map(q => q.slice());
+      const move = (ev) => {
+        const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * SVG_W / r.width, py = (ev.clientY - r.top) * SVG_H / r.height;
+        next[i] = [Math.round(f.z(px) * 20) / 20, Math.round(f.v(py) * 20) / 20];           // (to 5 cm)
+        c.setAttribute('cx', Math.max(0, Math.min(SVG_W, px))); c.setAttribute('cy', Math.max(0, Math.min(SVG_H, py)));
+        $('outlinePoly').setAttribute('points', next.map(q => f.x(q[0]).toFixed(1) + ',' + f.y(q[1]).toFixed(1)).join(' '));
+      };
+      const up = () => { c.removeEventListener('pointermove', move); c.removeEventListener('pointerup', up); c.removeEventListener('pointercancel', up); setPts(next, 'point ' + i + ' moved.'); };
+      c.addEventListener('pointermove', move); c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up);
+    }));
+  }
   $('pName').addEventListener('change', (e) => { if (p.added) set({ name: e.target.value }); else { S.nodes.get(p.id).name = e.target.value; set({ name: e.target.value }); } });
   $('pRole').addEventListener('change', (e) => set({ role: e.target.value }));
   const paint = (key, value) => {
