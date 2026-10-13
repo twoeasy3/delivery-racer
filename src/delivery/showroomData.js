@@ -82,7 +82,7 @@ export const carCard = (car, evil = false) => {
   const preview = carPreview(car); // (the tiers: 'show' | 'teaser' | 'hide' | null)
   const hidden = !unlocked && !owned && bp === 0 && (preview === 'teaser' || preview === 'hide');
   // blacked out: a tier not open yet, or a car that cannot be had at the moment (a key car whose key is not to be had, an earned car that is off) with none owned and no blueprint
-  const dark = hidden || (!unlocked && !owned && bp === 0 && ((car.keyAvailable === false && !blueprint) || !!(car.earned && car.off)));
+  const dark = hidden || (!unlocked && !owned && bp === 0 && ((car.keyAvailable === false && !blueprint) || !!(car.earned && car.off) || !!(blueprint && car.noPacks)));
   // why it cannot be driven
   let reason = '', hint = '';
   if (!unlocked) {
@@ -98,7 +98,7 @@ export const carCard = (car, evil = false) => {
         const level = LEVELS.find(l => l.id === car.earned.level);
         hint = 'Beat the par on ' + (level ? levelName(level) : car.earned.level);
       } else if (EVENT_CARS.includes(car)) hint = 'The key: an event\'s grand prize' + (car.bespoke && !car.noPacks ? ', or a Bespoke card in packs' : '');
-      else if (car.bespoke) hint = 'The key: a Bespoke card, in card packs';
+      else if (car.bespoke) hint = car.keyAvailable === false || car.noPacks ? 'No key to be had at the moment' : 'The key: a Bespoke card, in card packs';
     }
   }
   // a car that can be driven, but not on the level picked (its car rule, on the side picked)
@@ -138,6 +138,7 @@ export const overlayOf = (card) => {
   if (!card || card.unlocked) return null;
   const car = card.car;
   if (car.earned && car.off) return { kind: 'unavailable', title: 'Not available', line: 'at the moment' };
+  if (card.blueprint && car.noPacks && card.blueprints === 0) return { kind: 'unavailable', title: 'Not available', line: 'at the moment' }; // (a blueprint car in no pack for now: nothing to collect)
   if (card.hidden) return { kind: 'tier', title: 'Tier locked', line: card.tier ? 'Opens with the {tier:' + card.tier + '} tier' : 'Opens with a later tier' };
   if (card.blueprint) {
     const need = card.perEcu, have = Math.max(0, Math.min(need, card.blueprints));

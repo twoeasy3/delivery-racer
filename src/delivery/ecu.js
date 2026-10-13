@@ -79,6 +79,8 @@ export const DELIVERY = {
   wagon: 1.2, woody: 1.2, suv: 1.2, sleeper: 1.15, fullsize: 1.15, hearse: 1.1, stately: 1.0, swancar: 1.0,
   // big comfortable saloons with a boot to lose a parcel in
   goddess: 1.1, hardtop: 1.1,
+  // the sixth batch: a roomy coach, a quiet city EV and crossover, an open two-seater tourer, a hypercar with no room
+  coach: 1.2, cityev: 1.0, coupecross: 1.0, blower: 0.8, horseshoe: 0.6,
   // everyday small cars: as today, or a little under
   commuter: 1.0, evsaloon: 1.0, teardrop: 0.95, mini: 0.9, hothatch: 0.9, pandacoupe: 0.9, herald: 0.9, tank: 0.9,
   showdown: 0.9, 'earned-ufo': 0.9,
@@ -116,6 +118,8 @@ export const COMPOSURE = {
     // no stars (Key, Bespoke, special cars, the Tank): a coachbuilt tourer, an expedition snowcat, a promotional hot dog,
     // and the armoured ones
     swancar: 0.2, snocat: 0.15, hotdog: 0.1, tank: 0.2, 'earned-apc': 0.2,
+    // the sixth batch: a calm long-distance coach, a tall calm crossover
+    coach: 0.2, coupecross: 0.1,
   },
 };
 export const composureOf = (car) => car.composure ?? Number(Math.min(COMPOSURE.most, (COMPOSURE.base[car.tier] ?? 1) + (COMPOSURE.bump[car.id] ?? 0)).toFixed(3));

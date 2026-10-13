@@ -165,22 +165,6 @@ export const IDEA_CARS = [
   { id: 'gameviewer', name: 'Game-Drive Truck', basedOn: 'Toyota Land Cruiser 79 game viewer', model: 'gameviewer', color: 0x9a8a5a, evilColor: 0x2e4a2e,
     hw: 0.95, hl: 2.85, height: 2.4, note: 'No doors, three rows of seats climbing under a canopy, and a chair for the tracker out on the bull bar.',
     maxSpeed: 28, accel: 8, agility: 0.95, crossing: 1, health: 240, mass: 2, sound: 'suv' },
-  // (the sixth batch of five: two older vehicles and three modern cars; models in render/ideaModels6.js)
-  { id: 'blower', name: 'Blower Tourer', basedOn: 'Bentley 4½ Litre "Blower" (1929)', model: 'blower', color: 0x1d4a2c, evilColor: 0x5a1418,
-    hw: 0.85, hl: 2.03, height: 1.4, note: 'A supercharger out in front of the radiator, a strap round the bonnet and the wind in your face.',
-    maxSpeed: 33, accel: 10, agility: 0.95, crossing: 0.6, health: 160, mass: 1.6, sound: 'hotrod' },
-  { id: 'coach', name: 'Highway Coach', basedOn: 'GM Scenicruiser (1954)', model: 'coach', color: 0xc5cbd2, evilColor: 0x22252c,
-    hw: 1.25, hl: 5.45, height: 3.3, note: 'A raised deck at the back, a glazed step up to it and fluted sides. It does not stop till the depot.',
-    maxSpeed: 28, accel: 5, agility: 0.85, crossing: 0.7, health: 340, mass: 3, sound: 'bus' },
-  { id: 'horseshoe', name: 'Horseshoe Hypercar', basedOn: 'Bugatti Chiron (2016)', model: 'horseshoe', color: 0x1f4fa8, evilColor: 0x8a1420,
-    hw: 1.0, hl: 2.27, height: 1.21, note: 'A horseshoe in its nose, a big chrome C on each flank and a wing that rises out of its tail.',
-    maxSpeed: 48, accel: 20, agility: 1.35, crossing: 0.2, health: 150, mass: 1.4, sound: 'lmp' },
-  { id: 'cityev', name: 'City EV', basedOn: 'BMW i3 (2013)', model: 'cityev', color: 0xe2611c, evilColor: 0x6e1a2a,
-    hw: 0.89, hl: 2.0, height: 1.6, note: 'Tall, narrow and silent on skinny tyres, with a black band that dips under the back window.',
-    maxSpeed: 32, accel: 14, agility: 1.3, crossing: 0.4, health: 120, mass: 1.1, sound: 'evsaloon' },
-  { id: 'coupecross', name: 'Coupe Crossover', basedOn: 'Range Rover Evoque (2011)', model: 'coupecross', color: 0xa8232b, evilColor: 0x16171b,
-    hw: 0.95, hl: 2.18, height: 1.6, note: 'A waist that climbs, a roof that falls and a slit of glass between them.',
-    maxSpeed: 36, accel: 11, agility: 1.1, crossing: 0.8, health: 200, mass: 1.6, sound: 'suv' },
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
 export const IDEA_CAR = Object.fromEntries(IDEA_CARS.map(car => [car.id, car]));
