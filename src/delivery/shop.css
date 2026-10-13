@@ -367,7 +367,6 @@ button.shop-odds { width: 100%; padding: 0; cursor: pointer; }
    layer-free (contain). The reveal and the showroom keep their effects. ---- */
 .pack-contents .bp-card, .pack-contents .bp-card *, .pack-contents .bp-card *::before, .pack-contents .bp-card *::after,
 .pack-contents .bp-card::before, .pack-contents .bp-card::after { animation: none !important; }
-.pack-contents .pc-card { contain: layout paint; } /* (not content-visibility: auto: a card painted late as it scrolled in flashed on a tablet, the owner, 12-Oct) */
 /* the stacks' fade: a mouse/trackpad device only (the owner, 12-Oct, a tablet: "it flickers while scrolling and sitting still": the fade of every
    card's chance and bubble flipping at once, and the shadow under every picture, flickered there). A touch device: the chances sit side by side,
    the bubble shows the base stack, no timer (packcontents.js starts none), no per-picture shadow. */
@@ -378,6 +377,14 @@ button.shop-odds { width: 100%; padding: 0; cursor: pointer; }
   .pack-contents.phase-b .pc-stack.alt, .pack-contents.phase-b .amt-phase.alt { opacity: 1; }
 }
 @media (pointer: coarse) {
+  /* LITE cards on a touch device (the owner, 12-Oct: "the flicker is very strong on scrolling"): sixty-odd cards each painted a repeating
+     gradient in container units, shine layers and shadows, re-rasterised as the list scrolled; here each card's art is ONE plain linear gradient
+     in its rarity colours, no shine layers, no text shadows, and the scroller is its own layer */
+  .pack-contents .bp-art { background: linear-gradient(135deg, var(--rc), var(--rc-deep)) !important; }
+  .pack-contents .bp-art::before, .pack-contents .bp-art::after { display: none !important; }
+  .pack-contents .bp-stars, .pack-contents .bp-card * { text-shadow: none !important; }
+  .pack-contents .bp-card, .pack-contents .bp-card * { box-shadow: none !important; }
+  .pack-contents .pc-body { transform: translateZ(0); }
   .pack-contents .pc-stacks { display: inline-flex; flex-wrap: wrap; gap: 0 6px; }
   .pack-contents .pc-stack { grid-area: auto; }
   .pack-contents .bp-amount.cycle .amt-phase.alt { display: none; }
