@@ -46,6 +46,8 @@ import { swipeSwitch, PHONE_COLUMNS } from './showroomphone.js';
 import { panAt, panTo, panStep, PAN_MS } from './showroompan.js';
 import { Sound } from './audio.js';
 import { makerLine } from './blueprintcard.js';
+import { KeySpin } from './keyspin.js'; // (the "Where to get it" key card's key, turning: render/keyspin.js)
+import { sheetUp } from '../lite.js';
 import { renderSources } from './carsources.js'; // ("Where to get it": the car's key and blueprint sources)
 import { overlayNode } from './lockoverlay.js'; // (a locked card's overlay: its kind's tint, badge and caption)
 
@@ -224,7 +226,7 @@ const build = () => {
   detail.setAttribute('role', 'dialog');
   swipeOn(detail);
   // the phone's single-car screen: a vertical swipe outside the live car switches car (render/showroomphone.js)
-  swipeSwitch(detail, { skip: (target) => !isPhone() || !full || !!target.closest?.('.sr-dpic'), go: (offset) => goTo(offset) });
+  swipeSwitch(detail, { skip: (target) => !isPhone() || !full || !!target.closest?.('.sr-dpic, .cs-keyspin'), go: (offset) => goTo(offset) });
   sheet = buildSheet();
   sheetShade = make('div', 'sr-shade');
   sheetShade.addEventListener('click', () => closeFilters());
@@ -557,6 +559,9 @@ const showDetail = () => {
   requestAnimationFrame(() => { if (full && cardPic.isConnected) stillCar(cardPic, card.car, evilNow()); });
   // the car itself, live (a drag turns it; it lands: render/carbounce.js); with no WebGL, its still
   if (!ShowroomView.show(pic, card.car, { evil, dark: card.dark, keyEl })) requestAnimationFrame(() => { if (Showroom.isOpen) stillCar(pic, card.car, evilNow()); });
+  // the "Where to get it" key card's key turns as the car does (black for a blacked-out car): render/keyspin.js
+  const keyPic = detail.querySelector('.cs-where .bp-keypic');
+  if (keyPic) KeySpin.start(keyPic, card.car, { dark: card.dark }); else KeySpin.stop();
 };
 const pick = (id) => {
   if (id !== picked) blip('menuMove');
@@ -579,6 +584,7 @@ const closeFull = () => {
   detail.classList.remove('open');
   panel.classList.remove('full-up');
   ShowroomView.stop(); // (the live car let go: nothing drawn while the cards are up)
+  KeySpin.stop(); // (and the key card's key)
   detail.replaceChildren();
   Nav.leave('showroomFull');
   const node = cards.find(c => c.data.id === picked)?.node;
@@ -600,7 +606,7 @@ export const goTo = (offset) => {
 // nothing there. A pen still comes by pointer events.)
 const swipeOn = (el) => {
   let start = null;
-  const begin = (x, y, id, target) => !isPhone() && !target.closest?.('.sr-dpic, button') ? { x, y, id } : null;
+  const begin = (x, y, id, target) => !isPhone() && !target.closest?.('.sr-dpic, .cs-keyspin, button') ? { x, y, id } : null;
   const end = (x, y) => {
     const dx = x - start.x, dy = y - start.y;
     start = null;
@@ -714,6 +720,7 @@ export const Showroom = {
     queue.clear();
     watcher?.disconnect();
     ShowroomView.stop();
+    KeySpin.stop();
     setViewSide(null); // (the car rule goes by the side being played again)
     panel.classList.add('hidden');
     startScreen.classList.remove('hidden');
@@ -746,3 +753,5 @@ export const Showroom = {
 };
 // the live car is drawn only while it can be seen: the showroom up (not under the car lot) with the full view up
 ShowroomView.when(() => Showroom.isOpen && full && !Garage.isOpen && !panel.classList.contains('hidden'));
+// and the key card's turning key the same, and not under a sheet (What's inside, a pack reveal: lite.js sheetUp)
+KeySpin.when(() => Showroom.isOpen && full && !Garage.isOpen && !panel.classList.contains('hidden') && !sheetUp());
