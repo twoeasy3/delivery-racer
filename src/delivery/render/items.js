@@ -129,7 +129,10 @@ const makePickup = (p) => {
   gem.scale.setScalar(1.5); // (big enough to make out from the chase camera)
   gem.position.y = 1.7;
   const pad = new THREE.Mesh(new THREE.BoxGeometry(CONFIG.laneWidth * 0.8, 0.02, 5), new THREE.MeshBasicMaterial({
-    color: PICKUP_COLOR[p.type], transparent: true, opacity: 0.45, depthWrite: false }));
+    color: PICKUP_COLOR[p.type], transparent: true, opacity: 0.45, depthWrite: false,
+    // (pulled nearer than any of the levels' road overlays, a washboard, a runway, mud, which pull themselves
+    // up to -6 off the road: at the chase camera's low angle they hid the pad, 4 cm up as it is)
+    polygonOffset: true, polygonOffsetFactor: -8, polygonOffsetUnits: -8 }));
   pad.position.y = 0.04;
   group.add(gem, pad);
   group.rotation.y = Track.toWorld(p.s, p.lat, tmp);
