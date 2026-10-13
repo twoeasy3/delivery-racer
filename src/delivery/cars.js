@@ -187,7 +187,7 @@ export const CARS = [
   // ---- tier 2
   { id: 'lovebus', tier: 2, name: 'Love Bus', price: 130, color: 0x3fae4a, evilColor: 0xd8262b, fixedLivery: true, model: 'lovebus',
     maxSpeed: 24, accel: 7, crossing: 0.55, health: 165, hw: 1.0, hl: 2.3, height: 2.1 },
-  { id: 'wagon', tier: 2, name: 'Family Wagon', price: 160, color: 0x8cc8f0, evilColor: 0xf28cc0, fixedLivery: true, model: 'wagon',
+  { id: 'wagon', tier: 2, name: 'Family Wagon', price: 160, color: 0x8a8cf0, evilColor: 0xf28cc0, fixedLivery: true, model: 'wagon',
     maxSpeed: 26, accel: 9, crossing: 0.6, health: 140, hw: 1.05, hl: 2.4, height: 1.9 },
   { id: 'sport', tier: 2, name: 'Sportscompact', price: 190, color: 0x22c43a, evilColor: 0x151515, fixedLivery: true, model: 'sport',
     maxSpeed: 31, accel: 13, crossing: 0.35, health: 80, hw: 0.85, hl: 1.9, height: 1.1 },

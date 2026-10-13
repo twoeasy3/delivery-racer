@@ -80,6 +80,18 @@ const alloyFace = () => picture('alloy', 64, 64, (g) => {
   g.fillStyle = '#55585e';
   g.beginPath(); g.arc(32, 32, 3, 0, Math.PI * 2); g.fill();
 });
+// a pressed steel wheel's face: a silver dish with a ring of round holes, a rim and a domed hubcap
+const steelFace = () => picture('steel', 64, 64, (g) => {
+  g.fillStyle = '#d6d8dc';
+  g.fillRect(0, 0, 64, 64);
+  g.strokeStyle = '#8c9096';
+  g.lineWidth = 2;
+  for (const r of [29, 22, 12]) { g.beginPath(); g.arc(32, 32, r, 0, Math.PI * 2); g.stroke(); }
+  g.fillStyle = '#3a3c40';
+  for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; g.beginPath(); g.arc(32 + Math.cos(a) * 17, 32 + Math.sin(a) * 17, 3, 0, Math.PI * 2); g.fill(); }
+  g.fillStyle = '#ffffff';
+  g.beginPath(); g.arc(32, 32, 9, 0, Math.PI * 2); g.fill();
+});
 // the lowrider's grille: upright gold bars on black, inside a gold frame (laid on an arch: see lowrider)
 const archGrille = () => picture('archgrille', 64, 64, (g) => {
   g.fillStyle = '#120d06';
@@ -520,6 +532,94 @@ export const ORIG2_MODELS = {
     const livery = (evil) => stripe.color.setHex(evil ? 0x39ff14 : 0xf4f4f0);
     livery(false);
     group.userData = { body, parts: P.count, animate: () => {}, livery, stripe: (hex) => stripe.color.setHex(hex) };
+    return group;
+  },
+
+  // A family station wagon of the late 1970s: a rounded bonnet and nose with a round headlamp each side of a slatted
+  // grille, a black plate of a lower grille under it, a long roof with rails and a drip edge out to a near-upright
+  // tailgate, four panes of glass a side (the windscreen, two doors and the load bay's window), tall tail lamps at
+  // the back corners, chrome bumpers, and big black tyres on silver hubs (it rides high). It sits still
+  wagon: (car) => {
+    const group = new THREE.Group();
+    const w = car.hw * 2, L = car.hl, R = 0.46, half = w / 2;
+    const frontZ = L * 0.6, rearZ = -L * 0.6;
+    const paint = lambert(car.color), P = parts();
+    // the body, side on: high sills, the arches cut up into them, a rounded nose and bonnet, the belt level to the tail
+    const sill = 0.5, round = 0.06, belt = 1.1, scuttle = [L * 0.4, belt + 0.02];
+    const nose = [[L - 0.06, sill + 0.02, 0.08], [L - 0.04, 0.9, 0.12], [L - 0.2, 1.05, 0.22]];
+    const bodyPts = [[-L + 0.06, sill + 0.02, 0.08], ...arch(rearZ, R + 0.02, 0.58, sill), ...arch(frontZ, R + 0.02, 0.58, sill), ...nose,
+      scuttle, [-L + 0.3, belt], [-L + 0.06, belt - 0.02, 0.06]];
+    const body = new THREE.Mesh(extrude(outline(bodyPts), half, round), paint);
+    group.add(body);
+    const top = belt + round;
+    for (const z of [rearZ, frontZ]) P.add(WELL, bx(w - 0.76, 0.6, 1.1, 0, 0.72, z));     // dark wheel wells
+    // the glasshouse: a raked windscreen, a long flat roof, the tailgate's window nearly upright
+    const gBase = top - 0.01, gTop = 1.8, gRound = 0.04, gHalf = half - 0.07, gHalfTop = half - 0.16;
+    const lean = (y) => 1 - (1 - gHalfTop / gHalf) * Math.max(0, (y - gBase) / (gTop - gBase));
+    const houseHalf = (y) => gHalf * lean(y);
+    const ws = [scuttle[0] - 0.02, gBase], wsTop = [L * 0.12, gTop], rwTop = [-L + 0.2, gTop], rw = [-L + 0.1, gBase];
+    P.add(paint, extrude(outline([ws, wsTop, rwTop, rw]), gHalf, gRound, (y) => lean(y)));
+    P.add(GLASS, pane(ws, wsTop, gRound + 0.006, houseHalf, 0.04, 0.1));      // the windscreen,
+    P.add(GLASS, pane(rwTop, rw, gRound + 0.006, houseHalf, 0.08, 0.14));     // the tailgate's window
+    const aLine = (y, d) => ws[0] + (wsTop[0] - ws[0]) * (y - gBase) / (gTop - gBase) - d;
+    const dLine = (y, d) => rw[0] + (rwTop[0] - rw[0]) * (y - gBase) / (gTop - gBase) + d;
+    const lo = gBase + 0.05, hi = gTop - 0.05, b = -L * 0.13, c = -L * 0.56; // (the B and C pillars)
+    for (const sx of [-1, 1]) {
+      // four panes a side: the front door's, the back door's and the load bay's, between pillars
+      P.add(GLASS, flankPane([[aLine(lo, 0.12), lo], [aLine(hi, 0.12), hi], [b + 0.05, hi], [b + 0.05, lo]], sx, houseHalf));
+      P.add(GLASS, flankPane([[b - 0.05, lo], [b - 0.05, hi], [c + 0.05, hi], [c + 0.05, lo]], sx, houseHalf));
+      P.add(GLASS, flankPane([[c - 0.07, lo], [c - 0.07, hi], [dLine(hi, 0.14), hi], [dLine(lo, 0.14), lo]], sx, houseHalf));
+      // the roof: its drip edge, and a rail on four feet
+      P.add(TRIM, rod([sx * houseHalf(gTop), gTop + 0.005, wsTop[0] - 0.04], [sx * houseHalf(gTop), gTop + 0.005, rwTop[0] + 0.03], 0.03));
+      P.add(TRIM, rod([sx * 0.72, gTop + gRound + 0.07, wsTop[0] - 0.3], [sx * 0.72, gTop + gRound + 0.07, rwTop[0] + 0.12], 0.04));
+      for (const z of [wsTop[0] - 0.34, rwTop[0] + 0.16]) P.add(TRIM, bx(0.06, 0.09, 0.08, sx * 0.72, gTop + gRound + 0.03, z));
+      // the doors' shut lines, handles, a black rubbing strip along the flank, a mirror, the fuel filler
+      for (const z of [ws[0] - 0.04, b - 0.01, c - 0.02]) { // (down to the sill, or to the arch where one is under it)
+        const dz = Math.abs(z - rearZ), foot = dz < 0.52 ? R + 0.02 + Math.sqrt(0.52 * 0.52 - dz * dz) + 0.02 : sill + 0.02;
+        P.add(TRIM, rod([sx * half, top - 0.04, z], [sx * half, foot, z], 0.014));
+      }
+      for (const z of [b - 0.18, c - 0.2]) P.add(CHROME, bx(0.03, 0.035, 0.14, sx * (half + 0.004), 0.98, z));
+      for (const [z0, z1] of [[L - 0.12, frontZ + 0.62], [frontZ - 0.62, rearZ + 0.62], [rearZ - 0.62, -L + 0.12]]) { // (broken by the arches)
+        P.add(TRIM, rod([sx * half, 0.8, z0], [sx * half, 0.8, z1], 0.05, 0.08));
+      }
+      P.add(TRIM, bx(0.1, 0.09, 0.14, sx * (houseHalf(gBase) + 0.07), gBase + 0.06, ws[0] - 0.16));
+      P.add(TRIM, bx(0.08, 0.04, 0.04, sx * (houseHalf(gBase) + 0.02), gBase + 0.02, ws[0] - 0.14));
+      if (sx > 0) P.add(TRIM, dsc(0.07, 0.02, 0, 0, 0).rotateY(Math.PI / 2).translate(half + 0.005, 0.98, rearZ - 0.62));
+      // the nose: a round headlamp each side in a chrome bezel, an indicator round the corner under it
+      P.add(CHROME, dsc(0.17, 0.05, sx * 0.68, 0.88, L + 0.012, 14));
+      P.add(LAMP, dsc(0.14, 0.05, sx * 0.68, 0.88, L + 0.028, 14));
+      P.add(AMBER, bx(0.2, 0.07, 0.03, sx * 0.72, 0.68, L + 0.008));
+      P.add(AMBER, bx(0.03, 0.07, 0.14, sx * (half + 0.002), 0.68, L - 0.15));
+      // the tail: a tall lamp at each corner (the tail lamp, the brake lamp above it, the indicator and the reversing
+      // lamp below), set into the body's back
+      P.add(TRIM, bx(0.3, 0.52, 0.02, sx * (half - 0.2), 0.84, -L - 0.002));
+      P.add(STOP, bx(0.24, 0.12, 0.03, sx * (half - 0.2), 1.01, -L - 0.01));
+      P.add(TAIL, bx(0.24, 0.16, 0.03, sx * (half - 0.2), 0.86, -L - 0.01));
+      P.add(AMBER, bx(0.24, 0.08, 0.03, sx * (half - 0.2), 0.73, -L - 0.01));
+      P.add(REVERSE, bx(0.24, 0.05, 0.03, sx * (half - 0.2), 0.64, -L - 0.01));
+      // big black tyres on silver hubs
+      const hub = geoOnce('wagonhub', () => mergeGeometries([new THREE.CylinderGeometry(0.27, 0.27, 0.36, 14), new THREE.CylinderGeometry(0.11, 0.13, 0.4, 10)]));
+      for (const z of [frontZ, rearZ]) wheel(group, R, 0.34, sx * (half - 0.04), R, z, textured('steel', 0xeef0f3, steelFace()), 0.27, hub);
+    }
+    // the grille between the lamps: chrome slats on black, and the black lower grille under it, plate shaped
+    P.add(TRIM, bx(0.86, 0.26, 0.03, 0, 0.9, L + 0.002));
+    for (const y of [0.82, 0.88, 0.94, 1.0]) P.add(CHROME, bx(0.82, 0.022, 0.02, 0, y, L + 0.018));
+    P.add(CHROME, bx(0.05, 0.28, 0.03, 0, 0.9, L + 0.02));
+    P.add(textured('mesh', 0xffffff, meshGrille()), panel([[0.42, 0.6, L + 0.012], [-0.42, 0.6, L + 0.012], [-0.42, 0.72, L + 0.012], [0.42, 0.72, L + 0.012]].map(([x, y, z]) => [x, y, z])));
+    P.add(TRIM, bx(0.9, 0.16, 0.02, 0, 0.66, L + 0.002));
+    // chrome bumpers right across, wrapped round the corners, with black rubber strips
+    for (const e of [1, -1]) {
+      P.add(CHROME, bx(w + 0.06, 0.14, 0.16, 0, 0.5, e * (L + 0.04)));
+      P.add(TRIM, bx(w + 0.07, 0.04, 0.17, 0, 0.5, e * (L + 0.04)));
+      for (const sx of [-1, 1]) P.add(CHROME, bx(0.06, 0.14, 0.4, sx * (half + 0.0), 0.5, e * (L - 0.12)));
+    }
+    // the tailgate: its plate, its handle, the shut line round it; an exhaust under the back
+    P.add(PLATE, bx(0.44, 0.13, 0.02, 0, 0.8, -L - 0.006));
+    P.add(CHROME, bx(0.3, 0.04, 0.03, 0, 0.98, -L - 0.01));
+    for (const sx of [-1, 1]) P.add(TRIM, bx(0.012, 0.6, 0.012, sx * (half - 0.4), top - 0.32, -L - 0.004));
+    P.add(CHROME, bar(0.045, 0.3, 0.55, 0.42, -L + 0.06, 'z', 8));
+    P.into(group);
+    group.userData = { body, parts: P.count, animate: () => {} };
     return group;
   },
 };

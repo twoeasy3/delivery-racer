@@ -1908,30 +1908,9 @@ export const MODELS = {
     return group;
   },
 
-  // A big, boxy family 4x4: tall glasshouse, roof rails, a spare wheel on the back.
+  // The Family Wagon: rebuilt (13-Oct) after the owner's older game's picture, in render/modelsOrig2.js (see it)
   wagon: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.46;
-    const paint = lambert(car.color), dark = lambert(0x20242b), trim = lambert(0x2a2a2a);
-    const body = box(group, paint, w, 0.7, l, 0, 0.95, 0);
-    box(group, trim, w + 0.06, 0.2, l + 0.04, 0, 0.66, 0);                        // lower cladding
-    box(group, paint, w * 0.96, 0.6, l * 0.64, 0, 1.6, -l * 0.12);                // upper body
-    box(group, dark, w * 0.98, 0.36, l * 0.56, 0, 1.62, -l * 0.12);               // side windows
-    box(group, dark, w * 0.84, 0.36, l * 0.66, 0, 1.62, -l * 0.12);               // screens, front and back
-    for (const side of [-1, 1]) box(group, trim, 0.06, 0.06, l * 0.5, side * w * 0.38, 1.95, -l * 0.12); // roof rails
-    box(group, lambert(0xcfd3d8), w * 0.5, 0.2, 0.06, 0, 1.0, l / 2 + 0.02);      // grille
-    const lamp = new THREE.MeshBasicMaterial({ color: 0xfff3c4 }), tail = new THREE.MeshBasicMaterial({ color: 0xff2a2a });
-    for (const side of [-1, 1]) {
-      box(group, lamp, w * 0.18, 0.2, 0.1, side * w * 0.37, 1.0, l / 2 + 0.01);
-      box(group, tail, w * 0.12, 0.34, 0.1, side * w * 0.42, 1.05, -l / 2 - 0.01);
-      wheel(group, R, 0.34, side * (w / 2 - 0.04), R, l * 0.3);
-      wheel(group, R, 0.34, side * (w / 2 - 0.04), R, -l * 0.3);
-    }
-    const spare = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.26, 16), lambert(0x141414));
-    spare.rotation.x = Math.PI / 2; // flat against the tailgate
-    spare.position.set(0, 1.1, -l / 2 - 0.16);
-    group.add(spare);
-    group.userData = { body, animate: () => {} };
+    const group = ORIG2_MODELS.wagon(car);
     return group;
   },
 
