@@ -354,7 +354,7 @@ const fill = (fresh = true) => {
   const filtered = filterCount(filter) > 0;
   countEl.replaceChildren(...(filtered ? [make('b', '', String(list.length)), ' of ' + all.length + ' shown']
     : [make('b', '', String(all.filter(c => c.unlocked).length)), ' / ' + all.length + ' cars']),
-  imposed && filtered ? make('span', 'sr-imposed', 'This level: ', ...richTiers(imposed.label)) : null); // (the level's car rule, imposed)
+  ...(imposed && filtered ? [make('span', 'sr-imposed', 'This level: ', ...richTiers(imposed.label))] : [])); // (the level's car rule, imposed; replaceChildren would write a null as "null")
   bankEl.replaceChildren(make('small', '', 'Bank'), money(Progress.data.money));
   watcher?.disconnect();
   cards = list.map((data) => {

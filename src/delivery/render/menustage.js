@@ -676,14 +676,17 @@ const eventPanel = (event, picked, evil) => {
   }
   const cards = event.stages.map((stage) => {
     const rule = !stage.car && stage.level?.allowedCars ? listRule(stage.level) : null; // (a rule of its own: the Car Hunt's 3-star cars)
-    const st = Events.state(event, stage.index), car = stage.car ? carById(stage.car) : rule && stage.level === LEVEL && !CAR.silhouette ? CAR : rule ? [carById(Progress.data.car), ...Progress.data.cars.map(carById)].find(c => c && ruleAllows(rule, c)) || carById(Progress.data.car) || CAR : carById(Progress.data.car) || CAR, view = make('div', 'event-car'); // (any car: the player's own, not one a picked stage lends; under a rule, the car the rule puts them in)
+    // (any car: the player's own, not one a picked stage lends; under a rule, the car the rule puts them in, or none drawn
+    // when they own no car it allows: the card then says so, as the menu's own car panel does)
+    const fits = rule ? (stage.level === LEVEL && !CAR.silhouette ? CAR : [carById(Progress.data.car), ...Progress.data.cars.map(carById)].find(c => c && !c.silhouette && ruleAllows(rule, c)) || null) : null;
+    const st = Events.state(event, stage.index), car = stage.car ? carById(stage.car) : rule ? fits : carById(Progress.data.car) || CAR, view = make('div', 'event-car');
     const owned = stage.car && Progress.owns(stage.car);
     const badge = stage.free ? make('span', 'event-badge free', 'Free try') : stage.car ? make('span', 'event-badge ' + (owned ? 'owned' : 'needed'), (owned ? '✔ ' : '🔒 ') + car.name)
       : rule ? make('span', 'event-badge rule', ...richTiers(rule.label), ' only') : make('span', 'event-badge any', 'Any car');
     const again = !!event.repeat; // (a recurring event's stage: never done for good, READY whenever it is on)
     const card = make('button', 'event-stage' + (st.done && !again ? ' done' : st.open && !st.needs ? ' ready' : ' shut') + (stage.level === picked ? ' picked' : ''),
       make('span', 'event-stage-n', again ? 'Every run: a pack' : 'Stage ' + (stage.index + 1)), view, badge,
-      make('span', 'event-stage-state', st.done && !again ? 'Done' : st.open && !st.needs ? 'Ready' : st.why),
+      make('span', 'event-stage-state', ...(st.done && !again ? ['Done'] : !st.open ? [st.why] : st.needs ? [st.why] : rule && !fits ? ['No ', ...richTiers(rule.label.replace(/ cars$/, '')), ' car yet'] : ['Ready'])),
       make('span', 'event-stage-map', levelName(stage.level)));
     if (LEVEL_SHOTS[stage.map]) card.style.setProperty('--shot', `url("${LEVEL_SHOTS[stage.map]}")`);
     card.addEventListener('click', () => { if (stage.level !== cursor) { blip('menuMove'); show(stage.level); } });
