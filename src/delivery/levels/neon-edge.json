@@ -1,0 +1,78 @@
+{
+  "id": "neon-edge",
+  "theme": "tokyo",
+  "drive": "left",
+  "clock": { "good": 90, "evil": 70 },
+  "tip": 200,
+  "lanes": 4,
+  "cargo": { "good": "lavalamp", "evil": "glitter" },
+  "traffic": { "keitruck": 0.28, "taxi": 0.18, "commuter": 0.12, "sport": 0.1, "miata": 0.08, "darkvan": 0.08, "cargotruck": 0.06, "semi": 0.05, "police": 0.04 },
+  "trafficCount": 11,
+  "oncomingCount": 9,
+  "pursuits": { "every": { "min": 28, "max": 45 } },
+  "convoys": { "every": { "min": 16, "max": 28 }, "size": 4, "kind": "keitruck" },
+  "segments": [
+    { "length": 450, "curve": 0 },
+    { "length": 300, "curve": 0.003 },
+    { "length": 400, "curve": 0 },
+    { "length": 350, "curve": -0.003 },
+    { "length": 400, "curve": 0 },
+    { "length": 250, "curve": 0.0025 },
+    { "length": 350, "curve": 0 }
+  ],
+  "tarmac": [
+    { "from": 240, "to": 430, "lane": 3 }
+  ],
+  "tunnels": [
+    { "from": 800, "to": 1100 }
+  ],
+  "roadblocks": [
+    { "s": 1640 }
+  ],
+  "reversible": [
+    { "from": 1700, "to": 1890, "lane": 2 }
+  ],
+  "crosswinds": [
+    { "from": 1910, "to": 2140, "dir": "left" }
+  ],
+  "pickups": [
+    { "type": "cash10", "s": 80, "lane": 2 },
+    { "type": "cash10", "s": 80, "lane": 3 },
+    { "type": "turbo", "s": 180, "lane": 2 },
+    { "type": "cash20", "s": 300, "lane": 2 },
+    { "type": "cash20", "s": 400, "lane": 2 },
+    { "type": "cash10", "s": 560, "lane": 2 },
+    { "type": "cash10", "s": 560, "lane": 3 },
+    { "type": "wrench", "s": 700, "lane": 3 },
+    { "type": "cash10", "s": 860, "lane": 2 },
+    { "type": "cash10", "s": 860, "lane": 3 },
+    { "type": "cash20", "s": 1000, "lane": 2 },
+    { "type": "cash20", "s": 1000, "lane": 3 },
+    { "type": "cash10", "s": 1200, "lane": 2 },
+    { "type": "cash10", "s": 1200, "lane": 3 },
+    { "type": "turbo", "s": 1320, "lane": 3 },
+    { "type": "siren", "s": 1460, "lane": 2 },
+    { "type": "radarDetector", "s": 1460, "lane": 3 },
+    { "type": "cash20", "s": 1560, "lane": 2 },
+    { "type": "cash20", "s": 1560, "lane": 3 },
+    { "type": "cash10", "s": 1780, "lane": 3 },
+    { "type": "cash10", "s": 1780, "lane": "right" },
+    { "type": "mystery", "s": 1950, "lane": 2 },
+    { "type": "cash10", "s": 2050, "lane": 2 },
+    { "type": "cash10", "s": 2050, "lane": 3 },
+    { "type": "cash20", "s": 2250, "lane": 2 },
+    { "type": "cash20", "s": 2250, "lane": 3 },
+    { "type": "cash20", "s": 2360, "lane": 2 },
+    { "type": "cash20", "s": 2360, "lane": 3 },
+    { "type": "cash10", "s": 2440, "lane": 2 },
+    { "type": "cash10", "s": 2440, "lane": 3 },
+    { "type": "cash10", "s": 2440, "lane": "right" }
+  ],
+  "obstacles": [
+    { "s": 600, "lane": 3, "kind": "cone" },
+    { "s": 920, "lane": 3, "kind": "barrier" },
+    { "s": 1060, "lane": 2, "kind": "barrier" },
+    { "s": 1360, "lane": 2, "kind": "cone" },
+    { "s": 2180, "lane": 3, "kind": "cone" }
+  ]
+}

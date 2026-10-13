@@ -63,14 +63,15 @@ export const CARD_PARTS = ['medals', 'stats', 'description'];
 
 // a stage as a level: the map, the stage's fields over it, its own id; its words and cargo the map's, asked for now
 // (they are kept by the map's id: levelText.json, cargo.js)
-const stageLevel = (event, stage, index) => {
+// (day: a rotating event's day, 0 = the first: its own level, id <event>-d<n>, on the map the day names)
+const stageLevel = (event, stage, index, day = null) => {
   const map = MAPS.get(String(stage.level));
   if (!map) return null;
   const own = Object.fromEntries(Object.entries(stage).filter(([k]) => !OWN.has(k)));
   // (TANK RAGE is off in a stage, the owner: "noTankRage": false in the stage turns it on)
-  const level = { ...map, noTankRage: true, ...own, id: event.id + '-' + (index + 1), name: levelName(map),
+  const level = { ...map, noTankRage: true, ...own, id: event.id + (day === null ? '-' + (index + 1) : '-d' + (day + 1)), name: levelName(map),
     description: { good: levelDescription(map, false), evil: levelDescription(map, true) },
-    cargo: { good: cargoFor(map, false)?.id, evil: cargoFor(map, true)?.id }, stage: { event: event.id, index, map: map.id } };
+    cargo: { good: cargoFor(map, false)?.id, evil: cargoFor(map, true)?.id }, stage: { event: event.id, index, map: map.id, ...(day === null ? {} : { day }) } };
   if (!level.cargo.good) delete level.cargo; // (a map that carries nothing: a race)
   if (stage.car && stage.free) { level.car = stage.car; delete level.allowedCars; } // (lent: a car lock)
   else if (stage.car) { delete level.car; level.allowedCars = { cars: [stage.car] }; } // (needed, and owned)
@@ -86,10 +87,25 @@ export const SPECIALS = (Array.isArray(eventData.special) ? eventData.special : 
   event.stages = (Array.isArray(e.stages) ? e.stages : []).map((s, i) => ({
     index: i, from: when(s.from), car: s.car || null, free: !!s.free, map: String(s.level), level: stageLevel(event, s, i), raw: s,
   }));
+  // (a rotating event's day with a "level" of its own (the Concept Strike's: the owner, 13-Oct, "exclusive levels for Concept
+  // Strike", CHECKLIST 224): its one stage played on that map that day, a level of its own (id <event>-d<n>: its best time,
+  // replays and ghost the day's), with the day's "clock" (and "tip") over the stage's. The stage's `level` is the day's on the
+  // menu: Events.syncDay swaps it as the day changes. A day with none plays the stage's own map)
+  if (event.days && event.stages[0]) {
+    const base = event.stages[0];
+    base.own = base.level; base.ownMap = base.map;
+    for (const d of event.days) {
+      const raw = e.days[d.index] || {};
+      if (!raw.level) continue;
+      const over = Object.fromEntries(['clock', 'tip'].filter(k => raw[k] !== undefined).map(k => [k, raw[k]]));
+      d.map = String(raw.level);
+      d.level = stageLevel(event, { ...base.raw, level: raw.level, ...over }, 0, d.index);
+    }
+  }
   return event;
 });
-// every stage's level (replay.js fingerprints them; the menu lists the live ones)
-export const STAGE_LEVELS = SPECIALS.flatMap(e => e.stages.map(s => s.level).filter(Boolean));
+// every stage's level (replay.js fingerprints them; the menu lists the live ones), a rotating event's days' too
+export const STAGE_LEVELS = SPECIALS.flatMap(e => [...e.stages.map(s => s.own || s.level), ...(e.days || []).map(d => d.level)].filter(Boolean));
 
 // a recurring event's rule ({ every, live }: whole days, 1 <= live <= every), or null (none, or not sound: problems() says)
 function repeatOf(r) {
@@ -208,7 +224,7 @@ export const Events = {
     return { open: true, done: index < done, why: needs ? 'Needs the ' + needs.name : '', needs };
   },
   // a stage's level open on the menu now?
-  isOpen(level) { const at = this.stageOf(level); return !!at && this.state(at.event, at.stage.index).open; },
+  isOpen(level) { const at = this.stageOf(level); return !!at && !this.offDay(level) && this.state(at.event, at.stage.index).open; },
   // the stage that is next to play (the first not done), or null when all are
   next(event) { return event.stages[this.done(event)] || null; },
   prizeKey(event) { return 'event-' + event.id; },
@@ -326,10 +342,28 @@ export const Events = {
   // the stage's car lock follows the free try and the day (called as the menu draws): the day's car lent at the player's own
   // ECU (level.ownEcu: ecu.js), or no lock (any car the player owns)
   syncTry(event, t = this.now()) {
+    this.syncDay(event, t);
     const level = event?.days ? event.stages[0]?.level : null;
     if (!level) return;
     const day = this.dayOf(event, t);
+    for (const other of [event.stages[0].own, ...event.days.map(d => d.level)]) if (other && other !== level) { delete other.car; delete other.ownEcu; } // (another day's level: no lock)
     if (tryOn && day?.live && carById(day.car)) { level.car = day.car; level.ownEcu = true; } else { delete level.car; delete level.ownEcu; }
+  },
+  // a rotating event's stage is played on the day's own level (its days' "level"): the stage's level (and map) set to the day's
+  // on now, or the next day's between runs (Sunday: Monday's). Called as the menu draws (menustage.js buildTabs, syncTry)
+  syncDay(event, t = this.now()) {
+    const stage = event?.days ? event.stages[0] : null;
+    if (!stage) return;
+    const day = this.dayOf(event, t), own = day ? event.days[day.index] : null;
+    stage.level = own?.level || stage.own;
+    stage.map = own?.level ? own.map : stage.ownMap;
+  },
+  // a level of a rotating event's day that is not the one played now (a day gone by, or to come): not open on the menu
+  offDay(level, t = this.now()) {
+    const at = this.stageOf(level);
+    if (!at?.event.days) return false;
+    this.syncDay(at.event, t);
+    return at.stage.level !== level;
   },
   // a rotating event's stage delivered (delivered): every task of the day the run meets is paid, up to its limit this run.
   // { done: [words], packs: [names], key: car name or '' }
@@ -396,6 +430,9 @@ export const Events = {
             if (!carById(d.car)) say(n + 'its car "' + d.car + '" is not a car');
             if (!dayPack(e.id, i + 1)) say(n + 'no pack (packs.json: givenBy.event { "day": ' + (i + 1) + ' } naming ' + e.id + ')');
             if (!d.tasks.length) say(n + 'no tasks');
+            const raw = e.raw.days[i] || {};
+            if (raw.level !== undefined && !d.level) say(n + 'its level "' + raw.level + '" is not a level');
+            if (raw.level !== undefined && !(raw.clock?.good > 0 && raw.clock?.evil > 0)) say(n + 'its level\'s clock is not written out in full ({ "good": s, "evil": s })');
             for (const x of d.tasks) {
               const extra = Object.keys(x).filter(k => !['index', 'stars', 'side', 'car', 'featured', 'maxed', 'packs', 'limit', 'key'].includes(k));
               if (extra.length) say(n + 'task ' + (x.index + 1) + ': unknown ' + extra.join(', '));

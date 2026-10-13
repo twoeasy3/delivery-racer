@@ -29,6 +29,14 @@ the card): `medals` (the Good / Evil best-clear plaque), `stats` (the clock, tip
 (the road's words). `Events.cardHides(event)`; `problems()` names an unknown part, a part twice, an unknown field, or a
 `card` on an event of more stages. The Concept Strike hides all three; the Car Hunt and the rest keep theirs.
 
+**A day's own level (13-Oct, CHECKLIST 224): the Concept Strike's exclusive levels.** A rotating event's day may name a
+`level` (with its `clock`, and a `tip`): its one stage is played on that map that day, as a level of its own
+(`<event>-d<n>`: its best time, replays and ghost the day's). `Events.syncDay` puts the day's level in the stage (the
+menu's tab is built again when the day changes; Sunday shows Monday's; a day gone by is not open: `Events.offDay`).
+The maps are `levels.js` EVENT_MAPS, kept with the hidden levels (`?hidden=<id>` plays one, banking nothing): on no
+menu list, in no tier, medal or milestone count. Their menu pictures are `levelshots/<map id>.jpg` (`scripts/shots.mjs
+--levels=<id> --write`). Timed by `scripts/.strike-levels-check.mjs` (and `scripts/strike-times.mjs <id> car:ecu ...`).
+
 **The owner's answers (11-Oct):**
 1. Yes, in order.
 2. Either side, for now. A stage's clocks are written out in full (Good and Evil), worked out by hand for the stage:

@@ -1,0 +1,111 @@
+{
+  "id": "pocket-town",
+  "theme": "suburb",
+  "clock": { "good": 95, "evil": 75 },
+  "tip": 120,
+  "lanes": 4,
+  "cargo": { "good": "goldfish", "evil": "porcupine" },
+  "traffic": { "commuter": 0.24, "minivan": 0.16, "taxi": 0.12, "lovebus": 0.1, "wagon": 0.1, "learner": 0.08, "icecream": 0.05, "binlorry": 0.06, "bus": 0.06, "police": 0.03 },
+  "trafficCount": 7,
+  "oncomingCount": 6,
+  "segments": [
+    { "length": 200, "curve": 0 },
+    { "length": 24, "curve": 0.0654498 },
+    { "length": 380, "curve": 0 },
+    { "length": 24, "curve": -0.0654498 },
+    { "length": 420, "curve": 0 },
+    { "length": 24, "curve": 0.0654498 },
+    { "length": 360, "curve": 0 },
+    { "length": 24, "curve": -0.0654498 },
+    { "length": 260, "curve": 0 }
+  ],
+  "junctions": [
+    { "s": 200, "turn": "right" },
+    { "s": 604, "turn": "left" },
+    { "s": 1048, "turn": "right" },
+    { "s": 1432, "turn": "left" }
+  ],
+  "zones": [
+    { "id": "pocketLilyLane", "from": 0, "to": 190, "scenery": "park" },
+    { "id": "pocketHighStreet", "from": 242, "to": 588, "scenery": "highstreet" },
+    { "id": "pocketMarket", "from": 652, "to": 1028, "scenery": "market" },
+    { "id": "pocketPark", "from": 1094, "to": 1418, "scenery": "park" },
+    { "id": "pocketHighStreet", "from": 1473, "to": 1716, "scenery": "highstreet" }
+  ],
+  "narrows": [
+    { "from": 265, "to": 565, "lanesPerSide": 1 }
+  ],
+  "cushions": [
+    { "from": 60, "to": 170 }
+  ],
+  "parked": [
+    { "s": 312, "side": "right" },
+    { "s": 427, "side": "left" },
+    { "s": 507, "side": "right" },
+    { "s": 1543, "side": "right" },
+    { "s": 1614, "side": "left" }
+  ],
+  "trolleys": [
+    { "from": 300, "to": 542, "count": 5 }
+  ],
+  "waterMains": [
+    { "s": 1520, "lane": 3 }
+  ],
+  "iceCreamStops": [
+    { "s": 763, "lane": 2 }
+  ],
+  "shoulderRows": [
+    { "kind": "umbrella", "from": 674, "to": 984, "every": 12, "side": "both" }
+  ],
+  "drifters": [
+    { "from": 851, "to": 984, "kind": "wheelieBin", "count": 4, "pattern": "sweep" }
+  ],
+  "crossings": [
+    { "s": 1238 }
+  ],
+  "balloons": [
+    { "s": 1370, "lanes": [2, 2] }
+  ],
+  "pickups": [
+    { "type": "cash10", "s": 40, "lane": 2 },
+    { "type": "cash10", "s": 40, "lane": 3 },
+    { "type": "turbo", "s": 120, "lane": 2 },
+    { "type": "cash10", "s": 185, "lane": 2 },
+    { "type": "cash10", "s": 185, "lane": 3 },
+    { "type": "cash5", "s": 335, "lane": 2 },
+    { "type": "cash5", "s": 381, "lane": 2 },
+    { "type": "wrench", "s": 450, "lane": 2 },
+    { "type": "cash5", "s": 496, "lane": 2 },
+    { "type": "cash20", "s": 582, "lane": 2 },
+    { "type": "cash20", "s": 582, "lane": 3 },
+    { "type": "cash10", "s": 697, "lane": 2 },
+    { "type": "cash10", "s": 697, "lane": 3 },
+    { "type": "mystery", "s": 763, "lane": 2 },
+    { "type": "cash10", "s": 829, "lane": 2 },
+    { "type": "cash10", "s": 829, "lane": 3 },
+    { "type": "cash10", "s": 829, "lane": "right" },
+    { "type": "ghost", "s": 918, "lane": 3 },
+    { "type": "cash20", "s": 1006, "lane": 2 },
+    { "type": "cash20", "s": 1006, "lane": 3 },
+    { "type": "turbo", "s": 1106, "lane": 3 },
+    { "type": "cash10", "s": 1166, "lane": 2 },
+    { "type": "cash10", "s": 1166, "lane": 3 },
+    { "type": "cash10", "s": 1310, "lane": 2 },
+    { "type": "cash10", "s": 1310, "lane": 3 },
+    { "type": "cash20", "s": 1406, "lane": 3 },
+    { "type": "wrench", "s": 1473, "lane": 2 },
+    { "type": "cash10", "s": 1567, "lane": 2 },
+    { "type": "cash10", "s": 1567, "lane": 3 },
+    { "type": "cash20", "s": 1650, "lane": 2 },
+    { "type": "cash20", "s": 1650, "lane": 3 },
+    { "type": "cash20", "s": 1650, "lane": "right" }
+  ],
+  "obstacles": [
+    { "s": 140, "lane": 3, "kind": "wheelieBin" },
+    { "s": 652, "lane": 2, "kind": "cafeTable" },
+    { "s": 719, "lane": 3, "kind": "cafeTable" },
+    { "s": 1154, "lane": 2, "kind": "wheelieBin" },
+    { "s": 1450, "lane": 3, "kind": "cone" },
+    { "s": 1591, "lane": 2, "kind": "wheelieBin" }
+  ]
+}

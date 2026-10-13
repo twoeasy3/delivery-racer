@@ -554,5 +554,71 @@
       "evil": "A thundercloud in a jar, down the hill in a storm of its own. Nine hairpins, a landslide, half the road gone: never brake."
     },
     "cargo": { "good": "bouquet", "evil": "cloud" }
+  },
+  "pocket-town": {
+    "name": "Pocket Town",
+    "description": {
+      "good": "A goldfish across the smallest town on the map: speed humps, the high street, market day, the level crossing by the park. Small car, small streets, four corners, no time to dawdle.",
+      "evil": "A porcupine loose in a toy-sized town. Trolleys across the high street, café tables in the square, an ice-cream van in your lane and a train to beat: tiny car, big trouble."
+    },
+    "cargo": {
+      "good": "goldfish",
+      "evil": "porcupine"
+    }
+  },
+  "solstice-cliffs": {
+    "name": "Solstice Cliffs",
+    "description": {
+      "good": "A midsummer cake along the coast with the top down: through the bush, over the headland in one leap, across the Sea Cliff Bridge in the wind and into the bay with the sun in your eyes.",
+      "evil": "A box of angry bees on the longest day. Leap the headland, ride the gusts on the cliff bridge, and let the low sun hide you from the patrol cars on the way into town."
+    },
+    "cargo": {
+      "good": "cake",
+      "evil": "bees"
+    }
+  },
+  "grand-boulevard": {
+    "name": "Grand Boulevard",
+    "description": {
+      "good": "A trophy up the capital's grandest avenue, in something long and heavy: sweeping bends, a wide load on the lake bridge, a lane that turns against you, and a car transporter to fly at the end.",
+      "evil": "A briefcase of lawyers down the boulevard to Parliament. Shove past the wide load, take the reversible lane before it flips, outrun the pursuits and jump the jam on the ramp."
+    },
+    "cargo": {
+      "good": "trophy",
+      "evil": "lawyers"
+    }
+  },
+  "turbo-quay": {
+    "name": "Turbo Quay",
+    "description": {
+      "good": "A globe for the harbour master, flat out down the container quay: a slalom of barriers through the S-bends, a freight train at the crossing, the tunnel under the stacks and a crane dropping its load at the end.",
+      "evil": "A crate of fireworks through a port full of semis. Thread the barrier chicane, beat the container train, and let the cranes rain boxes on everyone behind you."
+    },
+    "cargo": {
+      "good": "globe",
+      "evil": "fireworks"
+    }
+  },
+  "neon-edge": {
+    "name": "Neon Edge",
+    "description": {
+      "good": "A lava lamp across the city at night, low and fast under the neon: fresh tar, the tunnel, a police roadblock to slip through, a lane that turns against you and the wind on the high span.",
+      "evil": "A sack of glitter on the expressway after dark. Grab the siren before the roadblock, beat the reversible lane and leave the keitrucks sparkling."
+    },
+    "cargo": {
+      "good": "lavalamp",
+      "evil": "glitter"
+    }
+  },
+  "endurance-road": {
+    "name": "Endurance Road",
+    "description": {
+      "good": "Coffee for the night shift, the race-day way: out past the grandstands and the pits, through the hay-bale chicane and the squeeze on the long straight, a rival courier on your tail all the way to the line.",
+      "evil": "An air horn for the drivers who are trying to sleep. Race Le Comte down the long straight, cut the chicanes, scatter the kangaroos and the caravans, and beat him to the line."
+    },
+    "cargo": {
+      "good": "coffee",
+      "evil": "airhorn"
+    }
   }
 }

@@ -116,7 +116,8 @@ const stagesOf = (e) => e.stages.map(s => s.level).filter(Boolean);
 const oneStage = (event) => !!event && stagesOf(event).length === 1;
 const buildTabs = () => {
   if (!Tiers.on()) return;
-  const live = Tiers.liveEvents(), specials = Events.shownSpecials(), key = [...live, ...specials].map(x => x.id).join(); // (a recurring event is listed between its runs too)
+  for (const e of Events.specials) if (e.days) Events.syncDay(e); // (a rotating event's stage is played on the day's own level: events.js)
+  const live = Tiers.liveEvents(), specials = Events.shownSpecials(), key = [...live, ...specials].map(x => x.id).join() + '|' + specials.map(e => e.stages[0]?.level?.id).join(); // (a recurring event is listed between its runs too; a new day's level builds them again)
   if (key === liveKey) return;
   liveKey = key;
   const singles = specials.filter(oneStage), series = specials.filter(e => stagesOf(e).length > 1);
@@ -503,7 +504,7 @@ export const draw = () => {
   if (isOpen(cursor) && cursor !== LEVEL && LEVELS.includes(LEVEL)) { cursor = LEVEL; tab = tabOf(LEVEL); }
   if (!TABS[tab].list.length) tab = 'delivery'; // (the Events tab emptied: every event over, or the tiers off)
   if (!TABS[tab].list.includes(cursor)) cursor = TABS[tab].list.includes(lastOn[tab]) ? lastOn[tab] : TABS[tab].list.find(isOpen) || TABS[tab].list[0];
-  const over = (Tiers.isEvent(LEVEL) && !Tiers.eventLive(LEVEL)) || (Events.isStage(LEVEL) && !Events.live(Events.stageOf(LEVEL).event));
+  const over = (Tiers.isEvent(LEVEL) && !Tiers.eventLive(LEVEL)) || (Events.isStage(LEVEL) && (!Events.live(Events.stageOf(LEVEL).event) || Events.offDay(LEVEL))); // (offDay: a rotating event's level of a day gone by)
   if (over && isOpen(cursor) && cursor !== LEVEL) { // (the level picked was an event or a stage of one, now over)
     pickLevel(cursor);
     useLevelCar(cursor.car, cursor.amphibious);

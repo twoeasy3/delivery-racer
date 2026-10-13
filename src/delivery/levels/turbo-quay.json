@@ -1,0 +1,84 @@
+{
+  "id": "turbo-quay",
+  "theme": "port",
+  "clock": { "good": 95, "evil": 75 },
+  "tip": 180,
+  "lanes": 6,
+  "cargo": { "good": "globe", "evil": "fireworks" },
+  "traffic": { "semi": 0.2, "cargotruck": 0.14, "pickup": 0.12, "van": 0.12, "darkvan": 0.1, "commuter": 0.1, "keitruck": 0.08, "postvan": 0.06, "taxi": 0.05, "police": 0.03 },
+  "trafficCount": 11,
+  "oncomingCount": 8,
+  "convoys": { "every": { "min": 18, "max": 30 }, "size": 3, "kind": "semi" },
+  "segments": [
+    { "length": 500, "curve": 0 },
+    { "length": 150, "curve": -0.004 },
+    { "length": 300, "curve": 0.004 },
+    { "length": 150, "curve": -0.004 },
+    { "length": 500, "curve": 0 },
+    { "length": 300, "curve": 0.002 },
+    { "length": 500, "curve": 0 }
+  ],
+  "tunnels": [
+    { "from": 1610, "to": 1890 }
+  ],
+  "crossings": [
+    { "s": 1330 }
+  ],
+  "wreckage": [
+    { "at": 2120, "kind": "containers", "from": "right", "lanes": [4, 5] }
+  ],
+  "crosswinds": [
+    { "from": 2200, "to": 2380, "dir": "left" }
+  ],
+  "machinery": [
+    { "s": 300, "kind": "forklift", "side": "right" },
+    { "s": 1980, "kind": "forklift", "side": "right" }
+  ],
+  "drifters": [
+    { "from": 1700, "to": 1800, "kind": "crate", "count": 3, "pattern": "zigzag" }
+  ],
+  "pickups": [
+    { "type": "cash10", "s": 80, "lane": 3 },
+    { "type": "cash10", "s": 80, "lane": 4 },
+    { "type": "turbo", "s": 180, "lane": 4 },
+    { "type": "cash10", "s": 300, "lane": 3 },
+    { "type": "cash10", "s": 300, "lane": 4 },
+    { "type": "cash10", "s": 300, "lane": 5 },
+    { "type": "cash20", "s": 470, "lane": 4 },
+    { "type": "cash20", "s": 470, "lane": 5 },
+    { "type": "ghost", "s": 560, "lane": 3 },
+    { "type": "cash20", "s": 690, "lane": 5 },
+    { "type": "cash20", "s": 790, "lane": 3 },
+    { "type": "cash20", "s": 890, "lane": 5 },
+    { "type": "cash20", "s": 990, "lane": 3 },
+    { "type": "wrench", "s": 1060, "lane": 4 },
+    { "type": "cash10", "s": 1150, "lane": 3 },
+    { "type": "cash10", "s": 1150, "lane": 4 },
+    { "type": "turbo", "s": 1240, "lane": 5 },
+    { "type": "cash20", "s": 1450, "lane": 3 },
+    { "type": "cash20", "s": 1450, "lane": 4 },
+    { "type": "cash10", "s": 1650, "lane": 4 },
+    { "type": "cash10", "s": 1650, "lane": 5 },
+    { "type": "mystery", "s": 1850, "lane": 3 },
+    { "type": "cash10", "s": 1960, "lane": 3 },
+    { "type": "cash10", "s": 1960, "lane": 4 },
+    { "type": "wrench", "s": 2060, "lane": 3 },
+    { "type": "cash20", "s": 2250, "lane": 3 },
+    { "type": "cash20", "s": 2250, "lane": 4 },
+    { "type": "cash20", "s": 2360, "lane": 3 },
+    { "type": "cash20", "s": 2360, "lane": 4 },
+    { "type": "cash20", "s": 2360, "lane": 5 }
+  ],
+  "obstacles": [
+    { "s": 640, "lane": 3, "kind": "barrier" },
+    { "s": 640, "lane": 4, "kind": "barrier" },
+    { "s": 740, "lane": 4, "kind": "barrier" },
+    { "s": 740, "lane": 5, "kind": "barrier" },
+    { "s": 840, "lane": 3, "kind": "barrier" },
+    { "s": 840, "lane": 4, "kind": "barrier" },
+    { "s": 940, "lane": 4, "kind": "barrier" },
+    { "s": 940, "lane": 5, "kind": "barrier" },
+    { "s": 1520, "lane": 5, "kind": "crate" },
+    { "s": 2000, "lane": 5, "kind": "crate" }
+  ]
+}

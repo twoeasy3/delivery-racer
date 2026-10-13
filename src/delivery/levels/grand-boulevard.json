@@ -1,0 +1,75 @@
+{
+  "id": "grand-boulevard",
+  "theme": "canberra",
+  "clock": { "good": 95, "evil": 75 },
+  "tip": 160,
+  "lanes": 6,
+  "cargo": { "good": "trophy", "evil": "lawyers" },
+  "traffic": { "commuter": 0.2, "wagon": 0.16, "taxi": 0.14, "darkvan": 0.12, "suv": 0.1, "bus": 0.1, "van": 0.08, "sport": 0.06, "police": 0.04 },
+  "trafficCount": 10,
+  "oncomingCount": 9,
+  "emergencies": { "every": { "min": 25, "max": 40 } },
+  "pursuits": { "every": { "min": 30, "max": 45 } },
+  "segments": [
+    { "length": 200, "curve": 0 },
+    { "length": 350, "curve": 0.0025 },
+    { "length": 150, "curve": 0 },
+    { "length": 350, "curve": -0.0025 },
+    { "length": 400, "curve": 0 },
+    { "length": 300, "curve": 0.002 },
+    { "length": 400, "curve": 0 }
+  ],
+  "bridges": [
+    { "from": 1090, "to": 1410 }
+  ],
+  "wideLoads": [
+    { "s": 1150, "lanes": [4, 5] }
+  ],
+  "reversible": [
+    { "from": 1480, "to": 1720, "lane": 3 }
+  ],
+  "jamRamps": [
+    { "s": 1900, "lane": 4, "lanes": [3, 4] }
+  ],
+  "shoulderRows": [
+    { "kind": "cone", "from": 1820, "to": 1980, "every": 8, "side": "right" }
+  ],
+  "pickups": [
+    { "type": "cash10", "s": 80, "lane": 3 },
+    { "type": "cash10", "s": 80, "lane": 4 },
+    { "type": "cash10", "s": 80, "lane": 5 },
+    { "type": "turbo", "s": 200, "lane": 4 },
+    { "type": "cash10", "s": 330, "lane": 4 },
+    { "type": "cash10", "s": 330, "lane": 5 },
+    { "type": "cash20", "s": 480, "lane": 3 },
+    { "type": "cash20", "s": 480, "lane": 4 },
+    { "type": "wrench", "s": 600, "lane": 5 },
+    { "type": "cash10", "s": 720, "lane": 3 },
+    { "type": "cash10", "s": 720, "lane": 4 },
+    { "type": "siren", "s": 860, "lane": 3 },
+    { "type": "cash20", "s": 960, "lane": 4 },
+    { "type": "cash20", "s": 960, "lane": 5 },
+    { "type": "cash10", "s": 1120, "lane": 3 },
+    { "type": "cash10", "s": 1120, "lane": 4 },
+    { "type": "cash20", "s": 1300, "lane": 3 },
+    { "type": "cash20", "s": 1300, "lane": 4 },
+    { "type": "mystery", "s": 1440, "lane": 5 },
+    { "type": "cash10", "s": 1600, "lane": 4 },
+    { "type": "cash10", "s": 1600, "lane": 5 },
+    { "type": "turbo", "s": 1760, "lane": 4 },
+    { "type": "cash20", "s": 1880, "lane": 5 },
+    { "type": "cash20", "s": 1880, "lane": "right" },
+    { "type": "cash20", "s": 2000, "lane": 3 },
+    { "type": "cash20", "s": 2000, "lane": 4 },
+    { "type": "cash10", "s": 2080, "lane": 3 },
+    { "type": "cash10", "s": 2080, "lane": 4 },
+    { "type": "cash10", "s": 2080, "lane": 5 }
+  ],
+  "obstacles": [
+    { "s": 420, "lane": 5, "kind": "cone" },
+    { "s": 780, "lane": 3, "kind": "barrier" },
+    { "s": 1000, "lane": 5, "kind": "cone" },
+    { "s": 1540, "lane": 4, "kind": "barrier" },
+    { "s": 2040, "lane": 5, "kind": "cone" }
+  ]
+}
