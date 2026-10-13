@@ -528,9 +528,9 @@ const showDetail = () => {
     look.textContent = statsOff ? 'Stats' : 'Hide stats';
     look.setAttribute('aria-pressed', String(statsOff));
   });
-  // (a KEY car's key, spinning in the stage's corner: render/showroomview.js; not a blacked-out car's, which it would give
-  // away; a blacked-out one (no key to be had) shows none)
-  const keyEl = kindOf(card) === 'key' && !card.dark ? make('div', 'sr-fkey') : null;
+  // (a KEY car's key, spinning in the stage's corner: render/showroomview.js; a blacked-out one's too, as a black
+  // silhouette (the owner, 13-Oct), its element naming no car: card.name is 'Locked car'; a car with no key, none)
+  const keyEl = kindOf(card) === 'key' ? make('div', 'sr-fkey' + (card.dark ? ' silhouette' : '')) : null;
   if (keyEl) { keyEl.setAttribute('role', 'img'); keyEl.setAttribute('aria-label', card.name + "'s key"); keyEl.title = 'Its key'; }
   const stage = make('div', 'sr-stage' + (keyEl ? ' has-key' : ''), pic, overlayNode(overlayOf(card), { inline: true }), keyEl, arrow(-1), arrow(1), look);
   // its card's picture (the cached still) in the panel
@@ -753,5 +753,6 @@ export const Showroom = {
 };
 // the live car is drawn only while it can be seen: the showroom up (not under the car lot) with the full view up
 ShowroomView.when(() => Showroom.isOpen && full && !Garage.isOpen && !panel.classList.contains('hidden'));
+ShowroomView.keyWhen(() => !sheetUp()); // (its corner key: not under a sheet either)
 // and the key card's turning key the same, and not under a sheet (What's inside, a pack reveal: lite.js sheetUp)
 KeySpin.when(() => Showroom.isOpen && full && !Garage.isOpen && !panel.classList.contains('hidden') && !sheetUp());
