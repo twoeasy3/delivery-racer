@@ -92,6 +92,8 @@ try {
   // ---- the LOCKED-CARD OVERLAYS (showroomData.js overlayOf, render/lockoverlay.js): one kind per locked card, none on a playable one
   await overlays(g, check);
   await carHunt(g, check);
+  // ---- the row's PAN (render/showroompan.js): taps during a pan carry it on, never restart it (the owner, 13-Oct)
+  await rowPan(g, check);
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error?.stack || error));
@@ -301,4 +303,67 @@ async function carHunt(g, check) {
   const f1 = D.imposedFilter(one, cards);
   check(JSON.stringify(D.filterCards(cards.map(c => ({ ...c, allowed: one.test(c.car) })), f1, null).map(c => c.id)) === '["sport"]' && f1.state.includes('allowed'), 'a rule the stars cannot say (one car): the "Allowed on this level" chip makes it exact');
   L.selectSpecial(before);
+}
+
+// The showroom row's pan (render/showroompan.js; the owner, 13-Oct, on a tablet: "tapping left or right while the screen
+// pans resets the animation and becomes really jarring"). On a fake clock at 60 frames a second, as render/showroom.js
+// drives it: N quick taps of the arrow (one every 70 ms, faster than a pan) move the row on every frame, never back,
+// never stand still before the end, never back at the start offset after it left, and end on the right column (N columns
+// on, the snap's own place); one tap alone is the plain ease-in-out from standing to standing; a tap the other way turns
+// it round without a jump.
+async function rowPan(g, check) {
+  const { panAt, panTo, panStep, PAN_MS } = await g.load('render/showroompan.js');
+  const col = 255, starts = Array.from({ length: 40 }, (_, i) => 4 + i * col), max = starts.at(-1), width = 1244, step = Math.max(200, width * 0.8);
+  // run a list of taps (dir at ms) on the clock, the row's place sampled each frame
+  const run = (taps, x0 = starts[0]) => {
+    let pan = null, x = x0, t = 0;
+    const xs = [x], queue = [...taps];
+    for (let frame = 0; frame < 400; frame++, t += 1000 / 60) {
+      while (queue.length && queue[0].at <= t) { const { dir } = queue.shift(); pan = panTo(pan, x, panStep(pan ? pan.to : x, dir, step, starts, max), t); }
+      if (pan) { const at = panAt(pan, t); x = at.x; if (at.done) pan = null; }
+      xs.push(x);
+    }
+    return { xs, end: x };
+  };
+  const frames = (xs) => xs.slice(1).map((x, i) => x - xs[i]);
+  // one tap: the plain pan, about a screen on, onto a column, smoothstep (slow, fast, slow), done in PAN_MS
+  const one = run([{ dir: 1, at: 0 }]), d1 = frames(one.xs).filter(d => d > 0);
+  const want1 = panStep(starts[0], 1, step, starts, max);
+  check(one.end === want1 && starts.includes(want1) && Math.abs(want1 - starts[0] - step) < col && d1.length <= Math.ceil(PAN_MS / (1000 / 60)) + 1
+    && d1[0] < d1[Math.floor(d1.length / 2)] && d1.at(-1) < d1[Math.floor(d1.length / 2)],
+    'one tap: a pan of ' + (want1 - starts[0]) + ' px onto a column, eased in and out, done in ' + d1.length + ' frames');
+  for (const n of [2, 4, 8]) {
+    const taps = Array.from({ length: n }, (_, i) => ({ dir: 1, at: i * 70 }));
+    const r = run(taps), d = frames(r.xs);
+    let goal = starts[0];
+    for (let i = 0; i < n; i++) goal = panStep(goal, 1, step, starts, max);
+    const moving = d.slice(1, d.findLastIndex(v => v !== 0)); // (from the first frame on to the last that moved)
+    const back = Math.max(0, ...d.map(v => -v)), still = moving.filter(v => v <= 0).length, reset = r.xs.slice(5).some(x => x <= starts[0]);
+    check(back === 0 && still === 0 && !reset && r.end === goal && starts.includes(goal),
+      n + ' quick taps on (70 ms apart): ' + (back ? 'jumped back ' + back.toFixed(1) + ' px, ' : 'never back, ') + (still ? still + ' frames stood still, ' : 'never stood still, ')
+      + (reset ? 'back at the start, ' : '') + 'ended at ' + Math.round(r.end) + ' (' + n + ' column steps on: ' + goal + ')');
+  }
+  // the old way, for the record: each tap a new pan from where the row is, from standing (what the browser's smooth scroll did)
+  {
+    let pan = null, x = starts[0], t = 0, stood = 0, prev = x;
+    const taps = [0, 70, 140, 210];
+    for (let frame = 0; frame < 120; frame++, t += 1000 / 60) {
+      if (taps.length && taps[0] <= t) { taps.shift(); pan = panTo(null, x, x + step, t); }
+      if (pan) { const at = panAt(pan, t); x = at.x; if (at.done) pan = null; }
+      if (frame > 1 && pan && x - prev < 0.5) stood++;
+      prev = x;
+    }
+    check(stood > 0, 'the old restart-from-standing (for contrast) stalls the row ' + stood + ' frames: the check would see it');
+  }
+  // the other way mid-pan: turns round, no single frame jumps more than a pan's top speed, ends a column back from the target
+  {
+    const r = run([{ dir: 1, at: 0 }, { dir: 1, at: 70 }, { dir: -1, at: 140 }]), d = frames(r.xs);
+    const top = Math.max(...run([{ dir: 1, at: 0 }]).xs.slice(1).map((x, i, a) => i ? x - a[i - 1] : 0)) * 2.5;
+    let goal = panStep(panStep(starts[0], 1, step, starts, max), 1, step, starts, max);
+    goal = panStep(goal, -1, step, starts, max);
+    check(r.end === goal && d.every(v => Math.abs(v) <= top), 'two taps on and one back, quickly: it turns round smoothly (no frame over ' + Math.round(top) + ' px) and ends at ' + Math.round(r.end) + ' (' + goal + ')');
+  }
+  // the ends: never past 0 or the last column
+  const left = run([{ dir: -1, at: 0 }, { dir: -1, at: 50 }], starts[0]), right = run(Array.from({ length: 6 }, (_, i) => ({ dir: 1, at: i * 60 })), starts.at(-3));
+  check(left.end === 0 && Math.min(...left.xs) >= 0 && right.end === max && Math.max(...right.xs) <= max + 1e-9, 'at the ends the pan stops at 0 / the last column and never passes them');
 }
