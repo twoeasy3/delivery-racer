@@ -39,6 +39,15 @@ NEVER above 4,000. The last two idea cars came out at 3,208 and 5,868 triangles,
 - Measure when you are done (a short script like the one in scripts/.suspension-check.mjs: traverse the model, count
   meshes and triangles) and put the numbers in the CHECKLIST item. If over budget, trim before reporting.
 
+## No panel lines, and do not try too hard (the owner, 13-Oct)
+- NO PANEL LINES. Do not model door shut lines, bonnet / boot / tailgate / fuel-flap lines, panel gaps, seams, or thin
+  strips of any kind that only fake a join. They never read at card size, they cost triangles and shapes, and they made
+  the original cars look fussy and ugly. Leave the body surface clean: big smooth forms and clear colour blocking.
+- Silhouette and proportion first. Judge the car at CARD size (about 120 to 200 px wide) next to its reference and keep
+  only the detail that survives there: lamps, grille, glass, bumpers, wheels with hubs, one or two strong colour breaks.
+  Skip the clutter (door handles, wipers, tiny trim, plates on every face) unless it clearly reads. A simple, charming,
+  bold shape beats a busy one: 'trying too hard' is a defect.
+
 ## Defects that are NOT allowed
 - No unconnected parts and no floating parts (a lamp, mirror, trim strip, spat, plate or stalk must touch/sit in the
   body, including on ROUNDED edges where an extrusion's bevel pulls the surface in).
