@@ -133,7 +133,7 @@ export const openContents = (host, { kind, title, featured = [] }) => {
     const trio = bannerCars(c.featured);
     const banner = trio ? bannerArt(trio, { className: 'pc-banner', onFail: () => banner.remove() }) : null;
     sections.push(make('section', 'pc-group featured', banner,
-      make('h3', '', make('span', 'shop-chip r-bespoke', 'Featured'), make('small', '', 'Guaranteed one of the following'), make('small', 'pc-sub', '(Smaller percentage denotes spread amongst featured items)')),
+      make('h3', '', make('span', 'shop-chip r-bespoke', 'Featured'), make('small', '', 'Guaranteed one of the following')),
       out.length ? make('p', 'pc-shift', make('b', '', 'Weights shifted: '), out.join(', ') + ' out of the pool') : null,
       c.reverted ? null : (out.length && out.length === c.featured.length ? make('p', 'pc-shift', make('b', '', 'Every featured card is had: '), 'the featured slot is an ordinary card, and this pack cannot be bought') : null),
       make('ul', 'pc-list', featuredRows(c.featured, c.baseAmount))));
