@@ -165,6 +165,10 @@ export const IDEA_CARS = [
   { id: 'gameviewer', name: 'Game-Drive Truck', basedOn: 'Toyota Land Cruiser 79 game viewer', model: 'gameviewer', color: 0x9a8a5a, evilColor: 0x2e4a2e,
     hw: 0.95, hl: 2.85, height: 2.4, note: 'No doors, three rows of seats climbing under a canopy, and a chair for the tracker out on the bull bar.',
     maxSpeed: 28, accel: 8, agility: 0.95, crossing: 1, health: 240, mass: 2, sound: 'suv' },
+  // (a concept city car, after the Nissan Pivo 2: model in render/ideaModels10.js)
+  { id: 'fishbowl', name: 'Fishbowl Runabout', basedOn: 'Nissan Pivo 2 (2007 concept)', model: 'fishbowl', color: 0x8fd3c4, evilColor: 0x4a1d42,
+    hw: 0.79, hl: 1.37, height: 1.6, note: 'Three seats under a glass bubble, a small wheel at each corner, and nowhere it cannot park.',
+    maxSpeed: 26, accel: 10, agility: 1.4, crossing: 0.3, health: 90, mass: 1, sound: 'evsaloon' },
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
 export const IDEA_CAR = Object.fromEntries(IDEA_CARS.map(car => [car.id, car]));
