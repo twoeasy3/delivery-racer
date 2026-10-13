@@ -17,6 +17,11 @@ the stage card, the event screen at 1000x620 and 390x760, the free try started i
 Comet in the garage once won. NOT seen: a whole event played by hand; the cards with many stages; at night (the
 cards' cars on a dark map picture).
 
+**A rotating event (13-Oct, CHECKLIST 211): the Concept Strike.** `days` on a recurring event: each day of a run its own
+run (window, countdown, counters), a featured car lent as a free try at the player's own ECU (the card's chip: the stage's
+car lock with `ownEcu`), tasks that pay that day's pack (packs.json `givenBy.event.day`) up to a limit a day, and the
+featured car's key for delivering it at its max ECU. events.js head and `payTasks`; the save's `eventRuns`.
+
 **The owner's answers (11-Oct):**
 1. Yes, in order.
 2. Either side, for now. A stage's clocks are written out in full (Good and Evil), worked out by hand for the stage:
