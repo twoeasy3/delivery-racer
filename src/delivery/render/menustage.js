@@ -777,7 +777,8 @@ const eventPanel = (event, picked, evil) => {
   requestAnimationFrame(() => { for (const [el, car, side = evil] of drawLater) stillCar(el, car, side); }); // (once laid out)
   return panel;
 };
-// ---- a RECURRING event's head (the Car Hunt, the owner 13-Oct: "Display the car, and the pack reward on the event card"):
+// ---- a RECURRING event's head, on the event screen of a recurring event of MORE stages (the Car Hunt, of one stage, is drawn
+// on the level card now: eventExtras; the owner 13-Oct: "Display the car, and the pack reward on the event card"):
 // its name, how it recurs and its countdown (Ends in / Next in), the car it hunts (the car its pack features, drawn
 // still in its Good livery, as the Comet Hunt's prize) and the pack every run gives (its art, the Shop's; a tap or its
 // "What's inside" opens the pack's sheet, render/packcontents.js, with the x1 / x3 odds)

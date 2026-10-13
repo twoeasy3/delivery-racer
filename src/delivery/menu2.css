@@ -361,7 +361,7 @@
 /* a special event's screen (render/menustage.js eventPanel): with a stage of it picked, in place of the level card and
    the strip. The head (its name, the progress, the prize), the row of stage cards (each its map's picture slanted
    behind, the car drawn still in 3D, its state), and the stage picked under them */
-#startScreen.eventview:not(.eventstrip) .menu-strip { display: none; } /* (a one-stage event among the single-level events keeps the strip: menustage.js) */
+#startScreen.eventview .menu-strip { display: none; } /* (an event of more stages; one of one stage, the Car Hunt, is on the level card, the strip under it: menustage.js eventExtras) */
 #startScreen.eventview .menu-stage { background: linear-gradient(160deg, #1b2335, #11161f); }
 #startScreen .event-panel { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; overflow-y: auto; overscroll-behavior: contain; }
 #startScreen .event-head { display: flex; align-items: center; gap: 14px; }
@@ -582,15 +582,28 @@
   #startScreen .cx-pack-words strong { font-size: 13px; }
   #startScreen .cx-pack-words .event-inside { margin-top: 2px; padding: 3px 8px; font-size: 11px; }
 }
-/* (a short window, a phone on its side: the prize smaller, the pack's words left out but its button) */
+/* (a short window, a phone on its side, about 440 x 223 for the card: the figures, the countdown and the road's chip keep the
+   card's whole width at its foot, as on any card here; over them, the tags and the name on the left and the prize on the right,
+   small: the car and its name, the pack beside it (a tap: What's inside). No description, road line or recurrence tag) */
 @media (max-height: 520px) and (min-width: 520px) {
-  #startScreen .menu-stage { --cx-w: clamp(170px, 30%, 230px); }
-  #startScreen .card-extras { right: 10px; bottom: 10px; padding: 0 8px 8px; gap: 4px; }
-  #startScreen .cx-odds, #startScreen .cx-pack-words > span, #startScreen .cx-pack-words > small { display: none; }
-  #startScreen .cx-art { width: 50px; height: 70px; }
-  #startScreen .cx-art .event-pack-art { width: 50px; height: 70px; }
-  #startScreen .cx-art .event-pack-art .shop-packs { transform: scale(.6); }
-  #startScreen .cx-ribbon { font-size: 9px; bottom: 10px; }
-  #startScreen .menu-stage.has-extras .info .road { right: calc(var(--cx-w) + 20px); }
+  #startScreen .menu-stage { --cx-w: clamp(150px, 30%, 220px); }
+  #startScreen .menu-stage.has-extras .info { padding-right: 40px; }
+  #startScreen .menu-stage.has-extras .info > .cx-tags, #startScreen .menu-stage.has-extras .info > h2 { margin-right: calc(var(--cx-w) + 14px); }
+  #startScreen .menu-stage.has-extras .desc, #startScreen .menu-stage .cx-road, #startScreen .cx-tag.often, #startScreen .menu-stage .needs.cx-rule { display: none; }
+  #startScreen .cx-tag { padding: 3px 6px 2px; font-size: 10px; letter-spacing: .05em; }
+  #startScreen .card-extras { right: 52px; bottom: 74px; padding: 0 6px 4px; flex-direction: row; align-items: flex-end; gap: 4px; }
+  #startScreen .card-extras::before { top: 30%; }
+  #startScreen .cx-car { flex: 1 1 auto; min-width: 0; }
+  #startScreen .cx-car > .cx-label, #startScreen .cx-odds, #startScreen .cx-pack-words { display: none; }
+  #startScreen .cx-name strong { font-size: 13px; }
+  #startScreen .cx-stars { font-size: 10px; }
+  #startScreen .cx-pack { flex: 0 0 auto; padding: 0 0 6px; border: 0; }
+  #startScreen .cx-art, #startScreen .cx-art .event-pack-art { width: 40px; height: 56px; }
+  #startScreen .cx-art .event-pack-art .shop-packs { transform: scale(.48); }
+  #startScreen .cx-ribbon { left: -6px; right: -6px; bottom: 7px; font-size: 7px; }
+  #startScreen .menu-stage.has-extras .cargo3d { top: 7px; right: 172px; width: auto; }
+  #startScreen .menu-stage.has-extras .cargo3d .ring { width: 34px; height: 34px; }
+  #startScreen .menu-stage.has-extras .cargo3d .cargo-name { max-width: 84px; font-size: 10px; }
 }
+#startScreen .menu-stage .info .event-ends.next { color: #3fd3ff; } /* (a recurring event between runs: 'Next in', as its event screen said it) */
 #startScreen .menu-stage .cx-road { margin: -2px 0 0; font: 800 13px/1.2 system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); text-shadow: 0 1px 2px #000; }
