@@ -164,7 +164,8 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined' && document
     import('../cars.js').then((Cars) => {
       const one = params.get('keys') ? Cars.carById?.(params.get('keys')) : null;
       const keyCars = [...(Cars.EVENT_CARS || []), ...(Cars.BESPOKE_CARS || [])].filter(c => c && (c.bespoke || c.keyModel));
-      const tiles = one ? KEY_MODELS.map(model => [one, model]) : keyCars.map(car => [car, keyModelInUse(car)]);
+      const only = (params.get('only') || '').split(',').filter(Boolean); // (&only=<model>,...: those keys only)
+      const tiles = (one ? KEY_MODELS.map(model => [one, model]) : keyCars.map(car => [car, keyModelInUse(car)])).filter(([, m]) => !only.length || only.includes(m));
       if (!tiles.length) return;
       const card = params.has('card');
       const sheet = document.createElement('div');
