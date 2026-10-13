@@ -544,18 +544,27 @@ export const goTo = (offset) => {
   slide = Math.sign(offset);
   pick(next.id);
 };
-// a swipe sideways on a touch screen, outside the live car (which a drag turns), goes to the previous / next car
+// a swipe sideways on a touch screen, outside the live car (which a drag turns), goes to the previous / next car.
+// (TOUCH events, passive, as the phone's swipeSwitch: pointer events were cancelled the moment the browser took the move for
+// a pan (pointercancel), which over the panel's words box, a scroller of its own, it always did on a tablet: the swipe did
+// nothing there. A pen still comes by pointer events.)
 const swipeOn = (el) => {
   let start = null;
-  el.addEventListener('pointerdown', (e) => { start = e.pointerType !== 'mouse' && !isPhone() && !e.target.closest('.sr-dpic, button') ? { x: e.clientX, y: e.clientY, id: e.pointerId } : null; });
-  const end = (e) => {
-    if (!start || e.pointerId !== start.id) return;
-    const dx = e.clientX - start.x, dy = e.clientY - start.y;
+  const begin = (x, y, id, target) => !isPhone() && !target.closest?.('.sr-dpic, button') ? { x, y, id } : null;
+  const end = (x, y) => {
+    const dx = x - start.x, dy = y - start.y;
     start = null;
-    if (e.type === 'pointerup' && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) goTo(dx < 0 ? 1 : -1); // (mostly sideways: a scroll of the panel is not one)
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) goTo(dx < 0 ? 1 : -1); // (mostly sideways: a scroll of the panel is not one)
   };
-  el.addEventListener('pointerup', end);
-  el.addEventListener('pointercancel', end);
+  el.addEventListener('touchstart', (e) => { start = e.touches.length === 1 ? begin(e.touches[0].clientX, e.touches[0].clientY, 't' + e.touches[0].identifier, e.target) : null; }, { passive: true });
+  el.addEventListener('touchend', (e) => {
+    const touch = start && [...e.changedTouches].find(t => 't' + t.identifier === start.id);
+    if (touch) end(touch.clientX, touch.clientY);
+  }, { passive: true });
+  el.addEventListener('touchcancel', () => { start = null; }, { passive: true });
+  el.addEventListener('pointerdown', (e) => { if (e.pointerType === 'pen') start = begin(e.clientX, e.clientY, e.pointerId, e.target); });
+  el.addEventListener('pointerup', (e) => { if (start && e.pointerId === start.id) end(e.clientX, e.clientY); });
+  el.addEventListener('pointercancel', (e) => { if (start && e.pointerId === start.id) start = null; });
 };
 // Drive: the car picked AND the side on show (showroomData.js driveAs), and back to the menu
 const drive = (card) => {
