@@ -5,6 +5,7 @@
 // from the start, in a section of their own at the end of the tiers: see buildLot). Tap any car, owned or not, to see its stats; the button under them
 // uses it, or buys it (hovering shows the price). The Good / Evil toggle swaps every car to its
 // other livery: buying a car buys both.
+import { SILHOUETTE } from './silhouette.js'; // (every teaser's: clearGroup keeps it)
 import { Nav } from '../nav.js';
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
@@ -151,8 +152,6 @@ const buildLot = () => {
 export { makeShowCar, paintShowCar };
 
 // ---- a car, parked in its bay: column by column --------------------------------------------------
-const SILHOUETTE = new THREE.MeshBasicMaterial({ color: 0x07080b });
-SILHOUETTE.userData.shared = true; // (every teaser's: clearGroup keeps it)
 const parkCar = (car, i) => {
   if (!car) return null; // (a bay left empty: see buildLot)
   const mesh = makeShowCar(car);

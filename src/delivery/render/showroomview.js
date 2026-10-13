@@ -34,8 +34,9 @@ import { makeShowCar, paintShowCar } from './showcar.js';
 import { makeKey } from './keyModels.js';
 import { keyModelInUse } from './keycard.js';
 import { SILHOUETTE_KEY } from './keyspin.js';
+import { SILHOUETTE } from './silhouette.js'; // (as the car lot's: render/garage.js)
 
-const SILHOUETTE = new THREE.MeshBasicMaterial({ color: 0x07080b }); // (as the car lot's: render/garage.js)
+
 const LIFT = 0.3, FOV = 30, SPIN = 0.35; // (rad looked down from level; the camera's height of view, deg; rad/s turning by itself)
 const KEY_SPIN = 1.1, KEY_REST = 0.55, KEY_LIFT = 0.12, KEY_FOV = 26; // (the corner key: rad/s; its angle standing still; rad looked down; deg)
 const DARK_KEY_FPS = 30; // (a blacked-out car's corner key: frames a second at most)

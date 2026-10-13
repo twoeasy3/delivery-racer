@@ -28,6 +28,7 @@ import { carById, CARS, FILLER_CARS, EVENT_CARS, BESPOKE_CARS, EARNED_CARS, SECR
 import { IDEA_CARS } from './ideas.js';
 import { buildInspectModel } from './render/inspectmodel.js';
 import { renderer } from './render/scene.js';
+import { SILHOUETTE } from './render/silhouette.js';
 import { extractParts, applyPatch, modelStats, BUDGET, emptyPatch, withSet, withDelete, withAdd, withDuplicate, withMirror, tidyPatch, PRIMITIVES } from './render/modelpatch.js';
 import { LOCAL_KEY, PATCHES, patchesReady, localPatches, setModelPatching } from './render/modelpatchapply.js';
 
@@ -215,7 +216,7 @@ const resize = () => {
 new ResizeObserver(resize).observe($('viewBox'));
 
 // ---- what is shown: eyes, solo, wireframe, boxes, the hitbox, the wheels ----------------------------------------
-const flags = () => ({ wire: $('wire').checked, bbox: $('bbox').checked, hitbox: $('hitbox').checked, wheels: $('wheels').checked });
+const flags = () => ({ wire: $('wire').checked, bbox: $('bbox').checked, hitbox: $('hitbox').checked, wheels: $('wheels').checked, dark: $('dark').checked });
 const applyViewFlags = () => {
   const f = flags();
   const soloNode = S.solo && S.nodes.get(S.solo);
@@ -223,6 +224,12 @@ const applyViewFlags = () => {
     node.userData.viewHidden = S.hidden.has(id);
     if (node.isMesh) for (const m of [].concat(node.material)) m.wireframe = f.wire;
   }
+  // Blackout: every mesh in the game's own silhouette material (as a locked car is shown), its own kept to put back
+  S.model.traverse((n) => {
+    if (!n.isMesh) return;
+    if (f.dark && !n.userData.darkOrig) { n.userData.darkOrig = n.material; n.material = SILHOUETTE; }
+    else if (!f.dark && n.userData.darkOrig) { n.material = n.userData.darkOrig; n.userData.darkOrig = null; }
+  });
   S.model.traverse((n) => {
     if (!n.isMesh) return;
     let shown = !n.userData.viewHidden;
@@ -248,7 +255,7 @@ const applyViewFlags = () => {
     }
   }
 };
-for (const id of ['wire', 'bbox', 'hitbox', 'wheels']) $(id).addEventListener('change', applyViewFlags);
+for (const id of ['wire', 'bbox', 'hitbox', 'wheels', 'dark']) $(id).addEventListener('change', applyViewFlags);
 
 // ---- picking: a tap (not a drag) on a part selects it; the mouse over one shows its box -------------------------
 const ray = new THREE.Raycaster();
@@ -589,6 +596,7 @@ window.addEventListener('pagehide', () => { disposeModel(S.model); renderer.disp
 // ---- start ---------------------------------------------------------------------------------------------------------
 resize();
 patchesReady.then(() => {
+  if (params.has('dark')) $('dark').checked = true; // (?dark: the Blackout view from the start)
   loadCar(params.get('car') || 'commuter');
   showTab(params.get('tab'));
   if (params.get('part')) select(params.get('part'));
