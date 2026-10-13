@@ -38,8 +38,8 @@ const bx = (w, h, l, x, y, z, pitch = 0, yaw = 0, roll = 0) => {
 };
 // a disc facing along the car (a lamp), turned `yaw` about the upright
 const dsc = (r, depth, x, y, z, yaw = 0, seg = 12) => new THREE.CylinderGeometry(r, r, depth, seg).rotateX(Math.PI / 2).rotateY(yaw).translate(x, y, z);
-// the top half of a ring lying flat on a flank (a wheel arch's lip), its middle at (x, y, z)
-const lip = (r, t, x, y, z) => new THREE.TorusGeometry(r, t, 3, 8, Math.PI).rotateY(Math.PI / 2).translate(x, y, z);
+// a thin round strip laid along the points `pts` ([x, y, z]): a wheel arch's lip, a shut line
+const strip = (pts, r, seg = 8) => new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(...p))), seg, r, 3, false);
 // the top half of a thin disc on a flank (a dark wheel well behind a wheel)
 const well = (r, x, y, z) => new THREE.CylinderGeometry(r, r, 0.01, 8, 1, false, 0, Math.PI).rotateZ(Math.PI / 2).translate(x, y, z);
 const merged = (parent, material, geos) => place(parent, mergeGeometries(geos, false), material, 0, 0, 0);
@@ -152,7 +152,7 @@ export const IDEA_MODELS_10 = {
       [-L, 0.5, 0.46, 0.7, 0.25, 0.44], [-L + 0.04, 0.66, 0.47, 0.75, 0.21, 0.6], [-L + 0.12, 0.74, 0.48, 0.8, 0.18, 0.7],
       [-1.0, 0.78, 0.48, 0.86, 0.16, 0.74], [0, 0.785, 0.48, 0.84, 0.15, 0.75], [1.0, 0.78, 0.47, 0.79, 0.16, 0.74], [L - 0.12, 0.74, 0.47, 0.76, 0.17, 0.7],
       [L - 0.04, 0.66, 0.46, 0.7, 0.19, 0.62], [L, 0.5, 0.44, 0.62, 0.22, 0.46],
-    ], AXLES, NB, [-0.4, -0.28, 0, 0.28, 0.4]);
+    ], AXLES, NB, [-0.43, -0.4, -0.27, 0, 0.27, 0.4, 0.43]); // (a station just clear of each arch, so the cut-back ends there)
     // the bubble: [z, half width, top (or, under 0.5, its height over the foot)]; its foot is where that width meets the body's shoulder
     const BUBBLE = [[-L + 0.015, 0.2, 0.06], [-L + 0.04, 0.38, 0.9], [-L + 0.09, 0.5, 1.04], [-L + 0.17, 0.58, 1.2], [-1.08, 0.64, 1.34], [-0.85, 0.69, 1.47], [-0.45, 0.71, 1.56],
       [-0.1, 0.715, 1.585], [0.25, 0.71, 1.56], [0.55, 0.69, 1.46], [0.82, 0.64, 1.28], [1.02, 0.56, 1.06], [1.13, 0.42, 0.88], [1.17, 0.24, 0.05]];
@@ -168,13 +168,13 @@ export const IDEA_MODELS_10 = {
     const zs = [...new Set([...keys.map(k => k[0]), ...FRAME.flatMap(f => f[0])])].sort((a, b) => a - b); // (the glass has a station wherever the frame has one)
     loft(group, glass, zs.map(z => [z, canopyRing(along(keys, z), NC)]));
     for (const [at, a, off] of FRAME) loft(group, frame, at.map(z => [z, coverRing(along(keys, z), NC, a, off)]), false);
-    // the stop lamp at the roof cap's back end
-    const [, , capTop] = along(keys, -1.08);
-    box(group, STOP, 0.32, 0.035, 0.05, 0, capTop - 0.06, -1.1);
+    // the stop lamp on the back window, just under the roof cap's end, lying on the glass's slope
+    const glassTop = (z) => along(keys, z)[2], slope = (z) => (glassTop(z + 0.03) - glassTop(z - 0.03)) / 0.06;
+    box(group, STOP, 0.3, 0.03, 0.05, 0, glassTop(-1.14) + 0.01, -1.14).rotation.x = -Math.atan(slope(-1.14));
     // the face: round lamps in dark rims, indicators beside them, the intake and the plate under them
     const LX = 0.4;
-    each(group, dark, [-1, 1].map(side => dsc(0.1, 0.04, side * LX, 0.45, L, 0, 14)));
-    each(group, LAMP, [-1, 1].map(side => dsc(0.075, 0.04, side * LX, 0.45, L + 0.007, 0, 14)));
+    each(group, dark, [-1, 1].map(side => dsc(0.1, 0.04, side * LX, 0.45, L, 0, 12)));
+    each(group, LAMP, [-1, 1].map(side => dsc(0.075, 0.04, side * LX, 0.45, L + 0.007, 0, 12)));
     each(group, AMBER, [-1, 1].map(side => bx(0.035, 0.07, 0.04, side * 0.25, 0.42, L)));
     merged(group, trim, [bx(0.62, 0.1, 0.05, 0, 0.29, L - 0.008), bx(0.18, 0.03, 0.05, 0, 0.53, L - 0.01)]); // the intake, a slot of a grille over it
     box(group, WHITE, 0.36, 0.09, 0.02, 0, 0.29, L + 0.022);
@@ -187,9 +187,10 @@ export const IDEA_MODELS_10 = {
     box(group, trim, 0.7, 0.08, 0.05, 0, 0.3, -L + 0.012);
     // the flanks: where the doors meet (under the hoop), handles, mirrors on the shoulders
     const sill = sideX(0, 0.36);
+    const shut = [0.24, 0.32, 0.4, 0.48, 0.56, 0.62].map(y => [sideX(-0.17, y) + 0.002, y, -0.17]);
     merged(group, trim, [-1, 1].flatMap(side => [
-      bx(0.012, 0.36, 0.014, side * (sill + 0.003), 0.4, -0.17),
-      bx(0.03, 0.06, 1.0, side * (sill - 0.006), 0.2, 0),                                  // the sills
+      strip(shut.map(([x, y, z]) => [side * x, y, z]), 0.007, 5),
+      bx(0.04, 0.06, 0.9, side * (sill - 0.035), 0.2, 0),                                  // the sills (tucked under the flanks)
     ]));
     each(group, frame, [-1, 1].map(side => bx(0.02, 0.025, 0.12, side * (sideX(0.1, 0.5) + 0.005), 0.5, 0.1)));
     for (const side of [-1, 1]) {
@@ -197,20 +198,24 @@ export const IDEA_MODELS_10 = {
       merged(group, trim, [bx(0.03, 0.08, 0.03, side * x, y + 0.03, z), bx(0.11, 0.07, 0.06, side * (x + 0.06), y + 0.08, z)]);
       box(group, AMBER, 0.012, 0.03, 0.07, side * (sideX(0.45, 0.55) + 0.001), 0.55, 0.45);   // a side repeater on the pod
     }
-    box(group, trim, 0.012, 0.1, 0.1, -(sideX(-0.62, 0.56) + 0.001), 0.56, -0.62);           // the charging flap
-    const [, , roofTop] = along(keys, -0.85);
-    box(group, trim, 0.03, 0.05, 0.1, 0, roofTop + 0.016 + 0.02, -0.85);                     // the aerial's fin
+    box(group, trim, 0.012, 0.1, 0.1, -(sideX(-0.62, 0.56) - 0.001), 0.56, -0.62);           // the charging flap
+    box(group, trim, 0.03, 0.05, 0.1, 0, glassTop(-0.7) + 0.03, -0.7).rotation.x = -Math.atan(slope(-0.7)); // the aerial's fin, on the roof cap
     // the wheels: small, at the corners, a white cap in each; dark wells and lips round them
     const tyreGeo = shared('fbTyre', () => new THREE.CylinderGeometry(R, R, TW, 16).rotateZ(Math.PI / 2));
-    const capGeo = shared('fbCap', () => new THREE.CylinderGeometry(R * 0.6, R * 0.6, TW + 0.02, 12).rotateZ(Math.PI / 2));
-    const nutGeo = shared('fbNut', () => new THREE.CylinderGeometry(0.05, 0.05, TW + 0.035, 8).rotateZ(Math.PI / 2));
+    const capGeo = shared('fbCap', () => new THREE.CylinderGeometry(R * 0.6, R * 0.6, TW + 0.02, 10).rotateZ(Math.PI / 2));
+    const nutGeo = shared('fbNut', () => new THREE.CylinderGeometry(0.05, 0.05, TW + 0.035, 6).rotateZ(Math.PI / 2));
     for (const side of [-1, 1]) for (const z of [ZA, -ZA]) {
       place(group, tyreGeo, TYRE, side * (OUT - TW / 2), R, z);
       place(group, capGeo, WHITE, side * (OUT - TW / 2), R, z);
       place(group, nutGeo, trim, side * (OUT - TW / 2), R, z);
     }
     merged(group, dark, [-1, 1].flatMap(side => [ZA, -ZA].map(z => well(R + 0.06, side * (OUT - TW - 0.01), R, z))));
-    merged(group, trim, [-1, 1].flatMap(side => [ZA, -ZA].map(z => lip(R + 0.075, 0.025, side * (sideX(z, 0.62) + 0.006), R, z))));
+    // (each lip follows the flank round the arch, so it lies on the body all the way round, where the body narrows too)
+    const arch = (za) => [0.1, 0.22, 0.36, 0.5, 0.64, 0.78, 0.9].map(f => {
+      const a = f * Math.PI, z = za + (R + 0.075) * Math.cos(a), y = R + (R + 0.075) * Math.sin(a);
+      return [sideX(z, y + 0.03) - 0.006, y, z];
+    });
+    merged(group, trim, [-1, 1].flatMap(side => [ZA, -ZA].map(za => strip(arch(za).map(([x, y, z]) => [side * x, y, z]), 0.026, 10))));
     group.userData = {
       body,
       animate: () => {},
