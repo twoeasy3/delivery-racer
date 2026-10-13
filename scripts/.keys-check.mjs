@@ -46,6 +46,39 @@ try {
   check(initialOf({ name: 'Silver Comet' }) === 'S' && initialOf({ name: '9 Lives' }) === 'L' && initialOf({ name: '42' }) === '*', 'the emblem: the first letter of the name, else a diamond');
   check(makeKey(cars[0], { model: 'nonsense' }).userData.keyModel === KEY_MODEL, 'an unknown model: the default');
 
+  // ---- ordinary keys, batch C (render/keyModelsOrdC.js: crystal, carbonfob, wedgefob, leaper): registered as ORDINARY (not
+  // among the nine), and each builds for the 3 cars x 3 rarities: 5 to 20 meshes, under 1,500 triangles, no NaN, an upright
+  // key-sized box, a gentle sway
+  {
+    const { ORDINARY_MODELS } = await g.load('render/keyModels.js');
+    await g.load('render/keyModelsOrdC.js');
+    const batchC = ['crystal', 'carbonfob', 'wedgefob', 'leaper'];
+    check(batchC.every(m => ORDINARY_MODELS.includes(m) && !KEY_MODELS.includes(m) && typeof KEY_BUILDERS[m] === 'function'), 'batch C registered as ordinary keys (' + batchC.join(', ') + ')');
+    for (const model of batchC) {
+      let ok = true, why = '';
+      for (const car of cars) for (const rarity of ['bespoke', 'epic', 'common']) {
+        const key = makeKey(car, { model, rarity });
+        key.updateMatrixWorld(true);
+        let meshes = 0, bad = 0, tris = 0;
+        key.traverse((node) => {
+          if (!node.isMesh) return;
+          meshes++;
+          tris += (node.geometry.index ? node.geometry.index.count : node.geometry.attributes.position.count) / 3;
+          if (Array.from(node.geometry.attributes.position.array).some(v => !Number.isFinite(v))) bad++;
+        });
+        const size = new THREE.Box3().setFromObject(key).getSize(new THREE.Vector3());
+        const fine = meshes >= 5 && meshes <= 20 && tris < 1500 && !bad && size.y >= 3 && size.y <= 7 && size.x >= 1 && size.x <= 3.5 && size.z >= 0.3 && size.z <= 1.5 && key.userData.keyModel === model;
+        if (!fine && ok) { ok = false; why = ` (${car.id} ${rarity}: ${meshes} meshes, ${tris} triangles, ${bad} bad, size ${size.toArray().map(n => n.toFixed(2)).join(' x ')})`; }
+        key.userData.animate(0); key.updateMatrixWorld(true);
+        const rest = new THREE.Box3().setFromObject(key);
+        key.userData.animate(2.2); key.updateMatrixWorld(true);
+        const swayed = new THREE.Box3().setFromObject(key);
+        if (ok && (rest.equals(swayed) || swayed.getCenter(new THREE.Vector3()).distanceTo(rest.getCenter(new THREE.Vector3())) > 0.6)) { ok = false; why = ' (the sway does not move it, or moves it off)'; }
+      }
+      check(ok, model + ' (ordinary, batch C): builds for 3 cars x 3 rarities: 5 to 20 meshes, under 1,500 triangles, an upright key-sized box, a gentle sway' + why);
+    }
+  }
+
   // ---- the card: a stand-in DOM, enough for blueprintcard.js
   const el = (tag) => {
     const node = { tagName: tag.toUpperCase(), children: [], className: '', dataset: {}, style: { setProperty() {} }, attrs: {}, parentNode: null, text: '',

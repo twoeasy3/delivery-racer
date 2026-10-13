@@ -12,7 +12,7 @@
 //              springing from a moulded head in the car's colour with its initial, a toothed blade below
 import { registerKey, KEY_KIT } from './keyModels.js';
 
-const { THREE, lambert, metal, glow, add, box, disc, outline, circle, slab, band, rimMaterial, rainbow, glyph, paintOf, inkOn, idle, plainBlade, merged, initialOf } = KEY_KIT;
+const { THREE, lambert, metal, glow, add, box, disc, outline, circle, slab, band, rimMaterial, rainbow, glyph, paintOf, inkOn, idle, merged, initialOf } = KEY_KIT;
 
 // an ellipse (rx, ry about cx, cy) as a shape, or as a hole of one
 const ellipse = (rx, ry, cx = 0, cy = 0, path = new THREE.Shape()) => { path.absellipse(cx, cy, rx, ry, 0, Math.PI * 2, false); return path; };
