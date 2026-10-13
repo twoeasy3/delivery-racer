@@ -66,6 +66,7 @@ const fresh = () => ({
   packs: {},       // card packs given and not yet opened (pending: the reveal opens them at once, or at the next menu): a count by pack id ('career', 'comet-special'...: packs.json; an old save's 'special:<event id>' is migrated: packid.js)
   packLog: [],     // the packs opened last, newest first: { kind (the pack's id), cards: [{ car, rarity, key?, featured? }] } (packs.js)
   shopCash: 0,     // the Shop's PLACEHOLDER currency (shop.json, shop.js): its own balance, never the bank; nothing gives it yet
+  eventRuns: {},   // a rotating event's TASK COUNTERS for its run on now (events.js tasks: the Concept Strike, CHECKLIST 211), by event id: { day: 'YYYY-MM-DD' (the run's first day, local), n: [times each task paid this run] }; a new run starts them again
   packBuys: {},    // the Shop's PURCHASE COUNTERS, by pack id (shop.js; a pack's packs.json shop.limits): { total (ever bought), day ('YYYY-MM-DD', the player's local day of the last buy), today (bought that day) }; a bundle counts each pack
 });
 
@@ -104,6 +105,11 @@ const cleanBuys = (buys) => Object.fromEntries(Object.entries(buys && typeof buy
   .slice(0, 50)
   .map(([id, b]) => [id, { total: b.total, day: typeof b.day === 'string' && /^\d{4}-\d\d-\d\d$/.test(b.day) ? b.day : '',
     today: Number.isInteger(b.today) && b.today >= 0 && b.today <= b.total ? b.today : 0 }]));
+// a rotating event's task counters (events.js), each checked: { [event id]: { day: 'YYYY-MM-DD', n: [whole numbers] } }
+const cleanRuns = (runs) => Object.fromEntries(Object.entries(runs && typeof runs === 'object' && !Array.isArray(runs) ? runs : {})
+  .filter(([id, r]) => /^[a-z0-9-]{1,40}$/.test(id) && r && typeof r === 'object' && typeof r.day === 'string' && /^\d{4}-\d\d-\d\d$/.test(r.day) && Array.isArray(r.n))
+  .slice(0, 20)
+  .map(([id, r]) => [id, { day: r.day, n: r.n.slice(0, 20).map(x => (Number.isInteger(x) && x >= 0 && x <= 999 ? x : 0)) }]));
 // a save as it was written (by any older version of the game), brought up to date
 const restore = (saved) => {
   {
@@ -113,6 +119,7 @@ const restore = (saved) => {
     data.tierCars = { ...(saved.tierCars && typeof saved.tierCars === 'object' ? saved.tierCars : {}) };
     data.packs = migrateHeld(saved.packs); // (card packs: a save from before has none; one from before one definition per pack held 'special:<event>': packid.js)
     data.packBuys = cleanBuys(saved.packBuys); // (the Shop's purchase counters: a save from before has none)
+    data.eventRuns = cleanRuns(saved.eventRuns); // (a rotating event's task counters: a save from before has none)
     data.packLog = Array.isArray(saved.packLog) ? saved.packLog : [];
     // (the Commuter and the Darkvan were saved as 'hatch' and 'coupe')
     const RENAMED = { hatch: 'commuter', coupe: 'darkvan' };
@@ -147,7 +154,7 @@ const saveText = (data) => JSON.stringify({
 });
 // The cookie's share of the save (see BACKUP above): never over COOKIE_ROOM bytes as written, whatever the save
 // holds. Should even the list of cars be too long for it (hundreds of them), it goes down to the car in use
-const COOKIE_KEYS = ['money', 'unlocked', 'levelOrder', 'cars', 'car', 'claimed', 'events', 'tankPieces', 'evil', 'muted', 'touch', 'autoGas', 'autoBrake', 'raceClass', 'raceTrack', 'blueprints', 'maxed', 'shopCash', 'packBuys'];
+const COOKIE_KEYS = ['money', 'unlocked', 'levelOrder', 'cars', 'car', 'claimed', 'events', 'tankPieces', 'evil', 'muted', 'touch', 'autoGas', 'autoBrake', 'raceClass', 'raceTrack', 'blueprints', 'maxed', 'shopCash', 'packBuys', 'eventRuns'];
 const COOKIE_ROOM = 3600; // bytes of cookie value (the cap is 4096 for the name, the value and its attributes)
 const cookieText = (data) => {
   const short = Object.fromEntries(COOKIE_KEYS.map(key => [key, key === 'money' ? rounded(data.money, SAVE_STEP.money) : data[key]]));
@@ -207,6 +214,7 @@ const tidy = (saved) => {
   clean.packs = Object.fromEntries(Object.entries(saved.packs && typeof saved.packs === 'object' && !Array.isArray(saved.packs) ? saved.packs : {})
     .filter(([k, n]) => /^[a-z0-9-]{1,40}(:[A-Za-z0-9_-]{1,40})?$/.test(k) && Number.isInteger(n) && n > 0 && n <= 9999).slice(0, 50)); // (a pack id; an old code's 'special:<event>', migrated by restore)
   clean.packBuys = cleanBuys(saved.packBuys); // (the Shop's purchase counters)
+  clean.eventRuns = cleanRuns(saved.eventRuns); // (a rotating event's task counters)
   clean.packLog = (Array.isArray(saved.packLog) ? saved.packLog : []).filter(p => p && typeof p === 'object' && word(p.kind) && Array.isArray(p.cards)).slice(0, 50)
     .map(p => ({ kind: p.kind, ...(word(p.from) ? { from: p.from } : {}), cards: p.cards.filter(c => c && word(c.car) && word(c.rarity)).slice(0, 20)
       .map(c => ({ car: c.car, rarity: c.rarity, ...(c.key === true ? { key: true } : {}), ...(c.featured === true ? { featured: true } : {}) })) }));

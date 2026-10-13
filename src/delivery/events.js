@@ -20,14 +20,26 @@
 // events tab says "Next in ..."); its stages are shut then. Its stages never count as "done for good": a stage done is
 // open again at once, to play again and again (repeat events give their packs on EVERY delivery: packs.js eventDone,
 // givenBy.event.every). Events.window(event, t) is the run on now or the next one: { live, start, end, next }.
+// A ROTATING event (the Concept Strike, the owner 13-Oct; CHECKLIST 211): a recurring one with `days`, one entry for each
+// day of a run (Monday to Saturday: `repeat: { every: 7, live: 6 }` from a Monday). Each DAY is a run of its own: the
+// window is the day's (Ends in: midnight; between days the next day starts at once; Sunday: Next in, Monday). A day has
+//   car     its FEATURED car: lent as a FREE TRY at the player's own ECU for it (the event card's Free try button: the
+//           stage's car lock for the visit, `ownEcu`: ecu.js drives it at the ECU its blueprints reach, not maxed)
+//   tasks   [{ stars, side, car, featured, maxed, packs, limit, key }]: a delivery of the stage that meets a task pays it:
+//           `packs` of the day's pack (packs.json: the pack whose givenBy.event names the event and that `day`, 1 = the
+//           first), at most `limit` times a run (the day); `key`: the featured car's key, once for good. Conditions:
+//           stars: a car of that many stars (a gold tier's, or a key car's rating: starsOf); side: 'good' / 'evil';
+//           car: that car; featured: the day's car; maxed: at its max ECU. Every task a delivery meets is paid.
+// The counters (`Progress.data.eventRuns`) belong to the run: a new day starts them at 0.
 // ============================================================================
 import eventData from './events.json';
 import { LEVELS, HIDDEN_LEVELS } from './levels.js';
 import { levelName, levelDescription } from './levelText.js';
 import { cargoFor } from './cargo.js';
 import { Progress } from './progress.js';
-import { carById } from './cars.js';
-import { Packs, packProblems } from './packs.js';
+import { carById, carTier } from './cars.js';
+import { Packs, packProblems, dayPack, packName } from './packs.js';
+import { Ecu } from './ecu.js';
 
 // a time in events.json: "2026-12-01" is midnight on the player's device; else a time with its zone. null: none
 // given; NaN: not a time
@@ -61,6 +73,8 @@ const stageLevel = (event, stage, index) => {
 export const SPECIALS = (Array.isArray(eventData.special) ? eventData.special : []).map(e => {
   const event = { id: String(e.id), name: String(e.name || e.id), short: String(e.short || e.name || e.id), from: when(e.from), to: when(e.to),
     prize: e.prize && typeof e.prize === 'object' ? e.prize : null, repeat: repeatOf(e.repeat), raw: e };
+  event.days = Array.isArray(e.days) && event.repeat ? e.days.map((d, i) => ({ index: i, car: d?.car ? String(d.car) : null,
+    tasks: (Array.isArray(d?.tasks) ? d.tasks : []).map((x, k) => ({ index: k, ...x })) })) : null; // (a rotating event's days: see the head)
   event.stages = (Array.isArray(e.stages) ? e.stages : []).map((s, i) => ({
     index: i, from: when(s.from), car: s.car || null, free: !!s.free, map: String(s.level), level: stageLevel(event, s, i), raw: s,
   }));
@@ -80,6 +94,16 @@ const addDays = (t, n) => { const d = new Date(t); return new Date(d.getFullYear
 // the run of a recurring event on at t, or the next one: { live, start, end, next } (start / end: the run on, or the next
 // one; next: when the one after starts); null: not recurring, or no run left (its `to` passed)
 export const windowOf = (event, t) => {
+  const w = weekOf(event, t);
+  if (!w || !event.days) return w;
+  // (a rotating event: each day of the run is a run of its own)
+  if (!w.live) return { ...w, end: addDays(w.start, 1) > w.end ? w.end : addDays(w.start, 1), day: 0 };
+  let d = 0;
+  while (d + 1 < event.repeat.live && addDays(w.start, d + 1) <= t) d++;
+  const start = addDays(w.start, d), end = d + 1 < event.repeat.live ? addDays(start, 1) : w.end;
+  return { live: true, start, end, next: d + 1 < event.repeat.live ? end : w.next, day: d };
+};
+const weekOf = (event, t) => {
   const r = event?.repeat;
   if (!r || event.from === null || Number.isNaN(event.from)) return null;
   const cap = (x) => (event.to !== null && x > event.to ? event.to : x);
@@ -94,6 +118,32 @@ export const windowOf = (event, t) => {
 };
 
 const dayName = (t) => new Date(t).toLocaleDateString([], { day: 'numeric', month: 'short' });
+// a day on the device: 'YYYY-MM-DD' (a run's mark in the save)
+const dayKey = (t) => { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+// a car's stars for a task (the owner: 'any 2-star car'): a gold tier's (1 to 5: the car lot's and the blueprint cars'), or a
+// key car's rating (the Bespoke and concept cars' magenta stars); null for any other (a Blue Star car, a special, an idea)
+export const starsOf = (car) => { const t = carTier(car); return t >= 1 && t <= 5 ? t : car?.rating >= 1 && car.rating <= 5 && !car.blue ? car.rating : null; };
+const STAR = '★';
+// a task in words: 'Deliver in any ★★ car as Good', 'Deliver in the Fishbowl Runabout', '... at its max ECU (5)'
+export const taskWords = (task, day) => {
+  const car = task.featured ? carById(day?.car) : task.car ? carById(task.car) : null;
+  const what = car ? 'the ' + car.name : task.stars ? 'any ' + STAR.repeat(task.stars) + ' car' : 'any car';
+  return 'Deliver in ' + what + (task.maxed ? ' at its max ECU' + (car ? ' (' + Ecu.max(car) + ')' : '') : '') + (task.side === 'good' ? ' as Good' : task.side === 'evil' ? ' as Evil' : '');
+};
+const rewardWords = (task) => (task.key ? 'Its key' : (task.packs || 1) + (task.packs > 1 ? ' packs' : ' pack'));
+// does a delivery ({ car, ecu, evil }) meet a task of the day?
+const meets = (task, day, run) => {
+  const car = run?.car;
+  if (!car || car.silhouette) return false;
+  if (task.side === 'good' && run.evil) return false;
+  if (task.side === 'evil' && !run.evil) return false;
+  if (task.stars && starsOf(car) !== task.stars) return false;
+  if (task.car && car.id !== task.car) return false;
+  if (task.featured && car.id !== day.car) return false;
+  if (task.maxed && !(Number(run.ecu) >= Ecu.max(car))) return false;
+  return true;
+};
+let tryOn = false; // (the free try of a rotating event's featured car, picked on its card: for the visit, never saved)
 
 export const Events = {
   specials: SPECIALS,
@@ -153,10 +203,15 @@ export const Events = {
   // and the prize after the last. { stage, of, prize, packs, repeat } (prize: the car's name, once; packs: the card packs
   // it gave, by name: packs.js eventDone; a recurring event's on EVERY delivery while it is on; repeat: a recurring
   // event's), or null for no stage, or an event not on
-  delivered(level) {
+  delivered(level, run = null) {
     const at = this.stageOf(level);
     if (!at || !this.live(at.event)) return null;
     const { event, stage } = at;
+    if (event.days) { // (a rotating event: its day's tasks, paid by what the run was driven in: payTasks)
+      if (stage.index === this.done(event)) (Progress.data.events ||= {})[event.id] = stage.index + 1;
+      const paid = this.payTasks(event, run || {});
+      return { stage: stage.index + 1, of: event.stages.length, prize: '', packs: paid.packs, key: paid.key, tasks: paid.done, repeat: true, name: event.name };
+    }
     const first = stage.index === this.done(event); // (the stage done for the first time)
     if (first) (Progress.data.events ||= {})[event.id] = stage.index + 1;
     let prize = '';
@@ -169,6 +224,91 @@ export const Events = {
     const packs = Packs.eventDone(event.id, first, !!prize); // (card packs: packs.js; the packs whose givenBy.event names this event; `every`: each delivery)
     Progress.save();
     return { stage: stage.index + 1, of: event.stages.length, prize, packs, repeat: !!event.repeat, name: event.name };
+  },
+  // ---- a ROTATING event's day (the Concept Strike): { index, car, tasks, pack } on now, or the next (between runs); null: not one
+  dayOf(event, t = this.now()) {
+    if (!event?.days) return null;
+    const w = windowOf(event, t);
+    const day = w ? event.days[w.day] : null;
+    return day ? { ...day, live: w.live, start: w.start, pack: dayPack(event.id, day.index + 1) } : null;
+  },
+  // the counters of the run on now ([times each task of the day was paid]), a new run's at 0 (write: kept in the save's place)
+  runCounts(event, t = this.now(), write = false) {
+    const w = windowOf(event, t), mark = w ? dayKey(w.start) : '';
+    const day = this.dayOf(event, t), size = day ? day.tasks.length : 0;
+    const saved = Progress.data.eventRuns?.[event.id];
+    const n = saved && saved.day === mark ? [...saved.n] : [];
+    while (n.length < size) n.push(0);
+    if (write) (Progress.data.eventRuns ||= {})[event.id] = { day: mark, n };
+    return n;
+  },
+  // the day's tasks, each with { task, words, reward, count, limit, left, done } (done: paid as often as it can be this run;
+  // a key task: once the key is owned)
+  tasks(event, t = this.now()) {
+    const day = this.dayOf(event, t);
+    if (!day) return [];
+    const n = this.runCounts(event, t);
+    return day.tasks.map((task, i) => {
+      const limit = task.key ? 1 : Math.max(1, Math.floor(task.limit || 1));
+      const count = task.key ? (Progress.owns(day.car) ? 1 : 0) : n[i] || 0;
+      return { task, words: taskWords(task, day), reward: rewardWords(task), count, limit, left: Math.max(0, limit - count), done: count >= limit };
+    });
+  },
+  // a rotating event's day that features this car, today or the next: { start, live } (live: it is that day now), or null
+  carDay(event, carId, t = this.now()) {
+    if (!event?.days?.some(d => d.car === carId)) return null;
+    const d0 = new Date(t), midnight = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate()).getTime();
+    for (let k = 0; k < 15; k++) {
+      const at = k ? addDays(midnight, k) + 3600e3 : t, day = this.dayOf(event, at);
+      if (day?.live && day.car === carId) return { start: day.start, live: k === 0 };
+    }
+    return null;
+  },
+  // anything left to earn in the run on now? (the Events tab's dot)
+  tasksLeft(event, t = this.now()) { return this.live(event, t) ? this.tasks(event, t).filter(x => !x.done).length : 0; },
+  // the FREE TRY of the day's car (its card's button): { car, on, ecu, max } (ecu: what the player's blueprints reach, as it
+  // is lent), or null (no rotating event, no run on)
+  freeTry(event, t = this.now()) {
+    const day = this.dayOf(event, t), car = day?.live ? carById(day.car) : null;
+    if (!car) return null;
+    return { car, on: tryOn, ecu: Math.max(1, Ecu.reached(car)), max: Ecu.max(car), owned: Progress.owns(car.id) };
+  },
+  setFreeTry(event, on) { tryOn = !!on; this.syncTry(event); },
+  // the stage's car lock follows the free try and the day (called as the menu draws): the day's car lent at the player's own
+  // ECU (level.ownEcu: ecu.js), or no lock (any car the player owns)
+  syncTry(event, t = this.now()) {
+    const level = event?.days ? event.stages[0]?.level : null;
+    if (!level) return;
+    const day = this.dayOf(event, t);
+    if (tryOn && day?.live && carById(day.car)) { level.car = day.car; level.ownEcu = true; } else { delete level.car; delete level.ownEcu; }
+  },
+  // a rotating event's stage delivered (delivered): every task of the day the run meets is paid, up to its limit this run.
+  // { done: [words], packs: [names], key: car name or '' }
+  payTasks(event, run, t = this.now()) {
+    const day = this.dayOf(event, t);
+    if (!day?.live) return { done: [], packs: [], key: '' };
+    const n = this.runCounts(event, t, true), done = [], packs = [];
+    let key = '', give = 0;
+    day.tasks.forEach((task, i) => {
+      if (!meets(task, day, run)) return;
+      if (task.key) {
+        const car = carById(day.car);
+        if (!car || Progress.owns(car.id)) return;
+        Packs.grantKey(car.id);
+        key = car.name; done.push(taskWords(task, day));
+        return;
+      }
+      const limit = Math.max(1, Math.floor(task.limit || 1));
+      if ((n[i] || 0) >= limit) return;
+      n[i] = (n[i] || 0) + 1;
+      give += Math.max(1, Math.floor(task.packs || 1));
+      done.push(taskWords(task, day));
+    });
+    (Progress.data.eventRuns ||= {})[event.id] = { day: dayKey(windowOf(event, t).start), n };
+    if (give && day.pack) { Packs.grant(day.pack, { n: give }); packs.push(...Array(give).fill(packName(day.pack))); }
+    Progress.save();
+    if (give) Packs.revealNow();
+    return { done, packs, key };
   },
   // what is wrong with events.json's special events, as lines (none: sound)
   problems() {
@@ -183,6 +323,27 @@ export const Events = {
       if (e.repeat && e.from === null) say('a recurring event needs "from" (the start of its first run)');
       if (e.repeat && e.raw.repeat && Object.keys(e.raw.repeat).some(k => !['every', 'live'].includes(k))) say('"repeat": unknown field(s) ' + Object.keys(e.raw.repeat).filter(k => !['every', 'live'].includes(k)).join(', '));
       if (!e.stages.length) say('it has no stages');
+      if (e.raw.days !== undefined) {
+        if (!e.days) say('"days" needs "repeat" (a rotating event is a recurring one)');
+        else {
+          if (e.days.length !== e.repeat.live) say('"days": ' + e.days.length + ' entries for ' + e.repeat.live + ' days a run');
+          if (e.stages.length !== 1) say('a rotating event has one stage');
+          e.days.forEach((d, i) => {
+            const n = 'day ' + (i + 1) + ': ';
+            if (!carById(d.car)) say(n + 'its car "' + d.car + '" is not a car');
+            if (!dayPack(e.id, i + 1)) say(n + 'no pack (packs.json: givenBy.event { "day": ' + (i + 1) + ' } naming ' + e.id + ')');
+            if (!d.tasks.length) say(n + 'no tasks');
+            for (const x of d.tasks) {
+              const extra = Object.keys(x).filter(k => !['index', 'stars', 'side', 'car', 'featured', 'maxed', 'packs', 'limit', 'key'].includes(k));
+              if (extra.length) say(n + 'task ' + (x.index + 1) + ': unknown ' + extra.join(', '));
+              if (x.stars !== undefined && !(Number.isInteger(x.stars) && x.stars >= 1 && x.stars <= 5)) say(n + 'task ' + (x.index + 1) + ': stars is not 1 to 5');
+              if (x.side !== undefined && !['good', 'evil'].includes(x.side)) say(n + 'task ' + (x.index + 1) + ': side is not good or evil');
+              if (x.car !== undefined && !carById(x.car)) say(n + 'task ' + (x.index + 1) + ': "' + x.car + '" is not a car');
+              if (x.key ? !x.featured : !(Number.isInteger(x.packs) && x.packs >= 1 && Number.isInteger(x.limit) && x.limit >= 1)) say(n + 'task ' + (x.index + 1) + ': a key task is the featured car\'s; any other gives whole packs, a whole limit');
+            }
+          });
+        }
+      }
       if (e.prize && !this.prizeCar(e)) say('its prize "' + e.prize.car + '" is not a car');
       if (e.raw.featured !== undefined) say('"featured" belongs on its pack now (packs.json: the pack whose "event" is ' + e.id + ', its featured.entries)'); // (one definition per pack: CHECKLIST 159)
       e.stages.forEach((s, i) => {

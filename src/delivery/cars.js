@@ -403,10 +403,13 @@ export const EVENT_CARS = [
 // and since 13-Oct a key of its OWN (the owner: "a unique car key model per key car ... evocative of the car it belongs
 // to"): the first three models went to the cars they fit (the fob stays the Silver Comet's, the brass classic is the 1910
 // Swan Car's, the glossy smart key the hypercar's), six were made for the rest (render/keyModels.js)
-const KEY_STYLE = { horseshoe: 'smart', swancar: 'classic', rocketfin: 'fin', solarracer: 'solar', moonrover: 'lunar', monowheel: 'wheel', snocat: 'snowboot', hotdog: 'bun' };
+const KEY_STYLE = { horseshoe: 'smart', swancar: 'classic', rocketfin: 'fin', solarracer: 'solar', moonrover: 'lunar', monowheel: 'wheel', snocat: 'snowboot', hotdog: 'bun',
+  // (the six CONCEPT key cars, CHECKLIST 211: each the key made for it, once an ordinary key: render/keyModels.js CONCEPT_KEYS)
+  fishbowl: 'keikey', midsummer: 'wing', sixteen: 'artisan', quadturbo: 'carbonfob', knifeedge: 'wedgefob', windsong: 'startfob' };
 // the Key cars' star ratings (the owner, 12-Oct: "add star ratings to the current key cars too"): magenta stars as a mark of how strong the
 // car is against the tiers, NOT a tier (`rating`, not `tier`: no level rule, no ECU ladder (a key car's max stays 5) reads it)
-const KEY_RATING = { horseshoe: 5, rocketfin: 5, solarracer: 5, monowheel: 3, hotdog: 4, moonrover: 4, swancar: 4, snocat: 3 };
+const KEY_RATING = { horseshoe: 5, rocketfin: 5, solarracer: 5, monowheel: 3, hotdog: 4, moonrover: 4, swancar: 4, snocat: 3,
+  fishbowl: 2, midsummer: 3, sixteen: 4, quadturbo: 5, knifeedge: 5, windsong: 5 }; // (the concept cars: the owner, 13-Oct: "2, 3, 4, 5, 5, 5 stars")
 const bespoke = (car) => ({ ...car, rating: KEY_RATING[car.id] || 0, bespoke: true, rarity: 'legendary', placeholder: true, price: 0, keyModel: KEY_STYLE[car.id] || 'fob' });
 export const BESPOKE_CARS = [
   // the all-rounder: quick, solid, a grand tourer
@@ -442,8 +445,36 @@ export const BESPOKE_CARS = [
   bespoke({ id: 'horseshoe', name: 'Horseshoe Hypercar', basedOn: 'Bugatti Chiron (2016)', model: 'horseshoe', color: 0x1f4fa8, evilColor: 0x8a1420, keyAvailable: false, noPacks: true,
     hw: 1.0, hl: 2.27, height: 1.21, note: 'A horseshoe in its nose, a big chrome C on each flank and a wing that rises out of its tail.',
     maxSpeed: 47.5, accel: 19, agility: 1.35, crossing: 0.2, health: 190, mass: 1.4, sound: 'lmp' }),
+  // ---- the six CONCEPT key cars (the owner, 13-Oct; CHECKLIST 211): show cars that never went on sale, car ideas until then
+  // (ideas.js; their models still render/ideaModels7.js to ideaModels10.js). Key cars as the Bespoke ones (a key of their
+  // own, Legendary blueprints, max ECU 5), rated 2, 3, 4, 5, 5 and 5 magenta stars, their figures the top of that many
+  // gold stars' range (the 5-star ones a little past it, as the Bespoke 5s are). `noPacks`: in no regular pack, key or
+  // blueprints; `concept`: only the Concept Strike gives them (events.json concept-strike: its day's pack has the car's
+  // blueprints; delivering it there at a maxed ECU gives its key)
+  ...[
+    bespoke({ id: 'fishbowl', name: 'Fishbowl Runabout', basedOn: 'Nissan Pivo 2 (2007 concept)', model: 'fishbowl', color: 0x8fd3c4, evilColor: 0x8e407f,
+      hw: 0.79, hl: 1.37, height: 1.6, note: 'Three seats under a glass bubble, a small wheel at each corner, and nowhere it cannot park.',
+      maxSpeed: 31, accel: 13, agility: 1.45, crossing: 0.3, health: 120, mass: 1, sound: 'evsaloon' }),
+    bespoke({ id: 'midsummer', name: 'Midsummer Roadster', basedOn: 'Pontiac Solstice concept (2002)', model: 'midsummer', color: 0xd2401f, evilColor: 0x7e51a3,
+      hw: 0.9, hl: 1.97, height: 1.12, note: 'A short, round two-seater with its wheels out at the corners and a hump behind each seat.',
+      maxSpeed: 38, accel: 15, agility: 1.35, crossing: 0.3, health: 140, mass: 1, sound: 'miata' }),
+    bespoke({ id: 'sixteen', name: 'Sixteen-Cylinder Coupe', basedOn: 'Cadillac Sixteen (2003 concept car)', model: 'sixteen', color: 0x9aa1a9, evilColor: 0x5d6070,
+      hw: 1.0, hl: 2.84, height: 1.4, note: 'A bonnet half the car long over sixteen cylinders, wheels nearly as tall as a child, and the cabin far back where it belongs.',
+      maxSpeed: 42, accel: 15, agility: 1.0, crossing: 0.3, health: 300, mass: 1.9, sound: 'classicgt' }),
+    bespoke({ id: 'quadturbo', name: 'Quad-Turbo Supercar', basedOn: 'Chrysler ME Four-Twelve (2004 concept car)', model: 'quadturbo', color: 0xd2ad5c, evilColor: 0xa9323f,
+      hw: 1.0, hl: 2.27, height: 1.14, note: 'Four turbochargers behind your back, a glass bubble of a cabin pushed right forward and a long tail to keep it all down.',
+      maxSpeed: 47, accel: 20, agility: 1.3, crossing: 0.2, health: 170, mass: 1.2, sound: 'gt' }),
+    bespoke({ id: 'knifeedge', name: 'Knife-Edge Supercar', basedOn: 'Cadillac Cien (2002 concept car)', model: 'knifeedge', color: 0xaab3be, evilColor: 0xb23a56,
+      hw: 1.0, hl: 2.23, height: 1.13, note: 'All flat facets and sharp creases, with lamps stacked up its wings like blades and its engine behind you.',
+      maxSpeed: 47.5, accel: 19, agility: 1.4, crossing: 0.2, health: 160, mass: 1.2, sound: 'lmp' }),
+    bespoke({ id: 'windsong', name: 'Wind-Song Racer', basedOn: 'Mazda Furai (2007 concept car)', model: 'windsong', color: 0xe2531d, evilColor: 0x8d56bc,
+      hw: 1.0, hl: 2.33, height: 1.06, note: 'A Le Mans racer with a number plate, a rotary scream and flames flowing down its flanks.',
+      maxSpeed: 48, accel: 21, agility: 1.45, crossing: 0.15, health: 120, mass: 1, sound: 'rotary' }),
+  ].map(car => ({ ...car, concept: true, noPacks: true })),
 ];
 applyNames('car', BESPOKE_CARS);
+// the six concept key cars (CHECKLIST 211), in the Concept Strike's order (Monday to Saturday)
+export const CONCEPT_CARS = ['fishbowl', 'midsummer', 'sixteen', 'quadturbo', 'knifeedge', 'windsong'].map(id => BESPOKE_CARS.find(car => car.id === id));
 // is it a Bespoke key car? (its key a Bespoke card, its blueprints Legendary; packs.js, carsources.js)
 export const isBespoke = (car) => !!car && !!car.bespoke && !car.off;
 // ---- the evergreen (filler) cars: BLUEPRINT cars (BLUEPRINTS-NOTES.md, CHECKLIST item 115) --------------------------

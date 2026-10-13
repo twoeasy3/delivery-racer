@@ -107,6 +107,7 @@ try {
   at(event.to + 1);
   check(Events.done(event) === 3 && !Events.prizeWon(event) && !Progress.owns('silvercomet'), 'another player, stopped at stage 4 to the end: three done, no prize');
   carHunt();
+  await conceptStrike();
 } catch (error) {
   failures++;
   console.log(error.stack);
@@ -176,4 +177,104 @@ function carHunt() {
   at(from + 7 * D + H);
   run(true);
   check(held() === 7, 'the next run: a pack again (' + held() + ')');
+}
+
+// THE CONCEPT STRIKE (the owner, 13-Oct; CHECKLIST 211): a ROTATING event, Monday to Saturday (repeat { every: 7, live: 6 }
+// from Monday 12 Oct 2026, `days`), each day its own run: its featured concept car (a free try at the player's own ECU),
+// its tasks (each paid up to its limit a day, the counters starting again the next day), its pack (packs.json
+// concept-strike-<day>, featuring the day's car); the featured car delivered at its max ECU gives its key. Every weekday
+// tried by a fake clock, Sunday too, in the first run and a later one.
+async function conceptStrike() {
+  const strike = Events.specials.find(e => e.id === 'concept-strike');
+  const { Ecu } = await g.load('ecu.js');
+  const { featuredOf } = await g.load('packs.js');
+  check(!!strike && strike.repeat?.every === 7 && strike.repeat?.live === 6 && strike.days?.length === 6 && strike.stages.length === 1 && strike.to === null,
+    'the Concept Strike: rotating, 6 days of every 7, one stage, no end');
+  if (!strike) return;
+  const H = 3600e3, D = 86400e3, from = strike.from;
+  check(new Date(from).getDay() === 1 && new Date(from).getHours() === 0, 'its first run starts on a Monday, at midnight on the device (' + new Date(from).toString().slice(0, 24) + ')');
+  const level = strike.stages[0].level;
+  check(level.id === 'concept-strike-1' && level.stage.map === 'back-roads' && level.clock.good === 300 && level.clock.evil === 300 && !level.allowedCars && !level.car,
+    'its stage: Back Roads as concept-strike-1, a 300 s TEST clock both sides, any car (no car rule, no lock)');
+  const want = [['fishbowl', 2, 4, 'Mon', 2], ['midsummer', 3, 3, 'Tue', 2], ['sixteen', 4, 3, 'Wed', 3], ['quadturbo', 5, 3, 'Thu', 4], ['knifeedge', 5, 3, 'Fri', 5], ['windsong', 5, 3, 'Sat', 5]] // (the last: task 1's stars; the owner, 13-Oct, Tue, Wed, Thu one star below the day's car);
+  const prev = [null, 'fishbowl', 'midsummer', 'sixteen', 'quadturbo', 'knifeedge'];
+  for (const week of [0, 3]) for (let d = 0; d < 7; d++) {
+    const t = from + (week * 7 + d) * D + 5 * H, name = new Date(t).toString().slice(0, 3), day = Events.dayOf(strike, t), c = Events.countdownOf(strike, t);
+    if (d === 6) {
+      check(name === 'Sun' && !Events.live(strike, t) && !day.live && day.car === 'fishbowl' && c?.words === 'Next in' && new Date(c.at).getDay() === 1 && Math.abs(c.at - (t + D - 5 * H)) < 2 * H
+        && Events.shownSpecials(t).includes(strike) && /^Back /.test(Events.state(strike, 0, t).why) && Events.tasksLeft(strike, t) === 0,
+        'week ' + (week + 1) + ' Sun: no event (listed, shut, "' + Events.state(strike, 0, t).why + '"), Next in Monday (the Fishbowl)');
+      continue;
+    }
+    const [car, stars, n, wd, task1] = want[d], tasks = Events.tasks(strike, t), C = g.cars.carById(car);
+    const shape = tasks.length === n && tasks[0].task.stars === task1 && tasks[0].task.packs === 1 && tasks[0].limit === 3
+      && (d === 0 ? tasks[1].task.side === 'good' && tasks[2].task.side === 'evil' && tasks[1].task.stars === 2 && tasks[2].task.stars === 2 : tasks[1].task.car === prev[d] && tasks[1].task.packs === 2 && tasks[1].limit === 3)
+      && tasks[n - 1].task.key && tasks[n - 1].task.maxed && tasks[n - 1].task.featured && tasks[n - 1].limit === 1;
+    check(name === wd && Events.live(strike, t) && day.live && day.car === car && C?.concept && C.rating === stars && day.pack === 'concept-strike-' + (d + 1)
+      && featuredOf(day.pack).every(f => f.car.id === car) && c?.words === 'Ends in' && Math.abs(c.at - (t + D - 5 * H)) < 2 * H && Events.state(strike, 0, t).open && shape,
+      'week ' + (week + 1) + ' ' + wd + ': ' + C?.name + ' (' + stars + ' stars), its pack ' + day.pack + ', Ends in at midnight, ' + tasks.map(x => x.words + ' (' + x.reward + ' x' + x.limit + ')').join('; '));
+  }
+  // playing it: Monday of the third run
+  Progress.reset(); Progress.noSave = true; Progress.data.tierBase = 1;
+  const two = g.cars.CARS.find(c => g.cars.carTier(c) === 2), three = g.cars.CARS.find(c => g.cars.carTier(c) === 3);
+  Progress.data.cars.push(two.id, three.id);
+  const P = Progress, held = (k) => (P.data.packs || {})['concept-strike-' + k] || 0;
+  const run = (evil, carId = null) => {
+    if (carId) P.data.car = carId;
+    Events.syncTry(strike);
+    levels.selectSpecial(level);
+    Game.evil = evil;
+    g.cars.useLevelCar(level.car, level.amphibious);
+    if (!Game.canStart) return 'no start';
+    Game.start();
+    const clock = Game.allowed, driven = g.cars.CAR.id, ecu = g.cars.carStats(g.cars.CAR)?.ecu;
+    Game.finish('delivered');
+    Game.toMenu();
+    return { clock, driven, ecu };
+  };
+  const mon = from + 14 * D + 5 * H;
+  at(mon);
+  const goods = [1, 2, 3].map(() => { run(false, two.id); return held(1); });
+  check(goods.join() === '2,4,6', 'Monday, a 2-star car as Good: tasks 1 and 2 pay a pack each (' + goods.join(', ') + ' held)');
+  const evils = [1, 2, 3].map(() => { run(true, two.id); return held(1); });
+  check(evils.join() === '7,8,9', '...as Evil: task 3 only, task 1 at its limit of 3 (' + evils.join(', ') + ')');
+  run(false, two.id); run(true, two.id);
+  check(held(1) === 9 && Events.tasks(strike).slice(0, 3).every(x => x.done && x.count === 3), 'every pack task at its limit: nothing more this run (9 packs)');
+  run(false, three.id);
+  check(held(1) === 9, 'a 3-star car on Monday pays nothing');
+  // the free try: the Fishbowl lent at the player's own ECU (none: ECU1); not maxed, so no key
+  Events.setFreeTry(strike, true);
+  const tryRun = run(false);
+  check(tryRun.driven === 'fishbowl' && tryRun.ecu === 1 && !P.owns('fishbowl') && Events.freeTry(strike)?.ecu === 1, 'the free try: the Fishbowl lent, driven at ECU1 (no blueprints), no key (' + JSON.stringify(tryRun) + ')');
+  Ecu.addBlueprints('fishbowl', 10);
+  check(run(false).ecu === 3 && !P.owns('fishbowl'), '10 blueprints: the free try drives at ECU3; still no key');
+  Ecu.addBlueprints('fishbowl', 10);
+  const maxed = run(true);
+  check(maxed.ecu === Ecu.max(g.cars.carById('fishbowl')) && P.owns('fishbowl') && Events.tasks(strike)[3].done, '20 blueprints: at its max ECU (' + maxed.ecu + ') the free try delivered gives the Fishbowl\'s KEY');
+  Events.setFreeTry(strike, false);
+  check(!level.car && !level.ownEcu, 'the free try off: no car lock again');
+  // Tuesday: the counters start again; the Fishbowl (now owned) pays 2 packs, 3 times
+  at(mon + D);
+  check(Events.tasks(strike).every(x => x.count === 0) && Events.dayOf(strike).car === 'midsummer', 'Tuesday: a new run, every counter at 0, the Midsummer Roadster featured');
+  run(false, two.id);
+  const fish = [1, 2, 3, 4].map(() => { run(false, 'fishbowl'); return held(2); });
+  check(held(1) === 9 && fish.join() === '4,7,9,9', 'Tuesday: a 2-star car 1 pack; the Fishbowl (2 stars too) 2 packs a time, 3 times, and 1 more from task 1 while it has room (' + fish.join(', ') + ' Midsummer packs held)');
+  check(JSON.stringify(P.data.eventRuns['concept-strike']) === JSON.stringify({ day: new Date(mon + D - 5 * H).toISOString().length && Events.window(strike).start && (() => { const x = new Date(Events.window(strike).start); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); })(), n: [3, 3, 0] }),
+    'the save holds the run\'s counters: ' + JSON.stringify(P.data.eventRuns['concept-strike']));
+  // a 5-star day (Saturday): any 5-star car, the Knife-Edge, the Wind-Song's key
+  at(mon + 5 * D);
+  check(Events.dayOf(strike).car === 'windsong' && Events.tasks(strike)[1].task.car === 'knifeedge', 'Saturday: the Wind-Song Racer, task 2 the Knife-Edge');
+  Events.setFreeTry(strike, true);
+  const sat = run(false);
+  check(sat.driven === 'windsong' && held(6) === 1 && !P.owns('windsong'), 'Saturday: the free try (5 stars) pays task 1: a Wind-Song Strike pack');
+  Events.setFreeTry(strike, false);
+  // Sunday: nothing
+  at(mon + 6 * D);
+  const before = JSON.stringify(P.data.packs);
+  run(false, two.id);
+  check(JSON.stringify(P.data.packs) === before && Events.delivered(level, { car: two, ecu: 1, evil: false }) === null, 'Sunday: a delivery pays nothing (no run on)');
+  // the counters survive a save code
+  at(mon + 5 * D); // (Saturday's run: its counters are the save's now, Tuesday's gone)
+  P.noSave = false; P.save(); const code = P.exportCode(); P.data.eventRuns = {}; P.importCode(code);
+  check(P.data.eventRuns?.['concept-strike']?.n?.join() === '1,0,0' && Events.tasks(strike)[0].count === 1, 'the counters come back through a save code (Export / Import save): ' + JSON.stringify(P.data.eventRuns));
 }

@@ -86,6 +86,8 @@ const params = new URLSearchParams(location.search);
 // ?eventsnow=2026-11-05: the events' clock (Events.now) set to that day for the visit (a look at an event over, or not
 // yet open: the menu, the Shop, the showroom's "Where to get it"); nothing saved
 if (params.get('eventsnow')) { const at = eventTime(params.get('eventsnow')); if (Number.isFinite(at)) Events.now = () => at; }
+// ?freetry: a rotating event's featured car (the Concept Strike's) as the free try for the visit (as its card's chip does)
+if (params.has('freetry')) for (const e of Events.specials) if (e.days) Events.setFreeTry(e, true);
 // A visit with any of these is a test, not play: it lends cars and opens levels, so none of it is saved
 // (Progress.noSave: the save stays as it was before the visit, whatever is delivered, bought or counted in it)
 if (['autostart', 'hidden', 'test', 'edited', 'pick', 'car', 'ghost', 'mystery', 'theme', 'beaten', 'owns', 'event'].some(key => params.get(key) !== null)) Progress.noSave = true;

@@ -83,7 +83,7 @@ export const carCard = (car, evil = false) => {
   const preview = carPreview(car); // (the tiers: 'show' | 'teaser' | 'hide' | null)
   // (a blueprint car in no regular pack that an event's pack features, the Car Hunt's Blower Tourer: obtainable from the
   // event, whatever tiers are open: shown in full with its blueprint overlay, never dark nor a tier teaser)
-  const hunt = blueprint && car.noPacks ? huntEventFor(car) : null;
+  const hunt = (blueprint || car.concept) && car.noPacks ? huntEventFor(car) : null; // (and a concept key car: the Concept Strike's, CHECKLIST 211)
   const hidden = !hunt && !unlocked && !owned && bp === 0 && (preview === 'teaser' || preview === 'hide');
   // blacked out: a tier not open yet, or a car that cannot be had at the moment (a key car whose key is not to be had, an earned car that is off) with none owned and no blueprint
   const dark = hidden || (!unlocked && !owned && bp === 0 && ((car.keyAvailable === false && !blueprint) || !!(car.earned && car.off) || !!(blueprint && car.noPacks && !hunt)));
@@ -103,6 +103,7 @@ export const carCard = (car, evil = false) => {
         const level = LEVELS.find(l => l.id === car.earned.level);
         hint = 'Beat the par on ' + (level ? levelName(level) : car.earned.level);
       } else if (EVENT_CARS.includes(car)) hint = 'The key: an event\'s grand prize' + (car.bespoke && !car.noPacks ? ', or a Bespoke card in packs' : '');
+      else if (car.concept && hunt) hint = 'The key: deliver it at its max ECU on its ' + hunt.event.name + ' day' + (hunt.live ? ' (today: a free try)' : ' (back ' + new Date(hunt.next).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ')') + '. Blueprints: its ' + packName(hunt.pack);
       else if (car.bespoke) hint = car.keyAvailable === false || car.noPacks ? 'No key to be had at the moment' : 'The key: a Bespoke card, in card packs';
     }
   }
@@ -157,6 +158,7 @@ export const overlayOf = (card) => {
     const level = car.earned && LEVELS.find(l => l.id === car.earned.level);
     return { kind: 'earned', title: 'Earn it', line: level ? 'Beat par on ' + levelName(level) : 'Earn it on its level' };
   }
+  if (car.concept && card.hunt) return { kind: 'key', title: 'Needs its key', line: (card.hunt.live ? 'Win it in the ' : 'From the ') + card.hunt.event.name }; // (a concept car: CHECKLIST 211)
   return { kind: 'key', title: 'Needs its key', line: EVENT_CARS.includes(car) ? (liveEventFor(car) ? 'Win it in ' + liveEventFor(car) : 'Win it at events') : car.keyAvailable === false ? 'Not available at the moment' : 'Find it in Bespoke packs' };
   // (an event car: the live event by name; else the general line; the other Bespoke cars have no event: packs only)
 };

@@ -2,7 +2,7 @@ import { CONFIG } from './config.js';
 import { LEVEL, LEVEL_INDEX, LEVELS, SCREENSAVER_LEVEL, selectLevel, selectSpecial, nextOnTab, isRace } from './levels.js';
 import { Progress } from './progress.js';
 import { Nav } from './nav.js';
-import { useLevelCar, returnCar, earnedFor, ownedAmphibious, carAllowed, carRule, carStats } from './cars.js';
+import { CAR, useLevelCar, returnCar, earnedFor, ownedAmphibious, carAllowed, carRule, carStats } from './cars.js';
 import { Tiers } from './tiers.js';
 import { Events } from './events.js';
 import { Packs } from './packs.js';
@@ -312,9 +312,10 @@ export const Game = {
     const reward = outcome === 'delivered' && !Replay.playing ? Tiers.claimReward(LEVEL) : '';
     if (reward) resultNote.textContent += '  |  Event reward: ' + reward + '!';
     // a special event's stage delivered: done, and the grand prize after the last (events.js)
-    const staged = outcome === 'delivered' && !Replay.playing ? Events.delivered(LEVEL) : null;
+    const staged = outcome === 'delivered' && !Replay.playing ? Events.delivered(LEVEL, { car: CAR, ecu: carStats(CAR)?.ecu, evil: Player.evil }) : null; // (what it was driven in: a rotating event's tasks)
     if (staged && !staged.repeat) resultNote.textContent += '  |  Stage ' + staged.stage + ' of ' + staged.of + ' done' + (staged.prize ? '  |  You won the ' + staged.prize + '!' : '');
-    if (staged?.repeat) resultNote.textContent += '  |  ' + staged.name + ' run done'; // (a recurring event, played again and again: its pack below, every time)
+    if (staged?.repeat && !staged.tasks) resultNote.textContent += '  |  ' + staged.name + ' run done'; // (a recurring event, played again and again: its pack below, every time)
+    if (staged?.tasks) resultNote.textContent += '  |  ' + staged.name + ': ' + (staged.tasks.length ? staged.tasks.length + (staged.tasks.length > 1 ? ' tasks' : ' task') + ' done' : 'no task left for that car') + (staged.key ? '  |  The ' + staged.key + '\'s KEY!' : ''); // (a rotating event's tasks: events.js payTasks)
     // card packs given (packs.js): a Career level's first delivery, a special event's stage or prize. Opened at once over these
     // results, a beat after they are up (the reveal, render/packs.js)
     const packs = [...(outcome === 'delivered' && !Replay.playing ? [Packs.levelDone(LEVEL, firstTime)] : []), ...(staged?.packs || [])].filter(Boolean);

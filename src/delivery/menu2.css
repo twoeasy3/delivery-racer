@@ -613,3 +613,18 @@
 }
 #startScreen .menu-stage .info .event-ends.next { color: #3fd3ff; } /* (a recurring event between runs: 'Next in', as its event screen said it) */
 #startScreen .menu-stage .cx-road { margin: -2px 0 0; font: 800 13px/1.2 system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); text-shadow: 0 1px 2px #000; }
+/* ---- a ROTATING event's card (the Concept Strike, CHECKLIST 211): the day's tasks under the figures, each with its reward and
+   how often it has paid today (a task paid out: ticked and dimmed); the featured car's Free try chip under its odds ---- */
+#startScreen .cx-tasks { list-style: none; margin: 6px 0 2px; padding: 0; display: flex; flex-direction: column; gap: 3px; max-width: 560px; }
+#startScreen .cx-tasks li { display: flex; justify-content: space-between; gap: 10px; padding: 3px 8px; border-radius: 6px; background: rgba(8, 14, 26, .55); border-left: 3px solid #ffbe2e; font-size: 12px; line-height: 1.25; }
+#startScreen .cx-tasks li.done { opacity: .6; border-left-color: #4fd17a; }
+#startScreen .cx-tasks li.done .cx-task-words::before { content: '✓ '; color: #4fd17a; }
+#startScreen .cx-task-reward { flex: 0 0 auto; font-weight: 700; color: #ffd36b; white-space: nowrap; }
+#startScreen .cx-try { margin-top: 5px; padding: 3px 10px; font-size: 11px; }
+#startScreen .cx-try.on { background: #ffbe2e; color: #1a1406; border-color: #ffbe2e; }
+@media (max-width: 760px) and (min-height: 521px), (max-width: 519px) {
+  #startScreen .cx-tasks li { font-size: 11px; padding: 2px 6px; }
+  #startScreen .menu-stage.has-tasks .desc, #startScreen .menu-stage.has-tasks .needs { display: none; } /* (room for the tasks: the description and the car line go, the tasks say it) */
+  #startScreen .cx-try { font-size: 10px; padding: 2px 7px; }
+}
+@media (max-height: 520px) and (min-width: 520px) { #startScreen .cx-tasks { display: none; } }
