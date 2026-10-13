@@ -61,7 +61,7 @@ const stackChip = (stacks) => (stacks?.length > 1
   ? make('span', 'pc-stacks', ...stacks.map((s, i) => make('span', 'pc-stack' + (s.doubled ? ' doubled' : '') + (i ? ' alt' : ''), percent(s.chance)))) : null); // (just the chance: the stack's size is in the bubble)
 const cardRow = (car, rarity, chance, { key = false, featured = false, note = '', chips = [], exhausted = null, inPool = !exhausted, n = 0, stacks = null } = {}) => {
   const pose = posePick(car.id);
-  const fading = inPool ? stackChip(stacks) : null;
+  const fading = stackChip(stacks); // (an exhausted card cycles its stacks too, the owner, 12-Oct: each at 0%, under the overlay)
   const bubbleN = fading && !key ? 1 : n; // (a card with stacks: the bubble is drawn below with the base amount, then its number fades)
   const { node, pic } = blueprintCard(car, { rarity, key, featured, n: bubbleN }, { compact: true, pose,
     chance: fading || (inPool ? percent(chance) : '0%'), marks: [...chips, ...marks(car, key), note ? make('small', 'pc-note', note) : null].filter(Boolean) });
@@ -82,7 +82,7 @@ const featuredRow = (f, base = 1) => {
   const amount = has !== null ? 'x' + (Array.isArray(has) ? has.join('-') : has) : '';
   const chips = []; // (no "Weight" chip, the owner, 12-Oct: duplicated info; no x3 / x15 chip beside the chance: the badge on the card shows the amount; the chip read as part of the chance, the owner, 12-Oct)
   const out = !f.inPlay;
-  const note = out ? 'out of the pool' : 'last slot ' + percent(f.lastSlot); // (the big figure is its chance a pack)
+  const note = out ? 'out of the pool' : ''; // (no "last slot" note, the owner, 12-Oct)
   return cardRow(f.car, f.rarity, f.chance, { key: f.key, featured: true, chips, note, exhausted: f.exhausted, inPool: !out,
     n: amount ? (Array.isArray(has) ? has[1] : has) : 0 });
 };
@@ -101,11 +101,11 @@ const featuredRows = (list, base = 1) => {
     const sorted = [...entries].sort((x, y) => y.weight - x.weight);
     const live = sorted.filter(f => f.inPlay);
     const first = sorted[0], pool = live.length ? live : sorted;
-    const stacks = pool.map((f, i) => ({ n: f.amount ?? base, chance: f.chance, doubled: i > 0 }));
+    const stacks = pool.map((f, i) => ({ n: f.amount ?? base, chance: live.length ? f.chance : 0, doubled: i > 0 }));
     const any = 1 - pool.reduce((left, f) => left * (1 - f.chance), 1);
     const out = !live.length;
     return cardRow(first.car, first.rarity, any, { featured: true, exhausted: out ? first.exhausted : null, inPool: !out,
-      note: out ? 'out of the pool' : 'last slot ' + percent(pool.reduce((t, f) => t + f.lastSlot, 0)), stacks: out ? null : stacks, n: stacks[0].n });
+      note: out ? 'out of the pool' : '', stacks, n: stacks[0].n });
   });
 };
 
@@ -133,7 +133,7 @@ export const openContents = (host, { kind, title, featured = [] }) => {
     const trio = bannerCars(c.featured);
     const banner = trio ? bannerArt(trio, { className: 'pc-banner', onFail: () => banner.remove() }) : null;
     sections.push(make('section', 'pc-group featured', banner,
-      make('h3', '', make('span', 'shop-chip r-bespoke', 'Featured'), make('small', '', 'Guaranteed one of the following'), make('small', 'pc-sub', '(Larger percentage denotes spread amongst featured items)')),
+      make('h3', '', make('span', 'shop-chip r-bespoke', 'Featured'), make('small', '', 'Guaranteed one of the following')),
       out.length ? make('p', 'pc-shift', make('b', '', 'Weights shifted: '), out.join(', ') + ' out of the pool') : null,
       c.reverted ? null : (out.length && out.length === c.featured.length ? make('p', 'pc-shift', make('b', '', 'Every featured card is had: '), 'the featured slot is an ordinary card, and this pack cannot be bought') : null),
       make('ul', 'pc-list', featuredRows(c.featured, c.baseAmount))));
