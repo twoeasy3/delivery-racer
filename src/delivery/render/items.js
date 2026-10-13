@@ -341,7 +341,10 @@ const rockWay = (o) => {
   };
   const wait = (side) => side < 0 ? lo - o.out : hi + o.out;
   let side = o.side, shape = land;
-  if (o.ledge && land(wait(side)) < R.hill) { // (the level's ledge: straight down off it to the road's edge)
+  // (a ledge is only there where the level has a quarry on that side, whose benches it waits on: a level that
+  // gives a height with nothing drawn there, the Wild West's and the Moon's, gets a crag that tall instead)
+  const ledge = o.ledge && Track.isMain(o.s) && (LEVEL.quarries || []).some(q => (q.side === 'left' ? -1 : 1) === side && o.s >= q.from && o.s <= q.to);
+  if (ledge && land(wait(side)) < R.hill) { // (the level's ledge: straight down off it to the road's edge)
     const from = wait(side), edge = side < 0 ? lo : hi;
     shape = (lat) => o.up * Math.max(0, Math.min(1, (lat - edge) / (from - edge)));
   } else if (land(wait(side)) < R.hill) {
