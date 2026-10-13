@@ -136,7 +136,9 @@ const entryOf = (x) => {
   if (!car || !(weight > 0) || !Number.isFinite(weight)) return null;
   if (x.key && !isBespokeCar(car)) return null;
   if (!x.key && x.amount !== undefined && !amountSound(x.amount)) return null;
-  return { car, weight, key: !!x.key, ...(!x.key && x.amount !== undefined ? { amount: x.amount } : {}) };
+  const slotChance = x.slotChance === undefined ? undefined : Number(x.slotChance);
+  if (slotChance !== undefined && !(slotChance >= 0 && slotChance <= 1)) return null;
+  return { car, weight, key: !!x.key, ...(!x.key && x.amount !== undefined ? { amount: x.amount } : {}), ...(slotChance !== undefined ? { slotChance } : {}) };
 };
 // an entry's amount: a whole number >= 1, or [min, max] of them (as a pack kind's `amount`)
 const amountSound = (v) => (Number.isInteger(v) && v >= 1) || (Array.isArray(v) && v.length === 2 && v.every(n => Number.isInteger(n) && n >= 1) && v[0] <= v[1]);
@@ -174,7 +176,8 @@ export const featuredProblems = (list) => {
       if (x.key && !isBespokeCar(car)) out.push(at + car.id + ' is not a Bespoke key car: it has no key card');
       if (x.amount !== undefined && !amountSound(x.amount)) out.push(at + car.id + ': its amount ' + JSON.stringify(x.amount) + ' is not a whole number of 1 or more, nor [min, max] of them');
       if (x.key && x.amount !== undefined && x.amount !== 1) out.push(at + car.id + ': a key is always one (its amount is not used)');
-      const extra = Object.keys(x).filter(k => !['car', 'weight', 'key', 'amount'].includes(k));
+      if (x.slotChance !== undefined && !(typeof x.slotChance === 'number' && x.slotChance >= 0 && x.slotChance <= 1)) out.push(at + car.id + ': "slotChance" is not a number from 0 to 1');
+      const extra = Object.keys(x).filter(k => !['car', 'weight', 'key', 'amount', 'slotChance'].includes(k));
       if (extra.length) out.push(at + car.id + ': unknown field(s) ' + extra.join(', '));
     }
     const k = obj && x.key ? 'key:' + car.id : car.id + (obj && x.amount !== undefined ? ':' + JSON.stringify(x.amount) : '');
@@ -237,15 +240,16 @@ export const slotShares = (list, c) => {
   const F = list.length;
   if (!F) return [];
   if (F > MAX_EXACT) { const W = list.reduce((n, f) => n + f.weight, 0), any = 1 - (1 - c) ** F; return list.map(f => any * f.weight / W); }
+  const cOf = (f) => c * (f.slotChance ?? 1); // (an entry's own roll on an upgraded slot: slotChance 0 = never rolled there, only the last slot by weight)
   return list.map((f, j) => {
     const others = list.filter((_, k) => k !== j);
     let e = 0;
     for (let mask = 0; mask < 1 << others.length; mask++) {
       let p = 1, w = f.weight;
-      for (let k = 0; k < others.length; k++) { if ((mask >> k) & 1) { p *= c; w += others[k].weight; } else p *= 1 - c; }
+      for (let k = 0; k < others.length; k++) { const ck = cOf(others[k]); if ((mask >> k) & 1) { p *= ck; w += others[k].weight; } else p *= 1 - ck; }
       e += p * f.weight / w;
     }
-    return c * e;
+    return cOf(f) * e;
   });
 };
 // each live entry's chance to be in a pack (and its car's: any of its entries), EXACTLY as draw() deals them: the last slot first (by weight), then each
@@ -357,7 +361,7 @@ export const draw = (kind, { random = Math.random, cars, owned, maxed, featured 
     const { upgradeChance = 0.25, featuredChance = 0.2 } = spec.featured;
     for (let i = 0; i < size - 1; i++) {
       if (!(random() < upgradeChance)) continue;
-      const hits = entries.filter(f => !(f.key && keysOut.has(f.car.id))).filter(() => random() < featuredChance);
+      const hits = entries.filter(f => !(f.key && keysOut.has(f.car.id))).filter(f => random() < featuredChance * (f.slotChance ?? 1));
       if (hits.length) { slots[i] = featuredCard(byWeight(hits)); locked.add(i); continue; }
       const above = have().find(r => rank(r) > rank(slots[i].rarity) && r !== 'bespoke');
       slots[i] = { ...card(above || slots[i].rarity), upgraded: true };

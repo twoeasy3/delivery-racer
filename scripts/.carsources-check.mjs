@@ -70,7 +70,7 @@ try {
   const hunt = ofHow(s.keys, 'event')[0];
   check(hunt?.available && hunt.where === 'The Comet Hunt' && /ends 1 Nov/.test(hunt.detail), 'while the Comet Hunt is on: its key is the grand prize (' + hunt?.detail + ')');
   const keyPacks = ofHow(s.keys, 'pack');
-  check(keyPacks.every(x => !(x.chance > 0 && x.available)), 'no regular pack holds its key (noPacks): ' + (keyPacks.map(x => x.where).join('; ') || 'none listed'));
+  check(keyPacks.every(x => x.kind === 'comet-special') && keyPacks.some(x => x.kind === 'comet-special' && x.chance > 0.004 && x.chance < 0.006), 'no regular pack holds its key (noPacks): only the Comet Hunt special, about 0.5% a pack (' + (keyPacks.map(x => x.where + ' ' + (x.chance * 100).toFixed(2) + '%').join('; ') || 'none listed') + ')');
   const rf = sourcesOf(by('rocketfin')), rfKeys = ofHow(rf.keys, 'pack');
   check(rfKeys.length >= 1 && rfKeys.every(x => x.rarity === 'bespoke' && x.chance > 0 && x.available) && rfKeys.map(x => x.kind).sort().join() === 'daily,standard,ten',
     'another Bespoke key car (the Rocket Fin Coupe): its key in the packs with keys: ' + rfKeys.map(x => x.where + ' ' + x.detail.split(':')[0]).join('; '));
@@ -85,7 +85,7 @@ try {
   const over = ofHow(s.keys, 'event')[0], spOver = s.blueprints.find(x => x.kind === 'comet-special');
   check(over && !over.available && /^Event over \(ended 1 Nov\)/.test(over.why), 'the event over: the prize is not obtainable (' + over?.why + ')');
   check(spOver && !spOver.available && spOver.ways.every(w => !w.available) && /Event over/.test(spOver.why), '...nor its special pack, from the stages or the Shop (' + spOver?.why + ')');
-  check(ofHow(s.keys, 'pack').every(x => x.available), '...its key still in the packs with keys (bought in the Shop)');
+  check(ofHow(s.keys, 'pack').every(x => !x.available), '...and the key from its special pack goes with the event');
   at(BEFORE);
   s = sourcesOf(comet);
   check(/^Not yet open: starts 1 Oct/.test(ofHow(s.keys, 'event')[0]?.why || ''), 'before the event: "' + ofHow(s.keys, 'event')[0]?.why + '"');

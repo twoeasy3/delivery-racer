@@ -44,7 +44,7 @@
       "event": "comet-hunt",
       "featured": {
         "upgradeChance": 0.25, "featuredChance": 0.2,
-        "entries": [ { "car": "silvercomet", "weight": 9, "amount": 3 }, { "car": "silvercomet", "weight": 1, "amount": 15 } ]
+        "entries": [ { "car": "silvercomet", "weight": 9, "amount": 3 }, { "car": "silvercomet", "weight": 1, "amount": 15 }, { "car": "silvercomet", "key": true, "weight": 0.0503, "slotChance": 0 } ]
       },
       "shop": { "section": "featured", "price": 450, "ribbon": "featured" },
       "givenBy": { "event": { "stage": true, "prize": true } }

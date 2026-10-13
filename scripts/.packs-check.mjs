@@ -115,7 +115,7 @@ try {
   Progress.reset(); Progress.noSave = true;
   check(Packs.grant('career') === 'Career pack' && Packs.grant('comet-special') && Packs.grant('ten', { n: 2 }) && Packs.grant('nonsense') === '', 'packs granted (and an unknown kind refused)');
   check(Packs.count('career') === 1 && Packs.count('comet-special') === 1 && Packs.count('ten') === 2 && Packs.total() === 4 && Packs.held().length === 3, 'held: ' + JSON.stringify(Progress.data.packs));
-  check(featuredOf('comet-special').map(f => f.car.id + ' x' + f.amount + ' w' + f.weight).join() === 'silvercomet x3 w9,silvercomet x15 w1', 'the Comet Hunt\'s featured entries: the pack\'s own featured.entries (' + featuredOf('comet-special').map(f => f.car.id + ' x' + f.amount + ' w' + f.weight) + ')');
+  check(featuredOf('comet-special').map(f => f.car.id + (f.key ? ' key' : ' x' + f.amount) + ' w' + f.weight).join() === 'silvercomet x3 w9,silvercomet x15 w1,silvercomet key w0.0503', 'the Comet Hunt\'s featured entries: the pack\'s own featured.entries (' + featuredOf('comet-special').map(f => f.car.id + ' x' + f.amount + ' w' + f.weight) + ')');
   const before = { ...(Progress.data.blueprints || {}) };
   const res = Packs.open('comet-special', { random: dice(7) });
   const added = {};
@@ -278,7 +278,7 @@ try {
     check(exact, kind + ': the cards listed are the pool exactly (' + c.total + ' cards: ' + c.groups.map(gr => gr.rarity + ' ' + gr.cards.length).join(', ') + ')');
     check(sums.every(([, sum, share]) => near(sum, share)) && near(c.odds.reduce((n, o) => n + o.share, 0), 1) && shares,
       kind + ': each rarity\'s cards add up to its share of the odds (' + sums.map(([r, sum]) => r + ' ' + (sum * 100).toFixed(2) + '%').join(', ') + ')');
-    check(Packs.data.packs[kind].featured ? c.featured.length === feats.length && feats.length > 0 && c.featured.every(f => f.chance >= f.lastSlot - 1e-12 && f.chance <= 1 + 1e-12 && f.rarity === featuredRarity(f.car))
+    check(Packs.data.packs[kind].featured ? c.featured.length === feats.length && feats.length > 0 && c.featured.every(f => f.chance >= f.lastSlot - 1e-9 && f.chance <= 1 + 1e-12 && f.rarity === (f.key ? 'bespoke' : featuredRarity(f.car)))
       : c.featured.length === 0, kind + ': featured cards ' + (Packs.data.packs[kind].featured ? c.featured.map(f => f.car.id + ' ' + (f.chance * 100).toFixed(1) + '% a pack').join(', ') : 'none'));
   }
   // the featured chance, against packs drawn: about what contents() says
@@ -445,7 +445,7 @@ try {
       check(fc.every(o => Math.abs(o.chance - (1 - (1 - o.lastSlot) * (1 - o.slot) ** 4)) < 1e-12), 'with no key the exact chance is 1 - (1 - w/W)(1 - q)^(size - 1)');
     }
     // amounts: the Comet Hunt's x3 at 9 and x15 at 1: the last slots about 9:1, the slot's n 3 or 15
-    const comet = featuredOf('comet-special');
+    const comet = featuredOf('comet-special').filter(f => !f.key); // (the key entry, 0.5% of the spread, is checked on its own below)
     const t5 = tally(comet, 15e6);
     const r = (t5.last['silvercomet:3'] || 0) / Math.max(1, t5.last['silvercomet:15'] || 0);
     check(Math.abs(share(t5, 'silvercomet:3') - 0.9) < 0.015 && r > 7.5 && r < 11 && [...t5.ns].every(n => n === 3 || n === 15),
@@ -479,10 +479,13 @@ try {
       && !Packs.featuredExhausted(null, []) && Packs.featuredExhausted(null, comet, { maxed: maxComet, owned: none }),
       'Packs.featuredExhausted: true only when every entry is exhausted (a list with none: false)');
     // the debug marks (?maxed= / ?owned=) count, for the visit
-    P.debugMarks(new URLSearchParams('maxed=silvercomet&owned=rocketfin'));
+    P.debugMarks(new URLSearchParams('maxed=silvercomet&owned=rocketfin,silvercomet')); // (the Comet Hunt pack also has the Silver Comet's key: exhausted once that is owned too)
     check(Packs.featuredExhausted('comet-special') && P.ownsNow('rocketfin') && P.maxedNow(by('silvercomet')), 'the debug marks (&maxed=silvercomet&owned=rocketfin) count as maxed / owned');
     P.debugMarks(new URLSearchParams(''));
     check(!Packs.featuredExhausted('comet-special') && !P.ownsNow('rocketfin'), '...and are gone when cleared');
+    { const spec = featuredOf('comet-special'), key = spec.find(f => f.key), total = spec.reduce((n, f) => n + f.weight, 0), cf = contents('comet-special', { featured: spec }).featured.find(f => f.key);
+      check(!!key && key.car.id === 'silvercomet' && key.slotChance === 0 && Math.abs(key.weight / total - 0.005) < 1e-4 && !!cf && Math.abs(cf.chance - 0.005) < 2e-4,
+        'the Comet Hunt pack: the Silver Comet KEY is 0.5% of the featured spread (' + (key ? (100 * key.weight / total).toFixed(3) : '?') + '%), never rolled on an upgraded slot, so about 0.5% a pack (' + (cf ? (cf.chance * 100).toFixed(3) : '?') + '%)'); }
     // the debug list: id[!key][:weight[xamount]]
     const dbg = P.debugFeatured(new URLSearchParams('featured=silvercomet:9x3,silvercomet:1x15,rocketfin:1,rocketfin!key:2'));
     check(dbg.map(f => (f.key ? 'key:' : '') + f.car.id + ':' + f.weight + (f.amount ? 'x' + f.amount : '')).join() === 'silvercomet:9x3,silvercomet:1x15,rocketfin:1,key:rocketfin:2',
