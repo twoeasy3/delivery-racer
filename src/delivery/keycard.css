@@ -36,3 +36,5 @@
 .key-sheet-views { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
 .key-sheet-pic.small { aspect-ratio: 1 / 1.1; }
 .key-sheet-pic.small::after { content: attr(data-label); position: absolute; left: 6px; top: 4px; font-size: 11px; color: #5b6271; }
+.key-sheet.cards .key-sheet-row { grid-template-columns: repeat(auto-fill, 110px); }
+.key-sheet.cards figcaption { font-size: 10px; }
