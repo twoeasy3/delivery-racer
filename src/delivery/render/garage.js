@@ -22,6 +22,8 @@ import { showComparison } from './compare.js';
 import { IdeasLot } from './ideaslot.js';
 import { ask, tell } from './dialog.js';
 import { sourcesLine } from '../carsources.js';
+import { IDEA_CARS } from '../ideas.js';
+import { Inspector } from './inspector.js';
 
 // The lot: three rows of bays, a long covered garage along the back, the cars parked strictly column by
 // column in order of their stars and price, cheapest first (one with no stars, the Tank, last), and in
@@ -198,6 +200,7 @@ const action = document.getElementById('garageAction');
 const ruleBanner = document.getElementById('garageRule');
 const whyEl = document.getElementById('garageWhy');
 const useBtn = document.getElementById('garageUse');
+const inspectBtn = document.getElementById('garageInspect');
 const startScreen = document.getElementById('startScreen');
 const money = (amount) => '$' + amount.toFixed(2);
 // (the figures of the ECU it has, or would have once its key or blueprints are had: ecu.js; and that ECU of its max)
@@ -295,7 +298,21 @@ const refresh = () => {
     if (car === looking) lookRing.position.set(mesh.position.x, 0.12, mesh.position.z);
   }
   if (IdeasLot.on) IdeasLot.refresh(); // (the "Car ideas" tab: its own words, and its ideas in the livery on show)
+  syncInspect();
 };
+// The "Inspect" button (render/inspector.js: the model full screen, to turn round and judge): the car looked at (on the
+// Car ideas tab, the idea tapped; on the lot, the car shown, the one in use until another is tapped). Not a silhouette of
+// the next tier, nor the dark stand-in for a car the level allows
+const inspectable = () => {
+  const car = IdeasLot.on ? IdeasLot.looking : looking || carInUse();
+  return car && !isTeaser(car) && !car.silhouette ? car : null;
+};
+const syncInspect = () => {
+  const car = inspectable();
+  inspectBtn.style.display = car ? '' : 'none';
+  inspectBtn.title = car ? 'Look round the ' + car.name + '’s model, full screen' : '';
+};
+inspectBtn.addEventListener('click', () => { const car = inspectable(); if (car) Garage.inspect(car.id); });
 
 // the band of the screen the lot is drawn in: under the bar, over the words and buttons at the bottom. What is in
 // the flow of the bottom block counts (the comparison card of a wide screen floats at its corner and does not). Measured
@@ -455,7 +472,7 @@ mountGarageView(() => garageCars(), () => {
 });
 // the "Garage" and "Car ideas" tabs: the second lot is render/ideaslot.js's
 // (inUse: the id of the car in use; side: true when Evil is the side being played)
-IdeasLot.mount({ barred: (car) => { const rule = carRule(Garage.evil); return ruleAllows(rule, car) ? null : ruleReason(rule); }, evil: () => Garage.evil, back: refresh, inUse: () => Progress.data.car, side: () => Game.evil });
+IdeasLot.mount({ changed: () => syncInspect(), barred: (car) => { const rule = carRule(Garage.evil); return ruleAllows(rule, car) ? null : ruleReason(rule); }, evil: () => Garage.evil, back: refresh, inUse: () => Progress.data.car, side: () => Game.evil });
 document.getElementById('garageBackBtn').addEventListener('click', () => Garage.close());
 // why a car is not allowed on the level picked (its car rule: a tier, or the level's own list), as nodes
 const ruleReason = (rule) => !rule ? ['Not allowed on this level'] : rule.tier ? ['Not allowed on this level: needs ', tierStarsNode(rule.tier)]
@@ -515,6 +532,7 @@ export const Garage = {
     measure();
   },
   close() {
+    Inspector.close(); // (the model inspector over it goes first)
     Nav.leave('garage');
     setViewSide(null); // (the car rule goes by the side being played again)
     // a different car: tell the rest of the game (the player gets into it when a run starts)
@@ -536,6 +554,18 @@ export const Garage = {
     if (name === 'ideas') IdeasLot.enter();
     else if (IdeasLot.on) { IdeasLot.leave(); refresh(); }
   },
+  // the model inspector (render/inspector.js) on the car with this id: an idea (its previous / next: every idea, in the
+  // list's order) or a car of the lot (its cars as parked); evil: the livery (the garage's on show, unless told). Closing
+  // it leaves that car looked at, on its own tab. ?garage&tab=ideas&inspect=<id>[&evil] (main.js). False: no such car
+  inspect(id, evil = this.evil) {
+    const idea = IDEA_CARS.find(car => car.id === id), lot = order.filter(car => car && !isTeaser(car) && !car.silhouette);
+    const car = idea || lot.find(c => c.id === id) || (looking?.id === id ? looking : null) || (carInUse().id === id ? carInUse() : null);
+    if (!car || isTeaser(car) || car.silhouette) return false;
+    return Inspector.open(car, { list: idea ? IDEA_CARS : lot, evil, kind: idea ? 'ideas' : 'cars', done: (shown) => {
+      if (!this.isOpen) return;
+      if (IDEA_CARS.includes(shown)) { if (!IdeasLot.on) IdeasLot.enter(); IdeasLot.look(shown.id); } else this.look(shown.id);
+    } });
+  },
   // for testing: look at the car with this id, as if it had been tapped (its stats, and the comparison card)
   look(carId) {
     if (IdeasLot.on) return IdeasLot.look(carId);
@@ -548,6 +578,7 @@ export const Garage = {
     hovered = parked.find(mesh => mesh.userData.car.id === carId) || null;
   },
   render(now) {
+    if (Inspector.isOpen) return; // (the model inspector covers it: nothing of the lot is drawn under it)
     if (IdeasLot.on) return IdeasLot.render(now); // (the Car ideas tab draws its own lot)
     const canvas = renderer.domElement;
     // (the lot is drawn in the band between the bar and the words and buttons under it, never behind them: the

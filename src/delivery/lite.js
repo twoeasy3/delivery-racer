@@ -39,12 +39,12 @@ if (LITE.size && typeof document !== 'undefined') {
   if (document.body) badge(); else addEventListener('DOMContentLoaded', badge, { once: true });
 }
 
-// A SHEET COVERS THE MENU (What's inside, the pack reveal): <html> gets `sheet-up`, and lite.css pauses the menu's and the
+// A SHEET COVERS THE MENU (What's inside, the pack reveal; the model inspector, render/inspector.js, over the garage): <html> gets `sheet-up`, and lite.css pauses the menu's and the
 // Shop's animations under it; the menu stage's 3D car stops drawing (menustage.js asks sheetUp()). Not a lite switch:
 // always on (nothing under the sheet's dim moves for nobody to see; it all carries on where it was once the sheet closes).
 let up = false;
 export const sheetUp = () => {
-  const now = !!document.querySelector('.pack-contents, .pack-reveal:not(.hidden)');
+  const now = !!document.querySelector('.pack-contents, .pack-reveal:not(.hidden), #inspector:not(.hidden)');
   if (now !== up) document.documentElement.classList.toggle('sheet-up', up = now);
   return now;
 };
