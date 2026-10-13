@@ -2,7 +2,7 @@
 // roster (the showroom's: garage cars, the blueprint fillers, the Bespoke key cars, event and earned cars; and every car
 // idea of the ideas lot) is built as the showroom builds it (render/showcar.js makeShowCar), its parts sorted once into
 // wheels (held on the floor), squashed parts (on the floor, stretched upright) and the sprung body, and then landed at
-// the bounce's compression (0.16 s) and rebound (0.31 s) peaks: the lowest point of its wheels must not move (planted),
+// the bounce's compression and rebound peaks: the lowest point of its wheels must not move (planted),
 // and its body must move by about the bounce's offset (down, then up). Each car is listed with what was found and how
 // (wheels / wheels+squash / named; none: a vehicle with no springs, which does not bounce at all). No picture: what it looks like is only seen in a browser
 // (?showroom&look=<id>&full&bounce=0.16).
@@ -48,9 +48,10 @@ try {
       'the roster: every garage, filler, Bespoke and event car, every earned car that is on, and the ideas (' + cars.length + ' cars)');
   }
   // the bounce: its compression and rebound peaks, and the free fall (wheels and all)
-  const down = bounceOffset(0.16), up = bounceOffset(0.31), fall = bounceOffset(0.05), rest = bounceOffset(2);
+  const TD = Math.sqrt(2 * DROP / 9.81) + 0.0735, TU = TD + 0.147; // (the first dip, the rebound after it: a quarter and three quarters of the spring's 0.294 s turn, after the fall)
+  const down = bounceOffset(TD), up = bounceOffset(TU), fall = bounceOffset(0.05), rest = bounceOffset(2);
   check(down.y < -0.025 && down.wheelY === 0 && up.y > 0.01 && up.wheelY === 0 && fall.wheelY === fall.y && fall.y > 0 && !rest.y && !rest.wheelY,
-    'the bounce: falls ' + DROP + ' m wheels and all, then the body alone: down ' + down.y.toFixed(3) + ' m (0.16 s), up ' + up.y.toFixed(3) + ' m (0.31 s), still at rest');
+    'the bounce: falls ' + DROP + ' m wheels and all, then the body alone: down ' + down.y.toFixed(3) + ' m (' + TD.toFixed(2) + ' s), up ' + up.y.toFixed(3) + ' m (' + TU.toFixed(2) + ' s), still at rest');
   check(bounceOffset(0.16, true).y === 0 && bounceOffset(0.16, true).wheelY === 0, 'reduced motion (and a locked silhouette): no motion');
   // a car's parts, as the showroom has them (the turntable at the origin): their lowest point, and the mean of their middles
   const measure = (meshes) => {
@@ -86,10 +87,10 @@ try {
     tally[s.how] = (tally[s.how] || 0) + 1;
     if (s.how === 'none') noWheels.push(car.id);
     const planted0 = s.how === 'none' || !planted.length || Math.abs(d.w - r.w) < 1e-4 && Math.abs(u.w - r.w) < 1e-4 && Math.abs(f.w - r.w - fall.y) < 1e-4;
-    // the body: its middle down and up by the offset (as eased by a low body's bump stop), and never into the floor; one
+    // the body: its middle down and up by the offset (as eased by a low body's bump stop: a dip bigger than its clearance is held short of the floor), and never into the floor; one
     // with no springs (no wheels on the floor, or its model's noBounce) not moved at all
     const body0 = s.how === 'none' ? [d, u, f].every(x => x.b === r.b && x.m === r.m && x.w === r.w && !x.y && !x.pitch)
-      : Math.abs(d.m - r.m - d.y) < 0.012 && Math.abs(u.m - r.m - u.y) < 0.012 && d.y < -0.003 && u.y > 0.01 && d.b > -0.002;
+      : (Math.abs(d.m - r.m - d.y) < 0.012 || (d.m - r.m > d.y && d.m - r.m < -0.003)) && Math.abs(u.m - r.m - u.y) < 0.012 && d.y < -0.003 && u.y > 0.01 && d.b > -0.002;
     const back0 = Math.abs(r1.w - r.w) < 1e-6 && Math.abs(r1.b - r.b) < 1e-6 && s.planted.every(node => node.matrixAutoUpdate);
     const line = car.id.padEnd(16) + ' ' + s.how.padEnd(13) + ' wheels ' + String(s.wheels).padStart(2) + ', planted ' + String(s.planted.length).padStart(2)
       + ' nodes (' + planted.length + ' meshes), squashed ' + s.squash.length + ', sprung ' + sprung.length + ' | body travel ' + (d.m - r.m).toFixed(3) + ' / +' + (u.m - r.m).toFixed(3)
