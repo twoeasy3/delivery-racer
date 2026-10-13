@@ -14,7 +14,8 @@
 // (as showroomview.js does), at the screen's pixels at most twice over and never more than about 3 million. A frame is
 // drawn only when something moved (a drag, a glide, the slow turn, a new size); the loop runs only while it is open, and
 // the renderer's canvas is given back its size when it closes. While it is up the garage's lot is not drawn at all
-// (Garage.render asks Inspector.isOpen) and <html> has `sheet-up` (lite.js: what is under it stops animating).
+// (Garage.render asks Inspector.isOpen) and <html> has `sheet-up` (lite.css: what is under it stops animating; set here,
+// not in lite.js, which is in the replays' rules fingerprint: vite.config.js logicFiles).
 //   ?garage&tab=ideas&inspect=<idea id>[&evil][&view=front|rear|left|right|top|34]   opens it on that idea (main.js)
 //   ?garage&inspect=<car id>                                                          a car of Crazey Jim's lot
 import * as THREE from 'three';
@@ -24,7 +25,8 @@ import { sharedRenderer, stillViews, STILL } from './modelviews.js';
 import { buildInspectModel, paintInspectModel, countModel, sizeWords } from './inspectmodel.js';
 
 const FOV = 30, LIFT = 0.32, AUTO = 0.28; // (deg the camera sees up and down; rad it looks down from at rest; rad/s turning by itself)
-const PITCH = [0, 1.5], ZOOM = [0.35, 2.4], MAX_PIXELS = 3e6;
+const PITCH = [0, 1.5], ZOOM = [0.42, 2.4], MAX_PIXELS = 3e6;
+const ORDER = ['front', 'rear', 'left', 'right', 'top', '34']; // (the buttons' order: an object's keys put '34' first)
 // the views (yaw: rad the camera is round from the car's front, toward its left; pitch: rad above level). The cars face +z
 export const VIEWS = {
   front: { name: 'Front', yaw: 0, pitch: 0.12 },
@@ -102,14 +104,16 @@ const mountUi = () => {
   const side = el('span', 'ins-side', good, evil);
   side.setAttribute('role', 'group'); side.setAttribute('aria-label', 'Livery');
   const prev = button('ins-arrow ins-prev', '‹', 'Previous car'), next = button('ins-arrow ins-next', '›', 'Next car');
-  const views = el('div', 'ins-views', ...Object.entries(VIEWS).map(([id, v]) => { const b = button('', v.name, v.name + ' view'); b.dataset.view = id; return b; }));
-  const stats = el('div', 'ins-stats'), hint = el('div', 'ins-hint', 'Drag to turn  ·  pinch or wheel to zoom  ·  double-tap to reset');
-  root = el('div', 'overlay inspector hidden', stage, el('div', 'ins-top', back, title, side), prev, next, el('div', 'ins-bottom', views, stats, hint));
+  const views = el('div', 'ins-views', ...ORDER.map((id) => { const v = VIEWS[id]; const b = button('', v.name, v.name + ' view'); b.dataset.view = id; return b; }));
+  const stats = el('div', 'ins-stats'), hint = el('div', 'ins-hint', window.matchMedia?.('(pointer: coarse)').matches
+    ? 'Drag to turn  ·  pinch to zoom  ·  double-tap to reset' : 'Drag to turn  ·  wheel to zoom  ·  double-click to reset');
+  const top = el('div', 'ins-top', back, title, side), bottom = el('div', 'ins-bottom', views, stats, hint);
+  root = el('div', 'overlay inspector hidden', stage, top, prev, next, bottom);
   root.id = 'inspector';
   root.setAttribute('role', 'dialog');
   root.setAttribute('aria-label', 'Model inspector');
   document.body.append(root);
-  ui = { stage, ctx: stage.getContext('2d'), back, title, good, evil, prev, next, views, stats, hint };
+  ui = { stage, ctx: stage.getContext('2d'), top, bottom, back, title, good, evil, prev, next, views, stats, hint };
   back.addEventListener('click', () => Inspector.close());
   good.addEventListener('click', () => Inspector.side(false));
   evil.addEventListener('click', () => Inspector.side(true));
@@ -208,11 +212,17 @@ const draw = (now) => {
   if (ui.stage.width !== w || ui.stage.height !== h) { ui.stage.width = w; ui.stage.height = h; dirty = true; }
   if (!moving && !dirty) return; // (nothing moved: the picture stands)
   dirty = false;
-  // the camera: far enough back for the whole car at any turn (by the narrower of the picture's two spans), times the zoom
-  const aspect = r.width / r.height, vHalf = THREE.MathUtils.degToRad(FOV / 2), hHalf = Math.atan(Math.tan(vHalf) * aspect);
-  const fit = v.radius / Math.sin(Math.min(vHalf, hHalf)) * 1.02, d = fit * cur.zoom;
+  // the camera: far enough back for the whole car at any turn (in the picture's width and its height), times the zoom
+  // (framed to the band between the bar on top and the buttons under it, not the whole screen: on a short screen the car
+  // never sits under them. The picture is still drawn to the whole screen, the view offset so the band's middle is the car's)
+  const top = Math.max(0, ui.top.getBoundingClientRect().bottom - r.top + 4), foot = Math.min(r.height, ui.bottom.getBoundingClientRect().top - r.top - 4);
+  const band = foot - top > r.height * 0.4 ? { top, height: foot - top } : { top: 0, height: r.height };
+  const aspect = r.width / band.height, vHalf = THREE.MathUtils.degToRad(FOV / 2), hHalf = Math.atan(Math.tan(vHalf) * aspect);
+  // (across, the near end of a long car looks bigger: room to spare; up and down, a low car never fills its sphere: less)
+  const fit = Math.max(v.radius / Math.sin(hHalf) * 1.08, v.radius / Math.sin(vHalf) * 0.9), d = fit * cur.zoom;
   const target = new THREE.Vector3(0, v.height * 0.42, 0), cp = Math.cos(cur.pitch);
   camera.aspect = aspect;
+  camera.setViewOffset(r.width, band.height, 0, -band.top, r.width, r.height);
   camera.near = Math.max(0.02, d - v.radius * 3) * 0.25;
   camera.far = d + v.radius * 8 + 50;
   camera.position.set(Math.sin(cur.yaw) * cp * d, target.y + Math.sin(cur.pitch) * d, Math.cos(cur.yaw) * cp * d);
@@ -322,7 +332,7 @@ export const Inspector = {
     if (!open) {
       open = true;
       root.classList.remove('hidden');
-      document.documentElement.classList.add('inspecting');
+      document.documentElement.classList.add('inspecting', 'sheet-up'); // (sheet-up: lite.css pauses what is under it)
       document.body.classList.add('inspecting');
       Nav.enter('inspect', () => this.close());
       const r = sharedRenderer();
@@ -340,6 +350,7 @@ export const Inspector = {
     Nav.leave('inspect');
     root.classList.add('hidden');
     document.documentElement.classList.remove('inspecting');
+    if (!document.querySelector('.pack-contents, .pack-reveal:not(.hidden)')) document.documentElement.classList.remove('sheet-up'); // (as lite.js sheetUp would have it)
     document.body.classList.remove('inspecting');
     held.clear(); pinch = null;
     const shown = car;

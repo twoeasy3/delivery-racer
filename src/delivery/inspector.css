@@ -54,7 +54,7 @@
   #inspector .ins-side button { padding: 0 11px; }
   #inspector .ins-views { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 360px; }
   #inspector .ins-stats { font-size: 12px; }
-  #inspector .ins-arrow { width: 40px; min-height: 56px; top: 44%; }
+  #inspector .ins-arrow { width: 40px; min-height: 56px; top: 24%; } /* (above the car, in the empty sky: never over it) */
 }
 /* a short screen (a phone on its side): the views in one row, the hint dropped */
 @media (max-height: 480px) {
