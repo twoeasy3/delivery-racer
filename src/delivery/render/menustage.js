@@ -16,7 +16,7 @@ import { LEVELS, LEVEL, selectLevel, selectSpecial, levelLabel, MAIN_LEVELS, AMP
 import { levelName, levelDescription } from '../levelText.js';
 import { cargoFor } from '../cargo.js';
 import { cargoCircleView } from './cargoview.js';
-import { CARS, CAR, useLevelCar, earnedFor, amphibiousCars, stars, starColour, carById, listRule } from '../cars.js';
+import { CARS, CAR, useLevelCar, earnedFor, amphibiousCars, stars, starColour, carById, listRule, ruleAllows } from '../cars.js';
 import { Progress } from '../progress.js';
 import { Tiers, tierStarsNode, richTiers } from '../tiers.js';
 import { Events } from '../events.js';
@@ -676,7 +676,7 @@ const eventPanel = (event, picked, evil) => {
   }
   const cards = event.stages.map((stage) => {
     const rule = !stage.car && stage.level?.allowedCars ? listRule(stage.level) : null; // (a rule of its own: the Car Hunt's 3-star cars)
-    const st = Events.state(event, stage.index), car = stage.car ? carById(stage.car) : rule && stage.level === LEVEL && !CAR.silhouette ? CAR : carById(Progress.data.car) || CAR, view = make('div', 'event-car'); // (any car: the player's own, not one a picked stage lends; under a rule, the car the rule puts them in)
+    const st = Events.state(event, stage.index), car = stage.car ? carById(stage.car) : rule && stage.level === LEVEL && !CAR.silhouette ? CAR : rule ? [carById(Progress.data.car), ...Progress.data.cars.map(carById)].find(c => c && ruleAllows(rule, c)) || carById(Progress.data.car) || CAR : carById(Progress.data.car) || CAR, view = make('div', 'event-car'); // (any car: the player's own, not one a picked stage lends; under a rule, the car the rule puts them in)
     const owned = stage.car && Progress.owns(stage.car);
     const badge = stage.free ? make('span', 'event-badge free', 'Free try') : stage.car ? make('span', 'event-badge ' + (owned ? 'owned' : 'needed'), (owned ? '✔ ' : '🔒 ') + car.name)
       : rule ? make('span', 'event-badge rule', ...richTiers(rule.label), ' only') : make('span', 'event-badge any', 'Any car');
@@ -817,6 +817,17 @@ document.getElementById('buildTag').textContent = buildLabel(); // (the build, i
 document.getElementById('menuKeys').replaceChildren(...[['← →', 'Level'], ['↑ ↓', 'Group'], ['T', 'Tab'], ['E', 'Good / Evil'], ['G', 'Showroom'], ['I', 'On this road'], ['O', 'Options'], ['Enter', 'Start']]
   .map(([key, does]) => make('span', '', make('kbd', '', key), does)));
 
+// ?event=car-hunt (main.js, after ?eventsnow= has set the events' clock): that special event's screen, on the stage to play
+// next (a recurring one's only stage), for a look; nothing is saved by it
+export const showEvent = (id) => {
+  const event = Events.specials.find(e => e.id === String(id));
+  if (!event) return false;
+  buildDeliveryTab();
+  const level = (Events.next(event) || event.stages[event.stages.length - 1])?.level;
+  if (!level || !TABS.delivery.list.includes(level)) return false;
+  show(level);
+  return true;
+};
 // ---- for a picture (see the top of the file) -------------------------------------------------------------
 if (params.get('tab') === 'races') { tab = 'race'; cursor = TABS.race.list[0]; if (!isRace(LEVEL)) { selectLevel(LEVELS.indexOf(cursor)); useLevelCar(cursor.car, cursor.amphibious); } } // (?tab=races: the menu opens on the races, for a check)
 if (params.get('side') === 'evil') Game.evil = true; // (not saved)

@@ -67,6 +67,8 @@ import './render/shop.js'; // (the Shop: card packs for a placeholder currency, 
 import './horn.js';
 import { Garage } from './render/garage.js';
 import { Events, when as eventTime } from './events.js';
+import { showEvent } from './render/menustage.js';
+import { Delivery } from './delivery.js';
 import { Showroom } from './render/showroom.js';
 import { ShowroomView } from './render/showroomview.js';
 import { Sound } from './render/audio.js';
@@ -86,7 +88,7 @@ const params = new URLSearchParams(location.search);
 if (params.get('eventsnow')) { const at = eventTime(params.get('eventsnow')); if (Number.isFinite(at)) Events.now = () => at; }
 // A visit with any of these is a test, not play: it lends cars and opens levels, so none of it is saved
 // (Progress.noSave: the save stays as it was before the visit, whatever is delivered, bought or counted in it)
-if (['autostart', 'hidden', 'test', 'edited', 'pick', 'car', 'ghost', 'mystery', 'theme', 'beaten', 'owns'].some(key => params.get(key) !== null)) Progress.noSave = true;
+if (['autostart', 'hidden', 'test', 'edited', 'pick', 'car', 'ghost', 'mystery', 'theme', 'beaten', 'owns', 'event'].some(key => params.get(key) !== null)) Progress.noSave = true;
 // ?beaten=expressway,back-roads:evil,farm:both and ?owns=lovebus,wagon&money=500: a state to look at (the level tiers:
 // medals are best times; nothing is saved). A level listed alone is a Good medal.
 if (params.get('beaten')) {
@@ -108,6 +110,16 @@ if (params.get('pick')) {
   selectLevel(Number(params.get('pick')) - 1);
   window.dispatchEvent(new Event('carchange')); // (the menu draws itself again)
   if (params.get('start') !== null) Game.start();
+}
+// ?event=car-hunt shows that special event's screen in the menu, on its next stage (render/menustage.js showEvent; with
+// &eventsnow= as the events' clock: a recurring one between its runs), for a look: nothing is saved. Before ?showroom,
+// so a showroom opened with it has the stage's car rule (its imposed filter)
+if (params.get('event')) showEvent(params.get('event'));
+// &deliver (with ?event=): the stage started and delivered at once, for a picture of its results (and the pack it gives
+// opening over them); nothing is saved
+if (params.get('event') && params.get('deliver') !== null && Game.canStart) {
+  Game.start(); Game.finish('delivered');
+  const skip = setInterval(() => { if (!Delivery.active || Delivery.skip()) clearInterval(skip); }, 250); // (the kerb's scene skipped, as a key would)
 }
 // ?garage (or ?garage=evil) opens the garage; with it, ?hover=darkvan shows that car's tooltip.
 if (params.get('garage') !== null) {

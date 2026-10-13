@@ -414,14 +414,14 @@
 #startScreen .event-rule { display: inline-flex; align-items: center; gap: 4px; margin: 6px 0 0; padding: 2px 8px; border-radius: 5px; background: rgba(0,0,0,.4); box-shadow: inset 0 0 0 1px var(--line);
   font: 800 12px/1.4 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: #fff; }
 #startScreen .event-badge.rule { display: inline-flex; align-items: center; gap: 4px; }
-#startScreen .event-pack { grid-template-columns: auto auto; }
-#startScreen .event-pack-art { position: relative; width: 60px; height: 83px; padding: 0; border: 0; background: none; cursor: pointer; justify-self: center; }
-#startScreen .event-pack-art .shop-packs { position: absolute; left: 0; top: 0; transform: scale(.714); transform-origin: 0 0; pointer-events: none; }
+#startScreen .event-pack { grid-template-columns: auto minmax(0, auto); gap: 4px 12px; }
+#startScreen .event-pack-art { position: relative; width: 72px; height: 100px; margin: 4px 4px 0; padding: 0; border: 0; background: none; cursor: pointer; justify-self: center; }
+#startScreen .event-pack-art .shop-packs { position: absolute; left: 0; top: 0; transform: scale(.857); transform-origin: 0 0; pointer-events: none; }
 #startScreen .event-pack-art:hover { filter: brightness(1.15); }
 #startScreen .event-inside { align-self: flex-start; margin-top: 4px; padding: 4px 9px; font-size: 12px; }
 @media (max-width: 760px) {
   #startScreen .event-head.hunt .event-prize { flex: 1 1 40%; min-width: 150px; }
-  #startScreen .event-head.hunt .event-hunt { grid-template-columns: 80px 1fr; }
+  #startScreen .event-head.hunt .event-hunt { grid-template-columns: 96px 1fr; }
   #startScreen .event-panel { padding: 10px; gap: 8px; }
   #startScreen .event-head { flex-wrap: wrap; gap: 8px; }
   #startScreen .event-title { flex-basis: 100%; }
@@ -482,3 +482,6 @@
 /* a tiered level's plate is dark, so its stars show in their own colour (the plate is the accent colour otherwise: gold on gold) */
 #startScreen .menu-stage .plate.tiered { background: rgba(14, 18, 26, .9); color: #fff; }
 #startScreen .menu-stage .plate.tiered small .tierstars { font-size: 17px; letter-spacing: .1em; }
+/* (the Car Hunt's car, larger than a prize: it is what the event is about) */
+#startScreen .event-head.hunt { align-items: flex-start; }
+#startScreen .event-hunt { grid-template-columns: clamp(130px, 13vw, 240px) auto; }
