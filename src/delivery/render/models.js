@@ -8,6 +8,7 @@
 //   userData.livery   optional, (evil) => void: shows the parts that differ between the Good
 //                     and Evil liveries (beyond the paint), called whenever the paint is set
 import * as THREE from 'three';
+import { ORIG1B_MODELS } from './modelsOrig1b.js'; // (the Commuter, the Darkvan and the Junker, rebuilt)
 
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 const box = (parent, material, w, h, l, x, y, z) => {
@@ -691,34 +692,8 @@ export const MODELS = {
     group.userData = { body, animate: () => {} };
     return group;
   },
-  // The Commuter: an old three-door supermini (a first-generation Nissan Micra). Small and
-  // boxy, with a tall glasshouse, a short sloping bonnet, square headlamps and chunky black
-  // bumpers.
-  commuter: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.3;
-    const paint = lambert(car.color), glass = lambert(GLASS), trim = lambert(TRIM), steel = lambert(0xb8bcc4);
-    const body = box(group, paint, w, 0.5, l, 0, 0.55, 0);
-    box(group, paint, w * 0.95, 0.08, l * 0.22, 0, 0.83, l * 0.37);               // short bonnet
-    box(group, glass, w * 0.9, 0.5, l * 0.58, 0, 1.08, -l * 0.08);                // tall glasshouse
-    box(group, paint, w * 0.92, 0.07, l * 0.56, 0, 1.36, -l * 0.08);              // roof
-    screen(group, glass, w * 0.86, 0.05, 0.6, 0, 1.06, l * 0.22, 0.55);             // windscreen
-    screen(group, glass, w * 0.86, 0.05, 0.52, 0, 1.06, -l * 0.37, -0.22);          // the hatch's glass
-    for (const side of [-1, 1]) {
-      for (const z of [0.18, -0.02, -0.35]) box(group, paint, 0.08, 0.5, 0.09, side * w * 0.45, 1.08, l * z); // pillars
-      box(group, trim, 0.03, 0.08, l * 0.8, side * (w / 2 + 0.01), 0.6, 0);        // rubbing strip
-      box(group, trim, 0.12, 0.09, 0.1, side * (w / 2 + 0.06), 0.95, l * 0.2);     // mirror
-      box(group, LAMP, w * 0.24, 0.16, 0.08, side * w * 0.32, 0.68, l / 2 + 0.01); // square headlamps
-      box(group, TAIL, w * 0.16, 0.22, 0.08, side * w * 0.38, 0.7, -l / 2 - 0.01);
-      wheel(group, R, 0.26, side * (w / 2 - 0.04), R, l * 0.31, steel);
-      wheel(group, R, 0.26, side * (w / 2 - 0.04), R, -l * 0.31, steel);
-    }
-    for (let i = 0; i < 3; i++) box(group, trim, w * 0.3, 0.03, 0.04, 0, 0.62 + i * 0.06, l / 2 + 0.02); // grille slats
-    box(group, trim, w + 0.06, 0.2, 0.16, 0, 0.36, l / 2 + 0.04);                 // chunky bumpers
-    box(group, trim, w + 0.06, 0.2, 0.16, 0, 0.36, -l / 2 - 0.04);
-    group.userData = { body, animate: () => {} };
-    return group;
-  },
+  // The Commuter: a bubbly little city hatchback (rebuilt: render/modelsOrig1b.js)
+  commuter: (car) => ORIG1B_MODELS.commuter(car),
 
   // A Japanese kei truck: a tiny cab-over with a flat, near-upright face, a long, low flatbed
   // with fold-down sides behind it, and little wheels right at the corners. It bobs as it idles
