@@ -177,6 +177,22 @@ Also need `autostart` (or a hidden level).
 | `w` / `h` | pixels | With `banner`: its size (default 1600x800). | (above) | Normal | yes |
 | `evil` / `labels` | bare / `0` | With `banner`: Evil livery / no names. | `...&banner=wedge,midnight&evil&labels=0` | Normal | untried |
 
+## 7b. Unlock cinematics (by address only, for now)
+
+A full-screen reveal over the menu, drawn in one canvas of its own (render/unlockcine.js). Not the `cine` stills of
+section 2 (those are a frozen camera on a run): these are short played sequences. Nothing in the game starts one yet.
+A tap or click, Escape, Space or Enter skips (closes) it. Reduced motion, or any `?lite=` switch: a 2.6 s fade-only
+version. Sound plays only once the page has been tapped or a key pressed (a browser rule), so a first play straight from
+the address is silent; with `&loop` the plays after that are heard (press a key other than Esc/Space/Enter, e.g. Shift).
+
+| Param | Values | What it does | Example | Saves? | Tried |
+|---|---|---|---|---|---|
+| `unlockcine` | `car:<car id>` | The CAR unlock, 5.0 s: a dark silhouette under a sweeping spotlight (low, wide), a close-up of the front corner as the light comes on, a tracking side shot with a flare in the rarity's colour, the front three-quarter hero shot with NEW CAR, the name, the stars and the rarity. Any car id. | `/delivery/?unlockcine=car:hearse` | Normal (it writes nothing) | yes (stills, CHECKLIST 237) |
+| `unlockcine` | `key:<car id>` | The KEY unlock, 9.0 s: the car's own key in the dark, sliding into a lock in slow motion (three tumbler clicks), the turn and CLICK (shake, flash), a slow-motion burst with the car's silhouette behind, the car brought out of the dark by a sweeping light, then KEY UNLOCKED, the name, the stars and the rarity. Any car id (a car with no key of its own gets the plain fob). | `/delivery/?unlockcine=key:swancar` | Normal | yes (stills) |
+| `evil` | bare | With `unlockcine`: the Evil livery (and "New ride" for a car). | `/delivery/?unlockcine=car:sixteen&evil` | Normal | yes |
+| `loop` | bare | With `unlockcine`: plays again and again (until skipped). | `/delivery/?unlockcine=key:swancar&loop` | Normal | untried |
+| `still` | seconds | With `unlockcine`: that moment of it, held (no sound), for pictures. | `/delivery/?unlockcine=key:swancar&still=3.4` | Normal | yes |
+
 ## 8. Performance: the tablet flicker bisect (`lite`)
 
 `?lite=<names>` turns suspects off for the visit (a small "lite: ..." badge in the bottom-left corner confirms it).
