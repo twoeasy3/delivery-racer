@@ -286,7 +286,7 @@ export const IDEA_MODELS_7 = {
       return h;
     };
     const body = place(group, loftGeo(stationsOf(KEYS, AXLES, 0.05).map(z => [z, mirror(half(z))]), true, true), paint, 0, 0, 0);
-    const { sideX, topY } = surface(half);
+    const { sideX } = surface(half);
     // the bonnet, a plate of bright metal lying on the top from the face to the windscreen, the hinge down its middle
     const lid = (z) => { const h = half(z), x = h[5][0] - 0.04, y = h[5][1] + (h[6][1] - h[5][1]) * 0.04 / h[5][0]; return [z, mirror([[0, h[6][1] - 0.02], [x, y - 0.02], [x, y + 0.008], [0, h[6][1] + 0.01]])]; };
     place(group, loftGeo([2.82, 2.72, 2.3, 1.92, 1.5, 1.0, 0.6, 0.48].map(lid), true, true), bonnet, 0, 0, 0);

@@ -35,6 +35,9 @@
 // promoted to the roster as tier-4 Legendary blueprint cars the same day (cars.js FILLER_CARS): 41 left.
 // The sixth batch, five more (CHECKLIST item 171): two older vehicles (a blown vintage tourer, a split-level highway
 // coach) and three modern ones (a horseshoe-grilled hypercar, a tall electric city car, a coupe crossover): 46 ideas.
+// (Four of the sixth batch were promoted the same day, and the Horseshoe became a key car: 41 left.) The seventh batch,
+// three CONCEPT CARS, show cars that never went on sale (the owner, 13-Oct): a knife-edged mid-engined supercar, a
+// sixteen-cylinder grand coupe and a flame-bodied Le Mans prototype (models: render/ideaModels7.js): 44 ideas.
 
 // ============================================================================
 export const IDEA_CARS = [
