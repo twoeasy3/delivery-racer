@@ -11,8 +11,9 @@
 // Message.sticky for as long as its condition lasts (Message.conditions, which player.js fills in), and the HUD
 // shows a small icon for each of those, on a desktop as on a phone. Its words never take a message line when it is
 // said (the owner, 13-Oct: "I'm seeing the airborne message instead of the icon"); they show only when the icon
-// is touched or clicked (Message.recall), and as the icon's tooltip. (CONFIG.messageTimes.stickyWords: true
-// puts back the old way, the words said on a line first and then the icon.)
+// is touched or clicked (Message.recall), and as the icon's tooltip. (CONFIG.messageTimes.stickyWords: true, not
+// there today, would put back the old way: the words said on a line first, then the icon. It is read here rather
+// than written into config.js, which is part of the replays' rules fingerprint: this is the HUD only.)
 // ============================================================================
 import MESSAGES from './messages.json';
 import { CONFIG } from './config.js';

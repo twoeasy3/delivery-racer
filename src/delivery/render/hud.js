@@ -205,7 +205,10 @@ const recallSticky = (e) => {
   const icon = e.target.closest?.('.icon');
   if (!icon) return;
   if (e.type === 'pointerdown') e.preventDefault(); // (the button takes no focus, so the keys still drive)
-  Message.recall(icon.dataset.path);
+  const line = Message.recall(icon.dataset.path);
+  // (swapped sides: its words name the side, filled in by mysteries.js only on a message line; a status's words
+  // are on none until now, so the side the car is on is put in here)
+  if (line?.text.includes('${side}')) line.text = line.text.replace('${side}', Player.evil ? 'EVIL' : 'GOOD');
 };
 hudSticky.addEventListener('pointerdown', recallSticky);
 hudSticky.addEventListener('pointerover', recallSticky);

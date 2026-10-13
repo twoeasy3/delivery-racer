@@ -23,7 +23,6 @@ try {
     if (!pickups) for (const p of Pickups.items) p.taken = true; // (none of the level's own to get in the way)
   };
   const mystery = (effect) => { P.nextMystery = effect; P.collect('mystery'); P.nextMystery = ''; };
-  const said = (text) => g.said.some(line => line.includes(text));
 
   for (const effect of M.effects) check(!!g.Message.pick('powerups', 'mystery', effect), 'wording for ' + effect);
 
@@ -66,7 +65,10 @@ try {
   start('suburbs', 'sport', false);
   mystery('swapSides');
   g.run(0.1);
-  check(P.evil === true && said('EVIL'), 'swap sides: Good turns Evil, and says so');
+  // (a status since 13-Oct: its icon says so, and its words, the side filled in, only when the icon is touched: render/hud.js)
+  const hudSource = (await import('node:fs')).readFileSync(new URL('../src/delivery/render/hud.js', import.meta.url), 'utf8');
+  check(P.evil === true && g.Message.sticky.some(h => h.path === 'powerups.mystery.swapSides') && hudSource.includes("line.text.replace('${side}', Player.evil ? 'EVIL' : 'GOOD')"),
+    'swap sides: Good turns Evil, and says so (its status icon; the side named when it is touched)');
   P.testGhost = true; // (a wrecked car's mystery only ends as its next car lands)
   g.run(M.time + 1);
   check(P.evil === false, 'swap sides: back after');

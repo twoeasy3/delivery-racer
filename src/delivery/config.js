@@ -1152,10 +1152,9 @@ export const CONFIG = {
     kinds: { reaction: 2, pickup: 4, rage: 4, bust: 7 }, // s, by kind: a driver's reaction, a pickup or an event, TANK RAGE and a car destroyed, a bust
     groups: {},            // s, by group in messages.json, e.g. zones: 3, milestones: 6
     keys: {},              // s, by the message's own path, e.g. 'events.speedFine': 6
-    // The sticky ones (the statuses): a message about something that is still true of the player's car. Said,
-    // it is a small icon beside the gauges, on a desktop as on a phone; its words are not put on a message line
-    // (the owner, 13-Oct), only when the icon is touched or clicked (`recall`) and as its tooltip. The icon stays
-    // beside the gauges (`stickyIcons` below; its picture is in render/hudIcons.js, its name in messages.json's
+    // The sticky ones: a message about something that is still true of the player's car. It is said as any
+    // other, on the message lines and for its time above, and then a small icon for it stays under the
+    // gauges (`stickyIcons` below; its picture is in render/hudIcons.js, its name in messages.json's
     // stickyNames or mysteryNames) until the condition named here ends, or the car is wrecked or busted, or
     // the run is over. path in messages.json: the condition it lasts for (see the foot of player.js:
     // 'mystery' is "the mystery effect this message is for is running"). Take a line out and that message
@@ -1178,7 +1177,6 @@ export const CONFIG = {
       // (the good ones are left to the pickup status, which names them while they run: toad, angel,
       // invincible, soupedUp, giant, magnet, trafficFreeze; and sundayDrivers, rushHour, carSwap, moodSwing)
     },
-    stickyWords: false,    // true: a sticky message's words are said on a message line first, as before 13-Oct (then the icon alone)
     recall: 3,             // s a sticky message's words show again for, when its icon is touched (or the pointer goes over it)
     // the sticky messages' icons: a round badge each, in rows under the two gauges (beside them on a phone
     // held upright, where under them is the road), the oldest first. By the
