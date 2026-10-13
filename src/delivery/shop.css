@@ -368,9 +368,23 @@ button.shop-odds { width: 100%; padding: 0; cursor: pointer; }
 .pack-contents .bp-card, .pack-contents .bp-card *, .pack-contents .bp-card *::before, .pack-contents .bp-card *::after,
 .pack-contents .bp-card::before, .pack-contents .bp-card::after { animation: none !important; }
 .pack-contents .pc-card { contain: layout paint; } /* (not content-visibility: auto: a card painted late as it scrolled in flashed on a tablet, the owner, 12-Oct) */
-@media (prefers-reduced-motion: no-preference) {
+/* the stacks' fade: a mouse/trackpad device only (the owner, 12-Oct, a tablet: "it flickers while scrolling and sitting still": the fade of every
+   card's chance and bubble flipping at once, and the shadow under every picture, flickered there). A touch device: the chances sit side by side,
+   the bubble shows the base stack, no timer (packcontents.js starts none), no per-picture shadow. */
+@media (prefers-reduced-motion: no-preference) and (pointer: fine) {
   .pack-contents .pc-stack, .pack-contents .amt-phase { transition: opacity .45s ease; }
   .pack-contents .pc-stack.alt, .pack-contents .amt-phase.alt { opacity: 0; }
   .pack-contents.phase-b .pc-stack:not(.alt), .pack-contents.phase-b .amt-phase:not(.alt) { opacity: 0; }
   .pack-contents.phase-b .pc-stack.alt, .pack-contents.phase-b .amt-phase.alt { opacity: 1; }
 }
+@media (pointer: coarse) {
+  .pack-contents .pc-stacks { display: inline-flex; flex-wrap: wrap; gap: 0 6px; }
+  .pack-contents .pc-stack { grid-area: auto; }
+  .pack-contents .bp-amount.cycle .amt-phase.alt { display: none; }
+  .pack-contents .bp-pic, .pack-contents .bp-keypic { filter: none; }
+}
+
+/* (the Bespoke/key cards flickered on a tablet while the Car Hunt's sheet, which has none, did not: no blend modes, no filters, no glow on the
+   cards in the sheet; the owner, 12-Oct) */
+.pack-contents .bp-card, .pack-contents .bp-card * { mix-blend-mode: normal !important; }
+.pack-contents .bp-card.r-bespoke, .pack-contents .bp-card.kind-key.r-legendary { filter: none !important; }
