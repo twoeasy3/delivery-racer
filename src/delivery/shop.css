@@ -395,3 +395,10 @@ button.shop-odds { width: 100%; padding: 0; cursor: pointer; }
    cards in the sheet; the owner, 12-Oct) */
 .pack-contents .bp-card, .pack-contents .bp-card * { mix-blend-mode: normal !important; }
 .pack-contents .bp-card.r-bespoke, .pack-contents .bp-card.kind-key.r-legendary { filter: none !important; }
+
+/* the car drawn on a pack that features one car (packart.js packCar): the brand at the top, the car in the middle of the foil, the mark gone,
+   "Card pack" along the bottom */
+.shop-pack.has-car { justify-content: flex-start; padding-top: 6px; }
+.shop-pack.has-car .pack-mark { display: none; }
+.shop-pack.has-car .pack-sub { position: absolute; left: 0; right: 0; bottom: 7px; }
+.shop-pack .pack-car { position: absolute; left: 1%; right: 1%; top: 42%; height: 36%; pointer-events: none; z-index: 2; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .55)); }
