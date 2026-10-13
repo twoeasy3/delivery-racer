@@ -135,7 +135,7 @@ const loftCover = (group, material, CANOPY, n, cover) => loft(group, material, C
 //   AXLES  [z, wheel radius, tyre width, the tyre's outer face]
 // Returns the body mesh, and sideX(z, y) / topY(z, x): where its side and its top are, for parts to sit on them.
 const CREST = 0.6, ROUND = 2.4; // (the crest's place, a share of the half width; how square the shoulder is)
-const supercarBody = (group, material, BODY, AXLES, around = [-0.46, -0.34, -0.18, 0, 0.18, 0.34, 0.46]) => {
+const supercarBody = (group, material, BODY, AXLES, around = [-0.46, -0.32, -0.12, 0.12, 0.32, 0.46]) => {
   const section = (z) => {
     let [W, yb, yc, yf, y0, wLow] = along(BODY, z), yLip = Math.max(yb - 0.1, y0 + 0.11);
     yb = Math.max(yb, yLip + 0.04);
@@ -195,7 +195,7 @@ export const IDEA_MODELS_8 = {
       //  z      W     yb    yc    yf    y0    wLow
       [-2.27, 0.84, 0.44, 0.78, 0.8, 0.22, 0.72], [-2.2, 0.93, 0.48, 0.82, 0.85, 0.17, 0.82], [-1.95, 0.98, 0.5, 0.84, 0.88, 0.15, 0.86],
       [-1.0, 1.0, 0.5, 0.82, 0.88, 0.14, 0.86], [-0.5, 0.97, 0.47, 0.78, 0.82, 0.14, 0.86], [0.0, 0.95, 0.45, 0.74, 0.76, 0.14, 0.86],
-      [0.6, 0.96, 0.46, 0.72, 0.76, 0.14, 0.86], [1.0, 0.98, 0.47, 0.67, 0.8, 0.14, 0.86], [1.6, 0.98, 0.42, 0.58, 0.71, 0.15, 0.84],
+      [1.0, 0.98, 0.47, 0.67, 0.8, 0.14, 0.86], [1.6, 0.98, 0.42, 0.58, 0.71, 0.15, 0.84],
       [1.95, 0.95, 0.38, 0.53, 0.64, 0.16, 0.8], [2.18, 0.88, 0.33, 0.46, 0.52, 0.17, 0.76], [2.27, 0.78, 0.33, 0.4, 0.44, 0.2, 0.68],
     ], AXLES);
     // the canopy: glass from the windscreen's foot, just behind the front wheels, over the cabin and on back down the
@@ -212,7 +212,7 @@ export const IDEA_MODELS_8 = {
     // the nose: an oval mouth, an intake under each lamp, a splitter under it all
     const oval = [];
     for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; oval.push([Math.cos(a) * 0.26, 0.31 + Math.sin(a) * 0.07]); }
-    merged(group, trim, [face(oval, 0.02, 2.275), ...[-1, 1].map(s => face([[0.38, 0.25], [0.58, 0.25], [0.62, 0.33], [0.4, 0.34]].map(([x, y]) => [s * x, y]).sort(() => 0), 0.02, 2.275))]);
+    merged(group, trim, [face(oval, 0.02, 2.275), ...[-1, 1].map(s => face([[0.38, 0.25], [0.58, 0.25], [0.62, 0.33], [0.4, 0.34]].map(([x, y]) => [s * x, y]), 0.02, 2.275))]);
     merged(group, carbon, [bx(1.3, 0.03, 0.2, 0, 0.19, 2.15)]);
     // the headlamps, set into the tops of the front wings: a slim dark slot lying on each wing along its leading edge,
     // three lamps in it, an indicator at its outer end
@@ -225,7 +225,7 @@ export const IDEA_MODELS_8 = {
       winkers.push(skin(topY, [mix(0, 0.05), mix(0, 0.45)], 0.03, 0.016));
     }
     // and two vents in the bonnet, between the wings
-    for (const s of [-1, 1]) slots.push(skin(topY, [[s * 0.19, 1.36], [s * 0.2, 1.47], [s * 0.21, 1.58], [s * 0.22, 1.69]], 0.045, 0.01));
+    for (const s of [-1, 1]) slots.push(skin(topY, [[s * 0.19, 1.36], [s * 0.2, 1.47], [s * 0.21, 1.58], [s * 0.22, 1.69]], 0.045, 0.014));
     merged(group, slot, slots);
     merged(group, LAMP, lamps);
     merged(group, AMBER, winkers);
@@ -237,28 +237,27 @@ export const IDEA_MODELS_8 = {
     ]));
     // mirrors on stalks off the canopy's foot
     merged(group, paint, [-1, 1].flatMap(s => [bx(0.07, 0.07, 0.14, s * 0.88, 0.81, 0.66), bx(0.26, 0.025, 0.05, s * 0.73, 0.79, 0.68)]));
-    // the wheels: a dark hub with a five-spoke star on it and a centre lock
+    // the wheels: a dark hub with a five-spoke star on it
     const hubColour = lambert(0x3a3d43);
     for (const s of [-1, 1]) {
       for (const [za, R, width, outer] of AXLES) wheel(group, R, width, s * (outer - width / 2), R, za, hubColour);
     }
-    merged(group, chrome, [-1, 1].flatMap(s => AXLES.flatMap(([za, R, width, outer]) => [
-      ...[0, 1, 2, 3, 4].map(i => bx(0.02, R * 0.58, 0.05, s * (outer + 0.012), R + Math.cos(i * 1.2566) * R * 0.3, za + Math.sin(i * 1.2566) * R * 0.3, i * 1.2566)),
-      cyl(R * 0.16, 0.03, s * (outer + 0.016), R, za, 'x', 8)])));
+    merged(group, chrome, [-1, 1].flatMap(s => AXLES.flatMap(([za, R, , outer]) => [
+      ...[0, 1, 2, 3, 4].map(i => bx(0.02, R * 0.6, 0.05, s * (outer + 0.012), R + Math.cos(i * 1.2566) * R * 0.29, za + Math.sin(i * 1.2566) * R * 0.29, i * 1.2566))])));
     // the tail: a lip of a spoiler, the band of tail lamps, a stop lamp over the mesh, the mesh panel, the
     // reversing lamps, the diffuser and four exhausts
     const zt = -2.27;
-    merged(group, paint, [bx(1.5, 0.03, 0.18, 0, 0.82, -2.2, -0.12)]);
-    merged(group, TAIL, [-1, 1].flatMap(s => [bx(0.46, 0.05, 0.03, s * 0.47, 0.68, zt - 0.005), bx(0.06, 0.12, 0.03, s * 0.72, 0.62, zt - 0.005)]).concat(bx(0.3, 0.025, 0.02, 0, 0.765, zt - 0.006)));
-    merged(group, trim, [bx(1.0, 0.18, 0.02, 0, 0.47, zt - 0.006), bx(1.5, 0.09, 0.3, 0, 0.215, -2.12), ...[-0.45, -0.15, 0.15, 0.45].map(x => bx(0.015, 0.06, 0.28, x, 0.19, -2.12))]);
+    merged(group, paint, [bx(1.42, 0.03, 0.18, 0, 0.835, -2.2, -0.12)]);
+    merged(group, TAIL, [-1, 1].flatMap(s => [bx(0.46, 0.05, 0.03, s * 0.47, 0.68, zt - 0.005), bx(0.06, 0.12, 0.03, s * 0.7, 0.62, zt - 0.005)]).concat(bx(0.3, 0.025, 0.02, 0, 0.765, zt - 0.006)));
+    merged(group, trim, [bx(1.0, 0.18, 0.02, 0, 0.47, zt + 0.002), bx(1.5, 0.09, 0.3, 0, 0.215, -2.13), ...[-0.45, -0.15, 0.15, 0.45].map(x => bx(0.015, 0.06, 0.28, x, 0.19, -2.13))]);
     merged(group, REVERSE, [-1, 1].map(s => bx(0.12, 0.04, 0.02, s * 0.6, 0.5, zt - 0.008)));
     merged(group, AMBER, [-1, 1].map(s => bx(0.1, 0.04, 0.02, s * 0.6, 0.6, zt - 0.008)));
     merged(group, chrome, [-0.27, -0.09, 0.09, 0.27].map(x => cyl(0.045, 0.12, x, 0.31, zt + 0.02, 'z', 10, true)));
-    merged(group, trim, [-0.27, -0.09, 0.09, 0.27].map(x => cyl(0.034, 0.02, x, 0.31, zt - 0.03, 'z', 10)));
+    merged(group, trim, [-0.27, -0.09, 0.09, 0.27].map(x => new THREE.CircleGeometry(0.04, 10).rotateY(Math.PI).translate(x, 0.31, zt - 0.02)));
     group.userData = {
       body,
       animate: () => {},
-      livery: (evil) => carbon.color.setHex(evil ? 0x3a0e14 : 0x2c3036),
+      livery: (evil) => carbon.color.setHex(evil ? 0x151619 : 0x2c3036),
     };
     return group;
   },

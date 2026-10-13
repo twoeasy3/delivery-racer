@@ -168,7 +168,7 @@ export const IDEA_CARS = [
     hw: 0.95, hl: 2.85, height: 2.4, note: 'No doors, three rows of seats climbing under a canopy, and a chair for the tracker out on the bull bar.',
     maxSpeed: 28, accel: 8, agility: 0.95, crossing: 1, health: 240, mass: 2, sound: 'suv' },
   // (the eighth batch: one concept car, a show car that never went on sale; its model in render/ideaModels8.js)
-  { id: 'quadturbo', name: 'Quad-Turbo Supercar', basedOn: 'Chrysler ME Four-Twelve (2004 concept car)', model: 'quadturbo', color: 0xd2ad5c, evilColor: 0x1d2c36,
+  { id: 'quadturbo', name: 'Quad-Turbo Supercar', basedOn: 'Chrysler ME Four-Twelve (2004 concept car)', model: 'quadturbo', color: 0xd2ad5c, evilColor: 0x6a1622,
     hw: 1.0, hl: 2.27, height: 1.14, note: 'Four turbochargers behind your back, a glass bubble of a cabin pushed right forward and a long tail to keep it all down.',
     maxSpeed: 47, accel: 19, agility: 1.3, crossing: 0.2, health: 150, mass: 1.2, sound: 'gt' },
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
