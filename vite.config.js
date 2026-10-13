@@ -15,7 +15,7 @@ import { posix } from 'node:path'
 // (replay.js). What the rules read is in it too, followed through their imports: a model, a JSON file, whatever it
 // is (the obstacles' models are only drawn today, their sizes in collision.js; should a rule ever measure a model,
 // that model joins the fingerprint by itself). Not the level files, which the level's own fingerprint covers.
-const NOT_RULES = new Set(['cargopage.js', 'editor.js', 'editorForms.js', 'gimmickspage.js', 'poweruppage.js', 'sides.js',
+const NOT_RULES = new Set(['cargopage.js', 'editor.js', 'modeleditor.js', 'editorForms.js', 'gimmickspage.js', 'poweruppage.js', 'sides.js',
   'gimmicks.js', 'police.js', 'powerups.js', 'words.js', 'levelText.js', 'levelinfo.js', 'nav.js', 'main.js', 'messages.js',
   'cargo.js', 'version.js', 'replay.js', 'replaystore.js', 'events.js',
   'packs.js']) // (card packs: given and opened on the menu and the results, never in a run; their odds, packs.json, tuned without refusing replays)
@@ -50,7 +50,7 @@ export default defineConfig({
       input: {
         delivery: 'delivery/index.html', powerups: 'delivery/powerups.html', sides: 'delivery/sides.html',
         police: 'delivery/police.html', editor: 'delivery/editor.html', gimmicks: 'delivery/gimmicks.html',
-        cargo: 'delivery/cargo.html',
+        cargo: 'delivery/cargo.html', modeleditor: 'delivery/modeleditor.html',
       },
     },
   },
