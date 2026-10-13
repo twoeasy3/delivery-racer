@@ -13,11 +13,12 @@ const KIND_MARK = { career: 'Career', daily: 'Daily', standard: 'Standard', ten:
 // well"): its Good-livery still, under the pack's mark; drawn once the art is laid out (carstill.js drawSoon)
 const PACK_POSE = { lift: 0.22, angle: -0.6, fov: 30, margin: 0.9 };
 export const featuredCarOf = (id) => {
-  const ids = [...new Set((packData?.packs?.[id]?.featured?.entries || []).filter(e => !e.key).map(e => e.car))];
+  const f = packData?.packs?.[id]?.featured, tie = f?.sameCarAs && packData.packs[f.sameCarAs]?.featured; // (sameCarAs: the car of the pack it is tied to, packs.js featuredOf)
+  const ids = [...new Set(((tie || f)?.entries || []).filter(e => !e.key).map(e => e.car))];
   return ids.length === 1 ? carById(ids[0]) || null : null;
 };
 export const artKind = (id) => (KIND_LOOK[id] ? id : packData?.packs?.[id]?.featured ? 'special' : id);
-export const lookOf = (id) => KIND_LOOK[artKind(id)] || 'common';
+export const lookOf = (id) => (featuredCarOf(id) ? 'legendary' : KIND_LOOK[artKind(id)] || 'common');
 
 const make = (tag, className, ...inside) => {
   const node = document.createElement(tag);
@@ -31,8 +32,8 @@ const packCar = (car) => {
   return el;
 };
 export const packArt = (id, count = 1) => {
-  const kind = artKind(id), look = KIND_LOOK[kind] || 'common', shown = Math.min(3, count);
-  const hunt = featuredCarOf(id);
+  const kind = artKind(id), hunt = featuredCarOf(id), shown = Math.min(3, count);
+  const look = hunt ? 'legendary' : KIND_LOOK[kind] || 'common'; // (a single-car hunt pack: yellow foil, the owner, 13-Oct)
   const one = (i) => make('div', 'shop-pack r-' + look + ' k-' + kind + (hunt ? ' has-car' : ''),
     make('span', 'pack-crimp'), make('span', 'pack-sheen'),
     make('span', 'pack-brand', make('b', '', 'Delivery'), make('i', '', 'Run')),
