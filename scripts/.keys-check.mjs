@@ -161,6 +161,32 @@ try {
     }
     check(!bespokeCars.some(c => batchB.includes(c.keyModel)), 'ordinary keys, batch B: no car uses one yet');
   }
+
+  // ---- ordinary keys, batch D (KEY-IDEAS.md 13 to 16: render/keyModelsOrdD.js): each registered as an ORDINARY model (not one
+  // of the nine), builds for 3 cars x 2 rarities: meshes, no NaN, under 1,700 triangles and 20 meshes, an upright key-sized box
+  {
+    const { ORDINARY_MODELS } = await g.load('render/keyModels.js');
+    await g.load('render/keyModelsOrdD.js');
+    for (const model of ['startfob', 'artisan', 'lottag', 'keikey']) {
+      let ok = ORDINARY_MODELS.includes(model) && !KEY_MODELS.includes(model), why = ok ? '' : ' (not registered as ordinary)';
+      for (const car of cars) for (const rarity of ['bespoke', 'common']) {
+        const key = makeKey(car, { model, rarity });
+        key.updateMatrixWorld(true);
+        let meshes = 0, tris = 0, bad = 0;
+        key.traverse((node) => {
+          if (!node.isMesh) return;
+          meshes++;
+          tris += (node.geometry.index ? node.geometry.index.count : node.geometry.attributes.position.count) / 3;
+          if (node.geometry.attributes.position.array.some(v => !Number.isFinite(v))) bad++;
+        });
+        const size = new THREE.Box3().setFromObject(key).getSize(new THREE.Vector3());
+        if (ok && !(key.userData.keyModel === model && meshes >= 5 && meshes <= 20 && tris < 1700 && !bad && size.y >= 3 && size.y <= 7 && size.x >= 1 && size.x <= 3.5 && size.z >= 0.3 && size.z <= 1.5)) {
+          ok = false; why = ` (${car.id} ${rarity}: ${meshes} meshes, ${tris} triangles, ${bad} bad, size ${size.toArray().map(n => n.toFixed(2)).join(' x ')})`;
+        }
+      }
+      check(ok, 'ordinary key ' + model + ' (batch D): builds for 3 cars x 2 rarities, light and key-sized' + why);
+    }
+  }
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error?.stack || error));
