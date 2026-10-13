@@ -61,7 +61,7 @@
     "car-hunt-5": {
       "name": "Car Hunt 5-pack", "size": 5, "baseAmount": 1, "pool": "evergreen", "atLeast": { "uncommon": 1 },
       "featured": {
-        "upgradeChance": 0, "featuredChance": 0,
+        "upgradeChance": 0, "featuredChance": 0, "sameCarAs": "car-hunt-special",
         "entries": [ { "car": "blower", "weight": 9, "amount": 3 }, { "car": "blower", "weight": 1, "amount": 15 } ]
       },
       "shop": { "section": "packs", "price": 250, "ribbon": "new" }

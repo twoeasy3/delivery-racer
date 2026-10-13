@@ -682,6 +682,7 @@ try {
     const five = Packs.data.packs['car-hunt-5'], fe = P.featuredOf('car-hunt-5');
     check(!!five && five.size === 5 && five.baseAmount === 1 && five.shop?.section === 'packs' && five.shop.price > 0 && !five.event && !five.limited && fe.length === 2 && fe.every(f => f.car.id === 'blower') && fe.some(f => f.amount === 3) && fe.some(f => f.amount === 15) && five.featured.upgradeChance === 0,
       'the Car Hunt 5-pack: bought in the Shop beside the regular packs (section packs, ' + five?.shop?.price + '), 5 cards, one featured slot: the Blower x3 or x15');
+    check(five?.featured?.sameCarAs === 'car-hunt-special' && P.featuredOf('car-hunt-5').every(f => f.car.id === P.featuredOf('car-hunt-special')[0].car.id), 'the 5-pack is tied to the Car Hunt: its featured car is whatever the Car Hunt pack hunts (' + P.featuredOf('car-hunt-5')[0]?.car.id + ')');
     Progress.reset(); Progress.noSave = true;
     let x1 = 0, x3 = 0, other = 0, featuredSlots = 0, plainNotOne = 0, blowerPlain = 0;
     const N = 20000;

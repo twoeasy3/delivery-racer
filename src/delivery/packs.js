@@ -456,7 +456,13 @@ export const featuredOf = (id) => {
   const spec = packOf(id);
   if (!spec?.featured) return [];
   if (Packs.featuredOverride) return Packs.featuredOverride;
-  const own = Array.isArray(spec.featured.entries) && spec.featured.entries.length ? spec.featured.entries : null;
+  let own = Array.isArray(spec.featured.entries) && spec.featured.entries.length ? spec.featured.entries : null;
+  // `sameCarAs`: a pack on sale tied to an event's pack (the owner, 13-Oct: "this pack on sale should tie to the car hunt's car"): every entry
+  // of it features the car THAT pack features (the Car Hunt 5-pack: whatever car the Car Hunt pack hunts), the entries' own amounts and weights kept
+  if (own && spec.featured.sameCarAs && spec.featured.sameCarAs !== id) {
+    const lead = (packOf(spec.featured.sameCarAs)?.featured?.entries || []).find(x => !x.key);
+    if (lead) own = own.map(x => (x && typeof x === 'object' ? { ...x, car: lead.car } : x));
+  }
   const prize = eventEntry(spec.event)?.prize?.car;
   return featuredEntries(own || (prize ? [prize] : (Cars.EVENT_CARS || []).map(c => c.id)));
 };
