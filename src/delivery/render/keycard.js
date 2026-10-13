@@ -5,6 +5,10 @@
 // the menu's ONE shared renderer (modelviews.js drawStill: no WebGL context of its own), LAZILY: only once the card is
 // within reach of the screen (an IntersectionObserver), a few a frame, and kept as a picture by car, model, rarity and
 // size (encoded off the main thread, an object URL), so the reveal, the contents sheet and a second card of it reuse it.
+// A key car's OWN key at Bespoke (what the cards show) is not drawn at all now: it is a PNG made beforehand by the same
+// code (src/delivery/keyshots/<car id>.png, scripts/keys-png.mjs), shown at once (keyShotOf; the owner, 13-Oct: a
+// tablet's flicker on What's inside). The live drawing below is the fallback: another rarity, a ?keymodel= override, a
+// car with no file; and the ?keys sheet. (The showroom corner's spinning key is its own: showroomview.js.)
 // The look of the card round it (the CAR KEY tab, the blue/purple streaks, the rainbow rim) is keycard.css.
 // Which key: KEY_MODEL (keyModels.js), or ?keymodel=fob|classic|smart for a visit (to compare the three live).
 // Debug: ?pack=bespoke opens a pack (nothing saved) whose cards include the Silver Comet's KEY (the first Bespoke key
@@ -103,11 +107,23 @@ const poll = () => {
   if (pending.size) polling = setTimeout(poll, 600);
 };
 
-// the key card's picture element (blueprintcard.js puts it where the car's picture would be): drawn lazily by itself
+// ---- the pre-rendered pictures (the owner, 13-Oct: a tablet flickered scrolling What's inside, and the key cards' live
+// drawing was the prime suspect): src/delivery/keyshots/<car id>.png, each key car's own key, Bespoke, drawn by this file's
+// own posedKey + KEY_POSE (scripts/keys-png.mjs makes them; scripts/.keyshots-check.mjs checks there is one a key car)
+const KEYSHOTS = Object.fromEntries(Object.entries(import.meta.glob('../keyshots/*.png', { eager: true, query: '?url', import: 'default' }))
+  .map(([path, url]) => [path.split('/').pop().replace(/\.png$/, ''), url]));
+// the file for this key, or null: only the car's OWN key (its keyModel; not a ?keymodel= override) at Bespoke, as drawn
+export const keyShotOf = (car, model = keyModelInUse(car), rarity = 'bespoke') =>
+  car && rarity === 'bespoke' && model === keyModelInUse(car) && !KEY_MODELS.includes(params.get('keymodel')) ? KEYSHOTS[car.id] || null : null;
+
+// the key card's picture element (blueprintcard.js puts it where the car's picture would be): the pre-rendered picture
+// at once if there is one (keyShotOf), else drawn lazily by itself
 export const keyPicture = (car, rarity = 'bespoke', { model = keyModelInUse(car) } = {}) => {
   const el = document.createElement('div');
   el.className = 'bp-pic bp-keypic';
   el.dataset.keymodel = model;
+  const shot = keyShotOf(car, model, rarity);
+  if (shot) { el.style.backgroundImage = `url("${shot}")`; el.dataset.keyshot = car.id; return el; }
   const o = { model, rarity };
   el._key = { car, o };
   near?.observe(el);

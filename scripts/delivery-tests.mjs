@@ -79,10 +79,10 @@ const GROUPS = {
     files: [/water\.js|amphib|slipway|harbour|flood|ford|fjord/],
   },
   render: {
-    about: 'Drawing, without a browser: the shared model views (a stand-in renderer), dents, the car keys (the three models, the key card), the showroom landing\'s suspension (every car\'s wheels found and kept on the floor, its body sprung)',
+    about: 'Drawing, without a browser: the shared model views (a stand-in renderer), dents, the car keys (the three models, the key card, the key cards\' pre-rendered PNGs in keyshots/), the showroom landing\'s suspension (every car\'s wheels found and kept on the floor, its body sprung)',
     seconds: 30,
-    tests: [t('.modelviews-check.mjs'), t('.dents-check.mjs'), t('.keys-check.mjs'), t('.suspension-check.mjs')],
-    files: [/src\/delivery\/render\//, /\.css$/],
+    tests: [t('.modelviews-check.mjs'), t('.dents-check.mjs'), t('.keys-check.mjs'), t('.keyshots-check.mjs'), t('.suspension-check.mjs')],
+    files: [/src\/delivery\/render\//, /\.css$/, /keyshots|keyModels|keys-png/],
   },
   replay: {
     about: 'Determinism: every level replays exactly from its seeds (a run hashed each second, twice the same, once another); runs recorded and played back by replay.js (pause, rewind, refusals); kept and watched as the player has them (replaystore.js: the save untouched). Heavy.',
