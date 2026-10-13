@@ -399,10 +399,11 @@ export const EVENT_CARS = [
 // lent by Car Swap, never dealt by "Unlock everything"; no price, no tier. Their only source is a Bespoke key card (no
 // event gives them). Figures: nudged from the idea's placeholders into the top of the range (`placeholder: true`: not
 // balanced), each a different way to drive, and are their MAXED ECU (ecus.json has the lower ones):
-// each has ONE key style for good (the owner, 12-Oct: the key is always the same for a car, never drifting like the blueprint poses):
-// the three of render/keyModels.js are all in use. Modern flagship: fob (the Silver Comet); the old coachbuilt and the
-// 1930s: classic; the space-age and the solar: smart
-const KEY_STYLE = { horseshoe: 'smart', rocketfin: 'smart', swancar: 'classic', solarracer: 'smart', moonrover: 'smart', monowheel: 'classic', snocat: 'classic', hotdog: 'fob' };
+// each has ONE key for good (the owner, 12-Oct: the key is always the same for a car, never drifting like the blueprint poses),
+// and since 13-Oct a key of its OWN (the owner: "a unique car key model per key car ... evocative of the car it belongs
+// to"): the first three models went to the cars they fit (the fob stays the Silver Comet's, the brass classic is the 1910
+// Swan Car's, the glossy smart key the hypercar's), six were made for the rest (render/keyModels.js)
+const KEY_STYLE = { horseshoe: 'smart', swancar: 'classic', rocketfin: 'fin', solarracer: 'solar', moonrover: 'lunar', monowheel: 'wheel', snocat: 'snowboot', hotdog: 'bun' };
 // the Key cars' star ratings (the owner, 12-Oct: "add star ratings to the current key cars too"): magenta stars as a mark of how strong the
 // car is against the tiers, NOT a tier (`rating`, not `tier`: no level rule, no ECU ladder (a key car's max stays 5) reads it)
 const KEY_RATING = { horseshoe: 5, rocketfin: 5, solarracer: 5, monowheel: 3, hotdog: 4, moonrover: 4, swancar: 4, snocat: 3 };

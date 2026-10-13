@@ -10,7 +10,8 @@
 // tablet's flicker on What's inside). The live drawing below is the fallback: another rarity, a ?keymodel= override, a
 // car with no file; and the ?keys sheet. (The showroom corner's spinning key is its own: showroomview.js.)
 // The look of the card round it (the CAR KEY tab, the blue/purple streaks, the rainbow rim) is keycard.css.
-// Which key: KEY_MODEL (keyModels.js), or ?keymodel=fob|classic|smart for a visit (to compare the three live).
+// Which key: the car's own (cars.js keyModel: each key car has a model of its own), else KEY_MODEL (keyModels.js);
+// ?keymodel=<any of KEY_MODELS> for a visit (to compare them live).
 // Debug: ?pack=bespoke opens a pack (nothing saved) whose cards include the Silver Comet's KEY (the first Bespoke key
 // car; &keycar=<id> another car's, &reveal=all every card turned at once); ?keys (or ?keys=<car id>) shows the three keys side by side, large, on a plain backdrop, each also from the
 // front, the side, the back and above (for stills).
@@ -21,13 +22,13 @@ import { sharedRenderer, drawStill } from './modelviews.js';
 
 const params = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();
 // the key model the cards draw: ?keymodel= for a visit, else KEY_MODEL
-// (the car's own key style, `keyModel` in cars.js, always the same; ?keymodel= overrides it for a visit, to compare the three)
+// (the car's own key, `keyModel` in cars.js, always the same; ?keymodel= overrides it for a visit, to compare them)
 export const keyModelInUse = (car) => (KEY_MODELS.includes(params.get('keymodel')) ? params.get('keymodel') : KEY_MODELS.includes(car?.keyModel) ? car.keyModel : KEY_MODEL);
 
 // the pose: the key turned a little and tipped across the picture (its head up and left, its blade down and right),
 // seen from a little above, framed tight (modelviews.js poseView)
 export const KEY_POSE = { lift: 0.2, angle: 0.38, fov: 30, margin: 0.98 }; // (a little more than a car: the corners of a tipped key's box are mostly empty)
-const TILT = { fob: -0.62, classic: -0.5, smart: -0.55 }; // (rad about the picture's axis: + turns the head left)
+const TILT = { fob: -0.62, classic: -0.5, smart: -0.55 }; // (the others: -0.55) // (rad about the picture's axis: + turns the head left)
 // the key in its pose's wrapper (the wrapper has no animate: a still never sways)
 export const posedKey = (car, { model = keyModelInUse(car), rarity = 'bespoke', tilt = TILT[model] ?? -0.55, turn = 0 } = {}) => {
   const wrap = new THREE.Group(), key = makeKey(car, { model, rarity });
@@ -158,28 +159,35 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined' && document
     });
   }
   if (params.has('keys')) {
+    // ?keys: every key car with its OWN key (cars.js keyModel); ?keys=<car id>: every key model tinted by that car.
+    // &card: the keys at card size only (some 100 px, as What's inside shows them), no views from the sides
     import('../cars.js').then((Cars) => {
-      const car = Cars.carById?.(params.get('keys') || KEY_CAR) || Cars.carById?.(KEY_CAR);
-      if (!car) return;
+      const one = params.get('keys') ? Cars.carById?.(params.get('keys')) : null;
+      const keyCars = [...(Cars.EVENT_CARS || []), ...(Cars.BESPOKE_CARS || [])].filter(c => c && (c.bespoke || c.keyModel));
+      const only = (params.get('only') || '').split(',').filter(Boolean); // (&only=<model>,...: those keys only)
+      const tiles = (one ? KEY_MODELS.map(model => [one, model]) : keyCars.map(car => [car, keyModelInUse(car)])).filter(([, m]) => !only.length || only.includes(m));
+      if (!tiles.length) return;
+      const card = params.has('card');
       const sheet = document.createElement('div');
-      sheet.className = 'key-sheet';
+      sheet.className = 'key-sheet' + (card ? ' cards' : '');
       const title = document.createElement('h2');
-      title.textContent = 'Car keys: ' + car.name + ' (default: ' + KEY_MODEL + ')';
+      title.textContent = one ? 'Car keys: every model, tinted by the ' + one.name : 'Car keys: each key car\'s own';
       sheet.append(title);
       const big = document.createElement('div');
       big.className = 'key-sheet-row';
       const sides = document.createElement('div');
       sides.className = 'key-sheet-sides';
       const jobs = [];
-      for (const model of KEY_MODELS) {
+      for (const [car, model] of tiles) {
         const tile = document.createElement('figure');
         const pic = document.createElement('div');
         pic.className = 'key-sheet-pic';
         const cap = document.createElement('figcaption');
-        cap.textContent = model + (model === KEY_MODEL ? ' (default)' : '');
+        cap.textContent = one ? model : car.name + ': ' + model;
         tile.append(pic, cap);
         big.append(tile);
-        jobs.push([pic, { model, rarity: 'bespoke' }]);
+        jobs.push([pic, car, { model, rarity: 'bespoke' }]);
+        if (card) continue;
         // from all sides: the front, the right side, the back, from above (the key upright, not tipped)
         const row = document.createElement('div');
         row.className = 'key-sheet-views';
@@ -189,13 +197,13 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined' && document
           v.title = model + ' ' + name;
           v.dataset.label = model + ' · ' + name;
           row.append(v);
-          jobs.push([v, { model, rarity: 'bespoke', tilt: 0, turn, pose: name, view: { lift, angle: 0, fov: 30, margin: 0.9 } }]);
+          jobs.push([v, car, { model, rarity: 'bespoke', tilt: 0, turn, pose: name, view: { lift, angle: 0, fov: 30, margin: 0.9 } }]);
         }
         sides.append(row);
       }
       sheet.append(big, sides);
       document.body.append(sheet);
-      for (const [el, o] of jobs) soon(el, car, o);
+      for (const [el, car, o] of jobs) soon(el, car, o);
     });
   }
 }

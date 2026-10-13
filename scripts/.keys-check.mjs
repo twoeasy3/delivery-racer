@@ -1,5 +1,5 @@
 // A check of the CAR KEY models and the key card (src/delivery/render/keyModels.js, keycard.js, blueprintcard.js),
-// headless: each of the three keys builds for a few cars and rarities into a group of meshes, every vertex a number,
+// headless: each of the nine keys (one a key car, the owner, 13-Oct) builds for a few cars and rarities into a group of meshes, every vertex a number,
 // its box in range (a key some 3 to 6 units long, upright, not a speck and not a building), its idle sway moves it and
 // stays bounded, the emblem is the car's initial; and a KEY card shows the CAR KEY tab and the key's picture (not the
 // car's: the picture handed back to the caller is kept out of the card), a blueprint card still BLUEPRINT and its own
@@ -13,8 +13,8 @@ const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' 
 try {
   const THREE = await import('three');
   const { KEY_MODELS, KEY_MODEL, KEY_BUILDERS, makeKey, initialOf } = await g.load('render/keyModels.js');
-  check(KEY_MODELS.length === 3 && KEY_MODELS.every(m => typeof KEY_BUILDERS[m] === 'function') && KEY_MODELS.includes(KEY_MODEL),
-    'three key models (' + KEY_MODELS.join(', ') + '), the default ' + KEY_MODEL + ' among them');
+  check(KEY_MODELS.length === 9 && new Set(KEY_MODELS).size === 9 && KEY_MODELS.every(m => typeof KEY_BUILDERS[m] === 'function') && KEY_MODELS.includes(KEY_MODEL),
+    'nine key models (' + KEY_MODELS.join(', ') + '), the default ' + KEY_MODEL + ' among them');
   const cars = [g.cars.carById('silvercomet'), g.cars.carById('commuter'), { id: 'x', name: '9 Lives', color: 0x101010 }].filter(Boolean);
   check(cars.length === 3, 'the Silver Comet and a garage car to tint them by');
   for (const model of KEY_MODELS) {
@@ -22,16 +22,18 @@ try {
     for (const car of cars) for (const rarity of ['bespoke', 'epic', 'common']) {
       const key = makeKey(car, { model, rarity });
       key.updateMatrixWorld(true);
-      let meshes = 0, bad = 0;
+      let meshes = 0, bad = 0, tris = 0;
       key.traverse((node) => {
         if (!node.isMesh) return;
         meshes++;
+        tris += (node.geometry.index ? node.geometry.index.count : node.geometry.attributes.position.count) / 3;
         const a = node.geometry.attributes.position.array;
         for (let i = 0; i < a.length; i++) if (!Number.isFinite(a[i])) { bad++; break; }
       });
       const box = new THREE.Box3().setFromObject(key), size = box.getSize(new THREE.Vector3());
-      const fine = meshes >= 10 && !bad && size.y >= 3 && size.y <= 7 && size.x >= 1 && size.x <= 3.5 && size.z >= 0.3 && size.z <= 1.5 && key.userData.keyModel === model;
-      if (!fine && ok) { ok = false; why = ` (${car.id} ${rarity}: ${meshes} meshes, ${bad} bad, size ${size.toArray().map(n => n.toFixed(2)).join(' x ')})`; }
+      // (the six newer keys merge their parts by material: some 7 to 13 meshes; each key under 4,000 triangles)
+      const fine = meshes >= 5 && tris < 4000 && !bad && size.y >= 3 && size.y <= 7 && size.x >= 1 && size.x <= 3.5 && size.z >= 0.3 && size.z <= 1.5 && key.userData.keyModel === model;
+      if (!fine && ok) { ok = false; why = ` (${car.id} ${rarity}: ${meshes} meshes, ${tris} triangles, ${bad} bad, size ${size.toArray().map(n => n.toFixed(2)).join(' x ')})`; }
       // the idle sway: moves it, and keeps it near where it stands
       key.userData.animate(0); key.updateMatrixWorld(true);
       const rest = new THREE.Box3().setFromObject(key);
@@ -66,12 +68,14 @@ try {
   const bn = all(b.node);
   check(/^BLUEPRINT/.test(bn.find(n => n.className === 'bp-tab')?.textContent || '') && bn.includes(b.pic) && !bn.some(n => /bp-keypic/.test(n.className)),
     'a blueprint card: BLUEPRINT, its own car picture, no key');
-  // each Bespoke key car has ONE key style for good (cars.js `keyModel`), and all three styles are in use (the owner, 12-Oct)
+  // each Bespoke key car has ONE key for good (cars.js `keyModel`; the owner, 12-Oct), a key of its OWN: no two cars share
+  // one, and every model is some car's (the owner, 13-Oct)
   const carsMod = await g.load('cars.js');
   const bespokeCars = [...carsMod.EVENT_CARS, ...carsMod.BESPOKE_CARS].filter(c => c.bespoke);
   const styles = bespokeCars.map(c => c.id + ':' + c.keyModel).join(' ');
   check(bespokeCars.length >= 6 && bespokeCars.every(c => KEY_MODELS.includes(c.keyModel)), 'every Bespoke key car has its own key style (' + styles + ')');
-  check(KEY_MODELS.every(m => bespokeCars.some(c => c.keyModel === m)), 'all three key styles (fob, classic, smart) are featured on some Bespoke car');
+  check(new Set(bespokeCars.map(c => c.keyModel)).size === bespokeCars.length, 'no two key cars share a key model');
+  check(KEY_MODELS.every(m => bespokeCars.some(c => c.keyModel === m)), 'every key model (' + KEY_MODELS.length + ') is some Bespoke car\'s');
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error?.stack || error));
