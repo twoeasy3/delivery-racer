@@ -43,6 +43,29 @@ try {
     }
     check(ok, model + ': builds for 3 cars x 3 rarities: meshes, no NaN, an upright key-sized box, a gentle sway' + why);
   }
+  // ---- ordinary keys, batch A (KEY-IDEAS.md rows 1 to 4: render/keyModelsOrdA.js): every ORDINARY model registered (none of
+  // them among the nine) builds for the same cars and rarities: 5+ meshes, under 4,000 triangles, every vertex a number
+  {
+    await g.load('render/keyModelsOrdinary.js');
+    const { ORDINARY_MODELS } = await g.load('render/keyModels.js');
+    check(['roundhead', 'wing', 'flipkey', 'rugged'].every(m => ORDINARY_MODELS.includes(m)) && !ORDINARY_MODELS.some(m => KEY_MODELS.includes(m)),
+      'the ordinary keys are registered apart from the nine (' + ORDINARY_MODELS.join(', ') + ')');
+    for (const model of ORDINARY_MODELS) {
+      let why = '';
+      for (const car of cars) for (const rarity of ['bespoke', 'epic', 'common']) {
+        const key = makeKey(car, { model, rarity });
+        let meshes = 0, bad = 0, tris = 0;
+        key.traverse((node) => {
+          if (!node.isMesh) return;
+          meshes++;
+          tris += (node.geometry.index ? node.geometry.index.count : node.geometry.attributes.position.count) / 3;
+          if (Array.from(node.geometry.attributes.position.array).some(v => !Number.isFinite(v))) bad++;
+        });
+        if (!why && !(key.isGroup && meshes >= 5 && tris < 4000 && !bad && key.userData.keyModel === model)) why = ` (${car.id} ${rarity}: ${meshes} meshes, ${tris} triangles, ${bad} bad)`;
+      }
+      check(!why, 'ordinary ' + model + ': builds for 3 cars x 3 rarities: 5+ meshes, under 4,000 triangles, no NaN' + why);
+    }
+  }
   check(initialOf({ name: 'Silver Comet' }) === 'S' && initialOf({ name: '9 Lives' }) === 'L' && initialOf({ name: '42' }) === '*', 'the emblem: the first letter of the name, else a diamond');
   check(makeKey(cars[0], { model: 'nonsense' }).userData.keyModel === KEY_MODEL, 'an unknown model: the default');
 
