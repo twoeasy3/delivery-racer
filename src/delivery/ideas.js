@@ -41,6 +41,7 @@
 // The eighth batch, one CONCEPT CAR (a show car that never went on sale; the owner, 13-Oct): a quad-turbo mid-engined
 // supercar with a big glass canopy and a long tail (model: render/ideaModels8.js): one more idea.
 // One concept car more (CHECKLIST item 301): a small open roadster after the Pontiac Solstice concept (2002).
+// One more (CHECKLIST item 302): a tiny three-seat concept city car under a glass bubble (render/ideaModels10.js).
 
 // ============================================================================
 export const IDEA_CARS = [
@@ -189,6 +190,10 @@ export const IDEA_CARS = [
   { id: 'midsummer', name: 'Midsummer Roadster', basedOn: 'Pontiac Solstice concept (2002)', model: 'midsummer', color: 0xd2401f, evilColor: 0x46285e,
     hw: 0.9, hl: 1.97, height: 1.12, note: 'A short, round two-seater with its wheels out at the corners and a hump behind each seat.',
     maxSpeed: 36, accel: 12, agility: 1.3, crossing: 0.3, health: 110, mass: 1, sound: 'miata' },
+  // (a concept city car, after the Nissan Pivo 2: model in render/ideaModels10.js)
+  { id: 'fishbowl', name: 'Fishbowl Runabout', basedOn: 'Nissan Pivo 2 (2007 concept)', model: 'fishbowl', color: 0x8fd3c4, evilColor: 0x4a1d42,
+    hw: 0.79, hl: 1.37, height: 1.6, note: 'Three seats under a glass bubble, a small wheel at each corner, and nowhere it cannot park.',
+    maxSpeed: 26, accel: 10, agility: 1.4, crossing: 0.3, health: 90, mass: 1, sound: 'evsaloon' },
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
 export const IDEA_CAR = Object.fromEntries(IDEA_CARS.map(car => [car.id, car]));
