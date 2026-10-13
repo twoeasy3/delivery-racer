@@ -12,6 +12,7 @@ import { IDEA_MODELS_3 } from './ideaModels3.js'; // (the third batch, ten more)
 import { IDEA_MODELS_4 } from './ideaModels4.js'; // (the fourth batch: ten unusual, retro-future and utility vehicles)
 import { IDEA_MODELS_5 } from './ideaModels5.js'; // (the fifth batch: two classic road cars)
 import { IDEA_MODELS_6 } from './ideaModels6.js'; // (the sixth batch: two older vehicles and three modern cars)
+import { IDEA_MODELS_8 } from './ideaModels8.js'; // (the eighth: a quad-turbo concept supercar)
 
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 const box = (parent, material, w, h, l, x, y, z) => {
@@ -165,6 +166,7 @@ export const IDEA_MODELS = {
   ...IDEA_MODELS_4,
   ...IDEA_MODELS_5,
   ...IDEA_MODELS_6,
+  ...IDEA_MODELS_8,
   // A bubble car (a BMW Isetta): an egg on wheels. The whole front is its one door, hinged at the side, the
   // windscreen in it; a glass bubble over a bench seat; lamps in pods on its flanks; the two back wheels close
   // together under the pinched tail. It sits still
