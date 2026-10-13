@@ -15,6 +15,11 @@
 
 /* the picture: the car on diagonal stripes of its rarity */
 .bp-art { position: relative; overflow: hidden; aspect-ratio: 1 / .9; border-radius: 5px;
+  /* (isolation: the shine's mix-blend-mode, below, blends with the art and nothing behind it, which is all it ever showed over: the art is opaque.
+     Without it Chrome cannot merge the cards into the scroller's layer and makes a compositing layer for nearly every shine and the cards after it:
+     What's inside, 66 cards, 136 layers, 209 Mpx of layers at a tablet's device pixel ratio 3; with it 85 and 162; the GPU's tiles of the
+     scrolled sheet 68 MB to 38 MB. The Mi Pad's flicker and flashing cards: CHECKLIST 212) */
+  isolation: isolate;
   background: repeating-linear-gradient(135deg, var(--rc) 0 7cqw, var(--rc-deep) 7cqw 14cqw); }
 .bp-card.r-bespoke .bp-art { background: repeating-linear-gradient(135deg, rgba(255, 255, 255, .22) 0 7cqw, transparent 7cqw 14cqw),
   linear-gradient(125deg, #ff3fae, #ffbe2e 28%, #3fd06f 48%, #35c2ff 68%, #b45cff 88%); }
