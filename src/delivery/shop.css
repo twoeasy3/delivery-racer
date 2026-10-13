@@ -359,3 +359,18 @@ button.shop-odds { width: 100%; padding: 0; cursor: pointer; }
 .bp-amount.cycle .amt-phase { grid-area: 1 / 1; white-space: nowrap; animation: pc-stack 3.2s ease-in-out infinite; }
 .bp-amount.cycle .amt-phase.alt { animation-delay: -1.6s; }
 @media (prefers-reduced-motion: reduce) { .bp-amount.cycle .amt-phase { animation: none; } .bp-amount.cycle .amt-phase.alt { display: none; } }
+
+/* ---- WHAT'S INSIDE, light on a tablet (the owner, 12-Oct: "the performance of the what's in this pack screen is really poor on a tablet running
+   the desktop site"): sixty-odd cards each ran several endless animations (a shine that moves a background, a mix-blend sweep, a holo, a
+   rainbow drop-shadow glow, a twinkle, two fades) and all were painted at once. Here the cards are STILL (their static shine layers stay),
+   the stacks fade off one timer (packcontents.js: .phase-b on the sheet, a transition), and a card off screen is not painted at all
+   (content-visibility). The reveal and the showroom keep their effects. ---- */
+.pack-contents .bp-card, .pack-contents .bp-card *, .pack-contents .bp-card *::before, .pack-contents .bp-card *::after,
+.pack-contents .bp-card::before, .pack-contents .bp-card::after { animation: none !important; }
+.pack-contents .pc-card { content-visibility: auto; contain-intrinsic-size: 168px 236px; }
+@media (prefers-reduced-motion: no-preference) {
+  .pack-contents .pc-stack, .pack-contents .amt-phase { transition: opacity .45s ease; }
+  .pack-contents .pc-stack.alt, .pack-contents .amt-phase.alt { opacity: 0; }
+  .pack-contents.phase-b .pc-stack:not(.alt), .pack-contents.phase-b .amt-phase:not(.alt) { opacity: 0; }
+  .pack-contents.phase-b .pc-stack.alt, .pack-contents.phase-b .amt-phase.alt { opacity: 1; }
+}
