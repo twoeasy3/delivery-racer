@@ -80,3 +80,43 @@ const wristband = (car, { rarity = 'bespoke' } = {}) => {
   return idle(group, merged(k));
 };
 registerKey('wristband', wristband);
+
+// ---- (6) the CAR-SHAPED fob: the car itself in miniature, seen from above (its nose up), glossy in its colour ----
+const carfob = (car, { rarity = 'bespoke' } = {}) => {
+  const group = new THREE.Group(), k = new THREE.Group();
+  const paint = paintOf(car);
+  const BODY = metal(paint.getHex(), 100), GLASS = metal(0x0d1015, 140), CHROME = metal(0xd4d8de, 110), GAP = lambert(0x1c1f25);
+  const TYRE = lambert(0x1a1b1f), TAIL = glow(0xd8322a), HEAD = glow(0xf4f1e2), UNDER = metal(0x23262c, 30), INK = metal(inkOn(paint), 90);
+  // the body's footprint: a rounded nose (top), the flanks straight, a squarer tail
+  const P = [[-0.6, -1.6, 0.26], [0.6, -1.6, 0.26], [0.7, -1.12, 0.2], [0.7, 1.0, 0.3], [0.52, 1.6, 0.34], [-0.52, 1.6, 0.34], [-0.7, 1.0, 0.3], [-0.7, -1.12, 0.2]];
+  const D = 0.34, B = 0.08, TOP = D / 2 + B; // (the deck at z = 0.25; the flanks stand 0.064 off the outline)
+  slab(k, BODY, outline(P, 0.25), D, B, 0, 3);
+  rainbow(band(k, rimMaterial(rarity), P, 0.25, -0.07, -0.025, 0.03, TOP + 0.005, 3), 0, 0);
+  // the glasshouse: a domed slab of dark glass (the windscreen ahead of the roof, the rear window behind it, the side
+  // glass on its bevel), and the roof on it in the car's colour: the lock button, as the real one's
+  const G = [[-0.54, -0.98], [0.54, -0.98], [0.6, -0.25], [0.56, 0.52], [-0.56, 0.52], [-0.6, -0.25]];
+  slab(k, GLASS, outline(G, 0.22), 0.16, 0.07, TOP + 0.06, 4); // (z 0.16 to 0.45)
+  slab(k, BODY, outline([[-0.43, -0.58], [0.43, -0.58], [0.45, -0.2], [0.43, 0.22], [-0.43, 0.22], [-0.45, -0.2]], 0.14), 0.04, 0, TOP + 0.21, 4); // (z 0.44 to 0.48)
+  // the boot lid's shut line (the boot button) and the bonnet's, sunk into the deck
+  box(k, GAP, 1.0, 0.03, 0.04, 0, -1.22, TOP);
+  box(k, GAP, 0.86, 0.03, 0.04, 0, 0.78, TOP);
+  // the badge on the bonnet: a chrome ring, the initial in ink on a disc of the paint
+  disc(k, CHROME, 0.2, TOP - 0.02, TOP + 0.03, 0, 1.12, 10);
+  disc(k, BODY, 0.15, TOP - 0.02, TOP + 0.045, 0, 1.12, 10);
+  glyph(k, INK, initialOf(car), 0.17, TOP + 0.035, TOP + 0.06, 0, 1.12);
+  // the lamps: a red strip across the tail's deck and down its end, two pale headlamps at the nose's corners
+  box(k, TAIL, 1.0, 0.07, 0.03, 0, -1.4, TOP);
+  box(k, TAIL, 1.0, 0.04, 0.16, 0, -1.665, 0.08);
+  for (const s of [1, -1]) {
+    const lamp = box(k, HEAD, 0.26, 0.07, 0.03, s * 0.3, 1.36, TOP);
+    lamp.rotation.z = s * 0.35;
+  }
+  // the wheels, just showing past the flanks, and the door mirrors
+  for (const s of [1, -1]) for (const y of [0.92, -0.95]) box(k, TYRE, 0.12, 0.5, 0.3, s * 0.75, y, -0.07);
+  for (const s of [1, -1]) box(k, BODY, 0.2, 0.09, 0.08, s * 0.76, 0.42, 0.16);
+  // the underside: a dark panel, a battery hatch's slot
+  box(k, UNDER, 1.0, 2.6, 0.04, 0, -0.05, -TOP);
+  box(k, GAP, 0.36, 0.05, 0.03, 0, -1.0, -TOP - 0.02);
+  return idle(group, merged(k));
+};
+registerKey('carfob', carfob);
