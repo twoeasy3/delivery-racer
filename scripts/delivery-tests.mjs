@@ -79,9 +79,9 @@ const GROUPS = {
     files: [/water\.js|amphib|slipway|harbour|flood|ford|fjord/],
   },
   render: {
-    about: 'Drawing, without a browser: the shared model views (a stand-in renderer), dents, the car keys (the three models, the key card, the key cards\' pre-rendered PNGs in keyshots/), the showroom landing\'s suspension (every car\'s wheels found and kept on the floor, its body sprung), the model inspector (every idea car built and its triangles counted); the showroom\'s turning key card (.keyspin-check: its source, then in headless Chromium if one is found: a blacked-out key drawn black only, the showroom\'s key card live and stopped)',
-    seconds: 60,
-    tests: [t('.modelviews-check.mjs'), t('.dents-check.mjs'), t('.keys-check.mjs'), t('.keyshots-check.mjs'), t('.suspension-check.mjs'), t('.inspector-check.mjs'), t('.keyspin-check.mjs')],
+    about: 'Drawing, without a browser: the shared model views (a stand-in renderer), dents, the car keys (the three models, the key card, the key cards\' pre-rendered PNGs in keyshots/), the showroom landing\'s suspension (every car\'s wheels found and kept on the floor, its body sprung), the model inspector (every idea car built and its triangles counted); the showroom\'s turning key card (.keyspin-check: its source, then in headless Chromium if one is found: a blacked-out key drawn black only, the showroom\'s key card live and stopped); the menu on a phone (.phone-menu-check: in headless Chromium, six phone sizes upright and on their side, the Career, Races and Events tabs and the two event cards, with and without the address bar: the menu no taller than the screen, START, the strip and the build tag on it and on top; the desktop and tablet menu as before)',
+    seconds: 300,
+    tests: [t('.modelviews-check.mjs'), t('.dents-check.mjs'), t('.keys-check.mjs'), t('.keyshots-check.mjs'), t('.suspension-check.mjs'), t('.inspector-check.mjs'), t('.keyspin-check.mjs'), t('.phone-menu-check.mjs')],
     files: [/src\/delivery\/render\//, /\.css$/, /keyshots|keyModels|keys-png/],
   },
   replay: {
