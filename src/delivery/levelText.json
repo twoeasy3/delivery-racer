@@ -609,5 +609,16 @@
       "good": "lavalamp",
       "evil": "glitter"
     }
+  },
+  "endurance-road": {
+    "name": "Endurance Road",
+    "description": {
+      "good": "Coffee for the night shift, the race-day way: out past the grandstands and the pits, through the hay-bale chicane and the squeeze on the long straight, a rival courier on your tail all the way to the line.",
+      "evil": "An air horn for the drivers who are trying to sleep. Race Le Comte down the long straight, cut the chicanes, scatter the kangaroos and the caravans, and beat him to the line."
+    },
+    "cargo": {
+      "good": "coffee",
+      "evil": "airhorn"
+    }
   }
 }

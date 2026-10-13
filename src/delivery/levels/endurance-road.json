@@ -1,0 +1,81 @@
+{
+  "id": "endurance-road",
+  "theme": "bathurst",
+  "clock": { "good": 90, "evil": 70 },
+  "tip": 220,
+  "cargo": { "good": "coffee", "evil": "airhorn" },
+  "rival": "opposite",
+  "rivals": [
+    { "name": "Le Comte", "car": "sport", "colors": ["#1f4fb5", "#f2f2f2"], "mark": "#2f7fe0" }
+  ],
+  "traffic": { "commuter": 0.18, "sport": 0.14, "miata": 0.14, "caravan": 0.12, "boyracer": 0.1, "wagon": 0.1, "lovebus": 0.08, "van": 0.07, "police": 0.03 },
+  "trafficCount": 9,
+  "oncomingCount": 7,
+  "segments": [
+    { "length": 300, "curve": 0 },
+    { "length": 150, "curve": 0.006 },
+    { "length": 900, "curve": 0 },
+    { "length": 100, "curve": 0.008 },
+    { "length": 400, "curve": 0 },
+    { "length": 200, "curve": -0.006 },
+    { "length": 200, "curve": 0 },
+    { "length": 150, "curve": 0.006 },
+    { "length": 100, "curve": 0 }
+  ],
+  "stands": [
+    { "from": 20, "to": 280, "side": "right" },
+    { "from": 20, "to": 280, "side": "left", "pits": true },
+    { "from": 2400, "to": 2500, "side": "right" }
+  ],
+  "runoff": [
+    { "from": 300, "to": 450, "side": "left", "width": 10 },
+    { "from": 1350, "to": 1450, "side": "left", "width": 10 }
+  ],
+  "gravel": [
+    { "from": 310, "to": 440, "side": "left" },
+    { "from": 1355, "to": 1445, "side": "left" }
+  ],
+  "narrows": [
+    { "from": 1080, "to": 1200, "lanesPerSide": 1 }
+  ],
+  "herds": [
+    { "from": 1560, "to": 1720, "count": 4, "kind": "kangaroo" }
+  ],
+  "pickups": [
+    { "type": "cash10", "s": 60, "lane": 2 },
+    { "type": "cash10", "s": 60, "lane": 3 },
+    { "type": "cash10", "s": 160, "lane": 2 },
+    { "type": "cash10", "s": 160, "lane": 3 },
+    { "type": "turbo", "s": 260, "lane": 3 },
+    { "type": "cash20", "s": 400, "lane": 2 },
+    { "type": "cash20", "s": 400, "lane": 3 },
+    { "type": "cash10", "s": 560, "lane": 2 },
+    { "type": "cash10", "s": 560, "lane": 3 },
+    { "type": "cash20", "s": 790, "lane": 3 },
+    { "type": "cash20", "s": 850, "lane": 2 },
+    { "type": "wrench", "s": 960, "lane": 3 },
+    { "type": "cash10", "s": 1140, "lane": 2 },
+    { "type": "turbo", "s": 1260, "lane": 2 },
+    { "type": "cash20", "s": 1400, "lane": 2 },
+    { "type": "cash20", "s": 1400, "lane": 3 },
+    { "type": "mystery", "s": 1500, "lane": 3 },
+    { "type": "cash10", "s": 1780, "lane": 2 },
+    { "type": "cash10", "s": 1780, "lane": 3 },
+    { "type": "cash10", "s": 1950, "lane": 2 },
+    { "type": "cash10", "s": 1950, "lane": 3 },
+    { "type": "ghost", "s": 2100, "lane": 2 },
+    { "type": "cash20", "s": 2300, "lane": 2 },
+    { "type": "cash20", "s": 2300, "lane": 3 },
+    { "type": "cash20", "s": 2450, "lane": 2 },
+    { "type": "cash20", "s": 2450, "lane": 3 },
+    { "type": "cash20", "s": 2450, "lane": "right" }
+  ],
+  "obstacles": [
+    { "s": 760, "lane": 2, "kind": "bale" },
+    { "s": 820, "lane": 3, "kind": "bale" },
+    { "s": 880, "lane": 2, "kind": "bale" },
+    { "s": 1060, "lane": 3, "kind": "cone" },
+    { "s": 2150, "lane": 3, "kind": "bale" },
+    { "s": 2350, "lane": 2, "kind": "bale" }
+  ]
+}
