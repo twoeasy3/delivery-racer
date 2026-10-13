@@ -275,6 +275,7 @@ const buy = async (id) => {
   const done = Shop.buy(id);
   draw();
   if (!done.ok) await tell({ title: 'Not bought', lines: ['Nothing was taken.'] });
+  else packsModule?.Packs && (packsModule.Packs.again = { label: 'Buy another · ' + cash(offer.price), can: () => Shop.canBuy(id).ok, buy: () => { Shop.buy(id); draw(); } }); // (the reveal's end offers it again, render/packs.js; the owner, 13-Oct)
   // (bought: the pack is opened at once, over the Shop: Shop.buy asked the reveal, render/packs.js)
 };
 export const ShopScreen = {
