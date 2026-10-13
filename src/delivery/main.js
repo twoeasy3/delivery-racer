@@ -10,6 +10,7 @@ import { standsAlone } from './levelText.js';
 import { THEMES } from './themes.js';
 import { Progress } from './progress.js';
 import './render/demo.js'; // (?demo: before the menu)
+if (/[?&]unlockcine=/.test(location.search)) import('./render/unlockcine.js'); // (?unlockcine=car:<id> / key:<id>: the unlock cinematics, by address only)
 import { Player } from './player.js';
 import { Traffic } from './traffic.js';
 import { Game } from './game.js';
