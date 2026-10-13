@@ -233,13 +233,15 @@ export const ORIG2_MODELS = {
     const group = new THREE.Group();
     const w = car.hw * 2, L = car.hl, R = 0.36, extreme = car.model === 'superlowrider';
     const half = w / 2, rearZ = -L * 0.6, frontZ = L * 0.64;
-    // everything that rises with the front end hangs off this, whose origin is the rear axle; `shell` puts the parts,
-    // made where they stand on the floor, back where they belong in it
+    // everything that rises with the front end hangs off this, whose origin is the tail (it hinges there, so the tail never
+    // dips into the road or onto the rear wheels, which stay planted while the body rises clear of them); `shell` puts the
+    // parts, made where they stand on the floor, back where they belong in it
+    const pivotZ = -L + 0.1;
     const chassis = new THREE.Group();
-    chassis.position.set(0, R, rearZ);
+    chassis.position.set(0, R, pivotZ);
     group.add(chassis);
     const shell = new THREE.Group();
-    shell.position.set(0, -R, -rearZ);
+    shell.position.set(0, -R, -pivotZ);
     chassis.add(shell);
     const paint = lambert(car.color), P = parts();
     const trimMetal = extreme ? GOLD : CHROME; // (the Super's brightwork is gold)
@@ -348,13 +350,13 @@ export const ORIG2_MODELS = {
       body,
       parts: P.count,
       animate: (t) => {
-        const tilt = (extreme ? 0.5 : 0.27) * (1 - Math.cos(t * 4)) / 2; // 0 (level) .. 0.27 rad (0.5 hopped up), and back, smoothly
+        const tilt = (extreme ? 0.4 : 0.22) * (1 - Math.cos(t * 4)) / 2; // 0 (level) .. 0.22 rad (0.4 hopped up), and back, smoothly (hinged at the tail: the nose rises about as far as it did from the axle)
         chassis.rotation.x = -tilt; // (negative pitch lifts the nose)
         if (extreme) {
           chassis.rotation.z = Math.sin(t * 2) * 0.12;                   // rocking side to side,
           glow.color.setHSL((t * 0.15) % 1, 1, 0.55);                    // the neon cycling round
         }
-        frontAxle.position.y = R + Math.sin(tilt) * (frontZ - rearZ) * 0.3; // (the front wheels rise only a third as far as the nose does)
+        frontAxle.position.y = R + Math.sin(tilt) * (frontZ - pivotZ) * 0.3; // (the front wheels rise only a third as far as the nose does)
       },
     };
     return group;
