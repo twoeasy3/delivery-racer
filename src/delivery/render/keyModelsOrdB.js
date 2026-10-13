@@ -19,10 +19,12 @@ const { THREE, lambert, metal, glow, add, box, disc, slab, band, outline, circle
 // a padlock: a body and a half-ring shackle (open: the shackle lifted and turned), `s` tall, its front at z
 const padlock = (parent, material, x, y, z, s, open = false) => {
   box(parent, material, s * 0.62, s * 0.48, 0.03, x, y - s * 0.18, z);
-  const shackle = add(parent, new THREE.TorusGeometry(s * 0.2, s * 0.07, 4, 8, Math.PI), material, x + (open ? s * 0.12 : 0), y + s * 0.04 + (open ? s * 0.1 : 0), z - 0.005);
+  const shackle = add(parent, new THREE.TorusGeometry(s * 0.2, s * 0.07, 3, 6, Math.PI), material, x + (open ? s * 0.12 : 0), y + s * 0.04 + (open ? s * 0.1 : 0), z - 0.005);
   shackle.rotation.z = open ? 0.4 : 0;
   return shackle;
 };
+// a colour's lightness (HSL), 0 to 1
+const lightness = (colour) => colour.getHSL({ h: 0, s: 0, l: 0 }).l;
 // a circle as the kit's outline points (a square with its corners rounded right round), for band()
 const ring = (r, x = 0, y = 0) => [[-r + x, -r + y], [r + x, -r + y], [r + x, r + y], [-r + x, r + y]];
 
@@ -31,7 +33,8 @@ const wristband = (car, { rarity = 'bespoke' } = {}) => {
   const group = new THREE.Group(), k = new THREE.Group();
   const paint = paintOf(car);
   // the rubber a little darker than the paint (a matte strap), the initial pressed in a shade darker again
-  const STRAP = lambert(paint.clone().multiplyScalar(0.82).getHex()), PRESS = lambert(paint.clone().multiplyScalar(0.5).getHex());
+  const STRAP = lambert(paint.clone().multiplyScalar(0.82).getHex());
+  const PRESS = lambert(lightness(paint) < 0.2 ? paint.clone().lerp(new THREE.Color(0xffffff), 0.3).getHex() : paint.clone().multiplyScalar(0.5).getHex()); // (on a dark strap, a lighter shade)
   const CHROME = metal(0xd4d8de, 110), FACE = metal(0x14171c, 120), MARK = metal(0xdfe3e8, 100), HOLE = lambert(0x1a1c20);
   // the strap's middle line in its side view (u: toward the face, +z; v: up): a straight front, a half-round curl at each
   // end going back, a short straight behind; the strap T thick round it, W wide (along x)
@@ -164,3 +167,56 @@ const cardkey = (car, { rarity = 'bespoke' } = {}) => {
   return idle(group, merged(k));
 };
 registerKey('cardkey', cardkey);
+
+// ---- (8) the DISPLAY key: a large fob with a rounded-glass colour screen (the car from above in its colour, its lock
+// state, its range), a chrome edge, three buttons below the screen, a loop at the top ----
+const displaykey = (car, { rarity = 'bespoke' } = {}) => {
+  const group = new THREE.Group(), k = new THREE.Group();
+  const paint = paintOf(car);
+  const BODY = metal(0x2a2d33, 60), CHROME = metal(0xd4d8de, 110), GLASS = metal(0x07090c, 150), SCREEN = glow(0x0f2747);
+  const CAR = glow(paint.clone().lerp(new THREE.Color(0xffffff), lightness(paint) < 0.2 ? 0.45 : 0.15).getHex()), // (a dark car's paint lifted: it must read on the dark screen)
+    CABIN = glow(0x0a1a30), GREEN = glow(0x4cd67a);
+  const TEXT = glow(0xdfe8f5), DIM = glow(0x3a5578), BUTTON = metal(0x3b3f47, 60), WHITE = metal(0xe8ecf2, 80), BACK = metal(0x8d939b, 70);
+  const P = [[-0.95, -1.72, 0.46], [0.95, -1.72, 0.46], [0.95, 1.72, 0.5], [-0.95, 1.72, 0.5]];
+  const D = 0.4, B = 0.08, FRONT = D / 2 + B; // (the face at z = 0.28)
+  slab(k, BODY, outline(P, 0.45), D, B, 0, 3);
+  band(k, CHROME, P, 0.45, -0.12, 0.12, 0.3, 0, 2);
+  rainbow(band(k, rimMaterial(rarity), P, 0.45, -0.17, -0.12, 0.04, FRONT + 0.005, 2), 0, 0);
+  // the screen: a domed glass pane (its bevel the rounding), the lit display a hair in front of it
+  const S = [[-0.78, -0.2], [0.78, -0.2], [0.78, 1.5], [-0.78, 1.5]];
+  slab(k, GLASS, outline(S, 0.24), 0.04, 0.035, FRONT + 0.02, 2); // (z 0.285 to 0.355)
+  const L = 0.36; // (the display's face)
+  slab(k, SCREEN, outline([[-0.68, -0.1], [0.68, -0.1], [0.68, 1.4], [-0.68, 1.4]], 0.16), 0.02, 0, L - 0.005, 3);
+  const on = (material, w, h, x, y) => box(k, material, w, h, 0.02, x, y, L + 0.01);
+  // the top line: the car's initial, the time's dashes, a battery
+  glyph(k, TEXT, initialOf(car), 0.18, L, L + 0.02, -0.5, 1.22);
+  on(DIM, 0.24, 0.05, 0.02, 1.22);
+  on(TEXT, 0.18, 0.09, 0.47, 1.22); on(TEXT, 0.03, 0.05, 0.575, 1.22);
+  // the car from above in its colour (its cabin dark), its doors locked: a green padlock beside it
+  slab(k, CAR, outline([[-0.19, 0.2, 0.06], [0.19, 0.2, 0.06], [0.21, 0.82], [0.14, 1.02, 0.1], [-0.14, 1.02, 0.1], [-0.21, 0.82]], 0.08), 0.02, 0, L + 0.01, 2).position.x = -0.2;
+  slab(k, CABIN, outline([[-0.15, 0.36], [0.15, 0.36], [0.16, 0.64], [-0.16, 0.64]], 0.06), 0.02, 0, L + 0.02, 2).position.x = -0.2;
+  for (const s of [1, -1]) for (const y of [0.34, 0.86]) on(DIM, 0.05, 0.14, -0.2 + s * 0.23, y); // (its wheels)
+  padlock(k, GREEN, 0.36, 0.62, L + 0.01, 0.34);
+  // the range: a bar of green segments, the last ones dim
+  for (let i = 0; i < 6; i++) on(i < 4 ? GREEN : DIM, 0.17, 0.08, -0.5 + i * 0.2, 0.06);
+  // three buttons under the screen: lock, unlock, the boot
+  [-0.52, 0, 0.52].forEach((x, i) => {
+    const y = -0.86;
+    disc(k, BUTTON, 0.21, FRONT - 0.03, FRONT + 0.06, x, y, 10);
+    if (i < 2) padlock(k, WHITE, x, y + 0.02, FRONT + 0.07, 0.22, i === 1);
+    else {
+      box(k, WHITE, 0.2, 0.04, 0.03, x, y - 0.08, FRONT + 0.07);
+      box(k, WHITE, 0.04, 0.13, 0.03, x, y, FRONT + 0.07);
+      for (const s of [1, -1]) box(k, WHITE, 0.04, 0.1, 0.03, x + s * 0.03, y + 0.06, FRONT + 0.072).rotation.z = s * 0.75;
+    }
+  });
+  // the loop at the top: a chrome lug, a ring through it (across the key)
+  box(k, CHROME, 0.5, 0.24, 0.3, 0, 1.8, 0);
+  const loop = add(k, new THREE.TorusGeometry(0.2, 0.05, 4, 10), CHROME, 0, 2.06, 0);
+  loop.rotation.y = Math.PI / 2;
+  // the back: a brushed panel, the wireless-charging pad's ring
+  slab(k, BACK, outline([[-0.72, -1.4], [0.72, -1.4], [0.72, 1.4], [-0.72, 1.4]], 0.3), 0.04, 0, -FRONT - 0.005, 2);
+  band(k, BODY, ring(0.36, 0, 0.1), 0.36, 0, 0.05, 0.03, -FRONT - 0.03, 2);
+  return idle(group, merged(k));
+};
+registerKey('displaykey', displaykey);
