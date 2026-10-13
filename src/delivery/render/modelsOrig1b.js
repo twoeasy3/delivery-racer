@@ -1,16 +1,19 @@
-// ---- one of the original roster's models, rebuilt: the Commuter --------------------------------------------------------
-// (cars.js `commuter`; also the commonest traffic kind, config.js CONFIG.vehicles, and the gimmicks' stand-in car, so it
-// is built for many cars at once: every geometry is made once per size and shared, and every material that is not the
-// paint is shared too.) render/models.js hands its MODELS.commuter to this builder. It takes the car's entry
+// ---- two of the original roster's models, rebuilt: the Commuter and the Sportscar --------------------------------------
+// (cars.js `commuter` and `miata`; both are traffic kinds too, config.js CONFIG.vehicles, the Commuter the commonest and
+// the gimmicks' stand-in car, the Sportscar the rival couriers', so each is built for many cars at once: every geometry
+// is made once per size and shared, and every material that is not the paint or a livery colour is shared too.)
+// render/models.js hands its MODELS.commuter and .miata to these builders. Each takes the car's entry
 // ({ hw, hl, height, color, ... }) and returns a group, front facing local +z, with
-//   userData.body     the mesh in the paint (the whole body and its mirrors, one mesh), so the livery can be swapped
+//   userData.body     the mesh in the paint (the whole body, one mesh), so the livery can be swapped
 //   userData.animate  (seconds) => void
-// The wheels stand where the old model had them (the same radius, axles and track), each tyre a mesh of its own with its
+//   (the Sportscar also: userData.livery(evil), its stripes' colour, and userData.stripe(hex), a rival courier's own)
+// The wheels stand where the old models had them (the same radius, axles and track), each tyre a mesh of its own with its
 // hub inside it, so the showroom's suspension finds and plants them (render/carsuspension.js).
-// How it is built (as render/modelsOrig4.js): the body is an extrusion of its side view with a straight lower line (no
-// wheel arches: the owner's rule; the fat tyres simply overlap its lower corners), its edges rounded off by a bevel; the
-// glasshouse another, narrowed toward its roof (tumblehome); the glass thin panels laid a few mm proud of it; the small
-// parts squashed spheres, discs and short extrusions merged into one mesh per material. No panel lines. State-free.
+// How they are built (as render/modelsOrig4.js): the body is an extrusion of its side view, its edges rounded off by a
+// big bevel (rounder across the car than round the side view); the Commuter's with a straight lower line and no wheel
+// arches (the fat tyres simply overlap its lower corners), the Sportscar's with plain arches cut in; the glasshouse
+// another, narrowed toward its roof (tumblehome); the glass thin flat panels laid a few mm proud of it; the small parts
+// squashed spheres, discs and short extrusions merged into one mesh per material. No panel lines. State-free.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
@@ -98,7 +101,8 @@ const curve = (a, b, c, d, n) => new THREE.CubicBezierCurve(...[a, b, c, d].map(
 const sideShape = (outline) => {
   const shape = new THREE.Shape();
   outline.forEach((p, i) => {
-    if (i === 0) shape.moveTo(p[0], p[1]);
+    if (p[0] === 'arc') shape.absarc(p[1], p[2], p[3], Math.PI, 0, true); // (a wheel arch, from its rear foot over to its front)
+    else if (i === 0) shape.moveTo(p[0], p[1]);
     else shape.lineTo(p[0], p[1]);
   });
   return shape;
@@ -239,5 +243,112 @@ ORIG1B_MODELS.commuter = (car) => {
   // the wheels: small fat tyres, plain silver hub caps
   for (const side of [-1, 1]) for (const z of [AX, -AX]) wheel(group, k, R, 0.26, side * (W - 0.04), z, 0.19, SILVER);
   group.userData = { body, animate: () => {} };
+  return group;
+};
+
+// a ribbon laid along a chain of a side view's top points ([z, y], from front to back), lifted `d` out from them (the
+// bevel and a few mm, mitred at each point), from x0 to x1 either side of the centre line: a racing stripe
+const ribbon = (chain, d, x0, x1) => {
+  const n = (a, b) => { const dz = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dz, dy); return [dy / len, -dz / len]; };
+  const out = chain.map((p, i) => {
+    const na = i > 0 ? n(chain[i - 1], p) : null, nb = i + 1 < chain.length ? n(p, chain[i + 1]) : null;
+    const [mz, my] = na && nb ? [na[0] + nb[0], na[1] + nb[1]] : na || nb, len = Math.hypot(mz, my), m = [mz / len, my / len];
+    const s = d / Math.max(0.5, m[0] * (na || nb)[0] + m[1] * (na || nb)[1]);
+    return [p[0] + m[0] * s, p[1] + m[1] * s];
+  });
+  const g = [];
+  for (let i = 0; i + 1 < out.length; i++) {
+    const [a, b] = [out[i], out[i + 1]];
+    for (const side of [-1, 1]) {
+      const quad = [[side * x0, a[1], a[0]], [side * x1, a[1], a[0]], [side * x1, b[1], b[0]], [side * x0, b[1], b[0]]];
+      g.push(panel(side > 0 ? quad : quad.reverse()));
+    }
+  }
+  return g;
+};
+
+// ---- the Sportscar ----------------------------------------------------------------------------------------------------
+// (render/modelsOrig4.js's Sportscar, improved: rounder and simpler.) A small, low, rounded two-seat sports coupe: a
+// round nose over a front lip spoiler, a long rounded bonnet with a raised scoop, fat haunches over the rear wheels, a
+// short round cabin with a raked windscreen and a fastback down to a ducktail; twin racing stripes from the lip over the
+// nose, the scoop, the roof, the deck and down the tail (white on red for Good, black on yellow for Evil;
+// userData.stripe for a rival courier's own colour); slim teardrop lamps at the nose's corners, a dark oval intake,
+// round mirrors in the paint; fat tyres on plain silver hubs; a tail lamp across each of the tail's corners.
+ORIG1B_MODELS.miata = (car) => {
+  const group = new THREE.Group();
+  const W = car.hw, L = car.hl, R = 0.32; // (as before: radius 0.32, the axles at +0.32 and -0.31 of the length)
+  const k = 'miata' + [W, L].join(',');
+  const paint = lambert(car.color), stripe = new THREE.MeshLambertMaterial({ color: 0xf4f4f4, side: THREE.DoubleSide });
+  const AF = 0.64 * L, AR = -0.62 * L; // (the axles: 1.248 and -1.209 for the car)
+  const BEV = 0.08, BW = W * 2 + 0.1; // (the flanks at ±0.9: the fat tyres just proud of them)
+  const ARCH = R + 0.04 + BEV, AY = R - 0.02; // (the arches' tops under the bonnet's and the deck's outline)
+  const NOSE = L - BEV, TAILZ = -L + BEV;
+  // the nose, up its round face and back over the bonnet to the windscreen's foot (the stripes follow it)
+  const WSF = [0.6, 0.78];
+  const front = [[NOSE - 0.02, 0.34], ...curve([NOSE - 0.02, 0.34], [NOSE + 0.03, 0.52], [NOSE - 0.06, 0.66], [NOSE - 0.32, 0.72], 4),
+    ...curve([NOSE - 0.32, 0.72], [1.2, 0.78], [0.9, 0.79], WSF, 3)];
+  const deck = [[-1.15, 0.78], ...curve([-1.15, 0.78], [-1.5, 0.79], [TAILZ + 0.12, 0.8], [TAILZ + 0.01, 0.83], 2)]; // (to the ducktail's lip)
+  const tail = curve([TAILZ + 0.01, 0.83], [TAILZ - 0.02, 0.62], [TAILZ, 0.42], [TAILZ + 0.03, 0.34], 3);
+  const bodyOutline = [
+    [NOSE - 0.08, AY], ...front, ...deck, ...tail, [TAILZ + 0.06, AY], // (one straight lower line, at the arches' feet)
+    ['arc', AR, AY, ARCH], ['arc', AF, AY, ARCH],
+  ];
+  // the haunches: a crown over each rear wheel (their outer sides just inside the flanks, their feet in the body and
+  // their arches a hair wider than the body's: only the crown shows)
+  const HW = 0.42, hx = BW / 2 - HW / 2 - 0.012; // (their outer sides just inside the flanks)
+  const rearHaunch = [[0.0, 0.3], [0.0, 0.62], ...curve([0.0, 0.62], [-0.5, 0.86], [-1.6, 0.88], [TAILZ + 0.05, 0.74], 4), [TAILZ + 0.05, 0.3],
+    ['arc', AR, AY, ARCH + 0.015]];
+  // the cabin: the windscreen's foot to a short round roof, the fastback down to the deck
+  const CBEV = 0.08, CW = BW - 0.34, TOP = car.height - CBEV + 0.02, CY = 0.62;
+  const TAPER = [CY - CBEV, TOP, 0.2];
+  const WS = [[WSF[0] + 0.1, CY], [-0.04, TOP - 0.03]], BL = [[-0.58, TOP - 0.03], [-1.25, CY]];
+  const roof = [WS[1], ...curve(WS[1], [-0.22, TOP + 0.03], [-0.44, TOP + 0.03], BL[0], 4)];
+  const cabinOutline = [WS[0], ...roof, BL[1]];
+  // the bonnet's scoop (its outline, side on: a blunt front, then down onto the bonnet)
+  const scoop = [[1.18, 0.7], [1.18, 0.9], [1.1, 0.93], [0.86, 0.93], [0.7, 0.84], [0.7, 0.7]];
+  const mirrorX = narrowAt(CW / 2, 0.86, TAPER) + 0.05;
+  const body = place(group, shared(k + 'body', () => merge([
+    extrudeSide(bodyOutline, BW, BEV, null, 2, 0.18),
+    ...[-1, 1].map(sd => extrudeSide(rearHaunch, HW, 0.1, null, 2).translate(sd * hx, 0, 0)),
+    extrudeSide(cabinOutline, CW, CBEV, TAPER, 2, 0.14),
+    extrudeSide(scoop, 0.3, 0.035, null, 2),
+    extrudeSide([[NOSE - 0.25, 0.12], [NOSE + 0.1, 0.12], [NOSE + 0.12, 0.15], [NOSE + 0.02, 0.22], [NOSE - 0.25, 0.22]], BW - 0.14, 0.02, null, 1, 0.05), // the front lip
+    ...[-1, 1].map(sd => blob(0.08, 0.06, 0.08, sd * mirrorX, 0.87, 0.36, 0, 0, [8, 5])),             // the mirrors
+  ])), paint);
+  // the stripes: two, from the lip up the nose, over the bonnet and the scoop, the roof, the deck and down the tail
+  const X0 = 0.17, X1 = 0.4; // (either side of the scoop)
+  place(group, shared(k + 'stripes', () => merge([
+    ...ribbon(front, BEV + 0.004, X0, X1),
+    ...ribbon(roof, CBEV + 0.004, X0, X1),
+    ...ribbon([...deck, ...tail], BEV + 0.004, X0, X1),
+    ...ribbon([[NOSE + 0.12, 0.15], [NOSE + 0.02, 0.22], [NOSE - 0.25, 0.22]], 0.024, X0, X1),
+  ])), stripe);
+  // the glass: windscreen, the fastback's window, and one long window a side
+  const CH = CW / 2, LIFT = CBEV + 0.006, foot = 0.86, top = (z) => heightAt(roof, z) - 0.03;
+  const zAt = ([[z0, y0], [z1, y1]], y) => z0 + (z1 - z0) * (y - y0) / (y1 - y0);
+  parts(group, k + 'glass', GLASS, () => [
+    slopeGlass([zAt(WS, 0.84), 0.84], WS[1], CH, TAPER, CBEV + 0.03, [0.02, 0.05], LIFT),
+    slopeGlass([zAt(BL, 0.88), 0.88], BL[0], CH, TAPER, CBEV + 0.05, [0.02, 0.06], LIFT),
+    ...sideGlass([[[zAt(WS, foot) - 0.1, foot], [zAt(BL, foot) + 0.14, foot], [zAt(BL, top(-0.62)) + 0.1, top(-0.62)],
+      [-0.35, top(-0.35)], [zAt(WS, top(-0.12)) - 0.08, top(-0.12)]]], CH, TAPER, 0.006),
+  ]);
+  // the dark parts: the intake, the scoop's mouth, a diffuser under the tail
+  parts(group, k + 'dark', TRIM, () => [
+    blob(0.36, 0.06, 0.05, 0, 0.32, NOSE + 0.07, 0, 0, [12, 6]),
+    bx(0.24, 0.12, 0.03, 0, 0.82, 1.21), // (the scoop's mouth, just proud of its face)
+    bx(BW - 0.4, 0.08, 0.08, 0, 0.26, TAILZ - 0.06),
+  ]);
+  // the lamps: slim teardrops at the nose's corners, sweeping back into the wings; a tail lamp across each corner
+  parts(group, k + 'lamp', LAMP, () => [-1, 1].map(sd => tear(0.09, 0.06, 0.24, sd * 0.62, 0.6, NOSE - 0.02, 0.5, -sd * 1.0)));
+  parts(group, k + 'tail', TAIL, () => [-1, 1].map(sd => blob(0.2, 0.06, 0.05, sd * 0.58, 0.62, TAILZ - BEV + 0.02, 0, 0, [10, 5])));
+  // the wheels: fat tyres on plain silver hubs
+  for (const side of [-1, 1]) for (const z of [AF, AR]) wheel(group, k, R, 0.3, side * (W - 0.04), z, R * 0.55, SILVER);
+  const colour = (hex) => stripe.color.setHex(hex);
+  group.userData = {
+    body,
+    animate: () => {},
+    livery: (evil) => colour(evil ? 0x151515 : 0xf4f4f4),
+    stripe: colour, // (a scheme of its own: see Traffic, a rival courier)
+  };
   return group;
 };
