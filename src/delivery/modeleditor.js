@@ -28,7 +28,7 @@ import { carById, CARS, FILLER_CARS, EVENT_CARS, BESPOKE_CARS, EARNED_CARS, SECR
 import { IDEA_CARS } from './ideas.js';
 import { buildInspectModel } from './render/inspectmodel.js';
 import { renderer } from './render/scene.js';
-import { SILHOUETTE } from './render/silhouette.js';
+import { silhouetteFor } from './render/silhouette.js';
 import { extractParts, applyPatch, modelStats, BUDGET, emptyPatch, withSet, withDelete, withAdd, withDuplicate, withMirror, tidyPatch, PRIMITIVES } from './render/modelpatch.js';
 import { LOCAL_KEY, PATCHES, patchesReady, localPatches, setModelPatching } from './render/modelpatchapply.js';
 
@@ -227,7 +227,7 @@ const applyViewFlags = () => {
   // Blackout: every mesh in the game's own silhouette material (as a locked car is shown), its own kept to put back
   S.model.traverse((n) => {
     if (!n.isMesh) return;
-    if (f.dark && !n.userData.darkOrig) { n.userData.darkOrig = n.material; n.material = SILHOUETTE; }
+    if (f.dark && !n.userData.darkOrig) { n.userData.darkOrig = n.material; n.material = silhouetteFor(n.material); }
     else if (!f.dark && n.userData.darkOrig) { n.material = n.userData.darkOrig; n.userData.darkOrig = null; }
   });
   S.model.traverse((n) => {

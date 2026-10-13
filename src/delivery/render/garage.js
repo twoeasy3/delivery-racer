@@ -5,7 +5,7 @@
 // from the start, in a section of their own at the end of the tiers: see buildLot). Tap any car, owned or not, to see its stats; the button under them
 // uses it, or buys it (hovering shows the price). The Good / Evil toggle swaps every car to its
 // other livery: buying a car buys both.
-import { SILHOUETTE } from './silhouette.js'; // (every teaser's: clearGroup keeps it)
+import { silhouetteFor } from './silhouette.js'; // (every teaser's: clearGroup keeps it)
 import { Nav } from '../nav.js';
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
@@ -155,7 +155,7 @@ export { makeShowCar, paintShowCar };
 const parkCar = (car, i) => {
   if (!car) return null; // (a bay left empty: see buildLot)
   const mesh = makeShowCar(car);
-  if (isTeaser(car)) mesh.traverse(part => { if (part.isMesh) part.material = SILHOUETTE; }); // (a car of the next tier: flat black, nothing of its paint)
+  if (isTeaser(car)) mesh.traverse(part => { if (part.isMesh) part.material = silhouetteFor(part.material); }); // (a car of the next tier: flat black, nothing of its paint)
   mesh.position.set(colX(Math.floor(i / ROWS)), car.ufo ? 1 : 0, ROW_Z[i % ROWS]); // (a saucer hovers)
   mesh.userData.car = car;
   lot.add(mesh); // (moves it out of the game's scene, where makeCarMesh put it)

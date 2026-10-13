@@ -34,7 +34,7 @@ import { makeShowCar, paintShowCar } from './showcar.js';
 import { makeKey } from './keyModels.js';
 import { keyModelInUse } from './keycard.js';
 import { SILHOUETTE_KEY } from './keyspin.js';
-import { SILHOUETTE } from './silhouette.js'; // (as the car lot's: render/garage.js)
+import { SILHOUETTE, silhouetteFor } from './silhouette.js'; // (as the car lot's: render/garage.js)
 
 
 const LIFT = 0.3, FOV = 30, SPIN = 0.35; // (rad looked down from level; the camera's height of view, deg; rad/s turning by itself)
@@ -130,7 +130,7 @@ const frameKey = (k, aspect) => {
 const build = () => {
   const model = makeShowCar(v.car);
   paintShowCar(model, v.car, v.evil);
-  if (v.dark) model.traverse((part) => { if (part.isMesh) part.material = SILHOUETTE; });
+  if (v.dark) model.traverse((part) => { if (part.isMesh) part.material = silhouetteFor(part.material); });
   const scene = lit();
   const turn = new THREE.Group(), body = new THREE.Group(); // (body: what lands and bounces, the model in it)
   body.add(model);
