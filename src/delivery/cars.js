@@ -447,17 +447,17 @@ export const BESPOKE_CARS = [
     maxSpeed: 47.5, accel: 19, agility: 1.35, crossing: 0.2, health: 190, mass: 1.4, sound: 'lmp' }),
   // ---- the six CONCEPT key cars (the owner, 13-Oct; CHECKLIST 211): show cars that never went on sale, car ideas until then
   // (ideas.js; their models still render/ideaModels7.js to ideaModels10.js). Key cars as the Bespoke ones (a key of their
-  // own, Legendary blueprints, max ECU 5), rated 2, 3, 4, 5, 5 and 5 magenta stars, their figures the top of that many
+  // own, Legendary blueprints (the 2 and 3 star ones Epic, the owner, 13-Oct), max ECU 5), rated 2, 3, 4, 5, 5 and 5 magenta stars, their figures the top of that many
   // gold stars' range (the 5-star ones a little past it, as the Bespoke 5s are). `noPacks`: in no regular pack, key or
   // blueprints; `concept`: only the Concept Strike gives them (events.json concept-strike: its day's pack has the car's
   // blueprints; delivering it there at a maxed ECU gives its key)
   ...[
-    bespoke({ id: 'fishbowl', name: 'Fishbowl Runabout', basedOn: 'Nissan Pivo 2 (2007 concept)', model: 'fishbowl', color: 0x8fd3c4, evilColor: 0x8e407f,
+    { ...bespoke({ id: 'fishbowl', name: 'Fishbowl Runabout', basedOn: 'Nissan Pivo 2 (2007 concept)', model: 'fishbowl', color: 0x8fd3c4, evilColor: 0x8e407f,
       hw: 0.79, hl: 1.37, height: 1.6, note: 'Three seats under a glass bubble, a small wheel at each corner, and nowhere it cannot park.',
-      maxSpeed: 31, accel: 13, agility: 1.45, crossing: 0.3, health: 120, mass: 1, sound: 'evsaloon' }),
-    bespoke({ id: 'midsummer', name: 'Midsummer Roadster', basedOn: 'Pontiac Solstice concept (2002)', model: 'midsummer', color: 0xd2401f, evilColor: 0x7e51a3,
+      maxSpeed: 31, accel: 13, agility: 1.45, crossing: 0.3, health: 120, mass: 1, sound: 'evsaloon' }), rarity: 'epic' },
+    { ...bespoke({ id: 'midsummer', name: 'Midsummer Roadster', basedOn: 'Pontiac Solstice concept (2002)', model: 'midsummer', color: 0xd2401f, evilColor: 0x7e51a3,
       hw: 0.9, hl: 1.97, height: 1.12, note: 'A short, round two-seater with its wheels out at the corners and a hump behind each seat.',
-      maxSpeed: 38, accel: 15, agility: 1.35, crossing: 0.3, health: 140, mass: 1, sound: 'miata' }),
+      maxSpeed: 38, accel: 15, agility: 1.35, crossing: 0.3, health: 140, mass: 1, sound: 'miata' }), rarity: 'epic' },
     bespoke({ id: 'sixteen', name: 'Sixteen-Cylinder Coupe', basedOn: 'Cadillac Sixteen (2003 concept car)', model: 'sixteen', color: 0x9aa1a9, evilColor: 0x5d6070,
       hw: 1.0, hl: 2.84, height: 1.4, note: 'A bonnet half the car long over sixteen cylinders, wheels nearly as tall as a child, and the cabin far back where it belongs.',
       maxSpeed: 42, accel: 15, agility: 1.0, crossing: 0.3, health: 300, mass: 1.9, sound: 'classicgt' }),
