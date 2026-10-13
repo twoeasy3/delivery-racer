@@ -144,6 +144,8 @@ const stageLine = (level) => {
   if (st.needs) return 'Needs the ' + st.needs.name + ': own it to play this stage';
   const rule = !car && level.allowedCars ? listRule(level) : null; // (a rule of its own: the Car Hunt's 3-star cars)
   if (rule) return 'Only ' + rule.label + ', both sides: the showroom opens on them'; // ({tier:n} tokens: richTiers)
+  const tried = event.days ? Events.freeTry(event) : null; // (a rotating event: any car you own, or its featured car's free try)
+  if (tried) return tried.on ? 'Free try: the ' + tried.car.name + ' at your ECU ' + tried.ecu + ' of ' + tried.max : 'Any car you own, or the ' + tried.car.name + ' as a free try';
   return stage.free ? 'Free try: driven in the ' + car.name + ', owned or not' : car ? 'Driven in your ' + car.name : 'Any car you own';
 };
 // how long until an event ends, for its card: "3d 4h", "5h 12m", "9m 30s"
@@ -298,6 +300,7 @@ const drawStage = () => {
       fact('Tip', money(level.tip)),
       fact('Best to spare', best === undefined ? 'Not delivered yet' : formatTime(best))) : null,
     needs ? make('p', 'needs' + (open && !Game.canStart ? ' warn' : '') + (extras?.ruleLine && open ? ' cx-rule' : ''), ...richTiers(needs)) : null, // (cx-rule: said by the card's rule badge too; a phone leaves the line out)
+    extras?.tasks || null,
     // (an event: how long it is on for, and its reward)
     event?.to ? ends(event.to) : null,
     single ? eventCount(Events.countdownOf(single)) : null,
@@ -497,6 +500,7 @@ export const draw = () => {
     useLevelCar(cursor.car, cursor.amphibious);
   }
   lastOn[tab] = cursor;
+  for (const e of Events.specials) if (e.days) Events.syncTry(e); // (a rotating event's free try follows the day: its stage's car lock)
   if (Tiers.on() && isOpen(cursor)) useLevelCar(LEVEL.car, LEVEL.amphibious); // (the tier rule: it goes by the side and the medals, which change)
   const open = isOpen(cursor), evil = Game.evil && !oneSided(cursor);
   bank.replaceChildren(make('small', '', 'Bank'), money(Progress.data.money));
@@ -570,6 +574,7 @@ const eventWaiting = () => TABS.event.list.some(level => {
   if (Tiers.isEvent(level)) return Tiers.eventLive(level) && !Tiers.beaten(level);
   const at = Events.stageOf(level);
   if (!at || !Events.live(at.event)) return false;
+  if (at.event.days) return Events.tasksLeft(at.event) > 0; // (a rotating event: a task of the day still to pay)
   if (at.event.repeat) return Events.done(at.event) === 0;
   const st = Events.state(at.event, at.stage.index);
   return st.open && !st.done && !st.needs;
@@ -786,7 +791,8 @@ const eventPanel = (event, picked, evil) => {
 // the pack it gives, `every` run first, and the car that pack features): { give, car, hunt, odds, rule, often }. car: the car
 // its pack features (hunt: true; odds: its blueprint chances, 'x1 90% · x3 10%'), else its grand prize (events.json prize.car)
 const extrasOf = (event) => {
-  const packs = eventPacks(event.id), give = packs.find(p => p.every) || packs[0] || null;
+  const day = event.days ? Events.dayOf(event) : null; // (a rotating event: the day's featured car and pack, the Concept Strike)
+  const packs = eventPacks(event.id), give = day ? packs.find(p => p.id === day.pack) || null : packs.find(p => p.every) || packs[0] || null;
   const featured = give ? featuredOf(give.id) : [], hunted = featured[0]?.car || null;
   let odds = '';
   if (hunted) {
@@ -794,8 +800,8 @@ const extrasOf = (event) => {
     odds = lines.length ? lines.map(f => 'x' + (f.amount ?? 1) + ' ' + percent(f.lastSlot)).join(' · ') : 'Car maxed';
   }
   const first = event.stages[0], rule = first?.level?.allowedCars && !first.car ? listRule(first.level) : null;
-  const r = event.repeat, often = r ? (r.every === 7 ? r.live + ' days a week' : r.live + ' days every ' + r.every) : '';
-  return { give, car: hunted || Events.prizeCar(event), hunt: !!hunted, odds, rule, often };
+  const r = event.repeat, often = day ? 'Mon to Sat, a car a day' : r ? (r.every === 7 ? r.live + ' days a week' : r.live + ' days every ' + r.every) : '';
+  return { give, car: hunted || Events.prizeCar(event), hunt: !!hunted, odds, rule, often, day };
 };
 // a pack's art as a button, and its What's inside: both open the pack's sheet (render/packcontents.js)
 const packButtons = (id) => {
@@ -839,8 +845,16 @@ const huntHead = (event, drawLater) => {
 // { node, tags, car, draw } (draw: the car's still, once laid out)
 const PRIZE_POSE = { lift: 0.3, angle: -0.64, fov: 30, margin: 0.94 }; // (the event cards' pose, carstill.js STILL_POSE, framed tight: the car fills its picture)
 const eventExtras = (event, level, open) => {
-  const { give, car, hunt, odds, rule, often } = extrasOf(event);
+  const { give, car, hunt, odds, rule, often, day } = extrasOf(event);
   const st = Events.state(event, level.stage.index);
+  const tried = day ? Events.freeTry(event) : null; // (a rotating event's featured car: its free try, at the player's own ECU)
+  let tryBtn = null;
+  if (tried && st.open) {
+    tryBtn = make('button', 'menu-chip cx-try' + (tried.on ? ' on' : ''), tried.on ? 'Free try ON · ECU ' + tried.ecu + '/' + tried.max : 'Free try · ECU ' + tried.ecu + '/' + tried.max);
+    tryBtn.title = tried.on ? 'Driving the ' + car.name + ' as a free try at your ECU: tap to drive your own car' : 'Drive the ' + car.name + ' free, at the ECU your blueprints reach (its key: deliver it at ECU ' + tried.max + ')';
+    tryBtn.setAttribute('aria-pressed', tried.on);
+    tryBtn.addEventListener('click', () => { blip('menuPick'); Events.setFreeTry(event, !tried.on); useLevelCar(level.car, level.amphibious); draw(); });
+  }
   const tags = make('div', 'cx-tags',
     make('span', 'cx-tag ' + (st.open ? 'live' : 'shut'), st.open ? 'Live now' : 'Closed'),
     rule ? make('span', 'cx-tag rule', ...richTiers(rule.label), ' only') : null,
@@ -848,20 +862,24 @@ const eventExtras = (event, level, open) => {
   const view = car ? make('div', 'event-car cx-still') : null;
   const prize = car ? make('div', 'cx-car',
     view,
-    make('small', 'cx-label', hunt ? 'Hunt car' : 'Grand prize'),
+    make('small', 'cx-label', day ? 'Featured car' + (Progress.owns(car.id) ? ' · key owned' : '') : hunt ? 'Hunt car' : 'Grand prize'),
     make('div', 'cx-name', make('strong', '', car.name), car.tier || car.rating ? make('span', 'cx-stars', stars(car)) : null),
-    make('span', 'cx-odds', hunt ? 'Blueprints ' + odds : Events.prizeWon(event) ? 'Won!' : 'Deliver it on time to win it')) : null;
+    make('span', 'cx-odds', hunt ? 'Blueprints ' + odds : Events.prizeWon(event) ? 'Won!' : 'Deliver it on time to win it'), tryBtn) : null;
   prize?.querySelector('.cx-stars')?.style.setProperty('color', starColour(car));
   let pack = null;
   if (give) {
     const { art, link } = packButtons(give.id);
     pack = make('div', 'cx-pack',
-      make('div', 'cx-art', art, make('span', 'cx-ribbon', give.every ? 'Every run' : give.prize ? 'Prize' : 'Reward')),
+      make('div', 'cx-art', art, make('span', 'cx-ribbon', give.every ? 'Every run' : give.day ? 'Tasks' : give.prize ? 'Prize' : 'Reward')),
       make('div', 'cx-pack-words', make('small', 'cx-label', 'Reward'), make('strong', '', packName(give.id)),
-        make('span', '', give.every ? 'Every run: a ' + packName(give.id) : describePack(give.id)), link));
+        make('span', '', give.every ? 'Every run: a ' + packName(give.id) : give.day ? 'From today\'s tasks' : describePack(give.id)), link));
   }
   const node = make('div', 'card-extras' + (open ? '' : ' shut'), prize, pack);
-  return { node, tags, car, ruleLine: !!rule && !st.needs, draw: () => { if (view && node.isConnected) stillCar(view, car, false, PRIZE_POSE); } }; // (its Good livery, whatever the side)
+  // (a rotating event: the day's tasks, each with its reward and how often it has paid this run: events.js tasks)
+  const list = day && st.open ? Events.tasks(event) : [];
+  const tasks = list.length ? make('ol', 'cx-tasks', ...list.map(x => make('li', x.done ? 'done' : '',
+    make('span', 'cx-task-words', x.words), make('span', 'cx-task-reward', x.reward + ' · ' + (x.task.key ? (x.done ? 'won' : '0/1') : x.count + '/' + x.limit + ' today'))))) : null;
+  return { node, tags, car, tasks, ruleLine: !!rule && !st.needs, draw: () => { if (view && node.isConnected) stillCar(view, car, false, PRIZE_POSE); } }; // (its Good livery, whatever the side)
 };
 // a pack's What's inside over the menu (render/packcontents.js, as the Shop opens it); Enter starts nothing while it is up,
 // Escape closes it
