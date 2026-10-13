@@ -1749,39 +1749,8 @@ export const MODELS = {
     return group;
   },
 
-  // The Pick Up: a lifted square-body pickup (a Chevy C-10): a boxy cab and an open bed with
-  // its tailgate, a wide chrome grille with square headlamps, big off-road tyres and the
-  // chassis and long shocks of the lift showing beneath.
-  pickup: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.48;
-    const paint = lambert(car.color), glass = lambert(GLASS), trim = lambert(TRIM), chrome = lambert(CHROME);
-    const body = box(group, paint, w, 0.6, l, 0, 1.25, 0);                        // the body, end to end
-    box(group, paint, w * 0.96, 0.08, l * 0.28, 0, 1.58, l * 0.35);               // bonnet
-    box(group, glass, w * 0.9, 0.5, l * 0.24, 0, 1.8, l * 0.07);                  // cab glass
-    box(group, paint, w * 0.92, 0.08, l * 0.24, 0, 2.08, l * 0.07);               // cab roof
-    screen(group, glass, w * 0.88, 0.05, 0.55, 0, 1.8, l * 0.2, 0.35);              // windscreen
-    box(group, glass, w * 0.7, 0.36, 0.02, 0, 1.82, -l * 0.05 - 0.01);            // back window
-    box(group, trim, w * 0.84, 0.06, l * 0.38, 0, 1.56, -l * 0.29);               // the bed floor
-    box(group, paint, w * 0.94, 0.42, 0.08, 0, 1.76, -l / 2 + 0.04);              // tailgate
-    for (const side of [-1, 1]) {
-      box(group, paint, 0.08, 0.42, l * 0.42, side * (w / 2 - 0.04), 1.76, -l * 0.29); // bed sides
-      box(group, paint, 0.08, 0.5, 0.1, side * w * 0.45, 1.8, l * 0.17);          // windscreen pillars
-      box(group, chrome, 0.14, 0.12, 0.1, side * (w / 2 + 0.07), 1.65, l * 0.18); // mirrors
-      box(group, LAMP, w * 0.16, 0.16, 0.06, side * w * 0.37, 1.32, l / 2 + 0.02); // square headlamps
-      box(group, TAIL, 0.1, 0.3, 0.06, side * w * 0.44, 1.5, -l / 2 - 0.01);
-      for (const z of [0.31, -0.3]) {
-        wheel(group, R, 0.42, side * (w / 2 - 0.02), R, l * z, chrome);
-        box(group, trim, 0.06, 0.5, 0.06, side * w * 0.34, 0.75, l * z);        // the lift's long shocks
-      }
-    }
-    box(group, chrome, w * 0.56, 0.24, 0.05, 0, 1.32, l / 2 + 0.02);              // wide chrome grille
-    box(group, trim, w * 0.7, 0.14, l * 0.86, 0, 0.8, 0);                         // the chassis, showing
-    box(group, chrome, w + 0.08, 0.18, 0.16, 0, 0.98, l / 2 + 0.05);              // bumpers
-    box(group, chrome, w + 0.08, 0.18, 0.16, 0, 0.98, -l / 2 - 0.05);
-    group.userData = { body, animate: () => {} };
-    return group;
-  },
+  // The Pick-Up: render/modelsOrig3.js
+  pickup: ORIG3_MODELS.pickup,
 
   // A long, low car on hydraulics: the front end rises and falls in a smooth, endless bob,
   // pivoting about the rear axle. The front wheels hang on their suspension: they lift only

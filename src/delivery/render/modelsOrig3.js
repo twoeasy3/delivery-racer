@@ -198,6 +198,29 @@ const flames = (key, fire) => texture('flames-' + key, 128, 64, (ctx, w, h) => {
   });
 });
 
+// a worn bonnet: faded, sun-bleached patches, scratches, and the ghost of a peeled-off decal (a pair of stripes and a
+// ring). Neutral pale and dark marks, part see-through, so it suits any paint under it
+const wear = () => texture('wear', 64, 64, (ctx, w, h) => {
+  ctx.clearRect(0, 0, w, h);
+  let seed = 7;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  for (let i = 0; i < 26; i++) { // sun-bleached blotches
+    ctx.fillStyle = 'rgba(255,244,220,' + (0.12 + rnd() * 0.16).toFixed(2) + ')';
+    ctx.beginPath(); ctx.ellipse(rnd() * w, rnd() * h, 2 + rnd() * 7, 1.5 + rnd() * 4, rnd() * 3, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.strokeStyle = 'rgba(255,240,215,0.42)'; // the ghost of the decal: two stripes down it, a ring between
+  ctx.lineWidth = 4;
+  for (const x of [22, 42]) { ctx.beginPath(); ctx.moveTo(x, 2); ctx.lineTo(x, 26); ctx.moveTo(x, 40); ctx.lineTo(x, 62); ctx.stroke(); }
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(32, 33, 9, 0, Math.PI * 2); ctx.stroke();
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 18; i++) { // scratches, light and dark
+    ctx.strokeStyle = i % 3 ? 'rgba(255,240,220,0.45)' : 'rgba(30,18,10,0.45)';
+    const x = rnd() * w, y = rnd() * h, a = rnd() * Math.PI, l = 4 + rnd() * 10;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); ctx.stroke();
+  }
+});
+
 export const ORIG3_MODELS = {
   // The Hearse: a long seventies funeral coach in deep indigo (white for an Evil driver). A long, flat bonnet with
   // a chrome-framed upright grille of vertical bars between four round lamps in chrome bezels; a tall, long coach
@@ -420,6 +443,87 @@ export const ORIG3_MODELS = {
       body: merged.get(paint),
       animate: () => {},
       livery: (evil) => bumper.color.setHex(evil ? 0x2e3036 : 0xd6d0c0),
+    };
+    group.userData.livery(false);
+    return group;
+  },
+
+  // The Pick-Up: a lifted seventies square-body pickup, orange, worked hard. A big dark bull bar across its nose, a
+  // wide grille between square lamps, a worn bonnet (sun-bleached, scratched, the ghost of a decal); a square cab with a
+  // sports bar of spot lamps over its roof; an open bed with wheel tubs, a tailgate and tall tail lamps; black flares
+  // over chunky tyres, and the lift showing beneath: the frame, the axles and long shocks.
+  pickup: (car) => {
+    const group = new THREE.Group();
+    const L = car.hl, w = car.hw * 2, R = 0.48, WX = w / 2 - 0.05, FZ = L * 0.62, RZ = -L * 0.6, ucw = w * 0.92;
+    const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(CHROME), trim = lambert(TRIM), dark = lambert(0x121418);
+    const bar = lambert(0x1d2238), flare = lambert(0x1c1e22), plate = lambert(0xece6cc);
+    const worn = new THREE.MeshLambertMaterial({ map: wear(), transparent: true, depthWrite: false });
+    const arch = (zc) => [[zc + 0.62, 0.95], [zc + 0.5, 1.14], [zc - 0.5, 1.14], [zc - 0.62, 0.95]];
+    // the front end and the cab's doors, below the waist, its front arches squared off
+    side(group, paint, w, [[2.5, 0.95, 0.04], [2.52, 1.5, 0.05], [0.4, 1.5], [-0.6, 1.5], [-0.6, 0.95], ...arch(FZ).reverse()], 0.05);
+    // the cab above it, a little narrower
+    side(group, paint, ucw, [[0.84, 1.46], [0.44, 1.98, 0.05], [-0.5, 2.0, 0.06], [-0.58, 1.46]], 0.05);
+    const rise = Math.atan2(0.52, 0.4);
+    slab(group, glass, ucw - 0.16, 0.02, 0.54, 0, 1.722 + 0.04, 0.64 + 0.04, rise);          // the windscreen
+    box(group, glass, ucw - 0.4, 0.3, 0.02, 0, 1.76, -0.636);                                 // the back window
+    decal(group, worn, w - 0.22, 1.56, 0, 1.556, 1.66, 'y');                                  // the worn bonnet
+    // the bed: its sides (arches cut), the headboard, floor, wheel tubs and tailgate
+    for (const s of [-1, 1]) side(group, paint, 0.1, [[-0.66, 0.95], [-0.66, 1.56, 0.03], [-2.55, 1.56, 0.03], [-2.55, 0.95], ...arch(RZ)], 0.02, s * (w / 2 - 0.05));
+    box(group, paint, w - 0.2, 0.56, 0.08, 0, 1.25, -0.7);
+    box(group, trim, w - 0.2, 0.04, 1.82, 0, 1.15, -1.62);
+    for (const s of [-1, 1]) box(group, paint, 0.32, 0.26, 1.04, s * (w / 2 - 0.26), 1.28, RZ);
+    box(group, paint, w - 0.2, 0.56, 0.08, 0, 1.25, -2.51);
+    for (const s of [-1, 1]) {
+      const x = s * (ucw / 2 + 0.006), X = s * (w / 2 + 0.003);
+      prism(group, glass, 0.02, [[0.68, 1.56], [0.38, 1.92], [-0.18, 1.92], [-0.18, 1.56]], x);  // the door's window
+      box(group, chrome, 0.14, 0.03, 0.03, s * (ucw / 2 + 0.07), 1.58, 0.66);                 // a big square mirror on its arm
+      box(group, chrome, 0.04, 0.26, 0.16, s * (ucw / 2 + 0.15), 1.66, 0.66);
+      box(group, AMBER, 0.012, 0.07, 0.14, X, 1.38, 2.3);                                     // side markers
+      box(group, TAIL, 0.012, 0.07, 0.14, s * (w / 2 + 0.003), 1.4, -2.38);
+      // the front: square lamps in chrome bezels, an indicator under each
+      box(group, chrome, 0.32, 0.26, 0.03, s * 0.74, 1.28, 2.53);
+      box(group, LAMP, 0.24, 0.2, 0.03, s * 0.74, 1.28, 2.543);
+      box(group, AMBER, 0.28, 0.08, 0.03, s * 0.74, 1.08, 2.53);
+      // the tail: tall lamps on the bed's corners (tail, brake, reversing) and an indicator
+      box(group, TAIL, 0.1, 0.16, 0.03, s * 0.98, 1.44, -2.56);
+      box(group, BRAKE, 0.1, 0.12, 0.03, s * 0.98, 1.29, -2.56);
+      box(group, AMBER, 0.1, 0.07, 0.03, s * 0.98, 1.195, -2.56);
+      box(group, REVERSE, 0.1, 0.07, 0.03, s * 0.98, 1.115, -2.56);
+      // black flares over the wheels
+      for (const z of [FZ, RZ]) place(group, new THREE.CylinderGeometry(R + 0.14, R + 0.14, 0.24, 10, 1, true, 0, Math.PI).rotateZ(Math.PI / 2), flare, s * (w / 2 + 0.06), R, z);
+      // the lift: long shocks at each wheel, the frame rails
+      for (const z of [FZ, RZ]) box(group, trim, 0.07, 0.56, 0.07, s * 0.62, 0.74, z - 0.18);
+      box(group, trim, 0.1, 0.14, 4.6, s * 0.48, 0.86, 0);
+      // the sports bar over the bed, just behind the cab
+      rod(group, bar, 0.04, 0.62, s * 0.86, 1.86, -0.82, 'y', 8);
+      for (const x of [0.22, 0.58]) {
+        rod(group, bar, 0.09, 0.1, s * x, 2.2, -0.8, 'z', 10);
+        rod(group, LAMP, 0.075, 0.02, s * x, 2.2, -0.745, 'z', 10);
+      }
+    }
+    box(group, bar, 1.82, 0.08, 0.08, 0, 2.15, -0.82);
+    // the grille: chrome framed, dark, a bar across it
+    box(group, chrome, 0.98, 0.32, 0.03, 0, 1.26, 2.53);
+    box(group, dark, 0.92, 0.26, 0.03, 0, 1.26, 2.54);
+    box(group, chrome, 0.9, 0.03, 0.02, 0, 1.26, 2.555);
+    // the bull bar: a heavy bumper with uprights and a hoop over the grille
+    box(group, bar, w + 0.12, 0.28, 0.22, 0, 0.98, 2.66);
+    for (const x of [-0.42, 0.42]) box(group, bar, 0.08, 0.62, 0.08, x, 1.34, 2.72);
+    box(group, bar, 0.92, 0.08, 0.08, 0, 1.62, 2.72);
+    for (const s of [-1, 1]) box(group, bar, 0.08, 0.08, 0.22, s * 0.42, 1.62, 2.64);
+    box(group, plate, 0.4, 0.12, 0.02, 0, 0.98, 2.775);
+    box(group, chrome, w + 0.06, 0.18, 0.18, 0, 0.98, -2.62);                                 // a step bumper behind
+    box(group, plate, 0.4, 0.14, 0.02, 0, 0.98, -2.715);
+    for (const z of [FZ, RZ]) rod(group, trim, 0.07, 1.7, 0, R, z, 'x', 8);                   // the axles
+    rod(group, trim, 0.045, 0.6, 0.66, 0.8, -2.3, 'z', 8);                                    // the exhaust
+    const keep = new Set();
+    const geo = wheelGeo(R, 0.42, 0.56), tyre = lambert(0x141414), hub = lambert(0xb8bcc2);
+    for (const s of [-1, 1]) for (const z of [FZ, RZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub, trim)) keep.add(part);
+    const merged = mergeByMaterial(group, keep);
+    group.userData = {
+      body: merged.get(paint),
+      animate: () => {},
+      livery: (evil) => bar.color.setHex(evil ? 0x17181b : 0x1d2238),
     };
     group.userData.livery(false);
     return group;
