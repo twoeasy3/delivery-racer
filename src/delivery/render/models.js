@@ -8,6 +8,7 @@
 //   userData.livery   optional, (evil) => void: shows the parts that differ between the Good
 //                     and Evil liveries (beyond the paint), called whenever the paint is set
 import * as THREE from 'three';
+import { ORIG1B_MODELS } from './modelsOrig1b.js'; // (the Commuter, the Darkvan and the Junker, rebuilt)
 
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 const box = (parent, material, w, h, l, x, y, z) => {
@@ -691,34 +692,8 @@ export const MODELS = {
     group.userData = { body, animate: () => {} };
     return group;
   },
-  // The Commuter: an old three-door supermini (a first-generation Nissan Micra). Small and
-  // boxy, with a tall glasshouse, a short sloping bonnet, square headlamps and chunky black
-  // bumpers.
-  commuter: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.3;
-    const paint = lambert(car.color), glass = lambert(GLASS), trim = lambert(TRIM), steel = lambert(0xb8bcc4);
-    const body = box(group, paint, w, 0.5, l, 0, 0.55, 0);
-    box(group, paint, w * 0.95, 0.08, l * 0.22, 0, 0.83, l * 0.37);               // short bonnet
-    box(group, glass, w * 0.9, 0.5, l * 0.58, 0, 1.08, -l * 0.08);                // tall glasshouse
-    box(group, paint, w * 0.92, 0.07, l * 0.56, 0, 1.36, -l * 0.08);              // roof
-    screen(group, glass, w * 0.86, 0.05, 0.6, 0, 1.06, l * 0.22, 0.55);             // windscreen
-    screen(group, glass, w * 0.86, 0.05, 0.52, 0, 1.06, -l * 0.37, -0.22);          // the hatch's glass
-    for (const side of [-1, 1]) {
-      for (const z of [0.18, -0.02, -0.35]) box(group, paint, 0.08, 0.5, 0.09, side * w * 0.45, 1.08, l * z); // pillars
-      box(group, trim, 0.03, 0.08, l * 0.8, side * (w / 2 + 0.01), 0.6, 0);        // rubbing strip
-      box(group, trim, 0.12, 0.09, 0.1, side * (w / 2 + 0.06), 0.95, l * 0.2);     // mirror
-      box(group, LAMP, w * 0.24, 0.16, 0.08, side * w * 0.32, 0.68, l / 2 + 0.01); // square headlamps
-      box(group, TAIL, w * 0.16, 0.22, 0.08, side * w * 0.38, 0.7, -l / 2 - 0.01);
-      wheel(group, R, 0.26, side * (w / 2 - 0.04), R, l * 0.31, steel);
-      wheel(group, R, 0.26, side * (w / 2 - 0.04), R, -l * 0.31, steel);
-    }
-    for (let i = 0; i < 3; i++) box(group, trim, w * 0.3, 0.03, 0.04, 0, 0.62 + i * 0.06, l / 2 + 0.02); // grille slats
-    box(group, trim, w + 0.06, 0.2, 0.16, 0, 0.36, l / 2 + 0.04);                 // chunky bumpers
-    box(group, trim, w + 0.06, 0.2, 0.16, 0, 0.36, -l / 2 - 0.04);
-    group.userData = { body, animate: () => {} };
-    return group;
-  },
+  // The Commuter: a bubbly little city hatchback (rebuilt: render/modelsOrig1b.js)
+  commuter: (car) => ORIG1B_MODELS.commuter(car),
 
   // A Japanese kei truck: a tiny cab-over with a flat, near-upright face, a long, low flatbed
   // with fold-down sides behind it, and little wheels right at the corners. It bobs as it idles
@@ -1770,37 +1745,7 @@ export const MODELS = {
     return group;
   },
 
-  miata: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.32;
-    const paint = lambert(car.color), glass = lambert(GLASS), trim = lambert(TRIM);
-    const stripe = lambert(0xf4f4f4), white = 0xf4f4f4, black = 0x151515;
-    const body = box(group, paint, w, 0.42, l, 0, 0.55, 0);
-    box(group, paint, w * 0.92, 0.06, l * 0.34, 0, 0.78, l * 0.3);               // bonnet
-    box(group, paint, w * 0.92, 0.06, l * 0.22, 0, 0.8, -l * 0.36);              // boot
-    box(group, trim, w * 0.8, 0.12, l * 0.3, 0, 0.72, -l * 0.06);                 // the cockpit
-    screen(group, glass, w * 0.82, 0.04, 0.36, 0, 0.92, l * 0.1, 0.9);              // small windscreen
-    for (const side of [-1, 1]) {
-      box(group, trim, 0.32, 0.36, 0.1, side * w * 0.2, 0.95, -l * 0.18);          // seat backs
-      box(group, paint, w * 0.18, 0.12, 0.3, side * w * 0.3, 0.86, l * 0.38);      // pop-up headlamps, up...
-      box(group, LAMP, w * 0.16, 0.09, 0.02, side * w * 0.3, 0.86, l * 0.38 + 0.16); // ...and lit
-      box(group, stripe, w * 0.08, 0.02, l * 0.34, side * w * 0.1, 0.815, l * 0.3); // racing stripes:
-      box(group, stripe, w * 0.08, 0.02, l * 0.22, side * w * 0.1, 0.835, -l * 0.36); // bonnet and boot
-      box(group, trim, 0.11, 0.08, 0.1, side * (w / 2 + 0.05), 0.85, l * 0.08);    // mirrors
-      box(group, TAIL, w * 0.24, 0.1, 0.06, side * w * 0.3, 0.62, -l / 2 - 0.01);
-      wheel(group, R, 0.28, side * (w / 2 - 0.04), R, l * 0.32, lambert(0xb8bcc4));
-      wheel(group, R, 0.28, side * (w / 2 - 0.04), R, -l * 0.31, lambert(0xb8bcc4));
-    }
-    box(group, trim, w * 0.4, 0.08, 0.04, 0, 0.5, l / 2 + 0.02);                  // the little mouth
-    box(group, trim, w + 0.04, 0.12, 0.12, 0, 0.36, -l / 2 - 0.02);
-    group.userData = {
-      body,
-      animate: () => {},
-      livery: (evil) => { stripe.color.setHex(evil ? black : white); },
-      stripe: (hex) => stripe.color.setHex(hex), // (a scheme of its own: see Traffic, a rival courier)
-    };
-    return group;
-  },
+  miata: (car) => ORIG1B_MODELS.miata(car), // (rebuilt: render/modelsOrig1b.js)
 
   // The Pick Up: a lifted square-body pickup (a Chevy C-10): a boxy cab and an open bed with
   // its tailgate, a wide chrome grille with square headlamps, big off-road tyres and the
