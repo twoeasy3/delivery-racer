@@ -212,4 +212,40 @@ const lottag = (car, { rarity = 'bespoke' } = {}) => {
 };
 
 registerKey('lottag', lottag);
+
+// ---- (16) the KEI key: a tiny slim wafer key with a bright cap ----
+const keikey = (car, { rarity = 'bespoke' } = {}) => {
+  const group = new THREE.Group(), k = new THREE.Group();
+  // the cap: the car's colour, made bright (saturated, mid-light) however dull the paint
+  const hsl = {}; paintOf(car).getHSL(hsl);
+  const bright = new THREE.Color().setHSL(hsl.h, Math.max(hsl.s, 0.8), Math.min(0.62, Math.max(0.48, hsl.l)));
+  const CAP = metal(bright.getHex(), 60), RIDGE = metal(bright.clone().multiplyScalar(0.6).getHex(), 60), INK = glow(inkOn(bright));
+  const CHROME = metal(0xd4d8de, 110), BLADE = metal(0xc3c8cf, 80), CUT = metal(0x7d848d, 60);
+  // a small rounded cap, wider at the top, slim (its faces at z = +-0.11)
+  const P = [[-0.42, -0.55, 0.14], [0.42, -0.55, 0.14], [0.56, 0.4], [0.36, 0.78, 0.3], [-0.36, 0.78, 0.3], [-0.56, 0.4]];
+  const D = 0.16, B = 0.03, FRONT = D / 2 + B;
+  const HOLE = [0, 0.5];
+  const cap = outline(P, 0.32);
+  cap.holes.push(circle(HOLE[0], HOLE[1], 0.1));
+  slab(k, CAP, cap, D, B, 0, 4);
+  rainbow(band(k, rimMaterial(rarity), P, 0.32, -0.1, -0.05, 0.03, FRONT + 0.005, 4), 0, 0.1);
+  // the initial, and three grip ridges across the cap's waist (both faces)
+  glyph(k, INK, initialOf(car), 0.3, FRONT - 0.01, FRONT + 0.02, 0, 0.06);
+  for (const s of [1, -1]) for (const y of [-0.24, -0.33, -0.42]) box(k, RIDGE, 0.6, 0.04, 0.04, 0, y, s * (FRONT - 0.005));
+  // a tiny split ring through the hole
+  splitRing(k, CHROME, HOLE[0], HOLE[1] - 0.1 + 0.035, 0.3, 0.035, Math.PI / 2, 0, 12);
+  // the chrome collar, and the short thin blade: a wavy foil track cut down each face, a pointed tip
+  box(k, CHROME, 0.44, 0.16, 0.14, 0, -0.6, 0);
+  const W = 0.3, T = 0.07, Y0 = -0.62, Y1 = -2.25;
+  const blade = [[-W / 2, Y0], [W / 2, Y0], [W / 2, Y1 + 0.2], [0, Y1], [-W / 2, Y1 + 0.12]];
+  slab(k, BLADE, new THREE.Shape(blade.map(([x, y]) => new THREE.Vector2(x, y))), T, 0, 0, 1);
+  const ys = [-0.8, -1.05, -1.3, -1.55, -1.8, -2.02], xs = [0.0, 0.06, -0.06, 0.06, -0.05, 0.02];
+  for (const s of [1, -1]) for (let i = 0; i < ys.length - 1; i++) {
+    const dx = xs[i + 1] - xs[i], dy = ys[i + 1] - ys[i], len = Math.hypot(dx, dy) + 0.05;
+    box(k, CUT, 0.06, len, 0.03, (xs[i] + xs[i + 1]) / 2, (ys[i] + ys[i + 1]) / 2, s * (T / 2)).rotation.z = Math.atan2(-dx, dy);
+  }
+  return idle(group, merged(k));
+};
+
+registerKey('keikey', keikey);
 void lambert; void outline; void band; void inkOn; void plainBlade; void grow;
