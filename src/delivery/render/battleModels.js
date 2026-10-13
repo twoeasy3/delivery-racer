@@ -6,6 +6,7 @@ import { CONFIG } from '../config.js';
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 const CONCRETE = lambert(0x9a978e), SLIT = lambert(0x141414), BAGS = lambert(0xb8a676), POLE = lambert(0x5a554c);
 const TEAM = { 1: lambert(CONFIG.battle.colors.good.apc), [-1]: lambert(CONFIG.battle.colors.evil.apc) };
+for (const shared of [CONCRETE, SLIT, BAGS, POLE, TEAM[1], TEAM[-1]]) shared.userData.shared = true; // (made once, used again by every level: clearGroup keeps them)
 const add = (group, geometry, material, x, y, z) => {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(x, y, z);

@@ -8,7 +8,7 @@ import { LEVEL } from '../levels.js';
 import { Track } from '../track.js';
 import { Traffic } from '../traffic.js';
 import { Game } from '../game.js';
-import { scene, tmp } from './scene.js';
+import { scene, tmp, clearGroup } from './scene.js';
 
 const group = new THREE.Group();
 scene.add(group);
@@ -39,8 +39,7 @@ const materials = () => {
 };
 
 const build = () => {
-  for (const o of group.children) o.traverse((m) => { if (m.geometry) m.geometry.dispose(); });
-  group.clear();
+  clearGroup(group); // (its materials and sign textures too, not only the geometry: audit P7)
   signs = [];
   if (!(LEVEL.reversible || []).length) return;
   materials();

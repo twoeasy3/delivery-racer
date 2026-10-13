@@ -6,6 +6,7 @@ import { CONFIG } from '../config.js';
 
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 const HIDE = lambert(0x8a8784), EAR = lambert(0x7b7774), TUSK = lambert(0xf3eedd), EYE = lambert(0x161616);
+for (const shared of [HIDE, EAR, TUSK, EYE]) shared.userData.shared = true; // (made once, used again by every level: clearGroup keeps them)
 export const add = (group, geometry, material, x, y, z) => {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(x, y, z);

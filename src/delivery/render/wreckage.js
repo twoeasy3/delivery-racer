@@ -19,7 +19,7 @@ import { Track } from '../track.js';
 import { Game } from '../game.js';
 import { Player } from '../player.js';
 import { Wreckage } from '../wreckage.js';
-import { scene, tmp } from './scene.js';
+import { scene, tmp, clearGroup } from './scene.js';
 import { Fire, Smoke, Particles, rnd, FIRE_COLORS } from './effects.js';
 import { lambert, CHAR, STEEL, WHITE, GLASS, add, box, across, makeAirliner, makeTower } from './airportModels.js';
 export { makeAirliner }; // (as before)
@@ -160,7 +160,7 @@ const buildStub = (T) => {
 let pieces = []; // { mesh, marker, spin } for each of Wreckage.list, in order
 const fires = []; // { s, lat, size }: the fires burning across the airfield
 Game.onLoad.push(() => {
-  group.clear();
+  clearGroup(group); // (freed, not only dropped: audit P7)
   pieces = [];
   fires.length = 0;
   tower = towerPivot = towerBase = null;

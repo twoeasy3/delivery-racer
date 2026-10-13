@@ -292,6 +292,7 @@ const readable = (object) => object.traverse((mesh) => {
 // hides in, only its legs and claws showing below until it drops
 const gumBark = new THREE.MeshLambertMaterial({ color: 0xd9cfbf }), gumLeaves = new THREE.MeshLambertMaterial({ color: 0x7a8f62 });
 const limbGeo = new THREE.CylinderGeometry(1, 1, 1, 7), clumpGeo = new THREE.SphereGeometry(1, 9, 7);
+for (const shared of [gumBark, gumLeaves, limbGeo, clumpGeo]) shared.userData.shared = true; // (made once, used by every level: clearGroup keeps them)
 const limb = (a, b, r) => { // (a branch from world point a to b, r thick)
   const mesh = new THREE.Mesh(limbGeo, gumBark), dir = new THREE.Vector3(b.x - a.x, b.y - a.y, b.z - a.z);
   mesh.scale.set(r, dir.length(), r);

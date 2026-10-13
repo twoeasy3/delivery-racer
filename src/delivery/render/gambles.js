@@ -8,7 +8,7 @@ import { Game } from '../game.js';
 import { Player } from '../player.js';
 import { Traffic } from '../traffic.js';
 import { Gambles } from '../gambles.js';
-import { scene, tmp } from './scene.js';
+import { scene, tmp, clearGroup } from './scene.js';
 import { Particles, rnd } from './effects.js';
 import { carMesh, trafficMeshes } from './cars.js';
 import { makeWindsock, makeSign, makeTransporter, makeHeightBar, makeDepthPost, makeCushion, makeShadeTree } from './gambleModels.js';
@@ -69,6 +69,7 @@ let veilOf = null;
 const cloudGroup = new THREE.Group();
 scene.add(cloudGroup);
 const CLOUD = new THREE.BoxGeometry(1, 1, 1), cloudMats = { spray: new THREE.MeshBasicMaterial({ color: 0xdfe6ea, transparent: true, opacity: 0.4, depthWrite: false }), dust: new THREE.MeshBasicMaterial({ color: 0xc9aa7c, transparent: true, opacity: 0.5, depthWrite: false }) };
+for (const shared of [CLOUD, cloudMats.spray, cloudMats.dust]) shared.userData.shared = true; // (made once, used by every level: clearGroup keeps them)
 let clouds = [];
 let floods = [];   // the fords that fill: { f, water, collars, y0 } (the water and the posts' collars rise with it)
 let sunDiscs = []; // the low sun's: { z (its stretch), sun (the model), x, zz (the way the stretch runs, in the world) }
@@ -80,7 +81,7 @@ const RUT_OUT = 0.7;
 let rutJolts = 0, rutOut = null, rutRolled = 0, lastLat = 0; // ({ at, side }; the roll given last frame, as leaned; the car's lat then)
 
 Game.onLoad.push(() => {
-  group.clear();
+  clearGroup(group); // (freed, not only dropped: audit P7)
   socks = [];
   const W = CONFIG.crosswind;
   Gambles.build(); // (its lists, for the level just loaded)
@@ -182,7 +183,7 @@ Game.onLoad.push(() => {
     const s = z.from - CONFIG.spray.sign;
     if (s > 5) at(s, Track.hi(s) - 0.6).add(makeSign('WET ROAD\nSPRAY', '#1f6fb2', '#fff', 5.4, 2.6));
   }
-  cloudGroup.clear();
+  clearGroup(cloudGroup);
   clouds = [];
   sunDiscs = [];
   // ---- dust trails: the road dry dirt, and before it a board and a windsock held out the way the wind blows

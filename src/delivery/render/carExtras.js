@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 
 const unitBox = new THREE.BoxGeometry(1, 1, 1);
+for (const shared of [unitBox]) shared.userData.shared = true; // (made once, shared by every car: clearGroup keeps them)
 // a green tractor: small wheels in front, big ones behind, a cab at the back
 export const makeTractorModel = () => {
   const lambert = (color) => new THREE.MeshLambertMaterial({ color });
@@ -83,7 +84,9 @@ const poolTexture = () => {
   light.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = light;
   ctx.fillRect(0, 0, 64, 64);
-  return (pool = new THREE.CanvasTexture(fade));
+  pool = new THREE.CanvasTexture(fade);
+  pool.userData.shared = true; // (one for every Super car's glow: clearGroup keeps it)
+  return pool;
 };
 // glass, by its colour: the pale glass one model has, or anything dark that is not the body's own paint (every
 // model's screens and cabin are a near-black of its own choosing: 0x232a35, 0x1a2230, 0x23262d...)

@@ -8,7 +8,7 @@ import { Track } from '../track.js';
 import { Game } from '../game.js';
 import { Player } from '../player.js';
 import { Machinery } from '../machinery.js';
-import { scene, tmp } from './scene.js';
+import { scene, tmp, clearGroup } from './scene.js';
 import { Particles, rnd } from './effects.js';
 import { makeMachine, BEACON_ON, BEACON_OFF } from './machineModels.js';
 
@@ -17,7 +17,7 @@ const group = new THREE.Group();
 scene.add(group);
 let meshes = [];
 Game.onLoad.push(() => {
-  group.clear();
+  clearGroup(group); // (freed, not only dropped: audit P7)
   meshes = (LEVEL.machinery || []).map(m => {
     const mesh = makeMachine(m.kind);
     group.add(mesh);

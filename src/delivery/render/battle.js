@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { Track } from '../track.js';
 import { Gunfire } from '../gunfire.js';
-import { scene, tmp } from './scene.js';
+import { scene, tmp, clearGroup } from './scene.js';
 import { makePillbox } from './battleModels.js';
 import { CONFIG } from '../config.js';
 import { LEVEL } from '../levels.js';
@@ -22,7 +22,7 @@ export const syncBattle = (dt) => {
   syncStrikes(dt);
   // (the pillboxes are set out as a run starts: see Gunfire.reset)
   if (built !== Gunfire.pillboxes) {
-    group.clear();
+    clearGroup(group); // (freed, not only dropped: audit P7)
     built = Gunfire.pillboxes;
     meshes = built.map(box => {
       const mesh = makePillbox(box.team);

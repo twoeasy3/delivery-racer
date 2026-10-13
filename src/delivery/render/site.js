@@ -10,7 +10,7 @@ import { Track } from '../track.js';
 import { Game } from '../game.js';
 import { Collision } from '../collision.js';
 import { Site } from '../site.js';
-import { scene, tmp } from './scene.js';
+import { scene, tmp, clearGroup } from './scene.js';
 import { buildStrip } from './road.js';
 import { makeDigger, makeWorker } from './siteModels.js';
 
@@ -22,7 +22,7 @@ const group = new THREE.Group();
 scene.add(group);
 let diggers = [], workers = [];
 Game.onLoad.push(() => {
-  group.clear();
+  clearGroup(group); // (freed, not only dropped: audit P7)
   diggers = [];
   workers = [];
   const W = CONFIG.site, works = LEVEL.siteWorks || [];

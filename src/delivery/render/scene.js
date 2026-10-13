@@ -29,12 +29,14 @@ export const applySky = (color) => {
   scene.background.set(color);
   scene.fog.color.set(color);
 };
-// empties a group of meshes built for a level, freeing what they held on the GPU
+// empties a group of meshes built for a level, freeing what they held on the GPU (a geometry, material or
+// texture made once for a module and used again, marked userData.shared, is kept)
 export const clearGroup = (group) => {
   group.traverse((o) => {
-    if (o.geometry) o.geometry.dispose();
+    if (o.geometry && !o.geometry.userData.shared) o.geometry.dispose();
     for (const material of [].concat(o.material || [])) {
-      if (material.map) material.map.dispose();
+      if (material.userData.shared) continue;
+      if (material.map && !material.map.userData.shared) material.map.dispose();
       material.dispose();
     }
   });

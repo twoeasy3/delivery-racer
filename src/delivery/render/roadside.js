@@ -15,7 +15,7 @@ import { Crossings } from '../crossing.js';
 import { StopGo } from '../stopgo.js';
 import '../site.js'; // (for what it sets up when it loads)
 import { SpeedCameras } from '../cameras.js';
-import { scene, camera, tmp, tmp2 } from './scene.js';
+import { scene, camera, tmp, tmp2, clearGroup } from './scene.js';
 import { buildStrip } from './road.js';
 import { makeCarriage } from './trainModel.js';
 import { makeLocomotive, makeTender, makeBoxcar, makeCarriage as makeWestCarriage, makeCaboose } from './themes/wildwestModels.js';
@@ -112,7 +112,7 @@ const crossingBoom = (s, lat) => {
 };
 
 Game.onLoad.push(() => {
-  group.clear();
+  clearGroup(group); // (freed, not only dropped: audit P7)
   crossings = [];
   signs = [];
   cameraMarkers = (LEVEL.cameras || []).map(() => makeCameraMarker());

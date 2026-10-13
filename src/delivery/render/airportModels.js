@@ -5,6 +5,7 @@ import * as THREE from 'three';
 
 export const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 export const CHAR = lambert(0x2a2624), STEEL = lambert(0x8f969e), WHITE = lambert(0xe8eaec), GLASS = lambert(0x2f5560);
+for (const shared of [CHAR, STEEL, WHITE, GLASS]) shared.userData.shared = true; // (made once, used again by every level: clearGroup keeps them)
 export const add = (group, geometry, material, x, y, z, rx = 0, ry = 0, rz = 0) => {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(x, y, z);
