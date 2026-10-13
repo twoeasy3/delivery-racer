@@ -320,7 +320,7 @@ const drawStage = () => {
   arrows[1].title = 'The next level (right)';
   arrows[0].addEventListener('click', () => step(-1));
   arrows[1].addEventListener('click', () => step(1));
-  const toggle = open && words ? make('button', 'info-toggle', 'i') : null; // (only where there is a description to show)
+  const toggle = open && words && !extras ? make('button', 'info-toggle', 'i') : null; // (only where there is a description to show; not on an event card with extras, whose phone layout shows the description and the figures both: menu2.css .cx-card)
   const paintToggle = () => {
     stage.classList.add('has-toggle');
     stage.classList.toggle('desc-view', showDesc);
@@ -331,6 +331,7 @@ const drawStage = () => {
   stage.replaceChildren(shot, plate, ribbon, ...(cargo ? [cargo] : []), ...(extras ? [extras.node] : []), info, ...arrows, ...(toggle ? [toggle] : []));
   // (a new level slides in; the other side only swaps the words)
   stage.className = 'menu-stage' + (open ? '' : ' locked') + (extras ? ' has-extras' + (extras.car ? '' : ' no-car') + (extras.tasks ? ' has-tasks' : '') : '') + (drawn && !sameLevel ? ' enter' : drawn && drawn !== key ? ' flip' : '');
+  startScreen.classList.toggle('cx-card', !!extras); // (a phone: the event card's own stacked layout, the menu scrolling past it: menu2.css)
   if (extras) requestAnimationFrame(extras.draw); // (its car's still, once laid out)
   if (toggle) paintToggle();
   drawn = key;
@@ -532,6 +533,7 @@ export const draw = () => {
   const special = Events.stageOf(cursor)?.event, series = special && !oneStage(special) ? special : null;
   startScreen.classList.toggle('eventview', !!series);
   if (series) {
+    startScreen.classList.remove('cx-card'); // (drawStage's: an event of more stages has its own screen)
     drawn = null;
     const left = stage.querySelector('.event-row')?.scrollLeft || 0; // (the row where it was scrolled to: picking a card draws it again)
     stage.replaceChildren(eventPanel(series, cursor, Game.evil && !oneSided(cursor)));
