@@ -1,0 +1,351 @@
+# Delivery Racer: everything you can put in the address
+
+Every query parameter the game's code reads (found by searching `src/delivery/` and `delivery/*.html` for
+`URLSearchParams`, `params.get/has/getAll` and `location.search`; nothing reads `location.hash`). Written 13-Oct-2026
+against `main` at v1.1.100 (58eada5). If a later change adds a switch, it will not be here until this file is updated.
+
+**Where to type them.** The game is at `https://delivery.pingmathehippo.com/delivery/`. Put `?` after that, then the
+first switch, and `&` before every other one:
+
+    https://delivery.pingmathehippo.com/delivery/?garage=evil&tab=ideas&look=limo
+
+The bare domain (`https://delivery.pingmathehippo.com/?...`) redirects to `/delivery/`. Whether the redirect keeps
+the `?...` part was **not tried** (the container cannot reach the live site), so the examples here all use
+`/delivery/`. A switch with no `=value` (like `&full`) is on just by being there.
+
+**Legend.** *Saves?* says what a switch can do to your real save (the cookie / local storage):
+
+- **No**: nothing from the visit is written. Many test switches turn saving off for the whole visit
+  (`Progress.noSave`), so even what you deliver or buy in that tab is forgotten when you leave.
+- **Normal**: the switch itself writes nothing, but saving stays ON, so anything you then do in that tab (buy a car,
+  deliver a level) is saved as usual, under the switch's conditions.
+- **YES**: the switch can end up in your save. Marked in bold.
+
+*Tried* says whether the example was loaded in headless Chromium on 13-Oct (scripts/shots.mjs) and the still looked
+at. "untried" means it was read from the code only.
+
+**Switches that turn saving off for the whole visit:** `autostart`, `hidden`, `test`, `edited`, `pick`, `car`,
+`ghost`, `mystery`, `theme`, `beaten`, `owns`, `event` (main.js), and also `pack`, `bp` (with `showroom`), `shopcash`,
+`shopbuys`, `maxed` / `owned` (on the Shop), and `demo`. Add any of them (e.g. `&ghost`) to a visit if you want to be
+sure nothing sticks.
+
+---
+
+## 1. Starting a level straight away
+
+These need `?autostart` (or `?hidden`, `?test`, `?edited`) to do anything; without it the menu shows as usual.
+
+| Param | Values | What it does | Example | Saves? | Tried |
+|---|---|---|---|---|---|
+| `autostart` | bare, or `evil` | Skips the menu and starts a run. `=evil` plays it as Evil. | `/delivery/?autostart&level=1` | No | yes |
+| `level` | a number, 1 to 73 today | Which level (its place in the game's list, NOT its id: see the list at the end; the numbers move when levels are added). Locked or not. Default 1. | `/delivery/?autostart&level=27&tiers=0` | No | yes |
+| `evil` | bare | Plays as Evil (same as `autostart=evil`). Also used by the showroom and the banner page. | `/delivery/?autostart&level=1&evil` | No | untried (`autostart=evil` tried) |
+| `car` | car id; `super-<id>` for its Super version | Drives that car for the visit, owned or not, at its max ECU. (Without autostart: see section 3.) | `/delivery/?autostart&level=1&car=hotrod` | No | yes (with `cine=car`) |
+| `tiers` | `0` or `1` | Turns the level tiers off (`0`) or on (`1`) for the visit. **Needed** to start most levels above the first tier on a fresh save (see Gotchas). | `/delivery/?autostart&level=27&tiers=0` | Normal (No with autostart) | yes |
+| `hidden` | `testbed`, `grand-prix`, `gimmick-road`, `gimmick-road-2`, `gimmick-road-3` | Starts a hidden level (no autostart needed). | `/delivery/?hidden=gimmick-road&ghost&at=600` | No | yes |
+| `test` | bare | The hidden test track (= `hidden=testbed`). `&evil` as Evil. | `/delivery/?test` | No | untried |
+| `edited` | bare | Plays the level the level editor last left (its local storage), as a hidden level. If it is broken, the menu shows with a red line saying why. | `/delivery/?edited` | No | untried |
+| `at` | metres | Starts that far along the road. | `/delivery/?autostart&level=1&at=900` | No | yes |
+| `ff` | seconds | Runs the game that long before the first frame is drawn (also with `screensaver` / `racewatch`). | `/delivery/?autostart&level=1&ff=4` | No | yes |
+| `ghost` | bare | Your car is a ghost all run: nothing wrecks it. | `/delivery/?autostart&level=1&ghost` | No | yes |
+| `speed` | m/s | Doing that speed from the start (with `ff`, hands off, it holds). | `/delivery/?autostart&level=1&speed=31` | No | untried |
+| `lane` | lane number | Starts in that lane. | `/delivery/?autostart&level=1&lane=4` | No | untried |
+| `theme` | a theme id (list at the end) | Plays the level dressed in that theme. | `/delivery/?autostart&level=1&theme=snow` | No | untried |
+| `mystery` | a mystery id (list at the end; any case) | Every mystery pickup is that one. | `/delivery/?autostart&level=7&mystery=toad` | No | untried |
+| `rival` | bare (the opposite side), `evil`, `good` | A rival courier on every delivery level. Works without autostart too. | `/delivery/?autostart&level=1&rival&ghost` | No with autostart; **Normal** without | yes ("Position 2/2") |
+| `gt` / `lmp` | bare | Every race in GT road cars / Le Mans prototypes, whatever the menu says. | `/delivery/?autostart&level=59&gt` | No with autostart; **Normal** without | untried |
+| `pursuit` | seconds | A police pursuit set off that many seconds in (any level that can have one). Works without autostart. | `/delivery/?autostart&level=1&pursuit=1` | as `rival` | tried, but no pursuit was visible in the still at 5 s: **not verified** |
+| `pursuitbehind` | metres | With `pursuit`: it starts that far behind you. | `...&pursuit=3&pursuitbehind=60` | as `rival` | untried |
+| `pieces` | number | That many tank pieces already found. | `/delivery/?autostart&level=1&pieces=3` | No | untried |
+| `rage` | bare | In TANK RAGE from the start. | `/delivery/?autostart&level=1&rage` | No | untried |
+| `infected` | bare, or `armour` | You are infected (radiation) from the start; `=armour` also under armour. | `/delivery/?autostart&level=53&infected` | No | untried |
+| `rad` | `from-to` or `from-to:lane` (metres) | Adds a radiated stretch on top of the level's own. | `/delivery/?autostart&level=1&rad=300-500:2` | No | untried |
+| `radcar` | bare (0.5) or a share 0 to 1 | That share of traffic starts infected. | `/delivery/?autostart&level=1&radcar=0.3` | No | untried |
+
+## 2. Pictures, cameras and HUD checks (in a run)
+
+Also need `autostart` (or a hidden level).
+
+| Param | Values | What it does | Example | Saves? | Tried |
+|---|---|---|---|---|---|
+| `cine` | bare, or `car` | A still for the menu: traffic dealt afresh, `ff` lets it settle, then frozen; no HUD, camera off to one side. `cine=car`: your car alone on white. | `/delivery/?autostart&level=1&ghost&cine&ff=4&at=300` | No | yes (both) |
+| `turn` | degrees | With `cine=car`: the camera that far round the car. | `...&cine=car&turn=120` | No | untried |
+| `cineside` | `left` | With `cine`: camera on the other side of the road. | `...&cine&cineside=left` | No | untried |
+| `cineout` / `cineup` / `cineback` | metres | With `cine`: camera beyond the road edge (default 9; below 0 is over the road) / height (7.5) / distance behind (22). | `...&cine&cineup=12&cineback=40` | No | untried |
+| `fly` | bare | Freezes the level and gives a free camera (drag to look, keys to move, Shift faster, T reveals). | `/delivery/?autostart&level=1&fly` | No | yes |
+| `cam` | `x,y,z` or `x,y,z,yawDeg,pitchDeg` | With `fly`: where the camera starts. | `...&fly&cam=0,40,-30,0,-20` | No | untried |
+| `reveal` | bare | With `fly`: what is only set off later (mines up, bears dropped...) shown as it ends up. (With `pack`: `reveal=all`.) | `...&fly&reveal` | No | untried |
+| `photo` | bare | Paused in photo mode once `ff` has run. | `/delivery/?autostart&level=1&ghost&photo&ff=2` | No | yes |
+| `hudcheck` | bare, `many`, `one`, `later`, `icons` | Every part of the HUD showing at once and held (bare: flat tyre, a mystery, half a tank, two messages; `many`: six sticky icons; `one`: only the flat tyre; `later`: said once and left to fade; `icons`: every sticky message). `&mystery=` names the mystery. | `/delivery/?autostart&level=1&hudcheck&ff=2` | No | yes (bare) |
+| `cargostate` | `0`, `1`, `2` | An Evil cargo item shown calm / agitated / furious whatever the clock says. | `/delivery/?autostart&level=1&evil&cargostate=2` | No | untried |
+| `deliver` | seconds | The delivery scene at the kerb stopped that many seconds in. (With `event` it means something else: section 6.) | `/delivery/?autostart&level=1&ghost&at=...&deliver=2.5` | No | untried |
+| `screensaver` | bare | Starts the screensaver (works with `ff`). No autostart needed. | `/delivery/?screensaver&ff=3` | Normal | yes |
+| `racewatch` | bare | Starts the race screensaver. | `/delivery/?racewatch` | Normal | untried |
+| `camcheck` | bare | With `racewatch`: checks every trackside camera and prints the result to the browser console (nothing on screen). | `/delivery/?racewatch&camcheck` | Normal | untried |
+
+## 3. The menu (no autostart)
+
+| Param | Values | What it does | Example | Saves? | Tried |
+|---|---|---|---|---|---|
+| `pick` | level number | The menu with that level picked; every level (and tier) open for the visit. Nothing starts. | `/delivery/?pick=27` | No | yes |
+| `start` | bare | With `pick`: Start is pressed too. | `/delivery/?pick=66&start` | No | untried |
+| `cursor` | level number | Moves the menu to that level (shown only if it is open to you). | `/delivery/?cursor=3` | Normal | untried |
+| `tab` | `races`, `events` | The menu opens on the Races or Events tab. (Means something else with `garage` and in the editor.) | `/delivery/?tab=races` | Normal | yes (`races`) |
+| `side` | `evil` | Plays Evil (not saved as a choice). The showroom then opens on Evil too. (On cargo.html it filters: section 9.) | `/delivery/?side=evil` | Normal | untried |
+| `options` | bare | The Options sheet open. | `/delivery/?options` | Normal | untried |
+| `road` | bare | The "What's on this road" card open (for the picked level: works with `pick`). | `/delivery/?pick=27&road` | Normal / No with pick | untried |
+| `do` | comma list of `key:<code>`, `click:<css selector>`, `swipe:left`/`swipe:right` | Works the menu step by step, one every 0.15 s (encode `#` as `%23`). | `/delivery/?do=key:ArrowRight,key:ArrowRight` | Normal | yes (moved to level 3) |
+| `car` | car id | (without autostart) The menu with that car in use for the visit, owned or not. | `/delivery/?car=hotrod` | No | untried |
+| `savepanel` | bare (export), or `import` | The save code panel open. | `/delivery/?savepanel` | Normal (an import you paste replaces your save, as usual) | yes |
+| `album` | bare | The Postcards album open. | `/delivery/?album` | Normal | yes |
+| `milestones` | bare | The Milestones wall open. | `/delivery/?milestones` | Normal | untried |
+| `unlock` | bare | With `album` / `milestones`: everything shown as earned (pretend only). | `/delivery/?album&unlock` | Normal | yes |
+| `demo` | bare | A made-up save for the visit: all but the last two levels open, medals on most, every other car owned, a full bank. Saving is switched off. | `/delivery/?demo` | No | yes |
+| `touch` | bare | Shows the on-screen touch controls (as on a phone). | `/delivery/?touch&autostart&level=1` | Normal | untried |
+
+## 4. Fake progress for a look (cheats)
+
+| Param | Values | What it does | Example | Saves? | Tried |
+|---|---|---|---|---|---|
+| `beaten` | comma list of `levelId`, `levelId:evil`, `levelId:both` | Those levels counted as having a medal (alone = Good). Uses level **ids**, not numbers. | `/delivery/?beaten=expressway,back-roads:evil,farm:both` | No | untried |
+| `owns` | comma list of car ids | Those cars lent for the visit, at max ECU. | `/delivery/?showroom&owns=sport&look=sport&full` | No | yes |
+| `money` | number | The bank set to that. **Does NOT switch saving off.** Loading it alone did not write it (a second load of the plain menu showed $0), but anything that saves later in the same tab (buying, delivering) would write the fake bank. Add `&ghost` (or another no-save switch) to be safe. | `/delivery/?money=500&ghost` | **YES** (if you then do something that saves) | yes |
+| `shopcash` | number | The Shop's Crazey Cash for the visit. | `/delivery/?shop&shopcash=5000` | No | untried |
+| `debug` | bare | On the Shop: a "+1000 (debug)" button on the wallet. What it adds **is saved**. | `/delivery/?shop&debug` | **YES** (pressing it) | untried |
+| `freetry` | bare | The rotating event's featured car (Concept Strike) as the free try, as its card's chip does. | `/delivery/?tab=events&freetry` | Normal (the try itself is never saved) | untried |
+
+## 5. Garage (Crazey Jim's car lot) and the Showroom
+
+| Param | Values | What it does | Example | Saves? | Tried |
+|---|---|---|---|---|---|
+| `garage` | bare, or `evil` | Opens the car lot (Evil livery with `=evil`). | `/delivery/?garage=evil` | Normal (buying there is real) | yes |
+| `tab` | `ideas` | With `garage`: the Car ideas lot. | `/delivery/?garage=evil&tab=ideas` | Normal | yes |
+| `look` | car id (an idea's id on the ideas tab) | With `garage`: that car tapped (its stats and the comparison card). On the ideas tab only the idea cars count (e.g. `limo`, `hovercraft`; list at the end): `look=sixteen` there does nothing (tried). | `/delivery/?garage=evil&tab=ideas&look=limo` | Normal | yes |
+| `hover` | car id | With `garage`: that car's tooltip shown. | `/delivery/?garage&hover=commuter` | Normal | yes |
+| `click` | CSS selector(s), `\|` between several, `#` as `%23` | With `garage` only: that control pressed once the lot is up (e.g. `%23garageAction` on an unowned car: its buy sheet). | `/delivery/?garage&look=postvan&click=%23garageAction` | Normal | tried with `floatvan`: nothing visible opened (the car may not be on the lot for level 1): **not verified** |
+| `sort` | `stars`, `price`, `speed`, `accel`, `health` | With `garage`: the lot sorted that way. | `/delivery/?garage&sort=speed&show=owned` | Normal | yes |
+| `show` | `all`, `owned`, `sale`, `afford`, `amphibious`, `gold`, `blue` | With `garage`: only those cars parked. | (as above) | Normal | yes |
+| `studio` | idea ids (comma) or `all` | With `garage&tab=ideas`: a studio picture of those idea models alone. | `/delivery/?garage&tab=ideas&studio=limo,bathtub` | Normal | untried |
+| `views` | `1`, `2` (default), `3` | With `studio`: how many sides of each model. | `...&studio=all&views=3` | Normal | untried |
+| `showroom` | bare | Opens the Showroom (where a car is picked). | `/delivery/?showroom` | Normal | yes |
+| `look` | car id | With `showroom`: that car's card picked. Any car id, key cars included (e.g. `sixteen`). | `/delivery/?showroom&look=sport` | Normal | yes |
+| `full` (old name `sheet`) | bare | With `showroom`: the picked car's full view open. | `/delivery/?showroom&look=sport&full` | Normal | yes |
+| `nostats` | bare | With `showroom&full`: the stats hidden. | `/delivery/?showroom&look=sport&full&nostats` | Normal | untried |
+| `evil` | bare | With `showroom`: opens on the Evil side. | `/delivery/?showroom&evil` | Normal | untried |
+| `filter` | `group:chip,chip;group:...;sort:<s>` groups `stars` (1-6), `colour` (gold, blue, magenta, green), `rarity` (common, uncommon, epic, legendary), `kind` (garage, blueprint, key, special), `state` (ready, locked, upgradable, maxed, inuse, barred, allowed, event); sort `tier`, `rarity`, `ecu`, `name`, `speed` | With `showroom`: a filter for the visit (not remembered). Note: the `tier:g3,b1` form in showroom.js's comments is out of date and is ignored. | `/delivery/?showroom&filter=stars:2;sort:speed&filters` | Normal | yes |
+| `filters` | bare | With `showroom`: the filter sheet open. | (as above) | Normal | yes |
+| `bp` | `carId:n,carId:n` | With `showroom`: those blueprint counts for the visit. | `/delivery/?showroom&bp=sport:7,hotrod:3&look=sport&full` | No | untried |
+| `bounce` | seconds | With `showroom&full`: the car's landing frozen that far in (0.16: down on its springs; 0.31: up off them). | `/delivery/?showroom&look=sport&full&bounce=0.16` | Normal | untried |
+| `sourcesopen` | bare | The full view's "Where to get it" list open from the start. | `/delivery/?showroom&look=sixteen&full&sourcesopen` | Normal | untried |
+
+## 6. Events and the clock
+
+| Param | Values | What it does | Example | Saves? | Tried |
+|---|---|---|---|---|---|
+| `event` | `comet-hunt`, `car-hunt`, `concept-strike` | The menu on that special event's next stage. | `/delivery/?event=concept-strike` | No | yes |
+| `eventsnow` | a day `2026-11-05`, or a date-time with zone | The events' clock set to that day for the visit (menu, Shop, Where to get it). Changes which Concept Strike car is today's, what is live, "Next in...". | `/delivery/?event=concept-strike&eventsnow=2026-10-14` | Normal (No with `event`). Without a no-save switch, a run you deliver is saved as if on that day | yes |
+| `deliver` | bare | With `event`: the stage started and delivered at once, for its results and the pack it gives. Only works if you have a car the stage allows (add one with `owns`). | `/delivery/?event=car-hunt&owns=minivan&deliver` | No | yes (the kerb scene showed; without `owns` nothing started) |
+| `freetry` | bare | See section 4. | | | |
+
+## 7. Shop, packs, keys and banners (pictures of the card side)
+
+| Param | Values | What it does | Example | Saves? | Tried |
+|---|---|---|---|---|---|
+| `shop` | bare | Opens the Shop. Only from the menu (not with autostart). | `/delivery/?shop` | Normal (buying is real) | yes |
+| `inside` | an offer id or pack id (list at the end) | With `shop`: that pack's "What's inside" sheet open. | `/delivery/?shop&inside=comet-special` | Normal | yes |
+| `limits` | `packId:t<total>d<daily>,...` | Purchase limits for the visit. | `/delivery/?shop&limits=ten:t3,standard:d2` | Normal | untried |
+| `shopbuys` | `packId:n,...` | So many of a pack counted as bought today (sold-out / claimed tiles). | `/delivery/?shop&shopbuys=daily:1,ten:2` | No | untried |
+| `pack` | a pack id, or `bespoke` | Opens that pack free on the menu, for a look ("A look: nothing saved"). `bespoke`: a standard pack with the Silver Comet's key added. | `/delivery/?pack=standard&reveal=all` | No | yes (both) |
+| `from` | event id | With `pack`: the old `pack=special&from=comet-hunt` form still finds the event's pack. (On gimmicks.html it is a card number.) | `/delivery/?pack=special&from=comet-hunt` | No | untried |
+| `reveal` | `all` | With `pack`: every card turned at once. | (above) | No | yes |
+| `give` | `kind` or `kind:eventId`, comma list | With `pack`: those packs also granted (queued as unopened), for a look. | `/delivery/?pack=standard&give=ten,daily` | No | untried |
+| `flick` | seconds | With `pack`: each slot's flick animation held that long after its first throw. | `/delivery/?pack=ten&flick=0.4` | No | untried |
+| `again` | bare | With `pack`: the "Buy another" button shown (it buys nothing). | `/delivery/?pack=standard&reveal=all&again` | No | untried |
+| `amount` | 1 to 99 | With `pack`: every non-key card that many (x3, x15...). | `/delivery/?pack=ten&amount=15&reveal=all` | No | untried |
+| `amounts` | `3,15` (by slot, alternating) or `common:3,epic:15` (by rarity) | With `pack`: per-slot or per-rarity amounts. | `/delivery/?pack=ten&amounts=common:3,epic:15` | No | untried |
+| `featured` | `carId[!key][:weight[x amount]]`, comma list | With `pack` or `shop`: a special pack's featured list for the visit. | `/delivery/?shop&inside=comet-special&featured=silvercomet:9x3,rocketfin!key:1` | Normal (nothing of it stored) | untried |
+| `double` / `base` | 0 to 1 / 1 to 99 | With `pack` or `shop`: the chance a card doubles, and the base amount. | `/delivery/?shop&inside=standard&double=0.5&base=2` | Normal | untried |
+| `maxed` / `owned` | car ids, comma list | With `pack` or `shop`: cars counted as at max ECU / their key owned (to see exhausted featured cards). | `/delivery/?shop&inside=comet-special&owned=silvercomet` | No | untried |
+| `keycar` | a key car's id | With `pack=bespoke`: whose key is added. | `/delivery/?pack=bespoke&keycar=sixteen&reveal=all` | No | untried |
+| `keys` | bare, `concepts`, `ordinary`, `all`, or a car id | A sheet of key pictures: bare = each key car's own key; `concepts` = the six concept cars'; `ordinary` = every ordinary key; `all` = every key; a car id = every key model tinted by that car. | `/delivery/?keys&card` | Normal | yes (bare, `ordinary`) |
+| `only` | key model names, comma list | With `keys`: only those models (fob, classic, smart, fin, wheel, solar, lunar, snowboot, bun, keikey, wing, artisan, carbonfob, wedgefob, startfob; ordinary: roundhead, flipkey, rugged, wristband, carfob, cardkey, displaykey, crystal, leaper, lottag). (On cargo.html it filters items.) | `/delivery/?keys=sixteen&only=artisan,fob` | Normal | untried |
+| `card` | bare | With `keys`: card-size pictures only, no side views. | `/delivery/?keys=ordinary&card` | Normal | yes |
+| `keymodel` | a key model name | Every card draws that key model for the visit (to compare). | `/delivery/?shop&inside=comet-special&keymodel=artisan` | Normal | untried |
+| `banner` | 1 to 3 car ids (hero first) | Just a pack banner over everything, to re-shoot. | `/delivery/?banner=wedge,midnight,splitwindow&w=1000&h=500` | Normal | yes |
+| `w` / `h` | pixels | With `banner`: its size (default 1600x800). | (above) | Normal | yes |
+| `evil` / `labels` | bare / `0` | With `banner`: Evil livery / no names. | `...&banner=wedge,midnight&evil&labels=0` | Normal | untried |
+
+## 8. Performance: the tablet flicker bisect (`lite`)
+
+`?lite=<names>` turns suspects off for the visit (a small "lite: ..." badge in the bottom-left corner confirms it).
+Comma separated. Works on any page of the game (menu, Shop, packs).
+
+| Name | Turns off |
+|---|---|
+| `glow` | the Legendary-key / Bespoke cards' pulsing glow |
+| `twinkle` | the glints over Legendary-key / Bespoke art |
+| `shine` | every card shine (sweep, holo, the Legendary blueprint's shine) |
+| `blend` | only the shine's blend mode (the shine still moves) |
+| `drift` | the menu picture's slow zoom |
+| `menu` | every menu animation (zoom, light sweep, START pulse, LIVE dot) |
+| `scene` | nothing drawn under What's inside / the pack reveal (a plain dark page) |
+| `blur` | every backdrop blur (the Shop's top bar) |
+| `shadow` | card shadows, picture drop-shadows, star glow |
+| `pics` | the car and key pictures on the cards |
+| `stacks` | the x1/x2 fades and the x3/x15 bubble cycle |
+| `anim` | every animation and transition in the sheet and the reveal |
+| `all` | all of the above |
+
+Example (tried, badge and plain page seen): `/delivery/?lite=all&shop&inside=standard`. Saves? Normal.
+
+## 9. The other pages
+
+The game has seven pages, all under `/delivery/`:
+
+| Page | What it is | Params |
+|---|---|---|
+| `index.html` (or just `/delivery/`) | the game | everything above |
+| `editor.html` | the level editor | see below |
+| `gimmicks.html` | every gimmick, by group, with its model | `group`, `from`, and `#<group>` anchors |
+| `cargo.html` | every cargo item, Evil ones in their three states | `side`, `only`, `still`, `t`, `turn` |
+| `powerups.html` | the power-ups | none |
+| `police.html` | the police | none |
+| `sides.html` | Good and Evil | none |
+
+Whether the live site serves these as `editor.html` or redirects to `editor` (and keeps the `?...`) was **not tried**.
+
+**gimmicks.html**
+
+| Param | Values | What it does | Example | Tried |
+|---|---|---|---|---|
+| `group` | `the-road-itself`, `wildlife`, `on-the-move`, `construction-site-and-airport`, `the-hood`, `races-and-rivals`, `vehicles`, `the-battlefield`, `gimmick-road`, `gimmick-road-` (Gimmick Road 2: the digit is dropped), `city-streets`, `road-gambles`, `fallout`, `road-dressing` | Only that group. | `/delivery/gimmicks.html?group=wildlife` | yes |
+| `from` | card number | With `group`: only its cards from that one on. | `/delivery/gimmicks.html?group=wildlife&from=3` | untried |
+
+**cargo.html**
+
+| Param | Values | What it does | Example | Tried |
+|---|---|---|---|---|
+| `side` | `good`, `evil` | Only that side's items. | `/delivery/cargo.html?side=evil` | yes |
+| `only` | item ids, comma list (list at the end) | Only those items. | `/delivery/cargo.html?only=doll,bees` | untried |
+| `still` | bare | Every model frozen at one moment. | `/delivery/cargo.html?side=evil&still` | yes |
+| `t` | seconds (default 2.4) | With `still`: which moment. | `...&still&t=1` | untried |
+| `turn` | radians (default 0.5) | Every model turned to that side. | `...&still&turn=3.14` | untried |
+
+**editor.html** (meant for pictures of the editor; all untried except `level` and `tab`)
+
+| Param | Values | What it does |
+|---|---|---|
+| `level` | a level **id** (e.g. `farm`), or `blank` | Opens that level. **With `level` in the address the editor does not autosave** (your edits there are lost on reload unless you Download .json). |
+| `tab` | `level`, `road`, `place`, `list`, `json` | That side tab open (tried: `list`). |
+| `q` | text | Search box filled in. |
+| `hide` | kinds, comma list | Those kinds hidden on the map. |
+| `tool` | `<field>` or `<field>:<kind>` | That placing tool picked. |
+| `click` | `<m>` or `<m>:<lat>`; repeatable | Clicks the map there with the tool (places a thing). |
+| `sideclick` | `<exit>:<m>`; repeatable | Clicks on a side road. |
+| `sel` | `<field>:<n>` | Selects that thing. |
+| `drag` | `<field>:<n>:<p\|a\|b\|move>:<m>`; repeatable | Drags a thing that far. |
+| `seglen` | `<segment>:<m>` | Resizes a road segment. |
+| `bend` | `<segment>:<m on>:<m right>` | Drags a segment's handle. |
+| `undo` / `redo` | times | Presses undo / redo. |
+| `zoom` | `<m>:<px per m>` | Zooms the map there. |
+| `scroll` | pixels | Scrolls the side panel. |
+| `view` | `3d` | The 3D view open. |
+
+Without `&level=`, edits made by these switches (`click`, `drag`, `seglen`...) go into the editor's autosave and
+**replace your autosaved editor work** (not your game save). Example: `/delivery/editor.html?level=farm&tab=list` (tried).
+
+`?edited&clock` on the game page is used by the editor's "Work out the clock" button (it loads the game out of
+sight); there is no reason to type it.
+
+---
+
+## Gotchas
+
+- **Tiers block autostart.** On a fresh save, `?autostart&level=27` opened the garage ("No car for this level")
+  instead of starting, because Hong Kong is a tier you have no car for. Add `&tiers=0` (tried: it then starts). The
+  same for `?autostart&car=sixteen&cine=car`: on level 1 the tier rule put the Commuter in; with `&tiers=0` the
+  Sixteen showed (tried).
+- **`level` is a number, `beaten` and the editor's `level` are ids.** The README's `?level=<id>` is out of date: an id
+  there is read as level 1. Numbers move when a level is added before it (list below).
+- **The `index.html?` trick is only for scripts/shots.mjs.** That script adds `?autostart` to any address starting with
+  `?` unless it names a mode (autostart, hidden, test, edited, screensaver, racewatch, garage, album, milestones), so
+  menu pictures there are written `index.html?shop`, `index.html?showroom`... In your own browser `/delivery/?shop`
+  is the menu with the Shop open: nothing autostarts unless you ask.
+- **Menu-only screens.** `shop`, `album`, `milestones` only open when the page starts on the menu, so they do
+  nothing together with `autostart` (or `hidden`, `test`...).
+- **Same name, different meaning by context:** `tab` (garage: `ideas`; menu: `races`/`events`; editor: its tabs),
+  `look` (garage car / idea; showroom card), `click` (garage: CSS selectors; editor: map clicks; the menu uses
+  `do=click:` instead; `click` does nothing on the menu or showroom), `evil` (run / showroom / banner), `side` (menu
+  vs cargo.html), `only` (keys vs cargo.html), `from` (pack vs gimmicks.html), `turn` (degrees with `cine=car`,
+  radians on cargo.html), `reveal` (fly vs pack), `deliver` (seconds with autostart; bare with `event`).
+- **`event&deliver` needs a usable car** (`&owns=<a car the stage allows>`); without one, nothing starts (tried).
+- **Fresh-save showroom shows silhouettes**: a car of a closed tier is "Locked car". Add `&owns=<id>` or `&demo` to
+  see it whole (tried with `owns=sport`).
+- `hover`, `look`, `tab`, `click`, `sort`, `show`, `studio` act only with `?garage`; `look`, `full`, `filter`,
+  `filters`, `bp`, `bounce`, `nostats` only with `?showroom`.
+- Not on `main` (only on unmerged branches, so they do nothing here): `?ge=` (Good/Evil cue ideas), `?poses=`,
+  `?poselab` (blueprint pose lab).
+
+## Handy recipes
+
+All prefixed with `https://delivery.pingmathehippo.com/delivery/`.
+
+- An Evil car-idea in the lot, with its card: `?garage=evil&tab=ideas&look=limo` (tried)
+- A pack's What's inside: `?shop&inside=comet-special` (tried), or the 10-pack `?shop&inside=ten`
+- Open a pack and see every card: `?pack=standard&reveal=all` (tried); with a Bespoke key: `?pack=bespoke&reveal=all` (tried)
+- Today's Concept Strike on a chosen day: `?event=concept-strike&eventsnow=2026-10-14` (tried; change the date to see another day's car)
+- The tablet flicker test with everything off: `?lite=all&shop&inside=standard` (tried); then turn one back on at a time, e.g. `?lite=glow,twinkle,shine&shop&inside=standard`
+- A car in the showroom's full view: `?showroom&owns=sport&look=sport&full` (tried)
+- Every key: `?keys=all&card`; each key car's own: `?keys&card` (tried)
+- Drive any level in any car, safely: `?autostart&level=27&tiers=0&car=hotrod&ghost` (the parts tried separately)
+- A level's menu still: `?autostart&level=1&ghost&cine&ff=4&at=300` (tried)
+- A car alone on white, from behind: `?autostart&tiers=0&car=sixteen&cine=car&turn=180` (tried without `turn`)
+- Look round the menus with a made-up full save: `?demo` (tried)
+- The whole HUD at once: `?autostart&level=1&hudcheck=many&ff=2` (tried bare `hudcheck`)
+- Fly round a level: `?autostart&level=27&tiers=0&fly` (tried on level 1)
+
+## Lists (13-Oct, v1.1.100)
+
+**Level numbers** (for `level`, `pick`, `cursor`; ids for `beaten` and the editor): 1 expressway, 2 back-roads,
+3 farm, 4 big-business, 5 hurricane, 6 night, 7 mystery-meadows, 8 suburbs, 9 canberra, 10 monte-carlo, 11 singapore,
+12 singapore-night, 13 grand-pacific, 14 passage-du-gois, 15 safari, 16 airport, 17 construction, 18 the-hood,
+19 panorama-avenue, 20 speed-trap-alley, 21 mountain-pass, 22 outback-express, 23 tour-de-coast, 24 ring-road,
+25 market-town, 26 quarry-run, 27 hong-kong, 28 tokyo, 29 mumbai, 30 stelvio, 31 christmas, 32 toys, 33 leaks, 34 moon,
+35 backlot, 36 venice, 37 iceroad, 38 park, 39 cinder, 40 docks, 41 noon, 42 morro, 43 rice, 44 derby, 45 seaquake,
+46 farside, 47 stunts, 48 ponti, 49 glow, 50 erupt, 51 cattle, 52 thaw, 53 fallout, 54 shift, 55 descent, 56 monsoon,
+57 all-heck, 58 ufo, 59 marina-bay (race), 60 oh-mine, 61 montreal (race), 62 bathurst (race), 63 rival-run,
+64 showdown, 65 battlefield, 66 slipway (amphibious), 67 harbour (amph.), 68 flood (amph.), 69 ford (amph.),
+70 fjord (amph.), 71 monza (race), 72 spa (race), 73 albert-park (race).
+
+**Themes** (`theme`): city flooded farm beach singapore singaporeNight coast safari construction airport snow canberra
+hood suburb hell battlefield bathurst panorama montreal sea monza spa albert-park space night hongkong tokyo mumbai
+christmas toyroom seabed moon backlot venice iceroad iceroadThaw themepark volcano port themeparkNight volcanoErupting
+portNight wildwest favela rice favelaRain riceMonsoon fallout.
+
+**Mysteries** (`mystery`): rickety toad angel jerk invincible noBrakes insuranceUp insuranceDown ufo bulletTrain
+soupedUp earthquake rewind giant swapSides magnet blackout trafficFreeze, and sundayDrivers rushHour carSwap moodSwing.
+One that does not suit the level becomes `invincible`.
+
+**Cars** (`car`, `owns`, `look`, `hover`...): commuter junker darkvan postvan keitruck mini lovebus wagon sport lowrider
+hothatch ute buggy liftedtruck hearse minivan pickup hotrod sleeper rally towtruck rotary taxi suv miata gullwing
+rearengine snake polytruck muscle fullsize evsaloon superlowrider classicgt sixbysix herald floatvan toybota dampervan
+nissank tank; earned: hellrod earned-ufo earned-gt earned-jetboat earned-f1 earned-lmp courier showdown earned-apc;
+key cars: silvercomet rocketfin swancar solarracer moonrover monowheel snocat hotdog horseshoe and the concepts
+fishbowl midsummer sixteen quadturbo knifeedge windsong; blueprint cars: bubble milkfloat tuktuk woody pandacoupe
+keiroadster fireengine fieldscout monster stately teardrop pony goddess hardtop midnight splitwindow wedge jetcar
+dragster flyingcar blower coach cityev coupecross.
+
+**Car ideas** (garage `tab=ideas` `look`/`hover`, `studio`): threewheeler tinsnail bug twostroke brickestate limo
+centreseat rallywedge safari widetruck corrugated foodtruck motorhome schoolbus doubledecker funeralcoach golfcart
+hovercraft steamwagon tipper dunebuggy creamvan yellowcab mixer wrecker policewagon camper boathauler armoured cigar
+sidecar bathtub circuswagon gyrocar mower snailcamper duckwagon pushbacktug roadsweeper cabledrum gameviewer.
+
+**Packs** (`pack`, `inside`, `give`, `limits`, `shopbuys`): standard ten career daily comet-special car-hunt-special
+car-hunt-5 concept-strike-1 to concept-strike-6 supercar-special classic-special record-special cruiser-special.
+
+**Cargo** (cargo.html `only`): Good: pizza pancakes ramen cactus clock goldfish bouquet present teaset canary bonsai
+lavalamp surfboard sushi cake globe toolbox record balloons coffee telescope trophy puppy sundae snowglobe casserole
+kittens jumper books fruit radio. Evil: parcel porcupine bees doll tentacle egg cooker flytrap barrel mirror skunk
+cannonball mimic fireworks alien teddy bats ice snakes genie reactor goose jack cloud piranhas lawyers chainletter
+glitter recorders subpoena telemarketers taxmen wardens consultants inlaws band piecatapult airhorn ghost nestedboxes
+spider ink.
