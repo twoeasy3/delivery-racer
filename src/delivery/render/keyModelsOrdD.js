@@ -15,7 +15,7 @@
 import { registerKey, KEY_KIT } from './keyModels.js';
 
 const { THREE, metal, lambert, glow, add, box, disc, outline, circle, slab, band, rimMaterial, rainbow, glyph, paintOf, inkOn,
-  idle, plainBlade, merged, initialOf, grow } = KEY_KIT;
+  idle, merged, initialOf, grow } = KEY_KIT;
 
 // a split ring: a torus `R` round centred so it passes through (x, y) (a hole), its plane turned `turn` off the key's face
 // (PI/2: straight across the key, as the Bespoke keys hang theirs), `up` the direction from the hole to its centre
@@ -248,4 +248,3 @@ const keikey = (car, { rarity = 'bespoke' } = {}) => {
 };
 
 registerKey('keikey', keikey);
-void lambert; void outline; void band; void inkOn; void plainBlade; void grow;
