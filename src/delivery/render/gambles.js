@@ -9,6 +9,7 @@ import { Player } from '../player.js';
 import { Traffic } from '../traffic.js';
 import { Gambles } from '../gambles.js';
 import { scene, tmp } from './scene.js';
+import { Particles, rnd } from './effects.js';
 import { carMesh, trafficMeshes } from './cars.js';
 import { makeWindsock, makeSign, makeTransporter, makeHeightBar, makeDepthPost, makeCushion, makeShadeTree } from './gambleModels.js';
 import { buildStrip } from './road.js';
@@ -72,6 +73,11 @@ let clouds = [];
 let floods = [];   // the fords that fill: { f, water, collars, y0 } (the water and the posts' collars rise with it)
 let sunDiscs = []; // the low sun's: { z (its stretch), sun (the model), x, zz (the way the stretch runs, in the world) }
 let leaned = 0;   // (the roll given the player's car last frame, taken off again before the next is put on)
+// climbing out of a rut (Gambles.rutJolts goes up): for RUT_OUT s the car heaves up over the rut's lip, rolled away
+// from the side it climbs out on, and settles with a smaller bounce; mud flies off its wheels (the owner, 12-Oct:
+// not a snap back onto the flat). Drawing only: the game's own jolt is Gambles.updateRuts
+const RUT_OUT = 0.7;
+let rutJolts = 0, rutOut = null, rutRolled = 0, lastLat = 0; // ({ at, side }; the roll given last frame, as leaned; the car's lat then)
 
 Game.onLoad.push(() => {
   group.clear();
@@ -283,6 +289,35 @@ export const syncGambles = (now) => {
   for (const sock of socks) {
     const w = Gambles.winds[sock.wind];
     if (w) sock.model.userData.set((Gambles.gust(w) - W.lull * 0.6) / (1 - W.lull * 0.6), w.dir, t);
+  }
+  // out of a rut: a heave, a roll and mud
+  carMesh.rotation.z -= rutRolled;
+  rutRolled = 0;
+  if (Gambles.rutJolts !== rutJolts) {
+    if (Gambles.rutJolts > rutJolts && Player.active) {
+      const side = Math.sign(Player.lat - lastLat) || 1, mud = THEMES[LEVEL.theme || 'city']?.soft?.mud ?? 0x6a4d31;
+      rutOut = { at: t, side };
+      const h = Track.toWorld(Player.s, Player.lat, tmp), fx = Math.sin(h), fz = Math.cos(h), ax = -Math.cos(h), az = Math.sin(h); // (ahead; and across, +lat)
+      for (let n = 0; n < 16; n++) { // (thrown back and up off the wheels, and out the side it left: the rut's side)
+        const back = Player.hl * (n % 2 ? 0.6 : -0.6), across = -side * (Player.hw * 0.8);
+        Particles.emit(tmp.x + fx * back + ax * across + rnd(0.3), tmp.y + 0.3, tmp.z + fz * back + az * across + rnd(0.3),
+          -fx * 3 - ax * side * (1.5 + Math.random() * 2.5) + rnd(1.5), 2.5 + Math.random() * 3.5, -fz * 3 - az * side * (1.5 + Math.random() * 2.5) + rnd(1.5),
+          0.6 + Math.random() * 0.4, 0.12 + Math.random() * 0.12, 0.3, 18, mud, tmp.y);
+      }
+    }
+    rutJolts = Gambles.rutJolts;
+  }
+  lastLat = Player.lat; // (the jolt puts the car out of the rut on the side it climbs: so which side, next time)
+  if (rutOut) {
+    const u = (t - rutOut.at) / RUT_OUT;
+    if (u < 0 || u >= 1 || !Player.active) rutOut = null;
+    else {
+      // (up over the lip and down in the first 60%, a smaller bounce after; the roll the same way, the climbing side up)
+      const heave = u < 0.6 ? Math.sin(Math.PI * u / 0.6) : 0.3 * Math.sin(Math.PI * (u - 0.6) / 0.4);
+      carMesh.position.y += 0.28 * heave;
+      rutRolled = -rutOut.side * 0.13 * heave; // (+ = over to its right: climbing out to its right, its right side is up)
+      carMesh.rotation.z += rutRolled;
+    }
   }
   // the cars in a crosswind lean with it
   carMesh.rotation.z -= leaned;

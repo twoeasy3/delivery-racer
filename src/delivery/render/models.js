@@ -1531,7 +1531,8 @@ export const MODELS = {
     }
     const prop = outboard(group, 0, 1.1, -l * 0.48 - 0.2, 1);
     box(group, lambert(0xd9c9a8), 0.06, 1.2, 0.06, 0, 2.6, l * 0.1);                   // the little mast on the roof,
-    const pennant = prism(group, lambert(0xd8262b), 0.02, [[l * 0.1, 3.15], [l * 0.1, 2.9], [l * 0.1 - 0.6, 3.03]]); // its pennant
+    const pennant = prism(group, lambert(0xd8262b), 0.02, [[0, 3.15], [0, 2.9], [-0.6, 3.03]]); // its pennant, made at z 0
+    pennant.position.z = l * 0.1; // and moved to the mast, so it flaps about the mast (it swung about the van's middle)
     box(group, trim, w + 0.04, 0.16, 0.12, 0, 0.5, l * 0.48 + 0.04);                     // bumper
     group.userData = { body, animate: (t) => { prop.rotation.z = t * 20; pennant.rotation.y = Math.sin(t * 5) * 0.2; } };
     return group;

@@ -332,7 +332,14 @@ export const Gambles = {
       const F = this.fly;
       P.s -= (P.speed - F.vx) * dt;
       P.speed = F.vx;
-      P.lat = Math.max(Track.lo(P.s) + P.hw, Math.min(Track.hi(P.s) - P.hw, P.lat + (F.latVel - P.latVel) * dt));
+      const lat = P.lat + (F.latVel - P.latVel) * dt, lo = Track.lo(P.s) + P.hw, hi = Track.hi(P.s) - P.hw;
+      // (a flight carried into the road's edge goes on over it, off the map: a wreck, the owner's 12-Oct. Not a
+      // hop of a few centimetres, nor a car that cannot be wrecked just now)
+      if ((lat > hi || lat < lo) && F.top > C.hop && P.health > 0 && P.shield <= 0 && P.ghost <= 0 && P.tank <= 0 && !P.testGhost) {
+        P.health = 0;
+        Message.say('events', 'offMap'); // (wrecked: see Collision.check)
+      }
+      P.lat = Math.max(lo, Math.min(hi, lat));
       P.latVel = F.latVel;
     }
     const wasOn = this.onRamp;

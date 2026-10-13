@@ -129,7 +129,10 @@ const makePickup = (p) => {
   gem.scale.setScalar(1.5); // (big enough to make out from the chase camera)
   gem.position.y = 1.7;
   const pad = new THREE.Mesh(new THREE.BoxGeometry(CONFIG.laneWidth * 0.8, 0.02, 5), new THREE.MeshBasicMaterial({
-    color: PICKUP_COLOR[p.type], transparent: true, opacity: 0.45, depthWrite: false }));
+    color: PICKUP_COLOR[p.type], transparent: true, opacity: 0.45, depthWrite: false,
+    // (pulled nearer than any of the levels' road overlays, a washboard, a runway, mud, which pull themselves
+    // up to -6 off the road: at the chase camera's low angle they hid the pad, 4 cm up as it is)
+    polygonOffset: true, polygonOffsetFactor: -8, polygonOffsetUnits: -8 }));
   pad.position.y = 0.04;
   group.add(gem, pad);
   group.rotation.y = Track.toWorld(p.s, p.lat, tmp);
@@ -341,7 +344,10 @@ const rockWay = (o) => {
   };
   const wait = (side) => side < 0 ? lo - o.out : hi + o.out;
   let side = o.side, shape = land;
-  if (o.ledge && land(wait(side)) < R.hill) { // (the level's ledge: straight down off it to the road's edge)
+  // (a ledge is only there where the level has a quarry on that side, whose benches it waits on: a level that
+  // gives a height with nothing drawn there, the Wild West's and the Moon's, gets a crag that tall instead)
+  const ledge = o.ledge && Track.isMain(o.s) && (LEVEL.quarries || []).some(q => (q.side === 'left' ? -1 : 1) === side && o.s >= q.from && o.s <= q.to);
+  if (ledge && land(wait(side)) < R.hill) { // (the level's ledge: straight down off it to the road's edge)
     const from = wait(side), edge = side < 0 ? lo : hi;
     shape = (lat) => o.up * Math.max(0, Math.min(1, (lat - edge) / (from - edge)));
   } else if (land(wait(side)) < R.hill) {
