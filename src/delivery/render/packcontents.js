@@ -111,7 +111,7 @@ export const openContents = (host, { kind, title, featured = [] }) => {
     const trio = bannerCars(c.featured);
     const banner = trio ? bannerArt(trio, { className: 'pc-banner', onFail: () => banner.remove() }) : null;
     sections.push(make('section', 'pc-group featured', banner,
-      make('h3', '', make('span', 'shop-chip r-bespoke', 'Featured'), make('small', '', 'the last card is one, picked by weight · the big figure: its chance a pack')),
+      make('h3', '', make('span', 'shop-chip r-bespoke', 'Featured'), make('small', '', 'Guaranteed one of the following'), make('small', 'pc-sub', '(Larger percentage denotes spread amongst featured items)')),
       out.length ? make('p', 'pc-shift', make('b', '', 'Weights shifted: '), out.join(', ') + ' out of the pool') : null,
       c.reverted ? null : (out.length && out.length === c.featured.length ? make('p', 'pc-shift', make('b', '', 'Every featured card is had: '), 'the featured slot is an ordinary card, and this pack cannot be bought') : null),
       make('ul', 'pc-list', c.featured.map(f => featuredRow(f, c.baseAmount)))));
@@ -119,12 +119,12 @@ export const openContents = (host, { kind, title, featured = [] }) => {
   for (const g of [...c.groups].reverse()) { // (the highest rarity first: Bespoke, Legendary, Epic, Uncommon, Common, after the Featured; the owner, 12-Oct)
     sections.push(make('section', 'pc-group r-' + g.rarity,
       make('h3', '', make('span', 'shop-chip r-' + g.rarity, rarityName(g.rarity)),
-        make('small', '', g.cards.length + (g.cards.length === 1 ? ' card · ' : ' cards · ') + percent(g.share) + ' of plain cards'
+        make('small', '', g.cards.length + (g.cards.length === 1 ? ' card · ' : ' cards · ') + percent(g.share) + ' of drawn cards'
           + (g.cards.some(x => x.exhausted) ? ' · ' + g.cards.filter(x => x.exhausted).length + ' obtained, out of the pool' : ''))),
       make('ul', 'pc-list', g.cards.map(card => cardRow(card.car, g.rarity, card.chance, { key: card.key, exhausted: card.exhausted, note: card.exhausted ? 'not in the pool' : '', stacks: card.stacks })))));
   }
   // (the owner, 12-Oct: "too verbose; discard any part that can be deduced elsewhere": one line; the rest is on the cards)
-  const foot = make('p', 'pc-foot', 'Plain card chances are per card drawn' + (c.doubleChance > 0 ? '. Featured cards and keys never double' : '') + '.');
+  const foot = make('p', 'pc-foot', 'Percentages are the chance of each card being drawn' + (c.doubleChance > 0 ? '. Featured cards and keys never double' : '') + '.');
   const body = make('div', 'pc-body', ...sections, foot);
   const box = make('div', 'pc-box', head, body);
   const sheet = make('div', 'pack-contents', box);
