@@ -22,6 +22,7 @@ import { stillsIn } from './carstill.js';
 import { blueprintCard } from './blueprintcard.js';
 import { posePick } from '../carposes.js';
 import { bannerCars, bannerArt } from './packbanner.js';
+import { lite } from '../lite.js';
 
 const make = (tag, className, ...inside) => {
   const node = document.createElement(tag);
@@ -162,7 +163,7 @@ export const openContents = (host, { kind, title, featured = [] }) => {
   for (const row of sheet.querySelectorAll('.pc-card')) observer.watch(row._pic, row._car, { side: 'good', pose: row._pose }); // (always the Good livery)
   // (the stacks' fades run off ONE timer on the sheet, not an animation on every card: the owner, 12-Oct: "the performance of the what's in
   // this pack screen is really poor on a tablet running the desktop site": see shop.css, the pack-contents block at the end)
-  const ticker = window.matchMedia?.('(pointer: fine)').matches ? setInterval(() => sheet.classList.toggle('phase-b'), 1600) : 0; // (a touch device: no timer, no fade)
+  const ticker = window.matchMedia?.('(pointer: fine)').matches && !lite('stacks') && !lite('anim') ? setInterval(() => sheet.classList.toggle('phase-b'), 1600) : 0; // (a touch device: no timer, no fade)
   open = { sheet, observer, kind, ticker };
   Nav.enter('packcontents', () => closeContents(true)); // (the back button closes it, before the Shop)
   close.focus({ preventScroll: true });

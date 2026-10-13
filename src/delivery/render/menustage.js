@@ -11,6 +11,7 @@
 // I what's on this road, O the options, Enter start. Touch: swipe the stage sideways, or tap the strip.
 // For a picture: ?cursor=47 puts that level on the stage, open or not (?pick= opens them all first: see
 // main.js); ?side=evil shows the Evil side for the visit; ?options opens the options; ?road the road card.
+import { sheetUp } from '../lite.js';
 import '../menu2.css';
 import { LEVELS, LEVEL, selectLevel, selectSpecial, levelLabel, MAIN_LEVELS, AMPHIBIOUS_LEVELS, DELIVERY_LEVELS, RACE_LEVELS, isRace } from '../levels.js';
 import { levelName, levelDescription } from '../levelText.js';
@@ -411,8 +412,9 @@ const showCarModel = (evil) => {
     requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
+    const covered = sheetUp(); // (What's inside or the pack reveal is up: <html>.sheet-up, lite.js; the menu's 3D car and cargo are not drawn under it)
     if (!menuUp()) { dropCargo(); return; } // (a run has started: what the circle took is given back)
-    if (Garage.isOpen) return;
+    if (Garage.isOpen || covered) return;
     if (!cargoView && cargoWant) buildCargo(); // (the menu is back, and the stage has not been drawn again)
     const views = [carView, cargoView && cargoDue(cargoView) ? cargoView : null].filter(Boolean);
     if (!views.length) return;
