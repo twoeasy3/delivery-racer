@@ -165,6 +165,10 @@ export const IDEA_CARS = [
   { id: 'gameviewer', name: 'Game-Drive Truck', basedOn: 'Toyota Land Cruiser 79 game viewer', model: 'gameviewer', color: 0x9a8a5a, evilColor: 0x2e4a2e,
     hw: 0.95, hl: 2.85, height: 2.4, note: 'No doors, three rows of seats climbing under a canopy, and a chair for the tracker out on the bull bar.',
     maxSpeed: 28, accel: 8, agility: 0.95, crossing: 1, health: 240, mass: 2, sound: 'suv' },
+  // (the seventh batch: three concept cars, show cars that never went on sale; models in render/ideaModels7.js)
+  { id: 'knifeedge', name: 'Knife-Edge Supercar', basedOn: 'Cadillac Cien (2002 concept car)', model: 'knifeedge', color: 0xaab3be, evilColor: 0x7a1830,
+    hw: 1.0, hl: 2.23, height: 1.13, note: 'All flat facets and sharp creases, with lamps stacked up its wings like blades and its engine behind you.',
+    maxSpeed: 47, accel: 19, agility: 1.35, crossing: 0.2, health: 150, mass: 1.2, sound: 'lmp' },
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
 export const IDEA_CAR = Object.fromEntries(IDEA_CARS.map(car => [car.id, car]));
