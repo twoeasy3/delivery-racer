@@ -349,4 +349,84 @@ export const IDEA_MODELS_7 = {
     group.userData = { body, animate: () => {}, livery: (evil) => bonnet.color.setHex(evil ? 0x4a4e56 : 0xd3d6da) };
     return group;
   },
+
+  // A flame-bodied Le Mans prototype (a Mazda Furai, 2007): low, wide and all flowing curves, lofted smooth through
+  // cross-sections that dip between a fender over each wheel and the tub in the middle. A long, low blade of a nose
+  // between the front fenders, slits of lamps in their tips; a bubble of a canopy swept back into the engine cover;
+  // big intakes in the sidepods behind the front wheels; rear fenders swelling up to a wing the width of the car on two
+  // end plates; lines that flow back along the flanks like flames; a black diffuser, a red lamp in each fender's tail
+  // and a rain lamp in the middle. It sits still
+  windsong: (car) => {
+    const group = new THREE.Group();
+    const paint = lambert(car.color), glass = lambert(GLASS), dark = lambert(0x1e1f24), flame = lambert(0x1a1a1e);
+    for (const m of [paint, glass, dark]) m.side = THREE.DoubleSide;
+    const AXLES = [[1.25, 0.34, 0.3, 0.98], [-1.55, 0.35, 0.36, 0.99]];
+    // the body, section by section: [z, floor, the side's half width, the sill's height, the side's top, the fender's
+    // peak (half width, height), the valley inside it (half width, height), the tub's shoulder (half width, height),
+    // the middle's height]
+    const KEYS = [
+      [-2.33, 0.2, 0.9, 0.22, 0.6, 0.78, 0.76, 0.5, 0.58, 0.2, 0.6, 0.6],
+      [-2.0, 0.14, 0.97, 0.16, 0.72, 0.84, 0.88, 0.55, 0.62, 0.2, 0.66, 0.66],
+      [-1.55, 0.12, 1.0, 0.14, 0.8, 0.84, 0.92, 0.55, 0.64, 0.2, 0.68, 0.7],
+      [-1.0, 0.12, 0.99, 0.14, 0.66, 0.82, 0.82, 0.55, 0.62, 0.25, 0.7, 0.72],
+      [-0.3, 0.12, 0.93, 0.14, 0.5, 0.76, 0.64, 0.5, 0.58, 0.3, 0.68, 0.7],
+      [0.3, 0.12, 0.9, 0.14, 0.45, 0.72, 0.58, 0.48, 0.55, 0.3, 0.62, 0.64],
+      [0.8, 0.12, 0.97, 0.14, 0.6, 0.78, 0.76, 0.46, 0.5, 0.24, 0.55, 0.58],
+      [1.25, 0.12, 0.99, 0.14, 0.77, 0.8, 0.87, 0.48, 0.44, 0.2, 0.45, 0.47],
+      [1.7, 0.12, 0.97, 0.14, 0.6, 0.8, 0.74, 0.48, 0.38, 0.18, 0.38, 0.4],
+      [2.1, 0.12, 0.85, 0.14, 0.34, 0.76, 0.48, 0.42, 0.3, 0.15, 0.3, 0.31],
+      [2.33, 0.14, 0.62, 0.16, 0.22, 0.55, 0.27, 0.3, 0.22, 0.12, 0.23, 0.24],
+    ];
+    const half = (z) => {
+      const [y0, wf, ys, yside, xp, yp, xv, yv, xc, yc, ym] = along(KEYS, z);
+      const h = [[0, y0], [wf - 0.05, y0], [wf, ys], [wf, yside], [(wf + xp) / 2 + 0.03, (yside + yp) / 2 + 0.05], [xp, yp], [xv, yv], [xc, yc], [0, ym]];
+      const a = archAt(AXLES, z, 0.06);
+      if (a) {
+        h[1][0] = Math.min(h[1][0], a.inner - 0.02); h[2][0] = Math.min(h[2][0], a.inner); h[2][1] = Math.max(h[2][1], a.lip);
+        h[3][1] = Math.max(h[3][1], a.lip + 0.03); h[4][1] = Math.max(h[4][1], h[3][1] + 0.04); h[5][1] = Math.max(h[5][1], h[4][1] + 0.02);
+      }
+      return h;
+    };
+    const body = place(group, loftGeo(stationsOf(KEYS, AXLES, 0.06, [-0.65, 0.0, 0.55, 1.9]).map(z => [z, mirror(half(z))])), paint, 0, 0, 0);
+    const { sideX, topY } = surface(half, [1, 5], [5, 8]);
+    // the canopy, a bubble swept back into the engine cover: [z, half width, its foot, its top]
+    const BUBBLE = [[-0.8, 0.12, 0.68, 0.72], [-0.45, 0.3, 0.64, 0.88], [0.0, 0.36, 0.6, 0.98], [0.4, 0.34, 0.56, 0.95], [0.8, 0.24, 0.5, 0.76], [1.05, 0.1, 0.44, 0.5]];
+    const ARC = [0, 1, 2, 3, 4].map(i => i * Math.PI / 10);
+    place(group, loftGeo(BUBBLE.map(([z, w, b, t]) => {
+      const side = [[w * 0.97, b - 0.1], ...ARC.map(a => [w * Math.cos(a), b + (t - b) * Math.sin(a)])];
+      return [z, mirror([[0, b - 0.1], ...side, [0, t]])];
+    })), glass, 0, 0, 0);
+    // the lamps: a slit in each front fender's tip, lying on its slope
+    const lamps = [];
+    for (const side of [-1, 1]) {
+      const x = side * 0.68, z = 2.05, y = topY(z, x);
+      const pitch = Math.atan2(topY(z - 0.06, x) - topY(z + 0.06, x), 0.12), roll = Math.atan2(topY(z, x + 0.05) - topY(z, x - 0.05), 0.1);
+      lamps.push(bx(0.15, 0.04, 0.2, 0, 0, 0).rotateZ(roll).rotateX(pitch).translate(x, y, z));
+    }
+    merged(group, LAMP, lamps);
+    // the sidepods' intakes, behind the front wheels; the flames along the flanks
+    const intake = [[0.8, 0.44], [0.18, 0.36], [0.12, 0.19], [0.78, 0.19]];
+    for (const side of [-1, 1]) place(group, onFlank(sideX, intake, 0.012, side), dark, 0, 0, 0);
+    const flameCurve = (pts) => new THREE.CatmullRomCurve3(pts.map(([z, y]) => new THREE.Vector3(sideX(z, y), y, z)));
+    const flames = [flameCurve([[0.83, 0.57], [0.5, 0.5], [-0.2, 0.45], [-0.8, 0.52], [-1.1, 0.62]]),       // (between the arches: off the flank there is only the wheel well)
+      flameCurve([[0.1, 0.4], [-0.3, 0.36], [-0.8, 0.41], [-1.1, 0.5]])];
+    flames.forEach((curve, i) => {
+      for (const side of [-1, 1]) place(group, shared('furaiFlame' + i, () => new THREE.TubeGeometry(curve, 14, 0.02, 4, false)), flame, 0, 0, 0).scale.x = side;
+    });
+    // mirrors on the fenders, by the canopy
+    merged(group, paint, [-1, 1].flatMap(side => [bx(0.14, 0.07, 0.1, side * 0.66, topY(0.75, 0.66) + 0.09, 0.75), bx(0.02, 0.1, 0.04, side * 0.66, topY(0.75, 0.66) + 0.03, 0.75)]));
+    // the wing, the width of the car, on two end plates that stand on the rear fenders
+    box(group, dark, 1.78, 0.03, 0.34, 0, 1.0, -2.17).rotation.x = -0.12;
+    merged(group, dark, [-1, 1].map(side => plate(0.025, [[-2.0, 0.7], [-2.34, 0.64], [-2.34, 1.06], [-2.1, 1.06]], side * 0.9)));
+    // the tail: a red lamp in each fender's tail, the rain lamp in the middle, the diffuser
+    const ZT = -2.33;
+    merged(group, TAIL, [-1, 1].map(side => bx(0.16, 0.05, 0.02, side * 0.7, 0.62, ZT - 0.008)));
+    box(group, dark, 0.9, 0.18, 0.02, 0, 0.45, ZT - 0.004);
+    box(group, TAIL, 0.1, 0.08, 0.02, 0, 0.48, ZT - 0.016);
+    merged(group, dark, [bx(1.3, 0.2, 0.3, 0, 0.26, ZT + 0.08), ...[-0.4, -0.13, 0.13, 0.4].map(x => bx(0.02, 0.18, 0.34, x, 0.25, ZT + 0.06))]);
+    box(group, dark, 1.5, 0.03, 0.3, 0, 0.13, 2.18);                                        // (the splitter under the nose)
+    alloys(group, AXLES, lambert(0x9da2a9), 6, lambert(0x2a2c31));
+    group.userData = { body, animate: () => {}, livery: (evil) => flame.color.setHex(evil ? 0xff5a1a : 0x1a1a1e) };
+    return group;
+  },
 };
