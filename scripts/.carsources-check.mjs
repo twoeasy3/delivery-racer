@@ -121,6 +121,27 @@ try {
   // a 1-gold starter
   s = sourcesOf(by('commuter'));
   check(s.keyOwned && /1-gold starter/.test(s.noBlueprints || ''), 'a 1-gold starter: owned, ' + s.noBlueprints);
+  // ---- the Blower Tourer (the owner, 13-Oct): a blueprint car in no regular pack whose ONLY source is the Car Hunt's pack
+  // (one for every Car Hunt delivery while it is on); between runs said plainly, with when it is back; the other noPacks
+  // cars still have none ----
+  {
+    const { huntEventFor } = await g.load('carsources.js');
+    const hunt = Events.specials.find(e => e.id === 'car-hunt');
+    fresh(); at(hunt.from + 3600e3);
+    s = sourcesOf(by('blower'));
+    const live = s.blueprints.filter(x => x.chance > 0);
+    const way = live[0]?.ways.find(w => w.how === 'event');
+    check(live.length === 1 && live[0].kind === 'car-hunt-special' && live[0].available && Math.abs(live[0].chance - 1) < 1e-9 && way?.where === 'Car Hunt' && way.available && /every delivery/.test(way.detail),
+      'the Blower Tourer\'s blueprints: only the Car Hunt pack (' + live.map(x => x.where + ' ' + x.detail).join('; ') + '; ' + way?.detail + ')');
+    check(s.keyless && s.obtainable.blueprints && /Car Hunt pack/.test(sourcesLine(by('blower'))) && huntEventFor(by('blower'))?.live, 'while the Car Hunt is on: obtainable, "' + sourcesLine(by('blower')) + '"');
+    at(hunt.from + 4 * 86400e3);
+    s = sourcesOf(by('blower'));
+    const off = s.blueprints.find(x => x.kind === 'car-hunt-special');
+    check(off && !off.available && /Between runs: back/.test(off.why) && !s.obtainable.blueprints && huntEventFor(by('blower')) && !huntEventFor(by('blower')).live, 'between runs: "' + off?.why + '"');
+    at(hunt.from + 3600e3);
+    const none = ['coach', 'cityev', 'coupecross'].map(id => sourcesOf(by(id)));
+    check(none.every(x => !x.obtainable.blueprints && x.blueprints.every(b => !(b.chance > 0))) && !huntEventFor(by('coach')), 'the Highway Coach, City EV and Coupe Crossover: still no blueprints anywhere');
+  }
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error.stack || error));

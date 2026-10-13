@@ -278,7 +278,7 @@ try {
     check(exact, kind + ': the cards listed are the pool exactly (' + c.total + ' cards: ' + c.groups.map(gr => gr.rarity + ' ' + gr.cards.length).join(', ') + ')');
     check(sums.every(([, sum, share]) => near(sum, share)) && near(c.odds.reduce((n, o) => n + o.share, 0), 1) && shares,
       kind + ': each rarity\'s cards add up to its share of the odds (' + sums.map(([r, sum]) => r + ' ' + (sum * 100).toFixed(2) + '%').join(', ') + ')');
-    check(Packs.data.packs[kind].featured ? c.featured.length === feats.length && feats.length > 0 && c.featured.every(f => f.chance >= f.lastSlot && f.chance <= 1 && f.rarity === featuredRarity(f.car))
+    check(Packs.data.packs[kind].featured ? c.featured.length === feats.length && feats.length > 0 && c.featured.every(f => f.chance >= f.lastSlot - 1e-12 && f.chance <= 1 + 1e-12 && f.rarity === featuredRarity(f.car))
       : c.featured.length === 0, kind + ': featured cards ' + (Packs.data.packs[kind].featured ? c.featured.map(f => f.car.id + ' ' + (f.chance * 100).toFixed(1) + '% a pack').join(', ') : 'none'));
   }
   // the featured chance, against packs drawn: about what contents() says
@@ -530,8 +530,9 @@ try {
   // featured card, an event's end); a `blurb` overrides them ----
   {
     const PK = Packs.data.packs;
-    check(P.careerPack() === 'career' && JSON.stringify(P.eventPacks('comet-hunt')) === '[{"id":"comet-special","stage":true,"prize":true}]' && P.eventPacks('no-such-event').length === 0,
-      'givenBy: the Career levels give the career pack; the Comet Hunt\'s stages and prize give comet-special (and nothing names another event)');
+    check(P.careerPack() === 'career' && JSON.stringify(P.eventPacks('comet-hunt')) === '[{"id":"comet-special","stage":true,"prize":true,"every":false}]'
+      && JSON.stringify(P.eventPacks('car-hunt')) === '[{"id":"car-hunt-special","stage":false,"prize":false,"every":true}]' && P.eventPacks('no-such-event').length === 0,
+      'givenBy: the Career levels give the career pack; the Comet Hunt\'s stages and prize give comet-special; EVERY Car Hunt delivery gives car-hunt-special (and nothing names another event)');
     check(Object.keys(PK).every(id => !PK[id].featured || P.featuredOf(id).length > 0) && P.featuredOf('standard').length === 0 && P.eventOf('comet-special')?.id === 'comet-hunt' && P.eventOf('ten') === null,
       'the featured entries and the event live on the pack (featuredOf, eventOf)');
     const names = (spec, text) => {
@@ -550,7 +551,8 @@ try {
     const bad = [];
     for (const id of Object.keys(PK)) {
       const text = P.describePack(id), miss = names(PK[id], text);
-      if (PK[id].event && !/Limited: ends \d+ \w{3}/.test(text)) miss.push('its event\'s end');
+      if (P.eventOf(id)?.to && !/Limited: ends \d+ \w{3}/.test(text)) miss.push('its event\'s end');
+      if (P.eventOf(id)?.repeat && PK[id].givenBy?.event?.every && !text.includes('One for every ' + P.eventOf(id).name + ' run')) miss.push('its recurring event');
       if (miss.length || !text) bad.push(id + ' (' + miss.join(', ') + '): ' + text);
     }
     for (const b of Object.values(Packs.data.bundles)) {
@@ -663,6 +665,42 @@ try {
     } finally { Packs.featuredOverride = null; Progress.reset(); Progress.noSave = true; }
     check(!!found && found.r.cards.at(-1).car === 'jetcar' && found.given === found.sum && P.maxedNow(jet) === false,
       'a pack whose earlier featured slot maxes the car still has it in the last slot (' + (found ? found.jets.length + ' jetcar cards, ' + found.given + ' blueprints given = the slots\' n' : 'no such pack found') + ')');
+  }
+  // ---- THE CAR HUNT PACK (the owner, 13-Oct: "A car hunt pack has 3 slots, all 1x. It has one featured item slot. The
+  // featured item is 1x of the car hunt car, or 3x of the car at low chances"): car-hunt-special, size 3, base 1, never
+  // doubled, exactly ONE featured slot (the last: upgradeChance 0), the Blower Tourer x1 at weight 9 and x3 at weight 1
+  // (90% / 10% of the featured slot), no shop block (given only), the Blower in no regular pack's pool; the Blower maxed:
+  // nothing featured, the last slot an ordinary (Epic-or-better) card ----
+  {
+    const spec = Packs.data.packs['car-hunt-special'];
+    check(!!spec && spec.size === 3 && spec.baseAmount === 1 && spec.doubleChance === 0 && !spec.shop && spec.featured?.upgradeChance === 0 && spec.givenBy?.event?.every === true,
+      'the Car Hunt pack: 3 cards, x1 each, never doubled, one featured slot (upgradeChance 0), given by every Car Hunt delivery, not sold (no shop block)');
+    const blower = by('blower');
+    const regular = Object.keys(Packs.data.packs).filter(k => k !== 'car-hunt-special');
+    check(blower?.noPacks && regular.every(k => Object.values(P.poolOf(Packs.data.packs[k])).flat().every(c => c.id !== 'blower')) && regular.every(k => !P.featuredOf(k).some(f => f.car.id === 'blower')),
+      'the Blower Tourer (noPacks) is in no other pack: no pool, no featured list (' + regular.length + ' packs)');
+    Progress.reset(); Progress.noSave = true;
+    let x1 = 0, x3 = 0, other = 0, featuredSlots = 0, plainNotOne = 0, blowerPlain = 0;
+    const N = 20000;
+    for (let i = 0; i < N; i++) {
+      const cards = draw('car-hunt-special', { random: dice(9100 + i), featured: P.featuredOf('car-hunt-special'), maxed: () => false, owned: () => false });
+      if (cards.length !== 3) other++;
+      featuredSlots += cards.filter(c => c.featured).length;
+      const last = cards.at(-1);
+      if (last.featured && last.car === 'blower') { if (last.n === 1) x1++; else if (last.n === 3) x3++; else other++; } else other++;
+      plainNotOne += cards.slice(0, 2).filter(c => c.n !== 1 || c.featured).length;
+      blowerPlain += cards.slice(0, 2).filter(c => c.car === 'blower').length;
+    }
+    check(other === 0 && featuredSlots === N && plainNotOne === 0 && blowerPlain === 0,
+      'every Car Hunt pack (' + N + ' seeded): 3 cards, exactly one featured (the last: the Blower), the other two ordinary x1 cards, never the Blower');
+    check(Math.abs(x1 / N - 0.9) < 0.01 && Math.abs(x3 / N - 0.1) < 0.01, 'the featured Blower: x1 ' + (x1 / N * 100).toFixed(1) + '% (weight 9: 90%), x3 ' + (x3 / N * 100).toFixed(1) + '% (weight 1: 10%)');
+    const c = contents('car-hunt-special', { featured: P.featuredOf('car-hunt-special'), maxed: () => false, owned: () => false });
+    check(c.featured.length === 2 && near(c.featured[0].lastSlot, 0.9) && near(c.featured[1].lastSlot, 0.1) && c.featured[0].amount === 1 && c.featured[1].amount === 3 && c.doubleChance === 0 && c.baseAmount === 1,
+      'What\'s inside: the Blower x1 ' + P.percent(c.featured[0]?.lastSlot) + ', x3 ' + P.percent(c.featured[1]?.lastSlot) + '; x1 a card, no doubling');
+    const maxedPack = draw('car-hunt-special', { random: dice(77), featured: P.featuredOf('car-hunt-special'), maxed: (car) => car.id === 'blower', owned: () => false });
+    const cm = contents('car-hunt-special', { featured: P.featuredOf('car-hunt-special'), maxed: (car) => car.id === 'blower', owned: () => false });
+    check(maxedPack.length === 3 && !maxedPack.some(x => x.featured) && maxedPack.every(x => x.car !== 'blower') && RARITIES.indexOf(maxedPack.at(-1).rarity) >= RARITIES.indexOf('epic') && cm.featured.every(f => f.exhausted === 'maxed' && f.chance === 0),
+      'the Blower maxed: nothing featured drops (the last slot an ordinary ' + maxedPack.at(-1).rarity + ' card, the existing rule), the sheet shows it Car Maxed at 0%');
   }
 } catch (error) {
   failures++;

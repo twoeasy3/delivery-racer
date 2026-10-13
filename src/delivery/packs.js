@@ -511,6 +511,7 @@ export const describePack = (id) => {
   if (spec.pool === 'all' && (packData.odds?.bespoke || 0) > 0) parts.push('A key, now and then');
   const e = eventOf(id), end = e ? dayWords(e.to) : null;
   if (end) parts.push('Limited: ends ' + end);
+  if (e?.repeat && spec.givenBy?.event?.every) parts.push('One for every ' + (e.name || e.id) + ' run'); // (a recurring event's pack: the Car Hunt's)
   return parts.join('. ');
 };
 // a bundle's line: the packs and the cards in all, and each pack's guarantees ("3 packs, 30 cards. At least one Epic or

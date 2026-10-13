@@ -81,10 +81,11 @@ export const carCard = (car, evil = false) => {
   const owned = Progress.owns(car.id);
   const unlocked = safe(() => Ecu.unlocked(car), owned);
   const preview = carPreview(car); // (the tiers: 'show' | 'teaser' | 'hide' | null)
-  const hidden = !unlocked && !owned && bp === 0 && (preview === 'teaser' || preview === 'hide');
-  // blacked out: a tier not open yet, or a car that cannot be had at the moment (a key car whose key is not to be had, an earned car that is off) with none owned and no blueprint
-  // (a blueprint car in no regular pack that an event's pack features, the Car Hunt's Blower Tourer: obtainable, not dark)
+  // (a blueprint car in no regular pack that an event's pack features, the Car Hunt's Blower Tourer: obtainable from the
+  // event, whatever tiers are open: shown in full with its blueprint overlay, never dark nor a tier teaser)
   const hunt = blueprint && car.noPacks ? huntEventFor(car) : null;
+  const hidden = !hunt && !unlocked && !owned && bp === 0 && (preview === 'teaser' || preview === 'hide');
+  // blacked out: a tier not open yet, or a car that cannot be had at the moment (a key car whose key is not to be had, an earned car that is off) with none owned and no blueprint
   const dark = hidden || (!unlocked && !owned && bp === 0 && ((car.keyAvailable === false && !blueprint) || !!(car.earned && car.off) || !!(blueprint && car.noPacks && !hunt)));
   // why it cannot be driven
   let reason = '', hint = '';
