@@ -38,7 +38,7 @@ let open = null; // { sheet, observer, close }
 const marks = (car, key) => {
   if (key) return [make('span', 'pc-mark key', 'Key')];
   const out = [];
-  if (Ecu.isBlueprint(car)) out.push(make('span', 'pc-mark bp', 'Blueprint'));
+  // (no "Blueprint" chip: the card's own label says it; the owner, 12-Oct: duplicated info)
   if (!Ecu.unlocked(car)) out.push(make('span', 'pc-mark locked', 'Locked'));
   return out;
 };
@@ -53,7 +53,6 @@ export const exhaustedOverlay = (kind, line = 'Out of the pool') => {
   node.dataset.exhausted = kind;
   return node;
 };
-const chip = (className, text) => make('span', 'pc-mark ' + className, text);
 // a card's STACKS (packs.js contents: its base stack and its doubled one, each with its TOTAL chance, adding up to the
 // card's): a small chip that cross-fades between them, x1 · 0.35% then x2 · 0.06% (CSS only, on the chip; reduced
 // motion: both side by side). One stack: just its chance
@@ -77,13 +76,11 @@ const cardRow = (car, rarity, chance, { key = false, featured = false, note = ''
   row._car = car; row._pic = pic; row._pose = pose;
   return row;
 };
-// a weight, as written: 9, 1.5
-const wt = (w) => String(Math.round(w * 1000) / 1000);
 // a featured entry's card: its amount (x3: the badge, and a chip), weight, share of the last slot, chance a pack
 const featuredRow = (f, base = 1) => {
   const has = f.key ? null : f.amount ?? base; // (an entry with no amount of its own: the pack's base, never doubled)
   const amount = has !== null ? 'x' + (Array.isArray(has) ? has.join('-') : has) : '';
-  const chips = [chip('wt', 'Weight ' + wt(f.weight))]; // (no x3 / x15 chip beside the chance: the badge on the card shows the amount; the chip read as part of the chance, the owner, 12-Oct)
+  const chips = []; // (no "Weight" chip, the owner, 12-Oct: duplicated info; no x3 / x15 chip beside the chance: the badge on the card shows the amount; the chip read as part of the chance, the owner, 12-Oct)
   const out = !f.inPlay;
   const note = out ? 'out of the pool' : 'last slot ' + percent(f.lastSlot); // (the big figure is its chance a pack)
   return cardRow(f.car, f.rarity, f.chance, { key: f.key, featured: true, chips, note, exhausted: f.exhausted, inPool: !out,
@@ -109,14 +106,12 @@ export const openContents = (host, { kind, title, featured = [] }) => {
     make('p', 'pc-odds', 'A card’s rarity: ', ...oddsLine));
   const sections = [];
   if (c.featured.length) {
-    const ratio = c.featured.map((f, i) => entryName(f) + ' ' + wt(c.weights[i])).join(' : ');
     const out = c.shifted.map(f => entryName(f) + ' (' + (f.exhausted === 'owned' ? 'Key obtained' : 'Car Maxed') + ')');
     // two or three featured cars: the pack's BANNER over them (render/packbanner.js; no WebGL: none, the cards say it all)
     const trio = bannerCars(c.featured);
     const banner = trio ? bannerArt(trio, { className: 'pc-banner', onFail: () => banner.remove() }) : null;
     sections.push(make('section', 'pc-group featured', banner,
       make('h3', '', make('span', 'shop-chip r-bespoke', 'Featured'), make('small', '', 'the last card is one, picked by weight · the big figure: its chance a pack')),
-      make('p', 'pc-weights', make('b', '', 'Featured weights: '), ratio),
       out.length ? make('p', 'pc-shift', make('b', '', 'Weights shifted: '), out.join(', ') + ' out of the pool') : null,
       c.reverted ? null : (out.length && out.length === c.featured.length ? make('p', 'pc-shift', make('b', '', 'Every featured card is had: '), 'the featured slot is an ordinary card, and this pack cannot be bought') : null),
       make('ul', 'pc-list', c.featured.map(f => featuredRow(f, c.baseAmount)))));
@@ -128,11 +123,8 @@ export const openContents = (host, { kind, title, featured = [] }) => {
           + (g.cards.some(x => x.exhausted) ? ' · ' + g.cards.filter(x => x.exhausted).length + ' obtained, out of the pool' : ''))),
       make('ul', 'pc-list', g.cards.map(card => cardRow(card.car, g.rarity, card.chance, { key: card.key, exhausted: card.exhausted, note: card.exhausted ? 'not in the pool' : '', stacks: card.stacks })))));
   }
-  const foot = make('p', 'pc-foot', 'A card’s chance is for one plain card of the pack: its rarity’s share split evenly over that rarity’s cards'
-    + (c.doubleChance > 0 ? '. Each card that drops may double its stack: its two figures (x' + c.baseAmount + ', then x' + c.baseAmount * 2 + ') are each stack’s own total chance, and add up to the card’s. Featured cards and keys are never doubled' : '')
-    + (guarantees.length ? '. The guaranteed cards are rolled again among the higher rarities, so they come up a little more often' : '')
-    + (c.featured.length ? '. A featured card’s chance is for a whole pack, worked out exactly: the last card is a featured one, picked by weight (its weight over the weights in play), and each other card may upgrade and turn featured, again by weight. A featured car you have maxed, or a key you own, is out of the featured pool and the others’ shares go up' : '')
-    + (c.groups.some(g => g.rarity === 'bespoke') ? '. Keys are only for cars you do not own yet: one you own is shown, out of the pool' : '') + '.');
+  // (the owner, 12-Oct: "too verbose; discard any part that can be deduced elsewhere": one line; the rest is on the cards)
+  const foot = make('p', 'pc-foot', 'Plain card chances are per card drawn' + (c.doubleChance > 0 ? '. Featured cards and keys never double' : '') + '.');
   const body = make('div', 'pc-body', ...sections, foot);
   const box = make('div', 'pc-box', head, body);
   const sheet = make('div', 'pack-contents', box);
