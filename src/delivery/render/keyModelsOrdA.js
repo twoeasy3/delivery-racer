@@ -175,6 +175,50 @@ const flipkey = (car, { rarity = 'bespoke' } = {}) => {
   return group;
 };
 
+// ---- (4) the RUGGED fob (a utility 4x4's): a fat rubber boot, a hexagonal plastic face, one big button ----
+const rugged = (car, { rarity = 'bespoke' } = {}) => {
+  const group = new THREE.Group(), k = new THREE.Group();
+  const paint = paintOf(car);
+  const RUBBER = lambert(0x2b2e33), PLATE = metal(paint.getHex(), 40), BUTTON = lambert(0x1d1f23), WHITE = glow(0xe8ecf2);
+  const STEEL = metal(0xb9bec6, 90), STRAP = lambert(0x3e4536), INK = lambert(inkOn(paint)), LED = glow(0xff5a3c);
+  // the boot: a fat rounded block of rubber
+  const P = [[-0.85, -1.15], [0.85, -1.15], [0.85, 1.0], [-0.85, 1.0]];
+  const D = 0.6, B = 0.1, FRONT = D / 2 + B; // (the face at z = 0.4)
+  slab(k, RUBBER, outline(P, 0.42), D, B, 0, 4);
+  rainbow(band(k, rimMaterial(rarity), P, 0.42, -0.14, -0.08, 0.04, FRONT + 0.005, 4), 0, -0.07);
+  // grip ribs across both sides
+  for (const sx of [1, -1]) for (let i = 0; i < 6; i++) box(k, RUBBER, 0.14, 0.1, 0.56, sx * 0.9, -0.66 + i * 0.25, 0);
+  // the hexagonal plastic face (the car's colour), sunk into the rubber and standing proud of it
+  const HY = -0.06, hex = [];
+  for (let i = 0; i < 6; i++) { const a = Math.PI / 2 + i * Math.PI / 3; hex.push([Math.cos(a) * 0.68, HY + Math.sin(a) * 0.68]); }
+  // (anticlockwise from the top)
+  slab(k, PLATE, outline(hex, 0.1), 0.1, 0, FRONT + 0.02, 2);
+  // the initial in its top, a small red LED beside it
+  glyph(k, INK, initialOf(car), 0.24, FRONT + 0.06, FRONT + 0.1, -0.06, HY + 0.38);
+  box(k, LED, 0.07, 0.07, 0.04, 0.2, HY + 0.38, FRONT + 0.075);
+  // the one big button: a fat rubber dome, a padlock mark on it
+  const BY = HY - 0.16;
+  disc(k, BUTTON, 0.36, FRONT, FRONT + 0.16, 0, BY, 16);
+  box(k, WHITE, 0.2, 0.15, 0.03, 0, BY - 0.04, FRONT + 0.165);
+  add(k, new THREE.TorusGeometry(0.065, 0.02, 3, 8, Math.PI), WHITE, 0, BY + 0.035, FRONT + 0.165);
+  // the back: four screws and a raised grip panel
+  for (const [x, y] of [[-0.5, -0.78], [0.5, -0.78], [-0.5, 0.62], [0.5, 0.62]]) disc(k, STEEL, 0.08, -FRONT - 0.03, -FRONT + 0.02, x, y, 8);
+  for (let i = 0; i < 4; i++) box(k, RUBBER, 0.8, 0.12, 0.06, 0, -0.45 + i * 0.3, -FRONT - 0.02);
+  // the lug on top, a steel ring through it (across the key) and a webbing loop hung on the ring
+  const LY = 1.2;
+  const lug = outline([[-0.34, 0.95], [0.34, 0.95], [0.3, LY + 0.24], [-0.3, LY + 0.24]], 0.14);
+  lug.holes.push(circle(0, LY, 0.11));
+  slab(k, RUBBER, lug, 0.38, 0, 0, 3);
+  const R = 0.3, top = LY + 2 * R;
+  add(k, new THREE.TorusGeometry(R, 0.055, 6, 16), STEEL, 0, LY + R, 0).rotation.y = Math.PI / 2;
+  // (the webbing: a flat loop in the face's plane, its bottom bight through the ring's top)
+  band(k, STRAP, [[-0.26, top - 0.04], [0.26, top - 0.04], [0.26, top + 1.0], [-0.26, top + 1.0]], 0.24, 0, 0.11, 0.07, 0, 4);
+  // a stitched bar tack where the webbing's two ends are sewn together
+  box(k, metal(0x8f9688, 30), 0.62, 0.12, 0.1, 0, top + 0.72, 0);
+  return idle(group, merged(k));
+};
+
 registerKey('roundhead', roundhead);
 registerKey('wing', wing);
 registerKey('flipkey', flipkey);
+registerKey('rugged', rugged);
