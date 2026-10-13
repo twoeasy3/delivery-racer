@@ -77,4 +77,57 @@ const startfob = (car, { rarity = 'bespoke' } = {}) => {
 };
 
 registerKey('startfob', startfob);
+
+// ---- (14) the ARTISAN fob: a walnut face, a stitched leather edge, brass ----
+const artisan = (car, { rarity = 'bespoke' } = {}) => {
+  const group = new THREE.Group(), k = new THREE.Group();
+  const paint = paintOf(car);
+  const WOOD = lambert(0x6e4325), WOOD2 = lambert(0x80512d), WOOD3 = lambert(0x5b361d), GRAIN = lambert(0x3f2412);
+  const LEATHER = lambert(0x4a2a18), STITCH = lambert(paint.clone().lerp(new THREE.Color(0xe6d3a8), 0.35).getHex()), BRASS = metal(0xc9a24a, 80), DARK = metal(0x2a1a10, 40);
+  const W = 0.75, H = 1.25, CR = 0.34;
+  const P = [[-W, -H], [W, -H], [W, H], [-W, H]];
+  const D = 0.44, FRONT = D / 2; // (the wood's face at z = 0.22)
+  // the core (its face the wood's middle tone), and the leather band round its edge, standing proud of both faces
+  slab(k, WOOD, outline(P, CR), D, 0, 0, 5);
+  const LIP = 0.05; // (how far the leather stands out of the faces)
+  band(k, LEATHER, P, CR, -0.09, 0.07, D + 2 * LIP, 0, 5);
+  // the wood: planks of three tints across the face (each to the rounded window's edge), a few darker grain lines
+  const IN = W - 0.09, ir = CR - 0.09, n = 8, pw = 2 * IN / n;
+  const yMax = (x) => { const dx = Math.abs(x) - (IN - ir); return dx <= 0 ? H - 0.09 : H - 0.09 - ir + Math.sqrt(Math.max(0, ir * ir - dx * dx)); };
+  const tints = [WOOD2, null, WOOD3, WOOD2, null, WOOD3, null, WOOD2];
+  for (let i = 0; i < n; i++) {
+    const x0 = -IN + i * pw, x1 = x0 + pw, cx = (x0 + x1) / 2, h = Math.min(yMax(x0), yMax(x1)) - 0.005;
+    if (tints[i]) box(k, tints[i], pw, 2 * h, 0.03, cx, 0, FRONT + 0.0);
+    // the grain: a thin darker line along every other plank, a little askew
+    if (i % 2) box(k, GRAIN, 0.014, 2 * h - 0.08, 0.03, x0 + pw * 0.4, 0, FRONT + 0.008).rotation.z = i % 4 === 1 ? 0.012 : -0.01;
+  }
+  // the rarity's lit rim on the wood, just inside the leather
+  rainbow(band(k, rimMaterial(rarity), P, CR, -0.15, -0.1, 0.03, FRONT + 0.02, 4));
+  // the stitching (thread of the car's colour, faded) all round the leather band's face: dashes along its middle
+  const seam = outline(P, CR, -0.01).getSpacedPoints(26);
+  for (let i = 0; i < 26; i++) {
+    const [a, b] = [seam[i], seam[i + 1]];
+    box(k, STITCH, 0.085, 0.026, 0.03, (a.x + b.x) / 2, (a.y + b.y) / 2, FRONT + LIP).rotation.z = Math.atan2(b.y - a.y, b.x - a.x);
+  }
+  // the brass plaque with the initial (dark, inlaid), and three brass buttons on a dark strip
+  const PL = [[-0.42, -0.3], [0.42, -0.3], [0.42, 0.3], [-0.42, 0.3]].map(([x, y]) => [x, y + 0.42]);
+  slab(k, BRASS, outline(PL, 0.12), 0.06, 0, FRONT + 0.02, 2);
+  glyph(k, DARK, initialOf(car), 0.36, FRONT + 0.04, FRONT + 0.07, 0, 0.42);
+  box(k, DARK, 1.0, 0.36, 0.06, 0, -0.62, FRONT + 0.005);
+  for (const x of [-0.32, 0, 0.32]) {
+    disc(k, BRASS, 0.12, FRONT, FRONT + 0.08, x, -0.62, 10);
+    disc(k, DARK, 0.05, FRONT + 0.07, FRONT + 0.095, x, -0.62, 6);
+  }
+  // the brass lug out of the top, a brass ring through it
+  const lug = outline([[-0.24, H - 0.2], [0.24, H - 0.2], [0.24, H + 0.36, 0.22], [-0.24, H + 0.36, 0.22]], 0.05);
+  const HOLE = [0, H + 0.16];
+  lug.holes.push(circle(HOLE[0], HOLE[1], 0.1));
+  slab(k, BRASS, lug, 0.26, 0, 0, 4);
+  splitRing(k, BRASS, HOLE[0], HOLE[1] - 0.1 + 0.045, 0.48, 0.045, Math.PI / 2, 0, 14);
+  // the back: the leather wraps it (one panel, inside the band's lip)
+  slab(k, LEATHER, outline(grow(P, -0.07), CR - 0.07), 0.04, 0, -FRONT - 0.01, 4);
+  return idle(group, merged(k));
+};
+
+registerKey('artisan', artisan);
 void lambert; void outline; void band; void inkOn; void plainBlade; void grow;
