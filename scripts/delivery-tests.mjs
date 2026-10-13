@@ -79,9 +79,9 @@ const GROUPS = {
     files: [/water\.js|amphib|slipway|harbour|flood|ford|fjord/],
   },
   render: {
-    about: 'Drawing, without a browser: the shared model views (a stand-in renderer), dents, the car keys (the three models, the key card, the key cards\' pre-rendered PNGs in keyshots/), the showroom landing\'s suspension (every car\'s wheels found and kept on the floor, its body sprung)',
+    about: 'Drawing, without a browser: the shared model views (a stand-in renderer), dents, the car keys (the three models, the key card, the key cards\' pre-rendered PNGs in keyshots/), the showroom landing\'s suspension (every car\'s wheels found and kept on the floor, its body sprung), the model inspector (every idea car built and its triangles counted)',
     seconds: 30,
-    tests: [t('.modelviews-check.mjs'), t('.dents-check.mjs'), t('.keys-check.mjs'), t('.keyshots-check.mjs'), t('.suspension-check.mjs')],
+    tests: [t('.modelviews-check.mjs'), t('.dents-check.mjs'), t('.keys-check.mjs'), t('.keyshots-check.mjs'), t('.suspension-check.mjs'), t('.inspector-check.mjs')],
     files: [/src\/delivery\/render\//, /\.css$/, /keyshots|keyModels|keys-png/],
   },
   replay: {

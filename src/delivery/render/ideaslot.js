@@ -286,8 +286,8 @@ export const IdeasLot = {
 
   // the garage's two tabs wired up. evil(): whether the garage's Livery button is on Evil; back(): the garage
   // writes its own words and button again; inUse(): the id of the car in use; side(): whether Evil is the side played
-  mount({ evil, back, inUse, side, barred }) {
-    host = { evil, back, inUse, side, barred };
+  mount({ evil, back, inUse, side, barred, changed }) {
+    host = { evil, back, inUse, side, barred, changed };
     tabs.ideas.addEventListener('click', () => this.enter());
     tabs.garage.addEventListener('click', () => { if (this.on) { this.leave(); host.back(); } });
   },
@@ -340,6 +340,7 @@ export const IdeasLot = {
     if (mesh) lookRing.position.set(mesh.position.x, 0.12, mesh.position.z);
     useRing.visible = !!used;
     if (used) useRing.position.set(used.position.x, 0.12, used.position.z);
+    host.changed?.(); // (the garage's Inspect button: for the idea looked at, if any)
   },
   // a page of the lot on show: the one before freed, this one built
   show(n, quiet) {

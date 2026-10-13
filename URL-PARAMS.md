@@ -125,6 +125,7 @@ Also need `autostart` (or a hidden level).
 | `click` | CSS selector(s), `\|` between several, `#` as `%23` | With `garage` only: that control pressed once the lot is up (e.g. `%23garageAction` on an unowned car: its buy sheet). | `/delivery/?garage&look=postvan&click=%23garageAction` | Normal | tried with `floatvan`: nothing visible opened (the car may not be on the lot for level 1): **not verified** |
 | `sort` | `stars`, `price`, `speed`, `accel`, `health` | With `garage`: the lot sorted that way. | `/delivery/?garage&sort=speed&show=owned` | Normal | yes |
 | `show` | `all`, `owned`, `sale`, `afford`, `amphibious`, `gold`, `blue` | With `garage`: only those cars parked. | (as above) | Normal | yes |
+| `inspect` | car id (an idea's id, or a car of the lot) | With `garage`: the MODEL INSPECTOR open on that car (full screen: drag to orbit, pinch or wheel to zoom, double-tap to reset, Front/Rear/Left/Right/Top/3/4, Good/Evil, previous/next; Back, Escape or the browser's back close it). An idea's previous/next go through every idea; a lot car's through the lot's cars. Add `&evil` (or use `garage=evil`) for the Evil livery and `&view=front` (`rear`, `left`, `right`, `top`, `34`) to start from that side. | `/delivery/?garage&tab=ideas&inspect=rallywedge&evil&view=left` | Normal | yes (headless Chromium, CHECKLIST 219) |
 | `studio` | idea ids (comma) or `all` | With `garage&tab=ideas`: a studio picture of those idea models alone. | `/delivery/?garage&tab=ideas&studio=limo,bathtub` | Normal | untried |
 | `views` | `1`, `2` (default), `3` | With `studio`: how many sides of each model. | `...&studio=all&views=3` | Normal | untried |
 | `showroom` | bare | Opens the Showroom (where a car is picked). | `/delivery/?showroom` | Normal | yes |
@@ -281,7 +282,7 @@ sight); there is no reason to type it.
 - **`event&deliver` needs a usable car** (`&owns=<a car the stage allows>`); without one, nothing starts (tried).
 - **Fresh-save showroom shows silhouettes**: a car of a closed tier is "Locked car". Add `&owns=<id>` or `&demo` to
   see it whole (tried with `owns=sport`).
-- `hover`, `look`, `tab`, `click`, `sort`, `show`, `studio` act only with `?garage`; `look`, `full`, `filter`,
+- `hover`, `look`, `tab`, `click`, `sort`, `show`, `studio`, `inspect` (and its `view`) act only with `?garage`; `look`, `full`, `filter`,
   `filters`, `bp`, `bounce`, `nostats` only with `?showroom`.
 - Not on `main` (only on unmerged branches, so they do nothing here): `?ge=` (Good/Evil cue ideas), `?poses=`,
   `?poselab` (blueprint pose lab).

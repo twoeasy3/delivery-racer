@@ -67,6 +67,7 @@ import './render/packs.js';
 import './render/shop.js'; // (the Shop: card packs for a placeholder currency, ?shop / ?shopcash=<n> / ?debug)
 import './horn.js';
 import { Garage } from './render/garage.js';
+import { Inspector } from './render/inspector.js';
 import { Events, when as eventTime } from './events.js';
 import { showEvent } from './render/menustage.js';
 import { Delivery } from './delivery.js';
@@ -130,6 +131,9 @@ if (params.get('garage') !== null) {
   if (params.get('tab')) Garage.tab(params.get('tab')); // (&tab=ideas: its Car ideas lot, where &look and &hover name an idea)
   if (params.get('hover')) Garage.hover(params.get('hover'));
   if (params.get('look')) Garage.look(params.get('look')); // (&look=sport: that car looked at, for its comparison card)
+  // &inspect=<id>: the model inspector open on that car (an idea, or a car of the lot), &evil in its Evil livery, &view=front
+  // (rear, left, right, top, 34) seen from there (render/inspector.js)
+  if (params.get('inspect') && Garage.inspect(params.get('inspect'), params.get('garage') === 'evil' || params.get('evil') !== null) && params.get('view')) Inspector.view(params.get('view'));
   // &click=<selector>: that control pressed once the garage is up (&click=%23garageAction on an unowned car: its buy
   // sheet; &click=.view-pick%20.view-btn: the Sort list), for a picture of what it opens
   if (params.get('click')) params.get('click').split('|').forEach((selector, i) => setTimeout(() => document.querySelector(selector)?.click(), 50 + i * 50)); // (several, with | between)
