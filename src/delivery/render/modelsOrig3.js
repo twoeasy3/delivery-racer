@@ -234,8 +234,6 @@ export const ORIG3_MODELS = {
       box(group, chrome, 0.025, 0.025, 2.72, s * (cw / 2 + 0.012), 1.56, -1.06);          // the drip rail along the roof
       box(group, chrome, 0.03, 0.03, L * 2 - 0.3, s * (w / 2 + 0.008), 0.95, 0);         // the chrome waist strip
       box(group, chrome, 0.03, 0.05, 1.98, s * (w / 2 + 0.008), 0.42, 0);                // the rocker strip, between the arches
-      for (const z of [0.98, -0.52]) box(group, trim, 0.012, 0.56, 0.014, s * (w / 2 + 0.003), 0.66, z); // the front door's shut lines
-      box(group, chrome, 0.03, 0.035, 0.14, s * (w / 2 + 0.012), 0.86, -0.36);           // its handle
       box(group, chrome, 0.1, 0.03, 0.03, s * (w / 2 + 0.05), 1.0, 0.7);                 // the mirror on its stalk
       box(group, chrome, 0.05, 0.1, 0.12, s * (w / 2 + 0.11), 1.03, 0.7);
       // the front: four round lamps, two to a chrome bezel, an indicator under each pair
@@ -263,7 +261,6 @@ export const ORIG3_MODELS = {
     box(group, chrome, w + 0.02, 0.14, 0.14, 0, 0.4, -L - 0.02);
     box(group, plate, 0.46, 0.13, 0.02, 0, 0.66, -L - 0.005);                              // the number plate
     decal(group, cloth, cw * 0.62, 0.36, 0, 1.18, -2.7 - 0.05 - 0.006, '-z');                // the rear door's curtained window
-    box(group, chrome, 0.16, 0.03, 0.03, 0, 0.88, -L - 0.01);                              // its handle
     const keep = new Set();
     const geo = wheelGeo(R, 0.28), tyre = lambert(0x141414), hub = lambert(0xc4c8ce);
     for (const s of [-1, 1]) for (const z of [WZ, -WZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub, chrome)) keep.add(part);
@@ -313,8 +310,6 @@ export const ORIG3_MODELS = {
       const x = s * (bw / 2 + 0.006);
       prism(shell, glass, 0.02, [[0.3, 0.95], [0.3, 1.09], [-0.3, 1.11], [-0.3, 0.95]], x);          // the door's window
       prism(shell, glass, 0.02, [[-0.4, 0.95], [-0.4, 1.1], [-0.56, 1.08], [-0.68, 0.95]], x);       // and the quarter window
-      for (const z of [0.4, -0.34]) box(shell, trim, 0.012, 0.34, 0.014, s * (bw / 2 + 0.003), 0.72, z); // the door's shut lines
-      box(shell, chrome, 0.03, 0.03, 0.12, s * (bw / 2 + 0.012), 0.84, -0.24);                      // its handle
       box(shell, chrome, 0.12, 0.025, 0.025, s * (bw / 2 + 0.05), 0.95, 0.36);                     // a mirror on its stalk
       box(shell, chrome, 0.03, 0.07, 0.09, s * (bw / 2 + 0.11), 0.98, 0.36);
       // the bonnet's flank: flames from the grille back, louvres over their tips, headers out under them
@@ -364,9 +359,9 @@ export const ORIG3_MODELS = {
   },
 
   // The Minivan: a nineties people carrier (a one-box van after the Astro): a tall wedge of a body with a short, sloping
-  // nose and a big raked windscreen, three rows of side windows (a front door, a sliding door with its rail, a rear
+  // nose and a big raked windscreen, three rows of side windows (a front door, a sliding door, a rear
   // quarter), a chrome-framed black grille between rectangular lamps, wraparound indicators, a pale bumper and valance,
-  // tall tail lamps up the rear corners, a high brake lamp, a rear window with its wiper, silver hubs. Its bumpers turn
+  // tall tail lamps up the rear corners, a high brake lamp, a rear window, silver hubs. Its bumpers turn
   // charcoal for an Evil driver.
   minivan: (car) => {
     const group = new THREE.Group();
@@ -384,21 +379,14 @@ export const ORIG3_MODELS = {
     box(group, dark, w - 0.4, 0.5, L * 1.7, 0, 0.58, 0);                                    // (the dark inside of the arches)
     const rise = Math.atan2(0.76, 0.83);
     slab(group, glass, w - 0.26, 0.02, 1.0, 0, 1.52 + 0.05, 1.135 + 0.048, rise);           // the big raked windscreen
-    for (const s of [-1, 1]) slab(group, trim, 0.5, 0.025, 0.04, s * 0.3, 1.2, 1.5, rise).rotation.z = s * 0.25; // its wipers
     for (const s of [-1, 1]) {
       const x = s * (w / 2 + 0.006), X = s * (w / 2 + 0.003);
       prism(group, glass, 0.02, [[1.38, 1.24], [0.8, 1.8], [0.26, 1.8], [0.26, 1.24]], x);         // the front door's window,
       prism(group, glass, 0.02, [[0.12, 1.24], [0.12, 1.8], [-0.94, 1.8], [-0.94, 1.24]], x);      // the sliding door's,
       prism(group, glass, 0.02, [[-1.1, 1.24], [-1.1, 1.8], [-2.12, 1.8], [-2.2, 1.24]], x);       // and the rear quarter's
       for (const z of [0.19, -1.02]) box(group, trim, 0.012, 0.56, 0.16, X + s * 0.004, 1.52, z); // the pillars between, blacked out
-      for (const z of [0.19, -1.02]) box(group, trim, 0.012, 0.86, 0.014, X, 0.8, z);       // the doors' shut lines
-      box(group, trim, 0.012, 0.34, 0.014, X, 1.05, 1.42);                                     // (the front one over the arch),
-      box(group, trim, 0.014, 0.02, 1.2, X, 1.2, -1.6);                                        // the sliding door's rail
-      for (const [z, l] of [[0, 1.9], [2.17, 0.4], [-2.17, 0.4]]) box(group, trim, 0.02, 0.07, l, s * (w / 2 + 0.008), 0.6, z); // the rubbing strip
-      for (const z of [0.36, 0.0]) box(group, trim, 0.03, 0.03, 0.12, s * (w / 2 + 0.012), 1.12, z); // door handles
       box(group, trim, 0.12, 0.03, 0.05, s * (w / 2 + 0.05), 1.28, 1.3);                      // the mirror on its arm
       box(group, trim, 0.05, 0.16, 0.2, s * (w / 2 + 0.11), 1.3, 1.3);
-      box(group, trim, 0.012, 0.1, 0.07, X, 1.05, -1.85);                                      // the filler flap
       // the front: a rectangular lamp each side in a chrome bezel, an indicator round the corner
       box(group, chrome, 0.44, 0.24, 0.03, s * 0.66, 0.72, L);
       box(group, LAMP, 0.38, 0.18, 0.03, s * 0.66, 0.72, L + 0.012);
@@ -421,9 +409,7 @@ export const ORIG3_MODELS = {
     box(group, plate, 0.44, 0.12, 0.02, 0, 0.47, L + 0.105);                                 // and the plate on it
     box(group, bumper, w + 0.02, 0.24, 0.16, 0, 0.42, -L - 0.02);                            // the rear bumper,
     box(group, plate, 0.44, 0.13, 0.02, 0, 0.72, -L - 0.005);                                // the plate over it,
-    box(group, chrome, 0.2, 0.035, 0.03, 0, 0.9, -L - 0.01);                                 // the tailgate's handle,
-    box(group, glass, w - 0.42, 0.56, 0.02, 0, 1.48, -L - 0.005);                            // its window
-    slab(group, trim, 0.5, 0.025, 0.03, 0.05, 1.4, -L - 0.022, 0).rotation.z = 0.35;          // with a wiper
+    box(group, glass, w - 0.42, 0.56, 0.02, 0, 1.48, -L - 0.005);                            // its window,
     box(group, BRAKE, 0.36, 0.05, 0.03, 0, 1.82, -L - 0.005);                                // and a brake lamp over it
     rod(group, trim, 0.035, 0.3, 0.6, 0.28, -L + 0.06, 'z', 8);                              // the exhaust
     const keep = new Set();
