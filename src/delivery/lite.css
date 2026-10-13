@@ -7,8 +7,9 @@ html.lite-shine .bp-card .bp-art { animation: none !important; }
 html.lite-blend .bp-card .bp-art::before { mix-blend-mode: normal !important; }
 html.lite-drift #startScreen .menu-stage .shot { animation: none !important; }
 html.lite-menu #startScreen *, html.lite-menu #startScreen *::before, html.lite-menu #startScreen *::after { animation: none !important; }
-html.lite-scene.sheet-up #startScreen, html.lite-scene.sheet-up .shop-screen, html.lite-scene.sheet-up #startScreen *, html.lite-scene.sheet-up .shop-screen * { visibility: hidden !important; }
-html.lite-scene.sheet-up .pack-contents, html.lite-scene.sheet-up .pack-contents *, html.lite-scene.sheet-up .pack-reveal, html.lite-scene.sheet-up .pack-reveal * { visibility: visible !important; }
+html.lite-scene.sheet-up body * { visibility: hidden !important; } /* (the menu, the Shop, the game's canvas and HUD: only the sheet and the badge are drawn) */
+html.lite-scene.sheet-up .pack-contents, html.lite-scene.sheet-up .pack-contents *, html.lite-scene.sheet-up .pack-reveal, html.lite-scene.sheet-up .pack-reveal *,
+html.lite-scene.sheet-up .lite-badge { visibility: visible !important; }
 html.lite-blur *, html.lite-blur *::before, html.lite-blur *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
 html.lite-shadow .bp-card { box-shadow: none !important; }
 html.lite-shadow .bp-card .bp-pic, html.lite-shadow .bp-card .bp-keypic { filter: none !important; }

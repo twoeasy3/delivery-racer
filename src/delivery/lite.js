@@ -7,8 +7,8 @@
 //   blend    only the shine's mix-blend-mode (the shine keeps moving, drawn normally)
 //   drift    the menu stage picture's slow zoom (stage-drift)
 //   menu     every animation on the menu (stage-drift, the backdrop's light sweep, the START pulse, the LIVE dot)
-//   scene    nothing under a sheet is drawn at all while What's inside / the pack reveal is up (menu and Shop hidden; the
-//            menu's 3D car is never drawn under a sheet anyway, see menustage.js)
+//   scene    nothing under a sheet is drawn at all while What's inside / the pack reveal is up (the menu, the Shop, the game's
+//            canvas and HUD hidden: a plain dark page round the sheet; the menu's 3D car is never drawn under a sheet anyway)
 //   blur     every backdrop-filter (the Shop's top bar)
 //   shadow   the cards' box-shadows, the pictures' drop-shadow filters and the stars' glow
 //   pics     the cars' and keys' pictures on the cards (are 66 images at DPR 3 being dropped and re-decoded?)
