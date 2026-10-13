@@ -32,8 +32,8 @@
 import '../showroom.css';
 import '../showroom-phone.css';
 import { showroomCars, carCard, floorBest, statShown, RARITIES, CAR_LOT, sideName, sideClick, driveWords, barredWhy, driveAs,
-  FILTER_GROUPS, SORTS, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn, overlayOf, cardTip, kindOf } from '../showroomData.js';
-import { CAR, carInUse, setViewSide, STAR_COLOURS } from '../cars.js';
+  FILTER_GROUPS, SORTS, imposedFilter, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn, overlayOf, cardTip, kindOf } from '../showroomData.js';
+import { CAR, carInUse, setViewSide, STAR_COLOURS, carRule } from '../cars.js';
 import { Progress } from '../progress.js';
 import { ShopScreen } from './shop.js'; // (the Shop, reached from the header)
 import { Game } from '../game.js';
@@ -113,9 +113,12 @@ requestAnimationFrame(pump);
 // ---- the filter: remembered for the next visit (local storage, as a convenience: never in the save) ----
 const STORE = 'delivery_showroom_filter';
 const loadFilter = () => { try { return cleanFilter(JSON.parse(localStorage.getItem(STORE))); } catch { return noFilter(); } };
-const saveFilter = () => { if (visitOnly) return; try { localStorage.setItem(STORE, JSON.stringify(filter)); } catch { /* (no storage: for this visit) */ } };
+const saveFilter = () => { if (visitOnly || imposed) return; try { localStorage.setItem(STORE, JSON.stringify(filter)); } catch { /* (no storage: for this visit) */ } };
 let filter = loadFilter();
 let visitOnly = false; // (a filter given by the address: not remembered)
+// a filter the level picked IMPOSES (its own car rule, an event's: showroomData.js imposedFilter), for this visit only:
+// { before (the filter it stood in for, put back on leaving), label (the rule's words) }; never remembered (saveFilter)
+let imposed = null;
 
 // ---- building it ----
 let cards = [];      // [{ data, node }]: the cards shown, in the filter's order
@@ -350,7 +353,8 @@ const fill = (fresh = true) => {
   list = filterCards(all, filter, inUse.id);
   const filtered = filterCount(filter) > 0;
   countEl.replaceChildren(...(filtered ? [make('b', '', String(list.length)), ' of ' + all.length + ' shown']
-    : [make('b', '', String(all.filter(c => c.unlocked).length)), ' / ' + all.length + ' cars']));
+    : [make('b', '', String(all.filter(c => c.unlocked).length)), ' / ' + all.length + ' cars']),
+  imposed && filtered ? make('span', 'sr-imposed', 'This level: ', ...richTiers(imposed.label)) : null); // (the level's car rule, imposed)
   bankEl.replaceChildren(make('small', '', 'Bank'), money(Progress.data.money));
   watcher?.disconnect();
   cards = list.map((data) => {
@@ -613,6 +617,8 @@ export const Showroom = {
     setViewSide(side);
     picked = (CAR && !CAR.silhouette ? CAR.id : null) || carInUse().id;
     full = false;
+    const rule = carRule(side), forced = rule?.list ? imposedFilter(rule, showroomCars().map(car => carCard(car, side))) : null;
+    if (forced) { imposed = { before: filter, label: rule.label }; filter = { ...forced, sort: filter.sort }; }
     build();
     panel.classList.toggle('evil', side);
     panel.classList.remove('hidden', 'full-up', 'filters-up');
@@ -634,6 +640,7 @@ export const Showroom = {
     if (!this.isOpen) return;
     closeFilters();
     closeFull();
+    if (imposed) { filter = imposed.before; imposed = null; } // (the imposed filter was for the visit: the player's own back)
     this.isOpen = false;
     Nav.leave('showroom');
     Game.inMenu = false;
@@ -648,7 +655,7 @@ export const Showroom = {
   // for a picture or a check: the side on show (as the switch does), and what is shown
   side(evil) { pickSide(evil); },
   get shown() {
-    return { side: sideName(side), picked, full, filters: !!sheet?.classList.contains('open'), filter: JSON.parse(JSON.stringify(filter)),
+    return { side: sideName(side), picked, full, filters: !!sheet?.classList.contains('open'), filter: JSON.parse(JSON.stringify(filter)), imposed: imposed ? imposed.label : null,
       list: list.map(c => c.id), live: ShowroomView.state, go: full ? detail?.querySelector('.sr-go')?.textContent || null : null };
   },
   // pick that car's card (and with full, open its full view)

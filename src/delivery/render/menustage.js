@@ -16,10 +16,13 @@ import { LEVELS, LEVEL, selectLevel, selectSpecial, levelLabel, MAIN_LEVELS, AMP
 import { levelName, levelDescription } from '../levelText.js';
 import { cargoFor } from '../cargo.js';
 import { cargoCircleView } from './cargoview.js';
-import { CARS, CAR, useLevelCar, earnedFor, amphibiousCars, stars, starColour, carById } from '../cars.js';
+import { CARS, CAR, useLevelCar, earnedFor, amphibiousCars, stars, starColour, carById, listRule } from '../cars.js';
 import { Progress } from '../progress.js';
 import { Tiers, tierStarsNode, richTiers } from '../tiers.js';
 import { Events } from '../events.js';
+import { eventPacks, featuredOf, packName, describePack, contents, percent } from '../packs.js';
+import { packArt } from './packart.js';
+import { openContents, closeContents } from './packcontents.js';
 import { Nav } from '../nav.js';
 import { buildLabel } from '../version.js';
 import { Game, formatTime, clockFor } from '../game.js';
@@ -102,7 +105,7 @@ for (let i = 0; i < RACE_LEVELS.length; i += 5) TABS.race.groups.push([i, Math.m
 let liveKey = null;
 const buildDeliveryTab = () => {
   if (!Tiers.on()) return;
-  const live = Tiers.liveEvents(), specials = Events.liveSpecials(), key = [...live, ...specials].map(x => x.id).join();
+  const live = Tiers.liveEvents(), specials = Events.shownSpecials(), key = [...live, ...specials].map(x => x.id).join(); // (a recurring event is listed between its runs too)
   if (key === liveKey) return;
   liveKey = key;
   // (the one-level events, a group; then each special event's stages, a group of its own: events.js)
@@ -125,6 +128,8 @@ const stageLine = (level) => {
   const { event, stage } = Events.stageOf(level), st = Events.state(event, stage.index), car = stage.car ? carById(stage.car) : null;
   if (!st.open) return st.why;
   if (st.needs) return 'Needs the ' + st.needs.name + ': own it to play this stage';
+  const rule = !car && level.allowedCars ? listRule(level) : null; // (a rule of its own: the Car Hunt's 3-star cars)
+  if (rule) return 'Only ' + rule.label + ', both sides: the showroom opens on them'; // ({tier:n} tokens: richTiers)
   return stage.free ? 'Free try: driven in the ' + car.name + ', owned or not' : car ? 'Driven in your ' + car.name : 'Any car you own';
 };
 // how long until an event ends, for its card: "3d 4h", "5h 12m", "9m 30s"
@@ -133,12 +138,20 @@ const countdown = (ms) => {
   return d ? d + 'd ' + h + 'h' : h ? h + 'h ' + m + 'm' : m + 'm ' + (s % 60) + 's';
 };
 const ends = (at) => { const p = make('p', 'event-ends countdown', 'Ends in ' + countdown(at - Tiers.now())); p.dataset.end = at; return p; };
-// (each second: the countdowns on the card; an event just over, and the menu is drawn again without it)
+// a special event's countdown (Events.countdownOf: 'Ends in' while on, a recurring one's 'Next in' between its runs), by
+// the events' clock (Events.now: ?eventsnow= moves it)
+const eventCount = (c) => {
+  if (!c) return null;
+  const p = make('p', 'event-ends countdown' + (c.words === 'Next in' ? ' next' : ''), c.words + ' ' + countdown(c.at - Events.now()));
+  p.dataset.end = c.at; p.dataset.words = c.words; p.dataset.clock = 'events';
+  return p;
+};
+// (each second: the countdowns on the card; an event just over or just begun, and the menu is drawn again)
 setInterval(() => {
   for (const node of document.querySelectorAll('#stage .countdown')) {
-    const left = Number(node.dataset.end) - Tiers.now();
+    const left = Number(node.dataset.end) - (node.dataset.clock === 'events' ? Events.now() : Tiers.now());
     if (left <= 0) { draw(); return; }
-    node.textContent = 'Ends in ' + countdown(left);
+    node.textContent = (node.dataset.words || 'Ends in') + ' ' + countdown(left);
   }
 }, 1000);
 const tabOf = (level) => isRace(level) ? 'race' : 'delivery';
@@ -647,24 +660,30 @@ const replaysCard = (level) => {
 // (stillCar: render/carstill.js, which the showroom's cards share)
 const eventPanel = (event, picked, evil) => {
   const done = Events.done(event), of = event.stages.length, prize = Events.prizeCar(event), won = Events.prizeWon(event);
-  const ring = make('div', 'event-ring', make('b', '', Math.round(done / of * 100) + '%'), make('small', '', 'progress'));
-  ring.style.setProperty('--share', done / of);
-  const prizeView = make('div', 'event-car');
-  const head = make('div', 'event-head',
-    make('div', 'event-title', make('h2', '', event.name), make('p', '', done + '/' + of + ' stages done'), event.to ? ends(event.to) : null),
-    ring,
-    make('div', 'event-prize', make('small', '', 'Grand prize'), prizeView,
-      make('div', 'event-prize-words', make('strong', '', prize ? prize.name : 'No prize'), make('span', '', won ? 'Won!' : 'Finish all ' + of + ' stages'))));
   const drawLater = [];
-  if (prize) drawLater.push([prizeView, prize]);
+  let head;
+  if (event.repeat) head = huntHead(event, drawLater); // (a recurring event, played again and again: its car and its pack, no progress)
+  else {
+    const ring = make('div', 'event-ring', make('b', '', Math.round(done / of * 100) + '%'), make('small', '', 'progress'));
+    ring.style.setProperty('--share', done / of);
+    const prizeView = make('div', 'event-car');
+    head = make('div', 'event-head',
+      make('div', 'event-title', make('h2', '', event.name), make('p', '', done + '/' + of + ' stages done'), event.to ? ends(event.to) : null),
+      ring,
+      make('div', 'event-prize', make('small', '', 'Grand prize'), prizeView,
+        make('div', 'event-prize-words', make('strong', '', prize ? prize.name : 'No prize'), make('span', '', won ? 'Won!' : 'Finish all ' + of + ' stages'))));
+    if (prize) drawLater.push([prizeView, prize]);
+  }
   const cards = event.stages.map((stage) => {
-    const st = Events.state(event, stage.index), car = stage.car ? carById(stage.car) : carById(Progress.data.car) || CAR, view = make('div', 'event-car'); // (any car: the player's own, not one a picked stage lends)
+    const rule = !stage.car && stage.level?.allowedCars ? listRule(stage.level) : null; // (a rule of its own: the Car Hunt's 3-star cars)
+    const st = Events.state(event, stage.index), car = stage.car ? carById(stage.car) : rule && stage.level === LEVEL && !CAR.silhouette ? CAR : carById(Progress.data.car) || CAR, view = make('div', 'event-car'); // (any car: the player's own, not one a picked stage lends; under a rule, the car the rule puts them in)
     const owned = stage.car && Progress.owns(stage.car);
     const badge = stage.free ? make('span', 'event-badge free', 'Free try') : stage.car ? make('span', 'event-badge ' + (owned ? 'owned' : 'needed'), (owned ? '✔ ' : '🔒 ') + car.name)
-      : make('span', 'event-badge any', 'Any car');
-    const card = make('button', 'event-stage' + (st.done ? ' done' : st.open && !st.needs ? ' ready' : ' shut') + (stage.level === picked ? ' picked' : ''),
-      make('span', 'event-stage-n', 'Stage ' + (stage.index + 1)), view, badge,
-      make('span', 'event-stage-state', st.done ? 'Done' : st.open && !st.needs ? 'Ready' : st.why),
+      : rule ? make('span', 'event-badge rule', ...richTiers(rule.label), ' only') : make('span', 'event-badge any', 'Any car');
+    const again = !!event.repeat; // (a recurring event's stage: never done for good, READY whenever it is on)
+    const card = make('button', 'event-stage' + (st.done && !again ? ' done' : st.open && !st.needs ? ' ready' : ' shut') + (stage.level === picked ? ' picked' : ''),
+      make('span', 'event-stage-n', again ? 'Every run: a pack' : 'Stage ' + (stage.index + 1)), view, badge,
+      make('span', 'event-stage-state', st.done && !again ? 'Done' : st.open && !st.needs ? 'Ready' : st.why),
       make('span', 'event-stage-map', levelName(stage.level)));
     if (LEVEL_SHOTS[stage.map]) card.style.setProperty('--shot', `url("${LEVEL_SHOTS[stage.map]}")`);
     card.addEventListener('click', () => { if (stage.level !== cursor) { blip('menuMove'); show(stage.level); } });
@@ -678,9 +697,9 @@ const eventPanel = (event, picked, evil) => {
   roadBtn?.addEventListener('click', () => roadCard(picked));
   replaysBtn?.addEventListener('click', () => replaysCard(picked));
   const detail = make('div', 'event-detail',
-    make('h3', '', 'Stage ' + (at.stage.index + 1) + ': ' + levelName(picked)),
+    make('h3', '', (event.repeat ? '' : 'Stage ' + (at.stage.index + 1) + ': ') + levelName(picked)),
     make('div', 'facts', fact('Clock', formatTime(clockFor(picked, evil))), fact('Tip', money(picked.tip)), fact('Best to spare', best === undefined ? 'Not delivered yet' : formatTime(best))),
-    make('p', 'needs' + (open && !Game.canStart ? ' warn' : ''), stageLine(picked)),
+    make('p', 'needs' + (open && !Game.canStart ? ' warn' : ''), ...richTiers(stageLine(picked))),
     roadBtn || replaysBtn ? make('div', 'road', roadBtn, replaysBtn) : null);
   // (the row scrolls sideways with no scroll bar: a swipe, the mouse wheel, or the arrows at its ends, a card at a time;
   // an arrow shows only where there is more that way)
@@ -703,9 +722,53 @@ const eventPanel = (event, picked, evil) => {
   row.addEventListener('click', (e) => { if (drag?.moved > 5) { e.stopPropagation(); e.preventDefault(); } }, true);
   requestAnimationFrame(arrows);
   const panel = make('div', 'event-panel', head, make('div', 'event-rowbox', row, back, on), detail);
-  requestAnimationFrame(() => { for (const [el, car] of drawLater) stillCar(el, car, evil); }); // (once laid out)
+  requestAnimationFrame(() => { for (const [el, car, side = evil] of drawLater) stillCar(el, car, side); }); // (once laid out)
   return panel;
 };
+// ---- a RECURRING event's head (the Car Hunt, the owner 13-Oct: "Display the car, and the pack reward on the event card"):
+// its name, how it recurs and its countdown (Ends in / Next in), the car it hunts (the car its pack features, drawn
+// still in its Good livery, as the Comet Hunt's prize) and the pack every run gives (its art, the Shop's; a tap or its
+// "What's inside" opens the pack's sheet, render/packcontents.js, with the x1 / x3 odds)
+const huntHead = (event, drawLater) => {
+  const give = eventPacks(event.id).find(p => p.every) || eventPacks(event.id)[0] || null;
+  const featured = give ? featuredOf(give.id) : [], car = featured[0]?.car || null;
+  const r = event.repeat, rule = event.stages[0]?.level?.allowedCars ? listRule(event.stages[0].level) : null;
+  const often = r.every === 7 ? r.live + ' days every week' : r.live + ' days every ' + r.every;
+  const title = make('div', 'event-title', make('h2', '', event.name),
+    make('p', '', 'Recurring: ' + often), eventCount(Events.countdownOf(event)),
+    rule ? make('p', 'event-rule', ...richTiers(rule.label), ' only') : null);
+  const out = [title];
+  if (car) {
+    const view = make('div', 'event-car');
+    const c = contents(give.id, { featured }), odds = (c?.featured || []).filter(f => f.car === car && !f.key && f.inPlay);
+    const words = odds.length ? odds.map(f => 'x' + (f.amount ?? 1) + ' ' + percent(f.lastSlot)).join(' · ') : 'Car maxed';
+    out.push(make('div', 'event-prize event-hunt', make('small', '', 'Hunt car'), view,
+      make('div', 'event-prize-words', make('strong', '', car.name), make('span', '', 'Blueprints: ' + words))));
+    drawLater.push([view, car, false]); // (its Good livery, whatever the side)
+  }
+  if (give) {
+    const inside = () => { blip('menuPick'); openInside(give.id); };
+    const art = make('button', 'event-pack-art', packArt(give.id));
+    art.title = 'What’s inside the ' + packName(give.id);
+    art.addEventListener('click', inside);
+    const link = make('button', 'menu-chip event-inside', 'What’s inside');
+    link.addEventListener('click', inside);
+    out.push(make('div', 'event-prize event-pack', make('small', '', 'Reward'), art,
+      make('div', 'event-prize-words', make('strong', '', packName(give.id)), make('span', '', give.every ? 'Every run: a ' + packName(give.id) : describePack(give.id)), link)));
+  }
+  return make('div', 'event-head hunt', ...out);
+};
+// a pack's What's inside over the menu (render/packcontents.js, as the Shop opens it); Enter starts nothing while it is up,
+// Escape closes it
+let insideUp = null;
+const openInside = (id) => {
+  const sheet = openContents(document.body, { kind: id, title: packName(id), featured: featuredOf(id) });
+  if (!sheet) return;
+  insideUp = sheet; Game.inMenu = true;
+  const gone = new MutationObserver(() => { if (!sheet.isConnected) { gone.disconnect(); if (insideUp === sheet) { insideUp = null; Game.inMenu = false; } } });
+  gone.observe(document.body, { childList: true });
+};
+window.addEventListener('keydown', (e) => { if (insideUp && e.code === 'Escape') { e.stopPropagation(); closeContents(); } }, true);
 const menuUp = () => Game.state === 'start' && !startScreen.classList.contains('hidden');
 window.addEventListener('keydown', (e) => {
   if (!menuUp() || e.ctrlKey || e.metaKey || e.altKey) return;

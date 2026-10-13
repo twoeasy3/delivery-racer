@@ -106,7 +106,7 @@ export const carCard = (car, evil = false) => {
     }
   }
   // a car that can be driven, but not on the level picked (its car rule, on the side picked)
-  const rule = carRule(evil), barred = unlocked && !!rule && !ruleAllows(rule, car);
+  const rule = carRule(evil), barred = unlocked && !!rule && !ruleAllows(rule, car), allowed = !rule || ruleAllows(rule, car);
   return {
     car, id: car.id,
     name: dark ? 'Locked car' : car.name,
@@ -114,7 +114,7 @@ export const carCard = (car, evil = false) => {
     rarity: rarityOf(car), hidden, dark, hunt,
     ecu, max, maxed, upgradable, blueprint, key: !blueprint,
     blueprints: bp, perEcu: x, have: maxed ? toNext : have, toNext,
-    owned, unlocked, barred,
+    owned, unlocked, barred, allowed,
     state: !unlocked ? 'locked' : barred ? 'barred' : 'ready',
     reason, hint,
     rule: barred ? rule : null,
@@ -224,7 +224,7 @@ export const FILTER_GROUPS = [
   { id: 'colour', name: 'Star colour', chips: [['gold', 'Gold'], ['blue', 'Blue'], ['magenta', 'Magenta'], ['green', 'Sea green']] },
   { id: 'rarity', name: 'Rarity', chips: [['common', 'Common'], ['uncommon', 'Uncommon'], ['epic', 'Epic'], ['legendary', 'Legendary']] },
   { id: 'kind', name: 'Kind', chips: [['garage', 'Garage'], ['blueprint', 'Blueprint'], ['key', 'Key'], ['special', 'Special']] },
-  { id: 'state', name: 'State', chips: [['ready', 'Ready'], ['locked', 'Locked'], ['upgradable', 'Upgradable'], ['maxed', 'Maxed'], ['inuse', 'In use'], ['barred', 'Not on this level']] },
+  { id: 'state', name: 'State', chips: [['ready', 'Ready'], ['locked', 'Locked'], ['upgradable', 'Upgradable'], ['maxed', 'Maxed'], ['inuse', 'In use'], ['barred', 'Not on this level'], ['allowed', 'Allowed on this level']] },
 ];
 export const SORTS = [['tier', 'Tier'], ['rarity', 'Rarity'], ['ecu', 'ECU'], ['name', 'Name'], ['speed', 'Top speed']];
 export const RARITY_ORDER = ['common', 'uncommon', 'epic', 'legendary', 'bespoke', 'special'];
@@ -267,6 +267,7 @@ export const statesOf = (card, inUseId) => {
   if (card.upgradable && !card.maxed) states.push('upgradable');
   if (card.maxed && card.ecu >= 1) states.push('maxed');
   if (card.id === inUseId) states.push('inuse');
+  if (card.allowed) states.push('allowed'); // (the level picked lets it be driven: its car rule, owned or not)
   return states;
 };
 export const cardMatches = (card, f, inUseId) =>
@@ -289,6 +290,21 @@ export const filterCards = (cards, f, inUseId) => {
   const sorter = SORTERS[f.sort] || SORTERS.tier;
   return cards.map((card, i) => [card, i]).filter(([card]) => cardMatches(card, f, inUseId))
     .sort(([a, i], [b, j]) => sorter(a, b) || i - j).map(([card]) => card);
+};
+// the filter a level's own car rule IMPOSES on the showroom when it is opened with that level picked (the owner, 13-Oct:
+// "For events with filtered car requirements, impose that requirement on the showroom filter when clicking in"): for a
+// level's own list (allowedCars: an event stage's, the Car Hunt's 3-star cars), the stars and star colours of the cars it
+// allows when those let by EXACTLY those cars (the Car Hunt: stars 3, gold and magenta); else, added to them, the state
+// chip 'allowed' ("Allowed on this level"), which always is exact. null: no such rule (a tier's medal rule is not imposed).
+// cards: the floor's cards (carCard, on the side picked). For the visit only: render/showroom.js never remembers it
+export const imposedFilter = (rule, cards) => {
+  if (!rule?.list) return null;
+  const ok = cards.filter(card => ruleAllows(rule, card.car)), want = new Set(ok.map(c => c.id));
+  const exact = (f) => { const got = filterCards(cards, f, null); return got.length === want.size && got.every(c => want.has(c.id)); };
+  const f = cleanFilter({ stars: ok.map(c => String(starCountOf(c))), colour: ok.map(colourOf) });
+  if (ok.length && exact(f)) return f;
+  const g = { ...f, state: ['allowed'] };
+  return exact(g) ? g : { ...noFilter(), state: ['allowed'] };
 };
 // the card before or after this one in a list (the full view's arrows): round from the last to the first
 export const stepIn = (list, id, dir) => {
