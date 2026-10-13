@@ -69,13 +69,6 @@ const cyl = (r, length, x, y, z, axis = 'y', seg = 10, r2 = r, open = false) => 
   if (axis === 'z') geo.rotateX(Math.PI / 2);
   return geo.translate(x, y, z);
 };
-// a flat plate of the outline `pts` ([x, y] round it), `t` thick, facing along the car, its back at z (for a grille, a
-// mouth, a plate on the nose or the tail: dir 1 faces forward, -1 back)
-const plate = (pts, t, z, dir = 1) => {
-  const geo = new THREE.ExtrudeGeometry(new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y))), { depth: t, bevelEnabled: false });
-  if (dir < 0) geo.rotateY(Math.PI);
-  return geo.translate(0, 0, z);
-};
 // a rounded rectangle's outline, w by h, its middle at (x, y), corners of r
 const roundRect = (w, h, x, y, r, seg = 2) => {
   const pts = [];
@@ -215,7 +208,7 @@ const glasshouse = (KEYS, xAt, roofFrom, roofTo, n = 3) => {
   };
   const mirror = (side) => side.slice().reverse().map(([x, y]) => [-x, y]);
   const ring = (z) => {
-    const [belt, , crown] = along(KEYS, z), low = belt - 0.08;
+    const [belt, , crown] = along(KEYS, z), low = belt - 0.025;
     const side = [[xAt(low), low], ...half(z, 0)];
     return [[0, low], ...side, [0, crown], ...mirror(side)];
   };
@@ -302,39 +295,39 @@ const commuterParts = (car) => {
   const P = bag();
   // ---- the body: round shoulders, its ends rounded off in plan and in profile, the bonnet high and full
   const BODY = [
-    [-L - 0.02, 0.64, 0.66, 0.86, 0.32, 0.635],
-    [-L + 0.06, 0.82, 0.7, 0.92, 0.24, 0.815],
-    [-L + 0.2, 0.9, 0.72, 0.94, 0.2, 0.895],
-    [-L + 0.4, 0.92, 0.72, 0.95, 0.19, 0.915],
-    [1.1, 0.92, 0.72, 0.97, 0.19, 0.915],
-    [L - 0.4, 0.91, 0.66, 0.9, 0.19, 0.905],
-    [L - 0.2, 0.88, 0.62, 0.85, 0.2, 0.875],
-    [L - 0.06, 0.81, 0.56, 0.8, 0.24, 0.805],
-    [L + 0.02, 0.66, 0.5, 0.74, 0.3, 0.655],
+    [-L - 0.02, 0.64, 0.52, 0.86, 0.32, 0.635],
+    [-L + 0.06, 0.82, 0.56, 0.92, 0.24, 0.815],
+    [-L + 0.2, 0.9, 0.58, 0.94, 0.2, 0.895],
+    [-L + 0.4, 0.92, 0.58, 0.95, 0.19, 0.915],
+    [1.1, 0.92, 0.58, 0.97, 0.19, 0.915],
+    [L - 0.4, 0.91, 0.52, 0.9, 0.19, 0.905],
+    [L - 0.2, 0.88, 0.48, 0.85, 0.2, 0.875],
+    [L - 0.06, 0.81, 0.42, 0.8, 0.24, 0.805],
+    [L + 0.02, 0.66, 0.36, 0.74, 0.3, 0.655],
   ];
   const AXLES = [[AX, R, TW, TX + TW / 2], [-AX, R, TW, TX + TW / 2]];
-  const { geo, topY } = loftBody(BODY, AXLES, 2.2, [], { around: [-0.47, -0.24, 0, 0.24, 0.47], archLift: 0.03 });
+  const { geo, topY } = loftBody(BODY, AXLES, 2.8, [], { around: [-0.47, -0.24, 0, 0.24, 0.47], archLift: 0.03 });
   P.add('paint', geo);
   // ---- the glasshouse: tall, its sides leaning in a little, the windscreen carrying on the bonnet's sweep, the roof
   // crowned and curving down to the hatch
   const xAt = (y) => 0.8 - (y - 0.92) * 0.32;
-  const beltAt = (z) => topY(z, xAt(0.94)) + 0.005;
-  const KEYS = [[1.12, 0, 0.005, 0.01], [0.3, 0, 1.35, 1.45], [-0.4, 0, 1.37, 1.47], [-1.05, 0, 1.3, 1.4], [-1.48, 0, 1.1, 1.19],
-    [-L + 0.12, 0, 0.02, 0.05]].map(([z, , e, c]) => { const b = beltAt(z); return [z, b, e > 0.5 ? e : b + e, c > 0.5 ? c : b + c]; })
+  const beltAt = (z) => { let y = 0.9; for (let i = 0; i < 8; i++) y = topY(z, xAt(y)); return y + 0.004; }; // (where the body meets the glass's plane)
+  const KEYS = [[1.12, 0, 0.005, 0.01], [0.3, 0, 1.35, 1.45], [-0.4, 0, 1.37, 1.47], [-1.05, 0, 1.3, 1.4], [-1.45, 0, 1.12, 1.21],
+    [-L + 0.22, 0, 0.02, 0.05]].map(([z, , e, c]) => { const b = beltAt(z); return [z, b, e > 0.5 ? e : b + e, c > 0.5 ? c : b + c]; })
     .sort((a, b) => a[0] - b[0]);
-  const { glass, skin } = glasshouse(KEYS, xAt, 0.3, -1.48, 2.5);
+  const { glass, skin } = glasshouse(KEYS, xAt, 0.3, -1.45, 2.5);
   P.add('glass', glass);
   P.add('paint', skin);
   // the side round the windows, in the paint (a front door window, a rear one, a tidy quarter light), a black B pillar
   const edge = (z) => along(KEYS, z)[1], belt = (z) => along(KEYS, z)[0];
   for (const side of [-1, 1]) {
-    const outline = [[1.12, belt(1.12) - 0.06], [0.3, edge(0.3)], [-0.4, edge(-0.4)], [-1.05, edge(-1.05)], [-1.48, edge(-1.48)],
-      [-L + 0.12, belt(-L + 0.12) - 0.06]];
+    const outline = [[1.12, belt(1.12) - 0.01], [0.3, edge(0.3)], [-0.4, edge(-0.4)], [-1.05, edge(-1.05)], [-1.45, edge(-1.45)],
+      [-L + 0.22, belt(-L + 0.22) - 0.01]];
     const top = (z) => edge(z) - 0.06, sill = (z) => belt(z) + 0.04;
     const front = [[0.98, sill(0.98)], [0.34, top(0.34)], [-0.34, top(-0.34)], [-0.34, sill(-0.34)]];
-    const bPillar = [[-0.34, sill(-0.34) - 0.03], [-0.34, top(-0.34)], [-0.48, top(-0.48)], [-0.48, sill(-0.48) - 0.03]];
+    const bPillar = [[-0.34, sill(-0.34) - 0.045], [-0.34, top(-0.34)], [-0.48, top(-0.48)], [-0.48, sill(-0.48) - 0.045]];
     const rear = [[-0.48, sill(-0.48)], [-0.48, top(-0.48)], [-0.98, top(-0.98)], [-0.98, sill(-0.98)]];
-    const quarter = [[-1.06, sill(-1.06)], [-1.06, top(-1.06)], [-1.1, top(-1.1)], [-1.38, sill(-1.38) + 0.05], [-1.38, sill(-1.38)]];
+    const quarter = [[-1.06, sill(-1.06)], [-1.06, top(-1.06)], [-1.1, top(-1.1)], [-1.33, sill(-1.33) + 0.05], [-1.33, sill(-1.33)]];
     P.add('paint', sidePanel(xAt, side, outline, [front, bPillar, rear, quarter]));
     P.add('dark', sidePanel(xAt, side, bPillar));
     P.add('paint', blob(0.05, 0.07, 0.1, side * (xAt(1.0) + 0.1), 1.0, 0.98, 8, 5));   // a rounded mirror on its stalk
@@ -353,7 +346,7 @@ const commuterParts = (car) => {
   P.add('white', bx(0.3, 0.08, 0.03, 0, 0.41, L + 0.065));
   // ---- the tail: the plate, a high brake lamp, a black lip under each end
   P.add('white', bx(0.38, 0.1, 0.03, 0, 0.6, -L - 0.03));
-  P.add('brake', bx(0.28, 0.04, 0.06, 0, 1.2, -1.47, 0.5));
+  P.add('brake', bx(0.28, 0.04, 0.06, 0, 1.21, -1.44, 0.5));
   P.add('dark', pod(1.5, 0.26, 0.12, 0.08, 0.2, L - 0.1));
   P.add('dark', pod(1.5, 0.26, 0.12, 0.08, 0.22, -L + 0.1));
   const merged = P.merge();
@@ -367,10 +360,6 @@ const commuterParts = (car) => {
   return merged;
 };
 
-// a plain wheel: a silver disc a little proud of the tyre each side, and a hub cap (one geometry)
-const discGeo = (R, width, rim = 0.68) => cached('disc' + [R, width, rim], () => ({
-  geo: mergeGeometries([cyl(R * rim, width + 0.012, 0, 0, 0, 'x', 12), cyl(R * 0.22, width + 0.04, 0, 0, 0, 'x', 8)].map(clean), false),
-})).geo;
 const commuter = (car) => {
   const group = new THREE.Group();
   const paint = lambert(car.color, { vertexColors: true });
