@@ -566,7 +566,8 @@ export const THEME_LEVELS = [
 ];
 export const MAIN_LEVELS = [...FIRST_LEVELS, ...THEME_LEVELS]; // (every numbered level: 1, 2, 3...)
 export const LEVELS = [...MAIN_LEVELS, ...SPECIAL_LEVELS, ...AMPHIBIOUS_LEVELS, ...CIRCUIT_LEVELS];
-// The menu has two tabs: deliveries, and races. A race is any lapped level (its "laps"), wherever it sits in
+// The menu's tabs (render/menustage.js): Events, Career (the delivery levels; once called Deliveries) and Races. A
+// race is any lapped level (its "laps"), wherever it sits in
 // LEVELS (Marina Bay, Montreal and Mount Panorama are among the special levels); races are always open, and
 // never lock the delivery level after them (see Progress and the menu)
 export const isRace = (level) => !!level.laps;

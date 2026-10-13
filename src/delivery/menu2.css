@@ -43,6 +43,10 @@
   color: var(--ink-dim); background: var(--panel); clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
 #startScreen .menu-tabs button:hover { color: #fff; background: var(--panel-2); }
 #startScreen .menu-tabs button.current { background: var(--accent); color: var(--accent-ink); }
+#startScreen .menu-tabs button[hidden] { display: none; }
+/* (the dot on the Events tab while an event on is not done: the Shop chip's, render/shop.js, inside the tab's slant) */
+#startScreen .menu-tabs button { position: relative; }
+#startScreen .menu-tabs .tab-dot { top: 3px; right: 6px; width: 7px; height: 7px; } /* (in the top right corner, clear of the slant and of the word) */
 #startScreen #bank { margin-left: auto; display: flex; align-items: baseline; gap: 8px; font: 700 22px/1 var(--display); color: var(--accent); font-variant-numeric: tabular-nums; }
 #startScreen #bank small { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); }
 #startScreen .menu-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px; border-radius: 7px; font-size: 13px; font-weight: 700; letter-spacing: .03em;
@@ -357,7 +361,7 @@
 /* a special event's screen (render/menustage.js eventPanel): with a stage of it picked, in place of the level card and
    the strip. The head (its name, the progress, the prize), the row of stage cards (each its map's picture slanted
    behind, the car drawn still in 3D, its state), and the stage picked under them */
-#startScreen.eventview .menu-strip { display: none; }
+#startScreen.eventview:not(.eventstrip) .menu-strip { display: none; } /* (a one-stage event among the single-level events keeps the strip: menustage.js) */
 #startScreen.eventview .menu-stage { background: linear-gradient(160deg, #1b2335, #11161f); }
 #startScreen .event-panel { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; overflow-y: auto; overscroll-behavior: contain; }
 #startScreen .event-head { display: flex; align-items: center; gap: 14px; }
@@ -486,3 +490,17 @@
 /* (the Car Hunt's car, larger than a prize: it is what the event is about) */
 #startScreen .event-head.hunt { align-items: flex-start; }
 #startScreen .event-hunt { grid-template-columns: clamp(130px, 13vw, 240px) auto; }
+/* (three tabs, 13-Oct: Events, Career, Races. A window too narrow for the title, three tabs, the bank, the Shop and the
+   options on one line, a small computer's or a phone on its side: the tabs closer, the word "Bank" and the word
+   "Options" left out, as on a phone held upright) */
+@media (min-width: 761px) and (max-width: 1080px), (max-height: 520px) and (min-width: 520px) and (max-width: 1080px) {
+  #startScreen .menu-top { gap: 10px; }
+  #startScreen .menu-tabs { margin-left: 0; }
+  #startScreen .menu-tabs button { padding: 7px 14px 6px; font-size: 15px; letter-spacing: .05em; }
+  #startScreen #bank small { display: none; }
+  #startScreen #optionsBtn span { display: none; }
+  #startScreen #optionsBtn { padding: 7px 10px; }
+}
+@media (min-width: 761px) and (max-width: 900px), (max-height: 520px) and (min-width: 520px) and (max-width: 900px) {
+  #startScreen h1 { font-size: 24px; }
+}
