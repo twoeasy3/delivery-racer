@@ -79,9 +79,12 @@ const rod = (parent, material, r, length, x, y, z, axis = 'z', segments = 12, r2
   return place(parent, geo, material, x, y, z);
 };
 // a flat picture (a decal, a curtained window): w by h, facing 'x' (+x), '-x', 'z', '-z' or 'y' (up)
-const decal = (parent, material, w, h, x, y, z, facing, u = [0, 1]) => {
+const decal = (parent, material, w, h, x, y, z, facing, u = [0, 1], v = [0, 1]) => {
   const geo = new THREE.PlaneGeometry(w, h), uv = geo.attributes.uv;
-  for (let i = 0; i < uv.count; i++) uv.setX(i, u[0] + uv.getX(i) * (u[1] - u[0])); // (a part of the picture: u from u[0] to u[1])
+  for (let i = 0; i < uv.count; i++) { // (a part of the picture: u from u[0] to u[1], v from v[0] to v[1])
+    uv.setX(i, u[0] + uv.getX(i) * (u[1] - u[0]));
+    uv.setY(i, v[0] + uv.getY(i) * (v[1] - v[0]));
+  }
   if (facing === 'x') geo.rotateY(Math.PI / 2);
   if (facing === '-x') geo.rotateY(-Math.PI / 2);
   if (facing === '-z') geo.rotateY(Math.PI);
@@ -214,35 +217,148 @@ const wear = () => texture('wear', 64, 64, (ctx, w, h) => {
   }
 });
 
-// rust eating through paint: blotches in two browns, ragged at the edges, clear between (the Junker's)
-const rust = () => texture('rust', 64, 64, (ctx, w, h) => {
-  ctx.clearRect(0, 0, w, h);
+// rust eating through paint (the Junker's): a picture of four patches, one in each cell of it (RUST_CELLS), each a
+// decal of its own shape. A patch lies where its `weight` says (fx, fy: 0 to 1 across the cell, fy 0 at its top) and
+// thins out to nothing before the cell's edges (but its bottom, where `low` is set: the body's own lower edge), in
+// smaller and sparser flecks, with a faint orange stain round it and streaks run down from it: no hard edge anywhere
+const RUST_W = 256, RUST_H = 128;
+const RUST_CELLS = {
+  // [x, y, w, h] in px, how it lies, low
+  sill: [[0, 0, 160, 56], (fx, fy) => fy ** 1.6 * (0.55 + 0.45 * Math.sin(fx * 9 + 1) ** 2), true],                 // the doors' bottoms
+  arch: [[160, 0, 96, 60], (fx, fy) => Math.exp(-(((Math.hypot((fx - 0.5) / 0.44, (fy - 1.07) / 0.7) - 1) / 0.22) ** 2)), true], // round a wheel
+  corner: [[0, 60, 40, 60], (fx, fy) => fy ** 1.2 * (0.5 + 0.5 * fx), true],                                         // a bottom corner
+  tail: [[44, 64, 120, 40], (fx, fy) => fy ** 1.4 * (0.35 + 0.65 * Math.sin(fx * 5 + 0.6) ** 2), true],             // the tailgate's bottom
+};
+// the u, v range of a cell, for decal(); `flip` turns it round (the other flank's)
+const rustCell = (name, flip = false) => {
+  const [x, y, w, h] = RUST_CELLS[name][0], u = [x / RUST_W, (x + w) / RUST_W];
+  return [flip ? [u[1], u[0]] : u, [1 - (y + h) / RUST_H, 1 - y / RUST_H]];
+};
+const rust = () => texture('rust', RUST_W, RUST_H, (ctx, W, H) => {
+  ctx.clearRect(0, 0, W, H);
   let seed = 11;
   const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-  for (const [colour, n, size] of [['#7a3f1e', 9, 9], ['#5a2c14', 14, 4], ['#9a5a2a', 8, 3]]) {
-    ctx.fillStyle = colour;
-    for (let i = 0; i < n; i++) {
-      const x = rnd() * w, y = rnd() * h;
-      for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.ellipse(x + (rnd() - 0.5) * size, y + (rnd() - 0.5) * size, size * (0.4 + rnd() * 0.6), size * (0.3 + rnd() * 0.5), rnd() * 3, 0, Math.PI * 2); ctx.fill(); }
+  const blob = (x, y, rx, ry) => { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rnd() * 3, 0, Math.PI * 2); ctx.fill(); };
+  for (const [[x0, y0, w, h], weight, low] of Object.values(RUST_CELLS)) {
+    const fade = (fx, fy) => Math.min(1, Math.min(fx, 1 - fx, fy, low ? 1 : 1 - fy) / 0.2);
+    const spots = [];
+    for (let i = 0; i < w * h / 6; i++) {
+      const fx = rnd(), fy = rnd(), k = Math.max(0, Math.min(1, weight(fx, fy))) * fade(fx, fy);
+      if (rnd() < k) spots.push([x0 + fx * w, y0 + fy * h, k]);
+      else if (rnd() < k * 0.35) spots.push([x0 + fx * w, y0 + fy * h, 0]); // (a lone fleck, out at its fringe)
     }
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x0, y0, w, h); ctx.clip();
+    ctx.fillStyle = 'rgba(122,62,24,0.22)'; // the stain the rust spreads round it
+    for (const [x, y, k] of spots) if (k > 0.3) blob(x, y, 2 + k * 5, 1.5 + k * 3.5);
+    ctx.strokeStyle = 'rgba(96,46,18,0.28)'; // streaks run down from it
+    ctx.lineWidth = 1;
+    for (const [x, y, k] of spots) if (k > 0.55 && rnd() < 0.12) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + (rnd() - 0.5), y + 3 + rnd() * 8); ctx.stroke(); }
+    for (const [colour, min, size] of [['#7a3f1e', 0, 1], ['#9a5a2a', 0.35, 0.55], ['#4e2410', 0.6, 0.45]]) { // rust, flaking, the holes
+      ctx.fillStyle = colour;
+      for (const [x, y, k] of spots) if (k >= min && rnd() < 0.8) {
+        const s = (0.6 + k * 3.2) * size;
+        blob(x + (rnd() - 0.5) * s, y + (rnd() - 0.5) * s, s * (0.5 + rnd() * 0.6), s * (0.35 + rnd() * 0.45));
+      }
+    }
+    ctx.fillStyle = 'rgba(230,200,160,0.35)'; // blistered paint at its edge
+    for (const [x, y, k] of spots) if (k > 0.1 && k < 0.45 && rnd() < 0.25) blob(x, y - 1, 0.9, 0.7);
+    ctx.restore();
   }
 });
 
-// a tarpaulin (the Junker's load): the cloth's colour with darker creases, and green rope crossing it on the diagonal.
-// It repeats (the tarp's own measure, in metres, lays it on): drawn so it tiles. colours: [cloth, crease, rope]
+// a tarpaulin (the Junker's load), laid once over the whole heap (not repeated): u runs across it from the right hem
+// over the ridge (u 0.5) to the left hem, v along it, from its back end (v 0 at the bed, TARP.m at the top of that
+// end) to its front. The cloth's colour, sun-faded on top and grimy low down; creases running down the slopes and
+// gathered in at the ends; two ropes lashed across it (on TARP.ropes), the cloth pulled into them; two stitched patches;
+// a doubled hem with grommets, frayed at its edge. colours: [cloth, crease, rope]
+const TARP = { z0: -2.44, z1: -0.46, m: 0.12, ropes: [-1.76, -1.14] };
+const tarpV = (z) => TARP.m + (1 - 2 * TARP.m) * (z - TARP.z0) / (TARP.z1 - TARP.z0);
 const tarpaulin = (key, [cloth, crease, rope]) => {
-  const map = texture('tarp-' + key, 64, 64, (ctx, w, h) => {
+  const map = texture('tarp-' + key, 256, 256, (ctx, W, H) => {
+    let seed = 5;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const top = TARP.m * H, end = (1 - TARP.m) * H, ropes = TARP.ropes.map(z => tarpV(z) * H);
     ctx.fillStyle = cloth;
-    ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = crease;
-    ctx.lineWidth = 2;
-    for (const [x, y, l] of [[8, 10, 16], [40, 6, 12], [22, 34, 18], [50, 40, 10], [6, 52, 12]]) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + l * 0.3, y + l); ctx.stroke(); }
-    ctx.strokeStyle = rope;
-    ctx.lineWidth = 3;
-    for (const o of [-64, 0, 64]) { ctx.beginPath(); ctx.moveTo(o, 0); ctx.lineTo(o + 64, 64); ctx.stroke(); }
+    ctx.fillRect(0, 0, W, H);
+    const glow = (x, y, r, colour) => {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, colour); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.fillRect(x - r, y - r, 2 * r, 2 * r);
+    };
+    // sun-faded along the ridge, grimy towards the hems; blotches of each
+    const across = ctx.createLinearGradient(0, 0, W, 0);
+    for (const [at, colour] of [[0, 'rgba(20,12,4,0.32)'], [0.16, 'rgba(20,12,4,0)'], [0.42, 'rgba(255,246,225,0)'], [0.5, 'rgba(255,246,225,0.14)'], [0.58, 'rgba(255,246,225,0)'], [0.84, 'rgba(20,12,4,0)'], [1, 'rgba(20,12,4,0.32)']]) across.addColorStop(at, colour);
+    ctx.fillStyle = across; ctx.fillRect(0, 0, W, H);
+    for (let i = 0; i < 9; i++) glow(rnd() * W, rnd() * H, 18 + rnd() * 30, i % 3 ? 'rgba(255,246,225,0.1)' : 'rgba(25,15,5,0.16)');
+    // a crease: a dark fold with the light catching its edge beside it
+    // a crease: a soft, wide shadow of a fold with a darker core, and the light catching its edge beside it
+    const fold = (x0, y0, cx, cy, x1, y1, width = 2) => {
+      ctx.lineCap = 'round';
+      for (const [dx, colour, lw, alpha] of [[0, crease, width * 2.6, 0.22], [0, crease, width, 0.4], [width * 0.9 + 1, '#fff6e6', width * 0.8, 0.12]]) {
+        ctx.strokeStyle = colour; ctx.lineWidth = lw; ctx.globalAlpha = alpha;
+        ctx.beginPath(); ctx.moveTo(x0 + dx, y0 - dx * 0.5); ctx.quadraticCurveTo(cx + dx, cy - dx * 0.5, x1 + dx, y1 - dx * 0.5); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    };
+    // creases down both slopes, from near the ridge to the hems, sagging between the ropes
+    for (const dir of [-1, 1]) for (let i = 0; i < 8; i++) {
+      const y = top + 8 + rnd() * (end - top - 16), x0 = W / 2 + dir * (8 + rnd() * 34), x1 = W / 2 + dir * (W / 2 - 6 - rnd() * 30);
+      const y1 = y + (rnd() - 0.4) * 26;
+      fold(x0, y, (x0 + x1) / 2, (y + y1) / 2 + (rnd() - 0.5) * 20, x1, y1, 2.5 + rnd() * 2);
+    }
+    // the ends: the cloth gathered down over them, in folds fanning from the top of each end to the bed
+    for (const [y0, y1] of [[top, 0], [end, H]]) for (let i = 0; i < 9; i++) {
+      const x1 = 10 + (i + rnd() * 0.6) * (W - 20) / 9;
+      fold(W / 2 + (rnd() - 0.5) * 40, y0 + (y1 - y0) * 0.1, (W / 2 + x1) / 2, (y0 + y1) / 2, x1, y1, 2 + rnd());
+    }
+    // two patches, stitched on
+    for (const [x, y, w, h, a] of [[40, 0.5 * H, 34, 26, 0.12], [176, 0.24 * H, 26, 20, -0.08]]) {
+      ctx.save();
+      ctx.translate(x, y); ctx.rotate(a);
+      ctx.fillStyle = crease; ctx.fillRect(-w / 2, -h / 2, w, h);
+      ctx.fillStyle = 'rgba(255,246,225,0.1)'; ctx.fillRect(-w / 2, -h / 2, w, h / 2);
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 1; ctx.strokeRect(-w / 2, -h / 2, w, h);
+      ctx.strokeStyle = 'rgba(240,230,205,0.75)'; ctx.setLineDash([2, 2]); ctx.strokeRect(-w / 2 + 2.5, -h / 2 + 2.5, w - 5, h - 5);
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+    // the ropes, lashed across: the cloth pulled into each (short creases running in to it), its shadow, the rope
+    // twisted, and a hook at each hem
+    for (const y of ropes) {
+      for (let x = 20; x < W - 20; x += 30 + rnd() * 16) for (const s of [-1, 1]) {
+        const l = 12 + rnd() * 10;
+        fold(x + (rnd() - 0.5) * 12, y + s * l, x + s * 2, y + s * l * 0.4, x + (rnd() - 0.5) * 4, y + s * 4, 2);
+      }
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 9;
+      ctx.beginPath(); ctx.moveTo(0, y + 1.5); ctx.lineTo(W, y + 1.5); ctx.stroke();
+      ctx.strokeStyle = rope; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 1;
+      for (let x = 0; x < W; x += 4) { ctx.beginPath(); ctx.moveTo(x, y - 2.5); ctx.lineTo(x + 3, y + 2.5); ctx.stroke(); }
+      ctx.strokeStyle = 'rgba(255,255,230,0.3)';
+      ctx.beginPath(); ctx.moveTo(0, y - 1.2); ctx.lineTo(W, y - 1.2); ctx.stroke();
+      ctx.fillStyle = '#2b2d30';
+      for (const x of [0, W - 6]) ctx.fillRect(x, y - 4, 6, 8);
+    }
+    // the hem: doubled (darker), stitched, grommets along it, frayed at its edge; and along the ends, on the bed
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.fillRect(0, 0, 9, H); ctx.fillRect(W - 9, 0, 9, H); ctx.fillRect(0, 0, W, 5); ctx.fillRect(0, H - 5, W, 5);
+    ctx.strokeStyle = 'rgba(240,230,205,0.55)'; ctx.lineWidth = 1; ctx.setLineDash([2, 2]);
+    for (const x of [10.5, W - 10.5]) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    ctx.setLineDash([]);
+    for (let y = 14; y < H; y += 24) for (const x of [4.5, W - 4.5]) {
+      ctx.fillStyle = '#c9c6ba'; ctx.beginPath(); ctx.arc(x, y, 2.6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#1d1d1f'; ctx.beginPath(); ctx.arc(x, y, 1.3, 0, Math.PI * 2); ctx.fill();
+      fold(x + (x < W / 2 ? 2 : -2), y + 2, x + (x < W / 2 ? 8 : -8), y + 12, x, y + 22, 1); // (the hem sags between them)
+    }
+    for (let i = 0; i < 70; i++) { // frayed
+      const y = rnd() * H, x = rnd() < 0.5 ? rnd() * 3 : W - rnd() * 3;
+      ctx.fillStyle = rnd() < 0.5 ? 'rgba(255,246,225,0.4)' : 'rgba(0,0,0,0.45)';
+      ctx.fillRect(x, y, 1 + rnd() * 2, 1);
+    }
   });
-  map.wrapS = map.wrapT = THREE.RepeatWrapping;
-  map.repeat.set(1.1, 1.1);
+  map.flipY = false; // (canvas row = v * height: the picture's top row is the back end)
   return map;
 };
 
@@ -531,7 +647,7 @@ export const ORIG3_MODELS = {
     const L = car.hl, R = 0.42, WX = 0.95, FZ = L * 0.62, RZ = -L * 0.6;
     const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(0xc4c7cb), dark = lambert(0x121418);
     const roof = lambert(0x4f5532), bumper = lambert(0x7d8794), plate = lambert(0xece6cc);
-    const cover = new THREE.MeshLambertMaterial();
+    const cover = new THREE.MeshLambertMaterial({ vertexColors: true });
     // the body: one flat-sided slab from the nose (its face leaning back at the bottom) to the tailgate, low in front
     // where the bonnet and the wings sit on it, the bed's sides level behind the cab; the wheels stand at its corners
     side(shell, paint, car.hw * 2, [[2.32, 0.46], [2.38, 0.92], [1.1, 0.92], [1.1, 1.18], [-2.45, 1.18, 0.03], [-2.45, 0.46]], 0.04, 0, 3);
@@ -579,31 +695,69 @@ export const ORIG3_MODELS = {
       box(shell, BRAKE, 0.14, 0.12, 0.03, s * 0.84, 0.89, -2.495);
     }
     box(shell, plate, 0.34, 0.13, 0.02, 0, 0.8, -2.495);
-    // rust, eating the paint: the lower doors, over the wheels, the corners
-    const rusty = new THREE.MeshLambertMaterial({ map: rust(), alphaTest: 0.5 });
+    // rust, eating the paint: along the bottoms of the doors, round both wheels, the back corners and the tailgate's
+    // bottom; each patch fades out in flecks before its decal's edge (see rust), and both flanks match (mirrored)
+    const rusty = new THREE.MeshLambertMaterial({ map: rust(), transparent: true, depthWrite: false });
     for (const s of [-1, 1]) {
-      const X = s * 1.006, f = s > 0 ? 'x' : '-x';
-      decal(shell, rusty, 1.2, 0.5, X, 0.72, 0.3, f, s > 0 ? [0, 0.8] : [0.2, 1]);
-      for (const z of [1.55, -1.5]) decal(shell, rusty, 1.1, 0.16, X, 1.07, z, f, [0.1, 0.9]);
-      decal(shell, rusty, 0.26, 0.4, X, 0.68, -2.24, f, [0.5, 0.8]);
-      decal(shell, rusty, 0.8, 0.26, X, 1.06, 1.9, f, [0.2, 0.8]);                               // (over the wings too)
+      const X = s * 1.006, f = s > 0 ? 'x' : '-x', flip = s < 0;
+      decal(shell, rusty, 1.45, 0.5, X, 0.715, 0.32, f, ...rustCell('sill', flip));
+      for (const z of [FZ, RZ]) decal(shell, rusty, 1.1, 0.68, X, 0.805, z, f, ...rustCell('arch', flip !== (z < 0)));
+      decal(shell, rusty, 0.3, 0.45, X, 0.69, -2.28, f, ...rustCell('corner', flip));
     }
-    // the load: one long tent of a tarpaulin, peaked, higher than the cab, wider than the bed, soft at its ends
-    const ridge = new THREE.ExtrudeGeometry(outline([[-1.06, 1.17], [1.06, 1.17, 0.06], [0.58, 1.66, 0.2], [0.04, 2.04, 0.3], [-0.6, 1.64, 0.2]]),
-      { depth: 1.86, steps: 6, curveSegments: 3, bevelEnabled: true, bevelThickness: 0.06, bevelSize: 0.04, bevelSegments: 1 });
+    decal(shell, rusty, 0.75, 0.25, -0.45, 0.66, -2.496, '-z', ...rustCell('tail'));             // (the tailgate's face: the
+    decal(shell, rusty, 0.45, 0.15, 0.55, 0.6, -2.496,  '-z', ...rustCell('tail', true));        // body's bevel puts it at -2.49)
+    // the load: one long tent of a tarpaulin, peaked, higher than the cab, wider than the bed, soft at its ends; lumps
+    // of the load bulge it, the two ropes pull it in where they cross, it sags between, darker in its hollows and low
+    // down (vertex colours), its creases smooth (not faceted). One picture laid over it all (tarpaulin: u across from
+    // hem to hem, v along it), so nothing repeats
+    const heap = outline([[-1.06, 1.17], [1.06, 1.17, 0.06], [0.58, 1.66, 0.2], [0.04, 2.04, 0.3], [-0.6, 1.64, 0.2]]);
+    const ridge = new THREE.ExtrudeGeometry(heap, { depth: 1.86, steps: 6, curveSegments: 3, bevelEnabled: true, bevelThickness: 0.06, bevelSize: 0.04, bevelSegments: 1 });
     ridge.translate(0, 0, -2.38);
-    const pos = ridge.attributes.position;
-    for (let i = 0; i < pos.count; i++) { // (a pillow: lower and narrower towards each end)
-      const t = (pos.getZ(i) + 1.45) / 0.99, f = 1 - 0.32 * t ** 4;
-      pos.setY(i, 1.17 + (pos.getY(i) - 1.17) * f);
-      pos.setX(i, pos.getX(i) * (1 - 0.06 * t ** 4));
+    // the arc over the top, from the right hem over the ridge to the left hem, its length so far at each point
+    const arc = heap.extractPoints(3).shape.slice(1).concat(heap.extractPoints(3).shape[0]), run = [0];
+    for (let i = 1; i < arc.length; i++) run.push(run[i - 1] + arc[i].distanceTo(arc[i - 1]));
+    const across = (x, y) => { // (the share of the arc to the point on it nearest x, y)
+      let best = Infinity, at = 0;
+      for (let i = 1; i < arc.length; i++) {
+        const a = arc[i - 1], dx = arc[i].x - a.x, dy = arc[i].y - a.y, t = Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / (dx * dx + dy * dy || 1)));
+        const d = Math.hypot(a.x + dx * t - x, a.y + dy * t - y);
+        if (d < best) { best = d; at = run[i - 1] + t * (run[i] - run[i - 1]); }
+      }
+      return at / run[run.length - 1];
+    };
+    const lumps = [[0.62, 1.68, -2.02, 0.09, 0.3], [-0.58, 1.72, -1.45, 0.1, 0.32], [0.12, 2.0, -0.84, 0.07, 0.26], [0.3, 1.86, -1.45, -0.07, 0.28], [-0.4, 1.8, -2.1, -0.05, 0.26]];
+    const pos = ridge.attributes.position, n = pos.count, uv = ridge.attributes.uv, shade = new Float32Array(n * 3);
+    const caps = ridge.groups[0].count; // (the end caps come first, then the sides)
+    for (let i = 0; i < n; i++) {
+      const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+      const u = across(x, y), up = Math.max(0, Math.min(1, (y - 1.17) / 0.87));
+      uv.setXY(i, u, i < caps ? (z < -1.45 ? TARP.m * up : 1 - TARP.m * up) : tarpV(z));
+      // the lumps under it and the ropes' pull (by place, so the caps and the sides still meet), the most up top
+      let bump = 0;
+      for (const [lx, ly, lz, a, r] of lumps) bump += a * Math.exp(-((x - lx) ** 2 + (y - ly) ** 2 + (z - lz) ** 2) / (r * r));
+      const pull = TARP.ropes.reduce((p, rz) => p - 0.045 * Math.exp(-(((z - rz) / 0.05) ** 2)), 0);
+      const lift = (bump + pull) * Math.max(0, Math.min(1, (y - 1.17) / 0.35)), d = Math.hypot(x, y - 1.25) || 1;
+      // (a pillow: lower and narrower towards each end)
+      const t = (z + 1.45) / 0.99, f = 1 - 0.32 * t ** 4;
+      pos.setXYZ(i, (x + lift * x / d) * (1 - 0.06 * t ** 4), 1.17 + (y + lift * (y - 1.25) / d - 1.17) * f, z);
+      const c = Math.max(0.5, Math.min(1, 0.97 - 0.3 * (1 - Math.min(1, up / 0.5)) ** 2 + 2.2 * Math.min(0, bump) + pull * 2.5));
+      shade.set([c, c, c], i * 3);
     }
+    ridge.setAttribute('color', new THREE.Float32BufferAttribute(shade, 3));
     ridge.computeVertexNormals();
-    place(shell, ridge, cover);
+    { // smooth the sides' normals (the caps stay flat; the hidden underside is left out)
+      const nrm = ridge.attributes.normal, sum = new Map(), key = (i) => `${pos.getX(i).toFixed(3)},${pos.getY(i).toFixed(3)},${pos.getZ(i).toFixed(3)}`;
+      for (let i = caps; i < n; i++) if (nrm.getY(i) > -0.7) {
+        const k = key(i), v = sum.get(k) || new THREE.Vector3();
+        sum.set(k, v.add(new THREE.Vector3(nrm.getX(i), nrm.getY(i), nrm.getZ(i))));
+      }
+      for (let i = caps; i < n; i++) if (nrm.getY(i) > -0.7) { const v = sum.get(key(i)).clone().normalize(); nrm.setXYZ(i, v.x, v.y, v.z); }
+    }
     const keep = new Set();
     const geo = wheelGeo(R, 0.3), tyre = lambert(0x141414), hub = lambert(0xa8acb2);
     for (const s of [-1, 1]) for (const z of [FZ, RZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub)) keep.add(part);
     const merged = mergeByMaterial(shell, keep);
+    place(shell, ridge, cover); // (after the merge, a mesh of its own: merging would drop its colours)
     group.userData = {
       body: merged.get(paint),
       livery: (evil) => {
