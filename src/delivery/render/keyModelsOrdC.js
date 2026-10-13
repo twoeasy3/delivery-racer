@@ -201,3 +201,48 @@ const wedgefob = (car, { rarity = 'bespoke' } = {}) => {
 };
 
 registerKey('wedgefob', wedgefob);
+
+// ---- (12) the LEAPER: a sporting classic's key whose bow is a big cat pouncing up off the key's moulded head ----
+// The cat is an original, plain outline (drawn here facing +x, level, then turned up 50 degrees): a big cat's head with
+// one ear, its forelegs reaching ahead, its hind legs pushing off, a long tail; not any maker's emblem. A ring hole is
+// drilled through its body and a split ring hangs there round its back
+const CAT = [[1.6, 0.28], [1.55, 0.15], [1.38, 0.06], [1.15, 0.02], [1.72, -0.14], [1.82, -0.2], [1.75, -0.3], [1.05, -0.3], [0.85, -0.32],
+  [0.2, -0.3], [-0.45, -0.28], [-0.6, -0.35], [-1.2, -0.55], [-1.6, -0.6], [-1.68, -0.5], [-1.25, -0.38], [-1.05, -0.1],
+  [-1.35, 0.1], [-1.6, 0.35], [-1.62, 0.52], [-1.5, 0.5], [-1.3, 0.28], [-1.0, 0.2], [-0.5, 0.32], [0.3, 0.28], [0.85, 0.38],
+  [1.02, 0.45], [1.08, 0.55], [1.1, 0.72], [1.2, 0.62], [1.28, 0.74], [1.36, 0.6], [1.5, 0.45], [1.6, 0.35]];
+const leaper = (car, { rarity = 'bespoke' } = {}) => {
+  const group = new THREE.Group(), k = new THREE.Group();
+  const paint = paintOf(car);
+  const CHROME = metal(0xd4d8de, 110), HEAD = metal(paint.getHex(), 50), INK = metal(inkOn(paint), 90), NICKEL = metal(0xc7cbd1, 90);
+  const GROOVE = metal(0x8a9098, 50), RING = metal(0xd9dde2, 110), EYE = lambert(0x16181d);
+  // the cat: turned up by A, scaled by S, moved by (DX, DY) so its hind feet stand on the head
+  const A = 0.22, S = 0.8, DX = 0.32, DY = 0.2, c = Math.cos(A), sn = Math.sin(A);
+  const place = ([x, y]) => [DX + S * (x * c - y * sn), DY + S * (x * sn + y * c)];
+  const cat = poly(CAT.map(place));
+  const HOLE = place([0.15, 0.0]);
+  cat.holes.push(circle(HOLE[0], HOLE[1], 0.1));
+  slab(k, CHROME, cat, 0.16, 0.03, 0, 6);
+  // its eye, a dark fleck either side
+  const eye = place([1.4, 0.38]);
+  for (const s of [1, -1]) box(k, EYE, 0.07, 0.05, 0.02, eye[0], eye[1], s * 0.11).rotation.z = A;
+  // the head of the key (moulded, the car's colour): a rounded block the cat's hind feet are set into, the initial on it
+  const feet = Math.min(...CAT.map(place).map(([, y]) => y)), TOP = feet + 0.1, BOT = TOP - 0.6;
+  const HP = [[-0.95, BOT], [0.95, BOT], [0.95, TOP], [-0.95, TOP]];
+  const D = 0.3, B = 0.05, FRONT = D / 2 + B; // (its face at z = 0.2)
+  slab(k, HEAD, outline(HP, 0.16), D, B, 0, 3);
+  rainbow(band(k, rimMaterial(rarity), HP, 0.16, -0.12, -0.07, 0.04, FRONT + 0.005, 3), 0, (TOP + BOT) / 2);
+  for (const s of [1, -1]) glyph(k, INK, initialOf(car), 0.3, FRONT - 0.01, FRONT + 0.035, 0, (TOP + BOT) / 2).rotation.y = s > 0 ? 0 : Math.PI;
+  // the split ring: through the hole and round the cat's back (its plane across the cat's body)
+  const back = [-sn, c], R = 0.34;
+  const ring = add(k, new THREE.TorusGeometry(R, 0.04, 5, 16), RING, HOLE[0] + back[0] * R, HOLE[1] + back[1] * R, 0);
+  ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(c, sn, 0));
+  // the blade: a straight back, teeth along its right edge, a rounded tip; a groove down each face
+  const Y = BOT + 0.05;
+  const pts = [[-0.2, Y], [-0.2, Y - 1.95], [-0.05, Y - 2.15], [0.2, Y - 2.0], [0.2, Y - 1.85], [0.33, Y - 1.7], [0.2, Y - 1.55], [0.32, Y - 1.4],
+    [0.2, Y - 1.22], [0.34, Y - 1.05], [0.2, Y - 0.88], [0.3, Y - 0.72], [0.2, Y - 0.55], [0.2, Y]];
+  slab(k, NICKEL, poly(pts), 0.12, 0, 0, 1);
+  for (const s of [1, -1]) box(k, GROOVE, 0.08, 1.5, 0.035, -0.07, Y - 1.1, s * 0.065);
+  return idle(group, merged(k));
+};
+
+registerKey('leaper', leaper);
