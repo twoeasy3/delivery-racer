@@ -140,6 +140,7 @@ const hull = (parent, material, plan, y, height) => {
   parent.add(mesh);
   return mesh;
 };
+import { ORIG3_MODELS } from './modelsOrig3.js'; // (the Hearse, the Hot Rod, the Minivan and the Pick-Up, rebuilt)
 const CHROME_MAT = () => lambert(CHROME);
 export const MODELS = {
   // A Formula 1 car: a long, low nose and monocoque in the livery, sidepods, the engine cover with
@@ -1521,65 +1522,11 @@ export const MODELS = {
     return group;
   },
 
-  // The Minivan: the same full-size van as the Darkvan, but road-going: normal ride height,
-  // a row of passenger windows down each side, chrome bumpers and hubcaps.
-  minivan: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.38;
-    const paint = lambert(car.color), glass = lambert(GLASS), trim = lambert(TRIM), chrome = lambert(CHROME);
-    const body = box(group, paint, w, 1.3, l * 0.8, 0, 1.15, -l * 0.1);           // the box
-    box(group, paint, w * 0.96, 0.6, l * 0.2, 0, 0.8, l * 0.4);                   // short nose
-    screen(group, glass, w * 0.9, 0.05, 0.8, 0, 1.42, l * 0.32, 0.5);               // windscreen
-    box(group, chrome, w * 0.5, 0.3, 0.06, 0, 0.8, l / 2 + 0.01);                 // grille
-    box(group, chrome, w + 0.08, 0.18, 0.16, 0, 0.42, l / 2 + 0.04);              // chrome bumpers
-    box(group, chrome, w + 0.08, 0.18, 0.16, 0, 0.42, -l / 2 - 0.04);
-    box(group, glass, w * 0.7, 0.4, 0.02, 0, 1.45, -l / 2 - 0.005);               // rear windows
-    for (const side of [-1, 1]) {
-      for (const z of [0.22, 0.02, -0.16, -0.34]) {                                // passenger windows
-        box(group, glass, 0.02, 0.42, l * 0.15, side * (w / 2 + 0.005), 1.45, l * z);
-      }
-      box(group, chrome, 0.02, 0.05, l * 0.9, side * (w / 2 + 0.008), 0.98, -l * 0.02); // body side trim
-      box(group, trim, 0.13, 0.12, 0.12, side * (w / 2 + 0.07), 1.3, l * 0.32);   // mirrors
-      box(group, LAMP, w * 0.2, 0.16, 0.08, side * w * 0.36, 0.86, l / 2 + 0.01);  // square headlamps
-      box(group, TAIL, 0.14, 0.36, 0.08, side * w * 0.43, 1.0, -l / 2 - 0.01);
-      wheel(group, R, 0.3, side * (w / 2 - 0.04), R, l * 0.3, chrome);
-      wheel(group, R, 0.3, side * (w / 2 - 0.04), R, -l * 0.3, chrome);
-    }
-    group.userData = { body, animate: () => {} };
-    return group;
-  },
+  // The Minivan: render/modelsOrig3.js
+  minivan: ORIG3_MODELS.minivan,
 
-  // The Hearse: long and low, a long glasshouse running back over the coffin deck, curtains
-  // drawn in the rear windows, chrome landau bars on the rear quarters and a chrome grille.
-  hearse: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.36;
-    const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(CHROME), curtain = lambert(0x4a2a4a);
-    const body = box(group, paint, w, 0.62, l, 0, 0.66, 0);
-    box(group, paint, w * 0.95, 0.06, l * 0.26, 0, 1.0, l * 0.36);               // long bonnet
-    box(group, paint, w * 0.9, 0.62, l * 0.6, 0, 1.28, -l * 0.17);               // the long roofed body
-    box(group, paint, w * 0.92, 0.07, l * 0.6, 0, 1.62, -l * 0.17);              // roof
-    screen(group, glass, w * 0.86, 0.05, 0.6, 0, 1.26, l * 0.18, 0.45);            // windscreen
-    box(group, curtain, w * 0.7, 0.45, 0.02, 0, 1.3, -l / 2 + 0.02);              // curtained back door
-    for (const side of [-1, 1]) {
-      box(group, glass, 0.02, 0.42, l * 0.14, side * (w * 0.45 + 0.005), 1.3, l * 0.06); // front side windows
-      box(group, curtain, 0.02, 0.38, l * 0.16, side * (w * 0.45 + 0.005), 1.3, -l * 0.14); // curtained rear windows
-      // the landau bar: an S of chrome on the blind rear quarter
-      slab(group, chrome, 0.03, 0.05, 0.6, side * (w * 0.45 + 0.02), 1.32, -l * 0.36, 0.5);
-      slab(group, chrome, 0.03, 0.05, 0.6, side * (w * 0.45 + 0.02), 1.32, -l * 0.36, -0.5);
-      box(group, chrome, 0.02, 0.05, l * 0.94, side * (w / 2 + 0.006), 0.72, 0);   // chrome side trim
-      box(group, chrome, 0.12, 0.08, 0.1, side * (w / 2 + 0.05), 1.05, l * 0.2);    // mirrors
-      box(group, LAMP, w * 0.2, 0.14, 0.08, side * w * 0.34, 0.78, l / 2 + 0.01);
-      box(group, TAIL, 0.12, 0.34, 0.08, side * w * 0.42, 0.8, -l / 2 - 0.01);       // tall tail lamps
-      wheel(group, R, 0.3, side * (w / 2 - 0.04), R, l * 0.3, chrome);
-      wheel(group, R, 0.3, side * (w / 2 - 0.04), R, -l * 0.3, chrome);
-    }
-    box(group, chrome, w * 0.6, 0.26, 0.06, 0, 0.78, l / 2 + 0.02);               // chrome grille
-    box(group, chrome, w + 0.1, 0.16, 0.16, 0, 0.42, l / 2 + 0.04);               // bumpers
-    box(group, chrome, w + 0.1, 0.16, 0.16, 0, 0.42, -l / 2 - 0.04);
-    group.userData = { body, animate: () => {} };
-    return group;
-  },
+  // The Hearse: render/modelsOrig3.js
+  hearse: ORIG3_MODELS.hearse,
 
   // The Sportscar: a little two-seat roadster (a first Mazda Miata), top down, pop-up
   // headlamps up, twin racing stripes over the bonnet and boot: white on red in the Good
@@ -1705,39 +1652,8 @@ export const MODELS = {
 
   miata: (car) => ORIG1B_MODELS.miata(car), // (rebuilt: render/modelsOrig1b.js)
 
-  // The Pick Up: a lifted square-body pickup (a Chevy C-10): a boxy cab and an open bed with
-  // its tailgate, a wide chrome grille with square headlamps, big off-road tyres and the
-  // chassis and long shocks of the lift showing beneath.
-  pickup: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.48;
-    const paint = lambert(car.color), glass = lambert(GLASS), trim = lambert(TRIM), chrome = lambert(CHROME);
-    const body = box(group, paint, w, 0.6, l, 0, 1.25, 0);                        // the body, end to end
-    box(group, paint, w * 0.96, 0.08, l * 0.28, 0, 1.58, l * 0.35);               // bonnet
-    box(group, glass, w * 0.9, 0.5, l * 0.24, 0, 1.8, l * 0.07);                  // cab glass
-    box(group, paint, w * 0.92, 0.08, l * 0.24, 0, 2.08, l * 0.07);               // cab roof
-    screen(group, glass, w * 0.88, 0.05, 0.55, 0, 1.8, l * 0.2, 0.35);              // windscreen
-    box(group, glass, w * 0.7, 0.36, 0.02, 0, 1.82, -l * 0.05 - 0.01);            // back window
-    box(group, trim, w * 0.84, 0.06, l * 0.38, 0, 1.56, -l * 0.29);               // the bed floor
-    box(group, paint, w * 0.94, 0.42, 0.08, 0, 1.76, -l / 2 + 0.04);              // tailgate
-    for (const side of [-1, 1]) {
-      box(group, paint, 0.08, 0.42, l * 0.42, side * (w / 2 - 0.04), 1.76, -l * 0.29); // bed sides
-      box(group, paint, 0.08, 0.5, 0.1, side * w * 0.45, 1.8, l * 0.17);          // windscreen pillars
-      box(group, chrome, 0.14, 0.12, 0.1, side * (w / 2 + 0.07), 1.65, l * 0.18); // mirrors
-      box(group, LAMP, w * 0.16, 0.16, 0.06, side * w * 0.37, 1.32, l / 2 + 0.02); // square headlamps
-      box(group, TAIL, 0.1, 0.3, 0.06, side * w * 0.44, 1.5, -l / 2 - 0.01);
-      for (const z of [0.31, -0.3]) {
-        wheel(group, R, 0.42, side * (w / 2 - 0.02), R, l * z, chrome);
-        box(group, trim, 0.06, 0.5, 0.06, side * w * 0.34, 0.75, l * z);        // the lift's long shocks
-      }
-    }
-    box(group, chrome, w * 0.56, 0.24, 0.05, 0, 1.32, l / 2 + 0.02);              // wide chrome grille
-    box(group, trim, w * 0.7, 0.14, l * 0.86, 0, 0.8, 0);                         // the chassis, showing
-    box(group, chrome, w + 0.08, 0.18, 0.16, 0, 0.98, l / 2 + 0.05);              // bumpers
-    box(group, chrome, w + 0.08, 0.18, 0.16, 0, 0.98, -l / 2 - 0.05);
-    group.userData = { body, animate: () => {} };
-    return group;
-  },
+  // The Pick-Up: render/modelsOrig3.js
+  pickup: ORIG3_MODELS.pickup,
 
   // The Lowrider (and the Super Lowrider, model 'superlowrider': the same car taken to extremes): rebuilt (13-Oct)
   // after the owner's older game's picture, in render/modelsOrig2.js (see it)
@@ -1746,64 +1662,8 @@ export const MODELS = {
     return group;
   },
 
-  // A rusty old pickup (a 70s full-size one): a long bonnet, a tall cab with a raked windscreen, an
-  // open load bed behind with a heap in it piled higher than the cab (purple for a good driver, yellow
-  // for an evil one), a door
-  // in grey primer, rust patches, one headlight out. It shudders as it idles.
-  junker: (car) => {
-    const group = new THREE.Group(), shell = new THREE.Group();
-    group.add(shell);
-    const w = car.hw * 2, l = car.hl * 2, R = 0.42;
-    const paint = lambert(car.color), rust = lambert(0x6b3a1f), dark = lambert(0x23262d), glass = lambert(GLASS);
-    const primer = lambert(0x8d9096), dull = lambert(0x9a9c9e);
-    const cabFront = l * 0.15, cabBack = -l * 0.09, bonnetFront = l / 2, top = 1.12, roof = 1.9;
-    const body = box(shell, paint, w, 0.55, l, 0, 0.85, 0);                                // the body sides
-    box(shell, paint, w * 0.92, 0.26, bonnetFront - cabFront - 0.1, 0, top + 0.13, (bonnetFront + cabFront + 0.1) / 2); // the long bonnet
-    box(shell, paint, w * 0.94, roof - top, cabFront - cabBack, 0, (top + roof) / 2, (cabFront + cabBack) / 2); // the cab
-    // the windscreen, raked back from the bonnet's tail to the cab roof
-    const fz = cabFront + 0.1, fy = top + 0.26, bz = cabFront - 0.18, by = roof;
-    screen(shell, glass, w * 0.86, 0.05, Math.hypot(fz - bz, by - fy), 0, (fy + by) / 2, (fz + bz) / 2, Math.atan2(by - fy, fz - bz));
-    box(shell, paint, w * 0.94, 0.06, cabFront - cabBack, 0, roof + 0.03, (cabFront + cabBack) / 2); // roof
-    box(shell, glass, w * 0.7, 0.34, 0.04, 0, roof - 0.3, cabBack - 0.01);                // back window
-    for (const side of [-1, 1]) {
-      box(shell, glass, 0.04, 0.36, (cabFront - cabBack) * 0.6, side * (w * 0.47 + 0.01), roof - 0.3, (cabFront + cabBack) / 2 - 0.05); // side windows
-      box(shell, paint, 0.1, 0.45, l / 2 + cabBack - 0.1, side * (w / 2 - 0.05), top + 0.22, (cabBack - l / 2) / 2 - 0.05); // bed sides
-      box(shell, dull, 0.12, 0.1, 0.1, side * (w / 2 + 0.06), roof - 0.35, cabFront - 0.05); // mirrors
-      wheel(group, R, 0.3, side * (w / 2 - 0.05), R, l * 0.31);
-      wheel(group, R, 0.3, side * (w / 2 - 0.05), R, -l * 0.3);
-    }
-    box(shell, paint, w, 0.45, 0.1, 0, top + 0.22, -l / 2 + 0.05);                       // tailgate
-    box(shell, dark, w * 0.86, 0.04, l / 2 + cabBack - 0.2, 0, top + 0.02, (cabBack - l / 2) / 2); // bed floor
-    // the heap in the bed, its colour by the driver's side (see livery)
-    const heap = lambert(0x8e44ad);
-    // (domes on the bed's floor, heaped high, over the cab's roof)
-    const dome = new THREE.SphereGeometry(1, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2);
-    for (const [x, y, z, sx, sy, sz] of [[0, top, -l * 0.29, w * 0.44, 1.3, l * 0.18], [-w * 0.17, top, -l * 0.17, w * 0.28, 0.85, l * 0.1],
-      [w * 0.18, top, -l * 0.42, w * 0.27, 0.75, l * 0.08], [-w * 0.08, top + 0.7, -l * 0.31, w * 0.24, 0.6, l * 0.1]]) {
-      const lump = new THREE.Mesh(dome, heap);
-      lump.scale.set(sx, sy, sz);
-      lump.position.set(x, y, z);
-      shell.add(lump);
-    }
-    box(shell, primer, 0.05, 0.5, (cabFront - cabBack) * 0.8, -w / 2 - 0.01, 1.0, (cabFront + cabBack) / 2); // a door in primer
-    box(shell, rust, 0.05, 0.3, l * 0.18, w / 2 + 0.01, 0.78, -l * 0.3);                // rust patches
-    box(shell, rust, w * 0.45, 0.03, l * 0.1, w * 0.15, top + 0.27, l * 0.38);
-    box(shell, dull, w * 0.6, 0.3, 0.05, 0, 0.92, l / 2 + 0.01);                        // the grille
-    box(shell, dull, w + 0.1, 0.16, 0.14, 0, 0.56, l / 2 + 0.04);                       // bumpers
-    box(shell, dull, w + 0.1, 0.16, 0.14, 0, 0.56, -l / 2 - 0.04);
-    disc(shell, LAMP, 0.13, 0.06, -w * 0.38, 0.92, l / 2 + 0.02);                       // one headlight works...
-    disc(shell, dark, 0.13, 0.06, w * 0.38, 0.92, l / 2 + 0.02);                        // ...the other's out
-    for (const side of [-1, 1]) box(shell, TAIL, w * 0.12, 0.2, 0.08, side * w * 0.4, 0.95, -l / 2 - 0.01);
-    group.userData = {
-      body,
-      livery: (evil) => heap.color.setHex(evil ? 0xe0bd1c : 0x8e44ad), // (a yellow heap of who knows what, or a purple one)
-      animate: (t) => { // a rough idle: the body shudders on its springs
-        shell.position.y = Math.sin(t * 31) * 0.012;
-        shell.rotation.z = Math.sin(t * 23) * 0.008;
-      },
-    };
-    return group;
-  },
+  // The Junker: render/modelsOrig3.js
+  junker: ORIG3_MODELS.junker,
 
   // The Sportscompact: rebuilt (13-Oct) after the owner's older game's picture, in render/modelsOrig2.js (see it)
   sport: (car) => {
@@ -1922,51 +1782,8 @@ export const MODELS = {
     return group;
   },
 
-  // A Ford lo-boy hot rod: no fenders, a long narrow bonnet with the engine out in the open
-  // (chrome stacks and all), big wheels at the back, skinny ones up front, and a chopped
-  // windscreen over an open cockpit. The engine shakes as it idles.
-  hotrod: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, RR = 0.5, RF = 0.34;
-    const paint = lambert(car.color), chrome = lambert(CHROME), trim = lambert(TRIM), glass = lambert(GLASS);
-    box(group, trim, w * 0.5, 0.12, l * 0.9, 0, 0.42, 0);                          // frame rails
-    const body = box(group, paint, w * 0.78, 0.55, l * 0.36, 0, 0.78, -l * 0.12);   // the tub
-    box(group, trim, w * 0.6, 0.2, l * 0.2, 0, 0.98, -l * 0.15);                    // cockpit and seat
-    box(group, paint, w * 0.52, 0.32, l * 0.3, 0, 0.82, l * 0.2);                   // bonnet
-    box(group, paint, w * 0.5, 0.62, 0.14, 0, 0.88, l * 0.36);                      // grille shell
-    box(group, chrome, w * 0.38, 0.48, 0.04, 0, 0.88, l * 0.44);                    // grille bars
-    box(group, glass, w * 0.7, 0.22, 0.04, 0, 1.18, l * 0.06);                      // chopped windscreen
-    box(group, chrome, w * 0.74, 0.04, 0.06, 0, 1.3, l * 0.06);                     // its frame
-    box(group, trim, w * 0.9, 0.08, 0.1, 0, 0.42, l * 0.33);                        // dropped front axle
-    box(group, chrome, w * 0.5, 0.12, 0.1, 0, 0.42, -l / 2 + 0.05);                 // rear nerf bar
-    const engine = new THREE.Group(); // (it shakes)
-    engine.position.set(0, 1.0, l * 0.22);
-    group.add(engine);
-    box(engine, lambert(0x5a5e66), w * 0.4, 0.22, 0.6, 0, 0, 0);                    // the block, showing
-    box(engine, chrome, w * 0.3, 0.2, 0.4, 0, 0.2, 0);                              // blower
-    box(engine, lambert(0x8d9096), w * 0.24, 0.08, 0.3, 0, 0.34, -0.02);           // its scoop
-    for (const side of [-1, 1]) {
-      for (const z of [-0.15, 0.05, 0.25]) { // stacks
-        const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.3, 8), chrome);
-        stack.position.set(side * w * 0.27, 0.12, z);
-        engine.add(stack);
-      }
-      box(group, chrome, 0.07, 0.07, l * 0.55, side * w * 0.3, 0.55, -l * 0.05);   // side pipes
-      disc(group, LAMP, 0.13, 0.12, side * w * 0.33, 1.02, l * 0.38);              // headlights on a bar
-      box(group, chrome, 0.04, 0.24, 0.04, side * w * 0.33, 0.86, l * 0.38);
-      box(group, TAIL, 0.12, 0.12, 0.06, side * w * 0.3, 0.72, -l * 0.3 - 0.01);
-      wheel(group, RR, 0.42, side * (w / 2 - 0.08), RR, -l * 0.3);                  // big ones at the back
-      wheel(group, RF, 0.2, side * w * 0.42, RF, l * 0.33);                         // skinny ones up front
-    }
-    group.userData = {
-      body,
-      animate: (t) => {
-        engine.rotation.z = Math.sin(t * 38) * 0.04;
-        engine.position.y = 1.0 + Math.abs(Math.sin(t * 19)) * 0.02;
-      },
-    };
-    return group;
-  },
+  // The Hot Rod: render/modelsOrig3.js
+  hotrod: ORIG3_MODELS.hotrod,
 };
 MODELS.superlowrider = MODELS.lowrider; // (the lowrider builder makes both: see it)
 // (the four original cars rebuilt on 13-Oct: the Lowrider, the Sportscompact, the Family Wagon and the Love Bus)

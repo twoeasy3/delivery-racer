@@ -172,7 +172,7 @@ export const CARS = [
   // ---- tier 1
   { id: 'commuter', tier: 1, name: 'Commuter', price: 0, color: 0xff7a1a, evilColor: 0x151515, fixedLivery: true, model: 'commuter',
     maxSpeed: 24, accel: 10, crossing: 0.6, health: 85, hw: 0.85, hl: 1.85, height: 1.45 },
-  { id: 'junker', tier: 1, name: 'Junker', price: 30, color: 0x6b7343, evilColor: 0x8a4a2a, fixedLivery: true, model: 'junker',
+  { id: 'junker', tier: 1, name: 'Junker', price: 30, color: 0x6b7343, evilColor: 0x6f6c66, fixedLivery: true, model: 'junker',
     maxSpeed: 25, accel: 9.5, crossing: 0.7, health: 100, hw: 1.0, hl: 2.5, height: 1.95 },
   { id: 'darkvan', tier: 1, name: 'Darkvan', price: 80, color: 0x9be37a, evilColor: 0x242d55, fixedLivery: true, model: 'darkvan',
     maxSpeed: 24, accel: 8.5, crossing: 0.65, health: 150, hw: 1.05, hl: 2.45, height: 2.4 },
@@ -203,7 +203,7 @@ export const CARS = [
   { id: 'liftedtruck', tier: 2, blue: true, name: 'Lifted Truck', price: 490, color: 0x1d5bbf, evilColor: 0xc9a66b, fixedLivery: true, model: 'liftedtruck',
     maxSpeed: 30.5, accel: 10, crossing: 0.95, health: 190, mass: 1.6, hw: 1.12, hl: 2.75, height: 2.65 },
   // ---- tier 3
-  { id: 'hearse', tier: 3, name: 'Hearse', price: 260, color: 0x151515, evilColor: 0xf2f2f2, fixedLivery: true, model: 'hearse',
+  { id: 'hearse', tier: 3, name: 'Hearse', price: 260, color: 0x2a2d6e, evilColor: 0xf2f2f2, fixedLivery: true, model: 'hearse',
     maxSpeed: 33, accel: 10, crossing: 0.4, health: 170, hw: 1.0, hl: 2.8, height: 1.65 },
   { id: 'minivan', tier: 3, name: 'Minivan', price: 290, color: 0xd8c8a0, evilColor: 0x3a4a5e, fixedLivery: true, model: 'minivan',
     maxSpeed: 32, accel: 9, crossing: 0.6, health: 200, hw: 1.05, hl: 2.45, height: 2.0 },
@@ -675,7 +675,7 @@ export const SUPER_LIVERIES = {
   liftedtruck: { good: [0x1d5bbf, 0xd0d4da], evil: [0xd2b07a, 0x151515], kit: { lights: true, bullbar: true, snorkel: true } }, // royal blue with silver / desert tan with black
   hearse: { good: [0x101010, 0xd4a52a], evil: [0xf2f2f2, 0x6a2bb3] },                   // black with gold / white with purple
   minivan: { good: [0xe0cfa0, 0x6b4a2a], evil: [0x3a4a5e, 0xf08a2a], kit: { lights: true, bullbar: true } }, // champagne with brown / slate with orange
-  pickup: { good: [0xd0621c, 0xf4e8c8], evil: [0x2f5a2a, 0xc8a86a], kit: { bullbar: true, snorkel: true } }, // burnt orange with cream / forest with tan
+  pickup: { good: [0xd0621c, 0xf4e8c8], evil: [0x2f5a2a, 0xc8a86a], kit: { snorkel: true } }, // burnt orange with cream / forest with tan (it has a bull bar of its own)
   hotrod: { good: [0x7a2fd0, 0xff8a1a], evil: [0x4b5320, 0xc81e1e] },                   // purple with flame orange / olive drab with red
   sleeper: { good: [0x6a2030, 0x8a8a8a], evil: [0xd2cab8, 0x151515] },                  // maroon with grey / beige with black (still a sleeper)
   rally: { good: [0x1d3f9e, 0xf2d21f], evil: [0xe24a8c, 0xf4f4f4] },                    // blue with yellow / pink with white
