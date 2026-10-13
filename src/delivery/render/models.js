@@ -1589,33 +1589,8 @@ export const MODELS = {
     return group;
   },
 
-  // The Minivan: the same full-size van as the Darkvan, but road-going: normal ride height,
-  // a row of passenger windows down each side, chrome bumpers and hubcaps.
-  minivan: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.38;
-    const paint = lambert(car.color), glass = lambert(GLASS), trim = lambert(TRIM), chrome = lambert(CHROME);
-    const body = box(group, paint, w, 1.3, l * 0.8, 0, 1.15, -l * 0.1);           // the box
-    box(group, paint, w * 0.96, 0.6, l * 0.2, 0, 0.8, l * 0.4);                   // short nose
-    screen(group, glass, w * 0.9, 0.05, 0.8, 0, 1.42, l * 0.32, 0.5);               // windscreen
-    box(group, chrome, w * 0.5, 0.3, 0.06, 0, 0.8, l / 2 + 0.01);                 // grille
-    box(group, chrome, w + 0.08, 0.18, 0.16, 0, 0.42, l / 2 + 0.04);              // chrome bumpers
-    box(group, chrome, w + 0.08, 0.18, 0.16, 0, 0.42, -l / 2 - 0.04);
-    box(group, glass, w * 0.7, 0.4, 0.02, 0, 1.45, -l / 2 - 0.005);               // rear windows
-    for (const side of [-1, 1]) {
-      for (const z of [0.22, 0.02, -0.16, -0.34]) {                                // passenger windows
-        box(group, glass, 0.02, 0.42, l * 0.15, side * (w / 2 + 0.005), 1.45, l * z);
-      }
-      box(group, chrome, 0.02, 0.05, l * 0.9, side * (w / 2 + 0.008), 0.98, -l * 0.02); // body side trim
-      box(group, trim, 0.13, 0.12, 0.12, side * (w / 2 + 0.07), 1.3, l * 0.32);   // mirrors
-      box(group, LAMP, w * 0.2, 0.16, 0.08, side * w * 0.36, 0.86, l / 2 + 0.01);  // square headlamps
-      box(group, TAIL, 0.14, 0.36, 0.08, side * w * 0.43, 1.0, -l / 2 - 0.01);
-      wheel(group, R, 0.3, side * (w / 2 - 0.04), R, l * 0.3, chrome);
-      wheel(group, R, 0.3, side * (w / 2 - 0.04), R, -l * 0.3, chrome);
-    }
-    group.userData = { body, animate: () => {} };
-    return group;
-  },
+  // The Minivan: render/modelsOrig3.js
+  minivan: ORIG3_MODELS.minivan,
 
   // The Hearse: render/modelsOrig3.js
   hearse: ORIG3_MODELS.hearse,

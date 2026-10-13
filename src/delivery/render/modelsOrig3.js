@@ -362,4 +362,80 @@ export const ORIG3_MODELS = {
     group.userData.livery(false);
     return group;
   },
+
+  // The Minivan: a nineties people carrier (a one-box van after the Astro): a tall wedge of a body with a short, sloping
+  // nose and a big raked windscreen, three rows of side windows (a front door, a sliding door with its rail, a rear
+  // quarter), a chrome-framed black grille between rectangular lamps, wraparound indicators, a pale bumper and valance,
+  // tall tail lamps up the rear corners, a high brake lamp, a rear window with its wiper, silver hubs. Its bumpers turn
+  // charcoal for an Evil driver.
+  minivan: (car) => {
+    const group = new THREE.Group();
+    const L = car.hl, w = car.hw * 2, R = 0.38, WX = w / 2 - 0.14, WZ = L * 0.6;
+    const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(CHROME), trim = lambert(TRIM), dark = lambert(0x121418);
+    const bumper = lambert(0xd6d0c0), plate = lambert(0xece6cc);
+    const arch = (zc) => {
+      const pts = [], ra = R + 0.1;
+      for (let i = 0; i <= 8; i++) { const a = Math.PI * i / 8; pts.push([zc - ra * Math.cos(a), R + 0.02 + ra * Math.sin(a) * 0.95]); }
+      return [[zc - ra, 0.34], ...pts, [zc + ra, 0.34]];
+    };
+    // the one box of a body: the nose sloping up to the windscreen, the windscreen up to the roof, the roof back to the tail
+    side(group, paint, w, [[-L + 0.06, 0.34, 0.06], ...arch(-WZ), ...arch(WZ), [L - 0.06, 0.34, 0.04], [L - 0.06, 0.84, 0.1],
+      [1.55, 1.14, 0.12], [0.72, 1.9, 0.14], [-L + 0.2, 1.93, 0.14], [-L + 0.06, 1.84, 0.08]], 0.06);
+    box(group, dark, w - 0.4, 0.5, L * 1.7, 0, 0.58, 0);                                    // (the dark inside of the arches)
+    const rise = Math.atan2(0.76, 0.83);
+    slab(group, glass, w - 0.26, 0.02, 1.0, 0, 1.52 + 0.05, 1.135 + 0.048, rise);           // the big raked windscreen
+    for (const s of [-1, 1]) slab(group, trim, 0.5, 0.025, 0.04, s * 0.3, 1.2, 1.5, rise).rotation.z = s * 0.25; // its wipers
+    for (const s of [-1, 1]) {
+      const x = s * (w / 2 + 0.006), X = s * (w / 2 + 0.003);
+      prism(group, glass, 0.02, [[1.38, 1.24], [0.8, 1.8], [0.26, 1.8], [0.26, 1.24]], x);         // the front door's window,
+      prism(group, glass, 0.02, [[0.12, 1.24], [0.12, 1.8], [-0.94, 1.8], [-0.94, 1.24]], x);      // the sliding door's,
+      prism(group, glass, 0.02, [[-1.1, 1.24], [-1.1, 1.8], [-2.12, 1.8], [-2.2, 1.24]], x);       // and the rear quarter's
+      for (const z of [0.19, -1.02]) box(group, trim, 0.012, 0.56, 0.16, X + s * 0.004, 1.52, z); // the pillars between, blacked out
+      for (const z of [0.19, -1.02]) box(group, trim, 0.012, 0.86, 0.014, X, 0.8, z);       // the doors' shut lines
+      box(group, trim, 0.012, 0.34, 0.014, X, 1.05, 1.42);                                     // (the front one over the arch),
+      box(group, trim, 0.014, 0.02, 1.2, X, 1.2, -1.6);                                        // the sliding door's rail
+      for (const [z, l] of [[0, 1.9], [2.17, 0.4], [-2.17, 0.4]]) box(group, trim, 0.02, 0.07, l, s * (w / 2 + 0.008), 0.6, z); // the rubbing strip
+      for (const z of [0.36, 0.0]) box(group, trim, 0.03, 0.03, 0.12, s * (w / 2 + 0.012), 1.12, z); // door handles
+      box(group, trim, 0.12, 0.03, 0.05, s * (w / 2 + 0.05), 1.28, 1.3);                      // the mirror on its arm
+      box(group, trim, 0.05, 0.16, 0.2, s * (w / 2 + 0.11), 1.3, 1.3);
+      box(group, trim, 0.012, 0.1, 0.07, X, 1.05, -1.85);                                      // the filler flap
+      // the front: a rectangular lamp each side in a chrome bezel, an indicator round the corner
+      box(group, chrome, 0.44, 0.24, 0.03, s * 0.66, 0.72, L);
+      box(group, LAMP, 0.38, 0.18, 0.03, s * 0.66, 0.72, L + 0.012);
+      box(group, AMBER, 0.16, 0.18, 0.03, s * 0.96, 0.72, L - 0.005);
+      box(group, AMBER, 0.03, 0.18, 0.14, s * (w / 2 + 0.002), 0.72, L - 0.1);
+      // the tail: tall lamps up the corners (tail lamp, brake lamp, indicator, reversing lamp)
+      box(group, TAIL, 0.16, 0.22, 0.03, s * 0.9, 1.12, -L);
+      box(group, BRAKE, 0.16, 0.18, 0.03, s * 0.9, 0.92, -L);
+      box(group, AMBER, 0.16, 0.1, 0.03, s * 0.9, 0.78, -L);
+      box(group, REVERSE, 0.16, 0.08, 0.03, s * 0.9, 0.69, -L);
+      box(group, bumper, 0.05, 0.22, 0.4, s * (w / 2 + 0.01), 0.42, L - 0.18);               // the bumpers' ends, round the corners
+      box(group, bumper, 0.05, 0.22, 0.4, s * (w / 2 + 0.01), 0.42, -L + 0.18);
+    }
+    // the grille: chrome-framed, black, three chrome bars across
+    box(group, chrome, 0.78, 0.28, 0.03, 0, 0.72, L);
+    box(group, dark, 0.7, 0.2, 0.03, 0, 0.72, L + 0.01);
+    for (const y of [0.66, 0.72, 0.78]) box(group, chrome, 0.68, 0.018, 0.02, 0, y, L + 0.025);
+    box(group, bumper, w + 0.02, 0.24, 0.16, 0, 0.42, L + 0.02);                             // the pale bumper,
+    box(group, trim, w * 0.5, 0.06, 0.03, 0, 0.38, L + 0.1);                                 // its slot of an intake,
+    box(group, plate, 0.44, 0.12, 0.02, 0, 0.47, L + 0.105);                                 // and the plate on it
+    box(group, bumper, w + 0.02, 0.24, 0.16, 0, 0.42, -L - 0.02);                            // the rear bumper,
+    box(group, plate, 0.44, 0.13, 0.02, 0, 0.72, -L - 0.005);                                // the plate over it,
+    box(group, chrome, 0.2, 0.035, 0.03, 0, 0.9, -L - 0.01);                                 // the tailgate's handle,
+    box(group, glass, w - 0.42, 0.56, 0.02, 0, 1.48, -L - 0.005);                            // its window
+    slab(group, trim, 0.5, 0.025, 0.03, 0.05, 1.4, -L - 0.022, 0).rotation.z = 0.35;          // with a wiper
+    box(group, BRAKE, 0.36, 0.05, 0.03, 0, 1.82, -L - 0.005);                                // and a brake lamp over it
+    rod(group, trim, 0.035, 0.3, 0.6, 0.28, -L + 0.06, 'z', 8);                              // the exhaust
+    const keep = new Set();
+    const geo = wheelGeo(R, 0.28, 0.6), tyre = lambert(0x141414), hub = lambert(0xc4c8ce);
+    for (const s of [-1, 1]) for (const z of [WZ, -WZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub, chrome)) keep.add(part);
+    const merged = mergeByMaterial(group, keep);
+    group.userData = {
+      body: merged.get(paint),
+      animate: () => {},
+      livery: (evil) => bumper.color.setHex(evil ? 0x2e3036 : 0xd6d0c0),
+    };
+    group.userData.livery(false);
+    return group;
+  },
 };
