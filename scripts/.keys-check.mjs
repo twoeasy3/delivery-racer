@@ -76,6 +76,35 @@ try {
   check(bespokeCars.length >= 6 && bespokeCars.every(c => KEY_MODELS.includes(c.keyModel)), 'every Bespoke key car has its own key style (' + styles + ')');
   check(new Set(bespokeCars.map(c => c.keyModel)).size === bespokeCars.length, 'no two key cars share a key model');
   check(KEY_MODELS.every(m => bespokeCars.some(c => c.keyModel === m)), 'every key model (' + KEY_MODELS.length + ') is some Bespoke car\'s');
+
+  // ---- ordinary keys, batch B (render/keyModelsOrdB.js: KEY-IDEAS.md rows 5 to 8): registered as ORDINARY (not among
+  // the nine), each builds for a light, a dark and a coloured car into a key-sized group, at most 20 meshes and about
+  // 1,500 triangles, no NaN, and no car uses one yet (no home chosen)
+  {
+    await g.load('render/keyModelsOrdinary.js');
+    const { ORDINARY_MODELS } = await g.load('render/keyModels.js');
+    const batchB = ['wristband', 'carfob', 'cardkey', 'displaykey'];
+    check(batchB.every(m => ORDINARY_MODELS.includes(m) && typeof KEY_BUILDERS[m] === 'function' && !KEY_MODELS.includes(m)), 'ordinary keys, batch B: ' + batchB.join(', ') + ' registered (ordinary, not among the nine)');
+    const tints = [cars[1], { id: 'b', name: 'Wren', color: 0xf2f2ee }, { id: 'd', name: 'Mamba', color: 0x141414 }];
+    for (const model of batchB) {
+      let why = '';
+      for (const car of tints) for (const rarity of ['bespoke', 'common']) {
+        const key = makeKey(car, { model, rarity });
+        let meshes = 0, tris = 0, bad = 0;
+        key.traverse((node) => {
+          if (!node.isMesh) return;
+          meshes++;
+          tris += (node.geometry.index ? node.geometry.index.count : node.geometry.attributes.position.count) / 3;
+          if (node.geometry.attributes.position.array.some(v => !Number.isFinite(v))) bad++;
+        });
+        const size = new THREE.Box3().setFromObject(key).getSize(new THREE.Vector3());
+        if (!why && !(meshes >= 3 && meshes <= 20 && tris <= 1600 && !bad && size.y >= 3 && size.y <= 7 && size.x >= 1 && size.x <= 3.5 && size.z >= 0.3 && size.z <= 1.5 && key.userData.keyModel === model && typeof key.userData.animate === 'function'))
+          why = ` (${car.id} ${rarity}: ${meshes} meshes, ${tris} triangles, ${bad} bad, size ${size.toArray().map(n => n.toFixed(2)).join(' x ')})`;
+      }
+      check(!why, 'ordinary keys, batch B: ' + model + ' builds for 3 tints x 2 rarities: <= 20 meshes, <= 1,600 triangles, key-sized' + why);
+    }
+    check(!bespokeCars.some(c => batchB.includes(c.keyModel)), 'ordinary keys, batch B: no car uses one yet');
+  }
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error?.stack || error));

@@ -14,7 +14,7 @@
 //               lock state, the range), a chrome edge, three buttons below it, a loop at the top
 import { registerKey, KEY_KIT } from './keyModels.js';
 
-const { THREE, lambert, metal, glow, add, box, disc, slab, band, outline, circle, rimMaterial, rainbow, glyph, paintOf, inkOn, idle, merged, initialOf } = KEY_KIT;
+const { THREE, lambert, metal, glow, add, box, disc, slab, band, outline, rimMaterial, rainbow, glyph, paintOf, inkOn, idle, merged, initialOf } = KEY_KIT;
 
 // a padlock: a body and a half-ring shackle (open: the shackle lifted and turned), `s` tall, its front at z
 const padlock = (parent, material, x, y, z, s, open = false) => {
