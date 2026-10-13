@@ -209,10 +209,15 @@ try {
     const wrong = over(31, 4);
     check(wrong.flights === 1 && (wrong.lost > 10 || wrong.wrecks > 0), 'crest, the risk taken and wrong: flying in the lane the barrier is in, it lands in it (' + (wrong.wrecks ? 'wrecked' : wrong.lost.toFixed(0) + ' health lost') + ')');
     // no steering in the air: full lock held all the way over moves it no faster across than it left the ground with
-    start(1060, 3, 31);
+    start(1060, 3, 31, { ghost: true }); // (a ghost: carried to the road's edge in the air it is not wrecked, see below)
     let turned = 0, air = 0, atOff = null;
     g.run(10, () => { quiet(); P.speed = 31; g.drive(1, P.s > 1150 ? 1 : 0); if (Gambles.fly) { if (atOff === null) atOff = P.latVel; air++; turned = Math.max(turned, Math.abs(P.latVel - atOff)); } return P.s > 1300; });
     check(air > 20 && turned < 1e-6, 'crest: in the air the steering does nothing (' + air + ' steps in the air at full lock, sideways speed unchanged)');
+    // off the map: a flight carried over the road's edge is a wreck (the owner, 12-Oct); steered out just as it
+    // leaves the ground, from the outside lane, it flies over the edge
+    const offEdge = (from) => ({ ...over(31, 5, { steer: () => (P.s > from ? 1 : 0) }), offMap: said('Off the map') });
+    const edgeRuns = [1170, 1175, 1180, 1185].map(offEdge);
+    check(edgeRuns.some(r => r.flights === 1 && r.wrecks > 0 && r.offMap), 'crest: a flight carried over the road\'s edge is a wreck, "off the map" (' + edgeRuns.map(r => r.flights + ' flight / ' + r.wrecks + ' wreck' + (r.offMap ? ', said' : '')).join('; ') + ')');
     // the safe line: under the crest's speed the car stays on the ground, sees the barrier from the top and steers round it
     const slow = over(need - 3, 4, { steer: () => (P.s > 1185 && P.s < 1225 && P.lat < lane(5, P.s) - 0.2 ? 1 : 0) });
     check(slow.flights === 0 && slow.lost === 0 && slow.wrecks === 0 && slow.slowest > 15, 'crest, the safe line: at ' + Math.round((need - 3) * 3.6) + ' km/h it stays on the ground, and steers round the barrier from the top (no damage, never under ' + Math.round(slow.slowest * 3.6) + ' km/h)');
