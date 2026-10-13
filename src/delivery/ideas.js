@@ -35,6 +35,9 @@
 // promoted to the roster as tier-4 Legendary blueprint cars the same day (cars.js FILLER_CARS): 41 left.
 // The sixth batch, five more (CHECKLIST item 171): two older vehicles (a blown vintage tourer, a split-level highway
 // coach) and three modern ones (a horseshoe-grilled hypercar, a tall electric city car, a coupe crossover): 46 ideas.
+// (Four of the sixth batch were promoted the same day, and the Horseshoe became a key car: 41 left.) The seventh batch,
+// three CONCEPT CARS, show cars that never went on sale (the owner, 13-Oct): a knife-edged mid-engined supercar, a
+// sixteen-cylinder grand coupe and a flame-bodied Le Mans prototype (models: render/ideaModels7.js): 44 ideas.
 
 // ============================================================================
 export const IDEA_CARS = [
@@ -165,6 +168,16 @@ export const IDEA_CARS = [
   { id: 'gameviewer', name: 'Game-Drive Truck', basedOn: 'Toyota Land Cruiser 79 game viewer', model: 'gameviewer', color: 0x9a8a5a, evilColor: 0x2e4a2e,
     hw: 0.95, hl: 2.85, height: 2.4, note: 'No doors, three rows of seats climbing under a canopy, and a chair for the tracker out on the bull bar.',
     maxSpeed: 28, accel: 8, agility: 0.95, crossing: 1, health: 240, mass: 2, sound: 'suv' },
+  // (the seventh batch: three concept cars, show cars that never went on sale; models in render/ideaModels7.js)
+  { id: 'knifeedge', name: 'Knife-Edge Supercar', basedOn: 'Cadillac Cien (2002 concept car)', model: 'knifeedge', color: 0xaab3be, evilColor: 0x7a1830,
+    hw: 1.0, hl: 2.23, height: 1.13, note: 'All flat facets and sharp creases, with lamps stacked up its wings like blades and its engine behind you.',
+    maxSpeed: 47, accel: 19, agility: 1.35, crossing: 0.2, health: 150, mass: 1.2, sound: 'lmp' },
+  { id: 'sixteen', name: 'Sixteen-Cylinder Coupe', basedOn: 'Cadillac Sixteen (2003 concept car)', model: 'sixteen', color: 0x9aa1a9, evilColor: 0x25262e,
+    hw: 1.0, hl: 2.84, height: 1.4, note: 'A bonnet half the car long over sixteen cylinders, wheels nearly as tall as a child, and the cabin far back where it belongs.',
+    maxSpeed: 40, accel: 14, agility: 0.95, crossing: 0.3, health: 280, mass: 1.9, sound: 'classicgt' },
+  { id: 'windsong', name: 'Wind-Song Racer', basedOn: 'Mazda Furai (2007 concept car)', model: 'windsong', color: 0xe2531d, evilColor: 0x4e2c68,
+    hw: 1.0, hl: 2.33, height: 1.06, note: 'A Le Mans racer with a number plate, a rotary scream and flames flowing down its flanks.',
+    maxSpeed: 47, accel: 20, agility: 1.45, crossing: 0.15, health: 120, mass: 1, sound: 'rotary' },
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
 export const IDEA_CAR = Object.fromEntries(IDEA_CARS.map(car => [car.id, car]));
