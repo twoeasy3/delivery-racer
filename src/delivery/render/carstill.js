@@ -103,13 +103,15 @@ const pump = () => {
   if (queue.length) pumping = requestAnimationFrame(pump);
 };
 // side: 'good' or 'evil', the livery (the pack screens always ask 'good': the owner, 12-Oct, "Render all card pack images in Good colours")
-// first: ahead of the queue (a picture on screen NOW, the big pack of a reveal, before the cards' that are turned away)
+// first: drawn NOW if laid out, else ahead of the queue (a picture on screen now: the big pack of a reveal, which is up for
+// under a second, before the cards' that are turned away)
 export const drawSoon = (el, car, { side = 'good', pose, first = false } = {}) => {
   const evil = side === 'evil';
   const job = { el, car, evil, pose, key: car.id + '/' + (evil ? 'e' : 'g') + '/' + poseKey(pose) };
   if (el.dataset.still === job.key) return;
   if (stillReady(el, car, evil, pose)) { el.dataset.still = job.key; return; } // (cached: at once, no frame)
   queue = queue.filter(j => j.el !== el); // (one job an element: a redraw at a new size replaces one not yet done)
+  if (first && boxOf(el).width && stillCar(el, car, evil, pose)) { el.dataset.still = job.key; return; } // (first, laid out: drawn now)
   if (first) queue.unshift(job); else queue.push(job);
   if (!pumping) pumping = requestAnimationFrame(pump);
 };

@@ -41,9 +41,10 @@ const packCar = (car) => {
     delete el.dataset.still;
     drawSoon(el, car, opts);
   };
+  drawSoon(el, car, opts); // (not laid out yet: first in the queue, so the next frame draws it before anything queued after it, the reveal's cards)
   if (typeof ResizeObserver === 'function') {
     new ResizeObserver((entries) => { const r = entries[entries.length - 1].contentRect; redraw(r.width, r.height); }).observe(el);
-  } else requestAnimationFrame(() => drawSoon(el, car, opts));
+  }
   return el;
 };
 export const packArt = (id, count = 1) => {
