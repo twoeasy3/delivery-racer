@@ -598,5 +598,16 @@
       "good": "globe",
       "evil": "fireworks"
     }
+  },
+  "neon-edge": {
+    "name": "Neon Edge",
+    "description": {
+      "good": "A lava lamp across the city at night, low and fast under the neon: fresh tar, the tunnel, a police roadblock to slip through, a lane that turns against you and the wind on the high span.",
+      "evil": "A sack of glitter on the expressway after dark. Grab the siren before the roadblock, beat the reversible lane and leave the keitrucks sparkling."
+    },
+    "cargo": {
+      "good": "lavalamp",
+      "evil": "glitter"
+    }
   }
 }

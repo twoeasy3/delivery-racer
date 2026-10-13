@@ -38,7 +38,7 @@ try {
         last = P.health;
         return g.Game.state !== 'playing';
       });
-      console.log(`${id}  ${car} ECU${ecu} SOLID, no traffic: ${g.Game.outcome || 'still driving'} after ${t.toFixed(1)} s; flights ${flights.join('; ') || 'none'}; hurt ${hits.join(', ') || 'never'}; health ${Math.round(g.Player.health)}/${Math.round(g.Player.maxHealth)}`);
+      console.log(`${id}  ${car} ECU${ecu} SOLID, no traffic: ${g.Game.outcome || 'still driving'} after ${t.toFixed(1)} s; flights ${flights.join('; ') || 'none'}; hurt ${hits.join(', ') || 'never'}; health ${Math.round(g.Player.health)}/${Math.round(g.Player.maxHealth)}; busts ${g.Game.busts || 0}`);
       Object.assign(level, was);
       continue;
     }
