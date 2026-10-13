@@ -33,7 +33,7 @@ import '../showroom.css';
 import '../showroom-phone.css';
 import { showroomCars, carCard, floorBest, statShown, RARITIES, CAR_LOT, sideName, sideClick, driveWords, barredWhy, driveAs,
   FILTER_GROUPS, SORTS, imposedFilter, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn, overlayOf, cardTip, kindOf } from '../showroomData.js';
-import { CAR, carInUse, setViewSide, STAR_COLOURS, carRule } from '../cars.js';
+import { CAR, carInUse, setViewSide, STAR_COLOURS, carRule, carFocus } from '../cars.js';
 import { Progress } from '../progress.js';
 import { ShopScreen } from './shop.js'; // (the Shop, reached from the header)
 import { Game } from '../game.js';
@@ -354,7 +354,9 @@ const fill = (fresh = true) => {
   const filtered = filterCount(filter) > 0;
   countEl.replaceChildren(...(filtered ? [make('b', '', String(list.length)), ' of ' + all.length + ' shown']
     : [make('b', '', String(all.filter(c => c.unlocked).length)), ' / ' + all.length + ' cars']),
-  ...(imposed && filtered ? [make('span', 'sr-imposed', 'This level: ', ...richTiers(imposed.label))] : [])); // (the level's car rule, imposed; replaceChildren would write a null as "null")
+  ...(imposed && filtered ? [make('span', 'sr-imposed', imposed.focus ? 'Today\u2019s event: ' : 'This level: ', ...richTiers(imposed.label))] : []));
+  const eventChip = sheet?.querySelector('[data-chip="event"]');
+  if (eventChip) eventChip.style.display = imposed?.focus || filter.state.includes('event') ? '' : 'none'; // (only where a day points at cars) // (the level's car rule, imposed; replaceChildren would write a null as "null")
   bankEl.replaceChildren(make('small', '', 'Bank'), money(Progress.data.money));
   watcher?.disconnect();
   cards = list.map((data) => {
@@ -626,8 +628,11 @@ export const Showroom = {
     setViewSide(side);
     picked = (CAR && !CAR.silhouette ? CAR.id : null) || carInUse().id;
     full = false;
-    const rule = carRule(side), forced = rule?.list ? imposedFilter(rule, showroomCars().map(car => carCard(car, side))) : null;
-    if (forced) { imposed = { before: filter, label: rule.label }; filter = { ...forced, sort: filter.sort }; }
+    // (a level's own list rule; else a rotating event's day, the Concept Strike's: a view of the cars it pays for, every car
+    // still drivable, cars.js carFocus)
+    const rule = carRule(side), focus = rule?.list ? null : carFocus(), floor = () => showroomCars().map(car => carCard(car, side));
+    const forced = rule?.list ? imposedFilter(rule, floor()) : focus ? imposedFilter({ list: true, test: focus.test }, floor(), 'event') : null;
+    if (forced) { imposed = { before: filter, label: (rule?.list ? rule : focus).label, focus: !!focus }; filter = { ...forced, sort: filter.sort }; }
     build();
     panel.classList.toggle('evil', side);
     panel.classList.remove('hidden', 'full-up', 'filters-up');

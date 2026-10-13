@@ -5,7 +5,7 @@
 // Crazey Jim's Used Cars (render/garage.js). The ECU figures are ecu.js's (Ecu); anything it does not say about a
 // car (a secret one, an earned one it has no table for) falls back to the car's own figures, so a card never throws.
 import { CONFIG } from './config.js';
-import { CARS, EARNED_CARS, EVENT_CARS, BESPOKE_CARS, FILLER_CARS, SECRET_CARS, stars, starColour, STAR_COLOURS, carTier, carPreview, forSale, carRule, ruleAllows, selectCar, carInUse } from './cars.js';
+import { CARS, EARNED_CARS, EVENT_CARS, BESPOKE_CARS, FILLER_CARS, SECRET_CARS, stars, starColour, STAR_COLOURS, carTier, carPreview, forSale, carRule, carFocus, ruleAllows, selectCar, carInUse } from './cars.js';
 import { Progress } from './progress.js';
 import { Game } from './game.js';
 import { Tiers } from './tiers.js';
@@ -109,6 +109,7 @@ export const carCard = (car, evil = false) => {
   }
   // a car that can be driven, but not on the level picked (its car rule, on the side picked)
   const rule = carRule(evil), barred = unlocked && !!rule && !ruleAllows(rule, car), allowed = !rule || ruleAllows(rule, car);
+  const focus = !!carFocus()?.test(car); // (a rotating event's day points the showroom at it: a view, not a rule)
   return {
     car, id: car.id,
     name: dark ? 'Locked car' : car.name,
@@ -116,7 +117,7 @@ export const carCard = (car, evil = false) => {
     rarity: rarityOf(car), hidden, dark, hunt,
     ecu, max, maxed, upgradable, blueprint, key: !blueprint,
     blueprints: bp, perEcu: x, have: maxed ? toNext : have, toNext,
-    owned, unlocked, barred, allowed,
+    owned, unlocked, barred, allowed, focus,
     state: !unlocked ? 'locked' : barred ? 'barred' : 'ready',
     reason, hint,
     rule: barred ? rule : null,
@@ -227,7 +228,7 @@ export const FILTER_GROUPS = [
   { id: 'colour', name: 'Star colour', chips: [['gold', 'Gold'], ['blue', 'Blue'], ['magenta', 'Magenta'], ['green', 'Sea green']] },
   { id: 'rarity', name: 'Rarity', chips: [['common', 'Common'], ['uncommon', 'Uncommon'], ['epic', 'Epic'], ['legendary', 'Legendary']] },
   { id: 'kind', name: 'Kind', chips: [['garage', 'Garage'], ['blueprint', 'Blueprint'], ['key', 'Key'], ['special', 'Special']] },
-  { id: 'state', name: 'State', chips: [['ready', 'Ready'], ['locked', 'Locked'], ['upgradable', 'Upgradable'], ['maxed', 'Maxed'], ['inuse', 'In use'], ['barred', 'Not on this level'], ['allowed', 'Allowed on this level']] },
+  { id: 'state', name: 'State', chips: [['ready', 'Ready'], ['locked', 'Locked'], ['upgradable', 'Upgradable'], ['maxed', 'Maxed'], ['inuse', 'In use'], ['barred', 'Not on this level'], ['allowed', 'Allowed on this level'], ['event', 'For today\u2019s event']] },
 ];
 export const SORTS = [['tier', 'Tier'], ['rarity', 'Rarity'], ['ecu', 'ECU'], ['name', 'Name'], ['speed', 'Top speed']];
 export const RARITY_ORDER = ['common', 'uncommon', 'epic', 'legendary', 'bespoke', 'special'];
@@ -271,6 +272,7 @@ export const statesOf = (card, inUseId) => {
   if (card.maxed && card.ecu >= 1) states.push('maxed');
   if (card.id === inUseId) states.push('inuse');
   if (card.allowed) states.push('allowed'); // (the level picked lets it be driven: its car rule, owned or not)
+  if (card.focus) states.push('event'); // (the level picked points at it: a rotating event's day, cars.js carFocus)
   return states;
 };
 export const cardMatches = (card, f, inUseId) =>
@@ -299,15 +301,18 @@ export const filterCards = (cards, f, inUseId) => {
 // level's own list (allowedCars: an event stage's, the Car Hunt's 3-star cars), the stars and star colours of the cars it
 // allows when those let by EXACTLY those cars (the Car Hunt: stars 3, gold and magenta); else, added to them, the state
 // chip 'allowed' ("Allowed on this level"), which always is exact. null: no such rule (a tier's medal rule is not imposed).
-// cards: the floor's cards (carCard, on the side picked). For the visit only: render/showroom.js never remembers it
-export const imposedFilter = (rule, cards) => {
+// cards: the floor's cards (carCard, on the side picked). For the visit only: render/showroom.js never remembers it.
+// A rotating event's day (the Concept Strike, the owner 13-Oct: "filter the showroom to the stars requirement AND the free
+// try car"; cars.js carFocus, no rule: every car still drivable) is imposed the same way: rule { list: true, test } and
+// chip 'event' ("For today's event", card.focus) in place of 'allowed'
+export const imposedFilter = (rule, cards, chip = 'allowed') => {
   if (!rule?.list) return null;
   const ok = cards.filter(card => ruleAllows(rule, card.car)), want = new Set(ok.map(c => c.id));
   const exact = (f) => { const got = filterCards(cards, f, null); return got.length === want.size && got.every(c => want.has(c.id)); };
   const f = cleanFilter({ stars: ok.map(c => String(starCountOf(c))), colour: ok.map(colourOf) });
   if (ok.length && exact(f)) return f;
-  const g = { ...f, state: ['allowed'] };
-  return exact(g) ? g : { ...noFilter(), state: ['allowed'] };
+  const g = { ...f, state: [chip] };
+  return exact(g) ? g : { ...noFilter(), state: [chip] };
 };
 // the card before or after this one in a list (the full view's arrows): round from the last to the first
 export const stepIn = (list, id, dir) => {

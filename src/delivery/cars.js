@@ -85,6 +85,9 @@ export const setViewSide = (evil) => { viewSide = evil === null || evil === unde
 // key, label }: only the cars a level's own "allowedCars" names (see listRule). Either way the car must be owned, and the
 // level's own vehicle ("car": a car lock) comes ahead of both. `label` says what is allowed, with {tier:n} tokens
 export const carRule = (evil) => tierHooks.rule?.(evil ?? viewSide) ?? null;
+// the cars the level picked POINTS the showroom at without making a rule of it (a rotating event's day: events.js
+// showroomFocus): { test(car), label }, or null. Every car stays drivable; the showroom only opens filtered to these
+export const carFocus = () => tierHooks.focus?.() ?? null;
 export const restrictedTier = (evil) => carRule(evil)?.tier ?? null; // (the tier of a tier rule; null for none or a list)
 const tierRules = {};
 export const tierRule = (tier) => tierRules[tier] ||= { tier, key: String(tier), label: '{tier:' + tier + '} cars' };
