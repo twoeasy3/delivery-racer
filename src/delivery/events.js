@@ -32,6 +32,10 @@
 //           stars: a car of that many stars (a gold tier's, or a key car's rating: starsOf); side: 'good' / 'evil';
 //           car: that car; featured: the day's car; maxed: at its max ECU. Every task a delivery meets is paid.
 // The counters (`Progress.data.eventRuns`) belong to the run: a new day starts them at 0.
+// CARD (the owner, 13-Oct, of the Concept Strike: "Drop the medals and stats and description ... Too long"): `card: { hide:
+// [...] }` leaves parts of the event's full level card out (render/menustage.js drawStage; an event of one stage only):
+// 'medals' (the Good / Evil best-clear medals at its top right), 'stats' (the clock, tip and best-to-spare row),
+// 'description' (the road's words). Events.cardHides(event) is the list; problems() names anything else.
 // ============================================================================
 import eventData from './events.json';
 import { LEVELS, HIDDEN_LEVELS } from './levels.js';
@@ -54,6 +58,8 @@ export const PLAIN_EVENTS = Array.isArray(eventData.events) ? eventData.events :
 
 const MAPS = new Map([...LEVELS, ...Object.values(HIDDEN_LEVELS)].map(level => [level.id, level]));
 const OWN = new Set(['level', 'from', 'car', 'free']); // (a stage's fields that are not a level's)
+// the parts of an event's level card that `card.hide` may leave out (see the head)
+export const CARD_PARTS = ['medals', 'stats', 'description'];
 
 // a stage as a level: the map, the stage's fields over it, its own id; its words and cargo the map's, asked for now
 // (they are kept by the map's id: levelText.json, cargo.js)
@@ -73,7 +79,8 @@ const stageLevel = (event, stage, index) => {
 
 export const SPECIALS = (Array.isArray(eventData.special) ? eventData.special : []).map(e => {
   const event = { id: String(e.id), name: String(e.name || e.id), short: String(e.short || e.name || e.id), from: when(e.from), to: when(e.to),
-    prize: e.prize && typeof e.prize === 'object' ? e.prize : null, repeat: repeatOf(e.repeat), raw: e };
+    prize: e.prize && typeof e.prize === 'object' ? e.prize : null, repeat: repeatOf(e.repeat), raw: e,
+    hide: Array.isArray(e.card?.hide) ? e.card.hide.filter(x => CARD_PARTS.includes(x)) : [] }; // (its card's parts left out: card.hide)
   event.days = Array.isArray(e.days) && event.repeat ? e.days.map((d, i) => ({ index: i, car: d?.car ? String(d.car) : null,
     tasks: (Array.isArray(d?.tasks) ? d.tasks : []).map((x, k) => ({ index: k, ...x })) })) : null; // (a rotating event's days: see the head)
   event.stages = (Array.isArray(e.stages) ? e.stages : []).map((s, i) => ({
@@ -234,6 +241,8 @@ export const Events = {
     return { stage: stage.index + 1, of: event.stages.length, prize, packs, repeat: !!event.repeat, name: event.name };
   },
   // ---- a ROTATING event's day (the Concept Strike): { index, car, tasks, pack } on now, or the next (between runs); null: not one
+  // the parts of the event's level card it leaves out ('medals', 'stats', 'description': events.json card.hide)
+  cardHides(event) { return event?.hide ? [...event.hide] : []; },
   dayOf(event, t = this.now()) {
     if (!event?.days) return null;
     const w = windowOf(event, t);
@@ -363,6 +372,20 @@ export const Events = {
       if (e.repeat && e.from === null) say('a recurring event needs "from" (the start of its first run)');
       if (e.repeat && e.raw.repeat && Object.keys(e.raw.repeat).some(k => !['every', 'live'].includes(k))) say('"repeat": unknown field(s) ' + Object.keys(e.raw.repeat).filter(k => !['every', 'live'].includes(k)).join(', '));
       if (!e.stages.length) say('it has no stages');
+      if (e.raw.card !== undefined) {
+        const c = e.raw.card, ok = c && typeof c === 'object' && !Array.isArray(c);
+        if (!ok) say('"card" is not { "hide": [...] }');
+        else {
+          const extra = Object.keys(c).filter(k => k !== 'hide');
+          if (extra.length) say('"card": unknown field(s) ' + extra.join(', '));
+          if (c.hide !== undefined && !Array.isArray(c.hide)) say('"card.hide" is not a list');
+          else for (const [i, x] of (c.hide || []).entries()) {
+            if (!CARD_PARTS.includes(x)) say('"card.hide": "' + x + '" is not a part of the card (' + CARD_PARTS.join(', ') + ')');
+            else if (c.hide.indexOf(x) !== i) say('"card.hide": "' + x + '" twice');
+          }
+          if (e.stages.length > 1) say('"card" is for an event of one stage (its full level card); this one has its own screen');
+        }
+      }
       if (e.raw.days !== undefined) {
         if (!e.days) say('"days" needs "repeat" (a rotating event is a recurring one)');
         else {

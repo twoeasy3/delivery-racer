@@ -264,7 +264,10 @@ const drawStage = () => {
   const tiered = Tiers.on() ? Tiers.place(level) : null; // (under the tiers: the stars, then 1/5)
   const plate = make('div', 'plate' + (tiered ? ' tiered' : ''), make('small', '', kindOf(level)), make('b', '', tiered ? tiered.pos + '/' + Tiers.tiers[tiered.tier - 1].length : label(level)));
   if (tiered) plate.setAttribute('aria-label', Tiers.spoken(tiered.tier) + ', level ' + tiered.pos + ' of ' + Tiers.tiers[tiered.tier - 1].length);
-  const ribbon = make('div', 'ribbon', ...(open ? (oneSided(level) ? [false] : [false, true]).map(side => ribbonHalf(level, side)) : []));
+  // (an event of one stage may leave parts of its card out: events.json card.hide, the Concept Strike's medals, figures and words)
+  const single = Events.isStage(level) && oneStage(Events.stageOf(level).event) ? Events.stageOf(level).event : null;
+  const hide = new Set(single ? Events.cardHides(single) : []);
+  const ribbon = hide.has('medals') ? null : make('div', 'ribbon', ...(open ? (oneSided(level) ? [false] : [false, true]).map(side => ribbonHalf(level, side)) : []));
   // what the level needs (a line of its own: a car that floats, the vehicle it is driven in, the level before it)
   const prize = earnedFor(level.id);
   const place = Tiers.on() ? Tiers.place(level) : null, rule = Tiers.restriction(level, evil);
@@ -290,14 +293,13 @@ const drawStage = () => {
   wantCargo(carried, ring);
   const event = Tiers.on() && Tiers.isEvent(level) ? Tiers.eventOf(level) : null;
   // (a special event of one stage, the Car Hunt: the full level card, with the event's extras drawn on it: eventExtras)
-  const single = Events.isStage(level) && oneStage(Events.stageOf(level).event) ? Events.stageOf(level).event : null;
   const extras = single ? eventExtras(single, level, open) : null;
   const info = make('div', 'info',
     extras?.tags,
     make('h2', '', single ? (single.title || single.name) : levelName(level)), // (the event's name, as the strip says it; its road under it)
     single ? make('p', 'cx-road', 'On ' + levelName(level)) : null,
-    open && words ? make('p', 'desc', words) : null,
-    open ? make('div', 'facts',
+    open && words && !hide.has('description') ? make('p', 'desc', words) : null,
+    open && !hide.has('stats') ? make('div', 'facts',
       fact('Clock', formatTime(clockFor(level, evil)) + (oneSided(level) ? ' (always Good)' : '')),
       fact('Tip', money(level.tip)),
       fact('Best to spare', best === undefined ? 'Not delivered yet' : formatTime(best))) : null,
@@ -321,7 +323,7 @@ const drawStage = () => {
   arrows[1].title = 'The next level (right)';
   arrows[0].addEventListener('click', () => step(-1));
   arrows[1].addEventListener('click', () => step(1));
-  const toggle = open && words && !extras ? make('button', 'info-toggle', 'i') : null; // (only where there is a description to show; not on an event card with extras, whose phone layout shows the description and the figures both: menu2.css .cx-card)
+  const toggle = open && words && !extras && !hide.size ? make('button', 'info-toggle', 'i') : null; // (only where there is a description to show; not on an event card with extras, whose phone layout shows the description and the figures both: menu2.css .cx-card)
   const paintToggle = () => {
     stage.classList.add('has-toggle');
     stage.classList.toggle('desc-view', showDesc);
@@ -329,9 +331,10 @@ const drawStage = () => {
     toggle.title = toggle.ariaLabel = showDesc ? 'Show the level’s figures' : 'Show the level’s description';
   };
   toggle?.addEventListener('click', () => { showDesc = !showDesc; blip('menuPick'); paintToggle(); });
-  stage.replaceChildren(shot, plate, ribbon, ...(cargo ? [cargo] : []), ...(extras ? [extras.node] : []), info, ...arrows, ...(toggle ? [toggle] : []));
+  stage.replaceChildren(shot, plate, ...(ribbon ? [ribbon] : []), ...(cargo ? [cargo] : []), ...(extras ? [extras.node] : []), info, ...arrows, ...(toggle ? [toggle] : []));
   // (a new level slides in; the other side only swaps the words)
-  stage.className = 'menu-stage' + (open ? '' : ' locked') + (extras ? ' has-extras' + (extras.car ? '' : ' no-car') + (extras.tasks ? ' has-tasks' : '') : '') + (drawn && !sameLevel ? ' enter' : drawn && drawn !== key ? ' flip' : '');
+  stage.className = 'menu-stage' + (open ? '' : ' locked') + (extras ? ' has-extras' + (extras.car ? '' : ' no-car') + (extras.tasks ? ' has-tasks' : '') : '')
+    + (hide.size ? ' cx-trim' + (hide.has('medals') ? ' no-medals' : '') + (hide.has('stats') ? ' no-stats' : '') + (hide.has('description') ? ' no-desc' : '') : '') + (drawn && !sameLevel ? ' enter' : drawn && drawn !== key ? ' flip' : '');
   startScreen.classList.toggle('cx-card', !!extras); // (a phone: the event card's own stacked layout, the menu scrolling past it: menu2.css)
   if (extras) requestAnimationFrame(extras.draw); // (its car's still, once laid out)
   if (toggle) paintToggle();

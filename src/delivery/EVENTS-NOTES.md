@@ -22,6 +22,13 @@ run (window, countdown, counters), a featured car lent as a free try at the play
 car lock with `ownEcu`), tasks that pay that day's pack (packs.json `givenBy.event.day`) up to a limit a day, and the
 featured car's key for delivering it at its max ECU. events.js head and `payTasks`; the save's `eventRuns`.
 
+**An event's card, trimmed (13-Oct; the owner of the Concept Strike: "Drop the medals and stats and description ... Too
+long").** `card: { "hide": [...] }` on an event of one stage leaves parts of its full level card out, at every size
+(render/menustage.js drawStage; the stage gets `cx-trim` and `no-medals` / `no-stats` / `no-desc`, menu2.css re-flows
+the card): `medals` (the Good / Evil best-clear plaque), `stats` (the clock, tip and best-to-spare row), `description`
+(the road's words). `Events.cardHides(event)`; `problems()` names an unknown part, a part twice, an unknown field, or a
+`card` on an event of more stages. The Concept Strike hides all three; the Car Hunt and the rest keep theirs.
+
 **The owner's answers (11-Oct):**
 1. Yes, in order.
 2. Either side, for now. A stage's clocks are written out in full (Good and Evil), worked out by hand for the stage:

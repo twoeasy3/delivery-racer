@@ -758,3 +758,39 @@
   #startScreen.cx-card .cx-pack-words > span { font-size: 12px; }
   #startScreen.cx-card .cx-pack-words .event-inside { grid-column: 1 / 3; justify-content: center; min-height: 44px; margin-top: 10px; margin-left: -6px; padding: 0 12px; font-size: 13px; }
 }
+/* ---- A TRIMMED EVENT CARD (.cx-trim: events.json card.hide, render/menustage.js drawStage; the Concept Strike, the owner
+   13-Oct: "Drop the medals and stats and description for Concept Strike. Too long"). Its medals (.no-medals), figures
+   (.no-stats) and words (.no-desc) are not drawn; what is left closes up: the cargo moves up into the medals' corner, and on
+   a desktop or a tablet the prize panel (the featured car and the pack) is larger and the day's tasks, now the card's
+   main words, a size up. On a phone the page is that much shorter (the stacked layout above simply has less in it) ---- */
+@media (min-width: 761px) and (min-height: 521px) {
+  #startScreen .menu-stage.cx-trim.no-medals.has-extras .cargo3d { top: 12px; }
+  #startScreen .menu-stage.cx-trim .cx-tasks { max-width: none; gap: 4px; margin-top: 6px; }
+}
+/* (a desktop with the height for it: the prize panel larger, the tasks a size up. A short one, 1000x620, keeps the usual sizes) */
+@media (min-width: 761px) and (min-height: 700px) and (orientation: landscape) {
+  #startScreen .menu-stage.cx-trim { --cx-w: clamp(240px, 35%, 370px); }
+  #startScreen .menu-stage.cx-trim .cx-tasks { gap: 5px; margin-top: 8px; }
+  #startScreen .menu-stage.cx-trim .cx-tasks li { padding: 6px 10px; font-size: 14px; }
+  #startScreen .menu-stage.cx-trim .cx-name strong { font-size: clamp(19px, 1.9vw, 27px); }
+  #startScreen .menu-stage.cx-trim .cx-odds, #startScreen .menu-stage.cx-trim .cx-pack-words > span { font-size: 12px; }
+}
+/* (a tablet held upright: the card is tall and narrow, so the prize panel stands on the picture over the words, on the right,
+   and the tasks take the card's whole width under it, where beside it they were squeezed to a third) */
+@media (min-width: 761px) and (min-height: 521px) and (orientation: portrait) {
+  #startScreen .menu-stage.cx-trim { --cx-w: clamp(260px, 56%, 360px); }
+  #startScreen .menu-stage.cx-trim > .card-extras { position: relative; right: auto; bottom: auto; align-self: flex-end; margin: 0 16px 14px 0; }
+  #startScreen .menu-stage.cx-trim.has-extras .info { padding-right: 58px; }
+  #startScreen .menu-stage.cx-trim .cx-tasks li { padding: 6px 10px; font-size: 14px; }
+  #startScreen .menu-stage.cx-trim .cx-name strong { font-size: 24px; }
+  #startScreen .menu-stage.cx-trim .cx-odds, #startScreen .menu-stage.cx-trim .cx-pack-words > span { font-size: 12px; }
+}
+@media (max-width: 760px) and (min-height: 521px), (max-width: 519px) {
+  #startScreen.cx-card .menu-stage.no-medals.has-extras .cargo3d { top: 8px; }
+  /* (no medals' plaque to clear: the picture's band a little lower, the level arrows up with it) */
+  #startScreen.cx-card .menu-stage.no-medals { --band: 150px; padding-top: 140px; }
+  #startScreen.cx-card .menu-stage.no-medals .arrow { top: 80px; }
+}
+@media (max-height: 520px) and (min-width: 520px) {
+  #startScreen.cx-card .menu-stage.no-medals.has-extras .cargo3d { right: 12px; }
+}
