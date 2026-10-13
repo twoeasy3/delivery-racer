@@ -624,6 +624,7 @@
 #startScreen .cx-try.on { background: #ffbe2e; color: #1a1406; border-color: #ffbe2e; }
 @media (max-width: 760px) and (min-height: 521px), (max-width: 519px) {
   #startScreen .cx-tasks li { font-size: 11px; padding: 2px 6px; }
+  #startScreen .menu-stage.has-tasks .desc, #startScreen .menu-stage.has-tasks .needs { display: none; } /* (room for the tasks: the description and the car line go, the tasks say it) */
   #startScreen .cx-try { font-size: 10px; padding: 2px 7px; }
 }
 @media (max-height: 520px) and (min-width: 520px) { #startScreen .cx-tasks { display: none; } }

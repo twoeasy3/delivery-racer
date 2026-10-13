@@ -329,7 +329,7 @@ const drawStage = () => {
   toggle?.addEventListener('click', () => { showDesc = !showDesc; blip('menuPick'); paintToggle(); });
   stage.replaceChildren(shot, plate, ribbon, ...(cargo ? [cargo] : []), ...(extras ? [extras.node] : []), info, ...arrows, ...(toggle ? [toggle] : []));
   // (a new level slides in; the other side only swaps the words)
-  stage.className = 'menu-stage' + (open ? '' : ' locked') + (extras ? ' has-extras' + (extras.car ? '' : ' no-car') : '') + (drawn && !sameLevel ? ' enter' : drawn && drawn !== key ? ' flip' : '');
+  stage.className = 'menu-stage' + (open ? '' : ' locked') + (extras ? ' has-extras' + (extras.car ? '' : ' no-car') + (extras.tasks ? ' has-tasks' : '') : '') + (drawn && !sameLevel ? ' enter' : drawn && drawn !== key ? ' flip' : '');
   if (extras) requestAnimationFrame(extras.draw); // (its car's still, once laid out)
   if (toggle) paintToggle();
   drawn = key;
@@ -483,7 +483,7 @@ const drawCar = () => {
       bar('Speed', Math.round(CAR.maxSpeed * 3.6) + ' km/h', CAR.maxSpeed / MOST.speed),
       bar('Accel', String(CAR.accel), CAR.accel / MOST.accel),
       bar('Health', String(CAR.health), CAR.health / MOST.health)),
-    make('span', 'go', LEVEL.car ? 'This level’s own vehicle' : 'Showroom'));
+    make('span', 'go', LEVEL.car ? (LEVEL.ownEcu ? 'Free try at your ECU' : 'This level’s own vehicle') : 'Showroom'));
   shop.title = LEVEL.car ? 'You must use this vehicle on this level. Your own car returns on other levels.' : 'Open the showroom to pick a car (G)';
 };
 
@@ -872,7 +872,7 @@ const eventExtras = (event, level, open) => {
     pack = make('div', 'cx-pack',
       make('div', 'cx-art', art, make('span', 'cx-ribbon', give.every ? 'Every run' : give.day ? 'Tasks' : give.prize ? 'Prize' : 'Reward')),
       make('div', 'cx-pack-words', make('small', 'cx-label', 'Reward'), make('strong', '', packName(give.id)),
-        make('span', '', give.every ? 'Every run: a ' + packName(give.id) : give.day ? 'From today\'s tasks' : describePack(give.id)), link));
+        make('span', '', give.every ? 'Every run: a ' + packName(give.id) : give.day ? (day?.live ? 'From today\'s tasks' : 'From ' + new Date(day.start).toLocaleDateString('en-GB', { weekday: 'long' }) + '\'s tasks') : describePack(give.id)), link));
   }
   const node = make('div', 'card-extras' + (open ? '' : ' shut'), prize, pack);
   // (a rotating event: the day's tasks, each with its reward and how often it has paid this run: events.js tasks)
