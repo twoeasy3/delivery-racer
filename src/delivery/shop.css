@@ -365,13 +365,15 @@ button.shop-odds { width: 100%; padding: 0; cursor: pointer; }
    rainbow drop-shadow glow, a twinkle, two fades) and all were painted at once. Here the cards are STILL (their static shine layers stay),
    the stacks fade off one timer (packcontents.js: .phase-b on the sheet, a transition), and each card paints on its own
    layer-free (contain). The reveal and the showroom keep their effects. ---- */
-.pack-contents .bp-card, .pack-contents .bp-card *, .pack-contents .bp-card *::before, .pack-contents .bp-card *::after,
-.pack-contents .bp-card::before, .pack-contents .bp-card::after { animation: none !important; }
+@media (pointer: coarse) { /* (a mouse device keeps every effect, the owner, 13-Oct: "the removal of the sheen effects on the cards is a shame") */
+  .pack-contents .bp-card, .pack-contents .bp-card *, .pack-contents .bp-card *::before, .pack-contents .bp-card *::after,
+  .pack-contents .bp-card::before, .pack-contents .bp-card::after { animation: none !important; }
+}
 /* the stacks' fade: a mouse/trackpad device only (the owner, 12-Oct, a tablet: "it flickers while scrolling and sitting still": the fade of every
    card's chance and bubble flipping at once, and the shadow under every picture, flickered there). A touch device: the chances sit side by side,
    the bubble shows the base stack, no timer (packcontents.js starts none), no per-picture shadow. */
 @media (prefers-reduced-motion: no-preference) and (pointer: fine) {
-  .pack-contents .pc-stack, .pack-contents .amt-phase { transition: opacity .45s ease; }
+  .pack-contents .pc-stack, .pack-contents .amt-phase { animation: none !important; transition: opacity .45s ease; } /* (one timer, not an animation a card) */
   .pack-contents .pc-stack.alt, .pack-contents .amt-phase.alt { opacity: 0; }
   .pack-contents.phase-b .pc-stack:not(.alt), .pack-contents.phase-b .amt-phase:not(.alt) { opacity: 0; }
   .pack-contents.phase-b .pc-stack.alt, .pack-contents.phase-b .amt-phase.alt { opacity: 1; }
@@ -393,8 +395,10 @@ button.shop-odds { width: 100%; padding: 0; cursor: pointer; }
 
 /* (the Bespoke/key cards flickered on a tablet while the Car Hunt's sheet, which has none, did not: no blend modes, no filters, no glow on the
    cards in the sheet; the owner, 12-Oct) */
-.pack-contents .bp-card, .pack-contents .bp-card * { mix-blend-mode: normal !important; }
-.pack-contents .bp-card.r-bespoke, .pack-contents .bp-card.kind-key.r-legendary { filter: none !important; }
+@media (pointer: coarse) {
+  .pack-contents .bp-card, .pack-contents .bp-card * { mix-blend-mode: normal !important; }
+  .pack-contents .bp-card.r-bespoke, .pack-contents .bp-card.kind-key.r-legendary { filter: none !important; }
+}
 
 /* the car drawn on a pack that features one car (packart.js packCar): the brand at the top, the car in the middle of the foil, the mark gone,
    "Card pack" along the bottom */
