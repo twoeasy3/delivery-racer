@@ -67,4 +67,47 @@ const roundhead = (car, { rarity = 'bespoke' } = {}) => {
   return idle(group, merged(k));
 };
 
+// ---- (2) the WING-HEAD key (a 1930s-50s bakelite head): wide moulded wings either side of a raised boss ----
+const wing = (car, { rarity = 'bespoke' } = {}) => {
+  const group = new THREE.Group(), k = new THREE.Group();
+  const paint = paintOf(car);
+  // bakelite: the car's colour deepened toward a moulded brown, glossy
+  const BAKE = metal(paint.clone().lerp(new THREE.Color(0x2e1a10), 0.6).getHex(), 60);
+  const BRASS = metal(0xc9a54e, 70), GROOVE = metal(0x8f7434, 40), CHROME = metal(0xd4d8de, 110);
+  const ENAMEL = metal(paint.getHex(), 70), INK = lambert(inkOn(paint));
+  // the head: a boss in the middle (the ring hole through it, the crest below), the wings swept out either side to
+  // blunt points, their lower edges rising toward the tips (a gull's wing)
+  const P = [[-0.36, -0.2, 0.08], [0.36, -0.2, 0.08], [1.5, 0.3, 0.14], [1.36, 0.76, 0.16], [0.44, 0.92, 0.1],
+    [0.28, 1.2, 0.18], [-0.28, 1.2, 0.18], [-0.44, 0.92, 0.1], [-1.36, 0.76, 0.16], [-1.5, 0.3, 0.14]];
+  const HOLE = [0, 0.93];
+  const D = 0.28, B = 0.05, FRONT = D / 2 + B; // (the face at z = 0.19)
+  const head = outline(P, 0.15);
+  head.holes.push(circle(HOLE[0], HOLE[1], 0.13));
+  slab(k, BAKE, head, D, B, 0, 2);
+  // a chrome eyelet in the hole, front and back
+  for (const z of [FRONT, -FRONT]) add(k, new THREE.TorusGeometry(0.16, 0.035, 4, 10), CHROME, HOLE[0], HOLE[1], z);
+  // the rarity's lit rim round each face, inset from the edge
+  for (const s of [1, -1]) rainbow(band(k, rimMaterial(rarity), P, 0.15, -0.14, -0.09, 0.04, s * (FRONT + 0.005), 2), 0, 0.45);
+  // the deco speed lines along each wing's face: two thin chrome inlays (the back is plain)
+  for (const sx of [1, -1]) for (const y of [0.3, 0.5]) box(k, CHROME, 0.55, 0.055, 0.05, sx * 0.87, y, FRONT + 0.01).rotation.z = sx * 0.12;
+  // the crest: a small chrome shield, an enamel inset of the car's colour, the initial on it
+  const SH = [[0, -0.12, 0.04], [0.28, 0.06, 0.06], [0.28, 0.5, 0.05], [-0.28, 0.5, 0.05], [-0.28, 0.06, 0.06]];
+  slab(k, CHROME, outline(SH, 0.05), 0.08, 0, FRONT + 0.01, 2);
+  slab(k, ENAMEL, outline(SH, 0.05, -0.06), 0.08, 0, FRONT + 0.03, 2);
+  glyph(k, INK, initialOf(car), 0.28, FRONT + 0.06, FRONT + 0.1, 0, 0.24);
+  // the back: a small chrome rivet where the crest's pin comes through
+  disc(k, CHROME, 0.08, -FRONT - 0.04, -FRONT + 0.02, 0, 0.24, 8);
+  // the brass collar out of the head, the shoulder, and the blade (bitted along its right edge, a groove each face)
+  box(k, BRASS, 0.56, 0.3, 0.22, 0, -0.3, 0);
+  box(k, BRASS, 0.74, 0.14, 0.18, 0, -0.5, 0);
+  const T = -0.55;
+  const pts = [[-0.22, T], [0.22, T], [0.22, T - 0.35], [0.32, T - 0.5], [0.22, T - 0.66], [0.3, T - 0.84], [0.19, T - 1.02], [0.32, T - 1.2],
+    [0.2, T - 1.4], [0.29, T - 1.6], [0.2, T - 1.78], [0.2, T - 2.15], [0.0, T - 2.4], [-0.22, T - 2.2]];
+  flat(k, BRASS, pts, 0.13);
+  box(k, GROOVE, 0.07, 1.75, 0.035, -0.08, T - 1.05, 0.065);
+  box(k, GROOVE, 0.07, 1.6, 0.035, 0.03, T - 0.95, -0.065);
+  return idle(group, merged(k));
+};
+
 registerKey('roundhead', roundhead);
+registerKey('wing', wing);
