@@ -10,7 +10,7 @@
 //   userData.animate  (seconds) => void
 //   userData.livery   (evil) => void: the parts that differ between Good and Evil beyond the paint (a second colour)
 // How they are made: the bodies are side views extruded across the car with their edges rounded off (one bevel step),
-// then bent (a warp: tumblehome on the glasshouse, a tuck under the sills, a taper to the nose); every part that never
+// then bent where wanted (a warp: the glasshouse's tumblehome); no panel lines (the owner, 13-Oct); every part that never
 // moves is merged into one mesh per material (the paint, the glass, the chrome...); the wheels stay meshes of their own
 // (a tyre and a hub each: the suspension and the Super kit find them as they find any model's). The few small
 // pictures (a wire wheel's spokes, the lowrider's grille, a mesh grille, the sport compact's banner) are canvases made
@@ -26,6 +26,7 @@ const GLASS = keep(lambert(0x1d2531, { side: THREE.DoubleSide }));
 const CHROME = keep(lambert(0xd9dce1)), GOLD = keep(lambert(0xe2b64a)), TRIM = keep(lambert(0x1b1d21));
 const TYRE = keep(lambert(0x151515)), PLATE = keep(lambert(0xf1eee2));
 const WHITEWALL = keep(lambert(0xf2f0ea)), WELL = keep(lambert(0x0d0e10));
+const BOARD = keep(lambert(0xff7eb6)); // (the Love Bus's surfboard)
 const LAMP = keep(basic(0xfff3c4)), TAIL = keep(basic(0xc0121a)), STOP = keep(basic(0xff3b3b));
 const AMBER = keep(basic(0xffa21a)), REVERSE = keep(basic(0xf6f4ee));
 
@@ -172,7 +173,7 @@ const bar = (r, length, x, y, z, axis = 'z', seg = 8) => {
   if (axis === 'z') geo.rotateX(Math.PI / 2);
   return geo.translate(x, y, z);
 };
-// a square rod `t` thick from point a to point b ([x, y, z]): a trim line, a shut line, a pillar's edge
+// a square rod `t` thick from point a to point b ([x, y, z]): a trim line, an arch's lip, a mirror's arm
 const UP = new THREE.Vector3(0, 0, 1), q = new THREE.Quaternion(), va = new THREE.Vector3(), vb = new THREE.Vector3();
 const rod = (a, b, t, t2 = t) => {
   va.set(...a); vb.set(...b);
@@ -249,9 +250,13 @@ const onEdge = (p, q2, out, t) => {
 // a four-cornered panel on that face from t0 to t1 along it, x0 to x1 across the car (a lamp, a banner)
 const edgePanel = (p, q2, out, t0, t1, x0, x1, uvScale = [1, 1]) => {
   const [z0, y0] = onEdge(p, q2, out, t0), [z1, y1] = onEdge(p, q2, out, t1);
-  const geo = panel([[x0, y0, z0], [x1, y0, z0], [x1, y1, z1], [x0, y1, z1]]);
-  const uv = geo.attributes.uv;
-  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * uvScale[0], uv.getY(i) * uvScale[1]);
+  // (wound to face out of the face, whichever way round x0 and x1 are: a one-sided material shows it either side)
+  const [n0, n1] = [onEdge(p, q2, 0, 0.5), onEdge(p, q2, 1, 0.5)], ny = n1[1] - n0[1], nz = n1[0] - n0[0];
+  const facing = (x1 - x0) * ((y1 - y0) * nz - (z1 - z0) * ny) > 0;
+  const corners = [[x0, y0, z0], [x1, y0, z0], [x1, y1, z1], [x0, y1, z1]];
+  const geo = panel(facing ? corners : [corners[1], corners[0], corners[3], corners[2]]);
+  const uv = geo.attributes.uv; // (the picture runs from x0 to x1 either way)
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, (facing ? uv.getX(i) : 1 - uv.getX(i)) * uvScale[0], uv.getY(i) * uvScale[1]);
   return geo;
 };
 // a window on a glasshouse's flank: the side view polygon `pts` ([z, y]) on the side `sx` (-1, 1), where the flank is
@@ -275,7 +280,7 @@ const wheel = (parent, R, width, x, y, z, hubMaterial, hubR = R * 0.62, hubGeo =
 // ---- the builders -------------------------------------------------------------------------------------------
 export const ORIG2_MODELS = {
   // A long, low 1960s hardtop on hydraulics (a '64 Impala, more or less): slab sides with a gold line along the belt
-  // and round the roof, a chrome spear down each flank, an arched gold grille between two pairs of round lamps, a
+  // and round the roof, an arched gold grille between two pairs of round lamps, a
   // long flat boot with three round tail lamps a side, chrome bumpers, chrome wire wheels. The front end rises and
   // falls in a smooth, endless bob, pivoting about the rear axle; the front wheels hang on their suspension and lift
   // only part of the way with the nose, so as it rises they droop below the body.
@@ -298,7 +303,7 @@ export const ORIG2_MODELS = {
     const trimMetal = extreme ? GOLD : CHROME; // (the Super's brightwork is gold)
 
     // the body: slab sides from the sill (0.21) to the belt (0.85), the bonnet and the long boot flat at the belt,
-    // the arches cut up into it; tucked in a little under the sills and drawn in a touch at its ends
+    // the arches cut up into it; slab sided
     const sill = 0.26, belt = 0.8, round = 0.05; // (drawn: the rounding grows it 5 cm all round)
     const bodyPts = [[-L + 0.05, sill, 0.06], ...arch(rearZ, R + 0.02, 0.44, sill), ...arch(frontZ, R + 0.02, 0.44, sill),
       [L - 0.05, sill, 0.06], [L - 0.05, belt - 0.03, 0.1], [L - 0.3, belt], [-L + 0.3, belt], [-L + 0.05, belt - 0.03, 0.1]];
@@ -325,12 +330,6 @@ export const ORIG2_MODELS = {
       const gx = (y) => sx * houseHalf(y);
       P.add(GOLD, rod([sx * half, top - 0.05, L - 0.12], [sx * half, top - 0.05, -L + 0.12], 0.022));
       for (const g of rods([[gx(gBase), gBase + 0.01, ws[0]], [gx(gTop), gTop, wsTop[0]], [gx(gTop), gTop, rwTop[0]], [gx(gBase), gBase + 0.01, rw[0]]], 0.022)) P.add(GOLD, g);
-      // a chrome spear down the flank, and the sill's chrome
-      P.add(CHROME, rod([sx * half, 0.58, L - 0.25], [sx * half, 0.58, -L + 0.35], 0.03));
-      P.add(CHROME, rod([sx * half, 0.3, frontZ - 0.5], [sx * half, 0.3, rearZ + 0.5], 0.03));
-      // the door: its shut lines and its handle
-      for (const z of [L * 0.36, -L * 0.14]) P.add(TRIM, rod([sx * half, top - 0.07, z], [sx * half, 0.33, z - 0.02], 0.014));
-      P.add(CHROME, bx(0.03, 0.03, 0.16, sx * (half + 0.005), 0.7, -L * 0.07));
       // a chrome mirror on the door, on a short stalk
       P.add(CHROME, bx(0.06, 0.08, 0.06, sx * (half - 0.02), top + 0.02, L * 0.33));
       P.add(CHROME, bar(0.05, 0.14, sx * (half + 0.01), top + 0.08, L * 0.33, 'z', 8));
@@ -365,9 +364,6 @@ export const ORIG2_MODELS = {
     for (const e of [1, -1]) P.add(CHROME, bx(w + 0.04, 0.12, 0.13, 0, 0.3, e * (L + 0.02)));
     P.add(PLATE, bx(0.42, 0.13, 0.02, 0, 0.45, -L - 0.005));
     P.add(CHROME, bar(0.04, 0.3, 0.55, 0.2, -L + 0.02, 'z', 8));
-    // the bonnet's centre crease and the boot lid's shut line
-    P.add(paint, bx(0.06, 0.03, L * 0.6, 0, top + 0.005, L * 0.66));
-    P.add(TRIM, bx(w * 0.7, 0.012, 0.012, 0, top + 0.002, -L + 0.25));
 
     // the front wheels hang on their own (not part of the chassis: see animate); the rear ones stay planted
     const frontAxle = new THREE.Group();
@@ -498,10 +494,7 @@ export const ORIG2_MODELS = {
       // black lips round the arches, and black skirts between them
       for (const z of [frontZ, rearZ]) for (const g of rods(arch(z, R + 0.02, 0.39, sill + 0.02, 6).map(([az, ay]) => [sx * (half - 0.004), ay, az]), 0.04)) P.add(TRIM, g);
       P.add(TRIM, bx(0.05, 0.12, frontZ - rearZ - 0.9, sx * (half + 0.005), 0.3, (frontZ + rearZ) / 2));
-      // the door's shut lines, a handle, a vent behind the door, a mirror on the door at the windscreen's foot
-      for (const [z, top] of [[ws[0] - 0.02, 0.8], [bPost - 0.06, 0.82]]) P.add(TRIM, rod([sx * half, top, z], [sx * half, 0.34, z], 0.012));
-      P.add(TRIM, bx(0.02, 0.025, 0.1, sx * (half + 0.004), 0.74, bPost + 0.06));
-      P.add(TRIM, bx(0.02, 0.1, 0.22, sx * (half + 0.004), 0.66, bPost - 0.22));
+      // a mirror on the door at the windscreen's foot (the flanks are left clean: the owner, 13-Oct, no panel lines)
       P.add(paint, bx(0.07, 0.07, 0.13, sx * (houseHalf(gBase) + 0.05), gBase + 0.05, ws[0] - 0.12));
       P.add(TRIM, bx(0.04, 0.04, 0.04, sx * (houseHalf(gBase) + 0.02), gBase + 0.02, ws[0] - 0.1));
       // the nose: a slim headlamp on each corner of its slope, an indicator under it, an intake low down
@@ -536,7 +529,7 @@ export const ORIG2_MODELS = {
   },
 
   // A family station wagon of the late 1970s: a rounded bonnet and nose with a round headlamp each side of a slatted
-  // grille, a black plate of a lower grille under it, a long roof with rails and a drip edge out to a near-upright
+  // grille, a black plate of a lower grille under it, a long roof with rails out to a near-upright
   // tailgate, four panes of glass a side (the windscreen, two doors and the load bay's window), tall tail lamps at
   // the back corners, chrome bumpers, and big black tyres on silver hubs (it rides high). It sits still
   wagon: (car) => {
@@ -569,22 +562,12 @@ export const ORIG2_MODELS = {
       P.add(GLASS, flankPane([[aLine(lo, 0.12), lo], [aLine(hi, 0.12), hi], [b + 0.05, hi], [b + 0.05, lo]], sx, houseHalf));
       P.add(GLASS, flankPane([[b - 0.05, lo], [b - 0.05, hi], [c + 0.05, hi], [c + 0.05, lo]], sx, houseHalf));
       P.add(GLASS, flankPane([[c - 0.07, lo], [c - 0.07, hi], [dLine(hi, 0.14), hi], [dLine(lo, 0.14), lo]], sx, houseHalf));
-      // the roof: its drip edge, and a rail on four feet
-      P.add(TRIM, rod([sx * houseHalf(gTop), gTop + 0.005, wsTop[0] - 0.04], [sx * houseHalf(gTop), gTop + 0.005, rwTop[0] + 0.03], 0.03));
+      // the roof: a rail on four feet
       P.add(TRIM, rod([sx * 0.72, gTop + gRound + 0.07, wsTop[0] - 0.3], [sx * 0.72, gTop + gRound + 0.07, rwTop[0] + 0.12], 0.04));
       for (const z of [wsTop[0] - 0.34, rwTop[0] + 0.16]) P.add(TRIM, bx(0.06, 0.09, 0.08, sx * 0.72, gTop + gRound + 0.03, z));
-      // the doors' shut lines, handles, a black rubbing strip along the flank, a mirror, the fuel filler
-      for (const z of [ws[0] - 0.04, b - 0.01, c - 0.02]) { // (down to the sill, or to the arch where one is under it)
-        const dz = Math.abs(z - rearZ), foot = dz < 0.52 ? R + 0.02 + Math.sqrt(0.52 * 0.52 - dz * dz) + 0.02 : sill + 0.02;
-        P.add(TRIM, rod([sx * half, top - 0.04, z], [sx * half, foot, z], 0.014));
-      }
-      for (const z of [b - 0.18, c - 0.2]) P.add(CHROME, bx(0.03, 0.035, 0.14, sx * (half + 0.004), 0.98, z));
-      for (const [z0, z1] of [[L - 0.12, frontZ + 0.62], [frontZ - 0.62, rearZ + 0.62], [rearZ - 0.62, -L + 0.12]]) { // (broken by the arches)
-        P.add(TRIM, rod([sx * half, 0.8, z0], [sx * half, 0.8, z1], 0.05, 0.08));
-      }
+      // a mirror (the flanks are left clean: the owner, 13-Oct, no panel lines)
       P.add(TRIM, bx(0.1, 0.09, 0.14, sx * (houseHalf(gBase) + 0.07), gBase + 0.06, ws[0] - 0.16));
       P.add(TRIM, bx(0.08, 0.04, 0.04, sx * (houseHalf(gBase) + 0.02), gBase + 0.02, ws[0] - 0.14));
-      if (sx > 0) P.add(TRIM, dsc(0.07, 0.02, 0, 0, 0).rotateY(Math.PI / 2).translate(half + 0.005, 0.98, rearZ - 0.62));
       // the nose: a round headlamp each side in a chrome bezel, an indicator round the corner under it
       P.add(CHROME, dsc(0.17, 0.05, sx * 0.68, 0.88, L + 0.012, 14));
       P.add(LAMP, dsc(0.14, 0.05, sx * 0.68, 0.88, L + 0.028, 14));
@@ -613,13 +596,98 @@ export const ORIG2_MODELS = {
       P.add(TRIM, bx(w + 0.07, 0.04, 0.17, 0, 0.5, e * (L + 0.04)));
       for (const sx of [-1, 1]) P.add(CHROME, bx(0.06, 0.14, 0.4, sx * (half + 0.0), 0.5, e * (L - 0.12)));
     }
-    // the tailgate: its plate, its handle, the shut line round it; an exhaust under the back
+    // a plate on the tailgate; an exhaust under the back
     P.add(PLATE, bx(0.44, 0.13, 0.02, 0, 0.8, -L - 0.006));
-    P.add(CHROME, bx(0.3, 0.04, 0.03, 0, 0.98, -L - 0.01));
-    for (const sx of [-1, 1]) P.add(TRIM, bx(0.012, 0.6, 0.012, sx * (half - 0.4), top - 0.32, -L - 0.004));
     P.add(CHROME, bar(0.045, 0.3, 0.55, 0.42, -L + 0.06, 'z', 8));
     P.into(group);
     group.userData = { body, parts: P.count, animate: () => {} };
+    return group;
+  },
+
+  // A split-screen camper bus (a 1960s VW Type 2, more or less): a rounded box, two-tone, the body colour below and
+  // white above (a dark grey on an Evil one: userData.livery), the white dipping in a V down the flat nose to a round
+  // badge; a split windscreen, a row of side windows, round headlamps, the spare
+  // wheel carried on the nose over a chrome bumper, the engine's louvres at the back, small tail lamps,
+  // chrome arm mirrors, pressed steel wheels, and a surfboard on a roof rack. It sways gently as it goes
+  lovebus: (car) => {
+    const group = new THREE.Group(), shell = new THREE.Group();
+    group.add(shell);
+    const w = car.hw * 2, L = car.hl, R = 0.4, half = w / 2;
+    const frontZ = L * 0.64, rearZ = -L * 0.64;
+    const paint = lambert(car.color), upper = lambert(0xf6f3ea), P = parts();
+    // the body: the lower half in the paint, the upper in white, meeting edge to edge at the join (each rounded off
+    // the same, so neither shows through the other); the nose flat and upright below, the windscreen leaning back
+    const sill = 0.36, join = 1.2, round = 0.08, roof = 1.98, nz = L - 0.07;
+    const lowerPts = [[-nz, sill, 0.1], ...arch(rearZ, R + 0.02, 0.5, sill), ...arch(frontZ, R + 0.02, 0.5, sill), [nz - 0.02, sill, 0.1], [nz, join], [-nz, join]];
+    const body = new THREE.Mesh(extrude(outline(lowerPts), half, round), paint);
+    shell.add(body);
+    const A = [nz, join], B = [nz - 0.14, roof, 0.3], C = [-nz + 0.08, roof, 0.3], D = [-nz, join];
+    P.add(upper, extrude(outline([A, B, C, D]), half, round));
+    for (const z of [rearZ, frontZ]) P.add(WELL, bx(w - 0.66, 0.5, 0.9, 0, 0.62, z));      // dark wheel wells
+    const flat = () => half;                                                               // (the flanks are upright)
+    // the split windscreen, the rear window, and the side windows: the cab door's and three along the flank
+    const lo = 1.33, hi = 1.74;
+    for (const sx of [-1, 1]) {
+      P.add(GLASS, edgePanel(A, B, round + 0.006, 0.17, 0.62, sx * 0.06, sx * 0.84));
+      P.add(GLASS, flankPane([[nz - 0.2, lo], [nz - 0.27, hi], [L * 0.66, hi], [L * 0.66, lo]], sx, flat));
+      for (let i = 0; i < 3; i++) {
+        const z0 = L * 0.58 - i * L * 0.42, z1 = z0 - L * 0.36;
+        P.add(GLASS, flankPane([[z0, lo], [z0, hi], [z1, hi], [z1, lo]], sx, flat));
+      }
+      // chrome arm mirrors at the front corners
+      P.add(CHROME, rod([sx * (half - 0.02), 1.32, nz - 0.18], [sx * (half + 0.14), 1.5, nz - 0.2], 0.025));
+      P.add(CHROME, bx(0.05, 0.16, 0.12, sx * (half + 0.15), 1.56, nz - 0.2));
+      // the nose: a round headlamp in a chrome ring each side, an indicator on the white above it
+      P.add(CHROME, dsc(0.17, 0.05, sx * 0.68, 0.98, nz + round + 0.012, 14));
+      P.add(LAMP, dsc(0.14, 0.05, sx * 0.68, 0.98, nz + round + 0.028, 14));
+      P.add(AMBER, dsc(0.06, 0.04, sx * 0.7, 1.29, nz + round - 0.005, 10));
+      // the tail: a small lamp each side (the brake lamp over the tail lamp), an indicator under it
+      P.add(TRIM, bx(0.16, 0.36, 0.02, sx * 0.76, 0.98, -nz - round - 0.002));
+      P.add(STOP, bx(0.12, 0.1, 0.03, sx * 0.76, 1.1, -nz - round - 0.01));
+      P.add(TAIL, bx(0.12, 0.12, 0.03, sx * 0.76, 0.98, -nz - round - 0.01));
+      P.add(AMBER, bx(0.12, 0.07, 0.03, sx * 0.76, 0.86, -nz - round - 0.01));
+      P.add(REVERSE, bx(0.1, 0.05, 0.03, sx * 0.4, 0.42, -L - 0.075));
+      // the surfboard's rack: a bar across the roof on a foot at each end
+      for (const z of [L * 0.42, -L * 0.42]) P.add(TRIM, bx(0.06, 0.08, 0.06, sx * 0.72, roof + round + 0.02, z));
+      // pressed steel wheels
+      const hub = geoOnce('bushub', () => mergeGeometries([new THREE.CylinderGeometry(0.25, 0.25, 0.32, 14), new THREE.CylinderGeometry(0.1, 0.12, 0.36, 10)]));
+      for (const z of [frontZ, rearZ]) wheel(group, R, 0.3, sx * (half - 0.04), R, z, textured('steel', 0xeef0f3, steelFace()), 0.25, hub);
+    }
+    // the V on the nose (in the white), down to a round chrome badge
+    const v = new THREE.Shape([[-0.9, join], [0, 0.86], [0.9, join], [0.42, join], [0, 1.05], [-0.42, join]].map(([x, y]) => new THREE.Vector2(x, y)));
+    P.add(upper, new THREE.ExtrudeGeometry(v, { depth: 0.012, bevelEnabled: false }).translate(0, 0, nz + round - 0.004));
+    P.add(CHROME, dsc(0.12, 0.03, 0, 0.95, nz + round + 0.014, 14));
+    P.add(upper, dsc(0.08, 0.03, 0, 0.95, nz + round + 0.02, 12));
+    // the windscreen's centre post, and the rear window
+    P.add(GLASS, edgePanel(D, [C[0] - 0.05, roof - 0.25], round + 0.006, 0.28, 0.82, 0.5, -0.5));
+    // chrome bumpers, and the spare wheel on the nose standing on the front one
+    for (const e of [1, -1]) {
+      P.add(CHROME, bx(w + 0.04, 0.12, 0.1, 0, 0.42, e * (L + 0.02)));
+      for (const sx of [-1, 1]) P.add(CHROME, bx(0.06, 0.12, 0.26, sx * (half - 0.02), 0.42, e * (L - 0.08)));
+      for (const sx of [-1, 1]) P.add(CHROME, bx(0.08, 0.2, 0.08, sx * 0.5, 0.48, e * (L + 0.03))); // (its overriders)
+    }
+    P.add(TYRE, dsc(0.27, 0.16, 0, 0.66, nz + round + 0.08, 16));
+    P.add(textured('steel', 0xeef0f3, steelFace()), dsc(0.16, 0.18, 0, 0.66, nz + round + 0.08, 14));
+    // the back: the engine's louvres, a plate, the exhaust
+    for (let i = 0; i < 3; i++) P.add(TRIM, bx(0.7, 0.025, 0.02, 0, 0.92 + i * 0.06, -nz - round - 0.004));
+    P.add(PLATE, bx(0.4, 0.12, 0.02, 0, 0.62, -nz - round - 0.004));
+    P.add(CHROME, bar(0.04, 0.24, 0.5, 0.3, -L + 0.02, 'z', 8));
+    // the surfboard on its rack
+    for (const z of [L * 0.42, -L * 0.42]) P.add(TRIM, bx(1.5, 0.04, 0.06, 0, roof + round + 0.07, z));
+    const board = new THREE.SphereGeometry(1, 12, 6).scale(0.3, 0.035, L * 0.86).translate(0.25, roof + round + 0.12, 0);
+    P.add(BOARD, board);
+    P.into(shell);
+    const livery = (evil) => upper.color.setHex(evil ? 0x505056 : 0xf6f3ea);
+    livery(false);
+    group.userData = {
+      body,
+      parts: P.count,
+      livery,
+      animate: (t) => { // a slow, easy sway
+        shell.rotation.z = Math.sin(t * 2.2) * 0.025;
+        shell.position.y = Math.sin(t * 4.4) * 0.015;
+      },
+    };
     return group;
   },
 };

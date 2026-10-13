@@ -1914,44 +1914,9 @@ export const MODELS = {
     return group;
   },
 
-  // A split-colour camper bus: painted below, white above, a V on its flat nose, big round
-  // headlights, a surfboard on the roof, and its spare tyre carried on the nose. It sways gently as it goes.
+  // The Love Bus: rebuilt (13-Oct) after the owner's older game's picture, in render/modelsOrig2.js (see it)
   lovebus: (car) => {
-    const group = new THREE.Group(), shell = new THREE.Group();
-    group.add(shell);
-    const w = car.hw * 2, l = car.hl * 2, R = 0.4;
-    const paint = lambert(car.color), white = lambert(0xf6f3ea), dark = lambert(0x23262d);
-    const body = box(shell, paint, w, 0.75, l, 0, 0.85, 0);
-    box(shell, white, w * 0.99, 0.85, l * 0.99, 0, 1.65, 0);                      // upper half
-    box(shell, dark, w * 1.01, 0.4, l * 0.78, 0, 1.68, -l * 0.04);                // side windows
-    box(shell, dark, w * 0.84, 0.42, 0.06, 0, 1.7, l / 2);                        // split windscreen
-    box(shell, white, 0.06, 0.44, 0.08, 0, 1.7, l / 2 + 0.01);
-    for (const side of [-1, 1]) { // the V on the nose, in the body colour's opposite
-      const arm = box(shell, white, 0.12, 0.62, 0.05, side * w * 0.14, 0.92, l / 2 + 0.01);
-      arm.rotation.z = side * 0.42;
-    }
-    box(shell, lambert(0xd8d8d8), w + 0.08, 0.12, 0.12, 0, 0.5, l / 2 + 0.03);    // chrome bumpers
-    box(shell, lambert(0xd8d8d8), w + 0.08, 0.12, 0.12, 0, 0.5, -l / 2 - 0.03);
-    box(shell, lambert(0xff7eb6), w * 0.3, 0.07, l * 0.8, w * 0.18, 2.16, -l * 0.02); // surfboard
-    disc(shell, lambert(0x141414), 0.3, 0.2, 0, 0.62, l / 2 + 0.16);              // the spare tyre, on the bumper...
-    disc(shell, lambert(CHROME), 0.15, 0.22, 0, 0.62, l / 2 + 0.16);              // ...and its hubcap
-    const lamp = new THREE.MeshBasicMaterial({ color: 0xfff3c4 }), tail = new THREE.MeshBasicMaterial({ color: 0xff2a2a });
-    for (const side of [-1, 1]) {
-      const light = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.08, 14), lamp);
-      light.rotation.x = Math.PI / 2;
-      light.position.set(side * w * 0.33, 0.92, l / 2 + 0.03);
-      shell.add(light);
-      box(shell, tail, w * 0.1, 0.24, 0.1, side * w * 0.4, 0.9, -l / 2 - 0.01);
-      wheel(group, R, 0.3, side * (w / 2 - 0.04), R, l * 0.32);
-      wheel(group, R, 0.3, side * (w / 2 - 0.04), R, -l * 0.32);
-    }
-    group.userData = {
-      body,
-      animate: (t) => { // a slow, easy sway
-        shell.rotation.z = Math.sin(t * 2.2) * 0.025;
-        shell.position.y = Math.sin(t * 4.4) * 0.015;
-      },
-    };
+    const group = ORIG2_MODELS.lovebus(car);
     return group;
   },
 

@@ -185,7 +185,7 @@ export const CARS = [
     maxSpeed: 25.5, accel: 12, agility: 1.4, crossing: 0.4, health: 95, hw: 0.74, hl: 1.5, height: 1.35,
     trait: 'slim', perk: 'Slips through gaps: scraping down the side of another car costs it nothing' },
   // ---- tier 2
-  { id: 'lovebus', tier: 2, name: 'Love Bus', price: 130, color: 0x3fae4a, evilColor: 0xd8262b, fixedLivery: true, model: 'lovebus',
+  { id: 'lovebus', tier: 2, name: 'Love Bus', price: 130, color: 0x77862a, evilColor: 0xd8262b, fixedLivery: true, model: 'lovebus',
     maxSpeed: 24, accel: 7, crossing: 0.55, health: 165, hw: 1.0, hl: 2.3, height: 2.1 },
   { id: 'wagon', tier: 2, name: 'Family Wagon', price: 160, color: 0x8a8cf0, evilColor: 0xf28cc0, fixedLivery: true, model: 'wagon',
     maxSpeed: 26, accel: 9, crossing: 0.6, health: 140, hw: 1.05, hl: 2.4, height: 1.9 },
