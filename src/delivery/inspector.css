@@ -1,0 +1,68 @@
+/* ---- the model inspector (render/inspector.js): one car full screen on a studio backdrop, turned by a drag ---- */
+#inspector.inspector { z-index: 45; padding: 0; gap: 0; display: block; text-align: left; color: #1d2430;
+  background: radial-gradient(120% 90% at 50% 38%, #f4f6f9 0%, #dfe4ea 48%, #b9c1cc 100%); touch-action: none;
+  -webkit-user-select: none; user-select: none; overscroll-behavior: contain; }
+#inspector.hidden { display: none; }
+#inspector .ins-stage { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+#inspector .ins-stage:active { cursor: grabbing; }
+#inspector button { font: 700 15px/1 system-ui, sans-serif; padding: 0 14px; min-height: 40px; border: 0; border-radius: 10px; cursor: pointer;
+  background: rgba(255, 255, 255, .86); color: #1d2430; box-shadow: 0 1px 0 rgba(255, 255, 255, .6) inset, 0 1px 4px rgba(20, 30, 45, .22); }
+#inspector button:hover { background: #fff; }
+#inspector button:focus-visible { outline: 3px solid #2a6fdb; outline-offset: 2px; }
+#inspector button:disabled { opacity: .4; cursor: default; }
+
+/* the bar along the top: Back, the car's name and place in the list, Good / Evil */
+#inspector .ins-top { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; gap: 12px;
+  padding: max(12px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 0 max(14px, env(safe-area-inset-left)); pointer-events: none; }
+#inspector .ins-top > * { pointer-events: auto; }
+#inspector .ins-back { background: #1d2430; color: #fff; }
+#inspector .ins-back:hover { background: #2b3546; }
+#inspector .ins-title { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; pointer-events: none; }
+#inspector .ins-title b { font: 800 20px/1.15 system-ui, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#inspector .ins-title small { font: 600 12px/1.2 system-ui, sans-serif; letter-spacing: .04em; text-transform: uppercase; opacity: .62; }
+#inspector .ins-side { display: inline-flex; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(20, 30, 45, .22); }
+#inspector .ins-side button { border-radius: 0; box-shadow: none; background: rgba(255, 255, 255, .7); }
+#inspector .ins-side button.on { background: #1d2430; color: #fff; }
+#inspector .ins-side button[data-side="evil"].on { background: #c8362b; }
+
+/* the previous / next car, at the sides */
+#inspector .ins-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 48px; min-height: 64px; padding: 0; font-size: 30px;
+  background: rgba(255, 255, 255, .6); }
+#inspector .ins-prev { left: max(10px, env(safe-area-inset-left)); }
+#inspector .ins-next { right: max(10px, env(safe-area-inset-right)); }
+
+/* along the bottom: the views, what the model is made of, how to turn it */
+#inspector .ins-bottom { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 0 max(14px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); pointer-events: none; }
+#inspector .ins-views { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; pointer-events: auto; }
+#inspector .ins-views button { min-width: 64px; }
+#inspector .ins-views button.on { background: #1d2430; color: #fff; }
+#inspector .ins-stats { max-width: 100%; padding: 6px 12px; border-radius: 8px; background: rgba(255, 255, 255, .62); text-align: center;
+  font: 600 13px/1.35 system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+#inspector .ins-hint { font: 600 12px/1.2 system-ui, sans-serif; opacity: .6; transition: opacity .6s; }
+#inspector .ins-hint.gone { opacity: 0; }
+
+/* a touch screen: every button at least 44px high */
+@media (pointer: coarse) {
+  #inspector button { min-height: 44px; }
+  #inspector .ins-views button { min-width: 58px; }
+}
+/* a phone held upright: the name over two lines' room, the views in two rows of three */
+@media (max-width: 560px) {
+  #inspector .ins-top { gap: 8px; }
+  #inspector .ins-title b { font-size: 17px; }
+  #inspector .ins-side button { padding: 0 11px; }
+  #inspector .ins-views { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 360px; }
+  #inspector .ins-stats { font-size: 12px; }
+  #inspector .ins-arrow { width: 40px; min-height: 56px; top: 24%; } /* (above the car, in the empty sky: never over it) */
+}
+/* a short screen (a phone on its side): the views in one row, the hint dropped */
+@media (max-height: 480px) {
+  #inspector .ins-top { padding-top: max(8px, env(safe-area-inset-top)); }
+  #inspector .ins-title b { font-size: 16px; }
+  #inspector .ins-bottom { gap: 5px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+  #inspector .ins-stats { font-size: 11.5px; padding: 4px 10px; }
+  #inspector .ins-hint { display: none; }
+}
+/* the garage under it: hidden, so nothing of it shows or takes a tap */
+body.inspecting #garageUi, body.inspecting #garageTip { visibility: hidden; }

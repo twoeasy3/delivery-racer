@@ -94,6 +94,9 @@ body.ideas-studio #garageUi, body.ideas-studio #garageTip { display: none !impor
 #garageUi .actions { display: flex; gap: 8px; }
 #garageUi #garageUse { background: #fff; }
 body.ideas-tab #garageUse { display: none !important; }
+/* (the model inspector's button, render/inspector.js: a quiet one beside the buying and driving ones) */
+#garageUi #garageInspect { background: rgba(255, 255, 255, .16); color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .4); }
+#garageUi #garageInspect:hover { background: rgba(255, 255, 255, .26); }
 
 /* ---- garage: the Sort and Show lists (render/garageview.js): a button that opens every choice, the one in use ticked ---- */
 #garageUi .view-pick { position: relative; display: inline-block; pointer-events: auto; }
