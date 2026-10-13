@@ -15,6 +15,7 @@ const add = (group, geometry, material, x, y, z, rx = 0, ry = 0, rz = 0) => {
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 const YELLOW = lambert(0xf2b51c), DARK = lambert(0x2a2a2a), GLASS = lambert(0x2f4a58), STEEL = lambert(0x7d838a);
 const HIVIS = lambert(0xff8a1a), SKIN = lambert(0xe0b48c), HAT = lambert(0xf6e12a), TROUSERS = lambert(0x2c3440);
+for (const shared of [YELLOW, DARK, GLASS, STEEL, HIVIS, SKIN, HAT, TROUSERS]) shared.userData.shared = true; // (made once, used again by every level: clearGroup keeps them)
 // a long-reach excavator, its arm along local +z, its bucket CONFIG.site.reach out, low down
 export const makeDigger = () => {
   const g = new THREE.Group(), R = CONFIG.site.reach;

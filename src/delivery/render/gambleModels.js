@@ -106,6 +106,7 @@ export const makeTransporter = (run = 15, top = 4.15, half = 1.5) => {
 
 // a windsock on its pole: `sock`, hinged at the top, reaches out along its local +x (see syncGambles)
 const POLE = lambert(0xd9dde2), RING = lambert(0x30343a), SOCK = [lambert(0xff6a1a, { side: THREE.DoubleSide }), lambert(0xf4f4f4, { side: THREE.DoubleSide })];
+for (const shared of [POLE, RING, ...SOCK]) shared.userData.shared = true; // (made once, used again by every level: clearGroup keeps them)
 export const makeWindsock = (height = 7.5, length = 4.2) => {
   const g = new THREE.Group(), turn = new THREE.Group(), sock = new THREE.Group();
   add(g, box(0.16, height, 0.16), POLE, 0, height / 2, 0);

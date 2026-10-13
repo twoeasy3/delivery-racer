@@ -9,7 +9,7 @@ import { LEVEL } from './levels.js';
 const MAX_YAW = Math.min(CONFIG.maxYawDeg, 45) * Math.PI / 180;
 
 // the angle a car's nose is turned by, given how fast it is moving sideways and forwards
-export const yawFor = (lateralSpeed, forwardSpeed) => clamp(
+const yawFor = (lateralSpeed, forwardSpeed) => clamp(
   Math.atan2(lateralSpeed, Math.max(Math.abs(forwardSpeed), CONFIG.yawMinSpeed)) * CONFIG.yawGain, -MAX_YAW, MAX_YAW);
 
 // Game logic -> rendering. Entries are either visual effects ({ type: 'explode' | 'burst' | 'gift', s, lat, ... }) or

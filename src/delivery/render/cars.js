@@ -20,6 +20,7 @@ const taillightMat = new THREE.MeshBasicMaterial({ color: 0xff2a2a });
 const bumperMat = new THREE.MeshLambertMaterial({ color: 0x2a2c31 });
 const tyreMat = new THREE.MeshLambertMaterial({ color: 0x141414 });
 const wheelGeo = new THREE.CylinderGeometry(1, 1, 1, 12).rotateZ(Math.PI / 2); // axle across the car
+for (const shared of [unitBox, cabinMat, headlightMat, taillightMat, bumperMat, tyreMat, wheelGeo]) shared.userData.shared = true; // (made once, shared by every car: clearGroup keeps them)
 export const makeCarMesh = (color) => {
   const group = new THREE.Group();
   const body = new THREE.Mesh(unitBox, new THREE.MeshLambertMaterial({ color }));
@@ -144,6 +145,7 @@ const brakeMat = new THREE.MeshBasicMaterial({ color: 0xff1a1a });
 const brakeHaloMat = new THREE.MeshBasicMaterial({ color: 0xff3020, transparent: true, opacity: 0.35, depthWrite: false });
 const amberMat = new THREE.MeshBasicMaterial({ color: 0xffa21a });
 const flashMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false });
+for (const shared of [brakeMat, brakeHaloMat, amberMat, flashMat]) shared.userData.shared = true; // (made once, shared by every car: clearGroup keeps them)
 const addLamps = (group) => {
   const lamps = new THREE.Group();
   const brakes = [0, 1].map(() => new THREE.Mesh(unitBox, brakeMat));
@@ -196,7 +198,7 @@ ufoMesh.visible = false;
 carMesh.add(ufoMesh);
 // the player's car can turn see-through (ghost), so it needs materials of its own
 carMesh.userData.cabin.material = cabinMat.clone();
-export const playerMats = [carMesh.userData.body.material, carMesh.userData.cabin.material];
+const playerMats = [carMesh.userData.body.material, carMesh.userData.cabin.material];
 for (const mat of playerMats) mat.transparent = true;
 // the inflatable passenger: a crash-test dummy riding along on the roof while it is active
 // (sat at the car's roof height: see items.js)

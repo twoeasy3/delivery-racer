@@ -48,7 +48,8 @@ const makeParticles = (MAX, material) => {
       data[o + 2] += data[o + 5] * dt;
       if (data[o + 1] < data[o + 11] + 0.1) { // debris lands and skids
         data[o + 1] = data[o + 11] + 0.1; data[o + 4] = 0;
-        data[o + 3] *= 0.9; data[o + 5] *= 0.9;
+        const skid = Math.pow(0.9, dt * 60); // (0.9 a 60th of a second, whatever the frame rate)
+        data[o + 3] *= skid; data[o + 5] *= skid;
       }
       const t = 1 - data[o + 6] / data[o + 7];
       const scale = data[o + 8] * (1 + data[o + 9] * t) * Math.min(1, (1 - t) * 3);
@@ -67,6 +68,9 @@ export const Smoke = makeParticles(600, new THREE.MeshBasicMaterial({
   transparent: true, opacity: 0.35, depthWrite: false }));
 
 export const rnd = (range) => (Math.random() - 0.5) * 2 * range;
+// how many of something emitted `rate` times a second come out this frame (a whole number, right on average):
+// so a wake or an exhaust is as thick at 30, 60 or 120 frames a second
+export const perSecond = (rate, dt) => Math.floor(rate * dt + Math.random());
 
 // damaged cars trail smoke from the engine: thicker and darker as health drops, then flames
 const emitSmoke = (v, dt) => {

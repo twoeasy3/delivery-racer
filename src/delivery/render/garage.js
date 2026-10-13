@@ -15,7 +15,7 @@ import { LEVELS } from '../levels.js';
 import { Tiers, tierStarsNode, richTiers } from '../tiers.js';
 import { Progress } from '../progress.js';
 import { Game } from '../game.js';
-import { renderer } from './scene.js';
+import { renderer, clearGroup } from './scene.js';
 import { makeShowCar, paintShowCar } from './showcar.js';
 import { GarageView, arrange, mountGarageView } from './garageview.js';
 import { showComparison } from './compare.js';
@@ -86,7 +86,7 @@ const label = (text, w, h, size, colour = '#ffd23f', ground = '#20242c') => {
 // ---- the lot and the building, and the cars parked in it: built afresh when the cars on show change ----
 const buildLot = () => {
   built = onShow();
-  lot.clear();
+  clearGroup(lot); // (the cars, signs and building it held freed, not only dropped: audit P7)
   // (sorted and filtered by the bar's Sort and Show buttons: see render/garageview.js)
   const sorted = arrange(garageCars().sort((a, b) => rank(a) - rank(b) || a.price - b.price));
   order = [];
@@ -150,6 +150,7 @@ export { makeShowCar, paintShowCar };
 
 // ---- a car, parked in its bay: column by column --------------------------------------------------
 const SILHOUETTE = new THREE.MeshBasicMaterial({ color: 0x07080b });
+SILHOUETTE.userData.shared = true; // (every teaser's: clearGroup keeps it)
 const parkCar = (car, i) => {
   if (!car) return null; // (a bay left empty: see buildLot)
   const mesh = makeShowCar(car);

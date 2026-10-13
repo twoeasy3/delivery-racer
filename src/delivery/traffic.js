@@ -2200,7 +2200,8 @@ export const Traffic = (() => {
         if (!LEVEL.battle && Track.isMain(car.s)) {
           const W = CONFIG.wrongWay;
           let head = null, near = Infinity;
-          for (const o of [...cars, Player]) {
+          for (let i = 0; i <= cars.length; i++) { // (every car, then the player: no array built for it, per car per step)
+            const o = i < cars.length ? cars[i] : Player;
             if (o === car || !o.active || o.junction || (o.isPlayer && Player.ghost > 0)) continue;
             const odir = o.isPlayer ? 1 : o.dir;
             if (odir === car.dir || !(car.wrongWay || o.wrongWay)) continue;

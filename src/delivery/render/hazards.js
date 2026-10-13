@@ -13,7 +13,7 @@ import { Track } from '../track.js';
 import { Game } from '../game.js';
 import { Player } from '../player.js';
 import { Hazards } from '../hazards.js';
-import { scene, tmp } from './scene.js';
+import { scene, tmp, clearGroup } from './scene.js';
 import { buildStrip } from './road.js';
 import { makeWorker } from './siteModels.js';
 import { makePuddle, makeFountain } from './watermains.js';
@@ -84,7 +84,7 @@ scene.add(group);
 let schools = [], mains = [], balloons = [], bridges = [];
 
 Game.onLoad.push(() => {
-  group.clear();
+  clearGroup(group); // (freed, not only dropped: audit P7)
   const LW = CONFIG.laneWidth;
   // ---- school crossings
   schools = (LEVEL.schoolCrossings || []).map((c) => {

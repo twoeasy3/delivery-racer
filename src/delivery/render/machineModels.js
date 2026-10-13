@@ -7,6 +7,7 @@ import { CONFIG } from '../config.js';
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 const YELLOW = lambert(0xf2b51c), DARK = lambert(0x2a2a2a), STEEL = lambert(0x7d838a), GLASS = lambert(0x2f4a58), ORANGE = lambert(0xe0701e);
 export const BEACON_ON = new THREE.MeshBasicMaterial({ color: 0xffa21a }), BEACON_OFF = lambert(0x7a4a10);
+for (const shared of [BEACON_ON, BEACON_OFF]) shared.userData.shared = true; // (made once, used by every level: clearGroup keeps them)
 export const add = (group, geometry, material, x, y, z, rx = 0, ry = 0, rz = 0) => {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(x, y, z);

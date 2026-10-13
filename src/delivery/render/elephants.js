@@ -8,7 +8,7 @@ import { Game } from '../game.js';
 import { Player } from '../player.js';
 import { Collision } from '../collision.js';
 import { Elephants } from '../elephants.js';
-import { scene, tmp } from './scene.js';
+import { scene, tmp, clearGroup } from './scene.js';
 import { Particles, rnd } from './effects.js';
 import { makeElephant } from './elephantModel.js';
 
@@ -17,7 +17,7 @@ const group = new THREE.Group();
 scene.add(group);
 let meshes = [];
 Game.onLoad.push(() => {
-  group.clear();
+  clearGroup(group); // (freed, not only dropped: audit P7)
   const count = (LEVEL.elephants || []).reduce((sum, z) => sum + (z.count || 1), 0);
   meshes = [];
   for (let i = 0; i < count; i++) {

@@ -259,7 +259,11 @@ export const Progress = {
     if (this.noSave) return;
     const text = this.saved();
     try { localStorage.setItem(BACKUP, text); } catch { /* (no storage: the cookie alone, and the short of the save) */ }
-    document.cookie = COOKIE + '=' + cookieText(this.data) + '; max-age=' + ONE_YEAR + '; path=/; SameSite=Lax';
+    // (the cookie is kept to the game's pages, path=/delivery: with path=/ it went out with every request to the
+    // origin, every script and picture under /assets/ too (audit P8). One written before with path=/ is deleted as
+    // this one is written; until then it is still read, as there is nothing else of that name)
+    document.cookie = COOKIE + '=; max-age=0; path=/; SameSite=Lax';
+    document.cookie = COOKIE + '=' + cookieText(this.data) + '; max-age=' + ONE_YEAR + '; path=/delivery; SameSite=Lax';
   },
   // a level delivered on time: bank the tip, remember the best time to spare (for the side it was
   // played on), open the next level. True: that was a new best

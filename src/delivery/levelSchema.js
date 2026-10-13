@@ -43,26 +43,26 @@ import { CARGO } from './cargo.js';
 // and a model for every pickup type: scripts/.schema-check.mjs checks the two agree)
 export const PICKUP_TYPES = ['turbo', 'ghost', 'wrench', 'passenger', 'mystery', 'radarDetector', 'siren', 'badGas', 'heavyMass', 'timePlus', 'timeMinus',
   'cash5', 'cash10', 'cash20', 'armour', 'bigSplash', 'butterfingers'];
-export const DRIFT_PATTERNS = ['circle', 'zigzag', 'sweep', 'figure8', 'dart'];
-export const POTTY_DANCES = ['hop', 'wave', 'slide', 'shuffle', 'stomp', 'spin'];
-export const HERD_KINDS = ['cow', 'kangaroo'];
-export const MIGRATION_KINDS = ['wildebeest', 'zebra'];
-export const MACHINERY_KINDS = ['bulldozer', 'excavator', 'dumpTruck', 'roller', 'forklift'];
-export const SITE_KINDS = ['trench', 'excavator', 'workers', 'pipes'];
-export const BRIDGE_STYLES = ['harbour', 'seacliff'];
-export const ZONE_SCENERY = ['sydney', 'bush', 'ousley', 'seacliff', 'wollongong', 'shellharbour', 'kiama', 'marais', 'gois', 'noirmoutier', 'savanna', 'kopjes', 'river', 'plains'];
+const DRIFT_PATTERNS = ['circle', 'zigzag', 'sweep', 'figure8', 'dart'];
+const POTTY_DANCES = ['hop', 'wave', 'slide', 'shuffle', 'stomp', 'spin'];
+const HERD_KINDS = ['cow', 'kangaroo'];
+const MIGRATION_KINDS = ['wildebeest', 'zebra'];
+const MACHINERY_KINDS = ['bulldozer', 'excavator', 'dumpTruck', 'roller', 'forklift'];
+const SITE_KINDS = ['trench', 'excavator', 'workers', 'pipes'];
+const BRIDGE_STYLES = ['harbour', 'seacliff'];
+const ZONE_SCENERY = ['sydney', 'bush', 'ousley', 'seacliff', 'wollongong', 'shellharbour', 'kiama', 'marais', 'gois', 'noirmoutier', 'savanna', 'kopjes', 'river', 'plains'];
 ZONE_SCENERY.push(...Object.values(THEMES).flatMap(theme => theme.sets || [])); // (and the sets of a theme with a file of its own: its "sets" in themes.js)
-export const LANDMARK_KINDS = ['bay', 'flyer', 'mbs', 'esplanade', 'fullerton', 'merlion', 'padang', 'gardens', 'artscience', 'helix', 'float', 'cbd', 'suntec', 'gallery', 'domes',
+const LANDMARK_KINDS = ['bay', 'flyer', 'mbs', 'esplanade', 'fullerton', 'merlion', 'padang', 'gardens', 'artscience', 'helix', 'float', 'cbd', 'suntec', 'gallery', 'domes',
   'river', 'basin', 'casino', 'biosphere', 'skyline', 'lake', 'oldStraight', 'stream', 'banking', 'hotel'];
 // ...and the ones it has: read from its own tables, never copied
-export const OBSTACLE_KINDS = Object.keys(CONFIG.obstacleKinds);
-export const VEHICLE_KINDS = Object.keys(CONFIG.vehicles);
-export const WRECKAGE_KINDS = Object.keys(CONFIG.wreckage.kinds);
-export const THEME_NAMES = Object.keys(THEMES);
-export const CAR_IDS = [...Object.keys(LEVEL_CARS), ...CARS.map(c => c.id), ...EARNED_CARS.map(c => c.id), ...EVENT_CARS.map(c => c.id)];
+const OBSTACLE_KINDS = Object.keys(CONFIG.obstacleKinds);
+const VEHICLE_KINDS = Object.keys(CONFIG.vehicles);
+const WRECKAGE_KINDS = Object.keys(CONFIG.wreckage.kinds);
+const THEME_NAMES = Object.keys(THEMES);
+const CAR_IDS = [...Object.keys(LEVEL_CARS), ...CARS.map(c => c.id), ...EARNED_CARS.map(c => c.id), ...EVENT_CARS.map(c => c.id)];
 // (the cars a level's allowedCars may name: any a player can own)
 const OWNABLE_IDS = [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...BESPOKE_CARS, ...FILLER_CARS, ...IDEA_CARS].map(c => c.id);
-export const RACE_KINDS = ['f1', 'gt', 'lmp'].filter(k => LEVEL_CARS[k]);
+const RACE_KINDS = ['f1', 'gt', 'lmp'].filter(k => LEVEL_CARS[k]);
 const SIDES = ['left', 'right'];
 
 // ---- how settings are written ----------------------------------------------------------------------
@@ -374,7 +374,6 @@ export const FIELDS = {
 };
 
 // ---- reading the schema ---------------------------------------------------------------------------
-export const fieldNames = () => Object.keys(FIELDS);
 export const isPlaced = (def) => def.shape === 'stretch' || def.shape === 'point' || def.shape === 'world';
 export const isList = (def) => (isPlaced(def) && !def.single) || def.shape === 'list';
 export const choiceValue = (c) => (c !== null && typeof c === 'object' ? c.value : c);
@@ -591,7 +590,7 @@ const wrongNumber = (S, v) => {
   if (S.max !== undefined && v > S.max) return 'at most ' + S.max;
   return null;
 };
-export const checkSetting = (S, v, name, out = []) => {
+const checkSetting = (S, v, name, out = []) => {
   const bad = (text) => { out.push(name + ': ' + text); return out; };
   if (S.alt && (S.alt.type === 'list' ? Array.isArray(v) : isObject(v))) return checkSetting({ type: S.alt.type || 'object', ...S.alt }, v, name, out);
   switch (S.type) {
@@ -632,7 +631,7 @@ export const checkSetting = (S, v, name, out = []) => {
 };
 // ...and with an object of settings: each one there checked, each required one there, none unknown
 const PLACE_KEYS = ['road', 'exit'];
-export const checkSettings = (settings, e, name, out = [], known = []) => {
+const checkSettings = (settings, e, name, out = [], known = []) => {
   for (const [k, S] of Object.entries(settings || {})) {
     if (e[k] === undefined) { if (S.required && (!S.when || S.when(e))) out.push(name + ': needs "' + k + '"'); } else checkSetting(S, e[k], name + '.' + k, out);
   }

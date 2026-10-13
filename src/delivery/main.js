@@ -422,21 +422,24 @@ const frame = (now) => {
     Sound.pack(heard ? heard.pack : 0);
     // the siren, louder the nearer the nearest police car or ambulance (the screensaver's too), and a radar
     // ping as one comes near enough to bust you (nobody busts a tank)
-    let copFar = Infinity;
+    // (one pass over the traffic for the siren, the lowriders, the helicopter and the toads: audit P13)
+    let copFar = Infinity, lowriderFar = Infinity, toadFar = Infinity, arrest = false;
+    const playerAlong = Track.along(Player.s);
     for (const c of Traffic.cars) {
-      if (!c.active || (c.kind !== 'police' && c.kind !== 'ambulance' && !c.sirenOn) || c.toad || c.junction) continue;
-      // (a pursuit's interceptor is heard from further off: before it is seen)
-      copFar = Math.min(copFar, Math.hypot(Track.along(c.s) - Track.along(Player.s), c.lat - Player.lat) * (c.sirenOn ? CONFIG.sirenRange / CONFIG.pursuit.heard : 1));
+      if (!c.active) continue;
+      if (c.arrest >= 0) arrest = true;
+      if (c.toad) { toadFar = Math.min(toadFar, Math.hypot(Track.along(c.s) - playerAlong, c.lat - Player.lat)); continue; }
+      if (c.junction) continue;
+      if (c.kind === 'police' || c.kind === 'ambulance' || c.sirenOn) {
+        // (a pursuit's interceptor is heard from further off: before it is seen)
+        copFar = Math.min(copFar, Math.hypot(Track.along(c.s) - playerAlong, c.lat - Player.lat) * (c.sirenOn ? CONFIG.sirenRange / CONFIG.pursuit.heard : 1));
+      }
+      if (c.kind === 'lowrider') lowriderFar = Math.min(lowriderFar, Math.hypot(Track.along(c.s) - playerAlong, c.lat - Player.lat));
     }
     const siren = Game.state === 'playing' && !Game.paused ? Math.max(0, 1 - copFar / CONFIG.sirenRange) : 0;
     // (the player's own siren, a pickup, at full blast)
     Sound.siren(live && Player.siren > 0 ? 1 : siren * siren, live && Player.tank <= 0 && Traffic.policeNear());
     // the lowriders' music, the same way: from the nearest one in traffic
-    let lowriderFar = Infinity;
-    for (const c of Traffic.cars) {
-      if (!c.active || c.kind !== 'lowrider' || c.toad || c.junction) continue;
-      lowriderFar = Math.min(lowriderFar, Math.hypot(Track.along(c.s) - Track.along(Player.s), c.lat - Player.lat));
-    }
     const lowrider = Game.state === 'playing' && !Game.paused ? Math.max(0, 1 - lowriderFar / CONFIG.lowriderHearing) : 0;
     Sound.lowriders(lowrider * lowrider);
     // beeps while on the shoulder with the danger meter running down, faster the nearer the bust
@@ -447,14 +450,11 @@ const frame = (now) => {
     Sound.ufoStrike(!!UfoStrike.phase && !Game.paused && Game.state === 'playing');
     // the helicopter while it comes for the car (wrecked or busted), and keeps it at game over
     Sound.helicopter(!Game.paused && !Game.screensaver &&
-      ((Game.state === 'playing' && (!Player.active || Player.busted || Traffic.cars.some(c => c.active && c.arrest >= 0))) || Game.over));
+      ((Game.state === 'playing' && (!Player.active || Player.busted || arrest)) || Game.over));
     // a frog croaks louder the nearer it is (and so does a toad, in TOAD RAGE)
-    let frogFar = Infinity;
+    let frogFar = toadFar;
     for (const o of Collision.obstacles) {
-      if (o.kind === 'frog' && !o.gone) frogFar = Math.min(frogFar, Math.abs(Track.along(o.s) - Track.along(Player.s)));
-    }
-    for (const c of Traffic.cars) {
-      if (c.active && c.toad) frogFar = Math.min(frogFar, Math.hypot(Track.along(c.s) - Track.along(Player.s), c.lat - Player.lat));
+      if (o.kind === 'frog' && !o.gone) frogFar = Math.min(frogFar, Math.abs(Track.along(o.s) - playerAlong));
     }
     Sound.frog(Game.paused || Game.state !== 'playing' ? 0 : Math.max(0, 1 - frogFar / CONFIG.frogHearing));
     renderer.render(scene, camera);

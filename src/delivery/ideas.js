@@ -176,4 +176,3 @@ export const IDEA_CARS = [
     maxSpeed: 28, accel: 8, agility: 0.95, crossing: 1, health: 240, mass: 2, sound: 'suv' },
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
-export const IDEA_CAR = Object.fromEntries(IDEA_CARS.map(car => [car.id, car]));

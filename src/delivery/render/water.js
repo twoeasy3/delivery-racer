@@ -18,7 +18,7 @@ import { Player } from '../player.js';
 import { Traffic } from '../traffic.js';
 import { scene, tmp, clearGroup } from './scene.js';
 import { carMesh, trafficMeshes } from './cars.js';
-import { Particles, rnd } from './effects.js';
+import { Particles, rnd, perSecond } from './effects.js';
 import './boatModels.js'; // (the boats, added to MODELS)
 
 const STEP = 4, COLS = 6;             // m between rows of the sheet; points across it
@@ -153,7 +153,7 @@ const spray = (s, lat, hw, hl, speed, dir) => {
 };
 
 let wasAfloat = false, rolled = false;
-export const syncWater = (now) => {
+export const syncWater = (now, dt) => {
   if (!sheets.length) {
     if (rolled) { carMesh.rotation.z = 0; rolled = false; }
     return;
@@ -184,7 +184,7 @@ export const syncWater = (now) => {
     carMesh.rotation.z = r.roll;
     carMesh.rotation.x += r.pitch - depth * 0.05 * Math.min(1, Player.speed / 30);
     rolled = true;
-    if (Player.active && Player.speed > C.wakeFrom && depth > 0.2) {
+    if (Player.active && Player.speed > C.wakeFrom && depth > 0.2) for (let k = perSecond(60, dt); k > 0; k--) { // (once a frame at 60 Hz, as it was)
       spray(Player.s, Player.lat, Player.hw, Player.hl, Player.speed, 1);
       // (the Amphibious Tank shoulders a big bow wave ahead of it: as much white water again, thrown wider)
       for (let n = 1; n < (Player.rageTank?.bowWave || 1); n++) spray(Player.s + 0.6 * n, Player.lat, Player.hw + 0.5 * n, Player.hl + 0.4, Player.speed * (1 + 0.25 * n), 1);
@@ -212,6 +212,8 @@ export const syncWater = (now) => {
     mesh.rotation.z = r.roll;
     mesh.rotation.x += r.pitch;
     mesh.userData.rolled = true;
-    if (Math.abs(car.vs) > C.wakeFrom && d > 0.2 && Math.abs(car.s - Player.s) < 220 && Math.random() < 0.6) spray(car.s, car.lat, car.hw, car.hl, car.vs, car.dir);
+    if (Math.abs(car.vs) > C.wakeFrom && d > 0.2 && Math.abs(car.s - Player.s) < 220) {
+      for (let k = perSecond(36, dt); k > 0; k--) spray(car.s, car.lat, car.hw, car.hl, car.vs, car.dir); // (36 a second: 60% of the frames at 60 Hz, as it was)
+    }
   }
 };

@@ -10,6 +10,31 @@ Sizes: **S** under an hour, **M** a few hours, **L** a day or more.
 
 ## Summary
 
+### Status as of 13-Oct (v1.1.101 + branch `claude/audit-safe-tier`)
+
+Checked against the code of `main` (v1.1.101, `002b929`) and the branch, not copied from older notes. Each finding
+below has a "Status (13-Oct)" line under its heading; the text of the finding is as it was written on 10-Oct.
+
+| | Findings |
+|---|---|
+| Already fixed on main (10) | P3, C1, C2, C3, C4, C5, C6, C7, C8, Q8 |
+| Done on the branch, not merged (6) | P7, P8, P9, P13, C9, Q7 |
+| Partly done (2) | P4 (the branch: the per-car array), Q2 (main: `blank()`) |
+| Not attempted (14) | P1, P2, P5, P6, P10, P11, P12, P14, Q1, Q3, Q4, Q5, Q6, Q9 |
+
+So 16 of 32 are done (10 on main, 6 on the branch), 2 partly, 14 open. **For the owner:** the two Lowrider tracks
+(stage 1: compressing them needs someone to listen); whether the player's own boat should lose its second wake
+(C9); P1, P2 and P6 (the draw calls and the tank corner) are the big open wins and are M to L each.
+
+Of the plan (section 4): **stage 0** in part on main (one runner with groups, `npm run check`, ESLint; no build-size
+report, picture-diff or level hash yet). **Stage 1**: the 15 MB of map downloads are already gone from this
+repository; the one unused sound (`Explosion Large.wav`, 16 KB) removed on the branch; the Super pictures are in
+use (Q7); the Lowrider tracks and the rounding of run-off widths not done. **Stage 2**: Q7's exports done on the
+branch; the field reference from the schema (B7) not done. **Stage 4** (one water-main system): done on main (C1).
+Stages 3, 5, 6, 7, 8 and 9 not started.
+
+### The audit as written (10-Oct)
+
 The ten most worth doing first:
 
 1. **C1. Two burst-water-main systems run on the same level field**, and one of them is never drawn, so it
@@ -53,6 +78,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 ## 1. Performance
 
 ### P1. Every part of every vehicle is its own draw call, and every traffic slot has its own copy of each model
+- **Status (13-Oct):** Not attempted (M to L; needs the picture-diff of stage 0 first).
 - **Where:** `render/models.js:12-30` (`box`, `wheel`), `render/cars.js:23-38` (`makeCarMesh`), `:147-156`
   (`addLamps`), `:230-260` (`trafficMeshes`, `ownModel`).
 - **What:** `box()` makes a new `BoxGeometry` and usually a new material for each part. `models.js` has 52
@@ -72,6 +98,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed** (structure). The draw-call numbers are estimates: read `renderer.info.render.calls` to get them.
 
 ### P2. One mesh, one geometry and one material for each cone, mine and asteroid
+- **Status (13-Oct):** Not attempted (M).
 - **Where:** `render/items.js:364-370` (`buildItems`), `render/obstacleModels.js:330-340` (cone), `:9-17`
   (`boxModel`), `render/items.js:399-405`.
 - **What:** `OBSTACLE_MODELS[kind](o)` is called once per obstacle. A cone builds its own `LatheGeometry` (about
@@ -89,6 +116,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed.**
 
 ### P3. The slower the frame, the more simulation steps it runs
+- **Status (13-Oct):** Already fixed on main: `main.js` steps the logic by exactly `CONFIG.maxStep` and carries the remainder to the next frame (the fixed step of "Replays Phase A", `e0fbf84`).
 - **Where:** `main.js:183-192`, `config.js:980` (`maxStep: 1 / 120`).
 - **What:** `steps = Math.ceil(dt / CONFIG.maxStep)`, with `dt` capped at 0.05 s. At a steady 60 Hz `dt` is
   16.67 ms and `maxStep` is 8.33 ms, so the ratio sits at 2.0 and `ceil` gives 3 on every frame that arrives a
@@ -103,6 +131,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed.**
 
 ### P4. `Traffic.update` allocates and rescans the pool for every car, every step
+- **Status (13-Oct):** Partly done on branch `claude/audit-safe-tier` (`Audit P4 (part)`): no `[...cars, Player]` array per car per step; the simulation is the same to the bit (end-of-run hashes on 8 levels identical to main). Open: the active-car list, the traffic mix per zone, `huntRoles`' filters.
 - **Where:** `traffic.js:2134`, `:2106`, `:2163`, `:2193`, `:1637`, `:1663`, `:1640` with `:69-75`, `:654-662`,
   `:1597-1608`.
 - **What:**
@@ -125,6 +154,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed.**
 
 ### P5. `syncTraffic` rebuilds every car's shape every frame
+- **Status (13-Oct):** Not attempted.
 - **Where:** `render/cars.js:261-323`, `:39-76` (`shapeCarMesh`), `:159-186` (`syncLamps`), `:306`;
   `render/items.js:104-121` (`syncToads`), `:486`, `:491`.
 - **What:** for each active car, each frame: `shapeCarMesh` sets the scale and position of 13 parts whether or
@@ -140,6 +170,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed.**
 
 ### P6. The tank corner is a second WebGL context
+- **Status (13-Oct):** Not attempted (M): `render/tankcorner.js` still has a WebGLRenderer of its own.
 - **Where:** `render/tankcorner.js:12-14`, `:44`; called from `main.js:301`.
 - **What:** it creates its own `WebGLRenderer` (antialiased, alpha) on its own canvas and renders it every
   frame of every run, to turn a ghost tank in a corner. `render/scene.js:15-17` already says why this is
@@ -152,6 +183,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed.**
 
 ### P7. Scenery and models are dropped without being freed
+- **Status (13-Oct):** Done on branch `claude/audit-safe-tier` (`Audit P7`): the eight modules and the garage use `clearGroup`, which keeps what is marked `userData.shared`. Measured: eight levels started three times in one page, main 2161 / 3487 / 4813 geometries and 44 / 85 / 126 textures, the branch 940 and 8 each time. Open: the traffic slots' and the player's models (P1).
 - **Where:** `group.clear()` with no `dispose` at `render/elephants.js:21`, `render/gambles.js:30`,
   `render/hazards.js:87`, `render/machinery.js:21`, `render/roadside.js:113`, `render/site.js:33`,
   `render/wreckage.js:163`; geometry only at `render/reversible.js:42`; `scene.remove` only at
@@ -171,6 +203,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed.**
 
 ### P8. The save cookie is sent with every request to the whole site
+- **Status (13-Oct):** Done on branch `claude/audit-safe-tier` (`Audit P8`): the cookie is written with `path=/delivery` and the old `path=/` one deleted. (The game now has its own subdomain, so the collection site no longer receives it in any case.)
 - **Where:** `progress.js:154` (`path=/`, about 3,400 bytes: README line 179).
 - **What:** local storage is already the store that is read first (`progress.js:45-62`). The cookie is only a
   second copy, but a cookie with `path=/` goes out in the header of every request to the origin: every picture
@@ -186,6 +219,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed** by reading (not seen in a network trace).
 
 ### P9. The HUD writes to the page every frame whether or not anything changed
+- **Status (13-Oct):** Done on branch `claude/audit-safe-tier` (`Audit P9`): `setText` / `setStyle` / `setAttr` write only a change. Open: the cargo corner's rectangle cached, `policeNear` once a frame.
 - **Where:** `render/hud.js:181-186`, `:205`, `:208-212`, `:238-241`, `:62`, `:145-163`, `:247-250`, `:270-280`;
   `render/cargo.js:115`; `main.js:270`.
 - **What:** `textContent` and `style` are set every frame for the timer, the tip, the effects line, the busts
@@ -201,6 +235,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed.**
 
 ### P10. Whole buffers go to the GPU every frame: the tide, the water, the particles
+- **Status (13-Oct):** Not attempted.
 - **Where:** `render/tide.js:96-107`, `render/water.js:163-178`, `render/effects.js:13-62`.
 - **What:** the tide and water rewrite only the rows near the player, then set `needsUpdate` on the whole
   attribute, and three.js 0.160 uploads all of it (no update range is set). The tide does it every frame even
@@ -214,6 +249,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed** (the code). Cost estimated.
 
 ### P11. Run-off and gravel are looked up by scanning every stretch
+- **Status (13-Oct):** Not attempted.
 - **Where:** `track.js:420-433` (`shoulderOn`), `:434`, `:481-491` (`lo`, `hi`), `:542-550` (`gravelAt`), `:536`.
 - **What:** `Track.lo(s)` and `Track.hi(s)` call `shoulderOn`, which loops over every run-off stretch. Spa has
   190, Monza 230. `gravelAt` loops over 172 on Spa and calls `gravelBand`, which calls `lo`/`hi` again and
@@ -226,6 +262,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Suspected** (the code is as described; whether it shows in a profile needs a run on Spa).
 
 ### P12. Everything loads before the first run
+- **Status (13-Oct):** Not attempted (stage 7).
 - **Where:** `levels.js` (54 static JSON imports), `main.js:15-64`, `render/garage.js` to `render/ideaslot.js`
   to `render/ideaModels.js`, `render/cargo.js` to the three `cargoModels*.js`.
 - **What:** an import-graph walk from `main.js` reaches about 118 modules and 2.0 MB of source (32,500
@@ -244,6 +281,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
   until shown or played, and the two large WAVs are already fetched lazily (`render/audio.js:27`).
 
 ### P13. The frame loop's sound section scans the pool four times
+- **Status (13-Oct):** Done on branch `claude/audit-safe-tier` (`Audit P13`): one pass over the pool for the siren, lowriders, helicopter and toads.
 - **Where:** `main.js:262-296`.
 - **What:** three loops over the 80 slots (siren, lowriders, frogs) and a `Traffic.cars.some(closure)` (287),
   each calling `Track.along(Player.s)` again for every car, plus a loop over every obstacle for frogs.
@@ -252,6 +290,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed.**
 
 ### P14. Pickups: a geometry and a material each, and all of them animated wherever they are
+- **Status (13-Oct):** Not attempted.
 - **Where:** `render/items.js:124-137`, `:385-397`.
 - **What:** every pickup's pad is a new `BoxGeometry` and a new `MeshBasicMaterial`; every pickup's gem is a
   fresh model. Each frame every pickup's gem is turned and animated, however far away. Unlike obstacles,
@@ -266,6 +305,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 ## 2. Correctness
 
 ### C1. Two burst-water-main systems run on the same field, and one is invisible
+- **Status (13-Oct):** Already fixed on main: `watermains.js` (the undrawn round slick) is gone; `waterMains` is read only by `hazards.js` (the wet lane, drawn by `render/hazards.js`); `render/watermains.js` holds only that lane's fountain and puddle models; `lane` is required, `every` is in no level. Recorded in CHECKLIST-10-Oct as `538320f` / `58987d3` (the owner's machine: this repository's history starts at the snapshot). `.hazards-check` passes on main.
 - **Where:** `watermains.js:21-28` and `hazards.js:113-118`, `:318-326`; `game.js:375`, `:388`;
   `render/watermains.js:129-152` against `game.js:165` and `:213`; `levels.js:248-250` and `:282`.
 - **What:**
@@ -290,6 +330,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed** by reading. Worth one look in the browser on Flooded to see it.
 
 ### C2. Address-bar loans are written into the real save
+- **Status (13-Oct):** Already fixed on main: a visit with an address switch sets `Progress.noSave` (`main.js`), and `save()` then writes nothing.
 - **Where:** `main.js:83`, `:117-118`, `:121`; `progress.js:174-182`; `milestones.js:35-65`; `packages.js:297`.
 - **What:** `?car=lowrider` pushes the id onto `Progress.data.cars` and sets `Progress.data.car`, with the
   comment "nothing is saved". `?pick=41` sets `Progress.data.unlocked` to every level "for this visit". An
@@ -305,6 +346,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed** by reading.
 
 ### C3. A traffic slot keeps state from the car that had it before
+- **Status (13-Oct):** Already fixed on main: `blank()` in `traffic.js` puts every field back from the pool's first car when a slot is dealt out. The replay group passes (53 of 53 levels per CHECKLIST-10-Oct).
 - **Where:** `traffic.js:236-353` (`outfit`), `:1564-1579` (`reset`), against `:639` (`hunt`), `:537`, `:999`
   (`shoulderRun`), `:948` (`oncoming`), `:808-810` (`boosts`, `damageScale`), `:1749` (`spinIce`); the reset for
   racers alone at `:593-597`; `:1668`, `:654`.
@@ -324,6 +366,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed** for `hunt` and `shoulderRun` by reading. That it explains the replay failures is **suspected**.
 
 ### C4. The editor puts a loaded level's values into `innerHTML`
+- **Status (13-Oct):** Already fixed on main: `editor.js` no longer writes a level's values into `innerHTML`.
 - **Where:** `editor.js:690-696`; reached from `:1205-1213` (a file picked or dropped), `:1186` (the autosave).
 - **What:** the segment table is built as an HTML string with `value="${seg.length}"`, `${seg[k] ?? ''}` and
   the rest, straight from the level. A level file with `"length": "\"><img src=x onerror=...>"` runs script
@@ -336,6 +379,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed** by reading.
 
 ### C5. `?edited` trusts whatever is in local storage, and a bad level stops the page
+- **Status (13-Oct):** Already fixed on main: `?edited` is checked and a bad level refused with a reason (`main.js`); a level that makes the track builder loop for ever still hangs.
 - **Where:** `main.js:108-111`, `:122`; `track.js:76-83`.
 - **What:** the handed-over level is `JSON.parse`d and passed to `selectSpecial` with no check. `buildTrack`
   then does `for (const seg of LEVEL.segments)` and `new Float64Array(length)`. No `segments`, or a `length`
@@ -350,6 +394,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed** by reading.
 
 ### C6. The save: what an import keeps, and what happens at the cookie's cap
+- **Status (13-Oct):** Already fixed on main: `tidy()` in `progress.js` keeps only a save's fields, each of its kind.
 - **Where:** `progress.js:107-123` (`tidy`), `:63-71` (`read`), `:73-92` (`restore`), `:154`.
 - **What:**
   - `tidy` starts from `{ ...saved }`, so every unknown key in a pasted code is kept and saved for ever.
@@ -370,6 +415,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed** by reading. The headroom figure is an estimate from the README's number.
 
 ### C7. Drop bears and the migration are placed with `Math.random` when the level loads
+- **Status (13-Oct):** Already fixed on main: `collision.js` draws from `util.random`, the logic's own dice, seeded at every load and run (`game.js`); no `Math.random` in the logic.
 - **Where:** `collision.js:373-378`, `:408-417`; compare the seeded rockfall, mines, drifters and asteroids at
   `:321`, `:336`, `:425`, `:453`.
 - **What:** the rule is "level content sits at fixed positions, the same every run". A drop bear's `s` is
@@ -380,6 +426,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed.**
 
 ### C8. Milestone counters count on runs that are said to save nothing
+- **Status (13-Oct):** Already fixed on main, by C2's `Progress.noSave`: on a test visit (hidden, edited, ghost, car...) the counters still count in memory but nothing is saved.
 - **Where:** `milestones.js:32-46`, `:61-65`; `packages.js:297`; `bullettrain.js:94`; `hippos.js:89`.
 - **What:** only the screensaver is excluded. A run on a hidden level, on `?edited`, with `?ghost` (nothing
   can wreck the car) or with `?car=` still counts packages landed, kilometres driven, police outrun and trains
@@ -389,6 +436,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed** by reading.
 
 ### C9. Spray and wakes are emitted per frame, and boats get them twice
+- **Status (13-Oct):** Done on branch `claude/audit-safe-tier` (`Audit C9`): wakes, spray and turbo exhaust by a rate times `dt`; a traffic boat on the water gets the water's spray only. Open, for the owner: the player's own boat still has both.
 - **Where:** `render/items.js:534-557`; `render/water.js:139-151` (`spray`) and its two callers.
 - **What:** two particles a frame for a wake and for turbo exhaust, and a 60% chance a frame for each boat:
   twice as much at 120 Hz as at 60, half as much at 30. A boat in traffic on a water stage is given a wake by
@@ -405,6 +453,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 ## 3. Code
 
 ### Q1. `main.js` and `game.js` are a hand-kept list of every gimmick
+- **Status (13-Oct):** Not attempted (stage 6: waits for a quiet tree).
 - **Where:** `main.js:3-64` (about 60 imports, 37 of them from `render/`), `:202-250` (about 35 `sync...`
   calls); `game.js:1-35` (35 imports), `:197-214` (18 `reset` calls), `:373-396` (about 20 `update` calls).
 - **What:** a new gimmick must add a line in five places across these two files. Every feature branch does,
@@ -417,11 +466,13 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed.**
 
 ### Q2. A traffic car's fields are defined in three hand-kept lists
+- **Status (13-Oct):** Partly fixed on main: `blank()` (C3) takes a slot's fields from the pool's literal; `outfit` is still a hand-kept list. Not attempted further.
 - **Where:** `traffic.js:36-40`, `:236-353`, `:1578`. See C3: the same thing as a structure problem.
 - **Fix:** `blankCar()`, as in C3. The same idea for `Player.reset` and for `Game.start` (`game.js:178-196`).
 - **Confirmed.**
 
 ### Q3. Very large functions doing many jobs
+- **Status (13-Oct):** Not attempted (stage 8).
 - **Where and what:**
   - `render/road.js:787-3335`: `buildRoad` is one function of about 2,550 lines that draws the road and every
     theme's scenery. Every theme agent edits it (three are doing so now).
@@ -441,6 +492,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed** (line counts).
 
 ### Q4. The same helpers written many times, already drifting
+- **Status (13-Oct):** Not attempted (stage 3): `between` is still written 14 times.
 - **Where (counts by `grep`, definitions of the name across `src/delivery`):** `const lambert =` 28 files;
   `const box =` 38 definitions in 31 files, with at least three different signatures (`(parent, material, w, h,
   l, x, y, z)` in `models.js:13`, `(w, h, d)` in `cargoModelsGood2.js:16`, others); `const between =` 15;
@@ -456,6 +508,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed.**
 
 ### Q5. Every level field is described three or four times
+- **Status (13-Oct):** Not attempted.
 - **Where:** the comment at the top of `levels.js` (359 lines); `levelSchema.js` (604 lines: shape, settings,
   rules, help); the checks in `track.js` (about 135 `problems.push`, roughly lines 845 to 1180); and the cards
   in `gimmicks.js` (969 lines).
@@ -469,6 +522,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed.**
 
 ### Q6. The "logic never imports rendering" rule cannot be checked by a machine as the files are laid out
+- **Status (13-Oct):** Not attempted.
 - **Where:** `gimmicks.js`, `editor.js`, `powerups.js`, `sides.js`, `cargopage.js` and `main.js` all live in the
   logic folder and import from `render/` (54 such imports in all).
 - **What:** the real game logic is clean: none of it imports rendering (checked by an import-graph walk). But
@@ -479,6 +533,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed.**
 
 ### Q7. Exports and assets nothing uses
+- **Status (13-Oct):** Done on branch `claude/audit-safe-tier` (`Stage 2`): `IDEA_CAR` and `fieldNames` removed; the export dropped from the in-file-only items. `TIERS` kept (scripts read it). The Super car pictures are NOT unused: the Super cars' ids are `super-<id>` and the start screen shows them where the live model cannot be had; kept.
 - **Where:** 46 exports are imported by no module. Used nowhere at all, not even by a script or their own file:
   `IDEA_CAR` (`ideas.js`), `fieldNames` (`levelSchema.js`), `TIERS` (`cars.js`, scripts only). Exported for no
   reader but used inside their file: `yawFor` (`physics.js:12`), `playerMats` (`render/cars.js:199`), `crumple`
@@ -491,6 +546,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed.**
 
 ### Q8. Twenty one-off check scripts and an 18-minute test, with no single way to run them
+- **Status (13-Oct):** Already fixed on main: `scripts/delivery-tests.mjs` (groups, `--changed`, `--fast`), `npm run check`, `npm run lint`, `src/delivery/TESTS.md`.
 - **Where:** `scripts/.*-check.mjs` (20 files, about 1,650 lines), `scripts/delivery-smoke.mjs` (2,875 lines),
   `delivery-headless.mjs`, `delivery-probe.mjs`, `_probe.mjs`, `delivery-levels-check.mjs`.
 - **What:** six of them start a Vite server of their own; the rest share a helper. They are hidden files, are
@@ -500,6 +556,7 @@ confirmed finding (C3) has a suspected consequence (the replay failures).
 - **Confirmed.**
 
 ### Q9. Tuning numbers inline in rendering
+- **Status (13-Oct):** Not attempted.
 - **Where:** for example `render/items.js:402` (700 m draw distance), `:128-131` (pickup size), `render/hud.js:83`,
   `:133` (camera alert distances, with `CONFIG.speedCamera?.warn || 180` as a fallback), `render/cars.js:164`,
   `:180` (blink periods), `traffic.js:1598`, `:1604`, `:1609` (0.5, 0.6, 0.65 chances of a direction), `:1589`
