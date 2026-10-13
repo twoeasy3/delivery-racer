@@ -32,7 +32,7 @@
 import '../showroom.css';
 import '../showroom-phone.css';
 import { showroomCars, carCard, floorBest, statShown, RARITIES, CAR_LOT, sideName, sideClick, driveWords, barredWhy, driveAs,
-  FILTER_GROUPS, SORTS, imposedFilter, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn, overlayOf, cardTip, kindOf } from '../showroomData.js';
+  FILTER_GROUPS, SORTS, imposedFilter, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn, overlayOf, cardTip, kindOf, lentWords } from '../showroomData.js';
 import { CAR, carInUse, setViewSide, STAR_COLOURS, carRule, carFocus } from '../cars.js';
 import { Progress } from '../progress.js';
 import { ShopScreen } from './shop.js'; // (the Shop, reached from the header)
@@ -394,7 +394,8 @@ const fill = (fresh = true) => {
     const img = make('span', 'sr-img' + (data.dark ? ' silhouette' : ''));
     const ov = overlayOf(data);
     const pic = make('span', 'sr-pic', img, overlayNode(ov));
-    const badge = data.car === inUse || data.id === inUse.id ? make('span', 'sr-badge inuse', 'In use')
+    const badge = data.lent ? make('span', 'sr-badge lent', lentWords(data)) // (a rotating event's free try: lent, not owned)
+      : data.car === inUse || data.id === inUse.id ? make('span', 'sr-badge inuse', 'In use')
       : data.state === 'barred' ? make('span', 'sr-badge barred', 'Not on this level' + (evil !== !!Game.evil ? ' as ' + sideName(evil) : '')) : null;
     const node = make('button', 'sr-card ' + data.rarity + ' ' + data.state + (ov ? ' ov-' + ov.kind : '') + (data.id === picked ? ' picked' : ''),
       make('span', 'sr-tag', RARITIES[data.rarity].name), starsNode(data), pic, badge,
@@ -404,7 +405,8 @@ const fill = (fresh = true) => {
         blueprintBar(data)));
     node.style.setProperty('--rar', RARITIES[data.rarity].colour);
     node.dataset.car = data.id;
-    node.title = data.state === 'locked' ? cardTip(data) : data.state === 'barred' ? 'You can drive it, but not on the level picked as ' + sideName(evil) : data.name;
+    node.title = data.lent ? 'Today\u2019s free try: lent at your ECU ' + data.lent.ecu + ' of ' + data.lent.max + ' (its blueprints raise it; its key at ECU ' + data.lent.max + ')'
+      : data.state === 'locked' ? cardTip(data) : data.state === 'barred' ? 'You can drive it, but not on the level picked as ' + sideName(evil) : data.name;
     node.addEventListener('click', () => { pick(data.id); openFull(); });
     watch(img, data.car);
     return { data, node };
@@ -470,8 +472,11 @@ const showDetail = () => {
   let why = null;
   go.textContent = driveWords(card, evil);
   if (card.state === 'ready') {
-    go.title = using && evil === !!Game.evil ? 'In use: back to the menu in it' : 'Drive the ' + card.name + ' as ' + sideName(evil) + ' (Enter)';
+    go.title = using && evil === !!Game.evil ? 'In use: back to the menu in it' : 'Drive the ' + card.name + ' as ' + sideName(evil) + (card.lent ? ', a free try' : '') + ' (Enter)';
     go.addEventListener('click', () => drive(card));
+    // (a free try: lent for today's event at the player's own ECU; its key comes at the max ECU)
+    if (card.lent) why = make('p', 'sr-why lent', make('b', '', lentWords(card)), make('span', '', 'Lent for today\u2019s event at your ECU ' + card.lent.ecu + ' of ' + card.lent.max
+      + '. Its blueprints raise it; deliver it at ECU ' + card.lent.max + ' to win its key.'));
   } else if (card.state === 'barred') {
     go.disabled = true;
     why = make('p', 'sr-why barred', ...barredWhy(card, evil).flatMap(part => typeof part === 'string' ? [part] : part.tier ? [tierStarsNode(part.tier)] : richTiers(part.rich)));
@@ -524,7 +529,7 @@ const showDetail = () => {
     stage,
     make('div', 'sr-dwords',
       make('div', 'sr-dtop', dcard, make('div', 'sr-dname',
-        make('div', 'sr-dhead', make('span', 'sr-dtag', RARITIES[card.rarity].name), starsNode(card), using ? make('span', 'sr-badge inuse', 'In use') : null),
+        make('div', 'sr-dhead', make('span', 'sr-dtag', RARITIES[card.rarity].name), starsNode(card), card.lent ? make('span', 'sr-badge lent', lentWords(card)) : using ? make('span', 'sr-badge inuse', 'In use') : null),
         make('h2', '', card.name),
         make('span', 'sr-kind', makerLine(card.car)))),
       make('div', 'sr-decu', make('small', '', 'ECU'), pips(card), make('b', '', card.ecu + ' of ' + card.max)),
