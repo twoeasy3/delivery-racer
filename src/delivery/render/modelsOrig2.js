@@ -588,8 +588,8 @@ export const ORIG2_MODELS = {
       const s0 = [L * 0.28, 1.22], s1 = [-L + 0.1, 1.86], t = 0.2;
       P.add(stripe, flankPane([[s0[0], s0[1]], [s0[0], s0[1] + t], [s1[0], s1[1] + t], [s1[0], s1[1]]], sx, () => half + 0.002));
       // a big round porthole window high on each flank, toward the back (a chrome ring round dark glass)
-      P.add(CHROME, dsc(0.3, 0.03, 0, 0, 0, 20).rotateY(Math.PI / 2).translate(sx * (half + 0.006), 1.8, -L * 0.3));
-      P.add(VANGLASS, dsc(0.25, 0.03, 0, 0, 0, 20).rotateY(Math.PI / 2).translate(sx * (half + 0.014), 1.8, -L * 0.3));
+      P.add(CHROME, dsc(0.3, 0.03, 0, 0, 0, 20).rotateY(Math.PI / 2).translate(sx * (half + 0.006), 1.8, -L * 0.58));
+      P.add(VANGLASS, dsc(0.25, 0.03, 0, 0, 0, 20).rotateY(Math.PI / 2).translate(sx * (half + 0.014), 1.8, -L * 0.58));
       // black mirrors on the doors
       P.add(TRIM, bx(0.08, 0.24, 0.16, sx * (half + 0.08), 1.78, aLine(1.7) - 0.05));
       // rectangular lamps each side of the grille; tall tail lamps, the brake lamp on top
