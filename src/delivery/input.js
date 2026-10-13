@@ -47,7 +47,7 @@ export const Input = (() => {
   // (the menus are left alone, so their lists can be scrolled. A touch is a menu's if it BEGAN on one: judged once, at its
   // start, and kept by the finger's id: a menu drawn again under a finger (its element gone, so `closest` finds no menu) must
   // not turn the rest of that touch into the driving stick, whose preventDefault would end the scroll and the touch)
-  const isUi = (e) => e.target.closest && e.target.closest('button, .pad, .overlay, .shop-screen, #showroom, .pack-reveal');
+  const isUi = (e) => e.target.closest && e.target.closest('button, .pad, .overlay, .shop-screen, #showroom, .pack-reveal, .pack-contents');
   const uiTouches = new Set();
   window.addEventListener('touchstart', (e) => {
     if (isUi(e)) { for (const t of e.changedTouches) uiTouches.add(t.identifier); return; }
