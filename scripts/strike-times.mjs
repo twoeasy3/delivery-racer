@@ -22,8 +22,11 @@ try {
     let air = 0, airAt = 0, hurt = 0; const marks = []; const upd = g.Game.update.bind(g.Game); let tt = 0, next = 0;
     g.Game.update = (dt) => { upd(dt); tt += dt; if (g.Player.health < g.Player.maxHealth - 0.01 && !hurt) hurt = Math.round(g.Player.s); if ((g.Player.air || 0) > air) { air = g.Player.air; airAt = g.Player.s; } if (g.Player.s >= next) { if (process.env.TRACE) marks.push(Math.round(g.Player.s) + 'm@' + tt.toFixed(1) + 's ' + g.Player.speed.toFixed(0)); next += (g.Player.s > 540 && g.Player.s < 720 ? 10 : 100); } };
     if (process.env.SOLID) { // (a solid car, no traffic and no obstacles: where it leaves the ground, lands, and is hurt)
-      const bare = { ...level, traffic: {}, obstacles: [], id: level.id };
+      const bare = { ...level, trafficCount: 0, oncomingCount: 0, obstacles: [], id: level.id };
       g.select(bare); g.cars.selectCar(car); g.Game.evil = false; g.Player.testGhost = false; g.Game.start(); g.drive(1, 0);
+      if (process.env.AT) g.Player.s = Number(process.env.AT);
+      const hold = process.env.LANE ? Number(process.env.LANE) : null, T = g.track.Track; // (LANE=n: steer to hold that lane, as a driver would line up with a ramp)
+      if (hold !== null) Object.defineProperty(g.Input, 'steer', { configurable: true, get: () => Math.max(-1, Math.min(1, (T.laneOffset(hold, g.Player.s) - g.Player.lat) * 0.6)) * (T.mirrored ? -1 : 1) });
       let up = null, flights = [], last = g.Player.health, hits = [];
       const t = g.run(400, () => {
         const P = g.Player;

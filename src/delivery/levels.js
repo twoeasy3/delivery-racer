@@ -466,6 +466,7 @@ import gimmickRoad3 from './levels/gimmick-road-3.json';
 // the Concept Strike's own levels (events.json concept-strike days[].level; CHECKLIST 224): one a day, Monday to Saturday
 import pocketTown from './levels/pocket-town.json';
 import solsticeCliffs from './levels/solstice-cliffs.json';
+import grandBoulevard from './levels/grand-boulevard.json';
 import hongKong from './levels/hong-kong.json';
 import tokyo from './levels/tokyo.json';
 import mumbai from './levels/mumbai.json';
@@ -611,7 +612,7 @@ export const SCREENSAVER_LEVEL = chaos;
 // the Concept Strike's days' "level"), never on the menu's lists, in no tier, no level number, medals or milestones. Kept with
 // the hidden levels, so they are checked as every level is and can be tried from the address (?hidden=pocket-town, a run
 // that banks nothing); played for real only as the event's stage (events.js: a level of its own, id concept-strike-d<n>)
-export const EVENT_MAPS = { 'pocket-town': pocketTown, 'solstice-cliffs': solsticeCliffs };
+export const EVENT_MAPS = { 'pocket-town': pocketTown, 'solstice-cliffs': solsticeCliffs, 'grand-boulevard': grandBoulevard };
 export const HIDDEN_LEVELS = { testbed, 'grand-prix': grandPrix, 'gimmick-road': gimmickRoad, 'gimmick-road-2': gimmickRoad2, 'gimmick-road-3': gimmickRoad3, ...EVENT_MAPS };
 // the class every race is run in: 'f1', 'gt' (GT road cars) or 'lmp' (Le Mans prototypes): the player's car
 // and the grid (the menu's Race cars button; ?gt or ?lmp for that class whatever it says)

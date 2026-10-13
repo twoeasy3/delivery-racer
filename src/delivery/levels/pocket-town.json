@@ -1,7 +1,7 @@
 {
   "id": "pocket-town",
   "theme": "suburb",
-  "clock": { "good": 90, "evil": 75 },
+  "clock": { "good": 95, "evil": 75 },
   "tip": 120,
   "lanes": 4,
   "cargo": { "good": "goldfish", "evil": "porcupine" },

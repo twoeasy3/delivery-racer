@@ -576,5 +576,16 @@
       "good": "cake",
       "evil": "bees"
     }
+  },
+  "grand-boulevard": {
+    "name": "Grand Boulevard",
+    "description": {
+      "good": "A trophy up the capital's grandest avenue, in something long and heavy: sweeping bends, a wide load on the lake bridge, a lane that turns against you, and a car transporter to fly at the end.",
+      "evil": "A briefcase of lawyers down the boulevard to Parliament. Shove past the wide load, take the reversible lane before it flips, outrun the pursuits and jump the jam on the ramp."
+    },
+    "cargo": {
+      "good": "trophy",
+      "evil": "lawyers"
+    }
   }
 }
