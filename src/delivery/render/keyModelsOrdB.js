@@ -35,7 +35,7 @@ const wristband = (car, { rarity = 'bespoke' } = {}) => {
   const CHROME = metal(0xd4d8de, 110), FACE = metal(0x14171c, 120), MARK = metal(0xdfe3e8, 100), HOLE = lambert(0x1a1c20);
   // the strap's middle line in its side view (u: toward the face, +z; v: up): a straight front, a half-round curl at each
   // end going back, a short straight behind; the strap T thick round it, W wide (along x)
-  const L = 1.12, R = 0.5, B = 0.62, T = 0.15, W = 0.84;
+  const L = 1.12, R = 0.46, B = 0.62, T = 0.15, W = 0.84;
   const mid = [];
   const curl = (cv, from, to) => { for (let i = 0; i <= 8; i++) { const a = from + (to - from) * i / 8; mid.push([-R + R * Math.cos(a), cv + R * Math.sin(a)]); } };
   mid.push([-2 * R, L - B]);
