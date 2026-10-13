@@ -130,4 +130,86 @@ const artisan = (car, { rarity = 'bespoke' } = {}) => {
 };
 
 registerKey('artisan', artisan);
+
+// ---- (15) the LOT TAG key: a plain key and a manila tag on one split ring (the second-hand car lot's) ----
+// a number stamped in 3x5 block digits (a row's run of blocks one box), `h` tall, from z0 to z1, centred on (x, y)
+const DIGITS = { 0: ['###', '#.#', '#.#', '#.#', '###'], 1: ['.#.', '##.', '.#.', '.#.', '###'], 2: ['###', '..#', '###', '#..', '###'],
+  3: ['###', '..#', '.##', '..#', '###'], 4: ['#.#', '#.#', '###', '..#', '..#'], 5: ['###', '#..', '###', '..#', '###'],
+  6: ['###', '#..', '###', '#.#', '###'], 7: ['###', '..#', '.#.', '.#.', '.#.'], 8: ['###', '#.#', '###', '#.#', '###'],
+  9: ['###', '#.#', '###', '..#', '###'] };
+const stamp = (parent, material, text, h, z0, z1, x = 0, y = 0) => {
+  const px = h / 5, gap = px, w = text.length * 3 * px + (text.length - 1) * gap;
+  [...text].forEach((d, n) => DIGITS[d].forEach((row, j) => {
+    for (const m of row.matchAll(/#+/g)) {
+      const bw = m[0].length * px;
+      box(parent, material, bw, px, z1 - z0, x - w / 2 + n * (3 * px + gap) + m.index * px + bw / 2, y + h / 2 - j * px - px / 2, (z0 + z1) / 2);
+    }
+  }));
+};
+// the lot's stock number for a car: two digits from its id (the same car, the same number)
+const stockOf = (car) => String(10 + [...String(car?.id || car?.name || '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 9973, 7) % 90);
+
+const lottag = (car, { rarity = 'bespoke' } = {}) => {
+  const group = new THREE.Group(), k = new THREE.Group();
+  const paint = paintOf(car);
+  const CAP = metal(paint.getHex(), 25), INK = metal(inkOn(paint), 60), NICKEL = metal(0xc7cbd1, 90), GROOVE = metal(0x8a9098, 50);
+  const RING = metal(0xd9dde2, 110), MANILA = lambert(0xe2c98a), CARD = lambert(0xcdb173), STAMP = lambert(0x2b2f3a);
+  const STRING = lambert(0xf1ece0), STICKER = metal(paint.getHex(), 40);
+  // the split ring: across the key but turned a third of the way to face us, so its loop shows from the front
+  const C = [0, 1.55], R = 0.55, TURN = -1.05;
+  add(k, new THREE.TorusGeometry(R, 0.045, 5, 16), RING, C[0], C[1], 0).rotation.y = TURN;
+  const onRing = (phi) => [C[0] + R * Math.cos(phi) * Math.cos(TURN), C[1] + R * Math.sin(phi), -R * Math.cos(phi) * Math.sin(TURN)];
+  // the KEY, hung by its hole from the ring's bottom (the wire through the hole's middle), swung a little right
+  const key = new THREE.Group();
+  key.position.set(C[0], C[1] - R, 0);
+  key.rotation.z = 0.36;
+  const HEAD = [[-0.52, -0.82, 0.12], [0.52, -0.82, 0.12], [0.6, -0.1], [0.3, 0.32, 0.22], [-0.3, 0.32, 0.22], [-0.6, -0.1]];
+  const head = outline(HEAD, 0.2);
+  head.holes.push(circle(0, 0, 0.17));
+  const HD = 0.3, HF = HD / 2; // (the cap's faces at z = +-0.15)
+  slab(key, CAP, head, HD, 0, 0, 4);
+  rainbow(band(key, rimMaterial(rarity), HEAD, 0.2, -0.1, -0.05, 0.03, HF + 0.01, 4), 0, -0.25);
+  glyph(key, INK, initialOf(car), 0.34, HF - 0.01, HF + 0.03, 0, -0.42);
+  // the metal under the cap: its shoulder, and the blade with its teeth along the right edge and a groove each side
+  box(key, NICKEL, 0.72, 0.14, 0.2, 0, -0.86, 0);
+  const pts = [[-0.2, -0.8], [-0.2, -2.6], [-0.04, -2.8], [0.2, -2.66], [0.2, -2.52], [0.33, -2.38], [0.2, -2.24], [0.31, -2.08], [0.2, -1.92],
+    [0.34, -1.76], [0.2, -1.6], [0.3, -1.44], [0.2, -1.28], [0.2, -0.8]];
+  slab(key, NICKEL, new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y))), 0.11, 0, 0, 1);
+  for (const s of [1, -1]) box(key, GROOVE, 0.07, 1.5, 0.03, -0.07, -1.82, s * 0.06);
+  k.add(key);
+  // the TAG on its string from the ring's lower left (behind the key's plane), swung out to the left
+  const S = onRing(Math.PI * 1.11), SWING = 0.62, LEN = 0.8;
+  const E = [S[0] - Math.sin(SWING) * LEN, S[1] - Math.cos(SWING) * LEN, S[2]];
+  const string = new THREE.CylinderGeometry(0.018, 0.018, LEN + 0.04, 4);
+  add(k, string, STRING, (S[0] + E[0]) / 2, (S[1] + E[1]) / 2, S[2]).rotation.z = -SWING;
+  const tag = new THREE.Group();
+  tag.position.set(...E);
+  tag.rotation.z = -SWING; // (its top toward the ring)
+  // a shipping tag: its top corners clipped, an eyelet near the top (the string's loop through it, up to the ring)
+  const TAG = [[-0.46, -1.62], [0.46, -1.62], [0.46, -0.32], [0.2, -0.04], [-0.2, -0.04], [-0.46, -0.32]];
+  const EY = -0.2, TD = 0.03;
+  const tagShape = new THREE.Shape(TAG.map(([x, y]) => new THREE.Vector2(x, y)));
+  tagShape.holes.push(circle(0, EY, 0.06));
+  slab(tag, MANILA, tagShape, TD, 0, 0, 3);
+  for (const s of [1, -1]) {
+    const washer = new THREE.Shape(); washer.absarc(0, EY, 0.13, 0, Math.PI * 2, false); washer.holes.push(circle(0, EY, 0.06));
+    slab(tag, CARD, washer, 0.012, 0, s * (TD / 2 + 0.004), 4);
+  }
+  add(tag, new THREE.TorusGeometry(0.09, 0.018, 4, 8), STRING, 0, EY + 0.06 + 0.02, 0).rotation.y = Math.PI / 2;
+  add(tag, new THREE.CylinderGeometry(0.018, 0.018, -EY, 4), STRING, 0, EY / 2 + 0.06, 0); // (up from the loop to the string)
+  // the stock number stamped on it, a ruled line, and a sticker of the car's colour with its initial; both faces numbered
+  for (const s of [1, -1]) {
+    const g = new THREE.Group(); // (built on the front face; turned round for the back, so it reads from there)
+    stamp(g, STAMP, stockOf(car), 0.36, TD / 2 - 0.005, TD / 2 + 0.008, 0, -0.62);
+    g.rotation.y = s < 0 ? Math.PI : 0;
+    tag.add(g);
+    box(tag, STAMP, 0.7, 0.025, 0.013, 0, -0.92, s * (TD / 2 + 0.0015));
+  }
+  disc(tag, STICKER, 0.2, TD / 2 - 0.005, TD / 2 + 0.012, 0, -1.28, 14);
+  glyph(tag, INK, initialOf(car), 0.2, TD / 2 + 0.005, TD / 2 + 0.022, 0, -1.28);
+  k.add(tag);
+  return idle(group, merged(k));
+};
+
+registerKey('lottag', lottag);
 void lambert; void outline; void band; void inkOn; void plainBlade; void grow;
