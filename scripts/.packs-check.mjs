@@ -533,8 +533,8 @@ try {
   // featured card, an event's end); a `blurb` overrides them ----
   {
     const PK = Packs.data.packs;
-    check(P.careerPack() === 'career' && JSON.stringify(P.eventPacks('comet-hunt')) === '[{"id":"comet-special","stage":true,"prize":true,"every":false}]'
-      && JSON.stringify(P.eventPacks('car-hunt')) === '[{"id":"car-hunt-special","stage":false,"prize":false,"every":true}]' && P.eventPacks('no-such-event').length === 0,
+    check(P.careerPack() === 'career' && JSON.stringify(P.eventPacks('comet-hunt')) === '[{"id":"comet-special","stage":true,"prize":true,"every":false,"day":0}]'
+      && JSON.stringify(P.eventPacks('car-hunt')) === '[{"id":"car-hunt-special","stage":false,"prize":false,"every":true,"day":0}]' && P.eventPacks('no-such-event').length === 0,
       'givenBy: the Career levels give the career pack; the Comet Hunt\'s stages and prize give comet-special; EVERY Car Hunt delivery gives car-hunt-special (and nothing names another event)');
     check(Object.keys(PK).every(id => !PK[id].featured || P.featuredOf(id).length > 0) && P.featuredOf('standard').length === 0 && P.eventOf('comet-special')?.id === 'comet-hunt' && P.eventOf('ten') === null,
       'the featured entries and the event live on the pack (featuredOf, eventOf)');
@@ -708,6 +708,27 @@ try {
     const cm = contents('car-hunt-special', { featured: P.featuredOf('car-hunt-special'), maxed: (car) => car.id === 'blower', owned: () => false });
     check(maxedPack.length === 3 && !maxedPack.some(x => x.featured) && maxedPack.every(x => x.car !== 'blower') && RARITIES.indexOf(maxedPack.at(-1).rarity) >= RARITIES.indexOf('epic') && cm.featured.every(f => f.exhausted === 'maxed' && f.chance === 0),
       'the Blower maxed: nothing featured drops (the last slot an ordinary ' + maxedPack.at(-1).rarity + ' card, the existing rule), the sheet shows it Car Maxed at 0%');
+  }
+  // ---- THE CONCEPT STRIKE PACKS (the owner, 13-Oct; CHECKLIST 211): concept-strike-1 to -6, one for each day of the
+  // rotating event (givenBy.event.day: the day's tasks give them, events.js payTasks; never eventDone), each a Car Hunt
+  // pack's shape (3 cards, x1, never doubled, one featured slot) featuring that day's concept car x1 90% / x3 10%; not
+  // sold; the six concept cars in no other pack (no pool, no featured list, no key in the Bespoke pool) ----
+  {
+    const CC = g.cars.CONCEPT_CARS || [];
+    const ids = [1, 2, 3, 4, 5, 6].map(d => 'concept-strike-' + d);
+    check(CC.length === 6 && ids.every((id, i) => P.dayPack('concept-strike', i + 1) === id && Packs.data.packs[id]?.event === 'concept-strike'),
+      'six Concept Strike packs, one a day (dayPack): ' + ids.map((id, i) => id + ' ' + CC[i]?.id).join(', '));
+    check(ids.every((id, i) => { const sp = Packs.data.packs[id], fe = P.featuredOf(id); return sp.size === 3 && sp.baseAmount === 1 && sp.doubleChance === 0 && !sp.shop && sp.featured.upgradeChance === 0
+      && fe.length === 2 && fe.every(f => f.car.id === CC[i].id && !f.key) && fe[0].amount === 1 && fe[1].amount === 3; }),
+      'each: 3 cards, x1, never doubled, not sold, one featured slot: the day\'s concept car x1 or x3');
+    check(JSON.stringify(P.eventPacks('concept-strike').map(p => p.day)) === '[1,2,3,4,5,6]' && P.eventPacks('concept-strike').every(p => !p.every && !p.stage && !p.prize),
+      'givenBy.event.day only: no pack for every delivery, a stage or a prize (the tasks pay them)');
+    const c = contents('concept-strike-1', { featured: P.featuredOf('concept-strike-1'), maxed: () => false, owned: () => false });
+    check(c.featured.length === 2 && near(c.featured[0].lastSlot, 0.9) && near(c.featured[1].lastSlot, 0.1), 'What\'s inside the Fishbowl Strike pack: x1 ' + P.percent(c.featured[0]?.lastSlot) + ', x3 ' + P.percent(c.featured[1]?.lastSlot));
+    const others = Object.keys(Packs.data.packs).filter(k => !ids.includes(k));
+    check(CC.every(car => car.noPacks && car.concept && car.bespoke) && others.every(k => Object.values(P.poolOf(Packs.data.packs[k])).flat().every(x => !x.concept) && !P.featuredOf(k).some(f => f.car.concept))
+      && !P.pools().keys?.some(x => x.concept), 'the six concept cars (noPacks) are in no other pack: no pool, no featured list, no key among the Bespoke keys (' + others.length + ' packs)');
+    check(/Concept Strike's tasks/.test(P.describePack('concept-strike-1')), 'its line: ' + P.describePack('concept-strike-1'));
   }
 } catch (error) {
   failures++;

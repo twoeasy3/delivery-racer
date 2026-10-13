@@ -92,6 +92,13 @@ const waysFor = (id, t) => {
   if (give) {
     for (const event of Events.specials) {
       if (event.id !== String(give.id ?? spec.event)) continue;
+      if (give.day && event.days) { // (a rotating event's day pack: that day's tasks pay it, up to their limits a day: the Concept Strike)
+        const dayOf = event.days[give.day - 1], cd = dayOf ? Events.carDay(event, dayOf.car, t) : null;
+        const most = (dayOf?.tasks || []).filter(x => !x.key).reduce((n, x) => n + (x.packs || 1) * (x.limit || 1), 0);
+        ways.push({ how: 'event', where: event.name, available: !!cd?.live, recurring: true, why: cd?.live ? null : cd ? 'Its day: back ' + day(cd.start) : 'Event over',
+          detail: 'its day\'s tasks, up to ' + most + ' packs that day' });
+        continue;
+      }
       const stage = !!give.stage, prize = !!give.prize && !!event.prize, every = !!give.every;
       if (!stage && !prize && !every) continue;
       const state = specialState(event, t), done = Events.done(event), left = event.stages.length - done;
@@ -171,6 +178,12 @@ const keySources = (car, t) => {
       why: won ? 'Prize already won' : state.why,
       detail: 'the grand prize for all ' + event.stages.length + ' stages' + endsWords(event.to) });
   }
+  for (const event of Events.specials) { // (a rotating event's featured car: its key for delivering it at its max ECU on its day: the Concept Strike)
+    const cd = Events.carDay(event, car.id, t);
+    if (!cd) continue;
+    out.push({ what: 'key', how: 'event', where: event.name, rarity: null, ways: [], available: cd.live, why: cd.live ? null : 'Its day: back ' + day(cd.start),
+      detail: 'deliver it at its max ECU (' + Ecu.max(car) + ') on its day; it is lent there as a free try at your ECU' });
+  }
   for (const entry of PLAIN_EVENTS) {
     if (!entry || typeof entry !== 'object' || entry.reward?.car !== car.id) continue;
     const level = levelById(entry.id), state = eventState(when(entry.from), when(entry.to), t);
@@ -206,6 +219,7 @@ export const huntEventFor = (car, { t = Events.now() } = {}) => {
     if (!featuredOf(id).some(f => f.car.id === car.id && !f.key)) continue;
     const event = Events.specials.find(e => e.id === String(give.id ?? spec.event));
     if (!event) continue;
+    if (give.day && event.days) { const cd = Events.carDay(event, car.id, t); if (cd) return { event, pack: id, live: cd.live, next: cd.start }; continue; } // (a rotating event: the car's own day)
     const state = specialState(event, t);
     if (state.live || state.recurring) return { event, pack: id, live: state.live, next: state.next ?? null };
   }

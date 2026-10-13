@@ -254,6 +254,16 @@ export const Events = {
       return { task, words: taskWords(task, day), reward: rewardWords(task), count, limit, left: Math.max(0, limit - count), done: count >= limit };
     });
   },
+  // a rotating event's day that features this car, today or the next: { start, live } (live: it is that day now), or null
+  carDay(event, carId, t = this.now()) {
+    if (!event?.days?.some(d => d.car === carId)) return null;
+    const d0 = new Date(t), midnight = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate()).getTime();
+    for (let k = 0; k < 15; k++) {
+      const at = k ? addDays(midnight, k) + 3600e3 : t, day = this.dayOf(event, at);
+      if (day?.live && day.car === carId) return { start: day.start, live: k === 0 };
+    }
+    return null;
+  },
   // anything left to earn in the run on now? (the Events tab's dot)
   tasksLeft(event, t = this.now()) { return this.live(event, t) ? this.tasks(event, t).filter(x => !x.done).length : 0; },
   // the FREE TRY of the day's car (its card's button): { car, on, ecu, max } (ecu: what the player's blueprints reach, as it

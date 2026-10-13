@@ -142,6 +142,29 @@ try {
     const none = ['coach', 'cityev', 'coupecross'].map(id => sourcesOf(by(id)));
     check(none.every(x => !x.obtainable.blueprints && x.blueprints.every(b => !(b.chance > 0))) && !huntEventFor(by('coach')), 'the Highway Coach, City EV and Coupe Crossover: still no blueprints anywhere');
   }
+  // ---- the six concept key cars (CHECKLIST 211): their blueprints only in their day's Concept Strike pack, their key only for
+  // delivering them at their max ECU on their day; on that day obtainable, on another (Sunday too) "back <its day>" ----
+  {
+    const { huntEventFor } = await g.load('carsources.js');
+    const strike = Events.specials.find(e => e.id === 'concept-strike'), D = 86400e3;
+    const ids = ['fishbowl', 'midsummer', 'sixteen', 'quadturbo', 'knifeedge', 'windsong'];
+    fresh();
+    let good = 0;
+    const lines = [];
+    ids.forEach((id, d) => {
+      at(strike.from + 14 * D + d * D + 5 * 3600e3); // (its day, in the third run)
+      const on = sourcesOf(by(id)), bp = on.blueprints.filter(x => x.chance > 0);
+      const ok1 = bp.length === 1 && bp[0].kind === 'concept-strike-' + (d + 1) && bp[0].available && Math.abs(bp[0].chance - 1) < 1e-9 && on.keys.length === 1 && on.keys[0].where === 'Concept Strike' && on.keys[0].available && huntEventFor(by(id))?.live;
+      at(strike.from + 14 * D + ((d + 1) % 7) * D + 5 * 3600e3); // (the next day: another car's)
+      const off = sourcesOf(by(id));
+      const ok2 = !off.obtainable.key && !off.obtainable.blueprints && /^Its day: back /.test(off.keys[0]?.why || '') && huntEventFor(by(id)) && !huntEventFor(by(id)).live;
+      if (ok1 && ok2) good++;
+      lines.push(id + ' (' + sourcesLine(by(id)) + ' / next day: ' + off.keys[0]?.why + ')');
+    });
+    check(good === 6, 'each concept car: on its day its key (the Concept Strike) and its blueprints (its day\'s pack only) obtainable; on another day "back <its day>": ' + lines.join('; '));
+    at(strike.from + 20 * D + 5 * 3600e3); // (a Sunday)
+    check(ids.every(id => !sourcesOf(by(id)).obtainable.key), 'Sunday: no concept car\'s key to be had (' + sourcesOf(by('fishbowl')).keys[0]?.why + ')');
+  }
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error.stack || error));
