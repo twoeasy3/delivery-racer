@@ -89,11 +89,11 @@ const decal = (parent, material, w, h, x, y, z, facing, u = [0, 1]) => {
   if (facing === 'y') geo.rotateX(-Math.PI / 2);
   return place(parent, geo, material, x, y, z);
 };
-// a wheel: its tyre (a cylinder on its side, the mesh the suspension and the Super kit look for), the hub inside it and
-// a cap on that. The three are meshes of their own, never merged (the suspension holds each wheel's parts on the floor)
-const wheel = (parent, geo, x, y, z, tyre, hub, cap) => {
+// a wheel as the rest of the roster has them (render/models.js wheel): a fat dark tyre (a cylinder on its side, the mesh
+// the suspension and the Super kit look for) and a plain hub disc in it. Meshes of their own, never merged (the
+// suspension holds each wheel's parts on the floor)
+const wheel = (parent, geo, x, y, z, tyre, hub) => {
   const parts = [new THREE.Mesh(geo.tyre, tyre), new THREE.Mesh(geo.hub, hub)];
-  if (cap) parts.push(new THREE.Mesh(geo.cap, cap));
   for (const mesh of parts) {
     mesh.rotation.z = Math.PI / 2;
     mesh.position.set(x, y, z);
@@ -101,11 +101,10 @@ const wheel = (parent, geo, x, y, z, tyre, hub, cap) => {
   }
   return parts;
 };
-// the geometries of a set of four like wheels (radius, tyre width), made once for the four
-const wheelGeo = (R, width, hub = 0.58) => ({
+// the geometries of a set of like wheels (radius, tyre width), made once for them all
+const wheelGeo = (R, width) => ({
   tyre: new THREE.CylinderGeometry(R, R, width, 16),
-  hub: new THREE.CylinderGeometry(R * hub, R * hub, width + 0.03, 12),
-  cap: new THREE.CylinderGeometry(R * 0.22, R * 0.26, width + 0.07, 8),
+  hub: new THREE.CylinderGeometry(R * 0.55, R * 0.55, width + 0.04, 12),
 });
 // every mesh directly in `parent` but those in `keep`, joined with the others of its material into one mesh (their
 // places baked in). Returns the merged mesh of each material (a Map)
@@ -286,7 +285,7 @@ export const ORIG3_MODELS = {
     decal(group, cloth, cw * 0.62, 0.36, 0, 1.18, -2.7 - 0.05 - 0.006, '-z');                // the rear door's curtained window
     const keep = new Set();
     const geo = wheelGeo(R, 0.28), tyre = lambert(0x141414), hub = lambert(0xc4c8ce);
-    for (const s of [-1, 1]) for (const z of [WZ, -WZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub, chrome)) keep.add(part);
+    for (const s of [-1, 1]) for (const z of [WZ, -WZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub)) keep.add(part);
     const merged = mergeByMaterial(group, keep);
     group.userData = {
       body: merged.get(paint),
@@ -363,10 +362,10 @@ export const ORIG3_MODELS = {
     box(shell, trim, 1.36, 0.07, 0.07, 0, RF + 0.02, L * 0.66);
     box(shell, chrome, 0.9, 0.04, 0.09, 0, 0.5, L * 0.66);
     const keep = new Set();
-    const rear = wheelGeo(RR, 0.42, 0.5), front = wheelGeo(RF, 0.2, 0.6), tyre = lambert(0x141414);
+    const rear = wheelGeo(RR, 0.42), front = wheelGeo(RF, 0.2), tyre = lambert(0x141414);
     for (const s of [-1, 1]) {
-      for (const part of wheel(group, rear, s * 0.82, RR, -L * 0.6, tyre, chrome, chrome)) keep.add(part);   // fat ones at the back,
-      for (const part of wheel(group, front, s * 0.756, RF, L * 0.66, tyre, chrome, chrome)) keep.add(part); // skinny ones in front
+      for (const part of wheel(group, rear, s * 0.82, RR, -L * 0.6, tyre, chrome)) keep.add(part);   // fat ones at the back,
+      for (const part of wheel(group, front, s * 0.756, RF, L * 0.66, tyre, chrome)) keep.add(part); // skinny ones in front
     }
     const merged = mergeByMaterial(shell, keep);
     group.userData = {
@@ -436,8 +435,8 @@ export const ORIG3_MODELS = {
     box(group, BRAKE, 0.36, 0.05, 0.03, 0, 1.82, -L - 0.005);                                // and a brake lamp over it
     rod(group, trim, 0.035, 0.3, 0.6, 0.28, -L + 0.06, 'z', 8);                              // the exhaust
     const keep = new Set();
-    const geo = wheelGeo(R, 0.28, 0.6), tyre = lambert(0x141414), hub = lambert(0xc4c8ce);
-    for (const s of [-1, 1]) for (const z of [WZ, -WZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub, chrome)) keep.add(part);
+    const geo = wheelGeo(R, 0.28), tyre = lambert(0x141414), hub = lambert(0xc4c8ce);
+    for (const s of [-1, 1]) for (const z of [WZ, -WZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub)) keep.add(part);
     const merged = mergeByMaterial(group, keep);
     group.userData = {
       body: merged.get(paint),
@@ -517,8 +516,8 @@ export const ORIG3_MODELS = {
     for (const z of [FZ, RZ]) rod(group, trim, 0.07, 1.7, 0, R, z, 'x', 8);                   // the axles
     rod(group, trim, 0.045, 0.6, 0.66, 0.8, -2.3, 'z', 8);                                    // the exhaust
     const keep = new Set();
-    const geo = wheelGeo(R, 0.42, 0.56), tyre = lambert(0x141414), hub = lambert(0xb8bcc2);
-    for (const s of [-1, 1]) for (const z of [FZ, RZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub, trim)) keep.add(part);
+    const geo = wheelGeo(R, 0.42), tyre = lambert(0x141414), hub = lambert(0xb8bcc2);
+    for (const s of [-1, 1]) for (const z of [FZ, RZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub)) keep.add(part);
     const merged = mergeByMaterial(group, keep);
     group.userData = {
       body: merged.get(paint),
