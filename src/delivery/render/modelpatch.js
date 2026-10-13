@@ -30,6 +30,34 @@
 import * as THREE from 'three';
 
 export const PATCH_VERSION = 1;
+// A wedge (or any tapered block): a base `width` x `depth`, a top `topWidth` x `topDepth` (0 = a sharp edge) whose centre is
+// `topShift` along the depth (z) from the base's, `height` up. topDepth 0 with topShift = depth / 2 is a ramp rising to a
+// vertical face at +z; topWidth < width tapers it in plan. Flat shaded, like a box. Made here so the editor can rebuild it.
+export class WedgeGeometry extends THREE.BufferGeometry {
+  constructor(width = 0.4, height = 0.3, depth = 0.6, topWidth = 0.4, topDepth = 0, topShift = 0.3) {
+    super();
+    this.type = 'WedgeGeometry';
+    this.parameters = { width, height, depth, topWidth, topDepth, topShift };
+    const w = width / 2, h = height / 2, d = depth / 2, tw = topWidth / 2, td = topDepth / 2;
+    const B = [[-w, -h, -d], [w, -h, -d], [w, -h, d], [-w, -h, d]];                                   // the base, seen from above: back-left, back-right, front-right, front-left
+    const T = [[-tw, h, topShift - td], [tw, h, topShift - td], [tw, h, topShift + td], [-tw, h, topShift + td]];
+    const quads = [B, [T[0], T[3], T[2], T[1]], [B[3], B[2], T[2], T[3]], [B[1], B[0], T[0], T[1]], [B[0], B[3], T[3], T[0]], [B[2], B[1], T[1], T[2]]];
+    const pos = [], a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), ab = new THREE.Vector3(), ac = new THREE.Vector3();
+    const tri = (p, q, r) => {
+      a.set(...p); b.set(...q); c.set(...r);
+      if (ab.subVectors(b, a).cross(ac.subVectors(c, a)).lengthSq() < 1e-12) return; // (a sharp edge: no sliver)
+      pos.push(...p, ...q, ...r);
+    };
+    // the base faces down (wound the other way round), the rest face out
+    quads.forEach(([p, q, r, s], i) => {
+      if (i === 0) { tri(B[0], B[1], B[2]); tri(B[0], B[2], B[3]); } else { tri(p, q, r); tri(p, r, s); }
+    });
+    this.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    this.computeVertexNormals();
+    const uv = []; for (let i = 0; i < pos.length / 3; i++) uv.push(0, 0);
+    this.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  }
+}
 // geometry kinds rebuilt from their parameters (their constructors take the parameters in this order)
 export const PRIMITIVES = {
   BoxGeometry: ['width', 'height', 'depth', 'widthSegments', 'heightSegments', 'depthSegments'],
@@ -39,17 +67,20 @@ export const PRIMITIVES = {
   TorusGeometry: ['radius', 'tube', 'radialSegments', 'tubularSegments', 'arc'],
   PlaneGeometry: ['width', 'height', 'widthSegments', 'heightSegments'],
   CircleGeometry: ['radius', 'segments', 'thetaStart', 'thetaLength'],
+  WedgeGeometry: ['width', 'height', 'depth', 'topWidth', 'topDepth', 'topShift'],
 };
 export const ADDABLE = {
   box: { kind: 'BoxGeometry', params: { width: 0.4, height: 0.3, depth: 0.4, widthSegments: 1, heightSegments: 1, depthSegments: 1 } },
   cylinder: { kind: 'CylinderGeometry', params: { radiusTop: 0.15, radiusBottom: 0.15, height: 0.4, radialSegments: 12, heightSegments: 1, openEnded: false, thetaStart: 0, thetaLength: Math.PI * 2 } },
   sphere: { kind: 'SphereGeometry', params: { radius: 0.2, widthSegments: 12, heightSegments: 8, phiStart: 0, phiLength: Math.PI * 2, thetaStart: 0, thetaLength: Math.PI } },
+  wedge: { kind: 'WedgeGeometry', params: { width: 0.4, height: 0.3, depth: 0.6, topWidth: 0.4, topDepth: 0, topShift: 0.3 } },
   cone: { kind: 'ConeGeometry', params: { radius: 0.2, height: 0.4, radialSegments: 12, heightSegments: 1, openEnded: false, thetaStart: 0, thetaLength: Math.PI * 2 } },
 };
 export const makeGeometry = (kind, params) => {
   const keys = PRIMITIVES[kind];
-  if (!keys || !THREE[kind]) return null;
-  return new THREE[kind](...keys.map(k => params?.[k]));
+  const Ctor = kind === 'WedgeGeometry' ? WedgeGeometry : THREE[kind];
+  if (!keys || !Ctor) return null;
+  return new Ctor(...keys.map(k => params?.[k]));
 };
 
 // ---- small helpers ----------------------------------------------------------------------------------------------

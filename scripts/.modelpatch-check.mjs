@@ -11,6 +11,7 @@
 //  - the GAME applies a patch once per model (userData.patched), and none without one;
 //  - the replays' rules fingerprint (vite.config.js logicFiles) has none of these files.
 //   node scripts/.modelpatch-check.mjs
+import * as THREE from 'three';
 import { startModels } from './modelpatch-load.mjs';
 
 const { load, close } = await startModels();
@@ -94,6 +95,16 @@ try {
   const added = MP.withAdd(MP.emptyPatch('bus'), 'cylinder', { position: [0, 2, 0] });
   t = run(added.patch);
   check(t.s.length === baseSnap.length + 1 && diff(baseSnap, t.s).length === 1 && t.s.some(r => r.startsWith(added.id + '|Mesh')), 'an add makes one new part (' + added.id + ') and changes nothing else');
+  // a wedge: eight triangles as added, flat-faced outward, editable by its sizes (a flat top makes it a taper), and its patch survives a rebuild
+  const wedge = MP.withAdd(MP.emptyPatch('bus'), 'wedge', { position: [0, 2, 0] });
+  t = run(wedge.patch);
+  const wNode = MP.extractParts(t.m).nodes.get(wedge.id), wGeo = wNode.geometry, wPart = MP.extractParts(t.m).parts.find(p => p.id === wedge.id);
+  check(wGeo.type === 'WedgeGeometry' && MP.triangles(wNode) === 8 && wPart.editable, 'a wedge is added as eight triangles, and its sizes are editable');
+  let outward = true; const wp = wGeo.attributes.position, wn = wGeo.attributes.normal, cen = new THREE.Vector3(0, 0, 0);
+  for (let i = 0; i < wp.count; i++) if (new THREE.Vector3().fromBufferAttribute(wn, i).dot(new THREE.Vector3().fromBufferAttribute(wp, i).sub(cen)) < -1e-6) outward = false;
+  check(outward, 'a wedge\'s faces all face out');
+  const flat = run(MP.withSet(wedge.patch, wPart, { params: { topDepth: 0.2 } }));
+  check(MP.triangles(MP.extractParts(flat.m).nodes.get(wedge.id)) === 12, 'a flat top (topDepth 0.2) makes the wedge a twelve-triangle block');
   t = run(MP.withSet(MP.emptyPatch('bus'), body, { params: { height: body.params.height * 2 } }));
   const bodyNode = MP.extractParts(t.m).nodes.get(body.id);
   check(Math.abs(bodyNode.geometry.parameters.height - body.params.height * 2) < 1e-6 && bodyNode.geometry !== MP.extractParts(base).nodes.get(body.id).geometry, 'a plain box\'s size is set by its parameters (a geometry of its own)');
