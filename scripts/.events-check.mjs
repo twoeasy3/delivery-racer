@@ -5,6 +5,7 @@
 // replay); the last stage done gives the prize once, into the save, kept when the event is over.
 //   node scripts/.events-check.mjs
 import { boot } from './delivery-headless.mjs';
+import { readFileSync } from 'node:fs';
 
 const g = await boot({ cars: ['commuter'] });
 let failures = 0;
@@ -108,6 +109,7 @@ try {
   check(Events.done(event) === 3 && !Events.prizeWon(event) && !Progress.owns('silvercomet'), 'another player, stopped at stage 4 to the end: three done, no prize');
   carHunt();
   await conceptStrike();
+  cardTrim();
 } catch (error) {
   failures++;
   console.log(error.stack);
@@ -402,4 +404,27 @@ async function strikeFreeTry(strike, level, from) {
     check(Events.freeTry(strike).on, '...and a pick on the Car Hunt’s stage leaves the Concept Strike’s free try alone');
   }
   levels.selectSpecial(level);
+}
+
+// AN EVENT'S CARD, TRIMMED (the owner, 13-Oct: "Drop the medals and stats and description for Concept Strike. Too long"):
+// events.json card.hide on the Concept Strike leaves its medals, figures and description off its level card; the Car Hunt (and
+// the Comet Hunt) keep theirs; problems() names a bad card.hide. The card itself (menustage.js drawStage) is looked at in a
+// browser; here: that it asks Events.cardHides and leaves each part out by it.
+function cardTrim() {
+  const strike = Events.specials.find(e => e.id === 'concept-strike'), hunt = Events.specials.find(e => e.id === 'car-hunt');
+  const comet = Events.specials.find(e => e.id === 'comet-hunt');
+  check(Events.cardHides(strike).sort().join() === 'description,medals,stats', 'the Concept Strike\'s card hides its medals, stats and description (' + Events.cardHides(strike).join(', ') + ')');
+  check(Events.cardHides(hunt).length === 0 && Events.cardHides(comet).length === 0 && hunt.raw.card === undefined, 'the Car Hunt (and the Comet Hunt) hide nothing: medals, stats and description on its card');
+  const raw = strike.raw, kept = raw.card;
+  const says = (card, words) => { raw.card = card; const p = Events.problems().filter(x => x.startsWith('event concept-strike: ') && /card/.test(x)); raw.card = kept; return p.some(x => words.test(x)); };
+  check(says({ hide: ['medals', 'clock'] }, /"clock" is not a part/) && says({ hide: ['stats', 'stats'] }, /"stats" twice/) && says({ hide: 'stats' }, /not a list/)
+    && says({ hide: [], show: [] }, /unknown field\(s\) show/) && says(['medals'], /is not \{ "hide"/), 'problems() names a bad card.hide (an unknown part, a part twice, not a list, an unknown field, not an object)');
+  raw.card = kept;
+  check(Events.problems().length === 0, '...and the real events.json is sound again');
+  comet.raw.card = { hide: ['medals'] };
+  check(Events.problems().some(x => /comet-hunt: "card" is for an event of one stage/.test(x)), 'a card on an event of more stages (the Comet Hunt: its own screen) is named');
+  delete comet.raw.card;
+  const src = readFileSync(new URL('../src/delivery/render/menustage.js', import.meta.url), 'utf8');
+  check(/Events\.cardHides\(single\)/.test(src) && /hide\.has\('medals'\)\s*\?\s*null\s*:\s*make\('div', 'ribbon'/.test(src) && /!hide\.has\('description'\) \? make\('p', 'desc'/.test(src) && /!hide\.has\('stats'\) \? make\('div', 'facts'/.test(src),
+    'the level card (menustage.js drawStage) leaves the medals, the figures and the description out by Events.cardHides');
 }
