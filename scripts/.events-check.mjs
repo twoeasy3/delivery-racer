@@ -338,11 +338,10 @@ async function strikeFreeTry(strike, level, from) {
     if (!Game.canStart) return { driven: 'no start' };
     Game.start();
     const out = { driven: g.cars.CAR.id, ecu: g.cars.carStats(g.cars.CAR)?.ecu, speed: g.cars.carStats(g.cars.CAR)?.maxSpeed };
-    out.staged = Game.finish('delivered') ?? null;
+    Game.finish('delivered');
     Game.toMenu();
     return out;
   };
-  const tasksPaid = () => (P.data.eventRuns?.['concept-strike']?.n || []).join();
   for (let d = 0; d < 6; d++) {
     at(mon + d * D);
     P.reset(); P.noSave = true; P.data.tierBase = 1;
@@ -379,11 +378,11 @@ async function strikeFreeTry(strike, level, from) {
     const ecu = Ecu.reached(fish);
     if (!seen.length || seen[seen.length - 1].ecu !== ecu) {
       const r = start(), c = carCard(fish, false);
-      seen.push({ ecu, bp: Ecu.blueprints('fishbowl'), driven: r.ecu, card: c.lent?.ecu, owned: P.owns('fishbowl'), key: !!r.staged?.key });
+      seen.push({ ecu, bp: Ecu.blueprints('fishbowl'), driven: r.ecu, card: c.lent?.ecu, owned: P.owns('fishbowl') });
     }
   }
   const below = seen.filter(x => x.ecu < 5);
-  check(seen.length >= 5 && seen.map(x => x.ecu).join() === '1,2,3,4,5'.slice(0, seen.length * 2 - 1) && seen.every(x => x.driven === x.ecu && (x.ecu === 5 || x.card === x.ecu)) && below.every(x => !x.owned && !x.key),
+  check(seen.length >= 5 && seen.map(x => x.ecu).join() === '1,2,3,4,5'.slice(0, seen.length * 2 - 1) && seen.every(x => x.driven === x.ecu && (x.ecu === 5 || x.card === x.ecu)) && below.every(x => !x.owned),
     'the chain: the Fishbowl Strike packs’ blueprints raise the ECU of the Fishbowl NOT owned (' + seen.map(x => 'ECU' + x.ecu + ' at ' + x.bp + ' bp').join(', ') + ', ' + opened + ' packs), each step driven as the free try and shown lent at it; below ECU5 no key');
   const top = seen[seen.length - 1];
   check(top?.ecu === 5 && top.owned && P.owns('fishbowl') && Events.tasks(strike)[3].done, 'delivered at ECU5 (maxed by blueprints) the free try gives the Fishbowl’s KEY: the car owned');

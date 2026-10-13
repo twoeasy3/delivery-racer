@@ -78,3 +78,8 @@
   #showroom .sr-detail.from-next .sr-stage, #showroom .sr-detail.from-next .sr-dwords,
   #showroom .sr-detail.from-prev .sr-stage, #showroom .sr-detail.from-prev .sr-dwords { animation: none; }
 }
+/* the imposed filter's line ("Today's event: ★★★★ cars or the Quad-Turbo Supercar (free try)") wraps on a phone: on one line
+   it ran past the screen, and opening on the day's car (the free try, picked) then scrolled the whole page sideways */
+@media (max-width: 760px) and (min-height: 521px), (max-width: 519px) {
+  #showroom .sr-count .sr-imposed { white-space: normal; display: inline-block; max-width: 100%; box-sizing: border-box; }
+}
