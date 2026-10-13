@@ -164,7 +164,8 @@ export const cardTip = (card) => {
 
 // the best figures on the floor, for the stat bars (by a car's MAXED figures, as the cars stand now)
 export const floorBest = () => {
-  const cards = showroomCars().map(car => statsAt(car, safe(() => Ecu.max(car), 1)));
+  // (the 6-star special cars (EARNED_CARS: the Road F1, the Road 8x8...) are left out, the owner, 12-Oct: "don't scale the bars to the highest 6 star cars": they would squash every other car's bar; theirs run to the end of the bar)
+  const cards = showroomCars().filter(car => !EARNED_CARS.includes(car) && !car.earned).map(car => statsAt(car, safe(() => Ecu.max(car), 1)));
   const most = (key) => Math.max(...cards.map(s => s[key] ?? 0));
   return { maxSpeed: most('maxSpeed'), accel: most('accel'), health: most('health'),
     respawnBest: Math.min(...cards.map(s => s.respawn)), respawnWorst: Math.max(...cards.map(s => s.respawn)) };

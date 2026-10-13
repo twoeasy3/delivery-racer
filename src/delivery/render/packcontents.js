@@ -121,7 +121,7 @@ export const openContents = (host, { kind, title, featured = [] }) => {
       c.reverted ? null : (out.length && out.length === c.featured.length ? make('p', 'pc-shift', make('b', '', 'Every featured card is had: '), 'the featured slot is an ordinary card, and this pack cannot be bought') : null),
       make('ul', 'pc-list', c.featured.map(f => featuredRow(f, c.baseAmount)))));
   }
-  for (const g of c.groups) {
+  for (const g of [...c.groups].reverse()) { // (the highest rarity first: Bespoke, Legendary, Epic, Uncommon, Common, after the Featured; the owner, 12-Oct)
     sections.push(make('section', 'pc-group r-' + g.rarity,
       make('h3', '', make('span', 'shop-chip r-' + g.rarity, rarityName(g.rarity)),
         make('small', '', g.cards.length + (g.cards.length === 1 ? ' card · ' : ' cards · ') + percent(g.share) + ' of plain cards'
