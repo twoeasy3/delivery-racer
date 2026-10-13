@@ -138,6 +138,7 @@ Also need `autostart` (or a hidden level).
 | `bp` | `carId:n,carId:n` | With `showroom`: those blueprint counts for the visit. | `/delivery/?showroom&bp=sport:7,hotrod:3&look=sport&full` | No | untried |
 | `bounce` | seconds | With `showroom&full`: the car's landing frozen that far in (0.16: down on its springs; 0.31: up off them). | `/delivery/?showroom&look=sport&full&bounce=0.16` | Normal | untried |
 | `sourcesopen` | bare | The full view's "Where to get it" list open from the start. | `/delivery/?showroom&look=sixteen&full&sourcesopen` | Normal | untried |
+| `keyturn` | radians | With `showroom&full`: the "Where to get it" key card's turning key (render/keyspin.js) held at that turn (no spin; a drag still turns it). 0 leaves the pre-rendered PNG. A blacked-out car's key turns black. | `/delivery/?showroom&look=hotdog&full&sourcesopen&keyturn=1.8` | Normal | yes (headless Chromium, CHECKLIST 224) |
 
 ## 6. Events and the clock
 

@@ -20,6 +20,12 @@
 // standing and spinning on its own upright axis, drawn by the same loop and the same shared renderer into a small 2D
 // canvas of its own (so it stops with the car: out of sight, hidden, closed). Reduced motion: it stands still, turned a
 // little. Its geometry and materials are given back with the car's (drop()).
+// A BLACKED-OUT key car (showroomData.js carCard `dark`: a Bespoke car whose key is not to be had, the Hot Dog Car,
+// the Snowcat, the Horseshoe; the owner, 13-Oct: "I wanted THIS key to be spinning when the car is blacked out") shows
+// its key too, spinning, as a solid black silhouette: every part one flat black unlit material (render/keyspin.js
+// SILHOUETTE_KEY, as the "Where to get it" key card's), anything not a mesh hidden, the lights off; its corner element
+// names no car ("Locked car's key"). It is drawn at most 30 times a second (the car may be drawn more often), and,
+// like every corner key, not while a sheet is over the showroom (keyWhen).
 import * as THREE from 'three';
 import { bounceOffset, bounceDone } from './carbounce.js';
 import { prepareSuspension, applySuspension } from './carsuspension.js';
@@ -27,10 +33,12 @@ import { sharedRenderer, lit, stillViews, STILL } from './modelviews.js';
 import { makeShowCar, paintShowCar } from './showcar.js';
 import { makeKey } from './keyModels.js';
 import { keyModelInUse } from './keycard.js';
+import { SILHOUETTE_KEY } from './keyspin.js';
 
 const SILHOUETTE = new THREE.MeshBasicMaterial({ color: 0x07080b }); // (as the car lot's: render/garage.js)
 const LIFT = 0.3, FOV = 30, SPIN = 0.35; // (rad looked down from level; the camera's height of view, deg; rad/s turning by itself)
 const KEY_SPIN = 1.1, KEY_REST = 0.55, KEY_LIFT = 0.12, KEY_FOV = 26; // (the corner key: rad/s; its angle standing still; rad looked down; deg)
+const DARK_KEY_FPS = 30; // (a blacked-out car's corner key: frames a second at most)
 
 // a soft round patch: the floor's light and the car's shadow (a canvas gradient, made once each)
 const patch = (inner, outer) => {
@@ -49,7 +57,7 @@ let floorMap, shadowMap;
 const flat = (map, opacity) => new THREE.MeshBasicMaterial({ map, transparent: true, opacity, depthWrite: false });
 
 let v = null; // the view: { el, canvas, ctx, car, evil, dark, scene, camera, turn, model, extra: [geometry, material], rxz, height, mid }
-let yaw = -0.64, spinBy = 0, held = null, idleAt = 0, raf = 0, last = 0, visible = () => true;
+let yaw = -0.64, spinBy = 0, held = null, idleAt = 0, raf = 0, last = 0, visible = () => true, keyVisible = () => true;
 
 // let go of the model and its floor (what they put on the graphics card is given back: a geometry or material models
 // share is simply sent again when next drawn, as modelviews.js disposeViews says)
@@ -69,19 +77,30 @@ const dropKey = () => {
   if (!v?.key) return;
   v.key.scene.traverse((node) => {
     node.geometry?.dispose();
-    for (const material of [].concat(node.material || [])) { material.map?.dispose(); material.dispose(); }
+    for (const material of [].concat(node.material || [])) if (material !== SILHOUETTE_KEY) { material.map?.dispose(); material.dispose(); }
   });
   v.key = null;
   v.keyCanvas?.remove();
 };
 // the corner key's scene: the key standing on its own upright axis (keyModels.js builds it standing, its face to +z),
-// its middle on that axis, the camera stood back far enough for it at any turn
-const buildKey = (car, el) => {
+// its middle on that axis, the camera stood back far enough for it at any turn. dark: every part flat black, no light
+const buildKey = (car, el, dark = false) => {
   const key = makeKey(car, { model: keyModelInUse(car), rarity: 'bespoke' }); // (a key car's key: always Bespoke)
+  if (dark) {
+    const own = new Set();
+    key.traverse((node) => {
+      if (!node.material) return;
+      for (const m of [].concat(node.material)) own.add(m);
+      if (node.isMesh) node.material = SILHOUETTE_KEY;
+      else node.visible = false; // (a line, a sprite, points: nothing but the black meshes)
+    });
+    for (const m of own) if (m !== SILHOUETTE_KEY) { m.map?.dispose(); m.dispose(); }
+  }
   key.updateMatrixWorld(true);
   const bounds = new THREE.Box3().setFromObject(key), mid = bounds.getCenter(new THREE.Vector3()), size = bounds.getSize(new THREE.Vector3());
   key.position.set(-mid.x, -mid.y, -mid.z);
   const scene = lit(), spin = new THREE.Group();
+  if (dark) scene.traverse((node) => { if (node.isLight) node.visible = false; }); // (unlit anyway: no light on it)
   spin.add(key);
   scene.add(spin);
   const r = Math.hypot(size.x, size.z) / 2, half = size.y / 2;
@@ -93,7 +112,7 @@ const buildKey = (car, el) => {
     v.keyCtx = v.keyCanvas.getContext('2d');
   }
   el.append(v.keyCanvas);
-  v.key = { el, scene, spin, camera, turn: KEY_REST, r, half };
+  v.key = { el, scene, spin, camera, turn: KEY_REST, r, half, dark, drawnAt: 0, frames: 0 };
 };
 // the key's camera for a picture of this shape: far enough back for it at any turn (its half width at most r)
 const frameKey = (k, aspect) => {
@@ -202,15 +221,18 @@ const draw = (now) => {
   v.ctx.globalAlpha = ShowroomView.hold >= 0 ? 1 : o.alpha; // (held for a picture: not faded)
   v.ctx.drawImage(renderer.domElement, 0, size.y - h, w, h, 0, 0, w, h);
   v.ctx.globalAlpha = 1;
-  if (v.key) drawKey(renderer, still, dt, ratio);
+  if (v.key) drawKey(renderer, still, dt, ratio, now);
 };
 // the corner key: turned on (or standing still, reduced motion), drawn into the same renderer and copied into its canvas
-const drawKey = (renderer, still, dt, ratio) => {
+const drawKey = (renderer, still, dt, ratio, now) => {
   const k = v.key, cw = k.el.clientWidth, ch = k.el.clientHeight;
-  if (!cw || !ch || !k.el.isConnected) return;
+  k.turn = still ? KEY_REST : (k.turn + KEY_SPIN * dt) % (Math.PI * 2); // (turned by the clock, drawn or not)
+  if (!cw || !ch || !k.el.isConnected || !keyVisible()) return; // (a sheet over it: not drawn)
+  if (k.dark && k.drawnAt && now - k.drawnAt < 1000 / DARK_KEY_FPS - 2) return; // (the blacked-out key: at most 30 a second)
+  k.drawnAt = now;
+  k.frames++;
   const w = Math.max(1, Math.round(cw * ratio)), h = Math.max(1, Math.round(ch * ratio));
   if (v.keyCanvas.width !== w || v.keyCanvas.height !== h) { v.keyCanvas.width = w; v.keyCanvas.height = h; }
-  k.turn = still ? KEY_REST : (k.turn + KEY_SPIN * dt) % (Math.PI * 2);
   k.spin.rotation.y = k.turn;
   if (k.camera.aspect !== w / h) frameKey(k, w / h);
   if (w > size.x || h > size.y) renderer.setSize(size.x = Math.max(size.x, w), size.y = Math.max(size.y, h), false);
@@ -279,7 +301,7 @@ export const ShowroomView = {
     } else if (v.evil !== evil) this.side(evil);
     // the corner key (a new car's built afresh with it; the same car's moved into the new corner: the detail is drawn anew)
     if (!keyEl) dropKey();
-    else if (!v.key || fresh) { dropKey(); try { buildKey(car, keyEl); } catch (error) { console.warn('No key for the showroom: ' + (error?.message || error)); dropKey(); } }
+    else if (!v.key || fresh) { dropKey(); try { buildKey(car, keyEl, dark); } catch (error) { console.warn('No key for the showroom: ' + (error?.message || error)); dropKey(); } }
     else if (v.key.el !== keyEl) { v.key.el = keyEl; keyEl.append(v.keyCanvas); }
     if (!raf) { last = 0; raf = requestAnimationFrame(draw); }
     return true;
@@ -294,6 +316,8 @@ export const ShowroomView = {
   hold: -1, // (a picture's: the landing stopped that many seconds in, e.g. 0.16 the body down on its springs; ?bounce=0.16)
   // whether the view is in sight now (render/showroom.js says)
   when(fn) { visible = fn; },
+  // whether the corner key may be drawn now (no sheet over the showroom: render/showroom.js says)
+  keyWhen(fn) { keyVisible = fn; },
   // done: the loop ended and the model let go (the 2D canvas is kept for next time)
   stop() {
     cancelAnimationFrame(raf);
@@ -303,5 +327,5 @@ export const ShowroomView = {
     if (v) { v.car = null; v.canvas?.remove(); v.el = null; }
   },
   // for a check or a picture: what is shown
-  get state() { return v?.scene ? { car: v.car.id, evil: v.evil, dark: v.dark, yaw, running: !!raf, landing: !!v.landing, lift: v.lift || 0, key: v.key ? { turn: v.key.turn } : null, since: v.landAt == null ? null : v.landT / this.slow, pitch: v.body.rotation.x } : null; },
+  get state() { return v?.scene ? { car: v.car.id, evil: v.evil, dark: v.dark, yaw, running: !!raf, landing: !!v.landing, lift: v.lift || 0, key: v.key ? { turn: v.key.turn, dark: v.key.dark, frames: v.key.frames } : null, since: v.landAt == null ? null : v.landT / this.slow, pitch: v.body.rotation.x } : null; },
 };
