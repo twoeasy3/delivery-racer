@@ -1,6 +1,7 @@
 // Entry point: loads the game logic, then the rendering, and runs the frame loop.
 // Game logic (src/*.js) never imports rendering (src/render/*.js), so it can run headless.
 import './style.css';
+import './lite.js'; // (?lite=<list>: the tablet flicker's bisect switches, and `sheet-up` under a sheet: lite.js)
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { Track } from './track.js';
