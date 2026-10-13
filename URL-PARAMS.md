@@ -208,6 +208,7 @@ The game has seven pages, all under `/delivery/`:
 |---|---|---|
 | `index.html` (or just `/delivery/`) | the game | everything above |
 | `editor.html` | the level editor | see below |
+| `modeleditor.html` | the car model editor (patches over the code's models) | see below |
 | `gimmicks.html` | every gimmick, by group, with its model | `group`, `from`, and `#<group>` anchors |
 | `cargo.html` | every cargo item, Evil ones in their three states | `side`, `only`, `still`, `t`, `turn` |
 | `powerups.html` | the power-ups | none |
@@ -255,6 +256,29 @@ Whether the live site serves these as `editor.html` or redirects to `editor` (an
 
 Without `&level=`, edits made by these switches (`click`, `drag`, `seglen`...) go into the editor's autosave and
 **replace your autosaved editor work** (not your game save). Example: `/delivery/editor.html?level=farm&tab=list` (tried).
+
+**modeleditor.html** (the car model editor: a car's model part by part, edited as a patch; how-to at the top of
+`src/delivery/modeleditor.js`, the patch format in `src/delivery/render/modelpatch.js`)
+
+| Param | Values | What it does | Tried |
+|---|---|---|---|
+| `car` | a car **id** (roster or idea, e.g. `commuter`, `circuswagon`) | Opens that car (default `commuter`). | yes |
+| `evil` | bare | Built and painted as Evil (colour edits can then go to the patch's `evil` list). | yes |
+| `tab` | `parts`, `part`, `json` | That side tab open. | yes |
+| `part` | a part id (`0`, `3.1`, an added `n1`, a mirror `m:12`) | That part selected. | yes |
+| `view` | `front`, `rear`, `left`, `right`, `top`, `34` | The camera there. | untried |
+
+The editor keeps every car's patch in this browser (localStorage `delivery.modelpatches`, per car) as you go; the
+address changes as you pick a car, a tab or a part (bookmark it). Keys: G / R / S move / rotate / scale, Delete,
+Ctrl+D duplicate, M mirror across the car, Ctrl+Z / Ctrl+Y, F frame the part, Esc let go.
+
+**The model patches in the game** (any page that builds a car's model: the game, the garage and its inspector, the
+showroom, the stills, the ideas lot)
+
+| Param | Values | What it does | Tried |
+|---|---|---|---|
+| `modelpatch` | `local` | The model editor's own patches from this browser (over the files' ones) instead of only `src/delivery/modelpatches/<car id>.json`: a quick look at an edit. E.g. `/delivery/?garage&inspect=commuter&modelpatch=local`. | yes (the inspector, a run) |
+| `modelpatch` | `off` | No patches at all: every model as its code builds it. | untried |
 
 `?edited&clock` on the game page is used by the editor's "Work out the clock" button (it loads the game out of
 sight); there is no reason to type it.

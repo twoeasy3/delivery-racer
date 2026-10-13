@@ -81,7 +81,7 @@ const GROUPS = {
   render: {
     about: 'Drawing, without a browser: the shared model views (a stand-in renderer), dents, the car keys (the three models, the key card, the key cards\' pre-rendered PNGs in keyshots/), the showroom landing\'s suspension (every car\'s wheels found and kept on the floor, its body sprung), the model inspector (every idea car built and its triangles counted); the showroom\'s turning key card (.keyspin-check: its source, then in headless Chromium if one is found: a blacked-out key drawn black only, the showroom\'s key card live and stopped)',
     seconds: 60,
-    tests: [t('.modelviews-check.mjs'), t('.dents-check.mjs'), t('.keys-check.mjs'), t('.keyshots-check.mjs'), t('.suspension-check.mjs'), t('.inspector-check.mjs'), t('.keyspin-check.mjs')],
+    tests: [t('.modelviews-check.mjs'), t('.dents-check.mjs'), t('.keys-check.mjs'), t('.keyshots-check.mjs'), t('.suspension-check.mjs'), t('.inspector-check.mjs'), t('.keyspin-check.mjs'), t('.modelpatch-check.mjs')],
     files: [/src\/delivery\/render\//, /\.css$/, /keyshots|keyModels|keys-png/],
   },
   replay: {

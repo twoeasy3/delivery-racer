@@ -328,6 +328,12 @@ export const applyPatch = (root, patch, { evil = false } = {}) => {
       out.applied++;
     } catch (e) { warn('op ' + i + ' failed: ' + e.message); }
   });
+  // a mirror copy is worked out last, from its part as the ops left it (so it follows the part's edits)
+  for (const op of patch.ops) {
+    if (!op?.add?.mirror) continue;
+    const copy = added.get(op.add.id), src = ctx.find(op.add.from, op.add.fromSig);
+    if (copy && src) { try { mirrorInto(copy, src, root); } catch (e) { warn('mirror ' + op.add.id + ': ' + e.message); } }
+  }
   // the side's paint: the ops' colours, then the Evil side's over them; re-applied after the model's own livery
   const evilOps = (Array.isArray(patch.evil) ? patch.evil : []).map(op => [op, ctx.find(op.id, op.sig)]);
   for (const [op, node] of evilOps) if (!node) out.unmatched.push('evil:' + op.id);

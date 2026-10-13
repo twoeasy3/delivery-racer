@@ -794,3 +794,5 @@
 @media (max-height: 520px) and (min-width: 520px) {
   #startScreen.cx-card .menu-stage.no-medals.has-extras .cargo3d { right: 12px; }
 }
+/* the two editors' links in Options (the level editor, the model editor): a finger-sized target on a touch screen */
+@media (pointer: coarse) { #startScreen .menu-chip.editor-link { min-height: 44px; box-sizing: border-box; } }
