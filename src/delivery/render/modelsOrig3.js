@@ -607,7 +607,7 @@ export const ORIG3_MODELS = {
     group.userData = {
       body: merged.get(paint),
       livery: (evil) => {
-        cover.map = tarpaulin(evil ? 'evil' : 'good', evil ? ['#c98a3e', '#9a6228', '#2f6a24'] : ['#b5a070', '#8a7650', '#2f6a24']);
+        cover.map = tarpaulin(evil ? 'evil' : 'good', evil ? ['#c98a3e', '#9a6228', '#2f6a24'] : ['#8a55c0', '#63399a', '#2f6a24']);
         cover.needsUpdate = true;
         roof.color.setHex(evil ? 0x4a4845 : 0x4f5532);
       },
