@@ -23,8 +23,9 @@
 // A ROTATING event (the Concept Strike, the owner 13-Oct; CHECKLIST 211): a recurring one with `days`, one entry for each
 // day of a run (Monday to Saturday: `repeat: { every: 7, live: 6 }` from a Monday). Each DAY is a run of its own: the
 // window is the day's (Ends in: midnight; between days the next day starts at once; Sunday: Next in, Monday). A day has
-//   car     its FEATURED car: lent as a FREE TRY at the player's own ECU for it (the event card's Free try button: the
-//           stage's car lock for the visit, `ownEcu`: ecu.js drives it at the ECU its blueprints reach, not maxed)
+//   car     its FEATURED car: lent as a FREE TRY at the player's own ECU for it, ON by default (the stage's car lock,
+//           `ownEcu`: ecu.js drives it at the ECU its blueprints reach, ECU1 with none; the key at ECU5). The event card's
+//           Free try chip, or the showroom's Drive on another car, turns it off for the visit (lentFor / pickFor)
 //   tasks   [{ stars, side, car, featured, maxed, packs, limit, key }]: a delivery of the stage that meets a task pays it:
 //           `packs` of the day's pack (packs.json: the pack whose givenBy.event names the event and that `day`, 1 = the
 //           first), at most `limit` times a run (the day); `key`: the featured car's key, once for good. Conditions:
@@ -143,7 +144,11 @@ const meets = (task, day, run) => {
   if (task.maxed && !(Number(run.ecu) >= Ecu.max(car))) return false;
   return true;
 };
-let tryOn = false; // (the free try of a rotating event's featured car, picked on its card: for the visit, never saved)
+// the free try of a rotating event's featured car: ON by default while a day is live (the owner, 13-Oct: "the idea is that
+// players ECU up the car they don't own, and only get the key when they max it out": the day's car is everyone's to drive,
+// lent at the ECU its blueprints reach). The card's chip, or a pick in the showroom of another car, turns it off for the
+// visit (never saved); a pick of the day's car, or the chip again, back on
+let tryOn = true;
 
 export const Events = {
   specials: SPECIALS,
@@ -274,6 +279,21 @@ export const Events = {
     return { car, on: tryOn, ecu: Math.max(1, Ecu.reached(car)), max: Ecu.max(car), owned: Progress.owns(car.id) };
   },
   setFreeTry(event, on) { tryOn = !!on; this.syncTry(event); },
+  // the free try the level picked lends this car: freeTry's { car, on, ecu, max, owned } when the level is a rotating
+  // event's stage, its day live, the car the day's (owned or not: an owner's is driven at their own ECU), else null
+  lentFor(level, car, t = this.now()) {
+    const event = car ? this.stageOf(level)?.event : null;
+    if (!event?.days) return null;
+    const tried = this.freeTry(event, t);
+    return tried && tried.car.id === car.id ? tried : null;
+  },
+  // a car picked to drive (the showroom's Drive) while the level picked is a rotating event's stage, its day live: the pick
+  // decides the free try (the day's car: on; any other: off, the player's own car driven), so Start drives what was picked
+  pickFor(level, carId, t = this.now()) {
+    const event = this.stageOf(level)?.event;
+    if (!event?.days || !this.dayOf(event, t)?.live) return;
+    this.setFreeTry(event, carId === this.dayOf(event, t).car);
+  },
   // the cars a rotating event's stage points the showroom at today (the owner, 13-Oct: "Concept Strike should filter the
   // showroom to the stars requirement AND the free try car"): any car of the stars of the day's first stars task (starsOf:
   // a gold tier's, the Blueprint cars' too, or a key car's rating), the day's featured car (lent: owned or not), and the car of

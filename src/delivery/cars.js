@@ -88,6 +88,12 @@ export const carRule = (evil) => tierHooks.rule?.(evil ?? viewSide) ?? null;
 // the cars the level picked POINTS the showroom at without making a rule of it (a rotating event's day: events.js
 // showroomFocus): { test(car), label }, or null. Every car stays drivable; the showroom only opens filtered to these
 export const carFocus = () => tierHooks.focus?.() ?? null;
+// a car the level picked LENDS the player, owned or not (a rotating event's free try of its day's car: events.js lentFor):
+// { car, on, ecu, max, owned }, or null. The showroom makes its card drivable ("Free try · ECU n/5")
+export const carLent = (car) => tierHooks.lent?.(car) ?? null;
+// a car picked to drive in the showroom: the level picked hears of it (a rotating event's free try on for its day's car, off
+// for any other: events.js pickFor), and its car lock follows
+export const carPicked = (id) => { tierHooks.picked?.(id); };
 export const restrictedTier = (evil) => carRule(evil)?.tier ?? null; // (the tier of a tier rule; null for none or a list)
 const tierRules = {};
 export const tierRule = (tier) => tierRules[tier] ||= { tier, key: String(tier), label: '{tier:' + tier + '} cars' };

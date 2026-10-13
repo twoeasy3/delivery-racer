@@ -194,6 +194,8 @@ async function conceptStrike() {
   const H = 3600e3, D = 86400e3, from = strike.from;
   check(new Date(from).getDay() === 1 && new Date(from).getHours() === 0, 'its first run starts on a Monday, at midnight on the device (' + new Date(from).toString().slice(0, 24) + ')');
   const level = strike.stages[0].level;
+  const firstTry = Events.freeTry(strike, from + 2 * D + 5 * H); // (before anything has set it: as a fresh visit has it)
+  check(firstTry?.on === true && firstTry.car.id === 'sixteen' && firstTry.ecu === 1, 'the free try is ON by default while a day is live (the owner, 13-Oct): Wednesday the Sixteen, ECU ' + firstTry?.ecu);
   check(level.id === 'concept-strike-1' && level.stage.map === 'back-roads' && level.clock.good === 300 && level.clock.evil === 300 && !level.allowedCars && !level.car,
     'its stage: Back Roads as concept-strike-1, a 300 s TEST clock both sides, any car (no car rule, no lock)');
   const want = [['fishbowl', 2, 4, 'Mon', 2], ['midsummer', 3, 3, 'Tue', 2], ['sixteen', 4, 3, 'Wed', 3], ['quadturbo', 5, 3, 'Thu', 4], ['knifeedge', 5, 3, 'Fri', 5], ['windsong', 5, 3, 'Sat', 5]] // (the last: task 1's stars; the owner, 13-Oct, Tue, Wed, Thu one star below the day's car);
@@ -220,7 +222,7 @@ async function conceptStrike() {
   Progress.data.cars.push(two.id, three.id);
   const P = Progress, held = (k) => (P.data.packs || {})['concept-strike-' + k] || 0;
   const run = (evil, carId = null) => {
-    if (carId) P.data.car = carId;
+    if (carId) { P.data.car = carId; Events.pickFor(level, carId); } // (a car picked: the showroom's Drive, which turns the free try off for another car)
     Events.syncTry(strike);
     levels.selectSpecial(level);
     Game.evil = evil;
@@ -278,6 +280,7 @@ async function conceptStrike() {
   P.noSave = false; P.save(); const code = P.exportCode(); P.data.eventRuns = {}; P.importCode(code);
   check(P.data.eventRuns?.['concept-strike']?.n?.join() === '1,0,0' && Events.tasks(strike)[0].count === 1, 'the counters come back through a save code (Export / Import save): ' + JSON.stringify(P.data.eventRuns));
   await strikeShowroom(strike, level, from);
+  await strikeFreeTry(strike, level, from);
 }
 
 // THE CONCEPT STRIKE IN THE SHOWROOM (the owner, 13-Oct: "Concept Strike should filter the showroom to the stars requirement
@@ -311,4 +314,92 @@ async function strikeShowroom(strike, level, from) {
       + (prevCar ? '; the ' + prevCar + (owned(prevCar) ? ' owned: in' : starsOf(g.cars.carById(prevCar)) === stars ? ' not owned, in by its stars' : ' not owned: out') : '') + '), filter ' + JSON.stringify({ stars: forced?.stars, colour: forced?.colour, state: forced?.state })
       + ', "' + focus?.label + '"; no car rule (any car still drivable)');
   }
+}
+
+// THE FREE TRY, END TO END (the owner, 13-Oct: "Concept Strike doesn't actually give the Free Try car"; "the idea is that
+// players ECU up the car they don't own, and only get the key when they max it out"): on every weekday of a later run, from a
+// fresh save (the starter only, no blueprints), the day's car is lent by default: the stage's car lock, the showroom's card
+// drivable ('Free try · ECU 1/5', no lock overlay), its Drive keeps it lent (nothing owned, nothing saved as the pick), and
+// the run starts in it at ECU1; Drive on the player's own car turns the try off (the run in their car), the day's car's
+// Drive back on. Then the chain on a Monday: the day's packs' blueprints raise the ECU of the car not owned (1 + a step
+// each 5), each step driven as the free try; below the max no key; delivered at ECU5 its key, the car owned, its card no
+// longer lent but the player's own (driven at its own ECU5). The Car Hunt is untouched (its stage never lent).
+async function strikeFreeTry(strike, level, from) {
+  const { showroomCars, carCard, driveAs, driveWords, overlayOf, imposedFilter, filterCards } = await g.load('showroomData.js');
+  const { Ecu } = await g.load('ecu.js');
+  const { Packs } = await g.load('packs.js');
+  const D = 86400e3, mon = from + 28 * D + 5 * 3600e3, P = Progress;
+  // a run started as the menu's Start does (the car lock as the menu draws it), finished delivered
+  const start = (evil = false) => {
+    Events.syncTry(strike);
+    levels.selectSpecial(level);
+    Game.evil = evil;
+    g.cars.useLevelCar(level.car, level.amphibious);
+    if (!Game.canStart) return { driven: 'no start' };
+    Game.start();
+    const out = { driven: g.cars.CAR.id, ecu: g.cars.carStats(g.cars.CAR)?.ecu, speed: g.cars.carStats(g.cars.CAR)?.maxSpeed };
+    Game.finish('delivered');
+    Game.toMenu();
+    return out;
+  };
+  for (let d = 0; d < 6; d++) {
+    at(mon + d * D);
+    P.reset(); P.noSave = true; P.data.tierBase = 1;
+    Events.setFreeTry(strike, true); // (a fresh visit: the default, checked above)
+    levels.selectSpecial(level);
+    Events.syncTry(strike);
+    const day = Events.dayOf(strike), car = g.cars.carById(day.car), wd = new Date(Events.now()).toString().slice(0, 3);
+    const card = carCard(car, false), focus = g.cars.carFocus();
+    const shown = focus ? filterCards(showroomCars().map(c => carCard(c, false)), imposedFilter({ list: true, test: focus.test }, showroomCars().map(c => carCard(c, false)), 'event'), null).map(c => c.id) : [];
+    check(level.car === day.car && level.ownEcu && !P.owns(day.car) && card.state === 'ready' && card.lent?.ecu === 1 && card.lent.max === 5 && !card.unlocked && overlayOf(card) === null
+      && /Free try/.test(driveWords(card, false)) && shown.includes(day.car),
+      wd + ' (fresh save): the ' + car.name + ' lent by default (the stage’s lock), its showroom card drivable "' + driveWords(card, false) + '" at ECU ' + card.lent?.ecu + '/' + card.lent?.max + ', no lock overlay, in the day’s view');
+    const picked = driveAs(card, false);
+    const r = start();
+    check(picked && !P.owns(day.car) && P.data.car === 'commuter' && r.driven === day.car && r.ecu === 1 && Math.abs(r.speed - Ecu.stats(car, 1).maxSpeed) < 1e-9 && !P.owns(day.car),
+      wd + ': its Drive keeps it lent (not owned, the pick still the commuter) and Start drives the ' + car.name + ' at ECU1 (' + r.speed + ' m/s, maxed ' + Ecu.stats(car, 5).maxSpeed + '); delivered, no key');
+    driveAs(carCard(g.cars.carById('commuter'), false), false);
+    const own = start();
+    check(own.driven === 'commuter' && !level.car && !Events.freeTry(strike).on, wd + ': Drive on the commuter turns the free try off: the run in the commuter, no car lock');
+    driveAs(carCard(car, false), false);
+    check(Events.freeTry(strike).on && level.car === day.car && start().driven === day.car, wd + ': Drive on the ' + car.name + ' again: the free try back on, the run in it');
+  }
+  // THE CHAIN, a Monday (the Fishbowl): blueprints from its packs -> ECU of a car not owned -> driven at it -> key at ECU5
+  at(mon + 7 * D);
+  P.reset(); P.noSave = true; P.data.tierBase = 1;
+  Events.setFreeTry(strike, true);
+  const fish = g.cars.carById('fishbowl');
+  const seen = [];
+  let opened = 0, seed = 7;
+  const random = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+  while (Ecu.blueprints('fishbowl') < 20 && opened < 400) {
+    Packs.open('concept-strike-1', { free: true, random });
+    opened++;
+    const ecu = Ecu.reached(fish);
+    if (!seen.length || seen[seen.length - 1].ecu !== ecu) {
+      const r = start(), c = carCard(fish, false);
+      seen.push({ ecu, bp: Ecu.blueprints('fishbowl'), driven: r.ecu, card: c.lent?.ecu, owned: P.owns('fishbowl') });
+    }
+  }
+  const below = seen.filter(x => x.ecu < 5);
+  check(seen.length >= 5 && seen.map(x => x.ecu).join() === '1,2,3,4,5'.slice(0, seen.length * 2 - 1) && seen.every(x => x.driven === x.ecu && (x.ecu === 5 || x.card === x.ecu)) && below.every(x => !x.owned),
+    'the chain: the Fishbowl Strike packs’ blueprints raise the ECU of the Fishbowl NOT owned (' + seen.map(x => 'ECU' + x.ecu + ' at ' + x.bp + ' bp').join(', ') + ', ' + opened + ' packs), each step driven as the free try and shown lent at it; below ECU5 no key');
+  const top = seen[seen.length - 1];
+  check(top?.ecu === 5 && top.owned && P.owns('fishbowl') && Events.tasks(strike)[3].done, 'delivered at ECU5 (maxed by blueprints) the free try gives the Fishbowl’s KEY: the car owned');
+  const ownCard = carCard(fish, false);
+  driveAs(ownCard, false);
+  const after = start();
+  check(ownCard.unlocked && !ownCard.lent && ownCard.state === 'ready' && after.driven === 'fishbowl' && after.ecu === 5 && P.owns('fishbowl'),
+    'after the key: its card the player’s own (not lent), driven at its own ECU5');
+  // the Car Hunt: its stage never lent (no free try), the showroom's cards as ever
+  const hunt = Events.specials.find(e => e.id === 'car-hunt'), hl = hunt?.stages[0].level;
+  if (hl) {
+    levels.selectSpecial(hl);
+    const blower = g.cars.carById('blower');
+    check(Events.lentFor(hl, blower) === null && Events.freeTry(hunt) === null && !hl.car && carCard(blower, false).lent === null,
+      'the Car Hunt: no free try, its stage never lent, the Blower’s card not lent');
+    Events.pickFor(hl, 'commuter');
+    check(Events.freeTry(strike).on, '...and a pick on the Car Hunt’s stage leaves the Concept Strike’s free try alone');
+  }
+  levels.selectSpecial(level);
 }

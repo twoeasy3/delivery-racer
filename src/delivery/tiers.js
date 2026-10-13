@@ -297,6 +297,10 @@ setTierHooks({
   },
   // the showroom's focus (cars.js carFocus): a rotating event's day (events.js showroomFocus), else none
   focus: () => { try { return Events.showroomFocus(currentLevel()); } catch { return null; } },
+  // a car the level picked LENDS (cars.js carLent): a rotating event's free try of its day's car (events.js lentFor), else null
+  lent: (car) => { try { return Events.lentFor(currentLevel(), car); } catch { return null; } },
+  // a car picked to drive (cars.js carPicked): on a rotating event's stage, the pick turns its free try on or off (events.js pickFor)
+  picked: (id) => { try { Events.pickFor(currentLevel(), id); } catch { /* (no events) */ } },
   blueOpen: () => Tiers.on() ? Tiers.tierOpen(6) || Tiers.legacy() > CONFIG.blueStarsAfter : null,
   // the garage's view of a car (the owner, 11-Oct): the cars of the tiers open are shown; those of the very next tier are
   // black silhouettes nobody can buy; those further on are not there. A car the player owns, or in no tier (earned,
