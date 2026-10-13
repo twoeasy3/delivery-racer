@@ -11,7 +11,7 @@ import { scene, tmp, clearGroup } from './scene.js';
 import { buildStrip, THEMES, landAt } from './road.js';
 import { carMesh, passengerMesh, makeTankMesh, shapeCarMesh, ufoMesh, trafficMeshes, syncLamps } from './cars.js';
 import { Traffic } from '../traffic.js';
-import { Particles, rnd } from './effects.js';
+import { Particles, rnd, perSecond } from './effects.js';
 import { MODELS } from './models.js';
 import { makeIdeaModel } from './ideaModels.js';
 import { TURBO_COLOR, PICKUP_COLOR, PICKUP_MODELS, makeTargetModel } from './pickupModels.js';
@@ -569,24 +569,28 @@ export const syncPickups = (dt) => {
   // a boat's wake: white water churned up behind it, the more the faster it goes
   if (Player.active && CAR.wake && Player.speed > 3) {
     const h = Track.toWorld(Player.s - Player.hl, Player.lat, tmp);
-    for (let n = 0; n < 2; n++) {
+    for (let n = perSecond(120, dt); n > 0; n--) { // (two a frame at 60 Hz, as it was)
       Particles.emit(tmp.x + rnd(0.6), tmp.y + 0.05, tmp.z + rnd(0.6), // (life, size, grow, gravity: a fine spray that falls back)
         Math.sin(h) * Player.speed * 0.15 + rnd(1.2), 1 + Math.random() * 1.5, Math.cos(h) * Player.speed * 0.15 + rnd(1.2),
         0.45 + Math.random() * 0.3, 0.16, 0.8, 6, Math.random() < 0.6 ? 0xffffff : 0xcfe9f2, tmp.y);
     }
   }
-  // (and the wakes of the boats in the traffic, those near enough to see)
+  // (and the wakes of the boats in the traffic, those near enough to see. On the water a boat's spray is
+  // syncWater's (render/water.js): this is only for one where the water is too shallow for that, so no boat has two)
   for (const car of Traffic.cars) {
     if (!car.active || !CONFIG.vehicles[car.kind]?.boat || Math.abs(car.vs) < 3 || Math.abs(car.s - Player.s) > 220) continue;
+    if (Track.water(car.s) > 0.2) continue;
     const h = Track.toWorld(car.s - car.hl * car.dir, car.lat, tmp);
-    Particles.emit(tmp.x + rnd(car.hw * 0.6), tmp.y + 0.05, tmp.z + rnd(car.hw * 0.6),
-      Math.sin(h) * car.vs * 0.15 + rnd(1.2), 1 + Math.random() * 1.5, Math.cos(h) * car.vs * 0.15 + rnd(1.2),
-      0.45 + Math.random() * 0.3, 0.16, 0.8, 6, Math.random() < 0.6 ? 0xffffff : 0xcfe9f2, tmp.y);
+    for (let n = perSecond(60, dt); n > 0; n--) { // (one a frame at 60 Hz, as it was)
+      Particles.emit(tmp.x + rnd(car.hw * 0.6), tmp.y + 0.05, tmp.z + rnd(car.hw * 0.6),
+        Math.sin(h) * car.vs * 0.15 + rnd(1.2), 1 + Math.random() * 1.5, Math.cos(h) * car.vs * 0.15 + rnd(1.2),
+        0.45 + Math.random() * 0.3, 0.16, 0.8, 6, Math.random() < 0.6 ? 0xffffff : 0xcfe9f2, tmp.y);
+    }
   }
   // turbo exhaust
   if (Player.active && powerShown(Player.turbo)) {
     const h = Track.toWorld(Player.s - Player.hl, Player.lat, tmp);
-    for (let n = 0; n < 2; n++) {
+    for (let n = perSecond(120, dt); n > 0; n--) { // (two a frame at 60 Hz, as it was)
       Particles.emit(tmp.x + rnd(0.5), tmp.y + 0.6, tmp.z + rnd(0.5),
         Math.sin(h) * Player.speed * 0.5 + rnd(1), Math.random(), Math.cos(h) * Player.speed * 0.5 + rnd(1),
         0.3, 0.5, 0.5, 0, Math.random() < 0.5 ? TURBO_COLOR : 0xffffff);
