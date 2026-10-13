@@ -1,4 +1,8 @@
-// ---- CAR KEYS: three 3D keys for the Bespoke KEY cards (the owner, 12-Oct, after Asphalt 9's CAR KEY card) ----------
+// ---- CAR KEYS: a 3D key for each Bespoke KEY car (the owner, 12-Oct, after Asphalt 9's CAR KEY card; 13-Oct: one each) ---
+// Nine models, one a key car (cars.js keyModel): the first three below (12-Oct) and six made for their cars (13-Oct, after
+// smart): fin (the Rocket Fin Coupe), wheel (the Monowheel), solar (the Solar Racer), lunar (the Moon Rover), snowboot (the
+// Snowcat) and bun (the Hot Dog Car). The first three went to the Silver Comet (fob), the Swan Car (classic) and the
+// Horseshoe Hypercar (smart). The 12-Oct notes follow.
 // "The agent needs to make a car key model and render it as part of the blueprint. Try 3 models please." Three keys in
 // the game's blocky low-poly style (boxes, extruded outlines with a small bevel, Lambert paint, a little Phong for the
 // metal), each a builder (car, { rarity }) => THREE.Group:
@@ -18,7 +22,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export const KEY_MODELS = ['fob', 'classic', 'smart', 'fin', 'wheel', 'solar', 'lunar', 'snowboot', 'bun'];
-// the one the cards use (?keymodel=fob|classic|smart picks another for a visit: render/keycard.js)
+// the one a car with no keyModel of its own gets (?keymodel=<any of KEY_MODELS> picks another for a visit: render/keycard.js)
 export const KEY_MODEL = 'fob';
 
 const RIM = { common: 0xa3acb7, uncommon: 0x3fd06f, epic: 0xb45cff, legendary: 0xffbe2e, bespoke: 'rainbow' };
@@ -345,15 +349,15 @@ const fin = (car, { rarity = 'bespoke' } = {}) => {
   slab(k, FIN, shape, D, B, 0, 4);
   band(k, CHROME, P, 0.2, -0.1, 0.12, 0.22, 0, 4);
   rainbow(band(k, rimMaterial(rarity), P, 0.2, -0.19, -0.13, 0.06, FRONT + 0.005, 4), 0, 0.3);
-  for (const z of [FRONT, -FRONT]) add(k, new THREE.TorusGeometry(0.15, 0.035, 6, 14), CHROME, HOLE[0], HOLE[1], z);
+  for (const z of [FRONT, -FRONT]) add(k, new THREE.TorusGeometry(0.15, 0.035, 5, 10), CHROME, HOLE[0], HOLE[1], z);
   // a split ring through the hole, round the fin's edge (in the plane across the key)
-  const ring = add(k, new THREE.TorusGeometry(0.5, 0.045, 6, 22), CHROME, HOLE[0], HOLE[1] + 0.5, 0);
+  const ring = add(k, new THREE.TorusGeometry(0.5, 0.045, 5, 18), CHROME, HOLE[0], HOLE[1] + 0.5, 0);
   ring.rotation.y = Math.PI / 2;
   // the porthole: a chrome ring, a dark window, the initial lit in the car's colour (both faces have the ring)
   const EY = -0.22;
-  for (const s of [1, -1]) add(k, new THREE.TorusGeometry(0.4, 0.06, 6, 20), CHROME, 0, EY, s * FRONT);
-  disc(k, PORT, 0.4, -FRONT - 0.02, FRONT + 0.02, 0, EY, 16);
-  glyph(k, INK, initialOf(car), 0.4, FRONT + 0.015, FRONT + 0.045, 0, EY);
+  disc(k, CHROME, 0.47, -FRONT - 0.03, FRONT + 0.03, 0, EY, 16);
+  disc(k, PORT, 0.39, -FRONT - 0.045, FRONT + 0.045, 0, EY, 16);
+  glyph(k, INK, initialOf(car), 0.4, FRONT + 0.035, FRONT + 0.065, 0, EY);
   // the speed strake, parallel to the leading edge
   const lead = Math.atan2(2.0, 1.55);
   const strake = box(k, CHROME, 0.7, 0.1, 0.04, 0.12, 0.62, FRONT + 0.01);
@@ -374,7 +378,7 @@ const wheel = (car, { rarity = 'bespoke' } = {}) => {
   const TYRE = lambert(0x24262b), RIMP = metal(paint.getHex(), 70), CHROME = metal(0xd4d8de, 110), NICKEL = metal(0xc7cbd1, 90);
   const GROOVE = metal(0x8a9098, 50), ENAMEL = metal(0xf2efe6, 60), INK = metal(inkOn(new THREE.Color(0xf2efe6)), 90);
   const C = 0.25; // (the wheel's middle)
-  add(k, new THREE.TorusGeometry(1.0, 0.17, 8, 28), TYRE, 0, C, 0);
+  add(k, new THREE.TorusGeometry(1.0, 0.17, 6, 24), TYRE, 0, C, 0);
   // tread blocks round the tyre's crown
   for (let i = 0; i < 16; i++) {
     const a = (i + 0.5) / 16 * Math.PI * 2;
@@ -404,7 +408,7 @@ const wheel = (car, { rarity = 'bespoke' } = {}) => {
   slab(k, NICKEL, new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y))), 0.12, 0, 0, 1);
   for (const s of [1, -1]) box(k, GROOVE, 0.07, 1.7, 0.035, 0, -2.0, s * 0.065);
   // the split ring round the tyre's top (in the plane across the key)
-  const split = add(k, new THREE.TorusGeometry(0.34, 0.045, 6, 20), CHROME, 0, C + 1.0, 0);
+  const split = add(k, new THREE.TorusGeometry(0.34, 0.045, 5, 16), CHROME, 0, C + 1.0, 0);
   split.rotation.y = Math.PI / 2;
   return idle(group, merged(k));
 };
@@ -423,7 +427,7 @@ const solar = (car, { rarity = 'bespoke' } = {}) => {
   shape.holes.push(circle(HOLE[0], HOLE[1], 0.09));
   slab(k, BODY, shape, D, B, 0, 4);
   rainbow(band(k, rimMaterial(rarity), P, 0.22, -0.17, -0.11, 0.05, FRONT + 0.005, 4), 0, 0.15);
-  for (const z of [FRONT, -FRONT]) add(k, new THREE.TorusGeometry(0.12, 0.03, 6, 14), CHROME, HOLE[0], HOLE[1], z);
+  for (const z of [FRONT, -FRONT]) add(k, new THREE.TorusGeometry(0.12, 0.03, 5, 10), CHROME, HOLE[0], HOLE[1], z);
   // the cells: a 5 x 5 grid, less the corners the top's chamfers cut, the ring hole's, the bubble's and the badge's
   const xs = [-0.68, -0.34, 0, 0.34, 0.68], ys = [-0.62, -0.28, 0.06, 0.4, 0.74];
   xs.forEach((x, i) => ys.forEach((y, j) => {
@@ -432,11 +436,11 @@ const solar = (car, { rarity = 'bespoke' } = {}) => {
     box(k, CELL, 0.3, 0.3, 0.03, x, y, FRONT + 0.005);
   }));
   // the bubble (a dome, flattened) and the badge
-  const dome = new THREE.SphereGeometry(0.33, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+  const dome = new THREE.SphereGeometry(0.33, 12, 5, 0, Math.PI * 2, 0, Math.PI / 2);
   dome.rotateX(Math.PI / 2);
   add(k, dome, GLASS, 0.51, 0.23, FRONT - 0.01).scale.set(1, 1.05, 0.85);
-  add(k, new THREE.TorusGeometry(0.3, 0.04, 6, 18), CHROME, -0.51, 0.23, FRONT + 0.01);
-  disc(k, BADGE, 0.3, FRONT - 0.01, FRONT + 0.03, -0.51, 0.23, 18);
+  disc(k, CHROME, 0.33, FRONT - 0.01, FRONT + 0.02, -0.51, 0.23, 16);
+  disc(k, BADGE, 0.27, FRONT - 0.01, FRONT + 0.035, -0.51, 0.23, 16);
   glyph(k, INK, initialOf(car), 0.3, FRONT + 0.02, FRONT + 0.06, -0.51, 0.23);
   // the back: a plain panel; the blade's collar and the blade
   box(k, metal(0xe8ecf2, 40), 1.4, 1.3, 0.03, 0, 0.0, -FRONT - 0.005);
@@ -462,33 +466,33 @@ const lunar = (car, { rarity = 'bespoke' } = {}) => {
   shape.holes.push(circle(HOLE[0], HOLE[1], 0.1));
   slab(k, BODY, shape, D, B, 0, 3);
   rainbow(band(k, rimMaterial(rarity), P, 0.3, -0.16, -0.1, 0.05, FRONT + 0.005, 3), 0, 0);
-  for (const z of [FRONT, -FRONT]) add(k, new THREE.TorusGeometry(0.13, 0.035, 6, 12), CHROME, HOLE[0], HOLE[1], z);
+  for (const z of [FRONT, -FRONT]) add(k, new THREE.TorusGeometry(0.13, 0.035, 5, 10), CHROME, HOLE[0], HOLE[1], z);
   // craters: a dark ring of a dent, its floor paler, barely proud of the face
-  for (const [x, y, r] of [[0.58, 0.8, 0.11], [-0.66, -0.05, 0.08], [0.7, 0.05, 0.07], [0.05, -0.88, 0.09], [-0.2, 0.86, 0.06]]) {
-    disc(k, CRATER, r, FRONT - 0.01, FRONT + 0.01, x, y, 10);
-    disc(k, FLOOR, r * 0.65, FRONT - 0.01, FRONT + 0.016, x, y, 10);
+  for (const [x, y, r] of [[0.58, 0.8, 0.11], [-0.66, -0.05, 0.08], [0.7, 0.05, 0.07], [0.05, -0.88, 0.09]]) {
+    disc(k, CRATER, r, FRONT - 0.01, FRONT + 0.01, x, y, 8);
+    disc(k, FLOOR, r * 0.65, FRONT - 0.01, FRONT + 0.016, x, y, 8);
   }
   // the rover's profile: a chassis, a deck, three wheels
   box(k, ROVER, 0.98, 0.1, 0.04, 0, 0.47, FRONT + 0.01);
   box(k, ROVER, 0.42, 0.16, 0.04, -0.12, 0.6, FRONT + 0.01);
   box(k, ROVER, 0.06, 0.22, 0.04, 0.3, 0.62, FRONT + 0.01);
-  for (const x of [-0.36, 0, 0.36]) disc(k, INK, 0.13, FRONT - 0.01, FRONT + 0.04, x, 0.34, 10);
+  for (const x of [-0.36, 0, 0.36]) disc(k, INK, 0.13, FRONT - 0.01, FRONT + 0.04, x, 0.34, 8);
   // the gold-foil strip, the initial and the GO button
   box(k, FOIL, 1.5, 0.12, 0.04, 0, 0.02, FRONT + 0.005);
   glyph(k, INK, initialOf(car), 0.42, FRONT - 0.01, FRONT + 0.04, -0.38, -0.5);
-  disc(k, CHROME, 0.27, FRONT - 0.02, FRONT + 0.04, 0.38, -0.5, 16);
-  disc(k, GO, 0.21, FRONT, FRONT + 0.09, 0.38, -0.5, 16);
+  disc(k, CHROME, 0.27, FRONT - 0.02, FRONT + 0.04, 0.38, -0.5, 12);
+  disc(k, GO, 0.21, FRONT, FRONT + 0.09, 0.38, -0.5, 12);
   // the dish: a shallow cone set in the top edge, looking up and out
-  const dish = add(k, new THREE.CylinderGeometry(0.38, 0.12, 0.12, 14), DISH, 0.42, 1.22, 0.04);
+  const dish = add(k, new THREE.CylinderGeometry(0.38, 0.12, 0.12, 12), DISH, 0.42, 1.22, 0.04);
   dish.rotation.x = -0.5;
   // the split ring through the hole and round the top edge, and the wheel hung on it: a knobbly tyre, a wire hub
   const R = 0.34;
-  const split = add(k, new THREE.TorusGeometry(R, 0.035, 6, 18), CHROME, HOLE[0], HOLE[1] + R, 0);
+  const split = add(k, new THREE.TorusGeometry(R, 0.035, 5, 14), CHROME, HOLE[0], HOLE[1] + R, 0);
   split.rotation.y = Math.PI / 2;
   const WY = HOLE[1] + 2 * R + 0.17; // (the ring's top passes inside the wheel, 0.17 below its middle)
-  add(k, new THREE.TorusGeometry(0.28, 0.08, 6, 18), RUBBER, HOLE[0], WY, 0);
-  for (let i = 0; i < 14; i++) { // (low knobs round the tread)
-    const a = (i + 0.5) / 14 * Math.PI * 2;
+  add(k, new THREE.TorusGeometry(0.28, 0.08, 5, 14), RUBBER, HOLE[0], WY, 0);
+  for (let i = 0; i < 12; i++) { // (low knobs round the tread)
+    const a = (i + 0.5) / 12 * Math.PI * 2;
     if (Math.abs(a - Math.PI * 1.5) < 0.3) continue; // (not where the ring passes)
     box(k, RUBBER, 0.05, 0.09, 0.19, HOLE[0] + Math.cos(a) * 0.36, WY + Math.sin(a) * 0.36, 0).rotation.z = a;
   }
@@ -544,8 +548,8 @@ const bun = (car, { rarity = 'bespoke' } = {}) => {
   const BUN = lambert(paint.getHex()), SAUSAGE = metal(0xb4432a, 30), MUSTARD = lambert(0xf3c51b), KETCHUP = metal(0xc2241c, 50);
   const CHROME = metal(0xd4d8de, 110), BLADE = metal(0xc3c8cf, 80), CUT = metal(0x7d848d, 60);
   const C = 0.15;
-  add(k, new THREE.CapsuleGeometry(0.34, 2.5, 4, 12), SAUSAGE, 0, C, 0.1);
-  for (const s of [1, -1]) add(k, new THREE.CapsuleGeometry(0.36, 1.9, 4, 12), BUN, s * 0.4, C, -0.08).scale.set(1, 1, 0.9);
+  add(k, new THREE.CapsuleGeometry(0.34, 2.5, 3, 10), SAUSAGE, 0, C, 0.1);
+  for (const s of [1, -1]) add(k, new THREE.CapsuleGeometry(0.36, 1.9, 3, 10), BUN, s * 0.4, C, -0.08).scale.set(1, 1, 0.9);
   // the mustard: a zigzag along the sausage's crown
   const zig = [];
   for (let i = 0; i <= 9; i++) zig.push([i % 2 ? 0.13 : -0.13, C - 1.05 + i * 0.25]);
@@ -556,7 +560,7 @@ const bun = (car, { rarity = 'bespoke' } = {}) => {
   }
   // the loop at the top
   box(k, CHROME, 0.3, 0.2, 0.3, 0, C + 1.62, 0.1);
-  const loop = add(k, new THREE.TorusGeometry(0.2, 0.05, 6, 16), CHROME, 0, C + 1.88, 0.1);
+  const loop = add(k, new THREE.TorusGeometry(0.2, 0.05, 5, 12), CHROME, 0, C + 1.88, 0.1);
   loop.rotation.y = Math.PI / 2;
   // the badge at the bottom: chrome-edged, ketchup red, the initial in mustard, the rarity's rim round it
   const BP = [[-0.48, -0.36], [0.48, -0.36], [0.48, 0.36], [-0.48, 0.36]].map(([x, y]) => [x, y - 1.72]);
