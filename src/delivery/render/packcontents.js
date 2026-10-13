@@ -87,6 +87,28 @@ const featuredRow = (f, base = 1) => {
     n: amount ? (Array.isArray(has) ? has[1] : has) : 0 });
 };
 
+// the featured entries as cards: ONE card a car, and when a car is declared twice (the owner, 12-Oct: "cycle between the regular and
+// jackpot versions of their stack, if two of the same cards are defined": x3 at weight 9, x15 at weight 1) its bubble and its chance fade
+// between the stacks, the likelier (the regular) first, the rarer (the jackpot) last, as a plain card's stacks do. A key is its own card
+const featuredRows = (list, base = 1) => {
+  const groups = [];
+  for (const f of list) {
+    const group = f.key ? null : groups.find(g => !g.key && g.entries[0].car.id === f.car.id);
+    if (group) group.entries.push(f); else groups.push({ key: !!f.key, entries: [f] });
+  }
+  return groups.map(({ entries }) => {
+    if (entries.length < 2) return featuredRow(entries[0], base);
+    const sorted = [...entries].sort((x, y) => y.weight - x.weight);
+    const live = sorted.filter(f => f.inPlay);
+    const first = sorted[0], pool = live.length ? live : sorted;
+    const stacks = pool.map((f, i) => ({ n: f.amount ?? base, chance: f.chance, doubled: i > 0 }));
+    const any = 1 - pool.reduce((left, f) => left * (1 - f.chance), 1);
+    const out = !live.length;
+    return cardRow(first.car, first.rarity, any, { featured: true, exhausted: out ? first.exhausted : null, inPool: !out,
+      note: out ? 'out of the pool' : 'last slot ' + percent(pool.reduce((t, f) => t + f.lastSlot, 0)), stacks: out ? null : stacks, n: stacks[0].n });
+  });
+};
+
 // open the sheet for a kind of pack over `host` (the Shop's screen). title: what the tile calls it; featured: the
 // special pack's featured cars (car objects)
 export const openContents = (host, { kind, title, featured = [] }) => {
@@ -114,7 +136,7 @@ export const openContents = (host, { kind, title, featured = [] }) => {
       make('h3', '', make('span', 'shop-chip r-bespoke', 'Featured'), make('small', '', 'Guaranteed one of the following'), make('small', 'pc-sub', '(Larger percentage denotes spread amongst featured items)')),
       out.length ? make('p', 'pc-shift', make('b', '', 'Weights shifted: '), out.join(', ') + ' out of the pool') : null,
       c.reverted ? null : (out.length && out.length === c.featured.length ? make('p', 'pc-shift', make('b', '', 'Every featured card is had: '), 'the featured slot is an ordinary card, and this pack cannot be bought') : null),
-      make('ul', 'pc-list', c.featured.map(f => featuredRow(f, c.baseAmount)))));
+      make('ul', 'pc-list', featuredRows(c.featured, c.baseAmount))));
   }
   for (const g of [...c.groups].reverse()) { // (the highest rarity first: Bespoke, Legendary, Epic, Uncommon, Common, after the Featured; the owner, 12-Oct)
     sections.push(make('section', 'pc-group r-' + g.rarity,
