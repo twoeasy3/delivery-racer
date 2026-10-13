@@ -1,11 +1,14 @@
 /* The Shop (render/shop.js): a screen over the start screen, after a racing game's store. Phones first: one column
    that scrolls, two tiles a row; wider, the rows spread out. Everything is under .shop-screen.
    The rarities' colours: Common grey, Uncommon green, Epic purple, Legendary gold, Bespoke the magenta rainbow. */
-.shop-screen {
+/* (the palette is on .pack-contents too: What's inside is also opened from an event's screen (render/menustage.js openInside), on
+   document.body, outside .shop-screen; there its rarity chips, odds and featured chip had no colours and showed black: CHECKLIST 214) */
+.shop-screen, .pack-contents {
   --c-common: #a3acb7; --c-uncommon: #3fd06f; --c-epic: #b45cff; --c-legendary: #ffbe2e; --c-bespoke: #ff3fae;
   --rainbow: linear-gradient(115deg, #ff3fae, #ffbe2e 25%, #3fd06f 45%, #35c2ff 65%, #b45cff 85%, #ff3fae);
   --ink-dim: rgba(255, 255, 255, .68); --panel: rgba(22, 28, 44, .92); --line: rgba(255, 255, 255, .1); --buy: #ffd23f; --buy-ink: #1c1500;
-  --display: "Bahnschrift", "DIN Alternate", "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
+  --display: "Bahnschrift", "DIN Alternate", "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", "Segoe UI", system-ui, sans-serif; }
+.shop-screen {
   position: fixed; inset: 0; z-index: 30; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; touch-action: pan-y;
   color: #fff; text-align: left; font-size: 14px; -webkit-tap-highlight-color: transparent;
   background:
