@@ -60,6 +60,9 @@ const MEASURE = (end) => `(() => {
     ss: box(ss), sizing: getComputedStyle(ss).boxSizing, scrollH: ss.scrollHeight, clientH: ss.clientHeight, scrollTop: ss.scrollTop,
     menuH: getComputedStyle(document.documentElement).getPropertyValue('--menu-h').trim(),
     tagText: tag.textContent.trim(), tagFont: parseFloat(st.fontSize), tagOpacity: parseFloat(st.opacity), tagColor: st.color, tagDisplay: st.display };
+  // (the event card's taps, CHECKLIST 222: Free try, What's inside, What's on this road, the level arrows: 44 px or more)
+  out.taps = [...ss.querySelectorAll('.cx-try, .event-inside, .menu-stage .road .menu-chip, .menu-stage .arrow')].filter(e => e.offsetParent)
+    .map(e => { const r = e.getBoundingClientRect(); return { c: String(e.className).split(' ')[0], w: Math.round(r.width), h: Math.round(r.height) }; });
   for (const [k, el] of Object.entries(els)) { const b = box(el); out[k] = b; out[k + 'In'] = inside(b); out[k + 'Top'] = onTop(el, k === 'tag'); }
   return out;
 })()`;
@@ -161,6 +164,7 @@ else {
         await evaluate(`document.fonts.ready.then(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))))`);
         const top = await evaluate(MEASURE(false));
         const card = top.card && h > w; // (an event card held upright: a page that scrolls, its foot sticky)
+        if (card) check(top.taps.length >= 3 && top.taps.every(t => t.h >= 44 && t.w >= 44) && top.scrollH > top.clientH, `${state} ${size}: the event card a page that scrolls (${top.scrollH} in ${top.clientH}), its taps 44 px (${top.taps.map(t => t.c + ' ' + t.w + 'x' + t.h).join(', ')})`);
         look(top, `${state} ${size}`, !card);
         await shot(`${state}-${size}`);
         if (top.scrollH > top.clientH + 1) {
@@ -172,7 +176,10 @@ else {
         if (state === 'career' || state === 'strike') {
           // (a) the address bar comes in: the screen 56 px shorter
           await metrics(w, h - BAR);
-          await sleep(600);
+          // (the resize event comes on a later frame: a loaded machine draws the menu's 3D cargo slowly, so wait for it, 8 s at most;
+          // a --menu-h never brought to the new innerHeight shows as the menu too tall, below)
+          await evaluate(`new Promise(done => { const t0 = performance.now(); const tick = () => (getComputedStyle(document.documentElement).getPropertyValue('--menu-h').trim() === innerHeight + 'px'
+            || performance.now() - t0 > 8000) ? requestAnimationFrame(() => done()) : setTimeout(tick, 50); tick(); })`);
           const a = await evaluate(MEASURE(false));
           look(a, `${state} ${size} bar (resized)`, !card);
           await shot(`${state}-${size}-bar-resized`);
