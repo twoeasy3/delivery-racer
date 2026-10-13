@@ -80,6 +80,7 @@ const GLASS = 0x232a35, CHROME = 0xd8d8d8, TRIM = 0x2a2c31;
 const F1_ACCENTS = [0xf4f4f4, 0x151515, 0xf2d21f, 0x1d4f9c, 0x18a35a, 0xe0701e, 0xc81f3a, 0x6fd0ff];
 const LAMP = new THREE.MeshBasicMaterial({ color: 0xfff3c4 }), TAIL = new THREE.MeshBasicMaterial({ color: 0xff2a2a });
 for (const shared of [LAMP, TAIL]) shared.userData.shared = true; // (made once, shared by every car: clearGroup keeps them)
+import { ORIG4_MODELS } from './modelsOrig4.js'; // (the Taxi, the Sportscar and the SUV, rebuilt)
 // where an ambulance's box body starts, ahead of its middle, as a share of its half length (its light
 // bar sits on the front of the box's roof: render/cars.js)
 export const AMBULANCE_BOX = 0.36;
@@ -2084,62 +2085,8 @@ export const MODELS = {
     return group;
   },
 
-  // A Checker Marathon cab: a long, upright sedan with a checker band down each side, quad
-  // round headlights, big chrome bumpers and a lit TAXI sign on the roof.
-  taxi: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.38;
-    const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(CHROME), trim = lambert(TRIM);
-    const body = box(group, paint, w, 0.6, l, 0, 0.65, 0);
-    box(group, paint, w * 0.95, 0.06, l * 0.27, 0, 0.98, l * 0.37);               // bonnet
-    box(group, paint, w * 0.95, 0.06, l * 0.2, 0, 0.98, -l * 0.41);               // boot
-    box(group, glass, w * 0.88, 0.52, l * 0.46, 0, 1.21, -l * 0.06);              // glasshouse
-    box(group, paint, w * 0.9, 0.08, l * 0.44, 0, 1.5, -l * 0.06);                // roof
-    screen(group, glass, w * 0.86, 0.05, 0.56, 0, 1.2, l * 0.19, 0.36);             // windscreen
-    screen(group, glass, w * 0.84, 0.05, 0.54, 0, 1.2, -l * 0.3, -0.36);            // rear window
-    // the checker band: two rows of black and white squares
-    const checks = document.createElement('canvas');
-    checks.width = 256; checks.height = 16;
-    const g = checks.getContext('2d');
-    for (let i = 0; i < 32; i++) {
-      for (let row = 0; row < 2; row++) {
-        g.fillStyle = (i + row) % 2 ? '#111111' : '#f4f4f4';
-        g.fillRect(i * 8, row * 8, 8, 8);
-      }
-    }
-    const band = new THREE.CanvasTexture(checks);
-    band.colorSpace = THREE.SRGBColorSpace;
-    const checker = new THREE.MeshLambertMaterial({ map: band });
-    // the roof sign, lit from inside
-    const signCanvas = document.createElement('canvas');
-    signCanvas.width = 128; signCanvas.height = 48;
-    const s = signCanvas.getContext('2d');
-    s.fillStyle = '#fff6c8';
-    s.fillRect(0, 0, 128, 48);
-    s.fillStyle = '#1b1b1b';
-    s.font = 'bold 34px sans-serif';
-    s.textAlign = 'center';
-    s.textBaseline = 'middle';
-    s.fillText('TAXI', 64, 26);
-    const signMap = new THREE.CanvasTexture(signCanvas);
-    signMap.colorSpace = THREE.SRGBColorSpace;
-    box(group, new THREE.MeshBasicMaterial({ map: signMap }), 0.9, 0.26, 0.42, 0, 1.68, -l * 0.04);
-    for (const side of [-1, 1]) {
-      box(group, checker, 0.02, 0.14, l * 0.86, side * (w / 2 + 0.006), 0.84, 0);  // checker band
-      for (const z of [0.12, -0.06, -0.26]) box(group, paint, 0.09, 0.52, 0.1, side * w * 0.43, 1.21, l * z); // pillars
-      box(group, chrome, 0.12, 0.08, 0.1, side * (w / 2 + 0.05), 1.0, l * 0.16);    // mirrors
-      for (const x of [0.22, 0.4]) disc(group, LAMP, 0.11, 0.08, side * w * x, 0.78, l / 2 + 0.02); // quad headlights
-      box(group, TAIL, w * 0.12, 0.26, 0.1, side * w * 0.4, 0.75, -l / 2 - 0.01);
-      wheel(group, R, 0.3, side * (w / 2 - 0.04), R, l * 0.3);
-      wheel(group, R, 0.3, side * (w / 2 - 0.04), R, -l * 0.3);
-    }
-    box(group, chrome, w * 0.24, 0.22, 0.06, 0, 0.78, l / 2 + 0.02);               // grille
-    box(group, chrome, w + 0.14, 0.2, 0.18, 0, 0.42, l / 2 + 0.05);               // big chrome bumpers
-    box(group, chrome, w + 0.14, 0.2, 0.18, 0, 0.42, -l / 2 - 0.05);
-    box(group, trim, w * 0.5, 0.18, 0.04, 0, 0.62, -l / 2 - 0.02);                // number plate
-    group.userData = { body, animate: () => {} };
-    return group;
-  },
+  // A Checker Marathon cab (rebuilt: render/modelsOrig4.js)
+  taxi: (car) => ORIG4_MODELS.taxi(car),
 
   // A 2002 Jeep Liberty: tall and square, round headlights either side of the seven-slot
   // grille, black arch flares, roof rails and a spare wheel on the tailgate. It rocks a
