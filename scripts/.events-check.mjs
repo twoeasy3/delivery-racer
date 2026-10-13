@@ -106,6 +106,7 @@ try {
   for (const i of [0, 1, 2]) deliver(i);
   at(event.to + 1);
   check(Events.done(event) === 3 && !Events.prizeWon(event) && !Progress.owns('silvercomet'), 'another player, stopped at stage 4 to the end: three done, no prize');
+  carHunt();
 } catch (error) {
   failures++;
   console.log(error.stack);
@@ -113,3 +114,66 @@ try {
 console.log(failures ? failures + ' FAILED' : 'all checks passed');
 await g.close();
 process.exit(failures ? 1 : 0);
+
+// THE CAR HUNT (the owner, 13-Oct): a RECURRING event (events.json repeat { every: 7, live: 3 }: on 3 days of every 7 from
+// its `from`), listed between its runs ("Next in"), its one stage Back Roads on a 300 s TEST clock both sides, driven only
+// in a 3-star car (allowedCars tiers [3], both sides); EVERY delivery while it is on, Good or Evil, gives one Car Hunt pack
+// (no first-time rule, no cap, no claimed-once mark); none between runs; its runs recorded as replays of the stage
+function carHunt() {
+  const hunt = Events.specials.find(e => e.id === 'car-hunt');
+  check(!!hunt && hunt.repeat?.every === 7 && hunt.repeat?.live === 3 && hunt.stages.length === 1 && hunt.to === null, 'the Car Hunt: recurring, on 3 days every 7, one stage, no end');
+  if (!hunt) return;
+  const H = 3600e3, D = 86400e3, from = hunt.from;
+  const comet = Events.specials.find(e => e.id === 'comet-hunt');
+  // the windows, by a fake clock
+  const W = (t) => Events.window(hunt, t);
+  const runs = [0, 7, 14, 70].map(k => from + k * D);
+  check(runs.every(t => Events.live(hunt, t + H) && Events.live(hunt, t + 3 * D - H)) && runs.every(t => !Events.live(hunt, t + 3 * D + H) && !Events.live(hunt, t + 7 * D - H)),
+    'on from its start for 3 days, off for 4, again every 7 days (runs 1, 2, 3 and 11 tried)');
+  const day2 = from + D + 5 * H, c1 = Events.countdownOf(hunt, day2);
+  check(c1?.words === 'Ends in' && Math.abs(c1.at - (from + 3 * D)) < 2 * H && W(day2).live, 'live: "Ends in", counting to the end of the run (' + new Date(c1?.at).toString().slice(0, 21) + ')');
+  const day5 = from + 4 * D + 5 * H, c2 = Events.countdownOf(hunt, day5);
+  check(c2?.words === 'Next in' && Math.abs(c2.at - (from + 7 * D)) < 2 * H && !W(day5).live, 'between runs: "Next in", counting to the next run (' + new Date(c2?.at).toString().slice(0, 21) + ')');
+  const before = Events.countdownOf(hunt, from - D);
+  check(before?.words === 'Next in' && before.at === from && !Events.live(hunt, from - D), 'before its first run: "Next in" its first run');
+  check(Events.shownSpecials(day5).includes(hunt) && !Events.liveSpecials(day5).includes(hunt) && Events.liveSpecials(day2).includes(hunt), 'between runs it is still listed on the menu (shownSpecials), not live');
+  check(!Events.state(hunt, 0, day5).open && /^Back /.test(Events.state(hunt, 0, day5).why) && Events.state(hunt, 0, day2).open, 'its stage is shut between runs ("' + Events.state(hunt, 0, day5).why + '"), open in one');
+  check(Events.live(comet, comet.from + H) && !Events.live(comet, comet.to + H) && Events.countdownOf(comet, comet.from + H)?.at === comet.to && Events.window(comet) === null,
+    'the Comet Hunt (one-off) keeps its window rules: on from its from to its to, "Ends in" its end, no runs');
+  // the stage: Back Roads, 300 s both sides (a test cap), 3-star cars only, both sides
+  const level = hunt.stages[0].level;
+  check(level.id === 'car-hunt-1' && level.stage.map === 'back-roads' && level.clock.good === 300 && level.clock.evil === 300, 'its stage: Back Roads as car-hunt-1, on a 300 s clock both sides (the TEST cap)');
+  levels.selectSpecial(level);
+  const rules = [false, true].map(evil => cars.carRule(evil));
+  const blower = cars.carById('blower'), three = cars.CARS.find(c => cars.carTier(c) === 3), two = cars.CARS.find(c => cars.carTier(c) === 2), blue3 = cars.CARS.find(c => cars.carTier(c) === 8);
+  check(rules.every(r => r?.list && cars.ruleAllows(r, blower) && cars.ruleAllows(r, three) && !cars.ruleAllows(r, two) && (!blue3 || !cars.ruleAllows(r, blue3))),
+    'its car rule, both sides: 3 gold-star cars (and 3-star blueprint cars: the Blower), not 2-star, not 3 blue (' + rules[0]?.label + ')');
+  // every delivery while it is on gives a pack, Good or Evil, again and again
+  Progress.reset(); Progress.noSave = true; Progress.data.tierBase = 1; Progress.data.cars.push(three.id);
+  const P = Progress, run = (evil) => {
+    levels.selectSpecial(level);
+    Game.evil = evil;
+    cars.useLevelCar(level.car, level.amphibious);
+    if (!Game.canStart) return 'no start (' + cars.CAR.id + ')';
+    Game.start();
+    const clock = Game.allowed;
+    Game.finish('delivered');
+    Game.toMenu();
+    return clock;
+  };
+  at(day2);
+  const clocks = [false, false, false, true, true].map(run);
+  const held = () => (P.data.packs || {})['car-hunt-special'] || 0;
+  check(clocks.every(c => c === 300) && held() === 5, 'five deliveries in a run (three Good, two Evil), each on a 300 s clock: five Car Hunt packs (' + held() + ', clocks ' + clocks.join(' ') + ')');
+  check(!(P.data.claimed || []).some(k => /car-hunt/.test(k)) && Events.done(hunt) === 1, 'no claimed-once mark for it; the stage counts as done once, and stays open');
+  const rec = Replay.last;
+  check(rec?.header.level === 'car-hunt-1' && Replay.check(rec).ok, 'a run recorded as the stage (car-hunt-1), its replay sound');
+  const direct = Events.delivered(level);
+  check(direct?.repeat && direct.packs.join() === 'Car Hunt pack' && held() === 6, 'Events.delivered says it: a recurring run, "Car Hunt pack" given (the results: "A Car Hunt pack!")');
+  at(day5);
+  run(false);
+  check(held() === 6 && Events.delivered(level) === null, 'between runs: a delivery gives nothing (the menu shuts the stage: Events.isOpen ' + Events.isOpen(level) + ')');
+  at(from + 7 * D + H);
+  run(true);
+  check(held() === 7, 'the next run: a pack again (' + held() + ')');
+}

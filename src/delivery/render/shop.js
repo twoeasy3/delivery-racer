@@ -209,7 +209,7 @@ const rarityGuide = () => {
       make('span', 'shop-chip r-' + r, RARITY_NAMES[r]), make('p', '', RARITY_HOLDS[r]), odds[r] ? make('small', '', pct(odds[r]) + ' of cards in a Standard pack') : null))));
 };
 
-let isOpen = false, ticker = 0;
+let isOpen = false, ticker = 0, wasInMenu = false; // (wasInMenu: the showroom under it, when opened from there)
 // Never drawn again under a finger: a redraw replaces the screen's content, and a touch whose element is taken away
 // ends its scroll (on a phone it could leave the next touches going nowhere: CHECKLIST 117). While a touch is down on
 // the Shop, or it is still gliding after one, a redraw asked for by an event waits until it settles. The scroll is kept.
@@ -282,6 +282,7 @@ export const ShopScreen = {
   open() {
     if (!isOpen) {
       isOpen = true;
+      wasInMenu = Game.inMenu;
       Game.inMenu = true; // (Enter must not start a run from here)
       Nav.enter('shop', () => this.close()); // (the back button closes it)
       ticker = setInterval(() => { // (the countdowns, each second; an offer just over, and the screen drawn again)
@@ -301,7 +302,7 @@ export const ShopScreen = {
     isOpen = false;
     clearInterval(ticker);
     Nav.leave('shop');
-    Game.inMenu = false;
+    Game.inMenu = wasInMenu; // (back to the showroom, when it was opened from there: still not the menu's Enter)
     screen.classList.add('hidden');
     closeContents();
   },

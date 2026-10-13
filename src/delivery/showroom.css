@@ -419,3 +419,5 @@
 @media (max-width: 700px) { #showroom .sr-shop { order: 5; padding: 0 12px; min-height: 40px; } #showroom .sr-shop-word { font-size: 15px; } #showroom .sr-shop-full { order: 0; padding: 0 10px; } #showroom .sr-shop-full .sr-shop-word { display: none; } }
 
 .sr-look { display: none; } /* (phone only: showroom-phone.css) */
+/* the filter a level's own car rule imposes for the visit (render/showroom.js imposed: the Car Hunt's 3-star cars) */
+#showroom .sr-count .sr-imposed { margin-left: 8px; padding: 2px 7px; border-radius: 5px; font: 800 12px/1.3 system-ui, sans-serif; letter-spacing: .03em; color: #fff; background: rgba(255, 178, 31, .22); box-shadow: inset 0 0 0 1px rgba(255, 178, 31, .6); white-space: nowrap; }

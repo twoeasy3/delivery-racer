@@ -73,7 +73,7 @@ const chip = (rarity) => {
 };
 const words = (text) => richTiers(String(text || ''));
 const short = (w) => w.how === 'career' ? 'Career levels (' + (w.detail.match(/(\d+) left/)?.[1] ?? '?') + ' left)'
-  : w.how === 'event' ? w.where + ' stages'
+  : w.how === 'event' ? w.where + (w.recurring ? ': every run' : ' stages') // (a recurring event's pack: one for every run)
   : w.how === 'held' ? w.detail + ' in your packs' : w.where;
 
 // one source's line

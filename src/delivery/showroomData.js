@@ -12,7 +12,8 @@ import { Tiers } from './tiers.js';
 import { LEVELS } from './levels.js';
 import { levelName } from './levelText.js';
 import { Ecu } from './ecu.js';
-import { liveEventFor } from './carsources.js';
+import { packName } from './packs.js';
+import { liveEventFor, huntEventFor } from './carsources.js';
 
 // the words players see on a car that cannot be driven (the owner's, 12-Oct)
 export const LOCKED_WORDS = {
@@ -80,15 +81,19 @@ export const carCard = (car, evil = false) => {
   const owned = Progress.owns(car.id);
   const unlocked = safe(() => Ecu.unlocked(car), owned);
   const preview = carPreview(car); // (the tiers: 'show' | 'teaser' | 'hide' | null)
-  const hidden = !unlocked && !owned && bp === 0 && (preview === 'teaser' || preview === 'hide');
+  // (a blueprint car in no regular pack that an event's pack features, the Car Hunt's Blower Tourer: obtainable from the
+  // event, whatever tiers are open: shown in full with its blueprint overlay, never dark nor a tier teaser)
+  const hunt = blueprint && car.noPacks ? huntEventFor(car) : null;
+  const hidden = !hunt && !unlocked && !owned && bp === 0 && (preview === 'teaser' || preview === 'hide');
   // blacked out: a tier not open yet, or a car that cannot be had at the moment (a key car whose key is not to be had, an earned car that is off) with none owned and no blueprint
-  const dark = hidden || (!unlocked && !owned && bp === 0 && ((car.keyAvailable === false && !blueprint) || !!(car.earned && car.off) || !!(blueprint && car.noPacks)));
+  const dark = hidden || (!unlocked && !owned && bp === 0 && ((car.keyAvailable === false && !blueprint) || !!(car.earned && car.off) || !!(blueprint && car.noPacks && !hunt)));
   // why it cannot be driven
   let reason = '', hint = '';
   if (!unlocked) {
     if (blueprint) {
       reason = 'Collect ' + Math.max(0, x - bp) + ' more blueprint' + (x - bp === 1 ? '' : 's') + ' to unlock this car';
-      hint = 'Blueprints come in card packs';
+      hint = hunt ? 'Blueprints come in the ' + packName(hunt.pack) + ': one for every ' + hunt.event.name + ' run' + (hunt.live ? '' : ' (back ' + new Date(hunt.next).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ')')
+        : 'Blueprints come in card packs';
     } else if (CARS.includes(car) && !car.evergreen) {
       reason = LOCKED_WORDS.lot;
       hint = forSale(car) ? 'At ' + CAR_LOT + ' for $' + car.price.toFixed(2) : tierWhy(car) ? 'Not for sale yet: ' + tierWhy(car) : 'Not for sale yet';
@@ -102,15 +107,15 @@ export const carCard = (car, evil = false) => {
     }
   }
   // a car that can be driven, but not on the level picked (its car rule, on the side picked)
-  const rule = carRule(evil), barred = unlocked && !!rule && !ruleAllows(rule, car);
+  const rule = carRule(evil), barred = unlocked && !!rule && !ruleAllows(rule, car), allowed = !rule || ruleAllows(rule, car);
   return {
     car, id: car.id,
     name: dark ? 'Locked car' : car.name,
     stars: stars(car), starColour: starColour(car), tier: tierOf(car),
-    rarity: rarityOf(car), hidden, dark,
+    rarity: rarityOf(car), hidden, dark, hunt,
     ecu, max, maxed, upgradable, blueprint, key: !blueprint,
     blueprints: bp, perEcu: x, have: maxed ? toNext : have, toNext,
-    owned, unlocked, barred,
+    owned, unlocked, barred, allowed,
     state: !unlocked ? 'locked' : barred ? 'barred' : 'ready',
     reason, hint,
     rule: barred ? rule : null,
@@ -138,11 +143,11 @@ export const overlayOf = (card) => {
   if (!card || card.unlocked) return null;
   const car = card.car;
   if (car.earned && car.off) return { kind: 'unavailable', title: 'Not available', line: 'at the moment' };
-  if (card.blueprint && car.noPacks && card.blueprints === 0) return { kind: 'unavailable', title: 'Not available', line: 'at the moment' }; // (a blueprint car in no pack for now: nothing to collect)
+  if (card.blueprint && car.noPacks && card.blueprints === 0 && !card.hunt) return { kind: 'unavailable', title: 'Not available', line: 'at the moment' }; // (a blueprint car in no pack for now: nothing to collect)
   if (card.hidden) return { kind: 'tier', title: 'Tier locked', line: card.tier ? 'Opens with the {tier:' + card.tier + '} tier' : 'Opens with a later tier' };
   if (card.blueprint) {
     const need = card.perEcu, have = Math.max(0, Math.min(need, card.blueprints));
-    return { kind: 'blueprint', title: have + '/' + need + ' blueprints', line: 'From card packs', have, need };
+    return { kind: 'blueprint', title: have + '/' + need + ' blueprints', line: card.hunt ? (card.hunt.live ? 'Win it in the ' : 'From the ') + card.hunt.event.name : 'From card packs', have, need }; // (the Car Hunt's car: its event, by name)
   }
   if (CARS.includes(car) && !car.evergreen) {
     if (card.forSale) return { kind: 'unpurchased', title: priceWords(car.price), line: 'At Crazey Jim’s', price: car.price };
@@ -220,7 +225,7 @@ export const FILTER_GROUPS = [
   { id: 'colour', name: 'Star colour', chips: [['gold', 'Gold'], ['blue', 'Blue'], ['magenta', 'Magenta'], ['green', 'Sea green']] },
   { id: 'rarity', name: 'Rarity', chips: [['common', 'Common'], ['uncommon', 'Uncommon'], ['epic', 'Epic'], ['legendary', 'Legendary']] },
   { id: 'kind', name: 'Kind', chips: [['garage', 'Garage'], ['blueprint', 'Blueprint'], ['key', 'Key'], ['special', 'Special']] },
-  { id: 'state', name: 'State', chips: [['ready', 'Ready'], ['locked', 'Locked'], ['upgradable', 'Upgradable'], ['maxed', 'Maxed'], ['inuse', 'In use'], ['barred', 'Not on this level']] },
+  { id: 'state', name: 'State', chips: [['ready', 'Ready'], ['locked', 'Locked'], ['upgradable', 'Upgradable'], ['maxed', 'Maxed'], ['inuse', 'In use'], ['barred', 'Not on this level'], ['allowed', 'Allowed on this level']] },
 ];
 export const SORTS = [['tier', 'Tier'], ['rarity', 'Rarity'], ['ecu', 'ECU'], ['name', 'Name'], ['speed', 'Top speed']];
 export const RARITY_ORDER = ['common', 'uncommon', 'epic', 'legendary', 'bespoke', 'special'];
@@ -263,6 +268,7 @@ export const statesOf = (card, inUseId) => {
   if (card.upgradable && !card.maxed) states.push('upgradable');
   if (card.maxed && card.ecu >= 1) states.push('maxed');
   if (card.id === inUseId) states.push('inuse');
+  if (card.allowed) states.push('allowed'); // (the level picked lets it be driven: its car rule, owned or not)
   return states;
 };
 export const cardMatches = (card, f, inUseId) =>
@@ -285,6 +291,21 @@ export const filterCards = (cards, f, inUseId) => {
   const sorter = SORTERS[f.sort] || SORTERS.tier;
   return cards.map((card, i) => [card, i]).filter(([card]) => cardMatches(card, f, inUseId))
     .sort(([a, i], [b, j]) => sorter(a, b) || i - j).map(([card]) => card);
+};
+// the filter a level's own car rule IMPOSES on the showroom when it is opened with that level picked (the owner, 13-Oct:
+// "For events with filtered car requirements, impose that requirement on the showroom filter when clicking in"): for a
+// level's own list (allowedCars: an event stage's, the Car Hunt's 3-star cars), the stars and star colours of the cars it
+// allows when those let by EXACTLY those cars (the Car Hunt: stars 3, gold and magenta); else, added to them, the state
+// chip 'allowed' ("Allowed on this level"), which always is exact. null: no such rule (a tier's medal rule is not imposed).
+// cards: the floor's cards (carCard, on the side picked). For the visit only: render/showroom.js never remembers it
+export const imposedFilter = (rule, cards) => {
+  if (!rule?.list) return null;
+  const ok = cards.filter(card => ruleAllows(rule, card.car)), want = new Set(ok.map(c => c.id));
+  const exact = (f) => { const got = filterCards(cards, f, null); return got.length === want.size && got.every(c => want.has(c.id)); };
+  const f = cleanFilter({ stars: ok.map(c => String(starCountOf(c))), colour: ok.map(colourOf) });
+  if (ok.length && exact(f)) return f;
+  const g = { ...f, state: ['allowed'] };
+  return exact(g) ? g : { ...noFilter(), state: ['allowed'] };
 };
 // the card before or after this one in a list (the full view's arrows): round from the last to the first
 export const stepIn = (list, id, dir) => {

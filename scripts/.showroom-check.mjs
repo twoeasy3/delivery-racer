@@ -91,6 +91,7 @@ try {
   await phone(g, check);
   // ---- the LOCKED-CARD OVERLAYS (showroomData.js overlayOf, render/lockoverlay.js): one kind per locked card, none on a playable one
   await overlays(g, check);
+  await carHunt(g, check);
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error?.stack || error));
@@ -121,7 +122,8 @@ async function filters(g, check) {
     kind: (id) => (c) => id === 'key' ? bespokeCar(c.car) : id === 'special' ? !bespokeCar(c.car) && (!!c.car.earned || secret(c.car))
       : !bespokeCar(c.car) && !c.car.earned && !secret(c.car) && (id === 'blueprint') === !!c.blueprint,
     state: (id) => (c) => id === 'ready' ? c.state === 'ready' : id === 'locked' ? !c.unlocked : id === 'barred' ? c.state === 'barred'
-      : id === 'upgradable' ? c.upgradable && c.ecu < c.max : id === 'maxed' ? c.ecu >= c.max && c.ecu >= 1 : id === 'inuse' ? c.id === inUse : false,
+      : id === 'upgradable' ? c.upgradable && c.ecu < c.max : id === 'maxed' ? c.ecu >= c.max && c.ecu >= 1 : id === 'inuse' ? c.id === inUse
+        : id === 'allowed' ? g.cars.ruleAllows(g.cars.carRule(false), c.car) : false,
   };
   const ids = (cards) => cards.map(c => c.id).join(',');
   const none = D.filterCards(all, D.noFilter(), inUse);
@@ -226,7 +228,7 @@ async function overlays(g, check) {
   const filler = D.showroomCars().find(car => car.evergreen && !D.carCard(car).hidden);
   if (filler) (Progress.data.blueprints ||= {})[filler.id] = 2; // (a blueprint car part-way: its bar on the overlay)
   const cards = D.showroomCars().map(car => D.carCard(car, false));
-  const want = (c) => c.unlocked ? null : (c.car.earned && c.car.off) || (c.blueprint && c.car.noPacks && c.blueprints === 0) ? 'unavailable' : c.hidden ? 'tier' : c.blueprint ? 'blueprint'
+  const want = (c) => c.unlocked ? null : (c.car.earned && c.car.off) || (c.blueprint && c.car.noPacks && c.blueprints === 0 && !c.hunt) ? 'unavailable' : c.hidden ? 'tier' : c.blueprint ? 'blueprint'
     : CARS.includes(c.car) && !c.car.evergreen ? (c.forSale ? 'unpurchased' : 'tier')
       : c.car.earned || Object.values(SECRET_CARS).includes(c.car) ? 'earned' : 'key';
   const kindOf = (c) => D.overlayOf(c)?.kind ?? null;
@@ -261,4 +263,42 @@ async function overlays(g, check) {
   const bp = cards.filter(c => kindOf(c) === 'blueprint');
   check(bp.every(c => { const o = D.overlayOf(c); return o.have >= 0 && o.have <= o.need && o.title === o.have + '/' + o.need + ' blueprints'; }), 'a blueprint-locked card shows its blueprints toward unlocking ("' + say(D.overlayOf(bp.find(c => c.id === filler?.id) || bp[0])) + '")');
   check(cards.every(c => !D.overlayOf(c) || !/You need the key|Purchase this car/.test(say(D.overlayOf(c)))), 'the overlays\' words are short, not the spec\'s sentences (those stay in the panel and the tooltip)');
+}
+
+// The Car Hunt (the owner, 13-Oct): its car, the Blower Tourer (a blueprint car in no regular pack), is obtainable from the
+// event: never blacked out nor "Not available", its blueprint overlay naming the Car Hunt (live: "Win it in the Car Hunt";
+// between runs: "From the Car Hunt"); the other noPacks cars stay unavailable. Its stage's car rule (allowedCars tiers [3]:
+// the hunt car's stars, both sides) IMPOSES a showroom filter (showroomData.js imposedFilter) that lets by EXACTLY the
+// cars the rule allows (stars 3, gold and magenta), on both sides; a level with no list rule imposes none. (That the
+// imposed filter is never remembered is render/showroom.js's: seen in a browser, not here)
+async function carHunt(g, check) {
+  const D = await g.load('showroomData.js');
+  const { Events: Ev } = await g.load('events.js');
+  const hunt = Ev.specials.find(e => e.id === 'car-hunt'), realNow = Ev.now;
+  if (!hunt) { check(false, 'the Car Hunt is in events.json'); return; }
+  const w = Ev.window(hunt, hunt.from + 3600e3);
+  Ev.now = () => w.start + 3600e3;
+  const on = D.carCard(g.cars.carById('blower'), false), ovOn = D.overlayOf(on);
+  Ev.now = () => w.end + 3600e3;
+  const off = D.carCard(g.cars.carById('blower'), false), ovOff = D.overlayOf(off);
+  const others = ['coach', 'cityev', 'coupecross', 'horseshoe'].map(id => D.carCard(g.cars.carById(id), false));
+  Ev.now = realNow;
+  check(!on.dark && !on.hidden && on.name === 'Blower Tourer' && ovOn?.kind === 'blueprint' && ovOn.line === 'Win it in the Car Hunt' && /Car Hunt pack/.test(on.hint),
+    'the Blower Tourer while the Car Hunt is on: shown in full, its blueprint overlay "' + ovOn?.title + ' / ' + ovOn?.line + '", hint "' + on.hint + '"');
+  check(!off.dark && ovOff?.kind === 'blueprint' && ovOff.line === 'From the Car Hunt', 'between runs: still shown, "' + ovOff?.line + '" (' + off.hint + ')');
+  check(others.every(c => c.dark && D.overlayOf(c)?.kind !== 'blueprint'), 'the other noPacks cars (Highway Coach, City EV, Coupe Crossover, Horseshoe) stay blacked out and unavailable');
+  // the imposed filter
+  const L = g.levels, before = L.LEVEL, stage = hunt.stages[0].level;
+  L.selectSpecial(stage);
+  for (const evil of [false, true]) {
+    const rule = g.cars.carRule(evil), cards = D.showroomCars().map(car => D.carCard(car, evil));
+    const f = D.imposedFilter(rule, cards), got = D.filterCards(cards, f, null).map(c => c.id), want = cards.filter(c => g.cars.ruleAllows(rule, c.car)).map(c => c.id);
+    check(rule?.list && JSON.stringify(got) === JSON.stringify(want) && want.includes('blower') && f.stars.join() === '3' && f.colour.includes('gold') && !f.state.length,
+      (evil ? 'Evil' : 'Good') + ': the Car Hunt imposes ' + JSON.stringify({ stars: f?.stars, colour: f?.colour, state: f?.state }) + ': exactly the ' + want.length + ' cars its rule allows (' + rule?.label + ')');
+  }
+  check(D.imposedFilter(null, []) === null && D.imposedFilter({ tier: 3, key: '3' }, []) === null, 'no rule, or a tier\'s medal rule: nothing imposed');
+  const one = { list: true, test: (car) => car.id === 'sport', key: 'x', label: 'Sportscompact' }, cards = D.showroomCars().map(car => D.carCard(car, false));
+  const f1 = D.imposedFilter(one, cards);
+  check(JSON.stringify(D.filterCards(cards.map(c => ({ ...c, allowed: one.test(c.car) })), f1, null).map(c => c.id)) === '["sport"]' && f1.state.includes('allowed'), 'a rule the stars cannot say (one car): the "Allowed on this level" chip makes it exact');
+  L.selectSpecial(before);
 }
