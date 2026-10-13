@@ -219,7 +219,7 @@ export const IDEA_MODELS_10 = {
     group.userData = {
       body,
       animate: () => {},
-      livery: (evil) => frame.color.setHex(evil ? 0x1a1b20 : 0xf2f2ee),
+      livery: (evil) => frame.color.setHex(evil ? 0x3a3c46 : 0xf2f2ee),
     };
     return group;
   },

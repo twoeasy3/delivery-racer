@@ -346,7 +346,7 @@ export const IDEA_MODELS_7 = {
     merged(group, chrome, [bx(1.0, 0.03, 0.03, 0, 0.8, ZT - 0.006), ...[-1, 1].map(side => cyl(0.05, 0.08, side * 0.3, 0.42, ZT - 0.01, 'z', 10))]);
     box(group, WHITE, 0.42, 0.1, 0.02, 0, 0.62, ZT - 0.008);
     alloys(group, AXLES, chrome, 8, trim);
-    group.userData = { body, animate: () => {}, livery: (evil) => bonnet.color.setHex(evil ? 0x4a4e56 : 0xd3d6da) };
+    group.userData = { body, animate: () => {}, livery: (evil) => bonnet.color.setHex(evil ? 0x848a96 : 0xd3d6da) };
     return group;
   },
 
