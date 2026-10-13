@@ -1902,29 +1902,9 @@ export const MODELS = {
     return group;
   },
 
-  // A small, low sports coupe: wedge nose, a centre stripe, a wing on the back.
+  // The Sportscompact: rebuilt (13-Oct) after the owner's older game's picture, in render/modelsOrig2.js (see it)
   sport: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, l = car.hl * 2, R = 0.36;
-    const paint = lambert(car.color), dark = lambert(0x1c1f25), white = lambert(0xf4f4f4);
-    const body = box(group, paint, w, 0.36, l, 0, 0.52, 0);
-    box(group, paint, w * 0.94, 0.12, l * 0.3, 0, 0.72, l * 0.3);                 // low bonnet
-    box(group, dark, w * 0.8, 0.32, l * 0.36, 0, 0.86, -l * 0.06);                // cabin
-    box(group, paint, w * 0.76, 0.05, l * 0.26, 0, 1.04, -l * 0.08);              // roof
-    box(group, white, w * 0.16, 0.02, l * 0.3, 0, 0.79, l * 0.3);                 // stripe: bonnet,
-    box(group, white, w * 0.16, 0.02, l * 0.26, 0, 1.075, -l * 0.08);             // roof,
-    box(group, white, w * 0.16, 0.02, l * 0.2, 0, 0.71, -l * 0.39);               // and boot
-    for (const side of [-1, 1]) box(group, dark, 0.06, 0.2, 0.08, side * w * 0.36, 0.84, -l * 0.44); // wing posts
-    box(group, paint, w * 1.02, 0.05, 0.3, 0, 0.96, -l * 0.45);                   // wing
-    box(group, dark, w * 0.9, 0.1, 0.12, 0, 0.4, l / 2 + 0.02);                   // splitter
-    const lamp = new THREE.MeshBasicMaterial({ color: 0xfff3c4 }), tail = new THREE.MeshBasicMaterial({ color: 0xff2a2a });
-    for (const side of [-1, 1]) {
-      box(group, lamp, w * 0.22, 0.1, 0.1, side * w * 0.33, 0.6, l / 2 + 0.01);
-      box(group, tail, w * 0.3, 0.08, 0.1, side * w * 0.3, 0.62, -l / 2 - 0.01);
-      wheel(group, R, 0.3, side * (w / 2 - 0.04), R, l * 0.3);
-      wheel(group, R, 0.32, side * (w / 2 - 0.04), R, -l * 0.31);
-    }
-    group.userData = { body, animate: () => {} };
+    const group = ORIG2_MODELS.sport(car);
     return group;
   },
 

@@ -19,13 +19,12 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const lambert = (color, options = {}) => new THREE.MeshLambertMaterial({ color, ...options });
-const basic = (color) => new THREE.MeshBasicMaterial({ color });
+const basic = (color) => new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide }); // (a lamp may be a flat panel: seen from either side)
 const keep = (thing) => { thing.userData.shared = true; return thing; }; // (made once, shared by every model)
 // the materials every model here shares (none of them is ever recoloured)
 const GLASS = keep(lambert(0x1d2531, { side: THREE.DoubleSide }));
 const CHROME = keep(lambert(0xd9dce1)), GOLD = keep(lambert(0xe2b64a)), TRIM = keep(lambert(0x1b1d21));
-// eslint-disable-next-line no-unused-vars -- (for the next cars: WIP)
-const TYRE = keep(lambert(0x151515)), STEEL = keep(lambert(0xb9bec6)), PLATE = keep(lambert(0xf1eee2));
+const TYRE = keep(lambert(0x151515)), PLATE = keep(lambert(0xf1eee2));
 const WHITEWALL = keep(lambert(0xf2f0ea)), WELL = keep(lambert(0x0d0e10));
 const LAMP = keep(basic(0xfff3c4)), TAIL = keep(basic(0xc0121a)), STOP = keep(basic(0xff3b3b));
 const AMBER = keep(basic(0xffa21a)), REVERSE = keep(basic(0xf6f4ee));
@@ -62,6 +61,25 @@ const wireFace = () => picture('wire', 64, 64, (g) => {
   g.fillStyle = '#ffffff';
   g.beginPath(); g.arc(32, 32, 8, 0, Math.PI * 2); g.fill();    // (the hub)
 });
+// an alloy wheel's face: five broad spokes between dark gaps, a rim and a hub (grey: the material makes it silver)
+const alloyFace = () => picture('alloy', 64, 64, (g) => {
+  g.fillStyle = '#26282c';
+  g.fillRect(0, 0, 64, 64);
+  g.fillStyle = '#e8e8e8';
+  g.beginPath(); g.arc(32, 32, 30, 0, Math.PI * 2); g.arc(32, 32, 25, 0, Math.PI * 2, true); g.fill(); // (the rim)
+  for (let i = 0; i < 5; i++) {
+    const a = i * Math.PI * 2 / 5;
+    g.beginPath();
+    g.moveTo(32 + Math.cos(a - 0.22) * 8, 32 + Math.sin(a - 0.22) * 8);
+    g.lineTo(32 + Math.cos(a - 0.2) * 26, 32 + Math.sin(a - 0.2) * 26);
+    g.lineTo(32 + Math.cos(a + 0.2) * 26, 32 + Math.sin(a + 0.2) * 26);
+    g.lineTo(32 + Math.cos(a + 0.22) * 8, 32 + Math.sin(a + 0.22) * 8);
+    g.fill();
+  }
+  g.beginPath(); g.arc(32, 32, 9, 0, Math.PI * 2); g.fill(); // (the hub)
+  g.fillStyle = '#55585e';
+  g.beginPath(); g.arc(32, 32, 3, 0, Math.PI * 2); g.fill();
+});
 // the lowrider's grille: upright gold bars on black, inside a gold frame (laid on an arch: see lowrider)
 const archGrille = () => picture('archgrille', 64, 64, (g) => {
   g.fillStyle = '#120d06';
@@ -71,7 +89,6 @@ const archGrille = () => picture('archgrille', 64, 64, (g) => {
   g.fillRect(0, 30, 64, 3); // (one bar across)
 });
 // a black mesh (a grille, an intake): a fine diamond lattice, tiled
-// eslint-disable-next-line no-unused-vars -- (for the next cars: WIP)
 const meshGrille = () => picture('mesh', 32, 32, (g) => {
   g.fillStyle = '#0b0c0e';
   g.fillRect(0, 0, 32, 32);
@@ -83,18 +100,17 @@ const meshGrille = () => picture('mesh', 32, 32, (g) => {
   }
 }, (map) => { map.wrapS = map.wrapT = THREE.RepeatWrapping; });
 // a strip of lettering: a windscreen banner
-// eslint-disable-next-line no-unused-vars -- (for the next cars: WIP)
 const banner = (text, ink, ground) => picture('banner:' + text + ink + ground, 128, 32, (g, w, h) => {
   g.fillStyle = ground;
   g.fillRect(0, 0, w, h);
   g.fillStyle = ink;
-  g.font = 'bold italic 22px sans-serif';
+  g.font = 'bold italic 21px sans-serif';
   g.textAlign = 'center';
   g.textBaseline = 'middle';
   g.fillText(text, w / 2, h / 2 + 1, w * 0.9);
 });
 const MATS = new Map(); // (the textured materials, one for each picture)
-const textured = (key, color, map) => MATS.get(key) || MATS.set(key, keep(new THREE.MeshLambertMaterial({ color, map }))).get(key);
+const textured = (key, color, map) => MATS.get(key) || MATS.set(key, keep(new THREE.MeshLambertMaterial({ color, map, side: THREE.DoubleSide }))).get(key);
 // (a flat flame on a flank, seen from either side)
 const flameMat = (color) => MATS.get('flame' + color) || MATS.set('flame' + color, keep(lambert(color, { side: THREE.DoubleSide }))).get('flame' + color);
 
@@ -211,6 +227,20 @@ const pane = (p, q2, out, half, inset, side) => {
   const at = (t, x) => { const z = p[0] + dz * t + s * nz * out, y = p[1] + dy * t + s * ny * out; return [x * (half(y) - side), y, z]; };
   const [a, b] = [inset, 1 - inset];
   return panel([at(a, -1), at(a, 1), at(b, 1), at(b, -1)]);
+};
+// a point on the face along the side view's edge from p to q ([z, y]), t of the way along it, pushed out `out`: [z, y]
+const onEdge = (p, q2, out, t) => {
+  const dz = q2[0] - p[0], dy = q2[1] - p[1], len = Math.hypot(dz, dy), nz = dy / len, ny = -dz / len;
+  const s = Math.sign(nz * (p[0] + q2[0]) + 1e-9) || 1;
+  return [p[0] + dz * t + s * nz * out, p[1] + dy * t + s * ny * out];
+};
+// a four-cornered panel on that face from t0 to t1 along it, x0 to x1 across the car (a lamp, a banner)
+const edgePanel = (p, q2, out, t0, t1, x0, x1, uvScale = [1, 1]) => {
+  const [z0, y0] = onEdge(p, q2, out, t0), [z1, y1] = onEdge(p, q2, out, t1);
+  const geo = panel([[x0, y0, z0], [x1, y0, z0], [x1, y1, z1], [x0, y1, z1]]);
+  const uv = geo.attributes.uv;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * uvScale[0], uv.getY(i) * uvScale[1]);
+  return geo;
 };
 // a window on a glasshouse's flank: the side view polygon `pts` ([z, y]) on the side `sx` (-1, 1), where the flank is
 // half(y) out from the middle, pushed out a hair
@@ -389,6 +419,107 @@ export const ORIG2_MODELS = {
         frontAxle.position.y = R + Math.sin(tilt) * (frontZ - rearZ) * 0.3; // (the front wheels rise only a third as far as the nose does)
       },
     };
+    return group;
+  },
+
+  // A small 1990s sport compact coupe (a Plymouth Laser, more or less): a low wedge of a nose with slim headlamps at
+  // its corners over a black mesh grille and two black intakes, a cab-forward glasshouse leaning in hard, a fastback
+  // hatch to a spoiler, black arch lips and side skirts, twin racing stripes over the bonnet, the roof and the tail
+  // (white on a Good one, the Good one's green on an Evil one), a LASER III banner across the top of the windscreen,
+  // a full-width tail lamp bar, five-spoke silver alloys. It sits still
+  sport: (car) => {
+    const group = new THREE.Group();
+    const w = car.hw * 2, L = car.hl, R = 0.36, half = w / 2;
+    const frontZ = L * 0.6, rearZ = -L * 0.62;
+    const paint = lambert(car.color), stripe = lambert(0xf4f4f0), P = parts();
+    // the body, side on: a low nose rising over the front wheels to the scuttle, the belt running back level to a
+    // short tail; the arches cut up into it
+    const sill = 0.27, round = 0.04;
+    const nose = [[L - 0.02, sill + 0.03, 0.05], [L, 0.5, 0.06], [L - 0.16, 0.66, 0.1]], scuttle = [L * 0.27, 0.78];
+    const bodyPts = [[-L + 0.04, sill + 0.03, 0.05], ...arch(rearZ, R + 0.02, 0.41, sill), ...arch(frontZ, R + 0.02, 0.41, sill), ...nose,
+      [frontZ, 0.76], scuttle, [-L * 0.65, 0.83], [-L + 0.06, 0.83, 0.06], [-L + 0.02, 0.62, 0.04]];
+    const body = new THREE.Mesh(extrude(outline(bodyPts), half, round), paint);
+    group.add(body);
+    for (const z of [rearZ, frontZ]) P.add(WELL, bx(w - 0.66, 0.46, 0.8, 0, 0.5, z));    // dark wheel wells
+    // the bonnet's top, for what lies on it: the side view's line from the nose back to the scuttle (pushed out by the rounding)
+    const bonnet = [[L - 0.16, 0.66], [frontZ, 0.76], scuttle];
+    const bonnetY = (z) => {
+      for (let i = 1; i < bonnet.length; i++) {
+        const [z0, y0] = bonnet[i - 1], [z1, y1] = bonnet[i];
+        if (z <= z0 && z >= z1) return y0 + (y1 - y0) * (z - z0) / (z1 - z0) + round;
+      }
+      return bonnet[bonnet.length - 1][1] + round;
+    };
+    // the glasshouse: cab forward, the windscreen steeply raked, a fastback hatch, the sides leaning in hard
+    const gBase = 0.8, gTop = 1.09, gRound = 0.03, gHalf = half - 0.06, gHalfTop = half - 0.26;
+    const lean = (y) => 1 - (1 - gHalfTop / gHalf) * Math.max(0, (y - gBase) / (gTop - gBase));
+    const houseHalf = (y) => gHalf * lean(y);
+    const ws = [scuttle[0] - 0.02, gBase], wsTop = [-L * 0.06, gTop], rwTop = [-L * 0.33, gTop], rw = [-L * 0.84, gBase];
+    P.add(paint, extrude(outline([ws, wsTop, rwTop, rw]), gHalf, gRound, (y) => lean(y)));
+    P.add(GLASS, pane(ws, wsTop, gRound + 0.006, houseHalf, 0.04, 0.09));      // the windscreen,
+    P.add(GLASS, pane(rwTop, rw, gRound + 0.006, houseHalf, 0.05, 0.12));     // the hatch's glass
+    // the banner across the top of the windscreen (lettering, read from in front: its first corner on the car's left)
+    const bt = (y) => houseHalf(y) - 0.1, by0 = ws[1] + (wsTop[1] - ws[1]) * 0.74, by1 = ws[1] + (wsTop[1] - ws[1]) * 0.95;
+    { const geo = edgePanel(ws, wsTop, gRound + 0.01, 0.74, 0.95, -bt(by0), bt(by0)); // (a trapezoid: narrower at its top)
+      const pos = geo.attributes.position;
+      for (let i = 0; i < pos.count; i++) if (pos.getY(i) > (by0 + by1) / 2) pos.setX(i, Math.sign(pos.getX(i)) * bt(by1));
+      P.add(textured('laser', 0xffffff, banner('LASER III', '#f4f4f4', '#141a2c')), geo); }
+    const aLine = (y, d) => ws[0] + (wsTop[0] - ws[0]) * (y - gBase) / (gTop - gBase) - d;
+    const cLine = (y, d) => rw[0] + (rwTop[0] - rw[0]) * (y - gBase) / (gTop - gBase) + d;
+    const lo = gBase + 0.03, hi = gTop - 0.03, bPost = -L * 0.3;
+    // the stripes: two each side of the middle, laid on the bonnet, the roof and the tail
+    const stripes = (x0, x1, pts) => { // (a ribbon over the points [z, y], a hair above them)
+      for (let i = 1; i < pts.length; i++) {
+        const [za, ya] = pts[i - 1], [zb, yb] = pts[i];
+        P.add(stripe, panel([[x0, ya + 0.006, za], [x1, ya + 0.006, za], [x1, yb + 0.006, zb], [x0, yb + 0.006, zb]]));
+      }
+    };
+    const bonnetLine = [L - 0.3, frontZ + 0.2, frontZ, frontZ - 0.25, scuttle[0] + 0.02].map(z => [z, bonnetY(z)]);
+    for (const sx of [-1, 1]) {
+      const x0 = sx * 0.035, x1 = sx * 0.21, [a, b] = sx > 0 ? [x0, x1] : [x1, x0];
+      stripes(a, b, [onEdge(nose[1], nose[2], round + 0.004, 0.1), onEdge(nose[1], nose[2], round + 0.004, 0.9), ...bonnetLine]); // (down the nose too)
+      stripes(a, b, [[wsTop[0] - 0.03, gTop + gRound], [rwTop[0] + 0.03, gTop + gRound]]);
+      stripes(a, b, [[rw[0] - 0.05, 0.83 + round], [-L + 0.26, 0.83 + round]]);
+      P.add(GLASS, flankPane([[aLine(lo, 0.1), lo], [aLine(hi, 0.1), hi], [bPost + 0.03, hi], [bPost + 0.03, lo]], sx, houseHalf)); // the door glass,
+      P.add(GLASS, flankPane([[bPost - 0.04, lo], [bPost - 0.04, hi], [cLine(hi, 0.12), hi], [cLine(lo, 0.12), lo]], sx, houseHalf)); // the quarter glass
+      P.add(TRIM, rod([sx * (houseHalf(lo) + 0.004), lo, bPost], [sx * (houseHalf(hi) + 0.004), hi, bPost], 0.07, 0.03)); // (the B pillar, black)
+      // black lips round the arches, and black skirts between them
+      for (const z of [frontZ, rearZ]) for (const g of rods(arch(z, R + 0.02, 0.39, sill + 0.02, 6).map(([az, ay]) => [sx * (half - 0.004), ay, az]), 0.04)) P.add(TRIM, g);
+      P.add(TRIM, bx(0.05, 0.12, frontZ - rearZ - 0.9, sx * (half + 0.005), 0.3, (frontZ + rearZ) / 2));
+      // the door's shut lines, a handle, a vent behind the door, a mirror on the door at the windscreen's foot
+      for (const [z, top] of [[ws[0] - 0.02, 0.8], [bPost - 0.06, 0.82]]) P.add(TRIM, rod([sx * half, top, z], [sx * half, 0.34, z], 0.012));
+      P.add(TRIM, bx(0.02, 0.025, 0.1, sx * (half + 0.004), 0.74, bPost + 0.06));
+      P.add(TRIM, bx(0.02, 0.1, 0.22, sx * (half + 0.004), 0.66, bPost - 0.22));
+      P.add(paint, bx(0.07, 0.07, 0.13, sx * (houseHalf(gBase) + 0.05), gBase + 0.05, ws[0] - 0.12));
+      P.add(TRIM, bx(0.04, 0.04, 0.04, sx * (houseHalf(gBase) + 0.02), gBase + 0.02, ws[0] - 0.1));
+      // the nose: a slim headlamp on each corner of its slope, an indicator under it, an intake low down
+      P.add(LAMP, edgePanel(nose[1], nose[2], round + 0.006, 0.3, 0.72, sx * 0.42, sx * 0.76));
+      P.add(TRIM, edgePanel(nose[1], nose[2], round + 0.003, 0.22, 0.8, sx * 0.38, sx * 0.79));
+      P.add(AMBER, bx(0.18, 0.04, 0.02, sx * 0.58, 0.43, L + round + 0.005));
+      P.add(textured('mesh', 0xffffff, meshGrille()), panel([[sx * 0.44, 0.29, L + round + 0.007], [sx * 0.72, 0.29, L + round + 0.007], [sx * 0.72, 0.38, L + round + 0.007], [sx * 0.44, 0.38, L + round + 0.007]]));
+      // the tail: the lamp bar's ends, the brake lamps, the reversing lamps and indicators in the black panel
+      P.add(STOP, bx(0.26, 0.09, 0.02, sx * (half - 0.2), 0.68, -L - round - 0.004));
+      P.add(AMBER, bx(0.09, 0.09, 0.02, sx * (half - 0.03), 0.68, -L - round - 0.002));
+      P.add(REVERSE, bx(0.1, 0.05, 0.02, sx * 0.24, 0.42, -L - round - 0.004));
+      // the spoiler's posts on the tail
+      P.add(TRIM, bx(0.05, 0.07, 0.1, sx * 0.5, 0.83 + round + 0.03, -L + 0.12));
+      // five-spoke silver alloys
+      const alloy = textured('alloy', 0xe4e6ea, alloyFace());
+      wheel(group, R, 0.3, sx * (half - 0.04), R, frontZ, alloy, R * 0.68);
+      wheel(group, R, 0.32, sx * (half - 0.04), R, rearZ, alloy, R * 0.68);
+    }
+    P.add(TAIL, bx(w - 0.62, 0.07, 0.02, 0, 0.68, -L - round - 0.004));                 // the lamp bar across the tail
+    P.add(TRIM, bx(w - 0.12, 0.16, 0.02, 0, 0.67, -L - round + 0.002));                 // on a black panel
+    P.add(paint, bx(w - 0.26, 0.04, 0.2, 0, 0.83 + round + 0.08, -L + 0.12));           // the spoiler
+    P.add(PLATE, bx(0.4, 0.12, 0.02, 0, 0.5, -L - round - 0.004));                     // the number plate
+    P.add(TRIM, bx(w - 0.1, 0.1, 0.06, 0, 0.32, -L - round + 0.01));                    // the rear valance,
+    P.add(CHROME, bar(0.045, 0.24, -0.5, 0.3, -L - round, 'z', 8));                     // and the exhaust through it
+    P.add(textured('mesh', 0xffffff, meshGrille()), panel([[0.34, 0.31, L + round + 0.007], [-0.34, 0.31, L + round + 0.007], [-0.34, 0.48, L + round + 0.007], [0.34, 0.48, L + round + 0.007]]));
+    P.add(TRIM, bx(w - 0.16, 0.05, 0.16, 0, 0.27, L - 0.02));                           // the air dam's lip
+    P.into(group);
+    const livery = (evil) => stripe.color.setHex(evil ? 0x39ff14 : 0xf4f4f0);
+    livery(false);
+    group.userData = { body, parts: P.count, animate: () => {}, livery, stripe: (hex) => stripe.color.setHex(hex) };
     return group;
   },
 };
