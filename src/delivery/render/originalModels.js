@@ -12,7 +12,7 @@
 // Every part that never moves is merged into one mesh per material; those geometries are made once for each size of
 // car and shared by every copy (traffic draws many of these), and the paint and the livery-coloured parts are the only
 // materials of a car's own. Each wheel is a tyre (a CylinderGeometry turned on its side: the suspension and the Super
-// kit find wheels that way) and its alloy, two meshes of its own. Small textures (the Junker's rust and its tarpaulin's
+// kit find wheels that way) and a plain hub, two meshes of its own. Small textures (the Junker's rust and its tarpaulin's
 // weave) are drawn in code once, 64 px, and shared. State-free: nothing here knows about the game.
 import * as THREE from 'three';
 import { mergeGeometries, toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -234,25 +234,15 @@ const sidePanel = (xAt, side, outline, holes = [], off = 0.006, t = 0.012) => {
   geo.computeVertexNormals();
   return geo;
 };
-// ---- the wheels: a tyre (its own CylinderGeometry, turned on its side by the mesh) and its alloy, each a mesh
+// ---- the wheels: a tyre (its own CylinderGeometry, turned on its side by the mesh) and its hub, each a mesh
 const tyreGeo = (R, width) => cached('tyre' + [R, width], () => ({ geo: new THREE.CylinderGeometry(R, R, width, 16) })).geo;
-// an alloy: a rim ring each side, `spokes` spokes across the hub, and a cap (one geometry, in one silver)
-const alloyGeo = (R, width, spokes = 5, rim = 0.72) => cached('alloy' + [R, width, spokes, rim], () => {
-  const r = R * rim, half = width / 2 + 0.006, parts = [];
-  for (const s of [-1, 1]) {
-    const ring = new THREE.RingGeometry(r * 0.82, r, 12, 1);
-    ring.rotateY(s * Math.PI / 2);
-    parts.push(ring.translate(s * half, 0, 0));
-  }
-  for (let i = 0; i < spokes; i++) parts.push(bx(width + 0.008, r * 0.2, r * 1.7, 0, 0, 0, i * Math.PI / spokes));
-  parts.push(cyl(r * 0.26, width + 0.03, 0, 0, 0, 'x', 8));
-  return { geo: mergeGeometries(parts.map(clean), false) };
-}).geo;
-const addWheel = (group, R, width, x, z, alloy, hubMat = MAT.alloy) => {
+// a hub: a plain light disc a little proud of the tyre each side, as the rest of the roster's wheels (models.js wheel)
+const hubGeo = (R, width, rim = 0.58) => cached('hub' + [R, width, rim], () => ({ geo: cyl(R * rim, width + 0.04, 0, 0, 0, 'x', 12) })).geo;
+const addWheel = (group, R, width, x, z, hubGeometry, hubMat = MAT.alloy) => {
   const tyre = new THREE.Mesh(tyreGeo(R, width), MAT.tyre);
   tyre.rotation.z = Math.PI / 2;
   tyre.position.set(x, R, z);
-  const hub = new THREE.Mesh(alloy, hubMat);
+  const hub = new THREE.Mesh(hubGeometry, hubMat);
   hub.position.set(x, R, z);
   group.add(tyre, hub);
   return [tyre, hub];
@@ -365,8 +355,8 @@ const commuter = (car) => {
   const paint = lambert(car.color, { vertexColors: true });
   const geos = cached('commuter' + [car.hw, car.hl, car.height], () => commuterParts(car));
   const body = assemble(group, geos, paint);
-  const AX = 0.31 * car.hl * 2, alloy = alloyGeo(0.3, 0.26, 4, 0.76);
-  for (const side of [-1, 1]) for (const z of [AX, -AX]) addWheel(group, 0.3, 0.26, side * (car.hw - 0.04), z, alloy);
+  const AX = 0.31 * car.hl * 2, hub = hubGeo(0.3, 0.26, 0.6);
+  for (const side of [-1, 1]) for (const z of [AX, -AX]) addWheel(group, 0.3, 0.26, side * (car.hw - 0.04), z, hub);
   group.userData = { body, animate: () => {} };
   return group;
 };
