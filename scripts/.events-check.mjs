@@ -202,7 +202,7 @@ async function conceptStrike() {
     const t = from + (week * 7 + d) * D + 5 * H, name = new Date(t).toString().slice(0, 3), day = Events.dayOf(strike, t), c = Events.countdownOf(strike, t);
     if (d === 6) {
       check(name === 'Sun' && !Events.live(strike, t) && !day.live && day.car === 'fishbowl' && c?.words === 'Next in' && new Date(c.at).getDay() === 1 && Math.abs(c.at - (t + D - 5 * H)) < 2 * H
-        && Events.shownSpecials(t).includes(strike) && /^Back /.test(Events.state(strike, 0, t).why) && Events.tasksLeft(strike, t) === 0,
+        && Events.shownSpecials(t).includes(strike) && Events.state(strike, 0, t).why === 'Back Monday' && Events.tasksLeft(strike, t) === 0,
         'week ' + (week + 1) + ' Sun: no event (listed, shut, "' + Events.state(strike, 0, t).why + '"), Next in Monday (the Fishbowl)');
       continue;
     }

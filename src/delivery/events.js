@@ -118,6 +118,9 @@ const weekOf = (event, t) => {
 };
 
 const dayName = (t) => new Date(t).toLocaleDateString([], { day: 'numeric', month: 'short' });
+// the day of the week, by name ('Monday'): a rotating event's day (the Concept Strike's cars: the owner, 13-Oct, "show what day of
+// the week concept strike cars are active, not the date value"); English, as the rest of the game
+export const weekdayName = (t) => new Date(t).toLocaleDateString('en-GB', { weekday: 'long' });
 // a day on the device: 'YYYY-MM-DD' (a run's mark in the save)
 const dayKey = (t) => { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 // a car's stars for a task (the owner: 'any 2-star car'): a gold tier's (1 to 5: the car lot's and the blueprint cars'), or a
@@ -184,7 +187,7 @@ export const Events = {
     if (event.repeat) { // (a recurring event: shut between its runs; a stage done stays open, to play again)
       const w = windowOf(event, t);
       if (!w) return { open: false, done: index < done, why: 'The event is over' };
-      if (!w.live) return { open: false, done: index < done, why: 'Back ' + dayName(w.start) };
+      if (!w.live) return { open: false, done: index < done, why: 'Back ' + (event.days ? weekdayName(w.start) : dayName(w.start)) }; // (a rotating event: its next day by name, 'Back Monday')
     }
     if (stage.from !== null && t < stage.from) return { open: false, done: false, why: 'Opens ' + dayName(stage.from) };
     if (index > done) return { open: false, done: false, why: 'Finish stage ' + (done + 1) + ' first' };

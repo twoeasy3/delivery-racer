@@ -97,7 +97,7 @@ const line = (s, flags, hide) => {
 };
 // a source that can NEVER give the car (the owner, 13-Oct: "don't name where it can't be obtained. That's pointless"): a
 // pack that cannot hold it, or one whose every way is shut for good; an event over, a prize won, sold out. Not listed.
-// A source shut for a while (its day: back <date>, between runs, not yet open, not for sale yet, come back tomorrow) is.
+// A source shut for a while (its day: Monday, between runs, not yet open, not for sale yet, come back tomorrow) is.
 const FOR_GOOD = /^(Not on sale: )?(cannot hold it|event over|its event is not in the game|its level is not in the game|prize already won|every stage done|every career level|sold out|no way to get one)/i;
 export const neverGives = (s) => s.how === 'pack' ? !s.chance || (!s.available && (!s.ways?.length || s.ways.every(w => FOR_GOOD.test(w.why || ''))))
   : !s.available && FOR_GOOD.test(s.why || '');

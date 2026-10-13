@@ -157,13 +157,17 @@ try {
       const ok1 = bp.length === 1 && bp[0].kind === 'concept-strike-' + (d + 1) && bp[0].available && Math.abs(bp[0].chance - 1) < 1e-9 && on.keys.length === 1 && on.keys[0].where === 'Concept Strike' && on.keys[0].available && huntEventFor(by(id))?.live;
       at(strike.from + 14 * D + ((d + 1) % 7) * D + 5 * 3600e3); // (the next day: another car's)
       const off = sourcesOf(by(id));
-      const ok2 = !off.obtainable.key && !off.obtainable.blueprints && /^Its day: back /.test(off.keys[0]?.why || '') && huntEventFor(by(id)) && !huntEventFor(by(id)).live;
+      const wd = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d], packOff = off.blueprints.find(x => x.chance > 0);
+      const ok2 = !off.obtainable.key && !off.obtainable.blueprints && off.keys[0]?.why === 'Its day: ' + wd && packOff?.ways.find(w => w.how === 'event')?.why === 'Its day: ' + wd
+        && huntEventFor(by(id)) && !huntEventFor(by(id)).live; // (its WEEKDAY, never a date: the owner, 13-Oct)
       if (ok1 && ok2) good++;
       lines.push(id + ' (' + sourcesLine(by(id)) + ' / next day: ' + off.keys[0]?.why + ')');
     });
-    check(good === 6, 'each concept car: on its day its key (the Concept Strike) and its blueprints (its day\'s pack only) obtainable; on another day "back <its day>": ' + lines.join('; '));
+    check(good === 6, 'each concept car: on its day its key (the Concept Strike) and its blueprints (its day\'s pack only) obtainable; on another day "Its day: <weekday>" (no date): ' + lines.join('; '));
     at(strike.from + 20 * D + 5 * 3600e3); // (a Sunday)
     check(ids.every(id => !sourcesOf(by(id)).obtainable.key), 'Sunday: no concept car\'s key to be had (' + sourcesOf(by('fishbowl')).keys[0]?.why + ')');
+    check(ids.every((id, d) => sourcesOf(by(id)).keys[0]?.why === 'Its day: ' + ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d]),
+      'Sunday: each concept car names its weekday, not a date (' + ids.map(id => sourcesOf(by(id)).keys[0]?.why).join('; ') + ')');
   }
 } catch (error) {
   failures++;

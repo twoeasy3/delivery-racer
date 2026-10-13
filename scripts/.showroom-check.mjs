@@ -92,6 +92,7 @@ try {
   // ---- the LOCKED-CARD OVERLAYS (showroomData.js overlayOf, render/lockoverlay.js): one kind per locked card, none on a playable one
   await overlays(g, check);
   await carHunt(g, check);
+  await conceptWords(g, check);
   // ---- the row's PAN (render/showroompan.js): taps during a pan carry it on, never restart it (the owner, 13-Oct)
   await rowPan(g, check);
 } catch (error) {
@@ -311,6 +312,36 @@ async function carHunt(g, check) {
 // never stand still before the end, never back at the start offset after it left, and end on the right column (N columns
 // on, the snap's own place); one tap alone is the plain ease-in-out from standing to standing; a tap the other way turns
 // it round without a jump.
+// The Concept Strike's cars' words (the owner, 13-Oct: "show what day of the week concept strike cars are active, not the
+// date value"; "From Concept Strike"; "Find it in packs"): on another day a concept car's overlay reads "From Concept
+// Strike" and its hint names its WEEKDAY (Mondays...), never a date; on its day "Win it in the Concept Strike"; a Bespoke
+// key car whose key is in packs reads "Find it in packs" (not "Bespoke packs")
+async function conceptWords(g, check) {
+  const D = await g.load('showroomData.js');
+  const { Events: Ev } = await g.load('events.js');
+  const { Progress } = await g.load('progress.js');
+  const strike = Ev.specials.find(e => e.id === 'concept-strike'), realNow = Ev.now;
+  if (!strike) { check(false, 'the Concept Strike is in events.json'); return; }
+  Progress.reset(); Progress.noSave = true;
+  const ids = ['fishbowl', 'midsummer', 'sixteen', 'quadturbo', 'knifeedge', 'windsong'], names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const DAY = 86400e3, MONTHS = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|\d/;
+  const bad = [];
+  ids.forEach((id, d) => {
+    for (const k of [d, (d + 1) % 7, 6]) { // (its day, the next, a Sunday)
+      Ev.now = () => strike.from + 14 * DAY + k * DAY + 5 * 3600e3;
+      const c = D.carCard(g.cars.carById(id), false), ov = D.overlayOf(c);
+      const ok = k === d ? ov?.line === 'Win it in the Concept Strike' && /today/.test(c.hint)
+        : ov?.line === 'From Concept Strike' && c.hint.includes('(' + names[d] + 's)') && !MONTHS.test(c.hint.replace(/max ECU|ECU/g, ''));
+      if (!ok) bad.push(id + ' day ' + k + ': "' + ov?.line + '" / ' + c.hint);
+    }
+  });
+  Ev.now = realNow;
+  check(!bad.length, 'each concept car: "Win it in the Concept Strike" on its day, else "From Concept Strike" and its weekday, no date' + (bad.length ? ' (not: ' + bad.join('; ') + ')' : ''));
+  const packKey = D.showroomCars().find(car => car.bespoke && !car.noPacks && car.keyAvailable !== false && !g.cars.EVENT_CARS.includes(car) && !car.concept);
+  const ovP = packKey && D.overlayOf(D.carCard(packKey, false));
+  check(!packKey || ovP?.line === 'Find it in packs', 'a Bespoke key car whose key is in packs: "' + ovP?.line + '" (' + packKey?.id + ')');
+}
+
 async function rowPan(g, check) {
   const { panAt, panTo, panStep, PAN_MS } = await g.load('render/showroompan.js');
   const col = 255, starts = Array.from({ length: 40 }, (_, i) => 4 + i * col), max = starts.at(-1), width = 1244, step = Math.max(200, width * 0.8);
