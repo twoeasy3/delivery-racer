@@ -21,7 +21,6 @@ const GLASS = 0x232a35, CHROME = 0xd8d8d8, TRIM = 0x2a2c31;
 // the lamps' lenses: made once, shared by every car (they never change colour)
 const LAMP = shared(new THREE.MeshBasicMaterial({ color: 0xfff3c4 })), TAIL = shared(new THREE.MeshBasicMaterial({ color: 0xff2a2a }));
 const BRAKE = shared(new THREE.MeshBasicMaterial({ color: 0xc4101c })), AMBER = shared(new THREE.MeshBasicMaterial({ color: 0xffa31a }));
-const REVERSE = shared(new THREE.MeshBasicMaterial({ color: 0xf2f2ea }));
 
 const place = (parent, geo, material, x = 0, y = 0, z = 0) => {
   const mesh = new THREE.Mesh(geo, material);
@@ -215,6 +214,38 @@ const wear = () => texture('wear', 64, 64, (ctx, w, h) => {
   }
 });
 
+// rust eating through paint: blotches in two browns, ragged at the edges, clear between (the Junker's)
+const rust = () => texture('rust', 64, 64, (ctx, w, h) => {
+  ctx.clearRect(0, 0, w, h);
+  let seed = 11;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  for (const [colour, n, size] of [['#7a3f1e', 9, 9], ['#5a2c14', 14, 4], ['#9a5a2a', 8, 3]]) {
+    ctx.fillStyle = colour;
+    for (let i = 0; i < n; i++) {
+      const x = rnd() * w, y = rnd() * h;
+      for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.ellipse(x + (rnd() - 0.5) * size, y + (rnd() - 0.5) * size, size * (0.4 + rnd() * 0.6), size * (0.3 + rnd() * 0.5), rnd() * 3, 0, Math.PI * 2); ctx.fill(); }
+    }
+  }
+});
+
+// a tarpaulin (the Junker's load): the cloth's colour with darker creases, and green rope crossing it on the diagonal.
+// It repeats (the tarp's own measure, in metres, lays it on): drawn so it tiles. colours: [cloth, crease, rope]
+const tarpaulin = (key, [cloth, crease, rope]) => {
+  const map = texture('tarp-' + key, 64, 64, (ctx, w, h) => {
+    ctx.fillStyle = cloth;
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = crease;
+    ctx.lineWidth = 2;
+    for (const [x, y, l] of [[8, 10, 16], [40, 6, 12], [22, 34, 18], [50, 40, 10], [6, 52, 12]]) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + l * 0.3, y + l); ctx.stroke(); }
+    ctx.strokeStyle = rope;
+    ctx.lineWidth = 3;
+    for (const o of [-64, 0, 64]) { ctx.beginPath(); ctx.moveTo(o, 0); ctx.lineTo(o + 64, 64); ctx.stroke(); }
+  });
+  map.wrapS = map.wrapT = THREE.RepeatWrapping;
+  map.repeat.set(1.1, 1.1);
+  return map;
+};
+
 export const ORIG3_MODELS = {
   // The Hearse: a long seventies funeral coach in deep indigo (white for an Evil driver). A long, flat bonnet with
   // a chrome-framed upright grille of vertical bars between four round lamps in chrome bezels; a tall, long coach
@@ -222,19 +253,13 @@ export const ORIG3_MODELS = {
   // drip rails along the roof and a rear door with its own curtained window; tall tail lamps, chrome bumpers.
   hearse: (car) => {
     const group = new THREE.Group();
-    const L = car.hl, w = car.hw * 2, R = 0.36, WX = w / 2 - 0.12, WZ = L * 0.6, cw = w * 0.9;
-    const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(CHROME), trim = lambert(TRIM), dark = lambert(0x121418);
+    const L = car.hl, w = car.hw * 2, R = 0.36, WX = w / 2 - 0.04, WZ = L * 0.6, cw = w * 0.9;
+    const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(CHROME), dark = lambert(0x121418);
     const cloth = new THREE.MeshLambertMaterial({ map: curtains('pale', ['#e4dff0', '#b5adc8']), alphaTest: 0.5 });
     const plate = lambert(0xece6cc);
-    // the body below the waist: a long slab with its arches cut out round the wheels
-    const arch = (zc) => {
-      const pts = [], ra = R + 0.1;
-      for (let i = 0; i <= 8; i++) { const a = Math.PI * i / 8; pts.push([zc - ra * Math.cos(a), R + 0.02 + ra * Math.sin(a) * 0.95]); }
-      return [[zc - ra, 0.32], ...pts, [zc + ra, 0.32]];
-    };
-    side(group, paint, w, [[-L + 0.04, 0.32, 0.06], ...arch(-WZ), ...arch(WZ), [L - 0.1, 0.32, 0.06], [L - 0.04, 0.5, 0.06],
+    // the body below the waist: one long slab, the wheels standing at its corners
+    side(group, paint, w, [[-L + 0.04, 0.32, 0.06], [L - 0.1, 0.32, 0.06], [L - 0.04, 0.5, 0.06],
       [L - 0.05, 0.9, 0.06], [L - 0.5, 0.95, 0.2], [0.98, 0.97, 0.1], [-L + 0.1, 0.97, 0.06], [-L + 0.04, 0.9, 0.06]], 0.04);
-    box(group, dark, w - 0.34, 0.5, L * 1.7, 0, 0.55, 0);                                  // (the dark inside of the arches)
     // the coach: the cabin and its long roof, set in from the body's sides (a shoulder for the chrome waist strip)
     side(group, paint, cw, [[1.02, 0.94], [0.3, 1.56, 0.06], [-2.42, 1.58, 0.14], [-2.7, 1.4, 0.08], [-2.7, 0.94]], 0.05);
     const rise = Math.atan2(0.62, 0.72);
@@ -250,7 +275,6 @@ export const ORIG3_MODELS = {
       }
       box(group, chrome, 0.025, 0.025, 2.72, s * (cw / 2 + 0.012), 1.56, -1.06);          // the drip rail along the roof
       box(group, chrome, 0.03, 0.03, L * 2 - 0.3, s * (w / 2 + 0.008), 0.95, 0);         // the chrome waist strip
-      box(group, chrome, 0.03, 0.05, 1.98, s * (w / 2 + 0.008), 0.42, 0);                // the rocker strip, between the arches
       box(group, chrome, 0.1, 0.03, 0.03, s * (w / 2 + 0.05), 1.0, 0.7);                 // the mirror on its stalk
       box(group, chrome, 0.05, 0.1, 0.12, s * (w / 2 + 0.11), 1.03, 0.7);
       // the front: four round lamps, two to a chrome bezel, an indicator under each pair
@@ -259,14 +283,9 @@ export const ORIG3_MODELS = {
         rod(group, LAMP, 0.085, 0.04, s * x, 0.72, L + 0.02, 'z', 14);
       }
       box(group, AMBER, 0.24, 0.07, 0.04, s * 0.66, 0.53, L - 0.01);
-      box(group, chrome, 0.05, 0.14, 0.34, s * (w / 2 + 0.005), 0.4, L - 0.12);           // the bumper's ends, round the corners
-      box(group, chrome, 0.05, 0.14, 0.34, s * (w / 2 + 0.005), 0.4, -L + 0.12);
-      // the tail: tall lamps at the corners (tail lamp over brake lamp), an indicator and a reversing lamp under them
+      // the tail: tall lamps at the corners (tail lamp over brake lamp)
       box(group, TAIL, 0.14, 0.2, 0.04, s * 0.86, 0.84, -L);
       box(group, BRAKE, 0.14, 0.14, 0.04, s * 0.86, 0.66, -L);
-      box(group, AMBER, 0.14, 0.06, 0.04, s * 0.86, 0.555, -L);
-      box(group, REVERSE, 0.12, 0.05, 0.03, s * 0.5, 0.49, -L - 0.005);
-      rod(group, trim, 0.035, 0.3, s * 0.55, 0.26, -L + 0.1, 'z', 8);                   // twin exhausts
     }
     // the grille: an upright chrome frame with an arched top, dark behind its vertical bars, a mascot on top
     box(group, chrome, 0.5, 0.4, 0.06, 0, 0.66, L);
@@ -329,22 +348,19 @@ export const ORIG3_MODELS = {
       prism(shell, glass, 0.02, [[-0.4, 0.95], [-0.4, 1.1], [-0.56, 1.08], [-0.68, 0.95]], x);       // and the quarter window
       box(shell, chrome, 0.12, 0.025, 0.025, s * (bw / 2 + 0.05), 0.95, 0.36);                     // a mirror on its stalk
       box(shell, chrome, 0.03, 0.07, 0.09, s * (bw / 2 + 0.11), 0.98, 0.36);
-      // the bonnet's flank: flames from the grille back, louvres over their tips, headers out under them
+      // the bonnet's flank: flames from the grille back, louvres over their tips
       decal(shell, fire, 1.0, 0.34, s * 0.366, 0.75, 1.12, s > 0 ? 'x' : '-x', s > 0 ? [0, 0.66] : [0.66, 0]);
       decal(shell, fire, 0.62, 0.32, x + s * 0.002, 0.72, 0.13, s > 0 ? 'x' : '-x', s > 0 ? [0.68, 1] : [1, 0.68]);
       for (let i = 0; i < 6; i++) box(shell, dark, 0.012, 0.016, 0.16, s * 0.367, 0.9 - (i % 2) * 0.035, 0.62 + 0.14 + Math.floor(i / 2) * 0.2);
-      for (let i = 0; i < 3; i++) rod(shell, chrome, 0.025, 0.2, s * 0.4, 0.5, 0.82 + i * 0.16, 'x', 6);
       rod(shell, chrome, 0.045, 1.4, s * 0.52, 0.44, 0.18, 'z', 8);                                // the side pipes, under the doors
       // lamps in chrome buckets on posts by the grille, an indicator on each post
       rod(shell, chrome, 0.02, 0.4, s * 0.48, 0.7, 1.62, 'y', 6);
       rod(shell, chrome, 0.12, 0.16, s * 0.48, 0.92, 1.64, 'z', 12, 0.07);
       rod(shell, LAMP, 0.1, 0.02, s * 0.48, 0.92, 1.72, 'z', 12);
       rod(shell, AMBER, 0.035, 0.05, s * 0.48, 0.66, 1.65, 'z', 8);
-      // the tail: round tail lamps over brake lamps on the back panel, an indicator and a reversing lamp
+      // the tail: round tail lamps beside brake lamps on the back panel
       rod(shell, TAIL, 0.055, 0.04, s * 0.42, 0.66, -1.96, 'z', 10);
       rod(shell, BRAKE, 0.045, 0.04, s * 0.29, 0.66, -1.96, 'z', 10);
-      box(shell, AMBER, 0.08, 0.035, 0.03, s * 0.42, 0.575, -1.965);
-      box(shell, REVERSE, 0.07, 0.035, 0.03, s * 0.29, 0.575, -1.965);
       box(shell, trim, 0.1, 0.1, 3.5, s * 0.36, 0.44, -0.12);                                      // the frame rails
     }
     box(shell, trim, 0.82, 0.06, 0.06, 0, 0.6, 1.62);                                              // the lamps' cross bar
@@ -382,18 +398,12 @@ export const ORIG3_MODELS = {
   // charcoal for an Evil driver.
   minivan: (car) => {
     const group = new THREE.Group();
-    const L = car.hl, w = car.hw * 2, R = 0.38, WX = w / 2 - 0.14, WZ = L * 0.6;
+    const L = car.hl, w = car.hw * 2, R = 0.38, WX = w / 2 - 0.04, WZ = L * 0.6;
     const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(CHROME), trim = lambert(TRIM), dark = lambert(0x121418);
     const bumper = lambert(0xd6d0c0), plate = lambert(0xece6cc);
-    const arch = (zc) => {
-      const pts = [], ra = R + 0.1;
-      for (let i = 0; i <= 8; i++) { const a = Math.PI * i / 8; pts.push([zc - ra * Math.cos(a), R + 0.02 + ra * Math.sin(a) * 0.95]); }
-      return [[zc - ra, 0.34], ...pts, [zc + ra, 0.34]];
-    };
     // the one box of a body: the nose sloping up to the windscreen, the windscreen up to the roof, the roof back to the tail
-    side(group, paint, w, [[-L + 0.06, 0.34, 0.06], ...arch(-WZ), ...arch(WZ), [L - 0.06, 0.34, 0.04], [L - 0.06, 0.84, 0.1],
+    side(group, paint, w, [[-L + 0.06, 0.34, 0.06], [L - 0.06, 0.34, 0.04], [L - 0.06, 0.84, 0.1],
       [1.55, 1.14, 0.12], [0.72, 1.9, 0.14], [-L + 0.2, 1.93, 0.14], [-L + 0.06, 1.84, 0.08]], 0.06);
-    box(group, dark, w - 0.4, 0.5, L * 1.7, 0, 0.58, 0);                                    // (the dark inside of the arches)
     const rise = Math.atan2(0.76, 0.83);
     slab(group, glass, w - 0.26, 0.02, 1.0, 0, 1.52 + 0.05, 1.135 + 0.048, rise);           // the big raked windscreen
     for (const s of [-1, 1]) {
@@ -404,18 +414,13 @@ export const ORIG3_MODELS = {
       for (const z of [0.19, -1.02]) box(group, trim, 0.012, 0.56, 0.16, X + s * 0.004, 1.52, z); // the pillars between, blacked out
       box(group, trim, 0.12, 0.03, 0.05, s * (w / 2 + 0.05), 1.28, 1.3);                      // the mirror on its arm
       box(group, trim, 0.05, 0.16, 0.2, s * (w / 2 + 0.11), 1.3, 1.3);
-      // the front: a rectangular lamp each side in a chrome bezel, an indicator round the corner
+      // the front: a rectangular lamp each side in a chrome bezel, an indicator outboard
       box(group, chrome, 0.44, 0.24, 0.03, s * 0.66, 0.72, L);
       box(group, LAMP, 0.38, 0.18, 0.03, s * 0.66, 0.72, L + 0.012);
       box(group, AMBER, 0.16, 0.18, 0.03, s * 0.96, 0.72, L - 0.005);
-      box(group, AMBER, 0.03, 0.18, 0.14, s * (w / 2 + 0.002), 0.72, L - 0.1);
-      // the tail: tall lamps up the corners (tail lamp, brake lamp, indicator, reversing lamp)
+      // the tail: tall lamps up the corners (tail lamp over brake lamp)
       box(group, TAIL, 0.16, 0.22, 0.03, s * 0.9, 1.12, -L);
       box(group, BRAKE, 0.16, 0.18, 0.03, s * 0.9, 0.92, -L);
-      box(group, AMBER, 0.16, 0.1, 0.03, s * 0.9, 0.78, -L);
-      box(group, REVERSE, 0.16, 0.08, 0.03, s * 0.9, 0.69, -L);
-      box(group, bumper, 0.05, 0.22, 0.4, s * (w / 2 + 0.01), 0.42, L - 0.18);               // the bumpers' ends, round the corners
-      box(group, bumper, 0.05, 0.22, 0.4, s * (w / 2 + 0.01), 0.42, -L + 0.18);
     }
     // the grille: chrome-framed, black, three chrome bars across
     box(group, chrome, 0.78, 0.28, 0.03, 0, 0.72, L);
@@ -428,7 +433,6 @@ export const ORIG3_MODELS = {
     box(group, plate, 0.44, 0.13, 0.02, 0, 0.72, -L - 0.005);                                // the plate over it,
     box(group, glass, w - 0.42, 0.56, 0.02, 0, 1.48, -L - 0.005);                            // its window,
     box(group, BRAKE, 0.36, 0.05, 0.03, 0, 1.82, -L - 0.005);                                // and a brake lamp over it
-    rod(group, trim, 0.035, 0.3, 0.6, 0.28, -L + 0.06, 'z', 8);                              // the exhaust
     const keep = new Set();
     const geo = wheelGeo(R, 0.28), tyre = lambert(0x141414), hub = lambert(0xc4c8ce);
     for (const s of [-1, 1]) for (const z of [WZ, -WZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub)) keep.add(part);
@@ -444,17 +448,16 @@ export const ORIG3_MODELS = {
 
   // The Pick-Up: a lifted seventies square-body pickup, orange, worked hard. A big dark bull bar across its nose, a
   // wide grille between square lamps, a worn bonnet and roof (sun-bleached, scratched); a square cab with a
-  // sports bar of spot lamps over its roof; an open bed with wheel tubs, a tailgate and tall tail lamps; black flares
-  // over chunky tyres, and the lift showing beneath: the frame, the axles and long shocks.
+  // sports bar of spot lamps over its roof; an open bed with wheel tubs, a tailgate and tall tail lamps;
+  // chunky tyres, and the lift showing beneath: the frame, the axles and long shocks.
   pickup: (car) => {
     const group = new THREE.Group();
     const L = car.hl, w = car.hw * 2, R = 0.48, WX = w / 2 - 0.05, FZ = L * 0.62, RZ = -L * 0.6, ucw = w * 0.92;
     const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(CHROME), trim = lambert(TRIM), dark = lambert(0x121418);
-    const bar = lambert(0x1d2238), flare = lambert(0x1c1e22), plate = lambert(0xece6cc);
+    const bar = lambert(0x1d2238), plate = lambert(0xece6cc);
     const worn = new THREE.MeshLambertMaterial({ map: wear(), transparent: true, depthWrite: false });
-    const arch = (zc) => [[zc + 0.62, 0.95], [zc + 0.5, 1.14], [zc - 0.5, 1.14], [zc - 0.62, 0.95]];
-    // the front end and the cab's doors, below the waist, its front arches squared off
-    side(group, paint, w, [[2.5, 0.95, 0.04], [2.52, 1.5, 0.05], [0.4, 1.5], [-0.6, 1.5], [-0.6, 0.95], ...arch(FZ).reverse()], 0.05);
+    // the front end and the cab's doors, below the waist
+    side(group, paint, w, [[2.5, 0.95, 0.04], [2.52, 1.5, 0.05], [0.4, 1.5], [-0.6, 1.5], [-0.6, 0.95]], 0.05);
     // the cab above it, a little narrower
     side(group, paint, ucw, [[0.84, 1.46], [0.44, 1.98, 0.05], [-0.5, 2.0, 0.06], [-0.58, 1.46]], 0.05);
     const rise = Math.atan2(0.52, 0.4);
@@ -462,30 +465,24 @@ export const ORIG3_MODELS = {
     box(group, glass, ucw - 0.4, 0.3, 0.02, 0, 1.76, -0.636);                                 // the back window
     decal(group, worn, w - 0.22, 1.56, 0, 1.556, 1.66, 'y');                                  // the worn bonnet,
     decal(group, worn, ucw - 0.16, 0.8, 0, 2.054, -0.03, 'y', [0.2, 0.8]);                    // and roof
-    // the bed: its sides (arches cut), the headboard, floor, wheel tubs and tailgate
-    for (const s of [-1, 1]) side(group, paint, 0.1, [[-0.66, 0.95], [-0.66, 1.56, 0.03], [-2.55, 1.56, 0.03], [-2.55, 0.95], ...arch(RZ)], 0.02, s * (w / 2 - 0.05));
+    // the bed: its sides, the headboard, floor, wheel tubs and tailgate
+    for (const s of [-1, 1]) side(group, paint, 0.1, [[-0.66, 0.95], [-0.66, 1.56, 0.03], [-2.55, 1.56, 0.03], [-2.55, 0.95]], 0.02, s * (w / 2 - 0.05));
     box(group, paint, w - 0.2, 0.56, 0.08, 0, 1.25, -0.7);
     box(group, trim, w - 0.2, 0.04, 1.82, 0, 1.15, -1.62);
     for (const s of [-1, 1]) box(group, paint, 0.32, 0.26, 1.04, s * (w / 2 - 0.26), 1.28, RZ);
     box(group, paint, w - 0.2, 0.56, 0.08, 0, 1.25, -2.51);
     for (const s of [-1, 1]) {
-      const x = s * (ucw / 2 + 0.006), X = s * (w / 2 + 0.003);
+      const x = s * (ucw / 2 + 0.006);
       prism(group, glass, 0.02, [[0.68, 1.56], [0.38, 1.92], [-0.18, 1.92], [-0.18, 1.56]], x);  // the door's window
       box(group, chrome, 0.14, 0.03, 0.03, s * (ucw / 2 + 0.07), 1.58, 0.66);                 // a big square mirror on its arm
       box(group, chrome, 0.04, 0.26, 0.16, s * (ucw / 2 + 0.15), 1.66, 0.66);
-      box(group, AMBER, 0.012, 0.07, 0.14, X, 1.38, 2.3);                                     // side markers
-      box(group, TAIL, 0.012, 0.07, 0.14, s * (w / 2 + 0.003), 1.4, -2.38);
       // the front: square lamps in chrome bezels, an indicator under each
       box(group, chrome, 0.32, 0.26, 0.03, s * 0.74, 1.28, 2.58);
       box(group, LAMP, 0.24, 0.2, 0.03, s * 0.74, 1.28, 2.593);
       box(group, AMBER, 0.28, 0.08, 0.03, s * 0.74, 1.08, 2.58);
-      // the tail: tall lamps on the bed's corners (tail, brake, reversing) and an indicator
+      // the tail: tall lamps on the bed's corners (tail lamp over brake lamp)
       box(group, TAIL, 0.1, 0.16, 0.03, s * 0.98, 1.44, -2.56);
       box(group, BRAKE, 0.1, 0.12, 0.03, s * 0.98, 1.29, -2.56);
-      box(group, AMBER, 0.1, 0.07, 0.03, s * 0.98, 1.195, -2.56);
-      box(group, REVERSE, 0.1, 0.07, 0.03, s * 0.98, 1.115, -2.56);
-      // black flares over the wheels
-      for (const z of [FZ, RZ]) place(group, new THREE.CylinderGeometry(R + 0.14, R + 0.14, 0.24, 10, 1, true, 0, Math.PI).rotateZ(Math.PI / 2), flare, s * (w / 2 + 0.06), R, z);
       // the lift: long shocks at each wheel, the frame rails
       for (const z of [FZ, RZ]) box(group, trim, 0.07, 0.56, 0.07, s * 0.62, 0.74, z - 0.18);
       box(group, trim, 0.1, 0.14, 4.6, s * 0.48, 0.86, 0);
@@ -510,7 +507,6 @@ export const ORIG3_MODELS = {
     box(group, chrome, w + 0.06, 0.18, 0.18, 0, 0.98, -2.62);                                 // a step bumper behind
     box(group, plate, 0.4, 0.14, 0.02, 0, 0.98, -2.715);
     for (const z of [FZ, RZ]) rod(group, trim, 0.07, 1.7, 0, R, z, 'x', 8);                   // the axles
-    rod(group, trim, 0.045, 0.6, 0.66, 0.8, -2.3, 'z', 8);                                    // the exhaust
     const keep = new Set();
     const geo = wheelGeo(R, 0.42), tyre = lambert(0x141414), hub = lambert(0xb8bcc2);
     for (const s of [-1, 1]) for (const z of [FZ, RZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub)) keep.add(part);
@@ -519,6 +515,87 @@ export const ORIG3_MODELS = {
       body: merged.get(paint),
       animate: () => {},
       livery: (evil) => bar.color.setHex(evil ? 0x17181b : 0x1d2238),
+    };
+    group.userData.livery(false);
+    return group;
+  },
+
+  // The Junker: a battered seventies pickup, stubby and boxy, with a lumpy load under a tarpaulin. Flat slab sides, the
+  // wheels at their corners; a flat, wide face: two round lamps stacked at each corner in chrome rims, an upright chrome
+  // grille of bars between them, a low bumper; a short bonnet; a square cab with a flat, overhanging roof in a darker
+  // shade and big dark glass; in the short bed one long tent of a tarpaulin, peaked like a ridge and higher than the cab,
+  // lashed with green rope. Rust eats the paint. It shudders as it idles.
+  junker: (car) => {
+    const group = new THREE.Group(), shell = new THREE.Group();
+    group.add(shell);
+    const L = car.hl, R = 0.42, WX = 0.95, FZ = L * 0.62, RZ = -L * 0.6;
+    const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(0xc4c7cb), dark = lambert(0x121418);
+    const roof = lambert(0x4f5532), bumper = lambert(0x7d8794), plate = lambert(0xece6cc);
+    const cover = new THREE.MeshLambertMaterial();
+    // the body: one flat-sided slab from the face to the tailgate, the bonnet sloping a little up to the cab, the bed's
+    // sides level behind it; the wheels stand at its corners
+    side(shell, paint, car.hw * 2, [[2.42, 0.46], [2.44, 1.1, 0.03], [1.1, 1.18], [-2.45, 1.18, 0.03], [-2.45, 0.46]], 0.04, 0, 3);
+    // the cab: square, close behind the bonnet, its windscreen raked, a flat roof overhanging it in a darker shade
+    side(shell, paint, 1.9, [[1.12, 1.14], [0.78, 1.74], [-0.38, 1.74], [-0.38, 1.14]], 0.03);
+    box(shell, roof, 1.98, 0.05, 1.3, 0, 1.79, 0.19);
+    box(shell, roof, 1.6, 0.012, 1.2, 0, 1.187, 1.75).rotation.x = 0.06;                        // (and a darker top to the bonnet)
+    const rake = Math.atan2(0.6, 0.34);
+    slab(shell, glass, 1.66, 0.02, 0.62, 0, 1.44 + 0.03 * Math.cos(rake), 0.95 + 0.03 * Math.sin(rake), rake); // big dark glass:
+    for (const s of [-1, 1]) prism(shell, glass, 0.02, [[0.98, 1.24], [0.76, 1.64], [-0.28, 1.64], [-0.28, 1.24]], s * 0.956);
+    box(shell, glass, 1.3, 0.3, 0.02, 0, 1.45, -0.42);
+    // the face: a stacked pair of round lamps at each corner, a chrome grille of upright bars between, a low bumper
+    box(shell, chrome, 1.02, 0.44, 0.03, 0, 0.84, 2.49);
+    box(shell, dark, 0.92, 0.36, 0.03, 0, 0.84, 2.5);
+    for (let i = -5; i <= 5; i++) box(shell, chrome, 0.03, 0.34, 0.03, i * 0.08, 0.84, 2.515);
+    box(shell, bumper, 2.06, 0.16, 0.16, 0, 0.44, 2.54);
+    box(shell, bumper, 2.0, 0.16, 0.16, 0, 0.44, -2.52);
+    for (const s of [-1, 1]) {
+      for (const y of [0.98, 0.74]) {
+        rod(shell, chrome, 0.105, 0.04, s * 0.77, y, 2.49, 'z', 10);
+        rod(shell, LAMP, 0.08, 0.04, s * 0.77, y, 2.5, 'z', 10);
+      }
+      box(shell, AMBER, 0.14, 0.06, 0.03, s * 0.77, 0.58, 2.49);                               // indicators
+      box(shell, dark, 0.05, 0.16, 0.12, s * 1.0, 1.4, 1.0);                                   // mirrors
+      // the tail: tall lamps at the corners (tail lamp over brake lamp)
+      box(shell, TAIL, 0.14, 0.14, 0.03, s * 0.84, 1.02, -2.495);
+      box(shell, BRAKE, 0.14, 0.12, 0.03, s * 0.84, 0.89, -2.495);
+    }
+    box(shell, plate, 0.34, 0.13, 0.02, 0, 0.8, -2.495);
+    // rust, eating the paint: the lower doors, over the wheels, the corners
+    const rusty = new THREE.MeshLambertMaterial({ map: rust(), alphaTest: 0.5 });
+    for (const s of [-1, 1]) {
+      const X = s * 1.006, f = s > 0 ? 'x' : '-x';
+      decal(shell, rusty, 1.2, 0.5, X, 0.72, 0.3, f, s > 0 ? [0, 0.8] : [0.2, 1]);
+      for (const z of [1.55, -1.5]) decal(shell, rusty, 1.1, 0.16, X, 1.07, z, f, [0.1, 0.9]);
+      for (const z of [2.24, -2.24]) decal(shell, rusty, 0.34, 0.56, X, 0.76, z, f, [0.5, 0.8]);
+    }
+    // the load: one long tent of a tarpaulin, peaked, higher than the cab, wider than the bed, soft at its ends
+    const ridge = new THREE.ExtrudeGeometry(outline([[-1.06, 1.17], [1.06, 1.17, 0.06], [0.58, 1.66, 0.2], [0.04, 2.04, 0.3], [-0.6, 1.64, 0.2]]),
+      { depth: 1.86, steps: 6, curveSegments: 3, bevelEnabled: true, bevelThickness: 0.06, bevelSize: 0.04, bevelSegments: 1 });
+    ridge.translate(0, 0, -2.38);
+    const pos = ridge.attributes.position;
+    for (let i = 0; i < pos.count; i++) { // (a pillow: lower and narrower towards each end)
+      const t = (pos.getZ(i) + 1.45) / 0.99, f = 1 - 0.32 * t ** 4;
+      pos.setY(i, 1.17 + (pos.getY(i) - 1.17) * f);
+      pos.setX(i, pos.getX(i) * (1 - 0.06 * t ** 4));
+    }
+    ridge.computeVertexNormals();
+    place(shell, ridge, cover);
+    const keep = new Set();
+    const geo = wheelGeo(R, 0.3), tyre = lambert(0x141414), hub = lambert(0xa8acb2);
+    for (const s of [-1, 1]) for (const z of [FZ, RZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub)) keep.add(part);
+    const merged = mergeByMaterial(shell, keep);
+    group.userData = {
+      body: merged.get(paint),
+      livery: (evil) => {
+        cover.map = tarpaulin(evil ? 'evil' : 'good', evil ? ['#c98a3e', '#9a6228', '#2f6a24'] : ['#b5a070', '#8a7650', '#2f6a24']);
+        cover.needsUpdate = true;
+        roof.color.setHex(evil ? 0x4a4845 : 0x4f5532);
+      },
+      animate: (t) => { // a rough idle: the body shudders on its springs
+        shell.position.y = Math.sin(t * 31) * 0.012;
+        shell.rotation.z = Math.sin(t * 23) * 0.008;
+      },
     };
     group.userData.livery(false);
     return group;

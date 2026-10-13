@@ -1847,64 +1847,8 @@ export const MODELS = {
     return group;
   },
 
-  // A rusty old pickup (a 70s full-size one): a long bonnet, a tall cab with a raked windscreen, an
-  // open load bed behind with a heap in it piled higher than the cab (purple for a good driver, yellow
-  // for an evil one), a door
-  // in grey primer, rust patches, one headlight out. It shudders as it idles.
-  junker: (car) => {
-    const group = new THREE.Group(), shell = new THREE.Group();
-    group.add(shell);
-    const w = car.hw * 2, l = car.hl * 2, R = 0.42;
-    const paint = lambert(car.color), rust = lambert(0x6b3a1f), dark = lambert(0x23262d), glass = lambert(GLASS);
-    const primer = lambert(0x8d9096), dull = lambert(0x9a9c9e);
-    const cabFront = l * 0.15, cabBack = -l * 0.09, bonnetFront = l / 2, top = 1.12, roof = 1.9;
-    const body = box(shell, paint, w, 0.55, l, 0, 0.85, 0);                                // the body sides
-    box(shell, paint, w * 0.92, 0.26, bonnetFront - cabFront - 0.1, 0, top + 0.13, (bonnetFront + cabFront + 0.1) / 2); // the long bonnet
-    box(shell, paint, w * 0.94, roof - top, cabFront - cabBack, 0, (top + roof) / 2, (cabFront + cabBack) / 2); // the cab
-    // the windscreen, raked back from the bonnet's tail to the cab roof
-    const fz = cabFront + 0.1, fy = top + 0.26, bz = cabFront - 0.18, by = roof;
-    screen(shell, glass, w * 0.86, 0.05, Math.hypot(fz - bz, by - fy), 0, (fy + by) / 2, (fz + bz) / 2, Math.atan2(by - fy, fz - bz));
-    box(shell, paint, w * 0.94, 0.06, cabFront - cabBack, 0, roof + 0.03, (cabFront + cabBack) / 2); // roof
-    box(shell, glass, w * 0.7, 0.34, 0.04, 0, roof - 0.3, cabBack - 0.01);                // back window
-    for (const side of [-1, 1]) {
-      box(shell, glass, 0.04, 0.36, (cabFront - cabBack) * 0.6, side * (w * 0.47 + 0.01), roof - 0.3, (cabFront + cabBack) / 2 - 0.05); // side windows
-      box(shell, paint, 0.1, 0.45, l / 2 + cabBack - 0.1, side * (w / 2 - 0.05), top + 0.22, (cabBack - l / 2) / 2 - 0.05); // bed sides
-      box(shell, dull, 0.12, 0.1, 0.1, side * (w / 2 + 0.06), roof - 0.35, cabFront - 0.05); // mirrors
-      wheel(group, R, 0.3, side * (w / 2 - 0.05), R, l * 0.31);
-      wheel(group, R, 0.3, side * (w / 2 - 0.05), R, -l * 0.3);
-    }
-    box(shell, paint, w, 0.45, 0.1, 0, top + 0.22, -l / 2 + 0.05);                       // tailgate
-    box(shell, dark, w * 0.86, 0.04, l / 2 + cabBack - 0.2, 0, top + 0.02, (cabBack - l / 2) / 2); // bed floor
-    // the heap in the bed, its colour by the driver's side (see livery)
-    const heap = lambert(0x8e44ad);
-    // (domes on the bed's floor, heaped high, over the cab's roof)
-    const dome = new THREE.SphereGeometry(1, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2);
-    for (const [x, y, z, sx, sy, sz] of [[0, top, -l * 0.29, w * 0.44, 1.3, l * 0.18], [-w * 0.17, top, -l * 0.17, w * 0.28, 0.85, l * 0.1],
-      [w * 0.18, top, -l * 0.42, w * 0.27, 0.75, l * 0.08], [-w * 0.08, top + 0.7, -l * 0.31, w * 0.24, 0.6, l * 0.1]]) {
-      const lump = new THREE.Mesh(dome, heap);
-      lump.scale.set(sx, sy, sz);
-      lump.position.set(x, y, z);
-      shell.add(lump);
-    }
-    box(shell, primer, 0.05, 0.5, (cabFront - cabBack) * 0.8, -w / 2 - 0.01, 1.0, (cabFront + cabBack) / 2); // a door in primer
-    box(shell, rust, 0.05, 0.3, l * 0.18, w / 2 + 0.01, 0.78, -l * 0.3);                // rust patches
-    box(shell, rust, w * 0.45, 0.03, l * 0.1, w * 0.15, top + 0.27, l * 0.38);
-    box(shell, dull, w * 0.6, 0.3, 0.05, 0, 0.92, l / 2 + 0.01);                        // the grille
-    box(shell, dull, w + 0.1, 0.16, 0.14, 0, 0.56, l / 2 + 0.04);                       // bumpers
-    box(shell, dull, w + 0.1, 0.16, 0.14, 0, 0.56, -l / 2 - 0.04);
-    disc(shell, LAMP, 0.13, 0.06, -w * 0.38, 0.92, l / 2 + 0.02);                       // one headlight works...
-    disc(shell, dark, 0.13, 0.06, w * 0.38, 0.92, l / 2 + 0.02);                        // ...the other's out
-    for (const side of [-1, 1]) box(shell, TAIL, w * 0.12, 0.2, 0.08, side * w * 0.4, 0.95, -l / 2 - 0.01);
-    group.userData = {
-      body,
-      livery: (evil) => heap.color.setHex(evil ? 0xe0bd1c : 0x8e44ad), // (a yellow heap of who knows what, or a purple one)
-      animate: (t) => { // a rough idle: the body shudders on its springs
-        shell.position.y = Math.sin(t * 31) * 0.012;
-        shell.rotation.z = Math.sin(t * 23) * 0.008;
-      },
-    };
-    return group;
-  },
+  // The Junker: render/modelsOrig3.js
+  junker: ORIG3_MODELS.junker,
 
   // A small, low sports coupe: wedge nose, a centre stripe, a wing on the back.
   sport: (car) => {
