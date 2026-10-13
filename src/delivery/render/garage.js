@@ -9,7 +9,7 @@ import { Nav } from '../nav.js';
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { Ecu } from '../ecu.js';
-import { CAR, carInUse, selectCar, stars, starColour, STAR_COLOURS, garageCars, carRule, ruleAllows, setViewSide, carAllowedOn, carTier, isTeaser, forSale, EVENT_CARS } from '../cars.js';
+import { CAR, carById, carInUse, selectCar, stars, starColour, STAR_COLOURS, garageCars, carRule, ruleAllows, setViewSide, carAllowedOn, carTier, isTeaser, forSale, EVENT_CARS } from '../cars.js';
 import { levelName } from '../levelText.js';
 import { LEVELS } from '../levels.js';
 import { Tiers, tierStarsNode, richTiers } from '../tiers.js';
@@ -556,12 +556,13 @@ export const Garage = {
   },
   // the model inspector (render/inspector.js) on the car with this id: an idea (its previous / next: every idea, in the
   // list's order) or a car of the lot (its cars as parked); evil: the livery (the garage's on show, unless told). Closing
-  // it leaves that car looked at, on its own tab. ?garage&tab=ideas&inspect=<id>[&evil] (main.js). False: no such car
+  // it leaves that car looked at, on its own tab. ?garage&tab=ideas&inspect=<id>[&evil] (main.js); a car that is not parked
+  // here (a key car of the showroom) opens by its id alone, with no previous / next. False: no such car
   inspect(id, evil = this.evil) {
     const idea = IDEA_CARS.find(car => car.id === id), lot = order.filter(car => car && !isTeaser(car) && !car.silhouette);
-    const car = idea || lot.find(c => c.id === id) || (looking?.id === id ? looking : null) || (carInUse().id === id ? carInUse() : null);
+    const parked = lot.find(c => c.id === id), car = idea || parked || carById(id); // (any other car of the roster, by address: a key car, alone)
     if (!car || isTeaser(car) || car.silhouette) return false;
-    return Inspector.open(car, { list: idea ? IDEA_CARS : lot, evil, kind: idea ? 'ideas' : 'cars', done: (shown) => {
+    return Inspector.open(car, { list: idea ? IDEA_CARS : parked ? lot : [car], evil, kind: idea ? 'ideas' : 'cars', done: (shown) => {
       if (!this.isOpen) return;
       if (IDEA_CARS.includes(shown)) { if (!IdeasLot.on) IdeasLot.enter(); IdeasLot.look(shown.id); } else this.look(shown.id);
     } });
