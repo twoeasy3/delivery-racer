@@ -35,6 +35,7 @@
 // promoted to the roster as tier-4 Legendary blueprint cars the same day (cars.js FILLER_CARS): 41 left.
 // The sixth batch, five more (CHECKLIST item 171): two older vehicles (a blown vintage tourer, a split-level highway
 // coach) and three modern ones (a horseshoe-grilled hypercar, a tall electric city car, a coupe crossover): 46 ideas.
+// One more (CHECKLIST item 302): a tiny three-seat concept city car under a glass bubble (render/ideaModels10.js).
 
 // ============================================================================
 export const IDEA_CARS = [
