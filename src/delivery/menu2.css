@@ -504,3 +504,79 @@
 @media (min-width: 761px) and (max-width: 900px), (max-height: 520px) and (min-width: 520px) and (max-width: 900px) {
   #startScreen h1 { font-size: 24px; }
 }
+/* ---- a special event of ONE stage on the full level card (render/menustage.js eventExtras: the Car Hunt). Over the name, its
+   tags (live or closed, the car rule's stars, how it recurs); at the card's right, its prize: a panel whose top the car's still
+   rises out of (the hunt car or the grand prize, its name and stars, its odds), and the pack it gives, tilted, with a ribbon
+   across it. The words keep clear of it (the info's padding). A phone held upright: the prize is a row over the words ---- */
+#startScreen .menu-stage { --cx-w: clamp(220px, 31%, 330px); }
+#startScreen .menu-stage.has-extras .info { padding-right: calc(var(--cx-w) + 34px); }
+#startScreen .menu-stage .cx-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 2px; }
+#startScreen .cx-tag { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px 3px; border-radius: 5px; font: 800 11px/1.25 system-ui, sans-serif; letter-spacing: .08em;
+  text-transform: uppercase; color: #fff; background: rgba(14, 18, 26, .84); box-shadow: inset 0 0 0 1px var(--line); white-space: nowrap; }
+#startScreen .cx-tag.live { background: #1d7f47; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25); }
+#startScreen .cx-tag.live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #7dffb2; box-shadow: 0 0 6px #7dffb2; animation: cx-pulse 1.6s ease-in-out infinite; }
+#startScreen .cx-tag.shut { background: #7a2a20; }
+#startScreen .cx-tag.rule { background: rgba(14, 18, 26, .9); box-shadow: inset 0 0 0 1.5px #ffd23f; }
+#startScreen .cx-tag .tierstars { font-size: 13px; line-height: 1; }
+@keyframes cx-pulse { 50% { opacity: .35; } }
+#startScreen .card-extras { position: absolute; right: 16px; bottom: 16px; width: var(--cx-w); display: flex; flex-direction: column; gap: 8px; padding: 0 12px 12px; }
+/* (the panel: from a third of the car's height down, so the car stands out of its top edge like a prize on a plinth) */
+#startScreen .card-extras::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; top: calc(var(--cx-w) * .2); z-index: -1; border-radius: 12px;
+  background: linear-gradient(165deg, rgba(38, 62, 104, .94), rgba(16, 21, 33, .96) 70%); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12), 0 12px 30px rgba(0, 0, 0, .55); }
+#startScreen .card-extras.shut { filter: saturate(.6); }
+#startScreen .cx-car { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; }
+#startScreen .cx-car::before { content: ""; position: absolute; left: 6%; right: 6%; top: 4%; height: 62%; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 226, 140, .30), rgba(255, 210, 63, .08) 60%, transparent); }
+#startScreen .cx-still { width: 100%; aspect-ratio: 16 / 9; filter: drop-shadow(0 12px 10px rgba(0, 0, 0, .55)); }
+#startScreen .cx-label { font: 800 10px/1 system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+#startScreen .cx-car > .cx-label { position: absolute; left: -2px; top: calc(var(--cx-w) * .2 + 9px); z-index: 1; }
+#startScreen .cx-name { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 0 7px; margin-top: -4px; }
+#startScreen .cx-name strong { font: italic 800 clamp(17px, 1.6vw, 24px)/1.05 var(--display); text-transform: uppercase; text-shadow: 0 2px 4px rgba(0, 0, 0, .7); }
+#startScreen .cx-stars { font-size: 15px; letter-spacing: .06em; }
+#startScreen .cx-odds { margin-top: 3px; font-size: 11px; font-weight: 600; color: #c9d2df; }
+#startScreen .cx-pack { display: flex; align-items: center; gap: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, .1); }
+#startScreen .cx-art { position: relative; flex: 0 0 auto; width: 72px; height: 100px; transform: rotate(6deg); }
+#startScreen .cx-art .event-pack-art { margin: 0; }
+#startScreen .cx-art .event-pack-art .shop-packs { filter: drop-shadow(0 8px 10px rgba(0, 0, 0, .55)); }
+/* (the ribbon across the pack's foot, as a shop's sale band) */
+#startScreen .cx-ribbon { position: absolute; left: -10px; right: -10px; bottom: 16px; padding: 3px 0 2px; transform: rotate(-12deg); pointer-events: none; text-align: center;
+  font: italic 800 11px/1.2 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--accent-ink); background: var(--accent);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, .5); clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 50%, 100% 100%, 0 100%, 6px 50%); }
+#startScreen .cx-pack-words { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+#startScreen .cx-pack-words strong { font: italic 800 16px/1.1 var(--display); text-transform: uppercase; }
+#startScreen .cx-pack-words > span { font-size: 11px; color: #c9d2df; }
+#startScreen .cx-pack-words .event-inside { margin-top: 5px; }
+#startScreen .menu-stage.no-car .card-extras::before { top: 0; }
+@media (prefers-reduced-motion: reduce) { #startScreen .cx-tag.live::before { animation: none; } }
+/* (a phone held upright, a narrow window: the prize a row over the words, the car on the left, the pack on the right) */
+@media (max-width: 760px) and (min-height: 521px), (max-width: 519px) {
+  #startScreen .menu-stage.has-extras .info { padding-right: 32px; }
+  #startScreen .card-extras { position: relative; right: auto; bottom: auto; width: auto; margin: 0 10px 8px; padding: 0 8px 8px; flex-direction: row; align-items: flex-end; gap: 8px; }
+  #startScreen .card-extras::before { top: 34px; }
+  #startScreen .cx-car { flex: 1 1 56%; min-width: 0; }
+  #startScreen .cx-still { aspect-ratio: 16 / 9; }
+  #startScreen .cx-car > .cx-label { top: 42px; left: 0; }
+  #startScreen .cx-name strong { font-size: 16px; }
+  #startScreen .cx-stars { font-size: 12px; }
+  #startScreen .cx-odds { font-size: 10px; }
+  #startScreen .cx-pack { flex: 1 1 44%; min-width: 0; flex-direction: column; align-items: center; gap: 4px; padding: 0; border: 0; text-align: center; }
+  #startScreen .cx-art { width: 58px; height: 80px; }
+  #startScreen .cx-art .event-pack-art { width: 58px; height: 80px; }
+  #startScreen .cx-art .event-pack-art .shop-packs { transform: scale(.69); }
+  #startScreen .cx-ribbon { bottom: 12px; font-size: 10px; }
+  #startScreen .cx-pack-words { align-items: center; }
+  #startScreen .cx-pack-words > small, #startScreen .cx-pack-words > span { display: none; }
+  #startScreen .cx-pack-words strong { font-size: 13px; }
+  #startScreen .cx-pack-words .event-inside { margin-top: 2px; padding: 3px 8px; font-size: 11px; }
+}
+/* (a short window, a phone on its side: the prize smaller, the pack's words left out but its button) */
+@media (max-height: 520px) and (min-width: 520px) {
+  #startScreen .menu-stage { --cx-w: clamp(170px, 30%, 230px); }
+  #startScreen .card-extras { right: 10px; bottom: 10px; padding: 0 8px 8px; gap: 4px; }
+  #startScreen .cx-odds, #startScreen .cx-pack-words > span, #startScreen .cx-pack-words > small { display: none; }
+  #startScreen .cx-art { width: 50px; height: 70px; }
+  #startScreen .cx-art .event-pack-art { width: 50px; height: 70px; }
+  #startScreen .cx-art .event-pack-art .shop-packs { transform: scale(.6); }
+  #startScreen .cx-ribbon { font-size: 9px; bottom: 10px; }
+  #startScreen .menu-stage.has-extras .info .road { right: calc(var(--cx-w) + 20px); }
+}

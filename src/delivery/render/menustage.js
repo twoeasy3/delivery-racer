@@ -108,13 +108,16 @@ for (let i = 0; i < RACE_LEVELS.length; i += 5) TABS.race.groups.push([i, Math.m
 // the amphibious, A). A group's third item is its tier number, 'events' or 'special:<id>'.)
 // Built again when the events on change (draw)
 let liveKey = null;
+const stagesOf = (e) => e.stages.map(s => s.level).filter(Boolean);
+// (a special event of exactly one stage (the Car Hunt) is a single-level event: listed among them, and drawn as one, on the
+// full level card with its extras on it (eventExtras); one of more stages (the Comet Hunt) has its event screen (eventPanel))
+const oneStage = (event) => !!event && stagesOf(event).length === 1;
 const buildTabs = () => {
   if (!Tiers.on()) return;
   const live = Tiers.liveEvents(), specials = Events.shownSpecials(), key = [...live, ...specials].map(x => x.id).join(); // (a recurring event is listed between its runs too)
   if (key === liveKey) return;
   liveKey = key;
-  const stagesOf = (e) => e.stages.map(s => s.level).filter(Boolean);
-  const singles = specials.filter(e => stagesOf(e).length === 1), series = specials.filter(e => stagesOf(e).length > 1);
+  const singles = specials.filter(oneStage), series = specials.filter(e => stagesOf(e).length > 1);
   const events = [...live, ...singles.map(e => stagesOf(e)[0])], eventGroups = [];
   if (events.length) eventGroups.push([0, events.length, 'events']);
   for (const e of series) { const n = stagesOf(e).length; eventGroups.push([events.length, events.length + n, 'special:' + e.id]); events.push(...stagesOf(e)); }
@@ -282,7 +285,11 @@ const drawStage = () => {
   if (cargo) cargo.title = (evil ? 'What you are delivering as Evil: ' : 'What you are delivering as Good: ') + carried.name;
   wantCargo(carried, ring);
   const event = Tiers.on() && Tiers.isEvent(level) ? Tiers.eventOf(level) : null;
+  // (a special event of one stage, the Car Hunt: the full level card, with the event's extras drawn on it: eventExtras)
+  const single = Events.isStage(level) && oneStage(Events.stageOf(level).event) ? Events.stageOf(level).event : null;
+  const extras = single ? eventExtras(single, level, open) : null;
   const info = make('div', 'info',
+    extras?.tags,
     make('h2', '', levelName(level)),
     open && words ? make('p', 'desc', words) : null,
     open ? make('div', 'facts',
@@ -292,6 +299,7 @@ const drawStage = () => {
     needs ? make('p', 'needs' + (open && !Game.canStart ? ' warn' : ''), ...richTiers(needs)) : null,
     // (an event: how long it is on for, and its reward)
     event?.to ? ends(event.to) : null,
+    single ? eventCount(Events.countdownOf(single)) : null,
     event?.reward ? make('p', 'prize', 'Reward: ' + Tiers.rewardWords(level) + (Tiers.rewardClaimed(level) ? ' (yours)' : ' for delivering it on time')) : null,
     open && place ? make('p', 'prize', tierStarsNode(place.tier), ' medals ' + Tiers.tierMedals(place.tier) + '/' + Tiers.tiers[place.tier - 1].length * 2) : null,
     prizeLine ? make('p', 'prize', prizeLine) : null,
@@ -315,9 +323,10 @@ const drawStage = () => {
     toggle.title = toggle.ariaLabel = showDesc ? 'Show the level’s figures' : 'Show the level’s description';
   };
   toggle?.addEventListener('click', () => { showDesc = !showDesc; blip('menuPick'); paintToggle(); });
-  stage.replaceChildren(shot, plate, ribbon, cargo, info, ...arrows, ...(toggle ? [toggle] : []));
+  stage.replaceChildren(shot, plate, ribbon, ...(cargo ? [cargo] : []), ...(extras ? [extras.node] : []), info, ...arrows, ...(toggle ? [toggle] : []));
   // (a new level slides in; the other side only swaps the words)
-  stage.className = 'menu-stage' + (open ? '' : ' locked') + (drawn && !sameLevel ? ' enter' : drawn && drawn !== key ? ' flip' : '');
+  stage.className = 'menu-stage' + (open ? '' : ' locked') + (extras ? ' has-extras' + (extras.car ? '' : ' no-car') : '') + (drawn && !sameLevel ? ' enter' : drawn && drawn !== key ? ' flip' : '');
+  if (extras) requestAnimationFrame(extras.draw); // (its car's still, once laid out)
   if (toggle) paintToggle();
   drawn = key;
 };
@@ -511,21 +520,19 @@ export const draw = () => {
   // (where the groups are a row to swipe along, the one shown is brought into it)
   const chip = groupBox.children[shown];
   if (chip && groupBox.scrollWidth > groupBox.clientWidth) groupBox.scrollTo({ left: chip.offsetLeft - (groupBox.clientWidth - chip.offsetWidth) / 2 });
-  const special = Events.stageOf(cursor)?.event; // (a special event's stage picked: its screen, in place of the level card and the strip)
-  startScreen.classList.toggle('eventview', !!special);
-  // (...but a one-stage event among the single-level events keeps the strip: the way to the others in the group)
-  const keepStrip = !!special && inSingles(cursor) && last - first > 1;
-  startScreen.classList.toggle('eventstrip', keepStrip);
-  if (special) {
+  // (a stage of a special event of more stages picked: its screen, in place of the level card and the strip. A special event
+  // of ONE stage, the Car Hunt, is a single-level event: the level card with its extras (drawStage), the strip under it)
+  const special = Events.stageOf(cursor)?.event, series = special && !oneStage(special) ? special : null;
+  startScreen.classList.toggle('eventview', !!series);
+  if (series) {
     drawn = null;
     const left = stage.querySelector('.event-row')?.scrollLeft || 0; // (the row where it was scrolled to: picking a card draws it again)
-    stage.replaceChildren(eventPanel(special, cursor, Game.evil && !oneSided(cursor)));
+    stage.replaceChildren(eventPanel(series, cursor, Game.evil && !oneSided(cursor)));
     const row = stage.querySelector('.event-row'), picked = row?.querySelector('.picked');
     if (row) {
       row.scrollLeft = left;
       if (picked && (picked.offsetLeft < row.scrollLeft || picked.offsetLeft + picked.offsetWidth > row.scrollLeft + row.clientWidth)) row.scrollLeft = picked.offsetLeft - 8; // (the card picked in view)
     }
-    if (keepStrip) drawStrip(first, last);
   } else {
     drawStage();
     drawStrip(first, last);
@@ -773,34 +780,85 @@ const eventPanel = (event, picked, evil) => {
 // its name, how it recurs and its countdown (Ends in / Next in), the car it hunts (the car its pack features, drawn
 // still in its Good livery, as the Comet Hunt's prize) and the pack every run gives (its art, the Shop's; a tap or its
 // "What's inside" opens the pack's sheet, render/packcontents.js, with the x1 / x3 odds)
+// what a special event offers, from its definition alone (events.json: its stage's car rule, its prize, how it recurs; packs.json:
+// the pack it gives, `every` run first, and the car that pack features): { give, car, hunt, odds, rule, often }. car: the car
+// its pack features (hunt: true; odds: its blueprint chances, 'x1 90% · x3 10%'), else its grand prize (events.json prize.car)
+const extrasOf = (event) => {
+  const packs = eventPacks(event.id), give = packs.find(p => p.every) || packs[0] || null;
+  const featured = give ? featuredOf(give.id) : [], hunted = featured[0]?.car || null;
+  let odds = '';
+  if (hunted) {
+    const c = contents(give.id, { featured }), lines = (c?.featured || []).filter(f => f.car === hunted && !f.key && f.inPlay);
+    odds = lines.length ? lines.map(f => 'x' + (f.amount ?? 1) + ' ' + percent(f.lastSlot)).join(' · ') : 'Car maxed';
+  }
+  const first = event.stages[0], rule = first?.level?.allowedCars && !first.car ? listRule(first.level) : null;
+  const r = event.repeat, often = r ? (r.every === 7 ? r.live + ' days every week' : r.live + ' days every ' + r.every) : '';
+  return { give, car: hunted || Events.prizeCar(event), hunt: !!hunted, odds, rule, often };
+};
+// a pack's art as a button, and its What's inside: both open the pack's sheet (render/packcontents.js)
+const packButtons = (id) => {
+  const inside = () => { blip('menuPick'); openInside(id); };
+  const art = make('button', 'event-pack-art', packArt(id));
+  art.title = 'What’s inside the ' + packName(id);
+  art.addEventListener('click', inside);
+  const link = make('button', 'menu-chip event-inside', 'What’s inside');
+  link.addEventListener('click', inside);
+  return { art, link };
+};
 const huntHead = (event, drawLater) => {
-  const give = eventPacks(event.id).find(p => p.every) || eventPacks(event.id)[0] || null;
-  const featured = give ? featuredOf(give.id) : [], car = featured[0]?.car || null;
-  const r = event.repeat, rule = event.stages[0]?.level?.allowedCars ? listRule(event.stages[0].level) : null;
-  const often = r.every === 7 ? r.live + ' days every week' : r.live + ' days every ' + r.every;
+  const { give, car, hunt, odds, rule, often } = extrasOf(event);
   const title = make('div', 'event-title', make('h2', '', event.name),
     make('p', '', 'Recurring: ' + often), eventCount(Events.countdownOf(event)),
     rule ? make('p', 'event-rule', ...richTiers(rule.label), ' only') : null);
   const out = [title];
-  if (car) {
+  if (car && hunt) {
     const view = make('div', 'event-car');
-    const c = contents(give.id, { featured }), odds = (c?.featured || []).filter(f => f.car === car && !f.key && f.inPlay);
-    const words = odds.length ? odds.map(f => 'x' + (f.amount ?? 1) + ' ' + percent(f.lastSlot)).join(' · ') : 'Car maxed';
     out.push(make('div', 'event-prize event-hunt', make('small', '', 'Hunt car'), view,
-      make('div', 'event-prize-words', make('strong', '', car.name), make('span', '', 'Blueprints: ' + words))));
+      make('div', 'event-prize-words', make('strong', '', car.name), make('span', '', 'Blueprints: ' + odds))));
     drawLater.push([view, car, false]); // (its Good livery, whatever the side)
   }
   if (give) {
-    const inside = () => { blip('menuPick'); openInside(give.id); };
-    const art = make('button', 'event-pack-art', packArt(give.id));
-    art.title = 'What’s inside the ' + packName(give.id);
-    art.addEventListener('click', inside);
-    const link = make('button', 'menu-chip event-inside', 'What’s inside');
-    link.addEventListener('click', inside);
+    const { art, link } = packButtons(give.id);
     out.push(make('div', 'event-prize event-pack', make('small', '', 'Reward'), art,
       make('div', 'event-prize-words', make('strong', '', packName(give.id)), make('span', '', give.every ? 'Every run: a ' + packName(give.id) : describePack(give.id)), link)));
   }
   return make('div', 'event-head hunt', ...out);
+};
+// ---- a special event of ONE stage on the full level card (the owner, 13-Oct: "Since it is a single event, render the full
+// event card and draw the extras on it"). drawStage draws the level card as for any single-level event (Christmas Eve: the
+// picture, EVENT n, the medals, the cargo, the name, the clock, tip and best time, the countdown, START), and these on it,
+// each from the event's definition (extrasOf), each left out where the event has none:
+//   tags, over the name: the stage's state (LIVE NOW, or SHUT between runs / before or after it), its car rule (a badge
+//     with the stars: "★★★ cars only"), how it recurs;
+//   the prize, at the card's right (a phone: a row over the words): the car it hunts (the car its pack features, drawn
+//     still in its Good livery, its name and stars, its blueprint odds) or its grand prize car; and the pack it gives,
+//     its art tilted over the car's corner with a ribbon ("Every run" for a pack on every delivery), a tap or its
+//     What's inside opening the pack's sheet.
+// { node, tags, car, draw } (draw: the car's still, once laid out)
+const eventExtras = (event, level, open) => {
+  const { give, car, hunt, odds, rule, often } = extrasOf(event);
+  const st = Events.state(event, level.stage.index);
+  const tags = make('div', 'cx-tags',
+    make('span', 'cx-tag ' + (st.open ? 'live' : 'shut'), st.open ? 'Live now' : 'Closed'),
+    rule ? make('span', 'cx-tag rule', ...richTiers(rule.label), ' only') : null,
+    often ? make('span', 'cx-tag often', '↻ ' + often) : null);
+  const view = car ? make('div', 'event-car cx-still') : null;
+  const prize = car ? make('div', 'cx-car',
+    make('small', 'cx-label', hunt ? 'Hunt car' : 'Grand prize'),
+    view,
+    make('div', 'cx-name', make('strong', '', car.name), car.tier || car.rating ? make('span', 'cx-stars', stars(car)) : null),
+    make('span', 'cx-odds', hunt ? 'Blueprints ' + odds : Events.prizeWon(event) ? 'Won!' : 'Deliver it on time to win it')) : null;
+  prize?.querySelector('.cx-stars')?.style.setProperty('color', starColour(car));
+  let pack = null;
+  if (give) {
+    const { art, link } = packButtons(give.id);
+    pack = make('div', 'cx-pack',
+      make('div', 'cx-art', art, make('span', 'cx-ribbon', give.every ? 'Every run' : give.prize ? 'Prize' : 'Reward')),
+      make('div', 'cx-pack-words', make('small', 'cx-label', 'Reward'), make('strong', '', packName(give.id)),
+        make('span', '', give.every ? 'Every run: a ' + packName(give.id) : describePack(give.id)), link));
+  }
+  const node = make('div', 'card-extras' + (open ? '' : ' shut'), prize, pack);
+  return { node, tags, car, draw: () => { if (view && node.isConnected) stillCar(view, car, false); } }; // (its Good livery, whatever the side)
 };
 // a pack's What's inside over the menu (render/packcontents.js, as the Shop opens it); Enter starts nothing while it is up,
 // Escape closes it
