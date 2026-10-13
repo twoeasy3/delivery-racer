@@ -38,6 +38,8 @@
 // (Four of the sixth batch were promoted the same day, and the Horseshoe became a key car: 41 left.) The seventh batch,
 // three CONCEPT CARS, show cars that never went on sale (the owner, 13-Oct): a knife-edged mid-engined supercar, a
 // sixteen-cylinder grand coupe and a flame-bodied Le Mans prototype (models: render/ideaModels7.js): 44 ideas.
+// The eighth batch, one CONCEPT CAR (a show car that never went on sale; the owner, 13-Oct): a quad-turbo mid-engined
+// supercar with a big glass canopy and a long tail (model: render/ideaModels8.js): one more idea.
 
 // ============================================================================
 export const IDEA_CARS = [
@@ -178,6 +180,10 @@ export const IDEA_CARS = [
   { id: 'windsong', name: 'Wind-Song Racer', basedOn: 'Mazda Furai (2007 concept car)', model: 'windsong', color: 0xe2531d, evilColor: 0x4e2c68,
     hw: 1.0, hl: 2.33, height: 1.06, note: 'A Le Mans racer with a number plate, a rotary scream and flames flowing down its flanks.',
     maxSpeed: 47, accel: 20, agility: 1.45, crossing: 0.15, health: 120, mass: 1, sound: 'rotary' },
+  // (the eighth batch: one concept car, a show car that never went on sale; its model in render/ideaModels8.js)
+  { id: 'quadturbo', name: 'Quad-Turbo Supercar', basedOn: 'Chrysler ME Four-Twelve (2004 concept car)', model: 'quadturbo', color: 0xd2ad5c, evilColor: 0x6a1622,
+    hw: 1.0, hl: 2.27, height: 1.14, note: 'Four turbochargers behind your back, a glass bubble of a cabin pushed right forward and a long tail to keep it all down.',
+    maxSpeed: 47, accel: 19, agility: 1.3, crossing: 0.2, health: 150, mass: 1.2, sound: 'gt' },
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
 export const IDEA_CAR = Object.fromEntries(IDEA_CARS.map(car => [car.id, car]));
