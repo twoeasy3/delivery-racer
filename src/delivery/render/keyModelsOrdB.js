@@ -120,3 +120,47 @@ const carfob = (car, { rarity = 'bespoke' } = {}) => {
   return idle(group, merged(k));
 };
 registerKey('carfob', carfob);
+
+// ---- (7) the CARD key: a flat rounded card (the 1990s hatch's, and today's NFC card), its tongue down (the end that
+// goes into the dash slot) ----
+const cardkey = (car, { rarity = 'bespoke' } = {}) => {
+  const group = new THREE.Group(), k = new THREE.Group();
+  const paint = paintOf(car);
+  const BODY = metal(0x1d2026, 70), STRIPE = metal(paint.getHex(), 70), INK = metal(inkOn(paint), 90), RUBBER = lambert(0x34383f);
+  const BUTTON = metal(0x4a4f58, 50), WHITE = metal(0xe8ecf2, 80), GOLD = metal(0xd2ab4e, 100), CHROME = metal(0xd4d8de, 110), BACK = metal(0x2a2e35, 30);
+  // the card: its shoulders step in to a narrower tongue at the bottom (a keyway-like notch each side)
+  const P = [[-0.74, -1.72, 0.12], [0.74, -1.72, 0.12], [0.74, -1.28, 0.04], [1.06, -1.12, 0.06], [1.06, 1.7, 0.24], [-1.06, 1.7, 0.24], [-1.06, -1.12, 0.06], [-0.74, -1.28, 0.04]];
+  const D = 0.22, B = 0.04, FRONT = D / 2 + B; // (the face at z = 0.15)
+  const shape = outline(P, 0.1);
+  shape.holes.push(outline([[-0.86, 1.36], [-0.44, 1.36], [-0.44, 1.52], [-0.86, 1.52]], 0.08, 0, new THREE.Path())); // (the lanyard slot)
+  slab(k, BODY, shape, D, B, 0, 3);
+  // the rarity's rim round the face's broad part
+  const F = [[-0.96, -1.02], [0.96, -1.02], [0.96, 1.6], [-0.96, 1.6]];
+  rainbow(band(k, rimMaterial(rarity), F, 0.18, -0.045, 0, 0.03, FRONT + 0.003, 3), 0, 0.3);
+  // the stripe of the car's colour, the initial on it
+  slab(k, STRIPE, outline([[-0.86, 0.6], [0.86, 0.6], [0.86, 1.18], [-0.86, 1.18]], 0.08), 0.04, 0, FRONT + 0.005, 2);
+  glyph(k, INK, initialOf(car), 0.36, FRONT + 0.015, FRONT + 0.04, -0.52, 0.89);
+  // the chip: a gold pad with its contacts' lines
+  box(k, GOLD, 0.42, 0.34, 0.03, -0.48, 0.12, FRONT);
+  for (const [w, h, x, y] of [[0.42, 0.025, -0.48, 0.12], [0.025, 0.34, -0.48, 0.12], [0.12, 0.025, -0.38, 0.03]]) box(k, BODY, w, h, 0.03, x, y, FRONT + 0.008);
+  // the button strip: a rubber pad, three buttons (lock, unlock, the boot), a white mark on each
+  slab(k, RUBBER, outline([[-0.88, -0.86], [0.88, -0.86], [0.88, -0.32], [-0.88, -0.32]], 0.12), 0.05, 0, FRONT + 0.01, 2);
+  [-0.56, 0, 0.56].forEach((x, i) => {
+    const y = -0.59;
+    box(k, BUTTON, 0.46, 0.4, 0.06, x, y, FRONT + 0.04);
+    if (i < 2) padlock(k, WHITE, x, y + 0.02, FRONT + 0.075, 0.26, i === 1);
+    else { // (the boot: an open lid over a sill, an arrow up)
+      box(k, WHITE, 0.26, 0.045, 0.03, x, y - 0.1, FRONT + 0.075);
+      box(k, WHITE, 0.045, 0.16, 0.03, x, y - 0.01, FRONT + 0.075);
+      for (const s of [1, -1]) box(k, WHITE, 0.045, 0.12, 0.03, x + s * 0.035, y + 0.06, FRONT + 0.077).rotation.z = s * 0.75;
+    }
+  });
+  // the emergency blade's chrome head out of the top edge, its grip ridged
+  box(k, CHROME, 0.4, 0.24, 0.16, 0.56, 1.76, 0);
+  box(k, BODY, 0.3, 0.03, 0.17, 0.56, 1.8, 0);
+  // the back: a raised panel, a small slot for the blade's release
+  slab(k, BACK, outline([[-0.9, -0.95], [0.9, -0.95], [0.9, 1.25], [-0.9, 1.25]], 0.14), 0.04, 0, -FRONT - 0.005, 2);
+  box(k, CHROME, 0.3, 0.06, 0.03, 0.56, 1.4, -FRONT - 0.02);
+  return idle(group, merged(k));
+};
+registerKey('cardkey', cardkey);
