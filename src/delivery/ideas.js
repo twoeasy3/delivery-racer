@@ -173,25 +173,25 @@ export const IDEA_CARS = [
     hw: 0.95, hl: 2.85, height: 2.4, note: 'No doors, three rows of seats climbing under a canopy, and a chair for the tracker out on the bull bar.',
     maxSpeed: 28, accel: 8, agility: 0.95, crossing: 1, health: 240, mass: 2, sound: 'suv' },
   // (the seventh batch: three concept cars, show cars that never went on sale; models in render/ideaModels7.js)
-  { id: 'knifeedge', name: 'Knife-Edge Supercar', basedOn: 'Cadillac Cien (2002 concept car)', model: 'knifeedge', color: 0xaab3be, evilColor: 0xb23a56,
+  { id: 'knifeedge', keyModel: 'wedgefob', name: 'Knife-Edge Supercar', basedOn: 'Cadillac Cien (2002 concept car)', model: 'knifeedge', color: 0xaab3be, evilColor: 0xb23a56,
     hw: 1.0, hl: 2.23, height: 1.13, note: 'All flat facets and sharp creases, with lamps stacked up its wings like blades and its engine behind you.',
     maxSpeed: 47, accel: 19, agility: 1.35, crossing: 0.2, health: 150, mass: 1.2, sound: 'lmp' },
-  { id: 'sixteen', name: 'Sixteen-Cylinder Coupe', basedOn: 'Cadillac Sixteen (2003 concept car)', model: 'sixteen', color: 0x9aa1a9, evilColor: 0x5d6070,
+  { id: 'sixteen', keyModel: 'artisan', name: 'Sixteen-Cylinder Coupe', basedOn: 'Cadillac Sixteen (2003 concept car)', model: 'sixteen', color: 0x9aa1a9, evilColor: 0x5d6070,
     hw: 1.0, hl: 2.84, height: 1.4, note: 'A bonnet half the car long over sixteen cylinders, wheels nearly as tall as a child, and the cabin far back where it belongs.',
     maxSpeed: 40, accel: 14, agility: 0.95, crossing: 0.3, health: 280, mass: 1.9, sound: 'classicgt' },
-  { id: 'windsong', name: 'Wind-Song Racer', basedOn: 'Mazda Furai (2007 concept car)', model: 'windsong', color: 0xe2531d, evilColor: 0x8d56bc,
+  { id: 'windsong', keyModel: 'startfob', name: 'Wind-Song Racer', basedOn: 'Mazda Furai (2007 concept car)', model: 'windsong', color: 0xe2531d, evilColor: 0x8d56bc,
     hw: 1.0, hl: 2.33, height: 1.06, note: 'A Le Mans racer with a number plate, a rotary scream and flames flowing down its flanks.',
     maxSpeed: 47, accel: 20, agility: 1.45, crossing: 0.15, health: 120, mass: 1, sound: 'rotary' },
   // (the eighth batch: one concept car, a show car that never went on sale; its model in render/ideaModels8.js)
-  { id: 'quadturbo', name: 'Quad-Turbo Supercar', basedOn: 'Chrysler ME Four-Twelve (2004 concept car)', model: 'quadturbo', color: 0xd2ad5c, evilColor: 0xa9323f,
+  { id: 'quadturbo', keyModel: 'carbonfob', name: 'Quad-Turbo Supercar', basedOn: 'Chrysler ME Four-Twelve (2004 concept car)', model: 'quadturbo', color: 0xd2ad5c, evilColor: 0xa9323f,
     hw: 1.0, hl: 2.27, height: 1.14, note: 'Four turbochargers behind your back, a glass bubble of a cabin pushed right forward and a long tail to keep it all down.',
     maxSpeed: 47, accel: 19, agility: 1.3, crossing: 0.2, health: 150, mass: 1.2, sound: 'gt' },
   // (a concept car: model in render/ideaModels9.js)
-  { id: 'midsummer', name: 'Midsummer Roadster', basedOn: 'Pontiac Solstice concept (2002)', model: 'midsummer', color: 0xd2401f, evilColor: 0x7e51a3,
+  { id: 'midsummer', keyModel: 'wing', name: 'Midsummer Roadster', basedOn: 'Pontiac Solstice concept (2002)', model: 'midsummer', color: 0xd2401f, evilColor: 0x7e51a3,
     hw: 0.9, hl: 1.97, height: 1.12, note: 'A short, round two-seater with its wheels out at the corners and a hump behind each seat.',
     maxSpeed: 36, accel: 12, agility: 1.3, crossing: 0.3, health: 110, mass: 1, sound: 'miata' },
   // (a concept city car, after the Nissan Pivo 2: model in render/ideaModels10.js)
-  { id: 'fishbowl', name: 'Fishbowl Runabout', basedOn: 'Nissan Pivo 2 (2007 concept)', model: 'fishbowl', color: 0x8fd3c4, evilColor: 0x8e407f,
+  { id: 'fishbowl', keyModel: 'keikey', name: 'Fishbowl Runabout', basedOn: 'Nissan Pivo 2 (2007 concept)', model: 'fishbowl', color: 0x8fd3c4, evilColor: 0x8e407f,
     hw: 0.79, hl: 1.37, height: 1.6, note: 'Three seats under a glass bubble, a small wheel at each corner, and nowhere it cannot park.',
     maxSpeed: 26, accel: 10, agility: 1.4, crossing: 0.3, health: 90, mass: 1, sound: 'evsaloon' },
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass

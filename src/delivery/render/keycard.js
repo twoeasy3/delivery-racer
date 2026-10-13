@@ -20,6 +20,7 @@ import * as THREE from 'three';
 import { makeKey, KEY_MODEL, KEY_MODELS, ORDINARY_MODELS } from './keyModels.js';
 import './keyModelsOrdinary.js'; // (the ordinary keys register themselves: KEY-IDEAS.md)
 import { sharedRenderer, drawStill } from './modelviews.js';
+import { IDEA_CARS } from '../ideas.js';
 
 const params = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();
 // the key model the cards draw: ?keymodel= for a visit, else KEY_MODEL
@@ -163,18 +164,19 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined' && document
     // ?keys: every key car with its OWN key (cars.js keyModel); ?keys=<car id>: every key model tinted by that car.
     // &card: the keys at card size only (some 100 px, as What's inside shows them), no views from the sides
     import('../cars.js').then((Cars) => {
+      const concepts = params.get('keys') === 'concepts'; // (?keys=concepts: the concept idea cars' own keys (ideas.js keyModel), in their Good colours)
       const everyKey = params.get('keys') === 'all'; // (?keys=all: the nine Bespoke AND every ordinary key, tinted by a plain car)
       const ordinary = everyKey || params.get('keys') === 'ordinary'; // (?keys=ordinary: every ORDINARY key, tinted by a plain car: KEY-IDEAS.md)
       const one = ordinary ? Cars.carById?.('commuter') : params.get('keys') ? Cars.carById?.(params.get('keys')) : null;
       const keyCars = [...(Cars.EVENT_CARS || []), ...(Cars.BESPOKE_CARS || [])].filter(c => c && (c.bespoke || c.keyModel));
       const only = (params.get('only') || '').split(',').filter(Boolean); // (&only=<model>,...: those keys only)
-      const tiles = (one ? (everyKey ? [...KEY_MODELS, ...ORDINARY_MODELS] : ordinary ? ORDINARY_MODELS : KEY_MODELS).map(model => [one, model]) : keyCars.map(car => [car, keyModelInUse(car)])).filter(([, m]) => !only.length || only.includes(m));
+      const tiles = concepts ? IDEA_CARS.filter(c => c.keyModel).map(c => [c, c.keyModel]) : (one ? (everyKey ? [...KEY_MODELS, ...ORDINARY_MODELS] : ordinary ? ORDINARY_MODELS : KEY_MODELS).map(model => [one, model]) : keyCars.map(car => [car, keyModelInUse(car)])).filter(([, m]) => !only.length || only.includes(m));
       if (!tiles.length) return;
       const card = params.has('card');
       const sheet = document.createElement('div');
       sheet.className = 'key-sheet' + (card ? ' cards' : '');
       const title = document.createElement('h2');
-      title.textContent = one ? 'Car keys: every model, tinted by the ' + one.name : 'Car keys: each key car\'s own';
+      title.textContent = concepts ? 'Concept cars: each car\'s own key' : one ? 'Car keys: every model, tinted by the ' + one.name : 'Car keys: each key car\'s own';
       sheet.append(title);
       const big = document.createElement('div');
       big.className = 'key-sheet-row';
@@ -186,7 +188,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined' && document
         const pic = document.createElement('div');
         pic.className = 'key-sheet-pic';
         const cap = document.createElement('figcaption');
-        cap.textContent = one ? model : car.name + ': ' + model;
+        cap.textContent = one && !concepts ? model : car.name + ': ' + model;
         tile.append(pic, cap);
         big.append(tile);
         jobs.push([pic, car, { model, rarity: 'bespoke' }]);
