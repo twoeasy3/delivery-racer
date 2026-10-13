@@ -139,9 +139,9 @@ const build = (car, evil, mode) => {
   const hemi = new THREE.HemisphereLight(0xc8d6ff, 0x20222a, 0);
   const keyLight = new THREE.DirectionalLight(0xffffff, 0);
   const rim = new THREE.DirectionalLight(accent.clone().lerp(new THREE.Color(0xffffff), 0.4), 0);
-  rim.position.set(-2, 3, -8);
+  rim.position.set(-0.6, 1.1, -8); // (from straight behind: an edge of light, the sides the camera sees left dark)
   const rim2 = new THREE.DirectionalLight(0xbfd0ff, 0);
-  rim2.position.set(5, 2.5, -6);
+  rim2.position.set(2.5, 0.9, -8);
   scene.add(hemi, keyLight, keyLight.target, rim, rim2);
 
   // sparks: one set of points, every one's path a function of the time (so a still is any moment)
@@ -234,22 +234,24 @@ const buildLock = (s, car) => {
 // (k: wider screens need less, narrow ones more: distances are stretched by it)
 const carShots = (s, k) => {
   const { W, H, L } = s;
+  const tall = Math.max(1, H / 1.6); // (a tall car, a van or a bus: the hero shot stands further back)
   return [
     { from: 0, to: 1.25, cam: (u) => [v3(-3.6 * k + u * 0.4, 0.38, 6.4 * k - u * 0.9), v3(0, H * 0.48, 0), 40] }, // SILHOUETTE: low, wide, front left
-    { from: 1.25, to: 2.25, cam: (u) => [v3(W / 2 + 1.0, H * 0.32, L * 0.12 + u * 0.7), v3(W * 0.42, H * 0.3, L * 0.42 + u * 0.25), 36] }, // DETAIL: the front wheel and lamp
+    { from: 1.25, to: 2.25, cam: (u) => [v3(W * 0.95 - u * 0.5, H * 0.42, L / 2 + 1.35 - u * 0.15), v3(W * 0.22 - u * 0.2, H * 0.4, L / 2 - 0.1), 38] }, // DETAIL: the front corner, lamp and grille, low and close, tracking across
     { from: 2.25, to: 3.35, cam: (u) => [v3(-6.2 * k, H * 0.62, -2.0 + u * 3.0), v3(0, H * 0.42, -0.9 + u * 2.2), 34] }, // TRACKING: the side
-    { from: 3.35, to: 5.0, cam: (u) => { const d = lerp(9.6, 8.1, easeOut(u)) * k; return [v3(d * 0.62, 1.35 + H * 0.3, d * 0.78), v3(0, H * 0.42, 0), 32, 0.17]; } }, // HERO (the car high in the picture: the words under it)
+    { from: 3.35, to: 5.0, cam: (u) => { const d = lerp(9.6, 8.1, easeOut(u)) * k * tall; return [v3(d * 0.62, 1.35 + H * 0.3, d * 0.78), v3(0, H * 0.42, 0), 32, 0.17]; } }, // HERO (the car high in the picture: the words under it)
   ];
 };
 const keyShots = (s, k) => {
   const { lockAt: P, H, L } = s;
+  const tall = Math.max(1, H / 1.6);
   return [
-    { from: 0, to: 1.6, cam: (u) => [v3(0.15, 0.08 - u * 0.05, 2.0 + 2.3 - u * 0.35).add(P), v3(0, 0, 2.0).add(P), 34] }, // DARKNESS: the key, close
-    { from: 1.6, to: 3.1, cam: (u) => [v3(2.3 - u * 0.25, 0.45, 0.9 - u * 0.15).add(P), v3(0, 0, 0.55 - u * 0.2).add(P), 38] }, // APPROACH: from the side
+    { from: 0, to: 1.6, cam: (u) => [v3(0.15, 0.08 - u * 0.05, 2.0 + 2.9 - u * 0.35).add(P), v3(0, 0, 2.0).add(P), 34] }, // DARKNESS: the key, close
+    { from: 1.6, to: 3.1, cam: (u) => [v3((2.8 - u * 0.3) * Math.sqrt(k), 0.5, 1.0 - u * 0.15).add(P), v3(0, 0, 0.65 - u * 0.25).add(P), 38] }, // APPROACH: from the side
     { from: 3.1, to: 3.6, cam: (u) => [v3(0.55, 0.3, 1.9 - u * 0.15).add(P), v3(0, 0, 0.3).add(P), 32] }, // THE TURN: the lock, close
     { from: 3.6, to: 5.0, cam: (u) => [v3(1.0 + u * 0.2, 0.55 + u * 0.15, 3.6 + u * 0.6).add(P), v3(0, -0.6, -3).add(P), 46] }, // BURST: past the lock to the car
     { from: 5.0, to: 6.7, cam: (u) => [v3(2.6 * k - u * 0.6, 0.42, (L / 2 + 5.2) * k - u * 0.6), v3(0, H * 0.5, 0), 40] }, // RESOLVE: low and wide
-    { from: 6.7, to: 9.0, cam: (u) => { const d = lerp(9.8, 8.0, easeOut(u)) * k; return [v3(-d * 0.62, 1.35 + H * 0.3, d * 0.78), v3(0, H * 0.42, 0), 32, 0.2]; } }, // HERO (the other side; high in the picture)
+    { from: 6.7, to: 9.0, cam: (u) => { const d = lerp(9.8, 8.0, easeOut(u)) * k * tall; return [v3(-d * 0.62, 1.35 + H * 0.3, d * 0.78), v3(0, H * 0.42, 0), 32, 0.18]; } }, // HERO (the other side; high in the picture)
   ];
 };
 
@@ -332,7 +334,7 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     renderer.setPixelRatio(ratio);
     renderer.setSize(w, h, false);
     aspect = w / h;
-    k = Math.pow(Math.max(1, 1.6 / aspect), 0.85);
+    k = Math.pow(Math.max(1, 1.6 / aspect), 0.7);
     shots = mode === 'key' ? keyShots(s, k) : carShots(s, k);
     // letterbox: the picture about 2.2:1 where the screen is wider than tall, never more than 11% a bar
     const bar = clamp((1 - (w / 2.2) / h) / 2, 0.04, 0.11);
@@ -412,14 +414,14 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     const shot = lite ? shots[shots.length - 1] : shots.find(x => t < x.to) || shots[shots.length - 1];
     const u = lite ? 1 : span(t, shot.from, shot.to);
     const [pos, target, fov, lift = 0] = shot.cam(smooth(u) * 0.5 + u * 0.5);
-    view.lift = lift;
+    view.lift = lift * Math.min(1, aspect); // (a tall screen has room under the car as it is)
     camera.position.copy(pos); camera.fov = fov; camera.lookAt(target);
     const { W, H, L } = s;
     // lights: dark, a rim, then the key light sweeping on in the detail shot, full from the side shot
-    const on = smooth(span(lt, 1.35, 2.3));
+    const on = smooth(span(lt, 1.3, 2.1));
     s.hemi.intensity = 0.02 + on * 1.35;
     s.keyLight.intensity = on * 2.4;
-    const sweep = lerp(-1.2, 0.7, smooth(span(lt, 1.25, 2.6)));
+    const sweep = lerp(1.6, 0.5, smooth(span(lt, 1.25, 2.6))); // (from the right across the nose)
     s.keyLight.position.set(Math.sin(sweep) * 8, 6, Math.cos(sweep) * 8);
     s.rim.intensity = 1.2 + 1.6 * smooth(span(lt, 0.1, 0.8));
     s.rim2.intensity = 0.8 * smooth(span(lt, 0.3, 1.0)) + on * 0.6;
@@ -456,7 +458,7 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     const shot = lite ? shots[shots.length - 1] : shots.find(x => t < x.to) || shots[shots.length - 1];
     const u = lite ? 1 : span(t, shot.from, shot.to);
     const [pos, target, fov, lift = 0] = shot.cam(smooth(u) * 0.5 + u * 0.5);
-    view.lift = lift;
+    view.lift = lift * Math.min(1, aspect); // (a tall screen has room under the car as it is)
     const CLICK = 3.3;
     camera.position.copy(pos).add(lite ? v3(0, 0, 0) : shake(t, CLICK, 0.07));
     camera.fov = fov; camera.lookAt(target);
@@ -470,7 +472,7 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     } else {
       // level: blade (-y) toward -z, its face up (+y)
       s.keyLevel.rotation.set(Math.PI / 2, 0, 0);
-      const inU = easeOut(span(t, 1.6, 2.95));
+      const inU = smooth(span(t, 1.6, 2.95)); // (slow in, slow home)
       const tipZ = lerp(1.7, -0.32, inU); // (the blade's tip, from the lock's face: in at last)
       s.keyRig.position.set(P.x, P.y, P.z + tipZ + s.keyHalf);
       const turn = easeIn(span(t, 3.12, CLICK)) * Math.PI / 2;
@@ -484,8 +486,8 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     s.glowRing.material.opacity = lite ? 0 : 0.2 * span(t, 2.3, 3.1) + ringPulse * 0.9;
     s.lock.visible = !lite && t >= 1.6 && t < 5.0; // (not in the dark first shot: only the key)
     // the key's own little light
-    s.keySpot.position.set(P.x + 0.4, P.y + 1.1, P.z + 1.6);
-    s.keySpot.intensity = lite ? 0 : 6 * smooth(span(t, 0.3, 1.2)) * (t < 5.0 ? 1 : 0) + 10 * ringPulse;
+    s.keySpot.position.set(P.x + 0.5, P.y + 0.9, P.z + 2.9);
+    s.keySpot.intensity = lite ? 0 : 9 * smooth(span(t, 0.3, 1.2)) * (t < 5.0 ? 1 : 0) + 10 * ringPulse;
     // the car: a silhouette far behind the lock, then the light sweeping across it (RESOLVE), full in the hero shot
     const on = smooth(span(lt, 5.35, 6.4));
     s.hemi.intensity = 0.05 + on * 1.35;
@@ -532,7 +534,7 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
   const frame = (t) => {
     if (mode === 'key') setKey(t); else setCar(t);
     camera.aspect = aspect;
-    if (view.lift) camera.setViewOffset(1000, 1000, 0, view.lift * 1000, 1000, 1000); else camera.clearViewOffset(); // (the picture slid: the subject higher)
+    if (view.lift) camera.setViewOffset(1000 * aspect, 1000, 0, view.lift * 1000, 1000 * aspect, 1000); else camera.clearViewOffset(); // (the picture slid: the subject higher)
     camera.updateProjectionMatrix();
     setWords(t);
     renderer.setClearColor(0x000000, 1);
@@ -568,9 +570,9 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
   };
   const onResize = () => { resize(); if (still !== null) frame(still); };
   const onKey = (e) => {
-    if (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); close(); }
+    if (['Escape', 'Space', 'Enter', 'NumpadEnter'].includes(e.code) || ['Escape', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); close(); }
   };
-  root.addEventListener('pointerdown', (e) => { e.stopPropagation(); close(); });
+  root.addEventListener('click', (e) => { e.stopPropagation(); close(); }); // (on the click, the last of a tap's events: nothing under it gets the tap)
   addEventListener('resize', onResize);
   addEventListener('keydown', onKey, true);
 
