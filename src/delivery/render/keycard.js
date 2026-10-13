@@ -120,11 +120,19 @@ export const keyShotOf = (car, model = keyModelInUse(car), rarity = 'bespoke') =
 
 // the key card's picture element (blueprintcard.js puts it where the car's picture would be): the pre-rendered picture
 // at once if there is one (keyShotOf), else drawn lazily by itself
-export const keyPicture = (car, rarity = 'bespoke', { model = keyModelInUse(car) } = {}) => {
+// dark: a blacked-out car's key (render/carsources.js): a black silhouette (.silhouette), and nothing on it names the car:
+// no data-keymodel / data-keyshot, and the file shown through a blob: address, not its own (keyshots/<car id>.png)
+const darkShots = new Map(); // shot url -> Promise of a blob: url
+export const keyPicture = (car, rarity = 'bespoke', { model = keyModelInUse(car), dark = false } = {}) => {
   const el = document.createElement('div');
-  el.className = 'bp-pic bp-keypic';
-  el.dataset.keymodel = model;
+  el.className = 'bp-pic bp-keypic' + (dark ? ' silhouette' : '');
+  if (!dark) el.dataset.keymodel = model;
   const shot = keyShotOf(car, model, rarity);
+  if (shot && dark) {
+    if (!darkShots.has(shot)) darkShots.set(shot, fetch(shot).then(r => (r.ok ? r.blob() : Promise.reject(new Error(r.status)))).then(b => URL.createObjectURL(b)).catch(() => { darkShots.delete(shot); return null; }));
+    darkShots.get(shot).then(url => { if (url) el.style.backgroundImage = `url("${url}")`; });
+    return el;
+  }
   if (shot) { el.style.backgroundImage = `url("${shot}")`; el.dataset.keyshot = car.id; return el; }
   const o = { model, rarity };
   el._key = { car, o };

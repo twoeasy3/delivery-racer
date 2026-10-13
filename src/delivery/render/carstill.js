@@ -105,9 +105,12 @@ const pump = () => {
 // side: 'good' or 'evil', the livery (the pack screens always ask 'good': the owner, 12-Oct, "Render all card pack images in Good colours")
 // first: drawn NOW if laid out, else ahead of the queue (a picture on screen now: the big pack of a reveal, which is up for
 // under a second, before the cards' that are turned away)
+// (the element's data-still is a tag, not the car's id: a blacked-out car's card must not name it: render/carsources.js)
+const tags = new Map();
+const tagOf = (key) => { if (!tags.has(key)) tags.set(key, 's' + tags.size); return tags.get(key); };
 export const drawSoon = (el, car, { side = 'good', pose, first = false } = {}) => {
   const evil = side === 'evil';
-  const job = { el, car, evil, pose, key: car.id + '/' + (evil ? 'e' : 'g') + '/' + poseKey(pose) };
+  const job = { el, car, evil, pose, key: tagOf(car.id + '/' + (evil ? 'e' : 'g') + '/' + poseKey(pose)) };
   if (el.dataset.still === job.key) return;
   if (stillReady(el, car, evil, pose)) { el.dataset.still = job.key; return; } // (cached: at once, no frame)
   queue = queue.filter(j => j.el !== el); // (one job an element: a redraw at a new size replaces one not yet done)
