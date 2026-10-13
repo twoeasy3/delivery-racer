@@ -77,7 +77,7 @@ const disc = (parent, material, r, depth, x, y, z) => {
 };
 const GLASS = 0x232a35, CHROME = 0xd8d8d8, TRIM = 0x2a2c31;
 // an F1 car's second colour, by its paint number (see Traffic: paint)
-export const F1_ACCENTS = [0xf4f4f4, 0x151515, 0xf2d21f, 0x1d4f9c, 0x18a35a, 0xe0701e, 0xc81f3a, 0x6fd0ff];
+const F1_ACCENTS = [0xf4f4f4, 0x151515, 0xf2d21f, 0x1d4f9c, 0x18a35a, 0xe0701e, 0xc81f3a, 0x6fd0ff];
 const LAMP = new THREE.MeshBasicMaterial({ color: 0xfff3c4 }), TAIL = new THREE.MeshBasicMaterial({ color: 0xff2a2a });
 // where an ambulance's box body starts, ahead of its middle, as a share of its half length (its light
 // bar sits on the front of the box's roof: render/cars.js)

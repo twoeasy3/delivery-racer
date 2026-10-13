@@ -196,7 +196,7 @@ ufoMesh.visible = false;
 carMesh.add(ufoMesh);
 // the player's car can turn see-through (ghost), so it needs materials of its own
 carMesh.userData.cabin.material = cabinMat.clone();
-export const playerMats = [carMesh.userData.body.material, carMesh.userData.cabin.material];
+const playerMats = [carMesh.userData.body.material, carMesh.userData.cabin.material];
 for (const mat of playerMats) mat.transparent = true;
 // the inflatable passenger: a crash-test dummy riding along on the roof while it is active
 // (sat at the car's roof height: see items.js)
