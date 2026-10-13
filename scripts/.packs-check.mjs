@@ -676,9 +676,12 @@ try {
     check(!!spec && spec.size === 3 && spec.baseAmount === 1 && spec.doubleChance === 0 && !spec.shop && spec.featured?.upgradeChance === 0 && spec.givenBy?.event?.every === true,
       'the Car Hunt pack: 3 cards, x1 each, never doubled, one featured slot (upgradeChance 0), given by every Car Hunt delivery, not sold (no shop block)');
     const blower = by('blower');
-    const regular = Object.keys(Packs.data.packs).filter(k => k !== 'car-hunt-special');
+    const regular = Object.keys(Packs.data.packs).filter(k => k !== 'car-hunt-special' && k !== 'car-hunt-5');
     check(blower?.noPacks && regular.every(k => Object.values(P.poolOf(Packs.data.packs[k])).flat().every(c => c.id !== 'blower')) && regular.every(k => !P.featuredOf(k).some(f => f.car.id === 'blower')),
-      'the Blower Tourer (noPacks) is in no other pack: no pool, no featured list (' + regular.length + ' packs)');
+      'the Blower Tourer (noPacks) is in no other pack but the Car Hunt pack and the Car Hunt 5-pack: no pool, no featured list (' + regular.length + ' packs)');
+    const five = Packs.data.packs['car-hunt-5'], fe = P.featuredOf('car-hunt-5');
+    check(!!five && five.size === 5 && five.baseAmount === 1 && five.shop?.section === 'packs' && five.shop.price > 0 && !five.event && !five.limited && fe.length === 2 && fe.every(f => f.car.id === 'blower') && fe.some(f => f.amount === 3) && fe.some(f => f.amount === 15) && five.featured.upgradeChance === 0,
+      'the Car Hunt 5-pack: bought in the Shop beside the regular packs (section packs, ' + five?.shop?.price + '), 5 cards, one featured slot: the Blower x3 or x15');
     Progress.reset(); Progress.noSave = true;
     let x1 = 0, x3 = 0, other = 0, featuredSlots = 0, plainNotOne = 0, blowerPlain = 0;
     const N = 20000;
