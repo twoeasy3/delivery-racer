@@ -22,7 +22,7 @@ const BRAKE = basic(0xc4101c);
 const roundel = (key, n, plate, ink) => texture('e5-roundel-' + key, 128, 128, (ctx, w, h) => {
   ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = '#16161a';
-  ctx.beginPath(); ctx.arc(w / 2, h / 2, 61, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(w / 2, h / 2, 60, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = plate;
   ctx.beginPath(); ctx.arc(w / 2, h / 2, 52, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = ink;
@@ -69,11 +69,11 @@ export const IDEA_MODELS_BATCH_E5 = {
     const zWS = (y) => WSF[0] + (WST[0] - WSF[0]) * (y - WSF[1]) / (WST[1] - WSF[1]);
     const zRW = (y) => RW0[0] + (RW1[0] - RW0[0]) * (ROOF - y) / (ROOF - DECK);
     parts(group, k + 'glass', GLASS, () => [
-      slopeGlass([zWS(0.97), 0.97], [zWS(1.22), 1.22], gx(0.97) - 0.1, gx(1.22) - 0.1, BEV + LIFT),
-      slopeGlass([zRW(1.17), 1.17], [zRW(1.04), 1.04], gx(1.17) - 0.1, gx(1.04) - 0.1, BEV + LIFT),
+      slopeGlass([zWS(0.97), 0.97], [zWS(1.17), 1.17], gx(0.97) - 0.1, gx(1.17) - 0.1, BEV + LIFT),
+      slopeGlass([zRW(1.15), 1.15], [zRW(1.03), 1.03], gx(1.15) - 0.12, gx(1.03) - 0.12, BEV + 0.003),
       ...sideGlass([
-        [[zWS(0.94) - 0.05, 0.94], [-0.1, 0.94], [-0.1, 1.25], [zWS(1.25) - 0.04, 1.25]],
-        [[-0.26, 0.94], [-1.18, 0.94], [-1.18, 1.1], [-0.92, 1.24], [-0.26, 1.24]],
+        [[zWS(0.94) - 0.05, 0.94], [-0.1, 0.94], [-0.1, 1.2], [zWS(1.2) - 0.04, 1.2]],
+        [[-0.26, 0.94], [-1.18, 0.94], [-1.18, 1.07], [-0.98, 1.2], [-0.26, 1.2]],
       ], HALF, TAPER, LIFT),
     ]);
     parts(group, k + 'black', TRIM, () => [
@@ -84,7 +84,7 @@ export const IDEA_MODELS_BATCH_E5 = {
       ...[-1, 1].map(s => bx(0.04, 0.12, 0.34, s * 1.0, 0.34, FZ + 0.05)), // a small end fin on each end of it
       bx(1.94, 0.12, 0.12, 0, 0.42, BZ - 0.01),          // the rear bumper
       bx(0.5, 0.16, 0.03, 0, 0.8, BZ),                   // the dark panel between the tail lamps
-      ...[-1, 1].map(s => bx(0.07, 0.12, 1.7, s * (HALF + 0.004), 0.37, 0.0)), // the sill skirts
+      ...[-1, 1].map(s => bx(0.07, 0.1, 1.7, s * (HALF + 0.004), 0.34, 0.0)), // the sill skirts
       ...[-1, 1].map(s => bx(0.1, 0.07, 0.14, s * (gx(0.93) + 0.02), 0.92, 0.5)), // the mirrors, on the door tops by the screen's foot
     ]);
     // the wing: a main plane on two posts, flat end plates at its ends, its trailing edge a little raised
@@ -105,7 +105,7 @@ export const IDEA_MODELS_BATCH_E5 = {
     const num = new THREE.MeshLambertMaterial({ map: roundel('tc', '3', '#f4f1e8', '#1a1a1a'), transparent: true, depthWrite: false });
     const X = HALF + 0.006;
     const marks = place(group, shared(k + 'marks', () => merge([
-      decal(0.5, 0.5, X, 0.64, 0.25, 'x'), decal(0.5, 0.5, -X, 0.64, 0.25, '-x'),
+      decal(0.58, 0.58, X, 0.68, 0.25, 'x'), decal(0.58, 0.58, -X, 0.68, 0.25, '-x'),
     ])), num);
     marks.renderOrder = 1;
     for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, k, R, TW, s * WX, z);
@@ -186,7 +186,7 @@ export const IDEA_MODELS_BATCH_E5 = {
     const num = new THREE.MeshLambertMaterial({ map: roundel('hc', '7', '#f2c230', '#1a1a1a'), transparent: true, depthWrite: false });
     const X = HALF + 0.006;
     const marks = place(group, shared(k + 'marks', () => merge([
-      decal(0.46, 0.46, X, 0.6, 0.15, 'x'), decal(0.46, 0.46, -X, 0.6, 0.15, '-x'),
+      decal(0.58, 0.58, X, 0.66, 0.15, 'x'), decal(0.58, 0.58, -X, 0.66, 0.15, '-x'),
     ])), num);
     marks.renderOrder = 1;
     for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, k, R, TW, s * WX, z);
