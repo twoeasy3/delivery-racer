@@ -1,0 +1,87 @@
+/* The COSMETICS screen (render/cosmeticsui.js): the player's car live on the left (a phone: on top), the slots and the choices
+   beside it (under it). Wide: two columns, nothing scrolls but the choices if they must. A PHONE held upright / narrow window
+   (the same query as render/showroom.js isPhone()): the car on top, the panel scrolls under it. Touch: choices 44 px tall. */
+#cosmetics {
+  --accent: #ffd23f; --accent-ink: #1c1500; --panel: rgba(20, 25, 36, .92); --panel-2: rgba(34, 41, 56, .94); --line: rgba(255, 255, 255, .14); --ink-dim: rgba(255, 255, 255, .66);
+  --display: "Bahnschrift", "DIN Alternate", "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
+  z-index: 30; display: grid; grid-template-columns: min(420px, 40vw) 1fr; grid-template-rows: auto 1fr; gap: 10px 16px; align-items: stretch; justify-content: stretch; text-align: left;
+  padding: 10px max(18px, env(safe-area-inset-right)) 12px max(18px, env(safe-area-inset-left)); box-sizing: border-box;
+  background: #0a0e15; color: #fff; overflow: hidden; font-size: 14px; touch-action: manipulation;
+}
+#cosmetics.hidden { display: none; }
+#cosmetics.evil { --accent: #ff4a33; --accent-ink: #fff; }
+#cosmetics > * { position: relative; z-index: 1; min-width: 0; min-height: 0; }
+#cosmetics button { font: inherit; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; color: inherit; cursor: pointer; }
+#cosmetics p, #cosmetics h1, #cosmetics h2, #cosmetics h3 { margin: 0; max-width: none; }
+#cosmetics :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+#cosmetics .cz-backdrop { position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(70% 45% at 70% 0%, rgba(120, 150, 210, .22), transparent 70%), linear-gradient(180deg, #121826 0%, #0a0e15 60%, #07090e 100%); }
+#cosmetics.evil .cz-backdrop { background: radial-gradient(60% 50% at 65% 45%, rgba(255, 150, 110, .3), transparent 72%), linear-gradient(180deg, #5a343a 0%, #3b2328 60%, #26161a 100%); }
+
+#cosmetics .cz-top { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; }
+#cosmetics .cz-back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px 0 12px; border-radius: 8px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line); font: 700 14px/1 system-ui, sans-serif; }
+#cosmetics .cz-back span:first-child { font: 700 26px/1 var(--display); margin-top: -3px; }
+#cosmetics .cz-back:hover { box-shadow: inset 0 0 0 1px var(--accent); }
+#cosmetics .cz-title h1 { font: italic 800 30px/1 var(--display); font-stretch: condensed; letter-spacing: .03em; text-transform: uppercase; text-shadow: 0 2px 0 rgba(0, 0, 0, .5); }
+#cosmetics .cz-sub { font: 700 11px/1.2 system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); margin-top: 3px; }
+
+/* the car: the panel at the left on a desktop, so the car is the right-hand column */
+#cosmetics .cz-stage { grid-column: 2; grid-row: 2; position: relative; border-radius: 12px; overflow: hidden; background: rgba(0, 0, 0, .18); box-shadow: inset 0 0 0 1px var(--line); }
+#cosmetics .cz-pic { position: absolute; inset: 0; background: center / contain no-repeat; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+#cosmetics .cz-pic.turning { cursor: grabbing; }
+#cosmetics .cz-pic canvas { position: absolute; inset: 0; }
+#cosmetics .cz-views { position: absolute; z-index: 2; top: 10px; right: 10px; display: flex; gap: 3px; padding: 3px; border-radius: 9px; background: rgba(0, 0, 0, .5); box-shadow: inset 0 0 0 1px var(--line); }
+#cosmetics .cz-view { min-height: 36px; padding: 0 12px; border-radius: 7px; font: 700 12px/1 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-dim); }
+#cosmetics .cz-view[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+#cosmetics .cz-hint { position: absolute; z-index: 2; left: 12px; bottom: 8px; font-size: 11px; color: var(--ink-dim); pointer-events: none; }
+
+/* the panel: the slots, then the open slot's choices */
+#cosmetics .cz-panel { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding-right: 4px; overscroll-behavior: contain; }
+#cosmetics .cz-slots { display: flex; flex-wrap: wrap; gap: 6px; }
+#cosmetics .cz-slot { display: inline-flex; flex-direction: column; justify-content: center; min-height: 44px; padding: 5px 14px; border-radius: 8px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line); font: 700 13px/1.1 system-ui, sans-serif; text-align: left; }
+#cosmetics .cz-slot small { font-size: 10px; font-weight: 600; letter-spacing: .04em; }
+#cosmetics .cz-slot.on { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+#cosmetics .cz-slot.later { opacity: .45; cursor: default; }
+#cosmetics .cz-section { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); }
+#cosmetics .cz-section h2 { font: italic 800 20px/1 var(--display); font-stretch: condensed; letter-spacing: .05em; text-transform: uppercase; }
+#cosmetics .cz-section h3 { margin-top: 4px; font: 700 11px/1 system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
+#cosmetics .cz-note { font-size: 12px; line-height: 1.35; color: var(--ink-dim); }
+#cosmetics .cz-row { display: flex; flex-wrap: wrap; gap: 6px; }
+#cosmetics .cz-chip { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; box-sizing: border-box; padding: 6px 12px 6px 9px; border-radius: 8px;
+  background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line); font: 700 13px/1.1 system-ui, sans-serif; text-align: left; }
+#cosmetics .cz-chip:hover { box-shadow: inset 0 0 0 1px var(--accent); }
+#cosmetics .cz-chip.equipped { background: rgba(255, 255, 255, .1); box-shadow: inset 0 0 0 2px var(--accent); }
+#cosmetics .cz-chip .cz-tick { display: none; width: 18px; height: 18px; border-radius: 50%; place-items: center; background: var(--accent); color: var(--accent-ink); font-size: 12px; line-height: 18px; text-align: center; }
+#cosmetics .cz-chip.equipped .cz-tick { display: inline-block; }
+#cosmetics .cz-chip.locked { opacity: .4; cursor: default; }
+#cosmetics .cz-swatch { flex: 0 0 24px; width: 24px; height: 24px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255, 255, 255, .55), inset 0 0 0 1px rgba(0, 0, 0, .35); }
+#cosmetics .cz-swatch.stock { background: repeating-conic-gradient(#9aa3b2 0 25%, #596273 0 50%) 0 0 / 8px 8px; }
+#cosmetics .cz-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+#cosmetics .cz-status { flex: 1 1 160px; font-size: 12px; color: var(--ink-dim); }
+#cosmetics .cz-reset { min-height: 44px; padding: 0 16px; border-radius: 8px; background: transparent; box-shadow: inset 0 0 0 1px var(--line); font: 700 13px/1 system-ui, sans-serif; letter-spacing: .04em; }
+#cosmetics .cz-reset:hover { box-shadow: inset 0 0 0 1px var(--accent); }
+
+/* a phone held upright, or a narrow window (render/showroom.js isPhone()): the car on top, the panel under it */
+@media (max-width: 760px) and (min-height: 521px), (max-width: 519px) {
+  #cosmetics { grid-template-columns: 1fr; grid-template-rows: auto minmax(160px, 30vh) 1fr; gap: 8px; padding: 8px max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left)); }
+  #cosmetics .cz-stage { grid-column: 1; grid-row: 2; }
+  #cosmetics .cz-panel { grid-column: 1; grid-row: 3; padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
+  #cosmetics .cz-title h1 { font-size: 24px; }
+  #cosmetics .cz-view { padding: 0 9px; font-size: 11px; }
+  #cosmetics .cz-hint { display: none; }
+  #cosmetics .cz-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  #cosmetics .cz-slot { padding: 4px 6px; font-size: 12px; }
+  #cosmetics .cz-slot small { font-size: 9px; }
+  #cosmetics .cz-section { padding: 10px; gap: 6px; }
+  #cosmetics .cz-note { font-size: 11px; }
+  #cosmetics .cz-chip { gap: 6px; padding: 4px 9px 4px 6px; font-size: 12px; }
+  #cosmetics .cz-swatch { flex-basis: 20px; width: 20px; height: 20px; }
+}
+/* a phone on its side / a short window: the panel narrower, the choices tighter */
+@media (max-height: 520px) and (min-width: 520px) {
+  #cosmetics { grid-template-columns: min(380px, 46vw) 1fr; gap: 6px 12px; padding-top: 6px; }
+  #cosmetics .cz-title h1 { font-size: 22px; }
+  #cosmetics .cz-section { padding: 8px; gap: 6px; }
+}
+@media (pointer: coarse) { #cosmetics .cz-chip, #cosmetics .cz-slot, #cosmetics .cz-reset, #cosmetics .cz-back, #cosmetics .cz-view { min-height: 44px; } }
+@media (prefers-reduced-motion: reduce) { #cosmetics * { transition: none !important; animation: none !important; } }

@@ -57,6 +57,10 @@ const patch = (inner, outer) => {
 let floorMap, shadowMap;
 const flat = (map, opacity) => new THREE.MeshBasicMaterial({ map, transparent: true, opacity, depthWrite: false });
 
+// the WHEELS CLOSE-UP (the Cosmetics screen, render/cosmeticsui.js): the same camera, eased in nearer and down to the wheels' height
+// (CLOSE = how much of the full distance is left); `closeup` is where it is heading, `zoom` how far it has got (0 = the whole car)
+const CLOSE = 0.5;
+let closeup = false, zoom = 0, alsoVisible = () => false;
 let v = null; // the view: { el, canvas, ctx, car, evil, dark, scene, camera, turn, model, extra: [geometry, material], rxz, height, mid }
 let yaw = -0.64, spinBy = 0, held = null, idleAt = 0, raf = 0, last = 0, visible = () => true, keyVisible = () => true;
 
@@ -170,8 +174,9 @@ const frame = (aspect) => {
   const across = rxz, up = rxz * Math.sin(LIFT) + height / 2 * Math.cos(LIFT); // (half its width and height seen from there)
   const far = Math.max(across / Math.tan(hHalf), up / Math.tan(vHalf)) * 1.08 + rxz * 0.75; // (and its near end, nearer: a little more)
   camera.aspect = aspect;
-  camera.position.set(0, height * 0.45 + far * Math.sin(LIFT), far * Math.cos(LIFT));
-  camera.lookAt(0, height * 0.42, 0);
+  const near = far * (1 - zoom * (1 - CLOSE)), lift = LIFT * (1 - zoom * 0.7), eye = height * (0.45 - zoom * 0.24), aim = height * (0.42 - zoom * 0.22); // (zoom 0: as always)
+  camera.position.set(0, eye + near * Math.sin(lift), near * Math.cos(lift));
+  camera.lookAt(0, aim, 0);
   camera.updateProjectionMatrix();
 };
 
@@ -180,7 +185,9 @@ const draw = (now) => {
   raf = requestAnimationFrame(draw);
   const dt = Math.min(0.05, (now - (last || now)) / 1000);
   last = now;
-  if (!v?.scene || document.hidden || !v.el.isConnected || !visible()) return; // (out of sight: nothing drawn)
+  zoom += ((closeup ? 1 : 0) - zoom) * Math.min(1, dt * 6); // (eased toward the close-up or back, a few frames)
+  if (Math.abs(zoom - (closeup ? 1 : 0)) < 0.002) zoom = closeup ? 1 : 0;
+  if (!v?.scene || document.hidden || !v.el.isConnected || !(visible() || alsoVisible())) return; // (out of sight: nothing drawn)
   const renderer = sharedRenderer();
   if (!renderer || renderer.getContext().isContextLost()) return;
   const r = v.el.getBoundingClientRect();
@@ -317,6 +324,10 @@ export const ShowroomView = {
   hold: -1, // (a picture's: the landing stopped that many seconds in, e.g. 0.16 the body down on its springs; ?bounce=0.16)
   // whether the view is in sight now (render/showroom.js says)
   when(fn) { visible = fn; },
+  // another screen that shows the view (the Cosmetics screen): in sight while fn() says so
+  also(fn) { alsoVisible = fn; },
+  // the wheels close-up on or off (eased); stop() puts it back
+  closeUp(on) { closeup = !!on; },
   // whether the corner key may be drawn now (no sheet over the showroom: render/showroom.js says)
   keyWhen(fn) { keyVisible = fn; },
   // done: the loop ended and the model let go (the 2D canvas is kept for next time)
@@ -324,6 +335,8 @@ export const ShowroomView = {
     cancelAnimationFrame(raf);
     raf = 0;
     held = null;
+    closeup = false;
+    zoom = 0;
     drop();
     if (v) { v.car = null; v.canvas?.remove(); v.el = null; }
   },

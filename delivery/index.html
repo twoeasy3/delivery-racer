@@ -162,11 +162,8 @@
         </section>
         <section class="wheels">
           <h3>Wheels</h3>
-          <h4>Design</h4>
-          <div id="wheelDesigns" class="wheel-swatches" role="group" aria-label="Wheel design: a tyre and hub look for every car"></div>
-          <h4>Hub colour</h4>
-          <div id="wheelSwatches" class="wheel-swatches" role="group" aria-label="Wheel colour: the rims and hubs of whatever car you drive"></div>
-          <p class="wheel-note">For every car, in the garage and on the road. A design sets the tyres (and its own hubs); a hub colour other than Stock overrides the design's hubs.</p>
+          <button id="wheelsOpenBtn" class="menu-chip">Customise wheels&hellip;</button>
+          <p class="wheel-note">Designs and hub colours, for every car, shown on your car in its own screen.</p>
         </section>
         <section>
           <h3>Extras</h3>
@@ -240,6 +237,8 @@
 
 <!-- the showroom: where a car is picked, a card for each car (render/showroom.js builds it; showroom.css) -->
 <div id="showroom" class="overlay showroom hidden" role="dialog" aria-label="Showroom"></div>
+<!-- the cosmetics screen: the player's car live, and what it wears (render/cosmeticsui.js builds it; cosmetics.css) -->
+<div id="cosmetics" class="overlay cz hidden" role="dialog" aria-label="Cosmetics"></div>
 
 <!-- the postcard album: a panel over the start screen (render/album.js builds it) -->
 <div id="album" class="overlay menu panel hidden"></div>

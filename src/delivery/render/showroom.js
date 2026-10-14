@@ -42,6 +42,7 @@ import { richTiers, tierStarsNode } from '../tiers.js';
 import { Garage } from './garage.js';
 import { stillCar, stillReady } from './carstill.js';
 import { ShowroomView } from './showroomview.js';
+import { Cosmetics } from './cosmeticsui.js'; // (the Cosmetics screen: the car live, wheels equipped; opened from the full view)
 import { swipeSwitch, PHONE_COLUMNS } from './showroomphone.js';
 import { panAt, panTo, panStep, PAN_MS } from './showroompan.js';
 import { Sound } from './audio.js';
@@ -558,7 +559,7 @@ const showDetail = () => {
       card.perk && !card.hidden ? make('p', 'sr-perk', make('b', '', 'Perk '), card.perk) : null,
       why,
       card.hidden ? null : renderSources(card.car, { open: true, dark: card.dark })), // (a blacked-out car's: the cards silhouetted, its name withheld; where its key and blueprints come from: render/carsources.js; shut on a desktop, a line)
-    make('div', 'sr-actions', sideSwitch('sr-side-detail'), go));
+    make('div', 'sr-actions', sideSwitch('sr-side-detail'), cosmeticsButton(card), go));
   fitLine(go, 11); // (its words on one line, smaller if need be: switching sides never changes its height; render/fitline.js)
   detail.style.setProperty('--rar', RARITIES[card.rarity].colour);
   detail.className = 'sr-detail ' + card.rarity + ' ' + card.state + ' open' + (statsOff ? ' statsoff' : '') + (slide > 0 ? ' from-next' : slide < 0 ? ' from-prev' : '');
@@ -574,6 +575,17 @@ const pick = (id) => {
   if (id !== picked) blip('menuMove');
   picked = id;
   showDetail();
+};
+// the full view's way to the Cosmetics screen: this car, live, on the side on show (a car of a tier not open yet: the car in use)
+const openCosmetics = (card) => {
+  if (!full || Cosmetics.isOpen) return;
+  Cosmetics.open({ car: card && !card.hidden && !card.dark ? card.car : null, evil: evilNow(), onClose: () => { if (Showroom.isOpen && !Garage.isOpen) Showroom.reshow(); } });
+};
+const cosmeticsButton = (card) => {
+  const b = make('button', 'sr-cosm', 'Cosmetics');
+  b.title = 'Wheels and more, on this car (C)';
+  b.addEventListener('click', () => openCosmetics(card));
+  return b;
 };
 // the full view, opened on the card picked; back keeps the cards where they were (scrolled to the car looked at last
 // only if it is out of sight)
@@ -657,7 +669,7 @@ const step = (dir) => {
   panRow(Math.max(0, Math.min(row.scrollWidth - row.clientWidth, to)));
 };
 window.addEventListener('keydown', (e) => {
-  if (!Showroom.isOpen || Garage.isOpen || panel.classList.contains('hidden') || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (!Showroom.isOpen || Garage.isOpen || Cosmetics.isOpen || panel.classList.contains('hidden') || e.ctrlKey || e.metaKey || e.altKey) return;
   if (document.querySelector('.menu-dialog:not(.hidden)')) return; // (a dialog's own keys)
   if (e.target?.matches?.('select') && e.code !== 'Escape') return; // (the sort list's own keys)
   const column = isPhone(), rows = perColumn();
@@ -668,6 +680,7 @@ window.addEventListener('keydown', (e) => {
     case 'ArrowUp': if (full) { if (column) goTo(-1); else return; } else if (column) step(-PHONE_COLUMNS); else if (rows > 1) step(-1); else return; break;
     case 'ArrowDown': if (full) { if (column) goTo(1); else return; } else if (column) step(PHONE_COLUMNS); else if (rows > 1) step(1); else return; break;
     case 'KeyE': pickSide(!side); break;
+    case 'KeyC': if (!full) return; openCosmetics(list.find(c => c.id === picked)); break;
     case 'KeyF': if (full) return; toggleFilters(); break;
     case 'Enter': {
       const focused = document.activeElement;
@@ -759,7 +772,7 @@ export const Showroom = {
   },
 };
 // the live car is drawn only while it can be seen: the showroom up (not under the car lot) with the full view up
-ShowroomView.when(() => Showroom.isOpen && full && !Garage.isOpen && !panel.classList.contains('hidden'));
+ShowroomView.when(() => Showroom.isOpen && full && !Garage.isOpen && !Cosmetics.isOpen && !panel.classList.contains('hidden'));
 ShowroomView.keyWhen(() => !sheetUp()); // (its corner key: not under a sheet either)
 // and the key card's turning key the same, and not under a sheet (What's inside, a pack reveal: lite.js sheetUp)
 KeySpin.when(() => Showroom.isOpen && full && !Garage.isOpen && !panel.classList.contains('hidden') && !sheetUp());

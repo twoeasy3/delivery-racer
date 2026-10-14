@@ -18,7 +18,7 @@ import './menuclick.js'; // (every click on a menu plays one sound)
 import { ask } from './dialog.js';
 import { Input } from '../input.js';
 import { draw, MenuStage } from './menustage.js';
-import { WHEEL_COLOURS, WHEEL_DESIGNS, wheelColour, setWheelColour, wheelDesign, setWheelDesign, onWheelColour } from './wheelcosmetic.js';
+import { Cosmetics } from './cosmeticsui.js';
 export { LEVEL_SHOTS } from './menustage.js'; // (the postcard album's pictures: render/album.js)
 
 // The menu's height on a phone (menu2.css, the phone's media queries: height var(--menu-h, 100dvh)): the window's inner height,
@@ -53,33 +53,8 @@ muteBtn.addEventListener('click', toggleMute);
 window.addEventListener('keydown', (e) => { if (e.code === 'KeyM' && !e.repeat) toggleMute(); });
 showMute();
 
-// the wheel colour (render/wheelcosmetic.js): one choice for every car, recolouring the cars on show at once (no reload)
-const wheelSwatches = document.getElementById('wheelSwatches');
-for (const colour of WHEEL_COLOURS) {
-  const chip = document.createElement('button');
-  chip.className = 'menu-chip';
-  chip.dataset.wheel = colour.id;
-  chip.innerHTML = '<span class="swatch ' + (colour.hex === null ? 'stock' : '') + '"' + (colour.hex === null ? '' : ' style="background:#' + colour.hex.toString(16).padStart(6, '0') + '"') + '></span>' + colour.name;
-  chip.addEventListener('click', () => setWheelColour(colour.id));
-  wheelSwatches.appendChild(chip);
-}
-// ...and the wheel DESIGN (tyre + hub preset): a little round picture of each, tyre / ring / hub as concentric bands
-const wheelDesigns = document.getElementById('wheelDesigns');
-const hexOf = (hex, fallback) => '#' + (hex === null ? fallback : hex.toString(16).padStart(6, '0'));
-for (const design of WHEEL_DESIGNS) {
-  const chip = document.createElement('button'), tyre = hexOf(design.tyre, '1b1b1d'), ring = design.ring ? hexOf(design.ring.hex) : tyre, hub = hexOf(design.hub, '9aa3b2');
-  chip.className = 'menu-chip';
-  chip.dataset.design = design.id;
-  chip.innerHTML = '<span class="swatch" style="background:radial-gradient(circle,' + hub + ' 0 30%,' + tyre + ' 30% 46%,' + ring + ' 46% 66%,' + tyre + ' 66%)"></span>' + design.name;
-  chip.addEventListener('click', () => setWheelDesign(design.id));
-  wheelDesigns.appendChild(chip);
-}
-const showWheels = () => {
-  for (const chip of wheelSwatches.children) chip.setAttribute('aria-pressed', String(chip.dataset.wheel === wheelColour()));
-  for (const chip of wheelDesigns.children) chip.setAttribute('aria-pressed', String(chip.dataset.design === wheelDesign()));
-};
-onWheelColour(showWheels);
-showWheels();
+// the wheels: Options only links to the Cosmetics screen (render/cosmeticsui.js), the one picker (render/wheelcosmetic.js keeps the choice)
+document.getElementById('wheelsOpenBtn').addEventListener('click', () => Cosmetics.open());
 
 // auto accelerate on / off: the accelerator is held down by itself, and braking overrides it
 const autoGasBtn = document.getElementById('autoGasBtn');
