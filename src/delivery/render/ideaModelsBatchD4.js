@@ -8,7 +8,6 @@
 // userData.animate (sits still) and, for the Yacht, userData.livery (evil) (its roof). No people. State-free.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { cabinGlass } from './ideaModelsDkit.js';
 
 const keep = (m) => { m.userData.shared = true; return m; };
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
@@ -183,23 +182,28 @@ IDEA_MODELS_BATCH_D4.autobahnestate = (car) => {
     [TAILZ, 0.46], [TAILZ + 0.05, AY],
   ];
   // the glasshouse: raked windscreen, flat roof, a steep tailgate leaning in toward the top
-  const CBEV = 0.05, CW = BW - 0.1, TOP = car.height - CBEV, CY = 0.97, TAPER = [0.98, TOP, 0.2];
-  const WS = [[0.88, CY], [0.28, TOP - 0.03]], TG = [[-2.27, CY], [-2.1, TOP - 0.04]];
-  // (the roof one straight run from the screen's top to the tailgate's top: the glass then has the body's own corners and no more)
-  const cabinOutline = [WS[0], WS[1], TG[1], TG[0]];
+  const CBEV = 0.07, CW = BW - 0.1, TOP = car.height - CBEV, CY = 0.97, TAPER = [0.98, TOP, 0.2];
+  const WS = [[0.88, CY], [0.28, TOP - 0.03]], TG = [[-2.27, CY], [-2.1, TOP - 0.06]];
+  const roof = [WS[1], ...curve(WS[1], [0, TOP + 0.01], [-1.2, TOP + 0.01], [-2.0, TOP - 0.02], 5)];
+  const cabinOutline = [WS[0], ...roof, TG[1], TG[0]];
   const body = shadeLow(merge([
     extrudeSide(bodyOutline, BW, BEV, null, 2, 0.16),
     extrudeSide(cabinOutline, CW, CBEV, TAPER, 2, 0.12),
+    // the spoiler lip on the tailgate's top edge
+    bx(CW * 0.78, 0.045, 0.2, 0, TOP + 0.05, -2.08, -0.12),
   ]), 0.25, 0.8, [0.72, 0.7, 0.68]);
   const bodyMesh = place(group, body, paint);
-  // the spoiler lip on the tailgate's top edge: its own paint mesh, so the body's top (what the glass follows) is the roof alone
-  place(group, shadeLow(merge([bx(CW * 0.78, 0.045, 0.2, 0, TOP + 0.05, -2.08, -0.12)]), 0.25, 0.8, [0.72, 0.7, 0.68]), paint);
-  const WINDOWS = [[-0.29, 9], [-1.25, -0.41], [-9, -1.37]];
-  // glass: windscreen, tailgate glass and three side windows a side (door, rear door, quarter), all from the cabin's own outline (cabinGlass)
-  const BELT = 1.06, CH = CW / 2;
-  const glass = cabinGlass(cabinOutline, { from: 0, to: cabinOutline.length - 1, belt: BELT, half: CH, taper: TAPER, grow: CBEV,
-    inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: CBEV + 0.006, sideLift: 0.006, windows: WINDOWS });
-  bag.add(GLASS, ...glass.sides, glass.front, glass.rear);
+  // glass: windscreen, tailgate glass, two door windows and a quarter window a side
+  const CH = CW / 2, LIFT = CBEV + 0.006, foot = 1.04, top = 1.27;
+  const aEdge = (y) => zAt(WS, y) - 0.1, cEdge = (y) => zAt(TG, y) + 0.1;
+  bag.add(GLASS,
+    slopeGlass([zAt(WS, foot), foot], WS[1], CH, TAPER, CBEV + 0.03, [0, 0.05], LIFT, [1, 1]),
+    slopeGlass([zAt(TG, foot), foot], TG[1], CH, TAPER, CBEV + 0.04, [0, 0.07], LIFT, [-1, 0.3]),
+    ...sideGlass([
+      [[aEdge(foot), foot], [0.12, foot], [0.12, top], [aEdge(top), top]],
+      [[0.02, foot], [-0.8, foot], [-0.8, top], [0.02, top]],
+      [[-0.9, foot], [cEdge(foot), foot], [cEdge(top), top], [-0.9, top]],
+    ], CH, TAPER, 0.006));
   // roof rails, mirrors
   for (const s of [-1, 1]) {
     bag.add(TRIM, rod(0.022, 1.9, s * 0.5, car.height + 0.004, -0.95, 'z', 8), bx(0.12, 0.07, 0.15, s * 0.84, 1.04, 0.7), strut([s * 0.78, 1.0, 0.76], [s * 0.86, 1.04, 0.72], 0.02, 5));

@@ -32,8 +32,8 @@ export const IDEA_MODELS_BATCH_D1 = {
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
     const body = place(group, shared(k + 'body', () => shadeBy(merge([extrudeSide(outline, BW, BEV, TAPER, 1, ACROSS)]), low(0.2, 0.7, [0.6, 0.54, 0.48]))), paint);
     // ALL the glass from the body's own side profile (cabinGlass: one inset outline, so the windscreen, the side window and the rear glass agree)
-    const glass = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(R2), belt: BELT, half: HALF, taper: TAPER,
-      inset: { aPillar: 0.06, roof: 0.06, cPillar: 0.06 }, lift: BEV + 0.006, topLift: BEV - 0.003, sideLift: 0.006 });
+    const glass = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(R2), belt: BELT, half: HALF, taper: TAPER, grow: BEV,
+      inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: BEV + 0.006, sideLift: 0.006 });
     parts(group, k + 'glass', GLASS, () => [...glass.sides, glass.front, glass.rear]);
     parts(group, k + 'black', TRIM, () => [bx(1.1, 0.08, 0.1, 0, 0.3, FZ + 0.01), bx(1.06, 0.08, 0.08, 0, 0.3, BZ - 0.01)]);
     parts(group, k + 'rim', CHROME, () => [dsc(0.115, 0.03, 0, 0.5, FZ + 0.01, 0, 12)]);
