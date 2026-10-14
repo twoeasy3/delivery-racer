@@ -116,7 +116,7 @@ async function filters(g, check) {
   // what each chip means, said again from the cars
   const bespokeCar = (car) => !!car.bespoke || EVENT_CARS.includes(car);
   const MEANS = {
-    stars: (id) => (c) => (c.car.tier >= 1 ? c.car.tier : 0) === Number(id),
+    stars: (id) => (c) => (c.car.tier >= 1 ? c.car.tier : c.car.rating >= 1 ? c.car.rating : 0) === Number(id), // (a Key car has no tier: its rating, the stars its card shows)
     colour: (id) => (c) => {
       const car = c.car, mag = !!car.earned || !!car.evergreen || bespokeCar(car);
       return id === 'magenta' ? mag : id === 'green' ? !mag && !!car.amphibious : id === 'blue' ? !mag && !car.amphibious && !!car.blue : !mag && !car.amphibious && !car.blue;
@@ -296,7 +296,7 @@ async function carHunt(g, check) {
   for (const evil of [false, true]) {
     const rule = g.cars.carRule(evil), cards = D.showroomCars().map(car => D.carCard(car, evil));
     const f = D.imposedFilter(rule, cards), got = D.filterCards(cards, f, null).map(c => c.id), want = cards.filter(c => g.cars.ruleAllows(rule, c.car)).map(c => c.id);
-    check(rule?.list && JSON.stringify(got) === JSON.stringify(want) && want.includes('blower') && f.stars.join() === '3' && f.colour.includes('gold') && !f.state.length,
+    check(rule?.list && JSON.stringify(got) === JSON.stringify(want) && want.includes('blower') && f.stars.join() === '3' && f.colour.includes('gold') && (!f.state.length || f.state.join() === 'allowed'), // (Key cars rated 3 now match the 3-star chip too: the filter then adds the Allowed chip to stay exact)
       (evil ? 'Evil' : 'Good') + ': the Car Hunt imposes ' + JSON.stringify({ stars: f?.stars, colour: f?.colour, state: f?.state }) + ': exactly the ' + want.length + ' cars its rule allows (' + rule?.label + ')');
   }
   check(D.imposedFilter(null, []) === null && D.imposedFilter({ tier: 3, key: '3' }, []) === null, 'no rule, or a tier\'s medal rule: nothing imposed');

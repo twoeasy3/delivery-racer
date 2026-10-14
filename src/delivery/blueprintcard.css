@@ -20,7 +20,7 @@
   linear-gradient(125deg, #ff3fae, #ffbe2e 28%, #3fd06f 48%, #35c2ff 68%, #b45cff 88%); }
 /* the cards of a BLUEPRINT car (only ever got from blueprints) and of a KEY car (a Bespoke key's blueprints) look different from a garage
    car's: a fine blueprint grid over the stripes (the stripes turned the other way), and for a Legendary one a slow shine; a Key car's
-   background is a sunburst of gold and magenta (the owner, 12-Oct: the player must see these work a bit differently) */
+   background is a sunburst of magenta and gold (the owner, 12-Oct: the player must see these work a bit differently) */
 .bp-card.kind-blueprint .bp-art { background:
   linear-gradient(rgba(255, 255, 255, .22) 1px, transparent 1px) 0 0 / 6cqw 6cqw, linear-gradient(90deg, rgba(255, 255, 255, .22) 1px, transparent 1px) 0 0 / 6cqw 6cqw,
   repeating-linear-gradient(45deg, var(--rc) 0 9cqw, var(--rc-deep) 9cqw 18cqw); }
@@ -31,7 +31,13 @@
   animation: bp-shine 3.2s linear infinite; }
 .bp-card.kind-key .bp-art { background:
   repeating-conic-gradient(from 0deg at 50% 62%, rgba(255, 255, 255, .26) 0 6deg, transparent 6deg 15deg),
-  radial-gradient(circle at 50% 62%, #ffe27a 0, #ffbe2e 30%, #ff3fae 75%, #b01a86 100%); }
+  radial-gradient(circle at 50% 62%, #ffc6ee 0, #ff3fae 30%, #ffbe2e 75%, #f08c00 100%); } /* (a Legendary key car's: magenta in the middle, gold at the edge: reversed from gold-in-the-middle, the owner, 14-Oct) */
+
+/* an EPIC key car's blueprints (Fishbowl, Midsummer...: the owner, 14-Oct, "Epic Key Car blueprints should have a different background as well"):
+   the same sunburst, but in the epic card's own purple and cyan instead of the gold and magenta of the Legendary key cars' */
+.bp-card.kind-key.r-epic .bp-art { background:
+  repeating-conic-gradient(from 0deg at 50% 62%, rgba(255, 255, 255, .26) 0 6deg, transparent 6deg 15deg),
+  radial-gradient(circle at 50% 62%, #d9f6ff 0, #7fd9ff 28%, var(--rc) 62%, var(--rc-deep) 100%); }
 @keyframes bp-shine { from { background-position: 0 0, 0 0, 130% 0, 0 0; } to { background-position: 0 0, 0 0, -90% 0, 0 0; } }
 @media (prefers-reduced-motion: reduce) { .bp-card.kind-blueprint.r-legendary .bp-art { animation: none; } }
 .bp-art::after { content: ''; position: absolute; inset: 0; pointer-events: none; /* (a sheen, and a floor shade under the car) */

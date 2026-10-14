@@ -263,8 +263,9 @@ export const parseFilter = (text) => {
 export const filterCount = (f) => FILTER_GROUPS.reduce((n, group) => n + (f[group.id]?.length || 0), 0);
 // a card's chip in each group
 const secret = (car) => Object.values(SECRET_CARS).includes(car);
-// the stars a card shows: the car's tier (an earned car's is 6); a Key car has none (the owner, 12-Oct: they need not have six)
-export const starCountOf = (card) => (card.car.tier >= 1 ? card.car.tier : 0);
+// the stars a card shows: the car's tier (an earned car's is 6); a Key car has no tier, so its rating (the stars its card shows: cars.js stars();
+// 14-Oct, the owner: "Key cars don't show up in the showroom if a star filter is applied": they counted as 0 stars, which no chip matches)
+export const starCountOf = (card) => (card.car.tier >= 1 ? card.car.tier : (card.car.rating >= 1 ? card.car.rating : 0));
 // the colour of those stars (cars.js starColour: magenta for the earned, Blueprint and Key cars)
 const COLOUR_IDS = { [STAR_COLOURS.gold]: 'gold', [STAR_COLOURS.blue]: 'blue', [STAR_COLOURS.earned]: 'magenta', [STAR_COLOURS.amphibious]: 'green' };
 export const colourOf = (card) => COLOUR_IDS[starColour(card.car)] || 'gold';

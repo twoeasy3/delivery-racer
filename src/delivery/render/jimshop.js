@@ -1,4 +1,4 @@
-// ---- CRAZEY JIM'S BLUEPRINT STALL: a section of the Shop (CHECKLIST item 249; rules jimshop.js, look jimshop.css) ----------------------
+// ---- CRAZEY JIM'S BLUEPRINT STALL: a section of the Shop (CHECKLIST item 250; rules jimshop.js, look jimshop.css) ----------------------
 // Drawn by render/shop.js at the top of the Shop's body (jimSection): Jim's BANNER (round 1's, restored: bunting and the red Crazey Jim's
 // sign with the yellow Blueprint Stall band), a strip with the clock to the next stock and the bank in $, then the offers as tiles in the Shop's
 // own style: the blueprint card (render/blueprintcard.js, the live car still), what the bundle is, "You have 3 / 5 to ECU 2" with a
