@@ -18,6 +18,7 @@ import { IDEA_MODELS_9 } from './ideaModels9.js'; // (a concept car: the Midsumm
 import { IDEA_MODELS_10 } from './ideaModels10.js'; // (a concept city car: the Fishbowl Runabout)
 import { IDEA_MODELS_TOPUP_A } from './ideaModelsTopupA.js'; // (the ideas top-up, batch A: four classic road cars)
 import { IDEA_MODELS_TOPUP_B } from './ideaModelsTopupB.js'; // (the top-up batch B: a removals van, a bin lorry, a jeepney)
+import { IDEA_MODELS_BATCH_E1 } from './ideaModelsBatchE1.js'; // (batch E1: the Kei Van)
 import { IDEA_MODELS_BATCH_D2 } from './ideaModelsBatchD2.js'; // (batch D2: the Flatbed Truck and the Utility Moke)
 import { IDEA_MODELS_BATCH_D3 } from './ideaModelsBatchD3.js'; // (batch D3: the Half-Track, the Sprint Hatch)
 import { IDEA_MODELS_BATCH_D4 } from './ideaModelsBatchD4.js'; // (batch D4: the Autobahn Estate, the Fin Land Yacht)
@@ -187,6 +188,7 @@ export const IDEA_MODELS = {
   ...IDEA_MODELS_TOPUP_C,
   ...IDEA_MODELS_BATCH_D1,
   ...IDEA_MODELS_BATCH_D2,
+  ...IDEA_MODELS_BATCH_E1,
   ...IDEA_MODELS_BATCH_D3,
   ...IDEA_MODELS_BATCH_D4,
   ...IDEA_MODELS_BATCH_D5,
