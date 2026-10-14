@@ -10,7 +10,7 @@
 // with userData.body, userData.animate and userData.livery. Spread into IDEA_MODELS by ideaModels.js. State-free.
 import * as THREE from 'three';
 import {
-  TYRE, TRIM, CHROME, GLASS, LAMP, TAIL, AMBER, shared, place, merge, parts, bx, dsc, curve, extrudeSide, panel, sideGlass,
+  TRIM, CHROME, GLASS, LAMP, TAIL, AMBER, shared, place, merge, parts, bx, curve, extrudeSide, panel, sideGlass,
   slopeGlass, shadeBy, low, wheel, roundRect, extrudePlan, narrowAt,
 } from './ideaModelsDkit.js';
 
