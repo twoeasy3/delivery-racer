@@ -267,6 +267,7 @@ export const addLegendDecal = (model, car) => {
 const blackFor = (m) => new THREE.MeshPhongMaterial({ color: LEGEND_BLACK, vertexColors: !!m.vertexColors, side: m.side, specular: 0x24242a, shininess: 40 });
 export const addLegend = (model, car) => {
   if (!model || model.userData.legend) return model;
+  model.userData.legendTouch?.(); // (a model's own Legendary touch: the Junker's load cover drawn in golds)
   model.userData.legend = true;
   const trim = LEGEND_TRIM[car.model] || {}, gold = new Set(trim.gold || []), black = new Set(trim.black || []);
   const body = model.userData.body, paint = body?.material, blacks = new Map();

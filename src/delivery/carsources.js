@@ -166,10 +166,10 @@ const keySources = (car, t) => {
   if (car.earned && EARNED_CARS.includes(car)) {
     const level = levelById(car.earned.level), open = !!level && Tiers.isOpen(level);
     const par = car.earned.par;
-    out.push({ what: 'key', how: 'level', where: level ? levelName(level) : car.earned.level, rarity: null, ways: [],
+    out.push({ what: 'key', how: 'level', where: level ? levelName(level) : car.earned.level || 'Coming soon', rarity: null, ways: [],
       available: !car.off && open,
       why: car.off ? 'Not to be had for now' : !level ? 'Its level is not in the game' : open ? null : 'Level not open yet: ' + Tiers.lockedBecause(level),
-      detail: 'won by delivering with ' + par.good + ' s to spare as Good' + (par.evil !== undefined ? ' and ' + par.evil + ' s as Evil' : '') });
+      detail: par.good === undefined ? 'not to be won yet' : 'won by delivering with ' + par.good + ' s to spare as Good' + (par.evil !== undefined ? ' and ' + par.evil + ' s as Evil' : '') }); // (no par: an off car earned on no level yet, the Legendary cars)
   }
   for (const event of Events.specials) {
     if (event.prize?.car !== car.id) continue;

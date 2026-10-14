@@ -35,6 +35,7 @@ const RARITY_WORD = { common: 'Common', uncommon: 'Uncommon', epic: 'Epic', lege
 export const makerLine = (car, key = false) => {
   if (key) return 'Car Key';
   if (car.bespoke || car.event) return 'Key Car';
+  if (car.earned) return 'Special Car'; // (an earned car: the showroom's Special kind)
   return safe(() => Ecu.isBlueprint(car), false) ? 'Blueprint Car' : 'Garage Car';
 };
 

@@ -766,6 +766,8 @@ export const ORIG3_MODELS = {
         cover.needsUpdate = true;
         roof.color.setHex(evil ? 0x4a4845 : 0x4f5532);
       },
+      // a Legendary Junker's load cover (render/legenddecal.js): the same cloth drawn in golds, on both sides
+      legendTouch: () => { cover.map = tarpaulin('gold', ['#c99a2e', '#8e6a18', '#5a4210']); cover.needsUpdate = true; },
       animate: (t) => { // a rough idle: the body shudders on its springs
         shell.position.y = Math.sin(t * 31) * 0.012;
         shell.rotation.z = Math.sin(t * 23) * 0.008;
