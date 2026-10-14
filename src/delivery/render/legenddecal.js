@@ -35,6 +35,10 @@ export const LEGEND_DECAL = {
   lowrider: [[-1.5, 0.38, 1.3]],
   wagon: [[-1.44, 0.48, 1.7]],
   lovebus: [[-1.47, 0.42, 1.45]],
+  darkvan: [[-1.47, 0.52, 1.84]],
+  hearse: [[-1.68, 0.38, 1.32]],
+  hotrod: [[-0.55, 0.72, 0.62]], // (its rear wheel stands bare behind the cab: the wreath on the cab's side, ahead of the flames)
+  minivan: [[-1.47, 0.4, 1.39]],
   commuter: [[-1.15, 0.32, 1.1]], // (HUGE, the owner: centred on the rear wheel, a laurel arch over it across most of the rear 30% (z -1.7 to -0.6); carved by the tyre, the waist and the tail's turn)
 };
 // OTHER PLACEMENTS to compare (the owner, 14-Oct: "Try some different placements of the wreath please"), by the base
@@ -59,7 +63,7 @@ export const LEGEND_PLACEMENTS = {
 // the wreath never shows above this height (m), by the base car's MODEL: the waist, so no stray bits land on the
 // pillars and the frames round the side windows
 export const LEGEND_WAIST = {
-  commuter: 0.8, sport: 0.8, miata: 0.84, lowrider: 0.84, wagon: 1.18, lovebus: 1.3,
+  commuter: 0.8, sport: 0.8, miata: 0.84, lowrider: 0.84, wagon: 1.18, lovebus: 1.3, darkvan: 1.52, hearse: 1.02, hotrod: 0.92, minivan: 1.22,
 };
 // the trim, by the base car's MODEL, by the colours (hex) of the materials its parts are drawn in (as the model builds
 // them, its Good livery): `gold` the metal, chrome and trim (bumpers, grille, lamp rims, sills, hubs); `black` a second
@@ -74,6 +78,10 @@ export const LEGEND_TRIM = {
   lowrider: { gold: [0xe2b64a, 0xd9dce1] }, // (its gold trim and its chrome: bumpers, spokes, side spears)
   wagon: { gold: [0x1b1d21, 0xd9dce1, 0xc4c8ce] }, // (the dark bumpers and trim, the chrome, the hubs)
   lovebus: { gold: [0xd9dce1, 0xc4c8ce], black: [0xf6f3ea] }, // (the chrome bumpers and the hub caps; its white upper half black)
+  darkvan: { gold: [0x1b1d21, 0xd9dce1, 0xc4c8ce], black: [0xf4f4f0] }, // (the dark bumpers and bull bar, the chrome, the hubs; its stripe black)
+  hearse: { gold: [0xd8d8d8, 0xc4c8ce, 0xece6cc] }, // (the chrome, the landau bars, the hubs; the curtains left)
+  hotrod: { gold: [0xd8d8d8, 0xf2d21f], goldMap: true }, // (the chrome engine, grille, pipes and hubs, the brass; its flames tinted gold; the frame stays dark)
+  minivan: { gold: [0xd8d8d8, 0xc4c8ce, 0xece6cc], black: [0xd6d0c0] }, // (the chrome grille and trim, the hubs; its body-coloured bumpers black; the dark pillars left)
 };
 const LIFT = 0.006; // (the wreath's offset out from the paint: past the z-fight check's 4 mm, and polygon offset besides)
 const FACING = 0.7; // (a point shows where the paint's normal is within about 45 degrees of straight out sideways)

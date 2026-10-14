@@ -69,7 +69,7 @@ export const X_DEFAULT = 5;
 // `node scripts/ecu-tables.mjs --delivery` to write each ECU's figure into ecus.json by the equal steps.
 export const DELIVERY = {
   // the Legendary cars: their base car's
-  'l-commuter': 1.0, 'l-sport': 0.75, 'l-miata': 0.7, 'l-lowrider': 0.85, 'l-wagon': 1.2, 'l-lovebus': 1.3,
+  'l-commuter': 1.0, 'l-sport': 0.75, 'l-miata': 0.7, 'l-lowrider': 0.85, 'l-wagon': 1.2, 'l-lovebus': 1.3, 'l-darkvan': 1.35, 'l-hearse': 1.1, 'l-hotrod': 0.7, 'l-minivan': 1.35,
   // mail, courier and delivery vehicles: built to hand things over (the best)
   postvan: 1.6, courier: 1.6, milkfloat: 1.55, keitruck: 1.5, floatvan: 1.5, 'earned-apc': 1.45, dampervan: 1.4,
   // vans and people carriers: a big side door, room to reach the parcels

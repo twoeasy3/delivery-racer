@@ -72,7 +72,7 @@ export const blueStarsOpen = () => tierHooks.blueOpen?.() ?? Progress.data.unloc
 // ---- the level tiers (tiers.js): which tier a car is in, and the car rule on a level not yet beaten ----
 // a car's tier number: 1 to 5 for the gold-star cars, 6 to 10 for the Blue Star ones (Blue 1 is 6); null for a car
 // outside the tiers (earned, amphibious, tierless, secret, a level's own vehicle)
-export const carTier = (car) => car && car.tier >= 1 && car.tier <= TIERS && !car.earned && !car.amphibious && !car.super && (CARS.includes(car) || FILLER_CARS.includes(car)) ? car.tier + (car.blue ? 5 : 0) : null; // (an evergreen blueprint car too)
+export const carTier = (car) => car && car.tier >= 1 && car.tier <= TIERS && !car.earned && !car.amphibious && !car.super && (CARS.includes(car) || FILLER_CARS.includes(car)) ? car.tier + (car.blue && !car.evergreen ? 5 : 0) : null; // (an evergreen blueprint car too: by its stars alone, which show magenta whatever its `blue`, which only lengthens its ECU ladder (the Legendary cars))
 // hooks tiers.js sets when it loads: rule() the car rule on the level picked (null: any car; see carRule below),
 // blueOpen() whether the Blue Star cars are in the garage (null: the old rule)
 const tierHooks = {};
@@ -607,6 +607,18 @@ export const FILLER_CARS = [
   filler(2, { id: 'l-lovebus', name: 'Legendary Love Bus', basedOn: 'the Love Bus', model: 'lovebus', legend: 'lovebus', blue: true,
     color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1, hl: 2.3, height: 2.1, note: 'Peace, love and first place: the bus that won the summer.',
     maxSpeed: 34, accel: 11, agility: 1.15, crossing: 0.65, health: 215, mass: 1, sound: 'lovebus', noPacks: true }, 'legendary'),
+  filler(1, { id: 'l-darkvan', name: 'Legendary Darkvan', basedOn: 'the Darkvan', model: 'darkvan', legend: 'darkvan', blue: true,
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1.05, hl: 2.45, height: 2.4, note: 'The panel van that never lost a delivery, and has the laurels to prove it.',
+    maxSpeed: 34, accel: 12.5, agility: 1.15, crossing: 0.75, health: 195, mass: 1, sound: 'darkvan', noPacks: true }, 'legendary'),
+  filler(3, { id: 'l-hearse', name: 'Legendary Hearse', basedOn: 'the Hearse', model: 'hearse', legend: 'hearse', blue: true,
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1, hl: 2.8, height: 1.65, note: 'The last ride, done in style: a champion that arrives right on time.',
+    maxSpeed: 43, accel: 14, agility: 1.15, crossing: 0.5, health: 221, mass: 1, sound: 'hearse', noPacks: true }, 'legendary'),
+  filler(3, { id: 'l-hotrod', name: 'Legendary Hot Rod', basedOn: 'the Hot Rod', model: 'hotrod', legend: 'hotrod', blue: true,
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 0.9, hl: 2.1, height: 1.2, note: 'The drag strip legend: a blown engine, open wheels and the laurels of a winner.',
+    maxSpeed: 48, accel: 19, agility: 1.15, crossing: 0.5, health: 143, mass: 1, sound: 'hotrod', noPacks: true }, 'legendary'),
+  filler(3, { id: 'l-minivan', name: 'Legendary Minivan', basedOn: 'the Minivan', model: 'minivan', legend: 'minivan', blue: true,
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1.05, hl: 2.45, height: 2, note: 'The people carrier that carried off every prize going.',
+    maxSpeed: 42, accel: 13, agility: 1.15, crossing: 0.7, health: 260, mass: 1, sound: 'minivan', noPacks: true }, 'legendary'),
 ];
 applyNames('car', FILLER_CARS);
 // is a blueprint car unlocked (its first X blueprints, ecu.js)? Set by ecu.js when it loads (null: none is, but one in
