@@ -144,3 +144,12 @@ on), so the lamp definitions can be judged. Do not send the nine-view sheets, th
 asked (still render and READ them yourself while inspecting: see "How to inspect"). Report: branch, commit, car names/ids,
 shapes and triangles per car, defects found and fixed, what is still wrong, what you did not see. Then STAND BY for
 follow-up changes.
+
+## Number plate anchors: every new car gets one, or an explicit 'none' (the owner, 14-Oct; not a hard check)
+The equippable number plate (render/platecosmetic.js) stands on each car's rear and front at a place in the plate table (render/plateanchorstable.js,
+GENERATED, keyed by model name, read by render/plateanchors.js). A new car (or a rebuilt model) should get its entry: run
+`node scripts/plate-anchors.mjs <car id> --write` (it builds the model, shoots rays at its back and front, fits a flat place and writes the entry; a
+craft, bike or open-wheeler goes on the none list), then look at it (`?cosmetics&car=<id>&platedesign=classic&slot=plate&closeup=rear` and `=front`
+with scripts/shots.mjs) and, if a place is wrong, put a hand fix in `HAND` in render/plateanchors.js (or the model in `HAND_NONE`). Give a plate a flat
+place about 0.52 x 0.13 m (0.40 or 0.30 wide will do) at the car's centre line, clear of lamps and glass. A car with no entry is "unplaced": the plate
+cosmetic does nothing on it, its own plates stay. Legendary variants are never dressed. Say in your report which cars got a plate place and which 'none'.

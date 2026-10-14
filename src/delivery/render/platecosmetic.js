@@ -180,7 +180,16 @@ const buildEnd = (model, end, anchor) => {
   group.position.set(0, anchor.at[1], anchor.at[2]);
   group.rotation.x = anchor.pitch * Math.PI / 180;
   group.name = 'numberplate-' + end;
-  model.add(group);
+  // on the body's own group where the model keeps its body in one that moves (the lowrider's hydraulics, an idle sway): the plate goes
+  // where the anchor says AT REST (the anchor is in the model's frame), then rides with the body
+  const parent = model.userData.body?.parent;
+  if (parent && parent !== model && !parent.userData.animate && !parent.userData.body) { // (a group with an animation of its own is skipped by dents.js: the plate stays on the model then)
+    model.updateMatrixWorld(true);
+    group.updateMatrix();
+    const toParent = new THREE.Matrix4().copy(model.matrixWorld).invert().multiply(parent.matrixWorld).invert().multiply(group.matrix);
+    toParent.decompose(group.position, group.quaternion, group.scale);
+    parent.add(group);
+  } else model.add(group);
   return group;
 };
 

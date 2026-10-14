@@ -16,9 +16,11 @@ import { PLATE_TABLE, PLATE_VARIANTS, PLATE_NONE } from './plateanchorstable.js'
 // hand-placed ends and fixes. { r: [y, z, w, pitch] | null, f: ..., ends?: 'both' | 'rear' | 'front' }. An end given here replaces the
 // generated one; `null` takes that end away; an end not mentioned stays as generated.
 export const HAND = {
+  mini: { ends: 'rear' }, autobahnestate: { ends: 'rear' }, // (something stands over a third of the front place: rear only)
+  dodgem: { ends: 'rear' }, // (the bumper car's nose is a blob: a front plate half sinks into it)
 };
 // models that can wear no plate though the generator found a place (a taste call) -- or that have a place nobody wants a plate on
-export const HAND_NONE = [];
+export const HAND_NONE = ['swancar']; // (the Swan Car's tail is all teardrop curve: the generator's flat place sits inside the body)
 
 export const PLATE_W_H = 4; // a plate is 4 times as wide as high (render/platedesigns.js draws it so)
 

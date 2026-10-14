@@ -24,8 +24,9 @@ const STORE = 'delivery_racer_progress_backup', cookie = () => document.cookie.s
 
 // the shipped registry
 const shipped = cosmeticKeys();
-check(wheels.WHEEL_SETS.length === 12 && shipped.length === 12 && wheels.WHEEL_SETS.every(s => shipped.includes('wheels:' + s.id)), 'the registry holds the 12 wheel sets as wheels:<id> (' + shipped.length + ' keys)');
-check(COSMETICS.every(c => c.free === true), 'every shipped cosmetic is free');
+const plateKeys = shipped.filter(k => k.startsWith('plate:'));
+check(wheels.WHEEL_SETS.length === 12 && shipped.length === 12 + plateKeys.length && wheels.WHEEL_SETS.every(s => shipped.includes('wheels:' + s.id)), 'the registry holds the 12 wheel sets as wheels:<id> and the plate designs as plate:<id> (' + shipped.length + ' keys, ' + plateKeys.length + ' plate designs)');
+check(COSMETICS.filter(c => c.slot === 'wheels').every(c => c.free === true) && COSMETICS.filter(c => c.slot === 'plate').some(c => !c.free), 'every wheel set is free; the plate designs are partly locked (CHECKLIST 286)');
 Progress.reset(); clearCosmetics();
 check(ownedCosmetics().length === 0 && wheels.WHEEL_SETS.every(s => ownsCosmetic('wheels', s.id)), 'a fresh start lists none and owns every free set');
 check(!ownsCosmetic('wheels', 'no-such-set') && !ownsCosmetic('plate', 'x'), 'an unknown item is not owned');
@@ -130,7 +131,7 @@ check(ownedCosmetics().join() === listed.join() && ownsCosmetic('plate', 'fixtur
   wheels.setWheelSet('stock');
 }
 undo();
-check(!cosmeticKeys().includes(KEY) && cosmeticKeys().length === 12, 'the fixture is taken out again (nothing shipped changed)');
+check(!cosmeticKeys().includes(KEY) && cosmeticKeys().length === shipped.length, 'the fixture is taken out again (nothing shipped changed)');
 console.log(failures ? failures + ' FAILED' : 'all checks passed');
 await g.close();
 process.exit(failures ? 1 : 0);

@@ -87,14 +87,14 @@ try {
     stats.triPerEnd.add(added / worn.length);
     for (const end of a.ends) {
       const g = plan.groups[end];
-      if (!g || g.parent !== b.model) bad.push(b.car.id + ' ' + end + ' not a child of the model');
+      if (!g || (g.parent !== b.model && g.parent !== b.model.userData.body?.parent)) bad.push(b.car.id + ' ' + end + ' not a child of the model');
       else if (Math.abs(g.position.y - a[end].at[1]) > 1e-6 || Math.abs(g.position.z - a[end].at[2]) > 1e-6 || g.position.x !== 0) bad.push(b.car.id + ' ' + end + ' misplaced');
       const mats = g.children.map(m => m.material);
       if (!mats[1].map || mats[1].map.image?.width !== 256) bad.push(b.car.id + ' ' + end + ' face has no 256 texture');
     }
     for (const e of P.existingPlates(b.model)) { if (e.mesh.visible === a.ends.includes(e.face)) bad.push(b.car.id + ' own ' + e.face + ' plate visibility'); else if (!e.mesh.visible) stats.hidden++; }
   }
-  check(!bad.length, 'every anchored car wears the plate on exactly its ends, at the anchor, as a child; its own plates hidden on those ends only; Legendary and no-anchor cars unchanged' + (bad.length ? ': ' + bad.slice(0, 8).join('; ') : ''));
+  check(!bad.length, 'every anchored car wears the plate on exactly its ends, at the anchor, as a child of the model (or of its body group); its own plates hidden on those ends only; Legendary and no-anchor cars unchanged' + (bad.length ? ': ' + bad.slice(0, 8).join('; ') : ''));
   console.log('        dressed ' + stats.ok + ' (both ' + stats.both + ', rear only ' + stats.rear + ', front only ' + stats.front + '), none ' + stats.none + ', unplaced ' + stats.unplaced + ', Legendary ' + stats.legend + '; own plates hidden ' + stats.hidden + '; triangles added per end: ' + [...stats.triPerEnd].join(','));
   check(stats.triPerEnd.size === 1 && [...stats.triPerEnd][0] === 14, 'a plate costs 14 triangles an end (12 edge + 2 face)');
   const noneCars = built.filter(b => A.plateAnchorsFor(b.car).status === 'none').map(b => b.car.id);
@@ -186,8 +186,8 @@ try {
   // ---- dents: the plate follows; burial at each stage ----
   if (!noDents) {
     clearCosmetics(); grantCosmetics(['plate:classic']); P.setPlateDesign('classic'); P.setPlateText('DENT 42');
-    const ray = new THREE.Raycaster(), buried = [], follows = [];
-    const stages = [0.3, 0.55, 0.75, 0.95];
+    const ray = new THREE.Raycaster(), buried = [], follows = [], notFollowing = [];
+    const stages = [0, 0.3, 0.55, 0.75, 0.95], atRest = [];
     for (const b of built) {
       const a = A.plateAnchorsFor(b.car);
       if (a.status !== 'ok' || b.car.legend) continue;
@@ -215,13 +215,18 @@ try {
         }
         seen.push(frac);
       }
+      const rest = Math.min(...Object.values(seen[0]));
+      if (rest < 0.7) atRest.push(b.car.id + ' ' + Object.entries(seen[0]).map(([e, v]) => e[0] + Math.round(v * 100)).join('/'));
       const worst = Math.min(...seen.flatMap(f => Object.values(f)));
       const clean = dentModel(m, m.userData.body, 0) ?? 0; void clean;
       if (worst < 0.6) buried.push(b.car.id + ' ' + seen.map(f => Object.entries(f).map(([e, v]) => e[0] + Math.round(v * 100)).join('/')).join(' > '));
-      follows.push(!!m.userData.dentFrame && m.userData.dentFrame.parts.some(p => p.mesh === plan.groups[a.ends[0]].children[1]));
+      const fl = !!m.userData.dentFrame && m.userData.dentFrame.parts.some(p => p.mesh === plan.groups[a.ends[0]].children[1]);
+      if (!fl) notFollowing.push(b.car.id);
+      follows.push(fl);
     }
-    check(follows.every(Boolean), 'dents.js measured the plate with the car (' + follows.length + ' cars)');
-    console.log('        plates under 60% visible at some stage (' + stages.join(' / ') + ' of damage), rear/front % per stage: ' + buried.length + (buried.length ? '\n          ' + buried.join('\n          ') : ''));
+    check(follows.every(Boolean), 'dents.js measured the plate with the car (' + follows.length + ' cars)' + (notFollowing.length ? ', NOT: ' + notFollowing.join(', ') : ''));
+    console.log('        plates under 60% visible at some stage (' + stages.join(' / ') + ' of damage), rear/front % per stage (the first is the car at rest): ' + buried.length + (buried.length ? '\n          ' + buried.join('\n          ') : ''));
+    check(!atRest.length, 'at rest every plate is seen from its end (>= 70% of sample points)' + (atRest.length ? ': ' + atRest.join(', ') : ''));
     P.resetPlate();
   }
 } finally {
