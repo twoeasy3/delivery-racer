@@ -156,7 +156,7 @@ export const MODELS = {
     box(group, paint, 0.5, 0.42, l * 0.28, 0, 0.72, -l * 0.18);                                   // engine cover...
     box(group, accent, 0.05, 0.36, l * 0.24, 0, 1.0, -l * 0.24);                                  // ...and its fin
     box(group, carbon, 0.42, 0.16, 0.5, 0, 0.72, l * 0.06);                                       // the cockpit
-    box(group, lambert(0xf2d21f), 0.24, 0.24, 0.24, 0, 0.82, l * 0.02);                           // a helmet
+    box(group, lambert(0xf2d21f), 0.24, 0.24, 0.24, 0, 0.82, l * 0.02).userData.figure = true;    // a helmet (figure: hidden in the unlock cinematics, render/unlockcine.js)
     // the halo: a hoop round the cockpit, its two arms running from the engine cover behind the driver's
     // shoulders forward to a point ahead of the helmet, held up there by a pillar down to the monocoque
     const haloY = 0.99, back = -l * 0.045, tip = l * 0.125, arm = 0.25;
@@ -459,11 +459,12 @@ export const MODELS = {
       box(shell, TAIL, 0.08, 0.08, 0.04, side * w * 0.4, 0.45, -front - 0.01);
     }
     box(shell, glass, w * 0.7, 0.4, 0.03, 0, 1.2, cabBack - 0.13);                       // the back of the cabin, glass
-    box(shell, dark, 0.34, 0.5, 0.3, -0.3, 0.96, -front * 0.08);                         // the captain: sat at the wheel...
+    box(shell, dark, 0.34, 0.5, 0.3, -0.3, 0.96, -front * 0.08).userData.figure = true;  // the captain: sat at the wheel... (figure: hidden in the cinematics)
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 8), lambert(0xe0b48c));     // ...the head...
     head.position.set(-0.3, 1.32, -front * 0.08);
     shell.add(head);
-    box(shell, lambert(0xf4f4f4), 0.3, 0.08, 0.3, -0.3, 1.45, -front * 0.08);            // ...and cap
+    head.userData.figure = true;
+    box(shell, lambert(0xf4f4f4), 0.3, 0.08, 0.3, -0.3, 1.45, -front * 0.08).userData.figure = true; // ...and cap
     box(shell, dark, 0.06, 0.25, 0.06, -0.3, 1.0, cabFront - 0.45);                      // the wheel's column
     box(shell, dark, w * 0.96, 0.05, 0.45, 0, 0.08, -front - 0.2);                       // the swim platform
     disc(shell, dark, 0.18, 0.3, 0, 0.0, -front - 0.15);                                 // the jet's nozzle
