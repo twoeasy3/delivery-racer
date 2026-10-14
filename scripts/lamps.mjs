@@ -38,8 +38,7 @@ const piecesOf = (model) => {
     const mat = [].concat(node.material)[0];
     if (!mat?.color || mat.transparent && mat.opacity < 0.6) return;
     if (!(mat.type === 'MeshBasicMaterial' || (mat.emissive && mat.emissive.getHex() > 0))) return;
-    const cat = colourOf(mat);
-    if (!cat) return;
+    const cat = colourOf(mat), hex = mat.color.getHexString(); // (cat null: a dark or off lamp colour; kept so a flashing beacon is matched across times)
     m.multiplyMatrices(inv, node.matrixWorld);
     const g = node.geometry, pos = g.attributes.position, idx = g.index, nt = (idx ? idx.count : pos.count) / 3;
     const parent = Int32Array.from({ length: nt }, (_, i) => i);
@@ -54,7 +53,7 @@ const piecesOf = (model) => {
     const comps = new Map();
     for (let t = 0; t < nt; t++) {
       const root = find(t);
-      if (!comps.has(root)) comps.set(root, { cat, box: new THREE.Box3(), tris: 0 });
+      if (!comps.has(root)) comps.set(root, { cat, hex, box: new THREE.Box3(), tris: 0 });
       const c = comps.get(root);
       c.tris++;
       for (let k = 0; k < 3; k++) c.box.expandByPoint(pts[t * 3 + k]);
@@ -71,20 +70,28 @@ const draft = (car, model) => {
   const top = new THREE.Box3().setFromObject(model).max.y, hl = car.hl || 2;
   model.userData.animate?.(0);
   const pieces = piecesOf(model);
-  let moves = 0; // (how far the lamps move with the model's animation, m: more than 2 cm needs a frame)
-  for (const t of [1.37, 2.9]) {
-    model.userData.animate?.(t);
-    const again = piecesOf(model);
-    if (again.length !== pieces.length) moves = Math.max(moves, 1);
-    else again.forEach((p, i) => { moves = Math.max(moves, p.box.getCenter(new THREE.Vector3()).distanceTo(pieces[i].box.getCenter(new THREE.Vector3()))); });
-  }
+  let moves = 0; // (how far the head / tail lamps move with the model's animation, m: more than 2 cm needs a frame)
+  // Pieces that come and go (a roof beacon or flasher swapping colour, a stop arm swinging out) are NOT lamps of the car:
+  // a piece whose colour changes at some time is `flashes`; one outside the front / rear zone that moves is an accessory.
+  // Both are ignored, so the car is classed by its real lamps (hard cars B: fireengine, schoolbus, wrecker).
+  const fixed = pieces.map(() => true), centre = (p) => p.box.getCenter(new THREE.Vector3());
+  const zone = (p) => Math.abs(centre(p).z) > hl * 0.55;
+  const times = [1.37, 2.9, 0.3, 0.6], seenAt = times.map((t) => { model.userData.animate?.(t); return piecesOf(model); });
+  seenAt.forEach((again) => {
+    if (again.length !== pieces.length) { moves = Math.max(moves, 1); return; }
+    again.forEach((p, i) => {
+      if (p.hex !== pieces[i].hex) { fixed[i] = false; return; }
+      if (zone(pieces[i])) moves = Math.max(moves, centre(p).distanceTo(centre(pieces[i])));
+    });
+  });
+  pieces.forEach((p, i) => { if (!fixed[i]) p.flashes = true; });
   moves = moves > 0.02 ? Math.round(moves * 100) / 100 : 0;
   model.userData.animate?.(0);
   const lamp = (p, front) => {
     const c = p.box.getCenter(new THREE.Vector3()), s = p.box.getSize(new THREE.Vector3());
     return { x: c.x, y: c.y, z: front ? p.box.max.z : p.box.min.z, w: s.x, h: s.y, round: p.tris > 12, cat: p.cat };
   };
-  const ok = (p) => { const s = p.box.getSize(new THREE.Vector3()); return Math.max(s.x, s.y) > 0.025 && p.box.max.y < top - 0.1; }; // (not a roof beacon or bar)
+  const ok = (p) => !p.flashes && !!p.cat && (() => { const s = p.box.getSize(new THREE.Vector3()); return Math.max(s.x, s.y) > 0.025 && p.box.max.y < top - 0.1; })(); // (not a roof beacon or bar)
   const front = pieces.filter(p => ok(p) && p.box.getCenter(new THREE.Vector3()).z > hl * 0.55).map(p => lamp(p, true));
   const rear = pieces.filter(p => ok(p) && p.box.getCenter(new THREE.Vector3()).z < -hl * 0.55).map(p => lamp(p, false));
   // fold mirror pairs: keep the +x one (mirror: true); a lamp on the centre line stays single
