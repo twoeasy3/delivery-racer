@@ -418,17 +418,17 @@ export const IDEA_MODELS_TOPUP_C = {
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
     const stripe = new THREE.MeshLambertMaterial({ color: 0x2a6fb8 });
     // the cab: its foot on the deck, its front leaning out a touch, the windscreen raked back, a flat roof
-    const CW = 1.56, CTAPER = [1.4, 2.34, 0.04], CF = [[1.98, 0.9], [2.04, 1.5], [1.94, 2.28]];
+    const CW = 1.3, CTAPER = [1.4, 2.34, 0.04], CF = [[1.98, 0.9], [2.04, 1.5], [1.94, 2.28]];
     const cab = [[0.84, 0.9], ...CF, ...curve(CF[2], [1.92, 2.32], [1.88, 2.34], [1.8, 2.34], 2), [0.92, 2.34], [0.84, 2.26]];
     // the snow tank: rounded over its top and its ends, and (a deep bevel across) over its sides
     // (its outline drawn 0.25 in: the deep bevel grows it back out, rounding every edge of it)
-    const TBW = 1.98, TANK = [[1.05, 1.0], [1.05, 1.62], ...curve([1.05, 1.62], [1.05, 1.8], [0.9, 1.87], [0.7, 1.87], 3),
-      [-1.2, 1.85], ...curve([-1.2, 1.85], [-1.7, 1.84], [-1.89, 1.7], [-1.89, 1.3], 4), [-1.89, 1.0]];
+    const TBW = 1.98, TANK = [[1.05, 1.0], [1.05, 1.72], ...curve([1.05, 1.72], [1.05, 1.92], [0.9, 1.97], [0.7, 1.97], 3),
+      [-1.2, 1.93], ...curve([-1.2, 1.93], [-1.7, 1.92], [-1.89, 1.76], [-1.89, 1.3], 4), [-1.89, 1.0]];
     const lower = [[NOSE, AY], [NOSE, 0.7], ...curve([NOSE, 0.7], [NOSE, 0.86], [NOSE - 0.06, DECK - 0.02], [NOSE - 0.2, DECK], 3),
       [TAILZ + 0.06, DECK], [TAILZ, DECK - 0.05], [TAILZ, AY], ['arc', AR, AY, ARC], ['arc', AF, AY, ARC]];
     const shade = (y, z) => {
       if (z < 0.86 && y > 1.0) { // the tank: a pale band across its shoulder, a little duller below it
-        const c = 0.82 + 0.18 * Math.exp(-(((y - 2.02) / 0.14) ** 2));
+        const c = 0.82 + 0.18 * Math.exp(-(((y - 2.1) / 0.14) ** 2));
         return [c, c, c * 1.0];
       }
       const t = Math.min(1, Math.max(0, (y - 0.24) / 0.7));
@@ -437,7 +437,7 @@ export const IDEA_MODELS_TOPUP_C = {
     const body = place(group, shared(k + 'body', () => shadeBy(merge([
       extrudeSide(lower, BW, BEV, null, 2, ACROSS),
       extrudeSide(cab, CW, BEV, CTAPER, 2, 0.08),
-      extrudeSide(TANK, TBW, 0.25, null, 3, 0.3),
+      extrudeSide(TANK, TBW, 0.25, null, 4, 0.3),
     ]), shade)), paint);
     // the stripe: along the body's flanks and the tank's, laid a few mm proud
     parts(group, k + 'stripe', stripe, () => [-1, 1].flatMap(s => [
@@ -450,7 +450,7 @@ export const IDEA_MODELS_TOPUP_C = {
     parts(group, k + 'glass', GLASS, () => [
       slopeGlass([zF(1.56), 1.56], [zF(2.22), 2.22], cx(1.56) - 0.12, cx(2.22) - 0.12, BEV + LIFT),
       ...sideGlass([[[zF(1.3) - 0.12, 1.3], [1.1, 1.3], [1.1, 2.22], [zF(2.22) - 0.1, 2.22]]], CW / 2, CTAPER, LIFT),
-      panel([[0.6, 2.16, 0.78 - LIFT], [-0.6, 2.16, 0.78 - LIFT], [-0.6, 2.26, 0.78 - LIFT], [0.6, 2.26, 0.78 - LIFT]]),
+      panel([[0.5, 2.24, 0.78 - LIFT], [-0.5, 2.24, 0.78 - LIFT], [-0.5, 2.3, 0.78 - LIFT], [0.5, 2.3, 0.78 - LIFT]]),
     ]);
     // dark: the conditioner bar across the back and its blade, the headlamps' surrounds
     const BZ = TAILZ - BEV, HZ = zF(1.2) + BEV;
@@ -458,10 +458,10 @@ export const IDEA_MODELS_TOPUP_C = {
       bx(2.2, 0.3, 0.24, 0, 0.36, -2.28),
       bx(2.08, 0.1, 0.05, 0, 0.17, -2.32),
       bx(1.9, 0.12, 0.12, 0, 0.4, NOSE + BEV + 0.03),                       // the front's rubber bumper
-      ...[-1, 1].map(s => bx(0.3, 0.22, 0.03, s * 0.46, 1.2, HZ, Math.atan2(0.06, 0.6))),
+      ...[-1, 1].map(s => bx(0.28, 0.22, 0.03, s * 0.38, 1.2, HZ, Math.atan2(0.06, 0.6))),
     ]);
     // the lamps: square headlamps on the cab's front, tail lamps on the back over the bar, ambers on the cab's corners
-    parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => bx(0.22, 0.14, 0.03, s * 0.46, 1.2, HZ + 0.012, Math.atan2(0.06, 0.6))));
+    parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => bx(0.2, 0.14, 0.03, s * 0.38, 1.2, HZ + 0.012, Math.atan2(0.06, 0.6))));
     parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.16, 0.16, 0.03, s * 0.8, 0.64, BZ - 0.006)));
     const RX = cx(2.2) - 0.04;
     parts(group, k + 'amber', AMBER, () => [-1, 1].flatMap(s => [

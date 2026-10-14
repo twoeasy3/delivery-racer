@@ -20,8 +20,8 @@ export const TOPUP_C = {
   // at the cab's top front corners flash at the front, and at the back (the cab's rear corners are near the middle of
   // the car) the indicator flashes red over the tail lamp, as an American machine's
   iceresurfacer: {
-    head: [{ at: [0.46, 1.2, 2.104], size: [0.22, 0.14], mirror: true }],
+    head: [{ at: [0.38, 1.2, 2.104], size: [0.2, 0.14], mirror: true }],
     tail: [{ at: [0.8, 0.64, -2.301], size: [0.16, 0.16], mirror: true }],
-    blink: [{ at: [0.713, 2.22, 2.018], size: [0.1, 0.07], mirror: true }, { at: [0.8, 0.64, -2.301], size: [0.16, 0.16], mirror: true, red: true, shared: 'tail lamp' }],
+    blink: [{ at: [0.588, 2.22, 2.018], size: [0.1, 0.07], mirror: true }, { at: [0.8, 0.64, -2.301], size: [0.16, 0.16], mirror: true, red: true, shared: 'tail lamp' }],
   },
 };
