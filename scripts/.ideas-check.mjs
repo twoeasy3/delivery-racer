@@ -22,10 +22,14 @@ try {
 
   // ---- what they are: thirty, tierless, free, placeholders, and none of them a garage car
 <<<<<<< HEAD
+<<<<<<< HEAD
   check(IDEA_CARS.length === 53, IDEA_CARS.length + ' car ideas (89 built: 26 originals, the second batch of twenty: render/ideaModels2.js, the third of ten: render/ideaModels3.js, the fourth of ten: render/ideaModels4.js, the fifth of two: render/ideaModels5.js, the sixth of five: render/ideaModels6.js, the seventh of three concept cars: render/ideaModels7.js, and the eighth to tenth, one concept car each: render/ideaModels8.js, ideaModels9.js, ideaModels10.js, and the top-up of ten: render/ideaModelsTopupA.js, B, C; less the 20 promoted to the roster, the 7 Bespoke key cars and the 6 concept key cars: CHECKLIST 211)');
 =======
   check(IDEA_CARS.length === 53, IDEA_CARS.length + ' car ideas (91 built: 26 originals, the second batch of twenty: render/ideaModels2.js, the third of ten: render/ideaModels3.js, the fourth of ten: render/ideaModels4.js, the fifth of two: render/ideaModels5.js, the sixth of five: render/ideaModels6.js, the seventh of three concept cars: render/ideaModels7.js, and the eighth to tenth, one concept car each: render/ideaModels8.js, ideaModels9.js, ideaModels10.js, and the top-up of ten: render/ideaModelsTopupA.js, B, C; batch D3 of two: render/ideaModelsBatchD3.js; less the 20 promoted to the roster, the 7 Bespoke key cars and the 6 concept key cars: CHECKLIST 211)');
 >>>>>>> origin/claude/ideas-batch-d3
+=======
+  check(IDEA_CARS.length === 53, IDEA_CARS.length + ' car ideas (89 built: 26 originals, the second batch of twenty: render/ideaModels2.js, the third of ten: render/ideaModels3.js, the fourth of ten: render/ideaModels4.js, the fifth of two: render/ideaModels5.js, the sixth of five: render/ideaModels6.js, the seventh of three concept cars: render/ideaModels7.js, and the eighth to tenth, one concept car each: render/ideaModels8.js, ideaModels9.js, ideaModels10.js, and the top-up of ten: render/ideaModelsTopupA.js, B, C, and batch D4 (two): render/ideaModelsBatchD4.js; less the 20 promoted to the roster, the 7 Bespoke key cars and the 6 concept key cars: CHECKLIST 211)');
+>>>>>>> origin/claude/ideas-batch-d4
   // (five that were ideas are the Bespoke key cars now (cars.js BESPOKE_CARS, 12-Oct): in the roster, out of the lot, not in CARS, no price, no tier)
   {
     const { BESPOKE_CARS = [] } = g.cars;

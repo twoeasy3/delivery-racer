@@ -46,11 +46,14 @@
 // Batch D2 (CHECKLIST item 3xx, to be renumbered): the Flatbed Truck and the Utility Moke (two more ideas, ideasBatchD2.js).
 // One more (CHECKLIST item 302): a tiny three-seat concept city car under a glass bubble (render/ideaModels10.js).
 // Batch D3, two more (CHECKLIST item 3xx, to be renumbered): a civilian half-track and a small sports hatch (render/ideaModelsBatchD3.js): +2 ideas.
+// Batch D4 (CHECKLIST item 3xx, to be renumbered): two more, a fast German-style estate and a huge fin-tailed 1950s cruiser
+// (ideasBatchD4.js, render/ideaModelsBatchD4.js): +2 ideas.
 
 import { IDEA_CARS_TOPUP_A } from './ideasTopupA.js'; // (the top-up's batch A: four classic road cars)
 
 // ============================================================================
 import { IDEAS_TOPUP_B } from './ideasTopupB.js';
+import { IDEAS_BATCH_D4 } from './ideasBatchD4.js'; // (batch D4: the Autobahn Estate, the Fin Land Yacht)
 
 import { IDEAS_BATCH_D2 } from './ideasBatchD2.js'; // (batch D2: the Flatbed Truck and the Utility Moke)
 import { IDEAS_BATCH_D3 } from './ideasBatchD3.js'; // (batch D3: the Half-Track and the Sprint Hatch)
@@ -190,5 +193,6 @@ export const IDEA_CARS = [
   ...IDEAS_BATCH_D1,
   ...IDEAS_BATCH_D2,
   ...IDEAS_BATCH_D3,
+  ...IDEAS_BATCH_D4,
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
