@@ -28,7 +28,10 @@
 //                   brake: the player's brake lamps held on; hazard / left / right: its indicators held lit (steady);
 //                   night: the headlamp glow on, and the ?cine=car studio dark. Comma-separated: ?lamps=show,brake
 import * as THREE from 'three';
+import { EASY_LAMPS } from './carlights-easy.js';
+import { HARD_LAMPS } from './carlights-hard.js';
 
+// (the hand-written entries; the generated batches are merged in under them: TABLE)
 export const CAR_LAMPS = {
   // The Commuter (render/modelsOrig1b.js): big teardrop headlamps on the nose's corners sweeping back into the wings,
   // tall oval tail lamps up the rear corners. No indicator lenses at all: the front ones flash on the outer tail of
@@ -87,6 +90,9 @@ export const CAR_LAMPS = {
   },
 };
 
+// every listed car: the generated batches (render/carlights-easy.js, carlights-hard.js), the hand-written ones over them
+export const TABLE = { ...EASY_LAMPS, ...HARD_LAMPS, ...CAR_LAMPS };
+
 // ---- ?lamps= (the debug and picture switches, above) ----
 const search = typeof location !== 'undefined' ? location.search : '';
 const lampsParam = (/[?&]lamps=([^&]*)/.exec(search) || [])[1] || '';
@@ -113,9 +119,9 @@ const slot = (l, w, h, out, d = 0.02) => {
 };
 const layouts = new Map();
 export const lampLayout = (key) => {
-  if (!key || LAMP_DEBUG.old || !CAR_LAMPS[key]) return null;
+  if (!key || LAMP_DEBUG.old || !TABLE[key]) return null;
   if (layouts.has(key)) return layouts.get(key);
-  const def = CAR_LAMPS[key];
+  const def = TABLE[key];
   const head = expand(def.head), tail = expand(def.tail), blink = expand(def.blink), reverse = expand(def.reverse);
   const brakeLamps = tail.filter(l => l.brake !== false);
   const layout = {
