@@ -167,7 +167,8 @@
 //                                  'cameraDolly', 'mooringPosts', 'fuelDrum', 'popcornCart', 'barrel',
 //                                  'chairStack', 'riceBasket', 'present', 'toyDrum', 'sackStack', 'beachBall',
 //                                  'tumbleweed', 'cafeTable', 'wheelieBin', 'snowdrift', 'brimstone', 'flagStand',
-//                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's). All of them are on the Gimmicks page, last,
+//                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'jerryStack', 'tentRoll' and
+//                                  'rallyFlag' (the desert's: stacked jerrycans, a rolled tent, a rally marker flag). All of them are on the Gimmicks page, last,
 //                                  under Road dressing (gimmicks.html?group=road-dressing)
 //   dropBears  { from, to, count } drop bears up in the trees over that stretch, dropping onto the
 //              road as the player comes near (see CONFIG.dropBear)

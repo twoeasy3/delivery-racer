@@ -1,7 +1,7 @@
 {
   "id": "dakar-dash",
   "theme": "desert",
-  "clock": {"good": 180, "evil": 140},
+  "clock": { "good": 255, "evil": 195 },
   "tip": 280,
   "lanes": 4,
   "flow": "north",
