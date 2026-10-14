@@ -151,7 +151,7 @@ const measure = (group, body, extra) => {
     meshes = meshesOf(group);
     wheels = new Set();
     try { for (const m of prepareSuspension(group).planted) wheels.add(m); } catch { /* (no wheels found: none held back) */ }
-    glass = new Set(meshes.filter(m => m !== body && paintOf(m) !== paintOf(body) && glassy(paintOf(m))));
+    glass = new Set(meshes.filter(m => m !== body && paintOf(m) !== paintOf(body) && !paintOf(m).userData.wheelHub && glassy(paintOf(m)))); // (a hub in the wheel colour, render/wheelcosmetic.js, is never glass, whatever its blue)
   }
   for (const m of extra) if (!meshes.includes(m)) meshes.push(m);
   const box = new THREE.Box3(), glassBoxes = [], wheelBoxes = [], parts = [];
