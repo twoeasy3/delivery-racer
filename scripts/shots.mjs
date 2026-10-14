@@ -97,6 +97,7 @@ if (opt('levels', false) || opt('cars', false) || shots.some(([, address]) => ad
   Object.assign(CINE, { descent: '&at=2240&ff=1&cineup=14&cineside=left' }); // (Mudslide: a hairpin below the road, houses stacked up the hill, a speed-cushion sign ahead; the start is in the cloud)
   Object.assign(CINE, { 'pocket-town': '&at=660&ff=2&car=fishbowl' }); // (the Concept Strike's Monday, an event map: market day in the square, the Fishbowl in it)
   Object.assign(CINE, { 'solstice-cliffs': '&at=1000&ff=2&car=midsummer' }); // (Tuesday's: the Sea Cliff Bridge, the Midsummer on it)
+  Object.assign(CINE, { 'chianti-run': '&at=1230&ff=1&cineup=12' }); // (Chianti Run, hidden: the hill village and its bell tower over the cypress lane, a farmhouse beside the road; the start is an avenue)
   Object.assign(CINE, { 'grand-boulevard': '&at=1120&ff=2&car=sixteen' }); // (Wednesday's: the lake bridge, the wide load and the Sixteen on it)
   Object.assign(CINE, { 'turbo-quay': '&at=1250&ff=2&car=quadturbo' }); // (Thursday's: the quay, a gantry crane over the level crossing, the Quad-Turbo)
   Object.assign(CINE, { 'neon-edge': '&at=300&ff=2&car=knifeedge' }); // (Friday's: the elevated expressway at night between the towers, the Knife-Edge on it)
@@ -108,7 +109,7 @@ if (opt('levels', false) || opt('cars', false) || shots.some(([, address]) => ad
     });
     // (an event's own levels, levels.js EVENT_MAPS: on no menu list, played from the address as a hidden level; their stage's card
     // shows <map id>.jpg, menustage.js shotId)
-    for (const id of Object.keys(levels.EVENT_MAPS || {})) {
+    for (const id of Object.keys(levels.HIDDEN_LEVELS || {})) { // (the event maps, and any other hidden level: only named ones)
       if (only(opt('levels')) && only(opt('levels')).includes(id)) shots.push([id, `?autostart${side}&hidden=${id}&ghost&cine${FF(id)}${CINE[id] || ''}`, !!PAIR.folder]);
     }
   }
