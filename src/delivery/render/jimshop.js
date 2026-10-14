@@ -10,8 +10,10 @@
 // By address (for a look; nothing is saved):
 //   ?jimshop                  the Shop opens with the stall expanded
 //   &demo[=name]              a made-up save: normal (default), keycar (two key cars, the Rocket Fin and the Swan Car, on the stall), expensive (the confirm up), soldout,
-//                             broke, maxed, capped, empty (all sold), nopool (no cars), bought (a purchase just made, feedback held)
+//                             broke, maxed, nocc (too little Crazey Cash to refresh), reflimit (refreshes used up), empty (all sold), nopool (no cars),
+//                             bought (a purchase just made, feedback held)
 //   &jimcars=a,b,c            with demo=keycar: those cars on the stall (up to six)
+//   &jimcc=<n>                the Crazey Cash for the visit (the Refresh button's)   &jimrefresh   press Refresh 0.7 s after opening
 //   &jimcash=<n>              the bank for the visit        &jimpress=<n>   press BUY on offer n (0-based, as laid out)
 //   &jimhold                  keep the toast up             &eventsnow=<date-time> sets the day and the slot (the rotation) and the clock
 import '../jimshop.css';
@@ -33,9 +35,10 @@ const params = new URLSearchParams(location.search);
 const dollars = (n) => '$' + Math.floor(n).toLocaleString('en-GB');
 const hold = params.get('jimhold') !== null;
 
-let expanded = params.get('jimshop') !== null, toast = null, toastTimer = 0, tween = 0, last = null; // (last: the purchase just made, for its tile and the bank to run from)
+let rerolled = false, expanded = params.get('jimshop') !== null, toast = null, toastTimer = 0, tween = 0, last = null; // (last: the purchase just made, for its tile and the bank to run from)
 let poolOverride = null; // (?demo=nopool: a pool of no cars)
 const pics = stillsIn(null);
+export const expandStall = () => { expanded = true; }; // (the menu's Jim button: the Shop opens with the stall's offers all showing)
 
 // ---- one offer ------------------------------------------------------------------------------------------------------------
 const offerTile = (v, anim) => {
@@ -54,13 +57,13 @@ const offerTile = (v, anim) => {
   const line = max
     ? make('div', 'jim-have-line', make('span', '', 'You have ', count), make('em', '', 'MAX ECU'))
     : make('div', 'jim-have-line', make('span', '', 'You have ', count, ' / ' + now.toNext), make('em', '', now.ecu === 0 && v.car.evergreen ? 'to unlock' : 'to ECU ' + (now.ecu + 1)));
-  const gain = make('div', 'jim-gain', off || max ? '' : (ups ? (after.ecu >= after.max ? 'Reaches MAX ECU!' : (now.ecu === 0 && v.car.evergreen ? 'Unlocks the car!' : 'Reaches ECU ' + after.ecu + '!')) : '+' + v.qty + (v.cut === 'need' ? ' (all it needs)' : v.cut === 'cap' ? ' (daily limit)' : '')));
+  const gain = make('div', 'jim-gain', off || max ? '' : (ups ? (after.ecu >= after.max ? 'Reaches MAX ECU!' : (now.ecu === 0 && v.car.evergreen ? 'Unlocks the car!' : 'Reaches ECU ' + after.ecu + '!')) : '+' + v.qty + (v.cut === 'need' ? ' (all it needs)' : '')));
   if (bought && !max) { // (the count runs up to the new figure, the bar fills)
     requestAnimationFrame(() => requestAnimationFrame(() => setBar(now)));
     runCount(count, shown.have, now.have, now.ecu > shown.ecu ? now.toNext : null);
   }
   // the price button: the Shop's own (shop.css .shop-price), greyed with its reason when it cannot be pressed
-  const words = { maxed: 'Maxed out', sold: 'Sold out', cap: 'Limit reached', short: 'Need ' + dollars(v.need) + ' more' }[v.why];
+  const words = { maxed: 'Maxed out', sold: 'Sold out', short: 'Need ' + dollars(v.need) + ' more' }[v.why];
   const button = v.why && v.why !== 'short'
     ? make('button', 'shop-price exhausted', make('b', '', words))
     : make('button', 'shop-price' + (v.why ? ' short' : ''), v.why ? make('b', '', words) : [v.was ? make('s', '', dollars(v.was)) : null, make('b', '', dollars(v.price)), make('span', 'jim-x', '×' + v.qty)]);
@@ -73,7 +76,8 @@ const offerTile = (v, anim) => {
   const pose = posePick(v.car.id);
   const { node, pic } = blueprintCard(v.car, { rarity: v.rarity, n: v.qty }, { pose });
   pics.watch(pic, v.car, { side: 'good', pose });
-  const stock = v.why === 'maxed' ? null : make('p', 'shop-limit' + (v.left <= 1 ? ' low' : ''), v.left === 0 ? 'None left this time' : (v.left === 1 ? 'Last one' : v.left + ' left') + (v.bought ? ' · price up' : ''));
+  // the cap per refresh, as what is left of it: "2 of 2 left" (an epic), "1 of 1 left" (a Legendary or a key car), "3 of 5 left" (a common)
+  const stock = v.why === 'maxed' ? null : make('p', 'shop-limit', v.left === 0 ? 'Sold out · cap ' + v.cap : Math.min(v.leftBp, v.cap) + ' of ' + v.cap + ' left' + (v.bought ? ' · price up' : ''));
   const tile = make('article', 'shop-tile jim-tile r-' + v.rarity + (v.key ? ' key' : '') + (off ? ' off' : '') + (bought ? ' bought' : ''),
     v.hot && !off ? make('span', 'shop-ribbon rb-sale', 'Hot −' + Math.round(JIM.hotOff * 100) + '%') : null,
     make('div', 'jim-art', node),
@@ -112,21 +116,26 @@ const animateBank = (node, from, to) => {
 export const jimSection = () => {
   const offers = Jim.offers({ cars: poolOverride });
   const order = [...offers.filter(o => o.hot), ...offers.filter(o => !o.hot)];
-  const today = Jim.today(), money = Math.floor(Progress.data.money);
+  const money = Math.floor(Progress.data.money);
   const left = Jim.nextAt() - Events.now();
   const live = () => { const b = make('b', 'countdown', ''); b.dataset.end = String(Jim.nextAt()); b.textContent = countdownText(left); return b; };
   const bankNode = make('b', '', dollars(last ? last.bank : money));
   if (last) animateBank(bankNode, last.bank, money);
   const flags = make('div', 'jim-bunting', ...Array.from({ length: 18 }, () => make('i')));
   const sign = make('div', 'jim-sign', make('h1', '', 'Crazey Jim\'s', make('span', '', 'Blueprint Stall')), make('p', '', '100% genuine blueprints*'));
-  const strip = make('div', 'jim-strip', make('div', 'jim-clock', 'New stock in', live()), make('div', 'jim-bank', make('small', '', 'Bank'), bankNode));
+  const info = Jim.refreshInfo(), cc = Math.max(0, Math.floor(Number(Progress.data.shopCash) || 0));
+  const refresh = make('button', 'jim-refresh' + (info.ok ? '' : ' off'), info.why === 'limit' ? 'Refresh limit reached' : info.why === 'short' ? 'Need ' + info.need + ' Crazey Cash' : 'Refresh (' + info.cost + ' CC)' + (info.left < 10 ? ' · ' + info.left + ' left' : ''));
+  refresh.type = 'button';
+  refresh.disabled = !info.ok;
+  refresh.setAttribute('aria-label', info.ok ? 'Refresh the stall for ' + info.cost + ' Crazey Cash (you have ' + cc + ')' : info.why === 'limit' ? 'Refresh limit reached for today' : 'Refreshing costs ' + info.cost + ' Crazey Cash: you need ' + info.need + ' more');
+  refresh.addEventListener('click', () => { if (Jim.refresh().ok) { rerolled = true; window.dispatchEvent(new Event('progresschange')); } });
+  const strip = make('div', 'jim-strip', make('div', 'jim-clock', 'New stock in', live()), refresh, make('div', 'jim-bank', make('small', '', 'Bank'), bankNode));
   const open = offers.filter(o => !o.why || o.why === 'short');
   const cheapest = open.length ? Math.min(...open.map(o => o.price)) : 0;
   let note = null;
-  if (offers.length && offers.every(o => o.why === 'maxed' || o.why === 'sold')) note = make('p', 'shop-note jim-note', 'Jim\'s cleaned out: everything is sold or maxed. New stock in ', live(), '.');
-  else if (offers.length && offers.every(o => o.why === 'maxed' || o.why === 'sold' || o.why === 'cap')) note = make('p', 'shop-note jim-note', 'Jim\'s daily limit of ' + JIM.dayCap + ' blueprints is reached. New stock in ', live(), '.');
+  if (offers.length && offers.every(o => o.why === 'maxed' || o.why === 'sold')) note = make('p', 'shop-note jim-note', 'Jim\'s cleaned out: everything is sold or maxed. Refresh the stall, or new stock in ', live(), '.');
   else if (open.length && open.every(o => o.why === 'short') && money < cheapest) note = make('p', 'shop-note jim-note', (money < 1 ? 'Your bank is empty. ' : 'Not enough in the bank. ') + 'Jim only takes tips: deliver something, then come back.');
-  const grid = make('div', 'jim-grid' + (expanded ? '' : ' collapsed'), ...order.map(o => offerTile(o, last)));
+  const grid = make('div', 'jim-grid' + (expanded ? '' : ' collapsed') + (rerolled ? ' rerolled' : ''), ...order.map(o => offerTile(o, last)));
   const more = offers.length > 2 ? make('button', 'jim-more', make('span', '', expanded ? 'Show fewer' : 'See all ' + offers.length + ' offers'), make('i', '', expanded ? '▴' : '▾')) : null;
   more?.addEventListener('click', () => {
     expanded = !expanded;
@@ -134,8 +143,9 @@ export const jimSection = () => {
     more.firstChild.textContent = expanded ? 'Show fewer' : 'See all ' + offers.length + ' offers';
     more.lastChild.textContent = expanded ? '▴' : '▾';
   });
-  const small = make('p', 'jim-small', '*Terms apply. Sold today: ' + today.bp + ' of ' + JIM.dayCap + '. Prices rise a little with each bundle of the same blueprint. Jim never sells a key, and sells key cars dearer, ' + JIM.keyCap + ' blueprints a day each.');
+  const small = make('p', 'jim-small', '*Terms apply. Each car has a cap of blueprints per refresh: ' + Object.entries(JIM.capPerRefresh).map(([r, n]) => (r === 'bespoke' ? 'key cars' : r) + ' ' + n).join(', ') + '. Prices rise a little with each bundle of the same blueprint. Jim never sells a key, and sells key cars dearer. A refresh costs Crazey Cash and starts the stall over.');
   last = null;
+  const rolled = rerolled; rerolled = hold && rolled; // (the pop plays once: kept for a picture with ?jimhold)
   return make('section', 'shop-section s-jim', flags, sign, strip, note, offers.length ? grid : make('p', 'shop-note jim-note', 'Jim has nothing on the stall right now. New stock in ', live(), '.'), more, offers.length ? small : null);
 };
 const countdownText = (ms) => {
@@ -177,7 +187,7 @@ const buy = async (id) => {
 const demo = (name) => {
   Progress.noSave = true;
   const data = Progress.data;
-  data.money = 900; data.blueprints = {}; data.jimBuys = {}; data.maxed = ['commuter'];
+  data.money = 900; data.shopCash = 40; data.blueprints = {}; data.jimBuys = {}; data.maxed = ['commuter'];
   if (name === 'keycar') Jim.force = (params.get('jimcars') || 'rocketfin,swancar').split(',').filter(Boolean);
   const offers = Jim.offers(), { day, slot } = { day: Jim.day(), slot: Jim.slot() }, buys = {};
   const sell = (o, n = o.stock) => { buys[o.id] = n; };
@@ -200,21 +210,23 @@ const demo = (name) => {
       if (free[1]) data.blueprints[free[1].id] = Math.max(0, needed(free[1].car, 0) - 1); // (one short of its max: the bundle is cut to one)
       break;
     }
-    case 'capped': data.money = 3000; base(); cap = true; break;
+    case 'nocc': data.money = 1500; data.shopCash = 3; base(); break; // (too little Crazey Cash to refresh)
+    case 'reflimit': data.money = 1500; data.shopCash = 500; base(); cap = true; break; // (the day's refreshes used up)
     case 'empty': data.money = 800; offers.forEach(o => sell(o)); break;
     case 'nopool': poolOverride = []; break;
     case 'keycar': data.money = 3000; base(); break;
     default: base(); break; // normal, bought
   }
   if (Object.keys(buys).length || cap) {
-    const spent = Object.entries(buys).reduce((n, [id, c]) => n + c * (offers.find(o => o.id === id)?.qty || 1), 0);
-    data.jimBuys = { day, slot, n: buys, bp: cap ? JIM.dayCap : spent, k: {} };
+    data.jimBuys = { day, slot, ref: 0, r: cap ? JIM.refreshCap : 0, n: buys };
     for (const [id, c] of Object.entries(buys)) data.blueprints[id] = (data.blueprints[id] || 0) + c * (offers.find(o => o.id === id)?.qty || 1);
   }
 };
 if (params.get('jimshop') !== null) {
   if (params.get('eventsnow')) { const at = eventTime(params.get('eventsnow')); if (Number.isFinite(at)) Events.now = () => at; } // (main.js sets it too, but after this: the demo needs the clock now)
   if (params.get('demo') !== null) demo(params.get('demo') || 'normal');
+  if (params.get('jimcc') !== null) { Progress.noSave = true; Progress.data.shopCash = Math.max(0, Math.floor(Number(params.get('jimcc')) || 0)); }
+  if (params.get('jimrefresh') !== null) setTimeout(() => document.querySelector('.jim-refresh')?.click(), 700);
   if (params.get('jimcash') !== null) { Progress.noSave = true; Progress.data.money = Math.max(0, Math.floor(Number(params.get('jimcash')) || 0)); }
   const press = params.get('jimpress'), name = params.get('demo');
   const index = press !== null ? Number(press) : name === 'bought' ? 'cheap' : name === 'expensive' ? 'dearest' : null;

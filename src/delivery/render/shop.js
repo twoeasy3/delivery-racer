@@ -28,7 +28,7 @@ import { packArt, lookOf } from './packart.js';
 import { openContents, closeContents } from './packcontents.js';
 import { keyPicture } from './keycard.js';
 import { bannerCars, bannerArt } from './packbanner.js';
-import { jimSection } from './jimshop.js'; // (Crazey Jim's blueprint stall: a section at the top, for tip money)
+import { jimSection, expandStall } from './jimshop.js'; // (Crazey Jim's blueprint stall: a section at the top, for tip money)
 
 // (packs.js, where the tree has it: see shop.js)
 const packsModule = Object.values(import.meta.glob('../packs.js', { eager: true }))[0] || null;
@@ -315,8 +315,14 @@ const button = make('button', 'menu-chip shop-btn', gem(), make('span', 'shop-wo
 button.id = 'shopBtn';
 button.title = 'The Shop: card packs';
 button.setAttribute('aria-label', 'Shop');
-document.getElementById('bank')?.after(button);
+// the Shop button is TWO HALVES side by side (the owner, 14-Oct): Shop, and Crazey Jim's blueprint stall (opens the Shop with the stall expanded)
+const jimButton = make('button', 'menu-chip jim-btn', make('i', 'jim-glyph', '$'), make('span', 'shop-word', 'Jim'));
+jimButton.id = 'jimBtn';
+jimButton.title = 'Crazey Jim\'s blueprint stall';
+jimButton.setAttribute('aria-label', 'Crazey Jim\'s blueprint stall');
+document.getElementById('bank')?.after(make('span', 'shop-split', button, jimButton));
 button.addEventListener('click', () => ShopScreen.open());
+jimButton.addEventListener('click', () => { expandStall(); ShopScreen.open(); });
 // a FREE pack waiting (the Daily pack not claimed today): a small dot on the chip (unobtrusive), checked on any change
 // and each minute (the local day turning at midnight brings it back)
 const dot = make('span', 'shop-dot');

@@ -246,6 +246,15 @@
 #startScreen .shop-btn:hover { background: linear-gradient(180deg, rgba(255, 63, 174, .5), rgba(180, 92, 255, .4)); }
 @media (max-width: 760px) and (min-height: 521px), (max-width: 519px) { #startScreen .shop-btn { padding: 6px 10px; font-size: 12px; } }
 @media (max-width: 430px) { #startScreen .shop-btn .shop-word { display: none; } #startScreen .shop-btn { padding: 6px 9px; } #startScreen .shop-btn .shop-gem { width: 15px; height: 15px; } }
+/* the Shop button in TWO HALVES (render/shop.js): Shop on the left, Crazey Jim's blueprint stall on the right (red, a price-tag $). One flex item of the
+   menu's top row, never wrapping; on a phone each half is icon-only and at least 44 px wide (the tap target) */
+#startScreen .shop-split { flex: 0 0 auto; display: inline-flex; align-items: stretch; white-space: nowrap; }
+#startScreen .shop-split .menu-chip { justify-content: center; }
+#startScreen .shop-split .shop-btn { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+#startScreen .jim-btn { flex: 0 0 auto; margin-left: 1px; border-top-left-radius: 0; border-bottom-left-radius: 0; background: linear-gradient(180deg, rgba(216, 38, 43, .7), rgba(165, 26, 31, .6)); box-shadow: inset 0 0 0 1px rgba(255, 140, 140, .55); }
+#startScreen .jim-btn:hover { background: linear-gradient(180deg, rgba(236, 52, 57, .85), rgba(190, 34, 40, .75)); }
+#startScreen .jim-glyph { flex: 0 0 auto; display: inline-grid; place-items: center; width: 16px; height: 14px; padding-bottom: 1px; font: 900 11px/1 var(--display, sans-serif); color: #14161a; background: #ffd23f; clip-path: polygon(0 0, 78% 0, 100% 50%, 78% 100%, 0 100%); box-sizing: border-box; }
+@media (max-width: 430px) { #startScreen .shop-split .menu-chip { min-width: 44px; padding: 6px 9px; } #startScreen .jim-btn .shop-word { display: none; } #startScreen .jim-glyph { width: 19px; height: 17px; font-size: 13px; } }
 
 /* ---- wider: the rows spread out ---- */
 @media (min-width: 700px) {

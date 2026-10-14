@@ -73,3 +73,14 @@
 .jim-toast small { display: block; margin-top: 2px; font-size: 12.5px; font-weight: 800; color: #ffd23f; }
 @media (prefers-reduced-motion: reduce) { .jim-bar .fill, .jim-toast { transition: none; } .jim-tile.bought { animation: none; } }
 .jim-tile .shop-price.short b, .jim-tile .shop-price.exhausted b { font-size: 14px; white-space: nowrap; }
+/* REFRESH (Crazey Cash): beside the clock; the Shop's yellow button in small, greyed when it cannot be pressed */
+.jim-refresh { padding: 8px 12px 7px; border-radius: 8px; font: 800 13px/1 var(--display); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; color: var(--buy-ink);
+  background: linear-gradient(#ffe066, var(--buy) 55%, #f0b400); box-shadow: 0 3px 0 #a87b00; }
+.jim-refresh:active { transform: translateY(2px); box-shadow: 0 1px 0 #a87b00; }
+.jim-refresh.off { color: rgba(255, 255, 255, .6); background: linear-gradient(#4b556b, #394256); box-shadow: 0 3px 0 #232a38; cursor: not-allowed; }
+.jim-strip { align-items: center; }
+.jim-grid.rerolled .jim-tile { animation: jim-reroll .5s ease-out; }
+.jim-grid.rerolled .jim-tile:nth-child(2) { animation-delay: .05s; } .jim-grid.rerolled .jim-tile:nth-child(3) { animation-delay: .1s; }
+.jim-grid.rerolled .jim-tile:nth-child(4) { animation-delay: .15s; } .jim-grid.rerolled .jim-tile:nth-child(5) { animation-delay: .2s; } .jim-grid.rerolled .jim-tile:nth-child(6) { animation-delay: .25s; }
+@keyframes jim-reroll { 0% { opacity: 0; transform: translateY(14px) scale(.96); } 100% { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .jim-grid.rerolled .jim-tile { animation: none; } }

@@ -2,8 +2,8 @@
 // CRAZEY JIM'S BLUEPRINT STALL - the rules (CHECKLIST item 249; the section of the Shop is render/jimshop.js). Jim, who runs the
 // car lot, sells BLUEPRINTS for tip money (the bank, whole dollars): 6 OFFERS drawn from a POOL, the same for a whole SLOT and
 // on every reload, new every 6 HOURS (the owner, 14-Oct): four slots a local day, starting at the local clock's 00:00, 06:00,
-// 12:00 and 18:00, seeded by the local date + the slot (no server). A SLOT's stock and price rises reset with its new offers;
-// the daily blueprint cap (DAY_CAP) and each key car's daily cap stay per LOCAL DAY (jimBuys: n by slot, bp and k by day).
+// 12:00 and 18:00, seeded by the local date + the slot (no server). A slot's stock and price rises reset with its new offers. The player
+// may also REFRESH the slot for Crazey Cash (a fresh draw, seed = date + slot + the refresh count, all stock back).
 // THE POOL (the owner, 14-Oct: first "all Evergreen blueprints, including the ones for Key Cars", then "remove all the key car blueprints
 // except the ones already available in standard packs"): exactly the blueprints the STANDARD pack can drop (packs.js poolOf of
 // packs.json standard): the 56 ordinary evergreen cars and the 5 key cars whose blueprints it holds (rocketfin, swancar, solarracer,
@@ -11,14 +11,15 @@
 // hotdog, horseshoe and the six concept cars: noPacks), earned and super cars, the Tank, `off` cars, and the noPacks cars that are not
 // key cars (the Blower, Coach, City EV, Coupe Cross).
 // KEY CARS are dear and rare (the economy warning: a concept car's key needs max ECU = 20 blueprints): JIM.keyMult on the price,
-// JIM.keyCap blueprints a day of each, JIM.weight.key for how often one is drawn. check: scripts/.jimshop-check.mjs.
-// THE OFFER: a car, a quantity (1, 3 or 5, by rarity), a stock (bundles a day: 3 / 2 / 1 by quantity), a unit price
-// (basis x k(rarity)), and one HOT DEAL a day (30% off). The price rises with each bundle of THE SAME OFFER bought today:
-// price = qty x unit x (hot ? 0.7 : 1) x (1 + RISE x bought). Jim also sells at most DAY_CAP blueprints a day in all.
-// A bundle is cut to what the car still needs to reach its max ECU (and priced for that), and a car at its max is not for sale.
-// THE SAVE: Progress.data.jimBuys = { day, slot, n: { car id: bundles bought this slot }, bp: blueprints bought today, k: { key
-// car id: its blueprints bought today } } (progress.js cleanJim); another slot's n and another day's bp / k are void. This file is NOT in the replay rules fingerprint (vite.config.js NOT_RULES):
-// a run never reads it. The pure functions take what they need as arguments; Jim.* reads the save and the clock.
+// JIM.capPerRefresh blueprints of each, JIM.weight.key for how often one is drawn. check: scripts/.jimshop-check.mjs.
+// THE OFFER: a car, a bundle size, a stock, a unit price (basis x k(rarity)), and one HOT DEAL (30% off). THE CAP PER REFRESH (the owner):
+// the most blueprints of one car Jim has per slot / refresh: common 5, uncommon 5, epic 2, legendary 1, key car 1 (JIM.capPerRefresh);
+// the offer's stock is cap / bundle size. The price rises with each bundle of THE SAME OFFER bought since the last refresh:
+// price = qty x unit x (hot ? 0.7 : 1) x (1 + RISE x bought). A bundle is cut to what the car still needs to reach its max ECU (and priced
+// for that), and a car at its max is not for sale. No daily caps (removed in round 4: the 10 a day over the stall, the key cars' 2 a day).
+// THE SAVE: Progress.data.jimBuys = { day, slot, ref (refreshes this slot), r (refreshes today), n: { car id: bundles since the last refresh } }
+// (progress.js cleanJim). This file is NOT in the replay rules fingerprint (vite.config.js NOT_RULES): a run never reads it. The pure functions
+// take what they need as arguments; Jim.* reads the save and the clock.
 // ============================================================================
 import { Progress } from './progress.js';
 import { Ecu } from './ecu.js';
@@ -31,17 +32,21 @@ export const JIM = {
   weight: { common: 45, uncommon: 33, epic: 18, legendary: 4, key: 5 }, // (key: all the key cars together: about 5% a slot, so most days show none or one)
   // the price of one blueprint, as a share of the car's BASIS price (below)
   k: { common: 0.17, uncommon: 0.20, epic: 0.24, legendary: 0.32 },
-  // KEY CARS (the Bespoke / concept cars): the basis price by their card rarity (they have no price), the price x keyMult on top
-  // of the share above, the blueprints a day of each (keyCap: also its stock), and the bundle sizes
-  keyBasis: { epic: 1000, legendary: 1300 }, keyMult: 2, keyCap: 2, keyQty: [1, 2],
-  // the bundle sizes a rarity may be sold in (the rarer, the smaller), and how many bundles of each Jim has a day
-  qty: { common: [1, 3, 5], uncommon: [1, 3, 5], epic: [1, 3], legendary: [1] },
-  stock: { 1: 3, 3: 2, 5: 1 },
+  // KEY CARS (the Bespoke key cars whose blueprints the Standard pack drops): the basis price by their card rarity (they have no price), the
+  // price x keyMult on top of the share above
+  keyBasis: { epic: 1000, legendary: 1300 }, keyMult: 2,
+  // THE CAP PER REFRESH (the owner, 14-Oct, "if we decide"): the most blueprints of ONE car Jim has in a slot / after a refresh, by the car's
+  // rarity (a key car: bespoke). It is the offer's whole stock, reset by every refresh and every 6-hour slot. REPLACES (removed in round 4):
+  // the old bundle stock (3 / 2 / 1 bundles by size), the 10-blueprints-a-day cap over the whole stall (dayCap) and the key cars' daily cap (keyCap).
+  capPerRefresh: { common: 5, uncommon: 5, epic: 2, legendary: 1, bespoke: 1 },
+  // the bundle sizes a rarity may be sold in; one that does not fit its cap is left out (stock = cap / size bundles)
+  qty: { common: [1, 5], uncommon: [1, 5], epic: [1, 2], legendary: [1], bespoke: [1] },
+  // REFRESH (the owner, 14-Oct): re-roll the slot's offers for Crazey Cash (the Shop's placeholder currency): a flat cost, at most refreshCap a local day
+  refreshCost: 5, refreshCap: 999,
   slots: 6,        // offers at a time
   slotHours: 6,    // a rotation every this many local hours (the clock's 00:00, 06:00, 12:00, 18:00)
   hotOff: 0.3,     // the hot deal's discount
   rise: 0.5,       // each bundle bought today raises that offer's price by this share of its first price
-  dayCap: 10,      // blueprints Jim sells in a day, in all
   confirmAt: 250,  // a bundle costing this much (or half the bank) asks first
   // the BASIS price of a car: its car lot price; a blueprint car (no price) the average of the lot cars of its stars
   basis: { g1: 100, g2: 200, g3: 320, g4: 470, g5: 730, b1: 300, b2: 460, b3: 730, b4: 1000, b5: 1300 },
@@ -49,6 +54,7 @@ export const JIM = {
 
 export const isKey = (car) => !!car && !!car.bespoke;
 export const basisOf = (car) => isKey(car) ? JIM.keyBasis[rarityOf(car)] || JIM.keyBasis.legendary : car.price > 0 ? car.price : JIM.basis[(car.blue ? 'b' : 'g') + Math.min(5, Math.max(1, car.tier || 1))];
+export const capKey = (car) => (isKey(car) ? 'bespoke' : rarityOf(car));
 export const unitPrice = (car, rarity = rarityOf(car)) => Math.max(1, Math.round(basisOf(car) * JIM.k[rarity] * (isKey(car) ? JIM.keyMult : 1)));
 
 // a car Jim may NEVER sell: not a blueprint car at all (earned, super, the Tank, off), or in no regular pack (noPacks)
@@ -74,13 +80,13 @@ export const pool = ({ cars } = {}) => {
 
 // the day's offers: [{ id (the car's), car, rarity, qty, stock, unit (one blueprint), hot, first (the bundle's first price) }]
 const offerOf = (car, rand) => {
-  const key = isKey(car), rarity = rarityOf(car);
-  const sizes = key ? JIM.keyQty.filter(n => n <= JIM.keyCap) : JIM.qty[rarity], qty = sizes[Math.floor(rand() * sizes.length)] || 1;
-  return { id: car.id, car, rarity, qty, key, stock: key ? Math.max(1, Math.floor(JIM.keyCap / qty)) : JIM.stock[qty], unit: unitPrice(car, rarity), hot: false };
+  const key = isKey(car), rarity = rarityOf(car), cap = JIM.capPerRefresh[capKey(car)];
+  const sizes = JIM.qty[capKey(car)].filter(n => n <= cap), qty = sizes[Math.floor(rand() * sizes.length)] || 1;
+  return { id: car.id, car, rarity, qty, key, cap, stock: Math.max(1, Math.floor(cap / qty)), unit: unitPrice(car, rarity), hot: false };
 };
-export const rotation = (day, { cars, force = [], slot = 0 } = {}) => {
+export const rotation = (day, { cars, force = [], slot = 0, ref = 0 } = {}) => {
   const left = Object.fromEntries(Object.entries(pool({ cars })).map(([r, list]) => [r, [...list]]));
-  const rand = mulberry(hash('crazey-jim|' + day + '|' + slot));
+  const rand = mulberry(hash('crazey-jim|' + day + '|' + slot + (ref ? '|r' + ref : '')));
   const out = [];
   for (let slot = 0; slot < JIM.slots; slot++) {
     const rarities = Object.keys(JIM.weight).filter(r => left[r].length);
@@ -130,27 +136,26 @@ export const nextSlot = (t) => {
   while (at <= t) at += 36e5; // (a nonexistent local hour jumps forward: never a boundary in the past)
   return at;
 };
-// state: Progress.data.jimBuys. n is of this slot only; bp and k are of this day only. Anything else is nothing.
+// state: Progress.data.jimBuys = { day, slot, ref (refreshes this slot), r (refreshes today), n: { car id: bundles bought since the last refresh } }.
+// n and ref are of this slot only, r of this day only. Anything else is nothing.
 export const todays = (state, day, slot = 0) => {
-  const sameDay = !!state && state.day === day;
-  return { n: sameDay && state.slot === slot ? state.n || {} : {}, bp: sameDay ? state.bp || 0 : 0, k: sameDay ? state.k || {} : {} };
+  const sameDay = !!state && state.day === day, sameSlot = sameDay && state.slot === slot;
+  return { n: sameSlot ? state.n || {} : {}, ref: sameSlot ? state.ref || 0 : 0, r: sameDay ? state.r || 0 : 0 };
 };
 
-// one offer as THIS player sees it today: { ...offer, bought, left (bundles), qty (cut to what the car needs), price, was,
-// hot, why (null: can buy; else 'maxed' | 'sold' | 'cap' | 'short'), need (dollars short), have (blueprints), progress }
+// one offer as THIS player sees it: { ...offer, bought, left (bundles), leftBp (blueprints of its cap left), qty (cut to what the car needs), price, was,
+// hot, why (null: can buy; else 'maxed' | 'sold' | 'short'), need (dollars short), have (blueprints) }
 export const viewOf = (offer, { day, slot = 0, state, money, blueprints = Ecu.blueprints(offer.id), maxed = needed(offer.car, blueprints) === 0 }) => {
   const t = todays(state, day, slot), bought = t.n[offer.id] || 0, left = Math.max(0, offer.stock - bought);
-  const room = Math.max(0, JIM.dayCap - t.bp), need = needed(offer.car, blueprints);
-  const keyRoom = offer.key ? Math.max(0, JIM.keyCap - (t.k[offer.id] || 0)) : Infinity; // (a key car: so many of its blueprints a day)
-  const qty = Math.max(0, Math.min(offer.qty, need, room, keyRoom));
+  const need = needed(offer.car, blueprints);
+  const qty = Math.max(0, Math.min(offer.qty, need));
   const price = bundlePrice(offer, qty || offer.qty, bought);
   const was = offer.hot ? wasPrice(offer, qty || offer.qty, bought) : null;
   let why = null;
   if (maxed || need === 0) why = 'maxed';
   else if (left === 0) why = 'sold';
-  else if (room === 0 || keyRoom === 0) why = 'cap';
   else if (money < price) why = 'short';
-  return { ...offer, bought, left, qty: qty || offer.qty, cut: qty > 0 && qty < offer.qty ? (qty === need ? 'need' : 'cap') : null, price, was, why, need: Math.max(0, price - money), have: blueprints, room };
+  return { ...offer, bought, left, leftBp: left * offer.qty, qty: qty || offer.qty, cut: qty > 0 && qty < offer.qty ? 'need' : null, price, was, why, need: Math.max(0, price - money), have: blueprints };
 };
 
 // where a car's blueprints stand (with `add` more): { bp, ecu, max, toNext (per ECU), have (toward the next), unlocked }, as packs.js revealProgress
@@ -169,10 +174,9 @@ export const Jim = {
   force: [], // (car ids put on the stall: ?demo=keycar, a check)
   // the offers as this player sees it: [view]
   offers({ cars } = {}) {
-    const { day, slot } = slotOf(Events.now());
-    return rotation(day, { cars, force: this.force, slot }).map(o => viewOf(o, { day, slot, state: Progress.data.jimBuys, money: Math.floor(Progress.data.money) }));
+    const { day, slot } = slotOf(Events.now()), t = todays(Progress.data.jimBuys, day, slot);
+    return rotation(day, { cars, force: this.force, slot, ref: t.ref }).map(o => viewOf(o, { day, slot, state: Progress.data.jimBuys, money: Math.floor(Progress.data.money) }));
   },
-  today() { const { day, slot } = slotOf(Events.now()); return todays(Progress.data.jimBuys, day, slot); },
   // buy an offer's bundle: { ok, why, qty, price, before, after } (nothing is taken unless ok)
   buy(id, { cars } = {}) {
     const view = this.offers({ cars }).find(o => o.id === id);
@@ -180,12 +184,28 @@ export const Jim = {
     if (view.why) return { ok: false, why: view.why, view };
     const before = stand(view.car), { day, slot } = slotOf(Events.now());
     const t = todays(Progress.data.jimBuys, day, slot), n = { ...t.n, [view.id]: (t.n[view.id] || 0) + 1 };
-    const k = view.key ? { ...t.k, [view.id]: (t.k[view.id] || 0) + view.qty } : t.k;
     Progress.data.money = Math.max(0, Progress.data.money - view.price);
-    Progress.data.jimBuys = { day, slot, n, bp: t.bp + view.qty, k };
+    Progress.data.jimBuys = { day, slot, ref: t.ref, r: t.r, n };
     Ecu.addBlueprints(view.id, view.qty); // (saves: the money and the counts with it)
     const after = stand(view.car);
     window.dispatchEvent(new Event('progresschange'));
     return { ok: true, qty: view.qty, price: view.price, view, before, after };
+  },
+  // REFRESH: what it costs and whether it can be done now: { cost, cap, done (today), left, ok, why (null | 'short' | 'limit'), need (Crazey Cash short) }
+  refreshInfo() {
+    const { day, slot } = slotOf(Events.now()), t = todays(Progress.data.jimBuys, day, slot), cash = Math.max(0, Math.floor(Number(Progress.data.shopCash) || 0));
+    const why = t.r >= JIM.refreshCap ? 'limit' : cash < JIM.refreshCost ? 'short' : null;
+    return { cost: JIM.refreshCost, cap: JIM.refreshCap, done: t.r, left: Math.max(0, JIM.refreshCap - t.r), ok: !why, why, need: Math.max(0, JIM.refreshCost - cash) };
+  },
+  // re-roll the slot's offers (a fresh seeded draw: date + slot + the refresh count), all stock back; takes the Crazey Cash. { ok, why }
+  refresh() {
+    const info = this.refreshInfo();
+    if (!info.ok) return { ok: false, why: info.why };
+    const { day, slot } = slotOf(Events.now()), t = todays(Progress.data.jimBuys, day, slot);
+    Progress.data.shopCash = Math.max(0, Math.floor(Number(Progress.data.shopCash) || 0) - JIM.refreshCost);
+    Progress.data.jimBuys = { day, slot, ref: t.ref + 1, r: t.r + 1, n: {} };
+    Progress.save();
+    window.dispatchEvent(new Event('progresschange'));
+    return { ok: true };
   },
 };

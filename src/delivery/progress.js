@@ -67,7 +67,7 @@ const fresh = () => ({
   packLog: [],     // the packs opened last, newest first: { kind (the pack's id), cards: [{ car, rarity, key?, featured? }] } (packs.js)
   shopCash: 0,     // the Shop's PLACEHOLDER currency (shop.json, shop.js): its own balance, never the bank; nothing gives it yet
   eventRuns: {},   // a rotating event's TASK COUNTERS for its run on now (events.js tasks: the Concept Strike, CHECKLIST 211), by event id: { day: 'YYYY-MM-DD' (the run's first day, local), n: [times each task paid this run] }; a new run starts them again
-  jimBuys: {},     // Crazey Jim's BLUEPRINT STALL purchases (jimshop.js): { day ('YYYY-MM-DD', local), slot (0..3: the 6 hours of it), n: { car id: bundles this slot }, bp (blueprints today), k: { key car id: blueprints today } }; another slot's n and another day's bp / k are void
+  jimBuys: {},     // Crazey Jim's BLUEPRINT STALL (jimshop.js): { day ('YYYY-MM-DD', local), slot (0..3: the 6 hours of it), ref (refreshes this slot: the draw's seed), r (refreshes today), n: { car id: bundles bought since the last refresh } }; another slot's ref and n and another day's r are void
   packBuys: {},    // the Shop's PURCHASE COUNTERS, by pack id (shop.js; a pack's packs.json shop.limits): { total (ever bought), day ('YYYY-MM-DD', the player's local day of the last buy), today (bought that day) }; a bundle counts each pack
 });
 
@@ -101,12 +101,13 @@ const read = () => {
   }
 };
 // the Shop's purchase counters (shop.js), each checked: { [pack id]: { total, day: 'YYYY-MM-DD', today } }
-// Crazey Jim's purchases (jimshop.js), checked: { day, slot 0..3, n: { car id: 1..99 } (this slot's bundles), bp: 0..999 (the day's), k: { car id: 1..99 } (key cars, the day's) } (empty: none)
+// Crazey Jim's stall (jimshop.js), checked: { day, slot 0..3, ref 0..999 (refreshes this slot), r 0..999 (refreshes today), n: { car id: 1..99 } (bundles since the last refresh) } (empty: none)
 const cleanJim = (j) => {
   if (!j || typeof j !== 'object' || Array.isArray(j) || typeof j.day !== 'string' || !/^\d{4}-\d\d-\d\d$/.test(j.day)) return {};
-  const map = (m) => Object.fromEntries(Object.entries(m && typeof m === 'object' && !Array.isArray(m) ? m : {})
+  const n = Object.fromEntries(Object.entries(j.n && typeof j.n === 'object' && !Array.isArray(j.n) ? j.n : {})
     .filter(([id, c]) => /^[a-z0-9-]{1,40}$/.test(id) && Number.isInteger(c) && c >= 1 && c <= 99).slice(0, 12));
-  return { day: j.day, slot: Number.isInteger(j.slot) && j.slot >= 0 && j.slot <= 3 ? j.slot : 0, n: map(j.n), bp: Number.isInteger(j.bp) && j.bp >= 0 && j.bp <= 999 ? j.bp : 0, k: map(j.k) };
+  const whole = (x, most) => (Number.isInteger(x) && x >= 0 && x <= most ? x : 0);
+  return { day: j.day, slot: whole(j.slot, 3), ref: whole(j.ref, 9999), r: whole(j.r, 9999), n };
 };
 const cleanBuys = (buys) => Object.fromEntries(Object.entries(buys && typeof buys === 'object' && !Array.isArray(buys) ? buys : {})
   .filter(([id, b]) => /^[a-z0-9-]{1,40}$/.test(id) && b && typeof b === 'object' && Number.isInteger(b.total) && b.total >= 0 && b.total <= 1e6)
