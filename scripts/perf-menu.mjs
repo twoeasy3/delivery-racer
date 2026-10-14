@@ -773,7 +773,20 @@ const main = async () => {
     if (mode === 'load' || mode === 'all') await doLoad();
     if (mode === 'eval') { // (exploration: node scripts/perf-menu.mjs eval "<js expression>" : run in the dev-server menu page after the hook, print the result)
       const server = await devServer(); await openBrowser();
-      try { const page = await gotoMenu(`http://127.0.0.1:${server.port}/delivery/index.html`, { gl: opt('gl', 'stub') }); console.log(JSON.stringify(await page.eval(args.filter(a => !a.startsWith('--') && a !== 'eval')[0]), null, 1)); await page.close(); } finally { await closeBrowser(); server.close(); }
+      try {
+        const page = await gotoMenu(`http://127.0.0.1:${server.port}/delivery/index.html`, { gl: opt('gl', 'stub'), cpu: Number(list('cpu', '1')[0]) });
+        // --trace: the Layout / UpdateLayoutTree events of the whole expression (their sizes: what a car switch dirties)
+        const evs = []; let done; const complete = new Promise(r => { done = r; });
+        const onMsg = (m) => { const d = JSON.parse(m.data); if (d.method === 'Tracing.dataCollected') evs.push(...d.params.value); if (d.method === 'Tracing.tracingComplete') done(); };
+        if (opt('trace', false)) { socket.addEventListener('message', onMsg); await send('Tracing.start', { categories: 'devtools.timeline', transferMode: 'ReportEvents' }); }
+        console.log(JSON.stringify(await page.eval(args.filter(a => !a.startsWith('--') && a !== 'eval')[0], 300000), null, 1));
+        if (opt('trace', false)) {
+          await send('Tracing.end'); await complete; socket.removeEventListener('message', onMsg);
+          const main = new Set(evs.filter(e => e.name === 'thread_name' && e.args?.name === 'CrRendererMain').map(e => e.pid + ':' + e.tid));
+          const rows = evs.filter(e => e.ph === 'X' && main.has(e.pid + ':' + e.tid) && /^(Layout|UpdateLayoutTree|PrePaint|Paint|Layerize)$/.test(e.name) && e.dur > 3000).sort((a, b) => a.ts - b.ts);
+          for (const e of rows) console.log(`  ${e.name} ${(e.dur / 1000).toFixed(1)} ms ` + JSON.stringify(e.args?.beginData || e.args?.elementCount !== undefined ? { elements: e.args.elementCount, ...(e.args.beginData || {}) } : {}));
+        }
+        await page.close(); } finally { await closeBrowser(); server.close(); }
     }
     if (mode === 'profile') await doProfile();
     if (mode === 'frames' || mode === 'all') await doFrames();
