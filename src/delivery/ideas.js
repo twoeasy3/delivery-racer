@@ -59,6 +59,7 @@ import { IDEAS_BATCH_D4 } from './ideasBatchD4.js'; // (batch D4: the Autobahn E
 import { IDEAS_BATCH_E1 } from './ideasBatchE1.js'; // (batch E1: the Kei Van)
 import { IDEAS_BATCH_E2 } from './ideasBatchE2.js'; // (batch E2: the Boxy Supermini and the Shuttle Minibus)
 import { IDEAS_BATCH_D2 } from './ideasBatchD2.js'; // (batch D2: the Flatbed Truck and the Utility Moke)
+import { IDEAS_BATCH_E4 } from './ideasBatchE4.js'; // (batch E4: the Sport Truck and the Pixel EV)
 import { IDEAS_BATCH_D3 } from './ideasBatchD3.js'; // (batch D3: the Half-Track and the Sprint Hatch)
 import { IDEAS_BATCH_E3 } from './ideasBatchE3.js'; // (batch E3: the Crane Lorry, the Moor Rover)
 import { IDEAS_BATCH_D5 } from './ideasBatchD5.js'; // (batch D5: a trophy truck, an armoured limo; render/ideaModelsBatchD5.js)
@@ -199,6 +200,7 @@ export const IDEA_CARS = [
   ...IDEAS_BATCH_D2,
   ...IDEAS_BATCH_E1,
   ...IDEAS_BATCH_E2,
+  ...IDEAS_BATCH_E4,
   ...IDEAS_BATCH_D3,
   ...IDEAS_BATCH_D4,
   ...IDEAS_BATCH_D5,
