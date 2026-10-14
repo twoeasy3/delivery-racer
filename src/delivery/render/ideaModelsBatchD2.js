@@ -17,7 +17,7 @@ const basic = (color) => keep(new THREE.MeshBasicMaterial({ color }));
 const TYRE = lambert(0x161616), HUB = lambert(0xb4b8be), TRIM = lambert(0x24262a), CHROME = lambert(0xc8cbd0);
 const GLASS = keep(new THREE.MeshLambertMaterial({ color: 0x1c2330, side: THREE.DoubleSide }));
 const LAMP = basic(0xfff3c4), TAIL = basic(0xff2a2a), AMBER = basic(0xffa31a);
-const SEAT = lambert(0x2b2622), WOOD = lambert(0xa5804e), TARP = lambert(0x4f5c3a), CANVAS = lambert(0xb8a77a), CAN = lambert(0x5a6a34), DECK = lambert(0x6b5036);
+const WOOD = lambert(0xa5804e), TARP = lambert(0x4f5c3a), CANVAS = lambert(0xb8a77a), CAN = lambert(0x5a6a34), DECK = lambert(0x6b5036);
 
 const SHARED = new Map();
 const shared = (key, make) => {
