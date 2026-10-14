@@ -79,7 +79,7 @@ import { ShowroomView } from './render/showroomview.js';
 import { Cosmetics } from './render/cosmeticsui.js';
 import { Sound } from './render/audio.js';
 import { Social } from './social.js';
-import { CAR, lendCar, superOf, ownedAmphibious, carStats } from './cars.js';
+import { CAR, CARS, lendCar, superOf, ownedAmphibious, carStats } from './cars.js';
 import { Message } from './messages.js';
 
 // ?autostart (or ?autostart=evil) in the address skips the start screen: handy when testing.
@@ -165,12 +165,6 @@ if (params.get('showroom') !== null) {
   if (params.get('look')) Showroom.look(params.get('look'), full); else if (full) Showroom.look(Showroom.shown.picked, true);
   if (params.get('filters') !== null) Showroom.filters(true); // (&filters: the filter sheet open)
 }
-// ?cosmetics opens the Cosmetics screen (render/cosmeticsui.js) over the menu on the car in use (?car=<id> lends one for the visit);
-// &evil its Evil side; &closeup the wheels close-up; &wheeldesign= / &wheelcolour= equip for the visit (render/wheelcosmetic.js)
-if (params.get('cosmetics') !== null && params.get('showroom') === null) {
-  if (params.get('evil') !== null) Game.evil = true;
-  Cosmetics.open({ evil: !!Game.evil });
-}
 // ?screensaver starts the screensaver straight away (with ?ff=5 as above); ?racewatch the race one
 const autostart = params.get('autostart');
 // ?car=bubble with no run started: the menu with that car in use for this visit, owned or not (a look at its card:
@@ -179,6 +173,12 @@ if (params.get('car') && autostart === null && !['hidden', 'test', 'edited', 'ra
   lendForVisit(params.get('car'));
   Progress.data.car = params.get('car');
   window.dispatchEvent(new Event('carchange')); // (the menu puts the player in it, and draws itself again)
+}
+// ?cosmetics opens the Cosmetics screen (render/cosmeticsui.js) over the menu on the car in use (?car=<id> lends one for the visit: so this runs after the car is lent);
+// &evil its Evil side; &closeup the wheels close-up; &wheeldesign= / &wheelcolour= equip for the visit (render/wheelcosmetic.js)
+if (params.get('cosmetics') !== null && params.get('showroom') === null) {
+  if (params.get('evil') !== null) Game.evil = true;
+  Cosmetics.open({ evil: !!Game.evil, car: CARS.find(c => c.id === params.get('car')) || null }); // (the car asked for; else the car in use)
 }
 const hidden = params.get('hidden') || (params.get('test') !== null ? 'testbed' : params.get('edited') !== null ? 'edited' : null); // (a hidden level: see levels.js)
 if (params.get('rival') !== null) Game.rival = params.get('rival') || 'opposite'; // ?rival[=evil|good]: a rival courier on every delivery level
