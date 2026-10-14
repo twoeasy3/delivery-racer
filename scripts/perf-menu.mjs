@@ -774,12 +774,15 @@ const main = async () => {
     if (mode === 'eval') { // (exploration: node scripts/perf-menu.mjs eval "<js expression>" : run in the dev-server menu page after the hook, print the result)
       const server = await devServer(); await openBrowser();
       try {
-        const page = await gotoMenu(`http://127.0.0.1:${server.port}/delivery/index.html`, { gl: opt('gl', 'stub'), cpu: Number(list('cpu', '1')[0]) });
+        // --url=<query>: open that address (?autostart&level=1&theme=volcano ...) instead of the menu, wait --seconds=4 and run the expression
+        let page;
+        if (opt('url', false)) { page = await openPage(`http://127.0.0.1:${server.port}/delivery/index.html`, { gl: opt('gl', 'stub'), cpu: Number(list('cpu', '1')[0]) }); await page.goto(`http://127.0.0.1:${server.port}/delivery/index.html${opt('url')}`); await sleep(Number(opt('seconds', 4)) * 1000); await page.eval(`(async () => { const P = window.__perf; P.manualOnly = false; return true; })()`).catch(() => {}); }
+        else page = await gotoMenu(`http://127.0.0.1:${server.port}/delivery/index.html`, { gl: opt('gl', 'stub'), cpu: Number(list('cpu', '1')[0]) });
         // --trace: the Layout / UpdateLayoutTree events of the whole expression (their sizes: what a car switch dirties)
         const evs = []; let done; const complete = new Promise(r => { done = r; });
         const onMsg = (m) => { const d = JSON.parse(m.data); if (d.method === 'Tracing.dataCollected') evs.push(...d.params.value); if (d.method === 'Tracing.tracingComplete') done(); };
         if (opt('trace', false)) { socket.addEventListener('message', onMsg); await send('Tracing.start', { categories: 'devtools.timeline', transferMode: 'ReportEvents' }); }
-        console.log(JSON.stringify(await page.eval(args.filter(a => !a.startsWith('--') && a !== 'eval')[0], 300000), null, 1));
+        console.log(JSON.stringify(await page.eval(args.filter(a => !a.startsWith('--') && a !== 'eval')[0], 300000), null, 1)); if (page.logs.length) console.log('page errors: ' + page.logs.slice(0, 5).join(' | '));
         if (opt('trace', false)) {
           await send('Tracing.end'); await complete; socket.removeEventListener('message', onMsg);
           const main = new Set(evs.filter(e => e.name === 'thread_name' && e.args?.name === 'CrRendererMain').map(e => e.pid + ':' + e.tid));

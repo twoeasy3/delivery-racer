@@ -34,6 +34,7 @@ import { standView, sharedRenderer, disposeViews, drawViews } from './modelviews
 import { stillCar } from './carstill.js';
 import { Showroom } from './showroom.js';
 import { Sound } from './audio.js';
+import { warmTheme } from './road.js';
 import { ask } from './dialog.js';
 import { Replay } from '../replay.js';
 import { ReplayStore } from '../replaystore.js';
@@ -140,7 +141,7 @@ buildTabs();
 const singlesGroup = () => (TABS.event.groups[0]?.[2] === 'events' ? TABS.event.groups[0] : null);
 const inSingles = (level) => { const g = singlesGroup(), k = TABS.event.list.indexOf(level); return !!g && k >= g[0] && k < g[1]; };
 // the level picked: a menu level by its place; a special event's stage is not in the menu's lists (events.js)
-const pickLevel = (level) => { if (Events.isStage(level)) selectSpecial(level); else selectLevel(LEVELS.indexOf(level)); };
+const pickLevel = (level) => { if (Events.isStage(level)) selectSpecial(level); else selectLevel(LEVELS.indexOf(level)); warmTheme(level); }; // (warmTheme: its theme's scenery file starts arriving, render/themes/index.js)
 // a special event's stage, said on its card: what stops it, or the car it is driven in (events.js)
 const stageLine = (level) => {
   const { event, stage } = Events.stageOf(level), st = Events.state(event, stage.index), car = stage.car ? carById(stage.car) : null;

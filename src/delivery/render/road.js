@@ -10,7 +10,7 @@ import { scene, tmp, applySky, applyLight, clearGroup } from './scene.js';
 import { setHeadlights } from './headlights.js';
 import { THEMES } from '../themes.js';
 import { CIRCUITS } from './circuits/index.js';
-import { THEME_SCENERY } from './themes/index.js';
+import { THEME_SCENERY, loadTheme, themeLoaded, themeNames } from './themes/index.js';
 import { THEME_EXTRAS, cityKeepsClear, outbackYard } from './themes/extras.js';
 
 // ---- track meshes ----------------------------------------------------------
@@ -3574,6 +3574,9 @@ const buildRoad = () => {
     instances(cube, 0x2a2a2a, tanks);
     instances(tube, 0x6b5436, trunks);
     instances(cube, 0x3f7a2e, fronds);
+  } else if (!themeLoaded(theme.scenery)) {
+    // (its file has not arrived: the road and the land stand now, the scenery when it does: warmTheme)
+    redrawWhenLoaded(theme.scenery);
   } else if (THEME_SCENERY[theme.scenery]) {
     // ---- a theme with a file of its own (render/themes/<scenery>.js): given what stands things beside a road here
     THEME_SCENERY[theme.scenery]({ theme, add, flat, instances, sideStrip, buildStrip, offRoads, standsClear, clearOfRoads, beside, inJunction, exits, cube, tube, cone, levelGroup, elevatedRoad });
@@ -3587,3 +3590,26 @@ const buildRoad = () => {
   clearLoose();
 };
 Game.onLoad.push(buildRoad);
+
+// ---- THEME FILES arrive on their own (render/themes/index.js): the picked level's after the menu is up, the rest when the page
+// is idle. A level that starts before its theme's file is here is drawn without that scenery and drawn again when it arrives
+// (the road is only drawn, never read by the rules: Math.random only). warmTheme(level) is for the menu to ask early.
+const redrawing = new Set();
+const redrawWhenLoaded = (name) => {
+  const level = LEVEL;
+  if (redrawing.has(name)) return;
+  redrawing.add(name);
+  loadTheme(name).then(() => { redrawing.delete(name); if (Game.loaded === level && LEVEL === level && THEMES[level.theme]?.scenery === name) buildRoad(); }).catch(() => { redrawing.delete(name); /* (offline: the road stays as drawn) */ });
+};
+export const warmTheme = (level = LEVEL) => { const name = THEMES[level?.theme]?.scenery; if (name) loadTheme(name).catch(() => {}); };
+// (the rest, one at a time when idle, after the menu has come up)
+const idleThemes = () => {
+  const next = themeNames().find(n => !themeLoaded(n));
+  if (!next) return;
+  const go = () => loadTheme(next).catch(() => {}).then(() => setTimeout(idleThemes, 50));
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(go, { timeout: 4000 }); else setTimeout(go, 1500);
+};
+if (typeof window !== 'undefined') {
+  warmTheme();
+  if (document.readyState === 'complete') setTimeout(idleThemes, 1500); else window.addEventListener('load', () => setTimeout(idleThemes, 1500), { once: true });
+}
