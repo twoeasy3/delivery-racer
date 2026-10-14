@@ -8,6 +8,7 @@ import { levelName } from '../levelText.js';
 import { CARS, SECRET_CARS, useLevelCar, selectCar, amphibiousCars, carRule, ruleAllows } from '../cars.js';
 import { Tiers } from '../tiers.js';
 import { Progress } from '../progress.js';
+import { clearCosmetics } from './cosmetics.js';
 import { unlockMode, setUnlockMode, unlockEverything } from '../unlockall.js';
 import { Shop } from '../shop.js';
 import { Game } from '../game.js';
@@ -168,6 +169,7 @@ Game.askStart = async () => {
 document.getElementById('resetBtn').addEventListener('click', async () => {
   if (!await ask({ title: 'Reset progress', lines: ['Erase your bank, unlocked levels and cars?'], ok: 'Erase', danger: true })) return;
   Progress.reset();
+  clearCosmetics();
   selectLevel(0);
   window.dispatchEvent(new Event('carchange')); // (the car in use may have been one that was bought)
   showAutoGas(); // (a reset forgets the choice)

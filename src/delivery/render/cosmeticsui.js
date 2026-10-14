@@ -15,7 +15,7 @@ import { ShowroomView } from './showroomview.js';
 import { stillCar } from './carstill.js';
 import { carInUse, CARS } from '../cars.js';
 import { Game } from '../game.js';
-import { Progress } from '../progress.js';
+import { ownsCosmetic } from './cosmetics.js';
 import { Nav } from '../nav.js';
 import { Sound } from './audio.js';
 
@@ -26,10 +26,10 @@ export const SLOTS = [
   { id: 'roof', name: 'Roof ornament', live: false },
   { id: 'underglow', name: 'Underglow', live: false },
 ];
-// THE place for "does the player own it?" It asks Progress.ownsCosmetic (free, or listed in the save: cosmetics.js is the registry).
+// THE place for "does the player own it?" It asks cosmetics.js ownsCosmetic (free, or in its own stored list; the registry is there too).
 // Every cosmetic is free today, so nothing is locked yet; a choice it refuses shows locked and cannot be equipped, and an equipped
 // set that is not owned wears Stock (wheelcosmetic.js).
-export const owned = (slot, id) => Progress.ownsCosmetic(slot, id);
+export const owned = (slot, id) => ownsCosmetic(slot, id);
 
 const root = document.getElementById('cosmetics');
 const make = (tag, className, ...children) => {

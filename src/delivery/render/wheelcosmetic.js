@@ -30,7 +30,7 @@
 // keeps the part's own paint in userData.solidMat, which is the one changed, so the ghost fades back to the new colour.
 import * as THREE from 'three';
 import { Progress } from '../progress.js';
-import { registerCosmetics } from '../cosmetics.js';
+import { registerCosmetics, ownsCosmetic } from './cosmetics.js';
 
 export const KEY = 'delivery.wheelcolour';
 export const WHEEL_COLOURS = [
@@ -69,7 +69,7 @@ const savedPairOwned = () => {
   if (stored === null) { stored = 'stock'; try { stored = byId(localStorage.getItem(KEY)).id; } catch { /* (no storage: stock) */ } }
   if (storedDesign === null) { storedDesign = 'stock'; try { storedDesign = designById(localStorage.getItem(KEY_DESIGN)).id; } catch { /* (no storage: stock) */ } }
   const set = WHEEL_SETS.find(s => s.design === storedDesign && s.hub === stored);
-  return !set || Progress.ownsCosmetic('wheels', set.id);
+  return !set || ownsCosmetic('wheels', set.id);
 };
 export const wheelColour = () => {
   if (asked) return byId(asked).id;
