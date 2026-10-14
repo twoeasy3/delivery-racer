@@ -758,6 +758,7 @@ export const ORIG3_MODELS = {
     for (const s of [-1, 1]) for (const z of [FZ, RZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub)) keep.add(part);
     const merged = mergeByMaterial(shell, keep);
     place(shell, ridge, cover); // (after the merge, a mesh of its own: merging would drop its colours)
+    merged.get(rusty).renderOrder = 1; // (after the body even when the game makes the body see-through-able for a ghost)
     group.userData = {
       body: merged.get(paint),
       livery: (evil) => {
