@@ -44,11 +44,14 @@
 // supercar with a big glass canopy and a long tail (model: render/ideaModels8.js): one more idea.
 // One concept car more (CHECKLIST item 301): a small open roadster after the Pontiac Solstice concept (2002).
 // One more (CHECKLIST item 302): a tiny three-seat concept city car under a glass bubble (render/ideaModels10.js).
+// Batch D4 (CHECKLIST item 3xx, to be renumbered): two more, a fast German-style estate and a huge fin-tailed 1950s cruiser
+// (ideasBatchD4.js, render/ideaModelsBatchD4.js): +2 ideas.
 
 import { IDEA_CARS_TOPUP_A } from './ideasTopupA.js'; // (the top-up's batch A: four classic road cars)
 
 // ============================================================================
 import { IDEAS_TOPUP_B } from './ideasTopupB.js';
+import { IDEAS_BATCH_D4 } from './ideasBatchD4.js'; // (batch D4: the Autobahn Estate, the Fin Land Yacht)
 
 import { IDEAS_TOPUP_C } from './ideasTopupC.js'; // (top-up batch C: three ideas, models in render/ideaModelsTopupC.js)
 export const IDEA_CARS = [
@@ -182,5 +185,6 @@ export const IDEA_CARS = [
   ...IDEA_CARS_TOPUP_A,
   ...IDEAS_TOPUP_B, // (the top-up batch B: a removals van, a bin lorry, a jeepney; ideasTopupB.js)
   ...IDEAS_TOPUP_C,
+  ...IDEAS_BATCH_D4,
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
