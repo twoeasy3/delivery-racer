@@ -23,6 +23,7 @@ import { IDEA_MODELS_BATCH_E2 } from './ideaModelsBatchE2.js'; // (batch E2: the
 import { IDEA_MODELS_BATCH_D2 } from './ideaModelsBatchD2.js'; // (batch D2: the Flatbed Truck and the Utility Moke)
 import { IDEA_MODELS_BATCH_D3 } from './ideaModelsBatchD3.js'; // (batch D3: the Half-Track, the Sprint Hatch)
 import { IDEA_MODELS_BATCH_D4 } from './ideaModelsBatchD4.js'; // (batch D4: the Autobahn Estate, the Fin Land Yacht)
+import { IDEA_MODELS_BATCH_E3 } from './ideaModelsBatchE3.js'; // (batch E3: the Crane Lorry, the Moor Rover)
 import { IDEA_MODELS_BATCH_D5 } from './ideaModelsBatchD5.js'; // (batch D5: the Trophy Truck, the Armoured Limo)
 import { IDEA_MODELS_TOPUP_C } from './ideaModelsTopupC.js'; // (top-up batch C: the Pocket 4x4, the Dodgem, the Ice Resurfacer)
 import { IDEA_MODELS_BATCH_D1 } from './ideaModelsBatchD1.js';
@@ -194,6 +195,7 @@ export const IDEA_MODELS = {
   ...IDEA_MODELS_BATCH_D3,
   ...IDEA_MODELS_BATCH_D4,
   ...IDEA_MODELS_BATCH_D5,
+  ...IDEA_MODELS_BATCH_E3,
   swancar: SWAN_MODELS.swancar,
   // A bubble car (a BMW Isetta): an egg on wheels. The whole front is its one door, hinged at the side, the
   // windscreen in it; a glass bubble over a bench seat; lamps in pods on its flanks; the two back wheels close
