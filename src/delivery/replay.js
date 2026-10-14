@@ -21,7 +21,7 @@
 // ============================================================================
 import { Input } from './input.js';
 import { Game } from './game.js';
-import { LEVEL, LEVELS, LEVEL_INDEX, selectLevel, selectSpecial, setRaceClass } from './levels.js';
+import { LEVEL, LEVELS, LEVEL_INDEX, selectLevel, selectSpecial, setRaceClass, levelLoaded, loadLevel, loadHooks } from './levels.js';
 import { STAGE_LEVELS } from './events.js';
 import { CAR, pinCar, carById, carStats } from './cars.js';
 import { Ecu } from './ecu.js';
@@ -49,8 +49,13 @@ const fnv = (items) => {
 };
 // a level's fingerprint: its data as loaded, but not its car and grid, which the race class rewrites (recorded apart)
 const levelPrint = (level) => fnv([JSON.stringify(level, (k, v) => (k === 'car' || k === 'grid' ? undefined : v))]);
-// taken once, as every level was loaded, before any run could change one (a rival rewrites its level's grid)
-const LEVEL_PRINTS = new Map([...LEVELS, ...STAGE_LEVELS].map(level => [level.id, levelPrint(level)])); // (a special event's stages too: events.js)
+// taken once, as every level was loaded, before any run could change one (a rival rewrites its level's grid): a level's
+// file comes when it is needed (levels.js), so its fingerprint is taken then (loadHooks), those here already now
+const LEVEL_PRINTS = new Map();
+const everyLevel = [...LEVELS, ...STAGE_LEVELS]; // (a special event's stages too: events.js)
+const take = (level) => { if (everyLevel.includes(level) && levelLoaded(level)) LEVEL_PRINTS.set(level.id, levelPrint(level)); };
+everyLevel.forEach(take);
+loadHooks.push(take);
 // a car's fingerprint: what it is (its figures, its model, its perks), not its words
 const carPrint = (car) => fnv([JSON.stringify(car, (k, v) => (typeof v === 'function' || k === 'name' || k === 'perk' ? undefined : v))]);
 // where everything is, as numbers: the clock, the player, every vehicle in play, every obstacle in play
@@ -160,7 +165,11 @@ export const Replay = {
     const h = rec?.header;
     if (!h || rec.format !== FORMAT) return { ok: false, why: 'This is not a replay this game can read.' };
     if (h.logic !== BUILD.logic) return { ok: false, why: 'The game has been updated since this replay was recorded.' };
-    if (!LEVEL_PRINTS.has(h.level)) return { ok: false, why: 'The level of this replay is no longer in the game.' };
+    if (!LEVEL_PRINTS.has(h.level)) {
+      const known = everyLevel.find(level => level.id === h.level);
+      if (known) { loadLevel(known).catch(console.error); return { ok: false, why: 'The level of this replay is still loading: try again in a moment.' }; } // (the menu's cards wait for it first)
+      return { ok: false, why: 'The level of this replay is no longer in the game.' };
+    }
     if (LEVEL_PRINTS.get(h.level) !== h.levelPrint) return { ok: false, why: 'This level has changed since the replay was recorded.' };
     const car = carById(h.car);
     if (!car) return { ok: false, why: 'The car of this replay is no longer in the game.' };

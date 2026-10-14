@@ -38,7 +38,7 @@
 // 'description' (the road's words). Events.cardHides(event) is the list; problems() names anything else.
 // ============================================================================
 import eventData from './events.json';
-import { LEVELS, HIDDEN_LEVELS } from './levels.js';
+import { LEVELS, HIDDEN_LEVELS, deriveLevel } from './levels.js';
 import { levelName, levelDescription } from './levelText.js';
 import { cargoFor } from './cargo.js';
 import { Progress } from './progress.js';
@@ -68,14 +68,18 @@ const stageLevel = (event, stage, index, day = null) => {
   const map = MAPS.get(String(stage.level));
   if (!map) return null;
   const own = Object.fromEntries(Object.entries(stage).filter(([k]) => !OWN.has(k)));
-  // (TANK RAGE is off in a stage, the owner: "noTankRage": false in the stage turns it on)
-  const level = { ...map, noTankRage: true, ...own, id: event.id + (day === null ? '-' + (index + 1) : '-d' + (day + 1)), name: levelName(map),
-    description: { good: levelDescription(map, false), evil: levelDescription(map, true) },
-    cargo: { good: cargoFor(map, false)?.id, evil: cargoFor(map, true)?.id }, stage: { event: event.id, index, map: map.id, ...(day === null ? {} : { day }) } };
-  if (!level.cargo.good) delete level.cargo; // (a map that carries nothing: a race)
-  if (stage.car && stage.free) { level.car = stage.car; delete level.allowedCars; } // (lent: a car lock)
-  else if (stage.car) { delete level.car; level.allowedCars = { cars: [stage.car] }; } // (needed, and owned)
-  return level;
+  // (made again from the map's whole file as it loads, levels.js deriveLevel: until then from the map's manifest entry)
+  const build = (map) => {
+    // (TANK RAGE is off in a stage, the owner: "noTankRage": false in the stage turns it on)
+    const level = { ...map, noTankRage: true, ...own, id: event.id + (day === null ? '-' + (index + 1) : '-d' + (day + 1)), name: levelName(map),
+      description: { good: levelDescription(map, false), evil: levelDescription(map, true) },
+      cargo: { good: cargoFor(map, false)?.id, evil: cargoFor(map, true)?.id }, stage: { event: event.id, index, map: map.id, ...(day === null ? {} : { day }) } };
+    if (!level.cargo.good) delete level.cargo; // (a map that carries nothing: a race)
+    if (stage.car && stage.free) { level.car = stage.car; delete level.allowedCars; } // (lent: a car lock)
+    else if (stage.car) { delete level.car; level.allowedCars = { cars: [stage.car] }; } // (needed, and owned)
+    return level;
+  };
+  return deriveLevel(build(map), map, build);
 };
 
 export const SPECIALS = (Array.isArray(eventData.special) ? eventData.special : []).map(e => {

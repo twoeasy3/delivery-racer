@@ -13,7 +13,7 @@
 // main.js); ?side=evil shows the Evil side for the visit; ?options opens the options; ?road the road card.
 import { sheetUp } from '../lite.js';
 import '../menu2.css';
-import { LEVELS, LEVEL, selectLevel, selectSpecial, levelLabel, MAIN_LEVELS, AMPHIBIOUS_LEVELS, DELIVERY_LEVELS, RACE_LEVELS, isRace } from '../levels.js';
+import { LEVELS, LEVEL, selectLevel, selectSpecial, levelLabel, MAIN_LEVELS, AMPHIBIOUS_LEVELS, DELIVERY_LEVELS, RACE_LEVELS, isRace, loadLevel, levelLoaded } from '../levels.js';
 import { levelName, levelDescription } from '../levelText.js';
 import { cargoFor } from '../cargo.js';
 import { cargoCircleView } from './cargoview.js';
@@ -672,10 +672,10 @@ const roadCard = async (level) => {
     }
   };
   const asked = roadAsked = {}; // (this asking: a later one, for another level, takes its place)
-  if (roadModule) { openSheet(roadBox, () => roadBox.replaceChildren()); fill(); return; }
+  if (roadModule && levelLoaded(level)) { openSheet(roadBox, () => roadBox.replaceChildren()); fill(); return; }
   roadLine(level, 'Loading…');
   openSheet(roadBox, () => roadBox.replaceChildren());
-  try { roadModule = await (roadLoading ||= import('./levelcard3d.js')); } catch (error) {
+  try { roadModule = (await Promise.all([loadLevel(level), roadModule || (roadLoading ||= import('./levelcard3d.js'))]))[1]; } catch (error) { // (the card reads the whole level: its file comes with the card's code, levels.js)
     roadLoading = null; // (the next tap asks for it again)
     console.error(error);
     if (sheet === roadBox && roadAsked === asked) roadLine(level, 'This card could not be loaded. Check the connection, or reload the page.');
@@ -694,6 +694,7 @@ const KIND_NAMES = { best: 'Best run', last: 'Last run', saved: 'Saved' };
 const OUTCOME_NAMES = { delivered: 'Delivered', late: 'Too late', timeout: 'Out of time', busted: 'Busted', left: 'Left part way' };
 const replaysCard = (level) => {
   if (!menuUp()) return;
+  if (!levelLoaded(level)) { loadLevel(level).then(() => replaysCard(level), console.error); return; } // (a replay is checked against the level's whole file: replay.js)
   const fill = () => {
     const closeBtn = make('button', 'menu-chip', 'Close');
     closeBtn.addEventListener('click', closeSheet);

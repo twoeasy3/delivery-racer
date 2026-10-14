@@ -6,7 +6,10 @@
 import './powerups.css';
 import './gimmicks.css';
 import { GROUPS, DRESSING, where } from './gimmicks.js';
+import { loadAllLevels } from './levels.js';
 import { standView, viewRenderer, drawViews } from './render/modelviews.js';
+
+await loadAllLevels(); // ("the levels it turns up in" reads every level's whole file: levels.js)
 
 // ---- the page: the groups (a row of buttons to jump to each), then the cards -------------------------
 const hex = (color) => '#' + color.toString(16).padStart(6, '0');

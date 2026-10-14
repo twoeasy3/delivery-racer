@@ -1,5 +1,5 @@
 import { CONFIG } from './config.js';
-import { LEVEL, LEVEL_INDEX, LEVELS, SCREENSAVER_LEVEL, selectLevel, selectSpecial, nextOnTab, isRace } from './levels.js';
+import { LEVEL, LEVEL_INDEX, LEVELS, SCREENSAVER_LEVEL, selectLevel, selectSpecial, nextOnTab, isRace, loadLevel, levelLoaded } from './levels.js';
 import { Progress } from './progress.js';
 import { Nav } from './nav.js';
 import { CAR, useLevelCar, returnCar, earnedFor, ownedAmphibious, carAllowed, carRule, carStats } from './cars.js';
@@ -133,7 +133,9 @@ export const Game = {
   },
   // the screensaver: its own level, no player car (the camera follows a ghost dolly), no
   // clock and no finish: at the end of the road everything goes round again
+  // a level's whole file comes when it is needed (levels.js): a start on one not here yet waits for it, then starts as asked
   startScreensaver() {
+    if (!levelLoaded(SCREENSAVER_LEVEL)) { loadLevel(SCREENSAVER_LEVEL).then(() => this.startScreensaver(), console.error); return; }
     this.menuLevel = LEVEL_INDEX;
     selectSpecial(SCREENSAVER_LEVEL);
     this.start();
@@ -143,10 +145,11 @@ export const Game = {
   },
   // the race screensaver: a race on a circuit, no player car, watched (and the next, once it is over)
   startRaceWatch() {
-    if (!this.screensaver) { this.menuLevel = LEVEL_INDEX; this.raceCount = 0; }
     // (on the circuit picked on the menu, or on each of them in turn: see Progress.data.raceTrack)
-    const circuits = LEVELS.filter(l => l.laps);
-    selectSpecial(circuits.find(l => l.id === Progress.data.raceTrack) || circuits[this.raceCount % circuits.length]);
+    const circuits = LEVELS.filter(l => l.laps), circuit = circuits.find(l => l.id === Progress.data.raceTrack) || circuits[(this.screensaver ? this.raceCount : 0) % circuits.length];
+    if (!levelLoaded(circuit)) { loadLevel(circuit).then(() => this.startRaceWatch(), console.error); return; }
+    if (!this.screensaver) { this.menuLevel = LEVEL_INDEX; this.raceCount = 0; }
+    selectSpecial(circuit);
     this.raceCount++;
     this.start();
     this.screensaver = true;
@@ -176,6 +179,7 @@ export const Game = {
     if (go && this.state === 'start') this.start();
   },
   start() {
+    if (!levelLoaded(LEVEL)) { const picked = LEVEL; loadLevel(picked).then(() => { if (LEVEL === picked) this.start(); }, console.error); return; }
     if (Replay.playing && !Replay.starting) Replay.stop(); // (a run of the player's own after a playback: the save as it was)
     // an amphibious level is only driven in an amphibious car: with none owned, back to the menu, which says
     // which one to get (render/menu.js). With one owned it is driven in that, whatever car is in use

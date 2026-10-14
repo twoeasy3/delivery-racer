@@ -1,0 +1,1177 @@
+{
+ "airport": {
+  "id": "airport",
+  "theme": "airport",
+  "flow": "north",
+  "shoulderTimer": false,
+  "clock": {
+   "good": 210,
+   "evil": 149
+  },
+  "tip": 160
+ },
+ "albert-park": {
+  "id": "albert-park",
+  "theme": "albert-park",
+  "car": "f1",
+  "flow": "north",
+  "shoulderTimer": false,
+  "clock": {
+   "good": 335,
+   "evil": 260
+  },
+  "tip": 400,
+  "laps": 3,
+  "grid": {
+   "count": 39,
+   "kind": "f1",
+   "gap": 7,
+   "pace": {
+    "min": 0.96,
+    "max": 1.02
+   }
+  },
+  "noPackages": true
+ },
+ "all-heck": {
+  "id": "all-heck",
+  "cargo": {
+   "good": "clock",
+   "evil": "doll"
+  },
+  "theme": "hell",
+  "car": "hearse",
+  "alwaysGood": true,
+  "flow": "south",
+  "clock": {
+   "good": 156,
+   "evil": 111
+  },
+  "tip": 120
+ },
+ "back-roads": {
+  "id": "back-roads",
+  "theme": "canberra",
+  "clock": {
+   "good": 115,
+   "evil": 90
+  },
+  "tip": 40
+ },
+ "backlot": {
+  "id": "backlot",
+  "theme": "backlot",
+  "clock": {
+   "good": 200,
+   "evil": 150
+  },
+  "tip": 295,
+  "cargo": {
+   "good": "trophy",
+   "evil": "alien"
+  }
+ },
+ "bathurst": {
+  "id": "bathurst",
+  "theme": "bathurst",
+  "car": "f1",
+  "flow": "north",
+  "shoulderTimer": false,
+  "clock": {
+   "good": 360,
+   "evil": 255
+  },
+  "tip": 450,
+  "laps": 2,
+  "grid": {
+   "count": 39,
+   "kind": "f1",
+   "gap": 7,
+   "pace": {
+    "min": 0.96,
+    "max": 1.02
+   }
+  },
+  "noPackages": true
+ },
+ "battlefield": {
+  "id": "battlefield",
+  "clock": {
+   "good": 312,
+   "evil": 221
+  },
+  "tip": 80,
+  "flow": "mixed",
+  "battle": true,
+  "car": "apc",
+  "theme": "battlefield",
+  "shoulderTimer": false
+ },
+ "big-business": {
+  "id": "big-business",
+  "theme": "city",
+  "flow": "north",
+  "clock": {
+   "good": 125,
+   "evil": 95
+  },
+  "tip": 90
+ },
+ "canberra": {
+  "id": "canberra",
+  "theme": "canberra",
+  "clock": {
+   "good": 180,
+   "evil": 128
+  },
+  "tip": 120
+ },
+ "cattle": {
+  "id": "cattle",
+  "theme": "wildwest",
+  "clock": {
+   "good": 255,
+   "evil": 195
+  },
+  "tip": 320,
+  "cargo": {
+   "good": "pancakes",
+   "evil": "cannonball"
+  }
+ },
+ "chaos": {
+  "id": "chaos",
+  "theme": "city",
+  "flow": "south",
+  "clock": {
+   "good": 11999,
+   "evil": 8499
+  },
+  "tip": 0
+ },
+ "chianti-run": {
+  "id": "chianti-run",
+  "theme": "tuscany",
+  "clock": {
+   "good": 190,
+   "evil": 145
+  },
+  "tip": 250,
+  "cargo": {
+   "good": "winecase",
+   "evil": "stolenbust"
+  }
+ },
+ "christmas": {
+  "id": "christmas",
+  "cargo": {
+   "good": "cake",
+   "evil": "doll"
+  },
+  "theme": "christmas",
+  "clock": {
+   "good": 180,
+   "evil": 135
+  },
+  "tip": 185,
+  "allowedCars": {
+   "cars": [
+    "commuter",
+    "lovebus",
+    "sport",
+    "towtruck",
+    "sixbysix",
+    "floatvan",
+    "tank",
+    "hellrod",
+    "earned-ufo",
+    "courier",
+    "milkfloat"
+   ]
+  }
+ },
+ "cinder": {
+  "id": "cinder",
+  "theme": "volcano",
+  "clock": {
+   "good": 225,
+   "evil": 170
+  },
+  "tip": 205,
+  "cargo": {
+   "good": "lavalamp",
+   "evil": "cooker"
+  }
+ },
+ "construction": {
+  "id": "construction",
+  "theme": "construction",
+  "flow": "north",
+  "shoulderTimer": false,
+  "clock": {
+   "good": 246,
+   "evil": 174
+  },
+  "tip": 105
+ },
+ "dakar-dash": {
+  "id": "dakar-dash",
+  "theme": "desert",
+  "clock": {
+   "good": 255,
+   "evil": 195
+  },
+  "tip": 280,
+  "flow": "north",
+  "shoulderTimer": false,
+  "rival": "opposite"
+ },
+ "derby": {
+  "id": "derby",
+  "theme": "toyroom",
+  "clock": {
+   "good": 155,
+   "evil": 120
+  },
+  "tip": 280,
+  "flow": "north",
+  "rival": "opposite",
+  "cargo": {
+   "good": "balloons",
+   "evil": "jack"
+  }
+ },
+ "descent": {
+  "id": "descent",
+  "theme": "favelaRain",
+  "clock": {
+   "good": 170,
+   "evil": 125
+  },
+  "tip": 340,
+  "cargo": {
+   "good": "bouquet",
+   "evil": "cloud"
+  }
+ },
+ "docks": {
+  "id": "docks",
+  "theme": "port",
+  "clock": {
+   "good": 215,
+   "evil": 160
+  },
+  "tip": 350,
+  "cargo": {
+   "good": "globe",
+   "evil": "barrel"
+  }
+ },
+ "endurance-road": {
+  "id": "endurance-road",
+  "theme": "bathurst",
+  "clock": {
+   "good": 90,
+   "evil": 70
+  },
+  "tip": 220,
+  "cargo": {
+   "good": "coffee",
+   "evil": "airhorn"
+  },
+  "rival": "opposite"
+ },
+ "erupt": {
+  "id": "erupt",
+  "theme": "volcanoErupting",
+  "clock": {
+   "good": 250,
+   "evil": 190
+  },
+  "tip": 320,
+  "cargo": {
+   "good": "canary",
+   "evil": "egg"
+  }
+ },
+ "expressway": {
+  "id": "expressway",
+  "cargo": {
+   "good": "pizza",
+   "evil": "parcel"
+  },
+  "clock": {
+   "good": 110,
+   "evil": 85
+  },
+  "tip": 50
+ },
+ "fallout": {
+  "id": "fallout",
+  "theme": "fallout",
+  "clock": {
+   "good": 195,
+   "evil": 150
+  },
+  "tip": 300,
+  "cargo": {
+   "good": "bonsai",
+   "evil": "cloud"
+  }
+ },
+ "farm": {
+  "id": "farm",
+  "cargo": {
+   "good": "cactus",
+   "evil": "bees"
+  },
+  "theme": "farm",
+  "clock": {
+   "good": 105,
+   "evil": 80
+  },
+  "tip": 70
+ },
+ "farside": {
+  "id": "farside",
+  "theme": "moon",
+  "clock": {
+   "good": 265,
+   "evil": 200
+  },
+  "tip": 360,
+  "cargo": {
+   "good": "telescope",
+   "evil": "reactor"
+  }
+ },
+ "fjord": {
+  "id": "fjord",
+  "theme": "snow",
+  "amphibious": true,
+  "clock": {
+   "good": 210,
+   "evil": 160
+  },
+  "tip": 340
+ },
+ "flood": {
+  "id": "flood",
+  "theme": "flooded",
+  "flow": "north",
+  "amphibious": true,
+  "clock": {
+   "good": 225,
+   "evil": 170
+  },
+  "tip": 280
+ },
+ "ford": {
+  "id": "ford",
+  "theme": "safari",
+  "flow": "north",
+  "amphibious": true,
+  "shoulderTimer": false,
+  "clock": {
+   "good": 215,
+   "evil": 160
+  },
+  "tip": 300
+ },
+ "gimmick-road-2": {
+  "id": "gimmick-road-2",
+  "car": "miata",
+  "clock": {
+   "good": 420,
+   "evil": 320
+  },
+  "tip": 50
+ },
+ "gimmick-road-3": {
+  "id": "gimmick-road-3",
+  "clock": {
+   "good": 480,
+   "evil": 370
+  },
+  "tip": 50
+ },
+ "gimmick-road": {
+  "id": "gimmick-road",
+  "car": "miata",
+  "clock": {
+   "good": 504,
+   "evil": 357
+  },
+  "tip": 50
+ },
+ "glow": {
+  "id": "glow",
+  "theme": "themeparkNight",
+  "clock": {
+   "good": 150,
+   "evil": 110
+  },
+  "tip": 280,
+  "flow": "north",
+  "cargo": {
+   "good": "telescope",
+   "evil": "mimic"
+  }
+ },
+ "grand-boulevard": {
+  "id": "grand-boulevard",
+  "theme": "canberra",
+  "clock": {
+   "good": 95,
+   "evil": 75
+  },
+  "tip": 160,
+  "cargo": {
+   "good": "trophy",
+   "evil": "lawyers"
+  }
+ },
+ "grand-pacific": {
+  "id": "grand-pacific",
+  "theme": "coast",
+  "drive": "left",
+  "clock": {
+   "good": 480,
+   "evil": 340
+  },
+  "tip": 365
+ },
+ "grand-prix": {
+  "id": "grand-prix",
+  "theme": "singaporeNight",
+  "drive": "left",
+  "car": "f1",
+  "flow": "north",
+  "shoulderTimer": false,
+  "clock": {
+   "good": 336,
+   "evil": 238
+  },
+  "tip": 300,
+  "laps": 3,
+  "grid": {
+   "count": 29,
+   "kind": "f1",
+   "gap": 8,
+   "pace": {
+    "min": 0.96,
+    "max": 1.02
+   }
+  },
+  "noPackages": true
+ },
+ "harbour": {
+  "id": "harbour",
+  "theme": "hongkong",
+  "drive": "left",
+  "amphibious": true,
+  "clock": {
+   "good": 235,
+   "evil": 175
+  },
+  "tip": 260
+ },
+ "hong-kong": {
+  "id": "hong-kong",
+  "name": "Hong Kong Harbour",
+  "description": {
+   "good": "The harbour front by night, on the left: roadworks, cameras, fresh tar, the long tunnel, the sea over the low road, a second tunnel and home.",
+   "evil": "Taxis nose to tail, four cameras to ignore, wet tar, two tunnels and the harbour washing over the road. The best money is in the tram lane."
+  },
+  "cargo": {
+   "good": "canary",
+   "evil": "genie"
+  },
+  "theme": "hongkong",
+  "drive": "left",
+  "clock": {
+   "good": 225,
+   "evil": 165
+  },
+  "tip": 165
+ },
+ "hurricane": {
+  "id": "hurricane",
+  "theme": "beach",
+  "flow": "north",
+  "clock": {
+   "good": 130,
+   "evil": 100
+  },
+  "tip": 130
+ },
+ "iceroad": {
+  "id": "iceroad",
+  "theme": "iceroad",
+  "clock": {
+   "good": 200,
+   "evil": 150
+  },
+  "tip": 280,
+  "cargo": {
+   "good": "snowglobe",
+   "evil": "ice"
+  }
+ },
+ "leaks": {
+  "id": "leaks",
+  "name": "Twenty Thousand Leaks",
+  "description": {
+   "good": "A glass tube along the sea bed, and it drips. Steer round the leaks, keep off the fresh tar, take the crest gently, and keep to your lane in the dark.",
+   "evil": "The tunnel is leaking and the best money sits in the puddles and on the wet tar. Fly the crest past the camera and let the whale be the only witness."
+  },
+  "theme": "seabed",
+  "clock": {
+   "good": 210,
+   "evil": 160
+  },
+  "tip": 260,
+  "cargo": {
+   "good": "goldfish",
+   "evil": "tentacle"
+  }
+ },
+ "marina-bay": {
+  "id": "marina-bay",
+  "theme": "singaporeNight",
+  "car": "f1",
+  "flow": "north",
+  "shoulderTimer": false,
+  "clock": {
+   "good": 396,
+   "evil": 281
+  },
+  "tip": 400,
+  "laps": 3,
+  "grid": {
+   "count": 39,
+   "kind": "f1",
+   "gap": 7,
+   "pace": {
+    "min": 0.96,
+    "max": 1.02
+   }
+  },
+  "noPackages": true
+ },
+ "market-town": {
+  "id": "market-town",
+  "name": "Market Town",
+  "description": {
+   "good": "Market day: the square, the level crossing by the station, roadworks on the bypass and the cattle market. Race the train or wave it through.",
+   "evil": "A learner, a funeral, a burst main and two trains between you and the drop. Beat them over the crossings; the cattle market will talk of it for years."
+  },
+  "theme": "suburb",
+  "clock": {
+   "good": 185,
+   "evil": 140
+  },
+  "tip": 265,
+  "cargo": {
+   "good": "puppy",
+   "evil": "goose"
+  }
+ },
+ "monsoon": {
+  "id": "monsoon",
+  "theme": "riceMonsoon",
+  "drive": "left",
+  "clock": {
+   "good": 235,
+   "evil": 175
+  },
+  "tip": 290,
+  "cargo": {
+   "good": "teaset",
+   "evil": "piranhas"
+  }
+ },
+ "monte-carlo": {
+  "id": "monte-carlo",
+  "theme": "snow",
+  "clock": {
+   "good": 174,
+   "evil": 123
+  },
+  "tip": 85
+ },
+ "montreal": {
+  "id": "montreal",
+  "theme": "montreal",
+  "car": "f1",
+  "flow": "north",
+  "shoulderTimer": false,
+  "clock": {
+   "good": 348,
+   "evil": 247
+  },
+  "tip": 400,
+  "laps": 3,
+  "grid": {
+   "count": 39,
+   "kind": "f1",
+   "gap": 7,
+   "pace": {
+    "min": 0.96,
+    "max": 1.02
+   }
+  },
+  "noPackages": true
+ },
+ "monza": {
+  "id": "monza",
+  "theme": "monza",
+  "car": "f1",
+  "flow": "north",
+  "shoulderTimer": false,
+  "clock": {
+   "good": 365,
+   "evil": 280
+  },
+  "tip": 400,
+  "laps": 3,
+  "grid": {
+   "count": 39,
+   "kind": "f1",
+   "gap": 7,
+   "pace": {
+    "min": 0.96,
+    "max": 1.02
+   }
+  },
+  "noPackages": true
+ },
+ "moon": {
+  "id": "moon",
+  "name": "Tranquility Base",
+  "description": {
+   "good": "A delivery to the Moon base: craters for potholes, ruts in the dust, machines crossing, and meteors now and then. Lift for the crests and look up.",
+   "evil": "Nobody hears a crash in a vacuum. Thread the meteor showers, cut across the bulldozer, take the rut with the money and every crest at full speed."
+  },
+  "theme": "moon",
+  "clock": {
+   "good": 230,
+   "evil": 175
+  },
+  "tip": 350,
+  "cargo": {
+   "good": "globe",
+   "evil": "alien"
+  }
+ },
+ "morro": {
+  "id": "morro",
+  "name": "Favela Heights",
+  "description": {
+   "good": "A record player for the party at the top. Up the hairpins and the bumps, past the carnival and the ice-cream van, over the ridge and down the far side, gently.",
+   "evil": "Fireworks for the hilltop, and the hill in the way. Round the parade, between the bumps, through burst mains, fly the ridge and never mind who is on the stairs."
+  },
+  "theme": "favela",
+  "clock": {
+   "good": 220,
+   "evil": 165
+  },
+  "tip": 380,
+  "cargo": {
+   "good": "record",
+   "evil": "fireworks"
+  }
+ },
+ "mountain-pass": {
+  "id": "mountain-pass",
+  "theme": "snow",
+  "clock": {
+   "good": 195,
+   "evil": 155
+  },
+  "tip": 140,
+  "cargo": {
+   "good": "clock",
+   "evil": "cannonball"
+  }
+ },
+ "mumbai": {
+  "id": "mumbai",
+  "theme": "mumbai",
+  "drive": "left",
+  "clock": {
+   "good": 230,
+   "evil": 170
+  },
+  "tip": 95
+ },
+ "mystery-meadows": {
+  "id": "mystery-meadows",
+  "theme": "farm",
+  "clock": {
+   "good": 234,
+   "evil": 166
+  },
+  "tip": 90
+ },
+ "neon-edge": {
+  "id": "neon-edge",
+  "theme": "tokyo",
+  "drive": "left",
+  "clock": {
+   "good": 90,
+   "evil": 70
+  },
+  "tip": 200,
+  "cargo": {
+   "good": "lavalamp",
+   "evil": "glitter"
+  }
+ },
+ "night": {
+  "id": "night",
+  "cargo": {
+   "good": "clock",
+   "evil": "doll"
+  },
+  "theme": "night",
+  "clock": {
+   "good": 168,
+   "evil": 119
+  },
+  "tip": 65
+ },
+ "noon": {
+  "id": "noon",
+  "theme": "wildwest",
+  "clock": {
+   "good": 205,
+   "evil": 155
+  },
+  "tip": 265,
+  "cargo": {
+   "good": "cactus",
+   "evil": "snakes"
+  }
+ },
+ "oh-mine": {
+  "id": "oh-mine",
+  "theme": "sea",
+  "car": "jetboat",
+  "clock": {
+   "good": 264,
+   "evil": 187
+  },
+  "tip": 60,
+  "flow": "north",
+  "shoulderTimer": false
+ },
+ "outback-express": {
+  "id": "outback-express",
+  "theme": "panorama",
+  "clock": {
+   "good": 225,
+   "evil": 170
+  },
+  "tip": 310,
+  "cargo": {
+   "good": "puppy",
+   "evil": "egg"
+  }
+ },
+ "panorama-avenue": {
+  "id": "panorama-avenue",
+  "theme": "panorama",
+  "clock": {
+   "good": 360,
+   "evil": 255
+  },
+  "tip": 225
+ },
+ "park": {
+  "id": "park",
+  "theme": "themepark",
+  "clock": {
+   "good": 225,
+   "evil": 170
+  },
+  "tip": 340,
+  "cargo": {
+   "good": "balloons",
+   "evil": "jack"
+  }
+ },
+ "passage-du-gois": {
+  "id": "passage-du-gois",
+  "cargo": {
+   "good": "goldfish",
+   "evil": "tentacle"
+  },
+  "theme": "coast",
+  "clock": {
+   "good": 348,
+   "evil": 247
+  },
+  "tip": 230
+ },
+ "pocket-town": {
+  "id": "pocket-town",
+  "theme": "suburb",
+  "clock": {
+   "good": 95,
+   "evil": 75
+  },
+  "tip": 120,
+  "cargo": {
+   "good": "goldfish",
+   "evil": "porcupine"
+  }
+ },
+ "ponti": {
+  "id": "ponti",
+  "theme": "venice",
+  "clock": {
+   "good": 175,
+   "evil": 135
+  },
+  "tip": 300,
+  "cargo": {
+   "good": "teaset",
+   "evil": "goose"
+  }
+ },
+ "quarry-run": {
+  "id": "quarry-run",
+  "theme": "construction",
+  "clock": {
+   "good": 215,
+   "evil": 165
+  },
+  "tip": 285,
+  "shoulderTimer": "mud",
+  "cargo": {
+   "good": "toolbox",
+   "evil": "parcel"
+  }
+ },
+ "rice": {
+  "id": "rice",
+  "theme": "rice",
+  "clock": {
+   "good": 205,
+   "evil": 155
+  },
+  "tip": 245,
+  "cargo": {
+   "good": "sushi",
+   "evil": "bats"
+  }
+ },
+ "ring-road": {
+  "id": "ring-road",
+  "name": "Ring Road",
+  "description": {
+   "good": "Rush hour round the city: estate, retail park, stadium, services. The limit is 90, a 20 lies past every camera, and each low bridge has an exit round it.",
+   "evil": "Cameras, ambulances, a police chase and three low bridges between you and the city centre. Take the cash off the shoulder and vanish down an exit."
+  },
+  "theme": "city",
+  "clock": {
+   "good": 265,
+   "evil": 200
+  },
+  "tip": 185,
+  "cargo": {
+   "good": "coffee",
+   "evil": "skunk"
+  }
+ },
+ "rival-run": {
+  "id": "rival-run",
+  "theme": "farm",
+  "clock": {
+   "good": 300,
+   "evil": 285
+  },
+  "tip": 300,
+  "rival": "opposite"
+ },
+ "safari": {
+  "id": "safari",
+  "cargo": {
+   "good": "cake",
+   "evil": "porcupine"
+  },
+  "theme": "safari",
+  "flow": "north",
+  "shoulderTimer": false,
+  "clock": {
+   "good": 252,
+   "evil": 179
+  },
+  "tip": 240
+ },
+ "seaquake": {
+  "id": "seaquake",
+  "theme": "seabed",
+  "clock": {
+   "good": 165,
+   "evil": 120
+  },
+  "tip": 285,
+  "drive": "left",
+  "cargo": {
+   "good": "sushi",
+   "evil": "piranhas"
+  }
+ },
+ "shift": {
+  "id": "shift",
+  "theme": "portNight",
+  "clock": {
+   "good": 160,
+   "evil": 120
+  },
+  "tip": 360,
+  "drive": "left",
+  "cargo": {
+   "good": "coffee",
+   "evil": "reactor"
+  }
+ },
+ "showdown": {
+  "id": "showdown",
+  "theme": "night",
+  "car": "miata",
+  "clock": {
+   "good": 200,
+   "evil": 190
+  },
+  "tip": 500,
+  "rival": "evil"
+ },
+ "singapore-night": {
+  "id": "singapore-night",
+  "theme": "singaporeNight",
+  "drive": "left",
+  "clock": {
+   "good": 210,
+   "evil": 149
+  },
+  "tip": 115
+ },
+ "singapore": {
+  "id": "singapore",
+  "theme": "singapore",
+  "drive": "left",
+  "clock": {
+   "good": 132,
+   "evil": 94
+  },
+  "tip": 75
+ },
+ "slipway": {
+  "id": "slipway",
+  "theme": "beach",
+  "amphibious": true,
+  "clock": {
+   "good": 165,
+   "evil": 125
+  },
+  "tip": 220
+ },
+ "solstice-cliffs": {
+  "id": "solstice-cliffs",
+  "theme": "coast",
+  "clock": {
+   "good": 90,
+   "evil": 70
+  },
+  "tip": 140,
+  "cargo": {
+   "good": "cake",
+   "evil": "bees"
+  }
+ },
+ "spa": {
+  "id": "spa",
+  "theme": "spa",
+  "car": "f1",
+  "flow": "north",
+  "shoulderTimer": false,
+  "clock": {
+   "good": 300,
+   "evil": 230
+  },
+  "tip": 400,
+  "laps": 2,
+  "grid": {
+   "count": 39,
+   "kind": "f1",
+   "gap": 7,
+   "pace": {
+    "min": 0.96,
+    "max": 1.02
+   }
+  },
+  "noPackages": true
+ },
+ "speed-trap-alley": {
+  "id": "speed-trap-alley",
+  "theme": "suburb",
+  "clock": {
+   "good": 240,
+   "evil": 180
+  },
+  "tip": 220,
+  "cargo": {
+   "good": "teaset",
+   "evil": "cooker"
+  }
+ },
+ "stelvio": {
+  "id": "stelvio",
+  "name": "Stelvio Pass",
+  "description": {
+   "good": "The great alpine pass in the cold: ice on the bends, rockfall off the walls and fog near the top. Slow in, slow out, parcel intact.",
+   "evil": "Ice, fog and half the mountain coming down on a road of careful drivers. Overtake every one of them on the outside."
+  },
+  "theme": "snow",
+  "clock": {
+   "good": 300,
+   "evil": 230
+  },
+  "tip": 175
+ },
+ "stunts": {
+  "id": "stunts",
+  "theme": "backlot",
+  "clock": {
+   "good": 150,
+   "evil": 115
+  },
+  "tip": 320,
+  "flow": "north",
+  "cargo": {
+   "good": "coffee",
+   "evil": "fireworks"
+  }
+ },
+ "suburbs": {
+  "id": "suburbs",
+  "theme": "suburb",
+  "clock": {
+   "good": 35,
+   "evil": 25
+  },
+  "tip": 85
+ },
+ "testbed": {
+  "id": "testbed",
+  "clock": {
+   "good": 1080,
+   "evil": 765
+  },
+  "tip": 50
+ },
+ "thaw": {
+  "id": "thaw",
+  "theme": "iceroadThaw",
+  "clock": {
+   "good": 265,
+   "evil": 205
+  },
+  "tip": 340,
+  "cargo": {
+   "good": "puppy",
+   "evil": "piranhas"
+  }
+ },
+ "the-hood": {
+  "id": "the-hood",
+  "theme": "hood",
+  "clock": {
+   "good": 304,
+   "evil": 215
+  },
+  "tip": 210
+ },
+ "tokyo": {
+  "id": "tokyo",
+  "theme": "tokyo",
+  "drive": "left",
+  "clock": {
+   "good": 190,
+   "evil": 140
+  },
+  "tip": 260
+ },
+ "tour-de-coast": {
+  "id": "tour-de-coast",
+  "name": "Tour de Coast",
+  "description": {
+   "good": "Race day on the coast: bears in the gums on the headland, one lane round the cliffs, the causeway ahead of the tide and a sprint to the harbour. Pass them wide.",
+   "evil": "A dozen pelotons in lycra all over your road: under the drop bears, on the one-lane cliffs, in the tide. The money is in the oncoming lane. Ring your bell."
+  },
+  "theme": "coast",
+  "clock": {
+   "good": 210,
+   "evil": 160
+  },
+  "tip": 180
+ },
+ "toys": {
+  "id": "toys",
+  "name": "Toy Room",
+  "description": {
+   "good": "A plastic track across the playroom carpet: corrugated card, a toy train at the crossing, a drawbridge to hop and a box tunnel. Mind the dominoes.",
+   "evil": "Somebody left their toys out. Skim the card, scatter the cones, jump the drawbridge flat out and take the banknotes in the lane that just turned round."
+  },
+  "theme": "toyroom",
+  "clock": {
+   "good": 215,
+   "evil": 165
+  },
+  "tip": 280,
+  "cargo": {
+   "good": "present",
+   "evil": "teddy"
+  }
+ },
+ "turbo-quay": {
+  "id": "turbo-quay",
+  "theme": "port",
+  "clock": {
+   "good": 95,
+   "evil": 75
+  },
+  "tip": 180,
+  "cargo": {
+   "good": "globe",
+   "evil": "fireworks"
+  }
+ },
+ "ufo": {
+  "id": "ufo",
+  "theme": "space",
+  "car": "ufo",
+  "shoulderTimer": false,
+  "clock": {
+   "good": 144,
+   "evil": 102
+  },
+  "tip": 90
+ },
+ "venice": {
+  "id": "venice",
+  "theme": "venice",
+  "clock": {
+   "good": 185,
+   "evil": 140
+  },
+  "tip": 180,
+  "cargo": {
+   "good": "sundae",
+   "evil": "mirror"
+  }
+ }
+}

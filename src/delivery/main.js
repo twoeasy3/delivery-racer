@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { Track } from './track.js';
 import { unlockEverything } from './unlockall.js';
-import { LEVEL, LEVELS, selectLevel, selectSpecial, HIDDEN_LEVELS, setRaceClass } from './levels.js';
+import { LEVEL, LEVELS, selectLevel, selectSpecial, HIDDEN_LEVELS, SCREENSAVER_LEVEL, setRaceClass, loadLevel } from './levels.js';
 import { standsAlone } from './levelText.js';
 import { THEMES } from './themes.js';
 import { Progress } from './progress.js';
@@ -89,6 +89,18 @@ import { Message } from './messages.js';
 // With it, ?level=3 picks the level (locked or not), ?at=1650 starts that many metres along
 // the expressway and ?ff=5 runs the game for that many seconds before the first frame is drawn.
 const params = new URLSearchParams(location.search);
+// A level's whole file comes when it is needed (levels.js): the levels this address starts or looks at are waited for here,
+// before the lines below read them (a visit with none of these waits for nothing: the menu needs only the manifest)
+{
+  const clampTo = (n) => LEVELS[Math.max(0, Math.min(LEVELS.length - 1, n))];
+  const named = [], hid = params.get('hidden') || (params.get('test') !== null ? 'testbed' : params.get('edited') !== null ? 'edited' : null);
+  if (hid) named.push(hid === 'edited' ? HIDDEN_LEVELS.testbed : HIDDEN_LEVELS[hid] || HIDDEN_LEVELS.testbed);
+  else if (params.get('autostart') !== null) named.push(clampTo((Number(params.get('level')) || 1) - 1));
+  if (params.get('pick')) named.push(clampTo(Number(params.get('pick')) - 1));
+  if (params.get('screensaver') !== null) named.push(SCREENSAVER_LEVEL);
+  if (params.get('racewatch') !== null) named.push(...LEVELS.filter(l => l.laps));
+  if (named.length) await Promise.all(named.map(loadLevel));
+}
 // ?eventsnow=2026-11-05: the events' clock (Events.now) set to that day for the visit (a look at an event over, or not
 // yet open: the menu, the Shop, the showroom's "Where to get it"); nothing saved
 if (params.get('eventsnow')) { const at = eventTime(params.get('eventsnow')); if (Number.isFinite(at)) Events.now = () => at; }
@@ -124,7 +136,7 @@ if (params.get('pick')) {
 // ?event=car-hunt shows that special event's screen in the menu, on its next stage (render/menustage.js showEvent; with
 // &eventsnow= as the events' clock: a recurring one between its runs), for a look: nothing is saved. Before ?showroom,
 // so a showroom opened with it has the stage's car rule (its imposed filter)
-if (params.get('event')) showEvent(params.get('event'));
+if (params.get('event')) { showEvent(params.get('event')); if (params.get('deliver') !== null) await loadLevel(LEVEL); }
 // &deliver (with ?event=): the stage started and delivered at once, for a picture of its results (and the pack it gives
 // opening over them); nothing is saved
 if (params.get('event') && params.get('deliver') !== null && Game.canStart) {

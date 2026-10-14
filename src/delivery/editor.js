@@ -22,7 +22,7 @@
 // ============================================================================
 import './editor.css';
 import { CONFIG } from './config.js';
-import { LEVELS, HIDDEN_LEVELS, levelLabel, selectSpecial } from './levels.js';
+import { LEVELS, HIDDEN_LEVELS, levelLabel, selectSpecial, loadAllLevels } from './levels.js';
 import { levelName, withWords } from './levelText.js';
 import { buildTrack, Track } from './track.js';
 import { THEMES } from './themes.js';
@@ -50,6 +50,7 @@ const SPAN_RULES = ['straight', 'level', 'clearOfExits', 'clearOfEnds', 'noBridg
 // ---- the level being edited ----------------------------------------------------------------------
 // (a built-in level is opened with its words in it, levelText.json's if they are kept there: withWords. So the
 // forms show them, and a level downloaded from here carries its own name and description: its file stands by itself)
+await loadAllLevels(); // (the editor opens any level: each one's whole file, levels.js)
 const sources = [
   ...LEVELS.map((l, i) => [`${levelLabel(i)}. ${levelName(l)}`, withWords(l)]),
   ...Object.entries(HIDDEN_LEVELS).map(([id, l]) => [`Hidden: ${levelName(l)} (${id})`, withWords(l)]),

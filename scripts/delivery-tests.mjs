@@ -32,7 +32,7 @@ const GROUPS = {
   levels: {
     about: 'Level data: the schema, every level builds with no problems, lapped levels close their loop, every import resolves, the Concept Strike\'s levels timed in its cars',
     seconds: 135,
-    tests: [t('.schema-check.mjs'), t('.loop-check.mjs'), t('.bundle-check.mjs'), t('.merge-cross-check.mjs'), t('delivery-levels-check.mjs', { heavy: true }), t('tiers.mjs', { args: ['check'] }), t('.strike-levels-check.mjs')],
+    tests: [t('.schema-check.mjs'), t('.loop-check.mjs'), t('.bundle-check.mjs'), t('.levels-lazy-check.mjs'), t('.levels-browser-check.mjs', { heavy: true }), t('.merge-cross-check.mjs'), t('delivery-levels-check.mjs', { heavy: true }), t('tiers.mjs', { args: ['check'] }), t('.strike-levels-check.mjs')],
     files: [/src\/delivery\/levels\//, /levels\.js$/, /events\.json/, /levelSchema|track\.js|physics\.js|editor/, /tiers\.json/],
   },
   'smoke-levels': {

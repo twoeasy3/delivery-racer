@@ -17,7 +17,7 @@ try {
   const S = await g.load('levelSchema.js');
   const { FIELDS } = S;
   const dir = 'src/delivery/levels/';
-  const files = readdirSync(dir).filter(f => f.endsWith('.json'));
+  const files = readdirSync(dir).filter(f => f.endsWith('.json') && f !== 'manifest.json'); // (manifest.json: the lazy levels' menu fields, not a level: scripts/level-manifest.mjs)
   // (each as the level editor opens it: with its name and description in it, which for most are kept in
   // levelText.json and not in the level's file: withWords. So "name" is still a field every level needs)
   const { withWords } = await g.load('levelText.js');

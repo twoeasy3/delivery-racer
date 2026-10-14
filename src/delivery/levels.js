@@ -420,105 +420,158 @@
 //              Lane 0 is the far left (oncoming). Add road: 'side' to put an item on a side
 //              road (and exit: n for the nth exit's): s from its start, lane 0 oncoming / 1 ours.
 // A level is checked as it loads; problems are shown on screen and in the console.
-// To add a level: add a .json file to ./levels, import it here and add it to MAIN_LEVELS (or
-// SPECIAL_LEVELS). Putting one in among those already there changes the positions saved progress
-// counts by: see LEVEL_ORDER in progress.js.
+// To add a level: add a .json file to ./levels, run `node scripts/level-manifest.mjs` (its manifest entry), declare it
+// below with builtin('<file>') and add it to MAIN_LEVELS (or SPECIAL_LEVELS). Putting one in among those already there
+// changes the positions saved progress counts by: see LEVEL_ORDER in progress.js.
 // ============================================================================
-import expressway from './levels/expressway.json';
-import backRoads from './levels/back-roads.json';
-import farm from './levels/farm.json';
-import bigBusiness from './levels/big-business.json';
-import hurricane from './levels/hurricane.json';
-import allHeck from './levels/all-heck.json';
-import ufo from './levels/ufo.json';
-import chaos from './levels/chaos.json';
-import night from './levels/night.json';
-import mysteryMeadows from './levels/mystery-meadows.json';
-import suburbs from './levels/suburbs.json';
-import canberra from './levels/canberra.json';
-import monteCarlo from './levels/monte-carlo.json';
-import singapore from './levels/singapore.json';
-import singaporeNight from './levels/singapore-night.json';
-import grandPacific from './levels/grand-pacific.json';
-import passageDuGois from './levels/passage-du-gois.json';
-import safari from './levels/safari.json';
-import airport from './levels/airport.json';
-import construction from './levels/construction.json';
-import theHood from './levels/the-hood.json';
-import panoramaAvenue from './levels/panorama-avenue.json';
-import grandPrix from './levels/grand-prix.json';
-import marinaBay from './levels/marina-bay.json';
-import testbed from './levels/testbed.json';
-import gimmickRoad from './levels/gimmick-road.json';
-import battlefield from './levels/battlefield.json';
-import ohMine from './levels/oh-mine.json';
-import montreal from './levels/montreal.json';
-import bathurst from './levels/bathurst.json';
-import rivalRun from './levels/rival-run.json';
-import showdown from './levels/showdown.json';
-import speedTrapAlley from './levels/speed-trap-alley.json';
-import mountainPass from './levels/mountain-pass.json';
-import outbackExpress from './levels/outback-express.json';
-import tourDeCoast from './levels/tour-de-coast.json';
-import ringRoad from './levels/ring-road.json';
-import marketTown from './levels/market-town.json';
-import quarryRun from './levels/quarry-run.json';
-import gimmickRoad2 from './levels/gimmick-road-2.json';
-import gimmickRoad3 from './levels/gimmick-road-3.json';
+import manifest from './levels/manifest.json';
+// ---- LAZY LEVELS (14-Oct, profile item 6) -------------------------------------------------------------------------
+// Only the levels/manifest.json entries (id, clock, tip, theme, laps... what the menu, the tiers and the cards read
+// without a run) are in the page's first scripts; a level's whole file comes when it is needed, as its own small chunk.
+// A level object is made ONCE, from its manifest entry, and keeps its identity (lists hold it, indexOf finds it);
+// loadLevel() later empties it and puts the file's keys in, in the file's order, so a loaded level is the object the file
+// would have given (JSON.stringify of it is the same). Anything that reads more than the manifest has (a run, the road
+// card, the editor, a replay) waits for loadLevel(level) / loadAllLevels() first: Game.start does, main.js does for the
+// address, the menu's cards do. A level that is no built-in's (the editor's, a copy) is "loaded" already.
+// In Node (the checks' ssrLoadModule) the files are read at once and the objects are the files' own, as ever;
+// set DELIVERY_LAZY_LEVELS=1 for the lazy path there too (scripts/.levels-lazy-check.mjs).
+// To add a level: add its .json, run `node scripts/level-manifest.mjs` (writes levels/manifest.json), then list it below.
+const node = globalThis.process; // (Node only: the checks)
+const LAZY = !import.meta.env.SSR || !!node?.env?.DELIVERY_LAZY_LEVELS;
+const FILES = import.meta.glob(['./levels/*.json', '!./levels/manifest.json'], { import: 'default' }); // (each a chunk of its own)
+// (Node, not lazy: the file read where it stands, as the page never could: import.meta.env.SSR is false in the page, so the build drops this)
+const readFile = (file) => JSON.parse(node.getBuiltinModule('node:fs').readFileSync(new URL(import.meta.url.replace(/[^/]*$/, 'levels/' + file + '.json')), 'utf8')); // (not new URL(.., import.meta.url): Vite would take that for assets)
+const pending = new Map();  // level -> { file, loading, pristine, dependents }: a built-in level not loaded yet, or loaded
+const derived = new Map();  // level -> map level: a level made from another (events.js stages) and refilled when it loads
+const fill = (target, data) => { for (const key of Object.keys(target)) delete target[key]; Object.assign(target, data); return target; };
+let raceKind = null;        // setRaceClass's choice, applied to a race when it loads
+const classed = (level) => { if (raceKind && level.grid && !level.grid.rival) { level.car = raceKind; level.grid = { ...level.grid, kind: raceKind }; } };
+function builtin(file) {
+  if (!LAZY) return readFile(file);
+  const made = { ...manifest[file] };
+  pending.set(made, { file, loading: null, pristine: null, dependents: [] });
+  return made;
+}
+export const loadHooks = []; // called with each level as its file comes in (replay.js takes the level's fingerprint then)
+export const levelLoaded = (level) => { const own = pending.get(level) || (derived.has(level) && pending.get(derived.get(level))); return !own || !!own.pristine; };
+export const loadLevel = (level) => {
+  const entry = pending.get(level) || (derived.has(level) ? pending.get(derived.get(level)) : null);
+  if (!entry) return Promise.resolve(level); // (no built-in's: whole already)
+  if (entry.pristine) return Promise.resolve(level);
+  const map = derived.has(level) ? derived.get(level) : level;
+  return entry.loading ||= FILES[`./levels/${entry.file}.json`]().then(data => {
+    entry.pristine = data;
+    fill(map, data);
+    for (const { to, build } of entry.dependents) fill(to, build(map)); // (before the race class: a stage's copy never had it)
+    classed(map);
+    for (const hook of loadHooks) for (const loaded of [map, ...entry.dependents.map(d => d.to)]) hook(loaded);
+    return level;
+  }, (error) => { entry.loading = null; throw error; }); // (a failed fetch: the next ask tries again)
+};
+export const loadAllLevels = () => Promise.all([...pending.keys()].map(loadLevel));
+// a level made from a built-in one (a stage's: events.js): build(map) gives it from the map's whole level, run again as the map loads
+export const deriveLevel = (to, map, build) => {
+  const entry = pending.get(map);
+  if (!entry) return to; // (loaded already)
+  derived.set(to, map);
+  entry.dependents.push({ to, build });
+  return to;
+};
+const expressway = builtin('expressway');
+const backRoads = builtin('back-roads');
+const farm = builtin('farm');
+const bigBusiness = builtin('big-business');
+const hurricane = builtin('hurricane');
+const allHeck = builtin('all-heck');
+const ufo = builtin('ufo');
+const chaos = builtin('chaos');
+const night = builtin('night');
+const mysteryMeadows = builtin('mystery-meadows');
+const suburbs = builtin('suburbs');
+const canberra = builtin('canberra');
+const monteCarlo = builtin('monte-carlo');
+const singapore = builtin('singapore');
+const singaporeNight = builtin('singapore-night');
+const grandPacific = builtin('grand-pacific');
+const passageDuGois = builtin('passage-du-gois');
+const safari = builtin('safari');
+const airport = builtin('airport');
+const construction = builtin('construction');
+const theHood = builtin('the-hood');
+const panoramaAvenue = builtin('panorama-avenue');
+const grandPrix = builtin('grand-prix');
+const marinaBay = builtin('marina-bay');
+const testbed = builtin('testbed');
+const gimmickRoad = builtin('gimmick-road');
+const battlefield = builtin('battlefield');
+const ohMine = builtin('oh-mine');
+const montreal = builtin('montreal');
+const bathurst = builtin('bathurst');
+const rivalRun = builtin('rival-run');
+const showdown = builtin('showdown');
+const speedTrapAlley = builtin('speed-trap-alley');
+const mountainPass = builtin('mountain-pass');
+const outbackExpress = builtin('outback-express');
+const tourDeCoast = builtin('tour-de-coast');
+const ringRoad = builtin('ring-road');
+const marketTown = builtin('market-town');
+const quarryRun = builtin('quarry-run');
+const gimmickRoad2 = builtin('gimmick-road-2');
+const gimmickRoad3 = builtin('gimmick-road-3');
 // the Concept Strike's own levels (events.json concept-strike days[].level; CHECKLIST 224): one a day, Monday to Saturday
-import pocketTown from './levels/pocket-town.json';
-import solsticeCliffs from './levels/solstice-cliffs.json';
-import grandBoulevard from './levels/grand-boulevard.json';
-import turboQuay from './levels/turbo-quay.json';
-import neonEdge from './levels/neon-edge.json';
-import enduranceRoad from './levels/endurance-road.json';
-import hongKong from './levels/hong-kong.json';
-import tokyo from './levels/tokyo.json';
-import mumbai from './levels/mumbai.json';
-import stelvio from './levels/stelvio.json';
-import christmas from './levels/christmas.json';
-import monza from './levels/monza.json';
-import spa from './levels/spa.json';
-import albertPark from './levels/albert-park.json';
-import slipway from './levels/slipway.json';
-import harbour from './levels/harbour.json';
-import flood from './levels/flood.json';
-import ford from './levels/ford.json';
-import fjord from './levels/fjord.json';
+const pocketTown = builtin('pocket-town');
+const solsticeCliffs = builtin('solstice-cliffs');
+const grandBoulevard = builtin('grand-boulevard');
+const turboQuay = builtin('turbo-quay');
+const neonEdge = builtin('neon-edge');
+const enduranceRoad = builtin('endurance-road');
+const hongKong = builtin('hong-kong');
+const tokyo = builtin('tokyo');
+const mumbai = builtin('mumbai');
+const stelvio = builtin('stelvio');
+const christmas = builtin('christmas');
+const monza = builtin('monza');
+const spa = builtin('spa');
+const albertPark = builtin('albert-park');
+const slipway = builtin('slipway');
+const harbour = builtin('harbour');
+const flood = builtin('flood');
+const ford = builtin('ford');
+const fjord = builtin('fjord');
 // (the themed levels, THEME_LEVELS below: one a line, a new one on the line above its batch's marker)
-import toys from './levels/toys.json';
-import leaks from './levels/leaks.json';
-import moonbase from './levels/moon.json';
+const toys = builtin('toys');
+const leaks = builtin('leaks');
+const moonbase = builtin('moon');
 // (batch A's imports go above this line)
-import backlot from './levels/backlot.json';
-import venice from './levels/venice.json';
-import iceroad from './levels/iceroad.json';
+const backlot = builtin('backlot');
+const venice = builtin('venice');
+const iceroad = builtin('iceroad');
 // (batch B's imports go above this line)
-import park from './levels/park.json';
-import cinder from './levels/cinder.json';
-import docks from './levels/docks.json';
+const park = builtin('park');
+const cinder = builtin('cinder');
+const docks = builtin('docks');
 // (batch C's imports go above this line)
-import noon from './levels/noon.json';
-import morro from './levels/morro.json';
-import rice from './levels/rice.json';
+const noon = builtin('noon');
+const morro = builtin('morro');
+const rice = builtin('rice');
 // (batch D's imports go above this line)
-import derby from './levels/derby.json';
-import seaquake from './levels/seaquake.json';
-import farside from './levels/farside.json';
-import stunts from './levels/stunts.json';
-import ponti from './levels/ponti.json';
-import thaw from './levels/thaw.json';
+const derby = builtin('derby');
+const seaquake = builtin('seaquake');
+const farside = builtin('farside');
+const stunts = builtin('stunts');
+const ponti = builtin('ponti');
+const thaw = builtin('thaw');
 // (batch E's imports go above this line)
-import glow from './levels/glow.json';
-import erupt from './levels/erupt.json';
-import cattle from './levels/cattle.json';
+const glow = builtin('glow');
+const erupt = builtin('erupt');
+const cattle = builtin('cattle');
 // (batch F's imports go above this line)
-import fallout from './levels/fallout.json';
-import shift from './levels/shift.json';
-import descent from './levels/descent.json';
-import monsoon from './levels/monsoon.json';
-import chiantiRun from './levels/chianti-run.json'; // (hidden: HIDDEN_LEVELS below)
-import dakarDash from './levels/dakar-dash.json';
+const fallout = builtin('fallout');
+const shift = builtin('shift');
+const descent = builtin('descent');
+const monsoon = builtin('monsoon');
+const chiantiRun = builtin('chianti-run'); // (hidden: HIDDEN_LEVELS below)
+const dakarDash = builtin('dakar-dash');
 
 // the numbered levels, and the special ones (S1, S2...), which always come after them on the
 // menu. All of them unlock in this order, each by delivering the one before, and saved progress
@@ -626,6 +679,7 @@ HIDDEN_LEVELS['dakar-dash'] = dakarDash; // Dakar Dash (the desert dunes): hidde
 // and the grid (the menu's Race cars button; ?gt or ?lmp for that class whatever it says)
 export const RACE_CLASSES = { f1: 'F1', gt: 'GT', lmp: 'LMP' };
 export const setRaceClass = (kind) => {
+  raceKind = kind; // (a race not loaded yet gets it as it loads)
   for (const level of [...LEVELS, ...Object.values(HIDDEN_LEVELS)]) {
     if (!level.grid || level.grid.rival) continue; // (a rival stage's own cars: see Game.start)
     level.car = kind;
@@ -640,11 +694,13 @@ export let LEVEL = LEVELS[0];
 export const selectLevel = (index) => {
   LEVEL_INDEX = Math.max(0, Math.min(LEVELS.length - 1, index));
   LEVEL = LEVELS[LEVEL_INDEX];
+  loadLevel(LEVEL).catch(console.error); // (ahead: by the time Start is pressed it is here; Game.start waits for it if not)
 };
 // a level that isn't on the menu (the screensaver's); selectLevel() puts the menu's back
 export const selectSpecial = (level) => {
   LEVEL_INDEX = -1;
   LEVEL = level;
+  loadLevel(LEVEL).catch(console.error);
 };
 // a level's name, and its description for the side played: asked of levelText.js, never read off the level
 export { levelName, levelDescription } from './levelText.js';
