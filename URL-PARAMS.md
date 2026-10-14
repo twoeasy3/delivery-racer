@@ -289,6 +289,14 @@ Without `&level=`, edits made by these switches (`click`, `drag`, `seglen`...) g
 | `tab` | `parts`, `part`, `json` | That side tab open. | yes |
 | `part` | a part id (`0`, `3.1`, an added `n1`, a mirror `m:12`) | That part selected. | yes |
 | `view` | `front`, `rear`, `left`, `right`, `top`, `34` | The camera there. | untried |
+| `dark` | bare | Blackout on from the start. | untried |
+| `lights` | bare | Lights on: the night headlamp glow (render/lampfx.js, from the car's lamp table entry) and the view darkened. | yes (stills) |
+| `brake` | bare | Brake lamps lit. | yes (stills) |
+| `hazards` | bare | All four indicators flashing at 1.2 Hz. | yes (stills) |
+| `left`, `right` | bare | The car's +x / -x indicators flashing (both = hazards). | left yes, right untried |
+| `steady` | bare | Indicators lit steadily, not flashing. | untried |
+| `lampmarks` | bare | Lamp markers on (labelled, as `?lamps=show` in the game). | yes (stills) |
+| `lampt` | seconds | Holds the flash clock at that time for a still: 0 lit, 0.5 dark. | yes |
 
 The editor keeps every car's patch in this browser (localStorage `delivery.modelpatches`, per car) as you go; the
 address changes as you pick a car, a tab or a part (bookmark it). Keys: G / R / S move / rotate / scale, Delete,

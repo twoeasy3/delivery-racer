@@ -66,7 +66,9 @@ textarea.json { width: 100%; min-height: 50vh; font-family: ui-monospace, Consol
   .prow button { height: 38px; font-size: 16px; }
   button, a.button { min-height: 40px; padding: 8px 10px; }
   .viewButtons button { min-height: 40px; }
-  .viewButtons label.check { padding: 9px 10px; }
+  .viewButtons { gap: 4px; }
+  .viewButtons label.check { padding: 7px 7px; font-size: 12px; gap: 4px; }
+  .viewButtons .seg button { padding: 8px 8px; }
   .viewButtons.tools { top: 58px; }
   header h1 { display: inline; font-size: 18px; margin-left: 12px; }
   textarea.json { min-height: 30vh; }

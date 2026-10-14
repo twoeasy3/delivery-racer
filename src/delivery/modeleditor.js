@@ -305,8 +305,10 @@ const buildLamps = (model) => {
     + (fxLayout.frame ? ', rides in ' + fxLayout.frame : '');
 };
 const flashPhase = (t) => Math.floor(t * FLASH_HZ * 2) % 2 === 0; // (on for the first half of each cycle)
-const syncLampView = (t = performance.now() / 1000) => {
+const FREEZE = params.has('lampt') ? +params.get('lampt') || 0 : null; // (?lampt=<s>: the flash clock held at that time, for a still: 0 is lit, 0.5 dark)
+const syncLampView = () => {
   if (!fx) return;
+  const t = FREEZE ?? performance.now() / 1000;
   const on = (id) => $(id).checked, dark = on('dark');
   const steady = on('lSteady'), turn = on('lLeft') && !on('lRight') ? 1 : on('lRight') && !on('lLeft') ? -1 : 0, hazards = on('lHazards') || (on('lLeft') && on('lRight'));
   fxLamps.lamps.visible = !dark; // (Blackout: no effects)
