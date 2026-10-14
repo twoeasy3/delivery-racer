@@ -368,7 +368,7 @@ const keyShots = (s, k) => {
   const opening = fob ? [
     // THE PRESS: one shot over the fob to the car: the fob large in the foreground (lower left), pointing at the car,
     // the car small and dark in the middle of the picture; a slow push in on the car (the lens closing in)
-    { from: 1.4, to: 3.5, cam: (u) => [v3(0.55, 0.32, 2.0 + 1.5).add(P), v3(0, H * 0.42, 0), lerp(36, 28, smooth(u))] },
+    { from: 1.4, to: 3.5, cam: (u) => [v3(0.75, 0.45, 2.0 + 2.1).add(P), v3(0, H * 0.42, 0), lerp(36, 28, smooth(u))] },
   ] : [
     { from: 1.4, to: 2.8, cam: (u) => [v3(-(2.8 - u * 0.3) * Math.sqrt(k), 0.45, 1.0 - u * 0.2).add(P), v3(0, 0, 0.6 - u * 0.25).add(P), 38] }, // INSERT: from the side
     { from: 2.8, to: 3.5, cam: (u) => [v3(0.32, 0.22, 2.25 - u * 0.2).add(P), v3(0, 0, 0.25).add(P), 34] }, // THE TURN: the barrel's face, from the driver
@@ -494,6 +494,7 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
       el.style.transform = lite ? '' : `translateY(${((1 - u) * rise).toFixed(1)}px)`;
     };
     show(sub, at.sub ?? 99, 8);
+    show(pips, at.pips ?? 99, 6);
     show(tag, at.tag, 8);
     if (at.big !== undefined) {
       const u = span(t, at.big, at.big + 0.5);
@@ -603,7 +604,7 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
   const setKey = (t) => {
     const lt = lite ? 99 : t;
     const [pos, target, fov] = shotAt(t);
-    camera.position.copy(pos).add(lite ? v3(0, 0, 0) : shake(t, CLICK, s.fob ? 0.04 : 0.07));
+    camera.position.copy(pos).add(lite ? v3(0, 0, 0) : shake(t, CLICK, s.fob ? 0.02 : 0.07));
     camera.fov = fov; camera.lookAt(target);
     const { H, L, lockAt: P } = s;
     const opening = !lite && t < 4.6; // (the key's part)
@@ -624,12 +625,12 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     const ringPulse = t >= CLICK ? Math.exp(-(t - CLICK) * 1.6) : 0;
     s.glowRing.material.opacity = lite || s.fob ? 0 : 0.2 * span(t, 1.9, 2.8) + ringPulse * 0.9;
     // the key's own little light
-    if (s.fob) s.keySpot.position.set(P.x + 0.5, P.y + 0.9, P.z + 2.9 - smooth(span(t, 1.0, 1.9)) * 0.4);
+    if (s.fob) s.keySpot.position.copy(t < 1.0 ? v3(P.x + 0.5, P.y + 0.9, P.z + 2.9) : v3(P.x + 0.5, P.y + 0.9, P.z + 2.9).lerp(v3(P.x - 1.2, P.y + 0.25, P.z + 2.4), smooth(span(t, 0.9, 1.3)))); // (to the side as it turns face up: no glare)
     else if (t < 1.4) s.keySpot.position.set(P.x + 0.5, P.y + 0.9, P.z + 2.9);
     else if (t < 2.8) s.keySpot.position.set(P.x - 1.0, P.y + 0.7, P.z + 1.5); // (the insert, seen from the left: lit from the left)
     else s.keySpot.position.set(P.x + 0.3, P.y + 0.6, P.z + 1.7);
     const press = !lite && s.fob ? pose.press : 0; // (the fob's button pressed: a pulse of light at it)
-    s.keySpot.intensity = !opening ? 0 : 9 * smooth(span(t, 0.3, 1.2)) + 10 * ringPulse;
+    s.keySpot.intensity = !opening ? 0 : 9 * smooth(span(t, 0.3, 1.2)) * (s.fob ? 1 - 0.45 * smooth(span(t, 0.9, 1.3)) : 1) + 10 * ringPulse;
     // the car's lights. Dark until the burst; its edges lit by the burst (a glimpse); a little fill as the headlamp
     // comes on (LAMPS); the key light sweeping across (SIDE); full from the rear shot on
     const on = smooth(span(lt, 5.6, 6.4));
@@ -662,8 +663,8 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
       const tip = pose.pos.clone().addScaledVector(v3(0, 1, 0).applyQuaternion(pose.quat), 0.55);
       s.flareCore.position.copy(tip.lerp(v3(0, H * 0.45, L / 2), smooth(fly)));
     } else if (press) s.flareCore.position.copy(pose.pos).addScaledVector(v3(0, 0, 1).applyQuaternion(pose.quat), 0.08);
-    s.flareCore.material.opacity = Math.min(1, pulse * 1.1 + settle + press * 0.6 + (fly >= 0 ? 0.9 * (1 - fly * 0.5) : 0));
-    s.flareCore.scale.setScalar(fly >= 0 ? 0.3 : press ? 0.16 + press * 0.12 : 1.2 + pulse * 2.4 + settle * 6);
+    s.flareCore.material.opacity = Math.min(1, pulse * 1.1 + settle + press * 0.95 + (fly >= 0 ? 0.9 * (1 - fly * 0.5) : 0));
+    s.flareCore.scale.setScalar(fly >= 0 ? 0.3 : press ? 0.2 + press * 0.25 : 1.2 + pulse * 2.4 + settle * 6);
     s.streak.material.opacity = pulse * 0.9 + settle; s.streak.scale.set(7 + (1 - pulse) * 5, 0.12, 1);
     s.rays.material.opacity = pulse * 0.55 + settle * 0.6; s.rays.scale.setScalar(2.5 + Math.max(0, t - CLICK) * 0.9); s.rays.mesh.rotation.z = t * 0.08;
     if (t < 4.6) setSparks(t, origin, s.fob ? 3.5 : CLICK, 1.1, 2.2, !lite && !press, lite ? 0 : smooth(span(t, 0.2, 1.0)) * (t < 1.4 ? 1 : 0));

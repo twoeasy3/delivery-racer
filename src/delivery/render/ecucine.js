@@ -162,7 +162,7 @@ const jim = (kx) => {
         { from: 1.2, to: 2.3, cam: (u) => [v3(S.x + 0.9 - u * 0.25, S.y + 0.2, S.z + 2.3 - u * 0.45), S.clone().add(v3(0.1, 0, 0)), 36] }, // SOLD
         { from: 2.3, to: 3.4, cam: (u) => [v3((W / 2 + 3.2) * k - u * 0.4, 0.55, (L / 2 + 5.2) * k - u * 0.5), v3(0, H * 0.55, 0), 42] }, // THE DROP
         { from: 3.4, to: 4.5, cam: (u) => [v3(2.6 + u * 0.15, 1.3, L / 2 + 3.7 - u * 0.15), v3(0.1, 1.05, L / 2 + 0.7), 40] }, // THE KEYS
-        { from: 4.5, to: 6.5, cam: (u) => { const d = lerp(9.6, 8.4, easeOut(u)) * k * tall; return [v3(d * 0.34, 1.4 + H * 0.3, d * 0.94), v3(0, H * 0.5, 0), 36, 0.16]; } }, // HERO
+        { from: 4.5, to: 6.5, cam: (u) => { const d = lerp(8.4, 7.4, easeOut(u)) * k * tall; return [v3(d * 0.34, 1.2 + H * 0.3, d * 0.94), v3(0, H * 0.5 + 0.5, 0), 46, 0.2]; } }, // HERO
       ];
     },
     set(t) {
@@ -487,7 +487,7 @@ const ecumax = (kx) => {
     total: 8.0, hint: 7.5,
     reveal: { big: 6.15, name: 6.4, stars: 6.6, pips: 6.75, pill: 6.9, sub: 7.15 },
     shots: (k) => {
-      const tall = Math.max(1, H / 1.6), Q = rig.Q, T = v3(0, 0.68, 0.3).applyMatrix4(rig.tower.matrixWorld), N = v3(0, 0.68, 1.0).applyMatrix4(rig.tower.matrixWorld);
+      const tall = Math.max(1, H / 1.6), Q = rig.Q, T = v3(0, 0.68, 0.3).applyMatrix4(rig.tower.matrixWorld), N = v3(0, 0.68, 1.6).applyMatrix4(rig.tower.matrixWorld);
       return [
         { from: 0, to: 1.0, cam: (u) => [v3(-4.4 * k + u * 0.4, 1.0, (L / 2 + 6.0) * k - u * 0.4), v3(0, H * 0.45, 0), 40] }, // LIGHTS
         { from: 1.0, to: 2.1, cam: (u) => [Q.clone().add(v3(-0.6 + u * 0.1, 0.42, 0.7 - u * 0.12)), Q.clone().add(v3(0, 0.1, 0)), 34] }, // THE CHIP
@@ -543,7 +543,7 @@ const ecumax = (kx) => {
       s.streak.material.opacity = boom * 0.7 * (t < 4.9 ? 1 : 0); s.streak.scale.set(12, 0.16, 1);
       kx.sparks(t, origin, BOOM, 0.5, 4.5, !lite && t < 6.0, 0);
       s.sparks.material.size = 0.12;
-      if (!lite && t >= BOOM && t < BOOM + 0.8) { const a = t - BOOM; kx.flashMat.opacity = a < 0.06 ? 1 : Math.exp(-(a - 0.06) * 5) * 0.8; kx.flashMat.color.set(0xffffff).lerp(accent, clamp(a / 0.3)); }
+      if (!lite && t >= BOOM && t < BOOM + 0.8) { const a = t - BOOM; kx.flashMat.opacity = a < 0.06 ? 0.9 : Math.exp(-(a - 0.06) * 10) * 0.55; kx.flashMat.color.set(0xffffff).lerp(accent, clamp(a / 0.3)); }
       else if (!lite && t >= CLICK && t < CLICK + 0.3) { kx.flashMat.opacity = 0.2 * (1 - span(t, CLICK, CLICK + 0.3)); kx.flashMat.color.copy(accent); }
       else kx.flashMat.opacity = 0;
       // the stars: shown in their own shot, flaring one by one
@@ -563,7 +563,9 @@ const ecumax = (kx) => {
         key.visible = showIt; keyGlow.visible = showIt;
         if (showIt) {
           const cam = kx.camera, fwd = v3(0, 0, -1).applyQuaternion(cam.quaternion), right = v3(1, 0, 0).applyQuaternion(cam.quaternion), up = v3(0, 1, 0).applyQuaternion(cam.quaternion);
-          key.position.copy(cam.position).addScaledVector(fwd, 4.2).addScaledVector(right, 1.25).addScaledVector(up, -1.6 + rise * 1.55);
+          const { w, h } = kx.size(), halfH = 4.2 * Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)), halfW = halfH * w / h; // (placed by the picture's own size: a tall screen too)
+          key.position.copy(cam.position).addScaledVector(fwd, 4.2).addScaledVector(right, halfW * 0.6).addScaledVector(up, halfH * (-1.5 + rise * 1.4));
+          key.scale.setScalar(clamp(w / h / 1.2, 0.55, 1));
           key.quaternion.copy(cam.quaternion); key.rotateY(0.5 + t * 0.6); key.rotateZ(-0.25);
           keyGlow.position.copy(key.position).addScaledVector(fwd, 0.3);
           keyGlow.material.opacity = 0.55 * rise; keyGlow.scale.setScalar(1.4);
