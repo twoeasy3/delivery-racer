@@ -193,7 +193,10 @@ try {
   const mystery = (effect) => { P.nextMystery = effect; P.startMystery(); P.nextMystery = ''; };
   start('schoolbus');
   const bus = cars().CAR;
+  const pool = g.CONFIG.mystery.effects, wasOff = !pool.includes('soupedUp');
+  if (wasOff) pool.push('soupedUp'); // (souped up is out of the pool since 14-Oct: forced here for the test)
   mystery('soupedUp');
+  if (wasOff) pool.splice(pool.indexOf('soupedUp'), 1);
   // (player.js startMystery: souped up in a car with no Super version upgrades nothing and says so, messages.json soupedUpNone; it is no longer swapped for the fallback)
   check(cars().CAR === bus && P.mystery === '' && P.hl === bus.hl, 'souped up: an idea has no Super version, so nothing is upgraded (the car stays the ' + bus.name + ', no effect runs)');
   P.endMystery();
