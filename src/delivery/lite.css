@@ -28,7 +28,3 @@ html.lite-anim .pack-reveal *, html.lite-anim .pack-reveal *::before, html.lite-
 html.sheet-up #startScreen *, html.sheet-up #startScreen *::before, html.sheet-up #startScreen *::after,
 html.sheet-up .shop-screen > :not(.pack-contents), html.sheet-up .shop-screen > :not(.pack-contents) *,
 html.sheet-up .shop-screen > :not(.pack-contents) *::before, html.sheet-up .shop-screen > :not(.pack-contents) *::after { animation-play-state: paused !important; }
-
-/* ---- Crazey Jim's stall (render/jimshop.js) is up over the Shop: the Shop and the menu under it stop animating, as under a sheet ---- */
-html.jim-up #startScreen *, html.jim-up #startScreen *::before, html.jim-up #startScreen *::after,
-html.jim-up .shop-screen:not(.jim-screen) *, html.jim-up .shop-screen:not(.jim-screen) *::before, html.jim-up .shop-screen:not(.jim-screen) *::after { animation-play-state: paused !important; }

@@ -28,7 +28,7 @@ import { packArt, lookOf } from './packart.js';
 import { openContents, closeContents } from './packcontents.js';
 import { keyPicture } from './keycard.js';
 import { bannerCars, bannerArt } from './packbanner.js';
-import { jimDoor } from './jimshop.js'; // (Crazey Jim's blueprint stall: a doorway at the top, for tip money)
+import { jimSection } from './jimshop.js'; // (Crazey Jim's blueprint stall: a section at the top, for tip money)
 
 // (packs.js, where the tree has it: see shop.js)
 const packsModule = Object.values(import.meta.glob('../packs.js', { eager: true }))[0] || null;
@@ -246,7 +246,7 @@ const draw = () => {
       + (Shop.hasPacks() ? '' : ' Packs are not in this build, so nothing can be bought.')) : null;
   screen.replaceChildren(
     make('header', 'shop-top', back, make('h1', '', 'Shop'), wallet()),
-    make('div', 'shop-body', note, jimDoor(), ...sections, rarityGuide()), ...kept);
+    make('div', 'shop-body', note, jimSection(), ...sections, rarityGuide()), ...kept);
   screen.scrollTop = keep;
   for (const [el, car] of drawLater) stillSoon(el, car, { side: 'good' }); // (always the Good livery; a few a frame, once laid out; kept, so a redraw costs nothing)
 };
@@ -351,7 +351,7 @@ if (params.get('shopcash') !== null) {
 if (params.get('limits')) Shop.limitsOverride = debugLimits(params.get('limits'));
 if (params.get('shopbuys')) { Progress.noSave = true; debugBuys(params.get('shopbuys')); }
 markWaiting();
-if (params.get('shop') !== null && Game.state === 'start') ShopScreen.open();
+if ((params.get('shop') !== null || params.get('jimshop') !== null) && Game.state === 'start') ShopScreen.open();
 // &inside=<offer id> (or a pack id; the old 'special': its pack): its "What's inside" sheet open too (for a look or a picture)
 if (ShopScreen.isOpen && params.get('inside')) {
   const want = params.get('inside'), id = packsModule?.packIdOf?.(want) || want;

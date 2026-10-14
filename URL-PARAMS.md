@@ -179,13 +179,13 @@ Also need `autostart` (or a hidden level).
 
 ## 7a. Crazey Jim's Blueprint Stall (branch claude/blueprint-shop, not on main yet)
 
-A screen over the Shop where Jim sells blueprints for tip money (the bank, `$`): a daily rotation of six offers (render/jimshop.js,
-rules in jimshop.js). Reached from a red "Crazey Jim's Blueprint Stall" doorway at the top of the Shop, or by address. Fake saves
-below write nothing (`Progress.noSave`). The rotation is seeded by the local date, so `eventsnow` picks the day.
+A section at the top of the Shop where Jim sells blueprints for tip money (the bank, `$`): six offers that change every 6 local hours
+(00:00, 06:00, 12:00, 18:00; render/jimshop.js, rules in jimshop.js). `jimshop` opens the Shop with it expanded. Fake saves
+below write nothing (`Progress.noSave`). The rotation is seeded by the local date and slot, so `eventsnow` picks the day and the slot.
 
 | Param | Values | What it does | Example | Saves? | Tried |
 |---|---|---|---|---|---|
-| `jimshop` | bare | Opens the stall on the menu (not with autostart). | `/delivery/?jimshop` | Normal (buying is real) | yes |
+| `jimshop` | bare | Opens the Shop with the stall expanded (on the menu, not with autostart). | `/delivery/?jimshop` | Normal (buying is real) | yes |
 | `demo` | `normal` (also bare), `keycar` (the Sixteen-Cylinder Coupe and the Rocket Fin Coupe on the stall as key-car offers), `expensive`, `soldout`, `broke`, `maxed`, `capped`, `empty`, `nopool`, `bought` | With `jimshop`: a made-up save: a bank of $900 (`expensive` $5000, `soldout` $1500, `broke` $0, `maxed` $2000, `capped` $3000, `empty` $800) and blueprint counts, so the offers show their states. `expensive`: the dearest offer's confirm up. `soldout`: two sold out. `maxed`: one car at its max, one a blueprint short of it. `capped`: Jim's daily limit hit. `empty`: everything sold. `nopool`: no cars to sell. `bought`: a cheap purchase made, its feedback shown. | `/delivery/?jimshop&demo=soldout` | No | yes |
 | `jimcash` | whole dollars | With `jimshop`: the bank for the visit. | `/delivery/?jimshop&jimcash=120` | No | untried |
 | `jimpress` | offer number (0-based, as laid out: the hot deal first) | With `jimshop`: that offer's Buy pressed 0.4 s after opening (a dear one asks first). | `/delivery/?jimshop&demo&jimpress=2` | No with `demo` | yes |

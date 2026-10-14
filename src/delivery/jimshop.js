@@ -1,7 +1,9 @@
 // ============================================================================
-// CRAZEY JIM'S BLUEPRINT STALL - the rules (CHECKLIST item 243; the screen is render/jimshop.js). Jim, who runs the car
-// lot, sells BLUEPRINTS for tip money (the bank, whole dollars): a few OFFERS a day, drawn from a POOL, the same all day
-// and on every reload (seeded by the player's LOCAL date: no server), new at local midnight.
+// CRAZEY JIM'S BLUEPRINT STALL - the rules (CHECKLIST item 243; the section of the Shop is render/jimshop.js). Jim, who runs the
+// car lot, sells BLUEPRINTS for tip money (the bank, whole dollars): 6 OFFERS drawn from a POOL, the same for a whole SLOT and
+// on every reload, new every 6 HOURS (the owner, 14-Oct): four slots a local day, starting at the local clock's 00:00, 06:00,
+// 12:00 and 18:00, seeded by the local date + the slot (no server). A SLOT's stock and price rises reset with its new offers;
+// the daily blueprint cap (DAY_CAP) and each key car's daily cap stay per LOCAL DAY (jimBuys: n by slot, bp and k by day).
 // THE POOL (the owner, 14-Oct: "Crazey Jim should offer all Evergreen blueprints, including the ones for Key Cars"): every
 // evergreen blueprint: the ordinary cars a pack can drop (packs.js pools().evergreen: 56 today, the 5 Legendary ones among
 // them), and the KEY CARS' blueprints (every `bespoke` car with a card rarity: the Bespoke pack cars, the Silver Comet, the
@@ -13,15 +15,15 @@
 // (basis x k(rarity)), and one HOT DEAL a day (30% off). The price rises with each bundle of THE SAME OFFER bought today:
 // price = qty x unit x (hot ? 0.7 : 1) x (1 + RISE x bought). Jim also sells at most DAY_CAP blueprints a day in all.
 // A bundle is cut to what the car still needs to reach its max ECU (and priced for that), and a car at its max is not for sale.
-// THE SAVE: Progress.data.jimBuys = { day, n: { car id: bundles bought today }, bp: blueprints bought today } (progress.js
-// cleanJim); another day's counts are void. This file is NOT in the replay rules fingerprint (vite.config.js NOT_RULES):
+// THE SAVE: Progress.data.jimBuys = { day, slot, n: { car id: bundles bought this slot }, bp: blueprints bought today, k: { key
+// car id: its blueprints bought today } } (progress.js cleanJim); another slot's n and another day's bp / k are void. This file is NOT in the replay rules fingerprint (vite.config.js NOT_RULES):
 // a run never reads it. The pure functions take what they need as arguments; Jim.* reads the save and the clock.
 // ============================================================================
 import { Progress } from './progress.js';
 import { Ecu } from './ecu.js';
 import { Events } from './events.js';
 import { pools, rarityOf, roster, isBespokeCar } from './packs.js';
-import { localDay, nextMidnight } from './shop.js';
+import { localDay } from './shop.js';
 
 export const JIM = {
   // how likely each rarity is to be drawn for a slot (of those with cars left)
@@ -34,7 +36,8 @@ export const JIM = {
   // the bundle sizes a rarity may be sold in (the rarer, the smaller), and how many bundles of each Jim has a day
   qty: { common: [1, 3, 5], uncommon: [1, 3, 5], epic: [1, 3], legendary: [1] },
   stock: { 1: 3, 3: 2, 5: 1 },
-  slots: 6,        // offers a day
+  slots: 6,        // offers at a time
+  slotHours: 6,    // a rotation every this many local hours (the clock's 00:00, 06:00, 12:00, 18:00)
   hotOff: 0.3,     // the hot deal's discount
   rise: 0.5,       // each bundle bought today raises that offer's price by this share of its first price
   dayCap: 10,      // blueprints Jim sells in a day, in all
@@ -69,9 +72,9 @@ const offerOf = (car, rand) => {
   const sizes = key ? JIM.keyQty.filter(n => n <= JIM.keyCap) : JIM.qty[rarity], qty = sizes[Math.floor(rand() * sizes.length)] || 1;
   return { id: car.id, car, rarity, qty, key, stock: key ? Math.max(1, Math.floor(JIM.keyCap / qty)) : JIM.stock[qty], unit: unitPrice(car, rarity), hot: false };
 };
-export const rotation = (day, { cars, force = [] } = {}) => {
+export const rotation = (day, { cars, force = [], slot = 0 } = {}) => {
   const left = Object.fromEntries(Object.entries(pool({ cars })).map(([r, list]) => [r, [...list]]));
-  const rand = mulberry(hash('crazey-jim|' + day));
+  const rand = mulberry(hash('crazey-jim|' + day + '|' + slot));
   const out = [];
   for (let slot = 0; slot < JIM.slots; slot++) {
     const rarities = Object.keys(JIM.weight).filter(r => left[r].length);
@@ -81,11 +84,11 @@ export const rotation = (day, { cars, force = [] } = {}) => {
     const car = left[rarity].splice(Math.floor(rand() * left[rarity].length), 1)[0];
     out.push(offerOf(car, rand));
   }
-  // (a check or a demo may ask for cars to be on the stall: each takes the place of the last slots)
+  // (a check or a demo may ask for cars to be on the stall: each takes the place of the second slot on)
   force.forEach((id, i) => {
     const car = Object.values(pool({ cars })).flat().find(c => c.id === id);
     if (!car || out.some(o => o.id === id)) return;
-    out[Math.max(0, out.length - 1 - i)] = offerOf(car, rand);
+    out[Math.min(out.length - 1, 1 + i)] = offerOf(car, rand);
   });
   if (out.length) { // one hot deal, never a legendary (they are dear enough), and a bundle of more than one
     const plain = out.filter(o => o.rarity !== 'legendary' && !o.key), many = plain.filter(o => o.qty > 1);
@@ -108,23 +111,35 @@ export const needed = (car, have = Ecu.blueprints(car.id)) => {
   return Math.max(0, full - have);
 };
 
-// ---- the day's counts ----------------------------------------------------------------------------------------------
-// state: Progress.data.jimBuys. A count of another day is nothing.
-export const todays = (state, day) => (state && state.day === day ? { n: state.n || {}, bp: state.bp || 0 } : { n: {}, bp: 0 });
+// ---- the counts ----------------------------------------------------------------------------------------------------------------
+// the SLOT of a moment: the local day, and which quarter of it (0..3). nextSlot: when the next begins (the local clock's next 6 hours: a
+// day with a clock change has slots of 5 or 7 real hours, the boundaries stay at the local 00:00 / 06:00 / 12:00 / 18:00)
+export const slotOf = (t) => { const d = new Date(t); return { day: localDay(t), slot: Math.floor(d.getHours() / JIM.slotHours) }; };
+export const nextSlot = (t) => {
+  const d = new Date(t), next = (Math.floor(d.getHours() / JIM.slotHours) + 1) * JIM.slotHours;
+  let at = new Date(d.getFullYear(), d.getMonth(), d.getDate(), next, 0, 0, 0).getTime();
+  while (at <= t) at += 36e5; // (a nonexistent local hour jumps forward: never a boundary in the past)
+  return at;
+};
+// state: Progress.data.jimBuys. n is of this slot only; bp and k are of this day only. Anything else is nothing.
+export const todays = (state, day, slot = 0) => {
+  const sameDay = !!state && state.day === day;
+  return { n: sameDay && state.slot === slot ? state.n || {} : {}, bp: sameDay ? state.bp || 0 : 0, k: sameDay ? state.k || {} : {} };
+};
 
 // one offer as THIS player sees it today: { ...offer, bought, left (bundles), qty (cut to what the car needs), price, was,
 // hot, why (null: can buy; else 'maxed' | 'sold' | 'cap' | 'short'), need (dollars short), have (blueprints), progress }
-export const viewOf = (offer, { day, state, money, blueprints = Ecu.blueprints(offer.id), maxed = needed(offer.car, blueprints) === 0 }) => {
-  const t = todays(state, day), bought = t.n[offer.id] || 0, left = Math.max(0, offer.stock - bought);
+export const viewOf = (offer, { day, slot = 0, state, money, blueprints = Ecu.blueprints(offer.id), maxed = needed(offer.car, blueprints) === 0 }) => {
+  const t = todays(state, day, slot), bought = t.n[offer.id] || 0, left = Math.max(0, offer.stock - bought);
   const room = Math.max(0, JIM.dayCap - t.bp), need = needed(offer.car, blueprints);
-  const keyRoom = offer.key ? Math.max(0, JIM.keyCap - bought * offer.qty) : Infinity; // (a key car: so many of its blueprints a day)
+  const keyRoom = offer.key ? Math.max(0, JIM.keyCap - (t.k[offer.id] || 0)) : Infinity; // (a key car: so many of its blueprints a day)
   const qty = Math.max(0, Math.min(offer.qty, need, room, keyRoom));
   const price = bundlePrice(offer, qty || offer.qty, bought);
   const was = offer.hot ? wasPrice(offer, qty || offer.qty, bought) : null;
   let why = null;
   if (maxed || need === 0) why = 'maxed';
   else if (left === 0) why = 'sold';
-  else if (room === 0) why = 'cap';
+  else if (room === 0 || keyRoom === 0) why = 'cap';
   else if (money < price) why = 'short';
   return { ...offer, bought, left, qty: qty || offer.qty, cut: qty > 0 && qty < offer.qty ? (qty === need ? 'need' : 'cap') : null, price, was, why, need: Math.max(0, price - money), have: blueprints, room };
 };
@@ -139,24 +154,26 @@ export const stand = (car, add = 0) => {
 
 export const Jim = {
   day: () => localDay(Events.now()),
-  // when the next stock arrives (local midnight)
-  nextAt: () => nextMidnight(Events.now()),
-  // the offers as this player sees them: [view]
+  slot: () => slotOf(Events.now()).slot,
+  // when the next stock arrives (the next 00:00, 06:00, 12:00 or 18:00 local)
+  nextAt: () => nextSlot(Events.now()),
   force: [], // (car ids put on the stall: ?demo=keycar, a check)
+  // the offers as this player sees it: [view]
   offers({ cars } = {}) {
-    const day = this.day();
-    return rotation(day, { cars, force: this.force }).map(o => viewOf(o, { day, state: Progress.data.jimBuys, money: Math.floor(Progress.data.money) }));
+    const { day, slot } = slotOf(Events.now());
+    return rotation(day, { cars, force: this.force, slot }).map(o => viewOf(o, { day, slot, state: Progress.data.jimBuys, money: Math.floor(Progress.data.money) }));
   },
-  today() { return todays(Progress.data.jimBuys, this.day()); },
+  today() { const { day, slot } = slotOf(Events.now()); return todays(Progress.data.jimBuys, day, slot); },
   // buy an offer's bundle: { ok, why, qty, price, before, after } (nothing is taken unless ok)
   buy(id, { cars } = {}) {
     const view = this.offers({ cars }).find(o => o.id === id);
     if (!view) return { ok: false, why: 'gone' };
     if (view.why) return { ok: false, why: view.why, view };
-    const before = stand(view.car), day = this.day();
-    const t = todays(Progress.data.jimBuys, day), n = { ...t.n, [view.id]: (t.n[view.id] || 0) + 1 };
+    const before = stand(view.car), { day, slot } = slotOf(Events.now());
+    const t = todays(Progress.data.jimBuys, day, slot), n = { ...t.n, [view.id]: (t.n[view.id] || 0) + 1 };
+    const k = view.key ? { ...t.k, [view.id]: (t.k[view.id] || 0) + view.qty } : t.k;
     Progress.data.money = Math.max(0, Progress.data.money - view.price);
-    Progress.data.jimBuys = { day, n, bp: t.bp + view.qty };
+    Progress.data.jimBuys = { day, slot, n, bp: t.bp + view.qty, k };
     Ecu.addBlueprints(view.id, view.qty); // (saves: the money and the counts with it)
     const after = stand(view.car);
     window.dispatchEvent(new Event('progresschange'));

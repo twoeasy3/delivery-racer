@@ -1,170 +1,56 @@
-/* Crazey Jim's BLUEPRINT STALL (render/jimshop.js; rules in jimshop.js): a screen over the Shop in the look of Jim's used-car
-   lot: tarmac and parking lines, a string of bunting, a red-and-yellow sign, yellow price boards, red SALE stickers. Phones
-   first (two offers a row; on its side the offers lie flat, picture left), wider three a row. KEPT CHEAP for the tablet's
-   flicker (CHECKLIST 213): no backdrop-filter, no blur, no filter, no blend modes, no big transparent layers; flat colours,
-   hard shadows, and only the toast, the count and the bar move (transform / opacity / width, short; none with reduced motion). */
-.jim-screen, .jim-door, .jim-toast {
-  --jim-red: #d8262b; --jim-red-deep: #a51a1f; --jim-yellow: #ffd23f; --jim-blue: #2f7fe0; --jim-green: #3cc464; --jim-ink: #14161a; --jim-paper: #f6f1de;
-  --c-common: #a3acb7; --c-uncommon: #3fd06f; --c-epic: #b45cff; --c-legendary: #ffbe2e;
-  --display: "Bahnschrift", "DIN Alternate", "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
-}
-.jim-screen {
-  position: fixed; inset: 0; z-index: 31; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; touch-action: pan-y;
-  color: #fff; text-align: left; font-size: 14px; -webkit-tap-highlight-color: transparent;
-  background: repeating-linear-gradient(90deg, transparent 0 86px, rgba(255, 255, 255, .06) 86px 90px, transparent 90px 176px), #1c1e23; /* (the lot's bay lines) */
-}
-.jim-screen.hidden { display: none; }
-.jim-screen * { box-sizing: border-box; }
-:where(.jim-screen) button { font: inherit; color: inherit; margin: 0; border: 0; cursor: pointer; background: none; padding: 0; }
-.jim-screen :focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
-.jim-screen h1, .jim-screen h2, .jim-screen p { margin: 0; max-width: none; opacity: 1; }
+/* Crazey Jim's BLUEPRINT STALL: a section of the Shop (render/jimshop.js; rules jimshop.js). It wears the Shop's own look (shop.css: the
+   section head, the tile, the yellow price button, the chips, the notes) and the blueprint card's frames (blueprintcard.css); Jim is
+   only an accent: a small red "Blueprint stall" tag, a thin string of bunting under the head, a red hot-deal ribbon. KEPT CHEAP for the
+   tablet's flicker (CHECKLIST 213): no backdrop-filter, blur, filter or blend; flat colours; only the toast, the bar and the pop move. */
+.s-jim .shop-section-head { align-items: center; }
+.s-jim .shop-section-head h2 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.jim-tag { padding: 3px 7px 2px; border-radius: 4px; font: 900 10.5px/1.1 var(--display); letter-spacing: .1em; color: #fff; background: #ff3b3b; transform: translateY(-1px); }
+.jim-bank { margin-left: auto; display: flex; align-items: baseline; gap: 6px; padding: 5px 12px; border-radius: 999px; background: rgba(255, 255, 255, .07); box-shadow: inset 0 0 0 1px var(--line); }
+.jim-bank small { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
+.jim-bank b { font: 800 19px/1 var(--display); color: var(--buy); font-variant-numeric: tabular-nums; }
+.jim-bunting { display: flex; justify-content: space-between; height: 15px; margin: -2px 0 10px; background: linear-gradient(var(--line), var(--line)) 0 0 / 100% 1px no-repeat; overflow: hidden; }
+.jim-bunting i { flex: 0 0 auto; width: 14px; height: 13px; margin-top: 1px; clip-path: polygon(0 0, 100% 0, 50% 100%); background: #ff3b3b; opacity: .85; }
+.jim-bunting i:nth-child(5n+2) { background: var(--buy); } .jim-bunting i:nth-child(5n+3) { background: #35c2ff; } .jim-bunting i:nth-child(5n+4) { background: var(--c-uncommon); } .jim-bunting i:nth-child(5n) { background: #fff; }
+.jim-bunting i:nth-child(n+17) { display: none; }
+@media (min-width: 520px) { .jim-bunting i:nth-child(n+17) { display: block; } .jim-bunting i:nth-child(n+25) { display: none; } }
+.jim-note { margin: 0 0 10px; }
 
-/* ---- the top bar: Back, the bank (solid, sticky) ---- */
-.jim-top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
-  background: #0f1013; box-shadow: 0 3px 0 #000; }
-.jim-back { display: inline-flex; align-items: center; gap: 4px; min-height: 40px; padding: 0 14px 0 10px; border-radius: 8px; font-weight: 800; font-size: 15px; background: #2b2e36; box-shadow: inset 0 0 0 2px #444851; }
-.jim-back span { font-size: 24px; line-height: 14px; margin-top: -3px; }
-.jim-bank { display: flex; align-items: baseline; gap: 8px; padding: 5px 12px; border-radius: 6px; background: #000; box-shadow: inset 0 0 0 2px #3a3d46; }
-.jim-bank small { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #aab0bd; }
-.jim-bank b { font: 800 24px/1 var(--display); color: var(--jim-yellow); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
-.jim-bank.spent b { color: #fff; }
-
-/* ---- the sign and the bunting ---- */
-.jim-bunting { display: flex; justify-content: space-between; height: 34px; padding: 0 2px; background: linear-gradient(#000, #000) 0 4px / 100% 2px no-repeat; }
-.jim-bunting i { flex: 0 0 auto; width: 6.2%; max-width: 46px; height: 28px; margin-top: 5px; clip-path: polygon(0 0, 100% 0, 50% 100%); background: var(--jim-red); transform-origin: 50% 0; }
-.jim-bunting i:nth-child(5n+2) { background: var(--jim-yellow); transform: rotate(3deg); }
-.jim-bunting i:nth-child(5n+3) { background: var(--jim-blue); transform: rotate(-2deg); }
-.jim-bunting i:nth-child(5n+4) { background: var(--jim-green); transform: rotate(2deg); }
-.jim-bunting i:nth-child(5n) { background: #f4f4f4; transform: rotate(-3deg); }
-.jim-bunting i:nth-child(n+14) { display: none; }
-.jim-sign { position: relative; margin: 2px max(12px, env(safe-area-inset-left)) 0; padding: 12px 12px 10px; text-align: center; border-radius: 10px; background: var(--jim-red);
-  box-shadow: inset 0 0 0 4px #fff, inset 0 0 0 7px var(--jim-red-deep), 0 5px 0 #000; }
-.jim-sign h1 { font: italic 900 clamp(26px, 8.4vw, 46px)/.95 var(--display); font-stretch: condensed; text-transform: uppercase; letter-spacing: .02em; color: #fff; text-shadow: 0 3px 0 var(--jim-red-deep); }
-.jim-sign h1 span { display: block; margin-top: 4px; padding: 3px 0 2px; font-size: .62em; letter-spacing: .1em; color: var(--jim-ink); background: var(--jim-yellow); text-shadow: none; box-shadow: 0 2px 0 var(--jim-red-deep); }
-.jim-sign p { margin-top: 7px; font: 700 12px/1.25 var(--display); letter-spacing: .08em; text-transform: uppercase; color: #ffe9e9; }
-
-/* ---- the strip under the sign: the clock to the next stock, and what Jim has sold today ---- */
-.jim-strip { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; margin: 12px max(12px, env(safe-area-inset-left)) 0; }
-.jim-clock { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 6px; background: #000; box-shadow: inset 0 0 0 2px var(--jim-yellow); font: 800 14px/1.1 var(--display); letter-spacing: .05em; text-transform: uppercase; }
-.jim-clock b { color: var(--jim-yellow); font-variant-numeric: tabular-nums; }
-.jim-limit { font: 700 12px/1.2 var(--display); letter-spacing: .08em; text-transform: uppercase; color: #b9bfcc; }
-.jim-limit b { color: #fff; font-size: 14px; }
-.jim-screen .jim-note { margin: 10px max(12px, env(safe-area-inset-left)) 0; padding: 10px 12px; border-radius: 8px; font-weight: 700; font-size: 14px; line-height: 1.3; background: #2b2e36; box-shadow: inset 0 0 0 2px #444851, inset 5px 0 0 var(--jim-yellow); }
-.jim-note b { color: var(--jim-yellow); }
-
-/* ---- the offers ---- */
-.jim-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; max-width: 1080px; margin: 12px auto 0;
-  padding: 0 max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left)); }
-.jim-offer { --rc: var(--c-common); position: relative; display: flex; flex-direction: column; gap: 7px; min-width: 0; padding: 7px 7px 8px; border-radius: 10px;
-  background: #2a2d34; box-shadow: 0 0 0 3px var(--rc), 0 5px 0 #000; }
-.jim-offer.r-uncommon { --rc: var(--c-uncommon); } .jim-offer.r-epic { --rc: var(--c-epic); } .jim-offer.r-legendary { --rc: var(--c-legendary); }
-.jim-art { position: relative; min-width: 0; }
-.jim-art .bp-card { box-shadow: 0 0 0 1.5px #fff, 0 0 0 3px var(--rc); } /* (no big blurred drop shadow) */
-.jim-art .bp-pic { filter: none; }
-.jim-info { display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1 1 auto; }
-
-/* what you have: "You have 4 / 5 for ECU 2", the bar (what you have, then what the bundle adds, striped), and what the bundle does */
-.jim-screen .jim-key { margin: 0; font-size: 11px; font-weight: 700; line-height: 1.25; color: #ffd6ef; }
-.jim-key b { display: inline-block; margin-right: 6px; padding: 2px 6px 1px; border-radius: 3px; font: 900 11px/1.1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: #fff; background: #c41f86; box-shadow: 0 0 0 1.5px #ff3fae; }
-.jim-offer.key { --rc: #ff3fae; }
+/* the offers: tiles in the Shop's tile style, two a row on a phone; collapsed, only the first row shows */
+.jim-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.jim-grid.collapsed .jim-tile:nth-child(n+3) { display: none; }
+@media (min-width: 700px) { .jim-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .jim-grid.collapsed .jim-tile:nth-child(n+3) { display: flex; } .jim-grid.collapsed .jim-tile:nth-child(n+4) { display: none; } }
+.jim-tile.key { --tc: var(--c-bespoke); }
+.jim-art { padding: 10px 10px 2px; }
+.jim-tile .shop-ribbon { top: 14px; }
+.jim-tile.off .jim-art { opacity: .45; }
+.jim-tile .shop-tile-info { gap: 6px; padding-top: 6px; }
+.jim-key { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 4px 6px; font-size: 11.5px; line-height: 1.3; }
 .jim-have { display: flex; flex-direction: column; gap: 4px; }
-.jim-have-line { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 6px; font-size: 12px; font-weight: 700; line-height: 1.25; color: #d4d9e4; }
+.jim-have-line { display: flex; align-items: baseline; justify-content: space-between; gap: 0 6px; font-size: 12px; font-weight: 700; line-height: 1.25; color: var(--ink-dim); }
+.jim-have-line span, .jim-have-line em { white-space: nowrap; }
 .jim-have-line b { font: 800 16px/1 var(--display); color: #fff; font-variant-numeric: tabular-nums; }
-.jim-have-line span { white-space: nowrap; }
-.jim-have-line em { white-space: nowrap; font-style: normal; font-weight: 800; color: var(--jim-yellow); }
-.jim-bar { position: relative; height: 11px; border-radius: 3px; overflow: hidden; background: #0d0e11; box-shadow: inset 0 0 0 2px #50545e; }
+.jim-have-line em { font-style: normal; font-weight: 800; color: var(--buy); }
+.jim-bar { position: relative; height: 8px; border-radius: 4px; overflow: hidden; background: rgba(255, 255, 255, .12); }
 .jim-bar i { position: absolute; top: 0; bottom: 0; left: 0; }
-.jim-bar .fill { background: var(--jim-green); transition: width .7s ease-out; }
-.jim-bar .plus { background: repeating-linear-gradient(135deg, var(--jim-yellow) 0 4px, #b98f10 4px 8px); }
-.jim-bar.max .fill { width: 100% !important; background: var(--jim-yellow); }
-.jim-gain { min-height: 15px; font-size: 11.5px; font-weight: 800; letter-spacing: .02em; color: var(--jim-yellow); }
+.jim-bar .fill { background: var(--c-uncommon); transition: width .7s ease-out; }
+.jim-bar .plus { background: var(--buy); opacity: .75; }
+.jim-bar.max .fill { width: 100% !important; background: var(--buy); }
+.jim-gain { min-height: 14px; font-size: 11.5px; font-weight: 800; color: var(--buy); }
+.jim-tile .shop-price b { font-size: 18px; }
+.jim-x { font: 800 12px/1 var(--display); letter-spacing: .04em; opacity: .7; }
+.jim-tile .shop-price:disabled { cursor: not-allowed; }
+.jim-tile.bought { animation: jim-pop .9s ease-out; }
+@keyframes jim-pop { 0% { outline: 3px solid var(--buy); outline-offset: 0; } 100% { outline: 3px solid transparent; outline-offset: 6px; } }
+.jim-more { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 10px; padding: 10px; border-radius: 8px; font: 800 14px/1 var(--display); letter-spacing: .06em; text-transform: uppercase;
+  background: rgba(255, 255, 255, .08); box-shadow: inset 0 0 0 1px var(--line); }
+.jim-more:hover { background: rgba(255, 255, 255, .14); }
+.jim-more i { font-style: normal; color: var(--buy); }
+.shop-screen .jim-small { margin-top: 10px; font-size: 11.5px; line-height: 1.4; color: var(--ink-dim); }
 
-/* the price board: yellow, black, loud. The old price struck through in red when there is a hot deal */
-.jim-board { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 0 8px; padding: 5px 6px 4px; border-radius: 4px; color: var(--jim-ink);
-  background: var(--jim-yellow); box-shadow: inset 0 0 0 3px var(--jim-ink), 0 2px 0 #000; font-variant-numeric: tabular-nums; }
-.jim-board b { font: 900 clamp(22px, 7vw, 30px)/1.05 var(--display); letter-spacing: -.01em; }
-.jim-board s { font: 800 14px/1 var(--display); color: var(--jim-red-deep); text-decoration: line-through; text-decoration-thickness: 2px; }
-.jim-stock { min-height: 14px; font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; text-align: center; color: #c5cad6; }
-.jim-stock.low { color: #ff8f8f; }
-.jim-buy { display: flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 8px; border-radius: 8px; font: 900 17px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; text-align: center;
-  color: #fff; background: var(--jim-red); box-shadow: inset 0 -4px 0 var(--jim-red-deep), 0 3px 0 #000; }
-.jim-buy:active { transform: translateY(2px); box-shadow: inset 0 -2px 0 var(--jim-red-deep), 0 1px 0 #000; }
-.jim-buy:disabled { cursor: default; color: #b5bac6; background: #474b55; box-shadow: inset 0 -4px 0 #383b43, 0 3px 0 #000; font-size: 13.5px; letter-spacing: .03em; }
-.jim-buy:disabled:active { transform: none; }
-.jim-buy.short { color: #ffd0d0; }
-
-/* the HOT DEAL sticker (a starburst) and the SOLD OUT / MAXED stamps */
-.jim-hot { position: absolute; z-index: 4; left: -6px; top: -8px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 78px; height: 78px; padding-top: 2px; text-align: center; transform: rotate(-12deg);
-  font: 900 11px/1 var(--display); letter-spacing: .04em; text-transform: uppercase; color: #fff; background: var(--jim-red); pointer-events: none;
-  clip-path: polygon(50% 0, 60% 12%, 75% 4%, 78% 20%, 94% 20%, 88% 35%, 100% 45%, 88% 57%, 96% 72%, 80% 74%, 76% 92%, 62% 84%, 50% 100%, 38% 84%, 24% 92%, 20% 74%, 4% 72%, 12% 57%, 0 45%, 12% 35%, 6% 20%, 22% 20%, 25% 4%, 40% 12%); }
-.jim-hot span { display: block; font-size: 12px; line-height: .95; }
-.jim-hot b { display: block; margin-top: 2px; font-size: 17px; color: var(--jim-yellow); }
-.jim-offer.off .jim-art::after { content: ''; position: absolute; inset: 0; z-index: 3; border-radius: 9px; background: rgba(8, 9, 12, .55); pointer-events: none; }
-.jim-stamp { position: absolute; z-index: 4; left: 50%; top: 44%; padding: 3px 9px 2px; border: 3px solid var(--jim-red); border-radius: 5px; transform: translate(-50%, -50%) rotate(-14deg); white-space: nowrap;
-  font: 900 clamp(15px, 4.7vw, 28px)/1 var(--display); letter-spacing: .05em; text-transform: uppercase; color: var(--jim-red); background: rgba(255, 255, 255, .94); pointer-events: none; }
-.jim-stamp.max { border-color: #0e7a2f; color: #0e7a2f; }
-.jim-offer.off .jim-board { background: #8c8466; box-shadow: inset 0 0 0 3px #4d4936, 0 2px 0 #000; }
-.jim-offer.bought { animation: jim-pop .9s ease-out; }
-@keyframes jim-pop { 0% { box-shadow: 0 0 0 3px var(--rc), 0 0 0 3px var(--jim-yellow), 0 5px 0 #000; } 35% { box-shadow: 0 0 0 3px var(--rc), 0 0 0 12px var(--jim-yellow), 0 5px 0 #000; } 100% { box-shadow: 0 0 0 3px var(--rc), 0 0 0 3px transparent, 0 5px 0 #000; } }
-
-/* the empty states */
-.jim-empty { max-width: 460px; margin: 22px auto 0; padding: 22px 16px; text-align: center; border-radius: 10px; background: #2a2d34; box-shadow: inset 0 0 0 3px #444851, 0 5px 0 #000; }
-.jim-empty h2 { font: italic 900 24px/1.05 var(--display); font-stretch: condensed; text-transform: uppercase; color: var(--jim-yellow); }
-.jim-empty p { margin-top: 8px; font-size: 14px; line-height: 1.4; color: #d4d9e4; }
-.jim-screen .jim-small { max-width: 1080px; margin: 18px auto 0; padding: 0 max(14px, env(safe-area-inset-left)) max(28px, env(safe-area-inset-bottom)); font-size: 11px; line-height: 1.45; letter-spacing: .02em; color: #8b92a2; text-align: center; }
-
-/* the toast */
-.jim-toast { position: fixed; z-index: 40; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); width: max-content; max-width: calc(100vw - 24px); padding: 10px 16px 9px; text-align: center; border-radius: 8px;
-  color: var(--jim-ink); background: var(--jim-yellow); box-shadow: inset 0 0 0 3px var(--jim-ink), 0 4px 0 #000; transform: translate(-50%, 0); transition: transform .25s ease-out, opacity .25s; }
+/* the toast: the Shop's panel with its yellow edge */
+.jim-toast { position: fixed; z-index: 40; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); width: max-content; max-width: calc(100vw - 24px); padding: 10px 16px 9px; text-align: center; border-radius: 10px; color: #fff;
+  background: #161c2c; box-shadow: inset 0 0 0 2px #ffd23f, 0 6px 18px rgba(0, 0, 0, .5); transform: translate(-50%, 0); transition: transform .25s ease-out, opacity .25s; }
 .jim-toast.gone { opacity: 0; transform: translate(-50%, 24px); }
-.jim-toast b { display: block; font: 900 17px/1.15 var(--display); letter-spacing: .02em; text-transform: uppercase; }
-.jim-toast small { display: block; margin-top: 2px; font-size: 12.5px; font-weight: 800; color: #5b4a00; }
-
-/* ---- the doorway on the Shop screen ---- */
-.jim-door { display: flex; align-items: center; gap: 12px; width: 100%; margin: 12px 0 16px; padding: 10px 12px; text-align: left; border-radius: 10px; color: #fff;
-  background: var(--jim-red); box-shadow: inset 0 0 0 3px #fff, inset 0 0 0 5px var(--jim-red-deep), 0 4px 0 #000; }
-.jim-door-flags { flex: 0 0 auto; display: grid; grid-template-columns: repeat(3, 14px); gap: 2px; }
-.jim-door-flags i { display: block; width: 14px; height: 12px; clip-path: polygon(0 0, 100% 0, 50% 100%); background: var(--jim-yellow); }
-.jim-door-flags i:nth-child(3n+2) { background: #f4f4f4; } .jim-door-flags i:nth-child(3n) { background: var(--jim-blue); }
-.jim-door-text { flex: 1 1 auto; min-width: 0; }
-.jim-door-text b { display: block; font: italic 900 20px/1 var(--display); font-stretch: condensed; text-transform: uppercase; letter-spacing: .02em; text-shadow: 0 2px 0 var(--jim-red-deep); }
-.jim-door-text small { display: block; margin-top: 4px; font-size: 12px; font-weight: 700; color: #ffe9e9; }
-.jim-door-go { flex: 0 0 auto; padding: 8px 12px 7px; border-radius: 6px; font: 900 14px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--jim-ink); background: var(--jim-yellow); box-shadow: 0 3px 0 #000; }
-
-/* ---- other shapes ---- */
-@media (min-width: 640px) { .jim-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 14px; } .jim-sign { max-width: 720px; margin-left: auto; margin-right: auto; } .jim-strip { max-width: 1056px; margin-left: auto; margin-right: auto; padding: 0 12px; } .jim-note { max-width: 1056px; margin-left: auto; margin-right: auto; } }
-@media (min-width: 640px) { .jim-bunting i { width: 4.6%; } .jim-bunting i:nth-child(n+14) { display: block; } .jim-bunting i:nth-child(n+18) { display: none; } }
-/* a phone on its side: short and wide, the offers lie flat (picture left, the board and the button right), two a row */
-@media (orientation: landscape) and (max-height: 520px), (min-width: 900px) {
-  .jim-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .jim-offer { flex-direction: row; align-items: stretch; gap: 8px; }
-  .jim-art { flex: 0 0 38%; }
-  .jim-info { justify-content: space-between; gap: 5px; }
-  .jim-bunting { height: 24px; } .jim-bunting i { height: 19px; margin-top: 4px; }
-  .jim-sign { padding: 6px 12px 6px; } .jim-sign h1 { font-size: 26px; } .jim-sign p { margin-top: 4px; }
-  .jim-hot { left: -8px; top: -9px; transform: rotate(-12deg) scale(.82); }
-  .jim-stamp { font-size: 18px; border-width: 3px; }
-  .jim-buy { min-height: 40px; }
-  .jim-board b { font-size: 24px; }
-}
-@media (prefers-reduced-motion: reduce) { .jim-bar .fill, .jim-toast { transition: none; } .jim-offer.bought { animation: none; } }
-@media (max-width: 359px) { .jim-grid { gap: 10px 7px; } .jim-offer { padding: 6px 6px 7px; } }
-@media (max-width: 380px) { .jim-clock { padding: 6px 9px; font-size: 13px; letter-spacing: .02em; } .jim-limit { font-size: 11px; letter-spacing: .04em; } .jim-limit b { font-size: 13px; } }
-@media (orientation: landscape) and (max-height: 520px) {
-  .jim-bunting { height: 24px; } .jim-bunting i { height: 19px; margin-top: 4px; }
-  .jim-sign { width: max-content; max-width: calc(100% - 24px); margin-left: auto; margin-right: auto; padding: 5px 16px 5px; } .jim-sign h1 { font-size: 24px; line-height: 1.1; } .jim-sign h1 span { display: inline-block; margin: 0 0 0 10px; padding: 2px 10px 1px; font-size: .8em; } .jim-sign p { display: none; }
-  .jim-strip { margin-top: 9px; }
-}
-/* a tablet on its side or a desktop: two a row, flat, the type a size up */
-@media (min-width: 900px) {
-  .jim-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 1000px; gap: 18px; }
-  .jim-offer { gap: 14px; padding: 10px; }
-  .jim-art { flex-basis: 40%; }
-  .jim-have-line { font-size: 14px; } .jim-have-line b { font-size: 20px; } .jim-bar { height: 13px; } .jim-gain { font-size: 13px; }
-  .jim-board b { font-size: 34px; } .jim-board s { font-size: 16px; } .jim-stock { font-size: 13px; }
-  .jim-buy { min-height: 52px; font-size: 20px; } .jim-buy:disabled { font-size: 15px; }
-  .jim-hot { left: -12px; top: -12px; transform: rotate(-12deg) scale(1.1); }
-  .jim-strip, .jim-note, .jim-small { max-width: 1000px; }
-  .jim-stamp { font-size: 26px; }
-}
+.jim-toast b { display: block; font: italic 800 17px/1.15 "Bahnschrift", "DIN Alternate", "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", "Segoe UI", system-ui, sans-serif; font-stretch: condensed; letter-spacing: .03em; text-transform: uppercase; }
+.jim-toast small { display: block; margin-top: 2px; font-size: 12.5px; font-weight: 800; color: #ffd23f; }
+@media (prefers-reduced-motion: reduce) { .jim-bar .fill, .jim-toast { transition: none; } .jim-tile.bought { animation: none; } }

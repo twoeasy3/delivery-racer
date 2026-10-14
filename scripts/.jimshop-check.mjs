@@ -4,8 +4,7 @@
 // and NEVER an earned / super car, the Tank, an off car or a noPacks car that is not a key car (400 days); key cars: dearer
 // (keyMult), at most keyCap blueprints a day each, never the hot deal, rare; the price rises with each bundle bought, the hot deal is cheaper, a bundle is
 // cut to what a car still needs and a maxed car is not for sale, the daily stock and the daily cap, the affordable check,
-// buying takes the money and gives the blueprints and counts it, the rotation boundary at LOCAL midnight (the counts of the
-// day before are void), the save (cleaned, a code from before has none, the cookie's size).
+// buying takes the money and gives the blueprints and counts it, the rotation every 6 LOCAL hours (00:00 06:00 12:00 18:00; a slot's stock and price rises, the day's caps; a clock set back; the days of a clock change), the save (cleaned, a code from before has none, the cookie's size).
 //   node scripts/.jimshop-check.mjs
 import { boot } from './delivery-headless.mjs';
 
@@ -67,7 +66,7 @@ try {
   const kOffer = rotation(day(0), { force: ['sixteen', 'swancar'] }).filter(o => o.key);
   check(kOffer.length === 2 && kOffer.every(o => !o.hot && o.stock * o.qty <= JIM.keyCap && o.unit === J.unitPrice(o.car)), 'a key car can be put on the stall (force): never the hot deal, stock x bundle within keyCap');
   const k1 = kOffer[0], kv = (st, m = 1e6) => viewOf(k1, { day: day(0), state: st, money: m, blueprints: 0 });
-  check(kv({ day: day(0), n: { [k1.id]: k1.stock }, bp: k1.stock * k1.qty }).why === 'sold', 'a key car sells out at keyCap blueprints a day (' + JIM.keyCap + ')');
+  check(kv({ day: day(0), slot: 0, n: { [k1.id]: k1.stock }, bp: k1.stock * k1.qty, k: { [k1.id]: JIM.keyCap } }).why === 'sold' && kv({ day: day(0), slot: 0, n: {}, bp: JIM.keyCap, k: { [k1.id]: JIM.keyCap } }).why === 'cap', 'a key car sells out at keyCap blueprints a day (' + JIM.keyCap + '), also in a new slot of the same day');
   check(needed(k1.car, 0) === 20, 'a key car needs 20 blueprints for max ECU');
   const dayMax = (() => { // (days Jim alone could give 20: infinite money, the best case, each key car offered every day it is drawn)
     return 20 / JIM.keyCap;
@@ -79,7 +78,7 @@ try {
   const p0 = bundlePrice(plain, plain.qty, 0), p1 = bundlePrice(plain, plain.qty, 1), p2 = bundlePrice(plain, plain.qty, 2);
   check(p0 === Math.ceil(plain.unit * plain.qty) && p1 > p0 && p2 > p1 && Math.abs(p1 / p0 - (1 + JIM.rise)) < 0.02, 'the price rises with each bundle bought today (' + p0 + ', ' + p1 + ', ' + p2 + ')');
   const d0 = day(0);
-  const state = (n, bp = 0, d = d0) => ({ day: d, n, bp });
+  const state = (n, bp = 0, d = d0, slot = 0, k = {}) => ({ day: d, slot, n, bp, k });
   fresh();
   const money = 100000;
   const view = (o, st, m = money, blueprints) => viewOf(o, { day: d0, state: st, money: m, blueprints });
@@ -121,26 +120,67 @@ try {
   fresh(); Progress.data.money = 1e6;
   for (const o of Jim.offers()) { while (Jim.offers().find(v => v.id === o.id).why === null) Jim.buy(o.id); }
   check(Progress.data.jimBuys.bp <= JIM.dayCap, 'buying everything sells at most ' + JIM.dayCap + ' blueprints in a day (sold ' + Progress.data.jimBuys.bp + ')');
-  // the rotation boundary
-  const before = Jim.offers().map(o => o.id).join();
-  const midnight = Jim.nextAt();
-  check(midnight > Events.now() && midnight - Events.now() <= 25 * 3600e3, 'the next stock is at the next local midnight (in ' + Math.round((midnight - Events.now()) / 60e3) + ' min)');
-  Events.now = () => midnight - 1000;
-  check(Jim.offers().map(o => o.id).join() === before, 'a second before midnight: the same offers');
-  Events.now = () => midnight + 1000;
-  const after = Jim.offers();
-  check(after.map(o => o.id).join() !== before && after.every(o => o.bought === 0 && o.left === o.stock), 'a second after: new offers, the old counts void, full stock');
+  // the rotation: every 6 local hours (00:00, 06:00, 12:00, 18:00)
+  const L = (y, mo, d, h, mi = 0) => new Date(y, mo, d, h, mi).getTime();
+  Events.now = () => L(2026, 9, 14, 10, 30);
+  const next = Jim.nextAt();
+  check(next === L(2026, 9, 14, 12), 'at 10:30 the next stock is at 12:00 (in ' + Math.round((next - Events.now()) / 60e3) + ' min)');
+  Events.now = () => L(2026, 9, 14, 20);
+  check(Jim.nextAt() === L(2026, 9, 15, 0), 'at 20:00 the next stock is at the next midnight');
+  const at = (t) => { Events.now = () => t; return Jim.offers(); };
+  const ids = (o) => o.map(x => x.id).join();
+  const s10 = at(L(2026, 9, 14, 6, 0)), s10b = at(L(2026, 9, 14, 11, 59)), s12 = at(L(2026, 9, 14, 12, 0)), s18 = at(L(2026, 9, 14, 18, 0)), s00 = at(L(2026, 9, 15, 0, 0));
+  check(ids(s10) === ids(s10b) && ids(s10) !== ids(s12) && ids(s12) !== ids(s18) && ids(s18) !== ids(s00), 'the offers hold from 06:00 to 11:59 and change at 12:00, 18:00 and midnight');
+  check(new Set([ids(at(L(2026, 9, 14, 0))), ids(s10), ids(s12), ids(s18)]).size === 4, 'four different sets in a local day');
+  // a purchase: its stock and price rise are the slot's; the daily caps stay for the day
+  fresh(); Progress.data.money = 1e6;
+  const a0 = at(L(2026, 9, 14, 6, 5)), o0 = a0.find(o => !o.key && !o.why);
+  Jim.buy(o0.id);
+  check(Jim.offers().find(o => o.id === o0.id).bought === 1 && Progress.data.jimBuys.slot === 1 && Progress.data.jimBuys.bp === o0.qty, 'a purchase is counted in its slot (slot 1) and the day');
+  const a1 = at(L(2026, 9, 14, 12, 5));
+  check(a1.every(o => o.bought === 0 && o.left === o.stock) && Jim.today().bp === o0.qty, 'the next slot: full stock, first prices; the day\'s blueprint count stays (' + Jim.today().bp + ')');
+  Progress.data.jimBuys = { day: Jim.day(), slot: 2, n: {}, bp: JIM.dayCap, k: {} };
+  check(Jim.offers().every(o => o.why === 'cap' || o.why === 'maxed'), 'the daily cap holds across slots');
+  const k0 = Jim.offers({}); void k0;
+  Jim.force = ['sixteen'];
+  fresh(); Progress.data.money = 1e6; at(L(2026, 9, 14, 6, 5));
+  const kk = Jim.offers().find(o => o.id === 'sixteen'); let got = 0;
+  while (Jim.offers().find(o => o.id === 'sixteen' && !o.why)) { got += Jim.buy('sixteen').qty; }
+  at(L(2026, 9, 14, 12, 5)); Jim.force = ['sixteen'];
+  while (Jim.offers().find(o => o.id === 'sixteen' && !o.why)) { got += Jim.buy('sixteen').qty; }
+  check(kk && got === JIM.keyCap && Progress.data.jimBuys.k.sixteen === JIM.keyCap, 'a key car: ' + JIM.keyCap + ' blueprints a day in all, over two slots (' + got + ')');
+  Jim.force = [];
+  // a clock set backwards: the earlier slot's offers again (the counts of the later slot are void)
+  fresh(); Progress.data.money = 1e6;
+  const late = at(L(2026, 9, 14, 19, 0)), lateIds = ids(late);
+  Jim.buy(late.find(o => !o.why).id);
+  const early = at(L(2026, 9, 14, 7, 0));
+  check(ids(early) !== lateIds && early.every(o => o.bought === 0), 'a clock set back to 07:00: that slot\'s offers, no counts of the later slot');
+  check(ids(at(L(2026, 9, 14, 19, 0))) === lateIds, 'and forward again: the 18:00 slot\'s offers, the same as before');
+  // a day with a clock change (the boundaries stay at the local 00:00, 06:00, 12:00, 18:00)
+  const tzOk = (() => { try { process.env.TZ = 'America/New_York'; return new Date(2026, 2, 8, 12).getTimezoneOffset() === 240 && new Date(2026, 2, 7, 12).getTimezoneOffset() === 300; } catch { return false; } })();
+  if (tzOk) {
+    check(J.nextSlot(L(2026, 2, 8, 1, 59)) === L(2026, 2, 8, 6) && (L(2026, 2, 8, 6) - L(2026, 2, 8, 0)) === 5 * 3600e3, 'spring-forward day (New York): the 06:00 stock comes 5 real hours after midnight');
+    check(J.nextSlot(L(2026, 10, 1, 1, 30)) === L(2026, 10, 1, 6) && (L(2026, 10, 1, 6) - L(2026, 10, 1, 0)) === 7 * 3600e3, 'fall-back day: the 06:00 stock comes 7 real hours after midnight');
+    let walk = L(2026, 2, 8, 0), seenSlots = [];
+    for (let i = 0; i < 4; i++) { seenSlots.push(J.slotOf(walk).slot); walk = J.nextSlot(walk); }
+    check(seenSlots.join() === '0,1,2,3' && J.slotOf(walk).day === '2026-03-09' && J.slotOf(walk).slot === 0, 'on the spring-forward day the four slots follow in order, then the next day\'s slot 0');
+    let strictly = true, t = L(2026, 2, 7, 0);
+    for (let i = 0; i < 12; i++) { const n2 = J.nextSlot(t); if (!(n2 > t)) strictly = false; t = n2; }
+    check(strictly, 'the next stock is always later than now, across the clock change');
+  } else console.log('  skip  (no time zone switch here: the clock-change days)');
+  process.env.TZ = '';
   // ---- the save ----
   const codeOf = (extra) => 'DR1.' + Buffer.from(JSON.stringify({ unlocked: 3, cars: ['commuter'], ...extra })).toString('base64');
-  check(Progress.importCode(codeOf({ jimBuys: { day: d0, n: { sleeper: 2, bad: 'x', 'X Y': 1, huge: 500 }, bp: 4 } })) && JSON.stringify(Progress.data.jimBuys) === JSON.stringify({ day: d0, n: { sleeper: 2 }, bp: 4 }),
+  check(Progress.importCode(codeOf({ jimBuys: { day: d0, slot: 2, n: { sleeper: 2, bad: 'x', 'X Y': 1, huge: 500 }, bp: 4, k: { sixteen: 2, mini: 0 } } })) && JSON.stringify(Progress.data.jimBuys) === JSON.stringify({ day: d0, slot: 2, n: { sleeper: 2 }, bp: 4, k: { sixteen: 2 } }),
     'a save code: junk counts are dropped (only the whole, sensible ones kept)');
   check(Progress.importCode(codeOf({})) && JSON.stringify(Progress.data.jimBuys) === '{}', 'a code from before (no jimBuys): none, no crash');
   check(Progress.importCode(codeOf({ jimBuys: { day: 'yesterday', n: { sleeper: 1 } } })) && JSON.stringify(Progress.data.jimBuys) === '{}' && Progress.importCode(codeOf({ jimBuys: [1, 2] })) && JSON.stringify(Progress.data.jimBuys) === '{}', 'a bad day or a bad shape: none');
   Progress.noSave = true;
-  fresh(); Progress.data.jimBuys = { day: d0, n: { sleeper: 2, hothatch: 1, mini: 3, towtruck: 1, goddess: 1, wedge: 2 }, bp: 8 };
+  fresh(); Progress.data.jimBuys = { day: d0, slot: 3, n: { sleeper: 2, hothatch: 1, mini: 3, towtruck: 1, goddess: 1, wedge: 2 }, bp: 8, k: { sixteen: 2, rocketfin: 2 } };
   const bytes = encodeURIComponent(JSON.stringify(Progress.data.jimBuys)).length;
-  check(bytes < 260, 'a full day of purchases is ' + bytes + ' bytes in the cookie (six cars; the cookie keeps ' + 3600 + ')');
-  console.log('  info  jimBuys in the cookie: empty ' + encodeURIComponent(JSON.stringify({})).length + ' B, a day of six offers ' + bytes + ' B');
+  check(bytes < 340, 'a full day of purchases is ' + bytes + ' bytes in the cookie (six cars; the cookie keeps ' + 3600 + ')');
+  console.log('  info  jimBuys in the cookie: empty ' + encodeURIComponent(JSON.stringify({})).length + ' B, a full day ' + bytes + ' B');
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error.stack || error));
