@@ -3,6 +3,7 @@
 // (see ../gimmicks.js) can both use them. Each faces local +z, its feet on y = 0.
 import * as THREE from 'three';
 import { makeWorker } from './siteModels.js';
+import { DESERT_OBSTACLES } from './themes/desertModels.js';
 
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 // a model made of boxes: parts are [material, width, height, length, x, y, z]
@@ -1178,3 +1179,5 @@ OBSTACLE_MODELS.cafeTable = () => {
   put(group, new THREE.SphereGeometry(0.06, 6, 5), lambert(0xe6b63c), 0, 2.38, 0);
   return grounded(group, 0.6);
 };
+// the desert dunes' own (render/themes/desertModels.js): a stack of jerrycans, a rolled tent, a rally marker flag
+Object.assign(OBSTACLE_MODELS, DESERT_OBSTACLES);

@@ -620,5 +620,16 @@
       "good": "coffee",
       "evil": "airhorn"
     }
+  },
+  "dakar-dash": {
+    "name": "Dakar Dash",
+    "description": {
+      "good": "Water jugs for the rally camps, a dust-and-dune stage: the wind will shove you off the ridge, the crests will throw you, and two rival couriers want the finish.",
+      "evil": "A crate of scarabs across the dunes. Let the crosswinds blow the tall ones into the sand, fly the crests flat out and leave two rivals eating your dust."
+    },
+    "cargo": {
+      "good": "waterjugs",
+      "evil": "scarabs"
+    }
   }
 }

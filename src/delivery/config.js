@@ -642,6 +642,7 @@ export const CONFIG = {
     flagStand: { damage: 3, speedKept: 0.94, light: true },  // the Moon's, for a cone that drifts: a flag on a stand
     // ...for a rock (sized by its radius, as a rock is):
     lavaRock: { damage: 39, speedKept: 0.6 },       // the volcano's: cooled lava, glowing in its cracks
+    jerryStack: { damage: 31, speedKept: 0.75 }, tentRoll: { damage: 38, speedKept: 0.75 }, rallyFlag: { damage: 3, speedKept: 0.94, light: true }, // the desert's: stacked jerrycans (a crate), a rolled tent (a bale), a rally marker flag (a cone)
   },
   // drifters: obstacles moving about the road in patterns (a level's "drifters")
   drifters: {

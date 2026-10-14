@@ -195,6 +195,13 @@ export const THEMES = {
   fallout: { sky: 0x9cc06e, ground: 0x6b6852, road: 0x3a3c3e, scenery: 'fallout', fogColor: 0xa9cc78, sets: ['pylons', 'checkpoint', 'plant', 'tankfarm', 'village'],
     target: { height: 4.2, beam: true }, // (up over the fence)
     light: { sky: 0xe4ffb8, ground: 0x3a3a2c, ambient: 1.3, sun: 0xf2ffd0, sunlight: 0.9 } },
+  // desert: desert dunes, Dakar-rally style (render/themes/desert.js): the land (terrain) a sea of orange-gold dunes, lighter
+  // on the windward faces and darker in the lee, rippled by the wind; a pale hot hazy sky with a pale sun in it; rock arches,
+  // mesas and hoodoos; rally service camps of tents, flags and trucks every so often; camels, dry scrub, an oasis; a pale
+  // sandy track with tyre ruts, unmarked; sand blowing across it, thicker in a crosswind (a level's "crosswinds")
+  desert: { sky: 0xf0e4c6, ground: 0xe3aa5e, road: 0xe6d3a6, scenery: 'desert', unmarked: true, washboard: 'sand', terrain: { gentle: 0xf0bb68, steep: 0xb9602c, rough: 1.5, flat: 12, rise: 80 },
+    target: { offset: 2, height: 4.6, beam: true },
+    light: { sky: 0xfff3d8, ground: 0xc58c4e, ambient: 1.55, sun: 0xffe6b8, sunlight: 1.5 } },
 };
 
 // ---- the themes' own obstacles ---------------------------------------------------------------------------
@@ -224,6 +231,7 @@ const OBSTACLES = {
   mumbai: { bale: 'sackStack' },
   beach: { bale: 'beachBall' },
   hell: { cone: 'brimstone' },
+  desert: { crate: 'jerryStack', bale: 'tentRoll', cone: 'rallyFlag' }, // (jerrycans stacked on a pallet; a rolled tent; a rally marker flag in a heap of sand)
   fallout: { crate: 'wasteDrum' }, // (a yellow drum of waste, the trefoil on it; the cones and barriers are a checkpoint's own)
   hongkong: { crate: 'hawkerCart', bale: 'bagStack' }, // (a hawker's cart under its awning; a heap of red-white-blue bags; the cones are roadworks and stay)
   // (the port keeps its crates, the farm and the Wild West their bales: there they belong)
