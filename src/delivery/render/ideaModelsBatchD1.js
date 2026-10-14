@@ -18,7 +18,7 @@ export const IDEA_MODELS_BATCH_D1 = {
   // middle, a near-upright windscreen, a square tail, two wheels at the front and one under the middle at the back.
   wedgemicro: (car) => {
     const group = new THREE.Group(), k = 'wmicro';
-    const R = 0.25, TW = 0.17, BEV = 0.05, ACROSS = 0.07, BW = 1.0, HALF = BW / 2, WX = HALF - 0.06;
+    const R = 0.25, TW = 0.17, BEV = 0.05, ACROSS = 0.07, BW = 1.28, HALF = BW / 2, WX = HALF - 0.04;
     const NOSE = 0.72, TAILZ = -0.72, AY = 0.27, AF = 0.4, BELT = 0.8, ROOF = 1.2;
     const TAPER = [BELT, ROOF, 0.1];
     const WSF = [0.42, BELT - 0.02], WST = [0.14, ROOF - 0.04];
@@ -36,13 +36,13 @@ export const IDEA_MODELS_BATCH_D1 = {
     parts(group, k + 'glass', GLASS, () => [
       slopeGlass([zWS(0.84), 0.84], [zWS(1.14), 1.14], gx(0.84) - 0.07, gx(1.14) - 0.07, BEV + LIFT),
       ...sideGlass([[[zWS(0.84) - 0.07, 0.84], [-0.5, 0.84], [-0.5, 1.14], [zWS(1.14) - 0.05, 1.14]]], HALF, TAPER, LIFT),
-      panel([[-0.3, 0.9, BZ - LIFT], [0.3, 0.9, BZ - LIFT], [0.28, 1.1, BZ - LIFT], [-0.28, 1.1, BZ - LIFT]].reverse()),
+      panel([[-0.4, 0.9, BZ - LIFT], [0.4, 0.9, BZ - LIFT], [0.38, 1.1, BZ - LIFT], [-0.38, 1.1, BZ - LIFT]].reverse()),
     ]);
-    parts(group, k + 'black', TRIM, () => [bx(0.84, 0.08, 0.1, 0, 0.3, FZ + 0.01), bx(0.8, 0.08, 0.08, 0, 0.3, BZ - 0.01)]);
+    parts(group, k + 'black', TRIM, () => [bx(1.1, 0.08, 0.1, 0, 0.3, FZ + 0.01), bx(1.06, 0.08, 0.08, 0, 0.3, BZ - 0.01)]);
     parts(group, k + 'rim', CHROME, () => [dsc(0.115, 0.03, 0, 0.5, FZ + 0.01, 0, 12)]);
     parts(group, k + 'lamp', LAMP, () => [dsc(0.085, 0.03, 0, 0.5, FZ + 0.022, 0, 12)]);
-    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.13, 0.1, 0.03, s * 0.32, 0.52, BZ - 0.006)));
-    parts(group, k + 'amber', AMBER, () => [-1, 1].map(s => bx(0.09, 0.06, 0.03, s * 0.37, 0.4, FZ + 0.004)));
+    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.13, 0.1, 0.03, s * 0.4, 0.52, BZ - 0.006)));
+    parts(group, k + 'amber', AMBER, () => [-1, 1].map(s => bx(0.09, 0.06, 0.03, s * 0.47, 0.4, FZ + 0.004)));
     for (const s of [-1, 1]) wheel(group, k, R, TW, s * WX, AF, 14);
     wheel(group, k, R, TW, 0, -0.45, 14);
     group.userData = { body, animate: () => {}, livery: () => {} };
