@@ -202,13 +202,47 @@ export const clipZ = (poly, zMin, zMax) => {
   return cut(cut(poly, p => p[0] >= zMin - 1e-9, at(zMin)), p => p[0] <= zMax + 1e-9, at(zMax));
 };
 // the cabin's outline: profile[from..to], its first and last edges carried (or trimmed) to the belt line, which closes it
+// A window has exactly the corners the body's cabin outline has there, no more (the owner, 14-Oct): a point within `tol` (1 cm) of the line
+// between its neighbours is no corner (the roof's gentle curve pieces, a point an inset or a clip left on a straight run) and is dropped, the
+// one furthest inside the tolerance first; an open chain keeps its two ends, a closed polygon may lose any point
+export const dropFlat = (pts, tol = 0.01, closed = false) => {
+  const out = pts.map(p => [p[0], p[1]]);
+  const off = (a, p, b) => { const dz = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dz, dy); return l < 1e-9 ? Math.hypot(p[0] - a[0], p[1] - a[1]) : Math.abs((p[0] - a[0]) * dy - (p[1] - a[1]) * dz) / l; };
+  for (;;) {
+    const n = out.length;
+    if (n <= (closed ? 3 : 2)) return out;
+    let best = -1, d = tol;
+    for (let i = closed ? 0 : 1; i < (closed ? n : n - 1); i++) { const e = off(out[(i + n - 1) % n], out[i], out[(i + 1) % n]); if (e < d) { d = e; best = i; } }
+    if (best < 0) return out;
+    out.splice(best, 1);
+  }
+};
+// a closed polygon's segments shorter than `short` (3 cm), which an inset's or a clip's corner leaves beside the outline's own, made ONE mitre:
+// the two ends are replaced by the crossing of the edges either side (their middle where those are parallel)
+export const oneMitre = (poly, short = 0.03) => {
+  const out = poly.map(p => [p[0], p[1]]);
+  for (let guard = 0; guard < 64; guard++) {
+    const n = out.length;
+    if (n <= 3) return out;
+    let at = -1, l = short;
+    for (let i = 0; i < n; i++) { const e = Math.hypot(out[(i + 1) % n][0] - out[i][0], out[(i + 1) % n][1] - out[i][1]); if (e < l) { l = e; at = i; } }
+    if (at < 0) return out;
+    const a = out[(at + n - 1) % n], p = out[at], q = out[(at + 1) % n], b = out[(at + 2) % n];
+    const d1 = [p[0] - a[0], p[1] - a[1]], d2 = [b[0] - q[0], b[1] - q[1]], den = d1[0] * d2[1] - d1[1] * d2[0];
+    const m = Math.abs(den) < 1e-9 ? [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2] : (() => { const t = ((q[0] - a[0]) * d2[1] - (q[1] - a[1]) * d2[0]) / den; return [a[0] + d1[0] * t, a[1] + d1[1] * t]; })();
+    if (at + 1 < n) out.splice(at, 2, m); else { out.splice(at, 1, m); out.splice(0, 1); }
+  }
+  return out;
+};
 export const cabinChain = (profile, from, to, belt) => {
   const chain = profile.slice(from, to + 1).map(p => [p[0], p[1]]);
   const toBelt = (p, q) => { const t = (belt - p[1]) / (q[1] - p[1]); return [p[0] + (q[0] - p[0]) * t, belt]; };
   chain[0] = toBelt(chain[0], chain[1]);
   chain[chain.length - 1] = toBelt(chain[chain.length - 1], chain[chain.length - 2]);
-  return chain;
+  return dropFlat(chain); // (the body's own corners only: the roof's curve pieces within 1 cm of a straight run are none)
 };
+// a window polygon tidied: no point on a straight run, no segment under 3 cm (one mitre at each corner)
+export const tidyGlass = (poly) => dropFlat(oneMitre(poly), 0.005, true);
 // the inset of the chain's edge i (from point i to the next): the belt edge (the last), the roof (an edge rising or falling less than
 // 1 in 4, about 14 degrees: a raked screen of 25 to 30 degrees is a PILLAR, not roof), the A-pillar (rising rearward) or the C-pillar
 export const edgeInset = (chain, i, { aPillar, roof, cPillar, belt }) => {
@@ -219,7 +253,7 @@ export const edgeInset = (chain, i, { aPillar, roof, cPillar, belt }) => {
 export const glassFromProfile = (profile, { from, to, belt, inset = {}, zFront = Infinity, zRear = -Infinity, half, taper = null, lift = 0.004 }) => {
   const { aPillar = 0.07, roof = 0.055, cPillar = 0.08, belt: beltInset = 0.025 } = inset;
   const chain = cabinChain(profile, from, to, belt);
-  const poly = clipZ(insetOutline(chain, chain.map((p, i) => edgeInset(chain, i, { aPillar, roof, cPillar, belt: beltInset }))), zRear, zFront);
+  const poly = tidyGlass(clipZ(insetOutline(chain, chain.map((p, i) => edgeInset(chain, i, { aPillar, roof, cPillar, belt: beltInset }))), zRear, zFront));
   const xAt = (y) => (taper ? narrowAt(half, y, taper) : half) + lift;
   const faces = THREE.ShapeUtils.triangulateShape(poly.map(p => new THREE.Vector2(p[0], p[1])), []);
   return [1, -1].map(s => {
@@ -266,8 +300,8 @@ export const cabinGlass = (profile, { from, to, belt, inset = {}, grow = 0, half
   const ins = { aPillar: Math.max(0, aPillar - grow), roof: Math.max(0, roof - grow), cPillar: Math.max(0, cPillar - grow), belt: beltInset };
   const last = profile[to];
   // the outline both ends of the glass are derived from
-  const chain = cabinChain(profile, from, to, belt), n = chain.length;
-  const poly = insetOutline(chain, chain.map((p, i) => edgeInset(chain, i, ins)));
+  const chain = cabinChain(profile, from, to, belt);
+  const poly = tidyGlass(insetOutline(chain, chain.map((p, i) => edgeInset(chain, i, ins)))), n = poly.length; // (poly[0] and poly[n - 1] are the belt corners: the ends are kept)
   const sides = windows.flatMap(([zRear, zFront]) => glassFromProfile(profile, { from, to, belt, inset: ins, zFront, zRear, half, taper, lift: sideLift }));
   const onLine = (p, q, y) => [p[0] + (q[0] - p[0]) * (y - p[1]) / (q[1] - p[1]), y];
   const hx = (y) => (taper ? narrowAt(half, y, taper) : half) - sideInset;
