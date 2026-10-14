@@ -134,21 +134,16 @@
     {"type": "cash5", "s": 4290, "lane": "right"}
   ],
   "obstacles": [
-    {"s": 250, "lane": 1, "kind": "crate"},
-    {"s": 640, "lane": 1, "kind": "bale"},
-    {"s": 870, "lane": 0, "kind": "crate"},
-    {"s": 1150, "lane": 1, "kind": "cone"},
-    {"s": 1380, "lane": 1, "kind": "crate"},
-    {"s": 1620, "lane": 1, "kind": "bale"},
-    {"s": 1900, "lane": 1, "kind": "crate"},
-    {"s": 2160, "lane": 1, "kind": "cone"},
-    {"s": 2640, "lane": 1, "kind": "crate"},
-    {"s": 2860, "lane": 0, "kind": "bale"},
-    {"s": 3100, "lane": 1, "kind": "crate"},
-    {"s": 3340, "lane": 1, "kind": "bale"},
-    {"s": 3665, "lane": 1, "kind": "crate"},
-    {"s": 3880, "lane": 1, "kind": "cone"},
-    {"s": 4100, "lane": 1, "kind": "crate"},
-    {"s": 4220, "lane": 0, "kind": "crate"}
+    {"s": 985, "lane": 1, "kind": "bale"},
+    {"s": 994, "lane": "right", "kind": "bale"},
+    {"s": 1360, "lane": 1, "kind": "crate"},
+    {"s": 1353, "lane": "right", "kind": "crate"},
+    {"s": 2250, "lane": 1, "kind": "cone"},
+    {"s": 2243, "lane": "right", "kind": "cone"},
+    {"s": 2259, "lane": "right", "kind": "cone"},
+    {"s": 3025, "lane": 1, "kind": "bale"},
+    {"s": 3034, "lane": "right", "kind": "bale"},
+    {"s": 4005, "lane": 1, "kind": "crate"},
+    {"s": 3998, "lane": "right", "kind": "crate"}
   ]
 }
