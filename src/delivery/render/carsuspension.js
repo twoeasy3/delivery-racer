@@ -44,7 +44,7 @@ export const prepareSuspension = (model) => {
   model.updateMatrixWorld(true);
   const toModel = new THREE.Matrix4().copy(model.matrixWorld).invert();
   const meshes = [];
-  model.traverse((node) => { if (node.isMesh && node.geometry) meshes.push({ node, box: boxIn(node, toModel) }); });
+  model.traverse((node) => { if (node.isMesh && node.geometry && !node.userData.wheelRing) meshes.push({ node, box: boxIn(node, toModel) }); }); // (a wheel design's sidewall ring, render/wheelcosmetic.js, is a child of its tyre: it rides with it and is no part of its own)
   const all = new THREE.Box3();
   for (const m of meshes) all.union(m.box);
   const ground = all.min.y, near = (m) => m.box.min.y - ground < NEAR;
@@ -89,7 +89,7 @@ export const prepareSuspension = (model) => {
     if (f) { squashed.add(m.node); squash.push({ node: m.node, top: f.box.max.y, mid: (m.box.min.y + m.box.max.y) / 2, stretch: false }); }
   }
   // the nodes to move: the highest whose meshes are all planted
-  const allPlanted = (node) => { let ok = true; node.traverse((part) => { if (part.isMesh && !planted.has(part)) ok = false; }); return ok; };
+  const allPlanted = (node) => { let ok = true; node.traverse((part) => { if (part.isMesh && !planted.has(part) && !part.userData.wheelRing) ok = false; }); return ok; };
   const nodes = new Set();
   for (const mesh of planted) {
     let node = mesh;

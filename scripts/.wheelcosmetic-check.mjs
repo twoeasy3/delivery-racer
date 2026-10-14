@@ -6,7 +6,10 @@
 // colour), Stock gives the very same stock material back, a ghost's stand-in or a blackout silhouette is left alone / the paint
 // under the ghost changes, a Legendary car keeps its gold, dents move the same panels with a blue hub as with a stock one, nothing
 // is written onto a car's entry, the rules' fingerprint does not include the module, the choice is kept in localStorage (and
-// survives a fresh load), works with no storage, and is ignored with Progress.noSave. No picture (scripts/shots.mjs).
+// survives a fresh load), works with no storage, and is ignored with Progress.noSave. DESIGNS (tyre + hub presets: sidewall rings,
+// red tyres): the same for every design on every car (a ring per hubbed tyre, 32 triangles, one shared geometry per shape; rubber
+// cloned; stock shared materials never changed; Stock gives everything back and removes the rings), plus the ghost, a silhouette,
+// dents, the suspension finder, the z-fight finder, and storage under its own key. No picture (scripts/shots.mjs).
 //   node scripts/.wheelcosmetic-check.mjs            (add a car id to see only that car)
 import { createServer } from 'vite';
 import { tmpdir } from 'node:os';
@@ -138,6 +141,130 @@ try {
     }
   }
 
+
+  // ---- DESIGNS ----
+  {
+    const D = W.WHEEL_DESIGNS, ids = D.map(d => d.id);
+    check(D.length >= 5 && D.length <= 8 && D[0].id === 'stock', 'the designs: ' + ids.join(', '));
+    check(W.wheelDesign() === 'stock', 'a fresh visit: design Stock');
+    const hubbed = models.filter(({ car, hubs }) => !car.legend && hubs.length);
+    const ringsOf = (model) => { const r = []; model.traverse(n => { if (n.userData.wheelRing) r.push(n); }); return r; };
+    const hubbedTyres = ({ model }) => new Set(model.userData.wheelHubs.info.map(t => t.tyre)).size;
+    for (const design of D.slice(1)) {
+      W.setWheelDesign(design.id);
+      check(W.wheelDesign() === design.id, design.id + ': a change takes at once');
+      const bad = [], geos = new Set(); let rings = 0, tris = new Set(), tyresRed = 0;
+      for (const { car, model, snap, hubs } of models) {
+        const mine = ringsOf(model), found = model.userData.wheelHubs;
+        const expect = design.ring ? found.info.reduce((n, t) => n + (t.outer ? 1 : 2), 0) : 0;
+        if (mine.length !== expect) bad.push(car.id + ' rings ' + mine.length + '/' + expect);
+        if (car.legend || !hubs.length) { if (mine.length) bad.push(car.id + ' left-stock car has rings'); }
+        for (const r of mine) { rings++; geos.add(r.geometry); tris.add(r.geometry.index.count / 3); if (!found.info.some(t => t.tyre === r.parent)) bad.push(car.id + ' ring not on a hubbed tyre'); }
+        const partSet = new Set(found.parts.map(p => p.mesh)), hubSet = new Set(hubs.map(h => h.mesh));
+        model.traverse(n => {
+          if (!n.isMesh || n.userData.wheelRing) return;
+          const was = snap.get(n);
+          if (partSet.has(n) && design.tyre !== null) { tyresRed++; if (n.material === was.material || n.material.color.getHex() !== design.tyre) bad.push(car.id + ' rubber not ' + design.tyre.toString(16)); }
+          else if (hubSet.has(n) && design.hub !== null) { if (n.material === was.material || n.material.color.getHex() !== design.hub) bad.push(car.id + ' hub not the design hub'); }
+          else if (n.material !== was.material) bad.push(car.id + ' an unrelated part changed');
+        });
+        for (const [, st] of snap) if (st.material.color && st.material.color.getHex() !== st.hex) bad.push(car.id + ' a stock material was mutated');
+      }
+      check(!bad.length, design.id + ': a ring on every hubbed tyre only, rubber / hubs clones in the design colour, nothing else changed, no stock material mutated' + (bad.length ? ' (' + bad.slice(0, 5).join('; ') + ')' : ''));
+      if (design.ring) check(geos.size === 1 && [...tris].join() === '32', design.id + ': ' + rings + ' rings share ONE geometry of ' + [...tris].join() + ' triangles each');
+      if (design.tyre !== null) check(tyresRed > 0 && models.every(({ model }) => { let ok = true; for (const t of model.userData.wheelHubs.info) if (t.tyre.material.color.getHex() !== design.tyre) ok = false; return ok; }), design.id + ': every hubbed tyre wears the design colour (' + tyresRed + ' rubber parts)');
+      // a hub colour chosen apart wins; Stock hub colour leaves the design's hubs
+      if (design.hub !== null) {
+        W.setWheelColour('green');
+        check(hubbed.every(({ model }) => model.userData.wheelHubs.hubs.every(h => h.mesh.material.color.getHex() === hexOf('green'))), design.id + ': a chosen hub colour (Green) wins over the design hub');
+        check(design.tyre === null || hubbed.every(({ model }) => model.userData.wheelHubs.info.every(t => t.tyre.material.color.getHex() === design.tyre)), design.id + ': ...and the tyres keep the design');
+        W.setWheelColour('stock');
+      }
+    }
+    // the hit rate of designs: cars that get a design / cars with tyres
+    W.setWheelDesign('whitewall');
+    const cover = hubbed.filter(m => ringsOf(m.model).length).length, tyresAll = models.reduce((n, m) => n + (m.car.legend ? 0 : W.findHubs(m.model).tyres.length), 0), tyresDone = hubbed.reduce((n, m) => n + hubbedTyres(m), 0);
+    console.log('        designs reach ' + cover + ' cars; ' + tyresDone + ' of ' + tyresAll + ' tyres of the non-Legendary cars; Legendary and cars with no hub stay stock: ' + (models.length - cover));
+    if (!only) check(tyresDone / tyresAll >= 0.95, 'designs reach 95% or more of the tyres');
+    // Stock restores everything
+    W.setWheelDesign('stock');
+    check(models.every(({ model, snap }) => { let ok = !ringsOf(model).length; model.traverse(n => { if (n.isMesh && n.material !== snap.get(n)?.material) ok = false; }); return ok; }), 'design Stock removes every ring and puts every very same stock material back');
+    // back and forth does not pile up rings
+    for (const id of ['whitewall', 'redline', 'whitewall']) W.setWheelDesign(id);
+    check(models.every(m => ringsOf(m.model).length === (m.model.userData.wheelHubs.info.reduce((n, t) => n + (t.outer ? 1 : 2), 0))), 'changing design again and again leaves one set of rings');
+    W.setWheelDesign('stock');
+
+    // a model BUILT while a design is on is dressed as it is built
+    W.setWheelDesign('redwhite');
+    const born = build(cars.find(c => c.id === 'commuter') || hubbed[0].car);
+    check(ringsOf(born).length === 0 && born.userData.wheelHubs.hubs.every(h => h.mesh.material.color.getHex() === 0xf4f4f2) && born.userData.wheelHubs.info.every(t => t.tyre.material.color.getHex() === 0xd8262b), 'a car built under Red tyres, white hubs wears them from the start');
+    W.setWheelDesign('goldwall');
+    const born2 = build(cars.find(c => c.id === 'commuter') || hubbed[0].car);
+    check(ringsOf(born2).length > 0 && born2.userData.wheelHubs.hubs.every(h => h.mesh.material.color.getHex() === 0xd9a92a), 'a car built under Gold hubs, whitewall wears them from the start');
+
+    // the ghost and a blackout
+    {
+      const m = hubbed.find(({ car }) => car.id === 'commuter') || hubbed[0], found = m.model.userData.wheelHubs, tyre = found.info[0].tyre;
+      const GHOST = new THREE.MeshLambertMaterial({ color: 0xdfe9ff });
+      W.setWheelDesign('stock');
+      tyre.userData.solidMat = tyre.material; tyre.material = GHOST; // (ghostify on)
+      W.setWheelDesign('redwhite');
+      check(tyre.material === GHOST && tyre.userData.solidMat.color.getHex() === 0xd8262b, 'a ghost: the stand-in stays on a tyre, the paint under it turns red');
+      W.setWheelDesign('whitewall');
+      const gr = ringsOf(m.model).filter(r => r.parent === tyre);
+      check(gr.length > 0 && gr.every(r => r.material === GHOST && r.userData.solidMat), 'a ring added during a ghost is pale like the rest, its own white under it');
+      tyre.material = tyre.userData.solidMat; tyre.userData.solidMat = null; for (const r of gr) { r.material = r.userData.solidMat; r.userData.solidMat = null; } // (ghostify off)
+      W.setWheelDesign('stock');
+      check(tyre.material === found.info[0].stock && !ringsOf(m.model).length, 'after the ghost, Stock gives the tyre back and the rings go');
+      const sil = silhouetteFor(tyre.material);
+      tyre.material = sil;
+      W.setWheelDesign('redline');
+      check(tyre.material === sil && !ringsOf(m.model).some(r => r.parent === tyre), 'a blacked-out tyre is left alone and gets no ring');
+      tyre.material = found.info[0].stock;
+      W.setWheelDesign('stock');
+    }
+
+    // the suspension finder and the dents leave the ring alone
+    {
+      const { prepareSuspension } = await load('render/carsuspension.js');
+      const sig = (model) => { let h = 0, n = 0; model.traverse(x => { if (x.isMesh && !x.userData.wheelRing) { const p = x.geometry.attributes.position; for (let i = 0; i < p.count; i++) { h += p.getX(i) * 1.3 + p.getY(i) * 2.1 + p.getZ(i) * 3.7; n++; } } }); return h.toFixed(4) + '/' + n; };
+      for (const id of ['commuter', 'pickup', 'sport', 'steamwagon', 'coach', 'woody'].filter(id => cars.some(c => c.id === id))) {
+        const car = cars.find(c => c.id === id);
+        W.setWheelDesign('stock');
+        const a = build(car); a.updateMatrixWorld(true); const sa = prepareSuspension(a);
+        dentModel(a, a.userData.body, 1); const da = sig(a);
+        W.setWheelDesign('whitewall');
+        const b = build(car); b.updateMatrixWorld(true); const sb = prepareSuspension(b);
+        const ringGeo = ringsOf(b)[0]?.geometry, before = ringGeo && ringGeo.attributes.position.array.slice();
+        dentModel(b, b.userData.body, 1);
+        check(sa.wheels === sb.wheels && sa.how === sb.how && sa.plantedMeshes.length === sb.plantedMeshes.length && sa.squash.length === sb.squash.length, id + ': the suspension finder sees the same wheels with rings on (' + sb.wheels + ', ' + sb.how + ')');
+        check(sig(b) === da, id + ': at full damage the same panels move with rings as without');
+        check(!ringGeo || before.every((v, i) => v === ringGeo.attributes.position.array[i]), id + ': a dent never moves a ring (the shared geometry is untouched)');
+        dentModel(b, b.userData.body, 0);
+        check(ringsOf(b).length > 0, id + ': the rings are still on after a dent and a repair');
+        W.setWheelDesign('stock');
+      }
+    }
+
+    // z-fighting: the finder reports nothing new with rings on
+    {
+      const { findZFights } = await load('render/zfight.js');
+      let worse = [];
+      for (const id of ['commuter', 'pickup', 'sport', 'steamwagon', 'coach', 'woody', 'hatch'].filter(id => cars.some(c => c.id === id))) {
+        const car = cars.find(c => c.id === id);
+        W.setWheelDesign('stock');
+        const a = build(car); a.updateMatrixWorld(true);
+        W.setWheelDesign('goldwall');
+        const b = build(car); b.updateMatrixWorld(true);
+        const na = findZFights(a).length, nb = findZFights(b).length;
+        if (nb > na) worse.push(id + ' ' + na + '->' + nb);
+      }
+      check(!worse.length, 'the z-fight finder finds nothing new with rings on, 5 mm off the tyre (' + (worse.join('; ') || 'same') + ')');
+    }
+    W.setWheelDesign('stock');
+    W.setWheelColour('stock');
+  }
+
   // nothing written onto a car, nothing in the fingerprint
   check(cars.every(car => plain(car) === entryBefore.get(car)), 'no car entry changed (' + cars.length + ' cars)');
   const { logicFiles } = await import('../vite.config.js');
@@ -174,6 +301,35 @@ try {
   quiet.setWheelColour('red');
   check(quiet.wheelColour() === 'red' && raw.getItem(W.KEY) === 'gold', 'and a change in it lasts the visit only: the saved Gold is not overwritten');
   Progress.noSave = false;
+
+  // the design is kept too, under its own key
+  {
+    const raw2 = globalThis.localStorage;
+    server.moduleGraph.invalidateAll();
+    const w1 = await load('render/wheelcosmetic.js');
+    w1.setWheelDesign('redline');
+    check(raw2.getItem(w1.KEY_DESIGN) === 'redline' && w1.KEY_DESIGN !== w1.KEY, 'the design is kept in localStorage under ' + w1.KEY_DESIGN);
+    server.moduleGraph.invalidateAll();
+    check((await load('render/wheelcosmetic.js')).wheelDesign() === 'redline', 'a fresh load finds Redline');
+    raw2.setItem(w1.KEY_DESIGN, 'nonsense');
+    server.moduleGraph.invalidateAll();
+    check((await load('render/wheelcosmetic.js')).wheelDesign() === 'stock', 'a saved design it does not know: Stock');
+    globalThis.localStorage = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); } };
+    server.moduleGraph.invalidateAll();
+    const b2 = await load('render/wheelcosmetic.js');
+    let threw2 = false;
+    try { check(b2.wheelDesign() === 'stock', 'no storage: design Stock'); b2.setWheelDesign('whitewall'); check(b2.wheelDesign() === 'whitewall', 'no storage: a design change still holds for the visit'); } catch { threw2 = true; }
+    check(!threw2, 'no storage: nothing throws (design)');
+    globalThis.localStorage = raw2;
+    raw2.setItem(w1.KEY_DESIGN, 'redline');
+    server.moduleGraph.invalidateAll();
+    const q2 = await load('render/wheelcosmetic.js'), { Progress: P2 } = await load('progress.js');
+    P2.noSave = true;
+    check(q2.wheelDesign() === 'stock', 'with test switches (Progress.noSave) the saved Redline is ignored');
+    q2.setWheelDesign('whitewall');
+    check(q2.wheelDesign() === 'whitewall' && raw2.getItem(w1.KEY_DESIGN) === 'redline', 'and a design change lasts the visit only');
+    P2.noSave = false;
+  }
 } finally {
   await server.close();
 }

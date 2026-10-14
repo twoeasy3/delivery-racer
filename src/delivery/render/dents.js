@@ -106,7 +106,7 @@ const meshesOf = (group) => {
   const list = [], fx = group.userData.lamps?.lamps;
   const walk = (node) => {
     if (node !== group && (node === fx || node.userData.body || node.userData.animate)) return;
-    if (node.isMesh && node.geometry?.attributes?.position && !node.isInstancedMesh) list.push(node);
+    if (node.isMesh && node.geometry?.attributes?.position && !node.isInstancedMesh && !node.userData.wheelRing) list.push(node); // (a wheel design's sidewall ring: rigid with its tyre)
     for (const child of node.children) walk(child);
   };
   walk(group);
