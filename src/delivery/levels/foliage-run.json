@@ -1,7 +1,7 @@
 {
   "id": "foliage-run",
   "theme": "autumn",
-  "clock": { "good": 200, "evil": 150 },
+  "clock": { "good": 185, "evil": 140 },
   "tip": 220,
   "lanes": {
     "north": 3,
@@ -98,12 +98,8 @@
       "grade": -0.03
     },
     {
-      "length": 350,
+      "length": 380,
       "curve": 0.0016
-    },
-    {
-      "length": 360,
-      "curve": 0
     }
   ],
   "tunnels": [
@@ -154,8 +150,8 @@
       "to": 3640
     },
     {
-      "from": 3930,
-      "to": 3980,
+      "from": 3860,
+      "to": 3900,
       "lane": 2
     }
   ],
@@ -623,54 +619,14 @@
       "lane": 3
     },
     {
-      "type": "cash20",
-      "s": 3973,
-      "lane": 3
-    },
-    {
-      "type": "cash5",
-      "s": 4090,
-      "lane": 2
-    },
-    {
-      "type": "cash10",
-      "s": 4090,
-      "lane": 3
-    },
-    {
-      "type": "cash5",
-      "s": 4090,
-      "lane": 4
-    },
-    {
       "type": "turbo",
-      "s": 4120,
+      "s": 3930,
       "lane": 3
     },
     {
       "type": "cash10",
-      "s": 4217,
+      "s": 3995,
       "lane": 3
-    },
-    {
-      "type": "cash10",
-      "s": 4217,
-      "lane": 4
-    },
-    {
-      "type": "cash5",
-      "s": 4339,
-      "lane": 2
-    },
-    {
-      "type": "cash10",
-      "s": 4339,
-      "lane": 3
-    },
-    {
-      "type": "cash5",
-      "s": 4339,
-      "lane": 4
     }
   ],
   "obstacles": [
@@ -740,7 +696,7 @@
       "kind": "bale"
     },
     {
-      "s": 4010,
+      "s": 3960,
       "lane": 2,
       "kind": "crate"
     }

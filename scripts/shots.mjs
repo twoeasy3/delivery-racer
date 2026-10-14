@@ -101,6 +101,7 @@ if (opt('levels', false) || opt('cars', false) || shots.some(([, address]) => ad
   Object.assign(CINE, { 'turbo-quay': '&at=1250&ff=2&car=quadturbo' }); // (Thursday's: the quay, a gantry crane over the level crossing, the Quad-Turbo)
   Object.assign(CINE, { 'neon-edge': '&at=300&ff=2&car=knifeedge' }); // (Friday's: the elevated expressway at night between the towers, the Knife-Edge on it)
   Object.assign(CINE, { 'endurance-road': '&at=60&ff=2&car=windsong&cineout=-1&cineup=10&cineback=30' }); // (Saturday's: the grandstand on the start straight, the Wind-Song and its rival, from above the road: the usual place is inside the stand)
+  Object.assign(CINE, { 'foliage-run': '&at=1360&ff=1&cineout=-1&cineup=9&cineback=26' }); // (Foliage Run, a hidden level: the covered bridge ahead over its stream, the forest in the fall on both sides, leaves coming down)
   Object.assign(CINE, { 'hong-kong': '&at=400&ff=1&car=postvan' }); // (Hong Kong Harbour: the first ferry pier's clock tower and lanterns ahead on the promenade, the neon and the towers on the left; a tier-6 car, so the level starts)
   if (opt('levels', false)) {
     levels.LEVELS.forEach((level, i) => {
@@ -108,7 +109,7 @@ if (opt('levels', false) || opt('cars', false) || shots.some(([, address]) => ad
     });
     // (an event's own levels, levels.js EVENT_MAPS: on no menu list, played from the address as a hidden level; their stage's card
     // shows <map id>.jpg, menustage.js shotId)
-    for (const id of Object.keys(levels.EVENT_MAPS || {})) {
+    for (const id of [...Object.keys(levels.EVENT_MAPS || {}), 'foliage-run']) { // (and the hidden levels of the themes: Foliage Run)
       if (only(opt('levels')) && only(opt('levels')).includes(id)) shots.push([id, `?autostart${side}&hidden=${id}&ghost&cine${FF(id)}${CINE[id] || ''}`, !!PAIR.folder]);
     }
   }
