@@ -585,6 +585,7 @@ export const IDEA_MODELS_3 = {
     box(lean, lambert(0xf2d21f), 0.24, 0.08, 0.02, 0, 0.78, -L * 0.93 - 0.1);            // its number plate
     group.userData = {
       body,
+      lampFrame: lean, // (the body the lamps ride on: render/carlights.js frame)
       animate: (t) => { lean.rotation.z = Math.sin(t * 0.9) * 0.05 + Math.sin(t * 2.3) * 0.01; },
       livery: (evil) => accent.color.setHex(evil ? 0xd8dce2 : 0xf07c1c),
     };

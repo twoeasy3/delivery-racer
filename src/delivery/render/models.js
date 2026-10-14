@@ -1604,6 +1604,7 @@ export const MODELS = {
     }
     group.userData = {
       body,
+      lampFrame: shell, // (the body the lamps ride on: render/carlights.js frame)
       animate: (t) => {
         shell.rotation.z = Math.sin(t * 1.4) * 0.014; // (soft springs: it wallows)
         shell.position.y = Math.sin(t * 2.8) * 0.014;
