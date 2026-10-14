@@ -49,6 +49,15 @@ NEVER above 4,000. The last two idea cars came out at 3,208 and 5,868 triangles,
 - Measure when you are done (a short script like the one in scripts/.suspension-check.mjs: traverse the model, count
   meshes and triangles) and put the numbers in the CHECKLIST item. If over budget, trim before reporting.
 
+## Proportions: not narrow (the owner, 14-Oct: "all of these recent idea models look narrow... fix them to be more like the median")
+Measured over the roster (full model box, wheels and mirrors included): the median car is 2.09 m wide, 80% are between 1.62 and
+2.72 m, and the median width / length ratio is 0.44 (80% between 0.35 and 0.54). The first idea cars of 14-Oct came out thin
+(widths of 1.07 to 2.06 m on 1.65 to 6.6 m lengths) and had to be widened. So: for the real car you copy, take its real length,
+then make the model's overall width (wheels and mirrors included) about 0.40 to 0.46 of its length unless it is a deliberately
+narrow vehicle, and compare with existing cars of similar length (measure a few with a Box3.setFromObject script like the one in
+scripts/.suspension-check.mjs). The cap on an idea's width is 3 m (hw 1.5; scripts/.ideas-check.mjs). Set `hw`, `hl`, `height` in
+the entry to match the model, and re-measure the lamp placements if you change the width later.
+
 ## No panel lines, and do not try too hard (the owner, 13-Oct)
 - NO PANEL LINES. Do not model door shut lines, bonnet / boot / tailgate / fuel-flap lines, panel gaps, seams, or thin
   strips of any kind that only fake a join. They never read at card size, they cost triangles and shapes, and they made
@@ -78,8 +87,7 @@ name: positions, sizes, round or square, mirrored pairs, which tail lamp brakes,
 night beams, brake lights and indicators sit on the model's own lamp shapes instead of the generic hitbox guess. A variant that
 reuses a base car's model (e.g. the Legendary variants) uses the base model's entry. Part of "done" for a car: the entry, the
 before/after stills (`?lamps=show`), and a line in the CHECKLIST item. How to do it: LAMP-PLACEMENT-GUIDE.md.
-STATUS NOTE: the lamp code and the guide are on branch claude/car-lights until the owner merges it; until then, define the
-lamp positions in your report (measured from the model: centre, size, brake lamp, indicator flash place) so they can be entered.
+(The lamp code and the guide are on main now; the per-car table is spread from render/carlights-batch*.js files: add your own new file, carlights-batch<yours>.js, and one import + spread line in render/carlights.js.)
 
 ## Defects that are NOT allowed
 - No unconnected parts and no floating parts (a lamp, mirror, trim strip, spat, plate or stalk must touch/sit in the
@@ -88,7 +96,7 @@ lamp positions in your report (measured from the model: centre, size, brake lamp
 - No missing windscreens or windows (front, rear and sides all glazed; pillars must follow the glass).
 - No missing lights: headlamps at the front, tail lamps AND brake lamps at the rear (and indicators/reversing lamps where
   the real car has them), all visibly seated in the body.
-- Lamp EFFECTS (brake glow, indicators, night glow) for a new car: see LAMP-PLACEMENT-GUIDE.md (code on `claude/car-lights` until merged).
+- Lamp EFFECTS (brake glow, indicators, night glow) for a new car: see LAMP-PLACEMENT-GUIDE.md.
 - Wheels planted on the floor and found by the suspension (node scripts/.suspension-check.mjs <id>).
 
 ## How to inspect (do it for EVERY car, before committing it as done)
@@ -107,8 +115,10 @@ for modelling: fix a model in its code; when you change a model that has a patch
 unmatched: tell the owner, do not delete the patch).
 
 ## Wiring and checks
-- Follow the ideas.js conventions (entry fields, `model` name, the note/tooltip rules in the README); update the idea
-  count in scripts/.ideas-check.mjs and the ideas.js header.
+- Follow the ideas.js conventions (entry fields, `model` name, the note/tooltip rules in the README). Put your entries in your own
+  new file ideasBatch<yours>.js and models in render/ideaModelsBatch<yours>.js with one-line registrations in ideas.js and
+  render/ideaModels.js (the one-liners conflict at merge; the orchestrator keeps both). The ideas-check no longer has a fixed count:
+  do not edit it; add a line to the ideas.js header only if the file asks for it.
 - Run: node --check and eslint on changed files, node scripts/.ideas-check.mjs, .suspension-check, .descriptions-check,
   .words-check, vite build.
 - Add a CHECKLIST.md item (next free number on main) saying what was and was NOT verified, with shapes/triangles per car.
