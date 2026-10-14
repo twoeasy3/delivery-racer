@@ -238,8 +238,8 @@ export const HALLOWEEN_OBSTACLES = {
     sheet.computeVertexNormals();
     put(g, sheet, lambert(0xf1f0f6, { emissive: 0x2a2a3c, side: THREE.DoubleSide }));
     const ink = glow(0x0e0e14);
-    for (const x of [-0.27, 0.27]) { const eye = put(g, new THREE.SphereGeometry(0.13, 8, 6), ink, x, 1.12, 0.72); eye.scale.set(0.8, 1.35, 0.3); }
-    const mouth = put(g, new THREE.SphereGeometry(0.15, 8, 6), ink, 0, 0.8, 0.9); mouth.scale.set(0.9, 1.2, 0.3);
+    for (const x of [-0.27, 0.27]) { const eye = put(g, new THREE.SphereGeometry(0.16, 8, 6), ink, x, 1.1, 0.86); eye.scale.set(0.8, 1.35, 0.4); }
+    const mouth = put(g, new THREE.SphereGeometry(0.17, 8, 6), ink, 0, 0.78, 1.0); mouth.scale.set(0.9, 1.2, 0.4);
     return shadow(g, 1.15);
   },
 };
