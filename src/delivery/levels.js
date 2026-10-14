@@ -167,7 +167,9 @@
 //                                  'cameraDolly', 'mooringPosts', 'fuelDrum', 'popcornCart', 'barrel',
 //                                  'chairStack', 'riceBasket', 'present', 'toyDrum', 'sackStack', 'beachBall',
 //                                  'tumbleweed', 'cafeTable', 'wheelieBin', 'snowdrift', 'brimstone', 'flagStand',
-//                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's). All of them are on the Gimmicks page, last,
+//                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'wineCrates', 'hayRoll', 'terracottaPot' (Tuscany's). All of them are on the Gimmicks page, last,
+//                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'jerryStack', 'tentRoll' and
+//                                  'rallyFlag' (the desert's: stacked jerrycans, a rolled tent, a rally marker flag). All of them are on the Gimmicks page, last,
 //                                  under Road dressing (gimmicks.html?group=road-dressing)
 //   dropBears  { from, to, count } drop bears up in the trees over that stretch, dropping onto the
 //              road as the player comes near (see CONFIG.dropBear)
@@ -516,6 +518,8 @@ import fallout from './levels/fallout.json';
 import shift from './levels/shift.json';
 import descent from './levels/descent.json';
 import monsoon from './levels/monsoon.json';
+import chiantiRun from './levels/chianti-run.json'; // (hidden: HIDDEN_LEVELS below)
+import dakarDash from './levels/dakar-dash.json';
 
 // the numbered levels, and the special ones (S1, S2...), which always come after them on the
 // menu. All of them unlock in this order, each by delivering the one before, and saved progress
@@ -617,7 +621,8 @@ export const SCREENSAVER_LEVEL = chaos;
 // the hidden levels, so they are checked as every level is and can be tried from the address (?hidden=pocket-town, a run
 // that banks nothing); played for real only as the event's stage (events.js: a level of its own, id concept-strike-d<n>)
 export const EVENT_MAPS = { 'pocket-town': pocketTown, 'solstice-cliffs': solsticeCliffs, 'grand-boulevard': grandBoulevard, 'turbo-quay': turboQuay, 'neon-edge': neonEdge, 'endurance-road': enduranceRoad };
-export const HIDDEN_LEVELS = { testbed, 'grand-prix': grandPrix, 'gimmick-road': gimmickRoad, 'gimmick-road-2': gimmickRoad2, 'gimmick-road-3': gimmickRoad3, 'jungle-highway': jungleHighway, ...EVENT_MAPS };
+export const HIDDEN_LEVELS = { testbed, 'grand-prix': grandPrix, 'gimmick-road': gimmickRoad, 'gimmick-road-2': gimmickRoad2, 'gimmick-road-3': gimmickRoad3, 'chianti-run': chiantiRun, 'jungle-highway': jungleHighway, ...EVENT_MAPS };
+HIDDEN_LEVELS['dakar-dash'] = dakarDash; // Dakar Dash (the desert dunes): hidden until the owner reveals it, ?hidden=dakar-dash
 // the class every race is run in: 'f1', 'gt' (GT road cars) or 'lmp' (Le Mans prototypes): the player's car
 // and the grid (the menu's Race cars button; ?gt or ?lmp for that class whatever it says)
 export const RACE_CLASSES = { f1: 'F1', gt: 'GT', lmp: 'LMP' };

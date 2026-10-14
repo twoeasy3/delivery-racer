@@ -119,17 +119,19 @@ const mergeByMaterial = (parent, keep) => {
     for (const name of Object.keys(geo.attributes)) if (name !== 'position' && name !== 'normal' && name !== 'uv') geo.deleteAttribute(name);
     if (!geo.attributes.uv) geo.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(geo.attributes.position.count * 2), 2));
     geo.clearGroups();
-    if (!buckets.has(mesh.material)) buckets.set(mesh.material, []);
-    buckets.get(mesh.material).push(geo);
+    const key = mesh.userData.plate ? mesh.userData.plate : mesh.material; // (a number plate is its own mesh per end, tagged userData.plate: render/platecosmetic.js hides it)
+    if (!buckets.has(key)) buckets.set(key, { material: mesh.material, plate: mesh.userData.plate, geos: [] });
+    buckets.get(key).geos.push(geo);
     mesh.geometry.dispose();
     parent.remove(mesh);
   }
   const out = new Map();
-  for (const [material, geos] of buckets) {
+  for (const { material, plate, geos } of buckets.values()) {
     const mesh = new THREE.Mesh(geos.length > 1 ? mergeGeometries(geos, false) : geos[0], material);
     for (const geo of geos) if (geos.length > 1) geo.dispose();
+    if (plate) mesh.userData.plate = plate;
     parent.add(mesh);
-    out.set(material, mesh);
+    if (!plate) out.set(material, mesh);
   }
   return out;
 };
@@ -411,7 +413,7 @@ export const ORIG3_MODELS = {
     rod(group, chrome, 0.03, 0.08, 0, 1.13, L - 0.06, 'y', 6);
     box(group, chrome, w + 0.02, 0.14, 0.14, 0, 0.4, L + 0.02);                            // bumpers
     box(group, chrome, w + 0.02, 0.14, 0.14, 0, 0.4, -L - 0.02);
-    box(group, plate, 0.46, 0.13, 0.02, 0, 0.66, -L - 0.005);                              // the number plate
+    box(group, plate, 0.46, 0.13, 0.02, 0, 0.66, -L - 0.005).userData.plate = 'rear';       // the number plate
     decal(group, cloth, cw * 0.62, 0.36, 0, 1.18, -2.7 - 0.05 - 0.006, '-z');                // the rear door's curtained window
     const keep = new Set();
     const geo = wheelGeo(R, 0.28), tyre = lambert(0x141414), hub = lambert(0xc4c8ce);
@@ -484,7 +486,7 @@ export const ORIG3_MODELS = {
     for (const s of [-1, 1]) box(shell, chrome, 0.04, 0.04, 0.24, s * 0.26, 0.42, 1.88);
     box(shell, chrome, 0.9, 0.06, 0.06, 0, 0.44, -2.02);                                           // and one behind
     for (const s of [-1, 1]) box(shell, chrome, 0.04, 0.04, 0.16, s * 0.4, 0.44, -1.94);
-    box(shell, plate, 0.3, 0.12, 0.02, 0, 0.64, -1.965);                                           // the number plate
+    box(shell, plate, 0.3, 0.12, 0.02, 0, 0.64, -1.965).userData.plate = 'rear';                    // the number plate
     // the front axle out in the open: a dropped beam and the spring across over it
     box(shell, trim, 1.36, 0.07, 0.07, 0, RF + 0.02, L * 0.66);
     box(shell, chrome, 0.9, 0.04, 0.09, 0, 0.5, L * 0.66);
@@ -544,9 +546,9 @@ export const ORIG3_MODELS = {
     for (const y of [0.66, 0.72, 0.78]) box(group, chrome, 0.68, 0.018, 0.02, 0, y, L + 0.025);
     box(group, bumper, w + 0.02, 0.24, 0.16, 0, 0.42, L + 0.02);                             // the pale bumper,
     box(group, trim, w * 0.5, 0.06, 0.03, 0, 0.38, L + 0.1);                                 // its slot of an intake,
-    box(group, plate, 0.44, 0.12, 0.02, 0, 0.47, L + 0.105);                                 // and the plate on it
+    box(group, plate, 0.44, 0.12, 0.02, 0, 0.47, L + 0.105).userData.plate = 'front';          // and the plate on it
     box(group, bumper, w + 0.02, 0.24, 0.16, 0, 0.42, -L - 0.02);                            // the rear bumper,
-    box(group, plate, 0.44, 0.13, 0.02, 0, 0.72, -L - 0.005);                                // the plate over it,
+    box(group, plate, 0.44, 0.13, 0.02, 0, 0.72, -L - 0.005).userData.plate = 'rear';         // the plate over it,
     box(group, glass, w - 0.42, 0.56, 0.02, 0, 1.48, -L - 0.005);                            // its window,
     box(group, BRAKE, 0.36, 0.05, 0.03, 0, 1.82, -L - 0.005);                                // and a brake lamp over it
     const keep = new Set();
@@ -619,9 +621,9 @@ export const ORIG3_MODELS = {
     for (const x of [-0.42, 0.42]) box(group, bar, 0.08, 0.62, 0.08, x, 1.34, 2.72);
     box(group, bar, 0.92, 0.08, 0.08, 0, 1.62, 2.72);
     for (const s of [-1, 1]) box(group, bar, 0.08, 0.08, 0.22, s * 0.42, 1.62, 2.64);
-    box(group, plate, 0.4, 0.12, 0.02, 0, 0.98, 2.775);
+    box(group, plate, 0.4, 0.12, 0.02, 0, 0.98, 2.775).userData.plate = 'front';
     box(group, chrome, w + 0.06, 0.18, 0.18, 0, 0.98, -2.62);                                 // a step bumper behind
-    box(group, plate, 0.4, 0.14, 0.02, 0, 0.98, -2.715);
+    box(group, plate, 0.4, 0.14, 0.02, 0, 0.98, -2.715).userData.plate = 'rear';
     for (const z of [FZ, RZ]) rod(group, trim, 0.07, 1.7, 0, R, z, 'x', 8);                   // the axles
     const keep = new Set();
     const geo = wheelGeo(R, 0.42), tyre = lambert(0x141414), hub = lambert(0xb8bcc2);
@@ -694,7 +696,7 @@ export const ORIG3_MODELS = {
       box(shell, TAIL, 0.14, 0.14, 0.03, s * 0.84, 1.02, -2.495);
       box(shell, BRAKE, 0.14, 0.12, 0.03, s * 0.84, 0.89, -2.495);
     }
-    box(shell, plate, 0.34, 0.13, 0.02, 0, 0.8, -2.495);
+    box(shell, plate, 0.34, 0.13, 0.02, 0, 0.8, -2.495).userData.plate = 'rear';
     // rust, eating the paint: along the bottoms of the doors, round both wheels, the back corners and the tailgate's
     // bottom; each patch fades out in flecks before its decal's edge (see rust), and both flanks match (mirrored)
     const rusty = new THREE.MeshLambertMaterial({ map: rust(), transparent: true, depthWrite: false });

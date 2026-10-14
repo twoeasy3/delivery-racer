@@ -30,6 +30,7 @@
 // keeps the part's own paint in userData.solidMat, which is the one changed, so the ghost fades back to the new colour.
 import * as THREE from 'three';
 import { Progress } from '../progress.js';
+import { registerCosmetics, ownsCosmetic } from './cosmetics.js';
 
 export const KEY = 'delivery.wheelcolour';
 export const WHEEL_COLOURS = [
@@ -62,6 +63,14 @@ const designById = (id) => WHEEL_DESIGNS.find(d => d.id === id) || WHEEL_DESIGNS
 
 let stored = null, visit = null, storedDesign = null, visitDesign = null; // the saved id (read the first time it is wanted); the id chosen in a visit that saves nothing
 const asked = typeof location !== 'undefined' ? /[?&]wheelcolour=(\w+)/.exec(location.search)?.[1] : null; // (?wheelcolour=red: a colour for the visit, for stills; never saved)
+// a SAVED pair that is a wheel set the player does not own (a save without it, a cosmetic made non-free) wears Stock instead; the
+// saved ids are left as they are, so owning it again brings it back. (Only the saved choice: ?wheelcolour= and test visits are the visit's own.)
+const savedPairOwned = () => {
+  if (stored === null) { stored = 'stock'; try { stored = byId(localStorage.getItem(KEY)).id; } catch { /* (no storage: stock) */ } }
+  if (storedDesign === null) { storedDesign = 'stock'; try { storedDesign = designById(localStorage.getItem(KEY_DESIGN)).id; } catch { /* (no storage: stock) */ } }
+  const set = WHEEL_SETS.find(s => s.design === storedDesign && s.hub === stored);
+  return !set || ownsCosmetic('wheels', set.id);
+};
 export const wheelColour = () => {
   if (asked) return byId(asked).id;
   if (Progress.noSave) return visit || 'stock'; // (a test switch is on, set after this module loads: stock wheels, and a change lasts the visit)
@@ -69,7 +78,7 @@ export const wheelColour = () => {
     stored = 'stock';
     try { stored = byId(localStorage.getItem(KEY)).id; } catch { /* (no storage: stock) */ }
   }
-  return stored;
+  return savedPairOwned() ? stored : 'stock';
 };
 
 const askedDesign = typeof location !== 'undefined' ? /[?&]wheeldesign=(\w+)/.exec(location.search)?.[1] : null; // (?wheeldesign=whitewall: for stills; never saved)
@@ -80,7 +89,7 @@ export const wheelDesign = () => {
     storedDesign = 'stock';
     try { storedDesign = designById(localStorage.getItem(KEY_DESIGN)).id; } catch { /* (no storage: stock) */ }
   }
-  return storedDesign;
+  return savedPairOwned() ? storedDesign : 'stock';
 };
 
 // ---- finding the hubs ----------------------------------------------------------------------------------------------
@@ -270,6 +279,7 @@ export const WHEEL_SETS = [
   { id: 'orange-pop', name: 'Orange pop', design: 'stock', hub: 'orange' },
   { id: 'red-hot', name: 'Red hot', design: 'stock', hub: 'red' },
 ];
+registerCosmetics(WHEEL_SETS.map(s => ({ slot: 'wheels', id: s.id, name: s.name, free: true }))); // (all free today; cosmetics.js)
 export const CUSTOM_SET = 'custom';
 export const wheelSet = () => { const d = wheelDesign(), h = wheelColour(); return WHEEL_SETS.find(s => s.design === d && s.hub === h)?.id || CUSTOM_SET; };
 export const setWheelSet = (id) => {

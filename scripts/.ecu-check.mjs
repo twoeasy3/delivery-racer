@@ -26,6 +26,8 @@ try {
   const { Game, Player, Input, CONFIG: C } = g;
   const { LEVELS } = g.levels;
   const car = (id) => carById(id);
+  // (blueprints only UNLOCK an ECU now, the bank buys it, scripts/.ecu-cost-check.mjs: this checks play the car at what its blueprints reached)
+  const own = (id) => { Ecu.migrate(); Progress.data.ecuBought[id] = Ecu.reached(car(id)); Progress.save(); };
 
   // ---- the ladder
   const roster = [...CARS, ...FILLER_CARS, ...EVENT_CARS, ...(g.cars.BESPOKE_CARS || []), ...EARNED_CARS];
@@ -135,7 +137,8 @@ try {
   check(g.cars.CAR.id !== 'sport', '...and not selectable without its key');
   Progress.data.money = 1000;
   Progress.buy(sport);
-  check(Ecu.level(sport) === 2 && Ecu.unlocked(sport), '...bought (its key): plays at the ECU reached, 2');
+  check(Ecu.level(sport) === 1 && Ecu.unlocked(sport) && Ecu.reached(sport) === 2, '...bought (its key): plays at ECU1 (blueprints alone no longer raise it), ECU2 reached');
+  check(Ecu.buy(sport).ok && Ecu.level(sport) === 2, '...and ECU2 bought from the bank: plays at 2');
   check(Ecu.addBlueprints('sport', 50) === 2 && Ecu.blueprints('sport') === 55, 'blueprints past the max are kept as a count, the ECU stays at its max');
   check(Ecu.level(bubble) === 0 && !Progress.owns('bubble') && !garageCars().includes(bubble), 'a blueprint car with no blueprints: ECU0, locked, not owned, not parked');
   selectCar('bubble');
@@ -148,6 +151,7 @@ try {
   check(Ecu.max(hellrod) === 1 && Ecu.reached(hellrod) === 1 && Ecu.rarity(hellrod) === null, 'a special car: ECU1 only, no cards');
 
   // ---- the save round trip
+  own('bubble');
   const code = Progress.exportCode(), stored = Progress.saved();
   Progress.reload();
   check(Progress.saved() === stored && Ecu.blueprints('sport') === 55 && Ecu.level(bubble) === 1, 'the stored save read again: blueprints and ECUs kept');
@@ -198,7 +202,7 @@ try {
   Game.update(1 / 120);
   check(Game.respawnTotal === 5.5 && Math.abs(Game.respawn - 5.5) < 1e-9, 'wrecked at ECU1: the helicopter takes 5.5 s (' + Game.respawnTotal + ')');
   Game.toMenu();
-  Ecu.addBlueprints('sport', 5);
+  Ecu.addBlueprints('sport', 5); own('sport');
   top = drive('sport', 25);
   Player.active = false;
   Game.respawn = -1;
@@ -226,7 +230,7 @@ try {
   Progress.noSave = true;
   const mid = car('midnight');
   const { Traffic, track: { Track } } = g;
-  Ecu.addBlueprints('midnight', 5); // (ECU1 of 5)
+  Ecu.addBlueprints('midnight', 5); own('midnight'); // (ECU1 of 5)
   const at = {};
   const measure = (ecu) => {
     const want = Ecu.stats(mid, ecu);
@@ -275,7 +279,7 @@ try {
     return same;
   };
   const ok1 = measure(1);
-  Ecu.addBlueprints('midnight', 20); // (ECU5, its max)
+  Ecu.addBlueprints('midnight', 20); own('midnight'); // (ECU5, its max)
   const ok5 = measure(5);
   check(ok1 && ok5, 'the Midnight Coupe driven at ECU1 and ECU5: Player.agility, crossing, delivery, composure, Social.dangerTime are its ECU\'s, its mass the same (ECU1 agility ' +
     at[1].agility + ', crossing ' + at[1].crossing + ', delivery ' + at[1].delivery + ', shoulder ' + at[1].fuse.toFixed(2) + ' s; ECU5 ' + at[5].agility + ', ' + at[5].crossing + ', ' + at[5].delivery + ', ' + at[5].fuse.toFixed(2) + ' s)');
@@ -311,7 +315,7 @@ try {
   Game.toMenu();
   const rec = Replay.last;
   check(rec && rec.header.ecu === 1 && ecuRun === 1 && healthRun === Ecu.stats(car('hotrod'), 1).health, 'a run in the Hot Rod at ECU1: the header records ecu ' + rec?.header.ecu);
-  Ecu.addBlueprints('hotrod', 10); // (by the time it is watched, the car is at ECU3)
+  Ecu.addBlueprints('hotrod', 10); own('hotrod'); // (by the time it is watched, the car is at ECU3)
   check(Ecu.level(car('hotrod')) === 3, '...the car since raised to ECU3');
   const play = (r) => {
     live = { throttle: -1, steer: 1 }; // (the player's own hands, not heard while it plays)

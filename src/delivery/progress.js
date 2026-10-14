@@ -62,6 +62,7 @@ const fresh = () => ({
   claimed: [],     // the rewards given ('event-<id>': tiers.js claimReward), kept when the event is gone
   tierCars: {},    // the car last picked for each tier's levels while their medal is not earned, by tier (the player's own pick, `car`, is kept apart)
   blueprints: {},  // blueprints collected, by car id (ecu.js: they raise a car's ECU, and unlock a blueprint car)
+  ecuBought: {},   // the ECU each car is bought up to, above its free first (ecu.js: blueprints only unlock an upgrade, the bank pays for it); null = a save from before them, migrated by ecu.js on first use
   maxed: ['commuter'], // cars held at their MAX ECU whatever their blueprints (ecu.js): the starter car comes maxed; an old save's cars all are
   packs: {},       // card packs given and not yet opened (pending: the reveal opens them at once, or at the next menu): a count by pack id ('career', 'comet-special'...: packs.json; an old save's 'special:<event id>' is migrated: packid.js)
   packLog: [],     // the packs opened last, newest first: { kind (the pack's id), cards: [{ car, rarity, key?, featured? }] } (packs.js)
@@ -119,6 +120,9 @@ const cleanRuns = (runs) => Object.fromEntries(Object.entries(runs && typeof run
   .filter(([id, r]) => /^[a-z0-9-]{1,40}$/.test(id) && r && typeof r === 'object' && typeof r.day === 'string' && /^\d{4}-\d\d-\d\d$/.test(r.day) && Array.isArray(r.n))
   .slice(0, 20)
   .map(([id, r]) => [id, { day: r.day, n: r.n.slice(0, 20).map(x => (Number.isInteger(x) && x >= 0 && x <= 999 ? x : 0)) }]));
+// the purchased ECUs (ecu.js): { [car id]: 2..9 }; anything else (a save from before them) is null, and migrated on first use
+const cleanBought = (b) => (b && typeof b === 'object' && !Array.isArray(b)
+  ? Object.fromEntries(Object.entries(b).filter(([id, n]) => /^[A-Za-z0-9_-]{1,40}$/.test(id) && Number.isInteger(n) && n >= 1 && n <= 9).slice(0, 300)) : null);
 // a save as it was written (by any older version of the game), brought up to date
 const restore = (saved) => {
   {
@@ -140,6 +144,7 @@ const restore = (saved) => {
     // loses power: each counts as its key, maxed. A blueprint car it does not own stays locked)
     data.blueprints = Object.fromEntries(Object.entries(saved.blueprints && typeof saved.blueprints === 'object' && !Array.isArray(saved.blueprints) ? saved.blueprints : {})
       .filter(([, n]) => Number.isInteger(n) && n >= 0));
+    data.ecuBought = cleanBought(saved.ecuBought); // (null: a save from before the purchases; ecu.js migrate() fills it from the blueprints, once)
     data.maxed = [...new Set(saved.blueprints === undefined ? ['commuter', ...data.cars] : Array.isArray(saved.maxed) ? saved.maxed.map(id => RENAMED[id] || id) : ['commuter'])];
     for (let order = saved.levelOrder || 1; order < LEVEL_ORDER; order++) {
       const at = INSERTED_AT[order - 1];
@@ -164,7 +169,7 @@ const saveText = (data) => JSON.stringify({
 });
 // The cookie's share of the save (see BACKUP above): never over COOKIE_ROOM bytes as written, whatever the save
 // holds. Should even the list of cars be too long for it (hundreds of them), it goes down to the car in use
-const COOKIE_KEYS = ['money', 'unlocked', 'levelOrder', 'cars', 'car', 'claimed', 'events', 'tankPieces', 'evil', 'muted', 'touch', 'autoGas', 'autoBrake', 'raceClass', 'raceTrack', 'blueprints', 'maxed', 'shopCash', 'packBuys', 'jimBuys', 'eventRuns'];
+const COOKIE_KEYS = ['money', 'unlocked', 'levelOrder', 'cars', 'car', 'claimed', 'events', 'tankPieces', 'evil', 'muted', 'touch', 'autoGas', 'autoBrake', 'raceClass', 'raceTrack', 'blueprints', 'maxed', 'ecuBought', 'shopCash', 'packBuys', 'jimBuys', 'eventRuns'];
 const COOKIE_ROOM = 3600; // bytes of cookie value (the cap is 4096 for the name, the value and its attributes)
 const cookieText = (data) => {
   const short = Object.fromEntries(COOKIE_KEYS.map(key => [key, key === 'money' ? rounded(data.money, SAVE_STEP.money) : data[key]]));
@@ -173,6 +178,7 @@ const cookieText = (data) => {
   const bare = { ...short };
   delete bare.blueprints;
   delete bare.maxed;
+  delete bare.ecuBought;
   for (const [base, cars] of [[short, short.cars], [bare, short.cars], [bare, [...new Set(['commuter', short.car])]]]) {
     const text = encodeURIComponent(JSON.stringify({ ...base, cars }));
     if (text.length <= COOKIE_ROOM) return text;
@@ -207,6 +213,7 @@ const tidy = (saved) => {
     clean.blueprints = Object.fromEntries(Object.entries(saved.blueprints).filter(([k, n]) => word(k) && Number.isInteger(n) && n >= 0 && n <= 1e6).slice(0, 300));
     clean.maxed = [...new Set((Array.isArray(saved.maxed) ? saved.maxed : []).filter(word))].slice(0, 300);
   }
+  if (saved.ecuBought && typeof saved.ecuBought === 'object' && !Array.isArray(saved.ecuBought)) clean.ecuBought = cleanBought(saved.ecuBought); // (a code from before the purchases has none: migrated on first use)
   clean.bestTime = {};
   for (const side of ['good', 'evil']) { // (a time for a level there is, and no other)
     const times = saved.bestTime && typeof saved.bestTime === 'object' ? saved.bestTime[side] : null;
@@ -268,6 +275,7 @@ export const Progress = {
   save() {
     this.countDirty = false;
     if (this.noSave) return;
+    if (this.data.ecuBought == null) this.ecuMigrate?.(); // (ecu.js: a save from before the purchases is never written without them)
     const text = this.saved();
     try { localStorage.setItem(BACKUP, text); } catch { /* (no storage: the cookie alone, and the short of the save) */ }
     // (the cookie is kept to the game's pages, path=/delivery: with path=/ it went out with every request to the

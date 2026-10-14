@@ -146,7 +146,7 @@ if (params.get('garage') !== null) {
 }
 // ?showroom opens the showroom (render/showroom.js: where a car is picked; ?garage is the car lot, Crazey Jim's);
 // &look=sport picks that car's card (&full or &sheet: and opens its full view); &filter=, &filters (render/showroom.js); &bp=sport:7,hotrod:3 gives those
-// blueprints for the visit (nothing is saved); &bounce=0.2: the full view's car stopped that many seconds into its landing
+// blueprints for the visit (nothing is saved; they unlock an ECU upgrade, &ecu=sport:2 buys it); &bounce=0.2: the full view's car stopped that many seconds into its landing
 // (0.16: the body down on its springs over its wheels, 0.31: up off them; render/carbounce.js), for a picture of it
 if (params.get('showroom') !== null) {
   if (params.get('bounce') !== null) ShowroomView.hold = Math.max(0, Number(params.get('bounce')) || 0);
@@ -155,6 +155,15 @@ if (params.get('showroom') !== null) {
     for (const token of params.get('bp').split(',')) {
       const [id, n] = token.split(':');
       (Progress.data.blueprints ||= {})[id] = Number(n) || 0;
+    }
+  }
+  // &ecu=sport:2,hotrod:3: those cars bought up to that ECU for the visit (ecu.js: &bp= only gives the blueprints, which unlock the
+  // upgrade; the bank, &money=, pays for it)
+  if (params.get('ecu')) {
+    Progress.noSave = true;
+    for (const token of params.get('ecu').split(',')) {
+      const [id, n] = token.split(':');
+      (Progress.data.ecuBought ||= {})[id] = Math.max(0, Math.floor(Number(n)) || 0);
     }
   }
   if (params.get('filter') !== null) Showroom.useFilter(params.get('filter')); // (&filter=tier:g3,b1;state:ready;sort:speed: for the visit)
