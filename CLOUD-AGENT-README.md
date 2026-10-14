@@ -77,6 +77,8 @@ groups above, and the quick smoke only when asked. Syntax-check changed files wi
 - The Good/Evil switch: `src/delivery/sidecues.js` exports `geOn(n)`; the ideas are numbered 1 to 12 and live behind
   `?ge=n`. The owner has not chosen; the recommended three are 1 + 8 + 11 (with 10 teaching it).
 
+- **Car catalogue:** `CARS-CATALOGUE.md` lists every car in the game (and the ten in progress) with what it is and the real vehicle it is inspired by. Before you propose or build a car, grep it for the vehicle and for its real-world inspiration; do not edit it (the orchestrator adds rows at merge). `node scripts/car-catalogue.mjs` compares it with the game (a warning script, not a check).
+
 - **Textures:** allowed (the owner, 14-Oct) when drawn in code on a canvas, never as image files (no download cost, about 4 bytes a
   pixel of memory); keep them modest (256 x 256 is today's biggest) and report their sizes. Details: CAR-AGENT-PROMPT.md.
 
