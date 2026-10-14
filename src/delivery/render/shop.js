@@ -242,8 +242,8 @@ const draw = () => {
       make('div', 'shop-row', ...here.map(o => (section.id === 'featured' ? featuredTile(o) : tile(o)))));
   });
   const note = CURRENCY.placeholder
-    ? make('p', 'shop-note', CURRENCY.name + ' is a placeholder: what buys packs is not decided yet, and nothing in the game gives it.'
-      + (Shop.hasPacks() ? '' : ' Packs are not in this build, so nothing can be bought.')) : null;
+    ? make('p', 'shop-note', CURRENCY.name + ' is a placeholder: nothing gives it yet.'
+      + (Shop.hasPacks() ? '' : ' Packs are not in this build.')) : null;
   screen.replaceChildren(
     make('header', 'shop-top', back, make('h1', '', 'Shop'), wallet()),
     make('div', 'shop-body', note, jimSection(), ...sections, rarityGuide()), ...kept);

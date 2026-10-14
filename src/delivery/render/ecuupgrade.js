@@ -4,11 +4,11 @@
 //   short        the same button dimmed, 'Need $400 more in the bank'
 //   blueprints   the same button dimmed, 'Needs 3 more blueprints' (the blueprints are what unblocks it)
 // A KEY car whose key is not had yet may be upgraded all the same (14-Oct); it stays unselectable until the key is had.
-// and under it what the step changes (the ecus.json figures of the next ECU against this one). A car with nothing to buy
+// (what the step changes is in the stat bars now: showroom.js stat(), 'old → new' and a green segment). A car with nothing to buy
 // (maxed, a starter, a car without its key or not yet unlocked: the panel's own words say that) gets none. The start screen
 // stays a menu: this is in the showroom only.
 import { Ecu } from '../ecu.js';
-import { statShown } from '../showroomData.js';
+import { statShown, LOCKED_WORDS } from '../showroomData.js';
 import { Sound } from './audio.js';
 import '../ecuupgrade.css';
 
@@ -37,8 +37,8 @@ export const changes = (now, next) => ROWS.map(([label, key, show]) => ({ label,
 export const upgradeWords = (up) => {
   const label = 'Upgrade to ECU' + up.to + ': ' + dollars(up.price);
   if (up.state === 'ready') return { label, why: 'Bank ' + dollars(up.bank) + ' → ' + dollars(up.bank - up.price) };
-  if (up.state === 'short') return { label, why: 'Need ' + dollars(Math.ceil(up.short)) + ' more in the bank' };
-  if (up.state === 'blueprints') return { label, why: 'Needs ' + up.need + ' more blueprint' + (up.need === 1 ? '' : 's') + ' to unlock ECU' + up.to };
+  if (up.state === 'short') return { label, why: 'Need ' + dollars(Math.ceil(up.short)) + ' more' };
+  if (up.state === 'blueprints') return { label, why: 'ECU' + up.to + ': ' + up.need + ' more blueprint' + (up.need === 1 ? '' : 's') };
   return null;
 };
 
@@ -85,8 +85,6 @@ export const upgradeBlock = (card, onBought, { evil = false } = {}) => {
     button.title = words.why;
     button.addEventListener('click', () => onBought?.({ ok: false, ...up }));
   }
-  const rows = card.nextStats ? changes(card.stats, card.nextStats) : [];
-  const list = rows.length ? make('ul', 'sr-up-changes', ...rows.map(r => make('li', '', make('span', '', r.label), make('b', '', r.from + ' → ' + r.to)))) : null;
-  const note = card.key && !card.unlocked ? make('p', 'sr-up-note', 'You can upgrade it now; you still need its key to drive it') : null; // (a key car without its key: buying is allowed, 14-Oct)
-  return make('div', 'sr-up', make('small', 'sr-up-head', 'Upgrade'), button, why, note, list);
+  const note = card.key && !card.unlocked && card.reason === LOCKED_WORDS.key ? make('p', 'sr-up-note', 'Key still needed') : null; // (a key car without its key: buying is allowed, 14-Oct)
+  return make('div', 'sr-up', make('small', 'sr-up-head', 'Upgrade'), button, why, note);
 };
