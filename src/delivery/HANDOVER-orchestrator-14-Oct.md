@@ -29,7 +29,7 @@ Read CLOUD-AGENT-README.md and CHECKLIST.md first (CLAUDE.md). Owner rules still
 - Replay fingerprint = hash of logicFiles (vite.config.js); render/* and pure modules are NOT in it.
 
 ## Where the code is (git, 14-Oct)
-- `origin/main` = `4023196` (v1.1.127). The working branch is `claude/charming-maxwell-pxoail` (7 commits ahead of main: true speed, damage v2 via the merge of `claude/damage-audit`, CHECKLIST and handover docs). Cloud sessions deploy by pushing `main`; do not push main for the unmerged items without the owner's "merge".
+- `origin/main` = v1.1.128 (the working branch `claude/charming-maxwell-pxoail` was fast-forwarded into it on 14-Oct at the owner's "Push the completed stuff": true speed, damage v2, the handover docs). Earlier note that these were unmerged is OUT OF DATE. Pushing `main` deploys; only on the owner's "merge".
 - Remote branches NOT merged into `origin/main`: `claude/charming-maxwell-pxoail` (+7, above), `claude/damage-audit` (+3, already inside the working branch), `claude/original-cars-1` (+4: the original-cars Agent 1 work; its worktree /home/user/dr-origcars1 has 1 uncommitted change; status not re-checked this session), `claude/blueprint-pose-lab` (+3, an experiment). The other 69 remote `claude/*` branches are merged and can be deleted when the owner agrees.
 - Worktrees: about 80 are registered (`git worktree list`): /home/user/dr-*, /home/user/wt-*, and `.claude/worktrees/agent-*`. All except dr-origcars1 had a clean tree. They are removable (`git worktree remove --force <path>`) once the owner agrees; none holds work that is not on a pushed branch.
 
@@ -41,6 +41,6 @@ Garage `CARS` 41, filler 24, earned 23 (9 level-earned T6 + 14 Legendary), Bespo
 - Pictures sent to the owner live only in the old session's scratchpad (not in the repo): contact sheets for the top-up cars and the damage v1/v2 samples; re-render with the model editor or `scripts/shots.mjs` if needed.
 
 ## First steps for the next agent
-1. Ask the owner (short): merge true speed + damage v2 to main (they asked to see them; they said of the damage v2 sheets only "genuinely impressive"), the triangle cost of damage (Mi Pad), and whether to rewrite the level clocks.
+1. Ask the owner (short): whether the live true speed and damage v2 are acceptable (both are on main, v1.1.128, but not played by hand), the triangle cost of damage (Mi Pad), and whether to rewrite the level clocks.
 2. Answer the owner's last question properly: do the lamp GLOW and the Legendary wreath move with a dent? Lamp bodies do; the glow group (`render/lampfx.js`) is skipped on purpose; the wreath is unchecked. Render a damaged Legendary car by day and night first.
 3. Build the approved next batch (CHECKLIST 260) with Opus agents under the Junker benchmark, one lamp table entry each.
