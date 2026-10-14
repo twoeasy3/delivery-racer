@@ -3,7 +3,7 @@
 // render/carlights-batchD4.js. Built as the Junker, Commuter and the top-up cars are (render/ideaModelsTopupA.js, whose
 // helpers are copied below so the files do not import each other): bodies are extrusions of a side view with rounded
 // edges, glass as thin flat panels laid a few mm proud, small parts merged into one mesh per material, plain chunky wheels
-// (a fat tyre and a plain hub, meshes of their own), no panel lines, vertex-colour shading low down, road dust drawn in code.
+// (a fat tyre and a plain hub, meshes of their own), no panel lines, vertex-colour shading low down. No textures (14-Oct, the owner: not everything needs one).
 // Each builder takes the idea's entry and returns a group, front facing local +z, with userData.body (the paint mesh),
 // userData.animate (sits still) and, for the Yacht, userData.livery (evil) (its roof). No people. State-free.
 import * as THREE from 'three';
@@ -154,47 +154,6 @@ const wheel = (parent, R, width, x, z, hubMat = SILVER, hubK = 0.55) => {
   place(parent, cached('hub' + [R, width, hubK], () => new THREE.CylinderGeometry(R * hubK, R * hubK, width + 0.016, 12).rotateZ(Math.PI / 2)), hubMat, x, R, z);
 };
 
-// ---- small textures drawn in code (made once, shared) -----------------------------------------------------------------
-const TEXTURES = new Map();
-const texture = (key, w, h, draw) => {
-  if (!TEXTURES.has(key)) {
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    draw(canvas.getContext('2d'), w, h);
-    const map = new THREE.CanvasTexture(canvas);
-    map.colorSpace = THREE.SRGBColorSpace;
-    map.userData.shared = true;
-    TEXTURES.set(key, map);
-  }
-  return TEXTURES.get(key);
-};
-// road dust thrown up along a sill: soft brown flecks and smears, thickest at the foot, thinning to nothing up the flank
-// and toward both ends (no hard edge anywhere: every mark's strength fades with its distance from the edges). 128 x 32
-const dust = () => texture('batchD4-dust', 128, 32, (ctx, W, H) => {
-  ctx.clearRect(0, 0, W, H);
-  let seed = 23;
-  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-  for (let i = 0; i < 520; i++) {
-    const fx = rnd(), fy = rnd() ** 0.6; // (more of them low down)
-    const k = Math.min(1, Math.min(fx, 1 - fx) / 0.22) * fy ** 2.2 * Math.min(1, (1.04 - fy) / 0.12 + 0.5);
-    if (rnd() > k) continue;
-    ctx.fillStyle = `rgba(${96 + rnd() * 40 | 0},${74 + rnd() * 26 | 0},${50 + rnd() * 16 | 0},${(0.12 + 0.3 * k).toFixed(2)})`;
-    ctx.beginPath();
-    ctx.ellipse(fx * W, fy * H, 1 + rnd() * 3 * k + 0.5, 0.6 + rnd() * 1.6 * k, (rnd() - 0.5) * 0.5, 0, Math.PI * 2);
-    ctx.fill();
-  }
-});
-// a flat picture on a flank (facing +x or -x), w by h, its middle at z, y; `flip` mirrors it (the other flank's)
-const flankDecal = (w, h, x, y, z, flip = false) => {
-  const geo = new THREE.PlaneGeometry(w, h);
-  if (flip) { const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setX(i, 1 - uv.getX(i)); }
-  geo.rotateY(x > 0 ? Math.PI / 2 : -Math.PI / 2);
-  return geo.translate(x, y, z);
-};
-const decalMat = (map, opacity = 1) => new THREE.MeshLambertMaterial({ map, transparent: true, opacity, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
-
-
 export const IDEA_MODELS_BATCH_D4 = {};
 
 // Each car is drawn at a base width (the W in its builder) and widened to the idea's hw by scaling the whole model across
@@ -210,7 +169,7 @@ const widen = (group, k) => {
 // ---- the Autobahn Estate (after the Audi RS6 Avant, fast German-style performance estate) ----------------------------------
 // Low, wide and long: a flat roof carried straight back over the load bay to a near-upright tailgate with a small spoiler lip;
 // a wide black single-frame grille between slim swept headlamps, a deep splitter and
-// side intakes; roof rails; a slim tail lamp bar either side and twin oval exhausts under a dark diffuser. Road dust low down.
+// side intakes; roof rails; a slim tail lamp bar either side and twin oval exhausts under a dark diffuser.
 IDEA_MODELS_BATCH_D4.autobahnestate = (car) => {
   const group = new THREE.Group(), bag = makeBag();
   const W = 0.92, L = car.hl, R = 0.39, AF = 1.45, AR = -1.38;
@@ -260,11 +219,7 @@ IDEA_MODELS_BATCH_D4.autobahnestate = (car) => {
   bag.add(CHROME, bx(0.4, 0.025, 0.05, 0, 0.55, L - 0.02));
   bag.add(PLATE, bx(0.4, 0.1, 0.02, 0, 0.68, -L - 0.002));
   bag.add(TAIL, bx(0.26, 0.04, 0.03, 0, 0.78, -L - 0.004));
-  // road dust along the sills, between the wheels
-  const dusty = decalMat(dust(), 0.8);
-  bag.add(dusty, ...[-1, 1].map(s => flankDecal(1.5, 0.22, s * (BW / 2 + 0.006), 0.46, (AF + AR) / 2, s < 0)));
-  const meshes = bag.done(group);
-  meshes.get(dusty).renderOrder = 1;
+  bag.done(group);
   for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, R, 0.28, s * (W - 0.15), z, ALLOY, 0.68);
   group.userData = { body: bodyMesh, animate: () => {} };
   return widen(group, car.hw / W);
@@ -329,9 +284,7 @@ IDEA_MODELS_BATCH_D4.finlandyacht = (car) => {
   bag.add(CHROME, bx(0.8, 0.12, 0.12, 0, 0.5, L - 0.01), bx(0.8, 0.12, 0.12, 0, 0.5, -L + 0.01), bx(1.14, 0.03, 0.05, 0, 0.84, L + 0.004));
   bag.add(TRIM, bx(0.72, 0.22, 0.05, 0, 0.74, L - 0.015), bx(BW - 0.2, 0.06, AF - AR - 0.9, 0, 0.3, (AF + AR) / 2));
   bag.add(PLATE, bx(0.4, 0.1, 0.02, 0, 0.7, -L - 0.002));
-  const dusty = decalMat(dust(), 0.6);
-  bag.add(dusty, ...[-1, 1].map(s => flankDecal(1.8, 0.22, s * (BW / 2 + 0.006), 0.47, (AF + AR) / 2, s < 0)));
-  bag.done(group).get(dusty).renderOrder = 1;
+  bag.done(group);
   // wheels: whitewall tyres and big chrome caps
   for (const s of [-1, 1]) for (const z of [AF, AR]) {
     wheel(group, R, 0.28, s * (W - 0.15), z, CHROME, 0.3);

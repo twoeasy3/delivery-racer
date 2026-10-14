@@ -6,9 +6,8 @@
 // Built as the approved Junker is (render/modelsOrig3.js; helpers kept here as copies, as ideaModelsTopupC.js does):
 // each body an extrusion of its side view with its edges rounded, flat dark glass laid a few mm proud, parts that share
 // a material and never move merged into one mesh, paint shaded darker low down (vertex colours), plain chunky wheels (a
-// dark tyre, a plain hub disc: meshes of their own, so the showroom's suspension finds them). Character from one small
-// texture DRAWN IN CODE, soft-edged (road dust along the sills and fenders; a race number): no image files, no panel
-// lines. Each builder takes the idea's entry and returns a group, front facing local +z, with userData.body (the paint),
+// dark tyre, a plain hub disc: meshes of their own, so the showroom's suspension finds them). No textures (14-Oct, the
+// owner: not everything needs one): flat colours, and a plain white disc for the Trophy Truck's roundel. No panel lines. Each builder takes the idea's entry and returns a group, front facing local +z, with userData.body (the paint),
 // userData.animate (seconds) => void. render/ideaModels.js spreads IDEA_MODELS_BATCH_D5 into IDEA_MODELS. State-free.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -51,16 +50,6 @@ const bx = (w, h, l, x, y, z, pitch = 0, yaw = 0, roll = 0) => {
 };
 // a disc facing along the car (a lamp, a bezel), turned `yaw` about the upright
 const dsc = (r, depth, x, y, z, yaw = 0, seg = 12) => new THREE.CylinderGeometry(r, r, depth, seg).rotateX(Math.PI / 2).rotateY(yaw).translate(x, y, z);
-// a flat picture w by h facing 'x', '-x', 'z' or '-z', its uv a part of the texture (u, v ranges)
-const decal = (w, h, x, y, z, facing, u = [0, 1], v = [0, 1]) => {
-  const geo = new THREE.PlaneGeometry(w, h), uv = geo.attributes.uv;
-  for (let i = 0; i < uv.count; i++) { uv.setX(i, u[0] + uv.getX(i) * (u[1] - u[0])); uv.setY(i, v[0] + uv.getY(i) * (v[1] - v[0])); }
-  if (facing === 'x') geo.rotateY(Math.PI / 2);
-  if (facing === '-x') geo.rotateY(-Math.PI / 2);
-  if (facing === '-z') geo.rotateY(Math.PI);
-  return geo.translate(x, y, z);
-};
-
 // ---- a body: an extrusion of its side view ([z, y] points; ['arc', z, y, r] a wheel arch from its rear foot over to its
 // front), `w` wide across the car, its outline grown by `bevel` all round and rounded `across` deep over the sides
 const curve = (a, b, c, d, n) => new THREE.CubicBezierCurve(...[a, b, c, d].map(([z, y]) => new THREE.Vector2(z, y)))
@@ -126,53 +115,6 @@ const wheel = (parent, key, R, width, x, z, seg = 16) => {
   place(parent, shared(key + 'hub', () => new THREE.CylinderGeometry(R * 0.52, R * 0.52, width + 0.02, Math.round(seg * 0.75)).rotateZ(Math.PI / 2)), HUB, x, R, z);
 };
 
-// ---- the small canvas textures: drawn once, shared ------------------------------------------------------------------
-const textures = new Map();
-const texture = (key, w, h, draw, repeat = false) => {
-  if (!textures.has(key)) {
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    draw(canvas.getContext('2d'), w, h);
-    const map = new THREE.CanvasTexture(canvas);
-    map.colorSpace = THREE.SRGBColorSpace;
-    if (repeat) map.wrapS = map.wrapT = THREE.RepeatWrapping;
-    map.userData.shared = true;
-    textures.set(key, map);
-  }
-  return textures.get(key);
-};
-const random = (seed) => () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-// road dust thrown up along the lower body and the fenders: a soft-edged decal (density thickest at the foot, thinning
-// upward into flecks, every edge fading to nothing). colours: [stain, fleck, dark fleck]
-const dust = (key, [stain, fleck, darkFleck]) => texture('dust-' + key, 128, 64, (ctx, w, h) => {
-  ctx.clearRect(0, 0, w, h);
-  const rnd = random(61);
-  const dot = (x, y, rx, ry) => { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rnd() * 3, 0, Math.PI * 2); ctx.fill(); };
-  for (let i = 0; i < w * h / 2.2; i++) {
-    const fx = rnd(), fy = rnd(); // fy 1 is the foot
-    const k = Math.min(1, 1.5 * fy ** 1.9) * (0.65 + 0.35 * Math.sin(fx * 13 + 1) ** 2) * Math.min(1, Math.min(fx, 1 - fx) / 0.16);
-    if (rnd() > k) continue;
-    const x = fx * w, y = fy * h;
-    ctx.fillStyle = stain; if (k > 0.3) dot(x, y, 1.5 + k * 3.5, 1 + k * 2.2);
-    ctx.fillStyle = rnd() < 0.4 ? darkFleck : fleck; dot(x, y, 0.5 + k * 1.3, 0.4 + k * 0.9);
-  }
-});
-// a race number in a white roundel, a little worn
-const roundel = (n) => texture('roundel-' + n, 64, 64, (ctx, w, h) => {
-  ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = '#f4f1e8';
-  ctx.beginPath(); ctx.arc(w / 2, h / 2, 29, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#1a1a1a';
-  ctx.font = 'bold ' + (n.length > 1 ? 34 : 42) + 'px Arial, sans-serif';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(n, w / 2, h / 2 + 2);
-  const rnd = random(5);
-  for (let i = 0; i < 14; i++) {
-    ctx.fillStyle = 'rgba(244,241,232,0.55)';
-    ctx.beginPath(); ctx.ellipse(10 + rnd() * 44, 10 + rnd() * 44, 0.8 + rnd() * 1.6, 0.6 + rnd(), rnd() * 3, 0, Math.PI * 2); ctx.fill();
-  }
-});
 // a tube (roll-cage bar, shock body) from point a to point b, open-ended
 const tube = (a, b, r, seg = 8) => {
   const va = new THREE.Vector3(...a), vb = new THREE.Vector3(...b), d = vb.clone().sub(va), len = d.length();
@@ -183,14 +125,14 @@ const tube = (a, b, r, seg = 8) => {
 };
 // a half-shell fender over a wheel: a half cylinder (axis across the car) of radius r, `w` wide, centred at x, y, z
 const fender = (x, y, z, r, w) => new THREE.CylinderGeometry(r, r, w, 14, 1, true, 0, Math.PI).rotateZ(Math.PI / 2).scale(1, 0.88, 1.2).translate(x, y, z); // (flattened and lengthened, a wing over the wheel, not a barrel)
-const SHOCK = keep(lambert(0xffcf1a)), STEEL = keep(lambert(0x5a5e66));
+const SHOCK = keep(lambert(0xffcf1a)), STEEL = keep(lambert(0x5a5e66)), WHITE = keep(lambert(0xf4f1e8));
 
 export const IDEA_MODELS_BATCH_D5 = {
   // ---- the Trophy Truck (a Baja desert racing truck) -----------------------------------------------------------------
   // A low fibreglass body, a long flat nose that rises to a short steep screen, a small cab under a roll cage with a
   // roof light bar, and a sloping tail deck with the spare standing on it. Huge half-shell fenders over tall tyres (the
   // tyres wider than the body), yellow shock stubs standing up out of the bonnet and the deck, an open dark nose with
-  // two lamps. A race number in a roundel on each door, road dust along the sills and fenders.
+  // two lamps. A white roundel disc on each door.
   trophytruck: (car) => {
     const group = new THREE.Group();
     const R = 0.56, TW = 0.38, AF = 1.55, AR = -1.45, WX = 0.96;
@@ -250,12 +192,9 @@ export const IDEA_MODELS_BATCH_D5 = {
     // the spare on the tail deck, standing: a tyre and a hub, partly sunk in the deck
     place(group, shared(k + 'spare', () => new THREE.CylinderGeometry(0.44, 0.44, 0.3, 14).rotateX(Math.PI / 2)), TYRE, 0, 1.56, -1.38);
     place(group, shared(k + 'sparehub', () => new THREE.CylinderGeometry(0.22, 0.22, 0.32, 10).rotateX(Math.PI / 2)), HUB, 0, 1.56, -1.38);
-    // race numbers on the doors, dust low on both flanks (mirrored), kept clear of the body's faces by a few mm
+    // a flat white roundel disc on each door (a race number's place; flat colour, no texture)
     const X = HALF + 0.008;
-    const numbered = new THREE.MeshLambertMaterial({ map: roundel('14'), transparent: true, depthWrite: false });
-    place(group, shared(k + 'num', () => merge([-1, 1].map(s => decal(0.42, 0.42, s * X, 0.9, 0.0, s > 0 ? 'x' : '-x')))), numbered).renderOrder = 1;
-    const dirty = new THREE.MeshLambertMaterial({ map: dust('sand', ['rgba(150,112,64,0.34)', 'rgba(170,130,78,0.85)', 'rgba(104,74,42,0.9)']), transparent: true, depthWrite: false });
-    place(group, shared(k + 'dust', () => merge([-1, 1].map(s => decal(4.0, 0.46, s * (X + 0.002), 0.72, 0.0, s > 0 ? 'x' : '-x')))), dirty).renderOrder = 1;
+    parts(group, k + 'roundel', WHITE, () => [-1, 1].map(s => new THREE.CircleGeometry(0.21, 16).rotateY(s * Math.PI / 2).translate(s * X, 0.9, 0.0)));
     // the wheels: tall and wide
     for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, k, R, TW, s * WX, z);
     group.userData = { body, animate: () => {}, livery: () => {} };
@@ -264,7 +203,7 @@ export const IDEA_MODELS_BATCH_D5 = {
   // ---- the Armoured Limo (a presidential-style armoured limousine) ---------------------------------------------------
   // A long black-tie saloon built like a vault: thick slab flanks, a raised flat roof, small deep windows (four a
   // side) between broad pillars, a tall upright chrome grille beside stacked lamps, steel bumpers and sills, and big
-  // run-flat wheels with plain hubs standing out of the slab sides (no wheel wells cut). Polished paint, darker low down, road grime on the lower flanks.
+  // run-flat wheels with plain hubs standing out of the slab sides (no wheel wells cut). Polished paint, darker low down.
   armouredlimo: (car) => {
     const group = new THREE.Group();
     const F = car.hw / 1.02; // (x positions below were measured at hw 1.02: scaled out with the width)
@@ -312,10 +251,6 @@ export const IDEA_MODELS_BATCH_D5 = {
       ...[-1, 1].map(s => bx(0.12, 0.08, 0.03, s * 0.74 * F, 0.54, FZ + 0.004)),
       ...[-1, 1].map(s => bx(0.18, 0.08, 0.03, s * 0.8 * F, 0.6, BZ - 0.006)),
     ]);
-    // road grime low on both flanks
-    const X = HALF + 0.008;
-    const grimy = new THREE.MeshLambertMaterial({ map: dust('grime', ['rgba(60,56,52,0.3)', 'rgba(80,74,68,0.8)', 'rgba(30,28,26,0.9)']), transparent: true, depthWrite: false });
-    place(group, shared(k + 'grime', () => merge([-1, 1].map(s => decal(5.6, 0.4, s * X, 0.55, 0.0, s > 0 ? 'x' : '-x')))), grimy).renderOrder = 1;
     for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, k, R, TW, s * WX, z);
     group.userData = { body, animate: () => {}, livery: () => {} };
     return group;

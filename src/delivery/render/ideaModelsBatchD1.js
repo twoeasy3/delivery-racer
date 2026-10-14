@@ -1,13 +1,13 @@
 // ---- car ideas' models, batch D1: the Wedge Microcar and the Farm Tractor (ideasBatchD1.js). Built as the approved Junker
 // and Commuter are: each body an extrusion of its side view with its edges rounded, dark glass laid a few mm proud, parts that
 // share a material merged, paint shaded darker low down (vertex colours), plain chunky wheels (a tyre and a hub disc, meshes of
-// their own so the showroom's suspension finds them), a soft-edged mud decal on the tractor. No panel lines, no people.
+// their own so the showroom's suspension finds them), no textures (14-Oct, the owner: not everything needs one). No panel lines, no people.
 // Each builder takes the idea's entry and returns a group (nose to local +z) with userData.body, animate and livery. State-free.
 // Helpers: ideaModelsDkit.js.
 import * as THREE from 'three';
 import {
   TRIM, CHROME, GLASS, LAMP, TAIL, AMBER, keep, lambert, shared, place, merge, parts, bx, dsc,
-  curve, extrudeSide, narrowAt, panel, sideGlass, slopeGlass, shadeBy, low, flare, wheel, mud, mudCell, decal,
+  curve, extrudeSide, narrowAt, panel, sideGlass, slopeGlass, shadeBy, low, flare, wheel,
 } from './ideaModelsDkit.js';
 
 const DARK = keep(lambert(0x1b1c20));
@@ -51,8 +51,7 @@ export const IDEA_MODELS_BATCH_D1 = {
 
   // ---- the Farm Tractor (after the Ford 8N, 1947) ------------------------------------------------------------------
   // A slow tank of a farm machine: huge rear wheels under curved mudguards, small close-set front wheels, a long narrow
-  // bonnet with a slatted grille, a bare steel seat and a steering wheel on a column, a tall exhaust stack. Mud on the
-  // flanks (a soft-edged decal), the paint darker low down.
+  // bonnet with a slatted grille, a bare steel seat and a steering wheel on a column, a tall exhaust stack. The paint darker low down.
   farmtractor: (car) => {
     const group = new THREE.Group(), k = 'tractor';
     const RR = 0.74, RW = 0.4, RX = 0.74, RZ = -0.85, RF = 0.38, FW = 0.17, FX = 0.5, FZ = 1.2;
@@ -87,13 +86,6 @@ export const IDEA_MODELS_BATCH_D1 = {
     parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => dsc(0.055, 0.03, s * 0.2, 1.0, NZ + 0.02, 0, 12)));
     parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.13, 0.1, 0.03, s * 0.4, 0.92, BZ - 0.002)));
     parts(group, k + 'amber', AMBER, () => [-1, 1].map(s => bx(0.1, 0.06, 0.03, s * 0.2, 0.68, NZ + 0.004)));
-    // mud thrown up the flanks and over the gearbox
-    const muddy = new THREE.MeshLambertMaterial({ map: mud('field', ['rgba(88,62,34,0.34)', 'rgba(102,74,42,0.85)', 'rgba(60,42,26,0.9)', 'rgba(168,138,98,0.6)']), transparent: true, depthWrite: false });
-    const dirt = place(group, shared(k + 'mud', () => merge([-1, 1].flatMap(s => {
-      const f = s > 0 ? 'x' : '-x', flip = s < 0;
-      return [decal(1.7, 0.6, s * (0.28 + 0.006 + 0.04), 0.82, -0.3, f, ...mudCell('sill', flip))];
-    }))), muddy);
-    dirt.renderOrder = 1;
     for (const s of [-1, 1]) wheel(group, k + 'r', RR, RW, s * RX, RZ, 20);
     for (const s of [-1, 1]) wheel(group, k + 'f', RF, FW, s * FX, FZ, 14);
     group.userData = { body, animate: () => {}, livery: () => {} };
