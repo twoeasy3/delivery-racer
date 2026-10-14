@@ -49,6 +49,7 @@ import { makerLine } from './blueprintcard.js';
 import { KeySpin } from './keyspin.js'; // (the "Where to get it" key card's key, turning: render/keyspin.js)
 import { sheetUp } from '../lite.js';
 import { renderSources } from './carsources.js'; // ("Where to get it": the car's key and blueprint sources)
+import { fitLine } from './fitline.js';
 import { bankFigure } from './bank.js'; // (the bank: whole dollars, its type scaled to its length)
 import { overlayNode } from './lockoverlay.js'; // (a locked card's overlay: its kind's tint, badge and caption)
 
@@ -60,7 +61,6 @@ const make = (tag, className, ...children) => {
   for (const child of children) if (child !== null && child !== undefined && child !== false) node.append(child);
   return node;
 };
-const money = (amount) => '$' + amount.toFixed(2);
 const blip = (name) => Sound.play(name, 0.5);
 // a phone held upright (or a narrow window): the cards a column. The phone's own code is behind this
 export const isPhone = () => !!window.matchMedia?.('(max-width: 760px) and (min-height: 521px), (max-width: 519px)').matches;
@@ -485,7 +485,11 @@ const showDetail = () => {
   // what can be done with it
   const go = make('button', 'sr-go');
   let why = null;
-  go.textContent = driveWords(card, evil);
+  // (the other side's words under its own, unseen: the button is as wide as the wider of the two, so switching sides
+  // never changes its size; with fitLine below, never its height either. The owner, 14-Oct)
+  const otherWords = make('span', 'sr-go-other', driveWords(card, !evil));
+  otherWords.setAttribute('aria-hidden', 'true');
+  go.replaceChildren(make('span', '', driveWords(card, evil)), otherWords);
   if (card.state === 'ready') {
     go.title = using && evil === !!Game.evil ? 'In use: back to the menu in it' : 'Drive the ' + card.name + ' as ' + sideName(evil) + (card.lent ? ', a free try' : '') + ' (Enter)';
     go.addEventListener('click', () => drive(card));
@@ -555,6 +559,7 @@ const showDetail = () => {
       why,
       card.hidden ? null : renderSources(card.car, { open: true, dark: card.dark })), // (a blacked-out car's: the cards silhouetted, its name withheld; where its key and blueprints come from: render/carsources.js; shut on a desktop, a line)
     make('div', 'sr-actions', sideSwitch('sr-side-detail'), go));
+  fitLine(go, 11); // (its words on one line, smaller if need be: switching sides never changes its height; render/fitline.js)
   detail.style.setProperty('--rar', RARITIES[card.rarity].colour);
   detail.className = 'sr-detail ' + card.rarity + ' ' + card.state + ' open' + (statsOff ? ' statsoff' : '') + (slide > 0 ? ' from-next' : slide < 0 ? ' from-prev' : '');
   slide = 0;

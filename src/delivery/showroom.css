@@ -309,6 +309,10 @@
 #showroom .sr-go { min-width: 200px; padding: 13px 30px 12px; font: italic 900 22px/1 var(--display); letter-spacing: .06em; text-transform: uppercase;
   background: var(--accent); color: var(--accent-ink); clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); box-shadow: 0 4px 18px var(--accent-glow); transition: filter .15s; }
 #showroom .sr-go:hover:not(:disabled) { filter: brightness(1.1); }
+/* (its words and, unseen in the same cell, the other side's: as wide on Good as on Evil, on one line) */
+#showroom .sr-go { display: grid; place-items: center; white-space: nowrap; }
+#showroom .sr-go > span { grid-area: 1 / 1; }
+#showroom .sr-go > .sr-go-other { visibility: hidden; }
 #showroom .sr-go:disabled { background: #3a4252; color: rgba(255, 255, 255, .55); }
 #showroom .sr-detail.locked .sr-go:not(:disabled) { background: linear-gradient(100deg, #e8341c, #ff8a1c); color: #fff; }
 #showroom .sr-shade { display: none; }
@@ -383,7 +387,9 @@
   #showroom .sr-stat-max { display: none; }
   #showroom .sr-actions { position: sticky; z-index: 3; right: auto; bottom: 0; flex: 0 0 auto; margin-top: auto; flex-wrap: nowrap; padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
     background: linear-gradient(180deg, transparent, rgba(8, 10, 16, .92) 30%); }
-  #showroom .sr-go { flex: 1 1 0; min-width: 0; font-size: 18px; line-height: 1.05; padding: 12px 14px 11px; white-space: normal; }
+  /* (one line, always: its type smaller where the words are long, render/fitline.js, and a height of its own, so "Drive as Good"
+     and "Drive as Evil" are the same box at any width; it went to two lines on a 320-wide phone. The owner, 14-Oct) */
+  #showroom .sr-go { flex: 1 1 0; min-width: 0; min-height: 46px; font-size: 18px; line-height: 1.05; padding: 12px 10px 11px; white-space: nowrap; overflow: hidden; }
   #showroom .sr-side-detail button { min-width: 0; padding: 10px 10px 9px; font-size: 15px; }
   #showroom .sr-side-top { order: 4; }
   #showroom .sr-side-top button { min-width: 0; padding: 7px 10px 6px; font-size: 13px; }
