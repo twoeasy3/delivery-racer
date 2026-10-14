@@ -62,6 +62,16 @@ narrow vehicle, and compare with existing cars of similar length (measure a few 
 scripts/.suspension-check.mjs). The cap on an idea's width is 3 m (hw 1.5; scripts/.ideas-check.mjs). Set `hw`, `hl`, `height` in
 the entry to match the model, and re-measure the lamp placements if you change the width later.
 
+## Windows follow the body contour (the owner, 14-Oct: "The agents have this quirk of not being able to generate the correct shape of windows for the contour")
+A window is NOT drawn by eye. Its outline is DERIVED from the body's own side profile: take the roofline and pillar edges of the
+body outline (the pink line in the owner's mark-up: the chassis contour from the rear deck over the roof and down the A-pillar to
+the windscreen base) and inset them by a constant margin (pillar width: about 6 to 9 cm at the A- and C-pillars, about 5 cm at the roof
+rail, a little more at the sill/beltline). The glass edge (the purple line) then runs PARALLEL to the contour: same rake, same
+curve, same kinks. Never a free-standing dome or arch that ignores the roofline. Use one inset helper for every window of a car (side
+glass, windscreen, rear glass, both sides), build side glass as a flat polygon from the inset outline, and check by rendering the side
+and front three-quarter views and asking: does the window's top edge follow the roof contour at an even distance? Same for a
+windscreen against the roof and A-pillar rake and a rear window against the tail.
+
 ## No panel lines, and do not try too hard (the owner, 13-Oct)
 - NO PANEL LINES. Do not model door shut lines, bonnet / boot / tailgate / fuel-flap lines, panel gaps, seams, or thin
   strips of any kind that only fake a join. They never read at card size, they cost triangles and shapes, and they made
