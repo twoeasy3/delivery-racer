@@ -99,7 +99,6 @@ export const TUSCANY_OBSTACLES = { wineCrates, hayRoll, terracottaPot };
 
 // ---- the cargo ------------------------------------------------------------------------------------------------
 const RED_EYES = new THREE.Color(0xff2a14);
-const TRANSITION = 0.5; // s from one state to the next: as cargoModels.js's
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const sub = (parent, x = 0, y = 0, z = 0) => { const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); return g; };
 const lettered = (text, colour, ground, w = 256, h = 96) => {
@@ -170,48 +169,56 @@ const makeStolenBust = () => {
   put(head, box(0.3, 0.05, 0.06), marble, 0, 0.07, 0.17);                                  // brow
   for (const x of [-1, 1]) put(head, sphere(0.032, 8, 6), eyeMat, x * 0.075, 0.03, 0.17);
   for (let k = 0; k < 7; k++) put(head, sphere(0.07, 7, 5), marble, Math.sin(k * 0.9 - 1.4) * 0.17, 0.17 - Math.abs(k - 3) * 0.015, -0.02 + Math.cos(k * 0.9 - 1.4) * 0.1); // curls
-  // the dust sheet: a lathe of 11 rings that is re-laid every frame (no allocation) so that every ring stays outside what is under it. BUST_ENV is the
-  // outline of the plinth's slab, the shoulders, the head with its curls, nose and brow, plus 3 cm; each ring's radius is never under it at its height
-  // (and the sheet is only ever pushed out, never tilted), so it cannot go through the bust whatever the state. `gone` 0..1 slides the top of the cloth
-  // down from over the head (1.47 m) to a collar round the shoulders (0.98 m)
+  // the dust sheet: a lathe of 11 rings, re-laid every frame (no allocation). State 0 ("Under a sheet") is the cloth draped over the bust, closed over the
+  // head; BUST_ENV is the outline of the plinth, slab, shoulders, head, curls, nose and brow plus 3 cm, and no ring is ever inside it. `gone` 0..1 lets the
+  // cloth fall: its rings come down to the ground, and spread out and bunch into a low heap round the foot of the plinth (HEAP: radius and height of each
+  // ring), still never inside the outline. In the other two states the bust is bare and the cloth lies there
   const SHEET = [[0.5, 0.45], [0.5, 0.5], [0.47, 0.575], [0.34, 0.62], [0.32, 0.8], [0.32, 0.95], [0.32, 1.1], [0.32, 1.24], [0.27, 1.36], [0.15, 1.44], [0, 1.47]];
-  const BUST_ENV = [[0.45, 0.47], [0.575, 0.47], [0.6, 0.33], [0.86, 0.28], [1.0, 0.28], [1.15, 0.29], [1.2, 0.29], [1.3, 0.3], [1.35, 0.26], [1.4, 0.14], [1.45, 0.05], [1.47, 0]];
+  const HEAP = [[0.98, 0.025], [0.92, 0.04], [0.85, 0.03], [0.78, 0.055], [0.7, 0.04], [0.62, 0.07], [0.55, 0.05], [0.48, 0.09], [0.43, 0.06], [0.4, 0.11], [0.39, 0.08]];
+  const BUST_ENV = [[0, 0.38], [0.44, 0.38], [0.45, 0.47], [0.575, 0.47], [0.6, 0.33], [0.86, 0.28], [1.0, 0.28], [1.15, 0.29], [1.2, 0.29], [1.3, 0.3], [1.35, 0.26], [1.4, 0.14], [1.45, 0.05], [1.47, 0]];
   const envAt = (y) => {
-    if (y <= BUST_ENV[0][0]) return BUST_ENV[0][1];
     for (let k = 1; k < BUST_ENV.length; k++) if (y <= BUST_ENV[k][0]) { const [y0, r0] = BUST_ENV[k - 1], [y1, r1] = BUST_ENV[k]; return r0 + (r1 - r0) * (y - y0) / (y1 - y0); }
     return 0;
   };
-  const SEG = 12, RINGS = SHEET.length, sheetPos = new Float32Array(RINGS * (SEG + 1) * 3), sheetIdx = [];
-  for (let i = 0; i < RINGS - 1; i++) for (let k = 0; k < SEG; k++) { const a = i * (SEG + 1) + k, b = a + SEG + 1; sheetIdx.push(a, b, a + 1, a + 1, b, b + 1); }
-  const sheetGeo = new THREE.BufferGeometry();
-  sheetGeo.setAttribute('position', new THREE.BufferAttribute(sheetPos, 3));
-  sheetGeo.setIndex(sheetIdx);
-  const sheet = new THREE.Mesh(sheetGeo, sheetMat);
-  sheet.frustumCulled = false;
-  all.add(sheet);
-  const tag = put(all, new THREE.PlaneGeometry(0.2, 0.1), lettered('STOLEN', 0x8a1a1a, 0xf1ecdd, 160, 64), 0, 0.8, 0.335);
-  const layOut = (gone, t) => {
-    const top = 1.47 - (1.47 - 0.98) * gone, swell = 0.01 * (1 + Math.sin(t * 2.3)) * 0.5 * (1 - gone);
+  // two cloths, each built ONCE (no solver, no blending: the model shows the state it is in): `gone` 0 is the cloth draped over the bust, closed over the
+  // head, `gone` 1 the same cloth fallen to the ground, a low irregular heap round the foot of the plinth
+  const SEG = 12, RINGS = SHEET.length;
+  const makeCloth = (gone, parent) => {
+    const pos = new Float32Array(RINGS * (SEG + 1) * 3), idx = [];
+    for (let i = 0; i < RINGS - 1; i++) for (let k = 0; k < SEG; k++) { const a = i * (SEG + 1) + k, b = a + SEG + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
     let n = 0;
     for (let i = 0; i < RINGS; i++) {
-      const [r0, y0] = SHEET[i], y = y0 <= 0.575 ? y0 : 0.575 + (top - 0.575) * (y0 - 0.575) / (1.47 - 0.575), r = Math.max(envAt(y), r0 * (1 + 0.12 * gone)) + (r0 > 0 ? swell : 0);
-      for (let k = 0; k <= SEG; k++) { const a = k / SEG * Math.PI * 2; sheetPos[n++] = Math.sin(a) * r; sheetPos[n++] = y; sheetPos[n++] = Math.cos(a) * r; }
+      const [r0, y0] = SHEET[i], [rh, yh] = HEAP[i];
+      const y = gone ? yh : y0, rd = Math.max(envAt(y0), r0) + (r0 > 0 && !gone ? 0.005 : 0);
+      for (let k = 0; k <= SEG; k++) {
+        const a = k / SEG * Math.PI * 2, wob = k === SEG ? 0 : a;
+        const yy = gone ? Math.max(0.012, y + 0.008 * Math.sin(2 * wob + i * 2.3)) : y;
+        let r = gone ? rh * (1 + 0.06 * Math.sin(3 * wob + i * 1.7)) : rd;
+        if (gone) r = Math.max(r, envAt(yy));
+        pos[n++] = Math.sin(a) * r; pos[n++] = yy; pos[n++] = Math.cos(a) * r;
+      }
     }
-    sheetGeo.attributes.position.needsUpdate = true;
-    sheetGeo.computeVertexNormals();
-    sheetGeo.computeBoundingSphere();
-    tag.visible = gone < 0.02;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    const mesh = new THREE.Mesh(geo, sheetMat);
+    parent.add(mesh);
+    return mesh;
   };
-  const state = { w: [1, 0, 0], target: 0, last: null };
+  const draped = makeCloth(0, all), heap = makeCloth(1, group); // (the heap stays on the ground when the bust hops)
+  const tag = put(all, new THREE.PlaneGeometry(0.2, 0.1), lettered('STOLEN', 0x8a1a1a, 0xf1ecdd, 160, 64), 0, 0.8, 0.335);
+  const show = (n) => { draped.visible = tag.visible = n === 0; heap.visible = n > 0; };
+  show(0);
+  const state = { w: [1, 0, 0], target: 0 };
   group.userData.state = 0;
   group.userData.setState = (n, snap = false) => {
     state.target = Math.max(0, Math.min(2, Math.round(n) || 0));
+    show(state.target);
     group.userData.state = state.target;
     if (snap) for (let i = 0; i < 3; i++) state.w[i] = i === state.target ? 1 : 0;
   };
   const pose = (t, a, f) => {
-    const gone = clamp01(a * 0.55 + f);                                             // how far the sheet has slid off
-    layOut(gone, t);
     eyeMat.color.setHex(0x2a2a2a).lerp(RED_EYES, clamp01(a * 0.35 + f * 0.65));
     head.rotation.y = Math.sin(t * (2 + f * 9)) * (0.1 * a + 0.5 * f);
     head.rotation.z = Math.sin(t * 7.3) * 0.12 * f;
@@ -220,9 +227,7 @@ const makeStolenBust = () => {
     all.rotation.z = Math.sin(t * 31) * 0.025 * f + Math.sin(t * 3) * 0.015 * a;
   };
   group.userData.animate = (t) => {
-    const dt = state.last === null ? 0 : Math.min(0.1, Math.abs(t - state.last));
-    state.last = t;
-    for (let i = 0; i < 3; i++) state.w[i] += Math.max(-dt / TRANSITION, Math.min(dt / TRANSITION, (i === state.target ? 1 : 0) - state.w[i]));
+    for (let i = 0; i < 3; i++) state.w[i] = i === state.target ? 1 : 0; // (three states and no transition: switching is instant)
     pose(t, state.w[1], state.w[2]);
   };
   group.userData.animate(0);
