@@ -165,3 +165,10 @@ export const updateCamera = (dt, snap) => {
   camera.fov = baseFov + CONFIG.camFovSpeedBoost * speedT * speedT;
   camera.updateProjectionMatrix();
 };
+// TEMPORARY MEASURING HOOK (not committed)
+{ const orig = renderer.render.bind(renderer); let n = 0, best = null;
+  renderer.render = (s, c) => { orig(s, c); if (s === scene) { n++; const r = renderer.info.render; if (n > 2) { best = { calls: r.calls, tris: r.triangles }; if (n % 4 === 0) console.warn('RENDERINFO calls=' + r.calls + ' tris=' + r.triangles + ' geometries=' + renderer.info.memory.geometries + ' textures=' + renderer.info.memory.textures); } } }; }
+{ const orig2 = renderer.render; let once = false;
+  renderer.render = (s, c) => { orig2(s, c); if (s === scene && !once && renderer.info.render.frame > 6) { once = true; const rows = [];
+    scene.traverse((o) => { if (!(o.isMesh || o.isPoints)) return; const g = o.geometry, tri = (g.index ? g.index.count : g.attributes.position.count) / 3, n = o.isInstancedMesh ? o.count : 1; rows.push([Math.round(tri * n), n, Math.round(tri), o.material.color ? o.material.color.getHexString() : '-', o.parent === scene ? 'scene' : (o.parent.type)]); });
+    rows.sort((a, b) => b[0] - a[0]); for (let i = 0; i < 40; i += 6) console.warn('TOP' + i + ' ' + rows.slice(i, i + 6).map(r => r.join('/')).join(' | ')); console.warn('INSTANCED ' + rows.filter(r => r[1] > 1).length + ' instanced meshes; tris in instanced=' + rows.filter(r => r[1] > 1).reduce((a, r) => a + r[0], 0)); console.warn('TOTAL meshes=' + rows.length + ' tris=' + rows.reduce((a, r) => a + r[0], 0)); } }; }

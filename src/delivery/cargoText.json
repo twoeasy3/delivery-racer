@@ -30,6 +30,7 @@
   "books": { "name": "Returned Library Books", "blurb": "A pile of library books, returned." },
   "fruit": { "name": "New Neighbour's Fruit Basket", "blurb": "A fruit basket from the new neighbour." },
   "radio": { "name": "Grandad's Repaired Radio", "blurb": "A repaired radio, back to its owner." },
+  "pumpkin": { "name": "Carved Pumpkin", "blurb": "A carved pumpkin, candle lit, for the harvest ball." },
   "parcel": { "name": "Ticking Parcel", "blurb": "A parcel that ticks.", "states": ["Ticking","Fuse lit","About to blow"] },
   "porcupine": { "name": "Porcupine", "blurb": "A porcupine in a mood.", "states": ["Sniffing about","Balled up","Rabid"] },
   "bees": { "name": "Crate of Bees", "blurb": "A crate of bees, and not happy.", "states": ["Humming","Rattling","Swarming"] },

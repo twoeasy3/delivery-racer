@@ -620,5 +620,16 @@
       "good": "coffee",
       "evil": "airhorn"
     }
+  },
+  "haunted-hollow": {
+    "name": "Haunted Hollow",
+    "description": {
+      "good": "A carved pumpkin for the harvest ball. Wind through the pumpkin patch, the foggy woods, the graveyard gates and under the haunted hill, home by lantern light.",
+      "evil": "A cage of bats for the old house on the hill. Smash the pumpkin crates, fly the humpback bridge, race the ghost train and leave the fog behind you."
+    },
+    "cargo": {
+      "good": "pumpkin",
+      "evil": "bats"
+    }
   }
 }

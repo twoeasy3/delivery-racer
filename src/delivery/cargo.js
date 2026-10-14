@@ -48,6 +48,7 @@ export const CARGO = {
     { id: 'books', name: 'Returned Library Books' },
     { id: 'fruit', name: "New Neighbour's Fruit Basket" },
     { id: 'radio', name: "Grandad's Repaired Radio" },
+    { id: 'pumpkin', name: 'Carved Pumpkin' },
   ],
   evil: [
     { id: 'parcel', name: 'Ticking Parcel', states: ['Ticking', 'Fuse lit', 'About to blow'] },

@@ -1121,6 +1121,7 @@ const DRESS = [ // [kind, name, what it stands in for, where, the card's colour]
   ['present', 'Present', 'bale', 'Christmas Eve', 0xd8262b], ['wheelieBin', 'Wheelie bin', 'cone', 'the hood', 0x2f9a48], ['sackStack', 'Stack of sacks', 'bale', 'Mumbai', 0xcfa868],
   ['beachBall', 'Beach ball', 'bale', 'the beach', 0x1a6be6], ['brimstone', 'Spike of brimstone', 'cone', 'hell', 0xff8a1e],
   ['wasteDrum', 'Drum of waste', 'crate', 'the fallout zone', 0xffd23f],
+  ['pumpkinCrate', 'Crate of pumpkins', 'crate', 'Halloween', 0xe8650f], ['candleLantern', 'Candle lantern', 'cone', 'Halloween', 0xffb020], ['hayGhost', 'Hay bale in a bedsheet', 'bale', 'Halloween', 0xf1f0f6],
   ['hawkerCart', 'Hawker\'s cart', 'crate', 'Hong Kong', 0xd8262b], ['bagStack', 'Heap of bags', 'bale', 'Hong Kong', 0x1f5fd0],
 ];
 // the kinds of plain obstacle a level's road has, as its theme has them
