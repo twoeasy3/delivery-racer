@@ -13,18 +13,10 @@
 import * as THREE from 'three';
 import {
   basic, TRIM, GLASS, LAMP, TAIL, AMBER, shared, place, merge, parts, bx, decal,
-  curve, extrudeSide, narrowAt, sideGlass, slopeGlass, panel, shadeBy, low, flare, wheel, texture, random,
+  curve, extrudeSide, narrowAt, cabinGlass, shadeBy, low, flare, wheel, texture, random,
 } from './ideaModelsDkit.js';
 
 const BRAKE = basic(0xc4101c);
-// like slopeGlass, but its top edge is sunk `top` into the body (negative lift) while its foot sits `foot` proud: no glass edge shows over the roof
-const tiltGlass = ([z0, y0], [z1, y1], hx0, hx1, foot, top) => {
-  const dz = z1 - z0, dy = y1 - y0, len = Math.hypot(dz, dy);
-  const [nz, ny] = dz < 0 ? [dy / len, -dz / len] : [-dy / len, dz / len];
-  const at = (z, y, hx, s, l) => [s * hx, y + ny * l, z + nz * l];
-  return panel([at(z0, y0, hx0, -1, foot), at(z0, y0, hx0, 1, foot), at(z1, y1, hx1, 1, top), at(z1, y1, hx1, -1, top)]);
-};
-
 // a racing number on a round plate with a dark ring, a little worn (128 x 128); the plate and the ink are the caller's
 const roundel = (key, n, plate, ink) => texture('e5-roundel-' + key, 128, 128, (ctx, w, h) => {
   ctx.clearRect(0, 0, w, h);
@@ -73,16 +65,10 @@ export const IDEA_MODELS_BATCH_E5 = {
       ...[-1, 1].flatMap(s => [AF, AR].map(z => flare(z, R, R + 0.03, R + 0.13, 0.12).translate(s > 0 ? HALF + 0.1 : -HALF - 0.02, 0, 0))),
     ]), low(0.28, 0.85, [0.62, 0.58, 0.56]))), paint);
     const LIFT = 0.004, gx = (y) => narrowAt(HALF, y, TAPER);
-    const zWS = (y) => WSF[0] + (WST[0] - WSF[0]) * (y - WSF[1]) / (WST[1] - WSF[1]);
-    const zRW = (y) => RW0[0] + (RW1[0] - RW0[0]) * (ROOF - y) / (ROOF - DECK);
-    parts(group, k + 'glass', GLASS, () => [
-      tiltGlass([zWS(0.97), 0.97], [zWS(1.21), 1.21], gx(0.97) - 0.1, gx(1.21) - 0.1, BEV + 0.006, BEV - 0.003),
-      tiltGlass([zRW(1.03), 1.03], [zRW(1.2), 1.2], gx(1.03) - 0.1, gx(1.2) - 0.1, BEV + 0.006, BEV - 0.003),
-      ...sideGlass([
-        [[zWS(0.94) - 0.05, 0.94], [-0.1, 0.94], [-0.1, 1.2], [zWS(1.2) - 0.04, 1.2]],
-        [[-0.26, 0.94], [-1.18, 0.94], [-1.18, 1.07], [-0.98, 1.2], [-0.26, 1.2]],
-      ], HALF, TAPER, LIFT),
-    ]);
+    // ALL the glass from the body's own side profile (one inset outline: the screens and the side windows agree at the pillars); a B-pillar between the two door windows
+    const glass = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(RW1), belt: BELT, half: HALF, taper: TAPER,
+      inset: { aPillar: 0.07, roof: 0.06, cPillar: 0.09 }, lift: BEV + 0.006, topLift: BEV - 0.003, sideLift: LIFT, windows: [[-0.1, 9], [-9, -0.26]] });
+    parts(group, k + 'glass', GLASS, () => [...glass.sides, glass.front, glass.rear]);
     parts(group, k + 'black', TRIM, () => [
       bx(1.1, 0.1, 0.03, 0, 0.5, FZ - 0.005),            // the grille
       bx(1.94, 0.1, 0.12, 0, 0.37, FZ + 0.02),           // the front bumper
@@ -150,15 +136,10 @@ export const IDEA_MODELS_BATCH_E5 = {
       ...[-1, 1].flatMap(s => [AF, AR].map(z => flare(z, R, R + 0.03, R + 0.15, 0.14).translate(s > 0 ? HALF + 0.12 : -HALF - 0.02, 0, 0))),
     ]), low(0.28, 0.85, [0.62, 0.58, 0.56]))), paint);
     const LIFT = 0.004, gx = (y) => narrowAt(HALF, y, TAPER);
-    const zWS = (y) => WSF[0] + (WST[0] - WSF[0]) * (y - WSF[1]) / (WST[1] - WSF[1]);
-    const zRW = (y) => RW0[0] + (RW1[0] - RW0[0]) * (ROOF - y) / (ROOF - DECK);
-    parts(group, k + 'glass', GLASS, () => [
-      slopeGlass([zWS(0.98), 0.98], [zWS(1.16), 1.16], gx(0.98) - 0.1, gx(1.16) - 0.1, BEV + LIFT),
-      slopeGlass([zRW(1.15), 1.15], [zRW(1.07), 1.07], gx(1.15) - 0.12, gx(1.07) - 0.12, BEV + LIFT),
-      ...sideGlass([
-        [[zWS(0.97) - 0.05, 0.97], [-0.66, 0.97], [-0.5, 1.12], [-0.3, 1.16], [zWS(1.16) - 0.04, 1.16]],
-      ], HALF, TAPER, LIFT),
-    ]);
+    // the glass from the body's own side profile, as the Touring Car's (one window each side: no B-pillar)
+    const glass = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(RW1), belt: BELT, half: HALF, taper: TAPER,
+      inset: { aPillar: 0.07, roof: 0.055, cPillar: 0.08 }, lift: BEV + 0.006, topLift: BEV - 0.003, sideLift: LIFT });
+    parts(group, k + 'glass', GLASS, () => [...glass.sides, glass.front, glass.rear]);
     // the bonnet vent lies on the bonnet's slope (front down, 0.237 rad)
     const SLOPE = Math.atan2(0.9 - 0.66, 1.78 - WSF[0]);
     parts(group, k + 'black', TRIM, () => [
