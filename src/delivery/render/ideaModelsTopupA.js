@@ -327,8 +327,11 @@ IDEA_MODELS_TOPUP_A.glassbrake = (car) => {
   const CH = CW / 2, LIFT = CBEV + 0.006, foot = 0.97;
   const glass = cabinGlass(cabinOutline, { from: 0, to: cabinOutline.indexOf(HF), belt: foot, half: CH, taper: TAPER, grow: CBEV,
     inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: LIFT, sideLift: 0.006, windows: [[-0.64, 9], [-9, -0.74]] });
-  bag.add(GLASS, ...glass.sides, glass.front, glass.rear,
-    slopeGlass(HT, HM, CH, TAPER, CBEV + 0.03, [0.02, 0], LIFT, [-0.2, 1]));
+  // the rear is the car's gimmick, ONE full-glass panel from the roof's end down over the bend to the tail: the original two slopeGlass pieces, kept
+  // (the owner, 14-Oct: the glass fix had split it with cabinGlass's rear glass and a body band, so that panel is as it was; glass.rear is not used)
+  bag.add(GLASS, ...glass.sides, glass.front,
+    slopeGlass(HT, HM, CH, TAPER, CBEV + 0.03, [0.02, 0], LIFT, [-0.2, 1]),
+    slopeGlass(HM, HF, CH, TAPER, CBEV + 0.03, [-0.08, 0.12], LIFT - 0.002, [-1, 0.6]));
   // the face: a low wide grille, a round lamp in a chrome ring at each end, split bumpers, amber lamps in their corners
   for (const s of [-1, 1]) {
     bag.add(CHROME, dsc(0.1, 0.03, s * 0.62, 0.62, L - 0.012, 14), bx(0.52, 0.07, 0.08, s * 0.5, 0.41, L + 0.03), bx(0.26, 0.07, 0.08, s * 0.8, 0.41, L - 0.06, 0, s * 0.7));
