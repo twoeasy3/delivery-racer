@@ -23,7 +23,7 @@ import { SpeedCameras } from '../cameras.js';
 import { Hazards } from '../hazards.js';
 import { Delivery } from '../delivery.js';
 import { patchModel } from './modelpatchapply.js';
-import { LAMP_DEBUG, lampKey, lampLayout, genericLayout, makeLampMarkers } from './carlights.js';
+import { LAMP_DEBUG, lampKey, lampsFor, makeLampMarkers } from './carlights.js';
 
 // Everything here that belongs to the loaded level (bridges, obstacles, pickups, targets)
 // lives in this group and is rebuilt by buildItems() each time a level is loaded.
@@ -48,7 +48,7 @@ const playerModel = (car) => {
 // ?lamps=show: markers at each lamp the player's car's effects use (render/carlights.js), remade when the car changes
 let lampMarks = null, lampMarksFor;
 const showLampMarkers = (key) => {
-  const layout = lampLayout(key) || genericLayout(Player, {});
+  const layout = lampsFor(key, Player, {});
   const id = (key || 'generic') + ':' + Player.hw + ':' + Player.hl + ':' + Player.height;
   if (lampMarks && lampMarksFor === id) return;
   if (lampMarks) lampMarks.removeFromParent();

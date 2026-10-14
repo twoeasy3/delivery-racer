@@ -470,6 +470,7 @@ export const MODELS = {
     disc(shell, dark, 0.18, 0.3, 0, 0.0, -front - 0.15);                                 // the jet's nozzle
     group.userData = {
       body,
+      lampFrame: shell, // (the hull the lamps ride on, bobbing: render/carlights.js lays the lamp effects in it)
       animate: (t) => { // bobbing on the chop: quick, and never quite the same twice
         shell.position.y = Math.sin(t * 6.1) * 0.07 + Math.sin(t * 9.7 + 1) * 0.025;
         shell.rotation.x = Math.sin(t * 4.4) * 0.035 + Math.sin(t * 7.3) * 0.01;

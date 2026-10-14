@@ -41,6 +41,9 @@ the real lamps (Pick-Up), covering two lamps where only one brakes (Lowrider), a
 | `reverse` | same | reversing lamps. Markers only: nothing lights them yet (the game has no reverse gear) |
 | `frame` | (per car) | name of a `userData` hook on the model, a node the lamps ride in when the body moves on its own (section 5) |
 
+An entry may list lamps at one end only: the other end keeps the old hitbox placement (`lampsFor`). An end with lamps
+but no `blink` entry has no indicators. List only lamps the model really has (no invented lamps).
+
 `mirror: true` adds the -x twin, so a pair is written once. Example (the Pick-Up):
 ```js
 pickup: {

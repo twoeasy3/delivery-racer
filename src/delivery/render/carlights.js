@@ -132,7 +132,7 @@ export const lampLayout = (key) => {
   const head = expand(def.head), tail = expand(def.tail), blink = expand(def.blink), reverse = expand(def.reverse);
   const brakeLamps = tail.filter(l => l.brake !== false);
   const layout = {
-    key, generic: false, frame: def.frame || null,
+    key, generic: false, frame: def.frame || null, hasHead: head.length > 0, hasTail: tail.length > 0,
     brake: brakeLamps.map(l => (Array.isArray(l.brake) ? slot(l, l.brake[0], l.brake[1], OUT.brake) : slot(l, l.size[0], l.size[1], OUT.brake))),
     halo: brakeLamps.map(l => ({ ...slot(l, grow(l.size[0], 1.35, 0.08, 0.12), grow(l.size[1], 1.35, 0.08, 0.12), OUT.halo, 0.01), round: true })), // (a soft round halo)
     blink: blink.map(l => ({ ...slot(l, l.size[0], l.size[1], OUT.blink), side: Math.sign(l.at[0]) || 1, front: l.at[2] > 0, red: !!l.red })),
@@ -145,6 +145,28 @@ export const lampLayout = (key) => {
   };
   layouts.set(key, layout);
   return layout;
+};
+
+// what a car's lamp effects use: its table layout; for an end the table has no lamps for (no head, or no tail), the
+// old hitbox placement at that end (its flash and indicators at the front, its brake lamps, halos and indicators at the
+// back); a car not in the table, the hitbox placement throughout. `store`: one object per car mesh, kept (the mix is
+// worked out again only when the car's layout or its hitbox changes)
+export const lampsFor = (key, v, store) => {
+  const table = lampLayout(key), generic = genericLayout(v, store.generic || (store.generic = {}));
+  if (!table) return generic;
+  if (table.hasHead && table.hasTail) return table;
+  const m = store.mixed || (store.mixed = {});
+  if (m.table === table && m.genericVersion === generic.version) return m;
+  const front = (b) => b.front, back = (b) => !b.front;
+  Object.assign(m, {
+    table, genericVersion: generic.version, version: (m.version || 0) + 1, key: table.key, generic: false, frame: table.frame,
+    beam: table.beam, glow: table.glow, hasHead: table.hasHead, hasTail: table.hasTail,
+    brake: table.hasTail ? table.brake : generic.brake, halo: table.hasTail ? table.halo : generic.halo,
+    flash: table.hasHead ? table.flash : generic.flash,
+    blink: [...(table.hasHead ? table.blink : generic.blink).filter(front), ...(table.hasTail ? table.blink : generic.blink).filter(back)],
+    marks: [...table.marks, ...generic.marks.filter(([, l]) => (l.at[2] > 0 ? !table.hasHead : !table.hasTail))],
+  });
+  return m;
 };
 
 // the old placement, from the hitbox (exactly what render/cars.js did before the table): worked out into `into`

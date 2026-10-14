@@ -11,7 +11,7 @@ import './trafficModels.js'; // (more of them, added to MODELS)
 import { makeCrashDummy } from './pickupModels.js';
 import { makeTractorModel, makeUfo } from './carExtras.js';
 import { damageShare, scorch } from './dents.js';
-import { lampLayout, genericLayout, LAMP_DEBUG, NightLamps } from './carlights.js';
+import { lampsFor, LAMP_DEBUG, NightLamps } from './carlights.js';
 
 // ---- cars (front faces local +z), sized from each vehicle's hitbox -----------
 export const unitBox = new THREE.BoxGeometry(1, 1, 1);
@@ -170,7 +170,7 @@ const addLamps = (group) => {
   const lamps = new THREE.Group();
   // (pools of meshes, grown the first time a layout needs more: made once each, never per frame)
   group.add(lamps);
-  group.userData.lamps = { lamps, brakes: [], halos: [], blinkers: [], flashers: [], glows: [], placed: null, version: -1, generic: {} };
+  group.userData.lamps = { lamps, brakes: [], halos: [], blinkers: [], flashers: [], glows: [], placed: null, version: -1 };
 };
 const pool = (L, list, n, mat, geo = unitBox) => {
   while (list.length < n) { const mesh = new THREE.Mesh(geo, mat); L.lamps.add(mesh); list.push(mesh); }
@@ -209,7 +209,7 @@ export const syncLamps = (group, v, show, braking, turnX, hazards, flashing, key
   const L = group.userData.lamps;
   L.lamps.visible = show;
   if (!show) return;
-  const layout = lampLayout(key) || genericLayout(v, L.generic);
+  const layout = lampsFor(key, v, L); // (the table's, an end it has no lamps for on the hitbox; or all on the hitbox)
   // (a model whose body moves on its own, the Lowrider's hydraulics, has its lamps ride in that body: CAR_LAMPS' `frame`)
   const frame = (layout.frame && model?.userData[layout.frame]) || group;
   if (L.lamps.parent !== frame) frame.add(L.lamps);
