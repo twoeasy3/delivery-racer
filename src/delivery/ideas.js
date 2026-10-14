@@ -43,6 +43,7 @@
 // The eighth batch, one CONCEPT CAR (a show car that never went on sale; the owner, 13-Oct): a quad-turbo mid-engined
 // supercar with a big glass canopy and a long tail (model: render/ideaModels8.js): one more idea.
 // One concept car more (CHECKLIST item 301): a small open roadster after the Pontiac Solstice concept (2002).
+// Batch D5 (CHECKLIST item 3xx, to be renumbered): two more ideas, a trophy truck and an armoured limo.
 // One more (CHECKLIST item 302): a tiny three-seat concept city car under a glass bubble (render/ideaModels10.js).
 
 import { IDEA_CARS_TOPUP_A } from './ideasTopupA.js'; // (the top-up's batch A: four classic road cars)
@@ -50,6 +51,7 @@ import { IDEA_CARS_TOPUP_A } from './ideasTopupA.js'; // (the top-up's batch A: 
 // ============================================================================
 import { IDEAS_TOPUP_B } from './ideasTopupB.js';
 
+import { IDEAS_BATCH_D5 } from './ideasBatchD5.js'; // (batch D5: a trophy truck, an armoured limo; render/ideaModelsBatchD5.js)
 import { IDEAS_TOPUP_C } from './ideasTopupC.js'; // (top-up batch C: three ideas, models in render/ideaModelsTopupC.js)
 export const IDEA_CARS = [
   { id: 'threewheeler', name: 'Three-Wheeler', basedOn: 'Reliant Robin', model: 'threewheeler', color: 0xe0902a, evilColor: 0x3d4a2a,
@@ -182,5 +184,6 @@ export const IDEA_CARS = [
   ...IDEA_CARS_TOPUP_A,
   ...IDEAS_TOPUP_B, // (the top-up batch B: a removals van, a bin lorry, a jeepney; ideasTopupB.js)
   ...IDEAS_TOPUP_C,
+  ...IDEAS_BATCH_D5,
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
