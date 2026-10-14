@@ -25,6 +25,7 @@ const failures = [];
 try {
   const { IDEA_CARS } = await load('ideas.js');
   const { makeIdeaModel } = await load('render/ideaModels.js');
+  const { dropFlat } = await load('render/ideaModelsDkit.js');
   const want = process.argv.slice(2);
   const cars = (want.length ? IDEA_CARS.filter(c => want.includes(c.id)) : IDEA_CARS);
   const rows = [];
@@ -109,6 +110,29 @@ try {
       }
       if (!found.length) { notes.push('window ' + (wi + 1) + ': no edge near the contour'); fails.push('window ' + (wi + 1) + ' is not inset from the profile'); return; }
       notes.push(`window ${wi + 1}: inset from the contour (cm, by edge): ${found.join(', ')}`);
+      // its EDGE COUNT (the owner, 14-Oct: a window has the corners the body's outline has there, no more): the boundary followed round, points on a
+      // straight run (within 4 mm of the line between their neighbours) dropped; expected 4 (belt, A or front cut, top, C or rear cut) plus the
+      // body's own corners along the window's top (the contour, flattened to 1 cm, turning more than 5 degrees between the top corners)
+      const loop = [], left = new Map([...edges.values()].filter(e => e.n === 1).map(e => [e.a[3] + '|' + e.b[3], e]));
+      let cur = left.values().next().value;
+      while (cur) {
+        left.delete(cur.a[3] + '|' + cur.b[3]);
+        loop.push([cur.a[2], cur.a[1]]);
+        const next = [...left.values()].find(e => e.a[3] === cur.b[3] || e.b[3] === cur.b[3]);
+        if (next && next.b[3] === cur.b[3]) { const t = next.a; next.a = next.b; next.b = t; }
+        cur = next;
+      }
+      const corners = dropFlat(loop, 0.004, true).length;
+      const topPts = loop.filter(q => q[1] > p.y1 - 0.05), zA = Math.max(...topPts.map(q => q[0])), zC = Math.min(...topPts.map(q => q[0]));
+      const flat = dropFlat(contour.filter(c => c[0] >= zC - 0.02 && c[0] <= zA + 0.02), 0.01, false);
+      let own = 0;
+      for (let i = 1; i + 1 < flat.length; i++) {
+        const [a, q, b] = [flat[i - 1], flat[i], flat[i + 1]], turn = Math.abs(Math.atan2(b[1] - q[1], b[0] - q[0]) - Math.atan2(q[1] - a[1], q[0] - a[0]));
+        if (turn > 5 * Math.PI / 180 && q[0] > zC + 0.03 && q[0] < zA - 0.03) own++;
+      }
+      if (process.env.DEBUG) console.log('window', wi + 1, 'top span', zC.toFixed(3), zA.toFixed(3), 'flat contour', flat.map(c => c.map(v => v.toFixed(3)).join(',')).join(' '));
+      notes.push(`window ${wi + 1}: ${corners} edges (expected ${4 + own}: 4 + ${own} of the body's own corners along its top)`);
+      if (corners > 4 + own) fails.push(`window ${wi + 1} has ${corners} edges, the body's outline gives it ${4 + own}`);
     });
     // 2) the screens: pieces spanning the car
     const screens = info.filter(p => !p.side && p.x1 - p.x0 > 0.5);
