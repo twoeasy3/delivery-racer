@@ -56,6 +56,7 @@ import { IDEA_CARS_TOPUP_A } from './ideasTopupA.js'; // (the top-up's batch A: 
 import { IDEAS_TOPUP_B } from './ideasTopupB.js';
 import { IDEAS_BATCH_D4 } from './ideasBatchD4.js'; // (batch D4: the Autobahn Estate, the Fin Land Yacht)
 
+import { IDEAS_BATCH_E1 } from './ideasBatchE1.js'; // (batch E1: the Cinquecento and the Kei Van)
 import { IDEAS_BATCH_D2 } from './ideasBatchD2.js'; // (batch D2: the Flatbed Truck and the Utility Moke)
 import { IDEAS_BATCH_D3 } from './ideasBatchD3.js'; // (batch D3: the Half-Track and the Sprint Hatch)
 import { IDEAS_BATCH_D5 } from './ideasBatchD5.js'; // (batch D5: a trophy truck, an armoured limo; render/ideaModelsBatchD5.js)
@@ -194,6 +195,7 @@ export const IDEA_CARS = [
   ...IDEAS_TOPUP_C,
   ...IDEAS_BATCH_D1,
   ...IDEAS_BATCH_D2,
+  ...IDEAS_BATCH_E1,
   ...IDEAS_BATCH_D3,
   ...IDEAS_BATCH_D4,
   ...IDEAS_BATCH_D5,
