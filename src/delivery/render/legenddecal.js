@@ -115,12 +115,12 @@ const wreathMaterial = () => {
   if (decalMat) return decalMat;
   const map = wreathTexture();
   if (!map) return null;
-  // lit as the body is (Lambert, not Basic); see-through outside the wreath, never writing depth (and so a blackout
-  // makes it black by its own picture: render/silhouette.js); pulled toward the camera so the paint never shows through
+  // lit as the body is (Lambert, not Basic); see-through outside the wreath, never writing depth; pulled toward the camera so the paint never shows through
   // (a little of its own light besides, from the same picture, so the gold still reads on a flank turned from the sun)
   decalMat = new THREE.MeshLambertMaterial({ map, emissive: 0x4a3c1c, emissiveMap: map, transparent: true, depthWrite: false, alphaTest: 0.02,
     polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
   decalMat.userData.shared = true;
+  decalMat.userData.blackout = 'hide'; // (render/silhouette.js: not drawn on a blacked-out car)
   return decalMat;
 };
 const GOLD = new Map(); // the gold version of each trim material (kept: the base car's shared materials stay shared)
