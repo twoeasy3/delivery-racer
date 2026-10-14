@@ -1,4 +1,4 @@
-// ---- the WHEEL colour: the first equippable cosmetic (the owner, 14-Oct: "Wheels first, and global"; CHECKLIST 260) ------------
+// ---- the WHEEL colour: the first equippable cosmetic (the owner, 14-Oct: "Wheels first, and global"; CHECKLIST 263) ------------
 // One choice for the whole game, not a loadout per car: the colour of the HUBS (rims, hub caps, spokes) of whatever car is on
 // show or driven. Tyres stay rubber-black. RENDER-ONLY: nothing here is written onto a car's CARS entry, into a save's
 // data or into the replay fingerprint (no rules module imports it); the choice is kept in this browser's localStorage under
@@ -37,7 +37,9 @@ export const WHEEL_COLOURS = [
 const byId = (id) => WHEEL_COLOURS.find(c => c.id === id) || WHEEL_COLOURS[0];
 
 let stored = null, visit = null; // the saved id (read the first time it is wanted); the id chosen in a visit that saves nothing
+const asked = typeof location !== 'undefined' ? /[?&]wheelcolour=(\w+)/.exec(location.search)?.[1] : null; // (?wheelcolour=red: a colour for the visit, for stills; never saved)
 export const wheelColour = () => {
+  if (asked) return byId(asked).id;
   if (Progress.noSave) return visit || 'stock'; // (a test switch is on, set after this module loads: stock wheels, and a change lasts the visit)
   if (stored === null) {
     stored = 'stock';

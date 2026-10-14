@@ -1,4 +1,4 @@
-// A check of the WHEEL COLOUR cosmetic (render/wheelcosmetic.js, CHECKLIST 260): the one global choice that recolours the hubs of
+// A check of the WHEEL COLOUR cosmetic (render/wheelcosmetic.js, CHECKLIST 263): the one global choice that recolours the hubs of
 // whatever car is shown or driven. For every car of the roster (garage, filler, Bespoke, event and earned cars, the ideas, every
 // Super version), built as the showroom builds it (render/showcar.js makeShowCar): its hubs are found (the hit rate is printed,
 // and the cars left stock are listed: the ones with no tyres and the ones whose wheels show no hub); a colour is put on, then
