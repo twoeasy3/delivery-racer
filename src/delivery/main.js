@@ -76,6 +76,7 @@ import { showEvent } from './render/menustage.js';
 import { Delivery } from './delivery.js';
 import { Showroom } from './render/showroom.js';
 import { ShowroomView } from './render/showroomview.js';
+import { Cosmetics } from './render/cosmeticsui.js';
 import { Sound } from './render/audio.js';
 import { Social } from './social.js';
 import { CAR, lendCar, superOf, ownedAmphibious, carStats } from './cars.js';
@@ -163,6 +164,12 @@ if (params.get('showroom') !== null) {
   const full = params.get('full') !== null || params.get('sheet') !== null; // (&full: the car's full view; &sheet, its old name)
   if (params.get('look')) Showroom.look(params.get('look'), full); else if (full) Showroom.look(Showroom.shown.picked, true);
   if (params.get('filters') !== null) Showroom.filters(true); // (&filters: the filter sheet open)
+}
+// ?cosmetics opens the Cosmetics screen (render/cosmeticsui.js) over the menu on the car in use (?car=<id> lends one for the visit);
+// &evil its Evil side; &closeup the wheels close-up; &wheeldesign= / &wheelcolour= equip for the visit (render/wheelcosmetic.js)
+if (params.get('cosmetics') !== null && params.get('showroom') === null) {
+  if (params.get('evil') !== null) Game.evil = true;
+  Cosmetics.open({ evil: !!Game.evil });
 }
 // ?screensaver starts the screensaver straight away (with ?ff=5 as above); ?racewatch the race one
 const autostart = params.get('autostart');

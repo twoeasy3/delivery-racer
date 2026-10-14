@@ -220,7 +220,7 @@
 #startScreen .options { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px 22px; }
 #startScreen .options section { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; }
 #startScreen .options h3 { flex: 0 0 100%; margin: 0 0 2px; font: 700 12px/1 system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
-#startScreen .options .howto, #startScreen .options .wheels { grid-column: 1 / -1; }
+#startScreen .options .howto { grid-column: 1 / -1; }
 #startScreen .options .howto p { font-size: 13px; line-height: 1.55; color: #d5dbe5; columns: 2 320px; column-gap: 26px; }
 
 /* ---- a phone held upright, or a narrow window: one column (stage, strip, then the car and the side). Not a
@@ -826,13 +826,6 @@
 #startScreen .unlock-mode .menu-chip[aria-pressed="true"] { background: var(--accent); color: #111; }
 #startScreen .unlock-note { margin: 4px 0 8px; font-size: 12px; opacity: .75; line-height: 1.35; max-width: 34em; }
 
-/* Options: the wheel colour (render/wheelcosmetic.js): a swatch and a name each, the one in use lit like the Unlock mode's */
-#startScreen .wheel-swatches { display: flex; flex-wrap: wrap; gap: 6px; flex: 0 0 100%; }
-#startScreen .wheel-swatches .menu-chip[aria-pressed="true"] { background: var(--accent); color: #111; }
-#startScreen .wheel-swatches .swatch { width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,.55), inset 0 0 0 1px rgba(0,0,0,.35); flex: 0 0 auto; }
-#startScreen .wheel-swatches .menu-chip[aria-pressed="true"] .swatch { box-shadow: 0 0 0 2px #111, inset 0 0 0 1px rgba(0,0,0,.35); }
-#startScreen .wheel-swatches .swatch.stock { background: repeating-conic-gradient(#9aa3b2 0 25%, #596273 0 50%) 0 0 / 8px 8px; }
-#startScreen #wheelDesigns .swatch { width: 22px; height: 22px; }
-#startScreen .wheels h4 { flex: 0 0 100%; margin: 6px 0 0; font-size: 12px; font-weight: 600; opacity: .7; text-transform: uppercase; letter-spacing: .04em; }
-#startScreen .wheel-note { flex: 0 0 100%; margin: 2px 0 0; font-size: 12px; opacity: .75; line-height: 1.35; }
-@media (pointer: coarse) { #startScreen .wheel-swatches .menu-chip { min-height: 44px; box-sizing: border-box; } }
+/* Options: Wheels is a link to the Cosmetics screen (cosmetics.css) */
+#startScreen .wheel-note { margin: 4px 0 0; font-size: 12px; opacity: .75; line-height: 1.35; }
+@media (pointer: coarse) { #startScreen .wheels .menu-chip { min-height: 44px; box-sizing: border-box; } }
