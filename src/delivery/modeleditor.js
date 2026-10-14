@@ -21,7 +21,12 @@
 //      (flashing at 1.2 Hz, or Steady), Lamp markers (a labelled marker at every lamp the game's effects use). They draw the
 //      game's own lamp effects for the car's lamp table entry (render/carlights.js, render/lampfx.js), or the old hitbox
 //      placement for a car with none (the stats strip says which). Blackout hides the effects.
-//   ?car=<id>  ?evil  ?tab=parts|part|json  ?part=<part id>  ?view=front|rear|left|right|top|34  ?dark
+//   5. DAMAGE (the Damage row, keys 0 to 5, ?damage=0..5 or a percentage such as 60): the car as the game shows it hurt, by the
+//      game's own code (render/dents.js, through render/inspectmodel.js damageModel): Clean, the four stages (CONFIG.dents.steps:
+//      20 / 40 / 60 / 80 %) and 100 % (the last stage's shapes, full scorch). Changed on the live model: no reload, the camera, the
+//      selection and the edits stay. The parts list and the stats strip show the damaged triangles (the cut-finer panels), the
+//      multiplier against clean and the draw calls clean against damaged. Edits are made on the clean model and dented over.
+//   ?car=<id>  ?damage=<0..5|percent>  ?evil  ?tab=parts|part|json  ?part=<part id>  ?view=front|rear|left|right|top|34  ?dark
 //   ?lights  ?brake  ?hazards  ?lampmarks  (those lamp toggles on from the start; also ?left ?right ?steady)
 import './render/modeleditorshim.js'; // (first: the game's modules' elements, stood in for)
 import * as THREE from 'three';
@@ -31,11 +36,11 @@ import './editor.css';
 import './modeleditor.css';
 import { carById, CARS, FILLER_CARS, EVENT_CARS, BESPOKE_CARS, EARNED_CARS, SECRET_CARS } from './cars.js'; // (not showroomData.js: it pulls in the game's own page code, which wants the game's buttons)
 import { IDEA_CARS } from './ideas.js';
-import { buildInspectModel } from './render/inspectmodel.js';
+import { buildInspectModel, DAMAGE_STATES, damageFromParam, damageIndex, damageModel, damageCounts } from './render/inspectmodel.js';
 import { renderer } from './render/scene.js';
 import { silhouetteFor } from './render/silhouette.js';
 import { findZFights } from './render/zfight.js';
-import { extractParts, applyPatch, modelStats, BUDGET, emptyPatch, withSet, withDelete, withAdd, withDuplicate, withMirror, tidyPatch, PRIMITIVES } from './render/modelpatch.js';
+import { extractParts, applyPatch, modelStats, triangles, BUDGET, emptyPatch, withSet, withDelete, withAdd, withDuplicate, withMirror, tidyPatch, PRIMITIVES } from './render/modelpatch.js';
 import { lampsFor, lampKey, lampSource, makeLampMarkers } from './render/carlights.js';
 import { addLamps, placeLamps, setLampLights } from './render/lampfx.js';
 import { LOCAL_KEY, PATCHES, patchesReady, localPatches, setModelPatching } from './render/modelpatchapply.js';
@@ -106,7 +111,7 @@ scene.add(selBox, hoverBox);
 
 // ---- the state -------------------------------------------------------------------------------------------------
 const S = {
-  car: null, evil: params.has('evil'), model: null, parts: [], nodes: new Map(), base: '', patch: null, result: null,
+  car: null, evil: params.has('evil'), share: damageFromParam(params.get('damage')), model: null, parts: [], nodes: new Map(), base: '', patch: null, result: null,
   sel: null, hover: null, history: [], at: -1, hidden: new Set(), solo: null, locked: new Set(), tab: 'parts', search: '',
 };
 const partOf = (id) => S.parts.find(p => p.id === id) || null;
@@ -140,6 +145,8 @@ const rebuild = () => {
   model.userData.livery?.(S.evil);
   const { parts, nodes, base } = extractParts(model);
   S.model = model; S.parts = parts; S.nodes = nodes;
+  damageModel(model, S.share); // (after the parts are listed from the clean model, before the lamp effects go in)
+  recount();
   buildLamps(model);
   if (!S.base) S.base = base;
   scene.add(model);
@@ -151,6 +158,25 @@ const rebuild = () => {
   if (S.tab === 'part') renderPart();
   if (S.tab === 'zfight') scanZ();
 };
+// the damage state (render/inspectmodel.js: the game's own dents): changed on the live model, nothing rebuilt, the camera,
+// the selection and the edits kept. The parts' triangle counts are the damaged ones.
+const recount = () => { for (const p of S.parts) { const n = S.nodes.get(p.id); if (n) p.tris = n.isMesh ? triangles(n) : p.tris; } };
+const setDamage = (share, quiet = false) => {
+  S.share = share;
+  const at = damageIndex(share);
+  document.querySelectorAll('#damageSeg button').forEach(b => { const on = +b.dataset.at === at; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  if (S.model) {
+    withoutFx(() => damageModel(S.model, share));
+    recount(); applyViewFlags(); renderList(); renderStats();
+    if (S.sel && S.nodes.has(S.sel)) selBox.setFromObject(S.nodes.get(S.sel));
+    if (S.tab === 'part') renderPart();
+    if (S.tab === 'zfight') scanZ();
+    if (!quiet) status(S.car.name + ': ' + DAMAGE_STATES[at].label + (at ? ' damage (stage ' + Math.min(at, 4) + ').' : '.'));
+  }
+  syncUrl();
+};
+$('damageSeg').innerHTML = DAMAGE_STATES.map((d, i) => '<button data-at="' + i + '" title="' + (i ? d.label + ' of the car\'s health lost' : 'No damage') + ' (key ' + i + ')" aria-pressed="false">' + d.label + '</button>').join('');
+$('damageSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setDamage(DAMAGE_STATES[+b.dataset.at].share); });
 // a new patch: kept in the history (undo), saved, shown
 const commit = (patch, words) => {
   S.patch = patch;
@@ -196,6 +222,7 @@ const syncUrl = () => {
   const q = new URLSearchParams();
   q.set('car', S.car.id);
   if (S.evil) q.set('evil', '');
+  if (S.share > 0) q.set('damage', String(damageIndex(S.share)));
   if (S.tab !== 'parts') q.set('tab', S.tab);
   if (S.sel) q.set('part', S.sel);
   for (const id of LAMP_IDS) if ($(id).checked) q.set(LAMP_PARAMS[id], '');
@@ -555,12 +582,13 @@ const remove = () => { const p = partOf(S.sel); if (!p) return; commit(withDelet
 
 // ---- the stats strip: against the budget (CAR-AGENT-PROMPT.md) ---------------------------------------------------
 const renderStats = () => {
-  const s = withoutFx(() => modelStats(S.model));
+  const s = withoutFx(() => modelStats(S.model)), dc = S.share > 0 ? withoutFx(() => damageCounts(S.model)) : null;
   const shapes = s.meshes > BUDGET.shapes[1] ? 'warn' : '', tris = s.triangles > BUDGET.hard ? 'bad' : s.triangles > BUDGET.triangles[1] ? 'warn' : '';
   const r = S.result;
   $('stats').innerHTML = '<span class="' + shapes + '">Shapes <b>' + s.meshes + '</b> / ' + BUDGET.shapes.join('-') + '</span>'
     + '<span class="' + tris + '">Triangles <b>' + s.triangles.toLocaleString('en') + '</b> / ' + BUDGET.triangles.map(n => n.toLocaleString('en')).join('-') + ' (max ' + BUDGET.hard.toLocaleString('en') + ')</span>'
     + '<span>Draw calls <b>' + s.materials + '</b> once merged</span>'
+    + (S.share > 0 ? '<span class="dmg" title="Damage ' + DAMAGE_STATES[damageIndex(S.share)].label + ': triangles and draw calls, clean against damaged (the cut-finer panels add triangles; paint is shared, so no draw call)">Damaged <b>' + dc.damaged.triangles.toLocaleString('en') + '</b> tris (clean ' + dc.clean.triangles.toLocaleString('en') + ', <b>&times;' + dc.factor.toFixed(2) + '</b>) &middot; draw calls <b>' + dc.damaged.materials + '</b> (clean ' + dc.clean.materials + ')</span>' : '')
     + '<span class="lamp" title="Where the lamp effects (Lights, Brake, Hazards, Lamp markers) are placed">lamps: <b>' + esc(fxSource) + '</b></span>'
     + '<span>Edits <b>' + S.patch.ops.length + (S.patch.evil?.length ? ' + ' + S.patch.evil.length + ' Evil' : '') + '</b></span>'
     + (r.unmatched.length ? '<span class="bad">Stale <b>' + r.unmatched.length + '</b></span>' : '')
@@ -709,6 +737,7 @@ window.addEventListener('keydown', (e) => {
   else if (ctrl && k === 'y') { e.preventDefault(); undo(1); }
   else if (ctrl && k === 'd') { e.preventDefault(); duplicate(); }
   else if (ctrl) return;
+  else if (/^[0-5]$/.test(k) && !e.shiftKey) setDamage(DAMAGE_STATES[+k].share);
   else if (k === 'g') setMode('translate');
   else if (k === 'r') setMode('rotate');
   else if (k === 's') setMode('scale');
@@ -735,6 +764,7 @@ resize();
 patchesReady.then(() => {
   if (params.has('dark')) $('dark').checked = true; // (?dark: the Blackout view from the start)
   loadCar(params.get('car') || 'commuter');
+  setDamage(S.share, true);
   showTab(params.get('tab'));
   if (params.get('part')) select(params.get('part'));
   if (params.get('tab')) showTab(params.get('tab'));

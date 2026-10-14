@@ -40,6 +40,9 @@
 #inspector .ins-views { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; pointer-events: auto; }
 #inspector .ins-views button { min-width: 64px; }
 #inspector .ins-views button.on { background: #1d2430; color: #fff; }
+#inspector .ins-damage { display: inline-flex; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(20, 30, 45, .22); pointer-events: auto; }
+#inspector .ins-damage button { border-radius: 0; box-shadow: none; background: rgba(255, 255, 255, .7); min-width: 46px; padding: 0 10px; min-height: 34px; }
+#inspector .ins-damage button.on { background: #1d2430; color: #fff; }
 #inspector .ins-stats { max-width: 100%; padding: 6px 12px; border-radius: 8px; background: rgba(255, 255, 255, .62); text-align: center;
   font: 600 13px/1.35 system-ui, sans-serif; font-variant-numeric: tabular-nums; }
 #inspector .ins-hint { font: 600 12px/1.2 system-ui, sans-serif; opacity: .6; transition: opacity .6s; }
