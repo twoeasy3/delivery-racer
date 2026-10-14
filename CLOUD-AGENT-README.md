@@ -80,7 +80,11 @@ groups above, and the quick smoke only when asked. Syntax-check changed files wi
 - **Textures:** allowed (the owner, 14-Oct) when drawn in code on a canvas, never as image files (no download cost, about 4 bytes a
   pixel of memory); keep them modest (256 x 256 is today's biggest) and report their sizes. Details: CAR-AGENT-PROMPT.md.
 
+- **Car lamps:** to put a car's brake lamps, indicators and headlamp glow on its own model's lamps, read `LAMP-PLACEMENT-GUIDE.md` (the code is on branch `claude/car-lights` until merged).
+
 - **Cinematics (unlockcine.js and any later cutscene):** render NO humans (the owner, 14-Oct): no people, hands, faces, silhouettes of figures; use props, signs, text and the cars only; hide any driver figure a car model carries.
+
+- **Lamps:** every new or rebuilt car gets its own headlight, taillight and blinker placements in the lamp table (the owner, 14-Oct): see CAR-AGENT-PROMPT.md ("Lamp placements") and LAMP-PLACEMENT-GUIDE.md (on branch claude/car-lights until merged).
 
 ## The unfinished work
 

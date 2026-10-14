@@ -25,6 +25,7 @@ import { syncEmotes } from './render/emotes.js';
 import { syncPickups, syncTargets, syncToads } from './render/items.js';
 import { syncHelicopter, syncArrests } from './render/helicopter.js';
 import { syncHeadlights, syncTrafficBeams } from './render/headlights.js';
+import { LAMP_DEBUG } from './render/carlights.js';
 import { syncUfoStrike } from './render/ufostrike.js';
 import { syncBulletTrain } from './render/bullettrain.js';
 import { syncJunctions } from './render/junctions.js';
@@ -280,6 +281,11 @@ if (params.get('racewatch') !== null) {
       floor.position.set(tmp.x, tmp.y - 0.01, tmp.z);
       floor.userData.studio = true;
       scene.add(floor);
+      if (LAMP_DEBUG.night) { // (?lamps=night: the studio dark, its lights turned well down, to see the lamps lit: render/carlights.js)
+        scene.background.set(0x0a0d18);
+        floor.material.color.set(0x2a2d36);
+        scene.traverse((o) => { if (o.isLight) o.intensity *= 0.3; });
+      }
     }
   }
 }
