@@ -5,34 +5,17 @@
 // row of five side windows, a big rear glass and a roof vent). Built as the approved Junker is: bodies from extrusions of
 // their side views (one bevel segment), dark glass laid a few mm proud, parts that share a material and never move merged
 // into one mesh, plain chunky wheels (a tyre and a hub disc, meshes of their own so the showroom's suspension finds them),
-// paint shaded darker low down (vertex colours) and a sun-worn paint picture (64 x 64, drawn in code, soft-edged). No image
+// paint shaded darker low down (vertex colours); NO textures at all (the owner, 14-Oct: flat colours). No image
 // files, no panel lines, no scooped arches. Each builder takes the idea's entry and returns a group, front facing local +z,
 // with userData.body, userData.animate and userData.livery. Spread into IDEA_MODELS by ideaModels.js. State-free.
 import * as THREE from 'three';
 import {
-  lambert, TYRE, TRIM, CHROME, GLASS, LAMP, TAIL, AMBER, shared, place, merge, parts, bx, dsc, curve, extrudeSide, panel, sideGlass,
-  slopeGlass, shadeBy, low, wheel, texture, random, roundRect, extrudePlan, narrowAt,
+  TYRE, TRIM, CHROME, GLASS, LAMP, TAIL, AMBER, shared, place, merge, parts, bx, dsc, curve, extrudeSide, panel, sideGlass,
+  slopeGlass, shadeBy, low, wheel, roundRect, extrudePlan, narrowAt,
 } from './ideaModelsDkit.js';
 
-// paint worn by sun and knocks, to repeat over the body: a white ground with soft darker rubs and a few fine scratches (a
-// multiply over the paint); no hard edges anywhere
-const worn = (seed) => texture('e2worn' + seed, 64, 64, (ctx, w, h) => {
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, w, h);
-  const rnd = random(seed);
-  for (let i = 0; i < 7; i++) {
-    const x = rnd() * w, y = rnd() * h, r = 5 + rnd() * 11, g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, 'rgba(95,75,60,0.12)'); g.addColorStop(1, 'rgba(95,75,60,0)');
-    ctx.fillStyle = g; ctx.fillRect(x - r, y - r, 2 * r, 2 * r);
-  }
-  for (let i = 0; i < 6; i++) {
-    const x = rnd() * w, y = rnd() * h, l = 3 + rnd() * 8, a = rnd() * Math.PI;
-    ctx.strokeStyle = 'rgba(60,50,45,0.22)'; ctx.lineWidth = 0.7;
-    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); ctx.stroke();
-  }
-}, true);
-const paintOf = (car, seed) => {
-  const m = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true, map: worn(seed) });
+const paintOf = (car) => {
+  const m = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
   m.userData.shared = true;
   return m;
 };
@@ -57,7 +40,7 @@ export const IDEA_MODELS_BATCH_E2 = {
       RH, RL, [TAILZ, FLOOR],
     ];
     const FZ = NOSE + BEV, BZ = TAILZ - BEV;
-    const paint = paintOf(car, 5);
+    const paint = paintOf(car);
     const body = place(group, shared(k + 'body', () => shadeBy(merge([extrudeSide(outline, BW, BEV, TAPER, 1)]), low(0.3, 0.8, [0.7, 0.64, 0.58]))), paint);
     const LIFT = 0.006, gx = (y) => narrowAt(HALF, y, TAPER);
     const zWS = (y) => WSF[0] + (WST[0] - WSF[0]) * (y - WSF[1]) / (WST[1] - WSF[1]);
@@ -99,8 +82,8 @@ export const IDEA_MODELS_BATCH_E2 = {
   minibus: (car) => {
     const group = new THREE.Group();
     const k = 'minibus';
-    const R = 0.38, TW = 0.25, WX = car.hw - TW / 2, AF = 1.55, AR = -1.5;
-    const BEV = 0.05, BW = 1.94, HALF = BW / 2, NOSE = 2.42, TAILZ = -2.42, FLOOR = 0.32, ROOF = 2.16;
+    const R = 0.38, TW = 0.25, WX = 1.12 - TW / 2, AF = 1.55, AR = -1.5;
+    const BEV = 0.05, BW = 2.06, HALF = BW / 2, NOSE = 2.42, TAILZ = -2.42, FLOOR = 0.32, ROOF = 2.16;
     const TAPER = [1.3, ROOF, 0.05];
     const WSF = [1.74, 1.12], WST = [1.42, 2.04];
     const outline = [
@@ -110,8 +93,8 @@ export const IDEA_MODELS_BATCH_E2 = {
       [TAILZ, FLOOR],
     ];
     const FZ = NOSE + BEV, BZ = TAILZ - BEV;
-    const paint = paintOf(car, 9);
-    const body = place(group, shared(k + 'body', () => shadeBy(merge([extrudeSide(outline, BW, BEV, TAPER, 1)]), low(0.35, 1.0, [0.62, 0.57, 0.5]))), paint);
+    const paint = paintOf(car);
+    const body = place(group, shared(k + 'body', () => shadeBy(merge([extrudeSide(outline, BW, BEV, TAPER, 1)]), low(0.35, 1.0, [0.72, 0.67, 0.6]))), paint);
     const LIFT = 0.006, gx = (y) => narrowAt(HALF, y, TAPER);
     const zWS = (y) => WSF[0] + (WST[0] - WSF[0]) * (y - WSF[1]) / (WST[1] - WSF[1]);
     const Y0 = 1.36, Y1 = 1.94;
@@ -122,22 +105,22 @@ export const IDEA_MODELS_BATCH_E2 = {
     parts(group, k + 'glass', GLASS, () => [
       slopeGlass([zWS(1.2), 1.2], [zWS(1.98), 1.98], gx(1.2) - 0.1, gx(1.98) - 0.1, BEV + LIFT),
       ...sideGlass(sides, HALF, TAPER, LIFT),
-      panel([[-0.66, 1.4, BZ - LIFT], [0.66, 1.4, BZ - LIFT], [0.66, 1.92, BZ - LIFT], [-0.66, 1.92, BZ - LIFT]].reverse()),
+      panel([[-0.72, 1.4, BZ - LIFT], [0.72, 1.4, BZ - LIFT], [0.72, 1.92, BZ - LIFT], [-0.72, 1.92, BZ - LIFT]].reverse()),
     ]);
     parts(group, k + 'black', TRIM, () => [
-      bumper(0.99, 0.08, 0.24, 0.34, NOSE - 0.01), bumper(0.99, 0.08, 0.24, 0.34, TAILZ + 0.01),
-      bx(1.05, 0.28, 0.03, 0, 0.82, FZ),
-      ...[-1, 1].flatMap(s => [bx(0.2, 0.03, 0.03, s * 1.0, 1.52, 1.55), bx(0.07, 0.34, 0.18, s * 1.08, 1.52, 1.55)]),
-      bx(1.3, 0.12, 0.14, 0, 0.38, AF), bx(1.3, 0.12, 0.14, 0, 0.38, AR),
+      bumper(1.05, 0.08, 0.24, 0.34, NOSE - 0.01), bumper(1.05, 0.08, 0.24, 0.34, TAILZ + 0.01),
+      bx(1.1, 0.28, 0.03, 0, 0.82, FZ),
+      ...[-1, 1].flatMap(s => [bx(0.24, 0.03, 0.03, s * 1.06, 1.52, 1.55), bx(0.07, 0.34, 0.18, s * 1.17, 1.52, 1.55)]),
+      bx(1.4, 0.12, 0.14, 0, 0.38, AF), bx(1.4, 0.12, 0.14, 0, 0.38, AR),
       bx(0.62, 0.06, 0.56, 0, ROOF + BEV + 0.03, -0.7),
     ]);
-    parts(group, k + 'chrome', CHROME, () => [0.76, 0.84, 0.92].map(y => bx(1.0, 0.03, 0.03, 0, y, FZ + 0.014)));
-    parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => bx(0.36, 0.22, 0.04, s * 0.76, 0.82, FZ - 0.01)));
+    parts(group, k + 'chrome', CHROME, () => [0.76, 0.84, 0.92].map(y => bx(1.08, 0.03, 0.03, 0, y, FZ + 0.014)));
+    parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => bx(0.36, 0.22, 0.04, s * 0.82, 0.82, FZ - 0.01)));
     parts(group, k + 'amber', AMBER, () => [
-      ...[-1, 1].map(s => bx(0.2, 0.07, 0.03, s * 0.8, 0.64, FZ + 0.004)),
-      ...[-1, 1].map(s => bx(0.14, 0.12, 0.03, s * 0.88, 0.76, BZ - 0.014)),
+      ...[-1, 1].map(s => bx(0.2, 0.07, 0.03, s * 0.86, 0.64, FZ + 0.004)),
+      ...[-1, 1].map(s => bx(0.14, 0.12, 0.03, s * 0.94, 0.76, BZ - 0.014)),
     ]);
-    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.14, 0.34, 0.03, s * 0.88, 1.1, BZ - 0.014)));
+    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.14, 0.34, 0.03, s * 0.94, 1.1, BZ - 0.014)));
     for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, k, R, TW, s * WX, z, 16);
     group.userData = { body, animate: () => {}, livery: () => {} };
     return group;
