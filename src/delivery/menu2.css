@@ -819,3 +819,9 @@
 }
 /* the two editors' links in Options (the level editor, the model editor): a finger-sized target on a touch screen */
 @media (pointer: coarse) { #startScreen .menu-chip.editor-link { min-height: 44px; box-sizing: border-box; } }
+
+/* Options: the Unlock everything mode (Everything / Absolutely everything) */
+#startScreen .unlock-mode { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0 0; }
+#startScreen .unlock-mode .unlock-label { font-size: 13px; font-weight: 700; opacity: .8; }
+#startScreen .unlock-mode .menu-chip[aria-pressed="true"] { background: var(--accent); color: #111; }
+#startScreen .unlock-note { margin: 4px 0 8px; font-size: 12px; opacity: .75; line-height: 1.35; max-width: 34em; }

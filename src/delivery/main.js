@@ -5,6 +5,7 @@ import './lite.js'; // (?lite=<list>: the tablet flicker's bisect switches, and 
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { Track } from './track.js';
+import { unlockEverything } from './unlockall.js';
 import { LEVEL, LEVELS, selectLevel, selectSpecial, HIDDEN_LEVELS, setRaceClass } from './levels.js';
 import { standsAlone } from './levelText.js';
 import { THEMES } from './themes.js';
@@ -94,7 +95,7 @@ if (params.get('eventsnow')) { const at = eventTime(params.get('eventsnow')); if
 if (params.has('freetry')) for (const e of Events.specials) if (e.days) Events.setFreeTry(e, true);
 // A visit with any of these is a test, not play: it lends cars and opens levels, so none of it is saved
 // (Progress.noSave: the save stays as it was before the visit, whatever is delivered, bought or counted in it)
-if (['autostart', 'hidden', 'test', 'edited', 'pick', 'car', 'ghost', 'mystery', 'theme', 'beaten', 'owns', 'event'].some(key => params.get(key) !== null)) Progress.noSave = true;
+if (['autostart', 'hidden', 'test', 'edited', 'pick', 'car', 'ghost', 'mystery', 'theme', 'beaten', 'owns', 'event', 'unlockall'].some(key => params.get(key) !== null)) Progress.noSave = true;
 // ?beaten=expressway,back-roads:evil,farm:both and ?owns=lovebus,wagon&money=500: a state to look at (the level tiers:
 // medals are best times; nothing is saved). A level listed alone is a Good medal.
 if (params.get('beaten')) {
@@ -106,8 +107,10 @@ if (params.get('beaten')) {
 // (a car a test switch gives is at its max ECU, ecu.js, as it drove before the ECUs: Progress.data.maxed)
 const lendForVisit = (id) => { if (!Progress.data.cars.includes(id)) Progress.data.cars.push(id); (Progress.data.maxed ||= []).push(id); };
 if (params.get('owns')) for (const id of params.get('owns').split(',')) lendForVisit(id);
+// ?unlockall=abs (or =all, or bare: Everything): the Options screen's Unlock everything applied from the address, for the visit only
+if (params.get('unlockall') !== null) unlockEverything(params.get('unlockall') === 'abs' ? 'abs' : 'all');
 if (params.get('money')) Progress.data.money = Number(params.get('money')) || 0;
-if (params.get('beaten') || params.get('owns') || params.get('money')) window.dispatchEvent(new Event('carchange')); // (the menu draws itself again)
+if (params.get('beaten') || params.get('owns') || params.get('money') || params.get('unlockall') !== null) window.dispatchEvent(new Event('carchange')); // (the menu draws itself again)
 // (before ?garage, so a garage opened with &pick is the picked level's) ?pick=41 shows the menu with that level picked, open or not (for a look at its card: nothing starts; the levels
 // are all open for this visit); with &start, Start Game is pressed too (an amphibious level with no amphibious car)
 if (params.get('pick')) {
