@@ -1,0 +1,7403 @@
+{
+ "about": "Plate audit, 14-Oct (src/delivery/AUDIT-plates-14-Oct.md). Measured by building every car via render/showcar.js makeShowCar (traffic kinds via MODELS) headless. Coordinates: car-local metres, x across, y up, nose at +z; rear = -z. anchor = {yc: centre height, W: widest flat width at 0.12 m high, H: tallest flat height at min(W,0.52), z: face depth}. Classes: A flat 0.52 x 0.12 (3 cm / 8 deg), B flat 0.30 x 0.12, C only 0.30 x 0.10 under looser tolerance (8 cm / 25 deg), D none. Category: reliable (A or B), hand (C or D), cannot (craft, open-wheelers, bikes, saucers; a manual list).",
+ "existing_plate_models": [
+  {
+   "model": "junker",
+   "source": "src/delivery/render/modelsOrig3.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.8,
+      -2.495
+     ],
+     "size_wht": [
+      0.34,
+      0.13,
+      0.02
+     ],
+     "colour": "0xece6cc",
+     "proud_of_body_m": 0.015,
+     "gap_to_body_m": -0.005,
+     "source_line": 697,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "garage:junker",
+    "super:super-junker",
+    "legendary:l-junker",
+    "traffic:traffic:junker"
+   ]
+  },
+  {
+   "model": "hearse",
+   "source": "src/delivery/render/modelsOrig3.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.66,
+      -2.805
+     ],
+     "size_wht": [
+      0.46,
+      0.13,
+      0.02
+     ],
+     "colour": "0xece6cc",
+     "proud_of_body_m": 0.015,
+     "gap_to_body_m": -0.005,
+     "source_line": 414,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "garage:hearse",
+    "super:super-hearse",
+    "legendary:l-hearse",
+    "traffic:traffic:hearse"
+   ]
+  },
+  {
+   "model": "minivan",
+   "source": "src/delivery/render/modelsOrig3.js",
+   "plates": [
+    {
+     "face": "front",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.47,
+      2.555
+     ],
+     "size_wht": [
+      0.44,
+      0.12,
+      0.02
+     ],
+     "colour": "0xece6cc",
+     "proud_of_body_m": 0.015,
+     "gap_to_body_m": -0.005,
+     "source_line": 547,
+     "tagged_as": "mesh.userData.plate = 'front'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    },
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.72,
+      -2.455
+     ],
+     "size_wht": [
+      0.44,
+      0.13,
+      0.02
+     ],
+     "colour": "0xece6cc",
+     "proud_of_body_m": 0.015,
+     "gap_to_body_m": -0.005,
+     "source_line": 549,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "garage:minivan",
+    "super:super-minivan",
+    "legendary:l-minivan",
+    "traffic:traffic:minivan"
+   ]
+  },
+  {
+   "model": "pickup",
+   "source": "src/delivery/render/modelsOrig3.js",
+   "plates": [
+    {
+     "face": "front",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.98,
+      2.775
+     ],
+     "size_wht": [
+      0.4,
+      0.12,
+      0.02
+     ],
+     "colour": "0xece6cc",
+     "proud_of_body_m": 0.015,
+     "gap_to_body_m": -0.005,
+     "source_line": 622,
+     "tagged_as": "mesh.userData.plate = 'front'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    },
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.98,
+      -2.715
+     ],
+     "size_wht": [
+      0.4,
+      0.14,
+      0.02
+     ],
+     "colour": "0xece6cc",
+     "proud_of_body_m": 0.015,
+     "gap_to_body_m": -0.005,
+     "source_line": 624,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "garage:pickup",
+    "super:super-pickup",
+    "legendary:l-pickup",
+    "traffic:traffic:pickup"
+   ]
+  },
+  {
+   "model": "hotrod",
+   "source": "src/delivery/render/modelsOrig3.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.64,
+      -1.965
+     ],
+     "size_wht": [
+      0.3,
+      0.12,
+      0.02
+     ],
+     "colour": "0xf2d21f",
+     "proud_of_body_m": 0.016,
+     "gap_to_body_m": -0.004,
+     "source_line": 487,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "garage:hotrod",
+    "super:super-hotrod",
+    "earned:hellrod",
+    "legendary:l-hotrod",
+    "traffic:traffic:hotrod"
+   ]
+  },
+  {
+   "model": "goddess",
+   "source": "src/delivery/render/ideaModels5.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.62,
+      -2.41
+     ],
+     "size_wht": [
+      0.32,
+      0.09,
+      0.02
+     ],
+     "colour": "0xf4f2ec",
+     "proud_of_body_m": 0.02,
+     "gap_to_body_m": 0,
+     "source_line": 190,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "filler:goddess"
+   ]
+  },
+  {
+   "model": "hardtop",
+   "source": "src/delivery/render/ideaModels5.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.58,
+      -2.51
+     ],
+     "size_wht": [
+      0.32,
+      0.16,
+      0.02
+     ],
+     "colour": "0xf4f2ec",
+     "proud_of_body_m": 0.02,
+     "gap_to_body_m": 0,
+     "source_line": 258,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "filler:hardtop"
+   ]
+  },
+  {
+   "model": "blower",
+   "source": "src/delivery/render/ideaModels6.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.72,
+      -1.955
+     ],
+     "size_wht": [
+      0.34,
+      0.12,
+      0.02
+     ],
+     "colour": "0xf4f2ec",
+     "proud_of_body_m": 0.015,
+     "gap_to_body_m": -0.005,
+     "source_line": 270,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "filler:blower"
+   ]
+  },
+  {
+   "model": "coach",
+   "source": "src/delivery/render/ideaModels6.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.78,
+      -5.46
+     ],
+     "size_wht": [
+      0.4,
+      0.2,
+      0.02
+     ],
+     "colour": "0xf4f2ec",
+     "proud_of_body_m": 0.02,
+     "gap_to_body_m": 0,
+     "source_line": 330,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "filler:coach"
+   ]
+  },
+  {
+   "model": "cityev",
+   "source": "src/delivery/render/ideaModels6.js",
+   "plates": [
+    {
+     "face": "front",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.44,
+      2.03
+     ],
+     "size_wht": [
+      0.42,
+      0.1,
+      0.02
+     ],
+     "colour": "0xf4f2ec",
+     "proud_of_body_m": 0.015,
+     "gap_to_body_m": -0.005,
+     "source_line": 466,
+     "tagged_as": "mesh.userData.plate = 'front'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    },
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.72,
+      -2.035
+     ],
+     "size_wht": [
+      0.42,
+      0.11,
+      0.02
+     ],
+     "colour": "0xf4f2ec",
+     "proud_of_body_m": 0.015,
+     "gap_to_body_m": -0.005,
+     "source_line": 474,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "filler:cityev"
+   ]
+  },
+  {
+   "model": "coupecross",
+   "source": "src/delivery/render/ideaModels6.js",
+   "plates": [
+    {
+     "face": "front",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.635,
+      2.205
+     ],
+     "size_wht": [
+      0.4,
+      0.09,
+      0.02
+     ],
+     "colour": "0xf4f2ec",
+     "proud_of_body_m": 0.005,
+     "gap_to_body_m": -0.015,
+     "source_line": 534,
+     "tagged_as": "mesh.userData.plate = 'front'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    },
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.84,
+      -2.188
+     ],
+     "size_wht": [
+      0.4,
+      0.1,
+      0.02
+     ],
+     "colour": "0xf4f2ec",
+     "proud_of_body_m": 0.018,
+     "gap_to_body_m": -0.002,
+     "source_line": 546,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "filler:coupecross"
+   ]
+  },
+  {
+   "model": "hotdog",
+   "source": "src/delivery/render/ideaModels3.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.62,
+      -2.598
+     ],
+     "size_wht": [
+      0.36,
+      0.12,
+      0.02
+     ],
+     "colour": "0xf2d21f",
+     "proud_of_body_m": 0.058,
+     "gap_to_body_m": 0.038,
+     "source_line": 795,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "bespoke:hotdog"
+   ]
+  },
+  {
+   "model": "fishbowl",
+   "source": "src/delivery/render/ideaModels10.js",
+   "plates": [
+    {
+     "face": "front",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.29,
+      1.392
+     ],
+     "size_wht": [
+      0.36,
+      0.09,
+      0.02
+     ],
+     "colour": "0xf4f2ec",
+     "proud_of_body_m": 0.015,
+     "gap_to_body_m": -0.005,
+     "source_line": 180,
+     "tagged_as": "mesh.userData.plate = 'front'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    },
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.48,
+      -1.386
+     ],
+     "size_wht": [
+      0.36,
+      0.1,
+      0.02
+     ],
+     "colour": "0xf4f2ec",
+     "proud_of_body_m": 0.026,
+     "gap_to_body_m": 0.006,
+     "source_line": 186,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "bespoke:fishbowl"
+   ]
+  },
+  {
+   "model": "midsummer",
+   "source": "src/delivery/render/ideaModels9.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.53,
+      -1.976
+     ],
+     "size_wht": [
+      0.36,
+      0.11,
+      0.02
+     ],
+     "colour": "0xf4f2ec",
+     "proud_of_body_m": 0.016,
+     "gap_to_body_m": -0.004,
+     "source_line": 231,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "bespoke:midsummer"
+   ]
+  },
+  {
+   "model": "sixteen",
+   "source": "src/delivery/render/ideaModels7.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.62,
+      -2.848
+     ],
+     "size_wht": [
+      0.42,
+      0.1,
+      0.02
+     ],
+     "colour": "0xf4f2ec",
+     "proud_of_body_m": 0.018,
+     "gap_to_body_m": -0.002,
+     "source_line": 347,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "bespoke:sixteen"
+   ]
+  },
+  {
+   "model": "knifeedge",
+   "source": "src/delivery/render/ideaModels7.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.42,
+      -2.238
+     ],
+     "size_wht": [
+      0.4,
+      0.1,
+      0.02
+     ],
+     "colour": "0xf4f2ec",
+     "proud_of_body_m": 0.018,
+     "gap_to_body_m": -0.002,
+     "source_line": 244,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "bespoke:knifeedge"
+   ]
+  },
+  {
+   "model": "threewheeler",
+   "source": "src/delivery/render/ideaModels.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.56,
+      -1.7
+     ],
+     "size_wht": [
+      0.426,
+      0.09,
+      0.02
+     ],
+     "colour": "0xf2d21f",
+     "proud_of_body_m": 0.033,
+     "gap_to_body_m": 0.013,
+     "source_line": 273,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "idea:threewheeler"
+   ]
+  },
+  {
+   "model": "bathtub",
+   "source": "src/delivery/render/ideaModels3.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.32,
+      -1.517
+     ],
+     "size_wht": [
+      0.3,
+      0.1,
+      0.02
+     ],
+     "colour": "0xf2d21f",
+     "proud_of_body_m": 0.02,
+     "gap_to_body_m": 0,
+     "source_line": 341,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "idea:bathtub"
+   ]
+  },
+  {
+   "model": "gyrocar",
+   "source": "src/delivery/render/ideaModels3.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.78,
+      -1.449
+     ],
+     "size_wht": [
+      0.24,
+      0.08,
+      0.02
+     ],
+     "colour": "0xf2d21f",
+     "proud_of_body_m": 0.008,
+     "gap_to_body_m": -0.011,
+     "source_line": 585,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "idea:gyrocar"
+   ]
+  },
+  {
+   "model": "snailcamper",
+   "source": "src/delivery/render/ideaModels3.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.4,
+      -2.53
+     ],
+     "size_wht": [
+      0.26,
+      0.08,
+      0.02
+     ],
+     "colour": "0xf2d21f",
+     "proud_of_body_m": 0.003,
+     "gap_to_body_m": -0.017,
+     "source_line": 725,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "idea:snailcamper"
+   ]
+  },
+  {
+   "model": "slantback",
+   "source": "src/delivery/render/ideaModelsTopupA.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.62,
+      -2.102
+     ],
+     "size_wht": [
+      0.36,
+      0.12,
+      0.02
+     ],
+     "colour": "0xece6cc",
+     "proud_of_body_m": 0.012,
+     "gap_to_body_m": -0.008,
+     "source_line": 284,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "idea:slantback"
+   ]
+  },
+  {
+   "model": "autobahnestate",
+   "source": "src/delivery/render/ideaModelsBatchD4.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.68,
+      -2.402
+     ],
+     "size_wht": [
+      0.457,
+      0.1,
+      0.02
+     ],
+     "colour": "0xece6cc",
+     "proud_of_body_m": 0.012,
+     "gap_to_body_m": -0.008,
+     "source_line": 220,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "idea:autobahnestate"
+   ]
+  },
+  {
+   "model": "finlandyacht",
+   "source": "src/delivery/render/ideaModelsBatchD4.js",
+   "plates": [
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.7,
+      -2.902
+     ],
+     "size_wht": [
+      0.46,
+      0.1,
+      0.02
+     ],
+     "colour": "0xece6cc",
+     "proud_of_body_m": 0.012,
+     "gap_to_body_m": -0.008,
+     "source_line": 286,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "idea:finlandyacht"
+   ]
+  },
+  {
+   "model": "moorrover",
+   "source": "src/delivery/render/ideaModelsBatchE3.js",
+   "plates": [
+    {
+     "face": "front",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.46,
+      2.31
+     ],
+     "size_wht": [
+      0.46,
+      0.12,
+      0.02
+     ],
+     "colour": "0xe8e4d0",
+     "proud_of_body_m": 0.015,
+     "gap_to_body_m": -0.005,
+     "source_line": 155,
+     "tagged_as": "mesh.userData.plate = 'front'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    },
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.46,
+      -2.31
+     ],
+     "size_wht": [
+      0.46,
+      0.12,
+      0.02
+     ],
+     "colour": "0xe8e4d0",
+     "proud_of_body_m": 0.015,
+     "gap_to_body_m": -0.005,
+     "source_line": 156,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "idea:moorrover"
+   ]
+  },
+  {
+   "model": "learner",
+   "source": "src/delivery/render/trafficModels.js",
+   "plates": [
+    {
+     "face": "front",
+     "type": "L plate board (white box + red L)",
+     "centre": [
+      0.374,
+      0.735,
+      1.93
+     ],
+     "size_wht": [
+      0.5,
+      0.5,
+      0.04
+     ],
+     "colour": "0xf4f4f4",
+     "proud_of_body_m": 0.05,
+     "gap_to_body_m": 0.01,
+     "source_line": 95,
+     "tagged_as": "mesh.userData.plate = 'front'",
+     "how_to_find": "three box meshes (white board 0.5 x 0.5 x 0.04, red stem, red foot), each tagged; render/platecosmetic.js existingPlates(model)"
+    },
+    {
+     "face": "rear",
+     "type": "L plate board (white box + red L)",
+     "centre": [
+      0.374,
+      0.735,
+      -1.93
+     ],
+     "size_wht": [
+      0.5,
+      0.5,
+      0.04
+     ],
+     "colour": "0xf4f4f4",
+     "proud_of_body_m": 0.05,
+     "gap_to_body_m": 0.01,
+     "source_line": 96,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "three box meshes (white board 0.5 x 0.5 x 0.04, red stem, red foot), each tagged; render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "traffic:traffic:learner"
+   ]
+  }
+ ],
+ "anchors": [
+  {
+   "id": "garage:commuter",
+   "model": "commuter",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -1.73,
+     "H": 0.5
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.46,
+     "W": 0.76,
+     "z": 1.773,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "garage:junker",
+   "model": "junker",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.49,
+     "H": 0.64
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.8,
+     "z": 2.446,
+     "H": 0.34
+    }
+   }
+  },
+  {
+   "id": "garage:darkvan",
+   "model": "darkvan",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.84,
+     "W": 0.88,
+     "z": -2.59,
+     "H": 0.24
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.84,
+     "W": 0.88,
+     "z": 2.59,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "garage:postvan",
+   "model": "postvan",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.38,
+     "W": 0.88,
+     "z": -2.19,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.72,
+     "W": 0.6,
+     "z": 2.1,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "garage:keitruck",
+   "model": "keitruck",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -1.695,
+     "H": 0.42
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.64,
+     "z": 1.7,
+     "H": 0.52
+    }
+   }
+  },
+  {
+   "id": "garage:mini",
+   "model": "mini",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -1.56,
+     "H": 0.32
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.5,
+     "W": 0.24,
+     "z": 1.565,
+     "H": 0.22
+    }
+   }
+  },
+  {
+   "id": "garage:lovebus",
+   "model": "lovebus",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.31,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.42,
+     "W": 0.88,
+     "z": 2.38,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "garage:wagon",
+   "model": "wagon",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.78,
+     "W": 0.56,
+     "z": 2.44,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "garage:sport",
+   "model": "sport",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.5,
+     "W": 0.88,
+     "z": -1.913,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.4,
+     "W": 0.88,
+     "z": 1.931,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "garage:lowrider",
+   "model": "lowrider",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.52,
+     "z": 2.525,
+     "H": 0.26
+    }
+   }
+  },
+  {
+   "id": "garage:hothatch",
+   "model": "hothatch",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.72,
+     "z": -2,
+     "H": 0.36
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.64,
+     "W": 0.6,
+     "z": 2.035,
+     "H": 0.26
+    }
+   }
+  },
+  {
+   "id": "garage:ute",
+   "model": "ute",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.42,
+     "W": 0.88,
+     "z": -2.55,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.7,
+     "W": 0.88,
+     "z": 2.485,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "garage:buggy",
+   "model": "buggy",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.76,
+     "z": -1.75,
+     "H": 0.24
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "garage:liftedtruck",
+   "model": "liftedtruck",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.22,
+     "W": 0.88,
+     "z": -2.89,
+     "H": 0.24
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.22,
+     "W": 0.88,
+     "z": 2.89,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "garage:hearse",
+   "model": "hearse",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.8,
+     "H": 0.4
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.4,
+     "W": 0.88,
+     "z": 2.89,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "garage:minivan",
+   "model": "minivan",
+   "existing_plate": "both",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.45,
+     "H": 0.66
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.45,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "garage:pickup",
+   "model": "pickup",
+   "existing_plate": "both",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.94,
+     "W": 0.88,
+     "z": -2.71,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.18,
+     "W": 0.72,
+     "z": 2.605,
+     "H": 0.3
+    }
+   }
+  },
+  {
+   "id": "garage:hotrod",
+   "model": "hotrod",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.6,
+     "z": 1.805,
+     "H": 0.52
+    }
+   }
+  },
+  {
+   "id": "garage:sleeper",
+   "model": "sleeper",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.5,
+     "H": 0.38
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.64,
+     "z": 2.535,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "garage:rally",
+   "model": "rally",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.44,
+     "W": 0.88,
+     "z": -2.3,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.7,
+     "W": 0.88,
+     "z": 2.235,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "garage:towtruck",
+   "model": "towtruck",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": -2.565,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": 2.96,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "garage:rotary",
+   "model": "rotary",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.52,
+     "W": 0.88,
+     "z": -2.208,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.4,
+     "W": 0.88,
+     "z": 2.209,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "garage:taxi",
+   "model": "taxi",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.76,
+     "z": -2.524,
+     "H": 0.36
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.76,
+     "z": 2.562,
+     "H": 0.38
+    }
+   }
+  },
+  {
+   "id": "garage:suv",
+   "model": "suv",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.68,
+     "W": 0.6,
+     "z": -2.63,
+     "H": 0.64
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.28,
+     "H": 0.64
+    }
+   }
+  },
+  {
+   "id": "garage:miata",
+   "model": "miata",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.8,
+     "z": -1.954,
+     "H": 0.48
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.54,
+     "W": 0.88,
+     "z": 1.913,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "garage:gullwing",
+   "model": "gullwing",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.64,
+     "z": -2.17,
+     "H": 0.24
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.52,
+     "W": 0.8,
+     "z": 2.17,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "garage:rearengine",
+   "model": "rearengine",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.78,
+     "W": 0.88,
+     "z": -2.064,
+     "H": 0.34
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.46,
+     "W": 0.88,
+     "z": 2.146,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "garage:snake",
+   "model": "snake",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 0.5,
+     "W": 0.48,
+     "z": 1.931,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "garage:polytruck",
+   "model": "polytruck",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.87,
+     "H": 0.66
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.87,
+     "H": 0.42
+    }
+   }
+  },
+  {
+   "id": "garage:muscle",
+   "model": "muscle",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.5,
+     "H": 0.26
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.58,
+     "W": 0.88,
+     "z": 2.5,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "garage:fullsize",
+   "model": "fullsize",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.91,
+     "H": 0.28
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.91,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "garage:evsaloon",
+   "model": "evsaloon",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.66,
+     "W": 0.88,
+     "z": -2.55,
+     "H": 0.24
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.48,
+     "W": 0.88,
+     "z": 2.565,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "garage:superlowrider",
+   "model": "superlowrider",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.56,
+     "z": -2.79,
+     "H": 0.28
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.52,
+     "z": 2.525,
+     "H": 0.26
+    }
+   }
+  },
+  {
+   "id": "garage:classicgt",
+   "model": "classicgt",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.54,
+     "W": 0.88,
+     "z": -2.36,
+     "H": 0.28
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.42,
+     "W": 0.88,
+     "z": 2.358,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "garage:sixbysix",
+   "model": "sixbysix",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.9,
+     "W": 0.88,
+     "z": -2.76,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.9,
+     "W": 0.88,
+     "z": 2.76,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "garage:herald",
+   "model": "herald",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.76,
+     "W": 0.88,
+     "z": -1.95,
+     "H": 0.18
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 1.95,
+     "H": 0.38
+    }
+   }
+  },
+  {
+   "id": "garage:floatvan",
+   "model": "transporter",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 1.04,
+     "W": 0.32,
+     "z": -2.708,
+     "H": 0.44
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.5,
+     "W": 0.88,
+     "z": 2.308,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "garage:toybota",
+   "model": "toybota",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 1.04,
+     "W": 0.36,
+     "z": -3,
+     "H": 0.44
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.66,
+     "W": 0.88,
+     "z": 2.5,
+     "H": 0.4
+    }
+   }
+  },
+  {
+   "id": "garage:dampervan",
+   "model": "dampervan",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.82,
+     "W": 0.88,
+     "z": -2.35,
+     "H": 0.3
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.12,
+     "W": 0.68,
+     "z": 2.33,
+     "H": 0.42
+    }
+   }
+  },
+  {
+   "id": "garage:nissank",
+   "model": "nissank",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.492,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "garage:tank",
+   "model": "tank",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.15,
+     "H": 0.46
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.15,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "super:super-commuter",
+   "model": "commuter",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -1.73,
+     "H": 0.5
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.46,
+     "W": 0.76,
+     "z": 1.773,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "super:super-junker",
+   "model": "junker",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.49,
+     "H": 0.64
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.84,
+     "z": 2.446,
+     "H": 0.34
+    }
+   }
+  },
+  {
+   "id": "super:super-darkvan",
+   "model": "darkvan",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.84,
+     "W": 0.88,
+     "z": -2.59,
+     "H": 0.24
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.84,
+     "W": 0.88,
+     "z": 2.59,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "super:super-postvan",
+   "model": "postvan",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.38,
+     "W": 0.88,
+     "z": -2.19,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.74,
+     "W": 0.6,
+     "z": 2.1,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "super:super-keitruck",
+   "model": "keitruck",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -1.695,
+     "H": 0.42
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.64,
+     "z": 1.7,
+     "H": 0.52
+    }
+   }
+  },
+  {
+   "id": "super:super-mini",
+   "model": "mini",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -1.56,
+     "H": 0.32
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.5,
+     "W": 0.24,
+     "z": 1.565,
+     "H": 0.22
+    }
+   }
+  },
+  {
+   "id": "super:super-lovebus",
+   "model": "lovebus",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.31,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.42,
+     "W": 0.88,
+     "z": 2.38,
+     "H": 0.22
+    }
+   }
+  },
+  {
+   "id": "super:super-wagon",
+   "model": "wagon",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.78,
+     "W": 0.56,
+     "z": 2.44,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "super:super-sport",
+   "model": "sport",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.5,
+     "W": 0.88,
+     "z": -1.913,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.4,
+     "W": 0.88,
+     "z": 1.931,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "super:super-lowrider",
+   "model": "superlowrider",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.56,
+     "z": -2.79,
+     "H": 0.28
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.52,
+     "z": 2.525,
+     "H": 0.26
+    }
+   }
+  },
+  {
+   "id": "super:super-hothatch",
+   "model": "hothatch",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.72,
+     "z": -2,
+     "H": 0.36
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.4,
+     "W": 0.88,
+     "z": 2.12,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "super:super-ute",
+   "model": "ute",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.42,
+     "W": 0.88,
+     "z": -2.55,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.7,
+     "W": 0.88,
+     "z": 2.485,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "super:super-buggy",
+   "model": "buggy",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.76,
+     "z": -1.75,
+     "H": 0.24
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "super:super-liftedtruck",
+   "model": "liftedtruck",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.22,
+     "W": 0.88,
+     "z": -2.89,
+     "H": 0.24
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.22,
+     "W": 0.88,
+     "z": 2.89,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "super:super-hearse",
+   "model": "hearse",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.8,
+     "H": 0.4
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.4,
+     "W": 0.88,
+     "z": 2.89,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "super:super-minivan",
+   "model": "minivan",
+   "existing_plate": "both",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.45,
+     "H": 0.66
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.46,
+     "W": 0.88,
+     "z": 2.55,
+     "H": 0.26
+    }
+   }
+  },
+  {
+   "id": "super:super-pickup",
+   "model": "pickup",
+   "existing_plate": "both",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.94,
+     "W": 0.88,
+     "z": -2.71,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.18,
+     "W": 0.76,
+     "z": 2.605,
+     "H": 0.3
+    }
+   }
+  },
+  {
+   "id": "super:super-hotrod",
+   "model": "hotrod",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.6,
+     "z": 1.805,
+     "H": 0.5
+    }
+   }
+  },
+  {
+   "id": "super:super-sleeper",
+   "model": "sleeper",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.5,
+     "H": 0.38
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.6,
+     "z": 2.535,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "super:super-rally",
+   "model": "rally",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.44,
+     "W": 0.88,
+     "z": -2.3,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.7,
+     "W": 0.84,
+     "z": 2.235,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "super:super-towtruck",
+   "model": "towtruck",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": -2.565,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": 2.96,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "super:super-rotary",
+   "model": "rotary",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.52,
+     "W": 0.88,
+     "z": -2.208,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.4,
+     "W": 0.88,
+     "z": 2.209,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "super:super-taxi",
+   "model": "taxi",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.76,
+     "z": -2.524,
+     "H": 0.36
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.76,
+     "z": 2.562,
+     "H": 0.38
+    }
+   }
+  },
+  {
+   "id": "super:super-suv",
+   "model": "suv",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.66,
+     "W": 0.6,
+     "z": -2.61,
+     "H": 0.64
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.28,
+     "H": 0.32
+    }
+   }
+  },
+  {
+   "id": "super:super-miata",
+   "model": "miata",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.84,
+     "z": -1.954,
+     "H": 0.48
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.48,
+     "W": 0.88,
+     "z": 1.938,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "super:super-gullwing",
+   "model": "gullwing",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.6,
+     "z": -2.17,
+     "H": 0.24
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.52,
+     "W": 0.76,
+     "z": 2.17,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "super:super-rearengine",
+   "model": "rearengine",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.78,
+     "W": 0.88,
+     "z": -2.064,
+     "H": 0.34
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.46,
+     "W": 0.88,
+     "z": 2.146,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "super:super-snake",
+   "model": "snake",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.5,
+     "W": 0.52,
+     "z": 1.931,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "super:super-polytruck",
+   "model": "polytruck",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.87,
+     "H": 0.66
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.64,
+     "W": 0.88,
+     "z": 2.87,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "super:super-muscle",
+   "model": "muscle",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.5,
+     "H": 0.26
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.58,
+     "W": 0.88,
+     "z": 2.5,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "super:super-fullsize",
+   "model": "fullsize",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.91,
+     "H": 0.28
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.91,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "super:super-evsaloon",
+   "model": "evsaloon",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.66,
+     "W": 0.88,
+     "z": -2.55,
+     "H": 0.24
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.48,
+     "W": 0.88,
+     "z": 2.565,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "super:super-superlowrider",
+   "model": "superlowrider",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.56,
+     "z": -2.79,
+     "H": 0.32
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.56,
+     "z": 2.525,
+     "H": 0.26
+    }
+   }
+  },
+  {
+   "id": "super:super-classicgt",
+   "model": "classicgt",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.54,
+     "W": 0.88,
+     "z": -2.36,
+     "H": 0.28
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.42,
+     "W": 0.88,
+     "z": 2.358,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "super:super-sixbysix",
+   "model": "sixbysix",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.9,
+     "W": 0.88,
+     "z": -2.76,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.9,
+     "W": 0.88,
+     "z": 2.76,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "super:super-herald",
+   "model": "herald",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.76,
+     "W": 0.88,
+     "z": -1.95,
+     "H": 0.18
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 1.95,
+     "H": 0.38
+    }
+   }
+  },
+  {
+   "id": "super:super-floatvan",
+   "model": "transporter",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.48,
+     "W": 0.88,
+     "z": -2.208,
+     "H": 0.6
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.64,
+     "W": 0.88,
+     "z": 2.208,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "super:super-toybota",
+   "model": "toybota",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 1.04,
+     "W": 0.36,
+     "z": -3,
+     "H": 0.44
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.66,
+     "W": 0.88,
+     "z": 2.5,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "super:super-dampervan",
+   "model": "dampervan",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.82,
+     "W": 0.88,
+     "z": -2.35,
+     "H": 0.3
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.12,
+     "W": 0.72,
+     "z": 2.33,
+     "H": 0.42
+    }
+   }
+  },
+  {
+   "id": "super:super-nissank",
+   "model": "nissank",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.492,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "filler:bubble",
+   "model": "bubble",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "filler:milkfloat",
+   "model": "milkfloat",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.34,
+     "W": 0.88,
+     "z": -1.758,
+     "H": 0.14
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.34,
+     "W": 0.88,
+     "z": 1.758,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "filler:tuktuk",
+   "model": "tuktuk",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -1.5,
+     "H": 0.4
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.52,
+     "z": 1.35,
+     "H": 0.22
+    }
+   }
+  },
+  {
+   "id": "filler:woody",
+   "model": "woody",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.665,
+     "H": 0.48
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.12,
+     "z": 2.77,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "filler:pandacoupe",
+   "model": "pandacoupe",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.8,
+     "z": -2.067,
+     "H": 0.26
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.84,
+     "z": 2.067,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "filler:keiroadster",
+   "model": "keiroadster",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -1.65,
+     "H": 0.44
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 1.65,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "filler:fireengine",
+   "model": "fireengine",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.74,
+     "W": 0.88,
+     "z": -4.5,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.66,
+     "W": 0.88,
+     "z": 4.79,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "filler:fieldscout",
+   "model": "jeep",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.78,
+     "W": 0.6,
+     "z": -2.28,
+     "H": 0.64
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 1.8,
+     "H": 0.54
+    }
+   }
+  },
+  {
+   "id": "filler:monster",
+   "model": "monster",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.4,
+     "W": 0.84,
+     "z": -1.769,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.4,
+     "W": 0.84,
+     "z": 1.769,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "filler:stately",
+   "model": "stately",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.6,
+     "z": -2.554,
+     "H": 0.46
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.52,
+     "z": 2.64,
+     "H": 0.58
+    }
+   }
+  },
+  {
+   "id": "filler:teardrop",
+   "model": "teardrop",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.54,
+     "W": 0.88,
+     "z": -2.481,
+     "H": 0.32
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.42,
+     "W": 0.88,
+     "z": 2.456,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "filler:pony",
+   "model": "pony",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.345,
+     "H": 0.22
+    }
+   }
+  },
+  {
+   "id": "filler:goddess",
+   "model": "goddess",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "filler:hardtop",
+   "model": "hardtop",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.5,
+     "H": 0.3
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.565,
+     "H": 0.44
+    }
+   }
+  },
+  {
+   "id": "filler:midnight",
+   "model": "midnight",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.72,
+     "W": 0.52,
+     "z": -2.256,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.48,
+     "W": 0.8,
+     "z": 2.38,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "filler:splitwindow",
+   "model": "splitwindow",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "filler:wedge",
+   "model": "wedge",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.6,
+     "z": -2.1,
+     "H": 0.4
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.36,
+     "W": 0.76,
+     "z": 2.041,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "filler:jetcar",
+   "model": "jetcar",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": {
+     "yc": 0.68,
+     "W": 0.12,
+     "z": -3.972,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "filler:dragster",
+   "model": "dragster",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": {
+     "yc": 0.54,
+     "W": 0.2,
+     "z": -3.42,
+     "H": 0.22
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.68,
+     "W": 0.6,
+     "z": 1.26,
+     "H": 0.32
+    }
+   }
+  },
+  {
+   "id": "filler:flyingcar",
+   "model": "flyingcar",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.08,
+     "z": -2.523,
+     "H": 0
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "filler:blower",
+   "model": "blower",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.72,
+     "W": 0.88,
+     "z": -1.95,
+     "H": 0.34
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.74,
+     "W": 0.68,
+     "z": 1.465,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "filler:coach",
+   "model": "coach",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.64,
+     "W": 0.88,
+     "z": -5.45,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.64,
+     "W": 0.88,
+     "z": 5.45,
+     "H": 0.8
+    }
+   }
+  },
+  {
+   "id": "filler:cityev",
+   "model": "cityev",
+   "existing_plate": "both",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2,
+     "H": 0.78
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.76,
+     "z": 2.02,
+     "H": 0.38
+    }
+   }
+  },
+  {
+   "id": "filler:coupecross",
+   "model": "coupecross",
+   "existing_plate": "both",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.88,
+     "z": -2.215,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.21,
+     "H": 0.4
+    }
+   }
+  },
+  {
+   "id": "bespoke:rocketfin",
+   "model": "rocketfin",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "C",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.2,
+     "z": -2.839,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "B",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.48,
+     "z": 2.415,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "bespoke:swancar",
+   "model": "swancar",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.3,
+     "W": 0.76,
+     "z": -1.123,
+     "H": 0.14
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.08,
+     "z": 2.597,
+     "H": 0
+    }
+   }
+  },
+  {
+   "id": "bespoke:solarracer",
+   "model": "solarracer",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "bespoke:moonrover",
+   "model": "moonrover",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.12,
+     "z": 0.28,
+     "H": 0.3
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "bespoke:monowheel",
+   "model": "monowheel",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "C",
+    "anchor": {
+     "yc": 0.92,
+     "W": 0.48,
+     "z": -0.926,
+     "H": 0.28
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "C",
+    "anchor": {
+     "yc": 0.92,
+     "W": 0.48,
+     "z": 0.926,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "bespoke:snocat",
+   "model": "snocat",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -1.95,
+     "H": 0.34
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 1.95,
+     "H": 0.42
+    }
+   }
+  },
+  {
+   "id": "bespoke:hotdog",
+   "model": "hotdog",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.55,
+     "H": 0.28
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.55,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "bespoke:horseshoe",
+   "model": "horseshoe",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.54,
+     "W": 0.88,
+     "z": -2.286,
+     "H": 0.34
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 0.38,
+     "W": 0.44,
+     "z": 2.305,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "bespoke:fishbowl",
+   "model": "fishbowl",
+   "existing_plate": "both",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.58,
+     "W": 0.64,
+     "z": -1.37,
+     "H": 0.34
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.52,
+     "W": 0.6,
+     "z": 1.385,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "bespoke:midsummer",
+   "model": "midsummer",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.52,
+     "W": 0.72,
+     "z": -1.97,
+     "H": 0.38
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.68,
+     "z": 1.97,
+     "H": 0.42
+    }
+   }
+  },
+  {
+   "id": "bespoke:sixteen",
+   "model": "sixteen",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.84,
+     "H": 0.48
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.87,
+     "H": 0.7
+    }
+   }
+  },
+  {
+   "id": "bespoke:quadturbo",
+   "model": "quadturbo",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.58,
+     "W": 0.88,
+     "z": -2.27,
+     "H": 0.5
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.32,
+     "W": 0.88,
+     "z": 2.285,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "bespoke:knifeedge",
+   "model": "knifeedge",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.25,
+     "H": 0.62
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.44,
+     "W": 0.88,
+     "z": 2.25,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "bespoke:windsong",
+   "model": "windsong",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.28,
+     "W": 0.24,
+     "z": -2.4,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "event:silvercomet",
+   "model": "centreseat",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.6,
+     "z": -2.136,
+     "H": 0.24
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "earned:hellrod",
+   "model": "hotrod",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.48,
+     "z": -1.96,
+     "H": 0.14
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.6,
+     "z": 1.805,
+     "H": 0.5
+    }
+   }
+  },
+  {
+   "id": "earned:earned-ufo",
+   "model": "earned-ufo",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "earned:earned-gt",
+   "model": "gt",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.36,
+     "W": 0.88,
+     "z": -2.345,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "earned:earned-jetboat",
+   "model": "jetboat",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": -1.134,
+     "H": 0.36
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.84,
+     "W": 0.88,
+     "z": 0.486,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "earned:earned-f1",
+   "model": "f1",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": {
+     "yc": 0.88,
+     "W": 0.04,
+     "z": -1.872,
+     "H": 0
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": {
+     "yc": 1.1,
+     "W": 0.04,
+     "z": -0.624,
+     "H": 0
+    }
+   }
+  },
+  {
+   "id": "earned:earned-lmp",
+   "model": "lmp",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.32,
+     "W": 0.88,
+     "z": -2.43,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": {
+     "yc": 1.1,
+     "W": 0.16,
+     "z": 0.103,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "earned:courier",
+   "model": "sleeper",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.5,
+     "H": 0.38
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.6,
+     "z": 2.535,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "earned:showdown",
+   "model": "muscle",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.5,
+     "H": 0.26
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.58,
+     "W": 0.88,
+     "z": 2.5,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "earned:earned-apc",
+   "model": "apc",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.7,
+     "W": 0.88,
+     "z": -3.264,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.78,
+     "W": 0.88,
+     "z": 1.082,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "legendary:l-commuter",
+   "model": "commuter",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -1.73,
+     "H": 0.34
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "legendary:l-sport",
+   "model": "sport",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.5,
+     "W": 0.88,
+     "z": -1.913,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.4,
+     "W": 0.88,
+     "z": 1.931,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "legendary:l-miata",
+   "model": "miata",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.8,
+     "z": -1.954,
+     "H": 0.48
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.54,
+     "W": 0.88,
+     "z": 1.913,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "legendary:l-lowrider",
+   "model": "lowrider",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.6,
+     "z": -2.5,
+     "H": 0.38
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.48,
+     "z": 2.525,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "legendary:l-wagon",
+   "model": "wagon",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": -2.381,
+     "H": 0.46
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": 2.385,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "legendary:l-lovebus",
+   "model": "lovebus",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.31,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.64,
+     "W": 0.08,
+     "z": 2.51,
+     "H": 0.12
+    }
+   }
+  },
+  {
+   "id": "legendary:l-darkvan",
+   "model": "darkvan",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.08,
+     "W": 0.88,
+     "z": -2.458,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "legendary:l-hearse",
+   "model": "hearse",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.78,
+     "W": 0.88,
+     "z": -2.8,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "legendary:l-hotrod",
+   "model": "hotrod",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "legendary:l-minivan",
+   "model": "minivan",
+   "existing_plate": "both",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.46,
+     "W": 0.88,
+     "z": -2.55,
+     "H": 0.24
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.68,
+     "W": 0.68,
+     "z": 2.475,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "legendary:l-pickup",
+   "model": "pickup",
+   "existing_plate": "both",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.14,
+     "W": 0.88,
+     "z": -2.55,
+     "H": 0.46
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "legendary:l-junker",
+   "model": "junker",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.49,
+     "H": 0.64
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.98,
+     "W": 0.88,
+     "z": 2.51,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "legendary:l-taxi",
+   "model": "taxi",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.76,
+     "z": -2.524,
+     "H": 0.36
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "legendary:l-suv",
+   "model": "suv",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.4,
+     "z": -2.61,
+     "H": 0.14
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.58,
+     "W": 0.88,
+     "z": 2.28,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "secret:bus",
+   "model": "citybus",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.66,
+     "W": 0.88,
+     "z": -5.5,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.66,
+     "W": 0.88,
+     "z": 5.5,
+     "H": 0.6
+    }
+   }
+  },
+  {
+   "id": "level:ufo",
+   "model": "ufo",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "level:f1",
+   "model": "f1",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.76,
+     "z": -1.716,
+     "H": 0.44
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.76,
+     "z": 1.508,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "level:gt",
+   "model": "gt",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.64,
+     "z": -2.316,
+     "H": 0.34
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.46,
+     "W": 0.88,
+     "z": 2.32,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "level:lmp",
+   "model": "lmp",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.32,
+     "W": 0.88,
+     "z": -2.43,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": {
+     "yc": 1.1,
+     "W": 0.16,
+     "z": 0.103,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "level:jetboat",
+   "model": "jetboat",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": -1.134,
+     "H": 0.36
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.84,
+     "W": 0.88,
+     "z": 0.486,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "level:apc",
+   "model": "apc",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.7,
+     "W": 0.88,
+     "z": -3.264,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.78,
+     "W": 0.88,
+     "z": 1.082,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "level:amphibioustank",
+   "model": "amphibioustank",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.15,
+     "H": 0.46
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.15,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "idea:threewheeler",
+   "model": "threewheeler",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -1.677,
+     "H": 0.22
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.64,
+     "z": 1.695,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "idea:tinsnail",
+   "model": "tinsnail",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.6,
+     "z": 1.932,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "idea:bug",
+   "model": "bug",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.88,
+     "z": -2.008,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "idea:twostroke",
+   "model": "twostroke",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "idea:brickestate",
+   "model": "brickestate",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.376,
+     "H": 0.52
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.8,
+     "z": 2.42,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "idea:limo",
+   "model": "limo",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.58,
+     "W": 0.88,
+     "z": -4.179,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.42,
+     "W": 0.88,
+     "z": 4.32,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "idea:centreseat",
+   "model": "centreseat",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.6,
+     "z": -2.136,
+     "H": 0.24
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "idea:rallywedge",
+   "model": "rallywedge",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.54,
+     "W": 0.88,
+     "z": -1.89,
+     "H": 0.28
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "idea:safari",
+   "model": "safari",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.36,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.4,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "idea:widetruck",
+   "model": "widetruck",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.115,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.115,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "idea:corrugated",
+   "model": "corrugated",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 2.2,
+     "W": 0.88,
+     "z": -2.14,
+     "H": 0.18
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.165,
+     "H": 0.48
+    }
+   }
+  },
+  {
+   "id": "idea:foodtruck",
+   "model": "foodtruck",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.72,
+     "W": 0.88,
+     "z": -3.3,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 3.42,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "idea:motorhome",
+   "model": "motorhome",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -3.31,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 3.31,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "idea:schoolbus",
+   "model": "schoolbus",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.7,
+     "W": 0.88,
+     "z": 5.36,
+     "H": 0.14
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.7,
+     "W": 0.88,
+     "z": 5.56,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "idea:doubledecker",
+   "model": "doubledecker",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.54,
+     "W": 0.88,
+     "z": -4.2,
+     "H": 0.18
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 2.26,
+     "W": 0.88,
+     "z": 4.053,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "idea:funeralcoach",
+   "model": "funeralcoach",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.9,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": 2.97,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "idea:golfcart",
+   "model": "golfcart",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -1.261,
+     "H": 0.46
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 0.52,
+     "W": 0.48,
+     "z": 1.261,
+     "H": 0.22
+    }
+   }
+  },
+  {
+   "id": "idea:hovercraft",
+   "model": "hovercraft",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "C",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.48,
+     "z": -2.39,
+     "H": 0.24
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.86,
+     "W": 0.8,
+     "z": 1.5,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "idea:steamwagon",
+   "model": "steamwagon",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.7,
+     "W": 0.88,
+     "z": -2.211,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.82,
+     "W": 0.6,
+     "z": 2.213,
+     "H": 0.6
+    }
+   }
+  },
+  {
+   "id": "idea:tipper",
+   "model": "tipper",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.72,
+     "W": 0.88,
+     "z": -3.705,
+     "H": 0.24
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.76,
+     "W": 0.88,
+     "z": 4.011,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "idea:dunebuggy",
+   "model": "dunebuggy",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 0.7,
+     "W": 0.44,
+     "z": -1.572,
+     "H": 0.36
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 0.58,
+     "W": 0.32,
+     "z": 1.832,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "idea:creamvan",
+   "model": "creamvan",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": -2.388,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.7,
+     "W": 0.88,
+     "z": 2.45,
+     "H": 0.32
+    }
+   }
+  },
+  {
+   "id": "idea:yellowcab",
+   "model": "yellowcab",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.55,
+     "H": 0.52
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.68,
+     "W": 0.88,
+     "z": 2.61,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "idea:mixer",
+   "model": "mixer",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.72,
+     "W": 0.88,
+     "z": -3.135,
+     "H": 0.32
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.84,
+     "W": 0.88,
+     "z": 3.318,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "idea:wrecker",
+   "model": "wrecker",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.78,
+     "W": 0.88,
+     "z": -2.85,
+     "H": 0.24
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.76,
+     "W": 0.88,
+     "z": 3.12,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "idea:policewagon",
+   "model": "policewagon",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.6,
+     "H": 0.28
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.74,
+     "W": 0.88,
+     "z": 2.65,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "idea:camper",
+   "model": "camper",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.8,
+     "z": -2.1,
+     "H": 0.76
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.82,
+     "W": 0.88,
+     "z": 1.974,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "idea:boathauler",
+   "model": "boathauler",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.64,
+     "W": 0.88,
+     "z": -2.7,
+     "H": 0.36
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.5,
+     "W": 0.88,
+     "z": 2.83,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "idea:armoured",
+   "model": "armoured",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.8,
+     "H": 0.3
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.74,
+     "W": 0.88,
+     "z": 2.8,
+     "H": 0.58
+    }
+   }
+  },
+  {
+   "id": "idea:cigar",
+   "model": "cigar",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "idea:sidecar",
+   "model": "sidecar",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "idea:bathtub",
+   "model": "bathtub",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.88,
+     "W": 0.88,
+     "z": -1.345,
+     "H": 0.22
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.88,
+     "W": 0.88,
+     "z": 1.345,
+     "H": 0.22
+    }
+   }
+  },
+  {
+   "id": "idea:circuswagon",
+   "model": "circuswagon",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.9,
+     "W": 0.88,
+     "z": -2.132,
+     "H": 0.54
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.06,
+     "W": 0.88,
+     "z": 2.36,
+     "H": 0.58
+    }
+   }
+  },
+  {
+   "id": "idea:gyrocar",
+   "model": "gyrocar",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.8,
+     "W": 0.2,
+     "z": -1.459,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": {
+     "yc": 0.42,
+     "W": 0.28,
+     "z": 1.333,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "idea:mower",
+   "model": "mower",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 0.48,
+     "W": 0.48,
+     "z": -1.038,
+     "H": 0.22
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 0.48,
+     "W": 0.44,
+     "z": 1.104,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "idea:snailcamper",
+   "model": "snailcamper",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 1.24,
+     "W": 0.32,
+     "z": -1.473,
+     "H": 0.22
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.492,
+     "H": 0.54
+    }
+   }
+  },
+  {
+   "id": "idea:duckwagon",
+   "model": "duckwagon",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.84,
+     "W": 0.88,
+     "z": -4.371,
+     "H": 0.56
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.36,
+     "W": 0.88,
+     "z": 3.431,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "idea:pushbacktug",
+   "model": "pushbacktug",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.61,
+     "H": 0.52
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.64,
+     "W": 0.88,
+     "z": 2.084,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "idea:roadsweeper",
+   "model": "roadsweeper",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.88,
+     "z": -2.268,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.88,
+     "z": 2.176,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "idea:cabledrum",
+   "model": "cabledrum",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -3.99,
+     "H": 0.18
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 3.99,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "idea:gameviewer",
+   "model": "gameviewer",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.58,
+     "W": 0.88,
+     "z": -2.707,
+     "H": 0.32
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.48,
+     "W": 0.88,
+     "z": 2.707,
+     "H": 0.22
+    }
+   }
+  },
+  {
+   "id": "idea:slantback",
+   "model": "slantback",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.1,
+     "H": 0.3
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "idea:glassbrake",
+   "model": "glassbrake",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.1,
+     "H": 0.28
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.09,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "idea:sevenroadster",
+   "model": "sevenroadster",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.68,
+     "W": 0.6,
+     "z": -1.397,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  },
+  {
+   "id": "idea:talltourer",
+   "model": "talltourer",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.64,
+     "W": 0.68,
+     "z": -1.6,
+     "H": 0.32
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.52,
+     "z": 1.76,
+     "H": 0.72
+    }
+   }
+  },
+  {
+   "id": "idea:removalsvan",
+   "model": "removalsvan",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.5,
+     "W": 0.88,
+     "z": 0.94,
+     "H": 0.14
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.52,
+     "W": 0.88,
+     "z": 3,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "idea:refuselorry",
+   "model": "refuselorry",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.78,
+     "W": 0.88,
+     "z": -2.85,
+     "H": 0.14
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 3.6,
+     "H": 0.32
+    }
+   }
+  },
+  {
+   "id": "idea:jeepney",
+   "model": "jeepney",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": -2.966,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.88,
+     "z": 2.99,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "idea:pocket4x4",
+   "model": "pocket4x4",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.5,
+     "W": 0.88,
+     "z": -1.51,
+     "H": 0.16
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.64,
+     "W": 0.76,
+     "z": 1.575,
+     "H": 0.38
+    }
+   }
+  },
+  {
+   "id": "idea:dodgem",
+   "model": "dodgem",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.54,
+     "W": 0.08,
+     "z": -0.892,
+     "H": 0.1
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.2,
+     "W": 0.04,
+     "z": 1.069,
+     "H": 0.12
+    }
+   }
+  },
+  {
+   "id": "idea:iceresurfacer",
+   "model": "iceresurfacer",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.28,
+     "H": 0.42
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.34,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "idea:wedgemicro",
+   "model": "wedgemicro",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.64,
+     "z": -0.77,
+     "H": 0.56
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.34,
+     "W": 0.84,
+     "z": 0.77,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "idea:farmtractor",
+   "model": "farmtractor",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.04,
+     "W": 0.56,
+     "z": -1.08,
+     "H": 0.22
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 0.78,
+     "W": 0.44,
+     "z": 1.565,
+     "H": 0.22
+    }
+   }
+  },
+  {
+   "id": "idea:flatbed",
+   "model": "flatbed",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.8,
+     "z": 0,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.05,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "idea:moke",
+   "model": "moke",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.48,
+     "z": -1.665,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.64,
+     "z": 1.585,
+     "H": 0.34
+    }
+   }
+  },
+  {
+   "id": "idea:keivan",
+   "model": "keivan",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": -1.7,
+     "H": 0.68
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.84,
+     "z": 1.7,
+     "H": 0.42
+    }
+   }
+  },
+  {
+   "id": "idea:supermini",
+   "model": "supermini",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -1.74,
+     "H": 0.56
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.54,
+     "W": 0.64,
+     "z": 1.74,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "idea:minibus",
+   "model": "minibus",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.64,
+     "W": 0.88,
+     "z": -2.47,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.64,
+     "W": 0.88,
+     "z": 2.47,
+     "H": 0.42
+    }
+   }
+  },
+  {
+   "id": "idea:sporttruck",
+   "model": "sporttruck",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.52,
+     "W": 0.88,
+     "z": 2.665,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "idea:pixelev",
+   "model": "pixelev",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.4,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.4,
+     "H": 0.72
+    }
+   }
+  },
+  {
+   "id": "idea:halftrack",
+   "model": "halftrack",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.6,
+     "H": 0.5
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.48,
+     "W": 0.88,
+     "z": 2.9,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "idea:sprinthatch",
+   "model": "sprinthatch",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -1.89,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.46,
+     "W": 0.88,
+     "z": 1.92,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "idea:autobahnestate",
+   "model": "autobahnestate",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.4,
+     "H": 0.44
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.68,
+     "z": 2.395,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "idea:finlandyacht",
+   "model": "finlandyacht",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": -2.9,
+     "H": 0.42
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": 2.91,
+     "H": 0.3
+    }
+   }
+  },
+  {
+   "id": "idea:trophytruck",
+   "model": "trophytruck",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.72,
+     "z": -2.75,
+     "H": 0.46
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.7,
+     "W": 0.84,
+     "z": 2.77,
+     "H": 0.3
+    }
+   }
+  },
+  {
+   "id": "idea:armouredlimo",
+   "model": "armouredlimo",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": -3.06,
+     "H": 0.68
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": 3.095,
+     "H": 0.36
+    }
+   }
+  },
+  {
+   "id": "idea:cranelorry",
+   "model": "cranelorry",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.64,
+     "W": 0.88,
+     "z": 2.9,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.68,
+     "W": 0.88,
+     "z": 3.39,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "idea:moorrover",
+   "model": "moorrover",
+   "existing_plate": "both",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.48,
+     "W": 0.88,
+     "z": -2.305,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": 2.215,
+     "H": 0.42
+    }
+   }
+  },
+  {
+   "id": "idea:touringcar",
+   "model": "touringcar",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.15,
+     "H": 0.26
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.5,
+     "W": 0.88,
+     "z": 2.16,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "idea:hillclimb",
+   "model": "hillclimb",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -1.9,
+     "H": 0.28
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.48,
+     "W": 0.88,
+     "z": 1.96,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:van",
+   "model": "deliveryvan",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.73,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.66,
+     "W": 0.88,
+     "z": 1.404,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:bus",
+   "model": "citybus",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.66,
+     "W": 0.88,
+     "z": -5.5,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.66,
+     "W": 0.88,
+     "z": 5.5,
+     "H": 0.6
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:tractor",
+   "model": "tractor",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.8,
+     "W": 0.88,
+     "z": -1.8,
+     "H": 0.52
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.8,
+     "W": 0.88,
+     "z": 2,
+     "H": 0.8
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:police",
+   "model": "police",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.1,
+     "H": 0.34
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.76,
+     "z": 2.145,
+     "H": 0.22
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:semi",
+   "model": "semi",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.64,
+     "W": 0.88,
+     "z": -7.9,
+     "H": 0.34
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.68,
+     "W": 0.88,
+     "z": 8.4,
+     "H": 0.26
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:f1",
+   "model": "f1",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.76,
+     "z": -1.716,
+     "H": 0.44
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.56,
+     "W": 0.76,
+     "z": 1.508,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:gt",
+   "model": "gt",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.64,
+     "z": -2.316,
+     "H": 0.34
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.46,
+     "W": 0.88,
+     "z": 2.32,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:lmp",
+   "model": "lmp",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.32,
+     "W": 0.88,
+     "z": -2.43,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": {
+     "yc": 1.1,
+     "W": 0.16,
+     "z": 0.103,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:ambulance",
+   "model": "ambulance",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.46,
+     "W": 0.88,
+     "z": -3,
+     "H": 0.18
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.9,
+     "H": 0.52
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:commuter",
+   "model": "commuter",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -1.73,
+     "H": 0.5
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.46,
+     "W": 0.76,
+     "z": 1.773,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:darkvan",
+   "model": "darkvan",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.84,
+     "W": 0.88,
+     "z": -2.59,
+     "H": 0.24
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.84,
+     "W": 0.88,
+     "z": 2.59,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:junker",
+   "model": "junker",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.49,
+     "H": 0.64
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.8,
+     "z": 2.446,
+     "H": 0.34
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:sport",
+   "model": "sport",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.5,
+     "W": 0.88,
+     "z": -1.913,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.4,
+     "W": 0.88,
+     "z": 1.931,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:wagon",
+   "model": "wagon",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": -2.381,
+     "H": 0.46
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.78,
+     "W": 0.56,
+     "z": 2.44,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:lovebus",
+   "model": "lovebus",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.31,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.42,
+     "W": 0.88,
+     "z": 2.38,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:lowrider",
+   "model": "lowrider",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.64,
+     "z": -2.5,
+     "H": 0.38
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.8,
+     "z": 2.525,
+     "H": 0.34
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:taxi",
+   "model": "taxi",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.76,
+     "z": -2.524,
+     "H": 0.36
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.76,
+     "z": 2.562,
+     "H": 0.38
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:suv",
+   "model": "suv",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.68,
+     "W": 0.6,
+     "z": -2.63,
+     "H": 0.64
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.28,
+     "H": 0.64
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:hotrod",
+   "model": "hotrod",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.48,
+     "z": -1.96,
+     "H": 0.14
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.6,
+     "z": 1.805,
+     "H": 0.52
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:minivan",
+   "model": "minivan",
+   "existing_plate": "both",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.45,
+     "H": 0.66
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.45,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:hearse",
+   "model": "hearse",
+   "existing_plate": "rear",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.8,
+     "H": 0.4
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.4,
+     "W": 0.88,
+     "z": 2.89,
+     "H": 0.16
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:jeep",
+   "model": "jeep",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.78,
+     "W": 0.6,
+     "z": -2.28,
+     "H": 0.64
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 1.8,
+     "H": 0.54
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:apc",
+   "model": "apc",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.7,
+     "W": 0.88,
+     "z": -3.264,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.78,
+     "W": 0.88,
+     "z": 1.082,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:tank",
+   "model": "armytank",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.86,
+     "W": 0.88,
+     "z": -3.135,
+     "H": 0.7
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.32,
+     "W": 0.88,
+     "z": 3.135,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:pickup",
+   "model": "pickup",
+   "existing_plate": "both",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.94,
+     "W": 0.88,
+     "z": -2.71,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.18,
+     "W": 0.72,
+     "z": 2.605,
+     "H": 0.3
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:miata",
+   "model": "miata",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.8,
+     "z": -1.954,
+     "H": 0.48
+    }
+   },
+   "front": {
+    "category": "hand",
+    "class": "C",
+    "anchor": {
+     "yc": 0.54,
+     "W": 0.88,
+     "z": 1.913,
+     "H": 0.24
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:boat",
+   "model": "jetboat",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.62,
+     "W": 0.88,
+     "z": -1.134,
+     "H": 0.36
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.84,
+     "W": 0.88,
+     "z": 0.486,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:trawler",
+   "model": "trawler",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -4.6,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": {
+     "yc": 1.22,
+     "W": 0.12,
+     "z": 1.67,
+     "H": 0.8
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:dinghy",
+   "model": "dinghy",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.2,
+     "W": 0.88,
+     "z": -1.7,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.28,
+     "z": -0.87,
+     "H": 0.44
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:barge",
+   "model": "barge",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -7.5,
+     "H": 0.76
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.9,
+     "W": 0.88,
+     "z": 5.326,
+     "H": 0.46
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:ferry",
+   "model": "ferry",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -5.5,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.92,
+     "W": 0.88,
+     "z": 3.63,
+     "H": 0.8
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:pedalo",
+   "model": "pedalo",
+   "existing_plate": "none",
+   "rear": {
+    "category": "cannot",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -0.9,
+     "H": 0.36
+    }
+   },
+   "front": {
+    "category": "cannot",
+    "class": "D",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.12,
+     "z": -0.78,
+     "H": 0.52
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:herald",
+   "model": "herald",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.76,
+     "W": 0.88,
+     "z": -1.95,
+     "H": 0.18
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 1.95,
+     "H": 0.38
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:floatvan",
+   "model": "transporter",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.48,
+     "W": 0.88,
+     "z": -2.208,
+     "H": 0.6
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.64,
+     "W": 0.88,
+     "z": 2.208,
+     "H": 0.28
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:toybota",
+   "model": "toybota",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "B",
+    "anchor": {
+     "yc": 1.04,
+     "W": 0.36,
+     "z": -3,
+     "H": 0.44
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.66,
+     "W": 0.88,
+     "z": 2.5,
+     "H": 0.4
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:dampervan",
+   "model": "dampervan",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.82,
+     "W": 0.88,
+     "z": -2.35,
+     "H": 0.3
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 1.12,
+     "W": 0.68,
+     "z": 2.33,
+     "H": 0.42
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:nissank",
+   "model": "nissank",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.76,
+     "z": -2.392,
+     "H": 0.56
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.492,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:icecream",
+   "model": "icecream",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.6,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.6,
+     "H": 0.8
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:binlorry",
+   "model": "binlorry",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.52,
+     "W": 0.88,
+     "z": -3.78,
+     "H": 0.26
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.66,
+     "W": 0.88,
+     "z": 4.116,
+     "H": 0.8
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:learner",
+   "model": "learner",
+   "existing_plate": "both",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.4,
+     "W": 0.88,
+     "z": -1.9,
+     "H": 0.18
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.4,
+     "W": 0.88,
+     "z": 1.9,
+     "H": 0.18
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:boyracer",
+   "model": "boyracer",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.8,
+     "z": -1.95,
+     "H": 0.52
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.8,
+     "z": 1.95,
+     "H": 0.52
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:caravan",
+   "model": "caravan",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.66,
+     "W": 0.88,
+     "z": -5.26,
+     "H": 0.8
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 5.2,
+     "H": 0.76
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:driveby",
+   "model": "driveby",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.65,
+     "H": 0.36
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.68,
+     "H": 0.36
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:keitruck",
+   "model": "keitruck",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -1.695,
+     "H": 0.42
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.64,
+     "z": 1.7,
+     "H": 0.52
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:postvan",
+   "model": "postvan",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.38,
+     "W": 0.88,
+     "z": -2.19,
+     "H": 0.2
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.72,
+     "W": 0.6,
+     "z": 2.1,
+     "H": 0.2
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:rickshaw",
+   "model": "rickshaw",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.84,
+     "z": -1.1,
+     "H": 0.54
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 1.25,
+     "H": 0.34
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:float",
+   "model": "float",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.66,
+     "W": 0.88,
+     "z": -4.2,
+     "H": 0.3
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.66,
+     "W": 0.88,
+     "z": 4.2,
+     "H": 0.3
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:cargotruck",
+   "model": "semi",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.64,
+     "W": 0.88,
+     "z": -7.9,
+     "H": 0.34
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.68,
+     "W": 0.88,
+     "z": 8.4,
+     "H": 0.26
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:getaway",
+   "model": "getaway",
+   "existing_plate": "none",
+   "rear": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": -2.3,
+     "H": 0.54
+    }
+   },
+   "front": {
+    "category": "reliable",
+    "class": "A",
+    "anchor": {
+     "yc": 0.6,
+     "W": 0.88,
+     "z": 2.34,
+     "H": 0.14
+    }
+   }
+  },
+  {
+   "id": "traffic:traffic:interceptor",
+   "model": "interceptor",
+   "existing_plate": "none",
+   "rear": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   },
+   "front": {
+    "category": "hand",
+    "class": "D",
+    "anchor": null
+   }
+  }
+ ]
+}

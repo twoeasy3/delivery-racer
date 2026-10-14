@@ -90,6 +90,30 @@ if (Progress.saved) {
   check(JSON.stringify(d.bestTime) === JSON.stringify({ good: { [LEVELS[0].id]: 20 }, evil: {} }), 'best times only for levels there are');
   check(Progress.importCode('DR1.' + btoa(JSON.stringify({ unlocked: 2, cars: [], junk: 'x'.repeat(30000) }))) === false, 'a code far longer than a save is refused');
 }
+// the purchased ECUs (ecu.js, CHECKLIST: ECU upgrades cost bank): kept with the save, in the cookie only as far as blueprints are
+// (dropped with them if it is too long); a save from before them has none, is migrated once on first use and written with them.
+// More of it: scripts/.ecu-cost-check.mjs
+{
+  const { Ecu } = await g.load('ecu.js');
+  Progress.reset();
+  Progress.data.cars.push('muscle'); Progress.data.money = 3000;
+  Ecu.addBlueprints('muscle', 10);
+  Ecu.buy(g.cars.carById('muscle'));
+  check(Progress.data.ecuBought.muscle === 2 && inCookie().ecuBought?.muscle === 2 && JSON.parse(localStorage.getItem(STORE)).ecuBought.muscle === 2, 'a purchased ECU is saved (local storage and, like the blueprints, the cookie)');
+  Progress.reload();
+  check(Ecu.level(g.cars.carById('muscle')) === 2, '...and read again: muscle plays at ECU2');
+  localStorage.removeItem(STORE); // (the cookie alone)
+  Progress.reload();
+  check(Ecu.level(g.cars.carById('muscle')) === 2, '...from the cookie alone too');
+  const old = JSON.parse(Progress.saved()); delete old.ecuBought;
+  localStorage.setItem(STORE, JSON.stringify(old));
+  document.cookie = 'delivery_racer_progress=; max-age=0; path=/delivery';
+  Progress.reload();
+  check(Progress.data.ecuBought === null, 'a save from before the purchases reads as having none');
+  Progress.save();
+  check(JSON.parse(localStorage.getItem(STORE)).ecuBought?.muscle === 3, '...and is migrated (muscle: its 10 blueprints = ECU3) before it is written again');
+  Progress.reset();
+}
 // a visit from the address bar's test switches (main.js sets Progress.noSave) lends cars and opens levels in
 // Progress.data: nothing of it is written, whatever is counted, delivered or bought on the way
 {

@@ -205,7 +205,7 @@ const startScreen = document.getElementById('startScreen');
 const money = (amount) => '$' + amount.toFixed(2);
 // (the figures of the ECU it has, or would have once its key or blueprints are had: ecu.js; and that ECU of its max)
 const stats = (car) => {
-  const e = Ecu.kind(car) ? Ecu.stats(car, Math.max(1, Ecu.reached(car))) : car;
+  const e = Ecu.kind(car) ? Ecu.stats(car, Math.max(1, Ecu.purchased(car))) : car;
   return 'Top speed ' + Math.round(e.maxSpeed * 3.6) + ' km/h  |  Acceleration ' + e.accel + '  |  Health ' + e.health +
     '  |  Crossing ' + Math.round((car.crossing ?? CONFIG.railCrossing.usual) * 100) + '%' +
     (Ecu.kind(car) ? '  |  ECU ' + Ecu.level(car) + ' of ' + Ecu.max(car) + '  |  Respawn ' + e.respawn + ' s' : '');

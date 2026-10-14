@@ -11,7 +11,7 @@
 // with...), unless first; hyphenated words too (Gift-Wrapped Cactus, Jack-in-the-Box). Its states are short
 // phrases, in sentence case.
 import { CONFIG } from './config.js';
-import { LEVELS } from './levels.js';
+import { LEVELS, HIDDEN_LEVELS } from './levels.js';
 import { levelCargoNames } from './levelText.js';
 import { nameOf, statesOf } from './words.js';
 
@@ -49,6 +49,8 @@ export const CARGO = {
     { id: 'fruit', name: "New Neighbour's Fruit Basket" },
     { id: 'radio', name: "Grandad's Repaired Radio" },
     { id: 'pie', name: 'Pumpkin Pie' },
+    { id: 'winecase', name: 'Case of Chianti' },
+    { id: 'waterjugs', name: 'Crate of Water Jugs' }, // (Dakar Dash)
   ],
   evil: [
     { id: 'parcel', name: 'Ticking Parcel', states: ['Ticking', 'Fuse lit', 'About to blow'] },
@@ -98,6 +100,8 @@ export const CARGO = {
     { id: 'spider', name: 'Spider on a Fishing Line', states: ['Hanging', 'Bobbing', 'Dropped'] },
     { id: 'ink', name: 'Disappearing Ink', states: ['Corked', 'Blotting', 'Splashing'] },
     { id: 'syrup', name: 'Stolen Maple Syrup', states: ['Sealed', 'Sticky', 'Pouring out'] },
+    { id: 'stolenbust', name: 'Stolen Marble Bust', states: ['Under a sheet', 'Sheet slipping', 'Glaring'] },
+    { id: 'scarabs', name: 'Crate of Scarabs', states: ['Lid nailed down', 'Scuttling inside', 'Swarming out'] }, // (Dakar Dash)
   ],
 };
 // the names and the Evil states in cargoText.json come first, these the fallback (words.js: a bad entry is passed over)
@@ -128,7 +132,7 @@ export const carriesCargo = (level) => !!level && !level.laps && !level.battle &
 const dealt = { good: null, evil: null };
 const deal = (side) => {
   const list = CARGO[side], carrying = LEVELS.filter(carriesCargo);
-  const taken = new Set(carrying.map(level => named(level, side)?.id).filter(Boolean));
+  const taken = new Set([...carrying, ...Object.values(HIDDEN_LEVELS)].map(level => named(level, side)?.id).filter(Boolean)); // (a hidden level's own item is not dealt to a level on the menu)
   const free = list.filter(item => !taken.has(item.id)), shift = side === 'evil' ? 2 : 0;
   const map = new Map();
   // (the Evil side starts two along, so a level's pair is not the same place in both lists)

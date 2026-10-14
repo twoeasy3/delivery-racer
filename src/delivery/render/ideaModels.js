@@ -270,7 +270,7 @@ export const IDEA_MODELS = {
     wheel(group, R + 0.01, 0.2, 0, R + 0.01, L * 0.7);                                   // the one front wheel
     box(shell, trim, w * 0.5, 0.06, 0.07, 0, 0.53, L + 0.02);                            // bumpers
     box(shell, trim, w + 0.04, 0.09, 0.08, 0, 0.42, -L - 0.03);
-    box(shell, lambert(0xf2d21f), w * 0.3, 0.09, 0.02, 0, 0.56, -L - 0.03);              // a yellow number plate
+    box(shell, lambert(0xf2d21f), w * 0.3, 0.09, 0.02, 0, 0.56, -L - 0.03).userData.plate = 'rear';              // a yellow number plate
     group.userData = { body, lampFrame: shell, animate: (t) => { shell.rotation.z = Math.sin(t * 1.1) * 0.05; } };
     return group;
   },

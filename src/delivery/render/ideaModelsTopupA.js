@@ -288,6 +288,7 @@ IDEA_MODELS_TOPUP_A.slantback = (car) => {
   bag.add(dusty, ...[-1, 1].map(s => flankDecal(1.2, 0.24, s * (BW / 2 + 0.006), 0.43, (AF + AR) / 2, s < 0)));
   const meshes = bag.done(group);
   meshes.get(dusty).renderOrder = 1;
+  meshes.get(PLATE).userData.plate = 'rear';
   for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, R, 0.24, s * (W - 0.12), z, SILVER, 0.6);
   group.userData = { body: bodyMesh, animate: () => {} };
   return group;

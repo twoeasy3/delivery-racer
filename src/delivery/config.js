@@ -624,10 +624,12 @@ export const CONFIG = {
     chairStack: { damage: 31, speedKept: 0.75 },    // the favela's: a stack of plastic chairs
     riceBasket: { damage: 31, speedKept: 0.75 },    // the rice terraces': a basket heaped with rice
     wasteDrum: { damage: 31, speedKept: 0.75 },     // the fallout zone's: a yellow drum of waste, the trefoil on it
+    wineCrates: { damage: 31, speedKept: 0.75 },    // Tuscany's: two wine crates, bottle necks out of the top one
     hawkerCart: { damage: 31, speedKept: 0.75 },    // Hong Kong's: a hawker's cart under its striped awning, a red lamp lit
     pumpkinCrate: { damage: 31, speedKept: 0.75 },  // autumn's: a slatted crate heaped with pumpkins
     // ...for a bale:
     leafPile: { damage: 38, speedKept: 0.75 },      // autumn's: a heap of raked leaves
+    hayRoll: { damage: 38, speedKept: 0.75 },       // Tuscany's: a round hay bale on its side
     bagStack: { damage: 38, speedKept: 0.75 },      // Hong Kong's: a heap of red-white-blue nylon bags, strapped
     cameraDolly: { damage: 38, speedKept: 0.75 },   // the film studio's: a camera on its dolly
     present: { damage: 38, speedKept: 0.75 },       // Christmas Eve's: a wrapped present
@@ -638,6 +640,7 @@ export const CONFIG = {
     // ...for a cone:
     skittle: { damage: 3, speedKept: 0.94, light: true }, // the toy room's (an orange cone is lost on its orange track)
     cafeTable: { damage: 3, speedKept: 0.94, light: true },  // Venice's: a cafe table under its shut parasol
+    terracottaPot: { damage: 3, speedKept: 0.94, light: true }, // Tuscany's: a terracotta pot with a lemon tree in it
     wheelieBin: { damage: 3, speedKept: 0.94, light: true }, // the hood's
     snowdrift: { damage: 3, speedKept: 0.94, light: true },  // the snow's and the ice road's: a heap of snow with a stake in it
     brimstone: { damage: 3, speedKept: 0.94, light: true },  // hell's: a glowing spike
@@ -645,6 +648,7 @@ export const CONFIG = {
     smallPumpkin: { damage: 3, speedKept: 0.94, light: true }, // autumn's: a small pumpkin on a stake
     // ...for a rock (sized by its radius, as a rock is):
     lavaRock: { damage: 39, speedKept: 0.6 },       // the volcano's: cooled lava, glowing in its cracks
+    jerryStack: { damage: 31, speedKept: 0.75 }, tentRoll: { damage: 38, speedKept: 0.75 }, rallyFlag: { damage: 3, speedKept: 0.94, light: true }, // the desert's: stacked jerrycans (a crate), a rolled tent (a bale), a rally marker flag (a cone)
   },
   // drifters: obstacles moving about the road in patterns (a level's "drifters")
   drifters: {
@@ -1085,6 +1089,24 @@ export const CONFIG = {
   packageDamage: 4,        // a care package barely scratches what it hits
   evilPackageDamage: 25,   // an Evil player's flaming package: real damage, and it makes enemies
   completeBank: 10000,     // $ in the bank after "Unlock everything" on the menu
+  // ECU UPGRADE PRICES (the owner, 14-Oct: "ECU levels should cost bank to upgrade. Collecting the blueprints only unblocks the
+  // upgrade"; ecu.js Ecu.price). PLACEHOLDERS for the balancing pass. ECU1 is free (a key car's key, a blueprint car's X blueprints);
+  // the step TO ECU n (n >= 2) costs  ref x share x growth^(n - 2)  from the bank (the money balance, never Crazey Cash), rounded to
+  // `round` dollars. ref = a typical car lot price of the car's stars (the lot's own prices run 30 to 1350; a car with no stars,
+  // an event or Bespoke key car, uses `none`). Maxing a car then costs about a fifth of its ref for a 2-ECU car, half for a 3-ECU
+  // one, and 1 to 1.6 times its ref for the 4 and 5-ECU ones: the last steps are the sink. `perCar` pins a car's ref by id.
+  //   node scripts/.ecu-cost-check.mjs --table   prints every car's price per step
+  ecuCost: {
+    ref: {
+      gold: { 1: 50, 2: 170, 3: 310, 4: 450, 5: 700 },
+      blue: { 1: 290, 2: 450, 3: 730, 4: 1000, 5: 1270 },
+      none: 1500,
+    },
+    share: 0.2,    // of the ref, the first step (to ECU2)
+    growth: 1.5,   // each step after costs this many times the one before
+    round: 5,      // $
+    perCar: {},    // { carId: ref } for an exception
+  },
   // the Blue Star cars (the garage's second season) stay out of the garage, lot and all, until this
   // numbered level has been delivered
   blueStarsAfter: 20,

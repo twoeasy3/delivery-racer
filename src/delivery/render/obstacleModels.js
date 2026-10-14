@@ -4,6 +4,8 @@
 import * as THREE from 'three';
 import { makeWorker } from './siteModels.js';
 import { AUTUMN_OBSTACLES } from './themes/autumnModels.js';
+import { TUSCANY_OBSTACLES } from './themes/tuscanyModels.js';
+import { DESERT_OBSTACLES } from './themes/desertModels.js';
 
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 // a model made of boxes: parts are [material, width, height, length, x, y, z]
@@ -1180,3 +1182,6 @@ OBSTACLE_MODELS.cafeTable = () => {
   return grounded(group, 0.6);
 };
 Object.assign(OBSTACLE_MODELS, AUTUMN_OBSTACLES); // autumn's own: pumpkinCrate, leafPile, smallPumpkin
+Object.assign(OBSTACLE_MODELS, TUSCANY_OBSTACLES); // Tuscany's: wineCrates, hayRoll, terracottaPot (themes/tuscanyModels.js)
+// the desert dunes' own (render/themes/desertModels.js): a stack of jerrycans, a rolled tent, a rally marker flag
+Object.assign(OBSTACLE_MODELS, DESERT_OBSTACLES);

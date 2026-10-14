@@ -78,6 +78,9 @@ export const carCard = (car, evil = false) => {
   const nextAt = blueprint ? (ecu + 1) * x : ecu * x;
   const toNext = told?.need ?? x, have = told?.have ?? Math.max(0, Math.min(toNext, bp - (nextAt - x)));
   const maxed = ecu >= max;
+  // (the ECU it is bought up to, ecu.js: what it plays at; `ecu` above is the one its blueprints have reached, the most it may be bought to)
+  const bought = Math.max(0, Math.min(max, safe(() => Ecu.purchased(car), ecu)));
+  const upgrade = safe(() => Ecu.upgrade(car), null);
   const upgradable = max > 1 || blueprint; // (a starter, a special car: never upgraded, no blueprints)
   const owned = Progress.owns(car.id);
   const unlocked = safe(() => Ecu.unlocked(car), owned);
@@ -119,13 +122,14 @@ export const carCard = (car, evil = false) => {
     name: dark ? 'Locked car' : car.name,
     stars: stars(car), starColour: starColour(car), tier: tierOf(car),
     rarity: rarityOf(car), hidden, dark, hunt,
-    ecu, max, maxed, upgradable, blueprint, key: !blueprint,
+    ecu, bought, upgrade, max, maxed, upgradable, blueprint, key: !blueprint,
     blueprints: bp, perEcu: x, have: maxed ? toNext : have, toNext,
     owned, unlocked, barred, allowed, focus, lent,
     state: lent ? 'ready' : !unlocked ? 'locked' : barred ? 'barred' : 'ready',
     reason, hint,
     rule: barred ? rule : null,
-    stats: statsAt(car, Math.max(1, ecu)), maxStats: statsAt(car, max),
+    stats: statsAt(car, Math.max(1, bought)), maxStats: statsAt(car, max),
+    nextStats: bought >= 1 && bought < max ? statsAt(car, bought + 1) : null, // (the next purchase's figures: the Upgrade block's change)
     perk: car.perk || '',
     forSale: !owned && forSale(car),
   };
@@ -276,8 +280,8 @@ export const kindOf = (card) => card.car.bespoke || EVENT_CARS.includes(card.car
     : card.blueprint ? 'blueprint' : 'garage';
 export const statesOf = (card, inUseId) => {
   const states = [card.state]; // ready | locked | barred
-  if (card.upgradable && !card.maxed) states.push('upgradable');
-  if (card.maxed && card.ecu >= 1) states.push('maxed');
+  if (card.upgradable && !(card.bought >= card.max)) states.push('upgradable');
+  if (card.bought >= card.max && card.bought >= 1) states.push('maxed');
   if (card.id === inUseId) states.push('inuse');
   if (card.allowed) states.push('allowed'); // (the level picked lets it be driven: its car rule, owned or not)
   if (card.focus) states.push('event'); // (the level picked points at it: a rotating event's day, cars.js carFocus)
