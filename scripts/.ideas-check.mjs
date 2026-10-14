@@ -31,7 +31,7 @@ try {
   // (eighteen that were ideas are evergreen BLUEPRINT cars now (cars.js FILLER_CARS, CHECKLIST item 115): in the roster, out of the lot)
   {
     const { FILLER_CARS } = g.cars;
-    check(FILLER_CARS.length === 34 && FILLER_CARS.every(c => c.evergreen && !c.idea && c.tier >= 1 && c.tier <= 5 && !IDEA_CARS.some(i => i.id === c.id) && !CARS.includes(c)),
+    check(FILLER_CARS.length === 38 && FILLER_CARS.every(c => c.evergreen && !c.idea && c.tier >= 1 && c.tier <= 5 && !IDEA_CARS.some(i => i.id === c.id) && !CARS.includes(c)),
       'the 30 evergreen blueprint cars (24 and the Legendary cars) are out of the ideas lot and not in CARS: ' + FILLER_CARS.map(c => c.id + ' ' + c.tier).join(', '));
   }
   // (four that were ideas are garage cars now: the Blue Stars at four stars. Bought, owned and saved as any other)

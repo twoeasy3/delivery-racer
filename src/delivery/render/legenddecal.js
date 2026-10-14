@@ -39,6 +39,10 @@ export const LEGEND_DECAL = {
   hearse: [[-1.68, 0.38, 1.32]],
   hotrod: [[-0.55, 0.72, 0.62]], // (its rear wheel stands bare behind the cab: the wreath on the cab's side, ahead of the flames)
   minivan: [[-1.47, 0.4, 1.39]],
+  pickup: [[-1.6, 1.22, 0.95]], // (its body rides high over the wheels: the wreath on the load bed's side)
+  junker: [[0.05, 0.72, 0.85]], // (rust round both arches and the load behind: the wreath on its doors)
+  taxi: [[-0.75, 0.66, 0.85]], // (on the rear door under the chequers: round the wheel the flared arch cut it to curls)
+  suv: [[-1.35, 0.44, 1.54]],
   commuter: [[-1.15, 0.32, 1.1]], // (HUGE, the owner: centred on the rear wheel, a laurel arch over it across most of the rear 30% (z -1.7 to -0.6); carved by the tyre, the waist and the tail's turn)
 };
 // OTHER PLACEMENTS to compare (the owner, 14-Oct: "Try some different placements of the wreath please"), by the base
@@ -63,7 +67,7 @@ export const LEGEND_PLACEMENTS = {
 // the wreath never shows above this height (m), by the base car's MODEL: the waist, so no stray bits land on the
 // pillars and the frames round the side windows
 export const LEGEND_WAIST = {
-  commuter: 0.8, sport: 0.8, miata: 0.84, lowrider: 0.84, wagon: 1.18, lovebus: 1.3, darkvan: 1.52, hearse: 1.02, hotrod: 0.92, minivan: 1.22,
+  commuter: 0.8, sport: 0.8, miata: 0.84, lowrider: 0.84, wagon: 1.18, lovebus: 1.3, darkvan: 1.52, hearse: 1.02, hotrod: 0.92, minivan: 1.22, pickup: 1.52, junker: 1.12, taxi: 1.0, suv: 1.22,
 };
 // the trim, by the base car's MODEL, by the colours (hex) of the materials its parts are drawn in (as the model builds
 // them, its Good livery): `gold` the metal, chrome and trim (bumpers, grille, lamp rims, sills, hubs); `black` a second
@@ -81,9 +85,17 @@ export const LEGEND_TRIM = {
   darkvan: { gold: [0x1b1d21, 0xd9dce1, 0xc4c8ce], black: [0xf4f4f0] }, // (the dark bumpers and bull bar, the chrome, the hubs; its stripe black)
   hearse: { gold: [0xd8d8d8, 0xc4c8ce, 0xece6cc] }, // (the chrome, the landau bars, the hubs; the curtains left)
   hotrod: { gold: [0xd8d8d8, 0xf2d21f], goldMap: true }, // (the chrome engine, grille, pipes and hubs, the brass; its flames tinted gold; the frame stays dark)
+  pickup: { gold: [0xd8d8d8, 0xb8bcc2, 0x2a2c31, 0x1d2238] }, // (the chrome, the hubs, the dark trim, the bull bar)
+  junker: { gold: [0xc4c7cb, 0xa8acb2, 0x7d8794], black: [0x4f5532] }, // (the grille, the hubs, the steel bumpers; its roof black; its rust and its load left)
+  taxi: { gold: [0xd9dce0, 0x26282d], goldMap: true }, // (the chrome and hubs, the dark bumpers; its chequers gold)
+  suv: { gold: [0xd9dce0, 0xb4b8bf, 0x34373d] }, // (the chrome, the hubs, the dark bumpers and cladding)
   minivan: { gold: [0xd8d8d8, 0xc4c8ce, 0xece6cc], black: [0xd6d0c0] }, // (the chrome grille and trim, the hubs; its body-coloured bumpers black; the dark pillars left)
 };
 const LIFT = 0.006; // (the wreath's offset out from the paint: past the z-fight check's 4 mm, and polygon offset besides)
+// a car whose paint carries see-through decals of its own (the Junker's rust, 6 mm out): the wreath further out, over them
+export const LEGEND_LIFT = { junker: 0.012 };
+// a see-through picture laid on the paint (a decal: transparent, writing no depth) is looked through when finding the paint
+const overlay = (o) => { const m = [].concat(o.material)[0]; return !!m && !!m.map && m.transparent && m.depthWrite === false; };
 const FACING = 0.7; // (a point shows where the paint's normal is within about 45 degrees of straight out sideways)
 
 // ---- the wreath: a picture drawn once ------------------------------------------------------------------------------
@@ -169,7 +181,7 @@ const flankAt = (model, s, y, z, only = null) => {
   FROM.set(s * 20, y, z).applyMatrix4(model.matrixWorld);
   DIR.set(-s, 0, 0).transformDirection(model.matrixWorld);
   RAY.set(FROM, DIR);
-  const hit = RAY.intersectObject(only || model, true).find(h => h.object.visible && !h.object.userData.legend);
+  const hit = RAY.intersectObject(only || model, true).find(h => h.object.visible && !h.object.userData.legend && !overlay(h.object));
   if (!hit || !hit.face) return null;
   const normal = hit.face.normal.clone().applyMatrix3(M3.getNormalMatrix(hit.object.matrixWorld)).normalize();
   return { point: hit.point.clone(), normal, object: hit.object };
@@ -181,6 +193,7 @@ const flankAt = (model, s, y, z, only = null) => {
 // built only where one of its corners is shown, and the wreath's ring passes it. The texture coordinates are turned by
 // the tilt (in the picture as seen from that side, so the top leans to the car's front on both flanks)
 const wrapFlank = (model, s, [z0, y0, size, tilt = LEGEND.tilt, lean = LEGEND.lean], out) => {
+  const lift = LEGEND_LIFT[model.userData.legendModel] ?? LIFT;
   const body = model.userData.body, n = Math.max(10, Math.min(26, Math.round(size / LEGEND.cell))), across = new THREE.Vector3(1, 0, 0).transformDirection(model.matrixWorld);
   const phi = s * (lean === 'rear' ? -1 : 1) * tilt * Math.PI / 180, cos = Math.cos(phi), sin = Math.sin(phi);
   const pts = [];
@@ -210,7 +223,7 @@ const wrapFlank = (model, s, [z0, y0, size, tilt = LEGEND.tilt, lean = LEGEND.le
       const tris = s > 0 ? [[0, 2, 1], [0, 3, 2]] : [[0, 1, 2], [0, 2, 3]];
       for (const k of tris.filter(t => t.some(k => q[k].shown)).flat()) { // (a triangle with nothing shown is left out)
         const p = q[k];
-        pos.push(p.paint.point.clone().addScaledVector(p.paint.normal, p.shown ? LIFT : -LIFT)); // (a hidden point tucked under the paint: no face left lying close beside a part that covers it there)
+        pos.push(p.paint.point.clone().addScaledVector(p.paint.normal, p.shown ? lift : -LIFT)); // (a hidden point tucked under the paint: no face left lying close beside a part that covers it there)
         nor.push(p.paint.normal);
         uvs.push(...p.uv);
         alpha.push(1, 1, 1, p.shown ? 1 : 0);
@@ -235,7 +248,7 @@ const flankMesh = (model, s, spots, material) => {
   decal.name = 'legend wreath ' + (s > 0 ? 'right' : 'left');
   decal.userData.patchRole = 'decal';
   decal.userData.legend = true;
-  decal.renderOrder = 1;
+  decal.renderOrder = 2; // (after the body and any decal of its own)
   parent.add(decal);
   return decal;
 };

@@ -619,6 +619,18 @@ export const FILLER_CARS = [
   filler(3, { id: 'l-minivan', name: 'Legendary Minivan', basedOn: 'the Minivan', model: 'minivan', legend: 'minivan', blue: true,
     color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1.05, hl: 2.45, height: 2, note: 'The people carrier that carried off every prize going.',
     maxSpeed: 42, accel: 13, agility: 1.15, crossing: 0.7, health: 260, mass: 1, sound: 'minivan', noPacks: true }, 'legendary'),
+  filler(3, { id: 'l-pickup', name: 'Legendary Pick-Up', basedOn: 'the Pick-Up', model: 'pickup', legend: 'pickup', blue: true,
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1.05, hl: 2.6, height: 2.1, note: 'A working truck that worked its way to the top of the podium.',
+    maxSpeed: 44, accel: 15, agility: 1.15, crossing: 1, health: 280, mass: 1, sound: 'pickup', noPacks: true }, 'legendary'),
+  filler(1, { id: 'l-junker', name: 'Legendary Junker', basedOn: 'the Junker', model: 'junker', legend: 'junker', blue: true,
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1, hl: 2.5, height: 1.95, note: 'Still dented, still rattling, and somehow a champion.',
+    maxSpeed: 35, accel: 13.5, agility: 1.15, crossing: 0.8, health: 130, mass: 1, sound: 'junker', noPacks: true }, 'legendary'),
+  filler(4, { id: 'l-taxi', name: 'Legendary Taxi', basedOn: 'the Taxi', model: 'taxi', legend: 'taxi', blue: true,
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1, hl: 2.55, height: 1.6, note: 'The fare that won the city: the most famous cab on the rank.',
+    maxSpeed: 48, accel: 16, agility: 1.15, crossing: 0.7, health: 273, mass: 1, sound: 'taxi', noPacks: true }, 'legendary'),
+  filler(4, { id: 'l-suv', name: 'Legendary SUV', basedOn: 'the SUV', model: 'suv', legend: 'suv', blue: true,
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1, hl: 2.25, height: 1.8, note: 'The off-roader that conquered every road there is, and a few that are not.',
+    maxSpeed: 47, accel: 15, agility: 1.15, crossing: 1, health: 390, mass: 1, sound: 'suv', noPacks: true }, 'legendary'),
 ];
 applyNames('car', FILLER_CARS);
 // is a blueprint car unlocked (its first X blueprints, ecu.js)? Set by ecu.js when it loads (null: none is, but one in
