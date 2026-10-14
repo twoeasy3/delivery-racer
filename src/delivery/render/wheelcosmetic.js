@@ -29,6 +29,7 @@
 // something else at that moment (a blacked-out silhouette) is left alone; a ghost's stand-in (render/items.js ghostify)
 // keeps the part's own paint in userData.solidMat, which is the one changed, so the ghost fades back to the new colour.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Progress } from '../progress.js';
 import { registerCosmetics, ownsCosmetic } from './cosmetics.js';
 
@@ -239,6 +240,7 @@ export const dressWheels = (model, car) => {
   model.userData.wheelHubs = found;
   live.add(new WeakRef(model));
   if (wheelColour() !== 'stock' || wheelDesign() !== 'stock') dressed(model);
+  if (rimAsked) addSpokeRims(model);
   return model;
 };
 
@@ -289,3 +291,45 @@ export const setWheelSet = (id) => {
   refresh(set.id); // (one refresh: every live car and the menu change once)
 };
 export const onWheelColour = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
+
+// ---- SPIKE (throwaway): spoke rims that turn. ?rim=spoke5|spoke10 &rimangle=<deg> (a fixed angle for stills) else they turn at a fixed pace ----
+const rimAsked = typeof location !== 'undefined' ? /[?&]rim=(\w+)/.exec(location.search)?.[1] : null;
+const rimAngle = typeof location !== 'undefined' ? /[?&]rimangle=(-?[\d.]+)/.exec(location.search)?.[1] : null;
+const spokeGeo = (n, thick) => {
+  const parts = [];
+  for (let i = 0; i < n; i++) {
+    const g = new THREE.BoxGeometry(thick, 0.62, 0.02).translate(0, 0.31, 0);
+    g.rotateZ(i * 2 * Math.PI / n); parts.push(g);
+  }
+  parts.push(new THREE.CylinderGeometry(0.16, 0.16, 0.04, 12).rotateX(Math.PI / 2));
+  return mergeGeometries(parts.map(g => g.toNonIndexed ? g.toNonIndexed() : g));
+};
+const spokeMat = new THREE.MeshLambertMaterial({ color: 0xcfd3d9, emissive: 0x333333 });
+const spinners = []; // { mesh, q0 }
+const SPIN_Z = new THREE.Quaternion(), AX = new THREE.Vector3(0, 0, 1);
+export const addSpokeRims = (model) => {
+  const found = model.userData.wheelHubs; if (!found) return 0;
+  const geo = spokeGeo(rimAsked === 'spoke10' ? 10 : 5, rimAsked === 'spoke10' ? 0.07 : 0.14);
+  for (const t of found.info) {
+    for (const side of t.outer ? [t.outer] : [-1, 1]) {
+      axis.set(t.axleX ? side : 0, 0, t.axleX ? 0 : side);
+      q.setFromUnitVectors(Z, axis);
+      pos.copy(t.centre).addScaledVector(axis, t.half + RING_GAP * 2);
+      pose.compose(pos, q, one.set(t.r, t.r, 1)).premultiply(t.toTyre);
+      const mesh = new THREE.Mesh(geo, spokeMat);
+      pose.decompose(mesh.position, mesh.quaternion, mesh.scale);
+      mesh.userData.wheelRing = true;
+      tyreAdd(t.tyre, mesh);
+      spinners.push({ mesh, q0: mesh.quaternion.clone(), dir: side });
+    }
+  }
+  return spinners.length;
+};
+const tyreAdd = (tyre, mesh) => tyre.add(mesh);
+const tick = () => {
+  const a = rimAngle !== null ? rimAngle * Math.PI / 180 : performance.now() / 1000 * 6;
+  for (const s of spinners) { SPIN_Z.setFromAxisAngle(AX, a * s.dir); s.mesh.quaternion.copy(s.q0).multiply(SPIN_Z); }
+  if (typeof requestAnimationFrame !== 'undefined') requestAnimationFrame(tick);
+};
+if (rimAsked && typeof requestAnimationFrame !== 'undefined') requestAnimationFrame(tick);
+export const SPIKE_ON = !!rimAsked;
