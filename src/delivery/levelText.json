@@ -658,5 +658,16 @@
       "good": "waterjugs",
       "evil": "scarabs"
     }
+  },
+  "jungle-highway": {
+    "name": "Jungle Highway",
+    "description": {
+      "good": "A fruit basket for the ranger station at the end of the jungle road. Splash the fords, cross two creaking bridges and give the elephants right of way.",
+      "evil": "A sack of snakes, smuggled out through the rainforest. Hit the fords flat out, jump the mud, scatter the elephants and let the rain wash out your tracks."
+    },
+    "cargo": {
+      "good": "fruit",
+      "evil": "snakes"
+    }
   }
 }

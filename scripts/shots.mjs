@@ -106,6 +106,7 @@ if (opt('levels', false) || opt('cars', false) || shots.some(([, address]) => ad
   Object.assign(CINE, { 'dakar-dash': '&at=620&ff=1' }); // (Dakar Dash, hidden for now: the rock arch over the track with the windsocks before it, the sun low ahead)
   Object.assign(CINE, { 'haunted-hollow': '&at=2610&ff=1' }); // (Haunted Hollow, hidden: the haunted house on its hill over the tunnel mouth, the harvest moon and bats over it)
   Object.assign(CINE, { 'hong-kong': '&at=400&ff=1&car=postvan' }); // (Hong Kong Harbour: the first ferry pier's clock tower and lanterns ahead on the promenade, the neon and the towers on the left; a tier-6 car, so the level starts)
+  Object.assign(CINE, { 'jungle-highway': '&at=900&ff=1&cineout=-1&cineup=9&cineback=28' }); // (Jungle Highway, hidden: the first bridge's old truss overgrown ahead, the wet jungle either side, a macaw over the road; over the road because the usual place is in the tree wall)
   if (opt('levels', false)) {
     levels.LEVELS.forEach((level, i) => {
       if (!only(opt('levels')) || only(opt('levels')).includes(level.id)) shots.push([level.id, `?autostart${side}&level=${i + 1}&ghost&cine${FF(level.id)}${CINE[level.id] || ''}`, !!PAIR.folder]);

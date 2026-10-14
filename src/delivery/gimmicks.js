@@ -42,14 +42,14 @@ const ob = (kind, o = {}) => OBSTACLE_MODELS[kind](o);
 // the sizes the Drifting junk card builds its models at (the kinds that drift on some level; the themes' own take no size)
 const JUNK = { umbrella: { hw: 1.2, hl: 1.2, height: 3 }, surfboard: { hw: 0.6, hl: 0.25, height: 2.6 }, cooler: { hw: 0.8, hl: 0.6, height: 1.2 }, chair: { hw: 1, hl: 1, height: 3.4 },
   wreck: { hw: 1, hl: 2.1, height: 1.4 }, bale: { hw: 1.1, hl: 1.1, height: 1.5 }, crate: { hw: 0.6, hl: 0.6, height: 1.1 }, cone: {}, barrow: {}, trolley: {}, rock: { r: 1 },
-  toyBlock: {}, skittle: {}, divingHelmet: {}, supplyPod: {}, directorChair: {}, cameraDolly: {}, mooringPosts: {}, fuelDrum: {}, popcornCart: {}, barrel: {}, chairStack: {}, riceBasket: {}, wasteDrum: {}, present: {}, hawkerCart: {}, bagStack: {}, wineCrates: {}, hayRoll: {}, terracottaPot: {},
+  toyBlock: {}, skittle: {}, divingHelmet: {}, supplyPod: {}, directorChair: {}, cameraDolly: {}, mooringPosts: {}, fuelDrum: {}, popcornCart: {}, barrel: {}, chairStack: {}, riceBasket: {}, wasteDrum: {}, present: {}, hawkerCart: {}, bagStack: {}, bananaCrate: {}, fallenLog: {}, termiteMound: {}, wineCrates: {}, hayRoll: {}, terracottaPot: {},
   toyDrum: {}, cafeTable: {}, wheelieBin: {}, snowdrift: {}, sackStack: {}, beachBall: {}, tumbleweed: {}, flagStand: {}, brimstone: {}, lavaRock: { r: 1 } };
 // ...and what each is called, several of them, in the card's line about a level's own
 const JUNK_NAMES = { umbrella: 'beach umbrellas', surfboard: 'surfboards', cooler: 'ice boxes', chair: 'lifeguard chairs', wreck: 'wrecked cars', bale: 'hay bales', crate: 'crates',
   cone: 'cones', barrow: 'wheelbarrows', trolley: 'shopping trolleys', rock: 'rocks', toyBlock: 'alphabet blocks', skittle: 'skittles', divingHelmet: 'diving helmets', supplyPod: 'supply pods',
   directorChair: 'director\'s chairs', cameraDolly: 'camera dollies', mooringPosts: 'mooring posts', fuelDrum: 'fuel drums', popcornCart: 'popcorn carts', barrel: 'barrels',
   chairStack: 'stacks of chairs', riceBasket: 'baskets of rice', wasteDrum: 'drums of waste', present: 'presents', toyDrum: 'toy drums', cafeTable: 'cafe tables', wheelieBin: 'wheelie bins', snowdrift: 'heaps of snow',
-  wineCrates: 'stacks of wine crates', hayRoll: 'hay bales', terracottaPot: 'terracotta pots', sackStack: 'stacks of sacks', hawkerCart: 'hawkers\' carts', bagStack: 'heaps of bags', beachBall: 'beach balls', tumbleweed: 'tumbleweeds', flagStand: 'flags on stands', brimstone: 'spikes of brimstone', lavaRock: 'lava boulders', mine: 'sea mines' };
+  wineCrates: 'stacks of wine crates', hayRoll: 'hay bales', terracottaPot: 'terracotta pots', sackStack: 'stacks of sacks', hawkerCart: 'hawkers\' carts', bagStack: 'heaps of bags', bananaCrate: 'crates of bananas', fallenLog: 'piles of logs', termiteMound: 'termite mounds', beachBall: 'beach balls', tumbleweed: 'tumbleweeds', flagStand: 'flags on stands', brimstone: 'spikes of brimstone', lavaRock: 'lava boulders', mine: 'sea mines' };
 Object.assign(JUNK, { jerryStack: {}, tentRoll: {}, rallyFlag: {} }); Object.assign(JUNK_NAMES, { jerryStack: 'stacks of jerrycans', tentRoll: 'rolled tents', rallyFlag: 'rally marker flags' }); // (the desert's)
 Object.assign(JUNK, { pumpkinCrate: {}, leafPile: {}, smallPumpkin: {} }); Object.assign(JUNK_NAMES, { pumpkinCrate: 'crates of pumpkins', leafPile: 'heaps of leaves', smallPumpkin: 'small pumpkins' }); // (autumn's)
 // the kinds that drift on a level (not the darting ones: those are another card), as its theme has them
@@ -1138,6 +1138,7 @@ const DRESS = [ // [kind, name, what it stands in for, where, the card's colour]
   ['pumpkinCrate', 'Crate of pumpkins', 'crate', 'Halloween', 0xe8650f], ['candleLantern', 'Candle lantern', 'cone', 'Halloween', 0xffb020], ['hayGhost', 'Hay bale in a bedsheet', 'bale', 'Halloween', 0xf1f0f6],
   ['wineCrates', 'Wine crates', 'crate', 'Tuscany', 0xe6c78e], ['hayRoll', 'Round hay bale', 'bale', 'Tuscany', 0xdcb953], ['terracottaPot', 'Terracotta pot', 'cone', 'Tuscany', 0xc8622c],
   ['hawkerCart', 'Hawker\'s cart', 'crate', 'Hong Kong', 0xd8262b], ['bagStack', 'Heap of bags', 'bale', 'Hong Kong', 0x1f5fd0],
+  ['bananaCrate', 'Crate of bananas', 'crate', 'the rainforest', 0xf7d63a], ['fallenLog', 'Pile of logs', 'bale', 'the rainforest', 0x5b3b22], ['termiteMound', 'Termite mound', 'cone', 'the rainforest', 0xd98a3d],
 ];
 DRESS.push(['pumpkinCrate', 'Crate of pumpkins', 'crate', 'autumn', 0xe8751a], ['leafPile', 'Heap of leaves', 'bale', 'autumn', 0xc8421e], ['smallPumpkin', 'Small pumpkin', 'cone', 'autumn', 0xf08a1c]);
 DRESS.push(['jerryStack', 'Stack of jerrycans', 'crate', 'the desert', 0xc8321f], ['tentRoll', 'Rolled tent', 'bale', 'the desert', 0xc4452a], ['rallyFlag', 'Rally marker flag', 'cone', 'the desert', 0xd8262b]);

@@ -35,6 +35,7 @@ const THEME_FILES = {
   fallout: () => import('./fallout.js'),
   halloween: () => import('./halloween.js'),
   autumn: () => import('./autumn.js'),
+  rainforest: () => import('./rainforest.js'),
   tuscany: () => import('./tuscany.js'),
   desert: () => import('./desert.js'),
 };

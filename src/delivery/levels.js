@@ -478,6 +478,7 @@ import grandBoulevard from './levels/grand-boulevard.json';
 import turboQuay from './levels/turbo-quay.json';
 import neonEdge from './levels/neon-edge.json';
 import enduranceRoad from './levels/endurance-road.json';
+import jungleHighway from './levels/jungle-highway.json'; // (the rainforest's level, hidden for now: HIDDEN_LEVELS)
 import hongKong from './levels/hong-kong.json';
 import tokyo from './levels/tokyo.json';
 import mumbai from './levels/mumbai.json';
@@ -627,7 +628,7 @@ export const SCREENSAVER_LEVEL = chaos;
 // the hidden levels, so they are checked as every level is and can be tried from the address (?hidden=pocket-town, a run
 // that banks nothing); played for real only as the event's stage (events.js: a level of its own, id concept-strike-d<n>)
 export const EVENT_MAPS = { 'pocket-town': pocketTown, 'solstice-cliffs': solsticeCliffs, 'grand-boulevard': grandBoulevard, 'turbo-quay': turboQuay, 'neon-edge': neonEdge, 'endurance-road': enduranceRoad };
-export const HIDDEN_LEVELS = { testbed, 'grand-prix': grandPrix, 'gimmick-road': gimmickRoad, 'gimmick-road-2': gimmickRoad2, 'gimmick-road-3': gimmickRoad3, 'chianti-run': chiantiRun, ...EVENT_MAPS };
+export const HIDDEN_LEVELS = { testbed, 'grand-prix': grandPrix, 'gimmick-road': gimmickRoad, 'gimmick-road-2': gimmickRoad2, 'gimmick-road-3': gimmickRoad3, 'chianti-run': chiantiRun, 'jungle-highway': jungleHighway, ...EVENT_MAPS };
 HIDDEN_LEVELS['dakar-dash'] = dakarDash; // Dakar Dash (the desert dunes): hidden until the owner reveals it, ?hidden=dakar-dash
 HIDDEN_LEVELS['haunted-hollow'] = hauntedHollow; // Haunted Hollow (Halloween): hidden until the owner reveals it, ?hidden=haunted-hollow
 import foliageRun from './levels/foliage-run.json';

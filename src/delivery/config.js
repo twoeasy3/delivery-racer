@@ -627,6 +627,7 @@ export const CONFIG = {
     pumpkinCrate: { damage: 31, speedKept: 0.75 },  // Halloween's: a crate heaped with pumpkins, the top one carved and lit
     hawkerCart: { damage: 31, speedKept: 0.75 },    // Hong Kong's: a hawker's cart under its striped awning, a red lamp lit
     harvestCrate: { damage: 31, speedKept: 0.75 },  // autumn's: a slatted crate heaped with pumpkins (pumpkinCrate is Halloween's)
+    bananaCrate: { damage: 31, speedKept: 0.75 },   // the rainforest's: a crate of bananas
     // ...for a bale:
     hayGhost: { damage: 38, speedKept: 0.75 },      // Halloween's: a hay bale in a bedsheet
     wineCrates: { damage: 31, speedKept: 0.75 },    // Tuscany's: two wine crates, bottle necks out of the top one
@@ -640,6 +641,7 @@ export const CONFIG = {
     sackStack: { damage: 38, speedKept: 0.75 },     // Mumbai's: a stack of jute sacks
     beachBall: { damage: 38, speedKept: 0.75 },     // the beach's: a great beach ball (it rolls, as a bale does)
     tumbleweed: { damage: 38, speedKept: 0.75 },    // the Wild West's, for a bale that drifts (it rolls too)
+    fallenLog: { damage: 38, speedKept: 0.75 },     // the rainforest's: a pile of fallen logs
     // ...for a cone:
     candleLantern: { damage: 3, speedKept: 0.94, light: true }, // Halloween's: an iron lantern with a candle in it
     skittle: { damage: 3, speedKept: 0.94, light: true }, // the toy room's (an orange cone is lost on its orange track)
@@ -647,6 +649,7 @@ export const CONFIG = {
     terracottaPot: { damage: 3, speedKept: 0.94, light: true }, // Tuscany's: a terracotta pot with a lemon tree in it
     wheelieBin: { damage: 3, speedKept: 0.94, light: true }, // the hood's
     snowdrift: { damage: 3, speedKept: 0.94, light: true },  // the snow's and the ice road's: a heap of snow with a stake in it
+    termiteMound: { damage: 3, speedKept: 0.94, light: true }, // the rainforest's: a tall mound of clay
     brimstone: { damage: 3, speedKept: 0.94, light: true },  // hell's: a glowing spike
     flagStand: { damage: 3, speedKept: 0.94, light: true },  // the Moon's, for a cone that drifts: a flag on a stand
     smallPumpkin: { damage: 3, speedKept: 0.94, light: true }, // autumn's: a small pumpkin on a stake
