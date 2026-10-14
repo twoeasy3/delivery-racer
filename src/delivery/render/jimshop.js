@@ -20,6 +20,7 @@
 import '../jimshop.css';
 import { Jim, JIM, stand, needed } from '../jimshop.js';
 import { Progress } from '../progress.js';
+import { barFill } from './barfill.js';
 import { Events, when as eventTime } from '../events.js';
 import { ask } from './dialog.js';
 import { blueprintCard } from './blueprintcard.js';
@@ -49,17 +50,20 @@ const offerTile = (v, anim) => {
   const open = !v.why || v.why === 'short';
   const after = stand(v.car, open ? v.qty : 0), ups = after.ecu > now.ecu;
   const fill = make('i', 'fill'), plus = make('i', 'plus');
-  const setBar = (s) => { fill.style.width = (s.ecu >= s.max ? 100 : Math.round(s.have / s.toNext * 100)) + '%'; };
+  const setBar = (s) => { fill.style.width = barFill(s).pct + '%'; };
   setBar(shown);
-  const preview = !max && !bought && open ? Math.min(100, Math.round((now.have + v.qty) / now.toNext * 100)) : 0;
+  // (a bar already full and overfilled -- an upgrade ready to buy, 14-Oct -- shows no preview: there is nothing left to fill)
+  const preview = !max && !now.over && !bought && open ? Math.min(100, Math.round((now.have + v.qty) / now.toNext * 100)) : 0;
   if (preview) { plus.style.left = fill.style.width; plus.style.width = Math.max(0, preview - parseInt(fill.style.width, 10)) + '%'; }
-  const bar = make('div', 'jim-bar' + (max ? ' max' : ''), fill, preview ? plus : null);
-  const count = make('b', '', String(max ? now.bp : shown.have));
-  const line = max
+  const bar = make('div', 'jim-bar' + (max ? ' max' : '') + (now.over ? ' over' : ''), fill, preview ? plus : null);
+  const count = make('b', '', String(max || now.over ? now.bp : shown.have));
+  const line = now.over
+    ? make('div', 'jim-have-line', make('span', '', 'You have ', count), make('em', '', 'Upgrade ready'))
+    : max
     ? make('div', 'jim-have-line', make('span', '', 'You have ', count), make('em', '', 'MAX ECU'))
     : make('div', 'jim-have-line', make('span', '', 'You have ', count, ' / ' + now.toNext), make('em', '', now.ecu === 0 && v.car.evergreen ? 'to unlock' : 'to ECU ' + (now.ecu + 1)));
-  const gain = make('div', 'jim-gain', off || max ? '' : (ups ? (after.ecu >= after.max ? 'Reaches MAX ECU!' : (now.ecu === 0 && v.car.evergreen ? 'Unlocks the car!' : 'Reaches ECU ' + after.ecu + '!')) : '+' + v.qty + (v.cut === 'need' ? ' (all it needs)' : '')));
-  if (bought && !max) { // (the count runs up to the new figure, the bar fills)
+  const gain = make('div', 'jim-gain', off || max ? '' : (ups ? (after.ecu >= after.max ? 'Unlocks the MAX ECU upgrade!' : (now.ecu === 0 && v.car.evergreen ? 'Unlocks the car!' : 'Unlocks the ECU ' + after.ecu + ' upgrade!')) : '+' + v.qty + (v.cut === 'need' ? ' (all it needs)' : '')));
+  if (bought && !max && !now.over) { // (the count runs up to the new figure, the bar fills)
     requestAnimationFrame(() => requestAnimationFrame(() => setBar(now)));
     runCount(count, shown.have, now.have, now.ecu > shown.ecu ? now.toNext : null);
   }
@@ -226,6 +230,7 @@ const demo = (name) => {
 if (params.get('jimshop') !== null) {
   if (params.get('eventsnow')) { const at = eventTime(params.get('eventsnow')); if (Number.isFinite(at)) Events.now = () => at; } // (main.js sets it too, but after this: the demo needs the clock now)
   if (params.get('demo') !== null) demo(params.get('demo') || 'normal');
+  for (const token of (params.get('jimbp') || '').split(',').filter(Boolean)) { const [id, n] = token.split(':'); Progress.noSave = true; (Progress.data.blueprints ||= {})[id] = Number(n) || 0; } // (&jimbp=midnight:10,woody:10: blueprints held, for a picture of the bars; after the demo)
   if (params.get('jimr') !== null) { Progress.noSave = true; const t = Progress.data.jimBuys || {}; Progress.data.jimBuys = { day: Jim.day(), slot: Jim.slot(), ref: t.ref || 0, r: Math.max(0, Math.floor(Number(params.get('jimr')) || 0)), n: t.n || {} }; } // (refreshes done today: the Refresh button's rising cost)
   if (params.get('jimcc') !== null) { Progress.noSave = true; Progress.data.shopCash = Math.max(0, Math.floor(Number(params.get('jimcc')) || 0)); }
   if (params.get('jimrefresh') !== null) setTimeout(() => document.querySelector('.jim-refresh')?.click(), 700);
@@ -236,7 +241,7 @@ if (params.get('jimshop') !== null) {
     const tiles = [...document.querySelectorAll('.jim-tile')];
     const price = (c) => Number(c.querySelector('.shop-price b')?.textContent.replace(/\D/g, ''));
     const live = tiles.filter(c => !c.querySelector('.shop-price:disabled'));
-    const tile = index === 'cheap' ? live.filter(c => price(c) < JIM.confirmAt && c.querySelector('.jim-gain')?.textContent.startsWith('Reaches'))[0] || live.filter(c => price(c) < JIM.confirmAt)[0]
+    const tile = index === 'cheap' ? live.filter(c => price(c) < JIM.confirmAt && c.querySelector('.jim-gain')?.textContent.startsWith('Unlocks'))[0] || live.filter(c => price(c) < JIM.confirmAt)[0]
       : index === 'dearest' ? live.sort((a, b) => price(b) - price(a))[0] : tiles[index];
     tile?.querySelector('.shop-price')?.click();
   }, 700);

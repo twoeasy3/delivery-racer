@@ -72,7 +72,7 @@ const tierWhy = (car) => {
 // One card: everything the showroom shows of a car. evil: the side picked (a level's car rule is a side's)
 export const carCard = (car, evil = false) => {
   const max = Math.max(1, safe(() => Ecu.max(car), 1)), ecu = Math.max(0, Math.min(max, safe(() => Ecu.reached?.(car) ?? Ecu.level(car), 1))); // (reached: a locked key car shows the ECU its blueprints have got it to)
-  const bp = safe(() => Ecu.blueprints(car.id), 0), x = Math.max(1, perEcu(car)), blueprint = blueprintCar(car);
+  const bp = safe(() => Ecu.counted(car), 0), x = Math.max(1, perEcu(car)), blueprint = blueprintCar(car);
   // blueprints toward the next ECU: a blueprint car's ECU k needs k*X; a key car's ECU k (k > 1) needs (k - 1)*X
   const told = safe(() => Ecu.progress?.(car), null);
   const nextAt = blueprint ? (ecu + 1) * x : ecu * x;
@@ -115,14 +115,14 @@ export const carCard = (car, evil = false) => {
   const rule = carRule(evil), barred = unlocked && !!rule && !ruleAllows(rule, car), allowed = !rule || ruleAllows(rule, car);
   const focus = !!carFocus()?.test(car); // (a rotating event's day points the showroom at it: a view, not a rule)
   // LENT by the level picked (a rotating event's free try of its day's car, not owned: the owner, 13-Oct "players ECU up the
-  // car they don't own, and only get the key when they max it out"): drivable, at the ECU its blueprints reach (ECU1 with none)
+  // car they don't own, and only get the key when they max it out"): drivable, at the ECU bought (ECU1 with none)
   const loan = !unlocked ? carLent(car) : null, lent = loan ? { ecu: loan.ecu, max: loan.max } : null;
   return {
     car, id: car.id,
     name: dark ? 'Locked car' : car.name,
     stars: stars(car), starColour: starColour(car), tier: tierOf(car),
     rarity: rarityOf(car), hidden, dark, hunt,
-    ecu, bought, upgrade, max, maxed, upgradable, blueprint, key: !blueprint,
+    ecu, bought, over: ecu > bought, upgrade, max, maxed, upgradable, blueprint, key: !blueprint, // (over: the blueprints have reached an ECU not bought: the bars read full and overfilled, barfill.js)
     blueprints: bp, perEcu: x, have: maxed ? toNext : have, toNext,
     owned, unlocked, barred, allowed, focus, lent,
     state: lent ? 'ready' : !unlocked ? 'locked' : barred ? 'barred' : 'ready',

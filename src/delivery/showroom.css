@@ -160,6 +160,10 @@
 #showroom .sr-bp-track i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #3f8cff, #6fd0ff); }
 #showroom .sr-bp.maxed .sr-bp-track i { background: linear-gradient(90deg, var(--accent), #fff3b0); }
 #showroom .sr-bp.maxed small { color: var(--accent); }
+/* UPGRADE READY (14-Oct): an ECU reached by blueprints, not bought: the bar is FULL and overfilled (stripes that run on, a glow past the end) */
+#showroom .sr-bp.over .sr-bp-track { overflow: visible; box-shadow: 0 0 6px 1px rgba(255, 210, 63, .5), 4px 0 8px 0 rgba(255, 210, 63, .55); }
+#showroom .sr-bp.over .sr-bp-track i { background: repeating-linear-gradient(115deg, #ffe27a 0 6px, #ffbe2e 6px 12px); }
+#showroom .sr-bp.over small { color: #ffd23f; }
 #showroom .sr-bp small { flex: 0 0 auto; font-size: 11px; font-variant-numeric: tabular-nums; }
 #showroom .sr-badge { position: absolute; left: 8px; top: 30px; z-index: 2; padding: 3px 7px; border-radius: 4px; font: 800 10px/1.2 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
 #showroom .sr-badge.inuse { background: var(--accent); color: var(--accent-ink); }

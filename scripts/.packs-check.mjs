@@ -348,7 +348,7 @@ try {
   {
     Progress.reset(); Progress.noSave = true;
     const kinds = Packs.data.packs, keep = JSON.stringify(kinds.ten);
-    const sumBy = (cards) => cards.filter(c => !c.key).reduce((m, c) => ({ ...m, [c.car]: (m[c.car] || 0) + c.n }), {});
+    const sumBy = (cards) => cards.filter(c => !c.key).reduce((m, c) => ({ ...m, [c.car]: (m[c.car] || 0) + (c.given ?? c.n) }), {}); // (given: what the save took; the cap of 14-Oct can cut a stack: c.cut is the stack as dealt)
     let ok = true, steps = true, seenN = new Set();
     try {
       kinds.ten.baseAmount = [2, 4]; kinds.ten.doubleChance = 0; kinds.ten.amounts = { common: 3, epic: 15 };
@@ -356,16 +356,17 @@ try {
         const before = {}; for (const id of new Set([...P.roster(), ...EVENT_CARS, ...(g.cars.BESPOKE_CARS || [])].map(c => c.id))) before[id] = Ecu.blueprints(id) || 0;
         const r = Packs.open('ten', { free: true, random: dice(900 + i) });
         for (const c of r.cards) {
-          seenN.add(c.n);
-          if (c.key ? c.n !== 1 : c.rarity === 'common' ? c.n !== 3 : c.rarity === 'epic' ? c.n !== 15 : !(c.n >= 2 && c.n <= 4)) ok = false;
+          const dealt = c.cut ?? c.n;
+          seenN.add(dealt);
+          if (c.key ? dealt !== 1 : c.rarity === 'common' ? dealt !== 3 : c.rarity === 'epic' ? dealt !== 15 : !(dealt >= 2 && dealt <= 4)) ok = false;
         }
         for (const [id, n] of Object.entries(sumBy(r.cards))) if ((Ecu.blueprints(id) || 0) - (before[id] || 0) !== n) ok = false;
         const cards = P.revealOrder(P.revealCards(r.cards)), prog = P.revealProgress(cards);
         prog.forEach((p, j) => {
           if (!p.before) return;
           const c = cards[j], s = p.steps;
-          if (c.key ? s.length !== 1 : s.length !== c.n || s.some((x, k) => x.bp !== p.before.bp + k + 1)) steps = false;
-          if (JSON.stringify(s.at(-1)) !== JSON.stringify(p.after)) steps = false;
+          if (c.key ? s.length !== 1 : s.length !== (c.given ?? c.n) || s.some((x, k) => x.bp !== p.before.bp + k + 1)) steps = false;
+          if (s.length && JSON.stringify(s.at(-1)) !== JSON.stringify(p.after)) steps = false;
         });
       }
     } finally { kinds.ten = JSON.parse(keep); }
@@ -373,7 +374,7 @@ try {
     check(steps, 'the reveal\'s bar: one step a copy, each a blueprint more, the last where the slot leaves the car');
     Progress.reset(); Progress.noSave = true;
     const r = Packs.open('ten', { free: true, random: dice(5), amountOf: (c, i) => (i % 2 ? 15 : 3) });
-    check(r.cards.every((c, i) => c.key ? c.n === 1 : c.n === (i % 2 ? 15 : 3)), 'an amount put over the kind\'s (the debug route\'s amountOf): 3 and 15 by slot, a key still one');
+    check(r.cards.every((c, i) => c.key ? c.n === 1 : (c.cut ?? c.n) === (i % 2 ? 15 : 3)), 'an amount put over the kind\'s (the debug route\'s amountOf): 3 and 15 by slot, a key still one');
   }
   // ---- FEATURED WEIGHTS (the owner, 12-Oct; CHECKLIST 150): entries { car, weight, amount, key }, the last slot by
   // weight, keys once and never owned, amounts per entry, exhausted entries out with the weights shifted, the sheet's
@@ -462,8 +463,8 @@ try {
     const maxJet = (car) => car.id === 'jetcar';
     const t7 = tally(ell, 17e6, { maxed: maxJet });
     const plainJet = t7.all.reduce((n, cards) => n + cards.filter(c => c.car === 'jetcar' && !c.featured).length, 0);
-    check(!t7.all.some(cards => cards.some(c => c.featured && c.car === 'jetcar')) && plainJet > 0,
-      'a maxed car is out of the featured slots only: its blueprint still drops in the regular slots (' + plainJet + ' times in ' + NW + ' packs)');
+    check(!t7.all.some(cards => cards.some(c => c.featured && c.car === 'jetcar')) && plainJet === 0,
+      'a maxed car is out of the featured slots AND (14-Oct, the blueprint cap) out of the regular ones: no blueprint of it dealt in ' + NW + ' packs (' + plainJet + ' seen)');
     // every one exhausted: nothing featured drops (no duplicates, no key); the last slot is an ordinary filler
     const allMax = () => true;
     const t8 = tally(ell, 18e6, { maxed: allMax });
@@ -626,6 +627,7 @@ try {
     }
     check(given, 'opened packs (standard and limited special, doubled stacks among them): the blueprints given equal each slot\'s n');
     // the sheet: each card's stacks (x base, x base*2), each its TOTAL chance, adding up to the card's; a simulation
+    Progress.reset(); Progress.noSave = true; // (the packs opened above filled some cars to their cap: those are listed 'maxed', chance 0, one stack)
     const c = P.contents('standard', { owned: (id) => id === 'commuter' });
     const plainCards = c.groups.flatMap(gr => gr.cards.filter(x => !x.key));
     check(plainCards.every(x => x.stacks.length === 2 && x.stacks[0].n === 1 && x.stacks[1].n === 2 && near(x.stacks[0].chance + x.stacks[1].chance, x.chance) && near(x.stacks[1].chance, x.chance * d))
@@ -651,7 +653,7 @@ try {
   // that maxes the featured car does not take it out of the pack's last slot (the duplicate is kept as the count) ----
   {
     let asked = 0;
-    const later = () => asked++ > 0; // (not maxed when first asked; maxed from then on, as if the pack's own cards had maxed it)
+    const later = (car) => car.id === 'jetcar' && asked++ > 0; // (not maxed when first asked; maxed from then on, as if the pack's own cards had maxed it; the pools ask for every car, the featured entry for jetcar: one snapshot, asked once)
     const one = draw('comet-special', { random: dice(41), featured: ['jetcar'], maxed: later, owned: () => false });
     check(asked === 1 && one.at(-1).featured && one.at(-1).car === 'jetcar', 'draw() reads the maxed state once, before any card (asked ' + asked + ' time): the last slot keeps the featured car');
     const jet = by('jetcar'), full = Ecu.max(jet) * Ecu.x(jet);
@@ -663,11 +665,42 @@ try {
         (Progress.data.blueprints ||= {}).jetcar = full - 1; // (one short of its max: the first jetcar card maxes it)
         const r = Packs.open('comet-special', { free: true, random: dice(42e6 + s) });
         const jets = r.cards.filter(c => c.featured && c.car === 'jetcar');
-        if (jets.length >= 2) found = { r, jets, given: Ecu.blueprints('jetcar') - (full - 1), sum: r.cards.filter(c => c.car === 'jetcar').reduce((n, c) => n + c.n, 0) };
+        if (jets.length >= 2) found = { r, jets, given: Ecu.blueprints('jetcar') - (full - 1), sum: r.cards.filter(c => c.car === 'jetcar').reduce((n, c) => n + (c.given ?? c.n), 0) };
       }
     } finally { Packs.featuredOverride = null; Progress.reset(); Progress.noSave = true; }
     check(!!found && found.r.cards.at(-1).car === 'jetcar' && found.given === found.sum && P.maxedNow(jet) === false,
       'a pack whose earlier featured slot maxes the car still has it in the last slot (' + (found ? found.jets.length + ' jetcar cards, ' + found.given + ' blueprints given = the slots\' n' : 'no such pack found') + ')');
+  }
+  // ---- THE BLUEPRINT CAP (the owner, 14-Oct; CHECKLIST 286): a car with every blueprint it can use is dealt no more; a pack that would deal it
+  // deals another car of the pool; a whole pool capped keeps the pool (no empty pack); open() gives no more than the room ----
+  {
+    Progress.reset(); Progress.noSave = true;
+    const woody = by('woody');
+    Progress.data.blueprints = { woody: Ecu.cap(woody) };
+    let seenWoody = 0, packs = 0, empty = 0;
+    for (let i = 0; i < 2000; i++) { const cards = draw('standard', { random: dice(61e6 + i), owned: () => false }); packs++; if (!cards.length) empty++; seenWoody += cards.filter(c => c.car === 'woody').length; }
+    check(Ecu.capped(woody) && seenWoody === 0 && empty === 0, 'a capped car (woody, 10 of 10) is dealt in none of ' + packs + ' standard packs (' + seenWoody + ' seen), no pack empty');
+    const sheet = P.contents('standard', { owned: () => false }), wc = sheet.groups.flatMap(gr => gr.cards).find(x => x.car.id === 'woody');
+    check(wc && wc.exhausted === 'maxed' && wc.chance === 0, 'the sheet lists the capped car out of the pool: exhausted "maxed", chance 0');
+    const rate = (id) => { let n = 0; for (let i = 0; i < 2000; i++) n += draw('standard', { random: dice(62e6 + i), owned: () => false }).filter(c => c.car === id).length; return n; };
+    Progress.reset(); Progress.noSave = true;
+    check(rate('woody') > 0, '...and an uncapped woody is dealt (' + rate('woody') + ' in 2000 packs)');
+    // a pack dealt a car twice, the room for one: the second slot is dealt another car
+    Progress.reset(); Progress.noSave = true;
+    // every car in the pools capped but woody (1 blueprint short): the pool is woody alone; the pack still comes out whole
+    for (const car of P.roster()) if (P.rarityOf(car) && Ecu.kind(car)) Progress.data.blueprints[car.id] = Ecu.cap(car);
+    Progress.data.blueprints.woody = Ecu.cap(woody) - 1;
+    const r = Packs.open('standard', { free: true, random: dice(63e6), amountOf: () => 3 });
+    const plain = r.cards.filter(c => !c.key);
+    check(r.cards.length === 5 && plain.length > 0 && plain.every(c => c.car === 'woody') && Ecu.blueprints('woody') === Ecu.cap(woody), 'only woody left with room (1): the pack is five cards, every blueprint card of it (a Bespoke key may come too), and the save takes just that one (' + Ecu.blueprints('woody') + ' of ' + Ecu.cap(woody) + ')');
+    check(plain[0].given === 1 && plain[0].cut === 3 && plain[0].n === 1 && plain.slice(1).every(c => c.given === 0 && c.maxed), 'the first card x3 is cut to what was taken (given 1, cut 3), the rest are shown as already maxed (given 0)');
+    Progress.reset(); Progress.noSave = true;
+    // every blueprint car capped: the whole pool is kept (a finished collection), the pack is whole and nothing is added
+    for (const car of P.roster()) if (P.rarityOf(car) && Ecu.kind(car)) Progress.data.blueprints[car.id] = Ecu.cap(car);
+    const snap = JSON.stringify(Progress.data.blueprints);
+    const done = Packs.open('standard', { free: true, random: dice(64e6) });
+    check(done.cards.length === 5 && JSON.stringify(Progress.data.blueprints) === snap && done.cards.every(c => c.maxed || c.key), 'a finished collection: five cards still dealt (the pool kept), every one shown maxed, no blueprint added');
+    Progress.reset(); Progress.noSave = true;
   }
   // ---- THE CAR HUNT PACK (the owner, 13-Oct: "A car hunt pack has 3 slots, all 1x. It has one featured item slot. The
   // featured item is 1x of the car hunt car, or 3x of the car at low chances"): car-hunt-special, size 3, base 1, never

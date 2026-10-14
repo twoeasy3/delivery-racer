@@ -115,7 +115,7 @@ export const featuredRarity = (car) => (car.rarity && rank(car.rarity) >= 0 && c
 // ---- the save, as the featured mechanic reads it: a key owned, a car at its max ECU. The debug marks (?owned=, ?maxed=:
 // Packs.markOwned / markMaxed, for a visit, never saved) count as well
 export const ownsNow = (id) => !!Packs.markOwned?.has(id) || Progress.owns(id);
-export const maxedNow = (car) => !!car && (!!Packs.markMaxed?.has(car.id) || (Ecu.max(car) > 0 && Ecu.reached(car) >= Ecu.max(car)));
+export const maxedNow = (car) => !!car && (!!Packs.markMaxed?.has(car.id) || (Ecu.max(car) > 0 && Ecu.capped(car))); // (capped: it has every blueprint it can use, ecu.js cap; the same as reached >= max for a car with a ladder)
 
 // ---- FEATURED ENTRIES (the owner, 12-Oct: "declare featured weights and display them on the What's Inside. If the
 // featured is Epic Legend Legend I would want them to be 1:1:1 so the Epics don't flood the packs. If the featured is
@@ -305,6 +305,16 @@ export const amountFor = (spec, rarity, random = Math.random) => {
 export const doubleOf = (spec, over) => Math.max(0, Math.min(1, Number(over ?? spec?.doubleChance ?? packData.doubleChance ?? 0) || 0));
 // a kind's base amount for a rarity, as words for the sheet (a number, or "2-4")
 const baseWords = (spec, rarity, over) => { const v = over ?? spec?.amounts?.[rarity] ?? spec?.baseAmount ?? spec?.amount ?? 1; return Array.isArray(v) ? v : Math.max(1, Math.floor(Number(v) || 1)); };
+// a car's maxed state asked once per pack drawn, whoever asks (the featured entries and the regular pools): one SNAPSHOT of the save
+const once = (ask) => { const seen = new Map(); return (car) => { if (!seen.has(car.id)) seen.set(car.id, !!ask(car)); return seen.get(car.id); }; };
+// THE BLUEPRINT CAP (the owner, 14-Oct): a car that already has every blueprint it can use (ecu.js cap: `capped`, here `maxed`) is dealt no
+// more blueprint cards in the regular slots: the pool without those cars (a rarity with none left is out of the odds and the others'
+// shares grow). Only when EVERY blueprint car is capped (a finished collection) is the whole pool kept, so a pack never comes out empty.
+// The Bespoke KEY cards are not blueprints and are left as they are. Pure: returns a new pool.
+export const dealable = (pool, capped) => {
+  const keep = Object.fromEntries(Object.entries(pool).map(([r, list]) => [r, r === 'bespoke' ? list : list.filter(car => !capped(car))]));
+  return Object.entries(keep).some(([r, list]) => r !== 'bespoke' && list.length) ? keep : pool;
+};
 // A pack drawn: its cards, nothing given. { rarity, car (its id), key (a Bespoke key card), featured, upgraded }.
 // random: the dice (0 <= n < 1); featured: the special pack's featured list (entries, car ids or car objects:
 // featuredEntries); owned / maxed: the save's (a check hands its own). The featured mechanic deals from the entries in
@@ -315,8 +325,8 @@ const baseWords = (spec, rarity, over) => { const v = over ?? spec?.amounts?.[ra
 // baseOverride, for a visit)
 export const draw = (kind, { random = Math.random, cars, owned, maxed, featured = [], spec = packOf(kind), double = Packs.doubleOverride ?? undefined, base = Packs.baseOverride ?? undefined } = {}) => {
   if (!spec) throw new Error('no such pack: ' + kind);
-  const marks = { owned: owned || ownsNow, maxed: maxed || maxedNow };
-  const byRarity = poolOf(spec, { cars, owned: marks.owned });
+  const marks = { owned: owned || ownsNow, maxed: once(maxed || maxedNow) };
+  const byRarity = dealable(poolOf(spec, { cars, owned: marks.owned }), marks.maxed);
   const entries = spec.featured ? featuredLive(featuredEntries(featured), marks).live : [];
   const featuredKeys = new Set(entries.filter(f => f.key).map(f => f.car.id));
   if (byRarity.bespoke && featuredKeys.size) byRarity.bespoke = byRarity.bespoke.filter(c => !featuredKeys.has(c.id)); // (a featured key comes only as the featured card: never twice)
@@ -381,7 +391,22 @@ export const draw = (kind, { random = Math.random, cars, owned, maxed, featured 
   // base (packs.json baseAmount, a rarity's `amounts` over it), DOUBLED at the pack's doubleChance (the owner, 12-Oct:
   // "each non-featured card that drops has a chance to DOUBLE its stack": n = base x 2), one roll of the dice a slot
   const twice = doubleOf(spec, double), baseSpec = base !== undefined ? { ...spec, amounts: undefined, baseAmount: base } : spec;
-  return slots.map(({ amount, ...c }) => {
+  // (a slot whose car cannot take another blueprint once the earlier slots of this pack are counted is dealt another car of the pool: the cap)
+  const planned = {};
+  const room = (carId) => { const car = Cars.carById(carId); return car && Ecu.kind(car) ? Ecu.room(car) - (planned[carId] || 0) : Infinity; };
+  const dealt = [];
+  for (const c of slots) {
+    let slot = c;
+    if (!slot.key && !slot.featured && !(room(slot.car) > 0)) {
+      const same = (byRarity[slot.rarity] || []).filter(car => room(car.id) > 0);
+      const any = RARITIES.filter(r => r !== 'bespoke').flatMap(r => byRarity[r] || []).filter(car => room(car.id) > 0);
+      const list = same.length ? same : any;
+      if (list.length) { const car = pick(list); slot = { ...slot, car: car.id, rarity: same.length ? slot.rarity : rarityOf(car) || slot.rarity }; }
+    }
+    dealt.push(slot);
+    if (!slot.key) planned[slot.car] = (planned[slot.car] || 0) + 1; // (counted as one card here: the amounts are rolled after, and Packs.open clamps the stack to the room left)
+  }
+  return dealt.map(({ amount, ...c }) => {
     if (c.key) return { ...c, n: 1 };
     if (c.featured && amount !== undefined) return { ...c, n: amountFor({ amount }, c.rarity, random) };
     if (c.featured) return { ...c, n: amountFor(baseSpec, c.rarity, random) }; // (a featured entry with no amount of its own: the base, never doubled)
@@ -405,8 +430,9 @@ export const draw = (kind, { random = Math.random, cars, owned, maxed, featured 
 // exhausted: the blueprint entries back at their declared weights), doubleChance, baseAmount, limited, atLeast }
 export const contents = (kind, { featured = [], cars, owned, maxed, spec = packOf(kind), double = Packs.doubleOverride ?? undefined, base = Packs.baseOverride ?? undefined } = {}) => {
   if (!spec) return null;
-  const marks = { owned: owned || ownsNow, maxed: maxed || maxedNow };
-  const byRarity = poolOf(spec, { cars, owned: marks.owned });
+  const marks = { owned: owned || ownsNow, maxed: once(maxed || maxedNow) };
+  const full = poolOf(spec, { cars, owned: marks.owned });
+  const byRarity = dealable(full, marks.maxed); // (the cars with every blueprint they can use are out of the deal: listed below as 'maxed', chance 0)
   const declared = spec.featured ? featuredEntries(featured) : [];
   const { live, reverted } = featuredLive(declared, marks);
   const featuredKeys = new Set(live.filter(f => f.key).map(f => f.car.id));
@@ -428,6 +454,15 @@ export const contents = (kind, { featured = [], cars, owned, maxed, spec = packO
       const chance = share / byRarity[rarity].length, key = rarity === 'bespoke';
       return { car, chance, key, exhausted: null, stacks: stacksOf(key, rarity, chance) };
     }) }));
+  // the capped cars (the owner, 14-Oct: a car with every blueprint it can use is dealt no more): listed, exhausted 'maxed', chance 0
+  for (const rarity of RARITIES) {
+    if (rarity === 'bespoke') continue;
+    const out = (full[rarity] || []).filter(car => !(byRarity[rarity] || []).includes(car));
+    if (!out.length) continue;
+    const cards = out.map(car => ({ car, chance: 0, key: false, exhausted: 'maxed', stacks: [{ n: baseWords(spec, rarity, base), chance: 0 }] }));
+    const g = groups.find(x => x.rarity === rarity);
+    if (g) g.cards.push(...cards); else groups.push({ rarity, share: 0, cards });
+  }
   // the keys owned: listed, exhausted (the owner, 12-Oct: "Keys in the regular packs should also carry this overlay")
   if (spec.pool === 'all') {
     const ownedKeys = (cars || roster()).filter(c => isBespokeCar(c) && marks.owned(c.id)).map(car => ({ car, chance: 0, key: true, exhausted: 'owned', stacks: [{ n: 1, chance: 0 }] }));
@@ -686,13 +721,14 @@ export const revealOrder = (cards) => {
 // blueprints are already given (open()), so where each car stood before the pack is worked back (its blueprints now,
 // less this pack's cards of it), and the cards are then laid on one at a time: a later card of the same car starts where
 // the earlier one left it. Per card: { before, after, unlocks (the car became driveable: a blueprint car's first ECU, a
-// key car's key), ecuUp (an ECU more reached), maxed (at its top after) }, before/after = { bp, ecu, max, have, toNext,
-// unlocked } (have/toNext: the blueprints toward the next ECU)
+// key car's key), ecuUp (an ECU more REACHED: an upgrade is ready to BUY, nothing glows for it any more: 14-Oct, the glow and the cinematic are
+// the purchase's), maxed (all its ECUs reached after) }, before/after = { bp, ecu, max, have, toNext, unlocked, bought, over } (have/toNext: the
+// blueprints toward the next ECU; over: reached above bought, the bar full and overfilled)
 export const revealProgress = (cards, { owned = (id) => Progress.owns(id) } = {}) => {
   const start = {}, keysNew = new Set();
   for (const c of cards || []) {
     if (c.key) { if (c.isNew) keysNew.add(c.car); continue; }
-    start[c.car] = (start[c.car] ?? Ecu.blueprints(c.car) ?? 0) - (c.n ?? 1);
+    start[c.car] = (start[c.car] ?? Ecu.blueprints(c.car) ?? 0) - (c.given ?? c.n ?? 1);
   }
   const bp = { ...start }, hasKey = {};
   const at = (car, n, key) => {
@@ -700,7 +736,8 @@ export const revealProgress = (cards, { owned = (id) => Progress.owns(id) } = {}
     const steps = Math.floor(Math.max(0, n) / x);
     const ecu = Ecu.maxed(car) ? max : Math.min(max, blueprint ? steps : 1 + steps);
     const unlocked = blueprint ? ecu >= 1 || Progress.data.cars.includes(car.id) : key;
-    return { bp: n, ecu, max, toNext: x, have: ecu >= max ? x : Math.max(0, n) % x, unlocked };
+    const bought = Math.min(ecu, Ecu.purchased(car)); // (the ECU bought: a pack buys nothing, so the save's; over = blueprints have reached an ECU not bought yet: the bar reads FULL and overfilled, barfill.js)
+    return { bp: n, ecu, max, toNext: x, have: ecu >= max ? x : Math.max(0, n) % x, unlocked, bought, over: ecu > bought };
   };
   return (cards || []).map((c) => {
     const car = Cars.carById(c.car);
@@ -709,7 +746,7 @@ export const revealProgress = (cards, { owned = (id) => Progress.owns(id) } = {}
     const n0 = bp[id] ?? Ecu.blueprints(id);
     const before = at(car, n0, key0);
     let n1 = n0, key1 = key0;
-    if (c.key) key1 = true; else n1 = n0 + (c.n ?? 1);
+    if (c.key) key1 = true; else n1 = n0 + (c.given ?? c.n ?? 1);
     bp[id] = n1; hasKey[id] = key1;
     const after = at(car, n1, key1);
     const steps = c.key ? [after] : Array.from({ length: n1 - n0 }, (_, j) => at(car, n0 + j + 1, key1)); // (after each copy: the bar fills copy by copy as they flick on)
@@ -797,10 +834,13 @@ export const Packs = {
         continue;
       }
       const before = Ecu.blueprints(c.car) || 0;
-      c.maxed = !!car && Ecu.max(car) > 0 && Ecu.reached(car) >= Ecu.max(car); // (already at its top: kept as a count, no further effect)
+      c.maxed = !!car && Ecu.max(car) > 0 && Ecu.capped(car); // (already has every blueprint it can use: nothing is added, the card is shown as it was dealt)
       c.isNew = before === 0 && !Progress.owns(c.car);
-      Ecu.addBlueprints(c.car, c.n ?? 1); // (the slot's amount)
+      Ecu.addBlueprints(c.car, c.n ?? 1); // (the slot's amount; ecu.js clamps it to the cap)
       c.count = Ecu.blueprints(c.car);
+      c.given = Math.max(0, c.count - before); // (what the save took: less than the card's n when the car's cap cut it)
+      if (c.given < (c.n ?? 1) && !c.maxed) c.cut = c.n ?? 1; // (the stack as dealt; n is what was given)
+      if (c.cut) c.n = c.given;
     }
     const log = (Progress.data.packLog ||= []);
     log.unshift({ kind: id, cards: cards.map(c => ({ car: c.car, rarity: c.rarity, ...(c.key ? { key: true } : {}), ...(c.featured ? { featured: true } : {}) })) });

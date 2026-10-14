@@ -1,7 +1,7 @@
 // A check of ECU UPGRADES THAT COST BANK (the owner, 14-Oct: "ECU levels should cost bank to upgrade. Collecting the blueprints only
 // unblocks the upgrade"; src/delivery/ecu.js price / upgrade / buy / purchased / migrate, CONFIG.ecuCost, progress.js ecuBought):
 //   the price table (positive, in whole rounding steps, rising with every step of a car), a purchase takes exactly its price from
-//   the bank and never takes it below zero, no purchase above the level the blueprints reached nor without the key, blueprints
+//   the bank and never takes it below zero, no purchase above the level the blueprints reached (a key car WITHOUT its key may buy, 14-Oct, and stays locked), blueprints
 //   alone no longer raise the ECU a car plays at, an old save (no purchased levels) keeps every car at the ECU it had (and
 //   migrating twice changes nothing), the save round trip, "Unlock everything" (both modes), the cookie.
 //   node scripts/.ecu-cost-check.mjs            the checks
@@ -79,13 +79,26 @@ try {
   const spent = 1e6 - Progress.data.money;
   check(spent === rows.find(r => r.c.id === 'muscle').steps.reduce((a, b) => a + b, 0), 'the muscle car cost the sum of its steps ($' + spent + ')');
 
-  // a key car without its key
+  // a key car without its key (14-Oct, the owner: 'Yes, paid upgrades'): its ECUs CAN be bought, up to what its blueprints reached; it stays locked until the key
   fresh();
   const cl = car('classicgt');
   Progress.data.money = 1e6; Ecu.addBlueprints('classicgt', 50);
-  check(Ecu.reached(cl) === 5 && Ecu.upgrade(cl).state === 'nokey' && !Ecu.buy(cl).ok && Progress.data.money === 1e6 && Ecu.level(cl) === 0, 'a key car without its key (50 blueprints): cannot be bought, stays locked, bank untouched');
+  check(Ecu.blueprints('classicgt') === 20 && Ecu.cap(cl) === 20, 'a key car without its key (50 blueprints offered): the cap holds 20, the 5-ECU key car needs no more');
+  check(Ecu.reached(cl) === 5 && Ecu.upgrade(cl).state === 'ready' && Ecu.upgrade(cl).to === 2, '...ECU5 reached, the upgrade to ECU2 is "ready" (no "nokey" state any more)');
+  const keyless = Ecu.buy(cl);
+  check(keyless.ok && Ecu.purchased(cl) === 2 && Progress.data.money === 1e6 - Ecu.price(cl, 2), '...and it can be BOUGHT without the key (ECU2, ' + Ecu.price(cl, 2) + ' from the bank)');
+  check(Ecu.level(cl) === 0 && !Ecu.unlocked(cl) && Ecu.lockedWords(cl) === 'Purchase this car from the car lot', '...but it stays locked (level 0, not driveable, "' + Ecu.lockedWords(cl) + '")');
+  Ecu.buy(cl); Ecu.buy(cl); Ecu.buy(cl);
+  check(Ecu.purchased(cl) === 5 && Ecu.upgrade(cl).state === 'maxed' && Ecu.level(cl) === 0, '...one step at a time to ECU5 bought, still no key, still locked');
   Progress.data.cars.push('classicgt');
-  check(Ecu.level(cl) === 1 && Ecu.buy(cl).ok && Ecu.level(cl) === 2, '...with the key: ECU1 free, then ECU2 can be bought');
+  check(Ecu.level(cl) === 5, '...the key arrives: it plays at the ECU bought (5), not at ECU1');
+  // only up to the reached level, with or without the key
+  fresh();
+  Progress.data.money = 1e6; Ecu.addBlueprints('classicgt', 5);
+  check(Ecu.buy(cl).ok && !Ecu.buy(cl).ok && Ecu.purchased(cl) === 2 && Ecu.upgrade(cl).state === 'blueprints', 'a keyless key car with 5 blueprints: ECU2 bought, ECU3 refused (blueprints reached 2)');
+  fresh();
+  Progress.data.cars.push('classicgt'); Progress.data.money = 1e6; Ecu.addBlueprints('classicgt', 5);
+  check(Ecu.level(cl) === 1 && Ecu.buy(cl).ok && Ecu.level(cl) === 2, 'with the key: ECU1 free, then ECU2 can be bought');
 
   // a blueprint car: its first X blueprints unlock it at ECU1 (free), the rest are bought
   fresh();
@@ -195,6 +208,81 @@ try {
   Progress.data.blueprints = { sport: 5 }; Progress.data.ecuBought = { sport: 2 };
   Progress.save();
   check(cookie().length <= 4096, 'a very long car list: the cookie is still under its cap (' + cookie().length + ')');
+  fresh();
+
+  // ---- 14-Oct FOLLOW-UP (CHECKLIST 286): the ECU UP moment is the PURCHASE's, the blueprint cap, the bars
+  // the hooks: a purchase fires 'ecuchange' (render/ecuupgrade.js plays the glow and the cinematic from it); reaching an ECU by blueprints does not
+  {
+    const heard = [];
+    const was = window.dispatchEvent; // (the headless page's window is a stub: its dispatchEvent is wrapped to listen)
+    window.dispatchEvent = (e) => { if (e?.type === 'ecuchange') heard.push(e.detail); return was?.call(window, e); };
+    fresh();
+    Progress.data.cars.push('muscle'); Progress.data.money = 1e6;
+    Ecu.addBlueprints('muscle', 5);
+    check(Ecu.reached(car('muscle')) === 2 && heard.length === 0, 'blueprints reaching a new ECU fire no ECU UP moment (the glow and cinematic hook stay quiet)');
+    Ecu.buy(car('muscle'));
+    check(heard.length === 1 && heard[0].car === 'muscle' && heard[0].to === 2 && heard[0].from === 1 && heard[0].max === 5, 'buying it fires it once: ' + JSON.stringify(heard[0]));
+    Ecu.buy(car('muscle'));
+    check(heard.length === 1, 'a refused purchase (ECU3 needs more blueprints) fires nothing');
+    window.dispatchEvent = was;
+  }
+  // the cap: X per step times the steps (a key car: max - 1 steps, a blueprint car: max steps); none for a car with no ECU or a 1-ECU key car
+  {
+    const caps = { sport: 5, muscle: 20, classicgt: 20, woody: 10, bubble: 5, midnight: 25, commuter: 0, hellrod: 0, bus: 0 };
+    const got = Object.fromEntries(Object.keys(caps).map(id => [id, Ecu.cap(car(id))]));
+    check(JSON.stringify(got) === JSON.stringify(caps), 'the cap per car: ' + JSON.stringify(got));
+    fresh();
+    check(Ecu.addBlueprints('commuter', 5) === 1 && Ecu.blueprints('commuter') === 0 && Ecu.blueprints('bus') === 0 && Ecu.addBlueprints('bus', 3) === 0 && Ecu.blueprints('bus') === 0 && Ecu.capped(car('bus')) && Ecu.capped(car('commuter')), 'a 1-ECU key car (the starter) and a car with no ECU take no blueprints');
+    Ecu.addBlueprints('woody', 7); Ecu.addBlueprints('woody', 7);
+    check(Ecu.blueprints('woody') === 10 && Ecu.capped(car('woody')) && Ecu.room(car('woody')) === 0, 'a blueprint car stops at its cap (woody 2 ECUs: 10, not 14)');
+    Ecu.addBlueprints('midnight', 24);
+    check(Ecu.room(car('midnight')) === 1 && Ecu.addBlueprints('midnight', 9) === 5 && Ecu.blueprints('midnight') === 25, 'one blueprint of room left: a stack of 9 gives 1');
+    // an over-cap save is read, never rewritten: the display clamps (showroom card, counted), the data stays
+    fresh();
+    Progress.data.blueprints = { woody: 40, sport: 99 };
+    Progress.save(); Progress.reload();
+    check(Progress.data.blueprints.woody === 40 && Ecu.counted(car('woody')) === 10 && Ecu.reached(car('woody')) === 2 && Ecu.addBlueprints('woody', 5) === 2 && Progress.data.blueprints.woody === 40,
+      'a save with 40 woody blueprints (cap 10): the data stays 40 through a reload and an add, reads as 10, ECU2');
+    const D = await g.load('showroomData.js');
+    check(D.carCard(car('woody')).blueprints === 10 && D.carCard(car('sport')).blueprints === 5, '...and the showroom card shows the clamped count (10, 5)');
+  }
+  // the bar: FULL and OVERFILLED while an upgrade is available and not bought (render/barfill.js, the one rule every bar uses)
+  {
+    const { barFill } = await g.load('render/barfill.js');
+    const same = (a, b) => a.pct === b.pct && a.over === b.over && a.full === b.full;
+    check(same(barFill({ have: 2, toNext: 5, ecu: 2, bought: 2, max: 5 }), { pct: 40, over: false, full: false }), 'bar: reached = bought: the next step\'s progress as ever (2 of 5 = 40%)');
+    check(same(barFill({ have: 2, toNext: 5, ecu: 3, bought: 2, max: 5 }), { pct: 100, over: true, full: true }), 'bar: an ECU reached and not bought: FULL and overfilled (not the next step\'s 40%)');
+    check(same(barFill({ have: 0, toNext: 5, ecu: 3, bought: 1, max: 5 }), { pct: 100, over: true, full: true }), 'bar: two steps unbought: still full and overfilled');
+    check(same(barFill({ have: 5, toNext: 5, ecu: 5, bought: 4, max: 5 }), { pct: 100, over: true, full: true }), 'bar: the last step reached and not bought: full, overfilled');
+    check(same(barFill({ have: 5, toNext: 5, ecu: 5, bought: 5, max: 5 }), { pct: 100, over: false, full: true }), 'bar: the last step bought: full (no overfill)');
+    check(same(barFill({ have: 3, toNext: 5, ecu: 0, bought: 0, max: 2 }), { pct: 60, over: false, full: false }), 'bar: a blueprint car part-way to its unlock: 60%');
+    check(same(barFill({ have: 0, toNext: 5, ecu: 1, bought: 1, max: 1 }), { pct: 100, over: false, full: true }) && barFill({}).pct === 0, 'bar: a 1-ECU car at its top is full; no figures: empty');
+    // the same on real cars: the showroom's card and the pack reveal's / Jim's state
+    fresh();
+    const D = await g.load('showroomData.js'), P = await g.load('packs.js'), J = await g.load('jimshop.js');
+    Progress.data.money = 1e6; Ecu.addBlueprints('classicgt', 5);
+    const keyless2 = D.carCard(car('classicgt'));
+    check(keyless2.over && keyless2.bought === 1 && keyless2.ecu === 2 && !keyless2.unlocked && keyless2.state === 'locked' && keyless2.upgrade.state === 'ready',
+      'a keyless key car with 5 blueprints: the card is locked, its bar over (ECU2 reached, ECU1), the Upgrade block "ready"');
+    check(J.stand(car('classicgt')).over === true && J.stand(car('classicgt')).bought === 1, '...Jim\'s stand() says over too');
+    Ecu.buy(car('classicgt'));
+    const bought2 = D.carCard(car('classicgt'));
+    check(!bought2.over && bought2.bought === 2 && J.stand(car('classicgt')).over === false, '...bought: the bar is the next step\'s progress again (not over)');
+    Ecu.addBlueprints('classicgt', 3);
+    const pr = P.revealProgress([{ car: 'classicgt', n: 3, key: false }]);
+    check(pr[0].after.over === false && pr[0].before.over === false && pr[0].after.have === 3, 'the reveal: 3 more blueprints (8 of 20, ECU2 bought): the next step at 3 of 5, no glow-worthy ECU UP');
+    Ecu.addBlueprints('classicgt', 2);
+    const pr2 = P.revealProgress([{ car: 'classicgt', n: 2, key: false }]);
+    check(pr2[0].ecuUp && pr2[0].after.over && pr2[0].after.bought === 2 && pr2[0].after.ecu === 3 && !pr2[0].unlocks, 'the reveal: the 2 blueprints that reach ECU3 -> over (bought 2, reached 3), nothing unlocked');
+  }
+  // events: the Concept Strike key's 'max ECU' is the BOUGHT level, and the free try drives at it
+  {
+    fresh();
+    const fb = car('fishbowl'); Progress.data.money = 1e9; Ecu.addBlueprints('fishbowl', 20);
+    check(Ecu.reached(fb) === 5 && Ecu.purchased(fb) === 1 && !Progress.owns('fishbowl') && Ecu.level(fb) === 0, 'the Fishbowl (a concept key car) with all 20 blueprints, nothing bought: reached 5, bought 1, not owned');
+    while (Ecu.buy(fb).ok);
+    check(Ecu.purchased(fb) === 5 && Ecu.max(fb) === 5 && !Progress.owns('fishbowl'), '...bought to ECU5 with no key: max ECU is now the bought level');
+  }
   fresh();
 } finally {
   console.log(failures ? failures + ' FAILED' : 'all checks passed');

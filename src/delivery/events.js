@@ -24,7 +24,7 @@
 // day of a run (Monday to Saturday: `repeat: { every: 7, live: 6 }` from a Monday). Each DAY is a run of its own: the
 // window is the day's (Ends in: midnight; between days the next day starts at once; Sunday: Next in, Monday). A day has
 //   car     its FEATURED car: lent as a FREE TRY at the player's own ECU for it, ON by default (the stage's car lock,
-//           `ownEcu`: ecu.js drives it at the ECU its blueprints reach, ECU1 with none; the key at ECU5). The event card's
+//           `ownEcu`: ecu.js drives it at the ECU BOUGHT (14-Oct, buying needs no key), ECU1 with none; the key at ECU5 bought). The event card's
 //           Free try chip, or the showroom's Drive on another car, turns it off for the visit (lentFor / pickFor)
 //   tasks   [{ stars, side, car, featured, maxed, packs, limit, key }]: a delivery of the stage that meets a task pays it:
 //           `packs` of the day's pack (packs.json: the pack whose givenBy.event names the event and that `day`, 1 = the
@@ -172,7 +172,7 @@ const meets = (task, day, run) => {
 };
 // the free try of a rotating event's featured car: ON by default while a day is live (the owner, 13-Oct: "the idea is that
 // players ECU up the car they don't own, and only get the key when they max it out": the day's car is everyone's to drive,
-// lent at the ECU its blueprints reach). The card's chip, or a pick in the showroom of another car, turns it off for the
+// lent at the ECU bought). The card's chip, or a pick in the showroom of another car, turns it off for the
 // visit (never saved); a pick of the day's car, or the chip again, back on
 let tryOn = true;
 
@@ -299,12 +299,12 @@ export const Events = {
   },
   // anything left to earn in the run on now? (the Events tab's dot)
   tasksLeft(event, t = this.now()) { return this.live(event, t) ? this.tasks(event, t).filter(x => !x.done).length : 0; },
-  // the FREE TRY of the day's car (its card's button): { car, on, ecu, max } (ecu: what the player's blueprints reach, as it
+  // the FREE TRY of the day's car (its card's button): { car, on, ecu, max } (ecu: the ECU the player has bought, as it
   // is lent), or null (no rotating event, no run on)
   freeTry(event, t = this.now()) {
     const day = this.dayOf(event, t), car = day?.live ? carById(day.car) : null;
     if (!car) return null;
-    return { car, on: tryOn, ecu: Math.max(1, Ecu.reached(car)), max: Ecu.max(car), owned: Progress.owns(car.id) };
+    return { car, on: tryOn, ecu: Math.max(1, Ecu.purchased(car)), max: Ecu.max(car), owned: Progress.owns(car.id) };
   },
   setFreeTry(event, on) { tryOn = !!on; this.syncTry(event); },
   // the free try the level picked lends this car: freeTry's { car, on, ecu, max, owned } when the level is a rotating

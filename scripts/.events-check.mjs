@@ -266,11 +266,17 @@ async function conceptStrike() {
   Events.setFreeTry(strike, true);
   const tryRun = run(false);
   check(tryRun.driven === 'fishbowl' && tryRun.ecu === 1 && !P.owns('fishbowl') && Events.freeTry(strike)?.ecu === 1, 'the free try: the Fishbowl lent, driven at ECU1 (no blueprints), no key (' + JSON.stringify(tryRun) + ')');
+  // (14-Oct, the owner: keyless key cars may BUY their ECUs, so 'max ECU' is the BOUGHT level and the free try drives at it: blueprints alone raise nothing)
   Ecu.addBlueprints('fishbowl', 10);
-  check(run(false).ecu === 3 && !P.owns('fishbowl'), '10 blueprints: the free try drives at ECU3; still no key');
+  check(run(false).ecu === 1 && Events.freeTry(strike)?.ecu === 1 && !P.owns('fishbowl'), '10 blueprints, nothing bought: the free try still drives at ECU1 (the bought level); still no key');
+  P.data.money = 1e6;
+  Ecu.buy(g.cars.carById('fishbowl')); Ecu.buy(g.cars.carById('fishbowl'));
+  check(run(false).ecu === 3 && Events.freeTry(strike)?.ecu === 3 && !P.owns('fishbowl'), '...ECU2 and ECU3 bought (the car not owned): the free try drives at ECU3; still no key');
   Ecu.addBlueprints('fishbowl', 10);
+  check(run(true).ecu === 3 && !P.owns('fishbowl') && !Events.tasks(strike)[3].done, '20 blueprints, ECU3 bought: delivered at ECU3, the key is NOT given (max ECU = the bought level)');
+  Ecu.buy(g.cars.carById('fishbowl')); Ecu.buy(g.cars.carById('fishbowl'));
   const maxed = run(true);
-  check(maxed.ecu === Ecu.max(g.cars.carById('fishbowl')) && P.owns('fishbowl') && Events.tasks(strike)[3].done, '20 blueprints: at its max ECU (' + maxed.ecu + ') the free try delivered gives the Fishbowl\'s KEY');
+  check(maxed.ecu === Ecu.max(g.cars.carById('fishbowl')) && P.owns('fishbowl') && Events.tasks(strike)[3].done, 'ECU4 and ECU5 bought: at its max ECU (' + maxed.ecu + ') the free try delivered gives the Fishbowl\'s KEY');
   Events.setFreeTry(strike, false);
   check(!SL(strike).car && !SL(strike).ownEcu, 'the free try off: no car lock again');
   // Tuesday: the counters start again; the Fishbowl (now owned) pays 2 packs, 3 times
@@ -388,12 +394,14 @@ async function strikeFreeTry(strike, from) {
   Events.setFreeTry(strike, true);
   const fish = g.cars.carById('fishbowl');
   const seen = [];
+  P.data.money = 1e9; // (the ECUs the blueprints reach are bought as they come: 14-Oct, the free try drives at the ECU BOUGHT)
   let opened = 0, seed = 7;
   const random = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
   while (Ecu.blueprints('fishbowl') < 20 && opened < 400) {
     Packs.open('concept-strike-1', { free: true, random });
     opened++;
     const ecu = Ecu.reached(fish);
+    while (Ecu.buy(fish).ok);
     if (!seen.length || seen[seen.length - 1].ecu !== ecu) {
       const r = start(), c = carCard(fish, false);
       seen.push({ ecu, bp: Ecu.blueprints('fishbowl'), driven: r.ecu, card: c.lent?.ecu, owned: P.owns('fishbowl') });
@@ -401,7 +409,7 @@ async function strikeFreeTry(strike, from) {
   }
   const below = seen.filter(x => x.ecu < 5);
   check(seen.length >= 5 && seen.map(x => x.ecu).join() === '1,2,3,4,5'.slice(0, seen.length * 2 - 1) && seen.every(x => x.driven === x.ecu && (x.ecu === 5 || x.card === x.ecu)) && below.every(x => !x.owned),
-    'the chain: the Fishbowl Strike packs’ blueprints raise the ECU of the Fishbowl NOT owned (' + seen.map(x => 'ECU' + x.ecu + ' at ' + x.bp + ' bp').join(', ') + ', ' + opened + ' packs), each step driven as the free try and shown lent at it; below ECU5 no key');
+    'the chain: the Fishbowl Strike packs’ blueprints, each ECU they reach bought, raise the ECU of the Fishbowl NOT owned (' + seen.map(x => 'ECU' + x.ecu + ' at ' + x.bp + ' bp').join(', ') + ', ' + opened + ' packs), each step driven as the free try and shown lent at it; below ECU5 no key');
   const top = seen[seen.length - 1];
   check(top?.ecu === 5 && top.owned && P.owns('fishbowl') && Events.tasks(strike)[3].done, 'delivered at ECU5 (maxed by blueprints) the free try gives the Fishbowl’s KEY: the car owned');
   const ownCard = carCard(fish, false);

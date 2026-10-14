@@ -226,6 +226,8 @@ window.addEventListener('keydown', (event) => {
     Packs.featuredOverride = debugFeatured(params); // (&featured=silvercomet:9x3,silvercomet:1x15,rocketfin!key:1: a special pack's featured list for this visit)
     debugDouble(params); // (&double=0.5&base=2: the doubling chance and base amount, for this visit)
     debugMarks(params); // (&maxed=<ids>&owned=<ids>: cars counted as maxed / keys owned, for this visit)
+    for (const token of (params.get('bp') || '').split(',').filter(Boolean)) { const [id, n] = token.split(':'); (Progress.data.blueprints ||= {})[id] = Number(n) || 0; } // (&bp=woody:4: blueprints held before the pack, for a look at its bars; nothing saved)
+    for (const token of (params.get('ecu') || '').split(',').filter(Boolean)) { const [id, n] = token.split(':'); (Progress.data.ecuBought ||= {})[id] = Math.max(0, Math.floor(Number(n)) || 0); } // (&ecu=sport:2: ECUs bought)
     Packs.amountOverride = debugAmounts(params); // (&amount=3, &amount=15, &amounts=3,15, &amounts=common:3,epic:15: every non-key slot that many, for this visit)
     const f = parseFloat(params.get('flick'));
     if (f >= 0) freezeAt = f; // (&flick=0.4: each slot's flicks held 0.4 s after its first throw, for a still)
