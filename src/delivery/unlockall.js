@@ -12,6 +12,7 @@ import { CONFIG } from './config.js';
 import { SPECIALS } from './events.js';
 import { Progress } from './progress.js';
 import { cosmeticKeys, grantCosmetics } from './render/cosmetics.js';
+import './render/platecosmetic.js'; // (registers the number plate designs, slot 'plate')
 import './render/wheelcosmetic.js'; // (registers the wheel sets; a later cosmetic slot's module is imported here too, so that 'abs' sees its items)
 
 export const MODES = { all: 'Everything', abs: 'Absolutely everything' };
