@@ -2,17 +2,35 @@
    section head, the tile, the yellow price button, the chips, the notes) and the blueprint card's frames (blueprintcard.css); Jim is
    only an accent: a small red "Blueprint stall" tag, a thin string of bunting under the head, a red hot-deal ribbon. KEPT CHEAP for the
    tablet's flicker (CHECKLIST 213): no backdrop-filter, blur, filter or blend; flat colours; only the toast, the bar and the pop move. */
-.s-jim .shop-section-head { align-items: center; }
-.s-jim .shop-section-head h2 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.jim-tag { padding: 3px 7px 2px; border-radius: 4px; font: 900 10.5px/1.1 var(--display); letter-spacing: .1em; color: #fff; background: #ff3b3b; transform: translateY(-1px); }
+/* THE BANNER (round 1's, restored at the owner's word, 14-Oct): a string of bunting, the red Crazey Jim's sign with the yellow Blueprint Stall band,
+   then a strip with the clock to the next stock and the bank. The rest of the section is the Shop's own style. */
+.s-jim { --jim-red: #d8262b; --jim-red-deep: #a51a1f; --jim-yellow: #ffd23f; --jim-blue: #2f7fe0; --jim-green: #3cc464; --jim-ink: #14161a; }
+.jim-bunting { display: flex; justify-content: space-between; height: 34px; padding: 0 2px; background: linear-gradient(#000, #000) 0 4px / 100% 2px no-repeat; }
+.jim-bunting i { flex: 0 0 auto; width: 6.2%; max-width: 46px; height: 28px; margin-top: 5px; clip-path: polygon(0 0, 100% 0, 50% 100%); background: var(--jim-red); transform-origin: 50% 0; }
+.jim-bunting i:nth-child(5n+2) { background: var(--jim-yellow); transform: rotate(3deg); }
+.jim-bunting i:nth-child(5n+3) { background: var(--jim-blue); transform: rotate(-2deg); }
+.jim-bunting i:nth-child(5n+4) { background: var(--jim-green); transform: rotate(2deg); }
+.jim-bunting i:nth-child(5n) { background: #f4f4f4; transform: rotate(-3deg); }
+.jim-bunting i:nth-child(n+14) { display: none; }
+.jim-sign { position: relative; margin: 2px max(12px, env(safe-area-inset-left)) 0; padding: 12px 12px 10px; text-align: center; border-radius: 10px; background: var(--jim-red);
+  box-shadow: inset 0 0 0 4px #fff, inset 0 0 0 7px var(--jim-red-deep), 0 5px 0 #000; }
+.jim-sign h1 { font: italic 900 clamp(26px, 8.4vw, 46px)/.95 var(--display); font-stretch: condensed; text-transform: uppercase; letter-spacing: .02em; color: #fff; text-shadow: 0 3px 0 var(--jim-red-deep); }
+.jim-sign h1 span { display: block; margin-top: 4px; padding: 3px 0 2px; font-size: .62em; letter-spacing: .1em; color: var(--jim-ink); background: var(--jim-yellow); text-shadow: none; box-shadow: 0 2px 0 var(--jim-red-deep); }
+.jim-sign p { margin-top: 7px; font: 700 12px/1.25 var(--display); letter-spacing: .08em; text-transform: uppercase; color: #ffe9e9; }
+.jim-strip { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; margin: 12px max(12px, env(safe-area-inset-left)) 0; }
+.jim-clock { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 6px; background: #000; box-shadow: inset 0 0 0 2px var(--jim-yellow); font: 800 14px/1.1 var(--display); letter-spacing: .05em; text-transform: uppercase; }
+.jim-clock b { color: var(--jim-yellow); font-variant-numeric: tabular-nums; }
 .jim-bank { margin-left: auto; display: flex; align-items: baseline; gap: 6px; padding: 5px 12px; border-radius: 999px; background: rgba(255, 255, 255, .07); box-shadow: inset 0 0 0 1px var(--line); }
 .jim-bank small { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
 .jim-bank b { font: 800 19px/1 var(--display); color: var(--buy); font-variant-numeric: tabular-nums; }
-.jim-bunting { display: flex; justify-content: space-between; height: 15px; margin: -2px 0 10px; background: linear-gradient(var(--line), var(--line)) 0 0 / 100% 1px no-repeat; overflow: hidden; }
-.jim-bunting i { flex: 0 0 auto; width: 14px; height: 13px; margin-top: 1px; clip-path: polygon(0 0, 100% 0, 50% 100%); background: #ff3b3b; opacity: .85; }
-.jim-bunting i:nth-child(5n+2) { background: var(--buy); } .jim-bunting i:nth-child(5n+3) { background: #35c2ff; } .jim-bunting i:nth-child(5n+4) { background: var(--c-uncommon); } .jim-bunting i:nth-child(5n) { background: #fff; }
-.jim-bunting i:nth-child(n+17) { display: none; }
-@media (min-width: 520px) { .jim-bunting i:nth-child(n+17) { display: block; } .jim-bunting i:nth-child(n+25) { display: none; } }
+.s-jim .jim-sign { margin-left: 0; margin-right: 0; }
+.s-jim .jim-strip { margin: 12px 0 10px; }
+@media (min-width: 640px) { .jim-bunting i { width: 4.6%; } .jim-bunting i:nth-child(n+14) { display: block; } .jim-bunting i:nth-child(n+18) { display: none; } .s-jim .jim-sign { max-width: 720px; margin-left: auto; margin-right: auto; } }
+@media (orientation: landscape) and (max-height: 520px) {
+  .jim-bunting { height: 24px; } .jim-bunting i { height: 19px; margin-top: 4px; }
+  .jim-sign { width: max-content; max-width: 100%; margin-left: auto !important; margin-right: auto !important; padding: 5px 16px 5px; } .jim-sign h1 { font-size: 24px; line-height: 1.1; } .jim-sign h1 span { display: inline-block; margin: 0 0 0 10px; padding: 2px 10px 1px; font-size: .8em; } .jim-sign p { display: none; }
+}
+@media (max-width: 380px) { .jim-clock { padding: 6px 9px; font-size: 13px; letter-spacing: .02em; } }
 .jim-note { margin: 0 0 10px; }
 
 /* the offers: tiles in the Shop's tile style, two a row on a phone; collapsed, only the first row shows */
@@ -54,3 +72,4 @@
 .jim-toast b { display: block; font: italic 800 17px/1.15 "Bahnschrift", "DIN Alternate", "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", "Segoe UI", system-ui, sans-serif; font-stretch: condensed; letter-spacing: .03em; text-transform: uppercase; }
 .jim-toast small { display: block; margin-top: 2px; font-size: 12.5px; font-weight: 800; color: #ffd23f; }
 @media (prefers-reduced-motion: reduce) { .jim-bar .fill, .jim-toast { transition: none; } .jim-tile.bought { animation: none; } }
+.jim-tile .shop-price.short b, .jim-tile .shop-price.exhausted b { font-size: 14px; white-space: nowrap; }

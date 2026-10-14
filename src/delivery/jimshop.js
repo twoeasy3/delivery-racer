@@ -4,11 +4,12 @@
 // on every reload, new every 6 HOURS (the owner, 14-Oct): four slots a local day, starting at the local clock's 00:00, 06:00,
 // 12:00 and 18:00, seeded by the local date + the slot (no server). A SLOT's stock and price rises reset with its new offers;
 // the daily blueprint cap (DAY_CAP) and each key car's daily cap stay per LOCAL DAY (jimBuys: n by slot, bp and k by day).
-// THE POOL (the owner, 14-Oct: "Crazey Jim should offer all Evergreen blueprints, including the ones for Key Cars"): every
-// evergreen blueprint: the ordinary cars a pack can drop (packs.js pools().evergreen: 56 today, the 5 Legendary ones among
-// them), and the KEY CARS' blueprints (every `bespoke` car with a card rarity: the Bespoke pack cars, the Silver Comet, the
-// Snowcat / Hot Dog / Horseshoe, the six concept cars: 15). Jim sells BLUEPRINTS only, never a key. NEVER sold: earned and
-// super cars, the Tank, a car that is `off`, and a noPacks car that is not a key car (the Blower, Coach, City EV, Coupe Cross).
+// THE POOL (the owner, 14-Oct: first "all Evergreen blueprints, including the ones for Key Cars", then "remove all the key car blueprints
+// except the ones already available in standard packs"): exactly the blueprints the STANDARD pack can drop (packs.js poolOf of
+// packs.json standard): the 56 ordinary evergreen cars and the 5 key cars whose blueprints it holds (rocketfin, swancar, solarracer,
+// moonrover, monowheel). Jim sells BLUEPRINTS only, never a key. Out: every key car not in the Standard pack's pool (silvercomet, snocat,
+// hotdog, horseshoe and the six concept cars: noPacks), earned and super cars, the Tank, `off` cars, and the noPacks cars that are not
+// key cars (the Blower, Coach, City EV, Coupe Cross).
 // KEY CARS are dear and rare (the economy warning: a concept car's key needs max ECU = 20 blueprints): JIM.keyMult on the price,
 // JIM.keyCap blueprints a day of each, JIM.weight.key for how often one is drawn. check: scripts/.jimshop-check.mjs.
 // THE OFFER: a car, a quantity (1, 3 or 5, by rarity), a stock (bundles a day: 3 / 2 / 1 by quantity), a unit price
@@ -22,7 +23,7 @@
 import { Progress } from './progress.js';
 import { Ecu } from './ecu.js';
 import { Events } from './events.js';
-import { pools, rarityOf, roster, isBespokeCar } from './packs.js';
+import { Packs, poolOf, rarityOf } from './packs.js';
 import { localDay } from './shop.js';
 
 export const JIM = {
@@ -50,19 +51,24 @@ export const isKey = (car) => !!car && !!car.bespoke;
 export const basisOf = (car) => isKey(car) ? JIM.keyBasis[rarityOf(car)] || JIM.keyBasis.legendary : car.price > 0 ? car.price : JIM.basis[(car.blue ? 'b' : 'g') + Math.min(5, Math.max(1, car.tier || 1))];
 export const unitPrice = (car, rarity = rarityOf(car)) => Math.max(1, Math.round(basisOf(car) * JIM.k[rarity] * (isKey(car) ? JIM.keyMult : 1)));
 
-// a car Jim may NEVER sell: not a blueprint car at all (earned, super, the Tank, off), or noPacks without being a key car
-export const barred = (car) => !car || !!(car.earned || car.super || car.tank || car.off || (car.noPacks && !car.bespoke) || !rarityOf(car));
+// a car Jim may NEVER sell: not a blueprint car at all (earned, super, the Tank, off), or in no regular pack (noPacks)
+export const barred = (car) => !car || !!(car.earned || car.super || car.tank || car.off || car.noPacks || !rarityOf(car));
 
 // ---- the rotation: a seeded draw, the same for a given day -------------------------------------------------------
 const hash = (text) => { let h = 2166136261; for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
 const mulberry = (seed) => () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 
-// the cars Jim may sell, by group: { common, uncommon, epic, legendary: the ordinary evergreen cars, key: the key cars } (cars: a
-// list for a check, in place of the roster)
+// the cars Jim may sell, by group: { common, uncommon, epic, legendary: the ordinary evergreen cars, key: the key cars } (cars: a list for a
+// check, in place of the roster). It is the STANDARD PACK's own blueprint pool (packs.js poolOf, the owner, 14-Oct: "only the ones already
+// available in standard packs"), so it follows the packs by itself: the ordinary evergreen cars, and the key cars whose blueprints the
+// Standard pack can drop (its `bespokeBlueprints`: today the five Bespoke key cars with a Legendary card). Never its keys (the Bespoke rarity).
 export const pool = ({ cars } = {}) => {
-  const { evergreen } = pools(cars ? { cars } : {});
-  const out = Object.fromEntries(['common', 'uncommon', 'epic', 'legendary'].map(r => [r, (evergreen[r] || []).filter(car => !barred(car))]));
-  out.key = (cars || roster()).filter(car => isBespokeCar(car) && !barred(car));
+  const standard = poolOf(Packs.data.packs.standard, cars ? { cars } : {});
+  const out = { common: [], uncommon: [], epic: [], legendary: [], key: [] };
+  for (const [rarity, list] of Object.entries(standard)) {
+    if (rarity === 'bespoke') continue; // (the keys themselves: never sold)
+    for (const car of list) if (!barred(car)) out[isKey(car) ? 'key' : rarity].push(car);
+  }
   return out;
 };
 
@@ -85,10 +91,13 @@ export const rotation = (day, { cars, force = [], slot = 0 } = {}) => {
     out.push(offerOf(car, rand));
   }
   // (a check or a demo may ask for cars to be on the stall: each takes the place of the second slot on)
-  force.forEach((id, i) => {
-    const car = Object.values(pool({ cars })).flat().find(c => c.id === id);
+  const all = Object.values(pool({ cars })).flat();
+  force.forEach((id) => {
+    const car = all.find(c => c.id === id);
     if (!car || out.some(o => o.id === id)) return;
-    out[Math.min(out.length - 1, 1 + i)] = offerOf(car, rand);
+    let at = force.length < out.length ? 1 : 0; // (the first slot stays the draw's, unless every slot is asked for)
+    while (at < out.length - 1 && force.includes(out[at].id)) at++; // (never over a car asked for)
+    out[Math.min(at, out.length - 1)] = offerOf(car, rand);
   });
   if (out.length) { // one hot deal, never a legendary (they are dear enough), and a bundle of more than one
     const plain = out.filter(o => o.rarity !== 'legendary' && !o.key), many = plain.filter(o => o.qty > 1);

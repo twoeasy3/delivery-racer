@@ -1,6 +1,6 @@
 // ---- CRAZEY JIM'S BLUEPRINT STALL: a section of the Shop (CHECKLIST item 243; rules jimshop.js, look jimshop.css) ----------------------
-// Drawn by render/shop.js at the top of the Shop's body (jimSection): a section head like the others (Crazey Jim's, a small red
-// "Blueprint stall" tag, the bank in $ and the clock to the next stock), a thin bunting strip, then the offers as tiles in the Shop's
+// Drawn by render/shop.js at the top of the Shop's body (jimSection): Jim's BANNER (round 1's, restored: bunting and the red Crazey Jim's
+// sign with the yellow Blueprint Stall band), a strip with the clock to the next stock and the bank in $, then the offers as tiles in the Shop's
 // own style: the blueprint card (render/blueprintcard.js, the live car still), what the bundle is, "You have 3 / 5 to ECU 2" with a
 // bar, and the Shop's yellow price button (greyed, with its reason, when it cannot be pressed: Need $120 more, Sold out, Maxed out,
 // Limit reached). One row shows at first (the hot deal and the next); "See all 6 offers" opens the rest in place. A dear bundle
@@ -9,8 +9,9 @@
 // hours (00:00, 06:00, 12:00, 18:00): the clock is the Shop's own `.countdown`, which redraws the Shop when it runs out.
 // By address (for a look; nothing is saved):
 //   ?jimshop                  the Shop opens with the stall expanded
-//   &demo[=name]              a made-up save: normal (default), keycar (two key cars on the stall), expensive (the confirm up), soldout,
+//   &demo[=name]              a made-up save: normal (default), keycar (two key cars, the Rocket Fin and the Swan Car, on the stall), expensive (the confirm up), soldout,
 //                             broke, maxed, capped, empty (all sold), nopool (no cars), bought (a purchase just made, feedback held)
+//   &jimcars=a,b,c            with demo=keycar: those cars on the stall (up to six)
 //   &jimcash=<n>              the bank for the visit        &jimpress=<n>   press BUY on offer n (0-based, as laid out)
 //   &jimhold                  keep the toast up             &eventsnow=<date-time> sets the day and the slot (the rotation) and the clock
 import '../jimshop.css';
@@ -20,6 +21,7 @@ import { Events, when as eventTime } from '../events.js';
 import { ask } from './dialog.js';
 import { blueprintCard } from './blueprintcard.js';
 import { stillsIn } from './carstill.js';
+import { posePick } from '../carposes.js';
 
 const make = (tag, className, ...inside) => {
   const node = document.createElement(tag);
@@ -29,7 +31,6 @@ const make = (tag, className, ...inside) => {
 };
 const params = new URLSearchParams(location.search);
 const dollars = (n) => '$' + Math.floor(n).toLocaleString('en-GB');
-const BUNTING = 24;
 const hold = params.get('jimhold') !== null;
 
 let expanded = params.get('jimshop') !== null, toast = null, toastTimer = 0, tween = 0, last = null; // (last: the purchase just made, for its tile and the bank to run from)
@@ -67,8 +68,11 @@ const offerTile = (v, anim) => {
   button.disabled = !!v.why;
   button.setAttribute('aria-label', v.why ? v.car.name + ' blueprints: ' + words : 'Buy ' + v.qty + ' ' + v.car.name + ' blueprint' + (v.qty > 1 ? 's' : '') + ' for ' + dollars(v.price));
   if (!v.why) button.addEventListener('click', () => buy(v.id));
-  const { node, pic } = blueprintCard(v.car, { rarity: v.rarity, n: v.qty }, { pose: 'front' });
-  pics.watch(pic, v.car, { side: 'good' });
+  // the car's own BLUEPRINT POSE, the one the "What's inside" sheet and the showroom give it (carposes.js posePick: stable by id), drawn by the
+  // same live still (carstill.js) in the Good livery; a key car's card is its blueprint card, never its key (Jim sells blueprints only)
+  const pose = posePick(v.car.id);
+  const { node, pic } = blueprintCard(v.car, { rarity: v.rarity, n: v.qty }, { pose });
+  pics.watch(pic, v.car, { side: 'good', pose });
   const stock = v.why === 'maxed' ? null : make('p', 'shop-limit' + (v.left <= 1 ? ' low' : ''), v.left === 0 ? 'None left this time' : (v.left === 1 ? 'Last one' : v.left + ' left') + (v.bought ? ' · price up' : ''));
   const tile = make('article', 'shop-tile jim-tile r-' + v.rarity + (v.key ? ' key' : '') + (off ? ' off' : '') + (bought ? ' bought' : ''),
     v.hot && !off ? make('span', 'shop-ribbon rb-sale', 'Hot −' + Math.round(JIM.hotOff * 100) + '%') : null,
@@ -113,11 +117,9 @@ export const jimSection = () => {
   const live = () => { const b = make('b', 'countdown', ''); b.dataset.end = String(Jim.nextAt()); b.textContent = countdownText(left); return b; };
   const bankNode = make('b', '', dollars(last ? last.bank : money));
   if (last) animateBank(bankNode, last.bank, money);
-  const head = make('div', 'shop-section-head',
-    make('h2', '', 'Crazey Jim\'s', make('span', 'jim-tag', 'Blueprint stall')),
-    make('p', '', 'Blueprints for tip money. New stock in ', live()),
-    make('div', 'jim-bank', make('small', '', 'Bank'), bankNode));
-  const flags = make('div', 'jim-bunting', ...Array.from({ length: BUNTING }, () => make('i')));
+  const flags = make('div', 'jim-bunting', ...Array.from({ length: 18 }, () => make('i')));
+  const sign = make('div', 'jim-sign', make('h1', '', 'Crazey Jim\'s', make('span', '', 'Blueprint Stall')), make('p', '', '100% genuine blueprints*'));
+  const strip = make('div', 'jim-strip', make('div', 'jim-clock', 'New stock in', live()), make('div', 'jim-bank', make('small', '', 'Bank'), bankNode));
   const open = offers.filter(o => !o.why || o.why === 'short');
   const cheapest = open.length ? Math.min(...open.map(o => o.price)) : 0;
   let note = null;
@@ -132,9 +134,9 @@ export const jimSection = () => {
     more.firstChild.textContent = expanded ? 'Show fewer' : 'See all ' + offers.length + ' offers';
     more.lastChild.textContent = expanded ? '▴' : '▾';
   });
-  const small = make('p', 'jim-small', 'Sold this time: ' + today.bp + ' of ' + JIM.dayCap + ' a day. Prices rise a little with each bundle of the same blueprint. Jim never sells a key, and sells key cars dearer, ' + JIM.keyCap + ' blueprints a day each.');
+  const small = make('p', 'jim-small', '*Terms apply. Sold today: ' + today.bp + ' of ' + JIM.dayCap + '. Prices rise a little with each bundle of the same blueprint. Jim never sells a key, and sells key cars dearer, ' + JIM.keyCap + ' blueprints a day each.');
   last = null;
-  return make('section', 'shop-section s-jim', head, flags, note, offers.length ? grid : make('p', 'shop-note jim-note', 'Jim has nothing on the stall right now. New stock in ', live(), '.'), more, offers.length ? small : null);
+  return make('section', 'shop-section s-jim', flags, sign, strip, note, offers.length ? grid : make('p', 'shop-note jim-note', 'Jim has nothing on the stall right now. New stock in ', live(), '.'), more, offers.length ? small : null);
 };
 const countdownText = (ms) => {
   const s = Math.max(0, Math.ceil(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
@@ -176,7 +178,7 @@ const demo = (name) => {
   Progress.noSave = true;
   const data = Progress.data;
   data.money = 900; data.blueprints = {}; data.jimBuys = {}; data.maxed = ['commuter'];
-  if (name === 'keycar') Jim.force = ['sixteen', 'rocketfin'];
+  if (name === 'keycar') Jim.force = (params.get('jimcars') || 'rocketfin,swancar').split(',').filter(Boolean);
   const offers = Jim.offers(), { day, slot } = { day: Jim.day(), slot: Jim.slot() }, buys = {};
   const sell = (o, n = o.stock) => { buys[o.id] = n; };
   const used = new Set(), pick = (test) => { const o = offers.find(x => !used.has(x.id) && test(x)) || offers.find(x => !used.has(x.id)); if (o) used.add(o.id); return o; };
