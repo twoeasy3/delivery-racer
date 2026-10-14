@@ -73,6 +73,7 @@ lamp positions in your report (measured from the model: centre, size, brake lamp
 - No missing windscreens or windows (front, rear and sides all glazed; pillars must follow the glass).
 - No missing lights: headlamps at the front, tail lamps AND brake lamps at the rear (and indicators/reversing lamps where
   the real car has them), all visibly seated in the body.
+- Lamp EFFECTS (brake glow, indicators, night glow) for a new car: see LAMP-PLACEMENT-GUIDE.md (code on `claude/car-lights` until merged).
 - Wheels planted on the floor and found by the suspension (node scripts/.suspension-check.mjs <id>).
 
 ## How to inspect (do it for EVERY car, before committing it as done)
