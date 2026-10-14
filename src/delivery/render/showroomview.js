@@ -180,7 +180,7 @@ const frame = (aspect) => {
   let near = far * (1 - zoom * (1 - CLOSE)), lift = LIFT * (1 - zoom * 0.7), eye = height * (0.45 - zoom * 0.24), aim = height * (0.42 - zoom * 0.22); // (zoom 0: as always)
   if (closeEnd) { // (a plate close-up: in front of the end that has turned to face us, at the plate's height)
     const a = v.model.userData.platePlan?.[closeEnd], y = a ? a.at[1] : height * 0.3, edge = a ? Math.abs(a.at[2]) : rxz * 0.8, w = a ? a.size[0] : 0.5;
-    const stand = Math.max(0.9, w / (PLATE_VIEW * 2 * Math.tan(hHalf)));
+    const stand = Math.max(0.55, w / (PLATE_VIEW * 2 * Math.tan(hHalf)));
     near = far + (edge + stand - far) * zoom; lift = LIFT * (1 - zoom * 0.9); eye = height * 0.45 + (y + 0.07 - height * 0.45) * zoom; aim = height * 0.42 + (y - height * 0.42) * zoom;
   }
   camera.position.set(0, eye + near * Math.sin(lift), near * Math.cos(lift));
@@ -188,6 +188,7 @@ const frame = (aspect) => {
   camera.updateProjectionMatrix();
 };
 
+const snap = typeof location !== 'undefined' && /[?&]closeup=/.test(location.search); // (a picture asked for with ?closeup=: turned at once, a slow frame rate must not leave it half way)
 const size = new THREE.Vector2();
 const draw = (now) => {
   raf = requestAnimationFrame(draw);
@@ -209,7 +210,7 @@ const draw = (now) => {
   const still = stillViews();
   if (!held) {
     if (Math.abs(spinBy) > 0.02) { yaw += spinBy * dt; spinBy *= Math.pow(0.05, dt); }
-    else if (closeEnd && closeup) { const d = Math.atan2(Math.sin((closeEnd === 'rear' ? Math.PI : 0) - yaw), Math.cos((closeEnd === 'rear' ? Math.PI : 0) - yaw)); yaw += d * Math.min(1, dt * 5); spinBy = 0; } // (a plate close-up: turned to show that end, and kept there)
+    else if (closeEnd && closeup) { const d = Math.atan2(Math.sin((closeEnd === 'rear' ? Math.PI : 0) - yaw), Math.cos((closeEnd === 'rear' ? Math.PI : 0) - yaw)); yaw += d * (snap ? 1 : Math.min(1, dt * 5)); spinBy = 0; } // (a plate close-up: turned to show that end, and kept there)
     else if (!still && !(ShowroomView.hold >= 0) && now - idleAt > 1200) yaw += SPIN * dt; // (held for a picture: not turning either)
   }
   v.turn.rotation.y = yaw;

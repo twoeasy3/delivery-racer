@@ -258,7 +258,9 @@ export const Cosmetics = {
     root.classList.remove('hidden');
     root.classList.toggle('evil', evil);
     Nav.enter('cosmetics', () => this.close());
-    setCloseUp(new URLSearchParams(location.search).get('closeup') !== null); // (?closeup: for a picture)
+    const q = new URLSearchParams(location.search), cu = q.get('closeup');
+    if (q.get('slot') === 'plate') openSlot = 'plate'; // (?slot=plate&closeup=rear|front: for a picture)
+    setCloseUp(cu !== null, cu === 'rear' || cu === 'front' ? cu : null);
     shown();
     openSection(openSlot);
     showCar();
