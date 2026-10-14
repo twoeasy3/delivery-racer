@@ -18,9 +18,9 @@
 import * as THREE from 'three';
 
 export const LEGEND_BLACK = 0x0b0b0e, LEGEND_GOLD = 0xd4a82a;
-// the same for every Legendary car: the wreath turned `tilt` degrees about the flank's normal, its open top leaning
+// the same for every Legendary car (the owner, 14-Oct: 35, then 20, "similar to P8b"): the wreath turned `tilt` degrees about the flank's normal, its open top leaning
 // toward the car's front (`lean: 'front'`, rising forward) or its rear ('rear'); `cell`: about how wide the wrapping grid's cells are, in metres (10 to 26 a side)
-export const LEGEND = { tilt: 35, lean: 'front', cell: 0.07,
+export const LEGEND = { tilt: 20, lean: 'front', cell: 0.07,
   pos: (typeof location !== 'undefined' && /[?&]legendpos=(\w+)/.exec(location.search)?.[1]) || null }; // (?legendpos=P3: LEGEND_PLACEMENTS)
 // where the wreath goes, by the base car's MODEL: [z, y, size] in metres in the model's own frame (z along the car, its
 // front +z; y up from the road; size: the wreath's width and height, the picture's square). Whatever of it does not
@@ -37,15 +37,18 @@ export const LEGEND_DECAL = {
 // showroom, the model editor; LEGEND.pos). P1 is LEGEND_DECAL's (the default)
 export const LEGEND_PLACEMENTS = {
   commuter: {
-    P1: [[-1.15, 0.32, 1.1]],                    // centred on the rear wheel: an arch of laurel over it
+    P1: [[-1.15, 0.32, 1.1]],                    // centred on the rear wheel: an arch of laurel over it (the default; the owner, 14-Oct: tilt 20, "similar to P8b")
     P2: [[-1.15, 0.78, 0.8]],                    // high on the rear quarter, between the arch and the rear window
     P3: [[-0.6, 0.58, 0.9]],                     // the rear door, mid flank (cut by the window line and the sill)
     P4: [[-0.85, 0.5, 1.0]],                     // on the front of the rear arch: half door, half quarter
     P5: [[0.2, 0.3, 1.7]],                       // low and long behind the front wheel, cut by both arches
     P6: [[0, 0.55, 2.2]],                        // the whole flank, arch to arch (a race livery)
     P7: [[-1.3, 0.56, 0.6], [-0.3, 0.58, 0.6]],  // two small: the rear quarter and the door
-    P8: [[-1.15, 0.32, 1.1, 35, 'rear']],        // P1 leaning back
-    P8b: [[-1.15, 0.32, 1.1, 20, 'front']],      // P1 at a gentler 20 degrees forward
+    P8: [[-1.15, 0.32, 1.1, 35, 'rear']],        // P1 leaning back 35
+    P8b: [[-1.15, 0.32, 1.1, 20, 'front']],      // P1 at 20 forward (now the same as P1)
+    P8c: [[-1.15, 0.32, 1.1, 35, 'front']],      // P1 at the first 35 forward
+    T15: [[-1.15, 0.32, 1.1, 15, 'front']],      // P1 at 15 forward
+    T25: [[-1.15, 0.32, 1.1, 25, 'front']],      // P1 at 25 forward
   },
 };
 // the wreath never shows above this height (m), by the base car's MODEL: the waist, so no stray bits land on the
