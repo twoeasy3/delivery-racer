@@ -116,8 +116,14 @@ const jim = (kx) => {
   });
   // the PRICE BOARD on its post, in front of the bay at the left: red with a white frame; it flips round to SOLD
   const S = v3(-(W / 2 + 1.1), 1.6, L / 2 + 1.0);
-  const post = new THREE.Mesh(keep(new THREE.CylinderGeometry(0.05, 0.05, 1.6, 8)), poleMat);
-  post.position.set(S.x, 0.8, S.z); scene.add(post);
+  // (the post stops under the board's bottom edge, a cap on it and a thin pin up into the frame (the pivot it flips on):
+  // nothing passes through either face, however it is turned)
+  const postTop = S.y - 0.45;
+  const post = new THREE.Mesh(keep(new THREE.CylinderGeometry(0.05, 0.05, postTop, 8)), poleMat);
+  post.position.set(S.x, postTop / 2, S.z); scene.add(post);
+  box(s, scene, 0x6d7178, 0.16, 0.04, 0.16, S.x, postTop + 0.02, S.z);
+  const pin = new THREE.Mesh(keep(new THREE.CylinderGeometry(0.012, 0.012, 0.06, 6)), poleMat);
+  pin.position.set(S.x, postTop + 0.05, S.z); scene.add(pin);
   const board = new THREE.Group(); board.position.copy(S); scene.add(board);
   box(s, board, 0xd7262e, 1.3, 0.85, 0.06, 0, 0, 0);
   for (const [w, h, x, y] of [[1.3, 0.06, 0, 0.4], [1.3, 0.06, 0, -0.4], [0.06, 0.85, 0.62, 0], [0.06, 0.85, -0.62, 0]]) box(s, board, 0xf4f1e8, w, h, 0.08, x, y, 0);
