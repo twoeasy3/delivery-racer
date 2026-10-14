@@ -17,7 +17,12 @@
 // change this view. A part made by a lofted, extruded or otherwise shaped geometry is edited as a whole (move, turn,
 // scale, colour, delete, copy), never vertex by vertex; the sizes are editable only for a plain primitive the code did
 // not move inside its geometry.
-//   ?car=<id>  ?evil  ?tab=parts|part|json  ?part=<part id>  ?view=front|rear|left|right|top|34
+//   4. The LAMP toggles (view row): Lights (the night headlamp glow, and the view darkens), Brake, Hazards / Left / Right
+//      (flashing at 1.2 Hz, or Steady), Lamp markers (a labelled marker at every lamp the game's effects use). They draw the
+//      game's own lamp effects for the car's lamp table entry (render/carlights.js, render/lampfx.js), or the old hitbox
+//      placement for a car with none (the stats strip says which). Blackout hides the effects.
+//   ?car=<id>  ?evil  ?tab=parts|part|json  ?part=<part id>  ?view=front|rear|left|right|top|34  ?dark
+//   ?lights  ?brake  ?hazards  ?lampmarks  (those lamp toggles on from the start; also ?left ?right ?steady)
 import './render/modeleditorshim.js'; // (first: the game's modules' elements, stood in for)
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -31,6 +36,8 @@ import { renderer } from './render/scene.js';
 import { silhouetteFor } from './render/silhouette.js';
 import { findZFights } from './render/zfight.js';
 import { extractParts, applyPatch, modelStats, BUDGET, emptyPatch, withSet, withDelete, withAdd, withDuplicate, withMirror, tidyPatch, PRIMITIVES } from './render/modelpatch.js';
+import { lampsFor, lampKey, lampSource, makeLampMarkers } from './render/carlights.js';
+import { addLamps, placeLamps, setLampLights } from './render/lampfx.js';
 import { LOCAL_KEY, PATCHES, patchesReady, localPatches, setModelPatching } from './render/modelpatchapply.js';
 
 setModelPatching(false); // (the code's own model here: this page applies the patch being edited itself)
@@ -57,7 +64,8 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xcfd5de);
 const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 200);
-scene.add(new THREE.HemisphereLight(0xffffff, 0x6b7280, 1.4));
+const hemi = new THREE.HemisphereLight(0xffffff, 0x6b7280, 1.4);
+scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff4e2, 2.0);
 sun.position.set(5, 10, 6);
 scene.add(sun);
@@ -132,9 +140,10 @@ const rebuild = () => {
   model.userData.livery?.(S.evil);
   const { parts, nodes, base } = extractParts(model);
   S.model = model; S.parts = parts; S.nodes = nodes;
+  buildLamps(model);
   if (!S.base) S.base = base;
   scene.add(model);
-  const foot = new THREE.Box3().setFromObject(model, true).getSize(new THREE.Vector3());
+  const foot = new THREE.Box3().setFromObject(model, true).getSize(new THREE.Vector3()); // (before the lamp effects are added)
   ground.scale.set(Math.max(0.5, foot.x * 1.5), Math.max(0.5, foot.z * 1.35), 1);
   applyViewFlags();
   select(keep && nodes.has(keep) ? keep : null, false);
@@ -189,13 +198,14 @@ const syncUrl = () => {
   if (S.evil) q.set('evil', '');
   if (S.tab !== 'parts') q.set('tab', S.tab);
   if (S.sel) q.set('part', S.sel);
+  for (const id of LAMP_IDS) if ($(id).checked) q.set(LAMP_PARAMS[id], '');
   history.replaceState(null, '', '?' + q.toString().replace(/=(&|$)/g, '$1'));
 };
 
 // ---- the camera ------------------------------------------------------------------------------------------------
 const VIEWS = { front: [0, 0.12], rear: [Math.PI, 0.12], left: [Math.PI / 2, 0.06], right: [-Math.PI / 2, 0.06], top: [0, 1.45], 34: [0.75, 0.38] };
 let view = VIEWS[params.get('view')] ? params.get('view') : '34';
-const modelBox = () => new THREE.Box3().setFromObject(S.model, true);
+const modelBox = () => withoutFx(() => new THREE.Box3().setFromObject(S.model, true));
 const frame = (name = view, box = null) => {
   view = name;
   const b = box || modelBox();
@@ -226,14 +236,15 @@ const applyViewFlags = () => {
     node.userData.viewHidden = S.hidden.has(id);
     if (node.isMesh) for (const m of [].concat(node.material)) m.wireframe = f.wire;
   }
+  syncLampView();
   // Blackout: every mesh in the game's own silhouette material (as a locked car is shown), its own kept to put back
   S.model.traverse((n) => {
-    if (!n.isMesh) return;
+    if (!n.isMesh || inFx(n)) return;
     if (f.dark && !n.userData.darkOrig) { n.userData.darkOrig = n.material; n.material = silhouetteFor(n.material); }
     else if (!f.dark && n.userData.darkOrig) { n.material = n.userData.darkOrig; n.userData.darkOrig = null; }
   });
   S.model.traverse((n) => {
-    if (!n.isMesh) return;
+    if (!n.isMesh || inFx(n)) return;
     let shown = !n.userData.viewHidden;
     for (let p = n.parent; p && p !== S.model && shown; p = p.parent) if (p.userData.viewHidden) shown = false;
     if (soloNode) { let inSolo = false; for (let p = n; p && p !== S.model; p = p.parent) if (p === soloNode) inSolo = true; shown = shown && inSolo; }
@@ -259,6 +270,59 @@ const applyViewFlags = () => {
 };
 for (const id of ['wire', 'bbox', 'hitbox', 'wheels', 'dark']) $(id).addEventListener('change', applyViewFlags);
 
+// ---- the lamp toggles: the game's own lamp effects (render/lampfx.js), laid over the car from its table entry (render/carlights.js
+// lampsFor) or, with none, the old hitbox placement; in the model's lampFrame node where the table names one, so they follow
+// the body. Built once per model rebuild; the loop only switches meshes on and off (no allocation). Not part of the model:
+// the part list, the stats, the bounds, the Blackout and the Z-fight scan leave them out.
+const LAMP_IDS = ['lLights', 'lBrake', 'lHazards', 'lLeft', 'lRight', 'lSteady', 'lMarks'];
+const LAMP_PARAMS = { lLights: 'lights', lBrake: 'brake', lHazards: 'hazards', lLeft: 'left', lRight: 'right', lSteady: 'steady', lMarks: 'lampmarks' };
+for (const id of LAMP_IDS) if (params.has(LAMP_PARAMS[id])) $(id).checked = true;
+const FLASH_HZ = 1.2; // (the editor's own clock; the game's flash is 1.4 Hz)
+const NIGHT_BG = new THREE.Color(0x0d1119), DAY_BG = new THREE.Color(0xcfd5de);
+const fxHit = { hw: 0, hl: 0, height: 0 };
+let fx = null, fxLamps = null, fxMarks = null, fxLayout = null, fxKey = null, fxSource = 'none', night = 0;
+const inFx = (n) => { for (let p = n; p; p = p.parent) if (p === fx) return true; return false; };
+const withoutFx = (fn) => { // (a measure of the model alone)
+  const parent = fx && fx.parent;
+  if (parent) parent.remove(fx);
+  try { return fn(); } finally { if (parent) parent.add(fx); }
+};
+const buildLamps = (model) => {
+  const car = S.car, v = car.real || car, k = car.scale && car.real ? car.scale : 1;
+  fxHit.hw = v.hw * k; fxHit.hl = v.hl * k; fxHit.height = v.height * k; // (the hitbox the generic placement is made from)
+  fxKey = lampKey(car);
+  fx = new THREE.Group();
+  fx.name = 'lamp effects';
+  addLamps(fx);
+  fxLamps = fx.userData.lamps;
+  fxLayout = lampsFor(fxKey, fxHit, fxLamps);
+  placeLamps(fxLamps, fxLayout);
+  fxMarks = makeLampMarkers(fxLayout);
+  fx.add(fxMarks);
+  (fxLayout.frame && model.userData[fxLayout.frame] || model).add(fx);
+  const src = lampSource(fxKey);
+  fxSource = !src ? 'generic hitbox placement' : 'table entry (' + src + ')' + (fxLayout.hasHead && fxLayout.hasTail ? '' : ', ' + (fxLayout.hasHead ? 'front' : 'rear') + ' only, the rest generic')
+    + (fxLayout.frame ? ', rides in ' + fxLayout.frame : '');
+};
+const flashPhase = (t) => Math.floor(t * FLASH_HZ * 2) % 2 === 0; // (on for the first half of each cycle)
+const FREEZE = params.has('lampt') ? +params.get('lampt') || 0 : null; // (?lampt=<s>: the flash clock held at that time, for a still: 0 is lit, 0.5 dark)
+const syncLampView = () => {
+  if (!fx) return;
+  const t = FREEZE ?? performance.now() / 1000;
+  const on = (id) => $(id).checked, dark = on('dark');
+  const steady = on('lSteady'), turn = on('lLeft') && !on('lRight') ? 1 : on('lRight') && !on('lLeft') ? -1 : 0, hazards = on('lHazards') || (on('lLeft') && on('lRight'));
+  fxLamps.lamps.visible = !dark; // (Blackout: no effects)
+  fxMarks.visible = on('lMarks');
+  setLampLights(fxLamps, fxLayout, on('lBrake'), steady || flashPhase(t), turn, hazards, false, on('lLights'));
+  // the view darkens with Lights on, so the glows read (as ?lamps=night does in the studio)
+  const to = on('lLights') ? 1 : 0;
+  night += (to - night) * 0.25; if (Math.abs(to - night) < 0.01) night = to;
+  scene.background.lerpColors(DAY_BG, NIGHT_BG, night);
+  hemi.intensity = 1.4 * (1 - 0.8 * night); sun.intensity = 2.0 * (1 - 0.75 * night); fill.intensity = 0.7 * (1 - 0.7 * night);
+  grid.material.opacity = 0.55 * (1 - 0.6 * night);
+};
+for (const id of LAMP_IDS) $(id).addEventListener('change', () => { syncLampView(); syncUrl(); });
+
 // ---- picking: a tap (not a drag) on a part selects it; the mouse over one shows its box -------------------------
 const ray = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
@@ -267,7 +331,7 @@ const hit = (e) => {
   pointer.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
   ray.setFromCamera(pointer, camera);
   ray.layers.set(0);
-  const hits = ray.intersectObject(S.model, true).filter(h => h.object.isMesh && isShown(h.object));
+  const hits = ray.intersectObject(S.model, true).filter(h => h.object.isMesh && isShown(h.object) && !inFx(h.object));
   for (const h of hits) {
     const id = pickable(h.object);
     if (id) return id;
@@ -491,12 +555,13 @@ const remove = () => { const p = partOf(S.sel); if (!p) return; commit(withDelet
 
 // ---- the stats strip: against the budget (CAR-AGENT-PROMPT.md) ---------------------------------------------------
 const renderStats = () => {
-  const s = modelStats(S.model);
+  const s = withoutFx(() => modelStats(S.model));
   const shapes = s.meshes > BUDGET.shapes[1] ? 'warn' : '', tris = s.triangles > BUDGET.hard ? 'bad' : s.triangles > BUDGET.triangles[1] ? 'warn' : '';
   const r = S.result;
   $('stats').innerHTML = '<span class="' + shapes + '">Shapes <b>' + s.meshes + '</b> / ' + BUDGET.shapes.join('-') + '</span>'
     + '<span class="' + tris + '">Triangles <b>' + s.triangles.toLocaleString('en') + '</b> / ' + BUDGET.triangles.map(n => n.toLocaleString('en')).join('-') + ' (max ' + BUDGET.hard.toLocaleString('en') + ')</span>'
     + '<span>Draw calls <b>' + s.materials + '</b> once merged</span>'
+    + '<span class="lamp" title="Where the lamp effects (Lights, Brake, Hazards, Lamp markers) are placed">lamps: <b>' + esc(fxSource) + '</b></span>'
     + '<span>Edits <b>' + S.patch.ops.length + (S.patch.evil?.length ? ' + ' + S.patch.evil.length + ' Evil' : '') + '</b></span>'
     + (r.unmatched.length ? '<span class="bad">Stale <b>' + r.unmatched.length + '</b></span>' : '')
     + (r.stale ? '<span class="warn">Code changed since the patch</span>' : '');
@@ -532,13 +597,14 @@ const clearZ = () => { zfGroup.clear(); };
 const scanZ = () => {
   if (!S.model) return;
   const back = [];
+  const fxParent = fx && fx.parent; if (fxParent) fxParent.remove(fx);
   S.model.traverse((n) => { // (the real colours, not the Blackout view's, and every part, not just the ones shown)
     if (!n.isMesh) return;
     if (n.userData.darkOrig) { back.push([n, n.material, n.layers.mask]); n.material = n.userData.darkOrig; } else back.push([n, null, n.layers.mask]);
     n.layers.set(0);
   });
   let found;
-  try { found = findZFights(S.model); } finally { for (const [n, m, mask] of back) { if (m) n.material = m; n.layers.mask = mask; } }
+  try { found = findZFights(S.model); } finally { for (const [n, m, mask] of back) { if (m) n.material = m; n.layers.mask = mask; } if (fxParent) fxParent.add(fx); }
   S.zf = found; S.zfSel = -1;
   renderZ();
 };
@@ -656,6 +722,7 @@ window.addEventListener('keydown', (e) => {
 const loop = () => {
   if (!document.hidden) {
     orbit.update();
+    syncLampView();
     if (S.sel && selBox.visible) selBox.update();
     renderer.render(scene, camera);
   }

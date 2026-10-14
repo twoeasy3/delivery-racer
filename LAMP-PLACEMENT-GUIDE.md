@@ -142,6 +142,17 @@ Contact sheet: `convert <png> -crop 760x560+90+20 +repage -resize 640x` on each 
 right of centre. READ every sheet: are the halo, glow and indicator ON the lens, at the right size, and on both sides?
 In-game stills with `&ghost` draw the player see-through and too small to judge, so use the studio.
 
+## 6b. Preview in the model editor
+`delivery/modeleditor.html` has lamp toggles in its view row: Lights (night glow, view darkens), Brake, Hazards (1.2 Hz
+flash), Left / Right, Steady, Lamp markers; Blackout hides the effects. Use it to check a new entry on the model itself,
+turning it with the Front / Rear / 3/4 buttons, with no game run. The effects are the game's: the meshes live in
+`render/lampfx.js` (`addLamps`, `placeLamps`, `setLampLights`, shared with `render/cars.js syncLamps`) and the layout is
+`lampsFor(lampKey(car), hitbox)`; they ride in the model's `frame` node. The stats strip names the entry:
+`lamps: table entry (hand-written|generated|guess)` or `generic hitbox placement`. Addresses: `?car=<id>&lights&brake&hazards&lampmarks`
+(also `left right steady`), `lampt=0` / `lampt=0.5` freezes the flash lit / dark for stills. After editing a lamp in the
+model editor's patch, re-measure: the table does not follow the patch. The editor does not run `animate`, so a moving body
+(Lowrider hop) is not shown moving.
+
 ## 7. Checks
 - `npx eslint` on changed files and `node --check`.
 - `node scripts/delivery-tests.mjs --group render,words --no-lock`. This takes about 5 min (the phone-menu check alone
