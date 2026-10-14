@@ -81,6 +81,8 @@ groups above, and the quick smoke only when asked. Syntax-check changed files wi
   (256 x 256), unless the owner asks or it is impossible otherwise (say why). Flat colours, shapes and vertex colours instead.
   Details: CAR-AGENT-PROMPT.md.
 
+- **Cinematics (unlockcine.js and any later cutscene):** render NO humans (the owner, 14-Oct): no people, hands, faces, silhouettes of figures; use props, signs, text and the cars only; hide any driver figure a car model carries.
+
 ## The unfinished work
 
 See `WIP/INDEX.md`. Take an item with `git apply --3way WIP/<branch>.patch`, then look at it (a still, a check) and commit
