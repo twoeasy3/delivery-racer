@@ -228,7 +228,7 @@ export const IDEA_MODELS_9 = {
       bx(0.28, 0.025, 0.02, 0, 0.73, -1.976),
     ]);
     merged(group, LAMP, [-1, 1].map(side => bx(0.1, 0.05, 0.02, side * 0.42, 0.53, -1.976)));
-    box(group, WHITE, 0.36, 0.11, 0.02, 0, 0.53, -1.976);
+    box(group, WHITE, 0.36, 0.11, 0.02, 0, 0.53, -1.976).userData.plate = 'rear';
     box(group, black, 0.9, 0.1, 0.24, 0, 0.3, -1.88);
     merged(group, chrome, [-1, 1].map(side => cyl(0.045, 0.08, side * 0.16, 0.3, -1.99, 'z', 10)));
     merged(group, black, [-1, 1].map(side => cyl(0.03, 0.02, side * 0.16, 0.3, -2.025, 'z', 8)));

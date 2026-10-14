@@ -25,6 +25,7 @@ import { Delivery } from '../delivery.js';
 import { patchModel } from './modelpatchapply.js';
 import { addLegend } from './legenddecal.js';
 import { dressWheels } from './wheelcosmetic.js';
+import { dressPlates } from './platecosmetic.js';
 import { LAMP_DEBUG, lampKey, lampsFor, makeLampMarkers } from './carlights.js';
 
 // Everything here that belongs to the loaded level (bridges, obstacles, pickups, targets)
@@ -42,6 +43,7 @@ const playerModel = (car) => {
     if (car.legend) addLegend(model, car); // (a Legendary car: black and gold, the wreath on its flanks)
     patchModel(model, car); // (its model patch, if it has one: render/modelpatchapply.js)
     dressWheels(model, car); // (the global wheel colour on its hubs: render/wheelcosmetic.js)
+    dressPlates(model, car); // (an equipped number plate hides the model's own: render/platecosmetic.js)
     model.userData.body.material.transparent = true; // (so it can go see-through as a ghost)
     carMesh.add(model);
     playerModels[car.id] = model;

@@ -8,6 +8,7 @@ import { levelName } from '../levelText.js';
 import { CARS, SECRET_CARS, useLevelCar, selectCar, amphibiousCars, carRule, ruleAllows } from '../cars.js';
 import { Tiers } from '../tiers.js';
 import { Progress } from '../progress.js';
+import { clearCosmetics } from './cosmetics.js';
 import { unlockMode, setUnlockMode, unlockEverything } from '../unlockall.js';
 import { Shop } from '../shop.js';
 import { Game } from '../game.js';
@@ -117,7 +118,7 @@ showRaceClass();
 draw();
 
 // a complete savegame, written to the progress cookie like any other progress (unlockall.js: 'Everything' as ever, or
-// 'Absolutely everything': also the cars not available yet, every key, every ECU maxed)
+// 'Absolutely everything': also the cars not available yet, every key, every ECU maxed, every cosmetic)
 const unlockBtns = { all: document.getElementById('unlockAllBtn'), abs: document.getElementById('unlockAbsBtn') };
 const showUnlockMode = () => { for (const [mode, btn] of Object.entries(unlockBtns)) btn.setAttribute('aria-pressed', String(unlockMode() === mode)); };
 for (const [mode, btn] of Object.entries(unlockBtns)) btn.addEventListener('click', () => { setUnlockMode(mode); showUnlockMode(); });
@@ -125,7 +126,7 @@ showUnlockMode();
 document.getElementById('completeBtn').addEventListener('click', async () => {
   const abs = unlockMode() === 'abs';
   if (!await ask(abs
-    ? { title: 'Unlock absolutely everything', lines: ['Open every level, own every car (the ones not available yet and every key too), max every ECU, and fill the bank?'], ok: 'Do it' }
+    ? { title: 'Unlock absolutely everything', lines: ['Open every level, own every car (the ones not available yet and every key too), every cosmetic, max every ECU, and fill the bank?'], ok: 'Do it' }
     : { title: 'Complete save', lines: ['Open every level, buy every car and fill the bank?'], ok: 'Do it' })) return;
   unlockEverything(abs ? 'abs' : 'all');
   draw();
@@ -168,6 +169,7 @@ Game.askStart = async () => {
 document.getElementById('resetBtn').addEventListener('click', async () => {
   if (!await ask({ title: 'Reset progress', lines: ['Erase your bank, unlocked levels and cars?'], ok: 'Erase', danger: true })) return;
   Progress.reset();
+  clearCosmetics();
   selectLevel(0);
   window.dispatchEvent(new Event('carchange')); // (the car in use may have been one that was bought)
   showAutoGas(); // (a reset forgets the choice)

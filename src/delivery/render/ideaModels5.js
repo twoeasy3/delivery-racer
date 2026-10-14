@@ -187,7 +187,7 @@ export const IDEA_MODELS_5 = {
     });
     box(group, chrome, w * 0.84, 0.05, 0.06, 0, 0.42, L + 0.02);                           // the slim front bumper,
     box(group, chrome, w * 0.58, 0.05, 0.06, 0, 0.53, -L - 0.02);                          // the back one,
-    box(group, WHITE, 0.32, 0.09, 0.02, 0, 0.62, -L - 0.01);                               // the plate above it
+    box(group, WHITE, 0.32, 0.09, 0.02, 0, 0.62, -L - 0.01).userData.plate = 'rear';                               // the plate above it
     for (const side of [-1, 1]) slab(group, chrome, 0.1, 0.02, 0.02, side * 0.04, 0.71, -L - 0.012, 0).rotation.z = side * 0.5; // the chevrons on the boot
     for (const side of [-1, 1]) slab(group, chrome, 0.1, 0.02, 0.02, side * 0.04, 0.68, -L - 0.012, 0).rotation.z = side * 0.5;
     tube(group, trim, 0.03, 0.3, -w * 0.25, 0.36, -L * 0.9, 'z');                          // the exhaust
@@ -255,7 +255,7 @@ export const IDEA_MODELS_5 = {
     box(group, gold, 0.12, 0.06, 0.02, 0, 0.62, L + 0.055);                                // its badge
     box(group, chrome, w * 0.98, 0.12, 0.14, 0, 0.42, L + 0.06);                           // the heavy bumper,
     box(group, chrome, w * 0.98, 0.14, 0.14, 0, 0.44, -L - 0.05);                          // the back one,
-    box(group, WHITE, 0.32, 0.16, 0.02, 0, 0.58, -L - 0.01);                               // the plate over it
+    box(group, WHITE, 0.32, 0.16, 0.02, 0, 0.58, -L - 0.01).userData.plate = 'rear';                               // the plate over it
     for (const side of [-1, 1]) slab(group, gold, 0.14, 0.025, 0.02, side * 0.055, 0.78, -L - 0.012, 0).rotation.z = -side * 0.5; // the V on the boot
     box(group, chrome, 0.1, 0.06, 0.04, S + 0.03, 0.97, L * 0.3);           // one mirror, on the driver's door
     tube(group, chrome, 0.01, 0.14, S - 0.004, 0.9, L * 0.3, 'y');
