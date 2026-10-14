@@ -84,3 +84,45 @@
 .jim-grid.rerolled .jim-tile:nth-child(4) { animation-delay: .15s; } .jim-grid.rerolled .jim-tile:nth-child(5) { animation-delay: .2s; } .jim-grid.rerolled .jim-tile:nth-child(6) { animation-delay: .25s; }
 @keyframes jim-reroll { 0% { opacity: 0; transform: translateY(14px) scale(.96); } 100% { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .jim-grid.rerolled .jim-tile { animation: none; } }
+
+/* DESKTOP (the owner, 14-Oct: "the blueprints shop is too massive on desktop"): above 900 px the stall is a compact band, like the pack
+   "What's inside" sheet's cards: one slim head row (the small sign, the clock, Refresh and the bank), all six offers in ONE row of
+   small tiles (so no "See all" there), a content width of 1080 px that does not stretch on a big screen. 900 px and under: untouched. */
+@media (min-width: 901px) {
+  .shop-section.s-jim { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 16px; width: min(1080px, 100%); margin-left: auto; margin-right: auto; }
+  .s-jim > * { grid-column: 1 / -1; }
+  .s-jim .jim-bunting { height: 16px; background-position: 0 2px; }
+  .jim-bunting i { height: 12px; margin-top: 3px; width: 3.4%; max-width: 30px; }
+  .jim-bunting i:nth-child(n+14) { display: block; } .jim-bunting i:nth-child(n+18) { display: none; }
+  .s-jim .jim-sign { grid-column: 1; grid-row: 2; width: max-content; max-width: none; margin: 4px 0 0; padding: 5px 16px 5px; border-radius: 7px; box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 4px var(--jim-red-deep), 0 3px 0 #000; }
+  .jim-sign h1 { display: flex; align-items: center; gap: 10px; font-size: 20px; line-height: 1.1; text-shadow: 0 2px 0 var(--jim-red-deep); }
+  .jim-sign h1 span { display: inline-block; margin: 0; padding: 2px 8px 1px; font-size: .74em; box-shadow: none; }
+  .jim-sign p { display: none; }
+  .s-jim .jim-strip { grid-column: 2; grid-row: 2; flex-wrap: nowrap; justify-content: flex-start; gap: 8px 10px; margin: 8px 0 0; }
+  .jim-clock { padding: 5px 10px; font-size: 12px; }
+  .jim-refresh { padding: 7px 11px 6px; font-size: 12px; }
+  .jim-bank { padding: 4px 11px; }
+  .jim-bank b { font-size: 16px; }
+  .s-jim .jim-note { grid-row: 3; margin: 10px 0 0; }
+  .jim-grid, .jim-grid.collapsed { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+  .jim-grid.collapsed .jim-tile:nth-child(n+3), .jim-grid.collapsed .jim-tile:nth-child(n+4) { display: flex; }
+  .jim-more { display: none; }
+  .jim-tile { border-radius: 10px; }
+  .jim-art { padding: 6px 6px 0; }
+  .jim-tile .shop-ribbon { top: 8px; }
+  .jim-tile .shop-tile-info { gap: 4px; padding: 5px 8px 4px; }
+  .jim-key { font-size: 10px; gap: 2px 4px; }
+  .jim-have { gap: 3px; }
+  .jim-have-line { font-size: 10.5px; }
+  .jim-have-line b { font-size: 13px; }
+  .jim-bar { height: 6px; }
+  .jim-gain { min-height: 12px; font-size: 10.5px; }
+  .jim-tile .shop-limit { font-size: 10px; margin: 0; }
+  .jim-tile .shop-tile-buy { padding: 2px 8px 8px; }
+  .jim-tile .shop-price { padding: 6px 8px; gap: 5px; }
+  .jim-tile .shop-price b { font-size: 15px; }
+  .jim-tile .shop-price s { font-size: 10.5px; }
+  .jim-x { font-size: 11px; }
+  .jim-tile .shop-price.short b, .jim-tile .shop-price.exhausted b { font-size: 11.5px; }
+  .shop-screen .jim-small { margin-top: 8px; font-size: 10.5px; }
+}

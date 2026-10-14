@@ -3,12 +3,12 @@
 // a run starts (Game.start). Nothing here reloads the page.
 // The level select, the car and the side are render/menustage.js (which draws them: `draw`); this file has the
 // switches and buttons of the options sheet, the race controls, the secret bus, and the results screen's buttons.
-import { CONFIG } from '../config.js';
 import { LEVELS, LEVEL_INDEX, LEVEL, selectLevel, nextOnTab, setRaceClass, RACE_CLASSES } from '../levels.js';
 import { levelName } from '../levelText.js';
 import { CARS, SECRET_CARS, useLevelCar, selectCar, amphibiousCars, carRule, ruleAllows } from '../cars.js';
 import { Tiers } from '../tiers.js';
 import { Progress } from '../progress.js';
+import { unlockMode, setUnlockMode, unlockEverything } from '../unlockall.js';
 import { Shop } from '../shop.js';
 import { Game } from '../game.js';
 import { Replay } from '../replay.js';
@@ -112,14 +112,18 @@ raceClassBtn.addEventListener('click', () => {
 showRaceClass();
 draw();
 
-// a complete savegame, written to the progress cookie like any other progress
+// a complete savegame, written to the progress cookie like any other progress (unlockall.js: 'Everything' as ever, or
+// 'Absolutely everything': also the cars not available yet, every key, every ECU maxed)
+const unlockBtns = { all: document.getElementById('unlockAllBtn'), abs: document.getElementById('unlockAbsBtn') };
+const showUnlockMode = () => { for (const [mode, btn] of Object.entries(unlockBtns)) btn.setAttribute('aria-pressed', String(unlockMode() === mode)); };
+for (const [mode, btn] of Object.entries(unlockBtns)) btn.addEventListener('click', () => { setUnlockMode(mode); showUnlockMode(); });
+showUnlockMode();
 document.getElementById('completeBtn').addEventListener('click', async () => {
-  if (!await ask({ title: 'Complete save', lines: ['Open every level, buy every car and fill the bank?'], ok: 'Do it' })) return;
-  Progress.complete({
-    levels: LEVELS.length,
-    cars: CARS.map(car => car.id),
-    money: CONFIG.completeBank,
-  });
+  const abs = unlockMode() === 'abs';
+  if (!await ask(abs
+    ? { title: 'Unlock absolutely everything', lines: ['Open every level, own every car (the ones not available yet and every key too), max every ECU, and fill the bank?'], ok: 'Do it' }
+    : { title: 'Complete save', lines: ['Open every level, buy every car and fill the bank?'], ok: 'Do it' })) return;
+  unlockEverything(abs ? 'abs' : 'all');
   draw();
 });
 
