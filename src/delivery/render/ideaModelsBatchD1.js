@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import {
   TRIM, CHROME, GLASS, LAMP, TAIL, AMBER, keep, lambert, shared, place, merge, parts, bx, dsc,
-  curve, extrudeSide, narrowAt, panel, sideGlass, slopeGlass, shadeBy, low, flare, wheel,
+  curve, extrudeSide, cabinGlass, shadeBy, low, flare, wheel,
 } from './ideaModelsDkit.js';
 
 const DARK = keep(lambert(0x1b1c20));
@@ -20,24 +20,21 @@ export const IDEA_MODELS_BATCH_D1 = {
     const group = new THREE.Group(), k = 'wmicro';
     const R = 0.25, TW = 0.17, BEV = 0.05, ACROSS = 0.07, BW = 1.28, HALF = BW / 2, WX = HALF - 0.04;
     const NOSE = 0.72, TAILZ = -0.72, AY = 0.27, AF = 0.4, BELT = 0.8, ROOF = 1.2;
-    const TAPER = [BELT, ROOF, 0.1];
-    const WSF = [0.42, BELT - 0.02], WST = [0.14, ROOF - 0.04];
+    const TAPER = [BELT, ROOF, 0.1], TB = [TAILZ, AY], R2 = [TAILZ + 0.03, BELT];
+    const WSF = [0.42, BELT], WST = [0.1, ROOF];
     const outline = [
       [NOSE, AY], [NOSE, 0.5], ...curve([NOSE, 0.5], [NOSE, 0.62], [NOSE - 0.1, 0.7], [0.46, 0.76], 4),
-      WSF, WST, ...curve(WST, [0.12, ROOF], [0.1, ROOF], [0.04, ROOF], 3),
-      [TAILZ + 0.1, ROOF + 0.06], ...curve([TAILZ + 0.1, ROOF + 0.06], [TAILZ + 0.02, ROOF + 0.06], [TAILZ, ROOF + 0.02], [TAILZ, ROOF - 0.08], 3),
-      [TAILZ, AY],
+      WSF, WST,
+      [-0.5, ROOF + 0.05], R2, [TAILZ, BELT - 0.04],
+      TB,
     ];
     const FZ = NOSE + BEV, BZ = TAILZ - BEV;
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
     const body = place(group, shared(k + 'body', () => shadeBy(merge([extrudeSide(outline, BW, BEV, TAPER, 1, ACROSS)]), low(0.2, 0.7, [0.6, 0.54, 0.48]))), paint);
-    const LIFT = 0.006, gx = (y) => narrowAt(HALF, y, TAPER);
-    const zWS = (y) => WSF[0] + (WST[0] - WSF[0]) * (y - WSF[1]) / (WST[1] - WSF[1]);
-    parts(group, k + 'glass', GLASS, () => [
-      slopeGlass([zWS(0.84), 0.84], [zWS(1.14), 1.14], gx(0.84) - 0.07, gx(1.14) - 0.07, BEV + LIFT),
-      ...sideGlass([[[zWS(0.84) - 0.07, 0.84], [-0.5, 0.84], [-0.5, 1.14], [zWS(1.14) - 0.05, 1.14]]], HALF, TAPER, LIFT),
-      panel([[-0.4, 0.9, BZ - LIFT], [0.4, 0.9, BZ - LIFT], [0.38, 1.1, BZ - LIFT], [-0.38, 1.1, BZ - LIFT]].reverse()),
-    ]);
+    // ALL the glass from the body's own side profile (cabinGlass: one inset outline, so the windscreen, the side window and the rear glass agree)
+    const glass = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(R2), belt: BELT, half: HALF, taper: TAPER,
+      inset: { aPillar: 0.06, roof: 0.06, cPillar: 0.06 }, lift: BEV + 0.006, topLift: BEV - 0.003, sideLift: 0.006 });
+    parts(group, k + 'glass', GLASS, () => [...glass.sides, glass.front, glass.rear]);
     parts(group, k + 'black', TRIM, () => [bx(1.1, 0.08, 0.1, 0, 0.3, FZ + 0.01), bx(1.06, 0.08, 0.08, 0, 0.3, BZ - 0.01)]);
     parts(group, k + 'rim', CHROME, () => [dsc(0.115, 0.03, 0, 0.5, FZ + 0.01, 0, 12)]);
     parts(group, k + 'lamp', LAMP, () => [dsc(0.085, 0.03, 0, 0.5, FZ + 0.022, 0, 12)]);
