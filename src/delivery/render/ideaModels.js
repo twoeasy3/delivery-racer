@@ -16,6 +16,7 @@ import { IDEA_MODELS_7 } from './ideaModels7.js'; // (the seventh batch: three c
 import { IDEA_MODELS_8 } from './ideaModels8.js'; // (the eighth: a quad-turbo concept supercar)
 import { IDEA_MODELS_9 } from './ideaModels9.js'; // (a concept car: the Midsummer Roadster)
 import { IDEA_MODELS_10 } from './ideaModels10.js'; // (a concept city car: the Fishbowl Runabout)
+import { IDEA_MODELS_TOPUP_C } from './ideaModelsTopupC.js'; // (top-up batch C: the Pocket 4x4, the Dodgem, the Ice Resurfacer)
 import { SWAN_MODELS } from './modelsSwan.js'; // (the Swan Car redone as a covered coupe, 13-Oct: over ideaModels3's open tourer)
 
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
@@ -174,6 +175,7 @@ export const IDEA_MODELS = {
   ...IDEA_MODELS_8,
   ...IDEA_MODELS_9,
   ...IDEA_MODELS_10,
+  ...IDEA_MODELS_TOPUP_C,
   swancar: SWAN_MODELS.swancar,
   // A bubble car (a BMW Isetta): an egg on wheels. The whole front is its one door, hinged at the side, the
   // windscreen in it; a glass bubble over a bench seat; lamps in pods on its flanks; the two back wheels close

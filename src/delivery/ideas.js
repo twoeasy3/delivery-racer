@@ -46,6 +46,7 @@
 // One more (CHECKLIST item 302): a tiny three-seat concept city car under a glass bubble (render/ideaModels10.js).
 
 // ============================================================================
+import { IDEAS_TOPUP_C } from './ideasTopupC.js'; // (top-up batch C: three ideas, models in render/ideaModelsTopupC.js)
 export const IDEA_CARS = [
   { id: 'threewheeler', name: 'Three-Wheeler', basedOn: 'Reliant Robin', model: 'threewheeler', color: 0xe0902a, evilColor: 0x3d4a2a,
     hw: 0.71, hl: 1.67, height: 1.37, note: 'One wheel at the front. It leans in a corner, and sometimes keeps going.',
@@ -174,5 +175,6 @@ export const IDEA_CARS = [
   { id: 'gameviewer', name: 'Game-Drive Truck', basedOn: 'Toyota Land Cruiser 79 game viewer', model: 'gameviewer', color: 0x9a8a5a, evilColor: 0x2e4a2e,
     hw: 0.95, hl: 2.85, height: 2.4, note: 'No doors, three rows of seats climbing under a canopy, and a chair for the tracker out on the bull bar.',
     maxSpeed: 28, accel: 8, agility: 0.95, crossing: 1, health: 240, mass: 2, sound: 'suv' },
+  ...IDEAS_TOPUP_C,
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
