@@ -2,7 +2,7 @@
 
 How to give any car custom headlamp, tail/brake lamp and indicator places, so that the game's lamp EFFECTS (brake
 lamps lit, indicators and hazards flashing, a wrong-way driver's flashed headlamps, the night headlamp glow and
-spotlights) sit on the model's own lenses instead of where the hitbox guesses. The pilot (CHECKLIST 242) did four cars:
+spotlights) sit on the model's own lenses instead of where the hitbox guesses. The pilot (CHECKLIST 243) did four cars:
 the Commuter, Lowrider, Pick-Up and Sportscar (`miata`).
 
 **Where the code is.** The code is NOT on `main` yet. It is on branch `claude/car-lights` until merged:

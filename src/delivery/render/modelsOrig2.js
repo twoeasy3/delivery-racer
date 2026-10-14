@@ -366,7 +366,7 @@ export const ORIG2_MODELS = {
   // A small 1990s sport compact coupe (a Plymouth Laser, more or less): a low wedge of a nose with slim headlamps at
   // its corners over a black mesh grille and two black intakes, a cab-forward glasshouse leaning in hard, a fastback
   // hatch to a spoiler, black side skirts, twin racing stripes over the bonnet, the roof and the tail
-  // (white on a Good one, the Good one's green on an Evil one), a LASER III banner across the top of the windscreen,
+  // (white on both the Good and the Evil one), a LASER III banner across the top of the windscreen,
   // a full-width tail lamp bar, plain wheels on dark hubs. It sits still
   sport: (car) => {
     const group = new THREE.Group();
@@ -447,7 +447,7 @@ export const ORIG2_MODELS = {
     P.add(textured('mesh', 0xffffff, meshGrille()), panel([[0.34, 0.31, L + round + 0.007], [-0.34, 0.31, L + round + 0.007], [-0.34, 0.48, L + round + 0.007], [0.34, 0.48, L + round + 0.007]]));
     P.add(TRIM, bx(w - 0.16, 0.05, 0.16, 0, 0.27, L - 0.02));                           // the air dam's lip
     P.into(group);
-    const livery = (evil) => stripe.color.setHex(evil ? 0x39ff14 : 0xf4f4f0);
+    const livery = () => stripe.color.setHex(0xf4f4f0); // (white on both sides: the owner, 14-Oct)
     livery(false);
     group.userData = { body, parts: P.count, animate: () => {}, livery, stripe: (hex) => stripe.color.setHex(hex) };
     return group;

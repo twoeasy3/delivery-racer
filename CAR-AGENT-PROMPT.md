@@ -56,6 +56,16 @@ is the biggest in the game today (the Junker's tarpaulin), so use 128 or less wh
 Prefer flat colours, shape and vertex colours first (the approved Commuter's way), and no panel-line drawing in textures
 either (see the section above). Report each texture's size.
 
+## Lamp placements: every new car needs them (the owner, 14-Oct)
+Every car created from now on (a new car, a rebuilt model, a variant that gets its own model) must come with its own HEADLIGHT,
+TAILLIGHT (brake lamp) and BLINKER placements, defined in the per-car lamp table (render/carlights.js `CAR_LAMPS`, keyed by model
+name: positions, sizes, round or square, mirrored pairs, which tail lamp brakes, where the indicator flash sits) so the game's
+night beams, brake lights and indicators sit on the model's own lamp shapes instead of the generic hitbox guess. A variant that
+reuses a base car's model (e.g. the Legendary variants) uses the base model's entry. Part of "done" for a car: the entry, the
+before/after stills (`?lamps=show`), and a line in the CHECKLIST item. How to do it: LAMP-PLACEMENT-GUIDE.md.
+STATUS NOTE: the lamp code and the guide are on branch claude/car-lights until the owner merges it; until then, define the
+lamp positions in your report (measured from the model: centre, size, brake lamp, indicator flash place) so they can be entered.
+
 ## Defects that are NOT allowed
 - No unconnected parts and no floating parts (a lamp, mirror, trim strip, spat, plate or stalk must touch/sit in the
   body, including on ROUNDED edges where an extrusion's bevel pulls the surface in).
