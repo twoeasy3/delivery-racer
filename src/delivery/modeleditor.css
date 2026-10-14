@@ -69,3 +69,11 @@ textarea.json { width: 100%; min-height: 50vh; font-family: ui-monospace, Consol
   header h1 { display: inline; font-size: 18px; margin-left: 12px; }
   textarea.json { min-height: 30vh; }
 }
+
+.zrow { border: 1px solid var(--line, #3a4252); border-radius: 8px; padding: 8px; margin-top: 8px; cursor: pointer; }
+.zrow.sel { border-color: #ffd23f; }
+.zrow .zhead { font-size: 13px; line-height: 1.7; }
+.zrow i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; border: 1px solid #0006; vertical-align: -1px; }
+.zk { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 6px; color: #101418; }
+.zk.yes { background: #ff6b5e; } .zk.maybe { background: #ffd23f; } .zk.dup { background: #9aa3b2; }
+.zrow .buttons button { padding: 5px 8px; font-size: 12px; }

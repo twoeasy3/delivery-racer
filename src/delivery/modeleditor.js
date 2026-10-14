@@ -29,6 +29,7 @@ import { IDEA_CARS } from './ideas.js';
 import { buildInspectModel } from './render/inspectmodel.js';
 import { renderer } from './render/scene.js';
 import { silhouetteFor } from './render/silhouette.js';
+import { findZFights } from './render/zfight.js';
 import { extractParts, applyPatch, modelStats, BUDGET, emptyPatch, withSet, withDelete, withAdd, withDuplicate, withMirror, tidyPatch, PRIMITIVES } from './render/modelpatch.js';
 import { LOCAL_KEY, PATCHES, patchesReady, localPatches, setModelPatching } from './render/modelpatchapply.js';
 
@@ -139,6 +140,7 @@ const rebuild = () => {
   select(keep && nodes.has(keep) ? keep : null, false);
   renderList(); renderStats(); renderJson();
   if (S.tab === 'part') renderPart();
+  if (S.tab === 'zfight') scanZ();
 };
 // a new patch: kept in the history (undo), saved, shown
 const commit = (patch, words) => {
@@ -520,13 +522,81 @@ $('json').addEventListener('blur', renderJson);
 $('tidy').addEventListener('click', () => { commit(tidyPatch(S.patch)); $('json').value = JSON.stringify(tidyPatch(S.patch), null, 1); });
 $('copy').addEventListener('click', () => navigator.clipboard?.writeText($('json').value).then(() => status('Copied.')));
 
+
+// ---- Z-fighting: surfaces in the same place, found from the model's triangles (render/zfight.js) ----------------------
+// Each row: the two surfaces, where, how far apart; click it to see them (A red, B green); "Lift A / B" moves that part to stand 5 mm
+// in front of the other (toward the viewer) so it wins, "Delete" takes a doubled one away. Scanned on opening the tab and after every edit.
+const zfGroup = new THREE.Group();
+scene.add(zfGroup);
+const clearZ = () => { zfGroup.clear(); };
+const scanZ = () => {
+  if (!S.model) return;
+  const back = [];
+  S.model.traverse((n) => { // (the real colours, not the Blackout view's, and every part, not just the ones shown)
+    if (!n.isMesh) return;
+    if (n.userData.darkOrig) { back.push([n, n.material, n.layers.mask]); n.material = n.userData.darkOrig; } else back.push([n, null, n.layers.mask]);
+    n.layers.set(0);
+  });
+  let found;
+  try { found = findZFights(S.model); } finally { for (const [n, m, mask] of back) { if (m) n.material = m; n.layers.mask = mask; } }
+  S.zf = found; S.zfSel = -1;
+  renderZ();
+};
+const nameOfNode = (node) => { const id = idOf(node), p = id && partOf(id); return (p ? (p.name || p.role || 'part') : 'part') + (id ? ' [' + id + ']' : ''); };
+const hexOf = (m) => (m && m.color ? '#' + m.color.getHexString() : 'picture');
+const renderZ = () => {
+  const box = $('zfBox'), list = S.zf || [];
+  const seen = list.filter(g => !g.sameColour), certain = seen.filter(g => g.certain), dup = list.length - seen.length;
+  clearZ();
+  if (!list.length) { box.innerHTML = '<p class="note">No surfaces fight in this model (planes within 4 mm that overlap and are seen from outside).</p>'; return; }
+  box.innerHTML = '<p class="note"><b>' + certain.length + '</b> will flicker (under 0.5 mm apart), <b>' + (seen.length - certain.length) + '</b> might (0.5-4 mm: a weak GPU or far away), <b>' + dup + '</b> doubled in one colour (no flicker, a wasted shape).</p>'
+    + list.map((g, i) => '<div class="zrow' + (i === S.zfSel ? ' sel' : '') + '" data-z="' + i + '">'
+      + '<div class="zhead"><span class="zk ' + (g.sameColour ? 'dup' : g.certain ? 'yes' : 'maybe') + '">' + (g.sameColour ? 'doubled' : g.certain ? 'flickers' : 'might') + '</span> '
+      + '<b>' + esc(nameOfNode(g.a)) + '</b> <i style="background:' + hexOf(g.aMat) + '"></i> vs <b>' + esc(nameOfNode(g.b)) + '</b> <i style="background:' + hexOf(g.bMat) + '"></i></div>'
+      + '<div class="small">' + (g.area * 10000).toFixed(1) + ' cm\u00b2, ' + (g.gapMin * 1000).toFixed(1) + (g.gapMax > g.gapMin + 1e-4 ? '-' + (g.gapMax * 1000).toFixed(1) : '') + ' mm apart, '
+      + (g.sameFacing ? 'facing the same way' : 'facing opposite ways') + '</div>'
+      + '<div class="buttons"><button data-za="liftA">Lift A</button><button data-za="liftB">Lift B</button><button data-za="delA">Delete A</button><button data-za="delB">Delete B</button></div></div>').join('');
+};
+const lift = (node, g, isA) => {
+  const id = idOf(node), p = id && partOf(id);
+  if (!p || !node.parent) return;
+  const move = 0.005 + (isA ? g.sep : -g.sep); // (to stand 5 mm in front (just outside the 4 mm the scan counts) of the other, whichever side of it it is on now)
+  const toward = g.normal.clone().multiplyScalar(g.view || 1).normalize().multiplyScalar(move); // (world metres, toward the viewer who sees both)
+  S.model.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(node.parent.matrixWorld).invert();
+  const o = new THREE.Vector3().applyMatrix4(inv), d = toward.applyMatrix4(inv).sub(o);
+  const at = node.position.clone().add(d).toArray().map(v => Math.round(v * 10000) / 10000);
+  commit(withSet(S.patch, p, { position: at }), (p.name || p.role) + ' now stands 5 mm in front of the other.');
+};
+$('zfBox').addEventListener('click', (e) => {
+  const row = e.target.closest('.zrow');
+  if (!row) return;
+  const g = S.zf[+row.dataset.z], act = e.target.closest('[data-za]')?.dataset.za;
+  if (!g) return;
+  if (act === 'liftA' || act === 'liftB') { lift(act === 'liftA' ? g.a : g.b, g, act === 'liftA'); return; }
+  if (act === 'delA' || act === 'delB') {
+    const id = idOf(act === 'delA' ? g.a : g.b), p = id && partOf(id);
+    if (p) commit(withDelete(S.patch, p), (p.name || p.role) + ' deleted.');
+    return;
+  }
+  S.zfSel = +row.dataset.z;
+  document.querySelectorAll('.zrow').forEach(r => r.classList.toggle('sel', r === row));
+  zfGroup.clear();
+  zfGroup.add(new THREE.Box3Helper(new THREE.Box3().setFromObject(g.a), 0xd8262b), new THREE.Box3Helper(new THREE.Box3().setFromObject(g.b), 0x18a35a));
+  const dot = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffd23f, depthTest: false }));
+  dot.position.copy(g.at); dot.renderOrder = 10; zfGroup.add(dot);
+  const id = idOf(g.a); if (id) select(id, false);
+});
+$('zfRescan').addEventListener('click', scanZ);
+
 // ---- the tabs, the side, the files --------------------------------------------------------------------------------
 const showTab = (tab) => {
-  S.tab = ['parts', 'part', 'json'].includes(tab) ? tab : 'parts';
+  S.tab = ['parts', 'part', 'json', 'zfight'].includes(tab) ? tab : 'parts';
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === S.tab));
   document.querySelectorAll('.tab').forEach(t => { t.hidden = t.id !== 'tab-' + S.tab; });
   if (S.tab === 'part') renderPart();
   if (S.tab === 'json') renderJson();
+  if (S.tab === 'zfight') scanZ(); else clearZ();
   if (S.car) syncUrl();
 };
 $('tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); });

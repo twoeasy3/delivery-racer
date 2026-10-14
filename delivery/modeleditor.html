@@ -30,7 +30,7 @@
     <p class="note" id="status"></p>
   </section>
   <nav class="tabs" id="tabs">
-    <button data-tab="parts">Parts</button><button data-tab="part">Part</button><button data-tab="json">JSON</button>
+    <button data-tab="parts">Parts</button><button data-tab="part">Part</button><button data-tab="json">JSON</button><button data-tab="zfight">Z-fight</button>
   </nav>
   <div class="tab" id="tab-parts">
     <section>
@@ -42,6 +42,13 @@
   </div>
   <div class="tab" id="tab-part" hidden>
     <section id="partBox"><p class="note">Tap a part in the view or the list.</p></section>
+  </div>
+  <div class="tab" id="tab-zfight" hidden>
+    <section>
+      <h2>Z-fighting <span class="small">surfaces in the same place</span></h2>
+      <div class="buttons"><button id="zfRescan">Scan again</button></div>
+      <div id="zfBox"></div>
+    </section>
   </div>
   <div class="tab" id="tab-json" hidden>
     <section>
