@@ -313,10 +313,10 @@ export const IDEA_MODELS_TOPUP_B = {
     // under the box: the chassis, and the cab's floor behind the front wheels; the bumpers; the stowed ramp
     box(shell, dark, 1.4, 0.42, 3.6, 0, 0.8, -0.7);
     box(shell, chrome, 1.98, 0.14, 0.14, 0, 0.52, 2.93);
-    box(shell, dark, 2.0, 0.16, 0.12, 0, 0.72, TAILZ - BR + 0.07);
-    box(shell, steel, 1.2, 0.06, 0.42, 0, 0.92, TAILZ - BR + 0.18);
+    box(shell, dark, 2.0, 0.28, 0.34, 0, 0.84, TAILZ - BR + 0.18); // (the rear bumper: a deep block under the box's tail)
+    box(shell, steel, 1.1, 0.05, 0.3, 0, 0.73, TAILZ - BR + 0.13); // (the ramp, stowed: its end out under the bumper)
     // the back: the shutter, a plain block of brushed grey, its handle bar at the foot
-    box(shell, shutter, 1.84, 1.72, 0.02, 0, 1.94, TAILZ - BR - 0.006);
+    box(shell, shutter, 1.84, 1.42, 0.02, 0, 1.79, TAILZ - BR - 0.006);
     box(shell, steel, 0.5, 0.05, 0.04, 0, 1.18, TAILZ - BR - 0.02);
     // the glass: the windscreen, the cab's side windows (their front edge following the screen)
     const LIFT = CR + 0.006, sz = (y) => WSF[0] + (WST[0] - WSF[0]) * (y - WSF[1]) / (WST[1] - WSF[1]);
@@ -331,7 +331,7 @@ export const IDEA_MODELS_TOPUP_B = {
       box(shell, dark, 0.05, 0.24, 0.13, s * 1.12, 1.56, 2.3);             // the mirror
       // the back: tall tail lamps up the box's lower corners, amber in the bumper's corners and on the flanks
       box(shell, TAIL, 0.14, 0.44, 0.03, s * 0.92, 1.3, TAILZ - BR - 0.008);
-      box(shell, AMBER, 0.16, 0.08, 0.03, s * 0.84, 0.72, TAILZ - BR + 0.005);
+      box(shell, AMBER, 0.16, 0.08, 0.03, s * 0.84, 0.84, TAILZ - BR + 0.005);
       box(shell, AMBER, 0.03, 0.08, 0.18, s * (car.hw + 0.006), 1.22, TAILZ + 0.32);
     }
     // grime: road dirt along the box's foot and the cab's, rain streaks run down from under the band, both flanks alike
@@ -342,7 +342,7 @@ export const IDEA_MODELS_TOPUP_B = {
       decal(shell, dirty, 4.1, 0.6, s * (car.hw + 0.004), 2.22, (TAILZ + 1.25) / 2, f, ...grimeCell('streak', flip));
       decal(shell, dirty, 0.62, 0.3, s * (CW / 2 + 0.004), 0.68, 1.48, f, ...grimeCell('low', flip));
     }
-    decal(shell, dirty, 1.9, 0.34, 0, 1.25, TAILZ - BR - 0.02, '-z', ...grimeCell('low'));
+    decal(shell, dirty, 1.6, 0.34, 0, 1.25, TAILZ - BR - 0.022, '-z', ...grimeCell('low'));
     // the wheels: fat tyres on plain silver hubs
     const keep = new Set(), geo = wheelGeo(R, 0.3), hub = lambert(0xc4c8ce);
     for (const s of [-1, 1]) for (const z of [FZ, RZ]) for (const part of wheel(group, geo, s * WX, R, z, hub)) keep.add(part);
