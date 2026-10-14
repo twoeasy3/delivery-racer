@@ -112,13 +112,15 @@ try {
       // the pillar in the side view: how far the screen's top and foot corners are from the line of the window's A (or C) edge: equal = parallel
       const ez = wTop[2] - wFoot[2], ey = wTop[1] - wFoot[1], el = Math.hypot(ez, ey);
       const d = (p) => Math.abs(((p[2] - wFoot[2]) * ey - (p[1] - wFoot[1]) * ez) / el);
-      return { topDy, wTop: d(sTop), wFoot: d(sFoot) };
+      return { topDy, wTop: d(sTop), wFoot: d(sFoot), roofGap: Math.max(...contour.filter(c => front_ ? c[0] <= sTop[2] && c[0] >= sTop[2] - 0.1 : c[0] >= sTop[2] && c[0] <= sTop[2] + 0.1).map(c => c[1])) - sTop[1] };
     };
     for (const [name, scr, win, f] of [['A-pillar', front, frontWin, true], ['C-pillar', rear, rearWin, false]]) {
       const r = pillar(scr, win, f);
       if (!r) { notes.push(name + ': no ' + (scr ? 'side window' : 'screen')); continue; }
       notes.push(`${name}: screen top vs window top ${(r.topDy * 100).toFixed(1)} cm apart in height; pillar (screen edge to window edge, side view) ${(r.wTop * 100).toFixed(1)} cm at the top, ${(r.wFoot * 100).toFixed(1)} cm at the foot`);
       if (r.topDy > TOL) fails.push(`${name}: the screen's top is ${(r.topDy * 100).toFixed(1)} cm from the window's top (> ${TOL * 100})`);
+      notes.push(`${name}: screen top ${(r.roofGap * 100).toFixed(1)} cm below the roof height beside it`);
+      if (r.roofGap > 0.07) fails.push(`${name}: the screen's top is ${(r.roofGap * 100).toFixed(1)} cm below the roof line (> 7): a lowered screen leaves a strip`);
       if (Math.abs(r.wTop - r.wFoot) > TOL) fails.push(`${name}: pillar width ${(r.wTop * 100).toFixed(1)} cm at the top, ${(r.wFoot * 100).toFixed(1)} cm at the foot`);
     }
     rows.push([car.id, fails.length ? 'FAIL' : 'ok', ...notes, ...fails.map(f => '  ! ' + f)]);

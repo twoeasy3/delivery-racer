@@ -248,23 +248,37 @@ export const screenGlassFromProfile = (profile, { edge, foot = 0.03, top = 0.07,
 // the roof), sideInset (the screens' margin from the flank each side, 0.08), foot (0.03: a screen starts this far up its slope from the body's own
 // edge). Example:   const g = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(RW1), belt: BELT, half: HALF, taper: TAPER,
 //   lift: BEV + 0.006, topLift: BEV - 0.003, windows: [[-0.1, 9], [-9, -0.26]] });   parts(group, k + 'glass', GLASS, () => [...g.sides, g.front, g.rear]);
-export const cabinGlass = (profile, { from, to, belt, inset = {}, half, taper = null, windows = [[-Infinity, Infinity]], sideLift = 0.004, lift = 0.004, topLift = lift, sideInset = 0.08, foot = 0.03 }) => {
+export const cabinGlass = (profile, { from, to, belt, inset = {}, half, taper = null, windows = [[-Infinity, Infinity]], sideLift = 0.004, lift = 0.004, topLift = lift, sideInset = 0.08, foot = 0.03, screenTop = 0.05 }) => {
   const { aPillar = 0.07, roof = 0.055, cPillar = 0.08, belt: beltInset = 0.025 } = inset;
   const last = profile[to];
-  const sides = windows.flatMap(([zRear, zFront]) => glassFromProfile(profile, { from, to, belt, inset: { aPillar, roof, cPillar, belt: beltInset }, zFront, zRear, half, taper, lift: sideLift }));
-  // the same outline again, for the heights at the two pillars
+  // the outline both ends of the glass are derived from
   const chain = profile.slice(from, to + 1).map(p => [p[0], p[1]]);
   const toBelt = (p, q) => { const t = (belt - p[1]) / (q[1] - p[1]); return [p[0] + (q[0] - p[0]) * t, belt]; };
   chain[0] = toBelt(chain[0], chain[1]);
   chain[chain.length - 1] = toBelt(chain[chain.length - 1], chain[chain.length - 2]);
   const n = chain.length;
-  const poly = insetOutline(chain, chain.map((p, i) => {
+  const insetPoly = (roofInset) => insetOutline(chain, chain.map((p, i) => {
     const q = chain[(i + 1) % n], dz = q[0] - p[0], dy = q[1] - p[1];
-    return i === n - 1 ? beltInset : Math.abs(dy) < 0.5 * Math.hypot(dz, dy) ? roof : dy > 0 ? aPillar : cPillar;
+    return i === n - 1 ? beltInset : Math.abs(dy) < 0.5 * Math.hypot(dz, dy) ? roofInset : dy > 0 ? aPillar : cPillar;
   }));
+  // The screens' own natural tops: `screenTop` (5 cm) down the screen's slope from the roof corner. A raked screen's natural top is HIGHER than
+  // the side window's (roof inset straight down from the corner), and the owner wants them LEVEL, not the screen lowered (a lowered screen leaves
+  // a solid strip above it). So the shared top line is the HIGHER of the two: if a screen's natural top is above the window's, the roof inset
+  // (all along the roof, so the window keeps ONE margin and still follows the contour) is reduced until the window's top reaches it, i.e. the
+  // window is raised up the pillar to meet the screen; the screen is then raised (never lowered) to the window's top where that is higher.
+  const along = (p, q, d) => { const l = Math.hypot(q[0] - p[0], q[1] - p[1]); return p[1] + (q[1] - p[1]) * d / l; }; // the height d from p towards q
+  const sTopA = along(chain[1], chain[0], screenTop), sTopC = along(chain[n - 2], chain[n - 1], screenTop);
+  let roofIn = roof, poly = insetPoly(roofIn);
+  for (let i = 0; i < 3; i++) {
+    const need = Math.max(poly[1][1] < sTopA ? sTopA - poly[1][1] : 0, poly[n - 2][1] < sTopC ? sTopC - poly[n - 2][1] : 0);
+    if (!need) break;
+    roofIn = Math.max(0.02, roofIn - need);
+    poly = insetPoly(roofIn);
+  }
+  const sides = windows.flatMap(([zRear, zFront]) => glassFromProfile(profile, { from, to, belt, inset: { aPillar, roof: roofIn, cPillar, belt: beltInset }, zFront, zRear, half, taper, lift: sideLift }));
   const onLine = (p, q, y) => [p[0] + (q[0] - p[0]) * (y - p[1]) / (q[1] - p[1]), y];
   const hx = (y) => (taper ? narrowAt(half, y, taper) : half) - sideInset;
-  const aTopY = poly[1][1], cTopY = poly[n - 2][1];
+  const aTopY = Math.max(poly[1][1], sTopA), cTopY = Math.max(poly[n - 2][1], sTopC);
   // (a screen stands off the body along its face's normal, which lifts its top edge by cos(slope) * topLift: aim lower so the EDGE lands at aTopY)
   const rise = (p, q) => Math.abs(q[0] - p[0]) / Math.hypot(q[0] - p[0], q[1] - p[1]);
   const aFoot = onLine(chain[0], chain[1], Math.max(chain[0][1], profile[from][1]) + foot * 0.8 - rise(chain[0], chain[1]) * lift), aTop = onLine(chain[0], chain[1], aTopY - rise(chain[0], chain[1]) * topLift);
