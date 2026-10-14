@@ -69,7 +69,7 @@ export const IDEA_MODELS_BATCH_E5 = {
     // inset from the body's silhouette (the profile grown BEV): a 5 cm roof rail, so the side glass reaches the roof's rounded shoulder and the
     // screens' tops are level with it; the glass 6 mm proud of the body everywhere. A B-pillar between the two door windows
     const glass = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(RW1), belt: BELT, half: HALF, taper: TAPER, grow: BEV,
-      inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: BEV + 0.006, sideLift: LIFT, windows: [[-0.1, 9], [-9, -0.26]] });
+      inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: BEV + 0.006, sideLift: LIFT, windows: [[-0.42, 9], [-9, -0.58]] });
     parts(group, k + 'glass', GLASS, () => [...glass.sides, glass.front, glass.rear]);
     parts(group, k + 'black', TRIM, () => [
       bx(1.1, 0.1, 0.03, 0, 0.5, FZ - 0.005),            // the grille
