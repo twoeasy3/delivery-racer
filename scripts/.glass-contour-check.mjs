@@ -7,9 +7,11 @@
 // Method: the body's contour is its centre-line top silhouette (a ray down at x = 0 every 1 cm over the paint mesh, `userData.body`). Each
 // glass mesh (the dark MeshLambert 0x1c2330) is split into connected pieces. A SIDE window (a piece whose x extent is small, off the centre):
 // its boundary is sampled every 1 cm, the belt edge and any vertical cut (a B-pillar) skipped, and the distance of each sample to the contour
-// measured; a constant inset gives a small range (FAIL when max - min > 1.5 cm over the top, A and C edges). A SCREEN (a piece spanning the car):
-// its top edge's height against the side window's at the pillar (FAIL > 1.5 cm), and the pillar width (the distance of the screen's side top corner and of its foot corner from the line of the
-// window's A or C edge in the side view: FAIL if they differ by more than 1.5 cm). Cars with no glass of that colour, or no body mesh, are listed as skipped. Helpers that build the glass this way:
+// measured along the edge's own normal, clear of its corners; a constant inset gives a small range (FAIL when max - min > 1.5 cm on any edge: the top, A and C edges each keep their own inset, parallel to the contour). A SCREEN (a piece spanning the car):
+// its top edge's height against the side window's at the pillar (FAIL > 1.5 cm), the pillar width (the distance of the screen's side top corner and of its foot corner from the line of the
+// window's A or C edge in the side view: FAIL if they differ by more than 1.5 cm), its top no more than 7 cm below the roof beside the pillar (a lowered screen leaves a strip), and its top
+// edge proud of the body (a ray in along the screen's normal at its top edge must hit glass first: a top tucked under the body face is hidden, with a strip of body over the visible glass).
+// Cars with no glass of that colour, or no body mesh, are listed as skipped. Helpers that build the glass this way:
 // render/ideaModelsDkit.js cabinGlass / glassFromProfile / screenGlassFromProfile.
 import { startModels } from './modelpatch-load.mjs';
 import { dirname, join } from 'node:path';
@@ -63,7 +65,7 @@ try {
     const info = pieces.map(tris => {
       const pts = [...new Map(tris.flat().map(p => [p[3], p])).values()], xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), zs = pts.map(p => p[2]);
       const b = { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys), z0: Math.min(...zs), z1: Math.max(...zs) };
-      return { tris, pts, ...b, side: (b.x1 - b.x0) < 0.12 && Math.abs((b.x0 + b.x1) / 2) > 0.3 };
+      return { tris, pts, ...b, side: (b.x1 - b.x0) < 0.2 && Math.abs((b.x0 + b.x1) / 2) > 0.3 }; // (a side window on a tapered flank leans in up to 0.2 over its height)
     });
     // 1) the side windows, +x side only: boundary samples against the contour
     const notes = [], fails = [];
@@ -75,22 +77,38 @@ try {
         if (!edges.has(id)) edges.set(id, { a, b, n: 0 });
         edges.get(id).n++;
       }
-      const ds = [];
+      // each boundary edge (the belt edge and vertical cuts skipped; edges shorter than 12 cm, the roof's curve pieces, too): its inset from the
+      // contour measured ALONG ITS OWN NORMAL every 1 cm, clear of its ends (5 cm: the corners are mitres between two insets), so an edge parallel to
+      // the contour has one inset all along (its range within TOL); edges by kind (top; A: rising to the front; C: rising to the rear)
+      const cz = p.pts.reduce((s, q) => s + q[2], 0) / p.pts.length, cy = p.pts.reduce((s, q) => s + q[1], 0) / p.pts.length;
+      const cross = (z, y, nz, ny) => { // the contour's crossing of the ray (z, y) + t (nz, ny): the smallest t > 0 within 25 cm
+        let best = Infinity;
+        for (let i = 1; i < contour.length; i++) {
+          const [az, ay] = contour[i - 1], [bz, by] = contour[i], ez = bz - az, ey = by - ay, den = nz * ey - ny * ez;
+          if (Math.abs(den) < 1e-9) continue;
+          const t = ((az - z) * ey - (ay - y) * ez) / den, u = ((az - z) * ny - (ay - y) * nz) / den;
+          if (t > 0 && t < best && u >= -1e-9 && u <= 1 + 1e-9) best = t;
+        }
+        return best < 0.25 ? best : null;
+      };
+      const found = [];
       for (const e of edges.values()) {
         if (e.n !== 1) continue;
         const dz = e.b[2] - e.a[2], dy = e.b[1] - e.a[1], len = Math.hypot(dz, dy);
-        if (len < 1e-6 || Math.abs(dz) / len < 0.05) continue; // a vertical cut (a B-pillar)
-        for (let t = 0; t <= len; t += 0.01) {
-          const z = e.a[2] + dz * t / len, y = e.a[1] + dy * t / len;
-          if (y < p.y0 + 0.03) continue; // the belt edge
-          const d = dist(z, y);
-          if (d < 0.25) ds.push(d);
-        }
+        if (len < 0.12 || Math.abs(dz) / len < 0.05) continue; // a short piece; a vertical cut (a B-pillar)
+        if (Math.max(e.a[1], e.b[1]) < p.y0 + 0.03) continue; // the belt edge (both ends at the belt)
+        let nz = -dy / len, ny = dz / len; // a normal, turned outward (away from the window's middle)
+        if ((e.a[2] - cz) * nz + (e.a[1] - cy) * ny < 0) { nz = -nz; ny = -ny; }
+        const ts = [];
+        for (let t = 0.05; t <= len - 0.05; t += 0.01) { const d = cross(e.a[2] + dz * t / len, e.a[1] + dy * t / len, nz, ny); if (d !== null) ts.push(d); }
+        const kind = Math.abs(dy) < 0.25 * len ? 'top' : dz * dy < 0 ? 'A' : 'C';
+        if (!ts.length) { fails.push(`window ${wi + 1}: its ${kind} edge finds no contour within 25 cm`); continue; }
+        const range = Math.max(...ts) - Math.min(...ts), mean = ts.reduce((s, d) => s + d, 0) / ts.length;
+        found.push(`${kind} ${(mean * 100).toFixed(1)}`);
+        if (range > TOL) fails.push(`window ${wi + 1}: its ${kind} edge follows the contour to only ${(range * 100).toFixed(1)} cm (> ${TOL * 100})`);
       }
-      if (!ds.length) { notes.push('window ' + (wi + 1) + ': no edge near the contour'); fails.push('window ' + (wi + 1) + ' is not inset from the profile'); return; }
-      const range = Math.max(...ds) - Math.min(...ds), mean = ds.reduce((s, d) => s + d, 0) / ds.length;
-      notes.push(`window ${wi + 1}: inset ${(mean * 100).toFixed(1)} cm, range ${(range * 100).toFixed(1)} cm`);
-      if (range > TOL) fails.push(`window ${wi + 1} follows the contour to only ${(range * 100).toFixed(1)} cm (> ${TOL * 100})`);
+      if (!found.length) { notes.push('window ' + (wi + 1) + ': no edge near the contour'); fails.push('window ' + (wi + 1) + ' is not inset from the profile'); return; }
+      notes.push(`window ${wi + 1}: inset from the contour (cm, by edge): ${found.join(', ')}`);
     });
     // 2) the screens: pieces spanning the car
     const screens = info.filter(p => !p.side && p.x1 - p.x0 > 0.5);
@@ -112,7 +130,18 @@ try {
       // the pillar in the side view: how far the screen's top and foot corners are from the line of the window's A (or C) edge: equal = parallel
       const ez = wTop[2] - wFoot[2], ey = wTop[1] - wFoot[1], el = Math.hypot(ez, ey);
       const d = (p) => Math.abs(((p[2] - wFoot[2]) * ey - (p[1] - wFoot[1]) * ez) / el);
-      return { topDy, wTop: d(sTop), wFoot: d(sFoot), roofGap: Math.max(...contour.filter(c => front_ ? c[0] <= sTop[2] && c[0] >= sTop[2] - 0.1 : c[0] >= sTop[2] && c[0] <= sTop[2] + 0.1).map(c => c[1])) - sTop[1] };
+      // the roof beside the pillar: the contour's height within 10 cm of the window's top corner (not the screen's face, which a raked screen's top sits on)
+      const roofGap = Math.max(...contour.filter(c => Math.abs(c[0] - wTop[2]) <= 0.1).map(c => c[1])) - sTop[1];
+      // the screen's top edge must stand PROUD of the body: a ray in along the screen's face normal at the middle of its top edge hits glass first
+      const top2 = scr.pts.filter(p => Math.abs(p[1] - sTop[1]) < 0.005), mid = top2.reduce((s, p) => [s[0] + p[0] / top2.length, s[1] + p[1] / top2.length, s[2] + p[2] / top2.length], [0, 0, 0]);
+      const tri = scr.tris[0], e1 = new THREE.Vector3(tri[1][0] - tri[0][0], tri[1][1] - tri[0][1], tri[1][2] - tri[0][2]), e2 = new THREE.Vector3(tri[2][0] - tri[0][0], tri[2][1] - tri[0][1], tri[2][2] - tri[0][2]);
+      const nrm = e1.cross(e2).normalize();
+      if (nrm.z * (front_ ? 1 : -1) < 0) nrm.negate(); // (outward: forward for the windscreen, rearward for the rear glass)
+      const start = new THREE.Vector3(mid[0], mid[1] - 0.01, mid[2]).addScaledVector(nrm, 1); // (1 cm below the edge, so the ray meets the face, not the edge)
+      rc.set(start, nrm.clone().negate());
+      const hit = rc.intersectObject(model, true).find(h => h.object.visible);
+      const hidden = !hit || [].concat(hit.object.material)[0].color?.getHex() !== 0x1c2330;
+      return { topDy, wTop: d(sTop), wFoot: d(sFoot), roofGap, hidden };
     };
     for (const [name, scr, win, f] of [['A-pillar', front, frontWin, true], ['C-pillar', rear, rearWin, false]]) {
       const r = pillar(scr, win, f);
@@ -121,6 +150,7 @@ try {
       if (r.topDy > TOL) fails.push(`${name}: the screen's top is ${(r.topDy * 100).toFixed(1)} cm from the window's top (> ${TOL * 100})`);
       notes.push(`${name}: screen top ${(r.roofGap * 100).toFixed(1)} cm below the roof height beside it`);
       if (r.roofGap > 0.07) fails.push(`${name}: the screen's top is ${(r.roofGap * 100).toFixed(1)} cm below the roof line (> 7): a lowered screen leaves a strip`);
+      if (r.hidden) fails.push(`${name}: the screen's top edge is under the body (the glass is not proud of the body face there: its visible top is lower, with a strip of body over it)`);
       if (Math.abs(r.wTop - r.wFoot) > TOL) fails.push(`${name}: pillar width ${(r.wTop * 100).toFixed(1)} cm at the top, ${(r.wFoot * 100).toFixed(1)} cm at the foot`);
     }
     rows.push([car.id, fails.length ? 'FAIL' : 'ok', ...notes, ...fails.map(f => '  ! ' + f)]);

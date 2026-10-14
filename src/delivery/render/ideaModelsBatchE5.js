@@ -65,9 +65,11 @@ export const IDEA_MODELS_BATCH_E5 = {
       ...[-1, 1].flatMap(s => [AF, AR].map(z => flare(z, R, R + 0.03, R + 0.13, 0.12).translate(s > 0 ? HALF + 0.1 : -HALF - 0.02, 0, 0))),
     ]), low(0.28, 0.85, [0.62, 0.58, 0.56]))), paint);
     const LIFT = 0.004, gx = (y) => narrowAt(HALF, y, TAPER);
-    // ALL the glass from the body's own side profile (one inset outline: the screens and the side windows agree at the pillars); a B-pillar between the two door windows
-    const glass = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(RW1), belt: BELT, half: HALF, taper: TAPER,
-      inset: { aPillar: 0.07, roof: 0.06, cPillar: 0.09 }, lift: BEV + 0.006, topLift: BEV - 0.003, sideLift: LIFT, windows: [[-0.1, 9], [-9, -0.26]] });
+    // ALL the glass from the body's own side profile (one inset outline: the screens and the side windows share one top line at the pillars),
+    // inset from the body's silhouette (the profile grown BEV): a 5 cm roof rail, so the side glass reaches the roof's rounded shoulder and the
+    // screens' tops are level with it; the glass 6 mm proud of the body everywhere. A B-pillar between the two door windows
+    const glass = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(RW1), belt: BELT, half: HALF, taper: TAPER, grow: BEV,
+      inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: BEV + 0.006, sideLift: LIFT, windows: [[-0.1, 9], [-9, -0.26]] });
     parts(group, k + 'glass', GLASS, () => [...glass.sides, glass.front, glass.rear]);
     parts(group, k + 'black', TRIM, () => [
       bx(1.1, 0.1, 0.03, 0, 0.5, FZ - 0.005),            // the grille
