@@ -218,53 +218,62 @@ export const IDEA_MODELS_BATCH_D2 = {
     return group;
   },
   // ---- the Utility Moke (after the Mini Moke, 1964) ------------------------------------------------------------------
-  // A flat open tub (no wheel wells carved in it: the wheels stand against its sides): a short flat bonnet with a slatted grille and two round lamps in chrome rims,
-  // low straight sides, a tailgate, a folding windscreen frame, two bare seats (no driver, a steering wheel) and a rear bed
-  // with a crate, a jerrycan and a canvas roll. Sun-worn paint, darker low down.
+  // A tiny flat open slab on chunky wheels, drawn in two tones: body paint with cream wing caps, seats and rear bench.
+  // A flat bonnet with a dark slatted grille on a vertical face and two round lamps standing proud on top of it, low
+  // straight sides (no wheel wells: the wheels stand against them under flat cream caps), a thin upright windscreen
+  // frame, a bench seat (no driver; a steering wheel), a rear bed with a crate, a jerrycan and a canvas roll, and a flat
+  // tailgate with the spare wheel on it. Sun-worn paint, darker low down.
   moke: (car) => {
     const group = new THREE.Group();
     const k = 'moke';
-    const R = 0.27, TW = 0.2, WX = car.hw - TW / 2, AF = 0.98, AR = -0.98, AY = R;
-    const BEV = 0.05, HALF = 0.47, NOSE = 1.5, TAILZ = -1.5, CZ = 0.45, SIDE = 0.74;
+    const R = 0.3, TW = 0.22, WX = car.hw - TW / 2, AF = 0.95, AR = -0.95;
+    const BEV = 0.05, HALF = 0.62, NOSE = 1.5, TAILZ = -1.5, CZ = 0.45, SIDE = 0.76, FLOOR = 0.3;
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true, map: worn(29) });
     const FZ = NOSE + BEV, BZ = TAILZ - 0.03;
     const bonnet = [
-      [NOSE, AY], [NOSE, 0.7], ...curve([NOSE, 0.7], [NOSE, 0.76], [NOSE - 0.04, 0.8], [NOSE - 0.1, 0.8], 3),
-      [CZ, 0.8], [CZ, AY],
+      [NOSE, FLOOR], [NOSE, 0.72], ...curve([NOSE, 0.72], [NOSE, 0.79], [NOSE - 0.03, 0.82], [NOSE - 0.1, 0.82], 3),
+      [CZ, 0.82], [CZ, FLOOR],
     ];
-    const sideOutline = [[CZ, AY], [CZ, SIDE], [TAILZ, SIDE], [TAILZ, AY]];
+    const sideOutline = [[CZ, FLOOR], [CZ, SIDE], [TAILZ, SIDE], [TAILZ, FLOOR]];
     const body = place(group, shared(k + 'body', () => shadeBy(merge([
       extrudeSide(bonnet, 2 * HALF, BEV, null, 0.05),
-      ...[-1, 1].map(s => extrudeSide(sideOutline, 0.07, 0.015, null, 0.015).translate(s * (HALF - 0.035), 0, 0)),
-      bx(2 * HALF, 0.44, 0.07, 0, 0.54, TAILZ + 0.035),
+      ...[-1, 1].map(s => extrudeSide(sideOutline, 0.08, 0.02, null, 0.02).translate(s * (HALF - 0.04), 0, 0)),
+      bx(2 * HALF, 0.46, 0.07, 0, 0.55, TAILZ + 0.035),
     ]), low(0.3, 0.8, [0.66, 0.6, 0.52]))), paint);
+    // cream: a flat cap over each wheel, the bench seat, the rear bench's cushion
+    const cream = lambert(0xe9e2cc);
+    parts(group, k + 'cream', cream, () => [
+      ...[-1, 1].flatMap(s => [AF, AR].map(z => bx(0.28, 0.05, 0.74, s * (car.hw - 0.14), 0.67, z))),
+      bx(1.02, 0.13, 0.5, 0, 0.43, -0.05), bx(1.02, 0.42, 0.1, 0, 0.68, -0.36, -0.15),
+    ]);
     parts(group, k + 'black', TRIM, () => [
-      bx(0.88, 0.06, 1.95, 0, 0.3, -0.5),                 // the floor of the tub
-      bx(0.5, 0.26, 0.03, 0, 0.5, FZ),                     // the grille panel
-      ...[-2, -1, 0, 1, 2].map(i => bx(0.05, 0.22, 0.04, i * 0.09, 0.5, FZ - 0.005)),
-      // the windscreen frame: foot bar, top bar, two raked posts
-      bx(0.9, 0.05, 0.06, 0, 0.87, 0.38), bx(0.9, 0.05, 0.05, 0, 1.3, 0.3),
-      ...[-1, 1].map(s => bx(0.04, 0.44, 0.04, s * 0.44, 1.085, 0.34, -0.184)),
-      // the steering wheel and its column
-      ...[0].map(() => new THREE.TorusGeometry(0.13, 0.02, 5, 12).rotateX(-1.1).translate(0.24, 0.86, 0.2)),
-      new THREE.CylinderGeometry(0.02, 0.02, 0.26, 6).rotateX(-0.9).translate(0.24, 0.76, 0.3),
+      bx(2 * HALF - 0.08, 0.06, 1.95, 0, 0.3, -0.5),              // the floor of the tub
+      bx(0.64, 0.32, 0.03, 0, 0.55, FZ),                           // the grille's dark face
+      bx(0.96, 0.05, 0.06, 0, 0.88, 0.38), bx(0.96, 0.05, 0.05, 0, 1.34, 0.3), // the windscreen frame: foot, top
+      ...[-1, 1].map(s => bx(0.04, 0.48, 0.04, s * 0.48, 1.1, 0.34, -0.15)),    // and the two upright posts
+      new THREE.TorusGeometry(0.14, 0.02, 5, 12).rotateX(-1.1).translate(0.3, 0.88, 0.2), // the steering wheel
+      new THREE.CylinderGeometry(0.02, 0.02, 0.26, 6).rotateX(-0.9).translate(0.3, 0.77, 0.3),
     ]);
-    parts(group, k + 'glass', GLASS, () => [slopeGlass([0.36, 0.9], [0.3, 1.28], 0.4, 0.4, 0.006)]);
+    parts(group, k + 'glass', GLASS, () => [slopeGlass([0.36, 0.92], [0.31, 1.31], 0.45, 0.45, 0.006)]);
     parts(group, k + 'chrome', CHROME, () => [
-      bx(1.0, 0.07, 0.08, 0, 0.31, FZ + 0.03), bx(1.0, 0.07, 0.08, 0, 0.31, BZ - 0.03),
-      ...[-1, 1].map(s => dsc(0.1, 0.03, s * 0.33, 0.54, FZ + 0.01, 14)),
+      ...[0.47, 0.54, 0.61, 0.68].map(y => bx(0.58, 0.035, 0.03, 0, y, FZ + 0.02)), // the grille's slats
+      bx(1.34, 0.07, 0.08, 0, 0.33, FZ + 0.03),                                       // front bumper
+      bx(1.34, 0.07, 0.08, 0, 0.33, BZ - 0.03),                                       // rear bumper
+      ...[-1, 1].map(s => dsc(0.125, 0.06, s * 0.46, 0.99, 1.27, 14)),                 // the lamps' rims, on top of the bonnet
     ]);
-    parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => dsc(0.075, 0.03, s * 0.33, 0.54, FZ + 0.02, 14)));
+    parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => blob(0.1, 0.1, 0.11, s * 0.46, 0.99, 1.3, [12, 7])));
     parts(group, k + 'amber', AMBER, () => [
-      ...[-1, 1].map(s => bx(0.12, 0.05, 0.03, s * 0.33, 0.42, FZ + 0.005)),
-      ...[-1, 1].map(s => bx(0.12, 0.05, 0.03, s * 0.36, 0.5, BZ - 0.006)),
+      ...[-1, 1].map(s => bx(0.12, 0.05, 0.03, s * 0.46, 0.43, FZ + 0.005)),
+      ...[-1, 1].map(s => bx(0.12, 0.05, 0.03, s * 0.5, 0.46, BZ - 0.006)),
     ]);
-    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.12, 0.12, 0.03, s * 0.36, 0.62, BZ - 0.006)));
-    // two bare seats (cushion and raked back), the rear bed's load
-    parts(group, k + 'seat', SEAT, () => [-1, 1].flatMap(s => [bx(0.42, 0.12, 0.5, s * 0.24, 0.4, -0.05), bx(0.42, 0.4, 0.1, s * 0.24, 0.64, -0.34, -0.15)]));
-    parts(group, k + 'crate', WOOD, () => [bx(0.44, 0.36, 0.44, -0.2, 0.51, -1.05), bx(0.3, 0.22, 0.3, 0.22, 0.44, -0.95, 0, 0.35)]);
-    parts(group, k + 'can', CAN, () => [bx(0.2, 0.34, 0.12, 0.3, 0.5, -0.55)]);
-    parts(group, k + 'roll', CANVAS, () => [new THREE.CylinderGeometry(0.1, 0.1, 0.88, 8).rotateZ(Math.PI / 2).translate(0, 0.43, -1.34)]);
+    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.12, 0.12, 0.03, s * 0.5, 0.6, BZ - 0.006)));
+    // the rear bed's load: a crate, a jerrycan, a canvas roll across the tailgate end
+    parts(group, k + 'crate', WOOD, () => [bx(0.5, 0.36, 0.5, -0.25, 0.51, -0.95), bx(0.32, 0.22, 0.32, 0.3, 0.44, -0.8, 0, 0.35)]);
+    parts(group, k + 'can', CAN, () => [bx(0.2, 0.34, 0.12, 0.42, 0.5, -1.2)]);
+    parts(group, k + 'roll', CANVAS, () => [new THREE.CylinderGeometry(0.1, 0.1, 1.0, 8).rotateZ(Math.PI / 2).translate(0, 0.43, -1.36)]);
+    // the spare wheel on the tailgate
+    place(group, shared(k + 'sparetyre', () => new THREE.CylinderGeometry(0.27, 0.27, 0.13, 14).rotateX(Math.PI / 2)), TYRE, 0, 0.6, BZ - 0.06);
+    place(group, shared(k + 'sparehub', () => new THREE.CylinderGeometry(0.14, 0.14, 0.15, 10).rotateX(Math.PI / 2)), HUB, 0, 0.6, BZ - 0.06);
     for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, k, R, TW, s * WX, z, 14);
     group.userData = { body, animate: () => {}, livery: () => {} };
     return group;

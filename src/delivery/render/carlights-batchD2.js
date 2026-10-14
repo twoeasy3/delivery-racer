@@ -9,11 +9,11 @@ export const BATCH_D2_LAMPS = {
     tail: [{ at: [0.8, 1.04, -2.385], size: [0.2, 0.12], mirror: true }],
     blink: [{ at: [0.64, 0.74, 2.07], size: [0.16, 0.07], mirror: true }, { at: [0.8, 0.8, -2.485], size: [0.2, 0.06], mirror: true, red: true }],
   },
-  // round lamps either side of the slatted grille, amber lenses under them; small square tail lamps on the tailgate (each
+  // round lamps either side of the slatted grille, amber lenses under them; round lamps standing proud on the bonnet; small square tail lamps on the tailgate beside the spare wheel (each
   // brakes whole), amber lenses under them
   moke: {
-    head: [{ at: [0.33, 0.54, 1.585], size: [0.13, 0.13], round: true, mirror: true }],
-    tail: [{ at: [0.36, 0.62, -1.551], size: [0.12, 0.12], mirror: true }],
-    blink: [{ at: [0.33, 0.42, 1.57], size: [0.12, 0.05], mirror: true }, { at: [0.36, 0.5, -1.551], size: [0.12, 0.05], mirror: true }],
+    head: [{ at: [0.46, 0.99, 1.407], size: [0.18, 0.18], round: true, mirror: true }],
+    tail: [{ at: [0.5, 0.6, -1.551], size: [0.12, 0.12], mirror: true }],
+    blink: [{ at: [0.46, 0.43, 1.57], size: [0.12, 0.05], mirror: true }, { at: [0.5, 0.46, -1.551], size: [0.12, 0.05], mirror: true }],
   },
 };
