@@ -102,6 +102,7 @@ if (opt('levels', false) || opt('cars', false) || shots.some(([, address]) => ad
   Object.assign(CINE, { 'neon-edge': '&at=300&ff=2&car=knifeedge' }); // (Friday's: the elevated expressway at night between the towers, the Knife-Edge on it)
   Object.assign(CINE, { 'endurance-road': '&at=60&ff=2&car=windsong&cineout=-1&cineup=10&cineback=30' }); // (Saturday's: the grandstand on the start straight, the Wind-Song and its rival, from above the road: the usual place is inside the stand)
   Object.assign(CINE, { 'hong-kong': '&at=400&ff=1&car=postvan' }); // (Hong Kong Harbour: the first ferry pier's clock tower and lanterns ahead on the promenade, the neon and the towers on the left; a tier-6 car, so the level starts)
+  Object.assign(CINE, { 'jungle-highway': '&at=900&ff=1&cineout=-1&cineup=9&cineback=28' }); // (Jungle Highway, hidden: the first bridge's old truss overgrown ahead, the wet jungle either side, a macaw over the road; over the road because the usual place is in the tree wall)
   if (opt('levels', false)) {
     levels.LEVELS.forEach((level, i) => {
       if (!only(opt('levels')) || only(opt('levels')).includes(level.id)) shots.push([level.id, `?autostart${side}&level=${i + 1}&ghost&cine${FF(level.id)}${CINE[level.id] || ''}`, !!PAIR.folder]);
@@ -112,6 +113,7 @@ if (opt('levels', false) || opt('cars', false) || shots.some(([, address]) => ad
       if (only(opt('levels')) && only(opt('levels')).includes(id)) shots.push([id, `?autostart${side}&hidden=${id}&ghost&cine${FF(id)}${CINE[id] || ''}`, !!PAIR.folder]);
     }
   }
+  if (opt('levels', false) && only(opt('levels'))?.includes('jungle-highway')) shots.push(['jungle-highway', `?autostart${side}&hidden=jungle-highway&ghost&cine${FF('jungle-highway')}${CINE['jungle-highway']}`, !!PAIR.folder]); // (a hidden level's picture, for when it is revealed)
   if (opt('cars', false)) {
     for (const car of [...cars.CARS, ...Object.values(cars.LEVEL_CARS), ...Object.values(cars.SECRET_CARS)]) {
       if (only(opt('cars')) && !only(opt('cars')).includes(car.id)) continue;

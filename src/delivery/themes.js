@@ -195,6 +195,9 @@ export const THEMES = {
   fallout: { sky: 0x9cc06e, ground: 0x6b6852, road: 0x3a3c3e, scenery: 'fallout', fogColor: 0xa9cc78, sets: ['pylons', 'checkpoint', 'plant', 'tankfarm', 'village'],
     target: { height: 4.2, beam: true }, // (up over the fence)
     light: { sky: 0xe4ffb8, ground: 0x3a3a2c, ambient: 1.3, sun: 0xf2ffd0, sunlight: 0.9 } },
+  // rainforest: the jungle highway (render/themes/rainforest.js): a muddy red-brown road between walls of tall trees and ferns, hanging vines, big leaves and bright flowers, warm rain (rain: true), mist in the gullies and shafts of light through the canopy, rope-and-plank bridges over the rivers, a waterfall far off, a ranger's hut
+  rainforest: { sky: 0xaec7b6, ground: 0x2c5a2e, road: 0x5c3a2a, scenery: 'rainforest', rain: true, line: 0xe9e0c6, centre: 0xe8b84a, fogColor: 0xa9c0ad, target: { offset: 2.4, height: 4.6, beam: true }, soft: { mud: 0x7a4a2c, track: 0x3a2214, puddle: 0x6b5438 },
+    light: { sky: 0xe4eed8, ground: 0x2f4a30, ambient: 1.15, sun: 0xfff0cf, sunlight: 0.8 } },
 };
 
 // ---- the themes' own obstacles ---------------------------------------------------------------------------
@@ -225,6 +228,7 @@ const OBSTACLES = {
   beach: { bale: 'beachBall' },
   hell: { cone: 'brimstone' },
   fallout: { crate: 'wasteDrum' }, // (a yellow drum of waste, the trefoil on it; the cones and barriers are a checkpoint's own)
+  rainforest: { crate: 'bananaCrate', bale: 'fallenLog', cone: 'termiteMound' }, // (a crate of bananas, a pile of fallen logs, a termite mound)
   hongkong: { crate: 'hawkerCart', bale: 'bagStack' }, // (a hawker's cart under its awning; a heap of red-white-blue bags; the cones are roadworks and stay)
   // (the port keeps its crates, the farm and the Wild West their bales: there they belong)
 };

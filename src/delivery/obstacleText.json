@@ -24,5 +24,8 @@
   "brimstone": { "name": "Spike of brimstone", "blurb": "Stands in for a cone in hell." },
   "wasteDrum": { "name": "Drum of waste", "blurb": "Stands in for a crate in the fallout zone." },
   "hawkerCart": { "name": "Hawker's cart", "blurb": "Stands in for a crate in Hong Kong." },
-  "bagStack": { "name": "Heap of bags", "blurb": "Stands in for a bale in Hong Kong." }
+  "bagStack": { "name": "Heap of bags", "blurb": "Stands in for a bale in Hong Kong." },
+  "bananaCrate": { "name": "Crate of bananas", "blurb": "Stands in for a crate in the rainforest." },
+  "fallenLog": { "name": "Pile of logs", "blurb": "Stands in for a bale in the rainforest." },
+  "termiteMound": { "name": "Termite mound", "blurb": "Stands in for a cone in the rainforest." }
 }

@@ -625,6 +625,7 @@ export const CONFIG = {
     riceBasket: { damage: 31, speedKept: 0.75 },    // the rice terraces': a basket heaped with rice
     wasteDrum: { damage: 31, speedKept: 0.75 },     // the fallout zone's: a yellow drum of waste, the trefoil on it
     hawkerCart: { damage: 31, speedKept: 0.75 },    // Hong Kong's: a hawker's cart under its striped awning, a red lamp lit
+    bananaCrate: { damage: 31, speedKept: 0.75 },   // the rainforest's: a crate of bananas
     // ...for a bale:
     bagStack: { damage: 38, speedKept: 0.75 },      // Hong Kong's: a heap of red-white-blue nylon bags, strapped
     cameraDolly: { damage: 38, speedKept: 0.75 },   // the film studio's: a camera on its dolly
@@ -633,11 +634,13 @@ export const CONFIG = {
     sackStack: { damage: 38, speedKept: 0.75 },     // Mumbai's: a stack of jute sacks
     beachBall: { damage: 38, speedKept: 0.75 },     // the beach's: a great beach ball (it rolls, as a bale does)
     tumbleweed: { damage: 38, speedKept: 0.75 },    // the Wild West's, for a bale that drifts (it rolls too)
+    fallenLog: { damage: 38, speedKept: 0.75 },     // the rainforest's: a pile of fallen logs
     // ...for a cone:
     skittle: { damage: 3, speedKept: 0.94, light: true }, // the toy room's (an orange cone is lost on its orange track)
     cafeTable: { damage: 3, speedKept: 0.94, light: true },  // Venice's: a cafe table under its shut parasol
     wheelieBin: { damage: 3, speedKept: 0.94, light: true }, // the hood's
     snowdrift: { damage: 3, speedKept: 0.94, light: true },  // the snow's and the ice road's: a heap of snow with a stake in it
+    termiteMound: { damage: 3, speedKept: 0.94, light: true }, // the rainforest's: a tall mound of clay
     brimstone: { damage: 3, speedKept: 0.94, light: true },  // hell's: a glowing spike
     flagStand: { damage: 3, speedKept: 0.94, light: true },  // the Moon's, for a cone that drifts: a flag on a stand
     // ...for a rock (sized by its radius, as a rock is):

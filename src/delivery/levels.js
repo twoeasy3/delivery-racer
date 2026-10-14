@@ -470,6 +470,7 @@ import grandBoulevard from './levels/grand-boulevard.json';
 import turboQuay from './levels/turbo-quay.json';
 import neonEdge from './levels/neon-edge.json';
 import enduranceRoad from './levels/endurance-road.json';
+import jungleHighway from './levels/jungle-highway.json'; // (the rainforest's level, hidden for now: HIDDEN_LEVELS)
 import hongKong from './levels/hong-kong.json';
 import tokyo from './levels/tokyo.json';
 import mumbai from './levels/mumbai.json';
@@ -616,7 +617,7 @@ export const SCREENSAVER_LEVEL = chaos;
 // the hidden levels, so they are checked as every level is and can be tried from the address (?hidden=pocket-town, a run
 // that banks nothing); played for real only as the event's stage (events.js: a level of its own, id concept-strike-d<n>)
 export const EVENT_MAPS = { 'pocket-town': pocketTown, 'solstice-cliffs': solsticeCliffs, 'grand-boulevard': grandBoulevard, 'turbo-quay': turboQuay, 'neon-edge': neonEdge, 'endurance-road': enduranceRoad };
-export const HIDDEN_LEVELS = { testbed, 'grand-prix': grandPrix, 'gimmick-road': gimmickRoad, 'gimmick-road-2': gimmickRoad2, 'gimmick-road-3': gimmickRoad3, ...EVENT_MAPS };
+export const HIDDEN_LEVELS = { testbed, 'grand-prix': grandPrix, 'gimmick-road': gimmickRoad, 'gimmick-road-2': gimmickRoad2, 'gimmick-road-3': gimmickRoad3, 'jungle-highway': jungleHighway, ...EVENT_MAPS };
 // the class every race is run in: 'f1', 'gt' (GT road cars) or 'lmp' (Le Mans prototypes): the player's car
 // and the grid (the menu's Race cars button; ?gt or ?lmp for that class whatever it says)
 export const RACE_CLASSES = { f1: 'F1', gt: 'GT', lmp: 'LMP' };
