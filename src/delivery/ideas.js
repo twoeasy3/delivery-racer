@@ -63,6 +63,7 @@ import { IDEAS_BATCH_E4 } from './ideasBatchE4.js'; // (batch E4: the Sport Truc
 import { IDEAS_BATCH_D3 } from './ideasBatchD3.js'; // (batch D3: the Half-Track and the Sprint Hatch)
 import { IDEAS_BATCH_E3 } from './ideasBatchE3.js'; // (batch E3: the Crane Lorry, the Moor Rover)
 import { IDEAS_BATCH_D5 } from './ideasBatchD5.js'; // (batch D5: a trophy truck, an armoured limo; render/ideaModelsBatchD5.js)
+import { IDEAS_BATCH_E5 } from './ideasBatchE5.js'; // (batch E5: the Touring Car, the Hill-Climb Special; render/ideaModelsBatchE5.js)
 import { IDEAS_TOPUP_C } from './ideasTopupC.js'; // (top-up batch C: three ideas, models in render/ideaModelsTopupC.js)
 import { IDEAS_BATCH_D1 } from './ideasBatchD1.js';
 export const IDEA_CARS = [
@@ -205,5 +206,6 @@ export const IDEA_CARS = [
   ...IDEAS_BATCH_D4,
   ...IDEAS_BATCH_D5,
   ...IDEAS_BATCH_E3,
+  ...IDEAS_BATCH_E5,
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
