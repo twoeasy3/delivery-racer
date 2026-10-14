@@ -1,14 +1,13 @@
 {
   "id": "chianti-run",
   "theme": "tuscany",
-  "clock": { "good": 190, "evil": 140 },
+  "clock": { "good": 190, "evil": 145 },
   "tip": 250,
   "lanes": 2,
   "cargo": {"good": "winecase", "evil": "stolenbust"},
   "traffic": {"commuter": 0.2, "miata": 0.12, "wagon": 0.1, "van": 0.12, "pickup": 0.1, "minivan": 0.08, "sport": 0.06, "suv": 0.05, "lovebus": 0.05, "tractor": 0.04, "bus": 0.03, "police": 0.03},
   "trafficCount": 6,
   "oncomingCount": 6,
-  "pursuits": {"every": {"min": 70, "max": 100}},
   "segments": [
     {"length": 260, "curve": 0, "grade": 0.0},
     {"length": 160, "curve": 0.0012, "grade": 0.05},
@@ -62,15 +61,6 @@
   "iceCreamStops": [
     {"s": 1780, "lane": 1}
   ],
-  "lowSun": [
-    {"from": 3930, "to": 4150}
-  ],
-  "potholes": [
-    {"s": 880, "lane": 1, "r": 1.1},
-    {"s": 1320, "lane": 1, "r": 1},
-    {"s": 2900, "lane": 1, "r": 1.2},
-    {"s": 3830, "lane": 1, "r": 1.1}
-  ],
   "parked": [
     {"s": 340, "side": "right"},
     {"s": 2330, "side": "right"},
@@ -79,9 +69,6 @@
   "shoulderRows": [
     {"kind": "cone", "from": 2270, "to": 2380, "every": 22, "side": "both"},
     {"kind": "cone", "from": 2430, "to": 2550, "every": 22, "side": "both"}
-  ],
-  "drifters": [
-    {"from": 3470, "to": 3600, "kind": "bale", "count": 3, "pattern": "sweep"}
   ],
   "targets": [
     {"s": 300, "side": "right"},

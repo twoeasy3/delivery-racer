@@ -625,7 +625,7 @@
     "name": "Chianti Run",
     "description": {
       "good": "A case of Chianti for the harvest table. Ease the tractors round the hairpins, take the old humpback bridges gently and beat the train to the crossing.",
-      "evil": "A stolen marble bust, and it knows. Slingshot the hairpins, fly the humpbacks and send the tractors weeping into the vines. The carabinieri are not far behind."
+      "evil": "A stolen marble bust, and it knows. Slingshot the hairpins, fly the humpbacks, scatter the cows and leave the tractors weeping in the vines. Beat the train."
     },
     "cargo": { "good": "winecase", "evil": "stolenbust" }
   }
