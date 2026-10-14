@@ -13,10 +13,10 @@ export const BATCH_D5 = {
   // with an amber foot
   armouredlimo: {
     head: [
-      { at: [0.74, 0.88, 3.08], size: [0.17, 0.17], round: true, mirror: true },
-      { at: [0.74, 0.7, 3.08], size: [0.17, 0.17], round: true, mirror: true },
+      { at: [1.0, 0.88, 3.08], size: [0.17, 0.17], round: true, mirror: true },
+      { at: [1.0, 0.7, 3.08], size: [0.17, 0.17], round: true, mirror: true },
     ],
-    tail: [{ at: [0.8, 0.85, -3.081], size: [0.14, 0.36], mirror: true }],
-    blink: [{ at: [0.74, 0.54, 3.079], size: [0.12, 0.08], mirror: true }, { at: [0.8, 0.6, -3.081], size: [0.14, 0.08], mirror: true }],
+    tail: [{ at: [1.082, 0.85, -3.081], size: [0.18, 0.36], mirror: true }],
+    blink: [{ at: [1.0, 0.54, 3.079], size: [0.12, 0.08], mirror: true }, { at: [1.082, 0.6, -3.081], size: [0.18, 0.08], mirror: true }],
   },
 };

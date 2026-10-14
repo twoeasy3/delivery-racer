@@ -267,7 +267,8 @@ export const IDEA_MODELS_BATCH_D5 = {
   // run-flat wheels with plain hubs standing out of the slab sides (no wheel wells cut). Polished paint, darker low down, road grime on the lower flanks.
   armouredlimo: (car) => {
     const group = new THREE.Group();
-    const R = 0.46, TW = 0.34, AF = 1.95, AR = -1.75, WX = car.hw - TW / 2;
+    const F = car.hw / 1.02; // (x positions below were measured at hw 1.02: scaled out with the width)
+    const R = 0.46, TW = 0.4, AF = 1.95, AR = -1.75, WX = car.hw - TW / 2;
     const BEV = 0.06, ACROSS = 0.1, BW = car.hw * 2 - 0.14, HALF = BW / 2; // (a plain slab body; the tyres sit against its sides and stand out of them)
     const NOSE = 3.0, TAILZ = -3.0, AY = 0.3, GAP = 0.5;
     const k = 'al';
@@ -299,17 +300,17 @@ export const IDEA_MODELS_BATCH_D5 = {
       bx(BW + 0.1, 0.24, 0.2, 0, 0.44, FZ + 0.03), bx(BW + 0.1, 0.24, 0.2, 0, 0.44, BZ - 0.03),
       ...[-1, 1].map(s => bx(0.1, 0.16, AF - AR - 2 * GAP + 0.2, s * HALF, 0.4, (AF + AR) / 2)),
     ]);
-    parts(group, k + 'black', TRIM, () => [bx(0.9, 0.38, 0.03, 0, 0.7, FZ)]);
+    parts(group, k + 'black', TRIM, () => [bx(0.9 * F, 0.38, 0.03, 0, 0.7, FZ)]);
     parts(group, k + 'chrome', CHROME, () => [
-      bx(0.96, 0.05, 0.05, 0, 0.9, FZ + 0.01), bx(0.96, 0.05, 0.05, 0, 0.5, FZ + 0.01),
-      ...[-1, 1].map(s => bx(0.05, 0.4, 0.05, s * 0.46, 0.7, FZ + 0.01)),
-      ...[-3, -2, -1, 0, 1, 2, 3].map(i => bx(0.03, 0.34, 0.03, i * 0.12, 0.7, FZ + 0.02)),
+      bx(0.96 * F, 0.05, 0.05, 0, 0.9, FZ + 0.01), bx(0.96 * F, 0.05, 0.05, 0, 0.5, FZ + 0.01),
+      ...[-1, 1].map(s => bx(0.05, 0.4, 0.05, s * 0.46 * F, 0.7, FZ + 0.01)),
+      ...[-3, -2, -1, 0, 1, 2, 3].map(i => bx(0.03, 0.34, 0.03, i * 0.12 * F, 0.7, FZ + 0.02)),
     ]);
-    parts(group, k + 'lamp', LAMP, () => [-1, 1].flatMap(s => [0.88, 0.7].map(y => dsc(0.09, 0.03, s * 0.74, y, FZ + 0.005, 0, 14))));
-    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.14, 0.36, 0.03, s * 0.8, 0.85, BZ - 0.006)));
+    parts(group, k + 'lamp', LAMP, () => [-1, 1].flatMap(s => [0.88, 0.7].map(y => dsc(0.09, 0.03, s * 0.74 * F, y, FZ + 0.005, 0, 14))));
+    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.18, 0.36, 0.03, s * 0.8 * F, 0.85, BZ - 0.006)));
     parts(group, k + 'amber', AMBER, () => [
-      ...[-1, 1].map(s => bx(0.12, 0.08, 0.03, s * 0.74, 0.54, FZ + 0.004)),
-      ...[-1, 1].map(s => bx(0.14, 0.08, 0.03, s * 0.8, 0.6, BZ - 0.006)),
+      ...[-1, 1].map(s => bx(0.12, 0.08, 0.03, s * 0.74 * F, 0.54, FZ + 0.004)),
+      ...[-1, 1].map(s => bx(0.18, 0.08, 0.03, s * 0.8 * F, 0.6, BZ - 0.006)),
     ]);
     // road grime low on both flanks
     const X = HALF + 0.008;
