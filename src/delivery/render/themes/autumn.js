@@ -24,7 +24,6 @@ const LEAVES = [0xb23a1c, 0xd9741f, 0xe0a62e, 0x8a4a22, 0xc4501c, 0xe8b840];
 const CARPET = [0xa8401c, 0xb85a1c, 0xc99a2e, 0x7a4a24, 0xc4601e, 0xb8903a, 0x8a3a1c]; // (the verge's: duller and browner than the leaves in the air)
 
 export const autumn = ({ theme, offRoads, beside, inJunction, levelGroup }) => {
-  const T0 = performance.now();
   // (laid out the same every time: a seed of the level's own)
   let seed = 41 + (LEVEL.id || '').length * 197;
   const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
