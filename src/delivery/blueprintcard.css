@@ -32,6 +32,12 @@
 .bp-card.kind-key .bp-art { background:
   repeating-conic-gradient(from 0deg at 50% 62%, rgba(255, 255, 255, .26) 0 6deg, transparent 6deg 15deg),
   radial-gradient(circle at 50% 62%, #ffe27a 0, #ffbe2e 30%, #ff3fae 75%, #b01a86 100%); }
+
+/* an EPIC key car's blueprints (Fishbowl, Midsummer...: the owner, 14-Oct, "Epic Key Car blueprints should have a different background as well"):
+   the same sunburst, but in the epic card's own purple and cyan instead of the gold and magenta of the Legendary key cars' */
+.bp-card.kind-key.r-epic .bp-art { background:
+  repeating-conic-gradient(from 0deg at 50% 62%, rgba(255, 255, 255, .26) 0 6deg, transparent 6deg 15deg),
+  radial-gradient(circle at 50% 62%, #d9f6ff 0, #7fd9ff 28%, var(--rc) 62%, var(--rc-deep) 100%); }
 @keyframes bp-shine { from { background-position: 0 0, 0 0, 130% 0, 0 0; } to { background-position: 0 0, 0 0, -90% 0, 0 0; } }
 @media (prefers-reduced-motion: reduce) { .bp-card.kind-blueprint.r-legendary .bp-art { animation: none; } }
 .bp-art::after { content: ''; position: absolute; inset: 0; pointer-events: none; /* (a sheen, and a floor shade under the car) */
