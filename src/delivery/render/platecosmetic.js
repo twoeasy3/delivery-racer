@@ -1,5 +1,5 @@
 // ---- the NUMBER PLATE cosmetic (the owner, 14-Oct: "Mark all existing number plates ... toggle the existing plate OFF when we equip one", then
-// plate DESIGNS as unlockable items and the TEXT written by the player; CHECKLIST 279, 285). Two pieces, both RENDER-ONLY like
+// plate DESIGNS as unlockable items and the TEXT written by the player; CHECKLIST 279, 286). Two pieces, both RENDER-ONLY like
 // render/wheelcosmetic.js: nothing is written onto a car's entry, a save, the cookie or the replay fingerprint (no rules module imports
 // this file), the choice lives in this browser's localStorage only.
 //
@@ -78,7 +78,9 @@ export const shownDesign = () => {
   const id = plateDesign();
   return askedDesign || ownsCosmetic('plate', id) ? id : 'stock';
 };
+let preview = null; // the text being typed (render/cosmeticsui.js): worn on the cars at once, saved only when confirmed
 export const plateText = () => {
+  if (preview) return preview.text;
   if (askedText != null) { let raw = askedText; try { raw = decodeURIComponent(askedText); } catch { /* (as typed) */ } return checkPlateText(raw.replace(/\+/g, ' ')).text; }
   if (Progress.noSave) return visitText || DEFAULT_TEXT;
   if (storedText === null) { storedText = DEFAULT_TEXT; try { const raw = localStorage.getItem(KEY_TEXT); if (raw) storedText = checkPlateText(raw).text; } catch { /* (no storage: the default) */ } }
@@ -100,12 +102,20 @@ export const setPlateDesign = (id) => {
 // the player's text, through the filter: { ok, text, reason } (text = what is worn: the cleaned text, or the default if it was empty or refused)
 export const setPlateText = (raw) => {
   const result = checkPlateText(raw);
+  preview = null;
   if (Progress.noSave) visitText = result.text;
   else { storedText = result.text; try { localStorage.setItem(KEY_TEXT, result.text); } catch { /* (no storage: for this visit) */ } }
   refresh();
   return result;
 };
+// the text as it is typed: worn live (every dressed car), checked by the filter, NOT saved; setPlateText(raw) saves it, previewPlateText(null) drops it
+export const previewPlateText = (raw) => {
+  preview = raw == null ? null : checkPlateText(raw);
+  refresh();
+  return preview;
+};
 export const resetPlate = () => {
+  preview = null;
   if (Progress.noSave) { visitDesign = 'stock'; visitText = DEFAULT_TEXT; }
   else { storedDesign = 'stock'; storedText = DEFAULT_TEXT; try { localStorage.removeItem(KEY_DESIGN); localStorage.removeItem(KEY_TEXT); } catch { /* (no storage) */ } }
   refresh();
@@ -176,7 +186,7 @@ const buildEnd = (model, end, anchor) => {
 
 // ---- dressing a model ----
 const planOf = (model) => model.userData.platePlan;
-export const platePlan = (model) => planOf(model) || null;
+export const platePlan = (model) => (model && planOf(model)) || null;
 // the model in its current state: plates on its ends (or none), the car's own plates shown or hidden to match
 const apply = (model) => {
   const info = model.userData.platePlan;

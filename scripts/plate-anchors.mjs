@@ -1,4 +1,4 @@
-// The NUMBER PLATE ANCHOR generator (CHECKLIST 285; src/delivery/render/plateanchors.js is the table's reader, render/plateanchorstable.js the
+// The NUMBER PLATE ANCHOR generator (CHECKLIST 286; src/delivery/render/plateanchors.js is the table's reader, render/plateanchorstable.js the
 // table this writes). For every car model it builds the model as the showroom does (render/showcar.js makeShowCar), takes the car's
 // existing plates off, and SHOOTS RAYS at the back and the front: a plate-sized grid of rays at each height, the first thing each ray
 // hits (glass, a lamp, a see-through part do not count as a place to stand a plate on), a plane fitted through the hits (its tilt is
@@ -161,7 +161,7 @@ try {
     if (!table.has(f.key)) table.set(f.key, { ...entryOf(f), by: car.id });
   }
   const variants = new Map();
-  for (const { group, car } of cars) {
+  for (const { car } of cars) {
     const f = found.get(car.id);
     if (!f || f.error || f.none) continue;
     const base = table.get(f.key);

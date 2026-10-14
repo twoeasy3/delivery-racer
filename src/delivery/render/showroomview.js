@@ -61,7 +61,7 @@ const flat = (map, opacity) => new THREE.MeshBasicMaterial({ map, transparent: t
 // (CLOSE = how much of the full distance is left); `closeup` is where it is heading, `zoom` how far it has got (0 = the whole car)
 const CLOSE = 0.5;
 let closeup = false, zoom = 0, alsoVisible = () => false;
-// the NUMBER PLATE close-up (CHECKLIST 285): the same ease, but turned to show one end of the car and aimed at its plate (closeEnd: 'rear' | 'front' | null = the wheels')
+// the NUMBER PLATE close-up (CHECKLIST 286): the same ease, but turned to show one end of the car and aimed at its plate (closeEnd: 'rear' | 'front' | null = the wheels')
 let closeEnd = null;
 const PLATE_VIEW = 0.62; // how much of the picture's width the plate is given (the camera stands back accordingly)
 let v = null; // the view: { el, canvas, ctx, car, evil, dark, scene, camera, turn, model, extra: [geometry, material], rxz, height, mid }
@@ -336,6 +336,7 @@ export const ShowroomView = {
   // another screen that shows the view (the Cosmetics screen): in sight while fn() says so
   also(fn) { alsoVisible = fn; },
   // the wheels close-up on or off (eased); stop() puts it back
+  get model() { return v?.model || null; },
   closeUp(on, end = null) { closeup = !!on; closeEnd = on && (end === 'rear' || end === 'front') ? end : null; },
   // whether the corner key may be drawn now (no sheet over the showroom: render/showroom.js says)
   keyWhen(fn) { keyVisible = fn; },

@@ -1,5 +1,5 @@
 // ---- the NUMBER PLATE TEXT: what a player may write on a plate, and the filter (the owner, 14-Oct: "write your own plate", with a
-// filter for abusive or obscene text; CHECKLIST 285). Pure functions, no storage, no DOM: render/platecosmetic.js keeps the chosen text and
+// filter for abusive or obscene text; CHECKLIST 286). Pure functions, no storage, no DOM: render/platecosmetic.js keeps the chosen text and
 // render/cosmeticsui.js has the field.
 //   sanitizePlateText(raw)  the typed text cut down to what a plate can show: A-Z 0-9 space dash, upper-cased, at most MAX_LEN characters
 //   checkPlateText(raw)     { ok, text, reason }: `text` is the plate to show: the clean text if it passes, else DEFAULT_TEXT.

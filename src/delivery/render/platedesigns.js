@@ -1,9 +1,9 @@
 // ---- the NUMBER PLATE DESIGNS: data in one place, and the code that draws one (the owner, 14-Oct: plate designs are unlockable items,
-// the text is the player's; CHECKLIST 285). Every plate is drawn in code on a small canvas (W x H = 256 x 64, about 64 KB), never an image
+// the text is the player's; CHECKLIST 286). Every plate is drawn in code on a small canvas (W x H = 256 x 64, about 64 KB), never an image
 // file. The formats are INVENTED and generic: no real country's registration, no real colour scheme claimed, no names. A design is:
 //   id, name         the registry key is plate:<id> (render/cosmetics.js)
 //   free             anyone has it; false = owned only when unlocked (Unlock everything: Absolutely does) -- the SHOP HOOK below
-//   price            a PLACEHOLDER for a later shop (nothing reads it yet: TODO CHECKLIST 285); registered with the item
+//   price            a PLACEHOLDER for a later shop (nothing reads it yet: TODO CHECKLIST 286); registered with the item
 //   bg, text         the plate's colour and its characters' colour; border: the frame line; edge: the dark rim round the plate
 //   stripe           optional { side: 'left' | 'top' | 'bottom', size (px), colour }
 //   shadow           optional colour of a drop shadow under the characters (an embossed look)
@@ -26,7 +26,7 @@ export const designById = (id) => PLATE_DESIGNS.find(d => d.id === id) || PLATE_
 
 const round = (ctx, x, y, w, h, r) => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); };
 // draw a plate (design d, text) over the whole of ctx's w x h canvas (a chip's small canvas uses the same drawing at its own size)
-export const drawPlate = (ctx, d, text, w = W, h = H) => {
+export const drawPlate = (ctx, d, text, w = W) => {
   const k = w / W; // (everything below is written for 256 x 64)
   ctx.save();
   ctx.scale(k, k);

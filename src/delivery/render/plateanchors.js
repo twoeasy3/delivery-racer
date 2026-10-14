@@ -1,4 +1,4 @@
-// ---- where a NUMBER PLATE goes on each car (the owner, 14-Oct: ends decided PER CAR; CHECKLIST 285). RENDER-ONLY, like the lamp table
+// ---- where a NUMBER PLATE goes on each car (the owner, 14-Oct: ends decided PER CAR; CHECKLIST 286). RENDER-ONLY, like the lamp table
 // (render/carlights.js CAR_LAMPS): keyed by the car's MODEL name (a Super, an earned reskin or a Legendary shares its base car's entry),
 // in car-local metres. The big table is GENERATED (render/plateanchorstable.js, by scripts/plate-anchors.mjs, which shoots rays at every
 // model's back and front and fits a plane); this file is what is written BY HAND on top of it, and the reader.
@@ -35,10 +35,9 @@ export const plateAnchorsFor = (car) => {
   const base = PLATE_VARIANTS[car.id] || PLATE_TABLE[key] || { r: null, f: null };
   const hand = { ...(HAND[key] || {}), ...(HAND[car.id] || {}) };
   const rear = toEnd('r' in hand ? hand.r : base.r), front = toEnd('f' in hand ? hand.f : base.f);
-  let ends = [];
   const strict = [rear && !rear.rough && 'rear', front && !front.rough && 'front'].filter(Boolean);
   const any = [rear && 'rear', front && 'front'].filter(Boolean);
-  ends = strict.length ? strict : any;
+  let ends = strict.length ? strict : any;
   if (hand.ends === 'rear' && rear) ends = ['rear'];
   else if (hand.ends === 'front' && front) ends = ['front'];
   else if (hand.ends === 'both') ends = any;
