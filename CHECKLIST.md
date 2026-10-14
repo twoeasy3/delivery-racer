@@ -3,6 +3,10 @@
 Working list, from the owner's ideas of 2026-10-09. `[x]` done, `[~]` partly done (see the note),
 `[ ]` not started, `[-]` built and then taken out. Each done item says what was and was not verified.
 
+## State on 14-Oct (read with `src/delivery/HANDOVER-orchestrator-14-Oct.md`)
+
+`main` is v1.1.127. Unmerged on the working branch: true speed (257), the four damage stages v2 (258, 262). Waiting on the owner: 259 (cosmetics set), 260 (next idea batch), 261 (level clocks after true speed). The rules for working here are in `CLOUD-AGENT-README.md`.
+
 ## New gimmicks
 
 - [x] 12. Drawbridge: bells, booms and a gap you either jump or wait at. Logic checked headless (`scripts/.hazards-check.mjs`); seen in a screenshot on Gimmick Road 2 (`?hidden=gimmick-road-2`); not played by hand, and in no real level yet. No swing bridge.

@@ -1,5 +1,7 @@
 # Delivery Racer: handover
 
+> **OUT OF DATE since 2026-10-14.** The counts and tables below (41 garage cars, 57 levels, "about 56,000 lines", 9 earned cars) describe 10-Oct. The newest state is in `HANDOVER-orchestrator-14-Oct.md` (same folder); read that first, then this file for how the game is put together.
+
 Updated on 2026-10-10 for whoever picks up the game in this repo. It covers where the game
 stands, how it is put together, how the owner likes changes made, and what is not verified.
 `README.md` beside this file has the file map, the address-bar shortcuts and the "adding content"
