@@ -29,7 +29,7 @@ export const UfoStrike = {
       this.t += dt;
       if (this.t >= U[this.phase]) {
         if (this.phase === 'arrive') { // hovering over the car now: everything on the road is doomed, and starts to burn at once
-          for (const car of Traffic.cars) if (car.active && !car.junction) car.ufoBurning = true;
+          for (const car of Traffic.cars) if (car.active && !car.junction && !Traffic.ghostly(car)) car.ufoBurning = true;
           this.burn = 0;
         }
         this.phase = NEXT[this.phase];
@@ -41,7 +41,7 @@ export const UfoStrike = {
     const rate = U.burnRate * Math.exp(U.burnGrowth * this.burn);
     let burning = false;
     for (const car of Traffic.cars) {
-      if (!car.active || !car.ufoBurning) continue;
+      if (!car.active || !car.ufoBurning || Traffic.ghostly(car)) continue;
       // the usual damage, so cars sour and may spin out as they burn, but with no critical hits
       // (a critical hit is a fixed chance per hit, and this is a hit every frame)
       hurt(car, rate * dt, 0);

@@ -101,7 +101,7 @@ export const BulletTrain = {
       this.carriage(i, box);
       const near = (o) => Math.abs(o.s - box.s) < box.hl + 12 && Math.abs(o.lat - box.lat) < box.hw + 6;
       for (const car of Traffic.cars) {
-        if (car.active && !car.junction && car.health > 0 && near(car) && Collision.overlap(box, car)) car.health = 0; // (it blows up: Collision.check)
+        if (car.active && !Traffic.ghostly(car) && !car.junction && car.health > 0 && near(car) && Collision.overlap(box, car)) car.health = 0; // (it blows up: Collision.check)
       }
       for (const o of Collision.obstacles) {
         if (o.gone || !near(o) || (o.kind === 'asteroid' && o.h - o.r > T.height)) continue;

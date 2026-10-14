@@ -1,0 +1,629 @@
+{
+ "id": "haunted-hollow",
+ "theme": "halloween",
+ "clock": { "good": 175, "evil": 135 },
+ "tip": 190,
+ "lanes": 4,
+ "cargo": {
+  "good": "pumpkin",
+  "evil": "bats"
+ },
+ "traffic": {
+  "pickup": 0.2,
+  "wagon": 0.14,
+  "van": 0.12,
+  "minivan": 0.1,
+  "jeep": 0.08,
+  "junker": 0.1,
+  "postvan": 0.06,
+  "hearse": 0.05,
+  "bus": 0.05,
+  "commuter": 0.06,
+  "police": 0.03
+ },
+ "trafficCount": 8,
+ "oncomingCount": 7,
+ "emergencies": {
+  "every": {
+   "min": 50,
+   "max": 80
+  }
+ },
+ "segments": [
+  {
+   "length": 300,
+   "curve": 0
+  },
+  {
+   "length": 260,
+   "curve": 0.0022
+  },
+  {
+   "length": 240,
+   "curve": 0
+  },
+  {
+   "length": 300,
+   "curve": -0.0028
+  },
+  {
+   "length": 60,
+   "curve": 0,
+   "ease": 6
+  },
+  {
+   "length": 36,
+   "curve": 0,
+   "grade": 0.14,
+   "ease": 6
+  },
+  {
+   "length": 36,
+   "curve": 0,
+   "grade": -0.14,
+   "ease": 6
+  },
+  {
+   "length": 68,
+   "curve": 0,
+   "ease": 6
+  },
+  {
+   "length": 260,
+   "curve": 0.0025
+  },
+  {
+   "length": 300,
+   "curve": 0
+  },
+  {
+   "length": 320,
+   "curve": -0.003
+  },
+  {
+   "length": 240,
+   "curve": 0
+  },
+  {
+   "length": 280,
+   "curve": 0.0026
+  },
+  {
+   "length": 260,
+   "curve": 0
+  },
+  {
+   "length": 300,
+   "curve": -0.0022
+  },
+  {
+   "length": 200,
+   "curve": 0
+  },
+  {
+   "length": 260,
+   "curve": 0.0028
+  },
+  {
+   "length": 240,
+   "curve": 0
+  },
+  {
+   "length": 280,
+   "curve": -0.0025
+  },
+  {
+   "length": 200,
+   "curve": 0
+  }
+ ],
+ "zones": [
+  {
+   "id": "hhPatch",
+   "from": 0,
+   "to": 780,
+   "scenery": "patch"
+  },
+  {
+   "id": "hhWoods",
+   "from": 780,
+   "to": 1500,
+   "scenery": "woods"
+  },
+  {
+   "id": "hhGraves",
+   "from": 1500,
+   "to": 2250,
+   "scenery": "graveyard"
+  },
+  {
+   "id": "hhHill",
+   "from": 2250,
+   "to": 3250,
+   "scenery": "hill"
+  },
+  {
+   "id": "hhVillage",
+   "from": 3250,
+   "to": 4440,
+   "scenery": "village"
+  }
+ ],
+ "tunnels": [
+  {
+   "from": 2720,
+   "to": 2960
+  }
+ ],
+ "fog": [
+  {
+   "from": 900,
+   "to": 1120
+  },
+  {
+   "from": 1980,
+   "to": 2200
+  }
+ ],
+ "crossings": [
+  {
+   "s": 3360
+  }
+ ],
+ "shoulderRows": [
+  {
+   "kind": "cone",
+   "from": 3320,
+   "to": 3720,
+   "every": 40,
+   "side": "both"
+  }
+ ],
+ "parked": [
+  {
+   "s": 520,
+   "side": "right"
+  },
+  {
+   "s": 1050,
+   "side": "left"
+  },
+  {
+   "s": 2150,
+   "side": "right"
+  },
+  {
+   "s": 3500,
+   "side": "left"
+  }
+ ],
+ "targets": [
+  {
+   "s": 600,
+   "side": "left"
+  },
+  {
+   "s": 1700,
+   "side": "right"
+  },
+  {
+   "s": 2500,
+   "side": "left"
+  },
+  {
+   "s": 3640,
+   "side": "right"
+  }
+ ],
+ "pickups": [
+  {
+   "type": "cash5",
+   "s": 150,
+   "lane": 2
+  },
+  {
+   "type": "cash5",
+   "s": 150,
+   "lane": 3
+  },
+  {
+   "type": "turbo",
+   "s": 230,
+   "lane": 3
+  },
+  {
+   "type": "cash10",
+   "s": 410,
+   "lane": 3
+  },
+  {
+   "type": "wrench",
+   "s": 540,
+   "lane": 2
+  },
+  {
+   "type": "cash10",
+   "s": 660,
+   "lane": 2
+  },
+  {
+   "type": "mystery",
+   "s": 660,
+   "lane": 3
+  },
+  {
+   "type": "cash5",
+   "s": 840,
+   "lane": 3
+  },
+  {
+   "type": "cash10",
+   "s": 905,
+   "lane": 2
+  },
+  {
+   "type": "cash10",
+   "s": 905,
+   "lane": 3
+  },
+  {
+   "type": "timePlus",
+   "s": 960,
+   "lane": 2
+  },
+  {
+   "type": "cash20",
+   "s": 1075,
+   "lane": 2
+  },
+  {
+   "type": "cash10",
+   "s": 1075,
+   "lane": 3
+  },
+  {
+   "type": "turbo",
+   "s": 1140,
+   "lane": 3
+  },
+  {
+   "type": "cash10",
+   "s": 1215,
+   "lane": 2
+  },
+  {
+   "type": "cash5",
+   "s": 1250,
+   "lane": 3
+  },
+  {
+   "type": "wrench",
+   "s": 1380,
+   "lane": 3
+  },
+  {
+   "type": "ghost",
+   "s": 1400,
+   "lane": 2
+  },
+  {
+   "type": "cash10",
+   "s": 1560,
+   "lane": 1
+  },
+  {
+   "type": "cash10",
+   "s": 1620,
+   "lane": 3
+  },
+  {
+   "type": "cash20",
+   "s": 1745,
+   "lane": 2
+  },
+  {
+   "type": "cash20",
+   "s": 1745,
+   "lane": 3
+  },
+  {
+   "type": "turbo",
+   "s": 1830,
+   "lane": 2
+  },
+  {
+   "type": "cash10",
+   "s": 1890,
+   "lane": 3
+  },
+  {
+   "type": "cash10",
+   "s": 1970,
+   "lane": 2
+  },
+  {
+   "type": "wrench",
+   "s": 2090,
+   "lane": 2
+  },
+  {
+   "type": "cash20",
+   "s": 2150,
+   "lane": "right"
+  },
+  {
+   "type": "cash10",
+   "s": 2300,
+   "lane": 2
+  },
+  {
+   "type": "armour",
+   "s": 2300,
+   "lane": 3
+  },
+  {
+   "type": "cash10",
+   "s": 2520,
+   "lane": 3
+  },
+  {
+   "type": "cash20",
+   "s": 2600,
+   "lane": 2
+  },
+  {
+   "type": "cash5",
+   "s": 2600,
+   "lane": 3
+  },
+  {
+   "type": "timePlus",
+   "s": 2800,
+   "lane": 2
+  },
+  {
+   "type": "mystery",
+   "s": 2800,
+   "lane": 3
+  },
+  {
+   "type": "cash5",
+   "s": 2880,
+   "lane": 2
+  },
+  {
+   "type": "cash5",
+   "s": 2880,
+   "lane": 3
+  },
+  {
+   "type": "cash10",
+   "s": 3000,
+   "lane": 2
+  },
+  {
+   "type": "wrench",
+   "s": 3060,
+   "lane": 3
+  },
+  {
+   "type": "passenger",
+   "s": 3180,
+   "lane": 3
+  },
+  {
+   "type": "cash20",
+   "s": 3250,
+   "lane": 3
+  },
+  {
+   "type": "turbo",
+   "s": 3290,
+   "lane": 2
+  },
+  {
+   "type": "cash10",
+   "s": 3420,
+   "lane": 3
+  },
+  {
+   "type": "cash5",
+   "s": 3480,
+   "lane": 2
+  },
+  {
+   "type": "cash10",
+   "s": 3480,
+   "lane": 3
+  },
+  {
+   "type": "cash20",
+   "s": 3560,
+   "lane": 2
+  },
+  {
+   "type": "timePlus",
+   "s": 3680,
+   "lane": 3
+  },
+  {
+   "type": "wrench",
+   "s": 3760,
+   "lane": 3
+  },
+  {
+   "type": "cash10",
+   "s": 3820,
+   "lane": 2
+  },
+  {
+   "type": "turbo",
+   "s": 3905,
+   "lane": 2
+  },
+  {
+   "type": "cash20",
+   "s": 3905,
+   "lane": 3
+  },
+  {
+   "type": "cash10",
+   "s": 4100,
+   "lane": 2
+  },
+  {
+   "type": "cash10",
+   "s": 4100,
+   "lane": 3
+  },
+  {
+   "type": "cash20",
+   "s": 4300,
+   "lane": 2
+  },
+  {
+   "type": "cash5",
+   "s": 4300,
+   "lane": 3
+  },
+  {
+   "type": "cash10",
+   "s": 4380,
+   "lane": 3
+  }
+ ],
+ "obstacles": [
+  {
+   "s": 340,
+   "lane": 2,
+   "kind": "barrier"
+  },
+  {
+   "s": 480,
+   "lane": 3,
+   "kind": "cone"
+  },
+  {
+   "s": 620,
+   "lane": 2,
+   "kind": "cone"
+  },
+  {
+   "s": 700,
+   "lane": 3,
+   "kind": "crate"
+  },
+  {
+   "s": 760,
+   "lane": 2,
+   "kind": "crate"
+  },
+  {
+   "s": 1010,
+   "lane": 3,
+   "kind": "crate"
+  },
+  {
+   "s": 1330,
+   "lane": 2,
+   "kind": "bale"
+  },
+  {
+   "s": 1450,
+   "lane": 2,
+   "kind": "crate"
+  },
+  {
+   "s": 1500,
+   "lane": 3,
+   "kind": "crate"
+  },
+  {
+   "s": 1700,
+   "lane": 3,
+   "kind": "sign"
+  },
+  {
+   "s": 1930,
+   "lane": 2,
+   "kind": "crate"
+  },
+  {
+   "s": 2010,
+   "lane": 3,
+   "kind": "crate"
+  },
+  {
+   "s": 2230,
+   "lane": 3,
+   "kind": "bale"
+  },
+  {
+   "s": 2420,
+   "lane": 3,
+   "kind": "crate"
+  },
+  {
+   "s": 2640,
+   "lane": 3,
+   "kind": "cone"
+  },
+  {
+   "s": 3020,
+   "lane": 2,
+   "kind": "cone"
+  },
+  {
+   "s": 3100,
+   "lane": 2,
+   "kind": "crate"
+  },
+  {
+   "s": 3300,
+   "lane": 3,
+   "kind": "barrier"
+  },
+  {
+   "s": 3560,
+   "lane": 3,
+   "kind": "crate"
+  },
+  {
+   "s": 3600,
+   "lane": 2,
+   "kind": "crate"
+  },
+  {
+   "s": 3880,
+   "lane": 2,
+   "kind": "bale"
+  },
+  {
+   "s": 4050,
+   "lane": 3,
+   "kind": "crate"
+  },
+  {
+   "s": 4200,
+   "lane": 3,
+   "kind": "bale"
+  }
+ ],
+ "ghostTraffic": [
+  {
+   "from": 860,
+   "to": 1110,
+   "density": 0.4
+  },
+  {
+   "from": 1650,
+   "to": 2160,
+   "density": 0.4
+  },
+  {
+   "from": 2380,
+   "to": 2700,
+   "density": 0.35
+  }
+ ]
+}

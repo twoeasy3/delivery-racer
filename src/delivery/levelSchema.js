@@ -250,6 +250,8 @@ export const FIELDS = {
       sea: num('Sea (m off the road)', { min: 0, max: 500 }) } },
   quietZones: { shape: 'stretch', group: 'zones', label: 'Quiet zone', help: 'Less traffic: only that share of the cars that would turn up there do.',
     settings: { density: num('Density (0 to 1)', { min: 0, max: 1, step: 0.05, required: true, init: 0.4 }) } },
+  ghostTraffic: { shape: 'stretch', group: 'zones', label: 'Ghost traffic', help: 'Some of the cars turning up here are ghosts: see-through and untouchable (nothing can hit or target them), flickering before each solid phase, when they are cars like any other. Driving through one upsets it.',
+    settings: { density: num('Share of the cars that are ghosts (0 to 1)', { min: 0, max: 1, step: 0.05, init: 0.35 }) } },
   trafficZones: { shape: 'stretch', group: 'zones', label: 'Traffic zone', span: 600, help: 'The traffic turning up is different: it sets the weights of the kinds it names over the level\'s (0 takes a kind away).',
     settings: { traffic: { type: 'mix', label: 'Traffic here', choices: VEHICLE_KINDS, required: true, init: { police: 0.05 } } } },
 

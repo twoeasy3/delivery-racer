@@ -30,6 +30,7 @@
   "books": { "name": "Returned Library Books", "blurb": "A pile of library books, returned." },
   "fruit": { "name": "New Neighbour's Fruit Basket", "blurb": "A fruit basket from the new neighbour." },
   "radio": { "name": "Grandad's Repaired Radio", "blurb": "A repaired radio, back to its owner." },
+  "pumpkin": { "name": "Carved Pumpkin", "blurb": "A carved pumpkin, candle lit, for the harvest ball." },
   "winecase": { "name": "Case of Chianti", "blurb": "A case of Chianti, six bottles, not a drop to spill." },
   "waterjugs": { "name": "Crate of Water Jugs", "blurb": "A crate of blue water jugs for the rally camp, slopping." },
   "parcel": { "name": "Ticking Parcel", "blurb": "A parcel that ticks.", "states": ["Ticking","Fuse lit","About to blow"] },

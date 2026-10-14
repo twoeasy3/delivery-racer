@@ -188,6 +188,12 @@
 //              each (messages.json: zones, by id). (Their traffic: see trafficZones)
 //   quietZones [{ from, to, density }]: stretches with less traffic (a narrow bridge with no shoulder): only
 //              `density` (0-1) of the cars that would turn up there do; the rest turn up elsewhere
+//   ghostTraffic [{ from, to, density?, kinds? }]: stretches where some of the ordinary cars that turn up (`density` of them, 0 to 1; of
+//              `kinds`, a list of vehicle kinds: both if not said, CONFIG.ghostTraffic's) are GHOST CARS: pale, see-through, flickering
+//              between two phases on a cycle of their own. GHOSTLY, one is intangible and untargetable (no knock, no damage; nothing
+//              aims at it, wrecks it or infects it); after a flicker of CONFIG.ghostTraffic.flicker s it is SOLID, a car of its
+//              kind in every way. The player driving through a ghostly one upsets it for a few seconds (redder, one honk, its
+//              next solid phase sooner, never without its flicker). See traffic.js (ghostMark, phantomState) and collision.js
 //   trafficZones [{ from, to, traffic: { kind: weight } }]: stretches where the traffic turning up is
 //              different: each sets the weights of the kinds it names over the level's "traffic" (0 takes
 //              a kind away), a later one over an earlier. With police only in such stretches, a police
@@ -517,6 +523,7 @@ import fallout from './levels/fallout.json';
 import shift from './levels/shift.json';
 import descent from './levels/descent.json';
 import monsoon from './levels/monsoon.json';
+import hauntedHollow from './levels/haunted-hollow.json'; // (hidden: HIDDEN_LEVELS)
 import chiantiRun from './levels/chianti-run.json'; // (hidden: HIDDEN_LEVELS below)
 import dakarDash from './levels/dakar-dash.json';
 
@@ -622,6 +629,7 @@ export const SCREENSAVER_LEVEL = chaos;
 export const EVENT_MAPS = { 'pocket-town': pocketTown, 'solstice-cliffs': solsticeCliffs, 'grand-boulevard': grandBoulevard, 'turbo-quay': turboQuay, 'neon-edge': neonEdge, 'endurance-road': enduranceRoad };
 export const HIDDEN_LEVELS = { testbed, 'grand-prix': grandPrix, 'gimmick-road': gimmickRoad, 'gimmick-road-2': gimmickRoad2, 'gimmick-road-3': gimmickRoad3, 'chianti-run': chiantiRun, ...EVENT_MAPS };
 HIDDEN_LEVELS['dakar-dash'] = dakarDash; // Dakar Dash (the desert dunes): hidden until the owner reveals it, ?hidden=dakar-dash
+HIDDEN_LEVELS['haunted-hollow'] = hauntedHollow; // Haunted Hollow (Halloween): hidden until the owner reveals it, ?hidden=haunted-hollow
 // the class every race is run in: 'f1', 'gt' (GT road cars) or 'lmp' (Le Mans prototypes): the player's car
 // and the grid (the menu's Race cars button; ?gt or ?lmp for that class whatever it says)
 export const RACE_CLASSES = { f1: 'F1', gt: 'GT', lmp: 'LMP' };

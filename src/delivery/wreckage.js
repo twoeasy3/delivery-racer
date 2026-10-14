@@ -158,7 +158,7 @@ export const Wreckage = {
       // landed, it wrecks whatever is in it, or runs into it (a little more than it covers, as it lands)
       const margin = e.kind === 'blast' ? 0 : e.t < W.flight + 0.3 || e.sliding ? W.blast : 0;
       for (const car of Traffic.cars) {
-        if (car.active && !car.junction && car.health > 0 && this.covers(e, car, margin)) car.health = 0; // (it blows up: Collision.check)
+        if (car.active && !Traffic.ghostly(car) && !car.junction && car.health > 0 && this.covers(e, car, margin)) car.health = 0; // (it blows up: Collision.check)
       }
       if (!Player.active || Player.shield > 0 || Player.health <= 0 || !this.covers(e, Player, margin)) continue;
       // (SHELVED: no car has the 'tow' trait now. The Tow Truck cleared a wreck: once it has come to rest, driving into it drags it out of the lanes)

@@ -33,6 +33,7 @@ const THEME_FILES = {
   rice: () => import('./rice.js'),
   // (batch D: Wild West, favela, rice terraces: new themes go above this line)
   fallout: () => import('./fallout.js'),
+  halloween: () => import('./halloween.js'),
   tuscany: () => import('./tuscany.js'),
   desert: () => import('./desert.js'),
 };

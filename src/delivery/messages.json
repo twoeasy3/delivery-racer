@@ -182,7 +182,12 @@
     "zonePylons": ["Under the pylons - the first green is on the right"],
     "zonePlant": ["The plant - keep out of the green, mind the drums"],
     "zoneTanks": ["The tank farm - the flare still burns"],
-    "zoneVillage": ["The dead village - the bypass is the clean way round"]
+    "zoneVillage": ["The dead village - the bypass is the clean way round"],
+    "hhPatch": ["The pumpkin patch - every one of them is watching"],
+    "hhWoods": ["The Hollow woods - mind the little stone bridge"],
+    "hhGraves": ["Hollow Cemetery - dead slow, please"],
+    "hhHill": ["The house on the hill - every window lit"],
+    "hhVillage": ["Hollow Green - trick or treat, lamp posts and all"]
   },
   "bustCount": {
     "1": ["First Offence - "],

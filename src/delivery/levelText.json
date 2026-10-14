@@ -621,6 +621,17 @@
       "evil": "airhorn"
     }
   },
+  "haunted-hollow": {
+    "name": "Haunted Hollow",
+    "description": {
+      "good": "A carved pumpkin for the harvest ball. Through the fog, past the graveyard gates and the ghost cars, under the haunted hill and home by lantern light.",
+      "evil": "A cage of bats for the old house on the hill. Smash the pumpkin crates, fly the humpback bridge, race the ghost train and drive through the ghost cars."
+    },
+    "cargo": {
+      "good": "pumpkin",
+      "evil": "bats"
+    }
+  },
   "chianti-run": {
     "name": "Chianti Run",
     "description": {

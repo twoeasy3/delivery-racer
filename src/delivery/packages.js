@@ -104,7 +104,7 @@ export const Packages = (() => {
     }
     if (best) return best;
     for (const car of Traffic.cars) {
-      if (!car.active || car.courier) continue; // (a rival courier is no target: see CONFIG.rival)
+      if (!car.active || Traffic.ghostly(car) || car.courier) continue; // (a rival courier is no target: see CONFIG.rival)
       const dist = distance(car, Player) * (car.s < Player.s ? CONFIG.throwBehind : 1);
       if (dist < bestDist) { best = car; bestDist = dist; }
     }
@@ -113,7 +113,7 @@ export const Packages = (() => {
   const gunTarget = (gun) => {
     let best = null, bestDist = gun.range;
     for (const car of Traffic.cars) {
-      if (!car.active || car.courier || car.health <= 0 || sameSide(car, Player) || (!LEVEL.battle && !car.evil)) continue; // (not Good)
+      if (!car.active || Traffic.ghostly(car) || car.courier || car.health <= 0 || sameSide(car, Player) || (!LEVEL.battle && !car.evil)) continue; // (not Good)
       const dist = distance(car, Player) * (car.s < Player.s ? CONFIG.throwBehind : 1);
       if (dist < bestDist) { best = car; bestDist = dist; }
     }
@@ -201,7 +201,7 @@ export const Packages = (() => {
     if (!victim && aim === 'escort') {
       let best = CONFIG.enemyThrowCarRange;
       for (const o of Traffic.cars) {
-        if (o === car || !o.active || o.kind === 'police' || o.courier) continue;
+        if (o === car || !o.active || Traffic.ghostly(o) || o.kind === 'police' || o.courier) continue;
         const dist = distance(o, Player);
         if (dist < best) { best = dist; victim = o; }
       }
@@ -209,7 +209,7 @@ export const Packages = (() => {
       let best = CONFIG.enemyThrowCarRange;
       const rival = car.rival && car.rival.active && car.rival.kind !== 'police' ? car.rival : null;
       for (const o of rival ? [rival] : Traffic.cars) {
-        if (o === car || !o.active || o.kind === 'police' || o.courier) continue;
+        if (o === car || !o.active || Traffic.ghostly(o) || o.kind === 'police' || o.courier) continue;
         const dist = distance(o, car);
         if (dist < best) { best = dist; victim = o; }
       }
@@ -261,7 +261,7 @@ export const Packages = (() => {
   const blast = (p) => {
     const G = p.gun, direct = G ? G.direct : CONFIG.cannonDirectRadius, reach = G ? G.splash : CONFIG.cannonSplashRadius;
     for (const car of Traffic.cars) {
-      if (!car.active || car.courier || car === p.owner || sameSide(car, p.owner)) continue;
+      if (!car.active || Traffic.ghostly(car) || car.courier || car === p.owner || sameSide(car, p.owner)) continue;
       const dist = distance(car, p);
       if (dist < direct + car.hl * 0.5) {
         if (G) hurt(car, G.damage * 2, CONFIG.cannonCrit);
@@ -351,7 +351,7 @@ export const Packages = (() => {
   const splashAround = (p, hit) => {
     if (!(Player.bigSplash > 0) || (p.kind !== 'gift' && p.kind !== 'fire')) return;
     for (const car of Traffic.cars) {
-      if (car === hit || !car.active || car.arrest >= 0 || car.emergency || car.junction || car.courier) continue;
+      if (car === hit || !car.active || Traffic.ghostly(car) || car.arrest >= 0 || car.emergency || car.junction || car.courier) continue;
       if (distance(car, p) > CONFIG.bigSplash.radius) continue;
       const was = doomed(car);
       deliver(p, car);
@@ -401,7 +401,7 @@ export const Packages = (() => {
         }
         for (const car of Traffic.cars) {
           if (!p.active) break;
-          if (!car.active || car.arrest >= 0 || car.emergency || car.junction || car.courier || p.h > car.height + 0.6) continue; // (a package goes straight past a rival courier)
+          if (!car.active || Traffic.ghostly(car) || car.arrest >= 0 || car.emergency || car.junction || car.courier || p.h > car.height + 0.6) continue; // (a package goes straight past a rival courier)
           if (Math.abs(car.s - p.s) > car.hl + 1 || !Collision.overlap(p, car)) continue;
           const was = doomed(car);
           deliver(p, car);

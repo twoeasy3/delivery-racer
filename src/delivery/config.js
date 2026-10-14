@@ -624,8 +624,11 @@ export const CONFIG = {
     chairStack: { damage: 31, speedKept: 0.75 },    // the favela's: a stack of plastic chairs
     riceBasket: { damage: 31, speedKept: 0.75 },    // the rice terraces': a basket heaped with rice
     wasteDrum: { damage: 31, speedKept: 0.75 },     // the fallout zone's: a yellow drum of waste, the trefoil on it
-    wineCrates: { damage: 31, speedKept: 0.75 },    // Tuscany's: two wine crates, bottle necks out of the top one
+    pumpkinCrate: { damage: 31, speedKept: 0.75 },  // Halloween's: a crate heaped with pumpkins, the top one carved and lit
     hawkerCart: { damage: 31, speedKept: 0.75 },    // Hong Kong's: a hawker's cart under its striped awning, a red lamp lit
+    // ...for a bale:
+    hayGhost: { damage: 38, speedKept: 0.75 },      // Halloween's: a hay bale in a bedsheet
+    wineCrates: { damage: 31, speedKept: 0.75 },    // Tuscany's: two wine crates, bottle necks out of the top one
     // ...for a bale:
     hayRoll: { damage: 38, speedKept: 0.75 },       // Tuscany's: a round hay bale on its side
     bagStack: { damage: 38, speedKept: 0.75 },      // Hong Kong's: a heap of red-white-blue nylon bags, strapped
@@ -636,6 +639,7 @@ export const CONFIG = {
     beachBall: { damage: 38, speedKept: 0.75 },     // the beach's: a great beach ball (it rolls, as a bale does)
     tumbleweed: { damage: 38, speedKept: 0.75 },    // the Wild West's, for a bale that drifts (it rolls too)
     // ...for a cone:
+    candleLantern: { damage: 3, speedKept: 0.94, light: true }, // Halloween's: an iron lantern with a candle in it
     skittle: { damage: 3, speedKept: 0.94, light: true }, // the toy room's (an orange cone is lost on its orange track)
     cafeTable: { damage: 3, speedKept: 0.94, light: true },  // Venice's: a cafe table under its shut parasol
     terracottaPot: { damage: 3, speedKept: 0.94, light: true }, // Tuscany's: a terracotta pot with a lemon tree in it
@@ -1305,6 +1309,20 @@ export const CONFIG = {
   split: {
     apart: 70,             // m the two ways are apart, unless the split says ("apart")
     ease: 320,             // m over which they part, and come back together
+  },
+  // ghost traffic (a level's "ghostTraffic": [{ from, to, density?, kinds? }]): ordinary traffic cars, drawn pale and see-through,
+  // that flicker between two states on a cycle of their own. GHOSTLY, the player (and every other car) drives straight through
+  // one, no knock, no damage; a flicker of `flicker` s warns of the SOLID phase, which lasts the last `solidShare` of the cycle and
+  // is a car of its kind in every way (the same box, the same cost). One turning solid while something overlaps it stays
+  // ghostly until it is clear. Which cars: those that turn up in the stretch, `density` of them (0 to 1), of these kinds
+  ghostTraffic: {
+    density: 0.35,
+    cycle: { min: 6, max: 9 },   // s round one ghostly-then-solid cycle, a car's own (and its own phase in it)
+    solidShare: 0.35,            // the share of the cycle that is solid
+    flicker: 0.5,                // s of flickering before each solid phase
+    upsetTime: 4,                // s a ghost car is UPSET for, once the player has driven through it (drawn redder; it honks once)
+    upsetSooner: { min: 1.5, max: 3 }, // s its next solid phase is brought forward by, at most (never into its warning flicker)
+    kinds: ['commuter', 'wagon', 'van', 'minivan', 'pickup', 'suv', 'sport', 'junker', 'postvan', 'taxi', 'miata', 'jeep'],
   },
   // a fog bank (a level's "fog": { from, to }): the fog closes right in, easing in and out over its edges
   fog: {

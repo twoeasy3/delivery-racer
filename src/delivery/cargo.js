@@ -48,6 +48,7 @@ export const CARGO = {
     { id: 'books', name: 'Returned Library Books' },
     { id: 'fruit', name: "New Neighbour's Fruit Basket" },
     { id: 'radio', name: "Grandad's Repaired Radio" },
+    { id: 'pumpkin', name: 'Carved Pumpkin' },
     { id: 'winecase', name: 'Case of Chianti' },
     { id: 'waterjugs', name: 'Crate of Water Jugs' }, // (Dakar Dash)
   ],

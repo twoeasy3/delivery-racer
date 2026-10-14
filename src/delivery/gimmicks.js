@@ -307,6 +307,18 @@ export const GROUPS = [
       const row = [0, 1, 2].map(k => { const p = ob('potty'); p.position.x = (k - 1) * 2.6; return p; });
       return { model: group(...row), tick: (t) => { row.forEach((p, k) => { const u = ((t / CONFIG.potties.period - k * 0.18) % 1 + 1) % 1; p.position.y = Math.sin(u * Math.PI) * 2.2; }); } };
     } },
+    { name: 'Ghost traffic', color: 0xb9c6ff, has: (l) => l.ghostTraffic?.length, rules: [
+      `Some of the cars on these stretches are ghosts: pale and see-through, flickering on a cycle of their own (${CONFIG.ghostTraffic.cycle.min} to ${CONFIG.ghostTraffic.cycle.max} s). While one is see-through you drive straight through it: no knock, no damage. Nothing can aim at it, wreck it or infect it either: gifts, fire, shells, the horn and the traffic all pass it by.`,
+      `It flickers for ${CONFIG.ghostTraffic.flicker} s before it turns solid, and then it is a car like any other of its kind for the last ${pct(CONFIG.ghostTraffic.solidShare)} of its cycle. Drive through one and it is upset for ${CONFIG.ghostTraffic.upsetTime} s: redder, it honks once, and it turns solid sooner (with its flicker first). It never moves out of its lane at you.`,
+    ], build: () => {
+      const car = vehicle('commuter', 0xdfe9ff), G = CONFIG.ghostTraffic, mats = [];
+      car.traverse((m) => { if (m.isMesh) { m.material = m.material.clone(); m.material.transparent = true; mats.push(m.material); } });
+      return { model: group(car), tick: (t) => {
+        const cycle = G.cycle.min, u = (t % cycle) / cycle, from = 1 - G.solidShare, warn = u >= from - G.flicker / cycle && u < from;
+        const o = u >= from ? 1 : warn ? (Math.floor(t * 10) % 2 ? 0.75 : 0.2) : 0.32;
+        mats.forEach(m => { m.opacity = o; });
+      } };
+    } },
   ] },
   { name: 'Construction site and airport', cards: [
     { name: 'Construction machinery', color: 0xf2b51c, has: (l) => l.machinery?.length, rules: [
@@ -1122,6 +1134,7 @@ const DRESS = [ // [kind, name, what it stands in for, where, the card's colour]
   ['present', 'Present', 'bale', 'Christmas Eve', 0xd8262b], ['wheelieBin', 'Wheelie bin', 'cone', 'the hood', 0x2f9a48], ['sackStack', 'Stack of sacks', 'bale', 'Mumbai', 0xcfa868],
   ['beachBall', 'Beach ball', 'bale', 'the beach', 0x1a6be6], ['brimstone', 'Spike of brimstone', 'cone', 'hell', 0xff8a1e],
   ['wasteDrum', 'Drum of waste', 'crate', 'the fallout zone', 0xffd23f],
+  ['pumpkinCrate', 'Crate of pumpkins', 'crate', 'Halloween', 0xe8650f], ['candleLantern', 'Candle lantern', 'cone', 'Halloween', 0xffb020], ['hayGhost', 'Hay bale in a bedsheet', 'bale', 'Halloween', 0xf1f0f6],
   ['wineCrates', 'Wine crates', 'crate', 'Tuscany', 0xe6c78e], ['hayRoll', 'Round hay bale', 'bale', 'Tuscany', 0xdcb953], ['terracottaPot', 'Terracotta pot', 'cone', 'Tuscany', 0xc8622c],
   ['hawkerCart', 'Hawker\'s cart', 'crate', 'Hong Kong', 0xd8262b], ['bagStack', 'Heap of bags', 'bale', 'Hong Kong', 0x1f5fd0],
 ];

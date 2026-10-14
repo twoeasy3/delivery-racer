@@ -15,6 +15,7 @@ import { EVIL2_MODELS } from './cargoModelsEvil2.js';
 import { MORE_MODELS } from './cargoModels3.js';
 import { PRANK_B_MODELS } from './cargoModelsPrankB.js';
 import { PRANK_C_MODELS } from './cargoModelsPrankC.js';
+import { makePumpkinCargo } from './themes/halloweenModels.js';
 import { TUSCANY_CARGO } from './themes/tuscanyModels.js';
 import { DESERT_CARGO_MODELS } from './themes/desertCargo.js';
 
@@ -593,6 +594,7 @@ export const CARGO_MODELS = {
   ...MORE_MODELS,
   ...PRANK_B_MODELS,
   ...PRANK_C_MODELS,
+  pumpkin: makePumpkinCargo, // (Halloween's: themes/halloweenModels.js)
   ...TUSCANY_CARGO,
   ...DESERT_CARGO_MODELS,
 };

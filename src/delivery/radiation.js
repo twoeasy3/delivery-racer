@@ -108,7 +108,7 @@ export const Radiation = {
     if (!Traffic.frozen && this.areas.length) {
       let n = -1;
       for (const car of Traffic.cars) {
-        if (!car.active || car.infected || car.junction || !this.at(car.s, car.lat) || !this.can(car)) continue;
+        if (!car.active || Traffic.ghostly(car) || car.infected || car.junction || !this.at(car.s, car.lat) || !this.can(car)) continue;
         if (random() >= R.catch * dt) continue;
         if (n < 0) n = this.count();
         if (n++ < R.most) car.infected = true;
@@ -128,7 +128,7 @@ export const Radiation = {
     // an infected player passes it on: a clean traffic vehicle it touches is infected at once (not through a shield)
     if (this.infected && !this.shielded()) {
       for (const car of Traffic.cars) {
-        if (!car.active || car.infected || car.junction || Math.abs(car.s - P.s) > R.radius + 1 || !this.can(car)) continue;
+        if (!car.active || Traffic.ghostly(car) || car.infected || car.junction || Math.abs(car.s - P.s) > R.radius + 1 || !this.can(car)) continue;
         if (!(car.arrest >= 0) && !(P.air > car.height) && Collision.overlap(P, car)) car.infected = true;
       }
     }

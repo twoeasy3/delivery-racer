@@ -3,6 +3,7 @@
 // (see ../gimmicks.js) can both use them. Each faces local +z, its feet on y = 0.
 import * as THREE from 'three';
 import { makeWorker } from './siteModels.js';
+import { HALLOWEEN_OBSTACLES } from './themes/halloweenModels.js';
 import { TUSCANY_OBSTACLES } from './themes/tuscanyModels.js';
 import { DESERT_OBSTACLES } from './themes/desertModels.js';
 
@@ -1180,6 +1181,7 @@ OBSTACLE_MODELS.cafeTable = () => {
   put(group, new THREE.SphereGeometry(0.06, 6, 5), lambert(0xe6b63c), 0, 2.38, 0);
   return grounded(group, 0.6);
 };
+Object.assign(OBSTACLE_MODELS, HALLOWEEN_OBSTACLES); // (Halloween's own: a crate of pumpkins, a candle lantern, a hay bale in a bedsheet: themes/halloweenModels.js)
 Object.assign(OBSTACLE_MODELS, TUSCANY_OBSTACLES); // Tuscany's: wineCrates, hayRoll, terracottaPot (themes/tuscanyModels.js)
 // the desert dunes' own (render/themes/desertModels.js): a stack of jerrycans, a rolled tent, a rally marker flag
 Object.assign(OBSTACLE_MODELS, DESERT_OBSTACLES);
