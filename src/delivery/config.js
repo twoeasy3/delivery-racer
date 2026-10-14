@@ -624,8 +624,10 @@ export const CONFIG = {
     chairStack: { damage: 31, speedKept: 0.75 },    // the favela's: a stack of plastic chairs
     riceBasket: { damage: 31, speedKept: 0.75 },    // the rice terraces': a basket heaped with rice
     wasteDrum: { damage: 31, speedKept: 0.75 },     // the fallout zone's: a yellow drum of waste, the trefoil on it
+    wineCrates: { damage: 31, speedKept: 0.75 },    // Tuscany's: two wine crates, bottle necks out of the top one
     hawkerCart: { damage: 31, speedKept: 0.75 },    // Hong Kong's: a hawker's cart under its striped awning, a red lamp lit
     // ...for a bale:
+    hayRoll: { damage: 38, speedKept: 0.75 },       // Tuscany's: a round hay bale on its side
     bagStack: { damage: 38, speedKept: 0.75 },      // Hong Kong's: a heap of red-white-blue nylon bags, strapped
     cameraDolly: { damage: 38, speedKept: 0.75 },   // the film studio's: a camera on its dolly
     present: { damage: 38, speedKept: 0.75 },       // Christmas Eve's: a wrapped present
@@ -636,6 +638,7 @@ export const CONFIG = {
     // ...for a cone:
     skittle: { damage: 3, speedKept: 0.94, light: true }, // the toy room's (an orange cone is lost on its orange track)
     cafeTable: { damage: 3, speedKept: 0.94, light: true },  // Venice's: a cafe table under its shut parasol
+    terracottaPot: { damage: 3, speedKept: 0.94, light: true }, // Tuscany's: a terracotta pot with a lemon tree in it
     wheelieBin: { damage: 3, speedKept: 0.94, light: true }, // the hood's
     snowdrift: { damage: 3, speedKept: 0.94, light: true },  // the snow's and the ice road's: a heap of snow with a stake in it
     brimstone: { damage: 3, speedKept: 0.94, light: true },  // hell's: a glowing spike

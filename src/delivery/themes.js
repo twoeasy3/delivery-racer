@@ -195,6 +195,10 @@ export const THEMES = {
   fallout: { sky: 0x9cc06e, ground: 0x6b6852, road: 0x3a3c3e, scenery: 'fallout', fogColor: 0xa9cc78, sets: ['pylons', 'checkpoint', 'plant', 'tankfarm', 'village'],
     target: { height: 4.2, beam: true }, // (up over the fence)
     light: { sky: 0xe4ffb8, ground: 0x3a3a2c, ambient: 1.3, sun: 0xf2ffd0, sunlight: 0.9 } },
+  // tuscany: the Chianti hills in the late afternoon (render/themes/tuscany.js): golden light on rolling land (terrain) laid out in fields of wheat, sunflowers and vines, rows of cypress along the road and up to the stone farmhouses with their terracotta roofs, olive groves, round hay bales, a hill village with its bell tower on the skyline; a pale gravel shoulder
+  tuscany: { sky: 0xb4d6ee, ground: 0xc4b05c, road: 0x6a6762, scenery: 'tuscany', line: 0xf4efdf, terrain: { gentle: 0xa9a45a, steep: 0x8b7a55, rough: 0.8, flat: 4, rise: 45 },
+    target: { height: 4.2, beam: true }, // (up over the cypress)
+    light: { sky: 0xfff1d6, ground: 0x8a7446, ambient: 1.25, sun: 0xffe2b0, sunlight: 1.2 } },
 };
 
 // ---- the themes' own obstacles ---------------------------------------------------------------------------
@@ -225,6 +229,7 @@ const OBSTACLES = {
   beach: { bale: 'beachBall' },
   hell: { cone: 'brimstone' },
   fallout: { crate: 'wasteDrum' }, // (a yellow drum of waste, the trefoil on it; the cones and barriers are a checkpoint's own)
+  tuscany: { crate: 'wineCrates', bale: 'hayRoll', cone: 'terracottaPot' }, // (a stack of wine crates; a round hay bale on its side; a pot with a lemon tree. The roadworks' cones are the hazard's own)
   hongkong: { crate: 'hawkerCart', bale: 'bagStack' }, // (a hawker's cart under its awning; a heap of red-white-blue bags; the cones are roadworks and stay)
   // (the port keeps its crates, the farm and the Wild West their bales: there they belong)
 };
