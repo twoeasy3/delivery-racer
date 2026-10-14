@@ -48,6 +48,7 @@ export const CARGO = {
     { id: 'books', name: 'Returned Library Books' },
     { id: 'fruit', name: "New Neighbour's Fruit Basket" },
     { id: 'radio', name: "Grandad's Repaired Radio" },
+    { id: 'pie', name: 'Pumpkin Pie' },
   ],
   evil: [
     { id: 'parcel', name: 'Ticking Parcel', states: ['Ticking', 'Fuse lit', 'About to blow'] },
@@ -96,6 +97,7 @@ export const CARGO = {
     { id: 'nestedboxes', name: 'Boxes within Boxes', states: ['Wrapped', 'Opening', 'Gotcha'] },
     { id: 'spider', name: 'Spider on a Fishing Line', states: ['Hanging', 'Bobbing', 'Dropped'] },
     { id: 'ink', name: 'Disappearing Ink', states: ['Corked', 'Blotting', 'Splashing'] },
+    { id: 'syrup', name: 'Stolen Maple Syrup', states: ['Sealed', 'Sticky', 'Pouring out'] },
   ],
 };
 // the names and the Evil states in cargoText.json come first, these the fallback (words.js: a bad entry is passed over)

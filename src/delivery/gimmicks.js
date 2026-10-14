@@ -50,6 +50,7 @@ const JUNK_NAMES = { umbrella: 'beach umbrellas', surfboard: 'surfboards', coole
   directorChair: 'director\'s chairs', cameraDolly: 'camera dollies', mooringPosts: 'mooring posts', fuelDrum: 'fuel drums', popcornCart: 'popcorn carts', barrel: 'barrels',
   chairStack: 'stacks of chairs', riceBasket: 'baskets of rice', wasteDrum: 'drums of waste', present: 'presents', toyDrum: 'toy drums', cafeTable: 'cafe tables', wheelieBin: 'wheelie bins', snowdrift: 'heaps of snow',
   sackStack: 'stacks of sacks', hawkerCart: 'hawkers\' carts', bagStack: 'heaps of bags', beachBall: 'beach balls', tumbleweed: 'tumbleweeds', flagStand: 'flags on stands', brimstone: 'spikes of brimstone', lavaRock: 'lava boulders', mine: 'sea mines' };
+Object.assign(JUNK, { pumpkinCrate: {}, leafPile: {}, smallPumpkin: {} }); Object.assign(JUNK_NAMES, { pumpkinCrate: 'crates of pumpkins', leafPile: 'heaps of leaves', smallPumpkin: 'small pumpkins' }); // (autumn's)
 // the kinds that drift on a level (not the darting ones: those are another card), as its theme has them
 const driftingKinds = (level) => [...new Set((level.drifters || []).filter(d => d.pattern !== 'dart').map(d => themedKind(level.theme, d.kind || 'cone', true)))].filter(k => JUNK[k]);
 // ...and the kinds that dart about on it (a placed obstacle with drift: 'dart', or drifters of that pattern)
@@ -1123,6 +1124,7 @@ const DRESS = [ // [kind, name, what it stands in for, where, the card's colour]
   ['wasteDrum', 'Drum of waste', 'crate', 'the fallout zone', 0xffd23f],
   ['hawkerCart', 'Hawker\'s cart', 'crate', 'Hong Kong', 0xd8262b], ['bagStack', 'Heap of bags', 'bale', 'Hong Kong', 0x1f5fd0],
 ];
+DRESS.push(['pumpkinCrate', 'Crate of pumpkins', 'crate', 'autumn', 0xe8751a], ['leafPile', 'Heap of leaves', 'bale', 'autumn', 0xc8421e], ['smallPumpkin', 'Small pumpkin', 'cone', 'autumn', 0xf08a1c]);
 // the kinds of plain obstacle a level's road has, as its theme has them
 const dressingKinds = (l) => new Set([...(l.obstacles || []).map(o => themedKind(l.theme, o.kind || 'barrier')), ...(l.shoulderRows || []).map(r => themedKind(l.theme, r.kind || 'cone')),
   ...(l.drifters || []).map(d => themedKind(l.theme, d.kind || 'cone', true))]);

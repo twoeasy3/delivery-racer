@@ -625,7 +625,9 @@ export const CONFIG = {
     riceBasket: { damage: 31, speedKept: 0.75 },    // the rice terraces': a basket heaped with rice
     wasteDrum: { damage: 31, speedKept: 0.75 },     // the fallout zone's: a yellow drum of waste, the trefoil on it
     hawkerCart: { damage: 31, speedKept: 0.75 },    // Hong Kong's: a hawker's cart under its striped awning, a red lamp lit
+    pumpkinCrate: { damage: 31, speedKept: 0.75 },  // autumn's: a slatted crate heaped with pumpkins
     // ...for a bale:
+    leafPile: { damage: 38, speedKept: 0.75 },      // autumn's: a heap of raked leaves
     bagStack: { damage: 38, speedKept: 0.75 },      // Hong Kong's: a heap of red-white-blue nylon bags, strapped
     cameraDolly: { damage: 38, speedKept: 0.75 },   // the film studio's: a camera on its dolly
     present: { damage: 38, speedKept: 0.75 },       // Christmas Eve's: a wrapped present
@@ -640,6 +642,7 @@ export const CONFIG = {
     snowdrift: { damage: 3, speedKept: 0.94, light: true },  // the snow's and the ice road's: a heap of snow with a stake in it
     brimstone: { damage: 3, speedKept: 0.94, light: true },  // hell's: a glowing spike
     flagStand: { damage: 3, speedKept: 0.94, light: true },  // the Moon's, for a cone that drifts: a flag on a stand
+    smallPumpkin: { damage: 3, speedKept: 0.94, light: true }, // autumn's: a small pumpkin on a stake
     // ...for a rock (sized by its radius, as a rock is):
     lavaRock: { damage: 39, speedKept: 0.6 },       // the volcano's: cooled lava, glowing in its cracks
   },

@@ -273,6 +273,7 @@ export const Collision = (() => {
   for (const [kind, like] of Object.entries({ toyBlock: 'crate', divingHelmet: 'crate', supplyPod: 'crate', directorChair: 'crate', mooringPosts: 'crate',
     fuelDrum: 'crate', popcornCart: 'crate', barrel: 'crate', chairStack: 'crate', riceBasket: 'crate', wasteDrum: 'crate', hawkerCart: 'crate', cameraDolly: 'bale', present: 'bale', toyDrum: 'bale', sackStack: 'bale', bagStack: 'bale',
     beachBall: 'bale', tumbleweed: 'bale', skittle: 'cone', cafeTable: 'cone', wheelieBin: 'cone', snowdrift: 'cone', brimstone: 'cone', flagStand: 'cone', lavaRock: 'rock' })) SIZE[kind] = SIZE[like];
+  Object.assign(SIZE, { pumpkinCrate: SIZE.crate, leafPile: SIZE.bale, smallPumpkin: SIZE.cone }); // (autumn's: a crate of pumpkins, a heap of leaves, a small pumpkin)
   // what a level's own obstacle of that kind is on its theme (its "obstacles", "shoulderRows" and "drifters"
   // only: what a gimmick puts out, a cargo truck's load among it, is what it always was)
   // (drifting: one of its "drifters", where a theme can have another thing again: a bale that drifts is a tumbleweed)
