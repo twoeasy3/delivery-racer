@@ -25,6 +25,7 @@ import { syncPackages } from './render/packages.js';
 import { syncEmotes } from './render/emotes.js';
 import { syncPickups, syncTargets, syncToads } from './render/items.js';
 import { syncHelicopter, syncArrests } from './render/helicopter.js';
+import { warmUpWhenSettled } from './render/warmup.js';
 import { syncHeadlights, syncTrafficBeams } from './render/headlights.js';
 import { LAMP_DEBUG } from './render/carlights.js';
 import { syncUfoStrike } from './render/ufostrike.js';
@@ -498,3 +499,4 @@ const frame = (now) => {
   requestAnimationFrame(frame);
 };
 requestAnimationFrame(frame);
+if (Game.state === 'start') warmUpWhenSettled(); // (on the menu: the player's car and a few more built and compiled while the page is idle: render/warmup.js)
