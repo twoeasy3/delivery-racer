@@ -329,7 +329,11 @@ IDEA_MODELS_TOPUP_A.glassbrake = (car) => {
     inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: LIFT, sideLift: 0.006, windows: [[-0.64, 9], [-9, -0.74]] });
   // the rear is the car's gimmick, ONE full-glass panel from the roof's end down over the bend to the tail: the original two slopeGlass pieces, kept
   // (the owner, 14-Oct: the glass fix had split it with cabinGlass's rear glass and a body band, so that panel is as it was; glass.rear is not used)
-  bag.add(GLASS, ...glass.sides, glass.front,
+  // the windscreen comes from a second cabinGlass call with the belt down at the bonnet (0.87): the side windows' belt (0.97) left the screen's foot
+  // floating 11 cm above the bonnet with a strip of body under it; the screen's top is the same line (the A-pillar corner), only the foot is lower
+  const screen = cabinGlass(cabinOutline, { from: 0, to: cabinOutline.indexOf(HF), belt: 0.87, half: CH, taper: TAPER, grow: CBEV,
+    inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: LIFT, sideLift: 0.006, windows: [[-0.64, 9], [-9, -0.74]] });
+  bag.add(GLASS, ...glass.sides, screen.front,
     slopeGlass(HT, HM, CH, TAPER, CBEV + 0.03, [0.02, 0], LIFT, [-0.2, 1]),
     slopeGlass(HM, HF, CH, TAPER, CBEV + 0.03, [-0.08, 0.12], LIFT - 0.002, [-1, 0.6]));
   // the face: a low wide grille, a round lamp in a chrome ring at each end, split bumpers, amber lamps in their corners
