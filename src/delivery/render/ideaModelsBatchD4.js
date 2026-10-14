@@ -197,13 +197,23 @@ const decalMat = (map, opacity = 1) => new THREE.MeshLambertMaterial({ map, tran
 
 export const IDEA_MODELS_BATCH_D4 = {};
 
+// Each car is drawn at a base width (the W in its builder) and widened to the idea's hw by scaling the whole model across
+// the car (no extra geometry): body, glass, lamps and wheels (the tyres a little wider) all follow, so the wheels stay planted.
+const widen = (group, k) => {
+  group.scale.x = k;
+  const outer = new THREE.Group();
+  outer.add(group);
+  outer.userData = group.userData;
+  return outer;
+};
+
 // ---- the Autobahn Estate (after the Audi RS6 Avant, fast German-style performance estate) ----------------------------------
 // Low, wide and long: a flat roof carried straight back over the load bay to a near-upright tailgate with a small spoiler lip;
 // a wide black single-frame grille between slim swept headlamps, a deep splitter and
 // side intakes; roof rails; a slim tail lamp bar either side and twin oval exhausts under a dark diffuser. Road dust low down.
 IDEA_MODELS_BATCH_D4.autobahnestate = (car) => {
   const group = new THREE.Group(), bag = makeBag();
-  const W = car.hw, L = car.hl, R = 0.39, AF = 1.45, AR = -1.38;
+  const W = 0.92, L = car.hl, R = 0.39, AF = 1.45, AR = -1.38;
   const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
   const BEV = 0.08, BW = 2 * W - 0.08, NOSE = L - BEV, TAILZ = -L + BEV, AY = 0.3;
   const bodyOutline = [
@@ -239,15 +249,15 @@ IDEA_MODELS_BATCH_D4.autobahnestate = (car) => {
   for (const s of [-1, 1]) {
     bag.add(TRIM, rod(0.022, 1.9, s * 0.5, car.height + 0.004, -0.95, 'z', 8), bx(0.12, 0.07, 0.15, s * 0.84, 1.04, 0.7), strut([s * 0.78, 1.0, 0.76], [s * 0.86, 1.04, 0.72], 0.02, 5));
     // the face: slim swept headlamps, side intakes with an amber lamp, the exhausts and tail lamps behind
-    bag.add(TRIM, bx(0.46, 0.13, 0.05, s * 0.62, 0.77, L - 0.02, 0, s * 0.18), bx(0.3, 0.14, 0.04, s * 0.64, 0.45, L - 0.01));
-    bag.add(LAMP, bx(0.4, 0.075, 0.03, s * 0.62, 0.775, L + 0.006, 0, s * 0.18));
-    bag.add(AMBER, bx(0.2, 0.03, 0.03, s * 0.64, 0.545, L + 0.006));
+    bag.add(TRIM, bx(0.4, 0.13, 0.05, s * 0.55, 0.66, L - 0.045), bx(0.3, 0.12, 0.04, s * 0.58, 0.4, L - 0.04));
+    bag.add(LAMP, bx(0.34, 0.075, 0.03, s * 0.55, 0.665, L - 0.027));
+    bag.add(AMBER, bx(0.2, 0.03, 0.03, s * 0.58, 0.4, L - 0.025));
     bag.add(TAIL, bx(0.44, 0.11, 0.03, s * 0.55, 0.8, -L - 0.004));
     bag.add(CHROME, new THREE.CylinderGeometry(0.045, 0.045, 0.1, 10).rotateX(Math.PI / 2).scale(1.7, 1, 1).translate(s * 0.55, 0.38, -L - 0.04));
   }
-  bag.add(TRIM, bx(1.0, 0.2, 0.05, 0, 0.62, L - 0.015), bx(BW - 0.3, 0.07, 0.14, 0, 0.36, L - 0.06),
+  bag.add(TRIM, bx(0.6, 0.17, 0.05, 0, 0.55, L - 0.03), bx(BW - 0.3, 0.07, 0.14, 0, 0.36, L - 0.09),
     bx(BW - 0.12, 0.18, 0.07, 0, 0.4, -L + 0.03), bx(BW - 0.3, 0.04, 0.2, 0, 0.3, -L + 0.0), bx(BW - 0.1, 0.1, 2.5, 0, 0.27, 0.0));
-  bag.add(CHROME, bx(0.5, 0.025, 0.05, 0, 0.62, L + 0.012));
+  bag.add(CHROME, bx(0.4, 0.025, 0.05, 0, 0.55, L - 0.02));
   bag.add(PLATE, bx(0.4, 0.1, 0.02, 0, 0.68, -L - 0.002));
   bag.add(TAIL, bx(0.26, 0.04, 0.03, 0, 0.78, -L - 0.004));
   // road dust along the sills, between the wheels
@@ -257,7 +267,7 @@ IDEA_MODELS_BATCH_D4.autobahnestate = (car) => {
   meshes.get(dusty).renderOrder = 1;
   for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, R, 0.28, s * (W - 0.15), z, ALLOY, 0.68);
   group.userData = { body: bodyMesh, animate: () => {} };
-  return group;
+  return widen(group, car.hw / W);
 };
 
 // ---- the Fin Land Yacht (after the 1959 Cadillac Sedan de Ville) ------------------------------------------------------------
@@ -267,7 +277,7 @@ IDEA_MODELS_BATCH_D4.autobahnestate = (car) => {
 // Whitewall tyres, chrome hubcaps.
 IDEA_MODELS_BATCH_D4.finlandyacht = (car) => {
   const group = new THREE.Group(), bag = makeBag();
-  const W = car.hw, L = car.hl, R = 0.36, AF = 1.75, AR = -1.6;
+  const W = 1.0, L = car.hl, R = 0.36, AF = 1.75, AR = -1.6;
   const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
   const ROOF = { good: 0xf2efe6, evil: 0x7a1020 }, roofMat = new THREE.MeshLambertMaterial({ color: ROOF.good });
   const BEV = 0.08, BW = 2 * W - 0.08, NOSE = L - BEV, TAILZ = -L + BEV, AY = 0.3;
@@ -331,5 +341,5 @@ IDEA_MODELS_BATCH_D4.finlandyacht = (car) => {
   const colour = (hex) => roofMat.color.setHex(hex);
   group.userData = { body: bodyMesh, animate: () => {}, livery: (evil) => colour(evil ? ROOF.evil : ROOF.good), stripe: colour };
   group.userData.livery(false);
-  return group;
+  return widen(group, car.hw / W);
 };
