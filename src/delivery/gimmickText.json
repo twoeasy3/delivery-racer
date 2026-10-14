@@ -86,5 +86,6 @@
   "flooded-underpass": { "name": "Flooded underpass", "blurb": "The dip under the railway is filling with water: take the slip road." },
   "crest-jumps": { "name": "Crest jumps", "blurb": "A steep climb and drop: a fast car leaves the ground." },
   "radiated-areas": { "name": "Radiated areas", "blurb": "A green haze: your health ticks down and the radiation meter fills." },
-  "infected-cars": { "name": "Infected cars", "blurb": "A glowing car with a ring on the road: within it you are dosed." }
+  "infected-cars": { "name": "Infected cars", "blurb": "A glowing car with a ring on the road: within it you are dosed." },
+  "ghost-traffic": { "name": "Ghost traffic", "blurb": "Pale see-through cars that flicker, then turn solid for a while." }
 }
