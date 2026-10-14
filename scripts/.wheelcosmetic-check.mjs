@@ -330,6 +330,70 @@ try {
     check(q2.wheelDesign() === 'whitewall' && raw2.getItem(w1.KEY_DESIGN) === 'redline', 'and a design change lasts the visit only');
     P2.noSave = false;
   }
+  // WHEEL SETS: the player-facing complete wheel (design + hub colour together); the equipped set is derived from the two keys
+  {
+    const raw3 = globalThis.localStorage;
+    raw3.removeItem(W.KEY); raw3.removeItem(W.KEY_DESIGN);
+    server.moduleGraph.invalidateAll();
+    const S = await load('render/wheelcosmetic.js'), { Progress: P3 } = await load('progress.js');
+    const sets = S.WHEEL_SETS;
+    check(sets.length >= 10 && sets.length <= 14 && new Set(sets.map(x => x.id)).size === sets.length, sets.length + ' sets, ids unique');
+    check(new Set(sets.map(x => x.design + '/' + x.hub)).size === sets.length, 'no two sets are the same design + hub pair');
+    check(sets.every(x => S.WHEEL_DESIGNS.some(d => d.id === x.design) && S.WHEEL_COLOURS.some(c => c.id === x.hub)), 'every set uses an existing design and hub colour');
+    check(sets[0].id === 'stock' && sets[0].design === 'stock' && sets[0].hub === 'stock', 'the first set is Stock');
+    check(S.wheelSet() === 'stock', 'nothing saved: the equipped set is Stock');
+    const pick = models.find(m => m.car.id === 'pickup') || models.find(m => !m.car.legend && m.model.userData.wheelHubs.hubs.length);
+    const model3 = pick.model, hubsOf = model3.userData.wheelHubs;
+    let calls = 0;
+    const off = W.onWheelColour(() => calls++);
+    for (const set of sets) {
+      calls = 0;
+      W.setWheelSet(set.id);
+      check(W.wheelDesign() === set.design && W.wheelColour() === set.hub && W.wheelSet() === set.id, set.id + ': design + hub set together, and detected as equipped');
+      check(calls === 1, set.id + ': one change notice');
+      check(raw3.getItem(W.KEY_DESIGN) === set.design && raw3.getItem(W.KEY) === set.hub, set.id + ': the two existing keys hold it (no new key)');
+      const d = W.WHEEL_DESIGNS.find(x => x.id === set.design), c = W.WHEEL_COLOURS.find(x => x.id === set.hub);
+      const wantHub = c.hex !== null ? c.hex : d.hub;
+      const hubOk = wantHub === null ? hubsOf.hubs.every(h => h.mesh.material === h.stock) : hubsOf.hubs.every(h => h.mesh.material.color.getHex() === wantHub);
+      check(hubOk && (d.ring ? hubsOf.rings.length > 0 : hubsOf.rings.length === 0), set.id + ': the live car wears the hub and the tyre treatment');
+    }
+    off();
+    check(raw3.getItem('delivery.wheelset') === null, 'no wheelset key was stored');
+    // an older / test-switch pair that is no set
+    W.setWheelDesign('redline'); W.setWheelColour('gold');
+    check(W.wheelSet() === 'custom', 'redline + gold (no set): Custom');
+    check(W.wheelDesign() === 'redline' && W.wheelColour() === 'gold' && hubsOf.rings.length > 0, 'and Custom keeps working (the pair is applied)');
+    server.moduleGraph.invalidateAll();
+    const R = await load('render/wheelcosmetic.js');
+    check(R.wheelSet() === 'custom' && R.wheelDesign() === 'redline', 'reload: Custom survives');
+    W.setWheelSet('gold-rush'); server.moduleGraph.invalidateAll();
+    check((await load('render/wheelcosmetic.js')).wheelSet() === 'gold-rush', 'reload: the equipped set is found again from the two keys');
+    raw3.setItem(S.KEY_DESIGN, 'nonsense'); raw3.setItem(S.KEY, 'nonsense'); server.moduleGraph.invalidateAll();
+    check((await load('render/wheelcosmetic.js')).wheelSet() === 'stock', 'garbage saved: Stock');
+    S.setWheelSet('no-such-set');
+    check(S.wheelSet() === 'stock', 'an unknown set id changes nothing');
+    // blocked storage
+    globalThis.localStorage = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); } };
+    server.moduleGraph.invalidateAll();
+    const B = await load('render/wheelcosmetic.js');
+    let thr = false;
+    try { check(B.wheelSet() === 'stock', 'no storage: Stock'); B.setWheelSet('red-white'); check(B.wheelSet() === 'red-white', 'no storage: a set holds for the visit'); } catch { thr = true; }
+    check(!thr, 'no storage: nothing throws (sets)');
+    globalThis.localStorage = raw3;
+    // noSave
+    raw3.setItem(S.KEY_DESIGN, 'redline'); raw3.setItem(S.KEY, 'blue');
+    server.moduleGraph.invalidateAll();
+    const N = await load('render/wheelcosmetic.js'), { Progress: P4 } = await load('progress.js');
+    check(N.wheelSet() === 'redline-blue', 'saved redline + blue: that set');
+    P4.noSave = true;
+    check(N.wheelSet() === 'stock', 'noSave: the saved set is ignored (Stock)');
+    N.setWheelSet('orange-pop');
+    check(N.wheelSet() === 'orange-pop' && raw3.getItem(S.KEY) === 'blue' && raw3.getItem(S.KEY_DESIGN) === 'redline', 'noSave: a set lasts the visit and the saved pair is not overwritten');
+    P4.noSave = false;
+    N.setWheelSet('stock');
+    raw3.removeItem(S.KEY); raw3.removeItem(S.KEY_DESIGN);
+    void P3;
+  }
 } finally {
   await server.close();
 }
