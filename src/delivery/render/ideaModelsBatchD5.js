@@ -182,8 +182,8 @@ const tube = (a, b, r, seg = 8) => {
   return geo.translate(m.x, m.y, m.z);
 };
 // a half-shell fender over a wheel: a half cylinder (axis across the car) of radius r, `w` wide, centred at x, y, z
-const fender = (x, y, z, r, w) => new THREE.CylinderGeometry(r, r, w, 14, 1, true, 0, Math.PI).rotateZ(Math.PI / 2).translate(x, y, z);
-const SHOCK = keep(lambert(0xe0b020)), STEEL = keep(lambert(0x5a5e66));
+const fender = (x, y, z, r, w) => new THREE.CylinderGeometry(r, r, w, 14, 1, true, 0, Math.PI).rotateZ(Math.PI / 2).scale(1, 0.88, 1.2).translate(x, y, z); // (flattened and lengthened, a wing over the wheel, not a barrel)
+const SHOCK = keep(lambert(0xffcf1a)), STEEL = keep(lambert(0x5a5e66));
 
 export const IDEA_MODELS_BATCH_D5 = {
   // ---- the Trophy Truck (a Baja desert racing truck) -----------------------------------------------------------------
@@ -213,8 +213,8 @@ export const IDEA_MODELS_BATCH_D5 = {
     const zWS = (y) => WSF[0] + (WST[0] - WSF[0]) * (y - WSF[1]) / (WST[1] - WSF[1]);
     parts(group, k + 'glass', GLASS, () => [
       slopeGlass([zWS(1.28), 1.28], [zWS(1.72), 1.72], gx(1.28) - 0.1, gx(1.72) - 0.1, BEV + LIFT),
-      ...sideGlass([[[0.62, 1.3], [-0.95, 1.3], [-0.85, 1.56], [0.25, 1.56]]], HALF, TAPER, LIFT),
-      slopeGlass([-0.72, 1.66], [-1.12, 1.4], gx(1.66) - 0.14, gx(1.4) - 0.1, BEV + LIFT),
+      ...sideGlass([[[0.69, 1.3], [-1.29, 1.3], [-0.69, 1.66], [0.27, 1.66]]], HALF, TAPER, LIFT),
+      slopeGlass([-0.913, 1.6], [-1.243, 1.4], gx(1.6) - 0.14, gx(1.4) - 0.12, BEV + LIFT),
     ]);
     // the roll cage (dark steel tube, 8-sided) and its roof light bar
     parts(group, k + 'cage', TRIM, () => [
@@ -238,10 +238,14 @@ export const IDEA_MODELS_BATCH_D5 = {
       ...[-1, 1].map(s => bx(0.1, 0.07, 0.03, s * 0.28, 0.62, FZ + 0.004)),
       ...[-1, 1].map(s => bx(0.24, 0.07, 0.03, s * 0.5, 0.72, BZ - 0.006)),
     ]);
-    // shock stubs standing out of the bonnet and the tail deck (yellow)
-    parts(group, k + 'shock', SHOCK, () => [-1, 1].flatMap(s => [
-      tube([s * 0.6, 1.0, AF], [s * 0.54, 1.5, AF], 0.055, 8),
-      tube([s * 0.6, 1.0, AR], [s * 0.54, 1.52, AR], 0.055, 8),
+    // shock stubs standing out of the bonnet and the tail deck (a dark body with a bright yellow spring round it)
+    parts(group, k + 'shockrod', STEEL, () => [-1, 1].flatMap(s => [
+      tube([s * 0.6, 1.0, AF], [s * 0.54, 1.56, AF], 0.04, 8),
+      tube([s * 0.6, 1.0, AR], [s * 0.54, 1.58, AR], 0.04, 8),
+    ]));
+    parts(group, k + 'shockspring', SHOCK, () => [-1, 1].flatMap(s => [
+      tube([s * 0.578, 1.1, AF], [s * 0.553, 1.4, AF], 0.085, 8),
+      tube([s * 0.573, 1.2, AR], [s * 0.55, 1.44, AR], 0.085, 8),
     ]));
     // the spare on the tail deck, standing: a tyre and a hub, partly sunk in the deck
     place(group, shared(k + 'spare', () => new THREE.CylinderGeometry(0.44, 0.44, 0.3, 14).rotateX(Math.PI / 2)), TYRE, 0, 1.56, -1.38);
