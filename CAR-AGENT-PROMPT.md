@@ -48,13 +48,13 @@ NEVER above 4,000. The last two idea cars came out at 3,208 and 5,868 triangles,
   Skip the clutter (door handles, wipers, tiny trim, plates on every face) unless it clearly reads. A simple, charming,
   bold shape beats a busy one: 'trying too hard' is a defect.
 
-## Textures: only the ones that exist (the owner, 14-Oct)
-The textures the car models have now are the only ones: the picture textures in the rebuilt cars (render/modelsOrig*.js: the
-Hearse's curtains, the Hot Rod's flames, the Lowrider's grille, the Junker's rust and tarpaulin, banners and the like) and the
-game's other existing ones. Do NOT add a texture, or make one bigger, unless the owner asks for it explicitly or the look is
-impossible any other way (then say so in your report and why). Use flat colours, shape, and vertex colours (as the approved
-Commuter does low down) instead. The biggest in the game today is a 256 x 256 canvas (the Junker's tarpaulin); nothing new
-goes above that. If you must touch an existing texture, keep its size.
+## Textures: allowed, drawn in code (the owner, 14-Oct, relaxing his earlier "no new textures")
+Textures are fine where they make a car read better (curtains, flames, grilles, rust, a tarpaulin, banners...), as long as they
+are DRAWN IN CODE on a canvas (the `texture()` helpers in render/modelsOrig*.js: made once, cached, shared) and never image files:
+a drawn texture costs no download (only a few KB of drawing code) and about 4 bytes a pixel of memory. Keep them modest: 256 x 256
+is the biggest in the game today (the Junker's tarpaulin), so use 128 or less where it will do and say why if you go larger.
+Prefer flat colours, shape and vertex colours first (the approved Commuter's way), and no panel-line drawing in textures
+either (see the section above). Report each texture's size.
 
 ## Defects that are NOT allowed
 - No unconnected parts and no floating parts (a lamp, mirror, trim strip, spat, plate or stalk must touch/sit in the
