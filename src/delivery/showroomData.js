@@ -99,10 +99,10 @@ export const carCard = (car, evil = false) => {
       reason = LOCKED_WORDS.lot;
       hint = forSale(car) ? 'At ' + CAR_LOT + ' for $' + car.price.toFixed(2) : tierWhy(car) ? 'Not for sale yet: ' + tierWhy(car) : 'Not for sale yet';
     } else {
-      reason = car.earned ? LOCKED_WORDS.earn : LOCKED_WORDS.key;
+      reason = car.earned ? (car.off && !car.earned.level ? 'Not available at the moment' : LOCKED_WORDS.earn) : LOCKED_WORDS.key; // (an off car earned on no level yet: the Legendary cars)
       if (car.earned) {
         const level = LEVELS.find(l => l.id === car.earned.level);
-        hint = 'Beat the par on ' + (level ? levelName(level) : car.earned.level);
+        hint = level ? 'Beat the par on ' + levelName(level) : car.off ? 'Not to be had for now' : 'Earn it on its level'; // (an off car earned on no level yet: the Legendary cars)
       } else if (EVENT_CARS.includes(car)) hint = 'The key: an event\'s grand prize' + (car.bespoke && !car.noPacks ? ', or a Bespoke card in packs' : '');
       else if (car.concept && hunt) hint = 'The key: deliver it at its max ECU on its ' + hunt.event.name + ' day' + (hunt.live ? ' (today: a free try)' : ' (' + weekdayName(hunt.next) + 's)') + '. Blueprints: its ' + packName(hunt.pack);
       else if (car.bespoke) hint = car.keyAvailable === false || car.noPacks ? 'No key to be had at the moment' : 'The key: a Bespoke card, in card packs';

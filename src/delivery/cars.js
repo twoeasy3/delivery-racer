@@ -362,6 +362,59 @@ const earnedCar = (level, par, car, base) => ({ ...car, ...(base ? { id: 'earned
 // for has), since each garage car has a Super version in play (superOf): the Hell Rod is a Super Hot Rod, the
 // Courier Special a Super Sleeper Wagon, the Showdown Muscle a Super Muscle Car. The six that are a level's own
 // vehicle (the saucer, the race cars, the jetboat, the 8x8) have no Super version, and stay as they are.
+// ---- the LEGENDARY cars (the owner, 14-Oct: "Let's try a Legendary car first. The reserved colour scheme will be Black
+// with gold trim. Legendary cars should have a large gold winner's wreath at the rear quarter of their sides"; then "Start
+// the other 13. Let's keep one colour scheme for all of them"; then "push them as EARNED CARS but unavailable at the
+// moment. Give them placeholder starless stats"): an exclusive version of each original car on its base car's model
+// (`model`), dressed black and gold with the wreath on both flanks, the same on both sides (`legend`: the base car's id;
+// render/legenddecal.js). Earned cars that are OFF (as the Courier Special: shown, blacked out, "Not available at the
+// moment", earned on no level yet: `earned.level` null), with NO tier and no rating (no stars), their figures the base
+// car's plus a Super car's (CONFIG.superCar: placeholders)
+const legendCar = (car) => ({ ...car, price: 0, earned: { level: null, par: {} }, off: true, placeholder: true });
+const LEGEND_CARS = [
+  legendCar({ id: 'l-commuter', name: 'Legendary Commuter', basedOn: 'the Commuter', model: 'commuter', legend: 'commuter',
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 0.85, hl: 1.85, height: 1.45, note: 'The starter car, made a legend: it has won everything there is to win, and it shows.',
+    maxSpeed: 34, accel: 14, agility: 1.15, crossing: 0.7, health: 111, mass: 1, sound: 'commuter' }),
+  legendCar({ id: 'l-sport', name: 'Legendary Sportscompact', basedOn: 'the Sportscompact', model: 'sport', legend: 'sport',
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 0.85, hl: 1.9, height: 1.1, note: 'The street racer in its finest hour: every trophy on the shelf and a wreath to show for it.',
+    maxSpeed: 41, accel: 17, agility: 1.15, crossing: 0.45, health: 104, mass: 1, sound: 'sport' }),
+  legendCar({ id: 'l-miata', name: 'Legendary Sportscar', basedOn: 'the Sportscar', model: 'miata', legend: 'miata',
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 0.85, hl: 1.95, height: 1.1, note: 'The open two-seater that won the lot, and wears the laurels on its flanks.',
+    maxSpeed: 52, accel: 19, agility: 1.15, crossing: 0.35, health: 176, mass: 1, sound: 'miata' }),
+  legendCar({ id: 'l-lowrider', name: 'Legendary Lowrider', basedOn: 'the Lowrider', model: 'lowrider', legend: 'lowrider',
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1, hl: 2.5, height: 1.1, note: 'Low, slow and crowned: the cruiser every boulevard bows to.',
+    maxSpeed: 37, accel: 13, agility: 1.15, crossing: 0.25, health: 156, mass: 1, sound: 'lowrider' }),
+  legendCar({ id: 'l-wagon', name: 'Legendary Family Wagon', basedOn: 'the Family Wagon', model: 'wagon', legend: 'wagon',
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1.05, hl: 2.4, height: 1.9, note: 'The school run, won outright: the most decorated wagon on the street.',
+    maxSpeed: 36, accel: 13, agility: 1.15, crossing: 0.7, health: 182, mass: 1, sound: 'wagon' }),
+  legendCar({ id: 'l-lovebus', name: 'Legendary Love Bus', basedOn: 'the Love Bus', model: 'lovebus', legend: 'lovebus',
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1, hl: 2.3, height: 2.1, note: 'Peace, love and first place: the bus that won the summer.',
+    maxSpeed: 34, accel: 11, agility: 1.15, crossing: 0.65, health: 215, mass: 1, sound: 'lovebus' }),
+  legendCar({ id: 'l-darkvan', name: 'Legendary Darkvan', basedOn: 'the Darkvan', model: 'darkvan', legend: 'darkvan',
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1.05, hl: 2.45, height: 2.4, note: 'The panel van that never lost a delivery, and has the laurels to prove it.',
+    maxSpeed: 34, accel: 12.5, agility: 1.15, crossing: 0.75, health: 195, mass: 1, sound: 'darkvan' }),
+  legendCar({ id: 'l-hearse', name: 'Legendary Hearse', basedOn: 'the Hearse', model: 'hearse', legend: 'hearse',
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1, hl: 2.8, height: 1.65, note: 'The last ride, done in style: a champion that arrives right on time.',
+    maxSpeed: 43, accel: 14, agility: 1.15, crossing: 0.5, health: 221, mass: 1, sound: 'hearse' }),
+  legendCar({ id: 'l-hotrod', name: 'Legendary Hot Rod', basedOn: 'the Hot Rod', model: 'hotrod', legend: 'hotrod',
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 0.9, hl: 2.1, height: 1.2, note: 'The drag strip legend: a blown engine, open wheels and the laurels of a winner.',
+    maxSpeed: 48, accel: 19, agility: 1.15, crossing: 0.5, health: 143, mass: 1, sound: 'hotrod' }),
+  legendCar({ id: 'l-minivan', name: 'Legendary Minivan', basedOn: 'the Minivan', model: 'minivan', legend: 'minivan',
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1.05, hl: 2.45, height: 2, note: 'The people carrier that carried off every prize going.',
+    maxSpeed: 42, accel: 13, agility: 1.15, crossing: 0.7, health: 260, mass: 1, sound: 'minivan' }),
+  legendCar({ id: 'l-pickup', name: 'Legendary Pick-Up', basedOn: 'the Pick-Up', model: 'pickup', legend: 'pickup',
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1.05, hl: 2.6, height: 2.1, note: 'A working truck that worked its way to the top of the podium.',
+    maxSpeed: 44, accel: 15, agility: 1.15, crossing: 1, health: 280, mass: 1, sound: 'pickup' }),
+  legendCar({ id: 'l-junker', name: 'Legendary Junker', basedOn: 'the Junker', model: 'junker', legend: 'junker',
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1, hl: 2.5, height: 1.95, note: 'Still dented, still rattling, and somehow a champion.',
+    maxSpeed: 35, accel: 13.5, agility: 1.15, crossing: 0.8, health: 130, mass: 1, sound: 'junker' }),
+  legendCar({ id: 'l-taxi', name: 'Legendary Taxi', basedOn: 'the Taxi', model: 'taxi', legend: 'taxi',
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1, hl: 2.55, height: 1.6, note: 'The fare that won the city: the most famous cab on the rank.',
+    maxSpeed: 48, accel: 16, agility: 1.15, crossing: 0.7, health: 273, mass: 1, sound: 'taxi' }),
+  legendCar({ id: 'l-suv', name: 'Legendary SUV', basedOn: 'the SUV', model: 'suv', legend: 'suv',
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1, hl: 2.25, height: 1.8, note: 'The off-roader that conquered every road there is, and a few that are not.',
+    maxSpeed: 47, accel: 15, agility: 1.15, crossing: 1, health: 390, mass: 1, sound: 'suv' }),
+];
 export const EARNED_CARS = [
   earnedCar('all-heck', { good: 39 }, { id: 'hellrod', name: 'Hell Rod', color: 0xff5a00, evilColor: 0x1a0608, model: 'hotrod',
     superKit: true, stripe: 0x151515, evilStripe: 0xff5a00, // flame orange with black / soot with a flame stripe
@@ -382,6 +435,7 @@ export const EARNED_CARS = [
     maxSpeed: 52, accel: 17, crossing: 0.45, health: 300, mass: 2, hw: 1.0, hl: 2.5, height: 1.35 }),
   // (the toughest car there is)
   earnedCar('battlefield', { good: 78 }, { ...LEVEL_CARS.apc, name: 'Road 8x8', health: 450, color: 0x6b6f5a, evilColor: 0x4a4e3a, perk: 'Its gun fires in place of packages' }, LEVEL_CARS.apc),
+  ...LEGEND_CARS, // (the Legendary cars: off, starless; earned on no level yet)
 ];
 Progress.earnedCars = EARNED_CARS;
 // Cars only an event gives (tiers.json events, a "reward": { "car": id }): defined here, not with the event, so a car

@@ -140,6 +140,7 @@ Also need `autostart` (or a hidden level).
 | `bounce` | seconds | With `showroom&full`: the car's landing frozen that far in (0.16: down on its springs; 0.31: up off them). | `/delivery/?showroom&look=sport&full&bounce=0.16` | Normal | untried |
 | `sourcesopen` | bare | The full view's "Where to get it" list open from the start. | `/delivery/?showroom&look=sixteen&full&sourcesopen` | Normal | untried |
 | `keyturn` | radians | With `showroom&full`: the "Where to get it" key card's turning key (render/keyspin.js) held at that turn (no spin; a drag still turns it). 0 leaves the pre-rendered PNG. A blacked-out car's key turns black. | `/delivery/?showroom&look=hotdog&full&sourcesopen&keyturn=1.8` | Normal | yes (headless Chromium, CHECKLIST 224) |
+| `legendpos` | `P1` .. `P8`, `P8b`, `P8c`, `T15`, `T25` | A Legendary car's wreath at another of the placements to compare (render/legenddecal.js LEGEND_PLACEMENTS; P1, the default, is its own, at the shared tilt of 20; T15 and T25 are P1 at 15 and 25 degrees, P8c at the old 35). Any page that builds the car: the showroom, the model editor (`modeleditor.html?car=l-commuter&legendpos=P3`), a run or `cine=car`. A car with no such placement keeps its own. | `/delivery/?showroom&look=l-commuter&owns=l-commuter&full&legendpos=P3` | Normal (it writes nothing) | yes (headless stills, CHECKLIST 243) |
 
 ## 6. Events and the clock
 

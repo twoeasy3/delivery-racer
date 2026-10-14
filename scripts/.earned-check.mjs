@@ -10,16 +10,21 @@ try {
   const { Progress } = await g.load('progress.js');
   const { CARS, EARNED_CARS, earnedFor, garageCars, selectCar, stars, starColour, STAR_COLOURS, superOf, LEVEL_CARS } = g.cars;
   const { SPECIAL_LEVELS, LEVELS } = g.levels;
-  check(SPECIAL_LEVELS.every(l => EARNED_CARS.some(car => car.earned.level === l.id)) && EARNED_CARS.length === SPECIAL_LEVELS.length, 'a car for each of the ' + SPECIAL_LEVELS.length + ' special levels, and no other');
+  // (the Legendary cars, cars.js LEGEND_CARS: earned cars too, but OFF, starless and earned on no level yet: apart below)
+  const LEGENDS = EARNED_CARS.filter(car => car.legend), LEVELLED = EARNED_CARS.filter(car => !car.legend);
+  check(SPECIAL_LEVELS.every(l => LEVELLED.some(car => car.earned.level === l.id)) && LEVELLED.length === SPECIAL_LEVELS.length, 'a car for each of the ' + SPECIAL_LEVELS.length + ' special levels, and no other');
+  check(LEGENDS.length === 14 && LEGENDS.every(car => car.off && car.earned.level === null && !car.tier && !car.rating && stars(car) === '' && car.placeholder && /^l-/.test(car.id) && /^Legendary /.test(car.name)
+    && !Progress.earned(car) && !Progress.owns(car.id) && !garageCars().includes(car) && superOf(car) === null && earnedFor(null) === undefined),
+  'the 14 Legendary cars: off, earned on no level, no stars, placeholders, not owned nor in the garage, no Super version: ' + LEGENDS.map(c => c.id).join(', '));
   // one off for now (Rival Run's Courier Special, the owner 11-Oct): not earned on its level, and nobody has it, a par beaten or not
-  const off = EARNED_CARS.filter(car => car.off), courier = EARNED_CARS.find(car => car.id === 'courier');
+  const off = LEVELLED.filter(car => car.off), courier = EARNED_CARS.find(car => car.id === 'courier');
   const had = JSON.stringify(Progress.data.bestTime);
   Progress.data.bestTime.good['rival-run'] = 999; Progress.data.bestTime.evil['rival-run'] = 999;
   check(off.length === 1 && courier?.off && !earnedFor('rival-run') && !Progress.earned(courier) && !Progress.owns(courier.id) && !garageCars().includes(courier),
     'the Courier Special is off: Rival Run earns nothing, and a par beaten there gives no car');
   Progress.data.bestTime = JSON.parse(had);
   check(new Set([...CARS, ...EARNED_CARS, ...Object.values(LEVEL_CARS)].map(c => c.id)).size === CARS.length + EARNED_CARS.length + Object.keys(LEVEL_CARS).length, 'every id its own');
-  for (const car of EARNED_CARS) {
+  for (const car of LEVELLED) {
     const level = LEVELS.find(l => l.id === car.earned.level), par = car.earned.par, onlyGood = level.battle || level.alwaysGood;
     // (held to no cap: each drives by its own figures; a level's vehicle as on its level unless one is given)
     const own = ['maxSpeed', 'accel', 'health'].every(k => car[k] > 0 && isFinite(car[k]));

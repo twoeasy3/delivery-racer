@@ -7,12 +7,14 @@ import { MODELS } from './models.js';
 import { makeIdeaModel } from './ideaModels.js';
 import { makeUfo, addSuperKit } from './carExtras.js';
 import { patchModel } from './modelpatchapply.js'; // (the car's model patch, if it has one: src/delivery/modelpatches)
+import { addLegend } from './legenddecal.js';
 
 export const makeShowCar = (car) => {
   if (car.idea) return patchModel(makeIdeaModel(car), car); // (a car idea in use: its own model, ideas.js; one with none throws below, and the card shows no picture)
   const mesh = car.tank ? makeTankMesh(car.color) : car.ufo ? makeUfo() : car.model ? MODELS[car.model](car) : makeCarMesh(car.color); // (ufo: the earned Saucer)
   if (!car.tank && !car.ufo && !car.model) shapeCarMesh(mesh, car);
   if (car.super || car.superKit) addSuperKit(mesh, car); // (an earned car built as its garage car's Super version: the body kit on, as in play)
+  if (car.legend) addLegend(mesh, car); // (a Legendary car: black and gold, the wreath on its flanks: render/legenddecal.js)
   return patchModel(mesh, car);
 };
 export const paintShowCar = (mesh, car, evil) => {
