@@ -177,6 +177,21 @@ Also need `autostart` (or a hidden level).
 | `w` / `h` | pixels | With `banner`: its size (default 1600x800). | (above) | Normal | yes |
 | `evil` / `labels` | bare / `0` | With `banner`: Evil livery / no names. | `...&banner=wedge,midnight&evil&labels=0` | Normal | untried |
 
+## 7a. Crazey Jim's Blueprint Stall (branch claude/blueprint-shop, not on main yet)
+
+A screen over the Shop where Jim sells blueprints for tip money (the bank, `$`): a daily rotation of six offers (render/jimshop.js,
+rules in jimshop.js). Reached from a red "Crazey Jim's Blueprint Stall" doorway at the top of the Shop, or by address. Fake saves
+below write nothing (`Progress.noSave`). The rotation is seeded by the local date, so `eventsnow` picks the day.
+
+| Param | Values | What it does | Example | Saves? | Tried |
+|---|---|---|---|---|---|
+| `jimshop` | bare | Opens the stall on the menu (not with autostart). | `/delivery/?jimshop` | Normal (buying is real) | yes |
+| `demo` | `normal` (also bare), `expensive`, `soldout`, `broke`, `maxed`, `capped`, `empty`, `nopool`, `bought` | With `jimshop`: a made-up save: a bank of $900 (`expensive` $5000, `soldout` $1500, `broke` $0, `maxed` $2000, `capped` $3000, `empty` $800) and blueprint counts, so the offers show their states. `expensive`: the dearest offer's confirm up. `soldout`: two sold out. `maxed`: one car at its max, one a blueprint short of it. `capped`: Jim's daily limit hit. `empty`: everything sold. `nopool`: no cars to sell. `bought`: a cheap purchase made, its feedback shown. | `/delivery/?jimshop&demo=soldout` | No | yes |
+| `jimcash` | whole dollars | With `jimshop`: the bank for the visit. | `/delivery/?jimshop&jimcash=120` | No | untried |
+| `jimpress` | offer number (0-based, as laid out: the hot deal first) | With `jimshop`: that offer's Buy pressed 0.4 s after opening (a dear one asks first). | `/delivery/?jimshop&demo&jimpress=2` | No with `demo` | yes |
+| `jimhold` | bare | With `jimshop`: the purchase toast stays up (for a picture). | `/delivery/?jimshop&demo=bought&jimhold` | No | yes |
+| `eventsnow` | a day or date-time | (section 6) sets the day, so the rotation, and the "New stock in" clock. | `/delivery/?jimshop&eventsnow=2026-10-14T19:48:00Z` | Normal | yes |
+
 ## 7b. Unlock cinematics (by address only, for now)
 
 A full-screen reveal over the menu, drawn in one canvas of its own (render/unlockcine.js). Not the `cine` stills of
