@@ -39,6 +39,7 @@ import { statShown } from '../showroomData.js';
 import { makeKey } from './keyModels.js';
 import { keyModelInUse } from './keycard.js';
 import { Sound } from './audio.js';
+import { prepareSuspension } from './carsuspension.js';
 import { clamp, lerp, span, smooth, easeOut, easeIn, v3, rand, WHITE, setLamp, glowMat, facing, beamGeometry } from './unlockcine.js';
 
 const money = (n) => '$' + Number(n).toFixed(2);
@@ -95,6 +96,29 @@ const dropKey = (car, length) => {
   const scaled = new THREE.Group(); scaled.add(key); scaled.scale.setScalar(length / Math.max(size.y, 0.01));
   const rig = new THREE.Group(); rig.add(scaled);
   return rig;
+};
+
+// ---- the dyno ROLLERS' art (the owner, 14-Oct: "the single stripe strobes"): two canvases drawn once (ROLLER_ART:
+// 64 x 16 px each): KNURL, 16 even bands round the roller (light and dark, so no single line flickers); STREAK, the same
+// steel smeared round (even all the way round, faint rings along its length) for a fast spin. cap: the most it turns,
+// rad/s, a third of a band a frame at 30 frames a second (2 pi / 16 / 3 x 30); fast: the revs past which the streak shows
+export const ROLLER_ART = { w: 64, h: 16, bands: 16, cap: (Math.PI * 2 / 16 / 3) * 30, fast: 0.3 };
+let rollerCanvases = null;
+const rollerArt = (keep) => {
+  if (!rollerCanvases) {
+    const make = (draw) => { const c = document.createElement('canvas'); c.width = ROLLER_ART.w; c.height = ROLLER_ART.h; draw(c.getContext('2d'), c.width, c.height); return c; };
+    rollerCanvases = {
+      knurl: make((g, w, h) => {
+        const band = w / ROLLER_ART.bands;
+        for (let i = 0; i < ROLLER_ART.bands; i++) { g.fillStyle = i % 2 ? '#6f757e' : '#c3c8cf'; g.fillRect(i * band, 0, band, h); }
+      }),
+      streak: make((g, w, h) => {
+        for (let y = 0; y < h; y++) { const v = 150 + 25 * Math.sin((y / h) * Math.PI * 4); g.fillStyle = `rgb(${v},${v + 4},${v + 10})`; g.fillRect(0, y, w, 1); }
+      }),
+    };
+  }
+  const tx = (c) => { const t = keep(new THREE.CanvasTexture(c)); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = THREE.RepeatWrapping; return t; };
+  return { knurl: tx(rollerCanvases.knurl), streak: tx(rollerCanvases.streak) };
 };
 
 // ============================================================================ CRAZEY JIM'S SALE
@@ -299,16 +323,47 @@ const dyno = (kx) => {
   const deck = 0.14;
   box(s, scene, 0x3a3f47, W + 1.6, deck, L + 1.4, 0, deck / 2, 0);
   for (let i = 0; i < 12; i++) box(s, scene, i % 2 ? 0x15161a : 0xf2c21b, (W + 1.6) / 12, 0.02, 0.12, -(W + 1.6) / 2 + (i + 0.5) * (W + 1.6) / 12, deck + 0.005, L / 2 + 0.64); // (hazard stripes on its front edge)
-  s.carRig.position.y = deck;
-  s.shadow.position.y = deck + 0.01;
-  const rollers = [];
-  const rollGeo = keep(new THREE.CylinderGeometry(0.2, 0.2, W * 0.95, 20)), rollMat = keep(new THREE.MeshLambertMaterial({ color: 0x9aa0a8 }));
-  for (const az of [-L * 0.31, L * 0.31]) for (const dz of [-0.2, 0.2]) {
-    const g = new THREE.Group(); g.position.set(0, deck - 0.1, az + dz);
-    const roll = new THREE.Mesh(rollGeo, rollMat); roll.rotation.z = Math.PI / 2; g.add(roll);
-    box(s, g, 0x2a2d33, W * 0.96, 0.05, 0.05, 0, 0.19, 0); // (a mark on it, to see it turn)
-    scene.add(g); rollers.push(g);
+  // THE ROLLERS, from the car's own WHEELS (the owner, 14-Oct: "place the rollers from the car's actual wheel positions"):
+  // its tyres as the showroom's suspension finds them (render/carsuspension.js: discs on the floor, or the model's own
+  // `planted`), grouped into axles by where they are along the car; under each axle a pair of rollers as wide as its
+  // tyres, their size from the tyres', set apart so every tyre rests on both; the car lifted onto them. A car with no
+  // wheels on the floor (the hovercraft, the snowcat, the saucer) stands on the plain deck. Each roller's surface is a
+  // small canvas (ROLLER_ART): fine knurling of an even number of bands while it turns slowly, a soft streak once fast
+  s.carRig.position.y = 0;
+  s.carRig.updateMatrixWorld(true);
+  const tyres = (prepareSuspension(s.model).wheelBoxes || []).map((b) => b.clone().applyMatrix4(s.model.matrixWorld));
+  tyres.sort((a, b) => (a.min.z + a.max.z) - (b.min.z + b.max.z));
+  const axles = [];
+  for (const b of tyres) {
+    const z = (b.min.z + b.max.z) / 2, r = (b.max.y - b.min.y) / 2, last = axles[axles.length - 1];
+    if (last && Math.abs(z - last.z) < Math.max(0.3, 0.6 * r)) { last.zs.push(z); last.z = last.zs.reduce((a, c) => a + c) / last.zs.length; last.r = Math.max(last.r, r); last.x0 = Math.min(last.x0, b.min.x); last.x1 = Math.max(last.x1, b.max.x); }
+    else axles.push({ z, zs: [z], r, x0: b.min.x, x1: b.max.x });
   }
+  const rr = axles.length ? clamp(Math.min(...axles.map(a => a.r)) * 0.42, 0.08, 0.22) : 0, lift = rr * 0.6; // (the rollers' radius; how far the car stands above the deck on them)
+  s.carRig.position.y = deck + lift;
+  s.shadow.position.y = deck + 0.01;
+  const rollers = [], arts = rollerArt(keep);
+  const rollMat = keep(new THREE.MeshLambertMaterial({ color: 0xffffff, map: arts.knurl }));
+  for (const a of axles) {
+    const span = a.x1 - a.x0 + 0.25, cx = (a.x0 + a.x1) / 2;
+    const d = Math.sqrt(Math.max(0.0001, (a.r + rr) ** 2 - (a.r + lift - rr) ** 2)); // (each roller's centre from the axle's, along the car: both touch the tyre)
+    const geo = keep(new THREE.CylinderGeometry(rr, rr, span, 24));
+    box(s, scene, 0x23262c, span + 0.12, rr * 0.9, 2 * (d + rr) + 0.08, cx, deck + rr * 0.45, a.z); // (the cradle they turn in)
+    for (const dz of [-d, d]) {
+      const g = new THREE.Group(); g.position.set(cx, deck + rr, a.z + dz);
+      const roll = new THREE.Mesh(geo, rollMat); roll.rotation.z = Math.PI / 2; g.add(roll);
+      scene.add(g); rollers.push(g);
+    }
+  }
+  const rearZ = axles.length ? axles[0].z : -L * 0.31;
+  // the rollers turned: by the integral of their speed (a function of the time: a still is any moment), never faster than
+  // a third of a band a frame at 30 frames a second (ROLLER_ART.cap); past ROLLER_ART.fast revs the streak art shows
+  const spin = (t, revAt) => {
+    let angle = 0;
+    for (let x = 0; x < t; x += 1 / 120) angle += Math.min(ROLLER_ART.cap, 0.5 + revAt(x) * 12) / 120;
+    for (const g of rollers) g.rotation.x = -angle;
+    rollMat.map = revAt(t) > ROLLER_ART.fast ? arts.streak : arts.knurl;
+  };
   // the strip lights overhead (off: dark; on: white)
   const strips = [-2.4, 0, 2.4].map((x) => box(s, scene, 0x111317, 0.22, 0.06, L * 1.3, x, 4.8, 0, true));
   // the tower, beside the car's nose, turned toward the front
@@ -348,7 +403,7 @@ const dyno = (kx) => {
   const ringMat = keep(new THREE.MeshBasicMaterial({ color: accent.clone().lerp(WHITE, 0.3), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
   const ring = new THREE.Mesh(keep(new THREE.RingGeometry(0.9, 1, 64)), ringMat); ring.rotation.x = -Math.PI / 2; ring.position.y = deck + 0.03; scene.add(ring);
   const lit = (mesh, on, colour = 0xffffff) => mesh.material.color.setHex(on ? colour : 0x222630);
-  return { deck, rollers, strips, bars, red, redMat, needleAt, Q, chip, die, led, rowLeds, chipGlow, flames, flameMat, ring, ringMat, lit, gauge, tower, engine: car.sound || car.id };
+  return { deck, rollers, spin, axles, rearZ, strips, bars, red, redMat, needleAt, Q, chip, die, led, rowLeds, chipGlow, flames, flameMat, ring, ringMat, lit, gauge, tower, engine: car.sound || car.id };
 };
 // the module's drop into its socket: above it until `a`, home at `b`
 const chipAt = (rig, t, a, b) => {
@@ -443,8 +498,9 @@ const ecu = (kx) => {
       const pulse = !lite && t >= CLICK ? Math.exp(-(t - CLICK) * 4) : 0;
       rig.chipGlow.material.opacity = pulse * 0.9; rig.chipGlow.scale.setScalar(0.5 + pulse * 0.6);
       // the run: rollers, revs, exhaust flares, the screen's bars, the needle
-      const rev = lt >= 99 ? 0.15 : t < 2.0 ? 0.05 : t < 3.3 ? 0.15 + 0.7 * smooth(span(t, 2.0, 3.3)) : 0.85 * (1 - span(t, 3.3, 4.0)) + 0.15;
-      rig.rollers.forEach((g) => { g.rotation.x = -t * (2 + rev * 40); });
+      const revAt = (x) => (lite ? 0.15 : x < 2.0 ? 0.05 : x < 3.3 ? 0.15 + 0.7 * smooth(span(x, 2.0, 3.3)) : 0.85 * (1 - span(x, 3.3, 4.0)) + 0.15);
+      const rev = revAt(t);
+      rig.spin(lite ? 0 : t, revAt);
       rig.needleAt(rev * 0.82);
       rig.bars.forEach((m, i) => { const v = 0.25 + 0.75 * Math.abs(Math.sin(t * (3 + i) + i)) * (0.3 + rev); m.scale.y = v; m.position.y = 1.1 - 0.1 * (1 - v); });
       const flare = (at) => (t >= at && t < at + 0.35 ? Math.exp(-(t - at) * 9) : 0);
@@ -521,7 +577,7 @@ const ecumax = (kx) => {
         { from: 0, to: 1.0, cam: (u) => [v3(-4.4 * k + u * 0.4, 1.0, (L / 2 + 6.0) * k - u * 0.4), v3(0, H * 0.45, 0), 40] }, // LIGHTS
         { from: 1.0, to: 2.1, cam: (u) => [Q.clone().add(v3(-0.6 + u * 0.1, 0.42, 0.7 - u * 0.12)), Q.clone().add(v3(0, 0.1, 0)), 34] }, // THE CHIP
         { from: 2.1, to: 3.0, cam: (u) => [N.clone().lerp(T, 0.15 + u * 0.08), T, 30] }, // THE TACH
-        { from: 3.0, to: 3.9, cam: (u) => [v3(s.W / 2 + 1.25 + u * 0.1, rig.deck + 0.35, -L * 0.31 - 1.0 + u * 0.15), v3(0, rig.deck + 0.25, -L * 0.42), 46] }, // REDLINE
+        { from: 3.0, to: 3.9, cam: (u) => [v3(s.W / 2 + 1.25 + u * 0.1, rig.deck + 0.35, rig.rearZ - 1.0 + u * 0.15), v3(0, rig.deck + 0.25, rig.rearZ - L * 0.11), 46] }, // REDLINE (at the rear axle)
         { from: 3.9, to: 4.9, cam: (u) => [v3(1.2 * k, 0.45, (L / 2 + 7.5 - u * 0.6) * k), v3(0, H * 0.5, 0), 44] }, // SHOCKWAVE
         { from: 4.9, to: 6.0, cam: (u) => [v3(0.9 - u * 0.3, rig.deck + H + 0.7, L / 2 + 4.4 - u * 0.4), v3(0, rig.deck + H + 0.65, 0.3), 40] }, // THE STARS
         { from: 6.0, to: 8.0, cam: (u) => { const d = lerp(10.6, 9.2, easeOut(u)) * k * tall; return [v3(-d * 0.62, 1.45 + H * 0.3, d * 0.78), v3(0, H * 0.45, 0), 32, 0.16]; } }, // HERO
@@ -551,8 +607,9 @@ const ecumax = (kx) => {
       rig.chipGlow.position.copy(rig.chip.position).add(v3(0, 0.08, 0));
       rig.chipGlow.material.opacity = lite ? 0 : hot * (t < 2.1 ? 0.9 : 0.5); rig.chipGlow.scale.setScalar(0.7 + hot * 0.5);
       // the revs: to the red and past it, cut after the boom
-      const rev = lt >= 99 ? 0.12 : t < 2.15 ? 0.06 : t < BOOM ? 0.1 + 0.95 * smooth(span(t, 2.15, 3.6)) : 1.05 * (1 - span(t, BOOM + 0.3, BOOM + 1.0)) + 0.12 * span(t, BOOM + 0.3, BOOM + 1.0);
-      rig.rollers.forEach((g) => { g.rotation.x = -t * (2 + rev * 60); });
+      const revAt = (x) => (lite ? 0.12 : x < 2.15 ? 0.06 : x < BOOM ? 0.1 + 0.95 * smooth(span(x, 2.15, 3.6)) : 1.05 * (1 - span(x, BOOM + 0.3, BOOM + 1.0)) + 0.12 * span(x, BOOM + 0.3, BOOM + 1.0));
+      const rev = revAt(t);
+      rig.spin(lite ? 0 : t, revAt);
       rig.needleAt(Math.min(1.02, rev * (1 + 0.03 * Math.sin(t * 47))));
       rig.redMat.color.setHex(rev > 0.8 && Math.sin(t * 30) > 0 ? 0xff2a1a : 0x7a1414);
       rig.bars.forEach((m, i) => { const v = 0.25 + 0.75 * Math.abs(Math.sin(t * (3 + i) + i)) * (0.3 + rev); m.scale.y = v; m.position.y = 1.1 - 0.1 * (1 - v); });
