@@ -196,7 +196,7 @@ export const THEMES = {
     target: { height: 4.2, beam: true }, // (up over the fence)
     light: { sky: 0xe4ffb8, ground: 0x3a3a2c, ambient: 1.3, sun: 0xf2ffd0, sunlight: 0.9 } },
   // halloween: a haunted hollow at dusk (render/themes/halloween.js): a purple sky with a harvest moon, bats and stars, fog drifting low over dark fields, pumpkin patches and corn, bare twisted trees, a cemetery behind iron gates, a haunted house on a hill with its windows lit, a village of carved pumpkins and cobwebbed lamp posts; a tunnel goes through the hill, the level crossing's train is the steam one
-  halloween: { sky: 0x1d1236, ground: 0x2b3322, road: 0x34323a, scenery: 'halloween', fogColor: 0x5a4a78, lit: true, headlights: true, night: true, train: 'steam', line: 0xe6dcc8, centre: 0xff9a1e,
+  halloween: { sky: 0x1d1236, ground: 0x3d4a31, road: 0x3a3842, scenery: 'halloween', fogColor: 0x5a4a78, lit: true, headlights: true, night: true, train: 'steam', line: 0xe6dcc8, centre: 0xff9a1e,
     sets: ['patch', 'woods', 'graveyard', 'hill', 'village'], target: { offset: 1.6, height: 4.2, beam: true },
     tunnel: { wall: 0x4a4f4a, tiles: 0x6b6f66, roof: 0x2a2c2a, face: 0x5d625a, lamp: 0xffa43a },
     light: { sky: 0x9a8cff, ground: 0x3a3050, ambient: 0.95, sun: 0xb8b0ff, sunlight: 0.5 } },

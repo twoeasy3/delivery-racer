@@ -629,7 +629,6 @@ export const CONFIG = {
     // ...for a bale:
     hayGhost: { damage: 38, speedKept: 0.75 },      // Halloween's: a hay bale in a bedsheet
     wineCrates: { damage: 31, speedKept: 0.75 },    // Tuscany's: two wine crates, bottle necks out of the top one
-    hawkerCart: { damage: 31, speedKept: 0.75 },    // Hong Kong's: a hawker's cart under its striped awning, a red lamp lit
     // ...for a bale:
     hayRoll: { damage: 38, speedKept: 0.75 },       // Tuscany's: a round hay bale on its side
     bagStack: { damage: 38, speedKept: 0.75 },      // Hong Kong's: a heap of red-white-blue nylon bags, strapped

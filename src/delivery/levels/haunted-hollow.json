@@ -1,10 +1,7 @@
 {
  "id": "haunted-hollow",
  "theme": "halloween",
- "clock": {
-  "good": 175,
-  "evil": 135
- },
+ "clock": { "good": 175, "evil": 135 },
  "tip": 190,
  "lanes": 4,
  "cargo": {
