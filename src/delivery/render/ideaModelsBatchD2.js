@@ -5,8 +5,8 @@
 // NO driver). Built as the approved Junker and Commuter are: bodies from extrusions of their side views (few bevel
 // segments), dark glass laid a few mm proud, parts that share a material and never move merged into one mesh, plain
 // chunky wheels (a tyre and a hub disc, meshes of their own so the showroom's suspension finds them), paint shaded darker
-// low down (vertex colours), and character from two small textures DRAWN IN CODE (sun-worn paint 64 x 64, soft-edged;
-// deck planks 64 x 64). No image files, no panel lines. Each builder takes the idea's entry and returns a group, front
+// low down (vertex colours). No textures (14-Oct, the owner: not everything needs one): flat colours only. No image
+// files, no panel lines. Each builder takes the idea's entry and returns a group, front
 // facing local +z, with userData.body, userData.animate and userData.livery. Spread into IDEA_MODELS by ideaModels.js. State-free.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -103,58 +103,6 @@ const wheel = (parent, key, R, width, x, z, seg = 14) => {
   place(parent, shared(key + 'hub', () => new THREE.CylinderGeometry(R * 0.52, R * 0.52, width + 0.02, 10).rotateZ(Math.PI / 2)), HUB, x, R, z);
 };
 
-// ---- small canvas textures, drawn once and shared ---------------------------------------------------------------------
-const textures = new Map();
-const texture = (key, w, h, draw) => {
-  if (!textures.has(key)) {
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    draw(canvas.getContext('2d'), w, h);
-    const map = new THREE.CanvasTexture(canvas);
-    map.colorSpace = THREE.SRGBColorSpace;
-    map.wrapS = map.wrapT = THREE.RepeatWrapping;
-    map.userData.shared = true;
-    textures.set(key, map);
-  }
-  return textures.get(key);
-};
-const random = (seed) => () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-// paint worn by sun and knocks, to repeat over the body: a white ground with soft darker rubs and a few fine scratches
-// (a multiply over the paint); no hard edges anywhere
-const worn = (seed) => texture('worn' + seed, 64, 64, (ctx, w, h) => {
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, w, h);
-  const rnd = random(seed);
-  for (let i = 0; i < 9; i++) {
-    const x = rnd() * w, y = rnd() * h, r = 5 + rnd() * 11, g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, 'rgba(95,75,60,0.22)'); g.addColorStop(1, 'rgba(95,75,60,0)');
-    ctx.fillStyle = g; ctx.fillRect(x - r, y - r, 2 * r, 2 * r);
-  }
-  for (let i = 0; i < 8; i++) {
-    const x = rnd() * w, y = rnd() * h, l = 3 + rnd() * 8, a = rnd() * Math.PI;
-    ctx.strokeStyle = 'rgba(60,50,45,0.25)'; ctx.lineWidth = 0.7;
-    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); ctx.stroke();
-  }
-});
-// deck planks running up the picture (along the truck): eight boards of slightly different brown, dark gaps one pixel,
-// soft grain streaks
-const planks = () => texture('planks', 64, 64, (ctx, w, h) => {
-  const rnd = random(77), n = 8, pw = w / n;
-  for (let i = 0; i < n; i++) {
-    const v = 0.82 + rnd() * 0.3;
-    ctx.fillStyle = 'rgb(' + Math.round(150 * v) + ',' + Math.round(116 * v) + ',' + Math.round(74 * v) + ')';
-    ctx.fillRect(i * pw, 0, pw, h);
-    for (let j = 0; j < 5; j++) {
-      ctx.strokeStyle = 'rgba(70,48,28,' + (0.1 + rnd() * 0.15).toFixed(2) + ')'; ctx.lineWidth = 0.8;
-      const x = i * pw + 1 + rnd() * (pw - 2);
-      ctx.beginPath(); ctx.moveTo(x, rnd() * 20); ctx.lineTo(x + (rnd() - 0.5) * 2, 30 + rnd() * 34); ctx.stroke();
-    }
-    ctx.fillStyle = 'rgba(40,28,18,0.5)';
-    ctx.fillRect(i * pw, 0, 1, h);
-  }
-});
-
 export const IDEA_MODELS_BATCH_D2 = {
   // ---- the Flatbed Truck (after the Bedford TK, 1960) ----------------------------------------------------------------
   // A short bonnet cab with a flat grille (chrome bars on a dark panel), round lamps in chrome rims either side, a black
@@ -166,7 +114,7 @@ export const IDEA_MODELS_BATCH_D2 = {
     const R = 0.48, TW = 0.3, WX = car.hw - TW / 2, AF = 1.35, AR = -1.35, AY = R;
     const BEV = 0.05, BW = 1.64, HALF = BW / 2, NOSE = 2.0, CB = 0.05, ROOF = 2.2, BELT = 1.34;
     const TAPER = [1.25, ROOF, 0.08];
-    const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true, map: worn(11) });
+    const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
     const WSF = [1.45, BELT], WST = [1.0, 2.12];
     const outline = [
       [NOSE, AY], [NOSE, 1.2], [NOSE - 0.05, BELT], [WSF[0], BELT],
@@ -198,9 +146,9 @@ export const IDEA_MODELS_BATCH_D2 = {
     parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => dsc(0.13, 0.03, s * 0.64, 1.0, FZ + 0.02, 14)));
     parts(group, k + 'amber', AMBER, () => [-1, 1].map(s => bx(0.16, 0.07, 0.03, s * 0.64, 0.74, FZ + 0.005)));
     parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.2, 0.12, 0.03, s * 0.8, 1.04, -2.37)).concat([-1, 1].map(s => bx(0.2, 0.06, 0.03, s * 0.8, 0.8, -2.47))));
-    // the deck: boards on top (planked picture), its edge below, the headboard, side boards, tail board, stakes
+    // the deck: boards on top (a flat wood colour), its edge below, the headboard, side boards, tail board, stakes
     place(group, shared(k + 'deck', () => merge([bx(1.86, 0.12, 2.4, 0, 1.04, -1.15)])), DECK);
-    const planked = new THREE.MeshLambertMaterial({ map: planks() });
+    const planked = new THREE.MeshLambertMaterial({ color: 0x96744a });
     planked.userData.shared = true;
     place(group, shared(k + 'planks', () => new THREE.PlaneGeometry(1.8, 2.34).rotateX(-Math.PI / 2)), planked, 0, 1.105, -1.15);
     parts(group, k + 'wood', WOOD, () => [
@@ -222,13 +170,13 @@ export const IDEA_MODELS_BATCH_D2 = {
   // A flat bonnet with a dark slatted grille on a vertical face and two round lamps standing proud on top of it, low
   // straight sides (no wheel wells: the wheels stand against them under flat cream caps), a thin upright windscreen
   // frame, a bench seat (no driver; a steering wheel), a rear bed with a crate, a jerrycan and a canvas roll, and a flat
-  // tailgate with the spare wheel on it. Sun-worn paint, darker low down.
+  // tailgate with the spare wheel on it. Paint darker low down.
   moke: (car) => {
     const group = new THREE.Group();
     const k = 'moke';
     const R = 0.3, TW = 0.22, WX = car.hw - TW / 2, AF = 0.95, AR = -0.95;
     const BEV = 0.05, HALF = 0.62, NOSE = 1.5, TAILZ = -1.5, CZ = 0.45, SIDE = 0.76, FLOOR = 0.3;
-    const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true, map: worn(29) });
+    const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
     const FZ = NOSE + BEV, BZ = TAILZ - 0.03;
     const bonnet = [
       [NOSE, FLOOR], [NOSE, 0.72], ...curve([NOSE, 0.72], [NOSE, 0.79], [NOSE - 0.03, 0.82], [NOSE - 0.1, 0.82], 3),
