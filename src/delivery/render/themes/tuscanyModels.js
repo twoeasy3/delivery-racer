@@ -170,9 +170,38 @@ const makeStolenBust = () => {
   put(head, box(0.3, 0.05, 0.06), marble, 0, 0.07, 0.17);                                  // brow
   for (const x of [-1, 1]) put(head, sphere(0.032, 8, 6), eyeMat, x * 0.075, 0.03, 0.17);
   for (let k = 0; k < 7; k++) put(head, sphere(0.07, 7, 5), marble, Math.sin(k * 0.9 - 1.4) * 0.17, 0.17 - Math.abs(k - 3) * 0.015, -0.02 + Math.cos(k * 0.9 - 1.4) * 0.1); // curls
-  const sheet = sub(all, 0, 0.5, 0);
-  put(sheet, lathe([[0.4, 0], [0.38, 0.35], [0.26, 0.6], [0.13, 0.78], [0.1, 0.9], [0.0, 0.96]], 9), sheetMat, 0, 0, 0);
-  put(sheet, new THREE.PlaneGeometry(0.2, 0.1), lettered('STOLEN', 0x8a1a1a, 0xf1ecdd, 160, 64), 0, 0.3, 0.37);
+  // the dust sheet: a lathe of 11 rings that is re-laid every frame (no allocation) so that every ring stays outside what is under it. BUST_ENV is the
+  // outline of the plinth's slab, the shoulders, the head with its curls, nose and brow, plus 3 cm; each ring's radius is never under it at its height
+  // (and the sheet is only ever pushed out, never tilted), so it cannot go through the bust whatever the state. `gone` 0..1 slides the top of the cloth
+  // down from over the head (1.47 m) to a collar round the shoulders (0.98 m)
+  const SHEET = [[0.5, 0.45], [0.5, 0.5], [0.47, 0.575], [0.34, 0.62], [0.32, 0.8], [0.32, 0.95], [0.32, 1.1], [0.32, 1.24], [0.27, 1.36], [0.15, 1.44], [0, 1.47]];
+  const BUST_ENV = [[0.45, 0.47], [0.575, 0.47], [0.6, 0.33], [0.86, 0.28], [1.0, 0.28], [1.15, 0.29], [1.2, 0.29], [1.3, 0.3], [1.35, 0.26], [1.4, 0.14], [1.45, 0.05], [1.47, 0]];
+  const envAt = (y) => {
+    if (y <= BUST_ENV[0][0]) return BUST_ENV[0][1];
+    for (let k = 1; k < BUST_ENV.length; k++) if (y <= BUST_ENV[k][0]) { const [y0, r0] = BUST_ENV[k - 1], [y1, r1] = BUST_ENV[k]; return r0 + (r1 - r0) * (y - y0) / (y1 - y0); }
+    return 0;
+  };
+  const SEG = 12, RINGS = SHEET.length, sheetPos = new Float32Array(RINGS * (SEG + 1) * 3), sheetIdx = [];
+  for (let i = 0; i < RINGS - 1; i++) for (let k = 0; k < SEG; k++) { const a = i * (SEG + 1) + k, b = a + SEG + 1; sheetIdx.push(a, b, a + 1, a + 1, b, b + 1); }
+  const sheetGeo = new THREE.BufferGeometry();
+  sheetGeo.setAttribute('position', new THREE.BufferAttribute(sheetPos, 3));
+  sheetGeo.setIndex(sheetIdx);
+  const sheet = new THREE.Mesh(sheetGeo, sheetMat);
+  sheet.frustumCulled = false;
+  all.add(sheet);
+  const tag = put(all, new THREE.PlaneGeometry(0.2, 0.1), lettered('STOLEN', 0x8a1a1a, 0xf1ecdd, 160, 64), 0, 0.8, 0.335);
+  const layOut = (gone, t) => {
+    const top = 1.47 - (1.47 - 0.98) * gone, swell = 0.01 * (1 + Math.sin(t * 2.3)) * 0.5 * (1 - gone);
+    let n = 0;
+    for (let i = 0; i < RINGS; i++) {
+      const [r0, y0] = SHEET[i], y = y0 <= 0.575 ? y0 : 0.575 + (top - 0.575) * (y0 - 0.575) / (1.47 - 0.575), r = Math.max(envAt(y), r0 * (1 + 0.12 * gone)) + (r0 > 0 ? swell : 0);
+      for (let k = 0; k <= SEG; k++) { const a = k / SEG * Math.PI * 2; sheetPos[n++] = Math.sin(a) * r; sheetPos[n++] = y; sheetPos[n++] = Math.cos(a) * r; }
+    }
+    sheetGeo.attributes.position.needsUpdate = true;
+    sheetGeo.computeVertexNormals();
+    sheetGeo.computeBoundingSphere();
+    tag.visible = gone < 0.02;
+  };
   const state = { w: [1, 0, 0], target: 0, last: null };
   group.userData.state = 0;
   group.userData.setState = (n, snap = false) => {
@@ -181,11 +210,8 @@ const makeStolenBust = () => {
     if (snap) for (let i = 0; i < 3; i++) state.w[i] = i === state.target ? 1 : 0;
   };
   const pose = (t, a, f) => {
-    const gone = clamp01(a * 0.55 + f * 0.45);                                             // how far the sheet has slid off
-    sheet.scale.set(1 + gone * 0.2, Math.max(0.001, 1 - gone * 1.0), 1 + gone * 0.2);
-    sheet.position.y = 0.5 - gone * 0.02;
-    sheet.rotation.z = Math.sin(t * 2.3) * 0.02 * (1 - gone) + a * 0.12;
-    sheet.visible = gone < 0.98;
+    const gone = clamp01(a * 0.55 + f);                                             // how far the sheet has slid off
+    layOut(gone, t);
     eyeMat.color.setHex(0x2a2a2a).lerp(RED_EYES, clamp01(a * 0.35 + f * 0.65));
     head.rotation.y = Math.sin(t * (2 + f * 9)) * (0.1 * a + 0.5 * f);
     head.rotation.z = Math.sin(t * 7.3) * 0.12 * f;
