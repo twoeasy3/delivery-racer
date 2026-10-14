@@ -57,7 +57,6 @@ try {
   for (const car of IDEA_CARS) add('idea', car);
   const list = cars.filter(c => !only.length || only.includes(c.car.id));
   const entryBefore = new Map(list.map(c => [c.car, plain(c.car)]));
-  const tris = (model) => { let n = 0; model.traverse((m) => { if (m.isMesh && m.visible && m.geometry) n += (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3; }); return n; };
   const allTris = (model) => { let n = 0; model.traverse((m) => { if (m.isMesh && m.geometry) n += (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3; }); return n; };
   check(P.plateDesign() === 'stock' && P.shownDesign() === 'stock', 'a fresh visit: Stock');
 
