@@ -38,6 +38,7 @@ import { ask } from './dialog.js';
 import { Replay } from '../replay.js';
 import { ReplayStore } from '../replaystore.js';
 import { watch } from './replayui.js';
+import { bankFigure } from './bank.js'; // (the bank: whole dollars, its type scaled to its length)
 
 const money = (amount) => '$' + amount.toFixed(2);
 // each level's still, by level id (taken with ?cine: see main.js). The postcard album uses them too (render/album.js)
@@ -513,7 +514,7 @@ export const draw = () => {
   for (const e of Events.specials) if (e.days) Events.syncTry(e); // (a rotating event's free try follows the day: its stage's car lock)
   if (Tiers.on() && isOpen(cursor)) useLevelCar(LEVEL.car, LEVEL.amphibious); // (the tier rule: it goes by the side and the medals, which change)
   const open = isOpen(cursor), evil = Game.evil && !oneSided(cursor);
-  bank.replaceChildren(make('small', '', 'Bank'), money(Progress.data.money));
+  bank.replaceChildren(make('small', '', 'Bank'), bankFigure(Progress.data.money));
   for (const [name, button] of Object.entries(tabBtns)) button.classList.toggle('current', name === tab);
   markEventsTab();
   startScreen.classList.toggle('races', tab === 'race');
@@ -562,15 +563,26 @@ export const draw = () => {
     button.setAttribute('aria-pressed', on);
     button.disabled = oneSided(cursor) && button.dataset.side === 'evil';
   }
-  sideNote.textContent = oneSided(cursor) ? 'This level is always played as Good.'
-    : cursor.noPackages ? (evil ? 'Less time on the clock.' : 'More time on the clock.') // (a race: nothing is thrown)
-      : evil ? 'Less time. Flaming packages do real damage, and the police bust you for them.'
+  // (both sides' notes are in it, one over the other, the other side's unseen: the box is as tall as the longer of
+  // the two, so switching Good and Evil never changes its height and nothing under it jumps. The owner, 14-Oct: "The
+  // 'Play as Good/Evil' should never wrap as toggling Good/Evil will cause the view to jump"; on a tablet the Evil
+  // note took a third line and the switch above it moved up 16 px)
+  const noteFor = (asEvil) => oneSided(cursor) ? 'This level is always played as Good.'
+    : cursor.noPackages ? (asEvil ? 'Less time on the clock.' : 'More time on the clock.') // (a race: nothing is thrown)
+      : asEvil ? 'Less time. Flaming packages do real damage, and the police bust you for them.'
         : 'More time. Care packages increase your social standing and gains you benefits.';
+  const otherNote = make('span', 'other', noteFor(!evil));
+  otherNote.setAttribute('aria-hidden', 'true');
+  sideNote.replaceChildren(make('span', '', noteFor(evil)), otherNote);
   const noCar = Tiers.on() && CAR.silhouette; // (the level's tier rule allows only cars the player has none of)
   startBtn.disabled = !open || noCar;
   startBtn.firstElementChild.textContent = !open ? 'Locked' : noCar ? 'No car' : tab === 'race' ? 'Race' : 'Start';
   // (the side's medal already earned: a replay wins only the tip. game.js asks first while the tier's level 4 is shut)
-  startNote.classList.toggle('hidden', !(open && !noCar && Tiers.replayed(cursor, evil)));
+  // (its place kept, unseen, when only the other side's medal is earned: START the same height on both sides, so
+  // switching sides moves nothing; the owner, 14-Oct)
+  const noteOn = (asEvil) => open && !noCar && Tiers.replayed(cursor, asEvil);
+  startNote.classList.toggle('hidden', !noteOn(evil) && !(noteOn(!evil) && !oneSided(cursor)));
+  startNote.classList.toggle('unseen', !noteOn(evil));
 };
 
 // ---- the controls ----------------------------------------------------------------------------------------

@@ -49,6 +49,7 @@ import { makerLine } from './blueprintcard.js';
 import { KeySpin } from './keyspin.js'; // (the "Where to get it" key card's key, turning: render/keyspin.js)
 import { sheetUp } from '../lite.js';
 import { renderSources } from './carsources.js'; // ("Where to get it": the car's key and blueprint sources)
+import { bankFigure } from './bank.js'; // (the bank: whole dollars, its type scaled to its length)
 import { overlayNode } from './lockoverlay.js'; // (a locked card's overlay: its kind's tint, badge and caption)
 
 const panel = document.getElementById('showroom');
@@ -401,7 +402,7 @@ const fill = (fresh = true) => {
   countEl.title = countEl.textContent; // (the whole line, where a phone cuts it short)
   const eventChip = sheet?.querySelector('[data-chip="event"]');
   if (eventChip) eventChip.style.display = imposed?.focus || filter.state.includes('event') ? '' : 'none'; // (only where a day points at cars) // (the level's car rule, imposed; replaceChildren would write a null as "null")
-  bankEl.replaceChildren(make('small', '', 'Bank'), money(Progress.data.money));
+  bankEl.replaceChildren(make('small', '', 'Bank'), bankFigure(Progress.data.money));
   watcher?.disconnect();
   cards = list.map((data) => {
     // the picture (its still on .sr-img) and, for a card that cannot be driven, its overlay over it (render/lockoverlay.js)
@@ -505,7 +506,7 @@ const showDetail = () => {
   backBtn.title = 'Back to the cards (Escape)';
   backBtn.addEventListener('click', () => closeFull());
   const at = list.indexOf(card);
-  const bank = make('div', 'sr-bank', make('small', '', 'Bank'), money(Progress.data.money));
+  const bank = make('div', 'sr-bank', make('small', '', 'Bank'), bankFigure(Progress.data.money));
   const ftop = make('div', 'sr-ftop', backBtn, make('div', 'sr-fpos', make('small', '', 'Showroom'), make('b', '', (at + 1) + ' / ' + list.length)), bank, shopButton('sr-shop sr-shop-full'), lotButton('sr-lot sr-lot-full'));
   // the car on its stage, the round arrows at its sides
   const arrow = (dir) => {
