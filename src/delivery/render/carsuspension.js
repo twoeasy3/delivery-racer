@@ -101,7 +101,7 @@ export const prepareSuspension = (model) => {
   const clearance = Math.min(...sprungMeshes.map(m => m.box.min.y)) - ground; // (how far its body is off the floor)
   const how = model.userData.noBounce || !wheels.length ? 'none' : named ? 'named' : feet.length ? 'wheels+squash' : 'wheels';
   return (model.userData.suspension = {
-    planted: [...nodes], squash, sprung, wheels: wheels.length, plantedMeshes: [...planted], how,
+    planted: [...nodes], squash, sprung, wheels: wheels.length, wheelBoxes: wheels, plantedMeshes: [...planted], how, // (wheelBoxes: each tyre's box in the model's own frame: render/ecucine.js puts the dyno's rollers under them)
     ground, clearance, half: (all.max.z - all.min.z) / 2, active: false, y: 0, pitch: 0, // (y, pitch: the body's, as last applied)
   });
 };
