@@ -50,40 +50,47 @@ const solid = (parts, r) => {
   return grounded(group, r);
 };
 
-// a crate's stand-in: two wooden wine crates, pale pine with darker slats and a red stencilled band, the top one
-// askew on the bottom one and open, six bottle necks in red foil standing out of its straw
+// a crate's stand-in: two wooden wine crates, pale pine with darker slats and a red stencilled band, the top one askew on the bottom one and open, six
+// bottle necks in red foil standing out of its straw. Drawn at the size of the box it costs (a crate's 1.2 m square and 1.1 m tall) so that what the
+// player sees is what the player hits, with a wide dark patch under it
 const wineCrates = () => {
   const parts = [];
   const crate = (w, d, y, turn) => {
     const at = (geometry, color, lx, ly, lz) => parts.push([geometry, color, lx * Math.cos(turn) + lz * Math.sin(turn), y + ly, -lx * Math.sin(turn) + lz * Math.cos(turn), 0, turn, 0]);
-    at(box(w, 0.48, d), 0xe6c78e, 0, 0, 0);
-    for (const dy of [-0.17, 0.17]) at(box(w + 0.03, 0.07, d + 0.03), 0xa9824a, 0, dy, 0);
-    for (const x of [-1, 1]) at(box(0.08, 0.5, d + 0.03), 0xa9824a, x * (w / 2 - 0.04), 0, 0);
-    for (const z of [-1, 1]) at(box(w * 0.5, 0.15, 0.02), 0xc0272d, 0, 0, z * (d / 2 + 0.017)); // the stencilled band, front and back
+    at(box(w, 0.52, d), 0xe6c78e, 0, 0, 0);
+    for (const dy of [-0.19, 0.19]) at(box(w + 0.03, 0.08, d + 0.03), 0xa9824a, 0, dy, 0);
+    for (const x of [-1, 1]) at(box(0.09, 0.54, d + 0.03), 0xa9824a, x * (w / 2 - 0.045), 0, 0);
+    for (const z of [-1, 1]) at(box(w * 0.55, 0.2, 0.02), 0xc0272d, 0, 0, z * (d / 2 + 0.017)); // the stencilled band, front and back
   };
-  crate(1.12, 0.78, 0.25, 0.08);
-  crate(1.0, 0.72, 0.73, -0.22);
-  const c = Math.cos(-0.22), s = Math.sin(-0.22);
-  parts.push([box(0.9, 0.04, 0.62), 0xd9b85c, 0, 0.95, 0, 0, -0.22, 0]); // the straw
+  crate(1.2, 1.12, 0.26, 0.05);
+  crate(1.12, 1.0, 0.78, -0.2);
+  const c = Math.cos(-0.2), s = Math.sin(-0.2);
+  parts.push([box(1.0, 0.04, 0.88), 0xd9b85c, 0, 1.03, 0, 0, -0.2, 0]); // the straw
   for (let k = 0; k < 6; k++) {
-    const lx = (k % 3 - 1) * 0.28, lz = (k < 3 ? -1 : 1) * 0.16, x = lx * c + lz * s, z = -lx * s + lz * c;
-    parts.push([cyl(0.055, 0.075, 0.26, 7), 0x16301c, x, 1.09, z], [cyl(0.058, 0.058, 0.07, 7), 0xd8262b, x, 1.24, z]);
+    const lx = (k % 3 - 1) * 0.32, lz = (k < 3 ? -1 : 1) * 0.22, x = lx * c + lz * s, z = -lx * s + lz * c;
+    parts.push([cyl(0.06, 0.08, 0.3, 7), 0x16301c, x, 1.18, z], [cyl(0.064, 0.064, 0.08, 7), 0xd8262b, x, 1.36, z]);
   }
-  return solid(parts, 0.95);
+  return solid(parts, 1.1);
 };
 
-// a bale's stand-in: a round bale of hay on its side, golden, wound in bands of net, the spiral of the straw on both ends
+// a bale's stand-in: two round bales of hay lying side by side on their sides, golden, wound in bands of net, the spiral of the straw on both ends: 2.2 m
+// across and 2.2 m deep, a bale's box (its height is 1.5 m, the rolls 1.1 m), so it fills what it costs
 const hayRoll = () => {
-  const R = 0.74, L = 1.5, parts = [[cyl(R, R, L, 16).rotateZ(Math.PI / 2), 0xdcb953, 0, R, 0]];
-  for (const x of [-0.5, 0, 0.5]) parts.push([cyl(R + 0.015, R + 0.015, 0.05, 16).rotateZ(Math.PI / 2), 0xb08a2e, x, R, 0]);
-  for (const x of [-1, 1]) {
-    parts.push([new THREE.CircleGeometry(R - 0.01, 16), 0xe9cd7a, x * (L / 2 + 0.002), R, 0, 0, x * Math.PI / 2, 0]);
-    for (const r of [0.2, 0.42, 0.62]) parts.push([new THREE.RingGeometry(r, r + 0.045, 16), 0xb08a2e, x * (L / 2 + 0.004), R, 0, 0, x * Math.PI / 2, 0]); // (the coil of the straw, in rings)
+  const R = 0.55, L = 2.2, parts = [];
+  for (const z of [-0.55, 0.55]) {
+    parts.push([cyl(R, R, L, 16).rotateZ(Math.PI / 2), 0xdcb953, 0, R, z]);
+    for (const x of [-0.7, 0, 0.7]) parts.push([cyl(R + 0.015, R + 0.015, 0.06, 16).rotateZ(Math.PI / 2), 0xb08a2e, x, R, z]);
+    for (const x of [-1, 1]) {
+      parts.push([new THREE.CircleGeometry(R - 0.01, 16), 0xe9cd7a, x * (L / 2 + 0.002), R, z, 0, x * Math.PI / 2, 0]);
+      for (const r of [0.15, 0.32, 0.47]) parts.push([new THREE.RingGeometry(r, r + 0.04, 16), 0xb08a2e, x * (L / 2 + 0.004), R, z, 0, x * Math.PI / 2, 0]); // (the coil of the straw)
+    }
   }
-  return solid(parts, 1.0);
+  parts.push([cyl(R * 0.8, R * 0.8, L * 0.8, 14).rotateZ(Math.PI / 2), 0xe4c65e, 0, R * 2 - 0.02, 0]); // a third on top of the two, along the crack
+  return solid(parts, 1.5);
 };
 
-// a cone's stand-in: a big terracotta pot with a lemon tree in it (green over orange: it shows on the grey road)
+// a cone's stand-in: a big terracotta pot with a lemon tree in it (green over orange: it shows on the grey road), 1.15 times its first size: a metre across
+// at the rim against the cone's 0.84, and 1.7 m tall against its 1.12
 const terracottaPot = () => {
   const parts = [
     [lathe([[0.2, 0], [0.31, 0.07], [0.37, 0.3], [0.34, 0.45], [0.43, 0.5], [0.43, 0.62], [0.33, 0.62], [0.3, 0.5]], 10), 0xc8622c, 0, 0, 0],
@@ -92,7 +99,7 @@ const terracottaPot = () => {
     [new THREE.IcosahedronGeometry(0.42, 0), 0x3f8a35, 0, 1.1, 0, 0, 0, 0, 1, 0.9, 1],      // the crown
   ];
   for (const [x, y, z] of [[0.3, 1.05, 0.2], [-0.28, 1.2, 0.18], [0.05, 0.95, 0.38], [-0.12, 1.28, -0.25]]) parts.push([sphere(0.07, 6, 4), 0xffd83a, x, y, z]);
-  return solid(parts, 0.6);
+  return solid(parts.map(([g, c, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1]) => [g, c, x * 1.15, y * 1.15, z * 1.15, rx, ry, rz, sx * 1.15, sy * 1.15, sz * 1.15]), 0.8);
 };
 
 export const TUSCANY_OBSTACLES = { wineCrates, hayRoll, terracottaPot };
