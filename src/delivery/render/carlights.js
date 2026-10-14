@@ -37,7 +37,6 @@ import { TOPUP_A_LAMPS } from './carlights-topup-A.js'; // (the ideas top-up, ba
 import { TOPUP_B_LAMPS } from './carlights-topup-B.js'; // (the ideas top-up batch B)
 import { BATCH_E1_LAMPS } from './carlights-batchE1.js'; // (batch E1's idea cars)
 import { BATCH_E2_LAMPS } from './carlights-batchE2.js'; // (batch E2's idea cars)
-export const TABLE = {  };
 import { BATCH_D2_LAMPS } from './carlights-batchD2.js'; // (batch D2's idea cars)
 import { BATCH_E4_LAMPS } from './carlights-batchE4.js'; // (batch E4's idea cars)
 import { TOPUP_C } from './carlights-topup-C.js'; // (top-up batch C's idea cars)

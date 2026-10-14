@@ -5,7 +5,7 @@ Working list, from the owner's ideas of 2026-10-09. `[x]` done, `[~]` partly don
 
 ## State on 14-Oct (read with `src/delivery/HANDOVER-orchestrator-14-Oct.md`)
 
-`main` is v1.1.129 (14-Oct, merged at the owner's "Merge into main": the ten idea cars of item 260 as items 263-267 (batches D1-D5, the ideas-check count is now 61) and the global wheel colour 268; before that v1.1.128: true speed 257, the four damage stages v2 258 / 262, the handover docs). Waiting on the owner: 259 (cosmetics: wheels first, colour done as 268, designs next), 261 (level clocks after true speed). The rules for working here are in `CLOUD-AGENT-README.md`.
+`main` is v1.1.129 (14-Oct, merged at the owner's "Merge into main" / "Push first": the ten idea cars of item 260 as items 263-267 (batches D1-D5, textures removed), nine more idea cars as items 270-274 (batches E1-E5; the Cinquecento was discarded), the global wheel colour 268, wheel designs 269, the Cosmetics equip screen 276 and the car catalogue 275; before that v1.1.128: true speed 257, the four damage stages v2 258 / 262, the handover docs). Waiting on the owner: 259 (cosmetics: wheels first, colour done as 268, designs next), 261 (level clocks after true speed). The rules for working here are in `CLOUD-AGENT-README.md`.
 
 ## New gimmicks
 

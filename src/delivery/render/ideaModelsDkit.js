@@ -131,3 +131,31 @@ export const roundRect = (a, b, r, path = new THREE.Shape()) => {
 export const extrudePlan = (shape, depth, bevel, y0, segs = 2) => new THREE.ExtrudeGeometry(shape, {
   depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: segs, curveSegments: 3,
 }).rotateX(-Math.PI / 2).translate(0, y0 + bevel, 0);
+
+// a flat picture w by h facing 'x', '-x', 'z' or '-z', its uv a part of the texture (u, v ranges)
+export const decal = (w, h, x, y, z, facing, u = [0, 1], v = [0, 1]) => {
+  const geo = new THREE.PlaneGeometry(w, h), uv = geo.attributes.uv;
+  for (let i = 0; i < uv.count; i++) { uv.setX(i, u[0] + uv.getX(i) * (u[1] - u[0])); uv.setY(i, v[0] + uv.getY(i) * (v[1] - v[0])); }
+  if (facing === 'x') geo.rotateY(Math.PI / 2);
+  if (facing === '-x') geo.rotateY(-Math.PI / 2);
+  if (facing === '-z') geo.rotateY(Math.PI);
+  return geo.translate(x, y, z);
+};
+
+// ---- the small canvas textures: drawn once, shared ------------------------------------------------------------------
+export const textures = new Map();
+export const texture = (key, w, h, draw, repeat = false) => {
+  if (!textures.has(key)) {
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    draw(canvas.getContext('2d'), w, h);
+    const map = new THREE.CanvasTexture(canvas);
+    map.colorSpace = THREE.SRGBColorSpace;
+    if (repeat) map.wrapS = map.wrapT = THREE.RepeatWrapping;
+    map.userData.shared = true;
+    textures.set(key, map);
+  }
+  return textures.get(key);
+};
+export const random = (seed) => () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
