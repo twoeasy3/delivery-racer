@@ -201,18 +201,25 @@ export const clipZ = (poly, zMin, zMax) => {
   const at = (z) => (p, q) => [z, p[1] + (q[1] - p[1]) * (z - p[0]) / (q[0] - p[0])];
   return cut(cut(poly, p => p[0] >= zMin - 1e-9, at(zMin)), p => p[0] <= zMax + 1e-9, at(zMax));
 };
-export const glassFromProfile = (profile, { from, to, belt, inset = {}, zFront = Infinity, zRear = -Infinity, half, taper = null, lift = 0.004 }) => {
-  const { aPillar = 0.07, roof = 0.055, cPillar = 0.08, belt: beltInset = 0.025 } = inset;
+// the cabin's outline: profile[from..to], its first and last edges carried (or trimmed) to the belt line, which closes it
+export const cabinChain = (profile, from, to, belt) => {
   const chain = profile.slice(from, to + 1).map(p => [p[0], p[1]]);
-  const toBelt = (p, q) => { const t = (belt - p[1]) / (q[1] - p[1]); return [p[0] + (q[0] - p[0]) * t, belt]; }; // carry (or trim) the edge p -> q to the belt line
+  const toBelt = (p, q) => { const t = (belt - p[1]) / (q[1] - p[1]); return [p[0] + (q[0] - p[0]) * t, belt]; };
   chain[0] = toBelt(chain[0], chain[1]);
   chain[chain.length - 1] = toBelt(chain[chain.length - 1], chain[chain.length - 2]);
-  const insets = chain.map((p, i) => {
-    const q = chain[(i + 1) % chain.length], dz = q[0] - p[0], dy = q[1] - p[1];
-    if (i === chain.length - 1) return beltInset;
-    return Math.abs(dy) < 0.5 * Math.hypot(dz, dy) ? roof : dy > 0 ? aPillar : cPillar;
-  });
-  const poly = clipZ(insetOutline(chain, insets), zRear, zFront);
+  return chain;
+};
+// the inset of the chain's edge i (from point i to the next): the belt edge (the last), the roof (an edge rising or falling less than
+// 1 in 4, about 14 degrees: a raked screen of 25 to 30 degrees is a PILLAR, not roof), the A-pillar (rising rearward) or the C-pillar
+export const edgeInset = (chain, i, { aPillar, roof, cPillar, belt }) => {
+  if (i === chain.length - 1) return belt;
+  const p = chain[i], q = chain[i + 1], dz = q[0] - p[0], dy = q[1] - p[1];
+  return Math.abs(dy) < 0.25 * Math.hypot(dz, dy) ? roof : dy > 0 ? aPillar : cPillar;
+};
+export const glassFromProfile = (profile, { from, to, belt, inset = {}, zFront = Infinity, zRear = -Infinity, half, taper = null, lift = 0.004 }) => {
+  const { aPillar = 0.07, roof = 0.055, cPillar = 0.08, belt: beltInset = 0.025 } = inset;
+  const chain = cabinChain(profile, from, to, belt);
+  const poly = clipZ(insetOutline(chain, chain.map((p, i) => edgeInset(chain, i, { aPillar, roof, cPillar, belt: beltInset }))), zRear, zFront);
   const xAt = (y) => (taper ? narrowAt(half, y, taper) : half) + lift;
   const faces = THREE.ShapeUtils.triangulateShape(poly.map(p => new THREE.Vector2(p[0], p[1])), []);
   return [1, -1].map(s => {
@@ -241,44 +248,31 @@ export const screenGlassFromProfile = (profile, { edge, foot = 0.03, top = 0.07,
 };
 
 // cabinGlass(profile, opts) -> { sides: [geometry, ...], front, rear }: the side windows, the windscreen and the rear glass of ONE cabin, all built
-// from the same inset outline so they agree where they meet: the windscreen's top edge is as high as the side window's top at the A-pillar corner
-// (and the rear glass's as the side window's at the C-pillar), the roof rail is one margin all round. opts: from, to, belt, inset ({ aPillar, roof,
-// cPillar, belt }, as glassFromProfile), half, taper, windows ([[zRear, zFront], ...] one side window each; default one), sideLift (0.004: a side
-// window off the flank), lift / topLift (the screens' foot and top off the body: pass BEV + 0.006 and BEV - 0.003 to tuck the top edge just under
-// the roof), sideInset (the screens' margin from the flank each side, 0.08), foot (0.03: a screen starts this far up its slope from the body's own
-// edge). Example:   const g = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(RW1), belt: BELT, half: HALF, taper: TAPER,
-//   lift: BEV + 0.006, topLift: BEV - 0.003, windows: [[-0.1, 9], [-9, -0.26]] });   parts(group, k + 'glass', GLASS, () => [...g.sides, g.front, g.rear]);
-export const cabinGlass = (profile, { from, to, belt, inset = {}, half, taper = null, windows = [[-Infinity, Infinity]], sideLift = 0.004, lift = 0.004, topLift = lift, sideInset = 0.08, foot = 0.03, screenTop = 0.05 }) => {
+// from the same inset outline so they agree where they meet: ONE top line. The side window's top is the roof contour inset by the roof-rail
+// margin; the windscreen's top edge is at exactly the height of the side window's top corner at the A-pillar, the rear glass's at the C-pillar
+// corner's (the owner, 14-Oct: level, never a screen lowered below the window nor left higher). opts: from, to, belt, inset ({ aPillar, roof,
+// cPillar, belt }, as glassFromProfile), grow (0: how far the body's SILHOUETTE stands outside the profile, i.e. extrudeSide's bevel size; the
+// insets are measured from that silhouette, the pink line of the owner's mark-up, so a body grown 5 cm with a 5 cm roof inset has its side
+// glass right up to the roof's rounded shoulder), half, taper, windows ([[zRear, zFront], ...] one side window each; default one), sideLift
+// (0.004: a side window off the flank), lift / topLift (the screens' foot and top off the PROFILE: pass BEV + 0.006 so the glass is 6 mm proud
+// of a body grown BEV; a top lift below BEV hides the screen's top under the body and leaves a solid strip over it), sideInset (the screens'
+// margin from the flank each side, 0.08), foot (0.03: a screen starts this far up its slope from the body's own edge). Example:
+//   const g = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(RW1), belt: BELT, half: HALF, taper: TAPER, grow: BEV,
+//     inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: BEV + 0.006, windows: [[-0.1, 9], [-9, -0.26]] });
+//   parts(group, k + 'glass', GLASS, () => [...g.sides, g.front, g.rear]);
+export const cabinGlass = (profile, { from, to, belt, inset = {}, grow = 0, half, taper = null, windows = [[-Infinity, Infinity]], sideLift = 0.004, lift = 0.004, topLift = lift, sideInset = 0.08, foot = 0.03 }) => {
   const { aPillar = 0.07, roof = 0.055, cPillar = 0.08, belt: beltInset = 0.025 } = inset;
+  // (the insets from the profile: `grow` less than from the silhouette; never outside the profile, where the body's shoulder rounds away)
+  const ins = { aPillar: Math.max(0, aPillar - grow), roof: Math.max(0, roof - grow), cPillar: Math.max(0, cPillar - grow), belt: beltInset };
   const last = profile[to];
   // the outline both ends of the glass are derived from
-  const chain = profile.slice(from, to + 1).map(p => [p[0], p[1]]);
-  const toBelt = (p, q) => { const t = (belt - p[1]) / (q[1] - p[1]); return [p[0] + (q[0] - p[0]) * t, belt]; };
-  chain[0] = toBelt(chain[0], chain[1]);
-  chain[chain.length - 1] = toBelt(chain[chain.length - 1], chain[chain.length - 2]);
-  const n = chain.length;
-  const insetPoly = (roofInset) => insetOutline(chain, chain.map((p, i) => {
-    const q = chain[(i + 1) % n], dz = q[0] - p[0], dy = q[1] - p[1];
-    return i === n - 1 ? beltInset : Math.abs(dy) < 0.5 * Math.hypot(dz, dy) ? roofInset : dy > 0 ? aPillar : cPillar;
-  }));
-  // The screens' own natural tops: `screenTop` (5 cm) down the screen's slope from the roof corner. A raked screen's natural top is HIGHER than
-  // the side window's (roof inset straight down from the corner), and the owner wants them LEVEL, not the screen lowered (a lowered screen leaves
-  // a solid strip above it). So the shared top line is the HIGHER of the two: if a screen's natural top is above the window's, the roof inset
-  // (all along the roof, so the window keeps ONE margin and still follows the contour) is reduced until the window's top reaches it, i.e. the
-  // window is raised up the pillar to meet the screen; the screen is then raised (never lowered) to the window's top where that is higher.
-  const along = (p, q, d) => { const l = Math.hypot(q[0] - p[0], q[1] - p[1]); return p[1] + (q[1] - p[1]) * d / l; }; // the height d from p towards q
-  const sTopA = along(chain[1], chain[0], screenTop), sTopC = along(chain[n - 2], chain[n - 1], screenTop);
-  let roofIn = roof, poly = insetPoly(roofIn);
-  for (let i = 0; i < 3; i++) {
-    const need = Math.max(poly[1][1] < sTopA ? sTopA - poly[1][1] : 0, poly[n - 2][1] < sTopC ? sTopC - poly[n - 2][1] : 0);
-    if (!need) break;
-    roofIn = Math.max(0.02, roofIn - need);
-    poly = insetPoly(roofIn);
-  }
-  const sides = windows.flatMap(([zRear, zFront]) => glassFromProfile(profile, { from, to, belt, inset: { aPillar, roof: roofIn, cPillar, belt: beltInset }, zFront, zRear, half, taper, lift: sideLift }));
+  const chain = cabinChain(profile, from, to, belt), n = chain.length;
+  const poly = insetOutline(chain, chain.map((p, i) => edgeInset(chain, i, ins)));
+  const sides = windows.flatMap(([zRear, zFront]) => glassFromProfile(profile, { from, to, belt, inset: ins, zFront, zRear, half, taper, lift: sideLift }));
   const onLine = (p, q, y) => [p[0] + (q[0] - p[0]) * (y - p[1]) / (q[1] - p[1]), y];
   const hx = (y) => (taper ? narrowAt(half, y, taper) : half) - sideInset;
-  const aTopY = Math.max(poly[1][1], sTopA), cTopY = Math.max(poly[n - 2][1], sTopC);
+  // the shared top line: the side window's top corner at each pillar
+  const aTopY = poly[1][1], cTopY = poly[n - 2][1];
   // (a screen stands off the body along its face's normal, which lifts its top edge by cos(slope) * topLift: aim lower so the EDGE lands at aTopY)
   const rise = (p, q) => Math.abs(q[0] - p[0]) / Math.hypot(q[0] - p[0], q[1] - p[1]);
   const aFoot = onLine(chain[0], chain[1], Math.max(chain[0][1], profile[from][1]) + foot * 0.8 - rise(chain[0], chain[1]) * lift), aTop = onLine(chain[0], chain[1], aTopY - rise(chain[0], chain[1]) * topLift);
