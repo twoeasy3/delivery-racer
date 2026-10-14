@@ -28,6 +28,7 @@ import { packArt, lookOf } from './packart.js';
 import { openContents, closeContents } from './packcontents.js';
 import { keyPicture } from './keycard.js';
 import { bannerCars, bannerArt } from './packbanner.js';
+import { jimDoor } from './jimshop.js'; // (Crazey Jim's blueprint stall: a doorway at the top, for tip money)
 
 // (packs.js, where the tree has it: see shop.js)
 const packsModule = Object.values(import.meta.glob('../packs.js', { eager: true }))[0] || null;
@@ -245,7 +246,7 @@ const draw = () => {
       + (Shop.hasPacks() ? '' : ' Packs are not in this build, so nothing can be bought.')) : null;
   screen.replaceChildren(
     make('header', 'shop-top', back, make('h1', '', 'Shop'), wallet()),
-    make('div', 'shop-body', note, ...sections, rarityGuide()), ...kept);
+    make('div', 'shop-body', note, jimDoor(), ...sections, rarityGuide()), ...kept);
   screen.scrollTop = keep;
   for (const [el, car] of drawLater) stillSoon(el, car, { side: 'good' }); // (always the Good livery; a few a frame, once laid out; kept, so a redraw costs nothing)
 };

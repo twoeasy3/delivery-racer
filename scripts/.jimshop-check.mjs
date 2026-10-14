@@ -76,7 +76,7 @@ try {
   check(needed(plain.car, 0) === full && needed(plain.car, full) === 0 && needed(plain.car, full + 3) === 0, 'blueprints needed to max: ' + full + ' for ' + plain.car.name);
   check(view(plain, {}, money, full).why === 'maxed', 'a car at its max ECU is "maxed", not for sale');
   const cut = view(plain, {}, money, full - 1);
-  check(cut.qty === 1 && cut.cut === (plain.qty > 1) && cut.price === bundlePrice(plain, 1, 0), 'a bundle is cut to what the car needs (1 left: x1 at the price of one)');
+  check(cut.qty === 1 && cut.cut === (plain.qty > 1 ? 'need' : null) && cut.price === bundlePrice(plain, 1, 0), 'a bundle is cut to what the car needs (1 left: x1 at the price of one)');
 
   // ---- buying ----
   fresh();

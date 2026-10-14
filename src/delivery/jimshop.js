@@ -105,7 +105,7 @@ export const viewOf = (offer, { day, state, money, blueprints = Ecu.blueprints(o
   else if (left === 0) why = 'sold';
   else if (room === 0) why = 'cap';
   else if (money < price) why = 'short';
-  return { ...offer, bought, left, qty: qty || offer.qty, cut: qty > 0 && qty < offer.qty, price, was, why, need: Math.max(0, price - money), have: blueprints, room };
+  return { ...offer, bought, left, qty: qty || offer.qty, cut: qty > 0 && qty < offer.qty ? (qty === need ? 'need' : 'cap') : null, price, was, why, need: Math.max(0, price - money), have: blueprints, room };
 };
 
 // where a car's blueprints stand (with `add` more): { bp, ecu, max, toNext (per ECU), have (toward the next), unlocked }, as packs.js revealProgress
