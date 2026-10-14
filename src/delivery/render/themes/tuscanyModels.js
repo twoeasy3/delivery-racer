@@ -169,34 +169,24 @@ const makeStolenBust = () => {
   put(head, box(0.3, 0.05, 0.06), marble, 0, 0.07, 0.17);                                  // brow
   for (const x of [-1, 1]) put(head, sphere(0.032, 8, 6), eyeMat, x * 0.075, 0.03, 0.17);
   for (let k = 0; k < 7; k++) put(head, sphere(0.07, 7, 5), marble, Math.sin(k * 0.9 - 1.4) * 0.17, 0.17 - Math.abs(k - 3) * 0.015, -0.02 + Math.cos(k * 0.9 - 1.4) * 0.1); // curls
-  // the dust sheet: a lathe of 11 rings, re-laid every frame (no allocation). State 0 ("Under a sheet") is the cloth draped over the bust, closed over the
-  // head; BUST_ENV is the outline of the plinth, slab, shoulders, head, curls, nose and brow plus 3 cm, and no ring is ever inside it. `gone` 0..1 lets the
-  // cloth fall: its rings come down to the ground, and spread out and bunch into a low heap round the foot of the plinth (HEAP: radius and height of each
-  // ring), still never inside the outline. In the other two states the bust is bare and the cloth lies there
+  // the dust sheet, state 0 ("Under a sheet"): a lathe of 11 rings built once, draped over the bust and closed over the head; BUST_ENV is the outline of
+  // the plinth, slab, shoulders, head, curls, nose and brow plus 3 cm, and no ring is ever inside it. States 1 and 2: the bust is bare and the cloth lies
+  // in a small solid pile on the ground to one side of the plinth (below). Three discrete states, nothing animated between them
   const SHEET = [[0.5, 0.45], [0.5, 0.5], [0.47, 0.575], [0.34, 0.62], [0.32, 0.8], [0.32, 0.95], [0.32, 1.1], [0.32, 1.24], [0.27, 1.36], [0.15, 1.44], [0, 1.47]];
-  const HEAP = [[0.98, 0.025], [0.92, 0.04], [0.85, 0.03], [0.78, 0.055], [0.7, 0.04], [0.62, 0.07], [0.55, 0.05], [0.48, 0.09], [0.43, 0.06], [0.4, 0.11], [0.39, 0.08]];
-  const BUST_ENV = [[0, 0.38], [0.44, 0.38], [0.45, 0.47], [0.575, 0.47], [0.6, 0.33], [0.86, 0.28], [1.0, 0.28], [1.15, 0.29], [1.2, 0.29], [1.3, 0.3], [1.35, 0.26], [1.4, 0.14], [1.45, 0.05], [1.47, 0]];
+  const BUST_ENV = [[0.45, 0.47], [0.575, 0.47], [0.6, 0.33], [0.86, 0.28], [1.0, 0.28], [1.15, 0.29], [1.2, 0.29], [1.3, 0.3], [1.35, 0.26], [1.4, 0.14], [1.45, 0.05], [1.47, 0]];
   const envAt = (y) => {
     for (let k = 1; k < BUST_ENV.length; k++) if (y <= BUST_ENV[k][0]) { const [y0, r0] = BUST_ENV[k - 1], [y1, r1] = BUST_ENV[k]; return r0 + (r1 - r0) * (y - y0) / (y1 - y0); }
     return 0;
   };
-  // two cloths, each built ONCE (no solver, no blending: the model shows the state it is in): `gone` 0 is the cloth draped over the bust, closed over the
-  // head, `gone` 1 the same cloth fallen to the ground, a low irregular heap round the foot of the plinth
+  // the draped cloth, built once
   const SEG = 12, RINGS = SHEET.length;
-  const makeCloth = (gone, parent) => {
+  const makeCloth = (parent) => {
     const pos = new Float32Array(RINGS * (SEG + 1) * 3), idx = [];
     for (let i = 0; i < RINGS - 1; i++) for (let k = 0; k < SEG; k++) { const a = i * (SEG + 1) + k, b = a + SEG + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
     let n = 0;
     for (let i = 0; i < RINGS; i++) {
-      const [r0, y0] = SHEET[i], [rh, yh] = HEAP[i];
-      const y = gone ? yh : y0, rd = Math.max(envAt(y0), r0) + (r0 > 0 && !gone ? 0.005 : 0);
-      for (let k = 0; k <= SEG; k++) {
-        const a = k / SEG * Math.PI * 2, wob = k === SEG ? 0 : a;
-        const yy = gone ? Math.max(0.012, y + 0.008 * Math.sin(2 * wob + i * 2.3)) : y;
-        let r = gone ? rh * (1 + 0.06 * Math.sin(3 * wob + i * 1.7)) : rd;
-        if (gone) r = Math.max(r, envAt(yy));
-        pos[n++] = Math.sin(a) * r; pos[n++] = yy; pos[n++] = Math.cos(a) * r;
-      }
+      const [r0, y0] = SHEET[i], r = Math.max(envAt(y0), r0) + (r0 > 0 ? 0.005 : 0);
+      for (let k = 0; k <= SEG; k++) { const a = k / SEG * Math.PI * 2; pos[n++] = Math.sin(a) * r; pos[n++] = y0; pos[n++] = Math.cos(a) * r; }
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
@@ -206,9 +196,40 @@ const makeStolenBust = () => {
     parent.add(mesh);
     return mesh;
   };
-  const draped = makeCloth(0, all), heap = makeCloth(1, group); // (the heap stays on the ground when the bust hops)
+  const draped = makeCloth(all);
+  // the fallen cloth: a pile of four squashed lumps (the last one taller, on top) and a flat tongue of cloth trailing out along the ground, 0.62 m to
+  // one side of the plinth (+x, the viewer's right from the front), static, in four near whites; sunk a little into the ground so there is no gap
+  const pile = (() => {
+    const parts = [], X = 0.62, Z = 0.05;
+    const lump = (x, z, rx, ry, rz, turn, color, lift = 0) => {
+      const g = new THREE.IcosahedronGeometry(1, 0).toNonIndexed(), p = g.attributes.position;
+      for (let i = 0; i < p.count; i++) { const j = 1 + 0.16 * Math.sin(i * 12.9898 + x * 78.2 + z * 37.7); p.setXYZ(i, p.getX(i) * j, p.getY(i) * (1 + 0.1 * Math.sin(i * 4.1 + z * 51)), p.getZ(i) * j); }
+      g.computeVertexNormals();
+      parts.push([g, color, X + x, ry * 0.55 + lift, Z + z, 0, turn, 0, rx, ry, rz]);
+    };
+    lump(0, 0, 0.23, 0.13, 0.18, 0.3, 0xf1ecdd);
+    lump(0.15, 0.06, 0.18, 0.1, 0.14, -0.6, 0xe6dfcb);
+    lump(-0.13, 0.1, 0.16, 0.09, 0.13, 1.0, 0xf6f1e4);
+    lump(0.01, -0.13, 0.17, 0.11, 0.12, 0.1, 0xe9e3d0);
+    lump(0.02, 0.0, 0.13, 0.12, 0.11, 0.7, 0xf4efe1, 0.1);
+    // the tongue: a wavy strip on the ground from the pile toward the front and the plinth's side
+    const tongue = new THREE.BufferGeometry(), tp = [], N = 6;
+    for (let i = 0; i <= N; i++) {
+      const u = i / N, cx = X + 0.1 + u * 0.3 + 0.05 * Math.sin(u * 5), cz = Z + 0.1 + u * 0.46, w = 0.1 + 0.07 * Math.sin(u * Math.PI), h = 0.012 + 0.01 * Math.sin(u * 9);
+      tp.push(cx - w * 0.9, h, cz + w * 0.4, cx + w * 0.9, h + 0.004, cz - w * 0.4);
+    }
+    const ti = [];
+    for (let i = 0; i < N; i++) { const a = i * 2; ti.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    tongue.setAttribute('position', new THREE.Float32BufferAttribute(tp, 3));
+    tongue.setIndex(ti);
+    tongue.computeVertexNormals();
+    parts.push([tongue, 0xece6d4, 0, 0, 0]);
+    const mesh = new THREE.Mesh(merged(parts), new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+    group.add(mesh);
+    return mesh;
+  })();
   const tag = put(all, new THREE.PlaneGeometry(0.2, 0.1), lettered('STOLEN', 0x8a1a1a, 0xf1ecdd, 160, 64), 0, 0.8, 0.335);
-  const show = (n) => { draped.visible = tag.visible = n === 0; heap.visible = n > 0; };
+  const show = (n) => { draped.visible = tag.visible = n === 0; pile.visible = n > 0; };
   show(0);
   const state = { w: [1, 0, 0], target: 0 };
   group.userData.state = 0;
