@@ -4,10 +4,18 @@
 // data or into the replay fingerprint (no rules module imports it); the choice is kept in this browser's localStorage under
 // KEY (not the cookie: that has little room), reads and writes wrapped in try/catch (no storage: it holds for the visit), and
 // is ignored on a visit with test switches (Progress.noSave: stock wheels, and a change lasts the visit only).
+// DESIGNS (the owner, 14-Oct: "designs that look plausible spinning first, like whitewalls, and red with white hubs"): a small
+// preset = a TYRE treatment + a HUB treatment, every one made of rings, discs and concentric bands, so it reads the same still or
+// turning (no spokes to read). Tyre: a flat ring on each outer sidewall (RingGeometry, 16 segments = 32 triangles a ring, one
+// geometry per ring shape shared by every wheel, 5 mm off the tyre's face so it cannot z-fight; a centre wheel gets one each side),
+// and/or the tyre's rubber (tyres, tread blocks, sidewall rings) recoloured. Hub: a colour. The two choices combine: a chosen
+// hub colour (anything but Stock) always wins over the design's hub; hub colour Stock leaves the design's own hubs (or the car's).
+// A car with no hub found stays stock; a tyre with no hub of its own gets no treatment. Kept under KEY_DESIGN (?wheeldesign=<id>).
 // API: dressWheels(model, car)  called where a car's model is built (render/showcar.js makeShowCar, render/items.js
 //        playerModel): finds the model's hubs (once, as built) and puts the chosen colour on them; returns the model
+//      WHEEL_DESIGNS, wheelDesign(), setWheelDesign(id)  the designs ({ id, name, tyre, ring, hub }), the choice, change it
 //      WHEEL_COLOURS, wheelColour(), setWheelColour(id)  the list ({ id, name, hex }; Stock = hex null), the choice, change it
-//      onWheelColour(fn)  fn(id) is called after a change (the menu's swatches); every dressed model still alive is recoloured
+//      onWheelColour(fn)  fn() is called after a colour or a design change (the menu's chips); every dressed model still alive is recoloured
 //        on the spot: no reload
 //      findHubs(model) -> { tyres, hubs: [{ mesh, tyre }] }  (for the check)
 // How the hubs are found (models have no wheel tagging; each builds its tyre and hub its own way): the TYRES are the discs on
@@ -36,7 +44,22 @@ export const WHEEL_COLOURS = [
 ];
 const byId = (id) => WHEEL_COLOURS.find(c => c.id === id) || WHEEL_COLOURS[0];
 
-let stored = null, visit = null; // the saved id (read the first time it is wanted); the id chosen in a visit that saves nothing
+// the designs. tyre: the rubber's colour (null: stock); ring: a flat band on the outer sidewall, from `inner` to `outer` times
+// the tyre's radius; hub: the hub colour the design brings (null: the car's own), overridden by a hub colour chosen apart
+export const KEY_DESIGN = 'delivery.wheeldesign';
+const WHITE = 0xf4f4f2, RED = 0xd8262b;
+const whitewall = { inner: 0.64, outer: 0.88, hex: WHITE }, redline = { inner: 0.78, outer: 0.84, hex: RED };
+export const WHEEL_DESIGNS = [
+  { id: 'stock', name: 'Stock', tyre: null, ring: null, hub: null },
+  { id: 'whitewall', name: 'Whitewall', tyre: null, ring: whitewall, hub: null },
+  { id: 'redline', name: 'Redline', tyre: null, ring: redline, hub: null },
+  { id: 'redwhite', name: 'Red tyres, white hubs', tyre: RED, ring: null, hub: WHITE },
+  { id: 'whiteblack', name: 'White hubs on black', tyre: null, ring: null, hub: WHITE },
+  { id: 'goldwall', name: 'Gold hubs, whitewall', tyre: null, ring: whitewall, hub: 0xd9a92a },
+];
+const designById = (id) => WHEEL_DESIGNS.find(d => d.id === id) || WHEEL_DESIGNS[0];
+
+let stored = null, visit = null, storedDesign = null, visitDesign = null; // the saved id (read the first time it is wanted); the id chosen in a visit that saves nothing
 const asked = typeof location !== 'undefined' ? /[?&]wheelcolour=(\w+)/.exec(location.search)?.[1] : null; // (?wheelcolour=red: a colour for the visit, for stills; never saved)
 export const wheelColour = () => {
   if (asked) return byId(asked).id;
@@ -46,6 +69,17 @@ export const wheelColour = () => {
     try { stored = byId(localStorage.getItem(KEY)).id; } catch { /* (no storage: stock) */ }
   }
   return stored;
+};
+
+const askedDesign = typeof location !== 'undefined' ? /[?&]wheeldesign=(\w+)/.exec(location.search)?.[1] : null; // (?wheeldesign=whitewall: for stills; never saved)
+export const wheelDesign = () => {
+  if (askedDesign) return designById(askedDesign).id;
+  if (Progress.noSave) return visitDesign || 'stock';
+  if (storedDesign === null) {
+    storedDesign = 'stock';
+    try { storedDesign = designById(localStorage.getItem(KEY_DESIGN)).id; } catch { /* (no storage: stock) */ }
+  }
+  return storedDesign;
 };
 
 // ---- finding the hubs ----------------------------------------------------------------------------------------------
@@ -61,18 +95,19 @@ export const findHubs = (model) => {
   model.updateMatrixWorld(true);
   toModel.copy(model.matrixWorld).invert();
   const meshes = [];
-  model.traverse((node) => { if (node.isMesh && node.geometry && !node.isInstancedMesh && node.visible) meshes.push({ node, box: boxIn(node) }); });
+  model.traverse((node) => { if (node.isMesh && node.geometry && !node.isInstancedMesh && node.visible && !node.userData.wheelRing) meshes.push({ node, box: boxIn(node) }); });
   const all = new THREE.Box3();
   for (const m of meshes) all.union(m.box);
-  const ground = all.min.y;
+  const ground = all.min.y, middle = all.getCenter(new THREE.Vector3());
   const tyres = meshes.filter((m) => {
     const size = m.box.getSize(v1), across = Math.min(size.x, size.z), along = Math.max(size.x, size.z);
     return !m.node.geometry.type.startsWith('Box') && size.y > 0.1 && m.box.min.y - ground < NEAR && Math.abs(along - size.y) < 0.15 * size.y && across < 0.85 * size.y;
   });
-  const isTyre = new Set(tyres.map(t => t.node)), hubs = [], taken = new Set();
+  const isTyre = new Set(tyres.map(t => t.node)), hubs = [], taken = new Set(), rubber = [], info = [];
   for (const tyre of tyres) {
     const size = tyre.box.getSize(new THREE.Vector3()), centre = tyre.box.getCenter(new THREE.Vector3());
     const axleX = size.x < size.z, r = size.y / 2, half = (axleX ? size.x : size.z) / 2, tread = colourOf(tyre.node);
+    const mine = { tyre: tyre.node, centre, axleX, r, half, hubs: 0, rubber: [], outer: Math.abs(axleX ? centre.x - middle.x : centre.z - middle.z) < 0.15 * r ? 0 : Math.sign(axleX ? centre.x - middle.x : centre.z - middle.z) };
     for (const m of meshes) {
       if (isTyre.has(m.node) || taken.has(m.node)) continue;
       const s = m.box.getSize(new THREE.Vector3()), c = m.box.getCenter(new THREE.Vector3()).sub(centre);
@@ -80,12 +115,16 @@ export const findHubs = (model) => {
       if (Math.abs(c.y) > 0.1 * r || Math.abs(other) > 0.1 * r) continue;      // (on the axle)
       if (Math.abs(axial) > half * 1.6 || sAxial > half * 3.2) continue;          // (about the tyre's width: a hub may stand a little proud)
       if (Math.max(s.y, sOther) > r * 1.94) continue;                              // (no wider across than the tread)
-      if (colourOf(m.node) === tread) continue;                                    // (tread blocks and sidewall rings: the tyre's own black)
       taken.add(m.node);
+      if (colourOf(m.node) === tread) { mine.rubber.push(m.node); rubber.push(m.node); continue; } // (tread blocks and sidewall rings: the tyre's own black; they follow a tyre recolour)
+      mine.hubs++;
       hubs.push({ mesh: m.node, tyre: tyre.node });
     }
+    // the tyre's frame: where its ring goes is kept relative to the tyre, so it rides with the tyre whatever moves it later
+    mine.toTyre = new THREE.Matrix4().copy(tyre.node.matrixWorld).invert().multiply(model.matrixWorld);
+    info.push(mine);
   }
-  return { tyres: tyres.map(t => t.node), hubs };
+  return { tyres: tyres.map(t => t.node), hubs, rubber, info };
 };
 
 // ---- putting a colour on them --------------------------------------------------------------------------------------
@@ -94,8 +133,8 @@ const listeners = new Set();
 
 // the model's clone of a stock material (one per material, so parts that shared one still do), the colour set; not
 // `shared`, so clearGroup disposes it with the model
-const cloneFor = (model, stock) => {
-  const clones = model.userData.wheelClones || (model.userData.wheelClones = new Map());
+const cloneFor = (model, stock, key) => {
+  const clones = model.userData[key] || (model.userData[key] = new Map());
   let clone = clones.get(stock);
   if (!clone) {
     clone = stock.clone();
@@ -105,42 +144,108 @@ const cloneFor = (model, stock) => {
   return clone;
 };
 
-const paint = (model, hex) => {
-  const found = model.userData.wheelHubs;
-  if (!found) return;
-  for (const hub of found.hubs) {
-    const mesh = hub.mesh, ghost = !!mesh.userData.solidMat, current = ghost ? mesh.userData.solidMat : mesh.material;
+// parts: [{ mesh, stock }]; key: the model's map of clones for them (hubs and rubber keep their own)
+const paint = (model, parts, key, hex, glow = 0) => {
+  for (const part of parts) {
+    const mesh = part.mesh, ghost = !!mesh.userData.solidMat, current = ghost ? mesh.userData.solidMat : mesh.material;
     if (Array.isArray(current) || !current) continue;
-    const stock = hub.stock;
-    if (current !== stock && current !== model.userData.wheelClones?.get(stock)) continue; // (a silhouette or something else stands in: left)
-    const next = hex === null ? stock : cloneFor(model, stock);
-    if (hex !== null) next.color.setHex(hex);
+    const stock = part.stock;
+    if (current !== stock && current !== model.userData[key]?.get(stock)) continue; // (a silhouette or something else stands in: left)
+    const next = hex === null ? stock : cloneFor(model, stock, key);
+    if (hex !== null) { next.color.setHex(hex); if (next.emissive) next.emissive.copy(next.color).multiplyScalar(glow); } // (glow: a little of its own light, so a white hub in shade reads white, not grey)
     if (ghost) mesh.userData.solidMat = next; else mesh.material = next;
   }
 };
 
-// how a model's hubs are shown now: its colour, or none (the stock)
-const dressed = (model) => paint(model, byId(wheelColour()).hex);
+// ---- the sidewall rings: one geometry per ring shape and one material per colour, shared by every wheel of every car ----
+const ringGeos = new Map(), ringMats = new Map(), Z = new THREE.Vector3(0, 0, 1);
+const ringGeo = (ring) => {
+  const key = ring.inner + '/' + ring.outer;
+  if (!ringGeos.has(key)) { const g = new THREE.RingGeometry(ring.inner, ring.outer, 16, 1); g.userData.shared = true; ringGeos.set(key, g); }
+  return ringGeos.get(key);
+};
+const ringMat = (hex) => {
+  if (!ringMats.has(hex)) { const m = new THREE.MeshLambertMaterial({ color: hex, emissive: new THREE.Color(hex).multiplyScalar(0.35) }); m.userData.shared = true; m.userData.wheelHub = true; ringMats.set(hex, m); }
+  return ringMats.get(hex);
+};
+export const RING_GAP = 0.005; // how far a ring stands off the tyre's face (m): over the 4 mm the z-fight detector calls "the same plane"
+const pose = new THREE.Matrix4(), axis = new THREE.Vector3(), q = new THREE.Quaternion(), pos = new THREE.Vector3(), one = new THREE.Vector3();
+const removeRings = (model) => {
+  const found = model.userData.wheelHubs;
+  for (const ring of found.rings) ring.parent?.remove(ring);
+  found.rings.length = 0;
+};
+const addRings = (model, ring) => {
+  const found = model.userData.wheelHubs;
+  removeRings(model);
+  if (!ring) return;
+  const geo = ringGeo(ring), mat = ringMat(ring.hex);
+  for (const t of found.info) {
+    const tyre = t.tyre, ghost = tyre.userData.solidMat, current = ghost || tyre.material;
+    if (current !== t.stock && current !== model.userData.wheelRubberClones?.get(t.stock)) continue; // (blacked out: no ring)
+    for (const side of t.outer ? [t.outer] : [-1, 1]) {
+      axis.set(t.axleX ? side : 0, 0, t.axleX ? 0 : side);
+      q.setFromUnitVectors(Z, axis);
+      pos.copy(t.centre).addScaledVector(axis, t.half + RING_GAP);
+      pose.compose(pos, q, one.set(t.r, t.r, 1)).premultiply(t.toTyre);
+      const mesh = new THREE.Mesh(geo, mat);
+      pose.decompose(mesh.position, mesh.quaternion, mesh.scale);
+      mesh.userData.wheelRing = true; // (the other render modules leave it be: dents, suspension)
+      if (ghost) { mesh.userData.solidMat = mat; mesh.material = tyre.material; } // (a ghost: pale like the rest)
+      tyre.add(mesh);
+      found.rings.push(mesh);
+    }
+  }
+};
 
+// how a model's wheels are shown now: the chosen design, and the hub colour (a colour chosen apart wins over the design's hubs)
+const dressed = (model) => {
+  const found = model.userData.wheelHubs;
+  if (!found || !found.hubs.length) return;
+  const design = designById(wheelDesign()), colour = byId(wheelColour());
+  paint(model, found.hubs, 'wheelClones', colour.hex !== null ? colour.hex : design.hub, 0.3);
+  paint(model, found.parts, 'wheelRubberClones', design.tyre);
+  addRings(model, design.ring);
+};
+
+const plain = (mesh) => { const m = mesh.material; return m && !Array.isArray(m) && m.color && !m.map && !m.vertexColors; };
 export const dressWheels = (model, car) => {
   if (!model || model.userData.wheelHubs) return model;
-  if (car && car.legend) { model.userData.wheelHubs = { tyres: [], hubs: [] }; return model; } // (Legendary: black and gold, as designed)
+  if (car && car.legend) { model.userData.wheelHubs = { tyres: [], hubs: [], parts: [], info: [], rings: [] }; return model; } // (Legendary: black and gold, as designed)
   let found;
-  try { found = findHubs(model); } catch { found = { tyres: [], hubs: [] }; }
+  try { found = findHubs(model); } catch { found = { tyres: [], hubs: [], rubber: [], info: [] }; }
   // only plain single-colour materials can be tinted: a textured, vertex-coloured or multi-material hub stays as it is
-  found.hubs = found.hubs.filter(({ mesh }) => { const m = mesh.material; return m && !Array.isArray(m) && m.color && !m.map && !m.vertexColors; });
+  found.hubs = found.hubs.filter(({ mesh }) => plain(mesh));
   for (const hub of found.hubs) hub.stock = hub.mesh.material;
+  // a tyre with no hub of its own (or a car with none) stays stock; the tyre's rubber = the tyre and its tread blocks / rings
+  const hubbed = new Set(found.hubs.map(h => h.tyre));
+  found.info = found.hubs.length ? found.info.filter(t => hubbed.has(t.tyre) && plain(t.tyre)) : [];
+  found.parts = [];
+  for (const t of found.info) {
+    t.stock = t.tyre.material;
+    for (const mesh of [t.tyre, ...t.rubber]) if (plain(mesh)) found.parts.push({ mesh, stock: mesh.material });
+  }
+  found.rings = [];
   model.userData.wheelHubs = found;
   live.add(new WeakRef(model));
-  if (byId(wheelColour()).hex !== null) dressed(model);
+  if (wheelColour() !== 'stock' || wheelDesign() !== 'stock') dressed(model);
   return model;
 };
 
+const refresh = (id) => {
+  for (const ref of live) { const model = ref.deref(); if (model) dressed(model); else live.delete(ref); }
+  for (const fn of listeners) fn(id);
+};
 export const setWheelColour = (id) => {
   const colour = byId(id);
   if (Progress.noSave) visit = colour.id;
   else { stored = colour.id; try { localStorage.setItem(KEY, colour.id); } catch { /* (no storage: for this visit) */ } }
-  for (const ref of live) { const model = ref.deref(); if (model) dressed(model); else live.delete(ref); }
-  for (const fn of listeners) fn(colour.id);
+  refresh(colour.id);
+};
+export const setWheelDesign = (id) => {
+  const design = designById(id);
+  if (Progress.noSave) visitDesign = design.id;
+  else { storedDesign = design.id; try { localStorage.setItem(KEY_DESIGN, design.id); } catch { /* (no storage: for this visit) */ } }
+  refresh(design.id);
 };
 export const onWheelColour = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };

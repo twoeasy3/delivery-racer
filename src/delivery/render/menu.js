@@ -18,7 +18,7 @@ import './menuclick.js'; // (every click on a menu plays one sound)
 import { ask } from './dialog.js';
 import { Input } from '../input.js';
 import { draw, MenuStage } from './menustage.js';
-import { WHEEL_COLOURS, wheelColour, setWheelColour, onWheelColour } from './wheelcosmetic.js';
+import { WHEEL_COLOURS, WHEEL_DESIGNS, wheelColour, setWheelColour, wheelDesign, setWheelDesign, onWheelColour } from './wheelcosmetic.js';
 export { LEVEL_SHOTS } from './menustage.js'; // (the postcard album's pictures: render/album.js)
 
 // The menu's height on a phone (menu2.css, the phone's media queries: height var(--menu-h, 100dvh)): the window's inner height,
@@ -63,7 +63,21 @@ for (const colour of WHEEL_COLOURS) {
   chip.addEventListener('click', () => setWheelColour(colour.id));
   wheelSwatches.appendChild(chip);
 }
-const showWheels = () => { for (const chip of wheelSwatches.children) chip.setAttribute('aria-pressed', String(chip.dataset.wheel === wheelColour())); };
+// ...and the wheel DESIGN (tyre + hub preset): a little round picture of each, tyre / ring / hub as concentric bands
+const wheelDesigns = document.getElementById('wheelDesigns');
+const hexOf = (hex, fallback) => '#' + (hex === null ? fallback : hex.toString(16).padStart(6, '0'));
+for (const design of WHEEL_DESIGNS) {
+  const chip = document.createElement('button'), tyre = hexOf(design.tyre, '1b1b1d'), ring = design.ring ? hexOf(design.ring.hex) : tyre, hub = hexOf(design.hub, '9aa3b2');
+  chip.className = 'menu-chip';
+  chip.dataset.design = design.id;
+  chip.innerHTML = '<span class="swatch" style="background:radial-gradient(circle,' + hub + ' 0 30%,' + tyre + ' 30% 46%,' + ring + ' 46% 66%,' + tyre + ' 66%)"></span>' + design.name;
+  chip.addEventListener('click', () => setWheelDesign(design.id));
+  wheelDesigns.appendChild(chip);
+}
+const showWheels = () => {
+  for (const chip of wheelSwatches.children) chip.setAttribute('aria-pressed', String(chip.dataset.wheel === wheelColour()));
+  for (const chip of wheelDesigns.children) chip.setAttribute('aria-pressed', String(chip.dataset.design === wheelDesign()));
+};
 onWheelColour(showWheels);
 showWheels();
 
