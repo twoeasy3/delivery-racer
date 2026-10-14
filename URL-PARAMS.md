@@ -178,6 +178,25 @@ Also need `autostart` (or a hidden level).
 | `w` / `h` | pixels | With `banner`: its size (default 1600x800). | (above) | Normal | yes |
 | `evil` / `labels` | bare / `0` | With `banner`: Evil livery / no names. | `...&banner=wedge,midnight&evil&labels=0` | Normal | untried |
 
+## 7a. Crazey Jim's Blueprint Stall (branch claude/blueprint-shop, not on main yet)
+
+A section at the top of the Shop where Jim sells blueprints for tip money (the bank, `$`): six offers that change every 6 local hours
+(00:00, 06:00, 12:00, 18:00; render/jimshop.js, rules in jimshop.js). `jimshop` opens the Shop with it expanded. Fake saves
+below write nothing (`Progress.noSave`). The rotation is seeded by the local date and slot, so `eventsnow` picks the day and the slot.
+
+| Param | Values | What it does | Example | Saves? | Tried |
+|---|---|---|---|---|---|
+| `jimshop` | bare | Opens the Shop with the stall expanded (on the menu, not with autostart); the menu's red $ / Jim half of the Shop button does the same. | `/delivery/?jimshop` | Normal (buying is real) | yes |
+| `demo` | `normal` (also bare), `keycar` (the Rocket Fin Coupe and the Swan Car on the stall as key-car offers), `expensive`, `soldout`, `broke`, `maxed`, `nocc`, `reflimit`, `empty`, `nopool`, `bought` | With `jimshop`: a made-up save: a bank of $900 (`expensive` $5000, `soldout` $1500, `broke` $0, `maxed` $2000, `empty` $800) and blueprint counts, so the offers show their states. `expensive`: the dearest offer's confirm up. `soldout`: two sold out. `maxed`: one car at its max, one a blueprint short of it. `nocc`: 3 Crazey Cash, too little to Refresh. `reflimit`: the day's refreshes used up. `empty`: everything sold. `nopool`: no cars to sell. `bought`: a cheap purchase made, its feedback shown. | `/delivery/?jimshop&demo=soldout` | No | yes |
+| `jimcars` | car ids, comma list (up to 6) | With `jimshop&demo=keycar`: those cars on the stall (any car of the stall's pool). | `/delivery/?jimshop&demo=keycar&jimcars=hearse,rocketfin` | No | yes |
+| `jimr` | whole number | With `jimshop`: the refreshes already done today, so the Refresh button costs 5 + n Crazey Cash. | `/delivery/?jimshop&demo&jimr=6` | No | yes |
+| `jimcc` | whole number | With `jimshop`: the Crazey Cash for the visit (the Refresh button costs 5, then 6, 7 ...). Demos start with 40. | `/delivery/?jimshop&jimcc=2` | No | yes |
+| `jimrefresh` | bare | With `jimshop`: the Refresh button pressed 0.7 s after opening (with `jimhold`, the re-roll's pop stays on). | `/delivery/?jimshop&demo&jimrefresh&jimhold` | No | yes |
+| `jimcash` | whole dollars | With `jimshop`: the bank for the visit. | `/delivery/?jimshop&jimcash=120` | No | untried |
+| `jimpress` | offer number (0-based, as laid out: the hot deal first) | With `jimshop`: that offer's Buy pressed 0.4 s after opening (a dear one asks first). | `/delivery/?jimshop&demo&jimpress=2` | No with `demo` | yes |
+| `jimhold` | bare | With `jimshop`: the purchase toast stays up (for a picture). | `/delivery/?jimshop&demo=bought&jimhold` | No | yes |
+| `eventsnow` | a day or date-time | (section 6) sets the day, so the rotation, and the "New stock in" clock. | `/delivery/?jimshop&eventsnow=2026-10-14T19:48:00Z` | Normal | yes |
+
 ## 7b. Unlock cinematics (by address only, for now)
 
 A full-screen reveal over the menu, drawn in one canvas of its own (render/unlockcine.js). Not the `cine` stills of

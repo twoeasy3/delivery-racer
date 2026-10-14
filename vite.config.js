@@ -18,7 +18,7 @@ import { posix } from 'node:path'
 const NOT_RULES = new Set(['cargopage.js', 'editor.js', 'modeleditor.js', 'editorForms.js', 'gimmickspage.js', 'poweruppage.js', 'sides.js',
   'gimmicks.js', 'police.js', 'powerups.js', 'words.js', 'levelText.js', 'levelinfo.js', 'nav.js', 'main.js', 'messages.js',
   'cargo.js', 'version.js', 'replay.js', 'replaystore.js', 'events.js',
-  'packs.js']) // (card packs: given and opened on the menu and the results, never in a run; their odds, packs.json, tuned without refusing replays)
+  'packs.js', 'jimshop.js']) // (Crazey Jim's blueprint stall, like the packs: a menu thing, never read in a run; card packs: given and opened on the menu and the results, never in a run; their odds, packs.json, tuned without refusing replays)
 const LOGIC_DIR = 'src/delivery/'
 export const logicFiles = () => {
   const files = new Set(readdirSync(LOGIC_DIR).filter(f => f.endsWith('.js') && !NOT_RULES.has(f)))
