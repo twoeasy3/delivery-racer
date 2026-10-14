@@ -12,6 +12,10 @@ src/delivery/render/ideaModels*.js, a new ideaModelsN.js spread into IDEA_MODELS
 
 ## Which cars
 - Cars we already have (NO duplicates, no near-duplicates, not the same real-world vehicle): {LIST}
+- BEFORE drafting, grep CARS-CATALOGUE.md (repo root) for each vehicle you have in mind AND for its real-world inspiration (maker, model,
+  nickname; also a different car of the same real vehicle is a duplicate). It lists every car in the game and the ten in progress on other
+  branches. Set `basedOn` (the real vehicle) on every idea entry you add. Do NOT edit CARS-CATALOGUE.md yourself (parallel branches
+  would conflict): the orchestrator adds your rows at merge, from your `basedOn` and `note`.
 - No weird cars: believable, recognisable road vehicles, classic or real-world inspired. No gimmicks.
 - Draft your {N} ideas first (name, real-world inspiration, Good colour, Evil colour) and send them to me with
   SendMessage before modelling. Then carry on without waiting.
