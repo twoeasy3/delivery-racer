@@ -19,6 +19,7 @@ import { IDEA_MODELS_10 } from './ideaModels10.js'; // (a concept city car: the 
 import { IDEA_MODELS_TOPUP_A } from './ideaModelsTopupA.js'; // (the ideas top-up, batch A: four classic road cars)
 import { IDEA_MODELS_TOPUP_B } from './ideaModelsTopupB.js'; // (the top-up batch B: a removals van, a bin lorry, a jeepney)
 import { IDEA_MODELS_BATCH_D2 } from './ideaModelsBatchD2.js'; // (batch D2: the Flatbed Truck and the Utility Moke)
+import { IDEA_MODELS_BATCH_D3 } from './ideaModelsBatchD3.js'; // (batch D3: the Half-Track, the Sprint Hatch)
 import { IDEA_MODELS_TOPUP_C } from './ideaModelsTopupC.js'; // (top-up batch C: the Pocket 4x4, the Dodgem, the Ice Resurfacer)
 import { IDEA_MODELS_BATCH_D1 } from './ideaModelsBatchD1.js';
 import { SWAN_MODELS } from './modelsSwan.js'; // (the Swan Car redone as a covered coupe, 13-Oct: over ideaModels3's open tourer)
@@ -184,6 +185,7 @@ export const IDEA_MODELS = {
   ...IDEA_MODELS_TOPUP_C,
   ...IDEA_MODELS_BATCH_D1,
   ...IDEA_MODELS_BATCH_D2,
+  ...IDEA_MODELS_BATCH_D3,
   swancar: SWAN_MODELS.swancar,
   // A bubble car (a BMW Isetta): an egg on wheels. The whole front is its one door, hinged at the side, the
   // windscreen in it; a glass bubble over a bench seat; lamps in pods on its flanks; the two back wheels close
