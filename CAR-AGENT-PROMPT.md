@@ -58,6 +58,11 @@ NEVER above 4,000. The last two idea cars came out at 3,208 and 5,868 triangles,
   Skip the clutter (door handles, wipers, tiny trim, plates on every face) unless it clearly reads. A simple, charming,
   bold shape beats a busy one: 'trying too hard' is a defect.
 
+## No scooped wheel wells (the owner, 14-Oct)
+Do NOT carve wheel wells into the body like ice-cream scoops out of a tub. It is trying too hard and wastes polygons. Use a
+plain body with the wheel sitting against (or slightly under) the body side, or a simple flat arch cap / fender only where it
+truly reads at card size. A rework that removes scooped arches should get cheaper, not dearer.
+
 ## Textures: allowed, drawn in code (the owner, 14-Oct, relaxing his earlier "no new textures")
 Textures are fine where they make a car read better (curtains, flames, grilles, rust, a tarpaulin, banners...), as long as they
 are DRAWN IN CODE on a canvas (the `texture()` helpers in render/modelsOrig*.js: made once, cached, shared) and never image files:
@@ -109,7 +114,12 @@ unmatched: tell the owner, do not delete the patch).
 - Add a CHECKLIST.md item (next free number on main) saying what was and was NOT verified, with shapes/triangles per car.
 
 ## Report
-You cannot send images to the owner (no SendUserFile): save the final stills as PNGs in
-/tmp/claude-0/-home-user/4ab9aa0b-f1e2-5d29-9323-35e61dac4e41/scratchpad/<your-folder>/ and tell me the paths: nine views
-per car in Good and Evil, nose and tail close-ups. Report: branch, commit, car names/ids, shapes and triangles per
-car, defects found and fixed, what is still wrong, what you did not see. Then STAND BY for follow-up changes.
+You cannot send images to the owner (no SendUserFile): save the final stills as PNGs in your own folder under /tmp and
+SendMessage "main" the absolute paths AS EACH CAR IS FINISHED (the owner, 14-Oct), not at the end. SEND FEWER ANGLES (the
+owner, 14-Oct): per car, Good only unless Evil differs in more than colour, as ONE contact sheet of at most four views (front
+three-quarter, rear three-quarter, side, top-down only if the roof matters) plus ONE LAMPS image: the same car in the game's
+`?lamps=show` view with the headlamp, tail / brake lamp and indicator placements marked (or at night with brake and hazards
+on), so the lamp definitions can be judged. Do not send the nine-view sheets, the Evil sheet, nose and tail close-ups unless
+asked (still render and READ them yourself while inspecting: see "How to inspect"). Report: branch, commit, car names/ids,
+shapes and triangles per car, defects found and fixed, what is still wrong, what you did not see. Then STAND BY for
+follow-up changes.
