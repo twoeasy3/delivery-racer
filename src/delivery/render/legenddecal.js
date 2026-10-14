@@ -19,22 +19,46 @@ import * as THREE from 'three';
 
 export const LEGEND_BLACK = 0x0b0b0e, LEGEND_GOLD = 0xd4a82a;
 // the same for every Legendary car: the wreath turned `tilt` degrees about the flank's normal, its open top leaning
-// toward the car's front (`lean: 'front'`, rising forward) or its rear ('rear'); `grid` cells a side across the wreath
-export const LEGEND = { tilt: 35, lean: 'front', grid: 16 };
+// toward the car's front (`lean: 'front'`, rising forward) or its rear ('rear'); `cell`: about how wide the wrapping grid's cells are, in metres (10 to 26 a side)
+export const LEGEND = { tilt: 35, lean: 'front', cell: 0.07,
+  pos: (typeof location !== 'undefined' && /[?&]legendpos=(\w+)/.exec(location.search)?.[1]) || null }; // (?legendpos=P3: LEGEND_PLACEMENTS)
 // where the wreath goes, by the base car's MODEL: [z, y, size] in metres in the model's own frame (z along the car, its
 // front +z; y up from the road; size: the wreath's width and height, the picture's square). Whatever of it does not
 // land on the body's side paint is left off, so it may overlap the wheel, the windows and the lamps freely. To add a
 // car: put the centre over the rear quarter (behind the rear door, over the rear wheel), make it as big as reads well,
 // and look at both sides: enough of the ring must stay on paint to read as a wreath.
+// A spot is [z, y, size] or [z, y, size, tilt, lean] (its own turn: degrees, 'front' or 'rear'; else LEGEND's); a car's
+// entry may list several spots (wreaths on each flank, all one mesh a side).
 export const LEGEND_DECAL = {
-  commuter: [-1.15, 0.32, 1.1], // (HUGE, the owner: centred on the rear wheel, a laurel arch over it across most of the rear 30% (z -1.7 to -0.6); carved by the tyre, the waist and the tail's turn)
+  commuter: [[-1.15, 0.32, 1.1]], // (HUGE, the owner: centred on the rear wheel, a laurel arch over it across most of the rear 30% (z -1.7 to -0.6); carved by the tyre, the waist and the tail's turn)
+};
+// OTHER PLACEMENTS to compare (the owner, 14-Oct: "Try some different placements of the wreath please"), by the base
+// car's MODEL, picked for a visit by the address: ?legendpos=P3 (any page that builds a Legendary car: the game, the
+// showroom, the model editor; LEGEND.pos). P1 is LEGEND_DECAL's (the default)
+export const LEGEND_PLACEMENTS = {
+  commuter: {
+    P1: [[-1.15, 0.32, 1.1]],                    // centred on the rear wheel: an arch of laurel over it
+    P2: [[-1.15, 0.78, 0.8]],                    // high on the rear quarter, between the arch and the rear window
+    P3: [[-0.6, 0.58, 0.9]],                     // the rear door, mid flank (cut by the window line and the sill)
+    P4: [[-0.85, 0.5, 1.0]],                     // on the front of the rear arch: half door, half quarter
+    P5: [[0.2, 0.3, 1.7]],                       // low and long behind the front wheel, cut by both arches
+    P6: [[0, 0.55, 2.2]],                        // the whole flank, arch to arch (a race livery)
+    P7: [[-1.3, 0.56, 0.6], [-0.3, 0.58, 0.6]],  // two small: the rear quarter and the door
+    P8: [[-1.15, 0.32, 1.1, 35, 'rear']],        // P1 leaning back
+    P8b: [[-1.15, 0.32, 1.1, 20, 'front']],      // P1 at a gentler 20 degrees forward
+  },
+};
+// the wreath never shows above this height (m), by the base car's MODEL: the waist, so no stray bits land on the
+// pillars and the frames round the side windows
+export const LEGEND_WAIST = {
+  commuter: 0.8,
 };
 // the trim made gold, by the base car's MODEL: the colours (hex) of the materials it is drawn in
 export const LEGEND_TRIM = {
   commuter: [0x232529, 0xc4c8ce], // (the black bumpers, mouth, grille and sill skirt; the silver hub caps)
 };
 const LIFT = 0.006; // (the wreath's offset out from the paint: past the z-fight check's 4 mm, and polygon offset besides)
-const FACING = 0.55; // (a cell is kept where the paint's normal is within about 57 degrees of straight out sideways)
+const FACING = 0.7; // (a point shows where the paint's normal is within about 45 degrees of straight out sideways)
 
 // ---- the wreath: a picture drawn once ------------------------------------------------------------------------------
 // 128 x 128 RGBA (64 KB of texture memory, about 85 KB with its mipmaps): flat shapes in two golds, nothing else (no
@@ -129,16 +153,16 @@ const flankAt = (model, s, y, z, only = null) => {
 // line between a shown point and a hidden one (alpha test at a half) rather than in steps of whole cells. A cell is
 // built only where one of its corners is shown, and the wreath's ring passes it. The texture coordinates are turned by
 // the tilt (in the picture as seen from that side, so the top leans to the car's front on both flanks)
-const wrapFlank = (model, s, [z0, y0, size], material) => {
-  const body = model.userData.body, n = LEGEND.grid, across = new THREE.Vector3(1, 0, 0).transformDirection(model.matrixWorld);
-  const phi = s * (LEGEND.lean === 'rear' ? -1 : 1) * LEGEND.tilt * Math.PI / 180, cos = Math.cos(phi), sin = Math.sin(phi);
+const wrapFlank = (model, s, [z0, y0, size, tilt = LEGEND.tilt, lean = LEGEND.lean], out) => {
+  const body = model.userData.body, n = Math.max(10, Math.min(26, Math.round(size / LEGEND.cell))), across = new THREE.Vector3(1, 0, 0).transformDirection(model.matrixWorld);
+  const phi = s * (lean === 'rear' ? -1 : 1) * tilt * Math.PI / 180, cos = Math.cos(phi), sin = Math.sin(phi);
   const pts = [];
   for (let j = 0; j <= n; j++) {
     for (let i = 0; i <= n; i++) {
       const dz = (i / n - 0.5) * size, dy = (j / n - 0.5) * size;
       const paint = flankAt(model, s, y0 + dy, z0 + dz, body), first = paint && flankAt(model, s, y0 + dy, z0 + dz);
       const facing = !!paint && paint.normal.dot(across) * s;
-      const shown = !!first && first.object === body && facing > FACING;
+      const shown = !!first && first.object === body && facing > FACING && y0 + dy <= (LEGEND_WAIST[model.userData.legendModel] ?? Infinity);
       // (seen from side s, the screen's right is -s z; the picture turned phi anticlockwise there)
       const sx = -s * dz / size, sy = dy / size;
       const u = sx * cos + sy * sin, v = -sx * sin + sy * cos;
@@ -146,8 +170,7 @@ const wrapFlank = (model, s, [z0, y0, size], material) => {
     }
   }
   const at = (i, j) => pts[j * (n + 1) + i];
-  const pos = [], nor = [], uvs = [], alpha = [];
-  let parent = null;
+  const { pos, nor, uvs, alpha } = out;
   for (let j = 0; j < n; j++) {
     for (let i = 0; i < n; i++) {
       const q = [at(i, j), at(i + 1, j), at(i + 1, j + 1), at(i, j + 1)];
@@ -156,7 +179,6 @@ const wrapFlank = (model, s, [z0, y0, size], material) => {
       if (far < RING[0] || near > RING[1] + 1 / n) continue; // (the ring's band does not pass this cell)
       if (q.every(p => p.v > 0 && Math.abs(Math.atan2(p.u, p.v)) < GAP)) continue; // (all in the open top)
       if (q.some(p => Math.abs(p.paint.point.clone().sub(q[0].paint.point).dot(across)) > size / n)) continue; // (a step in the surface: an edge)
-      parent ||= body.parent || model;
       // two triangles, wound to face out of side s
       const tris = s > 0 ? [[0, 2, 1], [0, 3, 2]] : [[0, 1, 2], [0, 2, 3]];
       for (const k of tris.filter(t => t.some(k => q[k].shown)).flat()) { // (a triangle with nothing shown is left out)
@@ -168,7 +190,13 @@ const wrapFlank = (model, s, [z0, y0, size], material) => {
       }
     }
   }
+};
+// one mesh a side holding every wreath of the car's placement on that flank
+const flankMesh = (model, s, spots, material) => {
+  const out = { pos: [], nor: [], uvs: [], alpha: [] }, { pos, nor, uvs, alpha } = out;
+  for (const spot of spots) wrapFlank(model, s, spot, out);
   if (!pos.length) return null;
+  const parent = model.userData.body.parent || model;
   parent.updateMatrixWorld(true);
   const toLocal = new THREE.Matrix4().copy(parent.matrixWorld).invert(), nm = new THREE.Matrix3().getNormalMatrix(toLocal);
   const geo = new THREE.BufferGeometry();
@@ -184,12 +212,15 @@ const wrapFlank = (model, s, [z0, y0, size], material) => {
   parent.add(decal);
   return decal;
 };
+// the placement for a car: the address's (?legendpos=P3) if the car has it, else its own
+export const legendSpots = (car) => (LEGEND.pos && LEGEND_PLACEMENTS[car.model]?.[LEGEND.pos]) || LEGEND_DECAL[car.model] || null;
 export const addLegendDecal = (model, car) => {
-  const spot = LEGEND_DECAL[car.model];
-  const material = spot && wreathMaterial();
+  const spots = legendSpots(car);
+  const material = spots && wreathMaterial();
   if (!material || !model.userData.body) return 0;
   model.updateMatrixWorld(true);
-  return [1, -1].filter(s => wrapFlank(model, s, spot, material)).length;
+  model.userData.legendModel = car.model;
+  return [1, -1].filter(s => flankMesh(model, s, spots, material)).length;
 };
 
 // ---- the whole look: the trim gold, the body a deep gloss black, the wreaths ------------------------------------------
