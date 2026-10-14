@@ -61,6 +61,9 @@ const flat = (map, opacity) => new THREE.MeshBasicMaterial({ map, transparent: t
 // (CLOSE = how much of the full distance is left); `closeup` is where it is heading, `zoom` how far it has got (0 = the whole car)
 const CLOSE = 0.5;
 let closeup = false, zoom = 0, alsoVisible = () => false;
+// the NUMBER PLATE close-up (CHECKLIST 285): the same ease, but turned to show one end of the car and aimed at its plate (closeEnd: 'rear' | 'front' | null = the wheels')
+let closeEnd = null;
+const PLATE_VIEW = 0.62; // how much of the picture's width the plate is given (the camera stands back accordingly)
 let v = null; // the view: { el, canvas, ctx, car, evil, dark, scene, camera, turn, model, extra: [geometry, material], rxz, height, mid }
 let yaw = -0.64, spinBy = 0, held = null, idleAt = 0, raf = 0, last = 0, visible = () => true, keyVisible = () => true;
 
@@ -174,7 +177,12 @@ const frame = (aspect) => {
   const across = rxz, up = rxz * Math.sin(LIFT) + height / 2 * Math.cos(LIFT); // (half its width and height seen from there)
   const far = Math.max(across / Math.tan(hHalf), up / Math.tan(vHalf)) * 1.08 + rxz * 0.75; // (and its near end, nearer: a little more)
   camera.aspect = aspect;
-  const near = far * (1 - zoom * (1 - CLOSE)), lift = LIFT * (1 - zoom * 0.7), eye = height * (0.45 - zoom * 0.24), aim = height * (0.42 - zoom * 0.22); // (zoom 0: as always)
+  let near = far * (1 - zoom * (1 - CLOSE)), lift = LIFT * (1 - zoom * 0.7), eye = height * (0.45 - zoom * 0.24), aim = height * (0.42 - zoom * 0.22); // (zoom 0: as always)
+  if (closeEnd) { // (a plate close-up: in front of the end that has turned to face us, at the plate's height)
+    const a = v.model.userData.platePlan?.[closeEnd], y = a ? a.at[1] : height * 0.3, edge = a ? Math.abs(a.at[2]) : rxz * 0.8, w = a ? a.size[0] : 0.5;
+    const stand = Math.max(0.9, w / (PLATE_VIEW * 2 * Math.tan(hHalf)));
+    near = far + (edge + stand - far) * zoom; lift = LIFT * (1 - zoom * 0.9); eye = height * 0.45 + (y + 0.07 - height * 0.45) * zoom; aim = height * 0.42 + (y - height * 0.42) * zoom;
+  }
   camera.position.set(0, eye + near * Math.sin(lift), near * Math.cos(lift));
   camera.lookAt(0, aim, 0);
   camera.updateProjectionMatrix();
@@ -201,6 +209,7 @@ const draw = (now) => {
   const still = stillViews();
   if (!held) {
     if (Math.abs(spinBy) > 0.02) { yaw += spinBy * dt; spinBy *= Math.pow(0.05, dt); }
+    else if (closeEnd && closeup) { const d = Math.atan2(Math.sin((closeEnd === 'rear' ? Math.PI : 0) - yaw), Math.cos((closeEnd === 'rear' ? Math.PI : 0) - yaw)); yaw += d * Math.min(1, dt * 5); spinBy = 0; } // (a plate close-up: turned to show that end, and kept there)
     else if (!still && !(ShowroomView.hold >= 0) && now - idleAt > 1200) yaw += SPIN * dt; // (held for a picture: not turning either)
   }
   v.turn.rotation.y = yaw;
@@ -327,7 +336,7 @@ export const ShowroomView = {
   // another screen that shows the view (the Cosmetics screen): in sight while fn() says so
   also(fn) { alsoVisible = fn; },
   // the wheels close-up on or off (eased); stop() puts it back
-  closeUp(on) { closeup = !!on; },
+  closeUp(on, end = null) { closeup = !!on; closeEnd = on && (end === 'rear' || end === 'front') ? end : null; },
   // whether the corner key may be drawn now (no sheet over the showroom: render/showroom.js says)
   keyWhen(fn) { keyVisible = fn; },
   // done: the loop ended and the model let go (the 2D canvas is kept for next time)
@@ -336,6 +345,7 @@ export const ShowroomView = {
     raf = 0;
     held = null;
     closeup = false;
+    closeEnd = null;
     zoom = 0;
     drop();
     if (v) { v.car = null; v.canvas?.remove(); v.el = null; }
