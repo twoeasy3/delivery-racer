@@ -20,14 +20,14 @@ import * as THREE from 'three';
 export const LEGEND_BLACK = 0x0b0b0e, LEGEND_GOLD = 0xd4a82a;
 // the same for every Legendary car: the wreath turned `tilt` degrees about the flank's normal, its open top leaning
 // toward the car's front (`lean: 'front'`, rising forward) or its rear ('rear'); `grid` cells a side across the wreath
-export const LEGEND = { tilt: 35, lean: 'front', grid: 12 };
+export const LEGEND = { tilt: 35, lean: 'front', grid: 16 };
 // where the wreath goes, by the base car's MODEL: [z, y, size] in metres in the model's own frame (z along the car, its
 // front +z; y up from the road; size: the wreath's width and height, the picture's square). Whatever of it does not
 // land on the body's side paint is left off, so it may overlap the wheel, the windows and the lamps freely. To add a
 // car: put the centre over the rear quarter (behind the rear door, over the rear wheel), make it as big as reads well,
 // and look at both sides: enough of the ring must stay on paint to read as a wreath.
 export const LEGEND_DECAL = {
-  commuter: [-0.6, 0.58, 0.7], // (its side paint: y 0.38 to 0.77 flat, rounding to 0.3 and 0.84; the rear tyre at z -1.15, 0.3 round, standing proud; 0.7 m: about the largest whose ring still reads, its top cut by the waist and its rear foot by the tyre)
+  commuter: [-1.15, 0.32, 1.1], // (HUGE, the owner: centred on the rear wheel, a laurel arch over it across most of the rear 30% (z -1.7 to -0.6); carved by the tyre, the waist and the tail's turn)
 };
 // the trim made gold, by the base car's MODEL: the colours (hex) of the materials it is drawn in
 export const LEGEND_TRIM = {
@@ -42,7 +42,7 @@ const FACING = 0.55; // (a cell is kept where the paint's normal is within about
 // deeper gold. The leaves lie between RING[0] and RING[1] of the picture's size from its centre (the grid keeps only
 // the cells that reach that band).
 export const WREATH_SIZE = 128;
-const RING = [0.2, 0.5], GAP = 0.3; // (and nothing within GAP radians either side of straight up: the ring's open top)
+const RING = [0.17, 0.5], GAP = 0.3; // (and nothing within GAP radians either side of straight up: the ring's open top)
 let wreath = null;
 export const wreathTexture = () => {
   if (wreath) return wreath;
@@ -51,7 +51,7 @@ export const wreathTexture = () => {
   canvas.width = canvas.height = S;
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
-  const c = S / 2, R = S * 0.355;
+  const c = S / 2, R = S * 0.34;
   ctx.clearRect(0, 0, S, S);
   // a leaf: a pointed oval L long and 2W wide from (x, y), pointing at angle a
   const leaf = (x, y, a, L, W, colour) => {
@@ -73,7 +73,7 @@ export const wreathTexture = () => {
     const a0 = Math.PI / 2 + 0.16, a1 = Math.PI * 1.5 - 0.5, n = 8, k = s < 0 ? 1 : -1;
     for (let i = 0; i < n; i++) {
       const t = (i + 0.5) / n, a = a0 + (a1 - a0) * t, [x, y] = pt(s, a), [x2, y2] = pt(s, a + 0.01);
-      const along = Math.atan2(y2 - y, x2 - x), L = S * (0.2 - 0.07 * t), W = L * 0.3;
+      const along = Math.atan2(y2 - y, x2 - x), L = S * (0.24 - 0.08 * t), W = L * 0.36;
       leaf(x, y, along + k * 0.5, L * 0.88, W * 0.92, DEEP); // (inside the ring)
       leaf(x, y, along - k * 0.6, L, W, GOLD);               // (outside it)
     }
@@ -158,9 +158,10 @@ const wrapFlank = (model, s, [z0, y0, size], material) => {
       if (q.some(p => Math.abs(p.paint.point.clone().sub(q[0].paint.point).dot(across)) > size / n)) continue; // (a step in the surface: an edge)
       parent ||= body.parent || model;
       // two triangles, wound to face out of side s
-      for (const k of s > 0 ? [0, 2, 1, 0, 3, 2] : [0, 1, 2, 0, 2, 3]) {
+      const tris = s > 0 ? [[0, 2, 1], [0, 3, 2]] : [[0, 1, 2], [0, 2, 3]];
+      for (const k of tris.filter(t => t.some(k => q[k].shown)).flat()) { // (a triangle with nothing shown is left out)
         const p = q[k];
-        pos.push(p.paint.point.clone().addScaledVector(p.paint.normal, LIFT));
+        pos.push(p.paint.point.clone().addScaledVector(p.paint.normal, p.shown ? LIFT : -LIFT)); // (a hidden point tucked under the paint: no face left lying close beside a part that covers it there)
         nor.push(p.paint.normal);
         uvs.push(...p.uv);
         alpha.push(1, 1, 1, p.shown ? 1 : 0);
