@@ -77,6 +77,11 @@ groups above, and the quick smoke only when asked. Syntax-check changed files wi
 - The Good/Evil switch: `src/delivery/sidecues.js` exports `geOn(n)`; the ideas are numbered 1 to 12 and live behind
   `?ge=n`. The owner has not chosen; the recommended three are 1 + 8 + 11 (with 10 teaching it).
 
+- **Textures:** allowed (the owner, 14-Oct) when drawn in code on a canvas, never as image files (no download cost, about 4 bytes a
+  pixel of memory); keep them modest (256 x 256 is today's biggest) and report their sizes. Details: CAR-AGENT-PROMPT.md.
+
+- **Cinematics (unlockcine.js and any later cutscene):** render NO humans (the owner, 14-Oct): no people, hands, faces, silhouettes of figures; use props, signs, text and the cars only; hide any driver figure a car model carries.
+
 ## The unfinished work
 
 See `WIP/INDEX.md`. Take an item with `git apply --3way WIP/<branch>.patch`, then look at it (a still, a check) and commit
