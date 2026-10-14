@@ -17,12 +17,14 @@ import { landAt } from '../road.js'; // (the height of the land as drawn)
 
 const CHUNK = 400; // m of road to a chunk of instances
 const CROWNS = [[0xc0301a, 18], [0xe0661a, 26], [0xe8b42a, 26], [0xb8b02e, 8], [0x9a5a2a, 10], [0x9a1c1c, 7], [0xd9441c, 5]]; // red, orange, gold, yellow-green, brown, crimson, vermilion
-const WHITES = [0xf4f1e8, 0xf4f1e8, 0xf4f1e8, 0xe8dca8, 0xc9d6dc, 0xd8c4b0];
+const WHITES = [0xfffdf4, 0xfffdf4, 0xfffdf4, 0xf2e6b4, 0xd4e4ea, 0xe8d4c0]; // (clapboard, a little over white: the walls that face the road stand in shade)
 const ROOFS = [0x4a4e58, 0x4a4e58, 0x5a3a2a, 0x7a2e26];
 const DOORS = [0xa82a22, 0x2f5a3a, 0x203a5a];
 const LEAVES = [0xb23a1c, 0xd9741f, 0xe0a62e, 0x8a4a22, 0xc4501c, 0xe8b840];
+const CARPET = [0xa8401c, 0xb85a1c, 0xc99a2e, 0x7a4a24, 0xc4601e, 0xb8903a, 0x8a3a1c]; // (the verge's: duller and browner than the leaves in the air)
 
 export const autumn = ({ theme, offRoads, beside, inJunction, levelGroup }) => {
+  const T0 = performance.now();
   // (laid out the same every time: a seed of the level's own)
   let seed = 41 + (LEVEL.id || '').length * 197;
   const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
@@ -223,8 +225,8 @@ export const autumn = ({ theme, offRoads, beside, inJunction, levelGroup }) => {
           for (let c = 0; c < COLS.length; c++) {
             Track.toWorld(s, beside(side, s, COLS[c]), p);
             pos.push(p.x, p.y - 0.24, p.z);
-            tint.set(LEAVES[Math.floor(rand() * LEAVES.length)]);
-            if (c === COLS.length - 1) tint.copy(land); else tint.lerp(land, Math.max(0, (c - 2) / 5) * 0.8);
+            tint.set(CARPET[Math.floor(rand() * CARPET.length)]);
+            if (c === COLS.length - 1) tint.copy(land); else tint.lerp(land, 0.15 + Math.max(0, (c - 1) / 5) * 0.75);
             col.push(tint.r, tint.g, tint.b);
           }
         }
@@ -241,10 +243,12 @@ export const autumn = ({ theme, offRoads, beside, inJunction, levelGroup }) => {
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
       geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+      for (let i = 0; i < idx.length; i += 3) { // (every triangle wound to face up, the left verge's and the right's being mirrors of each other)
+        const A = idx[i] * 3, B = idx[i + 1] * 3, Cc = idx[i + 2] * 3;
+        if ((pos[B + 2] - pos[A + 2]) * (pos[Cc] - pos[A]) - (pos[B] - pos[A]) * (pos[Cc + 2] - pos[A + 2]) < 0) { const k = idx[i + 1]; idx[i + 1] = idx[i + 2]; idx[i + 2] = k; }
+      }
       geo.setIndex(idx);
       geo.computeVertexNormals();
-      const n = geo.attributes.normal; // (wound whichever way: lit from above)
-      for (let i = 0; i < n.count; i++) if (n.getY(i) < 0) n.setXYZ(i, -n.getX(i), -n.getY(i), -n.getZ(i));
       const carpet = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
       carpet.userData.flat = true;
       levelGroup.add(carpet);
@@ -373,14 +377,15 @@ export const autumn = ({ theme, offRoads, beside, inJunction, levelGroup }) => {
     claim(x, z, 2.6);
     return true;
   };
-  const wall = (s0, s1, side, d) => { // a stone wall along the field edge, in lengths with gaps
-    for (let s = s0; s < s1; s += 3.4) {
-      if (rand() < 0.12) continue;
-      const lat = beside(side, s, d), h = Track.toWorld(s, lat, p);
-      if (inTunnel(s, 10) || inJunction(s) || !offRoads(p.x, p.z, 3) || lakeAt(p.x, p.z) || !gapOk(p.x, p.z, s, d, 0.9)) continue;
-      const hh = range(0.55, 0.95), gy = ground(p.x, p.z, p.y - 0.3);
+  const wall = (s0, s1, side, d) => { // a dry-stone wall along the field edge: a course of rounded stones with another on top, in lengths with gaps
+    for (let s = s0; s < s1; s += 2.3) {
+      if (rand() < 0.1) continue;
+      const lat = beside(side, s, d + (rand() - 0.5) * 0.3), h = Track.toWorld(s, lat, p);
+      if (inTunnel(s, 10) || inJunction(s) || !offRoads(p.x, p.z, 3) || lakeAt(p.x, p.z) || !gapOk(p.x, p.z, s, d, 0.9) || !free(p.x, p.z, 0.5)) continue;
+      const hh = range(0.4, 0.62), gy = ground(p.x, p.z, p.y - 0.3), stone = [0x8a8780, 0x7d7a74, 0x9a968c, 0x6f6c66, 0x948a78][Math.floor(rand() * 5)];
       if (Math.abs(gy - (p.y - 0.3)) > 1.5) continue;
-      at('cube', s, [0x8a8780, 0x7d7a74, 0x9a968c, 0x6f6c66][Math.floor(rand() * 4)], p.x, gy + hh / 2 - 0.05, p.z, range(0.55, 0.75), hh, range(3.2, 3.7), h + (rand() - 0.5) * 0.12);
+      at('blob', s, stone, p.x, gy + hh * 0.35, p.z, range(0.8, 1.0), hh * 1.3, range(2.1, 2.7), h + (rand() - 0.5) * 0.25);
+      if (rand() < 0.8) at('blob', s, [0x9a968c, 0x8a8780, 0xa49c88][Math.floor(rand() * 3)], p.x, gy + hh * 0.85, p.z, range(0.55, 0.75), hh * 0.9, range(1.4, 2.0), h + (rand() - 0.5) * 0.3);
     }
   };
 
@@ -399,9 +404,9 @@ export const autumn = ({ theme, offRoads, beside, inJunction, levelGroup }) => {
       else for (let a = 0; a < 3; a++) parts.push(['ball', px + (a - 1) * 0.16, 1.15 + (a % 2) * 0.1, range(-0.3, 0.3), 0.34, 0.34, 0.34, [0xc42a1c, 0xd9441c, 0x8ab43a][(k + a) % 3]]);
     }
     model(s, x, y, z, hd, parts);
+    const fx = Math.sin(hd), fz = Math.cos(hd), rx = Math.cos(hd), rz = -Math.sin(hd);
     signAt(pumpkins ? 'PUMPKINS|& HAY' : 'APPLES|& CIDER', 3.6, 1.2, x + fx * 1.3, y + 3.45, z + fz * 1.3, hd);
     // stacks in front (crates and hay), and the patch behind
-    const fx = Math.sin(hd), fz = Math.cos(hd), rx = Math.cos(hd), rz = -Math.sin(hd);
     for (let k = 0; k < 3; k++) at('cube', s, 0x9a6a38, x + fx * 1.5 + rx * (k - 1) * 1.7, y + 0.3, z + fz * 1.5 + rz * (k - 1) * 1.7, 1.1, 0.6, 0.9, hd);
     for (let k = 0; k < 4; k++) at('tube', s, 0xd9b44f, x - fx * (3.4 + (k % 2) * 1.8) + rx * (k * 2.4 - 3.5), y + 0.7, z - fz * (3.4 + (k % 2) * 1.8) + rz * (k * 2.4 - 3.5), 1.4, 1.4, 1.4, hd + Math.PI / 2, Math.PI / 2);
     if (pumpkins) { // the patch: a plot of vine with pumpkins lying in it
@@ -568,8 +573,15 @@ export const autumn = ({ theme, offRoads, beside, inJunction, levelGroup }) => {
       geo.computeVertexNormals();
       levelGroup.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: 0x7e2a1e, side: THREE.DoubleSide })));
       // the sign over the opening
-      const dir = end < (t.from + t.to) / 2 ? -1 : 1, hd = Track.toWorld(end + dir * 0.08, (a + b) / 2, p);
-      signAt('COVERED BRIDGE|BUILT 1861', 8, 2.2, p.x, p.y + H + 1.4, p.z, hd + (dir > 0 ? 0 : Math.PI));
+      const dir = end < (t.from + t.to) / 2 ? -1 : 1, hd = Track.toWorld(end + dir * 0.12, (a + b) / 2, p);
+      signAt('COVERED BRIDGE|BUILT 1861', 7, 1.9, p.x, p.y + H + 1.35, p.z, hd + (dir > 0 ? 0 : Math.PI));
+      // white boards along the two slopes of the gable and round the opening
+      const span = b - a + over * 2, front = Track.toWorld(end + dir * 0.2, (a + b) / 2, p);
+      const barge = Math.atan2(ridge, span / 2), bl = Math.hypot(span / 2, ridge) + 0.3, X = p.x, Y = p.y, Z = p.z;
+      model(end, X, Y, Z, front, [
+        ['cube', -span / 4, H - 0.1 + ridge / 2, 0, bl, 0.34, 0.34, 0xf2efe6, 0, 0, barge], ['cube', span / 4, H - 0.1 + ridge / 2, 0, bl, 0.34, 0.34, 0xf2efe6, 0, 0, -barge],
+        ['cube', 0, H + 0.1, 0, b - a + 1.2, 0.5, 0.4, 0xf2efe6], ['cube', -(b - a) / 2 - 0.3, H / 2, 0, 0.6, H, 0.4, 0xf2efe6], ['cube', (b - a) / 2 + 0.3, H / 2, 0, 0.6, H, 0.4, 0xf2efe6],
+      ]);
     }
     for (let s = t.from + 3; s < t.to; s += 2.4) {
       for (const side of [-1, 1]) {
@@ -641,7 +653,7 @@ export const autumn = ({ theme, offRoads, beside, inJunction, levelGroup }) => {
   // ---- leaves coming down: one points object in two layers, as the snow's, each a leaf-shaped sprite in an autumn colour,
   // tumbling and drifting on the GPU (the vertex shader swings each about by its place in the air; the sprite turns as it falls)
   {
-    const BOX = 46, COUNT = 520, positions = [], colors = [], c = new THREE.Color();
+    const BOX = 46, COUNT = 640, positions = [], colors = [], c = new THREE.Color();
     for (let i = 0; i < COUNT; i++) {
       positions.push((rand() - 0.5) * BOX * 2, rand() * BOX, (rand() - 0.5) * BOX * 2);
       c.set(LEAVES[Math.floor(rand() * LEAVES.length)]);
@@ -663,11 +675,12 @@ export const autumn = ({ theme, offRoads, beside, inJunction, levelGroup }) => {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    const uniforms = { uTime: { value: 0 } };
-    const mat = new THREE.PointsMaterial({ size: 0.62, map, vertexColors: true, transparent: true, alphaTest: 0.25, depthWrite: false, sizeAttenuation: true });
+    const uniforms = { uTime: { value: 0 }, uOn: { value: 1 } };
+    const mat = new THREE.PointsMaterial({ size: 0.9, map, vertexColors: true, transparent: true, alphaTest: 0.25, depthWrite: false, sizeAttenuation: true });
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uTime = uniforms.uTime;
-      shader.vertexShader = 'uniform float uTime;\nvarying float vSpin;\n' + shader.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      shader.uniforms.uOn = uniforms.uOn;
+      shader.vertexShader = 'uniform float uTime;\nuniform float uOn;\nvarying float vSpin;\n' + shader.vertexShader.replace('#include <fog_vertex>', '#include <fog_vertex>\n        gl_PointSize *= uOn;').replace('#include <begin_vertex>', `#include <begin_vertex>
         float ph = position.x * 0.37 + position.z * 0.53 + position.y * 0.21;
         transformed.x += sin(uTime * 1.5 + ph) * 1.1;
         transformed.z += cos(uTime * 1.2 + ph * 1.3) * 1.1;
@@ -687,6 +700,7 @@ export const autumn = ({ theme, offRoads, beside, inJunction, levelGroup }) => {
       fall.onBeforeRender = (renderer, scene, camera) => {
         const now = performance.now() / 1000, down = (now * 1.5 + layer * BOX) % (BOX * 2);
         uniforms.uTime.value = now;
+        uniforms.uOn.value = scene.fog && scene.fog.near < 80 ? 0 : 1; // (none under a covered bridge's roof: the tunnel draws the fog in)
         const x = scene.scale.x < 0 ? -camera.position.x : camera.position.x;
         fall.position.set(x, camera.position.y + BOX - down, camera.position.z);
         fall.updateMatrixWorld();
@@ -694,5 +708,6 @@ export const autumn = ({ theme, offRoads, beside, inJunction, levelGroup }) => {
       levelGroup.add(fall);
     }
   }
+  console.warn('autumn-scenery ' + JSON.stringify({ ms: Math.round(performance.now() - T0), trees: maples + pines, pines, lakes: lakes.map(l => [Math.round(l.s), l.cells.length, Math.round(l.level)]), ...placed, sawmill: !!placed.sawmill }));
   levelGroup.userData.autumn = { trees: maples + pines, pines, lakes: lakes.length, ...placed };
 };

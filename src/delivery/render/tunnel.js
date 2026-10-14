@@ -85,12 +85,14 @@ const build = () => {
       const slab = add(new THREE.BoxGeometry(w + 16, H + 9, 1.2), face);
       slab.position.set(tmp.x, tmp.y + (H + 9) / 2, tmp.z);
       slab.rotation.y = h;
-      // (with the opening cut out: the slab is a lintel over the road and a pier each side)
-      slab.geometry = new THREE.BoxGeometry(w + 16, 9, 1.2);
-      slab.position.y = tmp.y + H + 4.5;
+      // (with the opening cut out: the slab is a lintel over the road and a pier each side; a theme's tunnel can make them
+      // slighter: `lintel` m tall and `pier` m wide, 9 and 8 if not said: a covered bridge's frame, not a hillside)
+      const LT = look.lintel ?? 9, PIER = look.pier ?? 8;
+      slab.geometry = new THREE.BoxGeometry(w + PIER * 2, LT, 1.2);
+      slab.position.y = tmp.y + H + LT / 2;
       for (const side of [-1, 1]) {
-        const pier = add(new THREE.BoxGeometry(8, H, 1.2), face);
-        const lat = (side < 0 ? lo(end) : hi(end)) + side * 4;
+        const pier = add(new THREE.BoxGeometry(PIER, H, 1.2), face);
+        const lat = (side < 0 ? lo(end) : hi(end)) + side * PIER / 2;
         Track.toWorld(end, lat, tmp);
         pier.position.set(tmp.x, tmp.y + H / 2, tmp.z);
         pier.rotation.y = h;

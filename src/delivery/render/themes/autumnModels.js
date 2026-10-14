@@ -39,7 +39,7 @@ const pumpkin = (parent, r, x, y, z, turn, color) => {
   g.rotation.y = turn;
   const skin = lambert(color);
   put(g, sphere(r, 10, 7), skin).scale.set(1, 0.78, 1);
-  for (const a of [0, Math.PI / 3, Math.PI * 2 / 3]) put(g, sphere(r * 0.97, 8, 6), skin).scale.set(0.5, 0.8, 1).rotation.y = a;
+  for (const a of [0, Math.PI / 3, Math.PI * 2 / 3]) { const rib = put(g, sphere(r * 0.97, 8, 6), skin); rib.scale.set(0.5, 0.8, 1); rib.rotation.y = a; }
   put(g, cyl(r * 0.1, r * 0.17, r * 0.4, 6), lambert(0x4f6a22), 0, r * 0.74, 0).rotation.z = 0.2;
   return g;
 };
