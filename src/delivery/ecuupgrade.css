@@ -1,0 +1,19 @@
+/* The showroom's ECU Upgrade block (render/ecuupgrade.js). Touch targets 44px; dimmed (not hidden) when it cannot be bought. */
+#showroom .sr-up { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 8px 0 2px; }
+#showroom .sr-up-head { font: 800 12px/1 system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); }
+#showroom .sr-up-btn { min-height: 44px; min-width: 44px; max-width: 100%; padding: 10px 22px; font: italic 900 17px/1.1 var(--display); letter-spacing: .05em; text-transform: uppercase;
+  background: #2fbf71; color: #052414; clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); box-shadow: 0 3px 14px rgba(47, 191, 113, .4); text-align: center; }
+#showroom .sr-up-btn:hover.ready { filter: brightness(1.1); }
+#showroom .sr-up-btn.short, #showroom .sr-up-btn.blueprints { background: #3a4252; color: rgba(255, 255, 255, .6); box-shadow: none; cursor: not-allowed; }
+#showroom .sr-up-why { font-size: 13px; color: var(--ink-dim); }
+#showroom .sr-up-why.short { color: #ffb4a8; }
+#showroom .sr-up-why.blueprints { color: #ffd98a; }
+#showroom .sr-up-why.ready { color: #bff5d9; }
+#showroom .sr-up-changes { list-style: none; margin: 2px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 2px 18px; width: 100%; font-size: 12px; }
+#showroom .sr-up-changes li { display: flex; justify-content: space-between; gap: 8px; color: var(--ink-dim); }
+#showroom .sr-up-changes b { color: #7ff0b4; font-weight: 700; }
+@media (max-width: 760px) and (min-height: 521px), (max-width: 519px) {
+  #showroom .sr-up-btn { width: 100%; min-height: 48px; }
+  #showroom .sr-up-changes { grid-template-columns: 1fr 1fr; }
+}
+#showroom .sr-pips i.ready { background: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rar) 80%, #fff), 0 0 5px color-mix(in srgb, var(--rar) 50%, transparent); }

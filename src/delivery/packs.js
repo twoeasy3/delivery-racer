@@ -797,7 +797,7 @@ export const Packs = {
         continue;
       }
       const before = Ecu.blueprints(c.car) || 0;
-      c.maxed = !!car && Ecu.max(car) > 0 && Ecu.level(car) >= Ecu.max(car); // (already at its top: kept as a count, no further effect)
+      c.maxed = !!car && Ecu.max(car) > 0 && Ecu.reached(car) >= Ecu.max(car); // (already at its top: kept as a count, no further effect)
       c.isNew = before === 0 && !Progress.owns(c.car);
       Ecu.addBlueprints(c.car, c.n ?? 1); // (the slot's amount)
       c.count = Ecu.blueprints(c.car);

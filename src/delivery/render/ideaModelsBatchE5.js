@@ -13,10 +13,17 @@
 import * as THREE from 'three';
 import {
   basic, TRIM, GLASS, LAMP, TAIL, AMBER, shared, place, merge, parts, bx, decal,
-  curve, extrudeSide, narrowAt, sideGlass, slopeGlass, shadeBy, low, flare, wheel, texture, random,
+  curve, extrudeSide, narrowAt, sideGlass, slopeGlass, panel, shadeBy, low, flare, wheel, texture, random,
 } from './ideaModelsDkit.js';
 
 const BRAKE = basic(0xc4101c);
+// like slopeGlass, but its top edge is sunk `top` into the body (negative lift) while its foot sits `foot` proud: no glass edge shows over the roof
+const tiltGlass = ([z0, y0], [z1, y1], hx0, hx1, foot, top) => {
+  const dz = z1 - z0, dy = y1 - y0, len = Math.hypot(dz, dy);
+  const [nz, ny] = dz < 0 ? [dy / len, -dz / len] : [-dy / len, dz / len];
+  const at = (z, y, hx, s, l) => [s * hx, y + ny * l, z + nz * l];
+  return panel([at(z0, y0, hx0, -1, foot), at(z0, y0, hx0, 1, foot), at(z1, y1, hx1, 1, top), at(z1, y1, hx1, -1, top)]);
+};
 
 // a racing number on a round plate with a dark ring, a little worn (128 x 128); the plate and the ink are the caller's
 const roundel = (key, n, plate, ink) => texture('e5-roundel-' + key, 128, 128, (ctx, w, h) => {
@@ -69,8 +76,8 @@ export const IDEA_MODELS_BATCH_E5 = {
     const zWS = (y) => WSF[0] + (WST[0] - WSF[0]) * (y - WSF[1]) / (WST[1] - WSF[1]);
     const zRW = (y) => RW0[0] + (RW1[0] - RW0[0]) * (ROOF - y) / (ROOF - DECK);
     parts(group, k + 'glass', GLASS, () => [
-      slopeGlass([zWS(0.97), 0.97], [zWS(1.17), 1.17], gx(0.97) - 0.1, gx(1.17) - 0.1, BEV + LIFT),
-      slopeGlass([zRW(1.15), 1.15], [zRW(1.03), 1.03], gx(1.15) - 0.12, gx(1.03) - 0.12, BEV + 0.003),
+      tiltGlass([zWS(0.97), 0.97], [zWS(1.21), 1.21], gx(0.97) - 0.1, gx(1.21) - 0.1, BEV + 0.006, BEV - 0.003),
+      tiltGlass([zRW(1.03), 1.03], [zRW(1.2), 1.2], gx(1.03) - 0.1, gx(1.2) - 0.1, BEV + 0.006, BEV - 0.003),
       ...sideGlass([
         [[zWS(0.94) - 0.05, 0.94], [-0.1, 0.94], [-0.1, 1.2], [zWS(1.2) - 0.04, 1.2]],
         [[-0.26, 0.94], [-1.18, 0.94], [-1.18, 1.07], [-0.98, 1.2], [-0.26, 1.2]],

@@ -22,7 +22,13 @@
   "sackStack": { "name": "Stack of sacks", "blurb": "Stands in for a bale in Mumbai." },
   "beachBall": { "name": "Beach ball", "blurb": "Stands in for a bale in the beach." },
   "brimstone": { "name": "Spike of brimstone", "blurb": "Stands in for a cone in hell." },
+  "wineCrates": { "name": "Wine crates", "blurb": "Stands in for a crate in Tuscany." },
+  "hayRoll": { "name": "Round hay bale", "blurb": "Stands in for a bale in Tuscany." },
+  "terracottaPot": { "name": "Terracotta pot", "blurb": "Stands in for a cone in Tuscany." },
   "wasteDrum": { "name": "Drum of waste", "blurb": "Stands in for a crate in the fallout zone." },
   "hawkerCart": { "name": "Hawker's cart", "blurb": "Stands in for a crate in Hong Kong." },
-  "bagStack": { "name": "Heap of bags", "blurb": "Stands in for a bale in Hong Kong." }
+  "bagStack": { "name": "Heap of bags", "blurb": "Stands in for a bale in Hong Kong." },
+  "jerryStack": { "name": "Stack of jerrycans", "blurb": "Stands in for a crate in the desert." },
+  "tentRoll": { "name": "Rolled tent", "blurb": "Stands in for a bale in the desert." },
+  "rallyFlag": { "name": "Rally marker flag", "blurb": "Stands in for a cone in the desert." }
 }

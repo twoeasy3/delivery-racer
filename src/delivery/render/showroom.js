@@ -53,6 +53,7 @@ import { renderSources } from './carsources.js'; // ("Where to get it": the car'
 import { fitLine } from './fitline.js';
 import { bankFigure } from './bank.js'; // (the bank: whole dollars, its type scaled to its length)
 import { overlayNode } from './lockoverlay.js'; // (a locked card's overlay: its kind's tint, badge and caption)
+import { upgradeBlock } from './ecuupgrade.js'; // (the full view's ECU Upgrade button: the bank pays for an ECU its blueprints unlocked)
 
 const panel = document.getElementById('showroom');
 const startScreen = document.getElementById('startScreen');
@@ -69,15 +70,15 @@ export const isPhone = () => !!window.matchMedia?.('(max-width: 760px) and (min-
 // ---- the ECU pips and the blueprint bar (a card's, and the full view's, larger) ----
 const pips = (card) => {
   const row = make('span', 'sr-pips');
-  row.setAttribute('aria-label', 'ECU ' + card.ecu + ' of ' + card.max);
-  for (let i = 1; i <= card.max; i++) row.append(make('i', i <= card.ecu ? 'on' : ''));
+  row.setAttribute('aria-label', 'ECU ' + card.bought + ' of ' + card.max + (card.ecu > card.bought ? ' (' + card.ecu + ' unlocked, not yet bought)' : ''));
+  for (let i = 1; i <= card.max; i++) row.append(make('i', i <= card.bought ? 'on' : i <= card.ecu ? 'ready' : '')); // (ready: unlocked by its blueprints, to be bought)
   return row;
 };
 const blueprintBar = (card, long = false) => {
   if (!card.upgradable) return make('span', 'sr-bp none', long ? (card.car.earned ? 'A special car: no blueprints, it stays at ECU1' : 'Comes maxed: no blueprints') : 'No blueprints');
   const fill = make('i');
   fill.style.width = Math.round(card.have / card.toNext * 100) + '%';
-  const words = card.maxed ? (long ? 'Maxed out' + (card.blueprints ? ' (' + card.blueprints + ' blueprint' + (card.blueprints === 1 ? '' : 's') + ')' : '') : 'MAX')
+  const words = card.maxed ? (long ? (card.bought >= card.max ? 'Maxed out' : 'All blueprints collected') + (card.blueprints ? ' (' + card.blueprints + ' blueprint' + (card.blueprints === 1 ? '' : 's') + ')' : '') : 'MAX')
     : card.have + '/' + card.toNext + (long ? ' blueprints to ' + (card.ecu === 0 ? 'unlock it' : 'ECU' + (card.ecu + 1)) : '');
   return make('span', 'sr-bp' + (card.maxed ? ' maxed' : ''), make('b', 'sr-bp-icon', '▤'), make('span', 'sr-bp-track', fill), make('small', '', words));
 };
@@ -417,7 +418,7 @@ const fill = (fresh = true) => {
       make('span', 'sr-tag', RARITIES[data.rarity].name), starsNode(data), pic, badge,
       make('span', 'sr-info',
         make('strong', 'sr-name', data.name),
-        make('span', 'sr-ecu', make('small', '', 'ECU'), pips(data), make('em', '', data.ecu + '/' + data.max)),
+        make('span', 'sr-ecu', make('small', '', 'ECU'), pips(data), make('em', '', data.bought + '/' + data.max)),
         blueprintBar(data)));
     node.style.setProperty('--rar', RARITIES[data.rarity].colour);
     node.dataset.car = data.id;
@@ -553,8 +554,9 @@ const showDetail = () => {
         make('div', 'sr-dhead', make('span', 'sr-dtag', RARITIES[card.rarity].name), starsNode(card), card.lent ? make('span', 'sr-badge lent', lentWords(card)) : using ? make('span', 'sr-badge inuse', 'In use') : null),
         make('h2', '', card.name),
         make('span', 'sr-kind', makerLine(card.car)))),
-      make('div', 'sr-decu', make('small', '', 'ECU'), pips(card), make('b', '', card.ecu + ' of ' + card.max)),
+      make('div', 'sr-decu', make('small', '', 'ECU'), pips(card), make('b', '', card.bought + ' of ' + card.max)),
       blueprintBar(card, true),
+      upgradeBlock(card, () => { Showroom.reshow(); }),
       figures,
       card.perk && !card.hidden ? make('p', 'sr-perk', make('b', '', 'Perk '), card.perk) : null,
       why,

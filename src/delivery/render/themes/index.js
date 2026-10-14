@@ -24,6 +24,8 @@ import { favela } from './favela.js';
 import { rice } from './rice.js';
 // (batch D's imports go above this line)
 import { fallout } from './fallout.js';
+import { tuscany } from './tuscany.js';
+import { desert } from './desert.js';
 
 export const THEME_SCENERY = {
   toyroom,
@@ -43,4 +45,6 @@ export const THEME_SCENERY = {
   rice,
   // (batch D: Wild West, favela, rice terraces: new themes go above this line)
   fallout,
+  tuscany,
+  desert,
 };

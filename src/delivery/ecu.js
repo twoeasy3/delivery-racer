@@ -18,6 +18,14 @@
 // RACES are a separate game: none of this applies there (drive(): own figures, CONFIG.respawnTime).
 // Saved: Progress.data.blueprints = { [carId]: count } and Progress.data.maxed = [carId]: the cars held at their MAX ECU
 // whatever their blueprints (the starter car; every car an old save owned, so nobody lost power; "Unlock everything").
+// BLUEPRINTS ONLY UNLOCK THE UPGRADE; THE BANK PAYS FOR IT (the owner, 14-Oct: "ECU levels should cost bank to upgrade.
+// Collecting the blueprints only unblocks the upgrade"). A car has two levels: REACHED (what its blueprints allow: reached(),
+// one ECU per X blueprints, capped by the ladder, as ever) and PURCHASED (what it plays at: purchased(), saved in
+// Progress.data.ecuBought = { [carId]: ECU }, the cars above their free first ECU only). level() = the purchased one. ECU1 is
+// free: a key car's key, a blueprint car's first X blueprints (they unlock it; there is no ECU0 to buy out of). Each ECU above
+// ECU1 is one purchase, in order, from the bank (price(): CONFIG.ecuCost), and only up to the reached level and only with the
+// key. A maxed car (data.maxed) is purchased at its max whatever is saved. A save with no ecuBought (before this) is migrated
+// once, on first use: every car's purchased level = the level its blueprints gave it (migrate()).
 // ecus.json is imported here, so it is in the replay `logic` hash (vite.config.js): an edit to it refuses old replays.
 // ============================================================================
 import ECUS from './ecus.json';
@@ -184,6 +192,7 @@ export const Ecu = {
   // n blueprints of a car added (saved). Returns the ECU the car has now reached (reached: a key car without its key
   // has reached it all the same, and plays at it once the key is had; a blueprint car short of X: 0)
   addBlueprints(carId, n = 1) {
+    this.migrate(); // (a save from before the purchases: its levels are kept before the blueprints change them)
     const data = Progress.data;
     data.blueprints ||= {};
     data.blueprints[carId] = Math.max(0, (data.blueprints[carId] || 0) + Math.floor(n));
@@ -192,6 +201,68 @@ export const Ecu = {
     return car ? this.reached(car) : 0;
   },
   maxed(car) { return !!car && (Progress.data.maxed || []).includes(car.id); },
+  // ---- the purchased level and the upgrade (the owner, 14-Oct) ----
+  // A save from before the purchases has no ecuBought: every car keeps the ECU its blueprints gave it (no refund, no charge).
+  // Done at once, on the first use, saved; idempotent (a save with the field is left as it is). A maxed car needs no entry.
+  migrate() {
+    const data = Progress.data;
+    if (data.ecuBought != null) return false;
+    data.ecuBought = {};
+    for (const car of everyCar()) {
+      if (!this.kind(car) || this.maxed(car)) continue;
+      const reached = this.reached(car);
+      if (reached > 1) data.ecuBought[car.id] = reached;
+    }
+    Progress.save();
+    return true;
+  },
+  // the ECU it is bought up to (what it plays at once unlocked): a car with no ECU 1; a maxed car its max; else the saved level
+  // (never below the free first one: a key car 1, a blueprint car 1 once unlocked, else 0), held to its max
+  purchased(car) {
+    const kind = this.kind(car);
+    if (!kind) return 1;
+    const max = this.max(car);
+    if (this.maxed(car)) return max;
+    this.migrate();
+    const free = kind === 'key' || this.reached(car) >= 1 || Progress.data.cars.includes(car.id) ? 1 : 0;
+    return Math.min(max, Math.max(free, Math.floor(Progress.data.ecuBought[car.id]) || 0));
+  },
+  // blueprints a car must have for the step to ECU `to` (a key car's ECU k needs (k - 1) x X; a blueprint car's k x X)
+  blueprintsFor(car, to) { return Math.max(0, (this.kind(car) === 'key' ? to - 1 : to) * this.x(car)); },
+  // the price in dollars (the bank) of the step TO ECU `to` (2 and up; ECU1 is free), CONFIG.ecuCost
+  price(car, to) {
+    const c = CONFIG.ecuCost;
+    if (!c || !car || !(to >= 2)) return 0;
+    const ref = c.perCar?.[car.id] ?? (tierOf(car) ? c.ref[car.blue ? 'blue' : 'gold'][tierOf(car)] : c.ref.none);
+    return Math.max(c.round, Math.round(ref * c.share * Math.pow(c.growth, to - 2) / c.round) * c.round);
+  },
+  // where a car stands toward its next purchase: { state, to, price, bank, need?, short? }
+  //   none (no ECUs to buy) / maxed (bought to the top) / nokey (a key car without its key) / locked (a blueprint car not yet
+  //   unlocked: its first X blueprints) / blueprints (the next ECU's blueprints not had: need more) / short (the bank is
+  //   short: short more dollars) / ready (can be bought)
+  upgrade(car) {
+    const bank = Progress.data.money;
+    if (!this.kind(car) || this.max(car) <= 1) return { state: 'none', to: 0, price: 0, bank };
+    const have = this.purchased(car), to = have + 1, max = this.max(car);
+    if (have >= max) return { state: 'maxed', to: have, price: 0, bank };
+    const price = this.price(car, Math.max(2, to));
+    if (this.isKey(car) && !this.hasKey(car)) return { state: 'nokey', to, price, bank };
+    if (!this.unlocked(car)) return { state: 'locked', to, price, bank, need: Math.max(0, this.blueprintsFor(car, 1) - this.blueprints(car.id)) };
+    if (this.reached(car) < to) return { state: 'blueprints', to, price, bank, need: Math.max(1, this.blueprintsFor(car, to) - this.blueprints(car.id)) };
+    if (bank < price) return { state: 'short', to, price, bank, short: Math.round((price - bank) * 100) / 100 };
+    return { state: 'ready', to, price, bank };
+  },
+  // buy the next ECU: the bank pays, the level is saved. { ok, state, to, price } (not ok: nothing changed, state says why)
+  buy(car) {
+    const up = this.upgrade(car);
+    if (up.state !== 'ready') return { ok: false, ...up };
+    const data = Progress.data;
+    data.money = Math.max(0, Math.round((data.money - up.price) * 100) / 100);
+    data.ecuBought[car.id] = up.to;
+    Progress.save();
+    if (typeof window !== 'undefined') window.dispatchEvent?.(new Event('ecuchange'));
+    return { ok: true, ...up, bank: data.money };
+  },
   // has the player got its key? (a key car: bought, earned, given; Progress.owns)
   hasKey(car) { return !!car && Progress.owns(car.id); },
   // the ECU its blueprints (or a maxed grant) have reached, key or no key: a key car at least 1, a blueprint car 0
@@ -210,8 +281,8 @@ export const Ecu = {
     if (this.kind(car) === 'blueprint') return this.reached(car) >= 1 || Progress.data.cars.includes(car.id);
     return Progress.owns(car.id);
   },
-  // the ECU it plays at: 0 = locked (not driveable), else its reached ECU (at least 1)
-  level(car) { return this.unlocked(car) ? Math.max(1, this.reached(car)) : 0; },
+  // the ECU it plays at: 0 = locked (not driveable), else its PURCHASED ECU (at least 1; blueprints alone no longer raise it)
+  level(car) { return this.unlocked(car) ? Math.max(1, this.purchased(car)) : 0; },
   // why it cannot be driven (the words of the spec), or null if it can
   lockedWords(car) {
     if (!car || this.unlocked(car)) return null;
@@ -255,8 +326,11 @@ export const Ecu = {
 // (a car's own figures, as stats: read afresh each time, as a check may change a car's figures)
 const ownNew = (car) => Object.fromEntries(Object.entries(NEW_STATS).map(([k, d]) => [k, d.of(car)]));
 const own = (car) => (car ? { maxSpeed: car.maxSpeed, accel: car.accel, health: car.health, respawn: CONFIG.respawnTime, ...ownNew(car), ecu: null } : car);
-const byId = (id) => [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...BESPOKE_CARS, ...FILLER_CARS].find(car => car.id === id) || null;
+const everyCar = () => [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...BESPOKE_CARS, ...FILLER_CARS];
+const byId = (id) => everyCar().find(car => car.id === id) || null;
 
 // the hooks: cars.js asks for a run's figures; progress.js asks whether a blueprint car is owned (unlocked)
 setEcuHooks({ drive: (car, lent) => Ecu.drive(car, lent) });
+Progress.ecuMigrate = () => Ecu.migrate(); // (progress.js asks before it writes a save that has no purchased levels yet)
+Ecu.migrate(); // (the save loaded with the page: an old one is brought up now)
 Progress.blueprintOwns = (carId) => { const car = FILLER_CARS.find(c => c.id === carId); return !!car && Ecu.reached(car) >= 1; };
