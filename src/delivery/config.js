@@ -932,9 +932,9 @@ export const CONFIG = {
   wrongWay: { look: 30, lookTime: 2, stopShort: 6, swerve: 40, room: 10, warn: 320, horn: 1.1 },
   horn: { range: 60, wait: 0.6 },
   // dents and scorch on a damaged car (render/dents.js): at each `steps` share of damage the body's
-  // geometry is swapped for a more crumpled one (vertices shoved `amount` of the body's size per step,
-  // the same way every time); the paint darkens toward black by `scorch` at full damage
-  dents: { steps: [0.25, 0.5, 0.75], amount: 0.06, scorch: 0.35 },
+  // geometry is swapped for the next of four hand-made stages of damage (DAMAGE in render/dents.js, the same on
+  // every car); the paint darkens toward black by `scorch` at full damage
+  dents: { steps: [0.2, 0.4, 0.6, 0.8], scorch: 0.35 },
   // milestones (milestones.js): the thresholds each counter in the save's stats has a title for
   // (messages.json: milestones). A police car is outrun once it is `outrun` m behind the player (having been
   // near enough to see it) without a bust; a hippo survived is one that crossed within hippoNear m of the player

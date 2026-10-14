@@ -5,11 +5,11 @@ import * as THREE from 'three';
 let failures = 0;
 const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' : '  FAIL  ') + what); };
 try {
-  const { dentLevel, damageShare, dentModel, scorch } = await import('../src/delivery/render/dents.js');
+  const { dentLevel, damageShare, dentModel, scorch, DAMAGE } = await import('../src/delivery/render/dents.js');
   const { CONFIG } = await import('../src/delivery/config.js');
-  check([0, 0.2, 0.25, 0.5, 0.8, 1].map(dentLevel).join() === '0,0,1,2,3,3', 'a step more crumpled at each of ' + CONFIG.dents.steps.join(', ') + ' of damage');
+  check([0, 0.15, 0.2, 0.4, 0.6, 0.8, 1].map(dentLevel).join() === '0,0,1,2,3,4,4' && DAMAGE.length === 4 && CONFIG.dents.steps.length === 4, 'four stages, one more at each of ' + CONFIG.dents.steps.join(', ') + ' of damage');
   check(damageShare({ health: 30, maxHealth: 120 }) === 0.75 && damageShare({ health: -5, maxHealth: 100 }) === 1 && damageShare({ health: 1, maxHealth: 0 }) === 0, 'the share of health lost, 0 to 1');
-  const paint = new THREE.MeshLambertMaterial(), geometry = new THREE.BoxGeometry(1, 1, 1);
+  const paint = new THREE.MeshLambertMaterial(), geometry = new THREE.BoxGeometry(2, 1.2, 4, 6, 4, 8);
   const group = new THREE.Group(), body = new THREE.Mesh(geometry, paint), door = new THREE.Mesh(geometry, paint), glass = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial());
   group.add(body, door, glass);
   dentModel(group, body, 0);
@@ -17,7 +17,7 @@ try {
   dentModel(group, body, 0.6);
   const moved = (mesh) => { let far = 0; const a = mesh.geometry.attributes.position, b = geometry.attributes.position; for (let i = 0; i < a.count * 3; i++) far = Math.max(far, Math.abs(a.array[i] - b.array[i])); return far; };
   check(body.geometry !== geometry && door.geometry !== geometry && glass.geometry === geometry, 'at 60% the panels in the body\'s paint are crumpled copies, the glass is not');
-  check(moved(body) > 0.01 && moved(body) <= CONFIG.dents.amount * 2 + 1e-6 && ![...body.geometry.attributes.position.array].some(Number.isNaN), 'vertices shoved by up to ' + moved(body).toFixed(3) + ' of the panel');
+  check(moved(body) > 0.01 && moved(body) < 1.5 && ![...body.geometry.attributes.position.array].some(Number.isNaN), 'vertices shoved by up to ' + moved(body).toFixed(3) + ' m');
   const pos = body.geometry.attributes.position, seen = new Map(); let together = true;
   for (let i = 0; i < pos.count; i++) { const key = [0, 1, 2].map(k => geometry.attributes.position.array[i * 3 + k]).join(), now = [pos.getX(i), pos.getY(i), pos.getZ(i)].join(); if (seen.has(key) && seen.get(key) !== now) together = false; seen.set(key, now); }
   check(together, 'a box\'s corners stay together');
