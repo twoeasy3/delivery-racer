@@ -43,9 +43,9 @@ export const autumn = ({ theme, offRoads, beside, inJunction, levelGroup }) => {
     cone: new THREE.ConeGeometry(0.5, 1, 8),
     spire: new THREE.ConeGeometry(0.5, 1, 4),
     blob: new THREE.IcosahedronGeometry(0.5, 0),
-    ball: new THREE.SphereGeometry(0.5, 8, 6),
+    ball: new THREE.SphereGeometry(0.5, 6, 4),
     dome: new THREE.SphereGeometry(0.5, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2),
-    trunk: new THREE.CylinderGeometry(0.28, 0.5, 1, 5),
+    trunk: new THREE.CylinderGeometry(0.28, 0.5, 1, 4, 1, true),
     leaf: new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
     prism: (() => { // a gable: a triangle 1 across and 1 tall, 1 long, the ridge along z, its foot on y = 0
       const g = new THREE.BufferGeometry(), a = [-0.5, 0, -0.5], b = [0.5, 0, -0.5], c = [0, 1, -0.5], d = [-0.5, 0, 0.5], e = [0.5, 0, 0.5], f = [0, 1, 0.5];
