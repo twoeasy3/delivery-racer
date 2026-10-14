@@ -15,35 +15,42 @@ import { makeAmphibiousTankMesh } from './tankModels.js';
 import { PIXEL_RATIO } from './scene.js';
 
 const canvas = document.getElementById('tankCorner');
-const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-renderer.setPixelRatio(PIXEL_RATIO);
-renderer.setSize(canvas.clientWidth || 120, canvas.clientHeight || 84, false);
-const scene = new THREE.Scene();
-scene.add(new THREE.HemisphereLight(0xffffff, 0x445544, 1.8));
-const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-sun.position.set(3, 6, 4);
-scene.add(sun);
-const camera = new THREE.PerspectiveCamera(32, (canvas.clientWidth || 120) / (canvas.clientHeight || 84), 0.1, 50);
-camera.position.set(0, 4.2, 9.5);
-camera.lookAt(0, 0.9, 0);
 
-const tank = makeTankMesh(0x4b5a2a);
-tank.userData.body.material.color.setHex(0x4b5a2a);
-scene.add(tank);
-const ghost = new THREE.MeshBasicMaterial({ color: 0xcfe0ff, transparent: true, opacity: 0.2, depthWrite: false });
-const amphibian = makeAmphibiousTankMesh(AMPHIBIOUS_TANK.color);
-amphibian.scale.setScalar(0.82); // (it is the longer of the two)
-amphibian.position.z = -0.4;
-const turn = new THREE.Group(); // (so it turns about its middle)
-turn.add(amphibian);
-scene.add(turn);
-for (const model of [tank, amphibian]) for (const list of model.userData.pieces) for (const mesh of list) mesh.userData.solid = mesh.material;
+// Made when a run first needs it, not at load (the owner, 14-Oct: it was a WebGL context of its own, a tank and a scene built before the menu showed, never
+// drawn there): the page's third context is only taken when a level with TANK RAGE starts.
+let renderer, scene, camera, tank, ghost, amphibian, turn;
+const init = () => {
+  renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(PIXEL_RATIO);
+  renderer.setSize(canvas.clientWidth || 120, canvas.clientHeight || 84, false);
+  scene = new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x445544, 1.8));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+  sun.position.set(3, 6, 4);
+  scene.add(sun);
+  camera = new THREE.PerspectiveCamera(32, (canvas.clientWidth || 120) / (canvas.clientHeight || 84), 0.1, 50);
+  camera.position.set(0, 4.2, 9.5);
+  camera.lookAt(0, 0.9, 0);
+
+  tank = makeTankMesh(0x4b5a2a);
+  tank.userData.body.material.color.setHex(0x4b5a2a);
+  scene.add(tank);
+  ghost = new THREE.MeshBasicMaterial({ color: 0xcfe0ff, transparent: true, opacity: 0.2, depthWrite: false });
+  amphibian = makeAmphibiousTankMesh(AMPHIBIOUS_TANK.color);
+  amphibian.scale.setScalar(0.82); // (it is the longer of the two)
+  amphibian.position.z = -0.4;
+  turn = new THREE.Group(); // (so it turns about its middle)
+  turn.add(amphibian);
+  scene.add(turn);
+  for (const model of [tank, amphibian]) for (const list of model.userData.pieces) for (const mesh of list) mesh.userData.solid = mesh.material;
+};
 
 let shownPieces = -1, shown = null;
 export const syncTankCorner = (dt) => {
   const show = Game.state === 'playing' && !Game.screensaver && !LEVEL.noTankRage; // (not where TANK RAGE is off)
   canvas.style.display = show ? 'block' : 'none';
   if (!show) return;
+  if (!renderer) init();
   // (a tank in TANK RAGE, the garage's included, is all there)
   const have = Player.tank > 0 ? CONFIG.tankPieces : Game.tankPieces;
   const model = rageTankFor(LEVEL) ? amphibian : tank;

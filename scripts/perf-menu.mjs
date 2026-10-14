@@ -786,7 +786,12 @@ const main = async () => {
         if (opt('trace', false)) {
           await send('Tracing.end'); await complete; socket.removeEventListener('message', onMsg);
           const main = new Set(evs.filter(e => e.name === 'thread_name' && e.args?.name === 'CrRendererMain').map(e => e.pid + ':' + e.tid));
-          const rows = evs.filter(e => e.ph === 'X' && main.has(e.pid + ':' + e.tid) && /^(Layout|UpdateLayoutTree|PrePaint|Paint|Layerize)$/.test(e.name) && e.dur > 3000).sort((a, b) => a.ts - b.ts);
+          if (opt('trace', false) === 'sum') { // (--trace=sum: counts and total ms of the main thread's rendering work over the expression, for an idle page)
+            const sum = {};
+            for (const e of evs) if (e.ph === 'X' && main.has(e.pid + ':' + e.tid) && /^(Layout|UpdateLayoutTree|PrePaint|Paint|Layerize|Commit|RunTask|FireAnimationFrame|HitTest)$/.test(e.name)) { const k = (sum[e.name] ||= { n: 0, ms: 0 }); k.n++; k.ms += (e.dur || 0) / 1000; }
+            console.log('  main thread over the window: ' + Object.entries(sum).map(([k, v]) => `${k} ${v.n}x ${v.ms.toFixed(1)} ms`).join(', '));
+          }
+          const rows = evs.filter(e => e.ph === 'X' && main.has(e.pid + ':' + e.tid) && /^(Layout|UpdateLayoutTree|PrePaint|Paint|Layerize)$/.test(e.name) && e.dur > 3000 && opt('trace', false) !== 'sum').sort((a, b) => a.ts - b.ts);
           for (const e of rows) console.log(`  ${e.name} ${(e.dur / 1000).toFixed(1)} ms ` + JSON.stringify(e.args?.beginData || e.args?.elementCount !== undefined ? { elements: e.args.elementCount, ...(e.args.beginData || {}) } : {}));
         }
         await page.close(); } finally { await closeBrowser(); server.close(); }

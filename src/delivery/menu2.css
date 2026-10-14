@@ -189,16 +189,22 @@
 #startScreen #sideNote > .other { visibility: hidden; }
 /* (the side's two words on one line each, always: a word wrapping on one side and not the other would move what is under it) */
 #startScreen .side-switch button { white-space: nowrap; min-width: 0; }
-#startScreen #startBtn { flex: 0 0 auto; padding: 13px 10px 11px; background: var(--accent); color: var(--accent-ink); text-align: center;
+#startScreen #startBtn { position: relative; flex: 0 0 auto; padding: 13px 10px 11px; background: var(--accent); color: var(--accent-ink); text-align: center;
   clip-path: polygon(16px 0, 100% 0, calc(100% - 16px) 100%, 0 100%); font: italic 800 34px/1 var(--display); font-stretch: condensed; letter-spacing: .14em; text-transform: uppercase;
-  transition: transform .1s, filter .15s; animation: start-pulse 1.6s ease-in-out infinite; }
+  transition: transform .1s, filter .15s; }
+/* (the pulse: a white veil behind the words fading in and out, opacity only, on its own layer: it was `filter: brightness() drop-shadow()` animated on the
+   button itself (clipped to its slanted shape), a repaint of the button every frame for as long as the menu is up. The button's clip-path makes it a stacking
+   context, so the veil at z-index -1 is over its colour and under its words) */
+#startScreen #startBtn::before { content: ""; position: absolute; inset: 0; z-index: -1; background: #fff; opacity: 0; pointer-events: none;
+  animation: start-pulse 1.6s ease-in-out infinite; }
 #startScreen #startBtn:hover:not(:disabled) { filter: brightness(1.12); transform: scale(1.02); }
 #startScreen #startBtn:active:not(:disabled) { transform: scale(.98); }
 #startScreen #startBtn .start-note { display: block; margin-top: 4px; font-size: 12px; font-style: normal; font-weight: 700; letter-spacing: .08em; opacity: .75; }
 #startScreen #startBtn .start-note.hidden { display: none; }
 #startScreen #startBtn .start-note.unseen { visibility: hidden; }
-#startScreen #startBtn:disabled { background: #39414f; color: rgba(255, 255, 255, .5); animation: none; }
-@keyframes start-pulse { 50% { filter: brightness(1.14) drop-shadow(0 0 10px var(--accent-glow)); } }
+#startScreen #startBtn:disabled { background: #39414f; color: rgba(255, 255, 255, .5); }
+#startScreen #startBtn:disabled::before { animation: none; }
+@keyframes start-pulse { 50% { opacity: .16; } }
 
 /* ---- the keys, along the foot (where there is a keyboard) ---- */
 #startScreen .menu-keys { grid-area: keys; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; font-size: 12px; color: var(--ink-dim); max-height: 20px; overflow: hidden; }
@@ -372,7 +378,7 @@
   #startScreen .menu-stage .facts { max-width: calc(100% - 140px); }
 }
 @media (prefers-reduced-motion: reduce) {
-  #startScreen .menu-backdrop i, #startScreen .menu-stage .shot, #startScreen #startBtn, #startScreen .menu-stage.enter *, #startScreen .menu-stage.flip *, #startScreen .sheet-box { animation: none !important; }
+  #startScreen .menu-backdrop i, #startScreen .menu-stage .shot, #startScreen #startBtn::before, #startScreen .menu-stage.enter *, #startScreen .menu-stage.flip *, #startScreen .sheet-box { animation: none !important; }
 }
 
 /* ---- "what's on this road" (render/levelcard3d.js): three groups of tiles, each tile a model and a line. Each
