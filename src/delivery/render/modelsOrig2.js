@@ -347,6 +347,7 @@ export const ORIG2_MODELS = {
     }
     P.into(shell);
     group.userData = {
+      lampFrame: shell, // (the body the lamps ride on, nose rising and rocking: render/carlights.js lays the lamp effects in it)
       body,
       parts: P.count,
       animate: (t) => {

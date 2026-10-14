@@ -23,6 +23,7 @@ import { SpeedCameras } from '../cameras.js';
 import { Hazards } from '../hazards.js';
 import { Delivery } from '../delivery.js';
 import { patchModel } from './modelpatchapply.js';
+import { LAMP_DEBUG, lampKey, lampLayout, genericLayout, makeLampMarkers } from './carlights.js';
 
 // Everything here that belongs to the loaded level (bridges, obstacles, pickups, targets)
 // lives in this group and is rebuilt by buildItems() each time a level is loaded.
@@ -42,6 +43,18 @@ const playerModel = (car) => {
     playerModels[car.id] = model;
   }
   return playerModels[car.id];
+};
+
+// ?lamps=show: markers at each lamp the player's car's effects use (render/carlights.js), remade when the car changes
+let lampMarks = null, lampMarksFor;
+const showLampMarkers = (key) => {
+  const layout = lampLayout(key) || genericLayout(Player, {});
+  const id = (key || 'generic') + ':' + Player.hw + ':' + Player.hl + ':' + Player.height;
+  if (lampMarks && lampMarksFor === id) return;
+  if (lampMarks) lampMarks.removeFromParent();
+  lampMarks = makeLampMarkers(layout);
+  lampMarksFor = id;
+  carMesh.userData.lamps.lamps.add(lampMarks); // (in the lamps' own group: riding with them, hidden with them)
 };
 
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
@@ -526,7 +539,9 @@ export const syncPickups = (dt) => {
   passengerMesh.visible = powerShown(Player.passenger) && !tank && !ufo;
   passengerMesh.position.y = Player.height; // (sat on the roof, its shins down through the sunroof)
   // brake lights on any car-shaped car (not a tank or a UFO)
-  syncLamps(carMesh, Player, !tank && !ufo, Player.active && Player.brakeLight, 0, false);
+  // (on its own lamps where render/carlights.js lists it; ?lamps=brake / hazard / left / right hold them on for a picture)
+  syncLamps(carMesh, Player, !tank && !ufo, LAMP_DEBUG.brake || (Player.active && Player.brakeLight), LAMP_DEBUG.turn, LAMP_DEBUG.hazard, false, custom ? lampKey(CAR) : null, custom);
+  if (LAMP_DEBUG.show) showLampMarkers(custom ? lampKey(CAR) : null);
   ghostify(carMesh, ghostly);
   const t = performance.now() / 1000;
   // (the signs over the car don't spin: they face back down the road, at the camera following the car)
