@@ -624,8 +624,8 @@
   "haunted-hollow": {
     "name": "Haunted Hollow",
     "description": {
-      "good": "A carved pumpkin for the harvest ball. Wind through the pumpkin patch, the foggy woods, the graveyard gates and under the haunted hill, home by lantern light.",
-      "evil": "A cage of bats for the old house on the hill. Smash the pumpkin crates, fly the humpback bridge, race the ghost train and leave the fog behind you."
+      "good": "A carved pumpkin for the harvest ball. Through the fog, past the graveyard gates and the ghost cars, under the haunted hill and home by lantern light.",
+      "evil": "A cage of bats for the old house on the hill. Smash the pumpkin crates, fly the humpback bridge, race the ghost train and drive through the ghost cars."
     },
     "cargo": {
       "good": "pumpkin",

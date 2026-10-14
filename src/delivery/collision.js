@@ -730,7 +730,7 @@ export const Collision = (() => {
     for (const o of obstacles) {
       if (o.gone || o.kind !== 'landmine' || o.buried) continue;
       for (const car of Traffic.cars) {
-        if (!car.active || car.junction || car.health <= 0 || Math.abs(car.s - o.s) > car.hl + o.hl || !overlap(car, o)) continue;
+        if (!car.active || Traffic.ghostly(car) || car.junction || car.health <= 0 || Math.abs(car.s - o.s) > car.hl + o.hl || !overlap(car, o)) continue;
         car.health = 0;
         o.gone = true;
         FxQueue.push({ type: 'explode', s: o.s, lat: o.lat, vs: 0, big: false, sound: 'none' });
@@ -934,6 +934,21 @@ export const Collision = (() => {
         }
       }
     }
+    // a ghost car (a level's "ghostTraffic", CONFIG.ghostTraffic) is solid only in its solid phase, and then not while it still overlaps
+    // anything it turned solid on: it stays ghostly until it is clear (as the player's ghost power-up does)
+    const phantomLive = (v) => {
+      const p = v.phantom;
+      if (!p) return true;
+      if (Traffic.phantomState(v) !== 'solid') { p.live = false; return false; }
+      if (!p.live) {
+        if (bodies.some(o => o !== v && o.active && Math.abs(o.s - v.s) < CONFIG.broadPhaseDistance && overlap(v, o))) return false;
+        p.live = true;
+      }
+      return true;
+    };
+    for (const car of Traffic.cars) { // (the player driving through a ghost car: it is upset, once a pass: Traffic.phantomPass)
+      if (car.phantom && car.active) Traffic.phantomPass(car, Player.active && Math.abs(car.s - Player.s) < CONFIG.broadPhaseDistance && !(Player.air > car.height) && overlap(Player, car));
+    }
     for (let i = 0; i < bodies.length; i++) {
       const a = bodies[i];
       // (a freshly dropped or ghosted player, a car being arrested, or one off the road at a junction)
@@ -941,6 +956,7 @@ export const Collision = (() => {
       for (let j = i + 1; j < bodies.length; j++) {
         const b = bodies[j];
         if (!b.active || b.shield > 0 || b.arrest >= 0 || b.junction) continue; // (a racer just set down: untouchable)
+        if (a.phantom || b.phantom) { if (!phantomLive(a) || !phantomLive(b)) continue; } // (a ghost car in its ghostly phase: nothing touches it)
         // broad phase: nearby along the track and within neighbouring lanes
         if (Math.abs(b.s - a.s) > CONFIG.broadPhaseDistance ||
             Math.abs(b.lat - a.lat) > CONFIG.laneWidth * 1.5) continue;

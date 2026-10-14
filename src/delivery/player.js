@@ -335,7 +335,7 @@ export const Player = {
     if (this.rampAhead) return null; // (lined up with a ramp over the jam, or on it: it is going over the queue, not braking for it. See Gambles)
     let lead = null, leadGap = Infinity;
     for (const car of Traffic.cars) {
-      if (!car.active || car.dir < 0 || car.junction) continue; // braking won't save you from oncoming cars
+      if (!car.active || car.dir < 0 || car.junction || Traffic.ghostly(car)) continue; // braking won't save you from oncoming cars
       const gap = car.s - this.s - car.hl - this.hl;
       const closing = this.speed - car.vs;
       if (gap < -1 || closing <= 0 || gap > leadGap) continue;

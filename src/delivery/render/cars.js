@@ -227,10 +227,23 @@ const ownModel = (mesh, car) => {
   }
   return models[car.kind];
 };
+// ghost traffic (a level's "ghostTraffic": the logic is Traffic.phantomState): a ghost car is drawn in one pale, glowing, see-through
+// material of its own (the Ghost power-up's idea, render/items.js ghostify), flickering through the warning before its solid
+// phase, redder while it is upset. The solid phase is the car as it is; the parts' own materials are put aside and given back
+const phantomMats = new Map();
+const phantomLook = (mesh, on, i) => mesh.traverse((part) => {
+  if (!part.isMesh) return;
+  if (on && !part.userData.solidMat) {
+    if (!phantomMats.has(i)) phantomMats.set(i, new THREE.MeshLambertMaterial({ color: 0xdfe9ff, emissive: 0x4a6cff, transparent: true, opacity: 0.4, depthWrite: false }));
+    part.userData.solidMat = part.material;
+    part.material = phantomMats.get(i);
+  } else if (!on && part.userData.solidMat) { part.material = part.userData.solidMat; part.userData.solidMat = null; }
+});
 export const syncTraffic = () => {
   for (let i = 0; i < Traffic.cars.length; i++) {
     const car = Traffic.cars[i], mesh = trafficMeshes[i];
     mesh.visible = car.active;
+    if (mesh.userData.phantomOn) { phantomLook(mesh, false, i); mesh.userData.phantomOn = false; } // (its own paint back, to be painted)
     if (!car.active) continue;
     if (car.junction) { // (off the road, going through a junction: where it is in the world)
       mesh.position.set(car.wx, car.wy, car.wz);
@@ -281,5 +294,14 @@ export const syncTraffic = () => {
       turnX = Math.sign(signalAt.applyMatrix4(unplace.copy(mesh.matrix).invert()).x);
     }
     syncLamps(mesh, car, lit, car.braking, turnX, car.hazards || car.wrongWay, car.wrongWay, own ? CONFIG.vehicles[car.kind]?.model : null, own); // (a wrong-way driver: hazards on, headlights flashing)
+    const phase = Traffic.phantomState(car);
+    if (phase && (phase !== 'solid' || Traffic.upset(car))) {
+      phantomLook(mesh, true, i);
+      mesh.userData.phantomOn = true;
+      const m = phantomMats.get(i), upset = Traffic.upset(car), flick = Math.floor(performance.now() / 70) % 2;
+      m.opacity = phase === 'solid' ? 0.95 : phase === 'warn' ? (flick ? 0.8 : 0.18) : 0.38;
+      m.color.setHex(upset ? 0xffb4a4 : 0xdfe9ff);
+      m.emissive.setHex(upset ? 0xd01808 : 0x4a6cff);
+    }
   }
 };

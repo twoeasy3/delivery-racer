@@ -38,7 +38,7 @@ export const Traffic = (() => {
     cars.push({ active: false, unused: false, dir: north ? 1 : -1, bound: north ? 'north' : 'south', mass: 1,
       s: 0, lat: 0, vs: 0, latVel: 0, yaw: 0, yawVel: 0, stun: 0,
       lane: 0, baseSpeed: 0, kind: 'commuter', evil: false, emotion: 'neutral', mood: 0, paint: 0, think: 0, honkWait: 0,
-      health: 1, maxHealth: 1, smoke: 0, hw: 1, hl: 2.1, height: 1.4,
+      health: 1, maxHealth: 1, smoke: 0, hw: 1, hl: 2.1, height: 1.4, phantom: null,
       braking: false, signal: 0, hazards: false, pendingLane: null, hesitant: false, fromBehind: false });
   }
   // A slot dealt out again is a new vehicle, and a new run starts with new slots. Dozens of things are set on a
@@ -138,6 +138,7 @@ export const Traffic = (() => {
       : Track.openLane(first + Math.floor(random() * (last - first + 1)), car.s);
     if (!laneClear(car, lane, 25) || Wreckage.blocked(lane, car.s)) return false;
     outfit(car, kind, lane);
+    ghostMark(car); // (only a car dealt out on the road: not a pursuit's or a tractor)
     Radiation.deal(car); // (a share of a radiated level's traffic comes infected: car.infected, which blank() puts back)
     return true;
   };
@@ -364,6 +365,48 @@ export const Traffic = (() => {
     car.throwTimer = CONFIG.enemyThrowMin + random() * (CONFIG.enemyThrowMax - CONFIG.enemyThrowMin);
     car.think = random() * 2;
     car.active = true;
+  };
+
+  // ghost traffic: a car that turns up in a "ghostTraffic" stretch is a ghost car with chance `density`, if it is of a
+  // kind it names: a cycle and a phase of its own, from the seeded dice, and only dealt inside a stretch (so no other level's
+  // dice are touched). Which state it is in follows the run's clock: phantomState
+  const ghostMark = (car) => {
+    car.phantom = null;
+    const G = CONFIG.ghostTraffic, stretch = (LEVEL.ghostTraffic || []).find(z => car.s >= z.from && car.s <= z.to);
+    if (!stretch || car.toad || !(stretch.kinds || G.kinds).includes(car.kind)) return;
+    if (random() >= (stretch.density ?? G.density)) return;
+    const cycle = between(G.cycle);
+    car.phantom = { cycle, offset: random() * cycle, live: false, touching: false, upsetUntil: -1, honked: false };
+  };
+  // a ghost car is GHOSTLY (intangible, untargetable) in its ghost and warning phases, and in a solid one that has not yet come clear of
+  // what it turned solid on (Collision.check keeps `live`). Everything that targets or wrecks traffic leaves a ghostly car alone
+  const ghostly = (car) => !!car.phantom && (phantomState(car) !== 'solid' || !car.phantom.live);
+  // the player's car passes through a ghostly one (Collision.check, once a tick, `touching`: whether it overlaps it now): upsets it,
+  // once for each pass. For CONFIG.ghostTraffic.upsetTime s it is UPSET (drawn redder: upset), it honks once, and its next solid phase
+  // comes sooner: the phase moves on, by a little at most, but never past the start of its warning flicker, so the warning is always whole.
+  // It does nothing else (it does not move: no lunge)
+  const phantomPass = (car, touching) => {
+    const p = car.phantom;
+    if (!p) return;
+    if (!touching) { p.touching = false; return; }
+    if (p.touching) return;
+    p.touching = true;
+    if (!ghostly(car) || Game.time < p.upsetUntil) return;
+    const G = CONFIG.ghostTraffic;
+    p.upsetUntil = Game.time + G.upsetTime;
+    p.honked = true;
+    car.honkWait = 0;
+    honk(car);
+    const u = (Game.time + p.offset) % p.cycle, warnAt = p.cycle * (1 - G.solidShare) - G.flicker;
+    if (u < warnAt) p.offset += Math.min(warnAt - u, between(G.upsetSooner));
+  };
+  const upset = (car) => !!car.phantom && Game.time < car.phantom.upsetUntil;
+  // 'ghost' (intangible), 'warn' (flickering, still intangible), 'solid'; null for a car that is no ghost
+  const phantomState = (car) => {
+    const p = car.phantom;
+    if (!p) return null;
+    const G = CONFIG.ghostTraffic, u = (Game.time + p.offset) % p.cycle, from = p.cycle * (1 - G.solidShare);
+    return u >= from ? 'solid' : u >= from - G.flicker ? 'warn' : 'ghost';
   };
 
   // where a parked car stands: on the outer half of its shoulder, leaving passing traffic room
@@ -1132,7 +1175,7 @@ export const Traffic = (() => {
   const hornedAt = () => {
     const H = CONFIG.horn, lane = Track.nearestLane(Player.lat, Player.s);
     for (const car of cars) {
-      if (!car.active || car.junction || car.toad || car.arrest >= 0 || car.dir < 0 || car.racer || car.emergency || car.procession || car.kind === 'police') continue;
+      if (!car.active || ghostly(car) || car.junction || car.toad || car.arrest >= 0 || car.dir < 0 || car.racer || car.emergency || car.procession || car.kind === 'police') continue;
       const gap = car.s - Player.s;
       if (gap <= 0 || gap > H.range) continue;
       if (car.evil || car.emotion === 'angry') { car.honkWait = 0; honk(car); continue; }
@@ -2468,6 +2511,6 @@ export const Traffic = (() => {
 
   return { cars, reset, update, lap, policeNear, toadify, rushHour, moodSwing, startProcession, mourn, arrest, startEmergency, addRacer, sortGrid, tow, wreckedByPlayer,
     noteWreck, hornedAt, get reversibles() { return reversibles; },
-    outfit, spare: () => cars.find(c => !c.active && c.unused) || null, // (for a police pursuit: see pursuit.js)
+    outfit, phantomState, ghostly, upset, phantomPass, spare: () => cars.find(c => !c.active && c.unused) || null, // (for a police pursuit: see pursuit.js)
     frozen: false }; // (TRAFFIC FREEZE: set by Mysteries; update, Collision.updateObstacles and Hazards.update stand still while it is)
 })();

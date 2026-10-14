@@ -608,5 +608,22 @@
    "lane": 3,
    "kind": "bale"
   }
+ ],
+ "ghostTraffic": [
+  {
+   "from": 860,
+   "to": 1110,
+   "density": 0.4
+  },
+  {
+   "from": 1650,
+   "to": 2160,
+   "density": 0.4
+  },
+  {
+   "from": 2380,
+   "to": 2700,
+   "density": 0.35
+  }
  ]
 }

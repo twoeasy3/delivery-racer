@@ -1310,6 +1310,20 @@ export const CONFIG = {
     apart: 70,             // m the two ways are apart, unless the split says ("apart")
     ease: 320,             // m over which they part, and come back together
   },
+  // ghost traffic (a level's "ghostTraffic": [{ from, to, density?, kinds? }]): ordinary traffic cars, drawn pale and see-through,
+  // that flicker between two states on a cycle of their own. GHOSTLY, the player (and every other car) drives straight through
+  // one, no knock, no damage; a flicker of `flicker` s warns of the SOLID phase, which lasts the last `solidShare` of the cycle and
+  // is a car of its kind in every way (the same box, the same cost). One turning solid while something overlaps it stays
+  // ghostly until it is clear. Which cars: those that turn up in the stretch, `density` of them (0 to 1), of these kinds
+  ghostTraffic: {
+    density: 0.35,
+    cycle: { min: 6, max: 9 },   // s round one ghostly-then-solid cycle, a car's own (and its own phase in it)
+    solidShare: 0.35,            // the share of the cycle that is solid
+    flicker: 0.5,                // s of flickering before each solid phase
+    upsetTime: 4,                // s a ghost car is UPSET for, once the player has driven through it (drawn redder; it honks once)
+    upsetSooner: { min: 1.5, max: 3 }, // s its next solid phase is brought forward by, at most (never into its warning flicker)
+    kinds: ['commuter', 'wagon', 'van', 'minivan', 'pickup', 'suv', 'sport', 'junker', 'postvan', 'taxi', 'miata', 'jeep'],
+  },
   // a fog bank (a level's "fog": { from, to }): the fog closes right in, easing in and out over its edges
   fog: {
     near: 4,               // m the fog starts at, at its thickest (the usual: 120)...

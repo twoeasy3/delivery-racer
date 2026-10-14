@@ -148,7 +148,7 @@ export const Crossings = {
     for (let i = 0; i < C.cars; i++) {
       box.lat = this.carriage(c, i);
       for (const car of Traffic.cars) {
-        if (car.active && !car.junction && car.health > 0 && Math.abs(car.s - c.s) < car.hl + C.hw + 1 && Collision.overlap(box, car)) car.health = 0;
+        if (car.active && !Traffic.ghostly(car) && !car.junction && car.health > 0 && Math.abs(car.s - c.s) < car.hl + C.hw + 1 && Collision.overlap(box, car)) car.health = 0;
       }
       if (!Player.active || Player.shield > 0 || Player.health <= 0 || Math.abs(Player.s - c.s) > Player.hl + C.hw + 1 || !Collision.overlap(box, Player)) continue;
       if (Player.ghost > 0) Player.ghost = Math.max(Player.ghost, 0.2);

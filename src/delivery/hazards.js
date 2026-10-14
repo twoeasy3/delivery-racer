@@ -361,7 +361,7 @@ export const Hazards = {
       if (c.state !== 'idle' && (c.bell -= dt) <= 0) { c.bell = 0.5; if (Math.abs(ahead) < 300) sfxAt('bell', c.s, 1); }
       const open = this.bridgeOpen(c);
       if (open > 0.3) { // (traffic caught on it as it opens goes in)
-        for (const car of Traffic.cars) if (car.active && !car.junction && car.health > 0 && Math.abs(car.s - c.s) < D.leaf) car.health = 0;
+        for (const car of Traffic.cars) if (car.active && !Traffic.ghostly(car) && !car.junction && car.health > 0 && Math.abs(car.s - c.s) < D.leaf) car.health = 0;
       }
     }
     // the player on a deck (or in the air off one): see ride

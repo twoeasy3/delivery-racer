@@ -44,7 +44,7 @@ const heave = (s) => {
 const bounceTraffic = () => {
   const Q = M().earthquake;
   for (const car of Traffic.cars) {
-    if (!car.active || car.junction || car.parked || car.arrest >= 0 || car.racer || car.toad) continue;
+    if (!car.active || Traffic.ghostly(car) || car.junction || car.parked || car.arrest >= 0 || car.racer || car.toad) continue;
     const [first, last] = Track.laneRange(car.dir, car.s);
     const beside = [car.lane - 1, car.lane + 1].filter(l => l >= first && l <= last && Track.openLane(l, car.s) === l);
     if (!beside.length) continue;

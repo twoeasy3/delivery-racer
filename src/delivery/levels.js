@@ -188,6 +188,12 @@
 //              each (messages.json: zones, by id). (Their traffic: see trafficZones)
 //   quietZones [{ from, to, density }]: stretches with less traffic (a narrow bridge with no shoulder): only
 //              `density` (0-1) of the cars that would turn up there do; the rest turn up elsewhere
+//   ghostTraffic [{ from, to, density?, kinds? }]: stretches where some of the ordinary cars that turn up (`density` of them, 0 to 1; of
+//              `kinds`, a list of vehicle kinds: both if not said, CONFIG.ghostTraffic's) are GHOST CARS: pale, see-through, flickering
+//              between two phases on a cycle of their own. GHOSTLY, one is intangible and untargetable (no knock, no damage; nothing
+//              aims at it, wrecks it or infects it); after a flicker of CONFIG.ghostTraffic.flicker s it is SOLID, a car of its
+//              kind in every way. The player driving through a ghostly one upsets it for a few seconds (redder, one honk, its
+//              next solid phase sooner, never without its flicker). See traffic.js (ghostMark, phantomState) and collision.js
 //   trafficZones [{ from, to, traffic: { kind: weight } }]: stretches where the traffic turning up is
 //              different: each sets the weights of the kinds it names over the level's "traffic" (0 takes
 //              a kind away), a later one over an earlier. With police only in such stretches, a police
