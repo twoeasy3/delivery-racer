@@ -20,6 +20,8 @@ a.button:hover { background: #3a4456; }
 .viewButtons label.check { background: rgba(37, 43, 54, .9); border: 1px solid var(--edge); border-radius: 6px; padding: 4px 8px; font-size: 13px; }
 .stats { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
 .stats span { background: rgba(37, 43, 54, .92); border: 1px solid var(--edge); border-radius: 6px; padding: 3px 8px; font-size: 12px; }
+.lampRow { display: contents; }
+.stats .lamp { border-color: #7a6a2a; }
 .stats b { color: var(--accent); }
 .stats .warn { border-color: #e0a030; } .stats .warn b { color: #ffc266; }
 .stats .bad { border-color: var(--bad); } .stats .bad b { color: var(--bad); }

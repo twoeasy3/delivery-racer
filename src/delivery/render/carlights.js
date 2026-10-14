@@ -107,6 +107,9 @@ export const LAMP_DEBUG = {
 };
 LAMP_DEBUG.steady = LAMP_DEBUG.hazard || LAMP_DEBUG.turn !== 0;
 
+// where a car's table entry comes from, for the model editor's legend: 'hand-written', 'guess', 'generated', or null (no entry)
+export const lampSource = (key) => (!key || !TABLE[key] ? null : CAR_LAMPS[key] ? 'hand-written' : TABLE[key].guess ? 'guess' : 'generated');
+
 // the night switch (render/headlights.js setHeadlights), read by syncLamps for the headlamps' glow
 export const NightLamps = { on: false };
 
