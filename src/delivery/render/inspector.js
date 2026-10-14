@@ -17,12 +17,13 @@
 // (Garage.render asks Inspector.isOpen) and <html> has `sheet-up` (lite.css: what is under it stops animating; set here,
 // not in lite.js, which is in the replays' rules fingerprint: vite.config.js logicFiles).
 //   ?garage&tab=ideas&inspect=<idea id>[&evil][&view=front|rear|left|right|top|34]   opens it on that idea (main.js)
+//   ...&damage=<0..5 | percent>   the car as the game shows it hurt (render/dents.js, through inspectmodel.js): 0 clean, 1 to 4 the stages, 5 = 100 %
 //   ?garage&inspect=<car id>                                                          a car of Crazey Jim's lot
 import * as THREE from 'three';
 import '../inspector.css';
 import { Nav } from '../nav.js';
 import { sharedRenderer, stillViews, STILL } from './modelviews.js';
-import { buildInspectModel, paintInspectModel, countModel, sizeWords } from './inspectmodel.js';
+import { buildInspectModel, paintInspectModel, countModel, sizeWords, DAMAGE_STATES, damageIndex, damageModel, damageCounts } from './inspectmodel.js';
 
 const FOV = 30, LIFT = 0.32, AUTO = 0.28; // (deg the camera sees up and down; rad it looks down from at rest; rad/s turning by itself)
 const PITCH = [0, 1.5], ZOOM = [0.42, 2.4], MAX_PIXELS = 3e6;
@@ -105,24 +106,27 @@ const mountUi = () => {
   side.setAttribute('role', 'group'); side.setAttribute('aria-label', 'Livery');
   const prev = button('ins-arrow ins-prev', '‹', 'Previous car'), next = button('ins-arrow ins-next', '›', 'Next car');
   const views = el('div', 'ins-views', ...ORDER.map((id) => { const v = VIEWS[id]; const b = button('', v.name, v.name + ' view'); b.dataset.view = id; return b; }));
+  const hurt = el('span', 'ins-damage', ...DAMAGE_STATES.map((d, i) => { const b = button('', d.label, i ? d.label + ' damage (key ' + i + ')' : 'No damage (key 0)'); b.dataset.damage = i; return b; }));
+  hurt.setAttribute('role', 'group'); hurt.setAttribute('aria-label', 'Damage');
   const stats = el('div', 'ins-stats'), hint = el('div', 'ins-hint', window.matchMedia?.('(pointer: coarse)').matches
     ? 'Drag to turn  ·  pinch to zoom  ·  double-tap to reset' : 'Drag to turn  ·  wheel to zoom  ·  double-click to reset');
   // (the model editor on this car, in a tab of its own: delivery/modeleditor.html; its address is made as it is opened)
   const edit = el('a', 'ins-edit', 'Edit model');
   edit.target = '_blank'; edit.rel = 'noopener'; edit.title = 'Edit this model, part by part (the model editor)'; edit.href = 'modeleditor.html';
-  edit.addEventListener('click', () => { edit.href = 'modeleditor.html?car=' + encodeURIComponent(car?.id || '') + (evil ? '&evil' : ''); });
-  const top = el('div', 'ins-top', back, title, edit, side), bottom = el('div', 'ins-bottom', views, stats, hint);
+  edit.addEventListener('click', () => { edit.href = 'modeleditor.html?car=' + encodeURIComponent(car?.id || '') + (evil ? '&evil' : '') + (damage > 0 ? '&damage=' + damageIndex(damage) : ''); });
+  const top = el('div', 'ins-top', back, title, edit, side), bottom = el('div', 'ins-bottom', views, hurt, stats, hint);
   root = el('div', 'overlay inspector hidden', stage, top, prev, next, bottom);
   root.id = 'inspector';
   root.setAttribute('role', 'dialog');
   root.setAttribute('aria-label', 'Model inspector');
   document.body.append(root);
-  ui = { stage, ctx: stage.getContext('2d'), top, bottom, back, title, good, evil, prev, next, views, stats, hint };
+  ui = { hurt, stage, ctx: stage.getContext('2d'), top, bottom, back, title, good, evil, prev, next, views, stats, hint };
   back.addEventListener('click', () => Inspector.close());
   good.addEventListener('click', () => Inspector.side(false));
   evil.addEventListener('click', () => Inspector.side(true));
   prev.addEventListener('click', () => Inspector.step(-1));
   next.addEventListener('click', () => Inspector.step(1));
+  hurt.addEventListener('click', (e) => { const i = e.target.closest?.('button')?.dataset.damage; if (i !== undefined) Inspector.damage(DAMAGE_STATES[+i].share); });
   views.addEventListener('click', (e) => { const id = e.target.closest?.('button')?.dataset.view; if (id) Inspector.view(id); });
   stage.addEventListener('pointerdown', onDown);
   stage.addEventListener('pointermove', onMove);
@@ -136,6 +140,7 @@ const mountUi = () => {
 
 // ---- the state ------------------------------------------------------------------------------------------------
 let open = false, raf = 0, last = 0, dirty = true, touched = false;
+let damage = 0; // (share of damage shown, 0 .. 1: kept from car to car)
 let list = [], at = 0, car = null, evil = false, onClose = null, kind = '';
 let v = null; // { studio, model, height, radius, counts, calls }
 // the camera: where it is (cur) and where it is going (aim); vel: the fling after a drag (rad/s)
@@ -162,6 +167,7 @@ const build = () => {
   const model = buildInspectModel(car, evil);
   model.userData.animate?.(STILL.t); // (posed once: the inspector looks at a model, it does not play it)
   model.updateMatrixWorld(true);
+  damageModel(model, damage);
   const box = new THREE.Box3().setFromObject(model), size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
   model.position.set(-mid.x, -box.min.y, -mid.z); // (stood on the floor, its middle over the turntable's)
   s.scene.add(model);
@@ -169,18 +175,20 @@ const build = () => {
   s.floor.scale.set(footprint * 3.2, footprint * 3.2, 1);
   s.soft.scale.set(size.x * 1.9, size.z * 1.5, 1);
   s.shadow.scale.set(size.x / 0.6 * 1.04, size.z / 0.6 * 1.02, 1); // (the box in the shadow's texture is 60% of it)
-  v = { studio: s, model, height: size.y, radius: Math.hypot(size.x, size.y, size.z) / 2, counts: countModel(model), calls: 0 };
+  v = { studio: s, model, height: size.y, radius: Math.hypot(size.x, size.y, size.z) / 2, counts: countModel(model), hurt: damage > 0 ? damageCounts(model) : null, calls: 0 };
   dirty = true;
 };
 const say = () => {
+  for (const b of ui.hurt.children) { const on = +b.dataset.damage === damageIndex(damage); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }
   const n = list.length;
   ui.title.firstChild.textContent = car.name;
   ui.title.lastChild.textContent = (kind === 'ideas' ? 'Car idea ' : 'Car ') + (at + 1) + ' / ' + n;
   ui.prev.disabled = ui.next.disabled = n < 2;
   for (const b of [ui.good, ui.evil]) { const on = (b === ui.evil) === evil; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }
-  const c = v.counts;
+  const c = v.hurt ? v.hurt.clean : v.counts, h = v.hurt;
   const parts = [car.basedOn ? 'Based on ' + car.basedOn : null, sizeWords(car) + (car.real ? ' (real size)' : ''),
     c.meshes.toLocaleString('en') + ' shapes', c.triangles.toLocaleString('en') + ' triangles', v.calls ? v.calls + ' draw calls' : null,
+    h ? DAMAGE_STATES[damageIndex(damage)].label + ' damaged: ' + h.damaged.triangles.toLocaleString('en') + ' triangles (clean ' + h.clean.triangles.toLocaleString('en') + ', x' + h.factor.toFixed(2) + '), ' + h.damaged.materials + ' materials (clean ' + h.clean.materials + ')' : null,
     v.model.userData.block ? 'no model yet: a block' : null].filter(Boolean);
   ui.stats.textContent = parts.join('  ·  ');
 };
@@ -310,7 +318,7 @@ const onWheel = (e) => {
 const onKey = (e) => {
   if (!open) return;
   if (document.querySelector('.menu-dialog')) return; // (a dialog over it takes its own keys)
-  const keys = { Escape: () => Inspector.close(), ArrowLeft: () => Inspector.step(-1), ArrowRight: () => Inspector.step(1), KeyE: () => Inspector.side(!evil), KeyR: () => Inspector.reset() };
+  const keys = { Escape: () => Inspector.close(), ArrowLeft: () => Inspector.step(-1), ArrowRight: () => Inspector.step(1), KeyE: () => Inspector.side(!evil), KeyR: () => Inspector.reset(), ...Object.fromEntries(DAMAGE_STATES.map((d, i) => ['Digit' + i, () => Inspector.damage(d.share)])) };
   const fn = keys[e.code] || keys[e.key];
   if (!fn) return;
   e.preventDefault();
@@ -397,10 +405,17 @@ export const Inspector = {
     clampAim();
     for (const b of ui.views.children) b.classList.toggle('on', b.dataset.view === id);
   },
+  // the damage state (a share 0 .. 1, see inspectmodel.js DAMAGE_STATES): the model is built again in it, the camera stays
+  damage(share) {
+    damage = Math.max(0, Math.min(1, +share || 0));
+    if (!open) return;
+    build();
+    say();
+  },
   reset() { this.view('34'); },
   // for a check or a picture: what is shown
   get state() {
-    return open && v ? { car: car.id, at, of: list.length, evil, yaw: cur.yaw, pitch: cur.pitch, zoom: cur.zoom, aim: { ...aim }, touched,
+    return open && v ? { car: car.id, at, of: list.length, evil, damage, yaw: cur.yaw, pitch: cur.pitch, zoom: cur.zoom, aim: { ...aim }, touched,
       meshes: v.counts.meshes, triangles: v.counts.triangles, calls: v.calls, running: !!raf, block: !!v.model.userData.block } : { open: false, running: !!raf };
   },
 };
