@@ -19,6 +19,16 @@ src/delivery/render/ideaModels*.js, a new ideaModelsN.js spread into IDEA_MODELS
   cars do. Do not mention a colour or livery in the car's note unless its name denotes one specific real vehicle.
 - Convertible or open-top: do NOT render a person/driver.
 
+## The benchmark is the JUNKER (the owner, 14-Oct: "Use the Junker as the benchmark")
+Wherever this file or an older brief says the approved Commuter is the detail benchmark, use the JUNKER instead
+(`junker` in render/modelsOrig3.js: 21 meshes, about 2,146 triangles, 15 draw calls; the Legendary variants and the original
+roster rebuilds sit beside it). What it sets: a SHAPED front end (a real grille, bonnet and wings, never a flat slab), a chunky
+silhouette that reads at card size, and character through surface treatment: soft-edged weathering and small drawn-in-code
+textures (rust decals that fade out with NO hard rectangular edges, a 256 x 256 cloth picture, vertex-colour shading low down,
+a lumpy load shape). Everything else in the rules below still holds: no panel lines, plain chunky wheels, silhouette first,
+12 to 25 shapes, 1,000 to 2,200 triangles (3,000 is the hard cap), textures only drawn in code and no bigger than 256 x 256,
+lamp placements, no humans.
+
 ## The quality bar (and the budget)
 The two reference cars. READ their models first and match their level of detail, NOT more:
 - Split-Window Coupe (`splitwindow`, ideaModels.js): 38 shapes (meshes), 2,156 triangles, biggest single mesh 776.
@@ -53,7 +63,7 @@ Textures are fine where they make a car read better (curtains, flames, grilles, 
 are DRAWN IN CODE on a canvas (the `texture()` helpers in render/modelsOrig*.js: made once, cached, shared) and never image files:
 a drawn texture costs no download (only a few KB of drawing code) and about 4 bytes a pixel of memory. Keep them modest: 256 x 256
 is the biggest in the game today (the Junker's tarpaulin), so use 128 or less where it will do and say why if you go larger.
-Prefer flat colours, shape and vertex colours first (the approved Commuter's way), and no panel-line drawing in textures
+Prefer flat colours, shape and vertex colours first (the approved Junker's and Commuter's way), and no panel-line drawing in textures
 either (see the section above). Report each texture's size.
 
 ## Lamp placements: every new car needs them (the owner, 14-Oct)
