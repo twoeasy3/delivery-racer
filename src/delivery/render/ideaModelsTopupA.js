@@ -20,9 +20,9 @@ const keep = (m) => { m.userData.shared = true; return m; };
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 const basic = (color) => new THREE.MeshBasicMaterial({ color });
 const TYRE = keep(lambert(0x161616)), SILVER = keep(lambert(0xc4c8ce)), CHROME = keep(lambert(0xd6d9dd)), TRIM = keep(lambert(0x232529));
-const BLACK = keep(lambert(0x141518)), ALLOY = keep(lambert(0xa9adb2)), LEATHER = keep(lambert(0x2b211b));
+const BLACK = keep(lambert(0x141518)), ALLOY = keep(lambert(0xa9adb2)), LEATHER = keep(lambert(0x2b211b)), WOOD = keep(lambert(0xc4a676)), PLATE = keep(lambert(0xece6cc));
 const GLASS = keep(new THREE.MeshLambertMaterial({ color: 0x1c2330, side: THREE.DoubleSide }));
-const LAMP = keep(basic(0xfff3c4)), TAIL = keep(basic(0xff2a2a)), BRAKE = keep(basic(0xc4101c)), AMBER = keep(basic(0xffa31a));
+const LAMP = keep(basic(0xfff3c4)), TAIL = keep(basic(0xff2a2a)), AMBER = keep(basic(0xffa31a));
 
 // ---- geometry helpers -----------------------------------------------------------------------------------------------
 const place = (parent, geo, material, x = 0, y = 0, z = 0) => {
@@ -237,21 +237,21 @@ export const IDEA_MODELS_TOPUP_A = {};
 // blade fins along the rear wings, a tall tail lamp at each fin's end. Chrome bumpers, silver hubs, road dust low down.
 IDEA_MODELS_TOPUP_A.slantback = (car) => {
   const group = new THREE.Group(), bag = makeBag();
-  const W = car.hw, L = car.hl, R = 0.29, AF = 1.3, AR = -1.12;
+  const W = car.hw, L = car.hl, R = 0.29, AF = 1.32, AR = -1.2;
   const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
   const BEV = 0.08, BW = 2 * W - 0.08, NOSE = L - BEV, TAILZ = -L + BEV, AY = R, ARCH = R + 0.05 + BEV;
   const bodyOutline = [
-    [NOSE - 0.04, AY], ...curve([NOSE - 0.04, AY], [NOSE + 0.01, 0.46], [NOSE + 0.01, 0.66], [NOSE - 0.1, 0.76], 4),
-    ...curve([NOSE - 0.1, 0.76], [1.4, 0.83], [0.9, 0.86], [0.6, 0.88], 3),
+    [NOSE - 0.04, AY], ...curve([NOSE - 0.04, AY], [NOSE + 0.01, 0.46], [NOSE + 0.01, 0.7], [NOSE - 0.1, 0.8], 4),
+    ...curve([NOSE - 0.1, 0.8], [1.5, 0.84], [1.1, 0.86], [0.8, 0.87], 3),
     [-1.8, 0.9], ...curve([-1.8, 0.9], [TAILZ + 0.03, 0.9], [TAILZ, 0.84], [TAILZ, 0.72], 3),
     [TAILZ, 0.42], [TAILZ + 0.05, AY],
     ['arc', AR, AY, ARCH], ['arc', AF, AY, ARCH],
   ];
   // the glasshouse: raked windscreen, flat roof, a lip, the back window leaning the wrong way down to the boot
   const CBEV = 0.07, CW = BW - 0.1, TOP = car.height - CBEV, CY = 0.75, TAPER = [0.86, TOP, 0.17];
-  const WS = [[0.72, CY], [0.12, TOP - 0.03]], BL = [[-0.8, CY], [-1.12, TOP - 0.08]];
-  const roof = [WS[1], ...curve(WS[1], [-0.2, TOP + 0.01], [-0.75, TOP + 0.01], [-1.05, TOP], 5)];
-  const cabinOutline = [WS[0], ...roof, [-1.14, TOP - 0.04], BL[1], BL[0]];
+  const WS = [[0.92, CY], [0.36, TOP - 0.03]], BL = [[-0.6, CY], [-1.0, TOP - 0.08]];
+  const roof = [WS[1], ...curve(WS[1], [0.05, TOP + 0.01], [-0.65, TOP + 0.01], [-0.95, TOP], 5)];
+  const cabinOutline = [WS[0], ...roof, [-1.03, TOP - 0.04], BL[1], BL[0]];
   const body = shadeLow(merge([
     extrudeSide(bodyOutline, BW, BEV, null, 3, 0.16),
     extrudeSide(cabinOutline, CW, CBEV, TAPER, 2, 0.12),
@@ -261,14 +261,14 @@ IDEA_MODELS_TOPUP_A.slantback = (car) => {
   ]), 0.2, 0.7, [0.74, 0.7, 0.68]);
   const bodyMesh = place(group, body, paint);
   // glass: the windscreen, the back window (facing back and down), a door window and a quarter window a side
-  const CH = CW / 2, LIFT = CBEV + 0.006, foot = 0.99, top = 1.24;
+  const CH = CW / 2, LIFT = CBEV + 0.006, foot = 0.99, top = 1.265;
   const aEdge = (y) => zAt(WS, y) - 0.09, cEdge = (y) => zAt(BL, y) + 0.09;
   bag.add(GLASS,
     slopeGlass([zAt(WS, foot), foot], WS[1], CH, TAPER, CBEV + 0.03, [0, 0.05], LIFT, [1, 1]),
     slopeGlass([zAt(BL, foot), foot], BL[1], CH, TAPER, CBEV + 0.04, [0, 0.08], LIFT, [-1, -0.3]),
     ...sideGlass([
-      [[aEdge(foot), foot], [-0.24, foot], [-0.24, top], [aEdge(top), top]],
-      [[-0.34, foot], [cEdge(foot), foot], [cEdge(top), top], [-0.34, top]],
+      [[aEdge(foot), foot], [-0.06, foot], [-0.06, top], [aEdge(top), top]],
+      [[-0.16, foot], [cEdge(foot), foot], [cEdge(top), top], [-0.34, top]],
     ], CH, TAPER, 0.006));
   // the face: round lamps under the brows in chrome rings, a wide grille between them, chrome bumpers round the corners
   for (const s of [-1, 1]) {
@@ -277,14 +277,15 @@ IDEA_MODELS_TOPUP_A.slantback = (car) => {
     bag.add(AMBER, dsc(0.04, 0.03, s * 0.6, 0.45, L - 0.01, 10));
     bag.add(CHROME, bx(0.34, 0.1, 0.1, s * 0.74, 0.33, L - 0.08, 0, s * 0.55), bx(0.34, 0.1, 0.1, s * 0.74, 0.36, -L + 0.08, 0, -s * 0.55));
     // the tail: a tall lamp at the end of each fin (the left one brakes), an amber one under it
-    bag.add(s > 0 ? BRAKE : TAIL, bx(0.075, 0.26, 0.03, s * (BW / 2 - 0.07), 0.92, -L - 0.005));
+    bag.add(TAIL, bx(0.075, 0.26, 0.03, s * (BW / 2 - 0.07), 0.92, -L - 0.005));
     bag.add(AMBER, dsc(0.035, 0.03, s * (BW / 2 - 0.07), 0.66, -L - 0.0, 10));
   }
   bag.add(CHROME, blob(0.4, 0.1, 0.04, 0, 0.55, L - 0.02, 0, 0, 0, [14, 6]), bx(1.3, 0.1, 0.1, 0, 0.33, L + 0.02), bx(1.3, 0.1, 0.1, 0, 0.36, -L - 0.02));
-  bag.add(TRIM, blob(0.36, 0.075, 0.04, 0, 0.55, L - 0.005, 0, 0, 0, [14, 6]), bx(BW - 0.1, 0.1, 2 * AF - 0.9, 0, 0.27, 0.05));
+  bag.add(PLATE, bx(0.36, 0.12, 0.02, 0, 0.62, -L - 0.002));
+  bag.add(TRIM, blob(0.36, 0.075, 0.04, 0, 0.55, L - 0.005, 0, 0, 0, [14, 6]), bx(BW - 0.1, 0.1, AF - AR - 0.9, 0, 0.27, (AF + AR) / 2));
   // road dust along the sills, between the wheels
   const dusty = decalMat(dust(), 0.8);
-  bag.add(dusty, ...[-1, 1].map(s => flankDecal(1.1, 0.26, s * (BW / 2 + 0.004), 0.33, 0.06, s < 0)));
+  bag.add(dusty, ...[-1, 1].map(s => flankDecal(1.2, 0.24, s * (BW / 2 + 0.006), 0.43, (AF + AR) / 2, s < 0)));
   const meshes = bag.done(group);
   meshes.get(dusty).renderOrder = 1;
   for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, R, 0.24, s * (W - 0.12), z, SILVER, 0.6);
@@ -302,33 +303,39 @@ IDEA_MODELS_TOPUP_A.glassbrake = (car) => {
   const group = new THREE.Group(), bag = makeBag();
   const W = car.hw, L = car.hl, R = 0.31, AF = 1.32, AR = -1.2;
   const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
-  const lower = new THREE.MeshLambertMaterial({ color: 0x8c7552, vertexColors: true });
-  const BEV = 0.07, BW = 2 * W - 0.06, NOSE = L - BEV, TAILZ = -L + BEV, AY = R, ARCH = R + 0.05 + BEV, SW = 0.58;
-  const lowerOutline = [[NOSE - 0.02, AY], [NOSE + 0.01, 0.42], [NOSE + 0.01, SW], [TAILZ - 0.01, SW], [TAILZ - 0.01, 0.42], [TAILZ + 0.03, AY],
+  const LOWER = { good: 0x7a3b2e, evil: 0x111a14 }, lower = new THREE.MeshLambertMaterial({ color: LOWER.good, vertexColors: true });
+  const BEV = 0.07, BW = 2 * W - 0.06, NOSE = L - BEV, TAILZ = -L + BEV, AY = R, ARCH = R + 0.05 + BEV;
+  // the break, front to back: up from the nose along the flank, then dipping down ahead of the rear wheel (the shoulder's
+  // famous kink); the lower body under it, a step proud all round, the paint over it
+  const brk = [[NOSE + 0.01, 0.5], ...curve([NOSE + 0.01, 0.5], [1.2, 0.52], [0.6, 0.6], [0.1, 0.61], 3), [-0.15, 0.61],
+    ...curve([-0.15, 0.61], [-0.35, 0.61], [-0.37, 0.5], [-0.55, 0.5], 2), [TAILZ - 0.01, 0.5]];
+  const lowerOutline = [[NOSE - 0.02, AY], [NOSE + 0.01, 0.42], ...brk, [TAILZ - 0.01, 0.42], [TAILZ + 0.03, AY],
     ['arc', AR, AY, ARCH], ['arc', AF, AY, ARCH]];
-  const upperOutline = [[NOSE, SW + 0.03], ...curve([NOSE, SW + 0.03], [NOSE + 0.02, 0.68], [NOSE - 0.05, 0.74], [NOSE - 0.3, 0.77], 3),
-    ...curve([NOSE - 0.3, 0.77], [1.2, 0.8], [0.8, 0.84], [0.45, 0.86], 3), [TAILZ + 0.2, 0.88],
-    ...curve([TAILZ + 0.2, 0.88], [TAILZ + 0.02, 0.88], [TAILZ, 0.84], [TAILZ, 0.76], 2), [TAILZ, SW + 0.03]];
+  const upperOutline = [[NOSE, 0.53], ...curve([NOSE, 0.53], [NOSE + 0.02, 0.68], [NOSE - 0.05, 0.74], [NOSE - 0.3, 0.77], 3),
+    ...curve([NOSE - 0.3, 0.77], [1.2, 0.8], [0.8, 0.84], [0.45, 0.86], 3), [TAILZ + 0.3, 0.86],
+    ...curve([TAILZ + 0.3, 0.86], [TAILZ + 0.05, 0.84], [TAILZ, 0.8], [TAILZ, 0.72], 2),
+    ...brk.slice(1).reverse().map(([z, y]) => [Math.max(TAILZ, z), y + 0.03])];
   const CBEV = 0.07, CW = BW - 0.16, TOP = car.height - CBEV, CY = 0.72, TAPER = [0.86, TOP, 0.14];
-  const WS = [[0.62, CY], [-0.06, TOP - 0.03]], HT = [-0.95, TOP - 0.01], HF = [TAILZ + 0.06, 1.0];
+  const WS = [[0.62, CY], [-0.06, TOP - 0.03]], HT = [-1.0, TOP - 0.01], HM = [-1.68, 1.07], HF = [TAILZ + 0.05, 0.95];
   const roof = [WS[1], ...curve(WS[1], [-0.3, TOP + 0.01], [-0.7, TOP + 0.01], HT, 4)];
-  const cabinOutline = [WS[0], ...roof, HF, [TAILZ + 0.06, CY]];
+  const cabinOutline = [WS[0], ...roof, HM, HF, [TAILZ + 0.05, CY]];
   const body = place(group, shadeLow(merge([
     extrudeSide(upperOutline, BW, BEV, null, 2, 0.16),
     extrudeSide(cabinOutline, CW, CBEV, TAPER, 2, 0.12),
   ]), 0.55, 1.0, [0.86, 0.84, 0.82]), paint);
-  place(group, shadeLow(merge([extrudeSide(lowerOutline, BW + 0.024, BEV, null, 2, 0.16)]), 0.2, 0.6, [0.7, 0.68, 0.66]), lower);
+  place(group, shadeLow(merge([extrudeSide(lowerOutline, BW + 0.024, BEV, null, 2, 0.16)]), 0.2, 0.6, [0.8, 0.78, 0.76]), lower);
   // the glass: the windscreen, the long hatch (all glass, nearly flat), a door window, and the side glass back to the tail
-  const CH = CW / 2, LIFT = CBEV + 0.006, foot = 0.97, roofLine = [...roof, HF];
+  const CH = CW / 2, LIFT = CBEV + 0.006, foot = 0.97, roofLine = [...roof, HM, HF];
   const top = (z) => heightAt(roofLine, z) - 0.045;
   const aEdge = (y) => zAt(WS, y) - 0.09;
-  const back = [-0.55, -0.9, -1.25, -1.55, -1.72].map(z => [z, Math.max(foot + 0.012, top(z))]);
+  const back = [-0.55, -0.9, -1.25, -1.5, -1.68, -1.8].map(z => [z, Math.max(foot + 0.012, top(z))]);
   bag.add(GLASS,
     slopeGlass([zAt(WS, foot), foot], WS[1], CH, TAPER, CBEV + 0.03, [0, 0.05], LIFT, [1, 1]),
-    slopeGlass(HT, HF, CH, TAPER, CBEV + 0.03, [0.02, 0.04], LIFT, [-0.2, 1]),
+    slopeGlass(HT, HM, CH, TAPER, CBEV + 0.03, [0.02, 0], LIFT, [-0.2, 1]),
+    slopeGlass(HM, HF, CH, TAPER, CBEV + 0.03, [-0.08, 0.12], LIFT - 0.002, [-1, 0.6]),
     ...sideGlass([
       [[aEdge(foot), foot], [-0.42, foot], [-0.42, top(-0.42)], [aEdge(top(-0.1)), top(-0.1)]],
-      [[-0.52, foot], [-1.74, foot], ...back.slice().reverse()],
+      [[-0.52, foot], [-1.82, foot], ...back.slice().reverse()],
     ], CH, TAPER, 0.006));
   // the face: a low wide grille, a round lamp in a chrome ring at each end, split bumpers, amber lamps in their corners
   for (const s of [-1, 1]) {
@@ -336,16 +343,16 @@ IDEA_MODELS_TOPUP_A.glassbrake = (car) => {
     bag.add(LAMP, dsc(0.08, 0.03, s * 0.62, 0.62, L - 0.001, 14));
     bag.add(AMBER, bx(0.08, 0.045, 0.03, s * 0.8, 0.49, L - 0.005), bx(0.1, 0.05, 0.03, s * 0.7, 0.5, -L - 0.006));
     bag.add(CHROME, bx(0.3, 0.07, 0.08, s * 0.76, 0.42, -L + 0.06, 0, -s * 0.6));
-    bag.add(s > 0 ? BRAKE : TAIL, bx(0.12, 0.14, 0.03, s * 0.66, 0.75, -L + 0.002));
+    bag.add(TAIL, bx(0.12, 0.14, 0.03, s * 0.66, 0.75, -L + 0.002));
   }
   bag.add(CHROME, blob(0.44, 0.1, 0.04, 0, 0.47, L - 0.01, 0, 0, 0, [14, 6]), bx(1.3, 0.07, 0.08, 0, 0.42, -L - 0.02));
   bag.add(TRIM, blob(0.4, 0.075, 0.04, 0, 0.47, L + 0.004, 0, 0, 0, [14, 6]), bx(BW - 0.12, 0.1, 2 * AF - 1.0, 0, 0.27, 0.05));
   const dusty = decalMat(dust(), 0.7);
-  bag.add(dusty, ...[-1, 1].map(s => flankDecal(1.2, 0.24, s * (BW / 2 + 0.016), 0.33, 0.06, s < 0)));
+  bag.add(dusty, ...[-1, 1].map(s => flankDecal(1.0, 0.2, s * (BW / 2 + 0.018), 0.42, (AF + AR) / 2, s < 0)));
   bag.done(group).get(dusty).renderOrder = 1;
   for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, R, 0.25, s * (W - 0.12), z, SILVER, 0.6);
   const colour = (hex) => lower.color.setHex(hex);
-  group.userData = { body, animate: () => {}, livery: (evil) => colour(evil ? 0x0f1a13 : 0x8c7552), stripe: colour };
+  group.userData = { body, animate: () => {}, livery: (evil) => colour(evil ? LOWER.evil : LOWER.good), stripe: colour };
   group.userData.livery(false);
   return group;
 };
@@ -370,15 +377,15 @@ IDEA_MODELS_TOPUP_A.sevenroadster = (car) => {
   { const pos = tub.attributes.position; for (let i = 0; i < pos.count; i++) pos.setX(i, pos.getX(i) * narrow(pos.getZ(i))); tub.computeVertexNormals(); }
   const body = place(group, shadeLow(merge([tub]), 0.12, 0.5, [0.72, 0.72, 0.72]), paint);
   // the nose cone (in the accent, Good), its dark mouth
-  const nose = place(group, blob(0.29, 0.2, 0.3, 0, 0.36, 1.47, 0, 0, 0, [12, 8]), accent);
+  const nose = place(group, blob(0.29, 0.2, 0.3, 0, 0.36, 1.47, 0, 0, 0, [12, 6]), accent);
   bag.add(TRIM, blob(0.15, 0.1, 0.06, 0, 0.35, 1.72, 0, 0, 0, [10, 6]));
   // the wings: a clamshell over each rear wheel, its inner side in the tub; a thin cycle wing over each front wheel
-  const rearWing = extrudeSide(band(arcPts(AR, R, R + 0.13, Math.PI, 0, 10), 0.08), 0.32, 0.03, null, 1);
-  const frontWing = extrudeSide(band(arcPts(AF, R, R + 0.075, Math.PI * 0.86, Math.PI * 0.12, 8), 0.035), 0.22, 0.012, null, 1);
-  const wings = place(group, merge([
+  const rearWing = extrudeSide(band(arcPts(AR, R, R + 0.13, Math.PI, 0, 8), 0.08), 0.32, 0.03, null, 1);
+  const frontWing = extrudeSide(band(arcPts(AF, R, R + 0.075, Math.PI * 0.86, Math.PI * 0.12, 6), 0.035), 0.22, 0, null, 1);
+  const wings = place(group, shadeLow(merge([
     ...[-1, 1].map(s => rearWing.clone().translate(s * (RX - 0.01), 0, 0)),
     ...[-1, 1].map(s => frontWing.clone().translate(s * FX, 0, 0)),
-  ]), paint);
+  ]), 0.2, 0.6, [0.8, 0.8, 0.8]), paint);
   // the front suspension (dark): a stay from each cycle wing down to the wheel's upright, wishbones in to the body
   const bw = (z) => BW / 2 * narrow(z) - 0.02;
   for (const s of [-1, 1]) {
@@ -390,27 +397,27 @@ IDEA_MODELS_TOPUP_A.sevenroadster = (car) => {
       rod(0.03, 0.06, s * 0.36, 0.58, 1.26, 'x', 8),
       strut([s * bw(1.26), 0.5, 1.26], [s * 0.43, 0.66, 1.26], 0.015));
     // the headlamps on short stalks beside the bonnet, just over the cycle wings
-    bag.add(CHROME, rod(0.085, 0.12, s * 0.43, 0.7, 1.26, 'z', 12));
-    bag.add(LAMP, dsc(0.07, 0.02, s * 0.43, 0.7, 1.325, 12));
+    bag.add(CHROME, rod(0.085, 0.12, s * 0.43, 0.7, 1.26, 'z', 10));
+    bag.add(LAMP, dsc(0.07, 0.02, s * 0.43, 0.7, 1.325, 10));
     bag.add(AMBER, blob(0.035, 0.03, 0.03, s * 0.2, 0.3, 1.66));
-    bag.add(s > 0 ? BRAKE : TAIL, dsc(0.045, 0.03, s * 0.3, 0.44, -1.545, 10));
+    bag.add(TAIL, dsc(0.045, 0.03, s * 0.3, 0.44, -1.545, 10));
   }
   // the side exhaust (right flank): two pipes out of the bonnet's side into a long silencer along the tub
-  bag.add(ALLOY, rod(0.065, 1.0, -0.51, 0.3, 0.05, 'z', 10),
-    strut([-bw(0.95) + 0.03, 0.42, 0.95], [-0.51, 0.3, 0.55], 0.03), strut([-bw(0.8) + 0.03, 0.42, 0.8], [-0.51, 0.31, 0.5], 0.03),
+  bag.add(ALLOY, rod(0.06, 1.0, -0.505, 0.25, 0.05, 'z', 10),
+    strut([-bw(0.95) + 0.03, 0.4, 0.95], [-0.505, 0.25, 0.55], 0.03), strut([-bw(0.8) + 0.03, 0.4, 0.8], [-0.505, 0.26, 0.5], 0.03),
     // the fuel tank, lying across the tail, and its cap
-    rod(0.12, 0.62, 0, 0.7, -1.28, 'x', 12));
+    rod(0.12, 0.62, 0, 0.7, -1.28, 'x', 10));
   bag.add(CHROME, rod(0.035, 0.04, 0.2, 0.83, -1.28, 'y', 8));
   // the cockpit: a dark well, two empty seats, a wheel, a tiny aero screen in a chrome frame
   const rimY = 0.6 + BEV;
-  bag.add(BLACK, bx(BW - 0.16, 0.012, 1.4, 0, rimY + 0.004, -0.42),
-    bx(0.3, 0.3, 0.07, 0.17, rimY + 0.1, -1.0, -0.25), bx(0.3, 0.3, 0.07, -0.17, rimY + 0.1, -1.0, -0.25));
+  bag.add(BLACK, bx(BW - 0.16, 0.012, 1.4, 0, rimY + 0.004, -0.42));
+  bag.add(LEATHER, bx(0.32, 0.2, 0.08, 0.17, rimY + 0.06, -0.98, -0.35), bx(0.32, 0.2, 0.08, -0.17, rimY + 0.06, -0.98, -0.35));
   bag.add(TRIM, new THREE.TorusGeometry(0.12, 0.016, 4, 12).rotateX(-0.4).translate(0.17, rimY + 0.15, 0.05));
   bag.add(GLASS, bx(0.6, 0.2, 0.01, 0, rimY + 0.11, 0.36, -0.35));
   bag.add(CHROME, rod(0.012, 0.62, 0, rimY + 0.2, 0.33, 'x', 6));
   // the roundels on the flanks
   const decal = decalMat(roundel());
-  bag.add(decal, ...[-1, 1].map(s => flankDecal(0.3, 0.3, s * (BW / 2 + 0.004), 0.38, -0.3, s < 0)));
+  bag.add(decal, ...[-1, 1].map(s => flankDecal(0.25, 0.25, s * (BW / 2 + 0.004), 0.45, -0.32)));
   bag.done(group).get(decal).renderOrder = 1;
   for (const s of [-1, 1]) {
     wheel(group, R, 0.19, s * FX, AF, SILVER, 0.55);
@@ -442,31 +449,33 @@ IDEA_MODELS_TOPUP_A.talltourer = (car) => {
   const brass = new THREE.MeshLambertMaterial({ color: 0xc8a24a }), canvas = new THREE.MeshLambertMaterial({ color: 0xb8a67a, vertexColors: true });
   // the body: an open box from the scuttle to a short rounded tail, and the bonnet ahead of it
   const BW = 1.12;
-  const tubOutline = [[0.95, 0.5], [0.97, 1.14], [0.8, 1.3], [-1.35, 1.3], ...curve([-1.35, 1.3], [-1.62, 1.3], [-1.66, 1.1], [-1.66, 0.9], 2),
-    [-1.66, 0.6], [-1.58, 0.5]];
+  const tubOutline = [[0.85, 0.5], [0.87, 1.14], [0.7, 1.3], [-1.22, 1.3], ...curve([-1.22, 1.3], [-1.5, 1.3], [-1.56, 1.1], [-1.56, 0.9], 2),
+    [-1.56, 0.6], [-1.48, 0.5]];
   const body = place(group, shadeLow(merge([
     extrudeSide(tubOutline, BW, 0.04, null, 2, 0.08),
-    extrudeSide([[1.62, 0.7], [1.62, 1.1], [0.95, 1.14], [0.95, 0.7]], 0.64, 0.02, null, 2, 0.08),
+    extrudeSide([[1.62, 0.7], [1.62, 1.1], [0.85, 1.14], [0.85, 0.7]], 0.64, 0.02, null, 2, 0.08),
   ]), 0.5, 1.1, [0.72, 0.68, 0.64]), paint);
   // the wings (black): a thin band over each wheel, the front ones drooping to the front, running boards between
-  const fw = band([[0.62, 0.52], ...arcPts(AF, R, R + 0.12, Math.PI * 0.9, Math.PI * 0.18, 8), [1.78, 0.6]], 0.035);
+  const fw = band([[0.62, 0.52], ...arcPts(AF, R, R + 0.12, Math.PI * 0.9, Math.PI * 0.18, 8), [1.7, 0.64]], 0.035);
   const rw = band([[-1.62, 0.66], ...arcPts(AR, R, R + 0.12, Math.PI * 0.86, Math.PI * 0.12, 8), [-0.5, 0.52]], 0.035);
   for (const s of [-1, 1]) {
     bag.add(BLACK,
-      extrudeSide(fw, 0.26, 0.012, null, 1).translate(s * WX, 0, 0),
-      extrudeSide(rw, 0.26, 0.012, null, 1).translate(s * WX, 0, 0),
+      extrudeSide(fw, 0.26, 0, null, 1).translate(s * WX, 0, 0),
+      extrudeSide(rw, 0.26, 0, null, 1).translate(s * WX, 0, 0),
       bx(0.26, 0.035, 1.2, s * WX, 0.505, 0.06),
       // the headlamps' stalks, down to the front wings
       rod(0.02, 0.2, s * 0.6, 0.8, 1.66, 'y', 6),
       // the side lamps' housings on the scuttle
-      rod(0.055, 0.1, s * 0.6, 1.18, 0.88, 'z', 10));
+      rod(0.055, 0.1, s * 0.6, 1.18, 0.78, 'z', 10));
     bag.add(brass, rod(0.11, 0.16, s * 0.6, 0.99, 1.66, 'z', 12));
     bag.add(LAMP, dsc(0.09, 0.02, s * 0.6, 0.99, 1.745, 12));
-    bag.add(AMBER, dsc(0.04, 0.02, s * 0.6, 1.18, 0.935, 10));
+    bag.add(AMBER, dsc(0.04, 0.02, s * 0.6, 1.18, 0.835, 10));
+    // the splash apron from the bonnet's side out to the wing
+    bag.add(BLACK, bx(0.26, 0.02, 0.8, s * 0.44, 0.62, 1.22));
     // the windscreen's posts
-    bag.add(brass, rod(0.018, 0.66, s * 0.52, 1.6, 0.84, 'y', 6));
+    bag.add(brass, rod(0.018, 0.66, s * 0.52, 1.6, 0.74, 'y', 6));
     // the folded hood's bows, from the bundle down to the body's sides
-    bag.add(BLACK, strut([s * 0.5, 1.46, -1.4], [s * 0.53, 1.31, -0.98], 0.015));
+    bag.add(BLACK, strut([s * 0.5, 1.46, -1.28], [s * 0.53, 1.31, -0.86], 0.015));
   }
   // the chassis rails under the bonnet and the front crossmember the wings' tips meet; the front axle
   bag.add(BLACK, bx(0.1, 0.12, 3.2, 0.36, 0.52, 0.1), bx(0.1, 0.12, 3.2, -0.36, 0.52, 0.1), bx(1.42, 0.06, 0.08, 0, 0.57, 1.72),
@@ -475,15 +484,15 @@ IDEA_MODELS_TOPUP_A.talltourer = (car) => {
   bag.add(brass,
     extrudeSide([[1.6, 0.6], [1.74, 0.6], [1.74, 1.24], [1.6, 1.24]], 0.62, 0.02, null, 1, 0.03),
     rod(0.04, 0.08, 0, 1.3, 1.67, 'y', 8),
-    rod(0.018, 1.06, 0, 1.92, 0.84, 'x', 6), rod(0.018, 1.06, 0, 1.31, 0.84, 'x', 6));
+    rod(0.018, 1.06, 0, 1.92, 0.74, 'x', 6), rod(0.018, 1.06, 0, 1.31, 0.74, 'x', 6));
   bag.add(TRIM, bx(0.5, 0.52, 0.02, 0, 0.92, 1.763));
-  bag.add(GLASS, bx(1.02, 0.58, 0.012, 0, 1.615, 0.84));
-  bag.add(BLACK, bx(0.15, 0.15, 0.08, 0.42, 0.72, -1.72));
-  bag.add(BRAKE, dsc(0.055, 0.02, 0.42, 0.72, -1.765, 10));
+  bag.add(GLASS, bx(1.02, 0.58, 0.012, 0, 1.615, 0.74));
+  bag.add(BLACK, bx(0.15, 0.15, 0.08, 0.42, 0.72, -1.62));
+  bag.add(TAIL, dsc(0.055, 0.02, 0.42, 0.72, -1.665, 10));
   // the open top: a dark well, two bench seats' backs, the steering wheel on its column
-  bag.add(BLACK, bx(BW - 0.16, 0.01, 2.1, 0, 1.35, -0.3));
-  bag.add(LEATHER, bx(0.98, 0.3, 0.14, 0, 1.45, -0.05, -0.15), bx(0.98, 0.3, 0.14, 0, 1.46, -1.18, -0.15));
-  bag.add(BLACK, new THREE.TorusGeometry(0.17, 0.02, 4, 14).rotateX(-0.9).translate(0.27, 1.6, 0.42), strut([0.27, 1.6, 0.42], [0.27, 1.3, 0.8], 0.018));
+  bag.add(BLACK, bx(BW - 0.16, 0.01, 1.95, 0, 1.35, -0.33));
+  bag.add(LEATHER, bx(0.98, 0.3, 0.14, 0, 1.45, -0.15, -0.15), bx(0.98, 0.3, 0.14, 0, 1.46, -1.06, -0.15));
+  bag.add(BLACK, new THREE.TorusGeometry(0.17, 0.02, 4, 14).rotateX(-0.7).translate(0.27, 1.5, 0.38), strut([0.27, 1.5, 0.38], [0.27, 1.3, 0.66], 0.018));
   // the folded hood: a bundle of canvas lying across the back, bunched in folds (vertex lumps, darker in the creases)
   const hood = new THREE.CylinderGeometry(0.15, 0.15, 1.06, 12, 6).rotateZ(Math.PI / 2);
   { const pos = hood.attributes.position, shade = new Float32Array(pos.count * 3);
@@ -496,12 +505,12 @@ IDEA_MODELS_TOPUP_A.talltourer = (car) => {
       shade.set([c, c, c], i * 3);
     }
     hood.setAttribute('color', new THREE.Float32BufferAttribute(shade, 3)); hood.computeVertexNormals(); }
-  place(group, hood.translate(0, 1.46, -1.4), canvas);
+  place(group, hood.translate(0, 1.46, -1.28), canvas);
   // dust low on the body's flanks
   const dusty = decalMat(dust(), 0.9);
-  bag.add(dusty, ...[-1, 1].map(s => flankDecal(2.3, 0.34, s * (BW / 2 + 0.004), 0.68, -0.38, s < 0)));
+  bag.add(dusty, ...[-1, 1].map(s => flankDecal(2.2, 0.34, s * (BW / 2 + 0.004), 0.68, -0.33, s < 0)));
   bag.done(group).get(dusty).renderOrder = 1;
-  for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, R, 0.17, s * WX, z, SILVER, 0.5);
+  for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, R, 0.17, s * WX, z, WOOD, 0.62);
   group.userData = {
     body, animate: () => {},
     livery: (evil) => { brass.color.setHex(evil ? 0x8c7a46 : 0xc8a24a); canvas.color.setHex(evil ? 0x3a3631 : 0xb8a67a); },
