@@ -62,6 +62,7 @@ export const IDEA_MODELS_BATCH_E5 = {
     const FZ = NOSE + BEV, BZ = TAILZ - BEV;
     const body = place(group, shared(k + 'body', () => shadeBy(merge([
       extrudeSide(outline, BW, BEV, TAPER, 2, ACROSS),
+      bx(1.38, 0.024, 1.36, 0, ROOF + BEV + 0.002, -0.4), // the roof panel's lip: it overhangs the screen and the rear glass, so their edges do not show over the roof at grazing angles
       // a flat flare band round each wheel (no well cut: it stands on the flank, the tyre outside it)
       ...[-1, 1].flatMap(s => [AF, AR].map(z => flare(z, R, R + 0.03, R + 0.13, 0.12).translate(s > 0 ? HALF + 0.1 : -HALF - 0.02, 0, 0))),
     ]), low(0.28, 0.85, [0.62, 0.58, 0.56]))), paint);
