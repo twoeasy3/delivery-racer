@@ -708,6 +708,5 @@ export const autumn = ({ theme, offRoads, beside, inJunction, levelGroup }) => {
       levelGroup.add(fall);
     }
   }
-  console.warn('autumn-scenery ' + JSON.stringify({ ms: Math.round(performance.now() - T0), trees: maples + pines, pines, lakes: lakes.map(l => [Math.round(l.s), l.cells.length, Math.round(l.level)]), ...placed, sawmill: !!placed.sawmill }));
   levelGroup.userData.autumn = { trees: maples + pines, pines, lakes: lakes.length, ...placed };
 };
