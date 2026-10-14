@@ -205,7 +205,7 @@ export const IDEA_MODELS_BATCH_D3 = {
   sprinthatch: (car) => {
     const group = new THREE.Group();
     const R = 0.31, TW = 0.24, AF = 1.12, AR = -1.0, WX = car.hw - TW / 2;
-    const BEV = 0.05, ACROSS = 0.09, BW = 1.5, HALF = BW / 2;
+    const BEV = 0.05, ACROSS = 0.09, BW = 1.68, HALF = BW / 2;
     const NOSE = 1.86, TAILZ = -1.84, AY = 0.3, BELT = 0.9, ROOF = 1.26;
     const k = 'sh';
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
@@ -222,7 +222,7 @@ export const IDEA_MODELS_BATCH_D3 = {
     const FZ = NOSE + BEV, BZ = TAILZ - BEV;
     const body = place(group, shared(k + 'body', () => shadeBy(merge([
       extrudeSide(outline, BW, BEV, TAPER, 2, ACROSS),
-      bx(1.0, 0.04, 0.18, 0, 0.99, BZ + 0.03, -0.2), // the lip spoiler on the tail's top
+      bx(1.15, 0.04, 0.18, 0, 0.99, BZ + 0.03, -0.2), // the lip spoiler on the tail's top
       // a flat flare band round each wheel (no well cut: it stands on the flank, the tyre outside it)
       ...[-1, 1].flatMap(s => [AF, AR].map(z => flare(z, R, R + 0.03, R + 0.1, 0.06).translate(s > 0 ? HALF + 0.06 : -HALF + 0.0, 0, 0))),
     ]), low(0.28, 0.85, [0.6, 0.56, 0.54]))), paint);
@@ -237,27 +237,27 @@ export const IDEA_MODELS_BATCH_D3 = {
       ], HALF, TAPER, LIFT),
     ]);
     parts(group, k + 'black', TRIM, () => [
-      bx(0.9, 0.09, 0.03, 0, 0.47, FZ - 0.005),          // the slim grille
-      bx(1.54, 0.1, 0.12, 0, 0.36, FZ + 0.02),           // the front bumper
-      ...[-1, 1].map(s => bx(0.36, 0.14, 0.03, s * 0.53, 0.5, FZ - 0.02)), // the lamps' dark bezels
-      bx(1.2, 0.05, 0.2, 0, 0.28, FZ + 0.06),            // the air dam's lip
-      bx(1.1, 0.05, 0.16, 0, 0.3, BZ - 0.04),            // the rear diffuser lip
-      bx(1.56, 0.1, 0.1, 0, 0.44, BZ - 0.01),            // the rear bumper
+      bx(1.0, 0.09, 0.03, 0, 0.47, FZ - 0.005),          // the slim grille
+      bx(1.72, 0.1, 0.12, 0, 0.36, FZ + 0.02),           // the front bumper
+      ...[-1, 1].map(s => bx(0.36, 0.14, 0.03, s * 0.6, 0.5, FZ - 0.02)), // the lamps' dark bezels
+      bx(1.35, 0.05, 0.2, 0, 0.28, FZ + 0.06),            // the air dam's lip
+      bx(1.25, 0.05, 0.16, 0, 0.3, BZ - 0.04),            // the rear diffuser lip
+      bx(1.74, 0.1, 0.1, 0, 0.44, BZ - 0.01),            // the rear bumper
       ...[-1, 1].map(s => bx(0.1, 0.07, 0.14, s * (gx(0.93) + 0.02), 0.92, 0.42)), // the mirrors, on the door tops by the screen's foot
     ]);
     // lamps: slim square headlamps either side of the grille, amber under their outer ends; a tail lamp band each side
-    parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => bx(0.3, 0.1, 0.04, s * 0.53, 0.5, FZ - 0.005)));
-    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.4, 0.13, 0.04, s * 0.5, 0.74, BZ + 0.005)));
-    parts(group, k + 'brake', BRAKE, () => [-1, 1].map(s => bx(0.15, 0.09, 0.04, s * 0.27, 0.74, BZ)));
+    parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => bx(0.3, 0.1, 0.04, s * 0.6, 0.5, FZ - 0.005)));
+    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.4, 0.13, 0.04, s * 0.56, 0.74, BZ + 0.005)));
+    parts(group, k + 'brake', BRAKE, () => [-1, 1].map(s => bx(0.15, 0.09, 0.04, s * 0.3, 0.74, BZ)));
     parts(group, k + 'amber', AMBER, () => [
-      ...[-1, 1].map(s => bx(0.15, 0.05, 0.04, s * 0.62, 0.42, FZ - 0.005)),
-      ...[-1, 1].map(s => bx(0.12, 0.05, 0.04, s * 0.65, 0.6, BZ + 0.005)),
+      ...[-1, 1].map(s => bx(0.15, 0.05, 0.04, s * 0.7, 0.42, FZ - 0.005)),
+      ...[-1, 1].map(s => bx(0.12, 0.05, 0.04, s * 0.73, 0.6, BZ + 0.005)),
     ]);
     // a racing roundel on each door
     const num = new THREE.MeshLambertMaterial({ map: roundel('8'), transparent: true, depthWrite: false });
     const X = HALF + 0.006;
     const marks = place(group, shared(k + 'marks', () => merge([
-      decal(0.3, 0.3, X, 0.62, 0.0, 'x'), decal(0.3, 0.3, -X, 0.62, 0.0, '-x'),
+      decal(0.58, 0.58, X, 0.6, 0.0, 'x'), decal(0.58, 0.58, -X, 0.6, 0.0, '-x'),
     ])), num);
     marks.renderOrder = 1;
     for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, k, R, TW, s * WX, z);
@@ -272,9 +272,9 @@ export const IDEA_MODELS_BATCH_D3 = {
   // and an idler) under the high bed. The canvas is a drawn picture, soft-edged mottling and weave.
   halftrack: (car) => {
     const group = new THREE.Group();
-    const R = 0.52, TW = 0.3, AF = 2.2, HALF = 0.9, BW = HALF * 2, WX = 0.86;
+    const R = 0.52, TW = 0.3, AF = 2.05, HALF = 1.18, BW = HALF * 2, WX = car.hw - TW / 2;
     const BEV = 0.06, ACROSS = 0.1;
-    const NOSE = 3.14, TAILZ = -2.96, BOT = 0.62, BED = 1.0, DECK = 1.62, ROOF = 2.15, HOOD = 1.5;
+    const NOSE = 2.9, TAILZ = -2.6, BOT = 0.62, BED = 1.0, DECK = 1.62, ROOF = 2.15, HOOD = 1.5;
     const k = 'ht';
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
     const TAPER = [DECK, ROOF, 0.06];
@@ -290,7 +290,7 @@ export const IDEA_MODELS_BATCH_D3 = {
     const body = place(group, shared(k + 'body', () => shadeBy(merge([
       extrudeSide(outline, BW, BEV, TAPER, 1, ACROSS),
       // the grille's slots, upright bars in the paint standing in the dark grille panel
-      ...[-2, -1, 0, 1, 2].map(i => bx(0.06, 0.5, 0.04, i * 0.16, 1.0, FZ + 0.012)),
+      ...[-2, -1, 0, 1, 2].map(i => bx(0.08, 0.5, 0.04, i * 0.21, 1.0, FZ + 0.012)),
       // a flat flare band over each front wheel (it stands on the flank; the tyre comes through its hole)
       ...[-1, 1].map(s => flare(AF, R, R + 0.03, R + 0.13, 0.08).translate(s > 0 ? HALF + 0.07 : -HALF + 0.01, 0, 0)),
     ]), low(0.5, 1.5, [0.62, 0.58, 0.5]))), paint);
@@ -300,10 +300,10 @@ export const IDEA_MODELS_BATCH_D3 = {
     const canvasMat = new THREE.MeshLambertMaterial({ map: canvasMap, side: THREE.DoubleSide });
     place(group, shared(k + 'tilt', () => {
       const shape = new THREE.Shape();
-      shape.moveTo(-0.85, DECK - 0.05); shape.lineTo(0.85, DECK - 0.05); shape.lineTo(0.85, DECK + 0.02);
-      shape.absellipse(0, DECK + 0.02, 0.85, 0.8, 0, Math.PI, false);
-      shape.lineTo(-0.85, DECK - 0.05);
-      const geo = plain(new THREE.ExtrudeGeometry(shape, { depth: 2.5, bevelEnabled: false, curveSegments: 10 }).translate(0, 0, TAILZ + 0.02));
+      shape.moveTo(-1.1, DECK - 0.05); shape.lineTo(1.1, DECK - 0.05); shape.lineTo(1.1, DECK + 0.02);
+      shape.absellipse(0, DECK + 0.02, 1.1, 0.8, 0, Math.PI, false);
+      shape.lineTo(-1.1, DECK - 0.05);
+      const geo = plain(new THREE.ExtrudeGeometry(shape, { depth: 2.3, bevelEnabled: false, curveSegments: 10 }).translate(0, 0, TAILZ + 0.02));
       return geo;
     }), canvasMat);
     // the glass: the windscreen and a side window each side
@@ -318,26 +318,26 @@ export const IDEA_MODELS_BATCH_D3 = {
     // dark parts: the grille panel, the bumper bar and the roller's brackets, the underbody (so there is no void under
     // the bonnet, cab or bed)
     parts(group, k + 'black', TRIM, () => [
-      bx(0.96, 0.62, 0.03, 0, 1.0, FZ),
-      bx(1.96, 0.16, 0.16, 0, 0.76, FZ + 0.06),
-      ...[-1, 1].map(s => bx(0.1, 0.1, 0.26, s * 0.78, 0.77, FZ + 0.16)),
-      bx(1.4, 0.34, 3.2, 0, 0.45, 1.5),
-      bx(1.1, 0.56, 2.4, 0, 0.72, -1.7),
+      bx(1.3, 0.62, 0.03, 0, 1.0, FZ),
+      bx(2.55, 0.16, 0.16, 0, 0.76, FZ + 0.06),
+      ...[-1, 1].map(s => bx(0.1, 0.1, 0.26, s * 1.0, 0.77, FZ + 0.16)),
+      bx(1.8, 0.34, 3.0, 0, 0.45, 1.4),
+      bx(1.5, 0.56, 2.1, 0, 0.72, -1.55),
     ]);
     // the roller: a steel drum across the front on the brackets
-    place(group, shared(k + 'roller', () => new THREE.CylinderGeometry(0.13, 0.13, 1.7, 10).rotateZ(Math.PI / 2)), CHROME, 0, 0.77, FZ + 0.2);
+    place(group, shared(k + 'roller', () => new THREE.CylinderGeometry(0.13, 0.13, 2.3, 10).rotateZ(Math.PI / 2)), CHROME, 0, 0.77, FZ + 0.2);
     // lamps: round headlamps in chrome rims either side of the grille, ambers under them; tail lamps and ambers on the bed
-    parts(group, k + 'rim', CHROME, () => [-1, 1].map(s => dsc(0.18, 0.03, s * 0.68, 1.22, FZ + 0.01, 0, 14)));
-    parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => dsc(0.14, 0.03, s * 0.68, 1.22, FZ + 0.02, 0, 14)));
-    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.16, 0.16, 0.03, s * 0.76, 1.32, BZ - 0.006)));
+    parts(group, k + 'rim', CHROME, () => [-1, 1].map(s => dsc(0.18, 0.03, s * 0.9, 1.22, FZ + 0.01, 0, 14)));
+    parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => dsc(0.14, 0.03, s * 0.9, 1.22, FZ + 0.02, 0, 14)));
+    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.16, 0.16, 0.03, s * 1.0, 1.32, BZ - 0.006)));
     parts(group, k + 'amber', AMBER, () => [
-      ...[-1, 1].map(s => bx(0.16, 0.07, 0.03, s * 0.72, 0.98, FZ + 0.012)),
-      ...[-1, 1].map(s => bx(0.16, 0.07, 0.03, s * 0.76, 1.15, BZ - 0.006)),
+      ...[-1, 1].map(s => bx(0.16, 0.07, 0.03, s * 0.95, 0.98, FZ + 0.012)),
+      ...[-1, 1].map(s => bx(0.16, 0.07, 0.03, s * 1.0, 1.15, BZ - 0.006)),
     ]);
     // the front wheels: tall and chunky, against the body's sides
     for (const s of [-1, 1]) wheel(group, k, R, TW, s * WX, AF);
     // the tracks, a belt on a plate, with their wheels
-    const ZA = -2.3, ZB = -0.97, TR = 0.42, TI = 0.33, TX = 0.78, BELTW = 0.36;
+    const ZA = -2.0, ZB = -0.97, TR = 0.42, TI = 0.33, TX = 0.98, BELTW = 0.4;
     const stad = (r, path) => {
       path.moveTo(ZA, TR - r); path.lineTo(ZB, TR - r);
       path.absarc(ZB, TR, r, -Math.PI / 2, Math.PI / 2, false);
@@ -363,7 +363,7 @@ export const IDEA_MODELS_BATCH_D3 = {
     });
     const plate = shared(k + 'plate', () => plain(new THREE.ExtrudeGeometry(stad(TI + 0.01, new THREE.Shape()), { depth: BELTW - 0.06, bevelEnabled: false, curveSegments: 8 }).rotateY(-Math.PI / 2).translate((BELTW - 0.06) / 2, 0, 0)));
     const beltMat = new THREE.MeshLambertMaterial({ map: chainTex() });
-    const roadWheel = shared(k + 'road', () => new THREE.CylinderGeometry(0.16, 0.16, 0.06, 10).rotateZ(Math.PI / 2));
+    const roadWheel = shared(k + 'road', () => new THREE.CylinderGeometry(0.14, 0.14, 0.06, 10).rotateZ(Math.PI / 2));
     const bigWheel = shared(k + 'sprocket', () => new THREE.CylinderGeometry(0.27, 0.27, 0.06, 12).rotateZ(Math.PI / 2));
     for (const s of [-1, 1]) {
       place(group, chain, beltMat, s * TX, 0, 0);
@@ -371,7 +371,7 @@ export const IDEA_MODELS_BATCH_D3 = {
       const xo = s * (TX + BELTW / 2 + 0.01);
       place(group, bigWheel, HUB, xo, TR, ZB);
       place(group, bigWheel, HUB, xo, TR, ZA);
-      for (const z of [-1.3, -1.63, -1.96]) place(group, roadWheel, HUB, xo, 0.2, z);
+      for (const z of [-1.2, -1.5, -1.8]) place(group, roadWheel, HUB, xo + s * 0.015, 0.2, z);
     }
     group.userData = { body, animate: () => {}, livery: () => {} };
     return group;
