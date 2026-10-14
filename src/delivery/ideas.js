@@ -48,6 +48,8 @@
 import { IDEA_CARS_TOPUP_A } from './ideasTopupA.js'; // (the top-up's batch A: four classic road cars)
 
 // ============================================================================
+import { IDEAS_TOPUP_B } from './ideasTopupB.js';
+
 export const IDEA_CARS = [
   { id: 'threewheeler', name: 'Three-Wheeler', basedOn: 'Reliant Robin', model: 'threewheeler', color: 0xe0902a, evilColor: 0x3d4a2a,
     hw: 0.71, hl: 1.67, height: 1.37, note: 'One wheel at the front. It leans in a corner, and sometimes keeps going.',
@@ -177,5 +179,6 @@ export const IDEA_CARS = [
     hw: 0.95, hl: 2.85, height: 2.4, note: 'No doors, three rows of seats climbing under a canopy, and a chair for the tracker out on the bull bar.',
     maxSpeed: 28, accel: 8, agility: 0.95, crossing: 1, health: 240, mass: 2, sound: 'suv' },
   ...IDEA_CARS_TOPUP_A,
+  ...IDEAS_TOPUP_B, // (the top-up batch B: a removals van, a bin lorry, a jeepney; ideasTopupB.js)
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
