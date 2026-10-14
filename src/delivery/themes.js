@@ -199,6 +199,13 @@ export const THEMES = {
   tuscany: { sky: 0xb4d6ee, ground: 0xc4b05c, road: 0x6a6762, scenery: 'tuscany', line: 0xf4efdf, terrain: { gentle: 0xa9a45a, steep: 0x8b7a55, rough: 0.8, flat: 4, rise: 45 },
     target: { height: 4.2, beam: true }, // (up over the cypress)
     light: { sky: 0xfff1d6, ground: 0x8a7446, ambient: 1.25, sun: 0xffe2b0, sunlight: 1.2 } },
+  // desert: desert dunes, Dakar-rally style (render/themes/desert.js): the land (terrain) a sea of orange-gold dunes, lighter
+  // on the windward faces and darker in the lee, rippled by the wind; a pale hot hazy sky with a pale sun in it; rock arches,
+  // mesas and hoodoos; rally service camps of tents, flags and trucks every so often; camels, dry scrub, an oasis; a pale
+  // sandy track with tyre ruts, unmarked; sand blowing across it, thicker in a crosswind (a level's "crosswinds")
+  desert: { sky: 0xf0e4c6, ground: 0xe3aa5e, road: 0xe6d3a6, scenery: 'desert', unmarked: true, washboard: 'sand', terrain: { gentle: 0xf0bb68, steep: 0xb9602c, rough: 1.5, flat: 12, rise: 80 },
+    target: { offset: 2, height: 4.6, beam: true },
+    light: { sky: 0xfff3d8, ground: 0xc58c4e, ambient: 1.55, sun: 0xffe6b8, sunlight: 1.5 } },
 };
 
 // ---- the themes' own obstacles ---------------------------------------------------------------------------
@@ -228,6 +235,7 @@ const OBSTACLES = {
   mumbai: { bale: 'sackStack' },
   beach: { bale: 'beachBall' },
   hell: { cone: 'brimstone' },
+  desert: { crate: 'jerryStack', bale: 'tentRoll', cone: 'rallyFlag' }, // (jerrycans stacked on a pallet; a rolled tent; a rally marker flag in a heap of sand)
   fallout: { crate: 'wasteDrum' }, // (a yellow drum of waste, the trefoil on it; the cones and barriers are a checkpoint's own)
   tuscany: { crate: 'wineCrates', bale: 'hayRoll', cone: 'terracottaPot' }, // (a stack of wine crates; a round hay bale on its side; a pot with a lemon tree. The roadworks' cones are the hazard's own)
   hongkong: { crate: 'hawkerCart', bale: 'bagStack' }, // (a hawker's cart under its awning; a heap of red-white-blue bags; the cones are roadworks and stay)

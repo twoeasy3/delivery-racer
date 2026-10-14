@@ -31,6 +31,7 @@
   "fruit": { "name": "New Neighbour's Fruit Basket", "blurb": "A fruit basket from the new neighbour." },
   "radio": { "name": "Grandad's Repaired Radio", "blurb": "A repaired radio, back to its owner." },
   "winecase": { "name": "Case of Chianti", "blurb": "A case of Chianti, six bottles, not a drop to spill." },
+  "waterjugs": { "name": "Crate of Water Jugs", "blurb": "A crate of blue water jugs for the rally camp, slopping." },
   "parcel": { "name": "Ticking Parcel", "blurb": "A parcel that ticks.", "states": ["Ticking","Fuse lit","About to blow"] },
   "porcupine": { "name": "Porcupine", "blurb": "A porcupine in a mood.", "states": ["Sniffing about","Balled up","Rabid"] },
   "bees": { "name": "Crate of Bees", "blurb": "A crate of bees, and not happy.", "states": ["Humming","Rattling","Swarming"] },
@@ -73,5 +74,6 @@
   "nestedboxes": { "name": "Boxes within Boxes", "blurb": "A huge present with a smaller box inside, and so on.", "states": ["Wrapped","Opening","Gotcha"] },
   "spider": { "name": "Spider on a Fishing Line", "blurb": "A rubber spider dangled from a rod, price tag and all.", "states": ["Hanging","Bobbing","Dropped"] },
   "stolenbust": { "name": "Stolen Marble Bust", "blurb": "A marble bust under a dust sheet, stolen and not happy about it.", "states": ["Under a sheet","Sheet slipping","Glaring"] },
-  "ink": { "name": "Disappearing Ink", "blurb": "A bottle of disappearing ink and a quill, on a blotter.", "states": ["Corked","Blotting","Splashing"] }
+  "ink": { "name": "Disappearing Ink", "blurb": "A bottle of disappearing ink and a quill, on a blotter.", "states": ["Corked","Blotting","Splashing"] },
+  "scarabs": { "name": "Crate of Scarabs", "blurb": "A nailed-down crate of scarab beetles that want out.", "states": ["Lid nailed down","Scuttling inside","Swarming out"] }
 }

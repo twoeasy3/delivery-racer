@@ -50,6 +50,7 @@ const JUNK_NAMES = { umbrella: 'beach umbrellas', surfboard: 'surfboards', coole
   directorChair: 'director\'s chairs', cameraDolly: 'camera dollies', mooringPosts: 'mooring posts', fuelDrum: 'fuel drums', popcornCart: 'popcorn carts', barrel: 'barrels',
   chairStack: 'stacks of chairs', riceBasket: 'baskets of rice', wasteDrum: 'drums of waste', present: 'presents', toyDrum: 'toy drums', cafeTable: 'cafe tables', wheelieBin: 'wheelie bins', snowdrift: 'heaps of snow',
   wineCrates: 'stacks of wine crates', hayRoll: 'hay bales', terracottaPot: 'terracotta pots', sackStack: 'stacks of sacks', hawkerCart: 'hawkers\' carts', bagStack: 'heaps of bags', beachBall: 'beach balls', tumbleweed: 'tumbleweeds', flagStand: 'flags on stands', brimstone: 'spikes of brimstone', lavaRock: 'lava boulders', mine: 'sea mines' };
+Object.assign(JUNK, { jerryStack: {}, tentRoll: {}, rallyFlag: {} }); Object.assign(JUNK_NAMES, { jerryStack: 'stacks of jerrycans', tentRoll: 'rolled tents', rallyFlag: 'rally marker flags' }); // (the desert's)
 // the kinds that drift on a level (not the darting ones: those are another card), as its theme has them
 const driftingKinds = (level) => [...new Set((level.drifters || []).filter(d => d.pattern !== 'dart').map(d => themedKind(level.theme, d.kind || 'cone', true)))].filter(k => JUNK[k]);
 // ...and the kinds that dart about on it (a placed obstacle with drift: 'dart', or drifters of that pattern)
@@ -1124,6 +1125,7 @@ const DRESS = [ // [kind, name, what it stands in for, where, the card's colour]
   ['wineCrates', 'Wine crates', 'crate', 'Tuscany', 0xe6c78e], ['hayRoll', 'Round hay bale', 'bale', 'Tuscany', 0xdcb953], ['terracottaPot', 'Terracotta pot', 'cone', 'Tuscany', 0xc8622c],
   ['hawkerCart', 'Hawker\'s cart', 'crate', 'Hong Kong', 0xd8262b], ['bagStack', 'Heap of bags', 'bale', 'Hong Kong', 0x1f5fd0],
 ];
+DRESS.push(['jerryStack', 'Stack of jerrycans', 'crate', 'the desert', 0xc8321f], ['tentRoll', 'Rolled tent', 'bale', 'the desert', 0xc4452a], ['rallyFlag', 'Rally marker flag', 'cone', 'the desert', 0xd8262b]);
 // the kinds of plain obstacle a level's road has, as its theme has them
 const dressingKinds = (l) => new Set([...(l.obstacles || []).map(o => themedKind(l.theme, o.kind || 'barrier')), ...(l.shoulderRows || []).map(r => themedKind(l.theme, r.kind || 'cone')),
   ...(l.drifters || []).map(d => themedKind(l.theme, d.kind || 'cone', true))]);
