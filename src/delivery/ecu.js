@@ -68,6 +68,8 @@ export const X_DEFAULT = 5;
 // (a car's own `delivery` field in cars.js wins over it; a car in neither: 1), then run
 // `node scripts/ecu-tables.mjs --delivery` to write each ECU's figure into ecus.json by the equal steps.
 export const DELIVERY = {
+  // the Legendary cars: their base car's
+  'l-commuter': 1.0, 'l-sport': 0.75, 'l-miata': 0.7, 'l-lowrider': 0.85, 'l-wagon': 1.2, 'l-lovebus': 1.3,
   // mail, courier and delivery vehicles: built to hand things over (the best)
   postvan: 1.6, courier: 1.6, milkfloat: 1.55, keitruck: 1.5, floatvan: 1.5, 'earned-apc': 1.45, dampervan: 1.4,
   // vans and people carriers: a big side door, room to reach the parcels
@@ -82,7 +84,7 @@ export const DELIVERY = {
   // the sixth batch: a roomy coach, a quiet city EV and crossover, an open two-seater tourer, a hypercar with no room
   coach: 1.2, cityev: 1.0, coupecross: 1.0, blower: 0.8, horseshoe: 0.6,
   // everyday small cars: as today, or a little under
-  commuter: 1.0, 'l-commuter': 1.0, evsaloon: 1.0, teardrop: 0.95, mini: 0.9, hothatch: 0.9, pandacoupe: 0.9, herald: 0.9, tank: 0.9,
+  commuter: 1.0, evsaloon: 1.0, teardrop: 0.95, mini: 0.9, hothatch: 0.9, pandacoupe: 0.9, herald: 0.9, tank: 0.9,
   showdown: 0.9, 'earned-ufo': 0.9,
   // style over space: low, loud, two seats or a cramped cockpit
   rally: 0.85, lowrider: 0.85, gullwing: 0.85, pony: 0.85, muscle: 0.85, superlowrider: 0.8, classicgt: 0.8, buggy: 0.8,

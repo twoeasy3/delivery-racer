@@ -592,6 +592,21 @@ export const FILLER_CARS = [
   filler(1, { id: 'l-commuter', name: 'Legendary Commuter', basedOn: 'the Commuter', model: 'commuter', legend: 'commuter', blue: true,
     color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 0.85, hl: 1.85, height: 1.45, note: 'The starter car, made a legend: it has won everything there is to win, and it shows.',
     maxSpeed: 34, accel: 14, agility: 1.15, crossing: 0.7, health: 111, mass: 1, sound: 'commuter', noPacks: true }, 'legendary'),
+  filler(2, { id: 'l-sport', name: 'Legendary Sportscompact', basedOn: 'the Sportscompact', model: 'sport', legend: 'sport', blue: true,
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 0.85, hl: 1.9, height: 1.1, note: 'The street racer in its finest hour: every trophy on the shelf and a wreath to show for it.',
+    maxSpeed: 41, accel: 17, agility: 1.15, crossing: 0.45, health: 104, mass: 1, sound: 'sport', noPacks: true }, 'legendary'),
+  filler(4, { id: 'l-miata', name: 'Legendary Sportscar', basedOn: 'the Sportscar', model: 'miata', legend: 'miata', blue: true,
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 0.85, hl: 1.95, height: 1.1, note: 'The open two-seater that won the lot, and wears the laurels on its flanks.',
+    maxSpeed: 52, accel: 19, agility: 1.15, crossing: 0.35, health: 176, mass: 1, sound: 'miata', noPacks: true }, 'legendary'),
+  filler(2, { id: 'l-lowrider', name: 'Legendary Lowrider', basedOn: 'the Lowrider', model: 'lowrider', legend: 'lowrider', blue: true,
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1, hl: 2.5, height: 1.1, note: 'Low, slow and crowned: the cruiser every boulevard bows to.',
+    maxSpeed: 37, accel: 13, agility: 1.15, crossing: 0.25, health: 156, mass: 1, sound: 'lowrider', noPacks: true }, 'legendary'),
+  filler(2, { id: 'l-wagon', name: 'Legendary Family Wagon', basedOn: 'the Family Wagon', model: 'wagon', legend: 'wagon', blue: true,
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1.05, hl: 2.4, height: 1.9, note: 'The school run, won outright: the most decorated wagon on the street.',
+    maxSpeed: 36, accel: 13, agility: 1.15, crossing: 0.7, health: 182, mass: 1, sound: 'wagon', noPacks: true }, 'legendary'),
+  filler(2, { id: 'l-lovebus', name: 'Legendary Love Bus', basedOn: 'the Love Bus', model: 'lovebus', legend: 'lovebus', blue: true,
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 1, hl: 2.3, height: 2.1, note: 'Peace, love and first place: the bus that won the summer.',
+    maxSpeed: 34, accel: 11, agility: 1.15, crossing: 0.65, health: 215, mass: 1, sound: 'lovebus', noPacks: true }, 'legendary'),
 ];
 applyNames('car', FILLER_CARS);
 // is a blueprint car unlocked (its first X blueprints, ecu.js)? Set by ecu.js when it loads (null: none is, but one in

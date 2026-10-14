@@ -30,6 +30,11 @@ export const LEGEND = { tilt: 20, lean: 'front', cell: 0.07,
 // A spot is [z, y, size] or [z, y, size, tilt, lean] (its own turn: degrees, 'front' or 'rear'; else LEGEND's); a car's
 // entry may list several spots (wreaths on each flank, all one mesh a side).
 export const LEGEND_DECAL = {
+  sport: [[-1.18, 0.38, 1.3]],
+  miata: [[-1.21, 0.34, 1.15]],
+  lowrider: [[-1.5, 0.38, 1.3]],
+  wagon: [[-1.44, 0.48, 1.7]],
+  lovebus: [[-1.47, 0.42, 1.45]],
   commuter: [[-1.15, 0.32, 1.1]], // (HUGE, the owner: centred on the rear wheel, a laurel arch over it across most of the rear 30% (z -1.7 to -0.6); carved by the tyre, the waist and the tail's turn)
 };
 // OTHER PLACEMENTS to compare (the owner, 14-Oct: "Try some different placements of the wreath please"), by the base
@@ -54,11 +59,21 @@ export const LEGEND_PLACEMENTS = {
 // the wreath never shows above this height (m), by the base car's MODEL: the waist, so no stray bits land on the
 // pillars and the frames round the side windows
 export const LEGEND_WAIST = {
-  commuter: 0.8,
+  commuter: 0.8, sport: 0.8, miata: 0.84, lowrider: 0.84, wagon: 1.18, lovebus: 1.3,
 };
-// the trim made gold, by the base car's MODEL: the colours (hex) of the materials it is drawn in
+// the trim, by the base car's MODEL, by the colours (hex) of the materials its parts are drawn in (as the model builds
+// them, its Good livery): `gold` the metal, chrome and trim (bumpers, grille, lamp rims, sills, hubs); `black` a second
+// paint (a two-tone's other colour, a stripe), made the body's black; `goldMap` true: every Lambert material with a
+// picture and a white colour is tinted gold (a taxi's chequers). Everything else (glass, lamps, tyres) is left. The ONE
+// scheme (the owner, 14-Oct: "Let's keep one colour scheme for all of them"): Good and Evil alike, so the model's own
+// livery switch is turned off for a Legendary car (its Good second colours, then these).
 export const LEGEND_TRIM = {
-  commuter: [0x232529, 0xc4c8ce], // (the black bumpers, mouth, grille and sill skirt; the silver hub caps)
+  commuter: { gold: [0x232529, 0xc4c8ce] }, // (the black bumpers, mouth, grille and sill skirt; the silver hub caps)
+  sport: { gold: [0x1b1d21, 0x4a4e56], black: [0xf4f4f0] }, // (the dark bumpers, splitter and wing; the hubs; its white stripes black)
+  miata: { gold: [0x232529, 0xc4c8ce], black: [0xf4f4f4] }, // (bumpers and trim; hubs; its stripes black)
+  lowrider: { gold: [0xe2b64a, 0xd9dce1] }, // (its gold trim and its chrome: bumpers, spokes, side spears)
+  wagon: { gold: [0x1b1d21, 0xd9dce1, 0xc4c8ce] }, // (the dark bumpers and trim, the chrome, the hubs)
+  lovebus: { gold: [0xd9dce1, 0xc4c8ce], black: [0xf6f3ea] }, // (the chrome bumpers and the hub caps; its white upper half black)
 };
 const LIFT = 0.006; // (the wreath's offset out from the paint: past the z-fight check's 4 mm, and polygon offset besides)
 const FACING = 0.7; // (a point shows where the paint's normal is within about 45 degrees of straight out sideways)
@@ -129,9 +144,10 @@ const wreathMaterial = () => {
   return decalMat;
 };
 const GOLD = new Map(); // the gold version of each trim material (kept: the base car's shared materials stay shared)
-const goldFor = (m) => {
+const goldFor = (m, keepMap = false) => {
   if (!GOLD.has(m)) {
-    const g = new THREE.MeshPhongMaterial({ color: LEGEND_GOLD, emissive: 0x1c1404, specular: 0x9a8040, shininess: 45, side: m.side, vertexColors: !!m.vertexColors });
+    const g = new THREE.MeshPhongMaterial({ color: LEGEND_GOLD, emissive: 0x1c1404, specular: 0x9a8040, shininess: 45, side: m.side, vertexColors: !!m.vertexColors,
+      map: keepMap ? m.map : null, transparent: m.transparent, alphaTest: m.alphaTest });
     g.userData.shared = true;
     GOLD.set(m, g);
   }
@@ -226,20 +242,25 @@ export const addLegendDecal = (model, car) => {
   return [1, -1].filter(s => flankMesh(model, s, spots, material)).length;
 };
 
-// ---- the whole look: the trim gold, the body a deep gloss black, the wreaths ------------------------------------------
+// ---- the whole look: the trim gold, the paint a deep gloss black, the wreaths ------------------------------------------
+const blackFor = (m) => new THREE.MeshPhongMaterial({ color: LEGEND_BLACK, vertexColors: !!m.vertexColors, side: m.side, specular: 0x24242a, shininess: 40 });
 export const addLegend = (model, car) => {
   if (!model || model.userData.legend) return model;
   model.userData.legend = true;
-  const trim = new Set(LEGEND_TRIM[car.model] || []);
+  const trim = LEGEND_TRIM[car.model] || {}, gold = new Set(trim.gold || []), black = new Set(trim.black || []);
+  const body = model.userData.body, paint = body?.material, blacks = new Map();
   model.traverse((m) => {
-    if (!m.isMesh || m === model.userData.body || Array.isArray(m.material) || !m.material.color) return;
-    if (trim.has(m.material.color.getHex())) m.material = goldFor(m.material);
+    if (!m.isMesh || Array.isArray(m.material) || !m.material.color) return;
+    const mat = m.material, hex = mat.color.getHex();
+    // the paint (the body's material, on every part that shares it) and any second paint: a deep black with a slight
+    // sheen (Phong; the body's colour is still the car's, so paint, scorch and the ghost work as before)
+    if (mat === paint || (black.has(hex) && !mat.map)) {
+      if (!blacks.has(mat)) blacks.set(mat, blackFor(mat));
+      m.material = blacks.get(mat);
+    } else if (gold.has(hex) || (trim.goldMap && mat.map && hex === 0xffffff && mat.isMeshLambertMaterial)) m.material = goldFor(mat, !!mat.map);
   });
-  const body = model.userData.body;
-  if (body?.material?.isMeshLambertMaterial) { // (a slight sheen: Phong, its colour still the car's, so paint, scorch and ghost work as before)
-    const old = body.material;
-    body.material = new THREE.MeshPhongMaterial({ color: old.color.getHex(), vertexColors: old.vertexColors, side: old.side, specular: 0x24242a, shininess: 40 });
-  }
+  if (body) body.material.color.setHex(car.color ?? LEGEND_BLACK);
+  if (model.userData.livery) model.userData.livery = () => {}; // (one scheme: no Evil second colours)
   addLegendDecal(model, car);
   return model;
 };
