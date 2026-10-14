@@ -155,17 +155,18 @@ const onFlank = (sideX, points, off, sign) => {
 };
 // alloy wheels: a black tyre, a dark rim in it and `spokes` bright spokes and a cap on its outer face. AXLES as archAt's.
 // One geometry for each size of tyre and rim, the spokes of all four merged into one mesh
-const alloys = (group, AXLES, spokeMaterial, spokes = 5, rimMaterial = lambert(0x2e3138)) => {
+const alloys = (group, AXLES, spokeMaterial, spokes = 5, rimMaterial = lambert(0x2e3138), trims = true) => {
   const parts = [];
   for (const side of [-1, 1]) {
     for (const [za, R, width, outer] of AXLES) {
       const x = side * (outer - width / 2), face = side * (outer + 0.012);
       wheel(group, R, width, x, R, za, rimMaterial, 0.7);
+      if (!trims) continue; // (no spokes or cap: they are merged into one mesh over all four wheels, which the suspension takes for body, so they bounced with the car)
       for (let i = 0; i < spokes; i++) parts.push(bx(0.02, R * 0.62, 0.07, face, R + R * 0.31, za).translate(-face, -R, -za).rotateX(i * 2 * Math.PI / spokes).translate(face, R, za));
       parts.push(cyl(R * 0.16, 0.03, face, R, za, 'x', 8));
     }
   }
-  merged(group, spokeMaterial, parts);
+  if (parts.length) merged(group, spokeMaterial, parts);
 };
 
 export const IDEA_MODELS_7 = {
@@ -345,7 +346,7 @@ export const IDEA_MODELS_7 = {
     merged(group, LAMP, [-1, 1].map(side => bx(0.12, 0.05, 0.02, side * 0.42, 0.52, ZT - 0.006)));
     merged(group, chrome, [bx(1.0, 0.03, 0.03, 0, 0.8, ZT - 0.006), ...[-1, 1].map(side => cyl(0.05, 0.08, side * 0.3, 0.42, ZT - 0.01, 'z', 10))]);
     box(group, WHITE, 0.42, 0.1, 0.02, 0, 0.62, ZT - 0.008).userData.plate = 'rear';
-    alloys(group, AXLES, chrome, 8, trim);
+    alloys(group, AXLES, chrome, 8, trim, false); // (the owner, 14-Oct: the wheel trims bounced with the car: deleted)
     group.userData = { body, animate: () => {}, livery: (evil) => bonnet.color.setHex(evil ? 0x848a96 : 0xd3d6da) };
     return group;
   },
