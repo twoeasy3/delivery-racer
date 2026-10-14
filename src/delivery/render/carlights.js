@@ -36,6 +36,8 @@ import { HARD_B } from './carlights-hard-b.js';
 import { TOPUP_A_LAMPS } from './carlights-topup-A.js'; // (the ideas top-up, batch A)
 import { TOPUP_B_LAMPS } from './carlights-topup-B.js'; // (the ideas top-up batch B)
 import { BATCH_E1_LAMPS } from './carlights-batchE1.js'; // (batch E1's idea cars)
+import { BATCH_E2_LAMPS } from './carlights-batchE2.js'; // (batch E2's idea cars)
+export const TABLE = {  };
 import { BATCH_D2_LAMPS } from './carlights-batchD2.js'; // (batch D2's idea cars)
 import { TOPUP_C } from './carlights-topup-C.js'; // (top-up batch C's idea cars)
 import { BATCH_D3_LAMPS } from './carlights-batchD3.js'; // (batch D3's idea cars)
@@ -104,7 +106,8 @@ export const CAR_LAMPS = {
 import { BATCH_D1_LAMPS } from './carlights-batchD1.js';
 import { BATCH_D4_LAMPS } from './carlights-batchD4.js';
 import { BATCH_D5 as BATCH_D5_LAMPS } from './carlights-batchD5.js';
-export const TABLE = { ...EASY_LAMPS, ...HARD_LAMPS, ...HARD_A, ...HARD_B, ...TOPUP_A_LAMPS, ...TOPUP_B_LAMPS, ...TOPUP_C, ...BATCH_D1_LAMPS, ...BATCH_D2_LAMPS, ...BATCH_E1_LAMPS, ...BATCH_D3_LAMPS, ...BATCH_D4_LAMPS, ...BATCH_D5_LAMPS, ...GUESS_LAMPS, ...CAR_LAMPS }; // (carlights-hard-a.js, -b.js: the hard batches)
+
+export const TABLE = { ...EASY_LAMPS, ...HARD_LAMPS, ...HARD_A, ...HARD_B, ...TOPUP_A_LAMPS, ...TOPUP_B_LAMPS, ...TOPUP_C, ...BATCH_D1_LAMPS, ...BATCH_D2_LAMPS, ...BATCH_E1_LAMPS, ...BATCH_D3_LAMPS, ...BATCH_D4_LAMPS, ...BATCH_D5_LAMPS, ...BATCH_E2_LAMPS, ...GUESS_LAMPS, ...CAR_LAMPS }; // (carlights-hard-a.js, -b.js: the hard batches)
 
 // ---- ?lamps= (the debug and picture switches, above) ----
 const search = typeof location !== 'undefined' ? location.search : '';
