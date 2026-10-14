@@ -53,7 +53,7 @@ try {
     if (r.some(o => o.hot && o.rarity === 'legendary')) legendHot++;
     for (const o of r) if (barred(o.car) || barredOut.includes(o.car) || o.cap !== JIM.capPerRefresh[J.capKey(o.car)] || !JIM.qty[J.capKey(o.car)].includes(o.qty) || o.qty > o.cap || o.stock * o.qty > o.cap || o.stock * o.qty < o.cap - o.qty + 1 || (o.key && o.hot) || o.first < 1) bad++;
   }
-  check(bad === 0, 'in 400 days: no barred car, bundles fit the cap per refresh (common 5, uncommon 5, epic 2, legendary 1, key 1) and the stock is cap / bundle, every price at least $1');
+  check(bad === 0, 'in 400 days: no barred car, bundles fit the cap per refresh (common 5, uncommon 3, epic 2, legendary 1, key 1) and the stock is cap / bundle, every price at least $1');
   check(size === 0 && dup === 0 && hots === 0 && legendHot === 0, 'in 400 days: ' + JIM.slots + ' distinct cars, exactly one hot deal, never a legendary');
   check(sets.size > 380, 'the days differ (' + sets.size + ' different sets in 400 days)');
   const seen = new Set(); for (let d = 0; d < 400; d++) rotation(day(d)).forEach(o => seen.add(o.id));
@@ -71,7 +71,7 @@ try {
   check(kOffer.length === 2 && kOffer.every(o => !o.hot && o.cap === 1 && o.qty === 1 && o.stock === 1 && o.unit === J.unitPrice(o.car)), 'a key car can be put on the stall (force): never the hot deal, a cap of 1 per refresh');
   const k1 = kOffer[0];
   check(needed(k1.car, 0) === 20, 'a key car needs 20 blueprints for max ECU');
-  check(JIM.capPerRefresh.common === 5 && JIM.capPerRefresh.uncommon === 5 && JIM.capPerRefresh.epic === 2 && JIM.capPerRefresh.legendary === 1 && JIM.capPerRefresh.bespoke === 1, 'the caps per refresh are the owner\'s: 5, 5, 2, 1, 1');
+  check(JIM.capPerRefresh.common === 5 && JIM.capPerRefresh.uncommon === 3 && JIM.capPerRefresh.epic === 2 && JIM.capPerRefresh.legendary === 1 && JIM.capPerRefresh.bespoke === 1, 'the caps per refresh are the owner\'s: 5, 3, 2, 1, 1');
   check(!('dayCap' in JIM) && !('keyCap' in JIM) && !('stock' in JIM), 'the old daily caps and bundle stock are gone from the JIM table');
 
   // ---- prices ----
@@ -145,16 +145,25 @@ try {
   fresh(); Progress.data.money = 1e6; Progress.data.shopCash = 12;
   at(L(2026, 9, 14, 7, 0));
   const r0 = Jim.offers(), info0 = Jim.refreshInfo();
-  check(info0.cost === JIM.refreshCost && info0.ok && info0.left === JIM.refreshCap && JIM.refreshCap === 999 && JIM.refreshCost === 5, 'a refresh costs ' + JIM.refreshCost + ' Crazey Cash, and ' + JIM.refreshCap + ' a day are allowed');
+  check(info0.cost === 5 && JIM.refreshBase === 5 && JIM.refreshStep === 1 && info0.ok && info0.left === JIM.refreshCap && JIM.refreshCap === 999, 'the first refresh of the day costs 5 Crazey Cash (base ' + JIM.refreshBase + ', +' + JIM.refreshStep + ' each), and ' + JIM.refreshCap + ' a day are allowed');
   Jim.buy(r0.find(o => !o.why).id);
   const done1 = Jim.refresh(), r1 = Jim.offers();
-  check(done1.ok && Progress.data.shopCash === 12 - JIM.refreshCost && ids(r1) !== ids(r0), 'a refresh takes ' + JIM.refreshCost + ' Crazey Cash and draws other offers');
+  check(done1.ok && Progress.data.shopCash === 12 - 5 && ids(r1) !== ids(r0), 'a refresh takes its cost (5) and draws other offers');
   check(r1.every(o => o.bought === 0 && o.left === o.stock) && Progress.data.jimBuys.ref === 1 && Progress.data.jimBuys.r === 1, 'the refresh gives full stock and first prices back, and counts itself (slot 1, today 1)');
   check(ids(Jim.offers()) === ids(r1) && JSON.stringify(Jim.offers().map(o => [o.id, o.qty, o.hot, o.price])) === JSON.stringify(r1.map(o => [o.id, o.qty, o.hot, o.price])), 'the same offers on a reload (a fresh draw is seeded by date + slot + refresh count)');
   check(JSON.stringify(rotation('2026-10-14', { slot: 1, ref: 1 }).map(o => o.id)) === JSON.stringify(rotation('2026-10-14', { slot: 1, ref: 1 }).map(o => o.id)) && ids(rotation('2026-10-14', { slot: 1, ref: 1 })) !== ids(rotation('2026-10-14', { slot: 1, ref: 2 })) && ids(rotation('2026-10-14', { slot: 1, ref: 0 })) === ids(rotation('2026-10-14', { slot: 1 })), 'the seed: ref 1 is always the same, ref 2 another, ref 0 the slot\'s own draw');
-  Progress.data.shopCash = 12; Jim.refresh(); Jim.refresh();
+  // the cost rises with the refreshes done today: 5, 6, 7 ...; cumulative
+  fresh(); Progress.data.shopCash = 1e6; at(L(2026, 9, 14, 7, 0));
+  const costs = []; for (let i = 0; i < 10; i++) { costs.push(Jim.refreshInfo().cost); Jim.refresh(); }
+  check(costs.join() === '5,6,7,8,9,10,11,12,13,14' && 1e6 - Progress.data.shopCash === 95, 'the cost rises by 1 a refresh today: ' + costs.join(', ') + ' (ten cost 95 in all)');
+  check(Jim.refreshInfo().cost === 15 && (at(L(2026, 9, 14, 13, 0)), Jim.refreshInfo().cost === 15), 'it goes on rising across the 6-hour slots of the day');
+  at(L(2026, 9, 15, 0, 5));
+  check(Jim.refreshInfo().cost === 5, 'and starts again at 5 the next local day');
+  at(L(2026, 9, 14, 7, 0));
+  fresh(); Progress.data.jimBuys = { day: Jim.day(), slot: 1, ref: 2, r: 2, n: {} }; Progress.data.shopCash = 12; // (7 CC for the third refresh)
+  Jim.refresh();
   const short = Jim.refreshInfo(), kept = Progress.data.shopCash;
-  check(Progress.data.shopCash === 2 && short.why === 'short' && short.need === JIM.refreshCost - 2 && !Jim.refresh().ok && Progress.data.shopCash === kept, 'with too little Crazey Cash: "short" by exactly what is missing, nothing taken');
+  check(Progress.data.shopCash === 5 && short.cost === 8 && short.why === 'short' && short.need === 3 && !Jim.refresh().ok && Progress.data.shopCash === kept, 'with too little Crazey Cash: "short" by exactly what is missing (the next costs 8, 5 in hand), nothing taken');
   Progress.data.shopCash = 1e6; Progress.data.jimBuys = { day: Jim.day(), slot: 1, ref: 5, r: JIM.refreshCap, n: {} };
   check(Jim.refreshInfo().why === 'limit' && !Jim.refresh().ok && Progress.data.shopCash === 1e6 && Jim.refreshInfo().left === 0, 'at the daily limit (' + JIM.refreshCap + '): refused, nothing taken');
   Progress.data.jimBuys = { day: Jim.day(), slot: 1, ref: 3, r: 7, n: {} };
@@ -166,7 +175,7 @@ try {
   check(Jim.refreshInfo().done === 0, 'at the next local day the count of refreshes is 0');
   // the exploit, in numbers: Crazey Cash per blueprint if everything on every refresh were bought
   let capSum = 0; for (let d = 0; d < 300; d++) capSum += rotation(day(d), { ref: 1 }).reduce((n, o) => n + o.cap, 0);
-  console.log('  info  a refresh offers ' + (capSum / 300).toFixed(1) + ' blueprints on average (the caps summed): ' + (JIM.refreshCost / (capSum / 300)).toFixed(2) + ' Crazey Cash a blueprint, prices back to the first each time');
+  console.log('  info  a refresh offers ' + (capSum / 300).toFixed(1) + ' blueprints on average (the caps summed): ' + (5 / (capSum / 300)).toFixed(2) + ' Crazey Cash a blueprint, prices back to the first each time');
   // a clock set backwards: the earlier slot's offers again (the counts of the later slot are void)
   fresh(); Progress.data.money = 1e6;
   const late = at(L(2026, 9, 14, 19, 0)), lateIds = ids(late);

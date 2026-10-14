@@ -13,7 +13,7 @@
 // KEY CARS are dear and rare (the economy warning: a concept car's key needs max ECU = 20 blueprints): JIM.keyMult on the price,
 // JIM.capPerRefresh blueprints of each, JIM.weight.key for how often one is drawn. check: scripts/.jimshop-check.mjs.
 // THE OFFER: a car, a bundle size, a stock, a unit price (basis x k(rarity)), and one HOT DEAL (30% off). THE CAP PER REFRESH (the owner):
-// the most blueprints of one car Jim has per slot / refresh: common 5, uncommon 5, epic 2, legendary 1, key car 1 (JIM.capPerRefresh);
+// the most blueprints of one car Jim has per slot / refresh: common 5, uncommon 3, epic 2, legendary 1, key car 1 (JIM.capPerRefresh);
 // the offer's stock is cap / bundle size. The price rises with each bundle of THE SAME OFFER bought since the last refresh:
 // price = qty x unit x (hot ? 0.7 : 1) x (1 + RISE x bought). A bundle is cut to what the car still needs to reach its max ECU (and priced
 // for that), and a car at its max is not for sale. No daily caps (removed in round 4: the 10 a day over the stall, the key cars' 2 a day).
@@ -38,11 +38,12 @@ export const JIM = {
   // THE CAP PER REFRESH (the owner, 14-Oct, "if we decide"): the most blueprints of ONE car Jim has in a slot / after a refresh, by the car's
   // rarity (a key car: bespoke). It is the offer's whole stock, reset by every refresh and every 6-hour slot. REPLACES (removed in round 4):
   // the old bundle stock (3 / 2 / 1 bundles by size), the 10-blueprints-a-day cap over the whole stall (dayCap) and the key cars' daily cap (keyCap).
-  capPerRefresh: { common: 5, uncommon: 5, epic: 2, legendary: 1, bespoke: 1 },
+  capPerRefresh: { common: 5, uncommon: 3, epic: 2, legendary: 1, bespoke: 1 },
   // the bundle sizes a rarity may be sold in; one that does not fit its cap is left out (stock = cap / size bundles)
-  qty: { common: [1, 5], uncommon: [1, 5], epic: [1, 2], legendary: [1], bespoke: [1] },
-  // REFRESH (the owner, 14-Oct): re-roll the slot's offers for Crazey Cash (the Shop's placeholder currency): a flat cost, at most refreshCap a local day
-  refreshCost: 5, refreshCap: 999,
+  qty: { common: [1, 5], uncommon: [1, 3], epic: [1, 2], legendary: [1], bespoke: [1] },
+  // REFRESH (the owner, 14-Oct): re-roll the slot's offers for Crazey Cash (the Shop's placeholder currency). The cost RISES with the refreshes
+  // already done today (the local day's count, jimBuys.r): cost = refreshBase + refreshStep x done, so 5, 6, 7 ... ; at most refreshCap a local day
+  refreshBase: 5, refreshStep: 1, refreshCap: 999,
   slots: 6,        // offers at a time
   slotHours: 6,    // a rotation every this many local hours (the clock's 00:00, 06:00, 12:00, 18:00)
   hotOff: 0.3,     // the hot deal's discount
@@ -55,6 +56,8 @@ export const JIM = {
 export const isKey = (car) => !!car && !!car.bespoke;
 export const basisOf = (car) => isKey(car) ? JIM.keyBasis[rarityOf(car)] || JIM.keyBasis.legendary : car.price > 0 ? car.price : JIM.basis[(car.blue ? 'b' : 'g') + Math.min(5, Math.max(1, car.tier || 1))];
 export const capKey = (car) => (isKey(car) ? 'bespoke' : rarityOf(car));
+// what the next refresh costs when `done` have been made today
+export const refreshCostAt = (done) => JIM.refreshBase + JIM.refreshStep * done;
 export const unitPrice = (car, rarity = rarityOf(car)) => Math.max(1, Math.round(basisOf(car) * JIM.k[rarity] * (isKey(car) ? JIM.keyMult : 1)));
 
 // a car Jim may NEVER sell: not a blueprint car at all (earned, super, the Tank, off), or in no regular pack (noPacks)
@@ -194,15 +197,15 @@ export const Jim = {
   // REFRESH: what it costs and whether it can be done now: { cost, cap, done (today), left, ok, why (null | 'short' | 'limit'), need (Crazey Cash short) }
   refreshInfo() {
     const { day, slot } = slotOf(Events.now()), t = todays(Progress.data.jimBuys, day, slot), cash = Math.max(0, Math.floor(Number(Progress.data.shopCash) || 0));
-    const why = t.r >= JIM.refreshCap ? 'limit' : cash < JIM.refreshCost ? 'short' : null;
-    return { cost: JIM.refreshCost, cap: JIM.refreshCap, done: t.r, left: Math.max(0, JIM.refreshCap - t.r), ok: !why, why, need: Math.max(0, JIM.refreshCost - cash) };
+    const cost = refreshCostAt(t.r), why = t.r >= JIM.refreshCap ? 'limit' : cash < cost ? 'short' : null;
+    return { cost, cap: JIM.refreshCap, done: t.r, left: Math.max(0, JIM.refreshCap - t.r), ok: !why, why, need: Math.max(0, cost - cash) };
   },
   // re-roll the slot's offers (a fresh seeded draw: date + slot + the refresh count), all stock back; takes the Crazey Cash. { ok, why }
   refresh() {
     const info = this.refreshInfo();
     if (!info.ok) return { ok: false, why: info.why };
     const { day, slot } = slotOf(Events.now()), t = todays(Progress.data.jimBuys, day, slot);
-    Progress.data.shopCash = Math.max(0, Math.floor(Number(Progress.data.shopCash) || 0) - JIM.refreshCost);
+    Progress.data.shopCash = Math.max(0, Math.floor(Number(Progress.data.shopCash) || 0) - info.cost);
     Progress.data.jimBuys = { day, slot, ref: t.ref + 1, r: t.r + 1, n: {} };
     Progress.save();
     window.dispatchEvent(new Event('progresschange'));

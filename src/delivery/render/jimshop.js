@@ -13,6 +13,7 @@
 //                             broke, maxed, nocc (too little Crazey Cash to refresh), reflimit (refreshes used up), empty (all sold), nopool (no cars),
 //                             bought (a purchase just made, feedback held)
 //   &jimcars=a,b,c            with demo=keycar: those cars on the stall (up to six)
+//   &jimr=<n>                 the refreshes already done today (the cost is 5 + n)
 //   &jimcc=<n>                the Crazey Cash for the visit (the Refresh button's)   &jimrefresh   press Refresh 0.7 s after opening
 //   &jimcash=<n>              the bank for the visit        &jimpress=<n>   press BUY on offer n (0-based, as laid out)
 //   &jimhold                  keep the toast up             &eventsnow=<date-time> sets the day and the slot (the rotation) and the clock
@@ -143,7 +144,7 @@ export const jimSection = () => {
     more.firstChild.textContent = expanded ? 'Show fewer' : 'See all ' + offers.length + ' offers';
     more.lastChild.textContent = expanded ? '▴' : '▾';
   });
-  const small = make('p', 'jim-small', '*Terms apply. Each car has a cap of blueprints per refresh: ' + Object.entries(JIM.capPerRefresh).map(([r, n]) => (r === 'bespoke' ? 'key cars' : r) + ' ' + n).join(', ') + '. Prices rise a little with each bundle of the same blueprint. Jim never sells a key, and sells key cars dearer. A refresh costs Crazey Cash and starts the stall over.');
+  const small = make('p', 'jim-small', '*Terms apply. Each car has a cap of blueprints per refresh: ' + Object.entries(JIM.capPerRefresh).map(([r, n]) => (r === 'bespoke' ? 'key cars' : r) + ' ' + n).join(', ') + '. Prices rise a little with each bundle of the same blueprint. Jim never sells a key, and sells key cars dearer. A refresh costs Crazey Cash, a little more each time today, and starts the stall over.');
   last = null;
   const rolled = rerolled; rerolled = hold && rolled; // (the pop plays once: kept for a picture with ?jimhold)
   return make('section', 'shop-section s-jim', flags, sign, strip, note, offers.length ? grid : make('p', 'shop-note jim-note', 'Jim has nothing on the stall right now. New stock in ', live(), '.'), more, offers.length ? small : null);
@@ -225,6 +226,7 @@ const demo = (name) => {
 if (params.get('jimshop') !== null) {
   if (params.get('eventsnow')) { const at = eventTime(params.get('eventsnow')); if (Number.isFinite(at)) Events.now = () => at; } // (main.js sets it too, but after this: the demo needs the clock now)
   if (params.get('demo') !== null) demo(params.get('demo') || 'normal');
+  if (params.get('jimr') !== null) { Progress.noSave = true; const t = Progress.data.jimBuys || {}; Progress.data.jimBuys = { day: Jim.day(), slot: Jim.slot(), ref: t.ref || 0, r: Math.max(0, Math.floor(Number(params.get('jimr')) || 0)), n: t.n || {} }; } // (refreshes done today: the Refresh button's rising cost)
   if (params.get('jimcc') !== null) { Progress.noSave = true; Progress.data.shopCash = Math.max(0, Math.floor(Number(params.get('jimcc')) || 0)); }
   if (params.get('jimrefresh') !== null) setTimeout(() => document.querySelector('.jim-refresh')?.click(), 700);
   if (params.get('jimcash') !== null) { Progress.noSave = true; Progress.data.money = Math.max(0, Math.floor(Number(params.get('jimcash')) || 0)); }
