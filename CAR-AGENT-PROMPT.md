@@ -72,6 +72,12 @@ glass, windscreen, rear glass, both sides), build side glass as a flat polygon f
 and front three-quarter views and asking: does the window's top edge follow the roof contour at an even distance? Same for a
 windscreen against the roof and A-pillar rake and a rear window against the tail.
 
+The windscreen and the side windows share ONE top line (the owner, 14-Oct: "Almost every car's windscreen is higher than the side window"):
+the windscreen's top edge and the side window's top edge are at the SAME height where they meet at the A-pillar (both are the roof
+contour inset by the same roof-rail margin), the windscreen's side edge and the side window's front edge are the two sides of ONE
+pillar of constant width, and the rear glass meets the side window's rear edge the same way at the C-pillar. Build windscreen, side glass
+and rear glass from the same inset outline and one roof-top height per car, never each with a height of its own.
+
 ## No panel lines, and do not try too hard (the owner, 13-Oct)
 - NO PANEL LINES. Do not model door shut lines, bonnet / boot / tailgate / fuel-flap lines, panel gaps, seams, or thin
   strips of any kind that only fake a join. They never read at card size, they cost triangles and shapes, and they made
