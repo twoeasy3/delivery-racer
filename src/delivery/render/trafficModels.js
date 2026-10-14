@@ -88,7 +88,8 @@ Object.assign(MODELS, {
       const y = 0.3 + h * 0.3, x = w * 0.22;
       const white = box(group, lambert(0xf4f4f4), 0.5, 0.5, 0.04, x, y, z);
       const red = box(group, lambert(0xd8262b), 0.11, 0.36, 0.05, x - turn * 0.1, y, z);
-      box(group, lambert(0xd8262b), 0.28, 0.11, 0.05, x + turn * 0.02, y - 0.125, z);
+      const foot = box(group, lambert(0xd8262b), 0.28, 0.11, 0.05, x + turn * 0.02, y - 0.125, z);
+      for (const mesh of [white, red, foot]) mesh.userData.plate = turn > 0 ? 'front' : 'rear'; // (the board and its L: render/platecosmetic.js hides all three)
       return [white, red];
     };
     plate(l / 2 + 0.03, 1);

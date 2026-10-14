@@ -219,7 +219,7 @@ IDEA_MODELS_BATCH_D4.autobahnestate = (car) => {
   bag.add(CHROME, bx(0.4, 0.025, 0.05, 0, 0.55, L - 0.02));
   bag.add(PLATE, bx(0.4, 0.1, 0.02, 0, 0.68, -L - 0.002));
   bag.add(TAIL, bx(0.26, 0.04, 0.03, 0, 0.78, -L - 0.004));
-  bag.done(group);
+  bag.done(group).get(PLATE).userData.plate = 'rear';
   for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, R, 0.28, s * (W - 0.15), z, ALLOY, 0.68);
   group.userData = { body: bodyMesh, animate: () => {} };
   return widen(group, car.hw / W);
@@ -284,7 +284,7 @@ IDEA_MODELS_BATCH_D4.finlandyacht = (car) => {
   bag.add(CHROME, bx(0.8, 0.12, 0.12, 0, 0.5, L - 0.01), bx(0.8, 0.12, 0.12, 0, 0.5, -L + 0.01), bx(1.14, 0.03, 0.05, 0, 0.84, L + 0.004));
   bag.add(TRIM, bx(0.72, 0.22, 0.05, 0, 0.74, L - 0.015), bx(BW - 0.2, 0.06, AF - AR - 0.9, 0, 0.3, (AF + AR) / 2));
   bag.add(PLATE, bx(0.4, 0.1, 0.02, 0, 0.7, -L - 0.002));
-  bag.done(group);
+  bag.done(group).get(PLATE).userData.plate = 'rear';
   // wheels: whitewall tyres and big chrome caps
   for (const s of [-1, 1]) for (const z of [AF, AR]) {
     wheel(group, R, 0.28, s * (W - 0.15), z, CHROME, 0.3);

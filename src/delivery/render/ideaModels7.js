@@ -241,7 +241,7 @@ export const IDEA_MODELS_7 = {
     merged(group, TAIL, [-1, 1].flatMap(side => [bx(0.05, 0.42, 0.025, side * 0.76, 0.64, ZT - 0.008), bx(0.024, 0.3, 0.025, side * 0.69, 0.68, ZT - 0.008)]));
     merged(group, LAMP, [-1, 1].map(side => bx(0.1, 0.04, 0.02, side * 0.48, 0.4, ZT - 0.006)));
     merged(group, chrome, [-1, 1].map(side => cyl(0.045, 0.06, side * 0.12, 0.33, ZT - 0.01, 'z', 10)));
-    box(group, WHITE, 0.4, 0.1, 0.02, 0, 0.42, ZT - 0.008);
+    box(group, WHITE, 0.4, 0.1, 0.02, 0, 0.42, ZT - 0.008).userData.plate = 'rear';
     // the spoiler: a raked blade across the tail on two posts, the stop lamp along its back edge
     const spoiler = Math.atan2(0.05, 0.24);
     merged(group, trim, [-1, 1].map(side => bx(0.04, 0.09, 0.08, side * 0.5, topY(-2.12, 0.5) + 0.03, -2.12)));
@@ -344,7 +344,7 @@ export const IDEA_MODELS_7 = {
     box(group, TAIL, 0.36, 0.03, 0.02, 0, along(CAB, -2.62)[3] - 0.005, -2.632);                // (in the fastback's end)
     merged(group, LAMP, [-1, 1].map(side => bx(0.12, 0.05, 0.02, side * 0.42, 0.52, ZT - 0.006)));
     merged(group, chrome, [bx(1.0, 0.03, 0.03, 0, 0.8, ZT - 0.006), ...[-1, 1].map(side => cyl(0.05, 0.08, side * 0.3, 0.42, ZT - 0.01, 'z', 10))]);
-    box(group, WHITE, 0.42, 0.1, 0.02, 0, 0.62, ZT - 0.008);
+    box(group, WHITE, 0.42, 0.1, 0.02, 0, 0.62, ZT - 0.008).userData.plate = 'rear';
     alloys(group, AXLES, chrome, 8, trim);
     group.userData = { body, animate: () => {}, livery: (evil) => bonnet.color.setHex(evil ? 0x848a96 : 0xd3d6da) };
     return group;
