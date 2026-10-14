@@ -248,7 +248,7 @@ export const IDEA_MODELS_7 = {
     merged(group, trim, [-1, 1].map(side => bx(0.04, 0.09, 0.08, side * 0.5, topY(-2.12, 0.5) + 0.03, -2.12)));
     box(group, paint, 1.5, 0.03, 0.26, 0, topY(-2.12, 0.5) + 0.085, -2.12).rotation.x = -spoiler;
     box(group, TAIL, 0.9, 0.022, 0.02, 0, topY(-2.12, 0.5) + 0.06, -2.255);
-    alloys(group, AXLES, alloy, 5);
+    alloys(group, AXLES, alloy, 5, undefined, false); // (the owner, 14-Oct: the wheel trims did not animate while driving: deleted)
     group.userData = { body, animate: () => {} };
     return group;
   },
@@ -426,7 +426,7 @@ export const IDEA_MODELS_7 = {
     box(group, TAIL, 0.1, 0.08, 0.02, 0, 0.48, ZT - 0.016);
     merged(group, dark, [bx(1.3, 0.2, 0.3, 0, 0.26, ZT + 0.08), ...[-0.4, -0.13, 0.13, 0.4].map(x => bx(0.02, 0.18, 0.34, x, 0.25, ZT + 0.06))]);
     box(group, dark, 1.5, 0.03, 0.3, 0, 0.13, 2.18);                                        // (the splitter under the nose)
-    alloys(group, AXLES, lambert(0x9da2a9), 6, lambert(0x2a2c31));
+    alloys(group, AXLES, lambert(0x9da2a9), 6, lambert(0x2a2c31), false); // (the owner, 14-Oct: the wheel trims did not animate while driving: deleted)
     group.userData = { body, animate: () => {}, livery: (evil) => flame.color.setHex(evil ? 0xff5a1a : 0x1a1a1e) };
     return group;
   },
