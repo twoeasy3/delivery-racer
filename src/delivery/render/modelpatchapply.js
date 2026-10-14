@@ -22,7 +22,7 @@ export const patchFor = (id) => (mode === 'off' ? null : mode === 'local' ? loca
 // patch a model just built for this car (once: a model already patched is left), painted for the side
 export const patchModel = (model, car, evil = false) => {
   if (!on || !model || !car || model.userData.patched) return model;
-  const patch = patchFor(car.id);
+  const patch = patchFor(car.id) || (car.legend ? patchFor(car.legend) : null); // (a Legendary car wears its base car's patch unless it has its own)
   if (!patch) return model;
   const result = applyPatch(model, patch, { evil });
   if (result.unmatched.length || result.warnings.length) console.warn('model patch for ' + car.id + ':', result.unmatched.length ? 'unmatched ' + result.unmatched.join(', ') : '', ...result.warnings);

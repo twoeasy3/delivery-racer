@@ -583,6 +583,15 @@ export const FILLER_CARS = [
   filler(4, { id: 'coupecross', name: 'Coupe Crossover', basedOn: 'Range Rover Evoque (2011)', model: 'coupecross', color: 0xa8232b, evilColor: 0x16171b,
     hw: 0.95, hl: 2.18, height: 1.6, note: 'A waist that climbs, a roof that falls and a slit of glass between them.',
     maxSpeed: 38, accel: 12, agility: 1.1, crossing: 0.8, health: 230, mass: 1.6, sound: 'suv', noPacks: true }, 'legendary'),
+  // ---- the LEGENDARY cars (the owner, 14-Oct: "Let's try a Legendary car first. The reserved colour scheme will be Black
+  // with gold trim. Legendary cars should have a large gold winner's wreath at the rear quarter of their sides"): an
+  // exclusive version of an original car, its base car's model (`model`) dressed black and gold with the wreath on both
+  // flanks (`legend`: the base car's id; render/legenddecal.js, the same on both sides), its figures the base car's plus
+  // a Super car's (CONFIG.superCar: placeholders), Blue Stars of the base car's tier for a longer ECU ladder (1 to 3). A
+  // pilot of one; in no pack yet (`noPacks`: the owner decides how they are had)
+  filler(1, { id: 'l-commuter', name: 'Legendary Commuter', basedOn: 'the Commuter', model: 'commuter', legend: 'commuter', blue: true,
+    color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 0.85, hl: 1.85, height: 1.45, note: 'The starter car, made a legend: it has won everything there is to win, and it shows.',
+    maxSpeed: 34, accel: 14, agility: 1.15, crossing: 0.7, health: 111, mass: 1, sound: 'commuter', noPacks: true }, 'legendary'),
 ];
 applyNames('car', FILLER_CARS);
 // is a blueprint car unlocked (its first X blueprints, ecu.js)? Set by ecu.js when it loads (null: none is, but one in
