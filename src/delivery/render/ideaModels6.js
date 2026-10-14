@@ -267,7 +267,7 @@ export const IDEA_MODELS_6 = {
     tube(group, chrome, 0.08, 0.06, 0, 0.985, -1.71, 'y', 12);
     for (const side of [-1, 1]) disc(group, TAIL, 0.05, 0.04, side * 0.3, 0.62, -1.96);
     box(group, TAIL, 0.14, 0.06, 0.03, 0, 0.88, -1.955);
-    box(group, WHITE, 0.34, 0.12, 0.02, 0, 0.72, -1.955);
+    box(group, WHITE, 0.34, 0.12, 0.02, 0, 0.72, -1.955).userData.plate = 'rear';
     group.userData = { body, animate: () => {} };
     return group;
   },
@@ -327,7 +327,7 @@ export const IDEA_MODELS_6 = {
     merged(group, TAIL, [-1, 1].map(side => cyl(0.08, 0.04, side * 1.0, 2.75, -L - 0.01, 'z', 12)));
     merged(group, LAMP, [-1, 1].map(side => bx(0.14, 0.1, 0.04, side * 1.02, 0.65, -L - 0.01)));
     box(group, chrome, w, 0.18, 0.14, 0, 0.48, -L - 0.04);
-    box(group, WHITE, 0.4, 0.2, 0.02, 0, 0.78, -L - 0.01);
+    box(group, WHITE, 0.4, 0.2, 0.02, 0, 0.78, -L - 0.01).userData.plate = 'rear';
     group.userData = { body, animate: () => {} };
     return group;
   },
@@ -463,7 +463,7 @@ export const IDEA_MODELS_6 = {
     merged(group, AMBER, [-1, 1].map(side => bx(0.06, 0.03, 0.02, side * 0.71, 0.7, L + 0.025)));
     merged(group, grey, [-1, 1].map(side => bx(0.14, 0.09, 0.02, side * 0.09, 0.68, L + 0.025)));
     box(group, black, 0.9, 0.12, 0.04, 0, 0.42, L + 0.005);
-    box(group, WHITE, 0.42, 0.1, 0.02, 0, 0.44, L + 0.03);
+    box(group, WHITE, 0.42, 0.1, 0.02, 0, 0.44, L + 0.03).userData.plate = 'front';
     // the tail: U lamps in the black glass, the stop lamp at the roof's end, reversing lamps, the diffuser, the plate
     merged(group, TAIL, [-1, 1].flatMap(side => [
       bx(0.025, 0.2, 0.02, side * 0.62, 0.92, -L - 0.035), bx(0.16, 0.025, 0.02, side * 0.54, 1.01, -L - 0.035), bx(0.16, 0.025, 0.02, side * 0.54, 0.83, -L - 0.035),
@@ -471,7 +471,7 @@ export const IDEA_MODELS_6 = {
     box(group, TAIL, 0.4, 0.03, 0.04, 0, 1.52, -L * 0.9 - 0.02);
     merged(group, LAMP, [-1, 1].map(side => bx(0.12, 0.05, 0.02, side * 0.45, 0.5, -L - 0.012)));
     box(group, black, 1.1, 0.1, 0.06, 0, 0.38, -L + 0.01);
-    box(group, WHITE, 0.42, 0.11, 0.02, 0, 0.72, -L - 0.035);
+    box(group, WHITE, 0.42, 0.11, 0.02, 0, 0.72, -L - 0.035).userData.plate = 'rear';
     // tall, skinny wheels, a dark cap in each
     for (const side of [-1, 1]) for (const z of [ZW, -ZW]) {
       wheel(group, R, 0.17, side * (w / 2 - 0.085), R, z, steel);
@@ -531,7 +531,7 @@ export const IDEA_MODELS_6 = {
     merged(group, silver, [0.68, 0.72].map(y => bx(0.56, 0.012, 0.02, 0, y, 2.212)));
     box(group, black, 1.0, 0.12, 0.04, 0, 0.56, 2.19);
     box(group, silver, 0.6, 0.04, 0.22, 0, 0.47, 2.12);
-    box(group, WHITE, 0.4, 0.09, 0.02, 0, 0.635, 2.205);
+    box(group, WHITE, 0.4, 0.09, 0.02, 0, 0.635, 2.205).userData.plate = 'front';
     // the bonnet's vents, lying on it
     merged(group, black, [-1, 1].map(side => {
       const x = side * 0.5, z = 1.45, pitch = Math.atan2(topY(z - 0.1, x) - topY(z + 0.1, x), 0.2);
@@ -543,7 +543,7 @@ export const IDEA_MODELS_6 = {
     merged(group, LAMP, [-1, 1].map(side => bx(0.1, 0.05, 0.02, side * 0.35, 0.66, -2.193)));
     box(group, black, 1.3, 0.14, 0.05, 0, 0.56, -2.19);
     merged(group, chrome, [-1, 1].map(side => cyl(0.045, 0.05, side * 0.5, 0.53, -2.215, 'z', 10)));
-    box(group, WHITE, 0.4, 0.1, 0.02, 0, 0.84, -2.188);
+    box(group, WHITE, 0.4, 0.1, 0.02, 0, 0.84, -2.188).userData.plate = 'rear';
     // black sills and arch lips; big alloys with a dark cap each; door handles
     merged(group, black, [-1, 1].map(side => bx(0.03, 0.12, 1.5, side * (sideX(0, 0.55) + 0.006), 0.55, 0)));
     merged(group, black, [-1, 1].flatMap(side => AXLES.map(([z]) => lip(R + 0.07, 0.035, side * 0.958, R, z)))); // (clear of the arch's edge)

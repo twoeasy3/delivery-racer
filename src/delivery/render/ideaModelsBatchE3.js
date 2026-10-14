@@ -151,7 +151,9 @@ export const IDEA_MODELS_BATCH_E3 = {
       ...[-1, 1].map(s => bx(0.3, 0.2, 0.03, s * 0.72, 0.78, FZ + 0.005)),                 // the lamps' bezels
     ]);
     parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => bx(0.25, 0.15, 0.03, s * 0.72, 0.78, FZ + 0.02)));
-    parts(group, k + 'plates', lambert(0xe8e4d0), () => [bx(0.46, 0.12, 0.02, 0, 0.46, FZ + 0.11), bx(0.46, 0.12, 0.02, 0, 0.46, BZ - 0.11)]);
+    const plateMat = lambert(0xe8e4d0); // (one mesh a plate: render/platecosmetic.js hides each end by userData.plate)
+    parts(group, k + 'plateF', plateMat, () => [bx(0.46, 0.12, 0.02, 0, 0.46, FZ + 0.11)]).userData.plate = 'front';
+    parts(group, k + 'plateR', plateMat, () => [bx(0.46, 0.12, 0.02, 0, 0.46, BZ - 0.11)]).userData.plate = 'rear';
     parts(group, k + 'amber', AMBER, () => [
       ...[-1, 1].map(s => bx(0.2, 0.07, 0.03, s * 0.72, 0.6, FZ + 0.006)),
       ...[-1, 1].map(s => bx(0.1, 0.12, 0.03, s * 0.84, 0.66, BZ - 0.006)),

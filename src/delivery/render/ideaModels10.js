@@ -177,13 +177,13 @@ export const IDEA_MODELS_10 = {
     each(group, LAMP, [-1, 1].map(side => dsc(0.075, 0.04, side * LX, 0.45, L + 0.007, 0, 12)));
     each(group, AMBER, [-1, 1].map(side => bx(0.035, 0.07, 0.04, side * 0.25, 0.42, L)));
     merged(group, trim, [bx(0.62, 0.1, 0.05, 0, 0.29, L - 0.008), bx(0.18, 0.03, 0.05, 0, 0.53, L - 0.01)]); // the intake, a slot of a grille over it
-    box(group, WHITE, 0.36, 0.09, 0.02, 0, 0.29, L + 0.022);
+    box(group, WHITE, 0.36, 0.09, 0.02, 0, 0.29, L + 0.022).userData.plate = 'front';
     // the tail: lamps up its corners (tail over brake), reversing lamps, the plate and a dark valance
     each(group, TAIL, [-1, 1].map(side => bx(0.07, 0.12, 0.04, side * 0.4, 0.59, -L)));
     each(group, STOP, [-1, 1].map(side => bx(0.07, 0.08, 0.04, side * 0.4, 0.475, -L)));
     merged(group, AMBER, [-1, 1].map(side => bx(0.07, 0.04, 0.04, side * 0.4, 0.39, -L)));
     merged(group, LAMP, [-1, 1].map(side => bx(0.1, 0.04, 0.04, side * 0.24, 0.32, -L - 0.004)));
-    box(group, WHITE, 0.36, 0.1, 0.02, 0, 0.48, -L - 0.016);
+    box(group, WHITE, 0.36, 0.1, 0.02, 0, 0.48, -L - 0.016).userData.plate = 'rear';
     box(group, trim, 0.7, 0.08, 0.05, 0, 0.3, -L + 0.012);
     // the flanks: where the doors meet (under the hoop), handles, mirrors on the shoulders
     const sill = sideX(0, 0.36);

@@ -338,7 +338,7 @@ export const IDEA_MODELS_3 = {
     }
     box(group, chrome, w * 0.7, 0.07, 0.07, 0, 0.32, L * 0.92);                          // bumper bars
     box(group, chrome, w * 0.7, 0.07, 0.07, 0, 0.32, -L * 0.92);
-    box(group, lambert(0xf2d21f), 0.3, 0.1, 0.02, 0, 0.32, -L * 0.92 - 0.045);          // a number plate
+    box(group, lambert(0xf2d21f), 0.3, 0.1, 0.02, 0, 0.32, -L * 0.92 - 0.045).userData.plate = 'rear';          // a number plate
     // the bath: a roll-top tub (painted outside), on four clawed feet, with its enamel lip round the water
     const body = curved(group, paint, 1.3, rounded([[-1.1, 0.66], [1.1, 0.66], [1.3, 1.03], [-1.3, 1.03]], 0.3), 0.12);
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
@@ -582,7 +582,7 @@ export const IDEA_MODELS_3 = {
     disc(lean, LAMP, 0.07, 0.04, 0, 0.78, L + 0.06);
     disc(lean, chrome, 0.09, 0.03, 0, 0.78, L + 0.05);
     box(lean, TAIL, w * 0.66, 0.05, 0.04, 0, 1.0, -L * 0.92 - 0.06);                     // and one across the tail
-    box(lean, lambert(0xf2d21f), 0.24, 0.08, 0.02, 0, 0.78, -L * 0.93 - 0.1);            // its number plate
+    box(lean, lambert(0xf2d21f), 0.24, 0.08, 0.02, 0, 0.78, -L * 0.93 - 0.1).userData.plate = 'rear';            // its number plate
     group.userData = {
       body,
       lampFrame: lean, // (the body the lamps ride on: render/carlights.js frame)
@@ -722,7 +722,7 @@ export const IDEA_MODELS_3 = {
       for (const z of [L * 0.62, -L * 0.6]) wheel(group, R, 0.2, side * (w / 2 - 0.12), R, z);
     }
     box(group, chrome, w * 0.5, 0.06, 0.06, 0, 0.5, L * 0.98 + 0.13);                   // a smile of a bumper
-    box(group, lambert(0xf2d21f), 0.26, 0.08, 0.02, 0, 0.4, -L * 1.0 - 0.13);           // the number plate
+    box(group, lambert(0xf2d21f), 0.26, 0.08, 0.02, 0, 0.4, -L * 1.0 - 0.13).userData.plate = 'rear';           // the number plate
     // the shell: a logarithmic spiral of a tube, banded, wound up from where it sits on the foot
     const cz = -0.4, cy = 1.4, k = 0.115, wide = 2.1, steps = 300, turns = 5 * Math.PI, points = [], radii = [], at = (th) => 1.04 * Math.exp(-k * th);
     for (let i = 0; i <= steps; i++) {
@@ -792,7 +792,7 @@ export const IDEA_MODELS_3 = {
       disc(group, TAIL, 0.1, 0.06, side * 0.67, 0.92, -L * 0.72 - 0.17);
       for (const z of [L * 0.6, -L * 0.6]) wheel(group, R, 0.26, side * (w / 2 - 0.13), R, z, chrome);
     }
-    box(group, lambert(0xf2d21f), 0.36, 0.12, 0.02, 0, 0.62, -L * 0.72 + 0.05 - 0.2);
+    box(group, lambert(0xf2d21f), 0.36, 0.12, 0.02, 0, 0.62, -L * 0.72 + 0.05 - 0.2).userData.plate = 'rear';
     group.userData = { body, animate: () => {}, livery: (evil) => mustard.color.setHex(evil ? 0x6f9a2f : 0xf2c21b) };
     return group;
   },

@@ -21,9 +21,9 @@
      "colour": "0xece6cc",
      "proud_of_body_m": 0.015,
      "gap_to_body_m": -0.005,
-     "own_mesh": true,
      "source_line": 697,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -53,9 +53,9 @@
      "colour": "0xece6cc",
      "proud_of_body_m": 0.015,
      "gap_to_body_m": -0.005,
-     "own_mesh": true,
      "source_line": 414,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -85,9 +85,9 @@
      "colour": "0xece6cc",
      "proud_of_body_m": 0.015,
      "gap_to_body_m": -0.005,
-     "own_mesh": false,
      "source_line": 547,
-     "how_to_find": "shares one mesh (2 boxes, 24 triangles) with the other end's plate"
+     "tagged_as": "mesh.userData.plate = 'front'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     },
     {
      "face": "rear",
@@ -105,9 +105,9 @@
      "colour": "0xece6cc",
      "proud_of_body_m": 0.015,
      "gap_to_body_m": -0.005,
-     "own_mesh": false,
      "source_line": 549,
-     "how_to_find": "shares one mesh (2 boxes, 24 triangles) with the other end's plate"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -137,9 +137,9 @@
      "colour": "0xece6cc",
      "proud_of_body_m": 0.015,
      "gap_to_body_m": -0.005,
-     "own_mesh": false,
      "source_line": 622,
-     "how_to_find": "shares one mesh (2 boxes, 24 triangles) with the other end's plate"
+     "tagged_as": "mesh.userData.plate = 'front'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     },
     {
      "face": "rear",
@@ -157,9 +157,9 @@
      "colour": "0xece6cc",
      "proud_of_body_m": 0.015,
      "gap_to_body_m": -0.005,
-     "own_mesh": false,
      "source_line": 624,
-     "how_to_find": "shares one mesh (2 boxes, 24 triangles) with the other end's plate"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -189,9 +189,9 @@
      "colour": "0xf2d21f",
      "proud_of_body_m": 0.016,
      "gap_to_body_m": -0.004,
-     "own_mesh": true,
      "source_line": 487,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -222,9 +222,9 @@
      "colour": "0xf4f2ec",
      "proud_of_body_m": 0.02,
      "gap_to_body_m": 0,
-     "own_mesh": true,
      "source_line": 190,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -251,9 +251,9 @@
      "colour": "0xf4f2ec",
      "proud_of_body_m": 0.02,
      "gap_to_body_m": 0,
-     "own_mesh": true,
      "source_line": 258,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -280,9 +280,9 @@
      "colour": "0xf4f2ec",
      "proud_of_body_m": 0.015,
      "gap_to_body_m": -0.005,
-     "own_mesh": true,
-     "source_line": 271,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "source_line": 270,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -309,9 +309,9 @@
      "colour": "0xf4f2ec",
      "proud_of_body_m": 0.02,
      "gap_to_body_m": 0,
-     "own_mesh": true,
      "source_line": 330,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -338,9 +338,9 @@
      "colour": "0xf4f2ec",
      "proud_of_body_m": 0.015,
      "gap_to_body_m": -0.005,
-     "own_mesh": true,
      "source_line": 466,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'front'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     },
     {
      "face": "rear",
@@ -358,9 +358,9 @@
      "colour": "0xf4f2ec",
      "proud_of_body_m": 0.015,
      "gap_to_body_m": -0.005,
-     "own_mesh": true,
      "source_line": 474,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -387,9 +387,9 @@
      "colour": "0xf4f2ec",
      "proud_of_body_m": 0.005,
      "gap_to_body_m": -0.015,
-     "own_mesh": true,
      "source_line": 534,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'front'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     },
     {
      "face": "rear",
@@ -407,9 +407,9 @@
      "colour": "0xf4f2ec",
      "proud_of_body_m": 0.018,
      "gap_to_body_m": -0.002,
-     "own_mesh": true,
      "source_line": 546,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -436,9 +436,9 @@
      "colour": "0xf2d21f",
      "proud_of_body_m": 0.058,
      "gap_to_body_m": 0.038,
-     "own_mesh": true,
      "source_line": 795,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -465,9 +465,9 @@
      "colour": "0xf4f2ec",
      "proud_of_body_m": 0.015,
      "gap_to_body_m": -0.005,
-     "own_mesh": true,
      "source_line": 180,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'front'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     },
     {
      "face": "rear",
@@ -485,9 +485,9 @@
      "colour": "0xf4f2ec",
      "proud_of_body_m": 0.026,
      "gap_to_body_m": 0.006,
-     "own_mesh": true,
      "source_line": 186,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -514,9 +514,9 @@
      "colour": "0xf4f2ec",
      "proud_of_body_m": 0.016,
      "gap_to_body_m": -0.004,
-     "own_mesh": true,
      "source_line": 231,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -543,9 +543,9 @@
      "colour": "0xf4f2ec",
      "proud_of_body_m": 0.018,
      "gap_to_body_m": -0.002,
-     "own_mesh": true,
      "source_line": 347,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -572,9 +572,9 @@
      "colour": "0xf4f2ec",
      "proud_of_body_m": 0.018,
      "gap_to_body_m": -0.002,
-     "own_mesh": true,
      "source_line": 244,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -601,9 +601,9 @@
      "colour": "0xf2d21f",
      "proud_of_body_m": 0.033,
      "gap_to_body_m": 0.013,
-     "own_mesh": true,
      "source_line": 273,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -630,9 +630,9 @@
      "colour": "0xf2d21f",
      "proud_of_body_m": 0.02,
      "gap_to_body_m": 0,
-     "own_mesh": true,
      "source_line": 341,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -659,9 +659,9 @@
      "colour": "0xf2d21f",
      "proud_of_body_m": 0.008,
      "gap_to_body_m": -0.011,
-     "own_mesh": true,
      "source_line": 585,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -688,9 +688,9 @@
      "colour": "0xf2d21f",
      "proud_of_body_m": 0.003,
      "gap_to_body_m": -0.017,
-     "own_mesh": true,
      "source_line": 725,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -717,9 +717,9 @@
      "colour": "0xece6cc",
      "proud_of_body_m": 0.012,
      "gap_to_body_m": -0.008,
-     "own_mesh": true,
      "source_line": 284,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -746,9 +746,9 @@
      "colour": "0xece6cc",
      "proud_of_body_m": 0.012,
      "gap_to_body_m": -0.008,
-     "own_mesh": true,
      "source_line": 220,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -775,9 +775,9 @@
      "colour": "0xece6cc",
      "proud_of_body_m": 0.012,
      "gap_to_body_m": -0.008,
-     "own_mesh": true,
      "source_line": 286,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -804,9 +804,9 @@
      "colour": "0xe8e4d0",
      "proud_of_body_m": 0.015,
      "gap_to_body_m": -0.005,
-     "own_mesh": false,
-     "source_line": 154,
-     "how_to_find": "shares one mesh (2 boxes, 24 triangles) with the other end's plate"
+     "source_line": 155,
+     "tagged_as": "mesh.userData.plate = 'front'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     },
     {
      "face": "rear",
@@ -824,9 +824,9 @@
      "colour": "0xe8e4d0",
      "proud_of_body_m": 0.015,
      "gap_to_body_m": -0.005,
-     "own_mesh": false,
-     "source_line": 154,
-     "how_to_find": "shares one mesh (2 boxes, 24 triangles) with the other end's plate"
+     "source_line": 156,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh (before 279 the minivan, pickup and moorrover shared one 24-triangle mesh for both ends); render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
@@ -853,9 +853,9 @@
      "colour": "0xf4f4f4",
      "proud_of_body_m": 0.05,
      "gap_to_body_m": 0.01,
-     "own_mesh": true,
-     "source_line": 94,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "source_line": 95,
+     "tagged_as": "mesh.userData.plate = 'front'",
+     "how_to_find": "three box meshes (white board 0.5 x 0.5 x 0.04, red stem, red foot), each tagged; render/platecosmetic.js existingPlates(model)"
     },
     {
      "face": "rear",
@@ -873,9 +873,9 @@
      "colour": "0xf4f4f4",
      "proud_of_body_m": 0.05,
      "gap_to_body_m": 0.01,
-     "own_mesh": true,
-     "source_line": 95,
-     "how_to_find": "a mesh of 12 triangles (one box), centre/size as given, in the model group root"
+     "source_line": 96,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "three box meshes (white board 0.5 x 0.5 x 0.04, red stem, red foot), each tagged; render/platecosmetic.js existingPlates(model)"
     }
    ],
    "cars": [
