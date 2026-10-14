@@ -30,6 +30,7 @@
 import * as THREE from 'three';
 import { EASY_LAMPS } from './carlights-easy.js';
 import { HARD_LAMPS } from './carlights-hard.js';
+import { GUESS_LAMPS } from './carlights-guess.js';
 
 // (the hand-written entries; the generated batches are merged in under them: TABLE)
 export const CAR_LAMPS = {
@@ -90,8 +91,9 @@ export const CAR_LAMPS = {
   },
 };
 
-// every listed car: the generated batches (render/carlights-easy.js, carlights-hard.js), the hand-written ones over them
-export const TABLE = { ...EASY_LAMPS, ...HARD_LAMPS, ...CAR_LAMPS };
+// every listed car: the generated batches (render/carlights-easy.js, carlights-hard.js), the guesses for models with no
+// lamp to measure (carlights-guess.js, each `guess: true`), the hand-written ones over them
+export const TABLE = { ...EASY_LAMPS, ...HARD_LAMPS, ...GUESS_LAMPS, ...CAR_LAMPS };
 
 // ---- ?lamps= (the debug and picture switches, above) ----
 const search = typeof location !== 'undefined' ? location.search : '';
