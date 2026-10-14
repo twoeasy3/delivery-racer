@@ -100,7 +100,8 @@ const draft = (car, model) => {
     });
     return kept;
   };
-  const head = fold(front.filter(l => l.cat === 'white')), tail = fold(rear.filter(l => l.cat === 'red'));
+  // (a wide white piece high on the front is a lit destination sign, not a headlamp)
+  const head = fold(front.filter(l => l.cat === 'white' && !(l.w > 0.7 && l.y > 1.4))), tail = fold(rear.filter(l => l.cat === 'red'));
   const reverse = fold(rear.filter(l => l.cat === 'white'));
   const blink = [...fold(front.filter(l => l.cat === 'amber')), ...fold(rear.filter(l => l.cat === 'amber'))];
   // no amber lens at an end: flash over the outer part of the outermost lamp there

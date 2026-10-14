@@ -117,6 +117,9 @@ const slot = (l, w, h, out, d = 0.02) => {
   const dir = Math.sign(l.at[2]) || 1;
   return { x: l.at[0], y: l.at[1], z: l.at[2] + dir * (out + d / 2), w, h, d, round: !!l.round };
 };
+// a halo or glow round a lamp: k times its size and a margin, but never more than `most` past its edges (a lamp right
+// across the car keeps its glow on the car)
+const grow = (size, k, margin, most) => Math.min(size * k + margin, size + most);
 const layouts = new Map();
 export const lampLayout = (key) => {
   if (!key || LAMP_DEBUG.old || !TABLE[key]) return null;
@@ -127,10 +130,10 @@ export const lampLayout = (key) => {
   const layout = {
     key, generic: false, frame: def.frame || null,
     brake: brakeLamps.map(l => (Array.isArray(l.brake) ? slot(l, l.brake[0], l.brake[1], OUT.brake) : slot(l, l.size[0], l.size[1], OUT.brake))),
-    halo: brakeLamps.map(l => ({ ...slot(l, l.size[0] * 1.35 + 0.08, l.size[1] * 1.35 + 0.08, OUT.halo, 0.01), round: true })), // (a soft round halo)
+    halo: brakeLamps.map(l => ({ ...slot(l, grow(l.size[0], 1.35, 0.08, 0.12), grow(l.size[1], 1.35, 0.08, 0.12), OUT.halo, 0.01), round: true })), // (a soft round halo)
     blink: blink.map(l => ({ ...slot(l, l.size[0], l.size[1], OUT.blink), side: Math.sign(l.at[0]) || 1, front: l.at[2] > 0, red: !!l.red })),
-    flash: head.map(l => slot(l, l.size[0] * 1.8 + 0.08, l.size[1] * 1.8 + 0.08, OUT.flash, 0.01)),
-    glow: head.map(l => ({ ...slot(l, l.size[0] * 2.4 + 0.14, l.size[1] * 2.4 + 0.14, OUT.glow, 0.01), round: true })),
+    flash: head.map(l => slot(l, grow(l.size[0], 1.8, 0.08, 0.25), grow(l.size[1], 1.8, 0.08, 0.25), OUT.flash, 0.01)),
+    glow: head.map(l => ({ ...slot(l, grow(l.size[0], 2.4, 0.14, 0.3), grow(l.size[1], 2.4, 0.14, 0.3), OUT.glow, 0.01), round: true })),
     // (for the markers)
     marks: [...head.map(l => ['head', l]), ...tail.map(l => [l.brake === false ? 'tail' : 'brake', l]), ...blink.map(l => [l.red ? 'blinkred' : 'blink', l]), ...reverse.map(l => ['reverse', l])],
     // the player's night spotlights: their spread (m either side) and where along the car they start
