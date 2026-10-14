@@ -1,7 +1,8 @@
 // A check of Crazey Jim's blueprint stall (src/delivery/jimshop.js; CHECKLIST item 243), headless: the day's rotation is the same
 // for a date (and differs between dates), has the offers it should (distinct cars, a quantity and stock by rarity, one hot deal),
-// NEVER offers a Bespoke key car's blueprints, an event car, a noPacks car, an earned / super car or the Tank (400 days, and
-// the pool is exactly the packs' evergreen pool), the price rises with each bundle bought, the hot deal is cheaper, a bundle is
+// offers the FULL evergreen set (the owner, 14-Oct): the packs' ordinary evergreen cars AND every key car (Bespoke, concept),
+// and NEVER an earned / super car, the Tank, an off car or a noPacks car that is not a key car (400 days); key cars: dearer
+// (keyMult), at most keyCap blueprints a day each, never the hot deal, rare; the price rises with each bundle bought, the hot deal is cheaper, a bundle is
 // cut to what a car still needs and a maxed car is not for sale, the daily stock and the daily cap, the affordable check,
 // buying takes the money and gives the blueprints and counts it, the rotation boundary at LOCAL midnight (the counts of the
 // day before are void), the save (cleaned, a code from before has none, the cookie's size).
@@ -23,14 +24,17 @@ try {
   const day = (n) => new Date(Date.UTC(2026, 9, 1 + n, 12)).toISOString().slice(0, 10);
 
   // ---- the pool ----
-  const everyone = Object.values(pool()).flat();
+  const groups = pool(), everyone = Object.values(groups).flat();
   const evergreen = Object.values(P.pools().evergreen).flat();
-  check(everyone.length === evergreen.length && everyone.every(c => evergreen.includes(c)), 'the pool is the packs\' evergreen pool (' + everyone.length + ' cars)');
-  const never = [...Cars.BESPOKE_CARS, ...Cars.EVENT_CARS, ...Cars.CARS.filter(c => c.noPacks), ...Cars.EARNED_CARS];
-  check(never.length > 5 && never.every(c => !everyone.includes(c)), 'no Bespoke key car, event car, noPacks car or earned car is in the pool (' + never.length + ' checked)');
-  check(everyone.every(c => !barred(c) && JIM.weight[P.rarityOf(c)]), 'every pool car has a rarity Jim prices and is not barred');
-  check(['sixteen', 'silvercomet', 'rocketfin', 'swancar', 'solarracer', 'moonrover', 'monowheel', 'quadturbo', 'knifeedge', 'windsong', 'midsummer', 'hotdog', 'snocat', 'horseshoe'].every(id => !everyone.some(c => c.id === id)), 'the concept and key cars are not in the pool');
-  check(everyone.every(c => J.unitPrice(c) >= 1 && Number.isInteger(J.unitPrice(c))), 'every pool car has a whole-dollar unit price');
+  check(evergreen.every(c => groups[P.rarityOf(c)].includes(c)) && groups.common.length + groups.uncommon.length + groups.epic.length + groups.legendary.length === evergreen.length, 'the pool holds all ' + evergreen.length + ' ordinary evergreen cars of the packs (' + groups.legendary.length + ' of them Legendary)');
+  const keys = [...new Set([...Cars.BESPOKE_CARS, ...Cars.EVENT_CARS.filter(c => c.bespoke)])].filter(c => !c.off);
+  check(keys.length >= 15 && keys.every(c => groups.key.includes(c)) && groups.key.length === keys.length, 'and every key car: ' + groups.key.map(c => c.id).join(', '));
+  check(['silvercomet', 'rocketfin', 'swancar', 'solarracer', 'moonrover', 'monowheel', 'snocat', 'hotdog', 'horseshoe', 'fishbowl', 'midsummer', 'sixteen', 'quadturbo', 'knifeedge', 'windsong'].every(id => groups.key.some(c => c.id === id)), 'the Bespoke, event and concept key cars are in');
+  const barredOut = [...Cars.EARNED_CARS, ...Cars.CARS.filter(c => c.tank), ...Cars.CARS.filter(c => c.noPacks && !c.bespoke), ...Cars.FILLER_CARS.filter(c => c.noPacks && !c.bespoke)];
+  check(barredOut.length > 8 && barredOut.every(c => !everyone.includes(c) && barred(c)), 'out (' + barredOut.length + ' checked): earned cars, the Tank, the noPacks cars that are not key cars (' + Cars.FILLER_CARS.filter(c => c.noPacks && !c.bespoke).map(c => c.id).join(', ') + ')');
+  check(everyone.every(c => J.unitPrice(c) >= 1 && Number.isInteger(J.unitPrice(c)) && JIM.weight[P.rarityOf(c)]), 'every pool car has a rarity Jim prices and a whole-dollar unit price');
+  const key0 = groups.key.find(c => c.id === 'sixteen'), ord0 = groups.legendary[0];
+  check(J.unitPrice(key0) === Math.round(J.basisOf(key0) * JIM.k[P.rarityOf(key0)] * JIM.keyMult) && J.unitPrice(key0) > J.unitPrice(ord0), 'a key car costs keyMult (x' + JIM.keyMult + ') more: ' + key0.id + ' $' + J.unitPrice(key0) + ' a blueprint, ' + ord0.id + ' $' + J.unitPrice(ord0));
 
   // ---- the rotation ----
   const a = rotation(day(0)), b = rotation(day(0)), c = rotation(day(1));
@@ -44,7 +48,7 @@ try {
     if (new Set(r.map(o => o.id)).size !== r.length) dup++;
     if (r.filter(o => o.hot).length !== 1) hots++;
     if (r.some(o => o.hot && o.rarity === 'legendary')) legendHot++;
-    for (const o of r) if (barred(o.car) || never.includes(o.car) || !JIM.qty[o.rarity].includes(o.qty) || o.stock !== JIM.stock[o.qty] || o.first < 1) bad++;
+    for (const o of r) if (barred(o.car) || barredOut.includes(o.car) || (o.key && (o.qty > JIM.keyCap || o.stock * o.qty > JIM.keyCap || o.hot)) || (!o.key && (!JIM.qty[o.rarity].includes(o.qty) || o.stock !== JIM.stock[o.qty])) || o.first < 1) bad++;
   }
   check(bad === 0, 'in 400 days: no barred car, every quantity and stock as its rarity allows, every price at least $1');
   check(size === 0 && dup === 0 && hots === 0 && legendHot === 0, 'in 400 days: ' + JIM.slots + ' distinct cars, exactly one hot deal, never a legendary');
@@ -55,6 +59,20 @@ try {
   check(rotation(day(0), { cars: Cars.CARS.slice(0, 2) }).length <= 2, 'a pool of two: at most two offers');
   const hot = a.find(o => o.hot);
   check(bundlePrice(hot, hot.qty, 0) < Math.ceil(hot.unit * hot.qty) && Math.abs(bundlePrice(hot, hot.qty, 0) / Math.ceil(hot.unit * hot.qty) - (1 - JIM.hotOff)) < 0.05, 'the hot deal is ' + Math.round(JIM.hotOff * 100) + '% off');
+
+  // ---- the key cars ----
+  let keyDays = 0, keyOffers = 0;
+  for (let d = 0; d < 1000; d++) { const k = rotation(day(d)).filter(o => o.key).length; if (k) keyDays++; keyOffers += k; }
+  check(keyDays > 50 && keyDays < 500, 'key cars are rare: on ' + keyDays + ' of 1000 days at least one is on the stall (' + keyOffers + ' offers; weight ' + JIM.weight.key + ' of ' + Object.values(JIM.weight).reduce((n, w) => n + w, 0) + ')');
+  const kOffer = rotation(day(0), { force: ['sixteen', 'swancar'] }).filter(o => o.key);
+  check(kOffer.length === 2 && kOffer.every(o => !o.hot && o.stock * o.qty <= JIM.keyCap && o.unit === J.unitPrice(o.car)), 'a key car can be put on the stall (force): never the hot deal, stock x bundle within keyCap');
+  const k1 = kOffer[0], kv = (st, m = 1e6) => viewOf(k1, { day: day(0), state: st, money: m, blueprints: 0 });
+  check(kv({ day: day(0), n: { [k1.id]: k1.stock }, bp: k1.stock * k1.qty }).why === 'sold', 'a key car sells out at keyCap blueprints a day (' + JIM.keyCap + ')');
+  check(needed(k1.car, 0) === 20, 'a key car needs 20 blueprints for max ECU');
+  const dayMax = (() => { // (days Jim alone could give 20: infinite money, the best case, each key car offered every day it is drawn)
+    return 20 / JIM.keyCap;
+  })();
+  check(dayMax === 20 / JIM.keyCap, 'at keyCap ' + JIM.keyCap + ' a key car is ' + dayMax + ' days of its offer to max (the stall must draw it that many days)');
 
   // ---- prices ----
   const plain = a.find(o => !o.hot);

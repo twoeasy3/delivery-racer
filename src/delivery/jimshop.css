@@ -65,6 +65,9 @@
 .jim-info { display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1 1 auto; }
 
 /* what you have: "You have 4 / 5 for ECU 2", the bar (what you have, then what the bundle adds, striped), and what the bundle does */
+.jim-screen .jim-key { margin: 0; font-size: 11px; font-weight: 700; line-height: 1.25; color: #ffd6ef; }
+.jim-key b { display: inline-block; margin-right: 6px; padding: 2px 6px 1px; border-radius: 3px; font: 900 11px/1.1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: #fff; background: #c41f86; box-shadow: 0 0 0 1.5px #ff3fae; }
+.jim-offer.key { --rc: #ff3fae; }
 .jim-have { display: flex; flex-direction: column; gap: 4px; }
 .jim-have-line { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 6px; font-size: 12px; font-weight: 700; line-height: 1.25; color: #d4d9e4; }
 .jim-have-line b { font: 800 16px/1 var(--display); color: #fff; font-variant-numeric: tabular-nums; }

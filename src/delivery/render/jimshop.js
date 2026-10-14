@@ -10,7 +10,7 @@
 // count run to their new figures, a toast says what you got ("+3 Hearse blueprints", "ECU 2 reached!").
 // By address (for a look; nothing is saved):
 //   ?jimshop                  open it (on the menu)
-//   &demo[=name]              a made-up save: normal (default), expensive (the confirm up), soldout, broke, maxed, capped, empty (all sold),
+//   &demo[=name]              a made-up save: normal (default), keycar (two key cars on the stall), expensive (the confirm up), soldout, broke, maxed, capped, empty (all sold),
 //                             nopool (no cars), bought (a purchase just made, feedback held)
 //   &jimcash=<n>              the bank for the visit        &jimpress=<n>   press BUY on offer n (0-based, as laid out)
 //   &jimhold                  keep the toast up             &eventsnow=<date-time> sets the day (the rotation) and the clock
@@ -88,10 +88,11 @@ const offerCard = (v, anim) => {
   if (!v.why) button.addEventListener('click', () => buy(v.id));
   const { node, pic } = blueprintCard(v.car, { rarity: v.rarity, n: v.qty }, { pose: 'front' });
   pics?.watch(pic, v.car, { side: 'good' });
-  const card = make('article', 'jim-offer r-' + v.rarity + (v.hot ? ' hot' : '') + (off ? ' off' : '') + (bought ? ' bought' : ''),
+  const card = make('article', 'jim-offer r-' + v.rarity + (v.hot ? ' hot' : '') + (v.key ? ' key' : '') + (off ? ' off' : '') + (bought ? ' bought' : ''),
     v.hot && !off ? make('div', 'jim-hot', make('span', '', 'Hot'), make('span', '', 'deal'), make('b', '', '−' + Math.round(JIM.hotOff * 100) + '%')) : null,
     make('div', 'jim-art', node, v.why === 'sold' ? make('div', 'jim-stamp', 'Sold out') : v.why === 'maxed' ? make('div', 'jim-stamp max', 'Maxed') : null),
-    make('div', 'jim-info', make('div', 'jim-have', line, bar, gain), board, stock, button));
+    make('div', 'jim-info', v.key ? make('p', 'jim-key', make('b', '', 'Key car'), v.car.concept ? 'Max ECU + a delivery earns the key' : 'Its key comes in Bespoke packs') : null,
+      make('div', 'jim-have', line, bar, gain), board, stock, button));
   card.dataset.car = v.id;
   return card;
 };
@@ -140,7 +141,7 @@ const draw = () => {
   const grid = offers.length
     ? make('section', 'jim-grid', ...order.map(o => offerCard(o, last)))
     : make('div', 'jim-empty', make('h2', '', 'Jim has nothing today'), make('p', '', 'No blueprints on the stall. New stock in ', live.cloneNode(true), '.'));
-  const small = make('p', 'jim-small', '*Terms apply. Prices rise a little with every bundle of the same blueprint you buy today. Jim sells at most ' + JIM.dayCap + ' blueprints a day, and only for cars from the packs. Tips only, no refunds, no questions.');
+  const small = make('p', 'jim-small', '*Terms apply. Prices rise a little with every bundle of the same blueprint you buy today. Jim sells at most ' + JIM.dayCap + ' blueprints a day, never a key, and key cars cost more and no more than ' + JIM.keyCap + ' of each a day. Tips only, no refunds, no questions.');
   screen.replaceChildren(...[top, flags, sign, strip, note, grid, small].filter(Boolean));
   screen.scrollTop = keep;
   last = null;
@@ -251,6 +252,7 @@ const demo = (name) => {
   Progress.noSave = true;
   const data = Progress.data;
   data.money = 900; data.blueprints = {}; data.jimBuys = {}; data.maxed = ['commuter'];
+  if (name === 'keycar') Jim.force = ['sixteen', 'rocketfin'];
   const offers = Jim.offers(), day = Jim.day(), buys = {};
   const sell = (o, n = o.stock) => { buys[o.id] = n; };
   const used = new Set(), pick = (test) => { const o = offers.find(x => !used.has(x.id) && test(x)) || offers.find(x => !used.has(x.id)); if (o) used.add(o.id); return o; };
@@ -275,6 +277,7 @@ const demo = (name) => {
     case 'capped': data.money = 3000; base(); cap = true; break;
     case 'empty': data.money = 800; offers.forEach(o => sell(o)); break;
     case 'nopool': poolOverride = []; break;
+    case 'keycar': data.money = 3000; base(); break;
     default: base(); break; // normal, bought
   }
   if (Object.keys(buys).length || cap) {
