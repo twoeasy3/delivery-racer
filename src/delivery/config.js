@@ -108,8 +108,10 @@ export const CONFIG = {
   // is in messages.json, under powerups.mystery
   mystery: {
     // (the last eight are the second batch: see mysteries.js, and below)
+    // 'soupedUp' (the Super version swap) is OFF for now (the owner, 14-Oct: "disable the Super kit idea for now. Turn it off in
+    // Mystery"): its code and wording stay, it just is not in the pool. Put it back between 'bulletTrain' and 'earthquake' to switch it on
     effects: ['rickety', 'toad', 'angel', 'jerk', 'invincible', 'noBrakes', 'insuranceUp', 'insuranceDown', 'ufo', 'bulletTrain',
-      'soupedUp', 'earthquake', 'rewind', 'giant', 'swapSides', 'magnet', 'blackout', 'trafficFreeze'],
+      'earthquake', 'rewind', 'giant', 'swapSides', 'magnet', 'blackout', 'trafficFreeze'],
     //   soupedUp       the player's car is swapped for its Super version (cars.js superOf) for soupedUp.time s
     //   earthquake     the road ripples: everything bobs, and every car is bounced into the lane beside it
     //   rewind         ten seconds back, clock and all (over at once)

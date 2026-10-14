@@ -109,7 +109,9 @@ try {
   g.run(2);
   check(where.some(([c, s]) => c.active && c.s !== s), 'traffic freeze: and they move again');
 
-  // ---- souped up, and the Super cars
+  // ---- souped up, and the Super cars (it is OFF in the pool since 14-Oct: the forced tests below put it in the pool for a moment, and the draw test at the end checks it is never drawn)
+  const soupedOff = !M.effects.includes('soupedUp');
+  if (soupedOff) M.effects.push('soupedUp');
   start();
   const base = g.cars.CAR, top = base.maxSpeed, healthShare = P.health / P.maxHealth;
   mystery('soupedUp');
@@ -127,6 +129,7 @@ try {
       'souped up: the Lowrider becomes the garage\'s Super Lowrider (' + lent.name + ', ' + lent.maxSpeed + ' m/s)');
     check(superOf(superOf(CARS.find(c => c.id === 'lowrider'))) === null, '...which has no Super version of its own while lent');
   }
+  if (soupedOff) M.effects.splice(M.effects.indexOf('soupedUp'), 1);
   const tiered = CARS.filter(c => c.tier && c.tier <= 5 && c.id !== 'lowrider');
   check(tiered.every(c => superOf(c) && superOf(c).id === 'super-' + c.id && superOf(superOf(c)) === null), 'a Super version of each of the ' + tiered.length + ' tiered cars, and none of a Super car');
   check(tiered.every(c => SUPER_LIVERIES[c.id]), 'a Super livery for each' + tiered.filter(c => !SUPER_LIVERIES[c.id]).map(c => ' (none: ' + c.id + ')').join(''));
@@ -137,8 +140,9 @@ try {
   P.testGhost = true;
   const drawn = new Set();
   for (let i = 0; i < 400; i++) { P.collect('mystery'); drawn.add(P.mystery); for (const line of g.Message.lines) if (line.text) drawn.add(line.text); g.run(0.1); }
-  const missing = ['soupedUp', 'earthquake', 'giant', 'swapSides', 'magnet', 'blackout', 'trafficFreeze'].filter(e => !drawn.has(e));
+  const missing = [...(soupedOff ? [] : ['soupedUp']), 'earthquake', 'giant', 'swapSides', 'magnet', 'blackout', 'trafficFreeze'].filter(e => !drawn.has(e));
   check(!missing.length, 'every lasting new effect is drawn in 400 mysteries' + (missing.length ? ' (never: ' + missing.join(', ') + ')' : ''));
+  check(!soupedOff || !drawn.has('soupedUp'), 'souped up is off: never drawn in 400 mysteries');
   check(G.state === 'playing' || G.state === 'finished', 'and the run survives them all (' + G.state + ')');
 } catch (e) {
   failures++;
