@@ -13,6 +13,7 @@ import { SPECIALS } from './events.js';
 import { Progress } from './progress.js';
 import { cosmeticKeys, grantCosmetics } from './render/cosmetics.js';
 import './render/wheelcosmetic.js'; // (registers the wheel sets; a later cosmetic slot's module is imported here too, so that 'abs' sees its items)
+import { Ecu } from './ecu.js';
 
 export const MODES = { all: 'Everything', abs: 'Absolutely everything' };
 export const ABS_BANK = 9999999;       // $: well inside what the cookie holds (the bank is a short number in it)
@@ -24,7 +25,16 @@ export const everyCarId = () => [...new Set([...CARS, ...EARNED_CARS, ...EVENT_C
 
 export const unlockEverything = (mode = unlockMode()) => {
   Progress.complete({ levels: LEVELS.length, cars: CARS.map(car => car.id), money: CONFIG.completeBank }); // (as ever)
-  if (mode !== 'abs') return;
+  // (and every car at its max PURCHASED ECU, ecu.js: the garage's cars are in data.maxed, which holds a car at its max; a blueprint
+  // car or any other that blueprints reached is bought up to what they reached, so no upgrade is left to pay for)
+  Ecu.migrate();
+  const bought = (Progress.data.ecuBought ||= {});
+  for (const car of [...CARS, ...EARNED_CARS, ...EVENT_CARS, ...BESPOKE_CARS, ...FILLER_CARS]) {
+    if (!Ecu.kind(car)) continue;
+    const top = Ecu.maxed(car) ? 0 : Ecu.reached(car);
+    if (top > Ecu.purchased(car)) bought[car.id] = top;
+  }
+  if (mode !== 'abs') { Progress.save(); return; }
   const d = Progress.data, ids = everyCarId();
   for (const id of ids) if (!d.cars.includes(id)) d.cars.push(id);
   d.maxed = [...new Set([...(d.maxed || []), ...ids, ...FILLER_CARS.map(c => c.id)])]; // (max ECU for all, blueprint cars included)

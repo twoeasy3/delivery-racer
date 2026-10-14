@@ -1082,6 +1082,24 @@ export const CONFIG = {
   packageDamage: 4,        // a care package barely scratches what it hits
   evilPackageDamage: 25,   // an Evil player's flaming package: real damage, and it makes enemies
   completeBank: 10000,     // $ in the bank after "Unlock everything" on the menu
+  // ECU UPGRADE PRICES (the owner, 14-Oct: "ECU levels should cost bank to upgrade. Collecting the blueprints only unblocks the
+  // upgrade"; ecu.js Ecu.price). PLACEHOLDERS for the balancing pass. ECU1 is free (a key car's key, a blueprint car's X blueprints);
+  // the step TO ECU n (n >= 2) costs  ref x share x growth^(n - 2)  from the bank (the money balance, never Crazey Cash), rounded to
+  // `round` dollars. ref = a typical car lot price of the car's stars (the lot's own prices run 30 to 1350; a car with no stars,
+  // an event or Bespoke key car, uses `none`). Maxing a car then costs about a fifth of its ref for a 2-ECU car, half for a 3-ECU
+  // one, and 1 to 1.6 times its ref for the 4 and 5-ECU ones: the last steps are the sink. `perCar` pins a car's ref by id.
+  //   node scripts/.ecu-cost-check.mjs --table   prints every car's price per step
+  ecuCost: {
+    ref: {
+      gold: { 1: 50, 2: 170, 3: 310, 4: 450, 5: 700 },
+      blue: { 1: 290, 2: 450, 3: 730, 4: 1000, 5: 1270 },
+      none: 1500,
+    },
+    share: 0.2,    // of the ref, the first step (to ECU2)
+    growth: 1.5,   // each step after costs this many times the one before
+    round: 5,      // $
+    perCar: {},    // { carId: ref } for an exception
+  },
   // the Blue Star cars (the garage's second season) stay out of the garage, lot and all, until this
   // numbered level has been delivered
   blueStarsAfter: 20,
