@@ -53,7 +53,8 @@ import { renderSources } from './carsources.js'; // ("Where to get it": the car'
 import { fitLine } from './fitline.js';
 import { bankFigure } from './bank.js'; // (the bank: whole dollars, its type scaled to its length)
 import { overlayNode } from './lockoverlay.js'; // (a locked card's overlay: its kind's tint, badge and caption)
-import { upgradeBlock } from './ecuupgrade.js'; // (the full view's ECU Upgrade button: the bank pays for an ECU its blueprints unlocked)
+import { barFill } from './barfill.js';
+import { upgradeBlock, upFlash, freshLevel } from './ecuupgrade.js'; // (the full view's ECU Upgrade button: the bank pays for an ECU its blueprints unlocked)
 
 const panel = document.getElementById('showroom');
 const startScreen = document.getElementById('startScreen');
@@ -71,16 +72,18 @@ export const isPhone = () => !!window.matchMedia?.('(max-width: 760px) and (min-
 const pips = (card) => {
   const row = make('span', 'sr-pips');
   row.setAttribute('aria-label', 'ECU ' + card.bought + ' of ' + card.max + (card.ecu > card.bought ? ' (' + card.ecu + ' unlocked, not yet bought)' : ''));
-  for (let i = 1; i <= card.max; i++) row.append(make('i', i <= card.bought ? 'on' : i <= card.ecu ? 'ready' : '')); // (ready: unlocked by its blueprints, to be bought)
+  for (let i = 1; i <= card.max; i++) row.append(make('i', (i <= card.bought ? 'on' : i <= card.ecu ? 'ready' : '') + (i === freshLevel(card) ? ' fresh' : ''))); // (ready: unlocked by its blueprints, to be bought; fresh: just bought, it glows)
   return row;
 };
 const blueprintBar = (card, long = false) => {
   if (!card.upgradable) return make('span', 'sr-bp none', long ? (card.car.earned ? 'A special car: no blueprints, it stays at ECU1' : 'Comes maxed: no blueprints') : 'No blueprints');
   const fill = make('i');
-  fill.style.width = Math.round(card.have / card.toNext * 100) + '%';
-  const words = card.maxed ? (long ? (card.bought >= card.max ? 'Maxed out' : 'All blueprints collected') + (card.blueprints ? ' (' + card.blueprints + ' blueprint' + (card.blueprints === 1 ? '' : 's') + ')' : '') : 'MAX')
+  const bar = barFill({ have: card.have, toNext: card.toNext, ecu: card.ecu, bought: card.bought, max: card.max }); // (an upgrade ready to buy: full and overfilled)
+  fill.style.width = bar.pct + '%';
+  const words = bar.over ? (long ? (card.maxed ? 'All blueprints collected: ' : '') + 'Upgrade to ECU' + (card.bought + 1) + ' ready to buy' + (card.blueprints ? ' (' + card.blueprints + ' blueprint' + (card.blueprints === 1 ? '' : 's') + ')' : '') : 'READY')
+    : card.maxed ? (long ? (card.bought >= card.max ? 'Maxed out' : 'All blueprints collected') + (card.blueprints ? ' (' + card.blueprints + ' blueprint' + (card.blueprints === 1 ? '' : 's') + ')' : '') : 'MAX')
     : card.have + '/' + card.toNext + (long ? ' blueprints to ' + (card.ecu === 0 ? 'unlock it' : 'ECU' + (card.ecu + 1)) : '');
-  return make('span', 'sr-bp' + (card.maxed ? ' maxed' : ''), make('b', 'sr-bp-icon', '▤'), make('span', 'sr-bp-track', fill), make('small', '', words));
+  return make('span', 'sr-bp' + (card.maxed ? ' maxed' : '') + (bar.over ? ' over' : ''), make('b', 'sr-bp-icon', '▤'), make('span', 'sr-bp-track', fill), make('small', '', words));
 };
 const starsNode = (card) => {
   const span = make('span', 'sr-stars', card.stars || '');
@@ -556,7 +559,8 @@ const showDetail = () => {
         make('span', 'sr-kind', makerLine(card.car)))),
       make('div', 'sr-decu', make('small', '', 'ECU'), pips(card), make('b', '', card.bought + ' of ' + card.max)),
       blueprintBar(card, true),
-      upgradeBlock(card, () => { Showroom.reshow(); }),
+      upFlash(card),
+      upgradeBlock(card, () => { Showroom.reshow(); }, { evil: evilNow() }),
       figures,
       card.perk && !card.hidden ? make('p', 'sr-perk', make('b', '', 'Perk '), card.perk) : null,
       why,

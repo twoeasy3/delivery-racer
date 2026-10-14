@@ -125,8 +125,7 @@ export const wasPrice = (offer, qty, bought) => Math.ceil(offer.unit * qty * (1 
 // the blueprints a car still needs to reach its max ECU (0: it is there)
 export const needed = (car, have = Ecu.blueprints(car.id)) => {
   if (Ecu.maxed(car)) return 0;
-  const max = Ecu.max(car), x = Ecu.x(car), full = (Ecu.isBlueprint(car) ? max : max - 1) * x;
-  return Math.max(0, full - have);
+  return Math.max(0, Ecu.cap(car) - have); // (the cap: ecu.js, X per step; a count above it needs none)
 };
 
 // ---- the counts ----------------------------------------------------------------------------------------------------------------
@@ -164,9 +163,10 @@ export const viewOf = (offer, { day, slot = 0, state, money, blueprints = Ecu.bl
 // where a car's blueprints stand (with `add` more): { bp, ecu, max, toNext (per ECU), have (toward the next), unlocked }, as packs.js revealProgress
 export const stand = (car, add = 0) => {
   const x = Math.max(1, Ecu.x(car) || 1), max = Math.max(1, Ecu.max(car) || 1), blueprint = Ecu.isBlueprint(car);
-  const n = Ecu.blueprints(car.id) + add, steps = Math.floor(n / x);
+  const cap = Ecu.cap(car), n = cap > 0 ? Math.min(Ecu.blueprints(car.id) + add, cap) : Ecu.blueprints(car.id) + add, steps = Math.floor(n / x); // (the display reads a count above the cap as the cap)
   const ecu = Ecu.maxed(car) ? max : Math.min(max, blueprint ? steps : 1 + steps);
-  return { bp: n, ecu, max, toNext: x, have: ecu >= max ? x : n % x, unlocked: blueprint ? ecu >= 1 || Progress.data.cars.includes(car.id) : Progress.owns(car.id) };
+  const bought = Math.min(ecu, Ecu.purchased(car)); // (over: the blueprints have reached an ECU not bought yet: the bar is full and overfilled, barfill.js)
+  return { bp: n, ecu, max, toNext: x, have: ecu >= max ? x : n % x, unlocked: blueprint ? ecu >= 1 || Progress.data.cars.includes(car.id) : Progress.owns(car.id), bought, over: ecu > bought };
 };
 
 export const Jim = {

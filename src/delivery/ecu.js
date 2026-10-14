@@ -23,8 +23,11 @@
 // one ECU per X blueprints, capped by the ladder, as ever) and PURCHASED (what it plays at: purchased(), saved in
 // Progress.data.ecuBought = { [carId]: ECU }, the cars above their free first ECU only). level() = the purchased one. ECU1 is
 // free: a key car's key, a blueprint car's first X blueprints (they unlock it; there is no ECU0 to buy out of). Each ECU above
-// ECU1 is one purchase, in order, from the bank (price(): CONFIG.ecuCost), and only up to the reached level and only with the
-// key. A maxed car (data.maxed) is purchased at its max whatever is saved. A save with no ecuBought (before this) is migrated
+// ECU1 is one purchase, in order, from the bank (price(): CONFIG.ecuCost), and only up to the reached level. A KEY car whose key is
+// not had yet MAY buy its ECUs (the owner, 14-Oct: 'Yes, paid upgrades'): the car stays unselectable until the key is had, and then plays at
+// the level bought. BLUEPRINT CAP (the owner, 14-Oct): a car takes no more blueprints than it needs to max (cap(): X per step times its
+// steps; none for a car with no ECU or a 1-ECU key car): addBlueprints clamps, packs.js deals no card of a capped car; a saved count above
+// the cap is left as it is (data untouched, reads clamped). A maxed car (data.maxed) is purchased at its max whatever is saved. A save with no ecuBought (before this) is migrated
 // once, on first use: every car's purchased level = the level its blueprints gave it (migrate()).
 // ecus.json is imported here, so it is in the replay `logic` hash (vite.config.js): an edit to it refuses old replays.
 // ============================================================================
@@ -189,15 +192,31 @@ export const Ecu = {
 
   // ---- the save ----
   blueprints(carId) { return Progress.data.blueprints?.[carId] || 0; },
-  // n blueprints of a car added (saved). Returns the ECU the car has now reached (reached: a key car without its key
-  // has reached it all the same, and plays at it once the key is had; a blueprint car short of X: 0)
+  // THE CAP (the owner, 14-Oct): the most blueprints a car can use: a blueprint car's max ECU x X (X unlock it, X more each step), a key
+  // car's (max - 1) x X; 0 for a car with no ECU or a key car that stops at ECU1 (a special car, a 1-gold starter)
+  cap(car) {
+    const kind = this.kind(car);
+    if (!kind) return 0;
+    return Math.max(0, (kind === 'key' ? this.max(car) - 1 : this.max(car)) * this.x(car));
+  },
+  // the blueprints counted for it (a saved count above the cap reads as the cap: the data is left alone)
+  counted(car) { return car ? Math.min(this.blueprints(car.id), Math.max(this.cap(car), 0)) : 0; },
+  // is it at its cap (maxed, or has all the blueprints it can use)? A car with no ECU: true (it takes none)
+  capped(car) { return !car || this.cap(car) <= 0 || this.maxed(car) || this.blueprints(car.id) >= this.cap(car); },
+  // blueprints it can still take: 0 when capped
+  room(car) { return this.capped(car) ? 0 : this.cap(car) - this.blueprints(car.id); },
+  // n blueprints of a car added (saved), CLAMPED to the cap (a count already above it is never reduced). Returns the ECU the car has now
+  // reached (reached: a key car without its key has reached it all the same, and plays at it once the key is had; a blueprint car short of X: 0)
   addBlueprints(carId, n = 1) {
     this.migrate(); // (a save from before the purchases: its levels are kept before the blueprints change them)
     const data = Progress.data;
-    data.blueprints ||= {};
-    data.blueprints[carId] = Math.max(0, (data.blueprints[carId] || 0) + Math.floor(n));
-    Progress.save();
     const car = byId(carId);
+    data.blueprints ||= {};
+    const before = data.blueprints[carId] || 0, wanted = Math.max(0, before + Math.floor(n));
+    const limit = car ? this.cap(car) : 0; // (a car with no ECU, or no such car, takes none)
+    data.blueprints[carId] = car && this.maxed(car) ? before : Math.max(before, Math.min(wanted, limit));
+    if (!data.blueprints[carId]) delete data.blueprints[carId]; // (no empty entry kept)
+    Progress.save();
     return car ? this.reached(car) : 0;
   },
   maxed(car) { return !!car && (Progress.data.maxed || []).includes(car.id); },
@@ -237,7 +256,7 @@ export const Ecu = {
     return Math.max(c.round, Math.round(ref * c.share * Math.pow(c.growth, to - 2) / c.round) * c.round);
   },
   // where a car stands toward its next purchase: { state, to, price, bank, need?, short? }
-  //   none (no ECUs to buy) / maxed (bought to the top) / nokey (a key car without its key) / locked (a blueprint car not yet
+  //   none (no ECUs to buy) / maxed (bought to the top) / locked (a blueprint car not yet
   //   unlocked: its first X blueprints) / blueprints (the next ECU's blueprints not had: need more) / short (the bank is
   //   short: short more dollars) / ready (can be bought)
   upgrade(car) {
@@ -246,8 +265,7 @@ export const Ecu = {
     const have = this.purchased(car), to = have + 1, max = this.max(car);
     if (have >= max) return { state: 'maxed', to: have, price: 0, bank };
     const price = this.price(car, Math.max(2, to));
-    if (this.isKey(car) && !this.hasKey(car)) return { state: 'nokey', to, price, bank };
-    if (!this.unlocked(car)) return { state: 'locked', to, price, bank, need: Math.max(0, this.blueprintsFor(car, 1) - this.blueprints(car.id)) };
+    if (this.isBlueprint(car) && !this.unlocked(car)) return { state: 'locked', to, price, bank, need: Math.max(0, this.blueprintsFor(car, 1) - this.blueprints(car.id)) };
     if (this.reached(car) < to) return { state: 'blueprints', to, price, bank, need: Math.max(1, this.blueprintsFor(car, to) - this.blueprints(car.id)) };
     if (bank < price) return { state: 'short', to, price, bank, short: Math.round((price - bank) * 100) / 100 };
     return { state: 'ready', to, price, bank };
@@ -260,7 +278,7 @@ export const Ecu = {
     data.money = Math.max(0, Math.round((data.money - up.price) * 100) / 100);
     data.ecuBought[car.id] = up.to;
     Progress.save();
-    if (typeof window !== 'undefined') window.dispatchEvent?.(new Event('ecuchange'));
+    if (typeof window !== 'undefined') window.dispatchEvent?.(new CustomEvent('ecuchange', { detail: { car: car.id, from: up.to - 1, to: up.to, max: this.max(car) } })); // (the moment of the purchase: render/ecuupgrade.js plays the ECU UP glow and cinematic from it)
     return { ok: true, ...up, bank: data.money };
   },
   // has the player got its key? (a key car: bought, earned, given; Progress.owns)
@@ -307,7 +325,7 @@ export const Ecu = {
   // the figures a run drives the car with (cars.js carStats, on every use):
   //   a race (a separate game), or a car with no table: its own figures and CONFIG.respawnTime
   //   a car lent by Car Swap, a level's own vehicle (its car lock), a Super car: MAXED, as they always drove
-  //   a free try at the player's own ECU (the level's `ownEcu`: a rotating event's featured car): its reached ECU, key or none
+  //   a free try at the player's own ECU (the level's `ownEcu`: a rotating event's featured car): its PURCHASED ECU, key or none (14-Oct: buying is allowed without the key, so 'at its max ECU' is the bought level)
   //   a replay playing back: the ECU its header recorded (an old one, with none: maxed)
   //   else: the car's ECU (a car driven at ECU0, which only a test switch can do: ECU1)
   drive(car, lent = false) {
@@ -317,7 +335,7 @@ export const Ecu = {
     const tried = !!LEVEL?.ownEcu && LEVEL.car === car.id; // (a FREE TRY at the player's own ECU: a rotating event's featured car, events.js; CHECKLIST 211)
     if (lent || (LEVEL && LEVEL.car === car.id && !tried)) return this.stats(car, max);
     if (pinned) return this.stats(car, pinned.car === car.id && pinned.ecu ? pinned.ecu : max);
-    return this.stats(car, Math.max(1, tried ? this.reached(car) : this.level(car))); // (a free try: what its blueprints reach, the key or none)
+    return this.stats(car, Math.max(1, tried ? this.purchased(car) : this.level(car))); // (a free try: the level BOUGHT, key or none: 'max ECU' means the bought level)
   },
   // a replay's ECU, while it plays back (replay.js): { car, ecu } (ecu null: maxed), or null when it is over
   pin(value) { pinned = value && value.car ? { car: value.car, ecu: Number(value.ecu) || null } : null; },

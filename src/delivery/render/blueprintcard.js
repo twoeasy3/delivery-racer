@@ -15,6 +15,7 @@
 import '../blueprintcard.css';
 import { stars, starColour } from '../cars.js';
 import { Ecu } from '../ecu.js';
+import { barFill } from './barfill.js';
 import { keyPicture } from './keycard.js'; // (a KEY card's picture: the car's key, not the car)
 
 const make = (tag, className, ...inside) => {
@@ -69,27 +70,31 @@ export const blueprintCard = (car, card, { compact = false, chance = null, marks
 };
 
 // ---- the progress bar under a revealed card (the owner, 12-Oct): the car's ECU pips and its blueprints toward the next
-// ECU (n/X), standing where they were BEFORE this card; land() fills it to where they are AFTER (animated, or at once),
-// and where the card unlocked the car or took it up an ECU the bar GLOWS, with "UNLOCKED!" / "ECU 2!" and the new pip
-// lit. A car at its top shows MAX. p: packs.js revealProgress's entry for the card
-const fillOf = (s) => (s ? Math.round(Math.max(0, Math.min(1, s.have / s.toNext)) * 100) + '%' : '0%');
+// ECU (n/X), standing where they were BEFORE this card; land() fills it to where they are AFTER (animated, or at once).
+// A card that unlocked the car (a blueprint car's first ECU, a key car's key) GLOWS with "UNLOCKED!". A card that took the blueprints
+// up to an ECU not bought yet does NOT glow (the owner, 14-Oct: the ECU UP glow and cinematic are the PURCHASE's, render/ecuupgrade.js):
+// the bar reads FULL and overfilled (barfill.js), the new pip is outlined and a small quiet "Upgrade ready" is written under it.
+// A car at its top shows MAX. p: packs.js revealProgress's entry for the card
+const wordsOf = (s) => (s.over ? 'READY' : s.ecu >= s.max ? 'MAX' : s.have + '/' + s.toNext);
+export const readyWords = (s) => (s.ecu >= s.max ? 'Upgrade ready · MAX ECU' : 'Upgrade ready · ECU ' + (s.bought + 1));
 export const progressBar = (p, card) => {
   if (!p?.before) return { node: make('div', 'bp-prog none'), land() {}, step() {} };
   const { before, after } = p;
   const steps = p.steps?.length ? p.steps : [after]; // (where it stands after each copy the slot gave: the bar fills copy by copy)
   const pips = make('span', 'bp-pips');
-  for (let i = 1; i <= after.max; i++) pips.append(make('i', i <= before.ecu ? 'on' : ''));
+  const pipsFor = (s) => [...pips.children].forEach((pip, i) => { pip.classList.toggle('on', i < s.bought); pip.classList.toggle('ready', i >= s.bought && i < s.ecu); });
+  for (let i = 1; i <= after.max; i++) pips.append(make('i'));
+  pipsFor(before);
   const fill = make('i');
-  fill.style.width = before.ecu >= before.max ? '100%' : fillOf(before);
-  const words = (s) => (s.ecu >= s.max ? 'MAX' : s.have + '/' + s.toNext);
-  const count = make('small', 'bp-count', words(before));
+  fill.style.width = barFill(before).pct + '%';
+  const count = make('small', 'bp-count', wordsOf(before));
   const label = make('b', 'bp-up');
-  const node = make('div', 'bp-prog' + (before.ecu >= before.max ? ' max' : ''), pips, make('span', 'bp-track', fill), count, label);
+  const node = make('div', 'bp-prog' + (before.ecu >= before.max ? ' max' : '') + (before.over ? ' over' : ''), pips, make('span', 'bp-track', fill), count, label);
   node.title = card.key ? 'The key' : 'Blueprints toward the next ECU';
   let shown = 0, wrap = 0; // (copies on the bar so far; a pending wrap's timer)
   const empty = () => { fill.style.transition = 'none'; fill.style.width = '0%'; void fill.offsetWidth; fill.style.transition = ''; }; // (once an ECU, not a frame)
-  // step(k): the bar to where it stands after k copies (land(): all of them). It glows from the copy that unlocks the car
-  // or takes it up an ECU (a slot of many: on the flick that crosses it), with the words of where it stands then
+  // step(k): the bar to where it stands after k copies (land(): all of them). It glows only from the copy that unlocks the car; the
+  // copy that reaches an ECU not bought shows the quiet "Upgrade ready" and the overfilled bar
   const step = (k, instant = false) => {
     k = Math.min(steps.length, Math.max(0, k));
     if (k <= shown) return;
@@ -97,17 +102,21 @@ export const progressBar = (p, card) => {
     shown = k;
     if (wrap) { clearTimeout(wrap); wrap = 0; empty(); } // (a wrap still running: the bar starts the next ECU from empty now)
     node.classList.toggle('instant', instant);
-    const wrapped = !instant && to.ecu > was.ecu && to.ecu < to.max; // (an ECU reached: the bar runs full, then starts the next)
+    const wrapped = !instant && to.ecu > was.ecu && !barFill(to).full; // (an ECU reached and bought: the bar runs full, then starts the next)
     const finish = () => {
-      fill.style.width = to.ecu >= to.max ? '100%' : fillOf(to);
-      count.textContent = words(to);
-      [...pips.children].forEach((pip, i) => pip.classList.toggle('on', i < to.ecu));
-      for (let i = before.ecu; i < to.ecu; i++) pips.children[i]?.classList.add('new');
+      fill.style.width = barFill(to).pct + '%';
+      count.textContent = wordsOf(to);
+      pipsFor(to);
       node.classList.toggle('max', to.ecu >= to.max);
-      const unlocks = !before.unlocked && to.unlocked, up = to.ecu > before.ecu;
-      if (unlocks || up) {
-        label.textContent = unlocks ? (card.key ? 'KEY: UNLOCKED!' : 'UNLOCKED!') : to.ecu >= to.max ? 'ECU ' + to.ecu + ' · MAX!' : 'ECU ' + to.ecu + '!';
+      node.classList.toggle('over', !!to.over);
+      const unlocks = !before.unlocked && to.unlocked;
+      if (unlocks) {
+        label.textContent = card.key ? 'KEY: UNLOCKED!' : 'UNLOCKED!';
         node.classList.add('glow');
+        node.classList.remove('ready');
+      } else if (to.over) {
+        label.textContent = readyWords(to);
+        node.classList.add('ready');
       }
     };
     if (wrapped) {

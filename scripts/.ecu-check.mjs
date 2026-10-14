@@ -139,7 +139,12 @@ try {
   Progress.buy(sport);
   check(Ecu.level(sport) === 1 && Ecu.unlocked(sport) && Ecu.reached(sport) === 2, '...bought (its key): plays at ECU1 (blueprints alone no longer raise it), ECU2 reached');
   check(Ecu.buy(sport).ok && Ecu.level(sport) === 2, '...and ECU2 bought from the bank: plays at 2');
-  check(Ecu.addBlueprints('sport', 50) === 2 && Ecu.blueprints('sport') === 55, 'blueprints past the max are kept as a count, the ECU stays at its max');
+  check(Ecu.addBlueprints('sport', 50) === 2 && Ecu.blueprints('sport') === 5 && Ecu.cap(sport) === 5 && Ecu.capped(sport) && Ecu.room(sport) === 0, 'blueprints past the cap (14-Oct) are not kept: 50 more on a 2-ECU key car leave its 5, the ECU stays at its max');
+  { // a save from before the cap, with more than the cap: the data is left, the reads are clamped, and nothing reduces it
+    Progress.data.blueprints.sport = 55;
+    check(Ecu.blueprints('sport') === 55 && Ecu.counted(sport) === 5 && Ecu.addBlueprints('sport', 3) === 2 && Ecu.blueprints('sport') === 55 && Ecu.reached(sport) === 2, 'a saved count above the cap (55) is left as it is by an add, read as the cap (5) by counted()');
+    Progress.data.blueprints.sport = 5;
+  }
   check(Ecu.level(bubble) === 0 && !Progress.owns('bubble') && !garageCars().includes(bubble), 'a blueprint car with no blueprints: ECU0, locked, not owned, not parked');
   selectCar('bubble');
   check(g.cars.CAR.id !== 'bubble', '...and not selectable (not driveable at ECU0)');
@@ -154,9 +159,9 @@ try {
   own('bubble');
   const code = Progress.exportCode(), stored = Progress.saved();
   Progress.reload();
-  check(Progress.saved() === stored && Ecu.blueprints('sport') === 55 && Ecu.level(bubble) === 1, 'the stored save read again: blueprints and ECUs kept');
+  check(Progress.saved() === stored && Ecu.blueprints('sport') === 5 && Ecu.level(bubble) === 1, 'the stored save read again: blueprints and ECUs kept');
   Progress.reset();
-  check(Progress.importCode(code) && Ecu.blueprints('sport') === 55 && Ecu.blueprints('bubble') === 5 && Ecu.level(sport) === 2 && Ecu.level(bubble) === 1 && !Ecu.maxed(sport),
+  check(Progress.importCode(code) && Ecu.blueprints('sport') === 5 && Ecu.blueprints('bubble') === 5 && Ecu.level(sport) === 2 && Ecu.level(bubble) === 1 && !Ecu.maxed(sport),
     'the save code round trip: blueprints and ECUs kept (sport ECU2, not maxed; bubble unlocked)');
 
   // ---- an old save: every car it owns at its max ECU; a blueprint car it does not own, locked

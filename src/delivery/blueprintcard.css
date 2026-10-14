@@ -105,6 +105,13 @@
 .bp-prog.glow { box-shadow: inset 0 0 0 1.5px #6dffa0, 0 0 16px rgba(63, 208, 111, .75); animation: bp-glow 1.1s ease-in-out infinite alternate; }
 .bp-prog.glow .bp-up { display: block; animation: bp-pop .45s cubic-bezier(.2, 1.6, .4, 1); }
 .bp-prog.glow .bp-track i { background: linear-gradient(90deg, #3fd06f, #b6ffcf); }
+/* UPGRADE READY (14-Oct): the blueprints have reached an ECU not bought yet: the bar is FULL and overfilled (a bright fill that runs on, a glow
+   spilling past the end of the track), the new pip outlined, a small quiet label: no glow on the card, no cinematic (they are the purchase's) */
+.bp-pips i.ready { background: transparent; box-shadow: inset 0 0 0 1px #ffd23f; }
+.bp-prog.over .bp-track { overflow: visible; position: relative; box-shadow: 0 0 6px 1px rgba(255, 210, 63, .55), 4px 0 8px 0 rgba(255, 210, 63, .6); }
+.bp-prog.over .bp-track i { background: repeating-linear-gradient(115deg, #ffe27a 0 6px, #ffbe2e 6px 12px); }
+.bp-prog.over .bp-count { color: #ffd23f; }
+.bp-prog.ready .bp-up { display: block; font-size: 10px; font-style: normal; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #ffd98a; text-shadow: none; }
 .bp-prog.instant, .bp-prog.instant * { transition: none !important; }
 @keyframes bp-glow { from { box-shadow: inset 0 0 0 1.5px #6dffa0, 0 0 8px rgba(63, 208, 111, .5); } to { box-shadow: inset 0 0 0 1.5px #b6ffcf, 0 0 22px rgba(63, 208, 111, .95); } }
 @keyframes bp-pop { from { transform: scale(.4); opacity: 0; } }

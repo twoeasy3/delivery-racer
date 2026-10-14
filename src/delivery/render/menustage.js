@@ -493,7 +493,7 @@ const drawCar = () => {
       bar('Speed', Math.round(fig.maxSpeed * 3.6) + ' km/h', fig.maxSpeed / MOST.speed),
       bar('Accel', String(Math.round(fig.accel * 10) / 10), fig.accel / MOST.accel),
       bar('Health', String(Math.round(fig.health)), fig.health / MOST.health)),
-    make('span', 'go', LEVEL.car ? (LEVEL.ownEcu ? 'Free try · ECU ' + Math.max(1, Ecu.reached(CAR)) + '/' + Ecu.max(CAR) : 'This level’s own vehicle') : 'Showroom'));
+    make('span', 'go', LEVEL.car ? (LEVEL.ownEcu ? 'Free try · ECU ' + Math.max(1, Ecu.purchased(CAR)) + '/' + Ecu.max(CAR) : 'This level’s own vehicle') : 'Showroom'));
   shop.title = LEVEL.ownEcu ? 'Today\u2019s free try, lent at your ECU: open the showroom to drive your own car instead (G)'
     : LEVEL.car ? 'You must use this vehicle on this level. Your own car returns on other levels.' : 'Open the showroom to pick a car (G)';
 };
@@ -874,7 +874,7 @@ const eventExtras = (event, level, open) => {
   let tryBtn = null;
   if (tried && st.open) {
     tryBtn = make('button', 'menu-chip cx-try' + (tried.on ? ' on' : ''), tried.on ? 'Free try ON · ECU ' + tried.ecu + '/' + tried.max : 'Free try · ECU ' + tried.ecu + '/' + tried.max);
-    tryBtn.title = tried.on ? 'Driving the ' + car.name + ' as a free try at your ECU: tap to drive your own car' : 'Drive the ' + car.name + ' free, at the ECU your blueprints reach (its key: deliver it at ECU ' + tried.max + ')';
+    tryBtn.title = tried.on ? 'Driving the ' + car.name + ' as a free try at your ECU: tap to drive your own car' : 'Drive the ' + car.name + ' free, at the ECU you have bought (its key: deliver it at ECU ' + tried.max + ')';
     tryBtn.setAttribute('aria-pressed', tried.on);
     tryBtn.addEventListener('click', () => { blip('menuPick'); Events.setFreeTry(event, !tried.on); useLevelCar(level.car, level.amphibious); draw(); });
   }

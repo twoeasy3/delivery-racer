@@ -182,7 +182,7 @@ const keySources = (car, t) => {
     const cd = Events.carDay(event, car.id, t);
     if (!cd) continue;
     out.push({ what: 'key', how: 'event', where: event.name, rarity: null, ways: [], available: cd.live, why: cd.live ? null : 'Its day: ' + weekdayName(cd.start),
-      detail: 'deliver it at its max ECU (' + Ecu.max(car) + ') on its day; it is lent there as a free try at your ECU' });
+      detail: 'deliver it at its max ECU (' + Ecu.max(car) + ', bought) on its day; it is lent there as a free try at the ECU you have bought' });
   }
   for (const entry of PLAIN_EVENTS) {
     if (!entry || typeof entry !== 'object' || entry.reward?.car !== car.id) continue;
@@ -235,8 +235,8 @@ export const sourcesOf = (car, { t = Events.now() } = {}) => {
   if (keyOwned) keys = keys.map(s => ({ ...s, available: false, why: ownWord(car).again }));
   const noBlueprints = noBlueprintsWhy(car);
   let blueprints = noBlueprints ? [] : packSources(car, 'blueprints', t);
-  const maxed = !noBlueprints && Ecu.reached(car) >= Ecu.max(car);
-  if (maxed) blueprints = blueprints.map(s => ({ ...s, available: false, why: 'At its max ECU (' + Ecu.max(car) + '): no more blueprints needed' }));
+  const maxed = !noBlueprints && Ecu.capped(car); // (it has every blueprint it can use: the packs deal no more of it)
+  if (maxed) blueprints = blueprints.map(s => ({ ...s, available: false, why: 'It has every blueprint it needs for its max ECU (' + Ecu.max(car) + ')' }));
   return { car, keys, blueprints, keyOwned, keyless, noBlueprints, maxed,
     obtainable: { key: keys.some(s => s.available), blueprints: blueprints.some(s => s.available) } };
 };
