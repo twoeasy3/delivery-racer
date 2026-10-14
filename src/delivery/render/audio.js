@@ -27,12 +27,25 @@ const URLS = Object.fromEntries(Object.entries(
 // big files, fetched only once something asks for them
 const LAZY = new Set(['Lowrider', 'Lowrider 2']);
 const buffers = {}, loading = {};
+// The bytes are fetched when the page is idle after the menu is up (no AudioContext needed for that), so the first key press
+// (the same instant the showroom opens) starts no network at all: it builds the context and decodes what is already here.
+const fetched = {};
+const fetchBytes = (file) => fetched[file] ||= fetch(URLS[file]).then(r => r.arrayBuffer());
 const load = (file) => {
   if (!ctx || loading[file] || !URLS[file]) return;
-  loading[file] = fetch(URLS[file]).then(r => r.arrayBuffer()).then(data => ctx.decodeAudioData(data))
+  loading[file] = fetchBytes(file).then(data => { delete fetched[file]; return ctx.decodeAudioData(data); })
     .then(buffer => { buffers[file] = buffer; })
-    .catch(() => {}); // (a file that won't load leaves its synthesised stand-in playing)
+    .catch(() => { delete fetched[file]; }); // (a file that won't load leaves its synthesised stand-in playing)
 };
+// the sounds' bytes, one file at a time while idle (the two big Lowriders only when something asks for them)
+const idleFetch = () => {
+  const next = Object.keys(URLS).find(file => !LAZY.has(file) && !(file in fetched) && !loading[file]);
+  if (!next) return;
+  const go = () => { fetchBytes(next).catch(() => { delete fetched[next]; }).then(() => setTimeout(idleFetch, 30)); };
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(go, { timeout: 3000 }); else setTimeout(go, 500);
+};
+const startIdleFetch = () => setTimeout(idleFetch, 2500); // (after the page's own files, the first menu, and the theme files' turn)
+if (typeof document !== 'undefined' && document.readyState === 'complete') startIdleFetch(); else window.addEventListener('load', startIdleFetch, { once: true });
 
 // ---- which WAV each sound plays ----------------------------------------------------------------
 // a file name; [names] = one of them at random; { seq: [names] } = each in turn; '' = silent
@@ -175,7 +188,10 @@ const setup = () => {
   echoSend.gain.value = 0;
   master.connect(echoSend).connect(delay).connect(dull).connect(ctx.destination);
   dull.connect(feedback).connect(delay);
-  for (const file in URLS) if (!LAZY.has(file)) load(file);
+  // (a few at a time, so the key press that opens the audio does not also hand 40 buffers to the decoder in one go)
+  const files = Object.keys(URLS).filter(file => !LAZY.has(file));
+  const decodeSome = () => { for (const file of files.splice(0, 4)) load(file); if (files.length) setTimeout(decodeSome, 25); };
+  decodeSome();
 
   // a second of white noise, reused by every hiss, whoosh and bang
   noiseBuffer = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
