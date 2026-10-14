@@ -44,6 +44,7 @@
 // supercar with a big glass canopy and a long tail (model: render/ideaModels8.js): one more idea.
 // One concept car more (CHECKLIST item 301): a small open roadster after the Pontiac Solstice concept (2002).
 // Batch D2 (CHECKLIST item 3xx, to be renumbered): the Flatbed Truck and the Utility Moke (two more ideas, ideasBatchD2.js).
+// Batch D5 (CHECKLIST item 3xx, to be renumbered): two more ideas, a trophy truck and an armoured limo.
 // One more (CHECKLIST item 302): a tiny three-seat concept city car under a glass bubble (render/ideaModels10.js).
 // Batch D3, two more (CHECKLIST item 3xx, to be renumbered): a civilian half-track and a small sports hatch (render/ideaModelsBatchD3.js): +2 ideas.
 // Batch D4 (CHECKLIST item 3xx, to be renumbered): two more, a fast German-style estate and a huge fin-tailed 1950s cruiser
@@ -57,6 +58,7 @@ import { IDEAS_BATCH_D4 } from './ideasBatchD4.js'; // (batch D4: the Autobahn E
 
 import { IDEAS_BATCH_D2 } from './ideasBatchD2.js'; // (batch D2: the Flatbed Truck and the Utility Moke)
 import { IDEAS_BATCH_D3 } from './ideasBatchD3.js'; // (batch D3: the Half-Track and the Sprint Hatch)
+import { IDEAS_BATCH_D5 } from './ideasBatchD5.js'; // (batch D5: a trophy truck, an armoured limo; render/ideaModelsBatchD5.js)
 import { IDEAS_TOPUP_C } from './ideasTopupC.js'; // (top-up batch C: three ideas, models in render/ideaModelsTopupC.js)
 import { IDEAS_BATCH_D1 } from './ideasBatchD1.js';
 export const IDEA_CARS = [
@@ -194,5 +196,6 @@ export const IDEA_CARS = [
   ...IDEAS_BATCH_D2,
   ...IDEAS_BATCH_D3,
   ...IDEAS_BATCH_D4,
+  ...IDEAS_BATCH_D5,
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));

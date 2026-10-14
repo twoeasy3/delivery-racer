@@ -104,7 +104,8 @@ import { BATCH_D1_LAMPS } from './carlights-batchD1.js';
 import { BATCH_D2_LAMPS } from './carlights-batchD2.js';
 import { BATCH_D3_LAMPS } from './carlights-batchD3.js';
 import { BATCH_D4_LAMPS } from './carlights-batchD4.js';
-export const TABLE = { ...EASY_LAMPS, ...HARD_LAMPS, ...HARD_A, ...HARD_B, ...TOPUP_A_LAMPS, ...TOPUP_B_LAMPS, ...TOPUP_C, ...BATCH_D1_LAMPS, ...BATCH_D2_LAMPS, ...BATCH_D3_LAMPS, ...BATCH_D4_LAMPS, ...GUESS_LAMPS, ...CAR_LAMPS }; // (carlights-hard-a.js, -b.js: the hard batches)
+import { BATCH_D5_LAMPS } from './carlights-batchD5.js';
+export const TABLE = { ...EASY_LAMPS, ...HARD_LAMPS, ...HARD_A, ...HARD_B, ...TOPUP_A_LAMPS, ...TOPUP_B_LAMPS, ...TOPUP_C, ...BATCH_D1_LAMPS, ...BATCH_D2_LAMPS, ...BATCH_D3_LAMPS, ...BATCH_D4_LAMPS, ...BATCH_D5_LAMPS, ...GUESS_LAMPS, ...CAR_LAMPS }; // (carlights-hard-a.js, -b.js: the hard batches)
 
 // ---- ?lamps= (the debug and picture switches, above) ----
 const search = typeof location !== 'undefined' ? location.search : '';
