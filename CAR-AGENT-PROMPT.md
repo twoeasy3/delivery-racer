@@ -53,7 +53,7 @@ NEVER above 4,000. The last two idea cars came out at 3,208 and 5,868 triangles,
 Measured over the roster (full model box, wheels and mirrors included): the median car is 2.09 m wide, 80% are between 1.62 and
 2.72 m, and the median width / length ratio is 0.44 (80% between 0.35 and 0.54). The first idea cars of 14-Oct came out thin
 (widths of 1.07 to 2.06 m on 1.65 to 6.6 m lengths) and had to be widened. So: for the real car you copy, take its real length,
-then make the model's overall width (wheels and mirrors included) about 0.40 to 0.46 of its length unless it is a deliberately
+then make the model's overall width (wheels and mirrors included) about 0.44 to 0.50 of its length (err WIDE: the owner keeps finding the new models narrow even at 0.44 beside the roster) unless it is a deliberately
 narrow vehicle, and compare with existing cars of similar length (measure a few with a Box3.setFromObject script like the one in
 scripts/.suspension-check.mjs). The cap on an idea's width is 3 m (hw 1.5; scripts/.ideas-check.mjs). Set `hw`, `hl`, `height` in
 the entry to match the model, and re-measure the lamp placements if you change the width later.
@@ -71,6 +71,13 @@ the entry to match the model, and re-measure the lamp placements if you change t
 Do NOT carve wheel wells into the body like ice-cream scoops out of a tub. It is trying too hard and wastes polygons. Use a
 plain body with the wheel sitting against (or slightly under) the body side, or a simple flat arch cap / fender only where it
 truly reads at card size. A rework that removes scooped arches should get cheaper, not dearer.
+
+## STANDING RULE: NOT EVERYTHING NEEDS A TEXTURE (the owner, 14-Oct: "trying too hard with the textures")
+Default to NO texture. Flat colours, clean shapes, colour blocking and (sparingly) vertex shading are the baseline; most cars should
+have none at all. Add a texture ONLY when the car cannot read as itself without it (a tarpaulin, a grille mesh, a race roundel on a
+racing car) and then use ONE small one (128 x 128 or less). Never add texture for its own sake: not weathering on every panel, not
+grime or dust decals on clean modern cars, not a texture on each car in a batch because the last batch had one. If you can drop a
+texture and the car still reads at card size, drop it. Say in your report which cars have none (that is the good outcome).
 
 ## Textures: allowed, drawn in code (the owner, 14-Oct, relaxing his earlier "no new textures")
 Textures are fine where they make a car read better (curtains, flames, grilles, rust, a tarpaulin, banners...), as long as they
