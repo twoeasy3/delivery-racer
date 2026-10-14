@@ -8,7 +8,7 @@
 //       2.30-3.40 THE DROP    low and wide: the car drops into the bay from above (lands 2.62: a jolt, dust), its
 //                              headlamps come on and it honks its own horn (3.05)
 //       3.40-4.50 THE KEYS    its key tossed in from the side, tumbling, and caught in front of the camera (4.20)
-//       4.50-6.50 HERO        the front three-quarter under the bunting, confetti: CRAZEY JIM'S USED CARS, SOLD!, the
+//       4.50-6.50 HERO        the front three-quarter under the bunting, confetti, the board's SOLD: CRAZEY JIM'S USED CARS, the
 //                              name, the stars, "Paid $..." (a car with a price); "Tap to continue" at 6.0, held
 //   ?unlockcine=ecu:<car id>[:<level>]    ECU UP, 5.0 s (to <level>, default 2; held to 2..the car's max ECU):
 //       0.00-1.00 THE DYNO    side on: the car on a rolling road in a dark workshop, the diagnostics tower beside it
@@ -29,7 +29,7 @@
 //                              delivering it at its max ECU: events.js) ends with its KEY rising into the picture and
 //                              "Deliver it at its max ECU for its key"; "Tap to continue" at 7.5, held
 // NO TEXTURES (the owner, 14-Oct): flat colours, shapes and vertex colours only (unlockcine.js radialDisc and friends);
-// the sign's words are page text pinned over the board. NO PEOPLE (the owner, 14-Oct): no dealer, no hands; the money,
+// the sale board's two faces are small canvas textures drawn here (SIGN_ART, 192 x 128 each: the price, SOLD). NO PEOPLE (the owner, 14-Oct): no dealer, no hands; the money,
 // the key and the sign move by themselves, and a car's own driver figure is hidden (unlockcine.js: `figure` parts).
 // Sound: render/audio.js Sound.play / Sound.engine only (existing WAVs and synthesised stand-ins).
 import * as THREE from 'three';
@@ -43,6 +43,39 @@ import { clamp, lerp, span, smooth, easeOut, easeIn, v3, rand, WHITE, setLamp, g
 
 const money = (n) => '$' + Number(n).toFixed(2);
 const hexOf = (c) => '#' + c.getHexString();
+// ---- the SALE BOARD's art: a sign painter's red and white (the owner, 14-Oct: the words ON the board, not over the
+// picture). A canvas of SIGN_ART pixels drawn once per wording (kept by its words), a texture made from it per play:
+// a white border, a red field, the big word in heavy white capitals with a dark red edge, a small line over it
+export const SIGN_ART = { w: 192, h: 128 };
+const signCanvases = new Map();
+const signArt = (big, small) => {
+  const key = big + '|' + small;
+  if (!signCanvases.has(key)) {
+    const c = document.createElement('canvas');
+    c.width = SIGN_ART.w; c.height = SIGN_ART.h;
+    const g = c.getContext('2d'), W = c.width, H = c.height;
+    g.fillStyle = '#f4f1e8'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#c8202a'; g.fillRect(7, 7, W - 14, H - 14);
+    g.strokeStyle = '#f4f1e8'; g.lineWidth = 2; g.strokeRect(12, 12, W - 24, H - 24);
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    const font = (px) => `900 ${px}px Impact, "Arial Black", system-ui, sans-serif`;
+    let px = small ? 46 : 58;
+    g.font = font(px);
+    while (g.measureText(big).width > W - 34 && px > 14) g.font = font(--px);
+    const y = small ? H * 0.6 : H * 0.52;
+    g.lineJoin = 'round'; g.lineWidth = 5; g.strokeStyle = '#7d0f16'; g.strokeText(big, W / 2, y);
+    g.fillStyle = '#ffffff'; g.fillText(big, W / 2, y);
+    if (small) {
+      g.font = `800 15px system-ui, sans-serif`;
+      g.fillStyle = '#ffe9a8'; g.fillText(small.split('').join(String.fromCharCode(8202)), W / 2, H * 0.27);
+    }
+    signCanvases.set(key, c);
+  }
+  const tx = new THREE.CanvasTexture(signCanvases.get(key));
+  tx.colorSpace = THREE.SRGBColorSpace;
+  tx.anisotropy = 4;
+  return tx;
+};
 const box = (s, parent, colour, w, h, d, x, y, z, basic = false) => {
   const mesh = new THREE.Mesh(s.keep(new THREE.BoxGeometry(w, h, d)), s.keep(basic ? new THREE.MeshBasicMaterial({ color: colour }) : new THREE.MeshLambertMaterial({ color: colour })));
   mesh.position.set(x, y, z);
@@ -125,10 +158,16 @@ const jim = (kx) => {
   const pin = new THREE.Mesh(keep(new THREE.CylinderGeometry(0.012, 0.012, 0.06, 6)), poleMat);
   pin.position.set(S.x, postTop + 0.05, S.z); scene.add(pin);
   const board = new THREE.Group(); board.position.copy(S); scene.add(board);
-  box(s, board, 0xd7262e, 1.3, 0.85, 0.06, 0, 0, 0);
-  for (const [w, h, x, y] of [[1.3, 0.06, 0, 0.4], [1.3, 0.06, 0, -0.4], [0.06, 0.85, 0.62, 0], [0.06, 0.85, -0.62, 0]]) box(s, board, 0xf4f1e8, w, h, 0.08, x, y, 0);
-  const label = Object.assign(document.createElement('div'), { className: 'ucine-sign' });
-  kx.root.append(label);
+  box(s, board, 0xe9e5da, 1.3, 0.85, 0.06, 0, 0, 0); // (the board: its edges white)
+  // its two faces painted on (a small canvas each, SIGN_ART): the price (or FOR SALE) on the front, SOLD on the back, so
+  // the flip shows one then the other; the back's plane turned round to read the right way from behind
+  const faceGeo = keep(new THREE.PlaneGeometry(1.3, 0.85));
+  [[car.price > 0 ? money(car.price) : 'FOR SALE', car.price > 0 ? 'FOR SALE' : '', 0.031, 0], ['SOLD', 'CRAZEY JIM\u2019S', -0.031, Math.PI]].forEach(([big, small, z, turn]) => {
+    const art = keep(signArt(big, small));
+    const face = new THREE.Mesh(faceGeo, keep(new THREE.MeshLambertMaterial({ map: art })));
+    face.position.z = z; face.rotation.y = turn;
+    board.add(face);
+  });
   // BANKNOTES raining (one drawing: an instanced flat note)
   const NOTES = 40, notes = new THREE.InstancedMesh(keep(new THREE.BoxGeometry(0.2, 0.005, 0.09)), keep(new THREE.MeshLambertMaterial({ color: 0x5fb35a })), NOTES);
   notes.frustumCulled = false;
@@ -153,8 +192,6 @@ const jim = (kx) => {
   // the words
   kx.words.tag.textContent = 'Crazey Jim’s Used Cars';
   kx.words.tag.style.color = '#ffd23f';
-  kx.words.big.textContent = 'SOLD!';
-  kx.words.big.style.color = '#ff4a3d';
   kx.words.sub.textContent = car.price > 0 ? 'Paid ' + money(car.price) : '';
   const CATCH = 4.2, LAND = 2.62, DROP = 2.32;
   const P0 = v3(-3.2, 0.5, L / 2 + 0.8), P1 = v3(0.95, 1.2, L / 2 + 2.15);
@@ -206,7 +243,6 @@ const jim = (kx) => {
       // the board: the price, then SOLD (it flips round 1.45-1.75)
       const flip = smooth(span(lt, 1.45, 1.75));
       board.rotation.y = flip * Math.PI;
-      kx.signFlip = flip;
       // the banknotes: rain from above the board (1.25 on), each tumbling down
       let n = 0;
       for (const sd of noteSeeds) {
@@ -247,23 +283,10 @@ const jim = (kx) => {
       kx.flashMat.color.setHex(0xfff2c0);
       kx.fadeMat.opacity = 1 - (kx.lite ? span(t, 0, 0.5) : span(t, 0, 0.3));
     },
-    // the board's words, pinned over it (shown only in the two shots that see it)
-    post(t) {
-      const { w, h } = kx.size();
-      const front = v3(0, 0, kx.signFlip > 0.5 ? -0.05 : 0.05).applyQuaternion(board.quaternion).add(S);
-      const p = front.clone().project(kx.camera), dist = kx.camera.position.distanceTo(S);
-      const showIt = !kx.lite && t < 2.3 && p.z < 1;
-      label.style.display = showIt ? '' : 'none';
-      if (!showIt) return;
-      label.textContent = kx.signFlip > 0.5 ? 'SOLD' : (car.price > 0 ? money(car.price) : 'FOR SALE');
-      const px = (p.x + 1) / 2 * w, py = (1 - p.y) / 2 * h, size = (h / dist) * 0.24 / Math.tan(THREE.MathUtils.degToRad(kx.camera.fov / 2)) * 0.5;
-      label.style.fontSize = Math.max(8, size).toFixed(1) + 'px';
-      label.style.transform = `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px) translate(-50%, -50%) scaleX(${Math.abs(Math.cos(kx.signFlip * Math.PI)).toFixed(3)})`;
-    },
     cues: [[0.1, 'jingle', 0.5], [1.45, 'cash20', 0.8], [1.7, 'cash10', 0.8], [1.95, 'cash5', 0.8], [DROP, 'throw', 0.6], [LAND, 'drop', 1], [LAND + 0.02, 'crash', 0.6], [3.05, 'horn:' + (car.id), 0.7], [3.45, 'throw', 0.5], [CATCH, 'menuPick', 0.8], [4.75, 'bell', 0.7]],
   };
 };
-jim.words = ['tag', 'big', 'name', 'stars', 'sub'];
+jim.words = ['tag', 'name', 'stars', 'sub']; // (no SOLD! title: the board says it)
 
 // ============================================================================ THE DYNO (ECU up, max ECU)
 // the rolling road and the workshop round the car: a platform, two rollers under each axle, three strip lights, the
@@ -590,7 +613,6 @@ ecumax.words = ['big', 'name', 'stars', 'pips', 'pill', 'sub'];
 export const DIRECTORS = { jim, ecu, ecumax };
 // the page bits these add (small, opaque, no shadow but a hard 1 px one; no blur, no filters)
 const CSS = `
-.ucine-sign{position:absolute;left:0;top:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:900;color:#fff;letter-spacing:.04em;white-space:nowrap;pointer-events:none;text-shadow:0 1px 0 #000}
 .ucine-pips{display:flex;gap:6px;justify-content:center;margin:.2em 0 .45em}
 .ucine-pip{width:clamp(14px,2vw,22px);height:8px;border-radius:2px;background:#2a2e38;display:inline-block}
 .ucine-pip.fresh{outline:2px solid #fff}
