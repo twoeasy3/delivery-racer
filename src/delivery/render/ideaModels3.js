@@ -197,6 +197,7 @@ const SKIN = lambert(0xe2b38c);
 // a figure sat at (x, y, z) facing +z: a body in `coat`, its arms out in front, and a head (userData.head)
 const rider = (parent, coat, x, y, z) => {
   const g = new THREE.Group();
+  g.userData.figure = true; // (a person: hidden in the unlock cinematics, render/unlockcine.js; the owner, 14-Oct: no humans in a cutscene)
   g.position.set(x, y, z);
   parent.add(g);
   box(g, coat, 0.34, 0.42, 0.22, 0, 0.21, 0);
