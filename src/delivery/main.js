@@ -81,7 +81,8 @@ import { ShowroomView } from './render/showroomview.js';
 import { Cosmetics } from './render/cosmeticsui.js';
 import { Sound } from './render/audio.js';
 import { Social } from './social.js';
-import { CAR, CARS, lendCar, superOf, ownedAmphibious, carStats } from './cars.js';
+import { CAR, CARS, FILLER_CARS, BESPOKE_CARS, EVENT_CARS, EARNED_CARS, LEVEL_CARS, lendCar, superOf, ownedAmphibious, carStats } from './cars.js';
+import { IDEA_CARS } from './ideas.js';
 import { Message } from './messages.js';
 
 // ?autostart (or ?autostart=evil) in the address skips the start screen: handy when testing.
@@ -190,7 +191,7 @@ if (params.get('car') && autostart === null && !['hidden', 'test', 'edited', 'ra
 // &evil its Evil side; &closeup the wheels close-up; &wheeldesign= / &wheelcolour= equip for the visit (render/wheelcosmetic.js)
 if (params.get('cosmetics') !== null && params.get('showroom') === null) {
   if (params.get('evil') !== null) Game.evil = true;
-  Cosmetics.open({ evil: !!Game.evil, car: CARS.find(c => c.id === params.get('car')) || null }); // (the car asked for; else the car in use)
+  Cosmetics.open({ evil: !!Game.evil, car: [...CARS, ...FILLER_CARS, ...BESPOKE_CARS, ...EVENT_CARS, ...EARNED_CARS, ...Object.values(LEVEL_CARS), ...IDEA_CARS, ...CARS.map(superOf)].find(c => c && c.id === params.get('car')) || null }); // (the car asked for, any car in the game, for pictures; else the car in use)
 }
 const hidden = params.get('hidden') || (params.get('test') !== null ? 'testbed' : params.get('edited') !== null ? 'edited' : null); // (a hidden level: see levels.js)
 if (params.get('rival') !== null) Game.rival = params.get('rival') || 'opposite'; // ?rival[=evil|good]: a rival courier on every delivery level

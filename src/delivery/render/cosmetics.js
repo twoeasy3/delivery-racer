@@ -6,7 +6,7 @@
 // HOW TO ADD A COSMETIC: a slot's module calls registerCosmetics([{ slot: 'plate', id: 'gold-plate', name: 'Gold plate', free: false }])
 // once, as it loads (render/wheelcosmetic.js does it for WHEEL_SETS, so a new wheel set is registered by being added to that list);
 // a NEW slot's module is also imported by unlockall.js, so that "Absolutely everything" sees its items. Nothing else: the
-// Cosmetics screen asks owned(slot, id) (render/cosmeticsui.js) -> ownsCosmetic here, and a locked item shows locked and
+// A later shop: an item may carry `price` (a placeholder, 0 = none; nothing reads it yet: TODO CHECKLIST 286). The Cosmetics screen asks owned(slot, id) (render/cosmeticsui.js) -> ownsCosmetic here, and a locked item shows locked and
 // cannot be equipped. Not a rule of a run (no rules module imports this; it is not in the replay fingerprint).
 // OWNERSHIP IS DELIBERATELY OUTSIDE progress.js (the owner, 14-Oct: "cosmetics should not break the hash"): progress.js is read by
 // rules modules, so any edit to it changes the replay fingerprint (vite.config.js logicFiles). This file (render/, outside the walk) is imported by no rules
@@ -27,7 +27,7 @@ export const registerCosmetics = (items) => {
   const added = [];
   for (const item of items) {
     if (!item || !item.slot || !item.id || COSMETICS.some(c => c.slot === item.slot && c.id === item.id)) continue;
-    const entry = { slot: String(item.slot), id: String(item.id), name: String(item.name || item.id), free: item.free === true };
+    const entry = { slot: String(item.slot), id: String(item.id), name: String(item.name || item.id), free: item.free === true, price: Number.isFinite(item.price) ? item.price : 0 }; // (price: a placeholder for a later shop; nothing reads it yet)
     COSMETICS.push(entry);
     added.push(entry);
   }

@@ -337,6 +337,9 @@ const restore = (group, all) => {
   if (all) group.userData.dentFrame = undefined;
   group.userData.dentLevel = 0;
 };
+// a model's parts changed (render/platecosmetic.js put a number plate on, or took it off): its measure and finer panels thrown away, the clean
+// geometry back, so the next dentModel measures it again with the part (or without it). Nothing to do for a model not measured yet.
+export const forgetDents = (group) => { if (group.userData.dentFrame) restore(group, true); };
 // the model measured and its panels cut finer, once (the slow part, 50 to 300 ms: see `ready` below); measured again if the
 // game's box car has been reshaped for another car since
 const prepare = (group, body, extra) => {
