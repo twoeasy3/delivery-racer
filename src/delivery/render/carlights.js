@@ -35,7 +35,9 @@ import { HARD_A } from './carlights-hard-a.js';
 import { HARD_B } from './carlights-hard-b.js';
 import { TOPUP_A_LAMPS } from './carlights-topup-A.js'; // (the ideas top-up, batch A)
 import { TOPUP_B_LAMPS } from './carlights-topup-B.js'; // (the ideas top-up batch B)
+import { BATCH_D2_LAMPS } from './carlights-batchD2.js'; // (batch D2's idea cars)
 import { TOPUP_C } from './carlights-topup-C.js'; // (top-up batch C's idea cars)
+import { BATCH_D3_LAMPS } from './carlights-batchD3.js'; // (batch D3's idea cars)
 
 // (the hand-written entries; the generated batches are merged in under them: TABLE)
 export const CAR_LAMPS = {
@@ -98,7 +100,10 @@ export const CAR_LAMPS = {
 
 // every listed car: the generated batches (render/carlights-easy.js, carlights-hard.js), the guesses for models with no
 // lamp to measure (carlights-guess.js, each `guess: true`), the hand-written ones over them
-export const TABLE = { ...EASY_LAMPS, ...HARD_LAMPS, ...HARD_A, ...HARD_B, ...TOPUP_A_LAMPS, ...TOPUP_B_LAMPS, ...TOPUP_C, ...GUESS_LAMPS, ...CAR_LAMPS }; // (carlights-hard-a.js, -b.js: the hard batches)
+import { BATCH_D1_LAMPS } from './carlights-batchD1.js';
+import { BATCH_D4_LAMPS } from './carlights-batchD4.js';
+import { BATCH_D5 as BATCH_D5_LAMPS } from './carlights-batchD5.js';
+export const TABLE = { ...EASY_LAMPS, ...HARD_LAMPS, ...HARD_A, ...HARD_B, ...TOPUP_A_LAMPS, ...TOPUP_B_LAMPS, ...TOPUP_C, ...BATCH_D1_LAMPS, ...BATCH_D2_LAMPS, ...BATCH_D3_LAMPS, ...BATCH_D4_LAMPS, ...BATCH_D5_LAMPS, ...GUESS_LAMPS, ...CAR_LAMPS }; // (carlights-hard-a.js, -b.js: the hard batches)
 
 // ---- ?lamps= (the debug and picture switches, above) ----
 const search = typeof location !== 'undefined' ? location.search : '';

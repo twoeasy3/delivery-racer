@@ -21,7 +21,7 @@ try {
   const STORE = 'delivery_racer_progress_backup', cookieNow = () => document.cookie.split(';')[0], inCookie = () => JSON.parse(decodeURIComponent(cookieNow().split('=')[1]));
 
   // ---- what they are: thirty, tierless, free, placeholders, and none of them a garage car
-  check(IDEA_CARS.length === 51, IDEA_CARS.length + ' car ideas (89 built: 26 originals, the second batch of twenty: render/ideaModels2.js, the third of ten: render/ideaModels3.js, the fourth of ten: render/ideaModels4.js, the fifth of two: render/ideaModels5.js, the sixth of five: render/ideaModels6.js, the seventh of three concept cars: render/ideaModels7.js, and the eighth to tenth, one concept car each: render/ideaModels8.js, ideaModels9.js, ideaModels10.js, and the top-up of ten: render/ideaModelsTopupA.js, B, C; less the 20 promoted to the roster, the 7 Bespoke key cars and the 6 concept key cars: CHECKLIST 211)');
+  check(IDEA_CARS.length > 0 && new Set(IDEA_CARS.map(c => c.id)).size === IDEA_CARS.length, IDEA_CARS.length + ' car ideas, ids unique (the count is no longer fixed here: it only made every merge conflict; 99 built: 26 originals, the second batch of twenty: render/ideaModels2.js, the third of ten: render/ideaModels3.js, the fourth of ten: render/ideaModels4.js, the fifth of two: render/ideaModels5.js, the sixth of five: render/ideaModels6.js, the seventh of three concept cars: render/ideaModels7.js, and the eighth to tenth, one concept car each: render/ideaModels8.js, ideaModels9.js, ideaModels10.js, and the top-up of ten: render/ideaModelsTopupA.js, B, C; and ten more, batches D to D5 (2 each): render/ideaModelsBatchD1.js to D5; less the 20 promoted to the roster, the 7 Bespoke key cars and the 6 concept key cars: CHECKLIST 211)');
   // (five that were ideas are the Bespoke key cars now (cars.js BESPOKE_CARS, 12-Oct): in the roster, out of the lot, not in CARS, no price, no tier)
   {
     const { BESPOKE_CARS = [] } = g.cars;
@@ -73,7 +73,8 @@ try {
   check(out.length === 0, 'every figure a finite number' + (out.length ? ': NOT ' + out.join(', ') : ''));
   check(IDEA_CARS.every(c => [c.hw, c.hl, c.height].every(v => typeof v === 'number' && isFinite(v) && v > 0)), 'every size a finite number');
   const widest = Math.max(...CARS.map(c => c.hw)), longest = Math.max(...garage.map(c => c.hl)), tallest = Math.max(...garage.map(c => c.height));
-  check(IDEA_CARS.every(c => c.hw <= widest), 'none wider than the widest garage car (' + widest * 2 + ' m; a lane is ' + C.laneWidth + ' m): the widest idea is ' + Math.max(...IDEA_CARS.map(c => c.hw)) * 2 + ' m');
+  const MAX_HW = 1.5; // (14-Oct: was the widest garage car, 2.7 m, which kept the new long cars narrow; now 3 m, still inside a lane)
+  check(IDEA_CARS.every(c => c.hw <= MAX_HW), 'none wider than ' + MAX_HW * 2 + ' m (a lane is ' + C.laneWidth + ' m; the widest garage car is ' + widest * 2 + ' m): the widest idea is ' + Math.max(...IDEA_CARS.map(c => c.hw)) * 2 + ' m');
   check(IDEA_CARS.every(c => c.hl <= longest), 'none longer than the longest (the City Bus, ' + longest * 2 + ' m): the longest idea is ' + Math.max(...IDEA_CARS.map(c => c.hl)) * 2 + ' m');
   check(IDEA_CARS.filter(c => c.real).every(c => Math.abs(c.real.hw * c.scale - c.hw) < 0.02 && Math.abs(c.real.hl * c.scale - c.hl) < 0.02 && Math.abs(c.real.height * c.scale - c.height) < 0.02),
     'one scaled down to fit a lane has its hitbox scaled with its model: ' + IDEA_CARS.filter(c => c.real).map(c => c.name + ' at ' + c.scale).join(', '));
