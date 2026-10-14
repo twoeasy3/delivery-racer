@@ -18,15 +18,15 @@ export const IDEA_MODELS_BATCH_D1 = {
   // middle, a near-upright windscreen, a square tail, two wheels at the front and one under the middle at the back.
   wedgemicro: (car) => {
     const group = new THREE.Group(), k = 'wmicro';
-    const R = 0.25, TW = 0.17, BEV = 0.05, ACROSS = 0.07, BW = 1.0, HALF = BW / 2, WX = car.hw - TW / 2;
-    const NOSE = 0.72, TAILZ = -0.72, AY = 0.3, ARC = 0.33, AF = 0.4, BELT = 0.8, ROOF = 1.2;
+    const R = 0.25, TW = 0.17, BEV = 0.05, ACROSS = 0.07, BW = 1.0, HALF = BW / 2, WX = HALF - 0.06;
+    const NOSE = 0.72, TAILZ = -0.72, AY = 0.27, AF = 0.4, BELT = 0.8, ROOF = 1.2;
     const TAPER = [BELT, ROOF, 0.1];
     const WSF = [0.42, BELT - 0.02], WST = [0.14, ROOF - 0.04];
     const outline = [
       [NOSE, AY], [NOSE, 0.5], ...curve([NOSE, 0.5], [NOSE, 0.62], [NOSE - 0.1, 0.7], [0.46, 0.76], 4),
       WSF, WST, ...curve(WST, [0.12, ROOF], [0.1, ROOF], [0.04, ROOF], 3),
       [TAILZ + 0.1, ROOF + 0.06], ...curve([TAILZ + 0.1, ROOF + 0.06], [TAILZ + 0.02, ROOF + 0.06], [TAILZ, ROOF + 0.02], [TAILZ, ROOF - 0.08], 3),
-      [TAILZ, AY], ['arc', AF, AY, ARC],
+      [TAILZ, AY],
     ];
     const FZ = NOSE + BEV, BZ = TAILZ - BEV;
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
