@@ -77,6 +77,10 @@ groups above, and the quick smoke only when asked. Syntax-check changed files wi
 - The Good/Evil switch: `src/delivery/sidecues.js` exports `geOn(n)`; the ideas are numbered 1 to 12 and live behind
   `?ge=n`. The owner has not chosen; the recommended three are 1 + 8 + 11 (with 10 teaching it).
 
+- **Textures:** only the car textures that exist now (the owner, 14-Oct); no new textures, and none bigger than today's biggest
+  (256 x 256), unless the owner asks or it is impossible otherwise (say why). Flat colours, shapes and vertex colours instead.
+  Details: CAR-AGENT-PROMPT.md.
+
 ## The unfinished work
 
 See `WIP/INDEX.md`. Take an item with `git apply --3way WIP/<branch>.patch`, then look at it (a still, a check) and commit

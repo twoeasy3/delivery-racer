@@ -48,6 +48,14 @@ NEVER above 4,000. The last two idea cars came out at 3,208 and 5,868 triangles,
   Skip the clutter (door handles, wipers, tiny trim, plates on every face) unless it clearly reads. A simple, charming,
   bold shape beats a busy one: 'trying too hard' is a defect.
 
+## Textures: only the ones that exist (the owner, 14-Oct)
+The textures the car models have now are the only ones: the picture textures in the rebuilt cars (render/modelsOrig*.js: the
+Hearse's curtains, the Hot Rod's flames, the Lowrider's grille, the Junker's rust and tarpaulin, banners and the like) and the
+game's other existing ones. Do NOT add a texture, or make one bigger, unless the owner asks for it explicitly or the look is
+impossible any other way (then say so in your report and why). Use flat colours, shape, and vertex colours (as the approved
+Commuter does low down) instead. The biggest in the game today is a 256 x 256 canvas (the Junker's tarpaulin); nothing new
+goes above that. If you must touch an existing texture, keep its size.
+
 ## Defects that are NOT allowed
 - No unconnected parts and no floating parts (a lamp, mirror, trim strip, spat, plate or stalk must touch/sit in the
   body, including on ROUNDED edges where an extrusion's bevel pulls the surface in).
