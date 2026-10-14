@@ -630,6 +630,8 @@ export const EVENT_MAPS = { 'pocket-town': pocketTown, 'solstice-cliffs': solsti
 export const HIDDEN_LEVELS = { testbed, 'grand-prix': grandPrix, 'gimmick-road': gimmickRoad, 'gimmick-road-2': gimmickRoad2, 'gimmick-road-3': gimmickRoad3, 'chianti-run': chiantiRun, ...EVENT_MAPS };
 HIDDEN_LEVELS['dakar-dash'] = dakarDash; // Dakar Dash (the desert dunes): hidden until the owner reveals it, ?hidden=dakar-dash
 HIDDEN_LEVELS['haunted-hollow'] = hauntedHollow; // Haunted Hollow (Halloween): hidden until the owner reveals it, ?hidden=haunted-hollow
+import foliageRun from './levels/foliage-run.json';
+Object.assign(HIDDEN_LEVELS, { 'foliage-run': foliageRun }); // Foliage Run (the autumn theme's level): ?hidden=foliage-run, until it is revealed
 // the class every race is run in: 'f1', 'gt' (GT road cars) or 'lmp' (Le Mans prototypes): the player's car
 // and the grid (the menu's Race cars button; ?gt or ?lmp for that class whatever it says)
 export const RACE_CLASSES = { f1: 'F1', gt: 'GT', lmp: 'LMP' };

@@ -212,6 +212,8 @@ export const THEMES = {
     target: { offset: 2, height: 4.6, beam: true },
     light: { sky: 0xfff3d8, ground: 0xc58c4e, ambient: 1.55, sun: 0xffe6b8, sunlight: 1.5 } },
 };
+// autumn: New England in the fall (render/themes/autumn.js): a low golden sun in a hazy sky, hills (terrain) under forest in red, orange and gold, leaves drifting down and lying in a carpet along the verges, stone walls, white clapboard houses, pumpkin and apple stands, stacked firewood, a sawmill, a lake in the valleys; a tunnel is a covered bridge. Its wet-leaf patches are the level's "ice"
+THEMES.autumn = { sky: 0xeccfa0, ground: 0x9a8a3e, road: 0x4a4a4e, scenery: 'autumn', line: 0xf2eede, centre: 0xe6b422, terrain: { gentle: 0xa8923c, steep: 0x7a4c2a, rough: 0.5, flat: 5, rise: 45 }, target: { height: 4.2, beam: true }, tunnel: { wall: 0x8a2f22, tiles: 0xa8743e, roof: 0x5a2a1c, face: 0x7e2a1e, lamp: 0xffc878, lintel: 2.4, pier: 2.6 }, channel: { shallow: 0x7fa6a8, deep: 0x2c5a6a, glint: 0xa8cfd0 }, light: { sky: 0xffe6bc, ground: 0xb89464, ambient: 1.3, sun: 0xffc27a, sunlight: 1.2 } };
 
 // ---- the themes' own obstacles ---------------------------------------------------------------------------
 // obstacles: { crate: 'barrel', ... }: what a level's plain obstacle of a kind IS in this theme. A level goes on
@@ -245,6 +247,7 @@ const OBSTACLES = {
   halloween: { crate: 'pumpkinCrate', cone: 'candleLantern', bale: 'hayGhost' }, // (a crate of pumpkins, a candle lantern, a hay bale in a bedsheet)
   tuscany: { crate: 'wineCrates', bale: 'hayRoll', cone: 'terracottaPot' }, // (a stack of wine crates; a round hay bale on its side; a pot with a lemon tree. The roadworks' cones are the hazard's own)
   hongkong: { crate: 'hawkerCart', bale: 'bagStack' }, // (a hawker's cart under its awning; a heap of red-white-blue bags; the cones are roadworks and stay)
+  autumn: { crate: 'harvestCrate', bale: 'leafPile', cone: 'smallPumpkin' }, // (a crate of pumpkins; a heap of raked leaves; a small pumpkin on a stake)
   // (the port keeps its crates, the farm and the Wild West their bales: there they belong)
 };
 // drifting: the same, for the things of a level's "drifters" alone, where what moves about the road wants to be

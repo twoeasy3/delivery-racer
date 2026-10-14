@@ -274,6 +274,7 @@ export const Collision = (() => {
     fuelDrum: 'crate', popcornCart: 'crate', barrel: 'crate', chairStack: 'crate', riceBasket: 'crate', wasteDrum: 'crate', hawkerCart: 'crate', wineCrates: 'crate', hayRoll: 'bale', terracottaPot: 'cone', cameraDolly: 'bale', present: 'bale', toyDrum: 'bale', sackStack: 'bale', bagStack: 'bale',
     beachBall: 'bale', tumbleweed: 'bale', skittle: 'cone', cafeTable: 'cone', wheelieBin: 'cone', snowdrift: 'cone', brimstone: 'cone', flagStand: 'cone', lavaRock: 'rock' })) SIZE[kind] = SIZE[like];
   for (const [kind, like] of Object.entries({ pumpkinCrate: 'crate', hayGhost: 'bale', candleLantern: 'cone' })) SIZE[kind] = SIZE[like]; // (Halloween's)
+  Object.assign(SIZE, { harvestCrate: SIZE.crate, leafPile: SIZE.bale, smallPumpkin: SIZE.cone }); // (autumn's: a crate of pumpkins, a heap of leaves, a small pumpkin)
   for (const [kind, like] of Object.entries({ jerryStack: 'crate', tentRoll: 'bale', rallyFlag: 'cone' })) SIZE[kind] = SIZE[like]; // (the desert's)
   // what a level's own obstacle of that kind is on its theme (its "obstacles", "shoulderRows" and "drifters"
   // only: what a gimmick puts out, a cargo truck's load among it, is what it always was)

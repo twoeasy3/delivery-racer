@@ -49,6 +49,7 @@ export const CARGO = {
     { id: 'fruit', name: "New Neighbour's Fruit Basket" },
     { id: 'radio', name: "Grandad's Repaired Radio" },
     { id: 'pumpkin', name: 'Carved Pumpkin' },
+    { id: 'pie', name: 'Pumpkin Pie' },
     { id: 'winecase', name: 'Case of Chianti' },
     { id: 'waterjugs', name: 'Crate of Water Jugs' }, // (Dakar Dash)
   ],
@@ -99,6 +100,7 @@ export const CARGO = {
     { id: 'nestedboxes', name: 'Boxes within Boxes', states: ['Wrapped', 'Opening', 'Gotcha'] },
     { id: 'spider', name: 'Spider on a Fishing Line', states: ['Hanging', 'Bobbing', 'Dropped'] },
     { id: 'ink', name: 'Disappearing Ink', states: ['Corked', 'Blotting', 'Splashing'] },
+    { id: 'syrup', name: 'Stolen Maple Syrup', states: ['Sealed', 'Sticky', 'Pouring out'] },
     { id: 'stolenbust', name: 'Stolen Marble Bust', states: ['Under a sheet', 'Sheet slipping', 'Glaring'] },
     { id: 'scarabs', name: 'Crate of Scarabs', states: ['Lid nailed down', 'Scuttling inside', 'Swarming out'] }, // (Dakar Dash)
   ],

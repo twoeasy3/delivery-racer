@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { makeWorker } from './siteModels.js';
 import { HALLOWEEN_OBSTACLES } from './themes/halloweenModels.js';
+import { AUTUMN_OBSTACLES } from './themes/autumnModels.js';
 import { TUSCANY_OBSTACLES } from './themes/tuscanyModels.js';
 import { DESERT_OBSTACLES } from './themes/desertModels.js';
 
@@ -1182,6 +1183,7 @@ OBSTACLE_MODELS.cafeTable = () => {
   return grounded(group, 0.6);
 };
 Object.assign(OBSTACLE_MODELS, HALLOWEEN_OBSTACLES); // (Halloween's own: a crate of pumpkins, a candle lantern, a hay bale in a bedsheet: themes/halloweenModels.js)
+Object.assign(OBSTACLE_MODELS, AUTUMN_OBSTACLES); // autumn's own: harvestCrate, leafPile, smallPumpkin
 Object.assign(OBSTACLE_MODELS, TUSCANY_OBSTACLES); // Tuscany's: wineCrates, hayRoll, terracottaPot (themes/tuscanyModels.js)
 // the desert dunes' own (render/themes/desertModels.js): a stack of jerrycans, a rolled tent, a rally marker flag
 Object.assign(OBSTACLE_MODELS, DESERT_OBSTACLES);
