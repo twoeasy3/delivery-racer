@@ -15,6 +15,7 @@ import { levelName } from '../levelText.js';
 import { LEVELS } from '../levels.js';
 import { Tiers, tierStarsNode, richTiers } from '../tiers.js';
 import { Progress } from '../progress.js';
+import { bankFigure, bankText, bankWhole } from './bank.js'; // (the bank: whole dollars, its type scaled to its length)
 import { Game } from '../game.js';
 import { renderer, clearGroup } from './scene.js';
 import { makeShowCar, paintShowCar } from './showcar.js';
@@ -244,7 +245,7 @@ const refresh = () => {
   // (a secret vehicle in use has no bay, so no ring; nor has a car idea in this lot: its ring is in the Car ideas lot's)
   const inUse = carInUse();
   // (a level that restricts the car, tiers.js: the lot shows only the cars of its tier, and the bar says so)
-  bank.replaceChildren('Bank ' + money(Progress.data.money));
+  bank.replaceChildren('Bank ', bankFigure(Progress.data.money));
   // (the level's car rule on the side on show, said once above the lot: the side and the reason)
   const sideNow = Garage.evil, sideWord = sideNow ? 'Evil' : 'Good', ruleNow = carRule(sideNow), ruleOther = carRule(!sideNow);
   ruleBanner.classList.toggle('hidden', !ruleNow && !ruleOther);
@@ -353,12 +354,12 @@ const buy = async (car) => {
   const have = Progress.data.money;
   if (have < car.price) {
     await tell({ title: 'Not enough money', ok: 'OK', lines: [
-      'The ' + car.name + ' costs ' + money(car.price) + ' and you have ' + money(have) + '.',
-      'You need ' + money(car.price - have) + ' more.'] });
+      'The ' + car.name + ' costs ' + money(car.price) + ' and you have ' + bankText(have) + '.',
+      'You need ' + money(car.price - bankWhole(have)) + ' more.'] });
     return false;
   }
   const yes = await ask({ title: 'Buy the ' + car.name + '?', ok: 'Buy for ' + money(car.price), cancel: 'Cancel', lines: [
-    'Price ' + money(car.price) + '. You have ' + money(have) + ', and ' + money(have - car.price) + ' is left.',
+    'Price ' + money(car.price) + '. You have ' + bankText(have) + ', and ' + bankText(have - car.price) + ' is left.',
     'You get both liveries, Good and Evil.'] });
   if (!yes) return false;
   let bought = false;

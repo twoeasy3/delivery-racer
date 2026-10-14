@@ -2,7 +2,7 @@
 
 How to give any car custom headlamp, tail/brake lamp and indicator places, so that the game's lamp EFFECTS (brake
 lamps lit, indicators and hazards flashing, a wrong-way driver's flashed headlamps, the night headlamp glow and
-spotlights) sit on the model's own lenses instead of where the hitbox guesses. The pilot (CHECKLIST 242) did four cars:
+spotlights) sit on the model's own lenses instead of where the hitbox guesses. The pilot (CHECKLIST 243) did four cars:
 the Commuter, Lowrider, Pick-Up and Sportscar (`miata`).
 
 **Where the code is.** The code is NOT on `main` yet. It is on branch `claude/car-lights` until merged:
@@ -40,6 +40,9 @@ the real lamps (Pick-Up), covering two lamps where only one brakes (Lowrider), a
 | `blink` | same, plus `red`, `shared` | indicators. Front or rear comes from the sign of z, side from the sign of x. Amber unless `red: true`. `shared: '<lamp>'` documents that there is no lens and it flashes over another lamp |
 | `reverse` | same | reversing lamps. Markers only: nothing lights them yet (the game has no reverse gear) |
 | `frame` | (per car) | name of a `userData` hook on the model, a node the lamps ride in when the body moves on its own (section 5) |
+
+An entry may list lamps at one end only: the other end keeps the old hitbox placement (`lampsFor`). An end with lamps
+but no `blink` entry has no indicators. List only lamps the model really has (no invented lamps).
 
 `mirror: true` adds the -x twin, so a pair is written once. Example (the Pick-Up):
 ```js
@@ -138,6 +141,17 @@ Contact sheet: `convert <png> -crop 760x560+90+20 +repage -resize 640x` on each 
 `montage ... -tile 2x4 -geometry +4+4` (columns before | after). Do not centre-crop: the studio camera puts the car
 right of centre. READ every sheet: are the halo, glow and indicator ON the lens, at the right size, and on both sides?
 In-game stills with `&ghost` draw the player see-through and too small to judge, so use the studio.
+
+## 6b. Preview in the model editor
+`delivery/modeleditor.html` has lamp toggles in its view row: Lights (night glow, view darkens), Brake, Hazards (1.2 Hz
+flash), Left / Right, Steady, Lamp markers; Blackout hides the effects. Use it to check a new entry on the model itself,
+turning it with the Front / Rear / 3/4 buttons, with no game run. The effects are the game's: the meshes live in
+`render/lampfx.js` (`addLamps`, `placeLamps`, `setLampLights`, shared with `render/cars.js syncLamps`) and the layout is
+`lampsFor(lampKey(car), hitbox)`; they ride in the model's `frame` node. The stats strip names the entry:
+`lamps: table entry (hand-written|generated|guess)` or `generic hitbox placement`. Addresses: `?car=<id>&lights&brake&hazards&lampmarks`
+(also `left right steady`), `lampt=0` / `lampt=0.5` freezes the flash lit / dark for stills. After editing a lamp in the
+model editor's patch, re-measure: the table does not follow the patch. The editor does not run `animate`, so a moving body
+(Lowrider hop) is not shown moving.
 
 ## 7. Checks
 - `npx eslint` on changed files and `node --check`.

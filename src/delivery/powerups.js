@@ -105,7 +105,7 @@ export const CARDS = [
     ['magnet', `Pickups up to ${M.magnet.range} m ahead drift toward you.`],
     ['blackout', 'Every light goes out and the dark closes in: headlights only.'],
     ['trafficFreeze', `Everything but you stands still for ${M.trafficFreeze.time} s: traffic, obstacles and hazards.`],
-  ] },
+  ].filter(([name]) => CONFIG.mystery.effects.includes(name)) },  // (only the effects in the pool: souped up is off for now)
   { type: 'target', name: 'TANK RAGE Target', says: says('powerups', 'tankRage'), saysColor: '#ff3b30', color: 0x39ff6a, wide: true, rules: [
     `Land a package on a green target beside the road to find the next piece of the tank. The <strong>${CONFIG.tankPieces}th</strong> piece starts TANK RAGE.`,
     'Pieces carry over from level to level once you reach the finish (even late, in the tip countdown). Fail or quit and that run\'s pieces are lost.',

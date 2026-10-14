@@ -36,7 +36,7 @@ try {
   const all = await run('?lite=all');
   check(all.classes.length === all.names.length && all.names.every(x => all.classes.includes('lite-' + x)), '?lite=all: every switch (' + all.names.join(',') + ')');
   for (const name of none.names) {
-    const acted = css.includes('html.lite-' + name) || new RegExp("lite\\('" + name + "'\\)").test(readFileSync('src/delivery/render/packcontents.js', 'utf8'));
+    const acted = name === 'scene' /* (since 14-Oct the rule itself: html.sheet-up hides what lies under a sheet) */ || css.includes('html.lite-' + name) || new RegExp("lite\\('" + name + "'\\)").test(readFileSync('src/delivery/render/packcontents.js', 'utf8'));
     check(acted, `'${name}' is acted on (lite.css or packcontents.js)`);
   }
 } finally { rmSync(dir, { recursive: true, force: true }); }
@@ -46,8 +46,11 @@ const rules = css.split('}').map(r => r.split('{')[0].trim()).filter(Boolean);
 const loose = rules.filter(sel => !/^\.lite-badge$/.test(sel) && sel.split(',').some(s => !/html\.lite-|html\.sheet-up/.test(s)));
 check(loose.length === 0, 'every lite.css rule is gated by html.lite-* (or html.sheet-up)' + (loose.length ? ': ' + loose.join(' | ') : ''));
 const sheetRules = rules.filter(sel => sel.includes('html.sheet-up') && !sel.includes('lite-'));
-check(sheetRules.length > 0 && sheetRules.every(sel => css.split(sel)[1].split('}')[0].replace(/[{\s]/g, '') === 'animation-play-state:paused!important;'),
-  'under a sheet (no ?lite) the only change is animations paused');
+// under a sheet (no ?lite): animations paused or stopped, and (since the owner's Mi Pad bisect, 14-Oct) everything under it hidden
+const SHEET_BODIES = ['animation-play-state:paused!important;', 'animation:none!important;', 'visibility:hidden!important;', 'visibility:visible!important;'];
+const sheetBodies = css.split('}').map(r => r.split('{')).filter(([sel, body]) => body && /html\.sheet-up/.test(sel) && !/lite-/.test(sel)).map(([, body]) => body.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s/g, ''));
+check(sheetRules.length > 0 && sheetBodies.every(body => SHEET_BODIES.includes(body)),
+  'under a sheet (no ?lite) only animations stop and what lies under it is hidden (' + sheetBodies.length + ' rules)');
 
 const main = readFileSync('src/delivery/main.js', 'utf8');
 check(/^import '\.\/lite\.js';/m.test(main), 'main.js imports lite.js early (before the menu is built)');

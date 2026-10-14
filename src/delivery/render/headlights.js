@@ -8,6 +8,8 @@ import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { scene } from './scene.js';
 import { carMesh, trafficMeshes } from './cars.js';
+import { CAR } from '../cars.js';
+import { NightLamps, lampLayout, lampKey } from './carlights.js';
 import { Player } from '../player.js';
 import { Traffic } from '../traffic.js';
 
@@ -54,13 +56,15 @@ let beamsOn = false;
 export const setHeadlights = (on) => {
   for (const { light } of lamps) light.visible = on;
   beamsOn = on;
+  NightLamps.on = on; // (and the headlamps' glow on the cars render/carlights.js lists: render/cars.js syncLamps)
   for (const beam of beams) beam.visible = on;
 };
 // every frame, after syncTraffic: each beam just ahead of its own vehicle's nose
 export const syncTrafficBeams = () => {
   if (!beamsOn) return;
   for (let i = 0; i < beams.length; i++) {
-    beams[i].position.set(0, 0.08, Traffic.cars[i].hl + B.length / 2);
+    const car = Traffic.cars[i], own = CONFIG.vehicles[car.kind]?.model, beam = own && lampLayout(own)?.beam; // (from a listed car's own headlamps)
+    beams[i].position.set(0, 0.08, (beam ? beam.z : car.hl) + B.length / 2);
     beams[i].visible = !Traffic.cars[i].toad; // (toads have no headlights)
   }
 };
@@ -68,10 +72,14 @@ export const syncTrafficBeams = () => {
 export const syncHeadlights = () => {
   if (!lamps[0].light.visible) return;
   carMesh.updateMatrixWorld();
+  // (a car render/carlights.js lists: from its own headlamps, how far apart and how far forward; the height stays
+  // CONFIG's, a little above real lamps, so the light reaches on down the road)
+  const beam = Player.tank > 0 || CAR.ufo ? null : lampLayout(lampKey(CAR))?.beam;
+  const spread = beam ? beam.spread : H.spread, z = beam ? beam.z : Player.hl;
   for (const { light, side } of lamps) {
     light.intensity = carMesh.visible ? H.intensity : 0; // (no car: the screensaver, or being carried off)
     // (in the scene's own terms: the car's matrix, not its world one, which a mirrored level reverses)
-    light.position.copy(at.set(side * H.spread, H.height, Player.hl).applyMatrix4(carMesh.matrix));
-    light.target.position.copy(at.set(side * H.spread, 0, Player.hl + H.aim).applyMatrix4(carMesh.matrix));
+    light.position.copy(at.set(side * spread, H.height, z).applyMatrix4(carMesh.matrix));
+    light.target.position.copy(at.set(side * spread, 0, z + H.aim).applyMatrix4(carMesh.matrix));
   }
 };

@@ -1,5 +1,5 @@
 // ============================================================================
-// CRAZEY JIM'S BLUEPRINT STALL - the rules (CHECKLIST item 243; the section of the Shop is render/jimshop.js). Jim, who runs the
+// CRAZEY JIM'S BLUEPRINT STALL - the rules (CHECKLIST item 249; the section of the Shop is render/jimshop.js). Jim, who runs the
 // car lot, sells BLUEPRINTS for tip money (the bank, whole dollars): 6 OFFERS drawn from a POOL, the same for a whole SLOT and
 // on every reload, new every 6 HOURS (the owner, 14-Oct): four slots a local day, starting at the local clock's 00:00, 06:00,
 // 12:00 and 18:00, seeded by the local date + the slot (no server). A SLOT's stock and price rises reset with its new offers;

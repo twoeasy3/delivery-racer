@@ -318,6 +318,7 @@ export const IDEA_MODELS_2 = {
     for (const side of [-1, 1]) box(shell, paint, 0.05, 1.2, 0.4, side * 0.3, 1.78, -L * 0.68 - 0.45);  // two rudders behind
     group.userData = {
       body,
+      lampFrame: shell, // (the body the lamps ride on: render/carlights.js frame)
       livery: (evil) => ductPaint.color.setHex(evil ? car.evilColor : car.color),
       animate: (t) => { fan.rotation.z = t * 28; shell.position.y = 0.04 + Math.sin(t * 1.7) * 0.015; shell.rotation.z = Math.sin(t * 1.1) * 0.012; },
     };

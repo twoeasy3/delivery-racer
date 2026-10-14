@@ -47,7 +47,7 @@
 /* (the dot on the Events tab while an event on is not done: the Shop chip's, render/shop.js, inside the tab's slant) */
 #startScreen .menu-tabs button { position: relative; }
 #startScreen .menu-tabs .tab-dot { top: 3px; right: 6px; width: 7px; height: 7px; } /* (in the top right corner, clear of the slant and of the word) */
-#startScreen #bank { margin-left: auto; display: flex; align-items: baseline; gap: 8px; font: 700 22px/1 var(--display); color: var(--accent); font-variant-numeric: tabular-nums; }
+#startScreen #bank { margin-left: auto; display: flex; align-items: baseline; gap: 8px; font: 700 22px/1 var(--display); color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
 #startScreen #bank small { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); }
 #startScreen .menu-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px; border-radius: 7px; font-size: 13px; font-weight: 700; letter-spacing: .03em;
   background: var(--panel-2); color: #fff; box-shadow: inset 0 0 0 1px var(--line); transition: background .15s, box-shadow .15s, transform .1s; }
@@ -183,7 +183,12 @@
 #startScreen .side-switch button:disabled { opacity: .3; }
 #startScreen .side-switch button.current[data-side="good"] { background: #ffd23f; color: #1c1500; box-shadow: 0 0 14px rgba(255, 210, 63, .4); }
 #startScreen .side-switch button.current[data-side="evil"] { background: #c8241a; color: #fff; box-shadow: 0 0 14px rgba(255, 64, 40, .5); }
-#startScreen #sideNote { min-height: 2.6em; font-size: 12px; line-height: 1.3; color: var(--ink-dim); text-align: center; }
+#startScreen #sideNote { display: grid; min-height: 2.6em; font-size: 12px; line-height: 1.3; color: var(--ink-dim); text-align: center; }
+/* (both sides' notes in one cell, the other side's unseen: the note is the height of the longer, whichever side is on) */
+#startScreen #sideNote > span { grid-area: 1 / 1; }
+#startScreen #sideNote > .other { visibility: hidden; }
+/* (the side's two words on one line each, always: a word wrapping on one side and not the other would move what is under it) */
+#startScreen .side-switch button { white-space: nowrap; min-width: 0; }
 #startScreen #startBtn { flex: 0 0 auto; padding: 13px 10px 11px; background: var(--accent); color: var(--accent-ink); text-align: center;
   clip-path: polygon(16px 0, 100% 0, calc(100% - 16px) 100%, 0 100%); font: italic 800 34px/1 var(--display); font-stretch: condensed; letter-spacing: .14em; text-transform: uppercase;
   transition: transform .1s, filter .15s; animation: start-pulse 1.6s ease-in-out infinite; }
@@ -191,6 +196,7 @@
 #startScreen #startBtn:active:not(:disabled) { transform: scale(.98); }
 #startScreen #startBtn .start-note { display: block; margin-top: 4px; font-size: 12px; font-style: normal; font-weight: 700; letter-spacing: .08em; opacity: .75; }
 #startScreen #startBtn .start-note.hidden { display: none; }
+#startScreen #startBtn .start-note.unseen { visibility: hidden; }
 #startScreen #startBtn:disabled { background: #39414f; color: rgba(255, 255, 255, .5); animation: none; }
 @keyframes start-pulse { 50% { filter: brightness(1.14) drop-shadow(0 0 10px var(--accent-glow)); } }
 
@@ -238,12 +244,16 @@
      Placed from the top by --menu-h, as the menu is, so where the address bar is over a page laid out at 100vh it is still above it */
   #startScreen .build-tag { right: max(12px, env(safe-area-inset-right)); bottom: auto; top: calc(var(--menu-h, 100dvh) - var(--foot) + 8px); z-index: 6; font-size: 11px; opacity: .9; }
   /* the top: the title, the bank (the figure alone) and the options on one line, the tabs on the next */
-  #startScreen .menu-top { flex-wrap: wrap; gap: 6px 8px; }
-  #startScreen h1 { font-size: 22px; }
-  #startScreen #bank { font-size: 17px; }
+  /* (a grid, not a wrapping row: the title, the bank, the Shop and the options are ONE row at any width, the bank's
+     column taking what is left and its figure scaled to its length, render/bank.js; as a wrapping row the options
+     went to a second line on a 320-wide phone and with any long bank. The owner, 14-Oct: "Main menu options wrapped
+     to second row". The title and the bank shrink a little on the narrowest phones) */
+  #startScreen .menu-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 6px clamp(5px, 2vw, 8px); }
+  #startScreen h1 { font-size: clamp(18px, 5.6vw, 22px); }
+  #startScreen #bank { min-width: 0; justify-self: end; justify-content: flex-end; font-size: clamp(14px, 4.4vw, 17px); white-space: nowrap; overflow: hidden; }
   #startScreen #bank small { display: none; }
   #startScreen #optionsBtn { padding: 6px 10px; font-size: 12px; }
-  #startScreen .menu-tabs { order: 5; flex: 0 0 100%; margin: 0; }
+  #startScreen .menu-tabs { order: 5; grid-column: 1 / -1; margin: 0; }
   #startScreen .menu-tabs button { flex: 1 1 0; padding: 7px 8px 6px; font-size: 16px; text-align: center; }
   #startScreen .menu-groups button { padding: 7px 12px 6px; }
   /* the stage: its words between the arrows, which are at the middle of its edges; the description three lines at most */
@@ -285,7 +295,9 @@
   #startScreen #raceMenu .menu-chip { flex: 1 1 0; min-width: 0; display: block; padding: 6px 4px; font-size: 11px; line-height: 13px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #startScreen .side-box { grid-area: side; }
   #startScreen .side-switch { flex: 1 1 auto; }
-  #startScreen .side-switch button { padding: 0 4px; font-size: 19px; }
+  /* (19 px where the switch is wide enough, smaller with the screen's width under 390: on a 320-wide phone GOOD at 19 px
+     was wider than its half of the switch) */
+  #startScreen .side-switch button { padding: 0 4px; font-size: clamp(13px, calc(5.9vw - 4px), 19px); }
   #startScreen #sideNote { display: none; }
   #startScreen #startBtn { grid-area: start; padding: 9px 10px 7px; font-size: 24px; }
   #startScreen .menu-sheet { position: fixed; padding: 8px; } /* (fixed: over the screen even where the menu has scrolled) */

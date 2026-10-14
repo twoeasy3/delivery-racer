@@ -500,6 +500,7 @@ ORIG4_MODELS.suv = (car) => {
   for (const side of [-1, 1]) for (const z of [AX, -AX]) wheel(group, k, R, 0.32, side * (W - 0.08), z, SILVER);
   group.userData = {
     body,
+    lampFrame: shell, // (the body the lamps ride on: render/carlights.js frame)
     animate: (t) => {
       shell.rotation.z = Math.sin(t * 1.7) * 0.012;
       shell.position.y = Math.sin(t * 3.4) * 0.012;

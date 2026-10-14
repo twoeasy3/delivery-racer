@@ -11,6 +11,8 @@ import './trafficModels.js'; // (more of them, added to MODELS)
 import { makeCrashDummy } from './pickupModels.js';
 import { makeTractorModel, makeUfo } from './carExtras.js';
 import { damageShare, scorch } from './dents.js';
+import { lampsFor, LAMP_DEBUG, NightLamps } from './carlights.js';
+import { addLamps, placeLamps, setLampLights } from './lampfx.js';
 
 // ---- cars (front faces local +z), sized from each vehicle's hitbox -----------
 export const unitBox = new THREE.BoxGeometry(1, 1, 1);
@@ -140,51 +142,24 @@ export const makeTankMesh = (color) => {
 };
 
 // ---- brake lights, indicators and hazards, laid over any car-shaped vehicle ----------------------
-// (over the car's own tail lights, whichever model it is: they are sized from its hitbox)
-const brakeMat = new THREE.MeshBasicMaterial({ color: 0xff1a1a });
-const brakeHaloMat = new THREE.MeshBasicMaterial({ color: 0xff3020, transparent: true, opacity: 0.35, depthWrite: false });
-const amberMat = new THREE.MeshBasicMaterial({ color: 0xffa21a });
-const flashMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false });
-for (const shared of [brakeMat, brakeHaloMat, amberMat, flashMat]) shared.userData.shared = true; // (made once, shared by every car: clearGroup keeps them)
-const addLamps = (group) => {
-  const lamps = new THREE.Group();
-  const brakes = [0, 1].map(() => new THREE.Mesh(unitBox, brakeMat));
-  const halos = [0, 1].map(() => new THREE.Mesh(unitBox, brakeHaloMat));
-  const blinkers = [0, 1, 2, 3].map(() => new THREE.Mesh(unitBox, amberMat)); // front then back; left (-x) then right
-  const flashers = [0, 1].map(() => new THREE.Mesh(unitBox, flashMat)); // headlights flashed (a wrong-way driver's)
-  lamps.add(...brakes, ...halos, ...blinkers, ...flashers);
-  group.add(lamps);
-  group.userData.lamps = { lamps, brakes, halos, blinkers, flashers };
-};
-// v: the vehicle (its hitbox sizes the lamps); show: false for a vehicle that isn't car-shaped;
-// turnX: the side of the model (+1 = local +x, -1 = -x) whose indicators blink, 0 = none
-export const syncLamps = (group, v, show, braking, turnX, hazards, flashing) => {
-  const { lamps, brakes, halos, blinkers, flashers } = group.userData.lamps;
-  lamps.visible = show;
+// The meshes, materials and the glow picture are in render/lampfx.js (shared with the model editor's lamp toggles).
+// v: the vehicle (its hitbox sizes the lamps of a car not in the table); show: false for a vehicle that isn't car-shaped;
+// turnX: the side of the model (+1 = local +x, -1 = -x) whose indicators blink, 0 = none;
+// key: the car's key in render/carlights.js (lampKey), when its own model is the one shown (null: the hitbox's placement);
+// model: that model (for a listed car whose lamps ride on a moving body)
+export const syncLamps = (group, v, show, braking, turnX, hazards, flashing, key = null, model = null) => {
+  const L = group.userData.lamps;
+  L.lamps.visible = show;
   if (!show) return;
-  const w = v.hw * 2, l = v.hl * 2, y = Math.min(1.1, Math.max(0.55, v.height * 0.5));
-  const blink = Math.floor(performance.now() / 350) % 2 === 0;
-  brakes.forEach((lamp, i) => {
-    const side = i ? 1 : -1;
-    lamp.visible = halos[i].visible = braking;
-    lamp.scale.set(w * 0.24, 0.18, 0.06);
-    lamp.position.set(side * w * 0.33, y, -(l / 2 + 0.04));
-    halos[i].scale.set(w * 0.4, 0.4, 0.1);
-    halos[i].position.set(side * w * 0.33, y, -(l / 2 + 0.1));
-  });
-  blinkers.forEach((lamp, i) => {
-    const side = i % 2 ? 1 : -1, front = i < 2;
-    lamp.visible = blink && (hazards || turnX === side);
-    lamp.scale.set(0.2, 0.14, 0.08);
-    lamp.position.set(side * (w / 2 - 0.08), y, (front ? 1 : -1) * (l / 2 + 0.05));
-  });
+  const layout = lampsFor(key, v, L); // (the table's, an end it has no lamps for on the hitbox; or all on the hitbox)
+  // (a model whose body moves on its own, the Lowrider's hydraulics, has its lamps ride in that body: CAR_LAMPS' `frame`)
+  const frame = (layout.frame && model?.userData[layout.frame]) || group;
+  if (L.lamps.parent !== frame) frame.add(L.lamps);
+  if (L.placed !== layout || L.version !== (layout.version || 0)) placeLamps(L, layout);
+  const blink = LAMP_DEBUG.steady || Math.floor(performance.now() / 350) % 2 === 0;
   // (big and bright, so they are seen from well up the road)
   const flash = !!flashing && Math.floor(performance.now() / 140) % 2 === 0;
-  flashers.forEach((lamp, i) => {
-    lamp.visible = flash;
-    lamp.scale.set(w * 0.42, 0.5, 0.1);
-    lamp.position.set((i ? 1 : -1) * w * 0.3, y, l / 2 + 0.12);
-  });
+  setLampLights(L, layout, braking, blink, turnX, hazards, flash, NightLamps.on || LAMP_DEBUG.night);
 };
 
 export const carMesh = makeCarMesh(CAR.color);
@@ -305,6 +280,6 @@ export const syncTraffic = () => {
       // (in the scene's own terms: its matrix, not its world one, which a mirrored level reverses)
       turnX = Math.sign(signalAt.applyMatrix4(unplace.copy(mesh.matrix).invert()).x);
     }
-    syncLamps(mesh, car, lit, car.braking, turnX, car.hazards || car.wrongWay, car.wrongWay); // (a wrong-way driver: hazards on, headlights flashing)
+    syncLamps(mesh, car, lit, car.braking, turnX, car.hazards || car.wrongWay, car.wrongWay, own ? CONFIG.vehicles[car.kind]?.model : null, own); // (a wrong-way driver: hazards on, headlights flashing)
   }
 };

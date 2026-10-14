@@ -1,4 +1,4 @@
-// A check of Crazey Jim's blueprint stall (src/delivery/jimshop.js; CHECKLIST item 243), headless: the day's rotation is the same
+// A check of Crazey Jim's blueprint stall (src/delivery/jimshop.js; CHECKLIST item 249), headless: the day's rotation is the same
 // for a date (and differs between dates), has the offers it should (distinct cars, a quantity and stock by rarity, one hot deal),
 // offers exactly the Standard pack's blueprint pool (the owner, 14-Oct: the ordinary evergreen cars and the key cars whose blueprints it
 // drops, derived from the packs), and NEVER any other key car, an earned / super car, the Tank, an off car or a noPacks car (400 days); key cars: dearer

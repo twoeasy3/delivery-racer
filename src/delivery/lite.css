@@ -7,9 +7,6 @@ html.lite-shine .bp-card .bp-art { animation: none !important; }
 html.lite-blend .bp-card .bp-art::before { mix-blend-mode: normal !important; }
 html.lite-drift #startScreen .menu-stage .shot { animation: none !important; }
 html.lite-menu #startScreen *, html.lite-menu #startScreen *::before, html.lite-menu #startScreen *::after { animation: none !important; }
-html.lite-scene.sheet-up body * { visibility: hidden !important; } /* (the menu, the Shop, the game's canvas and HUD: only the sheet and the badge are drawn) */
-html.lite-scene.sheet-up .pack-contents, html.lite-scene.sheet-up .pack-contents *, html.lite-scene.sheet-up .pack-reveal, html.lite-scene.sheet-up .pack-reveal *,
-html.lite-scene.sheet-up .lite-badge { visibility: visible !important; }
 html.lite-blur *, html.lite-blur *::before, html.lite-blur *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
 html.lite-shadow .bp-card { box-shadow: none !important; }
 html.lite-shadow .bp-card .bp-pic, html.lite-shadow .bp-card .bp-keypic { filter: none !important; }
@@ -28,3 +25,11 @@ html.lite-anim .pack-reveal *, html.lite-anim .pack-reveal *::before, html.lite-
 html.sheet-up #startScreen *, html.sheet-up #startScreen *::before, html.sheet-up #startScreen *::after,
 html.sheet-up .shop-screen > :not(.pack-contents), html.sheet-up .shop-screen > :not(.pack-contents) *,
 html.sheet-up .shop-screen > :not(.pack-contents) *::before, html.sheet-up .shop-screen > :not(.pack-contents) *::after { animation-play-state: paused !important; }
+
+/* ---- since 14-Oct, NOT a lite switch any more: the old `scene` switch is the rule. The owner's Mi Pad bisect (?lite=drift,menu,scene stopped the
+   What's inside flicker; the three could not be narrowed further) points at what lies under the sheet, so while a sheet is up nothing
+   under it is drawn at all: the menu, the Shop, the game's canvas and HUD are hidden (a plain dark page round the sheet) ---- */
+html.sheet-up body * { visibility: hidden !important; }
+html.sheet-up .pack-contents, html.sheet-up .pack-contents *, html.sheet-up .pack-reveal, html.sheet-up .pack-reveal *,
+html.sheet-up .lite-badge { visibility: visible !important; }
+html.sheet-up #startScreen *, html.sheet-up #startScreen *::before, html.sheet-up #startScreen *::after { animation: none !important; } /* (the menu's own animations stop outright, not just pause) */
