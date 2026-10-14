@@ -2448,7 +2448,7 @@ export const Traffic = (() => {
         car.slideVel = (car.slideVel - Math.sign(bend) * car.dir * slide * dt) * (1 - Math.min(1, dt * 2)); // (gripping again as it eases)
         car.vs -= Math.sign(car.vs) * Math.min(Math.abs(car.vs), slide * CONFIG.race.scrub * dt); // (scrubbing off speed as it slides)
       } else car.slideVel = 0;
-      car.s += car.vs * dt;
+      car.s += car.vs * dt * Track.pathScale(car.s, car.lat); // (true speed)
       Track.transfer(car); // onto the side road, a flyover or back, where the roads join
       car.lat += (car.latVel + car.slideVel) * dt;
       keepOnRoad(car, 0.3);

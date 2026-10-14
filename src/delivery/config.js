@@ -174,6 +174,11 @@ export const CONFIG = {
   // Cornering: in a bend, every car (the player's too) has a lower top speed, the sharper the bend,
   // the heavier the car and the less agile: sqrt(grip x agility / (weight x curvature)). A gentle
   // bend is taken flat out, a hairpin at a crawl. (weight: as on ice, see CONFIG.ice.weightRef)
+  // True speed: progress along the road is the distance driven over the length of the car's own line, so the inside of a
+  // bend is shorter and the outside longer (Track.pathScale); `least` / `most` bound the scale (a lane is never past the
+  // bend's centre). Lane changes also scrub speed a little: `laneScrub` m/s^2 at full sideways speed, over the car's
+  // agility (a nimble car loses less)
+  trueSpeed: { on: true, least: 0.4, most: 2.5, laneScrub: 1.2 },
   cornering: { grip: 22 },   // m/s^2 of cornering a car of weight 1 and agility 1 holds
   // A race (a level's "grid", "understeer", "wallDamage", "nudge": see levels.js). Its understeer is
   // `understeer` times as hard as on ice, and sliding wide scrubs off speed: `scrub` m/s^2 for every

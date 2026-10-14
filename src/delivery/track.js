@@ -587,6 +587,11 @@ const createTrack = () => {
     return d / 2;
   };
 
+  // true speed: a car at lateral offset lat drives (1 - bend x lat) metres for every metre of the centre line
+  // (the inside of a bend is shorter, the outside longer), so its progress along the road runs this much
+  // faster. 1 on a straight or when CONFIG.trueSpeed is off
+  const pathScale = (s, lat) => !CONFIG.trueSpeed.on ? 1 : 1 / Math.min(CONFIG.trueSpeed.most, Math.max(CONFIG.trueSpeed.least, 1 - bend(s) * lat));
+
   // ---- lanes ------------------------------------------------------------------------------
   // expressway: 0 .. laneCount-1 left to right: the left side's lanes (oncoming on a two-way
   // road), the median's, then the right side's. -1 is the left shoulder, used as a lane only by
@@ -1291,7 +1296,7 @@ const createTrack = () => {
     apart, laneCount: LANES, leftLanes: LEFT, rightLanes: RIGHT, medianLanes: MID, medianHalf: HM, shoulder: SH, flow: FLOW, mirrored: MIRRORED,
     toWorld, fromWorld, grade, hilly, transfer, along, progress, finished, inBounds, spawnAt, place, isMain,
     laneOffset, openLane, nearestLane, laneRange, assistOffset, flyHeight,
-    lanesOn, edge, extraLane, onBridge, icy, sprays, slicks, muddy, gravels, gravelBand, gravelAt, water, waters, foggy, tunnel, bend, onRails, junctions, zoneAt, lo, hi, laneLo, laneHi, shoulderOffset, onShoulder, rampLaneZone, sideOpen, sideWidth, sideLeft, sideOncoming,
+    lanesOn, edge, extraLane, onBridge, icy, sprays, slicks, muddy, gravels, gravelBand, gravelAt, water, waters, foggy, tunnel, bend, pathScale, onRails, junctions, zoneAt, lo, hi, laneLo, laneHi, shoulderOffset, onShoulder, rampLaneZone, sideOpen, sideWidth, sideLeft, sideOncoming,
     flyPillar, sideDistance, mainDistance, exits, crossable, crossLo,
   };
 };

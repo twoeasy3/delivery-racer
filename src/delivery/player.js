@@ -535,7 +535,7 @@ export const Player = {
     }
     if (sea.damage && this.shield <= 0 && this.ghost <= 0) this.health -= sea.damage * this.damageScale * dt;
     this.updateSpeed(dt, throttle, stopping, auto);
-    this.s += this.speed * dt;
+    this.s += this.speed * dt * Track.pathScale(this.s, this.lat); // (true speed: the inside of a bend is shorter)
     // on the right shoulder at the exit = taking the side road; at its end, back onto the expressway
     const latBefore = this.lat;
     Track.transfer(this);
@@ -578,6 +578,11 @@ export const Player = {
     if (this.mystery === 'noBrakes' && steer !== 0 && !this.busted && this.speed > CONFIG.minSpeed) {
       const across = Math.min(1, Math.abs(this.latVel) / (CONFIG.steerSpeed * this.agility));
       this.speed = Math.max(CONFIG.minSpeed, this.speed - CONFIG.mystery.noBrakes.steerScrub * Math.abs(steer) * across * dt);
+    }
+    // changing lanes scrubs a little speed, the less the more agile the car (CONFIG.trueSpeed)
+    if (steer !== 0 && !this.busted && this.speed > CONFIG.minSpeed) {
+      const across = Math.min(1, Math.abs(this.latVel) / (CONFIG.steerSpeed * this.agility));
+      this.speed = Math.max(CONFIG.minSpeed, this.speed - CONFIG.trueSpeed.laneScrub * across * across / this.agility * dt);
     }
     // (where walls hurt, "wallDamage", nothing stops the slide carrying the car into one: see keepOnRoad)
     if (!LEVEL.wallDamage) this.latVel += slide * dt;
