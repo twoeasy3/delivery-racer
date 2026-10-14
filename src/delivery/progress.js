@@ -68,6 +68,7 @@ const fresh = () => ({
   shopCash: 0,     // the Shop's PLACEHOLDER currency (shop.json, shop.js): its own balance, never the bank; nothing gives it yet
   eventRuns: {},   // a rotating event's TASK COUNTERS for its run on now (events.js tasks: the Concept Strike, CHECKLIST 211), by event id: { day: 'YYYY-MM-DD' (the run's first day, local), n: [times each task paid this run] }; a new run starts them again
   jimBuys: {},     // Crazey Jim's BLUEPRINT STALL (jimshop.js): { day ('YYYY-MM-DD', local), slot (0..3: the 6 hours of it), ref (refreshes this slot: the draw's seed), r (refreshes today), n: { car id: bundles bought since the last refresh } }; another slot's ref and n and another day's r are void
+  cosmetics: [],   // the cosmetics owned that are not free, as 'slot:id' keys (cosmetics.js): LOCAL STORAGE ONLY, never in the cookie (COOKIE_KEYS)
   packBuys: {},    // the Shop's PURCHASE COUNTERS, by pack id (shop.js; a pack's packs.json shop.limits): { total (ever bought), day ('YYYY-MM-DD', the player's local day of the last buy), today (bought that day) }; a bundle counts each pack
 });
 
@@ -114,6 +115,8 @@ const cleanBuys = (buys) => Object.fromEntries(Object.entries(buys && typeof buy
   .slice(0, 50)
   .map(([id, b]) => [id, { total: b.total, day: typeof b.day === 'string' && /^\d{4}-\d\d-\d\d$/.test(b.day) ? b.day : '',
     today: Number.isInteger(b.today) && b.today >= 0 && b.today <= b.total ? b.today : 0 }]));
+// the cosmetics owned (cosmetics.js): 'slot:id' keys, each checked, no repeats, no more than there could be (a save from before has none)
+const cleanCosmetics = (list) => [...new Set((Array.isArray(list) ? list : []).filter(k => typeof k === 'string' && /^[a-z0-9-]{1,40}:[A-Za-z0-9_-]{1,40}$/.test(k)))].slice(0, 300);
 // a rotating event's task counters (events.js), each checked: { [event id]: { day: 'YYYY-MM-DD', n: [whole numbers] } }
 const cleanRuns = (runs) => Object.fromEntries(Object.entries(runs && typeof runs === 'object' && !Array.isArray(runs) ? runs : {})
   .filter(([id, r]) => /^[a-z0-9-]{1,40}$/.test(id) && r && typeof r === 'object' && typeof r.day === 'string' && /^\d{4}-\d\d-\d\d$/.test(r.day) && Array.isArray(r.n))
@@ -130,6 +133,7 @@ const restore = (saved) => {
     data.packBuys = cleanBuys(saved.packBuys); // (the Shop's purchase counters: a save from before has none)
     data.jimBuys = cleanJim(saved.jimBuys); // (Crazey Jim's blueprint stall: a save from before has none)
     data.eventRuns = cleanRuns(saved.eventRuns); // (a rotating event's task counters: a save from before has none)
+    data.cosmetics = cleanCosmetics(saved.cosmetics); // (the cosmetics owned: a save from before has none)
     data.packLog = Array.isArray(saved.packLog) ? saved.packLog : [];
     // (the Commuter and the Darkvan were saved as 'hatch' and 'coupe')
     const RENAMED = { hatch: 'commuter', coupe: 'darkvan' };
@@ -226,6 +230,7 @@ const tidy = (saved) => {
   clean.packBuys = cleanBuys(saved.packBuys); // (the Shop's purchase counters)
   clean.jimBuys = cleanJim(saved.jimBuys); // (Crazey Jim's purchases of the day)
   clean.eventRuns = cleanRuns(saved.eventRuns); // (a rotating event's task counters)
+  clean.cosmetics = cleanCosmetics(saved.cosmetics); // (the cosmetics owned)
   clean.packLog = (Array.isArray(saved.packLog) ? saved.packLog : []).filter(p => p && typeof p === 'object' && word(p.kind) && Array.isArray(p.cards)).slice(0, 50)
     .map(p => ({ kind: p.kind, ...(word(p.from) ? { from: p.from } : {}), cards: p.cards.filter(c => c && word(c.car) && word(c.rarity)).slice(0, 20)
       .map(c => ({ car: c.car, rarity: c.rarity, ...(c.key === true ? { key: true } : {}), ...(c.featured === true ? { featured: true } : {}) })) }));
@@ -318,6 +323,15 @@ export const Progress = {
     return this.data.cars.includes(carId) || this.earnedCars.some(car => car.id === carId && this.earned(car)) ||
       this.freeCars.some(car => car.id === carId) || !!this.blueprintOwns?.(carId);
   },
+  // a cosmetic (cosmetics.js): free, or its 'slot:id' key is in the save's list (local storage only: never the cookie)
+  ownsCosmetic(slot, id) {
+    return !!this.cosmeticFree?.(slot, id) || this.data.cosmetics.includes(slot + ':' + id);
+  },
+  // cosmetic keys given to the player (unlockall.js): cleaned like a loaded save, kept once each
+  grantCosmetics(keys) {
+    this.data.cosmetics = cleanCosmetics([...this.data.cosmetics, ...keys]);
+  },
+  cosmeticFree: null, // (set by cosmetics.js: is this item free?)
   // the cars that are free and always open (set by cars.js: the car ideas, ideas.js)
   freeCars: [],
   // is a blueprint car unlocked by its blueprints? (set by ecu.js; null: none is)

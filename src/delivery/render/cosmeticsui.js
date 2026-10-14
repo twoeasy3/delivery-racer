@@ -6,7 +6,7 @@
 // the wheels. The page never reloads and the start screen stays a menu.
 // SLOTS: a list down the side. WHEELS is the only live one (one row of wheel SETS, each a tyre + hub, for every car; 'Custom' shows when the saved pair is no set); the others are greyed
 // "coming later" entries that open nothing: the framework costs a line each. EVERYTHING IS FREE AND OPEN for now: `owned` is
-// the one place a later unlock check goes (a chip it says no to is shown locked and cannot be equipped).
+// the one place the unlock check goes (a chip it says no to is shown locked and cannot be equipped).
 // Keys: arrows move between the choices (left / right along a row, up / down between rows), Enter or Space equips the one
 // focused, Escape goes back. Touch: every choice is at least 44 px tall. Storage and the test switches are wheelcosmetic.js's.
 import '../cosmetics.css';
@@ -15,6 +15,7 @@ import { ShowroomView } from './showroomview.js';
 import { stillCar } from './carstill.js';
 import { carInUse, CARS } from '../cars.js';
 import { Game } from '../game.js';
+import { Progress } from '../progress.js';
 import { Nav } from '../nav.js';
 import { Sound } from './audio.js';
 
@@ -25,9 +26,10 @@ export const SLOTS = [
   { id: 'roof', name: 'Roof ornament', live: false },
   { id: 'underglow', name: 'Underglow', live: false },
 ];
-// THE place for "does the player own it?" Everything is free and open for now: nothing is locked. A later unlock system
-// answers here by slot ('wheels') and set id ('whitewall-gold', 'gold-rush'); a choice it refuses shows locked and cannot be equipped.
-export const owned = (slot, id) => true; // eslint-disable-line no-unused-vars
+// THE place for "does the player own it?" It asks Progress.ownsCosmetic (free, or listed in the save: cosmetics.js is the registry).
+// Every cosmetic is free today, so nothing is locked yet; a choice it refuses shows locked and cannot be equipped, and an equipped
+// set that is not owned wears Stock (wheelcosmetic.js).
+export const owned = (slot, id) => Progress.ownsCosmetic(slot, id);
 
 const root = document.getElementById('cosmetics');
 const make = (tag, className, ...children) => {
