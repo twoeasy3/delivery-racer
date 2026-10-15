@@ -119,7 +119,7 @@ const stagesOf = (e) => e.stages.map(s => s.level).filter(Boolean);
 const oneStage = (event) => !!event && stagesOf(event).length === 1;
 const buildTabs = () => {
   if (!Tiers.on()) return;
-  for (const e of Events.specials) if (e.days) Events.syncDay(e); // (a rotating event's stage is played on the day's own level: events.js)
+  for (const e of Events.specials) if (e.days || e.hunt) Events.syncDay(e); // (a rotating event's stage is played on the day's own level; a hunt's on its hunted car's tier's: events.js)
   const live = Tiers.liveEvents(), specials = Events.shownSpecials(), key = [...live, ...specials].map(x => x.id).join() + '|' + specials.map(e => e.stages[0]?.level?.id).join(); // (a recurring event is listed between its runs too; a new day's level builds them again)
   if (key === liveKey) return;
   liveKey = key;
@@ -300,7 +300,7 @@ const drawStage = () => {
   const extras = single ? eventExtras(single, level, open) : null;
   const info = make('div', 'info',
     extras?.tags,
-    make('h2', '', single ? (single.title || single.name) : levelName(level)), // (the event's name, as the strip says it; its road under it)
+    make('h2', '', single ? Events.titleOf(single) : levelName(level)), // (a hunt's names the car hunted now: 'Car Hunt: Kei Van') // (the event's name, as the strip says it; its road under it)
     single ? make('p', 'cx-road', 'On ' + levelName(level)) : null,
     open && words && !hide.has('description') ? make('p', 'desc', words) : null,
     open && !hide.has('stats') ? make('div', 'facts',
@@ -829,7 +829,7 @@ const extrasOf = (event) => {
     odds = lines.length ? lines.map(f => 'x' + (f.amount ?? 1) + ' ' + percent(f.lastSlot)).join(' · ') : 'Car maxed';
   }
   const first = event.stages[0], rule = first?.level?.allowedCars && !first.car ? listRule(first.level) : null;
-  const r = event.repeat, often = day ? 'Mon to Sat, a car a day' : r ? (r.every === 7 ? r.live + ' days a week' : r.live + ' days every ' + r.every) : '';
+  const r = event.repeat, often = day ? 'Mon to Sat, a car a day' : event.hunt ? 'New car every ' + event.hunt.days + ' days' : r ? (r.every === 7 ? r.live + ' days a week' : r.live + ' days every ' + r.every) : '';
   return { give, car: hunted || Events.prizeCar(event), hunt: !!hunted, odds, rule, often, day };
 };
 // a pack's art as a button, and its What's inside: both open the pack's sheet (render/packcontents.js)

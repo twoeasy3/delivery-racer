@@ -43,6 +43,7 @@ import { LEVELS, isRace } from './levels.js';
 import { Progress } from './progress.js';
 import { Ecu } from './ecu.js';
 import { packIdOf, migrateHeld } from './packid.js';
+import { clock, packHunt, huntCarOfPack, huntOf } from './hunt.js';
 
 export const RARITIES = Object.keys(packData.rarities); // (lowest first)
 export const PACKS = packData.packs;
@@ -460,22 +461,33 @@ export const contents = (kind, { featured = [], cars, owned, maxed, spec = packO
 // ---- the featured entries of a pack ({ car, weight, key, amount }: featuredEntries, every one declared, exhausted or
 // not): its own `featured.entries`, else its event's prize car at weight 1, else every event car at weight 1. The debug
 // ?featured= (Packs.featuredOverride, for a visit, never saved) is put over any of them. id: a pack id (an old
-// 'special:<event>' key is turned into its pack). [] for a pack with no featured mechanic
+// 'special:<event>' key is turned into its pack). [] for a pack with no featured mechanic.
+// A HUNT pack (`featured.hunt`, or `sameCarAs` one: the Car Hunt pack and the Car Hunt 5-pack, the owner 15-Oct) features the car
+// hunted at `t` (hunt.js huntAt: the events' clock), or `car` (the car a pack held was given for: Packs.open)
 const eventEntry = (id) => (Array.isArray(eventData.special) ? eventData.special : []).find(e => String(e.id) === String(id)) || null;
-export const featuredOf = (id) => {
+// a pack's entries with their car filled in: a hunt pack's with the car hunted (or `car`); a `sameCarAs` pack's with the car of the
+// pack it is tied to (the owner, 13-Oct: "this pack on sale should tie to the car hunt's car"), their own amounts and weights kept
+const entriesOf = (id, { t = clock.now(), car = null } = {}) => {
+  const spec = packOf(id), own = Array.isArray(spec?.featured?.entries) && spec.featured.entries.length ? spec.featured.entries : null;
+  if (!own) return null;
+  const hunted = packHunt(id) ? car || huntCarOfPack(id, t) : null;
+  if (hunted) return own.map(x => (x && typeof x === 'object' && !x.key ? { ...x, car: hunted } : x));
+  if (spec.featured.sameCarAs && spec.featured.sameCarAs !== id) {
+    const lead = (entriesOf(spec.featured.sameCarAs, { t, car }) || []).find(x => x && typeof x === 'object' && !x.key);
+    if (lead) return own.map(x => (x && typeof x === 'object' ? { ...x, car: lead.car } : x));
+  }
+  return own;
+};
+export const featuredOf = (id, { t = clock.now(), car = null } = {}) => {
   const spec = packOf(id);
   if (!spec?.featured) return [];
   if (Packs.featuredOverride) return Packs.featuredOverride;
-  let own = Array.isArray(spec.featured.entries) && spec.featured.entries.length ? spec.featured.entries : null;
-  // `sameCarAs`: a pack on sale tied to an event's pack (the owner, 13-Oct: "this pack on sale should tie to the car hunt's car"): every entry
-  // of it features the car THAT pack features (the Car Hunt 5-pack: whatever car the Car Hunt pack hunts), the entries' own amounts and weights kept
-  if (own && spec.featured.sameCarAs && spec.featured.sameCarAs !== id) {
-    const lead = (packOf(spec.featured.sameCarAs)?.featured?.entries || []).find(x => !x.key);
-    if (lead) own = own.map(x => (x && typeof x === 'object' ? { ...x, car: lead.car } : x));
-  }
+  const own = entriesOf(id, { t, car });
   const prize = eventEntry(spec.event)?.prize?.car;
   return featuredEntries(own || (prize ? [prize] : (Cars.EVENT_CARS || []).map(c => c.id)));
 };
+// the car a hunt pack features at t (a car id), or null: not a hunt pack (hunt.js)
+export const huntCarOf = (id, t = clock.now()) => huntCarOfPack(packIdOf(id), t);
 // the special event a pack belongs to (its `event`: on sale and listed only while it is on), as events.json has it; null
 export const eventOf = (id) => (packOf(id)?.event ? eventEntry(packOf(id).event) : null);
 // the packs a special event gives (its stages, its grand prize, every delivery): those whose givenBy.event names it (by
@@ -568,7 +580,16 @@ export const packProblems = (data = packData) => {
     if (p.event !== undefined && !events.has(String(p.event))) say('its event "' + p.event + '" is not a special event (events.json special)');
     if (p.featured !== undefined) {
       if (!p.featured || typeof p.featured !== 'object' || Array.isArray(p.featured)) say('"featured" is not { upgradeChance, featuredChance, entries }');
-      else for (const line of featuredProblems(p.featured.entries)) say(line + ' (a car id, or { "car", "weight" > 0, "key": true for a Bespoke key car, "amount" })');
+      else {
+        const f = p.featured, hunted = f.hunt !== undefined ? huntOf(f.hunt) : null;
+        if (f.hunt !== undefined && !hunted) say('featured.hunt: "' + f.hunt + '" is not an event with a "hunt" (events.json)');
+        if (f.hunt !== undefined && f.sameCarAs !== undefined) say('featured: "hunt" or "sameCarAs", not both');
+        if (f.sameCarAs !== undefined && !Object.hasOwn(packs, String(f.sameCarAs))) say('featured.sameCarAs: "' + f.sameCarAs + '" is not a pack');
+        if ((f.hunt !== undefined || f.sameCarAs !== undefined) && (f.entries || []).some(x => x && typeof x === 'object' && x.car !== undefined && !x.key)) say('featured: an entry names a car, but its car is ' + (f.hunt !== undefined ? 'the one hunted' : 'its sameCarAs pack\'s'));
+        // (a hunt / sameCarAs pack's entries name no car: checked with the car they would feature now)
+        const list = data === packData && (f.hunt !== undefined || f.sameCarAs !== undefined) ? entriesOf(id) || f.entries : f.entries;
+        for (const line of featuredProblems(list)) say(line + ' (a car id, or { "car", "weight" > 0, "key": true for a Bespoke key car, "amount" })');
+      }
     }
     const g = p.givenBy;
     if (g !== undefined) {
@@ -744,12 +765,16 @@ export const Packs = {
   total() { return Object.values(this.heldMap()).reduce((n, c) => n + (c > 0 ? c : 0), 0); },
   // an unopened pack given. id: a pack id (an old 'special' with { from: event } is turned into its pack). Its name, or
   // '' (no such pack)
-  grant(kind, { from = null, n = 1 } = {}) {
+  // A HUNT pack (the Car Hunt's: hunt.js) keeps the car hunted when it was given (car: one handed in; else the hunt's now): its
+  // car is queued in Progress.data.packCars[id], one a pack, and open() deals it, whenever it is opened
+  grant(kind, { from = null, n = 1, car = null } = {}) {
     const id = packIdOf(kind, from);
     if (!id) return '';
     const held = this.heldMap();
     held[id] = (held[id] || 0) + n;
     Progress.data.packs = held;
+    const hunted = car || huntCarOf(id);
+    if (hunted) { const q = ((Progress.data.packCars ||= {})[id] ||= []); for (let i = 0; i < n; i++) q.push(hunted); }
     Progress.save();
     window.dispatchEvent?.(new Event('packschange'));
     return packName(id);
@@ -789,13 +814,18 @@ export const Packs = {
   open(kind, { from = null, free = false, random = Math.random, amountOf = this.amountOverride } = {}) {
     const id = packIdOf(kind, from);
     if (!id) return null;
+    let car = null; // (a hunt pack: the car it was given for, the first queued; none queued (a save from before): the car hunted now)
     if (!free) {
       const held = this.heldMap();
       if (!(held[id] > 0)) return null;
       if (--held[id] <= 0) delete held[id];
+      const q = Progress.data.packCars?.[id];
+      if (q?.length) { const c = q.shift(); car = Cars.carById(c) ? c : null; }
+      if (q && q.length > (held[id] || 0)) q.splice(0, q.length - (held[id] || 0)); // (never more queued than held)
+      if (q && !q.length) delete Progress.data.packCars[id];
     }
     const spec = PACKS[id];
-    const cards = draw(id, { random, featured: spec.featured ? featuredOf(id) : [] });
+    const cards = draw(id, { random, featured: spec.featured ? featuredOf(id, { car }) : [] });
     if (amountOf) cards.forEach((c, i) => { const n = c.key ? null : amountOf(c, i); if (n >= 1) c.n = Math.floor(n); }); // (a key is always one)
     for (const c of cards) {
       const car = Cars.carById(c.car);
@@ -818,7 +848,7 @@ export const Packs = {
     log.length = Math.min(log.length, Math.max(0, packData.log ?? 20));
     Progress.save();
     window.dispatchEvent?.(new Event('packschange'));
-    return { kind: id, id, from: spec.event ?? null, cards };
+    return { kind: id, id, from: spec.event ?? null, cards, ...(packHunt(id) ? { car: car || huntCarOf(id) } : {}) }; // (car: a hunt pack's, for its art on the reveal)
   },
   // a Career level delivered (Game.finish). firstTime: never delivered before, on either side. The pack's name, or ''
   // (the pack: the one whose givenBy.career lists the level: careerPack)

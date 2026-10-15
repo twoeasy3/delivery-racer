@@ -65,6 +65,7 @@ const fresh = () => ({
   ecuBought: {},   // the ECU each car is bought up to, above its free first (ecu.js: blueprints only unlock an upgrade, the bank pays for it); null = a save from before them, migrated by ecu.js on first use
   maxed: ['commuter'], // cars held at their MAX ECU whatever their blueprints (ecu.js): the starter car comes maxed; an old save's cars all are
   packs: {},       // card packs given and not yet opened (pending: the reveal opens them at once, or at the next menu): a count by pack id ('career', 'comet-special'...: packs.json; an old save's 'special:<event id>' is migrated: packid.js)
+  packCars: {},    // a HUNT pack's car, one per pack held, oldest first, by pack id (packs.js grant / open; hunt.js: the Car Hunt's packs keep the car hunted when they were given)
   packLog: [],     // the packs opened last, newest first: { kind (the pack's id), cards: [{ car, rarity, key?, featured? }] } (packs.js)
   shopCash: 0,     // the Shop's PLACEHOLDER currency (shop.json, shop.js): its own balance, never the bank; nothing gives it yet
   eventRuns: {},   // a rotating event's TASK COUNTERS for its run on now (events.js tasks: the Concept Strike, CHECKLIST 211), by event id: { day: 'YYYY-MM-DD' (the run's first day, local), n: [times each task paid this run] }; a new run starts them again
@@ -110,6 +111,10 @@ const cleanJim = (j) => {
   const whole = (x, most) => (Number.isInteger(x) && x >= 0 && x <= most ? x : 0);
   return { day: j.day, slot: whole(j.slot, 3), ref: whole(j.ref, 9999), r: whole(j.r, 9999), n };
 };
+// the hunt packs' cars (packs.js): { [pack id]: [car ids] }, each checked
+const cleanPackCars = (cars) => Object.fromEntries(Object.entries(cars && typeof cars === 'object' && !Array.isArray(cars) ? cars : {})
+  .filter(([id, list]) => /^[a-z0-9-]{1,40}$/.test(id) && Array.isArray(list)).slice(0, 20)
+  .map(([id, list]) => [id, list.filter(c => typeof c === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(c)).slice(-500)]).filter(([, list]) => list.length));
 const cleanBuys = (buys) => Object.fromEntries(Object.entries(buys && typeof buys === 'object' && !Array.isArray(buys) ? buys : {})
   .filter(([id, b]) => /^[a-z0-9-]{1,40}$/.test(id) && b && typeof b === 'object' && Number.isInteger(b.total) && b.total >= 0 && b.total <= 1e6)
   .slice(0, 50)
@@ -132,6 +137,7 @@ const restore = (saved) => {
     data.tierCars = { ...(saved.tierCars && typeof saved.tierCars === 'object' ? saved.tierCars : {}) };
     data.packs = migrateHeld(saved.packs); // (card packs: a save from before has none; one from before one definition per pack held 'special:<event>': packid.js)
     data.packBuys = cleanBuys(saved.packBuys); // (the Shop's purchase counters: a save from before has none)
+    data.packCars = cleanPackCars(saved.packCars); // (the hunt packs' cars: a save from before has none: such a pack deals the car hunted when it is opened)
     data.jimBuys = cleanJim(saved.jimBuys); // (Crazey Jim's blueprint stall: a save from before has none)
     data.eventRuns = cleanRuns(saved.eventRuns); // (a rotating event's task counters: a save from before has none)
     data.packLog = Array.isArray(saved.packLog) ? saved.packLog : [];
@@ -231,6 +237,7 @@ const tidy = (saved) => {
   clean.packs = Object.fromEntries(Object.entries(saved.packs && typeof saved.packs === 'object' && !Array.isArray(saved.packs) ? saved.packs : {})
     .filter(([k, n]) => /^[a-z0-9-]{1,40}(:[A-Za-z0-9_-]{1,40})?$/.test(k) && Number.isInteger(n) && n > 0 && n <= 9999).slice(0, 50)); // (a pack id; an old code's 'special:<event>', migrated by restore)
   clean.packBuys = cleanBuys(saved.packBuys); // (the Shop's purchase counters)
+  clean.packCars = cleanPackCars(saved.packCars); // (the hunt packs' cars)
   clean.jimBuys = cleanJim(saved.jimBuys); // (Crazey Jim's purchases of the day)
   clean.eventRuns = cleanRuns(saved.eventRuns); // (a rotating event's task counters)
   clean.packLog = (Array.isArray(saved.packLog) ? saved.packLog : []).filter(p => p && typeof p === 'object' && word(p.kind) && Array.isArray(p.cards)).slice(0, 50)

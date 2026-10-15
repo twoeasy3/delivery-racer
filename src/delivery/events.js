@@ -32,6 +32,12 @@
 //           stars: a car of that many stars (a gold tier's, or a key car's rating: starsOf); side: 'good' / 'evil';
 //           car: that car; featured: the day's car; maxed: at its max ECU. Every task a delivery meets is paid.
 // The counters (`Progress.data.eventRuns`) belong to the run: a new day starts them at 0.
+// A HUNT (the Car Hunt, the owner 15-Oct: "Do all [the feature roster cars], shuffle the order, and they cycle. A car hunt is to
+// be active at all times"): `hunt: { cars, days, sameStars }` on a recurring event (repeat every = live = days: always on). One
+// car at a time is hunted, `days` whole local days each, in the fixed order of `cars`, round and round (hunt.js: the calendar,
+// shared with packs.js). The packs whose featured.hunt names the event feature the car hunted NOW (packs.js featuredOf), and a
+// pack given keeps its car. sameStars: the stage is driven only in a car of the hunted car's stars: a level per star tier
+// (<event>-t<n>, its best times and replays its own; Events.syncDay puts the hunted car's in the stage, as a rotating day's).
 // CARD (the owner, 13-Oct, of the Concept Strike: "Drop the medals and stats and description ... Too long"): `card: { hide:
 // [...] }` leaves parts of the event's full level card out (render/menustage.js drawStage; an event of one stage only):
 // 'medals' (the Good / Evil best-clear medals at its top right), 'stats' (the clock, tip and best-to-spare row),
@@ -43,8 +49,9 @@ import { levelName, levelDescription } from './levelText.js';
 import { cargoFor } from './cargo.js';
 import { Progress } from './progress.js';
 import { carById, carTier } from './cars.js';
-import { Packs, packProblems, dayPack, packName } from './packs.js';
+import { Packs, PACKS, packProblems, dayPack, packName } from './packs.js';
 import { Ecu } from './ecu.js';
+import { clock, huntOf as huntData, huntAt, huntWindowFor } from './hunt.js';
 
 // a time in events.json: "2026-12-01" is midnight on the player's device; else a time with its zone. null: none
 // given; NaN: not a time
@@ -64,12 +71,12 @@ export const CARD_PARTS = ['medals', 'stats', 'description'];
 // a stage as a level: the map, the stage's fields over it, its own id; its words and cargo the map's, asked for now
 // (they are kept by the map's id: levelText.json, cargo.js)
 // (day: a rotating event's day, 0 = the first: its own level, id <event>-d<n>, on the map the day names)
-const stageLevel = (event, stage, index, day = null) => {
+const stageLevel = (event, stage, index, day = null, id = null) => {
   const map = MAPS.get(String(stage.level));
   if (!map) return null;
   const own = Object.fromEntries(Object.entries(stage).filter(([k]) => !OWN.has(k)));
   // (TANK RAGE is off in a stage, the owner: "noTankRage": false in the stage turns it on)
-  const level = { ...map, noTankRage: true, ...own, id: event.id + (day === null ? '-' + (index + 1) : '-d' + (day + 1)), name: levelName(map),
+  const level = { ...map, noTankRage: true, ...own, id: id || event.id + (day === null ? '-' + (index + 1) : '-d' + (day + 1)), name: levelName(map),
     description: { good: levelDescription(map, false), evil: levelDescription(map, true) },
     cargo: { good: cargoFor(map, false)?.id, evil: cargoFor(map, true)?.id }, stage: { event: event.id, index, map: map.id, ...(day === null ? {} : { day }) } };
   if (!level.cargo.good) delete level.cargo; // (a map that carries nothing: a race)
@@ -102,10 +109,26 @@ export const SPECIALS = (Array.isArray(eventData.special) ? eventData.special : 
       d.level = stageLevel(event, { ...base.raw, level: raw.level, ...over }, 0, d.index);
     }
   }
+  // (a hunt: its calendar (hunt.js); with sameStars a level of the stage for each star tier its cars have, `<event>-t<n>`, the
+  // stage's own over it with allowedCars { tiers: [n] }, both sides; Events.syncDay puts the hunted car's tier's in the stage)
+  event.hunt = huntData(event.id);
+  event.huntLevels = null;
+  if (event.hunt && event.stages[0]) {
+    const base = event.stages[0];
+    base.own = base.level; base.ownMap = base.map;
+    if (event.hunt.sameStars) {
+      const tiers = [...new Set(event.hunt.cars.map(id => carTier(carById(id))).filter(t => t >= 1 && t <= 5))].sort();
+      event.huntLevels = new Map(tiers.map(n => {
+        const level = stageLevel(event, { ...base.raw, allowedCars: { tiers: [n] } }, 0, null, event.id + '-t' + n);
+        if (level) level.stage.tier = n;
+        return [n, level];
+      }));
+    }
+  }
   return event;
 });
 // every stage's level (replay.js fingerprints them; the menu lists the live ones), a rotating event's days' too
-export const STAGE_LEVELS = SPECIALS.flatMap(e => [...e.stages.map(s => s.own || s.level), ...(e.days || []).map(d => d.level)].filter(Boolean));
+export const STAGE_LEVELS = SPECIALS.flatMap(e => [...e.stages.map(s => s.own || s.level), ...(e.days || []).map(d => d.level), ...(e.huntLevels?.values() || [])].filter(Boolean));
 
 // a recurring event's rule ({ every, live }: whole days, 1 <= live <= every), or null (none, or not sound: problems() says)
 function repeatOf(r) {
@@ -178,7 +201,9 @@ let tryOn = true;
 
 export const Events = {
   specials: SPECIALS,
-  now: () => Date.now(), // (the device's clock: the checks set it)
+  // (the device's clock: the checks set it, as ?eventsnow= does. hunt.js's clock, so the packs' hunted car follows it too)
+  get now() { return clock.now; },
+  set now(f) { clock.now = f; },
   // the event and stage a level is ({ event, stage }), or null for a level that is no stage
   stageOf(level) {
     const at = level?.stage;
@@ -255,6 +280,25 @@ export const Events = {
     const packs = Packs.eventDone(event.id, first, !!prize); // (card packs: packs.js; the packs whose givenBy.event names this event; `every`: each delivery)
     Progress.save();
     return { stage: stage.index + 1, of: event.stages.length, prize, packs, repeat: !!event.repeat, name: event.name };
+  },
+  // ---- a HUNT (the Car Hunt): the car hunted at t: { car, start, end, next (the car after), slot (its place in the order,
+  // 0 = the first), of (cars in the order), cycle (times round) }; null: no hunt
+  huntOf(event, t = this.now()) {
+    if (!event?.hunt) return null;
+    const h = huntAt(event.id, t), car = h ? carById(h.car) : null;
+    return car ? { car, start: h.start, end: h.end, next: carById(h.next), slot: h.slot, of: event.hunt.cars.length, cycle: h.cycle } : null;
+  },
+  // when a car is hunted, now or next: { live, start, end }, or null (not in the hunt)
+  huntWindow(event, carId, t = this.now()) { return event?.hunt ? huntWindowFor(event.id, carId, t) : null; },
+  // the stage's level for the car hunted at t (sameStars: its tier's), or null
+  huntLevel(event, t = this.now()) {
+    const h = this.huntOf(event, t);
+    return h ? event.huntLevels?.get(carTier(h.car)) || event.stages[0]?.own || null : null;
+  },
+  // an event's title on its card: a hunt's names the car hunted ("Car Hunt: Kei Van"), else its `title`, else its name
+  titleOf(event, t = this.now()) {
+    const h = this.huntOf(event, t);
+    return h ? event.name + ': ' + h.car.name : String(event?.raw?.title || event?.name || '');
   },
   // ---- a ROTATING event's day (the Concept Strike): { index, car, tasks, pack } on now, or the next (between runs); null: not one
   // the parts of the event's level card it leaves out ('medals', 'stats', 'description': events.json card.hide)
@@ -352,6 +396,7 @@ export const Events = {
   // a rotating event's stage is played on the day's own level (its days' "level"): the stage's level (and map) set to the day's
   // on now, or the next day's between runs (Sunday: Monday's). Called as the menu draws (menustage.js buildTabs, syncTry)
   syncDay(event, t = this.now()) {
+    if (event?.hunt && event.stages[0]) { const stage = event.stages[0]; stage.level = this.huntLevel(event, t) || stage.own; return; } // (a hunt: the hunted car's tier's level)
     const stage = event?.days ? event.stages[0] : null;
     if (!stage) return;
     const day = this.dayOf(event, t), own = day ? event.days[day.index] : null;
@@ -361,7 +406,7 @@ export const Events = {
   // a level of a rotating event's day that is not the one played now (a day gone by, or to come): not open on the menu
   offDay(level, t = this.now()) {
     const at = this.stageOf(level);
-    if (!at?.event.days) return false;
+    if (!at?.event.days && !at?.event.hunt) return false; // (a hunt: the level of another star tier than the car hunted now)
     this.syncDay(at.event, t);
     return at.stage.level !== level;
   },
@@ -442,6 +487,26 @@ export const Events = {
               if (x.key ? !x.featured : !(Number.isInteger(x.packs) && x.packs >= 1 && Number.isInteger(x.limit) && x.limit >= 1)) say(n + 'task ' + (x.index + 1) + ': a key task is the featured car\'s; any other gives whole packs, a whole limit');
             }
           });
+        }
+      }
+      if (e.raw.hunt !== undefined) {
+        const h = e.raw.hunt, extra = h && typeof h === 'object' ? Object.keys(h).filter(k => !['cars', 'days', 'sameStars'].includes(k)) : [];
+        if (!e.hunt) say('"hunt" is not { "cars": [car ids], "days": whole days >= 1, "sameStars": true / false } with a "from"');
+        else {
+          if (extra.length) say('"hunt": unknown field(s) ' + extra.join(', '));
+          const ids = e.hunt.cars;
+          ids.forEach((id, i) => {
+            const car = carById(id);
+            if (!car) say('"hunt": car ' + (i + 1) + ' "' + id + '" is not a car');
+            else if (!car.evergreen) say('"hunt": ' + id + ' is not a blueprint car (a hunt deals its blueprints)');
+            else if (e.hunt.sameStars && !(carTier(car) >= 1 && carTier(car) <= 5)) say('"hunt": ' + id + ' has no gold stars (sameStars)');
+            if (ids.indexOf(id) !== i) say('"hunt": ' + id + ' twice (each car once a cycle)');
+          });
+          if (!e.repeat || e.repeat.every !== e.hunt.days || e.repeat.live !== e.hunt.days) say('"hunt": "repeat" must be { "every": ' + e.hunt.days + ', "live": ' + e.hunt.days + ' } (always on, a car every ' + e.hunt.days + ' days)');
+          if (e.to !== null) say('"hunt": no "to" (a hunt is always on)');
+          if (e.stages.length !== 1) say('a hunt has one stage');
+          if (e.days) say('a hunt has no "days"');
+          if (!Object.values(PACKS).some(p => String(p.featured?.hunt) === e.id)) say('"hunt": no pack features its car (packs.json featured.hunt: "' + e.id + '")');
         }
       }
       if (e.prize && !this.prizeCar(e)) say('its prize "' + e.prize.car + '" is not a car');

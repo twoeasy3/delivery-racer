@@ -22,6 +22,14 @@ run (window, countdown, counters), a featured car lent as a free try at the play
 car lock with `ownEcu`), tasks that pay that day's pack (packs.json `givenBy.event.day`) up to a limit a day, and the
 featured car's key for delivering it at its max ECU. events.js head and `payTasks`; the save's `eventRuns`.
 
+**The Car Hunt, always on (15-Oct, CHECKLIST 348).** `hunt: { cars, days, sameStars }` on a recurring event (`repeat` every =
+live = days): one car hunted at a time, `days` whole local days each from the event's `from`, in the FIXED order of `cars` (a
+shuffle written out as data: `node scripts/events.mjs hunt-order <seed>`), round and round. The calendar is `hunt.js` (shared by
+events.js, packs.js and render/packart.js; its clock is Events.now). The packs with `featured.hunt: <event>` (or `sameCarAs` such a
+pack) name no car: they feature the car hunted at the time (packs.js featuredOf), and a pack given or bought keeps that car until
+it is opened (`Progress.data.packCars`). `sameStars`: a stage level per star tier (`car-hunt-t<n>`, allowedCars tiers [n]), put in
+the stage by Events.syncDay. The card's title is `Events.titleOf` ("Car Hunt: Kei Van"). Checked: `scripts/.hunt-check.mjs`.
+
 **An event's card, trimmed (13-Oct; the owner of the Concept Strike: "Drop the medals and stats and description ... Too
 long").** `card: { "hide": [...] }` on an event of one stage leaves parts of its full level card out, at every size
 (render/menustage.js drawStage; the stage gets `cx-trim` and `no-medals` / `no-stats` / `no-desc`, menu2.css re-flows

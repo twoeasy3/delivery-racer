@@ -3,6 +3,7 @@
 import '../shop.css';
 import { drawSoon } from './carstill.js';
 import { carById } from '../cars.js';
+import { huntCarOfPack } from '../hunt.js';
 
 // the best a pack promises, for its foil, by pack id (packs.json). A pack with featured cards (an event's special pack:
 // comet-special) is drawn as a SPECIAL pack (its look, its mark, the k-special class), whatever its id
@@ -12,7 +13,10 @@ const KIND_MARK = { career: 'Career', daily: 'Daily', standard: 'Standard', ten:
 // a pack that features ONE car (the Car Hunt packs, the Comet Hunt's) has that car drawn on it (the owner, 13-Oct: "draw the car on the pack as
 // well"): its Good-livery still, under the pack's mark; drawn once the art is laid out (carstill.js drawSoon)
 export const PACK_POSE = { lift: 0.22, angle: -0.6, fov: 30, margin: 0.9 };
-export const featuredCarOf = (id) => {
+// (a hunt pack, the Car Hunt's: the car hunted now, hunt.js; car: the one a pack opened was given for, the reveal's)
+export const featuredCarOf = (id, car = null) => {
+  const hunted = car || huntCarOfPack(id);
+  if (hunted) return carById(hunted) || null;
   const f = packData?.packs?.[id]?.featured, tie = f?.sameCarAs && packData.packs[f.sameCarAs]?.featured; // (sameCarAs: the car of the pack it is tied to, packs.js featuredOf)
   const ids = [...new Set(((tie || f)?.entries || []).filter(e => !e.key).map(e => e.car))];
   return ids.length === 1 ? carById(ids[0]) || null : null;
@@ -47,8 +51,8 @@ const packCar = (car) => {
   }
   return el;
 };
-export const packArt = (id, count = 1) => {
-  const kind = artKind(id), hunt = featuredCarOf(id), shown = Math.min(3, count);
+export const packArt = (id, count = 1, car = null) => {
+  const kind = artKind(id), hunt = featuredCarOf(id, car), shown = Math.min(3, count);
   const look = hunt ? 'legendary' : KIND_LOOK[kind] || 'common'; // (a single-car hunt pack: yellow foil, the owner, 13-Oct)
   const one = (i) => make('div', 'shop-pack r-' + look + ' k-' + kind + (hunt ? ' has-car' : ''),
     make('span', 'pack-crimp'), make('span', 'pack-sheen'),

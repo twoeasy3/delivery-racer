@@ -18,7 +18,7 @@
 import '../shop.css';
 import { Shop, CURRENCY, SECTIONS, cash, debugLimits, debugBuys } from '../shop.js';
 import { Progress } from '../progress.js';
-import { Events } from '../events.js';
+import { Events, when as eventTime } from '../events.js';
 import { Nav } from '../nav.js';
 import { Game } from '../game.js';
 import { stars } from '../cars.js';
@@ -357,7 +357,10 @@ if (params.get('shopcash') !== null) {
 if (params.get('limits')) Shop.limitsOverride = debugLimits(params.get('limits'));
 if (params.get('shopbuys')) { Progress.noSave = true; debugBuys(params.get('shopbuys')); }
 markWaiting();
+if (params.get('shop') !== null && params.get('eventsnow')) { const at = eventTime(params.get('eventsnow')); if (Number.isFinite(at)) Events.now = () => at; } // (main.js sets it too, but after this: &inside= needs the clock now, for the Car Hunt's car)
 if ((params.get('shop') !== null || params.get('jimshop') !== null) && Game.state === 'start') ShopScreen.open();
+// ?shop=<section id> (packs, featured, ...): that row scrolled into view, for a look or a picture
+if (ShopScreen.isOpen && params.get('shop')) setTimeout(() => screen.querySelector('.shop-section.s-' + CSS.escape(params.get('shop')))?.scrollIntoView({ block: 'start' }), 300);
 // &inside=<offer id> (or a pack id; the old 'special': its pack): its "What's inside" sheet open too (for a look or a picture)
 if (ShopScreen.isOpen && params.get('inside')) {
   const want = params.get('inside'), id = packsModule?.packIdOf?.(want) || want;

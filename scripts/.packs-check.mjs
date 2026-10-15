@@ -730,21 +730,34 @@ try {
   }
   // ---- THE CAR HUNT PACK (the owner, 13-Oct: "A car hunt pack has 3 slots, all 1x. It has one featured item slot. The
   // featured item is 1x of the car hunt car, or 3x of the car at low chances"): car-hunt-special, size 3, base 1, never
-  // doubled, exactly ONE featured slot (the last: upgradeChance 0), the Blower Tourer x1 at weight 9 and x3 at weight 1
-  // (90% / 10% of the featured slot), no shop block (given only), the Blower in no regular pack's pool; the Blower maxed:
-  // nothing featured, the last slot an ordinary (Epic-or-better) card ----
+  // doubled, exactly ONE featured slot (the last: upgradeChance 0), the car hunted x1 at weight 9 and x3 at weight 1
+  // (90% / 10% of the featured slot), no shop block (given only), the hunt's cars in no regular pack's pool; the car maxed:
+  // nothing featured, the last slot an ordinary (Epic-or-better) card. Since 15-Oct (CHECKLIST 348) the car is the one HUNTED
+  // (events.json car-hunt hunt, hunt.js; the year: scripts/.hunt-check.mjs): tried here in the Blower Tourer's window ----
   {
+    const Hu = await g.load('hunt.js'), hunt = Hu.huntOf('car-hunt'), realClock = Hu.clock.now;
+    Hu.clock.now = () => hunt.from + hunt.cars.indexOf('blower') * hunt.days * 86400e3 + 5 * 3600e3; // (the Blower's window)
+    check(Hu.huntCarOfPack('car-hunt-special') === 'blower' && P.featuredOf('car-hunt-special').every(f => f.car.id === 'blower'), 'in the Blower\'s window the Car Hunt pack features the Blower');
     const spec = Packs.data.packs['car-hunt-special'];
     check(!!spec && spec.size === 3 && spec.baseAmount === 1 && spec.doubleChance === 0 && !spec.shop && spec.featured?.upgradeChance === 0 && spec.givenBy?.event?.every === true,
       'the Car Hunt pack: 3 cards, x1 each, never doubled, one featured slot (upgradeChance 0), given by every Car Hunt delivery, not sold (no shop block)');
-    const blower = by('blower');
     const regular = Object.keys(Packs.data.packs).filter(k => k !== 'car-hunt-special' && k !== 'car-hunt-5');
-    check(blower?.noPacks && regular.every(k => Object.values(P.poolOf(Packs.data.packs[k])).flat().every(c => c.id !== 'blower')) && regular.every(k => !P.featuredOf(k).some(f => f.car.id === 'blower')),
-      'the Blower Tourer (noPacks) is in no other pack but the Car Hunt pack and the Car Hunt 5-pack: no pool, no featured list (' + regular.length + ' packs)');
+    check(hunt.cars.every(id => by(id)?.noPacks && regular.every(k => Object.values(P.poolOf(Packs.data.packs[k])).flat().every(c => c.id !== id)) && regular.every(k => !P.featuredOf(k).some(f => f.car.id === id))),
+      'the 23 hunt cars (noPacks) are in no other pack but the Car Hunt pack and the Car Hunt 5-pack: no pool, no featured list (' + regular.length + ' packs)');
+    check(['car-hunt-special', 'car-hunt-5'].every(k => Hu.packHunt(k) === 'car-hunt') && regular.every(k => !Hu.packHunt(k)), 'only those two follow the hunt (featured.hunt, sameCarAs)');
     const five = Packs.data.packs['car-hunt-5'], fe = P.featuredOf('car-hunt-5');
     check(!!five && five.size === 5 && five.baseAmount === 1 && five.shop?.section === 'packs' && five.shop.price > 0 && !five.event && !five.limited && fe.length === 2 && fe.every(f => f.car.id === 'blower') && fe.some(f => f.amount === 3) && fe.some(f => f.amount === 15) && five.featured.upgradeChance === 0,
       'the Car Hunt 5-pack: bought in the Shop beside the regular packs (section packs, ' + five?.shop?.price + '), 5 cards, one featured slot: the Blower x3 or x15');
     check(five?.featured?.sameCarAs === 'car-hunt-special' && P.featuredOf('car-hunt-5').every(f => f.car.id === P.featuredOf('car-hunt-special')[0].car.id), 'the 5-pack is tied to the Car Hunt: its featured car is whatever the Car Hunt pack hunts (' + P.featuredOf('car-hunt-5')[0]?.car.id + ')');
+    // (every car of the hunt, the four Legendary fillers that are not `featurable` too: x1 / x3 and x3 / x15 at its TRUE rarity)
+    const badCars = hunt.cars.filter((id) => {
+      const car = by(id), f1 = P.featuredOf('car-hunt-special', { car: id }), f5 = P.featuredOf('car-hunt-5', { car: id });
+      const c1 = contents('car-hunt-special', { featured: f1, maxed: () => false, owned: () => false });
+      const out = draw('car-hunt-special', { random: dice(4242 + id.length), featured: f1, maxed: () => false, owned: () => false }).at(-1);
+      return !(f1.length === 2 && f5.length === 2 && f1.every(f => f.car === car) && f5.every(f => f.car === car) && JSON.stringify(f1.map(f => f.amount)) === '[1,3]' && JSON.stringify(f5.map(f => f.amount)) === '[3,15]'
+        && c1.featured.every(x => x.rarity === rarityOf(car) && x.rarity === car.rarity) && out.featured && out.car === id && out.rarity === car.rarity);
+    });
+    check(!badCars.length, 'each of the 23 hunt cars (the Blower, Coach, City EV and Coupe Crossover too) as the featured card: x1/x3 (Car Hunt pack), x3/x15 (5-pack), at its TRUE rarity on the card and the sheet' + (badCars.length ? ': NOT ' + badCars.join(', ') : ''));
     Progress.reset(); Progress.noSave = true;
     let x1 = 0, x3 = 0, other = 0, featuredSlots = 0, plainNotOne = 0, blowerPlain = 0;
     const N = 20000;
@@ -767,6 +780,7 @@ try {
     const cm = contents('car-hunt-special', { featured: P.featuredOf('car-hunt-special'), maxed: (car) => car.id === 'blower', owned: () => false });
     check(maxedPack.length === 3 && !maxedPack.some(x => x.featured) && maxedPack.every(x => x.car !== 'blower') && RARITIES.indexOf(maxedPack.at(-1).rarity) >= RARITIES.indexOf('epic') && cm.featured.every(f => f.exhausted === 'maxed' && f.chance === 0),
       'the Blower maxed: nothing featured drops (the last slot an ordinary ' + maxedPack.at(-1).rarity + ' card, the existing rule), the sheet shows it Car Maxed at 0%');
+    Hu.clock.now = realClock;
   }
   // ---- THE CONCEPT STRIKE PACKS (the owner, 13-Oct; CHECKLIST 211): concept-strike-1 to -6, one for each day of the
   // rotating event (givenBy.event.day: the day's tasks give them, events.js payTasks; never eventDone), each a Car Hunt
@@ -801,11 +815,12 @@ try {
     const real = pools(), everyPool = [...Object.values(real.evergreen).flat(), ...Object.values(real.bespoke).flat(), ...real.keys];
     check(!everyPool.some(c => ids.has(c.id)) && kinds.every(k => !Object.values(P.poolOf(Packs.data.packs[k])).flat().some(c => ids.has(c.id))),
       'none is in any evergreen or Bespoke pool, or in any pack kind\'s pool (' + kinds.length + ' kinds)');
-    check(kinds.every(k => !P.featuredOf(k).some(f => ids.has(f.car.id))), 'none is in any existing pack\'s featured list (no limited pack or event was edited)');
+    const Hn = await g.load('hunt.js'), noHunt = kinds.filter(k => !Hn.packHunt(k)); // (the Car Hunt's two packs feature the car hunted: one of these, in turn, 15-Oct)
+    check(noHunt.every(k => !P.featuredOf(k).some(f => ids.has(f.car.id))), 'none is in the featured list of any pack but the Car Hunt\'s two (' + noHunt.length + ' packs)');
     Progress.reset(); Progress.noSave = true;
     let leaked = 0, cards = 0;
-    for (const k of kinds) for (let i = 0; i < 1500; i++) for (const c of draw(k, { random: dice(31e6 + i * 7 + k.length), featured: Packs.data.packs[k].featured ? featuredOf(k) : [] })) { cards++; if (ids.has(c.car)) leaked++; }
-    check(leaked === 0, 'never dropped from a regular or existing limited pack: ' + cards + ' cards drawn from ' + kinds.length + ' kinds, ' + leaked + ' of the roster');
+    for (const k of noHunt) for (let i = 0; i < 1500; i++) for (const c of draw(k, { random: dice(31e6 + i * 7 + k.length), featured: Packs.data.packs[k].featured ? featuredOf(k) : [] })) { cards++; if (ids.has(c.car)) leaked++; }
+    check(leaked === 0, 'never dropped from a regular or other limited pack: ' + cards + ' cards drawn from ' + noHunt.length + ' kinds, ' + leaked + ' of the roster');
     const bad = [];
     for (const car of roster) {
       let hits = 0, other = 0;
