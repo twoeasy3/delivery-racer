@@ -4,7 +4,7 @@
 // its own (themes.js `tunnel.heights`, eased from one hall to the next: render/tunnelshape.js), a palette, and its own
 // dressing. The theme draws the whole shell itself (tunnel.js leaves it: `shell: false`): a polished tiled floor over the
 // road, the walls as rows of shop fronts (a pier, a glass front, a facia with the shop's name on it, a dark interior behind
-// with its displays lit), the ceiling with its panel lights (and their shine on the floor), the atrium's glass roof and
+// with its displays lit), the ceiling with its panel lights, the atrium's glass roof and
 // galleries, the food court's counters and tables, the escalator hall's escalators (their steps moving: the one thing that
 // moves) and mezzanine bridge, the play zone's balloon arch and ball pit, and at each end a facade: the mall's entrance
 // (a glass canopy on columns, the name over the doors, flags, planters) and the loading dock. Outside the tunnel it is a car
@@ -23,6 +23,7 @@ const BAY = 12;            // m: one shop front
 const NAME_GAP = 100;      // m within which no shop's name is used twice
 const FACIA = 4.9;         // m: the top of a shop front (its facia's top); the wall above goes up to the ceiling
 const GALLERY = 5.6;       // m: the atrium's gallery floor
+const OVERHANG = 1.0;      // m the galleries reach out past the wall line (the camera sits over the lanes: never under them)
 // the halls' looks: the floor's two tile tones, the wall above the shops, the ceiling, the facias' colours, the shops' interiors
 const PAL = {
   fashion: { floor: 0xe9e3d7, floor2: 0xd9d1c3, wall: 0xf4f1ec, roof: 0xf7f5f0, facia: [0x6b2d5c, 0x1f6f7a, 0xc89a1e, 0x1f3a6e, 0x9a2f3a], inside: 0x3a3238, lights: 1 },
@@ -76,7 +77,7 @@ export const mall = ({ theme, beside, levelGroup }) => {
   // (laid out the same every time: a seed of the level's own)
   let seed = 23 + (LEVEL.id || '').length * 131;
   const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const p = {}, q = {}, dummy = new THREE.Object3D(), colour = new THREE.Color();
+  const p = {}, q = {}, q_ = {}, dummy = new THREE.Object3D(), colour = new THREE.Color();
   dummy.rotation.order = 'YXZ'; // (a thing is turned to the road's heading first, then tilted about its own x: an escalator, a slide)
   const tunnels = LEVEL.tunnels || [];
   const zones = (LEVEL.zones || []).slice().sort((a, b) => a.from - b.from);
@@ -89,7 +90,8 @@ export const mall = ({ theme, beside, levelGroup }) => {
   const bent = (s) => Math.abs(curveAt(s)) > 0.003;
   const gaps = []; // where a side corridor opens off the main road: { side, from, to }
   const facing = (side) => side * Math.PI / 2; // (a thing on that side turned to face the road: its +z towards it)
-  const inside = (side, s, d) => beside(side, s, -d); // (d m in from the wall, on the widened floor: where the dressing stands)
+  const off = (side, s, d) => (side < 0 ? Track.laneLo(s) : Track.laneHi(s)) + side * d; // (d m beyond the lanes' edge, whatever the run-off)
+  const glassSheetMat = new THREE.MeshBasicMaterial({ color: 0xbfe0f4, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false });
 
   // ---- batches: one InstancedMesh per kind of thing, each instance with a colour of its own if it wants one -----
   const batches = [];
@@ -146,7 +148,7 @@ export const mall = ({ theme, beside, levelGroup }) => {
     return S;
   };
   const CUBE = new THREE.BoxGeometry(1, 1, 1), TUBE = new THREE.CylinderGeometry(0.5, 0.5, 1, 10), BALL = new THREE.SphereGeometry(0.5, 10, 7);
-  const PLANE = new THREE.PlaneGeometry(1, 1), FLAT = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), CONE = new THREE.ConeGeometry(0.5, 1, 8);
+  const PLANE = new THREE.PlaneGeometry(1, 1), CONE = new THREE.ConeGeometry(0.5, 1, 8);
   const INSIDE = openBoxGeometry(1, 1, 1);
   const lambert = (color, extra) => new THREE.MeshLambertMaterial({ color, ...extra });
   const glow = (color, extra) => new THREE.MeshBasicMaterial({ color, ...extra });
@@ -157,7 +159,7 @@ export const mall = ({ theme, beside, levelGroup }) => {
   const insides = batch(INSIDE), displays = batch(CUBE), doors = batch(CUBE, lambert(0x8a9096)), shutters = batch(CUBE), posters = batch(CUBE, null, true);
   const signPlanes = new Map(); // texture -> batch
   const signBatch = (texture) => { if (!signPlanes.has(texture)) signPlanes.set(texture, batch(PLANE, new THREE.MeshBasicMaterial({ map: texture }))); return signPlanes.get(texture); };
-  const panels = batch(CUBE, null, true), shine = batch(FLAT, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.14, depthWrite: false, blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+  const panels = batch(CUBE, null, true); // (no shine quads under them on the floor: the owner wants the floor one plain surface)
   const columns = batch(TUBE, lambert(0xd8d4cc)), mullions = batch(CUBE, lambert(0xe8ecf0)), rails = batch(CUBE, lambert(0x8a9096)), posts = batch(TUBE, lambert(0x8a9096));
   const planters = batch(CUBE, lambert(0x6b6f74)), leaves = batch(BALL, lambert(0x3f8a3a)), trunks = batch(TUBE, lambert(0x7a5a3a)), fronds = batch(CONE, lambert(0x4a9a48));
   const benches = batch(CUBE, lambert(0x8a6a48)), bins = batch(TUBE, lambert(0x4a4f57)), banners = batch(PLANE, new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide }));
@@ -166,7 +168,7 @@ export const mall = ({ theme, beside, levelGroup }) => {
   const trusses = batch(CUBE, lambert(0x6f757d)), balustrades = batch(CUBE, new THREE.MeshBasicMaterial({ color: 0xbfe0f4, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
   const handrails = batch(CUBE, lambert(0x1a1b1e)), steps = batch(CUBE, lambert(0x9aa0a8)), neon = batch(CUBE, null, true), screens = batch(PLANE, null, true);
   const balloons = batch(BALL), balls = batch(BALL), blocks = batch(CUBE), slides = batch(CUBE, lambert(0xd8262b));
-  const bays = batch(CUBE, glow(0xf4f1ec)), lamps = batch(TUBE, lambert(0x4a4f57)), lampHeads = batch(CUBE, null, true), hedges = batch(CUBE, lambert(0x2f6a2a)), bollards = batch(TUBE, lambert(0x4a4f57)), trolleyBays = batch(INSIDE, lambert(0x8a9096));
+  const lamps = batch(TUBE, lambert(0x4a4f57)), lampHeads = batch(CUBE, null, true), hedges = batch(CUBE, lambert(0x2f6a2a)), bollards = batch(TUBE, lambert(0x4a4f57)), trolleyBays = batch(INSIDE, lambert(0x8a9096));
   const flags = batch(PLANE, new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide })), poles = batch(TUBE, lambert(0xd8d4cc)), canopies = batch(CUBE, new THREE.MeshBasicMaterial({ color: 0xbfe0f4, transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false }));
   const facades = batch(CUBE), rollers = batch(CUBE);
 
@@ -214,7 +216,7 @@ export const mall = ({ theme, beside, levelGroup }) => {
   }
   walls.flush();
   roofs.flush();
-  const floor2 = sheet(floor.material), walls2 = sheet(walls.material), roofs2 = sheet(roofs.material); // (the side corridors' and the blank walls': flushed at the end)
+  const floor2 = sheet(floor.material), walls2 = sheet(walls.material), roofs2 = sheet(roofs.material); // (the side corridors', the open bays' and the blank walls': flushed at the end)
   // ---- the outside of the mall, seen from the car park (and nothing of the shops' insides from there): a plain skin 9 m
   // out from the halls' walls, up to 1.5 m over the ceiling, and a flat roof; the ends are the facades
   const skin = sheet(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
@@ -309,6 +311,43 @@ export const mall = ({ theme, beside, levelGroup }) => {
   const fronts = (from, to, side, hall, y0 = 0) => {
     for (let s = from; s + 6 <= to;) { const len = bent(s + 6) || bent(s) ? BAY / 2 : BAY; if (s + len > to) break; front(s, side, hall, y0, len); s += len; }
   };
+  // a gallery along a wall from `from` to `to` at height y: a slab OVERHANG m out past the wall line (its top, its front face and
+  // its underside as continuous sheets following the curve: no stepping), a glass balustrade and a rail along its edge, posts
+  // every 2 m. The upper units stand on it at the wall line (fronts(..., y))
+  const slabs = sheet(new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+  const glassSheet = sheet(glassSheetMat), railSheet = sheet(new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+  const gallery = (from, to, side, y) => {
+    const edge = side < 0 ? lo : hi, out = (q) => edge(q) - side * OVERHANG, SLAB = 0.5;
+    for (let q = from; q < to; q += 2) {
+      const q1 = Math.min(to, q + 2);
+      Track.toWorld(q, edge(q), p); Track.toWorld(q1, edge(q1), q_);
+      const A = [p.x, p.y + y, p.z], B = [q_.x, q_.y + y, q_.z], Au = [p.x, p.y + y - SLAB, p.z], Bu = [q_.x, q_.y + y - SLAB, q_.z];
+      Track.toWorld(q, out(q), p); Track.toWorld(q1, out(q1), q_);
+      const C = [p.x, p.y + y, p.z], D = [q_.x, q_.y + y, q_.z], Cu = [p.x, p.y + y - SLAB, p.z], Du = [q_.x, q_.y + y - SLAB, q_.z];
+      slabs.quad(A, B, D, C, 0xd8d4cc);                   // the top
+      slabs.quad(Cu, Du, Bu, Au, 0xb8b4ac);               // the underside
+      slabs.quad(C, D, Du, Cu, 0xc8c4bc);                 // the front face
+      glassSheet.quad(C, D, [q_.x, q_.y + y + 1.05, q_.z], [p.x, p.y + y + 1.05, p.z], 0xffffff); // the balustrade's glass
+      railSheet.quad([p.x, p.y + y + 1.05, p.z], [q_.x, q_.y + y + 1.05, q_.z], [q_.x, q_.y + y + 1.13, q_.z], [p.x, p.y + y + 1.13, p.z], 0x6f757d); // the rail
+    }
+    for (let q = from; q <= to; q += 2) posts.on(q, out(q), y + 0.55, 0, 0.08, 1.1, 0.08);
+  };
+  // an open bay in a wall from s to s + len: no front: the floor's tiles run on into it `depth` m, under a ceiling at CEIL, a back
+  // wall and the two side returns; the units' piers at its ends. What stands in it is decoration, behind the wall line
+  const openBay = (s, side, hall, len, depth = 8) => {
+    const P = PAL[hall] || PAL.fashion, edge = side < 0 ? lo : hi;
+    gaps.push({ side, from: s, to: s + len });
+    const pt = (q, d, y) => { Track.toWorld(q, edge(q) + side * d, p); return [p.x, p.y + y, p.z]; };
+    for (let q = s; q < s + len; q += 4) {
+      const q1 = Math.min(s + len, q + 4), tone = (Math.round(q / 4) % 2) ? P.floor : P.floor2;
+      floor2.quad([...pt(q, 0, 0.024), 0, q / 2], [...pt(q, depth, 0.024), depth / 2, q / 2], [...pt(q1, depth, 0.024), depth / 2, q1 / 2], [...pt(q1, 0, 0.024), 0, q1 / 2], tone);
+      roofs2.quad(pt(q, 0, FACIA), pt(q1, 0, FACIA), pt(q1, depth, FACIA), pt(q, depth, FACIA), P.roof);
+      walls2.quad(pt(q, depth, 0), pt(q1, depth, 0), pt(q1, depth, FACIA), pt(q, depth, FACIA), colour.set(P.wall).multiplyScalar(0.85).getHex());
+    }
+    for (const q of [s, s + len]) walls2.quad(pt(q, 0, 0), pt(q, depth, 0), pt(q, depth, FACIA), pt(q, 0, FACIA), colour.set(P.wall).multiplyScalar(0.9).getHex());
+    for (const q of [s, s + len]) piers.on(q, edge(q), FACIA / 2, 0, 0.6, FACIA, 0.9, P.wall);
+    for (let q = s + 3; q < s + len; q += 6) { panels.on(q, edge(q) + side * depth / 2, FACIA - 0.08, Math.PI / 2, 2.6, 0.12, 0.9, 0xffffff); }
+  };
   // ---- the lights: panels under the ceiling in two rows, a shine on the floor under each (the polish); the food court has
   // pendant lamps instead, hung low over the counters
   const lights = (t) => {
@@ -326,7 +365,6 @@ export const mall = ({ theme, beside, levelGroup }) => {
       for (const lat of [-2.0, 2.0]) {
         if (rand() > P.lights) continue;
         panels.on(s, lat, h - 0.08, 0, 2.6, 0.12, 0.9, hall === 'electronics' ? 0xcfe8ff : 0xffffff);
-        shine.on(s, lat, 0.045, 0, 2.2, 1, 5.0);
       }
     }
   };
@@ -341,24 +379,20 @@ export const mall = ({ theme, beside, levelGroup }) => {
     }
     for (const k of [-0.3, 0, 0.3]) mullions.on((from + to) / 2, (lo((from + to) / 2) + hi((from + to) / 2)) / 2 + k * (hi(from) - lo(from)), hAt((from + to) / 2) - 0.2, 0, 0.25, 0.25, to - from);
     for (const side of [-1, 1]) {
-      const edge = side < 0 ? lo : hi;
-      // the gallery: a slab out from the wall over the ground-floor shops, a balustrade along its edge
-      for (let s = from; s < to; s += 8) {
-        const s1 = Math.min(to, s + 8), mid = (s + s1) / 2;
-        uppers.on(mid, edge(mid) - side * 1.6, GALLERY - 0.3, 0, 3.2, 0.6, s1 - s + 0.05, 0xd8d4cc);
-        balustrades.on(mid, edge(mid) - side * 3.1, GALLERY + 0.55, 0, 0.06, 1.1, s1 - s);
-        rails.on(mid, edge(mid) - side * 3.1, GALLERY + 1.12, 0, 0.1, 0.06, s1 - s);
-        for (let q = s; q < s1; q += 2) posts.on(q, edge(q) - side * 3.1, GALLERY + 0.55, 0, 0.08, 1.1, 0.08);
+      gallery(from, to, side, GALLERY);
+      // every third bay on the ground floor is an open plaza bay: palms in pots, planters, benches, bins in it, behind the wall line
+      for (let s = from + BAY, k = 0; s + BAY <= to - BAY; s += BAY, k++) {
+        if (k % 3 !== 1 || gaps.some(g => g.side === side && s + BAY > g.from && s < g.to)) continue;
+        openBay(s, side, 'atrium', BAY);
+        for (let u = 2; u < BAY - 1; u += 4) {
+          const q = s + u, lat = off(side, q, 0.3 + 2.0 + rand() * 4), kind = Math.floor(rand() * 4);
+          if (kind === 0) { planters.on(q, lat, 0.45, 0, 1.6, 0.9, 1.6, 0x6b6f74); trunks.on(q, lat, 2.4, 0, 0.3, 3.2, 0.3); for (let f = 0; f < 6; f++) fronds.on(q, lat, 4.3, f * 1.05, 0.5, 2.2, 0.5, 0xffffff, 0.9, 0); }
+          else if (kind === 1) { planters.on(q, lat, 0.35, 0, 2.4, 0.7, 1.2); leaves.on(q, lat, 1.1, 0, 2.2, 1.2, 1.2); }
+          else if (kind === 2) { benches.on(q, lat, 0.45, 0, 0.5, 0.1, 2.2); for (const d of [-0.9, 0.9]) benches.on(q + d, lat, 0.2, 0, 0.4, 0.4, 0.08); }
+          else bins.on(q, lat, 0.5, 0, 0.6, 1.0, 0.6);
+        }
       }
       fronts(from, to, side, 'atrium'); fronts(from, to, side, 'atrium', GALLERY);
-      // the ground floor's run-off: palms in pots, planters, benches, bins, by turns
-      for (let s = from + 6; s < to - 6; s += 14) {
-        const lat = inside(side, s, 1.8), k = Math.floor(rand() * 4);
-        if (k === 0) { planters.on(s, lat, 0.45, 0, 1.6, 0.9, 1.6, 0x6b6f74); trunks.on(s, lat, 2.4, 0, 0.3, 3.2, 0.3); for (let f = 0; f < 6; f++) fronds.on(s, lat, 4.3, f * 1.05, 0.5, 2.2, 0.5, 0xffffff, 0.9, 0); }
-        else if (k === 1) { planters.on(s, lat, 0.35, 0, 2.4, 0.7, 1.2); leaves.on(s, lat, 1.1, 0, 2.2, 1.2, 1.2); }
-        else if (k === 2) { benches.on(s, lat, 0.45, 0, 0.5, 0.1, 2.2); for (const d of [-0.9, 0.9]) benches.on(s + d, lat, 0.2, 0, 0.4, 0.4, 0.08); }
-        else bins.on(s, lat, 0.5, 0, 0.6, 1.0, 0.6);
-      }
     }
     for (let s = from + 20; s < to - 20; s += 40) { // (the banners: hung from the roof over the road, in the shops' colours)
       const h = hAt(s);
@@ -371,27 +405,29 @@ export const mall = ({ theme, beside, levelGroup }) => {
     const from = Math.max(z.from, t.from), to = Math.min(z.to, t.to);
     for (const side of [-1, 1]) {
       const edge = side < 0 ? lo : hi;
-      for (let s = from; s + BAY <= to; s += BAY) {
+      for (let s = from, k = 0; s + BAY <= to; s += BAY, k++) {
         const gap = gaps.find(g => g.side === side && s + BAY > g.from && s < g.to); // (a concourse opens here: plain wall up to its mouth)
         if (gap) { blank(s, Math.min(s + BAY, gap.from), side, 'foodcourt'); blank(Math.max(s, gap.to), s + BAY, side, 'foodcourt'); continue; }
+        if (k % 2 === 1) { // a seating bay: open, the tables and chairs in it behind the wall line
+          openBay(s, side, 'foodcourt', BAY, 7);
+          for (let u = 1.5; u < BAY - 1; u += 2.6) for (const d of [1.6, 4.2]) {
+            if (rand() < 0.15) continue;
+            const q = s + u, lat = off(side, q, 0.3 + d);
+            tables.on(q, lat, 0.74, 0, 0.9, 0.05, 0.9);
+            legs.on(q, lat, 0.36, 0, 0.08, 0.72, 0.08);
+            for (const c of [-1, 1]) chairs.on(q + c * 0.7, lat, 0.45, 0, 0.42, 0.06, 0.42, PAL.foodcourt.facia[Math.floor(rand() * 4)]);
+          }
+          continue;
+        }
         const [name, bg, fg, glyph] = SHOPS.foodcourt[Math.floor(rand() * SHOPS.foodcourt.length)], col = PAL.foodcourt.facia[Math.floor(rand() * 4)];
         const mid = s + BAY / 2, latW = edge(mid), h = Track.toWorld(mid, latW, p), turn = h + facing(side), dx = Math.sin(turn), dz = Math.cos(turn), w = BAY - 0.9;
-        piers.on(s + 0.45, edge(s + 0.45), FACIA / 2, 0, 0.9, FACIA, 0.6, PAL.foodcourt.wall);
+        piers.on(s + 0.45, edge(s + 0.45), FACIA / 2, 0, 0.6, FACIA, 0.9, PAL.foodcourt.wall);
         insides.at(p.x - dx * 2.5, p.y + 2.45, p.z - dz * 2.5, turn, w, FACIA, 5, PAL.foodcourt.inside);
-        counters.at(p.x + dx * 0.6, p.y + 0.55, p.z + dz * 0.6, turn, w - 1, 1.1, 1.2, col);
-        counters.at(p.x + dx * 0.6, p.y + 1.15, p.z + dz * 0.6, turn, w - 0.8, 0.1, 1.4, 0xf4f1ec);
-        menus.at(p.x - dx * 1.2, p.y + 3.4, p.z - dz * 1.2, turn, w - 3, 1.0, 0.1, 0xfff4d0);
-        facias.at(p.x + dx * 0.3, p.y + 4.2, p.z + dz * 0.3, turn, w, 1.4, 0.6, col);
-        signBatch(sign(name, bg, fg, glyph)).at(p.x + dx * 0.62, p.y + 4.2, p.z + dz * 0.62, turn, 7, 1.0, 1);
-      }
-      for (let s = from + 6; s < to - 4; s += 5) { // (the tables, two deep on the widened floor)
-        for (const d of [1.2, 2.6]) {
-          const lat = inside(side, s, d);
-          if (rand() < 0.15) continue;
-          tables.on(s, lat, 0.74, 0, 0.9, 0.05, 0.9);
-          legs.on(s, lat, 0.36, 0, 0.08, 0.72, 0.08);
-          for (const c of [-1, 1]) chairs.on(s + c * 0.7, lat, 0.45, 0, 0.42, 0.06, 0.42, PAL.foodcourt.facia[Math.floor(rand() * 4)]);
-        }
+        counters.at(p.x - dx * 0.65, p.y + 0.55, p.z - dz * 0.65, turn, w - 1, 1.1, 1.2, col); // (the counter inside the wall line: nothing of it in the road)
+        counters.at(p.x - dx * 0.65, p.y + 1.15, p.z - dz * 0.65, turn, w - 0.8, 0.1, 1.4, 0xf4f1ec);
+        menus.at(p.x - dx * 1.6, p.y + 3.4, p.z - dz * 1.6, turn, w - 3, 1.0, 0.1, 0xfff4d0);
+        facias.at(p.x - dx * 0.25, p.y + 4.2, p.z - dz * 0.25, turn, w, 1.4, 0.5, col);
+        signBatch(sign(name, bg, fg, glyph)).at(p.x + dx * 0.02, p.y + 4.2, p.z + dz * 0.02, turn, 7, 1.0, 1);
       }
     }
   };
@@ -399,19 +435,13 @@ export const mall = ({ theme, beside, levelGroup }) => {
   // road (their steps move: everyFrame), with glass balustrades; a bridge across the road between the two mezzanines
   const movers = [];
   const escalators = (z, t) => {
-    const hAt = heightOf(t), from = Math.max(z.from, t.from), to = Math.min(z.to, t.to), RISE = GALLERY, RUN = 22;
+    const from = Math.max(z.from, t.from), to = Math.min(z.to, t.to), RISE = GALLERY, RUN = 22;
     for (const side of [-1, 1]) {
-      const edge = side < 0 ? lo : hi;
-      fronts(from, to, side, 'escalators'); // (shops under the mezzanine)
-      for (let s = from; s < to; s += 8) { // (the mezzanine and its balustrade)
-        const s1 = Math.min(to, s + 8), mid = (s + s1) / 2;
-        uppers.on(mid, edge(mid) - side * 1.6, GALLERY - 0.3, 0, 3.2, 0.6, s1 - s + 0.05, 0xd8d4cc);
-        balustrades.on(mid, edge(mid) - side * 3.1, GALLERY + 0.55, 0, 0.06, 1.1, s1 - s);
-        rails.on(mid, edge(mid) - side * 3.1, GALLERY + 1.12, 0, 0.1, 0.06, s1 - s);
-      }
-      // the escalators: one up and one down, on the widened floor, climbing along the road to the mezzanine
-      for (const [k, s0] of [[0, from + 40], [1, from + 180]]) {
-        const dir = k ? -1 : 1, lat = inside(side, s0 + RUN / 2, 1.5), tilt = Math.atan2(RISE, RUN), len = Math.hypot(RISE, RUN);
+      gallery(from, to, side, GALLERY);
+      // the escalators: one up and one down, each in an open bay behind the wall line, climbing along the road to the mezzanine
+      for (const [k, s0] of [[0, from + 36], [1, from + 176]]) {
+        openBay(s0 - 6, side, 'escalators', RUN + 12, 6);
+        const dir = k ? -1 : 1, lat = off(side, s0 + RUN / 2, 0.3 + 2.2), tilt = Math.atan2(RISE, RUN), len = Math.hypot(RISE, RUN);
         const h = Track.toWorld(s0 + RUN / 2, lat, p);
         trusses.at(p.x, p.y + RISE / 2 - 0.35, p.z, h, 1.5, 0.5, len, 0xffffff, -tilt, 0);
         for (const x of [-0.78, 0.78]) {
@@ -423,37 +453,35 @@ export const mall = ({ theme, beside, levelGroup }) => {
         for (let i = 0; i < count; i++) steps.on(s0 + RUN * i / count, lat, RISE * i / count + 0.1, 0, 1.4, 0.2, 0.5, 0x9aa0a8);
         movers.push({ first, count, s0, lat, RUN, RISE, dir, phase: rand() });
       }
+      fronts(from, to, side, 'escalators'); // (shops under the mezzanine, between the escalator bays)
     }
-    // the bridge: across the road at the hall's middle, between the mezzanines, with its balustrades
-    const mid = (from + to) / 2, w = hi(mid) - lo(mid);
-    uppers.on(mid, (lo(mid) + hi(mid)) / 2, GALLERY - 0.3, 0, w + 0.2, 0.6, 4, 0xd8d4cc);
-    for (const d of [-1.95, 1.95]) { balustrades.on(mid + d, (lo(mid) + hi(mid)) / 2, GALLERY + 0.55, Math.PI / 2, 0.06, 1.1, w); rails.on(mid + d, (lo(mid) + hi(mid)) / 2, GALLERY + 1.12, Math.PI / 2, 0.1, 0.06, w); }
-    void hAt;
   };
   // ---- the play zone: a balloon arch over the road at its start, a ball pit and giant blocks and a slide on the widened floor
   const kids = (z, t) => {
     const from = Math.max(z.from, t.from), to = Math.min(z.to, t.to), COLS = PAL.kids.facia;
-    for (const side of [-1, 1]) fronts(from, to, side, 'kids');
     const s0 = from + 30, w = hi(s0) - lo(s0), R = w / 2 + 1.5;
-    for (let k = 0; k <= 24; k++) { // (the arch)
+    for (let k = 0; k <= 24; k++) { // (the arch: its feet beyond the walls, over the road only well above the car)
       const a = Math.PI * k / 24;
       balloons.on(s0, (lo(s0) + hi(s0)) / 2 + Math.cos(a) * R, Math.sin(a) * R + 0.2, 0, 0.9, 1.1, 0.9, COLS[k % COLS.length]);
     }
     for (const side of [-1, 1]) {
-      for (let s = from + 50; s < to - 20; s += 60) {
-        const k = Math.floor(rand() * 3), lat = inside(side, s, 2.0);
-        if (k === 0) { // the ball pit: a tray and the balls in it
-          planters.on(s, lat, 0.4, 0, 3.2, 0.8, 7, 0x3ab0e8);
-          for (let b = 0; b < 40; b++) balls.on(s - 3 + rand() * 6, inside(side, s, 0.8 + rand() * 2.4), 0.75 + rand() * 0.4, 0, 0.55, 0.55, 0.55, COLS[b % COLS.length]);
-        } else if (k === 1) { // giant blocks stacked
-          for (let b = 0; b < 5; b++) blocks.on(s - 1.5 + (b % 3) * 1.4, inside(side, s, 1.6 + Math.floor(b / 3) * 0.2), 0.65 + Math.floor(b / 3) * 1.3, rand() * 0.4, 1.2, 1.2, 1.2, COLS[(b + 2) % COLS.length]);
-        } else { // the slide: a ladder of posts up to a platform, the chute down along the road
-          posts.on(s - 2, lat, 1.3, 0, 0.12, 2.6, 0.12);
-          posts.on(s - 2, inside(side, s, 1.0), 1.3, 0, 0.12, 2.6, 0.12);
-          uppers.on(s - 2, inside(side, s, 1.5), 2.6, 0, 1.4, 0.15, 1.4, 0xf2c21d);
-          slides.on(s + 1.2, inside(side, s, 1.5), 1.4, 0, 1.0, 0.15, 6.4, 0xffffff, 0.42, 0);
+      for (let s = from + BAY * 2, k = 0; s + BAY <= to - BAY; s += BAY * 3, k++) { // every third bay a play bay
+        if (gaps.some(g => g.side === side && s + BAY > g.from && s < g.to)) continue;
+        openBay(s, side, 'kids', BAY, 8);
+        const q = s + BAY / 2, kind = k % 3, lat = off(side, q, 0.3 + 4.0);
+        if (kind === 0) { // the ball pit: a tray and the balls in it
+          planters.on(q, lat, 0.4, 0, 6.5, 0.8, 8, 0x3ab0e8);
+          for (let b = 0; b < 40; b++) balls.on(q - 3.5 + rand() * 7, off(side, q, 0.3 + 1.5 + rand() * 5), 0.75 + rand() * 0.4, 0, 0.55, 0.55, 0.55, COLS[b % COLS.length]);
+        } else if (kind === 1) { // giant blocks stacked
+          for (let b = 0; b < 5; b++) blocks.on(q - 1.5 + (b % 3) * 1.4, off(side, q, 0.3 + 3.0 + Math.floor(b / 3) * 0.2), 0.65 + Math.floor(b / 3) * 1.3, rand() * 0.4, 1.2, 1.2, 1.2, COLS[(b + 2) % COLS.length]);
+        } else { // the slide: a ladder of posts up to a platform, the chute down along the bay
+          posts.on(q - 2, off(side, q, 0.3 + 3.0), 1.3, 0, 0.12, 2.6, 0.12);
+          posts.on(q - 2, off(side, q, 0.3 + 4.0), 1.3, 0, 0.12, 2.6, 0.12);
+          uppers.on(q - 2, off(side, q, 0.3 + 3.5), 2.6, 0, 1.4, 0.15, 1.4, 0xf2c21d);
+          slides.on(q + 1.2, off(side, q, 0.3 + 3.5), 1.4, 0, 1.0, 0.15, 6.4, 0xffffff, 0.42, 0);
         }
       }
+      fronts(from, to, side, 'kids');
     }
   };
   // ---- side corridors (DECORATION ONLY: the road's bounds stop the car at the wall, nothing in the rules knows them): at the
@@ -483,7 +511,6 @@ export const mall = ({ theme, beside, levelGroup }) => {
     for (let t = 3; t < L; t += 6) { // the lights
       const [x, y, z] = at(t, 0, CEIL - 0.08);
       panels.at(x, y, z, h + Math.PI / 2, 2.6, 0.12, 0.9, 0xffffff);
-      shine.at(x, O.y + 0.045, z, h + Math.PI / 2, 2.2, 1, 5.0);
     }
     if (L > 20) { // at the end: a kiosk (an info counter under a round canopy) or a fountain, by turns
       const [x, y, z] = at(L - 5, 0, 0);
@@ -492,12 +519,12 @@ export const mall = ({ theme, beside, levelGroup }) => {
     }
     if (open) return; // (a tunnel junction's concourse: open, the train comes through it; its beacons and sign are render/hazards.js's)
     // the mouth: a glass barrier across it on posts, the sign on it, a bollard each side
-    { const [x, y, z] = at(1.2, 0, 0);
+    { const [x, y, z] = at(2.6, 0, 0); // (2.6 m in from the wall line: nothing of it over the road)
       balustrades.at(x, y + 0.55, z, h, W - 1.4, 1.1, 0.06);
       rails.at(x, y + 1.12, z, h, W - 1.4, 0.06, 0.1);
-      for (const u of [-W / 2 + 0.7, 0, W / 2 - 0.7]) { const [px, py, pz] = at(1.2, u, 0); posts.at(px, py + 0.55, pz, 0, 0.08, 1.1, 0.08); }
+      for (const u of [-W / 2 + 0.7, 0, W / 2 - 0.7]) { const [px, py, pz] = at(2.6, u, 0); posts.at(px, py + 0.55, pz, 0, 0.08, 1.1, 0.08); }
       signBatch(sign('CLOSED FOR CLEANING', '#f2c21d', '#1a1b1e', null)).at(x + ox * -0.06, y + 0.75, z + oz * -0.06, turn, 2.8, 0.7, 1);
-      for (const u of [-W / 2 + 0.4, W / 2 - 0.4]) { const [px, py, pz] = at(0.5, u, 0); bollards.at(px, py + 0.5, pz, 0, 0.22, 1.0, 0.22); }
+      for (const u of [-W / 2 + 0.6, W / 2 - 0.6]) { const [px, py, pz] = at(1.8, u, 0); bollards.at(px, py + 0.5, pz, 0, 0.22, 1.0, 0.22); }
     }
   };
   // where they open: the outside of each bend in a hall of shops (14 m before the bend), and both sides of the plaza's middle
@@ -541,15 +568,23 @@ export const mall = ({ theme, beside, levelGroup }) => {
     }
   };
   // ---- the car park outside: painted bays along both sides, lamp posts, trolley bays, hedges (the ground is asphalt)
+  const lines = sheet(new THREE.MeshBasicMaterial({ color: 0xf4f1ec, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+  const line = (q0, q1, latA, latB) => { // a painted line from (q0, latA(q0)) to (q1, latB(q1)) as one strip of quads 4 m long
+    for (let q = q0; q < q1; q += 4) {
+      const q1_ = Math.min(q1, q + 4);
+      Track.toWorld(q, latA(q), p); const A = [p.x, p.y + 0.03, p.z]; Track.toWorld(q, latB(q), p); const B = [p.x, p.y + 0.03, p.z];
+      Track.toWorld(q1_, latB(q1_), p); const C = [p.x, p.y + 0.03, p.z]; Track.toWorld(q1_, latA(q1_), p); const D = [p.x, p.y + 0.03, p.z];
+      lines.quad(A, B, C, D, 0xffffff);
+    }
+  };
   const carpark = (from, to) => {
     for (const side of [-1, 1]) {
-      // (the road's edge lines, white: the theme is unmarked, so these are its own)
-      for (let s = from; s < to; s += 8) { const s1 = Math.min(to, s + 8), lat = (q) => (side < 0 ? Track.laneLo(q) : Track.laneHi(q)) + side * 0.15; bays.on((s + s1) / 2, lat((s + s1) / 2), 0.03, 0, 0.14, 0.02, s1 - s + 0.1); }
-      for (let s = from + 4; s < to - 4; s += 2.7) bays.on(s, beside(side, s, 7.4), 0.03, 0, 0.12, 0.02, 4.8);
-      bays.on((from + to) / 2, beside(side, (from + to) / 2, 5.0), 0.03, 0, 0.12, 0.02, to - from - 8);
-      for (let s = from + 15; s < to - 10; s += 36) { lamps.on(s, beside(side, s, 4.6), 4, 0, 0.18, 8, 0.18); lampHeads.on(s, beside(side, s, 4.6) - side * 0.6, 7.9, 0, 0.5, 0.2, 1.4, 0xfff4d0); }
-      for (let s = from + 30; s < to - 10; s += 60) trolleyBays.on(s, beside(side, s, 11), 1.1, facing(side), 2.4, 2.2, 4);
-      for (let s = from + 2; s < to - 2; s += 4) hedges.on(s, beside(side, s, 13.5), 0.5, 0, 1.2, 1.0, 4.1);
+      line(from, to, (q) => off(side, q, 0.1), (q) => off(side, q, 0.25));                 // the road's edge line (the theme is unmarked: its own)
+      line(from + 4, to - 4, (q) => off(side, q, 5.0), (q) => off(side, q, 5.14));           // the bay row's kerb line
+      for (let q = from + 4; q < to - 4; q += 2.7) line(q, q + 0.14, (r) => off(side, r, 5.0), (r) => off(side, r, 9.8)); // the bays' ticks, across
+      for (let q = from + 15; q < to - 10; q += 36) { lamps.on(q, off(side, q, 4.6), 4, 0, 0.18, 8, 0.18); lampHeads.on(q, off(side, q, 4.6) - side * 0.6, 7.9, 0, 0.5, 0.2, 1.4, 0xfff4d0); }
+      for (let q = from + 30; q < to - 10; q += 60) trolleyBays.on(q, off(side, q, 11), 1.1, facing(side), 2.4, 2.2, 4);
+      for (let q = from + 2; q < to - 2; q += 4) hedges.on(q, off(side, q, 13.5), 0.5, 0, 1.2, 1.0, 4.1);
     }
   };
 
@@ -575,7 +610,7 @@ export const mall = ({ theme, beside, levelGroup }) => {
   } catch (e) { console.error('mall scenery:', e); }
   if (!tunnels.length) carpark(Track.start, Track.end);
   flush();
-  floor2.flush(); walls2.flush(); roofs2.flush();
+  floor2.flush(); walls2.flush(); roofs2.flush(); slabs.flush(); glassSheet.flush(); railSheet.flush(); lines.flush();
 
   // ---- the escalators' steps move: each step rides up (or down) its escalator's slope and comes round again
   if (movers.length && steps.mesh) {
@@ -596,10 +631,10 @@ export const mall = ({ theme, beside, levelGroup }) => {
     });
   }
 
-  // ---- the level's ice patches are freshly polished stretches: the sheet a warm wet-white, the shine kept
+  // ---- the level's ice patches are freshly MOPPED stretches (the Wet floor card): the sheet dark and wet, the shine kept
   for (const m of levelGroup.children) {
     if (!m.isMesh || !m.material || !m.material.color || m.material.type !== 'MeshBasicMaterial' || !m.material.transparent) continue;
-    if (m.material.color.getHex() === 0xd6eef8) { m.material.color.set(0xf8f6f2); m.material.opacity = 0.55; }
+    if (m.material.color.getHex() === 0xd6eef8) { m.material.color.set(0x5f7a8c); m.material.opacity = 0.4; } // (a mopped, wet stretch: dark and glossy; its white streaks are the shine)
   }
   void theme; void CONFIG; void q;
 };

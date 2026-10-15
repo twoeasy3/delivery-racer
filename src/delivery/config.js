@@ -1516,7 +1516,7 @@ export const CONFIG = {
   // pulled on for `time` s at up to `speed` m/s over its own top speed (as a turbo pulls: CONFIG.turboAccel), the clock
   // refilled for as long as it is on the pad; a ghost too (it is the floor, as ice is). Beside it stand its handrails,
   // `rail` m sections every `rail` m along both edges, `railGap` m short of each end: ordinary obstacles (obstacleKinds.handrail)
-  boostPad: { time: 2.5, speed: 12, rail: 3, railGap: 3 },
+  boostPad: { time: 2.5, speed: 12, rail: 3, railGap: 3 }, // (a rail is 3 m long, 0.24 m thick: collision.js SIZE.handrail)
   // a dead-end lane ("deadEnds": { s, lane, kind, length? }, lanegimmicks.js): the lane runs on as usual for `length` m and
   // ENDS at s (obstacleKinds.laneEnd): a 'shutter' (road behind it: a Ghost passes, a tank or armour smashes through, any
   // other car is wrecked) or a 'wall' (nothing behind it: wrecked whatever protects the car). The telegraph: the lane's floor

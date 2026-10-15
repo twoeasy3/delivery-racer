@@ -36,7 +36,7 @@ export const LaneGimmicks = {
       const from = Track.place({ s: p.from, road: p.road, exit: p.exit }), to = from + (p.to - p.from);
       // the handrails: a section every `rail` m along both edges of the pad, `railGap` m short of each end
       for (let s = from + B.railGap + B.rail / 2; s <= to - B.railGap - B.rail / 2 + 0.01; s += B.rail) {
-        for (const side of [-1, 1]) add('handrail', s, Track.laneOffset(p.lane, s) + side * (LW / 2 - 0.3), { face: 0 });
+        for (const side of [-1, 1]) add('handrail', s, Track.laneOffset(p.lane, s) + side * (LW / 2 - 0.25), { face: 0 }); // (0.13 m inside the lane's edge: nothing of it in the lane beside)
       }
       return { from, to, lane: p.lane };
     });

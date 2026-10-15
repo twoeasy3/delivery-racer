@@ -603,7 +603,9 @@ export const Player = {
     if (!LEVEL.wallDamage) this.latVel = clamp(this.latVel, -roomLeft * CONFIG.edgeBrake, roomRight * CONFIG.edgeBrake);
     else this.latVel += slide * dt;
 
+    const latWas = this.lat;
     this.lat += this.latVel * dt;
+    this.lat = Track.divider(this.s, latWas, this.lat, this.hw); // (a marked dead-end lane cannot be steered into from the side: lanegimmicks.js)
     keepOnRoad(this, 0);
     updateYaw(this, dt);
 
