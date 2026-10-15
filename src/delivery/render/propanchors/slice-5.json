@@ -48,17 +48,25 @@
   },
   "cabledrum": {
    "roof": {
-    "no": "the roof is too small (no 0.3 x 0.25 m patch near its top)"
+    "box": [1.5, 0, 2.665, 3.56],
+    "cyl": [1.5, 0, 2.665, 3.56],
+    "from": "roof",
+    "lim": "max",
+    "inset": [0, 0.08]
    },
    "cargo": {
-    "box": [1.6, 0, 1.708, -3.08],
-    "cyl": [1.6, 0, 1.708, -3.08],
+    "box": [1.6, 0, 1.708, -1.84],
+    "cyl": [1.6, 0, 1.708, -1.84],
     "from": "deck",
     "lim": "max",
-    "inset": [0.008, 0.008]
+    "inset": [0.008, 0.008],
+    "existing": true
    },
    "wing": {
-    "no": "no rear deck and no flat roof edge"
+    "box": [1.3, 0, 2.517, 3.015],
+    "cyl": [1.3, 0, 2.485, 3.015],
+    "from": "roof-edge",
+    "lim": "max"
    }
   },
   "cigar": {
@@ -270,19 +278,20 @@
   },
   "jeepney": {
    "roof": {
-    "box": [1.5, 0, 2.435, 0.04],
-    "cyl": [1.5, 0, 2.435, 0.04],
+    "box": [1.5, 0, 2.435, -0.58],
+    "cyl": [1.5, 0, 2.435, -0.58],
     "from": "roof",
-    "lim": "max"
+    "lim": "max",
+    "existing": true
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.12, 0, 2.256, -2.852],
-    "cyl": [1.12, 0, 2.228, -2.852],
+    "box": [1.3, 0, 2.287, -2.825],
+    "cyl": [1.3, 0, 2.255, -2.825],
     "from": "roof-edge",
-    "lim": "w"
+    "lim": "max"
    }
   },
   "keivan": {
@@ -644,5 +653,32 @@
    }
   }
  },
- "hand": {}
+ "hand": {
+  "roadsweeper": {
+   "roof": {
+    "box": [0.9, -0.3, 2.185, 1.3],
+    "cyl": [0.9, -0.3, 2.185, 1.3],
+    "from": "roof",
+    "lim": "hand"
+   }
+  },
+  "gameviewer": {
+   "roof": {
+    "box": [1.1, 0, 2.665, -0.7],
+    "cyl": [1.1, 0, 2.665, -0.7],
+    "from": "roof",
+    "lim": "hand"
+   }
+  },
+  "sevenroadster": {
+   "cargo": {
+    "no": "an open roadster: the tail behind the seats is no load deck"
+   }
+  },
+  "refuselorry": {
+   "cargo": {
+    "no": "a refuse body: no open load deck (its top is the hopper)"
+   }
+  }
+ }
 }

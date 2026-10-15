@@ -456,6 +456,7 @@ export const IDEA_MODELS_4 = {
     const w = car.hw * 2, L = car.hl, R = 0.45, bed = 1.06;
     const paint = lambert(car.color), glass = lambert(GLASS), trim = lambert(TRIM), chrome = lambert(CHROME), steel = lambert(0x9aa0a8);
     const wood = lambert(0xb98a4a), cable = lambert(0x1b1b1d), plank = lambert(0x8a6a3a);
+    const load = (m) => { m.userData.prop = 'cargo'; return m; }; // (the drum, its A-frames and chocks: a chosen cargo prop hides them, render/propcosmetic.js)
     box(group, trim, w * 0.6, 0.3, L * 1.9, 0, 0.7, 0);                                   // the chassis
     // the cab: over the front wheels, a base, a deep windscreen and side glass, a roof, a sun visor
     const body = box(group, paint, w * 0.96, 0.5, L * 0.3, 0, 1.2, L * 0.84);
@@ -474,9 +475,9 @@ export const IDEA_MODELS_4 = {
       wheel(group, R, 0.34, side * (w / 2 - 0.2), R, -L * 0.7);
       box(group, paint, 0.04, 0.2, L * 1.44, side * (w / 2 - 0.02), bed + 0.1, -L * 0.26); // the bed's drop sides
       // the drum's A-frames and chocks
-      box(group, steel, 0.1, 1.2, 0.1, side * 0.74, bed + 0.6, -L * 0.2);
-      prism(group, trim, 0.3, [[-L * 0.2 - 0.9, bed], [-L * 0.2 - 0.3, bed], [-L * 0.2 - 0.5, bed + 0.3]], side * 0.5);
-      prism(group, trim, 0.3, [[-L * 0.2 + 0.3, bed], [-L * 0.2 + 0.9, bed], [-L * 0.2 + 0.5, bed + 0.3]], side * 0.5);
+      load(box(group, steel, 0.1, 1.2, 0.1, side * 0.74, bed + 0.6, -L * 0.2));
+      load(prism(group, trim, 0.3, [[-L * 0.2 - 0.9, bed], [-L * 0.2 - 0.3, bed], [-L * 0.2 - 0.5, bed + 0.3]], side * 0.5));
+      load(prism(group, trim, 0.3, [[-L * 0.2 + 0.3, bed], [-L * 0.2 + 0.9, bed], [-L * 0.2 + 0.5, bed + 0.3]], side * 0.5));
     }
     for (let i = -2; i <= 2; i++) box(group, trim, 0.4, 0.08, 0.03, i * w * 0.17, 1.02, L * 0.99 + 0.02); // grille slots
     box(group, trim, w, 0.2, 0.16, 0, 0.78, L * 0.98);                                    // bumpers
@@ -488,12 +489,12 @@ export const IDEA_MODELS_4 = {
     // the drum: two wooden flanges, a core wound in black cable, the axle through
     const DR = 1.15, dz = -L * 0.2, dy = bed + DR;
     for (const side of [-1, 1]) {
-      tube(group, wood, DR, 0.12, side * 0.64, dy, dz, 'x');
-      for (let i = 0; i < 4; i++) box(group, plank, 0.03, 0.14, DR * 1.9, side * 0.71, dy, dz).rotation.x = i * Math.PI / 4; // the flange's boards
+      load(tube(group, wood, DR, 0.12, side * 0.64, dy, dz, 'x'));
+      for (let i = 0; i < 4; i++) load(box(group, plank, 0.03, 0.14, DR * 1.9, side * 0.71, dy, dz)).rotation.x = i * Math.PI / 4; // the flange's boards
     }
-    tube(group, cable, DR * 0.84, 1.16, 0, dy, dz, 'x');
-    for (let i = -2; i <= 2; i++) tube(group, lambert(0x2c2c30), DR * 0.86, 0.1, i * 0.23, dy, dz, 'x'); // the turns of cable, ridged
-    tube(group, steel, 0.08, 1.8, 0, dy, dz, 'x');                                        // the axle
+    load(tube(group, cable, DR * 0.84, 1.16, 0, dy, dz, 'x'));
+    for (let i = -2; i <= 2; i++) load(tube(group, lambert(0x2c2c30), DR * 0.86, 0.1, i * 0.23, dy, dz, 'x')); // the turns of cable, ridged
+    load(tube(group, steel, 0.08, 1.8, 0, dy, dz, 'x'));                                      // the axle
     group.userData = { body, animate: () => {} };
     return group;
   },
