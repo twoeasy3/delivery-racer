@@ -3580,6 +3580,7 @@ const buildRoad = () => {
   placeInstances();
   clearLoose();
 };
+buildRoad.loadWeight = 8; // (most of a level's load: the loading screen's bar moves by it, render/loadscreen.js)
 Game.onLoad.push(buildRoad);
 
 // ---- THEME FILES arrive on their own (render/themes/index.js): the picked level's after the menu is up, the rest when the page

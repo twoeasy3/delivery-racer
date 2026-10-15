@@ -451,3 +451,17 @@ gauges and statuses (under the gauges) go to their right, as the corner was befo
   #gaugeRow { grid-column: 2; grid-row: 1 / span 2; flex-direction: column; gap: 6px; }
   #levelProblems, #flat { grid-column: 1 / span 2; }
 }
+
+/* ---- the loading screen (render/loadscreen.js): from Start until the run's first frame, only for a load past 300 ms. The menu's
+   look (menu2.css: its dark ground, the condensed italic capitals, Good's gold or Evil's red); over everything, taking no input of
+   its own (the loader holds the keys and taps while it is up) */
+#loadScreen { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: #0b0f16; color: #fff;
+  --accent: #ffd23f; --display: "Bahnschrift", "DIN Alternate", "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", "Segoe UI", system-ui, sans-serif; }
+#loadScreen.evil { --accent: #ff4a33; }
+#loadScreen.hidden { display: none; }
+#loadScreen .ls-box { width: min(520px, 100%); display: grid; gap: 12px; text-align: left; }
+#loadScreen small { font: 700 12px/1 system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+#loadScreen h2 { margin: 0; font: italic 800 clamp(30px, 6vw, 54px)/.95 var(--display); font-stretch: condensed; letter-spacing: .01em; text-transform: uppercase;
+  overflow-wrap: anywhere; }
+#loadScreen .ls-bar { height: 8px; overflow: hidden; background: rgba(255, 255, 255, .11); clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
+#loadScreen .ls-bar i { display: block; height: 100%; background: var(--accent); transform-origin: left; transform: scaleX(0); transition: transform .12s linear; }
