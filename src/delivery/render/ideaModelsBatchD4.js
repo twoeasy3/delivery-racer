@@ -7,8 +7,7 @@
 // Each builder takes the idea's entry and returns a group, front facing local +z, with userData.body (the paint mesh),
 // userData.animate (sits still) and, for the Yacht, userData.livery (evil) (its roof). No people. State-free.
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { cabinGlass } from './ideaModelsDkit.js';
+import { cabinGlass, mergeFlat } from './ideaModelsDkit.js'; // (mergeFlat: keeps the glass panes' ranges on the merged geometry, for the model editor)
 
 const keep = (m) => { m.userData.shared = true; return m; };
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
@@ -32,7 +31,7 @@ const plain = (geo) => {
   for (const name of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(name)) g.deleteAttribute(name);
   return g;
 };
-const merge = (geos) => mergeGeometries(geos.map(plain), false);
+const merge = (geos) => mergeFlat(geos.map(plain));
 // parts collected by material, then one mesh for each (`bag.add(material, ...geometries)`, `bag.done(group)`)
 const makeBag = () => {
   const bags = new Map();

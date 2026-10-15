@@ -9,8 +9,7 @@
 // files, no panel lines. Each builder takes the idea's entry and returns a group, front
 // facing local +z, with userData.body, userData.animate and userData.livery. Spread into IDEA_MODELS by ideaModels.js. State-free.
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { cabinGlass } from './ideaModelsDkit.js';
+import { cabinGlass, mergeFlat } from './ideaModelsDkit.js'; // (mergeFlat: keeps the glass panes' ranges on the merged geometry, for the model editor)
 
 const keep = (m) => { m.userData.shared = true; return m; };
 const lambert = (color) => keep(new THREE.MeshLambertMaterial({ color }));
@@ -39,7 +38,7 @@ const plain = (geo) => {
   g.clearGroups();
   return g;
 };
-const merge = (geos) => mergeGeometries(geos.map(plain), false);
+const merge = (geos) => mergeFlat(geos.map(plain));
 const parts = (parent, key, material, make) => place(parent, shared(key, () => merge(make())), material);
 const bx = (w, h, l, x, y, z, pitch = 0, yaw = 0) => {
   const geo = new THREE.BoxGeometry(w, h, l);

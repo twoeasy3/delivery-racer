@@ -10,8 +10,7 @@
 // owner: not everything needs one): flat colours, and a plain white disc for the Trophy Truck's roundel. No panel lines. Each builder takes the idea's entry and returns a group, front facing local +z, with userData.body (the paint),
 // userData.animate (seconds) => void. render/ideaModels.js spreads IDEA_MODELS_BATCH_D5 into IDEA_MODELS. State-free.
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { cabinGlass } from './ideaModelsDkit.js';
+import { cabinGlass, mergeFlat } from './ideaModelsDkit.js'; // (mergeFlat: keeps the glass panes' ranges on the merged geometry, for the model editor)
 
 const keep = (m) => { m.userData.shared = true; return m; };
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
@@ -39,7 +38,7 @@ const plain = (geo) => {
   g.clearGroups();
   return g;
 };
-const merge = (geos) => mergeGeometries(geos.map(plain), false);
+const merge = (geos) => mergeFlat(geos.map(plain));
 const parts = (parent, key, material, make) => place(parent, shared(key, () => merge(make())), material);
 
 const bx = (w, h, l, x, y, z, pitch = 0, yaw = 0, roll = 0) => {

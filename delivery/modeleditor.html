@@ -58,8 +58,9 @@
       <h2>The patch as JSON <span class="small">src/delivery/modelpatches/<span id="jsonCar"></span>.json</span></h2>
       <p class="note">Edits over the model the code builds: by part id. Applied as soon as it is valid.</p>
       <textarea id="json" class="json" spellcheck="false" aria-label="The patch, as JSON"></textarea>
-      <div class="buttons"><button id="tidy">Tidy</button><button id="copy">Copy</button></div>
+      <div class="buttons"><button id="tidy">Tidy</button><button id="copy">Copy</button><button id="bake" title="The window edits (the glass table) as a code literal for the car's cabinGlass call: paste it, or run scripts/bake-glass.mjs">Bake windows</button></div>
       <p class="note" id="jsonNote"></p>
+      <pre class="json" id="bakeOut" hidden></pre>
     </section>
   </div>
 </aside>
@@ -73,6 +74,7 @@
   <div class="viewButtons tools">
     <span class="seg" role="group" aria-label="Gizmo"><button data-mode="translate" class="on" title="Move (G)">Move</button><button data-mode="rotate" title="Rotate (R)">Rotate</button><button data-mode="scale" title="Scale (S)">Scale</button></span>
     <label class="check"><input type="checkbox" id="snap"><span>Snap</span></label>
+    <button id="mirrorMode" class="on" title="Mirror: an edit to a part (move, turn, scale, size, colour, delete) goes to its partner across the car too, and a window's edges to both flanks; found per part by its shape">Mirror: on</button>
     <label class="check"><input type="checkbox" id="wire"><span>Wire</span></label>
     <label class="check"><input type="checkbox" id="bbox"><span>Bounds</span></label>
     <label class="check"><input type="checkbox" id="hitbox"><span>Hitbox</span></label>

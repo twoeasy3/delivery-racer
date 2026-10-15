@@ -118,7 +118,7 @@ export const IDEA_MODELS_BATCH_E4 = {
     const [vA, vR] = [glass.virtual[1], glass.virtual[2]], roofY = vA[1] + (vR[1] - vA[1]) * (RAKE.top - vA[0]) / (vR[0] - vA[0]);
     const wChain = [glass.virtual[0], vA, [RAKE.top, roofY], [RAKE.top + (roofY - 1.0) * Math.tan(RAKE.angle), 1.0]];
     const wIns = { aPillar: Math.max(0, Math.max(0.07, A_PILLAR) - BEV), roof: Math.max(0, 0.05 - BEV), cPillar: 0, belt: 0.025 }, real = cabinChain(outline, FROM, TO, GBELT);
-    const windows = [[-0.10, 9], [-9, -0.24]].flatMap(([zr, zf]) => glassFromProfile(wChain, { from: 0, to: 3, belt: GBELT, inset: wIns, zRear: zr, zFront: zf, half: HALF, taper: TAPER, lift: 0.006, real, margin: 0.003 }));
+    const windows = [[-0.10, 9], [-9, -0.24]].flatMap(([zr, zf], i) => glassFromProfile(wChain, { from: 0, to: 3, belt: GBELT, inset: wIns, zRear: zr, zFront: zf, half: HALF, taper: TAPER, lift: 0.006, real, margin: 0.003, name: i ? 'quarter window' : 'door window' })); // (named: editable panes in the model editor)
     parts(group, k + 'glass', GLASS, () => [...windows, screen.front, glass.rear]);
     // the blade: the rear window's back edge's line, 14 cm wide, from the belt to the window's top
     const bb = windows[2].boundingBox ?? (windows[2].computeBoundingBox(), windows[2].boundingBox), yb = bb.min.y, yt = bb.max.y;
