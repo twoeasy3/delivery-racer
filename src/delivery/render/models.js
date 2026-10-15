@@ -278,12 +278,12 @@ export const MODELS = {
           box(g, white, sw, 0.02, (r0 - r1) * k, x, ry + 0.055, (r0 + r1) / 2 * k);          // over the roof,
           box(g, white, sw, 0.02, 0.72 * k, x, 0.85, -1.95 * k);                             // and across the boot
         }
-        box(g, paint, w * 0.9, 0.07, 0.16, 0, 0.88, -L + 0.06);                              // a ducktail
+        box(g, paint, w * 0.9, 0.07, 0.16, 0, 0.88, -L + 0.06).userData.prop = 'wing';                              // a ducktail
       }
       if (S.blackRoof) box(g, dark, w * 0.74, 0.03, (r0 - r1) * k + 0.1, 0, ry + 0.055, (r0 + r1) / 2 * k);
       if (S.whale) { // a whale tail on the engine lid, and the wide hips over the rear wheels
-        box(g, paint, w * 0.98, 0.07, 0.5, 0, 1.0, -L * 0.83);
-        box(g, dark, w * 0.98, 0.04, 0.1, 0, 1.03, -L * 0.83 - 0.24);
+        box(g, paint, w * 0.98, 0.07, 0.5, 0, 1.0, -L * 0.83).userData.prop = 'wing';
+        box(g, dark, w * 0.98, 0.04, 0.1, 0, 1.03, -L * 0.83 - 0.24).userData.prop = 'wing';
         for (const side of [-1, 1]) {
           box(g, dark, 0.05, 0.14, 0.3, side * w * 0.3, 0.92, -L * 0.83);
           box(g, paint, 0.14, 0.34, L * 0.62, side * (w / 2 + 0.03), 0.62, -L * 0.6);
@@ -291,17 +291,17 @@ export const MODELS = {
       }
       if (S.wing) { // a black engine deck, and a tall wing right across the tail between end plates
         box(g, dark, w * 0.72, 0.03, 1.15 * k, 0, 0.855, -1.7 * k);
-        box(g, dark, w * 1.04, 0.05, 0.4, 0, 1.24, -L + 0.12);
+        box(g, dark, w * 1.04, 0.05, 0.4, 0, 1.24, -L + 0.12).userData.prop = 'wing';
         for (const side of [-1, 1]) {
-          box(g, paint, 0.05, 0.46, 0.5, side * w * 0.52, 1.08, -L + 0.12);
-          box(g, dark, 0.06, 0.38, 0.1, side * w * 0.26, 1.04, -L + 0.14);
+          box(g, paint, 0.05, 0.46, 0.5, side * w * 0.52, 1.08, -L + 0.12).userData.prop = 'wing';
+          box(g, dark, 0.06, 0.38, 0.1, side * w * 0.26, 1.04, -L + 0.14).userData.prop = 'wing';
         }
         box(g, dark, w * 0.3, 0.1, 0.5 * k, 0, 1.12, -0.1 * k);                              // a roof scoop
       }
       if (S.louvres) { // the engine deck's louvres, and intakes in its flanks
         for (let i = 0; i < 4; i++) box(g, dark, w * 0.56, 0.03, 0.08, 0, 0.86, -L * (0.55 + i * 0.09));
         for (const side of [-1, 1]) box(g, dark, 0.04, 0.2, 0.55, side * (w / 2 + 0.005), 0.62, -L * 0.3);
-        box(g, paint, w * 0.9, 0.04, 0.2, 0, 0.9, -L * 0.95);                       // a lip spoiler
+        box(g, paint, w * 0.9, 0.04, 0.2, 0, 0.9, -L * 0.95).userData.prop = 'wing';                       // a lip spoiler
       }
       for (const side of [-1, 1]) {
         // lamps of its own: the tourer's wide oblong headlamps and twin round tail lamps a side; the coupe's

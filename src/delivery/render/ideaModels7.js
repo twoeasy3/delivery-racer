@@ -245,8 +245,10 @@ export const IDEA_MODELS_7 = {
     box(group, WHITE, 0.4, 0.1, 0.02, 0, 0.42, ZT - 0.008).userData.plate = 'rear';
     // the spoiler: a raked blade across the tail on two posts, the stop lamp along its back edge
     const spoiler = Math.atan2(0.05, 0.24);
-    merged(group, trim, [-1, 1].map(side => bx(0.04, 0.09, 0.08, side * 0.5, topY(-2.12, 0.5) + 0.03, -2.12)));
-    box(group, paint, 1.5, 0.03, 0.26, 0, topY(-2.12, 0.5) + 0.085, -2.12).rotation.x = -spoiler;
+    merged(group, trim, [-1, 1].map(side => bx(0.04, 0.09, 0.08, side * 0.5, topY(-2.12, 0.5) + 0.03, -2.12))).userData.prop = 'wing'; // (the spoiler's posts and blade: a wing prop)
+    const blade = box(group, paint, 1.5, 0.03, 0.26, 0, topY(-2.12, 0.5) + 0.085, -2.12);
+    blade.rotation.x = -spoiler;
+    blade.userData.prop = 'wing';
     box(group, TAIL, 0.9, 0.022, 0.02, 0, topY(-2.12, 0.5) + 0.06, -2.255);
     alloys(group, AXLES, alloy, 5, undefined, false); // (the owner, 14-Oct: the wheel trims did not animate while driving: deleted)
     group.userData = { body, animate: () => {} };
@@ -417,8 +419,10 @@ export const IDEA_MODELS_7 = {
     // mirrors on the fenders, by the canopy
     merged(group, paint, [-1, 1].flatMap(side => [bx(0.14, 0.07, 0.1, side * 0.66, topY(0.75, 0.66) + 0.09, 0.75), bx(0.02, 0.1, 0.04, side * 0.66, topY(0.75, 0.66) + 0.03, 0.75)]));
     // the wing, the width of the car, on two end plates that stand on the rear fenders
-    box(group, dark, 1.78, 0.03, 0.34, 0, 1.0, -2.17).rotation.x = -0.12;
-    merged(group, dark, [-1, 1].map(side => plate(0.025, [[-2.0, 0.7], [-2.34, 0.64], [-2.34, 1.06], [-2.1, 1.06]], side * 0.9)));
+    const blade = box(group, dark, 1.78, 0.03, 0.34, 0, 1.0, -2.17);
+    blade.rotation.x = -0.12;
+    blade.userData.prop = 'wing'; // (the wing: hidden when a wing prop is chosen)
+    merged(group, dark, [-1, 1].map(side => plate(0.025, [[-2.0, 0.7], [-2.34, 0.64], [-2.34, 1.06], [-2.1, 1.06]], side * 0.9))).userData.prop = 'wing';
     // the tail: a red lamp in each fender's tail, the rain lamp in the middle, the diffuser
     const ZT = -2.33;
     merged(group, TAIL, [-1, 1].map(side => bx(0.16, 0.05, 0.02, side * 0.7, 0.62, ZT - 0.008)));

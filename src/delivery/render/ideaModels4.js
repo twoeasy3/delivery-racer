@@ -297,10 +297,10 @@ export const IDEA_MODELS_4 = {
     // (the pontoons' tracks sit at z = ±L/2 each, so the pairs are rounded first: see above)
     box(group, trim, w * 0.5, 0.12, 0.04, 0, 1.34, L * 0.76 + 0.01);                      // a grille slot
     box(group, chrome, w * 0.7, 0.08, 0.08, 0, 1.0, L * 0.8);                             // a bumper bar
-    tube(group, trim, 0.05, 0.6, w * 0.3, 2.35, -L * 0.55, 'y');                          // the exhaust stack
-    box(group, trim, 0.12, 0.06, 0.12, w * 0.3, 2.66, -L * 0.55);                         // its rain cap
-    box(group, trim, 0.14, 0.1, 0.14, -w * 0.22, 2.17, L * 0.24);                         // the spotlight on the roof,
-    disc(group, LAMP, 0.07, 0.06, -w * 0.22, 2.17, L * 0.24 + 0.09);
+    tube(group, trim, 0.05, 0.6, w * 0.3, 2.35, -L * 0.55, 'y').userData.prop = 'roof';   // the exhaust stack (a roof item: hidden when a roof prop is chosen)
+    box(group, trim, 0.12, 0.06, 0.12, w * 0.3, 2.66, -L * 0.55).userData.prop = 'roof';   // its rain cap
+    box(group, trim, 0.14, 0.1, 0.14, -w * 0.22, 2.17, L * 0.24).userData.prop = 'roof';   // the spotlight on the roof,
+    disc(group, LAMP, 0.07, 0.06, -w * 0.22, 2.17, L * 0.24 + 0.09).userData.prop = 'roof';
     const lens = beacon(group, 0, 2.12, -L * 0.3);
     group.userData = { body, animate: (t) => flash(lens, t) };
     return group;
@@ -602,7 +602,7 @@ export const IDEA_MODELS_4 = {
       box(group, seat, 0.44, 0.06, 0.46, side * 0.3, 0.72, -L * 0.05);
       box(group, seat, 0.44, 0.5, 0.05, side * 0.3, 0.98, -L * 0.05 - 0.24);
       for (const dz of [-0.2, 0.2]) tube(group, steel, 0.02, 0.2, side * 0.3, 0.62, -L * 0.05 + dz, 'y');
-      box(group, gold, 0.28, 0.3, 0.32, side * 0.3, 0.68, -L * 0.7);                       // the gear on the tail
+      box(group, gold, 0.28, 0.3, 0.32, side * 0.3, 0.68, -L * 0.7).userData.prop = 'cargo';   // the gear on the tail (a load: hidden when a cargo prop is chosen)
     }
     for (const z of [L * 0.85, -L * 0.85, 0]) tube(group, steel, 0.035, w * 0.66, 0, 0.53, z, 'x'); // the cross members
     box(group, trim, 0.24, 0.3, 0.24, 0, 0.7, L * 0.25);                                   // the console between the seats,
