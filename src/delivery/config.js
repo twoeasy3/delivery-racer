@@ -1614,7 +1614,7 @@ export const CONFIG = {
   // m/s at most. On it, tar builds on the player's tyres, all they hold in `fill` s;
   // off it, it wears off in `clean` s. With the tyres full the car's top speed is down by `slow` of itself (in
   // proportion with less), brought down at `bite` m/s^2. A board `sign` m before; a cone every `cone` m
-  tarmac: { fill: 4, clean: 3, slow: 0.9, bite: 45, queue: 8, keepClear: 160, sign: 120, cone: 14 },
+  tarmac: { fill: 4, clean: 3, slow: 0.9, bite: 45, queue: 8, keepClear: 160, sign: 120, cone: 14 }, // (a car in the tar's lane moves over only into room: gambles.js)
   // radiation ("radiation": [{ from, to, lanes?, side? }] and "infectedTraffic": radiation.js). In a radiated area,
   // or within `radius` m of an infected car, the player's car loses `tick` of its FULL health a second and its
   // radiation meter fills in `meterTime` s; out of both, the meter empties again in `meterFall` s (Infinity: it
