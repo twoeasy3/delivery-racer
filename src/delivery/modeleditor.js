@@ -37,7 +37,12 @@
 //      pillar. With Mirror on the edit is stored once for both flanks ('door window'); off, for that flank only ('door window L'). The edit
 //      is a `glass` table in the patch, read by cabinGlass as the model is BUILT (withGlassEdits), never a change to the built mesh; "Reset to
 //      automatic" takes it out. "Bake" (JSON tab) prints it as a code literal for the car's cabinGlass call (scripts/bake-glass.mjs <car>).
-//   ?car=<id>  ?damage=<0..5|percent>  ?evil  ?tab=parts|part|json  ?part=<part id>  ?pane=<pane name>  ?mirror=off  ?view=front|rear|left|right|top|34  ?dark
+//   8. PLACES (the Placements tab, render/placementedit.js): the car's roof, cargo and wing prop slots and its number plates, moved on the car
+//      (tap the car, drag the shape, or Move / Turn / Size handles) or typed, with Snap, Fit max, Reset and the audit's measures as chips.
+//      "Write to build" writes the car's hand row into render/propanchors/slice-<n>.json and the plate into render/plateanchors.js (the dev
+//      server's POST /__placements, vite.config.js); with no dev server, Download gives the change for scripts/bake-placements.mjs. Not a patch.
+//      ?tab=place&slot=roof|cargo|wing|plate&end=front&prop=<prop id>
+//   ?car=<id>  ?damage=<0..5|percent>  ?evil  ?tab=parts|part|place|json  ?part=<part id>  ?pane=<pane name>  ?mirror=off  ?view=front|rear|left|right|top|34  ?dark
 //   ?lights  ?brake  ?hazards  ?lampmarks  (those lamp toggles on from the start; also ?left ?right ?steady)
 import './render/modeleditorshim.js'; // (first: the game's modules' elements, stood in for)
 import * as THREE from 'three';
@@ -56,6 +61,7 @@ import { withGlassEdits, glassEditsReport } from './render/ideaModelsDkit.js';
 import { lampsFor, lampKey, lampSource, makeLampMarkers } from './render/carlights.js';
 import { addLamps, placeLamps, setLampLights } from './render/lampfx.js';
 import { LOCAL_KEY, PATCHES, patchesReady, localPatches, setModelPatching } from './render/modelpatchapply.js';
+import { createPlacements } from './render/placementedit.js';
 
 setModelPatching(false); // (the code's own model here: this page applies the patch being edited itself)
 const $ = (id) => document.getElementById(id);
@@ -132,6 +138,7 @@ const S = {
   mirror: params.get('mirror') !== 'off', sym: new Map(), pane: null, // (Mirror; the parts' partners across the car; the selected window pane's name)
 };
 const partOf = (id) => S.parts.find(p => p.id === id) || null;
+let placements = null; // (the Placements tab: render/placementedit.js, made once the view is up)
 const status = (words, bad = false) => { $('status').textContent = words; $('status').classList.toggle('bad', bad); };
 
 // the patch kept in this browser, per car (the game's ?modelpatch=local reads the same)
@@ -178,6 +185,7 @@ const rebuild = () => {
   renderList(); renderStats(); renderJson();
   if (S.tab === 'part') renderPart();
   if (S.tab === 'zfight') scanZ();
+  placements?.onModel();
 };
 // the damage state (render/inspectmodel.js: the game's own dents): changed on the live model, nothing rebuilt, the camera,
 // the selection and the edits kept. The parts' triangle counts are the damaged ones.
@@ -209,8 +217,12 @@ const commit = (patch, words) => {
   if (words) status(words);
   syncUndo();
 };
-const syncUndo = () => { $('undo').disabled = S.at <= 0; $('redo').disabled = S.at >= S.history.length - 1; };
+const syncUndo = () => {
+  if (placements?.on) { $('undo').disabled = !placements.canUndo(-1); $('redo').disabled = !placements.canUndo(1); return; }
+  $('undo').disabled = S.at <= 0; $('redo').disabled = S.at >= S.history.length - 1;
+};
 const undo = (dir) => {
+  if (placements?.on) { placements.undo(dir); return; } // (the Placements tab: its draft's own history)
   const to = S.at + dir;
   if (to < 0 || to >= S.history.length) return;
   S.at = to; S.patch = JSON.parse(S.history[to]);
@@ -221,6 +233,7 @@ const undo = (dir) => {
 const loadCar = (id, { keepView = false } = {}) => {
   const car = carById(id) || roster[0];
   S.car = car; S.sel = null; S.hidden.clear(); S.solo = null; S.locked.clear(); S.base = '';
+  if (![...pick.options].some(o => o.value === car.id)) optgroup('Other', [car]); // (a car outside the lists, by ?car=: the picker names it)
   pick.value = car.id;
   // its patch: this browser's (autosave), else the game's file, else none
   const probe = buildInspectModel(car, false);
@@ -250,11 +263,12 @@ const syncUrl = () => {
   if (S.pane) q.set('pane', S.pane);
   if (!S.mirror) q.set('mirror', 'off');
   for (const id of LAMP_IDS) if ($(id).checked) q.set(LAMP_PARAMS[id], '');
+  placements?.urlParams(q);
   history.replaceState(null, '', '?' + q.toString().replace(/=(&|$)/g, '$1'));
 };
 
 // ---- the camera ------------------------------------------------------------------------------------------------
-const VIEWS = { front: [0, 0.12], rear: [Math.PI, 0.12], left: [Math.PI / 2, 0.06], right: [-Math.PI / 2, 0.06], top: [0, 1.45], 34: [0.75, 0.38] };
+const VIEWS = { front: [0, 0.12], rear: [Math.PI, 0.12], left: [Math.PI / 2, 0.06], right: [-Math.PI / 2, 0.06], top: [0, 1.45], 34: [0.75, 0.38], r34: [Math.PI - 0.7, 0.42], high34: [0.75, 0.7] }; // (r34, high34: the Placements tab's)
 let view = VIEWS[params.get('view')] ? params.get('view') : '34';
 const modelBox = () => withoutFx(() => new THREE.Box3().setFromObject(S.model, true));
 const frame = (name = view, box = null) => {
@@ -301,6 +315,7 @@ const applyViewFlags = () => {
     if (soloNode) { let inSolo = false; for (let p = n; p && p !== S.model; p = p.parent) if (p === soloNode) inSolo = true; shown = shown && inSolo; }
     n.layers.set(shown ? 0 : 1); // (layer 1: not drawn, not picked; the patch's own `visible` stays as it is)
   });
+  placements?.layers(S.model); // (placing: the car's own props and plates hidden, as the game hides them under a worn one)
   helpers.clear();
   if (f.bbox) helpers.add(new THREE.Box3Helper(modelBox(), 0x7a1fa8));
   if (f.hitbox) {
@@ -403,6 +418,7 @@ const pickable = (node) => {
 let down = null;
 canvas.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
 canvas.addEventListener('pointerup', (e) => {
+  if (placements?.on) { down = null; return; } // (placing: the tab's own taps)
   if (!down || gizmo.dragging) { down = null; return; }
   const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y), long = performance.now() - down.t;
   down = null;
@@ -411,7 +427,7 @@ canvas.addEventListener('pointerup', (e) => {
   select(id, true, hitPane);
 });
 canvas.addEventListener('pointermove', (e) => {
-  if (e.pointerType !== 'mouse' || e.buttons) return;
+  if (e.pointerType !== 'mouse' || e.buttons || placements?.on) return;
   const id = hit(e);
   if (id === S.hover) return;
   S.hover = id;
@@ -868,12 +884,15 @@ $('zfRescan').addEventListener('click', scanZ);
 
 // ---- the tabs, the side, the files --------------------------------------------------------------------------------
 const showTab = (tab) => {
-  S.tab = ['parts', 'part', 'json', 'zfight'].includes(tab) ? tab : 'parts';
+  const was = S.tab;
+  S.tab = ['parts', 'part', 'place', 'json', 'zfight'].includes(tab) ? tab : 'parts';
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === S.tab));
   document.querySelectorAll('.tab').forEach(t => { t.hidden = t.id !== 'tab-' + S.tab; });
   if (S.tab === 'part') renderPart();
   if (S.tab === 'json') renderJson();
   if (S.tab === 'zfight') scanZ(); else clearZ();
+  if (S.tab === 'place' && !placements.on) { select(null, false); placements.enter(); } else if (S.tab !== 'place' && was === 'place' && placements.on) { placements.leave(); applyViewFlags(); }
+  syncUndo();
   if (S.car) syncUrl();
 };
 $('tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); });
@@ -916,6 +935,7 @@ $('panelToggle').addEventListener('click', () => { document.body.classList.toggl
 window.addEventListener('keydown', (e) => {
   if (e.target.closest('input, textarea, select')) return;
   const k = e.key.toLowerCase(), ctrl = e.ctrlKey || e.metaKey;
+  if (placements?.on) { if (ctrl && (k === 'z' || k === 'y')) { e.preventDefault(); undo(k === 'y' || e.shiftKey ? 1 : -1); } return; } // (placing: no part keys)
   if (ctrl && k === 'z') { e.preventDefault(); undo(e.shiftKey ? 1 : -1); }
   else if (ctrl && k === 'y') { e.preventDefault(); undo(1); }
   else if (ctrl && k === 'd') { e.preventDefault(); duplicate(); }
@@ -944,6 +964,11 @@ window.addEventListener('pagehide', () => { disposeModel(S.model); renderer.disp
 
 // ---- start ---------------------------------------------------------------------------------------------------------
 resize();
+placements = createPlacements({
+  scene, camera, canvas, orbit, gizmo, root: $('placeBox'), toolsEl: $('placeTools'), roster: [...roster, ...ideas],
+  getCar: () => S.car, getModel: () => S.model, status, withoutFx, inFx, applyViewFlags, syncUrl: () => S.car && syncUrl(), syncUndo,
+  frame: (name) => frame(name), coarse: matchMedia('(pointer: coarse)').matches,
+});
 patchesReady.then(() => {
   if (params.has('dark')) $('dark').checked = true; // (?dark: the Blackout view from the start)
   loadCar(params.get('car') || 'commuter');
@@ -953,5 +978,5 @@ patchesReady.then(() => {
   if (params.get('tab')) showTab(params.get('tab'));
   frame(view);
   loop();
-  window.__modelEditor = Object.assign(S, { three: { camera, scene, gizmo, renderer, THREE }, api: { select, commit, undo, mirror, duplicate, remove, setFor, setPane, resetPane, mirrorPartner } }); // (for the checks and a curious console)
+  window.__modelEditor = Object.assign(S, { three: { camera, scene, gizmo, renderer, THREE }, api: { select, commit, undo, mirror, duplicate, remove, setFor, setPane, resetPane, mirrorPartner }, placements }); // (for the checks and a curious console)
 });

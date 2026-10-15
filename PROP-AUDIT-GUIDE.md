@@ -29,6 +29,12 @@ CONTAINMENT BOUNDS of future cosmetic props (render/propmodels.js has nine, buil
   flags ranked worst first; `--nohand` for the generated rows alone, `--table <json>` to try candidate rows) and is the check to run after
   any change to a placement.
 
+## The owner's own placements (CHECKLIST 440)
+
+A hand row with `"by": "editor"` was placed by the OWNER in the model editor (Places tab) and written by scripts/placements-lib.mjs; it
+carries `prev` (the row it replaced). NEVER drop, move or edit one, even where the generator now matches or beats it: it is his
+decision. The generator keeps it (it rewrites only `cars`) and says so; `.propanchors-check` lists it without testing it.
+
 ## The rules
 
 UPDATED (CHECKLIST 307, the placement audit): the generator's search is now `scripts/prop-audit-lib.mjs optimum`: no scale cap (the

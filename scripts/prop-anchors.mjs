@@ -12,7 +12,8 @@
 //   node scripts/prop-anchors.mjs <car id> --write        ...and merge them into their slice's file (a NEW CAR, or one car re-measured
 //                                                         after a tag; `--into <n>` puts them in another slice file, e.g. slice-0)
 //   --json <file>                                         also write every measured car's measurement (free sizes, kinds)
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
+import { readSlice as readSliceFile, writeSlice as writeSliceFile, sliceFile } from './placements-lib.mjs';
 import { startModels } from './modelpatch-load.mjs';
 import { roster } from './prop-roster.mjs';
 import { slicesOf, sliceOfCar } from './prop-slices.mjs';
@@ -24,13 +25,13 @@ const dry = args.includes('--dry'), write = args.includes('--write');
 const slice = flag('--slice') ? Number(flag('--slice')) : null, into = flag('--into') ? Number(flag('--into')) : null, jsonAt = flag('--json');
 const only = args.filter((a, i) => !a.startsWith('--') && !['--json', '--slice', '--into'].includes(args[i - 1]));
 const { load, close, ROOT } = await startModels();
-const fileOf = (n) => ROOT + '/src/delivery/render/propanchors/slice-' + n + '.json';
-const readSlice = (n) => (existsSync(fileOf(n)) ? JSON.parse(readFileSync(fileOf(n), 'utf8')) : { slice: n, cars: {}, hand: {} });
+// (the slice files are read and written by scripts/placements-lib.mjs, as the model editor's Placements tab writes its hand rows: the
+// generator rewrites a file's `cars` only; its `hand` block, the hand fixes and the owner's editor rows (`by: 'editor'`), is kept as it is)
+const readSlice = (n) => readSliceFile(ROOT, n);
 const writeSlice = (n, data) => {
-  const cars = {};
-  for (const id of Object.keys(data.cars).sort()) cars[id] = data.cars[id];
-  writeFileSync(fileOf(n), JSON.stringify({ slice: n, note: 'GENERATED `cars` by scripts/prop-anchors.mjs --slice ' + n + ' (do not edit); `hand` is this slice\'s hand fixes (render/propanchors.js), edited by hand', cars, hand: data.hand || {} }, null, 1).replace(/\[\n\s+([^[\]]*?)\n\s+\]/gs, (m, inner) => '[' + inner.replace(/,\n\s+/g, ', ') + ']') + '\n');
-  console.log('written ' + fileOf(n) + ' (' + Object.keys(cars).length + ' cars, ' + Object.keys(data.hand || {}).length + ' hand fixes)');
+  writeSliceFile(ROOT, n, data);
+  const kept = Object.entries(data.hand || {}).flatMap(([id, h]) => Object.keys(h).filter(s => h[s]?.by === 'editor').map(s => id + ' ' + s));
+  console.log('written ' + sliceFile(ROOT, n) + ' (' + Object.keys(data.cars).length + ' cars, ' + Object.keys(data.hand || {}).length + ' hand fixes' + (kept.length ? '; the owner\'s editor rows kept, they win over the generated ones: ' + kept.join(', ') : '') + ')');
 };
 // the table's entry for one slot (strip the generator's own eyes)
 const entry = (e) => { if (!e) return null; if (e.no) return e.existing ? { no: e.no, existing: true } : { no: e.no }; const out = { box: e.box, cyl: e.cyl, from: e.from, lim: e.lim }; if (e.inset) out.inset = e.inset; if (e.existing) out.existing = true; return out; };

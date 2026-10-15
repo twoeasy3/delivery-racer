@@ -758,12 +758,12 @@
  "hand": {
   "lmp": {
    "wing": {
-    "no": "the car's own wing spans the tail on end plates over nothing: no deck for a prop to stand on"
+    "no": "Its own wing stays: not changeable."
    }
   },
   "earned-lmp": {
    "wing": {
-    "no": "the car's own wing spans the tail on end plates over nothing: no deck for a prop to stand on"
+    "no": "Its own wing stays: not changeable."
    }
   },
   "showdown": {

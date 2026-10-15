@@ -33,7 +33,7 @@
     <p class="note" id="status"></p>
   </section>
   <nav class="tabs" id="tabs">
-    <button data-tab="parts">Parts</button><button data-tab="part">Part</button><button data-tab="json">JSON</button><button data-tab="zfight">Z-fight</button>
+    <button data-tab="parts">Parts</button><button data-tab="part">Part</button><button data-tab="place" title="Roof, cargo and wing slots and the number plates: written into the build">Places</button><button data-tab="json">JSON</button><button data-tab="zfight">Z-fight</button>
   </nav>
   <div class="tab" id="tab-parts">
     <section>
@@ -45,6 +45,9 @@
   </div>
   <div class="tab" id="tab-part" hidden>
     <section id="partBox"><p class="note">Tap a part in the view or the list.</p></section>
+  </div>
+  <div class="tab" id="tab-place" hidden>
+    <section id="placeBox"></section>
   </div>
   <div class="tab" id="tab-zfight" hidden>
     <section>
@@ -90,6 +93,7 @@
       <label class="check" title="Labelled markers at every lamp the effects use"><input type="checkbox" id="lMarks"><span>Lamp markers</span></label>
     </span>
   </div>
+  <div class="viewButtons tools placeTools" id="placeTools" hidden></div>
   <button id="panelToggle" class="panelToggle" aria-label="Show or hide the panel">Panel</button>
   <div class="stats" id="stats"></div>
 </main>

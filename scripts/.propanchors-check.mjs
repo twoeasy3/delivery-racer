@@ -9,7 +9,8 @@
 //     margin), its base no lower than the car's floor and no higher than 0.6 m over the car's top; rays down from just over the shape's
 //     own top (so a canopy over a covered bed is ignored) through its footprint's corners hit the car within TOUCH of the shape's base
 //     and top-of-inset (the prop stands on the surface)
-//   - the hand fixes name real cars and slots, and have the same shape as a generated entry
+//   - the hand fixes name real cars and slots, and have the same shape as a generated entry; a row the owner placed in the model editor
+//     (`by: 'editor'`, scripts/placements-lib.mjs) is his call: listed, not tested for standing on the surface
 //   - the counts, for the eye: supported per slot, reasons
 //   --complete   (the owner, at the end of the sweep) every in-scope car has an entry, else FAIL; without it, missing cars are listed only
 //   node scripts/.propanchors-check.mjs [--complete]
@@ -64,7 +65,7 @@ try {
   check(!badHand.length, 'every hand fix names a real car and slot, in the generated shape (' + Object.keys(P.HAND).length + ' hand fixes)' + (badHand.length ? ': ' + badHand.slice(0, 6).join('; ') : ''));
   // on the car
   const ray = new THREE.Raycaster(), from = new THREE.Vector3(), down = new THREE.Vector3(0, -1, 0);
-  const offCar = [], floating = [];
+  const offCar = [], floating = [], ownerRows = [];
   for (const id of ids) {
     let model;
     try { model = makeShowCar(byId.get(id).car); } catch { continue; }
@@ -79,6 +80,7 @@ try {
     for (const slot of P.SLOTS) {
       const s = plan[slot];
       if (!s.supported) continue;
+      if (P.HAND[id]?.[slot]?.by === 'editor') { ownerRows.push(id + ' ' + slot); continue; } // (placed by the owner in the model editor: his call, not tested for standing on the surface)
       for (const [name, sh] of [['box', s.box], ['cyl', s.cylinder]]) {
         const half = name === 'box' ? [sh.size[0] / 2, sh.size[1] / 2, sh.size[2] / 2] : sh.axis === 'x' ? [sh.height / 2, sh.radius, sh.radius] : [sh.radius, sh.height / 2, sh.radius];
         const [cx, cy, cz] = sh.centre, inset = sh.inset || 0, top = cy - half[1], base = top - inset; // (top: the base before the inset; base: as placed)
@@ -101,6 +103,7 @@ try {
       }
     }
   }
+  if (ownerRows.length) console.log('        the owner\'s editor rows (by: editor), not tested on the surface: ' + ownerRows.join(', '));
   check(!offCar.length, 'every supported shape lies over the car (footprint inside its box + ' + MARGIN + ' m, base between its floor and 0.6 m over its top)' + (offCar.length ? ': ' + offCar.slice(0, 8).join('; ') : ''));
   check(!floating.length, 'every supported shape stands on the car\'s surface (a ray down through it meets the body within ' + TOUCH + ' m of its base)' + (floating.length ? ': ' + floating.slice(0, 8).join('; ') : ''));
   // the counts
