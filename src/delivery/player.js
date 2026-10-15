@@ -8,7 +8,8 @@ import { updateYaw, keepOnRoad, sfx, cornerSpeed } from './physics.js';
 import { Traffic } from './traffic.js';
 import { Message } from './messages.js';
 import { UfoStrike } from './ufostrike.js';
-import { BulletTrain } from './bullettrain.js';
+import { BulletTrain, TRAINS } from './bullettrain.js';
+import { LaneGimmicks } from './lanegimmicks.js';
 import { Tide } from './tide.js';
 import { Water } from './water.js';
 import { Wreckage } from './wreckage.js';
@@ -142,6 +143,11 @@ export const Player = {
         this.dropOncoming = true;
       }
     }
+    // (wrecked at a group of PILLARS, lanegimmicks.js: set down clear of the group, behind or past it, in the lane beside, the
+    // track with no train on it on an edge railway: TRAINS[k] runs on track k, lane 0 the left, the last lane the right)
+    const busy = (l) => TRAINS.some((train, k) => train.active && train.onTrack && l === (k ? Track.laneCount - 1 : 0));
+    const clear = LaneGimmicks.pillarDrop(this.s, this.lat, busy);
+    if (clear) { this.s = clear.s; lane = clear.lane; }
     this.lat = Track.laneOffset(lane, this.s);
   },
   // a fresh car at a standstill (the helicopter has just set it down)

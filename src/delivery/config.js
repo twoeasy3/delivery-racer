@@ -1549,8 +1549,10 @@ export const CONFIG = {
   // end's wall). The telegraph as a dead end's: a PILLARS sign over the lane `sign` m before the first, beacons, a bell and a warning
   // with `warn` m to go, hazard stripes round each. The way past is the lane beside (in the metro a TRACK): on an edge railway no
   // train sets off while the player is between `warn` m before a group and its last pillar, and none while the other track's train
-  // is still about from `hold` m before it (bullettrain.js): at least one track is always clear past the pillars
-  pillar: { count: 3, gap: 18, sign: 150, warn: 170, hold: 800 },
+  // is still about from `hold` m before it (bullettrain.js): at least one track is always clear past the pillars. A car wrecked
+  // at them is set down `clear` m behind or past the group (the nearer), on a track with no train, and its respawn shield lets it
+  // through a pillar (Collision.hitObstacles: a pillar only; a dead end's wall wrecks it all the same)
+  pillar: { count: 3, gap: 18, sign: 150, warn: 170, hold: 800, clear: 12 }, // (clear: m from a group's first or last pillar a wrecked car is set down: Player.prepareDrop)
   // a roadworks diversion ("diversions": { from, to, kind: 'merge' | 'shift' | 'cross', by?, limit? }; roadworks.js, and Track's
   // lateral-offset layer): a lane closes through a `taper` m row of cones (smoothstep), lanes with traffic in them move across over
   // `shiftTaper` m (a long vehicle can follow that), run on their temporary line

@@ -47,6 +47,7 @@ const makeTrain = (up) => ({
   // most one track has a train on it, announced before the player gets there, and none sets off meanwhile (lanegimmicks.js)
   held() {
     if (!this.timed || LEVEL.railway.tracks !== 'edges') return false;
+    if (LaneGimmicks.groups.length && Player.shield > 0) return true; // (nor while a fresh car is shielded, just set down on a track)
     return LaneGimmicks.pillarHold(Player.s, TRAINS.find(t => t !== this).active);
   },
   // (a level with no trains of this kind down its railway: none; the right track's only on an edge railway)
