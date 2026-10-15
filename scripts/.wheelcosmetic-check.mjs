@@ -466,15 +466,16 @@ try {
           let hits = 0;
           for (const rho of [0.3, 0.55, 0.8]) for (let i = 0; i < 12; i++) {
             const a = i / 12 * Math.PI * 2;
-            o.set(Math.cos(a) * rho, Math.sin(a) * rho, -RM.RIM_GAP + 0.001).applyMatrix4(rim.matrixWorld);
-            e.set(Math.cos(a) * rho, Math.sin(a) * rho, 0.045).applyMatrix4(rim.matrixWorld);
+            const fl = rim.userData.rim.flat;
+            o.set(Math.cos(a) * rho, Math.sin(a) * rho, -(fl ? RM.TIGHT_GAP : RM.RIM_GAP) + 0.001).applyMatrix4(rim.matrixWorld);
+            e.set(Math.cos(a) * rho, Math.sin(a) * rho, fl ? RM.FLAT_DEPTH : 0.045).applyMatrix4(rim.matrixWorld);
             d.subVectors(e, o); const len = d.length(); d.normalize();
             ray.set(o, d); ray.far = len;
             let hit = ray.intersectObjects(others, false).length > 0;
             if (!hit) { ray.set(e, d.negate()); hit = ray.intersectObjects(others, false).length > 0; }
             if (hit) hits++;
           }
-          if (hits > RM.BLOCKED) poke.push(car.id + ' ' + hits + '/36');
+          if (hits > Math.floor((1 - RM.MOSTLY) * 36)) poke.push(car.id + ' ' + hits + '/36'); // (a nearly open face may have a mudguard's edge over a sliver: render/rims.js MOSTLY)
         }
       }
       tris.sort((a, b) => a - b); meshes.sort((a, b) => a - b);
@@ -611,6 +612,31 @@ try {
       PN.noSave = false;
       raw.removeItem('delivery.wheelrim'); raw.removeItem(W.KEY); raw.removeItem(W.KEY_DESIGN);
       void PR;
+    }
+    // UNLOCK REVEALS show the STOCK car; every other view wears the loadout (the owner, 15-Oct; render/showcar.js dressCosmetics)
+    {
+      server.moduleGraph.invalidateAll();
+      const { makeShowCar: mk2 } = await load('render/showcar.js'), W4 = await load('render/wheelcosmetic.js');
+      const { cosmeticKeys: keys2, grantCosmetics } = await load('render/cosmetics.js');
+      await load('unlockall.js'); grantCosmetics(keys2());
+      const PC = await load('render/platecosmetic.js'), PD = await load('render/propdress.js'), { PLATE_DESIGNS } = await load('render/platedesigns.js'), { PROPS } = await load('render/propmodels.js');
+      W4.setWheelSet('blade-spinner');
+      const plateOn = PC.setPlateDesign(PLATE_DESIGNS.find(d => d.id !== 'stock').id), propOn = PD.setProp('roof', PROPS.roof[0].id);
+      const car = fleetAll.find(c => c.id === 'commuter');
+      const dressedCar = mk2(car), stockCar = mk2(car, { stock: true });
+      const worn = (m) => ({ rims: m.userData.wheelHubs?.rims?.list.length || 0, plate: PC.platePlan(m)?.worn?.length || 0, props: PD.propPlan(m)?.worn?.length || 0, cos: (() => { let n = 0; m.traverse(x => { if (x.userData.propCosmetic || x.userData.wheelRing || x.userData.plateFace) n++; }); return n; })() });
+      const dw = worn(dressedCar), sw = worn(stockCar);
+      check(plateOn && propOn && dw.rims > 0 && dw.plate > 0 && dw.props > 0 && dw.cos > 0, 'a loadout on (blade spinner set, a plate design, a roof prop): a car on show wears it (' + JSON.stringify(dw) + ')');
+      check(!stockCar.userData.wheelHubs && !PC.platePlan(stockCar) && !PD.propPlan(stockCar) && sw.cos === 0 && sw.rims === 0, 'makeShowCar(car, { stock: true }): the car as it comes, no wheel set, rim, plate or prop (' + JSON.stringify(sw) + ')');
+      const { readFileSync } = await import('node:fs');
+      const src = (f) => readFileSync('src/delivery/' + f, 'utf8');
+      const uc = src('render/unlockcine.js'), calls = [...uc.matchAll(/makeShowCar\(([^)]*)\)/g)].map(m => m[1]).filter(x => x !== '' && !/^\s*$/.test(x));
+      check(calls.length === 1 && /\{ stock: true \}/.test(calls[0]) && !/makeShowCar|dressWheels|dressPlates|dressProps/.test(src('render/ecucine.js')), 'the unlock cinematics (render/unlockcine.js: car, key, and render/ecucine.js through it: Crazey Jim, ECU up, ECU max) build their car with { stock: true } only');
+      check(/drawSoon\([^)]*stock: true/.test(src('render/packs.js')), "a pack reveal's cards are drawn stock (render/packs.js)");
+      const others = ['render/garage.js', 'render/showroomview.js', 'render/menustage.js', 'render/carstill.js', 'render/packbanner.js', 'render/warmup.js', 'render/inspectmodel.js', 'render/items.js'];
+      check(others.every(f => !/stock: true/.test(src(f))) && /makeShowCar\(car, \{ stock \}\)/.test(src('render/carstill.js')) && /dressCosmetics\(model, car\)/.test(src('render/items.js')), 'every other view (garage, showroom, menu card, stills, pack banner, the game and its cameras) builds the dressed car: none passes stock');
+      // the game's model of the player's car is dressed through the same one hook
+      W4.setWheelSet('stock'); PC.setPlateDesign('stock'); PD.setProp('roof', 'none');
     }
     // unlock everything grants them; nothing in the fingerprint
     {

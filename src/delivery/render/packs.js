@@ -165,7 +165,7 @@ const show = (result, { look = false } = {}) => {
   cur = { result, slots, phase: 'pack', timers: [], wasInMenu };
   Nav.enter('packreveal', () => close(true)); // (the back button closes it)
   // the pictures: drawn while the pack bursts (the faces are laid out, turned away), a few a frame
-  for (const s of slots) drawSoon(s.pic, s.car, { side: 'good', pose: s.pose }); // (always the Good livery, whatever side is played)
+  for (const s of slots) drawSoon(s.pic, s.car, { side: 'good', pose: s.pose, stock: true }); // (always the Good livery, whatever side is played; an UNLOCK REVEAL: the stock car, no cosmetic of the player's)
   blip('menuPick', 0.5);
   if (!slots.length) { cur.phase = 'cards'; finish(); return; }
   later(T.pack, play);

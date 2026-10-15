@@ -202,6 +202,7 @@ const addRings = (model, ring) => {
       const mesh = new THREE.Mesh(geo, mat);
       pose.decompose(mesh.position, mesh.quaternion, mesh.scale);
       mesh.userData.wheelRing = true; // (the other render modules leave it be: dents, suspension)
+      mesh.userData.ringSide = side; // (render/rims.js: a rim brought in close to the tyre takes the ring's place on that face)
       if (ghost) { mesh.userData.solidMat = mat; mesh.material = tyre.material; } // (a ghost: pale like the rest)
       tyre.add(mesh);
       found.rings.push(mesh);

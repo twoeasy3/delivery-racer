@@ -20,7 +20,7 @@
 // { all: id } and may later carry { front, rear, cars: { <carId>: { all, front, rear } } }; resolveRim(carId, axle) is the one
 // reader (today: the global rim for every car and axle). Unknown, absent or broken = 'none'. ?wheelrim=<id> for a visit.
 // SKIPPED cars (RIM_SKIP: hoops, tracks, hulls, a jet's discs) and cars whose tyres findHubs cannot find get no rim; Legendary
-// cars keep their own wheels (wheelcosmetic.js).
+// cars keep their own wheels (wheelcosmetic.js); a wheel face under bodywork is judged by roomFor below (per face, then per axle).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Progress } from '../progress.js';
@@ -116,33 +116,46 @@ const bar = (w, r0, r1, z0, z1, ang, v, { taper = 0, sweep = 0, pitch = 0, off =
   each(g, (x, y, z) => { const k = (y - r0) / (r1 - r0); return [x * (1 - taper * k) - sweep * k * k + off, y, z + pitch * x / w]; });
   return g.rotateZ(ang);
 };
-const cap = (r, z0, z1, seg, v, x = 0, y = 0) => shade(new THREE.CylinderGeometry(r * 0.9, r, z1 - z0, seg, 1).rotateX(Math.PI / 2).translate(x, y, (z0 + z1) / 2), v);
+// (a cap: its side and top; no bottom, which nothing sees and which would lie on the spokes)
+const cap = (r, z0, z1, seg, v, x = 0, y = 0) => shade(mergeGeometries([new THREE.CylinderGeometry(r * 0.9, r, z1 - z0, seg, 1, true), new THREE.CircleGeometry(r * 0.9, seg).rotateX(-Math.PI / 2).translate(0, (z1 - z0) / 2, 0)].map(g => g.toNonIndexed()), false).rotateX(Math.PI / 2).translate(x, y, (z0 + z1) / 2), v);
 const TAU = Math.PI * 2, DARK = 0.1;
 const base = () => [circle(0.74, 0, 20, DARK), ring(0.68, 0.8, 0.008, 20, 1)]; // (the dark dish over the stock hub, and the lip)
+// FLAT: the same design squeezed in behind bodywork close to the tyre (a mudguard's side 2 cm off it): no dish (the tyre's own black
+// face shows between the spokes), the lip and the spokes in one plane side by side (never over each other; the spokes' backs sunk into
+// the tyre, so no face lies close over another), the cap and anything
+// on top 4.5 mm over them; FLAT_DEPTH deep in all. Every pair of faces that overlap stays at least 4.5 mm apart (the z-fight finder's 4).
+export const FLAT_DEPTH = 0.0095;
+const flatLip = () => [ring(0.7, 0.8, 0, 20, 1)];
 const BUILD = {
-  spoke5: () => [...base(), ...[0, 1, 2, 3, 4].map(i => bar(0.17, 0.14, 0.72, -0.006, 0.018, i * TAU / 5, 1, { taper: 0.35 })), cap(0.17, 0, 0.03, 10, 0.85)],
-  twin10: () => [...base(), ...[0, 1, 2, 3, 4].flatMap(i => [-1, 1].map(s => bar(0.06, 0.15, 0.72, -0.006, 0.016, i * TAU / 5, 1, { off: s * 0.055 }))), cap(0.17, 0, 0.03, 10, 0.85)],
-  turbine: () => [...base(), ...[...Array(10).keys()].map(i => bar(0.15, 0.18, 0.72, -0.004, 0.008, i * TAU / 10, 0.92, { pitch: 0.018, taper: -0.3 })), cap(0.2, 0, 0.03, 10, 0.8)],
-  blade3: () => [...base(), ...[0, 1, 2].map(i => bar(0.24, 0.12, 0.74, 0.004, 0.02, i * TAU / 3, 1, { taper: 0.55, sweep: 0.14 })), cap(0.2, 0, 0.04, 12, 1)],
-  twinspin: () => [...base(), circle(0.5, 0.012, 20, 0.5), ...[0, 1].map(i => bar(0.18, 0.1, 0.76, 0.014, 0.026, i * Math.PI, 1, { taper: 0.4 })), cap(0.1, 0.012, 0.045, 8, 0.2, 0.28, 0), cap(0.12, 0.012, 0.035, 10, 1)],
+  spoke5: (f) => f ? [...flatLip(), ...[0, 1, 2, 3, 4].map(i => bar(0.17, 0.14, 0.68, -0.009, 0, i * TAU / 5, 1, { taper: 0.35 })), cap(0.17, -0.003, 0.0045, 10, 0.85)]
+    : [...base(), ...[0, 1, 2, 3, 4].map(i => bar(0.17, 0.14, 0.72, -0.006, 0.018, i * TAU / 5, 1, { taper: 0.35 })), cap(0.17, 0, 0.03, 10, 0.85)],
+  twin10: (f) => f ? [...flatLip(), ...[0, 1, 2, 3, 4].flatMap(i => [-1, 1].map(s => bar(0.06, 0.15, 0.68, -0.009, 0, i * TAU / 5, 1, { off: s * 0.055 }))), cap(0.17, -0.003, 0.0045, 10, 0.85)]
+    : [...base(), ...[0, 1, 2, 3, 4].flatMap(i => [-1, 1].map(s => bar(0.06, 0.15, 0.72, -0.006, 0.016, i * TAU / 5, 1, { off: s * 0.055 }))), cap(0.17, 0, 0.03, 10, 0.85)],
+  turbine: (f) => f ? [...flatLip(), ...[...Array(10).keys()].map(i => bar(0.15, 0.2, 0.68, -0.009, -0.0015, i * TAU / 10, 0.92, { pitch: 0.003, taper: -0.3 })), cap(0.2, -0.003, 0.0045, 10, 0.8)]
+    : [...base(), ...[...Array(10).keys()].map(i => bar(0.15, 0.18, 0.72, -0.004, 0.008, i * TAU / 10, 0.92, { pitch: 0.018, taper: -0.3 })), cap(0.2, 0, 0.03, 10, 0.8)],
+  blade3: (f) => f ? [...flatLip(), ...[0, 1, 2].map(i => bar(0.24, 0.12, 0.66, -0.009, 0, i * TAU / 3, 1, { taper: 0.55, sweep: 0.12 })), cap(0.2, -0.003, 0.0045, 12, 1)]
+    : [...base(), ...[0, 1, 2].map(i => bar(0.24, 0.12, 0.74, 0.004, 0.02, i * TAU / 3, 1, { taper: 0.55, sweep: 0.14 })), cap(0.2, 0, 0.04, 12, 1)],
+  twinspin: (f) => f ? [...flatLip(), circle(0.5, 0, 20, 0.5), ...[0, 1].map(i => bar(0.18, 0.1, 0.66, -0.009, 0.005, i * Math.PI, 1, { taper: 0.4 })), cap(0.1, 0.001, FLAT_DEPTH, 8, 0.2, 0.28, 0), cap(0.12, 0.001, FLAT_DEPTH, 10, 1)]
+    : [...base(), circle(0.5, 0.012, 20, 0.5), ...[0, 1].map(i => bar(0.18, 0.1, 0.76, 0.014, 0.026, i * Math.PI, 1, { taper: 0.4 })), cap(0.1, 0.012, 0.045, 8, 0.2, 0.28, 0), cap(0.12, 0.012, 0.035, 10, 1)],
 };
-const BLUR_Z = { spoke5: 0.024, twin10: 0.022, turbine: 0.03 }; // (the blur disc, just over the spokes' faces; under the cap's top)
+const BLUR_Z = { spoke5: 0.024, twin10: 0.022, turbine: 0.03 }, BLUR_Z_FLAT = 0.003; // (the blur disc, just over the spokes' faces; under the cap's top)
 const geos = new Map();
-export const rimGeometry = (id) => {
-  if (!geos.has(id)) {
-    const g = mergeGeometries(BUILD[id](), false);
+export const rimGeometry = (id, flat = false) => {
+  const key = id + (flat ? ':flat' : '');
+  if (!geos.has(key)) {
+    const g = mergeGeometries(BUILD[id](flat), false);
     g.computeBoundingBox(); g.computeBoundingSphere();
     g.userData.shared = true;
-    geos.set(id, g);
+    geos.set(key, g);
   }
-  return geos.get(id);
-};
-const blurGeometry = (id) => {
-  const key = 'blur:' + id;
-  if (!geos.has(key)) { const g = new THREE.RingGeometry(0.17, 0.76, 20, 1).translate(0, 0, BLUR_Z[id]); g.userData.shared = true; geos.set(key, g); }
   return geos.get(key);
 };
-export const rimTriangles = (id) => { const g = rimGeometry(id); return (g.index ? g.index.count : g.attributes.position.count) / 3; };
+const blurGeometry = (id, flat = false) => {
+  const key = 'blur:' + id + (flat ? ':flat' : '');
+  if (!geos.has(key)) { const g = new THREE.RingGeometry(0.17, flat ? 0.7 : 0.76, 20, 1).translate(0, 0, flat ? BLUR_Z_FLAT : BLUR_Z[id]); g.userData.shared = true; geos.set(key, g); }
+  return geos.get(key);
+};
+export const rimTriangles = (id, flat = false) => { const g = rimGeometry(id, flat); return (g.index ? g.index.count : g.attributes.position.count) / 3; };
 
 // ---- the materials: one per colour (the blur: one per colour and step) ------------------------------------------------------
 const mats = new Map(), blurs = new Map();
@@ -172,38 +185,81 @@ const reach = (mesh, t, side) => {
   box.getSize(c3);
   return { out: side > 0 ? hi : -lo, across: Math.max(c3.y, t.axleX ? c3.z : c3.x) / 2 };
 };
-// which faces of each tyre have ROOM for a rim (worked out once per model): a face is left stock where bodywork crosses the depth a
-// rim would take (a mudguard's or a spat's side over the wheel, a skirt): rays along the axle from the tyre's face to past the rim's
-// cap, at 36 points over the face, either way (a face turned away still counts); more than BLOCKED of them meeting another part = no room
-export const BLOCKED = 3;
+// which faces of each tyre have ROOM for a rim (worked out once per model). Bodywork near a wheel's face (a mudguard's or a spat's
+// side, a skirt, an arch) is found with rays along the axle, from the tyre's face out past where a rim's cap would be, at 36 points
+// over the face (radii 0.3, 0.55, 0.8 of the tyre, 12 round), either way (a face turned away still counts). Per face:
+//   clear  the share of the 36 that meet nothing; depth  how far out (m) the nearest part met is, over the face.
+// Where something is met the rim is put BEHIND it, as a real wheel sits behind its arch, ending FIT_GAP short of the nearest part
+// met: whole if it fits; else FLAT (FLAT_DEPTH deep, brought in to TIGHT_GAP off the tyre; the design's sidewall ring, if any,
+// gives way on that face). A face wears a rim:
+//   open (clear >= MOSTLY): whole (a mudguard's edge or a bracket over a sliver of it is let be);
+//   partly covered (clear >= CLEAR) and the rim fits behind what covers it (the classic half-covered wheel under a mudguard);
+//   else (a spat or a skirt over most of it, or bodywork too close to get behind): stock.
+// Then per AXLE (tyres at the same place along the car): its faces take the worse face's answer, so one axle never mixes a rim and a
+// stock wheel, unless the car really is lopsided there (one face fully open, ALL_OPEN, the other heavily covered, under CLEAR - LOPSIDED).
+export const CLEAR = 0.4, MOSTLY = 0.9, ALL_OPEN = 0.97, LOPSIDED = 0.35, FIT_GAP = 0.0045, TIGHT_GAP = 0.005;
+const RIM_DEPTH = 0.045; // m: the deepest design (the twin spinner's weight), from the rim's base
+const REACH = RIM_GAP + RIM_DEPTH + 0.004; // m out from the tyre's face that the rays look
 const ray = new THREE.Raycaster(), o3 = new THREE.Vector3(), e3 = new THREE.Vector3(), d3 = new THREE.Vector3(), u3 = new THREE.Vector3(), w3 = new THREE.Vector3();
-const roomFor = (model, found) => {
+const nearest = (others, from, dir, far) => { ray.set(from, dir); ray.near = 0; ray.far = far; const h = ray.intersectObjects(others, false); return h.length ? h[0].distance : null; };
+const measure = (model, found) => {
   const own = new Set([...(found.tyres || []), ...found.rawHubs.map(h => h.mesh)]);
   for (const t of found.rimInfo) for (const part of t.rubber) own.add(part);
   const others = [];
   model.traverse((n) => { if (n.isMesh && !own.has(n) && !n.userData.wheelRing && !n.isInstancedMesh) { let p = n, seen = true; while (p && p !== model) { if (!p.visible) seen = false; p = p.parent; } if (seen) others.push(n); } });
+  const scale = model.matrixWorld.getMaxScaleOnAxis() || 1;
   for (const t of found.rimInfo) {
-    t.faces = [];
+    t.faceStats = [];
+    const tyres = (found.tyres || []).filter(x => x !== t.tyre);
     for (const side of t.outer ? [t.outer] : [-1, 1]) {
-      let face = t.half;
+      let face = Math.max(t.half, reach(t.tyre, t, side).out); // (a tyre leaning a little stands proud at its rim)
       for (const part of t.rubber) face = Math.max(face, reach(part, t, side).out);
       axis.set(t.axleX ? side : 0, 0, t.axleX ? 0 : side);
       u3.set(0, 1, 0); w3.crossVectors(axis, u3);
-      let hits = 0;
+      let hits = 0, depth = Infinity, behind = 0;
       for (const rho of [0.3, 0.55, 0.8]) for (let i = 0; i < 12; i++) {
         const a = i / 12 * TAU, y = Math.sin(a) * rho * t.r, x = Math.cos(a) * rho * t.r;
         o3.copy(t.centre).addScaledVector(u3, y).addScaledVector(w3, x).addScaledVector(axis, face + 0.001).applyMatrix4(model.matrixWorld);
-        e3.copy(t.centre).addScaledVector(u3, y).addScaledVector(w3, x).addScaledVector(axis, face + RIM_GAP + 0.045).applyMatrix4(model.matrixWorld);
+        e3.copy(t.centre).addScaledVector(u3, y).addScaledVector(w3, x).addScaledVector(axis, face + REACH).applyMatrix4(model.matrixWorld);
         d3.subVectors(e3, o3); const len = d3.length(); d3.normalize();
-        ray.set(o3, d3); ray.near = 0; ray.far = len;
-        let hit = ray.intersectObjects(others, false).length > 0;
-        if (!hit) { ray.set(e3, d3.negate()); hit = ray.intersectObjects(others, false).length > 0; }
-        if (hit) hits++;
+        let at = nearest(others, o3, d3, len);
+        if (at === null) { const back = nearest(others, e3, d3.negate(), len); if (back !== null) at = len - back; } // (a face turned toward the tyre: met from outside)
+        if (at !== null) { hits++; depth = Math.min(depth, at / scale + 0.001); }
+        if (tyres.length && (nearest(tyres, o3, d3.subVectors(e3, o3).normalize(), len) !== null || nearest(tyres, e3, d3.negate(), len) !== null)) behind++; // (either way: a face inside a wider tyre meets it from within)
       }
-      if (hits <= BLOCKED) t.faces.push({ side, face });
-      else (found.blockedFaces || (found.blockedFaces = [])).push(hits);
+      t.faceStats.push({ side, face, clear: 1 - hits / 36, depth, inner: behind >= 18 }); // (inner: the inner tyre of a pair of twins, its face against the outer one: no rim, and not counted)
     }
   }
+};
+// how a face's rim fits: st.fit 'whole' | 'flat' | null (no room behind what is met), st.gap how far off the tyre it stands
+const fitOf = (st) => {
+  st.gap = RIM_GAP;
+  if (st.depth >= RIM_GAP + RIM_DEPTH + FIT_GAP) return 'whole';
+  if (st.depth >= TIGHT_GAP + FLAT_DEPTH + FIT_GAP) { st.gap = TIGHT_GAP; return 'flat'; }
+  return null;
+};
+const roomFor = (model, found) => {
+  measure(model, found);
+  for (const t of found.rimInfo) for (const st of t.faceStats) { st.fit = fitOf(st); if (st.fit === null && st.clear >= MOSTLY) { st.fit = 'whole'; st.gap = RIM_GAP; } st.ok = st.clear >= CLEAR && st.fit !== null; }
+  // the axles: tyres within a third of a radius of each other along the car
+  const axles = [];
+  for (const t of found.rimInfo) { const z = t.axleX ? t.centre.z : t.centre.x; const ax = axles.find(a => Math.abs(a.z - z) < t.r / 3); if (ax) ax.tyres.push(t); else axles.push({ z, tyres: [t] }); }
+  for (const ax of axles) {
+    for (const t of ax.tyres) for (const st of t.faceStats) if (st.inner) st.ok = st.on = false;
+    const faces = ax.tyres.flatMap(t => t.faceStats.filter(f => !f.inner));
+    if (!faces.length) { ax.mode = 'stock'; continue; }
+    const worst = faces.reduce((a, b) => (b.clear < a.clear || (b.ok === false && a.ok) ? b : a));
+    const best = faces.reduce((a, b) => (b.clear > a.clear ? b : a));
+    const lopsided = faces.length > 1 && best.ok && best.clear >= ALL_OPEN && worst.clear < CLEAR - LOPSIDED;
+    ax.mode = !worst.ok && !lopsided ? 'stock' : lopsided ? 'lopsided' : 'rims';
+    for (const st of faces) st.on = ax.mode === 'stock' ? false : st.ok;
+    // one fit for the axle (flat if any face must be), so both sides look alike
+    const on = faces.filter(f => f.on), flat = on.some(f => f.fit === 'flat');
+    for (const st of on) { st.fit = flat ? 'flat' : 'whole'; st.gap = flat ? TIGHT_GAP : RIM_GAP; }
+  }
+  found.axles = axles.map(a => ({ mode: a.mode, faces: a.tyres.flatMap(t => t.faceStats.filter(f => !f.inner).map(f => ({ clear: f.clear, depth: f.depth, on: f.on, fit: f.fit, gap: f.gap }))) }));
+  for (const t of found.rimInfo) t.faces = t.faceStats.filter(f => f.on).map(f => ({ side: f.side, face: f.face, flat: f.fit === 'flat', gap: f.gap }));
+  found.blockedFaces = found.rimInfo.flatMap(t => t.faceStats.filter(f => !f.on && !f.inner).map(f => Math.round((1 - f.clear) * 36)));
   found.roomChecked = true;
 };
 export const removeRims = (model) => {
@@ -233,24 +289,26 @@ export const addRims = (model, hex, worn = true) => {
     let across = 0.8;
     for (const hub of hubs) across = Math.max(across, reach(hub, t, 1).across / t.r + 0.02);
     const k = Math.min(1.2, across / 0.8); // (a hub wider than the lip: the rim is made a little bigger to cover it)
-    const mat = rimMaterial(colour), geo = rimGeometry(rim.id);
+    const mat = rimMaterial(colour);
     if (!t.faces.length) continue; // (no room on either face: this wheel stays stock)
-    for (const { side, face } of t.faces) { // (face: the tyre's face, or its tread blocks' / own sidewall rings' if they stand prouder)
+    for (const { side, face, flat, gap } of t.faces) { // (face: the tyre's face, or its tread blocks' / own sidewall rings' if they stand prouder; flat: fitted in behind bodywork)
+      const geo = rimGeometry(rim.id, flat);
       axis.set(t.axleX ? side : 0, 0, t.axleX ? 0 : side);
       q.setFromUnitVectors(Z, axis);
-      pos.copy(t.centre).addScaledVector(axis, face + RIM_GAP);
+      pos.copy(t.centre).addScaledVector(axis, face + gap);
+      if (gap < RIM_GAP) for (const ring of found.rings || []) if (ring.parent === tyre && ring.userData.ringSide === side) { ring.parent.remove(ring); ring.visible = false; } // (brought in over a design's sidewall ring: the ring gives way)
       pose.compose(pos, q, scl.set(t.r * k, t.r * k, 1)).premultiply(t.toTyre);
       const mesh = new THREE.Mesh(geo, mat);
       pose.decompose(mesh.position, mesh.quaternion, mesh.scale);
       mesh.userData.wheelRing = true;
       let blur = null;
       if (rim.kind === 'speed') {
-        blur = new THREE.Mesh(blurGeometry(rim.id), blurMaterials(colour)[1]);
+        blur = new THREE.Mesh(blurGeometry(rim.id, flat), blurMaterials(colour)[1]);
         blur.userData.wheelRing = true;
         blur.visible = false;
         mesh.add(blur); // (it turns with the rim: a disc, so that cannot be seen)
       }
-      mesh.userData.rim = { id: rim.id, spin: rim.kind === 'spin', side, q0: mesh.quaternion.clone(), a: 0, f: 0, level: 0, gap: TAU / rim.n, r: t.r, tyre, x0: tyre.rotation.x, rolls: !!model.userData.rollsWheels, blur, blurs: blurMaterials(colour) };
+      mesh.userData.rim = { id: rim.id, flat, spin: rim.kind === 'spin', side, q0: mesh.quaternion.clone(), a: 0, f: 0, level: 0, gap: TAU / rim.n, r: t.r, tyre, x0: tyre.rotation.x, rolls: !!model.userData.rollsWheels, blur, blurs: blurMaterials(colour) };
       if (ghost) { mesh.userData.solidMat = mat; mesh.material = tyre.material; if (blur) { blur.userData.solidMat = blur.material; blur.material = tyre.material; } } // (a ghost: pale like the rest)
       tyre.add(mesh);
       found.rims.list.push(mesh);
