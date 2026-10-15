@@ -18,6 +18,9 @@ Math.random = () => {
 };
 
 const g = await boot({ cars: ['commuter', 'sport'] });
+// (seeded AGAIN after the boot: Vite's module runner draws on Math.random as it loads the game's modules, once a module, so
+// the game's dice would otherwise move with every file added to the game, and the strike would land on other traffic)
+state = Number((process.argv.find(a => a.startsWith('--seed=')) || '--seed=2026').slice(7)) >>> 0;
 let failures = 0;
 const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' : '  FAIL  ') + what); };
 try {
