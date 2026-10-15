@@ -94,7 +94,7 @@ export const MALL_OBSTACLES = {
   // the mall's bale: three shopping trolleys nested one in the next, across the road as a bale stands (hw 1.1): wire baskets
   // (grey frames and panels), red handles, four black wheels each. The nest runs along local x
   trolleyRow: () => {
-    const group = new THREE.Group(), wire = lambert(0x9aa0a8, { transparent: true, opacity: 0.85 }), frame = lambert(0x6f757d), red = lambert(0xd8262b), black = lambert(0x1a1b1e);
+    const group = new THREE.Group(), wire = lambert(0xc4c9d0), frame = lambert(0x5f656d), red = lambert(0xd8262b), black = lambert(0x1a1b1e);
     for (let k = 0; k < 3; k++) {
       const t = new THREE.Group();
       t.position.x = -0.62 + k * 0.62;
