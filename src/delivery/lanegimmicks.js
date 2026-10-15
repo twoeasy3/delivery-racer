@@ -1,9 +1,10 @@
 // ============================================================================
 // LANE GIMMICKS: boost pads and dead-end lanes (each a list in the level, barebones; CONFIG.boostPad, CONFIG.deadEnd;
 // drawn by render/lanegimmicks.js; the handrails and the end walls are obstacles, drawn as obstacles).
-//   boostPads { from, to, lane }: a pad in that lane (a travelator in the mall): a car on it is pulled on for a while
+//   boostPads { from, to, lane, rails? }: a pad in that lane (a travelator in the mall): a car on it is pulled on for a while
 //              over its own top speed (Player.update reads Track.padAt). Along both edges stand its HANDRAILS: ordinary
-//              obstacles of kind `handrail` (a cone's box and cost), blown away on contact like any obstacle.
+//              obstacles of kind `handrail` (a cone's box and cost), blown away on contact like any obstacle; rails: false,
+//              none (a flush pad: the metro's).
 //   deadEnds   { s, lane, kind: 'shutter' | 'wall', length? }: the lane runs on as usual for `length` m and ENDS at s
 //              (obstacle kind `laneEnd`). A SHUTTER has road behind it: a Ghost passes through, a tank or an armoured car
 //              smashes through, any other car is wrecked. A WALL has nothing behind it: a SUPER INSTAKILL, the car wrecked
@@ -35,7 +36,7 @@ export const LaneGimmicks = {
     this.pads = (LEVEL.boostPads || []).map((p) => {
       const from = Track.place({ s: p.from, road: p.road, exit: p.exit }), to = from + (p.to - p.from);
       // the handrails: a section every `rail` m along both edges of the pad, `railGap` m short of each end
-      for (let s = from + B.railGap + B.rail / 2; s <= to - B.railGap - B.rail / 2 + 0.01; s += B.rail) {
+      for (let s = from + B.railGap + B.rail / 2; p.rails !== false && s <= to - B.railGap - B.rail / 2 + 0.01; s += B.rail) {
         for (const side of [-1, 1]) add('handrail', s, Track.laneOffset(p.lane, s) + side * (LW / 2 - 0.25), { face: 0 }); // (0.13 m inside the lane's edge: nothing of it in the lane beside)
       }
       return { from, to, lane: p.lane };

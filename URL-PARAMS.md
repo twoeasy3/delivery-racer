@@ -52,6 +52,7 @@ These need `?autostart` (or `?hidden`, `?test`, `?edited`) to do anything; witho
 | `lane` | lane number | Starts in that lane. | `/delivery/?autostart&level=1&lane=4` | No | untried |
 | `theme` | a theme id (list at the end) | Plays the level dressed in that theme. | `/delivery/?autostart&level=1&theme=snow` | No | untried |
 | `mystery` | a mystery id (list at the end; any case) | Every mystery pickup is that one. | `/delivery/?autostart&level=7&mystery=toad` | No | untried |
+| `trainsin` | `a` or `a,b` (seconds) | On a level with a railway, its next trains are due in that many s (a: down the road; b: an edge railway's right track, overtaking). For stills of both. | `/delivery/?autostart&hidden=metro-run&ghost&at=420&speed=25&trainsin=1,1&ff=4&cine` | No | yes |
 | `rival` | bare (the opposite side), `evil`, `good` | A rival courier on every delivery level. Works without autostart too. | `/delivery/?autostart&level=1&rival&ghost` | No with autostart; **Normal** without | yes ("Position 2/2") |
 | `gt` / `lmp` | bare | Every race in GT road cars / Le Mans prototypes, whatever the menu says. | `/delivery/?autostart&level=59&gt` | No with autostart; **Normal** without | untried |
 | `pursuit` | seconds | A police pursuit set off that many seconds in (any level that can have one). Works without autostart. | `/delivery/?autostart&level=1&pursuit=1` | as `rival` | tried, but no pursuit was visible in the still at 5 s: **not verified** |

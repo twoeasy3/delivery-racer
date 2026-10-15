@@ -30,6 +30,7 @@ import { syncHeadlights, syncTrafficBeams } from './render/headlights.js';
 import { LAMP_DEBUG } from './render/carlights.js';
 import { syncUfoStrike } from './render/ufostrike.js';
 import { syncBulletTrain } from './render/bullettrain.js';
+import { BulletTrain, UpTrain } from './bullettrain.js';
 import { syncJunctions } from './render/junctions.js';
 import { syncTide } from './render/tide.js';
 import { syncWater } from './render/water.js';
@@ -290,6 +291,7 @@ if (params.get('racewatch') !== null) {
   if (params.get('infected') !== null) { Radiation.infect(); if (params.get('infected') === 'armour') Player.armour = 600; }
   if (params.get('speed')) Object.assign(Player, { speed: Number(params.get('speed')), launching: false }); // ?speed=31: doing that many m/s from the start (with ?ff: hands off, the speed holds)
   if (params.get('lane')) Player.lat = Track.laneOffset(Number(params.get('lane')), Player.s); // ?lane=4: in that lane
+  if (params.get('trainsin')) { const [a, b = a] = params.get('trainsin').split(',').map(Number); if (BulletTrain.timed) BulletTrain.next = a; if (UpTrain.timed) UpTrain.next = b; } // ?trainsin=2,2.5: the railway's next trains due in that many s (down, up: a still of both)
   if (params.get('pieces')) Game.tankPieces = Math.min(CONFIG.tankPieces - 1, Number(params.get('pieces')) || 0); // ?pieces=3: that many pieces of the tank found already
   if (params.get('rage') !== null) { Game.tankPieces = CONFIG.tankPieces; Player.startTank(); } // ?rage: in TANK RAGE from the start (a check, a picture: on an amphibious level, the Amphibious Tank)
   if (params.get('fly') !== null) startFly();

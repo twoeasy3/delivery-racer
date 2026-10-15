@@ -284,7 +284,8 @@ export const Collision = (() => {
   for (const [kind, like] of Object.entries({ barrierBlock: 'barrier', cableReel: 'crate', sandPile: 'bale', trafficDrum: 'cone', pipePallet: 'crate', worksSign: 'sign' })) SIZE[kind] = SIZE[like]; // (the roadworks')
   for (const [kind, like] of Object.entries({ ingotStack: 'crate', steelCoil: 'bale', hotSign: 'cone', rebarBundle: 'barrier' })) SIZE[kind] = SIZE[like]; // (the steelworks')
   for (const [kind, like] of Object.entries({ velvetRope: 'barrier', slotMachine: 'crate', luggageCart: 'bale', casinoDie: 'cone' })) SIZE[kind] = SIZE[like]; // (the Las Vegas Strip's)
-  for (const [kind, like] of Object.entries({ ticketGate: 'crate', scrubber: 'bale', trackLamp: 'cone', railTrolley: 'crate', infoTotem: 'sign', metroCarFront: 'tug', metroCarMid: 'trolley', metroCarBack: 'trolley' })) SIZE[kind] = SIZE[like]; // (the metro's)
+  for (const [kind, like] of Object.entries({ ticketGate: 'crate', scrubber: 'bale', trackLamp: 'cone', railTrolley: 'crate', infoTotem: 'sign' })) SIZE[kind] = SIZE[like]; // (the metro's)
+  SIZE.hoistDrum = [0.95, 0.6, 2.3]; // a tunnel junction's load in the metro (hazards.js, themes.js junctionTrain): a 1.9 m cable drum, 1.2 m wide along the road, slung 0.3 m off the floor
   SIZE.laneEnd = [1.6, 0.4, 2.8]; // a dead-end lane's end wall: a lane wide (lanegimmicks.js)
   // what a level's own obstacle of that kind is on its theme (its "obstacles", "shoulderRows" and "drifters"
   // only: what a gimmick puts out, a cargo truck's load among it, is what it always was)

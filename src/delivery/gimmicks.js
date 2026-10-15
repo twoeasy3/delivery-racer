@@ -222,6 +222,7 @@ export const GROUPS = [
     } },
     { name: 'The bullet train', color: 0x1f4fa8, has: (l) => l.railway, rules: [
       `A railway down the middle of the road slows any car crossing it, down to ${pct(CONFIG.railCrossing.slowest)} of its top speed for the worst at crossing.`,
+      'In the metro the tracks are the outermost lanes, one each side: trains come at you on the left one and from behind on the right one.',
       `Then the bullet train: it appears up the line and comes straight down it at ${kmh(BT.speed)}, about ${BT.warning} s after you're warned. It destroys everything it touches, you included (unless you're a ghost).`,
       `While it is about, the shoulder's police meter runs down at ${pct(BT.dangerMercy)} speed. It can also turn up in your lane as a mystery.`,
     ], build: () => {
@@ -848,7 +849,7 @@ export const GROUPS = [
     } },
     { name: 'Boost pads', color: 0x3ad8ff, has: (l) => l.boostPads?.length, rules: [
       `Drive over one and the car is pulled on for ${CONFIG.boostPad.time} s at up to ${kmh(CONFIG.boostPad.speed)} over its own top speed, as a turbo does. A ghost too.`,
-      `Handrails stand along both edges: ordinary obstacles (${CONFIG.obstacleKinds.handrail.damage} damage, ${pct(CONFIG.obstacleKinds.handrail.speedKept)} of your speed kept). In the mall a pad is a travelator.`,
+      `Handrails stand along both edges: ordinary obstacles (${CONFIG.obstacleKinds.handrail.damage} damage, ${pct(CONFIG.obstacleKinds.handrail.speedKept)} of your speed kept). In the mall a pad is a travelator; the metro's have no handrails.`,
     ], build: () => {
       const g = road(9, 14), belt = box(3.0, 0.04, 11, lambert(0x2a2d33), 0, 0.03, 0), chevrons = [];
       for (let z = -4.5; z < 5; z += 1.5) { const c = box(1.6, 0.012, 0.5, glow(0xffd23f), 0, 0.06, z); chevrons.push(c); g.add(c); }
@@ -874,6 +875,7 @@ export const GROUPS = [
     { name: 'Tunnel junctions', color: 0xffb020, has: (l) => l.tunnelJunctions?.length, rules: [
       `Inside a tunnel a side tunnel crosses the road. Within ${CONFIG.tunnelJunction.trigger} m the beacons over its mouths flash and a bell rings; ${CONFIG.tunnelJunction.warn} s later a tug and two trolleys come out of one side and cross at ${kmh(CONFIG.tunnelJunction.speed)}.`,
       `Hit the tug: ${CONFIG.obstacleKinds.tug.damage} damage, a trolley ${CONFIG.obstacleKinds.trolley.damage}; you keep most of your speed. Never a stop, never a bust: read the beacons and time it, or go round behind the train.`,
+      `In the metro it is two cable drums slung under a hoist on a beam across the road (${CONFIG.obstacleKinds.hoistDrum.damage} damage each).`,
     ], build: () => {
       const g = road(9, 16), wall = lambert(0x3a3d46), beacons = [];
       g.add(box(1.2, 6, 16, wall, 5.6, 3, 0), box(12.4, 1.2, 16, wall, 0, 6.6, 0));

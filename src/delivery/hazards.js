@@ -101,9 +101,10 @@ export const Hazards = {
     this.tunnelJunctions = (LEVEL.tunnelJunctions || []).map((c) => {
       const s = Track.place(c), side = c.side === 'left' ? -1 : 1, M = CONFIG.tunnelJunction.mouth;
       const from = side < 0 ? Track.lo(s) - 1 : Track.hi(s) + 1, to = side < 0 ? Track.hi(s) + M / 2 : Track.lo(s) - M / 2;
-      const kinds = (THEMES[LEVEL.theme] || THEMES.city).junctionTrain || ['tug', 'trolley', 'trolley']; // (the theme's own: the metro's battery locomotive and flat wagons, the same boxes and costs)
+      const theme = THEMES[LEVEL.theme] || THEMES.city;
+      const kinds = theme.junctionTrain || ['tug', 'trolley', 'trolley']; // (the theme's own: the metro's cable drums slung under a hoist on a beam across, junctionSpacing m apart)
       const train = kinds.map(kind => put(kind, s, from));
-      const j = { s, side, from, to, state: 'idle', t: 0, train };
+      const j = { s, side, from, to, state: 'idle', t: 0, train, spacing: theme.junctionSpacing ?? CONFIG.tunnelJunction.spacing };
       this.parkTrain(j);
       return j;
     });
@@ -121,7 +122,7 @@ export const Hazards = {
 
   // a tunnel junction's train, parked up its mouth (lat: `from` is just outside the road; the train stands beyond it, out of reach)
   parkTrain(j) {
-    const dir = Math.sign(j.to - j.from), SP = CONFIG.tunnelJunction.spacing;
+    const dir = Math.sign(j.to - j.from), SP = j.spacing;
     j.train.forEach((o, k) => { o.lat = j.from - dir * (2 + k * SP); o.face = dir > 0 ? Math.PI / 2 : -Math.PI / 2; });
   },
   reset() {
@@ -459,7 +460,7 @@ export const Hazards = {
         if (j.t >= TJ.warn) { j.state = 'cross'; j.t = 0; }
       } else if (j.state === 'cross') {
         const dir = Math.sign(j.to - j.from);
-        j.train.forEach((o, k) => { o.lat = j.from + dir * (TJ.speed * j.t - k * TJ.spacing); o.face = dir > 0 ? Math.PI / 2 : -Math.PI / 2; });
+        j.train.forEach((o, k) => { o.lat = j.from + dir * (TJ.speed * j.t - k * j.spacing); o.face = dir > 0 ? Math.PI / 2 : -Math.PI / 2; });
         if (dir * (j.train[j.train.length - 1].lat - j.to) > 0) { j.state = 'done'; j.t = 0; }
       } else if (j.state === 'done' && j.t >= TJ.rest && ahead > TJ.trigger) { j.state = 'idle'; j.t = 0; this.parkTrain(j); } // (a lapped level: ready for the next time round)
     }

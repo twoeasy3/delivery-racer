@@ -25,11 +25,14 @@ import { random } from './util.js';
 
 const box = { s: 0, lat: 0, yaw: 0, hl: 0, hw: 0 }; // one carriage's hitbox, for Collision.overlap
 
-export const BulletTrain = {
+// a train: `up` false comes down the road against the player (the mystery's, the median's, an edge railway's left track), true
+// goes up it with the player, overtaking (an edge railway's right track only)
+const makeTrain = (up) => ({
+  up,
   active: false,
   s: 0,          // where its nose is; the carriages trail behind it, up the road (higher s)
   lane: 0,       // the lane it keeps to: the player's when it was set off...
-  onTrack: false, // ...or the railway's track, down the middle of the median
+  onTrack: false, // ...or the railway's track (down the middle of the median, or its own on the road's edges)
   next: Infinity, // s to the next train down the railway, on a level with one
   end: 0,        // the s at which its road runs out
   passed: false, // its nose has gone by the player
@@ -38,14 +41,16 @@ export const BulletTrain = {
   get mercy() { return this.active || this.after > 0; },
   get length() { return CONFIG.bulletTrain.cars * CONFIG.bulletTrain.carLength; },
   // s until the next train down the railway, counted from when the last one has gone
+  // (a level with no trains of this kind down its railway: none; the right track's only on an edge railway)
+  get timed() { return !!LEVEL.railway && (!this.up || LEVEL.railway.tracks === 'edges'); },
   wait() {
     const { min, max } = LEVEL.railway.every;
     return min + random() * (max - min);
   },
   // where carriage i is (0 = the nose's), into `out` ({ s, lat })
   carriage(i, out) {
-    out.s = this.s + (i + 0.5) * CONFIG.bulletTrain.carLength;
-    out.lat = this.onTrack ? 0 : Track.laneOffset(Track.openLane(this.lane, out.s), out.s);
+    out.s = this.s + (this.up ? -1 : 1) * (i + 0.5) * CONFIG.bulletTrain.carLength; // (behind the nose: up the road coming down, down it going up)
+    out.lat = this.onTrack ? Track.railLat(this.up ? 1 : 0, out.s) : Track.laneOffset(Track.openLane(this.lane, out.s), out.s);
     return out;
   },
   // onTrack: down the railway (it says it is coming itself; a mystery's train is announced by the
@@ -59,17 +64,22 @@ export const BulletTrain = {
     // (or as far as that road goes)
     const side = Track.isMain(Player.s) ? null : Track.exits.find(x => Player.s >= x.side0 && Player.s <= x.sideEnd);
     const last = side ? side.sideEnd - 5 : Track.end - 20;
-    this.s = Math.min(last, Player.s + (T.speed + Math.max(0, Player.speed)) * T.warning);
-    this.end = side ? side.side0 : Track.start;
+    if (this.up) { // (behind the player, as far as it closes in the warning time; gone at the road's end)
+      this.s = Player.s - Math.max(20, T.speed - Math.max(0, Player.speed)) * T.warning;
+      this.end = Track.end;
+    } else {
+      this.s = Math.min(last, Player.s + (T.speed + Math.max(0, Player.speed)) * T.warning);
+      this.end = side ? side.side0 : Track.start;
+    }
     this.active = true;
     this.passed = false;
     sfx('trainHorn');
-    if (onTrack) Message.say('powerups', 'mystery', 'bulletTrain');
+    if (onTrack) Message.say(...(this.up ? ['events', 'trainBehind'] : ['powerups', 'mystery', 'bulletTrain']));
   },
   reset() {
     this.active = false;
     this.after = 0;
-    this.next = LEVEL.railway ? this.wait() : Infinity;
+    this.next = this.timed ? this.wait() : Infinity;
   },
   update(dt) {
     if (!this.active) {
@@ -81,17 +91,18 @@ export const BulletTrain = {
       }
       return;
     }
-    const T = CONFIG.bulletTrain;
-    this.s -= T.speed * dt;
-    if (!this.passed && this.s < Player.s) {
+    const T = CONFIG.bulletTrain, d = this.up ? 1 : -1;
+    this.s += d * T.speed * dt;
+    if (!this.passed && d * (this.s - Player.s) > 0) {
       this.passed = true;
       sfx('trainPass');
     }
-    // gone once its tail is well behind the player, or its road has run out
-    if (this.s < this.end || Track.along(this.s + this.length) < Track.along(Player.s) - CONFIG.despawnBehind) {
+    // gone once its tail is well behind the player (or, going up, well ahead), or its road has run out
+    const tail = Track.along(this.s - d * this.length), by = Track.along(Player.s);
+    if (d * (this.s - this.end) > 0 || (this.up ? tail > by + CONFIG.bulletTrain.ahead : tail < by - CONFIG.despawnBehind)) {
       this.active = false;
       this.after = T.mercyAfter;
-      if (LEVEL.railway) this.next = this.wait();
+      if (this.timed) this.next = this.wait();
       if (Player.active && Player.health > 0) Progress.count('trainsDodged'); // (by, and the player still in one piece: a milestone counter, see milestones.js)
       return;
     }
@@ -108,7 +119,7 @@ export const BulletTrain = {
         if (CONFIG.obstacleKinds[o.kind].trainProof) continue; // (a railway barrier: it goes straight through)
         if (!Collision.overlap(box, o)) continue;
         o.gone = true;
-        FxQueue.push({ type: 'explode', s: o.s, lat: o.lat, vs: -T.speed * 0.2, big: false });
+        FxQueue.push({ type: 'explode', s: o.s, lat: o.lat, vs: d * T.speed * 0.2, big: false });
       }
       // the player's car is wrecked outright, whatever it is, but for a ghost and a freshly
       // dropped one. (A ghost running out inside the train stays a ghost until it is clear, as it
@@ -118,4 +129,8 @@ export const BulletTrain = {
       else Player.health = 0;
     }
   },
-};
+});
+
+export const BulletTrain = makeTrain(false);
+export const UpTrain = makeTrain(true); // (an edge railway's right track: see above)
+export const TRAINS = [BulletTrain, UpTrain];

@@ -19,8 +19,10 @@
 //              over on the right (default CONFIG.laneCount); or { north, south }: how many on the
 //              right, going the player's way, and on the left, oncoming
 //   median     neutral lanes down the middle of a two-way road, which no traffic uses
-//   railway    { every: { min, max } }: a railway down the median (it needs one), with a bullet
-//              train coming through, against the player, every min-max s
+//   railway    { every: { min, max }, tracks? }: a railway, with a bullet train coming through every min-max s.
+//              tracks 'median' (the default): one track down the median (it needs one), its trains against the player.
+//              tracks 'edges': two tracks, the road's outermost lanes (no median, 3 lanes or more), each timed on its
+//              own: down the left one trains come against the player, up the right one they overtake from behind
 //   flow       'north' = every vehicle goes the player's way, 'south' = every vehicle comes
 //              the other way; either way the traffic uses all the lanes. 'mixed' = both ways, and
 //              every lane open to either (the Battlefield: oncoming traffic in every lane). Left out, the left

@@ -1100,29 +1100,35 @@ const buildRoad = () => {
       }
     }
   }
-  // the median: a strip of its own colour between those lines and, on a level with a railway, a
-  // track down the middle of it: sleepers on ballast, and two rails
-  if (HM) {
-    add(buildStrip(Track.start, Track.end, -HM + 0.1, HM - 0.1, 0.01), flat(theme.median || 0x6f8f4a));
-    if (LEVEL.railway) {
-      const GAUGE = 1.435;
-      const BED = CONFIG.railCrossing.width / 2;
-      add(buildStrip(Track.start, Track.end, -BED, BED, 0.03), flat(0x8b8378));
-      const sleeper = new THREE.InstancedMesh(new THREE.BoxGeometry(2.6, 0.12, 0.26), new THREE.MeshLambertMaterial({ color: 0x5e4b3a }),
-        Math.ceil((Track.end - Track.start) / 0.7));
-      const spot = new THREE.Object3D();
-      let n = 0;
-      for (let s = Track.start; s < Track.end; s += 0.7, n++) {
-        spot.rotation.y = Track.toWorld(s, 0, tmp);
-        spot.position.set(tmp.x, tmp.y + 0.08, tmp.z);
-        spot.updateMatrix();
-        sleeper.setMatrixAt(n, spot.matrix);
+  // the median: a strip of its own colour between those lines
+  if (HM) add(buildStrip(Track.start, Track.end, -HM + 0.1, HM - 0.1, 0.01), flat(theme.median || 0x6f8f4a));
+  // a railway's tracks (Track.railLat: down the middle of the median, or the road's two outermost lanes, tracks 'edges'):
+  // sleepers on a bed, and two rails (a theme's railBed / sleeper: its own colours, the metro's concrete slab track)
+  if (Track.railTracks) {
+    const GAUGE = 1.435, BED = CONFIG.railCrossing.width / 2, n = Track.railTracks, step = n > 1 ? 2 : 4; // (edge tracks sampled finer: the metro's tight bends)
+    // the sleepers instanced, in pieces of PIECE m (both tracks in each), each culled when out of view: the edge railway's run
+    // the whole level twice (one piece on a median railway, as ever)
+    const PIECE = n > 1 ? 400 : Infinity, geometry = new THREE.BoxGeometry(2.6, 0.12, 0.26), material = new THREE.MeshLambertMaterial({ color: theme.sleeper ?? 0x5e4b3a });
+    const spot = new THREE.Object3D();
+    for (let k = 0; k < n; k++) {
+      const mid = (s) => Track.railLat(k, s);
+      add(buildStrip(Track.start, Track.end, (s) => mid(s) - BED, (s) => mid(s) + BED, 0.03, step), flat(theme.railBed ?? 0x8b8378));
+      for (const side of [-1, 1]) add(buildStrip(Track.start, Track.end, (s) => mid(s) + side * GAUGE / 2 - 0.04, (s) => mid(s) + side * GAUGE / 2 + 0.04, 0.2, step), flat(0xb8bcc4));
+    }
+    for (let from = Track.start; from < Track.end; from += PIECE) {
+      const to = Math.min(Track.end, from + PIECE), sleeper = new THREE.InstancedMesh(geometry, material, n * Math.ceil((to - from) / 0.7) + n);
+      let count = 0;
+      for (let k = 0; k < n; k++) {
+        for (let s = Track.start + Math.ceil((from - Track.start) / 0.7 - 1e-9) * 0.7; s < to; s += 0.7, count++) {
+          spot.rotation.y = Track.toWorld(s, Track.railLat(k, s), tmp);
+          spot.position.set(tmp.x, tmp.y + 0.08, tmp.z);
+          spot.updateMatrix();
+          sleeper.setMatrixAt(count, spot.matrix);
+        }
       }
-      sleeper.count = n;
+      sleeper.count = count;
+      if (PIECE < Infinity) sleeper.computeBoundingSphere(); // (left out when its piece is out of view)
       levelGroup.add(sleeper);
-      for (const side of [-1, 1]) {
-        add(buildStrip(Track.start, Track.end, side * GAUGE / 2 - 0.04, side * GAUGE / 2 + 0.04, 0.2), flat(0xb8bcc4));
-      }
     }
   }
   // gravel traps (a level's "gravel": see Track.gravelBand): a bed of pale, sand-coloured gravel on the shoulder

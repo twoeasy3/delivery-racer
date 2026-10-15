@@ -14,7 +14,7 @@ import { Track, buildTrack } from './track.js';
 import { FxQueue, sfx } from './physics.js';
 import { Message } from './messages.js';
 import { UfoStrike } from './ufostrike.js';
-import { BulletTrain } from './bullettrain.js';
+import { BulletTrain, UpTrain } from './bullettrain.js';
 import { Tide } from './tide.js';
 import { SpeedCameras } from './cameras.js';
 import { Crossings } from './crossing.js';
@@ -246,6 +246,7 @@ export const Game = {
     Delivery.reset();
     UfoStrike.reset();
     BulletTrain.reset();
+    UpTrain.reset(); // (an edge railway's right track: bullettrain.js)
     Tide.reset();
     Hippos.reset();
     Elephants.reset();
@@ -457,6 +458,7 @@ export const Game = {
     if (playing) Pursuit.update(dt);
     UfoStrike.update(dt);
     BulletTrain.update(dt);
+    UpTrain.update(dt);
     if (playing) Tide.update(dt);
     if (playing) Hippos.update(dt);
     if (playing) Elephants.update(dt);
