@@ -534,6 +534,12 @@ export const syncPickups = (dt) => {
   const custom = CAR.model && !tank ? playerModel(CAR) : null;
   for (const id in playerModels) playerModels[id].visible = playerModels[id] === custom;
   if (custom) {
+    // how far it has rolled (m), for wheels and rims that turn with it (render/models.js wheelTurn, render/rims.js): the change in
+    // Player.s over the path's scale there (s runs faster on the inside of a bend: player.js), so a pause, a replay's 2x and a
+    // reverse all come out right; a jump (a restart, ?at=) is not rolled
+    const ds = Player.s - (custom.userData.lastS ?? Player.s);
+    custom.userData.lastS = Player.s;
+    custom.userData.roll = (custom.userData.roll || 0) + (Math.abs(ds) < 8 ? ds / Track.pathScale(Player.s, Player.lat) : 0);
     custom.userData.animate(performance.now() / 1000);
     paintOf(custom.userData.body).color.setHex(livery);
     dentModel(custom, custom.userData.body, worn);

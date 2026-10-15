@@ -10,7 +10,8 @@
 // Keys: arrows move between the choices (left / right along a row, up / down between rows), Enter or Space equips the one
 // focused, Escape goes back. Touch: every choice is at least 44 px tall. Storage and the test switches are wheelcosmetic.js's.
 import '../cosmetics.css';
-import { WHEEL_COLOURS, WHEEL_DESIGNS, WHEEL_SETS, wheelColour, wheelDesign, wheelSet, setWheelSet, onWheelColour } from './wheelcosmetic.js';
+import { WHEEL_COLOURS, WHEEL_DESIGNS, WHEEL_SETS, wheelColour, wheelDesign, wheelSet, wheelRim, setWheelSet, onWheelColour } from './wheelcosmetic.js';
+import { rimStatus } from './rims.js';
 import { PLATE_DESIGNS, designById, plateDesign, shownDesign, setPlateDesign, plateText, setPlateText, previewPlateText, resetPlate, onPlate, platePlan } from './platecosmetic.js';
 import { drawPlate } from './platedesigns.js';
 import { MAX_LEN, DEFAULT_TEXT, sanitizePlateText } from './platetext.js';
@@ -67,7 +68,28 @@ const shown = () => {
   const id = wheelSet(), set = WHEEL_SETS.find(x => x.id === id);
   for (const b of setRow.children) { const on = b.dataset.set === id; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('equipped', on); b.classList.toggle('locked', !owned('wheels', b.dataset.set)); }
   customChip.hidden = id !== 'custom'; // (the equipped state when the saved pair is no set: shown, ticked, not pressable)
-  status.textContent = 'Wheels: ' + (set ? set.name : 'Custom (a mix that is not one of the sets)');
+  status.textContent = 'Wheels: ' + (set ? set.name : 'Custom (a mix that is not one of the sets)') + (wheelRim() !== 'none' && ShowroomView.model && rimStatus(ShowroomView.model) !== 'ok' ? '. No rims for this car' : '');
+};
+// a rim set's chip: the rim itself, drawn small (the tyre, the dish, the spokes or blades, the cap)
+const miniRim = (rim, hub, tyre, ring) => {
+  const c = make('canvas', 'cz-swatch cz-rim'); c.width = c.height = 48;
+  const g = c.getContext('2d');
+  if (!g) return c;
+  const R = 24, disc = (r, fill) => { g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fillStyle = fill; g.fill(); };
+  const blade = (a, r0, r1, w0, w1, sweep = 0) => { g.save(); g.rotate(a); g.beginPath(); g.moveTo(-w0, -r0); g.quadraticCurveTo(-w1 - sweep, -(r0 + r1) / 2, -w1 - sweep, -r1); g.lineTo(w1 - sweep, -r1); g.quadraticCurveTo(w1, -(r0 + r1) / 2, w0, -r0); g.closePath(); g.fill(); g.restore(); };
+  g.translate(R, R);
+  disc(R, tyre);
+  if (ring !== tyre) { disc(R * 0.92, ring); disc(R * 0.85, tyre); }
+  disc(R * 0.8, hub); disc(R * 0.7, '#202226');
+  g.fillStyle = hub;
+  const T = Math.PI * 2;
+  if (rim === 'spoke5') for (let i = 0; i < 5; i++) blade(i * T / 5, 3, R * 0.72, 3, 2);
+  if (rim === 'twin10') for (let i = 0; i < 5; i++) for (const s of [-0.14, 0.14]) blade(i * T / 5 + s, 3, R * 0.72, 1, 1);
+  if (rim === 'turbine') for (let i = 0; i < 10; i++) blade(i * T / 10, 4, R * 0.72, 1.5, 3, 2);
+  if (rim === 'blade3') for (let i = 0; i < 3; i++) blade(i * T / 3, 2, R * 0.78, 4, 2, 4);
+  if (rim === 'twinspin') { disc(R * 0.5, hub); for (let i = 0; i < 2; i++) blade(i * Math.PI, R * 0.4, R * 0.78, 3.5, 2); g.fillStyle = '#202226'; g.beginPath(); g.arc(R * 0.3, 0, 2.6, 0, T); g.fill(); g.fillStyle = hub; }
+  disc(R * 0.17, hub);
+  return c;
 };
 
 const flash = (node, text) => { if (node) node.textContent = text; };
@@ -293,7 +315,7 @@ const build = () => {
   for (const w of WHEEL_SETS) {
     const d = WHEEL_DESIGNS.find(x => x.id === w.design), c = WHEEL_COLOURS.find(x => x.id === w.hub);
     const tyre = hexOf(d.tyre, '1b1b1d'), ring = d.ring ? hexOf(d.ring.hex) : tyre, hub = hexOf(c.hex !== null ? c.hex : d.hub, '9aa3b2'); // (a hub colour wins over the design's hub)
-    setRow.append(chip('set', w.id, w.name, swatchOf('radial-gradient(circle,' + hub + ' 0 30%,' + tyre + ' 30% 46%,' + ring + ' 46% 66%,' + tyre + ' 66%)'), setWheelSet));
+    setRow.append(chip('set', w.id, w.name, w.rim ? miniRim(w.rim, c.hex !== null || d.hub !== null ? hub : '#cfd3d9', tyre, ring) : swatchOf('radial-gradient(circle,' + hub + ' 0 30%,' + tyre + ' 30% 46%,' + ring + ' 46% 66%,' + tyre + ' 66%)'), setWheelSet));
   }
   customChip = make('div', 'cz-chip equipped custom', swatchOf(null, true), make('span', 'cz-name', 'Custom'), make('span', 'cz-tick', '✓'));
   customChip.hidden = true;
@@ -376,7 +398,7 @@ const showCar = () => {
   const car = state.car;
   carName.textContent = 'On your ' + car.name;
   if (!ShowroomView.show(stage, car, { evil: state.evil })) requestAnimationFrame(() => { if (state.open) stillCar(stage, car, state.evil); }); // (no WebGL: its picture)
-  if (built) { plateShown(); propShown(); }
+  if (built) { shown(); plateShown(); propShown(); }
 };
 
 export const Cosmetics = {

@@ -17,6 +17,10 @@ const box = (parent, material, w, h, l, x, y, z) => {
   parent.add(mesh);
   return mesh;
 };
+// how far a model's wheels have turned (rad) at time t (s): the player's car in the game, by the distance it has rolled
+// (userData.roll, m, set each frame by render/items.js) over the wheel's radius r; a car on show (userData.onShow, render/showcar.js)
+// a gentle idle; anything else (traffic) as before, a fixed fast turn
+export const wheelTurn = (group, t, r) => (typeof group.userData.roll === 'number' ? group.userData.roll / r : group.userData.onShow ? t * 3 : t * 30);
 // (returns [tyre, hub]; the hub is gold unless given a material of its own)
 const wheel = (parent, radius, width, x, y, z, hubMaterial = lambert(0xe6c15a)) => {
   const tyre = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, width, 16), lambert(0x141414));
@@ -177,7 +181,8 @@ export const MODELS = {
     }
     group.userData = {
       body,
-      animate: (t) => { for (const w of wheels) w.rotation.x = t * 30; },
+      rollsWheels: true, // (its tyres turn themselves: a rim on them takes that off its own turn, render/rims.js)
+      animate: (t) => { for (const w of wheels) w.rotation.x = wheelTurn(group, t, 0.35); },
       accent: (n) => accent.color.setHex(F1_ACCENTS[n % F1_ACCENTS.length]),
     };
     return group;
@@ -216,7 +221,8 @@ export const MODELS = {
     box(group, carbon, w * 0.5, 0.18, 0.2, 0, 0.3, -L + 0.02);                                                         // the diffuser
     group.userData = {
       body,
-      animate: (t) => { for (const wh of wheels) wh.rotation.x = t * 30; },
+      rollsWheels: true,
+      animate: (t) => { for (const wh of wheels) wh.rotation.x = wheelTurn(group, t, 0.35); },
       accent: (n) => accent.color.setHex(F1_ACCENTS[n % F1_ACCENTS.length]),
     };
     return group;
@@ -330,7 +336,8 @@ export const MODELS = {
     }
     group.userData = {
       body,
-      animate: (t) => { for (const wh of wheels) wh.rotation.x = t * 30; },
+      rollsWheels: true,
+      animate: (t) => { for (const wh of wheels) wh.rotation.x = wheelTurn(group, t, 0.35); },
       style: (n) => styles.forEach((g, i) => { g.visible = i === n % styles.length; }),
     };
     group.userData.style(0);
