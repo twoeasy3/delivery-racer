@@ -552,6 +552,9 @@ export const isBespoke = (car) => !!car && !!car.bespoke && !car.off;
 // in MODELS by the same names (the end of render/models.js). Their figures are the idea's placeholders nudged into the
 // gold range of their tier (`placeholder: true`: not balanced), and are their MAXED ECU (ecus.json has the lower ones)
 const filler = (tier, car, rarity = 'epic') => ({ ...car, tier, evergreen: true, rarity, placeholder: true, price: 0 });
+// a CHOSEN idea car, promoted (15-Oct): a blueprint car of its tier and rarity with its figures balanced (no `placeholder`), in no regular
+// pack (`noPacks`) and one that limited-time packs may feature (`featurable`)
+const promoted = (tier, car, rarity) => ({ ...car, tier, evergreen: true, rarity, price: 0, noPacks: true, featurable: true });
 export const FILLER_CARS = [
   // ---- tier 1 (24 to 25 m/s, 8.5 to 10, 85 to 150 health)
   filler(1, { id: 'bubble', name: 'Bubble Car', basedOn: 'BMW Isetta', model: 'bubble', color: 0x8fc9dd, evilColor: 0x8a1f2b,
@@ -637,8 +640,80 @@ export const FILLER_CARS = [
   filler(4, { id: 'coupecross', name: 'Coupe Crossover', basedOn: 'Range Rover Evoque (2011)', model: 'coupecross', color: 0xa8232b, evilColor: 0x16171b,
     hw: 0.95, hl: 2.18, height: 1.6, note: 'A waist that climbs, a roof that falls and a slit of glass between them.',
     maxSpeed: 38, accel: 12, agility: 1.1, crossing: 0.8, health: 230, mass: 1.6, sound: 'suv', noPacks: true }, 'legendary'),
+  // ---- the nineteen CHOSEN idea cars (the owner, 15-Oct: "make all our choices unobtainable blueprint cars for now. Then give them
+  // full stats and promote them to the roster. These are now our roster for limited-time packs' featured cars"). Blueprint cars as
+  // the rest of this list, with their own tier and rarity, figures balanced into their tier (CHECKLIST: the table), and
+  // `promoted()` below: noPacks (in NO regular pack: not evergreen, not in the career, standard, 10-pack or daily pools, so the
+  // showroom blacks them out and 'Where to get it' says "Not obtainable right now") and `featurable` (FEATURE_ROSTER: the cars a
+  // limited-time pack features; a featured entry in packs.json is the only way a blueprint of one drops, at the card's TRUE rarity).
+  // Their models are the ideas' (render/ideaModelsBatch*.js), put in MODELS by name (render/models.js).
+  // ---- tier 1
+  promoted(1, { id: 'keivan', name: 'Kei Van', basedOn: 'Suzuki Every', model: 'keivan', color: 0xf1f1ec, evilColor: 0x1f4a4a,
+    hw: 0.85, hl: 1.75, height: 1.88, note: 'Tall, boxy and narrow: a whole delivery round folded into a few square metres.',
+    maxSpeed: 24, accel: 8.5, agility: 1.05, crossing: 0.6, health: 125, mass: 1.1, sound: 'keitruck' }, 'common'),
+  promoted(1, { id: 'supermini', name: 'Boxy Supermini', basedOn: 'Fiat Uno (1983) / original Fiat Panda (1980) square hatchback', model: 'supermini', color: 0xd8402e, evilColor: 0x33363b,
+    hw: 0.86, hl: 1.77, height: 1.49, note: 'All straight lines and no airs: a tall little box with a big glass back door, quick round a corner.',
+    maxSpeed: 24.5, accel: 9.5, agility: 1.3, crossing: 0.45, health: 95, mass: 1, sound: 'mini' }, 'common'),
+  promoted(1, { id: 'wedgemicro', name: 'Wedge Microcar', basedOn: 'Peel P50 (1962)', model: 'wedgemicro', color: 0xf2c230, evilColor: 0x3a2a55,
+    hw: 0.7, hl: 0.85, height: 1.3, note: 'One door, one headlamp and room for one. It turns on a coin.',
+    maxSpeed: 24, accel: 9.5, agility: 1.5, crossing: 0.2, health: 70, mass: 0.7, sound: 'mini' }, 'uncommon'),
+  promoted(1, { id: 'farmtractor', name: 'Farm Tractor', basedOn: 'Ford 8N (1947)', model: 'farmtractor', color: 0xc8381f, evilColor: 0x232a35,
+    hw: 0.99, hl: 1.7, height: 1.65, note: 'No hurry, no ditch it cannot cross, and nothing gets it to stop.',
+    maxSpeed: 22, accel: 8.5, agility: 0.8, crossing: 0.9, health: 160, mass: 2.2, sound: 'keitruck' }, 'uncommon'),
+  // ---- tier 2
+  promoted(2, { id: 'minibus', name: 'Shuttle Minibus', basedOn: 'Toyota HiAce (1989) passenger minibus', model: 'minibus', color: 0xeadfc2, evilColor: 0x5a1f2b,
+    hw: 1.21, hl: 2.51, height: 2.27, note: 'Twelve seats, five windows a side and a long wait at every stop.',
+    maxSpeed: 26, accel: 8, agility: 1, crossing: 0.6, health: 170, mass: 1.6, sound: 'minivan' }, 'common'),
+  promoted(2, { id: 'flatbed', name: 'Flatbed Truck', basedOn: 'Bedford TK (1960) flatbed lorry', model: 'flatbed', color: 0xd9a21b, evilColor: 0x2f3b2c,
+    hw: 0.98, hl: 2.4, height: 2.3, note: 'No sides to speak of: whatever it carries is held on by rope and hope.',
+    maxSpeed: 24, accel: 7, agility: 1, crossing: 0.7, health: 190, mass: 1.6, sound: 'keitruck' }, 'uncommon'),
+  promoted(2, { id: 'moke', name: 'Utility Moke', basedOn: 'Mini Moke (1964)', model: 'moke', color: 0x6fb8c8, evilColor: 0x4a3c2c,
+    hw: 0.8, hl: 1.7, height: 1.4, note: 'No doors, no roof and no shame: a bed in the back for the odd job.',
+    maxSpeed: 24, accel: 9, agility: 1.25, crossing: 0.5, health: 90, mass: 1, sound: 'mini' }, 'uncommon'),
+  // ---- tier 3
+  promoted(3, { id: 'moorrover', name: 'Moor Rover', basedOn: 'Range Rover two-door (1970)', model: 'moorrover', color: 0x9c6b3a, evilColor: 0x1f3a2a,
+    hw: 1.09, hl: 2.3, height: 1.81, note: 'The first posh 4x4: a tall boxy estate that goes where the road gives up.',
+    maxSpeed: 34, accel: 10.5, agility: 1.05, crossing: 1, health: 200, mass: 1.7, sound: 'suv' }, 'uncommon'),
+  promoted(3, { id: 'sprinthatch', name: 'Sprint Hatch', basedOn: 'Honda CR-X (1984)', model: 'sprinthatch', color: 0xcf2a22, evilColor: 0x2c3f8f,
+    hw: 0.925, hl: 2, height: 1.3, note: 'Short, light and quick to turn: the back end likes to come round.',
+    maxSpeed: 35, accel: 13, agility: 1.45, crossing: 0.4, health: 110, mass: 1, sound: 'hothatch' }, 'uncommon'),
+  promoted(3, { id: 'halftrack', name: 'Half-Track', basedOn: 'Kegresse / M3 half-track (civilian utility)', model: 'halftrack', color: 0xc9a24a, evilColor: 0x2f3a2a,
+    hw: 1.35, hl: 3, height: 2.45, note: 'Wheels to steer at the front, tracks to push at the back: it crosses anything.',
+    maxSpeed: 32, accel: 9, agility: 0.9, crossing: 1, health: 220, mass: 2.6, sound: 'suv' }, 'epic'),
+  promoted(3, { id: 'cranelorry', name: 'Crane Lorry', basedOn: 'Hiab-style loader crane on a three-axle flatbed lorry (1970s)', model: 'cranelorry', color: 0xe8c21a, evilColor: 0x8a4a22,
+    hw: 1.49, hl: 3.2, height: 3.02, note: 'A crane folded away behind the cab, ready to lift its own load.',
+    maxSpeed: 32, accel: 8.5, agility: 0.8, crossing: 0.7, health: 220, mass: 3, sound: 'sixbysix' }, 'epic'),
+  // ---- tier 4
+  promoted(4, { id: 'touringcar', name: 'Touring Car', basedOn: 'BMW M3 E30 (Group A touring car, 1987)', model: 'touringcar', color: 0xf0f0f0, evilColor: 0xc42a2a,
+    hw: 1.13, hl: 2.3, height: 1.62, note: 'A family saloon with the rules bent: the big wing is not for show, and it grips like glue.',
+    maxSpeed: 40, accel: 14, agility: 1.35, crossing: 0.25, health: 150, mass: 1.2, sound: 'sport' }, 'uncommon'),
+  promoted(4, { id: 'sporttruck', name: 'Sport Truck', basedOn: 'Ford F-150 Lightning (2000s)', model: 'sporttruck', color: 0x2f55b0, evilColor: 0x141418,
+    hw: 1.24, hl: 2.72, height: 1.75, note: 'A pickup that sat down on its springs: low, loud and quick, with a bed for one small job.',
+    maxSpeed: 39, accel: 13.5, agility: 0.95, crossing: 0.7, health: 230, mass: 1.9, sound: 'pickup' }, 'uncommon'),
+  promoted(4, { id: 'pixelev', name: 'Pixel EV', basedOn: 'Hyundai Ioniq 5 (2020s)', model: 'pixelev', color: 0xb9bec4, evilColor: 0x1a1a1f,
+    hw: 1.11, hl: 2.43, height: 1.6, note: 'A quiet, boxy electric hatch whose lamps are little glowing squares.',
+    maxSpeed: 40, accel: 15, agility: 1.1, crossing: 0.4, health: 160, mass: 1.2, sound: 'evsaloon' }, 'uncommon'),
+  promoted(4, { id: 'autobahnestate', name: 'Autobahn Estate', basedOn: 'Audi RS6 Avant', model: 'autobahnestate', color: 0x6f7a86, evilColor: 0x8a1c26,
+    hw: 1.05, hl: 2.4, height: 1.42, note: 'A family estate with a very long right foot and room for the shopping at 250.',
+    maxSpeed: 44, accel: 15, agility: 1.05, crossing: 0.4, health: 230, mass: 1.5, sound: 'wagon' }, 'epic'),
+  promoted(4, { id: 'finlandyacht', name: 'Fin Land Yacht', basedOn: 'Cadillac Sedan de Ville (1959)', model: 'finlandyacht', color: 0xe3a9b8, evilColor: 0x17171c,
+    hw: 1.15, hl: 2.9, height: 1.45, note: 'Nearly six metres of chrome and sofa, with fins that could hold a sail.',
+    maxSpeed: 37, accel: 11, agility: 0.9, crossing: 0.4, health: 310, mass: 2.3, sound: 'lowrider' }, 'epic'),
+  // ---- tier 5
+  promoted(5, { id: 'trophytruck', name: 'Trophy Truck', basedOn: 'Baja 1000 class 1 trophy truck', model: 'trophytruck', color: 0xe8821e, evilColor: 0x2f6f5a,
+    hw: 1.2, hl: 2.8, height: 2, note: 'Long-travel springs, tyres taller than the bonnet and a cage round the cab: it flies over what others drive round.',
+    maxSpeed: 43, accel: 14, agility: 1.1, crossing: 1, health: 270, mass: 2.2, sound: 'liftedtruck' }, 'epic'),
+  promoted(5, { id: 'hillclimb', name: 'Hill-Climb Special', basedOn: 'Peugeot 205 T16 Pikes Peak (1987)', model: 'hillclimb', color: 0xc4c8cc, evilColor: 0x4a2a6e,
+    hw: 1.085, hl: 2.36, height: 1.88, note: 'All wing and no brakes to speak of: very quick, and it twitches at every touch.',
+    maxSpeed: 46, accel: 22, agility: 1.4, crossing: 0.3, health: 150, mass: 1, sound: 'rally' }, 'epic'),
+  promoted(5, { id: 'armouredlimo', name: 'Armoured Limo', basedOn: 'Cadillac One presidential state limousine', model: 'armouredlimo', color: 0x4d5666, evilColor: 0x7a1c34,
+    hw: 1.38, hl: 3.15, height: 1.75, note: "Doors as thick as a vault's, tiny windows and a long way to the back seat.",
+    maxSpeed: 43, accel: 12, agility: 0.9, crossing: 0.5, health: 430, mass: 3, sound: 'hearse' }, 'legendary'),
 ];
 applyNames('car', FILLER_CARS);
+// the cars limited-time packs FEATURE (the owner, 15-Oct): the nineteen chosen idea cars. Unobtainable until a limited pack's featured entries
+// (packs.json featured.entries) name one: never in a regular pool (packs.js pools skips noPacks)
+export const FEATURE_ROSTER = FILLER_CARS.filter(car => car.featurable);
 // is a blueprint car unlocked (its first X blueprints, ecu.js)? Set by ecu.js when it loads (null: none is, but one in
 // the save's list of cars, put there by a test switch)
 const ecuHooks = {};
