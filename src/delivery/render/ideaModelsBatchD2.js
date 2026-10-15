@@ -153,9 +153,10 @@ export const IDEA_MODELS_BATCH_D2 = {
       ...[-1, 1].map(s => bx(0.05, 0.3, 2.34, s * 0.905, 1.27, -1.15)),
       bx(1.86, 0.3, 0.05, 0, 1.27, -2.35),
       ...[-1, 1].flatMap(s => [-0.4, -1.2, -2.3].map(z => bx(0.07, 0.56, 0.08, s * 0.945, 1.38, z))),
-      bx(0.8, 0.5, 0.7, -0.15, 1.35, -0.5), bx(0.6, 0.4, 0.58, 0.1, 1.8, -0.5, 0, 0.18),
     ]);
-    parts(group, k + 'tarp', TARP, () => [blob(0.74, 0.4, 0.8, 0.02, 1.3, -1.55), blob(0.5, 0.3, 0.5, -0.3, 1.34, -0.95), blob(0.4, 0.3, 0.45, 0.4, 1.34, -1.05)]);
+    // the load: two crates and the tarpaulin mound (tagged userData.prop = 'cargo': a chosen cargo prop hides them, render/propcosmetic.js)
+    parts(group, k + 'crates', WOOD, () => [bx(0.8, 0.5, 0.7, -0.15, 1.35, -0.5), bx(0.6, 0.4, 0.58, 0.1, 1.8, -0.5, 0, 0.18)]).userData.prop = 'cargo';
+    parts(group, k + 'tarp', TARP, () => [blob(0.74, 0.4, 0.8, 0.02, 1.3, -1.55), blob(0.5, 0.3, 0.5, -0.3, 1.34, -0.95), blob(0.4, 0.3, 0.45, 0.4, 1.34, -1.05)]).userData.prop = 'cargo';
     // fuel tank under the deck (one side) and the wheels
     parts(group, k + 'tank', lambert(0x6a6e74), () => [new THREE.CylinderGeometry(0.2, 0.2, 0.9, 10).rotateX(Math.PI / 2).translate(0.6, 0.75, -0.2)]);
     for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, k, R, TW, s * WX, z, 16);

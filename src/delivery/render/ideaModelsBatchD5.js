@@ -143,9 +143,10 @@ export const IDEA_MODELS_BATCH_D5 = {
         tube([s * 0.75, 1.27, 0.75], [s * 0.75, 1.27, -0.95], 0.03), // door bar along the flank
       ]),
       tube([-0.52, 1.89, 0.2], [0.52, 1.89, 0.2], 0.035), tube([-0.52, 1.89, -0.6], [0.52, 1.89, -0.6], 0.035),
-      bx(0.96, 0.08, 0.1, 0, 1.97, 0.24),
     ]);
-    parts(group, k + 'barlamp', LAMP, () => [-1.5, -0.5, 0.5, 1.5].map(i => dsc(0.05, 0.03, i * 0.2, 1.97, 0.3, 0, 10)));
+    // the roof light bar and its lamps: an ornament, tagged userData.prop = 'roof' (a chosen roof prop hides it, render/propcosmetic.js)
+    parts(group, k + 'bar', TRIM, () => [bx(0.96, 0.08, 0.1, 0, 1.97, 0.24)]).userData.prop = 'roof';
+    parts(group, k + 'barlamp', LAMP, () => [-1.5, -0.5, 0.5, 1.5].map(i => dsc(0.05, 0.03, i * 0.2, 1.97, 0.3, 0, 10))).userData.prop = 'roof';
     // the nose: an open dark grille mouth and two lamps, a steel skid bar, the tail panel's skid
     parts(group, k + 'black', TRIM, () => [
       bx(0.86, 0.2, 0.04, 0, 0.74, FZ), bx(1.2, 0.1, 0.16, 0, 0.5, FZ + 0.02), bx(1.1, 0.1, 0.14, 0, 0.5, BZ - 0.02),
@@ -166,8 +167,9 @@ export const IDEA_MODELS_BATCH_D5 = {
       tube([s * 0.573, 1.2, AR], [s * 0.55, 1.44, AR], 0.085, 8),
     ]));
     // the spare on the tail deck, standing: a tyre and a hub, partly sunk in the deck
-    place(group, shared(k + 'spare', () => new THREE.CylinderGeometry(0.44, 0.44, 0.3, 14).rotateX(Math.PI / 2)), TYRE, 0, 1.56, -1.38);
-    place(group, shared(k + 'sparehub', () => new THREE.CylinderGeometry(0.22, 0.22, 0.32, 10).rotateX(Math.PI / 2)), HUB, 0, 1.56, -1.38);
+    // (tagged userData.prop = 'cargo': the spare is a load on the deck, a chosen cargo prop hides it, render/propcosmetic.js)
+    place(group, shared(k + 'spare', () => new THREE.CylinderGeometry(0.44, 0.44, 0.3, 14).rotateX(Math.PI / 2)), TYRE, 0, 1.56, -1.38).userData.prop = 'cargo';
+    place(group, shared(k + 'sparehub', () => new THREE.CylinderGeometry(0.22, 0.22, 0.32, 10).rotateX(Math.PI / 2)), HUB, 0, 1.56, -1.38).userData.prop = 'cargo';
     // a flat white roundel disc on each door (a race number's place; flat colour, no texture)
     const X = HALF + 0.008;
     parts(group, k + 'roundel', WHITE, () => [-1, 1].map(s => new THREE.CircleGeometry(0.21, 16).rotateY(s * Math.PI / 2).translate(s * X, 0.9, 0.0)));

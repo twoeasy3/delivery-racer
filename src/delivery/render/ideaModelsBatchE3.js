@@ -89,13 +89,14 @@ export const IDEA_MODELS_BATCH_E3 = {
       ...[-1, 1].map(s => bx(0.24, 0.07, 0.03, s * 1.0, 1.1, FZ + 0.005)),
       ...[-1, 1].map(s => bx(0.22, 0.07, 0.03, s * 1.1, 0.85, -3.005)),
     ]);
+    // (the load below is tagged userData.prop = 'cargo': a chosen cargo prop hides it, render/propcosmetic.js; the beacon is left as the lorry's own lamp)
     parts(group, k + 'beacon', AMBER, () => [new THREE.CylinderGeometry(0.12, 0.12, 0.14, 10).translate(0, 2.8, 2.4)]);
     parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.22, 0.14, 0.03, s * 1.1, 1.02, -3.005)));
     // the load: two stacks of concrete blocks on pallets
     parts(group, k + 'blocks', lambert(0x9a9a92), () => [
       bx(1.1, 0.55, 1.1, -0.62, 1.62, -0.85), bx(1.1, 0.55, 1.1, 0.62, 1.62, -0.85), bx(1.1, 0.55, 1.1, 0, 1.62, -2.1), bx(0.9, 0.4, 0.9, 0, 2.1, -2.1),
-    ]);
-    parts(group, k + 'pallet', lambert(0x6b5036), () => [bx(2.4, 0.07, 1.15, 0, 1.31, -0.85), bx(1.15, 0.07, 1.15, 0, 1.31, -2.1)]);
+    ]).userData.prop = 'cargo';
+    parts(group, k + 'pallet', lambert(0x6b5036), () => [bx(2.4, 0.07, 1.15, 0, 1.31, -0.85), bx(1.15, 0.07, 1.15, 0, 1.31, -2.1)]).userData.prop = 'cargo';
     // the hazard strip on the tail board: flat red and white blocks (no texture)
     parts(group, k + 'stripr', lambert(0xc4261c), () => [-4, -2, 0, 2, 4].map(i => bx(0.2, 0.26, 0.02, i * 0.2 - 0.0, 1.48, TAIL_Z - 0.01)));
     parts(group, k + 'stripw', lambert(0xe9e6dc), () => [-3, -1, 1, 3].map(i => bx(0.2, 0.26, 0.02, i * 0.2, 1.48, TAIL_Z - 0.01)));

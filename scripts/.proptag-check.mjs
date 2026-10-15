@@ -25,7 +25,7 @@ let failures = 0;
 const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' : '  FAIL  ') + what); };
 const BASELINE = ROOT + '/scripts/.proptag-baseline.json';
 // models where a tagged prop shared a merged mesh with other parts of its material and now is a mesh of its own (one more mesh each)
-const SPLIT = { minibus: 1, pickup: 11, taxi: 1 }; // (a tagged prop that came out of a merged mesh: one more mesh each; the Minibus's roof vent and the others the sweeping agents split)
+const SPLIT = { minibus: 1, pickup: 11, taxi: 1, jeepney: 2, flatbed: 1, autobahnestate: 1, trophytruck: 1 }; // (a tagged prop that came out of a merged mesh: one more mesh each; the Minibus's roof vent and the others the sweeping agents split)
 try {
   const { makeShowCar } = await load('render/showcar.js');
   const C = await load('cars.js');
