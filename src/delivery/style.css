@@ -40,6 +40,9 @@ body.orbiting #hud, body.orbiting #ghostGap, body.orbiting .throw, body.orbiting
 body.orbiting #touchControls, body.orbiting #copGlow, body.orbiting #cameraFlash, body.orbiting #behind, body.orbiting #cargoCorner, body.orbiting #camAlert,
 body.orbiting #resultScreen { display: none !important; }
 body.orbiting canvas#game { cursor: grab; touch-action: none; }
+body.replaying #ghostGap { top: calc(max(12px, env(safe-area-inset-top)) + 34px); } /* (the replay's badge has the top centre: the ghost's gap line goes under it) */
+body.replaying canvas#game { touch-action: none; } /* (a drag on the game view in a replay takes hold of the chase camera: render/orbit.js) */
+body.orbit-drag canvas#game { cursor: grab; }
 #orbitBtn { min-height: 36px; }
 body.after-run #runButtons button:not(#orbitBtn) { display: none !important; } /* (a run over: the row is only the Orbit button, at the top: the delivery's caption is at the foot) */
 body.after-run #runButtons { bottom: auto; top: max(12px, env(safe-area-inset-top)); }
