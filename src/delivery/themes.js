@@ -227,6 +227,19 @@ THEMES.mall = { sky: 0x9fc4e8, ground: 0x6f7174, road: 0x3a3d42, scenery: 'mall'
   tunnel: { lit: true, shell: false, camHeight: 6.5, camBack: 13, wall: 0xf1ede6, roof: 0xf8f6f1, lamp: 0xffffff, face: 0xe4dfd6,
     heights: { fashion: 8.5, atrium: 16, foodcourt: 10, escalators: 12, electronics: 8.5, kids: 10 } },
   light: { sky: 0xffffff, ground: 0x9a948a, ambient: 1.5, sun: 0xfff6ea, sunlight: 1.0 } };
+// metro: a METRO SYSTEM the road runs through (render/themes/metro.js): an open cutting down a ramp to a portal, then nearly the whole
+// level ONE LIT TUNNEL whose zones are its parts (tunnel.heights: running tunnels 8.5 m, stations 11, an interchange 12; tunnelshape.js):
+// 'running' a twin box beside a train line behind a row of columns, 'bore' an arched single bore, 'station' platforms both sides (an
+// island one between the road and the train line), 'interchange' a tall hall with concourses; then up a ramp out to the 'depot' yard.
+// shell: false: the theme draws every wall, ceiling and lamp; fog: a lit tunnel's own fog (tunnel.js: the far end of a tunnel fades
+// to its dark); camHeight/camBack: the chase camera under the arch. Unmarked and bare: one continuous floor, no lines on it.
+// junctionTrain: what a tunnel junction's train is here (hazards.js): a battery locomotive and flat wagons, not a tug and trolleys
+THEMES.metro = { sky: 0xa9b8c6, ground: 0x7a7d72, road: 0x6d7074, scenery: 'metro', unmarked: true, bare: true, lit: true,
+  sets: ['approach', 'running', 'bore', 'station', 'interchange', 'exit', 'depot'],
+  pad: 'travelator', laneEnd: 'metro', junctionTrain: ['batteryLoco', 'flatWagon', 'flatWagon'],
+  tunnel: { lit: true, shell: false, camHeight: 5.6, camBack: 12, fog: { color: 0x161a22, near: 70, far: 360 },
+    heights: { running: 8.5, bore: 8.5, station: 11, interchange: 12 } },
+  light: { sky: 0xf4f6ff, ground: 0x8a8a84, ambient: 1.45, sun: 0xfff2e0, sunlight: 0.9 } };
 // roadworks: the city with its road under repair (the Roadworks level): an overcast sky, the city's own scenery, and along the road
 // the works' own (render/roadworks.js): site cabins behind fencing, plant parked off the road, stockpiles, light towers; its
 // diversions' cones, barriers, arrow boards and signs wherever a level has them
@@ -274,6 +287,7 @@ const OBSTACLES = {
   hongkong: { crate: 'hawkerCart', bale: 'bagStack' }, // (a hawker's cart under its awning; a heap of red-white-blue bags; the cones are roadworks and stay)
   autumn: { crate: 'harvestCrate', bale: 'leafPile', cone: 'smallPumpkin' }, // (a crate of pumpkins; a heap of raked leaves; a small pumpkin on a stake)
   mall: { crate: 'boxStack', bale: 'trolleyRow', cone: 'wetFloorSign' },
+  metro: { crate: 'ticketGate', bale: 'scrubber', cone: 'trackLamp' }, // (a ticket gate; a ride-on floor scrubber, parked; a red track lamp on its tripod)
   roadworks: { barrier: 'barrierBlock', crate: 'cableReel', bale: 'sandPile' }, // (a water-filled barrier, a cable drum, a heap of sand; the cones are roadworks and stay)
   roadworksNight: { barrier: 'barrierBlock', crate: 'cableReel', bale: 'sandPile' }, // (the same road by night) // (delivery cartons on a sack truck; three shopping trolleys nested; a WET FLOOR A-frame)
   // (the port keeps its crates, the farm and the Wild West their bales: there they belong)

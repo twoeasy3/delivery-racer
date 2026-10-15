@@ -281,6 +281,7 @@ export const Collision = (() => {
   for (const [kind, like] of Object.entries({ planter: 'bale', palmPot: 'bale', kiosk: 'bale', bench: 'crate', playBlock: 'crate', bin: 'cone' })) SIZE[kind] = SIZE[like]; // (the mall's set dressing)
   SIZE.handrail = [0.12, 1.5, 1.0]; // a boost pad's handrail section (lanegimmicks.js): as thin as the rail, 3 m long (a cone's cost: config.js)
   for (const [kind, like] of Object.entries({ barrierBlock: 'barrier', cableReel: 'crate', sandPile: 'bale', trafficDrum: 'cone', pipePallet: 'crate', worksSign: 'sign' })) SIZE[kind] = SIZE[like]; // (the roadworks')
+  for (const [kind, like] of Object.entries({ ticketGate: 'crate', scrubber: 'bale', trackLamp: 'cone', railTrolley: 'crate', infoTotem: 'sign', batteryLoco: 'tug', flatWagon: 'trolley' })) SIZE[kind] = SIZE[like]; // (the metro's)
   SIZE.laneEnd = [1.6, 0.4, 2.8]; // a dead-end lane's end wall: a lane wide (lanegimmicks.js)
   // what a level's own obstacle of that kind is on its theme (its "obstacles", "shoulderRows" and "drifters"
   // only: what a gimmick puts out, a cargo truck's load among it, is what it always was)

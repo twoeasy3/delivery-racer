@@ -61,9 +61,9 @@ const GROUPS = {
     files: [/cargo|delivery\.js|packages/],
   },
   gimmicks: {
-    about: 'The gimmicks: Gimmick Road 2 and 3 (hazards, gambles, crests), roadworks diversions, gravel, police pursuit, radiation, the UFO strike, traffic with quirks',
+    about: 'The gimmicks: Gimmick Road 2 and 3 (hazards, gambles, crests), roadworks diversions, the metro (Metro Run), gravel, police pursuit, radiation, the UFO strike, traffic with quirks',
     seconds: 200,
-    tests: [t('.hazards-check.mjs'), t('.tunneljunction-check.mjs'), t('.lanegimmicks-check.mjs'), t('.roadworks-check.mjs'), t('.gimmicks3-check.mjs'), t('.gravel-check.mjs'), t('.pursuit-check.mjs'), t('.radiation-check.mjs'), t('.ufo-check.mjs'), t('.traffic-quirks-check.mjs')],
+    tests: [t('.hazards-check.mjs'), t('.tunneljunction-check.mjs'), t('.lanegimmicks-check.mjs'), t('.roadworks-check.mjs'), t('.metro-check.mjs'), t('.gimmicks3-check.mjs'), t('.gravel-check.mjs'), t('.pursuit-check.mjs'), t('.radiation-check.mjs'), t('.ufo-check.mjs'), t('.traffic-quirks-check.mjs')],
     files: [/hazards|gambles|gimmicks\.js|gravel|pursuit|radiation|ufostrike|crossing|bullettrain|police/],
   },
   obstacles: {

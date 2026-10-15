@@ -54,6 +54,7 @@ Object.assign(JUNK, { jerryStack: {}, tentRoll: {}, rallyFlag: {} }); Object.ass
 Object.assign(JUNK, { barrierBlock: { hw: 1.2, hl: 0.6, height: 1.2 }, cableReel: { hw: 0.6, hl: 0.6, height: 1.1 }, sandPile: { hw: 1.1, hl: 1.1, height: 1.5 }, trafficDrum: { hw: 0.42, hl: 0.42, height: 1.12 }, pipePallet: { hw: 0.6, hl: 0.6, height: 1.1 }, worksSign: { hw: 1.1, hl: 0.15, height: 3 } });
 Object.assign(JUNK_NAMES, { barrierBlock: 'barrier blocks', cableReel: 'cable drums', sandPile: 'heaps of sand', trafficDrum: 'traffic drums', pipePallet: 'pallets of pipes', worksSign: 'works signs' }); // (the roadworks')
 Object.assign(JUNK, { boxStack: {}, trolleyRow: {}, wetFloorSign: {} }); Object.assign(JUNK_NAMES, { boxStack: 'sack trucks of cartons', trolleyRow: 'rows of trolleys', wetFloorSign: 'wet-floor signs' }); // (the mall's)
+Object.assign(JUNK, { ticketGate: {}, scrubber: {}, trackLamp: {}, railTrolley: { hw: 0.6, hl: 0.6, height: 1.1 }, infoTotem: { hw: 1.1, hl: 0.15, height: 3 } }); Object.assign(JUNK_NAMES, { ticketGate: 'ticket gates', scrubber: 'floor scrubbers', trackLamp: 'track lamps', railTrolley: 'rail trolleys', infoTotem: 'wayfinding boards' }); // (the metro's)
 Object.assign(JUNK, { pumpkinCrate: {}, harvestCrate: {}, leafPile: {}, smallPumpkin: {} }); Object.assign(JUNK_NAMES, { pumpkinCrate: 'crates of pumpkins', harvestCrate: 'crates of pumpkins', leafPile: 'heaps of leaves', smallPumpkin: 'small pumpkins' }); // (Halloween's crate, and autumn's)
 // the kinds that drift on a level (not the darting ones: those are another card), as its theme has them
 const driftingKinds = (level) => [...new Set((level.drifters || []).filter(d => d.pattern !== 'dart').map(d => themedKind(level.theme, d.kind || 'cone', true)))].filter(k => JUNK[k]);
@@ -1211,6 +1212,8 @@ const DRESS = [ // [kind, name, what it stands in for, where, the card's colour]
 DRESS.push(['harvestCrate', 'Crate of pumpkins', 'crate', 'autumn', 0xe8751a], ['leafPile', 'Heap of leaves', 'bale', 'autumn', 0xc8421e], ['smallPumpkin', 'Small pumpkin', 'cone', 'autumn', 0xf08a1c]);
 DRESS.push(['jerryStack', 'Stack of jerrycans', 'crate', 'the desert', 0xc8321f], ['tentRoll', 'Rolled tent', 'bale', 'the desert', 0xc4452a], ['rallyFlag', 'Rally marker flag', 'cone', 'the desert', 0xd8262b]);
 DRESS.push(['boxStack', 'Cartons on a sack truck', 'crate', 'the mall', 0xc89a62], ['trolleyRow', 'Row of trolleys', 'bale', 'the mall', 0x9aa0a8], ['wetFloorSign', 'Wet-floor sign', 'cone', 'the mall', 0xf2c21d]);
+DRESS.push(['ticketGate', 'Ticket gate', 'crate', 'the metro', 0xd8262b], ['scrubber', 'Floor scrubber', 'bale', 'the metro', 0xf2b51d], ['trackLamp', 'Track lamp', 'cone', 'the metro', 0xff2a1a],
+  ['railTrolley', 'Rail trolley', 'crate', 'the metro', 0xe8751a], ['infoTotem', 'Wayfinding board', 'sign', 'the metro', 0x1f6fd0]);
 DRESS.push(['barrierBlock', 'Barrier blocks', 'barrier', 'the roadworks', 0xd8262b], ['cableReel', 'Cable drum', 'crate', 'the roadworks', 0xa8783e], ['sandPile', 'Heap of sand', 'bale', 'the roadworks', 0xd9b36a],
   ['trafficDrum', 'Traffic drum', 'cone', 'the roadworks', 0xff6a00], ['pipePallet', 'Pallet of pipes', 'crate', 'the roadworks', 0xe86a1a], ['worksSign', 'Works sign', 'sign', 'the roadworks', 0xd8262b]);
 // the kinds of plain obstacle a level's road has, as its theme has them

@@ -48,5 +48,10 @@
   "sandPile": { "name": "Heap of sand", "blurb": "Stands in for a bale in the roadworks." },
   "trafficDrum": { "name": "Traffic drum", "blurb": "A cone's size and cost, in the roadworks." },
   "pipePallet": { "name": "Pallet of pipes", "blurb": "A crate's size and cost, in the roadworks." },
-  "worksSign": { "name": "Works sign", "blurb": "A sign's size and cost, in the roadworks." }
+  "worksSign": { "name": "Works sign", "blurb": "A sign's size and cost, in the roadworks." },
+  "ticketGate": { "name": "Ticket gate", "blurb": "Stands in for a crate in the metro." },
+  "scrubber": { "name": "Floor scrubber", "blurb": "Stands in for a bale in the metro: a ride-on scrubber, parked." },
+  "trackLamp": { "name": "Track lamp", "blurb": "Stands in for a cone in the metro: a red lamp on a tripod." },
+  "railTrolley": { "name": "Rail trolley", "blurb": "A crate's size and cost, in the metro: sleepers on a trolley." },
+  "infoTotem": { "name": "Wayfinding board", "blurb": "A sign's size and cost, in the metro." }
 }

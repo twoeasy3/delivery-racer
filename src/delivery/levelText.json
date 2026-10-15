@@ -693,5 +693,13 @@
       "evil": "Glitter for the night shift's fresh tarmac. Cut the tapers in the dark, clip the cones and race the queue to the contraflow."
     },
     "cargo": { "good": "coffee", "evil": "glitter" }
+  },
+  "metro-run": {
+    "name": "Metro Run",
+    "description": {
+      "good": "Ticket rolls for the machines before the first train. Down the ramp, through two stations and the interchange, out to the depot. Mind the side tunnels.",
+      "evil": "A cage of tunnel rats for the depot. Race the trains through the tunnels, ride the travelators and never pick the dead lane."
+    },
+    "cargo": { "good": "ticketrolls", "evil": "rats" }
   }
 }

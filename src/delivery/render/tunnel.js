@@ -147,18 +147,22 @@ export const syncTunnel = () => {
   }
   const T = CONFIG.tunnel, want = Game.state === 'start' ? 0 : Track.tunnel(Player.s);
   if (!inside && !want) return;
-  // (a LIT tunnel, a mall's halls: no dark, no fog closing in, no headlights; only a little of the echo, a hall's: T.litEcho)
-  if (tunnelsLit()) { inside = want; Sound.echo(inside * T.echo * (T.litEcho ?? 0.5)); return; }
+  // (a LIT tunnel, a mall's halls: no dark, no fog closing in, no headlights; only a little of the echo, a hall's: T.litEcho. Unless
+  // the theme's tunnel has a fog of its own (`tunnel.fog`: { color, near, far }, the metro's): then its far end fades into that, still
+  // with no headlights)
+  const lit = tunnelsLit(), litFog = lit ? (THEMES[LEVEL.theme] || THEMES.city).tunnel?.fog : null;
+  if (lit && !litFog) { inside = want; Sound.echo(inside * T.echo * (T.litEcho ?? 0.5)); return; }
+  const F = litFog || T;
   if (!inside) outside.copy(scene.background); // (going in: the sky as it was, to put back)
   inside = want;
-  dark.set(T.color);
+  dark.set(F.color);
   // (never less fog than a fog bank in the tunnel already has: see render/roadside.js)
-  scene.fog.near = Math.min(scene.fog.near, USUAL.near + (T.near - USUAL.near) * inside);
-  scene.fog.far = Math.min(scene.fog.far, USUAL.far + (T.far - USUAL.far) * inside);
+  scene.fog.near = Math.min(scene.fog.near, USUAL.near + (F.near - USUAL.near) * inside);
+  scene.fog.far = Math.min(scene.fog.far, USUAL.far + (F.far - USUAL.far) * inside);
   scene.background.copy(outside).lerp(dark, inside);
   scene.fog.color.copy(scene.background);
-  if (!lightsOwn) setHeadlights(inside > 0.3); // (the headlights come on at the portal)
-  Sound.echo(inside * T.echo);
+  if (!lightsOwn && !lit) setHeadlights(inside > 0.3); // (the headlights come on at the portal)
+  Sound.echo(inside * T.echo * (lit ? T.litEcho ?? 0.5 : 1));
   if (!want) { // out the far end: the sky back, and the fog as the level has it
     scene.background.copy(outside);
     scene.fog.color.copy(outside);
