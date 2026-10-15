@@ -1,0 +1,126 @@
+// ---- where a ROOF PROP, a CARGO PROP and a REAR WING may go on each car (the owner, 15-Oct: "audit every car for roof prop and cargo prop
+// space ... render a Box and a Cylinder for each, and this will be our bounds for the customisations ... the same for a Rear Wing";
+// CHECKLIST 300). RENDER-ONLY, like the plate table (render/plateanchors.js): no rules module imports this, nothing is written onto a
+// car's entry. The big table is GENERATED (render/propanchorstable.js, by scripts/prop-anchors.mjs, which builds every car, rasterises
+// its top surface and finds the free flat space of each slot); this file holds the CANONICAL SHAPES, the hand fixes, and the reader.
+//
+// THE SHAPES ARE THE BOUNDS FOR FUTURE COSMETICS (the owner, 15-Oct). Each slot has ONE canonical box and ONE canonical cylinder
+// (PROP_BOUNDS below), the same aspect ratio on every car; a car's entry is that shape with a UNIFORM scale, a centre and a yaw: no
+// stretching on one axis. A future prop is MODELLED TO FIT INSIDE the canonical shape at scale 1, centred on the origin (a box prop
+// inside the box [w, h, d] centred on (0, 0, 0); a cylinder prop inside the cylinder of `radius` and `height` along `axis`, centred
+// on the origin), then placed on a car with fitProp(carId, slot, shape): position = centre, rotation.y = yaw, scale = s. The slot's
+// existing prop (a roof rack, a load, the car's own spoiler: tagged userData.prop, render/propcosmetic.js) is hidden when one is chosen.
+//
+// UNITS: car-local metres as the showroom builds the model (render/showcar.js makeShowCar; x across, y up, the nose at +z). A table
+// entry per CAR ID (a Super's body kit adds a wing and roof lamps, so a Super has a row of its own): { roof, cargo, wing }, a slot
+// either { no: 'why' } or { box: [s, x, y, z, yaw?], cyl: [s, x, y, z, yaw?], from, lim, existing?, conf? }: s = the uniform scale,
+// (x, y, z) = the shape's centre, `from` = the surface it stands on ('roof', 'deck', 'roof-edge', 'bed'...), `lim` = the dimension that
+// limited the scale ('w' width, 'd' depth, 'h' height), existing = the car already has a prop of that slot (tagged), conf 'measured'
+// (the generator) or 'hand' (HAND below).
+// HAND FIXES: HAND[car id or model] = { roof?: ..., cargo?: ..., wing?: ... }: a slot given here replaces the generated one (an entry of
+// the same shape, or { no: 'why' }); a slot not mentioned stays as generated. KINDS tells the generator what each car is (an open car
+// has no roof, a van no load deck...): the rules are in scripts/prop-anchors.mjs.
+import { PROP_TABLE } from './propanchorstable.js';
+
+export const SLOTS = ['roof', 'cargo', 'wing'];
+// the canonical containment bounds, one box and one cylinder a slot (at scale 1, centred on the origin). RATIOS:
+//   roof   box w:h:d = 1 : 0.5 : 0.8 (a roof box, a sign, a rack: wider than deep, half as tall); cylinder upright, diameter 0.9, height 0.5
+//          (a beacon, a drum, a dome: diameter 1.8 x its height)
+//   cargo  box w:h:d = 1 : 0.8 : 1.2 (a load in a bed: longer than wide, nearly cubic); cylinder upright, diameter 1, height 0.8 (a barrel)
+//   wing   box w:h:d = 1.4 : 0.35 : 0.3 (a blade across the car on short stands: 4 x as wide as deep); cylinder ACROSS the car (axis x),
+//          diameter 0.3, length 1.4 (a tube or roll bar of a wing)
+export const PROP_BOUNDS = {
+  roof: { box: [1.0, 0.5, 0.8], cylinder: { radius: 0.45, height: 0.5, axis: 'y' } },
+  cargo: { box: [1.0, 0.8, 1.2], cylinder: { radius: 0.5, height: 0.8, axis: 'y' } },
+  wing: { box: [1.4, 0.35, 0.3], cylinder: { radius: 0.15, height: 1.4, axis: 'x' } },
+};
+// the smallest scale worth having (below it the slot is unsupported: "too small")
+export const MIN_SCALE = { roof: 0.4, cargo: 0.4, wing: 0.45 };
+// the largest scale (a roof box as big as a van's whole roof is no ornament)
+export const MAX_SCALE = { roof: 1.2, cargo: 1.6, wing: 1.3 };
+
+// what each car IS, for the generator's rules (scripts/prop-anchors.mjs): by car id, else by model name, else 'car'.
+//   hatch saloon coupe sports estate suv  closed road cars: roof and wing measured, no cargo
+//   van bus truck                         boxy: roof measured, wing on the roof's rear edge (the owner, 15-Oct: "rear wings should work on
+//                                         the buses/vans"), no cargo (a closed body)
+//   pickup flatbed halftrack              a load bed: cargo measured, roof and wing (the cab roof's rear edge) measured
+//   open                                  no roof (a convertible, a roadster, a moke, a tractor, a buggy); cargo measured (a bed behind the
+//                                         seats); a wing only on a measured rear deck
+//   canopy craft tank micro bike          no roof, no wing; no cargo (the kind says it all)
+//   special                               everything measured, nothing assumed
+export const KINDS = {
+  // garage
+  commuter: 'hatch', junker: 'pickup', darkvan: 'van', postvan: 'van', keitruck: 'flatbed', mini: 'hatch', lovebus: 'van', wagon: 'estate',
+  sport: 'coupe', lowrider: 'coupe', hothatch: 'hatch', ute: 'pickup', buggy: 'open', liftedtruck: 'pickup', hearse: 'van', minivan: 'van',
+  pickup: 'pickup', hotrod: 'coupe', sleeper: 'estate', rally: 'saloon', towtruck: 'truck', rotary: 'coupe', taxi: 'saloon', suv: 'suv',
+  miata: 'sports', gullwing: 'sports', rearengine: 'sports', snake: 'open', polytruck: 'pickup', muscle: 'coupe', fullsize: 'suv',
+  evsaloon: 'saloon', superlowrider: 'coupe', classicgt: 'sports', sixbysix: 'pickup', herald: 'open', transporter: 'van', toybota: 'pickup',
+  dampervan: 'van', nissank: 'pickup', tank: 'tank',
+  // filler
+  bubble: 'micro', milkfloat: 'flatbed', tuktuk: 'open', woody: 'estate', pandacoupe: 'coupe', keiroadster: 'open', fireengine: 'truck',
+  jeep: 'open', monster: 'pickup', stately: 'saloon', teardrop: 'saloon', pony: 'coupe', goddess: 'saloon', hardtop: 'saloon', midnight: 'coupe',
+  splitwindow: 'coupe', wedge: 'sports', jetcar: 'craft', dragster: 'open', flyingcar: 'craft', blower: 'open', coach: 'bus', cityev: 'hatch',
+  coupecross: 'suv',
+  // bespoke and concept
+  rocketfin: 'canopy', swancar: 'coupe', solarracer: 'canopy', moonrover: 'open', monowheel: 'bike', snocat: 'special', hotdog: 'special',
+  horseshoe: 'sports', fishbowl: 'canopy', midsummer: 'open', sixteen: 'coupe', quadturbo: 'sports', knifeedge: 'sports', windsong: 'sports',
+  // event, earned, secret, level
+  centreseat: 'sports', ufo: 'craft', gt: 'sports', jetboat: 'craft', f1: 'open', lmp: 'sports', apc: 'tank', citybus: 'bus', amphibioustank: 'tank',
+  // ideas
+  threewheeler: 'hatch', tinsnail: 'saloon', bug: 'saloon', twostroke: 'saloon', brickestate: 'estate', limo: 'saloon', rallywedge: 'sports',
+  safari: 'suv', widetruck: 'suv', corrugated: 'van', foodtruck: 'van', motorhome: 'van', schoolbus: 'bus', doubledecker: 'bus',
+  funeralcoach: 'van', golfcart: 'open', hovercraft: 'craft', steamwagon: 'open', tipper: 'truck', dunebuggy: 'open', creamvan: 'van',
+  yellowcab: 'saloon', mixer: 'truck', wrecker: 'truck', policewagon: 'van', camper: 'van', boathauler: 'pickup', armoured: 'van',
+  cigar: 'open', sidecar: 'bike', bathtub: 'open', circuswagon: 'special', gyrocar: 'micro', mower: 'open', snailcamper: 'special',
+  duckwagon: 'open', pushbacktug: 'special', roadsweeper: 'truck', cabledrum: 'flatbed', gameviewer: 'open', slantback: 'saloon',
+  glassbrake: 'estate', sevenroadster: 'open', talltourer: 'open', removalsvan: 'van', refuselorry: 'truck', jeepney: 'van',
+  pocket4x4: 'suv', dodgem: 'open', iceresurfacer: 'special', wedgemicro: 'micro', farmtractor: 'open', flatbed: 'flatbed', moke: 'open',
+  halftrack: 'halftrack', keivan: 'van', supermini: 'hatch', minibus: 'van', sporttruck: 'pickup', pixelev: 'hatch', sprinthatch: 'hatch',
+  autobahnestate: 'estate', finlandyacht: 'saloon', trophytruck: 'pickup', armouredlimo: 'saloon', cranelorry: 'truck', moorrover: 'suv',
+  touringcar: 'saloon', hillclimb: 'hatch',
+};
+export const kindOf = (car) => KINDS[car.id] || KINDS[car.model || car.id] || 'car';
+
+// hand fixes (see the header): nothing yet
+export const HAND = {};
+
+const toShape = (slot, shape, e) => {
+  if (!e) return null;
+  const [s, x, y, z, yaw] = e;
+  const c = PROP_BOUNDS[slot];
+  return shape === 'box'
+    ? { scale: s, centre: [x, y, z], yaw: yaw || 0, size: c.box.map(v => v * s) }
+    : { scale: s, centre: [x, y, z], yaw: yaw || 0, radius: c.cylinder.radius * s, height: c.cylinder.height * s, axis: c.cylinder.axis };
+};
+const toSlot = (slot, e) => {
+  if (!e || e.no) return { supported: false, reason: e ? e.no : 'no entry', box: null, cylinder: null };
+  return { supported: true, reason: null, box: toShape(slot, 'box', e.box), cylinder: toShape(slot, 'cyl', e.cyl), from: e.from || null, limit: e.lim || null, existing: !!e.existing, confidence: e.conf || 'measured' };
+};
+const entryOf = (carId) => {
+  const base = PROP_TABLE[carId] || {};
+  const hand = HAND[carId] || {};
+  const out = {};
+  for (const slot of SLOTS) out[slot] = slot in hand ? { ...hand[slot], conf: 'hand' } : base[slot];
+  return out;
+};
+// the three slots of a car: { roof, cargo, wing }, each { supported, reason, box, cylinder, from, limit, existing, confidence }
+//   box: { scale, centre, yaw, size }   cylinder: { scale, centre, yaw, radius, height, axis }   (null when unsupported)
+export const propSlots = (carId) => {
+  const e = entryOf(carId);
+  return { roof: toSlot('roof', e.roof), cargo: toSlot('cargo', e.cargo), wing: toSlot('wing', e.wing) };
+};
+export const propSupported = (carId, slot) => propSlots(carId)[slot]?.supported === true;
+// the transform for a prop MODELLED TO THE CANONICAL BOUNDS of a slot (fits inside PROP_BOUNDS[slot].box or .cylinder at scale 1,
+// centred on the origin): { position: [x, y, z], rotationY: yaw, scale: s } to set on the prop (prop.position.set(...),
+// prop.rotation.y = rotationY, prop.scale.setScalar(scale)), as a child of the car's model. null when the slot is unsupported.
+export const fitProp = (carId, slot, shape = 'box') => {
+  const s = propSlots(carId)[slot];
+  if (!s || !s.supported) return null;
+  const sh = shape === 'cylinder' || shape === 'cyl' ? s.cylinder : s.box;
+  return { position: sh.centre.slice(), rotationY: sh.yaw, scale: sh.scale, bounds: PROP_BOUNDS[slot][shape === 'box' ? 'box' : 'cylinder'] };
+};
+export const propTableStats = () => {
+  const out = { cars: Object.keys(PROP_TABLE).length, hand: Object.keys(HAND).length };
+  for (const slot of SLOTS) out[slot] = Object.values(PROP_TABLE).filter(e => e[slot] && !e[slot].no).length;
+  return out;
+};

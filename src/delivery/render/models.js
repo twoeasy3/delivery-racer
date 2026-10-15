@@ -1084,8 +1084,8 @@ export const MODELS = {
     screen(group, glass, w * 0.84, 0.05, 0.66, 0, 1.1, l * 0.19, 0.6);               // windscreen
     screen(group, glass, w * 0.84, 0.05, 0.6, 0, 1.1, -l * 0.24, -0.55);             // rear screen
     box(group, paint, w * 0.96, 0.06, l * 0.2, 0, 0.9, -l * 0.39);                  // the boot
-    for (const side of [-1, 1]) box(group, trim, 0.06, 0.3, 0.12, side * w * 0.38, 1.06, -l * 0.45); // the wing's posts
-    box(group, paint, w * 0.94, 0.05, 0.36, 0, 1.22, -l * 0.45);                    // the tall wing
+    for (const side of [-1, 1]) box(group, trim, 0.06, 0.3, 0.12, side * w * 0.38, 1.06, -l * 0.45).userData.prop = 'wing'; // the wing's posts (tagged: an equipped wing hides them, render/propcosmetic.js)
+    box(group, paint, w * 0.94, 0.05, 0.36, 0, 1.22, -l * 0.45).userData.prop = 'wing'; // the tall wing
     for (const side of [-1, 1]) {
       const roundel = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.02, 16), white); // a door roundel
       roundel.rotation.z = Math.PI / 2;
