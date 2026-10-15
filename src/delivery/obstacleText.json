@@ -56,5 +56,9 @@
   "velvetRope": { "name": "Velvet rope", "blurb": "Stands in for a barrier in Las Vegas: brass posts, a red rope." },
   "slotMachine": { "name": "Slot machine", "blurb": "Stands in for a crate in Las Vegas." },
   "luggageCart": { "name": "Luggage cart", "blurb": "Stands in for a bale in Las Vegas: a bellhop's cart of cases." },
-  "casinoDie": { "name": "Giant die", "blurb": "Stands in for a cone in Las Vegas." }
+  "casinoDie": { "name": "Giant die", "blurb": "Stands in for a cone in Las Vegas." },
+  "cheeseWheels": { "name": "Cheese wheels", "blurb": "Stands in for a crate on the alpine pass." },
+  "woodpile": { "name": "Woodpile", "blurb": "Stands in for a bale on the alpine pass." },
+  "milkChurn": { "name": "Milk churn", "blurb": "Stands in for a cone on the alpine pass." },
+  "snowBlock": { "name": "Block of snow", "blurb": "Stands in for a barrier on the alpine pass." }
 }

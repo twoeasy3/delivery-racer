@@ -84,5 +84,7 @@
   "horseshoes": { "name": "Crate of Horseshoes", "blurb": "New horseshoes, a crate of them, and a lucky one nailed to the front." },
   "goldbar": { "name": "Bar of Questionable Gold", "blurb": "A gold bar on a velvet cushion. Gold on the outside, anyway.", "states": ["Gleaming","Flaking","Peeling off"] },
   "pokerchips": { "name": "Box of Poker Chips", "blurb": "Racks of chips in a baize-lined box, two dice on top." },
-  "fakechips": { "name": "Case of Counterfeit Chips", "blurb": "Fake chips in a locked case, a dye pack in the lid.", "states": ["Snapped shut","Rattling","Dye pack burst"] }
+  "fakechips": { "name": "Case of Counterfeit Chips", "blurb": "Fake chips in a locked case, a dye pack in the lid.", "states": ["Snapped shut","Rattling","Dye pack burst"] },
+  "cheesewheel": { "name": "Wheel of Mountain Cheese", "blurb": "A great wheel of mountain cheese, one wedge already cut." },
+  "fondue": { "name": "Suspicious Fondue", "blurb": "A fondue of no known cheese, and it is turning green.", "states": ["Simmering","Bubbling green","Boiling over"] }
 }

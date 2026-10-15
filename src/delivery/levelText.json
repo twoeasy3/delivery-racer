@@ -725,5 +725,13 @@
       "evil": "Counterfeit chips under the neon. Walkway, ramp, over the queue, three times. The house always wins. Prove it wrong."
     },
     "cargo": { "good": "pokerchips", "evil": "fakechips" }
+  },
+  "alpine-pass": {
+    "name": "Alpine Pass",
+    "description": {
+      "good": "A wheel of mountain cheese for the hut at the col. Mind the cows in the meadow, the black ice in the shade and the rocks over the hairpins.",
+      "evil": "A fondue of no known cheese, boiling over. Scatter the cows, take the shade flat out and race the rockfall up to the snow."
+    },
+    "cargo": { "good": "cheesewheel", "evil": "fondue" }
   }
 }

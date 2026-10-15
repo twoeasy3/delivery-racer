@@ -3131,8 +3131,8 @@ const buildRoad = () => {
     placed(tube, 0xd9cfbf, trunks);
     placed(new THREE.SphereGeometry(0.5, 8, 6), 0x7a8f62, clumps);
     if (rocks.length) placed(new THREE.DodecahedronGeometry(0.6), 0xb8915c, rocks);
-  } else if (theme.scenery === 'alpine') {
-    // ---- alpine: guardrails and snowbanks along both edges, snowy pines on the mountainside,
+  } else if (theme.scenery === 'snowpass') {
+    // ---- the snow theme's pass (called 'alpine' until 16-Oct: the alpine theme is render/themes/alpine.js): guardrails and snowbanks along both edges, snowy pines on the mountainside,
     // peaks all round in the haze, and snow falling
     const posts = [], rails = [], banks = [];
     for (let s = Track.start; s < Track.end; s += 4) {
@@ -3574,7 +3574,7 @@ const buildRoad = () => {
   }
   // (what the older themes were given since, beside what is drawn for them above: render/themes/extras.js)
   if (THEME_EXTRAS[theme.scenery]) THEME_EXTRAS[theme.scenery]({ theme, add, flat, instances, sideStrip, buildStrip, offRoads, standsClear, clearOfRoads, beside, inJunction, exits, cube, tube, cone, levelGroup, terrainAt, litTowers });
-  if (theme.snow && theme.scenery !== 'alpine') snowfall();
+  if (theme.snow && theme.scenery !== 'snowpass') snowfall();
   if (theme.rain) rainfall();
   if (theme.elevated && theme.scenery !== 'tokyo') elevatedRoad(theme.elevated);
   placeInstances();

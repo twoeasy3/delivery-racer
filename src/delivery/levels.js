@@ -170,7 +170,8 @@
 //                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'wineCrates', 'hayRoll', 'terracottaPot' (Tuscany's). All of them are on the Gimmicks page, last,
 //                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'boxStack', 'trolleyRow', 'wetFloorSign', 'planter', 'palmPot', 'kiosk', 'bench', 'playBlock', 'bin' (the mall's), 'jerryStack', 'tentRoll' and
 //                                  'rallyFlag' (the desert's: stacked jerrycans, a rolled tent, a rally marker flag), 'ingotStack', 'steelCoil', 'hotSign' and
-//                                  'rebarBundle' (the steelworks': hot billets, a coil, a HOT METAL sign, rebar). All of them are on the Gimmicks page, last,
+//                                  'rebarBundle' (the steelworks': hot billets, a coil, a HOT METAL sign, rebar), 'cheeseWheels', 'woodpile', 'milkChurn',
+//                                  'snowBlock' (the alpine pass's). All of them are on the Gimmicks page, last,
 //                                  under Road dressing (gimmicks.html?group=road-dressing)
 //   dropBears  { from, to, count } drop bears up in the trees over that stretch, dropping onto the
 //              road as the player comes near (see CONFIG.dropBear)
@@ -670,6 +671,8 @@ import vegasStrip from './levels/vegas-strip.json';
 import vegasNight from './levels/vegas-night.json';
 HIDDEN_LEVELS['vegas-strip'] = vegasStrip; // Vegas Strip (the Las Vegas theme: three ramps over the jam, each fed by a moving walkway): ?hidden=vegas-strip, until the owner decides
 HIDDEN_LEVELS['vegas-night'] = vegasNight; // Vegas by Night (the same Strip after dark, its hero look): ?hidden=vegas-night
+import alpinePass from './levels/alpine-pass.json';
+HIDDEN_LEVELS['alpine-pass'] = alpinePass; // Alpine Pass (the alpine theme's switchbacks to the col): ?hidden=alpine-pass, until the owner decides
 // THE HIDDEN LEVELS MENU (the owner, 15-Oct; Options > Hidden levels, render/hiddenlevels.js): every level of HIDDEN_LEVELS that is a
 // real level, so a hidden level added later is listed without a word here. TEST_LEVELS are the developer's test tracks (a testbed and the three
 // Gimmick Roads: gimmicks.js calls them 'Test'), left out of it. A run started from it is ?hidden=<id>: it banks nothing (game.js).
