@@ -52,13 +52,22 @@
 @media (pointer: coarse) {
   #inspector button { min-height: 44px; }
   #inspector .ins-views button { min-width: 58px; }
+  #inspector .ins-damage button { min-height: 40px; }
 }
 /* a phone held upright: the name over two lines' room, the views in two rows of three */
 @media (max-width: 560px) {
   #inspector .ins-top { gap: 8px; }
   #inspector .ins-title b { font-size: 17px; }
   #inspector .ins-side button { padding: 0 11px; }
-  #inspector .ins-views { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 360px; }
+  /* (compact, the owner 14-Oct "the toggles fill up the space on mobile": the views in ONE slim row, the damage row as wide, the
+     dev link "Edit model" and the hint dropped, buttons 40px high, so the car shows) */
+  #inspector .ins-edit, #inspector .ins-hint { display: none; }
+  #inspector .ins-views { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; width: 100%; max-width: 380px; }
+  #inspector .ins-views button { min-width: 0; padding: 0 2px; font-size: 12px; min-height: 40px; }
+  #inspector .ins-damage { width: 100%; max-width: 380px; }
+  #inspector .ins-damage button { flex: 1 1 0; min-width: 0; padding: 0 2px; font-size: 12px; min-height: 40px; }
+  #inspector .ins-back, #inspector .ins-side button { min-height: 40px; }
+  #inspector .ins-bottom { gap: 6px; }
   #inspector .ins-stats { font-size: 12px; }
   #inspector .ins-arrow { width: 40px; min-height: 56px; top: 24%; } /* (above the car, in the empty sky: never over it) */
 }

@@ -134,7 +134,13 @@ export const jimSection = () => {
   refresh.disabled = !info.ok;
   refresh.setAttribute('aria-label', info.ok ? 'Refresh the stall for ' + info.cost + ' Crazey Cash (you have ' + cc + ')' : info.why === 'limit' ? 'Refresh limit reached for today' : 'Refreshing costs ' + info.cost + ' Crazey Cash: you need ' + info.need + ' more');
   refresh.addEventListener('click', () => { if (Jim.refresh().ok) { rerolled = true; window.dispatchEvent(new Event('progresschange')); } });
-  const strip = make('div', 'jim-strip', make('div', 'jim-clock', 'New stock in', live()), refresh, make('div', 'jim-bank', make('small', '', 'Bank'), bankNode));
+  // (the owner, 14-Oct: "the blueprint shop hides the packs entirely": the stall is the Shop's first section and, opened (the menu's Jim button, or
+  // "See all offers"), its tall tiles fill the phone, the packs far below with no sign of them. "Packs" jumps to them.)
+  const packs = make('button', 'jim-packs', 'Packs ↓');
+  packs.type = 'button';
+  packs.setAttribute('aria-label', 'Jump to the packs below the stall');
+  packs.addEventListener('click', () => { const sec = [...document.querySelectorAll('#shopScreen .shop-section, .shop-body .shop-section')].find(s => !s.classList.contains('s-jim')); sec?.scrollIntoView({ block: 'start', behavior: 'smooth' }); });
+  const strip = make('div', 'jim-strip', make('div', 'jim-clock', 'New stock in', live()), refresh, packs, make('div', 'jim-bank', make('small', '', 'Bank'), bankNode));
   const open = offers.filter(o => !o.why || o.why === 'short');
   const cheapest = open.length ? Math.min(...open.map(o => o.price)) : 0;
   let note = null;

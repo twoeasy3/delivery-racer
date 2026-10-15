@@ -31,7 +31,7 @@
 // (not remembered); &filters opens the filter sheet; &bp=sport:7,hotrod:3 gives those blueprints for the visit.
 import '../showroom.css';
 import '../showroom-phone.css';
-import { showroomCars, carCard, floorBest, statShown, RARITIES, CAR_LOT, sideName, sideClick, driveWords, barredWhy, driveAs,
+import { showroomCars, carCard, LOCKED_WORDS, floorBest, statShown, RARITIES, CAR_LOT, sideName, sideClick, driveWords, barredWhy, driveAs,
   FILTER_GROUPS, SORTS, imposedFilter, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn, overlayOf, cardTip, kindOf, lentWords } from '../showroomData.js';
 import { CAR, carInUse, setViewSide, STAR_COLOURS, carRule, carFocus } from '../cars.js';
 import { Progress } from '../progress.js';
@@ -76,7 +76,7 @@ const pips = (card) => {
   return row;
 };
 const blueprintBar = (card, long = false) => {
-  if (!card.upgradable) return make('span', 'sr-bp none', long ? (card.car.earned ? 'A special car: no blueprints, it stays at ECU1' : 'Comes maxed: no blueprints') : 'No blueprints');
+  if (!card.upgradable) return make('span', 'sr-bp none', long ? (card.car.earned ? 'Special car: stays at ECU1' : 'Comes maxed: no blueprints') : 'No blueprints');
   const fill = make('i');
   const bar = barFill({ have: card.have, toNext: card.toNext, ecu: card.ecu, bought: card.bought, max: card.max }); // (an upgrade ready to buy: full and overfilled)
   fill.style.width = bar.pct + '%';
@@ -449,19 +449,35 @@ const fill = (fresh = true) => {
 
 // a stat line: the figure now, its bar, and (a car not maxed) the maxed figure and the bar's reach then (a stat the ECU
 // does not change, Weight: max = now, so no ghost and no "max"). tip: what it is, on the name
-const stat = (name, now, max, show, share, tip) => {
+// next: the figure after the next ECU purchase (an upgrade preview), drawn as a green segment after the fill and said "old → new"
+// (the owner, 14-Oct: the figures carry no units). The hatched tail is the MAX ECU's reach, a different thing, so it stays.
+const stat = (name, now, max, show, share, tip, next) => {
   const bar = make('span', 'sr-stat-track'), fillNow = make('i', 'now'), fillMax = make('i', 'max');
-  fillNow.style.width = Math.round(Math.max(0.04, Math.min(1, share(now))) * 100) + '%';
-  fillMax.style.width = Math.round(Math.max(0.04, Math.min(1, share(max))) * 100) + '%';
-  bar.append(fillMax, fillNow);
+  const pct = (v) => Math.round(Math.max(0.04, Math.min(1, share(v))) * 100) + '%';
+  fillNow.style.width = pct(now);
+  fillMax.style.width = pct(max);
+  const up = next !== undefined && show(next) !== show(now); // (the bar's share of a lower-is-better stat, Respawn, already grows as it falls)
+  if (up) { const fillUp = make('i', 'up'); fillUp.style.width = pct(next); bar.append(fillMax, fillUp, fillNow); } else bar.append(fillMax, fillNow);
   const same = show(now) === show(max);
   const label = make('small', '', name);
   if (tip) label.title = tip;
-  return make('div', 'sr-stat', label, bar, make('b', '', show(now)), make('span', 'sr-stat-max', same ? '' : 'max ' + show(max)));
+  return make('div', 'sr-stat', label, bar, make('b', up ? 'up' : '', show(now), up ? make('em', '', ' → ' + show(next)) : null), make('span', 'sr-stat-max', same ? '' : 'max ' + show(max)));
 };
 // (a ratio stat: a whole number, 0-100, 50 = today's usual car: showroomData.js STAT_SCALE; its bar the same share)
 const score = (v) => String(statShown(v)), scoreShare = (v) => statShown(v) / 100;
-const kmh = (v) => Math.round(v * 3.6) + ' km/h';
+const kmh = (v) => String(Math.round(v * 3.6)); // (no units in the bars)
+// the locked panel's words, cut short (display only: card.reason / card.hint and the spec's LOCKED_WORDS stay as the checks have them)
+const shortLocked = (card) => {
+  let reason = card.reason, hint = card.hint || '';
+  const bp = /^Collect (\d+) more (blueprints?) to unlock this car$/.exec(reason);
+  if (bp) { reason = bp[1] + ' more ' + bp[2] + ' to unlock'; hint = hint.replace(/^Blueprints come in /, 'In '); }
+  else if (reason === LOCKED_WORDS.lot) reason = 'Buy it at the car lot';
+  else if (reason === LOCKED_WORDS.key) {
+    const m = /^The key: ([^.]*)$/.exec(hint);
+    if (m) { reason = 'Needs its key (' + m[1].replace(/^an? /, '').replace('card packs', 'packs') + ')'; hint = ''; } else reason = 'Needs its key';
+  }
+  return { reason, hint };
+};
 // the FULL VIEW of the car picked (drawn only while it is up: the cards just mark the one picked)
 const showDetail = () => {
   for (const c of cards) c.node.classList.toggle('picked', c.data.id === picked);
@@ -473,20 +489,20 @@ const showDetail = () => {
   // for one at the car lot, as one that can be driven)
   const pic = make('div', 'sr-dpic' + (card.dark ? ' silhouette' : '') + (card.state === 'locked' && card.forSale && !card.hidden ? ' forsale' : ''));
   pic.title = 'Drag to turn it';
-  const s = card.stats, m = card.maxStats;
+  const s = card.stats, m = card.maxStats, n = card.nextStats || {};
   const share = { speed: v => v / best.maxSpeed, accel: v => v / best.accel, health: v => v / best.health,
     respawn: v => best.respawnWorst > best.respawnBest ? 0.15 + 0.85 * (best.respawnWorst - v) / (best.respawnWorst - best.respawnBest) : 1 };
-  const figures = card.hidden ? make('p', 'sr-why', 'A car of a tier not open yet: its figures show once it is.')
+  const figures = card.hidden ? make('p', 'sr-why', 'Figures show once its tier opens.')
     : make('div', 'sr-stats',
-      stat('Top speed', s.maxSpeed, m.maxSpeed, kmh, share.speed),
-      stat('Acceleration', s.accel, m.accel, v => String(Math.round(v * 10) / 10), share.accel),
-      stat('Health', s.health, m.health, v => String(Math.round(v)), share.health),
-      stat('Agility', s.agility, m.agility, score, scoreShare, 'How quickly it steers'),
-      stat('Delivery', s.delivery, m.delivery, score, scoreShare, 'Package efficacy: a gift\'s standing, a flaming package\'s damage'),
-      stat('Composure', s.composure, m.composure, score, scoreShare, 'How long it can sit on the shoulder before the police step in'),
-      stat('Crossing', s.crossing, m.crossing, score, scoreShare, 'How well it takes rails, fords, mud and the tide'),
+      stat('Top speed', s.maxSpeed, m.maxSpeed, kmh, share.speed, undefined, n.maxSpeed),
+      stat('Acceleration', s.accel, m.accel, v => String(Math.round(v * 10) / 10), share.accel, undefined, n.accel),
+      stat('Health', s.health, m.health, v => String(Math.round(v)), share.health, undefined, n.health),
+      stat('Agility', s.agility, m.agility, score, scoreShare, 'How quickly it steers', n.agility),
+      stat('Delivery', s.delivery, m.delivery, score, scoreShare, 'Package efficacy: a gift\'s standing, a flaming package\'s damage', n.delivery),
+      stat('Composure', s.composure, m.composure, score, scoreShare, 'How long it can sit on the shoulder before the police step in', n.composure),
+      stat('Crossing', s.crossing, m.crossing, score, scoreShare, 'How well it takes rails, fords, mud and the tide', n.crossing),
       stat('Weight', s.weight, s.weight, score, scoreShare, 'How heavy it is in a shove (the same at every ECU)'),
-      stat('Respawn', s.respawn, m.respawn, v => (Math.round(v * 10) / 10).toFixed(1) + ' s', share.respawn));
+      stat('Respawn', s.respawn, m.respawn, v => String(Math.round(v * 10) / 10), share.respawn, undefined, n.respawn));
   // what can be done with it
   const go = make('button', 'sr-go');
   let why = null;
@@ -499,15 +515,16 @@ const showDetail = () => {
     go.title = using && evil === !!Game.evil ? 'In use: back to the menu in it' : 'Drive the ' + card.name + ' as ' + sideName(evil) + (card.lent ? ', a free try' : '') + ' (Enter)';
     go.addEventListener('click', () => drive(card));
     // (a free try: lent for today's event at the player's own ECU; its key comes at the max ECU)
-    if (card.lent) why = make('p', 'sr-why lent', make('b', '', lentWords(card)), make('span', '', 'Lent for today\u2019s event at your ECU ' + card.lent.ecu + ' of ' + card.lent.max
-      + '. Its blueprints raise it; deliver it at ECU ' + card.lent.max + ' to win its key.'));
+    if (card.lent) why = make('p', 'sr-why lent', make('b', '', lentWords(card)), make('span', '', 'Free try at ECU ' + card.lent.ecu + ' of ' + card.lent.max
+      + '. Blueprints raise it; win its key at ECU ' + card.lent.max + '.'));
   } else if (card.state === 'barred') {
     go.disabled = true;
     why = make('p', 'sr-why barred', ...barredWhy(card, evil).flatMap(part => typeof part === 'string' ? [part] : part.tier ? [tierStarsNode(part.tier)] : richTiers(part.rich)));
   } else {
     go.disabled = !card.forSale;
     if (card.forSale) go.addEventListener('click', () => toLot(card.id));
-    why = make('p', 'sr-why locked', make('b', '', card.reason), card.hint ? make('span', '', ...richTiers(card.hint)) : null);
+    const w = shortLocked(card);
+    why = make('p', 'sr-why locked', make('b', '', w.reason), w.hint ? make('span', '', ...richTiers(w.hint)) : null);
   }
   // the top: back, where in the list, the bank, the car lot
   const backBtn = make('button', 'sr-fback', '‹');
@@ -588,7 +605,9 @@ const openCosmetics = (card) => {
   Cosmetics.open({ car: card && !card.hidden && !card.dark ? card.car : null, evil: evilNow(), onClose: () => { if (Showroom.isOpen && !Garage.isOpen) Showroom.reshow(); } });
 };
 const cosmeticsButton = (card) => {
-  const b = make('button', 'sr-cosm', 'Cosmetics');
+  // (a compact pill: a small wheel and "Style", styled like the Good/Evil switch beside it; its full name for a screen reader; the owner, 14-Oct)
+  const b = make('button', 'sr-cosm', make('span', 'sr-cosm-ico'), make('span', '', 'Style'));
+  b.setAttribute('aria-label', 'Cosmetics');
   b.title = 'Wheels and more, on this car (C)';
   b.addEventListener('click', () => openCosmetics(card));
   return b;

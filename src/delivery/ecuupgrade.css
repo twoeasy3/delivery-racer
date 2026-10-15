@@ -10,13 +10,9 @@
 #showroom .sr-up-why.blueprints { color: #ffd98a; }
 #showroom .sr-up-note { font-size: 12px; font-style: italic; color: var(--ink-dim); }
 #showroom .sr-up-why.ready { color: #bff5d9; }
-#showroom .sr-up-changes { list-style: none; margin: 2px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 2px 18px; width: 100%; font-size: 12px; }
-#showroom .sr-up-changes li { display: flex; justify-content: space-between; gap: 8px; color: var(--ink-dim); }
-#showroom .sr-up-changes b { color: #7ff0b4; font-weight: 700; }
 @media (max-width: 760px) and (min-height: 521px), (max-width: 519px) {
   #showroom .sr-up-btn { width: 100%; min-height: 48px; }
-  #showroom .sr-up-changes { grid-template-columns: 1fr 1fr; }
-}
+  }
 #showroom .sr-pips i.ready { background: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rar) 80%, #fff), 0 0 5px color-mix(in srgb, var(--rar) 50%, transparent); }
 /* THE ECU UP MOMENT, on purchase (14-Oct): the pip just bought glows and a flag says what happened */
 #showroom .sr-pips i.fresh { background: #fff; box-shadow: 0 0 10px 2px #ffd23f, 0 0 3px #fff; animation: sr-fresh 1.1s ease-in-out infinite alternate; }

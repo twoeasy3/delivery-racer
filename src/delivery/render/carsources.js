@@ -137,14 +137,14 @@ export const renderSources = (car, opts) => {
       : keyLines.length ? keyLines : [muted(word.none)]));
   const bpRarity = s.blueprints.find(b => b.rarity)?.rarity || null;
   const bp = make('div', 'cs-group', make('h4', '', 'Blueprints', chip(bpRarity)), nothing(noBp),
-    ...(s.noBlueprints ? [muted(s.noBlueprints)] : s.maxed ? [make('div', 'cs-line no', make('i', '', '✓'), make('span', '', make('b', '', 'Maxed'), make('small', '', 'At its max ECU: no more blueprints needed')))]
+    ...(s.noBlueprints ? [muted(s.noBlueprints)] : s.maxed ? [make('div', 'cs-line no', make('i', '', '✓'), make('span', '', make('b', '', 'Maxed'), make('small', '', 'Max ECU')))]
       : bpLines.length ? bpLines : [muted('No way to get its blueprints')]));
   const keyShown = !(none && needKey && !keyLines.length), bpShown = !(none && needBp && !bpLines.length);
   // (nothing to be had now, of either: said once, plainly, at the top; a key already owned, or a car maxed, is not
   // "nothing"; one of the two alone: said in its group)
   // the summary, one line, open or shut: a tick or a cross for the key and the blueprints, or "Not obtainable right now"
   const state = (label, ok, done) => make('span', 'cs-state ' + (done || ok ? 'ok' : 'no'), (done || ok ? '✓ ' : '✕ ') + label + (done ? ' ' + done : ''));
-  const summary = make('summary', '', make('h3', '', 'Where to get it'), none ? make('span', 'cs-none', 'Not obtainable right now')
+  const summary = make('summary', '', make('h3', '', 'Get it'), none ? make('span', 'cs-none', 'Not obtainable right now')
     : make('span', 'cs-states', s.keyless ? null : state(word.label, s.obtainable.key, s.keyOwned ? word.owned : ''),
       s.noBlueprints ? null : state('Blueprints', s.obtainable.blueprints, s.maxed ? 'maxed' : '')));
   // the cards themselves (the owner, 12-Oct): its BLUEPRINT card, and, for a Key car, its KEY card: drawn as the packs draw them
