@@ -66,7 +66,9 @@ try {
     'drawStill at 2x: the canvas is the span\'s own size in device pixels (258x132), whatever the shake (' + canvases.at(-1).width + 'x' + canvases.at(-1).height + ')');
 
   // ---- (2) every car a pack features, whole in the picture (the big pack's span: 129x66; the Shop's and the event card's packs are other sizes)
-  const featured = [...new Set(Object.values(packs).flatMap(p => {
+  const Hu = await load('hunt.js'); // (a hunt pack, the Car Hunt's: every car of the hunt is drawn on it in turn, CHECKLIST 345)
+  const featured = [...new Set(Object.entries(packs).flatMap(([id, p]) => {
+    if (Hu.packHunt(id)) return Hu.huntOf(Hu.packHunt(id)).cars;
     const f = p.featured, tie = f?.sameCarAs && packs[f.sameCarAs]?.featured;
     const ids = [...new Set(((tie || f)?.entries || []).filter(e => !e.key).map(e => e.car))];
     return ids.length === 1 ? ids : [];
@@ -76,6 +78,7 @@ try {
   for (const id of featured) {
     const car = carById(id);
     if (!car) { check(false, id + ': no such car'); continue; }
+    try { makeShowCar(car); } catch (e) { if (/canvas|getContext|document|ctx\./i.test(String(e?.message))) { console.log('  note  ' + id + ': its model draws a canvas texture, not built headless: not measured here'); continue; } throw e; }
     let worst = 0;
     for (const aspect of [129 / 66, 1.4, 1.7, 2.2, 2.6, 3]) {
       const before = worst; worst = 0;

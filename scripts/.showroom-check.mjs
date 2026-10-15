@@ -268,28 +268,32 @@ async function overlays(g, check) {
   check(cards.every(c => !D.overlayOf(c) || !/You need the key|Purchase this car/.test(say(D.overlayOf(c)))), 'the overlays\' words are short, not the spec\'s sentences (those stay in the panel and the tooltip)');
 }
 
-// The Car Hunt (the owner, 13-Oct): its car, the Blower Tourer (a blueprint car in no regular pack), is obtainable from the
-// event: never blacked out nor "Not available", its blueprint overlay naming the Car Hunt (live: "Win it in the Car Hunt";
-// between runs: "From the Car Hunt"); the other noPacks cars stay unavailable. Its stage's car rule (allowedCars tiers [3]:
-// the hunt car's stars, both sides) IMPOSES a showroom filter (showroomData.js imposedFilter) that lets by EXACTLY the
-// cars the rule allows (stars 3, gold and magenta), on both sides; a level with no list rule imposes none. (That the
-// imposed filter is never remembered is render/showroom.js's: seen in a browser, not here)
+// The Car Hunt (the owner, 13-Oct; 15-Oct: 23 cars hunted in turn, 3 days each, CHECKLIST 345): its cars (blueprint cars in no
+// regular pack) are obtainable from the event: never blacked out nor "Not available", their blueprint overlay naming the Car
+// Hunt (hunted now: "Win it in the Car Hunt"; another car's window: "From the Car Hunt", the hint its date); the Horseshoe (no
+// hunt) stays unavailable. Its stage's car rule (allowedCars tiers [n]: the hunted car's stars, both sides; a level per tier)
+// IMPOSES a showroom filter (showroomData.js imposedFilter) that lets by EXACTLY the cars the rule allows (gold and magenta),
+// on both sides; a level with no list rule imposes none. (That the imposed filter is never remembered is render/showroom.js's:
+// seen in a browser, not here)
 async function carHunt(g, check) {
   const D = await g.load('showroomData.js');
   const { Events: Ev } = await g.load('events.js');
   const hunt = Ev.specials.find(e => e.id === 'car-hunt'), realNow = Ev.now;
   if (!hunt) { check(false, 'the Car Hunt is in events.json'); return; }
-  const w = Ev.window(hunt, hunt.from + 3600e3);
-  Ev.now = () => w.start + 3600e3;
+  const start = hunt.from + hunt.hunt.cars.indexOf('blower') * 3 * 86400e3; // (the Blower's window)
+  Ev.now = () => start + 3600e3;
   const on = D.carCard(g.cars.carById('blower'), false), ovOn = D.overlayOf(on);
-  Ev.now = () => w.end + 3600e3;
+  const four = ['coach', 'cityev', 'coupecross', 'keivan'].map(id => D.carCard(g.cars.carById(id), false));
+  Ev.now = () => start + 3 * 86400e3 + 3600e3;
   const off = D.carCard(g.cars.carById('blower'), false), ovOff = D.overlayOf(off);
-  const others = ['coach', 'cityev', 'coupecross', 'horseshoe'].map(id => D.carCard(g.cars.carById(id), false));
-  Ev.now = realNow;
+  const horseshoe = D.carCard(g.cars.carById('horseshoe'), false);
   check(!on.dark && !on.hidden && on.name === 'Blower Tourer' && ovOn?.kind === 'blueprint' && ovOn.line === 'Win it in the Car Hunt' && /Car Hunt pack/.test(on.hint),
-    'the Blower Tourer while the Car Hunt is on: shown in full, its blueprint overlay "' + ovOn?.title + ' / ' + ovOn?.line + '", hint "' + on.hint + '"');
-  check(!off.dark && ovOff?.kind === 'blueprint' && ovOff.line === 'From the Car Hunt', 'between runs: still shown, "' + ovOff?.line + '" (' + off.hint + ')');
-  check(others.every(c => c.dark && D.overlayOf(c)?.kind !== 'blueprint'), 'the other noPacks cars (Highway Coach, City EV, Coupe Crossover, Horseshoe) stay blacked out and unavailable');
+    'the Blower Tourer in its window: shown in full, its blueprint overlay "' + ovOn?.title + ' / ' + ovOn?.line + '", hint "' + on.hint + '"');
+  check(!off.dark && ovOff?.kind === 'blueprint' && ovOff.line === 'From the Car Hunt' && /\(its hunt: \d+ \w+\)$/.test(off.hint), 'in another car\'s window: still shown, "' + ovOff?.line + '" (' + off.hint + ')');
+  check(four.every(c => !c.dark && D.overlayOf(c)?.line === 'From the Car Hunt'), 'the Coach, City EV, Coupe Crossover and Kei Van (hunted later): shown, "From the Car Hunt" (' + four[0].hint + ')');
+  check(horseshoe.dark && D.overlayOf(horseshoe)?.kind !== 'blueprint', 'the Horseshoe (in no hunt) stays blacked out and unavailable');
+  Ev.now = () => start + 3600e3;
+  Ev.syncDay(hunt);
   // the imposed filter
   const L = g.levels, before = L.LEVEL, stage = hunt.stages[0].level;
   L.selectSpecial(stage);
@@ -300,6 +304,7 @@ async function carHunt(g, check) {
       (evil ? 'Evil' : 'Good') + ': the Car Hunt imposes ' + JSON.stringify({ stars: f?.stars, colour: f?.colour, state: f?.state }) + ': exactly the ' + want.length + ' cars its rule allows (' + rule?.label + ')');
   }
   check(D.imposedFilter(null, []) === null && D.imposedFilter({ tier: 3, key: '3' }, []) === null, 'no rule, or a tier\'s medal rule: nothing imposed');
+  Ev.now = realNow;
   const one = { list: true, test: (car) => car.id === 'sport', key: 'x', label: 'Sportscompact' }, cards = D.showroomCars().map(car => D.carCard(car, false));
   const f1 = D.imposedFilter(one, cards);
   check(JSON.stringify(D.filterCards(cards.map(c => ({ ...c, allowed: one.test(c.car) })), f1, null).map(c => c.id)) === '["sport"]' && f1.state.includes('allowed'), 'a rule the stars cannot say (one car): the "Allowed on this level" chip makes it exact');

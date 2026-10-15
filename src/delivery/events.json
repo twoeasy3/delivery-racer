@@ -19,10 +19,11 @@
       ]
     },
     {
-      "id": "car-hunt", "name": "Car Hunt", "title": "Car Hunt: Blower Tourer", "short": "Car Hunt", "from": "2026-10-12", "repeat": { "every": 7, "live": 3 },
-      "_note": "The owner, 13-Oct: a recurring event, infinitely grindable: every delivery of its stage while it is on gives one Car Hunt pack (packs.json car-hunt-special, givenBy.event.every), whose featured card is the Blower Tourer. Its stage is Back Roads (normally 115 s Good / 90 s Evil), driven only in a car of the hunt car's stars (the owner: 'same-starred cars'; the Blower Tourer is 3 stars: allowedCars tiers [3], both sides). The clock of 300 s on both sides is a TESTING CAP (the owner: 'The 5 min cap is just for testing'): tighten it later, in the stage's clock below.",
+      "id": "car-hunt", "name": "Car Hunt", "short": "Car Hunt", "from": "2026-10-12", "repeat": { "every": 3, "live": 3 },
+      "_note": "The owner, 13-Oct and 15-Oct: a recurring event, ALWAYS on, infinitely grindable: every delivery of its stage gives one Car Hunt pack (packs.json car-hunt-special, givenBy.event.every), whose featured card is the car hunted NOW. hunt (hunt.js): the 19 feature-roster cars and the four Legendary blueprint fillers (Blower Tourer, Highway Coach, City EV, Coupe Crossover), 23 cars, each hunted for 3 whole local days in this FIXED shuffled order (scripts/events.mjs hunt-order 127: no two cars of the same stars side by side, the seam included), back to back from 12 Oct 2026, then round again (69 days a cycle); repeat every 3 / live 3 keeps it live every day. The car-hunt-5 Shop pack features the same car (sameCarAs). Its stage is Back Roads (normally 115 s Good / 90 s Evil), driven only in a car of the hunted car's stars (hunt.sameStars: a level per star tier, car-hunt-t<n>, both sides). The clock of 300 s on both sides is a TESTING CAP (the owner: 'The 5 min cap is just for testing'): tighten it later, in the stage's clock below.",
+      "hunt": { "days": 3, "sameStars": true, "cars": ["coach", "keivan", "blower", "finlandyacht", "cranelorry", "sporttruck", "farmtractor", "coupecross", "cityev", "armouredlimo", "sprinthatch", "trophytruck", "flatbed", "halftrack", "pixelev", "wedgemicro", "moorrover", "minibus", "touringcar", "moke", "autobahnestate", "hillclimb", "supermini"] },
       "stages": [
-        { "level": "back-roads", "allowedCars": { "tiers": [3] }, "clock": { "good": 300, "evil": 300 } }
+        { "level": "back-roads", "clock": { "good": 300, "evil": 300 } }
       ]
     },
     {

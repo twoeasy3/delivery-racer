@@ -176,7 +176,7 @@ const show = (result, { look = false } = {}) => {
       make('header', 'pr-head', make('div', 'pr-title', make('small', '', kicker), make('h2', '', packName(result.kind))),
         make('span', 'pr-count', slots.length + (slots.length === 1 ? ' card' : ' cards')), shut),
       make('div', 'pr-body',
-        make('div', 'pr-pack', make('div', 'pr-burst'), packArt(result.kind, 1)),
+        make('div', 'pr-pack', make('div', 'pr-burst'), packArt(result.kind, 1, result.car)),
         slots.length ? make('div', 'pr-cards' + (many ? ' many' : ''), slots.map(s => s.slot)) : make('p', 'pr-empty', 'This pack came out empty: there are no cards for it.')),
       make('footer', 'pr-foot', hint, again, done)));
   overlay.className = 'pack-reveal opening k-' + result.kind;

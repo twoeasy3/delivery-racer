@@ -121,38 +121,35 @@ try {
   // a 1-gold starter
   s = sourcesOf(by('commuter'));
   check(s.keyOwned && /1-gold starter/.test(s.noBlueprints || ''), 'a 1-gold starter: owned, ' + s.noBlueprints);
-  // ---- the Blower Tourer (the owner, 13-Oct): a blueprint car in no regular pack whose ONLY source is the Car Hunt's pack
-  // (one for every Car Hunt delivery while it is on); between runs said plainly, with when it is back; the other noPacks
-  // cars still have none ----
+  // ---- the Car Hunt's cars (the owner, 13-Oct and 15-Oct; CHECKLIST 345): blueprint cars in no regular pack whose ONLY sources are
+  // the Car Hunt pack (one for every Car Hunt delivery) and the Car Hunt 5-pack, while the car is HUNTED (3 days in turn, events.json
+  // hunt); before its turn said plainly, with the day it comes: the Blower Tourer, then all 23 (the 19 feature-roster cars and the
+  // Coach, City EV and Coupe Crossover) ----
   {
     const { huntEventFor } = await g.load('carsources.js');
-    const hunt = Events.specials.find(e => e.id === 'car-hunt');
-    fresh(); at(hunt.from + 3600e3);
+    const hunt = Events.specials.find(e => e.id === 'car-hunt'), D = 86400e3, order = hunt.hunt.cars;
+    const windowOf = (id) => hunt.from + order.indexOf(id) * 3 * D + 5 * 3600e3; // (an hour or five into its first window)
+    fresh(); at(windowOf('blower'));
     s = sourcesOf(by('blower'));
     const live = s.blueprints.filter(x => x.chance > 0);
     const way = live[0]?.ways.find(w => w.how === 'event');
     check(live.length === 2 && live.some(x => x.kind === 'car-hunt-special' && x.available && Math.abs(x.chance - 1) < 1e-9) && live.some(x => x.kind === 'car-hunt-5' && x.available) && way?.where === 'Car Hunt' && way.available && /every delivery/.test(way.detail),
-      'the Blower Tourer\'s blueprints: the Car Hunt pack and the Car Hunt 5-pack (' + live.map(x => x.where + ' ' + x.detail).join('; ') + '; ' + way?.detail + ')');
-    check(s.keyless && s.obtainable.blueprints && /Car Hunt pack/.test(sourcesLine(by('blower'))) && huntEventFor(by('blower'))?.live, 'while the Car Hunt is on: obtainable, "' + sourcesLine(by('blower')) + '"');
-    at(hunt.from + 4 * 86400e3);
+      'the Blower Tourer\'s blueprints in its window: the Car Hunt pack and the Car Hunt 5-pack (' + live.map(x => x.where + ' ' + x.detail).join('; ') + '; ' + way?.detail + ')');
+    check(s.keyless && s.obtainable.blueprints && /Car Hunt pack/.test(sourcesLine(by('blower'))) && huntEventFor(by('blower'))?.live, 'while it is hunted: obtainable, "' + sourcesLine(by('blower')) + '"');
+    at(windowOf('blower') + 3 * D);
     s = sourcesOf(by('blower'));
-    const off = s.blueprints.find(x => x.kind === 'car-hunt-special');
-    check(off && !off.available && /Between runs: back/.test(off.why) && s.obtainable.blueprints && s.blueprints.some(x => x.kind === 'car-hunt-5' && x.available) && huntEventFor(by('blower')) && !huntEventFor(by('blower')).live, 'between runs: "' + off?.why + '"');
-    at(hunt.from + 3600e3);
-    const none = ['coach', 'cityev', 'coupecross'].map(id => sourcesOf(by(id)));
-    check(none.every(x => !x.obtainable.blueprints && x.blueprints.every(b => !(b.chance > 0))) && !huntEventFor(by('coach')), 'the Highway Coach, City EV and Coupe Crossover: still no blueprints anywhere');
-  }
-  // ---- the nineteen chosen idea cars (the owner, 15-Oct; cars.js FEATURE_ROSTER): blueprint cars in no pack for now, said plainly:
-  // no source holds them, nothing is obtainable, the line says "not obtainable right now", and no event features them ----
-  {
-    const { huntEventFor } = await g.load('carsources.js');
-    const hunt0 = Events.specials.find(e => e.id === 'car-hunt');
-    fresh(); at(hunt0.from + 3600e3);
+    const off = s.blueprints.find(x => x.kind === 'car-hunt-special'), off5 = s.blueprints.find(x => x.kind === 'car-hunt-5'), h = huntEventFor(by('blower'));
+    check(off && !off.available && off5 && !off5.available && /^Its hunt: /.test(off.why) && off.chance > 0 && !s.obtainable.blueprints && h && !h.live && h.next === windowOf('blower') - 5 * 3600e3 + 69 * D,
+      'the next window (another car\'s): not obtainable, "' + off?.why + '" (its turn 69 days on), both packs');
+    const bad = [];
+    for (const id of order) {
+      at(windowOf(id));
+      const on = sourcesOf(by(id)), others = order.filter(x => x !== id).map(x => by(x));
+      if (!(on.obtainable.blueprints && huntEventFor(by(id))?.live && others.every(c => !sourcesOf(c).obtainable.blueprints && huntEventFor(c) && !huntEventFor(c).live))) bad.push(id);
+    }
+    check(!bad.length && order.length === 23, 'each of the 23 cars (the 19, the Blower, Coach, City EV, Coupe Crossover): obtainable in its own window, every other one then not, with its date' + (bad.length ? ': NOT ' + bad.join(', ') : ''));
     const roster = g.cars.FEATURE_ROSTER;
-    const sources = roster.map(c => sourcesOf(c));
-    check(roster.length === 19 && sources.every(x => x.keyless && !x.obtainable.blueprints && !x.obtainable.key && x.blueprints.every(b => !(b.chance > 0) && !b.available)) && roster.every(c => !huntEventFor(c)),
-      'the 19 feature-roster cars: no pack holds their blueprints, nothing is obtainable, no event features them');
-    check(roster.every(c => /Blueprints: not obtainable right now/.test(sourcesLine(c))), 'their line: "' + sourcesLine(roster[0]) + '"');
+    check(roster.length === 19 && roster.every(c => order.includes(c.id)), 'every feature-roster car is in the hunt');
   }
   // ---- the six concept key cars (CHECKLIST 211): their blueprints only in their day's Concept Strike pack, their key only for
   // delivering them at their max ECU on their day; on that day obtainable, on another (Sunday too) "back <its day>" ----

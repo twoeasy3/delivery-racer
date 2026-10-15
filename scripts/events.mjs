@@ -5,6 +5,10 @@
 //   node scripts/events.mjs                 the events and their stages, and any problems
 //   node scripts/events.mjs check           only the check (exit 1 if events.json is unsound)
 //   node scripts/events.mjs time [<id>]     each stage's clean run, in its car, beside the clock written for it
+//   node scripts/events.mjs hunt-order <seed> [<event id>]   a SHUFFLED order for a hunt's cars (events.json hunt.cars: the Car Hunt's,
+//                                           CHECKLIST 345): the cars now in it, in cars.js order, shuffled (mulberry32 Fisher-Yates) from the
+//                                           seed or the first one after it with no two cars of the same stars side by side, the seam included.
+//                                           It prints the list to paste; it writes nothing (15-Oct: seed 127)
 import { boot } from './delivery-headless.mjs';
 
 const args = process.argv.slice(2);
@@ -17,6 +21,20 @@ if (args[0] === 'check') {
   console.log(problems.length ? problems.join('\n') : 'events.json: sound');
   await g.close();
   process.exit(problems.length ? 1 : 0);
+}
+if (args[0] === 'hunt-order') {
+  const e = Events.specials.find(x => x.id === (args[2] || 'car-hunt'));
+  if (!e?.hunt) { console.log('no hunt: ' + (args[2] || 'car-hunt')); await g.close(); process.exit(1); }
+  const all = [...g.cars.FILLER_CARS].filter(c => e.hunt.cars.includes(c.id)).map(c => c.id); // (cars.js order)
+  const stars = (id) => g.cars.carTier(g.cars.carById(id));
+  const mul = (s) => () => { s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const shuffle = (seed) => { const r = mul(seed), a = [...all]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  for (let seed = Math.max(1, Math.floor(Number(args[1]) || 1)); seed < 1e6; seed++) {
+    const a = shuffle(seed);
+    if (a.every((id, i) => stars(id) !== stars(a[(i + 1) % a.length]))) { console.log('seed ' + seed + ' (stars ' + a.map(stars).join('') + '):\n' + JSON.stringify(a)); break; }
+  }
+  await g.close();
+  process.exit(0);
 }
 if (args[0] === 'time') {
   const { cleanRun } = await g.load('cleanrun.js');

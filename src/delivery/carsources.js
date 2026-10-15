@@ -20,6 +20,7 @@ import { Events, PLAIN_EVENTS, when, weekdayName } from './events.js';
 import { LEVELS, levelName } from './levels.js';
 import { Tiers } from './tiers.js';
 import { PACKS, PACK_IDS, contents, careerLevels, careerPack, featuredOf, packName, isBespokeCar, rarityOf, Packs } from './packs.js';
+import { packHunt } from './hunt.js';
 import { Shop } from './shop.js';
 import shopData from './shop.json';
 
@@ -122,9 +123,18 @@ const packSources = (car, what, t) => {
   const key = what === 'key', out = [];
   for (const kind of PACK_IDS) {
     const spec = PACKS[kind], from = spec.event ?? null;
-    const featured = spec.featured ? featuredOf(kind) : [];
+    // (a HUNT pack, the Car Hunt's: it features the car hunted now; a car of the hunt not hunted now is asked as if it were, and
+    // waits for its turn: 'Its hunt: 3 Nov')
+    const huntId = packHunt(kind), huntEvent = huntId ? Events.specials.find(e => e.id === huntId) : null;
+    const turn = huntEvent && !key ? Events.huntWindow(huntEvent, car.id, t) : null;
+    const featured = spec.featured ? featuredOf(kind, turn ? { car: car.id } : { t }) : [];
     const hit = chanceIn(kind, car, { key, featured });
     const name = packName(kind);
+    if (hit && turn && !turn.live) {
+      out.push({ what, how: 'pack', kind, from, where: name, rarity: hit.rarity, chance: hit.chance, available: false, ways: waysFor(kind, t),
+        why: 'Its hunt: ' + day(turn.start), detail: 'about ' + pct(hit.chance) + ' a pack (a featured card) while it is hunted, ' + day(turn.start) + ' to ' + day(turn.end - 3600e3) });
+      continue;
+    }
     if (!hit) {
       out.push({ what, how: 'pack', kind, from, where: name, available: false, chance: 0, rarity: null, ways: [], detail: '',
         why: 'Cannot hold it: ' + (key ? (spec.pool === 'all' ? 'not in its pool' : 'no keys in it')
@@ -207,17 +217,18 @@ export const liveEventFor = (car, { t = Events.now() } = {}) => {
   return null;
 };
 
-// the special event whose packs (givenBy.event) FEATURE this car, and are still to be had from it (it is on, or it recurs:
-// the Car Hunt and its Blower Tourer, the owner 13-Oct): { event, pack, live, next } (next: a recurring one's next run
-// when it is between runs), or null. A car in no regular pack (`noPacks`) with such an event is obtainable: the showroom
+// the special event whose packs (givenBy.event) FEATURE this car, and are still to be had from it (it is on, or it recurs;
+// a HUNT, the Car Hunt's 23 cars in turn (15-Oct, hunt.js): the car's turn, now or next): { event, pack, live, next } (next: a
+// recurring one's next run, a hunt car's next window, when it is not on), or null. A car in no regular pack (`noPacks`) with such an event is obtainable: the showroom
 // does not black it out (showroomData.js)
 export const huntEventFor = (car, { t = Events.now() } = {}) => {
   if (!car) return null;
   for (const id of PACK_IDS) {
     const spec = PACKS[id], give = spec.givenBy?.event;
     if (!give || !spec.featured) continue;
-    if (!featuredOf(id).some(f => f.car.id === car.id && !f.key)) continue;
     const event = Events.specials.find(e => e.id === String(give.id ?? spec.event));
+    if (event?.hunt && packHunt(id) === event.id) { const w = Events.huntWindow(event, car.id, t); if (w) return { event, pack: id, live: w.live, next: w.start }; continue; } // (a hunt: the car's turn, now or next)
+    if (!featuredOf(id, { t }).some(f => f.car.id === car.id && !f.key)) continue;
     if (!event) continue;
     if (give.day && event.days) { const cd = Events.carDay(event, car.id, t); if (cd) return { event, pack: id, live: cd.live, next: cd.start }; continue; } // (a rotating event: the car's own day)
     const state = specialState(event, t);
