@@ -17,27 +17,30 @@
 //    TEXTURES: one 256 x 64 canvas (64 KB, 85 KB with mipmaps) per distinct (design, text) pair, cached, shared by every car and both
 //    ends (the material and the texture are flagged `shared`); only the equipped pair and the one before it are kept.
 //    Geometry: the face is 2 triangles, the slab 12 (one pair per plate size, shared).
-// STORAGE: delivery.platedesign and delivery.platetext (localStorage, try/catch; ignored and not written with Progress.noSave, i.e. test
-// switches); ?platedesign=<id> and ?platetext=<text> for one visit (stills; never saved, the text is filtered the same). A saved design the
+// STORAGE: PER CAR over a default (15-Oct): the loadout store's plate slot (render/loadoutstore.js: one localStorage key, try/catch; ignored
+// and not written with Progress.noSave, i.e. test switches); delivery.platedesign and delivery.platetext are the old global keys, read once
+// as the default and kept in step with it. ?platedesign=<id> and ?platetext=<text> for one visit, every car (stills; never saved, the text
+// is filtered the same). A saved design the
 // player does not own wears Stock. Designs are registered as plate:<id> cosmetics (render/cosmetics.js; some free, the rest locked until
 // owned; "Unlock everything: Absolutely" grants them). SHOP HOOK: each design carries a `price` (a placeholder, nothing reads it yet).
 // API: dressPlates(model, car)                 where a car's model is built (render/showcar.js, render/items.js playerModel, beside dressWheels)
-//      PLATE_DESIGNS, plateDesign(), shownDesign(), setPlateDesign(id) -> bool (false: unknown or not owned)
-//      plateText(), setPlateText(raw) -> { ok, text, reason }   the filter (platetext.js); a refused text becomes the default text
-//      resetPlate()   design Stock, text default       onPlate(fn)  fn() after any change (every dressed model alive follows at once)
+//      PLATE_DESIGNS, plateDesign(carId), shownDesign(carId), setPlateDesign(id, target) -> bool (false: unknown or not owned)
+//      plateText(carId), setPlateText(raw, target) -> { ok, text, reason }   the filter (platetext.js); a refused text becomes the default text
+//      resetPlate(target)   design Stock, text default       onPlate(fn)  fn() after any change (every dressed model alive follows at once)
+//      (carId: whose plate, none = the default; target: a car id = that car's own, null / none = the default, every car without its own)
 //      platePlan(model) -> { status, ends, ... }  what a model got        plateTexture(design, text) -> { texture, material }  (for a check / the chips)
 //      the existing-plates toggle: dressPlates' siblings below, kept as they were: existingPlates, setExistingPlatesVisible, platesEquipped,
 //      setPlatesEquipped(on) (hides every tagged plate of every dressed model, Legendary included: the raw switch of 279), onPlatesEquipped
 // Traffic is not dressed (it never wears the player's cosmetics): other drivers keep their plates. ?plates=none hides the existing plates
 // for a visit (stills).
 import * as THREE from 'three';
-import { Progress } from '../progress.js';
 import { registerCosmetics, ownsCosmetic } from './cosmetics.js';
 import { PLATE_DESIGNS, designById, drawPlate, W, H } from './platedesigns.js';
 import { plateAnchorsFor } from './plateanchors.js';
 import { DEFAULT_TEXT, checkPlateText } from './platetext.js';
 import { forgetDents } from './dents.js';
 import { SILHOUETTE } from './silhouette.js';
+import * as Store from './loadoutstore.js'; // (the choice: per car over a default)
 
 export { PLATE_DESIGNS, designById, DEFAULT_TEXT };
 export const KEY_DESIGN = 'delivery.platedesign', KEY_TEXT = 'delivery.platetext';
@@ -65,60 +68,57 @@ export const setExistingPlatesVisible = (model, visible) => {
   return plates.length;
 };
 
-// ---- the choice ----
-let storedDesign = null, storedText = null, visitDesign = null, visitText = null; // the saved values (read the first time they are wanted); what a visit that saves nothing chose
-export const plateDesign = () => {
+// ---- the choice: the loadout store's plate slot { design, text } (render/loadoutstore.js), the car's own over the default ----
+// every reader takes a car id (none / null: the default); every setter a target (a car id: that car's own; null / none: the default)
+export const plateDesign = (carId = null) => {
   if (askedDesign) return designById(askedDesign).id;
-  if (Progress.noSave) return visitDesign || 'stock';
-  if (storedDesign === null) { storedDesign = 'stock'; try { storedDesign = designById(localStorage.getItem(KEY_DESIGN)).id; } catch { /* (no storage: stock) */ } }
-  return storedDesign;
+  return designById(Store.get(carId, 'plate').design).id;
 };
 // the design that is worn: the chosen one if it is owned (a saved choice that is not owned wears Stock; ?platedesign= is the visit's own)
-export const shownDesign = () => {
-  const id = plateDesign();
+export const shownDesign = (carId = null) => {
+  const id = plateDesign(carId);
   return askedDesign || ownsCosmetic('plate', id) ? id : 'stock';
 };
-let preview = null; // the text being typed (render/cosmeticsui.js): worn on the cars at once, saved only when confirmed
-export const plateText = () => {
-  if (preview) return preview.text;
+const checked = new Map(); // (a stored text through the filter, once each)
+const filtered = (raw) => { if (!checked.has(raw)) { if (checked.size > 50) checked.clear(); checked.set(raw, checkPlateText(raw).text); } return checked.get(raw); };
+// the text being typed (render/cosmeticsui.js): worn at once, saved only when confirmed. Its target: a car (that car only) or null (the
+// default: every car without a plate of its own)
+let preview = null;
+const previewed = (carId) => preview && (preview.target === null ? !Store.hasOwn(carId, 'plate') : preview.target === carId);
+export const plateText = (carId = null) => {
+  if (previewed(carId)) return preview.text;
   if (askedText != null) { let raw = askedText; try { raw = decodeURIComponent(askedText); } catch { /* (as typed) */ } return checkPlateText(raw.replace(/\+/g, ' ')).text; }
-  if (Progress.noSave) return visitText || DEFAULT_TEXT;
-  if (storedText === null) { storedText = DEFAULT_TEXT; try { const raw = localStorage.getItem(KEY_TEXT); if (raw) storedText = checkPlateText(raw).text; } catch { /* (no storage: the default) */ } }
-  return storedText;
+  const raw = Store.get(carId, 'plate').text;
+  return raw ? filtered(raw) : DEFAULT_TEXT;
 };
 const refresh = () => {
   for (const ref of live) { const model = ref.deref(); if (model) apply(model); else live.delete(ref); }
   prune();
   for (const fn of listeners) fn();
 };
-export const setPlateDesign = (id) => {
+Store.onStore(({ slot }) => { if (slot === null || slot === 'plate') refresh(); });
+export const setPlateDesign = (id, target = null) => {
   const design = PLATE_DESIGNS.find(d => d.id === id);
   if (!design || !ownsCosmetic('plate', design.id)) return false;
-  if (Progress.noSave) visitDesign = design.id;
-  else { storedDesign = design.id; try { localStorage.setItem(KEY_DESIGN, design.id); } catch { /* (no storage: for this visit) */ } }
-  refresh();
+  Store.setSlot(target, 'plate', { design: design.id });
   return true;
 };
 // the player's text, through the filter: { ok, text, reason } (text = what is worn: the cleaned text, or the default if it was empty or refused)
-export const setPlateText = (raw) => {
+export const setPlateText = (raw, target = null) => {
   const result = checkPlateText(raw);
   preview = null;
-  if (Progress.noSave) visitText = result.text;
-  else { storedText = result.text; try { localStorage.setItem(KEY_TEXT, result.text); } catch { /* (no storage: for this visit) */ } }
-  refresh();
+  Store.setSlot(target, 'plate', { text: result.text });
   return result;
 };
-// the text as it is typed: worn live (every dressed car), checked by the filter, NOT saved; setPlateText(raw) saves it, previewPlateText(null) drops it
-export const previewPlateText = (raw) => {
-  preview = raw == null ? null : checkPlateText(raw);
+// the text as it is typed: worn live (the target's cars), checked by the filter, NOT saved; setPlateText(raw) saves it, previewPlateText(null) drops it
+export const previewPlateText = (raw, target = null) => {
+  preview = raw == null ? null : { ...checkPlateText(raw), target: target == null ? null : String(target) };
   refresh();
   return preview;
 };
-export const resetPlate = () => {
+export const resetPlate = (target = null) => {
   preview = null;
-  if (Progress.noSave) { visitDesign = 'stock'; visitText = DEFAULT_TEXT; }
-  else { storedDesign = 'stock'; storedText = DEFAULT_TEXT; try { localStorage.removeItem(KEY_DESIGN); localStorage.removeItem(KEY_TEXT); } catch { /* (no storage) */ } }
-  refresh();
+  Store.setSlot(target, 'plate', { design: 'stock', text: null });
 };
 export const onPlate = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
 
@@ -140,9 +140,10 @@ export const plateTexture = (design, text) => {
   cache.set(key, hit = { texture, material, key });
   return hit;
 };
-// only the plate worn and the one before it are kept (typing makes a new pair at every letter)
+// only the plates worn (every live car's: they may differ car to car) and the one before are kept (typing makes a new pair at every letter)
 const prune = () => {
   const keep = new Set([shownDesign() + '|' + plateText()]);
+  for (const ref of live) { const key = ref.deref()?.userData.platePlan?.key; if (key) keep.add(key); }
   const keys = [...cache.keys()];
   for (const k of keys.slice(0, Math.max(0, keys.length - 2))) if (!keep.has(k)) { const hit = cache.get(k); hit.texture.dispose(); hit.material.dispose(); cache.delete(k); }
 };
@@ -200,8 +201,8 @@ export const platePlan = (model) => (model && planOf(model)) || null;
 const apply = (model) => {
   const info = model.userData.platePlan;
   if (!info) return;
-  const design = shownDesign(), want = design !== 'stock' && info.status === 'ok' ? info.ends : [];
-  const text = plateText();
+  const design = shownDesign(info.carId), want = design !== 'stock' && info.status === 'ok' ? info.ends : [];
+  const text = plateText(info.carId);
   let changed = false;
   // ends that have a plate group and should not, and the other way
   for (const end of ['rear', 'front']) {
@@ -231,7 +232,7 @@ const apply = (model) => {
 export const dressPlates = (model, car) => {
   if (!model || model.userData.platePlan) return model;
   const plan = car ? plateAnchorsFor(car) : { status: 'none', ends: [] };
-  model.userData.platePlan = { ...plan, groups: { rear: null, front: null }, worn: [], key: null };
+  model.userData.platePlan = { ...plan, carId: car ? car.id : null, groups: { rear: null, front: null }, worn: [], key: null };
   live.add(new WeakRef(model));
   apply(model);
   return model;

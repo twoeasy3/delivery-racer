@@ -9,9 +9,9 @@
 // Whoever KEEPS a picture or a model of a dressed car keys it by car id + pose + size + loadoutKey(car) (render/carstill.js), or
 // compares the key it was built with (render/showroomview.js, render/menustage.js), and onLoadout(fn) tells it that something changed.
 // A STOCK picture (a pack's, the Shop's, a blueprint card's: dressCosmetics { stock: true }) is never keyed by this: it is 'stock'.
-// PER CAR LATER: today every choice but the rim is global, so the key is the same for every car (bar the rim's per-car part and
-// Legendary). When a cosmetic becomes per car, only its reader below changes to read the car's own value (as resolveRim already
-// takes the car id); every cache is already keyed per car id, so nothing else needs to change.
+// PER CAR (15-Oct): every reader below takes the car's id and gives the car's OWN choice or, where it has none, the DEFAULT's
+// (render/loadoutstore.js). So the key is the car's resolved loadout: changing car A's look moves only A's key; changing the default
+// moves the key of every car that follows the default and of no car that has its own for that slot. Every cache is keyed per car id.
 // Render-only (no rules module imports it; not in the replay fingerprint).
 import { carById } from '../cars.js';
 import { wheelDesign, wheelColour, wornRim, onWheelColour } from './wheelcosmetic.js';
@@ -23,9 +23,9 @@ const carOf = (car) => (car && typeof car === 'object' ? car : carById(car) || {
 export const loadoutKey = (car) => {
   const c = carOf(car), id = c.id, raw = platesEquipped() ? '|x' : '';
   if (c.legend) return 'legend' + raw;
-  const wheels = 'w=' + wheelDesign() + '.' + wheelColour() + '.' + wornRim(id, 'front') + '.' + wornRim(id, 'rear');
-  const design = shownDesign(), plate = '|p=' + design + (design !== 'stock' ? '.' + plateText() : '');
-  const props = SLOTS.map((slot) => { const p = shownProp(slot); return '|' + slot + '=' + (p === 'none' ? '-' : p + '.' + propPaintChoice(slot)); }).join('');
+  const wheels = 'w=' + wheelDesign(id) + '.' + wheelColour(id) + '.' + wornRim(id, 'front') + '.' + wornRim(id, 'rear');
+  const design = shownDesign(id), plate = '|p=' + design + (design !== 'stock' ? '.' + plateText(id) : '');
+  const props = SLOTS.map((slot) => { const p = shownProp(slot, id); return '|' + slot + '=' + (p === 'none' ? '-' : p + '.' + propPaintChoice(slot, id)); }).join('');
   return wheels + plate + props + raw;
 };
 

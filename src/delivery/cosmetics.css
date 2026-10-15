@@ -137,3 +137,28 @@
 #cosmetics .cz-lock::before { content: ""; position: absolute; left: 1px; top: -4px; width: 4px; height: 4px; border: 1.5px solid currentColor; border-bottom: 0; border-radius: 3px 3px 0 0; }
 #cosmetics .cz-tabmsg { min-height: 0; font-size: 12px; color: var(--accent); }
 #cosmetics .cz-tabmsg:empty { display: none; }
+
+/* PER CAR (15-Oct): the 'This car / All cars' switch over the tabs, the car's two actions beside it, the header's 'Custom' mark, a tab's dot
+   (this car has its own for that slot) and a section's quiet 'from default' tag */
+#cosmetics .cz-scopebar { display: flex; align-items: center; justify-content: space-between; gap: 6px 8px; flex-wrap: wrap; }
+#cosmetics .cz-scopes { display: inline-flex; gap: 3px; padding: 3px; border-radius: 9px; background: rgba(0, 0, 0, .35); box-shadow: inset 0 0 0 1px var(--line); }
+#cosmetics .cz-seg { min-height: 36px; padding: 0 12px; border-radius: 7px; font: 700 12px/1 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-dim); }
+#cosmetics .cz-seg[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+#cosmetics .cz-acts { display: flex; gap: 6px; }
+#cosmetics .cz-acts[hidden] { display: none; }
+#cosmetics .cz-act { white-space: nowrap; min-height: 36px; padding: 0 11px; border-radius: 7px; box-shadow: inset 0 0 0 1px var(--line); font: 700 12px/1 system-ui, sans-serif; letter-spacing: .03em; color: var(--ink-dim); }
+#cosmetics .cz-act:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--accent); color: #fff; }
+#cosmetics .cz-act:disabled { opacity: .35; cursor: default; }
+#cosmetics .cz-custom { display: inline-block; margin-left: 8px; padding: 2px 5px; border-radius: 3px; background: var(--accent); color: var(--accent-ink); font-size: 9px; letter-spacing: .1em; vertical-align: 1px; }
+#cosmetics .cz-custom[hidden] { display: none; }
+#cosmetics .cz-tag { margin-left: 8px; font: 600 11px/1 system-ui, sans-serif; font-style: normal; letter-spacing: .02em; text-transform: none; color: var(--ink-dim); vertical-align: 3px; }
+#cosmetics .cz-tag[hidden] { display: none; }
+#cosmetics .cz-slot { position: relative; }
+#cosmetics .cz-own { display: none; position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+#cosmetics .cz-slot.own .cz-own { display: block; }
+#cosmetics .cz-slot.on .cz-own, #cosmetics .cz-slot[aria-selected="true"] .cz-own { background: var(--accent-ink); }
+@media (max-width: 760px) and (min-height: 521px), (max-width: 519px) {
+  #cosmetics .cz-seg { padding: 0 9px; font-size: 11px; }
+  #cosmetics .cz-act { padding: 0 8px; font-size: 11px; }
+}
+@media (pointer: coarse) { #cosmetics .cz-seg, #cosmetics .cz-act { min-height: 40px; } }

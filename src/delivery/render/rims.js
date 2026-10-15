@@ -16,14 +16,15 @@
 // themselves (userData.rollsWheels: the three old cars of render/models.js) has that turn taken off the rim's own.
 // The per-frame work is spinRims(model, t), called from the model's userData.animate (wrapped by dressWheels): one quaternion per
 // rim mesh and no allocation.
-// THE CHOICE: global today, kept so that it can grow per axle and per car: the stored value (KEY_RIM, JSON) is
-// { all: id } and may later carry { front, rear, cars: { <carId>: { all, front, rear } } }; resolveRim(carId, axle) is the one
-// reader (today: the global rim for every car and axle). Unknown, absent or broken = 'none'. ?wheelrim=<id> for a visit.
+// THE CHOICE: PER CAR over a default (render/loadoutstore.js: the wheels slot's rim = { all, front?, rear? }); resolveRim(carId, axle)
+// is the one reader (the car's own rim, else the default's; an axle's own, else the all-round one). Nothing edits per axle yet.
+// Unknown, absent or broken = 'none'. ?wheelrim=<id> for a visit (every car). The old global key KEY_RIM is read once as the
+// default by the store's migration and kept in step with the default.
 // SKIPPED cars (RIM_SKIP: hoops, tracks, hulls, a jet's discs) and cars whose tyres findHubs cannot find get no rim; Legendary
 // cars keep their own wheels (wheelcosmetic.js); a wheel face under bodywork is judged by roomFor below (per face, then per axle).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { Progress } from '../progress.js';
+import * as Store from './loadoutstore.js'; // (the choice, per car over the default)
 
 export const KEY_RIM = 'delivery.wheelrim';
 // kind: 'speed' turns with the car, 'spin' at a fixed pace; n: the spokes (or blades) round it, for the wagon-wheel clamp
@@ -48,9 +49,9 @@ export const BLUR = [0, 0.3, 0.55, 0.8]; // the disc's opacity steps (one shared
 export const RIM_GAP = 0.012;  // m off the tyre's face (a sidewall ring is at 5 mm)
 export const DEFAULT_HEX = 0xcfd3d9; // a rim with a Stock hub colour: silver
 
-// ---- the choice -------------------------------------------------------------------------------------------------------------
+// ---- the choice: in the loadout store (render/loadoutstore.js), the wheels slot's `rim` = { all, front?, rear? }, per car over the default ----
 const NONE = Object.freeze({ all: 'none' });
-// a stored value made safe: a JSON object of known ids (per axle and per car kept for later), or a bare id; anything else: none
+// a value made safe: a JSON object of known ids (all, front, rear; and the old per-car part), or a bare id; anything else: none
 export const cleanRimChoice = (raw) => {
   let v = raw;
   if (typeof v === 'string') { try { v = JSON.parse(v); } catch { v = { all: v }; } }
@@ -71,33 +72,22 @@ export const cleanRimChoice = (raw) => {
   }
   return out;
 };
-let storedRim = null, visitRim = null;
-const askedRim = typeof location !== 'undefined' ? /[?&]wheelrim=(\w+)/.exec(location.search)?.[1] : null; // (?wheelrim=spoke5: for stills; never saved)
+const askedRim = typeof location !== 'undefined' ? /[?&]wheelrim=(\w+)/.exec(location.search)?.[1] : null; // (?wheelrim=spoke5: every car, for stills; never saved)
 export const rimAsked = !!askedRim;
-// the saved choice as it is stored (for the ownership test in wheelcosmetic.js), whatever the visit's switches
-export const savedRimChoice = () => {
-  if (storedRim === null) { storedRim = NONE; try { storedRim = cleanRimChoice(localStorage.getItem(KEY_RIM)); } catch { /* (no storage: none) */ } }
-  return storedRim;
-};
-export const rimChoice = () => {
-  if (askedRim) return { all: rimById(askedRim).id };
-  if (Progress.noSave) return visitRim || NONE;
-  return savedRimChoice();
-};
-// THE one reader: the rim a car's axle ('front' | 'rear') wears. Today the global one for every car and axle.
+// the stored rim choice of a car (null: the default), as saved, whatever the visit's ?wheelrim= (for the ownership test in wheelcosmetic.js)
+export const savedRimChoice = (carId = null) => cleanRimChoice(Store.get(carId, 'wheels').rim);
+export const rimChoice = (carId = null) => (askedRim ? { all: rimById(askedRim).id } : savedRimChoice(carId));
+// THE one reader: the rim a car's axle ('front' | 'rear') wears: the car's own wheels (or the default's), that axle's rim or the all-round one
+// (the order, as before: the car's own rim for that axle, its own all-round, the default's for that axle, the default's all-round)
 export const resolveRim = (carId, axle) => {
-  const c = rimChoice(), car = carId && c.cars ? c.cars[carId] : null;
-  return rimById((car && (car[axle] || car.all)) || c[axle] || c.all).id;
+  if (askedRim) return rimById(askedRim).id;
+  const own = carId != null ? Store.own(carId, 'wheels')?.rim : null, d = Store.defaultSlot('wheels').rim || {};
+  return rimById((own && (own[axle] || own.all)) || d[axle] || d.all).id;
 };
-export const globalRim = () => rimChoice().all;
-// put the global rim (the per-axle and per-car parts, none today, are kept); returns the id
-export const putRim = (id) => {
-  const rim = rimById(id).id;
-  if (Progress.noSave) { visitRim = { ...(visitRim || NONE), all: rim }; return rim; }
-  storedRim = { ...savedRimChoice(), all: rim };
-  try { localStorage.setItem(KEY_RIM, JSON.stringify(storedRim)); } catch { /* (no storage: for this visit) */ }
-  return rim;
-};
+export const globalRim = (carId = null) => rimChoice(carId).all;
+// the rim (all round) of a target (a car id, or null: the default); the per-axle parts are kept. Returns the id. (Written with the rest of the wheel set by wheelcosmetic.js.)
+export const rimPatch = (id, target = null) => ({ rim: { ...savedRimChoice(target), all: rimById(id).id } });
+export const putRim = (id, target = null) => { Store.setSlot(target, 'wheels', rimPatch(id, target)); return rimById(id).id; };
 
 // ---- the geometry: x, y in tyre radii (the mesh is scaled by the radius), z in metres outward ------------------------------
 const shade = (g, v) => {
