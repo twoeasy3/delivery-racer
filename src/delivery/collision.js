@@ -287,6 +287,7 @@ export const Collision = (() => {
   for (const [kind, like] of Object.entries({ ticketGate: 'crate', scrubber: 'bale', trackLamp: 'cone', railTrolley: 'crate', infoTotem: 'sign' })) SIZE[kind] = SIZE[like]; // (the metro's)
   SIZE.hoistDrum = [0.95, 0.6, 2.3]; // a tunnel junction's load in the metro (hazards.js, themes.js junctionTrain): a 1.9 m cable drum, 1.2 m wide along the road, slung 0.3 m off the floor
   SIZE.laneEnd = [1.6, 0.4, 2.8]; // a dead-end lane's end wall: a lane wide (lanegimmicks.js)
+  SIZE.pillar = [0.7, 0.7, 8.5]; // a pillar in a lane (lanegimmicks.js): a 1.4 m square column, up to a tunnel's ceiling
   // what a level's own obstacle of that kind is on its theme (its "obstacles", "shoulderRows" and "drifters"
   // only: what a gimmick puts out, a cargo truck's load among it, is what it always was)
   // (drifting: one of its "drifters", where a theme can have another thing again: a bale that drifts is a tumbleweed)
@@ -754,7 +755,8 @@ export const Collision = (() => {
   const atRoadLevel = (o) => o.h - o.r < Player.height && o.h + o.r > 0;
 
   const hitObstacles = () => {
-    // a dead-end lane's end (lanegimmicks.js), checked before any protection is honoured. A SHUTTER (o.laneEnd 'shutter', the
+    // a dead-end lane's end, or a PILLAR in a lane (lanegimmicks.js: laneEnd 'pillar', a wreck as at a wall, but a Ghost passes
+    // through it: there is road behind it), checked before any protection is honoured. A SHUTTER (o.laneEnd 'shutter', the
     // road goes on behind it): a Ghost passes through it, a tank (Player.tank: a tank car or TANK RAGE) or an armoured car
     // smashes through it (the shutter is gone, no damage), any other car is wrecked outright. A WALL ('wall', nothing behind
     // it): a SUPER INSTAKILL, the car wrecked whatever protects it: not the Ghost, not a tank, not armour, not a fresh
@@ -764,8 +766,8 @@ export const Collision = (() => {
     if (Player.active && !Player.testGhost) {
       for (const o of obstacles) {
         if (!o.laneEnd || o.gone || Math.abs(o.s - Player.s) > CONFIG.broadPhaseDistance || !overlap(Player, o)) continue;
+        if (o.laneEnd !== 'wall' && Player.ghost > 0) continue; // (a shutter or a pillar: through it, as through anything; only a wall has nothing behind it)
         if (o.laneEnd === 'shutter') {
-          if (Player.ghost > 0) continue; // (through it, as through anything)
           if (Player.tank > 0 || Player.armour > 0) { // (smashed through: the shutter is gone)
             o.gone = true;
             Game.shake = Math.max(Game.shake, 0.5);
@@ -778,13 +780,14 @@ export const Collision = (() => {
         Player.lat = o.openLat;
         Game.shake = 1;
         FxQueue.push({ type: 'explode', s: o.s, lat: o.lat, vs: 0, big: true });
-        Message.say('events', 'deadEndHit');
+        Message.say('events', o.laneEnd === 'pillar' ? 'pillarHit' : 'deadEndHit');
         break;
       }
     }
     if (!Player.active || Player.shield > 0 || Player.ghost > 0) return;
     for (const o of obstacles) {
       if (o.gone || Math.abs(o.s - Player.s) > CONFIG.broadPhaseDistance) continue;
+      if (o.laneEnd === 'pillar') continue; // (a pillar is never knocked down: it wrecks the car, above, or it is passed through)
       if (o.kind === 'asteroid' && !atRoadLevel(o)) continue; // it passes over or under the car
       if ((o.kind === 'dropBear' || o.kind === 'rock') && o.h > Player.height) continue; // (still up in its tree, or falling)
       if (o.dance && o.h > Player.height) continue; // (a portaloo up in the air: the car goes underneath)

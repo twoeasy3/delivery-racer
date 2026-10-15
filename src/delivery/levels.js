@@ -331,6 +331,10 @@
 //              smashes through, any other car is wrecked. 'wall': nothing behind it: wrecked whatever protects the car. A DEAD END
 //              sign over the lane, beacons and a bell before it; another lane is always open beside it (the level reports one
 //              that would close the road). Never after a bend, never at a junction's mouth or on a pad
+//   pillars    { s, lane, count?, gap? }: `count` solid columns `gap` m apart standing in that lane (CONFIG.pillar): hit one and the
+//              car is wrecked, whatever protects it but the Ghost (as at a dead end's wall). A PILLARS sign, beacons, a bell and a
+//              warning before them; the way past is the lane beside. On an edge railway (the metro) the lanes beside are the
+//              tracks: no train sets off while the player is at a group, and the two tracks never both have one near it
 //   tunnelJunctions { s, side: 'left' | 'right' }: a side tunnel crossing the road inside a tunnel (a mall's concourse): a
 //              mouth in each wall; as the player comes near, beacons flash and a bell rings, then a train (an electric tug
 //              and two trolleys) comes out of the `side` mouth and crosses into the other. A knock, never a stop or a bust.

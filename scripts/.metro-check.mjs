@@ -5,12 +5,14 @@
 // furthest the car can be from the middle); the tunnel's roof under the ground (the lid metro.js lays over it), so nothing pokes
 // out. The junctions: each in a bore or the interchange (where metro.js draws its cross passages), clear of the zones' ends and of
 // the pads; what crosses there is two cable drums slung under a hoist (the owner, 15-Oct: the tiny train was nonsensical), each
-// colliding, never stopping the car, and never across the whole road at once. THE RAILWAY on the road's EDGES (the owner: the
-// leftmost and rightmost lanes are the tracks): two tracks, each with its own trains (down the left against the player, up the
-// right from behind), the three lanes between never in their way, the tracks slow a car on them. The boost pads without handrails
-// (Mall Dash's keep theirs). Obstacles: every one the level places is a real obstacle with a box and a cost (the theme's own the
-// box and cost of what they stand in for), none on a track, and driven into, each kind of the metro's knocks the car (it
-// collides: nothing in the road is decoration). Pickups: on the lanes, cash in rows of two or more.
+// colliding, never stopping the car, and never across the whole road at once. THE RAILWAY on the road's EDGES (the owner: three
+// lanes, the leftmost and rightmost the tracks): two tracks, each with its own trains (down the left against the player, up the
+// right from behind), the one road lane between never in their way, the tracks slow a car on them. PILLARS in the road lane (the
+// owner: "solid pillars that instakill in the middle road lane that forces drivers to pick a train track"): a wreck as at a dead
+// end's wall but for a Ghost; no train sets off while the player is at a group, and never a train on each track near one (by
+// measurement, trains due every 1 to 3 s). The boost pads without handrails in the road lane (Mall Dash's keep theirs).
+// Obstacles: every one the level places is a real obstacle with a box and a cost, on a TRACK (the road lane is the way round them),
+// and driven into, each kind of the metro's knocks the car. Pickups: cash on the tracks, in rows across them or lines along them.
 //   node scripts/.metro-check.mjs
 import { boot } from './delivery-headless.mjs';
 
@@ -87,18 +89,18 @@ try {
       P.speed = 0; P.s = j.s - TJ.trigger + 5; P.ghost = 30;
       if (j.state === 'cross') {
         crossed = true;
-        const blocked = [1, 2, 3].filter(n => j.train.some(o => Math.abs(o.lat - T.laneOffset(n, j.s)) < o.hw + P.hw)).length;
+        const blocked = [0, 1, 2].filter(n => j.train.some(o => Math.abs(o.lat - T.laneOffset(n, j.s)) < o.hw + P.hw)).length;
         widest = Math.max(widest, blocked);
       }
       return j.state === 'done';
     });
     check(parked && crossed && j.state === 'done', 'the drums wait beyond the wall, cross when the player comes within ' + TJ.trigger + ' m (after ' + TJ.warn + ' s of beacons and a bell) and go on into the far passage');
-    check(widest <= 2, 'at most ' + widest + ' of the three lanes between the tracks blocked by the drums at once: a way past always');
+    check(widest <= 2, 'at most ' + widest + ' of the three lanes (track, road, track) blocked by the drums at once: a way past always (or wait: they are across in ' + ((T.hi(j.s) - T.lo(j.s) + 6 + j.spacing) / TJ.speed).toFixed(1) + ' s)');
     // driven into one mid-road
     G.start();
     for (const o of g.Collision.obstacles) if (!o.hazard) o.gone = true;
     j.state = 'cross'; j.t = 0;
-    const lane2 = T.laneOffset(2, j.s), t0 = (Math.abs(lane2 - j.from)) / TJ.speed;
+    const lane2 = T.laneOffset(1, j.s), t0 = (Math.abs(lane2 - j.from)) / TJ.speed;
     j.t = t0;
     Object.assign(P, { s: j.s - 12, lat: lane2, speed: 15, launching: false, shield: 0, ghost: 0, tank: 0, armour: 0 });
     P.testGhost = false;
@@ -113,12 +115,12 @@ try {
   const { BulletTrain, UpTrain } = await g.load('bullettrain.js');
   const BT = CONFIG.bulletTrain;
   const lane = (n, s) => T.laneOffset(n, s);
-  check(level.lanes === 5 && !level.median && level.railway.tracks === 'edges' && T.railTracks === 2 && T.laneCount === 5,
-    'five lanes, the outermost two the tracks ("railway": ' + JSON.stringify(level.railway) + '), no median: three lanes to drive between them');
-  check(Math.abs(T.railLat(0, 500) - lane(0, 500)) < 1e-6 && Math.abs(T.railLat(1, 500) - lane(4, 500)) < 1e-6, 'the tracks are lanes 0 and 4 (' + lane(0, 500) + ' and ' + lane(4, 500) + ' m)');
-  check(lane(1, 500) - P.hw > T.railLat(0, 500) + BT.hw && lane(3, 500) + P.hw < T.railLat(1, 500) - BT.hw,
-    'a car in lane 1 or 3 is clear of a train on the track beside it (' + (lane(1, 500) - P.hw - T.railLat(0, 500) - BT.hw).toFixed(2) + ' m between)');
-  check(T.laneRange(1, 500).join() === '1,3', 'traffic (if a level had any) keeps to the lanes between the tracks: ' + T.laneRange(1, 500).join(' to '));
+  check(level.lanes === 3 && !level.median && level.railway.tracks === 'edges' && T.railTracks === 2 && T.laneCount === 3,
+    'three lanes, the outer two the tracks ("railway": ' + JSON.stringify(level.railway) + '), no median: one road lane between them');
+  check(Math.abs(T.railLat(0, 500) - lane(0, 500)) < 1e-6 && Math.abs(T.railLat(1, 500) - lane(2, 500)) < 1e-6, 'the tracks are lanes 0 and 2 (' + lane(0, 500) + ' and ' + lane(2, 500) + ' m), the road lane 1 (' + lane(1, 500) + ')');
+  check(lane(1, 500) - P.hw > T.railLat(0, 500) + BT.hw && lane(1, 500) + P.hw < T.railLat(1, 500) - BT.hw,
+    'a car in the road lane is clear of a train on either track (' + (lane(1, 500) - P.hw - T.railLat(0, 500) - BT.hw).toFixed(2) + ' and ' + (T.railLat(1, 500) - BT.hw - lane(1, 500) - P.hw).toFixed(2) + ' m between)');
+  check(T.laneRange(1, 500).join() === '1,1', 'traffic (if a level had any) keeps to the road lane: ' + T.laneRange(1, 500).join(' to '));
   check(BulletTrain.timed && UpTrain.timed && BulletTrain.next < Infinity && UpTrain.next < Infinity, 'both tracks have their trains, each timed on its own (next in ' + BulletTrain.next.toFixed(1) + ' and ' + UpTrain.next.toFixed(1) + ' s)');
   const drive = (train, lat, opts = {}) => { // the player at lat, a train set off on its track; what became of the car
     G.start();
@@ -136,28 +138,102 @@ try {
   const down = drive(BulletTrain, lane(0, 900));
   check(down.ahead >= (BT.speed + 20) * BT.warning - 1, 'down the left track: the train sets off ' + Math.round(down.ahead) + ' m up the road, ' + BT.warning + ' s away at its ' + BT.speed + ' m/s and the car\'s 20');
   check(down.wrecked, '...a car on the left track as it comes is wrecked');
-  const up = drive(UpTrain, lane(4, 900));
+  const up = drive(UpTrain, lane(2, 900));
   check(up.ahead <= -(BT.speed - 20) * BT.warning + 1, 'up the right track: the train sets off ' + Math.round(-up.ahead) + ' m behind, ' + BT.warning + ' s away at its ' + BT.speed + ' m/s less the car\'s 20');
   check(up.wrecked, '...a car on the right track as it overtakes is wrecked');
-  for (const n of [1, 2, 3]) {
+  for (const n of [1]) {
     const a = drive(BulletTrain, lane(n, 900)), b = drive(UpTrain, lane(n, 900));
     check(!a.wrecked && !b.wrecked && a.passed && b.passed && a.gone && b.gone, 'a car in lane ' + n + ' is untouched as each train goes by, and each is gone after');
   }
-  check(!drive(BulletTrain, lane(4, 900)).wrecked && !drive(UpTrain, lane(0, 900)).wrecked, 'each train keeps to its own track (a car on the other track untouched)');
-  check(!drive(BulletTrain, lane(0, 900), { ghost: true }).wrecked && !drive(UpTrain, lane(4, 900), { ghost: true }).wrecked, 'a ghost on a track is passed through');
+  check(!drive(BulletTrain, lane(2, 900)).wrecked && !drive(UpTrain, lane(0, 900)).wrecked, 'each train keeps to its own track (a car on the other track untouched)');
+  check(!drive(BulletTrain, lane(0, 900), { ghost: true }).wrecked && !drive(UpTrain, lane(2, 900), { ghost: true }).wrecked, 'a ghost on a track is passed through');
   { // the tracks slow a car on them, as Canberra's rails do (by how well it crosses: CONFIG.railCrossing)
     G.start();
     for (const car of g.Traffic.cars) car.active = false;
     for (const o of g.Collision.obstacles) o.gone = true;
     BulletTrain.active = UpTrain.active = false;
     const top = (lat) => { Object.assign(P, { s: 700, lat, speed: 0, launching: false, ghost: 0 }); let v = 0; g.run(12, () => { g.drive(1, 0); P.lat = lat; BulletTrain.next = UpTrain.next = Infinity; v = Math.max(v, P.speed); return false; }); return v; };
-    const free = top(lane(2, 700)), left = top(lane(0, 700)), right = top(lane(4, 700));
-    check(left < free * 0.95 && right < free * 0.95 && T.onRails(700, lane(0, 700), P.hw) && T.onRails(700, lane(4, 700), P.hw) && !T.onRails(700, lane(1, 700), P.hw) && !T.onRails(700, lane(3, 700), P.hw),
-      'the tracks slow the car: ' + left.toFixed(1) + ' and ' + right.toFixed(1) + ' m/s on them against ' + free.toFixed(1) + ' in the middle lane; lanes 1 and 3 are off them');
+    const free = top(lane(1, 700)), left = top(lane(0, 700)), right = top(lane(2, 700));
+    check(left < free * 0.95 && right < free * 0.95 && T.onRails(700, lane(0, 700), P.hw) && T.onRails(700, lane(2, 700), P.hw) && !T.onRails(700, lane(1, 700), P.hw),
+      'the tracks slow the car: ' + left.toFixed(1) + ' and ' + right.toFixed(1) + ' m/s on them against ' + free.toFixed(1) + ' in the road lane, which is off them');
   }
   check(level.railway.every.min >= 10, 'each track\'s trains come every ' + level.railway.every.min + ' to ' + level.railway.every.max + ' s, each announced ' + BT.warning + ' s ahead');
   // ---- the boost pads: flush, no handrails (the owner: "use the boost pads without the mall guardrails")
-  check(level.boostPads.every(p => p.rails === false && [1, 2, 3].includes(p.lane)) && !g.Collision.obstacles.some(o => o.kind === 'handrail'), level.boostPads.length + ' boost pads in the lanes between the tracks, no handrails');
+  check(level.boostPads.every(p => p.rails === false && p.lane === 1) && !g.Collision.obstacles.some(o => o.kind === 'handrail'), level.boostPads.length + ' boost pads in the road lane, no handrails');
+  // ---- PILLARS in the road lane (lanegimmicks.js "pillars"): solid columns, a wreck as at a dead end's wall but for a Ghost
+  const { LaneGimmicks } = await g.load('lanegimmicks.js');
+  const groups = LaneGimmicks.groups, PC = CONFIG.pillar, pillars = g.Collision.obstacles.filter(o => o.kind === 'pillar');
+  check(groups.length >= 5 && groups.every(q => q.lane === 1) && pillars.length === groups.length * PC.count && pillars.every(o => o.laneEnd === 'pillar' && o.height >= 8),
+    groups.length + ' groups of ' + PC.count + ' pillars, ' + PC.gap + ' m apart, in the road lane, up to the ceiling (' + pillars.length + ' in all)');
+  check(groups.every(q => ['running', 'bore'].includes(kindAt(q.from)) && kindAt(q.to) === kindAt(q.from) && heights[kindAt(q.from)] === 8.5),
+    '...each in a running tunnel or a bore, whose ceiling (8.5 m) the pillars meet: ' + groups.map(q => Math.round(q.from) + ' ' + kindAt(q.from)).join(', '));
+  check(groups.every(q => !level.tunnelJunctions.some(j => j.s > q.from - 60 && j.s < q.to + 60) && !level.boostPads.some(b => b.to > q.from - 60 && b.from < q.to + 60)) &&
+    groups.every((q, i) => !i || q.from - PC.warn > groups[i - 1].to), '...60 m or more from a junction or a pad, and each group\'s warning after the last pillar of the one before');
+  { // the wreck: whatever protects the car but the Ghost; the lane beside (a track) is the way past
+    const hitPillar = (opts = {}) => {
+      G.start();
+      for (const car of g.Traffic.cars) car.active = false;
+      BulletTrain.active = UpTrain.active = false; BulletTrain.next = UpTrain.next = Infinity;
+      const q = groups[0], lat = opts.lat ?? lane(1, q.from);
+      Object.assign(P, { s: q.from - 30, lat, speed: 20, launching: false, shield: opts.shield ? 5 : 0, ghost: opts.ghost ? 30 : 0, tank: opts.tank ? 30 : 0, armour: opts.armour ? 600 : 0 });
+      P.testGhost = false;
+      let wrecked = false;
+      g.run(4, () => { g.drive(1, 0); P.lat = lat; BulletTrain.next = UpTrain.next = Infinity; if (P.health <= 0 || !P.active) wrecked = true; return wrecked || P.s > q.to + 10; });
+      return wrecked;
+    };
+    check(hitPillar(), 'a car driven into a pillar is wrecked outright (the dead end\'s wall\'s way: Collision.hitObstacles, laneEnd \'pillar\')');
+    check(hitPillar({ shield: true }) && hitPillar({ tank: true }) && hitPillar({ armour: true }), '...a fresh drop\'s shield, a tank, armour: wrecked all the same (solid structure, as a wall)');
+    check(!hitPillar({ ghost: true }), '...a Ghost passes through (there is road behind it, as behind a shutter)');
+    check(!hitPillar({ lat: lane(0, groups[0].from) }) && !hitPillar({ lat: lane(2, groups[0].from) }), '...a car on either track beside them passes untouched (no train about)');
+    check(pillars.every(o => !o.gone), 'the pillars still stand after all that (never knocked down)');
+  }
+  { // THE COUNTERPLAY GUARANTEE: past every group of pillars at most one track has a train on it, and no train sets off from
+    // CONFIG.pillar.warn m before a group to its last pillar. Measured: the whole level driven at 15 to 60 m/s with trains due every
+    // 1 to 3 s on BOTH tracks (far more often than the level's), seeded runs
+    const every = level.railway.every;
+    level.railway.every = { min: 1, max: 3 };
+    let worst = 0, startedIn = 0, steps = 0, trainsRun = 0, nearBoth = 0;
+    try {
+      for (const v of [15, 25, 35, 45, 60]) {
+        G.start();
+        for (const car of g.Traffic.cars) car.active = false;
+        for (const o of g.Collision.obstacles) if (o.kind !== 'pillar') o.gone = true;
+        Object.assign(P, { s: 5, lat: lane(1, 5), speed: v, launching: false, ghost: 0, shield: 0 });
+        P.testGhost = true;
+        BulletTrain.reset(); UpTrain.reset();
+        const was = [false, false];
+        g.run(3600 / v, () => {
+          P.speed = v; P.lat = lane(1, P.s);
+          const trains = [BulletTrain, UpTrain];
+          trains.forEach((tr, k) => { if (tr.active && !was[k]) { trainsRun++; if (groups.some(q => P.s >= q.from - PC.warn + 1 && P.s <= q.to)) startedIn++; /* (+1: the step it set off in) */ } was[k] = tr.active; });
+          const at = groups.find(q => P.s >= q.from - 20 && P.s <= q.to + 1); // (from just before the first pillar to the last)
+          if (at) { steps++; const n = trains.filter(tr => tr.active).length; worst = Math.max(worst, n); if (n > 1) nearBoth++; }
+          return P.s > g.track.Track.length - 20;
+        });
+      }
+    } finally { level.railway.every = every; P.testGhost = false; }
+    check(trainsRun > 60 && worst <= 1 && !nearBoth, 'past the pillars at most ONE train is about (' + trainsRun + ' trains in five runs at 15 to 60 m/s, due every 1 to 3 s; ' + steps + ' steps at the pillars, most at once ' + worst + '): a track is always clear');
+    check(!startedIn, '...and none set off from ' + PC.warn + ' m before a group to its last pillar (' + startedIn + '): the player knows which track is clear before choosing');
+  }
+  { // ---- THE CHASE CAMERA (render/scene.js) where the car can be: in the road lane, on either track. Its place as scene.js puts it:
+    // camBack m back at the car's lat, kept within the theme's camKeep of the lanes' middle and CAM_PILLAR (2 m) off a pillar's
+    // middle, camHeight up (under the ceiling). How near it comes to a wall, a pillar, a train's roof, a platform; the near plane 0.5
+    const keep = cam.camKeep, back = cam.camBack, pill = pillars.map(o => [o.s, o.lat]);
+    let wall = Infinity, wallAt = 0, pillar = Infinity, roof = Infinity;
+    for (let s = t.from + back + 5; s <= t.to; s += 1) {
+      const cs = s - back, mid = (T.laneLo(cs) + T.laneHi(cs)) / 2, ceil = ceilingAt(cs), y = Math.min(cam.camHeight, ceil - 1.0);
+      for (const n of [0, 1, 2]) {
+        let lat = Math.max(mid - keep, Math.min(mid + keep, lane(n, cs)));
+        for (const [ps, pl] of pill) if (Math.abs(cs - ps) <= 2 && Math.abs(lat - pl) < 2) lat = pl + (lane(n, cs) < pl ? -2 : 2);
+        const L = T.lo(cs) - 0.3, R = T.hi(cs) + 0.3, d = Math.min(lat - L, R - lat);
+        if (d < wall) { wall = d; wallAt = cs; }
+        for (const [ps, pl] of pill) if (Math.abs(cs - ps) <= 0.7) pillar = Math.min(pillar, Math.abs(lat - pl) - 0.7);
+        roof = Math.min(roof, y - BT.height);
+      }
+    }
+    check(keep === 2 && wall > 2 && pillar >= 0.5 && roof >= 1.0, 'the chase camera (' + back + ' m back, ' + cam.camHeight + ' m up, kept within ' + keep + ' m of the lanes\' middle in the metro only): ' +
+      wall.toFixed(2) + ' m from a wall at least (at ' + wallAt + '), ' + pillar.toFixed(2) + ' m off a pillar\'s face passing it, ' + roof.toFixed(2) + ' m over a train\'s roof; never over a platform (they are behind the walls)');
+  }
   // ---- obstacles: real, with a box and a cost; the theme's own the same as what they stand in for
   const O = g.Collision.obstacles, K = CONFIG.obstacleKinds;
   const placed = O.filter(o => !o.hazard && !o.laneEnd && o.kind !== 'handrail');
@@ -168,10 +244,9 @@ try {
   }
   const inLanes = placed.filter(o => o.lat + o.hw > T.laneLo(o.s) && o.lat - o.hw < T.laneHi(o.s));
   check(inLanes.length === placed.length, 'every one stands (at least partly) where a car can drive: ' + inLanes.length + ' of ' + placed.length);
-  const onTrack = placed.filter(o => [0, 1].some(k => Math.abs(o.lat - T.railLat(k, o.s)) < o.hw + BT.hw));
-  check(!onTrack.length, 'none where a train runs (a train and an obstacle never share a lane)' + (onTrack.length ? ': ' + onTrack.map(o => o.kind + ' ' + Math.round(o.s)).join(', ') : ''));
-  const shut = placed.filter(o => [1, 2, 3].every(n => placed.some(x => Math.abs(x.s - o.s) < 15 && Math.abs(x.lat - lane(n, x.s)) < x.hw + P.hw)));
-  check(!shut.length, 'nowhere are all three lanes between the tracks blocked within 15 m' + (shut.length ? ': ' + shut.map(o => Math.round(o.s)).join(', ') : ''));
+  const offTrack = level.obstacles.filter(o => o.lane !== 0 && o.lane !== 2), byPillars = level.obstacles.filter(o => groups.some(q => o.s > q.from - 80 && o.s < q.to + 80));
+  const both = level.obstacles.filter(o => level.obstacles.some(x => x !== o && x.lane !== o.lane && Math.abs(x.s - o.s) < 30));
+  check(!offTrack.length && !byPillars.length && !both.length, 'every one on a TRACK (the road lane beside is the way round it), none within 80 m of pillars (where the tracks are the way past), never one on each track within 30 m');
   // driven into: each of the metro's kinds knocks the car (it collides) and does not stop it
   const kinds = ['ticketGate', 'scrubber', 'trackLamp', 'railTrolley', 'infoTotem', 'cableReel'];
   for (const kind of kinds) {
@@ -189,12 +264,13 @@ try {
   // ---- pickups: on the lanes, cash in rows, none in a dead lane's last 50 m
   const pk = level.pickups, cash = pk.filter(q => /^cash/.test(q.type));
   const rows = cash.filter(q => cash.filter(r => r.s === q.s).length >= 2);
-  check(pk.every(q => [0, 1, 2, 3, 4].includes(q.lane)) && pk.filter(q => q.lane === 0 || q.lane === 4).every(q => /^cash/.test(q.type)), pk.length + ' pickups, every one on a lane (' + pk.filter(q => q.lane === 0 || q.lane === 4).length + ' cash on the tracks: the lure)');
-  check(rows.length / cash.length >= 0.75, cash.length + ' cash pickups, ' + rows.length + ' of them in rows of two or more');
-  const trapped = pk.filter(q => (level.deadEnds || []).some(d => q.lane === d.lane && q.s > d.s - 50 && q.s <= d.s));
-  check(!trapped.length, 'no pickup in a dead lane\'s last 50 m' + (trapped.length ? ' (' + trapped.map(q => q.s).join(', ') + ')' : ''));
-  const blocked = placed.filter(o => (level.deadEnds || []).some(d => o.s > d.s - (CONFIG.deadEnd.sign) && o.s < d.s + 5 && o.lane !== d.lane && (o.lane === 0 || o.lane === 1)));
-  check(!blocked.length, 'no obstacle in the open lane beside a dead lane where the divider holds the car in it' + (blocked.length ? ' (' + blocked.map(o => o.s).join(', ') + ')' : ''));
+  check(pk.every(q => [0, 1, 2].includes(q.lane)) && pk.filter(q => q.lane !== 1).every(q => /^cash/.test(q.type)), pk.length + ' pickups, every one on a lane; ' + pk.filter(q => q.lane !== 1).length + ' cash on the tracks (the lure)');
+  const lines = cash.filter(q => cash.filter(r => r.lane === q.lane && Math.abs(r.s - q.s) <= 20).length >= 3);
+  const grouped = cash.filter(q => rows.includes(q) || lines.includes(q));
+  check(grouped.length / cash.length >= 0.75, cash.length + ' cash pickups, ' + grouped.length + ' of them in rows across the two tracks (' + rows.length + ') or lines of three along one (' + lines.length + ')');
+  const inPillars = pk.filter(q => q.lane === 1 && groups.some(x => q.s > x.from - 12 && q.s < x.to + 12));
+  check(!inPillars.length, 'no pickup in the road lane among the pillars');
+  check(!pk.some(q => q.type === 'mystery'), 'no mystery pickup (one can call the bullet train down the road lane: with pillars ahead, no way out)');
   // ---- what the shared code must leave alone: Canberra's one track down its median; Mall Dash's pads keep their handrails
   {
     const canberra = g.select('canberra');

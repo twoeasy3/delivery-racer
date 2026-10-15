@@ -300,6 +300,24 @@ export const METRO_OBSTACLES = {
     }
     return grounded(group, 1.1);
   },
+  // a PILLAR in a lane (lanegimmicks.js "pillars", obstacle kind `pillar`: a wreck, as a dead end's wall): a 1.4 m square concrete
+  // column up to the tunnel's ceiling (8.5 m: running tunnels and bores), a dark plinth, its foot wrapped in yellow and black hazard
+  // bands to 2 m, a red and white hazard board and an amber lamp on each face along the road, a cap under the ceiling. One merged
+  // mesh (and one lit). Generic in shape, kept here with the metro's (the only theme with pillars so far)
+  pillar: () => {
+    const K = kit(), group = new THREE.Group(), H = 8.5;
+    K.box(1.62, 0.25, 1.62, 0x6a6c6e, 0, 0.125, 0);
+    K.box(1.4, H - 0.25, 1.4, 0xc9c8c0, 0, 0.25 + (H - 0.25) / 2, 0);
+    for (let k = 0; k < 6; k++) K.box(1.44, 0.3, 1.44, k % 2 ? 0x1b1d22 : 0xf2c21d, 0, 0.4 + k * 0.3, 0);
+    for (const z of [-0.73, 0.73]) {
+      K.box(1.1, 0.7, 0.03, 0xd8262b, 0, 2.75, z);
+      for (const x of [-0.32, 0, 0.32]) K.box(0.12, 0.8, 0.035, 0xffffff, x, 2.75, z, 0, 0, 0.6);
+      K.glowBox(0.34, 0.2, 0.05, 0xffb020, 0, 3.4, z);
+    }
+    K.box(1.7, 0.35, 1.7, 0x9a9b96, 0, H - 0.175, 0);
+    K.done(group);
+    return grounded(group, 1.1);
+  },
   // a tunnel junction's load (hazards.js, themes.js junctionTrain: two of them, 3 m apart): a CABLE DRUM slung under a HOIST that runs on
   // the beam across the road (metro.js draws the beam, its underside HOIST_BEAM m up): the maintenance crews moving cable from one
   // service passage to the other. A wooden drum wound with orange power cable (1.9 m across, 1.2 wide: its axle along local x, so

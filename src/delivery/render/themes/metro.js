@@ -341,6 +341,9 @@ export const metro = ({ levelGroup }) => {
   };
   const archTop = (s, lat) => { const mid = (L(s) + R(s)) / 2, half = (R(s) - L(s)) / 2, u = Math.min(1, Math.abs(lat - mid) / half); return hAt(s) - SPRING + SPRING * Math.sqrt(1 - u * u); };
   const mouths = (LEVEL.tunnelJunctions || []).map(j => ({ s: Track.place(j), side: j.side === 'left' ? -1 : 1 }));
+  // where the level's PILLARS stand (lanegimmicks.js: drawn as obstacles, up to the ceiling): nothing hung from the ceiling there
+  const pillarSs = (LEVEL.pillars || []).flatMap(g => Array.from({ length: g.count ?? CONFIG.pillar.count }, (_, k) => Track.place(g) + k * (g.gap ?? CONFIG.pillar.gap)));
+  const pillarAt = (s) => pillarSs.some(q => Math.abs(q - s) < 1.6);
   const MOUTH = 5;      // m each side of a junction's middle: its mouth
   const inMouth = (s) => mouths.some(m => Math.abs(s - m.s) < MOUTH);
   const mouthBreaks = mouths.flatMap(m => [m.s - MOUTH, m.s + MOUTH]);
@@ -360,7 +363,7 @@ export const metro = ({ levelGroup }) => {
       liningS.ribbon(from, to, (s) => archPoint(s, k), (s) => archPoint(s, k + 1), shade(k + 0.5), { u: 1.5, v: 3, v0 });
       v0 += len / 3;
     }
-    for (let s = from + 4; s < to - 2; s += 9) lamps.on(s, (L(s) + R(s)) / 2, hAt(s) - 0.12, 0, 0.4, 0.14, 1.4, C.white);
+    for (let s = from + 4; s < to - 2; s += 9) if (!pillarAt(s)) lamps.on(s, (L(s) + R(s)) / 2, hAt(s) - 0.12, 0, 0.4, 0.14, 1.4, C.white); // (none where a pillar meets the crown)
     kmMarkers(from, to, -1);
     { // (the pipe on the right, in runs between the junctions' mouths: it turns into the wall short of each)
       let a = from;

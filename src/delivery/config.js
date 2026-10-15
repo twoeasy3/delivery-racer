@@ -619,6 +619,7 @@ export const CONFIG = {
     // brass posts (a barrier), a slot machine (a crate), a bellhop's luggage cart (a bale), a giant red die (a cone)
     velvetRope: { damage: 34, speedKept: 0.6 }, slotMachine: { damage: 31, speedKept: 0.75 }, luggageCart: { damage: 38, speedKept: 0.75 }, casinoDie: { damage: 3, speedKept: 0.94, light: true },
     laneEnd: { damage: 0, speedKept: 1 }, // a dead-end lane's end (lanegimmicks.js): no ordinary knock: a wreck outright, or passed through (see Collision.hitObstacles)
+    pillar: { damage: 0, speedKept: 1 }, // a pillar in a lane (lanegimmicks.js "pillars"): no ordinary knock either: a wreck outright, the dead end's way (laneEnd 'pillar': only a Ghost passes)
     runner: { damage: 10, speedKept: 0.88, light: true },
     waterTable: { damage: 6, speedKept: 0.9, light: true },
     paceCar: { damage: 42, speedKept: 0.5 },
@@ -1542,6 +1543,13 @@ export const CONFIG = {
   // coloured all along, a DEAD END sign over it `sign` m before, beacons, a bell and a warning with `warn` m to go, hazard
   // stripes on the floor over the last `stripes` m. (No cost here: a wreck, not damage)
   deadEnd: { length: 120, sign: 100, stripes: 24, warn: 120 },
+  // pillars in a lane ("pillars": { s, lane, count?, gap? }, lanegimmicks.js): `count` solid columns `gap` m apart standing in that
+  // lane (obstacleKinds.pillar, a laneEnd 'pillar': hit one and the car is wrecked, whatever protects it but the Ghost, as at a dead
+  // end's wall). The telegraph as a dead end's: a PILLARS sign over the lane `sign` m before the first, beacons, a bell and a warning
+  // with `warn` m to go, hazard stripes round each. The way past is the lane beside (in the metro a TRACK): on an edge railway no
+  // train sets off while the player is between `warn` m before a group and its last pillar, and none while the other track's train
+  // is still about from `hold` m before it (bullettrain.js): at least one track is always clear past the pillars
+  pillar: { count: 3, gap: 18, sign: 150, warn: 170, hold: 800 },
   // a roadworks diversion ("diversions": { from, to, kind: 'merge' | 'shift' | 'cross', by?, limit? }; roadworks.js, and Track's
   // lateral-offset layer): a lane closes through a `taper` m row of cones (smoothstep), lanes with traffic in them move across over
   // `shiftTaper` m (a long vehicle can follow that), run on their temporary line

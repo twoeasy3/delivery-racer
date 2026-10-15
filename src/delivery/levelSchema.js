@@ -304,6 +304,8 @@ export const FIELDS = {
     settings: { lane: lane('Lane', { required: true }), rails: flag('Handrails', { default: true }) } },
   deadEnds: { shape: 'point', group: 'hazards', label: 'Dead-end lane', help: 'That lane ends here. Shutter: wrecks you; a Ghost or a tank passes. Wall: wrecks everything.',
     settings: { lane: lane('Lane', { required: true }), kind: pick('Kind', ['shutter', 'wall'], { default: 'shutter' }), length: num('Dead for (m)', { min: 40, max: 400, default: C.deadEnd?.length ?? 100 }) } },
+  pillars: { shape: 'point', group: 'hazards', label: 'Pillars', help: 'Solid columns in a lane: hit one and the car is wrecked (a Ghost passes). A sign and beacons before them; the lane beside is the way past.',
+    settings: { lane: lane('Lane', { required: true }), count: int('How many', { min: 1, max: 8, default: CONFIG.pillar.count }), gap: num('Apart (m)', { min: 8, max: 60, step: 1, default: CONFIG.pillar.gap }) } },
   tunnelJunctions: { shape: 'point', group: 'hazards', label: 'Tunnel junction', help: 'Inside a tunnel: a side tunnel crosses the road. Beacons and a bell, then a tug and trolleys come out of that side and cross.',
     settings: { side: pick('From', ['left', 'right'], { default: 'right' }) } },
   balloons: { shape: 'point', group: 'hazards', label: 'Hot-air balloon', road: 'both', help: 'Comes down on those lanes, sits, and lifts off again.', settings: { lanes: lanes('Lanes (first, last)', { span: true, required: true }) } },

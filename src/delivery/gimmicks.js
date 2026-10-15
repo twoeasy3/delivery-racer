@@ -872,6 +872,18 @@ export const GROUPS = [
       g.add(post, beam, board);
       return { model: g, tick: (t) => { const on = Math.floor(t * 4) % 2 === 0; for (const l of lamps) l.material.color.setHex(on ? 0xffb020 : 0x5a4010); } };
     } },
+    { name: 'Pillars', color: 0xf2c21d, has: (l) => l.pillars?.length, rules: [
+      `Solid columns in a lane, ${CONFIG.pillar.count} at a time, ${CONFIG.pillar.gap} m apart. A PILLARS sign hangs over the lane ${CONFIG.pillar.sign} m before; beacons and a bell go with ${CONFIG.pillar.warn} m to go.`,
+      'Hit one and you are wrecked, shield, tank or armour or not; only a Ghost passes through. Take the lane beside.',
+      'In the metro the lanes beside are the tracks: no train sets off while you pass pillars, and never one on each track near them.',
+    ], build: () => {
+      const g = road(9, 16), lamps = [];
+      for (const z of [-4, 2, 8]) { const p = ob('pillar'); p.scale.setScalar(0.6); p.position.set(0, 0, z); g.add(p); }
+      const board = sign('PILLARS', '#f2c21d', '#111', 3.0, 0.8); board.position.set(0, 3.2, -7); board.rotation.y = Math.PI;
+      for (const x of [-1.6, 1.6]) { const lamp = box(0.3, 0.3, 0.3, glow(0xffb020), x, 3.2, -7); lamps.push(lamp); g.add(lamp); }
+      g.add(board);
+      return { model: g, tick: (t) => { const on = Math.floor(t * 4) % 2 === 0; for (const l of lamps) l.material.color.setHex(on ? 0xffb020 : 0x5a4010); } };
+    } },
     { name: 'Tunnel junctions', color: 0xffb020, has: (l) => l.tunnelJunctions?.length, rules: [
       `Inside a tunnel a side tunnel crosses the road. Within ${CONFIG.tunnelJunction.trigger} m the beacons over its mouths flash and a bell rings; ${CONFIG.tunnelJunction.warn} s later a tug and two trolleys come out of one side and cross at ${kmh(CONFIG.tunnelJunction.speed)}.`,
       `Hit the tug: ${CONFIG.obstacleKinds.tug.damage} damage, a trolley ${CONFIG.obstacleKinds.trolley.damage}; you keep most of your speed. Never a stop, never a bust: read the beacons and time it, or go round behind the train.`,

@@ -22,6 +22,7 @@ import { Traffic } from './traffic.js';
 import { Collision } from './collision.js';
 import { FxQueue, sfx } from './physics.js';
 import { random } from './util.js';
+import { LaneGimmicks } from './lanegimmicks.js';
 
 const box = { s: 0, lat: 0, yaw: 0, hl: 0, hw: 0 }; // one carriage's hitbox, for Collision.overlap
 
@@ -41,6 +42,13 @@ const makeTrain = (up) => ({
   get mercy() { return this.active || this.after > 0; },
   get length() { return CONFIG.bulletTrain.cars * CONFIG.bulletTrain.carLength; },
   // s until the next train down the railway, counted from when the last one has gone
+  // an edge railway's train due now waits while the player is at a group of pillars in the lane between the tracks (the tracks are
+  // the way past them), and while the other track's train is about with pillars coming (CONFIG.pillar.hold): so past pillars at
+  // most one track has a train on it, announced before the player gets there, and none sets off meanwhile (lanegimmicks.js)
+  held() {
+    if (!this.timed || LEVEL.railway.tracks !== 'edges') return false;
+    return LaneGimmicks.pillarHold(Player.s, TRAINS.find(t => t !== this).active);
+  },
   // (a level with no trains of this kind down its railway: none; the right track's only on an edge railway)
   get timed() { return !!LEVEL.railway && (!this.up || LEVEL.railway.tracks === 'edges'); },
   wait() {
@@ -74,7 +82,7 @@ const makeTrain = (up) => ({
     this.active = true;
     this.passed = false;
     sfx('trainHorn');
-    if (onTrack) Message.say(...(this.up ? ['events', 'trainBehind'] : ['powerups', 'mystery', 'bulletTrain']));
+    if (onTrack) Message.say(...(this.up ? ['events', 'trainBehind'] : LEVEL.railway?.tracks === 'edges' ? ['events', 'trainAhead'] : ['powerups', 'mystery', 'bulletTrain'])); // (on an edge railway: which track)
   },
   reset() {
     this.active = false;
@@ -85,7 +93,7 @@ const makeTrain = (up) => ({
     if (!this.active) {
       this.after = Math.max(0, this.after - dt);
       // the next train down the railway (if the player is off the main road just now, as soon as they are back)
-      if ((this.next -= dt) <= 0 && Player.active && Track.isMain(Player.s)) {
+      if ((this.next -= dt) <= 0 && Player.active && Track.isMain(Player.s) && !this.held()) {
         this.start(true);
         this.next = this.wait();
       }
