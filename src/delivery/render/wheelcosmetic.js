@@ -31,6 +31,7 @@
 import * as THREE from 'three';
 import { Progress } from '../progress.js';
 import { registerCosmetics, ownsCosmetic } from './cosmetics.js';
+import { addRims, spinRims, putRim, globalRim, savedRimChoice, resolveRim, rimAsked, RIM_SKIP } from './rims.js'; // (a set's rim: render/rims.js)
 
 export const KEY = 'delivery.wheelcolour';
 export const WHEEL_COLOURS = [
@@ -68,7 +69,7 @@ const asked = typeof location !== 'undefined' ? /[?&]wheelcolour=(\w+)/.exec(loc
 const savedPairOwned = () => {
   if (stored === null) { stored = 'stock'; try { stored = byId(localStorage.getItem(KEY)).id; } catch { /* (no storage: stock) */ } }
   if (storedDesign === null) { storedDesign = 'stock'; try { storedDesign = designById(localStorage.getItem(KEY_DESIGN)).id; } catch { /* (no storage: stock) */ } }
-  const set = WHEEL_SETS.find(s => s.design === storedDesign && s.hub === stored);
+  const set = WHEEL_SETS.find(s => s.design === storedDesign && s.hub === stored && (s.rim || 'none') === savedRimChoice().all);
   return !set || ownsCosmetic('wheels', set.id);
 };
 export const wheelColour = () => {
@@ -201,6 +202,7 @@ const addRings = (model, ring) => {
       const mesh = new THREE.Mesh(geo, mat);
       pose.decompose(mesh.position, mesh.quaternion, mesh.scale);
       mesh.userData.wheelRing = true; // (the other render modules leave it be: dents, suspension)
+      mesh.userData.ringSide = side; // (render/rims.js: a rim brought in close to the tyre takes the ring's place on that face)
       if (ghost) { mesh.userData.solidMat = mat; mesh.material = tyre.material; } // (a ghost: pale like the rest)
       tyre.add(mesh);
       found.rings.push(mesh);
@@ -211,24 +213,33 @@ const addRings = (model, ring) => {
 // how a model's wheels are shown now: the chosen design, and the hub colour (a colour chosen apart wins over the design's hubs)
 const dressed = (model) => {
   const found = model.userData.wheelHubs;
-  if (!found || !found.hubs.length) return;
+  if (!found) return; // (no hub found: the colour and rings have nothing to go on, but a rim still may)
   const design = designById(wheelDesign()), colour = byId(wheelColour());
-  paint(model, found.hubs, 'wheelClones', colour.hex !== null ? colour.hex : design.hub, 0.3);
+  const hub = colour.hex !== null ? colour.hex : design.hub;
+  paint(model, found.hubs, 'wheelClones', hub, 0.3);
   paint(model, found.parts, 'wheelRubberClones', design.tyre);
   addRings(model, design.ring);
+  addRims(model, hub, rimsWorn()); // (the set's rim, in its hub colour; render/rims.js)
 };
 
 const plain = (mesh) => { const m = mesh.material; return m && !Array.isArray(m) && m.color && !m.map && !m.vertexColors; };
 export const dressWheels = (model, car) => {
   if (!model || model.userData.wheelHubs) return model;
-  if (car && car.legend) { model.userData.wheelHubs = { tyres: [], hubs: [], parts: [], info: [], rings: [] }; return model; } // (Legendary: black and gold, as designed)
+  if (car && car.legend) { model.userData.wheelHubs = { tyres: [], hubs: [], parts: [], info: [], rings: [], legend: true }; return model; } // (Legendary: black and gold, as designed)
   let found;
   try { found = findHubs(model); } catch { found = { tyres: [], hubs: [], rubber: [], info: [] }; }
   // only plain single-colour materials can be tinted: a textured, vertex-coloured or multi-material hub stays as it is
+  found.rawHubs = found.hubs.slice(); // (every hub, tintable or not: a rim's dish covers them all)
   found.hubs = found.hubs.filter(({ mesh }) => plain(mesh));
   for (const hub of found.hubs) hub.stock = hub.mesh.material;
   // a tyre with no hub of its own (or a car with none) stays stock; the tyre's rubber = the tyre and its tread blocks / rings
   const hubbed = new Set(found.hubs.map(h => h.tyre));
+  // a RIM goes on every plain tyre found, hub or none (render/rims.js); front or rear by where it is along the car
+  found.rimInfo = found.info.filter(t => plain(t.tyre));
+  const zs = found.rimInfo.map(t => t.centre.z), midZ = (Math.min(...zs) + Math.max(...zs)) / 2;
+  for (const t of found.rimInfo) { t.stock = t.tyre.material; t.axle = t.centre.z > midZ + 0.01 ? 'front' : 'rear'; }
+  found.carId = car ? car.id : null;
+  found.rimSkip = !!(car && (RIM_SKIP.has(car.id) || RIM_SKIP.has(car.model)));
   found.info = found.hubs.length ? found.info.filter(t => hubbed.has(t.tyre) && plain(t.tyre)) : [];
   found.parts = [];
   for (const t of found.info) {
@@ -238,7 +249,10 @@ export const dressWheels = (model, car) => {
   found.rings = [];
   model.userData.wheelHubs = found;
   live.add(new WeakRef(model));
-  if (wheelColour() !== 'stock' || wheelDesign() !== 'stock') dressed(model);
+  // the rims turn as the model is drawn: its animate(t) also turns them (no extra arrays: a model's animate takes at most a few arguments)
+  const animate = model.userData.animate;
+  model.userData.animate = (t, a, b, c) => { const r = animate ? animate(t, a, b, c) : undefined; spinRims(model, t); return r; };
+  if (wheelColour() !== 'stock' || wheelDesign() !== 'stock' || found.rimInfo.some(t => resolveRim(found.carId, t.axle) !== 'none')) dressed(model);
   return model;
 };
 
@@ -259,9 +273,11 @@ const putDesign = (id) => {
   return design.id;
 };
 export const setWheelColour = (id) => refresh(putColour(id));
+export const setWheelRim = (id) => refresh(putRim(id)); // (the rim alone, for a check or a later per-axle screen; the menu equips whole sets)
 export const setWheelDesign = (id) => refresh(putDesign(id));
 
 // ---- WHEEL SETS (the owner, 14-Oct: "Don't split tyres and rims ... the player should get the item as a set") ----------------------
+// rim (15-Oct): a set may carry a rim (render/rims.js RIM_DESIGNS); none if absent. Kept under its own key, delivery.wheelrim.
 // What the player sees and equips: one complete wheel = a design (tyre) + a hub colour, applied together through the two setters
 // above (nothing new is stored: the equipped set is DERIVED from the two saved ids, so older saves and ?wheeldesign= / ?wheelcolour=
 // combinations keep working; a pair that is no set is 'custom'). A hub colour 'stock' lets the design's own hubs (or the car's) show.
@@ -278,14 +294,21 @@ export const WHEEL_SETS = [
   { id: 'gold-rush', name: 'Gold rush', design: 'stock', hub: 'gold' },
   { id: 'orange-pop', name: 'Orange pop', design: 'stock', hub: 'orange' },
   { id: 'red-hot', name: 'Red hot', design: 'stock', hub: 'red' },
+  { id: 'spoke5', name: '5-spoke', design: 'stock', hub: 'silver', rim: 'spoke5' },
+  { id: 'twin-spoke', name: 'Twin spoke', design: 'stock', hub: 'white', rim: 'twin10' },
+  { id: 'turbine', name: 'Turbine', design: 'redline', hub: 'silver', rim: 'turbine' },
+  { id: 'blade-spinner', name: 'Blade spinner', design: 'stock', hub: 'gold', rim: 'blade3' },
+  { id: 'twin-spinner', name: 'Twin spinner', design: 'stock', hub: 'red', rim: 'twinspin' },
 ];
 registerCosmetics(WHEEL_SETS.map(s => ({ slot: 'wheels', id: s.id, name: s.name, free: true }))); // (all free today; cosmetics.js)
 export const CUSTOM_SET = 'custom';
-export const wheelSet = () => { const d = wheelDesign(), h = wheelColour(); return WHEEL_SETS.find(s => s.design === d && s.hub === h)?.id || CUSTOM_SET; };
+const rimsWorn = () => rimAsked || Progress.noSave || savedPairOwned();
+export const wheelRim = () => (rimsWorn() ? globalRim() : 'none'); // (the global rim worn: a saved set not owned wears Stock, rim and all)
+export const wheelSet = () => { const d = wheelDesign(), h = wheelColour(), r = wheelRim(); return WHEEL_SETS.find(s => s.design === d && s.hub === h && (s.rim || 'none') === r)?.id || CUSTOM_SET; };
 export const setWheelSet = (id) => {
   const set = WHEEL_SETS.find(s => s.id === id);
   if (!set) return;
-  putDesign(set.design); putColour(set.hub);
+  putDesign(set.design); putColour(set.hub); putRim(set.rim || 'none');
   refresh(set.id); // (one refresh: every live car and the menu change once)
 };
 export const onWheelColour = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };

@@ -207,7 +207,7 @@ const build = (car, evil, mode) => {
   scene.fog = new THREE.Fog(0x000000, 14, 34);
 
   // the car, scaled to LEN long, stood on the floor at the middle
-  const model = makeShowCar(car);
+  const model = makeShowCar(car, { stock: true }); // (an UNLOCK REVEAL, every mode here: the car as it comes, no cosmetic of the player's: render/showcar.js dressCosmetics)
   paintShowCar(model, car, evil);
   model.traverse((node) => { if (node.userData.figure) node.visible = false; }); // (no people in a cutscene, the owner, 14-Oct: a model's driver, rider or helmet, tagged `figure` where it is built)
   model.userData.animate?.(0);

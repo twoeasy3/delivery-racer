@@ -337,8 +337,8 @@ try {
     server.moduleGraph.invalidateAll();
     const S = await load('render/wheelcosmetic.js'), { Progress: P3 } = await load('progress.js');
     const sets = S.WHEEL_SETS;
-    check(sets.length >= 10 && sets.length <= 14 && new Set(sets.map(x => x.id)).size === sets.length, sets.length + ' sets, ids unique');
-    check(new Set(sets.map(x => x.design + '/' + x.hub)).size === sets.length, 'no two sets are the same design + hub pair');
+    check(sets.length >= 10 && sets.length <= 20 && new Set(sets.map(x => x.id)).size === sets.length, sets.length + ' sets, ids unique');
+    check(new Set(sets.map(x => x.design + '/' + x.hub + '/' + (x.rim || 'none'))).size === sets.length, 'no two sets are the same design + hub + rim');
     check(sets.every(x => S.WHEEL_DESIGNS.some(d => d.id === x.design) && S.WHEEL_COLOURS.some(c => c.id === x.hub)), 'every set uses an existing design and hub colour');
     check(sets[0].id === 'stock' && sets[0].design === 'stock' && sets[0].hub === 'stock', 'the first set is Stock');
     check(S.wheelSet() === 'stock', 'nothing saved: the equipped set is Stock');
@@ -351,7 +351,7 @@ try {
       W.setWheelSet(set.id);
       check(W.wheelDesign() === set.design && W.wheelColour() === set.hub && W.wheelSet() === set.id, set.id + ': design + hub set together, and detected as equipped');
       check(calls === 1, set.id + ': one change notice');
-      check(raw3.getItem(W.KEY_DESIGN) === set.design && raw3.getItem(W.KEY) === set.hub, set.id + ': the two existing keys hold it (no new key)');
+      check(raw3.getItem(W.KEY_DESIGN) === set.design && raw3.getItem(W.KEY) === set.hub && JSON.parse(raw3.getItem('delivery.wheelrim')).all === (set.rim || 'none'), set.id + ': the two existing keys hold it, and the rim key its rim (' + (set.rim || 'none') + ')');
       const d = W.WHEEL_DESIGNS.find(x => x.id === set.design), c = W.WHEEL_COLOURS.find(x => x.id === set.hub);
       const wantHub = c.hex !== null ? c.hex : d.hub;
       const hubOk = wantHub === null ? hubsOf.hubs.every(h => h.mesh.material === h.stock) : hubsOf.hubs.every(h => h.mesh.material.color.getHex() === wantHub);
@@ -393,6 +393,260 @@ try {
     N.setWheelSet('stock');
     raw3.removeItem(S.KEY); raw3.removeItem(S.KEY_DESIGN);
     void P3;
+  }
+
+  // ---- RIMS (render/rims.js, CHECKLIST 307): a set's rim, a child of each tyre, turning with the car or at a fixed pace ----
+  {
+    const raw = globalThis.localStorage;
+    raw.removeItem('delivery.wheelrim'); raw.removeItem(W.KEY); raw.removeItem(W.KEY_DESIGN);
+    server.moduleGraph.invalidateAll();
+    const { makeShowCar: make } = await load('render/showcar.js');
+    const WC = await load('render/wheelcosmetic.js'), RM = await load('render/rims.js'), { Progress: PR } = await load('progress.js');
+    const { CARS: C2, LEVEL_CARS, SECRET_CARS, superOf: sup } = await load('cars.js'), { showroomCars: sc } = await load('showroomData.js'), { IDEA_CARS: IC } = await load('ideas.js');
+    const { findZFights } = await load('render/zfight.js'), { dentModel: dent } = await load('render/dents.js'), { prepareSuspension } = await load('render/carsuspension.js');
+    const fleetAll = [...new Set([...sc(), ...Object.values(LEVEL_CARS), ...Object.values(SECRET_CARS), ...IC, ...C2.map(sup).filter(Boolean)])], fleet = fleetAll.filter(car => !only || car.id === only);
+    const mk = (car) => { try { return make(car); } catch { return null; } };
+    const rimsOf = (model) => model.userData.wheelHubs?.rims?.list || [];
+    const D = RM.RIM_DESIGNS, rimSets = WC.WHEEL_SETS.filter(x => x.rim);
+    check(D[0].id === 'none' && D.filter(d => d.kind === 'speed').length >= 3 && D.filter(d => d.kind === 'spin').length >= 2, 'rim designs: ' + D.slice(1).map(d => d.id + ' (' + d.kind + ', ' + RM.rimTriangles(d.id) + ' triangles a face)').join(', '));
+    check(rimSets.length >= 5 && rimSets.every(x => D.some(d => d.id === x.rim && d.kind)) && !WC.WHEEL_SETS[0].rim && D.slice(1).every(d => rimSets.some(x => x.rim === d.id)), rimSets.length + ' sets carry a rim (every design in one), Stock carries none: ' + rimSets.map(x => x.id).join(', '));
+    check(WC.wheelRim() === 'none' && RM.resolveRim('commuter', 'front') === 'none', 'nothing saved: no rim');
+
+    // every rim set on a live car (the Pick-Up), then Stock again
+    const pu = mk(fleetAll.find(c => c.id === 'pickup') || fleet[0]), found = pu.userData.wheelHubs;
+    const hubsVisible = () => found.rawHubs.every(h => h.mesh.visible);
+    check(RM.rimStatus(pu) === 'ok' && rimsOf(pu).length === 0 && hubsVisible(), 'the Pick-Up can wear rims; none on yet, its hubs shown');
+    for (const set of rimSets) {
+      WC.setWheelSet(set.id);
+      const list = rimsOf(pu), hex = (WC.WHEEL_COLOURS.find(c => c.id === set.hub).hex ?? RM.DEFAULT_HEX);
+      check(WC.wheelSet() === set.id && WC.wheelRim() === set.rim && list.length === 4 && list.every(m => m.userData.rim.id === set.rim && m.material === RM.rimMaterial(hex) && m.geometry === RM.rimGeometry(set.rim)), set.id + ': equipped, the live Pick-Up wears ' + list.length + ' ' + set.rim + ' rims in the set\'s hub colour (one shared geometry and material)');
+      check(list.every(m => found.rimInfo.some(t => t.tyre === m.parent)) && list.every(m => m.userData.wheelRing && m.material.userData.wheelHub && (!m.userData.rim.blur || (m.userData.rim.blur.userData.wheelRing && m.userData.rim.blur.material.userData.wheelHub))), set.id + ': every rim is a child of its own tyre, tagged wheelRing, its material wheelHub (and the blur disc too)');
+      check(new Set(list.map(m => m.parent)).size === list.length || found.rimInfo.some(t => !t.outer), set.id + ': one rim per tyre face (never one mesh across wheels)');
+      check(!hubsVisible(), set.id + ': the stock hubs under the rims are hidden');
+    }
+    WC.setWheelSet('stock');
+    check(rimsOf(pu).length === 0 && hubsVisible() && JSON.parse(raw.getItem('delivery.wheelrim')).all === 'none', 'Stock: the rims go, the hubs come back, the rim key says none');
+    for (let i = 0; i < 3; i++) WC.setWheelSet(rimSets[i % 2].id);
+    check(rimsOf(pu).length === 4, 'changing set again and again leaves one set of rims');
+
+    // the whole fleet, every design: who wears them, the triangles and meshes it adds, z-fighting, poking through bodywork
+    const stat = { ok: [], skip: [], none: [], blocked: [] };
+    WC.setWheelSet('stock');
+    const base = new Map();
+    for (const car of fleet) {
+      const m = mk(car);
+      if (!m) continue;
+      const st = RM.rimStatus(m);
+      stat[st].push(car.id);
+      if ((m.userData.wheelHubs.blockedFaces || []).length) stat.blocked.push(car.id + ' ' + m.userData.wheelHubs.blockedFaces.length);
+      if (st === 'ok') base.set(car, findZFights(m).length);
+    }
+    console.log('        rims: ' + stat.ok.length + ' cars wear them; skipped (RIM_SKIP or Legendary): ' + stat.skip.join(', '));
+    console.log('        no room or no tyre found (stay stock, "No rims for this car"): ' + stat.none.join(', '));
+    console.log('        cars with some faces left stock for bodywork over the wheel (faces): ' + (stat.blocked.join(', ') || 'none'));
+    if (!only) check(stat.ok.length >= 0.8 * fleet.length, 'rims reach ' + stat.ok.length + ' of ' + fleet.length + ' cars (80% or more)');
+    const ray = new THREE.Raycaster(), o = new THREE.Vector3(), e = new THREE.Vector3(), d = new THREE.Vector3();
+    for (const design of D.slice(1)) {
+      const set = rimSets.find(x => x.rim === design.id);
+      WC.setWheelSet(set.id);
+      const zf = [], poke = [], tris = [], meshes = [], wrong = [];
+      for (const [car, zBase] of base) {
+        const m = mk(car), list = rimsOf(m);
+        if (!list.length) { wrong.push(car.id + ' no rims'); continue; }
+        m.updateMatrixWorld(true);
+        tris.push(list.reduce((n, x) => n + RM.rimTriangles(x.userData.rim.id), 0)); meshes.push(list.length);
+        const isRim = (x) => !!(x.userData.rim || x.parent?.userData.rim), all = findZFights(m), fights = all.filter(f => isRim(f.a) || isRim(f.b)).length;
+        if (fights) zf.push(car.id + ' ' + fights);
+        else if (set.design === 'stock' && all.length > zBase) zf.push(car.id + ' ' + zBase + '->' + all.length + ' (a part the hidden hub had covered)'); // (a set with a sidewall ring can add the ring's own: the designs' check above)
+        // poking through: from the tyre's face to the rim's top at 36 points of each rim, either way, against everything but the wheel's own parts
+        const own = new Set([...m.userData.wheelHubs.tyres, ...m.userData.wheelHubs.rawHubs.map(h => h.mesh)]);
+        for (const t of m.userData.wheelHubs.rimInfo) for (const p of t.rubber) own.add(p);
+        const others = []; m.traverse(n => { if (n.isMesh && !own.has(n) && !n.userData.wheelRing) { let v = true; for (let p = n; p; p = p.parent) if (!p.visible) v = false; if (v) others.push(n); } });
+        for (const rim of list) {
+          let hits = 0;
+          for (const rho of [0.3, 0.55, 0.8]) for (let i = 0; i < 12; i++) {
+            const a = i / 12 * Math.PI * 2;
+            const fl = rim.userData.rim.flat;
+            o.set(Math.cos(a) * rho, Math.sin(a) * rho, -(fl ? RM.TIGHT_GAP : RM.RIM_GAP) + 0.001).applyMatrix4(rim.matrixWorld);
+            e.set(Math.cos(a) * rho, Math.sin(a) * rho, fl ? RM.FLAT_DEPTH : 0.045).applyMatrix4(rim.matrixWorld);
+            d.subVectors(e, o); const len = d.length(); d.normalize();
+            ray.set(o, d); ray.far = len;
+            let hit = ray.intersectObjects(others, false).length > 0;
+            if (!hit) { ray.set(e, d.negate()); hit = ray.intersectObjects(others, false).length > 0; }
+            if (hit) hits++;
+          }
+          if (hits > Math.floor((1 - RM.MOSTLY) * 36)) poke.push(car.id + ' ' + hits + '/36'); // (a nearly open face may have a mudguard's edge over a sliver: render/rims.js MOSTLY)
+        }
+      }
+      tris.sort((a, b) => a - b); meshes.sort((a, b) => a - b);
+      console.log('        ' + design.id + ': ' + RM.rimTriangles(design.id) + ' triangles a face; per car ' + tris[0] + ' / ' + tris[tris.length >> 1] + ' / ' + tris[tris.length - 1] + ' (least / median / most), ' + meshes[0] + ' to ' + meshes[meshes.length - 1] + ' rim meshes (draw calls)');
+      check(!wrong.length, design.id + ': on every car that can wear rims (' + base.size + ')' + (wrong.length ? ' (' + wrong.slice(0, 5).join('; ') + ')' : ''));
+      check(!zf.length, design.id + ': the z-fight finder finds no rim in any pair, on any car (' + (zf.slice(0, 6).join('; ') || 'none') + ')');
+      check(!poke.length, design.id + ': no rim pokes through bodywork on any car (' + (poke.slice(0, 6).join('; ') || 'none') + ')');
+    }
+    WC.setWheelSet('stock');
+
+    // dents and the suspension finder: the same with rims on (hubs hidden) as without
+    {
+      const sig = (model) => { let h = 0, n = 0; model.traverse(x => { if (x.isMesh && !x.userData.wheelRing) { const p = x.geometry.attributes.position; for (let i = 0; i < p.count; i++) { h += p.getX(i) * 1.3 + p.getY(i) * 2.1 + p.getZ(i) * 3.7; n++; } } }); return h.toFixed(4) + '/' + n; };
+      for (const id of ['commuter', 'pickup', 'sport', 'coach', 'f1', 'farmtractor'].filter(id => fleetAll.some(c => c.id === id))) {
+        const car = fleetAll.find(c => c.id === id);
+        WC.setWheelSet('stock');
+        const a = mk(car); a.updateMatrixWorld(true); const sa = prepareSuspension(a); dent(a, a.userData.body, 1); const da = sig(a);
+        WC.setWheelSet('spoke5');
+        const b = mk(car); b.updateMatrixWorld(true); const sb = prepareSuspension(b);
+        const g = rimsOf(b)[0]?.geometry, before = g && g.attributes.position.array.slice();
+        dent(b, b.userData.body, 1);
+        check(rimsOf(b).length > 0 && sa.wheels === sb.wheels && sa.how === sb.how && sa.plantedMeshes.length === sb.plantedMeshes.length && sa.squash.length === sb.squash.length, id + ': the suspension finder sees the same wheels with rims on (' + sb.wheels + ', ' + sb.how + ')');
+        check(sig(b) === da && (!g || before.every((v, i) => v === g.attributes.position.array[i])), id + ': at full damage the same panels move with rims as without, and no rim is dented');
+        dent(b, b.userData.body, 0);
+      }
+      WC.setWheelSet('stock');
+    }
+
+    // the ghost: rims put on during it are pale like the rest; the blur steps go to the paint under it
+    {
+      const m = mk(fleetAll.find(c => c.id === 'commuter')), GHOST = new THREE.MeshLambertMaterial({ color: 0xdfe9ff });
+      m.traverse(n => { if (n.isMesh) { n.userData.solidMat = n.material; n.material = GHOST; } });
+      WC.setWheelSet('spoke5');
+      const list = rimsOf(m), u = list[0]?.userData.rim;
+      check(list.length > 0 && list.every(r => r.material === GHOST && r.userData.solidMat === RM.rimMaterial(0xcfd3d9) && r.userData.rim.blur.material === GHOST), 'a ghost: rims added during it wear the ghost, their own paint under it (the blur disc too)');
+      m.userData.roll = 0; m.userData.animate(0); for (let f = 1; f <= 30; f++) { m.userData.roll += 40 / 60; m.userData.animate(f / 60); }
+      check(u.level > 0 && list[0].userData.rim.blur.visible && list[0].userData.rim.blur.material === GHOST && u.blurs.includes(list[0].userData.rim.blur.userData.solidMat), 'a ghost at speed: the blur step changes the paint under the ghost, the ghost stays on');
+      WC.setWheelSet('stock');
+    }
+
+    // TURNING, measured: a spoke's tip, in the model's frame, as the car rolls at a fixed speed (angle about the axle: forward = the top goes to +z)
+    {
+      const tip = new THREE.Vector3(), inv = new THREE.Matrix4();
+      const angleOf = (m, rim, t) => { tip.set(0, 0.7, 0.01).applyMatrix4(rim.matrixWorld).applyMatrix4(inv.copy(m.matrixWorld).invert()); return Math.atan2(tip.z - t.centre.z, tip.y - t.centre.y); };
+      const run = (m, v, frames, startRoll = true) => { // v m/s at 60 fps; returns per rim: mean measured turn per frame
+        const list = rimsOf(m), info = m.userData.wheelHubs.rimInfo, last = list.map(() => null), sum = list.map(() => 0);
+        if (startRoll) m.userData.roll = 0;
+        m.userData.animate(100);
+        for (let f = 1; f <= frames; f++) {
+          if (v !== null) m.userData.roll += v / 60;
+          m.userData.animate(100 + f / 60); m.updateMatrixWorld(true);
+          list.forEach((r, i) => { const a = angleOf(m, r, info.find(t => t.tyre === r.parent)); if (last[i] !== null) { let da = a - last[i]; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI; sum[i] += da; } last[i] = a; });
+        }
+        return list.map((r, i) => ({ side: r.userData.rim.side, r: r.userData.rim.r, perFrame: sum[i] / (frames - 1), level: r.userData.rim.level, gap: r.userData.rim.gap }));
+      };
+      WC.setWheelSet('spoke5');
+      const com = mk(fleetAll.find(c => c.id === 'commuter'));
+      const slow = run(com, 2, 40);
+      const want = slow.map(x => 2 / x.r / 60);
+      console.log('        spoke5 at 2 m/s, per frame (rad): measured ' + slow.map(x => (x.side > 0 ? 'R ' : 'L ') + x.perFrame.toFixed(4)).join(', ') + '; wanted v/r/60 = ' + want.map(w => w.toFixed(4)).join(', '));
+      check(slow.every((x, i) => Math.abs(x.perFrame - want[i]) < 0.002 * want[i] + 1e-4), 'a speed rim turns by the distance rolled over its radius, every frame (2 m/s)');
+      check(slow.every(x => x.perFrame > 0) && slow.some(x => x.side > 0) && slow.some(x => x.side < 0), 'both sides turn forward (the top of the wheel toward the front) at a forward roll');
+      const back = run(com, -2, 20);
+      check(back.every(x => x.perFrame < 0), 'reversing turns them the other way');
+      check(slow.every(x => x.level === 0), 'at 2 m/s no blur');
+      const fast = run(com, 40, 60);
+      check(fast.every(x => Math.abs(x.perFrame - RM.CLAMP * x.gap) < 1e-3) && fast.every(x => x.level === RM.BLUR.length - 1), 'at 40 m/s the turn is clamped to ' + RM.CLAMP + ' of the spoke gap a frame (' + (RM.CLAMP * fast[0].gap).toFixed(3) + ' rad, under half of ' + fast[0].gap.toFixed(3) + ') and the blur disc is at its thickest');
+      const steps = [];
+      for (const v of [2, 4, 6, 8, 10, 12, 16]) { const r = run(com, v, 40)[0]; steps.push(v + ' m/s: ' + (r.perFrame / r.gap).toFixed(2) + ' gap, step ' + r.level); }
+      console.log('        blur steps (commuter, r ' + slow[0].r.toFixed(2) + ' m, 60 fps; starts at ' + RM.BLUR_FROM + ', full at ' + RM.BLUR_FULL + ' of the gap a frame): ' + steps.join('; '));
+      delete com.userData.roll; com.userData.wheelHubs.rims.roll = undefined;
+      const idle = run(com, null, 30, false);
+      check(idle.every(x => Math.abs(x.perFrame - RM.IDLE_RATE / 60) < 1e-4), 'with no speed to follow (garage, showroom) a speed rim idles at ' + RM.IDLE_RATE + ' rad/s');
+      WC.setWheelSet('blade-spinner');
+      const sp = mk(fleetAll.find(c => c.id === 'commuter'));
+      const still = run(sp, 0, 30), moving = run(sp, 30, 30), noSpeed = (() => { delete sp.userData.roll; sp.userData.wheelHubs.rims.roll = undefined; return run(sp, null, 30, false); })();
+      check([still, moving, noSpeed].every(rs => rs.every(x => Math.abs(x.perFrame - RM.SPIN_RATE / 60) < 1e-4)), 'a spinner turns at ' + RM.SPIN_RATE + ' rad/s stopped, at 30 m/s and on show alike');
+      // an old model whose tyres turn themselves (render/models.js wheelTurn): the rim's turn is still distance over radius, not doubled
+      WC.setWheelSet('spoke5');
+      const f1 = fleetAll.find(c => c.id === 'f1');
+      if (f1) {
+        const m = mk(f1);
+        check(m.userData.rollsWheels === true && m.userData.onShow === true, 'the F1 car is flagged as turning its own tyres, and built on show');
+        const r = run(m, 3, 40), tyre = rimsOf(m)[0].parent;
+        check(r.every(x => Math.abs(x.perFrame - 3 / x.r / 60) < 0.002 * (3 / x.r / 60) + 1e-4), 'F1 car: its rims turn by distance over radius although its tyres turn too');
+        check(Math.abs(tyre.rotation.x - m.userData.roll / 0.35) < 1e-9, 'F1 car in the game: its tyres turn by distance rolled (roll / 0.35), not by the clock');
+        delete m.userData.roll; m.userData.animate(10);
+        check(Math.abs(tyre.rotation.x - 30) < 1e-9, 'F1 car on show: a gentle idle (3 rad/s; was 30)');
+        const { MODELS } = await load('render/models.js'), traffic = MODELS.f1(f1); traffic.userData.animate(2);
+        const tt = []; traffic.traverse(n => { if (n.isMesh && n.geometry.type === 'CylinderGeometry' && n.rotation.x) tt.push(n.rotation.x); });
+        check(tt.length > 0 && tt.every(x => Math.abs(x - 60) < 1e-9), 'F1 car as traffic (not on show, no roll): as before, 30 rad/s');
+      }
+      WC.setWheelSet('stock');
+    }
+
+    // the choice: its own key, JSON, per axle and per car kept for later, garbage, blocked storage, noSave
+    {
+      check(JSON.stringify(RM.cleanRimChoice('spoke5')) === '{"all":"spoke5"}' && RM.cleanRimChoice('{"all":"nope"}').all === 'none' && RM.cleanRimChoice('[1,2]').all === 'none' && RM.cleanRimChoice(null).all === 'none' && RM.cleanRimChoice('{bad json').all === 'none', 'a stored rim made safe: a bare id, an unknown id, an array, nothing, broken JSON');
+      const per = RM.cleanRimChoice(JSON.stringify({ all: 'none', rear: 'blade3', cars: { pickup: { front: 'turbine' }, 'bad id!': { all: 'spoke5' } }, junk: 1 }));
+      check(JSON.stringify(per) === '{"all":"none","rear":"blade3","cars":{"pickup":{"front":"turbine"}}}', 'per axle and per car parts are kept, junk dropped: ' + JSON.stringify(per));
+      raw.setItem('delivery.wheelrim', JSON.stringify(per));
+      server.moduleGraph.invalidateAll();
+      const { makeShowCar: make2 } = await load('render/showcar.js'), R2 = await load('render/rims.js'), W2 = await load('render/wheelcosmetic.js');
+      check(R2.resolveRim('commuter', 'front') === 'none' && R2.resolveRim('commuter', 'rear') === 'blade3' && R2.resolveRim('pickup', 'front') === 'turbine' && R2.resolveRim('pickup', 'rear') === 'blade3', 'resolveRim(car, axle): the one reader, per axle and per car');
+      const p2 = make2(fleetAll.find(c => c.id === 'pickup')), l2 = p2.userData.wheelHubs.rims?.list || [];
+      check(l2.length === 4 && l2.every(r => r.userData.rim.id === (p2.userData.wheelHubs.rimInfo.find(t => t.tyre === r.parent).axle === 'front' ? 'turbine' : 'blade3')), 'a car built under it wears turbine on its front axle and the blade spinner on its rear');
+      W2.setWheelSet('spoke5');
+      check(JSON.parse(raw.getItem('delivery.wheelrim')).all === 'spoke5' && JSON.parse(raw.getItem('delivery.wheelrim')).rear === 'blade3', 'equipping a set changes the global rim and keeps the per-axle part');
+      raw.setItem('delivery.wheelrim', 'garbage{'); server.moduleGraph.invalidateAll();
+      check((await load('render/rims.js')).globalRim() === 'none' && (await load('render/wheelcosmetic.js')).wheelSet() !== 'spoke5', 'garbage saved: no rim');
+      raw.setItem(W.KEY, 'silver'); raw.setItem(W.KEY_DESIGN, 'stock'); raw.setItem('delivery.wheelrim', '{"all":"spoke5"}'); server.moduleGraph.invalidateAll();
+      check((await load('render/wheelcosmetic.js')).wheelSet() === 'spoke5', 'reload: the 5-spoke set is found again from the three keys');
+      raw.removeItem('delivery.wheelrim'); server.moduleGraph.invalidateAll();
+      check((await load('render/wheelcosmetic.js')).wheelRim() === 'none', 'an older save with no rim key: no rim (silver + stock tyres is then no set: Custom)');
+      // a rim set the player does not own: Stock, rim and all
+      raw.setItem(W.KEY, 'gold'); raw.setItem(W.KEY_DESIGN, 'stock'); raw.setItem('delivery.wheelrim', '{"all":"blade3"}'); server.moduleGraph.invalidateAll();
+      const W3 = await load('render/wheelcosmetic.js'), { COSMETICS } = await load('render/cosmetics.js'), entry = COSMETICS.find(c => c.slot === 'wheels' && c.id === 'blade-spinner');
+      entry.free = false;
+      check(W3.wheelSet() === 'stock' && W3.wheelRim() === 'none', 'a saved rim set not owned wears Stock, rim and all');
+      entry.free = true;
+      check(W3.wheelSet() === 'blade-spinner', '...and owned again, it is back');
+      globalThis.localStorage = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); }, removeItem() { throw new Error('blocked'); } };
+      server.moduleGraph.invalidateAll();
+      let threw = false;
+      try { const B = await load('render/wheelcosmetic.js'); check(B.wheelRim() === 'none', 'no storage: no rim'); B.setWheelSet('turbine'); check(B.wheelRim() === 'turbine' && B.wheelSet() === 'turbine', 'no storage: a rim set holds for the visit'); } catch { threw = true; }
+      check(!threw, 'no storage: nothing throws (rims)');
+      globalThis.localStorage = raw;
+      raw.setItem('delivery.wheelrim', '{"all":"spoke5"}'); server.moduleGraph.invalidateAll();
+      const N = await load('render/wheelcosmetic.js'), { Progress: PN } = await load('progress.js');
+      PN.noSave = true;
+      check(N.wheelRim() === 'none', 'a visit with test switches (Progress.noSave) ignores the saved rim');
+      N.setWheelSet('twin-spinner');
+      check(N.wheelRim() === 'twinspin' && raw.getItem('delivery.wheelrim') === '{"all":"spoke5"}', 'and a rim set chosen in it lasts the visit: the saved one is not overwritten');
+      PN.noSave = false;
+      raw.removeItem('delivery.wheelrim'); raw.removeItem(W.KEY); raw.removeItem(W.KEY_DESIGN);
+      void PR;
+    }
+    // UNLOCK REVEALS show the STOCK car; every other view wears the loadout (the owner, 15-Oct; render/showcar.js dressCosmetics)
+    {
+      server.moduleGraph.invalidateAll();
+      const { makeShowCar: mk2 } = await load('render/showcar.js'), W4 = await load('render/wheelcosmetic.js');
+      const { cosmeticKeys: keys2, grantCosmetics } = await load('render/cosmetics.js');
+      await load('unlockall.js'); grantCosmetics(keys2());
+      const PC = await load('render/platecosmetic.js'), PD = await load('render/propdress.js'), { PLATE_DESIGNS } = await load('render/platedesigns.js'), { PROPS } = await load('render/propmodels.js');
+      W4.setWheelSet('blade-spinner');
+      const plateOn = PC.setPlateDesign(PLATE_DESIGNS.find(d => d.id !== 'stock').id), propOn = PD.setProp('roof', PROPS.roof[0].id);
+      const car = fleetAll.find(c => c.id === 'commuter');
+      const dressedCar = mk2(car), stockCar = mk2(car, { stock: true });
+      const worn = (m) => ({ rims: m.userData.wheelHubs?.rims?.list.length || 0, plate: PC.platePlan(m)?.worn?.length || 0, props: PD.propPlan(m)?.worn?.length || 0, cos: (() => { let n = 0; m.traverse(x => { if (x.userData.propCosmetic || x.userData.wheelRing || x.userData.plateFace) n++; }); return n; })() });
+      const dw = worn(dressedCar), sw = worn(stockCar);
+      check(plateOn && propOn && dw.rims > 0 && dw.plate > 0 && dw.props > 0 && dw.cos > 0, 'a loadout on (blade spinner set, a plate design, a roof prop): a car on show wears it (' + JSON.stringify(dw) + ')');
+      check(!stockCar.userData.wheelHubs && !PC.platePlan(stockCar) && !PD.propPlan(stockCar) && sw.cos === 0 && sw.rims === 0, 'makeShowCar(car, { stock: true }): the car as it comes, no wheel set, rim, plate or prop (' + JSON.stringify(sw) + ')');
+      const { readFileSync } = await import('node:fs');
+      const src = (f) => readFileSync('src/delivery/' + f, 'utf8');
+      const uc = src('render/unlockcine.js'), calls = [...uc.matchAll(/makeShowCar\(([^)]*)\)/g)].map(m => m[1]).filter(x => x !== '' && !/^\s*$/.test(x));
+      check(calls.length === 1 && /\{ stock: true \}/.test(calls[0]) && !/makeShowCar|dressWheels|dressPlates|dressProps/.test(src('render/ecucine.js')), 'the unlock cinematics (render/unlockcine.js: car, key, and render/ecucine.js through it: Crazey Jim, ECU up, ECU max) build their car with { stock: true } only');
+      check(/drawSoon\([^)]*stock: true/.test(src('render/packs.js')), "a pack reveal's cards are drawn stock (render/packs.js)");
+      const others = ['render/garage.js', 'render/showroomview.js', 'render/menustage.js', 'render/carstill.js', 'render/packbanner.js', 'render/warmup.js', 'render/inspectmodel.js', 'render/items.js'];
+      check(others.every(f => !/stock: true/.test(src(f))) && /makeShowCar\(car, \{ stock \}\)/.test(src('render/carstill.js')) && /dressCosmetics\(model, car\)/.test(src('render/items.js')), 'every other view (garage, showroom, menu card, stills, pack banner, the game and its cameras) builds the dressed car: none passes stock');
+      // the game's model of the player's car is dressed through the same one hook
+      W4.setWheelSet('stock'); PC.setPlateDesign('stock'); PD.setProp('roof', 'none');
+    }
+    // unlock everything grants them; nothing in the fingerprint
+    {
+      server.moduleGraph.invalidateAll();
+      const { cosmeticKeys } = await load('render/cosmetics.js');
+      await load('unlockall.js');
+      check(rimSets.every(x => cosmeticKeys().includes('wheels:' + x.id)), 'the rim sets are in the registry, so "Absolutely everything" grants them: ' + rimSets.map(x => 'wheels:' + x.id).join(', '));
+      const { logicFiles } = await import('../vite.config.js');
+      check(!logicFiles().some(f => /rims|wheelcosmetic|models\.js|ideaModels3|items\.js|showcar/.test(f)), 'the replay fingerprint includes none of rims.js, wheelcosmetic.js, models.js, ideaModels3.js, items.js, showcar.js');
+    }
   }
 } finally {
   await server.close();

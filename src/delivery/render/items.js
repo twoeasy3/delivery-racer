@@ -24,9 +24,7 @@ import { Hazards } from '../hazards.js';
 import { Delivery } from '../delivery.js';
 import { patchModel } from './modelpatchapply.js';
 import { addLegend } from './legenddecal.js';
-import { dressWheels } from './wheelcosmetic.js';
-import { dressPlates } from './platecosmetic.js';
-import { dressProps } from './propdress.js';
+import { dressCosmetics } from './showcar.js';
 import { LAMP_DEBUG, lampKey, lampsFor, makeLampMarkers } from './carlights.js';
 
 // Everything here that belongs to the loaded level (bridges, obstacles, pickups, targets)
@@ -43,9 +41,7 @@ const playerModel = (car) => {
     if (car.super || car.superKit) addSuperKit(model, car); // (a Super car, or an earned car built as one: its base car's model with the body kit on)
     if (car.legend) addLegend(model, car); // (a Legendary car: black and gold, the wreath on its flanks)
     patchModel(model, car); // (its model patch, if it has one: render/modelpatchapply.js)
-    dressWheels(model, car); // (the global wheel colour on its hubs: render/wheelcosmetic.js)
-    dressPlates(model, car); // (an equipped number plate hides the model's own: render/platecosmetic.js)
-    dressProps(model, car); // (an equipped roof prop, cargo prop or rear wing: render/propdress.js)
+    dressCosmetics(model, car); // (the player's loadout: wheel set and rim, number plate, props: render/showcar.js)
     model.userData.body.material.transparent = true; // (so it can go see-through as a ghost)
     carMesh.add(model);
     playerModels[car.id] = model;
@@ -534,6 +530,12 @@ export const syncPickups = (dt) => {
   const custom = CAR.model && !tank ? playerModel(CAR) : null;
   for (const id in playerModels) playerModels[id].visible = playerModels[id] === custom;
   if (custom) {
+    // how far it has rolled (m), for wheels and rims that turn with it (render/models.js wheelTurn, render/rims.js): the change in
+    // Player.s over the path's scale there (s runs faster on the inside of a bend: player.js), so a pause, a replay's 2x and a
+    // reverse all come out right; a jump (a restart, ?at=) is not rolled
+    const ds = Player.s - (custom.userData.lastS ?? Player.s);
+    custom.userData.lastS = Player.s;
+    custom.userData.roll = (custom.userData.roll || 0) + (Math.abs(ds) < 8 ? ds / Track.pathScale(Player.s, Player.lat) : 0);
     custom.userData.animate(performance.now() / 1000);
     paintOf(custom.userData.body).color.setHex(livery);
     dentModel(custom, custom.userData.body, worn);

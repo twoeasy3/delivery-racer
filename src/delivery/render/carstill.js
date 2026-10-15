@@ -27,9 +27,10 @@ const poseOf = (pose) => (typeof pose === 'string' ? POSES[pose] || STILL_POSE :
 const poseKey = (pose) => (typeof pose === 'string' ? pose : pose && pose !== STILL_POSE ? JSON.stringify(pose) : 'still');
 
 const stills = new Map(); // car id + side + pose + size -> the object URL of its picture, once encoded
-const keyOf = (el, car, evil, pose) => {
+// stock: the car as it comes, no cosmetic of the player's (a pack reveal's cards: render/showcar.js dressCosmetics), kept apart
+const keyOf = (el, car, evil, pose, stock = false) => {
   const r = boxOf(el); // (its own laid-out size, not the box on screen a transform makes of it: modelviews.js boxOf)
-  return car.id + (evil ? '/evil/' : '/good/') + poseKey(pose) + '/' + Math.round(r.width / 20) + 'x' + Math.round(r.height / 20);
+  return car.id + (evil ? '/evil/' : '/good/') + poseKey(pose) + (stock ? '/stock/' : '/') + Math.round(r.width / 20) + 'x' + Math.round(r.height / 20);
 };
 // the picture fills the element, whole, whatever its pixel size (drawn at the device's pixel ratio, so twice the element at
 // 2x): an element whose CSS gives the background no size of its own gets `contain`, centred (a pack's car had none and
@@ -43,17 +44,17 @@ const show = (el, url) => {
   el.querySelector(':scope > canvas.still-draw')?.remove();
 };
 // already drawn for this element's size: shown at once (true); false: it is still to be drawn
-export const stillReady = (el, car, evil, pose) => {
-  const url = stills.get(keyOf(el, car, evil, pose));
+export const stillReady = (el, car, evil, pose, stock = false) => {
+  const url = stills.get(keyOf(el, car, evil, pose, stock));
   if (url) show(el, url);
   return !!url;
 };
 const waiting = new Map(); // key -> { canvas (the one drawn), els (to show it on once it is encoded) }
 // drawn now if it is not yet (a model built, painted, rendered, and given back). False: nothing could be drawn (no
 // renderer, no size yet, no model for the car)
-export const stillCar = (el, car, evil, pose) => {
-  if (stillReady(el, car, evil, pose)) return true;
-  const key = keyOf(el, car, evil, pose);
+export const stillCar = (el, car, evil, pose, stock = false) => {
+  if (stillReady(el, car, evil, pose, stock)) return true;
+  const key = keyOf(el, car, evil, pose, stock);
   const w = waiting.get(key);
   if (w) { // (being encoded: a copy of the one drawn until it is, so a second card of the car is never blank)
     if (!w.els.has(el)) {
@@ -70,7 +71,7 @@ export const stillCar = (el, car, evil, pose) => {
     return true;
   }
   try {
-    const model = makeShowCar(car);
+    const model = makeShowCar(car, { stock });
     paintShowCar(model, car, evil);
     if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
     el.querySelector(':scope > canvas.still-draw')?.remove(); // (one drawn for another size or pose)
@@ -96,8 +97,8 @@ const pump = () => {
   while (queue.length && performance.now() - t0 < BUDGET) {
     const job = queue.shift();
     if (!job.el.isConnected || job.el.dataset.still === job.key) continue;
-    if (stillReady(job.el, job.car, job.evil, job.pose)) { job.el.dataset.still = job.key; continue; }
-    if (stillCar(job.el, job.car, job.evil, job.pose)) job.el.dataset.still = job.key;
+    if (stillReady(job.el, job.car, job.evil, job.pose, job.stock)) { job.el.dataset.still = job.key; continue; }
+    if (stillCar(job.el, job.car, job.evil, job.pose, job.stock)) job.el.dataset.still = job.key;
     else if (job.el.isConnected && !boxOf(job.el).width && (job.tries = (job.tries || 0) + 1) < 30) { queue.push(job); break; } // (not laid out yet: a later frame)
   }
   if (queue.length) pumping = requestAnimationFrame(pump);
@@ -108,13 +109,13 @@ const pump = () => {
 // (the element's data-still is a tag, not the car's id: a blacked-out car's card must not name it: render/carsources.js)
 const tags = new Map();
 const tagOf = (key) => { if (!tags.has(key)) tags.set(key, 's' + tags.size); return tags.get(key); };
-export const drawSoon = (el, car, { side = 'good', pose, first = false } = {}) => {
+export const drawSoon = (el, car, { side = 'good', pose, first = false, stock = false } = {}) => {
   const evil = side === 'evil';
-  const job = { el, car, evil, pose, key: tagOf(car.id + '/' + (evil ? 'e' : 'g') + '/' + poseKey(pose)) };
+  const job = { el, car, evil, pose, stock, key: tagOf(car.id + '/' + (evil ? 'e' : 'g') + '/' + poseKey(pose) + (stock ? '/s' : '')) };
   if (el.dataset.still === job.key) return;
-  if (stillReady(el, car, evil, pose)) { el.dataset.still = job.key; return; } // (cached: at once, no frame)
+  if (stillReady(el, car, evil, pose, stock)) { el.dataset.still = job.key; return; } // (cached: at once, no frame)
   queue = queue.filter(j => j.el !== el); // (one job an element: a redraw at a new size replaces one not yet done)
-  if (first && boxOf(el).width && stillCar(el, car, evil, pose)) { el.dataset.still = job.key; return; } // (first, laid out: drawn now)
+  if (first && boxOf(el).width && stillCar(el, car, evil, pose, stock)) { el.dataset.still = job.key; return; } // (first, laid out: drawn now)
   if (first) queue.unshift(job); else queue.push(job);
   if (!pumping) pumping = requestAnimationFrame(pump);
 };
