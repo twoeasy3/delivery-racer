@@ -160,6 +160,12 @@ cargo 1 x 0.8 x 1.2, wing 1.4 x 0.35 x 0.3. Seen in stills /tmp/prop-maxscale/*.
 | cargo | cargo-tyres (Tyre stack) | 1.0 | 0.90 x 0.76 x 0.93 | van / light-truck tyres (~0.9 m); at 1.1 truck tyres in a pickup |
 | cargo | cargo-armchair (Armchair on straps) | 1.1 | 1.03 x 0.87 x 1.11 | an armchair is ~0.9 m wide and tall |
 | cargo | cargo-junkertarp (Junker tarp) | 2.0 | 2.00 x 1.20 x 2.28 | a tarp: as big as the bed |
+| cargo | cargo-mixer (Cement mixer) | 1.2 | 0.99 x 0.85 x 1.21 | a site mixer: drum ~0.7 m across, ~1.4 m long with its wheels; past 1.2 a concrete truck's drum |
+| cargo | cargo-logs (Log pile) | 1.4 | 1.20 x 0.98 x 1.57 | logs ~0.35 m thick, 1.6 m long (firewood lengths); a flatbed's load, not a timber lorry's |
+| cargo | cargo-dinghy (Rubber dinghy) | 1.6 | 1.50 x 0.93 x 1.82 | a small tender is ~1.9 x 1.4 m; it sits on bunks so it shows over a bed's sides |
+| cargo | cargo-speakers (Party speakers) | 1.1 | 1.02 x 0.79 x 0.90 | PA cabinets ~0.8 m tall; at 1.3 they read as a stage stack |
+| cargo | cargo-trophy (Giant trophy) | 1.3 | 0.94 x 1.01 x 0.68 | a joke: a cup a metre tall, giant but still a cup (on the kei truck at its room, 1.27) |
+| cargo | cargo-washer (Washing machine) | 1.15 | 0.85 x 0.89 x 0.85 | a washer is 0.6 m wide, 0.85 m tall: the machine 0.71 x 0.81 at 1.15 |
 | wing | winggt (GT wing) | 1.8 | 2.52 x 0.59 x 0.50 | conventional wings span the car, up to a bus / van (~2.5 m) |
 | wing | winglip (Duck-tail lip) | 1.8 | 2.34 x 0.31 x 0.50 | follows the body's width |
 | wing | wingtube (Tube wing) | 1.8 | 2.41 x 0.54 x 0.41 | as the GT wing |

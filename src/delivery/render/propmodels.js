@@ -17,6 +17,7 @@
 import * as THREE from 'three';
 import { MORE_ROOF } from './propmodelsroof.js';
 import { MORE_CARGO } from './propmodelscargo.js';
+import { MORE_CARGO_2 } from './propmodelscargo2.js';
 import { MORE_WING } from './propmodelswing.js';
 import { MORE_WING_CLASSIC } from './propmodelswingclassic.js';
 
@@ -135,7 +136,8 @@ export const BASE_PROPS = {
 // 'fixed'); their ids are 'roof-...', 'cargo-...', 'wing-...' and never collide with the nine.
 export const PROPS = {
   roof: [...BASE_PROPS.roof, ...MORE_ROOF],
-  cargo: [...BASE_PROPS.cargo, ...MORE_CARGO],
+  cargo: [...BASE_PROPS.cargo, ...MORE_CARGO,
+    ...MORE_CARGO_2],
   wing: [...BASE_PROPS.wing, ...MORE_WING_CLASSIC, ...MORE_WING],
 };
 export const propById = (id) => Object.values(PROPS).flat().find(p => p.id === id) || null;

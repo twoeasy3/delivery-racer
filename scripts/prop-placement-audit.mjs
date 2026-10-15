@@ -29,6 +29,7 @@ import { MAX_INSET } from './prop-audit-lib.mjs';
 const OUT = flag('--out', '/tmp/prop-audit'), part = flag('--part'), jobs = Number(flag('--jobs', 3));
 const only = args.filter((a, i) => !a.startsWith('--') && !['--out', '--part', '--jobs', '--table', '--tag'].includes(args[i - 1]));
 const REAL = { wing: ['winggt', 'winglip', 'wing-race', 'wingtube'], roof: ['roofbox', 'roofsign', 'roof-dish'], cargo: ['cargocrates', 'cargobarrel'] };
+for (const id of (process.env.PROP_AUDIT_PROPS || '').split(',').filter(Boolean)) REAL[id.startsWith('roof') ? 'roof' : id.startsWith('wing') ? 'wing' : 'cargo'].push(id); // (PROP_AUDIT_PROPS=<id,id>: more real props measured as worn)
 const CARGO_KINDS = new Set(['pickup', 'flatbed', 'halftrack', 'open', 'truck', 'special']);
 const NO_ROOF = new Set(['open', 'canopy', 'craft', 'tank', 'micro', 'bike']), NO_WING = new Set(['canopy', 'craft', 'tank', 'micro', 'bike']);
 mkdirSync(OUT, { recursive: true });
