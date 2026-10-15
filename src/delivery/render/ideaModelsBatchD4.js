@@ -79,17 +79,6 @@ const blob = (sx, sy, sz, x, y, z, pitch = 0, yaw = 0, roll = 0, seg = [10, 6]) 
   if (yaw) geo.rotateY(yaw);
   return geo.translate(x, y, z);
 };
-// a flat convex polygon through the points [x, y, z], fanned from its first
-const panel = (pts) => {
-  const pos = [];
-  for (let i = 1; i + 1 < pts.length; i++) pos.push(...pts[0], ...pts[i], ...pts[i + 1]);
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  geo.computeVertexNormals();
-  return geo;
-};
-const pair = (pts) => [panel(pts), panel(pts.map(([x, y, z]) => [-x, y, z]).reverse())];
-
 // ---- the body: an extrusion of a side view ([z, y] points; ['arc', z, y, r] a wheel arch from its rear foot to its front)
 const curve = (a, b, c, d, n) => new THREE.CubicBezierCurve(...[a, b, c, d].map(([z, y]) => new THREE.Vector2(z, y)))
   .getPoints(n).slice(1).map(v => [v.x, v.y]);
@@ -118,23 +107,6 @@ const extrudeSide = (outline, w, bevel, taper = null, segs = 2, across = bevel, 
   }
   return geo;
 };
-const zAt = ([[z0, y0], [z1, y1]], y) => z0 + (z1 - z0) * (y - y0) / (y1 - y0);
-// a glass panel on a sloping face from [z0, y0] to [z1, y1] (side view), `half` the half width before narrowing, inset
-// `inset` from the sides and `ends` (shares) from its ends, laid `lift` out along the face's normal on the side `out`
-// ([nz, ny]) points to
-const slopeGlass = ([z0, y0], [z1, y1], half, taper, inset, ends, lift, out) => {
-  const dz = z1 - z0, dy = y1 - y0, len = Math.hypot(dz, dy);
-  let nz = -dy / len, ny = dz / len;
-  if (nz * out[0] + ny * out[1] < 0) { nz = -nz; ny = -ny; }
-  const at = (t, sx) => {
-    const z = z0 + dz * t + nz * lift, y = y0 + dy * t + ny * lift;
-    return [sx * (narrowAt(half, y, taper) - inset), y, z];
-  };
-  const [a, b] = ends;
-  return panel([at(a, -1), at(a, 1), at(1 - b, 1), at(1 - b, -1)]);
-};
-// side windows: polygons of [z, y] laid on the (narrowed) flank, `lift` out
-const sideGlass = (windows, half, taper, lift) => windows.flatMap(win => pair(win.map(([z, y]) => [narrowAt(half, y, taper) + lift, y, z])));
 // a band of a side view: a line of [z, y] points and the same line `t` lower, as one outline (the Yacht's roof cap)
 const band = (pts, t) => [...pts, ...pts.slice().reverse().map(([z, y]) => [z, y - t])];
 // shade a geometry darker toward its foot (vertex colours: times the paint, any paint alike), `low` at y0 to white at y1
@@ -240,8 +212,9 @@ IDEA_MODELS_BATCH_D4.finlandyacht = (car) => {
   ];
   const CBEV = 0.07, CW = BW - 0.36, TOP = car.height - CBEV, CY = 0.98, TAPER = [0.98, TOP, 0.14];
   const WS = [[1.0, CY], [0.4, TOP - 0.03]], BL = [[-1.15, CY], [-1.45, TOP - 0.06]];
-  const roof = [WS[1], ...curve(WS[1], [0, TOP + 0.01], [-0.9, TOP + 0.01], [-1.35, TOP - 0.01], 5)];
-  const cabinOutline = [WS[0], ...roof, [-1.4, TOP - 0.04], BL[1], BL[0]];
+  // (the roof one gentle arch from the screen's top to the back window's top, two corners only: the glass then has the body's own corners and no more)
+  const roof = [WS[1], ...curve(WS[1], [0, TOP + 0.01], [-0.9, TOP + 0.01], BL[1], 5)];
+  const cabinOutline = [WS[0], ...roof, BL[0]];
   // the fins: a blade a side along the rear wing, rising to a sharp tip at the tail
   const fin = extrudeSide([[-1.3, 0.94], [-2.0, 1.04], [-2.78, 1.46], [-2.84, 0.94]], 0.12, 0.02, null, 1);
   const body = shadeLow(merge([
@@ -253,17 +226,16 @@ IDEA_MODELS_BATCH_D4.finlandyacht = (car) => {
   // the roof in its second colour: a cap on the flat of the roof
   const capPts = [[0.34, TOP + 0.03], ...curve([0.34, TOP + 0.03], [0, TOP + 0.075], [-0.8, TOP + 0.075], [-1.25, TOP + 0.055], 5)];
   place(group, merge([extrudeSide(band(capPts, 0.1), CW - 0.3, 0.02, TAPER, 1)]), roofMat);
-  // glass: wraparound windscreen and back window, three side windows a side
-  const CH = CW / 2, LIFT = CBEV + 0.006, foot = 1.06, top = 1.3;
-  const aEdge = (y) => zAt(WS, y) - 0.1, cEdge = (y) => zAt(BL, y) + 0.1;
-  bag.add(GLASS,
-    slopeGlass([zAt(WS, foot), foot], WS[1], CH, TAPER, CBEV + 0.03, [0, 0.06], LIFT, [1, 1]),
-    slopeGlass([zAt(BL, foot), foot], BL[1], CH, TAPER, CBEV + 0.04, [0, 0.08], LIFT, [-1, -1]),
-    ...sideGlass([
-      [[aEdge(foot), foot], [0.06, foot], [0.06, top], [aEdge(top), top]],
-      [[-0.04, foot], [-0.62, foot], [-0.62, top], [-0.04, top]],
-      [[-0.72, foot], [cEdge(foot), foot], [cEdge(top), top], [-0.72, top]],
-    ], CH, TAPER, 0.006));
+  // ALL the glass from the cabin's own side profile (cabinGlass: one inset outline, level tops): three side windows a side (a six-light saloon:
+  // front door, rear door, quarter window), a flat windscreen and a back window (the wraparound's rounded corners are gone: the screens are flat
+  // across, with the cabin's edges). The back window leans BACKWARDS (the roof overhangs it), so, as on the Slant-Back, the rear glass comes from
+  // a call with the lifts negated. The windscreen's foot is the bonnet (belt 1.0; the bonnet is 0.97 there).
+  const CH = CW / 2, LIFT = CBEV + 0.006;
+  const ARGS = { from: 0, to: cabinOutline.length - 1, half: CH, taper: TAPER, grow: CBEV, inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, sideLift: 0.006 };
+  const glass = cabinGlass(cabinOutline, { ...ARGS, belt: 1.06, lift: LIFT, windows: [[0.06, 9], [-0.62, -0.04], [-9, -0.72]] });
+  const screen = cabinGlass(cabinOutline, { ...ARGS, belt: 1.0, lift: LIFT });
+  const rear = cabinGlass(cabinOutline, { ...ARGS, belt: 1.0, lift: -LIFT }).rear;
+  bag.add(GLASS, ...glass.sides, screen.front, rear);
   for (const s of [-1, 1]) {
     // four round headlamps (two a side) in chrome rings, the grille between, the bumper's bullets
     for (const x of [0.84, 0.6]) {
