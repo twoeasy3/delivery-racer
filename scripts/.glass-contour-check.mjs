@@ -126,6 +126,7 @@ try {
         const ts = [];
         for (let t = 0.05; t <= len - 0.05; t += 0.01) { const d = cross(e.a[2] + dz * t / len, e.a[1] + dy * t / len, nz, ny); if (d !== null) ts.push(d); }
         const kind = Math.abs(dy) < 0.25 * len ? 'top' : dz * dy < 0 ? 'A' : 'C';
+        if (!ts.length && gv?.freeEdge) { notes.push(`window ${wi + 1}: its ${kind} edge is a deliberate free-standing line (userData.glassVirtual.freeEdge), not the contour`); continue; }
         if (!ts.length) { fails.push(`window ${wi + 1}: its ${kind} edge finds no contour within 25 cm`); continue; }
         const range = Math.max(...ts) - Math.min(...ts), mean = ts.reduce((s, d) => s + d, 0) / ts.length;
         found.push(`${kind} ${(mean * 100).toFixed(1)}`);
@@ -206,7 +207,7 @@ try {
       notes.push(`${name}: screen top ${(r.roofGap * 100).toFixed(1)} cm below the roof height beside it`);
       if (r.roofGap > (gv ? 0.2 : 0.07)) fails.push(`${name}: the screen's top is ${(r.roofGap * 100).toFixed(1)} cm below the roof line (> 7): a lowered screen leaves a strip`);
       if (r.hidden) fails.push(`${name}: the screen's top edge is under the body (the glass is not proud of the body face there: its visible top is lower, with a strip of body over it)`);
-      if (Math.abs(r.wTop - r.wFoot) > TOL) fails.push(`${name}: pillar width ${(r.wTop * 100).toFixed(1)} cm at the top, ${(r.wFoot * 100).toFixed(1)} cm at the foot`);
+      if (Math.abs(r.wTop - r.wFoot) > TOL && !(gv?.freeEdge && !f)) fails.push(`${name}: pillar width ${(r.wTop * 100).toFixed(1)} cm at the top, ${(r.wFoot * 100).toFixed(1)} cm at the foot`);
     }
     rows.push([car.id, fails.length ? 'FAIL' : 'ok', ...notes, ...fails.map(f => '  ! ' + f)]);
     if (fails.length) failures.push(car.id);

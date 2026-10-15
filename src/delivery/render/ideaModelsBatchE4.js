@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 import {
   TRIM, CHROME, GLASS, LAMP, TAIL, AMBER, shared, place, merge, parts, bx, curve, extrudeSide,
-  shadeBy, low, flare, wheel, cabinGlass,
+  shadeBy, low, flare, wheel, cabinGlass, glassFromProfile, cabinChain, flankPanel, insideChain,
 } from './ideaModelsDkit.js';
 
 // a block of square lamps ("pixels") on a flat face: `rows` are strings, '.' empty; column 0 is the INNER one; `s` the square,
@@ -94,7 +94,7 @@ export const IDEA_MODELS_BATCH_E4 = {
     const BEV = 0.05, BW = 2.02, HALF = BW / 2, NOSE = 2.35, TAILZ = -2.35, FLOOR = 0.3, BELT = 1.08, ROOF = 1.6;
     const TAPER = [BELT, ROOF, 0.12];
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
-    const ACC = { good: 0x3d4147, evil: 0xe8821e }, trim = new THREE.MeshLambertMaterial({ color: ACC.good });
+    const ACC = { good: 0x3d4147, evil: 0xe8821e }, trim = new THREE.MeshLambertMaterial({ color: ACC.good }), bladeMat = new THREE.MeshLambertMaterial({ color: ACC.good, side: THREE.DoubleSide });
     const WSF = [1.05, 1.12], WST = [0.4, 1.55], RGT = [-1.74, 1.44], RGB = [-2.22, 1.1];
     const outline = [
       [NOSE, FLOOR], [NOSE, 0.95], ...curve([NOSE, 0.95], [NOSE, 1.0], [NOSE - 0.04, 1.03], [NOSE - 0.18, 1.05], 3),
@@ -106,16 +106,25 @@ export const IDEA_MODELS_BATCH_E4 = {
     const body = place(group, shared(k + 'body', () => shadeBy(merge([
       extrudeSide(outline, BW, BEV, TAPER, 1, 0.07),
     ]), low(0.4, 1.1, [0.7, 0.66, 0.62]))), paint);
-    // ALL the glass from the body's own side profile (cabinGlass: one inset outline, level tops). Like the Ioniq 5 it follows, four doors' worth
-    // of glass: the front door window is the longest, the rear door window a little shorter, then the quarter window running up the hatch's
-    // slope; the hatch glass is the whole slope from the roof's end to the tail (RGT to RGB); the windscreen's foot is the bonnet (second call).
-    // QUARTER: the Ioniq-5-like layout (front door, rear door and a quarter window, my own choice, not asked for) or the car's ORIGINAL layout (a door window and
-    // one long rear window)
-    const QUARTER = false;
-    const INS = { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, ARGS = { from: outline.findIndex(p => p[0] === WSF[0] && p[1] === WSF[1]), to: outline.indexOf(RGB), half: HALF, taper: TAPER, grow: BEV, inset: INS, lift: BEV + 0.006, sideLift: 0.006, sideInset: 0.1 };
-    const glass = cabinGlass(outline, { ...ARGS, sharp: true, cornerDepth: 0.05, belt: 1.18, windows: QUARTER ? [[0.0, 9], [-1.0, -0.14], [-9, -1.14]] : [[0.0, 9], [-9, -0.14]] });
-    const screen = cabinGlass(outline, { ...ARGS, sharp: true, cornerDepth: 0.05, belt: WSF[1] + 0.03 });
-    parts(group, k + 'glass', GLASS, () => [...glass.sides, screen.front, glass.rear]);
+    // THE GLASS (the owner, 15-Oct): the car's own two side windows, a door window and one long rear window, sharp on the rounded body (cabinGlass sharp mode
+    // for the windscreen and the hatch glass; the side windows from the same virtual corners with their own rear edge). THE INVERTED REAR EDGE, made a
+    // design feature: the original's rear window ended in an edge that leans BACK at the top (from the belt at z -1.45 up and back to -1.66: 42 degrees from
+    // the vertical, the opposite of the hatch slope behind it). It is kept as ONE crisp straight edge at RAKE degrees, the window a clean 4-edge polygon,
+    // and a contrasting blade (the car's accent: grey, orange in Evil) follows exactly the same line behind it, 5 mm clear of the glass.
+    const INS = { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, FROM = outline.findIndex(p => p[0] === WSF[0] && p[1] === WSF[1]), TO = outline.indexOf(RGB), GBELT = 1.18;
+    const ARGS = { from: FROM, to: TO, half: HALF, taper: TAPER, grow: BEV, inset: INS, lift: BEV + 0.006, sideLift: 0.006, sideInset: 0.1, sharp: true, cornerDepth: 0.05 };
+    const glass = cabinGlass(outline, { ...ARGS, belt: GBELT }), screen = cabinGlass(outline, { ...ARGS, belt: WSF[1] + 0.03 });
+    const RAKE = { top: -1.5, angle: 38 * Math.PI / 180 }; // (the rear window's back edge: starts on the roof line at z top, runs down and FORWARD at angle from the vertical)
+    const [vA, vR] = [glass.virtual[1], glass.virtual[2]], roofY = vA[1] + (vR[1] - vA[1]) * (RAKE.top - vA[0]) / (vR[0] - vA[0]);
+    const wChain = [glass.virtual[0], vA, [RAKE.top, roofY], [RAKE.top + (roofY - 1.0) * Math.tan(RAKE.angle), 1.0]];
+    const wIns = { aPillar: Math.max(0, 0.07 - BEV), roof: Math.max(0, 0.05 - BEV), cPillar: 0, belt: 0.025 }, real = cabinChain(outline, FROM, TO, GBELT);
+    const windows = [[0.0, 9], [-9, -0.14]].flatMap(([zr, zf]) => glassFromProfile(wChain, { from: 0, to: 3, belt: GBELT, inset: wIns, zRear: zr, zFront: zf, half: HALF, taper: TAPER, lift: 0.006, real, margin: 0.003 }));
+    parts(group, k + 'glass', GLASS, () => [...windows, screen.front, glass.rear]);
+    // the blade: the rear window's back edge's line, 14 cm wide, from the belt to the window's top
+    const bb = windows[2].boundingBox ?? (windows[2].computeBoundingBox(), windows[2].boundingBox), yb = bb.min.y, yt = bb.max.y;
+    const edgeZ = (y) => RAKE.top + (roofY - y) * Math.tan(RAKE.angle) - 0.005 / Math.cos(RAKE.angle); // (the window's edge, 5 mm clear)
+    let ybt = yt; while (insideChain(real, [edgeZ(ybt) - 0.14, ybt]) < 0.003 && ybt > yb + 0.1) ybt -= 0.002; // (its top rear corner inside the rounded roof)
+    const blade = flankPanel([[edgeZ(yb) - 0.14, yb], [edgeZ(ybt) - 0.14, ybt], [edgeZ(ybt), ybt], [edgeZ(yb), yb]], { half: HALF, taper: TAPER, lift: 0.006 });
     parts(group, k + 'black', TRIM, () => [
       bx(1.1, 0.14, 0.03, 0, 0.45, FZ),                             // the lower intake
       bx(0.5, 0.1, 0.03, 0, 0.7, FZ),                               // a closed panel in the nose
@@ -127,6 +136,7 @@ export const IDEA_MODELS_BATCH_E4 = {
     ]);
     // trim: a sill between the wheels, a skid plate at each end and a ring round each wheel (grey / orange)
     const ring = () => flare(0, 0, R + 0.05, R + 0.14, 0.05);
+    parts(group, k + 'blade', bladeMat, () => blade); // (its own two-sided material: a flat panel; it follows the livery below)
     parts(group, k + 'trim', trim, () => [
       ...[-1, 1].map(s => bx(0.07, 0.12, 2.1, s * (HALF + 0.005), 0.4, 0)),
       bx(1.45, 0.08, 0.06, 0, 0.34, FZ - 0.01), bx(1.45, 0.08, 0.06, 0, 0.34, RZ + 0.01),
@@ -139,7 +149,7 @@ export const IDEA_MODELS_BATCH_E4 = {
     parts(group, k + 'pxamber', AMBER, () => [...front.flatMap(f => f.A), ...tail.flatMap(f => f.A)]);
     parts(group, k + 'pxtail', TAIL, () => tail.flatMap(f => f.T));
     for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, k, R, TW, s * WX, z, 16);
-    group.userData = { body, animate: () => {}, livery: (evil) => trim.color.setHex(evil ? ACC.evil : ACC.good), glassVirtual: { chain: glass.virtual, grow: BEV } }; // (the rounded body's virtual corners, for scripts/.glass-contour-check.mjs)
+    group.userData = { body, animate: () => {}, livery: (evil) => { trim.color.setHex(evil ? ACC.evil : ACC.good); bladeMat.color.setHex(evil ? ACC.evil : ACC.good); }, glassVirtual: { chain: glass.virtual, grow: BEV, freeEdge: true } }; // (freeEdge: the rear window's back edge is a deliberate free-standing line, not the contour: scripts/.glass-contour-check.mjs)
     return group;
   },
 };
