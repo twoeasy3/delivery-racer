@@ -5,7 +5,7 @@
 // Crazey Jim's Used Cars (render/garage.js). The ECU figures are ecu.js's (Ecu); anything it does not say about a
 // car (a secret one, an earned one it has no table for) falls back to the car's own figures, so a card never throws.
 import { CONFIG } from './config.js';
-import { CARS, EARNED_CARS, EVENT_CARS, BESPOKE_CARS, FILLER_CARS, SECRET_CARS, stars, starColour, STAR_COLOURS, carTier, carPreview, forSale, carRule, carFocus, carLent, carPicked, ruleAllows, selectCar, carInUse } from './cars.js';
+import { CARS, EARNED_CARS, EVENT_CARS, BESPOKE_CARS, FILLER_CARS, SECRET_CARS, stars, starColour, STAR_COLOURS, carTier, carPreview, forSale, carRule, carFocus, carLent, carPicked, ruleAllows, selectCar, carInUse, visibleCars } from './cars.js';
 import { Progress } from './progress.js';
 import { Game } from './game.js';
 import { Tiers } from './tiers.js';
@@ -56,11 +56,13 @@ const statsAt = (car, level) => {
 };
 
 // every car on the showroom's floor, in its order (the earned cars that are OFF too, with the "Not available" overlay; a secret one owned, the City Bus, last)
+// (but not a hidden car, cars.js isVisibleCar: a `hideUnlessAvailable` one not owned, no blueprint, not to be had now. So every count
+// on the showroom, which all read this floor, leaves it out)
 // the floor's order (the owner, 12-Oct: "the tier sort ... should just mix all"): by the number of STARS, whatever their colour (gold,
 // blue, sea green and magenta cars sit together, 1 star to 6), the cars with no stars (the Key cars) after them, a secret one last
 const rank = (car) => Object.values(SECRET_CARS).includes(car) ? 90 : car.tier >= 1 ? car.tier : 7;
-export const showroomCars = () => [...CARS, ...(FILLER_CARS || []), ...EVENT_CARS, ...BESPOKE_CARS, ...EARNED_CARS,
-  ...Object.values(SECRET_CARS).filter(car => Progress.owns(car.id))]
+export const showroomCars = () => visibleCars([...CARS, ...(FILLER_CARS || []), ...EVENT_CARS, ...BESPOKE_CARS, ...EARNED_CARS,
+  ...Object.values(SECRET_CARS).filter(car => Progress.owns(car.id))])
   .sort((a, b) => rank(a) - rank(b) || (a.price || 0) - (b.price || 0) || a.name.localeCompare(b.name));
 
 // how the tiers stand toward a car of a tier not open yet (render/garage.js's silhouette words)

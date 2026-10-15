@@ -38,6 +38,10 @@
 //   are in ecus.json, lower; mass is the same at every ECU, as `weight` there. See ecu.js, carStats)
 //   shotBack   (optional) how much further back the studio camera (?cine=car) stands for its picture, for
 //              a vehicle whose wings reach past its hit box
+//   hideUnlessAvailable  (optional, any roster) true = HIDDEN, and left out of every car count, while the player neither owns it,
+//              nor has a blueprint of it, nor can get it right now (carsources.js sourcesOf: a key or blueprint source available,
+//              e.g. an event featuring it). Any one of those and it shows and counts as usual. Opt-in per car, never a blanket
+//              rule (the owner, 15-Oct); the Legendary cars have it (legendCar below). One predicate: isVisibleCar, below
 // ============================================================================
 import { Progress } from './progress.js';
 import { CONFIG } from './config.js';
@@ -141,6 +145,14 @@ const forcedCar = (pick, rule) => {
 // an owned car, or one in no tier, is always there. With the tiers off: the old Blue Star rule.
 export const carPreview = (car) => tierHooks.preview?.(car) ?? null; // 'show' | 'teaser' | 'hide' | null (the tiers are off)
 export const isTeaser = (car) => carPreview(car) === 'teaser';
+// ---- HIDDEN UNTIL AVAILABLE (a car's `hideUnlessAvailable`, the header): THE one test every list and count of cars goes by
+// (the showroom's floor and its counts, the car lot). A car without the flag: always true. With it: true once the player owns it,
+// has any blueprint of it, or can get it now (the hook carsources.js sets: its sourcesOf; not loaded, nothing counts as available)
+const visibilityHooks = {};
+export const setVisibilityHooks = (hooks) => Object.assign(visibilityHooks, hooks);
+export const isVisibleCar = (car) => !!car && (!car.hideUnlessAvailable || Progress.owns(car.id) || (Progress.data.blueprints?.[car.id] || 0) > 0
+  || !!visibilityHooks.available?.(car));
+export const visibleCars = (list) => list.filter(isVisibleCar);
 // On a level with a list of its own (listRule) every car it allows is parked too, owned or not, drawn in full: one the
 // player could buy anyway is for sale; the rest (a car of a tier not open, an earned car, an event's) are not (forSale)
 export const garageCars = () => {
@@ -148,7 +160,7 @@ export const garageCars = () => {
   return [...new Set([...CARS.filter(car => { const p = carPreview(car); return p ? p !== 'hide' : (!car.blue || blueStarsOpen()); }),
     ...EARNED_CARS.filter(car => Progress.owns(car.id)), ...EVENT_CARS.filter(car => Progress.owns(car.id)), ...BESPOKE_CARS.filter(car => Progress.owns(car.id)), // (an earned car once earned, or given by an event; an event's car once given)
     ...FILLER_CARS.filter(car => Progress.owns(car.id)), // (a blueprint car once unlocked: ecu.js)
-    ...(rule?.list ? ruleCars(rule).filter(car => !IDEA_CARS.includes(car) && (!FILLER_CARS.includes(car) || Progress.owns(car.id))) : [])])]; // (the ideas have a lot of their own; a locked blueprint car is not parked)
+    ...(rule?.list ? ruleCars(rule).filter(car => !IDEA_CARS.includes(car) && (!FILLER_CARS.includes(car) || Progress.owns(car.id))) : [])])].filter(isVisibleCar); // (the ideas have a lot of their own; a locked blueprint car is not parked; a hidden car never)
 };
 // can it be bought in the garage now? A garage car (not an earned car, an event's or an idea) whose tier is open
 // (tiers.js buyable: a level's list parks a car of a later tier, drawn, but never sells it)
@@ -370,7 +382,8 @@ const earnedCar = (level, par, car, base) => ({ ...car, ...(base ? { id: 'earned
 // render/legenddecal.js). Earned cars that are OFF (as the Courier Special: shown, blacked out, "Not available at the
 // moment", earned on no level yet: `earned.level` null), with NO tier and no rating (no stars), their figures the base
 // car's plus a Super car's (CONFIG.superCar: placeholders)
-const legendCar = (car) => ({ ...car, price: 0, earned: { level: null, par: {} }, off: true, placeholder: true });
+// (hideUnlessAvailable: hidden and uncounted until owned, a blueprint had or obtainable: the owner, 15-Oct "Legendary spec cars should be hidden for now")
+const legendCar = (car) => ({ ...car, price: 0, earned: { level: null, par: {} }, off: true, placeholder: true, hideUnlessAvailable: true });
 const LEGEND_CARS = [
   legendCar({ id: 'l-commuter', name: 'Legendary Commuter', basedOn: 'the Commuter', model: 'commuter', legend: 'commuter',
     color: 0x0b0b0e, evilColor: 0x0b0b0e, hw: 0.85, hl: 1.85, height: 1.45, note: 'The starter car, made a legend: it has won everything there is to win, and it shows.',
