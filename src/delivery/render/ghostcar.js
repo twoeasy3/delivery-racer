@@ -4,7 +4,8 @@
 // (its recording's path: replay.js). It is only drawn: nothing touches it, and it changes nothing of the run (or of a
 // replay of it). Where the best run was rewound, the path holds the run as its clock ended up (replay.js mark), so
 // the ghost never has a rewind's ten seconds in it; a player rewound in a trial goes back on the clock, and the ghost
-// with it. A line under the clock says how far ahead or behind it is. Not in a replay being watched, a screensaver or
+// with it. A line under the clock says how far ahead or behind it is. In a replay being watched only when the orbit camera's panel
+// switches it on (WatchGhost below; never the very run being watched). Not in a screensaver or
 // a level off the menu; and not at all with "Ghost of your best run" off in the options.
 // ============================================================================
 import * as THREE from 'three';
@@ -25,13 +26,26 @@ gap.id = 'ghostGap';
 document.body.append(gap);
 
 let mesh = null, meshCar = null, path = null, runKey = '';
+// the ghost in a replay being watched (the orbit camera's panel, render/orbit.js): off unless asked for, and then the best run
+// on this level and side (not the very run being watched: that would sit on the car) goes by the replay's own clock
+export const WatchGhost = { on: false };
+const bestFor = () => {
+  const best = ReplayStore.best(LEVEL.id, Game.evil), now = Replay.playing?.rec;
+  if (!best?.path?.length || !Replay.check(best).ok) return null;
+  if (now && best.header.date === now.header.date && best.header.seed === now.header.seed) return null;
+  return best;
+};
+// is there a ghost to show for the replay playing? (the panel's button says none when not)
+export const watchGhostAvailable = () => !!Replay.playing && !!bestFor();
+// the ghost switched on or off mid-run: picked afresh on the next frame
+export const refreshGhost = () => { runKey = ''; };
 
 // the run has started: the ghost for it, if there is one to have
 const pick = () => {
   path = null;
-  if (!ReplayStore.ghostOn || Replay.playing || Game.screensaver || Game.raceWatch || !(LEVELS.includes(LEVEL) || STAGE_LEVELS.includes(LEVEL))) return;
-  const best = ReplayStore.best(LEVEL.id, Game.evil);
-  if (!best?.path?.length || !Replay.check(best).ok) return; // (one recorded before there were paths, or out of date)
+  if (!(Replay.playing ? WatchGhost.on : ReplayStore.ghostOn) || Game.screensaver || Game.raceWatch || !(LEVELS.includes(LEVEL) || STAGE_LEVELS.includes(LEVEL))) return;
+  const best = bestFor();
+  if (!best) return; // (one recorded before there were paths, or out of date, or the very run being watched)
   path = Replay.unpackPath(best.path);
   const car = carById(best.header.car) || CAR;
   if (!mesh) mesh = makeCarMesh(0xffffff);

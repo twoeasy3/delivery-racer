@@ -51,6 +51,7 @@ import { syncBattle } from './render/battle.js';
 import { raceCamera, raceAudio, syncRaceWatch, auditCameras } from './render/racewatch.js';
 import { Fly, startFly, flyCamera } from './render/fly.js';
 import { Photo, syncPhoto, photoCamera, startPhoto } from './render/photo.js';
+import { orbitCamera, orbitNote } from './render/orbit.js';
 import { syncTankCorner } from './render/tankcorner.js';
 import { syncCargo, drawCargoCorner, deliveryOn, deliveryCamera } from './render/cargo.js';
 import { UfoStrike } from './ufostrike.js';
@@ -437,9 +438,14 @@ const frame = (now) => {
     syncPhoto();
     if (Fly.on) flyCamera(dt); // (flying round a level: see render/fly.js)
     else if (Photo.on) photoCamera(); // (photo mode, while paused: see render/photo.js)
-    else if (Game.raceWatch) raceCamera(dt); // (the race screensaver's cameras)
-    else if (deliveryOn()) deliveryCamera(); // (a level delivered: round to the kerb, see render/cargo.js)
-    else updateCamera(dt, prevState !== 'playing' && Game.state === 'playing');
+    else {
+      const usual = () => { // (the usual cameras: the race screensaver's, the delivery at the kerb, the chase camera)
+        if (Game.raceWatch) raceCamera(dt); // (the race screensaver's cameras)
+        else if (deliveryOn()) deliveryCamera(); // (a level delivered: round to the kerb, see render/cargo.js)
+        else updateCamera(dt, prevState !== 'playing' && Game.state === 'playing');
+      };
+      if (!orbitCamera(dt, usual)) { usual(); orbitNote(); } // (the orbit camera, render/orbit.js: round the car in a replay, and once a run is over; or the usual camera, which the orbit takes hold of from)
+    }
     syncMysteries(dt); // (after the camera: the earthquake bobs it)
     syncRaceWatch(now);
     syncEmotes(dt, now);

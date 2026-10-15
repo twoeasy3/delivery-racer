@@ -166,6 +166,7 @@ const buildTerrain = (colours, others) => {
   land.material.polygonOffset = true; // (the road always wins where they meet)
   land.material.polygonOffsetFactor = 2;
   land.material.polygonOffsetUnits = 2;
+  land.userData.terrain = true; // (a ray at it would test every triangle: the orbit camera asks landAt instead, render/orbit.js)
   levelGroup.add(land);
   // (what stands on the land stands on the land as drawn: the grid's own triangles, which on a steep face between
   // two stretches of road can be metres off the height worked out at a point between its corners)
