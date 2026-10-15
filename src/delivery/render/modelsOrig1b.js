@@ -173,15 +173,15 @@ export const ORIG1B_MODELS = {};
 // The starter car, redrawn from the owner's photographs of a 2000s Nissan Micra (K12) and the old card picture: a
 // bubble. One round body, tall and short: a steep stubby bonnet dropping to a blunt round nose, a big raked windscreen
 // into a DOMED roof (its crown over the front seats) that falls away to an upright hatch; a low waist that rises toward
-// the back under deep windows; bug-eye headlamps, almond lenses in silver bezel rings standing out of the nose's corners
-// and sweeping back along the wings; a small two-slot grille; body-colour bumpers (as the photographs) over a chunky
+// the back under deep windows; flush rectangular headlamps in dark bezels on the nose's face either side of the grille
+// (the owner's pick of three drafts, 15-Oct); a small two-slot grille; body-colour bumpers (as the photographs) over a chunky
 // black skirt ring that runs right round the car's foot, 3 cm proud, with the mouth and two round fog lamps in its
 // front face; tall oval tail lamps in silver rings up the rear corners, a clear lens low in each; round mirrors in the
 // paint; plain silver hub caps on small fat tyres that overlap the body's lower corners (no wheel arches: the owner,
 // 15-Oct, "the tyres clipping through a rigid body is good enough"). The paint shades a little deeper and redder low
-// down (vertex colours). Every lamp is a silver RING standing out of the body along its surface's normal with a domed
-// lens on top, so its outline is the ring's own smooth rim and never a jagged cut into the body's facets; every pane of
-// glass stands clear of the body's bevels (its own crisp edge).
+// down (vertex colours). Each tail lamp is a silver RING standing out of the body with a domed lens on top, so its
+// outline is the ring's own smooth rim and never a jagged cut into the body's facets; the headlamps sit on the nose's
+// flat face for the same reason; every pane of glass stands clear of the body's bevels (its own crisp edge).
 ORIG1B_MODELS.commuter = (car) => {
   const group = new THREE.Group();
   const W = car.hw, L = car.hl, R = 0.3; // (as before: radius 0.3, the axles at ±0.62 of the half length)
@@ -251,25 +251,28 @@ ORIG1B_MODELS.commuter = (car) => {
     if (yaw) geo.rotateY(yaw);
     return geo.translate(x, y, z);
   };
-  const HL = [0.5, 0.66, NOSE - 0.03], HP = -0.95, HY = 0.22; // (the headlamp's place; its pitch, the ring's axis the nose corner's normal; its splay)
-  const TL = [0.66, 0.66, TAILZ - BEV + 0.03]; // (the tail lamp's place; its ring's axis straight back)
-  parts(group, k + 'bezel', SILVER, () => [
-    ...[-1, 1].map(s => ring(0.15, 0.28, 0.26, 0.1, s * HL[0], HL[1], HL[2], HP, -s * HY)),
-    ...[-1, 1].map(s => ring(0.1, 0.18, 0.22, 0.09, s * TL[0], TL[1], TL[2], Math.PI, 0)),
-  ]);
+  // the headlamps (the owner, 15-Oct, picked from three drafts): flush RECTANGULAR lamps on the nose's near-vertical
+  // face either side of the grille, each a flat cream lens standing a hair proud of a dark bezel block set into the
+  // nose (the face is flat under them, so nothing of the body cuts through, and from the side they are a thin edge).
+  // The tail lamps tall ovals in silver rings up the rear corners, a clear lens low in each
+  const NF = NOSE + 0.18, NP = -0.25; // (the nose face under the lamps, and its lean back)
+  const rbox = (w, h, d, out, x, y, z, pitch) => new THREE.BoxGeometry(w, h, d).translate(0, 0, out - d / 2).rotateX(pitch).translate(x, y, z);
+  const TL = [0.58, 0.66, TAILZ - BEV + 0.03]; // (the tail lamp's place, on the tail's flat panel; its ring's axis straight back)
+  parts(group, k + 'bezel', SILVER, () => [-1, 1].map(s => ring(0.1, 0.18, 0.16, 0.035, s * TL[0], TL[1], TL[2], Math.PI, 0)));
   parts(group, k + 'lamp', LAMP, () => [
-    ...[-1, 1].map(s => dome(0.13, 0.26, 0.05, 0.1, s * HL[0], HL[1], HL[2], HP, -s * HY)),
-    ...[-1, 1].map(s => dsc(0.03, 0.02, s * TL[0], TL[1] - 0.075, TL[2] - 0.118, 12)),   // the clear lenses
+    ...[-1, 1].map(s => rbox(0.27, 0.1, 0.02, 0.03, s * 0.44, 0.49, NF, NP)),                 // the headlamp lenses
+    ...[-1, 1].map(s => dsc(0.03, 0.02, s * TL[0], TL[1] - 0.075, TL[2] - 0.063, 12)),        // the clear lenses
   ]);
-  parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => dome(0.085, 0.16, 0.035, 0.09, s * TL[0], TL[1], TL[2], Math.PI, 0)));
+  parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => dome(0.085, 0.16, 0.035, 0.035, s * TL[0], TL[1], TL[2], Math.PI, 0)));
   // black: the skirt ring round the car's foot (3 cm proud of the flanks and both bumpers), the mouth and the two
   // grille slots on the nose, the hatch's handle strip
   const FZ = NOSE + 0.19, RZ = TAILZ - 0.19; // (the skirt's front and rear faces)
   parts(group, k + 'black', TRIM, () => [
     // (the skirt band: its corners rounded in plan as the body's are, its top and bottom edges rounded over)
     extrudeSide([[FZ - 0.05, 0.17], [FZ - 0.05, 0.29], [RZ + 0.05, 0.29], [RZ + 0.05, 0.17]], BW + 0.06, 0.05, null, 2, 0.2),
+    ...[-1, 1].map(s => rbox(0.3, 0.13, 0.14, 0.015, s * 0.44, 0.49, NF, NP)),                  // the headlamp bezels
     bx(0.5, 0.07, 0.06, 0, 0.38, FZ - 0.01),                                                   // the mouth
-    ...[-1, 1].map(s => blob(0.11, 0.03, 0.03, s * 0.17, 0.54, NOSE + 0.145, 0.45, 0, [8, 4])),     // the grille slots
+    ...[-1, 1].map(s => blob(0.1, 0.03, 0.03, s * 0.15, 0.55, NOSE + 0.14, 0.45, 0, [8, 4])),     // the grille slots
     bx(0.4, 0.03, 0.03, 0, 0.9, TAILZ - BEV + 0.01),                                           // the hatch's handle strip
   ]);
   parts(group, k + 'fog', LAMP, () => [-1, 1].map(s => dsc(0.045, 0.03, s * 0.56, 0.23, FZ + 0.005, 10)));
