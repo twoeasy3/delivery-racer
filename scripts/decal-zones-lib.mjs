@@ -6,6 +6,7 @@
 //   ZONES   the largest clean axis-aligned rectangles, greedily (at most MAX_ZONES a side, each at least MIN_W x MIN_H, no longer than
 //           ASPECT times its height), named by where they sit against the wheels: 'fender' over or ahead of the front wheels, 'quarter' over or
 //           behind the rear ones, between them 'door' (or 'flank' when longer than FLANK_LEN: a bus, a lorry's body)
+//   (a zone whose normals spread more than MAX_CURVE degrees is dropped: a band round a roof's shoulder)
 //   FLAT    each zone's plane fitted (x = a + b y + c z) and the most a ray's hit stands off it (mm); CURVE the widest angle between its
 //           normals and their mean (degrees)
 //   ROOM    the largest clean square (a roundel's diameter), the longest clean run STRIPE_H tall (a stripe's length), the clean share
@@ -15,7 +16,7 @@
 let flankHit = null;
 export const useHit = (fn) => { flankHit = fn; };
 
-export const SEARCH = { STEP: 0.04, STEP_JUMP: 1.25, STEP_TOL: 0.006, MIN_W: 0.3, MIN_H: 0.15, ASPECT: 12, MAX_ZONES: 4, FLANK_LEN: 2.6, STRIPE_H: 0.12 };
+export const SEARCH = { STEP: 0.04, STEP_JUMP: 1.25, STEP_TOL: 0.006, MIN_W: 0.3, MIN_H: 0.15, ASPECT: 12, MAX_ZONES: 4, MAX_CURVE: 35, FLANK_LEN: 2.6, STRIPE_H: 0.12 };
 const r3 = (v) => Math.round(v * 1000) / 1000;
 
 // one side's samples: { s, z0, y0, nz, ny, step, at(i, j) -> hit }
@@ -144,6 +145,7 @@ export const searchSide = (view, s, step = SEARCH.STEP) => {
     for (let j = r.j0; j < r.j1; j++) for (let i = r.i0; i < r.i1; i++) used[j * S.nz + i] = 1;
     const z = { z0: r3(S.z0 + r.i0 * step), z1: r3(S.z0 + r.i1 * step), y0: r3(S.y0 + r.j0 * step), y1: r3(S.y0 + r.j1 * step), ...r };
     Object.assign(z, flatness(S, z));
+    if (z.curve > SEARCH.MAX_CURVE) { k--; continue; } // (its cells stay used: a band round a roof's shoulder or a wing's crown is no zone)
     z.id = nameZone(z, wheels);
     zones.push(z);
   }

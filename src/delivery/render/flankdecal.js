@@ -18,7 +18,7 @@
 //                           van door is one quad; the Bug's dome is cut finer). Texture coordinates from the piece's atlas cell; `read`
 //                           pieces (a number) read left to right from the side they are on, `forward` pieces run nose-ward on both sides.
 // THE TEST DECAL: one 256 x 256 canvas (256 KB, ~341 KB with mipmaps) drawn here in flat shapes (a white disc, a black ring and a
-// number; a band and two pinstripes), shared by every car; ONE mesh per car (both flanks, both pieces) in ONE shared material:
+// number; a near-black band between two white pinstripes, so it reads on any paint), shared by every car; ONE mesh per car (both flanks, both pieces) in ONE shared material:
 // one draw call a car. Parented to the body's parent (it rides the suspension); the dents bend it as a panel (it is a large non-paint
 // part: render/dents.js crumples it with the paint, and `forgetDents` makes a model measured before it was added measure again);
 // hidden on a blacked-out car (`userData.blackout: 'hide'`, render/silhouette.js).
@@ -187,7 +187,7 @@ export const testTexture = (num = DECAL_TEST.num || '7') => {
   ctx.fillText(String(num).slice(0, 2), cx, cy + R * 0.06);
   const y0 = (1 - STRIPE[3]) * S, hgt = (STRIPE[3] - STRIPE[1]) * S;
   ctx.fillStyle = '#f2f2ee'; ctx.fillRect(0, y0 + hgt * 0.0, S, hgt * 0.14);
-  ctx.fillStyle = '#d8232a'; ctx.fillRect(0, y0 + hgt * 0.24, S, hgt * 0.52);
+  ctx.fillStyle = '#16181c'; ctx.fillRect(0, y0 + hgt * 0.24, S, hgt * 0.52);
   ctx.fillStyle = '#f2f2ee'; ctx.fillRect(0, y0 + hgt * 0.86, S, hgt * 0.14);
   atlas = new THREE.CanvasTexture(canvas);
   atlas.colorSpace = THREE.SRGBColorSpace;
@@ -201,7 +201,7 @@ const testMaterial = () => {
   const map = testTexture();
   if (!map) return null;
   // lit as the body is; see-through outside its shapes and where the paint does not show (the vertices' alpha), writing no depth
-  decalMat = new THREE.MeshLambertMaterial({ map, vertexColors: true, transparent: true, depthWrite: false, alphaTest: 0.5,
+  decalMat = new THREE.MeshLambertMaterial({ map, emissive: 0x3a3a3a, emissiveMap: map, vertexColors: true, transparent: true, depthWrite: false, alphaTest: 0.5,
     polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
   decalMat.userData.shared = true;
   decalMat.userData.blackout = 'hide';
@@ -209,7 +209,7 @@ const testMaterial = () => {
 };
 const zoneMaterial = () => {
   if (zoneMat) return zoneMat;
-  zoneMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.6, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+  zoneMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.8, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
   zoneMat.userData.shared = true;
   zoneMat.userData.blackout = 'hide';
   return zoneMat;
@@ -224,6 +224,19 @@ export const zonesFor = (key, side) => {
   if (!e) return [];
   const rows = side === 'R' && e.R === 'L' ? e.L : e[side] || [];
   return rows.map(([id, z0, z1, y0, y1, flat, curve]) => ({ id, z0, z1, y0, y1, flat, curve }));
+};
+// MIRROR PAIRING: the zones both flanks share (each left zone cut to each right zone it overlaps, kept where it still takes a 0.3 x 0.15 m
+// patch), so one livery reads the same on both sides of a car whose flanks differ (a bus's doors on one side only); the left's own
+// zones where they share none
+export const pairedZones = (key) => {
+  const L = zonesFor(key, 'L'), e = DECAL_ZONES[key];
+  if (!e || e.R === 'L') return L;
+  const out = [];
+  for (const a of L) for (const b of zonesFor(key, 'R')) {
+    const z = { id: a.id, z0: Math.max(a.z0, b.z0), z1: Math.min(a.z1, b.z1), y0: Math.max(a.y0, b.y0), y1: Math.min(a.y1, b.y1), flat: Math.max(a.flat, b.flat), curve: Math.max(a.curve, b.curve) };
+    if (z.z1 - z.z0 >= 0.3 && z.y1 - z.y0 >= 0.15) out.push(z);
+  }
+  return out.length ? out : L;
 };
 // the TEST decal on one side: the roundel as big as the roomiest zone takes (at most 0.55 m), the stripe along the longest zone, through
 // the roundel's middle when they share a zone, else along that zone's middle
@@ -247,7 +260,7 @@ export const buildFlankDecal = (model, key, { mode = 'decal', lift = FLANK.LIFT,
   const t0 = (typeof performance !== 'undefined' ? performance : Date).now();
   const view = flankView(model), out = { pos: [], nor: [], uv: [], col: [] }, pieces = [];
   for (const [s, side] of [[-1, 'L'], [1, 'R']]) {
-    const zones = zonesFor(key, side);
+    const zones = mode === 'zones' ? zonesFor(key, side) : pairedZones(key); // (the zones as found; the decal on the pair both sides share)
     if (mode === 'zones') for (const z of zones) pieces.push({ side, what: 'zone:' + z.id, ...wrapRect(view, s, z, { cell: [0, 0, 0, 0], map: 'forward', tint: ZONE_TINTS[z.id] || [1, 0, 1] }, out, lift) });
     else for (const p of testLayout(zones, { curved })) pieces.push({ side, what: p.what, ...wrapRect(view, s, p.rect, p.piece, out, lift) });
   }
