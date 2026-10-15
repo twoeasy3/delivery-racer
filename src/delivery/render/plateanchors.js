@@ -25,6 +25,10 @@ export const HAND = {
   tank: { f: [0.56, 2.15, 0.52, 0] }, amphibioustank: { f: [0.56, 2.15, 0.52, 0] }, // (low on the hull's nose between the tracks, under the glacis: the search's only flat place was the turret's face, which turns)
   moke: { f: [0.76, 1.544, 0.52, -12.2] }, // (kept at full size on the sloping nose: the search's 0.46 plate leaned 2 degrees more and lost its top row seen from ahead)
   centreseat: { f: [0.46, 2.111, 0.52, 0] }, // (the bumper bar is 11 cm, the plate 13: kept at full size, a centimetre over at top and bottom, rather than a 30 cm plate in the grille slot)
+  sixwheeler: { r: [0.38, -2.07, 0.52, 0] }, // (the generator's flat place is the black lamp panel; the plate goes on the paint under it, between the panel and the diffuser)
+  // (the Paddle-Wheel Amphibian: the generator's rear place is on the turning paddle wheel; the plate goes on the engine housing's flat back,
+  // above the wheel, on the centre line; the front one a little higher on the bow's face, under the bill and between the headlamps)
+  paddleduck: { r: [1.8, -3.23, 0.52, 0], f: [1.08, 4.492, 0.52, 14.1] },
 };
 // models that can wear no plate though the generator found a place (a taste call) -- or that have a place nobody wants a plate on
 // the Swan Car: its tail is all teardrop curve, the generator's flat place sits inside the body. The Monster Truck (15-Oct audit): its body

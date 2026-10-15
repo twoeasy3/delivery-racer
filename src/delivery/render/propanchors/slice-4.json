@@ -680,6 +680,26 @@
     "inset": [0.042, 0.028]
    }
   },
+  "sixwheeler": {
+   "roof": {
+    "box": [0.57, 0, 1.299, -0.36],
+    "cyl": [0.51, 0, 1.284, -0.36],
+    "from": "roof",
+    "lim": "d",
+    "inset": [0.007, 0.007]
+   },
+   "cargo": {
+    "no": "a closed body: no load deck"
+   },
+   "wing": {
+    "box": [0.61, 0, 1.036, -1.898],
+    "cyl": [0.61, 0, 1.021, -1.898],
+    "from": "deck",
+    "lim": "w",
+    "inset": [0.026, 0.026],
+    "existing": true
+   }
+  },
   "snocat": {
    "roof": {
     "box": [1.91, 0, 2.597, 0.2],

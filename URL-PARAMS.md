@@ -409,7 +409,7 @@ One that does not suit the level becomes `invincible`.
 hothatch ute buggy liftedtruck hearse minivan pickup hotrod sleeper rally towtruck rotary taxi suv miata gullwing
 rearengine snake polytruck muscle fullsize evsaloon superlowrider classicgt sixbysix herald floatvan toybota dampervan
 nissank tank; earned: hellrod earned-ufo earned-gt earned-jetboat earned-f1 earned-lmp courier showdown earned-apc;
-key cars: silvercomet rocketfin swancar solarracer moonrover monowheel snocat hotdog horseshoe and the concepts
+key cars: silvercomet rocketfin swancar solarracer moonrover snocat hotdog horseshoe and the concepts
 fishbowl midsummer sixteen quadturbo knifeedge windsong; blueprint cars: bubble milkfloat tuktuk woody pandacoupe
 keiroadster fireengine fieldscout monster stately teardrop pony goddess hardtop midnight splitwindow wedge jetcar
 dragster flyingcar blower coach cityev coupecross.
@@ -417,7 +417,7 @@ dragster flyingcar blower coach cityev coupecross.
 **Car ideas** (garage `tab=ideas` `look`/`hover`, `studio`): threewheeler tinsnail bug twostroke brickestate limo
 centreseat rallywedge safari widetruck corrugated foodtruck motorhome schoolbus doubledecker funeralcoach golfcart
 hovercraft steamwagon tipper dunebuggy creamvan yellowcab mixer wrecker policewagon camper boathauler armoured cigar
-sidecar bathtub circuswagon gyrocar mower snailcamper duckwagon pushbacktug roadsweeper cabledrum gameviewer.
+sidecar monowheel bathtub circuswagon gyrocar mower snailcamper duckwagon pushbacktug roadsweeper cabledrum gameviewer.
 
 **Packs** (`pack`, `inside`, `give`, `limits`, `shopbuys`): standard ten career daily comet-special car-hunt-special
 car-hunt-5 concept-strike-1 to concept-strike-6 supercar-special classic-special record-special cruiser-special.

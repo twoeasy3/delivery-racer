@@ -28,7 +28,9 @@ import { IDEA_MODELS_BATCH_E3 } from './ideaModelsBatchE3.js'; // (batch E3: the
 import { IDEA_MODELS_BATCH_D5 } from './ideaModelsBatchD5.js'; // (batch D5: the Trophy Truck, the Armoured Limo)
 import { IDEA_MODELS_BATCH_E5 } from './ideaModelsBatchE5.js'; // (batch E5: the Touring Car, the Hill-Climb Special)
 import { IDEA_MODELS_TOPUP_C } from './ideaModelsTopupC.js'; // (top-up batch C: the Pocket 4x4, the Dodgem, the Ice Resurfacer)
+import { IDEA_MODELS_PADDLE_DUCK } from './ideaModelsPaddleDuck.js'; // (the Paddle-Wheel Amphibian)
 import { IDEA_MODELS_BATCH_D1 } from './ideaModelsBatchD1.js';
+import { IDEA_MODELS_SIXWHEEL } from './ideaModelsSixWheel.js'; // (the Six-Wheel Supercar, a Legendary key car: cars.js BESPOKE_CARS)
 import { SWAN_MODELS } from './modelsSwan.js';
 import { withGlassEdits, glassEditsReport } from './ideaModelsDkit.js'; // (the glass edits of a car's model patch, read as its cabinGlass windows are built)
 import { glassEditsFor } from './modelpatchapply.js'; // (the Swan Car redone as a covered coupe, 13-Oct: over ideaModels3's open tourer)
@@ -192,6 +194,7 @@ export const IDEA_MODELS = {
   ...IDEA_MODELS_TOPUP_A,
   ...IDEA_MODELS_TOPUP_B,
   ...IDEA_MODELS_TOPUP_C,
+  ...IDEA_MODELS_PADDLE_DUCK,
   ...IDEA_MODELS_BATCH_D1,
   ...IDEA_MODELS_BATCH_D2,
   ...IDEA_MODELS_BATCH_E1,
@@ -202,6 +205,7 @@ export const IDEA_MODELS = {
   ...IDEA_MODELS_BATCH_D5,
   ...IDEA_MODELS_BATCH_E3,
   ...IDEA_MODELS_BATCH_E5,
+  ...IDEA_MODELS_SIXWHEEL,
   swancar: SWAN_MODELS.swancar,
   // A bubble car (a BMW Isetta): an egg on wheels. The whole front is its one door, hinged at the side, the
   // windscreen in it; a glass bubble over a bench seat; lamps in pods on its flanks; the two back wheels close

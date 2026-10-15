@@ -1,6 +1,6 @@
 // ---- CAR KEYS: a 3D key for each Bespoke KEY car (the owner, 12-Oct, after Asphalt 9's CAR KEY card; 13-Oct: one each) ---
 // Nine models, one a key car (cars.js keyModel): the first three below (12-Oct) and six made for their cars (13-Oct, after
-// smart): fin (the Rocket Fin Coupe), wheel (the Monowheel), solar (the Solar Racer), lunar (the Moon Rover), snowboot (the
+// smart): fin (the Rocket Fin Coupe), wheel (made for the Monowheel, an idea again since 15-Oct: the key waits for its next car), solar (the Solar Racer), lunar (the Moon Rover), snowboot (the
 // Snowcat) and bun (the Hot Dog Car). The first three went to the Silver Comet (fob), the Swan Car (classic) and the
 // Horseshoe Hypercar (smart). The 12-Oct notes follow.
 // "The agent needs to make a car key model and render it as part of the blueprint. Try 3 models please." Three keys in
@@ -25,7 +25,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 // register them: their builders are there only once render/keyModelsOrdinary.js is loaded, as render/keycard.js does), each now
 // the key of one concept key car (cars.js KEY_STYLE): key models, no longer ordinary ones)
 export const CONCEPT_KEYS = ['keikey', 'wing', 'artisan', 'carbonfob', 'wedgefob', 'startfob'];
-export const KEY_MODELS = ['fob', 'classic', 'smart', 'fin', 'wheel', 'solar', 'lunar', 'snowboot', 'bun', ...CONCEPT_KEYS];
+export const KEY_MODELS = ['fob', 'classic', 'smart', 'fin', 'wheel', 'solar', 'lunar', 'snowboot', 'bun', 'six', ...CONCEPT_KEYS]; // ('six': the Six-Wheel Supercar's, 15-Oct)
 // the one a car with no keyModel of its own gets (?keymodel=<any of KEY_MODELS> picks another for a visit: render/keycard.js)
 export const KEY_MODEL = 'fob';
 
@@ -374,7 +374,7 @@ const fin = (car, { rarity = 'bespoke' } = {}) => {
   return idle(group, merged(k));
 };
 
-// ---- (e) the WHEEL (the Monowheel): the bow is a wheel, a rubber tyre round a rim of the car's colour on six chrome
+// ---- (e) the WHEEL (made for the Monowheel, 13-Oct; the Monowheel went back to the ideas lot on 15-Oct): the bow is a wheel, a rubber tyre round a rim of the car's colour on six chrome
 // spokes, the initial on its hub; the split ring through the tyre at the top, a double-bit blade (teeth both sides) below
 const wheel = (car, { rarity = 'bespoke' } = {}) => {
   const group = new THREE.Group(), k = new THREE.Group();
@@ -576,7 +576,43 @@ const bun = (car, { rarity = 'bespoke' } = {}) => {
   return idle(group, merged(k));
 };
 
-export const KEY_BUILDERS = { fob, classic, smart, fin, wheel, solar, lunar, snowboot, bun };
+// ---- (j) the SIX key (the Six-Wheel Supercar, 15-Oct: the wheel key went to the Paddle-Wheel Amphibian): the bow is the car
+// seen from above, a wedge of its colour, nose down: a dark glass canopy, SIX black tyres on its flanks (two small pairs at the
+// nose, a big pair at the tail), the initial on a chrome badge on the engine deck; the ring through the tail, the blade out
+// of the nose
+const six = (car, { rarity = 'bespoke' } = {}) => {
+  const group = new THREE.Group(), k = new THREE.Group();
+  const paint = paintOf(car);
+  const BODY = metal(paint.getHex(), 80), TYRE = lambert(0x1d1f23), GLASS = metal(0x1f2a3a, 140), CHROME = metal(0xd4d8de, 110);
+  const BLADE = metal(0xc3c8cf, 80), CUT = metal(0x7d848d, 60), ENAMEL = metal(0xf2efe6, 60), INK = metal(inkOn(new THREE.Color(0xf2efe6)), 90);
+  const P = [[-0.25, -1.3], [0.25, -1.3], [0.55, -1.0], [0.78, -0.3], [0.78, 0.95], [0.6, 1.3], [-0.6, 1.3], [-0.78, 0.95], [-0.78, -0.3], [-0.55, -1.0]];
+  const D = 0.22, B = 0.04, FRONT = D / 2 + B; // (the face at z = 0.15)
+  const HOLE = [0, 1.02];
+  const shape = outline(P, 0.14);
+  shape.holes.push(circle(HOLE[0], HOLE[1], 0.11));
+  slab(k, BODY, shape, D, B, 0, 4);
+  rainbow(band(k, rimMaterial(rarity), P, 0.14, -0.15, -0.09, 0.05, FRONT + 0.005, 4), 0, 0);
+  for (const z of [FRONT, -FRONT]) add(k, new THREE.TorusGeometry(0.14, 0.035, 5, 12), CHROME, HOLE[0], HOLE[1], z);
+  // the canopy: a dark teardrop of glass, its point toward the nose
+  slab(k, GLASS, outline([[-0.18, -0.78], [0.18, -0.78], [0.42, -0.3], [0.4, 0.18], [-0.4, 0.18], [-0.42, -0.3]], 0.12), 0.05, 0, FRONT + 0.02, 4);
+  // the six tyres, standing out of each flank: four small at the nose, two big at the tail
+  for (const s of [1, -1]) {
+    for (const y of [-0.62, -0.2]) box(k, TYRE, 0.18, 0.3, 0.34, s * 0.86, y, 0);
+    box(k, TYRE, 0.22, 0.5, 0.4, s * 0.88, 0.62, 0);
+  }
+  // the badge on the engine deck, front and back
+  for (const z of [1, -1]) disc(k, CHROME, 0.2, z * (FRONT - 0.02), z * (FRONT + 0.04), 0, 0.5, 16);
+  disc(k, ENAMEL, 0.155, FRONT + 0.03, FRONT + 0.06, 0, 0.5, 16);
+  glyph(k, INK, initialOf(car), 0.2, FRONT + 0.055, FRONT + 0.08, 0, 0.5);
+  // the blade, straight out of the nose
+  plainBlade(k, BLADE, CUT, -1.22, -3.55, 0.38);
+  // the split ring through the tail's hole (in the plane across the key)
+  const ring = add(k, new THREE.TorusGeometry(0.36, 0.045, 5, 16), CHROME, 0, HOLE[1] + 0.36, 0);
+  ring.rotation.y = Math.PI / 2;
+  return idle(group, merged(k));
+};
+
+export const KEY_BUILDERS = { fob, classic, smart, fin, wheel, solar, lunar, snowboot, bun, six };
 // ---- the ORDINARY keys (KEY-IDEAS.md: "normal" looking real-world keys and fobs, for cars that are not Bespoke; no home chosen yet): each lives in
 // its own file (render/keyModelsOrd*.js), builds with the same kit the nine Bespoke keys use (KEY_KIT) and registers itself with registerKey(name, builder).
 // They are NOT in KEY_MODELS (the nine, one per Bespoke car: .keys-check) but in ORDINARY_MODELS; makeKey(car, { model }) builds either.

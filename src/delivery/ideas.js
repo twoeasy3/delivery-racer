@@ -54,6 +54,11 @@
 // Crane Lorry, Touring Car, Sport Truck, Pixel EV, Autobahn Estate, Fin Land Yacht, Trophy Truck, Hill-Climb Special and Armoured Limo):
 // roster blueprint cars in cars.js FILLER_CARS with full stats, in no regular pack (`noPacks`) and `featurable` (FEATURE_ROSTER) for
 // limited-time packs. Their batch files (ideasBatch*.js) are gone; their models are still built by render/ideaModels*.js.
+// 15-Oct (the owner: "The monowheel's design style doesn't suit the game anymore. Relegate it back to an idea car"): the Monowheel left
+// cars.js BESPOKE_CARS and is an idea in this lot again (its model still render/ideaModels3.js); its key style, the wheel key, went to a
+// new Legendary key car.
+// 15-Oct: the Paddle-Wheel Amphibian (an idea on the duck-amphibian branch for a day, ideasPaddleDuck.js) never reached the lot on main:
+// the owner made it a 5-star amphibious Bespoke key car (cars.js BESPOKE_CARS) with the wheel key; its model is render/ideaModelsPaddleDuck.js.
 
 import { IDEA_CARS_TOPUP_A } from './ideasTopupA.js'; // (the top-up's batch A: four classic road cars)
 
@@ -158,6 +163,10 @@ export const IDEA_CARS = [
     hw: 0.85, hl: 1.25, height: 1.6, note: 'A scooter with a boat of a chair bolted to its side, and a wheel for each.',
     maxSpeed: 25, accel: 7, agility: 1.3, crossing: 0.3, health: 80, mass: 1, sound: 'mini' },
   // (the third batch of ten, each an idea no other vehicle in the game has: models in render/ideaModels3.js)
+  // (the Monowheel: a Bespoke key car from 12-Oct to 15-Oct, back in the lot since: the owner, 15-Oct, "its design style doesn't suit the game anymore")
+  { id: 'monowheel', name: 'Monowheel', basedOn: 'Dynasphere monowheel (1932)', model: 'monowheel', color: 0xe8a317, evilColor: 0x6a3a8a,
+    hw: 0.5, hl: 1.0, height: 2.0, note: 'One wheel taller than its rider, who sits inside it. It rolls; he does not.',
+    maxSpeed: 31, accel: 10, agility: 1.6, crossing: 0.4, health: 90, mass: 1, sound: 'junker' },
   { id: 'bathtub', name: 'Bathtub Racer', basedOn: 'Ed China\'s motorised bathtub', model: 'bathtub', color: 0xc8304a, evilColor: 0x3b4a7a,
     hw: 0.8, hl: 1.6, height: 1.65, note: 'A roll-top bath on clawed feet, full to the brim, with the driver in the suds.',
     maxSpeed: 28, accel: 8, agility: 1.2, crossing: 0.4, health: 100, mass: 1.2, sound: 'buggy' },

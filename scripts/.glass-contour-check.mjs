@@ -24,12 +24,12 @@ const { load, close } = await startModels();
 const failures = [];
 try {
   const { IDEA_CARS: IDEAS } = await load('ideas.js');
-  const { FEATURE_ROSTER } = await load('cars.js'); // (the idea cars promoted to the roster as blueprint cars are still glass cars: check them too)
+  const { FEATURE_ROSTER, BESPOKE_CARS } = await load('cars.js'); // (the idea cars promoted to the roster as blueprint cars are still glass cars: check them too)
   const IDEA_CARS = [...IDEAS, ...FEATURE_ROSTER];
   const { makeIdeaModel } = await load('render/ideaModels.js');
   const { dropFlat } = await load('render/ideaModelsDkit.js');
   const want = process.argv.slice(2);
-  const cars = (want.length ? IDEA_CARS.filter(c => want.includes(c.id)) : IDEA_CARS);
+  const cars = (want.length ? [...IDEA_CARS, ...BESPOKE_CARS].filter(c => want.includes(c.id)) : IDEA_CARS); // (a key car by name too: the Six-Wheel Supercar's glass is cabinGlass)
   const rows = [];
   for (const car of cars) {
     const model = makeIdeaModel(car);
