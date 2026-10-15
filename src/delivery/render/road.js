@@ -38,7 +38,7 @@ export const buildStrip = (sFrom, sTo, latA, latB, y, step = 4) => {
 
 // dashed line along lat(s), drawn only where show(s) is true
 // (dash: { length, spacing, width } of its own, if not a lane line's: a lane-drop line's, see CONFIG.ramps.dropLine)
-const buildDashes = (sFrom, sTo, lat, show, dash) => {
+export const buildDashes = (sFrom, sTo, lat, show, dash) => {
   const pos = [], idx = [];
   const half = dash ? dash.width / 2 : 0.08, length = dash ? dash.length : CONFIG.dashLength;
   let n = 0;
@@ -977,11 +977,12 @@ const buildRoad = () => {
   // (nor anywhere on a runway, which has markings of its own: see the airport's scenery)
   const inJunction = (s) => Track.junctions.some(jn => s > jn.s - 1 && s < jn.end + 1) || (!!LEVEL.runway && s > LEVEL.runway.from - 1) ||
     Track.muddy(s); // (nor in mud)
-  const unmarked = (a, b) => { // the pieces of a..b to be marked: outside every junction (and runway, and mud)
+  // (skip: where else this line is not drawn: a roadworks diversion's stretch, whose temporary markings are render/roadworks.js's)
+  const unmarked = (a, b, skip) => { // the pieces of a..b to be marked: outside every junction (and runway, and mud)
     const pieces = [];
     let from = null;
     for (let s = a; ; s = Math.min(b, s + 1)) {
-      const marked = !inJunction(s);
+      const marked = !inJunction(s) && !(skip && skip(s));
       if (marked && from === null) from = s;
       if ((!marked || s >= b) && from !== null) {
         if (s - from > 0.5) pieces.push([from, s]);
@@ -992,9 +993,12 @@ const buildRoad = () => {
     return pieces;
   };
   const dashOutside = (s) => !inJunction(s) && !inJunction(s + CONFIG.dashLength);
-  const line = (a, b, lat, mat = lineMat) => {
-    for (const [p, q] of unmarked(a, b)) add(buildStrip(p, q, (s) => lat(s) - 0.1, (s) => lat(s) + 0.1, 0.02), mat);
+  const line = (a, b, lat, mat = lineMat, skip) => {
+    for (const [p, q] of unmarked(a, b, skip)) add(buildStrip(p, q, (s) => lat(s) - 0.1, (s) => lat(s) + 0.1, 0.02), mat);
   };
+  // (a side of the expressway whose lanes a diversion moves: its own markings stop there; the centre's where either side's do)
+  const worksOn = (side) => (s) => Track.divertedSide(side, s);
+  const worksAny = (s) => Track.divertedSide(-1, s) || Track.divertedSide(1, s);
 
   // ---- expressway -------------------------------------------------------------------
   // (where the two ways part, a level's "splits", each is a road of its own: so the two sides are paved apart)
@@ -1003,7 +1007,7 @@ const buildRoad = () => {
     pave(buildStrip(Track.start, Track.end, Track.lo, -HALF - 0.01, 0));
     pave(buildStrip(Track.start, Track.end, -HALF, Track.hi, 0));
   } else pave(buildStrip(Track.start, Track.end, Track.lo, Track.hi, 0));
-  line(Track.start, Track.end, Track.laneLo);
+  line(Track.start, Track.end, Track.laneLo, lineMat, worksOn(-1));
   // right edge line: solid, along the outside of the exit / merge lane where there is one. A fork is marked
   // as a real diverge is, and a merge as its mirror image (see CONFIG.ramps):
   //   - the exit lane opens in a taper, the edge line going out round it and on down the side road's right
@@ -1050,7 +1054,7 @@ const buildRoad = () => {
     };
     let from = Track.start;
     for (const x of [...exits].sort((a, b) => a.exitAt - b.exitAt)) {
-      line(from, x.exitAt, Track.laneHi);
+      line(from, x.exitAt, Track.laneHi, lineMat, worksOn(1));
       line(x.exitAt, x.mergeAt, Track.edge);
       const open = (s) => Track.extraLane(s) > R.dropLine.from;
       add(buildDashes(x.exitAt - ZONE, x.exitAt - R.dropLine.length, Track.edge, open, R.dropLine), lineMat);
@@ -1059,19 +1063,19 @@ const buildRoad = () => {
       nose(x.mergeAt, x.sideEnd, -1);
       from = x.mergeAt;
     }
-    line(from, Track.end, Track.laneHi);
+    line(from, Track.end, Track.laneHi, lineMat, worksOn(1));
   }
   // double yellow centre line (a one-way road has an ordinary lane divider there instead, and
   // a road with a median a solid line along each side of it)
   const twoWay = Track.flow === 'both', HM = Track.medianHalf;
-  if (!twoWay && Track.leftLanes && Track.rightLanes) add(buildDashes(Track.start, Track.end, () => 0, dashOutside), lineMat);
+  if (!twoWay && Track.leftLanes && Track.rightLanes) add(buildDashes(Track.start, Track.end, () => 0, (s) => dashOutside(s) && !worksAny(s) && !worksAny(s + CONFIG.dashLength)), lineMat);
   for (const side of [-1, 1]) {
-    if (twoWay && !HM) for (const [p, q] of unmarked(Track.start, Track.end)) add(buildStrip(p, q, side * 0.12, side * 0.28, 0.02), centreMat);
-    if (HM) line(Track.start, Track.end, () => side * HM - (side < 0 ? 0.11 : 0)); // (wholly on its own side of a split)
+    if (twoWay && !HM) for (const [p, q] of unmarked(Track.start, Track.end, worksAny)) add(buildStrip(p, q, side * 0.12, side * 0.28, 0.02), centreMat);
+    if (HM) line(Track.start, Track.end, () => side * HM - (side < 0 ? 0.11 : 0), lineMat, worksAny); // (wholly on its own side of a split)
     // dashed dividers between the lanes of each side, only where both lanes exist
     for (let k = 1; k < (side < 0 ? Track.leftLanes : Track.rightLanes); k++) {
       add(buildDashes(Track.start, Track.end, () => side * (HM + k * LW),
-        (s) => Track.lanesOn(side, s) >= k + 0.95 && dashOutside(s)), lineMat);
+        (s) => Track.lanesOn(side, s) >= k + 0.95 && dashOutside(s) && !Track.divertedSide(side, s) && !Track.divertedSide(side, s + CONFIG.dashLength)), lineMat);
     }
   }
   // a dirt road has no markings at all: only a pair of ruts worn along each lane (merging where

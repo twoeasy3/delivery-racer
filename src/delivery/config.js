@@ -1527,6 +1527,12 @@ export const CONFIG = {
   // coloured all along, a DEAD END sign over it `sign` m before, beacons, a bell and a warning with `warn` m to go, hazard
   // stripes on the floor over the last `stripes` m. (No cost here: a wreck, not damage)
   deadEnd: { length: 120, sign: 100, stripes: 24, warn: 120 },
+  // a roadworks diversion ("diversions": { from, to, kind: 'shift', by?, limit? }; roadworks.js, and Track's lateral-offset
+  // layer): the player's lanes move `by` m out (onto a widened shoulder, the works between the two ways) over `shiftTaper` m
+  // (smoothstep: a long vehicle can follow that), run on there and come back the same way; the cones of a taper `coneEvery` m
+  // apart. `limit` km/h: the temporary limit, from `slow` m before the first cone; signs `signs` m before (roadworks, the
+  // lanes, the limit). (taper, gap, contraflow, wait, zip, look: for what is to come)
+  diversion: { taper: 40, shiftTaper: 60, gap: 30, by: 4, contraflow: 1.2, limit: 50, slow: 120, coneEvery: 5, signs: [320, 220, 130], wait: 4, zip: 26, look: 220 },
   // ---- Gimmick Road 3's: the road gambles (gambles.js; each a field in the level, named below) ----
   // a crosswind ("crosswinds": { from, to, dir, strength?, every?, length? }): over the stretch a car is pushed
   // sideways at `strength` m/s^2 times (its height / heightRef) ^ heightPower: `lull` of that all the time, all of

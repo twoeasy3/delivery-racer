@@ -28,6 +28,7 @@ import { RaceWatch } from './racewatch.js';
 import { Site } from './site.js';
 import { Hazards } from './hazards.js';
 import { LaneGimmicks } from './lanegimmicks.js';
+import { Roadworks } from './roadworks.js';
 import { Gambles } from './gambles.js';
 import { Radiation } from './radiation.js';
 import { Social } from './social.js';
@@ -98,6 +99,7 @@ export const Game = {
     Radiation.build(); // (its areas, for the drawing)
     Hazards.attach(); // (its obstacles are loaded with the level's: see Collision.loaders)
     LaneGimmicks.attach(); // (the boost pads' handrails and the dead ends' walls likewise)
+    Roadworks.attach(); // (a diversion's taper cones likewise)
     Collision.loadLevel();
     Pickups.load();
     Targets.load();
@@ -255,6 +257,7 @@ export const Game = {
     StopGo.reset();
     Hazards.reset();
     LaneGimmicks.reset();
+    Roadworks.reset();
     Gambles.reset();
     Radiation.reset();
     Milestones.reset();
@@ -463,6 +466,7 @@ export const Game = {
     if (playing) Site.update(dt);
     if (playing) Hazards.update(dt);
     if (playing) LaneGimmicks.update(dt);
+    if (playing) Roadworks.update(dt);
     if (playing) Gambles.update(dt); // (after Hazards: it has the last word on the car's height off the road)
     if (playing) Radiation.update(dt); // (radiated areas and infected cars: after the traffic has moved, before the collisions push anything apart)
     if (playing) Mysteries.update(dt);

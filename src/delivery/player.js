@@ -543,7 +543,9 @@ export const Player = {
     }
     if (sea.damage && this.shield <= 0 && this.ghost <= 0) this.health -= sea.damage * this.damageScale * dt;
     this.updateSpeed(dt, throttle, stopping, auto);
+    const sWas = this.s;
     this.s += this.speed * dt * Track.pathScale(this.s, this.lat); // (true speed: the inside of a bend is shorter)
+    this.lat += Track.carry(sWas, this.s, this.lat); // (a roadworks diversion moving the lanes over carries the car with them, as a bend would: Track.carry)
     // on the right shoulder at the exit = taking the side road; at its end, back onto the expressway
     const latBefore = this.lat;
     Track.transfer(this);
@@ -597,8 +599,9 @@ export const Player = {
 
     // the car can't be turned into the roadside or the bridge structure: sideways speed
     // toward a side fades to nothing as the car reaches it, so it straightens up
-    const roomLeft = Math.max(0, this.lat - this.hw - Track.crossLo(this.s, this.hw)); // (out over the chevrons, merging: Track.crossable)
-    const roomRight = Math.max(0, Track.hi(this.s) - this.hw - this.lat);
+    const band = Track.diverting(this.s) ? Track.bounds(this.s, this.lat) : null; // (a diversion's works zone is an edge too: Track.works)
+    const roomLeft = Math.max(0, this.lat - this.hw - Math.max(Track.crossLo(this.s, this.hw), band ? band.lo : -Infinity)); // (out over the chevrons, merging: Track.crossable)
+    const roomRight = Math.max(0, Math.min(Track.hi(this.s), band ? band.hi : Infinity) - this.hw - this.lat);
     // (but where walls hurt, "wallDamage", nothing eases the car off them: it hits them, see keepOnRoad)
     if (!LEVEL.wallDamage) this.latVel = clamp(this.latVel, -roomLeft * CONFIG.edgeBrake, roomRight * CONFIG.edgeBrake);
     else this.latVel += slide * dt;

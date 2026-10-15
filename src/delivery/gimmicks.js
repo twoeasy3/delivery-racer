@@ -147,6 +147,21 @@ export const GROUPS = [
       for (let z = -6; z < 7; z += 4) { g.add(box(0.15, 0.02, 2, line, -1.5, 0.01, z)); if (z < -4) g.add(box(0.15, 0.02, 2, line, 1.5, 0.01, z)); } // (the lane lines, and the closing lane's)
       return { model: g };
     } },
+    { name: 'Roadworks diversions', color: 0xff8a1a, has: (l) => l.diversions?.length, rules: [
+      `Cones move your lanes over, round works in the middle of the road, and back. Signs and a lit arrow board show the way.`,
+      `Leave it late and the taper squeezes you over, knocking cones (${CONFIG.obstacleKinds.cone.damage} damage each, ${pct(CONFIG.obstacleKinds.cone.speedKept)} of your speed kept). The barriers hold you in your lane, never stop you.`,
+    ], build: () => {
+      const g = road(12, 18), lamps = [];
+      for (let k = 0; k < 6; k++) { const c = ob('cone'); c.position.set(-0.2 + k * 0.62, 0, -8 + k * 1.6); g.add(c); }
+      for (let z = 1.6; z < 9; z += 1.2) g.add(box(0.5, 0.8, 1.15, lambert(Math.round(z * 10) % 24 < 12 ? 0xd8262b : 0xf2f2f2), 3.6, 0.4, z));
+      for (let x = 3.6; x < 6; x += 1.2) g.add(box(1.15, 0.8, 0.5, lambert(x < 4 || x > 5 ? 0xd8262b : 0xf2f2f2), x, 0.4, 2));
+      g.add(box(0.15, 0.02, 9, glow(0xf2c21d), 3.0, 0.02, 4.5), box(1.7, 0.7, 2.4, lambert(0xf2b51c), 4.8, 0.75, 4.5), box(0.16, 2, 0.16, lambert(0x6f757d), 4.8, 2, 4.5));
+      const board = box(2.4, 1.6, 0.12, glow(0x111215), 4.8, 3.5, 4.5);
+      g.add(board);
+      for (let k = 0; k < 5; k++) { const lamp = box(0.22, 0.22, 0.05, glow(0xffb020), 5.7 - k * 0.45, 3.5, 4.43); lamps.push(lamp); g.add(lamp); } // (the arrow's shaft, and its head below)
+      for (const [dx, dy] of [[0.35, 0.35], [0.35, -0.35]]) { const lamp = box(0.22, 0.22, 0.05, glow(0xffb020), 4.35 + dx - 0.35, 3.5 + dy, 4.43); lamps.push(lamp); g.add(lamp); }
+      return { model: g, tick: (t) => { const on = Math.floor(t * 1.6) % 2 === 0; for (const l of lamps) l.material.color.setHex(on ? 0xffb020 : 0x3a2a10); } };
+    } },
     { name: 'Bridges', color: 0x9c4a3a, has: (l) => l.bridges?.length, rules: [
       'A bridge has no shoulder: its steel stands right beside the outer lanes.',
       'Arrive at one on the shoulder and you drive into the end of its structure: wrecked, there and then. Even a ghost can\'t pass through it.',

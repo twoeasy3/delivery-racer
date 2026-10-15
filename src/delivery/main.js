@@ -59,6 +59,7 @@ import { syncStorm } from './render/storm.js';
 import { syncMovers } from './render/movers.js';
 import { syncTunnel } from './render/tunnel.js';
 import { syncLaneGimmicks } from './render/lanegimmicks.js'; // (the boost pads' belts scroll, the dead ends' beacons flash)
+import { syncRoadworks } from './render/roadworks.js'; // (a diversion's arrow boards and beacons flash)
 import { syncReversible } from './render/reversible.js';
 import { syncMysteries } from './render/mysteries.js';
 import './render/pursuit.js';
@@ -423,6 +424,7 @@ const frame = (now) => {
     syncRoadside(dt);
     syncHazards(now);
     syncLaneGimmicks(dt, now);
+    syncRoadworks(dt, now);
     syncGambles(now, dt); // (after the car and the traffic are placed: it leans and shakes them)
     syncRadiation(now, dt); // (after the traffic is placed: the infected cars' rings go with them)
     syncTunnel(); // (after the roadside's fog bank: a tunnel only ever closes the fog in further)

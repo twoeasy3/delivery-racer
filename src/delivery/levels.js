@@ -331,6 +331,13 @@
 //              mouth in each wall; as the player comes near, beacons flash and a bell rings, then a train (an electric tug
 //              and two trolleys) comes out of the `side` mouth and crosses into the other. A knock, never a stop or a bust.
 //              Inside a tunnel, 30 m clear of its ends (see CONFIG.tunnelJunction)
+//   diversions { from, to, kind: 'shift', by?, limit? }: roadworks that move the lanes (roadworks.js; Track's lateral-offset
+//              layer). Over the stretch cones taper the player's lanes `by` m out (CONFIG.diversion.by) onto a widened shoulder
+//              over CONFIG.diversion.shiftTaper m, the works between the two ways; they run on there and come back the same way.
+//              The works zone is road no car enters (held at its line, never stopped; a taper's cones are a cone's knock each).
+//              `limit` km/h: the traffic's (CONFIG.diversion.limit). Pickups and obstacles on a lane follow it. On the expressway,
+//              CONFIG.diversion.signs m clear of the start, 150 m apart; no exit, bridge, narrowing, tunnel, split, stop / go,
+//              reversible lane, fresh tarmac, boost pad, dead end or junction in one
 //   (and wreckage of kind 'roadtrain': a road train jackknifing across its lanes)
 //   (Gimmick Road 3's: the road gambles, see gambles.js and CONFIG, each under its own name)
 //   (every one is a risk to take or leave: none stops the car, and none busts it. On the expressway only)
