@@ -709,5 +709,21 @@
       "evil": "Questionable gold, by the light of the furnaces. Race the ingot trains, ride the conveyors and keep it out of the light."
     },
     "cargo": { "good": "horseshoes", "evil": "goldbar" }
+  },
+  "vegas-strip": {
+    "name": "Vegas Strip",
+    "description": {
+      "good": "Poker chips for the cashier's cage at the far end of the Strip. Three jams, three ramps: ride the walkway, hit the ramp, or take the long way round.",
+      "evil": "Counterfeit chips, a dye pack in the lid. Hit every walkway and jump every jam. Double or nothing, all the way down the Strip."
+    },
+    "cargo": { "good": "pokerchips", "evil": "fakechips" }
+  },
+  "vegas-night": {
+    "name": "Vegas by Night",
+    "description": {
+      "good": "Chips for the late shift at the cage. The Strip is lit up, the fountains are dancing and the jams are back: jump them or go round.",
+      "evil": "Counterfeit chips under the neon. Walkway, ramp, over the queue, three times. The house always wins. Prove it wrong."
+    },
+    "cargo": { "good": "pokerchips", "evil": "fakechips" }
   }
 }

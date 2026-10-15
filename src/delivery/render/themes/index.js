@@ -41,6 +41,7 @@ const THEME_FILES = {
   mall: () => import('./mall.js'),
   city: () => import('./city.js'), // (the default theme: the city's streets, and every theme drawn as it, night, flooded)
   steelworks: () => import('./steelworks.js'),
+  vegas: () => import('./vegas.js'),
   // (batch E: Las Vegas strip, Alpine pass, Steelworks: new themes go above this line)
 };
 

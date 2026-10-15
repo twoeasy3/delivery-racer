@@ -52,5 +52,9 @@
   "ingotStack": { "name": "Stack of hot billets", "blurb": "Stands in for a crate in the steelworks." },
   "steelCoil": { "name": "Steel coil", "blurb": "Stands in for a bale in the steelworks: a coil on its cradle." },
   "hotSign": { "name": "Hot-metal sign", "blurb": "Stands in for a cone in the steelworks." },
-  "rebarBundle": { "name": "Bundles of rebar", "blurb": "Stands in for a barrier in the steelworks." }
+  "rebarBundle": { "name": "Bundles of rebar", "blurb": "Stands in for a barrier in the steelworks." },
+  "velvetRope": { "name": "Velvet rope", "blurb": "Stands in for a barrier in Las Vegas: brass posts, a red rope." },
+  "slotMachine": { "name": "Slot machine", "blurb": "Stands in for a crate in Las Vegas." },
+  "luggageCart": { "name": "Luggage cart", "blurb": "Stands in for a bale in Las Vegas: a bellhop's cart of cases." },
+  "casinoDie": { "name": "Giant die", "blurb": "Stands in for a cone in Las Vegas." }
 }

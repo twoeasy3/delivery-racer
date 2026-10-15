@@ -54,6 +54,7 @@ export const CARGO = {
     { id: 'waterjugs', name: 'Crate of Water Jugs' }, // (Dakar Dash)
     { id: 'bubbletea', name: 'Tray of Bubble Teas' }, // (Mall Dash)
     { id: 'horseshoes', name: 'Crate of Horseshoes' }, // (Steelworks Run)
+    { id: 'pokerchips', name: 'Box of Poker Chips' }, // (Vegas Strip)
   ],
   evil: [
     { id: 'parcel', name: 'Ticking Parcel', states: ['Ticking', 'Fuse lit', 'About to blow'] },
@@ -107,6 +108,7 @@ export const CARGO = {
     { id: 'scarabs', name: 'Crate of Scarabs', states: ['Lid nailed down', 'Scuttling inside', 'Swarming out'] }, // (Dakar Dash)
     { id: 'hamsterball', name: 'Pet-Shop Hamster Ball', states: ['Nibbling', 'Rolling', 'Bouncing loose'] }, // (Mall Dash)
     { id: 'goldbar', name: 'Bar of Questionable Gold', states: ['Gleaming', 'Flaking', 'Peeling off'] }, // (Steelworks Run)
+    { id: 'fakechips', name: 'Case of Counterfeit Chips', states: ['Snapped shut', 'Rattling', 'Dye pack burst'] }, // (Vegas Strip)
   ],
 };
 // the names and the Evil states in cargoText.json come first, these the fallback (words.js: a bad entry is passed over)
