@@ -362,10 +362,12 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.86, 0, 1.09, -1.621],
-    "cyl": [0.86, 0, 1.069, -1.621],
+    "box": [1.3, 0, 1.167, -1.995],
+    "cyl": [1.3, 0, 1.135, -1.995],
     "from": "deck",
-    "lim": "d"
+    "lim": "w",
+    "inset": [0.06, 0.06],
+    "existing": true
    }
   },
   "milkfloat": {
@@ -609,20 +611,18 @@
   },
   "wedge": {
    "roof": {
-    "box": [0.52, 0, 1.425, -1.74],
-    "cyl": [0.46, 0, 1.41, -1.74],
-    "from": "roof",
-    "lim": "d"
+    "no": "the roof is too small (no 0.3 x 0.25 m patch near its top)"
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.61, 0, 1.007, -1.378],
-    "cyl": [0.61, 0, 0.991, -1.378],
+    "box": [0.61, 0, 1.002, -1.658],
+    "cyl": [0.61, 0, 0.986, -1.658],
     "from": "deck",
     "lim": "w",
-    "inset": [0.023, 0.023]
+    "inset": [0.026, 0.026],
+    "existing": true
    }
   },
   "widetruck": {
@@ -698,6 +698,28 @@
     "box": [0.9, 0, 2.8, 0.25],
     "cyl": [0.9, 0, 2.8, 0.25],
     "from": "roof",
+    "lim": "hand",
+    "existing": true
+   }
+  },
+  "fireengine": {
+   "cargo": {
+    "no": "the ladder and hose bed are the engine's function: no clear load space"
+   }
+  },
+  "wedge": {
+   "roof": {
+    "box": [0.6, 0, 1.2, -0.25],
+    "cyl": [0.6, 0, 1.2, -0.25],
+    "from": "roof",
+    "lim": "hand"
+   }
+  },
+  "dragster": {
+   "wing": {
+    "box": [1.07, 0, 1.38, -3.35],
+    "cyl": [1.07, 0, 1.38, -3.35],
+    "from": "deck",
     "lim": "hand",
     "existing": true
    }

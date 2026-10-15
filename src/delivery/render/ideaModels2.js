@@ -834,8 +834,8 @@ export const IDEA_MODELS_2 = {
       // the exhaust: four pipes a side, leaning back and out
       for (let i = 0; i < 4; i++) rod(shell, chrome, 0.045, [side * 0.28, 0.72, L * (0.34 - i * 0.1)], [side * 0.5, 1.02, L * (0.34 - i * 0.1) - 0.3]);
       box(shell, TAIL, 0.08, 0.1, 0.04, side * 0.14, 0.7, -L * 0.98);
-      rod(shell, trim, 0.025, [side * 0.24, 0.5, -L * 0.82], [side * 0.5, 1.28, -L * 0.93]);   // wing struts
-      box(shell, paint, 0.04, 0.46, 0.55, side * 0.76, 1.32, -L * 0.93);                      // endplates
+      rod(shell, trim, 0.025, [side * 0.24, 0.5, -L * 0.82], [side * 0.5, 1.28, -L * 0.93]).userData.prop = 'wing';   // wing struts (tagged wing: a chosen wing hides the wing, its end plates and struts, render/propcosmetic.js)
+      box(shell, paint, 0.04, 0.46, 0.55, side * 0.76, 1.32, -L * 0.93).userData.prop = 'wing';                      // endplates
       rod(shell, trim, 0.03, [side * 0.22, 0.56, -L * 0.18], [side * 0.2, 1.1, -L * 0.34]);    // roll cage: hoop legs
     }
     box(shell, metal, 0.6, 0.46, L * 0.3, 0, 0.7, L * 0.2);                                  // the engine block
@@ -847,7 +847,7 @@ export const IDEA_MODELS_2 = {
     blob(shell, helmet, 0.17, 0.17, 0.2, 0, 0.98, -L * 0.34).userData.figure = true;         // the helmet (figure: hidden in the cinematics)
     box(shell, paint, 0.5, 0.06, 0.3, 0, 0.83, -L * 0.14);                                   // the cowl in front of him
     tube(shell, chrome, 0.03, 0.44, 0, 1.12, -L * 0.34 - 0.2, 'x');                           // the cage's top bar
-    box(shell, paint, 1.5, 0.05, 0.5, 0, 1.58 - 0.2, -L * 0.93);                             // the wing
+    box(shell, paint, 1.5, 0.05, 0.5, 0, 1.58 - 0.2, -L * 0.93).userData.prop = 'wing';                             // the wing
     box(shell, trim, 0.3, 0.2, 0.3, 0, 0.74, -L * 0.88);                                     // the 'chute pack
     tube(shell, trim, 0.1, 0.4, 0, 0.9, -L * 0.98, 'z');
     taper(shell, paint, [-L * 0.6, 0.5, 0.36, 0.7], [-L * 0.95, 0.24, 0.4, 0.62]);            // the tail

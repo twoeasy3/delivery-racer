@@ -794,11 +794,11 @@ export const IDEA_MODELS = {
     for (let i = 0; i < 4; i++) box(group, trim, B * 0.5, 0.02, 0.1, 0, 0.9 - i * 0.005, -L * (0.46 + i * 0.1)); // the engine deck's louvres
     box(group, trim, B * 0.94, 0.26, 0.04, 0, 0.68, -L - 0.01);                           // the tail panel
     box(group, trim, w * 0.96, 0.06, 0.26, 0, 0.31, L - 0.08);                            // a chin spoiler
-    box(group, paint, w * 0.98, 0.05, 0.44, 0, 1.27, -L * 0.84);                          // the huge wing,
+    box(group, paint, w * 0.98, 0.05, 0.44, 0, 1.27, -L * 0.84).userData.prop = 'wing'; // the huge wing (tagged wing: a chosen wing hides it, its end plates and struts),
     const doors = [];
     for (const side of [-1, 1]) {
-      box(group, paint, 0.05, 0.2, 0.5, side * w * 0.47, 1.19, -L * 0.84);                // its end plates,
-      box(group, paint, 0.07, 0.36, 0.16, side * w * 0.3, 1.07, -L * 0.82).rotation.x = 0.3; // and its struts
+      box(group, paint, 0.05, 0.2, 0.5, side * w * 0.47, 1.19, -L * 0.84).userData.prop = 'wing'; // its end plates,
+      { const strut = box(group, paint, 0.07, 0.36, 0.16, side * w * 0.3, 1.07, -L * 0.82); strut.rotation.x = 0.3; strut.userData.prop = 'wing'; } // and its struts
       box(group, paint, 0.3, 0.16, L * 0.3, side * B * 0.34, 0.98, -L * 0.48);            // an air box on each shoulder,
       box(group, trim, 0.26, 0.12, 0.03, side * B * 0.34, 0.98, -L * 0.33 + 0.01);        // its mouth open to the front
       box(group, LAMP, w * 0.2, 0.04, 0.04, side * w * 0.3, 0.42, L * 0.99);              // slits of lamps in the nose
@@ -976,11 +976,11 @@ export const IDEA_MODELS = {
     box(group, trim, w * 0.98, 0.04, 0.16, 0, 0.32, L + 0.02);                            // and a splitter under it
     box(group, paint, w + 0.04, 0.26, 0.16, 0, 0.5, -L + 0.04);                           // the back bumper
     box(group, trim, w * 0.92, 0.2, 0.03, 0, 0.76, -L * 0.97 - 0.01);                     // the tail's panel
-    box(group, paint, w * 0.92, 0.05, 0.3, 0, 1.36, -L * 0.86);                           // the wing, as tall as the roof,
-    box(group, paint, w * 0.8, 0.03, 0.2, 0, 1.12, -L * 0.86);                            // a second blade under it,
+    box(group, paint, w * 0.92, 0.05, 0.3, 0, 1.36, -L * 0.86).userData.prop = 'wing';   // the wing, as tall as the roof (tagged wing: a chosen wing hides it and its blade, uprights and end plates, render/propcosmetic.js),
+    box(group, paint, w * 0.8, 0.03, 0.2, 0, 1.12, -L * 0.86).userData.prop = 'wing';   // a second blade under it,
     for (const side of [-1, 1]) {
-      box(group, paint, 0.05, 0.44, 0.22, side * w * 0.34, 1.15, -L * 0.86);              // on two uprights,
-      box(group, paint, 0.04, 0.12, 0.34, side * w * 0.46, 1.33, -L * 0.86);              // with end plates
+      box(group, paint, 0.05, 0.44, 0.22, side * w * 0.34, 1.15, -L * 0.86).userData.prop = 'wing'; // on two uprights,
+      box(group, paint, 0.04, 0.12, 0.34, side * w * 0.46, 1.33, -L * 0.86).userData.prop = 'wing'; // with end plates
       prism(group, paint, 0.14, [[-L * 0.24, 1.34], [-L * 0.37, 1.34], [-L * 0.67, 0.9], [-L * 0.46, 0.9]], side * (w * 0.42 - 0.07)); // the rear pillars
       box(group, paint, 0.07, 0.44, 0.09, side * w * 0.42, 1.1, -L * 0.04);               // the door pillars
       box(group, LAMP, w * 0.2, 0.11, 0.05, side * w * 0.35, 0.78, L - 0.01);             // angular lamps
