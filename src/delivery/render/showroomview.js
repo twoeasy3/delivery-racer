@@ -63,6 +63,9 @@ const CLOSE = 0.5;
 let closeup = false, zoom = 0, alsoVisible = () => false;
 // the NUMBER PLATE close-up (CHECKLIST 286): the same ease, but turned to show one end of the car and aimed at its plate (closeEnd: 'rear' | 'front' | null = the wheels')
 let closeEnd = null;
+// the PROP close-up (CHECKLIST 302, render/cosmeticsui.js): the same ease, turned to a yaw and aimed at a point of the car (a prop slot's centre from
+// render/propanchors.js propSlots): { at: [x, y, z] in the model's frame, span: metres of the car to fit across the picture, yaw, lift }
+let closeFocus = null;
 const PLATE_VIEW = 0.62; // how much of the picture's width the plate is given (the camera stands back accordingly)
 let v = null; // the view: { el, canvas, ctx, car, evil, dark, scene, camera, turn, model, extra: [geometry, material], rxz, height, mid }
 let yaw = -0.64, spinBy = 0, held = null, idleAt = 0, raf = 0, last = 0, visible = () => true, keyVisible = () => true;
@@ -183,6 +186,16 @@ const frame = (aspect) => {
     const stand = Math.max(0.55, w / (PLATE_VIEW * 2 * Math.tan(hHalf)));
     near = far + (edge + stand - far) * zoom; lift = LIFT * (1 - zoom * 0.9); eye = height * 0.45 + (y + 0.07 - height * 0.45) * zoom; aim = height * 0.42 + (y - height * 0.42) * zoom;
   }
+  if (closeFocus) { // (a prop close-up: the camera eased from the whole-car view to one in front of the prop, at the car's turn)
+    const f = closeFocus, mp = v.model.position, c = Math.cos(yaw), sn = Math.sin(yaw), lx = f.at[0] + mp.x, lz = f.at[2] + mp.z;
+    const wx = lx * c + lz * sn, wy = f.at[1] + mp.y, wz = -lx * sn + lz * c; // (the prop on the turntable, as the car is turned)
+    const stand = Math.max(1.2, f.span / (2 * Math.tan(hHalf)));
+    const at = zoom, from = new THREE.Vector3(0, height * 0.45 + far * Math.sin(LIFT), far * Math.cos(LIFT)), to = new THREE.Vector3(wx, wy + stand * Math.sin(f.lift), wz + stand * Math.cos(f.lift));
+    camera.position.copy(from.lerp(to, at));
+    camera.lookAt(wx * at, height * 0.42 + (wy - height * 0.42) * at, wz * at);
+    camera.updateProjectionMatrix();
+    return;
+  }
   camera.position.set(0, eye + near * Math.sin(lift), near * Math.cos(lift));
   camera.lookAt(0, aim, 0);
   camera.updateProjectionMatrix();
@@ -210,7 +223,7 @@ const draw = (now) => {
   const still = stillViews();
   if (!held) {
     if (Math.abs(spinBy) > 0.02) { yaw += spinBy * dt; spinBy *= Math.pow(0.05, dt); }
-    else if (closeEnd && closeup) { const d = Math.atan2(Math.sin((closeEnd === 'rear' ? Math.PI : 0) - yaw), Math.cos((closeEnd === 'rear' ? Math.PI : 0) - yaw)); yaw += d * (snap ? 1 : Math.min(1, dt * 5)); spinBy = 0; } // (a plate close-up: turned to show that end, and kept there)
+    else if ((closeEnd || closeFocus) && closeup) { const goal = closeFocus ? closeFocus.yaw : closeEnd === 'rear' ? Math.PI : 0, d = Math.atan2(Math.sin(goal - yaw), Math.cos(goal - yaw)); yaw += d * (snap ? 1 : Math.min(1, dt * 5)); spinBy = 0; } // (a plate close-up: turned to show that end, and kept there)
     else if (!still && !(ShowroomView.hold >= 0) && now - idleAt > 1200) yaw += SPIN * dt; // (held for a picture: not turning either)
   }
   v.turn.rotation.y = yaw;
@@ -338,7 +351,7 @@ export const ShowroomView = {
   also(fn) { alsoVisible = fn; },
   // the wheels close-up on or off (eased); stop() puts it back
   get model() { return v?.model || null; },
-  closeUp(on, end = null) { closeup = !!on; closeEnd = on && (end === 'rear' || end === 'front') ? end : null; },
+  closeUp(on, end = null, focus = null) { closeup = !!on; closeEnd = on && (end === 'rear' || end === 'front') ? end : null; closeFocus = on && focus ? focus : null; },
   // whether the corner key may be drawn now (no sheet over the showroom: render/showroom.js says)
   keyWhen(fn) { keyVisible = fn; },
   // done: the loop ended and the model let go (the 2D canvas is kept for next time)
@@ -348,6 +361,7 @@ export const ShowroomView = {
     held = null;
     closeup = false;
     closeEnd = null;
+    closeFocus = null;
     zoom = 0;
     drop();
     if (v) { v.car = null; v.canvas?.remove(); v.el = null; }
