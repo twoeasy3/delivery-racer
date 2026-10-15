@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 import {
   TRIM, CHROME, GLASS, LAMP, TAIL, AMBER, shared, place, merge, parts, bx, curve, extrudeSide,
-  shadeBy, low, wheel, roundRect, extrudePlan, cabinGlass, glassFromProfile,
+  shadeBy, low, wheel, roundRect, extrudePlan, cabinGlass, glassFromProfile, virtualCorners, cabinChain,
 } from './ideaModelsDkit.js';
 
 const paintOf = (car) => {
@@ -33,25 +33,29 @@ export const IDEA_MODELS_BATCH_E2 = {
     const BEV = 0.04, BW = 1.5, HALF = BW / 2, NOSE = 1.7, TAILZ = -1.7, FLOOR = 0.27, COWL = 0.95, ROOF = 1.44;
     const TAPER = [0.9, ROOF, 0.08];
     const WSF = [0.92, COWL], WST = [0.5, 1.43];
-    const RH = [TAILZ, ROOF], TH = [TAILZ, 1.0]; // the roof's rear edge: a square corner onto the near-vertical tail (the glass hatch is on the tail; TH is a point on the straight tail where the tail glass's foot is)
+    const RH = [-1.64, ROOF], RL = [TAILZ, 1.3], TH = [TAILZ, 1.0]; // the roof's rear edge and the tail (the glass hatch is on the near-vertical tail; TH: a point on the straight tail, the tail glass's foot)
     const outline = [
       [NOSE, FLOOR], [NOSE, 0.62], [NOSE - 0.03, 0.82], [1.4, 0.9], WSF, WST,
       ...curve(WST, [0.46, 1.47], [0.38, ROOF], [0.26, ROOF], 3),
-      RH, TH, [TAILZ, FLOOR],
+      RH, RL, [TAILZ, FLOOR],
     ];
+    // (the glass's own copy of the outline, with TH on the straight tail: the body keeps its original vertices)
+    const gOutline = [...outline.slice(0, outline.length - 1), TH, outline[outline.length - 1]];
     const FZ = NOSE + BEV, BZ = TAILZ - BEV;
     const paint = paintOf(car);
     const body = place(group, shared(k + 'body', () => shadeBy(merge([extrudeSide(outline, BW, BEV, TAPER, 1)]), low(0.3, 0.8, [0.7, 0.64, 0.58]))), paint);
     // ALL the glass from the body's own side profile (cabinGlass: one inset outline, level tops, windows with the body's corners); the door glass is
     // the longer, the quarter window behind the B-pillar ends in a C-pillar before the tail glass. The windscreen's foot is the cowl (belt 0.98).
     const GBELT = 1.02, WIN = [[-0.34, 9], [-1.45, -0.5]], INS = { aPillar: 0.07, roof: 0.05, cPillar: 0.09 };
-    const glass = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(TH), belt: GBELT, half: HALF, taper: TAPER, grow: BEV,
+    const glass = cabinGlass(gOutline, { from: gOutline.findIndex(p => p[0] === WSF[0] && p[1] === WSF[1]), to: gOutline.indexOf(TH), belt: GBELT, half: HALF, taper: TAPER, grow: BEV, sharp: true, cornerDepth: 0.03,
       inset: INS, lift: BEV + 0.006, sideLift: 0.006, windows: WIN });
-    const screen = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(TH), belt: COWL + 0.03, half: HALF, taper: TAPER, grow: BEV,
+    const screen = cabinGlass(gOutline, { from: gOutline.findIndex(p => p[0] === WSF[0] && p[1] === WSF[1]), to: gOutline.indexOf(TH), belt: COWL + 0.03, half: HALF, taper: TAPER, grow: BEV, sharp: true, cornerDepth: 0.03,
       inset: INS, lift: BEV + 0.006, sideLift: 0.006 });
     parts(group, k + 'glass', GLASS, () => [...glass.sides, screen.front, glass.rear]);
     // black window surrounds: the same outline 4.5 cm bigger, a hair behind the glass (a trim frame)
-    const SUR = 0.045, surrounds = () => WIN.flatMap(([zr, zf]) => glassFromProfile(outline, { from: outline.indexOf(WSF), to: outline.indexOf(TH), belt: GBELT - SUR, inset: { aPillar: 0.003, roof: 0.003, cPillar: 0.003, belt: 0 },
+    // (built on the same virtual corners as the glass, its corners kept inside the rounded profile: `real`)
+    const SUR = 0.045, FROM = gOutline.findIndex(p => p[0] === WSF[0] && p[1] === WSF[1]), TO = gOutline.indexOf(TH), vc = virtualCorners(gOutline.slice(FROM, TO + 1)).points, rc = cabinChain(gOutline, FROM, TO, GBELT - SUR);
+    const surrounds = () => WIN.flatMap(([zr, zf]) => glassFromProfile(vc, { from: 0, to: vc.length - 1, belt: GBELT - SUR, inset: { aPillar: 0.003, roof: 0.003, cPillar: 0.003, belt: 0 }, real: rc, margin: 0.003,
       zRear: zr === -Infinity || zr <= -9 ? -9 : zr - SUR, zFront: zf >= 9 ? 9 : zf + SUR, half: HALF, taper: TAPER, lift: 0.0024 }));
     parts(group, k + 'black', TRIM, () => [
       ...surrounds(),
@@ -69,7 +73,7 @@ export const IDEA_MODELS_BATCH_E2 = {
     ]);
     parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.14, 0.27, 0.03, s * 0.58, 0.83, BZ - 0.014)));
     for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, k, R, TW, s * WX, z, 16);
-    group.userData = { body, animate: () => {}, livery: () => {} };
+    group.userData = { body, animate: () => {}, livery: () => {}, glassVirtual: { chain: glass.virtual, grow: BEV } }; // (the rounded body's virtual corners, for scripts/.glass-contour-check.mjs)
     return group;
   },
 

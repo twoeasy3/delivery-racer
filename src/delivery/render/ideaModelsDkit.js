@@ -265,7 +265,9 @@ export const virtualCorners = (chain, short = 0.2) => {
         const d1 = [b[0] - a[0], b[1] - a[1]], d2 = [d[0] - c[0], d[1] - c[1]], den = d1[0] * d2[1] - d1[1] * d2[0];
         if (Math.abs(den) > 1e-9) {
           const t = ((c[0] - a[0]) * d2[1] - (c[1] - a[1]) * d2[0]) / den;
-          points.push([a[0] + d1[0] * t, a[1] + d1[1] * t]);
+          // (a corner on a vertical or level long edge is snapped to that edge's coordinate: 1.7000000000000002 would flip tiltGlass's normal)
+          const snap = (v, ...near) => near.find(w => Math.abs(v - w) < 1e-9) ?? v;
+          points.push([snap(a[0] + d1[0] * t, a[0], b[0], c[0], d[0]), snap(a[1] + d1[1] * t, a[1], b[1], c[1], d[1])]);
           for (let k = i; k <= j; k++) map[k] = points.length - 1;
           i = j + 1;
           continue;
