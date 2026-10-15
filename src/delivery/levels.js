@@ -168,7 +168,7 @@
 //                                  'chairStack', 'riceBasket', 'present', 'toyDrum', 'sackStack', 'beachBall',
 //                                  'tumbleweed', 'cafeTable', 'wheelieBin', 'snowdrift', 'brimstone', 'flagStand',
 //                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'wineCrates', 'hayRoll', 'terracottaPot' (Tuscany's). All of them are on the Gimmicks page, last,
-//                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'jerryStack', 'tentRoll' and
+//                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'boxStack', 'trolleyRow', 'wetFloorSign' (the mall's), 'jerryStack', 'tentRoll' and
 //                                  'rallyFlag' (the desert's: stacked jerrycans, a rolled tent, a rally marker flag). All of them are on the Gimmicks page, last,
 //                                  under Road dressing (gimmicks.html?group=road-dressing)
 //   dropBears  { from, to, count } drop bears up in the trees over that stretch, dropping onto the
@@ -319,6 +319,10 @@
 //   trolleys   { from, to, count }: shopping trolleys rolling across the road with its camber
 //   marathons  { s, lane, count, water? }: runners in one lane behind a pace car; water: where its water station stands
 //   stampedes  { from, to, count, kind: 'cow' | 'kangaroo' }: animals charging down the road at the player
+//   tunnelJunctions { s, side: 'left' | 'right' }: a side tunnel crossing the road inside a tunnel (a mall's concourse): a
+//              mouth in each wall; as the player comes near, beacons flash and a bell rings, then a train (an electric tug
+//              and two trolleys) comes out of the `side` mouth and crosses into the other. A knock, never a stop or a bust.
+//              Inside a tunnel, 30 m clear of its ends (see CONFIG.tunnelJunction)
 //   (and wreckage of kind 'roadtrain': a road train jackknifing across its lanes)
 //   (Gimmick Road 3's: the road gambles, see gambles.js and CONFIG, each under its own name)
 //   (every one is a risk to take or leave: none stops the car, and none busts it. On the expressway only)
@@ -527,6 +531,7 @@ import monsoon from './levels/monsoon.json';
 import hauntedHollow from './levels/haunted-hollow.json'; // (hidden: HIDDEN_LEVELS)
 import chiantiRun from './levels/chianti-run.json'; // (hidden: HIDDEN_LEVELS below)
 import dakarDash from './levels/dakar-dash.json';
+import mallDash from './levels/mall-dash.json'; // (the mall's level, hidden: HIDDEN_LEVELS below)
 
 // the numbered levels, and the special ones (S1, S2...), which always come after them on the
 // menu. All of them unlock in this order, each by delivering the one before, and saved progress
@@ -630,6 +635,7 @@ export const SCREENSAVER_LEVEL = chaos;
 export const EVENT_MAPS = { 'pocket-town': pocketTown, 'solstice-cliffs': solsticeCliffs, 'grand-boulevard': grandBoulevard, 'turbo-quay': turboQuay, 'neon-edge': neonEdge, 'endurance-road': enduranceRoad };
 export const HIDDEN_LEVELS = { testbed, 'grand-prix': grandPrix, 'gimmick-road': gimmickRoad, 'gimmick-road-2': gimmickRoad2, 'gimmick-road-3': gimmickRoad3, 'chianti-run': chiantiRun, 'jungle-highway': jungleHighway, ...EVENT_MAPS };
 HIDDEN_LEVELS['dakar-dash'] = dakarDash; // Dakar Dash (the desert dunes): hidden until the owner reveals it, ?hidden=dakar-dash
+HIDDEN_LEVELS['mall-dash'] = mallDash; // Mall Dash (the shopping mall, a lit tunnel of halls): hidden until the owner reveals it, ?hidden=mall-dash
 HIDDEN_LEVELS['haunted-hollow'] = hauntedHollow; // Haunted Hollow (Halloween): hidden until the owner reveals it, ?hidden=haunted-hollow
 import foliageRun from './levels/foliage-run.json';
 Object.assign(HIDDEN_LEVELS, { 'foliage-run': foliageRun }); // Foliage Run (the autumn theme's level): ?hidden=foliage-run, until it is revealed

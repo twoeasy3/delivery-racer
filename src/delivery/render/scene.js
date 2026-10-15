@@ -7,6 +7,7 @@ import { Game } from '../game.js';
 import { CAR } from '../cars.js';
 import { LEVEL } from '../levels.js';
 import { Gambles } from '../gambles.js';
+import { ceilingAt, tunnelCamera as tunnelCam } from './tunnelshape.js'; // (a tunnel's ceiling height along it, and the camera it wants)
 
 // ============================================================================
 // RENDERING
@@ -148,8 +149,11 @@ export const updateCamera = (dt, snap) => {
   const inTunnel = tunnelCamera(Player.s - baseBack);
   // (and coming up to a crest a car can fly, down behind the car, so the far side stays hidden: see Gambles.blind)
   const blind = Game.screensaver ? 0 : Gambles.blind(Player.s) * (1 - inTunnel);
-  const camBack = baseBack + ((CONFIG.tunnel?.camBack ?? baseBack) - baseBack) * inTunnel + (CONFIG.crest.camBack - baseBack) * blind;
-  const camHeight = baseH + ((CONFIG.tunnel?.camHeight ?? 5.5) - baseH) * inTunnel + (CONFIG.crest.camHeight - baseH) * blind;
+  // (a theme's tunnel can ask for a camera of its own, tunnelshape.js: a mall's halls; and the camera is never up through the ceiling)
+  const want = tunnelCam();
+  const camBack = baseBack + (want.camBack - baseBack) * inTunnel + (CONFIG.crest.camBack - baseBack) * blind;
+  let camHeight = baseH + (want.camHeight - baseH) * inTunnel + (CONFIG.crest.camHeight - baseH) * blind;
+  if (inTunnel > 0) { const ceil = ceilingAt(Player.s - camBack); if (ceil !== null) camHeight = Math.min(camHeight, ceil - 1.0); }
   Track.toWorld(Player.s - camBack, camLat, tmp);
   const shake = CONFIG.hitShake * Game.shake;
   camera.position.set(tmp.x + (Math.random() - 0.5) * shake,

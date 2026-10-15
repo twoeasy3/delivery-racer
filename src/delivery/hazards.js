@@ -48,6 +48,7 @@ export const Hazards = {
   trolleys: [],  // obstacles, each with cart: { lat0, vel0, vel }
   marathons: [], // { s0, lane, on, members: obstacles with run: { s0, off } }
   stampedes: [], // { from, to, on, animals: obstacles with charge: { s0, lat0, speed, phase } }
+  tunnelJunctions: [], // { s, side, from, to (lat the train sets out from, and crosses to), state: 'idle' | 'warn' | 'cross' | 'done', t, train: obstacles (the tug first) }
   jump: null,    // the player in the air off a drawbridge's leaf: { bridge, vy (m/s up), vx (along the road), over (been over the gap), sunk (into the far leaf's end) }
   lastS: 0,
 
@@ -96,6 +97,14 @@ export const Hazards = {
       load.lat = ends(s0)[0];
       return { s0, ends, lo: (s) => Track.laneOffset(a, s), load, escort: put('escort', back, load.lat, { knock: true, vs: W.speed }), on: false, t: 0, passed: false, done: false };
     });
+    this.tunnelJunctions = (LEVEL.tunnelJunctions || []).map((c) => {
+      const s = Track.place(c), side = c.side === 'left' ? -1 : 1, M = CONFIG.tunnelJunction.mouth;
+      const from = side < 0 ? Track.lo(s) - 1 : Track.hi(s) + 1, to = side < 0 ? Track.hi(s) + M / 2 : Track.lo(s) - M / 2;
+      const train = [put('tug', s, from), put('trolley', s, from), put('trolley', s, from)];
+      const j = { s, side, from, to, state: 'idle', t: 0, train };
+      this.parkTrain(j);
+      return j;
+    });
     this.stampedes = (LEVEL.stampedes || []).map((z) => {
       const from = Track.place({ s: z.from, road: z.road, exit: z.exit }), to = from + (z.to - z.from), animals = [];
       for (let i = 0; i < (z.count || 8); i++) {
@@ -108,8 +117,14 @@ export const Hazards = {
     });
   },
 
+  // a tunnel junction's train, parked up its mouth (lat: `from` is just outside the road; the train stands beyond it, out of reach)
+  parkTrain(j) {
+    const dir = Math.sign(j.to - j.from), SP = CONFIG.tunnelJunction.spacing;
+    j.train.forEach((o, k) => { o.lat = j.from - dir * (2 + k * SP); o.face = dir > 0 ? Math.PI / 2 : -Math.PI / 2; });
+  },
   reset() {
     const place = (c) => Track.place(c);
+    for (const j of this.tunnelJunctions) { Object.assign(j, { state: 'idle', t: 0 }); this.parkTrain(j); }
     this.schools = (LEVEL.schoolCrossings || []).map(c => ({ s: place(c), state: 'idle', t: 0, next: 0, started: false }));
     this.mains = (LEVEL.waterMains || []).map((m) => {
       const from = place(m), to = from + (m.length ?? CONFIG.waterMain.length);
@@ -429,6 +444,22 @@ export const Hazards = {
         o.lat = Track.laneOffset(m.lane, o.s) + o.run.off + Math.sin(o.run.t * 2.1 + o.run.k) * R.wobble;
         if (o.s > Track.length - 20) o.gone = true;
       }
+    }
+
+    // ---- tunnel junctions: beacons and a bell as the player comes near, then the train out of its mouth and across
+    const TJ = CONFIG.tunnelJunction;
+    for (const j of this.tunnelJunctions) {
+      j.t += dt;
+      const ahead = j.s - Player.s;
+      if (j.state === 'idle') {
+        if (Player.active && ahead > 0 && ahead < TJ.trigger) { j.state = 'warn'; j.t = 0; Message.say('events', 'tunnelJunction'); sfxAt('bell', j.s, 1); }
+      } else if (j.state === 'warn') {
+        if (j.t >= TJ.warn) { j.state = 'cross'; j.t = 0; }
+      } else if (j.state === 'cross') {
+        const dir = Math.sign(j.to - j.from);
+        j.train.forEach((o, k) => { o.lat = j.from + dir * (TJ.speed * j.t - k * TJ.spacing); o.face = dir > 0 ? Math.PI / 2 : -Math.PI / 2; });
+        if (dir * (j.train[j.train.length - 1].lat - j.to) > 0) { j.state = 'done'; j.t = 0; }
+      } else if (j.state === 'done' && j.t >= TJ.rest && ahead > TJ.trigger) { j.state = 'idle'; j.t = 0; this.parkTrain(j); } // (a lapped level: ready for the next time round)
     }
 
     // ---- stampedes: charging down the road at the player

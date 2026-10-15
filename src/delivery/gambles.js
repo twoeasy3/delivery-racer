@@ -29,6 +29,7 @@
 // ============================================================================
 import { CONFIG } from './config.js';
 import { LEVEL } from './levels.js';
+import { tunnelLit } from './themes.js';
 import { CAR, carStats } from './cars.js';
 import { Track } from './track.js';
 import { Player } from './player.js';
@@ -642,7 +643,7 @@ export const Gambles = {
   // or the trees of a shade (see above). The vehicle, or true; null in the open
   shaded() {
     const L = CONFIG.lowSun, P = Player;
-    if (Track.tunnel(P.s) || Track.onBridge(P.s) || this.shadeAt(P.s, P.lat)) return true;
+    if ((Track.tunnel(P.s) && !tunnelLit(LEVEL)) || Track.onBridge(P.s) || this.shadeAt(P.s, P.lat)) return true; // (a lit tunnel, a mall's, is no shade)
     for (const car of Traffic.cars) {
       if (!car.active || car.junction || car.height < L.height || !Track.isMain(car.s)) continue;
       const d = car.s - car.hl - P.s - P.hl;

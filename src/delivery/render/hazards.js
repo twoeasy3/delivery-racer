@@ -81,11 +81,57 @@ const boom = (length) => {
 
 const group = new THREE.Group();
 scene.add(group);
-let schools = [], mains = [], balloons = [], bridges = [];
+let schools = [], mains = [], balloons = [], bridges = [], junctions = [];
+// a short sign on a small canvas (256 x 64): words on a colour
+const smallBoard = (text, bg, fg, w, h) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 64;
+  const c = canvas.getContext('2d');
+  c.fillStyle = bg;
+  c.fillRect(0, 0, 256, 64);
+  c.fillStyle = fg;
+  c.font = 'bold 30px system-ui, sans-serif';
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  c.fillText(text, 128, 34);
+  return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), side: THREE.DoubleSide }));
+};
+const BEACON_ON = 0xffb020, BEACON_OFF = 0x5a4010;
 
 Game.onLoad.push(() => {
   clearGroup(group); // (freed, not only dropped: audit P7)
   const LW = CONFIG.laneWidth;
+  // ---- tunnel junctions: over each mouth an amber beacon on a bracket (flashing while the train is due or crossing), a
+  // CROSS TRAFFIC board on the wall before the junction on the train's side, and a pool of light on the floor at each mouth
+  junctions = (LEVEL.tunnelJunctions || []).map((c) => {
+    const s = Track.place(c), beacons = [], pools = [];
+    for (const sd of [-1, 1]) {
+      const edge = sd < 0 ? Track.lo(s) - 0.3 : Track.hi(s) + 0.3, mouth = at(s, edge);
+      for (const dz of [-4.2, 4.2]) {
+        const material = glow(BEACON_OFF);
+        add(mouth, box(0.5, 0.25, 0.5), lambert(0x1b1d22), 0, 5.35, dz);
+        add(mouth, new THREE.CylinderGeometry(0.18, 0.18, 0.3, 10), material, 0, 5.62, dz);
+        beacons.push(material);
+      }
+      const pool = add(mouth, new THREE.CircleGeometry(5, 20), flat(0xffd890, -2, { transparent: true, opacity: 0.18, depthWrite: false, blending: THREE.AdditiveBlending }), -sd * 0.5, 0.05, 0);
+      pool.rotation.x = -Math.PI / 2;
+      pools.push(pool.material);
+    }
+    if (s - 45 > 5) for (const sd of [-1, 1]) { // the boards, on both walls 45 m before, facing the player, a beacon over each
+      const edge = sd < 0 ? Track.lo(s - 45) - 0.2 : Track.hi(s - 45) + 0.2, post = at(s - 45, edge);
+      const board = smallBoard('CROSS TRAFFIC', '#ffb020', '#111', 3.4, 0.85);
+      board.position.set(sd * 2.0, 3.5, 0); // (hung out from the wall over the road, facing the player coming up: local +x is the road's left)
+      board.rotation.y = Math.PI;
+      add(post, box(2.0, 0.12, 0.12), lambert(0x1b1d22), sd * 1.0, 4.05, 0); // (its bracket)
+      post.add(board);
+      add(post, box(0.5, 0.3, 0.5), lambert(0x1b1d22), sd * 2.0, 4.2, 0);
+      const material = glow(BEACON_OFF);
+      add(post, new THREE.CylinderGeometry(0.16, 0.16, 0.26, 10), material, sd * 2.0, 4.45, 0);
+      beacons.push(material);
+    }
+    return { beacons, pools };
+  });
   // ---- school crossings
   schools = (LEVEL.schoolCrossings || []).map((c) => {
     const s = Track.place(c), lo = Track.laneLo(s), hi = Track.laneHi(s);
@@ -261,6 +307,13 @@ Game.onLoad.push(() => {
 
 export const syncHazards = (now) => {
   const t = now / 1000, near = (s) => Math.abs(Track.along(s) - Track.along(Player.s)) < 400;
+  Hazards.tunnelJunctions.forEach((j, k) => {
+    const mesh = junctions[k];
+    if (!mesh) return;
+    const live = j.state === 'warn' || j.state === 'cross', on = live && Math.floor(t * 4) % 2 === 0;
+    for (const b of mesh.beacons) b.color.setHex(on ? BEACON_ON : BEACON_OFF);
+    for (const p of mesh.pools) p.opacity = live ? 0.3 + (on ? 0.12 : 0) : 0.18;
+  });
   Hazards.schools.forEach((c, k) => {
     const mesh = schools[k];
     if (!mesh) return;

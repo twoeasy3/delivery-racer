@@ -38,6 +38,7 @@ const THEME_FILES = {
   rainforest: () => import('./rainforest.js'),
   tuscany: () => import('./tuscany.js'),
   desert: () => import('./desert.js'),
+  mall: () => import('./mall.js'),
 };
 
 const loading = {};

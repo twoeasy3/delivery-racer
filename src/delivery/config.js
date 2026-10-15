@@ -603,6 +603,7 @@ export const CONFIG = {
     landmine: { damage: 0, speedKept: 1 }, // (no ordinary knock: it destroys whatever touches it outright, see Collision)
     // Gimmick Road 2's (see hazards.js)
     trolley: { damage: 8, speedKept: 0.88, light: true },
+    tug: { damage: 14, speedKept: 0.8, light: true }, // a tunnel junction's electric tug (hazards.js): a knock, never a stop
     runner: { damage: 10, speedKept: 0.88, light: true },
     waterTable: { damage: 6, speedKept: 0.9, light: true },
     paceCar: { damage: 42, speedKept: 0.5 },
@@ -656,6 +657,7 @@ export const CONFIG = {
     // ...for a rock (sized by its radius, as a rock is):
     lavaRock: { damage: 39, speedKept: 0.6 },       // the volcano's: cooled lava, glowing in its cracks
     jerryStack: { damage: 31, speedKept: 0.75 }, tentRoll: { damage: 38, speedKept: 0.75 }, rallyFlag: { damage: 3, speedKept: 0.94, light: true }, // the desert's: stacked jerrycans (a crate), a rolled tent (a bale), a rally marker flag (a cone)
+    boxStack: { damage: 31, speedKept: 0.75 }, trolleyRow: { damage: 38, speedKept: 0.75 }, wetFloorSign: { damage: 3, speedKept: 0.94, light: true }, // the mall's: cartons on a sack truck (a crate), nested shopping trolleys (a bale), a WET FLOOR A-frame (a cone)
   },
   // drifters: obstacles moving about the road in patterns (a level's "drifters")
   drifters: {
@@ -1355,6 +1357,7 @@ export const CONFIG = {
     camEase: 35,           // m over which camera dips before portal and rises after
     lampEvery: 12,         // m between the ceiling lamps
     echo: 0.45,            // how much of the engine comes back off the walls, well inside (0 = none)
+    litEcho: 0.5,          // ...and the share of that a LIT tunnel keeps (a mall's halls: a hall's reverb, not a tube's: render/tunnelshape.js)
   },
   // a burst water main (a level's "waterMains": { s, lane, length? }, see Hazards): a fountain out of its lane for
   // `on` s, then nothing for `off` s, over and over; while it sprays, `length` m of that lane beyond it is under
@@ -1500,6 +1503,13 @@ export const CONFIG = {
   // within `trigger` m of the stretch, each at its own `speed`, weaving `weave` m
   // (gone `past` m behind the player, or `run` m down the road from where they waited)
   stampede: { trigger: 240, speed: { min: 9, max: 14 }, weave: 0.8, past: 70, run: 400 },
+  // a tunnel junction ("tunnelJunctions": { s, side }): a side tunnel meets the road inside a tunnel, a mouth in each
+  // wall `mouth` m wide. As the player comes within `trigger` m the beacons over the mouths flash and a bell rings
+  // (`warn` s of warning), then a train (an electric tug and two trolleys, `spacing` m apart) comes out of the `side`
+  // mouth and crosses the road at `speed` m/s into the other. Hit one: a knock (obstacleKinds tug / trolley), no
+  // stop, no bust; the counterplay is the warning: time it, or change lane behind the train. `rest` s after, it is
+  // ready again (only for a player coming back to it: a lapped level)
+  tunnelJunction: { trigger: 150, warn: 2.2, speed: 4.5, spacing: 2.6, rest: 8, mouth: 10 },
   // ---- Gimmick Road 3's: the road gambles (gambles.js; each a field in the level, named below) ----
   // a crosswind ("crosswinds": { from, to, dir, strength?, every?, length? }): over the stretch a car is pushed
   // sideways at `strength` m/s^2 times (its height / heightRef) ^ heightPower: `lull` of that all the time, all of
