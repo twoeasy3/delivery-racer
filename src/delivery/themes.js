@@ -229,16 +229,19 @@ THEMES.mall = { sky: 0x9fc4e8, ground: 0x6f7174, road: 0x3a3d42, scenery: 'mall'
   light: { sky: 0xffffff, ground: 0x9a948a, ambient: 1.5, sun: 0xfff6ea, sunlight: 1.0 } };
 // metro: a METRO SYSTEM the road runs through (render/themes/metro.js): an open cutting down a ramp to a portal, then nearly the whole
 // level ONE LIT TUNNEL whose zones are its parts (tunnel.heights: running tunnels 8.5 m, stations 11, an interchange 12; tunnelshape.js):
-// 'running' a twin box beside a train line behind a row of columns, 'bore' an arched single bore, 'station' platforms both sides (an
-// island one between the road and the train line), 'interchange' a tall hall with concourses; then up a ramp out to the 'depot' yard.
+// 'running' a twin-walled box, 'bore' an arched single bore, 'station' a side platform beyond each track, 'interchange' a tall hall with
+// concourses; then up a ramp out to the 'depot' yard.
 // shell: false: the theme draws every wall, ceiling and lamp; fog: a lit tunnel's own fog (tunnel.js: the far end of a tunnel fades
-// to its dark); camHeight/camBack: the chase camera under the arch. The level's RAILWAY runs down the middle of the road (a median on
-// a one-way road: Canberra's bullet train comes down it, bullettrain.js); median: its bed's colour. Unmarked and bare: one continuous floor, no lines on it.
-// junctionTrain: what a tunnel junction's train is here (hazards.js): the Canberra train's carriages cut down, not a tug and trolleys
-THEMES.metro = { sky: 0xa9b8c6, ground: 0x7a7d72, road: 0x6d7074, median: 0x8f908c, scenery: 'metro', unmarked: true, bare: true, lit: true,
+// to its dark); camHeight/camBack: the chase camera under the arch; camKeep: inside, the camera kept within 2 m of the lanes' middle
+// (scene.js: a car on a track in a tight bend would otherwise look past the inside wall). The level's RAILWAY is on the road's EDGES (railway tracks
+// 'edges': its two outermost lanes are the metro's two tracks, the bullet trains on them, bullettrain.js); railBed / sleeper: the
+// tracks' colours (road.js: a concrete slab track). Unmarked and bare: one continuous floor, no lines on it.
+// junctionTrain / junctionSpacing / junctionBoard: what crosses at a tunnel junction here (hazards.js, render/hazards.js): two cable
+// drums slung under hoists on a beam across the road (metro.js draws the beam), 3 m apart, and the warning boards' words
+THEMES.metro = { sky: 0xa9b8c6, ground: 0x7a7d72, road: 0x6d7074, median: 0x8f908c, railBed: 0x5c5f63, sleeper: 0xa9aaa4, scenery: 'metro', unmarked: true, bare: true, lit: true,
   sets: ['approach', 'running', 'bore', 'station', 'interchange', 'exit', 'depot'],
-  pad: 'travelator', laneEnd: 'metro', junctionTrain: ['metroCarFront', 'metroCarMid', 'metroCarBack'],
-  tunnel: { lit: true, shell: false, camHeight: 5.6, camBack: 12, fog: { color: 0x161a22, near: 70, far: 360 },
+  pad: 'travelator', laneEnd: 'metro', junctionTrain: ['hoistDrum', 'hoistDrum'], junctionSpacing: 3.0, junctionBoard: 'HOIST CROSSING',
+  tunnel: { lit: true, shell: false, camHeight: 5.6, camBack: 12, camKeep: 2.0, fog: { color: 0x161a22, near: 70, far: 360 },
     heights: { running: 8.5, bore: 8.5, station: 11, interchange: 12 } },
   light: { sky: 0xf4f6ff, ground: 0x8a8a84, ambient: 1.45, sun: 0xfff2e0, sunlight: 0.9 } };
 // roadworks: the city with its road under repair (the Roadworks level): an overcast sky, the city's own scenery, and along the road

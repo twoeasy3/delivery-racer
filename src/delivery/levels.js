@@ -19,8 +19,10 @@
 //              over on the right (default CONFIG.laneCount); or { north, south }: how many on the
 //              right, going the player's way, and on the left, oncoming
 //   median     neutral lanes down the middle of a two-way road, which no traffic uses
-//   railway    { every: { min, max } }: a railway down the median (it needs one), with a bullet
-//              train coming through, against the player, every min-max s
+//   railway    { every: { min, max }, tracks? }: a railway, with a bullet train coming through every min-max s.
+//              tracks 'median' (the default): one track down the median (it needs one), its trains against the player.
+//              tracks 'edges': two tracks, the road's outermost lanes (no median, 3 lanes or more), each timed on its
+//              own: down the left one trains come against the player, up the right one they overtake from behind
 //   flow       'north' = every vehicle goes the player's way, 'south' = every vehicle comes
 //              the other way; either way the traffic uses all the lanes. 'mixed' = both ways, and
 //              every lane open to either (the Battlefield: oncoming traffic in every lane). Left out, the left
@@ -329,6 +331,10 @@
 //              smashes through, any other car is wrecked. 'wall': nothing behind it: wrecked whatever protects the car. A DEAD END
 //              sign over the lane, beacons and a bell before it; another lane is always open beside it (the level reports one
 //              that would close the road). Never after a bend, never at a junction's mouth or on a pad
+//   pillars    { s, lane, count?, gap? }: `count` solid columns `gap` m apart standing in that lane (CONFIG.pillar): hit one and the
+//              car is wrecked, whatever protects it but the Ghost (as at a dead end's wall). A PILLARS sign, beacons, a bell and a
+//              warning before them; the way past is the lane beside. On an edge railway (the metro) the lanes beside are the
+//              tracks: no train sets off while the player is at a group, and the two tracks never both have one near it
 //   tunnelJunctions { s, side: 'left' | 'right' }: a side tunnel crossing the road inside a tunnel (a mall's concourse): a
 //              mouth in each wall; as the player comes near, beacons flash and a bell rings, then a train (an electric tug
 //              and two trolleys) comes out of the `side` mouth and crosses into the other. A knock, never a stop or a bust.

@@ -737,8 +737,8 @@
   "metro-run": {
     "name": "Metro Run",
     "description": {
-      "good": "Ticket rolls for the machines before the first train. Down the ramp and along the line to the depot. Keep off the rails when the bullet train comes.",
-      "evil": "A cage of tunnel rats for the depot. Grab the cash on the rails, hear the horn and get off them before the bullet train does."
+      "good": "Ticket rolls for the depot. One lane between two tracks; pillars block the lane, so swerve onto whichever track has no train.",
+      "evil": "Tunnel rats for the depot. The cash is on the tracks, and so are the trains. Pillars in the lane: pick a track or wreck."
     },
     "cargo": { "good": "ticketrolls", "evil": "rats" }
   }

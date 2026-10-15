@@ -1286,4 +1286,4 @@ Object.assign(OBSTACLE_MODELS, STEELWORKS_OBSTACLES); // the steelworks' (render
 Object.assign(OBSTACLE_MODELS, VEGAS_OBSTACLES); // the Las Vegas Strip's (render/themes/vegasObstacles.js): a velvet rope, a slot machine, a luggage cart, a giant die
 Object.assign(OBSTACLE_MODELS, ALPINE_OBSTACLES); // the alpine pass's (render/themes/alpineModels.js): cheese wheels, a woodpile, a milk churn, a block of snow
 Object.assign(OBSTACLE_MODELS, ROADWORKS_OBSTACLES); // the roadworks' (render/themes/roadworksModels.js): barrier blocks, a cable drum, a heap of sand; a traffic drum, a pallet of pipes, a works sign
-Object.assign(OBSTACLE_MODELS, METRO_OBSTACLES); // the metro's (render/themes/metroModels.js): a ticket gate, a floor scrubber, a track lamp; a rail trolley, a wayfinding board; a junction's shuttle of Canberra carriages
+Object.assign(OBSTACLE_MODELS, METRO_OBSTACLES); // the metro's (render/themes/metroModels.js): a ticket gate, a floor scrubber, a track lamp; a rail trolley, a wayfinding board; a junction's hoisted cable drum; a pillar (lanegimmicks.js)

@@ -7,7 +7,8 @@ import { Game } from '../game.js';
 import { CAR } from '../cars.js';
 import { LEVEL } from '../levels.js';
 import { Gambles } from '../gambles.js';
-import { ceilingAt, tunnelCamera as tunnelCam } from './tunnelshape.js'; // (a tunnel's ceiling height along it, and the camera it wants)
+import { ceilingAt, tunnelCamera as tunnelCam } from './tunnelshape.js';
+import { LaneGimmicks } from '../lanegimmicks.js'; // (a tunnel's ceiling height along it, and the camera it wants)
 
 // ============================================================================
 // RENDERING
@@ -76,6 +77,7 @@ export const tmp2 = new THREE.Vector3();
 
 // ---- chase camera ----------------------------------------------------------
 let camLat = 0;
+const CAM_PILLAR = 2.0; // m: how far a pillar's middle the chase camera is kept (its half width 0.7, the near plane 0.5, a margin)
 let camAir = 0; // (m the camera is up with the car off the road: see updateCamera)
 // points the camera, placed in the game's own terms, at the target. On a left-hand level the scene
 // is drawn mirrored (scale x -1, see road.js), so the camera goes to the mirror image of its place
@@ -154,6 +156,18 @@ export const updateCamera = (dt, snap) => {
   const camBack = baseBack + (want.camBack - baseBack) * inTunnel + (CONFIG.crest.camBack - baseBack) * blind;
   let camHeight = baseH + (want.camHeight - baseH) * inTunnel + (CONFIG.crest.camHeight - baseH) * blind;
   if (inTunnel > 0) { const ceil = ceilingAt(Player.s - camBack); if (ceil !== null) camHeight = Math.min(camHeight, ceil - 1.0); }
+  // (a level's PILLARS, lanegimmicks.js, stand up to the ceiling: the camera, lagging the car out of their lane onto the lane beside,
+  // is held clear of them on the car's side as it passes them. Nothing changes on a level without pillars)
+  if (inTunnel > 0 && want.camKeep !== null) { // (a theme's camKeep: tunnelshape.js)
+    const cs = Player.s - camBack, mid = (Track.laneLo(cs) + Track.laneHi(cs)) / 2, keep = want.camKeep + (1 - inTunnel) * 20;
+    camLat = Math.max(mid - keep, Math.min(mid + keep, camLat));
+  }
+  for (const g of LaneGimmicks.groups) {
+    const cs = Player.s - camBack;
+    if (cs < g.from - CAM_PILLAR || cs > g.to + CAM_PILLAR) continue;
+    const lat = Track.laneOffset(g.lane, cs);
+    if (Math.abs(camLat - lat) < CAM_PILLAR) camLat = lat + (Player.lat < lat ? -CAM_PILLAR : CAM_PILLAR);
+  }
   Track.toWorld(Player.s - camBack, camLat, tmp);
   const shake = CONFIG.hitShake * Game.shake;
   camera.position.set(tmp.x + (Math.random() - 0.5) * shake,

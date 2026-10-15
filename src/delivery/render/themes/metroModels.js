@@ -2,8 +2,8 @@
 // The theme's plain obstacles, each the box and cost of the kind it stands in for (registered in ../obstacleModels.js;
 // config.js obstacleKinds, collision.js SIZE): a ticket gate (a crate), a ride-on floor scrubber (a bale), a red track lamp
 // on its tripod (a cone); named outright a rail trolley with sleepers on it (a crate) and a wayfinding board on its legs (a
-// sign); and a tunnel junction's train (themes.js junctionTrain): a shuttle of the Canberra train's carriages cut down to the
-// tug's and the trolleys' boxes and costs. Each is ONE merged mesh in vertex colours (and one lit mesh for its lamps):
+// sign); and a tunnel junction's load (themes.js junctionTrain): a cable drum slung under a hoist on a beam across the road.
+// Each is ONE merged mesh in vertex colours (and one lit mesh for its lamps):
 // a draw call or two, not one a part. Each faces local +z, its feet on y = 0. No people anywhere.
 // The pictures (every one drawn in code on a canvas, the first time it is wanted, then kept): glazed wall tiles, concrete,
 // a tunnel's lining segments, the polished floor, the tactile strip, the signs (pictograms and
@@ -13,6 +13,9 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { makeCarriage } from '../trainModel.js';
 
 const colour = new THREE.Color(), euler = new THREE.Euler(), matrix = new THREE.Matrix4();
+// the underside of a tunnel junction's hoist beam over the road (metro.js draws the beam, the hoistDrum hangs from it): under the chase
+// camera's 5.6 m by more than its near plane
+export const HOIST_BEAM = 4.6;
 // ---- a kit of parts merged into one mesh in vertex colours (and one unlit for whatever glows)
 export const kit = () => {
   const solid = [], lit = [];
@@ -297,12 +300,61 @@ export const METRO_OBSTACLES = {
     }
     return grounded(group, 1.1);
   },
-  // a tunnel junction's train (hazards.js, themes.js junctionTrain): a SHUTTLE OF THE CANBERRA TRAIN'S CARRIAGES, cut down (as a level
-  // crossing's train is: render/roadside.js) to the hit boxes the junction's train has always had: its lead car the tug's box and cost,
-  // the two behind a trolley's each; the last one's nose points back. Their windows lit (a tunnel's train)
-  metroCarFront: () => shuttleCar('front'),
-  metroCarMid: () => shuttleCar('mid'),
-  metroCarBack: () => shuttleCar('back'),
+  // a TRACK-WORK BARRIER on a track (obstacle kind trackBarrier: railBarrier's box and cost, trainProof): a low steel frame across the
+  // track, its beam in yellow and black bands, a red lamp at each end, feet on the sleepers. 0.95 m tall, 2.4 wide, 1.2 along: wholly
+  // inside a bullet train passing over it (the train leaves it standing). One merged mesh, one lit
+  trackBarrier: (o) => {
+    const K = kit(), group = new THREE.Group(), w = (o?.hw ?? 1.2) * 2, h = o?.height ?? 0.95;
+    for (const x of [-w / 2 + 0.12, w / 2 - 0.12]) { K.box(0.1, h - 0.1, 0.1, 0x3a3d42, x, (h - 0.1) / 2, 0); K.box(0.16, 0.06, 1.0, 0x3a3d42, x, 0.03, 0); }
+    for (let k = 0; k < 8; k++) K.box(w / 8, 0.32, 0.12, k % 2 ? 0x1b1d22 : 0xf2c21d, -w / 2 + (k + 0.5) * w / 8, h - 0.3, 0);
+    K.box(w, 0.18, 0.1, 0xf2c21d, 0, 0.35, 0);
+    for (const x of [-w / 2 + 0.12, w / 2 - 0.12]) K.glowCyl(0.08, 0.08, 0.1, 10, 0xff2a1a, x, h - 0.09, 0);
+    K.done(group);
+    return grounded(group, 1.1);
+  },
+  // a PILLAR in a lane (lanegimmicks.js "pillars", obstacle kind `pillar`: a wreck, as a dead end's wall): a 1.4 m square concrete
+  // column up to the tunnel's ceiling (8.5 m: running tunnels and bores), a dark plinth, its foot wrapped in yellow and black hazard
+  // bands to 2 m, a red and white hazard board and an amber lamp on each face along the road, a cap under the ceiling. One merged
+  // mesh (and one lit). Generic in shape, kept here with the metro's (the only theme with pillars so far)
+  pillar: () => {
+    const K = kit(), group = new THREE.Group(), H = 8.5;
+    K.box(1.62, 0.25, 1.62, 0x6a6c6e, 0, 0.125, 0);
+    K.box(1.4, H - 0.25, 1.4, 0xc9c8c0, 0, 0.25 + (H - 0.25) / 2, 0);
+    for (let k = 0; k < 6; k++) K.box(1.44, 0.3, 1.44, k % 2 ? 0x1b1d22 : 0xf2c21d, 0, 0.4 + k * 0.3, 0);
+    for (const z of [-0.73, 0.73]) {
+      K.box(1.1, 0.7, 0.03, 0xd8262b, 0, 2.75, z);
+      for (const x of [-0.32, 0, 0.32]) K.box(0.12, 0.8, 0.035, 0xffffff, x, 2.75, z, 0, 0, 0.6);
+      K.glowBox(0.34, 0.2, 0.05, 0xffb020, 0, 3.4, z);
+    }
+    K.box(1.7, 0.35, 1.7, 0x9a9b96, 0, H - 0.175, 0);
+    K.done(group);
+    return grounded(group, 1.1);
+  },
+  // a tunnel junction's load (hazards.js, themes.js junctionTrain: two of them, 3 m apart): a CABLE DRUM slung under a HOIST that runs on
+  // the beam across the road (metro.js draws the beam, its underside HOIST_BEAM m up): the maintenance crews moving cable from one
+  // service passage to the other. A wooden drum wound with orange power cable (1.9 m across, 1.2 wide: its axle along local x, so
+  // crossing the road it shows the player its round face), a steel spindle through it, slings up to a spreader bar, a chain to the
+  // hook block, the hoist's yellow body under the beam on its wheels, an amber lamp lit each way. Its box is the drum's (collision.js)
+  hoistDrum: () => {
+    const K = kit(), group = new THREE.Group(), R = 0.95, Y = 0.3 + R, TOP = HOIST_BEAM;
+    for (const x of [-0.56, 0.56]) K.cyl(R, R, 0.08, 20, 0x8a6a42, x, Y, 0, 0, 0, Math.PI / 2); // the flanges
+    for (const x of [-0.61, 0.61]) for (const a of [0, Math.PI / 2]) K.box(0.03, 0.1, R * 1.7, 0x5a4026, x, Y, 0, a); // battens across them
+    K.cyl(0.78, 0.78, 1.04, 20, 0xc8501a, 0, Y, 0, 0, 0, Math.PI / 2); // the cable wound on it
+    for (const x of [-0.3, 0.05, 0.4]) K.cyl(0.785, 0.785, 0.04, 20, 0x8a3a12, x, Y, 0, 0, 0, Math.PI / 2); // (its turns)
+    K.cyl(0.07, 0.07, 1.6, 8, 0x9aa0a8, 0, Y, 0, 0, 0, Math.PI / 2); // the spindle
+    const bar = 2.75;
+    for (const x of [-0.76, 0.76]) K.box(0.05, bar - Y, 0.05, 0x2a2d33, x, (Y + bar) / 2, 0); // the slings
+    K.box(1.75, 0.12, 0.14, 0xe8b51a, 0, bar, 0); // the spreader bar
+    for (const x of [-0.4, 0.4]) K.box(0.04, 0.62, 0.04, 0x2a2d33, x * 0.55, bar + 0.3, 0, 0, 0, x > 0 ? -0.55 : 0.55); // (a V up to the block)
+    K.box(0.3, 0.38, 0.26, 0xe8b51a, 0, bar + 0.75, 0); // the hook block
+    K.box(0.05, TOP - 0.45 - (bar + 0.94), 0.05, 0x2a2d33, 0, (bar + 0.94 + TOP - 0.45) / 2, 0); // its chain
+    K.box(0.62, 0.42, 1.0, 0xe8b51a, 0, TOP - 0.24, 0); // the hoist, under the beam
+    K.box(0.66, 0.06, 1.04, 0x2a2d33, 0, TOP - 0.45, 0);
+    for (const z of [-0.36, 0.36]) for (const x of [-0.22, 0.22]) K.cyl(0.07, 0.07, 0.06, 10, 0x2a2d33, x, TOP - 0.03, z, 0, 0, Math.PI / 2); // its wheels on the flange
+    for (const z of [-0.51, 0.51]) K.glowBox(0.22, 0.14, 0.04, 0xffb020, 0, TOP - 0.2, z); // amber lamps, each way it goes
+    K.done(group);
+    return grounded(group, 1.0);
+  },
 };
 
 // ---- THE CANBERRA TRAIN'S CARRIAGES, for the metro (render/trainModel.js makeCarriage: the bullet train's white and blue shell, its
@@ -351,12 +403,6 @@ export const canberraCar = (kind, w, h, l, litGlass = 0xffe9b8) => {
   const out = flatten(holder, litGlass);
   carriageCache.set(key, out);
   return out;
-};
-const shuttleCar = (kind) => { // (the junction's: 2.5 m a car, 1.9 m tall; the lead car 1.2 m wide (its box 1.4), the others 1.0 (theirs 0.9))
-  const g = canberraCar(kind, kind === 'front' ? 1.2 : 1.0, 1.9, 2.5), group = new THREE.Group();
-  if (g.solid) group.add(new THREE.Mesh(g.solid, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide })));
-  if (g.lit) group.add(new THREE.Mesh(g.lit, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })));
-  return group;
 };
 // the metro's side-line train: a Canberra carriage CAR_LENGTH m long (cut down from 25, as a level crossing's train is, so it keeps to
 // the bore in a 40 m bend), 2.7 m wide, its full 3.6 m tall

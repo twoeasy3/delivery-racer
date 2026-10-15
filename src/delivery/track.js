@@ -694,8 +694,18 @@ const createTrack = () => {
     }
     return most;
   };
-  // is a car (lat, half width hw) over the railway's track at s? (a level with a "railway")
-  const onRails = (s, lat, hw) => !!LEVEL.railway && isMain(s) && Math.abs(lat) - hw < CONFIG.railCrossing.width / 2;
+  // the railway's tracks (a level with a "railway"): one down the middle of the median (tracks 'median', the default: Canberra), or
+  // two, the expressway's outermost lanes (tracks 'edges': the metro), the left one track 0, the right one track 1. railLat: where
+  // track k's middle is at s; railTracks: how many there are (0 without a railway)
+  const EDGE_RAILS = LEVEL.railway?.tracks === 'edges';
+  const railTracks = !LEVEL.railway ? 0 : EDGE_RAILS ? 2 : 1;
+  const railLat = (k, s) => !EDGE_RAILS ? 0 : laneOffset(k ? LANES - 1 : 0, s);
+  // is a car (lat, half width hw) over one of the railway's tracks at s?
+  const onRails = (s, lat, hw) => {
+    if (!railTracks || !isMain(s)) return false;
+    for (let k = 0; k < railTracks; k++) if (Math.abs(lat - railLat(k, s)) - hw < CONFIG.railCrossing.width / 2) return true;
+    return false;
+  };
   // the level's zone at s, if any (a level's "zones": see levels.js)
   const zones = LEVEL.zones || [];
   const zoneAt = (s) => isMain(s) ? zones.find(z => s >= z.from && s < z.to) || null : null;
@@ -793,8 +803,9 @@ const createTrack = () => {
     // (a side road: lane 0 is the oncoming traffic's where it has any, and everybody's before that)
     if (kind === SIDE_ROAD) return dir < 0 ? [0, 0] : [sideOncoming(s) || sideLeft(s) <= 0.5 ? 1 : 0, sideLast(s)];
     if (kind !== MAIN) return [0, 0];
-    if (ONE_WAY) return [0, LANES - 1];
-    return dir < 0 ? [0, LEFT - 1] : [LEFT + MID, LANES - 1]; // (never the median)
+    const rim = EDGE_RAILS ? 1 : 0; // (nor the railway's tracks, where they are the outermost lanes)
+    if (ONE_WAY) return [rim, LANES - 1 - rim];
+    return dir < 0 ? [rim, LEFT - 1] : [LEFT + MID, LANES - 1 - rim]; // (never the median)
   };
 
   // where the player's lane assist pulls to: a lane centre, or the middle of a wide shoulder (the shoulder's own
@@ -1041,8 +1052,10 @@ const createTrack = () => {
       problems.push('lanes: whole numbers, and at least one lane');
     }
     if (!ONE_WAY && (LEFT < 1 || RIGHT < 1)) problems.push('lanes: a two-way road needs at least one lane each way');
-    if (ONE_WAY && MID && !LEVEL.railway) problems.push('median: only a two-way road can have one (or a one-way road with a railway down it: the metro)');
-    if (LEVEL.railway && !MID) problems.push('railway: it needs a median to run down');
+    if (ONE_WAY && MID && !(LEVEL.railway && !EDGE_RAILS)) problems.push('median: only a two-way road can have one (or a one-way road with a railway down it)');
+    if (LEVEL.railway && !EDGE_RAILS && !MID) problems.push('railway: it needs a median to run down (or tracks: \'edges\')');
+    if (EDGE_RAILS && (MID || LANES < 3)) problems.push('railway on the edges: its tracks are the outermost lanes, so no median and at least 3 lanes');
+    if (LEVEL.railway?.tracks !== undefined && !['median', 'edges'].includes(LEVEL.railway.tracks)) problems.push('railway: tracks \'median\' or \'edges\'');
     if (LEVEL.drive !== undefined && LEVEL.drive !== 'left' && LEVEL.drive !== 'right') problems.push('drive: left or right');
     // a bend tighter than the road is wide folds its inside edge over itself, and a road that comes
     // back past itself (a hairpin's legs, say) must leave room between the two
@@ -1467,7 +1480,7 @@ const createTrack = () => {
     apart, laneCount: LANES, leftLanes: LEFT, rightLanes: RIGHT, medianLanes: MID, medianHalf: HM, shoulder: SH, flow: FLOW, mirrored: MIRRORED,
     toWorld, fromWorld, grade, hilly, transfer, along, progress, finished, inBounds, spawnAt, place, isMain,
     laneOffset, openLane, nearestLane, laneRange, assistOffset, flyHeight,
-    lanesOn, edge, extraLane, onBridge, icy, padAt, divider, diverting, divertedSide, divert, works, bounds, carry, diversionAt, diversions: dvs, sprays, slicks, muddy, gravels, gravelBand, gravelAt, water, waters, foggy, tunnel, bend, pathScale, onRails, junctions, zoneAt, lo, hi, laneLo, laneHi, shoulderOffset, onShoulder, rampLaneZone, sideOpen, sideWidth, sideLeft, sideOncoming,
+    lanesOn, edge, extraLane, onBridge, icy, padAt, divider, diverting, divertedSide, divert, works, bounds, carry, diversionAt, diversions: dvs, sprays, slicks, muddy, gravels, gravelBand, gravelAt, water, waters, foggy, tunnel, bend, pathScale, onRails, railTracks, railLat, junctions, zoneAt, lo, hi, laneLo, laneHi, shoulderOffset, onShoulder, rampLaneZone, sideOpen, sideWidth, sideLeft, sideOncoming,
     flyPillar, sideDistance, mainDistance, exits, crossable, crossLo,
   };
 };

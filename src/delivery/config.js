@@ -545,6 +545,7 @@ export const CONFIG = {
     height: 3.6,           // m
     dangerMercy: 0.5,      // while it is about, the shoulder's danger meter runs down at this share of its usual rate,
     mercyAfter: 3,         // and nobody is busted for being on the shoulder, until this many s after it has gone
+    ahead: 400,            // m ahead of the player an overtaking train's tail is gone (an edge railway's right track: bullettrain.js UpTrain)
   },
   ufoStrike: {
     arrive: 1.5,           // s to fly in...
@@ -618,6 +619,7 @@ export const CONFIG = {
     // brass posts (a barrier), a slot machine (a crate), a bellhop's luggage cart (a bale), a giant red die (a cone)
     velvetRope: { damage: 34, speedKept: 0.6 }, slotMachine: { damage: 31, speedKept: 0.75 }, luggageCart: { damage: 38, speedKept: 0.75 }, casinoDie: { damage: 3, speedKept: 0.94, light: true },
     laneEnd: { damage: 0, speedKept: 1 }, // a dead-end lane's end (lanegimmicks.js): no ordinary knock: a wreck outright, or passed through (see Collision.hitObstacles)
+    pillar: { damage: 0, speedKept: 1 }, // a pillar in a lane (lanegimmicks.js "pillars"): no ordinary knock either: a wreck outright, the dead end's way (laneEnd 'pillar': only a Ghost passes)
     runner: { damage: 10, speedKept: 0.88, light: true },
     waterTable: { damage: 6, speedKept: 0.9, light: true },
     paceCar: { damage: 42, speedKept: 0.5 },
@@ -675,8 +677,9 @@ export const CONFIG = {
     boxStack: { damage: 31, speedKept: 0.75 }, trolleyRow: { damage: 38, speedKept: 0.75 }, wetFloorSign: { damage: 3, speedKept: 0.94, light: true }, // the mall's: cartons on a sack truck (a crate), nested shopping trolleys (a bale), a WET FLOOR A-frame (a cone)
     ingotStack: { damage: 31, speedKept: 0.75 }, steelCoil: { damage: 38, speedKept: 0.75 }, hotSign: { damage: 3, speedKept: 0.94, light: true }, rebarBundle: { damage: 34, speedKept: 0.6 }, // the steelworks': hot billets stacked (a crate), a coil on its cradle (a bale), a HOT METAL sign (a cone), rebar bundles (a barrier)
     ticketGate: { damage: 31, speedKept: 0.75 }, scrubber: { damage: 38, speedKept: 0.75 }, trackLamp: { damage: 3, speedKept: 0.94, light: true }, // the metro's: a ticket gate (a crate), a ride-on floor scrubber (a bale), a track lamp (a cone)
-    railTrolley: { damage: 31, speedKept: 0.75 }, infoTotem: { damage: 32, speedKept: 0.8 }, // ...and named outright: a rail trolley of sleepers (a crate's), a wayfinding board (a sign's)
-    metroCarFront: { damage: 14, speedKept: 0.8, light: true }, metroCarMid: { damage: 8, speedKept: 0.88, light: true }, metroCarBack: { damage: 8, speedKept: 0.88, light: true }, // ...and a tunnel junction's train there (themes.js junctionTrain: the Canberra train's carriages, cut down): the tug's and the trolleys'
+    railTrolley: { damage: 31, speedKept: 0.75 }, infoTotem: { damage: 32, speedKept: 0.8 },
+    trackBarrier: { damage: 33, speedKept: 0.6, trainProof: true }, // ...and the metro's railBarrier: a low track-work barrier on a track, a bullet train goes over it and leaves it standing (trainProof: small enough to sit inside the train) // ...and named outright: a rail trolley of sleepers (a crate's), a wayfinding board (a sign's)
+    hoistDrum: { damage: 14, speedKept: 0.8, light: true }, // ...and a tunnel junction's load there (themes.js junctionTrain: a cable drum slung under a hoist running on a beam across the road): the tug's cost
   },
   // drifters: obstacles moving about the road in patterns (a level's "drifters")
   drifters: {
@@ -1541,6 +1544,13 @@ export const CONFIG = {
   // coloured all along, a DEAD END sign over it `sign` m before, beacons, a bell and a warning with `warn` m to go, hazard
   // stripes on the floor over the last `stripes` m. (No cost here: a wreck, not damage)
   deadEnd: { length: 120, sign: 100, stripes: 24, warn: 120 },
+  // pillars in a lane ("pillars": { s, lane, count?, gap? }, lanegimmicks.js): `count` solid columns `gap` m apart standing in that
+  // lane (obstacleKinds.pillar, a laneEnd 'pillar': hit one and the car is wrecked, whatever protects it but the Ghost, as at a dead
+  // end's wall). The telegraph as a dead end's: a PILLARS sign over the lane `sign` m before the first, beacons, a bell and a warning
+  // with `warn` m to go, hazard stripes round each. The way past is the lane beside (in the metro a TRACK): on an edge railway no
+  // train sets off while the player is between `warn` m before a group and its last pillar, and none while the other track's train
+  // is still about from `hold` m before it (bullettrain.js): at least one track is always clear past the pillars
+  pillar: { count: 3, gap: 18, sign: 150, warn: 170, hold: 800 },
   // a roadworks diversion ("diversions": { from, to, kind: 'merge' | 'shift' | 'cross', by?, limit? }; roadworks.js, and Track's
   // lateral-offset layer): a lane closes through a `taper` m row of cones (smoothstep), lanes with traffic in them move across over
   // `shiftTaper` m (a long vehicle can follow that), run on their temporary line

@@ -17,6 +17,7 @@ import { Player } from '../player.js';
 import { LaneGimmicks } from '../lanegimmicks.js';
 import { scene, tmp, clearGroup } from './scene.js';
 import { buildStrip } from './road.js';
+import { ceilingAt } from './tunnelshape.js';
 
 const group = new THREE.Group();
 scene.add(group);
@@ -24,7 +25,7 @@ const lambert = (color, extra) => new THREE.MeshLambertMaterial({ color, ...extr
 const glow = (color, extra) => new THREE.MeshBasicMaterial({ color, ...extra });
 const flat = (color, offset, extra) => new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: offset, polygonOffsetUnits: offset, ...extra });
 const BEACON_ON = 0xffb020, BEACON_OFF = 0x5a4010;
-let belts = [], ends = [];
+let belts = [], ends = [], pillarSigns = [];
 
 // the belt's picture, 64 x 256 (repeated every 4 m along the pad): a travelator's dark belt with pale ridges and a yellow
 // chevron; a plain pad's blue strip with a white chevron. Made once each, kept
@@ -156,6 +157,20 @@ Game.onLoad.push(() => {
     for (const x of [-half, half]) { const material = glow(BEACON_OFF); add(gantry, new THREE.CylinderGeometry(0.16, 0.16, 0.3, 10), material, x, 4.65, 0); lamps.push(material); }
     return { lamps, e };
   });
+  // ---- the pillars (drawn as obstacles): a PILLARS board hung over their lane `sign` m before the first, from the ceiling (no posts
+  // in the road: the lanes beside are the way past), two beacons on it, flashing from `warn` m to go until the last is passed
+  const P = CONFIG.pillar;
+  pillarSigns = LaneGimmicks.groups.map((g) => {
+    const gs = g.from - P.sign, lat = Track.laneOffset(g.lane, gs), hang = at(gs, lat), lamps = [], top = ceilingAt(gs) ?? 6;
+    add(hang, new THREE.BoxGeometry(3.1, 0.95, 0.12), lambert(0x1b1d22), 0, 4.0, 0);
+    const sign = board('PILLARS', '#f2c21d', '#1b1d22', 3.0, 0.8);
+    sign.position.set(0, 4.0, -0.07);
+    sign.rotation.y = Math.PI;
+    hang.add(sign);
+    for (const x of [-1.0, 1.0]) add(hang, new THREE.BoxGeometry(0.06, top - 4.45, 0.06), lambert(0x4a4f57), x, (top + 4.45) / 2, 0);
+    for (const x of [-1.25, 1.25]) { const material = glow(BEACON_OFF); add(hang, new THREE.CylinderGeometry(0.15, 0.15, 0.26, 10), material, x, 4.6, 0); lamps.push(material); }
+    return { lamps, g };
+  });
 });
 
 export const syncLaneGimmicks = (dt, now) => {
@@ -163,6 +178,10 @@ export const syncLaneGimmicks = (dt, now) => {
   const on = Math.floor(now / 250) % 2 === 0;
   for (const { lamps, e } of ends) {
     const live = Player.active && e.s - Player.s > 0 && e.s - Player.s <= CONFIG.deadEnd.warn && LaneGimmicks.inDeadLane(Player.s, Player.lat) === e;
+    for (const l of lamps) l.color.setHex(live && on ? BEACON_ON : BEACON_OFF);
+  }
+  for (const { lamps, g } of pillarSigns) {
+    const live = Player.active && LaneGimmicks.pillarsAt(Player.s) === g;
     for (const l of lamps) l.color.setHex(live && on ? BEACON_ON : BEACON_OFF);
   }
 };

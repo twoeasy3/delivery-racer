@@ -2,15 +2,16 @@
 // nearly the whole level is ONE LIT TUNNEL (a level's "tunnels", lit by the theme: themes.js `tunnel.lit`; its far end fading to
 // the tunnel's own dark: `tunnel.fog`, render/tunnel.js), its zones the metro's parts, each with a ceiling height of its own
 // (themes.js `tunnel.heights`, eased from one to the next: render/tunnelshape.js):
-//   running      a twin box: the road, then a low plinth and a row of columns, then a train line in its own bore: a TRAIN comes by
-//                there (render only), its windows lit, the wheels heard (the bullet train's pass-by sound)
-//   station      platforms both sides behind the wall line (the road is the floor between them, a platform's edge its wall): an
-//                island platform between the road and the train line, tiled walls, a band in the line's colour, name boards of
-//                abstract bars, posters of shapes, empty benches, ticket machines against the wall, hung signs, clocks
+//   running      a box: concrete walls each side, trays, a pipe, lamps, signals on the wall by each track
+//   station      a side platform each side behind the wall line, beyond the track there (a platform's edge is the wall line, as a
+//                real platform's is the track's edge), tiled walls, a band in the line's colour, name boards of abstract bars,
+//                posters of shapes, empty benches, ticket machines against the wall, hung signs, clocks
 //   bore         an arched single bore lined with segments, cable trays, lamps down its crown, kilometre markers
 //   interchange  a tall hall with concourses each side behind a low glass barrier: stairs down, ticket gates, columns, big signs
 //                in two lines' colours hung over the road
-// and the tunnel junctions (hazards.js) as cross passages, open, lit, the works train's line in their floor. Then up a ramp and
+// THE RAILWAY is the level's (railway tracks 'edges': the road's two outermost lanes are the two tracks, drawn by road.js, the bullet
+// trains on them, bullettrain.js): the floor here is laid between and beside them. The tunnel junctions (hazards.js) are cross
+// passages, open, lit, a HOIST BEAM across the road from one to the other (its cable drums cross under it). Then up a ramp and
 // out to the DEPOT: sidings with trains stabled on them, lighting masts, a maintenance shed. The theme draws the whole shell
 // itself (tunnel.js leaves it: `shell: false`), and a lid of ground over the tunnel so nothing of it shows from the cutting.
 // The floor is ONE continuous floor, wall to wall: nothing drawn on it (the owner: zero floor markings). Everything that looks
@@ -19,19 +20,17 @@
 // All instanced or merged into sheets (a draw call per kind of thing), every texture a small canvas (metroModels.js), the
 // layout the same every run.
 import * as THREE from 'three';
+import { CONFIG } from '../../config.js';
 import { LEVEL } from '../../levels.js';
 import { Track } from '../../track.js';
 import { heightOf } from '../tunnelshape.js';
 import { kit, tileTexture, concreteTexture, liningTexture, floorTexture, tactileTexture, signTexture, clockTexture,
-  digitTexture, DIGIT_CELLS, posterTexture, metroTrainCars, CAR_LENGTH } from './metroModels.js';
+  digitTexture, DIGIT_CELLS, posterTexture, metroTrainCars, CAR_LENGTH, HOIST_BEAM } from './metroModels.js';
 
 // the lines' colours, and each zone's: its line, its walls' tile, its floor
 const LINE = { red: 0xd8262b, blue: 0x1f6fd0, green: 0x2e9b3d, amber: 0xe8a01a };
 const HEX = (c) => '#' + c.toString(16).padStart(6, '0');
 const PLATFORM = 5.5;      // m: a side platform's width, behind the wall line
-const ISLAND = 8.6;        // m: from the right wall line to the train line's middle in a station (the island platform between)
-const RUN_TRACK = 3.0;     // ...and in a running tunnel (a plinth and a row of columns between)
-const HALF_BED = 1.9;      // m: the train line's bed each side of its middle (the far wall 0.4 m beyond)
 const HALL = 12;           // m: an interchange's concourse each side, behind its barrier
 const DEPTH_MARGIN = 0.9;  // m: a cutting's walls stand that much over the ground (a coping, a fence on it)
 
@@ -53,29 +52,6 @@ export const metro = ({ levelGroup }) => {
   const hAt = (s) => { const t = tunnelAt(s); return t ? hOf.get(t)(Math.max(t.from, Math.min(t.to, s))) : 8.5; };
   const LINE_OF = { running: LINE.red, station: LINE.red, bore: LINE.amber, interchange: LINE.blue, approach: LINE.red, exit: LINE.green, depot: LINE.green };
   const lineAt = (s) => { const z = zoneAt(s); if (!z) return LINE.red; const k = zones.filter(x => x.scenery === z.scenery).indexOf(z); return z.scenery === 'station' && k % 2 ? LINE.green : z.scenery === 'running' && k % 2 ? LINE.green : LINE_OF[z.scenery] ?? LINE.red; };
-
-  // ---- the train line: where it runs (the spans of running tunnels and stations side by side), and its middle's offset from the
-  // right wall line: ISLAND in a station, RUN_TRACK in a running tunnel, eased over the 60 m of running tunnel next to a station
-  const spans = [];
-  for (const t of tunnels) {
-    let cur = null;
-    for (const z of zones) {
-      const a = Math.max(z.from, t.from), b = Math.min(z.to, t.to);
-      if (b <= a) continue;
-      if (z.scenery === 'running' || z.scenery === 'station') { if (cur && Math.abs(cur.to - a) < 0.5) cur.to = b; else spans.push(cur = { from: a, to: b }); } else cur = null;
-    }
-  }
-  const spanAt = (s) => spans.find(sp => s >= sp.from && s <= sp.to) || null;
-  const stationEnds = zones.filter(z => z.scenery === 'station').flatMap(z => [z.from, z.to]);
-  const smooth = (u) => u * u * (3 - 2 * u);
-  const offAt = (s) => {
-    if (kindAt(s) === 'station') return ISLAND;
-    let d = Infinity;
-    for (const e of stationEnds) { const sp = spanAt(e); if (sp && s >= sp.from && s <= sp.to) d = Math.min(d, Math.abs(s - e)); }
-    return d >= 60 ? RUN_TRACK : RUN_TRACK + (ISLAND - RUN_TRACK) * smooth(1 - d / 60);
-  };
-  const TC = (s) => R(s) + offAt(s);           // the train line's middle
-  const FAR = (s) => TC(s) + HALF_BED + 0.4;   // the far wall beyond it
 
   // ---- points and frames
   const pt = (s, lat, y) => { Track.toWorld(s, lat, p); return [p.x, p.y + y, p.z]; };
@@ -191,27 +167,14 @@ export const metro = ({ levelGroup }) => {
   // ---- the parts --------------------------------------------------------------------------------------------------
   const C = { conc: 0xd6d6d0, concDark: 0x9a9b96, dado: 0x5d6660, ceiling: 0xb4b5b0, bed: 0x3a3c40, slab: 0x6a6c6e, rail: 0xc0c4cc, edge: 0x3a3c40,
     lip: 0xf4f4f0, tile: 0xf2ecdc, hallTile: 0xe9edf2, platform: 0xd8d4ca, floor: 0xc9cac6, white: 0xffffff, warm: 0xfff2d0 };
-  // the train line's bed between lat a(s) and the far wall: the bed, a concrete slab under the rails, the two rails and the
-  // conductor rail (yellow capped), at road level
-  const trackBed = (from, to, a) => {
-    plainS.ribbon(from, to, (s) => [a(s), 0.01], (s) => [FAR(s), 0.01], C.bed);
-    plainS.ribbon(from, to, (s) => [TC(s) - 1.1, 0.1], (s) => [TC(s) + 1.1, 0.1], C.slab);
-    for (const off of [-1.1, 1.1]) plainS.ribbon(from, to, (s) => [TC(s) + off, 0.01], (s) => [TC(s) + off, 0.1], 0x55575a);
-    for (const off of [-0.72, 0.72]) {
-      plainS.ribbon(from, to, (s) => [TC(s) + off - 0.04, 0.18], (s) => [TC(s) + off + 0.04, 0.18], C.rail);
-      plainS.ribbon(from, to, (s) => [TC(s) + off - 0.04, 0.1], (s) => [TC(s) + off - 0.04, 0.18], 0x4a4d52);
-    }
-    plainS.ribbon(from, to, (s) => [TC(s) + 1.45, 0.3], (s) => [TC(s) + 1.6, 0.3], 0xe8c23a);
-    plainS.ribbon(from, to, (s) => [TC(s) + 1.45, 0.1], (s) => [TC(s) + 1.45, 0.3], 0x4a4d52);
-  };
-  // the road's floor, wall line to wall line, inside the tunnel: one continuous polished floor, nothing on it
-  // (either side of the RAILWAY down the middle, Track.medianHalf: the line itself, its ballast, sleepers and rails, is road.js's, the
-  // same as Canberra's)
-  const MEDIAN = Track.medianHalf || 0;
+  // the road's floor, wall line to wall line, inside the tunnel: one continuous polished floor, nothing on it, laid between and beside
+  // the RAILWAY's tracks (Track.railLat: the road's outermost lanes, or one down a median), whose beds, sleepers and rails are road.js's
+  const MEDIAN = Track.medianHalf || 0, BED = CONFIG.railCrossing.width / 2;
+  const cuts = MEDIAN ? [() => [-MEDIAN, MEDIAN]] : Array.from({ length: Track.railTracks }, (_, k) => (s) => [Track.railLat(k, s) - BED, Track.railLat(k, s) + BED]);
   const roadFloor = (from, to, col = C.floor) => {
-    if (!MEDIAN) { floorS.ribbon(from, to, (s) => [L(s), 0.024], (s) => [R(s), 0.024], col, { u: 4, v: 4 }); return; }
-    floorS.ribbon(from, to, (s) => [L(s), 0.024], () => [-MEDIAN, 0.024], col, { u: 4, v: 4 });
-    floorS.ribbon(from, to, () => [MEDIAN, 0.024], (s) => [R(s), 0.024], col, { u: 4, v: 4 });
+    let a = L;
+    for (const cut of cuts) { const lo = a; floorS.ribbon(from, to, (s) => [lo(s), 0.024], (s) => [cut(s)[0], 0.024], col, { u: 4, v: 4 }); a = (s) => cut(s)[1]; }
+    floorS.ribbon(from, to, (s) => [a(s), 0.024], (s) => [R(s), 0.024], col, { u: 4, v: 4 });
   };
   // rows of lit panels over the road, every `every` m
   const roadLamps = (from, to, every = 8, col = C.white) => { for (let s = from + every / 2; s < to; s += every) for (const d of [-1.7, 1.7]) lamps.on(s, (L(s) + R(s)) / 2 + d, hAt(s) - 0.09, 0, 0.35, 0.12, 1.8, col); };
@@ -319,70 +282,53 @@ export const metro = ({ levelGroup }) => {
   // a lit strip along a ceiling at lat(s)
   const litStrip = (from, to, lat, col = C.white, w = 0.3) => onS.ribbon(from, to, (s) => [lat(s) - w / 2, hAt(s) - 0.04], (s) => [lat(s) + w / 2, hAt(s) - 0.04], col);
 
-  // ---- RUNNING TUNNEL: the twin box
+  // ---- RUNNING TUNNEL: a box, its two walls alike
   const running = (from, to) => {
     roadFloor(from, to);
-    // the left wall: a dark dado, the concrete over it; trays, a pipe, lamps on it, the kilometre markers
-    plainS.ribbon(from, to, (s) => [L(s), 0], (s) => [L(s), 1.2], C.dado);
-    concS.ribbon(from, to, (s) => [L(s), 1.2], (s) => [L(s), hAt(s)], C.conc, { u: 4, v: 4 });
-    onS.ribbon(from, to, (s) => [L(s) + 0.02, 1.2], (s) => [L(s) + 0.02, 1.32], (s) => lineAt(s));
-    trays(from, to, -1);
+    for (const [side, at] of [[-1, L], [1, R]]) {
+      // a dark dado, the concrete over it; trays, lamps on it, a signal by the track every 140 m
+      plainS.ribbon(from, to, (s) => [at(s), 0], (s) => [at(s), 1.2], C.dado);
+      concS.ribbon(from, to, (s) => [at(s), 1.2], (s) => [at(s), hAt(s)], C.conc, { u: 4, v: 4 });
+      onS.ribbon(from, to, (s) => [at(s) - side * 0.02, 1.2], (s) => [at(s) - side * 0.02, 1.32], (s) => lineAt(s));
+      trays(from, to, side);
+      for (let s = from + (side < 0 ? 6 : 13.5); s < to - 3; s += 15) lamps.on(s, at(s) - side * 0.07, 2.7, 0, 0.12, 0.22, 1.0, C.warm);
+      for (let s = from + (side < 0 ? 60 : 130); s < to - 20; s += 140) signal(s, side);
+    }
     pipe(from, to, -1, 4.7, 0x2f7a5a);
-    for (let s = from + 6; s < to - 3; s += 15) lamps.on(s, L(s) + 0.07, 2.7, 0, 0.12, 0.22, 1.0, C.warm);
     kmMarkers(from, to, -1);
-    // the plinth and the columns between the road and the train line
-    plainS.ribbon(from, to, (s) => [R(s), 0], (s) => [R(s), 1.1], C.concDark);
-    plainS.ribbon(from, to, (s) => [R(s), 1.1], (s) => [R(s) + 0.5, 1.1], 0xb8b9b4);
-    plainS.ribbon(from, to, (s) => [R(s) + 0.5, 0], (s) => [R(s) + 0.5, 1.1], 0x7a7c78);
-    for (let s = from + 3; s < to - 1; s += 6) { cubes.on(s, R(s) + 0.25, 1.1 + (hAt(s) - 1.1) / 2, 0, 0.5, hAt(s) - 1.1, 0.5, 0xc4c4be); cubes.on(s, R(s) + 0.25, 2.2, 0, 0.52, 0.3, 0.52, lineAt(s)); }
-    // the train line: its bed, its far wall, the signals and the lamps of its bore
-    plainS.ribbon(from, to, (s) => [R(s) + 0.5, 0.01], (s) => [TC(s) - HALF_BED, 0.01], 0x4a4c50);
-    trackBed(from, to, (s) => TC(s) - HALF_BED);
-    concS.ribbon(from, to, (s) => [FAR(s), 0], (s) => [FAR(s), hAt(s)], C.concDark, { u: 4, v: 4 });
-    for (let s = from + 9; s < to - 3; s += 12) lamps.on(s, FAR(s) - 0.07, 3.4, 0, 0.12, 0.18, 0.8, 0xd8e4ff);
-    for (let s = from + 60; s < to - 20; s += 140) signal(s);
-    trays(from, to, 1, FAR);
-    // the ceiling over all of it (concrete), the lamps over the road
-    concS.ribbon(from, to, (s) => [L(s), hAt(s)], (s) => [FAR(s), hAt(s)], C.ceiling, { u: 4, v: 4 });
+    concS.ribbon(from, to, (s) => [L(s), hAt(s)], (s) => [R(s), hAt(s)], C.ceiling, { u: 4, v: 4 });
     roadLamps(from, to);
   };
-  // a signal by the train line: a post, a dark head with a lamp lit (red or green) facing the way the trains come
-  const signal = (s) => {
-    const lat = TC(s) + 1.95;
-    cubes.on(s, lat, 1.6, 0, 0.14, 3.2, 0.14, 0x2a2d33);
-    cubes.on(s, lat, 3.3, 0, 0.36, 0.8, 0.3, 0x1b1d22);
-    lampBalls.on(s - 0.16, lat, 3.5, 0, 0.2, 0.2, 0.12, rand() < 0.5 ? 0xff2a1a : 0x39e36a);
-    lampBalls.on(s - 0.16, lat, 3.12, 0, 0.2, 0.2, 0.12, 0x2a2d33);
+  // a signal on the wall by a track (side -1 the left, +1 the right): a dark head flat on the wall (nothing of it over the lanes), its
+  // lamps lit red or green facing the way that track's trains come (the left's down the road at the player, the right's from behind)
+  const signal = (s, side) => {
+    const at = side < 0 ? L : R, lat = at(s) - side * 0.13, toward = side < 0 ? 1 : -1;
+    cubes.on(s, lat, 2.75, 0, 0.26, 0.9, 0.34, 0x1b1d22);
+    lampBalls.on(s + toward * 0.18, lat, 3.0, 0, 0.18, 0.18, 0.1, rand() < 0.5 ? 0xff2a1a : 0x39e36a);
+    lampBalls.on(s + toward * 0.18, lat, 2.62, 0, 0.18, 0.18, 0.1, 0x2a2d33);
   };
 
-  // ---- STATION: platforms each side behind the wall line, the train line beyond the island platform
+  // ---- STATION: a side platform each side behind the wall line (beyond the track on that side), tiled walls behind them
   const station = (from, to) => {
     roadFloor(from, to);
-    const left = (s) => L(s) - PLATFORM, islandEnd = (s) => TC(s) - HALF_BED;
+    const left = (s) => L(s) - PLATFORM, right = (s) => R(s) + PLATFORM;
     platform(from, to, left, L, [1]);
-    platform(from, to, R, islandEnd, [-1, 1]);
-    trackBed(from, to, islandEnd);
+    platform(from, to, R, right, [-1]);
     tiledWall(from, to, -1, left, PH, C.tile);
-    tiledWall(from, to, 1, FAR, 0, C.tile);
-    plainS.ribbon(from, to, (s) => [left(s), hAt(s)], (s) => [FAR(s), hAt(s)], 0xe6e4de);
-    for (const lat of [(s) => left(s) + 2.4, (s) => (L(s) + R(s)) / 2 - 1.6, (s) => (L(s) + R(s)) / 2 + 1.6, (s) => (R(s) + islandEnd(s)) / 2, (s) => TC(s)]) litStrip(from + 3, to - 3, lat);
-    // on the side platform: benches, bins, machines against the wall, hung signs and clocks
-    for (let s = from + 12, k = 0; s < to - 8; s += 18, k++) {
-      benchF.solid.on(s, left(s) + 2.6, PH, facing(-1));
-      if (k % 2) tubes.on(s + 6, left(s) + 1.6, PH + 0.45, 0, 0.55, 0.9, 0.55, 0x4a4f57);
-      if (k % 3 === 1) { const m = k % 2 ? vendingF : machineF; m.solid.on(s - 5, left(s) + 0.45, PH, facing(-1)); m.lit?.on(s - 5, left(s) + 0.45, PH, facing(-1)); }
-    }
-    for (let s = from + 24, k = 0; s < to - 16; s += 36, k++) {
-      hungSign(s, L(s) - 2.6, PH + 3.1, signTexture(k % 2 ? 'exit' : 'train', HEX(lineAt(s))));
-      clock(s + 18, L(s) - 2.6, PH + 3.4);
-    }
-    // on the island: columns down its middle, benches between them, signs
-    for (let s = from + 6, k = 0; s < to - 3; s += 12, k++) {
-      const mid = (R(s) + islandEnd(s)) / 2;
-      cubes.on(s, mid, PH + (hAt(s) - PH) / 2, 0, 0.7, hAt(s) - PH, 0.7, C.tile);
-      cubes.on(s, mid, PH + 2.5, 0, 0.74, 0.45, 0.74, lineAt(s));
-      if (k % 2) benchF.solid.on(s + 6, mid, PH, facing(1));
-      if (k % 3 === 2) hungSign(s + 6, mid, PH + 3.1, signTexture('arrow', HEX(lineAt(s))));
+    tiledWall(from, to, 1, right, PH, C.tile);
+    plainS.ribbon(from, to, (s) => [left(s), hAt(s)], (s) => [right(s), hAt(s)], 0xe6e4de);
+    for (const lat of [(s) => left(s) + 2.4, (s) => (L(s) + R(s)) / 2 - 1.6, (s) => (L(s) + R(s)) / 2 + 1.6, (s) => right(s) - 2.4]) litStrip(from + 3, to - 3, lat);
+    // on each platform: benches, bins, machines against the wall, hung signs and clocks
+    for (const [side, wall, edge] of [[-1, left, L], [1, right, R]]) {
+      for (let s = from + (side < 0 ? 12 : 21), k = 0; s < to - 8; s += 18, k++) {
+        benchF.solid.on(s, wall(s) - side * 2.6, PH, facing(side));
+        if (k % 2) tubes.on(s + 6, wall(s) - side * 1.6, PH + 0.45, 0, 0.55, 0.9, 0.55, 0x4a4f57);
+        if (k % 3 === 1) { const m = k % 2 ? vendingF : machineF; m.solid.on(s - 5, wall(s) - side * 0.45, PH, facing(side)); m.lit?.on(s - 5, wall(s) - side * 0.45, PH, facing(side)); }
+      }
+      for (let s = from + (side < 0 ? 24 : 42), k = 0; s < to - 16; s += 36, k++) {
+        hungSign(s, edge(s) + side * 2.6, PH + 3.1, signTexture((k + (side > 0 ? 1 : 0)) % 2 ? 'exit' : 'train', HEX(lineAt(s))));
+        clock(s + 18, edge(s) + side * 2.6, PH + 3.4);
+      }
     }
   };
 
@@ -395,6 +341,9 @@ export const metro = ({ levelGroup }) => {
   };
   const archTop = (s, lat) => { const mid = (L(s) + R(s)) / 2, half = (R(s) - L(s)) / 2, u = Math.min(1, Math.abs(lat - mid) / half); return hAt(s) - SPRING + SPRING * Math.sqrt(1 - u * u); };
   const mouths = (LEVEL.tunnelJunctions || []).map(j => ({ s: Track.place(j), side: j.side === 'left' ? -1 : 1 }));
+  // where the level's PILLARS stand (lanegimmicks.js: drawn as obstacles, up to the ceiling): nothing hung from the ceiling there
+  const pillarSs = (LEVEL.pillars || []).flatMap(g => Array.from({ length: g.count ?? CONFIG.pillar.count }, (_, k) => Track.place(g) + k * (g.gap ?? CONFIG.pillar.gap)));
+  const pillarAt = (s) => pillarSs.some(q => Math.abs(q - s) < 1.6);
   const MOUTH = 5;      // m each side of a junction's middle: its mouth
   const inMouth = (s) => mouths.some(m => Math.abs(s - m.s) < MOUTH);
   const mouthBreaks = mouths.flatMap(m => [m.s - MOUTH, m.s + MOUTH]);
@@ -414,7 +363,7 @@ export const metro = ({ levelGroup }) => {
       liningS.ribbon(from, to, (s) => archPoint(s, k), (s) => archPoint(s, k + 1), shade(k + 0.5), { u: 1.5, v: 3, v0 });
       v0 += len / 3;
     }
-    for (let s = from + 4; s < to - 2; s += 9) lamps.on(s, (L(s) + R(s)) / 2, hAt(s) - 0.12, 0, 0.4, 0.14, 1.4, C.white);
+    for (let s = from + 4; s < to - 2; s += 9) if (!pillarAt(s)) lamps.on(s, (L(s) + R(s)) / 2, hAt(s) - 0.12, 0, 0.4, 0.14, 1.4, C.white); // (none where a pillar meets the crown)
     kmMarkers(from, to, -1);
     { // (the pipe on the right, in runs between the junctions' mouths: it turns into the wall short of each)
       let a = from;
@@ -467,8 +416,25 @@ export const metro = ({ levelGroup }) => {
     for (let s = from + 75; s < to - 40; s += 150) clock(s, L(s) - HALL * 0.45, 5.0);
   };
 
-  // ---- a JUNCTION's cross passage: beyond each mouth a short tunnel, open and lit, the works line's rails in its floor, its far end
-  // dark (the tunnel goes on). `edge(s)` the wall it opens from, `height` its roof
+  // ---- a JUNCTION's HOIST BEAM: a steel I-beam in the hoists' yellow (its underside HOIST_BEAM m up: the cable drums of hazards.js
+  // hang from it, metroModels.js hoistDrum), straight from (x0, z0) to (x1, z1) at the road's height y: three long boxes, no steps
+  const beam = (x0, z0, x1, z1, y) => {
+    const len = Math.hypot(x1 - x0, z1 - z0), ry = Math.atan2(x1 - x0, z1 - z0), x = (x0 + x1) / 2, z = (z0 + z1) / 2, B = y + HOIST_BEAM;
+    cubes.at(x, B + 0.025, z, ry, 0.32, 0.05, len, 0xe8b51a);
+    cubes.at(x, B + 0.16, z, ry, 0.04, 0.22, len, 0xd8a514);
+    cubes.at(x, B + 0.295, z, ry, 0.32, 0.05, len, 0xe8b51a);
+  };
+  // across the road at a junction from wall to wall (lo, hi: the lats it spans), hung from the ceiling every 3 m
+  const hoistBeam = (s, lo, hi) => {
+    const a = pt(s, lo, 0), b = pt(s, hi, 0);
+    beam(a[0], a[2], b[0], b[2], a[1]);
+    for (let lat = lo + 1.5; lat < hi - 1; lat += 3) {
+      const top = kindAt(s) === 'bore' ? archTop(s, lat) : hAt(s), y0 = HOIST_BEAM + 0.32;
+      cubes.on(s, lat, (y0 + top) / 2, 0, 0.08, top - y0, 0.08, 0x4a4f57);
+    }
+  };
+  // ---- a JUNCTION's cross passage: beyond each mouth a short tunnel, open and lit, the hoist beam down it, its far end dark (the
+  // tunnel goes on). `edge(s)` the wall it opens from, `height` its roof
   const passage = (m, side, edge, height, LEN = 26) => {
     const W = MOUTH, s = m.s, o = pt(s, edge(s), 0);
     Track.toWorld(s, edge(s) + side, p); const out = [p.x - o[0], p.z - o[2]], ol = Math.hypot(out[0], out[1]); out[0] /= ol; out[1] /= ol;
@@ -482,17 +448,19 @@ export const metro = ({ levelGroup }) => {
         plainS.quad(at(t, u, 0), at(t1, u, 0), at(t1, u, 1.0), at(t, u, 1.0), C.dado);
         concS.quad([...at(t, u, 1.0), t / 4, 0], [...at(t1, u, 1.0), t1 / 4, 0], [...at(t1, u, height), t1 / 4, 1], [...at(t, u, height), t / 4, 1], C.conc);
       }
-      for (const u of [-0.72, 0.72]) onS.quad(at(t, u - 0.04, 0.03), at(t1, u - 0.04, 0.03), at(t1, u + 0.04, 0.03), at(t, u + 0.04, 0.03), C.rail);
     }
+    // the hoist beam down the middle of it, hung from its roof (it comes on across the road: hoistBeam)
+    const [x0, , z0] = at(0, 0, 0), [x1, , z1] = at(LEN - 0.6, 0, 0);
+    beam(x0, z0, x1, z1, o[1]);
+    for (let t = 2; t < LEN - 1; t += 4) { const [x, y, z] = at(t, 0, 0); cubes.at(x, y + (HOIST_BEAM + 0.32 + height) / 2, z, 0, 0.08, height - HOIST_BEAM - 0.32, 0.08, 0x4a4f57); }
     for (let t = 3; t < LEN; t += 7) { const [x, y, z] = at(t, 0, height - 0.08); lamps.at(x, y, z, Math.atan2(out[0], out[1]), 0.35, 0.12, 1.6, C.white); }
     plainS.quad(at(LEN, -W, 0), at(LEN, W, 0), at(LEN, W, height), at(LEN, -W, height), 0x0c0e12); // (its far end: dark)
   };
 
-  // ---- the faces where one part meets the next: across the wider one's outline, the narrower one's opening left open; where
-  // the train line ends, a dark mouth over its bed (the line goes on in a bore of its own)
+  // ---- the faces where one part meets the next: across the wider one's outline, the narrower one's opening left open
   const outline = (kind, s) => {
-    if (kind === 'running') return { lo: L(s), hi: FAR(s), h: hAt(s), train: [R(s) + 0.5, FAR(s)] };
-    if (kind === 'station') return { lo: L(s) - PLATFORM, hi: FAR(s), h: hAt(s), train: [TC(s) - HALF_BED, FAR(s)] };
+    if (kind === 'running') return { lo: L(s), hi: R(s), h: hAt(s) };
+    if (kind === 'station') return { lo: L(s) - PLATFORM, hi: R(s) + PLATFORM, h: hAt(s) };
     if (kind === 'interchange') return { lo: L(s) - HALL, hi: R(s) + HALL, h: hAt(s) };
     return { lo: L(s), hi: R(s), h: hAt(s), arch: true }; // (a bore)
   };
@@ -511,14 +479,10 @@ export const metro = ({ levelGroup }) => {
       if (Math.max(ya, yb) >= H - 0.01) continue;
       plainS.quad(pt(s, a, ya), pt(s, b, yb), pt(s, b, H), pt(s, a, H), col);
     }
-    for (const [X, Y, dir] of [[A, B, -1], [B, A, 1]]) { // (a train line that ends here: its dark mouth, on its own side of the face)
-      if (!X.train || Y.train) continue;
-      plainS.quad(pt(s + dir * 0.06, X.train[0], 0), pt(s + dir * 0.06, X.train[1], 0), pt(s + dir * 0.06, X.train[1], 4.6), pt(s + dir * 0.06, X.train[0], 4.6), 0x06070a);
-    }
   };
 
   // ---- the CUTTING down to a portal (and up from the other): retaining walls up to the ground and a little over it, a coping, a
-  // fence on top; at the portal a headwall with the road's opening and the train line's dark mouth, a sign over it
+  // fence on top; at the portal a headwall with the road's opening (the tracks run through it), a sign over it
   const GROUND = roadY(0); // (the ground's height in the world: the road's at the start, before it goes down; Track puts the lowest road at 0)
   const groundOver = (s) => GROUND - roadY(s); // (m from the road up to the ground, at s)
   const cutting = (from, to) => {
@@ -542,8 +506,7 @@ export const metro = ({ levelGroup }) => {
   };
   const portal = (s, outward, inside) => { // the headwall across the cutting at s, its face towards `outward` (-1: the cutting is before s)
     const A = outline(inside, s), top = groundOver(s) + DEPTH_MARGIN;
-    face(s, { lo: L(s) - 8, hi: A.hi + 8, h: top }, { lo: L(s), hi: R(s), h: A.h }, 0xbdbcb4, top); // (the road's opening; the train line's...)
-    if (A.train) for (const d of [-0.08, 0.08]) plainS.quad(pt(s + d, A.train[0], 0), pt(s + d, A.train[1], 0), pt(s + d, A.train[1], 4.6), pt(s + d, A.train[0], 4.6), 0x06070a); // (...a dark mouth, both faces)
+    face(s, { lo: L(s) - 8, hi: A.hi + 8, h: top }, { lo: L(s), hi: R(s), h: A.h }, 0xbdbcb4, top); // (the road's opening)
     plainS.ribbon(Math.min(s, s + outward * 1.2), Math.max(s, s + outward * 1.2), (q) => [L(q) - 8, groundOver(q) + DEPTH_MARGIN], (q) => [outline(inside, q).hi + 8, groundOver(q) + DEPTH_MARGIN], 0xe4e3dc); // (the coping along its top)
     signB(signTexture('train', HEX(LINE.red))).on(s + outward * 0.1, (L(s) + R(s)) / 2, Math.min(top - 1.2, A.h + 1.2), outward < 0 ? Math.PI : 0, 6, 1.5, 1);
   };
@@ -605,6 +568,8 @@ export const metro = ({ levelGroup }) => {
           if (kind === 'interchange') passage(m, side, (s) => (side < 0 ? L(s) : R(s)) + side * HALL, 7, 22);
           else passage(m, side, side < 0 ? L : R, hAt(m.s) - SPRING, 26);
         }
+        if (kind === 'interchange') hoistBeam(m.s, L(m.s) - HALL, R(m.s) + HALL);
+        else hoistBeam(m.s, L(m.s), R(m.s));
         if (kind === 'interchange') for (const side of [-1, 1]) { // (the back wall over the passage's roof)
           const back = (s) => (side < 0 ? L(s) : R(s)) + side * HALL, edge = side < 0 ? L : R;
           tileS.ribbon(m.s - MOUTH, m.s + MOUTH, (s) => [back(s), 7], (s) => [back(s), hAt(s)], C.hallTile, { u: 1.2, v: 1.2 });
@@ -689,6 +654,6 @@ export const metro = ({ levelGroup }) => {
     touch(m);
     for (const mesh of m.mid) { mesh.computeBoundingSphere(); mesh.frustumCulled = true; } // (standing still: left out when the depot is out of view)
   }
-  // (no train runs beside the road any more: the danger train is the level's own, Canberra's bullet train down the RAILWAY in the
-  // middle of the road, bullettrain.js, drawn by render/bullettrain.js. The line beside the road stays empty: a siding)
+  // (the trains that run are the level's own, Canberra's bullet trains on the RAILWAY's two tracks, the road's outermost lanes:
+  // bullettrain.js, drawn by render/bullettrain.js)
 };

@@ -94,7 +94,7 @@ const smallBoard = (text, bg, fg, w, h) => {
   c.font = 'bold 30px system-ui, sans-serif';
   c.textAlign = 'center';
   c.textBaseline = 'middle';
-  c.fillText(text, 128, 34);
+  c.fillText(text, 128, 34, 244); // (squeezed to fit, never cut off)
   return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), side: THREE.DoubleSide }));
 };
 const BEACON_ON = 0xffb020, BEACON_OFF = 0x5a4010;
@@ -120,7 +120,7 @@ Game.onLoad.push(() => {
     }
     if (s - 45 > 5) for (const sd of [-1, 1]) { // the boards, on both walls 45 m before, facing the player, a beacon over each
       const edge = sd < 0 ? Track.lo(s - 45) - 0.2 : Track.hi(s - 45) + 0.2, post = at(s - 45, edge);
-      const board = smallBoard('CROSS TRAFFIC', '#ffb020', '#111', 3.4, 0.85);
+      const board = smallBoard((THEMES[LEVEL.theme] || THEMES.city).junctionBoard || 'CROSS TRAFFIC', '#ffb020', '#111', 3.4, 0.85); // (a theme's own words: the metro's HOIST CROSSING)
       board.position.set(sd * 2.0, 3.5, 0); // (hung out from the wall over the road, facing the player coming up: local +x is the road's left)
       board.rotation.y = Math.PI;
       add(post, box(2.0, 0.12, 0.12), lambert(0x1b1d22), sd * 1.0, 4.05, 0); // (its bracket)

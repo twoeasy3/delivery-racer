@@ -54,10 +54,12 @@ export const ceilingAt = (s, pad = 40) => {
   return least;
 };
 
-// the chase camera a tunnel wants: the theme's tunnel's camHeight / camBack, or CONFIG.tunnel's
+// the chase camera a tunnel wants: the theme's tunnel's camHeight / camBack, or CONFIG.tunnel's; camKeep (a theme's only, or null):
+// inside, the camera is kept within that many m of the lanes' middle however far out the car is (the metro: a car on a track in
+// a tight bend would otherwise look past the inside wall from beside it)
 export const tunnelCamera = () => {
   const T = theme().tunnel || {}, C = CONFIG.tunnel || {};
-  return { camHeight: T.camHeight ?? C.camHeight ?? 5.5, camBack: T.camBack ?? C.camBack ?? CONFIG.camBack };
+  return { camHeight: T.camHeight ?? C.camHeight ?? 5.5, camBack: T.camBack ?? C.camBack ?? CONFIG.camBack, camKeep: T.camKeep ?? null };
 };
 
 // is this level's tunnel lit (a mall's halls: no dark, no fog closing in, no headlights, the Tunnels card and message
