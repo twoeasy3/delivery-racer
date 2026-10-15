@@ -30,18 +30,18 @@ const waterline = () => texture('paddleduck-waterline', 128, 32, (ctx, w, h) => 
   const rnd = random(19);
   for (let x = 0; x < w; x++) {
     const ends = Math.min(1, Math.min(x, w - 1 - x) / 14);
-    const top = h * (0.35 + 0.25 * Math.sin(x * 0.21) ** 2 + 0.1 * rnd());
+    const top = h * (0.46 + 0.1 * Math.sin(x * 0.13) + 0.05 * Math.sin(x * 0.41 + 1));
     for (let y = 0; y < h; y++) {
       const k = y < top ? 0 : Math.min(1, (y - top) / (h - top) * 1.6) * ends;
       if (k <= 0) continue;
-      ctx.fillStyle = 'rgba(74,86,58,' + (0.4 * k).toFixed(3) + ')';
+      ctx.fillStyle = 'rgba(74,86,58,' + (0.34 * k).toFixed(3) + ')';
       ctx.fillRect(x, y, 1, 1);
     }
   }
   ctx.lineCap = 'round';
-  for (let i = 0; i < 26; i++) { // drips running up from the line (water dried on the paint)
+  for (let i = 0; i < 14; i++) { // drips running up from the line (water dried on the paint)
     const x = 10 + rnd() * (w - 20), l = 3 + rnd() * 9;
-    ctx.strokeStyle = 'rgba(70,82,56,' + (0.15 + rnd() * 0.2).toFixed(2) + ')';
+    ctx.strokeStyle = 'rgba(70,82,56,' + (0.1 + rnd() * 0.12).toFixed(2) + ')';
     ctx.lineWidth = 0.8 + rnd();
     ctx.beginPath(); ctx.moveTo(x, h * 0.62); ctx.lineTo(x + (rnd() - 0.5) * 2, h * 0.62 - l); ctx.stroke();
   }
@@ -111,7 +111,7 @@ export const IDEA_MODELS_PADDLE_DUCK = {
     const LEAN = Math.atan2(BOW1[0] - BOW0[0], BOW1[1] - BOW0[1]);
     const bowZ = (y) => BOW0[0] + (BOW1[0] - BOW0[0]) * (y - CHINE) / (BOW1[1] - CHINE) + BEV / Math.cos(LEAN); // (the bow face's silhouette at height y)
     const onBow = (geo, x, y, out = 0) => geo.rotateX(LEAN).translate(x, y, bowZ(y) + out);
-    parts(group, k + 'bill', BILL, () => [blob(0.44, 0.075, 0.34, 0, 1.36, bowZ(1.36) + 0.06, [14, 6])]);
+    parts(group, k + 'bill', BILL, () => [blob(0.44, 0.075, 0.3, 0, 1.36, bowZ(1.36) + 0.02, [14, 6])]);
     const EYE = 0.16, eyes = [-1, 1].map(s => [s * 0.52, 1.56, 3.98]);
     // (white: the eyes, and the canopy's valance, a band hanging under its open sides and its back edge, just inside its edge)
     parts(group, k + 'white', WHITE, () => [
