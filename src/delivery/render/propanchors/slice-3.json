@@ -14,11 +14,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.57, 0, 2.033, -2.15],
-    "cyl": [1.57, 0, 1.994, -2.15],
-    "from": "roof-edge",
+    "box": [1.4, 0, 1.544, -3.03],
+    "cyl": [1.4, 0, 1.509, -3.03],
+    "from": "deck-edge",
     "lim": "fit",
-    "inset": [0.024, 0.024]
+    "inset": [0.043, 0.043]
    }
   },
   "autobahnestate": {
@@ -48,9 +48,9 @@
     "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "box": [0.54, 0, 1.124, -1.43],
-    "cyl": [0.54, 0, 1.111, -1.43],
-    "from": "deck",
+    "box": [1.02, 0, 1.133, -1.95],
+    "cyl": [1.02, 0, 1.108, -1.95],
+    "from": "deck-edge",
     "lim": "fit"
    }
   },
@@ -203,11 +203,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.29, 0, 1.308, -2.51],
-    "cyl": [1.29, 0, 1.276, -2.51],
+    "box": [1.29, 0, 1.305, -2.59],
+    "cyl": [1.29, 0, 1.272, -2.59],
     "from": "deck",
     "lim": "fit",
-    "inset": [0.017, 0.017]
+    "inset": [0.046, 0.046]
    }
   },
   "fireengine": {
@@ -276,11 +276,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.02, 0, 0.968, -2.14],
-    "cyl": [1.02, 0, 0.943, -2.14],
+    "box": [0.97, 0, 0.963, -2.18],
+    "cyl": [0.97, 0, 0.939, -2.18],
     "from": "deck",
     "lim": "fit",
-    "inset": [0.029, 0.029]
+    "inset": [0.039, 0.039]
    }
   },
   "halftrack": {
@@ -648,8 +648,8 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.25, 0, 1.169, -2.49],
-    "cyl": [1.25, 0, 1.137, -2.49],
+    "box": [1.17, 0, 1.155, -2.41],
+    "cyl": [1.17, 0, 1.125, -2.41],
     "from": "deck-edge",
     "lim": "fit"
    }
