@@ -207,11 +207,11 @@ export const MODELS = {
       slab(group, LAMP, 0.34, 0.03, 0.26, x, 0.56, L * 0.9, Math.atan2(0.36, L * 0.24));                               // lamps in the wing's nose
       box(group, TAIL, 0.06, 0.34, 0.05, side * (w / 2 - 0.08), 0.56, -L - 0.01);                                      // tall thin tail lamps
       box(group, accent, 0.16, 0.08, 0.12, side * w * 0.27, 0.82, L * 0.3);                                            // mirrors
-      box(group, carbon, 0.05, 0.5, 0.5, side * (w / 2 - 0.04), 1.02, -L + 0.1);                                       // the wing's end plates
+      box(group, carbon, 0.05, 0.5, 0.5, side * (w / 2 - 0.04), 1.02, -L + 0.1).userData.prop = 'wing';                // the wing's end plates (tagged with it)
       wheels.push(...wheel(group, R, 0.3, side * (w / 2 - 0.13), R, L * 0.6, lambert(0x8a8f96)));
       wheels.push(...wheel(group, R + 0.02, 0.32, side * (w / 2 - 0.13), R + 0.02, -L * 0.62, lambert(0x8a8f96)));
     }
-    box(group, accent, w - 0.08, 0.06, 0.42, 0, 1.22, -L + 0.1);                                                       // the rear wing
+    box(group, accent, w - 0.08, 0.06, 0.42, 0, 1.22, -L + 0.1).userData.prop = 'wing';                                // the rear wing (tagged: a chosen wing prop hides it and its end plates)
     box(group, carbon, w * 0.98, 0.05, 0.3, 0, 0.2, L - 0.05);                                                         // the splitter
     box(group, carbon, w * 0.5, 0.18, 0.2, 0, 0.3, -L + 0.02);                                                         // the diffuser
     group.userData = {
@@ -911,7 +911,7 @@ export const MODELS = {
     box(group, paint, w * 0.9, 0.07, l * 0.58, 0, 1.34, -l * 0.16);                // roof
     screen(group, glass, w * 0.86, 0.05, 0.62, 0, 1.07, l * 0.19, 0.6);              // windscreen
     screen(group, glass, w * 0.86, 0.05, 0.48, 0, 1.08, -l * 0.45, -0.18);           // the upright hatch
-    box(group, trim, w * 0.8, 0.04, 0.16, 0, 1.39, -l * 0.43);                      // the roof spoiler's lip
+    box(group, trim, w * 0.8, 0.04, 0.16, 0, 1.39, -l * 0.43).userData.prop = 'wing'; // the roof spoiler's lip (tagged: a chosen wing prop hides it)
     box(group, trim, w * 0.94, 0.24, 0.05, 0, 0.7, l / 2 + 0.01);                   // the grille, right across
     box(group, red, w * 0.94, 0.03, 0.06, 0, 0.83, l / 2 + 0.02);                   // edged in red
     for (const side of [-1, 1]) {
@@ -1134,11 +1134,11 @@ export const MODELS = {
     for (const side of [-1, 1]) {
       box(group, paint, 0.34, 0.12, 0.26, side * w * 0.3, 0.72, L * 0.7);             // the pop-up headlamps, up,
       box(group, LAMP, 0.3, 0.09, 0.02, side * w * 0.3, 0.72, L * 0.7 + 0.135);       // and lit
-      box(group, trim, 0.05, 0.12, 0.06, side * w * 0.36, 0.86, -L * 0.86);           // the spoiler's posts
+      box(group, trim, 0.05, 0.12, 0.06, side * w * 0.36, 0.86, -L * 0.86).userData.prop = 'wing'; // the spoiler's posts (tagged: a chosen wing prop hides them and the hoop)
       wheel(group, R, 0.26, side * (w / 2 - 0.06), R, L * 0.66, lambert(0xc6cad0));
       wheel(group, R, 0.28, side * (w / 2 - 0.06), R, -L * 0.62, lambert(0xc6cad0));
     }
-    box(group, paint, w * 0.8, 0.04, 0.2, 0, 0.92, -L * 0.86);                        // the hoop of a spoiler
+    box(group, paint, w * 0.8, 0.04, 0.2, 0, 0.92, -L * 0.86).userData.prop = 'wing'; // the hoop of a spoiler
     box(group, TAIL, w * 0.8, 0.08, 0.04, 0, 0.66, -L - 0.03);                        // the tail lamp bar
     box(group, trim, w * 0.5, 0.08, 0.04, 0, 0.36, L + 0.03);                         // the mouth under the nose
     group.userData = { body, animate: () => {} };
@@ -1553,7 +1553,7 @@ export const MODELS = {
     screen(shell, glass, w * 0.82, 0.05, 0.6, 0, 1.17, l * 0.07, 0.75);              // raked windscreen
     screen(shell, glass, w * 0.82, 0.05, 0.6, 0, 1.15, -l * 0.31, -0.55);            // rear screen
     box(shell, paint, w * 0.96, 0.1, l * 0.2, 0, 1.0, -l * 0.39);                  // short boot deck...
-    box(shell, trim, w * 0.9, 0.06, 0.12, 0, 1.08, -l / 2 + 0.06);                 // ...with a lip spoiler
+    box(shell, trim, w * 0.9, 0.06, 0.12, 0, 1.08, -l / 2 + 0.06).userData.prop = 'wing'; // ...with a lip spoiler (tagged: a chosen wing prop hides it)
     for (const x of [-0.16, 0.16]) { // twin stripes over the roof, the bonnet and the boot
       box(shell, stripe, w * 0.12, 0.012, l * 0.28, x * w, 1.42, -l * 0.13);
       box(shell, stripe, w * 0.12, 0.012, l * 0.42, x * w, 1.045, l * 0.27);

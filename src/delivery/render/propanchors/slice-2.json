@@ -216,10 +216,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.47, 0, 1.132, -2.3],
-    "cyl": [0.47, 0, 1.12, -2.3],
+    "box": [0.47, 0, 1.132, -2.38],
+    "cyl": [0.47, 0, 1.12, -2.38],
     "from": "deck",
-    "lim": "fit"
+    "lim": "fit",
+    "existing": true
    }
   },
   "nissank": {
@@ -291,11 +292,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.91, 0, 1.262, -1.357],
-    "cyl": [0.91, 0, 1.239, -1.357],
+    "box": [1.1, 0, 1.242, -1.637],
+    "cyl": [1.1, 0, 1.215, -1.637],
     "from": "deck",
     "lim": "fit",
-    "inset": [0.04, 0.04]
+    "existing": true
    }
   },
   "sixbysix": {
@@ -490,8 +491,8 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.47, 0, 1.132, -2.29],
-    "cyl": [0.47, 0, 1.12, -2.29],
+    "box": [0.47, 0, 1.132, -2.37],
+    "cyl": [0.47, 0, 1.12, -2.37],
     "from": "deck",
     "lim": "fit",
     "existing": true
@@ -540,21 +541,22 @@
   },
   "super-rearengine": {
    "roof": {
-    "box": [1.05, 0, 1.578, -0.215],
-    "cyl": [0.93, 0, 1.548, -0.215],
+    "box": [1.11, 0, 1.593, -0.215],
+    "cyl": [0.99, 0, 1.563, -0.215],
     "from": "roof",
     "lim": "fit",
-    "inset": [0.045, 0.044]
+    "inset": [0.049, 0.05]
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.83, 0, 1.405, -0.755],
-    "cyl": [0.83, 0, 1.385, -0.755],
-    "from": "roof-edge",
+    "box": [0.97, 0, 1.248, -1.435],
+    "cyl": [0.94, 0, 1.218, -1.435],
+    "from": "deck",
     "lim": "fit",
-    "inset": [0.05, 0.05]
+    "inset": [0.028, 0.027],
+    "existing": true
    }
   },
   "super-sixbysix": {
