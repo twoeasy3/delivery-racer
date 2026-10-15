@@ -19,6 +19,7 @@
 // geometry is kept, so a new car (full health) is clean again: back at level 0 the crumpled copies are thrown away
 // (the measure and the finer panels are kept; the game's box car is measured again when it is reshaped).
 import * as THREE from 'three';
+import { isWindowNode } from './glassnames.js';
 import { CONFIG } from '../config.js';
 import { prepareSuspension } from './carsuspension.js';
 
@@ -151,7 +152,7 @@ const measure = (group, body, extra) => {
     meshes = meshesOf(group);
     wheels = new Set();
     try { for (const m of prepareSuspension(group).planted) wheels.add(m); } catch { /* (no wheels found: none held back) */ }
-    glass = new Set(meshes.filter(m => m !== body && paintOf(m) !== paintOf(body) && !paintOf(m).userData.wheelHub && glassy(paintOf(m)))); // (a hub in the wheel colour, render/wheelcosmetic.js, is never glass, whatever its blue)
+    glass = new Set(meshes.filter(m => isWindowNode(m) || (m !== body && paintOf(m) !== paintOf(body) && !paintOf(m).userData.wheelHub && glassy(paintOf(m))))); // (a hub in the wheel colour, render/wheelcosmetic.js, is never glass, whatever its blue; a part named or marked a window, in either spelling, always is: render/glassnames.js)
   }
   for (const m of extra) if (!meshes.includes(m)) meshes.push(m);
   const box = new THREE.Box3(), glassBoxes = [], wheelBoxes = [], parts = [];

@@ -9,6 +9,7 @@
 // a step overhanging it). Scored: flat, upright, near the preferred height (the car's own plate's, else 0.5 m), canonical size, out at
 // the car's end. Units: car-local metres (x across, y up, the nose at +z); pitch in degrees, the plane's dz/dy (the plate's rotation.x).
 import * as THREE from 'three';
+import { isWindowNode } from '../src/delivery/render/glassnames.js';
 
 export const SIZES = [0.52, 0.46, 0.40, 0.34, 0.30];
 export const STRICT = 0.006, ROUGH = 0.012; // m: the most a hit may stand off the fitted plane
@@ -33,7 +34,7 @@ export const makeView = (model, { glassy, wheels = new Set() } = {}) => {
     const m = [].concat(n.material)[0];
     if (!m || m.visible === false || (m.transparent && m.opacity < 0.95)) return;
     const lamp = m.isMeshBasicMaterial || (m.emissive && m.emissive.getHex() !== 0 && (m.emissiveIntensity ?? 1) > 0.25);
-    const glass = n !== body && m !== bodyMat && glassy && glassy(m);
+    const glass = isWindowNode(n) || (n !== body && m !== bodyMat && glassy && glassy(m)); // (named or marked a window, either spelling: render/glassnames.js)
     n.userData._plateKind = wheels.has(n) || n.userData.wheelRing || isTyre(n) ? 'wheel' : lamp ? 'lamp' : glass ? 'glass' : 'ok';
     meshes.push(n);
   });

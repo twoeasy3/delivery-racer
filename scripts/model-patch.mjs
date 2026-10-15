@@ -20,6 +20,7 @@ try {
   const { setModelPatching } = await load('render/modelpatchapply.js');
   setModelPatching(false); // (the code's own model: the patch is applied here)
   const { carById } = await load('cars.js');
+  const K = await load('render/ideaModelsDkit.js'), G = await load('render/glassnames.js');
   const evil = flag('--evil');
   const fileArg = (after) => { const i = args.indexOf(after); return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : null; };
   const readPatch = (id, file) => {
@@ -30,20 +31,23 @@ try {
   const one = (id, mode) => {
     const car = carById(id);
     if (!car) throw new Error('no car "' + id + '"');
-    const model = buildInspectModel(car, evil);
+    const patch0 = mode === 'dump' ? null : readPatch(id, fileArg('--' + mode));
+    // (the patch's window edits, its `glass` or `windows` table in any spelling, go into the BUILD as the game and the editor do)
+    const model = K.withGlassEdits(G.glassTable(patch0), () => buildInspectModel(car, evil)), rep = K.glassEditsReport();
+    if (rep.edits) model.userData.glassEdits = { used: Object.keys(rep.edits).filter(k => !rep.unused.includes(k)), unused: rep.unused };
     if (mode === 'dump') {
       MP.applyPatch(model, null);
       const { parts, base } = MP.extractParts(model);
       console.log(JSON.stringify({ car: id, base, stats: MP.modelStats(model), parts }, null, 1));
       return;
     }
-    const patch = readPatch(id, fileArg('--' + mode));
+    const patch = patch0;
     const before = MP.modelStats(model);
     const r = MP.applyPatch(model, patch, { evil });
     const after = MP.modelStats(model);
     const bad = r.unmatched.length > 0;
     if (bad) failed++;
-    console.log((bad ? 'FAIL  ' : 'ok    ') + id + ': ' + patch.ops.length + ' ops, ' + (patch.evil?.length || 0) + ' Evil; applied ' + r.applied
+    console.log((bad ? 'FAIL  ' : 'ok    ') + id + ': ' + patch.ops.length + ' ops, ' + (patch.evil?.length || 0) + ' Evil' + (G.glassTable(patch) ? ', ' + Object.keys(G.glassTable(patch)).length + ' window edits' : '') + '; applied ' + r.applied
       + (bad ? '; UNMATCHED ' + r.unmatched.join(', ') : '') + (r.stale ? ' (the code changed since it was made)' : ''));
     for (const w of r.warnings) console.log('      ' + w);
     if (mode === 'apply') console.log('      shapes ' + before.meshes + ' -> ' + after.meshes + ', triangles ' + before.triangles + ' -> ' + after.triangles + ', materials ' + before.materials + ' -> ' + after.materials

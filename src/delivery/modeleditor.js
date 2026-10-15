@@ -30,7 +30,12 @@
 //      found by its shape (render/modelpatch.js symmetryOf: the same vertices mirrored in x, with its colour), so a move, turn, scale, size,
 //      colour, glow, opacity, shown or delete of one goes to the other as one edit (one undo). The Part tab says which part is the partner,
 //      or that the part is symmetric in itself (a body, a merged pair of lamps), or that it has none. "Mirror: off" edits one side only.
-//   7. WINDOWS (a car whose glass cabinGlass builds, render/ideaModelsDkit.js): the one glass mesh has PANES (windscreen, rear glass, door
+//   7. WINDOWS ('glass' and 'window' are one thing: render/glassnames.js; the word shown is "window"). Every see-through part is a window
+//      (role 'window', whatever the model or a patch called it) and lists its PANES: the Parts tab's Windows row has every pane of the car,
+//      a tap on one in the view picks it (its outline yellow), Mirror finds its partner across the car, and its colour / opacity / place are
+//      edited as any part's. A hand-built window (its own boxes and panels: models.js, modelsOrig*.js, most ideaModels*.js) has panes found
+//      from its separate panels (windscreen, rear window, side window L / R, window 2 L..., side windows, roof window) but no edges to redraw
+//      (its outline is the code's: an extruded one is edited as a Shape). A cabinGlass car's (render/ideaModelsDkit.js): the one glass mesh has PANES (windscreen, rear window, door
 //      window L / R, quarter window L / R...): tap one in the view (or its button in the Part tab) and its EDGES can be redrawn: the side view
 //      shows the body's profile, the cabin outline (the limit: the glass stays inside it, on the flank, 6 mm proud as the build lays it),
 //      the automatic outline (dashed) and the pane's corners to drag (or type, add after, remove); a screen slides its foot and top along its
@@ -63,7 +68,8 @@ import { buildInspectModel, DAMAGE_STATES, damageFromParam, damageIndex, damageM
 import { renderer } from './render/scene.js';
 import { silhouetteFor } from './render/silhouette.js';
 import { findZFights } from './render/zfight.js';
-import { extractParts, applyPatch, modelStats, triangles, BUDGET, emptyPatch, withSet, withDelete, withAdd, withDuplicate, withMirror, withGlass, tidyPatch, PRIMITIVES, symmetryOf, mirroredTransform } from './render/modelpatch.js';
+import { extractParts, applyPatch, modelStats, triangles, BUDGET, emptyPatch, withSet, withDelete, withAdd, withDuplicate, withMirror, withGlass, tidyPatch, PRIMITIVES, symmetryOf, mirroredTransform, isWindowPart } from './render/modelpatch.js';
+import { glassTable, canonTable, windowKey, windowBase, sameWindow } from './render/glassnames.js';
 import { withGlassEdits, glassEditsReport } from './render/ideaModelsDkit.js';
 import { setShapeOverride, lastShapeReport, locateShapes, shapePartners, mirrorPoints, withShape, outlineInModel, shapeView, shapePlane, modelToShape } from './render/shapeedits.js';
 import { lampsFor, lampKey, lampSource, makeLampMarkers } from './render/carlights.js';
@@ -147,10 +153,12 @@ scene.add(shapeMarks);
 const S = {
   car: null, evil: params.has('evil'), share: damageFromParam(params.get('damage')), model: null, parts: [], nodes: new Map(), base: '', patch: null, result: null,
   sel: null, hover: null, history: [], at: -1, hidden: new Set(), solo: null, locked: new Set(), tab: 'parts', search: '',
-  mirror: params.get('mirror') !== 'off', sym: new Map(), pane: null, // (Mirror; the parts' partners across the car; the selected window pane's name)
+  mirror: params.get('mirror') !== 'off', sym: new Map(), pane: null, panes: new Map(), // (Mirror; the parts' partners across the car; the selected window pane's name)
   shapes: [], shapePairs: new Map(), shapeRep: null, shape: null, pt: -1, zoom: false, // (the outlines the build recorded, their partners, the selected one's id, its point, the 2D view zoomed on it)
 };
 const partOf = (id) => S.parts.find(p => p.id === id) || null;
+// a part's name for people: a window of one pane by that pane's name ('window 2 L'), else its own name or role
+const labelOf = (p) => (p ? (!p.name && p.panes?.length === 1 ? p.panes[0] : p.name || p.role) : '');
 let placements = null; // (the Placements tab: render/placementedit.js, made once the view is up)
 const status = (words, bad = false) => { $('status').textContent = words; $('status').classList.toggle('bad', bad); };
 
@@ -159,7 +167,7 @@ const save = () => {
   try {
     const all = localPatches();
     const p = tidyPatch(S.patch);
-    if (p.ops.length || p.evil.length || p.glass || p.shapes) all[S.car.id] = p; else delete all[S.car.id];
+    if (p.ops.length || p.evil.length || glassTable(p) || p.shapes) all[S.car.id] = p; else delete all[S.car.id];
     localStorage.setItem(LOCAL_KEY, JSON.stringify(all));
   } catch { /* (no storage: the edits last as long as the page) */ }
 };
@@ -180,15 +188,16 @@ const rebuild = () => {
   // (and its shape edits: every outline recorded as it is built, the edited ones built from their edited points: render/shapeedits.js)
   setShapeOverride({ edits: S.patch.shapes || null, record: true });
   let model;
-  try { model = withGlassEdits(S.patch.glass || null, () => buildInspectModel(S.car, S.evil)); } finally { setShapeOverride(null); }
+  try { model = withGlassEdits(glassTable(S.patch), () => buildInspectModel(S.car, S.evil)); } finally { setShapeOverride(null); } // (the table's ids in any spelling: render/glassnames.js)
   const shapeRep = lastShapeReport();
   const glassRep = glassEditsReport();
   if (glassRep.edits) model.userData.glassEdits = { used: Object.keys(glassRep.edits).filter(k => !glassRep.unused.includes(k)), unused: glassRep.unused };
   model.position.set(0, 0, 0); model.rotation.set(0, 0, 0);
   S.result = applyPatch(model, S.patch, { evil: S.evil });
   model.userData.livery?.(S.evil);
-  const { parts, nodes, base } = extractParts(model);
+  const { parts, nodes, base, panes } = extractParts(model);
   S.model = model; S.parts = parts; S.nodes = nodes;
+  S.panes = new Map([...panes].map(([id, ps]) => [nodes.get(id), ps])); // (every window part's panes: cabinGlass's, or a hand-built window's panels)
   S.sym = symmetryOf(model);
   S.shapeRep = shapeRep; S.shapes = locateShapes(model, shapeRep.records).filter(r => r.mesh); S.shapePairs = shapePartners(S.shapes);
   for (const id of shapeRep.unused) { S.result.unmatched.push('shape:' + id); S.result.warnings.push('shape edits: no outline "' + id + '" in this build (the code changed?)'); }
@@ -270,7 +279,7 @@ const loadCar = (id, { keepView = false } = {}) => {
   $('preview').href = './?garage&' + (car.idea ? 'tab=ideas&' : '') + 'inspect=' + encodeURIComponent(car.id) + (S.evil ? '&evil' : '') + '&modelpatch=local';
   const r = S.result;
   const pairs = [...S.sym.values()].filter(v => v.partner).length / 2, selfs = [...S.sym.values()].filter(v => v.self).length;
-  status(car.name + ': ' + S.parts.length + ' parts' + (pairs || selfs ? ' (' + (pairs ? pairs + ' mirrored pairs' : '') + (pairs && selfs ? ', ' : '') + (selfs ? selfs + ' symmetric in themselves' : '') + ')' : '') + '.' + (S.patch.ops.length ? ' ' + S.patch.ops.length + ' edits kept.' : '') + (S.patch.glass ? ' ' + Object.keys(S.patch.glass).length + ' window edits.' : '') + (S.patch.shapes ? ' ' + Object.keys(S.patch.shapes).length + ' shape edits.' : '') + (r.unmatched.length ? ' ' + r.unmatched.length + ' edits no longer match a part (see JSON).' : ''), r.unmatched.length > 0);
+  status(car.name + ': ' + S.parts.length + ' parts' + (pairs || selfs ? ' (' + (pairs ? pairs + ' mirrored pairs' : '') + (pairs && selfs ? ', ' : '') + (selfs ? selfs + ' symmetric in themselves' : '') + ')' : '') + '.' + (S.patch.ops.length ? ' ' + S.patch.ops.length + ' edits kept.' : '') + (glassTable(S.patch) ? ' ' + Object.keys(glassTable(S.patch)).length + ' window edits.' : '') + (S.patch.shapes ? ' ' + Object.keys(S.patch.shapes).length + ' shape edits.' : '') + (r.unmatched.length ? ' ' + r.unmatched.length + ' edits no longer match a part (see JSON).' : ''), r.unmatched.length > 0);
   syncUrl();
 };
 const syncUrl = () => {
@@ -435,7 +444,7 @@ const hit = (e) => {
 let hitPane = null, hitShape = null; // (the window pane / the shape the last hit() landed on: its name / id, or null)
 const shapesOf = (node) => S.shapes.filter(r => r.mesh === node);
 const shapeAt = (node, faceIndex) => { if (faceIndex == null) return null; const v = faceIndex * 3; const r = S.shapes.find(q => q.mesh === node && v >= q.start && v < q.start + q.count); return r ? r.id : null; };
-const panesOf = (node) => node?.geometry?.userData?.panes || null;
+const panesOf = (node) => node?.geometry?.userData?.panes || (node && S.panes.get(node)) || null; // (cabinGlass's, else a hand-built window's)
 const paneAt = (node, face) => { const ps = panesOf(node); if (!ps || !face) return null; const p = ps.find(q => face.a >= q.start && face.a < q.start + q.count); return p ? p.name : null; };
 const isShown = (n) => { for (let p = n; p; p = p.parent) if (!p.visible) return false; return true; };
 // the part a mesh belongs to: itself, unless it (or a group above it) is locked
@@ -480,7 +489,8 @@ const select = (id, show = true, pane = undefined, shape = undefined) => {
   // its window pane (kept across a rebuild when the same part is selected again), and its partner across the car
   const ps = panesOf(node);
   if (pane !== undefined) S.pane = pane;
-  if (!ps || !ps.some(q => q.name === S.pane)) S.pane = null;
+  const at = ps && S.pane && ps.find(q => q.name === S.pane || sameWindow(q.name, S.pane)); // (?pane=rear glass finds the rear window)
+  S.pane = at ? at.name : null;
   drawPane();
   if (shape !== undefined && shape !== S.shape) { S.shape = shape; S.pt = -1; }
   if (!node || !shapesOf(node).some(r => r.id === S.shape)) S.shape = null;
@@ -489,6 +499,7 @@ const select = (id, show = true, pane = undefined, shape = undefined) => {
   twinBox.visible = !!twin;
   if (twin) twinBox.setFromObject(S.nodes.get(twin));
   document.querySelectorAll('.prow').forEach(r => r.classList.toggle('sel', r.dataset.id === S.sel));
+  document.querySelectorAll('#windows [data-wpart]').forEach(b => b.classList.toggle('on', b.dataset.wpart === S.sel && b.dataset.wpane === S.pane));
   if (show) {
     const row = document.querySelector('.prow.sel'), list = $('parts');
     if (row && list.scrollHeight > list.clientHeight) { // (the list scrolls, not the panel)
@@ -521,7 +532,7 @@ const mirrorPartner = (part) => {
   if (!twin || twin === 'm:' + part.id || part.id === 'm:' + twin || !S.nodes.has(twin)) return null;
   return twin;
 };
-const mirrorWords = (part) => { const twin = mirrorPartner(part); return twin ? ', and its mirror ' + (partOf(twin).name || partOf(twin).role) + ' [' + twin + '].' : '.'; };
+const mirrorWords = (part) => { const twin = mirrorPartner(part); return twin ? ', and its mirror ' + labelOf(partOf(twin)) + ' [' + twin + '].' : '.'; };
 // withSet for the part, and the mirrored set for its partner (one commit: one undo)
 const setFor = (patch, part, values, opts = {}) => {
   let p = withSet(patch, part, values, opts);
@@ -544,10 +555,13 @@ const drawPane = () => {
   if (!pane) return;
   // the boundary: the pane's triangle edges used once, in model space (the mesh's own place honoured)
   S.model.updateMatrixWorld(true);
-  const pos = node.geometry.attributes.position, edges = new Map(), v = new THREE.Vector3();
+  const pos = node.geometry.attributes.position, idx = node.geometry.index?.array, edges = new Map(), v = new THREE.Vector3();
   const key = (i) => { v.fromBufferAttribute(pos, i); return v.toArray().map(c => Math.round(c * 10000)).join(','); };
-  for (let t = pane.start; t + 2 < pane.start + pane.count; t += 3) for (let k = 0; k < 3; k++) {
-    const a = t + k, b = t + (k + 1) % 3, id = [key(a), key(b)].sort().join('|');
+  const tris = []; // (the pane's triangles: a run of vertices, read through the index for an indexed geometry: a hand-built box)
+  if (idx) { for (let t = 0; t + 2 < idx.length; t += 3) if (idx[t] >= pane.start && idx[t] < pane.start + pane.count) tris.push([idx[t], idx[t + 1], idx[t + 2]]); }
+  else for (let t = pane.start; t + 2 < pane.start + pane.count; t += 3) tris.push([t, t + 1, t + 2]);
+  for (const tri of tris) for (let k = 0; k < 3; k++) {
+    const a = tri[k], b = tri[(k + 1) % 3], id = [key(a), key(b)].sort().join('|');
     if (!edges.has(id)) edges.set(id, { a, b, n: 0 });
     edges.get(id).n++;
   }
@@ -558,8 +572,12 @@ const drawPane = () => {
   paneLines.matrix.copy(node.matrixWorld); paneLines.matrixAutoUpdate = false;
 };
 // the key the edit is stored under: both flanks as one ('door window') with Mirror on, else this flank's ('door window L'); a screen its own name
-const paneKey = (pane) => (pane.kind === 'side' && S.mirror ? pane.name.slice(0, -2) : pane.name);
-const paneTwin = (pane) => (pane.kind === 'side' ? pane.name.slice(0, -1) + (pane.side > 0 ? 'R' : 'L') : null);
+// (keys are CANONICAL, render/glassnames.js windowKey: an edit stored as 'door glass' or 'rear glass' is the same window's; every spelling of
+// it is replaced when it is edited: withGlass)
+const paneKey = (pane) => (pane.kind === 'side' && S.mirror ? windowBase(pane.name) : windowKey(pane.name));
+const paneTwin = (pane) => (pane.kind === 'side' ? windowBase(pane.name) + (pane.side > 0 ? ' R' : ' L') : null);
+// the patch's entry for this pane: its own (this flank's) or the shared one (both flanks), as the table spells it
+const storedFor = (pane) => { const t = canonTable(glassTable(S.patch)); return t.get(windowKey(pane.name))?.from ?? (pane.kind === 'side' ? t.get(windowBase(pane.name))?.from : null) ?? null; };
 const setPane = (pane, edges, words) => {
   let p = withGlass(S.patch, paneKey(pane), edges);
   if (pane.kind === 'side' && S.mirror) { p = withGlass(p, pane.name, null); p = withGlass(p, paneTwin(pane), null); } // (a flank's own edit gives way to the shared one)
@@ -568,8 +586,8 @@ const setPane = (pane, edges, words) => {
 const resetPane = (pane) => {
   let p = withGlass(S.patch, pane.name, null);
   if (pane.kind === 'side') {
-    const shared = p.glass?.[pane.name.slice(0, -2)];
-    if (S.mirror) { p = withGlass(p, pane.name.slice(0, -2), null); p = withGlass(p, paneTwin(pane), null); }
+    const shared = canonTable(glassTable(p)).get(windowBase(pane.name));
+    if (S.mirror) { p = withGlass(p, windowBase(pane.name), null); p = withGlass(p, paneTwin(pane), null); }
     else if (shared) p = withGlass(p, pane.name, pane.auto); // (the other flank keeps the shared edit: this one is pinned to the automatic outline)
   }
   commit(p, pane.name + ': back to the automatic outline.');
@@ -590,7 +608,7 @@ const paneEditor = (node, pane) => {
   const side = pane.kind === 'side';
   const now = side ? pane.now : [pane.now.foot, pane.now.top], auto = side ? pane.auto : [pane.auto.foot, pane.auto.top];
   const handles = now.map((q, i) => '<circle data-gp="' + i + '" cx="' + f.x(q[0]).toFixed(1) + '" cy="' + f.y(q[1]).toFixed(1) + '" r="8" fill="#ffd23f" fill-opacity="0.9"/><text x="' + (f.x(q[0]) + 9).toFixed(1) + '" y="' + (f.y(q[1]) - 9).toFixed(1) + '" font-size="10" fill="#cbd5e1">' + (side ? i : i ? 'top' : 'foot') + '</text>').join('');
-  const key = paneKey(pane), stored = S.patch.glass?.[pane.name] ? pane.name : S.patch.glass?.[key] ? key : null;
+  const key = paneKey(pane), stored = storedFor(pane);
   return '<h2 style="margin-top:12px">Window: ' + esc(pane.name) + ' <span class="small">' + (side ? 'side view, nose to the right: drag a corner (it stays inside the cabin outline, on the flank as the build lays it)' : 'its foot and top slide along the pillar') + '</span></h2>'
     + '<div class="panes">' + ps.map(q => '<button data-pane="' + esc(q.name) + '" class="' + (q.name === pane.name ? 'on' : '') + (q.edited ? ' edited' : '') + '" title="' + (q.edited ? 'edited' : 'automatic') + '">' + esc(q.name) + '</button>').join('') + '</div>'
     + '<svg id="glassSvg" class="glass" viewBox="0 0 ' + GW + ' ' + GH + '">'
@@ -603,7 +621,7 @@ const paneEditor = (node, pane) => {
     + handles + '</svg>'
     + '<div class="pts">' + now.map((q, i) => '<div class="vec" data-grow="' + i + '"><span>' + (side ? i : i ? 'top' : 'foot') + '</span>' + num(q[0], 0.01) + num(q[1], 0.01)
       + (side ? '<button data-gadd="' + i + '" title="A corner after this one">+</button><button data-gdel="' + i + '" title="Remove this corner"' + (now.length <= 3 ? ' disabled' : '') + '>×</button>' : '<span></span><span></span>') + '</div>').join('') + '</div>'
-    + '<p class="kv">' + (stored ? 'Edited: stored as "' + esc(stored) + '" in the patch\'s glass table' + (side && stored === key && S.mirror ? ' (both flanks)' : '') : 'Automatic (from the body\'s profile)') + (side ? '. Mirror ' + (S.mirror ? 'on: an edit goes to both flanks.' : 'off: this flank only.') : '') + '</p>'
+    + '<p class="kv">' + (stored ? 'Edited: stored as "' + esc(stored) + '" in the patch\'s glass table' + (side && windowKey(stored) === key && S.mirror ? ' (both flanks)' : '') : 'Automatic (from the body\'s profile)') + (side ? '. Mirror ' + (S.mirror ? 'on: an edit goes to both flanks.' : 'off: this flank only.') : '') + '</p>'
     + '<div class="buttons"><button id="gReset"' + (pane.edited || stored ? '' : ' disabled') + '>Reset to automatic</button></div>';
 };
 const wirePaneEditor = (box, node, pane) => {
@@ -887,10 +905,11 @@ const edited = () => {
 const renderList = () => {
   const q = S.search.trim().toLowerCase();
   const ed = edited();
-  const rows = S.parts.filter(p => !q || [p.id, p.name, p.role, p.kind, p.type].some(v => String(v || '').toLowerCase().includes(q)));
+  const rows = S.parts.filter(p => !q || [p.id, p.name, p.role, p.kind, p.type, ...(p.panes || [])].some(v => String(v || '').toLowerCase().includes(q)) || (/glass|window/.test(q) && isWindowPart(p))); // ('glass' finds the windows too)
+  renderWindows();
   $('parts').innerHTML = rows.map((p) => {
     const depth = Math.min(3, p.id.split(/[./]/).length - 1);
-    const label = p.name && p.name !== p.role ? esc(p.name) + ' <i>' + esc(p.role) + '</i>' : esc(p.role);
+    const own = labelOf(p), label = own && own !== p.role ? esc(own) + ' <i>' + esc(p.role) + '</i>' : esc(p.role);
     const meta = (p.type === 'group' ? p.children + ' in it' : (p.kind || '').replace('Geometry', '') + ' · ' + p.tris);
     return '<div class="prow indent' + depth + (S.sel === p.id ? ' sel' : '') + (S.hidden.has(p.id) ? ' hidden' : '') + (ed.has(p.id) ? ' edited' : '') + '" data-id="' + esc(p.id) + '" role="option">'
       + '<button data-act="eye" class="' + (S.hidden.has(p.id) ? '' : 'on') + '" title="Show / hide in this view" aria-label="Show or hide">' + (S.hidden.has(p.id) ? '&#9675;' : '&#9673;') + '</button>'
@@ -900,6 +919,15 @@ const renderList = () => {
       + '<span class="pmeta">' + esc(meta) + (p.visible ? '' : ' · off') + '</span></div>';
   }).join('') || '<p class="note">No part matches.</p>';
 };
+// the car's WINDOWS (every pane of every window part, cabinGlass's or hand-built), above the list: a tap picks that window
+const renderWindows = () => {
+  const box = $('windows');
+  if (!box) return;
+  const ws = S.parts.filter(p => p.panes?.length);
+  box.hidden = !ws.length;
+  box.innerHTML = ws.length ? '<span class="cap">Windows</span>' + ws.flatMap(p => p.panes.map(n => '<button data-wpart="' + esc(p.id) + '" data-wpane="' + esc(n) + '" class="' + (S.sel === p.id && S.pane === n ? 'on' : '') + (panesOf(S.nodes.get(p.id))?.find(q => q.name === n)?.edited ? ' edited' : '') + '">' + esc(n) + '</button>')).join('') : '';
+};
+$('windows')?.addEventListener('click', (e) => { const b = e.target.closest('[data-wpart]'); if (b) { select(b.dataset.wpart, true, b.dataset.wpane); renderWindows(); } });
 $('parts').addEventListener('click', (e) => {
   const row = e.target.closest('.prow');
   if (!row) return;
@@ -945,10 +973,10 @@ const renderPart = () => {
   if (!p) { box.innerHTML = '<p class="note">Tap a part in the view or the list.</p>'; return; }
   const geo = p.params && PRIMITIVES[p.kind];
   box.innerHTML = '<div class="props">'
-    + '<h2>' + esc(p.name || p.role) + ' <span class="small">' + esc(p.type) + (p.kind ? ' · ' + esc(p.kind) : '') + ' · ' + p.tris + ' triangles</span></h2>'
+    + '<h2>' + esc(labelOf(p)) + ' <span class="small">' + esc(p.type) + (p.kind ? ' · ' + esc(p.kind) : '') + ' · ' + p.tris + ' triangles</span></h2>'
     + '<div class="grid"><label>Name <input id="pName" value="' + esc(p.name) + '"></label><label>Role <input id="pRole" value="' + esc(p.role) + '"></label></div>'
     + '<p class="kv">id ' + esc(p.id) + (p.hook ? ' · the code keeps it as userData.' + esc(p.hook) : '') + (p.added ? ' · added by the patch' : '') + '</p>'
-    + '<p class="kv" id="pMirror">' + (() => { const sy = S.sym.get(p.id), twin = sy?.partner && partOf(sy.partner); return twin ? 'Mirror partner: <b>' + esc(twin.name || twin.role) + '</b> [' + esc(sy.partner) + ']' + (S.mirror ? ' · edits go to both' : ' · Mirror is off: this part only') : sy?.self ? 'Symmetric in itself (one part across the car)' : 'No mirror partner (an asymmetric part)'; })() + '</p>'
+    + '<p class="kv" id="pMirror">' + (() => { const sy = S.sym.get(p.id), twin = sy?.partner && partOf(sy.partner); return twin ? 'Mirror partner: <b>' + esc(labelOf(twin)) + '</b> [' + esc(sy.partner) + ']' + (S.mirror ? ' · edits go to both' : ' · Mirror is off: this part only') : sy?.self ? 'Symmetric in itself (one part across the car)' : 'No mirror partner (an asymmetric part)'; })() + '</p>'
     + ['position', 'rotation', 'scale'].map(k => '<div class="vec" data-vec="' + k + '"><span>' + k[0].toUpperCase() + k.slice(1) + (k === 'rotation' ? ' °' : '') + '</span>'
       + p[k].map(v => num(k === 'rotation' ? v * DEG : v, k === 'rotation' ? 5 : k === 'scale' ? 0.05 : 0.01)).join('') + '</div>').join('')
     + (geo ? '<h2 style="margin-top:12px">Sizes ' + (p.editable ? '' : '<span class="small">set in its code (move or scale the part instead)</span>') + '</h2><div class="params">'
@@ -961,8 +989,14 @@ const renderPart = () => {
       return '<h2 style="margin-top:12px">Shapes <span class="small">' + (list.length > 1 ? 'pick one' : '') + '</span></h2><div class="panes">' + list.map((r, i) => '<button data-shape="' + esc(r.id) + '" class="' + (rec === r ? 'on' : '') + (S.patch.shapes?.[r.id] || S.patch.shapes?.[r.key] ? ' edited' : '') + '">' + (i + 1) + ' · ' + openPts(r.now).length + ' pts</button>').join('') + '</div>'
         + (rec ? shapeEditor(rec) : '');
     })()
-    + (p.panes ? (S.pane && panesOf(S.nodes.get(p.id)).find(q => q.name === S.pane) ? paneEditor(S.nodes.get(p.id), panesOf(S.nodes.get(p.id)).find(q => q.name === S.pane))
-      : '<h2 style="margin-top:12px">Windows <span class="small">tap a pane in the view, or here</span></h2><div class="panes">' + p.panes.map(n => '<button data-pane="' + esc(n) + '"' + (panesOf(S.nodes.get(p.id)).find(q => q.name === n)?.edited ? ' class="edited"' : '') + '>' + esc(n) + '</button>').join('') + '</div>') : '')
+    + (p.panes ? (() => {
+      const node = S.nodes.get(p.id), ps = panesOf(node), pane = S.pane && ps.find(q => q.name === S.pane);
+      if (pane && pane.cabin) return paneEditor(node, pane);
+      const buttons = '<div class="panes">' + ps.map(q => '<button data-pane="' + esc(q.name) + '" class="' + (q === pane ? 'on' : '') + (q.edited ? ' edited' : '') + '">' + esc(q.name) + '</button>').join('') + '</div>';
+      if (!pane) return '<h2 style="margin-top:12px">Windows <span class="small">tap one in the view, or here</span></h2>' + buttons;
+      return '<h2 style="margin-top:12px">Window: ' + esc(pane.name) + ' <span class="small">hand-built</span></h2>' + buttons // (no cabinGlass outline: its edges are the code's)
+        + '<p class="kv">Edges: as the code builds them' + (shapesOf(node).length ? ' (edit them as a Shape, above)' : '') + '. Colour, opacity and place: below.</p>';
+    })() : '')
     + (p.color ? '<div class="paint"><label>Colour <input type="color" id="pColor" value="' + p.color + '"></label>'
       + (p.emissive ? '<label>Glow <input type="color" id="pEmissive" value="' + p.emissive + '"></label>' : '')
       + '<label>Opacity <input type="range" id="pOpacity" min="0.05" max="1" step="0.05" value="' + p.opacity + '"></label></div>'
@@ -1003,7 +1037,7 @@ const renderPart = () => {
     }));
   }
   { const node = S.nodes.get(p.id), rec = S.shape && node && shapesOf(node).find(r => r.id === S.shape); if (rec) wireShapeEditor(box, rec); else box.querySelectorAll('[data-shape]').forEach(b => b.addEventListener('click', () => select(S.sel, true, undefined, b.dataset.shape))); }
-  if (p.panes) { const pane = S.pane && panesOf(S.nodes.get(p.id)).find(q => q.name === S.pane); if (pane) wirePaneEditor(box, S.nodes.get(p.id), pane); else box.querySelectorAll('[data-pane]').forEach(b => b.addEventListener('click', () => select(S.sel, true, b.dataset.pane))); }
+  if (p.panes) { const pane = S.pane && panesOf(S.nodes.get(p.id)).find(q => q.name === S.pane); if (pane?.cabin) wirePaneEditor(box, S.nodes.get(p.id), pane); else box.querySelectorAll('[data-pane]').forEach(b => b.addEventListener('click', () => select(S.sel, true, b.dataset.pane))); }
   $('pName').addEventListener('change', (e) => { if (p.added) set({ name: e.target.value }); else { S.nodes.get(p.id).name = e.target.value; set({ name: e.target.value }); } });
   $('pRole').addEventListener('change', (e) => set({ role: e.target.value }));
   const paint = (key, value) => {
@@ -1043,7 +1077,7 @@ const renderStats = () => {
     + '<span>Draw calls <b>' + s.materials + '</b> once merged</span>'
     + (S.share > 0 ? '<span class="dmg" title="Damage ' + DAMAGE_STATES[damageIndex(S.share)].label + ': triangles and draw calls, clean against damaged (the cut-finer panels add triangles; paint is shared, so no draw call)">Damaged <b>' + dc.damaged.triangles.toLocaleString('en') + '</b> tris (clean ' + dc.clean.triangles.toLocaleString('en') + ', <b>&times;' + dc.factor.toFixed(2) + '</b>) &middot; draw calls <b>' + dc.damaged.materials + '</b> (clean ' + dc.clean.materials + ')</span>' : '')
     + '<span class="lamp" title="Where the lamp effects (Lights, Brake, Hazards, Lamp markers) are placed">lamps: <b>' + esc(fxSource) + '</b></span>'
-    + '<span>Edits <b>' + S.patch.ops.length + (S.patch.evil?.length ? ' + ' + S.patch.evil.length + ' Evil' : '') + (S.patch.glass ? ' + ' + Object.keys(S.patch.glass).length + ' windows' : '') + (S.patch.shapes ? ' + ' + Object.keys(S.patch.shapes).length + ' shapes' : '') + '</b></span>'
+    + '<span>Edits <b>' + S.patch.ops.length + (S.patch.evil?.length ? ' + ' + S.patch.evil.length + ' Evil' : '') + (glassTable(S.patch) ? ' + ' + Object.keys(glassTable(S.patch)).length + ' windows' : '') + (S.patch.shapes ? ' + ' + Object.keys(S.patch.shapes).length + ' shapes' : '') + '</b></span>'
     + '<span title="Mirror: an edit goes to the part across the car too">Mirror <b>' + (S.mirror ? 'on' : 'off') + '</b></span>'
     + (r.unmatched.length ? '<span class="bad">Stale <b>' + r.unmatched.length + '</b></span>' : '')
     + (r.stale ? '<span class="warn">Code changed since the patch</span>' : '');
@@ -1070,7 +1104,7 @@ $('tidy').addEventListener('click', () => { commit(tidyPatch(S.patch)); $('json'
 $('copy').addEventListener('click', () => navigator.clipboard?.writeText($('json').value).then(() => status('Copied.')));
 // the window edits as code: the literal scripts/bake-glass.mjs writes beside the car's cabinGlass call (so the shipped car carries them in code)
 $('bake').addEventListener('click', () => {
-  const g = S.patch.glass, out = $('bakeOut');
+  const g = glassTable(S.patch) && tidyPatch(S.patch).glass, out = $('bakeOut'); // (its ids canonical: 'door window', 'rear window')
   out.hidden = false;
   const sh = S.patch.shapes && Object.keys(S.patch.shapes).length ? '// shape edits (' + Object.keys(S.patch.shapes).length + '): put the patch in src/delivery/modelpatches/' + S.car.id + '.json and run\n//   node scripts/bake-shapes.mjs ' + S.car.id + '\n// (it writes the points into the car\'s code where each outline is written, and proves the code builds the same model)\n' : '';
   if (!g || !Object.keys(g).length) { out.textContent = sh || 'No window or shape edits in this patch.'; if (sh) navigator.clipboard?.writeText(sh); return; }

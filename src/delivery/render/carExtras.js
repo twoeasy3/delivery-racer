@@ -2,6 +2,7 @@
 // The models alone (no game state, nothing added to a scene): built here so the game and the menu's pages
 // (see ../gimmicks.js) can both use them. Each faces local +z, its feet on y = 0.
 import * as THREE from 'three';
+import { isWindowNode } from './glassnames.js';
 
 const unitBox = new THREE.BoxGeometry(1, 1, 1);
 for (const shared of [unitBox]) shared.userData.shared = true; // (made once, shared by every car: clearGroup keeps them)
@@ -108,7 +109,7 @@ export const addSuperKit = (model, car) => {
     FROM.set(x, H + 5, z);
     RAY.set(FROM, DOWN);
     const hit = RAY.intersectObject(model, true)[0];
-    return !!hit && !!hit.object.material.color && glassy(hit.object.material.color.getHex(), model.userData.body.material.color?.getHex());
+    return !!hit && (isWindowNode(hit.object) || (!!hit.object.material.color && glassy(hit.object.material.color.getHex(), model.userData.body.material.color?.getHex()))); // (named or marked a window, either spelling: render/glassnames.js)
   };
   // the wheels (the tyres: cylinders on their side), for where the skirts and exhausts fit between them
   const tyres = [];

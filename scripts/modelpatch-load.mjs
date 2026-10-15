@@ -12,7 +12,7 @@ const SCENE = `import * as THREE from 'three';
 export const PIXEL_RATIO = 1, renderer = null, scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera();
 export const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3(), Cinematic = {};
 export const applySky = () => {}, clearGroup = () => {}, applyLight = () => {}, aim = () => {}, updateCamera = () => {};`;
-export const startModels = async ({ local = null } = {}) => {
+export const startModels = async ({ local = null, root = ROOT } = {}) => { // (root: another copy of the repo, e.g. an older commit's: scripts/.glass-window-check.mjs --base)
   const ctx2d = new Proxy({}, { get: (o, k) => (k in o ? o[k] : k === 'measureText' ? () => ({ width: 10 }) : k === 'getImageData' ? () => ({ data: new Uint8ClampedArray(4) }) : () => ctx2d), set: (o, k, v) => { o[k] = v; return true; } });
   const element = () => ({ classList: { add() {}, remove() {}, toggle() {} }, addEventListener() {}, style: {}, textContent: '' });
   globalThis.window = { addEventListener() {}, dispatchEvent() {}, matchMedia: () => ({ matches: false }), devicePixelRatio: 1 };
@@ -20,7 +20,7 @@ export const startModels = async ({ local = null } = {}) => {
   const stored = new Map(local ? [['delivery.modelpatches', JSON.stringify(local)]] : []);
   globalThis.localStorage = { getItem: (k) => (stored.has(k) ? stored.get(k) : null), setItem: (k, v) => stored.set(k, String(v)), removeItem: (k) => stored.delete(k) };
   const server = await createServer({
-    root: ROOT, configFile: false, appType: 'custom', logLevel: 'error',
+    root, configFile: false, appType: 'custom', logLevel: 'error',
     server: { middlewareMode: true, ws: false, hmr: false, watch: null },
     optimizeDeps: { noDiscovery: true, include: [] },
     cacheDir: join(tmpdir(), 'delivery-vite-' + process.pid + '-' + Date.now().toString(36)),
@@ -29,5 +29,5 @@ export const startModels = async ({ local = null } = {}) => {
   const load = (path) => server.ssrLoadModule('/src/delivery/' + path);
   // a stack recorded inside the loaded modules, its lines put back to the source files' own (Vite's transform moves them)
   const fixStack = (stack) => { const e = new Error('x'); e.stack = stack; server.ssrFixStacktrace(e); return e.stack; };
-  return { load, close: () => server.close(), ROOT, server, fixStack };
+  return { load, close: () => server.close(), ROOT: root, server, fixStack };
 };

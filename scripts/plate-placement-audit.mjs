@@ -28,6 +28,7 @@
 import * as THREE from 'three';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { startModels } from './modelpatch-load.mjs';
+import { isWindowNode } from '../src/delivery/render/glassnames.js';
 import { makeView, searchPlace, isTyre } from './plate-search.mjs';
 
 const argv = process.argv.slice(2);
@@ -85,7 +86,7 @@ try {
     const m = [].concat(n.material)[0];
     if (!m) return 'body';
     if (m.isMeshBasicMaterial || (m.emissive && m.emissive.getHex() !== 0 && (m.emissiveIntensity ?? 1) > 0.25)) return 'lamp';
-    if (n !== model.userData.body && m !== model.userData.body?.material && (glassy(m) || (m.transparent && m.opacity < 0.95))) return 'glass';
+    if (isWindowNode(n) || (n !== model.userData.body && m !== model.userData.body?.material && (glassy(m) || (m.transparent && m.opacity < 0.95)))) return 'glass'; // (named or marked a window, either spelling: render/glassnames.js)
     return 'body';
   };
   const meshesOf = (model, { props = false } = {}) => {
