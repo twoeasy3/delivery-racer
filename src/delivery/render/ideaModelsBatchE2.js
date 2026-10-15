@@ -10,8 +10,8 @@
 // with userData.body, userData.animate and userData.livery. Spread into IDEA_MODELS by ideaModels.js. State-free.
 import * as THREE from 'three';
 import {
-  TRIM, CHROME, GLASS, LAMP, TAIL, AMBER, shared, place, merge, parts, bx, curve, extrudeSide, panel, sideGlass,
-  slopeGlass, shadeBy, low, wheel, roundRect, extrudePlan, narrowAt,
+  TRIM, CHROME, GLASS, LAMP, TAIL, AMBER, shared, place, merge, parts, bx, curve, extrudeSide,
+  shadeBy, low, wheel, roundRect, extrudePlan, cabinGlass, glassFromProfile,
 } from './ideaModelsDkit.js';
 
 const paintOf = (car) => {
@@ -33,30 +33,28 @@ export const IDEA_MODELS_BATCH_E2 = {
     const BEV = 0.04, BW = 1.5, HALF = BW / 2, NOSE = 1.7, TAILZ = -1.7, FLOOR = 0.27, COWL = 0.95, ROOF = 1.44;
     const TAPER = [0.9, ROOF, 0.08];
     const WSF = [0.92, COWL], WST = [0.5, 1.43];
-    const RH = [-1.64, ROOF], RL = [-1.7, 1.3]; // the roof's rear edge and the tail (the glass hatch is on the near-vertical tail)
+    const RH = [TAILZ, ROOF], TH = [TAILZ, 1.0]; // the roof's rear edge: a square corner onto the near-vertical tail (the glass hatch is on the tail; TH is a point on the straight tail where the tail glass's foot is)
     const outline = [
       [NOSE, FLOOR], [NOSE, 0.62], [NOSE - 0.03, 0.82], [1.4, 0.9], WSF, WST,
       ...curve(WST, [0.46, 1.47], [0.38, ROOF], [0.26, ROOF], 3),
-      RH, RL, [TAILZ, FLOOR],
+      RH, TH, [TAILZ, FLOOR],
     ];
     const FZ = NOSE + BEV, BZ = TAILZ - BEV;
     const paint = paintOf(car);
     const body = place(group, shared(k + 'body', () => shadeBy(merge([extrudeSide(outline, BW, BEV, TAPER, 1)]), low(0.3, 0.8, [0.7, 0.64, 0.58]))), paint);
-    const LIFT = 0.006, gx = (y) => narrowAt(HALF, y, TAPER);
-    const zWS = (y) => WSF[0] + (WST[0] - WSF[0]) * (y - WSF[1]) / (WST[1] - WSF[1]);
-    const sides = [
-      [[zWS(1.02) - 0.05, 1.02], [-0.04, 1.02], [-0.04, 1.34], [zWS(1.34) - 0.04, 1.34]],
-      [[-0.16, 1.02], [-1.22, 1.02], [-1.08, 1.34], [-0.16, 1.34]],
-    ];
-    parts(group, k + 'glass', GLASS, () => [
-      slopeGlass([zWS(1.0), 1.0], [zWS(1.36), 1.36], gx(1.0) - 0.1, gx(1.36) - 0.1, BEV + LIFT),
-      panel([[-0.58, 1.04, BZ - LIFT], [0.58, 1.04, BZ - LIFT], [0.55, 1.36, BZ - LIFT], [-0.55, 1.36, BZ - LIFT]].reverse()),
-      ...sideGlass(sides, HALF, TAPER, LIFT),
-    ]);
-    // black: window surrounds (a little bigger than the glass, a hair behind it), bumpers, grille panel, mirrors, axles
-    const grow = (win) => { const cz = win.reduce((s, p) => s + p[0], 0) / win.length, cy = win.reduce((s, p) => s + p[1], 0) / win.length; return win.map(([z, y]) => [z + Math.sign(z - cz) * 0.045, y + Math.sign(y - cy) * 0.045]); };
+    // ALL the glass from the body's own side profile (cabinGlass: one inset outline, level tops, windows with the body's corners); the door glass is
+    // the longer, the quarter window behind the B-pillar ends in a C-pillar before the tail glass. The windscreen's foot is the cowl (belt 0.98).
+    const GBELT = 1.02, WIN = [[-0.34, 9], [-1.45, -0.5]], INS = { aPillar: 0.07, roof: 0.05, cPillar: 0.09 };
+    const glass = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(TH), belt: GBELT, half: HALF, taper: TAPER, grow: BEV,
+      inset: INS, lift: BEV + 0.006, sideLift: 0.006, windows: WIN });
+    const screen = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(TH), belt: COWL + 0.03, half: HALF, taper: TAPER, grow: BEV,
+      inset: INS, lift: BEV + 0.006, sideLift: 0.006 });
+    parts(group, k + 'glass', GLASS, () => [...glass.sides, screen.front, glass.rear]);
+    // black window surrounds: the same outline 4.5 cm bigger, a hair behind the glass (a trim frame)
+    const SUR = 0.045, surrounds = () => WIN.flatMap(([zr, zf]) => glassFromProfile(outline, { from: outline.indexOf(WSF), to: outline.indexOf(TH), belt: GBELT - SUR, inset: { aPillar: 0.003, roof: 0.003, cPillar: 0.003, belt: 0 },
+      zRear: zr === -Infinity || zr <= -9 ? -9 : zr - SUR, zFront: zf >= 9 ? 9 : zf + SUR, half: HALF, taper: TAPER, lift: 0.0024 }));
     parts(group, k + 'black', TRIM, () => [
-      ...sideGlass(sides.map(grow), HALF, TAPER, LIFT * 0.4),
+      ...surrounds(),
       bumper(0.78, 0.07, 0.2, 0.28, NOSE - 0.02), bumper(0.78, 0.07, 0.2, 0.28, TAILZ + 0.02),
       bx(0.7, 0.17, 0.03, 0, 0.72, FZ),
       ...[-1, 1].flatMap(s => [bx(0.12, 0.03, 0.03, s * 0.76, 1.0, 0.64), bx(0.05, 0.14, 0.17, s * 0.79, 1.04, 0.62)]),
@@ -85,28 +83,21 @@ export const IDEA_MODELS_BATCH_E2 = {
     const R = 0.38, TW = 0.25, WX = 1.12 - TW / 2, AF = 1.55, AR = -1.5;
     const BEV = 0.05, BW = 2.06, HALF = BW / 2, NOSE = 2.42, TAILZ = -2.42, FLOOR = 0.32, ROOF = 2.16;
     const TAPER = [1.3, ROOF, 0.05];
-    const WSF = [1.74, 1.12], WST = [1.42, 2.04];
+    const WSF = [1.74, 1.12], WST = [1.378, ROOF], TH = [TAILZ, 1.38]; // (TH: a point on the straight tail, the tail glass's foot)
     const outline = [
       [NOSE, FLOOR], [NOSE, 0.98], [NOSE - 0.06, 1.08], [1.95, 1.1], WSF, WST,
-      ...curve(WST, [1.38, 2.12], [1.32, ROOF], [1.15, ROOF], 3),
-      [-2.2, ROOF], ...curve([-2.2, ROOF], [-2.36, ROOF], [-2.42, 2.05], [-2.42, 1.9], 3),
-      [TAILZ, FLOOR],
+      [TAILZ, ROOF], TH, [TAILZ, FLOOR],
     ];
     const FZ = NOSE + BEV, BZ = TAILZ - BEV;
     const paint = paintOf(car);
     const body = place(group, shared(k + 'body', () => shadeBy(merge([extrudeSide(outline, BW, BEV, TAPER, 1)]), low(0.35, 1.0, [0.72, 0.67, 0.6]))), paint);
-    const LIFT = 0.006, gx = (y) => narrowAt(HALF, y, TAPER);
-    const zWS = (y) => WSF[0] + (WST[0] - WSF[0]) * (y - WSF[1]) / (WST[1] - WSF[1]);
-    const Y0 = 1.36, Y1 = 1.94;
-    const sides = [
-      [[zWS(Y0) - 0.05, Y0], [0.66, Y0], [0.66, Y1], [zWS(Y1) - 0.05, Y1]],
-      ...[[0.52, -0.12], [-0.24, -0.88], [-1.0, -1.64], [-1.76, -2.28]].map(([a, b]) => [[a, Y0], [b, Y0], [b, Y1], [a, Y1]]),
-    ];
-    parts(group, k + 'glass', GLASS, () => [
-      slopeGlass([zWS(1.2), 1.2], [zWS(1.98), 1.98], gx(1.2) - 0.1, gx(1.98) - 0.1, BEV + LIFT),
-      ...sideGlass(sides, HALF, TAPER, LIFT),
-      panel([[-0.72, 1.4, BZ - LIFT], [0.72, 1.4, BZ - LIFT], [0.72, 1.92, BZ - LIFT], [-0.72, 1.92, BZ - LIFT]].reverse()),
-    ]);
+    // ALL the glass from the body's own side profile (cabinGlass: one inset outline, level tops, the windows inset 5 cm from the roof). A bus's own
+    // proportion: the cab door glass is the longest, then four equal passenger windows (the HiAce's row), each between 12 cm pillars; the last one
+    // runs to the tail's C-pillar; the windscreen's foot is the cowl (second call, belt 1.15), the tail glass keeps its width (sideInset 0.3).
+    const INS = { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, ARGS = { from: outline.findIndex(p => p[0] === WSF[0] && p[1] === WSF[1]), to: outline.indexOf(TH), half: HALF, taper: TAPER, grow: BEV, inset: INS, lift: BEV + 0.006, sideLift: 0.006 };
+    const glass = cabinGlass(outline, { ...ARGS, belt: 1.42, sideInset: 0.3, windows: [[0.66, 9], [-0.12, 0.52], [-0.88, -0.24], [-1.64, -1.0], [-9, -1.76]] });
+    const screen = cabinGlass(outline, { ...ARGS, belt: 1.15, sideInset: 0.1 });
+    parts(group, k + 'glass', GLASS, () => [...glass.sides, screen.front, glass.rear]);
     parts(group, k + 'black', TRIM, () => [
       bumper(1.05, 0.08, 0.24, 0.34, NOSE - 0.01), bumper(1.05, 0.08, 0.24, 0.34, TAILZ + 0.01),
       bx(1.1, 0.28, 0.03, 0, 0.82, FZ),

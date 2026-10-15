@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import {
   TRIM, CHROME, GLASS, LAMP, TAIL, AMBER, lambert, shared, place, merge, parts, bx,
-  curve, extrudeSide, narrowAt, panel, sideGlass, slopeGlass, shadeBy, low, wheel,
+  extrudeSide, shadeBy, low, wheel, cabinGlass,
 } from './ideaModelsDkit.js';
 
 // a round rod from [z0, y0] to [z1, y1] in the middle of the car (a hydraulic ram, a rope), `x` across
@@ -40,12 +40,12 @@ export const IDEA_MODELS_BATCH_E3 = {
     const BEV = 0.05, HALF = 1.25, FRONT = 3.2, TAIL_Z = -2.9, DECKY = 1.2;
     const TAPER = [2.0, 2.72, 0.05];
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
-    const WSF = [3.17, 1.75], WST = [2.93, 2.62];
+    const WSF = [3.17, 1.75], WST = [2.902, 2.72], TH = [1.2, 1.98]; // (TH: a point on the straight cab back, the back window's foot)
     const cab = [
-      [1.2, 1.0], [FRONT, 1.0], [FRONT, WSF[1]], WSF, WST, ...curve(WST, [2.9, 2.7], [2.88, 2.72], [2.8, 2.72], 3),
-      [1.32, 2.72], [1.2, 2.62],
+      [1.2, 1.0], [FRONT, 1.0], [FRONT, WSF[1]], WSF, WST,
+      [1.2, 2.72], TH,
     ];
-    const FZ = FRONT + BEV, BZ = 1.2 - BEV;
+    const FZ = FRONT + BEV;
     // the crane (its pieces in the paint too): pivot P0 on the turntable, boom 1 up and back to the knuckle K, boom 2 folded
     // forward along it
     const P0 = [0.5, 2.1], K = [-1.5, 2.72], K2 = [-1.5, 2.86], T = [-0.1, 2.66];
@@ -60,13 +60,11 @@ export const IDEA_MODELS_BATCH_E3 = {
       ...[-1, 1].map(s => bx(0.07, 0.4, 2.75, s * 1.265, 1.48, -1.525)),                   // the drop sides
     ]);
     const body = place(group, shared(k + 'paint', () => shadeBy(painted, low(1.0, 1.4, [0.7, 0.64, 0.56]))), paint);
-    const LIFT = 0.006, gx = (y) => narrowAt(HALF, y, TAPER);
-    const zWS = (y) => WSF[0] + (WST[0] - WSF[0]) * (y - WSF[1]) / (WST[1] - WSF[1]);
-    parts(group, k + 'glass', GLASS, () => [
-      slopeGlass([zWS(1.86), 1.86], [zWS(2.54), 2.54], gx(1.86) - 0.1, gx(2.54) - 0.1, BEV + LIFT),
-      ...sideGlass([[[zWS(1.86) - 0.12, 1.86], [1.6, 1.86], [1.6, 2.54], [zWS(2.54) - 0.1, 2.54]]], HALF, TAPER, LIFT),
-      panel([[-0.6, 2.0, BZ - LIFT], [0.6, 2.0, BZ - LIFT], [0.58, 2.5, BZ - LIFT], [-0.58, 2.5, BZ - LIFT]]),
-    ]);
+    // ALL the glass from the cab's own side profile (cabinGlass: one inset outline, level tops): one door window a side (a lorry cab has no quarter
+    // window; it stops at a cab-back pillar), the windscreen with its foot at the bonnet-less cab's lower edge (second call), and the cab-back window
+    const INS = { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, ARGS = { from: cab.indexOf(WSF), to: cab.indexOf(TH), half: HALF, taper: TAPER, grow: BEV, inset: INS, lift: BEV + 0.006, sideLift: 0.006 };
+    const glass = cabinGlass(cab, { ...ARGS, belt: 1.95, sideInset: 0.65, windows: [[1.6, 9]] }), screen = cabinGlass(cab, { ...ARGS, belt: WSF[1] + 0.05, sideInset: 0.1 });
+    parts(group, k + 'glass', GLASS, () => [...glass.sides, screen.front, glass.rear]);
     parts(group, k + 'black', TRIM, () => [
       bx(2.1, 0.5, 0.34, 0, 0.78, 3.07),                                                   // the cab's lower front over the axle
       bx(2.6, 0.22, 0.18, 0, 0.74, 3.3),                                                  // front bumper
@@ -121,22 +119,18 @@ export const IDEA_MODELS_BATCH_E3 = {
     const BEV = 0.05, BW = 1.88, HALF = BW / 2, NOSE = 2.15, TAILZ = -2.15, ROOF = 1.76;
     const TAPER = [1.2, ROOF, 0.08];
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
-    const WSF = [0.8, 1.2], WST = [0.55, 1.72];
+    const WSF = [0.8, 1.2], WST = [0.531, ROOF], TH = [TAILZ, 1.24]; // (TH: a point on the straight tail, the tail glass's foot)
     const outline = [
-      [NOSE, 0.4], [NOSE, 0.97], [NOSE - 0.05, 1.05], [0.9, 1.13], WSF, WST, [0.42, ROOF], [-2.05, ROOF], [TAILZ, ROOF - 0.07], [TAILZ, 0.4],
+      [NOSE, 0.4], [NOSE, 0.97], [NOSE - 0.05, 1.05], [0.9, 1.13], WSF, WST, [TAILZ, ROOF], TH, [TAILZ, 0.4],
     ];
     const FZ = NOSE + BEV, BZ = TAILZ - BEV;
     const body = place(group, shared(k + 'body', () => shadeBy(merge([extrudeSide(outline, BW, BEV, TAPER, 2, 0.07)]), low(0.4, 0.95, [0.62, 0.57, 0.5]))), paint);
-    const LIFT = 0.006, gx = (y) => narrowAt(HALF, y, TAPER);
-    const zWS = (y) => WSF[0] + (WST[0] - WSF[0]) * (y - WSF[1]) / (WST[1] - WSF[1]);
-    parts(group, k + 'glass', GLASS, () => [
-      slopeGlass([zWS(1.28), 1.28], [zWS(1.66), 1.66], gx(1.28) - 0.08, gx(1.66) - 0.08, BEV + LIFT),
-      ...sideGlass([
-        [[zWS(1.28) - 0.07, 1.28], [-0.3, 1.28], [-0.3, 1.66], [zWS(1.66) - 0.06, 1.66]],   // the door
-        [[-0.54, 1.28], [-1.8, 1.28], [-1.8, 1.66], [-0.54, 1.66]],                          // the quarter window
-      ], HALF, TAPER, LIFT),
-      panel([[-0.72, 1.26, BZ - LIFT], [0.72, 1.26, BZ - LIFT], [0.68, 1.66, BZ - LIFT], [-0.68, 1.66, BZ - LIFT]]),
-    ]);
+    // ALL the glass from the body's own side profile (cabinGlass: one inset outline, level tops): the long door window, the shorter quarter window
+    // behind the B-pillar (the door the longer, as on the two-door Range Rover; the quarter stops at a broad C-pillar), the windscreen with its
+    // foot at the bonnet's end (second call) and the big tail window above the lower gate block
+    const INS = { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, ARGS = { from: outline.indexOf(WSF), to: outline.indexOf(TH), half: HALF, taper: TAPER, grow: BEV, inset: INS, lift: BEV + 0.006, sideLift: 0.006 };
+    const glass = cabinGlass(outline, { ...ARGS, belt: 1.28, sideInset: 0.22, windows: [[-0.45, 9], [-1.5, -0.61]] }), screen = cabinGlass(outline, { ...ARGS, belt: WSF[1] + 0.03, sideInset: 0.08 });
+    parts(group, k + 'glass', GLASS, () => [...glass.sides, screen.front, glass.rear]);
     // the lower tailgate: a darker block (black at a quarter strength, so it follows either paint)
     const shade = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.4, depthWrite: false });
     shade.userData.shared = true;
