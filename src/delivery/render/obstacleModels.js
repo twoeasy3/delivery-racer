@@ -13,6 +13,7 @@ import { ROADWORKS_OBSTACLES } from './themes/roadworksModels.js';
 import { STEELWORKS_OBSTACLES } from './themes/steelworksModels.js';
 import { VEGAS_OBSTACLES } from './themes/vegasObstacles.js';
 import { ALPINE_OBSTACLES } from './themes/alpineModels.js';
+import { METRO_OBSTACLES } from './themes/metroModels.js';
 import { LEVEL } from '../levels.js';
 import { THEMES } from '../themes.js';
 
@@ -652,7 +653,7 @@ OBSTACLE_MODELS.handrail = () => {
 // wall with a big X, taller, and behind it a block of solid structure over the lane (nothing beyond). The mall's (themes.js
 // laneEnd: 'mall') shutter is a shop's grey roller shutter with CLOSED on it, its wall a back-of-house wall of blockwork
 OBSTACLE_MODELS.laneEnd = (o) => {
-  const mall = (THEMES[LEVEL.theme] || THEMES.city).laneEnd === 'mall', W = 3.3, group = new THREE.Group();
+  const look = (THEMES[LEVEL.theme] || THEMES.city).laneEnd, mall = look === 'mall' || look === 'metro', metro = look === 'metro', W = 3.3, group = new THREE.Group(); // (the metro's: a sealed cross-passage, a service tunnel's gate)
   const stripes = (w, h, dark = 0x1b1d22, light = 0xf2c21d, n = 6) => { // (a striped board: diagonal bands are too dear; bands across)
     const g = new THREE.Group();
     for (let k = 0; k < n; k++) { const m = new THREE.Mesh(new THREE.BoxGeometry(w / n, h, 0.08), lambert(k % 2 ? light : dark)); m.position.x = -w / 2 + (k + 0.5) * w / n; g.add(m); }
@@ -675,7 +676,7 @@ OBSTACLE_MODELS.laneEnd = (o) => {
     const top = stripes(W, 0.5, 0x1b1d22, 0xd8262b, 8); top.position.set(0, 2.95, -0.2); group.add(top);
     for (const a of [0.8, -0.8]) { const bar = new THREE.Mesh(new THREE.BoxGeometry(0.28, 2.6, 0.06), lambert(0xd8262b)); bar.position.set(0, 1.6, -0.22); bar.rotation.z = a; group.add(bar); } // the X
     const block = new THREE.Mesh(new THREE.BoxGeometry(W + 0.2, 5.2, 24), lambert(mall ? 0x5a5955 : 0x4a3a3a)); block.position.set(0, 2.6, 12.3); group.add(block); // (solid structure behind: no lane beyond)
-    const label = words(mall ? 'NO ENTRY' : 'DEAD END', '#d8262b', '#ffffff', 2.6, 0.65); label.position.set(0, 3.6, -0.2); group.add(label);
+    const label = words(metro ? 'SEALED' : mall ? 'NO ENTRY' : 'DEAD END', '#d8262b', '#ffffff', 2.6, 0.65); label.position.set(0, 3.6, -0.2); group.add(label);
     for (const x of [-W / 2 - 0.15, W / 2 + 0.15]) { const post = stripes(0.3, 4.4, 0x1b1d22, 0xd8262b, 1); post.position.set(x, 2.2, -0.2); post.rotation.y = Math.PI / 2; group.add(post); }
   } else {
     const slats = new THREE.Mesh(new THREE.BoxGeometry(W, 2.4, 0.12), lambert(mall ? 0xa6abb2 : 0x7a7f86)); slats.position.y = 1.5; group.add(slats);
@@ -683,7 +684,7 @@ OBSTACLE_MODELS.laneEnd = (o) => {
     const bands = stripes(W, 0.3, 0x1b1d22, 0xf2c21d, 8); bands.position.set(0, 2.85, -0.05); group.add(bands);
     const slot = new THREE.Mesh(new THREE.BoxGeometry(W, 0.3, 0.1), new THREE.MeshBasicMaterial({ color: 0xfff4d0 })); slot.position.y = 0.15; group.add(slot); // (the lit slot: light from the road behind)
     const lintel = new THREE.Mesh(new THREE.BoxGeometry(W + 0.4, 0.4, 0.5), lambert(0x4a4f57)); lintel.position.y = 3.2; group.add(lintel);
-    const label = words(mall ? 'CLOSED' : 'SHUTTER', '#f2c21d', '#1b1d22', 2.4, 0.6); label.position.set(0, 3.6, -0.1); group.add(label);
+    const label = words(metro ? 'NO ACCESS' : mall ? 'CLOSED' : 'SHUTTER', '#f2c21d', '#1b1d22', 2.4, 0.6); label.position.set(0, 3.6, -0.1); group.add(label);
   }
   return group;
 };
@@ -1285,3 +1286,4 @@ Object.assign(OBSTACLE_MODELS, STEELWORKS_OBSTACLES); // the steelworks' (render
 Object.assign(OBSTACLE_MODELS, VEGAS_OBSTACLES); // the Las Vegas Strip's (render/themes/vegasObstacles.js): a velvet rope, a slot machine, a luggage cart, a giant die
 Object.assign(OBSTACLE_MODELS, ALPINE_OBSTACLES); // the alpine pass's (render/themes/alpineModels.js): cheese wheels, a woodpile, a milk churn, a block of snow
 Object.assign(OBSTACLE_MODELS, ROADWORKS_OBSTACLES); // the roadworks' (render/themes/roadworksModels.js): barrier blocks, a cable drum, a heap of sand; a traffic drum, a pallet of pipes, a works sign
+Object.assign(OBSTACLE_MODELS, METRO_OBSTACLES); // the metro's (render/themes/metroModels.js): a ticket gate, a floor scrubber, a track lamp; a rail trolley, a wayfinding board; a junction's shuttle of Canberra carriages

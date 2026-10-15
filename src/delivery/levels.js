@@ -168,7 +168,7 @@
 //                                  'chairStack', 'riceBasket', 'present', 'toyDrum', 'sackStack', 'beachBall',
 //                                  'tumbleweed', 'cafeTable', 'wheelieBin', 'snowdrift', 'brimstone', 'flagStand',
 //                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'wineCrates', 'hayRoll', 'terracottaPot' (Tuscany's). All of them are on the Gimmicks page, last,
-//                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'boxStack', 'trolleyRow', 'wetFloorSign', 'planter', 'palmPot', 'kiosk', 'bench', 'playBlock', 'bin' (the mall's), 'jerryStack', 'tentRoll' and
+//                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'ticketGate', 'scrubber', 'trackLamp', 'railTrolley', 'infoTotem' (the metro's), 'boxStack', 'trolleyRow', 'wetFloorSign', 'planter', 'palmPot', 'kiosk', 'bench', 'playBlock', 'bin' (the mall's), 'jerryStack', 'tentRoll' and
 //                                  'rallyFlag' (the desert's: stacked jerrycans, a rolled tent, a rally marker flag), 'ingotStack', 'steelCoil', 'hotSign' and
 //                                  'rebarBundle' (the steelworks': hot billets, a coil, a HOT METAL sign, rebar), 'cheeseWheels', 'woodpile', 'milkChurn',
 //                                  'snowBlock' (the alpine pass's). All of them are on the Gimmicks page, last,
@@ -673,6 +673,8 @@ HIDDEN_LEVELS['vegas-strip'] = vegasStrip; // Vegas Strip (the Las Vegas theme: 
 HIDDEN_LEVELS['vegas-night'] = vegasNight; // Vegas by Night (the same Strip after dark, its hero look): ?hidden=vegas-night
 import alpinePass from './levels/alpine-pass.json';
 HIDDEN_LEVELS['alpine-pass'] = alpinePass; // Alpine Pass (the alpine theme's switchbacks to the col): ?hidden=alpine-pass, until the owner decides
+import metroRun from './levels/metro-run.json';
+HIDDEN_LEVELS['metro-run'] = metroRun; // Metro Run (a metro system: running tunnels, stations, an interchange, the depot: render/themes/metro.js): ?hidden=metro-run, until it is put in the career
 // THE HIDDEN LEVELS MENU (the owner, 15-Oct; Options > Hidden levels, render/hiddenlevels.js): every level of HIDDEN_LEVELS that is a
 // real level, so a hidden level added later is listed without a word here. TEST_LEVELS are the developer's test tracks (a testbed and the three
 // Gimmick Roads: gimmicks.js calls them 'Test'), left out of it. A run started from it is ?hidden=<id>: it banks nothing (game.js).

@@ -59,6 +59,7 @@ Object.assign(JUNK_NAMES, { ingotStack: 'stacks of hot billets', steelCoil: 'ste
 Object.assign(JUNK, { velvetRope: { hw: 1.2, hl: 0.6, height: 1.2 }, slotMachine: { hw: 0.6, hl: 0.6, height: 1.1 }, luggageCart: { hw: 1.1, hl: 1.1, height: 1.5 }, casinoDie: { hw: 0.42, hl: 0.42, height: 1.12 } });
 Object.assign(JUNK_NAMES, { velvetRope: 'velvet ropes', slotMachine: 'slot machines', luggageCart: 'luggage carts', casinoDie: 'giant dice' }); // (the Las Vegas Strip's)
 Object.assign(JUNK, { boxStack: {}, trolleyRow: {}, wetFloorSign: {} }); Object.assign(JUNK_NAMES, { boxStack: 'sack trucks of cartons', trolleyRow: 'rows of trolleys', wetFloorSign: 'wet-floor signs' }); // (the mall's)
+Object.assign(JUNK, { ticketGate: {}, scrubber: {}, trackLamp: {}, railTrolley: { hw: 0.6, hl: 0.6, height: 1.1 }, infoTotem: { hw: 1.1, hl: 0.15, height: 3 } }); Object.assign(JUNK_NAMES, { ticketGate: 'ticket gates', scrubber: 'floor scrubbers', trackLamp: 'track lamps', railTrolley: 'rail trolleys', infoTotem: 'wayfinding boards' }); // (the metro's)
 Object.assign(JUNK, { pumpkinCrate: {}, harvestCrate: {}, leafPile: {}, smallPumpkin: {} }); Object.assign(JUNK_NAMES, { pumpkinCrate: 'crates of pumpkins', harvestCrate: 'crates of pumpkins', leafPile: 'heaps of leaves', smallPumpkin: 'small pumpkins' }); // (Halloween's crate, and autumn's)
 // the kinds that drift on a level (not the darting ones: those are another card), as its theme has them
 const driftingKinds = (level) => [...new Set((level.drifters || []).filter(d => d.pattern !== 'dart').map(d => themedKind(level.theme, d.kind || 'cone', true)))].filter(k => JUNK[k]);
@@ -1218,6 +1219,8 @@ DRESS.push(['jerryStack', 'Stack of jerrycans', 'crate', 'the desert', 0xc8321f]
 DRESS.push(['boxStack', 'Cartons on a sack truck', 'crate', 'the mall', 0xc89a62], ['trolleyRow', 'Row of trolleys', 'bale', 'the mall', 0x9aa0a8], ['wetFloorSign', 'Wet-floor sign', 'cone', 'the mall', 0xf2c21d]);
 DRESS.push(['cheeseWheels', 'Cheese wheels', 'crate', 'the alpine pass', 0xe8a92c], ['woodpile', 'Woodpile', 'bale', 'the alpine pass', 0x8a5a32], ['milkChurn', 'Milk churn', 'cone', 'the alpine pass', 0xc9d0d6],
   ['snowBlock', 'Block of snow', 'barrier', 'the alpine pass', 0xf4f8fc]);
+DRESS.push(['ticketGate', 'Ticket gate', 'crate', 'the metro', 0xd8262b], ['scrubber', 'Floor scrubber', 'bale', 'the metro', 0xf2b51d], ['trackLamp', 'Track lamp', 'cone', 'the metro', 0xff2a1a],
+  ['railTrolley', 'Rail trolley', 'crate', 'the metro', 0xe8751a], ['infoTotem', 'Wayfinding board', 'sign', 'the metro', 0x1f6fd0]);
 DRESS.push(['barrierBlock', 'Barrier blocks', 'barrier', 'the roadworks', 0xd8262b], ['cableReel', 'Cable drum', 'crate', 'the roadworks', 0xa8783e], ['sandPile', 'Heap of sand', 'bale', 'the roadworks', 0xd9b36a],
   ['trafficDrum', 'Traffic drum', 'cone', 'the roadworks', 0xff6a00], ['pipePallet', 'Pallet of pipes', 'crate', 'the roadworks', 0xe86a1a], ['worksSign', 'Works sign', 'sign', 'the roadworks', 0xd8262b]);
 DRESS.push(['ingotStack', 'Stack of hot billets', 'crate', 'the steelworks', 0xff6a1a], ['steelCoil', 'Steel coil', 'bale', 'the steelworks', 0xb9c1c9], ['hotSign', 'Hot-metal sign', 'cone', 'the steelworks', 0xf2c21d],

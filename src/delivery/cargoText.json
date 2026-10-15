@@ -86,5 +86,7 @@
   "pokerchips": { "name": "Box of Poker Chips", "blurb": "Racks of chips in a baize-lined box, two dice on top." },
   "fakechips": { "name": "Case of Counterfeit Chips", "blurb": "Fake chips in a locked case, a dye pack in the lid.", "states": ["Snapped shut","Rattling","Dye pack burst"] },
   "cheesewheel": { "name": "Wheel of Mountain Cheese", "blurb": "A great wheel of mountain cheese, one wedge already cut." },
-  "fondue": { "name": "Suspicious Fondue", "blurb": "A fondue of no known cheese, and it is turning green.", "states": ["Simmering","Bubbling green","Boiling over"] }
+  "fondue": { "name": "Suspicious Fondue", "blurb": "A fondue of no known cheese, and it is turning green.", "states": ["Simmering","Bubbling green","Boiling over"] },
+  "ticketrolls": { "name": "Box of Ticket Rolls", "blurb": "Fresh paper rolls for the ticket machines, one unspooling." },
+  "rats": { "name": "Cage of Tunnel Rats", "blurb": "Three rats from the tunnels in a wire cage, and the catch is loose.", "states": ["Sniffing","Gnawing the bars","Breaking out"] }
 }

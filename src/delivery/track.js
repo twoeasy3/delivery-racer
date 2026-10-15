@@ -1041,7 +1041,7 @@ const createTrack = () => {
       problems.push('lanes: whole numbers, and at least one lane');
     }
     if (!ONE_WAY && (LEFT < 1 || RIGHT < 1)) problems.push('lanes: a two-way road needs at least one lane each way');
-    if (ONE_WAY && MID) problems.push('median: only a two-way road can have one');
+    if (ONE_WAY && MID && !LEVEL.railway) problems.push('median: only a two-way road can have one (or a one-way road with a railway down it: the metro)');
     if (LEVEL.railway && !MID) problems.push('railway: it needs a median to run down');
     if (LEVEL.drive !== undefined && LEVEL.drive !== 'left' && LEVEL.drive !== 'right') problems.push('drive: left or right');
     // a bend tighter than the road is wide folds its inside edge over itself, and a road that comes
