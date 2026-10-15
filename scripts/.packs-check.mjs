@@ -715,6 +715,17 @@ try {
       'every pool car capped but woody (1 short): a five-card pack, the woody card x3 is cut to what the save took (given 1, cut 3, n 1)');
     check(others.length > 0 && others.every(c => c.given === 0 && c.maxed && c.n === 3 && c.cut === undefined && Ecu.blueprints(c.car) === found.snap[c.car]),
       'the other cards (cars at their cap) are dealt and shown as maxed: given 0, n 3 as dealt, no cut, the save unchanged (' + others.length + ' cards)');
+    // the REVEAL's cap tag (render/packs.js capTag, the owner 15-Oct): 'Already maxed' on a card that gave nothing, '+1 of ×3' on a cut one,
+    // none on a key, a featured card or a card that gave all it was dealt; the reward hook (surplus blueprints) gives nothing yet
+    {
+      const { readFileSync } = await import('node:fs');
+      const block = readFileSync(new URL('../src/delivery/render/packs.js', import.meta.url), 'utf8').match(/\/\/ <captag>[^\n]*\n([\s\S]*?)\/\/ <\/captag>/)?.[1] || '';
+      const capTag = block ? new Function(block + '\nreturn capTag;')() : () => undefined;
+      const tags = plain.map(c => capTag(c));
+      check(capTag(firstWoody)?.words === '+1 of ×3' && others.every(c => capTag(c)?.words === 'Already maxed') && tags.every(t => t && t.reward === null)
+        && capTag({ car: 'woody', n: 2, given: 2 }) === null && capTag({ car: 'x', key: true, n: 1, given: 0, maxed: true }) === null && capTag({ car: 'x', featured: true, n: 3, given: 0, maxed: true }) === null,
+        'the reveal tags them: "' + capTag(firstWoody)?.words + '" on the cut card, "Already maxed" on the ' + others.length + ' capped; none on a full card, a key or a featured card; no reward line yet (the hook returns null)');
+    }
     Progress.reset(); Progress.noSave = true;
   }
   // ---- THE CAR HUNT PACK (the owner, 13-Oct: "A car hunt pack has 3 slots, all 1x. It has one featured item slot. The

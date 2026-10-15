@@ -45,6 +45,21 @@ const rank = (r) => RARITIES.indexOf(r);
 const blip = (name, v = 0.5) => { try { Sound.play(name, v); } catch { /* (no sound: fine) */ } };
 const still = () => !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
+// <captag> THE CAP TAG (the owner, 15-Oct: 'Yes' to a tag): a REGULAR card whose car was already at its blueprint cap gives nothing
+// (packs.js open(): card.given 0, card.maxed) and says 'Already maxed'; one the cap cut (card.cut: the stack as dealt, card.given what the
+// save took) says '+1 of ×3'. Keys and featured cards never carry it. Pure (the check reads it from this file): { words, reward } or null.
+// surplusReward(card, surplus) is THE HOOK for the blueprints the cap turned away (the owner: they WILL give a special currency later): it
+// returns the reward line's words, or null; today nothing is given, so null, and no line is shown.
+const surplusReward = (card, surplus) => null; // eslint-disable-line no-unused-vars
+const capTag = (card) => {
+  if (!card || card.key || card.featured) return null;
+  const given = Math.max(0, card.given ?? card.n ?? 1), dealt = card.cut ?? (card.maxed ? card.n ?? 1 : given);
+  if (dealt <= given) return null;
+  const words = given === 0 ? 'Already maxed' : '+' + given + ' of ×' + dealt;
+  return { words, reward: surplusReward(card, dealt - given) };
+};
+// </captag>
+
 const overlay = make('div', 'pack-reveal hidden');
 overlay.id = 'packReveal';
 overlay.setAttribute('role', 'dialog');
@@ -125,6 +140,11 @@ const show = (result, { look = false } = {}) => {
     const car = carById(card.car);
     if (!car) return null;
     const { node, pic } = blueprintCard(car, card, { pose: poses[i] });
+    const tag = capTag(card); // (a capped car's card: 'Already maxed' / '+1 of ×3'; its reward line, once there is one, under the words)
+    if (tag) {
+      node.querySelector('.bp-art')?.append(make('span', 'bp-cap', make('b', '', tag.words), tag.reward ? make('small', '', tag.reward) : null));
+      node.setAttribute('aria-label', node.getAttribute('aria-label') + ', ' + tag.words + (tag.reward ? ', ' + tag.reward : ''));
+    }
     const prog = progressBar(progress[i], card);
     // n copies (card.n): the card turns at x1, then the rest flick onto its pile (render/flick.js), the badge and bar going up with each
     const plan = flickPlan(card.n, { reduced: still(), seed: 1 + i * 7919 + [...String(card.car)].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) | 0, 0) });
