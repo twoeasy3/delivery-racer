@@ -18,12 +18,20 @@ import { HAND as PLATE_HAND, HAND_NONE, plateAnchorsFor } from './plateanchors.j
 import { PLATE_TABLE, PLATE_VARIANTS, PLATE_NONE } from './plateanchorstable.js';
 import { glassy } from './dents.js';
 import { carGeometry, measureShape, dims, volume, overlap, effDepth, feasible, carInfo, footprint, isRim, MAX_INSET, WIDTH_CAP, SEARCH_MAX } from '../../../scripts/prop-audit-lib.mjs';
-import { makeView, shoot, fitPlane, blocked, searchPlace } from '../../../scripts/plate-search.mjs';
+import { makeView, shoot, fitPlane, blocked, searchPlace, findBars, placeKind, RULES as PLATE_RULES } from '../../../scripts/plate-search.mjs';
 
 export const DRAFT_KEY = 'delivery.modeleditor.placementDrafts'; // (the editor's own drafts: never read by the game)
 export const DEFAULT_PROP = { roof: 'roofbox', cargo: 'cargocrates', wing: 'winggt' };
 const TABS = [...SLOTS, 'plate'];
-const EDGE = 0.01; // m: the plate's rays this far in from its edge (the plate search lets a plate overhang its band by 9 mm: scripts/plate-search.mjs OVERHANG)
+// the rays' grid on a plate [y, z, w]: 7 x 3 points EDGE in from its edges; on a bumper bar only the part on the bar's face (rule EDGES)
+const plateGrid = (bar, y, w) => {
+  const h = w / 4, gx = Math.min(w / 2 - EDGE, bar ? bar.w / 2 - 0.003 : Infinity);
+  const y0 = Math.max(-h / 2 + EDGE, bar ? bar.y0 - y + 0.003 : -Infinity), y1 = Math.min(h / 2 - EDGE, bar ? bar.y1 - y - 0.003 : Infinity);
+  const out = [];
+  for (let i = 0; i < 7; i++) for (let j = 0; j < 3; j++) out.push([-gx + 2 * gx * i / 6, y0 + (y1 - y0) * j / 2]);
+  return out;
+};
+const EDGE = PLATE_RULES.OVERHANG_Y; // m: the plate's rays this far in from its edge (on the body the plate rules let a plate stand past its surface's top and bottom by this; on a bumper bar it may stick out further: scripts/plate-search.mjs RULES)
 const NAMES = { roof: 'Roof', cargo: 'Cargo', wing: 'Wing', plate: 'Plates' };
 const r3 = (v) => Math.round(v * 1000) / 1000, r2 = (v) => Math.round(v * 100) / 100;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -236,25 +244,31 @@ export const createPlacements = (ctx) => {
     if (!e || !model()) return null;
     geom();
     const [y, z, w, pitch] = e, h = w / 4, s = end === 'rear' ? -1 : 1, rows = [], kinds = {};
+    const where = placeKind(findBars(P.view, end), y, z); // (the rules' choice: a bumper bar first; on a bar the plate may stick out past it)
+    const bar = where.on === 'bumper' ? where.bar : null;
     let miss = 0;
-    for (let i = 0; i < 7; i++) for (let j = 0; j < 3; j++) {
-      const x = -(w / 2 - EDGE) + (w - 2 * EDGE) * i / 6, dy = -(h / 2 - EDGE) + (h - 2 * EDGE) * j / 2, hit = shoot(P.view, end, x, y + dy);
+    const grid = plateGrid(bar, y, w), all = grid.length;
+    for (const [x, dy] of grid) {
+      const hit = shoot(P.view, end, x, y + dy);
       if (!hit) { miss++; continue; }
       kinds[hit.kind] = (kinds[hit.kind] || 0) + 1;
       rows.push([x, dy, hit.z]);
     }
     const chips = [], cm = (v) => Math.round(v * 100);
     const f = rows.length >= 6 ? fitPlane(rows) : null;
-    if (miss > 3) chips.push(['bad', 'off the body']);
+    if (miss > all / 6) chips.push(['bad', 'off the body']);
+    if (bar && (Math.min(w, bar.w) < PLATE_RULES.BAR_HOLD * w || Math.min(h, bar.h) < PLATE_RULES.BAR_HOLD * h)) chips.push(['bad', 'mostly off the bar']);
     if (f) {
       const dev = f.dev * 1000;
-      chips.push([dev > 12 ? 'bad' : dev > 6 ? 'warn' : 'ok', (dev > 6 ? 'uneven ' : 'flat ') + Math.round(dev) + ' mm']);
+      const strict = PLATE_RULES.STRICT * 1000, rough = PLATE_RULES.ROUGH * 1000;
+      chips.push([dev > rough ? 'bad' : dev > strict ? 'warn' : 'ok', (dev > strict ? 'uneven ' : 'flat ') + Math.round(dev) + ' mm']);
       const gap = (z - f.a) * s; // (+: stands out from the surface; -: sunk into it)
-      if (gap > 0.015) chips.push(['bad', 'floats ' + cm(gap) + ' cm']);
-      if (gap < -0.015) chips.push(['bad', 'sunk ' + cm(-gap) + ' cm']);
+      if (gap > PLATE_RULES.GAP) chips.push(['bad', 'floats ' + cm(gap) + ' cm']);
+      if (gap < -PLATE_RULES.GAP) chips.push(['bad', 'sunk ' + cm(-gap) + ' cm']);
       const lean = Math.atan(f.b) * 180 / Math.PI;
-      if (Math.abs(lean - pitch) > 4) chips.push(['warn', 'tilt off ' + Math.round(Math.abs(lean - pitch)) + '°']);
+      if (Math.abs(lean - pitch) > PLATE_RULES.TILT) chips.push(['warn', 'tilt off ' + Math.round(Math.abs(lean - pitch)) + '°']);
     }
+    chips.push([where.on === 'above' || where.on === 'below' ? 'warn' : 'ok', where.on === 'bumper' ? 'on the bumper' : where.on === 'body' ? 'no bumper bar' : where.on + ' the bumper']);
     for (const k of ['glass', 'lamp', 'wheel']) if (kinds[k]) chips.push(['bad', 'on ' + k]);
     const N = new THREE.Vector3(0, -s * Math.tan(pitch * Math.PI / 180), s).normalize(), p = new THREE.Vector3(0, y, z).addScaledVector(N, 0.01);
     if (blocked(P.view, p, N)) chips.push(['bad', 'hidden']);
@@ -319,8 +333,8 @@ export const createPlacements = (ctx) => {
     const k = end === 'rear' ? 'r' : 'f', e = pl[k];
     if (!e) return false;
     geom();
-    const [y, , w] = e, h = w / 4, rows = [];
-    for (let i = 0; i < 7; i++) for (let j = 0; j < 3; j++) { const x = -(w / 2 - EDGE) + (w - 2 * EDGE) * i / 6, dy = -(h / 2 - EDGE) + (h - 2 * EDGE) * j / 2, hit = shoot(P.view, end, x, y + dy); if (hit) rows.push([x, dy, hit.z]); }
+    const [y, z0, w] = e, rows = [], k0 = placeKind(findBars(P.view, end), y, z0), bar = k0.on === 'bumper' ? k0.bar : null;
+    for (const [x, dy] of plateGrid(bar, y, w)) { const hit = shoot(P.view, end, x, y + dy); if (hit) rows.push([x, dy, hit.z]); } // (on a bar: only where it is on the face)
     const f = rows.length >= 6 ? fitPlane(rows) : null;
     if (!f) return false;
     pl[k] = [e[0], r3(f.a), e[2], Math.round(Math.atan(f.b) * 1800 / Math.PI) / 10];

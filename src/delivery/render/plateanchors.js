@@ -8,6 +8,8 @@
 //   NO PLATE: PLATE_NONE (the generated list of craft, open-wheelers, bikes, saucers) plus HAND_NONE below; a car with no place found
 //   at either end is simply "unplaced". Both mean the same to the player: this car cannot wear an equipped plate (its own stay).
 //   LEGENDARY cars keep their own gold plates: they are never dressed (platecosmetic.js), so they have no entry here.
+// WHERE A PLATE MAY GO: the plate rules, scripts/plate-search.mjs RULES and its header (one set for the generator, the audit and the model
+// editor; CHECKLIST 352: a bumper bar first, the plate centred on it and allowed to stick out past it, else the body).
 // HOW A NEW CAR GETS ONE: `node scripts/plate-anchors.mjs <car id> --write`, then look at it (shots.mjs ?platedesign=classic&car=<id>),
 // and put a hand fix in HAND below if it is wrong, or the model in HAND_NONE.
 // Looked up: a car's id first (a variant, or a hand fix for one car), then its model, in HAND, else the generated PLATE_VARIANTS / PLATE_TABLE.

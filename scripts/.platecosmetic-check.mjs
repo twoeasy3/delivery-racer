@@ -173,9 +173,10 @@ try {
   P.resetPlate();
 
   // ---- the replay fingerprint and the entries ----
-  const vite = readFileSync(ROOT + '/vite.config.js', 'utf8');
+  // (the fingerprint's own list, not a text search of vite.config.js: a comment there that names plateanchors.js made the old regex fail)
+  const logic = (await import(new URL('../vite.config.js', import.meta.url).href)).logicFiles();
   const walkers = ['platecosmetic', 'platedesigns', 'platetext', 'plateanchors', 'plateblocklist', 'plateanchorstable'];
-  check(!walkers.some(w => new RegExp("logicFiles[^;]*" + w).test(vite)), 'no plate module is listed in the replay fingerprint (vite.config.js logicFiles)');
+  check(logic.length > 0 && !logic.some(f => walkers.some(w => f.includes(w))), 'no plate module is listed in the replay fingerprint (vite.config.js logicFiles: ' + logic.length + ' files)');
   const importers = [];
   const { readdirSync } = await import('node:fs');
   for (const f of readdirSync(ROOT + '/src/delivery').filter(f => f.endsWith('.js'))) if (/render\/plate|platecosmetic/.test(readFileSync(ROOT + '/src/delivery/' + f, 'utf8'))) importers.push(f);

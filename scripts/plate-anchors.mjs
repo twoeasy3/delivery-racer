@@ -1,8 +1,9 @@
 // The NUMBER PLATE ANCHOR generator (CHECKLIST 286; src/delivery/render/plateanchors.js is the table's reader, render/plateanchorstable.js the
 // table this writes). For every car model it builds the model as the showroom does (render/showcar.js makeShowCar), takes the car's
-// existing plates off, and asks scripts/plate-search.mjs for the best place at the back and the front (rays along the car on a grid over
-// the plate and a margin round it, paintwork only, within reach of the car's end, one plane, upright enough, nothing in front; the
-// canonical 0.52 x 0.13 plate first, else 0.46 / 0.40 / 0.34 / 0.30 wide). It writes no ROUGH flag any more (an old entry may carry one:
+// existing plates off, and asks scripts/plate-search.mjs for the best place at the back and the front BY THE PLATE RULES (its RULES and
+// header: on the car's solid surface (paint, or a bumper of any finish; not glass, a lamp, a wheel), flat, within reach of the car's end,
+// upright, nothing in front, a BUMPER BAR first, else the body; the canonical 0.52 x 0.13 plate first, else 0.46 / 0.40 / 0.34 / 0.30
+// wide). It does not know the HAND rows (render/plateanchors.js), which win over what it writes. It writes no ROUGH flag any more (an old entry may carry one:
 // with a flag (r5 = 1), the hand list in plateanchors.js is where those are looked at and fixed. A model the audit
 // (src/delivery/plates-audit.json) calls "cannot" (craft, open-wheelers, bikes, saucers) is NOT shot: it goes in the table's `none` list.
 // A car whose model is the same as another's (a Super with its body kit, an earned reskin) gets its OWN entry only where its back or

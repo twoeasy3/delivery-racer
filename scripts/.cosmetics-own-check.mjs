@@ -95,7 +95,7 @@ check(ownedCosmetics().join() === listed.join() && ownsCosmetic('plate', 'fixtur
   const hashOf = (files, read) => { const h = createHash('sha256'); for (const f of files) h.update(f + '\0' + read(f)); return h.digest('hex').slice(0, 10); };
   const mine = hashOf(here, f => readFileSync('src/delivery/' + f));
   const dir = mkdtempSync(join(tmpdir(), 'main-snapshot-'));
-  execSync('git archive origin/main package.json vite.config.js src/delivery | tar -x -C ' + dir);
+  execSync('git archive origin/main package.json vite.config.js scripts src/delivery | tar -x -C ' + dir); // (scripts: vite.config.js imports scripts/placements-lib.mjs)
   symlinkSync(join(process.cwd(), 'node_modules'), join(dir, 'node_modules'));
   const cwd = process.cwd();
   process.chdir(dir);
