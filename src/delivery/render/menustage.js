@@ -388,15 +388,20 @@ let carLive = false;  // the model is being drawn (so the still is not shown und
 let carStale = false; // a cosmetic changed since the model was built (render/loadout.js): it is built again when next in sight
 onLoadout(() => { carStale = true; });
 const cosmeticsUp = () => { const el = document.getElementById('cosmetics'); return !!el && !el.classList.contains('hidden'); }; // (the Cosmetics screen over the menu: its own live car)
-// THE CAR STAGE (a prototype, OFF unless asked: CHECKLIST 347, render/carstage.js): ?stage=<theme> puts the card's car on that
-// theme's little set (?stage=level: the picked level's theme; ?stage=default: the plain studio). Its module is loaded only then
-const STAGE = params.get('stage'), stageTheme = () => (['', 'level', '1'].includes(STAGE) ? LEVEL.theme || 'city' : STAGE);
+// THE CAR STAGE (CHECKLIST 347, render/carstage.js): the card's car on a little set of the PICKED LEVEL'S THEME (a level with no
+// theme of its own is drawn as the city, road.js, so its stage is the city's; a theme unknown: the default studio; a stage that
+// fails: the default studio, then the plain card). Its module is loaded
+// lazily once the menu is up, and nothing waits for it. ?stage=<theme> forces a theme, ?stage=default the studio, ?stage=off the
+// plain card as before; ?stagethrow=<theme|*> makes a stage's build throw (to see the fallback)
+const STAGE = params.get('stage'), stageOn = !['off', '0'].includes(STAGE);
+const stageTheme = () => (STAGE === null || ['', 'level', '1'].includes(STAGE) ? (LEVEL ? LEVEL.theme || 'city' : undefined) : STAGE);
 let carStage = null;
-if (STAGE !== null || params.has('stagelog')) import('./carstage.js').then((m) => {
-  carStage = STAGE !== null ? m.cardStage(picture, { quality: params.get('stagequality') }) : null;
-  if (carStage) carStage.sync(CAR.silhouette ? null : carView, stageTheme(), carView?.evil);
+if (stageOn || params.has('stagelog')) import('./carstage.js').then((m) => { // (?stage=off&stagelog: the plain card's cost logged)
+  if (params.has('stagethrow')) m.STAGE_TEST.throwOn = params.get('stagethrow') || '*';
+  carStage = stageOn ? m.cardStage(picture, { quality: params.get('stagequality') }) : null;
+  carStage?.sync(CAR.silhouette ? null : carView, stageTheme(), carView?.evil);
   if (params.has('stagelog')) m.stageLog(() => carView, carStage, params);
-});
+}).catch((error) => { carStage = null; console.warn('No car stage (the plain card): ' + (error?.message || error)); });
 const syncPicture = () => {
   picture.style.backgroundImage = !carLive && carUrl ? `url("${carUrl}")` : '';
   if (carView?.canvas) carView.canvas.style.display = carLive ? 'block' : 'none';
@@ -423,7 +428,7 @@ const showCarModel = (evil) => {
     carView = null;
   }
   if (!carView) picture.querySelector('canvas:not(.stage-back)')?.remove(); // (no model: nor the last car's picture of one)
-  carStage?.sync(CAR.silhouette ? null : carView, stageTheme(), evil);
+  try { carStage?.sync(CAR.silhouette ? null : carView, stageTheme(), evil); } catch (error) { console.warn('Car stage: ' + (error?.message || error)); } // (never in the way of the card)
   carLive = !!carView;
   if (carView) carView.stillAt = undefined; // (standing still or not, it is drawn again at once: its paint may have changed)
   syncPicture();
