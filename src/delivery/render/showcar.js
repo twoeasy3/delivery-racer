@@ -6,7 +6,8 @@ import { makeCarMesh, shapeCarMesh, makeTankMesh } from './cars.js';
 import { MODELS } from './models.js';
 import { makeIdeaModel } from './ideaModels.js';
 import { makeUfo, addSuperKit } from './carExtras.js';
-import { patchModel } from './modelpatchapply.js'; // (the car's model patch, if it has one: src/delivery/modelpatches)
+import { patchModel, shapeEditsFor } from './modelpatchapply.js'; // (the car's model patch, if it has one: src/delivery/modelpatches)
+import { carShapes } from './shapeedits.js'; // (the car's own model built with its patch's shape edits, if any)
 import { addLegend } from './legenddecal.js';
 import { dressWheels } from './wheelcosmetic.js'; // (the player's global wheel colour on its hubs: render-only)
 import { dressPlates } from './platecosmetic.js'; // (an equipped number plate hides the model's own plates: render-only)
@@ -21,8 +22,8 @@ import { dressProps } from './propdress.js'; // (an equipped roof prop, cargo pr
 export const dressCosmetics = (model, car, { stock = false } = {}) => (stock ? model : dressProps(dressPlates(dressWheels(model, car), car), car));
 const onShow = (model) => { if (model?.userData) model.userData.onShow = true; return model; }; // (a car on show: a model whose wheels turn idles gently, render/models.js wheelTurn)
 export const makeShowCar = (car, { stock = false } = {}) => {
-  if (car.idea) return dressCosmetics(onShow(patchModel(makeIdeaModel(car), car)), car, { stock }); // (a car idea in use: its own model, ideas.js; one with none throws below, and the card shows no picture)
-  const mesh = car.tank ? makeTankMesh(car.color) : car.ufo ? makeUfo() : car.model ? MODELS[car.model](car) : makeCarMesh(car.color); // (ufo: the earned Saucer)
+  if (car.idea) return dressCosmetics(onShow(patchModel(carShapes(shapeEditsFor(car), () => makeIdeaModel(car)), car)), car, { stock }); // (a car idea in use: its own model, ideas.js; one with none throws below, and the card shows no picture)
+  const mesh = car.tank ? makeTankMesh(car.color) : car.ufo ? makeUfo() : car.model ? carShapes(shapeEditsFor(car), () => MODELS[car.model](car)) : makeCarMesh(car.color); // (ufo: the earned Saucer)
   if (!car.tank && !car.ufo && !car.model) shapeCarMesh(mesh, car);
   if (car.super || car.superKit) addSuperKit(mesh, car); // (an earned car built as its garage car's Super version: the body kit on, as in play)
   if (car.legend) addLegend(mesh, car); // (a Legendary car: black and gold, the wreath on its flanks: render/legenddecal.js)

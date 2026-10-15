@@ -16,6 +16,7 @@
 // pictures (the lowrider's grille, a mesh grille, the sport compact's banner) are canvases made
 // once and shared by every model (userData.shared: clearGroup keeps them). State-free.
 import * as THREE from 'three';
+import { shapesLive } from './shapeedits.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const lambert = (color, options = {}) => new THREE.MeshLambertMaterial({ color, ...options });
@@ -207,7 +208,7 @@ const flankPane = (pts, sx, half) => panel((sx > 0 ? pts : pts.slice().reverse()
 
 // ---- a wheel: a tyre and a hub, meshes of their own (the suspension plants them; the Super kit measures them) ----
 const GEOS = new Map();
-const geoOnce = (key, make) => GEOS.get(key) || GEOS.set(key, keep(make())).get(key);
+const geoOnce = (key, make) => (shapesLive() ? make() : GEOS.get(key) || GEOS.set(key, keep(make())).get(key));
 const wheel = (parent, R, width, x, y, z, hubMaterial, hubR = R * 0.55) => {
   const tyre = new THREE.Mesh(geoOnce('tyre' + [R, width], () => new THREE.CylinderGeometry(R, R, width, 16, 1)), TYRE);
   const hub = new THREE.Mesh(geoOnce('hub' + [hubR, width], () => new THREE.CylinderGeometry(hubR, hubR, width + 0.04, 12, 1)), hubMaterial);

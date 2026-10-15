@@ -132,3 +132,12 @@ pre.plRow, pre.plDiff, .plLast pre { max-height: 220px; overflow: auto; font-siz
 .locked .why { color: var(--muted); }
 .locked input { flex: 1; min-height: 40px; }
 .lockBtn { min-height: 40px; }
+/* the shape editor's numbered points (modeleditor.js shapeEditor): big targets for a finger */
+svg.glass .sh { cursor: grab; }
+svg.glass .sh.on circle:last-of-type { stroke-width: 2.5; }
+.pts .vec.on > span:first-child { color: var(--accent); font-weight: 700; }
+.spts .vec:first-child > span { font-size: 11px; color: var(--muted); }
+/* a shape open on a phone: the view keeps its views, Snap and Mirror; the other toggles (and the gizmo's modes) step aside for the handles */
+@media (max-width: 900px) {
+  body.shaping .viewButtons.tools > .seg, body.shaping .viewButtons.tools > .lampRow, body.shaping .viewButtons.tools > label.check:not(:has(#snap)) { display: none; }
+}

@@ -15,6 +15,7 @@
 // another, narrowed toward its roof (tumblehome); the glass thin flat panels laid a few mm proud of it; the small parts
 // squashed spheres, discs and short extrusions merged into one mesh per material. No panel lines. State-free.
 import * as THREE from 'three';
+import { shapesLive } from './shapeedits.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 // ---- shared materials (made once: clearGroup keeps them) ------------------------------------------------------------
@@ -28,6 +29,7 @@ const LAMP = keep(basic(0xfff3c4)), TAIL = keep(basic(0xc0141c));
 // ---- shared geometry ---------------------------------------------------------------------------------------------
 const SHARED = new Map();
 const shared = (key, make) => {
+  if (shapesLive()) return make(); // (a model built with shape edits, or recorded by the model editor, caches nothing: render/shapeedits.js)
   if (!SHARED.has(key)) { const geo = make(); geo.userData.shared = true; SHARED.set(key, geo); }
   return SHARED.get(key);
 };

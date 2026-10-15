@@ -27,5 +27,7 @@ export const startModels = async ({ local = null } = {}) => {
     plugins: [{ name: 'no-renderer', enforce: 'pre', load(id) { if (/render[\\/]scene\.js$/.test(id)) return SCENE; } }],
   });
   const load = (path) => server.ssrLoadModule('/src/delivery/' + path);
-  return { load, close: () => server.close(), ROOT };
+  // a stack recorded inside the loaded modules, its lines put back to the source files' own (Vite's transform moves them)
+  const fixStack = (stack) => { const e = new Error('x'); e.stack = stack; server.ssrFixStacktrace(e); return e.stack; };
+  return { load, close: () => server.close(), ROOT, server, fixStack };
 };
