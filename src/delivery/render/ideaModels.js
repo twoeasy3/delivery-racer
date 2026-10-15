@@ -477,9 +477,9 @@ export const IDEA_MODELS = {
     disc(group, chrome, 0.11, 0.2, 0, 0.56, L + 0.07);                                    // and the spinner in its middle
     box(group, chrome, w + 0.1, 0.13, 0.14, 0, 0.4, L + 0.12);                            // chrome bumpers
     box(group, chrome, w + 0.1, 0.13, 0.14, 0, 0.4, -L - 0.12);
-    for (const z of [-0.1, -0.66]) box(group, chrome, w * 0.86, 0.04, 0.06, 0, 1.56, L * z); // the roof bars,
-    blob(group, lambert(0xf3e6c0), 0.3, 0.045, L * 0.56, w * 0.14, 1.62, -L * 0.36);      // and the surfboard on them,
-    box(group, lambert(0xd8402f), 0.07, 0.02, L * 0.9, w * 0.14, 1.66, -L * 0.36);        // a stripe down it
+    for (const z of [-0.1, -0.66]) box(group, chrome, w * 0.86, 0.04, 0.06, 0, 1.56, L * z).userData.prop = 'roof'; // the roof bars (tagged: a chosen roof prop hides them, render/propcosmetic.js),
+    blob(group, lambert(0xf3e6c0), 0.3, 0.045, L * 0.56, w * 0.14, 1.62, -L * 0.36).userData.prop = 'roof'; // and the surfboard on them,
+    box(group, lambert(0xd8402f), 0.07, 0.02, L * 0.9, w * 0.14, 1.66, -L * 0.36).userData.prop = 'roof'; // a stripe down it
     group.userData = { body, animate: () => {} };
     return group;
   },
@@ -599,6 +599,7 @@ export const IDEA_MODELS = {
         one.position.y = 0.13 + k * 0.3;
         const caps = new THREE.Mesh(tops, silver);
         caps.position.y = 0.26 + k * 0.3;
+        one.userData.prop = caps.userData.prop = 'cargo'; // (the crates are a decorative load: tagged, a chosen cargo prop hides them)
         stack.add(one, caps);
       }
     }
@@ -1165,8 +1166,8 @@ export const IDEA_MODELS = {
     screen(shell, glass, bw * 0.88, 0.05, 0.6, 0, base + 0.86, bl * 0.2, 0.55);           // the windscreen
     box(shell, trim, bw * 0.9, 0.04, bl * 0.42, 0, base + 0.5, -bl * 0.28);               // the bed,
     box(shell, paint, bw, 0.3, 0.08, 0, base + 0.75, -bl / 2 + 0.04);                     // its tailgate,
-    box(shell, chrome, bw * 0.86, 0.07, 0.07, 0, base + 1.3, -bl * 0.09);                 // and the bar of lamps behind the cab
-    for (const x of [-0.6, -0.2, 0.2, 0.6]) disc(shell, LAMP, 0.11, 0.1, x, base + 1.43, -bl * 0.09);
+    box(shell, chrome, bw * 0.86, 0.07, 0.07, 0, base + 1.3, -bl * 0.09).userData.prop = 'roof'; // and the bar of lamps behind the cab (tagged: a chosen roof prop hides the bar, its lamps and legs, render/propcosmetic.js)
+    for (const x of [-0.6, -0.2, 0.2, 0.6]) disc(shell, LAMP, 0.11, 0.1, x, base + 1.43, -bl * 0.09).userData.prop = 'roof';
     box(shell, chrome, bw * 0.74, 0.3, 0.05, 0, base + 0.34, bl / 2 + 0.01);              // the chrome grille
     box(shell, trim, bw * 0.44, 0.2, 0.06, 0, base + 0.34, bl / 2 + 0.015);
     box(shell, chrome, bw + 0.1, 0.16, 0.2, 0, base + 0.02, bl / 2 + 0.08);               // chrome bumpers
@@ -1175,7 +1176,7 @@ export const IDEA_MODELS = {
     const flags = [];
     for (const side of [-1, 1]) {
       box(shell, paint, 0.08, 0.3, bl * 0.42, side * (bw / 2 - 0.04), base + 0.75, -bl * 0.28); // the bed's sides
-      box(shell, chrome, 0.07, 0.75, 0.07, side * bw * 0.4, base + 0.95, -bl * 0.09);     // the lamp bar's legs
+      box(shell, chrome, 0.07, 0.75, 0.07, side * bw * 0.4, base + 0.95, -bl * 0.09).userData.prop = 'roof';     // the lamp bar's legs
       box(shell, LAMP, 0.26, 0.16, 0.05, side * bw * 0.38, base + 0.36, bl / 2 + 0.03);   // square lamps
       box(shell, TAIL, 0.12, 0.3, 0.05, side * bw * 0.44, base + 0.36, -bl / 2 - 0.01);
       box(shell, yellow, 0.02, 0.12, bl * 0.84, side * (bw / 2 + 0.01), base + 0.34, 0);  // a yellow flash down the side,
@@ -1467,9 +1468,9 @@ export const IDEA_MODELS = {
     box(group, glass, w * 0.94, 0.66, L * 0.42, 0, 2.23, L * 0.78);                       // glass all round,
     box(group, WHITE, w * 0.96, 0.1, L * 0.44, 0, 2.61, L * 0.78);                        // under a white roof
     box(group, paint, 0.08, 0.66, 0.06, 0, 2.23, L * 0.99);
-    box(group, trim, w * 0.7, 0.07, 0.3, 0, 2.69, L * 0.8);                               // the bar of lights on it:
-    for (const side of [-1, 1]) box(group, beacons[side > 0 ? 0 : 1], w * 0.26, 0.16, 0.26, side * w * 0.2, 2.8, L * 0.8); // red, a side each,
-    box(group, LAMP, w * 0.1, 0.14, 0.24, 0, 2.79, L * 0.8);                              // white between them
+    box(group, trim, w * 0.7, 0.07, 0.3, 0, 2.69, L * 0.8).userData.prop = 'roof';        // the bar of lights on it (tagged: a chosen roof prop hides the bar, render/propcosmetic.js):
+    for (const side of [-1, 1]) box(group, beacons[side > 0 ? 0 : 1], w * 0.26, 0.16, 0.26, side * w * 0.2, 2.8, L * 0.8).userData.prop = 'roof'; // red, a side each,
+    box(group, LAMP, w * 0.1, 0.14, 0.24, 0, 2.79, L * 0.8).userData.prop = 'roof';                           // white between them
     box(group, chrome, w * 0.36, 0.4, 0.05, 0, 1.2, L + 0.005);                           // the chrome grille,
     for (let i = -3; i <= 3; i++) box(group, trim, 0.02, 0.32, 0.03, i * w * 0.045, 1.2, L + 0.03);
     box(group, chrome, w + 0.08, 0.22, 0.34, 0, 0.72, L + 0.12);                          // a great chrome bumper,
