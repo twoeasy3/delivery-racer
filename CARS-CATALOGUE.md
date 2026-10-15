@@ -251,7 +251,8 @@ The blueprint cars: in the roster, tiered, models built in render/ideaModels*.js
 | `swancar` | Swan Car | Talbot-Lago Teardrop (1938) - A pearl-white teardrop coupe with swan lines: a breast nose, wings sweeping back over the wheels and a... | basedOn field |
 | `solarracer` | Solar Racer | World Solar Challenge car (Nuna) - A wafer covered in solar cells with a bubble for the driver on one side. | basedOn field |
 | `moonrover` | Moon Rover | Apollo Lunar Roving Vehicle - An open frame on wire wheels with two bucket seats, a T-handle to steer by and a dish on a mast. | basedOn field |
-| `monowheel` | Monowheel | Dynasphere monowheel (1932) - One wheel taller than its rider, who sits inside it. | basedOn field |
+| `sixwheeler` | Six-Wheel Supercar | Covini C6W (2004) - Four small wheels to steer with and two big ones to push: it goes round a corner as if on rails. | basedOn field |
+| `paddleduck` | Paddle-Wheel Amphibian | Singapore DUCKtours amphibious tour bus (a converted DUKW) crossed with a sternwheel riverboat - A tour boat on six wheels: benches under a canopy, a duck's face on the bow and a paddle wheel turning at the stern. | basedOn field |
 | `snocat` | Snowcat | Tucker Sno-Cat 443 - A glass cab on four pontoons of track, with an exhaust stack and a spotlight. | basedOn field |
 | `hotdog` | Hot Dog Car | Oscar Mayer Wienermobile - A sausage the length of a van in a bun, with mustard along the top. | basedOn field |
 | `horseshoe` | Horseshoe Hypercar | Bugatti Chiron (2016) - A horseshoe in its nose, a big chrome C on each flank and a wing that rises out of its tail. | basedOn field |
@@ -434,6 +435,7 @@ Tierless and free in the garage's Car ideas lot. Inspiration is each entry's `ba
 | `armoured` | Armoured Van | Brink's armoured cash truck - Slab sides, slits for windows, a turret hatch, a bull bar and wheels in armour. | basedOn field |
 | `cigar` | Cigar Racer | Lotus 49 - A body like a fat cigar, the driver's head in the top, bare wishbones and no wings. | basedOn field |
 | `sidecar` | Scooter and Sidecar | Vespa with a sidecar - A scooter with a boat of a chair bolted to its side, and a wheel for each. | basedOn field |
+| `monowheel` | Monowheel | Dynasphere monowheel (1932) - One wheel taller than its rider, who sits inside it. | basedOn field |
 | `bathtub` | Bathtub Racer | Ed China's motorised bathtub - A roll-top bath on clawed feet, full to the brim, with the driver in the suds. | basedOn field |
 | `circuswagon` | Circus Wagon | Ringling Bros. cage wagon (1900s) - Gilt, sunburst wheels and a lion pacing behind the bars. | basedOn field |
 | `gyrocar` | Gyro Car | Lit Motors C-1 - A closed capsule on two wheels, one behind the other. | basedOn field |
