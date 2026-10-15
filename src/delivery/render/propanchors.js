@@ -88,6 +88,7 @@ export const KINDS = {
   cigar: 'open', sidecar: 'bike', bathtub: 'open', circuswagon: 'special', gyrocar: 'micro', mower: 'open', snailcamper: 'special',
   duckwagon: 'open', pushbacktug: 'special', roadsweeper: 'truck', cabledrum: 'flatbed', gameviewer: 'open', slantback: 'saloon',
   glassbrake: 'estate', sevenroadster: 'open', talltourer: 'open', removalsvan: 'van', refuselorry: 'truck', jeepney: 'van',
+  smileyhatch: 'hatch', eightieshatch: 'hatch', pebble: 'hatch', // (the three city hatchbacks, ideasCommuterIdeas.js)
   pocket4x4: 'suv', dodgem: 'open', iceresurfacer: 'special', wedgemicro: 'micro', farmtractor: 'open', flatbed: 'flatbed', moke: 'open',
   halftrack: 'halftrack', keivan: 'van', supermini: 'hatch', minibus: 'van', sporttruck: 'pickup', pixelev: 'hatch', sprinthatch: 'hatch',
   autobahnestate: 'estate', finlandyacht: 'saloon', trophytruck: 'pickup', armouredlimo: 'saloon', cranelorry: 'truck', moorrover: 'suv',

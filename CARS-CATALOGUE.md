@@ -456,6 +456,9 @@ Tierless and free in the garage's Car ideas lot. Inspiration is each entry's `ba
 | `pocket4x4` | Pocket 4x4 | Suzuki Jimny SJ410 (1981) - A little box that goes where the big ones can't. | basedOn field |
 | `dodgem` | Dodgem | fairground bumper car - Built to be hit: it bounces off everything and goes straight on. | basedOn field |
 | `iceresurfacer` | Ice Resurfacer | Zamboni Model 500 - It leaves a clean sheet behind it and nothing in the way. | basedOn field |
+| `smileyhatch` | Smiley Hatch | Daewoo Matiz (1998) - Two big round eyes and a grin: the friendliest face in any traffic jam. | basedOn field |
+| `eightieshatch` | Eighties Hatch | Ford Fiesta Mk2 (1983) - Square lamps, rubber bumpers and nothing round about it but the wheels. | basedOn field |
+| `pebble` | Pebble | Ford Ka (1996) - One smooth curve from nose to tail, with a wheel out at each corner. | basedOn field |
 
 ## 10. In progress (not in the game yet)
 
