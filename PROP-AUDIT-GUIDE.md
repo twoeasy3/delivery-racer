@@ -197,13 +197,16 @@ A plate (4:1, centred on the car's centre line) has a valid place at an end when
 5. **Clear**: nothing in front of its face straight on; less than `COVER_UP` (a quarter) hidden from `UP_ANGLE` 20 degrees above.
 6. **Height**: bottom edge at least `LOW_EDGE` 10 cm off the ground; middle no higher than `HIGH_FRAC` 60 % of the car.
 
-The choice: a place on a BUMPER BAR first (any size; `findBars`: a band of the end's surface on the centre line, 4 to 30 cm tall, flat,
-standing 1.5 cm or more proud of the surface above and below it), else the body as before; then the bigger plate (0.52, 0.46, 0.40, 0.34,
-0.30), flatter, more upright, nearer the car's own plate height (body only), out at the end, clear from above.
+The choice: a place on a BUMPER BAR first (any size; `findBars`: a band of the end's surface on the centre line, 4 to 30 cm tall
+(`BAR_MIN_H`, `BAR_MAX_H`), at least 40 cm wide (`BAR_MIN_W`: a narrower band is a grille lip or a trim strip), flat, standing 1.5 cm or
+more proud of the surface above and below it, its middle in the lower half of the car and no higher than 1 m (`BAR_MAX_FRAC`,
+`BAR_MAX_Y`: a band up a cab, a bed's tail or a Super kit's lamp bar is not a bumper); the lowest bar that takes a plate), else the
+body as before; then the bigger plate (0.52, 0.46, 0.40, 0.34, 0.30), flatter, more upright, nearer the car's own plate height (body
+only), out at the end, clear from above. So a bar under 6.5 cm tall (or 26 cm wide) takes a smaller plate than the canonical one.
 
 The audit measures a worn plate against the same numbers (FLOATING / BURIED, TILTED / UNEVEN, OVER_EDGE, COVERED / COVERED_FROM_ABOVE,
 ON_GLASS / OVER_LAMP / ON_WHEEL, ON_A_LID, LOW, HIGH; on a bar, contact is judged where the plate is on the face), says where each plate
-stands (`on`: bumper / above / below the end's bar / body at an end with no bar) and keeps a few sanity flags of its own (TUCKED,
+stands (`on`: bumper / above / below the end's bar / body at an end with no bar; the summary counts them) and keeps a few sanity flags of its own (TUCKED,
 WRONG_HALF, FACES_WRONG_WAY, TEXT_MIRRORED, TWO_PLATES, ZFIGHT, PLATE_LIKE_UNTAGGED). SMALL is information, not a fault. Removed:
 TALLER_THAN_SURFACE and WIDER_THAN_SURFACE (both were OVER_EDGE again with other numbers).
 
@@ -212,3 +215,7 @@ while the bar takes a plate, auditing each candidate as dressed; it takes one on
 replaces (then: onto a bar from the body, then bigger). HAND rows in `render/plateanchors.js` (reasoned fixes, and the owner's own
 `by: 'editor'` rows from the model editor) are never touched: only the generated table is written. A new car:
 `node scripts/plate-anchors.mjs <id> --write`, then the audit on it.
+
+The first regeneration under these rules (15-Oct, CHECKLIST 345): 111 table rows moved (104 from the body onto a bumper bar: 66 at
+0.52, 23 at 0.46, 8 at 0.40, 9 at 0.34 / 0.30); across all cars the ends on a bumper went from 109 to 238, the ends with a placement flag
+(other than SMALL / PROP_HIDES / COVERED_FROM_ABOVE) from 51 to 31. `--fix` and the audit print each candidate with PLATE_DEBUG=1.

@@ -7,7 +7,7 @@
 //   (a) SIZE     the plate's width against the canonical 0.52 m (a 4:1 plate, 0.52 x 0.13) and against the flat surface it sits on
 //                (`supportW` / `supportH`: how far from the plate's middle the surface stays within GAP of the plate's plane); where it
 //                stands (`on`: 'bumper' on a bumper bar's face, 'above' / 'below' the end's bar, 'body' at an end with no bar: findBars)
-//   (b) CONTACT  a grid of rays (9 x 3) through the plate, along its normal: the body surface under each point: the gap (floating) or
+//   (b) CONTACT  a grid of rays (9 x 5) through the plate, along its normal: the body surface under each point: the gap (floating) or
 //                the penetration (buried), points over AIR (the plate's edge in the air), a plane fitted through the surface: its
 //                angle to the plate's (tilt / skew); the plate's own normal faces OUT of its end; the texture reads the right way
 //                (not mirrored, not upside down: the face's u axis to the viewer's right, v up)
@@ -44,7 +44,7 @@ const only = argv.filter((a, i) => !a.startsWith('--') && argv[i - 1] !== '--out
 // more than contactBand in front of the plate's plane is something standing in front of it (not the surface under it); the share of the
 // face an equippable prop must hide to count
 const T = { air: 0.15, contactBand: 0.03, propCover: 0.15 };
-const NX = 9, NY = 3;
+const NX = 9, NY = 5;
 const r1 = (v) => Math.round(v * 10) / 10, r3 = (v) => Math.round(v * 1000) / 1000, cm = (v) => (v == null ? null : r1(v * 100));
 
 const { load, close } = await startModels();
@@ -135,7 +135,7 @@ try {
   };
 
   // ---- one plate end measured ----
-  const measureEnd = (model, car, end, group, anchor, { box, height, width, on = 'body' }) => {
+  const measureEnd = (model, car, end, group, anchor, { box, height, width, on = 'body', bar = null }) => {
     const F = frameOf(model, group, end);
     const w = anchor.size[0], h = anchor.size[1];
     const meshes = meshesOf(model);
@@ -165,9 +165,9 @@ try {
     };
     const supportL = sideW(-1), supportR = sideW(1), supportW = supportL + supportR;
     const supportDown = sideW(-1, F.Y, 0.4), supportUp = sideW(1, F.Y, 0.4), supportH = supportDown + supportUp;
-    // ON A BAR the plate may stick out past the bar (rule EDGES): its contact is judged where it is on the bar's face (the sample points
-    // within the measured support), on the body everywhere
-    const held = on !== 'bumper' ? () => true : (s) => s.a >= -supportL && s.a <= supportR && s.b >= -supportDown && s.b <= supportUp;
+    // ON A BAR the plate may stick out past the bar (rule EDGES): its contact is judged where it is in front of the bar's face (the sample
+    // points within the bar, findBars), on the body everywhere
+    const held = on !== 'bumper' || !bar ? () => true : (s) => Math.abs(s.p.x) <= bar.w / 2 && s.p.y >= bar.y0 && s.p.y <= bar.y1;
     // (b) contact: from 2 m out along the normal, inwards
     const contact = [], blockers = [], under = new Map();
     for (const s of pts) {
@@ -414,7 +414,7 @@ try {
       if (breakFn) breakFn(model, g, end);
       model.updateMatrixWorld(true);
       const bars = findBars(view, end), pk = placeKind(bars, plan[end].at[1], plan[end].at[2]);
-      const m = measureEnd(model, car, end, g, plan[end], { box, height: size.y, width: size.x, on: pk.on });
+      const m = measureEnd(model, car, end, g, plan[end], { box, height: size.y, width: size.x, on: pk.on, bar: pk.bar });
       m.on = pk.on; m.bars = bars.map(b => [r3(b.y0), r3(b.y1), r3(b.w)]).map(([a, b2, c]) => a + '-' + b2 + ' w' + c).join(' ');
       if (!NO_Z) {
         const z = zfightPass(model, g);
@@ -491,7 +491,7 @@ try {
         const was = { arr: base[k], score: sideScore(cur), flags: badFlags(cur), on: cur.on };
         if (best && better(best, was) && JSON.stringify(best.arr) !== JSON.stringify(was.arr)) {
           // into the table: a base car's entry is its model's (every car of the model follows); any other car gets a variant of its own
-          if (isBase(car)) TABLE.PLATE_TABLE[key] = { ...(TABLE.PLATE_TABLE[key] || base), [k]: best.arr };
+          if (isBase(car) && !had) TABLE.PLATE_TABLE[key] = { ...(TABLE.PLATE_TABLE[key] || base), [k]: best.arr }; // (a car whose own variant row wins over its model's keeps it: written there)
           else TABLE.PLATE_VARIANTS[car.id] = { ...base, [k]: best.arr };
           changes.push({ id: car.id, key, base: isBase(car), end, old: was.arr, new: best.arr, oldOn: was.on, newOn: best.on, oldFlags: was.flags, newFlags: best.flags, oldScore: was.score, newScore: best.score });
           console.log('  ' + car.id + ' ' + end + ': ' + JSON.stringify(was.arr) + ' ' + was.on + ' [' + was.flags.join(' ') + '] -> ' + JSON.stringify(best.arr) + ' ' + best.on + ' [' + best.flags.join(' ') + ']');
