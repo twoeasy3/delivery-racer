@@ -1,39 +1,47 @@
 // The PROP BOUNDS generator (CHECKLIST 300; the owner, 15-Oct: "Audit every car for roof prop and cargo prop space ... render a Box and a
-// Cylinder for each, and this will be our bounds for the customisations ... Do the same for a Rear Wing"). Modelled on
-// scripts/plate-anchors.mjs: for every car of the prop roster (scripts/prop-roster.mjs) it builds the model as the showroom does
+// Cylinder for each, and this will be our bounds for the customisations ... Do the same for a Rear Wing"; PROP-AUDIT-GUIDE.md). Modelled
+// on scripts/plate-anchors.mjs: for the cars of a SLICE (scripts/prop-slices.mjs) it builds each model as the showroom does
 // (render/showcar.js makeShowCar), hides the car's own tagged props (render/propcosmetic.js), rasterises the top surface and measures the
 // free flat space of the three slots (scripts/prop-anchors-lib.mjs), fits the CANONICAL shapes (render/propanchors.js PROP_BOUNDS) at the
-// largest uniform scale, and writes the GENERATED table src/delivery/render/propanchorstable.js. Hand fixes go in render/propanchors.js HAND.
-//   node scripts/prop-anchors.mjs                     all cars: print the stats, write the table
-//   node scripts/prop-anchors.mjs --dry               the same, write nothing
-//   node scripts/prop-anchors.mjs <car id> [...]      print the entries for those cars only, nothing written
-//   node scripts/prop-anchors.mjs <car id> --write    ...and merge them into the table (a NEW CAR: do this, then look at it:
-//                                                     scripts/shots.mjs with delivery/zpropview.html?car=<id>, see CAR-AGENT-PROMPT.md)
-//   --json <file>                                     also write every car's measurement (free sizes, kinds) for the contact sheets' labels
-import { writeFileSync } from 'node:fs';
+// largest uniform scale, and writes the slice's GENERATED data file src/delivery/render/propanchors/slice-<n>.json (its `cars`; the file's
+// `hand` block, the slice's hand fixes, is kept as it is). The reader merges every slice file (render/propanchors.js).
+//   node scripts/prop-anchors.mjs --slice <n>             measure that slice's cars, print the table, write slice-<n>.json
+//   node scripts/prop-anchors.mjs --slice <n> --dry       the same, write nothing
+//   node scripts/prop-anchors.mjs <car id> [...]          print the entries for those cars only, nothing written
+//   node scripts/prop-anchors.mjs <car id> --write        ...and merge them into their slice's file (a NEW CAR, or one car re-measured
+//                                                         after a tag; `--into <n>` puts them in another slice file, e.g. slice-0)
+//   --json <file>                                         also write every measured car's measurement (free sizes, kinds)
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { startModels } from './modelpatch-load.mjs';
 import { roster } from './prop-roster.mjs';
+import { slicesOf, sliceOfCar } from './prop-slices.mjs';
 import { measureCar } from './prop-anchors-lib.mjs';
 
 const args = process.argv.slice(2);
+const flag = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
 const dry = args.includes('--dry'), write = args.includes('--write');
-const jsonAt = args.includes('--json') ? args[args.indexOf('--json') + 1] : null;
-const only = args.filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--json');
+const slice = flag('--slice') ? Number(flag('--slice')) : null, into = flag('--into') ? Number(flag('--into')) : null, jsonAt = flag('--json');
+const only = args.filter((a, i) => !a.startsWith('--') && !['--json', '--slice', '--into'].includes(args[i - 1]));
 const { load, close, ROOT } = await startModels();
-const TABLE = ROOT + '/src/delivery/render/propanchorstable.js';
+const fileOf = (n) => ROOT + '/src/delivery/render/propanchors/slice-' + n + '.json';
+const readSlice = (n) => (existsSync(fileOf(n)) ? JSON.parse(readFileSync(fileOf(n), 'utf8')) : { slice: n, cars: {}, hand: {} });
+const writeSlice = (n, data) => {
+  const cars = {};
+  for (const id of Object.keys(data.cars).sort()) cars[id] = data.cars[id];
+  writeFileSync(fileOf(n), JSON.stringify({ slice: n, note: 'GENERATED `cars` by scripts/prop-anchors.mjs --slice ' + n + ' (do not edit); `hand` is this slice\'s hand fixes (render/propanchors.js), edited by hand', cars, hand: data.hand || {} }, null, 1).replace(/\[\n\s+([^[\]]*?)\n\s+\]/gs, (m, inner) => '[' + inner.replace(/,\n\s+/g, ', ') + ']') + '\n');
+  console.log('written ' + fileOf(n) + ' (' + Object.keys(cars).length + ' cars, ' + Object.keys(data.hand || {}).length + ' hand fixes)');
+};
+// the table's entry for one slot (strip the generator's own eyes)
+const entry = (e) => { if (!e) return null; if (e.no) return { no: e.no }; const out = { box: e.box, cyl: e.cyl, from: e.from, lim: e.lim }; if (e.inset) out.inset = e.inset; if (e.existing) out.existing = true; return out; };
 
-// one car's three slots, measured
-export const generate = async (load, wanted = null) => {
-  const C = await load('cars.js');
+// measure: every car of `list` ([{ group, car }])
+export const generate = async (load, list) => {
   const { makeShowCar } = await load('render/showcar.js');
-  const { IDEA_CARS } = await load('ideas.js');
   const { glassy } = await load('render/dents.js');
   const P = await load('render/propanchors.js');
   const PC = await load('render/propcosmetic.js');
-  const cars = roster(C, IDEA_CARS);
   const found = new Map();
-  for (const { group, car } of cars) {
-    if (wanted && !wanted.includes(car.id)) continue;
+  for (const { group, car } of list) {
     let model;
     try { model = makeShowCar(car); } catch (err) { found.set(car.id, { group, error: err.message }); continue; }
     model.parent?.remove(model);
@@ -44,59 +52,43 @@ export const generate = async (load, wanted = null) => {
     for (const slot of P.SLOTS) if (!m[slot].no && props.some(p => p.slot === slot)) m[slot].existing = true;
     found.set(car.id, { group, kind: m.kind, roof: m.roof, cargo: m.cargo, wing: m.wing, props: props.map(p => p.slot) });
   }
-  return { cars, found };
+  return found;
 };
-// the table's text for one slot
-const slotText = (e) => {
-  if (!e) return 'null';
-  if (e.no) return "{ no: '" + e.no.replace(/'/g, "\\'") + "' }";
-  const nums = (a) => '[' + a.join(', ') + ']';
-  return '{ box: ' + nums(e.box) + ', cyl: ' + nums(e.cyl) + ", from: '" + e.from + "', lim: '" + e.lim + "'" + (e.existing ? ', existing: true' : '') + ' }';
+const line = (id, f) => {
+  if (f.error) return id.padEnd(16) + ' could not build: ' + f.error;
+  const cell = (e) => (e.no ? 'no (' + e.no + ')' : 'YES s' + e.box[0] + (e.inset ? ' inset ' + Math.round(e.inset[0] * 100) + 'cm' : '') + (e.existing ? ' existing' : ''));
+  return id.padEnd(16) + ' ' + f.kind.padEnd(9) + ' roof ' + cell(f.roof).padEnd(34) + ' cargo ' + cell(f.cargo).padEnd(34) + ' wing ' + cell(f.wing);
 };
-const lineOf = (id, e) => '  ' + (/^[A-Za-z_$][\w$]*$/.test(id) ? id : "'" + id + "'") + ': { roof: ' + slotText(e.roof) + ', cargo: ' + slotText(e.cargo) + ', wing: ' + slotText(e.wing) + ' },';
-export const tableText = (entries) => '// GENERATED by scripts/prop-anchors.mjs (run it again, or with a car id and --write, to add a car): do not edit by hand. Hand fixes and\n'
-  + '// the rules for reading this are in render/propanchors.js. One row per CAR ID: { roof, cargo, wing }; a slot is { no: \'why\' } (unsupported)\n'
-  + '// or { box: [scale, x, y, z], cyl: [scale, x, y, z], from, lim, existing? }: the slot\'s CANONICAL box / cylinder (render/propanchors.js\n'
-  + '// PROP_BOUNDS, the containment bounds a future prop is modelled to) at that UNIFORM scale, its centre at (x, y, z) in car-local metres\n'
-  + '// (x across, y up, the nose at +z; a 5th number would be a yaw in degrees, none today), standing on `from` (roof, deck, roof-edge), the\n'
-  + '// scale limited by `lim` (w width, d depth, h height, max the slot\'s cap); existing: the car\'s own prop of that slot is tagged\n'
-  + '// (render/propcosmetic.js hides it when a prop is chosen).\n'
-  + 'export const PROP_TABLE = {\n' + [...entries.keys()].sort().map(id => lineOf(id, entries.get(id))).join('\n') + '\n};\n';
 
 try {
-  const { cars, found } = await generate(load, only.length ? only : null);
+  const C = await load('cars.js');
+  const { IDEA_CARS } = await load('ideas.js');
   const P = await load('render/propanchors.js');
-  const errors = [...found].filter(([, f]) => f.error);
-  if (only.length) {
-    for (const id of only) {
-      const f = found.get(id);
-      if (!f) { console.log(id + ': no such car'); continue; }
-      if (f.error) { console.log(id + ': could not build: ' + f.error); continue; }
-      console.log(id + ' (' + f.group + ', ' + f.kind + ', own props: ' + (f.props.join(', ') || 'none') + ')');
-      for (const slot of P.SLOTS) {
-        const e = f[slot];
-        console.log('  ' + slot.padEnd(6) + (e.no ? 'NO: ' + e.no : 'box s=' + e.box[0] + ' at ' + e.box.slice(1).join(',') + '  cyl s=' + e.cyl[0] + ' at ' + e.cyl.slice(1).join(',') + '  on ' + e.from + ' (free ' + e.free.join(' x ') + ' m, limited by ' + e.lim + ')' + (e.existing ? '  EXISTING prop' : '')));
-      }
-    }
-    if (write) {
-      const old = await import('file://' + TABLE + '?t=' + Date.now()).catch(() => ({ PROP_TABLE: {} }));
-      const entries = new Map(Object.entries(old.PROP_TABLE));
-      for (const id of only) { const f = found.get(id); if (f && !f.error) entries.set(id, f); }
-      writeFileSync(TABLE, tableText(entries));
-      console.log('merged into ' + TABLE);
-    }
-  } else {
-    const entries = new Map([...found].filter(([, f]) => !f.error));
+  const cars = roster(C, IDEA_CARS);
+  let list;
+  if (slice) list = slicesOf(cars)[slice - 1];
+  else if (only.length) list = cars.filter(c => only.includes(c.car.id));
+  else { console.log('say which: --slice <n> (1 to 5), or car ids (with --write to merge them into their slice file)'); process.exit(1); }
+  if (!list || !list.length) { console.log('no cars'); process.exit(1); }
+  const found = await generate(load, list);
+  console.log('car              kind      roof                                    cargo                                   wing');
+  for (const [id, f] of found) console.log(line(id, f));
+  const ok = [...found].filter(([, f]) => !f.error);
+  if (slice) {
     const stats = {};
-    for (const slot of P.SLOTS) {
-      const yes = [...entries.values()].filter(f => !f[slot].no), scales = yes.map(f => f[slot].box[0]).sort((a, b) => a - b);
-      const reasons = {};
-      for (const f of entries.values()) if (f[slot].no) reasons[f[slot].no] = (reasons[f[slot].no] || 0) + 1;
-      stats[slot] = { supported: yes.length, unsupported: entries.size - yes.length, existing: yes.filter(f => f[slot].existing).length, scale: scales.length ? [scales[0], scales[Math.floor(scales.length / 2)], scales[scales.length - 1]] : null, reasons };
+    for (const s of P.SLOTS) { const yes = ok.filter(([, f]) => !f[s].no); const reasons = {}; for (const [, f] of ok) if (f[s].no) reasons[f[s].no] = (reasons[f[s].no] || 0) + 1; stats[s] = { yes: yes.length, existing: yes.filter(([, f]) => f[s].existing).length, reasons }; }
+    console.log('slice ' + slice + ': ' + list.length + ' cars, ' + ok.length + ' measured, ' + (found.size - ok.length) + ' errors');
+    for (const s of P.SLOTS) console.log('  ' + s + ': supported ' + stats[s].yes + ' (existing prop on ' + stats[s].existing + '), unsupported ' + (ok.length - stats[s].yes) + ': ' + Object.entries(stats[s].reasons).map(([r, n]) => n + ' x ' + r).join('; '));
+    if (!dry) {
+      const data = readSlice(slice);
+      data.cars = {};
+      for (const [id, f] of ok) data.cars[id] = { roof: entry(f.roof), cargo: entry(f.cargo), wing: entry(f.wing) };
+      writeSlice(slice, data);
     }
-    console.log('cars: ' + cars.length + ', measured ' + entries.size + ', errors ' + errors.length + (errors.length ? ' (' + errors.map(([id, f]) => id + ': ' + f.error).join('; ') + ')' : ''));
-    for (const slot of P.SLOTS) console.log(slot + ': supported ' + stats[slot].supported + ' (existing prop on ' + stats[slot].existing + '), unsupported ' + stats[slot].unsupported + ', box scale min/median/max ' + (stats[slot].scale || []).join(' / ') + '\n   reasons: ' + Object.entries(stats[slot].reasons).map(([r, n]) => n + ' x ' + r).join('; '));
-    if (!dry) { writeFileSync(TABLE, tableText(entries)); console.log('written ' + TABLE); }
+  } else if (write) {
+    const bySlice = new Map();
+    for (const [id, f] of ok) { const n = into ?? sliceOfCar(cars, id); if (!bySlice.has(n)) bySlice.set(n, readSlice(n)); bySlice.get(n).cars[id] = { roof: entry(f.roof), cargo: entry(f.cargo), wing: entry(f.wing) }; }
+    for (const [n, data] of bySlice) writeSlice(n, data);
   }
   if (jsonAt) {
     const out = {};

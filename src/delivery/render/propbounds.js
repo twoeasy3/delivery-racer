@@ -13,7 +13,7 @@ export const TINTS = { roof: 0x8fb4ff, cargo: 0x8fe0a6, wing: 0xff9aa0 };
 const HIGHLIGHT = new THREE.MeshLambertMaterial({ color: 0xff2ad4, emissive: 0x7a0a66 });
 
 const place = (obj, shape) => {
-  obj.position.set(shape.centre[0], shape.centre[1], shape.centre[2]);
+  obj.position.set(shape.centre[0], shape.centre[1] - (shape.inset || 0), shape.centre[2]); // (sunk by the inset, as fitProp places a prop)
   obj.rotation.y = shape.yaw * Math.PI / 180;
   obj.scale.setScalar(shape.scale);
 };

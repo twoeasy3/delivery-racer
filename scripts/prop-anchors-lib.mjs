@@ -19,7 +19,9 @@ export const MARGIN = 0.03;          // m: a shape keeps this far inside its fla
 export const ROOF_SLOPE = 12, DECK_SLOPE = 15, WING_SLOPE = 20; // degrees
 export const BAND = 0.05;            // m: cells within this of the region's height count as the same flat
 export const ROOF_BAND = 0.08;
-export const OVERHANG = 0.08;        // m: the most a roof-edge wing hangs back over a sloping rear window       // m: a roof may crown this much over its flat part (a rounded roof is still a roof)
+export const OVERHANG = 0.08;
+export const MAX_INSET = 0.08;       // m: the most a shape's base may sink into a curved surface (the owner, 15-Oct: "inset the prop bounding
+                                     // box into the roof to give it more points of contact"; the base's corners all touch or lie within it)        // m: the most a roof-edge wing hangs back over a sloping rear window       // m: a roof may crown this much over its flat part (a rounded roof is still a roof)
 const cos = (deg) => Math.cos(deg * Math.PI / 180);
 const r3 = (v) => Math.round(v * 1000) / 1000;
 
@@ -179,6 +181,57 @@ const fitCyl = (C, free, min, max) => {
   return s >= min ? { s: Math.floor(s * 100) / 100, lim } : null;
 };
 
+// ---- the INSET: a shape settled on the surface under its footprint ----
+// the surface's height under (x, z), or null where there is nothing, or 'bad' over glass, a lamp or a wheel
+const surfaceAt = (map, x, z) => {
+  const i = map.I(x), j = map.J(z);
+  if (i < 0 || j < 0 || i >= map.nx || j >= map.nz) return null;
+  const h = map.y[map.at(i, j)];
+  if (h === -Infinity) return null;
+  return map.kind[map.at(i, j)] === map.KIND.ok ? h : 'bad';
+};
+// the footprint's sample points (corners, edge midpoints, the centre; a cylinder's rim) at scale s, centred on (cx, cz)
+const footprint = (B, shape, s, cx, cz) => {
+  const pts = [[cx, cz]];
+  if (shape === 'box' || (shape === 'cyl' && B.cylinder.axis === 'x')) {
+    const hw = (shape === 'box' ? B.box[0] : B.cylinder.height) * s / 2, hd = (shape === 'box' ? B.box[2] : 2 * B.cylinder.radius) * s / 2;
+    for (const a of [-1, 0, 1]) for (const b of [-1, 0, 1]) if (a || b) pts.push([cx + a * hw, cz + b * hd]);
+  } else {
+    const r = B.cylinder.radius * s;
+    for (let k = 0; k < 8; k++) pts.push([cx + r * Math.cos(k * Math.PI / 4), cz + r * Math.sin(k * Math.PI / 4)]);
+  }
+  return pts;
+};
+// a shape of scale `s` on the surface: shrinks the scale until the whole footprint (the part `keep` admits) is over body with an inset
+// of at most MAX_INSET; returns { s, top, inset } (top = the highest surface point under it: the shape's base at the top hovers; lowered by
+// `inset` it touches the lowest point, and so rests on the surface with several points of contact) or null (nothing fits)
+const settle = (map, B, shape, s, cx, cz, min, keep = () => true) => {
+  for (let k = 0; k < 14 && s >= min; k++, s = Math.floor(s * 90) / 100) {
+    const hs = [];
+    let bad = false;
+    for (const [x, z] of footprint(B, shape, s, cx, cz)) {
+      if (!keep(x, z)) continue;
+      const h = surfaceAt(map, x, z);
+      if (h === null || h === 'bad') { bad = true; break; }
+      hs.push(h);
+    }
+    if (bad || !hs.length) continue;
+    const top = Math.max(...hs), inset = top - Math.min(...hs);
+    if (inset <= MAX_INSET) return { s, top, inset: Math.round(inset * 1000) / 1000 };
+  }
+  return null;
+};
+// the table's row for a slot: both shapes settled on the surface at (cx, cz) (a box and a cylinder each its own scale, inset and height)
+const row = (map, B, box, cyl, cx, cz, from, free, region, min, keep, zOf = null) => {
+  const sb = settle(map, B, 'box', box.s, cx, zOf ? zOf('box', box.s) : cz, min, keep), sc = settle(map, B, 'cyl', cyl.s, cx, zOf ? zOf('cyl', cyl.s) : cz, min, keep);
+  if (!sb || !sc) return null;
+  const hb = B.box[1] * sb.s / 2, hc = B.cylinder.axis === 'y' ? B.cylinder.height * sc.s / 2 : B.cylinder.radius * sc.s;
+  const out = { box: [sb.s, r3(cx), r3(sb.top + hb), r3(zOf ? zOf('box', sb.s) : cz)], cyl: [sc.s, r3(cx), r3(sc.top + hc), r3(zOf ? zOf('cyl', sc.s) : cz)], from, lim: box.lim, free, region };
+  if (sb.inset > 0.004 || sc.inset > 0.004) out.inset = [sb.inset, sc.inset];
+  if (sb.s < box.s || sc.s < cyl.s) out.lim = 'inset';
+  return out;
+};
+
 // ---- the slots ----
 const NO_ROOF = { open: 'an open car: no roof', canopy: 'a canopy or bubble roof: nothing flat to stand on', craft: 'a craft, not a car', tank: 'a tank', micro: 'a microcar: too small', bike: 'a bike' };
 const NO_WING = { canopy: 'a canopy roof with no deck or edge', craft: 'a craft', tank: 'a tank', micro: 'a microcar', bike: 'a bike' };
@@ -204,17 +257,27 @@ export const measureRoof = (map, kind, B, limits) => {
   // the highest flat band: the top of the flat cells above the glass, then the cells within BAND of it
   let top = -Infinity;
   for (let i = 0; i < map.nx; i++) for (let j = 0; j < map.nz; j++) if (isFlat(map, i, j, ROOF_SLOPE) && map.y[map.at(i, j)] >= floor) top = Math.max(top, map.y[map.at(i, j)]);
-  if (top === -Infinity) return { no: 'no flat roof (nothing flat above the glass)' };
   // (several bands down from the top, the biggest flat wins: a crowned roof's flat is a little under its peak)
   let best = null;
-  for (const band of [top, top - ROOF_BAND / 2, top - ROOF_BAND, top - 1.5 * ROOF_BAND]) {
+  if (top > -Infinity) for (const band of [top, top - ROOF_BAND / 2, top - ROOF_BAND, top - 1.5 * ROOF_BAND]) {
     const r = region(map, (i, j) => isFlat(map, i, j, ROOF_SLOPE) && map.y[map.at(i, j)] >= floor && Math.abs(map.y[map.at(i, j)] - band) <= ROOF_BAND, 0.3, 0.25, true);
     if (r && (!best || r.w * r.d > best.w * best.d * 1.15)) best = r;
   }
-  if (!best) return { no: 'the flat part of the roof is too small (under 0.3 x 0.25 m)' };
-  const box = fitBox(B.box, { w: best.w, d: best.d }, limits.min, limits.max), cyl = fitCyl(B.cylinder, { w: best.w, d: best.d }, limits.min, limits.max);
-  if (!box || !cyl) return { no: 'the flat roof is too small for the smallest prop (' + r3(best.w) + ' x ' + r3(best.d) + ' m)' };
-  return { box: [box.s, 0, r3(best.y + B.box[1] * box.s / 2), r3(best.z)], cyl: [cyl.s, 0, r3(best.y + B.cylinder.height * cyl.s / 2), r3(best.z)], from: 'roof', lim: box.lim, free: [r3(best.w), r3(best.d)], region: best };
+  if (best) {
+    const box = fitBox(B.box, { w: best.w, d: best.d }, limits.min, limits.max), cyl = fitCyl(B.cylinder, { w: best.w, d: best.d }, limits.min, limits.max);
+    if (box && cyl) { const out = row(map, B, box, cyl, 0, best.z, 'roof', [r3(best.w), r3(best.d)], best, limits.min); if (out) return out; }
+  }
+  // no flat patch: a CURVED, domed or tapering roof (the owner, 15-Oct): the shape sits on the roof's top region (any slope) and is SUNK into
+  // it by an inset so that its base has several points of contact (settle: the scale shrinks until the inset is under MAX_INSET)
+  let crown = -Infinity;
+  for (let i = 0; i < map.nx; i++) for (let j = 0; j < map.nz; j++) if (map.kind[map.at(i, j)] === map.KIND.ok && map.y[map.at(i, j)] >= floor) crown = Math.max(crown, map.y[map.at(i, j)]);
+  if (crown === -Infinity) return { no: 'no roof (nothing of the body above the glass)' };
+  const curved = region(map, (i, j) => map.kind[map.at(i, j)] === map.KIND.ok && map.y[map.at(i, j)] >= floor && map.y[map.at(i, j)] >= crown - 0.25, 0.3, 0.25, true);
+  if (!curved) return { no: 'the roof is too small (no 0.3 x 0.25 m patch near its top)' };
+  const box = fitBox(B.box, { w: curved.w, d: curved.d }, limits.min, limits.max), cyl = fitCyl(B.cylinder, { w: curved.w, d: curved.d }, limits.min, limits.max);
+  if (!box || !cyl) return { no: 'the roof is too small for the smallest prop (' + r3(curved.w) + ' x ' + r3(curved.d) + ' m)' };
+  const out = row(map, B, box, cyl, 0, curved.z, 'roof-curved', [r3(curved.w), r3(curved.d)], curved, limits.min);
+  return out || { no: 'a curved roof: even the smallest prop would sink more than ' + MAX_INSET * 100 + ' cm into it' };
 };
 
 export const measureCargo = (map, kind, B, limits, roof) => {
@@ -235,7 +298,7 @@ export const measureCargo = (map, kind, B, limits, roof) => {
   const h = Math.max(0.5, roofY - best.y + 0.1);
   const box = fitBox(B.box, { w: best.w, d: best.d, h }, limits.min, limits.max), cyl = fitCyl(B.cylinder, { w: best.w, d: best.d, h }, limits.min, limits.max);
   if (!box || !cyl) return { no: 'the deck is too small for the smallest load (' + r3(best.w) + ' x ' + r3(best.d) + ' m)' };
-  return { box: [box.s, 0, r3(best.y + B.box[1] * box.s / 2), r3(best.z)], cyl: [cyl.s, 0, r3(best.y + B.cylinder.height * cyl.s / 2), r3(best.z)], from: 'deck', lim: box.lim, free: [r3(best.w), r3(best.d)], region: best };
+  return row(map, B, box, cyl, 0, best.z, 'deck', [r3(best.w), r3(best.d)], best, limits.min) || { no: 'the deck is too uneven for a load (more than ' + MAX_INSET * 100 + ' cm of inset)' };
 };
 
 export const measureWing = (map, kind, B, limits, roof) => {
@@ -250,9 +313,10 @@ export const measureWing = (map, kind, B, limits, roof) => {
     if (deck) {
       const w = Math.min(deck.w, bodyW * 0.95), d = deck.d;
       const box = fitBox(B.box, { w, d }, limits.min, limits.max), cyl = fitCyl(B.cylinder, { w, d }, limits.min, limits.max);
-      if (box && cyl) {
-        const zb = deck.zRear + B.box[2] * box.s / 2, zc = deck.zRear + B.cylinder.radius * cyl.s; // (at the deck's rear)
-        return { box: [box.s, 0, r3(deck.y + B.box[1] * box.s / 2), r3(zb)], cyl: [cyl.s, 0, r3(deck.y + B.cylinder.radius * cyl.s), r3(zc)], from: 'deck', lim: box.lim, free: [r3(w), r3(d)], region: deck };
+      if (box && cyl) { // (at the deck's rear)
+        const zOf = (shape, sc) => deck.zRear + (shape === 'box' ? B.box[2] * sc / 2 : B.cylinder.radius * sc);
+        const out = row(map, B, box, cyl, 0, 0, 'deck', [r3(w), r3(d)], deck, limits.min, () => true, zOf);
+        if (out) return out;
       }
     }
   }
@@ -279,17 +343,17 @@ export const measureWing = (map, kind, B, limits, roof) => {
   const d = Math.min(0.6, (map.Z(r.rect.j1) + CELL / 2) - zEdge) + overhang; // (the roof behind the slot's front, plus the overhang)
   const box = fitBox(B.box, { w, d }, limits.min, limits.max), cyl = fitCyl(B.cylinder, { w, d }, limits.min, limits.max);
   if (!box || !cyl) return { no: 'the roof edge is too narrow for a wing (' + r3(w) + ' m)' };
-  // the box's rear face `overhang` behind the roof's edge (at the tail for a vertical back): its base on the roof's last cells
-  const zb = zEdge - overhang + B.box[2] * box.s / 2, zc = zEdge - overhang + B.cylinder.radius * cyl.s;
-  const yEdge = (() => { let s = 0, n = 0; for (let j = j0; j < Math.min(map.nz, j0 + 3); j++) for (let i = map.I(-w / 2); i <= map.I(w / 2); i++) if (inBand(i, j)) { s += map.y[map.at(i, j)]; n++; } return n ? s / n : r.y; })();
-  return { box: [box.s, 0, r3(yEdge + B.box[1] * box.s / 2), r3(zb)], cyl: [cyl.s, 0, r3(yEdge + B.cylinder.radius * cyl.s), r3(zc)], from: 'roof-edge', lim: box.lim, free: [r3(w), r3(d)], region: r };
+  // the box's rear face `overhang` behind the roof's edge (at the tail for a vertical back): its base settled on the roof's last cells
+  // (only the footprint over the roof counts: the overhang hangs in the air)
+  const zOf = (shape, sc) => zEdge - overhang + (shape === 'box' ? B.box[2] * sc / 2 : B.cylinder.radius * sc);
+  return row(map, B, box, cyl, 0, 0, 'roof-edge', [r3(w), r3(d)], r, limits.min, (x, z) => z >= zEdge + CELL / 2, zOf) || { no: 'the roof edge is too uneven for a wing' };
 };
 
 // one car: { roof, cargo, wing } as the table holds them (plus `free` and `region` for the generator's own eyes)
 export const measureCar = (model, car, P, glassy) => {
   const map = topMap(model, glassy);
   const kind = P.kindOf(car);
-  const lim = (slot) => ({ min: P.MIN_SCALE[slot], max: P.MAX_SCALE[slot] });
+  const lim = (slot) => ({ min: P.MIN_SCALE[slot], max: P.maxScale(slot, kind) });
   const roof = measureRoof(map, kind, P.PROP_BOUNDS.roof, lim('roof'));
   const cargo = measureCargo(map, kind, P.PROP_BOUNDS.cargo, lim('cargo'), roof);
   const wing = measureWing(map, kind, P.PROP_BOUNDS.wing, lim('wing'), roof);
