@@ -669,6 +669,7 @@ export const CONFIG = {
     lavaRock: { damage: 39, speedKept: 0.6 },       // the volcano's: cooled lava, glowing in its cracks
     jerryStack: { damage: 31, speedKept: 0.75 }, tentRoll: { damage: 38, speedKept: 0.75 }, rallyFlag: { damage: 3, speedKept: 0.94, light: true }, // the desert's: stacked jerrycans (a crate), a rolled tent (a bale), a rally marker flag (a cone)
     boxStack: { damage: 31, speedKept: 0.75 }, trolleyRow: { damage: 38, speedKept: 0.75 }, wetFloorSign: { damage: 3, speedKept: 0.94, light: true }, // the mall's: cartons on a sack truck (a crate), nested shopping trolleys (a bale), a WET FLOOR A-frame (a cone)
+    ingotStack: { damage: 31, speedKept: 0.75 }, steelCoil: { damage: 38, speedKept: 0.75 }, hotSign: { damage: 3, speedKept: 0.94, light: true }, rebarBundle: { damage: 34, speedKept: 0.6 }, // the steelworks': hot billets stacked (a crate), a coil on its cradle (a bale), a HOT METAL sign (a cone), rebar bundles (a barrier)
   },
   // drifters: obstacles moving about the road in patterns (a level's "drifters")
   drifters: {
@@ -1309,8 +1310,9 @@ export const CONFIG = {
     boomDamage: 10,        // health a lowered boom costs the player driving through it (it costs no speed: the train is the danger)
     // the train drawn (a crossing's "train", or its theme's; else `usual`): 'bullet', the bullet train's carriages
     // cut down, or 'steam', the Wild West's locomotive, tender, boxcar, two passenger cars and caboose, the
-    // same cars x carLength long in all (render/roadside.js draws them)
-    trains: ['bullet', 'steam'],
+    // same cars x carLength long in all (render/roadside.js draws them); or 'ingot', the steelworks' shunter, torpedo ladle cars and
+    // a coil wagon, the same length again
+    trains: ['bullet', 'steam', 'ingot'],
     usual: 'bullet',
   },
   // stop / go roadworks (a level's "stopGo": stopgo.js): the oncoming side dug up, so both ways take

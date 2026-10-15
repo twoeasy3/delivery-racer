@@ -20,6 +20,7 @@ import { AUTUMN_CARGO } from './themes/autumnModels.js';
 import { TUSCANY_CARGO } from './themes/tuscanyModels.js';
 import { DESERT_CARGO_MODELS } from './themes/desertCargo.js';
 import { MALL_CARGO_MODELS } from './themes/mallCargo.js';
+import { STEELWORKS_CARGO_MODELS } from './themes/steelworksModels.js';
 
 export const TRANSITION = 0.5; // s an Evil item takes from one state to the next
 
@@ -601,6 +602,7 @@ export const CARGO_MODELS = {
   ...TUSCANY_CARGO,
   ...DESERT_CARGO_MODELS,
   ...MALL_CARGO_MODELS,
+  ...STEELWORKS_CARGO_MODELS, // (Steelworks Run: a crate of horseshoes, a bar of questionable gold)
 };
 // the model for an id (a plain box if it is not one of them: a level naming an item nobody has drawn)
 export const makeCargoModel = (id) => {

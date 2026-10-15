@@ -48,5 +48,9 @@
   "sandPile": { "name": "Heap of sand", "blurb": "Stands in for a bale in the roadworks." },
   "trafficDrum": { "name": "Traffic drum", "blurb": "A cone's size and cost, in the roadworks." },
   "pipePallet": { "name": "Pallet of pipes", "blurb": "A crate's size and cost, in the roadworks." },
-  "worksSign": { "name": "Works sign", "blurb": "A sign's size and cost, in the roadworks." }
+  "worksSign": { "name": "Works sign", "blurb": "A sign's size and cost, in the roadworks." },
+  "ingotStack": { "name": "Stack of hot billets", "blurb": "Stands in for a crate in the steelworks." },
+  "steelCoil": { "name": "Steel coil", "blurb": "Stands in for a bale in the steelworks: a coil on its cradle." },
+  "hotSign": { "name": "Hot-metal sign", "blurb": "Stands in for a cone in the steelworks." },
+  "rebarBundle": { "name": "Bundles of rebar", "blurb": "Stands in for a barrier in the steelworks." }
 }

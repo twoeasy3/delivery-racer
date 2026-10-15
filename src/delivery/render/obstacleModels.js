@@ -10,6 +10,7 @@ import { TUSCANY_OBSTACLES } from './themes/tuscanyModels.js';
 import { DESERT_OBSTACLES } from './themes/desertModels.js';
 import { MALL_OBSTACLES } from './themes/mallModels.js';
 import { ROADWORKS_OBSTACLES } from './themes/roadworksModels.js';
+import { STEELWORKS_OBSTACLES } from './themes/steelworksModels.js';
 import { LEVEL } from '../levels.js';
 import { THEMES } from '../themes.js';
 
@@ -621,9 +622,13 @@ OBSTACLE_MODELS.tug = () => {
 };
 // a boost pad's handrail section (lanegimmicks.js): a glass balustrade panel on two posts with a black rubber handrail along
 // its top, 1.4 m long along the road (a cone's box: blown away on contact like any obstacle). Faces local +z (along the road)
+// On a theme whose pads are conveyor belts (themes.js pad: 'conveyor', the steelworks) it is a belt's guard instead: a yellow
+// steel rail on two posts, a kick plate along its foot
 OBSTACLE_MODELS.handrail = () => {
   // (one mesh, its parts' colours as vertex colours: a pad has dozens of sections, one draw call each)
-  const parts = [[0x9aa0a8, 0.06, 0.95, 0.06, 0, 0.48, -1.2], [0x9aa0a8, 0.06, 0.95, 0.06, 0, 0.48, 1.2], [0x1b1d22, 0.1, 0.09, 2.8, 0, 1.0, 0], [0xcfe4ee, 0.03, 0.8, 2.6, 0, 0.55, 0]];
+  const conveyor = (THEMES[LEVEL.theme] || THEMES.city).pad === 'conveyor';
+  const parts = conveyor ? [[0xf2c21d, 0.08, 1.0, 0.08, 0, 0.5, -1.2], [0xf2c21d, 0.08, 1.0, 0.08, 0, 0.5, 1.2], [0xf2c21d, 0.08, 0.08, 2.8, 0, 1.0, 0], [0xf2c21d, 0.06, 0.06, 2.6, 0, 0.6, 0],
+    [0x1b1d22, 0.04, 0.22, 2.6, 0, 0.13, 0]] : [[0x9aa0a8, 0.06, 0.95, 0.06, 0, 0.48, -1.2], [0x9aa0a8, 0.06, 0.95, 0.06, 0, 0.48, 1.2], [0x1b1d22, 0.1, 0.09, 2.8, 0, 1.0, 0], [0xcfe4ee, 0.03, 0.8, 2.6, 0, 0.55, 0]];
   const pos = [], nor = [], col = [], c = new THREE.Color();
   for (const [colour, w, h, d, x, y, z] of parts) {
     const g = new THREE.BoxGeometry(w, h, d).translate(x, y, z).toNonIndexed();
@@ -1274,4 +1279,5 @@ Object.assign(OBSTACLE_MODELS, TUSCANY_OBSTACLES); // Tuscany's: wineCrates, hay
 // the desert dunes' own (render/themes/desertModels.js): a stack of jerrycans, a rolled tent, a rally marker flag
 Object.assign(OBSTACLE_MODELS, DESERT_OBSTACLES);
 Object.assign(OBSTACLE_MODELS, MALL_OBSTACLES); // the mall's (render/themes/mallModels.js): cartons on a sack truck, a row of nested trolleys, a WET FLOOR sign
+Object.assign(OBSTACLE_MODELS, STEELWORKS_OBSTACLES); // the steelworks' (render/themes/steelworksModels.js): hot billets stacked, a coil on its cradle, a HOT METAL sign, bundles of rebar
 Object.assign(OBSTACLE_MODELS, ROADWORKS_OBSTACLES); // the roadworks' (render/themes/roadworksModels.js): barrier blocks, a cable drum, a heap of sand; a traffic drum, a pallet of pipes, a works sign
