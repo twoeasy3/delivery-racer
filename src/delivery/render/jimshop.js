@@ -80,7 +80,7 @@ const offerTile = (v, anim) => {
   // same live still (carstill.js) in the Good livery; a key car's card is its blueprint card, never its key (Jim sells blueprints only)
   const pose = posePick(v.car.id);
   const { node, pic } = blueprintCard(v.car, { rarity: v.rarity, n: v.qty }, { pose });
-  pics.watch(pic, v.car, { side: 'good', pose });
+  pics.watch(pic, v.car, { side: 'good', pose, stock: true }); // (the STOCK car, as a pack's blueprint card: no cosmetic of the player's)
   // the cap per refresh, as what is left of it: "2 of 2 left" (an epic), "1 of 1 left" (a Legendary or a key car), "3 of 5 left" (a common)
   const stock = v.why === 'maxed' ? null : make('p', 'shop-limit', v.left === 0 ? 'Sold out · cap ' + v.cap : Math.min(v.leftBp, v.cap) + ' of ' + v.cap + ' left' + (v.bought ? ' · price up' : ''));
   const tile = make('article', 'shop-tile jim-tile r-' + v.rarity + (v.key ? ' key' : '') + (off ? ' off' : '') + (bought ? ' bought' : ''),

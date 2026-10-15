@@ -32,6 +32,7 @@ import { medalFor, medalNeeds } from '../levelinfo.js';
 import { Garage, makeShowCar, paintShowCar, IDEA_TAG } from './garage.js';
 import { standView, sharedRenderer, disposeViews, drawViews } from './modelviews.js';
 import { stillCar } from './carstill.js';
+import { loadoutKey, onLoadout } from './loadout.js';
 import { Showroom } from './showroom.js';
 import { Sound } from './audio.js';
 import { warmTheme } from './road.js';
@@ -384,6 +385,9 @@ const picture = make('span', 'picture');
 let carView = null;   // { el, scene, camera, step, canvas, ctx, model, car, evil }: the model on show
 let carUrl = '';      // the still for the car and side on show
 let carLive = false;  // the model is being drawn (so the still is not shown under it)
+let carStale = false; // a cosmetic changed since the model was built (render/loadout.js): it is built again when next in sight
+onLoadout(() => { carStale = true; });
+const cosmeticsUp = () => { const el = document.getElementById('cosmetics'); return !!el && !el.classList.contains('hidden'); }; // (the Cosmetics screen over the menu: its own live car)
 const syncPicture = () => {
   picture.style.backgroundImage = !carLive && carUrl ? `url("${carUrl}")` : '';
   if (carView?.canvas) carView.canvas.style.display = carLive ? 'block' : 'none';
@@ -392,7 +396,7 @@ const showCarModel = (evil) => {
   carUrl = CAR.silhouette ? '' : CAR_SHOTS[CAR.id + (evil ? '-evil' : '-good')] || '';
   picture.classList.toggle('silhouette', !!CAR.silhouette);
   try {
-    if (carView?.car === CAR) { // (the same car: the other side's paint, where it stands)
+    if (carView?.car === CAR && carView.loadout === loadoutKey(CAR)) { // (the same car in the same loadout: the other side's paint, where it stands)
       if (carView.evil !== evil) paintShowCar(carView.model, CAR, carView.evil = evil);
     } else {
       const old = carView;
@@ -402,7 +406,7 @@ const showCarModel = (evil) => {
         const model = makeShowCar(CAR);
         paintShowCar(model, CAR, evil);
         const stand = standView({ model, tick: (t) => model.userData.animate?.(t), lift: CAR_VIEW.lift, angle: CAR_VIEW.angle, fitWidth: true }, CAR_VIEW.close); // (fitWidth: the picture is narrow, and a car long)
-        carView = { el: picture, canvas: old?.canvas, ctx: old?.ctx, ...stand, model, car: CAR, evil }; // (the canvas is kept from car to car)
+        carView = { el: picture, canvas: old?.canvas, ctx: old?.ctx, ...stand, model, car: CAR, evil, loadout: loadoutKey(CAR) }; // (the canvas is kept from car to car; loadout: the player's cosmetics it was built in, render/loadout.js)
       }
     }
   } catch (error) { // (a vehicle with no model to show: its still)
@@ -423,6 +427,7 @@ const showCarModel = (evil) => {
     const covered = sheetUp(); // (What's inside or the pack reveal is up: <html>.sheet-up, lite.js; the menu's 3D car and cargo are not drawn under it)
     if (!menuUp()) { dropCargo(); return; } // (a run has started: what the circle took is given back)
     if (Garage.isOpen || covered) return;
+    if (carView && carStale && !cosmeticsUp()) { carStale = false; if (carView.loadout !== loadoutKey(CAR)) showCarModel(carView.evil); } // (a cosmetic changed: built again in it, framed afresh, once the Cosmetics screen is shut)
     if (!cargoView && cargoWant) buildCargo(); // (the menu is back, and the stage has not been drawn again)
     const views = [carView, cargoView && cargoDue(cargoView) ? cargoView : null].filter(Boolean);
     if (!views.length) return;
@@ -750,7 +755,7 @@ const eventPanel = (event, picked, evil) => {
       ring,
       make('div', 'event-prize', make('small', '', 'Grand prize'), prizeView,
         make('div', 'event-prize-words', make('strong', '', prize ? prize.name : 'No prize'), make('span', '', won ? 'Won!' : 'Finish all ' + of + ' stages'))));
-    if (prize) drawLater.push([prizeView, prize]);
+    if (prize) drawLater.push([prizeView, prize, false, true]); // (what the event OFFERS: the STOCK car in its Good livery, as a pack's card)
   }
   const cards = event.stages.map((stage) => {
     const rule = !stage.car && stage.level?.allowedCars ? listRule(stage.level) : null; // (a rule of its own: the Car Hunt's 3-star cars)
@@ -803,7 +808,7 @@ const eventPanel = (event, picked, evil) => {
   row.addEventListener('click', (e) => { if (drag?.moved > 5) { e.stopPropagation(); e.preventDefault(); } }, true);
   requestAnimationFrame(arrows);
   const panel = make('div', 'event-panel', head, make('div', 'event-rowbox', row, back, on), detail);
-  requestAnimationFrame(() => { for (const [el, car, side = evil] of drawLater) stillCar(el, car, side); }); // (once laid out)
+  requestAnimationFrame(() => { for (const [el, car, side = evil, stock = false] of drawLater) stillCar(el, car, side, undefined, stock); }); // (once laid out; a stage's car dressed in the player's loadout, an offer stock)
   return panel;
 };
 // ---- a RECURRING event's head, on the event screen of a recurring event of MORE stages (the Car Hunt, of one stage, is drawn
@@ -847,7 +852,7 @@ const huntHead = (event, drawLater) => {
     const view = make('div', 'event-car');
     out.push(make('div', 'event-prize event-hunt', make('small', '', 'Hunt car'), view,
       make('div', 'event-prize-words', make('strong', '', car.name), make('span', '', 'Blueprints: ' + odds))));
-    drawLater.push([view, car, false]); // (its Good livery, whatever the side)
+    drawLater.push([view, car, false, true]); // (the hunt car, as its pack features it: the STOCK car in its Good livery, whatever the side)
   }
   if (give) {
     const { art, link } = packButtons(give.id);
@@ -903,7 +908,7 @@ const eventExtras = (event, level, open) => {
   const list = day && st.open ? Events.tasks(event) : [];
   const tasks = list.length ? make('ol', 'cx-tasks', ...list.map(x => make('li', x.done ? 'done' : '',
     make('span', 'cx-task-words', x.words), make('span', 'cx-task-reward', x.reward + ' · ' + (x.task.key ? (x.done ? 'won' : '0/1') : x.count + '/' + x.limit + ' today'))))) : null;
-  return { node, tags, car, tasks, ruleLine: !!rule && !st.needs, draw: () => { if (view && node.isConnected) stillCar(view, car, false, PRIZE_POSE); } }; // (its Good livery, whatever the side)
+  return { node, tags, car, tasks, ruleLine: !!rule && !st.needs, draw: () => { if (view && node.isConnected) stillCar(view, car, false, PRIZE_POSE, true); } }; // (what the event offers: the STOCK car in its Good livery, whatever the side)
 };
 // a pack's What's inside over the menu (render/packcontents.js, as the Shop opens it); Enter starts nothing while it is up,
 // Escape closes it

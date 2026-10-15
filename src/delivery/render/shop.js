@@ -174,7 +174,7 @@ const featuredTile = (offer) => {
   const cars = make('div', 'shop-hero-cars n' + carViews.length, ...carViews);
   const fallBack = () => { // (no banner after all: the cars side by side, drawn now)
     banner?.remove(); cars.hidden = false; art.classList.remove('banner'); art.closest('.shop-tile')?.classList.remove('has-banner');
-    for (const [el, car] of stills) stillSoon(el, car, { side: 'good' });
+    for (const [el, car] of stills) stillSoon(el, car, { side: 'good', stock: true });
   };
   const banner = trio ? bannerArt(trio, { onFail: fallBack }) : null;
   if (banner) cars.hidden = true; else drawLater.push(...stills);
@@ -248,7 +248,7 @@ const draw = () => {
     make('header', 'shop-top', back, make('h1', '', 'Shop'), wallet()),
     make('div', 'shop-body', note, jimSection(), ...sections, rarityGuide()), ...kept);
   screen.scrollTop = keep;
-  for (const [el, car] of drawLater) stillSoon(el, car, { side: 'good' }); // (always the Good livery; a few a frame, once laid out; kept, so a redraw costs nothing)
+  for (const [el, car] of drawLater) stillSoon(el, car, { side: 'good', stock: true }); // (always the STOCK car in its Good livery, no cosmetic of the player's; a few a frame, once laid out; kept, so a redraw costs nothing)
 };
 
 // ---- buying -----------------------------------------------------------------------------------------------------

@@ -160,7 +160,7 @@ export const openContents = (host, { kind, title, featured = [] }) => {
   close.addEventListener('click', shut);
   sheet.addEventListener('click', (e) => { if (e.target === sheet) shut(); });
   host.append(sheet);
-  for (const row of sheet.querySelectorAll('.pc-card')) observer.watch(row._pic, row._car, { side: 'good', pose: row._pose }); // (always the Good livery)
+  for (const row of sheet.querySelectorAll('.pc-card')) observer.watch(row._pic, row._car, { side: 'good', pose: row._pose, stock: true }); // (always the STOCK car in its Good livery: no cosmetic of the player's)
   // (the stacks' fades run off ONE timer on the sheet, not an animation on every card: the owner, 12-Oct: "the performance of the what's in
   // this pack screen is really poor on a tablet running the desktop site": see shop.css, the pack-contents block at the end)
   const ticker = window.matchMedia?.('(pointer: fine)').matches && !lite('stacks') && !lite('anim') ? setInterval(() => sheet.classList.toggle('phase-b'), 1600) : 0; // (a touch device: no timer, no fade)

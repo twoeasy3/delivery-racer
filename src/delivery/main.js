@@ -181,6 +181,20 @@ if (params.get('showroom') !== null) {
   const full = params.get('full') !== null || params.get('sheet') !== null; // (&full: the car's full view; &sheet, its old name)
   if (params.get('look')) Showroom.look(params.get('look'), full); else if (full) Showroom.look(Showroom.shown.picked, true);
   if (params.get('filters') !== null) Showroom.filters(true); // (&filters: the filter sheet open)
+  // &restyle=<ms> (with &full): that long after opening, the full view's Style button opens the Cosmetics screen, a 5-spoke wheel set, a yellow
+  // plate 'RESTYLE' and a roof box are equipped there, and it is shut 1.2 s later, as a player would: for a picture of the showroom's car
+  // (and its card) drawn again in the new loadout with no reload (render/loadout.js). Equipped for the visit only (no save written)
+  if (params.get('restyle') !== null) {
+    Progress.noSave = true;
+    setTimeout(() => {
+      document.querySelector('.sr-cosm')?.click();
+      setTimeout(async () => {
+        const [{ setWheelSet }, { setPlateDesign, setPlateText }, { setProp }] = await Promise.all([import('./render/wheelcosmetic.js'), import('./render/platecosmetic.js'), import('./render/propdress.js')]);
+        setWheelSet('spoke5'); setPlateDesign('yellow'); setPlateText('RESTYLE'); setProp('roof', 'roofbox');
+        setTimeout(() => Cosmetics.close(), 1200);
+      }, 600);
+    }, Number(params.get('restyle')) || 1500);
+  }
 }
 // ?screensaver starts the screensaver straight away (with ?ff=5 as above); ?racewatch the race one
 const autostart = params.get('autostart');

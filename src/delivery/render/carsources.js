@@ -154,7 +154,7 @@ export const renderSources = (car, opts) => {
   if (!s.noBlueprints) cards.push([blueprintCard(car, { rarity: car.rarity || bpRarity || 'common', key: false, n: 1 }, { compact: true, pose: posePick(car.id), dark }), true]);
   if (!s.keyless && (car.bespoke || car.event)) cards.push([blueprintCard(car, { rarity: 'bespoke', key: true, n: 1 }, { compact: true, dark }), false]);
   const cardRow = cards.length ? make('div', 'cs-cards', ...cards.map(([c]) => c.node)) : null;
-  const drawCards = () => { for (const [c, needsPic] of cards) if (needsPic && c.pic) drawSoon(c.pic, car, { side: 'good', pose: posePick(car.id) }); };
+  const drawCards = () => { for (const [c, needsPic] of cards) if (needsPic && c.pic) drawSoon(c.pic, car, { side: 'good', pose: posePick(car.id), stock: true }); }; // (a blueprint card: the STOCK car in its Good livery, as the packs draw it)
   if (cardRow) { box.addEventListener('toggle', () => { if (box.open) requestAnimationFrame(drawCards); }); if (box.open) requestAnimationFrame(drawCards); }
   box.append(...[summary, cardRow, keyShown ? key : null, bpShown ? bp : null, flags.placeholder ? make('p', 'cs-note', '* Crazey Cash, the Shop\'s placeholder currency: nothing gives it yet') : null].filter(Boolean));
   return box;

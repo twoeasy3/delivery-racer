@@ -9,8 +9,9 @@
 // Poses: STILL_POSE (the event cards' and showroom's one pose, framed as before), or one of the four of a blueprint card
 // (carposes.js: 'top', 'hero', 'front', 'rear'; POSES below), framed tight to the picture.
 // Lazily: stillsIn(root) draws only the pictures scrolled into view (an IntersectionObserver), a few a frame.
-import { makeShowCar, paintShowCar } from './garage.js';
+import { makeShowCar, paintShowCar } from './showcar.js'; // (garage.js re-exports these: imported from their own module, so a check can load this one)
 import { sharedRenderer, drawStill, boxOf } from './modelviews.js';
+import { loadoutKey, onLoadout, STOCK_KEY } from './loadout.js';
 
 export const STILL_POSE = { lift: 0.3, angle: -0.64, close: 1 }; // (from a little above, in front, three-quarters on, the nose to the left: the event cards)
 // the blueprint cards' four (a model's nose is +z; angle turns it, from facing the camera: + to the right, - to the left).
@@ -26,11 +27,36 @@ export const POSES = {
 const poseOf = (pose) => (typeof pose === 'string' ? POSES[pose] || STILL_POSE : pose || STILL_POSE);
 const poseKey = (pose) => (typeof pose === 'string' ? pose : pose && pose !== STILL_POSE ? JSON.stringify(pose) : 'still');
 
-const stills = new Map(); // car id + side + pose + size -> the object URL of its picture, once encoded
-// stock: the car as it comes, no cosmetic of the player's (a pack reveal's cards: render/showcar.js dressCosmetics), kept apart
+const stills = new Map(); // car id + side + pose + loadout + size -> the object URL of its picture, once encoded
+const dressedAs = new Map(); // a DRESSED picture's key -> { id: its car's id, loadout: the loadoutKey it was drawn with } (to let go of it once that changes)
+// STOCK (stock: true): the car as it comes, no cosmetic of the player's (render/showcar.js dressCosmetics), ALWAYS in its Good livery:
+// every picture under the PACK umbrella (the owner, 15-Oct: "Packs render images based on the player's customisation. It should be a
+// STOCK good car"): a pack reveal's cards (render/packs.js), the car on a pack (render/packart.js), "What's inside" (render/packcontents.js),
+// the Shop's featured tile (render/shop.js) and banner (render/packbanner.js), Crazey Jim's blueprint cards (render/jimshop.js), the
+// "Where to get it" blueprint card (render/carsources.js), an event's hunt / featured / prize car (render/menustage.js).
+// A DRESSED picture (the showroom's cards, an event's stage cards, the Cosmetics screen's fallback) is keyed by the car's LOADOUT
+// SIGNATURE (render/loadout.js loadoutKey: per car id), so a change of any cosmetic draws it afresh; 'stock' is never a loadout key.
+const sideOf = (evil, stock) => !stock && !!evil; // (a stock picture is the Good one, whatever is asked)
+const lookOf = (car, stock) => (stock ? STOCK_KEY : 'L:' + loadoutKey(car));
 const keyOf = (el, car, evil, pose, stock = false) => {
   const r = boxOf(el); // (its own laid-out size, not the box on screen a transform makes of it: modelviews.js boxOf)
-  return car.id + (evil ? '/evil/' : '/good/') + poseKey(pose) + (stock ? '/stock/' : '/') + Math.round(r.width / 20) + 'x' + Math.round(r.height / 20);
+  return car.id + (sideOf(evil, stock) ? '/evil/' : '/good/') + poseKey(pose) + '/' + lookOf(car, stock) + '/' + Math.round(r.width / 20) + 'x' + Math.round(r.height / 20);
+};
+export const stillKey = keyOf; // (for a check)
+// a cosmetic changed: the dressed pictures of an old loadout are let go (the elements showing them are drawn again by their owners)
+onLoadout(() => {
+  for (const [key, was] of dressedAs) {
+    if (was.loadout === loadoutKey(was.id)) continue;
+    dressedAs.delete(key);
+    const url = stills.get(key);
+    stills.delete(key);
+    if (url?.startsWith('blob:')) setTimeout(() => URL.revokeObjectURL(url), 10000); // (later: a card still showing it is drawn again first)
+  }
+});
+// a check's or a picture's log of what was asked to be drawn (window.__stillLog = [] turns it on): { car, stock, evil, pose, where }
+const logAsk = (el, car, evil, stock, pose) => {
+  const log = typeof window !== 'undefined' ? window.__stillLog : null;
+  if (Array.isArray(log) && log.length < 2000) log.push({ car: car.id, stock: !!stock, evil: sideOf(evil, stock), pose: poseKey(pose), where: String(el.className || el.tagName || '') });
 };
 // the picture fills the element, whole, whatever its pixel size (drawn at the device's pixel ratio, so twice the element at
 // 2x): an element whose CSS gives the background no size of its own gets `contain`, centred (a pack's car had none and
@@ -53,6 +79,8 @@ const waiting = new Map(); // key -> { canvas (the one drawn), els (to show it o
 // drawn now if it is not yet (a model built, painted, rendered, and given back). False: nothing could be drawn (no
 // renderer, no size yet, no model for the car)
 export const stillCar = (el, car, evil, pose, stock = false) => {
+  evil = sideOf(evil, stock);
+  logAsk(el, car, evil, stock, pose);
   if (stillReady(el, car, evil, pose, stock)) return true;
   const key = keyOf(el, car, evil, pose, stock);
   const w = waiting.get(key);
@@ -81,6 +109,7 @@ export const stillCar = (el, car, evil, pose, stock = false) => {
     canvas.style.position = 'absolute'; canvas.style.inset = '0';
     const els = new Set([el]);
     waiting.set(key, { canvas, els });
+    if (!stock) dressedAs.set(key, { id: car.id, loadout: loadoutKey(car) });
     const done = (url) => { waiting.delete(key); stills.set(key, url); for (const e of els) show(e, url); };
     if (canvas.toBlob) canvas.toBlob((blob) => done(blob ? URL.createObjectURL(blob) : canvas.toDataURL('image/png')), 'image/png');
     else done(canvas.toDataURL('image/png'));
@@ -110,8 +139,9 @@ const pump = () => {
 const tags = new Map();
 const tagOf = (key) => { if (!tags.has(key)) tags.set(key, 's' + tags.size); return tags.get(key); };
 export const drawSoon = (el, car, { side = 'good', pose, first = false, stock = false } = {}) => {
-  const evil = side === 'evil';
-  const job = { el, car, evil, pose, stock, key: tagOf(car.id + '/' + (evil ? 'e' : 'g') + '/' + poseKey(pose) + (stock ? '/s' : '')) };
+  const evil = sideOf(side === 'evil', stock);
+  logAsk(el, car, evil, stock, pose);
+  const job = { el, car, evil, pose, stock, key: tagOf(car.id + '/' + (evil ? 'e' : 'g') + '/' + poseKey(pose) + '/' + lookOf(car, stock)) };
   if (el.dataset.still === job.key) return;
   if (stillReady(el, car, evil, pose, stock)) { el.dataset.still = job.key; return; } // (cached: at once, no frame)
   queue = queue.filter(j => j.el !== el); // (one job an element: a redraw at a new size replaces one not yet done)

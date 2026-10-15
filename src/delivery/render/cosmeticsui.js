@@ -22,6 +22,7 @@ import { existingProps } from './propcosmetic.js';
 import { sharedRenderer, drawStill } from './modelviews.js';
 import { ShowroomView } from './showroomview.js';
 import { stillCar } from './carstill.js';
+import { onLoadout } from './loadout.js';
 import { carInUse, CARS } from '../cars.js';
 import { Game } from '../game.js';
 import { ownsCosmetic } from './cosmetics.js';
@@ -337,6 +338,7 @@ const build = () => {
   onWheelColour(shown);
   onPlate(() => { if (state.open) plateShown(); });
   onProp(() => { if (state.open) propShown(); });
+  onLoadout(() => { if (state.open && !ShowroomView.model) requestAnimationFrame(() => { if (state.open && !ShowroomView.model) stillCar(stage, state.car, state.evil); }); }); // (no WebGL: its picture drawn again in the new loadout, render/carstill.js)
   setCloseUp(false);
 };
 const setCloseUp = (on, end = null, slot = null) => {
