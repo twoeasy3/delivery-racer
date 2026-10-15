@@ -45,16 +45,19 @@ import { BATCH_D3_LAMPS } from './carlights-batchD3.js'; // (batch D3's idea car
 
 // (the hand-written entries; the generated batches are merged in under them: TABLE)
 export const CAR_LAMPS = {
-  // The Commuter (render/modelsOrig1b.js): big teardrop headlamps on the nose's corners sweeping back into the wings,
-  // tall oval tail lamps up the rear corners. No indicator lenses at all: the front ones flash on the outer tail of
-  // the headlamp's teardrop, the rear ones on the foot of the tail lamp.
+  // The Commuter (render/modelsOrig1b.js, redrawn 15-Oct from the owner's Micra photographs): bug-eye almond
+  // headlamps in silver rings on the nose's corners, leaning back up the wings; tall oval tail lamps in silver rings up
+  // the rear corners, a clear reversing lens low in each; two small round fog lamps in the skirt's front face (not
+  // lamps the table drives). No indicator lenses: the front ones flash on the outer edge of the headlamp's almond, the
+  // rear ones on the outer edge of the tail lamp. (Placed from scripts/lamps.mjs's draft of the new body.)
   commuter: {
-    head: [{ at: [0.57, 0.64, 1.835], size: [0.24, 0.2], round: true, mirror: true }],
-    tail: [{ at: [0.64, 0.66, -1.757], size: [0.14, 0.3], round: true, mirror: true }],
+    head: [{ at: [0.48, 0.733, 1.909], size: [0.291, 0.303], round: true, mirror: true }],
+    tail: [{ at: [0.66, 0.66, -1.905], size: [0.17, 0.32], round: true, mirror: true }],
     blink: [
-      { at: [0.7, 0.72, 1.7], size: [0.1, 0.1], round: true, mirror: true, shared: 'headlamp' },
-      { at: [0.64, 0.56, -1.76], size: [0.11, 0.1], round: true, mirror: true, shared: 'tail lamp' },
+      { at: [0.575, 0.733, 1.909], size: [0.1, 0.1], round: true, mirror: true, shared: 'headlamp' },
+      { at: [0.711, 0.66, -1.905], size: [0.068, 0.1], round: true, mirror: true, shared: 'tail lamp' },
     ],
+    reverse: [{ at: [0.66, 0.585, -1.908], size: [0.06, 0.06], round: true, mirror: true }],
   },
   // The Lowrider (render/modelsOrig2.js, a '60s Impala): two round headlamps a side; three round tail lamps a side,
   // the inner one the brake lamp. No amber anywhere: the rear indicators are the outer tail lamps flashing red (as the
