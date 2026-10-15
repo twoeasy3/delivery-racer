@@ -237,6 +237,20 @@ THEMES.roadworks = { sky: 0xaebccb, ground: 0x6f8752, road: 0x3b3e43, scenery: '
 // light towers' pools of light
 THEMES.roadworksNight = { sky: 0x070a14, ground: 0x2c3a28, road: 0x41444a, scenery: 'city', sets: THEMES.city.sets, lit: true, headlights: true, night: true,
   light: { sky: 0x5d72b0, ground: 0x10141c, ambient: 0.32, sun: 0x9fb4ff, sunlight: 0.25 } };
+// steelworks: a steel mill complex the road runs through (render/themes/steelworks.js): a smoky orange-and-grey sky, slag-dark
+// ground; by the level's zones (sets) the stockyard, the blast furnaces, the melt shop (a hall: a lit tunnel, 24 m to its roof),
+// the rail sidings, the rolling mill (a hall, 16 m) and the coil yard; pipe racks and pipe bridges, conveyor bridges, chimneys
+// and cooling towers; glow and sparks, no real lights. Its level crossings' train is the ingot train (a shunter, torpedo ladle
+// cars, a coil wagon: CONFIG.crossing.trains), its boost pads conveyor belts (render/lanegimmicks.js), the building a blast blows
+// out of a converter shed (render/wreckage.js). steelworksNight: the same works after dark, the glow all that shows
+const STEEL_SETS = ['stockyard', 'furnaces', 'meltshop', 'sidings', 'rollingmill', 'coilyard'];
+const STEEL_HALL = { lit: true, shell: false, camHeight: 7, camBack: 13, wall: 0x5f666e, roof: 0x2c2e32, lamp: 0xffe0b0, face: 0x6a6460, heights: { meltshop: 24, rollingmill: 16 } };
+THEMES.steelworks = { sky: 0xc39a7c, ground: 0x4f4842, road: 0x3e3d40, scenery: 'steelworks', fogColor: 0xb8957c, train: 'ingot', pad: 'conveyor', sets: STEEL_SETS,
+  target: { height: 4.6, beam: true }, tunnel: STEEL_HALL,
+  light: { sky: 0xffe2c8, ground: 0x5a3a2a, ambient: 1.25, sun: 0xffd2a8, sunlight: 1.0 } };
+THEMES.steelworksNight = { sky: 0x2a1612, ground: 0x2a2320, road: 0x37363a, scenery: 'steelworks', fogColor: 0x4a2416, train: 'ingot', pad: 'conveyor', sets: STEEL_SETS,
+  night: true, lit: true, headlights: true, target: { height: 4.6, beam: true }, tunnel: STEEL_HALL,
+  light: { sky: 0xffb890, ground: 0x2a1a14, ambient: 0.75, sun: 0xffc8a0, sunlight: 0.45 } };
 THEMES.autumn = { sky: 0xeccfa0, ground: 0x9a8a3e, road: 0x4a4a4e, scenery: 'autumn', line: 0xf2eede, centre: 0xe6b422, terrain: { gentle: 0xa8923c, steep: 0x7a4c2a, rough: 0.5, flat: 5, rise: 45 }, target: { height: 4.2, beam: true }, tunnel: { wall: 0x8a2f22, tiles: 0xa8743e, roof: 0x5a2a1c, face: 0x7e2a1e, lamp: 0xffc878, lintel: 2.4, pier: 2.6 }, channel: { shallow: 0x7fa6a8, deep: 0x2c5a6a, glint: 0xa8cfd0 }, light: { sky: 0xffe6bc, ground: 0xb89464, ambient: 1.3, sun: 0xffc27a, sunlight: 1.2 } };
 
 // ---- the themes' own obstacles ---------------------------------------------------------------------------
@@ -275,7 +289,8 @@ const OBSTACLES = {
   autumn: { crate: 'harvestCrate', bale: 'leafPile', cone: 'smallPumpkin' }, // (a crate of pumpkins; a heap of raked leaves; a small pumpkin on a stake)
   mall: { crate: 'boxStack', bale: 'trolleyRow', cone: 'wetFloorSign' },
   roadworks: { barrier: 'barrierBlock', crate: 'cableReel', bale: 'sandPile' }, // (a water-filled barrier, a cable drum, a heap of sand; the cones are roadworks and stay)
-  roadworksNight: { barrier: 'barrierBlock', crate: 'cableReel', bale: 'sandPile' }, // (the same road by night) // (delivery cartons on a sack truck; three shopping trolleys nested; a WET FLOOR A-frame)
+  roadworksNight: { barrier: 'barrierBlock', crate: 'cableReel', bale: 'sandPile' }, // (the same road by night)
+  steelworks: { crate: 'ingotStack', bale: 'steelCoil', cone: 'hotSign', barrier: 'rebarBundle' }, // (a stack of hot billets, a coil on its cradle, a HOT METAL sign, bundles of rebar; steelworksNight has them too) // (delivery cartons on a sack truck; three shopping trolleys nested; a WET FLOOR A-frame)
   // (the port keeps its crates, the farm and the Wild West their bales: there they belong)
 };
 // drifting: the same, for the things of a level's "drifters" alone, where what moves about the road wants to be

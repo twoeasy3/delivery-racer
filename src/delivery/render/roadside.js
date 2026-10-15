@@ -19,6 +19,7 @@ import { scene, camera, tmp, tmp2, clearGroup } from './scene.js';
 import { buildStrip } from './road.js';
 import { makeCarriage } from './trainModel.js';
 import { makeLocomotive, makeTender, makeBoxcar, makeCarriage as makeWestCarriage, makeCaboose } from './themes/wildwestModels.js';
+import { makeShunter, makeTorpedo, makeCoilWagon } from './themes/steelworksModels.js';
 import { makeWorker } from './siteModels.js';
 
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
@@ -143,7 +144,12 @@ Game.onLoad.push(() => {
     // locomotive leading, its pieces spaced out to the same length. Each piece: { model, at (m from the nose
     // to its middle), back (true: it faces the way it came) }
     const length = Crossings.trainLength, carriages = [];
-    if (Crossings.model(c) === 'steam') {
+    if (Crossings.model(c) === 'ingot') { // (the steelworks': a shunter leading two torpedo ladle cars and a coil wagon)
+      const pieces = [[makeShunter(), 10], [makeTorpedo(), 13], [makeTorpedo(), 13], [makeCoilWagon(), 10]];
+      const gap = (length - pieces.reduce((sum, [, l]) => sum + l, 0)) / (pieces.length - 1);
+      let at = 0;
+      for (const [model, l] of pieces) { carriages.push({ model, at: at + l / 2, back: false }); at += l + gap; }
+    } else if (Crossings.model(c) === 'steam') {
       const pieces = [[makeLocomotive(), 9.6], [makeTender(), 5], [makeBoxcar(), 8.6], [makeWestCarriage(), 10.2], [makeWestCarriage(), 10.2], [makeCaboose(), 7.2]];
       const gap = (length - pieces.reduce((sum, [, l]) => sum + l, 0)) / (pieces.length - 1);
       let at = 0;

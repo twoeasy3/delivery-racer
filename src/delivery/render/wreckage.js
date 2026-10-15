@@ -22,6 +22,8 @@ import { Wreckage } from '../wreckage.js';
 import { scene, tmp, clearGroup } from './scene.js';
 import { Fire, Smoke, Particles, rnd, FIRE_COLORS } from './effects.js';
 import { lambert, CHAR, STEEL, WHITE, GLASS, add, box, across, makeAirliner, makeTower } from './airportModels.js';
+import { THEMES } from '../themes.js';
+import { makeConverterShed } from './themes/steelworksModels.js';
 export { makeAirliner }; // (as before)
 
 
@@ -168,7 +170,8 @@ Game.onLoad.push(() => {
   for (const e of LEVEL.wreckage || []) {
     const W = CONFIG.wreckage, LW = CONFIG.laneWidth, depth = W.kinds[e.kind].depth;
     const w = (e.lanes[1] - e.lanes[0] + 1) * LW - 0.4 + (e.kind === 'blast' ? CONFIG.shoulder + 0.2 : 0); // (a blast's box: out to the road's edge)
-    const mesh = e.kind === 'airliner' ? makeAirliner(w, depth, true) : e.kind === 'blast' && e.rock ? MODELS.rockBlast() : MODELS[e.kind](w, depth);
+    const steel = (THEMES[LEVEL.theme] || {}).scenery === 'steelworks'; // (on a steelworks level a blast is a converter shed blowing out)
+    const mesh = e.kind === 'airliner' ? makeAirliner(w, depth, true) : e.kind === 'blast' && e.rock ? MODELS.rockBlast() : e.kind === 'blast' && steel ? makeConverterShed() : MODELS[e.kind](w, depth);
     mesh.visible = false;
     const marker = new THREE.Mesh(new THREE.PlaneGeometry(w, depth + 4 + (e.slide || 0)).rotateX(-Math.PI / 2), // (an airliner's: the whole of its slide)
       new THREE.MeshBasicMaterial({ color: 0xff2a1a, transparent: true, opacity: 0.5, depthWrite: false,
