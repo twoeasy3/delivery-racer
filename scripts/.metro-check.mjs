@@ -146,6 +146,24 @@ try {
     check(!a.wrecked && !b.wrecked && a.passed && b.passed && a.gone && b.gone, 'a car in lane ' + n + ' is untouched as each train goes by, and each is gone after');
   }
   check(!drive(BulletTrain, lane(2, 900)).wrecked && !drive(UpTrain, lane(0, 900)).wrecked, 'each train keeps to its own track (a car on the other track untouched)');
+  { // the 'behind' marker (render/hud.js syncBehind reads UpTrain.behind()): on exactly while the overtaking train is live behind
+    // the player, on the right track's side; off once it has passed; never for the train coming the other way
+    G.start();
+    for (const car of g.Traffic.cars) car.active = false;
+    Object.assign(P, { s: 900, lat: lane(1, 900), speed: 20, launching: false, ghost: 0, shield: 0 });
+    BulletTrain.active = UpTrain.active = false; BulletTrain.next = UpTrain.next = Infinity;
+    UpTrain.start(true); BulletTrain.start(true);
+    let wrong = 0, on = 0, first = 0, side = true, downMarked = false;
+    g.run(10, () => {
+      BulletTrain.next = UpTrain.next = Infinity; P.lat = lane(1, P.s);
+      const b = UpTrain.behind(), live = UpTrain.active && !UpTrain.passed;
+      if (!!b !== live) wrong++;
+      if (b) { on++; first ||= b.gap; side &&= b.lat > P.lat && Math.abs(b.lat - T.railLat(1, P.s)) < 1e-6; }
+      if (BulletTrain.behind()) downMarked = true;
+      return !UpTrain.active && !BulletTrain.active;
+    });
+    check(!wrong && on > 0 && side && !downMarked, 'the HUD\'s \'behind\' marker for the overtaking train: on from ' + Math.round(first) + ' m behind until it passes (' + on + ' steps), on the right track\'s side, off after; none for the oncoming train');
+  }
   check(!drive(BulletTrain, lane(0, 900), { ghost: true }).wrecked && !drive(UpTrain, lane(2, 900), { ghost: true }).wrecked, 'a ghost on a track is passed through');
   { // the tracks slow a car on them, as Canberra's rails do (by how well it crosses: CONFIG.railCrossing)
     G.start();

@@ -4,6 +4,7 @@ import { Track } from '../track.js';
 import { Collision } from '../collision.js';
 import { Player } from '../player.js';
 import { LEVEL } from '../levels.js';
+import { UpTrain } from '../bullettrain.js';
 import { scene, camera, tmp } from './scene.js';
 import { FACE_COLORS, FEATURES, INK } from './faces.js';
 
@@ -89,8 +90,27 @@ const syncRivalMark = (now) => {
     mark.rotation.y = now / 700 + k;
   });
 };
+// the overtaking train (an edge railway's right track, bullettrain.js UpTrain) once it has passed the player and is ahead on the
+// screen: the rival's glowing arrow over its nose, in the train's red (render/hud.js shows it behind the player till then). The
+// first of the rivals' marks, free on a level without rivals
+const syncTrainMark = (now) => {
+  const mark = rivalMarks[0];
+  if (!mark || LEVEL.grid?.rival) return;
+  mark.visible = UpTrain.active && UpTrain.passed && UpTrain.onTrack;
+  if (!mark.visible) return;
+  mark.userData.glow.color.setHex(0xff3a2a);
+  UpTrain.carriage(0, at);
+  Track.toWorld(at.s + CONFIG.bulletTrain.carLength / 2 - 4, at.lat, tmp);
+  const sx = scene.scale.x < 0 ? -tmp.x : tmp.x;
+  const size = Math.max(1, Math.hypot(sx - camera.position.x, tmp.y - camera.position.y, tmp.z - camera.position.z) / CONFIG.rivalMark.growFrom);
+  mark.scale.setScalar(size);
+  mark.position.set(tmp.x, tmp.y + CONFIG.bulletTrain.height + CONFIG.rivalMark.above + Math.sin(now / 300) * 0.15 * size, tmp.z);
+  mark.rotation.y = now / 700;
+};
+const at = { s: 0, lat: 0 };
 export const syncEmotes = (dt, now) => {
   syncRivalMark(now);
+  syncTrainMark(now);
   // an angel or a jerk (mysteries): every face stays up for as long as it lasts, held once it
   // has popped up and swung round to the front (see below)
   const held = Player.mystery === 'angel' || Player.mystery === 'jerk';

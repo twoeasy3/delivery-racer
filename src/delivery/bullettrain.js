@@ -56,6 +56,14 @@ const makeTrain = (up) => ({
     const { min, max } = LEVEL.railway.every;
     return min + random() * (max - min);
   },
+  // the overtaking train while it is coming up behind the player (UpTrain, an edge railway's right track: from its announcement
+  // until its nose passes): { gap: m behind, lat: its track's middle at the player }, else null. For the HUD's 'behind' marker
+  // (render/hud.js syncBehind), as a race's rival has; the train coming the other way has none
+  behind() {
+    if (!this.up || !this.active || this.passed || !this.onTrack) return null;
+    const gap = Player.s - this.s;
+    return gap > 0 ? { gap, lat: Track.railLat(1, Player.s) } : null;
+  },
   // where carriage i is (0 = the nose's), into `out` ({ s, lat })
   carriage(i, out) {
     out.s = this.s + (this.up ? -1 : 1) * (i + 0.5) * CONFIG.bulletTrain.carLength; // (behind the nose: up the road coming down, down it going up)
