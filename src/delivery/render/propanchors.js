@@ -76,7 +76,7 @@ export const KINDS = {
   splitwindow: 'coupe', wedge: 'sports', jetcar: 'craft', dragster: 'open', flyingcar: 'craft', blower: 'open', coach: 'bus', cityev: 'hatch',
   coupecross: 'suv',
   // bespoke and concept
-  rocketfin: 'canopy', swancar: 'coupe', solarracer: 'canopy', moonrover: 'open', snocat: 'special', hotdog: 'special',
+  rocketfin: 'canopy', swancar: 'coupe', solarracer: 'canopy', moonrover: 'open', sixwheeler: 'sports', snocat: 'special', hotdog: 'special',
   horseshoe: 'sports', fishbowl: 'canopy', midsummer: 'open', sixteen: 'coupe', quadturbo: 'sports', knifeedge: 'sports', windsong: 'sports',
   // event, earned, secret, level
   centreseat: 'sports', ufo: 'craft', 'earned-ufo': 'craft', gt: 'sports', jetboat: 'craft', f1: 'open', lmp: 'sports', apc: 'tank', citybus: 'bus', amphibioustank: 'tank',

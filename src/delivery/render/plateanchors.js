@@ -18,6 +18,7 @@ import { PLATE_TABLE, PLATE_VARIANTS, PLATE_NONE } from './plateanchorstable.js'
 export const HAND = {
   mini: { ends: 'rear' }, autobahnestate: { ends: 'rear' }, // (something stands over a third of the front place: rear only)
   dodgem: { ends: 'rear' }, // (the bumper car's nose is a blob: a front plate half sinks into it)
+  sixwheeler: { r: [0.38, -2.07, 0.52, 0] }, // (the generator's flat place is the black lamp panel; the plate goes on the paint under it, between the panel and the diffuser)
 };
 // models that can wear no plate though the generator found a place (a taste call) -- or that have a place nobody wants a plate on
 export const HAND_NONE = ['swancar']; // (the Swan Car's tail is all teardrop curve: the generator's flat place sits inside the body)

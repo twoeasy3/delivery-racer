@@ -466,12 +466,12 @@ export const EVENT_CARS = [
 // and since 13-Oct a key of its OWN (the owner: "a unique car key model per key car ... evocative of the car it belongs
 // to"): the first three models went to the cars they fit (the fob stays the Silver Comet's, the brass classic is the 1910
 // Swan Car's, the glossy smart key the hypercar's), six were made for the rest (render/keyModels.js)
-const KEY_STYLE = { horseshoe: 'smart', swancar: 'classic', rocketfin: 'fin', solarracer: 'solar', moonrover: 'lunar', snocat: 'snowboot', hotdog: 'bun',
+const KEY_STYLE = { horseshoe: 'smart', swancar: 'classic', rocketfin: 'fin', solarracer: 'solar', moonrover: 'lunar', sixwheeler: 'wheel', snocat: 'snowboot', hotdog: 'bun',
   // (the six CONCEPT key cars, CHECKLIST 211: each the key made for it, once an ordinary key: render/keyModels.js CONCEPT_KEYS)
   fishbowl: 'keikey', midsummer: 'wing', sixteen: 'artisan', quadturbo: 'carbonfob', knifeedge: 'wedgefob', windsong: 'startfob' };
 // the Key cars' star ratings (the owner, 12-Oct: "add star ratings to the current key cars too"): magenta stars as a mark of how strong the
 // car is against the tiers, NOT a tier (`rating`, not `tier`: no level rule, no ECU ladder (a key car's max stays 5) reads it)
-const KEY_RATING = { horseshoe: 5, rocketfin: 5, solarracer: 5, hotdog: 4, moonrover: 4, swancar: 4, snocat: 3,
+const KEY_RATING = { horseshoe: 5, rocketfin: 5, solarracer: 5, sixwheeler: 4, hotdog: 4, moonrover: 4, swancar: 4, snocat: 3,
   fishbowl: 2, midsummer: 3, sixteen: 4, quadturbo: 5, knifeedge: 5, windsong: 5 }; // (the concept cars: the owner, 13-Oct: "2, 3, 4, 5, 5, 5 stars")
 const bespoke = (car) => ({ ...car, rating: KEY_RATING[car.id] || 0, bespoke: true, rarity: 'legendary', placeholder: true, price: 0, keyModel: KEY_STYLE[car.id] || 'fob' });
 export const BESPOKE_CARS = [
@@ -493,6 +493,11 @@ export const BESPOKE_CARS = [
     maxSpeed: 41, accel: 18, agility: 1.6, crossing: 1, health: 150, mass: 1, sound: 'mini' }),
   // (the Monowheel was a Bespoke key car here until 15-Oct, when the owner sent it back to the ideas lot: "its design style doesn't suit the
   // game anymore". Its id is an idea's again (ideas.js); a save that owned its key or blueprints keeps them harmlessly: an idea is free to drive)
+  // the grip car: six wheels, four of them to steer with: corners as nothing else does, light, quick, not tough (the owner, 15-Oct: a new
+  // Legendary key car for the wheel key, in the Monowheel's place: in the same packs as the four above; never an idea; model render/ideaModelsSixWheel.js)
+  bespoke({ id: 'sixwheeler', name: 'Six-Wheel Supercar', basedOn: 'Covini C6W (2004)', model: 'sixwheeler', color: 0x1f9e96, evilColor: 0x5e2470,
+    hw: 1.0, hl: 2.1, height: 1.17, note: 'Four small wheels to steer with and two big ones to push: it goes round a corner as if on rails.',
+    maxSpeed: 45, accel: 17, agility: 1.4, crossing: 0.2, health: 200, mass: 1.4, sound: 'gt' }),
   // (no key to be had for now: `keyAvailable: false`: in no pack's Bespoke pool and in no event; the owner, 12-Oct. Their blueprints still drop)
   // the expedition: a glass cab on tracks, slow to start, takes the deep snow and shrugs off a crash
   bespoke({ id: 'snocat', name: 'Snowcat', basedOn: 'Tucker Sno-Cat 443', model: 'snocat', color: 0xe8482a, evilColor: 0x1f4a6a, keyAvailable: false, noPacks: true,
