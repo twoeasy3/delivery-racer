@@ -8,7 +8,7 @@
 //   traffic pace: no car under control touches a cone, enters a works zone or touches another car; none stands still for
 //   long; cars spawned in a diversion are on its lanes; they keep to the limit; closing lanes merge (zip). An ambulance in a
 //   diversion never busts the player (there is nowhere to pull over). Prints the numbers.
-//   node scripts/.roadworks-check.mjs [--seeds=1,2,3,4,5] [--seconds=280]   (280 s at 13 m/s: the whole level)
+//   node scripts/.roadworks-check.mjs [--seeds=1,2,3,4,5] [--seconds=280] [--level=roadworks-night]   (280 s at 13 m/s: the whole level)
 import { boot } from './delivery-headless.mjs';
 
 const args = process.argv.slice(2);
@@ -20,7 +20,7 @@ const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' 
 try {
   const { CONFIG } = g, P = g.Player, G = g.Game, LW = CONFIG.laneWidth, DV = CONFIG.diversion;
   const { Roadworks } = await g.load('roadworks.js');
-  const level = g.select('roadworks');
+  const level = g.select(opt('level', 'roadworks')); // (--level=roadworks-night: the same works after dark)
   const start = (seed = 1) => {
     G.nextSeed = seed; G.nextLoadSeed = seed;
     G.evil = false;
@@ -113,7 +113,7 @@ try {
   for (const seed of SEEDS) {
     T = start(seed);
     P.testGhost = true; // (the player rolls through at a traffic pace, in the left-most of its lanes, touching nothing)
-    const inWorks = (s) => T.diversions.some(d => s > d.from - DV.slow - 40 && s < d.to + 40);
+    const inWorks = (s) => T.diversions.some(d => s > d.from - DV.slow - 40 && s < d.to + 40) || (level.tarmac || []).some(z => s > z.from - CONFIG.tarmac.keepClear - 20 && s < z.to + 20); // (and round the fresh tarmac: its queue moves over only into room)
     const still = new Map(), seen = new Set(), last = new Map();
     let t = 0;
     const counted = { cones: 0, zone: 0, contacts: 0, near: 0, stuck: 0 };
@@ -137,7 +137,7 @@ try {
         const co = Math.cos(c.yaw), si = Math.sin(c.yaw);
         for (const [u, w] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { // (its four corners, against the works zones where each is)
           const q = c.s + co * u * c.hl - si * w * c.hw, ql = c.lat + si * u * c.hl + co * w * c.hw, z = T.works(q);
-          for (let k = 0; k < z.n; k++) if (ql > z[k][0] + 0.05 && ql < z[k][1] - 0.05) counted.zone++;
+          for (let k = 0; k < z.n; k++) if (ql > z[k][0] + 0.05 && ql < z[k][1] - 0.05) { counted.zone++; if (process.env.WHY && counted.zone < 4) console.log('    zone', c.kind, c.s.toFixed(1), c.lat.toFixed(2), 'lane', c.lane, 'yaw', c.yaw.toFixed(3), 'lane at', T.laneOffset(c.lane, c.s).toFixed(2), 'latVel', c.latVel.toFixed(2)); }
         }
         const lim = Roadworks.limitAt(c.s, c.dir);
         if (lim < Infinity && T.diverting(c.s)) totals.speeds.push(Math.abs(c.vs) / lim);
@@ -151,7 +151,7 @@ try {
         if (!inWorks(a.s) || Math.abs(a.s - b.s) > a.hl + b.hl + 2) continue;
         const touching = g.Collision.overlap(a, b);
         if (wild(a) || wild(b)) { if (touching) totals.wildContacts++; continue; }
-        if (touching) counted.contacts++;
+        if (touching) { counted.contacts++; if (process.env.WHY && counted.contacts < 6) console.log('    car', a.kind, a.s.toFixed(1), a.lat.toFixed(2), 'L' + a.lane, Math.abs(a.vs).toFixed(1), a.zipInto, '|', b.kind, b.s.toFixed(1), b.lat.toFixed(2), 'L' + b.lane, Math.abs(b.vs).toFixed(1), b.zipInto); }
         else if (Math.abs(a.s - b.s) < a.hl + b.hl + 1 && Math.abs(a.lat - b.lat) < a.hw + b.hw + 0.3) counted.near++;
       }
     }
