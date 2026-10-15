@@ -170,78 +170,114 @@ const shadeLow = (geo, y0, y1, low) => {
 export const ORIG1B_MODELS = {};
 
 // ---- the Commuter -----------------------------------------------------------------------------------------------------
-// The starter car: a bubbly little five-door city hatchback (a Nissan Micra of the 2000s). Tall and short, one round
-// body: a short blunt nose and a high, bulbous bonnet sweeping up into a big raked windscreen, a tall glasshouse under a
-// roof that curves down to an upright hatch; fat wheel arches over small wheels with plain silver hub caps; big almond
-// headlamps up on the front wings' corners, a small oval grille between them, tall tail lamps up the rear corners;
-// black bumpers and sills under it all (a wide dark mouth with two round fog lamps); round mirrors in the paint. The
-// paint shades to a deeper red-orange low down (vertex colours).
+// The starter car, redrawn from the owner's photographs of a 2000s Nissan Micra (K12) and the old card picture: a
+// bubble. One round body, tall and short: a steep stubby bonnet dropping to a blunt round nose, a big raked windscreen
+// into a DOMED roof (its crown over the front seats) that falls away to an upright hatch; a low waist that rises toward
+// the back under deep windows; flush rectangular headlamps in dark bezels on the nose's face either side of the grille
+// (the owner's pick of three drafts, 15-Oct); a small two-slot grille; body-colour bumpers (as the photographs) over a chunky
+// black skirt ring that runs right round the car's foot, 3 cm proud, with the mouth and two round fog lamps in its
+// front face; tall oval tail lamps in silver rings up the rear corners, a clear lens low in each; round mirrors in the
+// paint; plain silver hub caps on small fat tyres that overlap the body's lower corners (no wheel arches: the owner,
+// 15-Oct, "the tyres clipping through a rigid body is good enough"). The paint shades a little deeper and redder low
+// down (vertex colours). Each tail lamp is a silver RING standing out of the body with a domed lens on top, so its
+// outline is the ring's own smooth rim and never a jagged cut into the body's facets; the headlamps sit on the nose's
+// flat face for the same reason; every pane of glass stands clear of the body's bevels (its own crisp edge).
 ORIG1B_MODELS.commuter = (car) => {
   const group = new THREE.Group();
-  const W = car.hw, L = car.hl, R = 0.3; // (as before: radius 0.3, the axles at ±0.31 of the length)
-  const k = 'commuter' + [W, L].join(',');
+  const W = car.hw, L = car.hl, R = 0.3; // (as before: radius 0.3, the axles at ±0.62 of the half length)
+  const k = 'commuterA' + [W, L].join(',');
   const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
-  const AX = 0.62 * L, BEV = 0.12, BW = 2 * W; // (the body a little narrower than the track: the tyres stand proud)
-  const NOSE = L - BEV - 0.05, TAILZ = -L + BEV + 0.12, BELT = 0.72, SILL = 0.36;
-  // the body, side on: one plain shape with a straight lower line (no wheel arches: the wheels overlap its corners);
-  // the nose's blunt face rounding over into a short, high bonnet, the waist rising to the back, a short round tail
-  const WSF = [1.2, BELT + 0.02], BR = BELT + 0.08;              // (the windscreen's foot; the waist at the back)
+  const AX = 0.62 * L, BEV = 0.14, BW = 2 * W; // (the body's flanks at the hitbox; the tyres stand proud of its rounded foot)
+  const NOSE = L - BEV - 0.02, TAILZ = -L + BEV + 0.04, FLOOR = 0.22;
+  // the body, side on: a straight lower line (the bumpers are the body's own ends), the front bumper's face rounding
+  // up and over into the steep short bonnet, the waist rising to the back, the tail upright with a soft shoulder
+  // (the outline grows by BEV all round: the waist's surface is BEV above these points)
+  const WSF = [0.98, 0.76], WAIST_R = [TAILZ + 0.12, 0.86];      // (the windscreen's foot; the waist at the back)
   const bodyOutline = [
-    [NOSE - 0.05, SILL], ...curve([NOSE - 0.05, SILL], [NOSE + 0.03, 0.56], [NOSE - 0.06, BELT - 0.02], WSF, 7),
-    [TAILZ + 0.14, BR], ...curve([TAILZ + 0.14, BR], [TAILZ + 0.01, BR - 0.02], [TAILZ - 0.01, BR - 0.12], [TAILZ, 0.6], 3),
-    ...curve([TAILZ, 0.6], [TAILZ, 0.46], [TAILZ + 0.01, SILL + 0.02], [TAILZ + 0.08, SILL], 2),
+    [NOSE - 0.02, FLOOR], [NOSE + 0.02, 0.34], ...curve([NOSE + 0.02, 0.34], [NOSE + 0.04, 0.48], [NOSE - 0.02, 0.58], [NOSE - 0.16, 0.63], 4),
+    ...curve([NOSE - 0.16, 0.63], [1.5, 0.66], [1.25, 0.72], WSF, 5),
+    WAIST_R, ...curve(WAIST_R, [TAILZ - 0.02, 0.84], [TAILZ - 0.04, 0.66], [TAILZ - 0.03, 0.46], 3),
+    [TAILZ + 0.01, 0.3], [TAILZ + 0.04, FLOOR],
   ];
-  // the glasshouse, side on: a big raked windscreen, a tall arched roof, an upright hatch
-  const CBEV = 0.1, CW = BW - 0.08, TOP = car.height - CBEV, CY = BELT - 0.2;
-  const TAPER = [CY - CBEV, TOP, 0.18];
-  const WS = [[WSF[0] + 0.12, CY], [0.18, TOP - 0.06]];         // the windscreen, foot to top (its foot in the body)
-  const HATCH = [[-1.42, TOP - 0.1], [TAILZ + 0.02, CY]];        // the hatch's glass, top to foot
-  const roof = [WS[1], ...curve(WS[1], [-0.15, TOP + 0.06], [-1.05, TOP + 0.05], HATCH[0], 8)];
+  // the glasshouse, side on: a big raked windscreen, a domed roof crowned over the front seats, an upright hatch
+  const CBEV = 0.11, CW = BW - 0.06, TOP = car.height - CBEV, CY = WSF[1] - 0.1;
+  const TAPER = [CY - CBEV, TOP, 0.2];
+  const WS = [[WSF[0] + 0.1, CY], [0.22, TOP - 0.03]];          // the windscreen, foot to top (its foot in the body)
+  const HATCH = [[-1.42, TOP - 0.12], [TAILZ + 0.02, 0.8]];      // the hatch's glass, top to foot (its foot in the body)
+  const roof = [WS[1], ...curve(WS[1], [-0.1, TOP + 0.07], [-0.9, TOP + 0.04], HATCH[0], 8)];
   const cabinOutline = [WS[0], ...roof, HATCH[1]];
-  const mirrorX = narrowAt(CW / 2, 0.9, TAPER) + 0.06;
+  const mirrorX = narrowAt(CW / 2, 0.9, TAPER) + 0.07;
   const body = place(group, shared(k + 'body', () => shadeLow(merge([
-    extrudeSide(bodyOutline, BW, BEV, null, 3, 0.2),
-    extrudeSide(cabinOutline, CW, CBEV, TAPER, 3, 0.14),
-    ...[-1, 1].map(s => blob(0.1, 0.065, 0.06, s * mirrorX, 0.9, 0.8, 0, s * 0.3, [8, 5])),   // the mirrors
-  ]), 0.2, 0.75, [0.82, 0.6, 0.58])), paint);
-  // the glass: the windscreen, the hatch's window, three windows a side (front door, rear door, the quarter)
+    extrudeSide(bodyOutline, BW, BEV, null, 3, 0.24),
+    extrudeSide(cabinOutline, CW, CBEV, TAPER, 3, 0.16),
+    ...[-1, 1].map(s => blob(0.1, 0.07, 0.06, s * mirrorX, 0.9, 0.78, 0, s * 0.3, [8, 5])),   // the mirrors
+  ]), 0.2, 0.7, [0.84, 0.64, 0.6])), paint);
+  // the glass: the windscreen, the hatch's window, three windows a side (front door, rear door, the quarter), their
+  // sills just above the body's rounded shoulder on the rising waist and their tops under the roof's dome
   const LIFT = CBEV + 0.006, CH = CW / 2;
-  const foot = (z) => heightAt([WSF, [TAILZ + 0.14, BR]], z) + 0.06;  // (the windows' sills, on the waist)
-  const top = (z) => heightAt(roof, z) - 0.04;
+  const foot = (z) => heightAt([WSF, WAIST_R], z) + BEV + 0.03;
+  const top = (z) => heightAt(roof, z) - 0.06; // (well under the roof's shoulder: seen from above, its edge never overlaps the glass)
   const zAt = ([[z0, y0], [z1, y1]], y) => z0 + (z1 - z0) * (y - y0) / (y1 - y0);
   const aEdge = (y) => zAt(WS, y) - 0.1, cEdge = (y) => zAt(HATCH, y) + 0.1;
+  // (a side window: its sill on the waist, its top under the roof at an even distance, its front and back edges along
+  // the pillars; the top sampled only between the pillars' tops, so it never runs off the roof's curve)
   const window = (z0, z1, front = null, back = null) => {
-    const f0 = foot(z0), f1 = foot(z1), t0 = top(z0), t1 = top(z1);
-    return [[front ? front(f0) : z0, f0], [back ? back(f1) : z1, f1], [back ? back(t1 - 0.02) : z1, back ? t1 - 0.02 : t1],
-      ...[0.66, 0.33].map(t => z1 + (z0 - z1) * t).map(z => [z, top(z)]).filter(([z]) => !front || z < front(t0)),
-      [front ? front(top(front(t0))) : z0, front ? top(front(t0)) : t0]];
+    const f0 = foot(z0), f1 = foot(z1);
+    const zTF = front ? front(top(z0)) : z0, zTB = back ? back(top(z1)) : z1;
+    return [[front ? front(f0) : z0, f0], [back ? back(f1) : z1, f1], [zTB, top(zTB) - (back ? 0.02 : 0)],
+      ...[0.2, 0.4, 0.6, 0.8].map(s => zTB + (zTF - zTB) * s).map(z => [z, top(z)]), [zTF, top(zTF)]]; // (in order round it, back to front: a fan of a zigzag is ragged)
   };
   parts(group, k + 'glass', GLASS, () => [
-    slopeGlass([zAt(WS, foot(WSF[0]) - 0.04), foot(WSF[0]) - 0.04], WS[1], CH, TAPER, CBEV + 0.03, [0.02, 0.04], LIFT),
-    slopeGlass([zAt(HATCH, BR + 0.06), BR + 0.06], HATCH[0], CH, TAPER, CBEV + 0.06, [0.02, 0.06], LIFT),
+    slopeGlass([zAt(WS, foot(WSF[0])), foot(WSF[0])], WS[1], CH, TAPER, CBEV + 0.07, [0.02, 0.09], LIFT),
+    slopeGlass([zAt(HATCH, 1.03), 1.03], HATCH[0], CH, TAPER, CBEV + 0.09, [0.02, 0.1], LIFT),
     ...sideGlass([
-      window(aEdge(foot(1.0)), -0.16, aEdge),
-      window(-0.26, -0.98),
-      window(-1.08, cEdge(foot(-1.3)), null, cEdge),
-    ], CH, TAPER, 0.006),
+      window(aEdge(foot(0.9)), -0.14, aEdge),
+      window(-0.24, -0.96),
+      window(-1.06, cEdge(foot(-1.3)), null, cEdge),
+    ], CH, TAPER, 0.016),
   ]);
-  // the lamps: big teardrops on the nose's corners, sweeping back and up into the wings; tall tail lamps up the rear
-  // corners
-  parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => tear(0.16, 0.11, 0.3, s * 0.56, 0.63, NOSE - 0.02, 0.55, -s * 0.75)));
-  parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => blob(0.08, 0.16, 0.06, s * 0.64, 0.66, TAILZ - BEV + 0.03)));
-  // black: the bumpers (level with the sill, round the corners), the skirt under the body, the mouth under the nose,
-  // the little oval grille over it
-  const FZ = NOSE + 0.09; // (the front bumper's face)
+  // the lamps: each a silver BEZEL, a short elliptical ring standing out of the body along its surface's normal, with a
+  // domed lens on top. The headlamps bug-eye almonds on the nose's corners, long axis from low at the front up and back
+  // along the wing; the tail lamps tall ovals up the rear corners, a clear lens low in each
+  const ring = (rx, ry, depth, out, x, y, z, pitch, yaw, seg = 20) => {
+    const geo = new THREE.CylinderGeometry(1, 1, depth, seg, 1, false).scale(rx, 1, ry).rotateX(Math.PI / 2).translate(0, 0, out - depth / 2);
+    if (pitch) geo.rotateX(pitch);
+    if (yaw) geo.rotateY(yaw);
+    return geo.translate(x, y, z);
+  };
+  const dome = (rx, ry, h, out, x, y, z, pitch, yaw) => {
+    const geo = new THREE.SphereGeometry(1, 20, 3, 0, Math.PI * 2, 0, Math.PI / 2).rotateX(Math.PI / 2).scale(rx, ry, h).translate(0, 0, out);
+    if (pitch) geo.rotateX(pitch);
+    if (yaw) geo.rotateY(yaw);
+    return geo.translate(x, y, z);
+  };
+  // the headlamps (the owner, 15-Oct, picked from three drafts): flush RECTANGULAR lamps on the nose's near-vertical
+  // face either side of the grille, each a flat cream lens standing a hair proud of a dark bezel block set into the
+  // nose (the face is flat under them, so nothing of the body cuts through, and from the side they are a thin edge).
+  // The tail lamps tall ovals in silver rings up the rear corners, a clear lens low in each
+  const NF = NOSE + 0.18, NP = -0.25; // (the nose face under the lamps, and its lean back)
+  const rbox = (w, h, d, out, x, y, z, pitch) => new THREE.BoxGeometry(w, h, d).translate(0, 0, out - d / 2).rotateX(pitch).translate(x, y, z);
+  const TL = [0.58, 0.66, TAILZ - BEV + 0.03]; // (the tail lamp's place, on the tail's flat panel; its ring's axis straight back)
+  parts(group, k + 'bezel', SILVER, () => [-1, 1].map(s => ring(0.1, 0.18, 0.16, 0.035, s * TL[0], TL[1], TL[2], Math.PI, 0)));
+  parts(group, k + 'lamp', LAMP, () => [
+    ...[-1, 1].map(s => rbox(0.27, 0.1, 0.02, 0.03, s * 0.44, 0.49, NF, NP)),                 // the headlamp lenses
+    ...[-1, 1].map(s => dsc(0.03, 0.02, s * TL[0], TL[1] - 0.075, TL[2] - 0.063, 12)),        // the clear lenses
+  ]);
+  parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => dome(0.085, 0.16, 0.035, 0.035, s * TL[0], TL[1], TL[2], Math.PI, 0)));
+  // black: the skirt ring round the car's foot (3 cm proud of the flanks and both bumpers), the mouth and the two
+  // grille slots on the nose, the hatch's handle strip
+  const FZ = NOSE + 0.19, RZ = TAILZ - 0.19; // (the skirt's front and rear faces)
   parts(group, k + 'black', TRIM, () => [
-    extrudeSide([[AX - 0.1, 0.16], [NOSE - 0.02, 0.16], [NOSE + 0.04, 0.24], [NOSE + 0.04, 0.42], [AX - 0.1, 0.42]], BW + 0.02, 0.05, null, 2, 0.18),
-    extrudeSide([[-AX + 0.1, 0.16], [TAILZ + 0.02, 0.16], [TAILZ - 0.04, 0.24], [TAILZ - 0.04, 0.44], [-AX + 0.1, 0.44]], BW + 0.02, 0.05, null, 2, 0.18),
-    bx(BW - 0.06, 0.12, 2 * AX, 0, 0.27, 0),
-    blob(0.34, 0.08, 0.05, 0, 0.33, FZ - 0.02, 0, 0, [12, 6]),
-    blob(0.16, 0.045, 0.04, 0, 0.58, NOSE + 0.1, 0.4, 0, [10, 5]),
+    // (the skirt band: its corners rounded in plan as the body's are, its top and bottom edges rounded over)
+    extrudeSide([[FZ - 0.05, 0.17], [FZ - 0.05, 0.29], [RZ + 0.05, 0.29], [RZ + 0.05, 0.17]], BW + 0.06, 0.05, null, 2, 0.2),
+    ...[-1, 1].map(s => rbox(0.3, 0.13, 0.14, 0.015, s * 0.44, 0.49, NF, NP)),                  // the headlamp bezels
+    bx(0.5, 0.07, 0.06, 0, 0.38, FZ - 0.01),                                                   // the mouth
+    ...[-1, 1].map(s => blob(0.1, 0.03, 0.03, s * 0.15, 0.55, NOSE + 0.14, 0.45, 0, [8, 4])),     // the grille slots
+    bx(0.4, 0.03, 0.03, 0, 0.9, TAILZ - BEV + 0.01),                                           // the hatch's handle strip
   ]);
-  parts(group, k + 'fog', LAMP, () => [-1, 1].map(s => dsc(0.045, 0.03, s * 0.55, 0.32, FZ + 0.005, 10)));
-  // the wheels: small fat tyres, plain silver hub caps
-  for (const side of [-1, 1]) for (const z of [AX, -AX]) wheel(group, k, R, 0.26, side * (W - 0.04), z, 0.19, SILVER);
+  parts(group, k + 'fog', LAMP, () => [-1, 1].map(s => dsc(0.045, 0.03, s * 0.56, 0.23, FZ + 0.005, 10)));
+  // the wheels: small fat tyres, plain silver hub caps, their outer faces just proud of the skirt
+  for (const side of [-1, 1]) for (const z of [AX, -AX]) wheel(group, k, R, 0.26, side * (W - 0.06), z, 0.19, SILVER);
   group.userData = { body, animate: () => {} };
   return group;
 };
