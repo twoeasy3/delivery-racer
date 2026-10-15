@@ -12,6 +12,10 @@
 //   Textures: none (flat colours and a little emissive: the owner's "not everything needs a texture").
 //   propById(id) -> the prop; buildProp(id, paint) -> the group; propPaint(hex) -> a paint material for it.
 import * as THREE from 'three';
+import { MORE_ROOF } from './propmodelsroof.js';
+import { MORE_CARGO } from './propmodelscargo.js';
+import { MORE_WING } from './propmodelswing.js';
+import { MORE_WING_CLASSIC } from './propmodelswingclassic.js';
 
 const shared = (m) => { m.userData.shared = true; return m; };
 const DARK = shared(new THREE.MeshLambertMaterial({ color: 0x23252a }));      // black plastic, stands, rails
@@ -32,7 +36,7 @@ const prism = (parent, material, w, profile) => {
   const m = new THREE.Mesh(geo, material); parent.add(m); return m;
 };
 
-export const PROPS = {
+export const BASE_PROPS = {
   roof: [
     // 1. a roof box: a long carrier on two rails, its lid darker, a chrome latch at the nose. Box 1 x 0.5 x 0.8: y -0.25 (the roof) to 0.25
     { id: 'roofbox', name: 'Roof box', shape: 'box', build: (paint) => {
@@ -122,6 +126,14 @@ export const PROPS = {
       return g;
     } },
   ],
+};
+// ---- the full registry: the nine first props above, then the extra ones of each zone (3 + 6 roof, 3 + 7 cargo, 3 + 6 + 6 wing).
+// The extras live in their own files (propmodelsroof / cargo / wing / wingclassic, each with a MORE_* list and colourFrom: 'car' | 'mixed' |
+// 'fixed'); their ids are 'roof-...', 'cargo-...', 'wing-...' and never collide with the nine.
+export const PROPS = {
+  roof: [...BASE_PROPS.roof, ...MORE_ROOF],
+  cargo: [...BASE_PROPS.cargo, ...MORE_CARGO],
+  wing: [...BASE_PROPS.wing, ...MORE_WING_CLASSIC, ...MORE_WING],
 };
 export const propById = (id) => Object.values(PROPS).flat().find(p => p.id === id) || null;
 export const propSlotOf = (id) => Object.keys(PROPS).find(slot => PROPS[slot].some(p => p.id === id)) || null;

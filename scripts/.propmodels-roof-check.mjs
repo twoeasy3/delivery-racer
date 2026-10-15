@@ -20,8 +20,8 @@ try {
   check(all.length === 6 && new Set(all.map(p => p.id)).size === 6 && all.every(p => /^roof-/.test(p.id) && p.name && ['box', 'cylinder'].includes(p.shape)), 'six props, distinct ids prefixed roof-, a name and a shape');
   check(all.filter(p => p.shape === 'cylinder').length >= 2 && all.filter(p => p.shape === 'box').length >= 2, 'a mix of shapes (' + all.filter(p => p.shape === 'box').length + ' box, ' + all.filter(p => p.shape === 'cylinder').length + ' cylinder)');
   check(all.every(p => ['car', 'mixed', 'fixed'].includes(p.colourFrom)) && ['car', 'mixed', 'fixed'].every(c => all.some(p => p.colourFrom === c)), 'colourFrom on every prop, all three kinds used (' + all.map(p => p.colourFrom).join(', ') + ')');
-  const first = PM.PROPS.roof.map(p => p.id);
-  check(all.every(p => !first.includes(p.id) && !PM.propById(p.id)), 'none duplicates one of the first roof props (' + first.join(', ') + ')');
+  const first = PM.BASE_PROPS.roof.map(p => p.id);
+  check(all.every(p => !first.includes(p.id) && PM.propById(p.id)?.build === p.build), 'none duplicates one of the first roof props (' + first.join(', ') + ')');
   check(M.carPrimary({ color: 0x112233, evilColor: 0x445566 }, false) === 0x112233 && M.carPrimary({ color: 0x112233, evilColor: 0x445566 }, true) === 0x445566 && M.carPrimary({ color: 0x112233 }, true) === 0x112233, 'carPrimary: color for Good, evilColor for Evil, color when there is no evilColor');
   const tris = (g) => { let n = 0; g.traverse(o => { if (o.isMesh) { const geo = o.geometry; n += Math.floor((geo.index ? geo.index.count : geo.attributes.position.count) / 3); } }); return n; };
   const counts = [];

@@ -16,7 +16,6 @@
 import * as THREE from 'three';
 import { startModels } from './modelpatch-load.mjs';
 import { roster } from './prop-roster.mjs';
-import { slicesOf } from './prop-slices.mjs';
 
 const complete = process.argv.includes('--complete');
 const TOUCH = 0.06, MARGIN = 0.12;
@@ -30,15 +29,14 @@ try {
   const PC = await load('render/propcosmetic.js');
   const { makeShowCar } = await load('render/showcar.js');
   const cars = roster(C, IDEA_CARS), byId = new Map(cars.map(c => [c.car.id, c]));
-  const slices = slicesOf(cars);
-  const sliceNo = (id) => slices.findIndex(s => s.some(c => c.car.id === id)) + 1;
   // the files
-  const badFile = [];
+  const badFile = [], seenIn = new Map();
   for (const s of P.SLICES) {
     if (typeof s.slice !== 'number' || typeof s.cars !== 'object' || (s.hand && typeof s.hand !== 'object')) badFile.push(s.file + ' malformed');
     for (const id of Object.keys(s.cars || {})) {
       if (!byId.has(id)) badFile.push(s.file + ': ' + id + ' is not an in-scope car');
-      else if (s.slice !== 0 && sliceNo(id) !== s.slice) badFile.push(s.file + ': ' + id + ' belongs to slice ' + sliceNo(id));
+      else if (s.slice !== 0 && seenIn.has(id) && seenIn.get(id) !== s.slice) badFile.push(s.file + ': ' + id + ' is also in slice ' + seenIn.get(id)); // (the slices are consolidated: a promotion of cars moves them between the generated groups, so a car's slice file is not checked against the partition any more, only that no car is in two)
+      if (s.slice !== 0) seenIn.set(id, s.slice);
     }
     for (const id of Object.keys(s.hand || {})) if (!byId.has(id)) badFile.push(s.file + ' hand: ' + id + ' is not an in-scope car');
   }

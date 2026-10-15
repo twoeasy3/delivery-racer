@@ -72,7 +72,7 @@ const junkerTarp = (paint) => {
     x += (k + out) * dx / d; y += (k + out) * dy / d;
     return { x, y: Math.max(BASE, y), bump, pull, up: a.y / 0.87 };
   };
-  const pos = [], col = [], idx = [], c = new THREE.Color();
+  const pos = [], col = [], idx = [];
   for (let j = 0; j <= Z; j++) for (let i = 0; i <= U; i++) {
     const z = -HZ + 2 * HZ * j / Z, q = surf(i / U, z);
     pos.push(q.x, q.y, z);

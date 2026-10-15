@@ -21,8 +21,8 @@ try {
   const v = new THREE.Vector3();
   const all = W.MORE_WING.map(p => ({ slot: 'wing', ...p }));
   check(all.length === 6 && all.every(p => /^wing-[a-z0-9-]+$/.test(p.id)), 'six wings, ids wing-* (' + all.map(p => p.id).join(', ') + ')');
-  const first = M.PROPS.wing.map(p => p.id);
-  check(new Set(all.map(p => p.id)).size === 6 && all.every(p => !first.includes(p.id) && !M.propById(p.id)), 'ids distinct from each other and from winggt / winglip / wingtube');
+  const first = M.BASE_PROPS.wing.map(p => p.id);
+  check(new Set(all.map(p => p.id)).size === 6 && all.every(p => !first.includes(p.id) && M.propById(p.id)?.build === p.build), 'ids distinct from each other and from winggt / winglip / wingtube');
   check(all.every(p => ['box', 'cylinder'].includes(p.shape) && ['car', 'mixed', 'fixed'].includes(p.colourFrom) && p.name && typeof p.build === 'function'), 'a name, shape (box | cylinder), colourFrom (car | mixed | fixed) and build on every wing');
   check(all.filter(p => p.shape === 'cylinder').length >= 2 && all.filter(p => p.shape === 'box').length >= 2, 'a mix of shapes: ' + all.filter(p => p.shape === 'box').length + ' box, ' + all.filter(p => p.shape === 'cylinder').length + ' cylinder');
   check(W.carPrimary({ color: 1, evilColor: 2 }, false) === 1 && W.carPrimary({ color: 1, evilColor: 2 }, true) === 2 && W.carPrimary({ color: 1 }, true) === 1, 'carPrimary(car, evil): colour for Good, evilColor for Evil, colour when there is no evilColor');

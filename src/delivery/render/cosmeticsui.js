@@ -141,9 +141,9 @@ const buildPlate = () => {
 
 // ---- the PROP slots: Roof, Cargo, Wing (CHECKLIST 302; the choice and the dressing are render/propdress.js) ----
 const PROP_TEXT = {
-  roof: ['Roof prop', "A box, a sign or a beacon for the roof. It goes on every car with room for it, and covers the car's own roof ornament."],
-  cargo: ['Cargo prop', "A load for the back: crates, a barrel or a tarp. It goes on every car with a load bed, and covers the car's own load."],
-  wing: ['Rear wing', "A wing for the tail. It goes on every car with room for it, and covers the car's own wing."],
+  roof: ['Roof prop', ''],
+  cargo: ['Cargo prop', ''],
+  wing: ['Rear wing', ''],
 };
 // the view the close-up of each slot takes: the car turned (rad), the camera's height (rad), and how wide the prop is shown (times its size)
 const PROP_VIEW = { roof: { yaw: Math.PI - 0.7, lift: 0.5, wide: 2.6 }, cargo: { yaw: Math.PI - 0.7, lift: 0.45, wide: 2.6 }, wing: { yaw: Math.PI - 0.45, lift: 0.2, wide: 2.8 } };
@@ -159,7 +159,7 @@ const drawPreviews = (slot) => requestAnimationFrame(() => {
   }
 });
 const buildPropSection = (slot) => {
-  const [title, note] = PROP_TEXT[slot];
+  const [title] = PROP_TEXT[slot];
   const row = make('div', 'cz-row cz-props');
   row.setAttribute('role', 'group'); row.setAttribute('aria-label', title);
   const pick = (id) => () => {
@@ -187,7 +187,7 @@ const buildPropSection = (slot) => {
     b.type = 'button'; b.dataset.paint = paintValueOf(c); b.title = c.name; b.setAttribute('aria-label', c.name);
     b.append(c.hex === null ? make('span', 'cz-dot match') : swatchOf('#' + c.hex.toString(16).padStart(6, '0')));
     b.firstChild.classList.add('cz-dot');
-    b.addEventListener('click', () => { if (slotStatus(state.car, slot).ok && setPropPaint(slot, b.dataset.paint)) Sound.play('menuMove', 0.4); });
+    b.addEventListener('click', () => { if (slotStatus(state.car, slot).ok && propById(shownProp(slot))?.colourFrom !== 'fixed' && setPropPaint(slot, b.dataset.paint)) Sound.play('menuMove', 0.4); });
     paints.append(b);
   }
   const why = make('div', 'cz-why'); why.setAttribute('role', 'status');
@@ -195,7 +195,7 @@ const buildPropSection = (slot) => {
   const reset = make('button', 'cz-reset', 'Reset to stock'); reset.type = 'button';
   reset.addEventListener('click', () => { resetProp(slot); Sound.play('menuMove', 0.4); });
   const colourHead = make('h3', '', 'Colour');
-  const node = make('section', 'cz-section cz-prop', make('h2', '', title), make('p', 'cz-note', note), why, make('h3', '', 'Choose'), row, colourHead, paints, make('div', 'cz-foot', stat, reset));
+  const node = make('section', 'cz-section cz-prop', make('h2', '', title), why, make('h3', '', 'Choose'), row, colourHead, paints, make('div', 'cz-foot', stat, reset));
   propSecs[slot] = { node, row, paints, why, stat, none, reset };
   return node;
 };
@@ -223,11 +223,13 @@ const propShown = () => {
       b.setAttribute('aria-disabled', String(!st.ok));
     }
     sec.none.querySelector('.cz-name').textContent = own.has(slot) ? 'Stock' : 'None';
+    const prop = worn !== 'none' ? propById(worn) : null;
+    const fixedColours = !!prop && prop.colourFrom === 'fixed'; // (a prop with colours of its own, such as the hay or the cactus: the swatches do nothing)
     for (const b of sec.paints.children) {
       const on = b.dataset.paint === paint;
-      b.setAttribute('aria-pressed', String(on)); b.classList.toggle('equipped', on && st.ok); b.classList.toggle('locked', !st.ok);
+      b.setAttribute('aria-pressed', String(on)); b.classList.toggle('equipped', on && st.ok && !fixedColours); b.classList.toggle('locked', !st.ok || fixedColours);
     }
-    const prop = worn !== 'none' ? propById(worn) : null;
+    sec.paints.title = fixedColours ? 'This one keeps its own colours' : '';
     sec.stat.textContent = !st.ok ? '' : prop ? prop.name + ' (' + (PROP_PAINTS.find(c => paintValueOf(c) === paint)?.name || '#' + paint) + ')' : own.has(slot) ? "Stock: the car's own is kept" : 'Nothing on';
     sec.reset.disabled = !st.ok;
     const tab = [...slotList.children].find(t => t.dataset.slot === slot);

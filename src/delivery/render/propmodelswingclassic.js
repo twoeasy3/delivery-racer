@@ -4,9 +4,9 @@
 // placed with fitProp(carId, 'wing', 'box'). The blade / main part takes the car's primary colour (carPrimary in propmodelswing.js);
 // stands, pylons and often the end plates are carbon black. MORE_WING_CLASSIC = [{ id, name, shape: 'box', colourFrom, build(paint) }].
 import * as THREE from 'three';
-import { propPaint } from './propmodels.js';
+// (defined here, not imported from propmodels.js, which imports this file for the registry: no import cycle)
+export const propPaint = (hex) => new THREE.MeshLambertMaterial({ color: hex });
 
-export { propPaint };
 const shared = (m) => { m.userData.shared = true; return m; };
 const DARK = shared(new THREE.MeshLambertMaterial({ color: 0x1f2125 }));        // carbon black: pylons, plates
 const RED = shared(new THREE.MeshLambertMaterial({ color: 0xff2a2a, emissive: 0xc01010, emissiveIntensity: 0.6 })); // a brake lamp strip

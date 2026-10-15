@@ -14,7 +14,8 @@
 //   userData.prop = 'roof' and userData.propId = <id>, so hideProps / existingProps treat them like any roof prop.
 //   carPrimary(car, evil) -> the car's primary colour (hex) for its side, for the Cosmetics UI to pass to propPaint.
 import * as THREE from 'three';
-import { propPaint } from './propmodels.js';
+// (defined here, not imported from propmodels.js, which imports this file for the registry: no import cycle)
+export const propPaint = (hex) => new THREE.MeshLambertMaterial({ color: hex });
 
 // the car's primary colour for a side: the garage / idea entry's `color` (Good) or `evilColor` (Evil), as paintShowCar (render/showcar.js)
 // sets it on the body (a car with no evilColor, such as a level's own vehicle, keeps its one paint)

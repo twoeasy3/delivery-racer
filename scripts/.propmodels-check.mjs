@@ -20,9 +20,11 @@ try {
   const M = await load('render/propmodels.js');
   const P = await load('render/propanchors.js');
   const v = new THREE.Vector3();
-  const slots = Object.keys(M.PROPS);
-  check(slots.join(',') === 'roof,cargo,wing' && slots.every(s => M.PROPS[s].length === 3), 'three props a slot, roof / cargo / wing (' + slots.map(s => s + ' ' + M.PROPS[s].length).join(', ') + ')');
-  const all = slots.flatMap(s => M.PROPS[s].map(p => ({ slot: s, ...p })));
+  const slots = Object.keys(M.BASE_PROPS);
+  check(slots.join(',') === 'roof,cargo,wing' && slots.every(s => M.BASE_PROPS[s].length === 3), 'three props a slot, roof / cargo / wing (' + slots.map(s => s + ' ' + M.BASE_PROPS[s].length).join(', ') + ')');
+  const full = Object.values(M.PROPS).flat();
+  check(['roof', 'cargo', 'wing'].every((s, i) => M.PROPS[s].length === [9, 10, 15][i]) && new Set(full.map(p => p.id)).size === full.length && full.every(p => M.propById(p.id) === p && M.propSlotOf(p.id) && p.name && ['box', 'cylinder'].includes(p.shape)), 'the full registry: roof 9, cargo 10, wing 15, distinct ids, each with a name and a shape (the extras are checked by the .propmodels-<zone>-check files)');
+  const all = slots.flatMap(s => M.BASE_PROPS[s].map(p => ({ slot: s, ...p })));
   check(new Set(all.map(p => p.id)).size === all.length && all.every(p => ['box', 'cylinder'].includes(p.shape) && p.name), 'distinct ids, a name and a shape (box | cylinder) on every prop');
   check(all.every(p => M.propById(p.id) === M.PROPS[p.slot].find(q => q.id === p.id) && M.propSlotOf(p.id) === p.slot), 'propById / propSlotOf find every prop in its slot');
   const tris = (g) => { let n = 0; g.traverse(o => { if (o.isMesh) { const geo = o.geometry; n += Math.floor((geo.index ? geo.index.count : geo.attributes.position.count) / 3); } }); return n; };

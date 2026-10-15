@@ -1,5 +1,5 @@
 // ---- the PROP cosmetics: a ROOF PROP, a CARGO PROP and a REAR WING the player puts on the car (the owner, 15-Oct: "get an agent on the
-// ui" for the nine props of render/propmodels.js; CHECKLIST 302). RENDER-ONLY like render/wheelcosmetic.js and render/platecosmetic.js:
+// ui" for the props of render/propmodels.js (34: 9 roof, 10 cargo, 15 wing); CHECKLIST 302). RENDER-ONLY like render/wheelcosmetic.js and render/platecosmetic.js:
 // nothing is written onto a car's entry, a save, the cookie or the replay fingerprint (no rules module imports this file; it is not
 // in vite.config.js logicFiles); the choice lives in this browser's localStorage only.
 //

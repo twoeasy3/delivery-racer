@@ -18,6 +18,7 @@ import * as THREE from 'three';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { startModels } from './modelpatch-load.mjs';
 
+const PROP_SPLIT = { minibus: 1, pickup: 11, taxi: 1, jeepney: 2, flatbed: 1, autobahnestate: 1, trophytruck: 1 }; // (the same as SPLIT in .proptag-check.mjs)
 const record = process.argv.includes('--record');
 const { load, close, ROOT } = await startModels();
 let failures = 0;
@@ -129,7 +130,8 @@ try {
         if (!was) { bad.push(key + ' (not in the baseline)'); continue; }
         const split = ['minivan', 'pickup', 'moorrover'].includes(e.model);
         const same = now.tris === was.tris && now.lo.every((v, i) => Math.abs(v - was.lo[i]) < 1e-4) && now.hi.every((v, i) => Math.abs(v - was.hi[i]) < 1e-4);
-        const meshOk = now.meshes === was.meshes || (split && now.meshes === was.meshes + 1);
+        const propSplit = PROP_SPLIT[e.model || e.id] || 0; // (the prop tags of CHECKLIST 302 split meshes too: the same table as .proptag-check.mjs)
+        const meshOk = now.meshes === was.meshes || (split && now.meshes === was.meshes + 1) || (propSplit && now.meshes >= was.meshes && now.meshes <= was.meshes + propSplit + (split ? 1 : 0));
         if (now.meshes !== was.meshes) plus.push(key);
         if (!same || !meshOk) bad.push(key + ' tris ' + was.tris + '->' + now.tris + ' meshes ' + was.meshes + '->' + now.meshes);
       }

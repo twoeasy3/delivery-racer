@@ -23,7 +23,7 @@ try {
   check(all.length === 7 && all.every(p => /^cargo-[a-z]+$/.test(p.id)) && new Set(all.map(p => p.id)).size === 7, 'seven props with distinct cargo- ids (' + all.map(p => p.id).join(', ') + ')');
   check(all.every(p => ['box', 'cylinder'].includes(p.shape) && ['car', 'mixed', 'fixed'].includes(p.colourFrom) && p.name && typeof p.build === 'function'), 'shape box|cylinder, colourFrom car|mixed|fixed, a name and build() on each');
   check(all.filter(p => p.shape === 'cylinder').length >= 2 && all.filter(p => p.shape === 'box').length >= 2, 'a mix of shapes (' + all.filter(p => p.shape === 'box').length + ' box, ' + all.filter(p => p.shape === 'cylinder').length + ' cylinder)');
-  check(all.every(p => !M.propById(p.id)) && all.every(p => C.cargoById(p.id) === p), 'ids do not collide with propmodels.js; cargoById finds each');
+  check(all.every(p => !Object.values(M.BASE_PROPS).flat().some(q => q.id === p.id) && M.propById(p.id) === p) && all.every(p => C.cargoById(p.id) === p), 'ids do not collide with propmodels.js; cargoById finds each');
   const tris = (g) => { let n = 0; g.traverse(o => { if (o.isMesh) { const geo = o.geometry; n += Math.floor((geo.index ? geo.index.count : geo.attributes.position.count) / 3); } }); return n; };
   const counts = [];
   for (const p of all) {

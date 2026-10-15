@@ -15,9 +15,9 @@
 //   carPrimary(car, evil) -> the car's primary colour (hex) for its side, as paintShowCar sets the body: evilColor for an Evil
 //   driver, falling back to colour (a level's own vehicle may have one paint).
 import * as THREE from 'three';
-import { propPaint } from './propmodels.js';
+// (defined here, not imported from propmodels.js, which imports this file for the registry: no import cycle)
+export const propPaint = (hex) => new THREE.MeshLambertMaterial({ color: hex });
 
-export { propPaint };
 export const carPrimary = (car, evil = false) => ((evil ? car.evilColor : car.color) ?? car.color);
 
 const shared = (m) => { m.userData.shared = true; return m; };
