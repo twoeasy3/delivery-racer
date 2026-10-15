@@ -599,6 +599,24 @@
     "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
    }
   },
+  "paddleduck": {
+   "roof": {
+    "box": [2.69, 0, 3.782, 0.295],
+    "cyl": [2.99, 0, 3.857, 0.335],
+    "from": "roof",
+    "lim": "fit"
+   },
+   "cargo": {
+    "no": "a closed body: no load deck"
+   },
+   "wing": {
+    "box": [1.79, 0, 3.423, -2.605],
+    "cyl": [1.79, 0, 3.378, -2.605],
+    "from": "roof-edge",
+    "lim": "fit",
+    "existing": true
+   }
+  },
   "quadturbo": {
    "roof": {
     "box": [0.59, 0, 1.272, -0.17],
@@ -682,21 +700,21 @@
   },
   "sixwheeler": {
    "roof": {
-    "box": [0.57, 0, 1.299, -0.36],
-    "cyl": [0.51, 0, 1.284, -0.36],
+    "box": [0.89, 0, 1.372, -0.33],
+    "cyl": [0.75, 0, 1.345, -0.33],
     "from": "roof",
-    "lim": "d",
-    "inset": [0.007, 0.007]
+    "lim": "fit",
+    "inset": [0.03, 0.029]
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.61, 0, 1.036, -1.898],
-    "cyl": [0.61, 0, 1.021, -1.898],
-    "from": "deck",
-    "lim": "w",
-    "inset": [0.026, 0.026],
+    "box": [1.25, 0, 1.146, -1.95],
+    "cyl": [1.25, 0, 1.115, -1.95],
+    "from": "deck-edge",
+    "lim": "fit",
+    "inset": [0.009, 0.009],
     "existing": true
    }
   },

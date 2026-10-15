@@ -395,7 +395,7 @@ try {
     void P3;
   }
 
-  // ---- RIMS (render/rims.js, CHECKLIST 307): a set's rim, a child of each tyre, turning with the car or at a fixed pace ----
+  // ---- RIMS (render/rims.js, CHECKLIST 310): a set's rim, a child of each tyre, turning with the car or at a fixed pace ----
   {
     const raw = globalThis.localStorage;
     raw.removeItem('delivery.wheelrim'); raw.removeItem(W.KEY); raw.removeItem(W.KEY_DESIGN);
