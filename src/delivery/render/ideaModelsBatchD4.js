@@ -166,7 +166,7 @@ IDEA_MODELS_BATCH_D4.autobahnestate = (car) => {
   const bodyMesh = place(group, body, paint);
   // the spoiler lip on the tailgate's top edge: its own paint mesh, so the body's top (what the glass follows) is the roof alone
   place(group, shadeLow(merge([bx(CW * 0.78, 0.045, 0.2, 0, TOP + 0.05, -2.08, -0.12)]), 0.25, 0.8, [0.72, 0.7, 0.68]), paint);
-  const WINDOWS = [[-0.29, 9], [-1.25, -0.41], [-9, -1.37]];
+  const WINDOWS = [[-0.37, 9], [-1.25, -0.49], [-9, -1.37]];
   // glass: windscreen, tailgate glass and three side windows a side (door, rear door, quarter), all from the cabin's own outline (cabinGlass)
   const BELT = 1.06, CH = CW / 2;
   const glass = cabinGlass(cabinOutline, { from: 0, to: cabinOutline.length - 1, belt: BELT, half: CH, taper: TAPER, grow: CBEV,
@@ -232,7 +232,7 @@ IDEA_MODELS_BATCH_D4.finlandyacht = (car) => {
   // a call with the lifts negated. The windscreen's foot is the bonnet (belt 1.0; the bonnet is 0.97 there).
   const CH = CW / 2, LIFT = CBEV + 0.006;
   const ARGS = { from: 0, to: cabinOutline.length - 1, half: CH, taper: TAPER, grow: CBEV, inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, sideLift: 0.006 };
-  const glass = cabinGlass(cabinOutline, { ...ARGS, belt: 1.06, lift: LIFT, windows: [[0.06, 9], [-0.62, -0.04], [-9, -0.72]] });
+  const glass = cabinGlass(cabinOutline, { ...ARGS, belt: 1.06, lift: LIFT, windows: [[0.0, 9], [-0.62, -0.10], [-9, -0.72]] });
   const screen = cabinGlass(cabinOutline, { ...ARGS, belt: 1.0, lift: LIFT });
   const rear = cabinGlass(cabinOutline, { ...ARGS, belt: 1.0, lift: -LIFT }).rear;
   bag.add(GLASS, ...glass.sides, screen.front, rear);

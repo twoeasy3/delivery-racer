@@ -10,7 +10,7 @@
 // with userData.body, userData.animate and userData.livery. Spread into IDEA_MODELS by ideaModels.js. State-free.
 import * as THREE from 'three';
 import {
-  TRIM, CHROME, GLASS, LAMP, TAIL, AMBER, shared, place, merge, parts, bx, curve, extrudeSide,
+  TRIM, CHROME, GLASS, LAMP, TAIL, AMBER, shared, place, merge, parts, bx, extrudeSide,
   shadeBy, low, wheel, roundRect, extrudePlan, cabinGlass, glassFromProfile,
 } from './ideaModelsDkit.js';
 
@@ -32,11 +32,10 @@ export const IDEA_MODELS_BATCH_E2 = {
     const R = 0.35, TW = 0.22, WX = car.hw - TW / 2, AF = 1.1, AR = -1.1;
     const BEV = 0.04, BW = 1.5, HALF = BW / 2, NOSE = 1.7, TAILZ = -1.7, FLOOR = 0.27, COWL = 0.95, ROOF = 1.44;
     const TAPER = [0.9, ROOF, 0.08];
-    const WSF = [0.92, COWL], WST = [0.5, 1.43];
+    const WSF = [0.92, COWL], WST = [0.4913, ROOF]; // (the windscreen's line runs on up to the roof: one corner there)
     const RH = [TAILZ, ROOF], TH = [TAILZ, 1.0]; // the roof's rear edge: a square corner onto the near-vertical tail (the glass hatch is on the tail; TH is a point on the straight tail where the tail glass's foot is)
     const outline = [
       [NOSE, FLOOR], [NOSE, 0.62], [NOSE - 0.03, 0.82], [1.4, 0.9], WSF, WST,
-      ...curve(WST, [0.46, 1.47], [0.38, ROOF], [0.26, ROOF], 3),
       RH, TH, [TAILZ, FLOOR],
     ];
     const FZ = NOSE + BEV, BZ = TAILZ - BEV;
@@ -44,7 +43,7 @@ export const IDEA_MODELS_BATCH_E2 = {
     const body = place(group, shared(k + 'body', () => shadeBy(merge([extrudeSide(outline, BW, BEV, TAPER, 1)]), low(0.3, 0.8, [0.7, 0.64, 0.58]))), paint);
     // ALL the glass from the body's own side profile (cabinGlass: one inset outline, level tops, windows with the body's corners); the door glass is
     // the longer, the quarter window behind the B-pillar ends in a C-pillar before the tail glass. The windscreen's foot is the cowl (belt 0.98).
-    const GBELT = 1.02, WIN = [[-0.34, 9], [-1.45, -0.5]], INS = { aPillar: 0.07, roof: 0.05, cPillar: 0.09 };
+    const GBELT = 1.02, WIN = [[-0.42, 9], [-1.45, -0.58]], INS = { aPillar: 0.07, roof: 0.05, cPillar: 0.09 };
     const glass = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(TH), belt: GBELT, half: HALF, taper: TAPER, grow: BEV,
       inset: INS, lift: BEV + 0.006, sideLift: 0.006, windows: WIN });
     const screen = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(TH), belt: COWL + 0.03, half: HALF, taper: TAPER, grow: BEV,

@@ -27,10 +27,10 @@ export const IDEA_MODELS_BATCH_E1 = {
     const R = 0.3, TW = 0.16, HALF = 0.72, WX = car.hw - 0.01 - TW / 2, AF = 1.12, AR = -1.31;
     const BEV = 0.05, NOSE = 1.65, TAILZ = -1.65, ROOF = 1.83;
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
-    const WSF = [1.58, 1.08], WST = [1.12, 1.8], TH = [TAILZ, 1.2]; // (TH: a point on the straight tail, the tail glass's foot)
+    const WSF = [1.58, 1.08], WST = [1.1008, ROOF], TH = [TAILZ, 1.2]; // (TH: a point on the straight tail, the tail glass's foot)
     const outline = [
       [1.62, 0.33], [NOSE, 0.4], [NOSE, 0.98], ...curve([NOSE, 0.98], [NOSE, 1.04], [1.62, 1.06], WSF, 3),
-      WST, ...curve(WST, [1.1, 1.83], [1.06, ROOF], [1.0, ROOF], 3),
+      WST,
       [TAILZ, ROOF],
       TH, [TAILZ, 0.5], [-1.62, 0.33],
     ];

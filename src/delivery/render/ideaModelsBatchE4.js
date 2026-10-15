@@ -109,7 +109,7 @@ export const IDEA_MODELS_BATCH_E4 = {
     // of glass: the front door window is the longest, the rear door window a little shorter, then the quarter window running up the hatch's
     // slope; the hatch glass is the whole slope from the roof's end to the tail (RGT to RGB); the windscreen's foot is the bonnet (second call).
     const INS = { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, ARGS = { from: outline.findIndex(p => p[0] === WSF[0] && p[1] === WSF[1]), to: outline.indexOf(RGB), half: HALF, taper: TAPER, grow: BEV, inset: INS, lift: BEV + 0.006, sideLift: 0.006, sideInset: 0.1 };
-    const glass = cabinGlass(outline, { ...ARGS, belt: 1.18, windows: [[0.0, 9], [-1.0, -0.14], [-9, -1.14]] });
+    const glass = cabinGlass(outline, { ...ARGS, belt: 1.18, windows: [[-0.10, 9], [-1.0, -0.24], [-9, -1.14]] });
     const screen = cabinGlass(outline, { ...ARGS, belt: WSF[1] + 0.03 });
     parts(group, k + 'glass', GLASS, () => [...glass.sides, screen.front, glass.rear]);
     parts(group, k + 'black', TRIM, () => [

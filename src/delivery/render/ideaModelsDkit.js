@@ -294,8 +294,14 @@ export const screenGlassFromProfile = (profile, { edge, foot = 0.03, top = 0.07,
 //   const g = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(RW1), belt: BELT, half: HALF, taper: TAPER, grow: BEV,
 //     inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: BEV + 0.006, windows: [[-0.1, 9], [-9, -0.26]] });
 //   parts(group, k + 'glass', GLASS, () => [...g.sides, g.front, g.rear]);
-export const cabinGlass = (profile, { from, to, belt, inset = {}, grow = 0, half, taper = null, windows = [[-Infinity, Infinity]], sideLift = 0.004, lift = 0.004, topLift = lift, sideInset = 0.08, foot = 0.03 }) => {
-  const { aPillar = 0.07, roof = 0.055, cPillar = 0.08, belt: beltInset = 0.025 } = inset;
+// THE A-PILLAR (the owner, 15-Oct: 'extremely thin on the door side'): a real car's is chunky, about 12 to 16 cm across. cabinGlass never insets the
+// side window's front edge less than `aPillarMin` (A_PILLAR) from the body's silhouette, and the windscreen's side edges stand `frontSideInset`
+// (A_SIDE) in from the flank at least, so the pillar is as sturdy seen along the body (3/4 front) as from the side. A car that passes a bigger
+// inset (the Armoured Limo's 20 cm) keeps it; pass aPillarMin: 0 / frontSideInset: 0 for the old thin pillar.
+export const A_PILLAR = 0.135, A_SIDE = 0.12;
+export const cabinGlass = (profile, { from, to, belt, inset = {}, grow = 0, half, taper = null, windows = [[-Infinity, Infinity]], sideLift = 0.004, lift = 0.004, topLift = lift, sideInset = 0.08, foot = 0.03, aPillarMin = A_PILLAR, frontSideInset = A_SIDE }) => {
+  const { aPillar: aPillarAsked = 0.07, roof = 0.055, cPillar = 0.08, belt: beltInset = 0.025 } = inset;
+  const aPillar = Math.max(aPillarAsked, aPillarMin);
   // (the insets from the profile: `grow` less than from the silhouette; never outside the profile, where the body's shoulder rounds away)
   const ins = { aPillar: Math.max(0, aPillar - grow), roof: Math.max(0, roof - grow), cPillar: Math.max(0, cPillar - grow), belt: beltInset };
   const last = profile[to];
@@ -305,6 +311,7 @@ export const cabinGlass = (profile, { from, to, belt, inset = {}, grow = 0, half
   const sides = windows.flatMap(([zRear, zFront]) => glassFromProfile(profile, { from, to, belt, inset: ins, zFront, zRear, half, taper, lift: sideLift }));
   const onLine = (p, q, y) => [p[0] + (q[0] - p[0]) * (y - p[1]) / (q[1] - p[1]), y];
   const hx = (y) => (taper ? narrowAt(half, y, taper) : half) - sideInset;
+  const hxF = (y) => (taper ? narrowAt(half, y, taper) : half) - Math.max(sideInset, frontSideInset); // (the windscreen: its side edges in from the flank by at least frontSideInset)
   // the shared top line: the side window's top corner at each pillar
   const aTopY = poly[1][1], cTopY = poly[n - 2][1];
   // (a screen stands off the body along its face's normal, which lifts its top edge by cos(slope) * topLift: aim lower so the EDGE lands at aTopY)
@@ -313,7 +320,7 @@ export const cabinGlass = (profile, { from, to, belt, inset = {}, grow = 0, half
   const cTop = onLine(chain[n - 1], chain[n - 2], cTopY - rise(chain[n - 1], chain[n - 2]) * topLift), cFoot = onLine(chain[n - 1], chain[n - 2], last[1] + foot * 0.8 - rise(chain[n - 1], chain[n - 2]) * lift);
   return {
     sides,
-    front: tiltGlass(aFoot, aTop, hx(aFoot[1]), hx(aTop[1]), lift, topLift),
+    front: tiltGlass(aFoot, aTop, hxF(aFoot[1]), hxF(aTop[1]), lift, topLift),
     rear: tiltGlass(cFoot, cTop, hx(cFoot[1]), hx(cTop[1]), lift, topLift),
   };
 };
