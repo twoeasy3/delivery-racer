@@ -27,6 +27,7 @@ import { Gunfire } from './gunfire.js';
 import { RaceWatch } from './racewatch.js';
 import { Site } from './site.js';
 import { Hazards } from './hazards.js';
+import { LaneGimmicks } from './lanegimmicks.js';
 import { Gambles } from './gambles.js';
 import { Radiation } from './radiation.js';
 import { Social } from './social.js';
@@ -96,6 +97,7 @@ export const Game = {
     Gambles.build(); // (its lists: Traffic puts out a ramp's queue from them)
     Radiation.build(); // (its areas, for the drawing)
     Hazards.attach(); // (its obstacles are loaded with the level's: see Collision.loaders)
+    LaneGimmicks.attach(); // (the boost pads' handrails and the dead ends' walls likewise)
     Collision.loadLevel();
     Pickups.load();
     Targets.load();
@@ -252,6 +254,7 @@ export const Game = {
     Crossings.reset();
     StopGo.reset();
     Hazards.reset();
+    LaneGimmicks.reset();
     Gambles.reset();
     Radiation.reset();
     Milestones.reset();
@@ -459,6 +462,7 @@ export const Game = {
     if (playing) Gunfire.update(dt);
     if (playing) Site.update(dt);
     if (playing) Hazards.update(dt);
+    if (playing) LaneGimmicks.update(dt);
     if (playing) Gambles.update(dt); // (after Hazards: it has the last word on the car's height off the road)
     if (playing) Radiation.update(dt); // (radiated areas and infected cars: after the traffic has moved, before the collisions push anything apart)
     if (playing) Mysteries.update(dt);

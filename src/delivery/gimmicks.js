@@ -812,6 +812,31 @@ export const GROUPS = [
     } },
   ] },
   { name: 'City streets', cards: [
+    { name: 'Boost pads', color: 0x3ad8ff, has: (l) => l.boostPads?.length, rules: [
+      `Drive over one and the car is pulled on for ${CONFIG.boostPad.time} s at up to ${kmh(CONFIG.boostPad.speed)} over its own top speed, as a turbo does. A ghost too.`,
+      `Handrails stand along both edges: ordinary obstacles (${CONFIG.obstacleKinds.handrail.damage} damage, ${pct(CONFIG.obstacleKinds.handrail.speedKept)} of your speed kept). In the mall a pad is a travelator.`,
+    ], build: () => {
+      const g = road(9, 14), belt = box(3.0, 0.04, 11, lambert(0x2a2d33), 0, 0.03, 0), chevrons = [];
+      for (let z = -4.5; z < 5; z += 1.5) { const c = box(1.6, 0.012, 0.5, glow(0xffd23f), 0, 0.06, z); chevrons.push(c); g.add(c); }
+      g.add(belt, box(3.2, 0.06, 0.5, glow(0xc8ccd2), 0, 0.03, 5.6), box(3.2, 0.06, 0.5, glow(0xc8ccd2), 0, 0.03, -5.6));
+      for (const x of [-1.5, 1.5]) for (let z = -3; z <= 3; z += 2) { const r = ob('handrail'); r.position.set(x, 0, z); g.add(r); }
+      return { model: g, tick: (t) => { chevrons.forEach((c, k) => { c.position.z = -4.5 + ((k * 1.5 + t * 2.5) % 9.5); }); } };
+    } },
+    { name: 'Dead-end lanes', color: 0xd8262b, has: (l) => l.deadEnds?.length, rules: [
+      `A lane that ends: its floor is coloured, a DEAD END sign hangs over it ${CONFIG.deadEnd.sign} m before, beacons and a bell go with ${CONFIG.deadEnd.warn} m to go. Another lane is always open: change lanes.`,
+      'Shutter: wrecks you; a Ghost passes through, a tank or armour smashes through. Wall: wrecks everything.',
+    ], build: () => {
+      const g = road(9, 16), lamps = [];
+      g.add(box(3.4, 0.02, 14, lambert(0x8a2a2a, { transparent: true, opacity: 0.6 }), 2.25, 0.02, -1));
+      const shutter = ob('laneEnd', { laneEnd: 'shutter' }); shutter.position.set(2.25, 0, 6); g.add(shutter);
+      const wall = ob('laneEnd', { laneEnd: 'wall' }); wall.position.set(-2.25, 0, 6); g.add(wall);
+      g.add(box(2.8, 0.02, 9, lambert(0x3a1414, { transparent: true, opacity: 0.6 }), -2.25, 0.02, 1.5));
+      const post = box(0.12, 4.2, 0.12, lambert(0x4a4f57), 4.4, 2.1, -4), beam = box(4.6, 0.12, 0.12, lambert(0x4a4f57), 2.2, 4.1, -4);
+      const board = sign('DEAD END', '#d8262b', '#fff', 3.2, 1.0); board.position.set(2.25, 3.5, -4); board.rotation.y = Math.PI;
+      for (const x of [0.9, 3.6]) { const lamp = box(0.3, 0.3, 0.3, glow(0xffb020), x, 4.4, -4); lamps.push(lamp); g.add(lamp); }
+      g.add(post, beam, board);
+      return { model: g, tick: (t) => { const on = Math.floor(t * 4) % 2 === 0; for (const l of lamps) l.material.color.setHex(on ? 0xffb020 : 0x5a4010); } };
+    } },
     { name: 'Tunnel junctions', color: 0xffb020, has: (l) => l.tunnelJunctions?.length, rules: [
       `Inside a tunnel a side tunnel crosses the road. Within ${CONFIG.tunnelJunction.trigger} m the beacons over its mouths flash and a bell rings; ${CONFIG.tunnelJunction.warn} s later a tug and two trolleys come out of one side and cross at ${kmh(CONFIG.tunnelJunction.speed)}.`,
       `Hit the tug: ${CONFIG.obstacleKinds.tug.damage} damage, a trolley ${CONFIG.obstacleKinds.trolley.damage}; you keep most of your speed. Never a stop, never a bust: read the beacons and time it, or go round behind the train.`,
