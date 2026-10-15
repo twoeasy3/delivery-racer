@@ -846,8 +846,9 @@ export const MODELS = {
     const beacon = new THREE.MeshBasicMaterial({ color: 0xffa31a });                  // an amber beacon on the roof
     const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.18, 12), beacon);
     lamp.position.set(0, 2.0, front - 0.6);
+    lamp.userData.prop = 'roof'; // (tagged: a chosen roof prop hides the beacon and its base)
     group.add(lamp);
-    box(group, trim, 0.34, 0.05, 0.34, 0, 1.9, front - 0.6);                             // on its base
+    box(group, trim, 0.34, 0.05, 0.34, 0, 1.9, front - 0.6).userData.prop = 'roof';                             // on its base
     group.userData = { body, animate: (t) => { beacon.color.setHex((t * 2.5) % 1 < 0.5 ? 0xffa31a : 0x7a4a10); } };
     return group;
   },
