@@ -44,8 +44,8 @@
     "lim": "fit"
    },
    "cargo": {
-    "box": [0.87, 0, 1.478, -0.88],
-    "cyl": [0.87, 0, 1.478, -0.8],
+    "box": [0.83, 0, 1.462, -0.84],
+    "cyl": [0.83, 0, 1.462, -0.76],
     "from": "deck",
     "lim": "fit",
     "existing": true
@@ -56,24 +56,25 @@
   },
   "cabledrum": {
    "roof": {
-    "box": [1.36, 0, 2.63, 3.662],
-    "cyl": [1.21, 0, 2.592, 3.662],
+    "box": [1.75, 0, 2.727, 3.542],
+    "cyl": [1.55, 0, 2.677, 3.542],
     "from": "roof",
     "lim": "fit"
    },
    "cargo": {
-    "box": [1.66, 0, 1.732, 0.942],
-    "cyl": [1.66, 0, 1.732, 1.102],
+    "box": [1.55, 0, 1.688, 1.022],
+    "cyl": [1.54, 0, 1.684, 1.182],
     "from": "deck",
     "lim": "fit",
     "inset": [0.008, 0.008],
     "existing": true
    },
    "wing": {
-    "box": [1.6, 0, 2.57, 2.882],
-    "cyl": [1.6, 0, 2.53, 2.882],
-    "from": "roof-edge",
-    "lim": "fit"
+    "box": [1.4, 0, 1.313, -4.038],
+    "cyl": [1.4, 0, 1.278, -4.038],
+    "from": "deck-edge",
+    "lim": "fit",
+    "inset": [0.008, 0.008]
    }
   },
   "camper": {
@@ -112,11 +113,10 @@
     "lim": "fit"
    },
    "cargo": {
-    "box": [0.68, 0, 1.362, -1.57],
-    "cyl": [0.74, 0, 1.386, -1.65],
+    "box": [0.63, 0, 1.342, -1.41],
+    "cyl": [0.67, 0, 1.358, -1.45],
     "from": "deck",
-    "lim": "fit",
-    "inset": [0, 0.03]
+    "lim": "fit"
    },
    "wing": {
     "box": [1.33, 0, 2.813, -2.23],
@@ -193,8 +193,8 @@
     "no": "an open car: no roof"
    },
    "cargo": {
-    "box": [1.08, 0, 1.492, 0.409],
-    "cyl": [1.2, 0, 1.54, 0.449],
+    "box": [1.01, 0, 1.464, 1.049],
+    "cyl": [1.14, 0, 1.516, 0.489],
     "from": "deck",
     "lim": "fit"
    },
@@ -290,8 +290,8 @@
     "no": "an open car: no roof"
    },
    "cargo": {
-    "box": [0.56, 0, 0.994, -0.951],
-    "cyl": [0.67, 0, 1.038, -0.951],
+    "box": [0.54, 0, 0.986, -0.911],
+    "cyl": [0.65, 0, 1.03, -0.911],
     "from": "deck",
     "lim": "fit",
     "existing": true
@@ -366,8 +366,8 @@
     "lim": "fit"
    },
    "cargo": {
-    "box": [0.7, 0, 1.25, 1.173],
-    "cyl": [0.84, 0, 1.306, -2.707],
+    "box": [0.63, 0, 1.222, 1.213],
+    "cyl": [0.76, 0, 1.274, 1.213],
     "from": "deck",
     "lim": "fit"
    },
@@ -469,8 +469,8 @@
     "inset": [0.025, 0.025]
    },
    "cargo": {
-    "box": [1.63, 0, 1.712, 0.64],
-    "cyl": [1.63, 0, 1.712, 0.8],
+    "box": [1.51, 0, 1.664, 0.72],
+    "cyl": [1.5, 0, 1.66, 0.88],
     "from": "deck",
     "lim": "fit"
    },
@@ -596,8 +596,8 @@
     "no": "an open car: no roof"
    },
    "cargo": {
-    "box": [0.69, 0, 1.656, -0.238],
-    "cyl": [0.83, 0, 1.712, -0.238],
+    "box": [0.67, 0, 1.648, -0.198],
+    "cyl": [0.81, 0, 1.704, -0.198],
     "from": "deck",
     "lim": "fit"
    },
@@ -644,22 +644,22 @@
   },
   "wrecker": {
    "roof": {
-    "box": [1.04, 0, 2.355, 1.25],
-    "cyl": [0.92, 0, 2.325, 1.25],
+    "box": [1.15, 0, 2.383, 1.17],
+    "cyl": [1.02, 0, 2.35, 1.17],
     "from": "roof",
     "lim": "fit",
     "existing": true
    },
    "cargo": {
-    "box": [1, 0, 1.56, -1.91],
-    "cyl": [1.2, 0, 1.64, -1.91],
+    "box": [0.96, 0, 1.544, -1.87],
+    "cyl": [1.15, 0, 1.62, -1.87],
     "from": "deck",
     "lim": "fit"
    },
    "wing": {
-    "box": [1.38, 0, 2.337, 0.63],
-    "cyl": [1.38, 0, 2.302, 0.63],
-    "from": "roof-edge",
+    "box": [1.1, 0, 1.352, -2.97],
+    "cyl": [1.1, 0, 1.325, -2.97],
+    "from": "deck-edge",
     "lim": "fit"
    }
   },
@@ -685,15 +685,34 @@
  "hand": {
   "gameviewer": {
    "roof": {
-    "box": [1.1, 0, 2.665, -0.7],
-    "cyl": [1.1, 0, 2.665, -0.7],
+    "box": [2.1, 0, 2.915, -0.277],
+    "cyl": [2.34, 0, 2.975, -0.277],
     "from": "roof",
-    "lim": "hand"
+    "lim": "hand",
+    "hand": "an open safari viewer, but its flat sun canopy on posts takes a roof prop: the generator skips roofs on the open kind, so this row is the optimum the generator search gives on the canopy (was 1.1 at z -0.7)"
    }
   },
   "sevenroadster": {
    "cargo": {
     "no": "an open roadster: the tail behind the seats is no load deck"
+   }
+  },
+  "tipper": {
+   "roof": {
+    "box": [1.96, 0, 3.04, 1.285],
+    "cyl": [1.74, 0, 2.985, 1.285],
+    "from": "roof",
+    "lim": "hand",
+    "hand": "on the flat canopy over the cab only (the generated box ran 1 m back over the dump body lid, 2.39)"
+   },
+   "cargo": {
+    "box": [0.77, 0, 2.856, 0.005],
+    "cyl": [0.93, 0, 2.92, 0.005],
+    "from": "deck",
+    "lim": "hand",
+    "inset": [0.05, 0.05],
+    "existing": true,
+    "hand": "on the dump body lid right behind the canopy, where its own load heap is (tagged); the lid slopes 6 %, so 5 cm of inset is the least that lets a 0.77 load touch at all four corners (0.46 at 3 cm)"
    }
   }
  }

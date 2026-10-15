@@ -43,8 +43,8 @@
   },
   "courier": {
    "roof": {
-    "box": [1.44, 0, 1.715, -0.39],
-    "cyl": [1.6, 0, 1.755, -0.39],
+    "box": [1.44, 0, 1.715, -0.43],
+    "cyl": [1.6, 0, 1.755, -0.43],
     "from": "roof",
     "lim": "fit"
    },
@@ -52,8 +52,8 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.77, 0, 1.49, -1.81],
-    "cyl": [0.69, 0, 1.459, -1.81],
+    "box": [1.01, 0, 1.532, -1.97],
+    "cyl": [1.01, 0, 1.507, -1.97],
     "from": "roof-edge",
     "lim": "fit",
     "existing": true
@@ -123,10 +123,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.34, 0, 1.485, -2.34],
-    "cyl": [1.34, 0, 1.451, -2.34],
+    "box": [0.55, 0, 1.126, 0.18],
+    "cyl": [0.55, 0, 1.112, 0.18],
     "from": "roof-edge",
-    "lim": "fit"
+    "lim": "fit",
+    "existing": true
    }
   },
   "earned-ufo": {
@@ -226,8 +227,8 @@
     "inset": [0.049, 0.049]
    },
    "cargo": {
-    "box": [0.53, 0, 0.912, -1.73],
-    "cyl": [0.53, 0, 0.912, -1.69],
+    "box": [0.48, 0, 0.892, -1.69],
+    "cyl": [0.5, 0, 0.9, -1.65],
     "from": "deck",
     "lim": "fit"
    },
@@ -291,11 +292,11 @@
   },
   "l-darkvan": {
    "roof": {
-    "box": [2.19, 0, 2.837, -1.21],
-    "cyl": [2.05, 0, 2.802, -1.21],
+    "box": [2.14, 0, 2.825, -0.45],
+    "cyl": [2.39, 0, 2.887, -0.45],
     "from": "roof",
     "lim": "fit",
-    "inset": [0.027, 0.01]
+    "inset": [0.01, 0.01]
    },
    "cargo": {
     "no": "a closed body: no load deck"
@@ -354,11 +355,10 @@
     "lim": "fit"
    },
    "cargo": {
-    "box": [0.9, 0, 1.58, -1.98],
-    "cyl": [0.89, 0, 1.576, -2.06],
+    "box": [0.83, 0, 1.552, -0.98],
+    "cyl": [0.84, 0, 1.556, -0.9],
     "from": "deck",
     "lim": "fit",
-    "inset": [0.027, 0.019],
     "existing": true
    },
    "wing": {
@@ -446,22 +446,24 @@
   },
   "l-pickup": {
    "roof": {
-    "box": [0.97, 0, 2.287, 0.095],
-    "cyl": [0.86, 0, 2.26, 0.095],
+    "box": [1.33, 0, 2.372, -0.025],
+    "cyl": [1.15, 0, 2.335, -0.025],
     "from": "roof",
     "lim": "fit",
-    "inset": [0.028, 0.027],
+    "inset": [0.029, 0.029],
     "existing": true
    },
    "cargo": {
-    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
+    "box": [1.09, 0, 1.606, -1.385],
+    "cyl": [1.14, 0, 1.626, -1.305],
+    "from": "deck",
+    "lim": "fit"
    },
    "wing": {
-    "box": [1.31, 0, 2.283, -0.485],
-    "cyl": [1.31, 0, 2.25, -0.485],
-    "from": "roof-edge",
-    "lim": "fit",
-    "inset": [0.012, 0.012]
+    "box": [1.37, 0, 1.77, -2.525],
+    "cyl": [1.37, 0, 1.735, -2.525],
+    "from": "deck-edge",
+    "lim": "fit"
    }
   },
   "l-sport": {
@@ -476,11 +478,12 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.86, 0, 1.021, -1.56],
-    "cyl": [1.16, 0, 1.054, -1.52],
-    "from": "deck",
+    "box": [1.13, 0, 1.068, -1.84],
+    "cyl": [1.13, 0, 1.04, -1.84],
+    "from": "deck-edge",
     "lim": "fit",
-    "inset": [0, 0.01]
+    "inset": [0.016, 0.016],
+    "existing": true
    }
   },
   "l-suv": {
@@ -549,10 +552,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.34, 0, 1.485, -2.34],
-    "cyl": [1.34, 0, 1.451, -2.34],
+    "box": [0.55, 0, 1.126, 0.18],
+    "cyl": [0.55, 0, 1.112, 0.18],
     "from": "roof-edge",
-    "lim": "fit"
+    "lim": "fit",
+    "existing": true
    }
   },
   "midsummer": {
@@ -587,7 +591,7 @@
    },
    "cargo": {
     "box": [0.54, 0, 0.741, -0.66],
-    "cyl": [0.65, 0, 0.785, -0.66],
+    "cyl": [0.59, 0, 0.761, -0.62],
     "from": "deck",
     "lim": "fit",
     "existing": true
@@ -685,8 +689,8 @@
     "existing": true
    },
    "cargo": {
-    "box": [0.7, 0, 1.9, -1.92],
-    "cyl": [0.74, 0, 1.916, -1.88],
+    "box": [0.63, 0, 1.872, -1.88],
+    "cyl": [0.68, 0, 1.892, -1.84],
     "from": "deck",
     "lim": "fit"
    },
@@ -758,12 +762,14 @@
  "hand": {
   "lmp": {
    "wing": {
-    "no": "the car's own wing spans the tail on end plates over nothing: no deck for a prop to stand on"
+    "no": "its own wing is part of the car",
+    "existing": true
    }
   },
   "earned-lmp": {
    "wing": {
-    "no": "the car's own wing spans the tail on end plates over nothing: no deck for a prop to stand on"
+    "no": "its own wing is part of the car",
+    "existing": true
    }
   },
   "showdown": {
@@ -775,22 +781,13 @@
     "existing": true
    }
   },
-  "l-pickup": {
-   "cargo": {
-    "box": [1.18, 0, 1.642, -1.7],
-    "cyl": [1.18, 0, 1.642, -1.7],
-    "from": "deck",
-    "lim": "hand"
-   }
-  },
   "horseshoe": {
    "wing": {
-    "box": [0.93, 0, 1.133, -1.97],
-    "cyl": [0.93, 0, 1.11, -1.97],
-    "from": "deck",
-    "lim": "hand",
-    "existing": true,
-    "inset": [0.07, 0.07]
+    "no": "its own wing (tagged) stands over the canopy glass that runs to 0.2 m from the tail; behind the glass the deck drops 13 cm across the depth of a wing: no place off the glass with at most 5 cm of inset",
+    "existing": true
+   },
+   "roof": {
+    "no": "a glass canopy from the windscreen to the tail: no body roof to stand on"
    }
   },
   "quadturbo": {
@@ -801,6 +798,16 @@
     "lim": "hand",
     "inset": [0.02, 0.02],
     "existing": true
+   }
+  },
+  "sixteen": {
+   "roof": {
+    "no": "the roof is four glass panels in a thin frame: no body panel over the cabin takes the smallest roof prop off the glass"
+   }
+  },
+  "windsong": {
+   "roof": {
+    "no": "a bubble canopy over the cabin and a deck that falls away round it: no roof"
    }
   }
  }

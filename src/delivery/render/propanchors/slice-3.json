@@ -129,8 +129,8 @@
     "lim": "fit"
    },
    "cargo": {
-    "box": [1.52, 0, 1.808, -1.92],
-    "cyl": [1.6, 0, 1.84, -2],
+    "box": [1.37, 0, 1.748, -1.44],
+    "cyl": [1.44, 0, 1.776, -1.52],
     "from": "deck",
     "lim": "fit",
     "existing": true
@@ -179,8 +179,8 @@
     "no": "an open car: no roof"
    },
    "cargo": {
-    "box": [0.9, 0, 1.385, -0.66],
-    "cyl": [0.9, 0, 1.385, -0.58],
+    "box": [0.84, 0, 1.361, -0.62],
+    "cyl": [0.85, 0, 1.365, -0.54],
     "from": "deck",
     "lim": "fit"
    },
@@ -219,37 +219,37 @@
     "existing": true
    },
    "cargo": {
-    "box": [0.73, 0, 2.092, 0.91],
-    "cyl": [0.73, 0, 2.092, 1.15],
+    "box": [0.66, 0, 2.064, 0.95],
+    "cyl": [0.66, 0, 2.064, 1.23],
     "from": "deck",
     "lim": "fit"
    },
    "wing": {
     "box": [1.68, 0, 2.094, -4.47],
-    "cyl": [1.7, 0, 2.055, -4.47],
+    "cyl": [1.68, 0, 2.052, -4.47],
     "from": "deck-edge",
     "lim": "fit"
    }
   },
   "flatbed": {
    "roof": {
-    "box": [1.04, 0, 2.51, 0.615],
-    "cyl": [0.93, 0, 2.483, 0.615],
+    "box": [1.34, 0, 2.585, 0.495],
+    "cyl": [1.19, 0, 2.548, 0.495],
     "from": "roof",
     "lim": "fit",
-    "inset": [0.026, 0.03]
+    "inset": [0.009, 0.008]
    },
    "cargo": {
-    "box": [1.55, 0, 1.725, -1.065],
-    "cyl": [1.55, 0, 1.725, -0.905],
+    "box": [1.42, 0, 1.673, -0.945],
+    "cyl": [1.41, 0, 1.669, -0.785],
     "from": "deck",
     "lim": "fit",
     "existing": true
    },
    "wing": {
-    "box": [1.03, 0, 2.43, 0.035],
-    "cyl": [1.03, 0, 2.405, 0.035],
-    "from": "roof-edge",
+    "box": [0.78, 0, 1.556, -2.365],
+    "cyl": [0.7, 0, 1.525, -2.365],
+    "from": "deck-edge",
     "lim": "fit"
    }
   },
@@ -291,11 +291,10 @@
     "lim": "fit"
    },
    "cargo": {
-    "box": [0.79, 0, 1.996, -2.101],
-    "cyl": [0.79, 0, 1.996, -2.181],
+    "box": [0.78, 0, 1.992, -0.821],
+    "cyl": [0.78, 0, 1.992, -0.741],
     "from": "deck",
-    "lim": "fit",
-    "inset": [0.002, 0.005]
+    "lim": "fit"
    },
    "wing": {
     "box": [1.39, 0, 2.453, -0.081],
@@ -415,8 +414,8 @@
     "lim": "fit"
    },
    "cargo": {
-    "box": [1.46, 0, 1.224, -0.027],
-    "cyl": [1.48, 0, 1.232, 0.133],
+    "box": [1.37, 0, 1.188, 0.053],
+    "cyl": [1.4, 0, 1.2, 0.173],
     "from": "deck",
     "lim": "fit",
     "existing": true
@@ -453,8 +452,8 @@
     "no": "an open car: no roof"
    },
    "cargo": {
-    "box": [0.73, 0, 0.622, -0.965],
-    "cyl": [0.88, 0, 0.682, -0.965],
+    "box": [0.67, 0, 0.598, -0.845],
+    "cyl": [0.8, 0, 0.65, -0.925],
     "from": "deck",
     "lim": "fit",
     "existing": true
@@ -476,8 +475,8 @@
     "existing": true
    },
    "cargo": {
-    "box": [0.75, 0, 2.371, -0.877],
-    "cyl": [0.75, 0, 2.371, -0.797],
+    "box": [0.7, 0, 2.351, -0.797],
+    "cyl": [0.68, 0, 2.343, -0.717],
     "from": "deck",
     "lim": "fit"
    },
@@ -596,22 +595,22 @@
   },
   "sporttruck": {
    "roof": {
-    "box": [1.36, 0, 2.11, -0.23],
-    "cyl": [1.21, 0, 2.072, -0.23],
+    "box": [1.75, 0, 2.207, -0.35],
+    "cyl": [1.55, 0, 2.157, -0.35],
     "from": "roof",
     "lim": "fit",
-    "inset": [0.007, 0.008]
+    "inset": [0.029, 0.027]
    },
    "cargo": {
-    "box": [1.1, 0, 1.24, -1.71],
-    "cyl": [1.24, 0, 1.296, -1.79],
+    "box": [0.9, 0, 1.16, -1.59],
+    "cyl": [1.08, 0, 1.232, -1.59],
     "from": "deck",
     "lim": "fit"
    },
    "wing": {
-    "box": [1.32, 0, 2.001, -0.97],
-    "cyl": [1.32, 0, 1.968, -0.97],
-    "from": "roof-edge",
+    "box": [1.52, 0, 1.386, -2.49],
+    "cyl": [1.52, 0, 1.348, -2.49],
+    "from": "deck-edge",
     "lim": "fit"
    }
   },
@@ -723,11 +722,11 @@
     "existing": true
    },
    "wing": {
-    "box": [0.88, 0, 1.334, -2.44],
-    "cyl": [0.88, 0, 1.312, -2.44],
-    "from": "deck",
+    "box": [1.33, 0, 1.478, -1.84],
+    "cyl": [1.33, 0, 1.445, -1.84],
+    "from": "deck-edge",
     "lim": "fit",
-    "inset": [0.03, 0.03]
+    "inset": [0.023, 0.023]
    }
   },
   "tuktuk": {
@@ -833,21 +832,27 @@
   },
   "dragster": {
    "wing": {
-    "box": [1.07, 0, 1.19, -3.35],
-    "cyl": [1.07, 0, 1.19, -3.35],
-    "from": "deck",
-    "lim": "hand",
+    "no": "its own tall wing (tagged) stands on struts over the wheelie bars; with it hidden there is no surface wider than the 0.3 m frame for a wing to stand on (a prop there would float)",
     "existing": true
    }
   },
-  "tipper": {
+  "keiroadster": {
    "cargo": {
-    "box": [1.2, 0, 2.95, -1.6],
-    "cyl": [1.2, 0, 2.95, -1.6],
+    "no": "an open kei roadster: the short deck behind the seats holds the wing; a load fits only at 0.41 between the headrests and the wing (it touched both): no load deck, as the Seven roadster"
+   }
+  },
+  "pandacoupe": {
+   "wing": {
+    "box": [0.61, 0, 0.956, -1.81],
+    "cyl": [0.63, 0, 0.9435, -1.81],
     "from": "deck",
     "lim": "hand",
-    "inset": [0.07, 0.07],
-    "existing": true
+    "hand": "clear of the rear window (the generated 0.73 at z -1.77 touched its glass by 1 cm): the largest wing on the boot lid that touches no glass"
+   }
+  },
+  "farmtractor": {
+   "wing": {
+    "no": "a tractor: its only rear surface is the 0.58 m step behind the seat, narrower than the smallest wing (0.63 m); a wing there hung out between the rear wheels"
    }
   }
  }
