@@ -771,10 +771,12 @@ export const IDEA_MODELS = {
       for (const z of [L * 0.62, -L * 0.62]) tube(group, chrome, R * 0.3, z > 0 ? 0.27 : 0.33, side * (w / 2 - 0.07), R, z, 'x'); // (the alloys' bright centres)
       box(group, trim, 0.09, 0.06, 0.1, side * (w / 2 + 0.03), 0.94, L * 0.26);           // mirrors
     }
+    // (the whale tail and its rubber lip are tagged userData.prop = 'wing': a chosen wing prop hides them and stands on the foot, the engine lid's
+    // hump, which stays; render/propcosmetic.js)
     prism(group, paint, w * 0.6, [[-L * 0.56, 1.05], [-L * 0.96, 1.05], [-L * 0.96, 0.7], [-L * 0.56, 0.98]]); // the whale tail: its foot,
-    box(group, paint, w * 0.9, 0.05, 0.54, 0, 1.07, -L * 0.76);                           // the tail itself,
-    box(group, trim, w * 0.92, 0.07, 0.08, 0, 1.085, -L * 0.76 - 0.29);                   // and its rubber lip,
-    for (const side of [-1, 1]) box(group, trim, 0.04, 0.07, 0.56, side * w * 0.455, 1.085, -L * 0.76 - 0.03); // round its sides too
+    box(group, paint, w * 0.9, 0.05, 0.54, 0, 1.07, -L * 0.76).userData.prop = 'wing';    // the tail itself,
+    box(group, trim, w * 0.92, 0.07, 0.08, 0, 1.085, -L * 0.76 - 0.29).userData.prop = 'wing'; // and its rubber lip,
+    for (const side of [-1, 1]) box(group, trim, 0.04, 0.07, 0.56, side * w * 0.455, 1.085, -L * 0.76 - 0.03).userData.prop = 'wing'; // round its sides too
     box(group, TAIL, w * 0.9, 0.09, 0.04, 0, 0.66, -L * 0.97 - 0.05);                     // one red band across the back
     box(group, trim, w + 0.02, 0.1, 0.1, 0, 0.44, L * 0.97);                              // black bumpers
     box(group, trim, w + 0.02, 0.1, 0.1, 0, 0.46, -L * 0.98);

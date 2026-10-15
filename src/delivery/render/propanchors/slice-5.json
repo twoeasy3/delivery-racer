@@ -72,7 +72,7 @@
    "wing": {
     "box": [1.4, 0, 1.313, -4.038],
     "cyl": [1.4, 0, 1.278, -4.038],
-    "from": "deck-edge",
+    "from": "bed-tail",
     "lim": "fit",
     "inset": [0.008, 0.008]
    }
@@ -290,16 +290,16 @@
     "no": "an open car: no roof"
    },
    "cargo": {
-    "box": [0.54, 0, 0.986, -0.911],
-    "cyl": [0.65, 0, 1.03, -0.911],
+    "box": [0.44, 0, 0.866, -0.031],
+    "cyl": [0.57, 0, 0.918, -0.031],
     "from": "deck",
     "lim": "fit",
     "existing": true
    },
    "wing": {
-    "box": [0.85, 0, 1.959, -0.731],
-    "cyl": [0.85, 0, 1.937, -0.731],
-    "from": "roof-edge",
+    "box": [0.76, 0, 0.903, -1.211],
+    "cyl": [0.76, 0, 0.884, -1.211],
+    "from": "deck-edge",
     "lim": "fit"
    }
   },
@@ -564,18 +564,18 @@
   },
   "slantback": {
    "roof": {
-    "box": [1.31, 0, 1.727, -0.15],
+    "box": [1.31, 0, 1.726, -0.19],
     "cyl": [1.35, 0, 1.736, -0.15],
     "from": "roof",
     "lim": "fit",
-    "inset": [0.03, 0.029]
+    "inset": [0.029, 0.029]
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.85, 0, 1.535, -0.89],
-    "cyl": [0.85, 0, 1.514, -0.89],
+    "box": [0.89, 0, 1.542, -0.93],
+    "cyl": [0.89, 0, 1.52, -0.93],
     "from": "roof-edge",
     "lim": "fit"
    }
@@ -659,7 +659,7 @@
    "wing": {
     "box": [1.1, 0, 1.352, -2.97],
     "cyl": [1.1, 0, 1.325, -2.97],
-    "from": "deck-edge",
+    "from": "bed-tail",
     "lim": "fit"
    }
   },
@@ -713,6 +713,23 @@
     "inset": [0.05, 0.05],
     "existing": true,
     "hand": "on the dump body lid right behind the canopy, where its own load heap is (tagged); the lid slopes 6 %, so 5 cm of inset is the least that lets a 0.77 load touch at all four corners (0.46 at 3 cm)"
+   }
+  },
+  "golfcart": {
+   "wing": {
+    "box": [0.85, 0, 1.959, -0.731],
+    "cyl": [0.85, 0, 1.937, -0.731],
+    "from": "roof-edge",
+    "lim": "hand",
+    "hand": "on the canopy roof rear edge, as before CHECKLIST 431: with the faint-emissive fix the generator moved it to the rear deck, which pushed the load onto the bench seat"
+   },
+   "cargo": {
+    "box": [0.56, 0, 0.994, -0.951],
+    "cyl": [0.67, 0, 1.038, -0.951],
+    "from": "deck",
+    "lim": "hand",
+    "existing": true,
+    "hand": "on the rear deck where the golf bags ride (the generator put it on the bench seat once the wing took the deck)"
    }
   }
  }

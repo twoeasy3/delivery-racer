@@ -81,7 +81,7 @@ async function worker(k, n) {
       const tail = g.box.min.z, len = g.box.max.z - g.box.min.z;
       const hideSlot = (slot) => (m) => g.meshes[m].tag !== slot;
       // ---- the optimum of each slot (prop-audit-lib.mjs optimum: the same search the generator uses) ----
-      const { opt } = L.optimum(g, P, kind, { maxInset: MAX_INSET });
+      const { opt } = L.optimum(g, P, kind, { maxInset: MAX_INSET, handNo: Object.fromEntries(P.SLOTS.map(s => [s, !!P.HAND[car.id]?.[s]?.no])) });
       // ---- thin plates near the tail: wings, spoilers (with the wing props hidden: anything left is untagged or tagged another slot) ----
       const bladesAll = g.blades(hideSlot('wing'));
       const bw0 = g.widthAt(tail + len * 0.15).w || (g.box.max.x - g.box.min.x);

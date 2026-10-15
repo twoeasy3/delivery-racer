@@ -227,7 +227,7 @@
    "wing": {
     "box": [1.68, 0, 2.094, -4.47],
     "cyl": [1.68, 0, 2.052, -4.47],
-    "from": "deck-edge",
+    "from": "bed-tail",
     "lim": "fit"
    }
   },
@@ -249,7 +249,7 @@
    "wing": {
     "box": [0.78, 0, 1.556, -2.365],
     "cyl": [0.7, 0, 1.525, -2.365],
-    "from": "deck-edge",
+    "from": "bed-tail",
     "lim": "fit"
    }
   },
@@ -483,7 +483,7 @@
    "wing": {
     "box": [1.03, 0, 2.251, -1.817],
     "cyl": [1.03, 0, 2.225, -1.817],
-    "from": "deck",
+    "from": "bed-tail",
     "lim": "fit"
    }
   },
@@ -590,7 +590,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
+    "box": [0.91, 0, 1.409, -0.695],
+    "cyl": [0.91, 0, 1.387, -0.695],
+    "from": "roof-edge",
+    "lim": "fit",
+    "inset": [0.049, 0.049]
    }
   },
   "sporttruck": {
@@ -610,7 +614,7 @@
    "wing": {
     "box": [1.52, 0, 1.386, -2.49],
     "cyl": [1.52, 0, 1.348, -2.49],
-    "from": "deck-edge",
+    "from": "bed-tail",
     "lim": "fit"
    }
   },
@@ -724,7 +728,7 @@
    "wing": {
     "box": [1.33, 0, 1.478, -1.84],
     "cyl": [1.33, 0, 1.445, -1.84],
-    "from": "deck-edge",
+    "from": "bed-tail",
     "lim": "fit",
     "inset": [0.023, 0.023]
    }
@@ -836,6 +840,11 @@
     "existing": true
    }
   },
+  "splitwindow": {
+   "wing": {
+    "no": "its only place left is the top of the cockpit roof, mid-car: no believable spot for a wing on the split-window coupe (the tail is a narrow, sloping split rear window)"
+   }
+  },
   "keiroadster": {
    "cargo": {
     "no": "an open kei roadster: the short deck behind the seats holds the wing; a load fits only at 0.41 between the headrests and the wing (it touched both): no load deck, as the Seven roadster"
@@ -853,6 +862,11 @@
   "farmtractor": {
    "wing": {
     "no": "a tractor: its only rear surface is the 0.58 m step behind the seat, narrower than the smallest wing (0.63 m); a wing there hung out between the rear wheels"
+   }
+  },
+  "halftrack": {
+   "cargo": {
+    "no": "the bed is under a fixed canvas tilt (untagged body): the generated load sat inside it, out of sight (tagging the tilt as its cargo prop would free the bed)"
    }
   }
  }

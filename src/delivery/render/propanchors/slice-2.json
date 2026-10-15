@@ -240,7 +240,7 @@
    "wing": {
     "box": [1.36, 0, 1.668, -2.297],
     "cyl": [1.36, 0, 1.634, -2.297],
-    "from": "deck-edge",
+    "from": "bed-tail",
     "lim": "fit"
    }
   },
@@ -318,7 +318,7 @@
    "wing": {
     "box": [1.56, 0, 2.373, -2.98],
     "cyl": [1.56, 0, 2.334, -2.98],
-    "from": "deck-edge",
+    "from": "bed-tail",
     "lim": "fit"
    }
   },
@@ -515,7 +515,7 @@
    "wing": {
     "box": [1.36, 0, 1.668, -2.3],
     "cyl": [1.36, 0, 1.634, -2.3],
-    "from": "deck-edge",
+    "from": "bed-tail",
     "lim": "fit",
     "existing": true
    }
@@ -578,7 +578,7 @@
    "wing": {
     "box": [1.56, 0, 2.373, -2.98],
     "cyl": [1.56, 0, 2.334, -2.98],
-    "from": "deck-edge",
+    "from": "bed-tail",
     "lim": "fit",
     "existing": true
    }
@@ -683,7 +683,7 @@
    "wing": {
     "box": [1.2, 0, 1.23, -2.25],
     "cyl": [1.2, 0, 1.2, -2.25],
-    "from": "deck",
+    "from": "bed-tail",
     "lim": "fit",
     "inset": [0.025, 0.025],
     "existing": true
@@ -770,8 +770,8 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.77, 0, 1.505, -1.1],
-    "cyl": [0.77, 0, 1.486, -1.1],
+    "box": [0.87, 0, 1.522, -1.1],
+    "cyl": [0.87, 0, 1.501, -1.1],
     "from": "roof-edge",
     "lim": "fit"
    }
@@ -812,7 +812,7 @@
    "wing": {
     "box": [1.23, 0, 1.235, -2.245],
     "cyl": [1.23, 0, 1.204, -2.245],
-    "from": "deck",
+    "from": "bed-tail",
     "lim": "fit",
     "inset": [0.025, 0.025]
    }
@@ -851,6 +851,11 @@
     "lim": "hand",
     "inset": [0.047, 0.047],
     "hand": "the cylinder at the box's scale and place (1.18 generated: its front touched the rear window by 1 cm)"
+   }
+  },
+  "polytruck": {
+   "cargo": {
+    "no": "its bed is a closed vault under the body shell: the generated load sat inside the shell, out of sight"
    }
   }
  }

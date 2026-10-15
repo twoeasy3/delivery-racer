@@ -462,7 +462,7 @@
    "wing": {
     "box": [1.37, 0, 1.77, -2.525],
     "cyl": [1.37, 0, 1.735, -2.525],
-    "from": "deck-edge",
+    "from": "bed-tail",
     "lim": "fit"
    }
   },
@@ -643,10 +643,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.47, 0, 1.132, -2.29],
-    "cyl": [0.47, 0, 1.12, -2.29],
-    "from": "deck",
+    "box": [1.36, 0, 1.299, -2.45],
+    "cyl": [1.36, 0, 1.265, -2.45],
+    "from": "deck-edge",
     "lim": "fit",
+    "inset": [0.011, 0.011],
     "existing": true
    }
   },
