@@ -163,17 +163,6 @@ const taper = (parent, material, a, b, x = 0) => {
   parent.add(mesh);
   return mesh;
 };
-// a pair of round headlamps (a lamp in a chrome ring) at the front, `k` of the width out from the middle
-const headlamps = (parent, w, y, z, r = 0.1, k = 0.34) => {
-  for (const side of [-1, 1]) {
-    disc(parent, lambert(CHROME), r * 1.25, 0.05, side * w * k, y, z);
-    disc(parent, LAMP, r, 0.07, side * w * k, y, z + 0.005);
-  }
-};
-// a pair of red tail lamps at the back
-const taillamps = (parent, w, y, z, k = 0.4, size = [0.1, 0.16]) => {
-  for (const side of [-1, 1]) box(parent, TAIL, size[0], size[1], 0.04, side * w * k, y, z);
-};
 // a point `t` (0 to 1) along a quadratic curve from a through b to c (each [z, y]), side on
 const bend = (a, b, c, t) => [0, 1].map(i => (1 - t) * (1 - t) * a[i] + 2 * (1 - t) * t * b[i] + t * t * c[i]);
 // a beacon (amber by day, flashing when animated): a short drum of a lens on a base

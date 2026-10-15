@@ -10,91 +10,39 @@
     "no": "the deck is too small for the smallest load (0.94 x 0.34 m)"
    },
    "wing": {
-    "box": [
-     0.55,
-     0,
-     0.915,
-     -1.107
-    ],
-    "cyl": [
-     0.55,
-     0,
-     0.901,
-     -1.107
-    ],
+    "box": [0.55, 0, 0.915, -1.107],
+    "cyl": [0.55, 0, 0.901, -1.107],
     "from": "deck",
     "lim": "w",
-    "inset": [
-     0.011,
-     0.011
-    ]
+    "inset": [0.011, 0.011]
    }
   },
   "commuter": {
    "roof": {
-    "box": [
-     0.94,
-     0,
-     1.706,
-     -0.6
-    ],
-    "cyl": [
-     1.04,
-     0,
-     1.731,
-     -0.6
-    ],
+    "box": [0.94, 0, 1.706, -0.6],
+    "cyl": [1.04, 0, 1.731, -0.6],
     "from": "roof",
     "lim": "w",
-    "inset": [
-     0.023,
-     0.037
-    ]
+    "inset": [0.023, 0.032]
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [
-     0.72,
-     0,
-     1.553,
-     -1.232
-    ],
-    "cyl": [
-     0.72,
-     0,
-     1.535,
-     -1.232
-    ],
+    "box": [0.72, 0, 1.553, -1.232],
+    "cyl": [0.72, 0, 1.535, -1.232],
     "from": "roof-edge",
     "lim": "w",
-    "inset": [
-     0.022,
-     0.022
-    ]
+    "inset": [0.022, 0.022]
    }
   },
   "darkvan": {
    "roof": {
-    "box": [
-     1.5,
-     0,
-     2.665,
-     -0.62
-    ],
-    "cyl": [
-     1.5,
-     0,
-     2.665,
-     -0.62
-    ],
+    "box": [1.5, 0, 2.665, -0.62],
+    "cyl": [1.5, 0, 2.665, -0.62],
     "from": "roof",
     "lim": "max",
-    "inset": [
-     0.01,
-     0.01
-    ]
+    "inset": [0.01, 0.01]
    },
    "cargo": {
     "no": "a closed body: no load deck"
@@ -105,59 +53,26 @@
   },
   "hearse": {
    "roof": {
-    "box": [
-     1.5,
-     0,
-     1.999,
-     -1.02
-    ],
-    "cyl": [
-     1.5,
-     0,
-     2,
-     -1.02
-    ],
+    "box": [1.5, 0, 1.999, -1.02],
+    "cyl": [1.5, 0, 1.999, -1.02],
     "from": "roof",
     "lim": "max",
-    "inset": [
-     0.009,
-     0.01
-    ]
+    "inset": [0.008, 0.009]
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [
-     1.21,
-     0,
-     1.841,
-     -2.318
-    ],
-    "cyl": [
-     1.21,
-     0,
-     1.811,
-     -2.318
-    ],
+    "box": [1.21, 0, 1.841, -2.318],
+    "cyl": [1.21, 0, 1.811, -2.318],
     "from": "roof-edge",
     "lim": "w"
    }
   },
   "hothatch": {
    "roof": {
-    "box": [
-     1.1,
-     0,
-     1.65,
-     -0.56
-    ],
-    "cyl": [
-     1.1,
-     0,
-     1.65,
-     -0.56
-    ],
+    "box": [1.1, 0, 1.65, -0.56],
+    "cyl": [1.1, 0, 1.65, -0.56],
     "from": "roof",
     "lim": "max"
    },
@@ -165,228 +80,95 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [
-     0.9,
-     0,
-     1.567,
-     -1.765
-    ],
-    "cyl": [
-     0.9,
-     0,
-     1.545,
-     -1.765
-    ],
+    "box": [0.9, 0, 1.567, -1.765],
+    "cyl": [0.9, 0, 1.545, -1.765],
     "from": "roof-edge",
     "lim": "w"
    }
   },
   "hotrod": {
    "roof": {
-    "box": [
-     0.86,
-     0,
-     1.41,
-     -0.04
-    ],
-    "cyl": [
-     0.95,
-     0,
-     1.433,
-     -0.04
-    ],
-    "from": "roof",
+    "box": [0.86, 0, 1.408, 0.04],
+    "cyl": [0.77, 0, 1.385, 0.04],
+    "from": "roof-clear",
     "lim": "w",
-    "inset": [
-     0.023,
-     0.029
-    ]
+    "inset": [0.021, 0.021]
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [
-     0.64,
-     0,
-     1.307,
-     -0.484
-    ],
-    "cyl": [
-     0.64,
-     0,
-     1.291,
-     -0.484
-    ],
+    "box": [0.64, 0, 1.307, -0.484],
+    "cyl": [0.64, 0, 1.291, -0.484],
     "from": "roof-edge",
     "lim": "w"
    }
   },
   "junker": {
    "roof": {
-    "box": [
-     1.1,
-     0,
-     2.09,
-     0.18
-    ],
-    "cyl": [
-     1.1,
-     0,
-     2.09,
-     0.18
-    ],
+    "box": [1.1, 0, 2.09, 0.18],
+    "cyl": [1.1, 0, 2.09, 0.18],
     "from": "roof",
     "lim": "max"
    },
    "cargo": {
-    "box": [
-     0.86,
-     0,
-     1.564,
-     -1.48
-    ],
-    "cyl": [
-     0.86,
-     0,
-     1.564,
-     -1.48
-    ],
+    "box": [0.86, 0, 1.564, -1.48],
+    "cyl": [0.86, 0, 1.564, -1.48],
     "from": "deck",
     "lim": "h",
     "existing": true
    },
    "wing": {
-    "box": [
-     1.3,
-     0,
-     1.448,
-     -2.235
-    ],
-    "cyl": [
-     1.3,
-     0,
-     1.415,
-     -2.235
-    ],
+    "box": [1.3, 0, 1.448, -2.235],
+    "cyl": [1.3, 0, 1.415, -2.235],
     "from": "deck",
     "lim": "w"
    }
   },
   "keitruck": {
    "roof": {
-    "box": [
-     1.42,
-     0,
-     1.955,
-     1.08
-    ],
-    "cyl": [
-     1.4,
-     0,
-     1.95,
-     1.08
-    ],
-    "from": "roof",
-    "lim": "w"
+    "box": [1.17, 0, 1.893, 1.2],
+    "cyl": [1.04, 0, 1.86, 1.2],
+    "from": "roof-clear",
+    "lim": "d"
    },
    "cargo": {
-    "box": [
-     1.34,
-     0,
-     1.096,
-     -0.72
-    ],
-    "cyl": [
-     1.34,
-     0,
-     1.096,
-     -0.72
-    ],
+    "box": [1.34, 0, 1.096, -0.72],
+    "cyl": [1.34, 0, 1.096, -0.72],
     "from": "deck",
     "lim": "w"
    },
    "wing": {
-    "box": [
-     1.01,
-     0,
-     1.777,
-     0.532
-    ],
-    "cyl": [
-     1.01,
-     0,
-     1.752,
-     0.532
-    ],
+    "box": [1.01, 0, 1.777, 0.532],
+    "cyl": [1.01, 0, 1.752, 0.532],
     "from": "roof-edge",
     "lim": "w"
    }
   },
   "liftedtruck": {
    "roof": {
-    "box": [
-     0.72,
-     0,
-     2.71,
-     -0.38
-    ],
-    "cyl": [
-     0.64,
-     0,
-     2.69,
-     -0.38
-    ],
-    "from": "roof",
-    "lim": "inset"
+    "box": [0.57, 0, 2.672, 0.36],
+    "cyl": [0.51, 0, 2.657, 0.36],
+    "from": "roof-clear",
+    "lim": "d"
    },
    "cargo": {
-    "box": [
-     0.9,
-     0,
-     2.28,
-     -1.78
-    ],
-    "cyl": [
-     0.9,
-     0,
-     2.28,
-     -1.78
-    ],
+    "box": [0.9, 0, 2.28, -1.78],
+    "cyl": [0.9, 0, 2.28, -1.78],
     "from": "deck",
     "lim": "h"
    },
    "wing": {
-    "box": [
-     1.3,
-     0,
-     2.757,
-     -0.665
-    ],
-    "cyl": [
-     1.3,
-     0,
-     2.725,
-     -0.665
-    ],
+    "box": [1.3, 0, 2.757, -0.665],
+    "cyl": [1.3, 0, 2.725, -0.665],
     "from": "roof-edge",
     "lim": "max"
    }
   },
   "lovebus": {
    "roof": {
-    "box": [
-     1.5,
-     0,
-     2.435,
-     -0.04
-    ],
-    "cyl": [
-     1.5,
-     0,
-     2.435,
-     -0.04
-    ],
+    "box": [1.5, 0, 2.435, -0.04],
+    "cyl": [1.5, 0, 2.435, -0.04],
     "from": "roof",
     "lim": "max"
    },
@@ -394,40 +176,17 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [
-     1.27,
-     0,
-     2.282,
-     -1.909
-    ],
-    "cyl": [
-     1.27,
-     0,
-     2.25,
-     -1.909
-    ],
+    "box": [1.27, 0, 2.282, -1.909],
+    "cyl": [1.27, 0, 2.25, -1.909],
     "from": "roof-edge",
     "lim": "w",
-    "inset": [
-     0.009,
-     0.009
-    ]
+    "inset": [0.009, 0.009]
    }
   },
   "lowrider": {
    "roof": {
-    "box": [
-     1.1,
-     0,
-     1.385,
-     -0.24
-    ],
-    "cyl": [
-     1.1,
-     0,
-     1.385,
-     -0.24
-    ],
+    "box": [1.1, 0, 1.385, -0.24],
+    "cyl": [1.1, 0, 1.385, -0.24],
     "from": "roof",
     "lim": "max"
    },
@@ -435,40 +194,17 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [
-     1.3,
-     0,
-     1.078,
-     -2.155
-    ],
-    "cyl": [
-     1.3,
-     0,
-     1.045,
-     -2.155
-    ],
+    "box": [1.3, 0, 1.078, -2.155],
+    "cyl": [1.3, 0, 1.045, -2.155],
     "from": "deck",
     "lim": "max",
-    "inset": [
-     0.019,
-     0.019
-    ]
+    "inset": [0.014, 0.014]
    }
   },
   "mini": {
    "roof": {
-    "box": [
-     1.1,
-     0,
-     1.59,
-     -0.46
-    ],
-    "cyl": [
-     1.1,
-     0,
-     1.59,
-     -0.46
-    ],
+    "box": [1.1, 0, 1.59, -0.46],
+    "cyl": [1.1, 0, 1.59, -0.46],
     "from": "roof",
     "lim": "max"
    },
@@ -476,132 +212,55 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [
-     0.9,
-     0,
-     1.473,
-     -1.285
-    ],
-    "cyl": [
-     0.9,
-     0,
-     1.45,
-     -1.285
-    ],
+    "box": [0.9, 0, 1.473, -1.285],
+    "cyl": [0.9, 0, 1.45, -1.285],
     "from": "roof-edge",
     "lim": "w"
    }
   },
   "minivan": {
    "roof": {
-    "box": [
-     1.5,
-     0,
-     2.356,
-     -0.8
-    ],
-    "cyl": [
-     1.5,
-     0,
-     2.357,
-     -0.8
-    ],
+    "box": [1.5, 0, 2.356, -0.8],
+    "cyl": [1.5, 0, 2.357, -0.8],
     "from": "roof",
     "lim": "max",
-    "inset": [
-     0.012,
-     0.014
-    ]
+    "inset": [0.011, 0.013]
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [
-     1.3,
-     0,
-     2.217,
-     -2.145
-    ],
-    "cyl": [
-     1.3,
-     0,
-     2.184,
-     -2.145
-    ],
+    "box": [1.3, 0, 2.217, -2.145],
+    "cyl": [1.3, 0, 2.184, -2.145],
     "from": "roof-edge",
     "lim": "max"
    }
   },
   "pickup": {
    "roof": {
-    "box": [
-     1.07,
-     0,
-     2.321,
-     -0.04
-    ],
-    "cyl": [
-     0.95,
-     0,
-     2.291,
-     -0.04
-    ],
-    "from": "roof",
+    "box": [0.67, 0, 2.221, 0.12],
+    "cyl": [0.6, 0, 2.204, 0.12],
+    "from": "roof-clear",
     "lim": "d",
-    "inset": [
-     0.023,
-     0.023
-    ],
     "existing": true
    },
    "cargo": {
-    "box": [
-     1.18,
-     0,
-     1.642,
-     -1.6
-    ],
-    "cyl": [
-     1.18,
-     0,
-     1.642,
-     -1.6
-    ],
+    "box": [1.18, 0, 1.642, -1.6],
+    "cyl": [1.18, 0, 1.642, -1.6],
     "from": "deck",
     "lim": "w"
    },
    "wing": {
-    "box": [
-     1.3,
-     0,
-     2.281,
-     -0.385
-    ],
-    "cyl": [
-     1.3,
-     0,
-     2.249,
-     -0.385
-    ],
+    "box": [1.3, 0, 2.281, -0.385],
+    "cyl": [1.3, 0, 2.249, -0.385],
     "from": "roof-edge",
     "lim": "w"
    }
   },
   "postvan": {
    "roof": {
-    "box": [
-     1.5,
-     0,
-     2.315,
-     -0.82
-    ],
-    "cyl": [
-     1.5,
-     0,
-     2.315,
-     -0.82
-    ],
+    "box": [1.5, 0, 2.315, -0.82],
+    "cyl": [1.5, 0, 2.315, -0.82],
     "from": "roof",
     "lim": "w",
     "existing": true
@@ -610,36 +269,16 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [
-     1.1,
-     0,
-     2.133,
-     -1.815
-    ],
-    "cyl": [
-     1.1,
-     0,
-     2.105,
-     -1.815
-    ],
+    "box": [1.1, 0, 2.133, -1.815],
+    "cyl": [1.1, 0, 2.105, -1.815],
     "from": "roof-edge",
     "lim": "w"
    }
   },
   "rally": {
    "roof": {
-    "box": [
-     1.1,
-     0,
-     1.68,
-     -0.08
-    ],
-    "cyl": [
-     1.1,
-     0,
-     1.68,
-     -0.08
-    ],
+    "box": [1.1, 0, 1.68, -0.08],
+    "cyl": [1.1, 0, 1.68, -0.08],
     "from": "roof",
     "lim": "max",
     "existing": true
@@ -648,24 +287,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [
-     1.18,
-     0,
-     1.137,
-     -2.053
-    ],
-    "cyl": [
-     1.18,
-     0,
-     1.107,
-     -2.053
-    ],
+    "box": [1.18, 0, 1.137, -2.053],
+    "cyl": [1.18, 0, 1.107, -2.053],
     "from": "deck",
     "lim": "w",
-    "inset": [
-     0.06,
-     0.06
-    ],
+    "inset": [0.06, 0.06],
     "existing": true
    }
   },
@@ -677,36 +303,16 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [
-     0.61,
-     0,
-     1.047,
-     -1.898
-    ],
-    "cyl": [
-     0.61,
-     0,
-     1.031,
-     -1.898
-    ],
+    "box": [0.61, 0, 1.047, -1.898],
+    "cyl": [0.61, 0, 1.031, -1.898],
     "from": "deck",
     "lim": "inset"
    }
   },
   "sleeper": {
    "roof": {
-    "box": [
-     1.1,
-     0,
-     1.63,
-     -0.6
-    ],
-    "cyl": [
-     1.1,
-     0,
-     1.63,
-     -0.6
-    ],
+    "box": [1.1, 0, 1.63, -0.6],
+    "cyl": [1.1, 0, 1.63, -0.6],
     "from": "roof",
     "lim": "max"
    },
@@ -714,59 +320,26 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [
-     0.95,
-     0,
-     1.521,
-     -2.077
-    ],
-    "cyl": [
-     0.95,
-     0,
-     1.498,
-     -2.077
-    ],
+    "box": [0.95, 0, 1.521, -2.077],
+    "cyl": [0.95, 0, 1.498, -2.077],
     "from": "roof-edge",
     "lim": "w"
    }
   },
   "sport": {
    "roof": {
-    "box": [
-     0.57,
-     0,
-     1.263,
-     -0.4
-    ],
-    "cyl": [
-     0.51,
-     0,
-     1.254,
-     -0.4
-    ],
-    "from": "roof",
+    "box": [0.42, 0, 1.231, -0.3],
+    "cyl": [0.37, 0, 1.219, -0.3],
+    "from": "roof-curved-clear",
     "lim": "d",
-    "inset": [
-     0,
-     0.006
-    ]
+    "inset": [0.006, 0.006]
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [
-     0.75,
-     0,
-     1.251,
-     -0.627
-    ],
-    "cyl": [
-     0.75,
-     0,
-     1.233,
-     -0.627
-    ],
+    "box": [0.75, 0, 1.251, -0.627],
+    "cyl": [0.75, 0, 1.233, -0.627],
     "from": "roof-edge",
     "lim": "w"
    }
@@ -779,296 +352,74 @@
     "no": "the deck is too small for the smallest load (0.94 x 0.34 m)"
    },
    "wing": {
-    "no": "an open car with no rear deck"
+    "box": [0.55, 0, 0.915, -1.107],
+    "cyl": [0.55, 0, 0.901, -1.107],
+    "from": "deck",
+    "lim": "w",
+    "inset": [0.011, 0.011],
+    "existing": true
    }
   },
   "super-commuter": {
    "roof": {
-    "box": [
-     1.1,
-     0,
-     1.773,
-     -0.6
-    ],
-    "cyl": [
-     1.1,
-     0,
-     1.773,
-     -0.6
-    ],
-    "from": "roof-curved",
-    "lim": "max",
-    "inset": [
-     0.064,
-     0.051
-    ]
+    "box": [0.94, 0, 1.706, -0.6],
+    "cyl": [1.04, 0, 1.731, -0.6],
+    "from": "roof",
+    "lim": "w",
+    "inset": [0.023, 0.032]
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [
-     0.72,
-     0,
-     1.598,
-     -1.112
-    ],
-    "cyl": [
-     0.72,
-     0,
-     1.58,
-     -1.112
-    ],
+    "box": [0.72, 0, 1.553, -1.232],
+    "cyl": [0.72, 0, 1.535, -1.232],
     "from": "roof-edge",
     "lim": "w",
-    "inset": [
-     0.045,
-     0.045
-    ],
+    "inset": [0.022, 0.022],
     "existing": true
    }
   },
   "super-darkvan": {
    "roof": {
-    "box": [
-     1.5,
-     0,
-     2.695,
-     -0.6
-    ],
-    "cyl": [
-     1.5,
-     0,
-     2.695,
-     -0.6
-    ],
-    "from": "roof-curved",
+    "box": [1.5, 0, 2.665, -0.62],
+    "cyl": [1.5, 0, 2.665, -0.62],
+    "from": "roof",
     "lim": "max",
-    "inset": [
-     0.04,
-     0.04
-    ],
+    "inset": [0.01, 0.01],
     "existing": true
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "no": "the roof edge is too narrow for a wing (0.22 m)"
+    "no": "the roof edge is too narrow for a wing (0.22 m)",
+    "existing": true
    }
   },
   "super-hearse": {
    "roof": {
-    "box": [
-     1.5,
-     0,
-     2.03,
-     -1.12
-    ],
-    "cyl": [
-     1.5,
-     0,
-     2.03,
-     -1.12
-    ],
-    "from": "roof-curved",
+    "box": [1.5, 0, 1.999, -1.02],
+    "cyl": [1.5, 0, 1.999, -1.02],
+    "from": "roof",
     "lim": "max",
-    "inset": [
-     0.039,
-     0.039
-    ]
+    "inset": [0.008, 0.009]
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "no": "the roof edge is too narrow for a wing (0.22 m)"
+    "box": [1.21, 0, 1.841, -2.318],
+    "cyl": [1.21, 0, 1.811, -2.318],
+    "from": "roof-edge",
+    "lim": "w",
+    "existing": true
    }
   },
   "super-hothatch": {
    "roof": {
-    "box": [
-     1.1,
-     0,
-     1.68,
-     -0.64
-    ],
-    "cyl": [
-     1.1,
-     0,
-     1.68,
-     -0.64
-    ],
-    "from": "roof-curved",
-    "lim": "max",
-    "inset": [
-     0.03,
-     0.03
-    ]
-   },
-   "cargo": {
-    "no": "a closed body: no load deck"
-   },
-   "wing": {
-    "no": "the roof edge is too narrow for a wing (0.14 m)"
-   }
-  },
-  "super-hotrod": {
-   "roof": {
-    "box": [
-     0.94,
-     0,
-     1.454,
-     -0.18
-    ],
-    "cyl": [
-     1.04,
-     0,
-     1.479,
-     -0.18
-    ],
-    "from": "roof-curved",
-    "lim": "w",
-    "inset": [
-     0.049,
-     0.041
-    ]
-   },
-   "cargo": {
-    "no": "a closed body: no load deck"
-   },
-   "wing": {
-    "no": "the roof edge is too narrow for a wing (0.14 m)"
-   }
-  },
-  "super-junker": {
-   "roof": {
-    "box": [
-     1.1,
-     0,
-     2.12,
-     0.18
-    ],
-    "cyl": [
-     1.1,
-     0,
-     2.12,
-     0.18
-    ],
-    "from": "roof-curved",
-    "lim": "max",
-    "inset": [
-     0.03,
-     0.03
-    ]
-   },
-   "cargo": {
-    "no": "the deck behind the cabin is too small (under 0.3 x 0.3 m)"
-   },
-   "wing": {
-    "no": "the roof edge is too narrow for a wing (-0.06 m)"
-   }
-  },
-  "super-keitruck": {
-   "roof": {
-    "box": [
-     0.41,
-     0,
-     1.813,
-     1.02
-    ],
-    "cyl": [
-     0.46,
-     0,
-     1.825,
-     1.02
-    ],
-    "from": "roof",
-    "lim": "inset"
-   },
-   "cargo": {
-    "box": [
-     1.34,
-     0,
-     1.096,
-     -0.72
-    ],
-    "cyl": [
-     1.34,
-     0,
-     1.096,
-     -0.72
-    ],
-    "from": "deck",
-    "lim": "w"
-   },
-   "wing": {
-    "no": "the roof edge is too narrow for a wing (0.38 m)"
-   }
-  },
-  "super-liftedtruck": {
-   "roof": {
-    "no": "the roof is too small (no 0.3 x 0.25 m patch near its top)"
-   },
-   "cargo": {
-    "box": [
-     1.32,
-     0,
-     2.448,
-     -1.78
-    ],
-    "cyl": [
-     1.32,
-     0,
-     2.448,
-     -1.78
-    ],
-    "from": "deck",
-    "lim": "h"
-   },
-   "wing": {
-    "no": "no rear deck and no flat roof edge"
-   }
-  },
-  "super-lovebus": {
-   "roof": {
-    "box": [
-     0.46,
-     0,
-     2.149,
-     2.24
-    ],
-    "cyl": [
-     0.51,
-     0,
-     2.162,
-     2.24
-    ],
-    "from": "roof",
-    "lim": "w",
-    "existing": true
-   },
-   "cargo": {
-    "no": "a closed body: no load deck"
-   },
-   "wing": {
-    "no": "the roof edge is too narrow for a wing (0.22 m)"
-   }
-  },
-  "super-lowrider": {
-   "roof": {
-    "box": [
-     1.1,
-     0,
-     1.385,
-     -0.24
-    ],
-    "cyl": [
-     1.1,
-     0,
-     1.385,
-     -0.24
-    ],
+    "box": [1.1, 0, 1.65, -0.56],
+    "cyl": [1.1, 0, 1.65, -0.56],
     "from": "roof",
     "lim": "max"
    },
@@ -1076,194 +427,231 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [
-     1.3,
-     0,
-     1.078,
-     -2.155
-    ],
-    "cyl": [
-     1.3,
-     0,
-     1.045,
-     -2.155
-    ],
+    "box": [0.9, 0, 1.567, -1.765],
+    "cyl": [0.9, 0, 1.545, -1.765],
+    "from": "roof-edge",
+    "lim": "w",
+    "existing": true
+   }
+  },
+  "super-hotrod": {
+   "roof": {
+    "box": [0.86, 0, 1.408, 0.04],
+    "cyl": [0.77, 0, 1.385, 0.04],
+    "from": "roof-clear",
+    "lim": "w",
+    "inset": [0.021, 0.021]
+   },
+   "cargo": {
+    "no": "a closed body: no load deck"
+   },
+   "wing": {
+    "box": [0.64, 0, 1.307, -0.484],
+    "cyl": [0.64, 0, 1.291, -0.484],
+    "from": "roof-edge",
+    "lim": "w",
+    "existing": true
+   }
+  },
+  "super-junker": {
+   "roof": {
+    "box": [1.1, 0, 2.09, 0.18],
+    "cyl": [1.1, 0, 2.09, 0.18],
+    "from": "roof",
+    "lim": "max"
+   },
+   "cargo": {
+    "box": [0.86, 0, 1.564, -1.48],
+    "cyl": [0.86, 0, 1.564, -1.48],
     "from": "deck",
-    "lim": "max",
-    "inset": [
-     0.019,
-     0.019
-    ]
-   }
-  },
-  "super-mini": {
-   "roof": {
-    "box": [
-     1.1,
-     0,
-     1.62,
-     -0.46
-    ],
-    "cyl": [
-     1.1,
-     0,
-     1.62,
-     -0.46
-    ],
-    "from": "roof-curved",
-    "lim": "max",
-    "inset": [
-     0.03,
-     0.03
-    ]
-   },
-   "cargo": {
-    "no": "a closed body: no load deck"
-   },
-   "wing": {
-    "no": "the roof edge is too narrow for a wing (0.14 m)"
-   }
-  },
-  "super-minivan": {
-   "roof": {
-    "box": [
-     1.5,
-     0,
-     2.386,
-     -0.8
-    ],
-    "cyl": [
-     1.5,
-     0,
-     2.387,
-     -0.8
-    ],
-    "from": "roof-curved",
-    "lim": "max",
-    "inset": [
-     0.042,
-     0.042
-    ],
+    "lim": "h",
     "existing": true
    },
-   "cargo": {
-    "no": "a closed body: no load deck"
-   },
    "wing": {
-    "no": "the roof edge is too narrow for a wing (0.22 m)"
+    "box": [1.3, 0, 1.448, -2.235],
+    "cyl": [1.3, 0, 1.415, -2.235],
+    "from": "deck",
+    "lim": "w",
+    "existing": true
    }
   },
-  "super-pickup": {
+  "super-keitruck": {
    "roof": {
-    "box": [
-     1.02,
-     0,
-     2.339,
-     -0.06
-    ],
-    "cyl": [
-     0.91,
-     0,
-     2.311,
-     -0.06
-    ],
-    "from": "roof-curved",
-    "lim": "d",
-    "inset": [
-     0.04,
-     0.04
-    ],
-    "existing": true
+    "box": [1.17, 0, 1.893, 1.2],
+    "cyl": [1.04, 0, 1.86, 1.2],
+    "from": "roof-clear",
+    "lim": "d"
    },
    "cargo": {
-    "box": [
-     1.18,
-     0,
-     1.642,
-     -1.6
-    ],
-    "cyl": [
-     1.18,
-     0,
-     1.642,
-     -1.6
-    ],
+    "box": [1.34, 0, 1.096, -0.72],
+    "cyl": [1.34, 0, 1.096, -0.72],
     "from": "deck",
     "lim": "w"
    },
    "wing": {
-    "no": "the roof edge is too narrow for a wing (-0.06 m)"
+    "box": [1.01, 0, 1.777, 0.532],
+    "cyl": [1.01, 0, 1.752, 0.532],
+    "from": "roof-edge",
+    "lim": "w",
+    "existing": true
+   }
+  },
+  "super-liftedtruck": {
+   "roof": {
+    "box": [0.57, 0, 2.672, 0.36],
+    "cyl": [0.51, 0, 2.657, 0.36],
+    "from": "roof-clear",
+    "lim": "d",
+    "existing": true
+   },
+   "cargo": {
+    "box": [0.9, 0, 2.28, -1.78],
+    "cyl": [0.9, 0, 2.28, -1.78],
+    "from": "deck",
+    "lim": "h"
+   },
+   "wing": {
+    "box": [1.3, 0, 2.757, -0.665],
+    "cyl": [1.3, 0, 2.725, -0.665],
+    "from": "roof-edge",
+    "lim": "max",
+    "existing": true
+   }
+  },
+  "super-lovebus": {
+   "roof": {
+    "box": [1.5, 0, 2.435, -0.04],
+    "cyl": [1.5, 0, 2.435, -0.04],
+    "from": "roof",
+    "lim": "max",
+    "existing": true
+   },
+   "cargo": {
+    "no": "a closed body: no load deck"
+   },
+   "wing": {
+    "box": [1.27, 0, 2.282, -1.909],
+    "cyl": [1.27, 0, 2.25, -1.909],
+    "from": "roof-edge",
+    "lim": "w",
+    "inset": [0.009, 0.009],
+    "existing": true
+   }
+  },
+  "super-lowrider": {
+   "roof": {
+    "box": [1.1, 0, 1.385, -0.24],
+    "cyl": [1.1, 0, 1.385, -0.24],
+    "from": "roof",
+    "lim": "max"
+   },
+   "cargo": {
+    "no": "a closed body: no load deck"
+   },
+   "wing": {
+    "box": [1.3, 0, 1.078, -2.155],
+    "cyl": [1.3, 0, 1.045, -2.155],
+    "from": "deck",
+    "lim": "max",
+    "inset": [0.014, 0.014]
+   }
+  },
+  "super-mini": {
+   "roof": {
+    "box": [1.1, 0, 1.59, -0.46],
+    "cyl": [1.1, 0, 1.59, -0.46],
+    "from": "roof",
+    "lim": "max"
+   },
+   "cargo": {
+    "no": "a closed body: no load deck"
+   },
+   "wing": {
+    "box": [0.9, 0, 1.473, -1.285],
+    "cyl": [0.9, 0, 1.45, -1.285],
+    "from": "roof-edge",
+    "lim": "w",
+    "existing": true
+   }
+  },
+  "super-minivan": {
+   "roof": {
+    "box": [1.5, 0, 2.356, -0.8],
+    "cyl": [1.5, 0, 2.357, -0.8],
+    "from": "roof",
+    "lim": "max",
+    "inset": [0.011, 0.013],
+    "existing": true
+   },
+   "cargo": {
+    "no": "a closed body: no load deck"
+   },
+   "wing": {
+    "box": [1.3, 0, 2.217, -2.145],
+    "cyl": [1.3, 0, 2.184, -2.145],
+    "from": "roof-edge",
+    "lim": "max",
+    "existing": true
+   }
+  },
+  "super-pickup": {
+   "roof": {
+    "box": [0.67, 0, 2.221, 0.12],
+    "cyl": [0.6, 0, 2.204, 0.12],
+    "from": "roof-clear",
+    "lim": "d",
+    "existing": true
+   },
+   "cargo": {
+    "box": [1.18, 0, 1.642, -1.6],
+    "cyl": [1.18, 0, 1.642, -1.6],
+    "from": "deck",
+    "lim": "w"
+   },
+   "wing": {
+    "box": [1.3, 0, 2.281, -0.385],
+    "cyl": [1.3, 0, 2.249, -0.385],
+    "from": "roof-edge",
+    "lim": "w",
+    "existing": true
    }
   },
   "super-postvan": {
    "roof": {
-    "box": [
-     1.35,
-     0,
-     2.323,
-     -0.82
-    ],
-    "cyl": [
-     1.21,
-     0,
-     2.288,
-     -0.82
-    ],
-    "from": "roof-curved",
-    "lim": "inset",
-    "inset": [
-     0.045,
-     0.045
-    ],
+    "box": [1.5, 0, 2.315, -0.82],
+    "cyl": [1.5, 0, 2.315, -0.82],
+    "from": "roof",
+    "lim": "w",
     "existing": true
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "no": "the roof edge is too narrow for a wing (0.14 m)"
+    "box": [1.1, 0, 2.133, -1.815],
+    "cyl": [1.1, 0, 2.105, -1.815],
+    "from": "roof-edge",
+    "lim": "w",
+    "existing": true
    }
   },
   "super-rally": {
    "roof": {
-    "box": [
-     0.97,
-     0,
-     1.647,
-     0.28
-    ],
-    "cyl": [
-     0.86,
-     0,
-     1.62,
-     0.28
-    ],
+    "box": [1.1, 0, 1.68, -0.08],
+    "cyl": [1.1, 0, 1.68, -0.08],
     "from": "roof",
-    "lim": "d",
+    "lim": "max",
     "existing": true
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [
-     0.73,
-     0,
-     1.058,
-     -2.121
-    ],
-    "cyl": [
-     0.73,
-     0,
-     1.04,
-     -2.121
-    ],
+    "box": [1.18, 0, 1.137, -2.053],
+    "cyl": [1.18, 0, 1.107, -2.053],
     "from": "deck",
-    "lim": "d",
-    "inset": [
-     0.06,
-     0.06
-    ],
+    "lim": "w",
+    "inset": [0.06, 0.06],
     "existing": true
    }
   },
@@ -1275,80 +663,55 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "no": "no rear deck and no flat roof edge"
+    "box": [0.61, 0, 1.047, -1.898],
+    "cyl": [0.61, 0, 1.031, -1.898],
+    "from": "deck",
+    "lim": "inset",
+    "existing": true
    }
   },
   "super-sleeper": {
    "roof": {
-    "box": [
-     1.1,
-     0,
-     1.66,
-     -0.6
-    ],
-    "cyl": [
-     1.1,
-     0,
-     1.66,
-     -0.6
-    ],
-    "from": "roof-curved",
-    "lim": "max",
-    "inset": [
-     0.03,
-     0.03
-    ]
+    "box": [1.1, 0, 1.63, -0.6],
+    "cyl": [1.1, 0, 1.63, -0.6],
+    "from": "roof",
+    "lim": "max"
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "no": "the roof edge is too narrow for a wing (0.14 m)"
+    "box": [0.95, 0, 1.521, -2.077],
+    "cyl": [0.95, 0, 1.498, -2.077],
+    "from": "roof-edge",
+    "lim": "w",
+    "existing": true
    }
   },
   "super-sport": {
    "roof": {
-    "box": [
-     0.62,
-     0,
-     1.305,
-     -0.38
-    ],
-    "cyl": [
-     0.55,
-     0,
-     1.287,
-     -0.38
-    ],
-    "from": "roof-curved",
+    "box": [0.42, 0, 1.231, -0.3],
+    "cyl": [0.37, 0, 1.219, -0.3],
+    "from": "roof-curved-clear",
     "lim": "d",
-    "inset": [
-     0.03,
-     0.03
-    ]
+    "inset": [0.006, 0.006]
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "no": "the roof edge is too narrow for a wing (0.14 m)"
+    "box": [0.75, 0, 1.251, -0.627],
+    "cyl": [0.75, 0, 1.233, -0.627],
+    "from": "roof-edge",
+    "lim": "w",
+    "existing": true
    }
   },
   "super-towtruck": {
    "roof": {
-    "box": [
-     1.37,
-     0,
-     2.117,
-     0.68
-    ],
-    "cyl": [
-     1.22,
-     0,
-     2.08,
-     0.68
-    ],
-    "from": "roof",
+    "box": [0.87, 0, 1.992, 0.88],
+    "cyl": [0.77, 0, 1.967, 0.88],
+    "from": "roof-clear",
     "lim": "d",
     "existing": true
    },
@@ -1356,18 +719,8 @@
     "no": "the deck behind the cabin is too small (under 0.3 x 0.3 m)"
    },
    "wing": {
-    "box": [
-     1.3,
-     0,
-     2.002,
-     0.295
-    ],
-    "cyl": [
-     1.3,
-     0,
-     1.97,
-     0.295
-    ],
+    "box": [1.3, 0, 2.002, 0.295],
+    "cyl": [1.3, 0, 1.97, 0.295],
     "from": "roof-edge",
     "lim": "max",
     "existing": true
@@ -1375,102 +728,48 @@
   },
   "super-ute": {
    "roof": {
-    "box": [
-     1.1,
-     0,
-     1.71,
-     0.1
-    ],
-    "cyl": [
-     1.1,
-     0,
-     1.71,
-     0.1
-    ],
-    "from": "roof-curved",
-    "lim": "max",
-    "inset": [
-     0.03,
-     0.03
-    ]
+    "box": [1.1, 0, 1.68, 0.08],
+    "cyl": [1.1, 0, 1.68, 0.08],
+    "from": "roof",
+    "lim": "max"
    },
    "cargo": {
-    "box": [
-     0.75,
-     0,
-     1.2,
-     -1.58
-    ],
-    "cyl": [
-     0.75,
-     0,
-     1.2,
-     -1.58
-    ],
+    "box": [0.75, 0, 1.2, -1.58],
+    "cyl": [0.75, 0, 1.2, -1.58],
     "from": "deck",
     "lim": "h"
    },
    "wing": {
-    "box": [
-     1.17,
-     0,
-     1.105,
-     -2.174
-    ],
-    "cyl": [
-     1.17,
-     0,
-     1.075,
-     -2.174
-    ],
+    "box": [1.3, 0, 1.127, -2.155],
+    "cyl": [1.3, 0, 1.095, -2.155],
     "from": "deck",
-    "lim": "inset",
+    "lim": "max",
     "existing": true
    }
   },
   "super-wagon": {
    "roof": {
-    "box": [
-     1.1,
-     0,
-     2.155,
-     -0.92
-    ],
-    "cyl": [
-     1.1,
-     0,
-     2.155,
-     -0.92
-    ],
-    "from": "roof-curved",
-    "lim": "max",
-    "inset": [
-     0.03,
-     0.03
-    ]
+    "box": [1.1, 0, 2.125, -0.96],
+    "cyl": [1.1, 0, 2.125, -0.96],
+    "from": "roof",
+    "lim": "max"
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "no": "the roof edge is too narrow for a wing (0.22 m)"
+    "box": [1.3, 0, 2.078, -2.065],
+    "cyl": [1.3, 0, 2.045, -2.065],
+    "from": "roof-edge",
+    "lim": "max",
+    "existing": true
    }
   },
   "towtruck": {
    "roof": {
-    "box": [
-     1.37,
-     0,
-     2.117,
-     0.68
-    ],
-    "cyl": [
-     1.22,
-     0,
-     2.08,
-     0.68
-    ],
-    "from": "roof",
+    "box": [0.87, 0, 1.992, 0.88],
+    "cyl": [0.77, 0, 1.967, 0.88],
+    "from": "roof-clear",
     "lim": "d",
     "existing": true
    },
@@ -1478,86 +777,36 @@
     "no": "the deck behind the cabin is too small (under 0.3 x 0.3 m)"
    },
    "wing": {
-    "box": [
-     1.3,
-     0,
-     2.002,
-     0.295
-    ],
-    "cyl": [
-     1.3,
-     0,
-     1.97,
-     0.295
-    ],
+    "box": [1.3, 0, 2.002, 0.295],
+    "cyl": [1.3, 0, 1.97, 0.295],
     "from": "roof-edge",
     "lim": "max"
    }
   },
   "ute": {
    "roof": {
-    "box": [
-     1.1,
-     0,
-     1.68,
-     0.08
-    ],
-    "cyl": [
-     1.1,
-     0,
-     1.68,
-     0.08
-    ],
+    "box": [1.1, 0, 1.68, 0.08],
+    "cyl": [1.1, 0, 1.68, 0.08],
     "from": "roof",
     "lim": "max"
    },
    "cargo": {
-    "box": [
-     0.75,
-     0,
-     1.2,
-     -1.58
-    ],
-    "cyl": [
-     0.75,
-     0,
-     1.2,
-     -1.58
-    ],
+    "box": [0.75, 0, 1.2, -1.58],
+    "cyl": [0.75, 0, 1.2, -1.58],
     "from": "deck",
     "lim": "h"
    },
    "wing": {
-    "box": [
-     1.17,
-     0,
-     1.105,
-     -2.174
-    ],
-    "cyl": [
-     1.17,
-     0,
-     1.075,
-     -2.174
-    ],
+    "box": [1.3, 0, 1.127, -2.155],
+    "cyl": [1.3, 0, 1.095, -2.155],
     "from": "deck",
-    "lim": "inset"
+    "lim": "max"
    }
   },
   "wagon": {
    "roof": {
-    "box": [
-     1.1,
-     0,
-     2.125,
-     -0.96
-    ],
-    "cyl": [
-     1.1,
-     0,
-     2.125,
-     -0.96
-    ],
+    "box": [1.1, 0, 2.125, -0.96],
+    "cyl": [1.1, 0, 2.125, -0.96],
     "from": "roof",
     "lim": "max"
    },
@@ -1565,18 +814,8 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [
-     1.3,
-     0,
-     2.078,
-     -2.065
-    ],
-    "cyl": [
-     1.3,
-     0,
-     2.045,
-     -2.065
-    ],
+    "box": [1.3, 0, 2.078, -2.065],
+    "cyl": [1.3, 0, 2.045, -2.065],
     "from": "roof-edge",
     "lim": "max"
    }
@@ -1585,130 +824,24 @@
  "hand": {
   "junker": {
    "wing": {
-    "box": [
-     1.3,
-     0,
-     2.043,
-     -0.385
-    ],
-    "cyl": [
-     1.3,
-     0,
-     2.01,
-     -0.385
-    ],
+    "box": [1.3, 0, 2.043, -0.385],
+    "cyl": [1.3, 0, 2.01, -0.385],
     "from": "roof-edge",
     "lim": "hand"
    }
   },
   "darkvan": {
    "wing": {
-    "box": [
-     1.3,
-     0,
-     2.517,
-     -2.265
-    ],
-    "cyl": [
-     1.3,
-     0,
-     2.485,
-     -2.265
-    ],
+    "box": [1.3, 0, 2.517, -2.265],
+    "cyl": [1.3, 0, 2.485, -2.265],
     "from": "roof-edge",
     "lim": "hand"
    }
   },
   "super-darkvan": {
    "wing": {
-    "box": [
-     1.3,
-     0,
-     2.547,
-     -2.265
-    ],
-    "cyl": [
-     1.3,
-     0,
-     2.515,
-     -2.265
-    ],
-    "from": "roof-edge",
-    "lim": "hand",
-    "existing": true
-   }
-  },
-  "super-buggy": {
-   "wing": {
-    "box": [
-     0.55,
-     0,
-     0.955,
-     -1.107
-    ],
-    "cyl": [
-     0.55,
-     0,
-     0.941,
-     -1.107
-    ],
-    "from": "deck",
-    "lim": "hand",
-    "existing": true
-   }
-  },
-  "super-hearse": {
-   "wing": {
-    "box": [
-     1.21,
-     0,
-     1.881,
-     -2.318
-    ],
-    "cyl": [
-     1.21,
-     0,
-     1.851,
-     -2.318
-    ],
-    "from": "roof-edge",
-    "lim": "hand",
-    "existing": true
-   }
-  },
-  "super-hothatch": {
-   "wing": {
-    "box": [
-     0.9,
-     0,
-     1.607,
-     -1.765
-    ],
-    "cyl": [
-     0.9,
-     0,
-     1.585,
-     -1.765
-    ],
-    "from": "roof-edge",
-    "lim": "hand",
-    "existing": true
-   }
-  },
-  "super-hotrod": {
-   "wing": {
-    "box": [
-     0.64,
-     0,
-     1.347,
-     -0.484
-    ],
-    "cyl": [
-     0.64,
-     0,
-     1.331,
-     -0.484
-    ],
+    "box": [1.3, 0, 2.547, -2.265],
+    "cyl": [1.3, 0, 2.515, -2.265],
     "from": "roof-edge",
     "lim": "hand",
     "existing": true
@@ -1716,18 +849,8 @@
   },
   "super-junker": {
    "wing": {
-    "box": [
-     1.3,
-     0,
-     2.083,
-     -0.385
-    ],
-    "cyl": [
-     1.3,
-     0,
-     2.05,
-     -0.385
-    ],
+    "box": [1.3, 0, 2.083, -0.385],
+    "cyl": [1.3, 0, 2.05, -0.385],
     "from": "roof-edge",
     "lim": "hand",
     "existing": true
@@ -1737,262 +860,27 @@
     "existing": true
    }
   },
-  "super-keitruck": {
-   "wing": {
-    "box": [
-     1.01,
-     0,
-     1.817,
-     0.532
-    ],
-    "cyl": [
-     1.01,
-     0,
-     1.792,
-     0.532
-    ],
-    "from": "roof-edge",
-    "lim": "hand",
-    "existing": true
-   }
-  },
   "super-liftedtruck": {
-   "wing": {
-    "box": [
-     1.3,
-     0,
-     2.797,
-     -0.665
-    ],
-    "cyl": [
-     1.3,
-     0,
-     2.765,
-     -0.665
-    ],
-    "from": "roof-edge",
-    "lim": "hand",
-    "existing": true
-   },
    "roof": {
-    "box": [
-     0.72,
-     0,
-     2.75,
-     -0.38
-    ],
-    "cyl": [
-     0.64,
-     0,
-     2.73,
-     -0.38
-    ],
+    "box": [0.72, 0, 2.75, -0.38],
+    "cyl": [0.64, 0, 2.73, -0.38],
     "from": "roof",
-    "lim": "hand",
-    "existing": true
-   }
-  },
-  "super-lovebus": {
-   "wing": {
-    "box": [
-     1.27,
-     0,
-     2.322,
-     -1.909
-    ],
-    "cyl": [
-     1.27,
-     0,
-     2.29,
-     -1.909
-    ],
-    "from": "roof-edge",
-    "lim": "hand",
-    "existing": true
-   },
-   "roof": {
-    "box": [
-     1.5,
-     0,
-     2.475,
-     -0.04
-    ],
-    "cyl": [
-     1.5,
-     0,
-     2.475,
-     -0.04
-    ],
-    "from": "roof",
-    "lim": "hand",
-    "existing": true
-   }
-  },
-  "super-mini": {
-   "wing": {
-    "box": [
-     0.9,
-     0,
-     1.513,
-     -1.285
-    ],
-    "cyl": [
-     0.9,
-     0,
-     1.49,
-     -1.285
-    ],
-    "from": "roof-edge",
-    "lim": "hand",
-    "existing": true
-   }
-  },
-  "super-minivan": {
-   "wing": {
-    "box": [
-     1.3,
-     0,
-     2.257,
-     -2.145
-    ],
-    "cyl": [
-     1.3,
-     0,
-     2.224,
-     -2.145
-    ],
-    "from": "roof-edge",
-    "lim": "hand",
-    "existing": true
-   }
-  },
-  "super-postvan": {
-   "wing": {
-    "box": [
-     1.1,
-     0,
-     2.173,
-     -1.815
-    ],
-    "cyl": [
-     1.1,
-     0,
-     2.145,
-     -1.815
-    ],
-    "from": "roof-edge",
-    "lim": "hand",
-    "existing": true
-   }
-  },
-  "super-sleeper": {
-   "wing": {
-    "box": [
-     0.95,
-     0,
-     1.561,
-     -2.077
-    ],
-    "cyl": [
-     0.95,
-     0,
-     1.538,
-     -2.077
-    ],
-    "from": "roof-edge",
-    "lim": "hand",
-    "existing": true
-   }
-  },
-  "super-sport": {
-   "wing": {
-    "box": [
-     0.75,
-     0,
-     1.291,
-     -0.627
-    ],
-    "cyl": [
-     0.75,
-     0,
-     1.273,
-     -0.627
-    ],
-    "from": "roof-edge",
-    "lim": "hand",
-    "existing": true
-   }
-  },
-  "super-wagon": {
-   "wing": {
-    "box": [
-     1.3,
-     0,
-     2.118,
-     -2.065
-    ],
-    "cyl": [
-     1.3,
-     0,
-     2.085,
-     -2.065
-    ],
-    "from": "roof-edge",
     "lim": "hand",
     "existing": true
    }
   },
   "ute": {
    "wing": {
-    "box": [
-     1,
-     0,
-     1.575,
-     -0.35
-    ],
-    "cyl": [
-     1,
-     0,
-     1.55,
-     -0.35
-    ],
+    "box": [1, 0, 1.575, -0.35],
+    "cyl": [1, 0, 1.55, -0.35],
     "from": "roof-edge",
     "lim": "hand"
    }
   },
   "super-ute": {
    "wing": {
-    "box": [
-     1,
-     0,
-     1.615,
-     -0.35
-    ],
-    "cyl": [
-     1,
-     0,
-     1.59,
-     -0.35
-    ],
-    "from": "roof-edge",
-    "lim": "hand",
-    "existing": true
-   }
-  },
-  "super-pickup": {
-   "wing": {
-    "box": [
-     1.3,
-     0,
-     2.321,
-     -0.385
-    ],
-    "cyl": [
-     1.3,
-     0,
-     2.289,
-     -0.385
-    ],
+    "box": [1, 0, 1.615, -0.35],
+    "cyl": [1, 0, 1.59, -0.35],
     "from": "roof-edge",
     "lim": "hand",
     "existing": true
@@ -2000,46 +888,20 @@
   },
   "rotary": {
    "wing": {
-    "box": [
-     0.61,
-     0,
-     1.047,
-     -1.898
-    ],
-    "cyl": [
-     0.61,
-     0,
-     1.031,
-     -1.898
-    ],
+    "box": [0.61, 0, 1.047, -1.898],
+    "cyl": [0.61, 0, 1.031, -1.898],
     "from": "deck",
     "lim": "hand",
-    "inset": [
-     0.07,
-     0.07
-    ]
+    "inset": [0.07, 0.07]
    }
   },
   "super-rotary": {
    "wing": {
-    "box": [
-     0.61,
-     0,
-     1.067,
-     -1.898
-    ],
-    "cyl": [
-     0.61,
-     0,
-     1.051,
-     -1.898
-    ],
+    "box": [0.61, 0, 1.067, -1.898],
+    "cyl": [0.61, 0, 1.051, -1.898],
     "from": "deck",
     "lim": "hand",
-    "inset": [
-     0.08,
-     0.08
-    ],
+    "inset": [0.08, 0.08],
     "existing": true
    }
   }

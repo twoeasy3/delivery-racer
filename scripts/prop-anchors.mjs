@@ -32,7 +32,7 @@ const writeSlice = (n, data) => {
   console.log('written ' + fileOf(n) + ' (' + Object.keys(cars).length + ' cars, ' + Object.keys(data.hand || {}).length + ' hand fixes)');
 };
 // the table's entry for one slot (strip the generator's own eyes)
-const entry = (e) => { if (!e) return null; if (e.no) return { no: e.no }; const out = { box: e.box, cyl: e.cyl, from: e.from, lim: e.lim }; if (e.inset) out.inset = e.inset; if (e.existing) out.existing = true; return out; };
+const entry = (e) => { if (!e) return null; if (e.no) return e.existing ? { no: e.no, existing: true } : { no: e.no }; const out = { box: e.box, cyl: e.cyl, from: e.from, lim: e.lim }; if (e.inset) out.inset = e.inset; if (e.existing) out.existing = true; return out; };
 
 // measure: every car of `list` ([{ group, car }])
 export const generate = async (load, list) => {
@@ -49,7 +49,7 @@ export const generate = async (load, list) => {
     const props = PC.existingProps(model);
     PC.hideProps(model);
     const m = measureCar(model, car, P, glassy);
-    for (const slot of P.SLOTS) if (!m[slot].no && props.some(p => p.slot === slot)) m[slot].existing = true;
+    for (const slot of P.SLOTS) if (props.some(p => p.slot === slot)) m[slot].existing = true; // (on an unsupported slot too: the car has its own, and no place for another)
     found.set(car.id, { group, kind: m.kind, roof: m.roof, cargo: m.cargo, wing: m.wing, props: props.map(p => p.slot) });
   }
   return found;

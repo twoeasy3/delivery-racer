@@ -46,7 +46,7 @@ export const PROP_BOUNDS = {
   wing: { box: [1.4, 0.35, 0.3], cylinder: { radius: 0.15, height: 1.4, axis: 'x' } },
 };
 // the smallest scale worth having (below it the slot is unsupported: "too small")
-export const MIN_SCALE = { roof: 0.4, cargo: 0.4, wing: 0.45 };
+export const MIN_SCALE = { roof: 0.35, cargo: 0.4, wing: 0.45 }; // (a 0.35 roof: a small ornament on a short coupe roof in front of its rear-edge wing)
 // the largest scale (a roof box as big as a van's whole roof is no ornament): the roof's cap depends on the KIND (the owner, 15-Oct:
 // 1.5 on a van, bus or truck, 1.1 on a car)
 export const MAX_SCALE = { roof: 1.1, cargo: 1.6, wing: 1.3 };
@@ -107,7 +107,7 @@ const toShape = (slot, shape, e, inset) => {
     : { scale: s, centre: [x, y, z], yaw: yaw || 0, inset, radius: c.cylinder.radius * s, height: c.cylinder.height * s, axis: c.cylinder.axis };
 };
 const toSlot = (slot, e) => {
-  if (!e || e.no) return { supported: false, reason: e ? e.no : 'no entry', box: null, cylinder: null };
+  if (!e || e.no) return { supported: false, reason: e ? e.no : 'no entry', box: null, cylinder: null, existing: !!(e && e.existing) }; // (existing on an unsupported slot: the car's own prop is there, tagged, but there is no place for another)
   const inset = Array.isArray(e.inset) ? e.inset : [0, 0];
   return { supported: true, reason: null, box: toShape(slot, 'box', e.box, inset[0] || 0), cylinder: toShape(slot, 'cyl', e.cyl, inset[1] || 0), from: e.from || null, limit: e.lim || null, existing: !!e.existing, confidence: e.conf || 'measured' };
 };

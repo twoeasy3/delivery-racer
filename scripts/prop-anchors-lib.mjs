@@ -28,10 +28,10 @@ const r3 = (v) => Math.round(v * 1000) / 1000;
 // ---- what each mesh is ----
 const classify = (model, glassy) => {
   model.updateMatrixWorld(true);
-  const body = model.userData.body, bodyMat = body?.material, meshes = [];
+  const body = model.userData.body, bodyMat = body?.material, meshes = [], kitGroup = model.userData.kit?.isObject3D ? model.userData.kit : null;
   model.traverse((n) => {
     if (!n.isMesh || n.isInstancedMesh || !n.geometry) return;
-    for (let p = n; p; p = p.parent) if (p.visible === false) return;
+    for (let p = n; p; p = p.parent) if (p.visible === false || (kitGroup && p === kitGroup)) return; // (hidden, or in the Super kit's group (model.userData.kit, render/carExtras.js): its stripe, scoop, skirts and tagged wing / lamp rack are no surface: a Super measures as its base car)
     const m = [].concat(n.material)[0];
     if (!m || (m.transparent && m.opacity < 0.95)) return; // (see-through: not a surface)
     let kind = 'ok';
@@ -192,12 +192,13 @@ const surfaceAt = (map, x, z) => {
 };
 // the footprint's sample points (corners, edge midpoints, the centre; a cylinder's rim) at scale s, centred on (cx, cz)
 const footprint = (B, shape, s, cx, cz) => {
-  const pts = [[cx, cz]];
+  // (a little inside the footprint's edge, as the check's rays are: the edge cell of a deck can be its side, falling away)
+  const pts = [[cx, cz]], IN = 0.92;
   if (shape === 'box' || (shape === 'cyl' && B.cylinder.axis === 'x')) {
-    const hw = (shape === 'box' ? B.box[0] : B.cylinder.height) * s / 2, hd = (shape === 'box' ? B.box[2] : 2 * B.cylinder.radius) * s / 2;
+    const hw = (shape === 'box' ? B.box[0] : B.cylinder.height) * s / 2 * IN, hd = (shape === 'box' ? B.box[2] : 2 * B.cylinder.radius) * s / 2 * IN;
     for (const a of [-1, 0, 1]) for (const b of [-1, 0, 1]) if (a || b) pts.push([cx + a * hw, cz + b * hd]);
   } else {
-    const r = B.cylinder.radius * s;
+    const r = B.cylinder.radius * s * IN;
     for (let k = 0; k < 8; k++) pts.push([cx + r * Math.cos(k * Math.PI / 4), cz + r * Math.sin(k * Math.PI / 4)]);
   }
   return pts;
@@ -251,28 +252,39 @@ const region = (map, ok, minW, minD, symmetric) => {
 };
 const isFlat = (map, i, j, slopeDeg) => map.kind[map.at(i, j)] === map.KIND.ok && map.ny[map.at(i, j)] >= cos(slopeDeg);
 
-export const measureRoof = (map, kind, B, limits) => {
+// the distinct heights (0.04 m bins, highest first) at which at least `least` cells `ok(i, j)` lie
+const levels = (map, ok, least = 8) => {
+  const bins = new Map();
+  for (let i = 0; i < map.nx; i++) for (let j = 0; j < map.nz; j++) if (ok(i, j)) { const b = Math.round(map.y[map.at(i, j)] / 0.04); bins.set(b, (bins.get(b) || 0) + 1); }
+  return [...bins].filter(([, n]) => n >= least).map(([b]) => b * 0.04).sort((a, b) => b - a);
+};
+export const measureRoof = (map, kind, B, limits, zMin = -Infinity) => {
   if (NO_ROOF[kind]) return { no: NO_ROOF[kind] };
   const floor = map.hasGlass ? map.glassTop - 0.06 : map.bodyTop - 0.5;
-  // the highest flat band: the top of the flat cells above the glass, then the cells within BAND of it
-  let top = -Infinity;
-  for (let i = 0; i < map.nx; i++) for (let j = 0; j < map.nz; j++) if (isFlat(map, i, j, ROOF_SLOPE) && map.y[map.at(i, j)] >= floor) top = Math.max(top, map.y[map.at(i, j)]);
-  // (several bands down from the top, the biggest flat wins: a crowned roof's flat is a little under its peak)
+  const above = (i, j) => map.y[map.at(i, j)] >= floor && map.Z(j) >= zMin;
+  // the flat bands, from the highest level down (a boom, an aerial or a tipper's shield over the cab is a level of its own and too small:
+  // the cab's roof is the next level; the owner, 15-Oct: a van or truck cab's small flat roof is a roof): at each level the biggest flat
+  // within ROOF_BAND (a crowned roof's flat is a little under its peak), and the highest level with a 0.3 x 0.25 m flat wins
   let best = null;
-  if (top > -Infinity) for (const band of [top, top - ROOF_BAND / 2, top - ROOF_BAND, top - 1.5 * ROOF_BAND]) {
-    const r = region(map, (i, j) => isFlat(map, i, j, ROOF_SLOPE) && map.y[map.at(i, j)] >= floor && Math.abs(map.y[map.at(i, j)] - band) <= ROOF_BAND, 0.3, 0.25, true);
-    if (r && (!best || r.w * r.d > best.w * best.d * 1.15)) best = r;
+  for (const level of levels(map, (i, j) => isFlat(map, i, j, ROOF_SLOPE) && above(i, j))) {
+    for (const band of [level, level - ROOF_BAND / 2]) {
+      const r = region(map, (i, j) => isFlat(map, i, j, ROOF_SLOPE) && above(i, j) && Math.abs(map.y[map.at(i, j)] - band) <= ROOF_BAND, 0.3, 0.25, true);
+      if (r && (!best || r.w * r.d > best.w * best.d * 1.15)) best = r;
+    }
+    if (best) break;
   }
   if (best) {
     const box = fitBox(B.box, { w: best.w, d: best.d }, limits.min, limits.max), cyl = fitCyl(B.cylinder, { w: best.w, d: best.d }, limits.min, limits.max);
     if (box && cyl) { const out = row(map, B, box, cyl, 0, best.z, 'roof', [r3(best.w), r3(best.d)], best, limits.min); if (out) return out; }
   }
   // no flat patch: a CURVED, domed or tapering roof (the owner, 15-Oct): the shape sits on the roof's top region (any slope) and is SUNK into
-  // it by an inset so that its base has several points of contact (settle: the scale shrinks until the inset is under MAX_INSET)
-  let crown = -Infinity;
-  for (let i = 0; i < map.nx; i++) for (let j = 0; j < map.nz; j++) if (map.kind[map.at(i, j)] === map.KIND.ok && map.y[map.at(i, j)] >= floor) crown = Math.max(crown, map.y[map.at(i, j)]);
-  if (crown === -Infinity) return { no: 'no roof (nothing of the body above the glass)' };
-  const curved = region(map, (i, j) => map.kind[map.at(i, j)] === map.KIND.ok && map.y[map.at(i, j)] >= floor && map.y[map.at(i, j)] >= crown - 0.25, 0.3, 0.25, true);
+  // it by an inset so that its base has several points of contact (settle: the scale shrinks until the inset is under MAX_INSET); again
+  // level by level from the top, so a thin thing over the roof does not hide the roof
+  const any = (i, j) => map.kind[map.at(i, j)] === map.KIND.ok && above(i, j);
+  const tops = levels(map, any);
+  if (!tops.length) return { no: 'no roof (nothing of the body above the glass)' };
+  let curved = null;
+  for (const crown of tops) { curved = region(map, (i, j) => any(i, j) && map.y[map.at(i, j)] >= crown - 0.25 && map.y[map.at(i, j)] <= crown + 0.02, 0.3, 0.25, true); if (curved) break; }
   if (!curved) return { no: 'the roof is too small (no 0.3 x 0.25 m patch near its top)' };
   const box = fitBox(B.box, { w: curved.w, d: curved.d }, limits.min, limits.max), cyl = fitCyl(B.cylinder, { w: curved.w, d: curved.d }, limits.min, limits.max);
   if (!box || !cyl) return { no: 'the roof is too small for the smallest prop (' + r3(curved.w) + ' x ' + r3(curved.d) + ' m)' };
@@ -354,8 +366,17 @@ export const measureCar = (model, car, P, glassy) => {
   const map = topMap(model, glassy);
   const kind = P.kindOf(car);
   const lim = (slot) => ({ min: P.MIN_SCALE[slot], max: P.maxScale(slot, kind) });
-  const roof = measureRoof(map, kind, P.PROP_BOUNDS.roof, lim('roof'));
+  let roof = measureRoof(map, kind, P.PROP_BOUNDS.roof, lim('roof'));
   const cargo = measureCargo(map, kind, P.PROP_BOUNDS.cargo, lim('cargo'), roof);
   const wing = measureWing(map, kind, P.PROP_BOUNDS.wing, lim('wing'), roof);
+  // a roof-edge wing and the roof box must not overlap (the owner, 15-Oct): the roof is measured again on the cells in front of the wing
+  if (!roof.no && !wing.no && wing.from === 'roof-edge') {
+    const wingFront = Math.max(wing.box[3] + P.PROP_BOUNDS.wing.box[2] * wing.box[0] / 2, wing.cyl[3] + P.PROP_BOUNDS.wing.cylinder.radius * wing.cyl[0]);
+    const roofRear = Math.min(roof.box[3] - P.PROP_BOUNDS.roof.box[2] * roof.box[0] / 2, roof.cyl[3] - P.PROP_BOUNDS.roof.cylinder.radius * roof.cyl[0]);
+    if (roofRear < wingFront + 0.02) {
+      const clear = measureRoof(map, kind, P.PROP_BOUNDS.roof, lim('roof'), wingFront + 0.03);
+      roof = clear.no ? { no: clear.no + ' (in front of the rear-edge wing)' } : { ...clear, from: clear.from + '-clear' };
+    }
+  }
   return { kind, roof, cargo, wing, map };
 };
