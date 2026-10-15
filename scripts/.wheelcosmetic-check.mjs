@@ -278,7 +278,7 @@ try {
   server.moduleGraph.invalidateAll();
   const fresh = await load('render/wheelcosmetic.js');
   check(fresh !== W && fresh.wheelColour() === 'gold', 'a fresh load (a reload) finds Gold');
-  raw.setItem(W.KEY, 'nonsense');
+  raw.removeItem('delivery.loadout'); raw.setItem(W.KEY, 'nonsense');
   server.moduleGraph.invalidateAll();
   check((await load('render/wheelcosmetic.js')).wheelColour() === 'stock', 'a saved id it does not know: Stock');
   globalThis.localStorage = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); } };
@@ -292,7 +292,7 @@ try {
   } catch { threw = true; }
   check(!threw, 'no storage: nothing throws');
   globalThis.localStorage = raw;
-  raw.setItem(W.KEY, 'gold');
+  raw.removeItem('delivery.loadout'); raw.setItem(W.KEY, 'gold');
   server.moduleGraph.invalidateAll();
   const quiet = await load('render/wheelcosmetic.js');
   const { Progress } = await load('progress.js');
@@ -311,7 +311,7 @@ try {
     check(raw2.getItem(w1.KEY_DESIGN) === 'redline' && w1.KEY_DESIGN !== w1.KEY, 'the design is kept in localStorage under ' + w1.KEY_DESIGN);
     server.moduleGraph.invalidateAll();
     check((await load('render/wheelcosmetic.js')).wheelDesign() === 'redline', 'a fresh load finds Redline');
-    raw2.setItem(w1.KEY_DESIGN, 'nonsense');
+    raw2.removeItem('delivery.loadout'); raw2.setItem(w1.KEY_DESIGN, 'nonsense');
     server.moduleGraph.invalidateAll();
     check((await load('render/wheelcosmetic.js')).wheelDesign() === 'stock', 'a saved design it does not know: Stock');
     globalThis.localStorage = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); } };
@@ -321,7 +321,7 @@ try {
     try { check(b2.wheelDesign() === 'stock', 'no storage: design Stock'); b2.setWheelDesign('whitewall'); check(b2.wheelDesign() === 'whitewall', 'no storage: a design change still holds for the visit'); } catch { threw2 = true; }
     check(!threw2, 'no storage: nothing throws (design)');
     globalThis.localStorage = raw2;
-    raw2.setItem(w1.KEY_DESIGN, 'redline');
+    raw2.removeItem('delivery.loadout'); raw2.setItem(w1.KEY_DESIGN, 'redline');
     server.moduleGraph.invalidateAll();
     const q2 = await load('render/wheelcosmetic.js'), { Progress: P2 } = await load('progress.js');
     P2.noSave = true;
@@ -333,7 +333,7 @@ try {
   // WHEEL SETS: the player-facing complete wheel (design + hub colour together); the equipped set is derived from the two keys
   {
     const raw3 = globalThis.localStorage;
-    raw3.removeItem(W.KEY); raw3.removeItem(W.KEY_DESIGN);
+    raw3.removeItem('delivery.loadout'); raw3.removeItem(W.KEY); raw3.removeItem(W.KEY_DESIGN);
     server.moduleGraph.invalidateAll();
     const S = await load('render/wheelcosmetic.js'), { Progress: P3 } = await load('progress.js');
     const sets = S.WHEEL_SETS;
@@ -368,7 +368,7 @@ try {
     check(R.wheelSet() === 'custom' && R.wheelDesign() === 'redline', 'reload: Custom survives');
     W.setWheelSet('gold-rush'); server.moduleGraph.invalidateAll();
     check((await load('render/wheelcosmetic.js')).wheelSet() === 'gold-rush', 'reload: the equipped set is found again from the two keys');
-    raw3.setItem(S.KEY_DESIGN, 'nonsense'); raw3.setItem(S.KEY, 'nonsense'); server.moduleGraph.invalidateAll();
+    raw3.removeItem('delivery.loadout'); raw3.setItem(S.KEY_DESIGN, 'nonsense'); raw3.setItem(S.KEY, 'nonsense'); server.moduleGraph.invalidateAll();
     check((await load('render/wheelcosmetic.js')).wheelSet() === 'stock', 'garbage saved: Stock');
     S.setWheelSet('no-such-set');
     check(S.wheelSet() === 'stock', 'an unknown set id changes nothing');
@@ -381,7 +381,7 @@ try {
     check(!thr, 'no storage: nothing throws (sets)');
     globalThis.localStorage = raw3;
     // noSave
-    raw3.setItem(S.KEY_DESIGN, 'redline'); raw3.setItem(S.KEY, 'blue');
+    raw3.removeItem('delivery.loadout'); raw3.setItem(S.KEY_DESIGN, 'redline'); raw3.setItem(S.KEY, 'blue');
     server.moduleGraph.invalidateAll();
     const N = await load('render/wheelcosmetic.js'), { Progress: P4 } = await load('progress.js');
     check(N.wheelSet() === 'redline-blue', 'saved redline + blue: that set');
@@ -391,14 +391,14 @@ try {
     check(N.wheelSet() === 'orange-pop' && raw3.getItem(S.KEY) === 'blue' && raw3.getItem(S.KEY_DESIGN) === 'redline', 'noSave: a set lasts the visit and the saved pair is not overwritten');
     P4.noSave = false;
     N.setWheelSet('stock');
-    raw3.removeItem(S.KEY); raw3.removeItem(S.KEY_DESIGN);
+    raw3.removeItem('delivery.loadout'); raw3.removeItem(S.KEY); raw3.removeItem(S.KEY_DESIGN);
     void P3;
   }
 
   // ---- RIMS (render/rims.js, CHECKLIST 310): a set's rim, a child of each tyre, turning with the car or at a fixed pace ----
   {
     const raw = globalThis.localStorage;
-    raw.removeItem('delivery.wheelrim'); raw.removeItem(W.KEY); raw.removeItem(W.KEY_DESIGN);
+    raw.removeItem('delivery.loadout'); raw.removeItem('delivery.wheelrim'); raw.removeItem(W.KEY); raw.removeItem(W.KEY_DESIGN);
     server.moduleGraph.invalidateAll();
     const { makeShowCar: make } = await load('render/showcar.js');
     const WC = await load('render/wheelcosmetic.js'), RM = await load('render/rims.js'), { Progress: PR } = await load('progress.js');
@@ -576,7 +576,7 @@ try {
       check(JSON.stringify(RM.cleanRimChoice('spoke5')) === '{"all":"spoke5"}' && RM.cleanRimChoice('{"all":"nope"}').all === 'none' && RM.cleanRimChoice('[1,2]').all === 'none' && RM.cleanRimChoice(null).all === 'none' && RM.cleanRimChoice('{bad json').all === 'none', 'a stored rim made safe: a bare id, an unknown id, an array, nothing, broken JSON');
       const per = RM.cleanRimChoice(JSON.stringify({ all: 'none', rear: 'blade3', cars: { pickup: { front: 'turbine' }, 'bad id!': { all: 'spoke5' } }, junk: 1 }));
       check(JSON.stringify(per) === '{"all":"none","rear":"blade3","cars":{"pickup":{"front":"turbine"}}}', 'per axle and per car parts are kept, junk dropped: ' + JSON.stringify(per));
-      raw.setItem('delivery.wheelrim', JSON.stringify(per));
+      raw.removeItem('delivery.loadout'); raw.setItem('delivery.wheelrim', JSON.stringify(per));
       server.moduleGraph.invalidateAll();
       const { makeShowCar: make2 } = await load('render/showcar.js'), R2 = await load('render/rims.js'), W2 = await load('render/wheelcosmetic.js');
       check(R2.resolveRim('commuter', 'front') === 'none' && R2.resolveRim('commuter', 'rear') === 'blade3' && R2.resolveRim('pickup', 'front') === 'turbine' && R2.resolveRim('pickup', 'rear') === 'blade3', 'resolveRim(car, axle): the one reader, per axle and per car');
@@ -584,14 +584,14 @@ try {
       check(l2.length === 4 && l2.every(r => r.userData.rim.id === (p2.userData.wheelHubs.rimInfo.find(t => t.tyre === r.parent).axle === 'front' ? 'turbine' : 'blade3')), 'a car built under it wears turbine on its front axle and the blade spinner on its rear');
       W2.setWheelSet('spoke5');
       check(JSON.parse(raw.getItem('delivery.wheelrim')).all === 'spoke5' && JSON.parse(raw.getItem('delivery.wheelrim')).rear === 'blade3', 'equipping a set changes the global rim and keeps the per-axle part');
-      raw.setItem('delivery.wheelrim', 'garbage{'); server.moduleGraph.invalidateAll();
+      raw.removeItem('delivery.loadout'); raw.setItem('delivery.wheelrim', 'garbage{'); server.moduleGraph.invalidateAll();
       check((await load('render/rims.js')).globalRim() === 'none' && (await load('render/wheelcosmetic.js')).wheelSet() !== 'spoke5', 'garbage saved: no rim');
-      raw.setItem(W.KEY, 'silver'); raw.setItem(W.KEY_DESIGN, 'stock'); raw.setItem('delivery.wheelrim', '{"all":"spoke5"}'); server.moduleGraph.invalidateAll();
+      raw.removeItem('delivery.loadout'); raw.setItem(W.KEY, 'silver'); raw.setItem(W.KEY_DESIGN, 'stock'); raw.setItem('delivery.wheelrim', '{"all":"spoke5"}'); server.moduleGraph.invalidateAll();
       check((await load('render/wheelcosmetic.js')).wheelSet() === 'spoke5', 'reload: the 5-spoke set is found again from the three keys');
-      raw.removeItem('delivery.wheelrim'); server.moduleGraph.invalidateAll();
+      raw.removeItem('delivery.loadout'); raw.removeItem('delivery.wheelrim'); server.moduleGraph.invalidateAll();
       check((await load('render/wheelcosmetic.js')).wheelRim() === 'none', 'an older save with no rim key: no rim (silver + stock tyres is then no set: Custom)');
       // a rim set the player does not own: Stock, rim and all
-      raw.setItem(W.KEY, 'gold'); raw.setItem(W.KEY_DESIGN, 'stock'); raw.setItem('delivery.wheelrim', '{"all":"blade3"}'); server.moduleGraph.invalidateAll();
+      raw.removeItem('delivery.loadout'); raw.setItem(W.KEY, 'gold'); raw.setItem(W.KEY_DESIGN, 'stock'); raw.setItem('delivery.wheelrim', '{"all":"blade3"}'); server.moduleGraph.invalidateAll();
       const W3 = await load('render/wheelcosmetic.js'), { COSMETICS } = await load('render/cosmetics.js'), entry = COSMETICS.find(c => c.slot === 'wheels' && c.id === 'blade-spinner');
       entry.free = false;
       check(W3.wheelSet() === 'stock' && W3.wheelRim() === 'none', 'a saved rim set not owned wears Stock, rim and all');
@@ -603,14 +603,14 @@ try {
       try { const B = await load('render/wheelcosmetic.js'); check(B.wheelRim() === 'none', 'no storage: no rim'); B.setWheelSet('turbine'); check(B.wheelRim() === 'turbine' && B.wheelSet() === 'turbine', 'no storage: a rim set holds for the visit'); } catch { threw = true; }
       check(!threw, 'no storage: nothing throws (rims)');
       globalThis.localStorage = raw;
-      raw.setItem('delivery.wheelrim', '{"all":"spoke5"}'); server.moduleGraph.invalidateAll();
+      raw.removeItem('delivery.loadout'); raw.setItem('delivery.wheelrim', '{"all":"spoke5"}'); server.moduleGraph.invalidateAll();
       const N = await load('render/wheelcosmetic.js'), { Progress: PN } = await load('progress.js');
       PN.noSave = true;
       check(N.wheelRim() === 'none', 'a visit with test switches (Progress.noSave) ignores the saved rim');
       N.setWheelSet('twin-spinner');
       check(N.wheelRim() === 'twinspin' && raw.getItem('delivery.wheelrim') === '{"all":"spoke5"}', 'and a rim set chosen in it lasts the visit: the saved one is not overwritten');
       PN.noSave = false;
-      raw.removeItem('delivery.wheelrim'); raw.removeItem(W.KEY); raw.removeItem(W.KEY_DESIGN);
+      raw.removeItem('delivery.loadout'); raw.removeItem('delivery.wheelrim'); raw.removeItem(W.KEY); raw.removeItem(W.KEY_DESIGN);
       void PR;
     }
     // UNLOCK REVEALS show the STOCK car; every other view wears the loadout (the owner, 15-Oct; render/showcar.js dressCosmetics)
