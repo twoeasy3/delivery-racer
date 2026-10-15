@@ -48,11 +48,16 @@ follow-up cars (state of `main` v1.1.136).
   from the roof's end over the bend to the tail); a first fix split it and the owner had it put back.
 - **Keep BODY changes to the minimum, and list every one** in your report (bevel, roofline, belt). Squaring a car's rounded roof
   corners to satisfy the edge-count rule was NOT what the owner wanted ("are we not able to do rounded edges with a proper
-  window?"; then "rounded body, sharp windows"). Prefer keeping the original rounded roof and giving the window sharp corners
-  on the body's virtual (tangent) corners, inset inside the rounded surface. That treatment (`sharp: true`, `virtualCorners`,
-  `fillet`, `levelTops`, `userData.glassVirtual`) was tried on the Minibus, Supermini and Pixel EV on branches
-  `claude/glass-minibus-round`, `claude/glass-supermini-round` and `claude/glass-pixelev-round` (NOT on `main` yet: check before
-  you rely on it). The 15 follow-up cars on `main` still have squared roof corners.
+  window?"; then "rounded body, sharp windows"). **Rounded body, sharp windows is now in `main`** (Minibus, Supermini, Pixel EV):
+  keep the rounded roof and pass `sharp: true` to `cabinGlass`: runs of short edges (under 20 cm, a rounding) collapse to their
+  virtual corners (`virtualCorners`, `fillet(a, V, b, l1, l2, n)` draws a rounding of chosen reach), the window is a clean polygon
+  on those corners, and its top corners are pulled in along the pillar (`pullCornersIn`, `cornerDepth` 0.05) until they sit inside
+  the rounded silhouette; `levelTops: true` keeps the window top parallel to a level roof. The car publishes
+  `userData.glassVirtual = { chain: glass.virtual, grow: BEV }` (add `freeEdge: true` for a deliberate free-standing window edge,
+  like the Pixel EV's reverse-rake rear edge) so `.glass-contour-check.mjs` judges it against the virtual outline (each rounding one
+  corner, corners at least 4.5 cm inside the real silhouette, the pillar-thinner-than-12-cm test still strict for every car). Bigger
+  roundings sink the window tops (13 to 20 cm under the roof): choose the reach (supermini 0.20 m, minibus 0.25 m) by the picture.
+  The 12 other follow-up cars on `main` still have squared roof corners (the owner has not asked for more).
 - Judge by the **picture, not the numbers**. A past attempt passed its own numbers while the render showed the strip.
 - Do not reuse the old d-/e-series glass attempts (an older helper, lopsided windows): the owner discarded them.
 
