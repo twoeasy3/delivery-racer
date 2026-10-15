@@ -4,17 +4,18 @@
  "cars": {
   "brickestate": {
    "roof": {
-    "box": [1.1, 0, 1.695, -0.8],
-    "cyl": [1.1, 0, 1.695, -0.8],
+    "box": [1.1, 0, 1.695, -0.78],
+    "cyl": [1.1, 0, 1.695, -0.78],
     "from": "roof",
-    "lim": "max"
+    "lim": "max",
+    "existing": true
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.9, 0, 1.577, -2.285],
-    "cyl": [0.9, 0, 1.555, -2.285],
+    "box": [1.07, 0, 1.607, -2.259],
+    "cyl": [1.07, 0, 1.58, -2.259],
     "from": "roof-edge",
     "lim": "w"
    }

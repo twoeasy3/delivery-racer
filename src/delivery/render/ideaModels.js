@@ -427,7 +427,7 @@ export const IDEA_MODELS = {
     box(group, paint, w * 0.92, 0.2, 0.06, 0, 0.95, -L * 0.98);                           // the tailgate, under its window
     for (const side of [-1, 1]) {
       for (const z of [0.3, 0.02, -0.36, -0.95]) box(group, paint, 0.08, 0.5, 0.1, side * w * 0.45, 1.1, L * z); // pillars
-      box(group, trim, 0.05, 0.05, L * 1.1, side * w * 0.4, 1.45, -L * 0.33);             // roof rails
+      box(group, trim, 0.05, 0.05, L * 1.1, side * w * 0.4, 1.45, -L * 0.33).userData.prop = 'roof'; // roof rails (a roof prop)
       box(group, trim, 0.02, 0.07, L * 1.8, side * (w / 2 + 0.01), 0.6, 0);               // rubbing strips
       for (const x of [0.3, 0.42]) box(group, LAMP, w * 0.11, 0.15, 0.04, side * w * x, 0.7, L + 0.0); // square lamps, two a side
       box(group, AMBER, w * 0.05, 0.15, 0.1, side * w * 0.485, 0.7, L - 0.04);
