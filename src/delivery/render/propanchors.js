@@ -127,13 +127,35 @@ export const propSupported = (carId, slot) => propSlots(carId)[slot]?.supported 
 // the transform for a prop MODELLED TO THE CANONICAL BOUNDS of a slot (fits inside PROP_BOUNDS[slot].box or .cylinder at scale 1,
 // centred on the origin): { position: [x, y, z], rotationY: yaw, scale: s } to set on the prop (prop.position.set(...),
 // prop.rotation.y = rotationY, prop.scale.setScalar(scale)), as a child of the car's model. null when the slot is unsupported.
-export const fitProp = (carId, slot, shape = 'box') => {
+// PER-PROP MAXIMUM (the owner, 15-Oct: "maybe the solution is to have a max scale for each individual prop"; CHECKLIST 450). The slot's
+// scale is the ROOM the surface allows (no global cap); a prop entry (render/propmodels.js PROPS) declares `maxScale` (its believable real
+// size) and may declare `align`. Pass the prop as the 4th argument and it is worn at min(room, prop.maxScale), KEPT SEATED on the surface:
+// its base stays on the slot's base plane (the inset shrinks with the scale), and along the car (the shape's own z, yaw applied) it keeps
+//   roof  'centre'  the middle of the slot                      wing  'rear'  the slot's rear edge (and its centreline x)
+//   cargo 'front'   the slot's cab-side end (against the cab)   a prop's `align: 'centre' | 'front' | 'rear'` overrides the slot's
+// A room smaller than the prop's max: the prop takes the room (as before). No prop (3 arguments, the bounds / the editor): the room itself.
+//   fitProp(carId, slot, shape, prop?) -> { position, rotationY, scale, inset, bounds, room, capped }   (room = the slot's scale; capped =
+//   the prop's max made it smaller)
+export const SLOT_ALIGN = { roof: 'centre', cargo: 'front', wing: 'rear' };
+export const fitProp = (carId, slot, shape = 'box', prop = null) => {
   const s = propSlots(carId)[slot];
   if (!s || !s.supported) return null;
-  const sh = shape === 'cylinder' || shape === 'cyl' ? s.cylinder : s.box;
+  const cyl = shape === 'cylinder' || shape === 'cyl';
+  const sh = cyl ? s.cylinder : s.box, B = PROP_BOUNDS[slot][cyl ? 'cylinder' : 'box'];
+  const room = sh.scale, max = prop && prop.maxScale > 0 ? prop.maxScale : Infinity;
+  const scale = Math.min(room, max), k = scale / room;
   const position = sh.centre.slice();
-  position[1] -= sh.inset || 0; // (sunk into a curved surface so the base has several points of contact)
-  return { position, rotationY: sh.yaw, scale: sh.scale, inset: sh.inset || 0, bounds: PROP_BOUNDS[slot][shape === 'box' ? 'box' : 'cylinder'] };
+  // the shape's height and its depth along its own z (a cylinder: upright, or across the car with axis x)
+  const H = cyl ? (B.axis === 'y' ? B.height : 2 * B.radius) : B[1], D = cyl ? 2 * B.radius : B[2];
+  const inset = (sh.inset || 0) * k;
+  position[1] += -H * room / 2 + H * scale / 2 - inset; // (the base on the slot's base, sunk into a curved surface so it has several points of contact)
+  if (k < 1) {
+    const align = (prop && prop.align) || SLOT_ALIGN[slot] || 'centre';
+    const dz = align === 'front' ? (D * room - D * scale) / 2 : align === 'rear' ? -(D * room - D * scale) / 2 : 0; // (+z is the nose)
+    const yaw = (sh.yaw || 0) * Math.PI / 180;
+    position[0] += dz * Math.sin(yaw); position[2] += dz * Math.cos(yaw);
+  }
+  return { position, rotationY: sh.yaw, scale, inset, bounds: B, room, capped: k < 1 };
 };
 export const propTableStats = () => {
   const out = { cars: Object.keys(PROP_TABLE).length, hand: Object.keys(HAND).length, slices: SLICES.map(s => s.file) };

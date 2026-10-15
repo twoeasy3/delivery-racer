@@ -88,12 +88,12 @@ try {
   const cars = ['minibus', 'touringcar', 'sporttruck', 'moke', 'rally'];
   let placed = 0, bad = [];
   for (const id of cars) for (const p of all) {
-    const f = P.fitProp(id, 'roof', p.shape), s = P.propSlots(id).roof;
+    const f = P.fitProp(id, 'roof', p.shape, p), s = P.propSlots(id).roof; // (as worn: at most the prop's own maxScale, CHECKLIST 450)
     if (!s.supported) { if (f !== null) bad.push(id + ' unsupported but fitProp gave a transform'); continue; }
-    if (!f || !(f.scale > 0) || f.scale > 1.5 + 1e-9 || !f.position.every(Number.isFinite) || !Number.isFinite(f.rotationY)) bad.push(id + ' ' + p.id);
+    if (!f || !(f.scale > 0) || f.scale > Math.min(1.5, p.maxScale) + 1e-9 || !f.position.every(Number.isFinite) || !Number.isFinite(f.rotationY)) bad.push(id + ' ' + p.id);
     else placed++;
   }
-  check(!bad.length && placed === 24, 'fitProp gives a transform (scale 0 to 1.5, finite position and yaw) for the six on the four roofed test cars, null on the moke (' + placed + ' placed)' + (bad.length ? ': ' + bad.join('; ') : ''));
+  check(!bad.length && placed === 24, 'fitProp(car, roof, shape, prop) gives a transform (scale 0 to the prop\'s maxScale, at most 1.5, finite position and yaw) for the six on the four roofed test cars, null on the moke (' + placed + ' placed)' + (bad.length ? ': ' + bad.join('; ') : ''));
   const { logicFiles } = await import(ROOT + '/vite.config.js');
   check(![...logicFiles()].some(f => /propmodels|propmodelsroof|propanchors|propcosmetic|propbounds/.test(f)), 'the prop modules are not in the replay fingerprint (vite.config.js logicFiles)');
 } finally { await close(); }

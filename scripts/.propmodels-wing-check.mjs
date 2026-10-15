@@ -89,7 +89,7 @@ try {
     if (!s2.supported) { if (f !== null) bad.push(id + ' unsupported but fitProp gave a transform'); continue; }
     if (!f || !(f.scale > 0) || f.position.length !== 3 || !f.position.every(Number.isFinite) || !Number.isFinite(f.rotationY)) bad.push(id + ' ' + shape); else placed++;
   }
-  check(!bad.length && placed === 8, 'fitProp(car, wing, shape) gives a transform for the four supported test cars, null for the moke (' + placed + ' placed)' + (bad.length ? ': ' + bad.join('; ') : ''));
+  check(!bad.length && placed === 10, 'fitProp(car, wing, shape) gives a transform for the five test cars (the moke\'s rear deck takes a wing since the placement audit, CHECKLIST 307) (' + placed + ' placed)' + (bad.length ? ': ' + bad.join('; ') : ''));
   const { logicFiles } = await import(ROOT + '/vite.config.js');
   check(![...logicFiles()].some(f => /propmodels|propanchors|propcosmetic|propbounds|propmodelswing/.test(f)), 'the prop modules are not in the replay fingerprint (vite.config.js logicFiles)');
 } finally { await close(); }

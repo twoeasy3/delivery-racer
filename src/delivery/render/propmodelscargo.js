@@ -100,7 +100,7 @@ const junkerTarp = (paint) => {
 export const MORE_CARGO = [
   // 1. a PALLET OF PARCELS: six parcels stacked on a wooden pallet, two in cardboard and four in the car's colour, each taped across.
   //    Box 1 x 0.8 x 1.2: the pallet's runners on y -0.4, the top parcel under y 0.4
-  { id: 'cargo-parcels', name: 'Pallet of parcels', shape: 'box', colourFrom: 'mixed', build: (paint) => {
+  { id: 'cargo-parcels', name: 'Pallet of parcels', maxScale: 1.2, shape: 'box', colourFrom: 'mixed', build: (paint) => {
     const g = new THREE.Group();
     for (const x of [-0.4, 0, 0.4]) box(g, WOOD, 0.12, 0.075, 1.12, x, -0.3625, 0);     // the runners (y -0.4 to -0.325)
     box(g, WOOD, 0.96, 0.04, 1.16, 0, -0.325, 0);                                          // the deck (y -0.345 to -0.305)
@@ -119,7 +119,7 @@ export const MORE_CARGO = [
   } },
   // 2. a BUNDLE OF GAS CYLINDERS: four bottles of the car's colour with white shoulders and chrome valves standing in a round steel base.
   //    Cylinder r 0.5 x 0.8 high: the base at y -0.4, the valves under y 0.4
-  { id: 'cargo-gas', name: 'Gas cylinders', shape: 'cylinder', colourFrom: 'mixed', build: (paint) => {
+  { id: 'cargo-gas', name: 'Gas cylinders', maxScale: 1.2, shape: 'cylinder', colourFrom: 'mixed', build: (paint) => {
     const g = new THREE.Group();
     cyl(g, STEEL, 0.49, 0.49, 0.05, 0, -0.375, 0, 10);                                      // the round base (y -0.4 to -0.35)
     for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
@@ -132,7 +132,7 @@ export const MORE_CARGO = [
   } },
   // 3. a HAY STACK: two bales lengthwise and two across on top, each with two loops of orange twine. Fixed straw colours.
   //    Box 1 x 0.8 x 1.2: the bottom bales on y -0.4, the top ones under y 0.34
-  { id: 'cargo-hay', name: 'Hay bales', shape: 'box', colourFrom: 'fixed', build: () => {
+  { id: 'cargo-hay', name: 'Hay bales', maxScale: 1.3, shape: 'box', colourFrom: 'fixed', build: () => {
     const g = new THREE.Group();
     const bale = (mat, w, h, d, x, y, z, ry, along) => {
       const b = box(g, mat, w, h, d, x, y, z, ry);
@@ -147,7 +147,7 @@ export const MORE_CARGO = [
   } },
   // 4. a BASKET OF WATERMELONS: a wicker basket heaped with four striped melons. Fixed colours.
   //    Cylinder r 0.5 x 0.8 high: the basket on y -0.4, the top melon under y 0.4
-  { id: 'cargo-melons', name: 'Watermelons', shape: 'cylinder', colourFrom: 'fixed', build: () => {
+  { id: 'cargo-melons', name: 'Watermelons', maxScale: 0.9, shape: 'cylinder', colourFrom: 'fixed', build: () => {
     const g = new THREE.Group();
     cyl(g, WICKER, 0.49, 0.42, 0.24, 0, -0.28, 0, 12);                                      // the basket (y -0.4 to -0.16)
     cyl(g, RIM, 0.495, 0.495, 0.04, 0, -0.17, 0, 12, true);                                 // its rim band
@@ -166,7 +166,7 @@ export const MORE_CARGO = [
     return g;
   } },
   // 5. a STACK OF TYRES: three tyres, slightly out of true, with a wheel rim of the car's colour on top. Cylinder r 0.5 x 0.8 high
-  { id: 'cargo-tyres', name: 'Tyre stack', shape: 'cylinder', colourFrom: 'mixed', build: (paint) => {
+  { id: 'cargo-tyres', name: 'Tyre stack', maxScale: 1.0, shape: 'cylinder', colourFrom: 'mixed', build: (paint) => {
     const g = new THREE.Group();
     const prof = [[0.2, 0], [0.45, 0.03], [0.45, 0.21], [0.2, 0.24]];
     const offs = [[0, 0], [0.025, -0.015], [-0.02, 0.02]];
@@ -177,7 +177,7 @@ export const MORE_CARGO = [
   } },
   // 6. a LONE ARMCHAIR ON STRAPS: a chair of the car's colour with a cream seat cushion on four wooden feet, two black straps over the arms.
   //    No person. Box 1 x 0.8 x 1.2: the feet on y -0.4, the back's top under y 0.4; it faces the tail (the chase camera sees the seat)
-  { id: 'cargo-armchair', name: 'Armchair on straps', shape: 'box', colourFrom: 'mixed', build: (paint) => {
+  { id: 'cargo-armchair', name: 'Armchair on straps', maxScale: 1.1, shape: 'box', colourFrom: 'mixed', build: (paint) => {
     const g = new THREE.Group();
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(g, WOOD, 0.08, 0.1, 0.08, sx * 0.38, -0.35, sz * 0.36); // the feet (y -0.4 to -0.3)
     box(g, paint, 0.9, 0.2, 0.9, 0, -0.205, 0);                                            // the seat base (y -0.305 to -0.105)
@@ -192,7 +192,7 @@ export const MORE_CARGO = [
   } },
   // 7. the JUNKER'S TARPAULIN (the owner, 15-Oct): the Junker's trademark load as a prop, a lumpy tent roped down with green rope. The cloth is the car's
   //    colour (darker and rusty in the hollows). Box 1 x 0.8 x 1.2: the hems on y -0.4, the ridge under y 0.4
-  { id: 'cargo-junkertarp', name: 'Junker tarp', shape: 'box', colourFrom: 'mixed', build: junkerTarp },
+  { id: 'cargo-junkertarp', name: 'Junker tarp', maxScale: 2.0, shape: 'box', colourFrom: 'mixed', build: junkerTarp },
 ];
 export const cargoById = (id) => MORE_CARGO.find(p => p.id === id) || null;
 export const buildCargo = (id, paint = cargoPaint(0xffffff)) => {

@@ -14,7 +14,7 @@
 // DRESSING (dressProps(model, car), called where dressPlates is: render/showcar.js makeShowCar and render/items.js playerModel):
 // a slot is worn only if the car's table entry supports it (render/propanchors.js propSupported / fitProp, by the car's id) and the car is not
 // LEGENDARY (a Legendary car keeps its own black-and-gold look, as it keeps its gold hubs and plates: nothing added, nothing hidden). The prop
-// (render/propmodels.js buildProp, modelled to the slot's canonical box / cylinder) is placed by fitProp(carId, slot, prop.shape) as a child of
+// (render/propmodels.js buildProp, modelled to the slot's canonical box / cylinder) is placed by fitProp(carId, slot, prop.shape, prop) (at most the prop's own maxScale, CHECKLIST 450) as a child of
 // the model's BODY GROUP where the model keeps its body in one that moves (the same parent rule as the number plate), else of the model, so it
 // rides the suspension and the body bounce; forgetDents makes dents.js measure the model again with it on. The car's own tagged props of that
 // slot (userData.prop, render/propcosmetic.js) are hidden with it and shown again on Stock. The Ghost power-up treats it as any mesh
@@ -151,7 +151,7 @@ const apply = (model) => {
   for (const slot of SLOTS) {
     const id = info.status === 'ok' ? shownProp(slot) : 'none';
     const prop = id !== 'none' ? propById(id) : null;
-    const fit = prop ? fitProp(info.carId, slot, prop.shape) : null;
+    const fit = prop ? fitProp(info.carId, slot, prop.shape, prop) : null; // (the prop's own maxScale: worn at min(the slot's room, its max), seated)
     const paintValue = propPaintChoice(slot);
     let group = info.groups[slot];
     if (group && (!fit || group.userData.propId !== id || group.userData.paintValue !== paintValue)) { remove(group); group = info.groups[slot] = null; changed = true; }

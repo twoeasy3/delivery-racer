@@ -6,6 +6,9 @@
 // that slot is hidden (render/propcosmetic.js hideProps). Checked by scripts/.propmodels-check.mjs: inside the bounds, finite, under
 // the triangle budget, tagged, no coplanar faces between parts, every part touching another.
 //   PROPS = { roof: [...], cargo: [...], wing: [...] }, a prop = { id, name, shape: 'box' | 'cylinder', build(paint) -> Group }
+//   maxScale (every prop, CHECKLIST 450): the largest scale it is worn at, its believable real size (the slot's room may be bigger:
+//   render/propanchors.js fitProp wears it at min(room, maxScale), seated); align?: 'centre' | 'front' | 'rear' overrides the slot's
+//   (roof centre, cargo front = against the cab, wing rear). The table of maxima and their reasons: PROP-AUDIT-GUIDE.md
 //   build(paint): `paint` is the RECOLOURABLE main material (a MeshLambertMaterial; the caller owns it: the same prop in several
 //   colours is the same build with another paint); the other parts use the fixed materials below (shared, flagged so clearGroup keeps
 //   them). The group carries userData.prop = <slot> and userData.propId = <id>, and so does every mesh (hideProps finds them).
@@ -39,7 +42,7 @@ const prism = (parent, material, w, profile) => {
 export const BASE_PROPS = {
   roof: [
     // 1. a roof box: a long carrier on two rails, its lid darker, a chrome latch at the nose. Box 1 x 0.5 x 0.8: y -0.25 (the roof) to 0.25
-    { id: 'roofbox', name: 'Roof box', shape: 'box', build: (paint) => {
+    { id: 'roofbox', name: 'Roof box', maxScale: 1.0, shape: 'box', build: (paint) => {
       const g = new THREE.Group();
       for (const s of [-1, 1]) box(g, DARK, 0.06, 0.05, 0.7, s * 0.3, -0.225, 0);     // the rails on the roof
       box(g, paint, 0.9, 0.34, 0.76, 0, -0.03, 0);                                     // the carrier
@@ -48,7 +51,7 @@ export const BASE_PROPS = {
       return g;
     } },
     // 2. a roof sign: a lit panel on two stalks over a base bar (a taxi's, a delivery sign). Its faces glow; the panel is the paint
-    { id: 'roofsign', name: 'Roof sign', shape: 'box', build: (paint) => {
+    { id: 'roofsign', name: 'Roof sign', maxScale: 1.1, shape: 'box', build: (paint) => {
       const g = new THREE.Group();
       box(g, DARK, 0.5, 0.04, 0.16, 0, -0.23, 0);                                      // the base bar on the roof
       for (const s of [-1, 1]) box(g, DARK, 0.03, 0.12, 0.03, s * 0.2, -0.16, 0);     // the stalks (into the bar and the panel)
@@ -57,7 +60,7 @@ export const BASE_PROPS = {
       return g;
     } },
     // 3. a beacon dome: a base plate, a drum of the paint, a chrome ring and an amber dome. Cylinder r 0.45 x 0.5 high: y -0.25 to 0.25
-    { id: 'roofbeacon', name: 'Beacon dome', shape: 'cylinder', build: (paint) => {
+    { id: 'roofbeacon', name: 'Beacon dome', maxScale: 0.5, shape: 'cylinder', build: (paint) => {
       const g = new THREE.Group();
       cyl(g, DARK, 0.42, 0.42, 0.04, 0, -0.23, 0, 16);                                 // the base plate
       cyl(g, paint, 0.3, 0.3, 0.16, 0, -0.13, 0, 12);                                  // the drum
@@ -69,7 +72,7 @@ export const BASE_PROPS = {
   ],
   cargo: [
     // 1. a crate stack: three crates of the paint with dark battens up their edges, two on the deck, one on top. Box 1 x 0.8 x 1.2
-    { id: 'cargocrates', name: 'Crate stack', shape: 'box', build: (paint) => {
+    { id: 'cargocrates', name: 'Crate stack', maxScale: 1.5, shape: 'box', build: (paint) => {
       const g = new THREE.Group();
       const crate = (w, h, d, x, y, z) => {
         box(g, paint, w, h, d, x, y, z);
@@ -81,7 +84,7 @@ export const BASE_PROPS = {
       return g;
     } },
     // 2. a barrel: a bellied drum of the paint with three dark hoops and a lid. Cylinder r 0.5 x 0.8 high: y -0.4 to 0.4
-    { id: 'cargobarrel', name: 'Barrel', shape: 'cylinder', build: (paint) => {
+    { id: 'cargobarrel', name: 'Barrel', maxScale: 0.9, shape: 'cylinder', build: (paint) => {
       const g = new THREE.Group();
       cyl(g, paint, 0.46, 0.4, 0.4, 0, -0.2, 0, 14);                                   // the lower belly (its base on the deck)
       cyl(g, paint, 0.4, 0.46, 0.38, 0, 0.19, 0, 14);                                  // the upper
@@ -91,7 +94,7 @@ export const BASE_PROPS = {
       return g;
     } },
     // 3. a tarp load: a mound of the paint roped down on a pallet. Box 1 x 0.8 x 1.2
-    { id: 'cargotarp', name: 'Tarp load', shape: 'box', build: (paint) => {
+    { id: 'cargotarp', name: 'Tarp load', maxScale: 2.0, shape: 'box', build: (paint) => {
       const g = new THREE.Group();
       box(g, WOOD, 0.96, 0.08, 1.16, 0, -0.36, 0);                                     // the pallet's deck
       for (const s of [-1, 1]) box(g, WOOD, 0.1, 0.04, 1.1, s * 0.4, -0.3, 0);        // its bearers (on the deck, under the mound)
@@ -103,7 +106,7 @@ export const BASE_PROPS = {
   ],
   wing: [
     // 1. a GT wing: a blade of the paint on two dark stands, between end plates. Box 1.4 x 0.35 x 0.3: y -0.175 (the deck) to 0.175
-    { id: 'winggt', name: 'GT wing', shape: 'box', build: (paint) => {
+    { id: 'winggt', name: 'GT wing', maxScale: 1.8, shape: 'box', build: (paint) => {
       const g = new THREE.Group();
       for (const s of [-1, 1]) box(g, DARK, 0.05, 0.29, 0.14, s * 0.4, -0.03, 0);     // the stands, 5 mm up into the blade
       box(g, paint, 1.36, 0.04, 0.26, 0, 0.13, 0);                                     // the blade
@@ -111,14 +114,14 @@ export const BASE_PROPS = {
       return g;
     } },
     // 2. a duck-tail lip: a low wedge of the paint rising to the tail, a brake strip on its back. Box 1.4 x 0.35 x 0.3 (it uses the lower half)
-    { id: 'winglip', name: 'Duck-tail lip', shape: 'box', build: (paint) => {
+    { id: 'winglip', name: 'Duck-tail lip', maxScale: 1.8, shape: 'box', build: (paint) => {
       const g = new THREE.Group();
       prism(g, paint, 1.3, [[0.13, -0.175], [-0.14, -0.175], [-0.14, -0.02], [-0.08, 0], [0.13, -0.12]]); // the wedge, its tail 1 cm short of the bound
       box(g, RED, 0.5, 0.03, 0.01, 0, -0.06, -0.145);                                 // the brake strip, 5 mm proud of the back
       return g;
     } },
     // 3. a tube wing: a round bar of the paint across the tail on two slim stands, round end plates. Cylinder across the car, r 0.15 x 1.4
-    { id: 'wingtube', name: 'Tube wing', shape: 'cylinder', build: (paint) => {
+    { id: 'wingtube', name: 'Tube wing', maxScale: 1.8, shape: 'cylinder', build: (paint) => {
       const g = new THREE.Group();
       const bar = cyl(g, paint, 0.055, 0.055, 1.3, 0, 0.09, 0, 12); bar.rotation.z = Math.PI / 2; // the bar
       for (const s of [-1, 1]) box(g, DARK, 0.05, 0.245, 0.03, s * 0.42, -0.0275, 0); // the stands: y -0.15 (the deck) to 0.095 (into the bar)
