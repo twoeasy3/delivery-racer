@@ -603,6 +603,7 @@ export const CONFIG = {
     landmine: { damage: 0, speedKept: 1 }, // (no ordinary knock: it destroys whatever touches it outright, see Collision)
     // Gimmick Road 2's (see hazards.js)
     trolley: { damage: 8, speedKept: 0.88, light: true },
+    tug: { damage: 14, speedKept: 0.8, light: true }, // a tunnel junction's electric tug (hazards.js): a knock, never a stop
     runner: { damage: 10, speedKept: 0.88, light: true },
     waterTable: { damage: 6, speedKept: 0.9, light: true },
     paceCar: { damage: 42, speedKept: 0.5 },
@@ -1502,6 +1503,13 @@ export const CONFIG = {
   // within `trigger` m of the stretch, each at its own `speed`, weaving `weave` m
   // (gone `past` m behind the player, or `run` m down the road from where they waited)
   stampede: { trigger: 240, speed: { min: 9, max: 14 }, weave: 0.8, past: 70, run: 400 },
+  // a tunnel junction ("tunnelJunctions": { s, side }): a side tunnel meets the road inside a tunnel, a mouth in each
+  // wall `mouth` m wide. As the player comes within `trigger` m the beacons over the mouths flash and a bell rings
+  // (`warn` s of warning), then a train (an electric tug and two trolleys, `spacing` m apart) comes out of the `side`
+  // mouth and crosses the road at `speed` m/s into the other. Hit one: a knock (obstacleKinds tug / trolley), no
+  // stop, no bust; the counterplay is the warning: time it, or change lane behind the train. `rest` s after, it is
+  // ready again (only for a player coming back to it: a lapped level)
+  tunnelJunction: { trigger: 150, warn: 2.2, speed: 4.5, spacing: 2.6, rest: 8, mouth: 10 },
   // ---- Gimmick Road 3's: the road gambles (gambles.js; each a field in the level, named below) ----
   // a crosswind ("crosswinds": { from, to, dir, strength?, every?, length? }): over the stretch a car is pushed
   // sideways at `strength` m/s^2 times (its height / heightRef) ^ heightPower: `lull` of that all the time, all of

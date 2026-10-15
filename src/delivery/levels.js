@@ -319,6 +319,10 @@
 //   trolleys   { from, to, count }: shopping trolleys rolling across the road with its camber
 //   marathons  { s, lane, count, water? }: runners in one lane behind a pace car; water: where its water station stands
 //   stampedes  { from, to, count, kind: 'cow' | 'kangaroo' }: animals charging down the road at the player
+//   tunnelJunctions { s, side: 'left' | 'right' }: a side tunnel crossing the road inside a tunnel (a mall's concourse): a
+//              mouth in each wall; as the player comes near, beacons flash and a bell rings, then a train (an electric tug
+//              and two trolleys) comes out of the `side` mouth and crosses into the other. A knock, never a stop or a bust.
+//              Inside a tunnel, 30 m clear of its ends (see CONFIG.tunnelJunction)
 //   (and wreckage of kind 'roadtrain': a road train jackknifing across its lanes)
 //   (Gimmick Road 3's: the road gambles, see gambles.js and CONFIG, each under its own name)
 //   (every one is a risk to take or leave: none stops the car, and none busts it. On the expressway only)

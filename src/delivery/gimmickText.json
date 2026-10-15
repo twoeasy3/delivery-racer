@@ -64,6 +64,7 @@
   "stampedes": { "name": "Stampedes", "blurb": "Cows or kangaroos charge down the road at you, weaving." },
   "road-train-jackknife": { "name": "Road-train jackknife", "blurb": "A road train locks its brakes and its trailers swing across." },
   "tunnels": { "name": "Tunnels", "blurb": "No sky, the dark closing in, and only lamps and headlights." },
+  "tunnel-junctions": { "name": "Tunnel junctions", "blurb": "A side tunnel crosses the road: beacons and a bell, then a train." },
   "parades": { "name": "Parades", "blurb": "Floats abreast in every lane, a marching band behind them." },
   "police-roadblocks": { "name": "Police roadblocks", "blurb": "Police cars across every lane but one: find the gap." },
   "falling-cargo": { "name": "Falling cargo", "blurb": "A cargo truck sheds crates and bales onto the road." },

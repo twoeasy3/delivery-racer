@@ -298,6 +298,8 @@ export const FIELDS = {
   shoulderRows: { shape: 'stretch', group: 'hazards', label: 'Row on the shoulder', help: 'A row of obstacles standing on the shoulder. Exit and merge lanes are left clear.',
     settings: { kind: pick('Kind', OBSTACLE_KINDS, { required: true, init: 'cone' }), every: num('One every (m)', { min: 1, max: 500, required: true, init: 12 }), side: pick('Side', ['left', 'right', 'both'], { default: 'both' }) } },
   trolleys: { shape: 'stretch', group: 'hazards', label: 'Shopping trolleys', road: 'both', help: 'Rolling across the road with its camber.', settings: { count: count(6) } },
+  tunnelJunctions: { shape: 'point', group: 'hazards', label: 'Tunnel junction', help: 'Inside a tunnel: a side tunnel crosses the road. Beacons and a bell, then a tug and trolleys come out of that side and cross.',
+    settings: { side: pick('From', ['left', 'right'], { default: 'right' }) } },
   balloons: { shape: 'point', group: 'hazards', label: 'Hot-air balloon', road: 'both', help: 'Comes down on those lanes, sits, and lifts off again.', settings: { lanes: lanes('Lanes (first, last)', { span: true, required: true }) } },
   drawbridges: { shape: 'point', group: 'hazards', label: 'Drawbridge', road: 'both', rules: ['straight'], reach: () => (C.drawbridge?.stopLine ?? 20) + 10, help: 'Two leaves that lift: jump the gap if you came fast enough, or stop short, or drop in.' },
   wideLoads: { shape: 'point', group: 'hazards', label: 'Wide load', road: 'both', trigger: { default: () => C.wideLoad?.trigger }, help: 'A load two lanes wide crawling along, swinging from side to side.',

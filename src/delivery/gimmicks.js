@@ -812,6 +812,20 @@ export const GROUPS = [
     } },
   ] },
   { name: 'City streets', cards: [
+    { name: 'Tunnel junctions', color: 0xffb020, has: (l) => l.tunnelJunctions?.length, rules: [
+      `Inside a tunnel a side tunnel crosses the road. Within ${CONFIG.tunnelJunction.trigger} m the beacons over its mouths flash and a bell rings; ${CONFIG.tunnelJunction.warn} s later a tug and two trolleys come out of one side and cross at ${kmh(CONFIG.tunnelJunction.speed)}.`,
+      `Hit the tug: ${CONFIG.obstacleKinds.tug.damage} damage, a trolley ${CONFIG.obstacleKinds.trolley.damage}; you keep most of your speed. Never a stop, never a bust: read the beacons and time it, or go round behind the train.`,
+    ], build: () => {
+      const g = road(9, 16), wall = lambert(0x3a3d46), beacons = [];
+      g.add(box(1.2, 6, 16, wall, 5.6, 3, 0), box(12.4, 1.2, 16, wall, 0, 6.6, 0));
+      g.add(box(1.2, 6, 5, wall, -5.6, 3, -5.5), box(1.2, 6, 5, wall, -5.6, 3, 5.5), box(1.2, 1.1, 6, wall, -5.6, 5.45, 0)); // (the mouth in the left wall)
+      g.add(box(6, 0.02, 5.5, glow(0xffe8b0), -8.5, 0.01, 0));
+      for (const z of [-3.2, 3.2]) { const lamp = box(0.5, 0.4, 0.5, glow(0xffb020), -4.9, 5.1, z); beacons.push(lamp); g.add(lamp); }
+      const tug = ob('tug'); tug.position.set(-2.2, 0, 0); tug.rotation.y = -Math.PI / 2;
+      const carts = [0, 1].map(k => { const c = ob('trolley'); c.position.set(-4.8 - k * 2.6, 0, 0); c.rotation.y = -Math.PI / 2; return c; });
+      g.add(tug, ...carts);
+      return { model: g, tick: (t) => { const on = Math.floor(t * 4) % 2 === 0; for (const b of beacons) b.material.color.setHex(on ? 0xffb020 : 0x5a4010); const u = (t * 0.25) % 1; tug.position.x = -2.2 + u * 8; carts.forEach((c, k) => { c.position.x = -4.8 - k * 2.6 + u * 8; }); } };
+    } },
     { name: 'Tunnels', color: 0x4a4f5c, has: (l) => l.tunnels?.length && !tunnelLit(l), rules: [
       `The road goes under cover: no sky, the dark closing in over ${T.edge} m at each portal, and nothing to see by but the ceiling lamps (one every ${T.lampEvery} m) and your own headlights, which come on by themselves.`,
       `You see about ${T.far} m ahead inside, a good deal less than outside. The camera drops in close behind the car, and the engine echoes off the walls.`,

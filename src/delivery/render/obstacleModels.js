@@ -597,6 +597,25 @@ OBSTACLE_MODELS.trolley = () => {
   group.scale.setScalar(1.25); // (bigger than life: easier to see)
   return group;
 };
+// a tunnel junction's electric tug (hazards.js): a low driverless tow tug, yellow, a black bumper, a mast with an amber beacon,
+// a tow bar behind for the trolleys it pulls, four small wheels. Faces local +z
+OBSTACLE_MODELS.tug = () => {
+  const yellow = lambert(0xf2c21d), black = lambert(0x1b1d22), grey = lambert(0x6f757d);
+  const group = boxModel([
+    [yellow, 1.2, 0.5, 1.8, 0, 0.45, 0], [black, 1.24, 0.14, 0.3, 0, 0.32, 1.0], [yellow, 0.9, 0.35, 0.8, 0, 0.85, -0.3],  // the body, the bumper, the cowl
+    [grey, 0.08, 0.9, 0.08, 0.45, 1.3, 0.5], [grey, 0.16, 0.06, 1.0, 0, 0.73, -1.3],                                      // the mast, the tow bar
+    [black, 0.3, 0.2, 0.3, 0.45, 1.75, 0.5],                                                                              // the beacon's base
+  ]);
+  const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.22, 10), new THREE.MeshBasicMaterial({ color: 0xffb020 }));
+  beacon.position.set(0.45, 1.96, 0.5);
+  group.add(beacon);
+  for (const x of [-0.5, 0.5]) for (const z of [-0.6, 0.6]) {
+    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.16, 10).rotateZ(Math.PI / 2), black);
+    wheel.position.set(x, 0.18, z);
+    group.add(wheel);
+  }
+  return group;
+};
 // a marathon runner: singlet and shorts, a race number, arms and legs swinging. userData.animate(t) runs
 OBSTACLE_MODELS.runner = () => {
   const vests = [0xff4f8b, 0x2f7de1, 0xffd23f, 0x39d353, 0xff7a1a, 0xb026ff];

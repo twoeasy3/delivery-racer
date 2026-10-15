@@ -27,7 +27,7 @@ const GALLERY = 5.6;       // m: the atrium's gallery floor
 const PAL = {
   fashion: { floor: 0xe9e3d7, floor2: 0xd9d1c3, wall: 0xf4f1ec, roof: 0xf7f5f0, facia: [0x6b2d5c, 0x1f6f7a, 0xc89a1e, 0x1f3a6e, 0x9a2f3a], inside: 0x3a3238, lights: 1 },
   atrium: { floor: 0xdedbd5, floor2: 0xcac6be, wall: 0xeeebe4, roof: 0xbcd6ea, facia: [0x2f6f8a, 0x8a4a2f, 0x3a7a4a, 0x6b2d5c], inside: 0x33303a, lights: 0.6 },
-  foodcourt: { floor: 0xc9a27a, floor2: 0xb8906a, wall: 0xe8dcc8, roof: 0x3a3a3c, facia: [0xd8262b, 0xf2c21d, 0x2e9b3d, 0xe8751a], inside: 0x4a3a2a, lights: 0 },
+  foodcourt: { floor: 0xc9a27a, floor2: 0xb8906a, wall: 0xe8dcc8, roof: 0x3a3a3c, facia: [0xd8262b, 0xf2c21d, 0x2e9b3d, 0xe8751a], inside: 0x7a6650, lights: 0 },
   escalators: { floor: 0xd9d6cf, floor2: 0xc8c5be, wall: 0xdfe2e6, roof: 0xf2f2f4, facia: [0x4a5a6a, 0x2f6f8a], inside: 0x3a3c42, lights: 1 },
   electronics: { floor: 0x4a4c52, floor2: 0x3e4046, wall: 0x3a3c42, roof: 0x24262b, facia: [0x1a1b1e, 0x2a2c33, 0x101114], inside: 0x16171a, lights: 0.5 },
   kids: { floor: 0x6fb3ea, floor2: 0x5aa0d8, wall: 0xfff2b8, roof: 0xffffff, facia: [0xf04a5e, 0xf2c21d, 0x3ab0e8, 0x5fc04a, 0xf28ac0], inside: 0x4a3a52, lights: 1 },
@@ -214,6 +214,7 @@ export const mall = ({ theme, beside, levelGroup }) => {
   }
   walls.flush();
   roofs.flush();
+  const floor2 = sheet(floor.material), walls2 = sheet(walls.material), roofs2 = sheet(roofs.material); // (the side corridors' and the blank walls': flushed at the end)
   // ---- the outside of the mall, seen from the car park (and nothing of the shops' insides from there): a plain skin 9 m
   // out from the halls' walls, up to 1.5 m over the ceiling, and a flat roof; the ends are the facades
   const skin = sheet(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
@@ -290,9 +291,17 @@ export const mall = ({ theme, beside, levelGroup }) => {
       at(screens, 0, 2.2, 2.2, 2.4, 1.4, 1, 0x7fc8ff);
     }
   };
-  // a unit along the road: from s to s + len on that side, facing the road (not where a side corridor opens: `gaps`)
+  // plain wall along the road from s0 to s1 on that side, floor to the facia's top (the bits of a bay beside a side corridor's mouth)
+  const blank = (s0, s1, side, hall) => {
+    if (s1 - s0 < 0.3) return;
+    const edge = side < 0 ? lo : hi, P = PAL[hall] || PAL.fashion;
+    Track.toWorld(s0, edge(s0), p); Track.toWorld(s1, edge(s1), q);
+    walls2.quad([p.x, p.y, p.z], [p.x, p.y + FACIA, p.z], [q.x, q.y + FACIA, q.z], [q.x, q.y, q.z], colour.set(P.wall).multiplyScalar(0.9).getHex());
+  };
+  // a unit along the road: from s to s + len on that side, facing the road (where a side corridor opens, `gaps`, plain wall up to its mouth)
   const front = (s, side, hall, y0 = 0, len = BAY) => {
-    if (y0 === 0 && gaps.some(g => g.side === side && s + len > g.from && s < g.to)) return; // (the gallery runs on over a side corridor's mouth)
+    const gap = y0 === 0 && gaps.find(g => g.side === side && s + len > g.from && s < g.to); // (the gallery runs on over a mouth)
+    if (gap) { blank(s, Math.min(s + len, gap.from), side, hall); blank(Math.max(s, gap.to), s + len, side, hall); return; }
     const edge = side < 0 ? lo : hi, mid = s + len / 2, h = Track.toWorld(mid, edge(mid), p);
     unit(p.x, p.y, p.z, h + facing(side), hall, len - 0.9, mid, y0);
   };
@@ -363,6 +372,8 @@ export const mall = ({ theme, beside, levelGroup }) => {
     for (const side of [-1, 1]) {
       const edge = side < 0 ? lo : hi;
       for (let s = from; s + BAY <= to; s += BAY) {
+        const gap = gaps.find(g => g.side === side && s + BAY > g.from && s < g.to); // (a concourse opens here: plain wall up to its mouth)
+        if (gap) { blank(s, Math.min(s + BAY, gap.from), side, 'foodcourt'); blank(Math.max(s, gap.to), s + BAY, side, 'foodcourt'); continue; }
         const [name, bg, fg, glyph] = SHOPS.foodcourt[Math.floor(rand() * SHOPS.foodcourt.length)], col = PAL.foodcourt.facia[Math.floor(rand() * 4)];
         const mid = s + BAY / 2, latW = edge(mid), h = Track.toWorld(mid, latW, p), turn = h + facing(side), dx = Math.sin(turn), dz = Math.cos(turn), w = BAY - 0.9;
         piers.on(s + 0.45, edge(s + 0.45), FACIA / 2, 0, 0.9, FACIA, 0.6, PAL.foodcourt.wall);
@@ -450,9 +461,8 @@ export const mall = ({ theme, beside, levelGroup }) => {
   // ceiling with its panel lights, units along both its walls, a kiosk or a fountain at its end before the back wall; and
   // across its mouth a low glass barrier on posts with a CLOSED FOR CLEANING sign and a bollard each side, so it never reads
   // as a way to take. Cheap: the same batches and sheets as the halls (its sheets flushed with the rest)
-  const floor2 = sheet(floor.material), walls2 = sheet(walls.material), roofs2 = sheet(roofs.material);
   const W = 10, CEIL = FACIA; // (the corridor is as tall as the units: its roof meets the hall wall above its mouth)
-  const offshoot = (s, side, hall, L) => {
+  const offshoot = (s, side, hall, L, open = false) => {
     const P = PAL[hall], edge = side < 0 ? lo : hi, h = Track.toWorld(s, edge(s), p), turn = h + facing(side);
     const ox = -Math.sin(turn), oz = -Math.cos(turn), rx = Math.sin(h), rz = Math.cos(h); // (out along the corridor; along the road)
     const O = { x: p.x, y: p.y, z: p.z };
@@ -465,6 +475,7 @@ export const mall = ({ theme, beside, levelGroup }) => {
       for (const u of [-W / 2, W / 2]) walls2.quad(at(t, u, FACIA - 0.3), at(t, u, CEIL), at(t1, u, CEIL), at(t1, u, FACIA - 0.3), colour.set(P.wall).multiplyScalar(0.9).getHex());
     }
     walls2.quad(at(L, -W / 2, 0), at(L, -W / 2, CEIL), at(L, W / 2, CEIL), at(L, W / 2, 0), colour.set(P.wall).multiplyScalar(0.85).getHex()); // the back wall
+    for (const u of [-W / 2, W / 2]) walls2.quad(at(0, u, 0), at(0, u, FACIA), at(4, u, FACIA), at(4, u, 0), colour.set(P.wall).multiplyScalar(0.9).getHex()); // (the first 4 m of each side: a return wall before the units, so nothing of the hall's shops' backs shows)
     for (const u of [-1, 1]) { // the units along both walls, facing in
       const faceTurn = Math.atan2(-rx * u, -rz * u);
       for (let t = 4; t + 6 <= L - 2; t += 6) { const [x, y, z] = at(t + 3, u * W / 2, 0); unit(x, y, z, faceTurn, hall, 5.1, s + t, 0); }
@@ -479,6 +490,7 @@ export const mall = ({ theme, beside, levelGroup }) => {
       if (rand() < 0.5) { tables.at(x, y + 0.55, z, 0, 2.8, 1.1, 2.8, 0xf4f1ec); columns.at(x, y + 2, z, 0, 0.25, 4, 0.25); tables.at(x, y + 3.2, z, 0, 3.6, 0.2, 3.6, PAL.atrium.facia[1]); }
       else { bins.at(x, y + 0.3, z, 0, 4.2, 0.6, 4.2, 0x9a9ea4); pendants.at(x, y + 0.62, z, 0, 3.8, 0.05, 3.8, 0x6fc4ff); fronds.at(x, y + 1.5, z, 0, 0.5, 1.8, 0.5, 0xbfe8ff); }
     }
+    if (open) return; // (a tunnel junction's concourse: open, the train comes through it; its beacons and sign are render/hazards.js's)
     // the mouth: a glass barrier across it on posts, the sign on it, a bollard each side
     { const [x, y, z] = at(1.2, 0, 0);
       balustrades.at(x, y + 0.55, z, h, W - 1.4, 1.1, 0.06);
@@ -497,6 +509,8 @@ export const mall = ({ theme, beside, levelGroup }) => {
       offshoot(a - 14, c > 0 ? -1 : 1, hall, 24 + Math.floor(rand() * 3) * 12);
       n++;
     }
+    // the tunnel junctions (a level's "tunnelJunctions", hazards.js): an OPEN concourse each side, lit, no barrier
+    for (const j of LEVEL.tunnelJunctions || []) for (const side of [-1, 1]) offshoot(j.s, side, hallAt(j.s) || 'fashion', 30, true);
     const plaza = zones.find(z => z.scenery === 'atrium');
     if (plaza) for (const side of [-1, 1]) offshoot((plaza.from + plaza.to) / 2 + side * 30, side, 'atrium', 48);
   };

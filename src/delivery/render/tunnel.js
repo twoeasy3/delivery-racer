@@ -57,6 +57,9 @@ const build = () => {
   const add = (geo, mat) => { if (!geo.attributes.normal) geo.computeVertexNormals(); const mesh = new THREE.Mesh(geo, mat); group.add(mesh); return mesh; };
   const spot = new THREE.Object3D();
   if (look.shell === false) return; // (the theme draws the whole shell itself, walls, ceiling, lamps and portals: a mall's halls, render/themes/mall.js)
+  // (a tunnel junction, hazards.js: a mouth CONFIG.tunnelJunction.mouth m wide in each wall, and beyond it a stub of side tunnel)
+  const mouths = (LEVEL.tunnelJunctions || []).map(j => Track.place(j)), HALF = (CONFIG.tunnelJunction?.mouth ?? 10) / 2;
+  const inMouth = (s) => mouths.some(m => Math.abs(s - m) < HALF);
   for (const t of LEVEL.tunnels) {
     const lo = (s) => Track.lo(s) - 0.3, hi = (s) => Track.hi(s) + 0.3;
     // the ceiling's height along the tunnel (tunnelshape.js): the usual H, the tunnel's own `height` or `profile`, or the theme's by zone
@@ -71,7 +74,7 @@ const build = () => {
         const q = Math.min(s, t.to);
         Track.toWorld(q, edge(q), tmp);
         pos.push(tmp.x, tmp.y, tmp.z, tmp.x, tmp.y + hAt(q), tmp.z);
-        if (n) { const a = (n - 1) * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+        if (n && !inMouth(q - 2)) { const a = (n - 1) * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } // (no wall across a junction's mouth)
       }
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
@@ -87,6 +90,20 @@ const build = () => {
       b.scale.setScalar(1.001);
     }
     add(varies ? roofStrip(t.from, t.to, lo, hi, hAt, 4) : buildStrip(t.from, t.to, lo, hi, hAt(t.from), 4), roof);
+    // the side tunnels of its junctions: a stub each side, as tall as the tunnel there, 20 m long, the dark at its end
+    for (const m of mouths) {
+      if (m <= t.from || m >= t.to) continue;
+      const H = hAt(m);
+      for (const side of [-1, 1]) {
+        const h = Track.toWorld(m, (side < 0 ? lo(m) : hi(m)) + side * 10, tmp), stub = new THREE.Group();
+        stub.position.set(tmp.x, tmp.y, tmp.z);
+        stub.rotation.y = h;
+        for (const dz of [-HALF, HALF]) { const w = new THREE.Mesh(new THREE.BoxGeometry(20, H, 0.3), wall); w.position.set(0, H / 2, dz); stub.add(w); }
+        const r = new THREE.Mesh(new THREE.BoxGeometry(20, 0.3, HALF * 2 + 0.3), roof); r.position.set(0, H, 0); stub.add(r);
+        const end = new THREE.Mesh(new THREE.BoxGeometry(0.3, H, HALF * 2), face); end.position.set(-side * 10, H / 2, 0); // (local +x is the road's left: the far end of a left mouth's stub is at +x) stub.add(end);
+        group.add(stub);
+      }
+    }
     // the lamps down the middle of the ceiling
     const count = Math.floor((t.to - t.from) / T.lampEvery);
     const lamps = new THREE.InstancedMesh(new THREE.BoxGeometry(0.5, 0.12, 2.2), lamp, count);

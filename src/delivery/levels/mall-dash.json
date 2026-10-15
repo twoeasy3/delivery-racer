@@ -81,6 +81,11 @@
     {"from": 2160, "to": 2260, "lane": 0},
     {"from": 2620, "to": 2720}
   ],
+  "tunnelJunctions": [
+    {"s": 760, "side": "left"},
+    {"s": 1580, "side": "right"},
+    {"s": 2300, "side": "left"}
+  ],
   "trolleys": [
     {"from": 300, "to": 420, "count": 4},
     {"from": 1320, "to": 1480, "count": 5},

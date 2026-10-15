@@ -1002,6 +1002,7 @@ const createTrack = () => {
       if (!(z.from < z.to) || !(z.count ? onRoad(z, z.from) && onRoad(z, z.to) : z.from >= 0 && z.to <= length)) problems.push((z.count ? 'rockfall' : 'fog') + ' at ' + z.from + '-' + z.to + ': from before to, on the road');
       else if (z.count && z.side !== 'left' && z.side !== 'right') problems.push('rockfall at ' + z.from + ': side is left or right');
     }
+    for (const j of LEVEL.tunnelJunctions || []) if (!tunnels.some(t => j.s > t.from + 30 && j.s < t.to - 30)) problems.push('tunnel junction at ' + j.s + ': not inside a tunnel (30 m clear of its ends)');
     for (const t of tunnels) {
       if (!(t.from < t.to) || t.from < 30 || t.to > length - 30) problems.push('tunnel at ' + t.from + '-' + t.to + ': from before to, on the road, clear of the start and the finish');
       else if (t.to - t.from < 60) problems.push('tunnel at ' + t.from + ': too short (60 m at least)');
