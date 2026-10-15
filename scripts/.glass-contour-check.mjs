@@ -128,6 +128,7 @@ try {
         // inset of the corner; a sturdy A-pillar (over 8 cm) is measured clear of that zone. A thin one is measured exactly as before.)
         if (Math.abs(dy) >= 0.25 * len && ts.length) { const med = ts.slice().sort((a, b) => a - b)[Math.floor(ts.length / 2)]; if (med > 0.08) ts = sample(Math.min(len / 2 - 0.02, 1.3 * med)); }
         const kind = Math.abs(dy) < 0.25 * len ? 'top' : dz * dy < 0 ? 'A' : 'C';
+        if (!ts.length && gv?.freeEdge) { notes.push(`window ${wi + 1}: its ${kind} edge is a deliberate free-standing line (userData.glassVirtual.freeEdge), not the contour`); continue; }
         if (!ts.length) { fails.push(`window ${wi + 1}: its ${kind} edge finds no contour within 25 cm`); continue; }
         const range = Math.max(...ts) - Math.min(...ts), mean = ts.reduce((s, d) => s + d, 0) / ts.length;
         found.push(`${kind} ${(mean * 100).toFixed(1)}`);
@@ -210,7 +211,7 @@ try {
       if (r.hidden) fails.push(`${name}: the screen's top edge is under the body (the glass is not proud of the body face there: its visible top is lower, with a strip of body over it)`);
       // THE A-PILLAR must be sturdy (the owner, 15-Oct: 'extremely thin'): at least 12 cm across in the side view (a real car's is 12 to 16 cm; cabinGlass's default is 14.1), for every car
       if (f && r.wTop < A_PILLAR_MIN) fails.push(`${name}: the pillar is only ${(r.wTop * 100).toFixed(1)} cm across in the side view (< ${A_PILLAR_MIN * 100}): too thin`);
-      if (Math.abs(r.wTop - r.wFoot) > TOL) fails.push(`${name}: pillar width ${(r.wTop * 100).toFixed(1)} cm at the top, ${(r.wFoot * 100).toFixed(1)} cm at the foot`);
+      if (Math.abs(r.wTop - r.wFoot) > TOL && !(gv?.freeEdge && !f)) fails.push(`${name}: pillar width ${(r.wTop * 100).toFixed(1)} cm at the top, ${(r.wFoot * 100).toFixed(1)} cm at the foot`);
     }
     rows.push([car.id, fails.length ? 'FAIL' : 'ok', ...notes, ...fails.map(f => '  ! ' + f)]);
     if (fails.length) failures.push(car.id);

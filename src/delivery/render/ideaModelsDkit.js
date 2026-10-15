@@ -314,6 +314,19 @@ export const pullCornersIn = (poly, real, margin, level = false) => {
   }
   return out;
 };
+// a flat polygon of [z, y] points laid on the (narrowed) flank of half width `half`, `lift` out from it: [right, left] geometries (a blade, a panel)
+export const flankPanel = (poly, { half, taper = null, lift = 0.004 }) => {
+  const xAt = (y) => (taper ? narrowAt(half, y, taper) : half) + lift;
+  const faces = THREE.ShapeUtils.triangulateShape(poly.map(p => new THREE.Vector2(p[0], p[1])), []);
+  return [1, -1].map(s => {
+    const pos = [];
+    for (const f of faces) for (const i of (s > 0 ? f : f.slice().reverse())) pos.push(s * xAt(poly[i][1]), poly[i][1], poly[i][0]);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.computeVertexNormals();
+    return geo;
+  });
+};
 export const glassFromProfile = (profile, { from, to, belt, inset = {}, zFront = Infinity, zRear = -Infinity, half, taper = null, lift = 0.004, real = null, margin = 0, levelTops = false }) => {
   const { aPillar = 0.07, roof = 0.055, cPillar = 0.08, belt: beltInset = 0.025 } = inset;
   const chain = cabinChain(profile, from, to, belt);
