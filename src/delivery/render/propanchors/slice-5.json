@@ -19,20 +19,21 @@
   },
   "autobahnestate": {
    "roof": {
-    "box": [1.02, 0, 1.642, -0.92],
-    "cyl": [1.1, 0, 1.662, -0.92],
+    "box": [1.1, 0, 1.662, -0.96],
+    "cyl": [1.1, 0, 1.662, -0.96],
     "from": "roof",
-    "lim": "w"
+    "lim": "max",
+    "existing": true
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.72, 0, 1.573, -2.152],
-    "cyl": [0.72, 0, 1.555, -2.152],
+    "box": [0.95, 0, 1.604, -2.117],
+    "cyl": [0.95, 0, 1.58, -2.117],
     "from": "roof-edge",
     "lim": "w",
-    "inset": [0.014, 0.014]
+    "inset": [0.064, 0.064]
    }
   },
   "bathtub": {
@@ -102,13 +103,14 @@
     "no": "the roof is too small (no 0.3 x 0.25 m patch near its top)"
    },
    "cargo": {
-    "no": "the deck is too small for the smallest load (1.98 x 0.38 m)"
+    "box": [0.88, 0, 1.552, -2.26],
+    "cyl": [1.06, 0, 1.624, -2.26],
+    "from": "deck",
+    "lim": "d",
+    "existing": true
    },
    "wing": {
-    "box": [0.62, 0, 2.408, -2.417],
-    "cyl": [0.62, 0, 2.393, -2.417],
-    "from": "deck",
-    "lim": "inset"
+    "no": "no rear deck and no flat roof edge"
    }
   },
   "dodgem": {
@@ -624,14 +626,16 @@
     "cyl": [0.73, 0, 2.051, -0.18],
     "from": "roof",
     "lim": "d",
-    "inset": [0.034, 0.034]
+    "inset": [0.034, 0.034],
+    "existing": true
    },
    "cargo": {
     "box": [0.45, 0, 1.409, -2.24],
     "cyl": [0.55, 0, 1.449, -2.24],
     "from": "deck",
     "lim": "inset",
-    "inset": [0.075, 0.075]
+    "inset": [0.075, 0.075],
+    "existing": true
    },
    "wing": {
     "box": [0.84, 0, 1.333, -2.424],
@@ -697,6 +701,39 @@
     "box": [0.9, 0, 2.448, 3],
     "cyl": [0.9, 0, 2.425, 3],
     "from": "roof-edge",
+    "lim": "hand"
+   }
+  },
+  "cranelorry": {
+   "roof": {
+    "box": [1.2, 0, 3.07, 2.2],
+    "cyl": [1.2, 0, 3.07, 2.2],
+    "from": "roof",
+    "lim": "hand"
+   },
+   "wing": {
+    "box": [0.9, 0, 2.9275, 1.5],
+    "cyl": [0.9, 0, 2.905, 1.5],
+    "from": "roof-edge",
+    "lim": "hand"
+   }
+  },
+  "halftrack": {
+   "cargo": {
+    "no": "the bed is under a canvas tilt: no open load deck"
+   },
+   "roof": {
+    "box": [0.9, 0, 2.435, 0.4],
+    "cyl": [0.9, 0, 2.435, 0.4],
+    "from": "roof",
+    "lim": "hand"
+   }
+  },
+  "flatbed": {
+   "roof": {
+    "box": [0.9, 0, 2.475, 0.5],
+    "cyl": [0.9, 0, 2.475, 0.5],
+    "from": "roof",
     "lim": "hand"
    }
   }
