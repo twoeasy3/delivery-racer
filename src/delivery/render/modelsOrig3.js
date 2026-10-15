@@ -270,11 +270,14 @@ const rust = () => texture('rust', RUST_W, RUST_H, (ctx, W, H) => {
 });
 
 // a tarpaulin (the Junker's load), laid once over the whole heap (not repeated): u runs across it from the right hem
-// over the ridge (u 0.5) to the left hem, v along it, from its back end (v 0 at the bed, TARP.m at the top of that
-// end) to its front. The cloth's colour, sun-faded on top and grimy low down; creases running down the slopes and
-// gathered in at the ends; two ropes lashed across it (on TARP.ropes), the cloth pulled into them; two stitched patches;
-// a doubled hem with grommets, frayed at its edge. colours: [cloth, crease, rope]
-const TARP = { z0: -2.44, z1: -0.46, m: 0.12, ropes: [-1.76, -1.14] };
+// over the ridge (u 0.5) to the left hem, v along it, from its back end (v 0 at the hem on the bed's floor, TARP.m where
+// the end has climbed to the top, at TARP.z0) to its front (TARP.z1, then down the front end to v 1). The cloth's colour,
+// sun-faded on top and grimy low down; creases running down the slopes and gathered in at the ends; three ropes lashed
+// across it (on TARP.ropes) out to the hems, the cloth pulled into them; two stitched patches; a doubled hem
+// with grommets, frayed at its edge. colours: [cloth, crease, rope]
+const TARP = { z0: -2.05, z1: -0.75, m: 0.22, ropes: [-1.96, -1.4, -0.84] };
+// the Junker's bed: its floor's height, the walls' inner faces (+-x), the bulkhead's face and the tailgate's inner face (z)
+const BED = { floor: 0.8, inner: 0.84, front: -0.44, gate: -2.37 };
 const tarpV = (z) => TARP.m + (1 - 2 * TARP.m) * (z - TARP.z0) / (TARP.z1 - TARP.z0);
 const tarpaulin = (key, [cloth, crease, rope]) => {
   const map = texture('tarp-' + key, 256, 256, (ctx, W, H) => {
@@ -644,8 +647,12 @@ export const ORIG3_MODELS = {
   // The Junker: a battered seventies pickup, stubby and boxy, with a lumpy load under a tarpaulin. Flat slab sides, the
   // wheels at their corners; a flat, wide face: two round lamps stacked at each corner in chrome rims, an upright chrome
   // grille of bars between them, a low bumper; a short bonnet; a square cab with a flat, overhanging roof in a darker
-  // shade and big dark glass; in the short bed one long tent of a tarpaulin, peaked like a ridge and higher than the cab,
-  // lashed with green rope. Rust eats the paint. It shudders as it idles.
+  // shade and big dark glass; behind it a real pickup bed (a ribbed floor, two walls with a rolled top rail, the bulkhead
+  // against the cab, the rear wheel tubs inside, a tailgate hinged at its foot between the tail-lamp posts) heaped full
+  // with a load under a tarpaulin: a full loaf, higher than the cab but inside the car's height, its hems hanging over
+  // the rails, lashed with green rope that runs to the hems; the bed shows at both ends of it. No studs or hooks on the
+  // bed (the owner, 15-Oct: they read as rivets).
+  // Rust eats the paint. It shudders as it idles.
   junker: (car) => {
     const group = new THREE.Group(), shell = new THREE.Group();
     group.add(shell);
@@ -653,9 +660,26 @@ export const ORIG3_MODELS = {
     const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(0xc4c7cb), dark = lambert(0x121418);
     const roof = lambert(0x4f5532), bumper = lambert(0x7d8794), plate = lambert(0xece6cc);
     const cover = new THREE.MeshLambertMaterial({ vertexColors: true });
-    // the body: one flat-sided slab from the nose (its face leaning back at the bottom) to the tailgate, low in front
-    // where the bonnet and the wings sit on it, the bed's sides level behind the cab; the wheels stand at its corners
-    side(shell, paint, car.hw * 2, [[2.32, 0.46], [2.38, 0.92], [1.1, 0.92], [1.1, 1.18], [-2.45, 1.18, 0.03], [-2.45, 0.46]], 0.04, 0, 3);
+    // the body: one flat-sided slab from the nose (its face leaning back at the bottom) to the back of the cab, low in
+    // front where the bonnet and the wings sit on it; its back face, above the bed's floor, is the bed's bulkhead
+    side(shell, paint, car.hw * 2, [[2.32, 0.46], [2.38, 0.92], [1.1, 0.92], [1.1, 1.18], [-0.4, 1.18], [-0.4, 0.46]], 0.04, 0, 3);
+    // the bed behind it: one U across the car (its walls and the floor between them, the body under the floor), drawn a
+    // bevel smaller all round and grown back by the bevel: the flanks flush with the body's (x +-1), the floor at
+    // BED.floor, the walls' inner faces at +-BED.inner, the back face at z -2.49 (the old body's), the front in the body
+    const bedU = new THREE.Shape([[0.96, 0.5], [0.96, 1.16], [BED.inner + 0.04, 1.16], [BED.inner + 0.04, BED.floor - 0.04],
+      [-BED.inner - 0.04, BED.floor - 0.04], [-BED.inner - 0.04, 1.16], [-0.96, 1.16], [-0.96, 0.5]].map(([x, y]) => new THREE.Vector2(x, y)));
+    place(shell, new THREE.ExtrudeGeometry(bedU, { depth: 1.99, curveSegments: 1, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 1 })
+      .translate(0, 0, -2.45), paint);
+    // the top rails: rolled over the walls (a lip a centimetre proud of the flank), and across the bulkhead, in the roof's shade
+    for (const s of [-1, 1]) side(shell, roof, 0.17, [[-0.44, 1.21], [-0.44, 1.25], [-2.46, 1.25], [-2.46, 1.21]], 0.02, s * 0.925, 1);
+    box(shell, roof, 2.02, 0.06, 0.12, 0, 1.24, -0.49);
+    // inside: the rear wheels' tubs (half drums over the tyres), three ribs along the floor
+    const tub = new THREE.CylinderGeometry(0.42, 0.42, 0.28, 6, 1, false, 0, Math.PI).rotateZ(Math.PI / 2);
+    for (const s of [-1, 1]) place(shell, s > 0 ? tub : tub.clone(), paint, s * (BED.inner - 0.14), 0.5, RZ);
+    for (const x of [-0.5, 0, 0.5]) box(shell, roof, 0.07, 0.035, BED.front - BED.gate - 0.04, x, BED.floor + 0.0075, (BED.front + BED.gate) / 2);
+    // the tailgate between the lamp posts, a centimetre in from them, up to the rails, hinged at its foot
+    box(shell, paint, BED.inner * 2 - 0.02, 0.445, 0.11, 0, BED.floor + 0.2225, -2.425);
+    for (const s of [-1, 1]) box(shell, dark, 0.12, 0.045, 0.035, s * 0.62, BED.floor + 0.01, -2.485);   // the hinges
     // the front: the wings, raised a little over the bonnet's edges and rounded down at the front; between them the
     // bonnet, crowned (higher down its middle), its front edge hanging over the grille
     for (const s of [-1, 1]) side(shell, paint, 0.38, [[1.1, 0.9], [2.3, 0.9], [2.34, 1.02, 0.08], [2.16, 1.2, 0.16], [1.1, 1.21]], 0.06, s * 0.81, 3);
@@ -695,11 +719,11 @@ export const ORIG3_MODELS = {
       }
       box(shell, AMBER, 0.14, 0.05, 0.03, s * 0.5, 0.58, 2.42);                                // indicators
       box(shell, dark, 0.05, 0.16, 0.12, s * 1.0, 1.4, 1.0);                                   // mirrors
-      // the tail: tall lamps at the corners (tail lamp over brake lamp)
-      box(shell, TAIL, 0.14, 0.14, 0.03, s * 0.84, 1.02, -2.495);
-      box(shell, BRAKE, 0.14, 0.12, 0.03, s * 0.84, 0.89, -2.495);
+      // the tail: tall lamps on the bed's corner posts (tail lamp over brake lamp), seated into the posts' bevels
+      box(shell, TAIL, 0.1, 0.14, 0.05, s * 0.92, 1.02, -2.485);
+      box(shell, BRAKE, 0.1, 0.12, 0.05, s * 0.92, 0.89, -2.485);
     }
-    box(shell, plate, 0.34, 0.13, 0.02, 0, 0.8, -2.495).userData.plate = 'rear';
+    box(shell, plate, 0.4, 0.13, 0.02, 0, 0.44, -2.609).userData.plate = 'rear';                  // (on the rear bumper bar's face, where the plate cosmetic goes)
     // rust, eating the paint: along the bottoms of the doors, round both wheels, the back corners and the tailgate's
     // bottom; each patch fades out in flecks before its decal's edge (see rust), and both flanks match (mirrored)
     const rusty = new THREE.MeshLambertMaterial({ map: rust(), transparent: true, depthWrite: false });
@@ -709,60 +733,63 @@ export const ORIG3_MODELS = {
       for (const z of [FZ, RZ]) decal(shell, rusty, 1.1, 0.68, X, 0.805, z, f, ...rustCell('arch', flip !== (z < 0)));
       decal(shell, rusty, 0.3, 0.45, X, 0.69, -2.28, f, ...rustCell('corner', flip));
     }
-    decal(shell, rusty, 0.75, 0.25, -0.45, 0.66, -2.496, '-z', ...rustCell('tail'));             // (the tailgate's face: the
-    decal(shell, rusty, 0.45, 0.15, 0.55, 0.6, -2.496,  '-z', ...rustCell('tail', true));        // body's bevel puts it at -2.49)
-    // the load: one long tent of a tarpaulin, peaked, higher than the cab, wider than the bed, soft at its ends; lumps
-    // of the load bulge it, the two ropes pull it in where they cross, it sags between, darker in its hollows and low
-    // down (vertex colours), its creases smooth (not faceted). One picture laid over it all (tarpaulin: u across from
-    // hem to hem, v along it), so nothing repeats
-    const heap = outline([[-1.06, 1.17], [1.06, 1.17, 0.06], [0.58, 1.66, 0.2], [0.04, 2.04, 0.3], [-0.6, 1.64, 0.2]]);
-    const ridge = new THREE.ExtrudeGeometry(heap, { depth: 1.86, steps: 6, curveSegments: 3, bevelEnabled: true, bevelThickness: 0.06, bevelSize: 0.04, bevelSegments: 1 });
-    ridge.translate(0, 0, -2.38);
-    // the arc over the top, from the right hem over the ridge to the left hem, its length so far at each point
-    const arc = heap.extractPoints(3).shape.slice(1).concat(heap.extractPoints(3).shape[0]), run = [0];
-    for (let i = 1; i < arc.length; i++) run.push(run[i - 1] + arc[i].distanceTo(arc[i - 1]));
-    const across = (x, y) => { // (the share of the arc to the point on it nearest x, y)
-      let best = Infinity, at = 0;
-      for (let i = 1; i < arc.length; i++) {
-        const a = arc[i - 1], dx = arc[i].x - a.x, dy = arc[i].y - a.y, t = Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / (dx * dx + dy * dy || 1)));
-        const d = Math.hypot(a.x + dx * t - x, a.y + dy * t - y);
-        if (d < best) { best = d; at = run[i - 1] + t * (run[i] - run[i - 1]); }
-      }
-      return at / run[run.length - 1];
-    };
-    const lumps = [[0.62, 1.68, -2.02, 0.09, 0.3], [-0.58, 1.72, -1.45, 0.1, 0.32], [0.12, 2.0, -0.84, 0.07, 0.26], [0.3, 1.86, -1.45, -0.07, 0.28], [-0.4, 1.8, -2.1, -0.05, 0.26]];
-    const pos = ridge.attributes.position, n = pos.count, uv = ridge.attributes.uv, shade = new Float32Array(n * 3);
-    const caps = ridge.groups[0].count; // (the end caps come first, then the sides)
-    for (let i = 0; i < n; i++) {
-      const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-      const u = across(x, y), up = Math.max(0, Math.min(1, (y - 1.17) / 0.87));
-      uv.setXY(i, u, i < caps ? (z < -1.45 ? TARP.m * up : 1 - TARP.m * up) : tarpV(z));
-      // the lumps under it and the ropes' pull (by place, so the caps and the sides still meet), the most up top
+    decal(shell, rusty, 0.75, 0.24, -0.45, 0.63, -2.496, '-z', ...rustCell('tail'));             // (the bed's back under the
+    decal(shell, rusty, 0.45, 0.15, 0.55, 0.6, -2.496,  '-z', ...rustCell('tail', true));        // tailgate: its bevel puts it at -2.49)
+    // the load: heaped full in the bed under one tarpaulin, a full loaf higher than the cab (its top inside the car's
+    // height), its sides near upright over the walls and its hems hanging over the rails outside them; at each end it
+    // comes down into the bed onto the floor, short of the bulkhead and the tailgate (the bed shows there), its corners
+    // over the rails. Lumps of the load bulge it, the ropes pull it in where they cross, darker in its hollows and low
+    // down (vertex colours), smooth (one sheet of shared corners). One picture laid over it all (tarpaulin: u across
+    // from hem to hem, v along it), so nothing repeats; the ropes are drawn in it, out to the hems
+    const RAIL = 1.29, HEM = 1.12, FLOOR = BED.floor + 0.035, PEAK = 1.95; // (the cloth over the rails; its hem outside them; on the ribs; its top at most: the Junker's height, cars.js)
+    const ZR = -2.27, ZF = -0.52, ZM = (ZR + ZF) / 2, ZH = (ZF - ZR) / 2;   // (its ends, in the bed)
+    const ease = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+    const lumps = [[0.62, -1.72, 0.08, 0.28], [-0.66, -1.14, 0.08, 0.28], [0.25, -0.98, -0.04, 0.24], [-0.4, -1.98, 0.06, 0.26], [0.7, -1.18, 0.05, 0.22],
+      [-0.1, -1.6, -0.035, 0.22], [-0.7, -0.72, 0.05, 0.2], [0.5, -2.1, -0.03, 0.2]]; // [x, z, height, reach]: crates and sacks under it, hollows between
+    const cloth = (x, z) => { // the cloth's height over (x, z), with the lump and the ropes' pull there
+      const ax = Math.abs(x);
+      if (ax > 0.99) return { y: RAIL - (RAIL - HEM) * ease(1.012, 1.035, ax), bump: 0, pull: 0 };      // over the rail and down its outside
+      const low = FLOOR + (RAIL - FLOOR) * ease(0.79, 0.835, ax);                                         // (at the ends: on the floor, over the rails)
+      const crest = RAIL + 0.63 * Math.sqrt(Math.max(0, 1 - (ax / 0.99) ** 3));                          // across: a full loaf
+      const along = Math.sqrt(Math.max(0, 1 - Math.abs((z - ZM) / ZH) ** 4));                            // along: full, rounded down at its ends
+      let y = low + (crest - low) * along;
+      const up = ease(RAIL, RAIL + 0.2, y);
       let bump = 0;
-      for (const [lx, ly, lz, a, r] of lumps) bump += a * Math.exp(-((x - lx) ** 2 + (y - ly) ** 2 + (z - lz) ** 2) / (r * r));
-      const pull = TARP.ropes.reduce((p, rz) => p - 0.045 * Math.exp(-(((z - rz) / 0.05) ** 2)), 0);
-      const lift = (bump + pull) * Math.max(0, Math.min(1, (y - 1.17) / 0.35)), d = Math.hypot(x, y - 1.25) || 1;
-      // (a pillow: lower and narrower towards each end)
-      const t = (z + 1.45) / 0.99, f = 1 - 0.32 * t ** 4;
-      pos.setXYZ(i, (x + lift * x / d) * (1 - 0.06 * t ** 4), 1.17 + (y + lift * (y - 1.25) / d - 1.17) * f, z);
-      const c = Math.max(0.5, Math.min(1, 0.97 - 0.3 * (1 - Math.min(1, up / 0.5)) ** 2 + 2.2 * Math.min(0, bump) + pull * 2.5));
-      shade.set([c, c, c], i * 3);
-    }
-    ridge.setAttribute('color', new THREE.Float32BufferAttribute(shade, 3));
-    ridge.computeVertexNormals();
-    { // smooth the sides' normals (the caps stay flat; the hidden underside is left out)
-      const nrm = ridge.attributes.normal, sum = new Map(), key = (i) => `${pos.getX(i).toFixed(3)},${pos.getY(i).toFixed(3)},${pos.getZ(i).toFixed(3)}`;
-      for (let i = caps; i < n; i++) if (nrm.getY(i) > -0.7) {
-        const k = key(i), v = sum.get(k) || new THREE.Vector3();
-        sum.set(k, v.add(new THREE.Vector3(nrm.getX(i), nrm.getY(i), nrm.getZ(i))));
-      }
-      for (let i = caps; i < n; i++) if (nrm.getY(i) > -0.7) { const v = sum.get(key(i)).clone().normalize(); nrm.setXYZ(i, v.x, v.y, v.z); }
-    }
+      for (const [lx, lz, a, r] of lumps) bump += a * Math.exp(-((x - lx) ** 2 + (z - lz) ** 2) / (r * r));
+      const pull = TARP.ropes.reduce((p, rz) => p - 0.03 * Math.exp(-(((z - rz) / 0.1) ** 2)), 0);
+      y += (bump + pull) * up;
+      if (y > PEAK - 0.04) y = PEAK - 0.04 * Math.exp(-(y - PEAK + 0.04) / 0.04);                       // (a soft cap: never over PEAK)
+      return { y: Math.max(ax >= 0.835 ? RAIL : FLOOR, y), bump, pull };
+    };
+    const XS = [0, 0.42, 0.79, 0.835, 0.95, 0.99, 1.012, 1.035], cols = [...XS.slice(1).reverse().map(x => -x), ...XS]; // (from the right hem, x -)
+    const ZS = [ZR, ZR + 0.03, ZR + 0.09, TARP.z0, -1.96, -1.68, -1.4, -1.12, -0.84, TARP.z1, ZF - 0.09, ZF - 0.03, ZF];
+    // v along: the ends by their arc (down the middle) into [0, m] and [1 - m, 1], the top between in step with z (tarpV)
+    const endV = (zs, from) => { const ys = zs.map(z => cloth(0, z).y), d = [0]; for (let i = 1; i < zs.length; i++) d.push(d[i - 1] + Math.hypot(zs[i] - zs[i - 1], ys[i] - ys[i - 1])); return d.map(l => from(l / d[d.length - 1])); };
+    const vs = [...endV(ZS.slice(0, 4), f => f * TARP.m).slice(0, 3), ...ZS.slice(3, 10).map(tarpV), ...endV(ZS.slice(9), f => 1 - TARP.m * (1 - f)).slice(1)];
+    const P = [], UV = [], C = [], I = [], W = cols.length;
+    ZS.forEach((z, j) => {
+      const row = cols.map(x => ({ x, ...cloth(x, z) })), run = [0];
+      for (let i = 1; i < W; i++) run.push(run[i - 1] + Math.hypot(row[i].x - row[i - 1].x, row[i].y - row[i - 1].y));
+      row.forEach(({ x, y, bump, pull }, i) => {
+        P.push(x, y, z);
+        UV.push(run[i] / run[W - 1], vs[j]);
+        const c = Math.max(0.5, Math.min(1, 0.97 - 0.32 * (1 - Math.min(1, Math.max(0, y - HEM) / 0.4)) ** 2 + 2.2 * Math.min(0, bump) + pull * 2.5));
+        C.push(c, c, c);
+      });
+    });
+    for (let j = 0; j + 1 < ZS.length; j++) for (let i = 0; i + 1 < W; i++) { const a = j * W + i; I.push(a, a + W, a + 1, a + 1, a + W, a + W + 1); }
+    const sheet = new THREE.BufferGeometry();
+    sheet.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+    sheet.setAttribute('uv', new THREE.Float32BufferAttribute(UV, 2));
+    sheet.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
+    sheet.setIndex(I);
+    sheet.computeVertexNormals();
+    const load = sheet; // (the ropes are the picture's: they run over the cloth to its hems)
     const keep = new Set();
     const geo = wheelGeo(R, 0.3), tyre = lambert(0x141414), hub = lambert(0xa8acb2);
     for (const s of [-1, 1]) for (const z of [FZ, RZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub)) keep.add(part);
     const merged = mergeByMaterial(shell, keep);
-    place(shell, ridge, cover).userData.prop = 'cargo'; // (tagged: a chosen cargo prop hides the tarp load) (after the merge, a mesh of its own: merging would drop its colours)
+    place(shell, load, cover).userData.prop = 'cargo'; // (tagged: a chosen cargo prop hides the tarp load and its ropes, the bed stays) (after the merge, a mesh of its own: merging would drop its colours)
     merged.get(rusty).renderOrder = 1; // (after the body even when the game makes the body see-through-able for a ghost)
     group.userData = {
       body: merged.get(paint),
