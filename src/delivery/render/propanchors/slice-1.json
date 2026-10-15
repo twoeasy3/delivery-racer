@@ -7,7 +7,11 @@
     "no": "an open car: no roof"
    },
    "cargo": {
-    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
+    "box": [0.49, 0, 1.046, -1.38],
+    "cyl": [0.55, 0, 1.07, -1.38],
+    "from": "deck",
+    "lim": "fit",
+    "inset": [0.031, 0.043]
    },
    "wing": {
     "box": [0.6, 0, 0.955, -1.56],
@@ -118,11 +122,10 @@
     "lim": "fit"
    },
    "cargo": {
-    "box": [0.9, 0, 1.58, -1.98],
-    "cyl": [0.89, 0, 1.576, -2.06],
+    "box": [0.83, 0, 1.552, -0.98],
+    "cyl": [0.84, 0, 1.556, -0.9],
     "from": "deck",
     "lim": "fit",
-    "inset": [0.027, 0.019],
     "existing": true
    },
    "wing": {
@@ -134,21 +137,21 @@
   },
   "keitruck": {
    "roof": {
-    "box": [1.37, 0, 1.943, 1.2],
-    "cyl": [1.22, 0, 1.905, 1.2],
+    "box": [1.51, 0, 1.978, 1.16],
+    "cyl": [1.34, 0, 1.935, 1.16],
     "from": "roof",
     "lim": "fit"
    },
    "cargo": {
-    "box": [1.39, 0, 1.116, -0.52],
-    "cyl": [1.39, 0, 1.116, -0.36],
+    "box": [1.26, 0, 1.064, -0.36],
+    "cyl": [1.27, 0, 1.068, -0.24],
     "from": "deck",
     "lim": "fit"
    },
    "wing": {
-    "box": [1.03, 0, 1.78, 0.5],
-    "cyl": [1.03, 0, 1.755, 0.5],
-    "from": "roof-edge",
+    "box": [0.86, 0, 1.011, -1.66],
+    "cyl": [0.86, 0, 0.989, -1.66],
+    "from": "bed-tail",
     "lim": "fit"
    }
   },
@@ -160,15 +163,15 @@
     "lim": "fit"
    },
    "cargo": {
-    "box": [0.91, 0, 2.264, -1.47],
-    "cyl": [0.91, 0, 2.264, -1.35],
+    "box": [0.83, 0, 2.252, -1.39],
+    "cyl": [0.84, 0, 2.256, -1.31],
     "from": "deck",
     "lim": "fit"
    },
    "wing": {
-    "box": [1.49, 0, 2.181, -2.45],
-    "cyl": [1.49, 0, 2.143, -2.45],
-    "from": "deck",
+    "box": [1.4, 0, 2.57, -2.73],
+    "cyl": [1.4, 0, 2.535, -2.73],
+    "from": "bed-tail",
     "lim": "fit"
    }
   },
@@ -249,25 +252,24 @@
   },
   "pickup": {
    "roof": {
-    "box": [0.97, 0, 2.287, 0.095],
-    "cyl": [0.86, 0, 2.26, 0.095],
+    "box": [1.33, 0, 2.372, -0.025],
+    "cyl": [1.15, 0, 2.335, -0.025],
     "from": "roof",
     "lim": "fit",
-    "inset": [0.028, 0.027],
+    "inset": [0.029, 0.029],
     "existing": true
    },
    "cargo": {
-    "box": [1.21, 0, 1.654, -1.585],
-    "cyl": [1.21, 0, 1.654, -1.465],
+    "box": [1.09, 0, 1.606, -1.385],
+    "cyl": [1.14, 0, 1.626, -1.305],
     "from": "deck",
     "lim": "fit"
    },
    "wing": {
-    "box": [1.31, 0, 2.283, -0.485],
-    "cyl": [1.31, 0, 2.25, -0.485],
-    "from": "roof-edge",
-    "lim": "fit",
-    "inset": [0.012, 0.012]
+    "box": [1.37, 0, 1.77, -2.525],
+    "cyl": [1.37, 0, 1.735, -2.525],
+    "from": "bed-tail",
+    "lim": "fit"
    }
   },
   "postvan": {
@@ -484,11 +486,10 @@
     "lim": "fit"
    },
    "cargo": {
-    "box": [0.87, 0, 1.568, -1.99],
-    "cyl": [0.87, 0, 1.568, -2.07],
+    "box": [0.79, 0, 1.536, -1.03],
+    "cyl": [0.79, 0, 1.536, -0.95],
     "from": "deck",
     "lim": "fit",
-    "inset": [0.02, 0.02],
     "existing": true
    },
    "wing": {
@@ -507,15 +508,15 @@
     "lim": "fit"
    },
    "cargo": {
-    "box": [1.37, 0, 1.108, -0.47],
-    "cyl": [1.39, 0, 1.116, -0.35],
+    "box": [1.24, 0, 1.056, -0.35],
+    "cyl": [1.33, 0, 1.092, -0.27],
     "from": "deck",
     "lim": "fit"
    },
    "wing": {
-    "box": [1.03, 0, 1.78, 0.51],
-    "cyl": [1.03, 0, 1.755, 0.51],
-    "from": "roof-edge",
+    "box": [1, 0, 1.035, -1.69],
+    "cyl": [1, 0, 1.01, -1.69],
+    "from": "bed-tail",
     "lim": "fit",
     "existing": true
    }
@@ -529,15 +530,15 @@
     "existing": true
    },
    "cargo": {
-    "box": [0.91, 0, 2.264, -1.435],
-    "cyl": [0.91, 0, 2.264, -1.355],
+    "box": [0.84, 0, 2.256, -1.395],
+    "cyl": [0.85, 0, 2.26, -1.315],
     "from": "deck",
     "lim": "fit"
    },
    "wing": {
-    "box": [1.49, 0, 2.181, -2.455],
-    "cyl": [1.49, 0, 2.143, -2.455],
-    "from": "deck",
+    "box": [1.52, 0, 2.591, -2.735],
+    "cyl": [1.52, 0, 2.553, -2.735],
+    "from": "bed-tail",
     "lim": "fit",
     "existing": true
    }
@@ -584,8 +585,8 @@
   },
   "super-mini": {
    "roof": {
-    "box": [1.44, 0, 1.675, -0.25],
-    "cyl": [1.53, 0, 1.698, -0.25],
+    "box": [1.44, 0, 1.675, -0.33],
+    "cyl": [1.6, 0, 1.715, -0.33],
     "from": "roof",
     "lim": "fit"
    },
@@ -593,10 +594,7 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.91, 0, 1.474, -1.07],
-    "cyl": [0.91, 0, 1.452, -1.07],
-    "from": "roof-edge",
-    "lim": "fit",
+    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing",
     "existing": true
    }
   },
@@ -623,25 +621,24 @@
   },
   "super-pickup": {
    "roof": {
-    "box": [0.97, 0, 2.288, 0.08],
-    "cyl": [0.86, 0, 2.26, 0.08],
+    "box": [1.33, 0, 2.373, -0.04],
+    "cyl": [1.17, 0, 2.34, -0.04],
     "from": "roof",
     "lim": "fit",
-    "inset": [0.022, 0.022],
+    "inset": [0.028, 0.029],
     "existing": true
    },
    "cargo": {
-    "box": [1.08, 0, 1.602, -1.4],
-    "cyl": [1.18, 0, 1.642, -1.32],
+    "box": [0.98, 0, 1.562, -1.32],
+    "cyl": [1.1, 0, 1.61, -1.28],
     "from": "deck",
     "lim": "fit"
    },
    "wing": {
-    "box": [1.31, 0, 2.283, -0.5],
-    "cyl": [1.31, 0, 2.25, -0.5],
-    "from": "roof-edge",
+    "box": [1.37, 0, 1.77, -2.54],
+    "cyl": [1.37, 0, 1.735, -2.54],
+    "from": "bed-tail",
     "lim": "fit",
-    "inset": [0.019, 0.019],
     "existing": true
    }
   },
@@ -746,8 +743,8 @@
     "existing": true
    },
    "cargo": {
-    "box": [0.89, 0, 1.166, -2.045],
-    "cyl": [0.95, 0, 1.19, -2.125],
+    "box": [0.82, 0, 1.138, -1.885],
+    "cyl": [0.86, 0, 1.154, -1.885],
     "from": "deck",
     "lim": "fit"
    },
@@ -767,15 +764,15 @@
     "lim": "fit"
    },
    "cargo": {
-    "box": [0.75, 0, 1.2, -1.245],
-    "cyl": [0.75, 0, 1.2, -1.165],
+    "box": [0.74, 0, 1.196, -1.205],
+    "cyl": [0.72, 0, 1.188, -1.125],
     "from": "deck",
     "lim": "fit"
    },
    "wing": {
-    "box": [1.16, 0, 1.103, -2.225],
-    "cyl": [1.16, 0, 1.074, -2.225],
-    "from": "deck",
+    "box": [1.29, 0, 1.351, -2.425],
+    "cyl": [1.29, 0, 1.319, -2.425],
+    "from": "bed-tail",
     "lim": "fit",
     "existing": true
    }
@@ -809,8 +806,8 @@
     "existing": true
    },
    "cargo": {
-    "box": [0.89, 0, 1.166, -2.06],
-    "cyl": [0.95, 0, 1.19, -2.1],
+    "box": [0.81, 0, 1.134, -1.86],
+    "cyl": [0.86, 0, 1.154, -1.9],
     "from": "deck",
     "lim": "fit"
    },
@@ -829,15 +826,15 @@
     "lim": "fit"
    },
    "cargo": {
-    "box": [0.75, 0, 1.2, -1.25],
-    "cyl": [0.75, 0, 1.2, -1.17],
+    "box": [0.68, 0, 1.172, -1.17],
+    "cyl": [0.73, 0, 1.192, -1.13],
     "from": "deck",
     "lim": "fit"
    },
    "wing": {
-    "box": [1.13, 0, 1.098, -2.23],
-    "cyl": [1.13, 0, 1.069, -2.23],
-    "from": "deck",
+    "box": [1.13, 0, 1.323, -2.43],
+    "cyl": [1.13, 0, 1.295, -2.43],
+    "from": "bed-tail",
     "lim": "fit"
    }
   },
@@ -865,6 +862,11 @@
    "cargo": {
     "no": "the bed under the load measures as no usable deck (the Super's kit and stripe), though the Junker itself has one",
     "existing": true
+   }
+  },
+  "buggy": {
+   "wing": {
+    "no": "an open frame: its only rear surface is the engine cover, about 0.5 m wide, narrower than the smallest wing (0.63 m); a wing there hung out over the frame"
    }
   }
  }

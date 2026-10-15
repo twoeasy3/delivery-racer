@@ -33,7 +33,8 @@ export const carGeometry = (model, glassy) => {
     if (!m || m.visible === false) return;
     let kind = 'body';
     if (m.transparent && m.opacity < 0.95) kind = 'clear';
-    else if (m.isMeshBasicMaterial || (m.emissive && m.emissive.getHex() !== 0 && (m.emissiveIntensity ?? 1) > 0.25)) kind = 'lamp';
+    // (a lamp glows: a faint emissive tint is paint, not a lamp: the Legendary skin's dark gold 0x1c1404 on every body part, CHECKLIST 309)
+    else if (m.isMeshBasicMaterial || (m.emissive && Math.max(m.emissive.r, m.emissive.g, m.emissive.b) * (m.emissiveIntensity ?? 1) > 0.12 && (m.emissiveIntensity ?? 1) > 0.25)) kind = 'lamp';
     else if (n !== body && m !== bodyMat && glassy(m)) kind = 'glass';
     else if (n.geometry.type === 'CylinderGeometry' && n.geometry.parameters.radiusTop >= 0.18 && Math.abs(Math.abs(n.rotation.z) - Math.PI / 2) < 0.02) kind = 'wheel';
     if (inKit && kind === 'body') kind = 'kit';
@@ -291,8 +292,11 @@ export const feasible = (g, o, s, z) => {
       const h = g.support(px, pz, L + 0.01, o.allow);
       const isAir = !h || L - h.y > (o.maxInset + 0.4);
       const why = (w) => { if (o.debug) console.log('  L', L, 's', s, 'z', z, [fx, fz], w, h && h.y, h && g.meshes[h.m].name); };
-      if (isAir) { if (o.airRows && fz < 0) { air++; continue; } why('air'); bad = true; break; }
+      if (isAir) { if (o.airRows && fz < 0) { air++; continue; } if (o.spanRows && fz !== 0) { air++; continue; } why('air'); bad = true; break; }
       const rim = isRim(d, o.slot, fx, fz);
+      // (a blade SPANNING a bed: its stands' row, the middle one, on the tailgate or the rails; its front and rear edges may hang over the bed's
+      // well or behind the tail)
+      if (o.spanRows && fz !== 0 && L - h.y > o.maxInset + 1e-6) { air++; continue; }
       if (L - h.y > o.maxInset + (rim ? 0 : 0.1) + 1e-6) { why('inset'); bad = true; break; } // (inside the rim a dip is a gap under the prop)
       const k = g.meshes[h.m].kind;
       // (stands only on the car's own untagged body: never glass, a lamp, the Super kit's parts, or another slot's own prop, which is
@@ -303,7 +307,7 @@ export const feasible = (g, o, s, z) => {
       if (rim) low = Math.min(low, h.y);
     }
     if (bad || top === -Infinity) continue;
-    if (o.airRows && air > pts.length / 3) continue;
+    if (o.airRows && !o.spanRows && air > pts.length / 3) continue;
     // the INSET: the least that makes the footprint's rim (its corners and edges) touch the surface (the owner, 15-Oct)
     const inset = low === Infinity ? 0 : Math.max(0, top - low);
     if (inset > o.maxInset + 1e-6) continue;
@@ -311,6 +315,7 @@ export const feasible = (g, o, s, z) => {
     if (o.widthCap) { const sw = g.widthAt(z, top - 0.15, o.allow).w; if (d.W > sw * o.widthCap + 0.01) { if (o.debug) console.log('  L', L, 'wider than the surface', sw); continue; } }
     const base = top - inset;
     const vol = volume(d, ox, base, z, top + TOL);
+    if (o.glassTol != null) { const r = g.intrude(vol, o.allow); if ([...r.meshes].some(([mi, dd]) => (g.meshes[mi].kind === 'glass' || g.meshes[mi].kind === 'lamp') && dd > o.glassTol)) continue; } // (opt-in: glass and lamps not touched at all)
     if (effDepth(g, g.intrude(vol, o.allow)) > 0.01) { if (o.debug) { const r = g.intrude(vol, o.allow); console.log('  L', L, 'intrude', r.depth, [...r.meshes].map(([mi, dd]) => g.meshes[mi].name + '/' + g.meshes[mi].kind + ' ' + dd.toFixed(3)).join(', ')); } continue; }
     if (o.avoid && o.avoid.some(a => overlap(volume(d, ox, base, z), a) > 0)) { if (o.debug) console.log('  L', L, 'avoid'); continue; }
     if (o.frontLimit != null && z + d.D / 2 > o.frontLimit + 1e-9) continue;
@@ -342,7 +347,7 @@ export const best = (g, o) => {
   const sTop = Math.max(...rows.map(r => r.s));
   let pick;
   if (o.prefer === 'rear') pick = rows.filter(r => r.s >= sTop * (o.rearShare ?? 0.85) - 1e-9).sort((a, b) => a.z - b.z)[0];
-  else if (o.prefer === 'front') pick = rows.filter(r => r.s >= sTop - 1e-9).sort((a, b) => b.z - a.z)[0];
+  else if (o.prefer === 'front') pick = rows.filter(r => r.s >= sTop * (o.frontShare ?? 1) - 1e-9).sort((a, b) => b.z - a.z)[0];
   else {
     const top = rows.filter(r => r.s >= sTop - 1e-9);
     // the middle of the best run of z (centred in the space it fits)
@@ -362,6 +367,8 @@ export const overlap = (a, b) => {
 export const MAX_INSET = 0.05;   // m: the owner, 15-Oct ("some of the roof insets are too strong"): 4 to 5 cm at most, the least that gives contact
 export const WIDTH_CAP = 0.95;   // a wing spans at most this share of the body's width at its z (a real wing: 80 to 100 %)
 export const REAR_SHARE = 0.85;
+export const FRONT_SHARE = 0.9; // a load takes the place nearest the cab whose scale is within this share of the best anywhere (not the tail for 3 % more)
+const BED_KINDS = new Set(['pickup', 'flatbed', 'truck', 'halftrack']); // (a bed or a deck behind the cab: the wing at its rear end)
 const CAB_KINDS = new Set(['truck', 'flatbed', 'pickup', 'halftrack', 'van', 'bus', 'special']); // (a wing may stand on a cab's roof far forward; other cars keep it on their rear 55 %)  // a wing takes the rear-most place whose scale is within this share of the best anywhere
 // -> { opt: { 'wing-box', 'wing-cyl', 'roof-box', 'roof-cyl', 'cargo-box', 'cargo-cyl' } (best() results or null), info }
 //    o.high: { roof, cargo, wing } scales to search up to (past the caps: the audit's "would a bigger cap help"); default the caps
@@ -400,37 +407,66 @@ export const optimum = (g, P, kind, o = {}) => {
   // the body allows, the rear-most place within REAR_SHARE of the best scale; its rear row may hang over the tail
   const wingAllow = hideSlot('wing');
   const wingLevel = (y, z) => y >= Math.max(0.45, hasGlass ? rearGlassFoot - 0.2 : height * 0.45) && y >= topAt(z, wingAllow) - 0.03;
-  for (const shape of ['box', 'cyl']) {
+  // a truck or pickup with a BED (or a flat deck) behind its cab: the wing goes at the bed's rear end, as wide as the bed, never on the cab's
+  // roof (the owner, 15-Oct: "the flatbed there should put its wing on the rear of the truck bed"); its stands' row on the tailgate, the
+  // rails or the deck, its front and rear edges free to hang over the bed's well and behind the tail. Where nothing at the bed's end takes
+  // the smallest wing (a crane's boom, a tow rig), the cab roof's rear edge as for a van.
+  const cabRear = hasGlass ? glassMinZ - 0.04 : g.box.max.z - len * 0.45;
+  // (the bed's own level: the median top along its middle, every tagged prop hidden; the wing stands no lower than 10 cm under it: never on
+  // a bumper behind a bed that a tarp or a load covers. A "bed" whose top is over the cab's glass is a BODY (a mixer's drum, a tipper's or a
+  // refuse lorry's box, a canvas tilt, a milk float's canopy): the van rule then, the wing on its rear top edge or the cab's roof)
+  let bedTop = Infinity;
+  if (BED_KINDS.has(kind) && hasGlass && cabRear - tail >= 0.6) {
+    const tops = [];
+    for (let z = tail + 0.3; z <= cabRear - 0.1; z += 0.1) { const t = topAt(z, (m) => !g.meshes[m].tag); if (t > -Infinity) tops.push(t); }
+    if (tops.length) bedTop = tops.sort((a, b) => a - b)[Math.floor(tops.length / 2)];
+  }
+  const isBed = bedTop < glassTop - 0.05;
+  let bedWing = false;
+  if (isBed) {
+    const bed = { B: P.PROP_BOUNDS.wing, min: P.MIN_SCALE.wing, max: high.wing ?? P.maxScale('wing', kind), cap: P.maxScale('wing', kind), zFrom: tail + 0.04, zTo: cabRear - 0.1,
+      frontLimit: cabRear, noBlades: false, level: (y, z) => y >= Math.max(0.45, bedTop - 0.1) && y >= topAt(z, wingAllow) - 0.03, maxInset, allow: wingAllow, prefer: 'rear', rearShare: REAR_SHARE,
+      airRows: true, spanRows: true, widthCap: WIDTH_CAP, rearLimit: tail - 0.05 };
+    const wb = bestSoft(g, { ...bed, slot: 'wing', shape: 'box' });
+    if (wb) {
+      let wc = null;
+      for (let s = wb.s; s >= P.MIN_SCALE.wing - 1e-9 && !wc; s = Math.round((s - 0.02) * 100) / 100) wc = feasible(g, { ...bed, slot: 'wing', shape: 'cyl' }, s, wb.z);
+      if (wc) { opt['wing-box'] = { ...wb, bed: true }; opt['wing-cyl'] = { ...wc, sMax: wb.sMax, bed: true }; bedWing = true; }
+    }
+  }
+  if (!bedWing) for (const shape of ['box', 'cyl']) {
     opt['wing-' + shape] = bestSoft(g, { slot: 'wing', shape, B: P.PROP_BOUNDS.wing, min: P.MIN_SCALE.wing, max: high.wing ?? P.maxScale('wing', kind), cap: P.maxScale('wing', kind),
       zFrom: tail + 0.04, zTo: Math.min(hasGlass ? Math.min(g.box.max.z - 0.3, glassMinZ + 0.6) : tail + len * 0.55, CAB_KINDS.has(kind) ? Infinity : tail + len * 0.55), noBlades: true,
       level: wingLevel, maxInset, allow: wingAllow, prefer: 'rear', rearShare: REAR_SHARE, airRows: true, widthCap: WIDTH_CAP, rearLimit: tail - 0.05 });
   }
   // (a wing's box and cylinder at the same z: the cylinder's own search may pick another place; it follows the box where it fits there)
-  if (opt['wing-box'] && opt['wing-cyl'] && Math.abs(opt['wing-cyl'].z - opt['wing-box'].z) > 0.05) {
+  if (!bedWing && opt['wing-box'] && opt['wing-cyl'] && Math.abs(opt['wing-cyl'].z - opt['wing-box'].z) > 0.05) {
     const o2 = { slot: 'wing', shape: 'cyl', B: P.PROP_BOUNDS.wing, maxInset, allow: wingAllow, level: wingLevel, noBlades: true, airRows: true, widthCap: WIDTH_CAP, rearLimit: tail - 0.05 };
     for (let s = opt['wing-cyl'].s; s >= P.MIN_SCALE.wing; s = Math.round((s - 0.02) * 100) / 100) { const f = feasible(g, o2, s, opt['wing-box'].z); if (f) { opt['wing-cyl'] = { ...f, sMax: opt['wing-cyl'].sMax }; break; } }
   }
-  const wingAvoid = [...vols('wing', opt['wing-box']), ...vols('wing', opt['wing-cyl'])];
+  // (a slot the hand table marks unsupported (o.handNo: { wing: true, ... }) is no obstacle to the others: nothing is ever worn there)
+  const handNo = o.handNo || {};
+  const wingAvoid = handNo.wing ? [] : [...vols('wing', opt['wing-box']), ...vols('wing', opt['wing-cyl'])];
   // the ROOF: over the glasshouse, centred where the biggest fits, clear of the wing
   const roofFloor = hasGlass ? glassTop - 0.06 : bodyTop - 0.5;
+  const roofRear = isBed ? glassMinZ - 0.1 : undefined; // (a truck's roof prop stays on its cab: never out over the bed)
   for (const shape of ['box', 'cyl']) {
     opt['roof-' + shape] = bestSoft(g, { slot: 'roof', shape, B: P.PROP_BOUNDS.roof, min: P.MIN_SCALE.roof, max: high.roof ?? P.maxScale('roof', kind), cap: P.maxScale('roof', kind), noBlades: false, // (a car's roof is a plate over the cabin: no blade test)
      
-      zFrom: tail + 0.1, zTo: g.box.max.z - 0.1, level: (y) => y >= roofFloor, maxInset, allow: hideSlot('roof'), prefer: 'centre', avoid: wingAvoid });
+      zFrom: tail + 0.1, zTo: g.box.max.z - 0.1, level: (y) => y >= roofFloor, maxInset, allow: hideSlot('roof'), prefer: 'centre', avoid: wingAvoid, rearLimit: roofRear });
   }
   if (opt['roof-box'] && opt['roof-cyl'] && Math.abs(opt['roof-cyl'].z - opt['roof-box'].z) > 0.05) { // (the cylinder centred where the box is, if it fits there)
-    const o2 = { slot: 'roof', shape: 'cyl', B: P.PROP_BOUNDS.roof, maxInset, allow: hideSlot('roof'), level: (y) => y >= roofFloor, avoid: wingAvoid };
+    const o2 = { slot: 'roof', shape: 'cyl', B: P.PROP_BOUNDS.roof, maxInset, allow: hideSlot('roof'), level: (y) => y >= roofFloor, avoid: wingAvoid, rearLimit: roofRear };
     for (let s = opt['roof-cyl'].s; s >= P.MIN_SCALE.roof; s = Math.round((s - 0.02) * 100) / 100) { const f = feasible(g, o2, s, opt['roof-box'].z); if (f) { opt['roof-cyl'] = { ...f, sMax: opt['roof-cyl'].sMax }; break; } }
   }
   // the CARGO: on a deck behind the cab, under the roof line, as big as fits, then as close to the cab as it goes (the owner, 15-Oct: "right
   // behind the cab"), clear of the wing and the roof
   const roofY = opt['roof-box'] ? opt['roof-box'].top : bodyTop;
-  const cabRear = hasGlass ? glassMinZ - 0.04 : g.box.max.z - len * 0.45;
-  const avoid2 = [...wingAvoid, ...vols('roof', opt['roof-box']), ...vols('roof', opt['roof-cyl'])];
+  const avoid2 = [...wingAvoid, ...(handNo.roof ? [] : [...vols('roof', opt['roof-box']), ...vols('roof', opt['roof-cyl'])])];
   for (const shape of ['box', 'cyl']) {
     opt['cargo-' + shape] = cabRear - tail < 0.3 ? null : bestSoft(g, { slot: 'cargo', shape, B: P.PROP_BOUNDS.cargo, min: P.MIN_SCALE.cargo, max: high.cargo ?? P.maxScale('cargo', kind), cap: P.maxScale('cargo', kind), noBlades: false, // (a deck is often a plate over the chassis, air under it)
      
-      zFrom: tail + 0.1, zTo: cabRear - 0.1, frontLimit: cabRear, level: (y) => y > 0.2 && y < roofY - 0.25, maxInset, allow: hideSlot('cargo'), prefer: 'front', zStep: 0.04, avoid: avoid2,
+      zFrom: tail + 0.1, zTo: cabRear - 0.1, frontLimit: cabRear, level: (y) => y > 0.2 && y < roofY - 0.25, maxInset, allow: hideSlot('cargo'), prefer: 'front', frontShare: FRONT_SHARE, zStep: 0.04, avoid: avoid2,
       maxTop: (base) => Math.max(base + 0.5, roofY + 0.1) }); // (a load no higher than the cab's roof, or 0.5 m: the first generator's clearance rule)
   }
   return { opt, info: { tail, len, height, glassTop, glassMinZ, rearGlassFoot, bodyTop, hasGlass, roofFloor, cabRear } };
@@ -439,7 +475,7 @@ export const optimum = (g, P, kind, o = {}) => {
 export const toEntry = (slot, rb, rc, info, cap) => {
   if (!rb || !rc) return null;
   const r3 = (v) => Math.round(v * 1000) / 1000;
-  const from = slot === 'roof' ? 'roof' : slot === 'cargo' ? 'deck' : (rb.top >= info.roofFloor - 0.02 && info.hasGlass ? 'roof-edge' : rb.air ? 'deck-edge' : 'deck');
+  const from = slot === 'roof' ? 'roof' : slot === 'cargo' ? 'deck' : rb.bed ? 'bed-tail' : (rb.top >= info.roofFloor - 0.02 && info.hasGlass ? 'roof-edge' : rb.air ? 'deck-edge' : 'deck');
   const e = { box: [rb.s, 0, r3(rb.y), r3(rb.z)], cyl: [rc.s, 0, r3(rc.y), r3(rc.z)], from, lim: rb.s >= cap - 1e-9 ? 'max' : 'fit' }; // ('fit': the surface limited it)
   if (rb.inset > 0.004 || rc.inset > 0.004) e.inset = [r3(rb.inset), r3(rc.inset)];
   return e;

@@ -43,7 +43,8 @@ const NO_WING = { canopy: 'a canopy roof with no deck or edge', craft: 'a craft'
 const CARGO_KINDS = new Set(['pickup', 'flatbed', 'halftrack', 'open', 'truck', 'special']);
 const measureCar = (model, car, P, glassy) => {
   const g = carGeometry(model, glassy), kind = P.kindOf(car);
-  const { opt, info } = optimum(g, P, kind);
+  const handNo = Object.fromEntries(P.SLOTS.map(s => [s, !!P.HAND[car.id]?.[s]?.no])); // (a hand-unsupported slot is no obstacle to the others)
+  const { opt, info } = optimum(g, P, kind, { handNo });
   const slot = (name, no, why) => {
     if (no) return { no };
     return toEntry(name, opt[name + '-box'], opt[name + '-cyl'], info, P.maxScale(name, kind)) || { no: why };

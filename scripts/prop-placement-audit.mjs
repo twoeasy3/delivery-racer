@@ -83,7 +83,7 @@ async function worker(k, n) {
       const tail = g.box.min.z, len = g.box.max.z - g.box.min.z;
       const hideSlot = (slot) => (m) => g.meshes[m].tag !== slot;
       // ---- the optimum of each slot (prop-audit-lib.mjs optimum: the same search the generator uses) ----
-      const { opt } = L.optimum(g, P, kind, { maxInset: MAX_INSET });
+      const { opt } = L.optimum(g, P, kind, { maxInset: MAX_INSET, handNo: Object.fromEntries(P.SLOTS.map(s => [s, !!P.HAND[car.id]?.[s]?.no])) });
       // ---- thin plates near the tail: wings, spoilers (with the wing props hidden: anything left is untagged or tagged another slot) ----
       const bladesAll = g.blades(hideSlot('wing'));
       const bw0 = g.widthAt(tail + len * 0.15).w || (g.box.max.x - g.box.min.x);
@@ -179,6 +179,13 @@ async function worker(k, n) {
               const h = g.support(v.x, v.z, sh.centre[1] + d.H / 2, allow);
               if (h && v.y < h.y - 0.005) buried++;
               if (v.y < minY + 0.01 && h) lowGap = Math.min(lowGap, v.y - h.y);
+            }
+            // (the base face between its corners too: a stand's foot astride a 6 cm tailgate cap touches it though no corner does)
+            let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+            for (let q = 0; q < p.count; q++) { v.fromBufferAttribute(p, q).applyMatrix4(o.matrixWorld); if (v.y < minY + 0.01) { x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); z0 = Math.min(z0, v.z); z1 = Math.max(z1, v.z); } }
+            if (x0 <= x1) for (let i = 0; i <= 4; i++) for (let j = 0; j <= 4; j++) {
+              const h = g.support(x0 + (x1 - x0) * i / 4, z0 + (z1 - z0) * j / 4, sh.centre[1] + d.H / 2, allow);
+              if (h) lowGap = Math.min(lowGap, minY - h.y);
             }
           });
           row.props[id] = { pen: r3(pen), by, buried: r2(buried / Math.max(1, verts)), standGap: r3(lowGap === Infinity ? null : lowGap), scale: r2(fit.scale), room: r2(fit.room), atMax: fit.capped };

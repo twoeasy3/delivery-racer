@@ -89,7 +89,10 @@ try {
         // highest point within TOUCH of `top`, the lowest within TOUCH of `base` (so the inset is what the surface asks for)
         // (a WING stands on its stands, about a third of its width out from the centre, and its blade's ends may reach over a crowned deck's
         // fall or a roof's edge: its stand line is tested; one whose rear hangs back over the tail ('roof-edge', 'deck-edge'): the front half)
-        const pts = slot === 'wing' ? (s.from === 'roof-edge' || s.from === 'deck-edge' ? [[cx, cz + half[2] * 0.6], [cx - half[0] * 0.3, cz + half[2] * 0.6], [cx + half[0] * 0.3, cz + half[2] * 0.6]]
+        // (a 'bed-tail' wing spans a truck's bed at its rear end: its stands' row, across its middle, on the tailgate, the rails or the deck;
+        // its front and rear edges hang over the bed's well and behind the tail)
+        const pts = slot === 'wing' && s.from === 'bed-tail' ? [[cx, cz], [cx - half[0] * 0.6, cz], [cx + half[0] * 0.6, cz]]
+          : slot === 'wing' ? (s.from === 'roof-edge' || s.from === 'deck-edge' ? [[cx, cz + half[2] * 0.6], [cx - half[0] * 0.3, cz + half[2] * 0.6], [cx + half[0] * 0.3, cz + half[2] * 0.6]]
           : [[cx, cz], [cx - half[0] * 0.3, cz - half[2] * 0.6], [cx + half[0] * 0.3, cz - half[2] * 0.6], [cx - half[0] * 0.3, cz + half[2] * 0.6], [cx + half[0] * 0.3, cz + half[2] * 0.6]])
           : s.from === 'roof-edge' ? [[cx, cz + half[2] * 0.6], [cx - half[0] * 0.9, cz + half[2] * 0.9], [cx + half[0] * 0.9, cz + half[2] * 0.9]]
           : name === 'cyl' && sh.axis === 'y' ? [[cx, cz], ...[0, 1, 2, 3].map(k => [cx + half[0] * 0.9 * Math.cos(k * Math.PI / 2 + Math.PI / 4), cz + half[2] * 0.9 * Math.sin(k * Math.PI / 2 + Math.PI / 4)])] // (a standing cylinder: its rim, not its bounding square's corners)

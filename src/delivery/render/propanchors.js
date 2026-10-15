@@ -15,7 +15,8 @@
 // entry per CAR ID (a Super's body kit adds a wing and roof lamps, so a Super has a row of its own): { roof, cargo, wing }, a slot
 // either { no: 'why' } or { box: [s, x, y, z, yaw?], cyl: [s, x, y, z, yaw?], from, lim, inset?, existing?, conf? }: s = the uniform scale,
 // (x, y, z) = the shape's centre with its base on the highest surface point under it, `inset` = [box, cyl] metres the shapes are SUNK
-// into a curved surface (absent = 0: flat), `from` = the surface it stands on ('roof', 'roof-curved', 'deck', 'roof-edge', 'deck-edge': a wing whose rear hangs back over the tail), `lim` = what
+// into a curved surface (absent = 0: flat), `from` = the surface it stands on ('roof', 'roof-curved', 'deck', 'roof-edge', 'deck-edge': a wing whose rear hangs back over the tail, 'bed-tail': a wing
+// across a truck's bed at its rear end, its stands on the tailgate or the rails, its edges over the well and the tail), `lim` = what
 // limited the scale ('w' width, 'd' depth, 'h' height, 'max' the cap, 'inset' the surface's curve), existing = the car already has a prop
 // of that slot (tagged), conf 'measured' (the generator) or 'hand' (HAND below).
 // THE DATA, PER SLICE (five sweeping agents, one slice each, never the same file): render/propanchors/slice-<n>.json, each
