@@ -674,3 +674,40 @@ Working list, from the owner's ideas of 2026-10-09. `[x]` done, `[~]` partly don
   - SEEN (headless Chromium, software GL; /tmp/cosmetics-per-car/, READ): the Cosmetics screen at 1100x650 and 390x844 on This car (commuter: 5-spoke, roof box, MY CAR plate, Custom tag, tab dots) and All cars (Whitewall + gold ticked, 'not on this car'), the pick-up on This car (the default look, 'from default', Reset/Copy greyed), the plate tab on a phone, the 'Replace 1 car?' confirm on a phone (fits on one line); the showroom switching commuter -> pick-up -> commuter with no reload (each its own look, cards too); a flow from the showroom's Style button: All cars -> Redline + blue -> shut -> the pick-up wears it, the commuter keeps its 5-spoke; the menu card on the commuter and the pick-up; the garage lot (the commuter's roof box among stock cars); an old save (only the old keys) opening with its look on the commuter, 'from default'.
   - IN GAME (a still from the menu's START, no test switch): the pick-up wears the default's yellow plate at its tail (seen from behind only). The COMMUTER in game is the plain player mesh: items.js dresses only cars with a model of their own (`CAR.model`), so a car built by makeCarMesh (the commuter and the other box-built cars) wears no cosmetic in a run, as before this change (not changed here; an open point).
   - NOT VERIFIED: a real phone or the Mi Pad; an old save from a real player's browser (simulated in headless with the old keys only); a whole run with a custom car (one still only); per-axle editing (not built). Seen in passing, NOT this change (the same on a86e4a9): after the Style screen is shut, the next car shown fades in from transparent, which in headless software GL took several seconds (looks dim in a still); on a device it is a normal fade.
+- [x] 760. THE ALPINE PASS THEME AND ITS LEVEL (the owner: three new themes on three agents; this is the alpine pass). Branch `claude/theme-alpine` from main v1.1.142, NOT merged, no version bump. **760 is a placeholder number** (other agents are also adding 7xx lines): renumber at the merge.
+  - THEME `alpine` (themes.js; scenery `alpinepass` in `render/themes/alpine.js`, models in `alpineModels.js`, one line in render/themes/index.js above the new batch E marker). The snow theme's old road.js scenery was called `alpine`; it is renamed `snowpass` (themes.js and two lines of road.js) so the names do not clash. Stelvio still draws as before (still read). `alpineDusk`: the same pass at golden hour (warm light, pink snow, lit windows), not used by a level (`&theme=alpineDusk`).
+  - LOOK: early summer. road.js's terrain is lifted into mountains (never within 45 m of a road), a basin is dug for a frozen lake under a glacier, and the land is coloured by height and slope (meadow, alpine grass, scree, rock, snow from about 150 m up). There is a valley village of timber chalets round a church with a green spire, chalets and hay barns in the meadows, pines up to the treeline, a chair lift over the road (empty chairs going round), a gondola over the high valley, chevron boards round the hairpins and red-and-white snow poles. The road edges are a gravel verge, a steel rail on the valley side, a stone retaining wall on the hill side, snow banks higher up and plough-cut snow walls at the col; all of them are continuous ribbons along the curve, with no steps. There is a refuge hut, a summit board and a parked snowplough at the col, a ring of glaciered peaks and cloud banks, and a cold blue sky. The level's tunnel is the AVALANCHE GALLERY: the theme's tunnel is `lit` with `shell: false`, so the theme draws it as a concrete roof on columns, open to the valley, with the hill banked over it. The camera dips under it as in any tunnel. Because the tunnel is lit, it is not dark and does not get the Tunnels card. No people or figures are drawn anywhere.
+  - OBSTACLES (each has the box and cost of the kind it replaces): cheese wheels on a pallet (`cheeseWheels`, a crate), a woodpile (`woodpile`, a bale), a milk churn (`milkChurn`, a cone) and a block of snow with snow poles (`snowBlock`, a barrier). Words and DRESS lines are added. Nothing else stands in the driving area.
+  - LEVEL `alpine-pass` (hidden, `?hidden=alpine-pass`), 3527 m, 2 lanes up and 1 down, climbing from 0 to 147 m:
+    - 0-260: the village.
+    - 260-720: the meadows (cows 430-640, chair lift at about 560).
+    - 720-1552: four hairpins (radius 20 m) with 190-200 m legs at 7%. Black ice in the shade at 1110-1230 (right lane) and 1380-1485 (left lane), on the approaches to the hairpins.
+    - 1552-2472: the high valley: the frozen lake at about 2100, 95 m off the road, and the gondola at about 2150.
+    - 2472-3327: three hairpins (radius 24 m) with 200-220 m legs. Rockfall at 2600-2705 under the rock face between the upper legs (rocks waiting 18 m out); the gallery at 2850-2990; snow walls from 3150.
+    - 3327-3527: the col, with the hut at 3420.
+    - Clock 165/125 from level-clocks; tip 200; pickups in rows of two or three; 4 targets.
+    - Cargo: Wheel of Mountain Cheese (Good) and Suspicious Fondue (Evil, 3 states).
+    - Menu pair: `levelshots/alpine-pass.jpg` and `large/` (CINE in shots.mjs), both read.
+  - GIMMICKS: Cows (alpine pasture), Black ice in the shade (shaded hairpin approaches under the pines) and Rockfall (only under its rock face). There is no fog or crosswinds, which keeps it apart from Stelvio's ice, rockfall, fog and crosswinds. The climbing lane and the hairpin cut were not built: the owner dropped them (CHECKLIST-11-Oct, Q19). No new gimmick was added.
+  - COST (headless Chromium, software GL, `renderer.info`, from the player's camera at 500 / 1100 / 3300 m):
+    - The theme's own scenery: 16 / 16 / 15 calls and about 88k triangles.
+    - road.js's terrain: 1 call and 102k triangles.
+    - The whole level group: 28 / 24 / 27 calls and 201k triangles.
+    - One canvas texture of 256 x 256 (262,144 bytes).
+    - For comparison, measured the same way: Stelvio's group is 46 calls and 364k triangles; Chianti Run's is 31 calls and 293k.
+    - The new `scripts/.alpine-check.mjs` (render group) holds the cost to 20 meshes, 150k triangles, 4,000 instances and a 256 px texture. Headless it is 17 meshes and 103k triangles (the land is flat there, so trees stand everywhere).
+  - CHECKED:
+    - `.alpine-check` passes: theme, level, obstacles collide and cost what they replace, scenery is laid out on 3 levels and the dusk, nothing reaches a road, every ribbon is beyond the pavement, the camera at 12,690 places is never inside anything or at the gallery roof and never over lifted land, and the budget holds.
+    - The schema, descriptions, obstacles, words, levelrules, hiddenlevels, cargo, hazards and gimmicks3 checks pass.
+    - `.replay-check alpine-pass` passes.
+    - `delivery-levels-check` passes.
+    - `--group gimmicks,obstacles,levels,words,tiers,render --no-lock` ran 70 scripts with 2 failures, `.pursuit-check` and `.strike-levels-check`. Both are known failures on main.
+    - `node --check` and eslint pass on the changed files, and the vite build passes (alpine.js is its own chunk, 31 kB).
+    - The replay fingerprint changes, as for every new theme: logic files changed (config, collision, themes, levels, cargo).
+  - SEEN (stills in /tmp/theme-alpine/, READ): the village, the meadows with the chair lift and cows, the switchbacks from the chase camera and from above, the shade, the rockfall face, the high valley with the gondola, the gallery inside and from outside, the col with its snow walls and hut, close-ups of the four obstacles, the dusk, a phone frame (390x844 at 2x), and the menu pair.
+  - NOT VERIFIED:
+    - Motion (stills only): the chairs and cabins moving, the chunks culling.
+    - A real GPU or phone.
+    - The frozen lake is only glimpsed: it is off to the side of the road.
+    - The gimmicks page's cards for the four new obstacles were not looked at one by one.
+    - The full run on the level, beyond the checks.
