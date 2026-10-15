@@ -97,7 +97,11 @@ parts(group, k + 'glass', GLASS, () => [...glass.sides, glass.front, glass.rear]
 2. **Render and read the images** (see Process rules): a LEVEL orthographic side view, a 3/4 front, a close-up of the
    A-pillar/screen-top corner, the rear 3/4, before and after. Compare the pixel row of the screen top and the side-window top
    (they must be the same row). Count each window's corners in the image. Check the screen's foot against the bonnet. Do not
-   report success unless your own pixel and corner check confirms it.
+   report success unless your own pixel and corner check confirms it. Also a STEEP three-quarter view at 2x, cropped to the
+   windows: a ragged top edge seen only from above is the roof's bevelled shoulder overlapping a pane that sits too close
+   under it, and a sawtooth from every angle is a pane polygon whose points are out of order (its fan overlaps itself). Both
+   were found on the Commuter's hand-built panes, 15-Oct: see "Crisp glass edges" in CAR-AGENT-PROMPT.md. The helper orders
+   its polygons; a car that builds its own panes must be checked for it.
 3. Other checks: `.ideas-check --quick`, `.bundle-check`, `.modelpatch-check`, `.suspension-check <car>`, eslint on changed files,
    `.platetag-check` (the triangle baseline will change: say by how much and do not edit the baseline file; the orchestrator
    re-records only the glass cars' entries at merge), lamps unchanged. If you change the shared helper, prove every other car's

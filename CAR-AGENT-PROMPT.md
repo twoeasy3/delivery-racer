@@ -83,6 +83,19 @@ contour inset by the same roof-rail margin), the windscreen's side edge and the 
 pillar of constant width, and the rear glass meets the side window's rear edge the same way at the C-pillar. Build windscreen, side glass
 and rear glass from the same inset outline and one roof-top height per car, never each with a height of its own.
 
+Crisp glass edges: three faults found on the Commuter (15-Oct, CHECKLIST 345) that make a window's edge ragged; check every pane for them.
+- **A pane polygon's points must go IN ORDER round the outline.** The old Commuter listed its roof samples front-to-back AFTER the
+  back-top corner, so the polygon zig-zagged and its triangle fan (`panel`, fanned from the first point) overlapped itself: a
+  sawtooth along the window's top. Sample the top edge from the back corner to the front corner (or the reverse), then close.
+- **A pane must stand clear of the body's bevels.** A flat pane lifted a few mm off a bevelled flank is cut by the rounded shoulder
+  under its foot (the body outline grows by the bevel size, so the real shoulder sits that much above the waist line) and by the
+  roof's rounded edge above its top. Put the pane's foot above the shoulder (waist + bevel + a margin), its top a few cm under the
+  roof line, and lift it 1 to 2 cm, not 6 mm; inset a windscreen or rear glass further from the pillars than the bevel's size.
+- **Where a surface bends, flat parts cut it raggedly.** Any flat or thin part laid on a curved corner (a lens, a badge, a pane)
+  meets the faceted body in a kinked line. Either put the part on a flat face, or give it a steep wall (a ring, a block, a fat
+  shape) so its visible outline is its own rim and not the intersection.
+Look at the side AND a steep three-quarter view at 2x (`scripts/shots.mjs ... --scale=2`, then crop) before calling a window done.
+
 ## No panel lines, and do not try too hard (the owner, 13-Oct)
 - NO PANEL LINES. Do not model door shut lines, bonnet / boot / tailgate / fuel-flap lines, panel gaps, seams, or thin
   strips of any kind that only fake a join. They never read at card size, they cost triangles and shapes, and they made
