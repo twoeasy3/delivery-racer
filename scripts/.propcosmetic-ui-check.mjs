@@ -5,7 +5,7 @@
 //   - slotStatus: a supported slot is ok; a slot the table says 'no' to carries its short reason; a car with no table entry is 'not available yet'
 //     with no reason; a Legendary car keeps its own look; the screen shows 'Not available for this car yet' for those
 //   - equip: every prop of every supported slot goes on every supported car as a child of the model's body group or the model, placed by fitProp
-//     (position, uniform scale), the car's OWN tagged props of that slot hidden (only that slot), the other slots untouched; None / Stock shows
+//     (position, uniform scale: min(the slot's room, the prop's own maxScale), CHECKLIST 450), the car's OWN tagged props of that slot hidden (only that slot), the other slots untouched; None / Stock shows
 //     them again and removes the prop; an unsupported slot adds nothing; a Legendary car is untouched
 //   - the prop is a sprung part (never planted on the floor like a wheel), is not mistaken for the car's own prop (existingProps), the paint 'match'
 //     follows the car's body colour (same Color object), a hex paint sets its colour, a change refreshes a model already built (no rebuild)
@@ -76,7 +76,7 @@ try {
   // ---- equip on the five cars ----
   const ownOf = (model, slot) => PC.existingProps(model).filter(e => e.slot === slot);
   const rideOk = (model, group) => group.parent === model || group.parent === model.userData.body?.parent;
-  let dressed = 0, bad = [];
+  let dressed = 0, bad = [], capped = 0;
   for (const id of ids) {
     const c = car(id), t = PA.propSlots(id);
     for (const slot of SLOTS) {
@@ -92,7 +92,9 @@ try {
           if (g || plan.worn.length || model.children.length !== kids || ownOf(model, slot).some(e => !e.mesh.visible)) bad.push(id + ' ' + slot + ' ' + p.id + ' unsupported but changed');
           continue;
         }
-        const fit = PA.fitProp(id, slot, p.shape);
+        const fit = PA.fitProp(id, slot, p.shape, p), room = PA.fitProp(id, slot, p.shape);
+        if (Math.abs(fit.scale - Math.min(room.scale, p.maxScale)) > 1e-9) bad.push(id + ' ' + slot + ' ' + p.id + ': not worn at min(room ' + room.scale + ', maxScale ' + p.maxScale + ')');
+        if (fit.capped) capped++;
         let why = '';
         if (!g) why = 'no group';
         else {
@@ -116,7 +118,7 @@ try {
       }
     }
   }
-  check(bad.length === 0, dressed + ' prop / slot / car combinations dress and restore on the five cars' + (bad.length ? ' (' + bad.slice(0, 6).join('; ') + ')' : ''));
+  check(bad.length === 0, dressed + ' prop / slot / car combinations dress and restore on the five cars, each worn at min(the slot\'s room, the prop\'s own maxScale) (' + capped + ' at their max)' + (bad.length ? ' (' + bad.slice(0, 6).join('; ') + ')' : ''));
   const hasOwn = ['minibus roof', 'moke cargo', 'rally roof', 'rally wing', 'touringcar wing'].filter(k => ownOf(makeShowCar(car(k.split(' ')[0])), k.split(' ')[1]).length);
   check(hasOwn.length === 5, "the cars with their own tagged prop hide it for a worn prop and show it for None (" + hasOwn.join(', ') + ')');
   D.setProp('roof', 'none');

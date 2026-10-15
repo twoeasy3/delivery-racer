@@ -64,7 +64,7 @@ const m = makeShowCar(car); m.userData.animate?.(0);
 const slots = q.get('slots') ? q.get('slots').split(',') : undefined, shapes = q.get('shapes') ? q.get('shapes').split(',') : undefined;
 if (q.get('hide')) hideProps(m, q.get('hide') === '1' ? null : q.get('hide'));
 if (propId) {
-  const slot = propSlotOf(propId), shape = propById(propId).shape, fit = fitProp(id, slot, shape);
+  const slot = propSlotOf(propId), shape = propById(propId).shape, fit = fitProp(id, slot, shape, q.get('nocap') ? null : propById(propId)); // (worn as the game wears it: at most the prop's own maxScale; &nocap=1: at the slot's full room, as before CHECKLIST 450)
   if (fit) {
     hideProps(m, slot);
     const prop = buildProp(propId, propPaint(paintHex));

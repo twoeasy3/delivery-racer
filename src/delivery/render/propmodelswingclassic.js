@@ -38,7 +38,7 @@ const blade = (parent, material, w, chord, t, x, y, z, tilt = 0) => {
 
 export const MORE_WING_CLASSIC = [
   // 1. a swan-neck GT wing: the blade hangs UNDER two curved pylons that rise from the deck, arch over and drop onto its top; end plates.
-  { id: 'wing-swan', name: 'Swan-neck GT wing', shape: 'box', colourFrom: 'mixed', build: (paint) => {
+  { id: 'wing-swan', name: 'Swan-neck GT wing', maxScale: 1.8, shape: 'box', colourFrom: 'mixed', build: (paint) => {
     const g = new THREE.Group();
     const neck = ribbon([[0.105, -0.175], [0.105, -0.02], [0.098, 0.08], [0.07, 0.13], [0.02, 0.153], [-0.03, 0.135], [-0.05, 0.105], [-0.05, 0.07]], 0.02);
     for (const s of [-1, 1]) prism(g, DARK, 0.035, neck, s * 0.32);
@@ -47,7 +47,7 @@ export const MORE_WING_CLASSIC = [
     return g;
   } },
   // 2. a single-pedestal wing: one wide tapered pylon on the centre line carries a long blade, small end plates (a time-attack wing).
-  { id: 'wing-pedestal', name: 'Pedestal wing', shape: 'box', colourFrom: 'mixed', build: (paint) => {
+  { id: 'wing-pedestal', name: 'Pedestal wing', maxScale: 1.8, shape: 'box', colourFrom: 'mixed', build: (paint) => {
     const g = new THREE.Group();
     prism(g, DARK, 0.09, [[0.06, -0.175], [-0.07, -0.175], [-0.035, 0.1], [0.035, 0.1]]);   // the pylon: wide at the deck, narrow under the blade
     blade(g, paint, 1.34, 0.24, 0.035, 0, 0.115, -0.01, 0.08);                           // the blade, y 0.1 to 0.13, the pylon's top 1.5 cm into it
@@ -55,7 +55,7 @@ export const MORE_WING_CLASSIC = [
     return g;
   } },
   // 3. a tuner wing: a wide flat blade low on two short stands between big upswept end plates in the car's colour.
-  { id: 'wing-tuner', name: 'Tuner wing', shape: 'box', colourFrom: 'mixed', build: (paint) => {
+  { id: 'wing-tuner', name: 'Tuner wing', maxScale: 1.8, shape: 'box', colourFrom: 'mixed', build: (paint) => {
     const g = new THREE.Group();
     for (const s of [-1, 1]) box(g, DARK, 0.05, 0.14, 0.05, s * 0.4, -0.105, 0.0);       // the short stands: floor up into the blade
     blade(g, paint, 1.34, 0.28, 0.032, 0, -0.025, 0.0, 0.07);                            // the blade
@@ -63,14 +63,14 @@ export const MORE_WING_CLASSIC = [
     return g;
   } },
   // 4. a ducktail: one moulded kicked-up lip that follows the deck: it rises from the deck's surface in a gentle curve to a lifted tail edge.
-  { id: 'wing-ducktail', name: 'Ducktail', shape: 'box', colourFrom: 'car', build: (paint) => {
+  { id: 'wing-ducktail', name: 'Ducktail', maxScale: 1.8, shape: 'box', colourFrom: 'car', build: (paint) => {
     const g = new THREE.Group();
     const top = [0, 1, 2, 3, 4, 5, 6, 7].map(i => { const t = i / 7; return [0.15 - 0.265 * t, -0.17 + 0.135 * Math.pow(t, 2.2)]; }); // the gentle rise, from the deck to the lifted tail edge
     prism(g, paint, 1.3, [[0.15, -0.175], [-0.14, -0.175], [-0.14, -0.04], ...top.reverse()]);
     return g;
   } },
   // 5. a hatch roof spoiler: a curved, deep blade on two short pedestals at the roof's rear edge, with a brake lamp strip on its back.
-  { id: 'wing-hatch', name: 'Hatch roof spoiler', shape: 'box', colourFrom: 'mixed', build: (paint) => {
+  { id: 'wing-hatch', name: 'Hatch roof spoiler', maxScale: 1.8, shape: 'box', colourFrom: 'mixed', build: (paint) => {
     const g = new THREE.Group();
     for (const s of [-1, 1]) box(g, DARK, 0.08, 0.1, 0.07, s * 0.5, -0.125, 0.0);          // the pedestals: floor up into the blade
     const o = -0.08;
@@ -79,7 +79,7 @@ export const MORE_WING_CLASSIC = [
     return g;
   } },
   // 6. a race wing: a tall dual-element blade (main plane and a steep flap with a Gurney flap), two vertical pylons, large end plates.
-  { id: 'wing-race', name: 'Race wing', shape: 'box', colourFrom: 'mixed', build: (paint) => {
+  { id: 'wing-race', name: 'Race wing', maxScale: 1.8, shape: 'box', colourFrom: 'mixed', build: (paint) => {
     const g = new THREE.Group();
     for (const s of [-1, 1]) box(g, DARK, 0.045, 0.215, 0.05, s * 0.3, -0.0675, 0.015);   // the pylons: floor up into the main plane
     blade(g, paint, 1.36, 0.17, 0.035, 0, 0.05, 0.02, 0.05);                              // the main plane

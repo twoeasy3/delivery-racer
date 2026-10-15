@@ -92,6 +92,38 @@ try {
     else placed++;
   }
   check(!bad.length && placed >= 20, 'fitProp gives a transform (positive scale, finite position and yaw) for every supported slot of the five test cars, null otherwise (' + placed + ' placed)' + (bad.length ? ': ' + bad.join('; ') : ''));
+  // ---- each prop's own maximum scale (CHECKLIST 450): declared on its registry entry, and fitProp(car, slot, shape, prop) wears it at
+  // min(the slot's room, prop.maxScale), its base on the slot's base, centred on a roof, at the rear edge of a wing, at the cab end of a load
+  {
+    const rooms = { roof: { box: [], cylinder: [] }, cargo: { box: [], cylinder: [] }, wing: { box: [], cylinder: [] } };
+    for (const id of Object.keys({ ...P.PROP_TABLE, ...P.HAND })) for (const slot of slots) { const s = P.propSlots(id)[slot]; if (s.supported) { rooms[slot].box.push(s.box.scale); rooms[slot].cylinder.push(s.cylinder.scale); } }
+    const badMax = [];
+    for (const slot of slots) for (const p of M.PROPS[slot]) {
+      const least = Math.min(...rooms[slot][p.shape]);
+      if (!(Number.isFinite(p.maxScale) && p.maxScale > 0)) badMax.push(p.id + ' no maxScale');
+      else if (p.maxScale < P.MIN_SCALE[slot] || p.maxScale < least) badMax.push(p.id + ' ' + p.maxScale + ' under the smallest room ' + least);
+      if (p.align && !['centre', 'front', 'rear'].includes(p.align)) badMax.push(p.id + ' align ' + p.align);
+    }
+    check(!badMax.length, 'every one of the ' + full.length + ' props declares maxScale (positive, at least its slot\'s MIN_SCALE and the smallest room any car gives its shape)' + (badMax.length ? ': ' + badMax.join('; ') : ''));
+    const near = (a, b) => Math.abs(a - b) < 1e-6, badFit = [];
+    let capped = 0, worn = 0;
+    for (const id of Object.keys({ ...P.PROP_TABLE, ...P.HAND })) for (const slot of slots) for (const p of M.PROPS[slot]) {
+      const room = P.fitProp(id, slot, p.shape), f = P.fitProp(id, slot, p.shape, p);
+      if (!room) { if (f) badFit.push(id + ' ' + p.id + ' unsupported but placed'); continue; }
+      worn++;
+      const B = room.bounds, cyl = p.shape === 'cylinder', H = cyl ? (B.axis === 'y' ? B.height : 2 * B.radius) : B[1], D = cyl ? 2 * B.radius : B[2];
+      const yaw = room.rotationY * Math.PI / 180, along = (pos) => pos[0] * Math.sin(yaw) + pos[2] * Math.cos(yaw), across = (pos) => pos[0] * Math.cos(yaw) - pos[2] * Math.sin(yaw);
+      if (!near(f.scale, Math.min(room.scale, p.maxScale)) || f.room !== room.scale || f.capped !== (p.maxScale < room.scale)) badFit.push(id + ' ' + p.id + ' scale ' + f.scale);
+      if (!near(f.position[1] + f.inset - H * f.scale / 2, room.position[1] + room.inset - H * room.scale / 2)) badFit.push(id + ' ' + p.id + ' base moved');
+      if (f.inset > room.inset + 1e-9) badFit.push(id + ' ' + p.id + ' sunk deeper');
+      if (!near(across(f.position), across(room.position))) badFit.push(id + ' ' + p.id + ' moved sideways');
+      const want = { centre: 0, front: 1, rear: -1 }[p.align || P.SLOT_ALIGN[slot]];
+      const edge = (pos, s) => along(pos) + want * D * s / 2; // (the edge it keeps: the middle, the cab end or the rear edge)
+      if (!near(edge(f.position, f.scale), edge(room.position, room.scale))) badFit.push(id + ' ' + p.id + ' not ' + (p.align || P.SLOT_ALIGN[slot]));
+      if (f.capped) capped++;
+    }
+    check(!badFit.length && worn > 1000, 'fitProp(car, slot, shape, prop) on every car of the table and every prop (' + worn + ' worn, ' + capped + ' at the prop\'s max): scale = min(room, maxScale), the base on the slot\'s base (inset scaled down, never deeper), not moved sideways; a roof prop stays centred, a load at the cab end, a wing at the rear edge' + (badFit.length ? ': ' + badFit.slice(0, 6).join('; ') : ''));
+  }
   const { logicFiles } = await import(ROOT + '/vite.config.js');
   check(![...logicFiles()].some(f => /propmodels|propanchors|propcosmetic|propbounds/.test(f)), 'the prop modules are not in the replay fingerprint (vite.config.js logicFiles)');
 } finally { await close(); }

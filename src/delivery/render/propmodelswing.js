@@ -49,7 +49,7 @@ const blade = (parent, material, w, chord, t, x, y, z, tilt = 0) => {
 export const MORE_WING = [
   // 1. a biplane wing: two staggered blades of the paint, one above the other, braced by slim struts and closed by two tall end
   //    plates, on two stands: the loudest motorsport silhouette (a hill-climb special). Box; the car's colour on the blades.
-  { id: 'wing-biplane', name: 'Biplane wing', shape: 'box', colourFrom: 'mixed', build: (paint) => {
+  { id: 'wing-biplane', name: 'Biplane wing', maxScale: 1.6, shape: 'box', colourFrom: 'mixed', build: (paint) => {
     const g = new THREE.Group();
     for (const s of [-1, 1]) box(g, DARK, 0.04, 0.17, 0.05, s * 0.3, -0.09, -0.03);   // the stands: the floor (-0.175) up into the lower blade
     blade(g, paint, 1.34, 0.21, 0.034, 0, 0.0, -0.01, 0.1);                           // the lower blade, set back
@@ -60,7 +60,7 @@ export const MORE_WING = [
   } },
   // 2. a shark-fin wing: five swept dorsal fins of the paint in a school across the tail, the middle one tallest and carrying three
   //    gill slits, on a dark rail. Box.
-  { id: 'wing-shark', name: 'Shark-fin wing', shape: 'box', colourFrom: 'car', build: (paint) => {
+  { id: 'wing-shark', name: 'Shark-fin wing', maxScale: 1.3, shape: 'box', colourFrom: 'car', build: (paint) => {
     const g = new THREE.Group();
     box(g, DARK, 1.3, 0.03, 0.26, 0, -0.16, 0);                                       // the rail on the deck (y -0.175 to -0.145)
     const fin = (x, s) => {                                                           // a fin: base y -0.165, height 0.34 * s, swept back
@@ -73,7 +73,7 @@ export const MORE_WING = [
   } },
   // 3. a pizza-box wing: a flat box on two stands with two pizzas in it and its lid standing open behind as the wing's tall blade,
   //    a sash of the paint across the lid. A delivery car's joke. Box.
-  { id: 'wing-pizza', name: 'Pizza-box wing', shape: 'box', colourFrom: 'mixed', build: (paint) => {
+  { id: 'wing-pizza', name: 'Pizza-box wing', maxScale: 1.0, shape: 'box', colourFrom: 'mixed', build: (paint) => {
     const g = new THREE.Group();
     for (const s of [-1, 1]) box(g, DARK, 0.05, 0.1, 0.05, s * 0.45, -0.125, 0.03);   // the stands: the floor up into the box
     box(g, CARDBOARD, 1.3, 0.04, 0.18, 0, -0.07, 0.03);                                 // the box, y -0.09 to -0.05
@@ -90,7 +90,7 @@ export const MORE_WING = [
   } },
   // 4. a flame wing: five tongues of fire, red-orange with a yellow core, the middle one tallest, licking back from a dark rail.
   //    Its own colours whatever the car. Box.
-  { id: 'wing-flame', name: 'Flame wing', shape: 'box', colourFrom: 'fixed', build: () => {
+  { id: 'wing-flame', name: 'Flame wing', maxScale: 1.4, shape: 'box', colourFrom: 'fixed', build: () => {
     const g = new THREE.Group();
     box(g, DARK, 1.3, 0.03, 0.26, 0, -0.16, 0);
     const tongue = (x, s) => {
@@ -105,7 +105,7 @@ export const MORE_WING = [
   } },
   // 5. a rocket-pod pair: two grey pods with the car's colour on their nose cones, a short wing plate through them and glowing
   //    bells at the back. Cylinder (the section stays inside the 0.15 circle).
-  { id: 'wing-rockets', name: 'Rocket pods', shape: 'cylinder', colourFrom: 'mixed', build: (paint) => {
+  { id: 'wing-rockets', name: 'Rocket pods', maxScale: 1.4, shape: 'cylinder', colourFrom: 'mixed', build: (paint) => {
     const g = new THREE.Group();
     for (const s of [-1, 1]) {
       const x = s * 0.38;
@@ -119,7 +119,7 @@ export const MORE_WING = [
     return g;
   } },
   // 6. a hoop wing: three round hoops of the paint standing in a row across the tail, tied top and bottom by two slim rods. Cylinder.
-  { id: 'wing-hoops', name: 'Hoop wing', shape: 'cylinder', colourFrom: 'car', build: (paint) => {
+  { id: 'wing-hoops', name: 'Hoop wing', maxScale: 1.5, shape: 'cylinder', colourFrom: 'car', build: (paint) => {
     const g = new THREE.Group();
     for (const x of [-0.5, 0, 0.5]) {
       const ring = new THREE.Mesh(new THREE.TorusGeometry(0.115, 0.035, 4, 8), paint);                // 8 around so a vertex sits at the very bottom

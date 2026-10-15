@@ -110,3 +110,62 @@ hand fixes: <car> <slot>: <why> ...       kind changes: <car> <was> -> <is>
 unsure: <car>: <what you could not decide> ...
 sheets: /tmp/prop-bounds/slice-<n>/sheet-<n>-1.png ...     checks: <which ran, ok / fail>
 ```
+
+## Each prop's own maximum scale (CHECKLIST 450)
+
+The owner, 15-Oct, after the caps were lifted (CHECKLIST 307): roof boxes became containers on the buses and vans ("maybe the solution is to
+have a max scale for each individual prop"). So: the SLOT keeps the largest scale its surface allows (the anchors, the slice files: that is
+the ROOM, unchanged), and EACH PROP declares `maxScale` on its registry entry (`render/propmodels.js` BASE_PROPS, `propmodelsroof.js`
+`def(..., maxScale)`, `propmodelscargo.js`, `propmodelswing.js`, `propmodelswingclassic.js`). No global cap, nothing in the anchors.
+
+- API: `fitProp(carId, slot, shape, prop?)` (render/propanchors.js). With the prop: scale = min(room, prop.maxScale), and the prop stays
+  SEATED: its base on the slot's base plane (the inset scaled down with it, never deeper), not moved sideways, and along its own z it keeps
+  the slot's `SLOT_ALIGN`: roof `centre`, cargo `front` (the cab end of the bed, against the cab), wing `rear` (the slot's rear edge, on
+  the centreline). A prop may declare `align: 'centre' | 'front' | 'rear'` to override (none does yet). Without the 4th argument
+  (the bounds, the editor's shapes): the room, exactly as before. The result also carries `room` (the slot's scale) and `capped`.
+- Callers: render/propdress.js (the game), delivery/propview.html (`&prop=`; `&nocap=1` shows the old room-sized prop),
+  scripts/prop-placement-audit.mjs (the real props measured as worn; `PROP-AT-MAX`, weight 0, and the csv's `atMax` column `id scale/room`).
+- Where the room is smaller than a prop's max, the prop takes the room (as before). No `minScale` was needed: every max is above the
+  smallest room any car gives (`.propmodels-check` asserts it).
+- Checks: `.propmodels-check` (every prop has a maxScale, positive, >= MIN_SCALE and >= the smallest room of its slot/shape; fitProp with a
+  prop on every car x every prop: scale, base, sideways, alignment), `.propcosmetic-ui-check` (dressed at min(room, max)), `.propmodels-roof-check`.
+
+Sizes are the prop's bounding box at its max (w across x h x d along the car, metres); the canonical bounds at scale 1 are roof 1 x 0.5 x 0.8,
+cargo 1 x 0.8 x 1.2, wing 1.4 x 0.35 x 0.3. Seen in stills /tmp/prop-maxscale/*.png (on the owner's tuning list: anything that reads wrong).
+
+| slot | prop | maxScale | size at max (m) | why |
+|---|---|---|---|---|
+| roof | roofbox (Roof box) | 1.0 | 0.90 x 0.45 x 0.78 | a roof cargo box is ~0.4-0.45 m tall; not a second storey (the minivan's was 2.18: 1.5 m wide, 0.75 tall) |
+| roof | roofsign (Roof sign) | 1.1 | 0.99 x 0.44 x 0.18 | a taxi / delivery sign: up to about a metre wide |
+| roof | roofbeacon (Beacon dome) | 0.5 | 0.42 x 0.22 x 0.42 | a beacon is a small dome (~0.3-0.4 m) |
+| roof | roof-surfboard (Surfboard rack) | 1.5 | 1.47 x 0.50 x 1.16 | a rack spans a roof (~1.4 m); boards stay board-sized |
+| roof | roof-tent (Roof tent) | 1.5 | 1.47 x 0.74 x 1.17 | a pitched rooftop tent: roof width, under a metre tall |
+| roof | roof-parcels (Parcel stack) | 1.1 | 1.07 x 0.48 x 0.81 | parcels strapped on: about roof-box height |
+| roof | roof-dish (Satellite dish) | 0.9 | 0.56 x 0.44 x 0.55 | a small dish (~0.5 m) |
+| roof | roof-pennant (Pennant mast) | 1.4 | 0.88 x 0.70 x 0.56 | a 0.7 m mast with its pennant |
+| roof | roof-cactus (Rooftop cactus) | 1.1 | 0.90 x 0.54 x 0.95 | a potted cactus; at 1.3 the pot read as a big bowl |
+| cargo | cargocrates (Crate stack) | 1.5 | 1.44 x 1.13 x 1.71 | crates up to ~0.9 m; a truck bed takes a big stack |
+| cargo | cargobarrel (Barrel) | 0.9 | 0.82 x 0.72 x 0.84 | a cask / drum (~0.6-0.8 m); at 1.1 it read as a vat |
+| cargo | cargotarp (Tarp load) | 2.0 | 1.96 x 1.56 x 2.32 | a tarp covers whatever: as big as the bed |
+| cargo | cargo-parcels (Pallet of parcels) | 1.2 | 1.15 x 0.89 x 1.39 | a pallet is ~1.2 x 1.0 m |
+| cargo | cargo-gas (Gas cylinders) | 1.2 | 1.12 x 0.96 x 1.18 | bottles about a metre tall; at 1.4 they read as tanks |
+| cargo | cargo-hay (Hay bales) | 1.3 | 1.25 x 0.95 x 1.46 | small square bales (~0.45 x 0.35 x 1 m) |
+| cargo | cargo-melons (Watermelons) | 0.9 | 0.89 x 0.68 x 0.89 | a basket of melons, melons melon-sized |
+| cargo | cargo-tyres (Tyre stack) | 1.0 | 0.90 x 0.76 x 0.93 | van / light-truck tyres (~0.9 m); at 1.1 truck tyres in a pickup |
+| cargo | cargo-armchair (Armchair on straps) | 1.1 | 1.03 x 0.87 x 1.11 | an armchair is ~0.9 m wide and tall |
+| cargo | cargo-junkertarp (Junker tarp) | 2.0 | 2.00 x 1.20 x 2.28 | a tarp: as big as the bed |
+| wing | winggt (GT wing) | 1.8 | 2.52 x 0.59 x 0.50 | conventional wings span the car, up to a bus / van (~2.5 m) |
+| wing | winglip (Duck-tail lip) | 1.8 | 2.34 x 0.31 x 0.50 | follows the body's width |
+| wing | wingtube (Tube wing) | 1.8 | 2.41 x 0.54 x 0.41 | as the GT wing |
+| wing | wing-swan (Swan-neck GT wing) | 1.8 | 2.50 x 0.63 x 0.47 | as the GT wing |
+| wing | wing-pedestal (Pedestal wing) | 1.8 | 2.50 x 0.63 x 0.45 | as the GT wing |
+| wing | wing-tuner (Tuner wing) | 1.8 | 2.50 x 0.52 x 0.50 | as the GT wing |
+| wing | wing-ducktail (Ducktail) | 1.8 | 2.34 x 0.25 x 0.52 | follows the body's width |
+| wing | wing-hatch (Hatch roof spoiler) | 1.8 | 2.34 x 0.31 x 0.45 | a roof spoiler spans the roof's edge |
+| wing | wing-race (Race wing) | 1.8 | 2.52 x 0.63 x 0.49 | as the GT wing |
+| wing | wing-biplane (Biplane wing) | 1.6 | 2.24 x 0.56 x 0.43 | two blades: past 1.6 it is a scaffold |
+| wing | wing-shark (Shark-fin wing) | 1.3 | 1.69 x 0.45 x 0.36 | a dorsal fin is ~0.3-0.5 m tall |
+| wing | wing-pizza (Pizza-box wing) | 1.0 | 1.30 x 0.31 x 0.24 | pizza boxes stay pizza-sized (a joke, already generous) |
+| wing | wing-flame (Flame wing) | 1.4 | 1.88 x 0.49 x 0.39 | flames past half a metre swamp a car |
+| wing | wing-rockets (Rocket pods) | 1.4 | 1.68 x 0.32 x 0.36 | pods ~0.3 m across |
+| wing | wing-hoops (Hoop wing) | 1.5 | 1.95 x 0.45 x 0.45 | hoops ~0.45 m |

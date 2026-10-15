@@ -201,14 +201,14 @@ const tagged = (id, build) => (paint) => {
   g.traverse((o) => { o.userData.prop = 'roof'; o.userData.propId = id; });
   return g;
 };
-const def = (id, name, shape, colourFrom, build, what) => ({ id, name, shape, colourFrom, what, build: tagged(id, build) });
+const def = (id, name, shape, colourFrom, build, what, maxScale) => ({ id, name, shape, colourFrom, what, maxScale, build: tagged(id, build) }); // (maxScale: the largest it is worn at, render/propanchors.js fitProp; PROP-AUDIT-GUIDE.md has the reasons)
 export const MORE_ROOF = [
-  def('roof-surfboard', 'Surfboard rack', 'box', 'mixed', buildSurfboard, 'three strapped boards on a rack, the first in the car colour'),
-  def('roof-tent', 'Roof tent', 'box', 'car', buildTent, 'a camping tent on a shell with a ladder, in the car colour'),
-  def('roof-parcels', 'Parcel stack', 'box', 'mixed', buildParcels, 'kraft parcels, one wrapped in the car colour, and a post tube'),
-  def('roof-dish', 'Satellite dish', 'cylinder', 'car', buildDish, 'a dish on a post, tipped up and back, in the car colour'),
-  def('roof-pennant', 'Pennant mast', 'cylinder', 'mixed', buildPennant, 'a mast with a rippling pennant in the car colour and a pale stripe'),
-  def('roof-cactus', 'Rooftop cactus', 'cylinder', 'fixed', buildCactus, 'a terracotta pot with a flowering cactus, its own colours'),
+  def('roof-surfboard', 'Surfboard rack', 'box', 'mixed', buildSurfboard, 'three strapped boards on a rack, the first in the car colour', 1.5),
+  def('roof-tent', 'Roof tent', 'box', 'car', buildTent, 'a camping tent on a shell with a ladder, in the car colour', 1.5),
+  def('roof-parcels', 'Parcel stack', 'box', 'mixed', buildParcels, 'kraft parcels, one wrapped in the car colour, and a post tube', 1.1),
+  def('roof-dish', 'Satellite dish', 'cylinder', 'car', buildDish, 'a dish on a post, tipped up and back, in the car colour', 0.9),
+  def('roof-pennant', 'Pennant mast', 'cylinder', 'mixed', buildPennant, 'a mast with a rippling pennant in the car colour and a pale stripe', 1.4),
+  def('roof-cactus', 'Rooftop cactus', 'cylinder', 'fixed', buildCactus, 'a terracotta pot with a flowering cactus, its own colours', 1.1),
 ];
 export const moreRoofById = (id) => MORE_ROOF.find(p => p.id === id) || null;
 // the prop built (already tagged) with a paint; `paint` defaults to white

@@ -11,6 +11,8 @@
 //   - the OPTIMUM (prop-audit-lib.mjs best): the largest uniform scale that stands on the surface with at most MAX_INSET of inset, touches
 //     nothing and (a wing) is no wider than the body, searched along the car (a wing prefers the rear-most place within 85 % of the best
 //     scale); UTILISATION = scale / min(cap, the optimum's scale); the wing's offset from the optimum's z; unsupported slots that fit (MISSED)
+//   - each real prop AS WORN (fitProp with the prop: at most its own maxScale, CHECKLIST 450): PROP-AT-MAX (no weight, information) when its max
+//     made it smaller than the slot's room; the csv's atMax column lists them as 'id scale/room'
 //   - thin plates with air under them near the tail (a spoiler) that are not tagged (UNTAGGED-WING), and a wing standing on one (ON-WING)
 // Output: /tmp/prop-audit/audit.csv (a row per car and slot, worst first), audit.json (everything), and the flag counts.
 //   node scripts/prop-placement-audit.mjs [car ids...] [--jobs 3] [--out /tmp/prop-audit] [--table <json>: audit a candidate table instead]
@@ -152,7 +154,7 @@ async function worker(k, n) {
         for (const id of REAL[slot]) {
           const def = PM.propById(id);
           if (!def) continue;
-          const fit = P.fitProp(car.id, slot, def.shape);
+          const fit = P.fitProp(car.id, slot, def.shape, def); // (as worn: at most the prop's own maxScale, seated on the slot's base)
           if (!fit) continue;
           const prop = PM.buildProp(id);
           prop.position.set(...fit.position); prop.rotation.y = fit.rotationY * Math.PI / 180; prop.scale.setScalar(fit.scale);
@@ -179,7 +181,8 @@ async function worker(k, n) {
               if (v.y < minY + 0.01 && h) lowGap = Math.min(lowGap, v.y - h.y);
             }
           });
-          row.props[id] = { pen: r3(pen), by, buried: r2(buried / Math.max(1, verts)), standGap: r3(lowGap === Infinity ? null : lowGap) };
+          row.props[id] = { pen: r3(pen), by, buried: r2(buried / Math.max(1, verts)), standGap: r3(lowGap === Infinity ? null : lowGap), scale: r2(fit.scale), room: r2(fit.room), atMax: fit.capped };
+          if (fit.capped) row.flags.push('PROP-AT-MAX'); // (information: the prop is worn at its own maxScale, smaller than the room; CHECKLIST 450)
           if (pen > 0.02) row.flags.push('PROP-PEN');
           if (buried / Math.max(1, verts) > 0.2) row.flags.push('PROP-BURIED');
           if (lowGap !== Infinity && lowGap > 0.03) row.flags.push('PROP-HOVER');
@@ -212,19 +215,19 @@ async function worker(k, n) {
 // ---- the report ----
 function report(rows) {
   const WEIGHT = { 'PEN-box': 5, 'PEN-cyl': 4, 'PROP-PEN': 5, 'ON-WING': 6, 'UNTAGGED-WING': 3, SMALL: 4, NARROW: 3, FORWARD: 3, 'WRONG-SURFACE': 3, MISSED: 4, 'SLOT-OVERLAP': 3,
-    'BURIED-box': 4, 'BURIED-cyl': 3, 'PROP-BURIED': 3, 'INSET-box': 2, 'INSET-cyl': 2, 'HOVER-box': 3, 'HOVER-cyl': 2, 'PROP-HOVER': 2, 'ON-GLASS-box': 4, 'ON-GLASS-cyl': 3, NOFIT: 2 };
+    'BURIED-box': 4, 'BURIED-cyl': 3, 'PROP-BURIED': 3, 'INSET-box': 2, 'INSET-cyl': 2, 'HOVER-box': 3, 'HOVER-cyl': 2, 'PROP-HOVER': 2, 'ON-GLASS-box': 4, 'ON-GLASS-cyl': 3, NOFIT: 2, 'PROP-AT-MAX': 0 };
   const score = (r) => r.flags.reduce((s, f) => s + (WEIGHT[f] ?? 1), 0) + (r.util != null ? Math.max(0, 0.9 - r.util) * 5 : 0);
   rows = rows.filter(r => !r.error).sort((a, b) => score(b) - score(a));
   const counts = {};
   for (const r of rows) for (const f of r.flags) counts[f] = (counts[f] || 0) + 1;
   const cols = ['car', 'kind', 'slot', 'supported', 'from', 'scale', 'cylScale', 'optScale', 'util', 'wingW', 'bodyW', 'widthRatio', 'surfW', 'surfRatio', 'z', 'optZ', 'zOff', 'distFromTail',
-    'inset', 'needInset', 'cylInset', 'minGap', 'pen', 'penBy', 'cylPen', 'propPen', 'overlaps', 'flags', 'notes'];
+    'inset', 'needInset', 'cylInset', 'minGap', 'pen', 'penBy', 'cylPen', 'propPen', 'atMax', 'overlaps', 'flags', 'notes'];
   const esc = (v) => { const s = v == null ? '' : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   const lines = [cols.join(',')];
   for (const r of rows) {
     const propPen = r.props ? Object.entries(r.props).filter(([, p]) => p.pen > 0.02 || p.buried > 0.2 || p.standGap > 0.03).map(([id, p]) => id + ' pen' + Math.round(p.pen * 100) + 'cm bur' + Math.round(p.buried * 100) + '% gap' + (p.standGap == null ? '-' : Math.round(p.standGap * 100) + 'cm') + (p.by ? ' ' + p.by : '')).join('; ') : '';
     lines.push([r.car, r.kind, r.slot, r.supported ? 'yes' : 'no: ' + r.reason, r.from, r.box?.s, r.cyl?.s, r.opt?.sMax, r.util, r.wingW, r.bodyW, r.widthRatio, r.surfW, r.surfRatio, r.box?.z, r.opt?.z, r.zOff, r.distFromTail,
-      r.box?.inset, r.box?.need, r.cyl?.inset, r.box?.minGap, r.box?.pen, (r.box?.penBy || []).join('; '), r.cyl?.pen, propPen, (r.overlaps || []).join(' '), r.flags.join(' '),
+      r.box?.inset, r.box?.need, r.cyl?.inset, r.box?.minGap, r.box?.pen, (r.box?.penBy || []).join('; '), r.cyl?.pen, propPen, r.props ? Object.entries(r.props).filter(([, p]) => p.atMax).map(([id, p]) => id + ' ' + p.scale + '/' + p.room).join('; ') : '', (r.overlaps || []).join(' '), r.flags.join(' '),
       [...(r.onWing ? ['on ' + r.onWing.join('|')] : []), ...(r.untagged ? ['untagged ' + r.untagged.join('|')] : [])].join('; ')].map(esc).join(','));
   }
   writeFileSync(OUT + '/audit.csv', lines.join('\n') + '\n');
