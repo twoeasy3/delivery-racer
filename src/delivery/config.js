@@ -671,7 +671,7 @@ export const CONFIG = {
     boxStack: { damage: 31, speedKept: 0.75 }, trolleyRow: { damage: 38, speedKept: 0.75 }, wetFloorSign: { damage: 3, speedKept: 0.94, light: true }, // the mall's: cartons on a sack truck (a crate), nested shopping trolleys (a bale), a WET FLOOR A-frame (a cone)
     ticketGate: { damage: 31, speedKept: 0.75 }, scrubber: { damage: 38, speedKept: 0.75 }, trackLamp: { damage: 3, speedKept: 0.94, light: true }, // the metro's: a ticket gate (a crate), a ride-on floor scrubber (a bale), a track lamp (a cone)
     railTrolley: { damage: 31, speedKept: 0.75 }, infoTotem: { damage: 32, speedKept: 0.8 }, // ...and named outright: a rail trolley of sleepers (a crate's), a wayfinding board (a sign's)
-    batteryLoco: { damage: 14, speedKept: 0.8, light: true }, flatWagon: { damage: 8, speedKept: 0.88, light: true }, // ...and a tunnel junction's train there (themes.js junctionTrain): the tug's and the trolley's
+    metroCarFront: { damage: 14, speedKept: 0.8, light: true }, metroCarMid: { damage: 8, speedKept: 0.88, light: true }, metroCarBack: { damage: 8, speedKept: 0.88, light: true }, // ...and a tunnel junction's train there (themes.js junctionTrain: the Canberra train's carriages, cut down): the tug's and the trolleys'
   },
   // drifters: obstacles moving about the road in patterns (a level's "drifters")
   drifters: {

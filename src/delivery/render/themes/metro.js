@@ -26,8 +26,8 @@ import { Game } from '../../game.js';
 import { heightOf } from '../tunnelshape.js';
 import { everyFrame } from './sceneryClock.js';
 import { Sound } from '../audio.js';
-import { kit, tileTexture, concreteTexture, liningTexture, floorTexture, tactileTexture, windowTexture, signTexture, clockTexture,
-  digitTexture, DIGIT_CELLS, posterTexture, trainGeometries, CAR_LENGTH } from './metroModels.js';
+import { kit, tileTexture, concreteTexture, liningTexture, floorTexture, tactileTexture, signTexture, clockTexture,
+  digitTexture, DIGIT_CELLS, posterTexture, metroTrainCars, CAR_LENGTH } from './metroModels.js';
 
 // the lines' colours, and each zone's: its line, its walls' tile, its floor
 const LINE = { red: 0xd8262b, blue: 0x1f6fd0, green: 0x2e9b3d, amber: 0xe8a01a };
@@ -85,13 +85,13 @@ export const metro = ({ levelGroup }) => {
   // ---- points and frames
   const pt = (s, lat, y) => { Track.toWorld(s, lat, p); return [p.x, p.y + y, p.z]; };
   // the steps along a stretch: every `base` m on the straight (a flat wall needs no more), 6 m where a height or the train line's
-  // offset eases (by a zone's ends), 3 m in a bend (a 40 m bend's chord strays 3 cm), and at each segment's end and each of `breaks`
+  // offset eases (by a zone's ends), 1.5 m in a bend (a 40 m bend's chord strays 7 mm: no kinks even close up), and at each segment's end and each of `breaks`
   const segEnds = curves.map(c => c[1]), zoneEnds = zones.map(z => z.from);
-  const easing = (s) => zoneEnds.some(e => Math.abs(s - e) < 46);
+  const easing = (s) => zoneEnds.some(e => Math.abs(s - e) < 64);
   const steps = (from, to, base = 12, breaks = []) => {
     const out = [from];
     for (let s = from; s < to;) {
-      const next = Math.min(to, s + base), d = bent(s) || bent(next) || bent((s + next) / 2) ? Math.min(3, base) : easing(s) || easing(next) ? Math.min(6, base) : base;
+      const next = Math.min(to, s + base), d = bent(s) || bent(next) || bent((s + next) / 2) ? Math.min(1.5, base) : easing(s) || easing(next) ? Math.min(6, base) : base;
       s = Math.min(to, s + d);
       out.push(s);
     }
@@ -215,19 +215,42 @@ export const metro = ({ levelGroup }) => {
   const roadLamps = (from, to, every = 8, col = C.white) => { for (let s = from + every / 2; s < to; s += every) for (const d of [-1.7, 1.7]) lamps.on(s, (L(s) + R(s)) / 2 + d, hAt(s) - 0.09, 0, 0.35, 0.12, 1.8, col); };
   // cable trays on a wall (side -1 left at L, +1 right at R or `at`): two trays, the cables in them, at 3.4 and 3.9 m
   const trays = (from, to, side, at = side < 0 ? L : R, opts = {}) => {
+    for (let q = from + 3; q < to; q += 6) if (!opts.skip?.(q)) cubes.on(q, at(q) - side * 0.2, 3.34, 0, 0.42, 0.06, 0.06, 0x4a4f57); // (its brackets)
     for (const y of [3.4, 3.9]) {
       plainS.ribbon(from, to, (s) => [at(s), y], (s) => [at(s) - side * 0.38, y], 0x6f737a, null, opts);
       plainS.ribbon(from, to, (s) => [at(s) - side * 0.38, y], (s) => [at(s) - side * 0.38, y + 0.1], 0x8a8f96, null, opts);
       onS.ribbon(from, to, (s) => [at(s) - side * 0.06, y + 0.02], (s) => [at(s) - side * 0.3, y + 0.02], y < 3.6 ? 0x1b1d22 : 0xc8501a, null, opts);
     }
   };
-  // a pipe along a wall: a square section (its top lit, its underside dark) as four ribbons, `r` m half its width, `d` m off the wall
+  // a PIPE along a wall: ONE swept tube following the wall's line (8 sides, its rings sharing their vertices so it shades smooth;
+  // a ring every 3 m in a bend, 12 on the straight: steps()), in pieces of about 300 m (so what is out of view is left out); a
+  // clamp to the wall every 3 m (small, instanced). Nothing stepped: no chords, no ends overlapping
+  const pipeMaterial = new THREE.MeshLambertMaterial({ vertexColors: true });
   const pipe = (from, to, side, y, col, at = side < 0 ? L : R, opts = {}) => {
-    const r = 0.13, d = 0.3, c = (k) => colour.set(col).multiplyScalar(k).getHex(), o = (s, e) => at(s) - side * (d + e);
-    plainS.ribbon(from, to, (s) => [o(s, -r), y + r], (s) => [o(s, r), y + r], c(1.15), null, opts);
-    plainS.ribbon(from, to, (s) => [o(s, r), y + r], (s) => [o(s, r), y - r], c(0.9), null, opts);
-    plainS.ribbon(from, to, (s) => [o(s, r), y - r], (s) => [o(s, -r), y - r], c(0.55), null, opts);
-    plainS.ribbon(from, to, (s) => [o(s, -r), y - r], (s) => [o(s, -r), y + r], c(0.7), null, opts);
+    const r = 0.14, d = 0.32, SIDES = 8, ss = steps(from, to, 12, opts.breaks || []);
+    colour.set(col);
+    for (let start = 0; start < ss.length - 1;) {
+      const end = Math.min(ss.length - 1, start + 60), pos = [], nor = [], cols = [], idx = [];
+      for (let i = start; i <= end; i++) {
+        const s0 = ss[i], c = pt(s0, at(s0) - side * d, y), o = pt(s0, at(s0) - side * d + 1, y); // (the lateral: across the road)
+        const ux = o[0] - c[0], uz = o[2] - c[2], ul = Math.hypot(ux, uz) || 1;
+        for (let k = 0; k < SIDES; k++) {
+          const a = k / SIDES * Math.PI * 2, nx = Math.cos(a) * ux / ul, ny = Math.sin(a), nz = Math.cos(a) * uz / ul;
+          pos.push(c[0] + nx * r, c[1] + ny * r, c[2] + nz * r); nor.push(nx, ny, nz); cols.push(colour.r, colour.g, colour.b);
+        }
+        if (i > start) for (let k = 0; k < SIDES; k++) { const a0 = (i - start - 1) * SIDES, a1 = a0 + SIDES, k1 = (k + 1) % SIDES; idx.push(a0 + k, a1 + k, a1 + k1, a0 + k, a1 + k1, a0 + k1); }
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+      geo.setIndex(idx);
+      geo.computeBoundingSphere();
+      levelGroup.add(new THREE.Mesh(geo, pipeMaterial));
+      start = end;
+    }
+    for (let q = from + 1.5; q < to; q += 3) if (!opts.skip?.(q)) cubes.on(q, at(q) - side * d / 2, y, 0, d, 0.08, 0.12, 0x4a4f57);
+    for (const q of [from, to]) cubes.on(q, at(q) - side * (d + 0.02) / 2, y, 0, d + 0.18, 0.32, 0.32, col); // (each end turned into the wall: no open end)
   };
   // kilometre markers on a wall: a white plate, the distance on it in the digits' cells ("1.2"), every 100 m
   const kmMarkers = (from, to, side, y = 1.9, at = side < 0 ? L : R) => {
@@ -391,7 +414,11 @@ export const metro = ({ levelGroup }) => {
     }
     for (let s = from + 4; s < to - 2; s += 9) lamps.on(s, (L(s) + R(s)) / 2, hAt(s) - 0.12, 0, 0.4, 0.14, 1.4, C.white);
     kmMarkers(from, to, -1);
-    pipe(from, to, 1, 4.4, 0x3a5a8a);
+    { // (the pipe on the right, in runs between the junctions' mouths: it turns into the wall short of each)
+      let a = from;
+      for (const m of mouths.filter(m => m.s > from && m.s < to).sort((x, y) => x.s - y.s)) { pipe(a, m.s - MOUTH - 0.3, 1, 4.4, 0x3a5a8a); a = m.s + MOUTH + 0.3; }
+      pipe(a, to, 1, 4.4, 0x3a5a8a);
+    }
   };
 
   // ---- INTERCHANGE: a tall hall, a concourse each side behind a low barrier on the wall line
@@ -530,7 +557,7 @@ export const metro = ({ levelGroup }) => {
       for (const d of [8, 13.5]) {
         for (const r of [-0.72, 0.72]) plainS.ribbon(from, to, (s) => [edge(s) + side * d + r - 0.04, 0.2], (s) => [edge(s) + side * d + r + 0.04, 0.2], C.rail);
         plainS.ribbon(from, to, (s) => [edge(s) + side * d - 1.1, 0.1], (s) => [edge(s) + side * d + 1.1, 0.1], 0x7a7470);
-        for (let s = from + 30 + rand() * 20; s + CARS * CAR_LENGTH < to - 15; s += 5 * CAR_LENGTH + 30 + rand() * 40) stabled.push({ s, lat: (q) => edge(q) + side * d, n: 5, line: d < 10 ? LINE.red : LINE.green });
+        if (d < 10) for (let s = from + 30 + rand() * 20; s + CARS * CAR_LENGTH < to - 15; s += 5 * CAR_LENGTH + 30 + rand() * 40) stabled.push({ s, lat: (q) => edge(q) + side * d, n: 5, line: d < 10 ? LINE.red : LINE.green });
       }
       for (let s = from + 25; s < to; s += 50) { tubes.on(s, edge(s) + side * 18, 8, 0, 0.35, 16, 0.35, 0x6f757d); lamps.on(s, edge(s) + side * 18 - side * 0.6, 16, 0, 1.6, 0.3, 0.8, C.warm); }
     }
@@ -625,49 +652,52 @@ export const metro = ({ levelGroup }) => {
   dummy.rotation.order = 'XYZ';
   for (const S of sheets) S.flush();
 
-  // ---- the TRAINS: one train of CARS cars for the moving one (only one train line is near the player at a time), and the depot's
-  // stabled ones (instanced, their lights off)
-  const G = trainGeometries();
-  const winTex = windowTexture();
-  const trainMeshes = (count, lit) => {
-    const m = {
-      body: new THREE.InstancedMesh(G.body, new THREE.MeshLambertMaterial({ vertexColors: true }), count),
-      band: new THREE.InstancedMesh(G.band, new THREE.MeshLambertMaterial({ color: 0xffffff }), count),
-      windows: new THREE.InstancedMesh(G.windows, new THREE.MeshBasicMaterial({ map: winTex, side: THREE.DoubleSide, color: lit ? 0xffffff : 0x5a5e66 }), count),
-    };
-    if (lit) m.lamps = new THREE.InstancedMesh(G.lamps, new THREE.MeshBasicMaterial({ vertexColors: true }), 2);
-    for (const mesh of Object.values(m)) { mesh.frustumCulled = false; levelGroup.add(mesh); }
+  // ---- the TRAINS: the CANBERRA TRAIN's carriages (render/trainModel.js makeCarriage, its white and blue shell, cut down to 12 m a
+  // car as a level crossing's train is: metroModels.js metroTrainCars), instanced: its front car, its middle ones, its back one
+  // (each a solid and a lit geometry: two draw calls a kind); the moving train's windows lit, the depot's stabled cars' dark
+  const kindsOf = (cars) => ({ front: cars.front, mid: cars.mid, back: cars.back });
+  const trainMeshes = (cars, counts) => {
+    const m = {};
+    for (const [kind, g] of Object.entries(kindsOf(cars))) {
+      if (!counts[kind]) continue;
+      m[kind] = [];
+      for (const [geo, material] of [[g.solid, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide })], [g.lit, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })]]) {
+        if (!geo) continue;
+        const mesh = new THREE.InstancedMesh(geo, material, counts[kind]);
+        mesh.frustumCulled = false;
+        levelGroup.add(mesh);
+        m[kind].push(mesh);
+      }
+    }
     return m;
   };
-  const setCar = (m, i, s, lat, dir, line, lampSlot = -1) => {
+  const setCar = (meshes, i, s, lat, dir) => {
     const a = pt(s - 4, lat(s - 4), 0), b = pt(s + 4, lat(s + 4), 0), mid = pt(s, lat(s), 0);
     dummy.position.set(mid[0], mid[1], mid[2]);
     dummy.rotation.set(0, Math.atan2(b[0] - a[0], b[2] - a[2]) + (dir < 0 ? Math.PI : 0), 0);
     dummy.scale.set(1, 1, 1);
     dummy.updateMatrix();
-    m.body.setMatrixAt(i, dummy.matrix); m.band.setMatrixAt(i, dummy.matrix); m.windows.setMatrixAt(i, dummy.matrix);
-    m.band.setColorAt(i, colour.set(line));
-    if (lampSlot >= 0 && m.lamps) m.lamps.setMatrixAt(lampSlot, dummy.matrix);
+    for (const mesh of meshes) mesh.setMatrixAt(i, dummy.matrix);
   };
-  const hide = (m, i) => { dummy.position.set(0, -500, 0); dummy.scale.set(0.001, 0.001, 0.001); dummy.updateMatrix(); for (const k of ['body', 'band', 'windows']) m[k].setMatrixAt(i, dummy.matrix); };
-  const touch = (m) => { for (const mesh of Object.values(m)) { mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true; } };
+  const hide = (meshes, i) => { dummy.position.set(0, -500, 0); dummy.scale.set(0.001, 0.001, 0.001); dummy.updateMatrix(); for (const mesh of meshes) mesh.setMatrixAt(i, dummy.matrix); };
+  const touch = (m) => { for (const list of Object.values(m)) for (const mesh of list) mesh.instanceMatrix.needsUpdate = true; };
   if (stabled.length) {
-    const m = trainMeshes(stabled.reduce((n, t) => n + t.n, 0), false);
+    const n = stabled.reduce((k, t) => k + t.n, 0), m = trainMeshes(metroTrainCars(null), { mid: n });
     let i = 0;
-    for (const t of stabled) for (let k = 0; k < t.n; k++) setCar(m, i++, t.s + (k + 0.5) * CAR_LENGTH, t.lat, 1, t.line);
+    for (const t of stabled) for (let k = 0; k < t.n; k++) setCar(m.mid, i++, t.s + (k + 0.5) * CAR_LENGTH, t.lat, 1);
     touch(m);
-    for (const mesh of Object.values(m)) { mesh.computeBoundingSphere(); mesh.frustumCulled = true; } // (standing still: left out when the depot is out of view)
+    for (const mesh of m.mid) { mesh.computeBoundingSphere(); mesh.frustumCulled = true; } // (standing still: left out when the depot is out of view)
   }
   if (spans.length) {
-    const m = trainMeshes(CARS, true), lat = TC;
+    const m = trainMeshes(metroTrainCars(0xffe9b8), { front: 1, mid: CARS - 2, back: 1 }), lat = TC;
     const T = { on: false, head: 0, dir: 1, v: 0, span: null, wait: 0.6, n: 0, heard: false, last: 0 };
+    const slot = (i) => i === 0 ? [m.front, 0] : i === CARS - 1 ? [m.back, 0] : [m.mid, i - 1];
     const place = () => {
       for (let i = 0; i < CARS; i++) {
-        const s = T.head - T.dir * (i + 0.5) * CAR_LENGTH;
-        if (!T.on || s < T.span.from - CAR_LENGTH / 2 || s > T.span.to + CAR_LENGTH / 2) { hide(m, i); continue; }
-        setCar(m, i, s, lat, T.dir, lineAt(s), i === 0 ? 0 : i === CARS - 1 ? 1 : -1);
+        const s = T.head - T.dir * (i + 0.5) * CAR_LENGTH, [meshes, k] = slot(i);
+        if (!T.on || s < T.span.from - CAR_LENGTH / 2 || s > T.span.to + CAR_LENGTH / 2) { hide(meshes, k); continue; }
+        setCar(meshes, k, s, lat, T.dir);
       }
-      if (!T.on) { dummy.position.set(0, -500, 0); dummy.scale.set(0.001, 0.001, 0.001); dummy.updateMatrix(); m.lamps.setMatrixAt(0, dummy.matrix); m.lamps.setMatrixAt(1, dummy.matrix); }
       touch(m);
     };
     place();
@@ -678,7 +708,7 @@ export const metro = ({ levelGroup }) => {
         T.wait -= dt;
         if (span && T.wait <= 0 && span.to - here > 60) { // a train: by turns one overtaking from behind, then one coming the other way
           T.on = true; T.span = span; T.heard = false;
-          if (T.n++ % 2 === 0) { T.dir = 1; T.head = Math.max(span.from, here - 20); T.v = 0; } else { T.dir = -1; T.head = Math.min(span.to + CARS * CAR_LENGTH, here + 320); T.v = 20; }
+          if (T.n++ % 2 === 0) { T.dir = 1; T.head = Math.max(span.from, here - 20); T.v = 0; } else { T.dir = -1; T.head = Math.min(span.to + CARS * CAR_LENGTH, here + 320); T.v = 20; if (dt < 0.3) Sound.play('trainHorn', 0.2); } // (the Canberra train's own sounds: its horn coming, its rush going by)
         }
         return;
       }

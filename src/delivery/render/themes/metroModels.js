@@ -2,14 +2,15 @@
 // The theme's plain obstacles, each the box and cost of the kind it stands in for (registered in ../obstacleModels.js;
 // config.js obstacleKinds, collision.js SIZE): a ticket gate (a crate), a ride-on floor scrubber (a bale), a red track lamp
 // on its tripod (a cone); named outright a rail trolley with sleepers on it (a crate) and a wayfinding board on its legs (a
-// sign); and a tunnel junction's works train (themes.js junctionTrain): a battery locomotive (the tug's box and cost) and
-// flat wagons with a cable drum (a trolley's). Each is ONE merged mesh in vertex colours (and one lit mesh for its lamps):
+// sign); and a tunnel junction's train (themes.js junctionTrain): a shuttle of the Canberra train's carriages cut down to the
+// tug's and the trolleys' boxes and costs. Each is ONE merged mesh in vertex colours (and one lit mesh for its lamps):
 // a draw call or two, not one a part. Each faces local +z, its feet on y = 0. No people anywhere.
 // The pictures (every one drawn in code on a canvas, the first time it is wanted, then kept): glazed wall tiles, concrete,
-// a tunnel's lining segments, the polished floor, the tactile strip, the trains' windows, the signs (pictograms and
+// a tunnel's lining segments, the polished floor, the tactile strip, the signs (pictograms and
 // abstract bars, no words a brand could own), a clock face, the kilometre markers' digits.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { makeCarriage } from '../trainModel.js';
 
 const colour = new THREE.Color(), euler = new THREE.Euler(), matrix = new THREE.Matrix4();
 // ---- a kit of parts merged into one mesh in vertex colours (and one unlit for whatever glows)
@@ -153,15 +154,6 @@ export const tactileTexture = () => canvasTexture('tactile', 64, 64, (g, w, h) =
   g.fillStyle = '#fff2a8';
   for (let y = 8; y < h; y += 16) for (let x = 8; x < w; x += 16) { g.beginPath(); g.arc(x - 1.5, y - 1.5, 1.6, 0, Math.PI * 2); g.fill(); }
 });
-// A TRAIN'S WINDOWS, one side of a car (256 x 64): lit panes between dark pillars, a door each end with its narrow lit panes.
-// Tinted grey for a train standing in the depot, its lights off
-export const windowTexture = () => canvasTexture('windows', 256, 64, (g, w, h) => {
-  g.fillStyle = '#2a2d33';
-  g.fillRect(0, 0, w, h);
-  const pane = (x, y, pw, ph) => { const grad = g.createLinearGradient(x, y, x, y + ph); grad.addColorStop(0, '#fff6d8'); grad.addColorStop(1, '#ffd98a'); g.fillStyle = grad; g.fillRect(x, y, pw, ph); };
-  for (const x of [8, 224]) { g.fillStyle = '#c9ccd2'; g.fillRect(x, 4, 24, 60); pane(x + 3, 8, 7, 30); pane(x + 14, 8, 7, 30); } // the doors
-  for (let k = 0; k < 4; k++) pane(44 + k * 44, 10, 36, 30); // the windows
-}, false);
 // SIGNS: a board in a line's colour with a white pictogram on the left and abstract white bars for its words (no words: the
 // owner's rule, no names a brand could own). `kind`: 'train' (a train's front), 'exit' (a door with an arrow out of it),
 // 'stairs' (steps going down), 'arrow' (an arrow along), 'name' (a station's name board: a band, bars in its middle)
@@ -305,55 +297,68 @@ export const METRO_OBSTACLES = {
     }
     return grounded(group, 1.1);
   },
-  // a tunnel junction's works train (hazards.js, themes.js junctionTrain): a BATTERY LOCOMOTIVE, a yellow cab with black and yellow
-  // ends, a lamp lit and a beacon (the tug's box and cost)...
-  batteryLoco: () => {
-    const K = kit(), yellow = 0xf2c21d, dark = 0x1b1d22;
-    K.box(1.3, 0.55, 2.0, yellow, 0, 0.55, 0);
-    K.box(1.0, 0.65, 0.8, yellow, 0, 1.15, -0.45);                          // the cab
-    K.box(1.02, 0.3, 0.6, 0x9fc4e8, 0, 1.25, -0.45);                         // its windows (no driver)
-    K.box(1.32, 0.2, 0.06, dark, 0, 0.4, 1.02); K.box(1.32, 0.2, 0.06, dark, 0, 0.4, -1.02);
-    for (let k = 0; k < 4; k++) K.box(0.18, 0.2, 0.07, yellow, -0.5 + k * 0.33, 0.4, 1.04);
-    K.box(1.2, 0.2, 2.0, 0x2a2d33, 0, 0.2, 0);
-    for (const x of [-0.5, 0.5]) for (const z of [-0.6, 0.6]) K.cyl(0.2, 0.2, 0.12, 12, dark, x, 0.2, z, 0, 0, Math.PI / 2);
-    K.glowBox(0.22, 0.14, 0.04, 0xfff4c8, -0.4, 0.75, 1.01); K.glowBox(0.22, 0.14, 0.04, 0xfff4c8, 0.4, 0.75, 1.01);
-    K.box(0.18, 0.16, 0.18, dark, 0.3, 1.56, -0.45);
-    K.glowCyl(0.1, 0.1, 0.16, 10, 0xffa020, 0.3, 1.72, -0.45);
-    return K.done();
-  },
-  // ...and its FLAT WAGONS, each a cable drum chained on (a trolley's box and cost)
-  flatWagon: () => {
-    const K = kit();
-    K.box(1.0, 0.12, 1.4, 0x4a4f57, 0, 0.38, 0);
-    for (const x of [-0.4, 0.4]) for (const z of [-0.45, 0.45]) K.cyl(0.16, 0.16, 0.08, 12, 0x1b1d22, x, 0.18, z, 0, 0, Math.PI / 2);
-    K.cyl(0.42, 0.42, 0.12, 16, 0xa8783e, -0.3, 0.86, 0, 0, 0, Math.PI / 2); K.cyl(0.42, 0.42, 0.12, 16, 0xa8783e, 0.3, 0.86, 0, 0, 0, Math.PI / 2);
-    K.cyl(0.3, 0.3, 0.5, 14, 0x1b1d22, 0, 0.86, 0, 0, 0, Math.PI / 2);     // the cable wound on it
-    K.box(1.06, 0.06, 0.06, 0xf2c21d, 0, 0.47, 0.72);
-    return K.done();
-  },
+  // a tunnel junction's train (hazards.js, themes.js junctionTrain): a SHUTTLE OF THE CANBERRA TRAIN'S CARRIAGES, cut down (as a level
+  // crossing's train is: render/roadside.js) to the hit boxes the junction's train has always had: its lead car the tug's box and cost,
+  // the two behind a trolley's each; the last one's nose points back. Their windows lit (a tunnel's train)
+  metroCarFront: () => shuttleCar('front'),
+  metroCarMid: () => shuttleCar('mid'),
+  metroCarBack: () => shuttleCar('back'),
 };
 
-// ---- a TRAIN's car, for instancing (metro.js): 12 m long along local z, 2.6 m wide, its floor 1.1 m up. The body (silver, the
-// roof, the skirts and bogies dark: one geometry in vertex colours), the band in the line's colour (its own geometry, coloured by
-// the instance), the windows (two planes, one each side, showing windowTexture) and the end's lamps (lit). No people inside: the
-// windows are lit panes, nothing behind them
-export const CAR_LENGTH = 12;
-export const trainGeometries = () => {
-  const body = kit(), band = kit(), lamps = kit(), L = CAR_LENGTH - 0.4;
-  body.box(2.6, 2.4, L, 0xd6d9de, 0, 2.2, 0);
-  body.box(2.4, 0.3, L - 0.2, 0x9aa0a8, 0, 3.5, 0);                       // the roof
-  body.box(2.5, 0.45, L - 1.2, 0x2a2d33, 0, 0.82, 0);                     // the skirt
-  for (const z of [-L / 2 + 2, L / 2 - 2]) { body.box(2.0, 0.5, 2.4, 0x1b1d22, 0, 0.45, z); for (const x of [-0.78, 0.78]) for (const dz of [-0.75, 0.75]) body.cyl(0.36, 0.36, 0.1, 8, 0x3a3d42, x, 0.36, z + dz, 0, 0, Math.PI / 2); }
-  for (const z of [-L / 2 - 0.05, L / 2 + 0.05]) body.box(2.3, 2.0, 0.1, 0x3a3d42, 0, 2.2, z); // the ends' gangway faces
-  band.box(2.64, 0.3, L, 0xffffff, 0, 1.45, 0);
-  band.box(2.64, 0.12, L, 0xffffff, 0, 3.25, 0);
-  for (const x of [-0.85, 0.85]) lamps.glowBox(0.35, 0.18, 0.06, 0xfff4d0, x, 1.35, L / 2 + 0.12);
-  for (const x of [-0.85, 0.85]) lamps.glowBox(0.35, 0.18, 0.06, 0xff2a1a, x, 1.35, -L / 2 - 0.12);
-  // the windows: a plane each side, uv across the whole car
-  const win = new THREE.BufferGeometry(), W = 1.31, y0 = 1.85, y1 = 3.0, z0 = -L / 2 + 0.3, z1 = L / 2 - 0.3;
-  win.setAttribute('position', new THREE.Float32BufferAttribute([W, y0, z1, W, y0, z0, W, y1, z0, W, y1, z1, -W, y0, z0, -W, y0, z1, -W, y1, z1, -W, y1, z0], 3));
-  win.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1], 2));
-  win.setIndex([0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7]);
-  win.computeVertexNormals();
-  return { body: body.geometries().solid, band: band.geometries().solid, lamps: lamps.geometries().lit, windows: win };
+// ---- THE CANBERRA TRAIN'S CARRIAGES, for the metro (render/trainModel.js makeCarriage: the bullet train's white and blue shell, its
+// SECTION and paint; a level crossing's train is the same, cut down). `flatten` merges a carriage's meshes into one geometry in vertex
+// colours, to be instanced (a draw call for every car of a kind, not five a car), and with `litGlass` its dark window panels become
+// lit ones (the inside lit: a train in a tunnel), moved into a second, unlit geometry with its lamps
+const GLASS = new THREE.Color(0x1b2430);
+export const flatten = (group, litGlass = null) => {
+  group.updateMatrixWorld(true);
+  const solid = [], lit = [], glass = litGlass && new THREE.Color(litGlass);
+  group.traverse((m) => {
+    if (!m.isMesh) return;
+    const g = (m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone());
+    g.applyMatrix4(m.matrixWorld);
+    for (const name of Object.keys(g.attributes)) if (!['position', 'normal', 'color'].includes(name)) g.deleteAttribute(name);
+    const n = g.attributes.position.count, basic = m.material.type === 'MeshBasicMaterial';
+    if (!g.attributes.color) { const c = m.material.color, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) a.set([c.r, c.g, c.b], i * 3); g.setAttribute('color', new THREE.BufferAttribute(a, 3)); }
+    if (basic) { lit.push(g); return; }
+    if (!glass) { solid.push(g); return; }
+    // (the glass's triangles apart: lit)
+    const col = g.attributes.color.array, pos = g.attributes.position.array, nor = g.attributes.normal.array, keep = [[], [], []], move = [[], [], []];
+    for (let t = 0; t < n; t += 3) {
+      const isGlass = Math.abs(col[t * 3] - GLASS.r) < 1e-4 && Math.abs(col[t * 3 + 1] - GLASS.g) < 1e-4 && Math.abs(col[t * 3 + 2] - GLASS.b) < 1e-4;
+      const to = isGlass ? move : keep;
+      for (let v = t; v < t + 3; v++) { to[0].push(pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2]); to[1].push(nor[v * 3], nor[v * 3 + 1], nor[v * 3 + 2]); to[2].push(...(isGlass ? [glass.r, glass.g, glass.b] : [col[v * 3], col[v * 3 + 1], col[v * 3 + 2]])); }
+    }
+    for (const [list, [P, N, C]] of [[solid, keep], [lit, move]]) {
+      if (!P.length) continue;
+      const out = new THREE.BufferGeometry();
+      out.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); out.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3)); out.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
+      list.push(out);
+    }
+  });
+  return { solid: solid.length ? mergeGeometries(solid) : null, lit: lit.length ? mergeGeometries(lit) : null };
 };
+// a Canberra carriage scaled to w x h x l (m), flattened: { solid, lit }. kind 'front' (nose, lamps lit), 'back' (nose turned back,
+// its tail lamps), 'mid'; litGlass: the windows lit
+const carriageCache = new Map();
+export const canberraCar = (kind, w, h, l, litGlass = 0xffe9b8) => {
+  const key = [kind, w, h, l, litGlass].join();
+  if (carriageCache.has(key)) return carriageCache.get(key);
+  const c = makeCarriage(kind !== 'mid', kind === 'front'), holder = new THREE.Group();
+  c.scale.set(w / 3.0, h / 3.6, l / 25); // (makeCarriage's: 3.0 m wide, 3.6 tall, 25 long: CONFIG.bulletTrain)
+  if (kind === 'back') c.rotation.y = Math.PI;
+  holder.add(c);
+  const out = flatten(holder, litGlass);
+  carriageCache.set(key, out);
+  return out;
+};
+const shuttleCar = (kind) => { // (the junction's: 2.5 m a car, 1.9 m tall; the lead car 1.2 m wide (its box 1.4), the others 1.0 (theirs 0.9))
+  const g = canberraCar(kind, kind === 'front' ? 1.2 : 1.0, 1.9, 2.5), group = new THREE.Group();
+  if (g.solid) group.add(new THREE.Mesh(g.solid, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide })));
+  if (g.lit) group.add(new THREE.Mesh(g.lit, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })));
+  return group;
+};
+// the metro's side-line train: a Canberra carriage CAR_LENGTH m long (cut down from 25, as a level crossing's train is, so it keeps to
+// the bore in a 40 m bend), 2.7 m wide, its full 3.6 m tall
+export const CAR_LENGTH = 12;
+export const metroTrainCars = (litGlass) => ({ front: canberraCar('front', 2.7, 3.6, CAR_LENGTH, litGlass), mid: canberraCar('mid', 2.7, 3.6, CAR_LENGTH, litGlass), back: canberraCar('back', 2.7, 3.6, CAR_LENGTH, litGlass) });

@@ -66,6 +66,11 @@ try {
     const pads = (level.boostPads || []).filter(b => j.s > b.from - 20 && j.s < b.to + 20);
     check((k === 'bore' || k === 'interchange') && j.s - z.from >= 40 && z.to - j.s >= 40 && !pads.length, 'junction at ' + j.s + ' (' + j.side + '): in ' + (k === 'interchange' ? 'the interchange' : 'a ' + k) + ' (its cross passages; not across the train line), ' + Math.round(Math.min(j.s - z.from, z.to - j.s)) + ' m from the zone\'s ends, clear of the pads');
   }
+  // ---- the junctions' train: the Canberra carriages, cut down, at the tug's and the trolleys' boxes and costs (the gimmick's rules unchanged)
+  const pieces = g.Collision.obstacles.filter(o => o.hazard && /^metroCar/.test(o.kind)), like = { metroCarFront: 'tug', metroCarMid: 'trolley', metroCarBack: 'trolley' };
+  check(pieces.length === 3 * level.tunnelJunctions.length && pieces.every(o => JSON.stringify(CONFIG.obstacleKinds[o.kind]) === JSON.stringify(CONFIG.obstacleKinds[like[o.kind]])),
+    'each junction\'s train is three cut-down Canberra carriages, at the tug\'s and the trolleys\' costs (' + [...new Set(pieces.map(o => o.kind))].join(', ') + ')');
+  check(pieces.every(o => [o.hw, o.hl].join() === (like[o.kind] === 'tug' ? [0.7, 1.0] : [0.45, 0.6]).join()), '...and at their boxes (tug 1.4 x 2.0 m, trolley 0.9 x 1.2 m)');
   // ---- the train line: spans of running tunnels and stations
   const spans = zones.filter(z => z.scenery === 'running' || z.scenery === 'station');
   check(spans.length >= 2, 'the train line runs beside the road in ' + spans.length + ' zones (' + spans.map(z => z.id).join(', ') + ')');
