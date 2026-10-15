@@ -9,6 +9,7 @@ import { RAINFOREST_OBSTACLES } from './themes/rainforestModels.js';
 import { TUSCANY_OBSTACLES } from './themes/tuscanyModels.js';
 import { DESERT_OBSTACLES } from './themes/desertModels.js';
 import { MALL_OBSTACLES } from './themes/mallModels.js';
+import { ROADWORKS_OBSTACLES } from './themes/roadworksModels.js';
 import { LEVEL } from '../levels.js';
 import { THEMES } from '../themes.js';
 
@@ -1273,3 +1274,4 @@ Object.assign(OBSTACLE_MODELS, TUSCANY_OBSTACLES); // Tuscany's: wineCrates, hay
 // the desert dunes' own (render/themes/desertModels.js): a stack of jerrycans, a rolled tent, a rally marker flag
 Object.assign(OBSTACLE_MODELS, DESERT_OBSTACLES);
 Object.assign(OBSTACLE_MODELS, MALL_OBSTACLES); // the mall's (render/themes/mallModels.js): cartons on a sack truck, a row of nested trolleys, a WET FLOOR sign
+Object.assign(OBSTACLE_MODELS, ROADWORKS_OBSTACLES); // the roadworks' (render/themes/roadworksModels.js): barrier blocks, a cable drum, a heap of sand; a traffic drum, a pallet of pipes, a works sign

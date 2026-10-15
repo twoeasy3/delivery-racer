@@ -42,5 +42,11 @@
   "rallyFlag": { "name": "Rally marker flag", "blurb": "Stands in for a cone in the desert." },
   "boxStack": { "name": "Cartons on a sack truck", "blurb": "Stands in for a crate in the mall." },
   "trolleyRow": { "name": "Row of trolleys", "blurb": "Stands in for a bale in the mall: three trolleys nested." },
-  "wetFloorSign": { "name": "Wet-floor sign", "blurb": "Stands in for a cone in the mall: a yellow A-frame." }
+  "wetFloorSign": { "name": "Wet-floor sign", "blurb": "Stands in for a cone in the mall: a yellow A-frame." },
+  "barrierBlock": { "name": "Barrier blocks", "blurb": "Stands in for a barrier in the roadworks: two water-filled blocks." },
+  "cableReel": { "name": "Cable drum", "blurb": "Stands in for a crate in the roadworks." },
+  "sandPile": { "name": "Heap of sand", "blurb": "Stands in for a bale in the roadworks." },
+  "trafficDrum": { "name": "Traffic drum", "blurb": "A cone's size and cost, in the roadworks." },
+  "pipePallet": { "name": "Pallet of pipes", "blurb": "A crate's size and cost, in the roadworks." },
+  "worksSign": { "name": "Works sign", "blurb": "A sign's size and cost, in the roadworks." }
 }

@@ -404,13 +404,114 @@ const createTrack = () => {
   // expressway: the lanes on a side (-1 left, 1 right) at s; where it narrows to `lanesPerSide`,
   // that side's outer lanes merge inward (a median never narrows). A narrowing with a "side" is that side's
   // alone: so each way can lose and gain lanes of its own
-  const lanesOn = (side, s) => {
+  const narrowed = (side, s) => {
     const n = side < 0 ? LEFT : RIGHT;
     let cut = 0;
     for (const z of narrows) if (!z.side || (z.side === 'left' ? -1 : 1) === side) cut = Math.max(cut, Math.max(0, n - z.lanesPerSide) * zone(s, z));
     return n - cut;
   };
-  const edge = (s, side = 1) => HM + lanesOn(side, s) * LW; // expressway: a side's outer lane line, from the centre
+  // (and a diversion's closed lanes: see below)
+  const lanesOn = (side, s) => { if (!diverting(s)) return narrowed(side, s); const p = divert(side, s); return Math.min(narrowed(side, s), (side < 0 ? LEFT : RIGHT) - p.ci - p.co); };
+
+  // ---- ROADWORKS DIVERSIONS: the lateral-offset layer (a level's "diversions": { from, to, kind, by?, limit? }; CONFIG.diversion,
+  // roadworks.js). A diversion moves a side's lanes in track space, not in the world (unlike a split, which moves the road): over
+  // its stretch each side has `ci` of its lanes closed from the inside (the centre line's side), `co` closed from the outside (the
+  // kerb's), and the lanes still open moved `d` m across (+ = towards +lat), each eased in and out over CONFIG.diversion.taper m
+  // (smoothstep), so every lane runs on continuously through the taper. laneOffset, openLane, nearestLane, edge, laneLo / laneHi,
+  // lanesOn and the pavement (lo / hi: widened where the lanes move out) all read it, so whatever follows a lane (the player's lane
+  // assist, traffic, pickups and obstacles placed on a lane, rivals, the camera, the minimap) follows the temporary lanes with no
+  // code of its own. Where the lanes have moved away the road is a WORKS ZONE (works(s): the strips between the sides, and outside
+  // a side whose kerb lanes are closed): a boundary no car crosses (bounds(s, lat): the free band a car at lat is in; keepOnRoad
+  // holds every car inside it, as the road's edge does), its line coned along the tapers (roadworks.js: cones a squeezed car
+  // knocks over) and barriered along the run. Not on a side road, a bridge, a narrowing or a junction (problems, below)
+  const DV = CONFIG.diversion;
+  const dvs = (LEVEL.diversions || []).map((d) => {
+    const G = DV.gap, ramps = [];
+    // (a lane closing over `taper` m; lanes with traffic in them moving across over `shiftTaper`: a long vehicle follows it)
+    const ramp = (side, key, v, from, to) => { const T = key === 'd' ? DV.shiftTaper : DV.taper; if (to - from >= 2 * T) ramps.push({ side, key, v, from, to, T }); };
+    if (d.kind === 'merge') ramp(1, 'co', 1, d.from, d.to);
+    else if (d.kind === 'shift') ramp(1, 'd', d.by ?? DV.by, d.from, d.to);
+    else if (d.kind === 'cross') { // (the oncoming inner lane closes first and opens last; between, the player's lanes cross into it)
+      ramp(-1, 'ci', 1, d.from, d.to);
+      ramp(1, 'd', DV.contraflow - LW - 2 * HM, d.from + DV.taper + G, d.to - DV.taper - G);
+    }
+    return { from: d.from, to: d.to, kind: d.kind, limit: (d.limit ?? DV.limit) / 3.6, ramps };
+  });
+  // does a diversion move or close this side's lanes at s (anywhere over its stretch: its temporary markings run its whole length)?
+  const divertedSide = (side, s) => diverting(s) && dvs.some(d => s > d.from && s < d.to && d.ramps.some(r => r.side === side));
+  const diverting = (s) => { if (!dvs.length || s < -LEAD_IN || s >= FIRST) return false; for (const d of dvs) if (s > d.from && s < d.to) return true; return false; };
+  const DIV = { [-1]: { ci: 0, co: 0, d: 0 }, 1: { ci: 0, co: 0, d: 0 } }; // (written over on every call: read at once)
+  const divert = (side, s) => {
+    const p = DIV[side];
+    p.ci = p.co = p.d = 0;
+    for (const d of dvs) {
+      if (s <= d.from || s >= d.to) continue;
+      for (const r of d.ramps) {
+        if (r.side !== side || s <= r.from || s >= r.to) continue;
+        p[r.key] += r.v * smooth((s - r.from) / r.T) * (1 - smooth((s - (r.to - r.T)) / r.T));
+      }
+    }
+    return p;
+  };
+  // a side's open lanes' span at s: [inner edge, outer edge] as lats (the inner nearer the centre line), into out
+  const span = (side, s, out) => {
+    const p = divert(side, s), n = side < 0 ? LEFT : RIGHT;
+    out[0] = side * (HM + p.ci * LW) + p.d;
+    out[1] = side * (HM + (n - p.co) * LW) + p.d;
+    return out;
+  };
+  const SPAN_L = [0, 0], SPAN_R = [0, 0];
+  // the works zones at s: [lo, hi] lat strips no car may enter (none outside a diversion). Into a list kept and reused
+  const ZONES = [[0, 0], [0, 0], [0, 0]];
+  ZONES.n = 0;
+  const works = (s) => {
+    ZONES.n = 0;
+    if (!diverting(s)) return ZONES;
+    span(-1, s, SPAN_L);
+    span(1, s, SPAN_R);
+    const push = (lo, hi) => { const z = ZONES[ZONES.n++]; z[0] = lo; z[1] = hi; };
+    if (LEFT && RIGHT && SPAN_R[0] - SPAN_L[0] > 2 * HM + 0.05) push(SPAN_L[0], SPAN_R[0]); // (between the two ways)
+    if (RIGHT && SPAN_R[1] < HM + RIGHT * LW - 0.05) push(SPAN_R[1], Infinity);           // (outside the player's way: its kerb lanes closed)
+    if (LEFT && SPAN_L[1] > -(HM + LEFT * LW) + 0.05) push(-Infinity, SPAN_L[1]);         // (outside the oncoming way)
+    return ZONES;
+  };
+  // the free band of road a car at lat is in at s (between the pavement's edges and any works zone): which side of a zone a car
+  // is on is where it is against the zone's middle (a zone grows from nothing at a lane's edge, so every car starts on its side)
+  const BAND = { lo: 0, hi: 0 };
+  const bounds = (s, lat) => {
+    BAND.lo = lo(s);
+    BAND.hi = hi(s);
+    const zs = works(s);
+    for (let i = 0; i < zs.n; i++) {
+      const [a, b] = zs[i], mid = a === -Infinity ? -Infinity : b === Infinity ? Infinity : (a + b) / 2;
+      if (lat < mid) BAND.hi = Math.min(BAND.hi, a);
+      else BAND.lo = Math.max(BAND.lo, b);
+    }
+    return BAND;
+  };
+  // how far a car at lat is carried across going from s0 to s1 by a diversion moving its side's lanes (its `d`: a shift, a
+  // crossover; not a lane closing, which a car must leave by itself): the player's car is carried as by a bend, so a lane
+  // shift needs no steering of its own (Player.update); 0 off a diversion
+  const carry = (s0, s1, lat) => {
+    if (!diverting(s0) && !diverting(s1)) return 0;
+    const lane = nearestLane(lat, s0);
+    if (lane < 0 || lane >= LANES || inMedian(lane)) return 0;
+    const side = lane < LEFT ? -1 : 1, d0 = divert(side, s0).d;
+    return divert(side, s1).d - d0;
+  };
+  // the diversion s is in (or coming up to, within CONFIG.diversion.slow m), for its limit: or null
+  const diversionAt = (s, ahead = 0) => {
+    if (!dvs.length || !isMain(s)) return null;
+    for (const d of dvs) if (s > d.from - ahead && s < d.to) return d;
+    return null;
+  };
+  const rawEdge = (s, side) => HM + narrowed(side, s) * LW; // (as the road is laid, before any diversion)
+  // expressway: a side's outer lane line, from the centre (where a diversion has moved the lanes, wherever they are now)
+  const edge = (s, side = 1) => {
+    if (!diverting(s)) return rawEdge(s, side);
+    const sp = span(side, s, side < 0 ? SPAN_L : SPAN_R);
+    return side * sp[1];
+  };
   const onBridge = (s) => {
     for (const b of bridges) if (s >= b.from && s <= b.to) return true;
     return false;
@@ -433,7 +534,8 @@ const createTrack = () => {
     }
     return w;
   };
-  const mainOuter = (s, side = 1) => edge(s, side) + (onBridge(s) ? Math.min(SH, CONFIG.bridgeWallInset) : shoulderOn(side, s));
+  // (the pavement never narrows for a diversion: a closed lane is still road, the works on it; where the lanes move out it widens)
+  const mainOuter = (s, side = 1) => Math.max(rawEdge(s, side), edge(s, side)) + (onBridge(s) ? Math.min(SH, CONFIG.bridgeWallInset) : shoulderOn(side, s));
   // The exit / merge lane: an extra lane outside the expressway's right-hand lane, with the
   // shoulder beyond it. Before an exit it opens over `gore` metres at the start of the lane
   // zone and runs to the exit, where the side road's lane carries straight on from it and the
@@ -641,8 +743,15 @@ const createTrack = () => {
     if (inMedian(lane)) return (lane - LEFT + 0.5) * LW - HM;
     const side = lane < LEFT ? -1 : 1;
     const k = side < 0 ? LEFT - 1 - lane : lane - LEFT - MID;
+    if (diverting(s)) { // (a diversion: the open lanes where they have moved to; a closing lane eased into the open one beside it)
+      const p = divert(side, s), n = side < 0 ? LEFT : RIGHT;
+      return side * (HM + (Math.max(p.ci, Math.min(k, n - 1 - p.co)) + 0.5) * LW) + p.d;
+    }
     return side * (HM + (Math.min(k, lanesOn(side, s) - 1) + 0.5) * LW);
   };
+  // a diversion's lanes closed at s on a side, counted from the inside and the outside: a lane is closed from the first cone of its
+  // taper (so traffic sees it coming, and nothing is put in a taper)
+  const shut = (x) => x > 0.01 ? Math.ceil(x - 0.01) : 0;
 
   // the lane itself, or the lane it has merged into where the expressway is narrower
   const openLane = (lane, s) => {
@@ -650,6 +759,10 @@ const createTrack = () => {
     if (!isMain(s) || lane < 0 || lane >= LANES || inMedian(lane)) return lane;
     const side = lane < LEFT ? -1 : 1;
     const k = side < 0 ? LEFT - 1 - lane : lane - LEFT - MID;
+    if (diverting(s)) {
+      const p = divert(side, s), n = side < 0 ? LEFT : RIGHT, a = Math.min(n - 1, shut(p.ci)), b = Math.max(a, n - 1 - shut(p.co));
+      return laneOf(side, Math.max(a, Math.min(k, b)));
+    }
     return laneOf(side, Math.min(k, openCount(side, s) - 1));
   };
 
@@ -659,6 +772,15 @@ const createTrack = () => {
     if (kind !== MAIN) return 0;
     // in the exit / merge lane, where there is (most of) one
     if (lat > 0 && extra(s) > LW / 2 && lat > edge(s) + (extra(s) - LW) / 2) return LANES;
+    if (diverting(s)) { // (the open lane whose centre is nearest, wherever the diversion has put it)
+      let best = LEFT + MID, far = Infinity;
+      for (let l = 0; l < LANES; l++) {
+        if (inMedian(l) || openLane(l, s) !== l) continue;
+        const d = Math.abs(laneOffset(l, s) - lat);
+        if (d < far) { far = d; best = l; }
+      }
+      return best;
+    }
     if (Math.abs(lat) < HM) return LEFT + Math.max(0, Math.min(MID - 1, Math.floor((lat + HM) / LW)));
     const side = (lat < 0 && LEFT > 0) || RIGHT === 0 ? -1 : 1;
     const k = Math.round((Math.abs(lat) - HM) / LW - 0.5);
@@ -1032,6 +1154,25 @@ const createTrack = () => {
       for (const e of LEVEL.deadEnds || []) if (e !== d && e.lane !== d.lane && overlaps(from, d.s, e.s - (e.length ?? CONFIG.deadEnd.length), e.s)) problems.push('dead ends at ' + d.s + ' and ' + e.s + ': both lanes dead at once');
       for (let q = from; q <= d.s; q += 10) if (lanesOn(Math.sign(laneOffset(d.lane, q)) || 1, q) < 2 && openCount(Math.sign(laneOffset(beside, q)) || 1, q) < 1) problems.push('dead end at ' + d.s + ': no lane open beside it at ' + q);
     }
+    (LEVEL.diversions || []).forEach((d, i) => {
+      const name = 'diversion at ' + d.from, T = DV.taper, ST = DV.shiftTaper, G = DV.gap;
+      const least = d.kind === 'cross' ? 2 * (T + G + ST) + 60 : d.kind === 'shift' ? 2 * ST + 40 : 2 * T + 40;
+      if (!['merge', 'shift', 'cross'].includes(d.kind)) problems.push(name + ': kind is merge, shift or cross');
+      else if (d.road === 'side' || !(d.from < d.to) || d.from < Math.max(...DV.signs) || d.to > length - 60) problems.push(name + ': from before to, on the expressway, ' + Math.max(...DV.signs) + ' m from the start (its signs), 60 m from the finish');
+      else if (d.to - d.from < least) problems.push(name + ': too short (' + least + ' m at least for a ' + d.kind + ')');
+      else if (d.kind === 'merge' && RIGHT < 2) problems.push(name + ': a merge needs two lanes or more the player\'s way');
+      else if (d.kind === 'cross' && (ONE_WAY || LEFT < 2 || !RIGHT)) problems.push(name + ': a crossover needs a two-way road with two lanes or more coming the other way');
+      else if (d.by !== undefined && !(d.by >= 1 && d.by <= 2 * LW)) problems.push(name + ': by is 1 to ' + 2 * LW + ' m');
+      else if (d.limit !== undefined && !(d.limit >= 20 && d.limit <= 130)) problems.push(name + ': limit is 20 to 130 km/h');
+      const near = (a, b) => overlaps(d.from - 60, d.to + 60, a, b);
+      for (const x of exits) if (near(x.exitAt - X.laneZone, x.mergeAt + X.laneZone)) problems.push(name + ': an exit is in it');
+      for (const [what, list] of [['bridge', bridges], ['narrowing', narrows], ['tunnel', tunnels], ['split', splits], ['stop / go', LEVEL.stopGo || []], ['reversible lane', LEVEL.reversible || []], ['fresh tarmac', LEVEL.tarmac || []], ['boost pad', pads]]) {
+        for (const z of list) if (near(z.from, z.to)) problems.push(name + ': a ' + what + ' at ' + z.from + ' is in it');
+      }
+      for (const j of junctions) if (near(j.s, j.end)) problems.push(name + ': a junction is in it');
+      for (const e of LEVEL.deadEnds || []) if (near(e.s - (e.length ?? CONFIG.deadEnd.length), e.s)) problems.push(name + ': a dead-end lane is in it');
+      (LEVEL.diversions || []).forEach((e, k) => { if (k > i && overlaps(d.from - 150, d.to + 150, e.from, e.to)) problems.push(name + ': the diversion at ' + e.from + ' is too near (150 m between them)'); });
+    });
     for (const t of tunnels) {
       if (!(t.from < t.to) || t.from < 30 || t.to > length - 30) problems.push('tunnel at ' + t.from + '-' + t.to + ': from before to, on the road, clear of the start and the finish');
       else if (t.to - t.from < 60) problems.push('tunnel at ' + t.from + ': too short (60 m at least)');
@@ -1326,7 +1467,7 @@ const createTrack = () => {
     apart, laneCount: LANES, leftLanes: LEFT, rightLanes: RIGHT, medianLanes: MID, medianHalf: HM, shoulder: SH, flow: FLOW, mirrored: MIRRORED,
     toWorld, fromWorld, grade, hilly, transfer, along, progress, finished, inBounds, spawnAt, place, isMain,
     laneOffset, openLane, nearestLane, laneRange, assistOffset, flyHeight,
-    lanesOn, edge, extraLane, onBridge, icy, padAt, divider, sprays, slicks, muddy, gravels, gravelBand, gravelAt, water, waters, foggy, tunnel, bend, pathScale, onRails, junctions, zoneAt, lo, hi, laneLo, laneHi, shoulderOffset, onShoulder, rampLaneZone, sideOpen, sideWidth, sideLeft, sideOncoming,
+    lanesOn, edge, extraLane, onBridge, icy, padAt, divider, diverting, divertedSide, divert, works, bounds, carry, diversionAt, diversions: dvs, sprays, slicks, muddy, gravels, gravelBand, gravelAt, water, waters, foggy, tunnel, bend, pathScale, onRails, junctions, zoneAt, lo, hi, laneLo, laneHi, shoulderOffset, onShoulder, rampLaneZone, sideOpen, sideWidth, sideLeft, sideOncoming,
     flyPillar, sideDistance, mainDistance, exits, crossable, crossLo,
   };
 };

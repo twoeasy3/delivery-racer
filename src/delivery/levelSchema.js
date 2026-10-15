@@ -325,6 +325,9 @@ export const FIELDS = {
   // ---- roadworks and machinery ----
   stopGo: { shape: 'stretch', group: 'works', label: 'Stop / go roadworks', span: 200, rules: ['oneEachWay', 'straight'], help: 'The oncoming side dug up, both ways taking turns through the lane left.',
     settings: { go: num('GO each way (s)', { min: 1, max: 120, default: C.stopGo?.go }), clear: num('Clearing time between (s)', { min: 0, max: 120, default: C.stopGo?.clear }) } },
+  diversions: { shape: 'stretch', group: 'works', label: 'Roadworks diversion', span: 500, minSpan: 160, rules: ['clearOfEnds'], help: 'Cones move the lanes over: merge closes the kerb lane, shift moves your lanes out, cross is a contraflow.',
+    settings: { kind: pick('Kind', ['merge', 'shift', 'cross'], { required: true, init: 'shift' }), by: num('Shift (m)', { min: 1, max: 7, step: 0.1, default: C.diversion?.by, when: (e) => e.kind === 'shift' }),
+      limit: num('Limit (km/h)', { min: 20, max: 130, step: 5, default: C.diversion?.limit }) } },
   machinery: { shape: 'point', group: 'works', label: 'Machinery', sub: 'kind', help: 'A bulldozer, excavator or dump truck trundling across the road; a roller crawling along a shoulder (from, to); or a forklift backing out onto one.',
     make: (kind, s) => kind === 'roller' ? { kind, from: s, to: s + 150, side: 'right' } : kind === 'forklift' ? { kind, s, side: 'right' } : { s, kind: kind || 'bulldozer' },
     settings: { kind: pick('Kind', MACHINERY_KINDS, { required: true, init: 'bulldozer' }), side: pick('Side', SIDES, { when: (e) => e.kind === 'roller' || e.kind === 'forklift' }) } },

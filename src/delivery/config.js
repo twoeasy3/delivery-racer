@@ -609,6 +609,11 @@ export const CONFIG = {
     // a kiosk (a bale's cost and box), a bench, a play block (a crate's), a bin (a cone's); its cafe tables are Venice's cafeTable
     planter: { damage: 38, speedKept: 0.75 }, palmPot: { damage: 38, speedKept: 0.75 }, kiosk: { damage: 38, speedKept: 0.75 },
     bench: { damage: 31, speedKept: 0.75 }, playBlock: { damage: 31, speedKept: 0.75 }, bin: { damage: 3, speedKept: 0.94, light: true }, // a boost pad's handrail section (lanegimmicks.js): a cone's box and cost, blown away on contact like any obstacle
+    // the roadworks' own (the Roadworks level's theme, themes.js; render/obstacleModels.js): each the cost of what it stands in for: a
+    // water-filled barrier block (a barrier), a cable drum (a crate), a heap of sand (a bale); named outright: a traffic drum (a cone),
+    // a pallet of pipes (a crate), a works sign on its frame (a sign)
+    barrierBlock: { damage: 34, speedKept: 0.6 }, cableReel: { damage: 31, speedKept: 0.75 }, sandPile: { damage: 38, speedKept: 0.75 },
+    trafficDrum: { damage: 3, speedKept: 0.94, light: true }, pipePallet: { damage: 31, speedKept: 0.75 }, worksSign: { damage: 32, speedKept: 0.8 },
     laneEnd: { damage: 0, speedKept: 1 }, // a dead-end lane's end (lanegimmicks.js): no ordinary knock: a wreck outright, or passed through (see Collision.hitObstacles)
     runner: { damage: 10, speedKept: 0.88, light: true },
     waterTable: { damage: 6, speedKept: 0.9, light: true },
@@ -1527,6 +1532,16 @@ export const CONFIG = {
   // coloured all along, a DEAD END sign over it `sign` m before, beacons, a bell and a warning with `warn` m to go, hazard
   // stripes on the floor over the last `stripes` m. (No cost here: a wreck, not damage)
   deadEnd: { length: 120, sign: 100, stripes: 24, warn: 120 },
+  // a roadworks diversion ("diversions": { from, to, kind: 'merge' | 'shift' | 'cross', by?, limit? }; roadworks.js, and Track's
+  // lateral-offset layer): a lane closes through a `taper` m row of cones (smoothstep), lanes with traffic in them move across over
+  // `shiftTaper` m (a long vehicle can follow that), run on their temporary line
+  // and come back the same way. merge: the kerb lane closes; shift: the player's lanes move `by` m out (onto a widened shoulder,
+  // works in the middle); cross: the oncoming side gives up its inner lane and `gap` m later the player's lanes cross over into
+  // it (a contraflow, the works on the player's kerb side), `contraflow` m of water-filled barrier between the two ways. `limit` km/h: the temporary limit the
+  // traffic keeps to from `slow` m before the first cone. A taper cone every `coneEvery` m; signs `signs` m before
+  // (roadworks, the lane sign, the limit). Traffic: a car whose lane closes merges, or waits at the taper (`wait` m short of
+  // it) for a gap; the open lane lets one in at a time (`zip`: m ahead of it a waiting car may be)
+  diversion: { taper: 40, shiftTaper: 60, gap: 30, by: 4, contraflow: 1.2, limit: 50, slow: 120, coneEvery: 5, signs: [320, 220, 130], wait: 4, zip: 26, look: 220 },
   // ---- Gimmick Road 3's: the road gambles (gambles.js; each a field in the level, named below) ----
   // a crosswind ("crosswinds": { from, to, dir, strength?, every?, length? }): over the stretch a car is pushed
   // sideways at `strength` m/s^2 times (its height / heightRef) ^ heightPower: `lull` of that all the time, all of

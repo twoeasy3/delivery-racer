@@ -51,6 +51,8 @@ const JUNK_NAMES = { umbrella: 'beach umbrellas', surfboard: 'surfboards', coole
   chairStack: 'stacks of chairs', riceBasket: 'baskets of rice', wasteDrum: 'drums of waste', present: 'presents', toyDrum: 'toy drums', cafeTable: 'cafe tables', wheelieBin: 'wheelie bins', snowdrift: 'heaps of snow',
   wineCrates: 'stacks of wine crates', hayRoll: 'hay bales', terracottaPot: 'terracotta pots', sackStack: 'stacks of sacks', hawkerCart: 'hawkers\' carts', bagStack: 'heaps of bags', bananaCrate: 'crates of bananas', fallenLog: 'piles of logs', termiteMound: 'termite mounds', beachBall: 'beach balls', tumbleweed: 'tumbleweeds', flagStand: 'flags on stands', brimstone: 'spikes of brimstone', lavaRock: 'lava boulders', mine: 'sea mines' };
 Object.assign(JUNK, { jerryStack: {}, tentRoll: {}, rallyFlag: {} }); Object.assign(JUNK_NAMES, { jerryStack: 'stacks of jerrycans', tentRoll: 'rolled tents', rallyFlag: 'rally marker flags' }); // (the desert's)
+Object.assign(JUNK, { barrierBlock: { hw: 1.2, hl: 0.6, height: 1.2 }, cableReel: { hw: 0.6, hl: 0.6, height: 1.1 }, sandPile: { hw: 1.1, hl: 1.1, height: 1.5 }, trafficDrum: { hw: 0.42, hl: 0.42, height: 1.12 }, pipePallet: { hw: 0.6, hl: 0.6, height: 1.1 }, worksSign: { hw: 1.1, hl: 0.15, height: 3 } });
+Object.assign(JUNK_NAMES, { barrierBlock: 'barrier blocks', cableReel: 'cable drums', sandPile: 'heaps of sand', trafficDrum: 'traffic drums', pipePallet: 'pallets of pipes', worksSign: 'works signs' }); // (the roadworks')
 Object.assign(JUNK, { boxStack: {}, trolleyRow: {}, wetFloorSign: {} }); Object.assign(JUNK_NAMES, { boxStack: 'sack trucks of cartons', trolleyRow: 'rows of trolleys', wetFloorSign: 'wet-floor signs' }); // (the mall's)
 Object.assign(JUNK, { pumpkinCrate: {}, harvestCrate: {}, leafPile: {}, smallPumpkin: {} }); Object.assign(JUNK_NAMES, { pumpkinCrate: 'crates of pumpkins', harvestCrate: 'crates of pumpkins', leafPile: 'heaps of leaves', smallPumpkin: 'small pumpkins' }); // (Halloween's crate, and autumn's)
 // the kinds that drift on a level (not the darting ones: those are another card), as its theme has them
@@ -146,6 +148,22 @@ export const GROUPS = [
       g.add(ribbon(() => -4.5, () => -4.35, 0.01, line), ribbon((z) => edgeX(z) - 0.15, edgeX, 0.01, line)); // (the edge lines)
       for (let z = -6; z < 7; z += 4) { g.add(box(0.15, 0.02, 2, line, -1.5, 0.01, z)); if (z < -4) g.add(box(0.15, 0.02, 2, line, 1.5, 0.01, z)); } // (the lane lines, and the closing lane's)
       return { model: g };
+    } },
+    { name: 'Roadworks diversions', color: 0xff8a1a, has: (l) => l.diversions?.length, rules: [
+      `Cones move the lanes over: a kerb lane closed, your lanes shifted out, or a contraflow with oncoming traffic beside you. Signs and a lit arrow board show the way.`,
+      `Leave it late and the taper squeezes you over, knocking cones (${CONFIG.obstacleKinds.cone.damage} damage each, ${pct(CONFIG.obstacleKinds.cone.speedKept)} of your speed kept). The barriers hold you in your lane, never stop you.`,
+      `Traffic slows to the ${CONFIG.diversion.limit} km/h limit, merges in turn and keeps its lane.`,
+    ], build: () => {
+      const g = road(12, 18), lamps = [];
+      for (let k = 0; k < 6; k++) { const c = ob('cone'); c.position.set(-0.2 + k * 0.62, 0, -8 + k * 1.6); g.add(c); }
+      for (let z = 1.6; z < 9; z += 1.2) g.add(box(0.5, 0.8, 1.15, lambert(Math.round(z * 10) % 24 < 12 ? 0xd8262b : 0xf2f2f2), 3.6, 0.4, z));
+      for (let x = 3.6; x < 6; x += 1.2) g.add(box(1.15, 0.8, 0.5, lambert(x < 4 || x > 5 ? 0xd8262b : 0xf2f2f2), x, 0.4, 2));
+      g.add(box(0.15, 0.02, 9, glow(0xf2c21d), 3.0, 0.02, 4.5), box(1.7, 0.7, 2.4, lambert(0xf2b51c), 4.8, 0.75, 4.5), box(0.16, 2, 0.16, lambert(0x6f757d), 4.8, 2, 4.5));
+      const board = box(2.4, 1.6, 0.12, glow(0x111215), 4.8, 3.5, 4.5);
+      g.add(board);
+      for (let k = 0; k < 5; k++) { const lamp = box(0.22, 0.22, 0.05, glow(0xffb020), 5.7 - k * 0.45, 3.5, 4.43); lamps.push(lamp); g.add(lamp); } // (the arrow's shaft, and its head below)
+      for (const [dx, dy] of [[0.35, 0.35], [0.35, -0.35]]) { const lamp = box(0.22, 0.22, 0.05, glow(0xffb020), 4.35 + dx - 0.35, 3.5 + dy, 4.43); lamps.push(lamp); g.add(lamp); }
+      return { model: g, tick: (t) => { const on = Math.floor(t * 1.6) % 2 === 0; for (const l of lamps) l.material.color.setHex(on ? 0xffb020 : 0x3a2a10); } };
     } },
     { name: 'Bridges', color: 0x9c4a3a, has: (l) => l.bridges?.length, rules: [
       'A bridge has no shoulder: its steel stands right beside the outer lanes.',
@@ -1193,6 +1211,8 @@ const DRESS = [ // [kind, name, what it stands in for, where, the card's colour]
 DRESS.push(['harvestCrate', 'Crate of pumpkins', 'crate', 'autumn', 0xe8751a], ['leafPile', 'Heap of leaves', 'bale', 'autumn', 0xc8421e], ['smallPumpkin', 'Small pumpkin', 'cone', 'autumn', 0xf08a1c]);
 DRESS.push(['jerryStack', 'Stack of jerrycans', 'crate', 'the desert', 0xc8321f], ['tentRoll', 'Rolled tent', 'bale', 'the desert', 0xc4452a], ['rallyFlag', 'Rally marker flag', 'cone', 'the desert', 0xd8262b]);
 DRESS.push(['boxStack', 'Cartons on a sack truck', 'crate', 'the mall', 0xc89a62], ['trolleyRow', 'Row of trolleys', 'bale', 'the mall', 0x9aa0a8], ['wetFloorSign', 'Wet-floor sign', 'cone', 'the mall', 0xf2c21d]);
+DRESS.push(['barrierBlock', 'Barrier blocks', 'barrier', 'the roadworks', 0xd8262b], ['cableReel', 'Cable drum', 'crate', 'the roadworks', 0xa8783e], ['sandPile', 'Heap of sand', 'bale', 'the roadworks', 0xd9b36a],
+  ['trafficDrum', 'Traffic drum', 'cone', 'the roadworks', 0xff6a00], ['pipePallet', 'Pallet of pipes', 'crate', 'the roadworks', 0xe86a1a], ['worksSign', 'Works sign', 'sign', 'the roadworks', 0xd8262b]);
 // the kinds of plain obstacle a level's road has, as its theme has them
 const dressingKinds = (l) => new Set([...(l.obstacles || []).map(o => themedKind(l.theme, o.kind || 'barrier')), ...(l.shoulderRows || []).map(r => themedKind(l.theme, r.kind || 'cone')),
   ...(l.drifters || []).map(d => themedKind(l.theme, d.kind || 'cone', true))]);

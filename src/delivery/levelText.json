@@ -677,5 +677,13 @@
       "evil": "A hamster in a ball for the pet shop, and it wants out. Skate the mopped halls flat out, scatter the trolleys and go out through the loading dock."
     },
     "cargo": { "good": "bubbletea", "evil": "hamsterball" }
+  },
+  "roadworks": {
+    "name": "Roadworks",
+    "description": {
+      "good": "Coffee for the road crew at the far end of the works. Follow the cones: a lane closed, the lanes shifted, then a contraflow. Keep to the limit.",
+      "evil": "A bucket of glitter for the fresh tarmac. Clip the cones, cut the tapers fine and squeeze past the queue before the contraflow."
+    },
+    "cargo": { "good": "coffee", "evil": "glitter" }
   }
 }

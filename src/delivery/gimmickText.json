@@ -2,6 +2,7 @@
   "side-roads": { "name": "Side roads", "blurb": "An exit lane beside the right-hand lane: a way round the jam." },
   "crossroads": { "name": "Crossroads", "blurb": "The road turns, or runs straight through, a crossroads." },
   "lanes-closing": { "name": "Lanes closing", "blurb": "The outer lanes close and everyone squeezes in." },
+  "roadworks-diversions": { "name": "Roadworks diversions", "blurb": "Cones move the lanes over: follow them, or knock them flying." },
   "bridges": { "name": "Bridges", "blurb": "No shoulder on a bridge: steel stands beside the outer lanes." },
   "ice": { "name": "Ice", "blurb": "Brakes and steering lose most of their grip, and the car slews." },
   "mud": { "name": "Mud", "blurb": "Mud slows the car, a nimble sports car worst of all." },

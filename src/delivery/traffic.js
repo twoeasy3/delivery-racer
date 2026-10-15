@@ -20,6 +20,7 @@ import { Water } from './water.js';
 import { Hazards } from './hazards.js';
 import { Gambles } from './gambles.js';
 import { Radiation } from './radiation.js';
+import { Roadworks } from './roadworks.js';
 
 // ---- traffic ---------------------------------------------------------------
 // One pool of cars recycled ahead of the player: some northbound (the player's way), the
@@ -136,6 +137,7 @@ export const Traffic = (() => {
     // (a vehicle that keeps to the kerb starts out there)
     const lane = CONFIG.vehicles[kind].kerb ? Track.openLane(kerbLane(car.dir, car.s), car.s)
       : Track.openLane(first + Math.floor(random() * (last - first + 1)), car.s);
+    if (nearWorks(car) && Track.openLane(lane, car.s + car.dir * 150) !== lane) return false; // (not in a lane a diversion closes just ahead)
     if (!laneClear(car, lane, 25) || Wreckage.blocked(lane, car.s)) return false;
     outfit(car, kind, lane);
     ghostMark(car); // (only a car dealt out on the road: not a pursuit's or a tractor)
@@ -784,6 +786,58 @@ export const Traffic = (() => {
     if (car.dir > 0 && lane > car.lane && lane > Tide.dryLane(car.s + 70)) return false; // (nobody moves over into the tide's water)
     return true;
   };
+  // ---- roadworks diversions (Track's lateral-offset layer, roadworks.js) ------------------------------------------------
+  // near one (within CONFIG.diversion.look m of its ends, either way)?
+  const nearWorks = (car) => {
+    if (!Track.diversions.length || !Track.isMain(car.s)) return false;
+    const L = CONFIG.diversion.look;
+    for (const d of Track.diversions) if (car.s > d.from - L && car.s < d.to + L) return true;
+    return false;
+  };
+  // m ahead (its way) to where its lane closes, within CONFIG.diversion.look: Infinity if it doesn't
+  const closedAhead = (car, lane) => {
+    for (let d = 0; d <= CONFIG.diversion.look; d += 4) if (Track.openLane(lane, car.s + car.dir * d) !== lane) return d;
+    return Infinity;
+  };
+  // room to merge into `lane` here: nothing in it (nor the player) alongside, or close enough ahead or behind that the two
+  // would meet at the speeds they are going
+  const zipRoom = (car, lane) => {
+    const lat = Track.laneOffset(lane, car.s), mine = Math.abs(car.vs);
+    for (let i = 0; i <= cars.length; i++) {
+      const o = i < cars.length ? cars[i] : Player;
+      if (o === car || !o.active || o.junction) continue;
+      if (o.isPlayer ? Player.ghost > 0 || Math.abs(Player.lat - lat) > Player.hw + car.hw + 0.3
+        : o.dir !== car.dir || (Track.openLane(o.lane, o.s) !== lane && Math.abs(o.lat - lat) > o.hw + car.hw)) continue;
+      const ahead = (o.s - car.s) * car.dir, theirs = o.isPlayer ? Player.speed : Math.abs(o.vs);
+      if (ahead > -(o.hl + car.hl + 2 + Math.max(0, theirs - mine) * 1.2) && ahead < o.hl + car.hl + 2 + Math.max(0, mine - theirs) * 1.2) return false;
+    }
+    return true;
+  };
+  // in roadworks, how fast it may go and still stop in time behind what is ahead of it in its lane (or coming into it: a car
+  // that has just moved over, or one waiting to, that a courteous driver lets in): braking firmly (see `hold` in update), not
+  // easing off, so a queue that stops at a taper stops nose to tail and nothing runs into the back of it
+  const worksFollow = (car) => {
+    const b = CONFIG.junction.stopping, lane = Track.openLane(car.lane, car.s);
+    let most = Infinity;
+    for (let i = 0; i <= cars.length; i++) {
+      const o = i < cars.length ? cars[i] : Player;
+      if (o === car || !o.active || o.junction || (o.isPlayer ? Player.ghost > 0 || Player.testGhost : o.dir !== car.dir)) continue;
+      const centres = (o.s - car.s) * car.dir, gap = centres - o.hl - car.hl;
+      if (gap < -1.5 || gap > 70) continue;
+      const letIn = !o.isPlayer && o.zipInto === lane && courteous(car) && centres > o.hl + car.hl + 2 && centres < CONFIG.diversion.zip + o.hl + car.hl;
+      const inLane = Math.abs(o.lat - car.lat) < o.hw + car.hw + 0.2 || (!o.isPlayer && Track.openLane(o.lane, o.s) === lane);
+      if (!letIn && !inLane) continue;
+      const v = letIn ? 0 : Math.max(0, o.isPlayer ? Player.speed : o.vs * car.dir);
+      most = Math.min(most, Math.sqrt(v * v + 2 * b * Math.max(0, gap - (letIn ? 5 : 3))));
+    }
+    return most;
+  };
+  // how far over the works' limit it goes (its own, from what it is: the same every time; an evil driver a little more)
+  const keepsTo = (car) => (0.94 + ((car.baseSpeed * 7.31) % 1) * 0.12) * (car.evil ? 1.08 : 1);
+  // how fast its lane is moving across where it is, at the speed it is going (m/s): through a diversion's taper the lane moves, and
+  // a car steering only for where its lane IS lags behind it, out over the cones; steering for where it is GOING as well, it keeps
+  // to the middle of the lane all the way through
+  const laneDrift = (car) => (Track.laneOffset(car.lane, car.s + 1) - Track.laneOffset(car.lane, car.s - 1)) / 2 * car.vs;
   // A calm (happy or neutral), good driver decides early and signals: it moves over
   // CONFIG.signalTime later, if the lane is still free then (see update). Evil and angry drivers just go.
   const courteous = (car) => !car.evil && car.emotion !== 'angry';
@@ -1237,6 +1291,7 @@ export const Traffic = (() => {
     if (car.dir > 0 && cars.some(v => v.active && v.icecream && v.baseSpeed === 0 && v.s - car.s > -5 && v.s - car.s < CONFIG.iceCream.queue)) return;
     if (car.kind === 'tractor' || CONFIG.vehicles[car.kind].kerb) return; // a tractor just trundles along its lane, and a truck keeps to the kerb
     if (car.pendingLane !== null) return; // (already signalling for a move)
+    if (nearWorks(car)) return; // (through roadworks it keeps its lane: see update, the zip)
     if (sirenFor(car)) return; // (no lane changes of its own with a siren behind it)
     if (LEVEL.battle && car.kind === 'tank') return; // (a tank changes lanes only to hunt or dodge: see battle)
     // angry evil drivers pick on whoever is nearest (a good one only fights back, when it is hit)
@@ -1521,6 +1576,7 @@ export const Traffic = (() => {
     // a player who is busted already, or can't be, it just waits behind)
     if (blocker !== car.blocker || gap > E.reach) car.blockTime = 0;
     car.blocker = blocker;
+    if (nearWorks(car)) car.blockTime = 0; // (in roadworks there is nowhere to pull over to: it waits behind, as long as it takes)
     const caught = blocker && blocker.isPlayer && (Player.busted || car.sparePlayer);
     if (blocker && !caught && gap <= E.reach && (car.blockTime += dt) >= E.giveWay) {
       if (blocker.isPlayer) {
@@ -1533,6 +1589,7 @@ export const Traffic = (() => {
     // full speed, or as fast as lets it stop in time behind what is in its way
     // (an ambulance on a call takes the bends flat out)
     let target = car.baseSpeed;
+    if (nearWorks(car)) target = Math.min(target, Roadworks.limitAt(car.s, car.dir) * 1.2); // (through roadworks, carefully)
     if (car.blocker) {
       const theirs = Math.max(0, car.blocker.vs * car.dir);
       target = Math.min(target, theirs + Math.sqrt(2 * E.brake * Math.max(0, gap - E.followGap)));
@@ -1549,7 +1606,7 @@ export const Traffic = (() => {
     }
     Track.transfer(car);
     // held to its lane
-    car.latVel = (pathLat(car, car.s) - car.lat) * 4;
+    car.latVel = (pathLat(car, car.s) - car.lat) * 4 + (nearWorks(car) ? (pathLat(car, car.s + 1) - pathLat(car, car.s - 1)) / 2 * car.vs : 0); // (and with its lane through a diversion's taper)
     car.lat += car.latVel * dt;
     car.signal = 0;
     car.hazards = false;
@@ -2008,6 +2065,7 @@ export const Traffic = (() => {
               Math.abs(rival.s - car.s) > CONFIG.rivalryRange * 1.5) rival = car.rival = null;
         }
         if (CONFIG.vehicles[car.kind].kerb) rival = car.rival = null; // (a truck keeps out of feuds)
+        if (rival && !rival.isPlayer && !car.racer && nearWorks(car)) rival = null; // (nor any feud in roadworks: eyes on the cones. It can pick up again after)
         // a jerk (a mystery): every driver going the player's way and near enough goes after the
         // player as if the player were its rival, and an evil one throws at the player. (Not the
         // police, whose swerving into the player would be a bust, nor oncoming traffic: a head-on.)
@@ -2066,8 +2124,26 @@ export const Traffic = (() => {
         const dry = (s) => car.dir > 0 && !car.evil ? Tide.dryLane(s) : Infinity;
         const lead = (reach) => ramp !== car.lane ? ramp : Math.min(Track.openLane(home, car.s + car.dir * reach), dry(car.s + car.dir * reach));
         const open = lead(70);
-        let squeezed = false;
-        if (courteous(car)) {
+        let squeezed = false, zipHold = Infinity, zipped = false;
+        const works = nearWorks(car), laneWas = car.lane;
+        car.zipInto = null;
+        if (works) {
+          // ROADWORKS: its lane closing ahead, it moves into the lane it closes into once there is room there (a courteous driver
+          // as soon as it can, the rest nearer the cones), or waits short of the first cone, signalling, until there is: the open
+          // lane lets one in at a time (see the zip, below). Nothing else changes lanes in the works (see think)
+          const shutIn = closedAhead(car, car.lane);
+          const into = shutIn < Infinity ? Track.openLane(car.lane, car.s + car.dir * (shutIn + 2)) : car.lane;
+          if (into !== car.lane) {
+            car.pendingLane = null;
+            car.signal = Math.sign(into - car.lane);
+            if ((courteous(car) || shutIn < 90) && zipRoom(car, into)) { car.lane = into; zipped = true; }
+            else {
+              car.zipInto = into;
+              squeezed = true;
+              zipHold = Math.sqrt(2 * CONFIG.junction.stopping * Math.max(0, shutIn - CONFIG.diversion.wait - car.hl));
+            }
+          }
+        } else if (courteous(car)) {
           const soon = lead(70 + Math.abs(car.vs) * CONFIG.signalTime);
           if (soon !== car.lane && car.pendingLane !== soon) signalTo(car, soon, true);
           squeezed = open !== car.lane; // (until it has moved over)
@@ -2409,7 +2485,8 @@ export const Traffic = (() => {
         // (on ice, and on a level where cars understeer, they don't slow for a bend: they slide wide instead;
         // though a racer, knowing the track, slows for the bends ahead as much as lets it slide a little)
         target = Math.min(target, giveWay(car), car.onIce || LEVEL.understeer ? Infinity : cornerSpeed(car.s, weightOf(car)));
-        const hold = Math.min(Crossings.holdFor(car), StopGo.holdFor(car), Hazards.holdFor(car), Water.holdFor(car)); // (waiting at a level crossing, or a STOP; or one of Hazards'; or at the water's edge)
+        const hold = Math.min(Crossings.holdFor(car), StopGo.holdFor(car), Hazards.holdFor(car), Water.holdFor(car), zipHold, works ? worksFollow(car) : Infinity); // (waiting at a level crossing, or a STOP; or one of Hazards'; or at the water's edge; or a diversion's taper, for a gap, and in the works nose to tail: worksFollow)
+        if (works) target = Math.min(target, Roadworks.limitAt(car.s, car.dir) * keepsTo(car) * (car.racer ? 1.25 : 1)); // (the works' limit: see CONFIG.diversion)
         const cyclists = passPeloton(car); // (giving cyclists room, or waiting behind them for it)
         // quirks of its kind (see CONFIG.vehicles): a bin lorry pulling up where it is, every so often
         const quirk = CONFIG.vehicles[car.kind];
@@ -2446,6 +2523,9 @@ export const Traffic = (() => {
           car.vs -= car.dir * Math.min(Math.abs(car.vs) - target, 1.5 * CONFIG.junction.stopping * dt);
         } else car.vs += (car.dir * target - car.vs) * damp(car.tap > 0 || (car.racer && car.braking) ? 3 : car.racer ? 1.2 * CONFIG.race.aiPickup : 1.2, dt);
 
+        // (in roadworks, no other move but into a lane open all the way through and with room in it, whatever asked for it: a jam's
+        // impatience, a hunt, a block)
+        if (works && car.lane !== laneWas && !zipped && !(closedAhead(car, car.lane) === Infinity && zipRoom(car, car.lane))) { car.lane = laneWas; car.pendingLane = null; }
         // spring back to the lane centre
         // (alongside its rival it steers straight at it, but never over into the oncoming lanes after it)
         const beside = rival && car.waterWait == null && Math.abs(rival.s - car.s) < rival.hl + car.hl + 2; // (not one waiting at the water's edge: it stays in its queue)
@@ -2466,15 +2546,18 @@ export const Traffic = (() => {
         const settled = Math.abs(aimLat - car.lat) < 0.3;
         if (settled && car.pendingLane === null) car.signal = 0;
         car.hazards = ((car.pulledOver || car.punctured) && (car.hazards || settled)) || car.binStop > 0; // (or a bin lorry at a stop)
-        const drift = car.hesitant && !beside && !car.pulledOver ? (quirk.wobble // (a learner: a wide wobble, two drifts at once so it never repeats)
+        const drift = works ? 0 : car.hesitant && !beside && !car.pulledOver ? (quirk.wobble // (no wandering about its lane in roadworks) // (a learner: a wide wobble, two drifts at once so it never repeats)
           ? (Math.sin(car.wander += dt * 2.1) * 0.7 + Math.sin(car.wander * 0.37) * 0.3) * quirk.wobble
           : Math.sin(car.wander += dt * 1.3) * H.wander)
           : quirk.sway && !car.pulledOver ? Math.sin(car.wander += dt * 1.7) * quirk.sway * Math.min(1, Math.abs(car.vs) / 12) : 0; // (a caravan, swaying)
         // (and nothing is ever steered into a median: not even after a rival who has gone in there)
         let aim = aimLat + drift + (beside ? 0 : car.squeeze * CONFIG.race.bully.squeeze); // (an evil racer leaning on a good one)
-        if (Track.medianHalf) aim = car.dir > 0 ? Math.max(aim, Track.medianHalf + car.hw) : Math.min(aim, -Track.medianHalf - car.hw);
+        if (Track.medianHalf && !works) aim = car.dir > 0 ? Math.max(aim, Track.medianHalf + car.hw) : Math.min(aim, -Track.medianHalf - car.hw); // (a diversion may lead a way over it: a contraflow)
         const sharp = car.racer && car.attack > 0 && !car.squeeze ? CONFIG.race.passSharp : 1; // (a racer going for a gap moves across sharply)
-        const wantVel = clamp((aim - car.lat) * CONFIG.trafficLaneChangeRate * sharp, -6 * sharp, 6 * sharp);
+        // (in roadworks, its lane's own drift across as well, where it is following its lane: see laneDrift)
+        const drift2 = works && !beside && aimLat === Track.laneOffset(car.lane, car.s) ? laneDrift(car) : 0;
+        const across = works && car.hl > 4 ? 2.5 : 6; // (a long vehicle moves over slowly in roadworks: its nose swings out over the next lane)
+        const wantVel = clamp((aim - car.lat) * CONFIG.trafficLaneChangeRate * sharp, -across * sharp, across * sharp) + drift2;
         car.latVel += (wantVel - car.latVel) * damp(6 * sharp, dt);
       }
 
