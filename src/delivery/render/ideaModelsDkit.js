@@ -250,6 +250,16 @@ export const edgeInset = (chain, i, { aPillar, roof, cPillar, belt }) => {
   const p = chain[i], q = chain[i + 1], dz = q[0] - p[0], dy = q[1] - p[1];
   return Math.abs(dy) < 0.25 * Math.hypot(dz, dy) ? roof : dy > 0 ? aPillar : cPillar;
 };
+// a ROUNDED corner of a side profile (the owner, 15-Oct): the corner V between the incoming edge (from point `a`) and the outgoing edge (to `b`) cut by a
+// smooth curve starting `l1` back along the incoming edge and ending `l2` along the outgoing one (`k`: how far the curve's handles reach toward V, 0.6 is
+// near round). Returns the points of the curve INCLUDING its start and excluding V; splice it into an outline in place of V. `n` pieces (short edges,
+// which virtualCorners collapses again for the glass).
+export const fillet = (a, V, b, l1, l2, n = 4, k = 0.6) => {
+  const u = (p, q) => { const l = Math.hypot(q[0] - p[0], q[1] - p[1]); return [(q[0] - p[0]) / l, (q[1] - p[1]) / l]; };
+  const da = u(V, a), db = u(V, b);
+  const S = [V[0] + da[0] * l1, V[1] + da[1] * l1], E = [V[0] + db[0] * l2, V[1] + db[1] * l2];
+  return [S, ...curve(S, [S[0] + (V[0] - S[0]) * k, S[1] + (V[1] - S[1]) * k], [E[0] + (V[0] - E[0]) * k, E[1] + (V[1] - E[1]) * k], E, n)];
+};
 // ROUNDED BODY, SHARP WINDOWS (the owner, 15-Oct): a run of short edges (under `short`, 20 cm: a rounded roof corner drawn as curve pieces) between two
 // long edges is collapsed to its VIRTUAL corner, where the long edges' lines meet. profile.slice(from, to + 1) in, { points, map } out (map: old index
 // (relative to `from`) -> the new one). A run at either end of the chain is kept as it is.
@@ -265,7 +275,9 @@ export const virtualCorners = (chain, short = 0.2) => {
         const d1 = [b[0] - a[0], b[1] - a[1]], d2 = [d[0] - c[0], d[1] - c[1]], den = d1[0] * d2[1] - d1[1] * d2[0];
         if (Math.abs(den) > 1e-9) {
           const t = ((c[0] - a[0]) * d2[1] - (c[1] - a[1]) * d2[0]) / den;
-          points.push([a[0] + d1[0] * t, a[1] + d1[1] * t]);
+          // (a corner on a vertical or level long edge is snapped to that edge's coordinate: 1.7000000000000002 would flip tiltGlass's normal)
+          const snap = (v, ...near) => near.find(w => Math.abs(v - w) < 1e-9) ?? v;
+          points.push([snap(a[0] + d1[0] * t, a[0], b[0], c[0], d[0]), snap(a[1] + d1[1] * t, a[1], b[1], c[1], d[1])]);
           for (let k = i; k <= j; k++) map[k] = points.length - 1;
           i = j + 1;
           continue;
@@ -291,19 +303,22 @@ export const insideChain = (chain, p) => {
 };
 // a sharp window's two top corners, pulled in along their pillar's inset line until they sit `margin` inside the REAL (rounded) chain
 // (no vertex added: the window stays a clean polygon, its top edge sinks a little at each end)
-export const pullCornersIn = (poly, real, margin) => {
-  const out = poly.map(p => [p[0], p[1]]), n = out.length;
-  for (const [k, o] of [[1, 0], [n - 2, n - 1]]) {
-    const d = [poly[o][0] - poly[k][0], poly[o][1] - poly[k][1]], l = Math.hypot(d[0], d[1]);
-    for (let s = 0; s < l * 0.8 && insideChain(real, out[k]) < margin; s += 0.002) out[k] = [poly[k][0] + d[0] / l * s, poly[k][1] + d[1] / l * s];
+export const pullCornersIn = (poly, real, margin, level = false) => {
+  const out = poly.map(p => [p[0], p[1]]), n = out.length, ks = [[1, 0], [n - 2, n - 1]];
+  const slide = (k, o, s) => { const d = [poly[o][0] - poly[k][0], poly[o][1] - poly[k][1]], l = Math.hypot(d[0], d[1]); return [poly[k][0] + d[0] / l * s, poly[k][1] + d[1] / l * s]; };
+  const len = (k, o) => Math.hypot(poly[o][0] - poly[k][0], poly[o][1] - poly[k][1]);
+  for (const [k, o] of ks) for (let s = 0; s < len(k, o) * 0.8 && insideChain(real, out[k]) < margin; s += 0.002) out[k] = slide(k, o, s);
+  if (level) { // both top corners to the lower one's height: the window's top edge stays parallel to a level roof
+    const y = Math.min(out[1][1], out[n - 2][1]);
+    for (const [k, o] of ks) { const dy = poly[o][1] - poly[k][1]; if (Math.abs(dy) > 1e-9) out[k] = slide(k, o, (y - poly[k][1]) / dy * len(k, o)); }
   }
   return out;
 };
-export const glassFromProfile = (profile, { from, to, belt, inset = {}, zFront = Infinity, zRear = -Infinity, half, taper = null, lift = 0.004, real = null, margin = 0 }) => {
+export const glassFromProfile = (profile, { from, to, belt, inset = {}, zFront = Infinity, zRear = -Infinity, half, taper = null, lift = 0.004, real = null, margin = 0, levelTops = false }) => {
   const { aPillar = 0.07, roof = 0.055, cPillar = 0.08, belt: beltInset = 0.025 } = inset;
   const chain = cabinChain(profile, from, to, belt);
   let inner = insetOutline(chain, chain.map((p, i) => edgeInset(chain, i, { aPillar, roof, cPillar, belt: beltInset })));
-  if (real) inner = pullCornersIn(inner, real, margin); // (rounded body, sharp window: `profile` holds the virtual corners, `real` the rounded chain)
+  if (real) inner = pullCornersIn(inner, real, margin, levelTops); // (rounded body, sharp window: `profile` holds the virtual corners, `real` the rounded chain)
   const poly = tidyGlass(clipZ(inner, zRear, zFront));
   const xAt = (y) => (taper ? narrowAt(half, y, taper) : half) + lift;
   const faces = THREE.ShapeUtils.triangulateShape(poly.map(p => new THREE.Vector2(p[0], p[1])), []);
@@ -349,7 +364,7 @@ export const screenGlassFromProfile = (profile, { edge, foot = 0.03, top = 0.07,
 // from their virtual corners (virtualCorners), so every window is a clean polygon, and each window's two top corners are pulled in along their pillar's
 // inset line until they lie `cornerDepth` (0.05) inside the real rounded silhouette (pullCornersIn: no vertex added, the top edge sinks a little).
 // The result's `virtual` holds the virtual chain: a car publishes it as userData.glassVirtual = { chain, grow } for scripts/.glass-contour-check.mjs.
-export const cabinGlass = (profile, { from, to, belt, inset = {}, grow = 0, half, taper = null, windows = [[-Infinity, Infinity]], sideLift = 0.004, lift = 0.004, topLift = lift, sideInset = 0.08, foot = 0.03, sharp = false, cornerDepth = 0.05 }) => {
+export const cabinGlass = (profile, { from, to, belt, inset = {}, grow = 0, half, taper = null, windows = [[-Infinity, Infinity]], sideLift = 0.004, lift = 0.004, topLift = lift, sideInset = 0.08, foot = 0.03, sharp = false, cornerDepth = 0.05, levelTops = false }) => {
   const { aPillar = 0.07, roof = 0.055, cPillar = 0.08, belt: beltInset = 0.025 } = inset;
   // (the insets from the profile: `grow` less than from the silhouette; never outside the profile, where the body's shoulder rounds away)
   const ins = { aPillar: Math.max(0, aPillar - grow), roof: Math.max(0, roof - grow), cPillar: Math.max(0, cPillar - grow), belt: beltInset };
@@ -366,8 +381,8 @@ export const cabinGlass = (profile, { from, to, belt, inset = {}, grow = 0, half
   // the outline both ends of the glass are derived from
   const chain = cabinChain(profile, from, to, belt);
   const raw = insetOutline(chain, chain.map((p, i) => edgeInset(chain, i, ins)));
-  const poly = tidyGlass(real ? pullCornersIn(raw, real, margin) : raw), n = poly.length; // (poly[0] and poly[n - 1] are the belt corners: the ends are kept)
-  const sides = windows.flatMap(([zRear, zFront]) => glassFromProfile(profile, { from, to, belt, inset: ins, zFront, zRear, half, taper, lift: sideLift, real, margin }));
+  const poly = tidyGlass(real ? pullCornersIn(raw, real, margin, levelTops) : raw), n = poly.length; // (poly[0] and poly[n - 1] are the belt corners: the ends are kept)
+  const sides = windows.flatMap(([zRear, zFront]) => glassFromProfile(profile, { from, to, belt, inset: ins, zFront, zRear, half, taper, lift: sideLift, real, margin, levelTops }));
   const onLine = (p, q, y) => [p[0] + (q[0] - p[0]) * (y - p[1]) / (q[1] - p[1]), y];
   const hx = (y) => (taper ? narrowAt(half, y, taper) : half) - sideInset;
   // the shared top line: the side window's top corner at each pillar
