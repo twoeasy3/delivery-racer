@@ -125,13 +125,6 @@ const extrudeSide = (outline, w, bevel, taper = null, segs = 2, across = bevel, 
   }
   return geo;
 };
-const heightAt = (chain, z) => {
-  for (let i = 0; i + 1 < chain.length; i++) {
-    const [z0, y0] = chain[i], [z1, y1] = chain[i + 1];
-    if ((z - z0) * (z - z1) <= 0 && z0 !== z1) return y0 + (y1 - y0) * (z - z0) / (z1 - z0);
-  }
-  return chain[0][1];
-};
 const zAt = ([[z0, y0], [z1, y1]], y) => z0 + (z1 - z0) * (y - y0) / (y1 - y0);
 // a glass panel on a sloping face from [z0, y0] to [z1, y1] (side view), `half` the half width before narrowing, inset
 // `inset` from the sides and `ends` (shares) from its ends, laid `lift` out along the face's normal on the side `out`
@@ -317,28 +310,32 @@ IDEA_MODELS_TOPUP_A.glassbrake = (car) => {
     ...curve([NOSE - 0.3, 0.77], [1.2, 0.8], [0.8, 0.84], [0.45, 0.86], 3), [TAILZ + 0.3, 0.86],
     ...curve([TAILZ + 0.3, 0.86], [TAILZ + 0.05, 0.84], [TAILZ, 0.8], [TAILZ, 0.72], 2),
     ...brk.slice(1).reverse().map(([z, y]) => [Math.max(TAILZ, z), y + 0.03])];
-  const CBEV = 0.07, CW = BW - 0.16, TOP = car.height - CBEV, CY = 0.72, TAPER = [0.86, TOP, 0.14];
-  const WS = [[0.62, CY], [-0.06, TOP - 0.03]], HT = [-1.0, TOP - 0.01], HM = [-1.68, 1.07], HF = [TAILZ + 0.05, 0.95];
-  const roof = [WS[1], ...curve(WS[1], [-0.3, TOP + 0.01], [-0.7, TOP + 0.01], HT, 4)];
+  const CBEV = 0.05, CW = BW - 0.16, TOP = car.height - CBEV, CY = 0.72, TAPER = [0.86, TOP, 0.14];
+  const WS = [[0.62, CY], [-0.06, TOP - 0.01]], HM = [-1.68, 1.05], HF = [TAILZ + 0.05, 0.86];
+  const HT = [-1.0, WS[1][1] + (HM[1] - WS[1][1]) * (-1.0 - WS[1][0]) / (HM[0] - WS[1][0])]; // (where the hatch glass begins: ON the straight line of the roof, so the body has no corner there)
+  const roof = [WS[1]];
   const cabinOutline = [WS[0], ...roof, HM, HF, [TAILZ + 0.05, CY]];
   const body = place(group, shadeLow(merge([
     extrudeSide(upperOutline, BW, BEV, null, 2, 0.16),
     extrudeSide(cabinOutline, CW, CBEV, TAPER, 2, 0.12),
   ]), 0.55, 1.0, [0.86, 0.84, 0.82]), paint);
   place(group, shadeLow(merge([extrudeSide(lowerOutline, BW + 0.024, BEV, null, 2, 0.16)]), 0.2, 0.6, [0.8, 0.78, 0.76]), lower);
-  // the glass: the windscreen, the long hatch (all glass, nearly flat), a door window, and the side glass back to the tail
-  const CH = CW / 2, LIFT = CBEV + 0.006, foot = 0.97, roofLine = [...roof, HM, HF];
-  const top = (z) => heightAt(roofLine, z) - 0.045;
-  const aEdge = (y) => zAt(WS, y) - 0.09;
-  const back = [-0.55, -0.9, -1.25, -1.5, -1.68, -1.8].map(z => [z, Math.max(foot + 0.012, top(z))]);
-  bag.add(GLASS,
-    slopeGlass([zAt(WS, foot), foot], WS[1], CH, TAPER, CBEV + 0.03, [0, 0.05], LIFT, [1, 1]),
+  // the glass: ALL of it from the cabin's own side profile (cabinGlass: one inset outline, so the windscreen, the side glass and the tail glass share
+  // one top line at the pillars), inset from the body's silhouette (grown CBEV); the glass 6 mm proud of the body. The side glass runs from the A-pillar
+  // back along the roof and the flat hatch, down to the tail; a B-pillar splits it into the door window and the long rear quarter window. The one
+  // thing cabinGlass does not make is the flat hatch panel itself (the near-flat roof of glass from the roof's end to the tail's bend), laid below
+  const CH = CW / 2, LIFT = CBEV + 0.006, foot = 0.97;
+  const glass = cabinGlass(cabinOutline, { from: 0, to: cabinOutline.indexOf(HF), belt: foot, half: CH, taper: TAPER, grow: CBEV,
+    inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: LIFT, sideLift: 0.006, windows: [[-0.64, 9], [-9, -0.74]] });
+  // the rear is the car's gimmick, ONE full-glass panel from the roof's end down over the bend to the tail: the original two slopeGlass pieces, kept
+  // (the owner, 14-Oct: the glass fix had split it with cabinGlass's rear glass and a body band, so that panel is as it was; glass.rear is not used)
+  // the windscreen comes from a second cabinGlass call with the belt down at the bonnet (0.87): the side windows' belt (0.97) left the screen's foot
+  // floating 11 cm above the bonnet with a strip of body under it; the screen's top is the same line (the A-pillar corner), only the foot is lower
+  const screen = cabinGlass(cabinOutline, { from: 0, to: cabinOutline.indexOf(HF), belt: 0.87, half: CH, taper: TAPER, grow: CBEV,
+    inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: LIFT, sideLift: 0.006, windows: [[-0.64, 9], [-9, -0.74]] });
+  bag.add(GLASS, ...glass.sides, screen.front,
     slopeGlass(HT, HM, CH, TAPER, CBEV + 0.03, [0.02, 0], LIFT, [-0.2, 1]),
-    slopeGlass(HM, HF, CH, TAPER, CBEV + 0.03, [-0.08, 0.12], LIFT - 0.002, [-1, 0.6]),
-    ...sideGlass([
-      [[aEdge(foot), foot], [-0.42, foot], [-0.42, top(-0.42)], [aEdge(top(-0.1)), top(-0.1)]],
-      [[-0.52, foot], [-1.82, foot], ...back.slice().reverse()],
-    ], CH, TAPER, 0.006));
+    slopeGlass(HM, HF, CH, TAPER, CBEV + 0.03, [-0.08, 0.12], LIFT - 0.002, [-1, 0.6]));
   // the face: a low wide grille, a round lamp in a chrome ring at each end, split bumpers, amber lamps in their corners
   for (const s of [-1, 1]) {
     bag.add(CHROME, dsc(0.1, 0.03, s * 0.62, 0.62, L - 0.012, 14), bx(0.52, 0.07, 0.08, s * 0.5, 0.41, L + 0.03), bx(0.26, 0.07, 0.08, s * 0.8, 0.41, L - 0.06, 0, s * 0.7));
