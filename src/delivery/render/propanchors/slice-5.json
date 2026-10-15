@@ -174,11 +174,11 @@
     "lim": "d"
    },
    "cargo": {
-    "box": [0.41, 0, 1.859, -1.54],
-    "cyl": [0.46, 0, 1.879, -1.54],
+    "box": [1.55, 0, 1.725, -1.22],
+    "cyl": [1.55, 0, 1.725, -1.22],
     "from": "deck",
-    "lim": "d",
-    "inset": [0.045, 0.034]
+    "lim": "h",
+    "existing": true
    },
    "wing": {
     "box": [0.92, 0, 2.411, 0.038],
@@ -678,6 +678,26 @@
   "refuselorry": {
    "cargo": {
     "no": "a refuse body: no open load deck (its top is the hopper)"
+   },
+   "roof": {
+    "box": [0.7, 0.65, 2.855, 2.65],
+    "cyl": [0.7, 0.65, 2.855, 2.65],
+    "from": "roof",
+    "lim": "hand"
+   }
+  },
+  "cabledrum": {
+   "roof": {
+    "box": [1, 0, 2.54, 3.55],
+    "cyl": [1, 0, 2.54, 3.55],
+    "from": "roof",
+    "lim": "hand"
+   },
+   "wing": {
+    "box": [0.9, 0, 2.448, 3],
+    "cyl": [0.9, 0, 2.425, 3],
+    "from": "roof-edge",
+    "lim": "hand"
    }
   }
  }
