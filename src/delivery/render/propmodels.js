@@ -19,6 +19,7 @@ import { MORE_ROOF } from './propmodelsroof.js';
 import { MORE_CARGO } from './propmodelscargo.js';
 import { MORE_WING } from './propmodelswing.js';
 import { MORE_WING_CLASSIC } from './propmodelswingclassic.js';
+import { MORE_WING_2 } from './propmodelswing2.js';
 
 const shared = (m) => { m.userData.shared = true; return m; };
 const DARK = shared(new THREE.MeshLambertMaterial({ color: 0x23252a }));      // black plastic, stands, rails
@@ -136,7 +137,7 @@ export const BASE_PROPS = {
 export const PROPS = {
   roof: [...BASE_PROPS.roof, ...MORE_ROOF],
   cargo: [...BASE_PROPS.cargo, ...MORE_CARGO],
-  wing: [...BASE_PROPS.wing, ...MORE_WING_CLASSIC, ...MORE_WING],
+  wing: [...BASE_PROPS.wing, ...MORE_WING_CLASSIC, ...MORE_WING_2, ...MORE_WING],
 };
 export const propById = (id) => Object.values(PROPS).flat().find(p => p.id === id) || null;
 export const propSlotOf = (id) => Object.keys(PROPS).find(slot => PROPS[slot].some(p => p.id === id)) || null;
