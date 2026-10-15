@@ -759,7 +759,7 @@ export const ORIG3_MODELS = {
     const geo = wheelGeo(R, 0.3), tyre = lambert(0x141414), hub = lambert(0xa8acb2);
     for (const s of [-1, 1]) for (const z of [FZ, RZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub)) keep.add(part);
     const merged = mergeByMaterial(shell, keep);
-    place(shell, ridge, cover); // (after the merge, a mesh of its own: merging would drop its colours)
+    place(shell, ridge, cover).userData.prop = 'cargo'; // (tagged: a chosen cargo prop hides the tarp load) (after the merge, a mesh of its own: merging would drop its colours)
     merged.get(rusty).renderOrder = 1; // (after the body even when the game makes the body see-through-able for a ghost)
     group.userData = {
       body: merged.get(paint),
