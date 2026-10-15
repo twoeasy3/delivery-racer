@@ -39,6 +39,7 @@ const THEME_FILES = {
   tuscany: () => import('./tuscany.js'),
   desert: () => import('./desert.js'),
   mall: () => import('./mall.js'),
+  city: () => import('./city.js'), // (the default theme: the city's streets, and every theme drawn as it, night, flooded)
 };
 
 const loading = {};
