@@ -91,7 +91,7 @@ if (opt('levels', false) || opt('cars', false) || shots.some(([, address]) => ad
     stunts: '&cineout=-1&cineup=10&cineback=30', // (a New York street set: over the road, as its level's agent found it)
     'market-town': '&at=900&ff=2&cineside=left', // (the market square, its stalls and clock tower: its level's agent's frame)
     fallout: '&at=1660&ff=1&cineout=2&cineup=9', // (the plant's gate: the cooling towers and the dome ahead over the pipe racks, drums on the shoulder, the green on the road)
-    'ring-road': '&at=4330&ff=1', // (the city centre's towers over the last stretch, the exit gantry ahead: its level's agent's frame)
+    'ring-road': '&at=4330&ff=1&tiers=0', // (the city centre's towers over the last stretch, the exit gantry ahead: its level's agent's frame)
     'albert-park': '&cineside=left&at=150' }); // (the tree again, further on)
   Object.assign(CINE, { thaw: '&at=3020&ff=1&cineside=left' }); // (Spring Thaw: the ford's sign, the bend and the meltwater, the side road leaving; the start is mostly empty sky)
   Object.assign(CINE, { descent: '&at=2240&ff=1&cineup=14&cineside=left' }); // (Mudslide: a hairpin below the road, houses stacked up the hill, a speed-cushion sign ahead; the start is in the cloud)
@@ -108,6 +108,7 @@ if (opt('levels', false) || opt('cars', false) || shots.some(([, address]) => ad
   Object.assign(CINE, { 'haunted-hollow': '&at=2610&ff=1' }); // (Haunted Hollow, hidden: the haunted house on its hill over the tunnel mouth, the harvest moon and bats over it)
   Object.assign(CINE, { 'hong-kong': '&at=400&ff=1&car=postvan' }); // (Hong Kong Harbour: the first ferry pier's clock tower and lanterns ahead on the promenade, the neon and the towers on the left; a tier-6 car, so the level starts)
   Object.assign(CINE, { 'jungle-highway': '&at=900&ff=1&cineout=-1&cineup=9&cineback=28' }); // (Jungle Highway, hidden: the first bridge's old truss overgrown ahead, the wet jungle either side, a macaw over the road; over the road because the usual place is in the tree wall)
+  Object.assign(CINE, { expressway: '&at=880&cineout=-1&cineup=10&cineback=30', 'big-business': '&cineout=-1&cineup=10&cineback=30', night: '&at=1000&cineout=-1&cineup=10&cineback=30&tiers=0', showdown: '&cineout=-1&cineup=10&cineback=30', flood: '&at=700&cineout=-1&cineup=10&cineback=30' }); // (the city's streets, CHECKLIST 460: the usual place, 9 m off the edge, is inside a shop since the city was built; over the road)
   if (opt('levels', false)) {
     levels.LEVELS.forEach((level, i) => {
       if (!only(opt('levels')) || only(opt('levels')).includes(level.id)) shots.push([level.id, `?autostart${side}&level=${i + 1}&ghost&cine${FF(level.id)}${CINE[level.id] || ''}`, !!PAIR.folder]);

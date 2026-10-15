@@ -1464,7 +1464,11 @@ const buildRoad = () => {
   // (an entry with a 7th, [s1, lat1], is a run of wall or the like from (s, lat) to there: placed
   // between the two in the world, turned along the line from one to the other and as long as it,
   // so it follows an edge that swings out from the road, a run-off's, and meets the next one)
-  const placeEntry = ([s, lat, y, sx, sy, sz, to]) => {
+  // (and an entry may carry, as properties of its own: tilt, radians about the road's line (an awning leaning out over
+  // the pavement), and turn, radians more about the upright (the far half of a gable roof): see render/themes/city.js)
+  const placeEntry = (entry) => {
+    const [s, lat, y, sx, sy, sz, to] = entry;
+    dummy.rotation.z = 0;
     if (to) {
       const a = {}, b = {};
       Track.toWorld(s, lat, a);
@@ -1481,17 +1485,20 @@ const buildRoad = () => {
       dummy.rotation.x = 0; // (nothing else placed with it is tipped)
       return;
     } else {
-      dummy.rotation.y = Track.toWorld(s, lat, tmp);
+      dummy.rotation.y = Track.toWorld(s, lat, tmp) + (entry.turn || 0);
+      dummy.rotation.z = entry.tilt || 0;
       dummy.position.set(tmp.x, tmp.y + y, tmp.z);
       dummy.scale.set(sx, sy, sz);
     }
     dummy.updateMatrix();
   };
   // (every kind is kept until the whole level's scenery has been said, then gone through together: see
-  // placeInstances. pad: m more than the verge to keep that kind clear of another road)
+  // placeInstances. pad: m more than the verge to keep that kind clear of another road. material: one of the kind's
+  // own, in place of the plain colour; then an entry may carry a colour of its own (entry.c, a hex) and four numbers
+  // for the material's shader (entry.a, as the instanced attribute aStyle: the city's buildings, render/themes/city.js))
   const pending = [];
-  const instances = (geometry, color, list, glowing, pad = 0) => {
-    if (list.length) pending.push({ geometry, color, list: list.slice(), glowing, pad });
+  const instances = (geometry, color, list, glowing, pad = 0, material = null) => {
+    if (list.length) pending.push({ geometry, color, list: list.slice(), glowing, pad, material });
   };
   // is an entry clear of every other road? Its footprint from its geometry and its scale (a run of wall or
   // rail: at both ends and the middle). Returns [x, z, m round it, clear]
@@ -1544,13 +1551,20 @@ const buildRoad = () => {
       };
       if (gone.size) for (const job of pending) job.list = job.list.filter((_, i) => job.at[i][3] && !withOne(job.at[i][0], job.at[i][1], job.at[i][2]));
     }
-    for (const { geometry, color, list, glowing } of pending) {
+    const tint = new THREE.Color();
+    for (const { geometry, color, list, glowing, material: own } of pending) {
       if (!list.length) continue;
-      const material = glowing ? new THREE.MeshBasicMaterial({ color }) : new THREE.MeshLambertMaterial({ color });
-      const mesh = new THREE.InstancedMesh(geometry, material, list.length);
+      const material = own || (glowing ? new THREE.MeshBasicMaterial({ color }) : new THREE.MeshLambertMaterial({ color }));
+      // (a material of its own reads a style per instance: a geometry of the mesh's own to carry it, shared or not)
+      const shape = own && own.userData.styled ? geometry.clone() : geometry;
+      if (shape !== geometry) shape.userData = {}; // (the copy is this level's, to be freed with it: not the shared one's mark)
+      if (shape !== geometry) shape.setAttribute('aStyle', new THREE.InstancedBufferAttribute(new Float32Array(list.length * 4), 4));
+      const mesh = new THREE.InstancedMesh(shape, material, list.length);
       list.forEach((entry, i) => {
         placeEntry(entry);
         mesh.setMatrixAt(i, dummy.matrix);
+        if (own) mesh.setColorAt(i, tint.set(entry.c ?? color));
+        if (shape !== geometry && entry.a) shape.attributes.aStyle.array.set(entry.a, i * 4);
       });
       levelGroup.add(mesh);
     }
@@ -1745,36 +1759,8 @@ const buildRoad = () => {
     }
   };
 
-  if (theme.scenery === 'city') {
-    // ---- roadside poles and blocks (instanced), so speed is readable -----------------------------
-    // along the expressway and every side road alike, end to end: what would stand on another road, at a fork
-    // or a merge, under a flyover or where two roads run close, is taken out with the rest (see placeInstances);
-    // and nothing is put in a river
-    const nearBridge = (s) => (LEVEL.bridges || []).some(b => s > b.from - 30 && s < b.to + 30);
-    const poles = [], blocks = [];
-    const roads = [[Track.start, Track.end], ...exits.map(x => [x.side0, x.sideEnd])];
-    for (const [from, to] of roads) {
-      for (let s = from; s < to; s += CONFIG.poleSpacing) {
-        if (Track.onBridge(s)) continue;
-        poles.push([s, Track.lo(s) - 1.5, 2.5, 1, 1, 1], [s, Track.hi(s) + 1.5, 2.5, 1, 1, 1]);
-      }
-      for (let s0 = from; s0 < to - 10; s0 += CONFIG.buildingSpacing) {
-        if (nearBridge(s0)) continue;
-        for (const side of [-1, 1]) {
-          const s = s0 + Math.random() * 10;
-          const w = 6 + Math.random() * 10, h = 5 + Math.random() * 22, d = 6 + Math.random() * 12;
-          const far = 8 + w / 2 + Math.random() * 30;
-          // (a set-piece of a zone stands there: themes/extras.js. The dice are thrown all the same, so the rest is laid
-          // out as ever. A side road's own blocks reach across the expressway where the two run close: along such a
-          // stretch it has none on its left)
-          if (from === Track.start ? cityKeepsClear(s, side) : side < 0 && cityKeepsClear(Track.along(s), -1)) continue;
-          blocks.push([s, side < 0 ? Track.lo(s) - far : Track.hi(s) + far, h / 2, w, h, d]);
-        }
-      }
-    }
-    instances(new THREE.BoxGeometry(0.3, 5, 0.3), 0xd9d9d9, poles);
-    instances(cube, 0x8b93a1, blocks, false, CONFIG.ramps.clearBuilding);
-  } else if (theme.scenery === 'farm') {
+  // (the city, the default theme, and every theme drawn as it: render/themes/city.js, a theme file of its own like the rest)
+  if (theme.scenery === 'farm') {
     // ---- farm: fenced fields of crops, trees, barns, silos and hay stacks -------------------------
     // fields: strips of different crops running alongside the road, drawn just after the ground
     const crops = [0xd9b84a, 0x6fae45, 0x9a7b4f, 0xc7d44f];
@@ -3580,7 +3566,7 @@ const buildRoad = () => {
     redrawWhenLoaded(theme.scenery);
   } else if (THEME_SCENERY[theme.scenery]) {
     // ---- a theme with a file of its own (render/themes/<scenery>.js): given what stands things beside a road here
-    THEME_SCENERY[theme.scenery]({ theme, add, flat, instances, sideStrip, buildStrip, offRoads, standsClear, clearOfRoads, beside, inJunction, exits, cube, tube, cone, levelGroup, elevatedRoad });
+    THEME_SCENERY[theme.scenery]({ theme, add, flat, instances, sideStrip, buildStrip, offRoads, standsClear, clearOfRoads, beside, inJunction, exits, cube, tube, cone, levelGroup, elevatedRoad, cityKeepsClear });
   }
   // (what the older themes were given since, beside what is drawn for them above: render/themes/extras.js)
   if (THEME_EXTRAS[theme.scenery]) THEME_EXTRAS[theme.scenery]({ theme, add, flat, instances, sideStrip, buildStrip, offRoads, standsClear, clearOfRoads, beside, inJunction, exits, cube, tube, cone, levelGroup, terrainAt, litTowers });
@@ -3600,9 +3586,10 @@ const redrawWhenLoaded = (name) => {
   const level = LEVEL;
   if (redrawing.has(name)) return;
   redrawing.add(name);
-  loadTheme(name).then(() => { redrawing.delete(name); if (Game.loaded === level && LEVEL === level && THEMES[level.theme]?.scenery === name) buildRoad(); }).catch(() => { redrawing.delete(name); /* (offline: the road stays as drawn) */ });
+  loadTheme(name).then(() => { redrawing.delete(name); if (Game.loaded === level && LEVEL === level && (THEMES[level.theme] || THEMES.city).scenery === name) buildRoad(); }).catch(() => { redrawing.delete(name); /* (offline: the road stays as drawn) */ });
 };
-export const warmTheme = (level = LEVEL) => { const name = THEMES[level?.theme]?.scenery; if (name) loadTheme(name).catch(() => {}); };
+// (a level with no theme of its own is the city's: its file is warmed as any other's)
+export const warmTheme = (level = LEVEL) => { const name = (THEMES[level?.theme] || THEMES.city).scenery; if (name) loadTheme(name).catch(() => {}); };
 // (the rest, one at a time when idle, after the menu has come up)
 const idleThemes = () => {
   const next = themeNames().find(n => !themeLoaded(n));
