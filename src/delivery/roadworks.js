@@ -1,12 +1,15 @@
 // ============================================================================
-// ROADWORKS DIVERSIONS (a level's "diversions": { from, to, kind: 'shift', by?, limit? }; CONFIG.diversion;
+// ROADWORKS DIVERSIONS (a level's "diversions": { from, to, kind: 'merge' | 'shift' | 'cross', by?, limit? }; CONFIG.diversion;
 // drawn by render/roadworks.js). Where the lanes go is Track's (its lateral-offset layer: Track.divert, works, bounds): this is
 // what stands in the road and what is said. Along every TAPER (where a works zone's line moves across a lane) a cone every
 // CONFIG.diversion.coneEvery m: ordinary obstacles of kind `cone` (a cone's box and cost), standing just over the line, so a car
 // left in a closing lane, squeezed across by the line (keepOnRoad holds it at the line), knocks them over one by one: the cost of
 // cutting it fine, never a stop. Along the run the line is a row of barriers (drawn: no car can reach them, the line holds it).
 // The temporary limit is for the traffic (Traffic); the player is told the works are coming, once each.
+//   merge  the kerb lane closes: everyone zips into the lane beside
 //   shift  the player's lanes move `by` m out, onto a widened shoulder, the works between the two ways
+//   cross  a contraflow: the oncoming side gives up its inner lane and the player's lanes cross over into it (works on the kerb side),
+//          oncoming traffic beside it behind a line of water-filled barriers
 // ============================================================================
 import { CONFIG } from './config.js';
 import { Track } from './track.js';
@@ -80,7 +83,7 @@ export const Roadworks = {
       const ahead = d.from - Player.s;
       if (!d.said && Player.active && ahead > 0 && ahead < Math.max(...D.signs)) {
         d.said = true;
-        Message.say('events', 'laneShift');
+        Message.say('events', d.kind === 'cross' ? 'contraflow' : d.kind === 'merge' ? 'laneClosed' : 'laneShift');
       }
     }
   },

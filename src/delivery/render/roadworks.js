@@ -67,7 +67,8 @@ const limitSign = (kmh) => picture('limit' + kmh, 128, 128, (c) => {
   c.strokeStyle = '#d8262b'; c.lineWidth = 14; c.beginPath(); c.arc(64, 64, 54, 0, Math.PI * 2); c.stroke();
   text(c, String(kmh), 64, 68, 54, '#1b1d22');
 });
-// the lanes ahead, on yellow: arrows showing what they do (shift: both bend over)
+// the lanes ahead, on yellow: arrows showing what they do (merge: the kerb lane's arrow bends in; shift: both bend over and back;
+// cross: one arrow each way, the player's crossing over)
 const laneSign = (kind) => picture('lanes-' + kind, 128, 128, (c) => {
   c.fillStyle = '#f2c21d'; c.fillRect(0, 0, 128, 128);
   c.strokeStyle = '#1b1d22'; c.lineWidth = 9; c.lineCap = 'round'; c.lineJoin = 'round';
@@ -76,8 +77,10 @@ const laneSign = (kind) => picture('lanes-' + kind, 128, 128, (c) => {
     const [x, y] = pts[pts.length - 1], d = up ? -1 : 1;
     c.fillStyle = '#1b1d22'; c.beginPath(); c.moveTo(x, y + d * 14); c.lineTo(x - 11, y - d * 2); c.lineTo(x + 11, y - d * 2); c.closePath(); c.fill();
   };
-  arrow([[36, 112], [36, 84], [62, 58], [62, 22]]); arrow([[70, 112], [70, 84], [96, 58], [96, 22]]);
-  text(c, 'LANE SHIFT', 64, 10, 14, '#1b1d22');
+  if (kind === 'merge') { arrow([[44, 112], [44, 22]]); arrow([[84, 112], [84, 74], [50, 40], [50, 34]]); }
+  else if (kind === 'shift') { arrow([[36, 112], [36, 84], [62, 58], [62, 22]]); arrow([[70, 112], [70, 84], [96, 58], [96, 22]]); }
+  else { arrow([[78, 112], [78, 80], [52, 56], [52, 22]]); arrow([[22, 22], [22, 112]], false); c.fillStyle = '#d8262b'; c.fillRect(34, 30, 6, 70); }
+  text(c, kind === 'cross' ? 'CONTRAFLOW' : kind === 'merge' ? 'LANE CLOSED' : 'LANE SHIFT', 64, 10, 14, '#1b1d22');
 });
 const endSign = () => picture('end', 128, 128, (c) => {
   c.fillStyle = '#ffffff'; c.fillRect(0, 0, 128, 128);
@@ -248,7 +251,7 @@ Game.onLoad.push(() => {
     // ---- plant parked well off the road on the works' side, beacons going (never in the road: 4 m and more beyond its edge)
     const kinds = ['roller', 'excavator', 'dumpTruck'];
     [0.33, 0.66].forEach((u, i) => {
-      const s = d.from + (d.to - d.from) * u, side = i ? 1 : -1;
+      const s = d.from + (d.to - d.from) * u, side = d.kind === 'cross' || d.kind === 'merge' ? 1 : (i ? 1 : -1);
       const machine = makeMachine(kinds[(list.indexOf(d) + i) % kinds.length]);
       const g = at(s, side > 0 ? Track.hi(s) + 5.5 : Track.lo(s) - 5.5);
       g.add(machine);

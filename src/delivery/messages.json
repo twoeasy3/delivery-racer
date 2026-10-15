@@ -61,6 +61,8 @@
     "tunnelJunction": ["Side tunnel ahead! Mind what comes out."],
     "deadEnd": ["DEAD END in your lane! Change lanes!"],
     "laneShift": ["Roadworks ahead: lanes shift."],
+    "laneClosed": ["Roadworks ahead: lane closed, merge."],
+    "contraflow": ["Contraflow ahead: oncoming traffic beside you."],
     "deadEndHit": ["Dead end. Wrecked."],
     "shutterSmashed": ["Straight through the shutter!"],
     "beached": ["Beached in the gravel!"],

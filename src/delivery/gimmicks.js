@@ -148,8 +148,9 @@ export const GROUPS = [
       return { model: g };
     } },
     { name: 'Roadworks diversions', color: 0xff8a1a, has: (l) => l.diversions?.length, rules: [
-      `Cones move your lanes over, round works in the middle of the road, and back. Signs and a lit arrow board show the way.`,
+      `Cones move the lanes over: a kerb lane closed, your lanes shifted out, or a contraflow with oncoming traffic beside you. Signs and a lit arrow board show the way.`,
       `Leave it late and the taper squeezes you over, knocking cones (${CONFIG.obstacleKinds.cone.damage} damage each, ${pct(CONFIG.obstacleKinds.cone.speedKept)} of your speed kept). The barriers hold you in your lane, never stop you.`,
+      `Traffic slows to the ${CONFIG.diversion.limit} km/h limit, merges in turn and keeps its lane.`,
     ], build: () => {
       const g = road(12, 18), lamps = [];
       for (let k = 0; k < 6; k++) { const c = ob('cone'); c.position.set(-0.2 + k * 0.62, 0, -8 + k * 1.6); g.add(c); }

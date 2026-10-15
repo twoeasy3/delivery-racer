@@ -413,7 +413,7 @@ const createTrack = () => {
   // (and a diversion's closed lanes: see below)
   const lanesOn = (side, s) => { if (!diverting(s)) return narrowed(side, s); const p = divert(side, s); return Math.min(narrowed(side, s), (side < 0 ? LEFT : RIGHT) - p.ci - p.co); };
 
-  // ---- ROADWORKS DIVERSIONS: the lateral-offset layer (a level's "diversions": { from, to, kind: 'shift', by?, limit? }; CONFIG.diversion,
+  // ---- ROADWORKS DIVERSIONS: the lateral-offset layer (a level's "diversions": { from, to, kind, by?, limit? }; CONFIG.diversion,
   // roadworks.js). A diversion moves a side's lanes in track space, not in the world (unlike a split, which moves the road): over
   // its stretch each side has `ci` of its lanes closed from the inside (the centre line's side), `co` closed from the outside (the
   // kerb's), and the lanes still open moved `d` m across (+ = towards +lat), each eased in and out over CONFIG.diversion.taper m
@@ -426,10 +426,15 @@ const createTrack = () => {
   // knocks over) and barriered along the run. Not on a side road, a bridge, a narrowing or a junction (problems, below)
   const DV = CONFIG.diversion;
   const dvs = (LEVEL.diversions || []).map((d) => {
-    const ramps = [];
+    const G = DV.gap, ramps = [];
     // (a lane closing over `taper` m; lanes with traffic in them moving across over `shiftTaper`: a long vehicle follows it)
     const ramp = (side, key, v, from, to) => { const T = key === 'd' ? DV.shiftTaper : DV.taper; if (to - from >= 2 * T) ramps.push({ side, key, v, from, to, T }); };
-    if (d.kind === 'shift') ramp(1, 'd', d.by ?? DV.by, d.from, d.to);
+    if (d.kind === 'merge') ramp(1, 'co', 1, d.from, d.to);
+    else if (d.kind === 'shift') ramp(1, 'd', d.by ?? DV.by, d.from, d.to);
+    else if (d.kind === 'cross') { // (the oncoming inner lane closes first and opens last; between, the player's lanes cross into it)
+      ramp(-1, 'ci', 1, d.from, d.to);
+      ramp(1, 'd', DV.contraflow - LW - 2 * HM, d.from + DV.taper + G, d.to - DV.taper - G);
+    }
     return { from: d.from, to: d.to, kind: d.kind, limit: (d.limit ?? DV.limit) / 3.6, ramps };
   });
   // does a diversion move or close this side's lanes at s (anywhere over its stretch: its temporary markings run its whole length)?
@@ -1150,11 +1155,13 @@ const createTrack = () => {
       for (let q = from; q <= d.s; q += 10) if (lanesOn(Math.sign(laneOffset(d.lane, q)) || 1, q) < 2 && openCount(Math.sign(laneOffset(beside, q)) || 1, q) < 1) problems.push('dead end at ' + d.s + ': no lane open beside it at ' + q);
     }
     (LEVEL.diversions || []).forEach((d, i) => {
-      const name = 'diversion at ' + d.from, ST = DV.shiftTaper;
-      const least = 2 * ST + 40;
-      if (d.kind !== 'shift') problems.push(name + ': kind is shift');
+      const name = 'diversion at ' + d.from, T = DV.taper, ST = DV.shiftTaper, G = DV.gap;
+      const least = d.kind === 'cross' ? 2 * (T + G + ST) + 60 : d.kind === 'shift' ? 2 * ST + 40 : 2 * T + 40;
+      if (!['merge', 'shift', 'cross'].includes(d.kind)) problems.push(name + ': kind is merge, shift or cross');
       else if (d.road === 'side' || !(d.from < d.to) || d.from < Math.max(...DV.signs) || d.to > length - 60) problems.push(name + ': from before to, on the expressway, ' + Math.max(...DV.signs) + ' m from the start (its signs), 60 m from the finish');
       else if (d.to - d.from < least) problems.push(name + ': too short (' + least + ' m at least for a ' + d.kind + ')');
+      else if (d.kind === 'merge' && RIGHT < 2) problems.push(name + ': a merge needs two lanes or more the player\'s way');
+      else if (d.kind === 'cross' && (ONE_WAY || LEFT < 2 || !RIGHT)) problems.push(name + ': a crossover needs a two-way road with two lanes or more coming the other way');
       else if (d.by !== undefined && !(d.by >= 1 && d.by <= 2 * LW)) problems.push(name + ': by is 1 to ' + 2 * LW + ' m');
       else if (d.limit !== undefined && !(d.limit >= 20 && d.limit <= 130)) problems.push(name + ': limit is 20 to 130 km/h');
       const near = (a, b) => overlaps(d.from - 60, d.to + 60, a, b);
