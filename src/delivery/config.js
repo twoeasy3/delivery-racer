@@ -609,6 +609,11 @@ export const CONFIG = {
     // a kiosk (a bale's cost and box), a bench, a play block (a crate's), a bin (a cone's); its cafe tables are Venice's cafeTable
     planter: { damage: 38, speedKept: 0.75 }, palmPot: { damage: 38, speedKept: 0.75 }, kiosk: { damage: 38, speedKept: 0.75 },
     bench: { damage: 31, speedKept: 0.75 }, playBlock: { damage: 31, speedKept: 0.75 }, bin: { damage: 3, speedKept: 0.94, light: true }, // a boost pad's handrail section (lanegimmicks.js): a cone's box and cost, blown away on contact like any obstacle
+    // the roadworks' own (the Roadworks level's theme, themes.js; render/obstacleModels.js): each the cost of what it stands in for: a
+    // water-filled barrier block (a barrier), a cable drum (a crate), a heap of sand (a bale); named outright: a traffic drum (a cone),
+    // a pallet of pipes (a crate), a works sign on its frame (a sign)
+    barrierBlock: { damage: 34, speedKept: 0.6 }, cableReel: { damage: 31, speedKept: 0.75 }, sandPile: { damage: 38, speedKept: 0.75 },
+    trafficDrum: { damage: 3, speedKept: 0.94, light: true }, pipePallet: { damage: 31, speedKept: 0.75 }, worksSign: { damage: 32, speedKept: 0.8 },
     laneEnd: { damage: 0, speedKept: 1 }, // a dead-end lane's end (lanegimmicks.js): no ordinary knock: a wreck outright, or passed through (see Collision.hitObstacles)
     runner: { damage: 10, speedKept: 0.88, light: true },
     waterTable: { damage: 6, speedKept: 0.9, light: true },
