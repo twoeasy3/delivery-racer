@@ -62,11 +62,8 @@ export const Crossings = {
     return ahead / Math.max(Player.speed, 4) <= this.lead - c.offset; // (the train there offset s after the player would be)
   },
   // the boom going way dir comes to: where it stands (s), and across which lats
-  // (on a one-way road, every lane coming the player's way, one boom right across them all on the way in, and none on the way out:
-  // a boom beyond the line would only catch a car that had got over first. The metro's tunnels)
   boom(c, dir) {
     const s = c.s - dir * CONFIG.crossing.stopLine;
-    if (Track.flow === 'north') return dir > 0 ? { s, lo: Track.laneLo(s), hi: Track.laneHi(s) } : { s, lo: 1, hi: 0 };
     return dir > 0 ? { s, lo: 0, hi: Track.laneHi(s) } : { s, lo: Track.laneLo(s), hi: 0 };
   },
   // carriage i's middle (lat), the nose's first

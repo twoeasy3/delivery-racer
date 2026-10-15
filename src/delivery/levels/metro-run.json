@@ -1,7 +1,7 @@
 {
   "id": "metro-run",
   "theme": "metro",
-  "clock": {"good":160,"evil":120},
+  "clock": {"good":145,"evil":110},
   "tip": 240,
   "lanes": 2,
   "flow": "north",
@@ -73,14 +73,14 @@
     {"from":3055,"to":3500,"side":"left","width":3},
     {"from":3055,"to":3500,"side":"right","width":3}
   ],
-  "crossings": [
-    {"s":1170},
-    {"s":1700},
-    {"s":2240}
+  "tunnelJunctions": [
+    {"s":1170,"side":"right"},
+    {"s":1665,"side":"left"},
+    {"s":2240,"side":"right"}
   ],
   "boostPads": [
-    {"from":790,"to":870,"lane":1},
     {"from":1490,"to":1570,"lane":0},
+    {"from":1705,"to":1785,"lane":1},
     {"from":2370,"to":2450,"lane":0}
   ],
   "deadEnds": [
@@ -97,12 +97,12 @@
     {"s":660,"lane":1,"kind":"crate"},
     {"s":720,"lane":"right","kind":"railTrolley"},
     {"s":780,"lane":"left","kind":"infoTotem"},
+    {"s":830,"lane":1,"kind":"bale"},
     {"s":890,"lane":"right","kind":"infoTotem"},
     {"s":950,"lane":0,"kind":"cone"},
-    {"s":955,"lane":1,"kind":"bale"},
     {"s":1030,"lane":"right","kind":"cableReel"},
     {"s":1095,"lane":1,"kind":"cone"},
-    {"s":1120,"lane":"left","kind":"railTrolley"},
+    {"s":1145,"lane":"left","kind":"railTrolley"},
     {"s":1245,"lane":0,"kind":"crate"},
     {"s":1320,"lane":"right","kind":"cableReel"},
     {"s":1380,"lane":0,"kind":"cone"},
@@ -110,7 +110,7 @@
     {"s":1500,"lane":1,"kind":"crate"},
     {"s":1585,"lane":"left","kind":"infoTotem"},
     {"s":1625,"lane":1,"kind":"bale"},
-    {"s":1760,"lane":0,"kind":"crate"},
+    {"s":1720,"lane":0,"kind":"crate"},
     {"s":1800,"lane":"left","kind":"infoTotem"},
     {"s":1845,"lane":0,"kind":"bale"},
     {"s":1900,"lane":"left","kind":"cableReel"},
@@ -165,7 +165,7 @@
     {"type":"cash10","s":980,"lane":1},
     {"type":"cash10","s":1060,"lane":0},
     {"type":"cash10","s":1060,"lane":1},
-    {"type":"mystery","s":1100,"lane":0},
+    {"type":"mystery","s":1130,"lane":0},
     {"type":"cash20","s":1215,"lane":0},
     {"type":"cash20","s":1215,"lane":1},
     {"type":"cash10","s":1280,"lane":0},
@@ -190,7 +190,7 @@
     {"type":"cash20","s":2060,"lane":0},
     {"type":"cash10","s":2165,"lane":0},
     {"type":"cash10","s":2165,"lane":1},
-    {"type":"timePlus","s":2190,"lane":0},
+    {"type":"timePlus","s":2200,"lane":0},
     {"type":"cash10","s":2275,"lane":0},
     {"type":"cash10","s":2275,"lane":1},
     {"type":"cash20","s":2350,"lane":0},
