@@ -9,7 +9,7 @@ CONTAINMENT BOUNDS of future cosmetic props (render/propmodels.js has nine, buil
 
 - `src/delivery/render/propanchors.js`: the canonical shapes (`PROP_BOUNDS`: one box and one cylinder a slot, fixed aspect ratio; a car's
   entry is a UNIFORM scale + centre + yaw), `KINDS` (what each car is), the reader (`propSlots`, `propSupported`, `fitProp`), the merge
-  of the slice files. `MIN_SCALE`, `maxScale(slot, kind)`: the roof cap is 1.5 on van / bus / truck / flatbed / halftrack, 1.1 on cars.
+  of the slice files. `MIN_SCALE` (the floor), `maxScale(slot, kind)`: NO CAP since CHECKLIST 307 (the owner: "lift the size caps, only keep a size floor").
 - `src/delivery/render/propanchors/slice-<n>.json`: ONE FILE PER SLICE, `{ slice, cars, hand }`. `cars` is GENERATED (never edit);
   `hand` is your hand fixes. You edit only your slice's file. (`slice-0.json` holds the five first test cars: minibus, touringcar,
   sporttruck, moke, rally; your slice's row of the same car wins over slice-0's.)
@@ -24,9 +24,20 @@ CONTAINMENT BOUNDS of future cosmetic props (render/propmodels.js has nine, buil
 - `scripts/.propanchors-check.mjs`: the data check on whatever slices exist (`--complete` at the very end: every car has an entry).
 - `scripts/.proptag-check.mjs`: the tags changed nothing drawn (geometry hash, triangles, boxes against `scripts/.proptag-baseline.json`),
   the hide / show toggle, dents / ghost / blackout. `scripts/.propmodels-check.mjs`: the nine props.
-- `scripts/prop-anchors-lib.mjs`: how the measuring works (read its header before you judge a result).
+- `scripts/prop-audit-lib.mjs`: how the placement search works (read its header before you judge a result); it replaced the first
+  height-map measurer (CHECKLIST 307). `scripts/prop-placement-audit.mjs` audits the merged table on every car (`/tmp/prop-audit/audit.csv`,
+  flags ranked worst first; `--nohand` for the generated rows alone, `--table <json>` to try candidate rows) and is the check to run after
+  any change to a placement.
 
 ## The rules
+
+UPDATED (CHECKLIST 307, the placement audit): the generator's search is now `scripts/prop-audit-lib.mjs optimum`: no scale cap (the
+MIN_SCALE floor stays), an inset of at most 5 cm and the least that makes the footprint's rim touch (3 cm preferred when it keeps 85 % of the
+scale), standing only on the car's own untagged body (never glass, a lamp, the Super kit or another slot's own prop), touching no visible
+geometry (another slot's own props included: they stay drawn when only one slot is worn) and no other slot's shapes; a wing at most 95 % of
+the width of the surface it stands on, on the rear-most place within 85 % of the best scale (a boot lid before the roof's edge), its rear at
+most 5 cm behind the tail; a load right behind the cab, no higher than the cab's roof (or 0.5 m). Where the text below says 0.08 m of inset
+or a cap, read the above.
 
 ROOF (slot `roof`): a flat-enough roof area (the generator: the flat band over the glass, slope under 12 degrees, the largest centred
 rectangle; the box's footprint fits it at the largest uniform scale, 0.4 to the cap). A roof with NO flat patch (curved, domed,
