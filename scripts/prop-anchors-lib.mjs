@@ -18,7 +18,8 @@ export const CELL = 0.04;            // m: the map's cell
 export const MARGIN = 0.03;          // m: a shape keeps this far inside its flat region
 export const ROOF_SLOPE = 12, DECK_SLOPE = 15, WING_SLOPE = 20; // degrees
 export const BAND = 0.05;            // m: cells within this of the region's height count as the same flat
-export const ROOF_BAND = 0.08;       // m: a roof may crown this much over its flat part (a rounded roof is still a roof)
+export const ROOF_BAND = 0.08;
+export const OVERHANG = 0.08;        // m: the most a roof-edge wing hangs back over a sloping rear window       // m: a roof may crown this much over its flat part (a rounded roof is still a roof)
 const cos = (deg) => Math.cos(deg * Math.PI / 180);
 const r3 = (v) => Math.round(v * 1000) / 1000;
 
@@ -256,21 +257,32 @@ export const measureWing = (map, kind, B, limits, roof) => {
     }
   }
   if (kind === 'open') return { no: 'an open car with no rear deck' };
-  // 2. the roof's rear edge: the blade stands on the roof's last cells and may hang back as far as the tail
+  // 2. the roof's ACTUAL rear edge (the owner, 15-Oct: "the wing on the minivan should be on the rear edge of the roof"): the rearmost row
+  // of the roof's flat band with a run of flat cells at least 0.6 m wide (a mid-roof vent, rack or beacon does not move it: the band is
+  // every flat cell at the roof's height, not the largest rectangle), the blade's width the flat run over its depth less a margin
   if (!roof || roof.no) return { no: 'no rear deck and no flat roof edge' };
-  // (the blade may hang back over a SLOPING rear window or a fastback: the cells behind the roof's edge that stay within 0.55 m of the
-  // roof's height, at the car's centre line; never over a bed or a cab's drop)
-  const r = roof.region;
+  const r = roof.region, inBand = (i, j) => isFlat(map, i, j, ROOF_SLOPE) && Math.abs(map.y[map.at(i, j)] - r.y) <= ROOF_BAND;
+  // the widest run of flat cells across row j that straddles x = 0, in metres
+  const runAt = (j) => { let a = map.I(0), b = a; if (!inBand(a, j)) return 0; while (a > 0 && inBand(a - 1, j)) a--; while (b < map.nx - 1 && inBand(b + 1, j)) b++; return (b - a + 1) * CELL; };
+  let j0 = -1;
+  for (let j = 0; j < map.nz; j++) if (runAt(j) >= 0.6) { j0 = j; break; }
+  if (j0 < 0) return { no: 'no flat roof edge at least 0.6 m wide' };
+  const zEdge = map.Z(j0) - CELL / 2;
+  let w = Infinity;
+  for (let j = j0; j < Math.min(map.nz, j0 + Math.ceil(0.4 / CELL)); j++) w = Math.min(w, runAt(j));
+  w = Math.min(w - 2 * MARGIN, bodyW * 0.95);
+  // (the blade may hang back a little over a SLOPING rear window or a fastback: the cells behind the edge that stay within 0.55 m of
+  // the roof's height, at the car's centre line, at most OVERHANG; never over a bed, a cab's drop or a vertical tail)
   let over = 0;
-  for (let j = r.rect.j0 - 1; j >= 0 && map.y[map.at(map.I(0), j)] >= r.y - 0.55; j--) over += CELL;
-  const overhang = Math.min(Math.max(0, r.zRear - tailZ), over);
-  const w = Math.min(r.w, bodyW * 0.95), d = r.d + overhang;
+  for (let j = j0 - 1; j >= 0 && map.y[map.at(map.I(0), j)] >= r.y - 0.55; j--) over += CELL;
+  const overhang = Math.min(Math.max(0, zEdge - tailZ), over, OVERHANG);
+  const d = Math.min(0.6, (map.Z(r.rect.j1) + CELL / 2) - zEdge) + overhang; // (the roof behind the slot's front, plus the overhang)
   const box = fitBox(B.box, { w, d }, limits.min, limits.max), cyl = fitCyl(B.cylinder, { w, d }, limits.min, limits.max);
   if (!box || !cyl) return { no: 'the roof edge is too narrow for a wing (' + r3(w) + ' m)' };
-  // the box's rear face at the tail, or the box on the roof's rear edge when the roof is deeper than its overhang allows
-  const zb = Math.max(r.zRear - overhang, r.zRear - B.box[2] * box.s * 0.6) + B.box[2] * box.s / 2;
-  const zc = Math.max(r.zRear - overhang, r.zRear - B.cylinder.radius * cyl.s) + B.cylinder.radius * cyl.s;
-  return { box: [box.s, 0, r3(r.y + B.box[1] * box.s / 2), r3(zb)], cyl: [cyl.s, 0, r3(r.y + B.cylinder.radius * cyl.s), r3(zc)], from: 'roof-edge', lim: box.lim, free: [r3(w), r3(d)], region: r };
+  // the box's rear face `overhang` behind the roof's edge (at the tail for a vertical back): its base on the roof's last cells
+  const zb = zEdge - overhang + B.box[2] * box.s / 2, zc = zEdge - overhang + B.cylinder.radius * cyl.s;
+  const yEdge = (() => { let s = 0, n = 0; for (let j = j0; j < Math.min(map.nz, j0 + 3); j++) for (let i = map.I(-w / 2); i <= map.I(w / 2); i++) if (inBand(i, j)) { s += map.y[map.at(i, j)]; n++; } return n ? s / n : r.y; })();
+  return { box: [box.s, 0, r3(yEdge + B.box[1] * box.s / 2), r3(zb)], cyl: [cyl.s, 0, r3(yEdge + B.cylinder.radius * cyl.s), r3(zc)], from: 'roof-edge', lim: box.lim, free: [r3(w), r3(d)], region: r };
 };
 
 // one car: { roof, cargo, wing } as the table holds them (plus `free` and `region` for the generator's own eyes)

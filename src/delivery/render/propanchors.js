@@ -37,7 +37,7 @@ export const PROP_BOUNDS = {
 // the smallest scale worth having (below it the slot is unsupported: "too small")
 export const MIN_SCALE = { roof: 0.4, cargo: 0.4, wing: 0.45 };
 // the largest scale (a roof box as big as a van's whole roof is no ornament)
-export const MAX_SCALE = { roof: 1.2, cargo: 1.6, wing: 1.3 };
+export const MAX_SCALE = { roof: 1.5, cargo: 1.6, wing: 1.3 };
 
 // what each car IS, for the generator's rules (scripts/prop-anchors.mjs): by car id, else by model name, else 'car'.
 //   hatch saloon coupe sports estate suv  closed road cars: roof and wing measured, no cargo

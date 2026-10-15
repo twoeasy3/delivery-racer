@@ -1080,7 +1080,7 @@ export const MODELS = {
     box(group, trim, w * 0.3, 0.1, 0.42, 0, 0.98, l * 0.3);                          // its scoop
     box(group, glass, w * 0.86, 0.44, l * 0.36, 0, 1.12, -l * 0.02);                // the cabin
     box(group, paint, w * 0.88, 0.07, l * 0.36, 0, 1.37, -l * 0.02);                // roof
-    box(group, trim, w * 0.24, 0.06, 0.3, 0, 1.42, l * 0.04);                        // roof vent
+    box(group, trim, w * 0.24, 0.06, 0.3, 0, 1.42, l * 0.04).userData.prop = 'roof';  // roof vent (tagged: a chosen roof prop hides it, render/propcosmetic.js)
     screen(group, glass, w * 0.84, 0.05, 0.66, 0, 1.1, l * 0.19, 0.6);               // windscreen
     screen(group, glass, w * 0.84, 0.05, 0.6, 0, 1.1, -l * 0.24, -0.55);             // rear screen
     box(group, paint, w * 0.96, 0.06, l * 0.2, 0, 0.9, -l * 0.39);                  // the boot

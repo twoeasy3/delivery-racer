@@ -17,6 +17,26 @@ const place = (obj, shape) => {
   obj.rotation.y = shape.yaw * Math.PI / 180;
   obj.scale.setScalar(shape.scale);
 };
+// the wireframe of one canonical shape of a slot at scale 1, centred on the origin (a group: the faint fill and the edges)
+export const boundsWireframe = (slot, shape) => {
+  const B = PROP_BOUNDS[slot], g = new THREE.Group();
+  if (shape === 'box') {
+    const geo = new THREE.BoxGeometry(B.box[0], B.box[1], B.box[2]);
+    const fill = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: COLOURS[slot], transparent: true, opacity: 0.14, depthWrite: false }));
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: COLOURS[slot], transparent: true, opacity: 0.95 }));
+    fill.renderOrder = edges.renderOrder = 10;
+    g.add(fill, edges);
+  } else {
+    const c = B.cylinder, geo = new THREE.CylinderGeometry(c.radius, c.radius, c.height, 24, 1);
+    if (c.axis === 'x') geo.rotateZ(Math.PI / 2); else if (c.axis === 'z') geo.rotateX(Math.PI / 2);
+    const fill = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: TINTS[slot], transparent: true, opacity: 0.12, depthWrite: false }));
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 20), new THREE.LineDashedMaterial({ color: TINTS[slot], dashSize: 0.05, gapSize: 0.03, transparent: true, opacity: 0.95 }));
+    edges.computeLineDistances();
+    fill.renderOrder = edges.renderOrder = 10;
+    g.add(fill, edges);
+  }
+  return g;
+};
 export const addPropBounds = (model, carId, { slots = SLOTS, shapes = ['box', 'cyl'], highlight = true } = {}) => {
   const group = new THREE.Group();
   group.name = 'propbounds';
@@ -24,29 +44,15 @@ export const addPropBounds = (model, carId, { slots = SLOTS, shapes = ['box', 'c
   for (const slot of slots) {
     const s = plan[slot];
     if (!s || !s.supported) continue;
-    const B = PROP_BOUNDS[slot];
-    if (shapes.includes('box')) {
-      const geo = new THREE.BoxGeometry(B.box[0], B.box[1], B.box[2]);
-      const fill = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: COLOURS[slot], transparent: true, opacity: 0.14, depthWrite: false }));
-      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: COLOURS[slot], transparent: true, opacity: 0.95 }));
-      place(fill, s.box); place(edges, s.box);
-      fill.renderOrder = edges.renderOrder = 10;
-      group.add(fill, edges);
-    }
+    if (shapes.includes('box')) { const w = boundsWireframe(slot, 'box'); place(w, s.box); group.add(w); }
     if (shapes.includes('cyl')) {
-      const c = B.cylinder, geo = new THREE.CylinderGeometry(c.radius, c.radius, c.height, 24, 1);
-      if (c.axis === 'x') geo.rotateZ(Math.PI / 2); else if (c.axis === 'z') geo.rotateX(Math.PI / 2);
-      const fill = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: TINTS[slot], transparent: true, opacity: 0.12, depthWrite: false }));
-      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 20), new THREE.LineDashedMaterial({ color: TINTS[slot], dashSize: 0.05, gapSize: 0.03, transparent: true, opacity: 0.95 }));
-      edges.computeLineDistances();
-      place(fill, s.cylinder); place(edges, s.cylinder);
+      const w = boundsWireframe(slot, 'cylinder'); place(w, s.cylinder);
       // (a dashed line's dashes are in local units: scale them back so they read the same at every scale)
-      edges.material.dashSize = 0.05 / s.cylinder.scale; edges.material.gapSize = 0.03 / s.cylinder.scale;
-      fill.renderOrder = edges.renderOrder = 10;
-      group.add(fill, edges);
+      w.children[1].material.dashSize = 0.05 / s.cylinder.scale; w.children[1].material.gapSize = 0.03 / s.cylinder.scale;
+      group.add(w);
     }
   }
-  if (highlight) for (const { mesh } of existingProps(model)) { mesh.userData.propPaint = mesh.material; mesh.material = HIGHLIGHT; }
+  if (highlight) for (const { mesh } of existingProps(model)) if (!mesh.userData.propId) { mesh.userData.propPaint = mesh.material; mesh.material = HIGHLIGHT; } // (the car's OWN props, not a fitted one)
   model.add(group);
   return group;
 };

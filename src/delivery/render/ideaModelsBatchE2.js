@@ -118,8 +118,8 @@ export const IDEA_MODELS_BATCH_E2 = {
       bx(1.1, 0.28, 0.03, 0, 0.82, FZ),
       ...[-1, 1].flatMap(s => [bx(0.24, 0.03, 0.03, s * 1.06, 1.52, 1.55), bx(0.07, 0.34, 0.18, s * 1.17, 1.52, 1.55)]),
       bx(1.4, 0.12, 0.14, 0, 0.38, AF), bx(1.4, 0.12, 0.14, 0, 0.38, AR),
-      bx(0.62, 0.06, 0.56, 0, ROOF + BEV + 0.03, -0.7),
     ]);
+    parts(group, k + 'vent', TRIM, () => [bx(0.62, 0.06, 0.56, 0, ROOF + BEV + 0.03, -0.7)]).userData.prop = 'roof'; // the roof vent (a mesh of its own, tagged: a chosen roof prop hides it, render/propcosmetic.js)
     parts(group, k + 'chrome', CHROME, () => [0.76, 0.84, 0.92].map(y => bx(1.08, 0.03, 0.03, 0, y, FZ + 0.014)));
     parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => bx(0.36, 0.22, 0.04, s * 0.82, 0.82, FZ - 0.01)));
     parts(group, k + 'amber', AMBER, () => [
