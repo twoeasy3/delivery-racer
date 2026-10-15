@@ -31,8 +31,18 @@ try {
   // (eighteen that were ideas are evergreen BLUEPRINT cars now (cars.js FILLER_CARS, CHECKLIST item 115): in the roster, out of the lot)
   {
     const { FILLER_CARS } = g.cars;
-    check(FILLER_CARS.length === 24 && FILLER_CARS.every(c => c.evergreen && !c.idea && c.tier >= 1 && c.tier <= 5 && !IDEA_CARS.some(i => i.id === c.id) && !CARS.includes(c)),
-      'the 24 evergreen blueprint cars are out of the ideas lot and not in CARS: ' + FILLER_CARS.map(c => c.id + ' ' + c.tier).join(', '));
+    check(FILLER_CARS.length === 43 && FILLER_CARS.every(c => c.evergreen && !c.idea && c.tier >= 1 && c.tier <= 5 && !IDEA_CARS.some(i => i.id === c.id) && !CARS.includes(c)),
+      'the 43 evergreen blueprint cars (24 and the 19 chosen ideas) are out of the ideas lot and not in CARS: ' + FILLER_CARS.map(c => c.id + ' ' + c.tier).join(', '));
+    // (15-Oct, the owner: the nineteen chosen ideas are blueprint cars now, unobtainable for now and the roster limited-time packs feature)
+    const CHOSEN = { keivan: [1, 'common'], supermini: [1, 'common'], wedgemicro: [1, 'uncommon'], farmtractor: [1, 'uncommon'], minibus: [2, 'common'], flatbed: [2, 'uncommon'], moke: [2, 'uncommon'],
+      moorrover: [3, 'uncommon'], sprinthatch: [3, 'uncommon'], halftrack: [3, 'epic'], cranelorry: [3, 'epic'], touringcar: [4, 'uncommon'], sporttruck: [4, 'uncommon'], pixelev: [4, 'uncommon'],
+      autobahnestate: [4, 'epic'], finlandyacht: [4, 'epic'], trophytruck: [5, 'epic'], hillclimb: [5, 'epic'], armouredlimo: [5, 'legendary'] };
+    const chosen = Object.keys(CHOSEN).map(id => FILLER_CARS.find(c => c.id === id));
+    check(chosen.length === 19 && chosen.every(c => c && c.tier === CHOSEN[c.id][0] && c.rarity === CHOSEN[c.id][1] && c.noPacks === true && c.featurable === true && !c.placeholder && c.price === 0 && !c.idea && !IDEA_CARS.some(x => x.id === c.id)),
+      'the 19 chosen ideas: blueprint cars of their tier and rarity, noPacks, featurable, no placeholder flag, price 0, out of the lot (the lot holds ' + IDEA_CARS.length + ' ideas now)');
+    check(g.cars.FEATURE_ROSTER.length === 19 && g.cars.FEATURE_ROSTER.every(c => chosen.includes(c)) && FILLER_CARS.filter(c => c.featurable).length === 19, 'FEATURE_ROSTER is exactly those 19');
+    check(chosen.every(c => ['maxSpeed', 'accel', 'agility', 'crossing', 'health', 'mass'].every(k => typeof c[k] === 'number' && isFinite(c[k]) && c[k] > 0)) && chosen.every(c => c.health <= g.cars.NEXT_TIER_CAPS.health && c.accel <= g.cars.NEXT_TIER_CAPS.accel && c.maxSpeed <= g.cars.NEXT_TIER_CAPS.maxSpeed),
+      '...every one with full figures inside the game\'s caps (cars.js NEXT_TIER_CAPS)');
   }
   // (four that were ideas are garage cars now: the Blue Stars at four stars. Bought, owned and saved as any other)
   {

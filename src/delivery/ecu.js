@@ -105,6 +105,9 @@ export const DELIVERY = {
   snake: 0.65, keiroadster: 0.65, wedge: 0.65,
   // tiny novelties, record cars and racers: nowhere to keep a parcel (the worst)
   fishbowl: 1.0, sixteen: 0.85, midsummer: 0.7, quadturbo: 0.6, knifeedge: 0.6, windsong: 0.6, // (the concept key cars: CHECKLIST 211)
+  // the nineteen chosen idea cars (15-Oct): a van's side door and a flatbed's load best, a one-seat microcar, a racing saloon and a hill-climb racer worst
+  keivan: 1.5, supermini: 1.0, wedgemicro: 0.65, farmtractor: 1.1, minibus: 1.35, flatbed: 1.3, moke: 1.1, moorrover: 1.15, sprinthatch: 0.8, halftrack: 1.2, cranelorry: 1.3,
+  touringcar: 0.7, sporttruck: 1.1, pixelev: 1.0, autobahnestate: 1.2, finlandyacht: 1.1, trophytruck: 0.75, hillclimb: 0.6, armouredlimo: 1.0,
   snocat: 1.1, hotdog: 1.4, bubble: 0.6, jetcar: 0.6, dragster: 0.6, solarracer: 0.6, monowheel: 0.6, 'earned-f1': 0.6, 'earned-lmp': 0.6,
 };
 // COMPOSURE at a car's MAXED ECU (the shoulder meter: CONFIG.dangerTime 3 s x it). THIS TABLE IS WHERE TO EDIT IT (a car's
