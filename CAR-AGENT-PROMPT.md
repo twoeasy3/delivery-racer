@@ -22,6 +22,11 @@ src/delivery/render/ideaModels*.js, a new ideaModelsN.js spread into IDEA_MODELS
 - Colours: an evocative colour for Good (`color`), an alternative colour for Evil (`evilColor`), as the existing idea
   cars do. Do not mention a colour or livery in the car's note unless its name denotes one specific real vehicle.
 - Convertible or open-top: do NOT render a person/driver.
+- **STANDING RULE (the owner, 15-Oct): NO bikes, NO flying objects, and nothing driven by a rider instead of a driver.** A car has a
+  DRIVER sitting in it: no motorcycles, scooters, mopeds, trikes or bicycles with a rider astride, no one-wheelers or standing
+  vehicles, no aircraft, drones, balloons or craft that fly (hovering is not flying for the existing cars, but do not propose new
+  ones). Road vehicles with wheels and a driver's seat only. Existing cars that already break this rule (for the owner's call, do not
+  change them): sidecar (scooter and sidecar), gyrocar, monowheel (now an idea car), flyingcar, ufo and earned-ufo, hovercraft.
 
 ## The benchmark is the JUNKER (the owner, 14-Oct: "Use the Junker as the benchmark")
 Wherever this file or an older brief says the approved Commuter is the detail benchmark, use the JUNKER instead
