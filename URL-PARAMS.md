@@ -106,6 +106,10 @@ Also need `autostart` (or a hidden level).
 | `unlock` | bare | With `album` / `milestones`: everything shown as earned (pretend only). | `/delivery/?album&unlock` | Normal | yes |
 | `demo` | bare | A made-up save for the visit: all but the last two levels open, medals on most, every other car owned, a full bank. Saving is switched off. | `/delivery/?demo` | No | yes |
 | `touch` | bare | Shows the on-screen touch controls (as on a phone). | `/delivery/?touch&autostart&level=1` | Normal | untried |
+| `stage` | `off`, a theme id (`vegas`, `alpineDusk`...), `default`, `level` | The car card's stage (CHECKLIST 347; on by default, from the picked level's theme). `off`: the plain card as before (the stage's code not loaded); a theme: that theme's stage; `default`: the plain studio; an unknown name: the studio. | `/delivery/?stage=off`, `/delivery/?stage=vegasNight` | Normal | yes (stills) |
+| `stagequality` | `low`, `high` | With the stage: its props (`low` 2, `high` 5), else by the card's height (under 120 px: low). | `/delivery/?stage=vegas&stagequality=low` | Normal | yes |
+| `stagethrow` | a theme id, or `*` | Makes that stage's build throw, to see the fallback (`*`: every one, the plain card). | `/delivery/?stagethrow=*` | Normal | yes (stills) |
+| `stagelog` | bare | The card's cost in the console (draw calls, triangles, programs). `&stageswap=<car>&swapat=<ms>` switches car then and logs the frames after. | `/delivery/?stagelog` | Normal | yes |
 
 ## 4. Fake progress for a look (cheats)
 
