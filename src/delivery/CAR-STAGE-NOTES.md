@@ -1,9 +1,18 @@
 # The car stage: a cheap per-theme scene for the selected car (investigation + prototype, 15-Oct)
 
 The owner: "a cheap, interchangeable scene for the selected car ... both the Tall view (desktop) and the smaller mobile view
-... a 'frontend' for each theme". Branch `claude/car-stage`, CHECKLIST 347. PROTOTYPE, OFF unless `?stage=` is in the address.
+... a 'frontend' for each theme". Branch `claude/car-stage`, CHECKLIST 347. ON BY DEFAULT since the owner's "Let's have the theme of the
+level control this. Have a fallback if the theme doesn't exist" (15-Oct): the start screen's car card takes the picked level's theme.
 
-Try it: `index.html?stage=level` (the picked level's theme), `?stage=vegas`, `?stage=vegasNight`, `?stage=alpine`,
+THE FALLBACK: a level with no theme of its own is drawn as the city (road.js), so its stage is the city's; a theme name that is not in
+themes.js (or none at all): the default studio (backdrop + plinth, no props); a theme with no stage file: its palette and its own
+obstacles from themes.js (a slot whose kind the theme has no model for takes one of the theme's own: never a generic crate; a theme
+with no obstacles: no props); a stage file that fails to load: the theme's stage without it (a console.warn); a stage that throws
+(built, framed or painted): the default studio for that theme from then on; the default throwing too: the plain card as before. The
+props are held to 6,316 triangles (the Steelworks' five; a prop that would go over is left out). `scripts/.carstage-check.mjs`
+(render group) covers every theme and every link of the chain.
+
+Try it: no parameter (the picked level's theme), `?stage=off` (the plain card), `?stagethrow=<theme|*>` (a build made to throw), `?stage=vegas`, `?stage=vegasNight`, `?stage=alpine`,
 `?stage=steelworks`, `?stage=city`, `?stage=default` (the plain studio); `&side=evil`; `&stagequality=low|high`;
 `&stagelog` prints the cost in the console (`&stageswap=<car>&swapat=<ms>` also switches car and logs the frames after).
 
@@ -72,7 +81,11 @@ browse levels; free); (2) the car's own "home" theme (needs a new field per car,
 Low quality: `quality: 'low'` (2 props) is picked automatically for a picture under 120 px tall (the phone row); `'off'`
 returns the plain card. An Options switch would set it.
 
-## 5. Open questions for the owner
+## 5. Open questions for the owner (unanswered: DECIDED BY DEFAULT, the recommended ones, 15-Oct; any can be changed)
+
+Decided by default: 1 the picked level's theme; 2 Evil as built (sky toward red, light dimmed); 3 the dark plinth; 4 five props on the
+Tall card, two on the phone; 5 the start screen's car card ONLY (the showroom full view and Cosmetics unchanged); 6 the Good/Evil
+switch as built (rebuilds the stage).
 
 1. Theme source: the picked level's theme (recommended), the car's home, or a choice in Options?
 2. Evil side: the prototype darkens the sky toward red and dims the light; or should Evil use the theme's night look?

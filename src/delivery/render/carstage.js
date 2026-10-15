@@ -55,6 +55,11 @@ const BOX = { crate: [0.6, 0.6, 1.1], bale: [1.1, 1.1, 1.5], cone: [0.42, 0.42, 
 const SLOTS = [['bale', -0.8, 1.9, 0.5], ['crate', 0.82, 1.5, -0.4], ['cone', 0.95, -1.5, 0.3], ['cone', 0.55, 3.6, 0.2], ['barrier', -0.4, 5, 0.1]];
 // (the third stands IN FRONT, at the picture's edge, cut by it: depth negative. The first two are the low quality's)
 const LOW = 2; // (props at low quality)
+// the props' triangles at most (the Steelworks' five, the dearest drawn: 6,316 + the set's 164 = 6,480); a prop that would go over is left out
+export const PROP_TRIANGLES = 6316;
+// (a part kept in the merge: a mesh, shown, not instanced, not a model's own soft shadow: the stage has its own)
+const mergeable = (node) => { const m = node.isMesh && [].concat(node.material)[0]; return !!m && !node.isInstancedMesh && node.visible && !(m.transparent && m.opacity < 0.6); };
+const trianglesOf = (model) => { let n = 0; model.traverse((node) => { if (mergeable(node)) n += (node.geometry.index ? node.geometry.index.count : node.geometry.attributes.position.count) / 3; }); return n; };
 
 const col = (hex) => new THREE.Color(hex);
 const mix = (a, b, t) => col(a).lerp(col(b), t);
@@ -111,8 +116,8 @@ const merged = (models, haze) => {
   for (const { model, fade } of models) {
     model.updateMatrixWorld(true);
     model.traverse((node) => {
-      const m = node.isMesh && [].concat(node.material)[0];
-      if (!m || node.isInstancedMesh || !node.visible || (m.transparent && m.opacity < 0.6)) return; // (a model's own soft shadow: the stage has its own light)
+      if (!mergeable(node)) return;
+      const m = [].concat(node.material)[0];
       let g = node.geometry.index ? node.geometry.toNonIndexed() : node.geometry.clone();
       const own = m.vertexColors ? g.attributes.color : null; // (a model whose parts' colours are in its vertices already)
       for (const name of Object.keys(g.attributes)) if (name !== 'position' && name !== 'normal') g.deleteAttribute(name);
@@ -183,13 +188,20 @@ export const makeStage = (theme, { evil = false, quality = 'high' } = {}) => {
     if (props) { group.remove(props); props.geometry.dispose(); props = null; }
     const halfTan = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / camera.zoom * camera.aspect;
     const models = [];
+    // (a slot whose kind the theme has no own model for takes one of the theme's own in turn: never a generic crate or bale)
+    const own = Object.values(T.obstacles || {}).filter((k) => OBSTACLE_MODELS[k]);
+    let next = 0, used = 0;
     for (const [kind, side, depth, turn, scale = 1, like] of slots) { // (like: a file's prop's kind of box, crate / bale / cone / barrier)
-      const real = file?.props ? kind : themedKind(theme, kind);
+      let real = file?.props ? kind : themedKind(theme, kind);
+      if (!file?.props && real === kind) { if (!own.length) continue; real = own[next++ % own.length]; } // (a theme with no obstacles of its own: no props)
       const make = OBSTACLE_MODELS[real];
-      if (!make || real === kind && !file?.props && !T.obstacles) continue; // (a theme with no obstacles of its own: no generic crates)
+      if (!make) continue;
       const [hw, hl, height] = BOX[like] || BOX[kind] || BOX.crate;
       let model;
       try { model = make({ kind: real, hw, hl, height }); } catch { continue; }
+      const tris = trianglesOf(model);
+      if (used + tris > PROP_TRIANGLES) { model.traverse((node) => { node.geometry?.dispose(); }); continue; } // (over the budget: left out)
+      used += tris;
       const z = -depth * r * (depth > 0 ? 1 + Math.max(0, 1 / camera.aspect - 0.8) * 1.2 : 1), dist = camera.position.z - z, x = side * dist * halfTan;
       model.position.set(x, 0, z);
       model.rotation.y = turn;
