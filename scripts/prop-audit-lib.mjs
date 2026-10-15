@@ -356,7 +356,8 @@ export const overlap = (a, b) => {
 // ---- the three slots of a car, by the rules (the generator scripts/prop-anchors.mjs and the audit use this one search) ----
 export const MAX_INSET = 0.05;   // m: the owner, 15-Oct ("some of the roof insets are too strong"): 4 to 5 cm at most, the least that gives contact
 export const WIDTH_CAP = 0.95;   // a wing spans at most this share of the body's width at its z (a real wing: 80 to 100 %)
-export const REAR_SHARE = 0.85;  // a wing takes the rear-most place whose scale is within this share of the best anywhere
+export const REAR_SHARE = 0.85;
+const CAB_KINDS = new Set(['truck', 'flatbed', 'pickup', 'halftrack', 'van', 'bus', 'special']); // (a wing may stand on a cab's roof far forward; other cars keep it on their rear 55 %)  // a wing takes the rear-most place whose scale is within this share of the best anywhere
 // -> { opt: { 'wing-box', 'wing-cyl', 'roof-box', 'roof-cyl', 'cargo-box', 'cargo-cyl' } (best() results or null), info }
 //    o.high: { roof, cargo, wing } scales to search up to (past the caps: the audit's "would a bigger cap help"); default the caps
 export const SOFT_INSET = 0.03, SOFT_SHARE = 0.85; // a slot takes a place within 3 cm of inset when that keeps 85 % of the scale 5 cm gives
@@ -391,7 +392,7 @@ export const optimum = (g, P, kind, o = {}) => {
   const wingLevel = (y, z) => y >= Math.max(0.45, hasGlass ? rearGlassFoot - 0.2 : height * 0.45) && y >= topAt(z, wingAllow) - 0.03;
   for (const shape of ['box', 'cyl']) {
     opt['wing-' + shape] = bestSoft(g, { slot: 'wing', shape, B: P.PROP_BOUNDS.wing, min: P.MIN_SCALE.wing, max: high.wing ?? P.maxScale('wing', kind), cap: P.maxScale('wing', kind),
-      zFrom: tail + 0.04, zTo: hasGlass ? Math.min(g.box.max.z - 0.3, glassMinZ + 0.6) : tail + len * 0.55, noBlades: true,
+      zFrom: tail + 0.04, zTo: Math.min(hasGlass ? Math.min(g.box.max.z - 0.3, glassMinZ + 0.6) : tail + len * 0.55, CAB_KINDS.has(kind) ? Infinity : tail + len * 0.55), noBlades: true,
       level: wingLevel, maxInset, allow: wingAllow, prefer: 'rear', rearShare: REAR_SHARE, airRows: true, widthCap: WIDTH_CAP, rearLimit: tail - 0.05 });
   }
   // (a wing's box and cylinder at the same z: the cylinder's own search may pick another place; it follows the box where it fits there)

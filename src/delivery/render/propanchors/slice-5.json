@@ -199,10 +199,7 @@
     "lim": "fit"
    },
    "wing": {
-    "box": [0.5, 0, 1.737, 1.949],
-    "cyl": [0.5, 0, 1.725, 1.949],
-    "from": "roof-edge",
-    "lim": "fit"
+    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
    }
   },
   "dunebuggy": {

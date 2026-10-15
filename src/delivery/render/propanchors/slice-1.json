@@ -7,18 +7,13 @@
     "no": "an open car: no roof"
    },
    "cargo": {
-    "box": [0.49, 0, 1.046, -1.38],
-    "cyl": [0.55, 0, 1.07, -1.38],
-    "from": "deck",
-    "lim": "fit",
-    "inset": [0.031, 0.043]
+    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "box": [0.9, 0, 1.017, 0.72],
-    "cyl": [1.18, 0, 1.036, 0.72],
+    "box": [0.6, 0, 0.955, -1.56],
+    "cyl": [0.6, 0, 0.94, -1.56],
     "from": "deck",
-    "lim": "fit",
-    "inset": [0.011, 0.016]
+    "lim": "fit"
    }
   },
   "commuter": {
@@ -373,7 +368,7 @@
    },
    "wing": {
     "box": [0.6, 0, 0.955, -1.555],
-    "cyl": [0.59, 0, 0.939, -1.555],
+    "cyl": [0.6, 0, 0.94, -1.555],
     "from": "deck",
     "lim": "fit",
     "existing": true

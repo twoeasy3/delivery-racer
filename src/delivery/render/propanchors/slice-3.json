@@ -48,8 +48,8 @@
     "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "box": [0.61, 0, 1.137, -1.39],
-    "cyl": [0.61, 0, 1.121, -1.39],
+    "box": [0.54, 0, 1.124, -1.43],
+    "cyl": [0.54, 0, 1.111, -1.43],
     "from": "deck",
     "lim": "fit"
    }
@@ -453,17 +453,18 @@
     "no": "an open car: no roof"
    },
    "cargo": {
-    "box": [0.82, 0, 0.658, -0.925],
-    "cyl": [0.98, 0, 0.722, -0.925],
+    "box": [0.73, 0, 0.622, -0.965],
+    "cyl": [0.88, 0, 0.682, -0.965],
     "from": "deck",
     "lim": "fit",
     "existing": true
    },
    "wing": {
-    "box": [0.84, 0, 1.017, 0.535],
-    "cyl": [0.84, 0, 0.996, 0.495],
-    "from": "deck",
-    "lim": "fit"
+    "box": [0.69, 0, 1.003, -0.425],
+    "cyl": [0.69, 0, 0.986, -0.425],
+    "from": "deck-edge",
+    "lim": "fit",
+    "inset": [0.02, 0.02]
    }
   },
   "monster": {
