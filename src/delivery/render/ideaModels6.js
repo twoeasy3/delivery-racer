@@ -409,8 +409,8 @@ export const IDEA_MODELS_6 = {
     // the wing, and its struts, which rise out of the tail together
     const wing = new THREE.Group();
     group.add(wing);
-    box(wing, carbon, 1.3, 0.03, 0.3, 0, 0.985, -1.97);                                    // (at rest it lies in the engine cover)
-    merged(wing, trim, [-1, 1].map(side => bx(0.03, 0.22, 0.1, side * 0.35, 0.87, -1.97)));
+    box(wing, carbon, 1.3, 0.03, 0.3, 0, 0.985, -1.97).userData.prop = 'wing';                                    // (at rest it lies in the engine cover)
+    merged(wing, trim, [-1, 1].map(side => bx(0.03, 0.22, 0.1, side * 0.35, 0.87, -1.97))).userData.prop = 'wing';
     group.userData = {
       body,
       animate: (t) => { // (down for most of the time; up now and then)

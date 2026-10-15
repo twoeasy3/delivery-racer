@@ -247,7 +247,7 @@ export const IDEA_MODELS_8 = {
     // the tail: a lip of a spoiler, the band of tail lamps, a stop lamp over the mesh, the mesh panel, the
     // reversing lamps, the diffuser and four exhausts
     const zt = -2.27;
-    merged(group, paint, [bx(1.42, 0.03, 0.18, 0, 0.835, -2.2, -0.12)]);
+    merged(group, paint, [bx(1.42, 0.03, 0.18, 0, 0.835, -2.2, -0.12)]).userData.prop = 'wing'; // (the spoiler's lip: a wing prop)
     merged(group, TAIL, [-1, 1].flatMap(s => [bx(0.46, 0.05, 0.03, s * 0.47, 0.68, zt - 0.005), bx(0.06, 0.12, 0.03, s * 0.7, 0.62, zt - 0.005)]).concat(bx(0.3, 0.025, 0.02, 0, 0.765, zt - 0.006)));
     merged(group, trim, [bx(1.0, 0.18, 0.02, 0, 0.47, zt + 0.002), bx(1.5, 0.09, 0.3, 0, 0.215, -2.13), ...[-0.45, -0.15, 0.15, 0.45].map(x => bx(0.015, 0.06, 0.28, x, 0.19, -2.13))]);
     merged(group, REVERSE, [-1, 1].map(s => bx(0.12, 0.04, 0.02, s * 0.6, 0.5, zt - 0.008)));

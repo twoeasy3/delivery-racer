@@ -163,17 +163,6 @@ const taper = (parent, material, a, b, x = 0) => {
   parent.add(mesh);
   return mesh;
 };
-// a pair of round headlamps (a lamp in a chrome ring) at the front, `k` of the width out from the middle
-const headlamps = (parent, w, y, z, r = 0.1, k = 0.34) => {
-  for (const side of [-1, 1]) {
-    disc(parent, lambert(CHROME), r * 1.25, 0.05, side * w * k, y, z);
-    disc(parent, LAMP, r, 0.07, side * w * k, y, z + 0.005);
-  }
-};
-// a pair of red tail lamps at the back
-const taillamps = (parent, w, y, z, k = 0.4, size = [0.1, 0.16]) => {
-  for (const side of [-1, 1]) box(parent, TAIL, size[0], size[1], 0.04, side * w * k, y, z);
-};
 // a point `t` (0 to 1) along a quadratic curve from a through b to c (each [z, y]), side on
 const bend = (a, b, c, t) => [0, 1].map(i => (1 - t) * (1 - t) * a[i] + 2 * (1 - t) * t * b[i] + t * t * c[i]);
 // a beacon (amber by day, flashing when animated): a short drum of a lens on a base
@@ -297,10 +286,10 @@ export const IDEA_MODELS_4 = {
     // (the pontoons' tracks sit at z = ±L/2 each, so the pairs are rounded first: see above)
     box(group, trim, w * 0.5, 0.12, 0.04, 0, 1.34, L * 0.76 + 0.01);                      // a grille slot
     box(group, chrome, w * 0.7, 0.08, 0.08, 0, 1.0, L * 0.8);                             // a bumper bar
-    tube(group, trim, 0.05, 0.6, w * 0.3, 2.35, -L * 0.55, 'y');                          // the exhaust stack
-    box(group, trim, 0.12, 0.06, 0.12, w * 0.3, 2.66, -L * 0.55);                         // its rain cap
-    box(group, trim, 0.14, 0.1, 0.14, -w * 0.22, 2.17, L * 0.24);                         // the spotlight on the roof,
-    disc(group, LAMP, 0.07, 0.06, -w * 0.22, 2.17, L * 0.24 + 0.09);
+    tube(group, trim, 0.05, 0.6, w * 0.3, 2.35, -L * 0.55, 'y').userData.prop = 'roof';   // the exhaust stack (a roof item: hidden when a roof prop is chosen)
+    box(group, trim, 0.12, 0.06, 0.12, w * 0.3, 2.66, -L * 0.55).userData.prop = 'roof';   // its rain cap
+    box(group, trim, 0.14, 0.1, 0.14, -w * 0.22, 2.17, L * 0.24).userData.prop = 'roof';   // the spotlight on the roof,
+    disc(group, LAMP, 0.07, 0.06, -w * 0.22, 2.17, L * 0.24 + 0.09).userData.prop = 'roof';
     const lens = beacon(group, 0, 2.12, -L * 0.3);
     group.userData = { body, animate: (t) => flash(lens, t) };
     return group;
@@ -456,6 +445,7 @@ export const IDEA_MODELS_4 = {
     const w = car.hw * 2, L = car.hl, R = 0.45, bed = 1.06;
     const paint = lambert(car.color), glass = lambert(GLASS), trim = lambert(TRIM), chrome = lambert(CHROME), steel = lambert(0x9aa0a8);
     const wood = lambert(0xb98a4a), cable = lambert(0x1b1b1d), plank = lambert(0x8a6a3a);
+    const load = (m) => { m.userData.prop = 'cargo'; return m; }; // (the drum, its A-frames and chocks: a chosen cargo prop hides them, render/propcosmetic.js)
     box(group, trim, w * 0.6, 0.3, L * 1.9, 0, 0.7, 0);                                   // the chassis
     // the cab: over the front wheels, a base, a deep windscreen and side glass, a roof, a sun visor
     const body = box(group, paint, w * 0.96, 0.5, L * 0.3, 0, 1.2, L * 0.84);
@@ -474,9 +464,9 @@ export const IDEA_MODELS_4 = {
       wheel(group, R, 0.34, side * (w / 2 - 0.2), R, -L * 0.7);
       box(group, paint, 0.04, 0.2, L * 1.44, side * (w / 2 - 0.02), bed + 0.1, -L * 0.26); // the bed's drop sides
       // the drum's A-frames and chocks
-      box(group, steel, 0.1, 1.2, 0.1, side * 0.74, bed + 0.6, -L * 0.2);
-      prism(group, trim, 0.3, [[-L * 0.2 - 0.9, bed], [-L * 0.2 - 0.3, bed], [-L * 0.2 - 0.5, bed + 0.3]], side * 0.5);
-      prism(group, trim, 0.3, [[-L * 0.2 + 0.3, bed], [-L * 0.2 + 0.9, bed], [-L * 0.2 + 0.5, bed + 0.3]], side * 0.5);
+      load(box(group, steel, 0.1, 1.2, 0.1, side * 0.74, bed + 0.6, -L * 0.2));
+      load(prism(group, trim, 0.3, [[-L * 0.2 - 0.9, bed], [-L * 0.2 - 0.3, bed], [-L * 0.2 - 0.5, bed + 0.3]], side * 0.5));
+      load(prism(group, trim, 0.3, [[-L * 0.2 + 0.3, bed], [-L * 0.2 + 0.9, bed], [-L * 0.2 + 0.5, bed + 0.3]], side * 0.5));
     }
     for (let i = -2; i <= 2; i++) box(group, trim, 0.4, 0.08, 0.03, i * w * 0.17, 1.02, L * 0.99 + 0.02); // grille slots
     box(group, trim, w, 0.2, 0.16, 0, 0.78, L * 0.98);                                    // bumpers
@@ -488,12 +478,12 @@ export const IDEA_MODELS_4 = {
     // the drum: two wooden flanges, a core wound in black cable, the axle through
     const DR = 1.15, dz = -L * 0.2, dy = bed + DR;
     for (const side of [-1, 1]) {
-      tube(group, wood, DR, 0.12, side * 0.64, dy, dz, 'x');
-      for (let i = 0; i < 4; i++) box(group, plank, 0.03, 0.14, DR * 1.9, side * 0.71, dy, dz).rotation.x = i * Math.PI / 4; // the flange's boards
+      load(tube(group, wood, DR, 0.12, side * 0.64, dy, dz, 'x'));
+      for (let i = 0; i < 4; i++) load(box(group, plank, 0.03, 0.14, DR * 1.9, side * 0.71, dy, dz)).rotation.x = i * Math.PI / 4; // the flange's boards
     }
-    tube(group, cable, DR * 0.84, 1.16, 0, dy, dz, 'x');
-    for (let i = -2; i <= 2; i++) tube(group, lambert(0x2c2c30), DR * 0.86, 0.1, i * 0.23, dy, dz, 'x'); // the turns of cable, ridged
-    tube(group, steel, 0.08, 1.8, 0, dy, dz, 'x');                                        // the axle
+    load(tube(group, cable, DR * 0.84, 1.16, 0, dy, dz, 'x'));
+    for (let i = -2; i <= 2; i++) load(tube(group, lambert(0x2c2c30), DR * 0.86, 0.1, i * 0.23, dy, dz, 'x')); // the turns of cable, ridged
+    load(tube(group, steel, 0.08, 1.8, 0, dy, dz, 'x'));                                      // the axle
     group.userData = { body, animate: () => {} };
     return group;
   },
@@ -602,7 +592,7 @@ export const IDEA_MODELS_4 = {
       box(group, seat, 0.44, 0.06, 0.46, side * 0.3, 0.72, -L * 0.05);
       box(group, seat, 0.44, 0.5, 0.05, side * 0.3, 0.98, -L * 0.05 - 0.24);
       for (const dz of [-0.2, 0.2]) tube(group, steel, 0.02, 0.2, side * 0.3, 0.62, -L * 0.05 + dz, 'y');
-      box(group, gold, 0.28, 0.3, 0.32, side * 0.3, 0.68, -L * 0.7);                       // the gear on the tail
+      box(group, gold, 0.28, 0.3, 0.32, side * 0.3, 0.68, -L * 0.7).userData.prop = 'cargo';   // the gear on the tail (a load: hidden when a cargo prop is chosen)
     }
     for (const z of [L * 0.85, -L * 0.85, 0]) tube(group, steel, 0.035, w * 0.66, 0, 0.53, z, 'x'); // the cross members
     box(group, trim, 0.24, 0.3, 0.24, 0, 0.7, L * 0.25);                                   // the console between the seats,

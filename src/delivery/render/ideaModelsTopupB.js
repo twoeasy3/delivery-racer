@@ -471,15 +471,18 @@ export const IDEA_MODELS_TOPUP_B = {
     const RZ0 = TAILZ - BR - 0.01, RZ1 = FACE + BR + 0.15;
     box(shell, roof, BW + 0.08, 0.1, RZ1 - RZ0, 0, BTOP + BR, (RZ0 + RZ1) / 2);
     // the rack on it: two rails along it and four across, on short posts; the lamp bar across the front of it
-    const rackY = BTOP + 0.2;
+    // (the rack and the lamp bar are the roof's own ornaments: built in `rack`, merged apart from the body, tagged 'roof' so a chosen roof prop hides them)
+    const rack = new THREE.Group(), rackY = BTOP + 0.2;
     for (const s of [-1, 1]) {
-      box(shell, chrome, 0.04, 0.04, 3.6, s * 0.86, rackY, -1.1);
-      for (const z of [0.6, -2.8]) box(shell, chrome, 0.04, 0.12, 0.04, s * 0.86, rackY - 0.08, z);
+      box(rack, chrome, 0.04, 0.04, 3.6, s * 0.86, rackY, -1.1);
+      for (const z of [0.6, -2.8]) box(rack, chrome, 0.04, 0.12, 0.04, s * 0.86, rackY - 0.08, z);
     }
-    for (const z of [0.5, -0.5, -1.6, -2.7]) box(shell, chrome, 1.72, 0.03, 0.03, 0, rackY + 0.02, z);
-    box(shell, chrome, 1.5, 0.08, 0.06, 0, BTOP + 0.17, FACE + 0.1);
-    for (const s of [-1, 1]) box(shell, chrome, 0.04, 0.1, 0.04, s * 0.7, BTOP + 0.1, FACE + 0.1);
-    for (let i = -2; i <= 2; i++) rod(shell, LAMP, 0.045, 0.03, i * 0.3, BTOP + 0.17, FACE + 0.14, 'z', 8);
+    for (const z of [0.5, -0.5, -1.6, -2.7]) box(rack, chrome, 1.72, 0.03, 0.03, 0, rackY + 0.02, z);
+    box(rack, chrome, 1.5, 0.08, 0.06, 0, BTOP + 0.17, FACE + 0.1);
+    for (const s of [-1, 1]) box(rack, chrome, 0.04, 0.1, 0.04, s * 0.7, BTOP + 0.1, FACE + 0.1);
+    for (let i = -2; i <= 2; i++) rod(rack, LAMP, 0.045, 0.03, i * 0.3, BTOP + 0.17, FACE + 0.14, 'z', 8);
+    const rackMeshes = [...mergeByMaterial(rack, new Set()).values()];
+    for (const m of rackMeshes) { m.userData.prop = 'roof'; shell.add(m); }
     // the glass: the windscreen in the box's face; the open windows down the sides (dark, between pillars of paint)
     box(shell, glass, BW - 0.24, 0.56, 0.02, 0, 1.56, FACE + BR + 0.006);
     const wins = [];
@@ -528,7 +531,7 @@ export const IDEA_MODELS_TOPUP_B = {
     for (const s of [-1, 1]) decal(shell, art, 4.3, 0.52, s * (BW / 2 + 0.004), 1.1, (TAILZ + FACE) / 2, s > 0 ? 'x' : '-x', s > 0 ? [0, 1] : [1, 0], [0.5, 1]);
     decal(shell, art, 1.0, 1.0, 0, 1.272, 2.18, 'y', [0, 1], [0, 0.5]);
     // the wheels: fat tyres on plain chrome hubs
-    const keep = new Set(), geo = wheelGeo(R, 0.28), hub = lambert(0xd0d3d8);
+    const keep = new Set(rackMeshes), geo = wheelGeo(R, 0.28), hub = lambert(0xd0d3d8);
     for (const s of [-1, 1]) for (const z of [FZ, RZ]) for (const part of wheel(group, geo, s * WX, R, z, hub)) keep.add(part);
     const merged = mergeByMaterial(shell, keep);
     const body = merged.get(paint);

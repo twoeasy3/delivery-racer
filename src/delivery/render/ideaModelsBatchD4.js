@@ -143,7 +143,7 @@ const widen = (group, k) => {
 // a wide black single-frame grille between slim swept headlamps, a deep splitter and
 // side intakes; roof rails; a slim tail lamp bar either side and twin oval exhausts under a dark diffuser.
 IDEA_MODELS_BATCH_D4.autobahnestate = (car) => {
-  const group = new THREE.Group(), bag = makeBag();
+  const group = new THREE.Group(), bag = makeBag(), railBag = makeBag();
   const W = 0.92, L = car.hl, R = 0.39, AF = 1.45, AR = -1.38;
   const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
   const BEV = 0.08, BW = 2 * W - 0.08, NOSE = L - BEV, TAILZ = -L + BEV, AY = 0.3;
@@ -173,7 +173,8 @@ IDEA_MODELS_BATCH_D4.autobahnestate = (car) => {
   bag.add(GLASS, ...glass.sides, glass.front, glass.rear);
   // roof rails, mirrors
   for (const s of [-1, 1]) {
-    bag.add(TRIM, rod(0.022, 1.9, s * 0.5, car.height + 0.004, -0.95, 'z', 8), bx(0.12, 0.07, 0.15, s * 0.84, 1.04, 0.7), strut([s * 0.78, 1.0, 0.76], [s * 0.86, 1.04, 0.72], 0.02, 5));
+    railBag.add(TRIM, rod(0.022, 1.9, s * 0.5, car.height + 0.004, -0.95, 'z', 8)); // (the roof rails: a mesh of their own, tagged 'roof' below)
+    bag.add(TRIM, bx(0.12, 0.07, 0.15, s * 0.84, 1.04, 0.7), strut([s * 0.78, 1.0, 0.76], [s * 0.86, 1.04, 0.72], 0.02, 5));
     // the face: slim swept headlamps, side intakes with an amber lamp, the exhausts and tail lamps behind
     bag.add(TRIM, bx(0.4, 0.13, 0.05, s * 0.55, 0.66, L - 0.045), bx(0.3, 0.12, 0.04, s * 0.58, 0.4, L - 0.04));
     bag.add(LAMP, bx(0.34, 0.075, 0.03, s * 0.55, 0.665, L - 0.027));
@@ -186,6 +187,7 @@ IDEA_MODELS_BATCH_D4.autobahnestate = (car) => {
   bag.add(CHROME, bx(0.4, 0.025, 0.05, 0, 0.55, L - 0.02));
   bag.add(PLATE, bx(0.4, 0.1, 0.02, 0, 0.68, -L - 0.002));
   bag.add(TAIL, bx(0.26, 0.04, 0.03, 0, 0.78, -L - 0.004));
+  for (const m of railBag.done(group).values()) m.userData.prop = 'roof'; // (the roof rails are an ornament: a chosen roof prop hides them, render/propcosmetic.js)
   bag.done(group).get(PLATE).userData.plate = 'rear';
   for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, R, 0.28, s * (W - 0.15), z, ALLOY, 0.68);
   group.userData = { body: bodyMesh, animate: () => {} };

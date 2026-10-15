@@ -165,20 +165,22 @@ export const addSuperKit = (model, car) => {
   if (kit.wing) {
     const z = -l * 0.42, feet = [top(-w * 0.3, z), top(w * 0.3, z)].filter(y => y !== null);
     const foot = feet.length ? Math.max(...feet) : H * 0.6, y = Math.max(foot + 0.32, H * 0.85);
-    for (const s of [-1, 1]) box(dark, 0.06, y - foot, 0.22, s * w * 0.3, (y + foot) / 2, z);
-    box(stripeMat, w * 1.1, 0.05, 0.34, 0, y, z);
-    for (const s of [-1, 1]) box(dark, 0.03, 0.22, 0.38, s * w * 0.55, y + 0.04, z); // (end plates)
+    // (every part of the wing is tagged userData.prop = 'wing': a chosen wing prop hides it, render/propcosmetic.js)
+    for (const s of [-1, 1]) box(dark, 0.06, y - foot, 0.22, s * w * 0.3, (y + foot) / 2, z).userData.prop = 'wing';
+    box(stripeMat, w * 1.1, 0.05, 0.34, 0, y, z).userData.prop = 'wing';
+    for (const s of [-1, 1]) box(dark, 0.03, 0.22, 0.38, s * w * 0.55, y + 0.04, z).userData.prop = 'wing'; // (end plates)
   }
   // a roof rack of lamps across the front of the roof, for a van or a bus that is no place for a wing
   if (kit.lights) {
     const z = l * 0.18, y = top(0, z);
     if (y !== null) {
-      box(dark, w * 0.9, 0.07, 0.09, 0, y + 0.18, z);
-      for (const s of [-1, 1]) box(dark, 0.05, 0.18, 0.05, s * w * 0.4, y + 0.09, z);
+      // (the whole rack is tagged userData.prop = 'roof': a chosen roof prop hides it)
+      box(dark, w * 0.9, 0.07, 0.09, 0, y + 0.18, z).userData.prop = 'roof';
+      for (const s of [-1, 1]) box(dark, 0.05, 0.18, 0.05, s * w * 0.4, y + 0.09, z).userData.prop = 'roof';
       for (let i = 0; i < 4; i++) {
         const x = (i - 1.5) * w * 0.22;
-        box(dark, 0.17, 0.15, 0.1, x, y + 0.26, z);
-        box(lamp, 0.13, 0.11, 0.02, x, y + 0.26, z + 0.06);
+        box(dark, 0.17, 0.15, 0.1, x, y + 0.26, z).userData.prop = 'roof';
+        box(lamp, 0.13, 0.11, 0.02, x, y + 0.26, z + 0.06).userData.prop = 'roof';
       }
     }
   }

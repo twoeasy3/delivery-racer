@@ -152,9 +152,10 @@ export const IDEA_MODELS_BATCH_D2 = {
       ...[-1, 1].map(s => bx(0.05, 0.3, 2.34, s * 0.905, 1.27, -1.15)),
       bx(1.86, 0.3, 0.05, 0, 1.27, -2.35),
       ...[-1, 1].flatMap(s => [-0.4, -1.2, -2.3].map(z => bx(0.07, 0.56, 0.08, s * 0.945, 1.38, z))),
-      bx(0.8, 0.5, 0.7, -0.15, 1.35, -0.5), bx(0.6, 0.4, 0.58, 0.1, 1.8, -0.5, 0, 0.18),
     ]);
-    parts(group, k + 'tarp', TARP, () => [blob(0.74, 0.4, 0.8, 0.02, 1.3, -1.55), blob(0.5, 0.3, 0.5, -0.3, 1.34, -0.95), blob(0.4, 0.3, 0.45, 0.4, 1.34, -1.05)]);
+    // the load: two crates and the tarpaulin mound (tagged userData.prop = 'cargo': a chosen cargo prop hides them, render/propcosmetic.js)
+    parts(group, k + 'crates', WOOD, () => [bx(0.8, 0.5, 0.7, -0.15, 1.35, -0.5), bx(0.6, 0.4, 0.58, 0.1, 1.8, -0.5, 0, 0.18)]).userData.prop = 'cargo';
+    parts(group, k + 'tarp', TARP, () => [blob(0.74, 0.4, 0.8, 0.02, 1.3, -1.55), blob(0.5, 0.3, 0.5, -0.3, 1.34, -0.95), blob(0.4, 0.3, 0.45, 0.4, 1.34, -1.05)]).userData.prop = 'cargo';
     // fuel tank under the deck (one side) and the wheels
     parts(group, k + 'tank', lambert(0x6a6e74), () => [new THREE.CylinderGeometry(0.2, 0.2, 0.9, 10).rotateX(Math.PI / 2).translate(0.6, 0.75, -0.2)]);
     for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, k, R, TW, s * WX, z, 16);
@@ -212,9 +213,10 @@ export const IDEA_MODELS_BATCH_D2 = {
     ]);
     parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.12, 0.12, 0.03, s * 0.5, 0.6, BZ - 0.006)));
     // the rear bed's load: a crate, a jerrycan, a canvas roll across the tailgate end
-    parts(group, k + 'crate', WOOD, () => [bx(0.5, 0.36, 0.5, -0.25, 0.51, -0.95), bx(0.32, 0.22, 0.32, 0.3, 0.44, -0.8, 0, 0.35)]);
-    parts(group, k + 'can', CAN, () => [bx(0.2, 0.34, 0.12, 0.42, 0.5, -1.2)]);
-    parts(group, k + 'roll', CANVAS, () => [new THREE.CylinderGeometry(0.1, 0.1, 1.0, 8).rotateZ(Math.PI / 2).translate(0, 0.43, -1.36)]);
+    // (tagged userData.prop = 'cargo': a chosen cargo prop hides the load, render/propcosmetic.js)
+    parts(group, k + 'crate', WOOD, () => [bx(0.5, 0.36, 0.5, -0.25, 0.51, -0.95), bx(0.32, 0.22, 0.32, 0.3, 0.44, -0.8, 0, 0.35)]).userData.prop = 'cargo';
+    parts(group, k + 'can', CAN, () => [bx(0.2, 0.34, 0.12, 0.42, 0.5, -1.2)]).userData.prop = 'cargo';
+    parts(group, k + 'roll', CANVAS, () => [new THREE.CylinderGeometry(0.1, 0.1, 1.0, 8).rotateZ(Math.PI / 2).translate(0, 0.43, -1.36)]).userData.prop = 'cargo';
     // the spare wheel on the tailgate
     place(group, shared(k + 'sparetyre', () => new THREE.CylinderGeometry(0.27, 0.27, 0.13, 14).rotateX(Math.PI / 2)), TYRE, 0, 0.6, BZ - 0.06);
     place(group, shared(k + 'sparehub', () => new THREE.CylinderGeometry(0.14, 0.14, 0.15, 10).rotateX(Math.PI / 2)), HUB, 0, 0.6, BZ - 0.06);
