@@ -170,6 +170,7 @@
           <h3>Extras</h3>
           <button id="albumBtn" class="menu-chip">Postcards</button>
           <button id="milestonesBtn" class="menu-chip">Milestones</button>
+          <button id="hiddenLevelsBtn" class="menu-chip" title="Levels that are not on the menu: play them here (they bank nothing)">Hidden levels</button>
           <button id="screensaverBtn" class="menu-chip">Screensaver</button>
           <button id="raceWatchBtn2" class="menu-chip">Race screensaver</button>
           <a id="screensaverLink" class="menu-chip" href="?screensaver" title="Opens the screensaver straight away: bookmark it or share it">Screensaver link</a>
@@ -245,6 +246,8 @@
 <div id="album" class="overlay menu panel hidden"></div>
 <!-- and the milestones wall (render/milestones.js) -->
 <div id="milestones" class="overlay menu panel hidden"></div>
+<!-- and the hidden levels menu (render/hiddenlevels.js; Options > Hidden levels) -->
+<div id="hiddenLevels" class="overlay menu hidden" role="dialog" aria-label="Hidden levels"></div>
 
 <div id="resultScreen" class="overlay hidden">
   <h1 id="resultTitle">Delivered!</h1>

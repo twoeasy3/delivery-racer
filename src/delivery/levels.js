@@ -639,6 +639,11 @@ HIDDEN_LEVELS['mall-dash'] = mallDash; // Mall Dash (the shopping mall, a lit tu
 HIDDEN_LEVELS['haunted-hollow'] = hauntedHollow; // Haunted Hollow (Halloween): hidden until the owner reveals it, ?hidden=haunted-hollow
 import foliageRun from './levels/foliage-run.json';
 Object.assign(HIDDEN_LEVELS, { 'foliage-run': foliageRun }); // Foliage Run (the autumn theme's level): ?hidden=foliage-run, until it is revealed
+// THE HIDDEN LEVELS MENU (the owner, 15-Oct; Options > Hidden levels, render/hiddenlevels.js): every level of HIDDEN_LEVELS that is a
+// real level, so a hidden level added later is listed without a word here. TEST_LEVELS are the developer's test tracks (a testbed and the three
+// Gimmick Roads: gimmicks.js calls them 'Test'), left out of it. A run started from it is ?hidden=<id>: it banks nothing (game.js).
+export const TEST_LEVELS = ['testbed', 'gimmick-road', 'gimmick-road-2', 'gimmick-road-3'];
+export const playableHidden = () => Object.entries(HIDDEN_LEVELS).filter(([id]) => !TEST_LEVELS.includes(id)).map(([id, level]) => ({ id, level, event: id in EVENT_MAPS }));
 // the class every race is run in: 'f1', 'gt' (GT road cars) or 'lmp' (Le Mans prototypes): the player's car
 // and the grid (the menu's Race cars button; ?gt or ?lmp for that class whatever it says)
 export const RACE_CLASSES = { f1: 'F1', gt: 'GT', lmp: 'LMP' };

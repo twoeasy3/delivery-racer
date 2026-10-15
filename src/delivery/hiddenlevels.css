@@ -1,0 +1,22 @@
+/* the hidden levels menu (render/hiddenlevels.js): a panel over the start screen, one card per level, phone first */
+#hiddenLevels.overlay.menu { z-index: 21; justify-content: flex-start; align-items: stretch; overflow-y: auto; padding: 0 0 24px; text-align: left; background: #0c0f16; }
+#hiddenLevels .hl-bar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: max(10px, env(safe-area-inset-top)) 14px 10px; background: rgba(12, 15, 22, .97); }
+#hiddenLevels .hl-bar h2 { margin: 0; font: 800 20px/1.1 system-ui, sans-serif; }
+#hiddenLevels .hl-back { min-height: 44px; padding: 0 14px; border: 0; border-radius: 10px; background: rgba(255, 255, 255, .12); color: #fff; font: 700 15px/1 system-ui, sans-serif; cursor: pointer; }
+#hiddenLevels .hl-note { margin: 2px 14px 10px; font: 600 13px/1.3 system-ui, sans-serif; color: #ffd98a; }
+#hiddenLevels .hl-list { display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%; max-width: 980px; margin: 0 auto; padding: 0 14px; box-sizing: border-box; }
+#hiddenLevels .hl-card { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 8px; border-radius: 12px; background: #262c37; }
+#hiddenLevels .hl-pic { width: 96px; aspect-ratio: 600 / 267; border-radius: 8px; background: #1a1f29 center / cover no-repeat; }
+#hiddenLevels .hl-pic.none { background: repeating-linear-gradient(135deg, #1a1f29 0 8px, #202633 8px 16px); }
+#hiddenLevels .hl-info { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+#hiddenLevels .hl-info b { font: 800 16px/1.15 system-ui, sans-serif; }
+#hiddenLevels .hl-info p { margin: 0; font: 500 12.5px/1.25 system-ui, sans-serif; color: rgba(255, 255, 255, .72); }
+#hiddenLevels .hl-info small { font: 700 10.5px/1.2 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: rgba(255, 255, 255, .5); }
+#hiddenLevels .hl-play { display: inline-flex; align-items: center; justify-content: center; min-width: 64px; min-height: 44px; padding: 0 16px; border-radius: 10px; background: #ffd23f; color: #1c1500; font: 900 15px/1 system-ui, sans-serif; letter-spacing: .04em; text-transform: uppercase; text-decoration: none; }
+#hiddenLevels .hl-play:hover { filter: brightness(1.08); }
+@media (max-width: 420px) {
+  #hiddenLevels .hl-card { grid-template-columns: 84px minmax(0, 1fr); }
+  #hiddenLevels .hl-pic { width: 84px; }
+  #hiddenLevels .hl-play { grid-column: 1 / -1; min-height: 44px; }
+}
+@media (min-width: 760px) { #hiddenLevels .hl-list { grid-template-columns: 1fr 1fr; } #hiddenLevels .hl-card { grid-template-columns: 150px minmax(0, 1fr) auto; } #hiddenLevels .hl-pic { width: 150px; } }

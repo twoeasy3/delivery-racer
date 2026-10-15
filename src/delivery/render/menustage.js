@@ -644,7 +644,7 @@ document.getElementById('optionsBtn').addEventListener('click', () => openSheet(
 document.getElementById('optionsCloseBtn').addEventListener('click', closeSheet);
 // (the album, the milestones wall and the save code's panel open over the menu themselves, and the screensavers
 // leave it: the options step aside first, ahead of the button's own doing)
-for (const id of ['albumBtn', 'milestonesBtn', 'exportBtn', 'importBtn', 'screensaverBtn', 'raceWatchBtn2', 'wheelsOpenBtn']) document.getElementById(id).addEventListener('click', closeSheet, true);
+for (const id of ['albumBtn', 'milestonesBtn', 'exportBtn', 'importBtn', 'screensaverBtn', 'raceWatchBtn2', 'wheelsOpenBtn', 'hiddenLevelsBtn']) document.getElementById(id).addEventListener('click', closeSheet, true);
 
 // "What's on this road": the level's gimmicks, pickups and traffic, with their models (render/levelcard3d.js,
 // brought in only when it is first asked for: it carries the reference pages' models)
