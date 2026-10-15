@@ -10,9 +10,37 @@ export const GLASS = keep(new THREE.MeshLambertMaterial({ color: 0x1c2330, side:
 export const LAMP = basic(0xfff3c4), TAIL = basic(0xff2a2a), AMBER = basic(0xffa31a), SPARK = basic(0xbfe6ff);
 
 export const SHARED = new Map();
+// ---- GLASS EDITS (the owner, 15-Oct: "why can't the patch just edit the build?"): the windows of a car built with cabinGlass (below) are
+// edited by changing cabinGlass's INPUTS, not its mesh. A car's model patch (src/delivery/modelpatches/<id>.json) may carry a `glass` table,
+// { '<window id>': <edges> }: a side window's id names both sides ('door window', 'quarter window', 'side window', 'rear door window', or
+// 'window 3'...; its edges a [z, y] polygon in the side profile, 3 or more points, built on both flanks from the one polygon so the car
+// stays symmetric), or one side only ('door window L' / 'door window R': the left (+x) or right flank, an asymmetric edit), or a screen
+// ('windscreen', 'rear glass': { foot: [z, y], top: [z, y] } on its slope). The table is set as the car is built (render/ideaModels.js
+// makeIdeaModel, from the patch; the model editor from the patch it edits) and cabinGlass reads it; a model built with edits caches its
+// geometries under its own keys (shared: the plain car's cache is never touched). A code literal `overrides` passed to cabinGlass itself
+// ("baked in": scripts/bake-glass.mjs) is read the same way, under the patch's table. Ids the build never asks for are reported
+// (glassEditsReport, unused) and skipped. With no edits nothing is salted and the geometry is exactly the code's.
+const fnv = (s) => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(36); };
+let glassEdits = null, glassSalt = '', glassUsed = null, lastReport = { edits: null, unused: [] };
+export const withGlassEdits = (edits, fn) => {
+  const prev = [glassEdits, glassSalt, glassUsed];
+  if (edits && typeof edits === 'object' && Object.keys(edits).length) { glassEdits = edits; glassSalt = '#glass' + fnv(JSON.stringify(edits)); glassUsed = new Set(); lastReport = { edits, unused: Object.keys(edits) }; }
+  else if (edits !== undefined) { glassEdits = null; glassSalt = ''; glassUsed = null; lastReport = { edits: null, unused: [] }; } // (null: no edits; undefined: keep what is set)
+  try { return fn(); } finally { [glassEdits, glassSalt, glassUsed] = prev; }
+};
+// the edits the last build read, and the ids it never asked for (call right after withGlassEdits returns)
+export const glassEditsReport = () => lastReport;
+const editFor = (name, side, literal) => {
+  const base = side ? name.slice(0, -2) : name; // ('door window L' -> 'door window')
+  const look = (table) => (table ? (table[name] != null ? table[name] : side && table[base] != null ? table[base] : null) : null);
+  if (glassUsed) { glassUsed.add(name); if (side) glassUsed.add(base); lastReport = { edits: glassEdits, unused: Object.keys(glassEdits).filter(k => !glassUsed.has(k)) }; }
+  const own = look(glassEdits);
+  return own != null ? own : look(literal);
+};
 export const shared = (key, make) => {
-  if (!SHARED.has(key)) { const geo = make(); geo.userData.shared = true; SHARED.set(key, geo); }
-  return SHARED.get(key);
+  const k = key + glassSalt;
+  if (!SHARED.has(k)) { const geo = make(); geo.userData.shared = true; SHARED.set(k, geo); }
+  return SHARED.get(k);
 };
 export const place = (parent, geo, material, x = 0, y = 0, z = 0) => {
   const mesh = new THREE.Mesh(geo, material);
@@ -28,7 +56,18 @@ export const plain = (geo) => {
   g.clearGroups();
   return g;
 };
-export const merge = (geos) => mergeGeometries(geos.map(plain), false);
+// (a geometry that is one PANE of a cabin's glass, cabinGlass below, carries `userData.pane`; the merged geometry keeps the list of
+// them with each one's vertex range, `userData.panes`, so the model editor can pick one pane of the one glass mesh and the patch can
+// rebuild it with its own edges: render/modelpatch.js reglaze. The game's mesh stays ONE draw call.)
+export const mergeFlat = (flat) => {
+  const out = mergeGeometries(flat, false);
+  const panes = [];
+  let at = 0;
+  for (const g of flat) { const n = g.attributes.position.count; if (g.userData.pane) panes.push({ ...g.userData.pane, start: at, count: n }); at += n; }
+  if (out && panes.length) out.userData.panes = panes;
+  return out;
+};
+export const merge = (geos) => mergeFlat(geos.map(plain));
 export const parts = (parent, key, material, make) => place(parent, shared(key, () => merge(make())), material);
 
 export const bx = (w, h, l, x, y, z, pitch = 0, yaw = 0, roll = 0) => {
@@ -250,20 +289,26 @@ export const edgeInset = (chain, i, { aPillar, roof, cPillar, belt }) => {
   const p = chain[i], q = chain[i + 1], dz = q[0] - p[0], dy = q[1] - p[1];
   return Math.abs(dy) < 0.25 * Math.hypot(dz, dy) ? roof : dy > 0 ? aPillar : cPillar;
 };
-export const glassFromProfile = (profile, { from, to, belt, inset = {}, zFront = Infinity, zRear = -Infinity, half, taper = null, lift = 0.004 }) => {
+// a side window's polygon ([z, y], tidied) from the profile: the cabin chain inset edge by edge, cut to the window's z span
+export const sidePoly = (profile, { from, to, belt, inset = {}, zFront = Infinity, zRear = -Infinity }) => {
   const { aPillar = 0.07, roof = 0.055, cPillar = 0.08, belt: beltInset = 0.025 } = inset;
   const chain = cabinChain(profile, from, to, belt);
-  const poly = tidyGlass(clipZ(insetOutline(chain, chain.map((p, i) => edgeInset(chain, i, { aPillar, roof, cPillar, belt: beltInset }))), zRear, zFront));
-  const xAt = (y) => (taper ? narrowAt(half, y, taper) : half) + lift;
+  return tidyGlass(clipZ(insetOutline(chain, chain.map((p, i) => edgeInset(chain, i, { aPillar, roof, cPillar, belt: beltInset }))), zRear, zFront));
+};
+// one side window's pane on side `s` (+1 the car's left, -1 its right) from its polygon, laid at x = xAt(y)
+export const sidePane = (poly, s, xAt) => {
   const faces = THREE.ShapeUtils.triangulateShape(poly.map(p => new THREE.Vector2(p[0], p[1])), []);
-  return [1, -1].map(s => {
-    const pos = [];
-    for (const f of faces) for (const i of (s > 0 ? f : f.slice().reverse())) pos.push(s * xAt(poly[i][1]), poly[i][1], poly[i][0]);
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    geo.computeVertexNormals();
-    return geo;
-  });
+  const pos = [];
+  for (const f of faces) for (const i of (s > 0 ? f : f.slice().reverse())) pos.push(s * xAt(poly[i][1]), poly[i][1], poly[i][0]);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.computeVertexNormals();
+  return geo;
+};
+export const glassFromProfile = (profile, { from, to, belt, inset = {}, zFront = Infinity, zRear = -Infinity, half, taper = null, lift = 0.004 }) => {
+  const poly = sidePoly(profile, { from, to, belt, inset, zFront, zRear });
+  const xAt = (y) => (taper ? narrowAt(half, y, taper) : half) + lift;
+  return [1, -1].map(s => sidePane(poly, s, xAt));
 };
 // a glass panel across the car on a face from [z0, y0] up to [z1, y1], standing `foot` off it at the lower end and `top` at the upper
 export const tiltGlass = ([z0, y0], [z1, y1], hx0, hx1, foot, top) => {
@@ -299,7 +344,24 @@ export const screenGlassFromProfile = (profile, { edge, foot = 0.03, top = 0.07,
 // (A_SIDE) in from the flank at least, so the pillar is as sturdy seen along the body (3/4 front) as from the side. A car that passes a bigger
 // inset (the Armoured Limo's 20 cm) keeps it; pass aPillarMin: 0 / frontSideInset: 0 for the old thin pillar.
 export const A_PILLAR = 0.135, A_SIDE = 0.12;
-export const cabinGlass = (profile, { from, to, belt, inset = {}, grow = 0, half, taper = null, windows = [[-Infinity, Infinity]], sideLift = 0.004, lift = 0.004, topLift = lift, sideInset = 0.08, foot = 0.03, aPillarMin = A_PILLAR, frontSideInset = A_SIDE }) => {
+// PANES (the owner, 15-Oct: edit the windows per pane in the model editor). Every geometry cabinGlass returns carries `userData.pane`:
+// its name ('windscreen', 'rear glass', 'door window L' / ' R', 'quarter window L'..., windows named from the front), its kind ('side' or
+// 'screen'), its side (+1 the car's left, -1 its right, 0 across), `auto` (the edges the profile gives it: a side window's [z, y] polygon,
+// a screen's { foot, top } on its slope), `now` (the edges it has: `auto`, or the edit), `edge` (a screen: the profile edge it slides on)
+// and `cabin` (the profile, the cabin chain, grow and belt: the editor's guide). Dkit's merge() keeps the list with each pane's vertex
+// range on the merged geometry (`userData.panes`), so the glass stays ONE mesh and ONE draw call in the game and the part ids do not move;
+// the editor picks a pane by the face it taps. The edges come from the GLASS EDITS table above (the patch's), else opts.overrides (a code
+// literal), else the profile: a side window's edges are its [z, y] polygon (3+ points; its x stays the flank + sideLift, so the glass
+// stays proud of the body), a screen's { foot: [z, y], top: [z, y] } (points on its profile edge: it stays `lift` proud of the body face).
+// With no edits the geometry is exactly what it was before panes existed (scripts/.editor-glass-check.mjs proves it on every idea car).
+const windowName = (rank, count) => (count === 1 ? 'side window' : count === 2 ? ['door window', 'quarter window'][rank] : count === 3 ? ['door window', 'rear door window', 'quarter window'][rank] : 'window ' + (rank + 1));
+const polyLike = (pts, auto) => { // (a user's polygon wound as the automatic one, so its normals agree)
+  const area = (p) => p.reduce((s, a, i) => { const b = p[(i + 1) % p.length]; return s + a[0] * b[1] - b[0] * a[1]; }, 0);
+  const out = pts.filter(q => Array.isArray(q) && q.length >= 2 && isFinite(q[0]) && isFinite(q[1])).map(q => [+q[0], +q[1]]);
+  if (out.length < 3) return auto;
+  return (area(out) > 0) === (area(auto) > 0) ? out : out.reverse();
+};
+export const cabinGlass = (profile, { from, to, belt, inset = {}, grow = 0, half, taper = null, windows = [[-Infinity, Infinity]], sideLift = 0.004, lift = 0.004, topLift = lift, sideInset = 0.08, foot = 0.03, aPillarMin = A_PILLAR, frontSideInset = A_SIDE, overrides = null }) => {
   const { aPillar: aPillarAsked = 0.07, roof = 0.055, cPillar = 0.08, belt: beltInset = 0.025 } = inset;
   const aPillar = Math.max(aPillarAsked, aPillarMin);
   // (the insets from the profile: `grow` less than from the silhouette; never outside the profile, where the body's shoulder rounds away)
@@ -308,7 +370,20 @@ export const cabinGlass = (profile, { from, to, belt, inset = {}, grow = 0, half
   // the outline both ends of the glass are derived from
   const chain = cabinChain(profile, from, to, belt);
   const poly = tidyGlass(insetOutline(chain, chain.map((p, i) => edgeInset(chain, i, ins)))), n = poly.length; // (poly[0] and poly[n - 1] are the belt corners: the ends are kept)
-  const sides = windows.flatMap(([zRear, zFront]) => glassFromProfile(profile, { from, to, belt, inset: ins, zFront, zRear, half, taper, lift: sideLift }));
+  const cabin = { profile: profile.map(p => (p[0] === 'arc' ? [p[1], p[2]] : [p[0], p[1]])), chain, grow, belt, half, lift: sideLift };
+  const ov = (name, side) => editFor(name, side, overrides);
+  const xSide = (y) => (taper ? narrowAt(half, y, taper) : half) + sideLift;
+  const ranks = windows.map((w, i) => i).sort((a, b) => windows[b][1] - windows[a][1] || windows[b][0] - windows[a][0]); // (from the front)
+  const sides = windows.flatMap(([zRear, zFront], wi) => {
+    const auto = sidePoly(profile, { from, to, belt, inset: ins, zFront, zRear });
+    return [1, -1].map(s => {
+      const name = windowName(ranks.indexOf(wi), windows.length) + (s > 0 ? ' L' : ' R');
+      const edges = (o) => (Array.isArray(o) ? polyLike(o, auto) : auto);
+      const now = edges(ov(name, true)), geo = sidePane(now, s, xSide);
+      geo.userData.pane = { name, kind: 'side', side: s, auto, now, cabin, edited: now !== auto };
+      return geo;
+    });
+  });
   const onLine = (p, q, y) => [p[0] + (q[0] - p[0]) * (y - p[1]) / (q[1] - p[1]), y];
   const hx = (y) => (taper ? narrowAt(half, y, taper) : half) - sideInset;
   const hxF = (y) => (taper ? narrowAt(half, y, taper) : half) - Math.max(sideInset, frontSideInset); // (the windscreen: its side edges in from the flank by at least frontSideInset)
@@ -318,9 +393,17 @@ export const cabinGlass = (profile, { from, to, belt, inset = {}, grow = 0, half
   const rise = (p, q) => Math.abs(q[0] - p[0]) / Math.hypot(q[0] - p[0], q[1] - p[1]);
   const aFoot = onLine(chain[0], chain[1], Math.max(chain[0][1], profile[from][1]) + foot * 0.8 - rise(chain[0], chain[1]) * lift), aTop = onLine(chain[0], chain[1], aTopY - rise(chain[0], chain[1]) * topLift);
   const cTop = onLine(chain[n - 1], chain[n - 2], cTopY - rise(chain[n - 1], chain[n - 2]) * topLift), cFoot = onLine(chain[n - 1], chain[n - 2], last[1] + foot * 0.8 - rise(chain[n - 1], chain[n - 2]) * lift);
+  const screen = (name, auto, edge, hxOf) => {
+    const pt = (q, d) => (Array.isArray(q) && q.length >= 2 && isFinite(q[0]) && isFinite(q[1]) ? [+q[0], +q[1]] : d);
+    const edges = (o) => (o && typeof o === 'object' ? { foot: pt(o.foot, auto.foot), top: pt(o.top, auto.top) } : auto);
+    const build = (e) => tiltGlass(e.foot, e.top, hxOf(e.foot[1]), hxOf(e.top[1]), lift, topLift);
+    const now = edges(ov(name, false)), geo = build(now);
+    geo.userData.pane = { name, kind: 'screen', side: 0, auto, now, edge, cabin, edited: now !== auto };
+    return geo;
+  };
   return {
     sides,
-    front: tiltGlass(aFoot, aTop, hxF(aFoot[1]), hxF(aTop[1]), lift, topLift),
-    rear: tiltGlass(cFoot, cTop, hx(cFoot[1]), hx(cTop[1]), lift, topLift),
+    front: screen('windscreen', { foot: aFoot, top: aTop }, [chain[0], chain[1]], hxF),
+    rear: screen('rear glass', { foot: cFoot, top: cTop }, [chain[n - 1], chain[n - 2]], hx),
   };
 };

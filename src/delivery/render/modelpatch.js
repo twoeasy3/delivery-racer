@@ -19,7 +19,11 @@
 //       { add: { id: 'n1', kind: 'BoxGeometry', params: {...}, color, emissive, opacity, parent: '<id>' | '',
 //                position, rotation, scale, name, role } },
 //       { add: { id: 'm:3.1', from: '3.1', mirror: true } },   // a copy of a part (mirror: across the model's X)
-//     ], evil: [ { id, sig, set: { color, emissive, opacity, visible } } ] }   // the Evil side's paint over the ops
+//     ], evil: [ { id, sig, set: { color, emissive, opacity, visible } } ],   // the Evil side's paint over the ops
+//     glass: { 'door window': [[z, y], ...], 'quarter window R': [[z, y], ...], windscreen: { foot: [z, y], top: [z, y] } } }
+//   `glass` (a car whose windows cabinGlass builds, render/ideaModelsDkit.js): the WINDOW EDGES, read as the model is BUILT (not an op on
+//   a part): a side window's id names both flanks (one polygon, so the car stays symmetric) or one (' L' / ' R'); an id the build never
+//   asks for is reported (a warning) and skipped. withGlass() edits the table; the model editor's Glass tool draws it.
 // Ids are resolved against the model AS BUILT, before anything is changed (so a delete never shifts another id): by
 // path when the sig agrees there, else by the one node anywhere with that sig; else the op is UNMATCHED: reported,
 // skipped, never a crash. `base` differing means the code changed since the patch was made (a warning only).
@@ -205,6 +209,7 @@ export const extractParts = (root) => {
       position: node.position.toArray().map(r3), rotation: [node.rotation.x, node.rotation.y, node.rotation.z].map(r3), scale: node.scale.toArray().map(r3),
       visible: node.visible, parent: path.includes('.') ? path.slice(0, path.lastIndexOf('.')) : '',
       children: node.children.length, added: !!node.userData.patchId,
+      panes: geo?.userData?.panes ? geo.userData.panes.map(q => q.name) : null, // (a cabinGlass window mesh: its panes, by name)
       box: box.isEmpty() ? null : [...box.min.toArray(), ...box.max.toArray()].map(r3),
     };
     row.parent = node.parent === root ? '' : ids.get(node.parent) ?? row.parent; // (by the ids the patch uses)
@@ -399,7 +404,75 @@ export const applyPatch = (root, patch, { evil = false } = {}) => {
     root.userData.patchPaint = repaint;
     repaint(evil);
   }
+  // the glass edits: read as the model was built (render/ideaModels.js makeIdeaModel, userData.glassEdits); an id no window answers to is stale
+  if (patch.glass && typeof patch.glass === 'object' && Object.keys(patch.glass).length) {
+    const g = root.userData.glassEdits;
+    if (!g) warn('glass edits: this model is not built with cabinGlass, so its window edges cannot be set');
+    else for (const id of g.unused) { out.unmatched.push('glass:' + id); warn('glass edits: no window called "' + id + '" (' + (g.used.length ? 'the windows are ' + g.used.join(', ') : 'none used') + ')'); }
+  }
   root.userData.patched = { car: patch.car, ops: patch.ops.length, unmatched: out.unmatched.length };
+  return out;
+};
+
+// ---- MIRROR: which parts stand across the car from each other --------------------------------------------------
+// symmetryOf(root) -> Map id -> { partner: id | null, self: bool }: a part's PARTNER is the other part whose set of vertices (in model space,
+// to the millimetre, with its colour) is its own mirrored across x; a part is SELF-symmetric when its mirror is itself (a body, a merged pair of lamps).
+// By the vertex sets, so it finds the pairs however the code made them (two meshes, a mirrored geometry, a turned copy). A group counts the
+// meshes under it. An asymmetric part has neither.
+export const symmetryOf = (root, { tol = 0.001 } = {}) => {
+  root.updateMatrixWorld(true);
+  const toModel = new THREE.Matrix4().copy(root.matrixWorld).invert(), m = new THREE.Matrix4(), v = new THREE.Vector3();
+  const q = (x) => (x < 0 ? -Math.round(-x / tol) : Math.round(x / tol)); // (rounded away from zero the same both sides of 0)
+  const meshKeys = new Map(); // mesh -> [plain keys, mirrored keys] (unsorted)
+  root.traverse((n) => {
+    if (!n.isMesh || !n.geometry || n === root) return;
+    m.multiplyMatrices(toModel, n.matrixWorld);
+    const pos = n.geometry.attributes.position, plain = [], flip = [];
+    const colour = [].concat(n.material || [])[0]?.color?.getHexString() || '';
+    for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m); const y = q(v.y), z = q(v.z), x = q(v.x); plain.push(x + ',' + y + ',' + z + ';' + colour); flip.push(-x + ',' + y + ',' + z + ';' + colour); }
+    meshKeys.set(n, [plain, flip]);
+  });
+  const ids = new Map(); walk(root, (node, path) => ids.set(node, node.userData.patchId || node.userData.patchPath || path));
+  const rows = [];
+  walk(root, (node) => {
+    const plain = [], flip = [];
+    node.traverse((n) => { const k = meshKeys.get(n); if (k) { plain.push(...k[0]); flip.push(...k[1]); } });
+    if (!plain.length) return;
+    // (the SET of vertices: a mirrored box has the same corners, but its triangles' diagonals use them a different number of times)
+    rows.push({ node, id: ids.get(node), plain: fnv([...new Set(plain)].sort().join('|')), flip: fnv([...new Set(flip)].sort().join('|')), count: plain.length });
+  });
+  const byPlain = new Map();
+  for (const r of rows) { if (!byPlain.has(r.plain)) byPlain.set(r.plain, []); byPlain.get(r.plain).push(r); }
+  const related = (a, b) => { for (let p = a; p; p = p.parent) if (p === b) return true; for (let p = b; p; p = p.parent) if (p === a) return true; return false; };
+  const out = new Map();
+  for (const r of rows) {
+    const self = r.plain === r.flip;
+    const partner = self ? null : (byPlain.get(r.flip) || []).find(o => o !== r && !related(o.node, r.node)) || null;
+    out.set(r.id, { partner: partner ? partner.id : null, self });
+  }
+  return out;
+};
+// the partner's place when `node` is edited: the same change, mirrored across the car. `was` are the rows (position, rotation, scale) the two
+// parts had before the edit (extractParts); `set` is the edit to `node` (position / rotation / scale, any of them). -> { position, rotation, scale }
+// for the partner: its old world matrix carried by the mirror image of the part's own change (so a partner the code placed by turning, not
+// mirroring, keeps its own way of standing).
+export const mirroredTransform = (root, node, was, partner, partnerWas, set) => {
+  root.updateMatrixWorld(true);
+  const toModel = new THREE.Matrix4().copy(root.matrixWorld).invert();
+  const local = (row, over) => new THREE.Matrix4().compose(new THREE.Vector3().fromArray(over?.position || row.position), new THREE.Quaternion().setFromEuler(new THREE.Euler(...(over?.rotation || row.rotation))), new THREE.Vector3().fromArray(over?.scale || row.scale));
+  const Pa = new THREE.Matrix4().multiplyMatrices(toModel, node.parent.matrixWorld), Pb = new THREE.Matrix4().multiplyMatrices(toModel, partner.parent.matrixWorld);
+  const Wa0 = Pa.clone().multiply(local(was)), Wa1 = Pa.clone().multiply(local(was, set)), Wb0 = Pb.clone().multiply(local(partnerWas));
+  const M = new THREE.Matrix4().makeScale(-1, 1, 1);
+  const delta = Wa1.clone().multiply(Wa0.clone().invert()); // (the change, in model space)
+  const Wb1 = M.clone().multiply(delta).multiply(M).multiply(Wb0);
+  const Lb = Pb.clone().invert().multiply(Wb1);
+  const p = new THREE.Vector3(), qt = new THREE.Quaternion(), sc = new THREE.Vector3();
+  Lb.decompose(p, qt, sc);
+  const e = new THREE.Euler().setFromQuaternion(qt);
+  const out = {};
+  if (set.position) out.position = p.toArray().map(r3);
+  if (set.rotation) out.rotation = [e.x, e.y, e.z].map(r3);
+  if (set.scale) out.scale = sc.toArray().map(r3);
   return out;
 };
 
@@ -453,10 +526,19 @@ export const withMirror = (patch, part) => {
   if (!p.ops.some(op => op.add && op.add.id === id)) p.ops.push({ add: { id, from: part.id, fromSig: part.added ? undefined : part.sig, mirror: true, name: (part.name || part.role) + ' (mirror)' } });
   return { patch: p, id };
 };
+// the glass edits table: `edges` for the window `id` (a side window's [z, y] polygon, or a screen's { foot, top }); null takes it out
+export const withGlass = (patch, id, edges) => {
+  const p = clonePatch(patch);
+  p.glass = { ...(p.glass || {}) };
+  if (edges == null) delete p.glass[id]; else p.glass[id] = JSON.parse(JSON.stringify(edges));
+  if (!Object.keys(p.glass).length) delete p.glass;
+  return p;
+};
 // the patch without ops that do nothing (an empty set)
 export const tidyPatch = (patch) => {
   const p = clonePatch(patch);
   p.ops = p.ops.filter(op => op.add || op.delete || (op.set && Object.keys(op.set).length));
   p.evil = (p.evil || []).filter(op => op.set && Object.keys(op.set).length);
+  if (p.glass && (typeof p.glass !== 'object' || !Object.keys(p.glass).length)) delete p.glass;
   return p;
 };
