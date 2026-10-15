@@ -45,7 +45,6 @@ try {
       const hit = rc.intersectObject(body, true)[0];
       if (hit) contour.push([z, hit.point.y]);
     }
-    const dist = (z, y) => { let d = Infinity; for (const [cz, cy] of contour) d = Math.min(d, Math.hypot(cz - z, cy - y)); return d; };
     // connected pieces of every glass mesh, in model space
     const pieces = [];
     for (const mesh of glass) {
