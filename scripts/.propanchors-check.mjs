@@ -72,7 +72,9 @@ try {
     model.parent?.remove(model); model.userData.animate?.(0); model.updateMatrixWorld(true);
     PC.hideProps(model);
     const box = new THREE.Box3().setFromObject(model, true);
-    const meshes = []; model.traverse(n => { if (n.isMesh && n.visible && !n.userData.prop) meshes.push(n); });
+    // (the surface: visible meshes only, and none under a hidden parent: a model that builds several styles and hides all but one, as the
+    // GT does, must not offer its hidden roofs and wings as a surface; the measure lib skips them the same way)
+    const meshes = []; model.traverse(n => { if (!n.isMesh || n.userData.prop) return; for (let p = n; p; p = p.parent) if (p.visible === false) return; meshes.push(n); });
     const plan = P.propSlots(id);
     for (const slot of P.SLOTS) {
       const s = plan[slot];
