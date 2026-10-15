@@ -18,6 +18,9 @@ import { PLATE_TABLE, PLATE_VARIANTS, PLATE_NONE } from './plateanchorstable.js'
 export const HAND = {
   mini: { ends: 'rear' }, autobahnestate: { ends: 'rear' }, // (something stands over a third of the front place: rear only)
   dodgem: { ends: 'rear' }, // (the bumper car's nose is a blob: a front plate half sinks into it)
+  // (the Paddle-Wheel Amphibian: the generator's rear place is on the turning paddle wheel; the plate goes on the engine housing's flat back,
+  // above the wheel, on the centre line; the front one a little higher on the bow's face, under the bill and between the headlamps)
+  paddleduck: { r: [1.8, -3.23, 0.52, 0], f: [1.08, 4.492, 0.52, 14.1] },
 };
 // models that can wear no plate though the generator found a place (a taste call) -- or that have a place nobody wants a plate on
 export const HAND_NONE = ['swancar']; // (the Swan Car's tail is all teardrop curve: the generator's flat place sits inside the body)
