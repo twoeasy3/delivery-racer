@@ -673,8 +673,8 @@
   "mall-dash": {
     "name": "Mall Dash",
     "description": {
-      "good": "Bubble teas for the food court, before the doors open. The halls are freshly polished, the trolleys are loose, and the loading dock is the only way out.",
-      "evil": "A hamster in a ball for the pet shop, and it wants out. Skate the polished halls flat out, scatter the trolleys and go out through the loading dock."
+      "good": "Bubble teas for the food court, before the doors open. The floors are freshly mopped, the trolleys are loose, and the loading dock is the only way out.",
+      "evil": "A hamster in a ball for the pet shop, and it wants out. Skate the mopped halls flat out, scatter the trolleys and go out through the loading dock."
     },
     "cargo": { "good": "bubbletea", "evil": "hamsterball" }
   }

@@ -73,6 +73,49 @@ export const GLYPHS = {
 
 // ---- the obstacles --------------------------------------------------------------------------------------------
 export const MALL_OBSTACLES = {
+  // the set dressing along the halls' sides, as obstacles (the owner: real, colliding): each a bale's, a crate's or a cone's box
+  planter: () => { // a square concrete planter with a clipped bush (a bale's box)
+    const group = new THREE.Group();
+    put(group, box(1.8, 0.9, 1.8), lambert(0x6b6f74), 0, 0.45, 0);
+    put(group, box(1.9, 0.08, 1.9), lambert(0x8a8f96), 0, 0.92, 0);
+    put(group, new THREE.SphereGeometry(0.95, 10, 7), lambert(0x3f8a3a), 0, 1.5, 0).scale.set(1, 0.7, 1);
+    return grounded(group, 1.15);
+  },
+  palmPot: () => { // a potted palm: a terracotta pot, a trunk, six fronds (a bale's box)
+    const group = new THREE.Group();
+    put(group, cyl(0.6, 0.45, 0.9, 12), lambert(0xb85a34), 0, 0.45, 0);
+    put(group, cyl(0.14, 0.18, 2.6, 8), lambert(0x7a5a3a), 0, 2.2, 0);
+    for (let f = 0; f < 6; f++) { const frond = put(group, new THREE.ConeGeometry(0.28, 2.0, 6), lambert(0x4a9a48), 0, 3.5, 0); frond.rotation.set(0.9, f * 1.05, 0); frond.position.set(Math.sin(f * 1.05) * 0.7, 3.4, Math.cos(f * 1.05) * 0.7); }
+    return grounded(group, 1.0);
+  },
+  kiosk: () => { // an info kiosk: a round counter under a round canopy on a post (a bale's box)
+    const group = new THREE.Group();
+    put(group, cyl(1.0, 1.0, 1.1, 12), lambert(0xf4f1ec), 0, 0.55, 0);
+    put(group, cyl(1.05, 1.05, 0.08, 12), lambert(0x2f6f8a), 0, 1.14, 0);
+    put(group, cyl(0.12, 0.12, 2.2, 8), lambert(0x8a9096), 0, 2.2, 0);
+    put(group, cyl(1.4, 1.4, 0.16, 14), lambert(0x2f6f8a), 0, 3.3, 0);
+    put(group, box(0.5, 0.5, 0.06), new THREE.MeshBasicMaterial({ color: 0xffffff }), 0, 2.6, 0.13);
+    return grounded(group, 1.1);
+  },
+  bench: () => { // a slatted bench on two cast ends (a crate's box)
+    const group = new THREE.Group();
+    for (const z of [-0.7, 0.7]) put(group, box(0.5, 0.45, 0.08), lambert(0x4a4f57), 0, 0.22, z);
+    for (const x of [-0.18, 0, 0.18]) put(group, box(0.14, 0.05, 1.8), lambert(0x8a6a48), x, 0.47, 0);
+    return grounded(group, 0.75);
+  },
+  playBlock: () => { // a giant play block (a crate's box)
+    const group = new THREE.Group(), colours = [0xf04a5e, 0xf2c21d, 0x3ab0e8, 0x5fc04a];
+    put(group, box(1.1, 1.1, 1.1), lambert(colours[Math.floor(Math.random() * 4)]), 0, 0.55, 0);
+    for (const z of [-0.56, 0.56]) put(group, box(0.6, 0.6, 0.02), lambert(0xfff8e0), 0, 0.55, z);
+    return grounded(group, 0.75);
+  },
+  bin: () => { // a litter bin: a steel drum with a domed lid and a slot (a cone's box)
+    const group = new THREE.Group();
+    put(group, cyl(0.32, 0.3, 0.9, 12), lambert(0x4a4f57), 0, 0.45, 0);
+    put(group, new THREE.SphereGeometry(0.34, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), lambert(0x6f757d), 0, 0.9, 0);
+    put(group, box(0.3, 0.1, 0.02), lambert(0x1b1d22), 0, 1.0, 0.3);
+    return grounded(group, 0.5);
+  },
   // the mall's crate: four cardboard cartons stacked on a two-wheeled sack truck, tape down each one, a red FRAGILE band
   // round the top one, the truck's handle up behind them. Stands in a lane as a crate does (hw 0.6, 1.1 m tall)
   boxStack: () => {

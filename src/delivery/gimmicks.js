@@ -163,7 +163,7 @@ export const GROUPS = [
       for (let z = -8; z <= 8; z += 4) g.add(box(10, 0.3, 0.3, steel, 0, 4, z));
       return { model: g };
     } },
-    { name: 'Ice', color: 0xbfe6f7, has: (l) => l.ice?.length, rules: [
+    { name: 'Ice', color: 0xbfe6f7, has: (l) => l.ice?.length && l.theme !== 'mall', rules: [
       `On ice your brakes work at ${pct(IC.brakeGrip)} and your steering at ${pct(IC.steerGrip)} of their grip, you cross the road at ${pct(IC.laneSpeed)} of your speed, and the car slews round as it hits it.`,
       'In a bend it understeers: it slides to the outside, the more so the faster, heavier and clumsier it is.',
       `Traffic hitting it may spin out and blow up: the faster, the likelier (${pct(IC.spinPerSpeed)} for every m/s).`,
@@ -812,6 +812,16 @@ export const GROUPS = [
     } },
   ] },
   { name: 'City streets', cards: [
+    { name: 'Wet floor', color: 0x7fb8d8, has: (l) => l.theme === 'mall' && l.ice?.length, rules: [
+      `A freshly mopped stretch of the mall's floor, a WET FLOOR sign before it: on it the car brakes at ${pct(IC.brakeGrip)} and steers at ${pct(IC.steerGrip)} of its grip (as on ice).`,
+      'Read the sign and ease off.',
+    ], build: () => {
+      const g = road(9, 12, 0xd9d2c4);
+      g.add(mesh(new THREE.PlaneGeometry(4.2, 8).rotateX(-Math.PI / 2), lambert(0x5f7a8c, { transparent: true, opacity: 0.45 }), -2.2, 0.03, 0));
+      for (let k = 0; k < 3; k++) { const st = box(0.12, 0.01, 3 + k, glow(0xffffff), -3 + k * 0.8, 0.05, k - 1); st.rotation.y = 0.3; g.add(st); }
+      const signA = ob('wetFloorSign'); signA.position.set(-2.2, 0, -5); g.add(signA);
+      return { model: g };
+    } },
     { name: 'Boost pads', color: 0x3ad8ff, has: (l) => l.boostPads?.length, rules: [
       `Drive over one and the car is pulled on for ${CONFIG.boostPad.time} s at up to ${kmh(CONFIG.boostPad.speed)} over its own top speed, as a turbo does. A ghost too.`,
       `Handrails stand along both edges: ordinary obstacles (${CONFIG.obstacleKinds.handrail.damage} damage, ${pct(CONFIG.obstacleKinds.handrail.speedKept)} of your speed kept). In the mall a pad is a travelator.`,

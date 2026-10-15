@@ -51,7 +51,14 @@ try {
   // the handrails: ordinary obstacles, a cone's box and cost
   const rails = g.Collision.obstacles.filter(o => o.kind === 'handrail');
   const K = CONFIG.obstacleKinds;
-  check(rails.length > 0 && JSON.stringify(K.handrail) === JSON.stringify(K.cone) && rails.every(o => o.hw === g.Collision.size.cone[0] && o.hl === g.Collision.size.cone[1]), rails.length + ' handrail sections, each a cone\'s box and cost');
+  check(rails.length > 0 && JSON.stringify(K.handrail) === JSON.stringify(K.cone), rails.length + ' handrail sections, each at a cone\'s cost');
+  // (the rails' boxes: as thin as the rail, nothing of them in the lane beside, and the pad's lane keeps room for a car between them)
+  const LW = CONFIG.laneWidth, outer = Math.max(...rails.map(o => Math.abs(o.lat - lane(pad.lane, o.s)) + o.hw)), inner = Math.min(...rails.map(o => Math.abs(o.lat - lane(pad.lane, o.s)) - o.hw));
+  check(outer <= LW / 2 && inner * 2 >= P.hw * 2 + 0.5, 'the rails reach ' + outer.toFixed(2) + ' m from the pad lane\'s centre (the lane\'s edge is at ' + (LW / 2).toFixed(2) + '): nothing in the lane beside; ' + (inner * 2).toFixed(2) + ' m clear between them for a car ' + (P.hw * 2).toFixed(2) + ' m wide');
+  start(pad.from - 30, pad.lane + 1, 20);
+  const hNext = P.health, railsNext = rails.filter(o => !o.gone).length;
+  g.run(8, () => { quiet(); g.drive(1, 0); P.lat = lane(pad.lane + 1, P.s); return P.s > pad.to + 12; });
+  check(P.health === hNext && rails.filter(o => !o.gone).length === railsNext, 'a car down the lane beside the pad touches no rail');
   start(pad.from - 30, pad.lane, 20);
   const h0 = P.health, before = rails.filter(o => !o.gone).length;
   g.run(8, () => { quiet(); g.drive(1, 0); P.lat += 0.25; P.lat = Math.min(P.lat, lane(pad.lane, P.s) + CONFIG.laneWidth / 2 + 0.3); return P.s > pad.to + 20; });
@@ -78,6 +85,21 @@ try {
   check(!ar.wrecked && ar.past && ar.gone, 'an armoured car smashes through the shutter');
   const wp = into(wall, null), wg = into(wall, 'ghost'), wt = into(wall, 'tank'), wa = into(wall, 'armour');
   check(wp.wrecked && wg.wrecked && wt.wrecked && wa.wrecked, 'the wall wrecks a plain car, a Ghost, a tank and an armoured car alike');
+  // ---- the divider: from the sign on, the dead lane cannot be entered from the side; a car in it can leave
+  { const besideLane = shutter.lane > 0 ? shutter.lane - 1 : shutter.lane + 1;
+    start(shutter.s - D.sign + 10, besideLane, 20);
+    const want = lane(shutter.lane, P.s), was = P.lat;
+    g.run(3, () => { quiet(); P.speed = 20; g.drive(1, Math.sign(want - P.lat)); P.latVel = Math.sign(want - was) * 4; return false; });
+    const line = lane(shutter.lane, P.s) + Math.sign(was - lane(shutter.lane, P.s)) * LW / 2;
+    check(Math.sign(P.lat - line) === Math.sign(was - line) && Math.abs(P.lat - lane(shutter.lane, P.s)) > LW / 2, 'steering into the marked dead lane from the side: held at the line (lat ' + P.lat.toFixed(2) + ', the line at ' + line.toFixed(2) + ')');
+    start(shutter.s - D.sign + 10, shutter.lane, 20);
+    const out = lane(besideLane, P.s);
+    g.run(3, () => { quiet(); P.speed = 20; g.drive(1, Math.sign(out - P.lat)); P.latVel = Math.sign(out - lane(shutter.lane, P.s)) * 4; return Math.abs(P.lat - out) < 0.3; });
+    check(Math.abs(P.lat - out) < 0.5 && P.health > 0, 'a car in the dead lane leaves it freely (lat ' + P.lat.toFixed(2) + ')');
+    start(shutter.s - D.sign - 40, besideLane, 20);
+    g.run(2, () => { quiet(); P.speed = 20; P.latVel = Math.sign(lane(shutter.lane, P.s) - P.lat) * 4; return Math.abs(P.lat - lane(shutter.lane, P.s)) < 0.3; });
+    check(Math.abs(P.lat - lane(shutter.lane, P.s)) < 0.5, 'before the sign the lane can still be entered (lat ' + P.lat.toFixed(2) + ')');
+  }
   // ---- a car in the lane beside drives past unharmed
   start(shutter.s - 200, shutter.lane > 0 ? shutter.lane - 1 : shutter.lane + 1, 25);
   const hb = P.health;

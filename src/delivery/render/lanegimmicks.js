@@ -122,6 +122,20 @@ Game.onLoad.push(() => {
     const head = add(arrow, new THREE.ConeGeometry(0.6, 1.0, 3), glow(0xffffff), open * -1.4, 0, 0); // (local +x is the road's left)
     head.rotation.z = open > 0 ? -Math.PI / 2 : Math.PI / 2;
     head.rotation.x = Math.PI / 2;
+    // the divider (Track.divider holds a car out of the lane from here): a low glass barrier along the line between the dead
+    // lane and the open one, from the sign to the end, a rail on top, posts every 4 m
+    const beside = Track.laneOffset(e.lane > 0 ? e.lane - 1 : e.lane + 1, e.s), dir = Math.sign(beside - lat(e.s)) || 1;
+    const lineLat = (s) => lat(s) + dir * LW / 2;
+    { const pos = [], idx = [];
+      let n = 0;
+      for (let s = e.s - D.sign; ; s += 2, n++) { const q = Math.min(s, e.s); Track.toWorld(q, lineLat(q), tmp); pos.push(tmp.x, tmp.y + 0.05, tmp.z, tmp.x, tmp.y + 0.95, tmp.z); if (n) { const k = (n - 1) * 2; idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); } if (q >= e.s) break; }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      geo.setIndex(idx);
+      add(group, geo, new THREE.MeshBasicMaterial({ color: 0xbfe0f4, transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false }));
+    }
+    add(group, buildStrip(e.s - D.sign, e.s, (s) => lineLat(s) - 0.05, (s) => lineLat(s) + 0.05, 0.95, 2), lambert(0x6f757d)); // the rail
+    for (let s = e.s - D.sign; s <= e.s; s += 4) { const post = at(s, lineLat(s)); add(post, new THREE.BoxGeometry(0.08, 0.95, 0.08), lambert(0x6f757d), 0, 0.47, 0); }
     // the sign: a gantry over the lane `sign` m before the end, the board facing the player, two beacons on it
     const gs = e.s - D.sign, gantry = at(gs, lat(gs)), lamps = [];
     for (const x of [-half - 0.2, half + 0.2]) add(gantry, new THREE.BoxGeometry(0.14, 4.4, 0.14), lambert(0x4a4f57), x, 2.2, 0);
