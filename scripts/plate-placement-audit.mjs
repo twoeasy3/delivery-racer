@@ -2,8 +2,11 @@
 // measure them). Every car the game can show (garage, Supers, filler, Bespoke, event, earned and Legendary (`l-`), secret, level, idea
 // cars) is built as the game dresses it (render/showcar.js makeShowCar, with a plate design EQUIPPED, so render/platecosmetic.js puts
 // the cosmetic plate on the ends render/plateanchors.js gives) and each worn plate is MEASURED, nothing looked at:
+// THE RULES it measures against are scripts/plate-search.mjs RULES (one set, shared with the place search and the generator: read its
+// header for what a valid place is); every threshold below is one of them, except the few measuring constants in T.
 //   (a) SIZE     the plate's width against the canonical 0.52 m (a 4:1 plate, 0.52 x 0.13) and against the flat surface it sits on
-//                (`supportW`: how far either side of the plate's middle the body stays within 2.5 cm of the plate's plane)
+//                (`supportW` / `supportH`: how far from the plate's middle the surface stays within GAP of the plate's plane); where it
+//                stands (`on`: 'bumper' on a bumper bar's face, 'above' / 'below' the end's bar, 'body' at an end with no bar: findBars)
 //   (b) CONTACT  a grid of rays (9 x 3) through the plate, along its normal: the body surface under each point: the gap (floating) or
 //                the penetration (buried), points over AIR (the plate's edge in the air), a plane fitted through the surface: its
 //                angle to the plate's (tilt / skew); the plate's own normal faces OUT of its end; the texture reads the right way
@@ -28,7 +31,7 @@
 import * as THREE from 'three';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { startModels } from './modelpatch-load.mjs';
-import { makeView, searchPlace, isTyre } from './plate-search.mjs';
+import { makeView, searchPlace, isTyre, findBars, placeKind, surfaceKind, RULES as R } from './plate-search.mjs';
 
 const argv = process.argv.slice(2);
 const opt = (name, def) => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : def; };
@@ -37,8 +40,10 @@ const FIX = argv.includes('--fix'), WRITE = argv.includes('--write');
 const BREAK = argv.includes('--break'), NO_PROPS = argv.includes('--no-props'), NO_Z = argv.includes('--no-zfight');
 const only = argv.filter((a, i) => !a.startsWith('--') && argv[i - 1] !== '--out' && argv[i - 1] !== '--orig');
 
-// thresholds (the owner's: floating > 1.5 cm, buried > 1 cm, the normal within a few degrees)
-const T = { float: 0.015, bury: 0.010, tilt: 4, air: 0.15, contactBand: 0.03, tuck: 0.30, highFrac: 0.6, lowEdge: 0.10, canonW: 0.52, cover: 0.10, propCover: 0.15 };
+// the audit's own measuring constants (every rule's threshold is in R): the share of sample points over nothing that is OVER_AIR; a surface
+// more than contactBand in front of the plate's plane is something standing in front of it (not the surface under it); the share of the
+// face an equippable prop must hide to count
+const T = { air: 0.15, contactBand: 0.03, propCover: 0.15 };
 const NX = 9, NY = 3;
 const r1 = (v) => Math.round(v * 10) / 10, r3 = (v) => Math.round(v * 1000) / 1000, cm = (v) => (v == null ? null : r1(v * 100));
 
@@ -84,8 +89,9 @@ try {
     if (n.userData.prop) return 'ownprop:' + n.userData.prop;
     const m = [].concat(n.material)[0];
     if (!m) return 'body';
-    if (m.isMeshBasicMaterial || (m.emissive && m.emissive.getHex() !== 0 && (m.emissiveIntensity ?? 1) > 0.25)) return 'lamp';
-    if (n !== model.userData.body && m !== model.userData.body?.material && (glassy(m) || (m.transparent && m.opacity < 0.95))) return 'glass';
+    const k = surfaceKind(n, model.userData.body, glassy); // (the search's own: a bumper of any finish is 'ok', the body)
+    if (k !== 'ok') return k;
+    if (n !== model.userData.body && m !== model.userData.body?.material && m.transparent && m.opacity < 0.95) return 'glass';
     return 'body';
   };
   const meshesOf = (model, { props = false } = {}) => {
@@ -129,7 +135,7 @@ try {
   };
 
   // ---- one plate end measured ----
-  const measureEnd = (model, car, end, group, anchor, { box, height, width }) => {
+  const measureEnd = (model, car, end, group, anchor, { box, height, width, on = 'body' }) => {
     const F = frameOf(model, group, end);
     const w = anchor.size[0], h = anchor.size[1];
     const meshes = meshesOf(model);
@@ -143,6 +149,25 @@ try {
     const toWorld = (v) => v.clone().applyMatrix4(model.matrixWorld);
     const dirWorld = (v) => v.clone().transformDirection(model.matrixWorld);
     const hitsAlong = (from, dir, list) => { ray.set(toWorld(from), dirWorld(dir)); ray.far = 50; return ray.intersectObjects(list, false); };
+    // (a) the flat surface's width either side of the middle, at the plate's height: within GAP of the plate's plane
+    const sideW = (sgn, axis = F.X, max = 1.2) => {
+      let last = 0;
+      for (let d = 0.005; d <= max; d += 0.005) {
+        const p = F.o.clone().addScaledVector(axis, sgn * d);
+        const hits = hitsAlong(p.clone().addScaledVector(F.N, 2), F.N.clone().negate(), meshes);
+        const hit = hits.find(hh => { const off = hh.point.clone().applyMatrix4(F.inv).sub(p).dot(F.N); return off <= T.contactBand; });
+        if (!hit) break;
+        const off = hit.point.clone().applyMatrix4(F.inv).sub(p).dot(F.N);
+        if (Math.abs(off) >= R.GAP) break;
+        last = d;
+      }
+      return last;
+    };
+    const supportL = sideW(-1), supportR = sideW(1), supportW = supportL + supportR;
+    const supportDown = sideW(-1, F.Y, 0.4), supportUp = sideW(1, F.Y, 0.4), supportH = supportDown + supportUp;
+    // ON A BAR the plate may stick out past the bar (rule EDGES): its contact is judged where it is on the bar's face (the sample points
+    // within the measured support), on the body everywhere
+    const held = on !== 'bumper' ? () => true : (s) => s.a >= -supportL && s.a <= supportR && s.b >= -supportDown && s.b <= supportUp;
     // (b) contact: from 2 m out along the normal, inwards
     const contact = [], blockers = [], under = new Map();
     for (const s of pts) {
@@ -158,32 +183,34 @@ try {
       }
       s.contact = c;
       if (process.env.PLATE_DEBUG) console.log('   sample', end, s.a.toFixed(3), s.b.toFixed(3), c ? (c.off * 100).toFixed(1) + 'cm ' + describe(model, c.mesh) : 'AIR', hits.slice(0, 3).map(hh => ((hh.point.clone().applyMatrix4(F.inv).sub(s.p).dot(F.N)) * 100).toFixed(1)).join(' '));
-      if (c) { contact.push(c); const k = kindOf(model, c.mesh); under.set(k, (under.get(k) || 0) + 1); }
+      if (c) { const k = kindOf(model, c.mesh); under.set(k, (under.get(k) || 0) + 1); }
+      if (c && held(s)) contact.push(c);
     }
+    const nHeld = pts.filter(held).length || 1;
     const gaps = contact.map(c => -c.off).sort((x, y) => x - y); // + floating, - buried
     const q = (f) => (gaps.length ? gaps[Math.min(gaps.length - 1, Math.floor(f * (gaps.length - 1) + 0.5))] : null);
-    const airFrac = 1 - contact.length / pts.length;
+    const airFrac = 1 - contact.length / nHeld;
     const gapMed = q(0.5), gapP75 = q(0.75), gapMax = gaps.length ? gaps[gaps.length - 1] : null, buryMax = gaps.length ? Math.max(0, -gaps[0]) : 0;
-    const buriedFrac = gaps.filter(g => g < -T.bury).length / pts.length;
-    if (gapP75 != null && gapP75 > T.float) flags.push('FLOATING');
+    const buriedFrac = gaps.filter(g => g < -R.BURY).length / nHeld;
+    if (gapP75 != null && gapP75 > R.GAP) flags.push('FLOATING');
     if (buriedFrac >= 0.1) flags.push('BURIED');
     if (airFrac > T.air) flags.push('OVER_AIR');
     // the plane through the surface hits, in the plate's frame: off = a + b*x + c*y -> the surface's tilt against the plate's
     let tiltYaw = null, tiltPitch = null, tilt = null, fitDev = null;
     if (contact.length >= 8) {
-      const rows = pts.filter(s => s.contact).map(s => [s.a, s.b, s.contact.off]);
+      const rows = pts.filter(s => s.contact && held(s)).map(s => [s.a, s.b, s.contact.off]);
       let n = rows.length, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0, sz = 0, sxz = 0, syz = 0;
       for (const [x, y, z] of rows) { sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y; sz += z; sxz += x * z; syz += y * z; }
-      const M = [[n, sx, sy], [sx, sxx, sxy], [sy, sxy, syy]], R = [sz, sxz, syz];
+      const M = [[n, sx, sy], [sx, sxx, sxy], [sy, sxy, syy]], Rv = [sz, sxz, syz];
       const det = (m) => m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
       const D = det(M);
       if (Math.abs(D) > 1e-14) {
-        const col = (k) => det(M.map((row, i) => row.map((v, j) => (j === k ? R[i] : v))));
+        const col = (k) => det(M.map((row, i) => row.map((v, j) => (j === k ? Rv[i] : v))));
         const a0 = col(0) / D, b = col(1) / D, c = col(2) / D;
         tiltYaw = Math.atan(b) * 180 / Math.PI; tiltPitch = Math.atan(c) * 180 / Math.PI; tilt = Math.atan(Math.hypot(b, c)) * 180 / Math.PI;
         fitDev = Math.max(...rows.map(([x, y, z]) => Math.abs(z - (a0 + b * x + c * y))));
         if (fitDev >= 0.015) flags.push('UNEVEN');
-        else if (tilt > T.tilt) flags.push('TILTED');
+        else if (tilt > R.TILT) flags.push('TILTED');
       }
     }
     // the surface's own plane, found WITHOUT the plate (rays along the car's length at the plate's points, the first surface met from
@@ -191,23 +218,23 @@ try {
     let surfTilt = null, surfDev = null;
     {
       const rows = [];
-      for (const s of pts) {
+      for (const s of pts.filter(held)) {
         const hit = hitsAlong(new THREE.Vector3(s.p.x, s.p.y, out * 30), new THREE.Vector3(0, 0, -out), meshes)[0];
         if (hit) { const H = hit.point.clone().applyMatrix4(F.inv); if (Math.abs(H.z - s.p.z) < 0.4) rows.push([H.x, H.y, H.z]); }
       }
-      if (rows.length >= pts.length * 0.7) {
+      if (rows.length >= nHeld * 0.7) {
         let n = rows.length, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0, sz = 0, sxz = 0, syz = 0;
         for (const [x, y, z] of rows) { sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y; sz += z; sxz += x * z; syz += y * z; }
-        const M = [[n, sx, sy], [sx, sxx, sxy], [sy, sxy, syy]], R = [sz, sxz, syz];
+        const M = [[n, sx, sy], [sx, sxx, sxy], [sy, sxy, syy]], Rv = [sz, sxz, syz];
         const det = (m) => m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
         const D = det(M);
         if (Math.abs(D) > 1e-14) {
-          const col = (k) => det(M.map((row, i) => row.map((v, j) => (j === k ? R[i] : v))));
+          const col = (k) => det(M.map((row, i) => row.map((v, j) => (j === k ? Rv[i] : v))));
           const a0 = col(0) / D, b = col(1) / D, c = col(2) / D;
           const sn = new THREE.Vector3(-b, -c, 1).normalize().multiplyScalar(out);
           surfTilt = Math.acos(Math.max(-1, Math.min(1, sn.dot(F.N)))) * 180 / Math.PI;
           surfDev = Math.max(...rows.map(([x, y, z]) => Math.abs(z - (a0 + b * x + c * y))));
-          if (surfDev < 0.015 && surfTilt > T.tilt && !flags.includes('TILTED')) flags.push('TILTED');
+          if (surfDev < 0.015 && surfTilt > R.TILT && !flags.includes('TILTED')) flags.push('TILTED');
         }
       }
     }
@@ -222,33 +249,19 @@ try {
     if ((under.get('lamp') || 0) >= 2) flags.push('OVER_LAMP');
     if ((under.get('glass') || 0) >= 2) flags.push('ON_GLASS');
     if ((under.get('wheel') || 0) >= 2) flags.push('ON_WHEEL');
-    // (a) the flat surface's width either side of the middle, at the plate's height: within 2.5 cm of the plate's plane
-    const sideW = (sgn, axis = F.X, max = 1.2) => {
-      let last = 0;
-      for (let d = 0.005; d <= max; d += 0.005) {
-        const p = F.o.clone().addScaledVector(axis, sgn * d);
-        const hits = hitsAlong(p.clone().addScaledVector(F.N, 2), F.N.clone().negate(), meshes);
-        const hit = hits.find(hh => { const off = hh.point.clone().applyMatrix4(F.inv).sub(p).dot(F.N); return off <= T.contactBand; });
-        if (!hit) break;
-        const off = hit.point.clone().applyMatrix4(F.inv).sub(p).dot(F.N);
-        if (Math.abs(off) > 0.025) break;
-        last = d;
-      }
-      return last;
-    };
-    const supportL = sideW(-1), supportR = sideW(1), supportW = supportL + supportR;
-    const supportDown = sideW(-1, F.Y, 0.4), supportUp = sideW(1, F.Y, 0.4), supportH = supportDown + supportUp;
-    if (supportH + 0.02 < h) flags.push('TALLER_THAN_SURFACE'); // (more than 1 cm over at top and bottom together: a plate on a bumper bar a hair lower than it is how real cars wear them)
-    // an edge of the plate past the edge of the surface it stands on (off one side, or hanging over the bumper's top or bottom)
-    const edges = [['left', supportL, w], ['right', supportR, w], ['bottom', supportDown, h], ['top', supportUp, h]].filter(([, sup, size]) => sup + 0.006 < size / 2).map(([k, sup, size]) => k + ' ' + Math.round((size / 2 - sup) * 100) + 'cm');
-    if (edges.length) notes.push('over the edge: ' + edges.join(', '));
-    if ([['l', supportL, w], ['r', supportR, w], ['b', supportDown, h], ['t', supportUp, h]].some(([, sup, size]) => sup + 0.015 <= size / 2)) flags.push('OVER_EDGE'); // (a strip of 1.5 cm or more of the plate past its surface's edge)
-    if (w < T.canonW - 1e-6) flags.push(width < 1.5 ? 'SMALL(tiny car)' : 'SMALL');
-    if (supportW + 0.03 < w) flags.push('WIDER_THAN_SURFACE');
+    // an edge of the plate past the edge of the surface it stands on (the rule EDGES), each beyond the measuring step AUDIT_SLACK: ON A BAR,
+    // OVER_EDGE when less than BAR_HOLD of its height or of its width is on the face; ON THE BODY, past a side at all, or past the top or the
+    // bottom by more than OVERHANG_Y
+    const edges = [['left', supportL, w / 2, 0], ['right', supportR, w / 2, 0], ['bottom', supportDown, h / 2, R.OVERHANG_Y], ['top', supportUp, h / 2, R.OVERHANG_Y]];
+    const past = edges.filter(([, sup, half]) => sup + 0.002 < half).map(([k, sup, half]) => k + ' ' + Math.round((half - sup) * 1000) / 10 + 'cm');
+    if (past.length) notes.push('past its surface: ' + past.join(', '));
+    const holdW = Math.min(supportL, w / 2) + Math.min(supportR, w / 2), holdH = Math.min(supportDown, h / 2) + Math.min(supportUp, h / 2);
+    if (on === 'bumper' ? holdW + R.AUDIT_SLACK < R.BAR_HOLD * w || holdH + R.AUDIT_SLACK < R.BAR_HOLD * h : edges.some(([, sup, half, allow]) => half - sup > allow + R.AUDIT_SLACK)) flags.push('OVER_EDGE');
+    if (w < R.SIZES[0] - 1e-6) flags.push(width < 1.5 ? 'SMALL(tiny car)' : 'SMALL');
     if (w > 0.45 * width) flags.push('BIG_FOR_CAR');
     // (c) cover: rays from a viewer to each point of the FACE (level along the normal; 20 degrees above it)
     const faceAt = (s) => s.p.clone().addScaledVector(F.N, P.STAND + 0.0005);
-    const up20 = F.N.clone().multiplyScalar(Math.cos(Math.PI / 9)).add(new THREE.Vector3(0, Math.sin(Math.PI / 9), 0)).normalize();
+    const upA = R.UP_ANGLE * Math.PI / 180, up20 = F.N.clone().multiplyScalar(Math.cos(upA)).add(new THREE.Vector3(0, Math.sin(upA), 0)).normalize();
     const coverFrom = (dirOut, list) => {
       let covered = 0; const by = new Map();
       for (const s of pts) {
@@ -260,8 +273,8 @@ try {
       return { frac: covered / pts.length, by: [...by].sort((x, y) => y[1] - x[1]).map(([k, n]) => k + ' x' + n) };
     };
     const coverLevel = coverFrom(F.N, meshes), coverUp = coverFrom(up20, meshes);
-    if (coverLevel.frac >= T.cover) flags.push(coverLevel.frac >= 0.8 && blockers.length >= pts.length * 0.8 && Math.max(...blockers.map(b => b.off)) < 0.25 ? 'BURIED_DEEP' : 'COVERED');
-    else if (coverUp.frac >= 0.25) flags.push('COVERED_FROM_ABOVE');
+    if (coverLevel.frac >= R.COVER_LEVEL) flags.push(coverLevel.frac >= 0.8 && blockers.length >= pts.length * 0.8 && Math.max(...blockers.map(b => b.off)) < 0.25 ? 'BURIED_DEEP' : 'COVERED');
+    else if (coverUp.frac >= R.COVER_UP) flags.push('COVERED_FROM_ABOVE');
     // (d) place
     const len = box.max.z - box.min.z;
     const endZ = end === 'rear' ? box.min.z : box.max.z;
@@ -276,11 +289,11 @@ try {
       if (localEnd === null || z * out > localEnd * out) localEnd = z;
     }
     const insideLocal = localEnd === null ? null : (F.o.z - localEnd) * -out;
-    if (insideLocal != null && insideLocal > T.tuck) flags.push('TUCKED');
+    if (insideLocal != null && insideLocal > R.TUCK) flags.push('TUCKED');
     if (F.o.z * out < len * 0.15) flags.push('WRONG_HALF');
     const yLow = F.o.y - h / 2, cx = (box.min.x + box.max.x) / 2;
-    if (F.o.y > box.min.y + T.highFrac * height && F.o.y > 1.0) flags.push('HIGH');
-    if (yLow < box.min.y + T.lowEdge) flags.push('LOW');
+    if (F.o.y > box.min.y + R.HIGH_FRAC * height + 0.005 && F.o.y > 1.0) flags.push('HIGH');
+    if (yLow < box.min.y + R.LOW_EDGE - 0.005) flags.push('LOW');
     // the end's own middle at the plate's height: the left and right edges of the surface within 0.5 m of the plate's depth
     let xl = null, xr = null;
     for (let x = -2; x <= 2.001; x += 0.01) {
@@ -294,7 +307,7 @@ try {
     const mid = xl === null ? cx : (xl + xr) / 2;
     if (Math.abs(F.o.x - mid) > 0.03) flags.push('OFF_CENTRE');
     const pitch = Math.asin(Math.max(-1, Math.min(1, F.N.y))) * 180 / Math.PI;
-    if (Math.abs(pitch) > 30) flags.push('ON_A_LID');
+    if (Math.abs(pitch) > R.MAX_PITCH + 0.5) flags.push('ON_A_LID'); // (the search goes past MAX_PITCH only at an end with nothing upright: look at it)
     // (e) the model's own plates
     const own = P.existingPlates(model);
     const ownHere = own.filter(o => o.face === end && visibleDeep(o.mesh));
@@ -393,12 +406,16 @@ try {
     }
     const size = box.getSize(new THREE.Vector3());
     const ends = {};
+    // the end's bumper bars (the search's findBars) and where the plate stands against them
+    const hubs = model.userData.wheelHubs || {}, view = makeView(model, { glassy, wheels: new Set(['tyres', 'hubs', 'parts', 'rings'].flatMap(x => hubs[x] || [])) });
     for (const end of plan.ends) {
       const g = info.groups[end];
       if (!g) { row.sides[end] = { flags: ['NOT_BUILT'] }; continue; }
       if (breakFn) breakFn(model, g, end);
       model.updateMatrixWorld(true);
-      const m = measureEnd(model, car, end, g, plan[end], { box, height: size.y, width: size.x });
+      const bars = findBars(view, end), pk = placeKind(bars, plan[end].at[1], plan[end].at[2]);
+      const m = measureEnd(model, car, end, g, plan[end], { box, height: size.y, width: size.x, on: pk.on });
+      m.on = pk.on; m.bars = bars.map(b => [r3(b.y0), r3(b.y1), r3(b.w)]).map(([a, b2, c]) => a + '-' + b2 + ' w' + c).join(' ');
       if (!NO_Z) {
         const z = zfightPass(model, g);
         m.zfight = z;
@@ -418,9 +435,12 @@ try {
     return row;
   };
 
-  // ---- --fix: a new place for every end with a placement flag, searched (scripts/plate-search.mjs) and each candidate AUDITED as
-  // the game dresses it; the best audited one is taken only if it scores better than the place it replaces ----
-  const IGNORE = new Set(['SMALL(tiny car)', 'PROP_HIDES', 'PLATE_LIKE_UNTAGGED']); // (not about where the plate is)
+  // ---- --fix: a new place for every end with a placement flag OR not on its bumper bar (THE CHOICE: a bar first), searched
+  // (scripts/plate-search.mjs) and each candidate AUDITED as the game dresses it; the best audited one (the fewest placement flags; then
+  // on a bar before the body; then the bigger plate) is taken only if it is better than the place it replaces: fewer flags, or as few
+  // and onto a bar from the body, or as few, the same kind and bigger. An end written BY HAND (plateanchors.js HAND, the model editor's
+  // `by: 'editor'` rows included) is never touched: only the generated table is written ----
+  const IGNORE = new Set(['SMALL', 'SMALL(tiny car)', 'PROP_HIDES', 'PLATE_LIKE_UNTAGGED']); // (not about where the plate is: SMALL is the surface's choice)
   const badFlags = (m) => (m?.flags || []).filter(f => !IGNORE.has(f));
   const sideScore = (m) => score(badFlags(m));
   const entryArr = (e) => (e ? [e.at[1], e.at[2], e.size[0], e.pitch, ...(e.rough ? [1] : [])] : null);
@@ -435,8 +455,10 @@ try {
       if (before.status !== 'ok') continue;
       for (const end of ['rear', 'front']) {
         const cur = before.sides[end];
-        if (!cur || !badFlags(cur).length) continue;
         const plan = A.plateAnchorsFor(car), key = keyOf(car), k = end === 'rear' ? 'r' : 'f';
+        const hand = { ...(A.HAND[key] || {}), ...(A.HAND[car.id] || {}) };
+        if (k in hand) { if (cur && (badFlags(cur).length || cur.on !== 'bumper')) kept.push({ id: car.id, key, end, arr: entryArr(plan[end]), flags: badFlags(cur), on: cur.on, hand: true }); continue; } // (hand-placed: his, or a reasoned fix)
+        if (!cur || (!badFlags(cur).length && (cur.on === 'bumper' || cur.on === 'body'))) continue; // (clean, and on its bar or at an end with none)
         const base = { r: entryArr(plan.rear), f: entryArr(plan.front) };
         // the car's own model, own plates and the cosmetic plate out of the way, searched
         const model = makeShowCar(car); model.parent?.remove(model);
@@ -445,8 +467,14 @@ try {
         const own = P.existingPlates(model).find(o => o.face === end);
         const preferY = own ? new THREE.Box3().setFromObject(own.mesh, true).getCenter(new THREE.Vector3()).y : null;
         const cands = searchPlace(makeView(model, { glassy, wheels }), end, { preferY });
+        if (!badFlags(cur).length && !cands.some(c => c.on === 'bumper')) continue; // (clean; its bar takes no plate: it stays on the body)
         // the place the table had before this audit (--orig <table.js>: e.g. git show origin/main:...plateanchorstable.js) is a candidate too
         if (ORIG) { const o = (ORIG.PLATE_VARIANTS[car.id] || ORIG.PLATE_TABLE[key] || {})[k]; if (o) cands.unshift({ y: o[0], z: o[1], w: o[2], pitch: o[3] || 0, orig: true }); }
+        const better = (a, b) => { // (fewer placement flags; as few: onto a bar from the body; as few and the same kind: the bigger plate)
+          if (a.score !== b.score) return a.score < b.score;
+          if ((a.on === 'bumper') !== (b.on === 'bumper')) return a.on === 'bumper';
+          return !!a.arr && !!b.arr && a.arr[2] > b.arr[2];
+        };
         const had = TABLE.PLATE_VARIANTS[car.id];
         let best = null;
         for (const c of cands.slice(0, 9)) {
@@ -455,20 +483,21 @@ try {
           const r = auditCar(group, car);
           const m = r.sides[end];
           const sc = m ? sideScore(m) : 99;
-          if (!best || sc < best.score || (sc === best.score && c.w > best.arr[2])) best = { arr, score: sc, flags: badFlags(m), cand: c }; // (a tie: the bigger plate)
-          if (sc === 0 && c.w >= 0.52) break;
+          const it = { arr, score: sc, flags: badFlags(m), cand: c, on: m?.on };
+          if (process.env.PLATE_DEBUG) console.log('    candidate ' + JSON.stringify(arr) + ' ' + it.on + ' [' + (m?.flags || []).join(' ') + ']');
+          if (!best || better(it, best)) best = it;
         }
         if (had) TABLE.PLATE_VARIANTS[car.id] = had; else delete TABLE.PLATE_VARIANTS[car.id];
-        const was = { arr: base[k], score: sideScore(cur), flags: badFlags(cur) };
-        if (best && (best.score < was.score || (best.score === was.score && was.arr && best.arr[2] > was.arr[2]))) { // (better, or as good with a bigger plate)
+        const was = { arr: base[k], score: sideScore(cur), flags: badFlags(cur), on: cur.on };
+        if (best && better(best, was) && JSON.stringify(best.arr) !== JSON.stringify(was.arr)) {
           // into the table: a base car's entry is its model's (every car of the model follows); any other car gets a variant of its own
           if (isBase(car)) TABLE.PLATE_TABLE[key] = { ...(TABLE.PLATE_TABLE[key] || base), [k]: best.arr };
           else TABLE.PLATE_VARIANTS[car.id] = { ...base, [k]: best.arr };
-          changes.push({ id: car.id, key, base: isBase(car), end, old: was.arr, new: best.arr, oldFlags: was.flags, newFlags: best.flags, oldScore: was.score, newScore: best.score });
-          console.log('  ' + car.id + ' ' + end + ': ' + JSON.stringify(was.arr) + ' [' + was.flags.join(' ') + '] -> ' + JSON.stringify(best.arr) + ' [' + best.flags.join(' ') + ']');
+          changes.push({ id: car.id, key, base: isBase(car), end, old: was.arr, new: best.arr, oldOn: was.on, newOn: best.on, oldFlags: was.flags, newFlags: best.flags, oldScore: was.score, newScore: best.score });
+          console.log('  ' + car.id + ' ' + end + ': ' + JSON.stringify(was.arr) + ' ' + was.on + ' [' + was.flags.join(' ') + '] -> ' + JSON.stringify(best.arr) + ' ' + best.on + ' [' + best.flags.join(' ') + ']');
         } else {
-          kept.push({ id: car.id, key, end, arr: was.arr, flags: was.flags, best: best && { arr: best.arr, flags: best.flags }, candidates: cands.length });
-          console.log('  ' + car.id + ' ' + end + ': KEPT ' + JSON.stringify(was.arr) + ' [' + was.flags.join(' ') + ']' + (best ? ' (best found ' + JSON.stringify(best.arr) + ' [' + best.flags.join(' ') + '])' : ' (no place found)'));
+          kept.push({ id: car.id, key, end, arr: was.arr, flags: was.flags, on: was.on, best: best && { arr: best.arr, flags: best.flags, on: best.on }, candidates: cands.length });
+          console.log('  ' + car.id + ' ' + end + ': KEPT ' + JSON.stringify(was.arr) + ' ' + was.on + ' [' + was.flags.join(' ') + ']' + (best ? ' (best found ' + JSON.stringify(best.arr) + ' ' + best.on + ' [' + best.flags.join(' ') + '])' : ' (no place found)'));
         }
       }
     }
@@ -534,14 +563,14 @@ try {
     results.sort((a, b) => (b.score || 0) - (a.score || 0));
     mkdirSync(OUT, { recursive: true });
     writeFileSync(OUT + '/audit.json', JSON.stringify(results, null, 1));
-    const head = ['score', 'id', 'group', 'model', 'status', 'end', 'flags', 'y', 'z', 'w', 'pitch', 'supportW', 'carW', 'gapMed_cm', 'gapP75_cm', 'gapMax_cm', 'buryMax_cm', 'air', 'tilt', 'tiltYaw', 'tiltPitch', 'surfTilt', 'surfDev_cm', 'inside_cm', 'insideLocal_cm', 'supportH', 'coverLevel', 'coverUp', 'coveredBy', 'under', 'zfight', 'propLevel', 'propAbove', 'own', 'notes'];
+    const head = ['score', 'id', 'group', 'model', 'status', 'end', 'flags', 'on', 'bars', 'y', 'z', 'w', 'pitch', 'supportW', 'carW', 'gapMed_cm', 'gapP75_cm', 'gapMax_cm', 'buryMax_cm', 'air', 'tilt', 'tiltYaw', 'tiltPitch', 'surfTilt', 'surfDev_cm', 'inside_cm', 'insideLocal_cm', 'supportH', 'coverLevel', 'coverUp', 'coveredBy', 'under', 'zfight', 'propLevel', 'propAbove', 'own', 'notes'];
     const lines = [head.join(',')];
     const q = (v) => '"' + String(v ?? '').replace(/"/g, "'") + '"';
     const rows = [];
     for (const r of results) {
-      if (r.status !== 'ok') { rows.push([0, r.id, r.group, r.model, r.status, '', r.error ? 'BUILD_ERROR' : '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', (r.ownPlates || []).join(' '), r.error || '']); continue; }
+      if (r.status !== 'ok') { rows.push([0, r.id, r.group, r.model, r.status, '', r.error ? 'BUILD_ERROR' : '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', (r.ownPlates || []).join(' '), r.error || '']); continue; }
       for (const [end, m] of Object.entries(r.sides)) {
-        rows.push([m.score, r.id, r.group, r.model, r.status, end, (m.flags || []).join(' '), m.at?.[1], m.at?.[2], m.w, m.pitch, m.supportW, m.carW, m.gapMed, m.gapP75, m.gapMax, m.buryMax, m.airFrac, m.tilt, m.tiltYaw, m.tiltPitch, m.surfTilt, m.surfDev, m.inside, m.insideLocal, m.supportH, m.coverLevel, m.coverUp, (m.coverLevelBy || []).join(' | '), JSON.stringify(m.under || {}), m.zfight ? (m.zfight.body || []).map(f => f.with + ' ' + f.gap + 'cm').join(' | ') : '', (m.propLevel || []).join(' | '), (m.propAbove || []).join(' | '), (r.ownPlates || []).join(' '), (m.notes || []).concat(m.platey || []).join(' | ')]);
+        rows.push([m.score, r.id, r.group, r.model, r.status, end, (m.flags || []).join(' '), m.on, m.bars, m.at?.[1], m.at?.[2], m.w, m.pitch, m.supportW, m.carW, m.gapMed, m.gapP75, m.gapMax, m.buryMax, m.airFrac, m.tilt, m.tiltYaw, m.tiltPitch, m.surfTilt, m.surfDev, m.inside, m.insideLocal, m.supportH, m.coverLevel, m.coverUp, (m.coverLevelBy || []).join(' | '), JSON.stringify(m.under || {}), m.zfight ? (m.zfight.body || []).map(f => f.with + ' ' + f.gap + 'cm').join(' | ') : '', (m.propLevel || []).join(' | '), (m.propAbove || []).join(' | '), (r.ownPlates || []).join(' '), (m.notes || []).concat(m.platey || []).join(' | ')]);
       }
     }
     rows.sort((a, b) => b[0] - a[0]);
@@ -557,11 +586,12 @@ try {
       ...Object.entries(byStatus).map(([s, ids]) => '  ' + s + ': ' + ids.length + (s === 'ok' ? '' : ' [' + ids.join(', ') + ']')),
       'plate ends measured: ' + sides.length + ', with a flag (any): ' + sides.filter(m => (m.flags || []).length).length + ', with a flag other than SMALL / PROP_HIDES / COVERED_FROM_ABOVE: ' + sides.filter(m => (m.flags || []).some(f => !/^SMALL|^PROP_HIDES|^COVERED_FROM_ABOVE/.test(f))).length,
       'cars with a flag (other than SMALL / PROP_HIDES / COVERED_FROM_ABOVE): ' + ok.filter(r => Object.values(r.sides).some(m => (m.flags || []).some(f => !/^SMALL|^PROP_HIDES|^COVERED_FROM_ABOVE/.test(f)))).length,
+      'where: ' + ['bumper', 'above', 'below', 'body'].map(k => k + ' ' + sides.filter(m => m.on === k).length).join(', ') + ' (on a bumper bar\'s face; on the body above / below the end\'s bar; an end with no bar)',
       'flags: ' + [...count].sort((a, b) => b[1] - a[1]).map(([f, n]) => f + ' ' + n).join(', '),
       'worst 30: ' + rows.slice(0, 30).map(r => r[1] + ' ' + r[5] + ' ' + r[0] + ' [' + r[6] + ']').join('; ')];
     writeFileSync(OUT + '/summary.txt', sum.join('\n') + '\n');
     console.log(sum.join('\n'));
-    if (only.length) for (const r of results) console.log(JSON.stringify({ id: r.id, status: r.status, anchors: r.anchors, sides: Object.fromEntries(Object.entries(r.sides).map(([e, m]) => [e, { flags: m.flags, at: m.at, w: m.w, supportW: m.supportW, gapMed: m.gapMed, gapP75: m.gapP75, buryMax: m.buryMax, air: m.airFrac, tilt: m.tilt, tiltYaw: m.tiltYaw, tiltPitch: m.tiltPitch, surfTilt: m.surfTilt, surfDev: m.surfDev, inside: m.inside, insideLocal: m.insideLocal, supportH: m.supportH, cover: m.coverLevel, coverBy: m.coverLevelBy, coverUp: m.coverUp, coverUpBy: m.coverUpBy, under: m.under, z: m.zfight, propLevel: m.propLevel, propAbove: m.propAbove, platey: m.platey, notes: m.notes }])) }));
+    if (only.length) for (const r of results) console.log(JSON.stringify({ id: r.id, status: r.status, anchors: r.anchors, sides: Object.fromEntries(Object.entries(r.sides).map(([e, m]) => [e, { flags: m.flags, on: m.on, bars: m.bars, at: m.at, w: m.w, supportW: m.supportW, gapMed: m.gapMed, gapP75: m.gapP75, buryMax: m.buryMax, air: m.airFrac, tilt: m.tilt, tiltYaw: m.tiltYaw, tiltPitch: m.tiltPitch, surfTilt: m.surfTilt, surfDev: m.surfDev, inside: m.inside, insideLocal: m.insideLocal, supportH: m.supportH, cover: m.coverLevel, coverBy: m.coverLevelBy, coverUp: m.coverUp, coverUpBy: m.coverUpBy, under: m.under, z: m.zfight, propLevel: m.propLevel, propAbove: m.propAbove, platey: m.platey, notes: m.notes }])) }));
   }
 } finally {
   await close();

@@ -175,3 +175,40 @@ cargo 1 x 0.8 x 1.2, wing 1.4 x 0.35 x 0.3. Seen in stills /tmp/prop-maxscale/*.
 | wing | wing-flame (Flame wing) | 1.4 | 1.88 x 0.49 x 0.39 | flames past half a metre swamp a car |
 | wing | wing-rockets (Rocket pods) | 1.4 | 1.68 x 0.32 x 0.36 | pods ~0.3 m across |
 | wing | wing-hoops (Hoop wing) | 1.5 | 1.95 x 0.45 x 0.45 | hoops ~0.45 m |
+
+## Number plate rules (CHECKLIST 345)
+
+The owner, 15-Oct: "The bumper is the most logical place for the plate but it is not allowed by the current rules", then "The plate should
+just stick out from the bar anyway". ONE rule set, in `scripts/plate-search.mjs` (`RULES` and the header above it); the place search, the
+generator (`scripts/plate-anchors.mjs`), the audit (`scripts/plate-placement-audit.mjs`) and the model editor's plate chips / Snap / Fit
+(`render/placementedit.js`) all read it. Nothing else holds a plate threshold.
+
+A plate (4:1, centred on the car's centre line) has a valid place at an end when:
+
+1. **Surface**: it stands on the car's own solid surface: paint, a bumper of ANY finish (chrome, painted, black), trim. Never glass, a lamp
+   (unlit or glowing material), a wheel or a spare tyre; the surface is the first thing met from outside, within `REACH` 0.5 m of the end.
+2. **Flat**: one plane under it where it stands on its surface (within `STRICT` 6 mm; `ROUGH` 12 mm only when nothing strict exists).
+3. **Edges**: ON A BUMPER BAR it is centred on the bar's face (the bar's middle height) and may stick out past the bar's top, bottom and
+   ends, as long as at least `BAR_HOLD` (half) of its height AND of its width are on the face: the canonical 0.52 x 0.13 plate goes on any
+   bar 6.5 cm tall and 26 cm wide. ON THE BODY the surface reaches past its sides, and past its top and bottom except for `OVERHANG_Y` (1 cm)
+   each. A surface `GAP` (1.5 cm) or more behind the plate is not under it.
+4. **Upright and square**: pitch at most `MAX_PITCH` 25 degrees (`GLACIS` 40 only at an end with nothing upright, flagged ON_A_LID),
+   yaw at most 1.5.
+5. **Clear**: nothing in front of its face straight on; less than `COVER_UP` (a quarter) hidden from `UP_ANGLE` 20 degrees above.
+6. **Height**: bottom edge at least `LOW_EDGE` 10 cm off the ground; middle no higher than `HIGH_FRAC` 60 % of the car.
+
+The choice: a place on a BUMPER BAR first (any size; `findBars`: a band of the end's surface on the centre line, 4 to 30 cm tall, flat,
+standing 1.5 cm or more proud of the surface above and below it), else the body as before; then the bigger plate (0.52, 0.46, 0.40, 0.34,
+0.30), flatter, more upright, nearer the car's own plate height (body only), out at the end, clear from above.
+
+The audit measures a worn plate against the same numbers (FLOATING / BURIED, TILTED / UNEVEN, OVER_EDGE, COVERED / COVERED_FROM_ABOVE,
+ON_GLASS / OVER_LAMP / ON_WHEEL, ON_A_LID, LOW, HIGH; on a bar, contact is judged where the plate is on the face), says where each plate
+stands (`on`: bumper / above / below the end's bar / body at an end with no bar) and keeps a few sanity flags of its own (TUCKED,
+WRONG_HALF, FACES_WRONG_WAY, TEXT_MIRRORED, TWO_PLATES, ZFIGHT, PLATE_LIKE_UNTAGGED). SMALL is information, not a fault. Removed:
+TALLER_THAN_SURFACE and WIDER_THAN_SURFACE (both were OVER_EDGE again with other numbers).
+
+Regenerating: `node scripts/plate-placement-audit.mjs --fix --write` re-places every end that has a placement flag OR stands off its bar
+while the bar takes a plate, auditing each candidate as dressed; it takes one only when it has no more placement flags than the place it
+replaces (then: onto a bar from the body, then bigger). HAND rows in `render/plateanchors.js` (reasoned fixes, and the owner's own
+`by: 'editor'` rows from the model editor) are never touched: only the generated table is written. A new car:
+`node scripts/plate-anchors.mjs <id> --write`, then the audit on it.
