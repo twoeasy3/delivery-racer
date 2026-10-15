@@ -199,7 +199,10 @@
     "lim": "fit"
    },
    "wing": {
-    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
+    "box": [1.59, 0, 1.278, -4.051],
+    "cyl": [1.59, 0, 1.239, -4.051],
+    "from": "deck",
+    "lim": "fit"
    }
   },
   "dunebuggy": {
@@ -404,7 +407,11 @@
     "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
+    "box": [0.71, 0, 0.762, -0.918],
+    "cyl": [0.71, 0, 0.744, -0.918],
+    "from": "deck-edge",
+    "lim": "fit",
+    "inset": [0.022, 0.022]
    }
   },
   "pocket4x4": {
@@ -544,11 +551,10 @@
     "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "box": [0.93, 0, 0.813, -0.603],
-    "cyl": [0.97, 0, 0.795, -0.643],
+    "box": [1.02, 0, 0.828, -0.643],
+    "cyl": [1.02, 0, 0.803, -0.683],
     "from": "deck",
-    "lim": "fit",
-    "inset": [0.015, 0.019]
+    "lim": "fit"
    }
   },
   "sidecar": {
@@ -574,10 +580,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.89, 0, 1.542, -0.93],
-    "cyl": [0.89, 0, 1.52, -0.93],
-    "from": "roof-edge",
-    "lim": "fit"
+    "box": [1.01, 0, 1.146, -2.01],
+    "cyl": [1.01, 0, 1.121, -2.01],
+    "from": "deck-edge",
+    "lim": "fit",
+    "inset": [0.044, 0.044]
    }
   },
   "snailcamper": {
@@ -616,8 +623,8 @@
     "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "box": [0.74, 0, 1.485, -0.875],
-    "cyl": [0.76, 0, 1.469, -0.875],
+    "box": [0.76, 0, 1.488, -0.875],
+    "cyl": [0.73, 0, 1.465, -0.875],
     "from": "deck",
     "lim": "fit"
    }
@@ -694,6 +701,21 @@
   "sevenroadster": {
    "cargo": {
     "no": "an open roadster: the tail behind the seats is no load deck"
+   }
+  },
+  "golfcart": {
+   "cargo": {
+    "box": [0.56, 0, 0.994, -0.951],
+    "cyl": [0.67, 0, 1.038, -0.951],
+    "from": "deck",
+    "lim": "fit",
+    "existing": true
+   },
+   "wing": {
+    "box": [0.85, 0, 1.959, -0.731],
+    "cyl": [0.85, 0, 1.937, -0.731],
+    "from": "roof-edge",
+    "lim": "fit"
    }
   }
  }

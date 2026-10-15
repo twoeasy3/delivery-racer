@@ -62,11 +62,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.76, 0, 0.971, -2.04],
-    "cyl": [0.9, 0, 0.981, -2],
+    "box": [0.78, 0, 0.975, -2.04],
+    "cyl": [0.78, 0, 0.956, -2.04],
     "from": "deck",
     "lim": "fit",
-    "inset": [0.048, 0.048]
+    "inset": [0.049, 0.049]
    }
   },
   "dampervan": {
@@ -96,11 +96,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.94, 0, 1.225, -2.215],
-    "cyl": [1.18, 0, 1.243, -2.175],
+    "box": [0.84, 0, 1.201, -2.255],
+    "cyl": [0.84, 0, 1.18, -2.255],
     "from": "deck",
     "lim": "fit",
-    "inset": [0.047, 0.05]
+    "inset": [0.05, 0.05]
    }
   },
   "floatvan": {
@@ -274,11 +274,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1, 0, 1.09, -1.275],
-    "cyl": [1.01, 0, 1.067, -1.275],
+    "box": [1.03, 0, 1.095, -1.515],
+    "cyl": [1.03, 0, 1.07, -1.515],
     "from": "deck",
     "lim": "fit",
-    "inset": [0.029, 0.031]
+    "inset": [0.034, 0.034]
    }
   },
   "rearengine": {
@@ -336,10 +336,10 @@
    },
    "wing": {
     "box": [0.83, 0, 0.834, -1.855],
-    "cyl": [0.86, 0, 0.81, -1.855],
+    "cyl": [0.83, 0, 0.813, -1.855],
     "from": "deck-edge",
     "lim": "fit",
-    "inset": [0.05, 0.042]
+    "inset": [0.05, 0.05]
    }
   },
   "super-classicgt": {
@@ -350,11 +350,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.48, 0, 0.925, -1.99],
-    "cyl": [0.48, 0, 0.913, -1.99],
+    "box": [0.49, 0, 0.925, -2],
+    "cyl": [0.49, 0, 0.913, -2],
     "from": "deck",
     "lim": "fit",
-    "inset": [0.024, 0.024],
+    "inset": [0.025, 0.025],
     "existing": true
    }
   },
@@ -386,11 +386,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.69, 0, 1.185, -2.13],
-    "cyl": [0.7, 0, 1.17, -2.13],
+    "box": [0.62, 0, 1.168, -2.175],
+    "cyl": [0.76, 0, 1.179, -2.135],
     "from": "deck",
     "lim": "fit",
-    "inset": [0.022, 0.022],
+    "inset": [0.024, 0.025],
     "existing": true
    }
   },
@@ -406,8 +406,8 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.36, 0, 2.263, -2.19],
-    "cyl": [1.36, 0, 2.229, -2.19],
+    "box": [1.36, 0, 2.263, -2.193],
+    "cyl": [1.36, 0, 2.229, -2.193],
     "from": "roof-edge",
     "lim": "fit",
     "existing": true
@@ -425,8 +425,8 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.4, 0, 2.205, -2.575],
-    "cyl": [1.4, 0, 2.17, -2.575],
+    "box": [1.4, 0, 2.205, -2.55],
+    "cyl": [1.4, 0, 2.17, -2.55],
     "from": "roof-edge",
     "lim": "fit",
     "existing": true
@@ -440,11 +440,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.26, 0, 1.037, -2.129],
-    "cyl": [1.26, 0, 1.006, -2.129],
+    "box": [1.13, 0, 1.019, -2.07],
+    "cyl": [1.13, 0, 0.991, -2.07],
     "from": "deck-edge",
     "lim": "fit",
-    "inset": [0.017, 0.017],
+    "inset": [0.015, 0.015],
     "existing": true
    }
   },
@@ -472,11 +472,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.17, 0, 1.11, -1.935],
-    "cyl": [1.17, 0, 1.081, -1.935],
-    "from": "deck-edge",
+    "box": [1.08, 0, 1.071, -1.055],
+    "cyl": [1.08, 0, 1.044, -1.055],
+    "from": "deck",
     "lim": "fit",
-    "inset": [0.028, 0.028],
+    "inset": [0.022, 0.022],
     "existing": true
    }
   },
@@ -492,8 +492,8 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.36, 0, 1.299, -2.45],
-    "cyl": [1.36, 0, 1.265, -2.45],
+    "box": [1.36, 0, 1.299, -2.42],
+    "cyl": [1.36, 0, 1.265, -2.42],
     "from": "deck-edge",
     "lim": "fit",
     "inset": [0.011, 0.011],
@@ -514,8 +514,8 @@
     "lim": "fit"
    },
    "wing": {
-    "box": [1.34, 0, 1.33, -2.06],
-    "cyl": [1.34, 0, 1.296, -2.06],
+    "box": [1.34, 0, 1.33, -2.057],
+    "cyl": [1.34, 0, 1.296, -2.057],
     "from": "deck",
     "lim": "fit",
     "existing": true
@@ -534,11 +534,7 @@
     "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "box": [1.03, 0, 1.475, -2.812],
-    "cyl": [1.03, 0, 1.449, -2.812],
-    "from": "deck-edge",
-    "lim": "fit",
-    "inset": [0.05, 0.05]
+    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
    }
   },
   "super-rearengine": {
@@ -597,11 +593,11 @@
     "inset": [0.01, 0.01]
    },
    "wing": {
-    "box": [0.89, 0, 0.838, -1.854],
-    "cyl": [0.88, 0, 0.814, -1.854],
+    "box": [0.83, 0, 0.834, -1.855],
+    "cyl": [0.83, 0, 0.813, -1.855],
     "from": "deck-edge",
     "lim": "fit",
-    "inset": [0.042, 0.042],
+    "inset": [0.05, 0.05],
     "existing": true
    }
   },
@@ -638,11 +634,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.23, 0, 1.965, -2.005],
-    "cyl": [1.23, 0, 1.935, -2.005],
+    "box": [1.23, 0, 1.965, -1.99],
+    "cyl": [1.23, 0, 1.935, -1.99],
     "from": "roof-edge",
     "lim": "fit",
-    "inset": [0.017, 0.017],
+    "inset": [0.015, 0.015],
     "existing": true
    }
   },
@@ -659,11 +655,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.05, 0, 1.243, -1.915],
-    "cyl": [1.36, 0, 1.262, -1.955],
+    "box": [1.38, 0, 1.283, -2.14],
+    "cyl": [1.38, 0, 1.249, -2.14],
     "from": "deck",
     "lim": "fit",
-    "inset": [0.021, 0.024],
+    "inset": [0.016, 0.016],
     "existing": true
    }
   },
@@ -683,8 +679,8 @@
     "existing": true
    },
    "wing": {
-    "box": [1.2, 0, 1.23, -2.25],
-    "cyl": [1.2, 0, 1.2, -2.25],
+    "box": [1.23, 0, 1.235, -2.245],
+    "cyl": [1.23, 0, 1.204, -2.245],
     "from": "deck",
     "lim": "fit",
     "inset": [0.025, 0.025],
@@ -703,11 +699,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.37, 0, 1.086, -2.41],
-    "cyl": [1.37, 0, 1.052, -2.41],
-    "from": "deck-edge",
+    "box": [1.37, 0, 1.09, -2.25],
+    "cyl": [1.37, 0, 1.056, -2.25],
+    "from": "deck",
     "lim": "fit",
-    "inset": [0.028, 0.028]
+    "inset": [0.04, 0.04]
    }
   },
   "suv": {
@@ -754,11 +750,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.19, 0, 1.778, -1.22],
-    "cyl": [1.18, 0, 1.747, -1.22],
-    "from": "roof-edge",
+    "box": [1.4, 0, 1.271, -2.5],
+    "cyl": [1.4, 0, 1.236, -2.5],
+    "from": "deck-edge",
     "lim": "fit",
-    "inset": [0.026, 0.025]
+    "inset": [0.045, 0.045]
    }
   },
   "threewheeler": {
@@ -830,7 +826,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
+    "box": [0.92, 0, 1, -1.74],
+    "cyl": [0.92, 0, 0.977, -1.74],
+    "from": "deck-edge",
+    "lim": "fit",
+    "inset": [0.013, 0.013]
    }
   }
  },
