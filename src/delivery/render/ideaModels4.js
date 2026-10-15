@@ -602,7 +602,7 @@ export const IDEA_MODELS_4 = {
       box(group, seat, 0.44, 0.06, 0.46, side * 0.3, 0.72, -L * 0.05);
       box(group, seat, 0.44, 0.5, 0.05, side * 0.3, 0.98, -L * 0.05 - 0.24);
       for (const dz of [-0.2, 0.2]) tube(group, steel, 0.02, 0.2, side * 0.3, 0.62, -L * 0.05 + dz, 'y');
-      box(group, gold, 0.28, 0.3, 0.32, side * 0.3, 0.68, -L * 0.7);                       // the gear on the tail
+      box(group, gold, 0.28, 0.3, 0.32, side * 0.3, 0.68, -L * 0.7).userData.prop = 'cargo';   // the gear on the tail (a load: hidden when a cargo prop is chosen)
     }
     for (const z of [L * 0.85, -L * 0.85, 0]) tube(group, steel, 0.035, w * 0.66, 0, 0.53, z, 'x'); // the cross members
     box(group, trim, 0.24, 0.3, 0.24, 0, 0.7, L * 0.25);                                   // the console between the seats,
