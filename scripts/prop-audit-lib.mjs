@@ -14,6 +14,7 @@
 //                                    most `maxInset`), touches nothing, and (a wing) is no wider than the body; a wing prefers the rear
 //   measureShape(g, ...)             a placed shape's numbers: support, gap, inset, intrusion
 import * as THREE from 'three';
+import { isWindowNode } from '../src/delivery/render/glassnames.js';
 
 export const GRID = 0.1;
 export const TOL = 0.015;          // m: the surface may touch a shape this far over its (un-sunk) base: contact, not a collision
@@ -35,7 +36,7 @@ export const carGeometry = (model, glassy) => {
     if (m.transparent && m.opacity < 0.95) kind = 'clear';
     // (a lamp glows: a faint emissive tint is paint, not a lamp: the Legendary skin's dark gold 0x1c1404 on every body part, CHECKLIST 309)
     else if (m.isMeshBasicMaterial || (m.emissive && Math.max(m.emissive.r, m.emissive.g, m.emissive.b) * (m.emissiveIntensity ?? 1) > 0.12 && (m.emissiveIntensity ?? 1) > 0.25)) kind = 'lamp';
-    else if (n !== body && m !== bodyMat && glassy(m)) kind = 'glass';
+    else if (isWindowNode(n) || (n !== body && m !== bodyMat && glassy(m))) kind = 'glass'; // (a part named or marked a window, either spelling: render/glassnames.js)
     else if (n.geometry.type === 'CylinderGeometry' && n.geometry.parameters.radiusTop >= 0.18 && Math.abs(Math.abs(n.rotation.z) - Math.PI / 2) < 0.02) kind = 'wheel';
     if (inKit && kind === 'body') kind = 'kit';
     const mi = meshes.length;

@@ -10,7 +10,7 @@
 // facing local +z, with userData.body, userData.animate and userData.livery. Spread into IDEA_MODELS by ideaModels.js. State-free.
 import * as THREE from 'three';
 import { shapesLive } from './shapeedits.js';
-import { cabinGlass, mergeFlat } from './ideaModelsDkit.js'; // (mergeFlat: keeps the glass panes' ranges on the merged geometry, for the model editor)
+import { cabinGlass, mergeFlat, glassKey } from './ideaModelsDkit.js'; // (mergeFlat: keeps the glass panes' ranges on the merged geometry, for the model editor)
 
 const keep = (m) => { m.userData.shared = true; return m; };
 const lambert = (color) => keep(new THREE.MeshLambertMaterial({ color }));
@@ -23,6 +23,7 @@ const WOOD = lambert(0xa5804e), TARP = lambert(0x4f5c3a), CANVAS = lambert(0xb8a
 const SHARED = new Map();
 const shared = (key, make) => {
   if (shapesLive()) return make(); // (a model built with shape edits, or recorded by the model editor, caches nothing: render/shapeedits.js)
+  key = glassKey(key); // (a build with window edits caches under its own keys: ideaModelsDkit.js withGlassEdits)
   if (!SHARED.has(key)) { const geo = make(); geo.userData.shared = true; SHARED.set(key, geo); }
   return SHARED.get(key);
 };

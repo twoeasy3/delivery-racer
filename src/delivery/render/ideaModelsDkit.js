@@ -1,6 +1,7 @@
 // ---- the shared kit for the ideas batch D (ideaModelsD.js, ideaModelsD2.js): the helpers of ideaModelsTopupC.js, exported once. State-free.
 import * as THREE from 'three';
 import { shapesLive } from './shapeedits.js';
+import { canonicalTable, lookupWindow, windowBase, windowKey } from './glassnames.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export const keep = (m) => { m.userData.shared = true; return m; };
@@ -16,28 +17,36 @@ export const SHARED = new Map();
 // { '<window id>': <edges> }: a side window's id names both sides ('door window', 'quarter window', 'side window', 'rear door window', or
 // 'window 3'...; its edges a [z, y] polygon in the side profile, 3 or more points, built on both flanks from the one polygon so the car
 // stays symmetric), or one side only ('door window L' / 'door window R': the left (+x) or right flank, an asymmetric edit), or a screen
-// ('windscreen', 'rear glass': { foot: [z, y], top: [z, y] } on its slope). The table is set as the car is built (render/ideaModels.js
+// ('windscreen', 'rear window': { foot: [z, y], top: [z, y] } on its slope; any spelling: 'door glass' is 'door window', 'rear glass'
+// 'rear window', render/glassnames.js windowKey). The table is set as the car is built (render/ideaModels.js
 // makeIdeaModel, from the patch; the model editor from the patch it edits) and cabinGlass reads it; a model built with edits caches its
 // geometries under its own keys (shared: the plain car's cache is never touched). A code literal `overrides` passed to cabinGlass itself
 // ("baked in": scripts/bake-glass.mjs) is read the same way, under the patch's table. Ids the build never asks for are reported
 // (glassEditsReport, unused) and skipped. With no edits nothing is salted and the geometry is exactly the code's.
 const fnv = (s) => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(36); };
 let glassEdits = null, glassSalt = '', glassUsed = null, lastReport = { edits: null, unused: [] };
+// (the table is read through CANONICAL keys, render/glassnames.js: 'door glass' and 'door window', 'rear glass' and 'rear window' are one
+// window; the salt is the canonical table's, so two spellings of the same edits build, and cache, the same geometry)
 export const withGlassEdits = (edits, fn) => {
   const prev = [glassEdits, glassSalt, glassUsed];
-  if (edits && typeof edits === 'object' && Object.keys(edits).length) { glassEdits = edits; glassSalt = '#glass' + fnv(JSON.stringify(edits)); glassUsed = new Set(); lastReport = { edits, unused: Object.keys(edits) }; }
+  if (edits && typeof edits === 'object' && Object.keys(edits).length) { glassEdits = edits; glassSalt = '#glass' + fnv(JSON.stringify(canonicalTable(edits))); glassUsed = new Set(); lastReport = { edits, unused: Object.keys(edits) }; }
   else if (edits !== undefined) { glassEdits = null; glassSalt = ''; glassUsed = null; lastReport = { edits: null, unused: [] }; } // (null: no edits; undefined: keep what is set)
   try { return fn(); } finally { [glassEdits, glassSalt, glassUsed] = prev; }
 };
-// the edits the last build read, and the ids it never asked for (call right after withGlassEdits returns)
+// the edits the last build read, and the ids it never asked for (call right after withGlassEdits returns; the ids as the table spells them)
 export const glassEditsReport = () => lastReport;
 const editFor = (name, side, literal) => {
-  const base = side ? name.slice(0, -2) : name; // ('door window L' -> 'door window')
-  const look = (table) => (table ? (table[name] != null ? table[name] : side && table[base] != null ? table[base] : null) : null);
-  if (glassUsed) { glassUsed.add(name); if (side) glassUsed.add(base); lastReport = { edits: glassEdits, unused: Object.keys(glassEdits).filter(k => !glassUsed.has(k)) }; }
+  const base = side ? windowBase(name) : null; // ('door window L' -> 'door window'; 'door glass L' too)
+  const look = (table) => (table ? lookupWindow(table, name) ?? (side ? lookupWindow(table, base) : null) : null);
+  if (glassUsed) {
+    glassUsed.add(windowKey(name)); if (side) glassUsed.add(base);
+    lastReport = { edits: glassEdits, unused: Object.keys(glassEdits).filter(k => !glassUsed.has(windowKey(k))) };
+  }
   const own = look(glassEdits);
   return own != null ? own : look(literal);
 };
+// a model file's OWN geometry cache key, salted the same way (a car built with window edits never takes the plain car's cached glass)
+export const glassKey = (key) => key + glassSalt;
 export const shared = (key, make) => {
   if (shapesLive()) return make(); // (a model built with shape edits, or recorded by the model editor, caches nothing: render/shapeedits.js)
   const k = key + glassSalt;
@@ -446,7 +455,7 @@ export const screenGlassFromProfile = (profile, { edge, foot = 0.03, top = 0.07,
 // The result's `virtual` holds the virtual chain: a car publishes it as userData.glassVirtual = { chain, grow } for scripts/.glass-contour-check.mjs.
 export const A_PILLAR = 0.135, A_SIDE = 0.12;
 // PANES (the owner, 15-Oct: edit the windows per pane in the model editor). Every geometry cabinGlass returns carries `userData.pane`:
-// its name ('windscreen', 'rear glass', 'door window L' / ' R', 'quarter window L'..., windows named from the front), its kind ('side' or
+// its name ('windscreen', 'rear window' (was 'rear glass': an edit under either name is read), 'door window L' / ' R', 'quarter window L'..., windows named from the front), its kind ('side' or
 // 'screen'), its side (+1 the car's left, -1 its right, 0 across), `auto` (the edges the profile gives it: a side window's [z, y] polygon,
 // a screen's { foot, top } on its slope), `now` (the edges it has: `auto`, or the edit), `edge` (a screen: the profile edge it slides on)
 // and `cabin` (the profile, the cabin chain, grow and belt: the editor's guide). Dkit's merge() keeps the list with each pane's vertex
@@ -511,7 +520,7 @@ export const cabinGlass = (profile, { from, to, belt, inset = {}, grow = 0, half
   return {
     sides,
     front: screen('windscreen', { foot: aFoot, top: aTop }, [chain[0], chain[1]], hxF),
-    rear: screen('rear glass', { foot: cFoot, top: cTop }, [chain[n - 1], chain[n - 2]], hx),
+    rear: screen('rear window', { foot: cFoot, top: cTop }, [chain[n - 1], chain[n - 2]], hx),
     virtual, // (sharp: the cabin chain's virtual corners, for the contour check)
   };
 };

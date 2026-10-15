@@ -6,6 +6,7 @@
 //   ?modelpatch=local   the model editor's own patches instead (this browser's localStorage, LOCAL_KEY), for a look
 //   ?modelpatch=off     none at all
 import { applyPatch } from './modelpatch.js';
+import { glassTable } from './glassnames.js';
 
 export const LOCAL_KEY = 'delivery.modelpatches';
 const search = typeof location !== 'undefined' ? location.search : '';
@@ -24,7 +25,7 @@ export const patchFor = (id) => (mode === 'off' ? null : mode === 'local' ? loca
 export const glassEditsFor = (car) => {
   if (!on) return undefined;
   const patch = patchFor(car.id) || (car.legend ? patchFor(car.legend) : null);
-  return patch && patch.glass && typeof patch.glass === 'object' && Object.keys(patch.glass).length ? patch.glass : null;
+  return glassTable(patch); // (its `glass` table, or one called `windows`: render/glassnames.js)
 };
 // the car's SHAPE EDITS table (render/shapeedits.js: an outline's id -> its edited points), read as the car's own model is BUILT (carShapes in
 // render/showcar.js, items.js, ideaslot.js): null when it has none or patching is off (the model editor sets its own: setShapeOverride)

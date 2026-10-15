@@ -10,6 +10,7 @@
 import { readFileSync, writeFileSync, existsSync, unlinkSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { startModels } from './modelpatch-load.mjs';
+import { glassTable, canonicalTable } from '../src/delivery/render/glassnames.js';
 
 const args = process.argv.slice(2);
 const id = args.find(a => !a.startsWith('--') && args[args.indexOf(a) - 1] !== '--patch');
@@ -20,7 +21,9 @@ const ROOT = join(import.meta.dirname, '..'), DIR = join(ROOT, 'src/delivery/mod
 const patchPath = patchArg || join(DIR, id + '.json');
 if (!existsSync(patchPath)) { console.log('FAIL  no patch at ' + patchPath); process.exit(1); }
 const patch = JSON.parse(readFileSync(patchPath, 'utf8'));
-const table = patch.glass;
+// (the table called `glass` or `windows`, its ids in any spelling ('door glass' is 'door window', 'rear glass' 'rear window'): written with the
+// canonical ids, render/glassnames.js, which cabinGlass reads whatever the spelling)
+const raw = glassTable(patch), table = raw && canonicalTable(raw);
 if (!table || typeof table !== 'object' || !Object.keys(table).length) { console.log('FAIL  the patch has no glass table to bake'); process.exit(1); }
 
 // the literal, as the code is written (single quotes, a line per window)
@@ -77,7 +80,7 @@ try {
   if (hashCode !== hashWith) { writeFileSync(file, src); throw new Error('the baked code does not build the same glass as the patch: the file is put back as it was'); }
   console.log('ok    the baked code builds the same glass as the patch (' + hashWith.split(',').length / 3 + ' vertices)');
   if (!patchArg) {
-    delete patch.glass;
+    delete patch.glass; delete patch.windows;
     if (patch.ops?.length || patch.evil?.length) { writeFileSync(patchPath, JSON.stringify(patch, null, 1) + '\n'); console.log('ok    ' + patchPath.replace(ROOT + '/', '') + ': the glass table taken out (' + patch.ops.length + ' ops kept)'); }
     else { unlinkSync(patchPath); console.log('ok    ' + patchPath.replace(ROOT + '/', '') + ' deleted (nothing else was in it)'); }
   } else console.log('note  --patch: the patch file is left as it is; take its glass table out yourself');

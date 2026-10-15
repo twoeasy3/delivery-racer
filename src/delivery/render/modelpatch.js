@@ -6,9 +6,14 @@
 // groups) gets an id, its PATH of child indices from the root ("0", "3.1", ...), and a SIGNATURE (sig: what it is made
 // of: its kind, the geometry's type, vertex count and size; never its place, so a part moved in code still matches).
 // A part also carries a name (its own .name, else the model's hook that holds it: userData.body, wheels, lamps...,
-// else a guessed role: wheel, tyre, hub, glass, headlamp, tail lamp, body, bumper, mirror...), its geometry's kind and
+// else a guessed role: wheel, tyre, hub, window, headlamp, tail lamp, body, bumper, mirror...), its geometry's kind and
 // parameters (editable for the plain primitives), its material's colour / emissive / opacity, its local transform,
 // its parent and its triangles.
+// WINDOWS (the owner, 15-Oct: 'glass' and 'window' are the same thing): a see-through part's role is 'window', whichever word the model
+// or a patch used (render/glassnames.js: a name, role, hook or material name with glass / window / windscreen in it, cabinGlass's panes,
+// or the guess: a see-through material that does not glow, or the models' dark blue-grey glass). Every window part lists its PANES
+// (row.panes, windowPanes below): cabinGlass's own (named, their edges editable), else the separate panels of a hand-built glass mesh
+// (named from where they stand: windscreen, rear window, side window L / R, window 2 L..., side windows (a band through the car), roof window).
 //
 // THE PATCH (JSON):
 //   { car: '<car id>', version: 1, base: '<signature of the builder output>', ops: [
@@ -35,6 +40,7 @@
 // The code's hooks keep working: the wheels, lamps, livery, animate and the suspension hold the same nodes; the paint
 // for a side is re-applied after the model's own livery (userData.livery is wrapped), so the patch's colours win.
 import * as THREE from 'three';
+import { WINDOW_ROLE, isWindowRole, isGlassWord, isWindowNode, glassTable, windowKey, canonicalTable } from './glassnames.js';
 
 export const PATCH_VERSION = 1;
 // A side view extruded across the car, as the car models draw their bodies: `points` is the outline seen from the left,
@@ -150,10 +156,11 @@ const hookNames = (root) => {
   }
   return names;
 };
-const guessRole = (node, box, carBox) => {
+const guessRole = (node, box, carBox, paint = null) => {
   const s = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
   const cs = carBox.getSize(new THREE.Vector3());
   if (!node.isMesh) return node.children.length ? 'group' : 'empty';
+  if (isWindowNode(node)) return WINDOW_ROLE; // (named or marked a window, in either spelling, or cabinGlass's panes)
   const mat = firstMat(node) || {};
   const col = mat.color ? mat.color.getHSL({}) : { h: 0, s: 0, l: 0.5 };
   const glow = mat.type === 'MeshBasicMaterial' || (mat.emissive && mat.emissive.getHex() > 0 && (mat.emissiveIntensity ?? 1) > 0);
@@ -169,8 +176,8 @@ const guessRole = (node, box, carBox) => {
     if (rear && (red || amber)) return amber ? 'indicator' : 'tail lamp';
     if (glow) return 'lamp';
   }
-  if (mat.transparent && mat.opacity < 0.95) return 'glass';
-  if (col.l < 0.32 && col.h > 0.5 && col.h < 0.72 && col.s > 0.18) return 'glass';
+  if (mat.transparent && mat.opacity < 0.95) return WINDOW_ROLE;
+  if (col.l < 0.32 && col.h > 0.5 && col.h < 0.72 && col.s > 0.18 && !(paint && mat.color && (mat === paint || mat.color.equals(paint.color)))) return WINDOW_ROLE; // (by colour: never the body's own paint, as render/dents.js)
   if (s.x > cs.x * 0.75 && s.y < cs.y * 0.25 && (front || rear) && c.y < carBox.min.y + cs.y * 0.45) return 'bumper';
   if (s.x * s.y * s.z > cs.x * cs.y * cs.z * 0.15) return 'body';
   if ((c.x > carBox.max.x - cs.x * 0.12 || c.x < carBox.min.x + cs.x * 0.12) && s.x < 0.25 && s.y < 0.2 && c.z > carBox.min.z + cs.z * 0.45 && c.y > carBox.min.y + cs.y * 0.45) return 'mirror';
@@ -193,11 +200,11 @@ export const extractParts = (root) => {
     if (node.visible) carBox.union(b);
   });
   const groupBox = (node) => { const b = new THREE.Box3(); node.traverse(n => boxes.has(n) && b.union(boxes.get(n))); return b; };
-  const parts = [], nodes = new Map(), ids = new Map();
+  const parts = [], nodes = new Map(), ids = new Map(), panes = new Map(); // (panes: a window part's id -> its panes)
   walk(root, (node, path) => {
     const box = boxes.get(node) || groupBox(node);
     const hook = hooks.get(node);
-    const role = node.userData.patchRole || (hook ? hook.replace(/\[\d+\]$/, '') : guessRole(node, box, carBox.isEmpty() ? box : carBox));
+    const role = node.userData.patchRole || (hook ? hook.replace(/\[\d+\]$/, '') : guessRole(node, box, carBox.isEmpty() ? box : carBox, firstMat(root.userData.body?.isMesh ? root.userData.body : {})));
     const mat = node.isMesh ? firstMat(node) : null;
     const geo = node.isMesh ? node.geometry : null;
     const row = {
@@ -212,15 +219,71 @@ export const extractParts = (root) => {
       position: node.position.toArray().map(r3), rotation: [node.rotation.x, node.rotation.y, node.rotation.z].map(r3), scale: node.scale.toArray().map(r3),
       visible: node.visible, parent: path.includes('.') ? path.slice(0, path.lastIndexOf('.')) : '',
       children: node.children.length, added: !!node.userData.patchId,
-      panes: geo?.userData?.panes ? geo.userData.panes.map(q => q.name) : null, // (a cabinGlass window mesh: its panes, by name)
+      panes: null, window: false, // (a window part: its panes' names, below)
       box: box.isEmpty() ? null : [...box.min.toArray(), ...box.max.toArray()].map(r3),
     };
     row.parent = node.parent === root ? '' : ids.get(node.parent) ?? row.parent; // (by the ids the patch uses)
+    if (geo && (isWindowRole(role) || isGlassWord(row.name) || isWindowNode(node))) { // (a window, whichever word says so)
+      row.window = true;
+      const ps = windowPanes(node, root, carBox.isEmpty() ? box : carBox);
+      panes.set(row.id, ps);
+      row.panes = ps.map(q => q.name);
+    }
     ids.set(node, row.id);
     parts.push(row);
     nodes.set(row.id, node);
   });
-  return { parts, nodes, base: modelSignature(root) };
+  nameHandPanes(panes);
+  for (const row of parts) if (panes.has(row.id)) row.panes = panes.get(row.id).map(q => q.name);
+  return { parts, nodes, base: modelSignature(root), panes };
+};
+// a window part's row: the editor's test (cabinGlass glass, a hand-built window, a part a patch named or gave the role 'glass' or 'window')
+export const isWindowPart = (row) => !!row && (row.window || isWindowRole(row.role) || isGlassWord(row.name) || isGlassWord(row.hook));
+
+// ---- a window part's PANES -------------------------------------------------------------------------------------------------------
+// cabinGlass's (geometry.userData.panes: named, each with its edges, render/ideaModelsDkit.js), else the hand-built glass's separate panels:
+// the triangles joined by shared corners (to 0.1 mm), each a run of vertices { name, kind: 'hand', side, start, count } (side +1 the car's
+// left (+x), -1 its right, 0 across). A mesh whose panels are not runs of vertices (an indexed geometry shared out of order) is one pane.
+// Named from where they stand by nameHandPanes, once every window part of the model is known.
+export const windowPanes = (node, root, carBox) => {
+  const geo = node.geometry;
+  if (geo?.userData?.panes) return geo.userData.panes;
+  const pos = geo?.attributes?.position;
+  if (!pos || !pos.count) return [];
+  root.updateMatrixWorld(true);
+  const toModel = new THREE.Matrix4().copy(root.matrixWorld).invert().multiply(node.matrixWorld);
+  const idx = geo.index ? geo.index.array : null, tris = Math.floor((idx ? idx.length : pos.count) / 3);
+  // weld by position, join the corners of each triangle (union-find)
+  const weld = new Map(), up = new Int32Array(pos.count), v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) { const k = Math.round(pos.getX(i) * 1e4) + ',' + Math.round(pos.getY(i) * 1e4) + ',' + Math.round(pos.getZ(i) * 1e4); up[i] = weld.has(k) ? weld.get(k) : i; if (!weld.has(k)) weld.set(k, i); }
+  const top = (i) => { while (up[i] !== i) { up[i] = up[up[i]]; i = up[i]; } return i; };
+  const at = (t, k) => (idx ? idx[t * 3 + k] : t * 3 + k);
+  for (let t = 0; t < tris; t++) { const a = top(at(t, 0)), b = top(at(t, 1)), c = top(at(t, 2)); up[b] = a; up[top(c)] = a; }
+  const groups = new Map();
+  for (let t = 0; t < tris; t++) { const r = top(at(t, 0)); if (!groups.has(r)) groups.set(r, { lo: Infinity, hi: -1, verts: new Set() }); const g = groups.get(r); for (let k = 0; k < 3; k++) { const i = at(t, k); g.verts.add(i); g.lo = Math.min(g.lo, i); g.hi = Math.max(g.hi, i); } }
+  let list = [...groups.values()].sort((a, b) => a.lo - b.lo);
+  const runs = list.every((g, i) => g.hi - g.lo + 1 === g.verts.size && (!i || g.lo > list[i - 1].hi)); // (each panel its own run of vertices)
+  if (!runs || list.length > 40) list = [{ lo: 0, hi: pos.count - 1, verts: null }];
+  const cz = (carBox.min.z + carBox.max.z) / 2;
+  return list.map((g) => {
+    const b = new THREE.Box3(), n = new THREE.Vector3(), p = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()], e1 = new THREE.Vector3(), e2 = new THREE.Vector3();
+    for (let i = g.lo; i <= g.hi; i++) b.expandByPoint(v.fromBufferAttribute(pos, i).applyMatrix4(toModel));
+    for (let t = 0; t < tris; t++) { if (at(t, 0) < g.lo || at(t, 0) > g.hi) continue; for (let k = 0; k < 3; k++) p[k].fromBufferAttribute(pos, at(t, k)).applyMatrix4(toModel); const c = e1.subVectors(p[1], p[0]).cross(e2.subVectors(p[2], p[0])); n.x += Math.abs(c.x); n.y += Math.abs(c.y); n.z += Math.abs(c.z); }
+    const side = b.min.x > 0.01 ? 1 : b.max.x < -0.01 ? -1 : 0, c = b.getCenter(new THREE.Vector3());
+    const sz = b.getSize(new THREE.Vector3()), band = !side && sz.z > sz.x && sz.x > (carBox.max.x - carBox.min.x) * 0.8; // (a block through the car showing on both flanks: a bus's window band)
+    const face = side ? 'side' : band ? 'band' : n.y > 2.5 * Math.max(n.z, n.x) ? 'roof' : c.z >= cz ? 'front' : 'rear'; // (a raked screen is a screen: roof only under about 20 degrees)
+    return { name: '', kind: 'hand', side, face, z: c.z, start: g.lo, count: g.hi - g.lo + 1 };
+  });
+};
+// the hand-built panes' names, over the whole model (so the two flanks number alike and a pane's twin across the car has its name)
+const nameHandPanes = (panes) => {
+  const hand = [...panes.values()].flat().filter(q => q.kind === 'hand');
+  const used = new Map(), named = (base) => { const n = (used.get(base) || 0) + 1; used.set(base, n); return n === 1 ? base : base + ' ' + n; };
+  for (const s of [1, -1]) {
+    const flank = hand.filter(q => q.face === 'side' && q.side === s).sort((a, b) => b.z - a.z); // (from the front)
+    flank.forEach((q, i) => { q.name = (flank.length === 1 ? 'side window' : 'window ' + (i + 1)) + (s > 0 ? ' L' : ' R'); });
+  }
+  for (const q of hand.filter(x => x.face !== 'side').sort((a, b) => b.z - a.z)) q.name = named(q.face === 'front' ? 'windscreen' : q.face === 'rear' ? 'rear window' : q.face === 'band' ? 'side windows' : 'roof window');
 };
 // the builder output's signature (what the patch was made against)
 export const modelSignature = (root) => {
@@ -411,7 +474,7 @@ export const applyPatch = (root, patch, { evil = false } = {}) => {
     repaint(evil);
   }
   // the glass edits: read as the model was built (render/ideaModels.js makeIdeaModel, userData.glassEdits); an id no window answers to is stale
-  if (patch.glass && typeof patch.glass === 'object' && Object.keys(patch.glass).length) {
+  if (glassTable(patch)) { // (the table called `glass` or `windows`, its ids in any spelling: render/glassnames.js)
     const g = root.userData.glassEdits;
     if (!g) warn('glass edits: this model is not built with cabinGlass, so its window edges cannot be set');
     else for (const id of g.unused) { out.unmatched.push('glass:' + id); warn('glass edits: no window called "' + id + '" (' + (g.used.length ? 'the windows are ' + g.used.join(', ') : 'none used') + ')'); }
@@ -536,11 +599,16 @@ export const withMirror = (patch, part) => {
   if (!p.ops.some(op => op.add && op.add.id === id)) p.ops.push({ add: { id, from: part.id, fromSig: part.added ? undefined : part.sig, mirror: true, name: (part.name || part.role) + ' (mirror)' } });
   return { patch: p, id };
 };
-// the glass edits table: `edges` for the window `id` (a side window's [z, y] polygon, or a screen's { foot, top }); null takes it out
+// the glass edits table: `edges` for the window `id` (a side window's [z, y] polygon, or a screen's { foot, top }); null takes it out.
+// Any spelling of the id ('door glass', 'door window') is the same window: every spelling of it goes, and the edit is kept under the
+// canonical one (render/glassnames.js windowKey); a table called `windows` is folded into `glass`.
 export const withGlass = (patch, id, edges) => {
   const p = clonePatch(patch);
-  p.glass = { ...(p.glass || {}) };
-  if (edges == null) delete p.glass[id]; else p.glass[id] = JSON.parse(JSON.stringify(edges));
+  p.glass = { ...(glassTable(p) || {}) };
+  delete p.windows;
+  const key = windowKey(id);
+  for (const k of Object.keys(p.glass)) if (windowKey(k) === key) delete p.glass[k];
+  if (edges != null) p.glass[key] = JSON.parse(JSON.stringify(edges));
   if (!Object.keys(p.glass).length) delete p.glass;
   return p;
 };
@@ -549,7 +617,9 @@ export const tidyPatch = (patch) => {
   const p = clonePatch(patch);
   p.ops = p.ops.filter(op => op.add || op.delete || (op.set && Object.keys(op.set).length));
   p.evil = (p.evil || []).filter(op => op.set && Object.keys(op.set).length);
-  if (p.glass && (typeof p.glass !== 'object' || !Object.keys(p.glass).length)) delete p.glass;
+  const g = glassTable(p); // (one table, called `glass`, every id spelt the canonical way: the same windows, render/glassnames.js)
+  delete p.windows;
+  if (g) p.glass = canonicalTable(g); else delete p.glass;
   if (p.shapes && (typeof p.shapes !== 'object' || !Object.keys(p.shapes).length)) delete p.shapes;
   return p;
 };
