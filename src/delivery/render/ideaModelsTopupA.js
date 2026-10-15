@@ -95,7 +95,6 @@ const panel = (pts) => {
   geo.computeVertexNormals();
   return geo;
 };
-const pair = (pts) => [panel(pts), panel(pts.map(([x, y, z]) => [-x, y, z]).reverse())];
 
 // ---- the body: an extrusion of a side view ([z, y] points; ['arc', z, y, r] a wheel arch from its rear foot to its front)
 const curve = (a, b, c, d, n) => new THREE.CubicBezierCurve(...[a, b, c, d].map(([z, y]) => new THREE.Vector2(z, y)))
@@ -125,7 +124,6 @@ const extrudeSide = (outline, w, bevel, taper = null, segs = 2, across = bevel, 
   }
   return geo;
 };
-const zAt = ([[z0, y0], [z1, y1]], y) => z0 + (z1 - z0) * (y - y0) / (y1 - y0);
 // a glass panel on a sloping face from [z0, y0] to [z1, y1] (side view), `half` the half width before narrowing, inset
 // `inset` from the sides and `ends` (shares) from its ends, laid `lift` out along the face's normal on the side `out`
 // ([nz, ny]) points to
@@ -140,8 +138,6 @@ const slopeGlass = ([z0, y0], [z1, y1], half, taper, inset, ends, lift, out) => 
   const [a, b] = ends;
   return panel([at(a, -1), at(a, 1), at(1 - b, 1), at(1 - b, -1)]);
 };
-// side windows: polygons of [z, y] laid on the (narrowed) flank, `lift` out
-const sideGlass = (windows, half, taper, lift) => windows.flatMap(win => pair(win.map(([z, y]) => [narrowAt(half, y, taper) + lift, y, z])));
 // a band of a side view: a line of [z, y] points and the same line `t` lower, as one outline (a wing, a cycle wing)
 const band = (pts, t) => [...pts, ...pts.slice().reverse().map(([z, y]) => [z, y - t])];
 // points round an arc about [z, y] of radius r, from angle a0 to a1 (radians; 0 is +z, PI/2 up)
