@@ -250,6 +250,16 @@ export const edgeInset = (chain, i, { aPillar, roof, cPillar, belt }) => {
   const p = chain[i], q = chain[i + 1], dz = q[0] - p[0], dy = q[1] - p[1];
   return Math.abs(dy) < 0.25 * Math.hypot(dz, dy) ? roof : dy > 0 ? aPillar : cPillar;
 };
+// a ROUNDED corner of a side profile (the owner, 15-Oct): the corner V between the incoming edge (from point `a`) and the outgoing edge (to `b`) cut by a
+// smooth curve starting `l1` back along the incoming edge and ending `l2` along the outgoing one (`k`: how far the curve's handles reach toward V, 0.6 is
+// near round). Returns the points of the curve INCLUDING its start and excluding V; splice it into an outline in place of V. `n` pieces (short edges,
+// which virtualCorners collapses again for the glass).
+export const fillet = (a, V, b, l1, l2, n = 4, k = 0.6) => {
+  const u = (p, q) => { const l = Math.hypot(q[0] - p[0], q[1] - p[1]); return [(q[0] - p[0]) / l, (q[1] - p[1]) / l]; };
+  const da = u(V, a), db = u(V, b);
+  const S = [V[0] + da[0] * l1, V[1] + da[1] * l1], E = [V[0] + db[0] * l2, V[1] + db[1] * l2];
+  return [S, ...curve(S, [S[0] + (V[0] - S[0]) * k, S[1] + (V[1] - S[1]) * k], [E[0] + (V[0] - E[0]) * k, E[1] + (V[1] - E[1]) * k], E, n)];
+};
 // ROUNDED BODY, SHARP WINDOWS (the owner, 15-Oct): a run of short edges (under `short`, 20 cm: a rounded roof corner drawn as curve pieces) between two
 // long edges is collapsed to its VIRTUAL corner, where the long edges' lines meet. profile.slice(from, to + 1) in, { points, map } out (map: old index
 // (relative to `from`) -> the new one). A run at either end of the chain is kept as it is.
