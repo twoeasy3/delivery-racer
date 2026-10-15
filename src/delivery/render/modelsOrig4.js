@@ -290,9 +290,9 @@ ORIG4_MODELS.taxi = (car) => {
     for (const side of [-1, 1]) {
       g.push(dsc(0.047, 0.01, side * (SX + 0.03), BELT + 0.09, AX - 0.64, 10));                     // its glass
     }
-    g.push(bx(0.56, 0.05, 0.2, 0, top + 0.02, -0.2));                                               // the sign's foot
     return g;
   });
+  parts(group, k + 'signfoot', TRIM, () => [bx(0.56, 0.05, 0.2, 0, top + 0.02, -0.2)]).userData.prop = 'roof'; // the sign's foot (a roof prop with the sign)
   // the roof sign: one box, its faces mapped to the sign's picture (TAXI) and its ends and top to the plain strip
   const signGeo = shared('taxisign', () => {
     const geo = new THREE.BoxGeometry(0.66, 0.2, 0.24);
@@ -304,7 +304,7 @@ ORIG4_MODELS.taxi = (car) => {
     }
     return geo;
   });
-  place(group, signGeo, sign, 0, top + 0.145, -0.2);
+  place(group, signGeo, sign, 0, top + 0.145, -0.2).userData.prop = 'roof'; // (the roof sign: hidden when a roof prop is chosen)
   // the checker band, down each flank under the belt (the texture repeated along it)
   const bandGeo = shared(k + 'band', () => {
     const len = 2 * L - 0.5, geos = pair([[SX + 0.003, 0.8, -len / 2], [SX + 0.003, 0.8, len / 2], [SX + 0.003, 0.92, len / 2], [SX + 0.003, 0.92, -len / 2]]);
@@ -478,7 +478,7 @@ ORIG4_MODELS.suv = (car) => {
   parts(shell, k + 'roof', roofPanel, () => [
     bx(1.24, 0.02, RZ0 - RZ1, 0, RY + 0.002, (RZ0 + RZ1) / 2),
     ...[-0.48, -0.24, 0, 0.24, 0.48].map(x => bx(0.07, 0.035, RZ0 - RZ1 - 0.06, x, RY + 0.02, (RZ0 + RZ1) / 2)),
-  ]);
+  ]).userData.prop = 'roof'; // (the ribbed roof rack panel: a roof prop)
   // the face: a chrome grille block with five dark slots, two plain rectangular lamps
   const FZ = NOSE + BEV + 0.01;
   parts(shell, k + 'chrome', CHROME, () => [bx(0.9, 0.34, 0.04, 0, 0.84, FZ)]);

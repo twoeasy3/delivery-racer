@@ -1,0 +1,87 @@
+<!doctype html><meta charset="utf-8"><body style="margin:0;background:#fff"><canvas id="c"></canvas>
+<script type="module">
+// the PROP BOUNDS review page (CHECKLIST 300, PROP-AUDIT-GUIDE.md; the cars as JSON from scripts/prop-sheet.mjs): one car with its PROP BOUNDS (render/propbounds.js) for scripts/shots.mjs: ?car=<id>&view=side|front|rear|top|all
+// (all: the four in one picture) &slots=roof,cargo,wing &shapes=box,cyl &hide=1 (the car's own tagged props hidden) &w=&h=
+import * as THREE from 'three';
+import { MODELS } from '/src/delivery/render/models.js';
+import { makeIdeaModel } from '/src/delivery/render/ideaModels.js';
+import { makeUfo, addSuperKit } from '/src/delivery/render/carExtras.js';
+import { addLegend } from '/src/delivery/render/legenddecal.js';
+import { patchModel } from '/src/delivery/render/modelpatchapply.js';
+import { addPropBounds, boundsWireframe } from '/src/delivery/render/propbounds.js';
+import { hideProps } from '/src/delivery/render/propcosmetic.js';
+import { propSlots, fitProp, PROP_BOUNDS } from '/src/delivery/render/propanchors.js';
+import { buildProp, propPaint, propSlotOf, propById } from '/src/delivery/render/propmodels.js';
+const q = new URLSearchParams(location.search), view = q.get('view') || 'all', W = +q.get('w') || 1400, H = +q.get('h') || 1000;
+// &prop=<id>&paint=<hex>: that prop (render/propmodels.js) fitted on the car in that paint, the car's own prop of the slot hidden; the bounds
+// are drawn only with &bounds=1 then. &alone=<id>&paint=: the prop by itself on its canonical bound (view=trio: front, side, top)
+const propId = q.get('prop') || q.get('alone'), paintHex = parseInt(q.get('paint') || 'ffffff', 16);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xffffff);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x888888, 1.6)); const d = new THREE.DirectionalLight(0xffffff, 1.2); d.position.set(-5, 8, 6); scene.add(d);
+const grid = new THREE.GridHelper(8, 16, 0xdddddd, 0xeeeeee); grid.position.y = 0.001; scene.add(grid);
+const r = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true, preserveDrawingBuffer: true }); r.setSize(W, H); r.setPixelRatio(1);
+r.setScissorTest(true);
+const render = (mid, R, F) => {
+  const cams = {
+    side: () => { const c = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100); c.position.set(-20, mid.y, mid.z); c.lookAt(0, mid.y, mid.z); return [c, 'ortho']; },
+    top: () => { const c = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100); c.position.set(0, 20, mid.z); c.up.set(0, 0, -1); c.lookAt(0, 0, mid.z); return [c, 'ortho']; },
+    head: () => { const c = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100); c.position.set(0, mid.y, 20); c.lookAt(0, mid.y, 0); return [c, 'ortho']; },
+    front: () => { const c = new THREE.PerspectiveCamera(32, 1, 0.1, 100); c.position.set(-R * 1.6, R * 1.0, mid.z + R * 1.7); c.lookAt(0, F ? mid.y : mid.y * 0.9, mid.z); return [c, 'persp']; },
+    rear: () => { const c = new THREE.PerspectiveCamera(32, 1, 0.1, 100); c.position.set(-R * 1.6, R * 1.05, mid.z - R * 1.7); c.lookAt(0, F ? mid.y : mid.y * 0.9, mid.z); return [c, 'persp']; },
+  };
+  const draw = (name, x, y, w, h) => {
+    const [c, kind] = cams[name]();
+    if (kind === 'ortho') { const hh = R * 0.95, hw = hh * w / h; c.left = -hw; c.right = hw; c.top = hh; c.bottom = -hh; c.updateProjectionMatrix(); }
+    else { c.aspect = w / h; c.updateProjectionMatrix(); }
+    r.setViewport(x, y, w, h); r.setScissor(x, y, w, h); r.render(scene, c);
+  };
+  if (view === 'all') { draw('side', 0, H / 2, W / 2, H / 2); draw('top', W / 2, H / 2, W / 2, H / 2); draw('front', 0, 0, W / 2, H / 2); draw('rear', W / 2, 0, W / 2, H / 2); }
+  else if (view === 'pair') { draw('side', 0, 0, W / 2, H); draw('rear', W / 2, 0, W / 2, H); }
+  else if (view === 'trio') { draw('head', 0, 0, W / 3, H); draw('side', W / 3, 0, W / 3, H); draw('top', 2 * W / 3, 0, W / 3, H); }
+  else draw(view, 0, 0, W, H);
+};
+if (q.get('alone')) {
+  const slot = propSlotOf(propId), prop = buildProp(propId, propPaint(paintHex)), shape = propById(propId).shape;
+  const wire = boundsWireframe(slot, shape);
+  const B = PROP_BOUNDS[slot], lift = shape === 'box' ? B.box[1] / 2 : B.cylinder.axis === 'y' ? B.cylinder.height / 2 : B.cylinder.radius;
+  prop.position.y = lift; wire.position.y = lift; scene.add(prop, wire);
+  const size = shape === 'box' ? Math.max(...B.box) : Math.max(B.cylinder.height, 2 * B.cylinder.radius);
+  render(new THREE.Vector3(0, lift, 0), size * 0.62 + 0.15, true);
+  document.title = 'done';
+} else {
+// (the roster's entries as JSON, written by the generator: the game's cars.js cannot be imported without the whole game's page)
+const cars = await (await fetch('/delivery/propcars.json')).json();
+const id = q.get('car') || 'minibus', car = cars[id];
+// (as render/showcar.js makeShowCar builds it, less the plate and wheel dressing; the Tank stands in as the army tank model)
+const makeShowCar = (car) => {
+  if (car.idea) return patchModel(makeIdeaModel(car), car);
+  const mesh = car.tank ? MODELS.armytank(car) : car.ufo ? makeUfo() : MODELS[car.model](car);
+  if (car.super || car.superKit) addSuperKit(mesh, car);
+  if (car.legend) addLegend(mesh, car);
+  return patchModel(mesh, car);
+};
+const m = makeShowCar(car); m.userData.animate?.(0);
+const slots = q.get('slots') ? q.get('slots').split(',') : undefined, shapes = q.get('shapes') ? q.get('shapes').split(',') : undefined;
+if (q.get('hide')) hideProps(m, q.get('hide') === '1' ? null : q.get('hide'));
+if (propId) {
+  const slot = propSlotOf(propId), shape = propById(propId).shape, fit = fitProp(id, slot, shape);
+  if (fit) {
+    hideProps(m, slot);
+    const prop = buildProp(propId, propPaint(paintHex));
+    prop.position.set(...fit.position); prop.rotation.y = fit.rotationY; prop.scale.setScalar(fit.scale);
+    m.add(prop);
+  } else console.log('no ' + slot + ' slot on ' + id);
+}
+if (!propId || q.get('bounds')) addPropBounds(m, id, { slots, shapes, highlight: !q.get('hide') });
+scene.add(m);
+const box = new THREE.Box3().setFromObject(m), size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
+let R = Math.max(size.x, size.y, size.z) * 0.62 + 0.4;
+// &focus=<slot>: the camera close on that slot's box
+const F = q.get('focus') && propSlots(id)[q.get('focus')];
+if (F && F.supported) { mid.set(F.box.centre[0], F.box.centre[1], F.box.centre[2]); R = Math.max(...F.box.size) * 1.1 + 0.6; }
+render(mid, R, F);
+const Pl = propSlots(id); console.log(JSON.stringify({ id, roof: Pl.roof.supported, cargo: Pl.cargo.supported, wing: Pl.wing.supported }));
+document.title = 'done';
+}
+document.title = 'done';
+</script>

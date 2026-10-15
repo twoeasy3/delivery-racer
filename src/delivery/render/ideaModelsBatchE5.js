@@ -87,7 +87,7 @@ export const IDEA_MODELS_BATCH_E5 = {
       bx(1.86, 0.04, 0.36, 0, 1.5, -1.95, 0.14),
       ...[-1, 1].map(s => bx(0.03, 0.3, 0.5, s * 0.94, 1.47, -1.95)),
       ...[-1, 1].map(s => bx(0.07, 0.53, 0.11, s * 0.35, 1.235, -1.92)),
-    ]);
+    ]).userData.prop = 'wing'; // (tagged: an equipped wing hides it, render/propcosmetic.js)
     // lamps: wide rectangular headlamps either side of the grille, amber under their outer ends; a tail lamp each side with a brake lamp inboard
     parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => bx(0.34, 0.12, 0.04, s * 0.68, 0.5, FZ - 0.005)));
     parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.4, 0.13, 0.04, s * 0.66, 0.8, BZ + 0.005)));
@@ -164,7 +164,7 @@ export const IDEA_MODELS_BATCH_E5 = {
       bx(2.0, 0.04, 0.3, 0, 1.64, -2.12, 0.5),
       ...[-1, 1].map(s => bx(0.04, 0.72, 0.95, s * 1.0, 1.52, -1.99)),
       ...[-1, 1].map(s => bx(0.08, 0.55, 0.12, s * 0.5, 1.2, -1.9)),
-    ]);
+    ]).userData.prop = 'wing'; // (tagged: an equipped wing hides it, render/propcosmetic.js)
     // lamps: wide rectangular headlamps in the nose either side of the intake, amber under them; slim tail lamps with brake lamps inboard
     parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => bx(0.34, 0.12, 0.04, s * 0.73, 0.5, FZ - 0.005)));
     parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.44, 0.1, 0.04, s * 0.64, 0.82, BZ + 0.005)));

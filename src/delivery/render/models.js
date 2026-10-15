@@ -278,12 +278,12 @@ export const MODELS = {
           box(g, white, sw, 0.02, (r0 - r1) * k, x, ry + 0.055, (r0 + r1) / 2 * k);          // over the roof,
           box(g, white, sw, 0.02, 0.72 * k, x, 0.85, -1.95 * k);                             // and across the boot
         }
-        box(g, paint, w * 0.9, 0.07, 0.16, 0, 0.88, -L + 0.06);                              // a ducktail
+        box(g, paint, w * 0.9, 0.07, 0.16, 0, 0.88, -L + 0.06).userData.prop = 'wing';                              // a ducktail
       }
       if (S.blackRoof) box(g, dark, w * 0.74, 0.03, (r0 - r1) * k + 0.1, 0, ry + 0.055, (r0 + r1) / 2 * k);
       if (S.whale) { // a whale tail on the engine lid, and the wide hips over the rear wheels
-        box(g, paint, w * 0.98, 0.07, 0.5, 0, 1.0, -L * 0.83);
-        box(g, dark, w * 0.98, 0.04, 0.1, 0, 1.03, -L * 0.83 - 0.24);
+        box(g, paint, w * 0.98, 0.07, 0.5, 0, 1.0, -L * 0.83).userData.prop = 'wing';
+        box(g, dark, w * 0.98, 0.04, 0.1, 0, 1.03, -L * 0.83 - 0.24).userData.prop = 'wing';
         for (const side of [-1, 1]) {
           box(g, dark, 0.05, 0.14, 0.3, side * w * 0.3, 0.92, -L * 0.83);
           box(g, paint, 0.14, 0.34, L * 0.62, side * (w / 2 + 0.03), 0.62, -L * 0.6);
@@ -291,17 +291,17 @@ export const MODELS = {
       }
       if (S.wing) { // a black engine deck, and a tall wing right across the tail between end plates
         box(g, dark, w * 0.72, 0.03, 1.15 * k, 0, 0.855, -1.7 * k);
-        box(g, dark, w * 1.04, 0.05, 0.4, 0, 1.24, -L + 0.12);
+        box(g, dark, w * 1.04, 0.05, 0.4, 0, 1.24, -L + 0.12).userData.prop = 'wing';
         for (const side of [-1, 1]) {
-          box(g, paint, 0.05, 0.46, 0.5, side * w * 0.52, 1.08, -L + 0.12);
-          box(g, dark, 0.06, 0.38, 0.1, side * w * 0.26, 1.04, -L + 0.14);
+          box(g, paint, 0.05, 0.46, 0.5, side * w * 0.52, 1.08, -L + 0.12).userData.prop = 'wing';
+          box(g, dark, 0.06, 0.38, 0.1, side * w * 0.26, 1.04, -L + 0.14).userData.prop = 'wing';
         }
         box(g, dark, w * 0.3, 0.1, 0.5 * k, 0, 1.12, -0.1 * k);                              // a roof scoop
       }
       if (S.louvres) { // the engine deck's louvres, and intakes in its flanks
         for (let i = 0; i < 4; i++) box(g, dark, w * 0.56, 0.03, 0.08, 0, 0.86, -L * (0.55 + i * 0.09));
         for (const side of [-1, 1]) box(g, dark, 0.04, 0.2, 0.55, side * (w / 2 + 0.005), 0.62, -L * 0.3);
-        box(g, paint, w * 0.9, 0.04, 0.2, 0, 0.9, -L * 0.95);                       // a lip spoiler
+        box(g, paint, w * 0.9, 0.04, 0.2, 0, 0.9, -L * 0.95).userData.prop = 'wing';                       // a lip spoiler
       }
       for (const side of [-1, 1]) {
         // lamps of its own: the tourer's wide oblong headlamps and twin round tail lamps a side; the coupe's
@@ -846,8 +846,9 @@ export const MODELS = {
     const beacon = new THREE.MeshBasicMaterial({ color: 0xffa31a });                  // an amber beacon on the roof
     const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.18, 12), beacon);
     lamp.position.set(0, 2.0, front - 0.6);
+    lamp.userData.prop = 'roof'; // (tagged: a chosen roof prop hides the beacon and its base)
     group.add(lamp);
-    box(group, trim, 0.34, 0.05, 0.34, 0, 1.9, front - 0.6);                             // on its base
+    box(group, trim, 0.34, 0.05, 0.34, 0, 1.9, front - 0.6).userData.prop = 'roof';                             // on its base
     group.userData = { body, animate: (t) => { beacon.color.setHex((t * 2.5) % 1 < 0.5 ? 0xffa31a : 0x7a4a10); } };
     return group;
   },
@@ -1080,12 +1081,12 @@ export const MODELS = {
     box(group, trim, w * 0.3, 0.1, 0.42, 0, 0.98, l * 0.3);                          // its scoop
     box(group, glass, w * 0.86, 0.44, l * 0.36, 0, 1.12, -l * 0.02);                // the cabin
     box(group, paint, w * 0.88, 0.07, l * 0.36, 0, 1.37, -l * 0.02);                // roof
-    box(group, trim, w * 0.24, 0.06, 0.3, 0, 1.42, l * 0.04);                        // roof vent
+    box(group, trim, w * 0.24, 0.06, 0.3, 0, 1.42, l * 0.04).userData.prop = 'roof';  // roof vent (tagged: a chosen roof prop hides it, render/propcosmetic.js)
     screen(group, glass, w * 0.84, 0.05, 0.66, 0, 1.1, l * 0.19, 0.6);               // windscreen
     screen(group, glass, w * 0.84, 0.05, 0.6, 0, 1.1, -l * 0.24, -0.55);             // rear screen
     box(group, paint, w * 0.96, 0.06, l * 0.2, 0, 0.9, -l * 0.39);                  // the boot
-    for (const side of [-1, 1]) box(group, trim, 0.06, 0.3, 0.12, side * w * 0.38, 1.06, -l * 0.45); // the wing's posts
-    box(group, paint, w * 0.94, 0.05, 0.36, 0, 1.22, -l * 0.45);                    // the tall wing
+    for (const side of [-1, 1]) box(group, trim, 0.06, 0.3, 0.12, side * w * 0.38, 1.06, -l * 0.45).userData.prop = 'wing'; // the wing's posts (tagged: an equipped wing hides them, render/propcosmetic.js)
+    box(group, paint, w * 0.94, 0.05, 0.36, 0, 1.22, -l * 0.45).userData.prop = 'wing'; // the tall wing
     for (const side of [-1, 1]) {
       const roundel = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.02, 16), white); // a door roundel
       roundel.rotation.z = Math.PI / 2;
@@ -1190,8 +1191,8 @@ export const MODELS = {
     box(group, glass, w * 0.92, 0.42, l * 0.18, 0, 1.5, l * 0.12);                  // its glass
     box(group, paint, w * 0.94, 0.07, l * 0.2, 0, 1.74, l * 0.12);                  // its roof
     screen(group, glass, w * 0.9, 0.05, 0.5, 0, 1.47, l * 0.215, 0.3);               // windscreen
-    box(group, trim, w * 0.8, 0.08, 0.2, 0, 1.82, l * 0.12);                         // the light bar's base
-    for (const side of [-1, 1]) box(group, amber, w * 0.3, 0.1, 0.16, side * w * 0.22, 1.89, l * 0.12); // and its lamps
+    box(group, trim, w * 0.8, 0.08, 0.2, 0, 1.82, l * 0.12).userData.prop = 'roof';   // the light bar's base (tagged: a chosen roof prop hides the bar)
+    for (const side of [-1, 1]) box(group, amber, w * 0.3, 0.1, 0.16, side * w * 0.22, 1.89, l * 0.12).userData.prop = 'roof'; // and its lamps
     for (const side of [-1, 1]) box(group, paint, 0.42, 0.62, l * 0.42, side * (w / 2 - 0.21), 1.0, -l * 0.24); // the tool boxes
     box(group, trim, w * 0.5, 0.06, l * 0.42, 0, 0.78, -l * 0.24);                   // the deck between them
     const foot = [0, 1.2, -l * 0.1], tip = [0, 2.3, -l * 0.5 - 0.2];                 // the boom, from its foot to its tip
@@ -1236,8 +1237,8 @@ export const MODELS = {
     box(group, paint, w * 0.94, 0.08, cabL, 0, base + 1.16, cabZ);                     // its roof
     screen(group, glass, w * 0.86, 0.05, 0.56, 0, base + 0.86, cabFront + 0.03, 0.12);  // the near-upright windscreen
     for (const z of [cabFront - 0.05, cabZ, cabBack + 0.05]) for (const side of [-1, 1]) box(group, paint, 0.08, 0.55, 0.1, side * w * 0.455, base + 0.85, z); // pillars
-    box(group, trim, w * 0.9, 0.06, cabL, 0, base + 1.25, cabZ);                         // the roof rack,
-    box(group, LAMP, w * 0.7, 0.08, 0.03, 0, base + 1.3, cabFront - 0.05);              // and its light bar
+    box(group, trim, w * 0.9, 0.06, cabL, 0, base + 1.25, cabZ).userData.prop = 'roof';   // the roof rack,
+    box(group, LAMP, w * 0.7, 0.08, 0.03, 0, base + 1.3, cabFront - 0.05).userData.prop = 'roof'; // and its light bar
     const bedZ = (cabBack - l / 2) / 2, bedL = cabBack + l / 2;
     for (const side of [-1, 1]) box(group, paint, 0.08, 0.4, bedL, side * (w / 2 - 0.04), base + 0.75, bedZ); // the bed's sides
     box(group, paint, w, 0.4, 0.08, 0, base + 0.75, -l / 2 + 0.04);                     // and tailgate
@@ -1247,6 +1248,7 @@ export const MODELS = {
     const spare = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.3, 16), lambert(0x141414)); // the spare, standing in the bed
     spare.rotation.x = Math.PI / 2;
     spare.position.set(0, base + 1.0, cabBack - 0.75);
+    spare.userData.prop = 'cargo'; // (a decorative load in the bed)
     group.add(spare);
     box(group, trim, w * 0.5, 0.34, 0.05, 0, base + 0.3, l / 2 + 0.01);                 // the grille,
     for (const y of [0.2, 0.3, 0.4]) box(group, chrome, w * 0.46, 0.03, 0.06, 0, base + y, l / 2 + 0.02); // its slats
@@ -1340,6 +1342,7 @@ export const MODELS = {
     const rope = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.07, 6, 14), lambert(0xd9c27a)); // a rope, coiled in it
     rope.rotation.x = Math.PI / 2;
     rope.position.set(w * 0.2, 1.06, -l * 0.33);
+    rope.userData.prop = 'cargo'; // (a decorative load in the bed)
     group.add(rope);
     const prop = outboard(group, 0, 1.1, -l / 2 - 0.2, 1);
     for (const side of [-1, 1]) {
@@ -1511,8 +1514,9 @@ export const MODELS = {
       wheel(group, R, 0.24, side * (w / 2 - 0.05), R, -l * 0.31, lambert(0xc4c8ce));
     }
     const prop = outboard(group, 0, 1.1, -l * 0.48 - 0.2, 1);
-    box(group, lambert(0xd9c9a8), 0.06, 1.2, 0.06, 0, 2.6, l * 0.1);                   // the little mast on the roof,
+    box(group, lambert(0xd9c9a8), 0.06, 1.2, 0.06, 0, 2.6, l * 0.1).userData.prop = 'roof';  // the little mast on the roof (a roof ornament, tagged),
     const pennant = prism(group, lambert(0xd8262b), 0.02, [[0, 3.15], [0, 2.9], [-0.6, 3.03]]); // its pennant, made at z 0
+    pennant.userData.prop = 'roof';
     pennant.position.z = l * 0.1; // and moved to the mast, so it flaps about the mast (it swung about the van's middle)
     box(group, trim, w + 0.04, 0.16, 0.12, 0, 0.5, l * 0.48 + 0.04);                     // bumper
     group.userData = { body, animate: (t) => { prop.rotation.z = t * 20; pennant.rotation.y = Math.sin(t * 5) * 0.2; } };
@@ -1588,8 +1592,8 @@ export const MODELS = {
     box(shell, paint, w * 0.98, 0.08, l * 0.74, 0, 1.92, -l * 0.1);                // ...its roof
     screen(shell, glass, w * 0.9, 0.05, 0.55, 0, 1.6, l * 0.28, 0.5);                // windscreen
     for (const z of [0.25, 0.04, -0.17, -0.4]) for (const side of [-1, 1]) box(shell, paint, 0.08, 0.54, 0.12, side * w * 0.485, 1.62, l * z); // pillars: three rows of windows
-    for (const side of [-1, 1]) box(shell, trim, 0.06, 0.06, l * 0.62, side * w * 0.38, 2.0, -l * 0.1); // roof rack rails...
-    for (const z of [0.1, -0.15, -0.38]) box(shell, trim, w * 0.8, 0.05, 0.06, 0, 2.03, l * z);         // ...and bars
+    for (const side of [-1, 1]) box(shell, trim, 0.06, 0.06, l * 0.62, side * w * 0.38, 2.0, -l * 0.1).userData.prop = 'roof'; // roof rack rails...
+    for (const z of [0.1, -0.15, -0.38]) box(shell, trim, w * 0.8, 0.05, 0.06, 0, 2.03, l * z).userData.prop = 'roof'; // ...and bars
     box(shell, chrome, w * 0.6, 0.34, 0.06, 0, 1.12, l / 2 + 0.02);                // the chrome grille...
     for (const y of [1.02, 1.12, 1.22]) box(shell, trim, w * 0.58, 0.03, 0.04, 0, y, l / 2 + 0.05); // ...its bars
     box(shell, chrome, w + 0.1, 0.26, 0.2, 0, 0.58, l / 2 + 0.06);                 // chrome bumpers

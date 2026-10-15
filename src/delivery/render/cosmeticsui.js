@@ -14,6 +14,11 @@ import { WHEEL_COLOURS, WHEEL_DESIGNS, WHEEL_SETS, wheelColour, wheelDesign, whe
 import { PLATE_DESIGNS, designById, plateDesign, shownDesign, setPlateDesign, plateText, setPlateText, previewPlateText, resetPlate, onPlate, platePlan } from './platecosmetic.js';
 import { drawPlate } from './platedesigns.js';
 import { MAX_LEN, DEFAULT_TEXT, sanitizePlateText } from './platetext.js';
+import { PROP_PAINTS, paintValueOf, PROPS, propChoice, shownProp, setProp, propPaintChoice, setPropPaint, resetProp, onProp, slotStatus } from './propdress.js';
+import { propById, buildProp, propPaint } from './propmodels.js';
+import { propSlots } from './propanchors.js';
+import { existingProps } from './propcosmetic.js';
+import { sharedRenderer, drawStill } from './modelviews.js';
 import { ShowroomView } from './showroomview.js';
 import { stillCar } from './carstill.js';
 import { carInUse, CARS } from '../cars.js';
@@ -26,7 +31,9 @@ import { Sound } from './audio.js';
 export const SLOTS = [
   { id: 'wheels', name: 'Wheels', live: true },
   { id: 'plate', name: 'Number plate', live: true },
-  { id: 'roof', name: 'Roof ornament', live: false },
+  { id: 'roof', name: 'Roof', live: true, prop: true },
+  { id: 'cargo', name: 'Cargo', live: true, prop: true },
+  { id: 'wing', name: 'Wing', live: true, prop: true },
   { id: 'underglow', name: 'Underglow', live: false },
 ];
 // THE place for "does the player own it?" It asks cosmetics.js ownsCosmetic (free, or in its own stored list; the registry is there too).
@@ -43,7 +50,7 @@ const make = (tag, className, ...children) => {
 };
 const hexOf = (hex, fallback) => '#' + (hex === null ? fallback : hex.toString(16).padStart(6, '0'));
 
-let built = false, stage, carName, status, slotList, setRow, customChip, closeBtn, viewBtns, sections = {}, plateRow, plateInput, plateMsg, plateStatus, plateChip, openSlot = 'wheels';
+let built = false, stage, carName, status, slotList, setRow, customChip, closeBtn, viewBtns, sections = {}, propSecs = {}, tabMsg, plateRow, plateInput, plateMsg, plateStatus, plateChip, openSlot = 'wheels';
 let state = { open: false, car: null, evil: false, onClose: null, inMenu: false, close: false };
 
 const chip = (kind, id, name, swatch, pick, slot = 'wheels') => {
@@ -132,6 +139,121 @@ const buildPlate = () => {
     make('div', 'cz-foot', plateStatus, reset));
 };
 
+// ---- the PROP slots: Roof, Cargo, Wing (CHECKLIST 302; the choice and the dressing are render/propdress.js) ----
+const PROP_TEXT = {
+  roof: ['Roof prop', ''],
+  cargo: ['Cargo prop', ''],
+  wing: ['Rear wing', ''],
+};
+// the view the close-up of each slot takes: the car turned (rad), the camera's height (rad), and how wide the prop is shown (times its size)
+const PROP_VIEW = { roof: { yaw: Math.PI - 0.7, lift: 0.5, wide: 2.6 }, cargo: { yaw: Math.PI - 0.7, lift: 0.45, wide: 2.6 }, wing: { yaw: Math.PI - 0.45, lift: 0.2, wide: 2.8 } };
+const PREVIEW_POSE = { fov: 24, lift: 0.42, angle: 0.7, margin: 0.9 };
+const previews = new Set(); // ids drawn
+// each prop alone, once, into its chip's small box (the shared renderer; nothing if there is none: the chip keeps its name)
+const drawPreviews = (slot) => requestAnimationFrame(() => {
+  const renderer = sharedRenderer();
+  if (!renderer || !state.open || openSlot !== slot) return;
+  for (const box of propSecs[slot].row.querySelectorAll('.cz-prev[data-prop]')) {
+    if (previews.has(box.dataset.prop) || !box.offsetWidth) continue;
+    try { if (drawStill(renderer, box, buildProp(box.dataset.prop, propPaint(0xc9d3e6)), PREVIEW_POSE)) previews.add(box.dataset.prop); } catch { /* (no picture: the name stays) */ }
+  }
+});
+const buildPropSection = (slot) => {
+  const [title] = PROP_TEXT[slot];
+  const row = make('div', 'cz-row cz-props');
+  row.setAttribute('role', 'group'); row.setAttribute('aria-label', title);
+  const pick = (id) => () => {
+    if (!slotStatus(state.car, slot).ok) return;
+    if (id !== 'none' && !owned(slot, id)) return flash(plateMsg, 'Locked: unlock it to wear it.');
+    if (setProp(slot, id)) Sound.play('menuPick', 0.4);
+  };
+  const none = make('button', 'cz-chip cz-propchip');
+  none.type = 'button'; none.dataset.prop = 'none';
+  none.append(make('span', 'cz-prev stock'), make('span', 'cz-name', 'None'), make('span', 'cz-tick', '✓'));
+  none.addEventListener('click', pick('none'));
+  row.append(none);
+  for (const p of PROPS[slot]) {
+    const b = make('button', 'cz-chip cz-propchip');
+    b.type = 'button'; b.dataset.prop = p.id;
+    const prev = make('span', 'cz-prev'); prev.dataset.prop = p.id;
+    b.append(prev, make('span', 'cz-name', p.name), make('span', 'cz-tick', '✓'));
+    b.addEventListener('click', pick(p.id));
+    row.append(b);
+  }
+  const paints = make('div', 'cz-row cz-paints');
+  paints.setAttribute('role', 'group'); paints.setAttribute('aria-label', title + ' colour');
+  for (const c of PROP_PAINTS) {
+    const b = make('button', 'cz-paint');
+    b.type = 'button'; b.dataset.paint = paintValueOf(c); b.title = c.name; b.setAttribute('aria-label', c.name);
+    b.append(c.hex === null ? make('span', 'cz-dot match') : swatchOf('#' + c.hex.toString(16).padStart(6, '0')));
+    b.firstChild.classList.add('cz-dot');
+    b.addEventListener('click', () => { if (slotStatus(state.car, slot).ok && propById(shownProp(slot))?.colourFrom !== 'fixed' && setPropPaint(slot, b.dataset.paint)) Sound.play('menuMove', 0.4); });
+    paints.append(b);
+  }
+  const why = make('div', 'cz-why'); why.setAttribute('role', 'status');
+  const stat = make('p', 'cz-status'); stat.setAttribute('aria-live', 'polite');
+  const reset = make('button', 'cz-reset', 'Reset to stock'); reset.type = 'button';
+  reset.addEventListener('click', () => { resetProp(slot); Sound.play('menuMove', 0.4); });
+  const colourHead = make('h3', '', 'Colour');
+  const node = make('section', 'cz-section cz-prop', make('h2', '', title), why, make('h3', '', 'Choose'), row, colourHead, paints, make('div', 'cz-foot', stat, reset));
+  propSecs[slot] = { node, row, paints, why, stat, none, reset };
+  return node;
+};
+// everything the three prop slots show for the car on the stage: supported or greyed (with the reason), the choice ticked, the colour
+// the one line a locked tab gives (a tap, the tooltip, the screen reader): the table's reason, or that the car is not audited yet
+const lockReason = (slot) => {
+  const st = slotStatus(state.car, slot), name = SLOTS.find(t => t.id === slot).name;
+  return name + ' is locked: ' + (st.legend ? 'Legendary cars keep their own look.' : st.why ? st.why.charAt(0).toUpperCase() + st.why.slice(1) + '.' : 'Not available for this car yet.');
+};
+const lockIcon = () => { const i = make('span', 'cz-lock'); i.setAttribute('aria-hidden', 'true'); return i; };
+const propShown = () => {
+  const car = state.car;
+  if (!car) return;
+  if (propSlotNow() && !slotStatus(car, openSlot).ok) { flash(tabMsg, ''); openSection('wheels'); return; } // (the open tab is locked on this car: back to Wheels)
+  const model = ShowroomView.model, own = model ? new Set(existingProps(model).map(e => e.slot)) : new Set();
+  for (const slot of Object.keys(PROP_TEXT)) {
+    const sec = propSecs[slot], st = slotStatus(car, slot), worn = shownProp(slot), chosen = propChoice(slot), paint = propPaintChoice(slot);
+    sec.node.classList.toggle('unsupported', !st.ok);
+    sec.why.hidden = st.ok;
+    sec.why.replaceChildren(...(st.ok ? [] : [make('strong', '', st.legend ? 'Not available for this car' : 'Not available for this car yet'), ...(st.why ? [make('span', '', st.why.charAt(0).toUpperCase() + st.why.slice(1) + '.')] : [])]));
+    for (const b of sec.row.children) {
+      const id = b.dataset.prop, on = id === chosen && (id === 'none' || owned(slot, id));
+      b.setAttribute('aria-pressed', String(on)); b.classList.toggle('equipped', on && st.ok);
+      b.classList.toggle('locked', !st.ok || (id !== 'none' && !owned(slot, id)));
+      b.setAttribute('aria-disabled', String(!st.ok));
+    }
+    sec.none.querySelector('.cz-name').textContent = own.has(slot) ? 'Stock' : 'None';
+    const prop = worn !== 'none' ? propById(worn) : null;
+    const fixedColours = !!prop && prop.colourFrom === 'fixed'; // (a prop with colours of its own, such as the hay or the cactus: the swatches do nothing)
+    for (const b of sec.paints.children) {
+      const on = b.dataset.paint === paint;
+      b.setAttribute('aria-pressed', String(on)); b.classList.toggle('equipped', on && st.ok && !fixedColours); b.classList.toggle('locked', !st.ok || fixedColours);
+    }
+    sec.paints.title = fixedColours ? 'This one keeps its own colours' : '';
+    sec.stat.textContent = !st.ok ? '' : prop ? prop.name + ' (' + (PROP_PAINTS.find(c => paintValueOf(c) === paint)?.name || '#' + paint) + ')' : own.has(slot) ? "Stock: the car's own is kept" : 'Nothing on';
+    sec.reset.disabled = !st.ok;
+    const tab = [...slotList.children].find(t => t.dataset.slot === slot);
+    if (tab) {
+      tab.classList.toggle('na', !st.ok); tab.classList.toggle('locked', !st.ok);
+      tab.setAttribute('aria-disabled', String(!st.ok));
+      tab.title = st.ok ? '' : lockReason(slot);
+      tab.setAttribute('aria-label', st.ok ? SLOTS.find(t => t.id === slot).name : lockReason(slot));
+      tab.querySelector('.cz-lockline').replaceChildren(...(st.ok ? [] : [lockIcon(), document.createTextNode('Locked')]));
+    }
+  }
+  const ps = propSlotNow();
+  if (viewBtns) { viewBtns[4].hidden = !ps; if (ps) { viewBtns[4].textContent = SLOTS.find(t => t.id === ps).name + ' close-up'; viewBtns[4].disabled = !slotStatus(car, ps).ok; } }
+  if (state.close && state.prop && state.prop === ps) setCloseUp(true, null, ps); // (the shape changed: the camera follows)
+};
+const propSlotNow = () => (SLOTS.find(s => s.id === openSlot)?.prop ? openSlot : null);
+// where the close-up of a slot looks: the slot's centre on this car (its box, or the worn cylinder prop's), as wide as the prop with the car around it
+const focusOf = (slot) => {
+  const car = state.car, s = car && propSlots(car.id)[slot];
+  if (!s || !s.supported) return null;
+  const prop = propById(shownProp(slot)), sh = prop && prop.shape === 'cylinder' ? s.cylinder : s.box, v = PROP_VIEW[slot];
+  return { at: sh.centre.slice(), span: Math.max(...(sh.size || [sh.radius * 2, sh.height, sh.radius * 2])) * v.wide, yaw: v.yaw, lift: v.lift };
+};
+
 const build = () => {
   built = true;
   const back = make('button', 'cz-back', make('span', '', '‹'), make('span', '', 'Back'));
@@ -146,7 +268,8 @@ const build = () => {
   stage.title = 'Drag to turn it';
   const view = (name, close) => { const b = make('button', 'cz-view', name); b.type = 'button'; b.addEventListener('click', () => setCloseUp(close)); return b; };
   const endView = (name, end) => { const b = make('button', 'cz-view', name); b.type = 'button'; b.dataset.end = end; b.addEventListener('click', () => setCloseUp(true, end)); return b; };
-  viewBtns = [view('Whole car', false), view('Wheels close-up', true), endView('Rear plate', 'rear'), endView('Front plate', 'front')];
+  const propView = () => { const b = make('button', 'cz-view', 'Close-up'); b.type = 'button'; b.hidden = true; b.addEventListener('click', () => { const ps = propSlotNow(); if (ps) setCloseUp(true, null, ps); }); return b; };
+  viewBtns = [view('Whole car', false), view('Wheels close-up', true), endView('Rear plate', 'rear'), endView('Front plate', 'front'), propView()];
   const stageBox = make('div', 'cz-stage', stage, make('div', 'cz-views', ...viewBtns), make('p', 'cz-hint', 'Drag to turn the car'));
   // the slots
   slotList = make('div', 'cz-slots');
@@ -159,7 +282,8 @@ const build = () => {
     b.setAttribute('aria-selected', String(slot.id === 'wheels'));
     if (!slot.live) b.setAttribute('aria-disabled', 'true'); // (greyed: nothing behind it yet; it is skipped by the keys)
     b.dataset.slot = slot.id;
-    if (slot.live) b.addEventListener('click', () => openSection(slot.id));
+    if (slot.prop) b.append(make('small', 'cz-lockline'));
+    if (slot.live) b.addEventListener('click', () => { if (slot.prop && !slotStatus(state.car, slot.id).ok) flash(tabMsg, lockReason(slot.id)); else { flash(tabMsg, ''); openSection(slot.id); } });
     slotList.append(b);
   }
   // the Wheels section
@@ -184,19 +308,25 @@ const build = () => {
     make('p', 'cz-note', 'A wheel set is a tyre and rim together. It applies to every car you drive, in the garage and on the road.'),
     setRow, customChip,
     make('div', 'cz-foot', status, reset));
-  sections = { wheels, plate: buildPlate() };
-  root.replaceChildren(make('div', 'cz-backdrop'), top, stageBox, make('div', 'cz-panel', slotList, wheels, sections.plate));
+  tabMsg = make('p', 'cz-tabmsg'); tabMsg.setAttribute('role', 'status');
+  sections = { wheels, plate: buildPlate(), roof: buildPropSection('roof'), cargo: buildPropSection('cargo'), wing: buildPropSection('wing') };
+  root.replaceChildren(make('div', 'cz-backdrop'), top, stageBox, make('div', 'cz-panel', slotList, tabMsg, wheels, sections.plate, sections.roof, sections.cargo, sections.wing));
   openSection('wheels');
   onWheelColour(shown);
   onPlate(() => { if (state.open) plateShown(); });
+  onProp(() => { if (state.open) propShown(); });
   setCloseUp(false);
 };
-const setCloseUp = (on, end = null) => {
+const setCloseUp = (on, end = null, slot = null) => {
+  const focus = on && slot ? focusOf(slot) : null;
+  if (on && slot && !focus) { on = false; slot = null; } // (a slot this car cannot wear has nothing to look at)
   state.close = on;
   state.end = on ? end : null;
-  ShowroomView.closeUp(on, end);
+  state.prop = on ? slot : null;
+  ShowroomView.closeUp(on, end, focus);
   viewBtns[0].setAttribute('aria-pressed', String(!on));
-  viewBtns[1].setAttribute('aria-pressed', String(on && !end));
+  viewBtns[1].setAttribute('aria-pressed', String(on && !end && !slot));
+  viewBtns[4].setAttribute('aria-pressed', String(on && !!slot));
   viewBtns[2].setAttribute('aria-pressed', String(on && end === 'rear'));
   viewBtns[3].setAttribute('aria-pressed', String(on && end === 'front'));
 };
@@ -206,12 +336,15 @@ const openSection = (id) => {
   for (const [key, node] of Object.entries(sections)) node.hidden = key !== id;
   for (const b of slotList.children) { const on = b.dataset.slot === id; b.classList.toggle('on', on && !b.classList.contains('later')); b.setAttribute('aria-selected', String(on)); }
   viewBtns[1].hidden = id !== 'wheels'; viewBtns[2].hidden = viewBtns[3].hidden = id !== 'plate';
-  if (state.close && ((id === 'plate') === !state.end)) setCloseUp(false);
+  const keep = state.close && (id === 'plate' ? !!state.end : id === 'wheels' ? !state.end && !state.prop : state.prop === id);
+  if (state.close && !keep) setCloseUp(false);
   if (id === 'plate') plateShown();
+  if (propSlotNow()) { propShown(); drawPreviews(id); }
+  else viewBtns[4].hidden = true;
 };
 
 // arrows: along a row, or to the nearest choice above / below
-const choices = () => [...root.querySelectorAll('button.cz-chip:not(.locked), .cz-reset, .cz-view, .cz-back')];
+const choices = () => [...root.querySelectorAll('button.cz-chip:not(.locked), .cz-paint:not(.locked), .cz-reset:not(:disabled), .cz-view:not(:disabled), .cz-back')].filter(el => el.offsetParent !== null);
 const move = (dx, dy) => {
   const all = choices(), at = document.activeElement, from = all.includes(at) ? at : null;
   if (!from) { (root.querySelector('.cz-chip.equipped') || all[0])?.focus(); return; }
@@ -243,7 +376,7 @@ const showCar = () => {
   const car = state.car;
   carName.textContent = 'On your ' + car.name;
   if (!ShowroomView.show(stage, car, { evil: state.evil })) requestAnimationFrame(() => { if (state.open) stillCar(stage, car, state.evil); }); // (no WebGL: its picture)
-  if (built) plateShown();
+  if (built) { plateShown(); propShown(); }
 };
 
 export const Cosmetics = {
@@ -259,8 +392,9 @@ export const Cosmetics = {
     root.classList.toggle('evil', evil);
     Nav.enter('cosmetics', () => this.close());
     const q = new URLSearchParams(location.search), cu = q.get('closeup');
-    if (q.get('slot') === 'plate') openSlot = 'plate'; // (?slot=plate&closeup=rear|front: for a picture)
-    setCloseUp(cu !== null, cu === 'rear' || cu === 'front' ? cu : null);
+    if (SLOTS.some(s => s.live && s.id === q.get('slot'))) openSlot = q.get('slot'); // (?slot=plate|roof|cargo|wing&closeup=rear|front|1: for a picture)
+    const propSlot = SLOTS.find(s => s.prop && s.id === openSlot);
+    setCloseUp(cu !== null, cu === 'rear' || cu === 'front' ? cu : null, propSlot && cu !== null && cu !== 'rear' && cu !== 'front' ? propSlot.id : null);
     shown();
     openSection(openSlot);
     showCar();
@@ -280,7 +414,7 @@ export const Cosmetics = {
     done?.();
   },
   // for a check or a picture
-  get shown() { return { plate: shownDesign(), plateText: plateText(), openSlot, end: state.end || null, open: state.open, car: state.car?.id || null, closeUp: state.close, design: wheelDesign(), colour: wheelColour(), set: wheelSet(), view: ShowroomView.state }; },
+  get shown() { return { props: { roof: shownProp('roof'), cargo: shownProp('cargo'), wing: shownProp('wing') }, prop: state.prop || null, plate: shownDesign(), plateText: plateText(), openSlot, end: state.end || null, open: state.open, car: state.car?.id || null, closeUp: state.close, design: wheelDesign(), colour: wheelColour(), set: wheelSet(), view: ShowroomView.state }; },
   closeUp: setCloseUp,
 };
 // the live car is drawn while this screen is up

@@ -13,6 +13,7 @@ import { SPECIALS } from './events.js';
 import { Progress } from './progress.js';
 import { cosmeticKeys, grantCosmetics } from './render/cosmetics.js';
 import './render/platecosmetic.js'; // (registers the number plate designs, slot 'plate')
+import './render/propdress.js'; // (registers the roof / cargo / wing props, slots 'roof' 'cargo' 'wing')
 import './render/wheelcosmetic.js'; // (registers the wheel sets; a later cosmetic slot's module is imported here too, so that 'abs' sees its items)
 import { Ecu } from './ecu.js';
 

@@ -10,14 +10,15 @@ import { patchModel } from './modelpatchapply.js'; // (the car's model patch, if
 import { addLegend } from './legenddecal.js';
 import { dressWheels } from './wheelcosmetic.js'; // (the player's global wheel colour on its hubs: render-only)
 import { dressPlates } from './platecosmetic.js'; // (an equipped number plate hides the model's own plates: render-only)
+import { dressProps } from './propdress.js'; // (an equipped roof prop, cargo prop or rear wing hides the model's own: render-only)
 
 export const makeShowCar = (car) => {
-  if (car.idea) return dressPlates(dressWheels(patchModel(makeIdeaModel(car), car), car), car); // (a car idea in use: its own model, ideas.js; one with none throws below, and the card shows no picture)
+  if (car.idea) return dressProps(dressPlates(dressWheels(patchModel(makeIdeaModel(car), car), car), car), car); // (a car idea in use: its own model, ideas.js; one with none throws below, and the card shows no picture)
   const mesh = car.tank ? makeTankMesh(car.color) : car.ufo ? makeUfo() : car.model ? MODELS[car.model](car) : makeCarMesh(car.color); // (ufo: the earned Saucer)
   if (!car.tank && !car.ufo && !car.model) shapeCarMesh(mesh, car);
   if (car.super || car.superKit) addSuperKit(mesh, car); // (an earned car built as its garage car's Super version: the body kit on, as in play)
   if (car.legend) addLegend(mesh, car); // (a Legendary car: black and gold, the wreath on its flanks: render/legenddecal.js)
-  return dressPlates(dressWheels(patchModel(mesh, car), car), car);
+  return dressProps(dressPlates(dressWheels(patchModel(mesh, car), car), car), car);
 };
 export const paintShowCar = (mesh, car, evil) => {
   mesh.userData.body?.material.color.setHex((evil ? car.evilColor : car.color) ?? car.color); // (a level's own vehicle may have one paint, or no body to paint)

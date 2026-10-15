@@ -1,0 +1,382 @@
+// The PROP BOUNDS MEASURER (CHECKLIST 300; the generator scripts/prop-anchors.mjs and the check scripts/.propanchors-check.mjs use it).
+// For one car's model (built as the showroom builds it) it RASTERISES THE TOP SURFACE: a grid of CELL metres over the car's footprint,
+// each cell keeping the highest triangle over it (its height, its slope, what kind of part it is: body, glass, lamp, wheel, or a tagged
+// existing prop, which is hidden first so the free space is measured under it). From the map it finds, per slot, the free flat region
+// (connected flat cells of one height band, the largest rectangle inside them, inset by a margin, centred on the car where the slot is
+// centred) and fits the CANONICAL SHAPES of render/propanchors.js (PROP_BOUNDS) into it at the largest UNIFORM scale that fits.
+//   ROOF  the highest flat band (slope under ROOF_SLOPE) that lies above the glass (a roof is over the glasshouse): the box's footprint
+//         and the cylinder's circle fit inside the rectangle; the shape stands on the surface (its base at the surface's height)
+//   CARGO the lowest big flat region BEHIND THE CABIN (behind the glass's rearmost cell) and well below the roof: a bed's floor, a deck;
+//         the box's footprint fits inside it, its height is free (a load may stand above the bed's walls, up to MAX_SCALE)
+//   WING  a rear DECK (flat cells behind the rear glass, in the tail) where one is long enough, else the ROOF'S REAR EDGE (the blade sits
+//         on the last cells of the roof and may hang back over the rear glass as far as the tail): the owner, 15-Oct: "rear wings should
+//         work on the buses/vans"
+// KINDS (render/propanchors.js) say which slots a car may have at all (an open car has no roof, a closed car no cargo...).
+import * as THREE from 'three';
+
+export const CELL = 0.04;            // m: the map's cell
+export const MARGIN = 0.03;          // m: a shape keeps this far inside its flat region
+export const ROOF_SLOPE = 12, DECK_SLOPE = 15, WING_SLOPE = 20; // degrees
+export const BAND = 0.05;            // m: cells within this of the region's height count as the same flat
+export const ROOF_BAND = 0.08;
+export const OVERHANG = 0.08;
+export const MAX_INSET = 0.08;       // m: the most a shape's base may sink into a curved surface (the owner, 15-Oct: "inset the prop bounding
+                                     // box into the roof to give it more points of contact"; the base's corners all touch or lie within it)        // m: the most a roof-edge wing hangs back over a sloping rear window       // m: a roof may crown this much over its flat part (a rounded roof is still a roof)
+const cos = (deg) => Math.cos(deg * Math.PI / 180);
+const r3 = (v) => Math.round(v * 1000) / 1000;
+
+// ---- what each mesh is ----
+const classify = (model, glassy) => {
+  model.updateMatrixWorld(true);
+  const body = model.userData.body, bodyMat = body?.material, meshes = [], kitGroup = model.userData.kit?.isObject3D ? model.userData.kit : null;
+  model.traverse((n) => {
+    if (!n.isMesh || n.isInstancedMesh || !n.geometry) return;
+    for (let p = n; p; p = p.parent) if (p.visible === false || (kitGroup && p === kitGroup)) return; // (hidden, or in the Super kit's group (model.userData.kit, render/carExtras.js): its stripe, scoop, skirts and tagged wing / lamp rack are no surface: a Super measures as its base car)
+    const m = [].concat(n.material)[0];
+    if (!m || (m.transparent && m.opacity < 0.95)) return; // (see-through: not a surface)
+    let kind = 'ok';
+    if (n.userData.prop) kind = 'prop';
+    else if (m.isMeshBasicMaterial || (m.emissive && m.emissive.getHex() !== 0 && (m.emissiveIntensity ?? 1) > 0.25)) kind = 'lamp';
+    else if (n !== body && m !== bodyMat && glassy(m)) kind = 'glass';
+    else if (n.geometry.type === 'CylinderGeometry' && n.geometry.parameters.radiusTop >= 0.18 && Math.abs(Math.abs(n.rotation.z) - Math.PI / 2) < 0.02) kind = 'wheel';
+    meshes.push({ mesh: n, kind });
+  });
+  return meshes;
+};
+
+// ---- the top-surface map ----
+export const topMap = (model, glassy) => {
+  const meshes = classify(model, glassy);
+  const box = new THREE.Box3();
+  for (const { mesh, kind } of meshes) if (kind !== 'prop') box.expandByObject(mesh, true);
+  const x0 = Math.floor(box.min.x / CELL) - 1, z0 = Math.floor(box.min.z / CELL) - 1;
+  const nx = Math.ceil(box.max.x / CELL) + 1 - x0 + 1, nz = Math.ceil(box.max.z / CELL) + 1 - z0 + 1;
+  const y = new Float32Array(nx * nz).fill(-Infinity), ny = new Float32Array(nx * nz), kind = new Uint8Array(nx * nz), who = new Int16Array(nx * nz).fill(-1);
+  const KIND = { ok: 1, glass: 2, lamp: 3, wheel: 4, prop: 5 };
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3(), e1 = new THREE.Vector3(), e2 = new THREE.Vector3();
+  const put = (i, j, h, nyv, k, w) => { const at = i * nz + j; if (h > y[at] + 1e-6) { y[at] = h; ny[at] = nyv; kind[at] = k; who[at] = w; } };
+  meshes.forEach(({ mesh, kind: k }, w) => {
+    if (k === 'prop') return;
+    const g = mesh.geometry, p = g.attributes.position, idx = g.index;
+    const count = idx ? idx.count : p.count;
+    const vert = (v, i) => v.fromBufferAttribute(p, idx ? idx.getX(i) : i).applyMatrix4(mesh.matrixWorld);
+    for (let t = 0; t + 2 < count; t += 3) {
+      vert(a, t); vert(b, t + 1); vert(c, t + 2);
+      e1.subVectors(b, a); e2.subVectors(c, a); n.crossVectors(e1, e2);
+      const len = n.length();
+      if (len < 1e-10) continue;
+      n.divideScalar(len);
+      if (n.y <= 0.02) { // (a wall or an underside: it still marks the cells its vertices fall in, as a thing that is there)
+        for (const v of [a, b, c]) put(Math.round(v.x / CELL) - x0, Math.round(v.z / CELL) - z0, v.y, 0, KIND[k], w);
+        continue;
+      }
+      // the cells inside the triangle's xz shadow
+      const i0 = Math.max(0, Math.floor(Math.min(a.x, b.x, c.x) / CELL) - x0), i1 = Math.min(nx - 1, Math.ceil(Math.max(a.x, b.x, c.x) / CELL) - x0);
+      const j0 = Math.max(0, Math.floor(Math.min(a.z, b.z, c.z) / CELL) - z0), j1 = Math.min(nz - 1, Math.ceil(Math.max(a.z, b.z, c.z) / CELL) - z0);
+      const det = (b.x - a.x) * (c.z - a.z) - (c.x - a.x) * (b.z - a.z);
+      if (Math.abs(det) < 1e-12) { for (const v of [a, b, c]) put(Math.round(v.x / CELL) - x0, Math.round(v.z / CELL) - z0, v.y, n.y, KIND[k], w); continue; }
+      for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
+        const px = (i + x0) * CELL, pz = (j + z0) * CELL;
+        const l1 = ((b.x - px) * (c.z - pz) - (c.x - px) * (b.z - pz)) / det, l2 = ((c.x - px) * (a.z - pz) - (a.x - px) * (c.z - pz)) / det, l3 = 1 - l1 - l2;
+        if (l1 < -0.02 || l2 < -0.02 || l3 < -0.02) continue;
+        put(i, j, l1 * a.y + l2 * b.y + l3 * c.y, n.y, KIND[k], w);
+      }
+      for (const v of [a, b, c]) put(Math.round(v.x / CELL) - x0, Math.round(v.z / CELL) - z0, v.y, n.y, KIND[k], w); // (thin parts: an aerial, a rail)
+    }
+  });
+  const at = (i, j) => i * nz + j;
+  const map = { nx, nz, x0, z0, y, ny, kind, who, meshes, box, KIND, at,
+    X: (i) => (i + x0) * CELL, Z: (j) => (j + z0) * CELL, I: (x) => Math.round(x / CELL) - x0, J: (z) => Math.round(z / CELL) - z0 };
+  // the glass: its top, its rearmost cell (the cabin's back), the rear window's foot
+  let glassTop = -Infinity, glassMinZ = Infinity, glassMaxZ = -Infinity, bodyTop = -Infinity, rearGlassFoot = Infinity;
+  for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
+    const k = kind[at(i, j)], h = y[at(i, j)];
+    if (h === -Infinity) continue;
+    if (k === KIND.glass) { glassTop = Math.max(glassTop, h); glassMinZ = Math.min(glassMinZ, map.Z(j)); glassMaxZ = Math.max(glassMaxZ, map.Z(j)); }
+    if (k === KIND.ok) bodyTop = Math.max(bodyTop, h);
+  }
+  // the rear glass's foot: the lowest glass cell in the rearmost 0.3 m of glass (a deck lies at about that height)
+  for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) if (kind[at(i, j)] === KIND.glass && map.Z(j) < glassMinZ + 0.3) rearGlassFoot = Math.min(rearGlassFoot, y[at(i, j)]);
+  Object.assign(map, { glassTop, glassMinZ, glassMaxZ, bodyTop, rearGlassFoot, hasGlass: glassTop > -Infinity });
+  return map;
+};
+
+// ---- regions ----
+// the connected components (4-neighbour) of the cells `ok(i, j)` accepts, each as a list of [i, j]
+const components = (map, ok) => {
+  const seen = new Uint8Array(map.nx * map.nz), out = [];
+  for (let i = 0; i < map.nx; i++) for (let j = 0; j < map.nz; j++) {
+    if (seen[map.at(i, j)] || !ok(i, j)) continue;
+    const comp = [], stack = [[i, j]];
+    seen[map.at(i, j)] = 1;
+    while (stack.length) {
+      const [a, b] = stack.pop();
+      comp.push([a, b]);
+      for (const [c, d] of [[a + 1, b], [a - 1, b], [a, b + 1], [a, b - 1]]) {
+        if (c < 0 || d < 0 || c >= map.nx || d >= map.nz || seen[map.at(c, d)] || !ok(c, d)) continue;
+        seen[map.at(c, d)] = 1; stack.push([c, d]);
+      }
+    }
+    out.push(comp);
+  }
+  return out.sort((p, q) => q.length - p.length);
+};
+// the largest rectangle of cells inside a component (the histogram way); `symmetric` keeps it centred on x = 0; returns
+// { i0, i1, j0, j1, w, d } in cells (inclusive), or null
+const largestRect = (map, comp, symmetric) => {
+  const inside = new Uint8Array(map.nx * map.nz);
+  for (const [i, j] of comp) inside[map.at(i, j)] = 1;
+  const heights = new Int32Array(map.nz);
+  let best = null;
+  const consider = (i0, i1, j0, j1) => {
+    if (symmetric) { // (clip to the part that mirrors about the car's centre line)
+      const xa = map.X(i0) - CELL / 2, xb = map.X(i1) + CELL / 2, m = Math.min(-xa, xb);
+      if (m <= 0) return;
+      i0 = Math.max(i0, map.I(-m + CELL / 2)); i1 = Math.min(i1, map.I(m - CELL / 2));
+      if (i1 < i0) return;
+    }
+    const area = (i1 - i0 + 1) * (j1 - j0 + 1);
+    if (!best || area > best.area) best = { i0, i1, j0, j1, area, w: (i1 - i0 + 1) * CELL, d: (j1 - j0 + 1) * CELL };
+  };
+  for (let i = 0; i < map.nx; i++) {
+    for (let j = 0; j < map.nz; j++) heights[j] = inside[map.at(i, j)] ? heights[j] + 1 : 0;
+    const stack = [];
+    for (let j = 0; j <= map.nz; j++) {
+      const h = j < map.nz ? heights[j] : 0;
+      let start = j;
+      while (stack.length && stack[stack.length - 1][1] > h) {
+        const [s, hh] = stack.pop();
+        consider(i - hh + 1, i, s, j - 1);
+        start = s;
+      }
+      stack.push([start, h]);
+    }
+  }
+  return best;
+};
+const rectCells = (rect) => { const out = []; for (let i = rect.i0; i <= rect.i1; i++) for (let j = rect.j0; j <= rect.j1; j++) out.push([i, j]); return out; };
+const meanY = (map, cells) => cells.reduce((s, [i, j]) => s + map.y[map.at(i, j)], 0) / cells.length;
+const mainMesh = (map, cells) => {
+  const counts = new Map();
+  for (const [i, j] of cells) { const w = map.who[map.at(i, j)]; counts.set(w, (counts.get(w) || 0) + 1); }
+  const w = [...counts].sort((p, q) => q[1] - p[1])[0]?.[0];
+  return w >= 0 ? (map.meshes[w].mesh.name || map.meshes[w].mesh.geometry.type) : null;
+};
+
+// ---- the fit of the canonical shapes ----
+// the largest uniform scale at which a box [W, H, D] fits a free space { w, d, h? }, and which dimension limited it
+const fitBox = (B, free, min, max) => {
+  const by = { w: free.w / B[0], d: free.d / B[2], h: free.h != null ? free.h / B[1] : Infinity };
+  let lim = 'w', s = by.w;
+  for (const k of ['d', 'h']) if (by[k] < s) { s = by[k]; lim = k; }
+  if (s > max) { s = max; lim = 'max'; }
+  return s >= min ? { s: Math.floor(s * 100) / 100, lim } : null;
+};
+const fitCyl = (C, free, min, max) => {
+  const by = C.axis === 'y' ? { w: free.w / (2 * C.radius), d: free.d / (2 * C.radius), h: free.h != null ? free.h / C.height : Infinity }
+    : { w: free.w / C.height, d: free.d / (2 * C.radius), h: free.h != null ? free.h / (2 * C.radius) : Infinity };
+  let lim = 'w', s = by.w;
+  for (const k of ['d', 'h']) if (by[k] < s) { s = by[k]; lim = k; }
+  if (s > max) { s = max; lim = 'max'; }
+  return s >= min ? { s: Math.floor(s * 100) / 100, lim } : null;
+};
+
+// ---- the INSET: a shape settled on the surface under its footprint ----
+// the surface's height under (x, z), or null where there is nothing, or 'bad' over glass, a lamp or a wheel
+const surfaceAt = (map, x, z) => {
+  const i = map.I(x), j = map.J(z);
+  if (i < 0 || j < 0 || i >= map.nx || j >= map.nz) return null;
+  const h = map.y[map.at(i, j)];
+  if (h === -Infinity) return null;
+  return map.kind[map.at(i, j)] === map.KIND.ok ? h : 'bad';
+};
+// the footprint's sample points (corners, edge midpoints, the centre; a cylinder's rim) at scale s, centred on (cx, cz)
+const footprint = (B, shape, s, cx, cz) => {
+  // (a little inside the footprint's edge, as the check's rays are: the edge cell of a deck can be its side, falling away)
+  const pts = [[cx, cz]], IN = 0.92;
+  if (shape === 'box' || (shape === 'cyl' && B.cylinder.axis === 'x')) {
+    const hw = (shape === 'box' ? B.box[0] : B.cylinder.height) * s / 2 * IN, hd = (shape === 'box' ? B.box[2] : 2 * B.cylinder.radius) * s / 2 * IN;
+    for (const a of [-1, 0, 1]) for (const b of [-1, 0, 1]) if (a || b) pts.push([cx + a * hw, cz + b * hd]);
+  } else {
+    const r = B.cylinder.radius * s * IN;
+    for (let k = 0; k < 8; k++) pts.push([cx + r * Math.cos(k * Math.PI / 4), cz + r * Math.sin(k * Math.PI / 4)]);
+  }
+  return pts;
+};
+// a shape of scale `s` on the surface: shrinks the scale until the whole footprint (the part `keep` admits) is over body with an inset
+// of at most MAX_INSET; returns { s, top, inset } (top = the highest surface point under it: the shape's base at the top hovers; lowered by
+// `inset` it touches the lowest point, and so rests on the surface with several points of contact) or null (nothing fits)
+const settle = (map, B, shape, s, cx, cz, min, keep = () => true) => {
+  for (let k = 0; k < 14 && s >= min; k++, s = Math.floor(s * 90) / 100) {
+    const hs = [];
+    let bad = false;
+    for (const [x, z] of footprint(B, shape, s, cx, cz)) {
+      if (!keep(x, z)) continue;
+      const h = surfaceAt(map, x, z);
+      if (h === null || h === 'bad') { bad = true; break; }
+      hs.push(h);
+    }
+    if (bad || !hs.length) continue;
+    const top = Math.max(...hs), inset = top - Math.min(...hs);
+    if (inset <= MAX_INSET) return { s, top, inset: Math.round(inset * 1000) / 1000 };
+  }
+  return null;
+};
+// the table's row for a slot: both shapes settled on the surface at (cx, cz) (a box and a cylinder each its own scale, inset and height)
+const row = (map, B, box, cyl, cx, cz, from, free, region, min, keep, zOf = null) => {
+  const sb = settle(map, B, 'box', box.s, cx, zOf ? zOf('box', box.s) : cz, min, keep), sc = settle(map, B, 'cyl', cyl.s, cx, zOf ? zOf('cyl', cyl.s) : cz, min, keep);
+  if (!sb || !sc) return null;
+  const hb = B.box[1] * sb.s / 2, hc = B.cylinder.axis === 'y' ? B.cylinder.height * sc.s / 2 : B.cylinder.radius * sc.s;
+  const out = { box: [sb.s, r3(cx), r3(sb.top + hb), r3(zOf ? zOf('box', sb.s) : cz)], cyl: [sc.s, r3(cx), r3(sc.top + hc), r3(zOf ? zOf('cyl', sc.s) : cz)], from, lim: box.lim, free, region };
+  if (sb.inset > 0.004 || sc.inset > 0.004) out.inset = [sb.inset, sc.inset];
+  if (sb.s < box.s || sc.s < cyl.s) out.lim = 'inset';
+  return out;
+};
+
+// ---- the slots ----
+const NO_ROOF = { open: 'an open car: no roof', canopy: 'a canopy or bubble roof: nothing flat to stand on', craft: 'a craft, not a car', tank: 'a tank', micro: 'a microcar: too small', bike: 'a bike' };
+const NO_WING = { canopy: 'a canopy roof with no deck or edge', craft: 'a craft', tank: 'a tank', micro: 'a microcar', bike: 'a bike' };
+const CARGO_KINDS = new Set(['pickup', 'flatbed', 'halftrack', 'open', 'truck', 'special']);
+
+// a region's free rectangle: the largest rect in the biggest component that meets the size, inset by MARGIN, as { w, d, x, z, y, cells, rect }
+const region = (map, ok, minW, minD, symmetric) => {
+  for (const comp of components(map, ok).slice(0, 6)) {
+    const rect = largestRect(map, comp, symmetric);
+    if (!rect) continue;
+    const w = rect.w - 2 * MARGIN, d = rect.d - 2 * MARGIN;
+    if (w < minW || d < minD) continue;
+    const cells = rectCells(rect);
+    return { w, d, x: symmetric ? 0 : (map.X(rect.i0) + map.X(rect.i1)) / 2, z: (map.Z(rect.j0) + map.Z(rect.j1)) / 2, zRear: map.Z(rect.j0) - CELL / 2 + MARGIN, zFront: map.Z(rect.j1) + CELL / 2 - MARGIN, y: meanY(map, cells), cells, rect, from: mainMesh(map, cells) };
+  }
+  return null;
+};
+const isFlat = (map, i, j, slopeDeg) => map.kind[map.at(i, j)] === map.KIND.ok && map.ny[map.at(i, j)] >= cos(slopeDeg);
+
+// the distinct heights (0.04 m bins, highest first) at which at least `least` cells `ok(i, j)` lie
+const levels = (map, ok, least = 8) => {
+  const bins = new Map();
+  for (let i = 0; i < map.nx; i++) for (let j = 0; j < map.nz; j++) if (ok(i, j)) { const b = Math.round(map.y[map.at(i, j)] / 0.04); bins.set(b, (bins.get(b) || 0) + 1); }
+  return [...bins].filter(([, n]) => n >= least).map(([b]) => b * 0.04).sort((a, b) => b - a);
+};
+export const measureRoof = (map, kind, B, limits, zMin = -Infinity) => {
+  if (NO_ROOF[kind]) return { no: NO_ROOF[kind] };
+  const floor = map.hasGlass ? map.glassTop - 0.06 : map.bodyTop - 0.5;
+  const above = (i, j) => map.y[map.at(i, j)] >= floor && map.Z(j) >= zMin;
+  // the flat bands, from the highest level down (a boom, an aerial or a tipper's shield over the cab is a level of its own and too small:
+  // the cab's roof is the next level; the owner, 15-Oct: a van or truck cab's small flat roof is a roof): at each level the biggest flat
+  // within ROOF_BAND (a crowned roof's flat is a little under its peak), and the highest level with a 0.3 x 0.25 m flat wins
+  let best = null;
+  for (const level of levels(map, (i, j) => isFlat(map, i, j, ROOF_SLOPE) && above(i, j))) {
+    for (const band of [level, level - ROOF_BAND / 2]) {
+      const r = region(map, (i, j) => isFlat(map, i, j, ROOF_SLOPE) && above(i, j) && Math.abs(map.y[map.at(i, j)] - band) <= ROOF_BAND, 0.3, 0.25, true);
+      if (r && (!best || r.w * r.d > best.w * best.d * 1.15)) best = r;
+    }
+    if (best) break;
+  }
+  if (best) {
+    const box = fitBox(B.box, { w: best.w, d: best.d }, limits.min, limits.max), cyl = fitCyl(B.cylinder, { w: best.w, d: best.d }, limits.min, limits.max);
+    if (box && cyl) { const out = row(map, B, box, cyl, 0, best.z, 'roof', [r3(best.w), r3(best.d)], best, limits.min); if (out) return out; }
+  }
+  // no flat patch: a CURVED, domed or tapering roof (the owner, 15-Oct): the shape sits on the roof's top region (any slope) and is SUNK into
+  // it by an inset so that its base has several points of contact (settle: the scale shrinks until the inset is under MAX_INSET); again
+  // level by level from the top, so a thin thing over the roof does not hide the roof
+  const any = (i, j) => map.kind[map.at(i, j)] === map.KIND.ok && above(i, j);
+  const tops = levels(map, any);
+  if (!tops.length) return { no: 'no roof (nothing of the body above the glass)' };
+  let curved = null;
+  for (const crown of tops) { curved = region(map, (i, j) => any(i, j) && map.y[map.at(i, j)] >= crown - 0.25 && map.y[map.at(i, j)] <= crown + 0.02, 0.3, 0.25, true); if (curved) break; }
+  if (!curved) return { no: 'the roof is too small (no 0.3 x 0.25 m patch near its top)' };
+  const box = fitBox(B.box, { w: curved.w, d: curved.d }, limits.min, limits.max), cyl = fitCyl(B.cylinder, { w: curved.w, d: curved.d }, limits.min, limits.max);
+  if (!box || !cyl) return { no: 'the roof is too small for the smallest prop (' + r3(curved.w) + ' x ' + r3(curved.d) + ' m)' };
+  const out = row(map, B, box, cyl, 0, curved.z, 'roof-curved', [r3(curved.w), r3(curved.d)], curved, limits.min);
+  return out || { no: 'a curved roof: even the smallest prop would sink more than ' + MAX_INSET * 100 + ' cm into it' };
+};
+
+export const measureCargo = (map, kind, B, limits, roof) => {
+  if (!CARGO_KINDS.has(kind)) return { no: 'a closed body: no load deck' };
+  const cabRear = map.hasGlass ? map.glassMinZ - 0.04 : map.box.max.z - (map.box.max.z - map.box.min.z) * 0.45;
+  const roofY = roof && !roof.no ? roof.region.y : map.bodyTop;
+  const ok = (i, j) => isFlat(map, i, j, DECK_SLOPE) && map.Z(j) < cabRear && map.y[map.at(i, j)] > 0.2 && map.y[map.at(i, j)] < roofY - 0.25;
+  // the lowest big flat behind the cabin: components by size, the one whose height band holds the most cells
+  const comps = components(map, ok);
+  if (!comps.length) return { no: 'nothing flat behind the cabin' };
+  let best = null;
+  for (const comp of comps.slice(0, 5)) {
+    const ys = comp.map(([i, j]) => map.y[map.at(i, j)]).sort((p, q) => p - q), floorY = ys[Math.floor(ys.length * 0.3)];
+    const r = region(map, (i, j) => ok(i, j) && Math.abs(map.y[map.at(i, j)] - floorY) <= BAND && comp.some(() => true), 0.3, 0.3, true);
+    if (r && (!best || r.w * r.d > best.w * best.d)) best = r;
+  }
+  if (!best) return { no: 'the deck behind the cabin is too small (under 0.3 x 0.3 m)' };
+  const h = Math.max(0.5, roofY - best.y + 0.1);
+  const box = fitBox(B.box, { w: best.w, d: best.d, h }, limits.min, limits.max), cyl = fitCyl(B.cylinder, { w: best.w, d: best.d, h }, limits.min, limits.max);
+  if (!box || !cyl) return { no: 'the deck is too small for the smallest load (' + r3(best.w) + ' x ' + r3(best.d) + ' m)' };
+  return row(map, B, box, cyl, 0, best.z, 'deck', [r3(best.w), r3(best.d)], best, limits.min) || { no: 'the deck is too uneven for a load (more than ' + MAX_INSET * 100 + ' cm of inset)' };
+};
+
+export const measureWing = (map, kind, B, limits, roof) => {
+  if (NO_WING[kind]) return { no: NO_WING[kind] };
+  const tailZ = map.box.min.z, length = map.box.max.z - map.box.min.z;
+  const bodyW = map.box.max.x - map.box.min.x;
+  // 1. a rear deck: flat cells behind the rear glass's foot, in the tail, under the roof line
+  if (map.hasGlass) {
+    // (at about the rear glass's foot: a boot lid, not a pickup's bed floor far below the cab's back window)
+    const ok = (i, j) => isFlat(map, i, j, WING_SLOPE) && map.Z(j) < map.glassMinZ - 0.02 && map.Z(j) < tailZ + length * 0.4 && map.y[map.at(i, j)] > Math.max(0.3, map.rearGlassFoot - 0.2) && map.y[map.at(i, j)] < map.glassTop - 0.08;
+    const deck = region(map, ok, 0.7, 0.22, true);
+    if (deck) {
+      const w = Math.min(deck.w, bodyW * 0.95), d = deck.d;
+      const box = fitBox(B.box, { w, d }, limits.min, limits.max), cyl = fitCyl(B.cylinder, { w, d }, limits.min, limits.max);
+      if (box && cyl) { // (at the deck's rear)
+        const zOf = (shape, sc) => deck.zRear + (shape === 'box' ? B.box[2] * sc / 2 : B.cylinder.radius * sc);
+        const out = row(map, B, box, cyl, 0, 0, 'deck', [r3(w), r3(d)], deck, limits.min, () => true, zOf);
+        if (out) return out;
+      }
+    }
+  }
+  if (kind === 'open') return { no: 'an open car with no rear deck' };
+  // 2. the roof's ACTUAL rear edge (the owner, 15-Oct: "the wing on the minivan should be on the rear edge of the roof"): the rearmost row
+  // of the roof's flat band with a run of flat cells at least 0.6 m wide (a mid-roof vent, rack or beacon does not move it: the band is
+  // every flat cell at the roof's height, not the largest rectangle), the blade's width the flat run over its depth less a margin
+  if (!roof || roof.no) return { no: 'no rear deck and no flat roof edge' };
+  const r = roof.region, inBand = (i, j) => isFlat(map, i, j, ROOF_SLOPE) && Math.abs(map.y[map.at(i, j)] - r.y) <= ROOF_BAND;
+  // the widest run of flat cells across row j that straddles x = 0, in metres
+  const runAt = (j) => { let a = map.I(0), b = a; if (!inBand(a, j)) return 0; while (a > 0 && inBand(a - 1, j)) a--; while (b < map.nx - 1 && inBand(b + 1, j)) b++; return (b - a + 1) * CELL; };
+  let j0 = -1;
+  for (let j = 0; j < map.nz; j++) if (runAt(j) >= 0.6) { j0 = j; break; }
+  if (j0 < 0) return { no: 'no flat roof edge at least 0.6 m wide' };
+  const zEdge = map.Z(j0) - CELL / 2;
+  let w = Infinity;
+  for (let j = j0; j < Math.min(map.nz, j0 + Math.ceil(0.4 / CELL)); j++) w = Math.min(w, runAt(j));
+  w = Math.min(w - 2 * MARGIN, bodyW * 0.95);
+  // (the blade may hang back a little over a SLOPING rear window or a fastback: the cells behind the edge that stay within 0.55 m of
+  // the roof's height, at the car's centre line, at most OVERHANG; never over a bed, a cab's drop or a vertical tail)
+  let over = 0;
+  for (let j = j0 - 1; j >= 0 && map.y[map.at(map.I(0), j)] >= r.y - 0.55; j--) over += CELL;
+  const overhang = Math.min(Math.max(0, zEdge - tailZ), over, OVERHANG);
+  const d = Math.min(0.6, (map.Z(r.rect.j1) + CELL / 2) - zEdge) + overhang; // (the roof behind the slot's front, plus the overhang)
+  const box = fitBox(B.box, { w, d }, limits.min, limits.max), cyl = fitCyl(B.cylinder, { w, d }, limits.min, limits.max);
+  if (!box || !cyl) return { no: 'the roof edge is too narrow for a wing (' + r3(w) + ' m)' };
+  // the box's rear face `overhang` behind the roof's edge (at the tail for a vertical back): its base settled on the roof's last cells
+  // (only the footprint over the roof counts: the overhang hangs in the air)
+  const zOf = (shape, sc) => zEdge - overhang + (shape === 'box' ? B.box[2] * sc / 2 : B.cylinder.radius * sc);
+  return row(map, B, box, cyl, 0, 0, 'roof-edge', [r3(w), r3(d)], r, limits.min, (x, z) => z >= zEdge + CELL / 2, zOf) || { no: 'the roof edge is too uneven for a wing' };
+};
+
+// one car: { roof, cargo, wing } as the table holds them (plus `free` and `region` for the generator's own eyes)
+export const measureCar = (model, car, P, glassy) => {
+  const map = topMap(model, glassy);
+  const kind = P.kindOf(car);
+  const lim = (slot) => ({ min: P.MIN_SCALE[slot], max: P.maxScale(slot, kind) });
+  let roof = measureRoof(map, kind, P.PROP_BOUNDS.roof, lim('roof'));
+  const cargo = measureCargo(map, kind, P.PROP_BOUNDS.cargo, lim('cargo'), roof);
+  const wing = measureWing(map, kind, P.PROP_BOUNDS.wing, lim('wing'), roof);
+  // a roof-edge wing and the roof box must not overlap (the owner, 15-Oct): the roof is measured again on the cells in front of the wing
+  if (!roof.no && !wing.no && wing.from === 'roof-edge') {
+    const wingFront = Math.max(wing.box[3] + P.PROP_BOUNDS.wing.box[2] * wing.box[0] / 2, wing.cyl[3] + P.PROP_BOUNDS.wing.cylinder.radius * wing.cyl[0]);
+    const roofRear = Math.min(roof.box[3] - P.PROP_BOUNDS.roof.box[2] * roof.box[0] / 2, roof.cyl[3] - P.PROP_BOUNDS.roof.cylinder.radius * roof.cyl[0]);
+    if (roofRear < wingFront + 0.02) {
+      const clear = measureRoof(map, kind, P.PROP_BOUNDS.roof, lim('roof'), wingFront + 0.03);
+      roof = clear.no ? { no: clear.no + ' (in front of the rear-edge wing)' } : { ...clear, from: clear.from + '-clear' };
+    }
+  }
+  return { kind, roof, cargo, wing, map };
+};
