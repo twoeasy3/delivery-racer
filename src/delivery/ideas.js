@@ -49,23 +49,18 @@
 // Batch D3, two more (CHECKLIST item 3xx, to be renumbered): a civilian half-track and a small sports hatch (render/ideaModelsBatchD3.js): +2 ideas.
 // Batch D4 (CHECKLIST item 3xx, to be renumbered): two more, a fast German-style estate and a huge fin-tailed 1950s cruiser
 // (ideasBatchD4.js, render/ideaModelsBatchD4.js): +2 ideas.
+// 15-Oct (the owner's decision): the NINETEEN chosen ideas left this lot (every car of the batches D1 to D5 and E1 to E5: the Kei Van,
+// Boxy Supermini, Wedge Microcar, Farm Tractor, Shuttle Minibus, Flatbed Truck, Utility Moke, Moor Rover, Sprint Hatch, Half-Track,
+// Crane Lorry, Touring Car, Sport Truck, Pixel EV, Autobahn Estate, Fin Land Yacht, Trophy Truck, Hill-Climb Special and Armoured Limo):
+// roster blueprint cars in cars.js FILLER_CARS with full stats, in no regular pack (`noPacks`) and `featurable` (FEATURE_ROSTER) for
+// limited-time packs. Their batch files (ideasBatch*.js) are gone; their models are still built by render/ideaModels*.js.
 
 import { IDEA_CARS_TOPUP_A } from './ideasTopupA.js'; // (the top-up's batch A: four classic road cars)
 
 // ============================================================================
 import { IDEAS_TOPUP_B } from './ideasTopupB.js';
-import { IDEAS_BATCH_D4 } from './ideasBatchD4.js'; // (batch D4: the Autobahn Estate, the Fin Land Yacht)
 
-import { IDEAS_BATCH_E1 } from './ideasBatchE1.js'; // (batch E1: the Kei Van)
-import { IDEAS_BATCH_E2 } from './ideasBatchE2.js'; // (batch E2: the Boxy Supermini and the Shuttle Minibus)
-import { IDEAS_BATCH_D2 } from './ideasBatchD2.js'; // (batch D2: the Flatbed Truck and the Utility Moke)
-import { IDEAS_BATCH_E4 } from './ideasBatchE4.js'; // (batch E4: the Sport Truck and the Pixel EV)
-import { IDEAS_BATCH_D3 } from './ideasBatchD3.js'; // (batch D3: the Half-Track and the Sprint Hatch)
-import { IDEAS_BATCH_E3 } from './ideasBatchE3.js'; // (batch E3: the Crane Lorry, the Moor Rover)
-import { IDEAS_BATCH_D5 } from './ideasBatchD5.js'; // (batch D5: a trophy truck, an armoured limo; render/ideaModelsBatchD5.js)
-import { IDEAS_BATCH_E5 } from './ideasBatchE5.js'; // (batch E5: the Touring Car, the Hill-Climb Special; render/ideaModelsBatchE5.js)
 import { IDEAS_TOPUP_C } from './ideasTopupC.js'; // (top-up batch C: three ideas, models in render/ideaModelsTopupC.js)
-import { IDEAS_BATCH_D1 } from './ideasBatchD1.js';
 export const IDEA_CARS = [
   { id: 'threewheeler', name: 'Three-Wheeler', basedOn: 'Reliant Robin', model: 'threewheeler', color: 0xe0902a, evilColor: 0x3d4a2a,
     hw: 0.71, hl: 1.67, height: 1.37, note: 'One wheel at the front. It leans in a corner, and sometimes keeps going.',
@@ -197,15 +192,5 @@ export const IDEA_CARS = [
   ...IDEA_CARS_TOPUP_A,
   ...IDEAS_TOPUP_B, // (the top-up batch B: a removals van, a bin lorry, a jeepney; ideasTopupB.js)
   ...IDEAS_TOPUP_C,
-  ...IDEAS_BATCH_D1,
-  ...IDEAS_BATCH_D2,
-  ...IDEAS_BATCH_E1,
-  ...IDEAS_BATCH_E2,
-  ...IDEAS_BATCH_E4,
-  ...IDEAS_BATCH_D3,
-  ...IDEAS_BATCH_D4,
-  ...IDEAS_BATCH_D5,
-  ...IDEAS_BATCH_E3,
-  ...IDEAS_BATCH_E5,
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));

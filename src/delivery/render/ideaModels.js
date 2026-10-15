@@ -29,7 +29,9 @@ import { IDEA_MODELS_BATCH_D5 } from './ideaModelsBatchD5.js'; // (batch D5: the
 import { IDEA_MODELS_BATCH_E5 } from './ideaModelsBatchE5.js'; // (batch E5: the Touring Car, the Hill-Climb Special)
 import { IDEA_MODELS_TOPUP_C } from './ideaModelsTopupC.js'; // (top-up batch C: the Pocket 4x4, the Dodgem, the Ice Resurfacer)
 import { IDEA_MODELS_BATCH_D1 } from './ideaModelsBatchD1.js';
-import { SWAN_MODELS } from './modelsSwan.js'; // (the Swan Car redone as a covered coupe, 13-Oct: over ideaModels3's open tourer)
+import { SWAN_MODELS } from './modelsSwan.js';
+import { withGlassEdits, glassEditsReport } from './ideaModelsDkit.js'; // (the glass edits of a car's model patch, read as its cabinGlass windows are built)
+import { glassEditsFor } from './modelpatchapply.js'; // (the Swan Car redone as a covered coupe, 13-Oct: over ideaModels3's open tourer)
 
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 const box = (parent, material, w, h, l, x, y, z) => {
@@ -1517,7 +1519,12 @@ export const IDEA_MODELS = {
 export const makeIdeaModel = (car) => {
   const build = IDEA_MODELS[car.model];
   if (!build) return null;
-  const mesh = build(car.real ? { ...car, ...car.real } : car);
+  // (the car's GLASS EDITS, from its model patch, read by cabinGlass as the glass is built: ideaModelsDkit.js withGlassEdits; the model
+  // editor sets the table itself, from the patch it edits, so `undefined` here keeps it)
+  const edits = glassEditsFor(car);
+  const mesh = withGlassEdits(edits, () => build(car.real ? { ...car, ...car.real } : car));
+  const report = glassEditsReport();
+  if (report.edits) mesh.userData.glassEdits = { used: Object.keys(report.edits).filter(k => !report.unused.includes(k)), unused: report.unused };
   if (car.scale) mesh.scale.setScalar(car.scale);
   mesh.userData.animate = mesh.userData.animate || (() => {});
   return mesh;

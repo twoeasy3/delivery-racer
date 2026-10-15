@@ -97,7 +97,8 @@ export const carCard = (car, evil = false) => {
     if (blueprint) {
       reason = 'Collect ' + Math.max(0, x - bp) + ' more blueprint' + (x - bp === 1 ? '' : 's') + ' to unlock this car';
       hint = hunt ? 'Blueprints come in the ' + packName(hunt.pack) + ': one for every ' + hunt.event.name + ' run' + (hunt.live ? '' : ' (back ' + new Date(hunt.next).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ')')
-        : 'Blueprints come in card packs';
+        : car.noPacks ? 'Blueprints are not obtainable at the moment' // (a blueprint car in no pack and with no event hunting it: the 19 chosen idea cars, CHECKLIST: not "in card packs")
+          : 'Blueprints come in card packs';
     } else if (CARS.includes(car) && !car.evergreen) {
       reason = LOCKED_WORDS.lot;
       hint = forSale(car) ? 'At ' + CAR_LOT + ' for $' + car.price.toFixed(2) : tierWhy(car) ? 'Not for sale yet: ' + tierWhy(car) : 'Not for sale yet';

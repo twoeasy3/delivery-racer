@@ -19,6 +19,13 @@ export const localPatches = () => { try { return JSON.parse(localStorage.getItem
 let on = true;
 export const setModelPatching = (yes) => { on = !!yes; }; // (the model editor builds the code's model and patches it itself)
 export const patchFor = (id) => (mode === 'off' ? null : mode === 'local' ? localPatches()[id] || PATCHES[id] : PATCHES[id]) || null;
+// the car's GLASS EDITS table (render/ideaModelsDkit.js withGlassEdits), read by cabinGlass as an idea car's model is built (render/ideaModels.js):
+// null when it has none (or patching is off); `undefined` when this module is not patching at all (the model editor sets the table itself)
+export const glassEditsFor = (car) => {
+  if (!on) return undefined;
+  const patch = patchFor(car.id) || (car.legend ? patchFor(car.legend) : null);
+  return patch && patch.glass && typeof patch.glass === 'object' && Object.keys(patch.glass).length ? patch.glass : null;
+};
 // patch a model just built for this car (once: a model already patched is left), painted for the side
 export const patchModel = (model, car, evil = false) => {
   if (!on || !model || !car || model.userData.patched) return model;

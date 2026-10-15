@@ -763,6 +763,45 @@ try {
       && !P.pools().keys?.some(x => x.concept), 'the six concept cars (noPacks) are in no other pack: no pool, no featured list, no key among the Bespoke keys (' + others.length + ' packs)');
     check(/Concept Strike's tasks/.test(P.describePack('concept-strike-1')), 'its line: ' + P.describePack('concept-strike-1'));
   }
+  // ---- THE FEATURE ROSTER (the owner, 15-Oct: "make all our choices unobtainable blueprint cars for now ... These are now our roster for
+  // limited-time packs' featured cars"): the nineteen chosen idea cars (cars.js FEATURE_ROSTER) are in no regular pool and in no existing
+  // pack's featured list, so no pack drops them; any limited pack that names one in its featured.entries deals it as a featured card of its
+  // own TRUE rarity (no event or pack is edited here: the draw is given a featured list, as a new limited pack would hold) ----
+  {
+    const roster = g.cars.FEATURE_ROSTER, kinds = Object.keys(Packs.data.packs);
+    check(roster.length === 19 && roster.every(c => c.noPacks && c.featurable && c.evergreen && rarityOf(c) === c.rarity && ['common', 'uncommon', 'epic', 'legendary'].includes(c.rarity)),
+      'the feature roster: 19 blueprint cars, noPacks and featurable, each its own rarity (' + roster.map(c => c.id + ' ' + c.rarity).join(', ') + ')');
+    const ids = new Set(roster.map(c => c.id));
+    const real = pools(), everyPool = [...Object.values(real.evergreen).flat(), ...Object.values(real.bespoke).flat(), ...real.keys];
+    check(!everyPool.some(c => ids.has(c.id)) && kinds.every(k => !Object.values(P.poolOf(Packs.data.packs[k])).flat().some(c => ids.has(c.id))),
+      'none is in any evergreen or Bespoke pool, or in any pack kind\'s pool (' + kinds.length + ' kinds)');
+    check(kinds.every(k => !P.featuredOf(k).some(f => ids.has(f.car.id))), 'none is in any existing pack\'s featured list (no limited pack or event was edited)');
+    Progress.reset(); Progress.noSave = true;
+    let leaked = 0, cards = 0;
+    for (const k of kinds) for (let i = 0; i < 1500; i++) for (const c of draw(k, { random: dice(31e6 + i * 7 + k.length), featured: Packs.data.packs[k].featured ? featuredOf(k) : [] })) { cards++; if (ids.has(c.car)) leaked++; }
+    check(leaked === 0, 'never dropped from a regular or existing limited pack: ' + cards + ' cards drawn from ' + kinds.length + ' kinds, ' + leaked + ' of the roster');
+    const bad = [];
+    for (const car of roster) {
+      let hits = 0, other = 0;
+      for (let i = 0; i < 60; i++) {
+        const out = draw('comet-special', { random: dice(32e6 + i), featured: [car.id] });
+        const f = out.filter(c => c.featured);
+        if (f.length >= 1 && f.every(c => c.car === car.id && c.rarity === car.rarity && !c.key)) hits++; else other++;
+        if (out.some(c => !c.featured && c.car === car.id)) other++;
+      }
+      const sheet = P.contents('comet-special', { featured: [car.id], owned: () => false, maxed: () => false }).featured[0];
+      if (other || hits !== 60 || featuredRarity(car) !== car.rarity || sheet?.rarity !== car.rarity) bad.push(car.id + ' (hits ' + hits + ', other ' + other + ', sheet ' + sheet?.rarity + ')');
+    }
+    check(!bad.length, 'a limited pack (comet-special given a featured list of one) deals each of the 19 as its featured card at the car\'s TRUE rarity, 60 packs each, and the What\'s inside sheet says the same' + (bad.length ? ': NOT ' + bad.join(', ') : ''));
+    // (the featured amount, and a featured weight, as for any blueprint car; and only the featured slot deals it)
+    const one = roster[0], two = draw('comet-special', { random: dice(33e6), featured: [{ car: one.id, amount: 3 }] }).at(-1);
+    check(two.featured && two.car === one.id && two.n === 3, 'a featured entry with an amount works for them (' + one.id + ' x' + two.n + ')');
+    // (the Bespoke, Legendary and earned cars are as they were: none is featurable, noPacks or in the roster)
+    const others = [...g.cars.BESPOKE_CARS, ...g.cars.EARNED_CARS, ...g.cars.EVENT_CARS, ...g.cars.CARS];
+    check(others.every(c => !c.featurable && !ids.has(c.id)) && g.cars.BESPOKE_CARS.length === 14 && g.cars.BESPOKE_CARS.every(c => c.rarity === 'legendary' || c.rarity === 'epic'),
+      'the Bespoke, event, earned and garage cars are not in the roster and not featurable');
+    Progress.reset(); Progress.noSave = true;
+  }
 } catch (error) {
   failures++;
   console.log('  FAIL  ' + (error.stack || error));

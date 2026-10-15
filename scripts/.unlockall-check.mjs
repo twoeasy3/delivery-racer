@@ -27,6 +27,11 @@ check(offIds.length >= 14, 'there are off earned cars (' + offIds.length + ')');
 Progress.reset(); unlockEverything('all');
 check(offIds.every(id => !Progress.owns(id)), 'after "all", the off cars are still not owned');
 
+// the nineteen chosen idea cars (cars.js FEATURE_ROSTER, 15-Oct): blueprint cars in no pack for now. "Everything" must not give them;
+// "Absolutely everything" gives every roster car, so it unlocks them (maxed) like the other blueprint cars
+Progress.reset(); unlockEverything('all');
+check(g.cars.FEATURE_ROSTER.length === 19 && g.cars.FEATURE_ROSTER.every(c => !Progress.owns(c.id) && !Ecu.unlocked(c) && Ecu.reached(c) === 0), 'after "all", none of the 19 feature-roster cars is owned or unlocked (no blueprints)');
+
 // 'abs'
 const abs = full('abs');
 Progress.data.cars.length; // (Progress.data is the abs save now)
@@ -37,6 +42,7 @@ check(BESPOKE_CARS.every(c => Ecu.hasKey(c)), 'abs: every Bespoke key car has it
 check(Object.keys(SECRET_CARS).every(id => Progress.owns(id)), 'abs: the secrets owned');
 const all = [...CARS, ...EARNED_CARS, ...BESPOKE_CARS, ...FILLER_CARS];
 check(all.every(c => Ecu.kind(c) === null || Ecu.unlocked(c)), 'abs: every car with an ECU table is unlocked');
+check(g.cars.FEATURE_ROSTER.every(c => Ecu.unlocked(c) && Ecu.reached(c) === Ecu.max(c)), 'abs: the 19 feature-roster cars are unlocked at their max ECU, as every roster car is');
 check(all.every(c => Ecu.kind(c) === null || Ecu.reached(c) === Ecu.max(c)), 'abs: every car at its max ECU, blueprint cars and key cars included');
 check(abs.money === ABS_BANK && Shop.balance() === ABS_CASH, 'abs: bank ' + abs.money + ', Crazey Cash ' + Shop.balance());
 check(abs.unlocked >= plain.unlocked && Object.keys(plain.bestTime.good).every(k => k in abs.bestTime.good), 'abs: a superset of "all" (levels, medals)');

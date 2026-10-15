@@ -142,6 +142,18 @@ try {
     const none = ['coach', 'cityev', 'coupecross'].map(id => sourcesOf(by(id)));
     check(none.every(x => !x.obtainable.blueprints && x.blueprints.every(b => !(b.chance > 0))) && !huntEventFor(by('coach')), 'the Highway Coach, City EV and Coupe Crossover: still no blueprints anywhere');
   }
+  // ---- the nineteen chosen idea cars (the owner, 15-Oct; cars.js FEATURE_ROSTER): blueprint cars in no pack for now, said plainly:
+  // no source holds them, nothing is obtainable, the line says "not obtainable right now", and no event features them ----
+  {
+    const { huntEventFor } = await g.load('carsources.js');
+    const hunt0 = Events.specials.find(e => e.id === 'car-hunt');
+    fresh(); at(hunt0.from + 3600e3);
+    const roster = g.cars.FEATURE_ROSTER;
+    const sources = roster.map(c => sourcesOf(c));
+    check(roster.length === 19 && sources.every(x => x.keyless && !x.obtainable.blueprints && !x.obtainable.key && x.blueprints.every(b => !(b.chance > 0) && !b.available)) && roster.every(c => !huntEventFor(c)),
+      'the 19 feature-roster cars: no pack holds their blueprints, nothing is obtainable, no event features them');
+    check(roster.every(c => /Blueprints: not obtainable right now/.test(sourcesLine(c))), 'their line: "' + sourcesLine(roster[0]) + '"');
+  }
   // ---- the six concept key cars (CHECKLIST 211): their blueprints only in their day's Concept Strike pack, their key only for
   // delivering them at their max ECU on their day; on that day obtainable, on another (Sunday too) "back <its day>" ----
   {
