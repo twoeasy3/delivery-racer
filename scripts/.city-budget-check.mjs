@@ -2,7 +2,8 @@
 // drawn as the city (no theme of its own, or a theme whose scenery is 'city': city, night, flooded, and any added later),
 // on the menu or hidden, has its scenery laid out headless (the theme's own code, with road.js's helpers stood in for), and
 // what it would hand the GPU is counted: meshes (draw calls), instances and triangles, all of it and what is in sight at
-// once (any 1,200 m of road: the boxes and crowns are in meshes of 600 m each, culled out of sight; the rest is drawn whole),
+// once (any 1,200 m of road: the boxes are in meshes of 600 m each and the crowns of 1,800 m, culled out of sight; the rest is
+// drawn whole),
 // and the one texture's size. Each is held under a budget, so the scenery cannot grow by stealth: raise a budget on purpose,
 // with a word in CHECKLIST.md. An upper bound: what road.js then takes off other roads is still counted here.
 //   node scripts/.city-budget-check.mjs [--report]       (--report: every level's numbers, not only failures)
@@ -12,10 +13,10 @@ import * as THREE from 'three';
 import { boot } from './delivery-headless.mjs';
 
 const BUDGET = {
-  callsInSight: 12,       // meshes drawn at once (any 1,200 m), the pavement's included
-  calls: 40,              // meshes in all (a long level has more chunks)
-  trisInSight: 90000,     // triangles drawn at once
-  instances: 22000,       // instances in all
+  callsInSight: 10,       // meshes drawn at once (any 1,200 m), the pavement's included (15-Oct: 7 or 8)
+  calls: 30,              // meshes in all (a long level has more chunks; 15-Oct: 10 to 23)
+  trisInSight: 80000,     // triangles drawn at once (15-Oct: 26,000 to 62,000)
+  instances: 15000,       // instances in all (15-Oct: 2,800 to 10,900)
   textureSide: 256,       // the canvas texture's side, px (4 bytes a pixel)
 };
 const REPORT = process.argv.includes('--report');

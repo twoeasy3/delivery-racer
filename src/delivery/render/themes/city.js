@@ -1,7 +1,7 @@
 // ---- THE CITY: the default theme (a level with no theme of its own, and 'city', 'night', 'flooded' and every theme whose
 // scenery is 'city') ------------------------------------------------------------------------------------------------
 // Until 15-Oct this was grey boxes and white poles, from the game's first day. Now a city, laid out along the road in
-// DISTRICTS, a few hundred metres each, so a drive does not repeat: the edge of town (houses with hipped roofs behind
+// DISTRICTS, a few hundred metres each, so a drive does not repeat: the edge of town (houses with gable roofs behind
 // their garden walls, low blocks of flats), the industrial estate (warehouses with sawtooth roofs and loading doors
 // behind a fence), the high street (brick and rendered terraces, shops under awnings with coloured fascias), midtown
 // (blocks of flats with balconies, modern mid-rise with ribbon windows, shops under them) and downtown (glass and banded
@@ -17,8 +17,9 @@
 // a drawbridge or a ford, and no street furniture where a target, a camera, a low bridge, a shade or roadworks stand
 // (clearings below). The Ring Road's set pieces (render/themes/extras.js) keep their stretches as before (cityKeepsClear).
 // COST: every box is one instance of one mesh in one material (see cityModels.js: the facades are drawn by its shader),
-// and the sawtooth roofs, hipped roofs, water tanks, tree crowns and (at night) the lamps' light one mesh each, the
-// pavements one merged mesh: seven draw calls at most, one canvas texture of 256 x 256. Laid out the same every time
+// and the roofs' wedges (sawtooth and gable), the tree crowns and (at night) the lamps' light one mesh each, the pavements one
+// merged mesh; the boxes in a mesh a 600 m of road and the crowns a 1,800 m, so what is out of sight is not drawn: six to
+// eight draw calls in sight, one canvas texture of 256 x 256. Laid out the same every time
 // (seeded from the level's id), drawn only: nothing here is read by the rules.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -68,7 +69,7 @@ export const city = ({ theme, add, flat, instances, sideStrip, beside, exits, cu
   const L = Track.length;
 
   // ---- the lists: one mesh each ----
-  const boxes = [], prisms = [], hips = [], tanks = [], crowns = [], cones = [];
+  const boxes = [], prisms = [], crowns = [], cones = [];
   // an entry [s, lat, y, across, high, along] in a colour, a style, a seed, m of it below the street, its ground floor
   const put = (list, s, lat, y, sx, sy, sz, c, style = STYLE.PLAIN, sd = 0, sink = 0, ground = 0) => {
     const e = [s, lat, y, sx, sy, sz];
@@ -168,7 +169,7 @@ export const city = ({ theme, add, flat, instances, sideStrip, beside, exits, cu
     if (rand() < 0.3 * odds) {
       const ts = s + wide * between(-0.3, 0.3), tl = lat + deep * between(-0.25, 0.25);
       put(boxes, ts, tl, y + 0.9, 2.4, 1.8, 2.4, DARK);
-      put(tanks, ts, tl, y + 3.0, 2.6, 2.4, 2.6, pick([0x8a6a4a, 0x9aa0a4, 0x6f7276]));
+      put(boxes, ts, tl, y + 3.0, 2.5, 2.4, 2.5, pick([0x8a6a4a, 0x9aa0a4, 0x6f7276]), STYLE.LOUVRE); // (a panel tank)
     }
     if (rand() < 0.2 * odds) put(boxes, s + wide * between(-0.3, 0.3), lat, y + 2.5, 0.12, 5, 0.12, DARK);
   };
@@ -193,7 +194,7 @@ export const city = ({ theme, add, flat, instances, sideStrip, beside, exits, cu
         for (let k = 0; k < units; k++) {
           if (rand() < 0.3) continue;
           const at = s + (k + 0.5) * uw;
-          put(boxes, at, beside(side, at, d - 0.85), 3.15, 1.8, 0.07, uw - 0.9, pick(AWNINGS)).tilt = side * 0.32;
+          put(boxes, at, beside(side, at, d - 0.85), 3.15, 1.8, 0.07, uw - 0.9, pick(AWNINGS)).tilt = -side * 0.32; // (a box's +x is towards the road on the right: down that way)
         }
       }
       if (rand() < 0.35) put(boxes, sm + between(-1, 1), beside(side, sm, d + deep * 0.75), H + 1, 0.9, 2, 2.2, brick ? pick(BRICKS) : DARK, brick ? STYLE.BRICK : STYLE.PLAIN); // (a chimney stack)
@@ -278,12 +279,16 @@ export const city = ({ theme, add, flat, instances, sideStrip, beside, exits, cu
       for (let q = s; q < s + wide + 4; q += 4) run(q, beside(side, q, 5.2), Math.min(q + 4, s + wide + 4), beside(side, Math.min(q + 4, s + wide + 4), 5.2), 0.8, 0.08, 1.6, 0x8c968f, STYLE.LOUVRE); // (a palisade along its yard)
       return wide + between(6, 14);
     },
-    // a house: two storeys (or one), a hipped roof, a garden wall, a tree in the garden
+    // a house: two storeys (or one), a gable roof, a garden wall, a tree in the garden
     house(s, side) {
       const wide = between(10, 13.5), deep = between(8, 10), H = (rand() < 0.75 ? 5.9 : 3.1) + jitter() / 3, d = between(8, 11), sm = s + wide / 2, fw = wide - 3;
       const lat = body(sm, side, d, deep, fw, H, pick(HOUSES), STYLE.HOUSE, rand());
       if (lat === null) return wide;
-      put(hips, sm, lat, H + 1.15, deep + 0.8, 2.4, fw + 0.8, pick(TILES));
+      // (a gable roof, its ridge along the road: two wedges back to back, each turned so its upright face is at the ridge.
+      // A box's -x is the road's +lat: the first wedge on the -lat half, the second turned round on the +lat half)
+      const tiles = pick(TILES), half = (deep + 0.8) / 2;
+      put(prisms, sm, lat - half / 2, H + 1.15, half, 2.4, fw + 0.8, tiles, STYLE.ROOF);
+      put(prisms, sm, lat + half / 2, H + 1.15, half, 2.4, fw + 0.8, tiles, STYLE.ROOF).turn = Math.PI;
       if (rand() < 0.5) put(boxes, sm + fw * 0.25, beside(side, sm, d + deep * 0.6), H + 1.6, 0.7, 2.2, 0.7, 0x8a5a48, STYLE.BRICK); // (a chimney)
       run(s + 0.3, beside(side, s + 0.3, 4.3), s + wide - 0.3, beside(side, s + wide - 0.3, 4.3), 0.4, 0.3, 0.8, pick([0x9a5a45, 0xd8d2c2, 0x8f8a80]), STYLE.PLAIN);
       if (rand() < 0.55) tree(sm + between(-3, 3), beside(side, sm, d - 2.2), between(0.8, 1.1));
@@ -320,7 +325,7 @@ export const city = ({ theme, add, flat, instances, sideStrip, beside, exits, cu
       for (let s = st.from + 4; s < st.to - 10;) {
         const sMain = sMainOf(st, s);
         if (blocked(s, side, 'building') || cityKeepsClear(sMain, side)) { s += 6; continue; }
-        const d = districtAt(sMain), lists = [boxes, prisms, hips, tanks, crowns], before = lists.map(list => list.length);
+        const d = districtAt(sMain), lists = [boxes, prisms, crowns], before = lists.map(list => list.length);
         s += Math.max(4, LOT[d.type](s, side, d.c));
         // (a lot that ran on into a clearing, or off the end of its road: taken back, the clearing kept)
         if (s > st.to || blocked(s - 1, side, 'building') || cityKeepsClear(sMainOf(st, s - 1), side)) lists.forEach((list, k) => { list.length = before[k]; });
@@ -426,17 +431,15 @@ export const city = ({ theme, add, flat, instances, sideStrip, beside, exits, cu
   }
 
   // ---- all of it, one mesh a shape (road.js: placed, and taken off any other road, at the end of the level's scenery) ----
-  // (the boxes and the crowns, the most of it, in a mesh for each CHUNK m of the road: what is out of sight, behind the
-  // camera or round a bend, is not drawn at all. Two or three of each are in sight at once)
-  const CHUNK = 600, chunks = (list) => {
+  // (the boxes, the most of it, in a mesh for each 600 m of the road, the crowns each 1,800 m: what is out of sight, behind
+  // the camera or round a bend, is not drawn at all. Two or three meshes of boxes are in sight at once, one or two of crowns)
+  const chunks = (list, every) => {
     const by = new Map();
-    for (const e of list) { const k = Math.floor((Track.isMain(e[0]) ? e[0] : Track.along(e[0])) / CHUNK); if (!by.has(k)) by.set(k, []); by.get(k).push(e); }
+    for (const e of list) { const k = Math.floor((Track.isMain(e[0]) ? e[0] : Track.along(e[0])) / every); if (!by.has(k)) by.set(k, []); by.get(k).push(e); }
     return [...by.values()];
   };
-  for (const part of chunks(boxes)) instances(cube, 0xffffff, part, false, 0, material);
+  for (const part of chunks(boxes, 600)) instances(cube, 0xffffff, part, false, 0, material);
+  for (const part of chunks(crowns, 1800)) instances(SHAPES.crown, 0xffffff, part, false, 0, material);
   instances(SHAPES.prism, 0xffffff, prisms, false, 0, material);
-  instances(SHAPES.hip, 0xffffff, hips, false, 0, material);
-  instances(SHAPES.tank, 0xffffff, tanks, false, 0, material);
-  for (const part of chunks(crowns)) instances(SHAPES.crown, 0xffffff, part, false, 0, material);
   if (cones.length) instances(SHAPES.lamp, 0xffd9a0, cones, false, 0, lampLightMaterial());
 };

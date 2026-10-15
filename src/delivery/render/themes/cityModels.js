@@ -6,8 +6,8 @@
 // of its windows are lit at night), how far its box goes down below the street (sink: the floors count from the street,
 // so a setback tier passes a negative one, the height it stands at), and its GROUND floor (0 none, 1 shops, 2 a lobby,
 // 3 loading doors). Its colour is the instance's own (instanceColor). So a street of a hundred buildings, each with
-// its own window grid, shopfronts, fascias and lit windows, costs one draw call; the roofs' sawtooth prisms, hipped
-// roofs, water tanks and tree crowns are one each more, in the same material.
+// its own window grid, shopfronts, fascias and lit windows, costs one draw call; the roofs' wedges (sawtooth and gable)
+// and the tree crowns are one each more, in the same material.
 // The walls' grain comes from ONE canvas texture drawn here in code, 256 x 256 (256 KB at 4 bytes a pixel, a third more
 // with its mipmaps), each channel a seamless pattern of its own: red, brick courses (running bond); green, a mottled
 // noise (render, concrete, a roof's gravel); blue, corrugated metal's ribs. The windows, shopfronts and signs are drawn
@@ -29,6 +29,7 @@ export const STYLE = {
   LOUVRE: 8,  // slatted: rooftop plant rooms, air-conditioning units
   SAWTOOTH: 9, // a sawtooth roof's tooth: metal, its upright face glazed
   LEAF: 10,   // a tree's crown: mottled, darker underneath
+  ROOF: 11,   // a gable roof's wedge: courses of tiles down its slope, its triangular end a rendered gable
 };
 
 // ---- the texture ---------------------------------------------------------------------------------------------------
@@ -153,6 +154,11 @@ void cityFacade(inout vec3 col, inout vec3 glow) {
   }
   if (style == 8) { col *= 0.78 + 0.22 * cityBand(fract(f.y / 0.18), 0.25, 1.0, fw.y / 0.18) + 0.08 * mottle; return; }
   if (style == 10) { col *= (0.62 + 0.45 * mottle) * (0.75 + 0.25 * clamp(vObjN.y + 0.6, 0.0, 1.0)); return; }
+  if (style == 11) {
+    if (abs(vObjN.z) > 0.5) col = vec3(0.7, 0.64, 0.52) * (0.85 + 0.2 * mottle); // (the gable end)
+    else col *= (0.78 + 0.18 * mottle) * (0.82 + 0.18 * cityBand(fract(f.x / 0.32), 0.14, 1.0, fw.x / 0.32));
+    return;
+  }
   if (style == 9) {
     if (vObjN.x < -0.5) { // (the upright face: glazing in long panes)
       float pane = cityBand(fract(f.x / 1.2), 0.06, 0.94, fw.x / 1.2) * cityBand(f.y, 0.25, vTop.x - 0.2, fw.y);
@@ -267,7 +273,7 @@ void cityFacade(inout vec3 col, inout vec3 glow) {
 }
 `;
 
-// one material for the whole city's boxes (and its prisms, tanks and crowns): night (lit windows, glowing lamps and signs)
+// one material for the whole city's boxes (and its wedges and crowns): night (lit windows, glowing lamps and signs)
 // and the sky's colour (for the glass) are the theme's
 export const cityMaterial = ({ night = false, sky = 0x9fc4e8 } = {}) => {
   const material = new THREE.MeshLambertMaterial({ color: 0xffffff });
@@ -305,8 +311,6 @@ const prism = () => {
 };
 export const SHAPES = {
   get prism() { return this._prism ||= prism(); },
-  get hip() { return this._hip ||= keep(new THREE.ConeGeometry(Math.SQRT1_2, 1, 4).rotateY(Math.PI / 4).toNonIndexed()); }, // (a hipped roof: a square pyramid)
-  get tank() { return this._tank ||= keep(new THREE.CylinderGeometry(0.5, 0.5, 1, 10)); },
   get crown() { return this._crown ||= keep(new THREE.IcosahedronGeometry(0.5, 1)); },
   // (the cone of light, open, its point up, with the pool of light a little above its foot)
   get lamp() {
