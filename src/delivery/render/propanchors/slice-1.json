@@ -87,7 +87,8 @@
     "box": [0.62, 0, 1.484, -1.48],
     "cyl": [0.62, 0, 1.468, -1.48],
     "from": "roof-edge",
-    "lim": "fit"
+    "lim": "fit",
+    "existing": true
    }
   },
   "hotrod": {
@@ -316,11 +317,12 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.95, 0, 0.978, -2.09],
-    "cyl": [0.95, 0, 0.954, -2.09],
-    "from": "deck-edge",
+    "box": [1.11, 0, 1.047, -1.85],
+    "cyl": [1.06, 0, 1.012, -1.85],
+    "from": "deck",
     "lim": "fit",
-    "inset": [0.05, 0.05]
+    "inset": [0.048, 0.045],
+    "existing": true
    }
   },
   "sleeper": {
@@ -352,11 +354,12 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.86, 0, 1.021, -1.56],
-    "cyl": [1.16, 0, 1.054, -1.52],
-    "from": "deck",
+    "box": [1.13, 0, 1.068, -1.84],
+    "cyl": [1.13, 0, 1.04, -1.84],
+    "from": "deck-edge",
     "lim": "fit",
-    "inset": [0, 0.01]
+    "inset": [0.016, 0.016],
+    "existing": true
    }
   },
   "super-buggy": {
@@ -689,11 +692,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.5, 0, 0.849, -2.155],
-    "cyl": [0.5, 0, 0.836, -2.155],
-    "from": "deck-edge",
+    "box": [0.75, 0, 0.985, -1.795],
+    "cyl": [1.07, 0, 1.018, -1.755],
+    "from": "deck",
     "lim": "fit",
-    "inset": [0.05, 0.05],
+    "inset": [0.023, 0.028],
     "existing": true
    }
   },
@@ -727,8 +730,8 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.93, 0, 1.033, -1.55],
-    "cyl": [0.99, 0, 1.019, -1.55],
+    "box": [1.04, 0, 1.052, -1.55],
+    "cyl": [1.16, 0, 1.044, -1.59],
     "from": "deck",
     "lim": "fit",
     "existing": true
@@ -861,16 +864,6 @@
   "super-junker": {
    "cargo": {
     "no": "the bed under the load measures as no usable deck (the Super's kit and stripe), though the Junker itself has one",
-    "existing": true
-   }
-  },
-  "super-rotary": {
-   "wing": {
-    "box": [0.61, 0, 1.067, -1.898],
-    "cyl": [0.61, 0, 1.051, -1.898],
-    "from": "deck",
-    "lim": "hand",
-    "inset": [0.08, 0.08],
     "existing": true
    }
   }

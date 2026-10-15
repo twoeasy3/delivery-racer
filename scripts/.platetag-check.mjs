@@ -18,7 +18,7 @@ import * as THREE from 'three';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { startModels } from './modelpatch-load.mjs';
 
-const PROP_SPLIT = { minibus: 1, pickup: 11, taxi: 1, jeepney: 2, flatbed: 1, autobahnestate: 1, trophytruck: 1 }; // (the same as SPLIT in .proptag-check.mjs)
+const PROP_SPLIT = { minibus: 1, pickup: 11, taxi: 1, jeepney: 2, flatbed: 1, autobahnestate: 1, trophytruck: 1, sport: 2 }; // (the same as SPLIT in .proptag-check.mjs)
 const record = process.argv.includes('--record');
 const { load, close, ROOT } = await startModels();
 let failures = 0;

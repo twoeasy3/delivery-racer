@@ -373,6 +373,7 @@ export const ORIG2_MODELS = {
     const w = car.hw * 2, L = car.hl, R = 0.36, half = w / 2;
     const frontZ = L * 0.6, rearZ = -L * 0.62;
     const paint = lambert(car.color), stripe = lambert(0xf4f4f0, { side: THREE.DoubleSide }), P = parts();
+    const S = parts(); // (the spoiler and its posts: merged apart from the rest, so they are meshes of their own, tagged wing below)
     // the body, side on: a low nose rising over the front wheels to the scuttle, the belt running back level to a
     // short tail; the wheels poke out of its lower corners
     const sill = 0.27, round = 0.04;
@@ -435,21 +436,25 @@ export const ORIG2_MODELS = {
       // the tail: the brake lamps at the lamp bar's ends
       P.add(STOP, bx(0.26, 0.09, 0.02, sx * (half - 0.2), 0.68, -L - round - 0.004));
       // the spoiler's posts on the tail
-      P.add(TRIM, bx(0.05, 0.07, 0.1, sx * 0.5, 0.83 + round + 0.03, -L + 0.12));
+      S.add(TRIM, bx(0.05, 0.07, 0.1, sx * 0.5, 0.83 + round + 0.03, -L + 0.12));
       // plain chunky wheels with dark hubs
       wheel(group, R, 0.3, sx * (half - 0.04), R, frontZ, DARKHUB);
       wheel(group, R, 0.32, sx * (half - 0.04), R, rearZ, DARKHUB);
     }
     P.add(TAIL, bx(w - 0.62, 0.07, 0.02, 0, 0.68, -L - round - 0.004));                 // the lamp bar across the tail
     P.add(TRIM, bx(w - 0.12, 0.16, 0.02, 0, 0.67, -L - round + 0.002));                 // on a black panel
-    P.add(paint, bx(w - 0.26, 0.04, 0.2, 0, 0.83 + round + 0.08, -L + 0.12));           // the spoiler
+    S.add(paint, bx(w - 0.26, 0.04, 0.2, 0, 0.83 + round + 0.08, -L + 0.12));           // the spoiler
     P.add(TRIM, bx(w - 0.1, 0.1, 0.06, 0, 0.32, -L - round + 0.01));                    // the rear valance
     P.add(textured('mesh', 0xffffff, meshGrille()), panel([[0.34, 0.31, L + round + 0.007], [-0.34, 0.31, L + round + 0.007], [-0.34, 0.48, L + round + 0.007], [0.34, 0.48, L + round + 0.007]]));
     P.add(TRIM, bx(w - 0.16, 0.05, 0.16, 0, 0.27, L - 0.02));                           // the air dam's lip
+    const partCount = P.count + S.count;
     P.into(group);
+    // the spoiler and its posts (tagged userData.prop = 'wing': a chosen wing prop hides them, render/propcosmetic.js); merged apart from
+    // the rest of the paint and the trim, one mesh each, the same triangles (scripts/.proptag-check.mjs SPLIT)
+    for (const mesh of S.into(group).values()) mesh.userData.prop = 'wing';
     const livery = () => stripe.color.setHex(0xf4f4f0); // (white on both sides: the owner, 14-Oct)
     livery(false);
-    group.userData = { body, parts: P.count, animate: () => {}, livery, stripe: (hex) => stripe.color.setHex(hex) };
+    group.userData = { body, parts: partCount, animate: () => {}, livery, stripe: (hex) => stripe.color.setHex(hex) };
     return group;
   },
 
