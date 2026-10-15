@@ -121,3 +121,10 @@
 
 /* the progress bar under a card sits ABOVE the pile's edges and reads clearly (the owner, 12-Oct) */
 .pr-slot .bp-prog { position: relative; z-index: 4; }
+/* THE CAP TAG (render/packs.js capTag, 15-Oct): a regular card of a car already at its blueprint cap, 'Already maxed', or one the cap cut,
+   '+1 of ×3'. The NEW tag's shape and type, slate instead of pink, low on the picture above the rarity word (clear of NEW and the badge);
+   a reward line (once surplus blueprints give one) sits under the words, smaller */
+.pack-reveal .bp-cap { position: absolute; z-index: 3; left: 2.5cqw; bottom: 15cqw; display: flex; flex-direction: column; gap: .6cqw; max-width: 92cqw;
+  padding: 1cqw 2.4cqw; border-radius: 2cqw; background: #3a4150; color: #fff; transform: rotate(-4deg); box-shadow: 0 2px 6px rgba(0, 0, 0, .4); }
+.pack-reveal .bp-cap b { font: italic 900 max(9px, 6.5cqw)/1 var(--display); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.pack-reveal .bp-cap small { font: 700 max(8px, 5cqw)/1 var(--display); color: #ffe27a; white-space: nowrap; }
