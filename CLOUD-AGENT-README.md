@@ -19,7 +19,7 @@ The owner works from `CHECKLIST.md` at the repo root: it is the working list of 
 verified. Read it first, and tick and annotate items there as you finish them.
 
 Documents to read, in order: `src/delivery/README.md`, `src/delivery/HANDOVER.md`,
-`src/delivery/HANDOVER-orchestrator-14-Oct.md` (the NEWEST state, 14-Oct: read it first), `src/delivery/HANDOVER-orchestrator-12-Oct.md` (older; section 5 is the owner's open
+`src/delivery/HANDOVER-orchestrator-15-Oct.md` (the NEWEST state, 15-Oct: read it first; `NEXT-ORCHESTRATOR-PROMPT.md` is the prompt for an orchestrator), `src/delivery/HANDOVER-orchestrator-14-Oct.md` (14-Oct), `src/delivery/HANDOVER-orchestrator-12-Oct.md` (older; section 5 is the owner's open
 questions), `src/delivery/OPEN-QUESTIONS-10-Oct.md` (22 to 30 are open or just closed), `src/delivery/TESTS.md`,
 `src/delivery/PLAN-delivery-subdomain-12-Oct.md` (the plan for the game to have its own repo and subdomain; this is
 that repo).
