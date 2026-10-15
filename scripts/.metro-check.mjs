@@ -71,9 +71,41 @@ try {
   check(pieces.length === 3 * level.tunnelJunctions.length && pieces.every(o => JSON.stringify(CONFIG.obstacleKinds[o.kind]) === JSON.stringify(CONFIG.obstacleKinds[like[o.kind]])),
     'each junction\'s train is three cut-down Canberra carriages, at the tug\'s and the trolleys\' costs (' + [...new Set(pieces.map(o => o.kind))].join(', ') + ')');
   check(pieces.every(o => [o.hw, o.hl].join() === (like[o.kind] === 'tug' ? [0.7, 1.0] : [0.45, 0.6]).join()), '...and at their boxes (tug 1.4 x 2.0 m, trolley 0.9 x 1.2 m)');
-  // ---- the train line: spans of running tunnels and stations
-  const spans = zones.filter(z => z.scenery === 'running' || z.scenery === 'station');
-  check(spans.length >= 2, 'the train line runs beside the road in ' + spans.length + ' zones (' + spans.map(z => z.id).join(', ') + ')');
+  // ---- THE RAILWAY down the middle (Canberra's gimmick, as Canberra has it: "median": 1, "railway": { every }): the bullet train
+  // (bullettrain.js) comes down it at CONFIG.bulletTrain.speed, warned CONFIG.bulletTrain.warning s ahead, wrecking what it touches
+  const { BulletTrain } = await g.load('bullettrain.js');
+  const BT = CONFIG.bulletTrain, RC = CONFIG.railCrossing;
+  check(level.median === 1 && JSON.stringify(level.railway) === JSON.stringify(g.levels.LEVELS.find(l => l.id === 'canberra').railway) && T.medianHalf > BT.hw,
+    'a railway down the middle of the whole road, as Canberra\'s ("median": 1, "railway": ' + JSON.stringify(level.railway) + '): its median ' + (T.medianHalf * 2) + ' m wide, the train ' + (BT.hw * 2) + ' m');
+  const lane = (n, s) => T.laneOffset(n, s);
+  check(lane(0, 500) + P.hw < -BT.hw && lane(2, 500) - P.hw > BT.hw && T.laneRange(1, 500)[0] === 0 && T.laneRange(1, 500)[1] === 2, 'the two lanes either side of it are clear of the train (lanes 0 and 2 at ' + lane(0, 500) + ' and ' + lane(2, 500) + ' m, the train out to ' + BT.hw + '): a safe lane always; the rails (lane 1) drivable');
+  const drive = (lat, opts = {}) => { // the player at lat, a train set off down the railway; what became of the car
+    G.start();
+    for (const car of g.Traffic.cars) car.active = false;
+    for (const o of g.Collision.obstacles) o.gone = true;
+    Object.assign(P, { s: 900, lat, speed: 20, launching: false, shield: 0, ghost: opts.ghost ? 30 : 0, tank: 0, armour: 0 });
+    P.testGhost = false;
+    BulletTrain.active = false; BulletTrain.start(true);
+    const ahead = BulletTrain.s - P.s;
+    let top = 0, onRails = 0;
+    g.run(8, () => { g.drive(1, 0); P.lat = lat; if (opts.ghost) P.ghost = 30; top = Math.max(top, P.speed); if (T.onRails(P.s, P.lat, P.hw)) onRails++; return !BulletTrain.active || P.health <= 0; });
+    return { wrecked: P.health <= 0 || !P.active, ahead, top, onRails };
+  };
+  const onLine = drive(0);
+  check(onLine.ahead >= (BT.speed + 20) * BT.warning - 1, 'the train sets off ' + Math.round(onLine.ahead) + ' m up the line, ' + BT.warning + ' s away at its ' + BT.speed + ' m/s and the car\'s 20 (Canberra\'s warning)');
+  check(onLine.wrecked, 'a car on the rails as it comes is wrecked');
+  for (const n of [0, 2]) { const r = drive(lane(n, 900)); check(!r.wrecked, 'a car in lane ' + n + ', beside the rails, is untouched as the train goes by'); }
+  check(!drive(0, { ghost: true }).wrecked, 'a ghost on the rails is passed through');
+  { // the rails slow a car on them, as Canberra's do (by how well it crosses: CONFIG.railCrossing)
+    G.start();
+    for (const car of g.Traffic.cars) car.active = false;
+    for (const o of g.Collision.obstacles) o.gone = true;
+    BulletTrain.active = false; BulletTrain.next = Infinity;
+    const top = (lat) => { Object.assign(P, { s: 700, lat, speed: 0, launching: false, ghost: 0 }); let v = 0; g.run(12, () => { g.drive(1, 0); P.lat = lat; BulletTrain.next = Infinity; v = Math.max(v, P.speed); return false; }); return v; };
+    const free = top(lane(0, 700)), rails = top(0);
+    check(rails < free * 0.95, 'the rails slow the car: ' + rails.toFixed(1) + ' m/s on them against ' + free.toFixed(1) + ' in a lane (the car\'s crossing stat, railCrossing.slowest ' + RC.slowest + ')');
+  }
+  check(level.railway.every.min >= 10, 'trains come every ' + level.railway.every.min + ' to ' + level.railway.every.max + ' s, each announced ' + BT.warning + ' s ahead');
   // ---- obstacles: real, with a box and a cost; the theme's own the same as what they stand in for
   const O = g.Collision.obstacles, K = CONFIG.obstacleKinds;
   const placed = O.filter(o => !o.hazard && !o.laneEnd && o.kind !== 'handrail');
@@ -101,7 +133,7 @@ try {
   // ---- pickups: on the lanes, cash in rows, none in a dead lane's last 50 m
   const pk = level.pickups, cash = pk.filter(q => /^cash/.test(q.type));
   const rows = cash.filter(q => cash.filter(r => r.s === q.s).length >= 2);
-  check(pk.every(q => q.lane === 0 || q.lane === 1), pk.length + ' pickups, every one on a lane');
+  check(pk.every(q => [0, 1, 2].includes(q.lane)), pk.length + ' pickups, every one on a lane or the rails (' + pk.filter(q => q.lane === 1).length + ' on the rails: the lure)');
   check(rows.length / cash.length >= 0.75, cash.length + ' cash pickups, ' + rows.length + ' of them in rows of two or more');
   const trapped = pk.filter(q => (level.deadEnds || []).some(d => q.lane === d.lane && q.s > d.s - 50 && q.s <= d.s));
   check(!trapped.length, 'no pickup in a dead lane\'s last 50 m' + (trapped.length ? ' (' + trapped.map(q => q.s).join(', ') + ')' : ''));

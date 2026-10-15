@@ -103,7 +103,7 @@ export const RULES = {
   playerSide: { text: 'Needs a side of the road going the player\'s way', broken: (f) => f.flow === 'south' },
   twoLanes: { text: 'The player\'s side needs two lanes or more', broken: (f) => f.playerLanes < 2 },
   needsMedian: { text: 'Needs a median ("median")', broken: (f) => !(f.median > 0) },
-  medianTwoWay: { text: 'Only a two-way road can have a median', broken: (f) => f.oneWay && f.median > 0 },
+  medianTwoWay: { text: 'Only a two-way road can have a median (or a one-way road with a railway down it)', broken: (f) => f.oneWay && f.median > 0 && !f.level.railway },
   amphibious: { text: 'Only on an amphibious level ("amphibious")', broken: (f) => !f.level.amphibious },
   noRailway: { text: 'Not on a level with a railway', broken: (f) => !!f.level.railway },
   clearOfExits: { text: 'Clear of every exit\'s ramps', broken: (f, e, [a, b]) => f.ramps.some(([c, d]) => a - 20 < d && c < b + 20) },

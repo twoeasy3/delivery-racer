@@ -21,11 +21,7 @@
 import * as THREE from 'three';
 import { LEVEL } from '../../levels.js';
 import { Track } from '../../track.js';
-import { Player } from '../../player.js';
-import { Game } from '../../game.js';
 import { heightOf } from '../tunnelshape.js';
-import { everyFrame } from './sceneryClock.js';
-import { Sound } from '../audio.js';
 import { kit, tileTexture, concreteTexture, liningTexture, floorTexture, tactileTexture, signTexture, clockTexture,
   digitTexture, DIGIT_CELLS, posterTexture, metroTrainCars, CAR_LENGTH } from './metroModels.js';
 
@@ -38,7 +34,6 @@ const RUN_TRACK = 3.0;     // ...and in a running tunnel (a plinth and a row of 
 const HALF_BED = 1.9;      // m: the train line's bed each side of its middle (the far wall 0.4 m beyond)
 const HALL = 12;           // m: an interchange's concourse each side, behind its barrier
 const DEPTH_MARGIN = 0.9;  // m: a cutting's walls stand that much over the ground (a coping, a fence on it)
-const CARS = 6;            // a train's cars
 
 export const metro = ({ levelGroup }) => {
   let seed = 41 + (LEVEL.id || '').length * 97;
@@ -210,7 +205,14 @@ export const metro = ({ levelGroup }) => {
     plainS.ribbon(from, to, (s) => [TC(s) + 1.45, 0.1], (s) => [TC(s) + 1.45, 0.3], 0x4a4d52);
   };
   // the road's floor, wall line to wall line, inside the tunnel: one continuous polished floor, nothing on it
-  const roadFloor = (from, to, col = C.floor) => floorS.ribbon(from, to, (s) => [L(s), 0.024], (s) => [R(s), 0.024], col, { u: 4, v: 4 });
+  // (either side of the RAILWAY down the middle, Track.medianHalf: the line itself, its ballast, sleepers and rails, is road.js's, the
+  // same as Canberra's)
+  const MEDIAN = Track.medianHalf || 0;
+  const roadFloor = (from, to, col = C.floor) => {
+    if (!MEDIAN) { floorS.ribbon(from, to, (s) => [L(s), 0.024], (s) => [R(s), 0.024], col, { u: 4, v: 4 }); return; }
+    floorS.ribbon(from, to, (s) => [L(s), 0.024], () => [-MEDIAN, 0.024], col, { u: 4, v: 4 });
+    floorS.ribbon(from, to, () => [MEDIAN, 0.024], (s) => [R(s), 0.024], col, { u: 4, v: 4 });
+  };
   // rows of lit panels over the road, every `every` m
   const roadLamps = (from, to, every = 8, col = C.white) => { for (let s = from + every / 2; s < to; s += every) for (const d of [-1.7, 1.7]) lamps.on(s, (L(s) + R(s)) / 2 + d, hAt(s) - 0.09, 0, 0.35, 0.12, 1.8, col); };
   // cable trays on a wall (side -1 left at L, +1 right at R or `at`): two trays, the cables in them, at 3.4 and 3.9 m
@@ -557,7 +559,7 @@ export const metro = ({ levelGroup }) => {
       for (const d of [8, 13.5]) {
         for (const r of [-0.72, 0.72]) plainS.ribbon(from, to, (s) => [edge(s) + side * d + r - 0.04, 0.2], (s) => [edge(s) + side * d + r + 0.04, 0.2], C.rail);
         plainS.ribbon(from, to, (s) => [edge(s) + side * d - 1.1, 0.1], (s) => [edge(s) + side * d + 1.1, 0.1], 0x7a7470);
-        if (d < 10) for (let s = from + 30 + rand() * 20; s + CARS * CAR_LENGTH < to - 15; s += 5 * CAR_LENGTH + 30 + rand() * 40) stabled.push({ s, lat: (q) => edge(q) + side * d, n: 5, line: d < 10 ? LINE.red : LINE.green });
+        if (d < 10) for (let s = from + 30 + rand() * 20; s + 6 * CAR_LENGTH < to - 15; s += 5 * CAR_LENGTH + 30 + rand() * 40) stabled.push({ s, lat: (q) => edge(q) + side * d, n: 5, line: d < 10 ? LINE.red : LINE.green });
       }
       for (let s = from + 25; s < to; s += 50) { tubes.on(s, edge(s) + side * 18, 8, 0, 0.35, 16, 0.35, 0x6f757d); lamps.on(s, edge(s) + side * 18 - side * 0.6, 16, 0, 1.6, 0.3, 0.8, C.warm); }
     }
@@ -679,7 +681,6 @@ export const metro = ({ levelGroup }) => {
     dummy.updateMatrix();
     for (const mesh of meshes) mesh.setMatrixAt(i, dummy.matrix);
   };
-  const hide = (meshes, i) => { dummy.position.set(0, -500, 0); dummy.scale.set(0.001, 0.001, 0.001); dummy.updateMatrix(); for (const mesh of meshes) mesh.setMatrixAt(i, dummy.matrix); };
   const touch = (m) => { for (const list of Object.values(m)) for (const mesh of list) mesh.instanceMatrix.needsUpdate = true; };
   if (stabled.length) {
     const n = stabled.reduce((k, t) => k + t.n, 0), m = trainMeshes(metroTrainCars(null), { mid: n });
@@ -688,45 +689,6 @@ export const metro = ({ levelGroup }) => {
     touch(m);
     for (const mesh of m.mid) { mesh.computeBoundingSphere(); mesh.frustumCulled = true; } // (standing still: left out when the depot is out of view)
   }
-  if (spans.length) {
-    const m = trainMeshes(metroTrainCars(0xffe9b8), { front: 1, mid: CARS - 2, back: 1 }), lat = TC;
-    const T = { on: false, head: 0, dir: 1, v: 0, span: null, wait: 0.6, n: 0, heard: false, last: 0 };
-    const slot = (i) => i === 0 ? [m.front, 0] : i === CARS - 1 ? [m.back, 0] : [m.mid, i - 1];
-    const place = () => {
-      for (let i = 0; i < CARS; i++) {
-        const s = T.head - T.dir * (i + 0.5) * CAR_LENGTH, [meshes, k] = slot(i);
-        if (!T.on || s < T.span.from - CAR_LENGTH / 2 || s > T.span.to + CAR_LENGTH / 2) { hide(meshes, k); continue; }
-        setCar(meshes, k, s, lat, T.dir);
-      }
-      touch(m);
-    };
-    place();
-    // (it runs on the run's own clock, Game.time: still while the game is paused, and caught up in steps after a jump: ?ff=)
-    const step = (dt) => {
-      const here = Player.s, span = spanAt(here);
-      if (!T.on) {
-        T.wait -= dt;
-        if (span && T.wait <= 0 && span.to - here > 60) { // a train: by turns one overtaking from behind, then one coming the other way
-          T.on = true; T.span = span; T.heard = false;
-          if (T.n++ % 2 === 0) { T.dir = 1; T.head = Math.max(span.from, here - 20); T.v = 0; } else { T.dir = -1; T.head = Math.min(span.to + CARS * CAR_LENGTH, here + 320); T.v = 20; if (dt < 0.3) Sound.play('trainHorn', 0.2); } // (the Canberra train's own sounds: its horn coming, its rush going by)
-        }
-        return;
-      }
-      if (T.dir > 0) T.v = Math.max(16, (Player.speed || 0) + 12);
-      T.head += T.dir * T.v * dt;
-      const tail = T.head - T.dir * CARS * CAR_LENGTH;
-      if (!T.heard && Math.abs(T.head - here) < 12) { T.heard = true; if (dt < 0.3) Sound.play('trainPass', 0.4); }
-      if ((T.dir > 0 && tail > T.span.to + 2) || (T.dir < 0 && tail < T.span.from - 2) || (Math.abs(tail - here) > 420 && Math.abs(T.head - here) > 420)) {
-        T.on = false; T.wait = 3 + rand() * 3;
-      }
-    };
-    everyFrame(levelGroup, () => {
-      const now = Game.time || 0;
-      if (now < T.last) Object.assign(T, { on: false, wait: 0.6, n: 0 }); // (the run started again)
-      let dt = now < T.last ? 0 : Math.min(10, now - T.last);
-      T.last = now;
-      while (dt > 1e-6) { const d = Math.min(0.25, dt); step(d); dt -= d; }
-      place();
-    });
-  }
+  // (no train runs beside the road any more: the danger train is the level's own, Canberra's bullet train down the RAILWAY in the
+  // middle of the road, bullettrain.js, drawn by render/bullettrain.js. The line beside the road stays empty: a siding)
 };
