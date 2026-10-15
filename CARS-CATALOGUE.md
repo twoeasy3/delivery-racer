@@ -175,6 +175,10 @@ The blueprint cars: in the roster, tiered, models built in render/ideaModels*.js
 | `bubble` | Bubble Car | BMW Isetta - The whole front is the door. | basedOn field |
 | `milkfloat` | Milk Float | Smith's / Wales & Edwards electric milk float - Electric, open-sided and stacked with crates. | basedOn field |
 | `tuktuk` | Tuk-Tuk | Bajaj RE auto-rickshaw - One wheel up front, a bench under a canvas roof, and the driver leaning on the bars. | basedOn field |
+| `keivan` | Kei Van | Suzuki Every - Tall, boxy and narrow: a whole delivery round folded into a few square metres. | basedOn field |
+| `supermini` | Boxy Supermini | Fiat Uno (1983) / original Fiat Panda (1980) square hatchback - All straight lines and no airs: a tall little box with a big glass back door, quick round a corner. | basedOn field |
+| `wedgemicro` | Wedge Microcar | Peel P50 (1962) - One door, one headlamp and room for one. | basedOn field |
+| `farmtractor` | Farm Tractor | Ford 8N (1947) - No hurry, no ditch it cannot cross, and nothing gets it to stop. | basedOn field |
 
 ### Tier 2
 
@@ -184,6 +188,9 @@ The blueprint cars: in the roster, tiered, models built in render/ideaModels*.js
 | `woody` | Woody Wagon | 1949 Ford "Woody" wagon - Timber down its sides and a surfboard on the roof. | basedOn field |
 | `pandacoupe` | Panda Coupe | Toyota Sprinter Trueno AE86 - White over black, lamps that pop up, and a cup of water on the dashboard. | basedOn field |
 | `keiroadster` | Kei Roadster | Honda Beat - A mid-engined two-seater that is barely wider than a door, with no roof to speak of. | basedOn field |
+| `minibus` | Shuttle Minibus | Toyota HiAce (1989) passenger minibus - Twelve seats, five windows a side and a long wait at every stop. | basedOn field |
+| `flatbed` | Flatbed Truck | Bedford TK (1960) flatbed lorry - No sides to speak of: whatever it carries is held on by rope and hope. | basedOn field |
+| `moke` | Utility Moke | Mini Moke (1964) - No doors, no roof and no shame: a bed in the back for the odd job. | basedOn field |
 
 ### Tier 3
 
@@ -196,6 +203,10 @@ The blueprint cars: in the roster, tiered, models built in render/ideaModels*.js
 | `blower` | Blower Tourer | Bentley 4½ Litre "Blower" (1929) - A supercharger out in front of the radiator, a strap round the bonnet and the wind in your face. | basedOn field |
 | `coach` | Highway Coach | GM Scenicruiser (1954) - A raised deck at the back, a glazed step up to it and fluted sides. | basedOn field |
 | `cityev` | City EV | BMW i3 (2013) - Tall, narrow and silent on skinny tyres, with a black band that dips under the back window. | basedOn field |
+| `moorrover` | Moor Rover | Range Rover two-door (1970) - The first posh 4x4: a tall boxy estate that goes where the road gives up. | basedOn field |
+| `sprinthatch` | Sprint Hatch | Honda CR-X (1984) - Short, light and quick to turn: the back end likes to come round. | basedOn field |
+| `halftrack` | Half-Track | Kegresse / M3 half-track (civilian utility) - Wheels to steer at the front, tracks to push at the back: it crosses anything. | basedOn field |
+| `cranelorry` | Crane Lorry | Hiab-style loader crane on a three-axle flatbed lorry (1970s) - A crane folded away behind the cab, ready to lift its own load. | basedOn field |
 
 ### Tier 4
 
@@ -208,6 +219,11 @@ The blueprint cars: in the roster, tiered, models built in render/ideaModels*.js
 | `goddess` | Goddess Saloon | Citroën DS (1968 on) - A shark's nose, its back wheels under spats, and lamps that turn to look round the corner. | basedOn field |
 | `hardtop` | Fifties Hardtop | 1957 Chevrolet Bel Air hardtop - Rockets on the bonnet, fins on the tail, chrome everywhere and no pillar between the windows. | basedOn field |
 | `coupecross` | Coupe Crossover | Range Rover Evoque (2011) - A waist that climbs, a roof that falls and a slit of glass between them. | basedOn field |
+| `touringcar` | Touring Car | BMW M3 E30 (Group A touring car, 1987) - A family saloon with the rules bent: the big wing is not for show, and it grips like glue. | basedOn field |
+| `sporttruck` | Sport Truck | Ford F-150 Lightning (2000s) - A pickup that sat down on its springs: low, loud and quick, with a bed for one small job. | basedOn field |
+| `pixelev` | Pixel EV | Hyundai Ioniq 5 (2020s) - A quiet, boxy electric hatch whose lamps are little glowing squares. | basedOn field |
+| `autobahnestate` | Autobahn Estate | Audi RS6 Avant - A family estate with a very long right foot and room for the shopping at 250. | basedOn field |
+| `finlandyacht` | Fin Land Yacht | Cadillac Sedan de Ville (1959) - Nearly six metres of chrome and sofa, with fins that could hold a sail. | basedOn field |
 
 ### Tier 5
 
@@ -220,6 +236,9 @@ The blueprint cars: in the roster, tiered, models built in render/ideaModels*.js
 | `jetcar` | Jet Land-Speed Car | ThrustSSC - Two jet engines as big as cars, a needle between them and a fin. | basedOn field |
 | `dragster` | Slingshot Dragster | front-engined top-fuel dragster - A rail with a blown engine, skinny wheels in front, huge slicks and a wing behind the driver. | basedOn field |
 | `flyingcar` | Flying Car | Terrafugia Transition - An aeroplane that drives home with its wings folded up, the propeller idling behind. | basedOn field |
+| `trophytruck` | Trophy Truck | Baja 1000 class 1 trophy truck - Long-travel springs, tyres taller than the bonnet and a cage round the cab: it flies over what others... | basedOn field |
+| `hillclimb` | Hill-Climb Special | Peugeot 205 T16 Pikes Peak (1987) - All wing and no brakes to speak of: very quick, and it twitches at every touch. | basedOn field |
+| `armouredlimo` | Armoured Limo | Cadillac One presidential state limousine - Doors as thick as a vault's, tiny windows and a long way to the back seat. | basedOn field |
 
 ## 3. Bespoke key cars (BESPOKE_CARS)
 
@@ -435,16 +454,6 @@ Tierless and free in the garage's Car ideas lot. Inspiration is each entry's `ba
 | `pocket4x4` | Pocket 4x4 | Suzuki Jimny SJ410 (1981) - A little box that goes where the big ones can't. | basedOn field |
 | `dodgem` | Dodgem | fairground bumper car - Built to be hit: it bounces off everything and goes straight on. | basedOn field |
 | `iceresurfacer` | Ice Resurfacer | Zamboni Model 500 - It leaves a clean sheet behind it and nothing in the way. | basedOn field |
-| `wedgemicro` | Wedge Microcar | Peel P50 (1962) - One door, one headlamp and room for one. | basedOn field |
-| `farmtractor` | Farm Tractor | Ford 8N (1947) - No hurry, no ditch it cannot cross, and nothing gets it to stop. | basedOn field |
-| `flatbed` | Flatbed Truck | Bedford TK (1960) flatbed lorry - No sides to speak of: whatever it carries is held on by rope and hope. | basedOn field |
-| `moke` | Utility Moke | Mini Moke (1964) - No doors, no roof and no shame: a bed in the back for the odd job. | basedOn field |
-| `halftrack` | Half-Track | Kegresse / M3 half-track (civilian utility) - Wheels to steer at the front, tracks to push at the back: it crosses anything. | basedOn field |
-| `sprinthatch` | Sprint Hatch | Honda CR-X (1984) - Short, light and quick to turn: the back end likes to come round. | basedOn field |
-| `autobahnestate` | Autobahn Estate | Audi RS6 Avant - A family estate with a very long right foot and room for the shopping at 250. | basedOn field |
-| `finlandyacht` | Fin Land Yacht | Cadillac Sedan de Ville (1959) - Nearly six metres of chrome and sofa, with fins that could hold a sail. | basedOn field |
-| `trophytruck` | Trophy Truck | Baja 1000 class 1 trophy truck - Long-travel springs, tyres taller than the bonnet and a cage round the cab: it flies over what others... | basedOn field |
-| `armouredlimo` | Armoured Limo | Cadillac One presidential state limousine - Doors as thick as a vault's, tiny windows and a long way to the back seat. | basedOn field |
 
 ## 10. In progress (not in the game yet)
 
@@ -453,13 +462,3 @@ Ten idea cars on branches `claude/ideas-batch-e1`..`e5`, not merged. Ids are not
 <!-- group:PLANNED -->
 | id | name | what it is / inspired by | source |
 |---|---|---|---|
-| — | Cinquecento | Fiat 500 (1957) - tiny rear-engined city car | note (in progress, branches claude/ideas-batch-e1..e5) |
-| — | Kei Van | Suzuki Every - Japanese kei cab-over van | note (in progress, branches claude/ideas-batch-e1..e5) |
-| — | Boxy Supermini | Fiat Uno / original Panda - square-cut 1980s supermini | note (in progress, branches claude/ideas-batch-e1..e5) |
-| — | Shuttle Minibus | Toyota HiAce - high-roof passenger minibus | note (in progress, branches claude/ideas-batch-e1..e5) |
-| — | Crane Lorry | lorry-mounted crane (no make given) - truck with a boom crane | note (in progress, branches claude/ideas-batch-e1..e5) |
-| — | Moor Rover | early Range Rover - two-door 4x4 estate | note (in progress, branches claude/ideas-batch-e1..e5) |
-| — | Sport Truck | Ford F-150 Lightning - electric sport pickup | note (in progress, branches claude/ideas-batch-e1..e5) |
-| — | Pixel EV | Hyundai Ioniq 5 style - pixel-lamp electric hatchback | note (in progress, branches claude/ideas-batch-e1..e5) |
-| — | Touring Car | BTCC saloon - British touring car racer | note (in progress, branches claude/ideas-batch-e1..e5) |
-| — | Hill-Climb Special | Pikes Peak wedge hatch - hill-climb special | note (in progress, branches claude/ideas-batch-e1..e5) |

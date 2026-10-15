@@ -24,7 +24,9 @@ try {
   const apply = await load('render/modelpatchapply.js');
   const K = await load('render/ideaModelsDkit.js');
   const { carById } = await load('cars.js');
-  const { IDEA_CARS } = await load('ideas.js');
+  const { IDEA_CARS: IDEAS } = await load('ideas.js');
+  const { FEATURE_ROSTER } = await load('cars.js'); // (the promoted idea cars: still cabinGlass cars)
+  const IDEA_CARS = [...IDEAS, ...FEATURE_ROSTER];
   apply.setModelPatching(false);
   const build = (id, edits = null) => {
     const m = K.withGlassEdits(edits, () => buildInspectModel(carById(id), false));

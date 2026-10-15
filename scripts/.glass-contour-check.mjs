@@ -23,7 +23,9 @@ const TOL = 0.015, A_PILLAR_MIN = 0.12;
 const { load, close } = await startModels();
 const failures = [];
 try {
-  const { IDEA_CARS } = await load('ideas.js');
+  const { IDEA_CARS: IDEAS } = await load('ideas.js');
+  const { FEATURE_ROSTER } = await load('cars.js'); // (the idea cars promoted to the roster as blueprint cars are still glass cars: check them too)
+  const IDEA_CARS = [...IDEAS, ...FEATURE_ROSTER];
   const { makeIdeaModel } = await load('render/ideaModels.js');
   const { dropFlat } = await load('render/ideaModelsDkit.js');
   const want = process.argv.slice(2);
