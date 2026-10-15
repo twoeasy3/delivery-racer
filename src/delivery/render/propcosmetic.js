@@ -6,11 +6,11 @@
 // mesh.userData.prop = 'roof' | 'cargo' | 'wing'. Hiding is `visible = false` (the mesh stays in the tree, so part ids, dents, the ghost
 // stand-in and a blackout see the model unchanged, as the plate tags do). The future cosmetic hides a slot's props when the player
 // picks a prop for that slot (render/propanchors.js gives the bounds it may fill) and shows them again on Stock.
-// API: existingProps(model) -> [{ mesh, slot }]    hideProps(model, slot?) -> how many hidden (no slot: all three)    showProps(model)
+// API: existingProps(model) -> [{ mesh, slot }]    hideProps(model, slot?) -> how many hidden (no slot: all three)    showProps(model, slot?)   (an EQUIPPED prop, render/propdress.js, carries userData.propId too and is not counted as the car's own)
 export const PROP_SLOTS = ['roof', 'cargo', 'wing'];
 export const existingProps = (model) => {
   const found = [];
-  model.traverse((node) => { if (node.isMesh && node.userData.prop) found.push({ mesh: node, slot: node.userData.prop }); });
+  model.traverse((node) => { if (node.isMesh && node.userData.prop && !node.userData.propId) found.push({ mesh: node, slot: node.userData.prop }); });
   return found;
 };
 export const hideProps = (model, slot = null) => {
@@ -18,8 +18,8 @@ export const hideProps = (model, slot = null) => {
   for (const { mesh, slot: s } of existingProps(model)) if (!slot || s === slot) { mesh.visible = false; n++; }
   return n;
 };
-export const showProps = (model) => {
+export const showProps = (model, slot = null) => {
   let n = 0;
-  for (const { mesh } of existingProps(model)) { mesh.visible = true; n++; }
+  for (const { mesh, slot: s } of existingProps(model)) if (!slot || s === slot) { mesh.visible = true; n++; }
   return n;
 };
