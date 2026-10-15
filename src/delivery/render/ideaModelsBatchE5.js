@@ -69,7 +69,7 @@ export const IDEA_MODELS_BATCH_E5 = {
     // inset from the body's silhouette (the profile grown BEV): a 5 cm roof rail, so the side glass reaches the roof's rounded shoulder and the
     // screens' tops are level with it; the glass 6 mm proud of the body everywhere. A B-pillar between the two door windows
     const glass = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(RW1), belt: BELT, half: HALF, taper: TAPER, grow: BEV,
-      inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: BEV + 0.006, sideLift: LIFT, windows: [[-0.1, 9], [-9, -0.26]] });
+      inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: BEV + 0.006, sideLift: LIFT, windows: [[-0.42, 9], [-9, -0.58]] });
     parts(group, k + 'glass', GLASS, () => [...glass.sides, glass.front, glass.rear]);
     parts(group, k + 'black', TRIM, () => [
       bx(1.1, 0.1, 0.03, 0, 0.5, FZ - 0.005),            // the grille
@@ -117,7 +117,7 @@ export const IDEA_MODELS_BATCH_E5 = {
     const group = new THREE.Group();
     const R = 0.34, TW = 0.34, AF = 1.2, AR = -1.12, WX = car.hw - TW / 2;
     const BEV = 0.05, ACROSS = 0.09, BW = 1.86, HALF = BW / 2;
-    const NOSE = 1.9, TAILZ = -1.85, AY = 0.3, BELT = 0.94, ROOF = 1.22, DECK = 1.04;
+    const NOSE = 1.9, TAILZ = -1.85, AY = 0.3, BELT = 0.94, ROOF = 1.22, DECK = BELT;
     const k = 'hc';
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
     const TAPER = [BELT, ROOF, 0.16];
@@ -140,7 +140,7 @@ export const IDEA_MODELS_BATCH_E5 = {
     const LIFT = 0.004, gx = (y) => narrowAt(HALF, y, TAPER);
     // the glass from the body's own side profile, as the Touring Car's (one window each side: no B-pillar)
     const glass = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(RW1), belt: BELT, half: HALF, taper: TAPER,
-      inset: { aPillar: 0.07, roof: 0.055, cPillar: 0.08 }, lift: BEV + 0.006, topLift: BEV - 0.003, sideLift: LIFT });
+      grow: BEV, inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: BEV + 0.006, sideLift: LIFT });
     parts(group, k + 'glass', GLASS, () => [...glass.sides, glass.front, glass.rear]);
     // the bonnet vent lies on the bonnet's slope (front down, 0.237 rad)
     const SLOPE = Math.atan2(0.9 - 0.66, 1.78 - WSF[0]);
