@@ -160,7 +160,7 @@ export const amphibiousCars = () => CARS.filter(car => car.amphibious);
 // the amphibious car to drive an amphibious level in: the one in use if it is one, or else the best the
 // player owns (the highest tier); null: the player owns none
 export const ownedAmphibious = () => {
-  const owned = amphibiousCars().filter(car => Progress.owns(car.id));
+  const owned = [...amphibiousCars(), ...BESPOKE_CARS.filter(car => car.amphibious)].filter(car => Progress.owns(car.id)); // (and a Bespoke key car that floats, its key had: the Paddle-Wheel Amphibian)
   return owned.find(car => car.id === Progress.data.car) || owned.sort((a, b) => b.tier - a.tier)[0] || null;
 };
 
@@ -466,12 +466,12 @@ export const EVENT_CARS = [
 // and since 13-Oct a key of its OWN (the owner: "a unique car key model per key car ... evocative of the car it belongs
 // to"): the first three models went to the cars they fit (the fob stays the Silver Comet's, the brass classic is the 1910
 // Swan Car's, the glossy smart key the hypercar's), six were made for the rest (render/keyModels.js)
-const KEY_STYLE = { horseshoe: 'smart', swancar: 'classic', rocketfin: 'fin', solarracer: 'solar', moonrover: 'lunar', sixwheeler: 'wheel', snocat: 'snowboot', hotdog: 'bun',
+const KEY_STYLE = { horseshoe: 'smart', swancar: 'classic', rocketfin: 'fin', solarracer: 'solar', moonrover: 'lunar', sixwheeler: 'six', paddleduck: 'wheel', snocat: 'snowboot', hotdog: 'bun',
   // (the six CONCEPT key cars, CHECKLIST 211: each the key made for it, once an ordinary key: render/keyModels.js CONCEPT_KEYS)
   fishbowl: 'keikey', midsummer: 'wing', sixteen: 'artisan', quadturbo: 'carbonfob', knifeedge: 'wedgefob', windsong: 'startfob' };
 // the Key cars' star ratings (the owner, 12-Oct: "add star ratings to the current key cars too"): magenta stars as a mark of how strong the
 // car is against the tiers, NOT a tier (`rating`, not `tier`: no level rule, no ECU ladder (a key car's max stays 5) reads it)
-const KEY_RATING = { horseshoe: 5, rocketfin: 5, solarracer: 5, sixwheeler: 3, hotdog: 4, moonrover: 4, swancar: 4, snocat: 3,
+const KEY_RATING = { horseshoe: 5, rocketfin: 5, solarracer: 5, sixwheeler: 3, paddleduck: 5, hotdog: 4, moonrover: 4, swancar: 4, snocat: 3,
   fishbowl: 2, midsummer: 3, sixteen: 4, quadturbo: 5, knifeedge: 5, windsong: 5 }; // (the concept cars: the owner, 13-Oct: "2, 3, 4, 5, 5, 5 stars")
 const bespoke = (car) => ({ ...car, rating: KEY_RATING[car.id] || 0, bespoke: true, rarity: 'legendary', placeholder: true, price: 0, keyModel: KEY_STYLE[car.id] || 'fob' });
 export const BESPOKE_CARS = [
@@ -499,6 +499,15 @@ export const BESPOKE_CARS = [
   bespoke({ id: 'sixwheeler', name: 'Six-Wheel Supercar', basedOn: 'Covini C6W (2004)', model: 'sixwheeler', color: 0x1f9e96, evilColor: 0x5e2470,
     hw: 1.0, hl: 2.1, height: 1.17, note: 'Four small wheels to steer with and two big ones to push: it goes round a corner as if on rails.',
     maxSpeed: 45, accel: 17, agility: 1.4, crossing: 0.2, health: 200, mass: 1.4, sound: 'gt' }),
+  // the tour boat (the owner, 15-Oct: "The Paddle Wheel Amphibian should be a 5 star amphibian with a key unlock, using the monowheel's key"):
+  // a car idea until then (the duck-amphibian branch; model render/ideaModelsPaddleDuck.js), now a Bespoke key car that FLOATS (amphibious:
+  // it drives the water stages as the garage's amphibious cars do: ownedAmphibious below counts it once its key is had), 5 sea-green-tier
+  // stars (tier 5: its ECU ladder and stars; a key car's stars are magenta), its key the wheel key with the Monowheel's availability (in the
+  // same packs as the four in-pack key cars above). Slow, very tough, heavy: a 3 t boat on six wheels
+  bespoke({ id: 'paddleduck', name: 'Paddle-Wheel Amphibian', basedOn: 'Singapore DUCKtours amphibious tour bus (a converted DUKW) crossed with a sternwheel riverboat',
+    model: 'paddleduck', color: 0xf2c21b, evilColor: 0x1e2a48, tier: 5, amphibious: true, draft: 1.05, perk: AMPHIBIOUS_PERK,
+    hw: 1.3, hl: 4.8, height: 3.1, note: 'A tour boat on six wheels: benches under a canopy, a duck\'s face on the bow and a paddle wheel turning at the stern.',
+    maxSpeed: 40, accel: 11, agility: 0.85, crossing: 1, health: 430, mass: 3, sound: 'sixbysix' }),
   // (no key to be had for now: `keyAvailable: false`: in no pack's Bespoke pool and in no event; the owner, 12-Oct. Their blueprints still drop)
   // the expedition: a glass cab on tracks, slow to start, takes the deep snow and shrugs off a crash
   bespoke({ id: 'snocat', name: 'Snowcat', basedOn: 'Tucker Sno-Cat 443', model: 'snocat', color: 0xe8482a, evilColor: 0x1f4a6a, keyAvailable: false, noPacks: true,

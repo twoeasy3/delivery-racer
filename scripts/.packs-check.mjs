@@ -798,7 +798,7 @@ try {
     check(two.featured && two.car === one.id && two.n === 3, 'a featured entry with an amount works for them (' + one.id + ' x' + two.n + ')');
     // (the Bespoke, Legendary and earned cars are as they were: none is featurable, noPacks or in the roster)
     const others = [...g.cars.BESPOKE_CARS, ...g.cars.EARNED_CARS, ...g.cars.EVENT_CARS, ...g.cars.CARS];
-    check(others.every(c => !c.featurable && !ids.has(c.id)) && g.cars.BESPOKE_CARS.length === 14 && g.cars.BESPOKE_CARS.every(c => c.rarity === 'legendary' || c.rarity === 'epic'),
+    check(others.every(c => !c.featurable && !ids.has(c.id)) && g.cars.BESPOKE_CARS.length === 15 && g.cars.BESPOKE_CARS.every(c => c.rarity === 'legendary' || c.rarity === 'epic'),
       'the Bespoke, event, earned and garage cars are not in the roster and not featurable');
     Progress.reset(); Progress.noSave = true;
   }

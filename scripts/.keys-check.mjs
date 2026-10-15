@@ -14,8 +14,8 @@ try {
   const THREE = await import('three');
   const { KEY_MODELS, KEY_MODEL, KEY_BUILDERS, makeKey, initialOf, CONCEPT_KEYS } = await g.load('render/keyModels.js');
   await g.load('render/keyModelsOrdinary.js'); // (the six concept keys are built in the ordinary keys' files: CHECKLIST 211)
-  check(KEY_MODELS.length === 15 && new Set(KEY_MODELS).size === 15 && KEY_MODELS.every(m => typeof KEY_BUILDERS[m] === 'function') && KEY_MODELS.includes(KEY_MODEL),
-    'fifteen key models, the nine Bespoke and the six concept keys (' + KEY_MODELS.join(', ') + '), the default ' + KEY_MODEL + ' among them');
+  check(KEY_MODELS.length === 16 && new Set(KEY_MODELS).size === 16 && KEY_MODELS.every(m => typeof KEY_BUILDERS[m] === 'function') && KEY_MODELS.includes(KEY_MODEL),
+    'sixteen key models, the ten Bespoke (six: the Six-Wheel Supercar key) and the six concept keys (' + KEY_MODELS.join(', ') + '), the default ' + KEY_MODEL + ' among them');
   {
     const { ORDINARY_MODELS } = await g.load('render/keyModels.js');
     check(CONCEPT_KEYS.length === 6 && CONCEPT_KEYS.every(m => KEY_MODELS.includes(m) && !ORDINARY_MODELS.includes(m)), 'the six concept keys are key models, not ordinary ones (' + CONCEPT_KEYS.join(', ') + ')');

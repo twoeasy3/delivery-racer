@@ -76,7 +76,7 @@ export const KINDS = {
   splitwindow: 'coupe', wedge: 'sports', jetcar: 'craft', dragster: 'open', flyingcar: 'craft', blower: 'open', coach: 'bus', cityev: 'hatch',
   coupecross: 'suv',
   // bespoke and concept
-  rocketfin: 'canopy', swancar: 'coupe', solarracer: 'canopy', moonrover: 'open', sixwheeler: 'sports', snocat: 'special', hotdog: 'special',
+  rocketfin: 'canopy', swancar: 'coupe', solarracer: 'canopy', moonrover: 'open', sixwheeler: 'sports', paddleduck: 'bus', snocat: 'special', hotdog: 'special',
   horseshoe: 'sports', fishbowl: 'canopy', midsummer: 'open', sixteen: 'coupe', quadturbo: 'sports', knifeedge: 'sports', windsong: 'sports',
   // event, earned, secret, level
   centreseat: 'sports', ufo: 'craft', 'earned-ufo': 'craft', gt: 'sports', jetboat: 'craft', f1: 'open', lmp: 'sports', apc: 'tank', citybus: 'bus', amphibioustank: 'tank',
@@ -92,7 +92,6 @@ export const KINDS = {
   halftrack: 'halftrack', keivan: 'van', supermini: 'hatch', minibus: 'van', sporttruck: 'pickup', pixelev: 'hatch', sprinthatch: 'hatch',
   autobahnestate: 'estate', finlandyacht: 'saloon', trophytruck: 'pickup', armouredlimo: 'saloon', cranelorry: 'truck', moorrover: 'suv',
   touringcar: 'saloon', hillclimb: 'hatch', monowheel: 'bike', // (the Monowheel: a Bespoke key car until 15-Oct, an idea again)
-  paddleduck: 'bus', // (the Paddle-Wheel Amphibian: a flat canopy roof over a tour boat; no load deck; its funnel is a wing-slot prop)
 };
 export const kindOf = (car) => KINDS[car.id] || KINDS[car.model || car.id] || 'car';
 

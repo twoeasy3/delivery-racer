@@ -1120,7 +1120,7 @@ export const CONFIG = {
     share: 0.2,    // of the ref, the first step (to ECU2)
     growth: 1.5,   // each step after costs this many times the one before
     round: 5,      // $
-    perCar: {},    // { carId: ref } for an exception
+    perCar: { paddleduck: 1500 }, // { carId: ref } for an exception (the Paddle-Wheel Amphibian: a Bespoke key car with a tier, priced as the key cars with none are, 15-Oct)
   },
   // the Blue Star cars (the garage's second season) stay out of the garage, lot and all, until this
   // numbered level has been delivered

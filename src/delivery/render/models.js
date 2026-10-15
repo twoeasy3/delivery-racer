@@ -1828,10 +1828,10 @@ for (const name of ['gullwing', 'rearengine', 'snake', 'polytruck']) {
 // builds them (makeIdeaModel: at the vehicle's real size, and one too wide for a lane, the Monster Truck, scaled down)
 for (const name of ['bubble', 'milkfloat', 'tuktuk', 'woody', 'pandacoupe', 'keiroadster', 'fireengine', 'monster',
   'stately', 'teardrop', 'pony', 'midnight', 'splitwindow', 'wedge', 'jetcar', 'dragster', 'flyingcar',
-  'goddess', 'hardtop', 'blower', 'coach', 'cityev', 'coupecross', 'horseshoe', 'rocketfin', 'swancar', 'solarracer', 'moonrover', 'sixwheeler', 'snocat', 'hotdog',
+  'goddess', 'hardtop', 'blower', 'coach', 'cityev', 'coupecross', 'horseshoe', 'rocketfin', 'swancar', 'solarracer', 'moonrover', 'sixwheeler', 'paddleduck', 'snocat', 'hotdog',
   'fishbowl', 'midsummer', 'sixteen', 'quadturbo', 'knifeedge', 'windsong',
   'keivan', 'supermini', 'wedgemicro', 'farmtractor', 'minibus', 'flatbed', 'moke', 'moorrover', 'sprinthatch', 'halftrack', 'cranelorry', 'touringcar', 'sporttruck', 'pixelev',
   'autobahnestate', 'finlandyacht', 'trophytruck', 'hillclimb', 'armouredlimo']) { // (15-Oct: the last nineteen: the chosen ideas, promoted to blueprint cars, cars.js FILLER_CARS)
-  // (the thirteen before them: the Bespoke key cars, cars.js BESPOKE_CARS; the last six of them the concept cars)
+  // (the fourteen before them: the Bespoke key cars, cars.js BESPOKE_CARS; the last six of them the concept cars)
   MODELS[name] = (car) => makeIdeaModel({ ...car, model: name });
 }

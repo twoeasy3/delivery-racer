@@ -57,6 +57,8 @@
 // 15-Oct (the owner: "The monowheel's design style doesn't suit the game anymore. Relegate it back to an idea car"): the Monowheel left
 // cars.js BESPOKE_CARS and is an idea in this lot again (its model still render/ideaModels3.js); its key style, the wheel key, went to a
 // new Legendary key car.
+// 15-Oct: the Paddle-Wheel Amphibian (an idea on the duck-amphibian branch for a day, ideasPaddleDuck.js) never reached the lot on main:
+// the owner made it a 5-star amphibious Bespoke key car (cars.js BESPOKE_CARS) with the wheel key; its model is render/ideaModelsPaddleDuck.js.
 
 import { IDEA_CARS_TOPUP_A } from './ideasTopupA.js'; // (the top-up's batch A: four classic road cars)
 
@@ -64,7 +66,6 @@ import { IDEA_CARS_TOPUP_A } from './ideasTopupA.js'; // (the top-up's batch A: 
 import { IDEAS_TOPUP_B } from './ideasTopupB.js';
 
 import { IDEAS_TOPUP_C } from './ideasTopupC.js'; // (top-up batch C: three ideas, models in render/ideaModelsTopupC.js)
-import { IDEAS_PADDLE_DUCK } from './ideasPaddleDuck.js'; // (the Paddle-Wheel Amphibian, model in render/ideaModelsPaddleDuck.js)
 export const IDEA_CARS = [
   { id: 'threewheeler', name: 'Three-Wheeler', basedOn: 'Reliant Robin', model: 'threewheeler', color: 0xe0902a, evilColor: 0x3d4a2a,
     hw: 0.71, hl: 1.67, height: 1.37, note: 'One wheel at the front. It leans in a corner, and sometimes keeps going.',
@@ -200,6 +201,5 @@ export const IDEA_CARS = [
   ...IDEA_CARS_TOPUP_A,
   ...IDEAS_TOPUP_B, // (the top-up batch B: a removals van, a bin lorry, a jeepney; ideasTopupB.js)
   ...IDEAS_TOPUP_C,
-  ...IDEAS_PADDLE_DUCK,
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));

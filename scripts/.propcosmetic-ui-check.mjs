@@ -17,7 +17,6 @@
 //   node scripts/.propcosmetic-ui-check.mjs
 import * as THREE from 'three';
 import { readFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
 import { startModels } from './modelpatch-load.mjs';
 
 const { load, close, ROOT } = await startModels();
@@ -216,10 +215,8 @@ try {
     const { logicFiles } = await import('../vite.config.js');
     const logic = [...logicFiles()];
     check(!logic.some(f => /propdress|propcosmetic|propmodels|propanchors|cosmeticsui|showroomview|cosmetics\.js|showcar|unlockall/.test(f)), 'no prop module, the Cosmetics screen, showcar or unlockall is in the replay fingerprint (' + logic.length + ' logic files)');
-    let changed = [];
-    try { changed = execSync('git diff --name-only origin/main', { cwd: ROOT }).toString().split('\n').filter(Boolean).map(f => f.replace(/^src\/delivery\//, '')); } catch { /* (no git: skipped below) */ }
-    const touched = logic.filter(f => changed.includes(f));
-    check(changed.length > 0 && touched.length === 0, 'none of the logic files differs from origin/main (' + changed.length + ' files changed, ' + touched.length + ' of them logic)');
+    // (a line here once checked that no logic file differed from origin/main: true only on the prop branch itself, false on any later
+    // branch that changes a car (cars.js, ecus.json...). What it meant, that the props are render-only, is the check above)
   }
 } catch (e) { failures++; console.log('  FAIL  threw ' + (e && e.stack || e)); }
 await close();
