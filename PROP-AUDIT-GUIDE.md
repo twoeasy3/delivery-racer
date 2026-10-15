@@ -68,6 +68,7 @@ that is a wing (wing). Nothing drawn may change: `node scripts/.proptag-check.mj
 baseline recorded before any tag). A merged mesh that holds a prop AND body parts cannot be tagged: if the split is trivial (its own
 `parts(...)` / bucket, as the Minibus's vent and the plates in `mergeByMaterial`), do it and add the model to `SPLIT` in
 `.proptag-check.mjs` (+1 mesh allowed); otherwise list the car as NEEDS A SPLIT in your report and leave it. After tagging, re-measure
+A tagged mesh split out of a `mergeByMaterial` bucket must get `geometry = geometry.toNonIndexed()` (and join `keep`): the check hashes vertices, so an indexed mesh reads as changed geometry (the Pick-Up's sports bar: SPLIT `pickup: 11`).
 the car (`node scripts/prop-anchors.mjs <id> --write`): the generator measures with the car's props hidden and marks `existing: true`.
 
 ## The sweep, step by step
