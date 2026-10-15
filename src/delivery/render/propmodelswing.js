@@ -22,7 +22,6 @@ export const carPrimary = (car, evil = false) => ((evil ? car.evilColor : car.co
 
 const shared = (m) => { m.userData.shared = true; return m; };
 const DARK = shared(new THREE.MeshLambertMaterial({ color: 0x23252a }));        // black plastic, stands, rails
-const CHROME = shared(new THREE.MeshLambertMaterial({ color: 0xd8d8d8 }));
 const GREY = shared(new THREE.MeshLambertMaterial({ color: 0xc9ced4 }));        // a rocket pod's body
 const CARDBOARD = shared(new THREE.MeshLambertMaterial({ color: 0xe6cf9c }));   // a pizza box
 const CRUST = shared(new THREE.MeshLambertMaterial({ color: 0xd9a24a }));
@@ -91,7 +90,7 @@ export const MORE_WING = [
   } },
   // 4. a flame wing: five tongues of fire, red-orange with a yellow core, the middle one tallest, licking back from a dark rail.
   //    Its own colours whatever the car. Box.
-  { id: 'wing-flame', name: 'Flame wing', shape: 'box', colourFrom: 'fixed', build: (paint) => {
+  { id: 'wing-flame', name: 'Flame wing', shape: 'box', colourFrom: 'fixed', build: () => {
     const g = new THREE.Group();
     box(g, DARK, 1.3, 0.03, 0.26, 0, -0.16, 0);
     const tongue = (x, s) => {
