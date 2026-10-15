@@ -251,14 +251,14 @@ ORIG1B_MODELS.commuter = (car) => {
     if (yaw) geo.rotateY(yaw);
     return geo.translate(x, y, z);
   };
-  const HL = [0.5, 0.66, NOSE - 0.03], HP = -0.95, HY = 0.4; // (the headlamp's place; its pitch, the ring's axis the nose corner's normal; its splay)
+  const HL = [0.5, 0.66, NOSE - 0.03], HP = -0.95, HY = 0.22; // (the headlamp's place; its pitch, the ring's axis the nose corner's normal; its splay)
   const TL = [0.66, 0.66, TAILZ - BEV + 0.03]; // (the tail lamp's place; its ring's axis straight back)
   parts(group, k + 'bezel', SILVER, () => [
-    ...[-1, 1].map(s => ring(0.15, 0.28, 0.24, 0.09, s * HL[0], HL[1], HL[2], HP, -s * HY)),
+    ...[-1, 1].map(s => ring(0.15, 0.28, 0.26, 0.1, s * HL[0], HL[1], HL[2], HP, -s * HY)),
     ...[-1, 1].map(s => ring(0.1, 0.18, 0.22, 0.09, s * TL[0], TL[1], TL[2], Math.PI, 0)),
   ]);
   parts(group, k + 'lamp', LAMP, () => [
-    ...[-1, 1].map(s => dome(0.13, 0.26, 0.05, 0.09, s * HL[0], HL[1], HL[2], HP, -s * HY)),
+    ...[-1, 1].map(s => dome(0.13, 0.26, 0.05, 0.1, s * HL[0], HL[1], HL[2], HP, -s * HY)),
     ...[-1, 1].map(s => dsc(0.03, 0.02, s * TL[0], TL[1] - 0.075, TL[2] - 0.118, 12)),   // the clear lenses
   ]);
   parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => dome(0.085, 0.16, 0.035, 0.09, s * TL[0], TL[1], TL[2], Math.PI, 0)));

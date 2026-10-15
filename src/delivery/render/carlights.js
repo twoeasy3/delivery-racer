@@ -51,10 +51,10 @@ export const CAR_LAMPS = {
   // lamps the table drives). No indicator lenses: the front ones flash on the outer edge of the headlamp's almond, the
   // rear ones on the outer edge of the tail lamp. (Placed from scripts/lamps.mjs's draft of the new body.)
   commuter: {
-    head: [{ at: [0.48, 0.733, 1.909], size: [0.291, 0.303], round: true, mirror: true }],
+    head: [{ at: [0.487, 0.741, 1.923], size: [0.27, 0.303], round: true, mirror: true }],
     tail: [{ at: [0.66, 0.66, -1.905], size: [0.17, 0.32], round: true, mirror: true }],
     blink: [
-      { at: [0.575, 0.733, 1.909], size: [0.1, 0.1], round: true, mirror: true, shared: 'headlamp' },
+      { at: [0.572, 0.741, 1.923], size: [0.1, 0.1], round: true, mirror: true, shared: 'headlamp' },
       { at: [0.711, 0.66, -1.905], size: [0.068, 0.1], round: true, mirror: true, shared: 'tail lamp' },
     ],
     reverse: [{ at: [0.66, 0.585, -1.908], size: [0.06, 0.06], round: true, mirror: true }],
