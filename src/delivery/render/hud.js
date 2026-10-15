@@ -267,7 +267,7 @@ export const updateHud = () => {
   }
   syncSticky();
   // pause and exit: shown during a run and the screensaver
-  setStyle(runButtons, 'display', Game.state === 'playing' ? 'flex' : 'none');
+  setStyle(runButtons, 'display', Game.state === 'playing' || document.body.classList.contains('after-run') ? 'flex' : 'none'); // (a run over: only while the orbit camera is on offer, render/orbit.js: the row is its button)
   const held = !!Replay.playing?.over; // (a replay held at its end, or where it drifted: its results say so, not PAUSED)
   setStyle(pauseBtn, 'display', held ? 'none' : '');
   const pauseLabel = Game.paused ? 'Resume' : 'Pause';

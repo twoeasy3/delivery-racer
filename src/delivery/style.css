@@ -34,6 +34,20 @@ body.photo #touchControls, body.photo #copGlow, body.photo #cameraFlash, body.ph
   background: rgba(10,14,20,.55); color: #fff; cursor: pointer; }
 #photoBar button:hover { background: rgba(10,14,20,.85); }
 body.photo canvas#game { cursor: grab; }
+/* the orbit camera (render/orbit.js): the scene with the usual HUD away, the run's own buttons kept (Pause, speed, Exit: a replay goes on
+   while it is on), its panel (the way back to the chase view, and the ghost) small at the foot of the screen, and the results out of the way */
+body.orbiting #hud, body.orbiting #ghostGap, body.orbiting .throw, body.orbiting #messages, body.orbiting #sticky, body.orbiting #tankCorner, body.orbiting #banner,
+body.orbiting #touchControls, body.orbiting #copGlow, body.orbiting #cameraFlash, body.orbiting #behind, body.orbiting #cargoCorner, body.orbiting #camAlert,
+body.orbiting #resultScreen { display: none !important; }
+body.orbiting canvas#game { cursor: grab; touch-action: none; }
+#orbitBtn { min-height: 36px; }
+body.after-run #runButtons button:not(#orbitBtn) { display: none !important; } /* (a run over: the row is only the Orbit button, at the top: the delivery's caption is at the foot) */
+body.after-run #runButtons { bottom: auto; top: max(12px, env(safe-area-inset-top)); }
+#orbitPanel { position: fixed; right: max(10px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); display: flex; gap: 6px; z-index: 6; }
+#orbitPanel button { font: inherit; font-size: 13px; font-weight: 700; min-height: 40px; min-width: 44px; padding: 6px 12px; border-radius: 8px; white-space: nowrap;
+  border: 2px solid rgba(255,255,255,.4); background: rgba(10,14,20,.55); color: #fff; cursor: pointer; }
+#orbitPanel button:hover { background: rgba(10,14,20,.85); }
+
 @media (max-width: 560px) { #photoBar span { display: none; } }
 body.cinematic #hud, body.cinematic #ghostGap, body.cinematic #runButtons, body.cinematic .throw, body.cinematic #messages, body.cinematic #sticky,
 body.cinematic #tankCorner, body.cinematic #banner, body.cinematic #touchControls { display: none !important; }

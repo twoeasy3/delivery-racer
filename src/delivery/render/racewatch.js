@@ -55,6 +55,40 @@ export const sees = (from, s0, s1) => {
   }
   return true;
 };
+// how far from `origin` towards `end` (game terms, both) the first solid thing of the scenery is, or Infinity: the same
+// test as sees (solid, not a flat strip, not see-through), for one line. The orbit camera (render/orbit.js) uses it to
+// keep itself out of walls, stands, tunnel roofs and hillsides
+// (not everything in levelGroup is asked: a ray tests each of its top-level objects, over a thousand on a circuit, which cost
+// ~10 ms a ray. Each is boxed once, and only those whose box the line crosses are tested. The terrain mesh, userData.terrain,
+// is left out: a ray tests every one of its tens of thousands of triangles; its height is landAt's, see render/orbit.js)
+let listed = -1, boxed = [];
+const crossed = new THREE.Vector3();
+// (boxed once per level, when the orbit camera comes on offer (render/orbit.js), so the first ray does not stall the frame)
+export const prepareSolids = () => {
+  if (levelGroup.children.length === listed) return;
+  levelGroup.updateMatrixWorld();
+  listed = levelGroup.children.length;
+  boxed = levelGroup.children.filter(c => !c.userData.terrain).map(c => ({ c, box: new THREE.Box3().setFromObject(c).expandByScalar(0.5) }));
+};
+export const firstSolid = (origin, end) => {
+  const flip = scene.scale.x < 0 ? -1 : 1;
+  eye.set(origin.x * flip, origin.y, origin.z); // (cast from the car's end, so the first hit is the one nearest it)
+  target.set(end.x * flip, end.y, end.z);
+  dir.subVectors(target, eye);
+  const d = dir.length();
+  if (d < 1e-3) return Infinity;
+  levelGroup.updateMatrixWorld();
+  prepareSolids();
+  ray.set(eye, dir.normalize());
+  ray.far = d;
+  const near = [];
+  for (const { c, box } of boxed) {
+    if (box.isEmpty()) continue;
+    if (box.containsPoint(eye) || (ray.ray.intersectBox(box, crossed) && crossed.distanceTo(eye) <= d)) near.push(c);
+  }
+  const hit = ray.intersectObjects(near, true).find(h => !h.object.userData.flat && !h.object.material.transparent);
+  return hit ? hit.distance : Infinity;
+};
 // a trackside camera for the car: the first of a few tries that sees the road it is coming along
 const setSpot = (c) => {
   let best = null;

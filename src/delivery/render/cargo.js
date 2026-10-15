@@ -236,7 +236,8 @@ export const deliveryCamera = () => {
 // any key, tap or click skips it (taken before anything else sees it: Enter would start the level again,
 // and a tap would press whatever is under it)
 const skip = (e) => {
-  if (!Delivery.active || e.repeat) return;
+  if (!Delivery.active || e.repeat || e.code === 'KeyO') return; // (O is the orbit camera's)
+  if (document.body.classList.contains('orbiting') || e.target?.closest?.('#runButtons, #orbitPanel')) return; // (the orbit camera's own taps and drags are not a skip: render/orbit.js)
   if (Delivery.skip()) { e.stopImmediatePropagation(); e.preventDefault(); }
 };
 window.addEventListener('keydown', skip, true);
