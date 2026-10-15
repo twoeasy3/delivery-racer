@@ -604,6 +604,8 @@ export const CONFIG = {
     // Gimmick Road 2's (see hazards.js)
     trolley: { damage: 8, speedKept: 0.88, light: true },
     tug: { damage: 14, speedKept: 0.8, light: true }, // a tunnel junction's electric tug (hazards.js): a knock, never a stop
+    handrail: { damage: 3, speedKept: 0.94, light: true }, // a boost pad's handrail section (lanegimmicks.js): a cone's box and cost, blown away on contact like any obstacle
+    laneEnd: { damage: 0, speedKept: 1 }, // a dead-end lane's end (lanegimmicks.js): no ordinary knock: a wreck outright, or passed through (see Collision.hitObstacles)
     runner: { damage: 10, speedKept: 0.88, light: true },
     waterTable: { damage: 6, speedKept: 0.9, light: true },
     paceCar: { damage: 42, speedKept: 0.5 },
@@ -1510,6 +1512,17 @@ export const CONFIG = {
   // stop, no bust; the counterplay is the warning: time it, or change lane behind the train. `rest` s after, it is
   // ready again (only for a player coming back to it: a lapped level)
   tunnelJunction: { trigger: 150, warn: 2.2, speed: 4.5, spacing: 2.6, rest: 8, mouth: 10 },
+  // a boost pad ("boostPads": { from, to, lane }, lanegimmicks.js; a travelator in the mall): a car driving over it is
+  // pulled on for `time` s at up to `speed` m/s over its own top speed (as a turbo pulls: CONFIG.turboAccel), the clock
+  // refilled for as long as it is on the pad; a ghost too (it is the floor, as ice is). Beside it stand its handrails,
+  // `rail` m sections every `rail` m along both edges, `railGap` m short of each end: ordinary obstacles (obstacleKinds.handrail)
+  boostPad: { time: 2.5, speed: 12, rail: 3, railGap: 3 },
+  // a dead-end lane ("deadEnds": { s, lane, kind, length? }, lanegimmicks.js): the lane runs on as usual for `length` m and
+  // ENDS at s (obstacleKinds.laneEnd): a 'shutter' (road behind it: a Ghost passes, a tank or armour smashes through, any
+  // other car is wrecked) or a 'wall' (nothing behind it: wrecked whatever protects the car). The telegraph: the lane's floor
+  // coloured all along, a DEAD END sign over it `sign` m before, beacons, a bell and a warning with `warn` m to go, hazard
+  // stripes on the floor over the last `stripes` m. (No cost here: a wreck, not damage)
+  deadEnd: { length: 120, sign: 100, stripes: 24, warn: 120 },
   // ---- Gimmick Road 3's: the road gambles (gambles.js; each a field in the level, named below) ----
   // a crosswind ("crosswinds": { from, to, dir, strength?, every?, length? }): over the stretch a car is pushed
   // sideways at `strength` m/s^2 times (its height / heightRef) ^ heightPower: `lull` of that all the time, all of
