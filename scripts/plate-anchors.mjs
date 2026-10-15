@@ -1,9 +1,8 @@
 // The NUMBER PLATE ANCHOR generator (CHECKLIST 286; src/delivery/render/plateanchors.js is the table's reader, render/plateanchorstable.js the
 // table this writes). For every car model it builds the model as the showroom does (render/showcar.js makeShowCar), takes the car's
-// existing plates off, and SHOOTS RAYS at the back and the front: a plate-sized grid of rays at each height, the first thing each ray
-// hits (glass, a lamp, a see-through part do not count as a place to stand a plate on), a plane fitted through the hits (its tilt is
-// the plate's pitch), and the height with the flattest, lowest-slung, best-looking place wins. Sizes are the plate's 4:1 shape:
-// 0.52 x 0.13, else 0.40 x 0.10, else 0.30 x 0.075. A place flatter than STRICT is "reliable"; one that is only ROUGH is written
+// existing plates off, and asks scripts/plate-search.mjs for the best place at the back and the front (rays along the car on a grid over
+// the plate and a margin round it, paintwork only, within reach of the car's end, one plane, upright enough, nothing in front; the
+// canonical 0.52 x 0.13 plate first, else 0.46 / 0.40 / 0.34 / 0.30 wide). It writes no ROUGH flag any more (an old entry may carry one:
 // with a flag (r5 = 1), the hand list in plateanchors.js is where those are looked at and fixed. A model the audit
 // (src/delivery/plates-audit.json) calls "cannot" (craft, open-wheelers, bikes, saucers) is NOT shot: it goes in the table's `none` list.
 // A car whose model is the same as another's (a Super with its body kit, an earned reskin) gets its OWN entry only where its back or
@@ -13,21 +12,19 @@
 //   node scripts/plate-anchors.mjs <car id> [...]      print the entry for those cars only (an id from cars.js / ideas.js); nothing written
 //   node scripts/plate-anchors.mjs <car id> --write    ...and merge the entry into the table (a NEW CAR: do this, then look at it:
 //                                                      scripts/shots.mjs ?platedesign=classic&car=<id>, see CAR-AGENT-PROMPT.md)
+// THE SEARCH is scripts/plate-search.mjs (since the 15-Oct placement audit); check a result with scripts/plate-placement-audit.mjs <car id>.
 // Units: car-local metres, x across, y up, the nose at +z. An end is [y, z, width, pitch (degrees), flag?]: z is the outermost
 // surface under the plate's middle (the plate stands a few mm off it), the height is width / 4, x is 0.
 import * as THREE from 'three';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { startModels } from './modelpatch-load.mjs';
+import { makeView, searchPlace } from './plate-search.mjs';
 
 const args = process.argv.slice(2);
 const dry = args.includes('--dry'), write = args.includes('--write'), only = args.filter(a => !a.startsWith('--'));
 const { load, close, ROOT } = await startModels();
 const TABLE = ROOT + '/src/delivery/render/plateanchorstable.js';
-const SIZES = [0.52, 0.40, 0.30];                 // plate widths tried, the height is a quarter of it
-const STRICT = 0.010, ROUGH = 0.026;              // m: the most a place may stand off its fitted plane
-const MAX_PITCH = 32, ROUGH_PITCH = 42, MAX_YAW = 6; // degrees
-const Y_LO = 0.24, DIFF = 0.012;
-const NX = 9, NY = 4;
+const DIFF = 0.012; // m: a variant whose place differs from its base model's by more than this gets an entry of its own
 const r3 = (v) => Math.round(v * 1000) / 1000;
 
 try {
@@ -54,85 +51,6 @@ try {
   for (const car of C.CARS) add('super', C.superOf(car));
   const keyOf = (car) => car.model || car.id;
 
-  // ---- the rays ----
-  const ray = new THREE.Raycaster(), origin = new THREE.Vector3(), dir = new THREE.Vector3();
-  const prepare = (model) => {
-    P.setExistingPlatesVisible(model, false);
-    model.updateMatrixWorld(true);
-    const body = model.userData.body, bodyMat = body?.material, meshes = [];
-    model.traverse((n) => {
-      if (!n.isMesh || n.isInstancedMesh || !n.visible || n.userData.wheelRing || !n.geometry) return;
-      let hidden = false;
-      for (let p = n; p; p = p.parent) if (p.visible === false) hidden = true;
-      if (hidden) return;
-      const m = [].concat(n.material)[0];
-      if (!m || (m.transparent && m.opacity < 0.95)) return; // (see-through: not a surface)
-      const lamp = m.isMeshBasicMaterial || (m.emissive && m.emissive.getHex() !== 0 && (m.emissiveIntensity ?? 1) > 0.25);
-      const glass = n !== body && m !== bodyMat && glassy(m);
-      n.userData._kind = lamp ? 'lamp' : glass ? 'glass' : 'ok';
-      meshes.push(n);
-    });
-    const box = new THREE.Box3().setFromObject(model, true);
-    return { meshes, box };
-  };
-  // the first surface a ray meets from outside the end; null = a miss, 'bad' = glass or a lamp
-  const shoot = (view, end, x, y) => {
-    const s = end === 'rear' ? -1 : 1;
-    origin.set(x, y, s * (Math.max(Math.abs(view.box.min.z), Math.abs(view.box.max.z)) + 1));
-    dir.set(0, 0, -s);
-    ray.set(origin, dir);
-    const hit = ray.intersectObjects(view.meshes, false)[0];
-    if (!hit) return null;
-    return hit.object.userData._kind === 'ok' ? hit.point.z : 'bad';
-  };
-  // a plate of width w centred at height y: the plane through the hits; null if any ray misses or meets glass or a lamp
-  const fit = (view, end, w, y) => {
-    const h = w / 4, zs = [], rows = [];
-    for (let i = 0; i < NX; i++) for (let j = 0; j < NY; j++) {
-      const x = -w / 2 + w * (i + 0.5) / NX, yy = y - h / 2 + h * (j + 0.5) / NY, z = shoot(view, end, x, yy);
-      if (z === null || z === 'bad') return null;
-      zs.push(z); rows.push([x, yy - y]);
-    }
-    // z = a + b * dy + c * x, least squares
-    let sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0, sz = 0, sxz = 0, syz = 0;
-    const n = zs.length;
-    for (let k = 0; k < n; k++) { const [x, dy] = rows[k], z = zs[k]; sx += x; sy += dy; sxx += x * x; syy += dy * dy; sxy += x * dy; sz += z; sxz += x * z; syz += dy * z; }
-    const M = [[n, sy, sx], [sy, syy, sxy], [sx, sxy, sxx]], R = [sz, syz, sxz];
-    const det = (m) => m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
-    const D = det(M);
-    if (Math.abs(D) < 1e-12) return null;
-    const col = (k) => det(M.map((row, i) => row.map((v, j) => (j === k ? R[i] : v))));
-    const a = col(0) / D, b = col(1) / D, c = col(2) / D;
-    let dev = 0, out = end === 'rear' ? Infinity : -Infinity;
-    for (let k = 0; k < n; k++) {
-      const [x, dy] = rows[k], flat = zs[k] - b * dy - c * x;
-      dev = Math.max(dev, Math.abs(zs[k] - (a + b * dy + c * x)));
-      out = end === 'rear' ? Math.min(out, flat) : Math.max(out, flat); // (the plate stands on the outermost of them)
-    }
-    return { z: out, pitch: Math.atan(b) * 180 / Math.PI, yaw: Math.atan(c) * 180 / Math.PI, dev, w };
-  };
-  // the best place at one end: { y, z, w, pitch, rough } or null
-  const place = (view, end, preferY) => {
-    const top = view.box.max.y * 0.8;
-    for (const [tol, maxPitch, rough] of [[STRICT, MAX_PITCH, false], [ROUGH, ROUGH_PITCH, true]]) {
-      for (const w of SIZES) {
-        if (rough && w > SIZES[1]) continue;
-        let best = null;
-        for (let y = Y_LO; y <= top; y += 0.02) {
-          const f = fit(view, end, w, y);
-          if (!f || f.dev > tol || Math.abs(f.pitch) > maxPitch || Math.abs(f.yaw) > MAX_YAW) continue;
-          const score = f.dev * 220 + Math.abs(f.pitch) / 25 + Math.abs(y - 0.52) * 1.2 + (preferY != null ? Math.abs(y - preferY) * 3 : 0) + (w < 0.5 ? 0.3 : 0);
-          if (!best || score < best.score) best = { score, y, w, z: f.z + (end === 'rear' ? 0 : 0), pitch: f.pitch, dev: f.dev };
-        }
-        if (best) {
-          // the surface depth under the plate's middle at its pitch: z is at the middle already (dy = 0)
-          return { y: r3(best.y), z: r3(best.z), w: best.w, pitch: Math.round(best.pitch * 10) / 10, rough, dev: best.dev };
-        }
-      }
-    }
-    return null;
-  };
-
   // ---- every car ----
   const wanted = (c) => !only.length || only.includes(c.car.id);
   const found = new Map(); // car id -> { key, rear, front }
@@ -142,10 +60,15 @@ try {
     if (cannot.has(key) || car.ufo) { found.set(car.id, { key, group, none: true }); continue; }
     let model;
     try { model = makeShowCar(car); } catch (err) { found.set(car.id, { key, group, error: err.message }); continue; }
-    const view = prepare(model);
+    P.setExistingPlatesVisible(model, false);
     const existing = P.existingPlates(model);
     const ex = (face) => { const p = existing.find(e => e.face === face); if (!p) return null; const b = new THREE.Box3().setFromObject(p.mesh, true); return (b.min.y + b.max.y) / 2; };
-    found.set(car.id, { key, group, rear: place(view, 'rear', ex('rear')), front: place(view, 'front', ex('front')), had: existing.map(e => e.face) });
+    // the place search of the plate placement audit (scripts/plate-search.mjs, CHECKLIST 309; the old search here let a ray run under the
+    // car to the back of the other bumper and stood plates over a bumper's top edge)
+    const hubs = model.userData.wheelHubs || {}, wheels = new Set(['tyres', 'hubs', 'parts', 'rings'].flatMap(x => hubs[x] || []));
+    const sview = makeView(model, { glassy, wheels });
+    const best = (end) => { const c = searchPlace(sview, end, { preferY: ex(end) })[0]; return c ? { y: r3(c.y), z: r3(c.z), w: c.w, pitch: Math.round(c.pitch * 10) / 10, rough: false } : null; };
+    found.set(car.id, { key, group, rear: best('rear'), front: best('front'), had: existing.map(e => e.face) });
   }
 
   // ---- the table: one entry per model (its base car's), an entry of its own for a variant that differs ----
