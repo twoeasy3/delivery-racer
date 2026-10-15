@@ -31,6 +31,7 @@ import { bounceOffset, bounceDone } from './carbounce.js';
 import { prepareSuspension, applySuspension } from './carsuspension.js';
 import { sharedRenderer, lit, stillViews, STILL } from './modelviews.js';
 import { makeShowCar, paintShowCar } from './showcar.js';
+import { loadoutKey } from './loadout.js'; // (the player's cosmetics the model was built in: built again in a new loadout)
 import { makeKey } from './keyModels.js';
 import { keyModelInUse } from './keycard.js';
 import { SILHOUETTE_KEY } from './keyspin.js';
@@ -319,8 +320,11 @@ export const ShowroomView = {
       v.canvas.style.cssText = 'display:block;width:100%;height:100%;pointer-events:none';
       v.ctx = v.canvas.getContext('2d');
     }
-    const fresh = v.car !== car || v.dark !== dark || !v.scene;
-    const swapped = fresh && !!v.scene && !!v.car && v.landAt != null; // (a SWITCH: another car after one was on screen; CHECKLIST 303)
+    const look = loadoutKey(car);
+    // RESTYLED: the same car on screen in another loadout (a cosmetic changed since it was built: render/loadout.js); built again, no landing
+    const restyled = !!v.scene && v.car === car && v.dark === dark && v.loadout !== look;
+    const fresh = v.car !== car || v.dark !== dark || !v.scene || restyled;
+    const swapped = fresh && !restyled && !!v.scene && !!v.car && v.landAt != null; // (a SWITCH: another car after one was on screen; CHECKLIST 303)
     if (v.el !== el) {
       v.el = el;
       el.append(v.canvas);
@@ -331,9 +335,9 @@ export const ShowroomView = {
     }
     if (fresh) {
       drop();
-      Object.assign(v, { car, evil, dark, landAt: null, landing: true, lift: 0, swapped }); // (landAt: its first frame drawn)
+      Object.assign(v, { car, evil, dark, loadout: look, landAt: restyled ? performance.now() : null, landT: restyled ? 60 : 0, landing: !restyled, lift: 0, swapped: swapped || restyled }); // (landAt: its first frame drawn; restyled: landed already)
       try { build(); } catch (error) { console.warn('No model for the showroom: ' + (error?.message || error)); drop(); v.car = null; return false; }
-      if (!held) { yaw = -0.64; spinBy = 0; idleAt = performance.now(); } // (a new car: from the cards' pose, then turning)
+      if (!held && !restyled) { yaw = -0.64; spinBy = 0; idleAt = performance.now(); } // (a new car: from the cards' pose, then turning; restyled: where it was)
     } else if (v.evil !== evil) this.side(evil);
     // the corner key (a new car's built afresh with it; the same car's moved into the new corner: the detail is drawn anew)
     if (!keyEl) dropKey();
@@ -344,7 +348,7 @@ export const ShowroomView = {
     // animation frame: the shaders' compile and the textures' upload (a stall, long on a 3x tablet) then happen before the
     // browser paints, so the old picture stays up until the new car is in the canvas, and the canvas is never shown empty
     // (it used to be: the old car vanished, an empty stage for the compile's stall, then the new one faded up from alpha 0).
-    if (swapped && fresh) { try { frameAt(performance.now()); } catch (error) { console.warn('Showroom switch frame: ' + (error?.message || error)); } }
+    if ((swapped || restyled) && fresh) { try { frameAt(performance.now()); } catch (error) { console.warn('Showroom switch frame: ' + (error?.message || error)); } }
     return true;
   },
   // the side's livery on the car shown (a dark one stays dark)

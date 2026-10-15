@@ -633,8 +633,11 @@ try {
       const uc = src('render/unlockcine.js'), calls = [...uc.matchAll(/makeShowCar\(([^)]*)\)/g)].map(m => m[1]).filter(x => x !== '' && !/^\s*$/.test(x));
       check(calls.length === 1 && /\{ stock: true \}/.test(calls[0]) && !/makeShowCar|dressWheels|dressPlates|dressProps/.test(src('render/ecucine.js')), 'the unlock cinematics (render/unlockcine.js: car, key, and render/ecucine.js through it: Crazey Jim, ECU up, ECU max) build their car with { stock: true } only');
       check(/drawSoon\([^)]*stock: true/.test(src('render/packs.js')), "a pack reveal's cards are drawn stock (render/packs.js)");
-      const others = ['render/garage.js', 'render/showroomview.js', 'render/menustage.js', 'render/carstill.js', 'render/packbanner.js', 'render/warmup.js', 'render/inspectmodel.js', 'render/items.js'];
-      check(others.every(f => !/stock: true/.test(src(f))) && /makeShowCar\(car, \{ stock \}\)/.test(src('render/carstill.js')) && /dressCosmetics\(model, car\)/.test(src('render/items.js')), 'every other view (garage, showroom, menu card, stills, pack banner, the game and its cameras) builds the dressed car: none passes stock');
+      // (the PACK umbrella is stock too since 15-Oct, "It should be a STOCK good car": the pack banner, and every pack / Shop / blueprint-card
+      // still through carstill.js stock: scripts/.loadout-key-check.mjs checks those call sites)
+      const others = ['render/garage.js', 'render/showroomview.js', 'render/warmup.js', 'render/inspectmodel.js', 'render/items.js'];
+      check(others.every(f => !/stock: true/.test(src(f))) && /makeShowCar\(CAR\)/.test(src('render/menustage.js')) && /makeShowCar\(car, \{ stock \}\)/.test(src('render/carstill.js')) && /dressCosmetics\(model, car\)/.test(src('render/items.js')) && /makeShowCar\(car, \{ stock: true \}\)/.test(src('render/packbanner.js')),
+        'every other view (garage, showroom, menu card, the dressed stills, the game and its cameras) builds the dressed car: none passes stock; the pack banner is stock');
       // the game's model of the player's car is dressed through the same one hook
       W4.setWheelSet('stock'); PC.setPlateDesign('stock'); PD.setProp('roof', 'none');
     }

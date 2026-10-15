@@ -123,7 +123,7 @@ export const bannerScene = (cars, aspect, { evil = false, config: o = BANNER } =
   const built = [];
   for (const car of cars) {
     try {
-      const model = makeShowCar(car);
+      const model = makeShowCar(car, { stock: true }); // (a pack's banner: the STOCK car, no cosmetic of the player's: render/carstill.js)
       paintShowCar(model, car, evil);
       model.userData.animate?.(STILL.t);
       model.updateMatrixWorld(true);

@@ -304,6 +304,7 @@ registerCosmetics(WHEEL_SETS.map(s => ({ slot: 'wheels', id: s.id, name: s.name,
 export const CUSTOM_SET = 'custom';
 const rimsWorn = () => rimAsked || Progress.noSave || savedPairOwned();
 export const wheelRim = () => (rimsWorn() ? globalRim() : 'none'); // (the global rim worn: a saved set not owned wears Stock, rim and all)
+export const wornRim = (carId, axle) => (rimsWorn() ? resolveRim(carId, axle) : 'none'); // (the rim a car's axle wears, as dressed() puts it on: render/loadout.js)
 export const wheelSet = () => { const d = wheelDesign(), h = wheelColour(), r = wheelRim(); return WHEEL_SETS.find(s => s.design === d && s.hub === h && (s.rim || 'none') === r)?.id || CUSTOM_SET; };
 export const setWheelSet = (id) => {
   const set = WHEEL_SETS.find(s => s.id === id);

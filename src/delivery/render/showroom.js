@@ -41,6 +41,7 @@ import { Nav } from '../nav.js';
 import { richTiers, tierStarsNode } from '../tiers.js';
 import { Garage } from './garage.js';
 import { stillCar, stillReady } from './carstill.js';
+import { onLoadout } from './loadout.js';
 import { ShowroomView } from './showroomview.js';
 import { Cosmetics } from './cosmeticsui.js'; // (the Cosmetics screen: the car live, wheels equipped; opened from the full view)
 import { swipeSwitch, PHONE_COLUMNS } from './showroomphone.js';
@@ -104,8 +105,16 @@ const watch = (el, car) => {
   carOf.set(el, car);
   if (watcher) watcher.observe(el); else want(el, car);
 };
+// a cosmetic changed (render/loadout.js): the cards' pictures are of the old loadout (carstill.js keys them by it), so each card is asked
+// for again once the showroom is in sight (not under the Cosmetics screen, where a plate's text changes at every letter)
+let restyled = false;
+onLoadout(() => { restyled = true; });
 const pump = () => {
   requestAnimationFrame(pump);
+  if (restyled && Showroom.isOpen && !Garage.isOpen && !Cosmetics.isOpen) {
+    restyled = false;
+    for (const c of cards) { const img = c.node.querySelector('.sr-img'); if (img?.isConnected) want(img, c.data.car); }
+  }
   if (!Showroom.isOpen || Garage.isOpen || !queue.size) return;
   if (full && isPhone()) return; // (the phone's single-car screen covers the cards: its live car has the frames)
   const t0 = performance.now();

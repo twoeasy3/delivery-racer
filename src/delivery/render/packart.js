@@ -32,7 +32,7 @@ const make = (tag, className, ...inside) => {
 // ResizeObserver, which also waits for the span to be laid out (CHECKLIST 201: the Comet cut off on the big pack)
 const packCar = (car) => {
   const el = make('span', 'pack-car');
-  const opts = { side: 'good', pose: PACK_POSE, first: true };
+  const opts = { side: 'good', pose: PACK_POSE, first: true, stock: true }; // (the STOCK car in its Good livery: no cosmetic of the player's, carstill.js)
   let drawnAt = '';
   const redraw = (w, h) => {
     const at = Math.round(w / 20) + 'x' + Math.round(h / 20); // (carstill.js keeps stills in steps of 20 px)
