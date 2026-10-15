@@ -15,6 +15,13 @@ export const STRICT = 0.006, ROUGH = 0.012; // m: the most a hit may stand off t
 export const MAX_PITCH = 25, MAX_YAW = 1.5, REACH = 0.5, MARGIN = 0.004, OVERHANG = 0.009, GLACIS = 40; // degrees; m from the car's end; m round the plate; m a big plate may overhang its band at top and bottom
 const NX = 11, NY = 5;
 
+// a spare wheel's tyre (not one of the four the wheel code knows): a near-black cylinder 0.4 m or more across
+export const isTyre = (n) => {
+  const g = n.geometry, m = [].concat(n.material)[0];
+  if (!g || g.type !== 'CylinderGeometry' || !m?.color) return false;
+  const c = m.color, r = Math.max(g.parameters.radiusTop, g.parameters.radiusBottom) * Math.max(n.scale.x, n.scale.y, n.scale.z);
+  return r >= 0.2 && Math.max(c.r, c.g, c.b) < 0.12;
+};
 // the meshes a plate can be measured against: visible, not the cosmetic plate or prop, not see-through; each with its kind
 // opts.glassy(material) (render/dents.js), opts.wheels: a Set of wheel meshes
 export const makeView = (model, { glassy, wheels = new Set() } = {}) => {
@@ -27,7 +34,7 @@ export const makeView = (model, { glassy, wheels = new Set() } = {}) => {
     if (!m || m.visible === false || (m.transparent && m.opacity < 0.95)) return;
     const lamp = m.isMeshBasicMaterial || (m.emissive && m.emissive.getHex() !== 0 && (m.emissiveIntensity ?? 1) > 0.25);
     const glass = n !== body && m !== bodyMat && glassy && glassy(m);
-    n.userData._plateKind = wheels.has(n) || n.userData.wheelRing ? 'wheel' : lamp ? 'lamp' : glass ? 'glass' : 'ok';
+    n.userData._plateKind = wheels.has(n) || n.userData.wheelRing || isTyre(n) ? 'wheel' : lamp ? 'lamp' : glass ? 'glass' : 'ok';
     meshes.push(n);
   });
   const box = new THREE.Box3();

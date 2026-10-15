@@ -28,7 +28,7 @@
 import * as THREE from 'three';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { startModels } from './modelpatch-load.mjs';
-import { makeView, searchPlace } from './plate-search.mjs';
+import { makeView, searchPlace, isTyre } from './plate-search.mjs';
 
 const argv = process.argv.slice(2);
 const opt = (name, def) => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : def; };
@@ -79,7 +79,7 @@ try {
   const kindOf = (model, n) => {
     const hubs = model.userData.wheelHubs;
     if (hubs && ['tyres', 'hubs', 'parts', 'rings'].some(k => (hubs[k] || []).includes(n))) return 'wheel';
-    if (n.userData.wheelRing) return 'wheel';
+    if (n.userData.wheelRing || isTyre(n)) return 'wheel'; // (a spare wheel's tyre too)
     if (n.userData.plate) return 'ownplate';
     if (n.userData.prop) return 'ownprop:' + n.userData.prop;
     const m = [].concat(n.material)[0];
@@ -324,7 +324,7 @@ try {
   // (c, props) every equippable prop on this car: does it hide the plate (level / from above)?
   const propPass = (model, car, ends) => {
     const res = {};
-    for (const [end, m] of Object.entries(ends)) res[end] = { level: [], above: [] };
+    for (const end of Object.keys(ends)) res[end] = { level: [], above: [] };
     for (const slot of ['wing', 'cargo', 'roof']) {
       for (const prop of PROPS[slot] || []) {
         const fit = fitProp(car.id, slot, prop.shape);
@@ -365,7 +365,7 @@ try {
       if (!new THREE.Box3().setFromObject(n, true).intersectsBox(pb)) return;
       add(n);
     });
-    let fights = [];
+    let fights;
     try { fights = findZFights(tmp); } catch (err) { return { error: err.message }; }
     const withBody = fights.filter(f => isCosmeticPlate(f.a.userData.src) !== isCosmeticPlate(f.b.userData.src));
     return { body: withBody.map(f => ({ area: r3(f.area * 1e4) / 1e4, gap: cm(f.gapMin), certain: f.certain, with: describe(model, isCosmeticPlate(f.a.userData.src) ? f.b.userData.src : f.a.userData.src) })), internal: fights.length - withBody.length };
@@ -460,7 +460,7 @@ try {
         }
         if (had) TABLE.PLATE_VARIANTS[car.id] = had; else delete TABLE.PLATE_VARIANTS[car.id];
         const was = { arr: base[k], score: sideScore(cur), flags: badFlags(cur) };
-        if (best && best.score < was.score) {
+        if (best && (best.score < was.score || (best.score === was.score && was.arr && best.arr[2] > was.arr[2]))) { // (better, or as good with a bigger plate)
           // into the table: a base car's entry is its model's (every car of the model follows); any other car gets a variant of its own
           if (isBase(car)) TABLE.PLATE_TABLE[key] = { ...(TABLE.PLATE_TABLE[key] || base), [k]: best.arr };
           else TABLE.PLATE_VARIANTS[car.id] = { ...base, [k]: best.arr };
