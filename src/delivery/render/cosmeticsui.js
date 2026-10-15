@@ -103,9 +103,34 @@ const miniRim = (rim, hub, tyre, ring) => {
   g.translate(R, R);
   disc(R, tyre);
   if (ring !== tyre) { disc(R * 0.92, ring); disc(R * 0.85, tyre); }
+  const T = Math.PI * 2, wedges = (r, n, a, b) => { for (let i = 0; i < n; i++) { g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, r, i * T / n, (i + 1) * T / n); g.closePath(); g.fillStyle = i % 2 ? b : a; g.fill(); } };
+  const shape = (pts, fill) => { g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x * R, -y * R) : g.moveTo(x * R, -y * R))); g.closePath(); g.fillStyle = fill; g.fill(); };
+  if (rim === 'pumpkin') { // (its own colours, as render/rims.js builds it: a lobed orange face, rib lines, carved eyes and grin glowing, a green stem)
+    disc(R * 0.8, '#3a1606');
+    g.beginPath(); for (let i = 0; i <= 64; i++) { const a = i / 64 * T, r = R * (0.7 + 0.08 * Math.sqrt(Math.abs(Math.cos(4 * a)))); g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.fillStyle = '#f07a12'; g.fill();
+    g.strokeStyle = '#9a3c06'; g.lineWidth = 1.2; for (let i = 0; i < 8; i++) { const a = (i + 0.5) / 8 * T; g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.cos(a) * R * 0.7, Math.sin(a) * R * 0.7); g.stroke(); }
+    const eye = [[-0.39, 0.18], [-0.13, 0.18], [-0.26, 0.45]];
+    shape(eye, '#ffd84a'); shape(eye.map(([x, y]) => [-x, y]), '#ffd84a');
+    shape([[-0.54, -0.08], [-0.36, -0.2], [-0.18, -0.26], [-0.14, -0.38], [-0.08, -0.27], [0.08, -0.27], [0.14, -0.38], [0.18, -0.26], [0.36, -0.2], [0.54, -0.08], [0.4, -0.38], [0.2, -0.53], [0, -0.44], [-0.2, -0.53], [-0.4, -0.38]], '#ffd84a');
+    disc(R * 0.14, '#4a7a1c');
+    return c;
+  }
+  if (rim === 'candycane') { // (a pine-green dish, a red lip, five striped J canes, a peppermint)
+    disc(R * 0.8, '#d8262b'); disc(R * 0.68, '#0f3d1a');
+    g.lineCap = 'butt';
+    for (let i = 0; i < 5; i++) {
+      g.save(); g.rotate(i * T / 5);
+      const path = () => { g.beginPath(); g.moveTo(0, -R * 0.15); g.lineTo(0, -R * 0.42); g.arc(-R * 0.15, -R * 0.42, R * 0.15, 0, -Math.PI * 0.9, true); };
+      g.lineWidth = 3.6; g.strokeStyle = '#fff8f4'; g.setLineDash([]); path(); g.stroke();
+      g.strokeStyle = '#d8262b'; g.setLineDash([2.6, 2.6]); path(); g.stroke();
+      g.restore();
+    }
+    g.setLineDash([]);
+    wedges(R * 0.2, 12, '#d8262b', '#fff8f4'); disc(R * 0.07, '#fff8f4');
+    return c;
+  }
   disc(R * 0.8, hub); disc(R * 0.7, '#202226');
   g.fillStyle = hub;
-  const T = Math.PI * 2;
   if (rim === 'spoke5') for (let i = 0; i < 5; i++) blade(i * T / 5, 3, R * 0.72, 3, 2);
   if (rim === 'twin10') for (let i = 0; i < 5; i++) for (const s of [-0.14, 0.14]) blade(i * T / 5 + s, 3, R * 0.72, 1, 1);
   if (rim === 'turbine') for (let i = 0; i < 10; i++) blade(i * T / 10, 4, R * 0.72, 1.5, 3, 2);

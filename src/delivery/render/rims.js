@@ -8,12 +8,16 @@
 // a rim is on and shown again after), a lip, the spokes or blades, a centre cap; vertex colours shade it, the material's colour
 // is the set's hub colour. It stands RIM_GAP off the tyre's face (or its tread blocks), over the 4 mm the z-fight finder calls
 // one plane and clear of a design's sidewall ring (5 mm).
-// TURNING: two kinds. 'speed' rims (5-spoke, twin, turbine) turn with the car: the player's model gets userData.roll (metres
-// rolled, from render/items.js) and each frame the rim turns by the distance over its wheel's radius; with no roll (the garage,
-// the showroom, the Cosmetics screen) they idle at IDLE_RATE. Against the wagon-wheel effect a turn is never more than CLAMP of
-// the gap between two spokes in one frame, and above BLUR_FROM of the gap a translucent disc fades in over the spokes (in steps:
-// BLUR shared materials). 'spin' rims (the spinners) turn at SPIN_RATE everywhere, stopped or not. A model whose tyres turn
-// themselves (userData.rollsWheels: the three old cars of render/models.js) has that turn taken off the rim's own.
+// TURNING: EVERY rim turns with the car, as a real wheel's face does (the owner, 15-Oct: "fix the rims right": the two that turned
+// at a fixed pace, stopped or not, were called spinners; they are now ordinary rims, 'Blade' and 'Twin blade', ids kept). The
+// player's model gets userData.roll (metres rolled, from render/items.js) and each frame the rim turns by the distance over its
+// wheel's radius; with no roll (the garage, the showroom, the Cosmetics screen) it idles at IDLE_RATE. Against the wagon-wheel
+// effect a turn is never more than CLAMP of the gap between two spokes in one frame, and above BLUR_FROM of the gap a translucent
+// disc fades in over the spokes (in steps: BLUR shared materials). A model whose tyres turn themselves (userData.rollsWheels: the
+// three old cars of render/models.js) has that turn taken off the rim's own.
+// COLOURS: a rim is shaded grey by its vertex colours and coloured by the set's hub colour; a THEMED rim (own: true, the Pumpkin
+// and the Candy cane) carries its own colours in its vertex colours on one white material (still one geometry and one material,
+// so no more draw calls than any other rim), and its blur disc takes the design's own `blur` colour.
 // The per-frame work is spinRims(model, t), called from the model's userData.animate (wrapped by dressWheels): one quaternion per
 // rim mesh and no allocation.
 // THE CHOICE: PER CAR over a default (render/loadoutstore.js: the wheels slot's rim = { all, front?, rear? }); resolveRim(carId, axle)
@@ -27,22 +31,25 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import * as Store from './loadoutstore.js'; // (the choice, per car over the default)
 
 export const KEY_RIM = 'delivery.wheelrim';
-// kind: 'speed' turns with the car, 'spin' at a fixed pace; n: the spokes (or blades) round it, for the wagon-wheel clamp
+// kind: 'speed' (every rim: it turns with the car; null: none); n: the spokes (or blades, ribs) round it, for the wagon-wheel clamp;
+// own: its own colours (not the set's hub colour), blur: then its blur disc's colour. The ids are kept for good (saved loadouts and
+// ?wheelrim= name them): blade3 and twinspin were the 'Blade spinner' and 'Twin spinner' before 15-Oct.
 export const RIM_DESIGNS = [
   { id: 'none', name: 'None', kind: null, n: 0 },
   { id: 'spoke5', name: '5-spoke', kind: 'speed', n: 5 },
   { id: 'twin10', name: 'Twin spoke', kind: 'speed', n: 10 },
   { id: 'turbine', name: 'Turbine', kind: 'speed', n: 10 },
-  { id: 'blade3', name: 'Blade spinner', kind: 'spin', n: 3 },
-  { id: 'twinspin', name: 'Twin spinner', kind: 'spin', n: 2 },
+  { id: 'blade3', name: 'Blade', kind: 'speed', n: 3 },
+  { id: 'twinspin', name: 'Twin blade', kind: 'speed', n: 2 },
+  { id: 'pumpkin', name: 'Pumpkin', kind: 'speed', n: 8, own: true, blur: 0xe8661a },
+  { id: 'candycane', name: 'Candy cane', kind: 'speed', n: 5, own: true, blur: 0xe8a0a8 },
 ];
 export const rimById = (id) => RIM_DESIGNS.find(d => d.id === id) || RIM_DESIGNS[0];
 // cars that cannot wear a rim (by car id or model): a hoop, tracks, hulls, a hovercraft's skirt, discs that are not wheels; and three whose
 // wheels are their look (the Quad Turbo's own alloys, the Circus Wagon's wooden spokes, a dodgem's hidden castors)
 export const RIM_SKIP = new Set(['monowheel', 'hovercraft', 'snocat', 'quadturbo', 'dodgem', 'circuswagon', 'halftrack', 'tank', 'amphibioustank', 'jetboat', 'trawler', 'jetcar', 'moonrover']);
 
-export const IDLE_RATE = 1.2;  // rad/s: a speed rim with no speed to follow (a car on show)
-export const SPIN_RATE = 6;    // rad/s: a spinner, everywhere
+export const IDLE_RATE = 1.2;  // rad/s: a rim with no speed to follow (a car on show)
 export const CLAMP = 0.45;     // of the spoke gap: the most a speed rim turns in one frame
 export const BLUR_FROM = 0.18, BLUR_FULL = 0.4; // of the spoke gap per frame: the disc starts to show / is at its thickest
 export const BLUR = [0, 0.3, 0.55, 0.8]; // the disc's opacity steps (one shared material each, per colour)
@@ -90,13 +97,32 @@ export const rimPatch = (id, target = null) => ({ rim: { ...savedRimChoice(targe
 export const putRim = (id, target = null) => { Store.setSlot(target, 'wheels', rimPatch(id, target)); return rimById(id).id; };
 
 // ---- the geometry: x, y in tyre radii (the mesh is scaled by the radius), z in metres outward ------------------------------
+// v: a grey (times the set's hub colour), or [r, g, b] (a themed rim's own colour; over 1 is brighter than lit: the jack-o'-lantern's glow)
 const shade = (g, v) => {
   const geo = g.index ? g.toNonIndexed() : g;
   geo.deleteAttribute('uv');
-  const n = geo.attributes.position.count;
-  geo.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(n * 3).fill(v), 3));
+  const n = geo.attributes.position.count, c = new Float32Array(n * 3);
+  if (Array.isArray(v)) for (let i = 0; i < n; i++) c.set(v, i * 3); else c.fill(v);
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(c, 3));
   return geo;
 };
+// a triangle's colour from where its middle is (x, y in tyre radii; i: the triangle's index): stripes, pinwheels
+const paintTris = (geo, fn) => {
+  const p = geo.attributes.position, c = geo.attributes.color;
+  for (let i = 0; i < p.count; i += 3) {
+    const x = (p.getX(i) + p.getX(i + 1) + p.getX(i + 2)) / 3, y = (p.getY(i) + p.getY(i + 1) + p.getY(i + 2)) / 3;
+    const v = fn(x, y, i / 3);
+    for (let k = 0; k < 3; k++) c.setXYZ(i + k, v[0], v[1], v[2]);
+  }
+  return geo;
+};
+// a flat polygon (points [x, y] in tyre radii, either winding) at depth z, facing out (+z)
+const poly = (pts, z, v) => {
+  const shape = new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y)));
+  return shade(new THREE.ShapeGeometry(shape).translate(0, 0, z), v);
+};
+// the same polygon grown by d (each point pushed away from the polygon's middle: an outline round it, for the carved look)
+const grow = (pts, d) => { const cx = pts.reduce((a, p) => a + p[0], 0) / pts.length, cy = pts.reduce((a, p) => a + p[1], 0) / pts.length; return pts.map(([x, y]) => { const l = Math.hypot(x - cx, y - cy) || 1; return [x + (x - cx) / l * d, y + (y - cy) / l * d]; }); };
 const each = (g, fn) => { const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const [x, y, z] = fn(p.getX(i), p.getY(i), p.getZ(i)); p.setXYZ(i, x, y, z); } return g; };
 const circle = (r, z, seg, v) => shade(new THREE.CircleGeometry(r, seg).translate(0, 0, z), v);
 const ring = (r0, r1, z, seg, v) => shade(new THREE.RingGeometry(r0, r1, seg, 1).translate(0, 0, z), v);
@@ -116,6 +142,71 @@ const base = () => [circle(0.74, 0, 20, DARK), ring(0.68, 0.8, 0.008, 20, 1)]; /
 // on top 4.5 mm over them; FLAT_DEPTH deep in all. Every pair of faces that overlap stays at least 4.5 mm apart (the z-fight finder's 4).
 export const FLAT_DEPTH = 0.0095;
 const flatLip = () => [ring(0.7, 0.8, 0, 20, 1)];
+// ---- the THEMED rims (own colours in their vertex colours; render/rims.js header) ----
+// PUMPKIN: a jack-o'-lantern. A dark disc behind (the dish and the lip in one: it shows as a thin dark edge and in the notches
+// between the lobes), the pumpkin's face over it, lobed round its edge (8 ribs) and shaded darker into each rib, two carved
+// triangle eyes and a jagged grin (a dark carved edge, and inside it a glow brighter than lit), the green stem as the centre cap.
+// (colours written as seen, sRGB, and made linear for the renderer: vertex colours are linear; the glow over 1 stays over 1)
+const lin = (c) => c.map(v => Math.pow(v, 2.2));
+const ORANGE = lin([1.12, 0.56, 0.04]), RIB = lin([0.78, 0.3, 0.02]), SHELL = lin([0.22, 0.08, 0.02]), CARVED = lin([0.25, 0.06, 0.01]), GLOW = lin([1.3, 1.12, 0.45]), STEM = lin([0.3, 0.5, 0.12]);
+const EYE = [[-0.37, 0.2], [-0.15, 0.2], [-0.26, 0.42]];
+const GRIN = [[-0.52, -0.1], [-0.36, -0.22], [-0.24, -0.27], [-0.18, -0.38], [-0.12, -0.29], [0.12, -0.29], [0.18, -0.38], [0.24, -0.27], [0.36, -0.22], [0.52, -0.1],
+  [0.4, -0.36], [0.22, -0.5], [0.06, -0.55], [0, -0.44], [-0.06, -0.55], [-0.22, -0.5], [-0.4, -0.36]];
+const lobedFace = (z, seg = 32) => {
+  const pos = [], col = [], at = (i) => { const a = i / seg * TAU, l = Math.sqrt(Math.abs(Math.cos(4 * a))); return [Math.cos(a) * (0.7 + 0.08 * l), Math.sin(a) * (0.7 + 0.08 * l), RIB.map((c, k) => c + (ORANGE[k] - c) * l)]; };
+  for (let i = 0; i < seg; i++) {
+    const [x0, y0, c0] = at(i), [x1, y1, c1] = at(i + 1);
+    pos.push(0, 0, z, x0, y0, z, x1, y1, z); col.push(...ORANGE, ...c0, ...c1);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.computeVertexNormals();
+  return g;
+};
+const pumpkin = (flat) => {
+  const z = flat ? [0, 0.0045, 0.009] : [0.006, 0.0115, 0.017]; // (the face; the carved edge; the glow: each 4.5 mm or more over the last)
+  const mirror = (pts) => pts.map(([x, y]) => [-x, y]);
+  return [
+    ...(flat ? [] : [circle(0.8, 0, 32, SHELL)]), lobedFace(z[0]),
+    poly(grow(EYE, 0.04), z[1], CARVED), poly(grow(mirror(EYE), 0.04), z[1], CARVED), poly(grow(GRIN, 0.04), z[1], CARVED),
+    poly(EYE, z[2], GLOW), poly(mirror(EYE), z[2], GLOW), poly(GRIN, z[2], GLOW),
+    flat ? cap(0.12, -0.003, FLAT_DEPTH, 6, STEM) : cap(0.12, 0.006, 0.045, 6, STEM),
+  ];
+};
+// CANDY CANE: five striped canes, each a J (straight out from the middle, then curled round like a cane's hook), red and white
+// bands along them, a red lip round a dark pine-green dish (a green gap between the hooks and the lip, so each J reads), and a peppermint for the centre cap (red and white wedges,
+// a white middle).
+const RED = lin([0.88, 0.07, 0.1]), WHITE = lin([1.12, 1.1, 1.08]), PINE = lin([0.06, 0.24, 0.1]);
+const cane = (ang, z0, z1, w = 0.15, a = 0.15, top = 0.42) => {
+  const line = [];
+  for (let i = 0; i <= 3; i++) line.push([0, 0.15 + (top - 0.15) * i / 3]);
+  for (let i = 1; i <= 3; i++) { const f = i / 3 * (160 / 180) * Math.PI; line.push([-a + a * Math.cos(f), top + a * Math.sin(f)]); }
+  const pos = [], col = [], side = (p, q, n) => [p[0] + n[0] * w / 2, p[1] + n[1] * w / 2];
+  const normal = (i) => { const p = line[Math.max(0, i - 1)], q = line[Math.min(line.length - 1, i + 1)], dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy); return [dy / l, -dx / l]; }; // (to the right of the way along)
+  const quad = (a3, b3, c3, d3, c) => { pos.push(...a3, ...b3, ...c3, ...a3, ...c3, ...d3); for (let k = 0; k < 6; k++) col.push(...c); };
+  for (let i = 0; i < line.length - 1; i++) {
+    const n0 = normal(i), n1 = normal(i + 1), m0 = [-n0[0], -n0[1]], m1 = [-n1[0], -n1[1]];
+    const r0 = side(line[i], 0, n0), r1 = side(line[i + 1], 0, n1), l0 = side(line[i], 0, m0), l1 = side(line[i + 1], 0, m1);
+    const c = i % 2 ? WHITE : RED;
+    quad([r0[0], r0[1], z1], [r1[0], r1[1], z1], [l1[0], l1[1], z1], [l0[0], l0[1], z1], c); // (the front)
+    quad([r0[0], r0[1], z0], [r1[0], r1[1], z0], [r1[0], r1[1], z1], [r0[0], r0[1], z1], c); // (the right side)
+    quad([l1[0], l1[1], z0], [l0[0], l0[1], z0], [l0[0], l0[1], z1], [l1[0], l1[1], z1], c); // (the left side)
+  }
+  const e = line.length - 1, ne = normal(e), re = side(line[e], 0, ne), le = side(line[e], 0, [-ne[0], -ne[1]]);
+  quad([le[0], le[1], z0], [re[0], re[1], z0], [re[0], re[1], z1], [le[0], le[1], z1], WHITE); // (the hook's end)
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.computeVertexNormals();
+  return g.rotateZ(ang);
+};
+const stripes = (n, a = RED, b = WHITE) => (x, y) => (Math.floor(((Math.atan2(y, x) + TAU) % TAU) / (TAU / n)) % 2 ? b : a);
+const candycane = (flat) => {
+  const canes = [0, 1, 2, 3, 4].map(i => (flat ? cane(i * TAU / 5, -0.009, 0) : cane(i * TAU / 5, -0.004, 0.018)));
+  const mint = (z0, z1) => paintTris(cap(0.19, z0, z1, 12, WHITE), stripes(12));
+  return flat
+    ? [ring(0.7, 0.8, 0, 20, RED), ...canes, mint(-0.003, 0.0045), circle(0.07, 0.009, 8, WHITE)]
+    : [circle(0.74, 0, 20, PINE), ring(0.68, 0.8, 0.008, 20, RED), ...canes, mint(0, 0.03), circle(0.07, 0.035, 8, WHITE)];
+};
 const BUILD = {
   spoke5: (f) => f ? [...flatLip(), ...[0, 1, 2, 3, 4].map(i => bar(0.17, 0.14, 0.68, -0.009, 0, i * TAU / 5, 1, { taper: 0.35 })), cap(0.17, -0.003, 0.0045, 10, 0.85)]
     : [...base(), ...[0, 1, 2, 3, 4].map(i => bar(0.17, 0.14, 0.72, -0.006, 0.018, i * TAU / 5, 1, { taper: 0.35 })), cap(0.17, 0, 0.03, 10, 0.85)],
@@ -127,8 +218,11 @@ const BUILD = {
     : [...base(), ...[0, 1, 2].map(i => bar(0.24, 0.12, 0.74, 0.004, 0.02, i * TAU / 3, 1, { taper: 0.55, sweep: 0.14 })), cap(0.2, 0, 0.04, 12, 1)],
   twinspin: (f) => f ? [...flatLip(), circle(0.5, 0, 20, 0.5), ...[0, 1].map(i => bar(0.18, 0.1, 0.66, -0.009, 0.005, i * Math.PI, 1, { taper: 0.4 })), cap(0.1, 0.001, FLAT_DEPTH, 8, 0.2, 0.28, 0), cap(0.12, 0.001, FLAT_DEPTH, 10, 1)]
     : [...base(), circle(0.5, 0.012, 20, 0.5), ...[0, 1].map(i => bar(0.18, 0.1, 0.76, 0.014, 0.026, i * Math.PI, 1, { taper: 0.4 })), cap(0.1, 0.012, 0.045, 8, 0.2, 0.28, 0), cap(0.12, 0.012, 0.035, 10, 1)],
+
+  pumpkin: (f) => pumpkin(f),
+  candycane: (f) => candycane(f),
 };
-const BLUR_Z = { spoke5: 0.024, twin10: 0.022, turbine: 0.03 }, BLUR_Z_FLAT = 0.003; // (the blur disc, just over the spokes' faces; under the cap's top)
+const BLUR_Z = { spoke5: 0.024, twin10: 0.022, turbine: 0.03, blade3: 0.025, twinspin: 0.031, pumpkin: 0.022, candycane: 0.024 }, BLUR_Z_FLAT = 0.003; // (the blur disc, just over the spokes' faces; under the cap's top)
 const geos = new Map();
 export const rimGeometry = (id, flat = false) => {
   const key = id + (flat ? ':flat' : '');
@@ -156,6 +250,8 @@ export const rimMaterial = (hex) => {
   }
   return mats.get(hex);
 };
+// the colour of a design's material: the set's hub colour, or white for a themed rim (its colours are in its vertex colours)
+export const rimHex = (id, hex) => (rimById(id).own ? 0xffffff : hex);
 const blurMaterials = (hex) => {
   if (!blurs.has(hex)) {
     const c = new THREE.Color(hex).multiplyScalar(0.55);
@@ -188,7 +284,7 @@ const reach = (mesh, t, side) => {
 // Then per AXLE (tyres at the same place along the car): its faces take the worse face's answer, so one axle never mixes a rim and a
 // stock wheel, unless the car really is lopsided there (one face fully open, ALL_OPEN, the other heavily covered, under CLEAR - LOPSIDED).
 export const CLEAR = 0.4, MOSTLY = 0.9, ALL_OPEN = 0.97, LOPSIDED = 0.35, FIT_GAP = 0.0045, TIGHT_GAP = 0.005;
-const RIM_DEPTH = 0.045; // m: the deepest design (the twin spinner's weight), from the rim's base
+const RIM_DEPTH = 0.045; // m: the deepest design (the twin blade's weight, the pumpkin's stem), from the rim's base
 const REACH = RIM_GAP + RIM_DEPTH + 0.004; // m out from the tyre's face that the rays look
 const ray = new THREE.Raycaster(), o3 = new THREE.Vector3(), e3 = new THREE.Vector3(), d3 = new THREE.Vector3(), u3 = new THREE.Vector3(), w3 = new THREE.Vector3();
 const nearest = (others, from, dir, far) => { ray.set(from, dir); ray.near = 0; ray.far = far; const h = ray.intersectObjects(others, false); return h.length ? h[0].distance : null; };
@@ -279,7 +375,7 @@ export const addRims = (model, hex, worn = true) => {
     let across = 0.8;
     for (const hub of hubs) across = Math.max(across, reach(hub, t, 1).across / t.r + 0.02);
     const k = Math.min(1.2, across / 0.8); // (a hub wider than the lip: the rim is made a little bigger to cover it)
-    const mat = rimMaterial(colour);
+    const mat = rimMaterial(rimHex(rim.id, colour)), blurs = blurMaterials(rim.own ? rim.blur : colour);
     if (!t.faces.length) continue; // (no room on either face: this wheel stays stock)
     for (const { side, face, flat, gap } of t.faces) { // (face: the tyre's face, or its tread blocks' / own sidewall rings' if they stand prouder; flat: fitted in behind bodywork)
       const geo = rimGeometry(rim.id, flat);
@@ -291,14 +387,11 @@ export const addRims = (model, hex, worn = true) => {
       const mesh = new THREE.Mesh(geo, mat);
       pose.decompose(mesh.position, mesh.quaternion, mesh.scale);
       mesh.userData.wheelRing = true;
-      let blur = null;
-      if (rim.kind === 'speed') {
-        blur = new THREE.Mesh(blurGeometry(rim.id, flat), blurMaterials(colour)[1]);
-        blur.userData.wheelRing = true;
-        blur.visible = false;
-        mesh.add(blur); // (it turns with the rim: a disc, so that cannot be seen)
-      }
-      mesh.userData.rim = { id: rim.id, flat, spin: rim.kind === 'spin', side, q0: mesh.quaternion.clone(), a: 0, f: 0, level: 0, gap: TAU / rim.n, r: t.r, tyre, x0: tyre.rotation.x, rolls: !!model.userData.rollsWheels, blur, blurs: blurMaterials(colour) };
+      const blur = new THREE.Mesh(blurGeometry(rim.id, flat), blurs[1]);
+      blur.userData.wheelRing = true;
+      blur.visible = false;
+      mesh.add(blur); // (it turns with the rim: a disc, so that cannot be seen)
+      mesh.userData.rim = { id: rim.id, flat, side, q0: mesh.quaternion.clone(), a: 0, f: 0, level: 0, gap: TAU / rim.n, r: t.r, tyre, x0: tyre.rotation.x, rolls: !!model.userData.rollsWheels, blur, blurs };
       if (ghost) { mesh.userData.solidMat = mat; mesh.material = tyre.material; if (blur) { blur.userData.solidMat = blur.material; blur.material = tyre.material; } } // (a ghost: pale like the rest)
       tyre.add(mesh);
       found.rims.list.push(mesh);
@@ -335,15 +428,11 @@ export const rimFrame = (model, dt, dist) => {
   const scale = dist === null ? 1 : (model.matrixWorld.getMaxScaleOnAxis() || 1);
   for (let i = 0; i < st.list.length; i++) {
     const mesh = st.list[i], u = mesh.userData.rim;
-    let da;
-    if (u.spin) da = SPIN_RATE * dt;
-    else {
-      da = dist === null ? IDLE_RATE * dt : dist / (u.r * scale);
-      u.f += (Math.abs(da) / u.gap - u.f) * 0.25; // (the turn per frame as a share of the spoke gap, smoothed: a frame's jitter does not flicker the blur)
-      const lim = CLAMP * u.gap;
-      if (da > lim) da = lim; else if (da < -lim) da = -lim;
-      setLevel(u, levelOf(u.f));
-    }
+    let da = dist === null ? IDLE_RATE * dt : dist / (u.r * scale);
+    u.f += (Math.abs(da) / u.gap - u.f) * 0.25; // (the turn per frame as a share of the spoke gap, smoothed: a frame's jitter does not flicker the blur)
+    const lim = CLAMP * u.gap;
+    if (da > lim) da = lim; else if (da < -lim) da = -lim;
+    setLevel(u, levelOf(u.f));
     u.a = (u.a + da) % TAU;
     Q.setFromAxisAngle(Z, u.side * (u.a - (u.rolls ? u.tyre.rotation.x - u.x0 : 0)));
     mesh.quaternion.copy(u.q0).multiply(Q);
