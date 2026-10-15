@@ -285,6 +285,7 @@ export const Collision = (() => {
   for (const [kind, like] of Object.entries({ ingotStack: 'crate', steelCoil: 'bale', hotSign: 'cone', rebarBundle: 'barrier' })) SIZE[kind] = SIZE[like]; // (the steelworks')
   for (const [kind, like] of Object.entries({ velvetRope: 'barrier', slotMachine: 'crate', luggageCart: 'bale', casinoDie: 'cone' })) SIZE[kind] = SIZE[like]; // (the Las Vegas Strip's)
   for (const [kind, like] of Object.entries({ ticketGate: 'crate', scrubber: 'bale', trackLamp: 'cone', railTrolley: 'crate', infoTotem: 'sign' })) SIZE[kind] = SIZE[like]; // (the metro's)
+  SIZE.trackBarrier = SIZE.railBarrier; // the metro's track-work barrier (railBarrier's box: wholly inside a passing train)
   SIZE.hoistDrum = [0.95, 0.6, 2.3]; // a tunnel junction's load in the metro (hazards.js, themes.js junctionTrain): a 1.9 m cable drum, 1.2 m wide along the road, slung 0.3 m off the floor
   SIZE.laneEnd = [1.6, 0.4, 2.8]; // a dead-end lane's end wall: a lane wide (lanegimmicks.js)
   SIZE.pillar = [0.7, 0.7, 8.5]; // a pillar in a lane (lanegimmicks.js): a 1.4 m square column, up to a tunnel's ceiling

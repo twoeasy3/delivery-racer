@@ -677,7 +677,8 @@ export const CONFIG = {
     boxStack: { damage: 31, speedKept: 0.75 }, trolleyRow: { damage: 38, speedKept: 0.75 }, wetFloorSign: { damage: 3, speedKept: 0.94, light: true }, // the mall's: cartons on a sack truck (a crate), nested shopping trolleys (a bale), a WET FLOOR A-frame (a cone)
     ingotStack: { damage: 31, speedKept: 0.75 }, steelCoil: { damage: 38, speedKept: 0.75 }, hotSign: { damage: 3, speedKept: 0.94, light: true }, rebarBundle: { damage: 34, speedKept: 0.6 }, // the steelworks': hot billets stacked (a crate), a coil on its cradle (a bale), a HOT METAL sign (a cone), rebar bundles (a barrier)
     ticketGate: { damage: 31, speedKept: 0.75 }, scrubber: { damage: 38, speedKept: 0.75 }, trackLamp: { damage: 3, speedKept: 0.94, light: true }, // the metro's: a ticket gate (a crate), a ride-on floor scrubber (a bale), a track lamp (a cone)
-    railTrolley: { damage: 31, speedKept: 0.75 }, infoTotem: { damage: 32, speedKept: 0.8 }, // ...and named outright: a rail trolley of sleepers (a crate's), a wayfinding board (a sign's)
+    railTrolley: { damage: 31, speedKept: 0.75 }, infoTotem: { damage: 32, speedKept: 0.8 },
+    trackBarrier: { damage: 33, speedKept: 0.6, trainProof: true }, // ...and the metro's railBarrier: a low track-work barrier on a track, a bullet train goes over it and leaves it standing (trainProof: small enough to sit inside the train) // ...and named outright: a rail trolley of sleepers (a crate's), a wayfinding board (a sign's)
     hoistDrum: { damage: 14, speedKept: 0.8, light: true }, // ...and a tunnel junction's load there (themes.js junctionTrain: a cable drum slung under a hoist running on a beam across the road): the tug's cost
   },
   // drifters: obstacles moving about the road in patterns (a level's "drifters")

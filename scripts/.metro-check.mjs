@@ -239,8 +239,7 @@ try {
   const placed = O.filter(o => !o.hazard && !o.laneEnd && o.kind !== 'handrail');
   check(placed.length === level.obstacles.length && placed.every(o => K[o.kind] && o.hw > 0 && o.hl > 0 && o.height > 0), placed.length + ' placed obstacles, every one with a cost and a box: ' + [...new Set(placed.map(o => o.kind))].join(', '));
   for (const [plain, own] of Object.entries(theme.obstacles)) {
-    const a = O.find(o => o.kind === own);
-    check(!!a && JSON.stringify(K[plain]) === JSON.stringify(K[own]), 'the metro\'s ' + plain + ' is a ' + own + ' (' + themedKind('metro', plain) + '), at a ' + plain + '\'s cost');
+    check(K[plain].damage === K[own].damage && K[plain].speedKept === K[own].speedKept, 'the metro\'s ' + plain + ' is a ' + own + ' (' + themedKind('metro', plain) + '), at a ' + plain + '\'s cost');
   }
   const inLanes = placed.filter(o => o.lat + o.hw > T.laneLo(o.s) && o.lat - o.hw < T.laneHi(o.s));
   check(inLanes.length === placed.length, 'every one stands (at least partly) where a car can drive: ' + inLanes.length + ' of ' + placed.length);
@@ -248,7 +247,28 @@ try {
   const both = level.obstacles.filter(o => level.obstacles.some(x => x !== o && x.lane !== o.lane && Math.abs(x.s - o.s) < 30));
   check(!offTrack.length && !byPillars.length && !both.length, 'every one on a TRACK (the road lane beside is the way round it), none within 80 m of pillars (where the tracks are the way past), never one on each track within 30 m');
   // driven into: each of the metro's kinds knocks the car (it collides) and does not stop it
-  const kinds = ['ticketGate', 'scrubber', 'trackLamp', 'railTrolley', 'infoTotem', 'cableReel'];
+  const kinds = [...new Set(placed.map(o => o.kind))];
+  // every one on a track is TRAIN-PROOF (the owner: "look at the train barriers in Canberra"): low and narrow enough to sit inside a
+  // passing train, which leaves it standing (bullettrain.js, both trains: one update); the railBarrier's box for the track barrier
+  check(kinds.every(k => K[k].trainProof) && placed.every(o => o.hw <= BT.hw && o.height < BT.height) && JSON.stringify(g.Collision.size.trackBarrier) === JSON.stringify(g.Collision.size.railBarrier) &&
+    JSON.stringify(K.trackBarrier) === JSON.stringify(K.railBarrier), 'every obstacle on the tracks is train-proof and fits inside a train (' + kinds.join(', ') + '; the track barrier at Canberra\'s rail barrier\'s box and cost)');
+  for (const train of [BulletTrain, UpTrain]) { // a train down (or up) its track over every obstacle on it, each left standing
+    const k = train.up ? 1 : 0, on = placed.filter(o => Math.abs(o.lat - T.railLat(k, o.s)) < 0.5);
+    let standing = true, passedOver = 0;
+    for (const o of on) {
+      G.start();
+      for (const car of g.Traffic.cars) car.active = false;
+      Object.assign(P, { s: o.s - (train.up ? -20 : 20), lat: lane(1, o.s), speed: 0, launching: false, ghost: 0 });
+      BulletTrain.active = UpTrain.active = false; BulletTrain.next = UpTrain.next = Infinity;
+      train.start(true);
+      let over = false;
+      g.run(8, () => { P.speed = 0; BulletTrain.next = UpTrain.next = Infinity; for (let i = 0; i < BT.cars; i++) { const c = train.carriage(i, {}); if (Math.abs(c.s - o.s) < BT.carLength / 2 && Math.abs(c.lat - o.lat) < 1) over = true; } return !train.active; });
+      const live = g.Collision.obstacles.find(x => x.s === o.s && x.lat === o.lat);
+      if (over) passedOver++;
+      if (!live || live.gone) standing = false;
+    }
+    check(on.length > 0 && passedOver === on.length && standing, (train.up ? 'the overtaking train (right track)' : 'the oncoming train (left track)') + ' goes over all ' + on.length + ' obstacles on its track and leaves every one standing');
+  }
   for (const kind of kinds) {
     const o = placed.find(o => o.kind === kind);
     if (!o) { check(false, 'a ' + kind + ' on the level'); continue; }

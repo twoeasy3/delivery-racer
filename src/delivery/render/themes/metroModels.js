@@ -300,6 +300,18 @@ export const METRO_OBSTACLES = {
     }
     return grounded(group, 1.1);
   },
+  // a TRACK-WORK BARRIER on a track (obstacle kind trackBarrier: railBarrier's box and cost, trainProof): a low steel frame across the
+  // track, its beam in yellow and black bands, a red lamp at each end, feet on the sleepers. 0.95 m tall, 2.4 wide, 1.2 along: wholly
+  // inside a bullet train passing over it (the train leaves it standing). One merged mesh, one lit
+  trackBarrier: (o) => {
+    const K = kit(), group = new THREE.Group(), w = (o?.hw ?? 1.2) * 2, h = o?.height ?? 0.95;
+    for (const x of [-w / 2 + 0.12, w / 2 - 0.12]) { K.box(0.1, h - 0.1, 0.1, 0x3a3d42, x, (h - 0.1) / 2, 0); K.box(0.16, 0.06, 1.0, 0x3a3d42, x, 0.03, 0); }
+    for (let k = 0; k < 8; k++) K.box(w / 8, 0.32, 0.12, k % 2 ? 0x1b1d22 : 0xf2c21d, -w / 2 + (k + 0.5) * w / 8, h - 0.3, 0);
+    K.box(w, 0.18, 0.1, 0xf2c21d, 0, 0.35, 0);
+    for (const x of [-w / 2 + 0.12, w / 2 - 0.12]) K.glowCyl(0.08, 0.08, 0.1, 10, 0xff2a1a, x, h - 0.09, 0);
+    K.done(group);
+    return grounded(group, 1.1);
+  },
   // a PILLAR in a lane (lanegimmicks.js "pillars", obstacle kind `pillar`: a wreck, as a dead end's wall): a 1.4 m square concrete
   // column up to the tunnel's ceiling (8.5 m: running tunnels and bores), a dark plinth, its foot wrapped in yellow and black hazard
   // bands to 2 m, a red and white hazard board and an amber lamp on each face along the road, a cap under the ceiling. One merged
