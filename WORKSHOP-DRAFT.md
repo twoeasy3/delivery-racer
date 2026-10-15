@@ -36,6 +36,12 @@ Notes for the real list:
 ## Tune budget (keeps A and B fair)
 Give every stat a **value per unit** (from the ECU table: one ECU step is about +1.8 m/s top speed for about +43 health on a 5-star key car). A swap is fair when value gained is about value lost. Triggers and passives are priced in the same units. Then a designer can write a car's Tunes by balancing the sums, and a check can enforce it.
 
+### Top speed is the most important stat (owner, 15-Oct)
+- Top speed decides level clocks, par, medals and records far more than any other stat, so it carries the **highest value per unit** in the budget: 1 m/s of top speed is worth many times 1 point of health (placeholder: 1 m/s ~ 100 health, to be set from the clocks).
+- So **any Tune that adds top speed must cost a lot**, and any Tune that sells top speed must pay a lot back: the owner's example B (-12 top speed for +120 health) is a very expensive sale at that rate, and A (-100 health for +4 top speed) is a strong buy that needs a real price somewhere else (a switch cost, a second drawback, or a smaller number).
+- **The cap on boosts is tightest for top speed** (a few percent total from Tunes and Fittings together) and looser for health, composure and the rest. Fittings that add top speed are rare and small; most Fittings boost the other stats.
+- This also makes "lose top speed" the genuinely hard choice for players who race, and "gain top speed" the temptation to price carefully.
+
 ## Fittings
 - A Fitting is a small permanent bonus to one stat (for example +4% top speed), slotted into a car.
 - Cars have **varying slot counts**: more for higher tiers and key cars, fewer for starters.
