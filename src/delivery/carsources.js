@@ -13,7 +13,7 @@
 // placeholder }] }. `why` (when not available) is plain words; a tier is the token {tier:n} (tiers.js richTiers draws it).
 // keyless: why it has no key (a blueprint car), or null; noBlueprints: why it has no blueprints, or null.
 // ============================================================================
-import { CARS, EARNED_CARS, carTier, forSale } from './cars.js';
+import { CARS, EARNED_CARS, carTier, forSale, setVisibilityHooks } from './cars.js';
 import { Progress } from './progress.js';
 import { Ecu } from './ecu.js';
 import { Events, PLAIN_EVENTS, when, weekdayName } from './events.js';
@@ -250,3 +250,7 @@ export const sourcesLine = (car, opts) => {
   const bp = s.noBlueprints ? 'No blueprints' : s.maxed ? 'Blueprints: maxed' : s.obtainable.blueprints ? 'Blueprints: ' + list(s.blueprints) : 'Blueprints: not obtainable right now';
   return [key, bp].filter(Boolean).join(' · ');
 };
+
+// can the car be had right now, key or blueprints? (cars.js isVisibleCar: a `hideUnlessAvailable` car shows once it can)
+export const obtainableNow = (car, opts) => { const s = sourcesOf(car, opts); return !!s && (s.obtainable.key || s.obtainable.blueprints); };
+setVisibilityHooks({ available: (car) => obtainableNow(car) });

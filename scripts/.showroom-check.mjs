@@ -18,7 +18,7 @@ try {
   const floor = showroomCars(), ids = floor.map(car => car.id);
   check(new Set(ids).size === ids.length, 'every car on the floor once (' + ids.length + ')');
   check(CARS.every(car => ids.includes(car.id)) && EVENT_CARS.every(car => ids.includes(car.id)), 'every garage car and event car is there');
-  check(EARNED_CARS.every(car => ids.includes(car.id)), 'the earned cars, including the one that is off (the Courier Special: shown, not available at the moment)');
+  check(EARNED_CARS.every(car => ids.includes(car.id) === !car.hideUnlessAvailable), 'the earned cars, including the one that is off (the Courier Special: shown, not available at the moment); not the Legendary ones (hidden until available: .hidden-cars-check)');
   // every card: pips within the maximum, blueprints within the step, a reason exactly when it is locked
   const cards = floor.map(car => carCard(car));
   const bad = cards.filter(c => !(c.max >= 1 && c.ecu >= 0 && c.ecu <= c.max && c.have >= 0 && c.have <= c.toNext && c.toNext >= 1)

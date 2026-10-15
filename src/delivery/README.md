@@ -264,6 +264,10 @@ ones, which are always open and open nothing.
   `carshots/<id>-evil.jpg`, taken with `?cine=car`. A vehicle that belongs to a level goes in
   `LEVEL_CARS`; one that should stay out of the garage goes in `SECRET_CARS`, with its own way
   in (the City Bus: type B U S on the start screen, or `?autostart&car=bus`).
+- **Hiding a car that cannot be had:** put `hideUnlessAvailable: true` on its entry (any roster in `cars.js`). It is then
+  off the showroom and the car lot, and out of every car count, until the player owns it, has a blueprint of it, or can get it
+  now (`carsources.js` sourcesOf: an event featuring it, a pack that deals it, its level open). Opt-in, one car at a time; the
+  14 Legendary cars have it (`legendCar`). The one test is `isVisibleCar` in `cars.js`; check: `scripts/.hidden-cars-check.mjs`.
 - **Car ideas lot:** the garage has a second tab, "Car ideas": a lot of vehicles (twenty-six) that are ideas
   on show, not cars. Each is drawn after a real vehicle and has a generic name (the Bubble Car after the
   BMW Isetta, the Double Decker after the AEC Routemaster...); hovering or tapping one shows its name,
