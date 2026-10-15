@@ -12,6 +12,7 @@
 // userData.stripe (hex). render/ideaModels.js spreads IDEA_MODELS_TOPUP_C into IDEA_MODELS. State-free.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { cabinGlass } from './ideaModelsDkit.js';
 
 const keep = (m) => { m.userData.shared = true; return m; };
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
@@ -277,12 +278,11 @@ export const IDEA_MODELS_TOPUP_C = {
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
     const TAPER = [BELT, ROOF, 0.07];
     // the windscreen's foot and top (side view), nearly upright
-    const WSF = [0.64, BELT - 0.02], WST = [0.52, ROOF - 0.06];
+    const WSF = [0.64, BELT - 0.02], WST = [0.507, ROOF], TH = [TAILZ, 1.4]; // (TH: a point on the straight tail, the back window's foot, above the spare wheel)
     const outline = [
       [NOSE, AY], [NOSE, 0.92], ...curve([NOSE, 0.92], [NOSE, 0.97], [NOSE - 0.02, BELT - 0.04], [NOSE - 0.08, BELT - 0.03], 3),
-      WSF, WST, ...curve(WST, [0.5, ROOF - 0.02], [0.47, ROOF], [0.42, ROOF], 3),
-      [TAILZ + 0.08, ROOF], ...curve([TAILZ + 0.08, ROOF], [TAILZ + 0.02, ROOF], [TAILZ, ROOF - 0.02], [TAILZ, ROOF - 0.08], 3),
-      [TAILZ, AY], ['arc', AR, AY, ARC], ['arc', AF, AY, ARC],
+      WSF, WST,
+      [TAILZ, ROOF], TH, [TAILZ, AY], ['arc', AR, AY, ARC], ['arc', AF, AY, ARC],
     ];
     const FZ = NOSE + BEV, BZ = TAILZ - BEV; // (the face and the tail's face)
     const body = place(group, shared(k + 'body', () => shadeBy(merge([
@@ -290,17 +290,13 @@ export const IDEA_MODELS_TOPUP_C = {
       // the grille's slots: upright bars in the paint, standing in the dark grille panel
       ...[-2, -1, 0, 1, 2].map(i => bx(0.05, 0.26, 0.04, i * 0.11, 0.8, FZ + 0.012)),
     ]), low(0.38, 0.9, [0.62, 0.56, 0.48]))), paint);
-    // the glass: the windscreen, two windows a side, the back door's window over the spare wheel
-    const LIFT = 0.006, gx = (y) => narrowAt(HALF, y, TAPER);
-    const zWS = (y) => WSF[0] + (WST[0] - WSF[0]) * (y - WSF[1]) / (WST[1] - WSF[1]);
-    parts(group, k + 'glass', GLASS, () => [
-      slopeGlass([zWS(1.1), 1.1], [zWS(1.54), 1.54], gx(1.1) - 0.13, gx(1.54) - 0.13, BEV + LIFT),
-      ...sideGlass([
-        [[zWS(1.12) - 0.12, 1.12], [-0.2, 1.12], [-0.2, 1.55], [zWS(1.55) - 0.1, 1.55]],
-        [[-0.32, 1.12], [-1.24, 1.12], [-1.24, 1.55], [-0.32, 1.55]],
-      ], HALF, TAPER, LIFT),
-      panel([[-0.46, 1.38, BZ - LIFT], [0.46, 1.38, BZ - LIFT], [0.44, 1.56, BZ - LIFT], [-0.44, 1.56, BZ - LIFT]].reverse()),
-    ]);
+    // ALL the glass from the body's own side profile (cabinGlass: one inset outline, level tops): the door window and the quarter window behind the
+    // B-pillar (the door the longer, as on the SJ410), the windscreen (its foot at the bonnet's end: second call), and the back door's window,
+    // narrower than the cab and above the spare wheel
+    const INS = { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, ARGS = { from: outline.findIndex(p => p[0] === WSF[0] && p[1] === WSF[1]), to: outline.indexOf(TH), half: HALF, taper: TAPER, grow: BEV, inset: INS, lift: BEV + 0.006, sideLift: 0.006 };
+    const glass = cabinGlass(outline, { ...ARGS, belt: 1.12, sideInset: 0.22, windows: [[-0.34, 9], [-1.2, -0.5]] });
+    const screen = cabinGlass(outline, { ...ARGS, belt: BELT, sideInset: 0.13 });
+    parts(group, k + 'glass', GLASS, () => [...glass.sides, screen.front, glass.rear]);
     // the face: the grille panel, the bumpers, the mirrors (dark)
     parts(group, k + 'black', TRIM, () => [
       bx(0.6, 0.3, 0.03, 0, 0.8, FZ),
