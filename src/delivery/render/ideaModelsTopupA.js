@@ -15,6 +15,7 @@
 // No people: the open cars have empty seats. State-free.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { cabinGlass } from './ideaModelsDkit.js';
 
 const keep = (m) => { m.userData.shared = true; return m; };
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
@@ -248,10 +249,10 @@ IDEA_MODELS_TOPUP_A.slantback = (car) => {
     ['arc', AR, AY, ARCH], ['arc', AF, AY, ARCH],
   ];
   // the glasshouse: raked windscreen, flat roof, a lip, the back window leaning the wrong way down to the boot
-  const CBEV = 0.07, CW = BW - 0.1, TOP = car.height - CBEV, CY = 0.75, TAPER = [0.86, TOP, 0.17];
-  const WS = [[0.92, CY], [0.36, TOP - 0.03]], BL = [[-0.6, CY], [-1.0, TOP - 0.08]];
-  const roof = [WS[1], ...curve(WS[1], [0.05, TOP + 0.01], [-0.65, TOP + 0.01], [-0.95, TOP], 5)];
-  const cabinOutline = [WS[0], ...roof, [-1.03, TOP - 0.04], BL[1], BL[0]];
+  const CBEV = 0.05, CW = BW - 0.1, TOP = car.height - CBEV, CY = 0.75, TAPER = [0.86, TOP, 0.17];
+  const WS = [[0.92, CY], [0.36, TOP]], BL = [[-0.6, CY], [-1.0, TOP]];
+  const roof = [WS[1], BL[1]]; // (a flat roof: two corners, the windscreen's top and the back window's)
+  const cabinOutline = [WS[0], ...roof, BL[0]];
   const body = shadeLow(merge([
     extrudeSide(bodyOutline, BW, BEV, null, 3, 0.16),
     extrudeSide(cabinOutline, CW, CBEV, TAPER, 2, 0.12),
@@ -260,16 +261,16 @@ IDEA_MODELS_TOPUP_A.slantback = (car) => {
     ...[-1, 1].map(s => extrudeSide([[-1.2, 0.84], [-2.04, 0.84], [-2.05, 1.07], [-1.92, 1.07]], 0.07, 0.02, null, 1).translate(s * (BW / 2 - 0.07), 0, 0)),
   ]), 0.2, 0.7, [0.74, 0.7, 0.68]);
   const bodyMesh = place(group, body, paint);
-  // glass: the windscreen, the back window (facing back and down), a door window and a quarter window a side
-  const CH = CW / 2, LIFT = CBEV + 0.006, foot = 0.99, top = 1.265;
-  const aEdge = (y) => zAt(WS, y) - 0.09, cEdge = (y) => zAt(BL, y) + 0.09;
-  bag.add(GLASS,
-    slopeGlass([zAt(WS, foot), foot], WS[1], CH, TAPER, CBEV + 0.03, [0, 0.05], LIFT, [1, 1]),
-    slopeGlass([zAt(BL, foot), foot], BL[1], CH, TAPER, CBEV + 0.04, [0, 0.08], LIFT, [-1, -0.3]),
-    ...sideGlass([
-      [[aEdge(foot), foot], [-0.06, foot], [-0.06, top], [aEdge(top), top]],
-      [[-0.16, foot], [cEdge(foot), foot], [cEdge(top), top], [-0.34, top]],
-    ], CH, TAPER, 0.006));
+  // ALL the glass from the cabin's own side profile (cabinGlass: one inset outline, so the screens and the side windows share one top line at
+  // the pillars; the owner, 14-Oct): a door window and a quarter window each side with the B-pillar between
+  const CH = CW / 2, LIFT = CBEV + 0.006, BELT = 0.99;
+  const glass = cabinGlass(cabinOutline, { from: 0, to: cabinOutline.length - 1, belt: BELT, half: CH, taper: TAPER, grow: CBEV,
+    inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: LIFT, sideLift: 0.006, windows: [[-0.2, 9], [-9, -0.3]] });
+  // (the back window leans BACKWARDS, so its outward normal is the opposite of a forward-leaning screen's, which cabinGlass assumes: the same
+  // call with the lifts negated stands that screen proud of the body on the outside; only its rear glass is used)
+  const rear = cabinGlass(cabinOutline, { from: 0, to: cabinOutline.length - 1, belt: BELT, half: CH, taper: TAPER, grow: CBEV,
+    inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: -LIFT, sideLift: 0.006 }).rear;
+  bag.add(GLASS, ...glass.sides, glass.front, rear);
   // the face: round lamps under the brows in chrome rings, a wide grille between them, chrome bumpers round the corners
   for (const s of [-1, 1]) {
     bag.add(CHROME, dsc(0.105, 0.03, s * 0.58, 0.66, L - 0.005, 14));
