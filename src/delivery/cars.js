@@ -471,7 +471,7 @@ const KEY_STYLE = { horseshoe: 'smart', swancar: 'classic', rocketfin: 'fin', so
   fishbowl: 'keikey', midsummer: 'wing', sixteen: 'artisan', quadturbo: 'carbonfob', knifeedge: 'wedgefob', windsong: 'startfob' };
 // the Key cars' star ratings (the owner, 12-Oct: "add star ratings to the current key cars too"): magenta stars as a mark of how strong the
 // car is against the tiers, NOT a tier (`rating`, not `tier`: no level rule, no ECU ladder (a key car's max stays 5) reads it)
-const KEY_RATING = { horseshoe: 5, rocketfin: 5, solarracer: 5, sixwheeler: 4, hotdog: 4, moonrover: 4, swancar: 4, snocat: 3,
+const KEY_RATING = { horseshoe: 5, rocketfin: 5, solarracer: 5, sixwheeler: 3, hotdog: 4, moonrover: 4, swancar: 4, snocat: 3,
   fishbowl: 2, midsummer: 3, sixteen: 4, quadturbo: 5, knifeedge: 5, windsong: 5 }; // (the concept cars: the owner, 13-Oct: "2, 3, 4, 5, 5, 5 stars")
 const bespoke = (car) => ({ ...car, rating: KEY_RATING[car.id] || 0, bespoke: true, rarity: 'legendary', placeholder: true, price: 0, keyModel: KEY_STYLE[car.id] || 'fob' });
 export const BESPOKE_CARS = [
@@ -494,7 +494,8 @@ export const BESPOKE_CARS = [
   // (the Monowheel was a Bespoke key car here until 15-Oct, when the owner sent it back to the ideas lot: "its design style doesn't suit the
   // game anymore". Its id is an idea's again (ideas.js); a save that owned its key or blueprints keeps them harmlessly: an idea is free to drive)
   // the grip car: six wheels, four of them to steer with: corners as nothing else does, light, quick, not tough (the owner, 15-Oct: a new
-  // Legendary key car for the wheel key, in the Monowheel's place: in the same packs as the four above; never an idea; model render/ideaModelsSixWheel.js)
+  // Legendary key car for the wheel key, in the Monowheel's place: in the same packs as the four above; never an idea; model render/ideaModelsSixWheel.js;
+  // the owner: "The 6 wheel will replace the monowheel 1:1 in availability": so its KEY_RATING is the Monowheel's 3, which the events' star tasks read)
   bespoke({ id: 'sixwheeler', name: 'Six-Wheel Supercar', basedOn: 'Covini C6W (2004)', model: 'sixwheeler', color: 0x1f9e96, evilColor: 0x5e2470,
     hw: 1.0, hl: 2.1, height: 1.17, note: 'Four small wheels to steer with and two big ones to push: it goes round a corner as if on rails.',
     maxSpeed: 45, accel: 17, agility: 1.4, crossing: 0.2, health: 200, mass: 1.4, sound: 'gt' }),
