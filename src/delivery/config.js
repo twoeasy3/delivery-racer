@@ -604,7 +604,11 @@ export const CONFIG = {
     // Gimmick Road 2's (see hazards.js)
     trolley: { damage: 8, speedKept: 0.88, light: true },
     tug: { damage: 14, speedKept: 0.8, light: true }, // a tunnel junction's electric tug (hazards.js): a knock, never a stop
-    handrail: { damage: 3, speedKept: 0.94, light: true }, // a boost pad's handrail section (lanegimmicks.js): a cone's box and cost, blown away on contact like any obstacle
+    handrail: { damage: 3, speedKept: 0.94, light: true },
+    // the mall's set dressing along the sides, as obstacles a level names outright (themes/mallModels.js): a planter, a potted palm,
+    // a kiosk (a bale's cost and box), a bench, a play block (a crate's), a bin (a cone's); its cafe tables are Venice's cafeTable
+    planter: { damage: 38, speedKept: 0.75 }, palmPot: { damage: 38, speedKept: 0.75 }, kiosk: { damage: 38, speedKept: 0.75 },
+    bench: { damage: 31, speedKept: 0.75 }, playBlock: { damage: 31, speedKept: 0.75 }, bin: { damage: 3, speedKept: 0.94, light: true }, // a boost pad's handrail section (lanegimmicks.js): a cone's box and cost, blown away on contact like any obstacle
     laneEnd: { damage: 0, speedKept: 1 }, // a dead-end lane's end (lanegimmicks.js): no ordinary knock: a wreck outright, or passed through (see Collision.hitObstacles)
     runner: { damage: 10, speedKept: 0.88, light: true },
     waterTable: { damage: 6, speedKept: 0.9, light: true },

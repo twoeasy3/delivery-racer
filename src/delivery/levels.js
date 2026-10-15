@@ -168,7 +168,7 @@
 //                                  'chairStack', 'riceBasket', 'present', 'toyDrum', 'sackStack', 'beachBall',
 //                                  'tumbleweed', 'cafeTable', 'wheelieBin', 'snowdrift', 'brimstone', 'flagStand',
 //                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'wineCrates', 'hayRoll', 'terracottaPot' (Tuscany's). All of them are on the Gimmicks page, last,
-//                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'boxStack', 'trolleyRow', 'wetFloorSign' (the mall's), 'jerryStack', 'tentRoll' and
+//                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'boxStack', 'trolleyRow', 'wetFloorSign', 'planter', 'palmPot', 'kiosk', 'bench', 'playBlock', 'bin' (the mall's), 'jerryStack', 'tentRoll' and
 //                                  'rallyFlag' (the desert's: stacked jerrycans, a rolled tent, a rally marker flag). All of them are on the Gimmicks page, last,
 //                                  under Road dressing (gimmicks.html?group=road-dressing)
 //   dropBears  { from, to, count } drop bears up in the trees over that stretch, dropping onto the

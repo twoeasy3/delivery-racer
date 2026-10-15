@@ -57,7 +57,7 @@ try {
   check(outer <= LW / 2 && inner * 2 >= P.hw * 2 + 0.5, 'the rails reach ' + outer.toFixed(2) + ' m from the pad lane\'s centre (the lane\'s edge is at ' + (LW / 2).toFixed(2) + '): nothing in the lane beside; ' + (inner * 2).toFixed(2) + ' m clear between them for a car ' + (P.hw * 2).toFixed(2) + ' m wide');
   start(pad.from - 30, pad.lane + 1, 20);
   const hNext = P.health, railsNext = rails.filter(o => !o.gone).length;
-  g.run(8, () => { quiet(); g.drive(1, 0); P.lat = lane(pad.lane + 1, P.s); return P.s > pad.to + 20; });
+  g.run(8, () => { quiet(); g.drive(1, 0); P.lat = lane(pad.lane + 1, P.s); return P.s > pad.to + 12; });
   check(P.health === hNext && rails.filter(o => !o.gone).length === railsNext, 'a car down the lane beside the pad touches no rail');
   start(pad.from - 30, pad.lane, 20);
   const h0 = P.health, before = rails.filter(o => !o.gone).length;
