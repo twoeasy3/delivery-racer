@@ -581,20 +581,17 @@
   },
   "splitwindow": {
    "roof": {
-    "box": [0.52, 0, 1.38, -0.355],
-    "cyl": [0.46, 0, 1.365, -0.355],
+    "box": [0.76, 0, 1.44, -0.475],
+    "cyl": [0.77, 0, 1.443, -0.475],
     "from": "roof",
-    "lim": "fit"
+    "lim": "fit",
+    "inset": [0.03, 0.016]
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.91, 0, 1.409, -0.695],
-    "cyl": [0.91, 0, 1.387, -0.695],
-    "from": "roof-edge",
-    "lim": "fit",
-    "inset": [0.049, 0.049]
+    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
    }
   },
   "sporttruck": {
@@ -851,6 +848,11 @@
     "lim": "hand",
     "inset": [0.07, 0.07],
     "existing": true
+   }
+  },
+  "splitwindow": {
+   "wing": {
+    "no": "its only place left is the top of the cockpit roof, mid-car: no believable spot for a wing on the split-window coupe (the tail is a narrow, sloping split rear window)"
    }
   }
  }
