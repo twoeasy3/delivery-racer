@@ -22,6 +22,31 @@ const USUAL = { near: 120, far: 520 };
 const dark = new THREE.Color(), outside = new THREE.Color();
 let inside = 0, lightsOwn = false, has = false;
 
+// SPIKE: the ceiling's height at s for a tunnel: its `profile` [[s, h], ...], eased between points; its `height`; or the usual
+export const heightOf = (t, usual) => {
+  const P = t.profile;
+  if (!P) { const h = t.height ?? usual; return () => h; }
+  return (s) => {
+    if (s <= P[0][0]) return P[0][1];
+    for (let i = 1; i < P.length; i++) if (s <= P[i][0]) { const u = (s - P[i - 1][0]) / (P[i][0] - P[i - 1][0]), k = u * u * (3 - 2 * u); return P[i - 1][1] + (P[i][1] - P[i - 1][1]) * k; }
+    return P[P.length - 1][1];
+  };
+};
+// SPIKE: a roof strip whose height varies along s (buildStrip, with y a function of s)
+const roofStrip = (sFrom, sTo, latA, latB, yAt, step = 4) => {
+  const pos = [], idx = [];
+  for (let n = 0; ; n++) {
+    const s = Math.min(sFrom + n * step, sTo);
+    Track.toWorld(s, latA(s), tmp); pos.push(tmp.x, tmp.y + yAt(s), tmp.z);
+    Track.toWorld(s, latB(s), tmp); pos.push(tmp.x, tmp.y + yAt(s), tmp.z);
+    if (n > 0) { const a = (n - 1) * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    if (s >= sTo) break;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+  return geo;
+};
 const build = () => {
   for (const o of group.children) o.traverse((m) => { if (m.geometry) m.geometry.dispose(); if (m.material) m.material.dispose(); });
   group.clear();
@@ -41,6 +66,8 @@ const build = () => {
   const spot = new THREE.Object3D();
   for (const t of LEVEL.tunnels) {
     const lo = (s) => Track.lo(s) - 0.3, hi = (s) => Track.hi(s) + 0.3;
+    // SPIKE: the ceiling's height along the tunnel: a `profile` [[s, h], ...] (eased from one point to the next), a `height`, or the usual
+    const hAt = heightOf(t, H);
     // the walls: a vertical strip each side, from the road up to the ceiling (built as a flat strip, stood up:
     // one quad per 4 m along, its two edges the foot and the top of the wall)
     for (const side of [-1, 1]) {
@@ -50,7 +77,7 @@ const build = () => {
       for (let s = t.from; s <= t.to + 0.001; s += 4, n++) {
         const q = Math.min(s, t.to);
         Track.toWorld(q, edge(q), tmp);
-        pos.push(tmp.x, tmp.y, tmp.z, tmp.x, tmp.y + H, tmp.z);
+        pos.push(tmp.x, tmp.y, tmp.z, tmp.x, tmp.y + hAt(q), tmp.z);
         if (n) { const a = (n - 1) * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
       }
       const geo = new THREE.BufferGeometry();
@@ -58,7 +85,7 @@ const build = () => {
       geo.setIndex(idx);
       add(geo, wall);
       // the band of tiles along it, at headlight height
-      const band = pos.map((v, i) => i % 3 === 1 ? (i % 6 === 1 ? v + 0.9 : v - H + 2.1) : v + (i % 3 ? 0 : 0));
+      const band = pos.map((v, i) => i % 3 === 1 ? (i % 6 === 1 ? v + 0.9 : pos[i - 3] + 2.1) : v); // (SPIKE: the top from the foot, not the ceiling)
       const bandGeo = new THREE.BufferGeometry();
       bandGeo.setAttribute('position', new THREE.Float32BufferAttribute(band, 3));
       bandGeo.setIndex(idx);
@@ -66,20 +93,21 @@ const build = () => {
       b.position.x += 0; // (flush: it is the same wall, a lighter band of it)
       b.scale.setScalar(1.001);
     }
-    add(buildStrip(t.from, t.to, lo, hi, H, 4), roof);
+    add(t.profile ? roofStrip(t.from, t.to, lo, hi, hAt, 4) : buildStrip(t.from, t.to, lo, hi, hAt(t.from), 4), roof);
     // the lamps down the middle of the ceiling
     const count = Math.floor((t.to - t.from) / T.lampEvery);
     const lamps = new THREE.InstancedMesh(new THREE.BoxGeometry(0.5, 0.12, 2.2), lamp, count);
     for (let k = 0; k < count; k++) {
       const s = t.from + T.lampEvery * (k + 0.5);
       spot.rotation.y = Track.toWorld(s, 0, tmp);
-      spot.position.set(tmp.x, tmp.y + H - 0.1, tmp.z);
+      spot.position.set(tmp.x, tmp.y + hAt(s) - 0.1, tmp.z);
       spot.updateMatrix();
       lamps.setMatrixAt(k, spot.matrix);
     }
     group.add(lamps);
     // the portals: a face of concrete round each opening, wide and tall, the hillside the tunnel goes into
     for (const end of [t.from, t.to]) {
+      const H = hAt(end); // (SPIKE: the portal as tall as the tunnel is there)
       const w = hi(end) - lo(end);
       const h = Track.toWorld(end, (lo(end) + hi(end)) / 2, tmp);
       const slab = add(new THREE.BoxGeometry(w + 16, H + 9, 1.2), face);
@@ -109,6 +137,7 @@ export const syncTunnel = () => {
   }
   const T = CONFIG.tunnel, want = Game.state === 'start' ? 0 : Track.tunnel(Player.s);
   if (!inside && !want) return;
+  if (LEVEL.tunnels.every(t => t.lit)) { inside = want; Sound.echo(inside * T.echo * 0.6); return; } // (SPIKE: a lit tunnel: no dark, no fog, no headlights; a little echo)
   if (!inside) outside.copy(scene.background); // (going in: the sky as it was, to put back)
   inside = want;
   dark.set(T.color);

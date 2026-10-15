@@ -7,6 +7,16 @@ import { Game } from '../game.js';
 import { CAR } from '../cars.js';
 import { LEVEL } from '../levels.js';
 import { Gambles } from '../gambles.js';
+// SPIKE: a tunnel's ceiling height at s (its profile [[s, h], ...], eased): the same as render/tunnel.js heightOf (copied: no import cycle)
+const heightOf = (t, usual) => {
+  const P = t.profile;
+  if (!P) { const h = t.height ?? usual; return () => h; }
+  return (s) => {
+    if (s <= P[0][0]) return P[0][1];
+    for (let i = 1; i < P.length; i++) if (s <= P[i][0]) { const u = (s - P[i - 1][0]) / (P[i][0] - P[i - 1][0]), k = u * u * (3 - 2 * u); return P[i - 1][1] + (P[i][1] - P[i - 1][1]) * k; }
+    return P[P.length - 1][1];
+  };
+};
 
 // ============================================================================
 // RENDERING
@@ -148,8 +158,11 @@ export const updateCamera = (dt, snap) => {
   const inTunnel = tunnelCamera(Player.s - baseBack);
   // (and coming up to a crest a car can fly, down behind the car, so the far side stays hidden: see Gambles.blind)
   const blind = Game.screensaver ? 0 : Gambles.blind(Player.s) * (1 - inTunnel);
-  const camBack = baseBack + ((CONFIG.tunnel?.camBack ?? baseBack) - baseBack) * inTunnel + (CONFIG.crest.camBack - baseBack) * blind;
-  const camHeight = baseH + ((CONFIG.tunnel?.camHeight ?? 5.5) - baseH) * inTunnel + (CONFIG.crest.camHeight - baseH) * blind;
+  // SPIKE: a tunnel's own camera height and distance (its camHeight, camBack), and the camera never over its ceiling (its profile)
+  const tn = inTunnel > 0 ? (LEVEL.tunnels || []).find(t => Player.s - baseBack >= t.from - 35 && Player.s - baseBack <= t.to + 35) : null;
+  const camBack = baseBack + ((tn?.camBack ?? CONFIG.tunnel?.camBack ?? baseBack) - baseBack) * inTunnel + (CONFIG.crest.camBack - baseBack) * blind;
+  let camHeight = baseH + ((tn?.camHeight ?? CONFIG.tunnel?.camHeight ?? 5.5) - baseH) * inTunnel + (CONFIG.crest.camHeight - baseH) * blind;
+  if (tn?.profile) { const ceil = heightOf(tn, CONFIG.tunnel.height)(Player.s - camBack); camHeight = Math.min(camHeight, ceil - 1.0); }
   Track.toWorld(Player.s - camBack, camLat, tmp);
   const shake = CONFIG.hitShake * Game.shake;
   camera.position.set(tmp.x + (Math.random() - 0.5) * shake,
