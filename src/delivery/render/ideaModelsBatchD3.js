@@ -12,6 +12,7 @@
 // userData.animate (seconds) => void, userData.livery (evil) => void. render/ideaModels.js spreads IDEA_MODELS_BATCH_D3.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { cabinGlass } from './ideaModelsDkit.js';
 
 const keep = (m) => { m.userData.shared = true; return m; };
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
@@ -140,17 +141,16 @@ export const IDEA_MODELS_BATCH_D3 = {
     const group = new THREE.Group();
     const R = 0.31, TW = 0.24, AF = 1.12, AR = -1.0, WX = car.hw - TW / 2;
     const BEV = 0.05, ACROSS = 0.09, BW = 1.68, HALF = BW / 2;
-    const NOSE = 1.86, TAILZ = -1.84, AY = 0.3, BELT = 0.9, ROOF = 1.26;
+    const NOSE = 1.86, TAILZ = -1.84, AY = 0.3, BELT = 0.9, ROOF = 1.26, GBELT = 0.94;
     const k = 'sh';
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
     const TAPER = [BELT, ROOF, 0.14];
-    const WSF = [0.66, 0.82], WST = [-0.06, ROOF];
+    const WSF = [0.66, 0.82], WST = [-0.06, ROOF], RT = [TAILZ + 0.06, 0.95];
     const outline = [
       [NOSE, AY], [NOSE, 0.52], ...curve([NOSE, 0.52], [NOSE, 0.6], [NOSE - 0.1, 0.64], [NOSE - 0.3, 0.68], 3),
       WSF, WST,
-      ...curve(WST, [-0.12, ROOF + 0.01], [-0.18, ROOF + 0.01], [-0.28, ROOF], 3),
       [-0.62, ROOF], ...curve([-0.62, ROOF], [-1.0, ROOF - 0.1], [-1.4, 1.02], [-1.72, 0.97], 5),
-      [TAILZ + 0.06, 0.95], ...curve([TAILZ + 0.06, 0.95], [TAILZ, 0.95], [TAILZ, 0.9], [TAILZ, 0.82], 3),
+      RT, ...curve(RT, [TAILZ, 0.95], [TAILZ, 0.9], [TAILZ, 0.82], 3),
       [TAILZ, AY],
     ];
     const FZ = NOSE + BEV, BZ = TAILZ - BEV;
@@ -160,16 +160,15 @@ export const IDEA_MODELS_BATCH_D3 = {
       // a flat flare band round each wheel (no well cut: it stands on the flank, the tyre outside it)
       ...[-1, 1].flatMap(s => [AF, AR].map(z => flare(z, R, R + 0.03, R + 0.1, 0.06).translate(s > 0 ? HALF + 0.06 : -HALF + 0.0, 0, 0))),
     ]), low(0.28, 0.85, [0.6, 0.56, 0.54]))), paint);
-    const LIFT = 0.006, gx = (y) => narrowAt(HALF, y, TAPER);
-    const zWS = (y) => WSF[0] + (WST[0] - WSF[0]) * (y - WSF[1]) / (WST[1] - WSF[1]);
-    parts(group, k + 'glass', GLASS, () => [
-      slopeGlass([zWS(0.94), 0.94], [zWS(1.23), 1.23], gx(0.94) - 0.1, gx(1.23) - 0.1, BEV + LIFT),
-      slopeGlass([-0.72, 1.2], [-1.6, 1.0], gx(1.2) - 0.1, gx(1.0) - 0.1, BEV + LIFT),
-      ...sideGlass([
-        [[zWS(0.94) - 0.06, 0.94], [-0.34, 0.94], [-0.34, 1.23], [zWS(1.23) - 0.04, 1.23]],
-        [[-0.5, 0.94], [-1.0, 0.94], [-1.0, 1.07], [-0.72, 1.21], [-0.5, 1.21]],
-      ], HALF, TAPER, LIFT),
-    ]);
+    // ALL the glass from the body's own side profile (cabinGlass); the door glass is the long one, the quarter window behind the B-pillar the short one
+    const glass = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(RT), belt: GBELT, half: HALF, taper: TAPER, grow: BEV,
+      inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: BEV + 0.006, sideLift: 0.006, windows: [[-0.46, 9], [-1.25, -0.62]] });
+    // the windscreen from a second call with the belt down at the bonnet (0.85; the bonnet ends at 0.82): the side windows' belt (0.94) left
+    // its foot 12 cm above the bonnet; its top is the same line (the A-pillar corner), only the foot is lower
+    const screen = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(RT), belt: 0.85, half: HALF, taper: TAPER, grow: BEV,
+      inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: BEV + 0.006, sideLift: 0.006 });
+    const gx = (y) => narrowAt(HALF, y, TAPER);
+    parts(group, k + 'glass', GLASS, () => [...glass.sides, screen.front, glass.rear]);
     parts(group, k + 'black', TRIM, () => [
       bx(1.0, 0.09, 0.03, 0, 0.47, FZ - 0.005),          // the slim grille
       bx(1.72, 0.1, 0.12, 0, 0.36, FZ + 0.02),           // the front bumper
