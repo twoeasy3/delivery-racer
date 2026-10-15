@@ -1237,8 +1237,8 @@ export const MODELS = {
     box(group, paint, w * 0.94, 0.08, cabL, 0, base + 1.16, cabZ);                     // its roof
     screen(group, glass, w * 0.86, 0.05, 0.56, 0, base + 0.86, cabFront + 0.03, 0.12);  // the near-upright windscreen
     for (const z of [cabFront - 0.05, cabZ, cabBack + 0.05]) for (const side of [-1, 1]) box(group, paint, 0.08, 0.55, 0.1, side * w * 0.455, base + 0.85, z); // pillars
-    box(group, trim, w * 0.9, 0.06, cabL, 0, base + 1.25, cabZ);                         // the roof rack,
-    box(group, LAMP, w * 0.7, 0.08, 0.03, 0, base + 1.3, cabFront - 0.05);              // and its light bar
+    box(group, trim, w * 0.9, 0.06, cabL, 0, base + 1.25, cabZ).userData.prop = 'roof';   // the roof rack,
+    box(group, LAMP, w * 0.7, 0.08, 0.03, 0, base + 1.3, cabFront - 0.05).userData.prop = 'roof'; // and its light bar
     const bedZ = (cabBack - l / 2) / 2, bedL = cabBack + l / 2;
     for (const side of [-1, 1]) box(group, paint, 0.08, 0.4, bedL, side * (w / 2 - 0.04), base + 0.75, bedZ); // the bed's sides
     box(group, paint, w, 0.4, 0.08, 0, base + 0.75, -l / 2 + 0.04);                     // and tailgate
@@ -1248,6 +1248,7 @@ export const MODELS = {
     const spare = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.3, 16), lambert(0x141414)); // the spare, standing in the bed
     spare.rotation.x = Math.PI / 2;
     spare.position.set(0, base + 1.0, cabBack - 0.75);
+    spare.userData.prop = 'cargo'; // (a decorative load in the bed)
     group.add(spare);
     box(group, trim, w * 0.5, 0.34, 0.05, 0, base + 0.3, l / 2 + 0.01);                 // the grille,
     for (const y of [0.2, 0.3, 0.4]) box(group, chrome, w * 0.46, 0.03, 0.06, 0, base + y, l / 2 + 0.02); // its slats
@@ -1341,6 +1342,7 @@ export const MODELS = {
     const rope = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.07, 6, 14), lambert(0xd9c27a)); // a rope, coiled in it
     rope.rotation.x = Math.PI / 2;
     rope.position.set(w * 0.2, 1.06, -l * 0.33);
+    rope.userData.prop = 'cargo'; // (a decorative load in the bed)
     group.add(rope);
     const prop = outboard(group, 0, 1.1, -l / 2 - 0.2, 1);
     for (const side of [-1, 1]) {
@@ -1512,8 +1514,9 @@ export const MODELS = {
       wheel(group, R, 0.24, side * (w / 2 - 0.05), R, -l * 0.31, lambert(0xc4c8ce));
     }
     const prop = outboard(group, 0, 1.1, -l * 0.48 - 0.2, 1);
-    box(group, lambert(0xd9c9a8), 0.06, 1.2, 0.06, 0, 2.6, l * 0.1);                   // the little mast on the roof,
+    box(group, lambert(0xd9c9a8), 0.06, 1.2, 0.06, 0, 2.6, l * 0.1).userData.prop = 'roof';  // the little mast on the roof (a roof ornament, tagged),
     const pennant = prism(group, lambert(0xd8262b), 0.02, [[0, 3.15], [0, 2.9], [-0.6, 3.03]]); // its pennant, made at z 0
+    pennant.userData.prop = 'roof';
     pennant.position.z = l * 0.1; // and moved to the mast, so it flaps about the mast (it swung about the van's middle)
     box(group, trim, w + 0.04, 0.16, 0.12, 0, 0.5, l * 0.48 + 0.04);                     // bumper
     group.userData = { body, animate: (t) => { prop.rotation.z = t * 20; pennant.rotation.y = Math.sin(t * 5) * 0.2; } };
@@ -1589,8 +1592,8 @@ export const MODELS = {
     box(shell, paint, w * 0.98, 0.08, l * 0.74, 0, 1.92, -l * 0.1);                // ...its roof
     screen(shell, glass, w * 0.9, 0.05, 0.55, 0, 1.6, l * 0.28, 0.5);                // windscreen
     for (const z of [0.25, 0.04, -0.17, -0.4]) for (const side of [-1, 1]) box(shell, paint, 0.08, 0.54, 0.12, side * w * 0.485, 1.62, l * z); // pillars: three rows of windows
-    for (const side of [-1, 1]) box(shell, trim, 0.06, 0.06, l * 0.62, side * w * 0.38, 2.0, -l * 0.1); // roof rack rails...
-    for (const z of [0.1, -0.15, -0.38]) box(shell, trim, w * 0.8, 0.05, 0.06, 0, 2.03, l * z);         // ...and bars
+    for (const side of [-1, 1]) box(shell, trim, 0.06, 0.06, l * 0.62, side * w * 0.38, 2.0, -l * 0.1).userData.prop = 'roof'; // roof rack rails...
+    for (const z of [0.1, -0.15, -0.38]) box(shell, trim, w * 0.8, 0.05, 0.06, 0, 2.03, l * z).userData.prop = 'roof'; // ...and bars
     box(shell, chrome, w * 0.6, 0.34, 0.06, 0, 1.12, l / 2 + 0.02);                // the chrome grille...
     for (const y of [1.02, 1.12, 1.22]) box(shell, trim, w * 0.58, 0.03, 0.04, 0, y, l / 2 + 0.05); // ...its bars
     box(shell, chrome, w + 0.1, 0.26, 0.2, 0, 0.58, l / 2 + 0.06);                 // chrome bumpers
