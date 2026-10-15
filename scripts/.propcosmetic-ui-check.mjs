@@ -67,7 +67,7 @@ try {
   // ---- locked tabs (the owner, 15-Oct: a slot the car cannot wear has its TAB locked, not selectable, with the reason; the open tab falls back to Wheels) ----
   {
     const locked = (id) => SLOTS.filter(sl => !st(id, sl).ok).join();
-    check(locked('moke') === 'roof,wing' && locked('touringcar') === 'cargo' && locked('minibus') === 'cargo' && locked('sporttruck') === '' && locked(noEntry.id) === 'roof,cargo,wing', 'locked tabs: moke roof + wing, touringcar cargo, minibus cargo, sporttruck none, a car with no table entry (' + noEntry.id + ') all three');
+    check(locked('moke') === 'roof' && locked('touringcar') === 'cargo' && locked('minibus') === 'cargo' && locked('sporttruck') === '' && locked(noEntry.id) === 'roof,cargo,wing', 'locked tabs: moke roof (an open car; its rear deck takes a wing since the placement audit, CHECKLIST 307), touringcar cargo, minibus cargo, sporttruck none, a car with no table entry (' + noEntry.id + ') all three');
     check(/tab\.setAttribute\('aria-disabled', String\(!st\.ok\)\)/.test(ui) && /tab\.setAttribute\('aria-label', st\.ok \? [^:]+: lockReason\(slot\)\)/.test(ui) && /tab\.title = st\.ok/.test(ui) && /cz-lockline/.test(ui) && /Not available for this car yet/.test(ui), "a locked tab is aria-disabled, carries the reason in its aria-label and tooltip, and shows a padlock and 'Locked'");
     check(/if \(slot\.prop && !slotStatus\(state\.car, slot\.id\)\.ok\) flash\(tabMsg, lockReason\(slot\.id\)\)/.test(ui) && /!slotStatus\(car, openSlot\)\.ok\) \{ flash\(tabMsg, ''\); openSection\('wheels'\)/.test(ui), 'a tap on a locked tab opens nothing and shows the one-line reason; a locked open tab falls back to Wheels');
     check(!/aria-disabled', String\(!st\.ok\)\);\n\s*b\.classList/.test(ui) && /sec\.node\.classList\.toggle\('unsupported'/.test(ui), 'wheels and number plate tabs are not made lockable (only slots flagged prop)');
@@ -127,7 +127,7 @@ try {
     const legend = makeShowCar({ ...car('rally'), legend: true });
     check(D.propPlan(legend).worn.length === 0 && D.propPlan(legend).status === 'legend', 'a Legendary car is not dressed with props');
     const moke = makeShowCar(car('moke'));
-    check(D.propPlan(moke).worn.length === 0, 'the Moke: roof and wing unsupported, nothing worn');
+    check(D.propPlan(moke).worn.join() === 'wing', 'the Moke: roof unsupported (an open car), so only the wing is worn');
     const traffic = new THREE.Group();
     check(D.propPlan(traffic) === null && D.dressProps(traffic, null) === traffic && D.propPlan(traffic).worn.length === 0, 'a model that is not dressed (traffic) has no plan; dressing one with no car adds nothing');
     D.setProp('roof', 'none'); D.setProp('wing', 'none');

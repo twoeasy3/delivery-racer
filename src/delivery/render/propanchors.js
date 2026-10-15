@@ -15,7 +15,7 @@
 // entry per CAR ID (a Super's body kit adds a wing and roof lamps, so a Super has a row of its own): { roof, cargo, wing }, a slot
 // either { no: 'why' } or { box: [s, x, y, z, yaw?], cyl: [s, x, y, z, yaw?], from, lim, inset?, existing?, conf? }: s = the uniform scale,
 // (x, y, z) = the shape's centre with its base on the highest surface point under it, `inset` = [box, cyl] metres the shapes are SUNK
-// into a curved surface (absent = 0: flat), `from` = the surface it stands on ('roof', 'roof-curved', 'deck', 'roof-edge'), `lim` = what
+// into a curved surface (absent = 0: flat), `from` = the surface it stands on ('roof', 'roof-curved', 'deck', 'roof-edge', 'deck-edge': a wing whose rear hangs back over the tail), `lim` = what
 // limited the scale ('w' width, 'd' depth, 'h' height, 'max' the cap, 'inset' the surface's curve), existing = the car already has a prop
 // of that slot (tagged), conf 'measured' (the generator) or 'hand' (HAND below).
 // THE DATA, PER SLICE (five sweeping agents, one slice each, never the same file): render/propanchors/slice-<n>.json, each
@@ -47,11 +47,10 @@ export const PROP_BOUNDS = {
 };
 // the smallest scale worth having (below it the slot is unsupported: "too small")
 export const MIN_SCALE = { roof: 0.35, cargo: 0.4, wing: 0.45 }; // (a 0.35 roof: a small ornament on a short coupe roof in front of its rear-edge wing)
-// the largest scale (a roof box as big as a van's whole roof is no ornament): the roof's cap depends on the KIND (the owner, 15-Oct:
-// 1.5 on a van, bus or truck, 1.1 on a car)
-export const MAX_SCALE = { roof: 1.1, cargo: 1.6, wing: 1.3 };
-export const ROOF_CAP_BIG = 1.5, BIG_KINDS = new Set(['van', 'bus', 'truck', 'flatbed', 'halftrack']);
-export const maxScale = (slot, kind) => (slot === 'roof' && BIG_KINDS.has(kind) ? ROOF_CAP_BIG : MAX_SCALE[slot]);
+// NO CAP (the owner, 15-Oct: "lift the size caps, only keep a size floor"): each shape takes the largest uniform scale the free surface allows
+// (scripts/prop-audit-lib.mjs: on the surface with at most 5 cm of inset, touching nothing drawn and no other slot's shapes, a wing at most
+// 95 % of the width of the surface it stands on). maxScale stays as the one place a cap would go, and returns Infinity.
+export const maxScale = (slot, kind) => { void slot; void kind; return Infinity; };
 
 // what each car IS, for the generator's rules (scripts/prop-anchors.mjs): by car id, else by model name, else 'car'.
 //   hatch saloon coupe sports estate suv  closed road cars: roof and wing measured, no cargo

@@ -1,9 +1,10 @@
 // The PROP BOUNDS generator (CHECKLIST 300; the owner, 15-Oct: "Audit every car for roof prop and cargo prop space ... render a Box and a
 // Cylinder for each, and this will be our bounds for the customisations ... Do the same for a Rear Wing"; PROP-AUDIT-GUIDE.md). Modelled
 // on scripts/plate-anchors.mjs: for the cars of a SLICE (scripts/prop-slices.mjs) it builds each model as the showroom does
-// (render/showcar.js makeShowCar), hides the car's own tagged props (render/propcosmetic.js), rasterises the top surface and measures the
-// free flat space of the three slots (scripts/prop-anchors-lib.mjs), fits the CANONICAL shapes (render/propanchors.js PROP_BOUNDS) at the
-// largest uniform scale, and writes the slice's GENERATED data file src/delivery/render/propanchors/slice-<n>.json (its `cars`; the file's
+// (render/showcar.js makeShowCar) and finds each slot's place with scripts/prop-audit-lib.mjs `optimum` (CHECKLIST 307: the car's triangles,
+// that slot's own tagged props hidden, everything else an obstacle; the CANONICAL shapes of render/propanchors.js PROP_BOUNDS at the largest
+// uniform scale that stands on the body with at most 5 cm of inset (3 cm preferred), touches nothing and no other slot's shapes, a wing at
+// most 95 % of the surface's width and at the rear-most such place; no cap, the MIN_SCALE floor), and writes the slice's GENERATED data file src/delivery/render/propanchors/slice-<n>.json (its `cars`; the file's
 // `hand` block, the slice's hand fixes, is kept as it is). The reader merges every slice file (render/propanchors.js).
 //   node scripts/prop-anchors.mjs --slice <n>             measure that slice's cars, print the table, write slice-<n>.json
 //   node scripts/prop-anchors.mjs --slice <n> --dry       the same, write nothing
@@ -15,7 +16,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { startModels } from './modelpatch-load.mjs';
 import { roster } from './prop-roster.mjs';
 import { slicesOf, sliceOfCar } from './prop-slices.mjs';
-import { measureCar } from './prop-anchors-lib.mjs';
+import { carGeometry, optimum, toEntry } from './prop-audit-lib.mjs';
 
 const args = process.argv.slice(2);
 const flag = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
@@ -34,6 +35,24 @@ const writeSlice = (n, data) => {
 // the table's entry for one slot (strip the generator's own eyes)
 const entry = (e) => { if (!e) return null; if (e.no) return e.existing ? { no: e.no, existing: true } : { no: e.no }; const out = { box: e.box, cyl: e.cyl, from: e.from, lim: e.lim }; if (e.inset) out.inset = e.inset; if (e.existing) out.existing = true; return out; };
 
+// one car's three slots (scripts/prop-audit-lib.mjs: the car's triangles as drawn, each slot's search with that slot's own tagged props
+// hidden and everything else an obstacle; NO CAP, the MIN_SCALE floor; the KIND says which slots a car may have at all)
+const NO_ROOF = { open: 'an open car: no roof', canopy: 'a canopy or bubble roof: nothing flat to stand on', craft: 'a craft, not a car', tank: 'a tank', micro: 'a microcar: too small', bike: 'a bike' };
+const NO_WING = { canopy: 'a canopy roof with no deck or edge', craft: 'a craft', tank: 'a tank', micro: 'a microcar', bike: 'a bike' };
+const CARGO_KINDS = new Set(['pickup', 'flatbed', 'halftrack', 'open', 'truck', 'special']);
+const measureCar = (model, car, P, glassy) => {
+  const g = carGeometry(model, glassy), kind = P.kindOf(car);
+  const { opt, info } = optimum(g, P, kind);
+  const slot = (name, no, why) => {
+    if (no) return { no };
+    return toEntry(name, opt[name + '-box'], opt[name + '-cyl'], info, P.maxScale(name, kind)) || { no: why };
+  };
+  return { kind,
+    roof: slot('roof', NO_ROOF[kind], 'no place over the glasshouse takes the smallest roof prop (scale ' + P.MIN_SCALE.roof + ') on the body with at most 5 cm of inset, clear of the wing'),
+    cargo: slot('cargo', CARGO_KINDS.has(kind) ? null : 'a closed body: no load deck', 'no deck behind the cab takes the smallest load (scale ' + P.MIN_SCALE.cargo + ') with at most 5 cm of inset, touching nothing'),
+    wing: slot('wing', NO_WING[kind], 'no rear deck or roof edge takes the smallest wing (scale ' + P.MIN_SCALE.wing + ') off the glass, with at most 5 cm of inset, touching nothing') };
+};
+
 // measure: every car of `list` ([{ group, car }])
 export const generate = async (load, list) => {
   const { makeShowCar } = await load('render/showcar.js');
@@ -47,7 +66,6 @@ export const generate = async (load, list) => {
     model.parent?.remove(model);
     model.userData.animate?.(0);
     const props = PC.existingProps(model);
-    PC.hideProps(model);
     const m = measureCar(model, car, P, glassy);
     for (const slot of P.SLOTS) if (props.some(p => p.slot === slot)) m[slot].existing = true; // (on an unsupported slot too: the car has its own, and no place for another)
     found.set(car.id, { group, kind: m.kind, roof: m.roof, cargo: m.cargo, wing: m.wing, props: props.map(p => p.slot) });

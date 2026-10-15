@@ -2,38 +2,24 @@
  "slice": 5,
  "note": "GENERATED `cars` by scripts/prop-anchors.mjs --slice 5 (do not edit); `hand` is this slice's hand fixes (render/propanchors.js), edited by hand",
  "cars": {
-  "armouredlimo": {
+  "armoured": {
    "roof": {
-    "box": [1.1, 0, 2.02, -0.64],
-    "cyl": [1.1, 0, 2.02, -0.64],
+    "box": [2.1, 0, 2.955, -1.38],
+    "cyl": [2.33, 0, 3.013, -1.38],
     "from": "roof",
-    "lim": "max",
-    "inset": [0.01, 0.011]
-   },
-   "cargo": {
-    "no": "a closed body: no load deck"
-   },
-   "wing": {
-    "no": "the roof edge is too narrow for a wing (-0.06 m)"
-   }
-  },
-  "autobahnestate": {
-   "roof": {
-    "box": [1.1, 0, 1.661, -0.96],
-    "cyl": [1.1, 0, 1.662, -0.96],
-    "from": "roof",
-    "lim": "max",
+    "lim": "fit",
+    "inset": [0.03, 0.03],
     "existing": true
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.95, 0, 1.619, -2.117],
-    "cyl": [0.95, 0, 1.595, -2.117],
+    "box": [1.32, 0, 2.661, -2.68],
+    "cyl": [1.32, 0, 2.628, -2.68],
     "from": "roof-edge",
-    "lim": "w",
-    "inset": [0.014, 0.014]
+    "lim": "fit",
+    "inset": [0.03, 0.03]
    }
   },
   "bathtub": {
@@ -41,33 +27,70 @@
     "no": "an open car: no roof"
    },
    "cargo": {
-    "no": "the deck behind the cabin is too small (under 0.3 x 0.3 m)"
+    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "no": "an open car with no rear deck"
+    "box": [0.83, 0, 1.395, -1.447],
+    "cyl": [0.83, 0, 1.375, -1.447],
+    "from": "deck-edge",
+    "lim": "fit"
+   }
+  },
+  "boathauler": {
+   "roof": {
+    "box": [1.17, 0, 2.023, 1],
+    "cyl": [1.04, 0, 1.99, 1],
+    "from": "roof",
+    "lim": "fit"
+   },
+   "cargo": {
+    "box": [0.87, 0, 1.478, -0.88],
+    "cyl": [0.87, 0, 1.478, -0.8],
+    "from": "deck",
+    "lim": "fit",
+    "existing": true
+   },
+   "wing": {
+    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
    }
   },
   "cabledrum": {
    "roof": {
-    "box": [1.27, 0, 2.607, 3.76],
-    "cyl": [1.13, 0, 2.572, 3.76],
-    "from": "roof-clear",
-    "lim": "d",
-    "inset": [0.08, 0.08]
+    "box": [1.36, 0, 2.63, 3.662],
+    "cyl": [1.21, 0, 2.592, 3.662],
+    "from": "roof",
+    "lim": "fit"
    },
    "cargo": {
-    "box": [1.6, 0, 1.708, -1.84],
-    "cyl": [1.6, 0, 1.708, -1.84],
+    "box": [1.66, 0, 1.732, 0.942],
+    "cyl": [1.66, 0, 1.732, 1.102],
     "from": "deck",
-    "lim": "max",
+    "lim": "fit",
     "inset": [0.008, 0.008],
     "existing": true
    },
    "wing": {
-    "box": [1.3, 0, 2.517, 3.015],
-    "cyl": [1.3, 0, 2.485, 3.015],
+    "box": [1.6, 0, 2.57, 2.882],
+    "cyl": [1.6, 0, 2.53, 2.882],
     "from": "roof-edge",
-    "lim": "max"
+    "lim": "fit"
+   }
+  },
+  "camper": {
+   "roof": {
+    "box": [1.77, 0, 2.742, -0.07],
+    "cyl": [1.97, 0, 2.792, -0.07],
+    "from": "roof",
+    "lim": "fit"
+   },
+   "cargo": {
+    "no": "a closed body: no load deck"
+   },
+   "wing": {
+    "box": [0.97, 0, 2.07, -2.09],
+    "cyl": [1.12, 0, 2.068, -2.09],
+    "from": "roof-edge",
+    "lim": "fit"
    }
   },
   "cigar": {
@@ -75,48 +98,66 @@
     "no": "an open car: no roof"
    },
    "cargo": {
-    "no": "the deck behind the cabin is too small (under 0.3 x 0.3 m)"
+    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "no": "an open car with no rear deck"
+    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
    }
   },
   "circuswagon": {
    "roof": {
-    "box": [1.1, 0, 2.855, -0.48],
-    "cyl": [1.1, 0, 2.855, -0.48],
+    "box": [2.13, 0, 3.112, -0.89],
+    "cyl": [2.36, 0, 3.17, -0.93],
     "from": "roof",
-    "lim": "max"
+    "lim": "fit"
    },
    "cargo": {
-    "no": "the deck behind the cabin is too small (under 0.3 x 0.3 m)"
+    "box": [0.68, 0, 1.362, -1.57],
+    "cyl": [0.74, 0, 1.386, -1.65],
+    "from": "deck",
+    "lim": "fit",
+    "inset": [0, 0.03]
    },
    "wing": {
-    "box": [1.24, 0, 2.797, -2.074],
-    "cyl": [1.24, 0, 2.766, -2.074],
-    "from": "roof-edge",
-    "lim": "w"
+    "box": [1.33, 0, 2.813, -2.23],
+    "cyl": [1.33, 0, 2.779, -2.23],
+    "from": "deck-edge",
+    "lim": "fit"
    }
   },
-  "cranelorry": {
+  "corrugated": {
    "roof": {
-    "box": [0.87, 0, 2.987, 1.88],
-    "cyl": [0.77, 0, 2.962, 1.88],
-    "from": "roof-clear",
-    "lim": "d"
+    "box": [2.04, 0, 2.83, -0.36],
+    "cyl": [2.24, 0, 2.88, -0.32],
+    "from": "roof",
+    "lim": "fit"
    },
    "cargo": {
-    "box": [0.88, 0, 1.552, -2.26],
-    "cyl": [1.06, 0, 1.624, -2.26],
-    "from": "deck",
-    "lim": "d",
-    "existing": true
+    "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.3, 0, 2.997, 1.295],
-    "cyl": [1.3, 0, 2.965, 1.295],
+    "box": [1.36, 0, 2.558, -2.02],
+    "cyl": [1.36, 0, 2.524, -2.02],
     "from": "roof-edge",
-    "lim": "max"
+    "lim": "fit"
+   }
+  },
+  "creamvan": {
+   "roof": {
+    "box": [2.29, 0, 2.673, -0.67],
+    "cyl": [2.54, 0, 2.736, -0.67],
+    "from": "roof",
+    "lim": "fit",
+    "existing": true
+   },
+   "cargo": {
+    "no": "a closed body: no load deck"
+   },
+   "wing": {
+    "box": [1.29, 0, 2.326, -2.33],
+    "cyl": [1.29, 0, 2.293, -2.33],
+    "from": "roof-edge",
+    "lim": "fit"
    }
   },
   "dodgem": {
@@ -124,10 +165,27 @@
     "no": "an open car: no roof"
    },
    "cargo": {
-    "no": "the deck behind the cabin is too small (under 0.3 x 0.3 m)"
+    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "no": "an open car with no rear deck"
+    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
+   }
+  },
+  "doubledecker": {
+   "roof": {
+    "box": [2.44, 0, 4.985, 0.07],
+    "cyl": [2.71, 0, 5.053, 0.11],
+    "from": "roof",
+    "lim": "fit"
+   },
+   "cargo": {
+    "no": "a closed body: no load deck"
+   },
+   "wing": {
+    "box": [1.66, 0, 4.666, -4.03],
+    "cyl": [1.66, 0, 4.624, -4.03],
+    "from": "roof-edge",
+    "lim": "fit"
    }
   },
   "duckwagon": {
@@ -135,64 +193,62 @@
     "no": "an open car: no roof"
    },
    "cargo": {
-    "box": [1.05, 0, 1.48, -2.28],
-    "cyl": [1.18, 0, 1.532, -2.28],
+    "box": [1.08, 0, 1.492, 0.409],
+    "cyl": [1.2, 0, 1.54, 0.449],
     "from": "deck",
-    "lim": "d"
+    "lim": "fit"
    },
    "wing": {
-    "no": "an open car with no rear deck"
+    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
    }
   },
-  "farmtractor": {
+  "dunebuggy": {
    "roof": {
     "no": "an open car: no roof"
    },
    "cargo": {
-    "no": "the deck behind the cabin is too small (under 0.3 x 0.3 m)"
+    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "no": "an open car with no rear deck"
+    "box": [0.53, 0, 1.083, -1.135],
+    "cyl": [0.53, 0, 1.07, -1.135],
+    "from": "deck",
+    "lim": "fit"
    }
   },
-  "finlandyacht": {
+  "foodtruck": {
    "roof": {
-    "box": [1.09, 0, 1.738, -0.42],
-    "cyl": [1.1, 0, 1.741, -0.42],
+    "box": [2.5, 0, 3.325, -0.75],
+    "cyl": [2.77, 0, 3.393, -0.75],
     "from": "roof",
-    "lim": "w",
-    "inset": [0.011, 0.013]
+    "lim": "fit",
+    "existing": true
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.84, 0, 1.602, -1.374],
-    "cyl": [0.84, 0, 1.581, -1.374],
+    "box": [1.56, 0, 2.973, -3.29],
+    "cyl": [1.56, 0, 2.934, -3.29],
     "from": "roof-edge",
-    "lim": "w",
-    "inset": [0.072, 0.072]
+    "lim": "fit"
    }
   },
-  "flatbed": {
+  "funeralcoach": {
    "roof": {
-    "box": [0.87, 0, 2.468, 0.6],
-    "cyl": [0.77, 0, 2.443, 0.6],
-    "from": "roof-clear",
-    "lim": "d"
+    "box": [1.55, 0, 1.988, -0.46],
+    "cyl": [1.71, 0, 2.028, -0.46],
+    "from": "roof",
+    "lim": "fit"
    },
    "cargo": {
-    "box": [1.55, 0, 1.725, -1.22],
-    "cyl": [1.55, 0, 1.725, -1.22],
-    "from": "deck",
-    "lim": "h",
-    "existing": true
+    "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.92, 0, 2.411, 0.038],
-    "cyl": [0.92, 0, 2.388, 0.038],
+    "box": [1.11, 0, 1.794, -2.84],
+    "cyl": [1.11, 0, 1.767, -2.84],
     "from": "roof-edge",
-    "lim": "w"
+    "lim": "fit"
    }
   },
   "gameviewer": {
@@ -200,29 +256,51 @@
     "no": "an open car: no roof"
    },
    "cargo": {
-    "no": "the deck behind the cabin is too small (under 0.3 x 0.3 m)"
+    "box": [0.63, 0, 1.712, 0.583],
+    "cyl": [0.76, 0, 1.764, 0.583],
+    "from": "deck",
+    "lim": "fit",
+    "inset": [0.01, 0.01]
    },
    "wing": {
-    "no": "an open car with no rear deck"
+    "box": [1.32, 0, 2.641, -2.717],
+    "cyl": [1.32, 0, 2.608, -2.717],
+    "from": "roof-edge",
+    "lim": "fit",
+    "inset": [0.02, 0.02]
    }
   },
   "glassbrake": {
    "roof": {
-    "box": [0.92, 0, 1.468, -0.42],
-    "cyl": [0.82, 0, 1.443, -0.42],
-    "from": "roof-clear",
-    "lim": "d",
-    "inset": [0.059, 0.059]
+    "box": [1.1, 0, 1.493, -0.42],
+    "cyl": [0.69, 0, 1.406, -0.42],
+    "from": "roof",
+    "lim": "fit",
+    "inset": [0.044, 0.049]
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.78, 0, 1.306, -0.983],
-    "cyl": [0.78, 0, 1.286, -0.983],
+    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
+   }
+  },
+  "golfcart": {
+   "roof": {
+    "no": "an open car: no roof"
+   },
+   "cargo": {
+    "box": [0.56, 0, 0.994, -0.951],
+    "cyl": [0.67, 0, 1.038, -0.951],
+    "from": "deck",
+    "lim": "fit",
+    "existing": true
+   },
+   "wing": {
+    "box": [0.85, 0, 1.959, -0.731],
+    "cyl": [0.85, 0, 1.937, -0.731],
     "from": "roof-edge",
-    "lim": "w",
-    "inset": [0.01, 0.01]
+    "lim": "fit"
    }
   },
   "gyrocar": {
@@ -236,136 +314,86 @@
     "no": "a microcar"
    }
   },
-  "halftrack": {
+  "hovercraft": {
    "roof": {
-    "box": [0.62, 0, 2.595, -1.42],
-    "cyl": [0.68, 0, 2.61, -1.42],
-    "from": "roof",
-    "lim": "w",
-    "inset": [0.029, 0.029]
-   },
-   "cargo": {
-    "no": "the deck behind the cabin is too small (under 0.3 x 0.3 m)"
-   },
-   "wing": {
-    "no": "the roof edge is too narrow for a wing (-0.06 m)"
-   }
-  },
-  "hillclimb": {
-   "roof": {
-    "no": "a curved roof: even the smallest prop would sink more than 8 cm into it"
+    "no": "a craft, not a car"
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.24, 0, 1.207, -1.364],
-    "cyl": [1.24, 0, 1.176, -1.364],
-    "from": "deck",
-    "lim": "w",
-    "existing": true
+    "no": "a craft"
    }
   },
   "iceresurfacer": {
    "roof": {
-    "box": [1.09, 0, 2.673, 1.44],
-    "cyl": [1.1, 0, 2.675, 1.44],
-    "from": "roof-clear",
-    "lim": "w"
+    "box": [1.32, 0, 2.73, 1.38],
+    "cyl": [1.44, 0, 2.76, 1.38],
+    "from": "roof",
+    "lim": "fit",
+    "inset": [0.03, 0.016]
    },
    "cargo": {
-    "no": "the deck behind the cabin is too small (under 0.3 x 0.3 m)"
+    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "box": [0.75, 0, 2.531, 0.773],
-    "cyl": [0.75, 0, 2.513, 0.773],
-    "from": "roof-edge",
-    "lim": "w"
+    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
    }
   },
   "jeepney": {
    "roof": {
-    "box": [1.5, 0, 2.435, -0.58],
-    "cyl": [1.5, 0, 2.435, -0.58],
+    "box": [2.04, 0, 2.57, -0.47],
+    "cyl": [2.29, 0, 2.632, -0.43],
     "from": "roof",
-    "lim": "max",
+    "lim": "fit",
     "existing": true
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.3, 0, 2.287, -2.825],
-    "cyl": [1.3, 0, 2.255, -2.825],
-    "from": "roof-edge",
-    "lim": "max"
+    "box": [1.21, 0, 2.272, -2.93],
+    "cyl": [1.21, 0, 2.241, -2.93],
+    "from": "deck-edge",
+    "lim": "fit"
    }
   },
-  "keivan": {
+  "mixer": {
    "roof": {
-    "box": [1.34, 0, 2.215, -0.32],
-    "cyl": [1.48, 0, 2.25, -0.32],
+    "box": [1.44, 0, 2.81, 2.413],
+    "cyl": [1.28, 0, 2.77, 2.413],
     "from": "roof",
-    "lim": "w"
+    "lim": "fit"
    },
    "cargo": {
-    "no": "a closed body: no load deck"
-   },
-   "wing": {
-    "box": [0.95, 0, 2.046, -1.597],
-    "cyl": [0.95, 0, 2.022, -1.597],
-    "from": "roof-edge",
-    "lim": "w"
-   }
-  },
-  "minibus": {
-   "roof": {
-    "box": [1.5, 0, 2.585, -0.52],
-    "cyl": [1.5, 0, 2.585, -0.52],
-    "from": "roof",
-    "lim": "max",
-    "existing": true
-   },
-   "cargo": {
-    "no": "a closed body: no load deck"
-   },
-   "wing": {
-    "box": [1.3, 0, 2.438, -2.145],
-    "cyl": [1.3, 0, 2.405, -2.145],
-    "from": "roof-edge",
-    "lim": "w"
-   }
-  },
-  "moke": {
-   "roof": {
-    "no": "an open car: no roof"
-   },
-   "cargo": {
-    "box": [0.75, 0, 0.63, -0.94],
-    "cyl": [0.89, 0, 0.686, -0.94],
+    "box": [0.7, 0, 1.25, 1.173],
+    "cyl": [0.84, 0, 1.306, -2.707],
     "from": "deck",
-    "lim": "d",
-    "existing": true
+    "lim": "fit"
    },
    "wing": {
-    "no": "an open car with no rear deck"
+    "box": [1.41, 0, 2.697, 1.593],
+    "cyl": [1.41, 0, 2.662, 1.593],
+    "from": "roof-edge",
+    "lim": "fit"
    }
   },
-  "moorrover": {
+  "motorhome": {
    "roof": {
-    "box": [1.1, 0, 2.085, -0.82],
-    "cyl": [1.1, 0, 2.085, -0.82],
+    "box": [2.6, 0, 3.25, -0.19],
+    "cyl": [2.89, 0, 3.322, -0.19],
     "from": "roof",
-    "lim": "max"
+    "lim": "fit",
+    "existing": true
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.1, 0, 2.002, -2.095],
-    "cyl": [1.1, 0, 1.975, -2.095],
+    "box": [1.49, 0, 2.861, -3.01],
+    "cyl": [1.63, 0, 2.844, -3.01],
     "from": "roof-edge",
-    "lim": "w"
+    "lim": "fit"
    }
   },
   "mower": {
@@ -373,115 +401,139 @@
     "no": "an open car: no roof"
    },
    "cargo": {
-    "no": "the deck behind the cabin is too small (under 0.3 x 0.3 m)"
+    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "no": "an open car with no rear deck"
-   }
-  },
-  "pixelev": {
-   "roof": {
-    "box": [1.1, 0, 1.918, -0.6],
-    "cyl": [1.1, 0, 1.918, -0.6],
-    "from": "roof",
-    "lim": "max",
-    "inset": [0.015, 0.016]
-   },
-   "cargo": {
-    "no": "a closed body: no load deck"
-   },
-   "wing": {
-    "box": [1.18, 0, 1.828, -1.483],
-    "cyl": [1.18, 0, 1.799, -1.483],
-    "from": "roof-edge",
-    "lim": "w",
-    "inset": [0.016, 0.016]
+    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
    }
   },
   "pocket4x4": {
    "roof": {
-    "box": [1.02, 0, 1.955, -0.42],
-    "cyl": [1.1, 0, 1.975, -0.42],
+    "box": [1.32, 0, 2.03, -0.28],
+    "cyl": [1.47, 0, 2.068, -0.28],
     "from": "roof",
-    "lim": "w"
+    "lim": "fit",
+    "inset": [0.025, 0.027]
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.7, 0, 1.823, -1.435],
-    "cyl": [0.7, 0, 1.805, -1.435],
+    "box": [0.86, 0, 1.851, -1.3],
+    "cyl": [0.86, 0, 1.829, -1.3],
     "from": "roof-edge",
-    "lim": "w"
+    "lim": "fit"
+   }
+  },
+  "policewagon": {
+   "roof": {
+    "box": [2.14, 0, 2.685, -0.78],
+    "cyl": [2.34, 0, 2.735, -0.78],
+    "from": "roof",
+    "lim": "fit",
+    "existing": true
+   },
+   "cargo": {
+    "no": "a closed body: no load deck"
+   },
+   "wing": {
+    "box": [1.36, 0, 2.388, -2.52],
+    "cyl": [1.36, 0, 2.354, -2.52],
+    "from": "roof-edge",
+    "lim": "fit"
    }
   },
   "pushbacktug": {
    "roof": {
-    "box": [1.1, 0, 2.335, -1.4],
-    "cyl": [1.1, 0, 2.335, -1.4],
+    "box": [1.42, 0, 2.415, -1.43],
+    "cyl": [1.42, 0, 2.415, -1.47],
     "from": "roof",
-    "lim": "max"
+    "lim": "fit"
    },
    "cargo": {
-    "box": [0.98, 0, 1.452, -0.2],
-    "cyl": [1.18, 0, 1.532, -0.2],
-    "from": "deck",
-    "lim": "d"
+    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "box": [0.78, 0, 2.196, -2.423],
-    "cyl": [0.78, 0, 2.177, -2.423],
+    "box": [1.06, 0, 2.245, -2.49],
+    "cyl": [1.06, 0, 2.219, -2.49],
     "from": "roof-edge",
-    "lim": "w"
+    "lim": "fit"
    }
   },
   "refuselorry": {
    "roof": {
-    "box": [0.39, 0, 2.949, -2.42],
-    "cyl": [0.35, 0, 2.939, -2.42],
-    "from": "roof-curved",
-    "lim": "inset",
-    "inset": [0.007, 0.007]
+    "box": [1.33, 0, 3.167, -1.4],
+    "cyl": [1.18, 0, 3.13, -1.4],
+    "from": "roof",
+    "lim": "fit",
+    "inset": [0.025, 0.025]
    },
    "cargo": {
-    "no": "the deck behind the cabin is too small (under 0.3 x 0.3 m)"
+    "box": [1.63, 0, 1.712, 0.64],
+    "cyl": [1.63, 0, 1.712, 0.8],
+    "from": "deck",
+    "lim": "fit"
    },
    "wing": {
-    "no": "the roof edge is too narrow for a wing (-0.06 m)"
+    "box": [1.41, 0, 3.347, -2.82],
+    "cyl": [1.41, 0, 3.311, -2.82],
+    "from": "roof-edge",
+    "lim": "fit",
+    "inset": [0.029, 0.029]
    }
   },
   "removalsvan": {
    "roof": {
-    "box": [1.5, 0, 3.375, -0.38],
-    "cyl": [1.5, 0, 3.375, -0.38],
+    "box": [2.14, 0, 3.535, -0.2],
+    "cyl": [2.39, 0, 3.598, -0.2],
     "from": "roof",
-    "lim": "max"
+    "lim": "fit"
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.3, 0, 3.228, -2.825],
-    "cyl": [1.3, 0, 3.195, -2.825],
+    "box": [1.4, 0, 3.245, -2.86],
+    "cyl": [1.4, 0, 3.21, -2.86],
     "from": "roof-edge",
-    "lim": "max"
+    "lim": "fit"
    }
   },
   "roadsweeper": {
    "roof": {
-    "box": [1.27, 0, 2.278, 1.56],
-    "cyl": [1.13, 0, 2.243, 1.56],
+    "box": [1.44, 0, 2.32, 1.586],
+    "cyl": [1.27, 0, 2.278, 1.586],
     "from": "roof",
-    "lim": "d"
+    "lim": "fit"
    },
    "cargo": {
-    "no": "the deck behind the cabin is too small (under 0.3 x 0.3 m)"
+    "box": [0.41, 0, 0.814, 0.146],
+    "cyl": [0.5, 0, 0.85, 0.146],
+    "from": "deck",
+    "lim": "fit"
    },
    "wing": {
-    "box": [1.24, 0, 2.177, 0.526],
-    "cyl": [1.24, 0, 2.146, 0.526],
+    "box": [1.27, 0, 2.182, 0.406],
+    "cyl": [1.27, 0, 2.151, 0.406],
     "from": "roof-edge",
-    "lim": "w"
+    "lim": "fit"
+   }
+  },
+  "schoolbus": {
+   "roof": {
+    "box": [2.38, 0, 3.575, -0.78],
+    "cyl": [2.65, 0, 3.643, -0.78],
+    "from": "roof",
+    "lim": "fit"
+   },
+   "cargo": {
+    "no": "a closed body: no load deck"
+   },
+   "wing": {
+    "box": [1.49, 0, 3.241, -5.28],
+    "cyl": [1.49, 0, 3.204, -5.28],
+    "from": "roof-edge",
+    "lim": "fit"
    }
   },
   "sevenroadster": {
@@ -489,16 +541,14 @@
     "no": "an open car: no roof"
    },
    "cargo": {
-    "box": [0.62, 0, 0.898, -0.46],
-    "cyl": [0.62, 0, 0.898, -0.46],
-    "from": "deck",
-    "lim": "h"
+    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "box": [0.55, 0, 0.746, -0.787],
-    "cyl": [0.55, 0, 0.732, -0.787],
+    "box": [0.93, 0, 0.813, -0.603],
+    "cyl": [0.97, 0, 0.795, -0.643],
     "from": "deck",
-    "lim": "w"
+    "lim": "fit",
+    "inset": [0.015, 0.019]
    }
   },
   "sidecar": {
@@ -514,90 +564,48 @@
   },
   "slantback": {
    "roof": {
-    "box": [1.09, 0, 1.669, -0.34],
-    "cyl": [1.1, 0, 1.672, -0.34],
+    "box": [1.31, 0, 1.726, -0.19],
+    "cyl": [1.35, 0, 1.736, -0.15],
     "from": "roof",
-    "lim": "w",
-    "inset": [0.01, 0.011]
+    "lim": "fit",
+    "inset": [0.029, 0.029]
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.95, 0, 1.146, -1.807],
-    "cyl": [0.95, 0, 1.123, -1.807],
-    "from": "deck",
-    "lim": "w",
-    "inset": [0.016, 0.016]
+    "box": [0.89, 0, 1.542, -0.93],
+    "cyl": [0.89, 0, 1.52, -0.93],
+    "from": "roof-edge",
+    "lim": "fit"
    }
   },
   "snailcamper": {
    "roof": {
-    "box": [0.47, 0, 1.813, 1.64],
-    "cyl": [0.42, 0, 1.801, 1.64],
-    "from": "roof-curved",
-    "lim": "d",
-    "inset": [0.018, 0.018]
+    "no": "no place over the glasshouse takes the smallest roof prop (scale 0.35) on the body with at most 5 cm of inset, clear of the wing"
    },
    "cargo": {
-    "no": "the deck behind the cabin is too small (under 0.3 x 0.3 m)"
+    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "no": "the roof edge is too narrow for a wing (0.38 m)"
+    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
    }
   },
-  "sporttruck": {
+  "steamwagon": {
    "roof": {
-    "box": [1.02, 0, 2.025, -0.18],
-    "cyl": [0.91, 0, 1.997, -0.18],
-    "from": "roof-clear",
-    "lim": "d"
+    "no": "an open car: no roof"
    },
    "cargo": {
-    "box": [1.08, 0, 1.232, -1.7],
-    "cyl": [1.3, 0, 1.32, -1.7],
+    "box": [0.69, 0, 1.656, -0.238],
+    "cyl": [0.83, 0, 1.712, -0.238],
     "from": "deck",
-    "lim": "d"
+    "lim": "fit"
    },
    "wing": {
-    "box": [1.24, 0, 1.987, -0.834],
-    "cyl": [1.24, 0, 1.956, -0.834],
-    "from": "roof-edge",
-    "lim": "w"
-   }
-  },
-  "sprinthatch": {
-   "roof": {
-    "box": [0.42, 0, 1.415, -0.18],
-    "cyl": [0.37, 0, 1.402, -0.18],
-    "from": "roof-curved-clear",
-    "lim": "d"
-   },
-   "cargo": {
-    "no": "a closed body: no load deck"
-   },
-   "wing": {
-    "box": [0.9, 0, 1.467, -0.565],
-    "cyl": [0.9, 0, 1.445, -0.565],
-    "from": "roof-edge",
-    "lim": "w"
-   }
-  },
-  "supermini": {
-   "roof": {
-    "box": [1.1, 0, 1.755, -0.6],
-    "cyl": [1.1, 0, 1.755, -0.6],
-    "from": "roof",
-    "lim": "max"
-   },
-   "cargo": {
-    "no": "a closed body: no load deck"
-   },
-   "wing": {
-    "box": [0.87, 0, 1.632, -1.529],
-    "cyl": [0.87, 0, 1.611, -1.529],
-    "from": "roof-edge",
-    "lim": "w"
+    "box": [0.93, 0, 1.543, -1.858],
+    "cyl": [0.83, 0, 1.504, -1.858],
+    "from": "deck",
+    "lim": "fit"
    }
   },
   "talltourer": {
@@ -605,80 +613,76 @@
     "no": "an open car: no roof"
    },
    "cargo": {
-    "box": [0.54, 0, 1.571, -0.62],
-    "cyl": [0.65, 0, 1.615, -0.62],
-    "from": "deck",
-    "lim": "d"
+    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "no": "an open car with no rear deck"
+    "box": [0.74, 0, 1.485, -0.875],
+    "cyl": [0.76, 0, 1.469, -0.875],
+    "from": "deck",
+    "lim": "fit"
    }
   },
-  "touringcar": {
+  "tipper": {
    "roof": {
-    "box": [1.1, 0, 1.632, -0.42],
-    "cyl": [1.08, 0, 1.627, -0.42],
+    "box": [2.39, 0, 3.147, 0.985],
+    "cyl": [2.49, 0, 3.172, 0.985],
     "from": "roof",
-    "lim": "max",
-    "inset": [0.007, 0.007]
+    "lim": "fit",
+    "inset": [0.021, 0.03]
+   },
+   "cargo": {
+    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing",
+    "existing": true
+   },
+   "wing": {
+    "box": [1.6, 0, 2.593, -3.795],
+    "cyl": [1.6, 0, 2.553, -3.795],
+    "from": "roof-edge",
+    "lim": "fit",
+    "inset": [0.012, 0.012]
+   }
+  },
+  "wrecker": {
+   "roof": {
+    "box": [1.04, 0, 2.355, 1.25],
+    "cyl": [0.92, 0, 2.325, 1.25],
+    "from": "roof",
+    "lim": "fit",
+    "existing": true
+   },
+   "cargo": {
+    "box": [1, 0, 1.56, -1.91],
+    "cyl": [1.2, 0, 1.64, -1.91],
+    "from": "deck",
+    "lim": "fit"
+   },
+   "wing": {
+    "box": [1.38, 0, 2.337, 0.63],
+    "cyl": [1.38, 0, 2.302, 0.63],
+    "from": "roof-edge",
+    "lim": "fit"
+   }
+  },
+  "yellowcab": {
+   "roof": {
+    "box": [1.89, 0, 2.053, -0.46],
+    "cyl": [2.14, 0, 2.115, -0.46],
+    "from": "roof",
+    "lim": "fit",
+    "existing": true
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.18, 0, 1.236, -1.893],
-    "cyl": [1.18, 0, 1.207, -1.893],
-    "from": "deck",
-    "lim": "w",
-    "existing": true
-   }
-  },
-  "trophytruck": {
-   "roof": {
-    "box": [0.82, 0, 2.072, -0.18],
-    "cyl": [0.73, 0, 2.049, -0.18],
-    "from": "roof",
-    "lim": "d",
-    "inset": [0.03, 0.03],
-    "existing": true
-   },
-   "cargo": {
-    "box": [0.51, 0, 1.433, -2.24],
-    "cyl": [0.62, 0, 1.477, -2.24],
-    "from": "deck",
-    "lim": "d",
-    "inset": [0.075, 0.075],
-    "existing": true
-   },
-   "wing": {
-    "box": [0.84, 0, 1.328, -2.424],
-    "cyl": [0.84, 0, 1.307, -2.424],
-    "from": "deck",
-    "lim": "w",
-    "inset": [0.027, 0.027]
-   }
-  },
-  "wedgemicro": {
-   "roof": {
-    "no": "a microcar: too small"
-   },
-   "cargo": {
-    "no": "a closed body: no load deck"
-   },
-   "wing": {
-    "no": "a microcar"
+    "box": [1.25, 0, 1.269, -2.52],
+    "cyl": [1.25, 0, 1.237, -2.52],
+    "from": "deck-edge",
+    "lim": "fit"
    }
   }
  },
  "hand": {
-  "roadsweeper": {
-   "roof": {
-    "box": [0.9, -0.3, 2.185, 1.3],
-    "cyl": [0.9, -0.3, 2.185, 1.3],
-    "from": "roof",
-    "lim": "hand"
-   }
-  },
   "gameviewer": {
    "roof": {
     "box": [1.1, 0, 2.665, -0.7],
@@ -690,50 +694,6 @@
   "sevenroadster": {
    "cargo": {
     "no": "an open roadster: the tail behind the seats is no load deck"
-   }
-  },
-  "refuselorry": {
-   "roof": {
-    "box": [0.7, 0.65, 2.855, 2.65],
-    "cyl": [0.7, 0.65, 2.855, 2.65],
-    "from": "roof",
-    "lim": "hand"
-   }
-  },
-  "cabledrum": {
-   "roof": {
-    "box": [1, 0, 2.54, 3.55],
-    "cyl": [1, 0, 2.54, 3.55],
-    "from": "roof",
-    "lim": "hand"
-   },
-   "wing": {
-    "box": [0.9, 0, 2.448, 3],
-    "cyl": [0.9, 0, 2.425, 3],
-    "from": "roof-edge",
-    "lim": "hand"
-   }
-  },
-  "cranelorry": {
-   "roof": {
-    "box": [1.2, 0, 3.07, 2.2],
-    "cyl": [1.2, 0, 3.07, 2.2],
-    "from": "roof",
-    "lim": "hand"
-   },
-   "wing": {
-    "box": [0.9, 0, 2.9275, 1.5],
-    "cyl": [0.9, 0, 2.905, 1.5],
-    "from": "roof-edge",
-    "lim": "hand"
-   }
-  },
-  "halftrack": {
-   "roof": {
-    "box": [0.9, 0, 2.435, 0.4],
-    "cyl": [0.9, 0, 2.435, 0.4],
-    "from": "roof",
-    "lim": "hand"
    }
   }
  }
