@@ -219,6 +219,25 @@
     "lim": "fit"
    }
   },
+  "eightieshatch": {
+   "roof": {
+    "box": [1.62, 0, 1.85, -0.31],
+    "cyl": [1.47, 0, 1.813, -0.31],
+    "from": "roof",
+    "lim": "fit",
+    "inset": [0.027, 0.015]
+   },
+   "cargo": {
+    "no": "a closed body: no load deck"
+   },
+   "wing": {
+    "box": [1.07, 0, 1.632, -1.13],
+    "cyl": [1.07, 0, 1.606, -1.13],
+    "from": "roof-edge",
+    "lim": "fit",
+    "inset": [0.045, 0.045]
+   }
+  },
   "foodtruck": {
    "roof": {
     "box": [2.5, 0, 3.325, -0.75],
@@ -414,6 +433,25 @@
     "inset": [0.022, 0.022]
    }
   },
+  "pebble": {
+   "roof": {
+    "box": [1.2, 0, 1.727, -0.417],
+    "cyl": [1.29, 0, 1.754, -0.417],
+    "from": "roof",
+    "lim": "fit",
+    "inset": [0.029, 0.048]
+   },
+   "cargo": {
+    "no": "a closed body: no load deck"
+   },
+   "wing": {
+    "box": [0.54, 0, 1.462, -1.077],
+    "cyl": [0.54, 0, 1.448, -1.077],
+    "from": "roof-edge",
+    "lim": "fit",
+    "inset": [0.049, 0.049]
+   }
+  },
   "pocket4x4": {
    "roof": {
     "box": [1.32, 0, 2.03, -0.28],
@@ -585,6 +623,25 @@
     "from": "deck-edge",
     "lim": "fit",
     "inset": [0.044, 0.044]
+   }
+  },
+  "smileyhatch": {
+   "roof": {
+    "box": [1.36, 0, 1.773, -0.45],
+    "cyl": [1.27, 0, 1.753, -0.45],
+    "from": "roof",
+    "lim": "fit",
+    "inset": [0.028, 0.021]
+   },
+   "cargo": {
+    "no": "a closed body: no load deck"
+   },
+   "wing": {
+    "box": [0.87, 0, 1.564, -1.15],
+    "cyl": [0.87, 0, 1.542, -1.15],
+    "from": "roof-edge",
+    "lim": "fit",
+    "inset": [0.049, 0.049]
    }
   },
   "snailcamper": {
