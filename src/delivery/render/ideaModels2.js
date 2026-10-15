@@ -246,9 +246,9 @@ export const IDEA_MODELS_2 = {
     box(group, paint, w, 0.34, L * 0.5, 0, 0.55, -L * 0.72);                                 // the body at the back
     box(group, trim, w * 0.96, 0.05, L * 0.5, 0, 0.745, -L * 0.72);                           // its rack
     for (const [x, c] of [[-0.22, 0x2e5a3a], [0.2, 0xa8282c]]) {                             // two golf bags
-      tube(group, lambert(c), 0.13, 0.62, x, 1.07, -L * 0.74);
-      blob(group, lambert(c), 0.13, 0.07, 0.13, x, 1.38, -L * 0.74);
-      for (const k of [-0.07, 0.07]) blob(group, k > 0 ? WHITE : lambert(CHROME), 0.045, 0.045, 0.045, x + k, 1.47, -L * 0.74);
+      tube(group, lambert(c), 0.13, 0.62, x, 1.07, -L * 0.74).userData.prop = 'cargo'; // (the golf bags: a decorative load, tagged cargo, hidden by a chosen cargo prop, render/propcosmetic.js)
+      blob(group, lambert(c), 0.13, 0.07, 0.13, x, 1.38, -L * 0.74).userData.prop = 'cargo';
+      for (const k of [-0.07, 0.07]) blob(group, k > 0 ? WHITE : lambert(CHROME), 0.045, 0.045, 0.045, x + k, 1.47, -L * 0.74).userData.prop = 'cargo';
     }
     box(group, WHITE, w * 1.04, 0.06, L * 1.5, 0, 1.78, -L * 0.1);                          // the roof
     for (const side of [-1, 1]) {
@@ -384,7 +384,7 @@ export const IDEA_MODELS_2 = {
     box(group, trim, w * 0.7, 0.25, L * 1.9, 0, 0.78, 0);                                    // the chassis
     const body = prism(group, paint, w * 0.98, [[-L * 0.98, 1.0], [L * 0.12, 1.0], [L * 0.12, 2.55], [-L * 0.98, 2.3]]); // the tipping body
     box(group, paint, w * 0.98, 0.1, L * 0.4, 0, 2.5, L * 0.32);                              // the shield over the cab
-    blob(group, earth, w * 0.4, 0.3, L * 0.4, 0, 2.35, -L * 0.42);                            // the load, heaped above the sides
+    blob(group, earth, w * 0.4, 0.3, L * 0.4, 0, 2.35, -L * 0.42).userData.prop = 'cargo';                            // the load, heaped above the sides
     box(group, dark, w * 0.84, 0.16, L * 0.1, 0, 1.08, -L - 0.02);                           // the tailgate's hinge strip
     box(group, paint, w * 0.92, 1.2, L * 0.32, 0, 1.5, L * 0.38);                            // the cab
     box(group, glass, w * 0.86, 0.5, 0.04, 0, 1.78, L * 0.54 + 0.005);                       // its windscreen
@@ -478,14 +478,14 @@ export const IDEA_MODELS_2 = {
       whitewall(group, R, 0.22, side * (w / 2 - 0.02), R, -L * 0.6, chrome);
       box(group, trim, 0.1, 0.2, 0.1, side * (w / 2 + 0.1), 1.7, L * 0.42);                   // mirrors
     }
-    box(group, trim, w * 0.34, 0.14, 0.34, w * 0.24, 2.2, L * 0.2);                          // the chimes' speaker
+    box(group, trim, w * 0.34, 0.14, 0.34, w * 0.24, 2.2, L * 0.2).userData.prop = 'roof';                          // the chimes' speaker
     // the cone: tip down on a stand, three scoops and a cherry
-    tube(group, trim, 0.06, 0.12, 0, 2.16, -L * 0.2);
-    cone(group, waffle, 0.34, 0.04, 0.62, 0, 2.52, -L * 0.2);
-    blob(group, scoop, 0.4, 0.28, 0.4, 0, 2.86, -L * 0.2);
-    blob(group, pinkScoop, 0.32, 0.22, 0.32, 0, 3.1, -L * 0.2);
-    blob(group, WHITE, 0.2, 0.15, 0.2, 0, 3.3, -L * 0.2);
-    blob(group, lambert(0xc4161e), 0.07, 0.07, 0.07, 0, 3.47, -L * 0.2);
+    tube(group, trim, 0.06, 0.12, 0, 2.16, -L * 0.2).userData.prop = 'roof';
+    cone(group, waffle, 0.34, 0.04, 0.62, 0, 2.52, -L * 0.2).userData.prop = 'roof';
+    blob(group, scoop, 0.4, 0.28, 0.4, 0, 2.86, -L * 0.2).userData.prop = 'roof';
+    blob(group, pinkScoop, 0.32, 0.22, 0.32, 0, 3.1, -L * 0.2).userData.prop = 'roof';
+    blob(group, WHITE, 0.2, 0.15, 0.2, 0, 3.3, -L * 0.2).userData.prop = 'roof';
+    blob(group, lambert(0xc4161e), 0.07, 0.07, 0.07, 0, 3.47, -L * 0.2).userData.prop = 'roof';
     group.userData = { body, animate: () => {} };
     return group;
   },
@@ -505,8 +505,8 @@ export const IDEA_MODELS_2 = {
     for (let i = 0; i < 14; i++) for (const side of [-1, 1]) {
       box(group, i % 2 ? WHITE : black, 0.02, 0.1, L * 2 / 14 - 0.01, side * (w / 2 + 0.008), 0.84, -L + (i + 0.5) * L * 2 / 14); // the chequered band
     }
-    box(group, WHITE, 0.4, 0.14, 0.14, 0, 1.65, -L * 0.1);                                     // the TAXI sign: white,
-    box(group, black, 0.3, 0.06, 0.16, 0, 1.65, -L * 0.1);                                    // with a dark word-strip
+    box(group, WHITE, 0.4, 0.14, 0.14, 0, 1.65, -L * 0.1).userData.prop = 'roof';                                     // the TAXI sign: white,
+    box(group, black, 0.3, 0.06, 0.16, 0, 1.65, -L * 0.1).userData.prop = 'roof';                                    // with a dark word-strip
     box(group, chrome, w * 0.6, 0.26, 0.05, 0, 0.76, L + 0.025);                             // the grille
     for (let i = -4; i <= 4; i++) box(group, trim, 0.02, 0.2, 0.06, i * w * 0.06, 0.76, L + 0.03);
     box(group, chrome, w + 0.06, 0.16, 0.14, 0, 0.45, L + 0.06);                             // great bumpers
