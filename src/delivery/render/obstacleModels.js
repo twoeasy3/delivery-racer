@@ -9,6 +9,8 @@ import { RAINFOREST_OBSTACLES } from './themes/rainforestModels.js';
 import { TUSCANY_OBSTACLES } from './themes/tuscanyModels.js';
 import { DESERT_OBSTACLES } from './themes/desertModels.js';
 import { MALL_OBSTACLES } from './themes/mallModels.js';
+import { LEVEL } from '../levels.js';
+import { THEMES } from '../themes.js';
 
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 // a model made of boxes: parts are [material, width, height, length, x, y, z]
@@ -613,6 +615,67 @@ OBSTACLE_MODELS.tug = () => {
     const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.16, 10).rotateZ(Math.PI / 2), black);
     wheel.position.set(x, 0.18, z);
     group.add(wheel);
+  }
+  return group;
+};
+// a boost pad's handrail section (lanegimmicks.js): a glass balustrade panel on two posts with a black rubber handrail along
+// its top, 1.4 m long along the road (a cone's box: blown away on contact like any obstacle). Faces local +z (along the road)
+OBSTACLE_MODELS.handrail = () => {
+  // (one mesh, its parts' colours as vertex colours: a pad has dozens of sections, one draw call each)
+  const parts = [[0x9aa0a8, 0.06, 0.95, 0.06, 0, 0.48, -1.2], [0x9aa0a8, 0.06, 0.95, 0.06, 0, 0.48, 1.2], [0x1b1d22, 0.1, 0.09, 2.8, 0, 1.0, 0], [0xcfe4ee, 0.03, 0.8, 2.6, 0, 0.55, 0]];
+  const pos = [], nor = [], col = [], c = new THREE.Color();
+  for (const [colour, w, h, d, x, y, z] of parts) {
+    const g = new THREE.BoxGeometry(w, h, d).translate(x, y, z).toNonIndexed();
+    c.set(colour);
+    for (let i = 0; i < g.attributes.position.count; i++) col.push(c.r, c.g, c.b);
+    pos.push(...g.attributes.position.array);
+    nor.push(...g.attributes.normal.array);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  const group = new THREE.Group();
+  group.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true })));
+  return group;
+};
+// a dead-end lane's end (lanegimmicks.js), a lane wide, facing the player (local -z): o.laneEnd 'shutter': a roll-up shutter with
+// amber hazard stripes, a lit slot at the foot (the road goes on behind it) and a shutter mark; 'wall': a red and black hazard
+// wall with a big X, taller, and behind it a block of solid structure over the lane (nothing beyond). The mall's (themes.js
+// laneEnd: 'mall') shutter is a shop's grey roller shutter with CLOSED on it, its wall a back-of-house wall of blockwork
+OBSTACLE_MODELS.laneEnd = (o) => {
+  const mall = (THEMES[LEVEL.theme] || THEMES.city).laneEnd === 'mall', W = 3.3, group = new THREE.Group();
+  const stripes = (w, h, dark = 0x1b1d22, light = 0xf2c21d, n = 6) => { // (a striped board: diagonal bands are too dear; bands across)
+    const g = new THREE.Group();
+    for (let k = 0; k < n; k++) { const m = new THREE.Mesh(new THREE.BoxGeometry(w / n, h, 0.08), lambert(k % 2 ? light : dark)); m.position.x = -w / 2 + (k + 0.5) * w / n; g.add(m); }
+    return g;
+  };
+  const words = (text, bg, fg, w, h) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 64;
+    const c = canvas.getContext('2d');
+    c.fillStyle = bg; c.fillRect(0, 0, 256, 64);
+    c.fillStyle = fg; c.font = 'bold 40px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(text, 128, 34);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), side: THREE.DoubleSide }));
+    m.rotation.y = Math.PI; // (facing the player coming up: local -z)
+    return m;
+  };
+  if (o.laneEnd === 'wall') {
+    const face = new THREE.Mesh(new THREE.BoxGeometry(W, 3.2, 0.3), lambert(mall ? 0x6b6a66 : 0x8a2020)); face.position.y = 1.6; group.add(face);
+    const bands = stripes(W, 0.5, 0x1b1d22, 0xd8262b, 8); bands.position.set(0, 0.3, -0.2); group.add(bands);
+    const top = stripes(W, 0.5, 0x1b1d22, 0xd8262b, 8); top.position.set(0, 2.95, -0.2); group.add(top);
+    for (const a of [0.8, -0.8]) { const bar = new THREE.Mesh(new THREE.BoxGeometry(0.28, 2.6, 0.06), lambert(0xd8262b)); bar.position.set(0, 1.6, -0.22); bar.rotation.z = a; group.add(bar); } // the X
+    const block = new THREE.Mesh(new THREE.BoxGeometry(W + 0.2, 5.2, 24), lambert(mall ? 0x5a5955 : 0x4a3a3a)); block.position.set(0, 2.6, 12.3); group.add(block); // (solid structure behind: no lane beyond)
+    const label = words(mall ? 'NO ENTRY' : 'DEAD END', '#d8262b', '#ffffff', 2.6, 0.65); label.position.set(0, 3.6, -0.2); group.add(label);
+    for (const x of [-W / 2 - 0.15, W / 2 + 0.15]) { const post = stripes(0.3, 4.4, 0x1b1d22, 0xd8262b, 1); post.position.set(x, 2.2, -0.2); post.rotation.y = Math.PI / 2; group.add(post); }
+  } else {
+    const slats = new THREE.Mesh(new THREE.BoxGeometry(W, 2.4, 0.12), lambert(mall ? 0xa6abb2 : 0x7a7f86)); slats.position.y = 1.5; group.add(slats);
+    for (let y = 0.6; y < 2.6; y += 0.4) { const line = new THREE.Mesh(new THREE.BoxGeometry(W, 0.04, 0.14), lambert(0x6f757d)); line.position.y = y; group.add(line); }
+    const bands = stripes(W, 0.3, 0x1b1d22, 0xf2c21d, 8); bands.position.set(0, 2.85, -0.05); group.add(bands);
+    const slot = new THREE.Mesh(new THREE.BoxGeometry(W, 0.3, 0.1), new THREE.MeshBasicMaterial({ color: 0xfff4d0 })); slot.position.y = 0.15; group.add(slot); // (the lit slot: light from the road behind)
+    const lintel = new THREE.Mesh(new THREE.BoxGeometry(W + 0.4, 0.4, 0.5), lambert(0x4a4f57)); lintel.position.y = 3.2; group.add(lintel);
+    const label = words(mall ? 'CLOSED' : 'SHUTTER', '#f2c21d', '#1b1d22', 2.4, 0.6); label.position.set(0, 3.6, -0.1); group.add(label);
   }
   return group;
 };

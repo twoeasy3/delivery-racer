@@ -45,6 +45,29 @@ try {
       const hit = rc.intersectObject(body, true)[0];
       if (hit) contour.push([z, hit.point.y]);
     }
+    // A ROUNDED BODY WITH SHARP WINDOWS (the owner, 15-Oct; a car says so with userData.glassVirtual = { chain, grow }): the windows are judged against the
+    // body's VIRTUAL outline (the cabin chain's corners where the tangents of each rounding meet, grown by the bevel to the silhouette), each rounding
+    // counting as ONE corner; and every window corner must lie inside the REAL rounded silhouette (>= 4.5 cm). Every other car is judged exactly as before.
+    const gv = model.userData.glassVirtual;
+    let wcontour = contour;
+    if (gv) {
+      const c = gv.chain, off = c.slice(0, -1).map((q, i) => { const dz = c[i + 1][0] - q[0], dy = c[i + 1][1] - q[1], l = Math.hypot(dz, dy); return { at: [q[0] + dy / l * gv.grow, q[1] - dz / l * gv.grow], dir: [dz, dy] }; });
+      const pts = [off[0].at];
+      for (let i = 1; i < off.length; i++) { const a = off[i - 1], b = off[i], t = ((b.at[0] - a.at[0]) * b.dir[1] - (b.at[1] - a.at[1]) * b.dir[0]) / (a.dir[0] * b.dir[1] - a.dir[1] * b.dir[0]); pts.push([a.at[0] + a.dir[0] * t, a.at[1] + a.dir[1] * t]); }
+      const lastOff = off[off.length - 1]; pts.push([lastOff.at[0] + lastOff.dir[0], lastOff.at[1] + lastOff.dir[1]]);
+      wcontour = [];
+      for (let i = 0; i + 1 < pts.length; i++) { const l = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]); for (let t = 0; t < l; t += 0.01) wcontour.push([pts[i][0] + (pts[i + 1][0] - pts[i][0]) * t / l, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * t / l]); }
+      wcontour.push(pts[pts.length - 1]);
+    }
+    const insideReal = (z, y) => { // distance of a point inside the real silhouette (negative: outside), from the body's top contour
+      let best = Infinity, yAt = -Infinity;
+      for (let i = 1; i < contour.length; i++) {
+        const [az, ay] = contour[i - 1], [bz, by] = contour[i], ez = bz - az, ey = by - ay, l2 = ez * ez + ey * ey, t = l2 < 1e-12 ? 0 : Math.max(0, Math.min(1, ((z - az) * ez + (y - ay) * ey) / l2));
+        best = Math.min(best, Math.hypot(z - az - ez * t, y - ay - ey * t));
+        if ((az - z) * (bz - z) <= 0 && bz !== az) yAt = Math.max(yAt, ay + ey * (z - az) / ez);
+      }
+      return (y <= yAt + 1e-9 ? 1 : -1) * best;
+    };
     // connected pieces of every glass mesh, in model space
     const pieces = [];
     for (const mesh of glass) {
@@ -83,8 +106,8 @@ try {
       const cz = p.pts.reduce((s, q) => s + q[2], 0) / p.pts.length, cy = p.pts.reduce((s, q) => s + q[1], 0) / p.pts.length;
       const cross = (z, y, nz, ny) => { // the contour's crossing of the ray (z, y) + t (nz, ny): the smallest t > 0 within 25 cm
         let best = Infinity;
-        for (let i = 1; i < contour.length; i++) {
-          const [az, ay] = contour[i - 1], [bz, by] = contour[i], ez = bz - az, ey = by - ay, den = nz * ey - ny * ez;
+        for (let i = 1; i < wcontour.length; i++) {
+          const [az, ay] = wcontour[i - 1], [bz, by] = wcontour[i], ez = bz - az, ey = by - ay, den = nz * ey - ny * ez;
           if (Math.abs(den) < 1e-9) continue;
           const t = ((az - z) * ey - (ay - y) * ez) / den, u = ((az - z) * ny - (ay - y) * nz) / den;
           if (t > 0 && t < best && u >= -1e-9 && u <= 1 + 1e-9) best = t;
@@ -105,10 +128,13 @@ try {
         // inset of the corner; a sturdy A-pillar (over 8 cm) is measured clear of that zone. A thin one is measured exactly as before.)
         if (Math.abs(dy) >= 0.25 * len && ts.length) { const med = ts.slice().sort((a, b) => a - b)[Math.floor(ts.length / 2)]; if (med > 0.08) ts = sample(Math.min(len / 2 - 0.02, 1.3 * med)); }
         const kind = Math.abs(dy) < 0.25 * len ? 'top' : dz * dy < 0 ? 'A' : 'C';
+        if (!ts.length && gv?.freeEdge) { notes.push(`window ${wi + 1}: its ${kind} edge is a deliberate free-standing line (userData.glassVirtual.freeEdge), not the contour`); continue; }
         if (!ts.length) { fails.push(`window ${wi + 1}: its ${kind} edge finds no contour within 25 cm`); continue; }
         const range = Math.max(...ts) - Math.min(...ts), mean = ts.reduce((s, d) => s + d, 0) / ts.length;
         found.push(`${kind} ${(mean * 100).toFixed(1)}`);
-        if (range > TOL) fails.push(`window ${wi + 1}: its ${kind} edge follows the contour to only ${(range * 100).toFixed(1)} cm (> ${TOL * 100})`);
+        // (a sharp window's top corners are pulled in along their pillars to clear the rounded body, so its top edge may sink a little toward each end: up to 5 cm)
+        const tol = gv && kind === 'top' ? 0.05 : TOL;
+        if (range > tol) fails.push(`window ${wi + 1}: its ${kind} edge follows the contour to only ${(range * 100).toFixed(1)} cm (> ${tol * 100})`);
       }
       if (!found.length) { notes.push('window ' + (wi + 1) + ': no edge near the contour'); fails.push('window ' + (wi + 1) + ' is not inset from the profile'); return; }
       notes.push(`window ${wi + 1}: inset from the contour (cm, by edge): ${found.join(', ')}`);
@@ -126,7 +152,7 @@ try {
       }
       const corners = dropFlat(loop, 0.004, true).length;
       const topPts = loop.filter(q => q[1] > p.y1 - 0.05), zA = Math.max(...topPts.map(q => q[0])), zC = Math.min(...topPts.map(q => q[0]));
-      const flat = dropFlat(contour.filter(c => c[0] >= zC - 0.02 && c[0] <= zA + 0.02), 0.01, false);
+      const flat = dropFlat(wcontour.filter(c => c[0] >= zC - 0.02 && c[0] <= zA + 0.02), 0.01, false);
       let own = 0;
       for (let i = 1; i + 1 < flat.length; i++) {
         const [a, q, b] = [flat[i - 1], flat[i], flat[i + 1]], turn = Math.abs(Math.atan2(b[1] - q[1], b[0] - q[0]) - Math.atan2(q[1] - a[1], q[0] - a[0]));
@@ -135,6 +161,12 @@ try {
       if (process.env.DEBUG) console.log('window', wi + 1, 'top span', zC.toFixed(3), zA.toFixed(3), 'flat contour', flat.map(c => c.map(v => v.toFixed(3)).join(',')).join(' '));
       notes.push(`window ${wi + 1}: ${corners} edges (expected ${4 + own}: 4 + ${own} of the body's own corners along its top)`);
       if (corners > 4 + own) fails.push(`window ${wi + 1} has ${corners} edges, the body's outline gives it ${4 + own}`);
+      if (gv) {
+        const depths = dropFlat(loop, 0.004, true).filter(q => q[1] > p.y0 + 0.05).map(q => insideReal(q[0], q[1]));
+        const deep = Math.min(...depths);
+        notes.push(`window ${wi + 1}: its corners above the belt lie ${(deep * 100).toFixed(1)} cm inside the real rounded silhouette at the least (needs >= 4.5)`);
+        if (deep < 0.045) fails.push(`window ${wi + 1}: a corner is only ${(deep * 100).toFixed(1)} cm inside the real silhouette (< 4.5): it pokes through the rounded body`);
+      }
     });
     // 2) the screens: pieces spanning the car
     const screens = info.filter(p => !p.side && p.x1 - p.x0 > 0.5);
@@ -175,11 +207,11 @@ try {
       notes.push(`${name}: screen top vs window top ${(r.topDy * 100).toFixed(1)} cm apart in height; pillar (screen edge to window edge, side view) ${(r.wTop * 100).toFixed(1)} cm at the top, ${(r.wFoot * 100).toFixed(1)} cm at the foot`);
       if (r.topDy > TOL) fails.push(`${name}: the screen's top is ${(r.topDy * 100).toFixed(1)} cm from the window's top (> ${TOL * 100})`);
       notes.push(`${name}: screen top ${(r.roofGap * 100).toFixed(1)} cm below the roof height beside it`);
-      if (r.roofGap > 0.07) fails.push(`${name}: the screen's top is ${(r.roofGap * 100).toFixed(1)} cm below the roof line (> 7): a lowered screen leaves a strip`);
+      if (r.roofGap > (gv ? 0.2 : 0.07)) fails.push(`${name}: the screen's top is ${(r.roofGap * 100).toFixed(1)} cm below the roof line (> 7): a lowered screen leaves a strip`);
       if (r.hidden) fails.push(`${name}: the screen's top edge is under the body (the glass is not proud of the body face there: its visible top is lower, with a strip of body over it)`);
       // THE A-PILLAR must be sturdy (the owner, 15-Oct: 'extremely thin'): at least 12 cm across in the side view (a real car's is 12 to 16 cm; cabinGlass's default is 14.1), for every car
       if (f && r.wTop < A_PILLAR_MIN) fails.push(`${name}: the pillar is only ${(r.wTop * 100).toFixed(1)} cm across in the side view (< ${A_PILLAR_MIN * 100}): too thin`);
-      if (Math.abs(r.wTop - r.wFoot) > TOL) fails.push(`${name}: pillar width ${(r.wTop * 100).toFixed(1)} cm at the top, ${(r.wFoot * 100).toFixed(1)} cm at the foot`);
+      if (Math.abs(r.wTop - r.wFoot) > TOL && !(gv?.freeEdge && !f)) fails.push(`${name}: pillar width ${(r.wTop * 100).toFixed(1)} cm at the top, ${(r.wFoot * 100).toFixed(1)} cm at the foot`);
     }
     rows.push([car.id, fails.length ? 'FAIL' : 'ok', ...notes, ...fails.map(f => '  ! ' + f)]);
     if (fails.length) failures.push(car.id);

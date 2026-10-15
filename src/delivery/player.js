@@ -48,6 +48,7 @@ export const Player = {
   gripLost: 0,         // 0 .. 1: how much of its steering's grip the car has lost to ice or water just now (only read: for the HUD's grip status; it changes nothing)
   dropOncoming: false, // the helicopter is setting the car down on the oncoming side (no dry lane on its own)
   turbo: 0,            // s of turbocharger left
+  boost: 0,            // s of a boost pad's push left (lanegimmicks.js, Track.padAt)
   ghost: 0,            // s of passing through cars and barriers left
   passenger: 0,        // s of legal shoulder driving left
   radar: 0,            // s of radar detector left: the police can't bust the car
@@ -152,6 +153,7 @@ export const Player = {
     this.speed = 0;
     this.launching = true;
     this.turbo = 0;
+    this.boost = 0;
     this.ghost = 0;
     this.passenger = 0;
     this.radar = 0;
@@ -238,6 +240,7 @@ export const Player = {
     // passenger, who makes the shoulder legal anyway)
     const caught = this.radar > 0 && this.danger <= 0 && type !== 'passenger';
     this.turbo = 0;
+    this.boost = 0;
     this.passenger = 0;
     this.radar = 0;
     this.siren = 0;
@@ -372,16 +375,21 @@ export const Player = {
     }
     if (throttle < 0 || this.speed >= CONFIG.startSpeed) this.launching = false;
     // hands off, the speed simply holds; pulling away and recovering from a hit are automatic
-    const boosted = this.turbo > 0;
+    // (a boost pad under the car: its push for CONFIG.boostPad.time s, refilled for as long as the car is on it; a ghost too, it is the floor)
+    if (this.active && Track.padAt(this.s, this.lat)) this.boost = CONFIG.boostPad.time;
+    const padded = this.boost > 0;
+    this.boost = Math.max(0, this.boost - dt);
+    const boosted = this.turbo > 0 || padded;
     this.turbo = Math.max(0, this.turbo - dt);
     // (the same turbo as a share of the car's own top speed: its bends are taken that much faster too)
     const drives = carStats(CAR); // (the car's figures at its ECU: ecu.js)
     const baseTop = this.tank > 0 ? (this.rageTank ? this.rageTank.maxSpeed : CONFIG.tankMaxSpeed) : drives.maxSpeed;
-    const turboCorner = boosted && baseTop > 0 ? 1 + CONFIG.turboBoost / baseTop : 1;
+    const lift = (this.turbo > 0 ? CONFIG.turboBoost : 0) + (padded ? CONFIG.boostPad.speed : 0); // (m/s over the car's own top speed: the turbo's, the pad's, both)
+    const turboCorner = boosted && baseTop > 0 ? 1 + lift / baseTop : 1;
     // (a turbo adds the same to every car's top speed: a slow car stays the slower one)
     // (bad gas and the weight hold the car back: a share of its top speed and acceleration)
     const held = this.badGas > 0 ? CONFIG.badGas : this.heavy > 0 ? CONFIG.heavyMass : null;
-    let top = ((this.tank > 0 ? (this.rageTank ? this.rageTank.maxSpeed : CONFIG.tankMaxSpeed) : drives.maxSpeed) + (boosted ? CONFIG.turboBoost : 0)) * (held ? held.topSpeed : 1) *
+    let top = ((this.tank > 0 ? (this.rageTank ? this.rageTank.maxSpeed : CONFIG.tankMaxSpeed) : drives.maxSpeed) + lift) * (held ? held.topSpeed : 1) *
       (this.puncture ? CONFIG.puncture.topSpeed : 1); // (and a flat tyre)
     // in a race, in another car's slipstream: faster (see CONFIG.race); and pulling out of it, flung on
     // past it: the slingshot, a kick on top of the tow's speed, both fading away (the longer, the more

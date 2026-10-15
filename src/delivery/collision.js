@@ -278,6 +278,8 @@ export const Collision = (() => {
   for (const [kind, like] of Object.entries({ jerryStack: 'crate', tentRoll: 'bale', rallyFlag: 'cone' })) SIZE[kind] = SIZE[like]; // (the desert's)
   for (const [kind, like] of Object.entries({ boxStack: 'crate', trolleyRow: 'bale', wetFloorSign: 'cone' })) SIZE[kind] = SIZE[like]; // (the mall's)
   SIZE.tug = [0.7, 1.0, 1.1]; // a tunnel junction's electric tug (hazards.js)
+  SIZE.handrail = SIZE.cone; // a boost pad's handrail section (lanegimmicks.js): a cone's box
+  SIZE.laneEnd = [1.6, 0.4, 2.8]; // a dead-end lane's end wall: a lane wide (lanegimmicks.js)
   // what a level's own obstacle of that kind is on its theme (its "obstacles", "shoulderRows" and "drifters"
   // only: what a gimmick puts out, a cargo truck's load among it, is what it always was)
   // (drifting: one of its "drifters", where a theme can have another thing again: a bale that drifts is a tumbleweed)
@@ -745,6 +747,34 @@ export const Collision = (() => {
   const atRoadLevel = (o) => o.h - o.r < Player.height && o.h + o.r > 0;
 
   const hitObstacles = () => {
+    // a dead-end lane's end (lanegimmicks.js), checked before any protection is honoured. A SHUTTER (o.laneEnd 'shutter', the
+    // road goes on behind it): a Ghost passes through it, a tank (Player.tank: a tank car or TANK RAGE) or an armoured car
+    // smashes through it (the shutter is gone, no damage), any other car is wrecked outright. A WALL ('wall', nothing behind
+    // it): a SUPER INSTAKILL, the car wrecked whatever protects it: not the Ghost, not a tank, not armour, not a fresh
+    // drop's shield, not an invincible mystery (damageScale is not asked). Wrecked as on a landmine, and set in the open
+    // lane beside, where the helicopter drops the next car. (The test ghost of the checks and the screenshots is spared:
+    // it is no protection of the player's.)
+    if (Player.active && !Player.testGhost) {
+      for (const o of obstacles) {
+        if (!o.laneEnd || o.gone || Math.abs(o.s - Player.s) > CONFIG.broadPhaseDistance || !overlap(Player, o)) continue;
+        if (o.laneEnd === 'shutter') {
+          if (Player.ghost > 0) continue; // (through it, as through anything)
+          if (Player.tank > 0 || Player.armour > 0) { // (smashed through: the shutter is gone)
+            o.gone = true;
+            Game.shake = Math.max(Game.shake, 0.5);
+            FxQueue.push({ type: 'explode', s: o.s, lat: o.lat, vs: Player.speed, big: false, smoke: 0.6 });
+            Message.say('events', 'shutterSmashed');
+            continue;
+          }
+        }
+        Player.health = 0;
+        Player.lat = o.openLat;
+        Game.shake = 1;
+        FxQueue.push({ type: 'explode', s: o.s, lat: o.lat, vs: 0, big: true });
+        Message.say('events', 'deadEndHit');
+        break;
+      }
+    }
     if (!Player.active || Player.shield > 0 || Player.ghost > 0) return;
     for (const o of obstacles) {
       if (o.gone || Math.abs(o.s - Player.s) > CONFIG.broadPhaseDistance) continue;

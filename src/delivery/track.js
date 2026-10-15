@@ -516,6 +516,13 @@ const createTrack = () => {
     for (const p of slicks) if (s >= p.from && s <= p.to && Math.abs(lat - p.lat) <= p.half) return p;
     return null;
   };
+  // on a boost pad (a level's "boostPads": { from, to, lane }: lanegimmicks.js)? The pad, or null
+  const pads = LEVEL.boostPads || [];
+  const padAt = (s, lat) => {
+    if (!isMain(s)) return null;
+    for (const p of pads) if (s >= p.from && s <= p.to && Math.abs(lat - laneOffset(p.lane, s)) <= LW / 2) return p;
+    return null;
+  };
   // how far into a tunnel s is (a level's "tunnels": { from, to }): 0 (outside) .. 1 (well inside), over
   // CONFIG.tunnel.edge m at each portal (the light fades in and out)
   const tunnels = LEVEL.tunnels || [];
@@ -1003,6 +1010,15 @@ const createTrack = () => {
       else if (z.count && z.side !== 'left' && z.side !== 'right') problems.push('rockfall at ' + z.from + ': side is left or right');
     }
     for (const j of LEVEL.tunnelJunctions || []) if (!tunnels.some(t => j.s > t.from + 30 && j.s < t.to - 30)) problems.push('tunnel junction at ' + j.s + ': not inside a tunnel (30 m clear of its ends)');
+    for (const p of pads) if (!(p.from < p.to) || p.lane === undefined || p.lane < 0 || p.lane >= LEFT + RIGHT) problems.push('boost pad at ' + p.from + ': from before to, and a lane of the road');
+    for (const d of LEVEL.deadEnds || []) { // (never the whole road: another lane is always open beside a dead one)
+      const len = d.length ?? CONFIG.deadEnd.length, from = d.s - len;
+      if (d.lane === undefined || d.lane < 0 || d.lane >= LEFT + RIGHT || d.s < 30 || d.s > length - 30) problems.push('dead end at ' + d.s + ': a lane of the road, clear of the start and the finish');
+      const beside = d.lane > 0 ? d.lane - 1 : d.lane + 1;
+      if (LEFT + RIGHT < 2) problems.push('dead end at ' + d.s + ': the road has only one lane');
+      for (const e of LEVEL.deadEnds || []) if (e !== d && e.lane !== d.lane && overlaps(from, d.s, e.s - (e.length ?? CONFIG.deadEnd.length), e.s)) problems.push('dead ends at ' + d.s + ' and ' + e.s + ': both lanes dead at once');
+      for (let q = from; q <= d.s; q += 10) if (lanesOn(Math.sign(laneOffset(d.lane, q)) || 1, q) < 2 && openCount(Math.sign(laneOffset(beside, q)) || 1, q) < 1) problems.push('dead end at ' + d.s + ': no lane open beside it at ' + q);
+    }
     for (const t of tunnels) {
       if (!(t.from < t.to) || t.from < 30 || t.to > length - 30) problems.push('tunnel at ' + t.from + '-' + t.to + ': from before to, on the road, clear of the start and the finish');
       else if (t.to - t.from < 60) problems.push('tunnel at ' + t.from + ': too short (60 m at least)');
@@ -1297,7 +1313,7 @@ const createTrack = () => {
     apart, laneCount: LANES, leftLanes: LEFT, rightLanes: RIGHT, medianLanes: MID, medianHalf: HM, shoulder: SH, flow: FLOW, mirrored: MIRRORED,
     toWorld, fromWorld, grade, hilly, transfer, along, progress, finished, inBounds, spawnAt, place, isMain,
     laneOffset, openLane, nearestLane, laneRange, assistOffset, flyHeight,
-    lanesOn, edge, extraLane, onBridge, icy, sprays, slicks, muddy, gravels, gravelBand, gravelAt, water, waters, foggy, tunnel, bend, pathScale, onRails, junctions, zoneAt, lo, hi, laneLo, laneHi, shoulderOffset, onShoulder, rampLaneZone, sideOpen, sideWidth, sideLeft, sideOncoming,
+    lanesOn, edge, extraLane, onBridge, icy, padAt, sprays, slicks, muddy, gravels, gravelBand, gravelAt, water, waters, foggy, tunnel, bend, pathScale, onRails, junctions, zoneAt, lo, hi, laneLo, laneHi, shoulderOffset, onShoulder, rampLaneZone, sideOpen, sideWidth, sideLeft, sideOncoming,
     flyPillar, sideDistance, mainDistance, exits, crossable, crossLo,
   };
 };

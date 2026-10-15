@@ -74,23 +74,33 @@
     {"from": 2880, "to": 3000, "side": "right", "width": 4}
   ],
   "ice": [
-    {"from": 420, "to": 500, "lane": 1},
+    {"from": 420, "to": 480, "lane": 0},
     {"from": 580, "to": 660, "lane": 0},
     {"from": 1020, "to": 1120},
     {"from": 1500, "to": 1580, "lane": 1},
     {"from": 2160, "to": 2260, "lane": 0},
-    {"from": 2620, "to": 2720}
+    {"from": 2730, "to": 2800}
   ],
   "tunnelJunctions": [
     {"s": 760, "side": "left"},
     {"s": 1580, "side": "right"},
     {"s": 2300, "side": "left"}
   ],
+  "boostPads": [
+    {"from": 200, "to": 280, "lane": 0},
+    {"from": 1850, "to": 1930, "lane": 0},
+    {"from": 2580, "to": 2660, "lane": 0}
+  ],
+  "deadEnds": [
+    {"s": 490, "lane": 1, "kind": "shutter", "length": 120},
+    {"s": 2105, "lane": 0, "kind": "wall", "length": 100},
+    {"s": 2515, "lane": 1, "kind": "shutter", "length": 110}
+  ],
   "trolleys": [
-    {"from": 300, "to": 420, "count": 4},
+    {"from": 300, "to": 360, "count": 3},
     {"from": 1320, "to": 1480, "count": 5},
-    {"from": 2040, "to": 2150, "count": 4},
-    {"from": 2480, "to": 2600, "count": 5}
+    {"from": 2120, "to": 2230, "count": 4},
+    {"from": 2720, "to": 2820, "count": 5}
   ],
   "obstacles": [
     {"s": 390, "lane": "right", "kind": "cone"},
@@ -104,7 +114,6 @@
     {"s": 1470, "lane": "left", "kind": "cone"},
     {"s": 1620, "lane": 0, "kind": "bale"},
     {"s": 1760, "lane": 1, "kind": "crate"},
-    {"s": 1900, "lane": 0, "kind": "crate"},
     {"s": 1906, "lane": 1, "kind": "crate"},
     {"s": 2130, "lane": "left", "kind": "cone"},
     {"s": 2140, "lane": 1, "kind": "cone"},
@@ -124,6 +133,8 @@
     {"type": "cash10", "s": 330, "lane": 0},
     {"type": "cash10", "s": 330, "lane": 1},
     {"type": "ghost", "s": 360, "lane": 0},
+    {"type": "cash10", "s": 410, "lane": 1},
+    {"type": "cash10", "s": 440, "lane": 1},
     {"type": "cash10", "s": 460, "lane": 0},
     {"type": "cash20", "s": 530, "lane": 1},
     {"type": "cash20", "s": 530, "lane": 0},
@@ -149,13 +160,15 @@
     {"type": "cash10", "s": 1800, "lane": 1},
     {"type": "cash20", "s": 1960, "lane": 0},
     {"type": "cash20", "s": 1960, "lane": 1},
-    {"type": "cash10", "s": 2080, "lane": 0},
+    {"type": "cash10", "s": 2035, "lane": 0},
+    {"type": "cash10", "s": 2055, "lane": 0},
     {"type": "cash10", "s": 2080, "lane": 1},
     {"type": "ghost", "s": 2110, "lane": 0},
     {"type": "cash10", "s": 2220, "lane": 1},
     {"type": "wrench", "s": 2290, "lane": 1},
     {"type": "cash20", "s": 2380, "lane": 0},
     {"type": "cash20", "s": 2380, "lane": 1},
+    {"type": "cash10", "s": 2430, "lane": 1},
     {"type": "cash10", "s": 2450, "lane": 0},
     {"type": "cash10", "s": 2450, "lane": 1},
     {"type": "timePlus", "s": 2540, "lane": 0},
