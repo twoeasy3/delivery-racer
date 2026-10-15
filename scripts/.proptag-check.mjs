@@ -76,7 +76,7 @@ try {
     console.log('baseline written: ' + Object.keys(out).length + ' cars -> ' + BASELINE);
   } else {
     const P = await load('render/propcosmetic.js');
-    const { PROP_TABLE } = await load('render/propanchors.js');
+    const { PROP_TABLE, HAND } = await load('render/propanchors.js');
     // ---- nothing that is drawn changed ----
     let base = null;
     try { base = JSON.parse(readFileSync(BASELINE, 'utf8')); } catch { /* (no baseline) */ }
@@ -104,7 +104,7 @@ try {
       for (const { mesh, slot } of props) if (!SLOTS.includes(slot)) badTag.push(id + ' ' + mesh.name + ' "' + slot + '"');
       tagged += props.length;
       if (props.length) taggedCars++;
-      const entry = PROP_TABLE[id];
+      const entry = PROP_TABLE[id] && Object.fromEntries(SLOTS.map(s => [s, (HAND[id] && s in HAND[id]) ? HAND[id][s] : PROP_TABLE[id][s]])); // (the merged entry: a hand fix counts, as in the reader)
       if (!entry) continue; // (not measured yet: the sweep is in progress; .propanchors-check --complete asks for every car)
       for (const slot of SLOTS) {
         const has = props.some(p => p.slot === slot), says = !!(entry && entry[slot] && entry[slot].existing);
