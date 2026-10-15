@@ -212,12 +212,17 @@ export const carGeometry = (model, glassy) => {
   };
   // is the surface hit `h` at (x, z) a THIN PLATE with air under it (a spoiler's blade, a rack's shelf)?
   const isBlade = (x, z, h, allow = ALL) => {
-    const hs = rays(x, z, allow).filter(q => q.y < h.y - 1e-4 && meshes[q.m].kind !== 'clear');
+    // (glass and see-through parts are not the floor under a plate: a hatch's rear glass under its roof's last cells is no air gap)
+    const hs = rays(x, z, allow).filter(q => q.y < h.y - 1e-4 && meshes[q.m].kind !== 'clear' && meshes[q.m].kind !== 'glass');
     const under = hs.find(q => q.ny < -0.05);
     if (!under || h.y - under.y > 0.1) return false;
+    // (a DECAL: a thin strip laid on or a little into a surface (the Muscle's boot stripes): another up-facing face between its top and
+    // a few mm under its underside is the surface it lies on, so it is no blade)
+    if (hs.some(q => q.ny > 0.05 && q.y >= under.y - 0.005)) return false;
     const below = hs.find(q => q.y < under.y && q.ny > 0.05);
     return !!below && under.y - below.y >= 0.03 && under.y - below.y <= 0.35; // (more air than that is a cabin under its roof)
   };
+
   return { meshes, P, M, T, box, rays, support, intrude, widthAt, blades, near, isBlade };
 };
 

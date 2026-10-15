@@ -216,10 +216,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.47, 0, 1.132, -2.38],
-    "cyl": [0.47, 0, 1.12, -2.38],
-    "from": "deck",
+    "box": [1.36, 0, 1.299, -2.42],
+    "cyl": [1.36, 0, 1.265, -2.42],
+    "from": "deck-edge",
     "lim": "fit",
+    "inset": [0.011, 0.011],
     "existing": true
    }
   },
@@ -491,10 +492,11 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.47, 0, 1.132, -2.37],
-    "cyl": [0.47, 0, 1.12, -2.37],
-    "from": "deck",
+    "box": [1.36, 0, 1.299, -2.45],
+    "cyl": [1.36, 0, 1.265, -2.45],
+    "from": "deck-edge",
     "lim": "fit",
+    "inset": [0.011, 0.011],
     "existing": true
    }
   },
@@ -770,8 +772,8 @@
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [0.77, 0, 1.505, -1.1],
-    "cyl": [0.77, 0, 1.486, -1.1],
+    "box": [0.87, 0, 1.522, -1.1],
+    "cyl": [0.87, 0, 1.501, -1.1],
     "from": "roof-edge",
     "lim": "fit"
    }

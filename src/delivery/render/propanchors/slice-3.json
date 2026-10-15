@@ -581,17 +581,20 @@
   },
   "splitwindow": {
    "roof": {
-    "box": [0.76, 0, 1.44, -0.475],
-    "cyl": [0.77, 0, 1.443, -0.475],
+    "box": [0.52, 0, 1.38, -0.355],
+    "cyl": [0.46, 0, 1.365, -0.355],
     "from": "roof",
-    "lim": "fit",
-    "inset": [0.03, 0.016]
+    "lim": "fit"
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
+    "box": [0.91, 0, 1.409, -0.695],
+    "cyl": [0.91, 0, 1.387, -0.695],
+    "from": "roof-edge",
+    "lim": "fit",
+    "inset": [0.049, 0.049]
    }
   },
   "sporttruck": {
