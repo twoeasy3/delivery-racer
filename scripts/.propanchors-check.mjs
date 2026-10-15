@@ -6,8 +6,9 @@
 //     cap (the canonical aspect is implied: the table holds only a scale, so no stretching is possible), a centre, a `from` and an inset
 //     (if any) of 0 to 0.08 m; an unsupported slot has a reason
 //   - the bounds sit on the car: the car is built (makeShowCar) and each supported shape's footprint lies inside the car's box (a small
-//     margin), its base no lower than the car's floor and no higher than 0.6 m over the car's top; a ray down through the box's centre
-//     (its front for a roof-edge wing) hits the car within TOUCH of the shape's base (the prop stands on the surface)
+//     margin), its base no lower than the car's floor and no higher than 0.6 m over the car's top; rays down from just over the shape's
+//     own top (so a canopy over a covered bed is ignored) through its footprint's corners hit the car within TOUCH of the shape's base
+//     and top-of-inset (the prop stands on the surface)
 //   - the hand fixes name real cars and slots, and have the same shape as a generated entry
 //   - the counts, for the eye: supported per slot, reasons
 //   --complete   (the owner, at the end of the sweep) every in-scope car has an entry, else FAIL; without it, missing cars are listed only
@@ -72,7 +73,9 @@ try {
     model.parent?.remove(model); model.userData.animate?.(0); model.updateMatrixWorld(true);
     PC.hideProps(model);
     const box = new THREE.Box3().setFromObject(model, true);
-    const meshes = []; model.traverse(n => { if (n.isMesh && n.visible && !n.userData.prop) meshes.push(n); });
+    // (the surface: visible meshes only, and none under a hidden parent: a model that builds several styles and hides all but one, as the
+    // GT does, must not offer its hidden roofs and wings as a surface; the measure lib skips them the same way)
+    const meshes = []; model.traverse(n => { if (!n.isMesh || n.userData.prop) return; for (let p = n; p; p = p.parent) if (p.visible === false) return; meshes.push(n); });
     const plan = P.propSlots(id);
     for (const slot of P.SLOTS) {
       const s = plan[slot];
@@ -86,7 +89,8 @@ try {
         const pts = s.from === 'roof-edge' ? [[cx, cz + half[2] * 0.6], [cx - half[0] * 0.9, cz + half[2] * 0.9], [cx + half[0] * 0.9, cz + half[2] * 0.9]]
           : [[cx, cz], [cx - half[0] * 0.9, cz - half[2] * 0.9], [cx + half[0] * 0.9, cz - half[2] * 0.9], [cx - half[0] * 0.9, cz + half[2] * 0.9], [cx + half[0] * 0.9, cz + half[2] * 0.9]];
         const hs = [];
-        for (const [x, z] of pts) { from.set(x, box.max.y + 2, z); ray.set(from, down); const hit = ray.intersectObjects(meshes, false)[0]; if (hit) hs.push(hit.point.y); }
+        // (the rays start just over the shape's own top, not over the whole car: a canopy or a cab-over above a covered bed is not its surface)
+        for (const [x, z] of pts) { from.set(x, cy + half[1] + 0.05, z); ray.set(from, down); const hit = ray.intersectObjects(meshes, false)[0]; if (hit) hs.push(hit.point.y); }
         if (!hs.length) { floating.push(id + ' ' + slot + ' ' + name + ' (nothing under it)'); continue; }
         const hi = Math.max(...hs), lo = Math.min(...hs);
         if (Math.abs(hi - top) > TOUCH || lo < base - TOUCH - 0.02) floating.push(id + ' ' + slot + ' ' + name + ' (surface ' + lo.toFixed(2) + '..' + hi.toFixed(2) + ', base ' + base.toFixed(2) + ', top ' + top.toFixed(2) + ')');
