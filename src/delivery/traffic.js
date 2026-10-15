@@ -139,6 +139,9 @@ export const Traffic = (() => {
       : Track.openLane(first + Math.floor(random() * (last - first + 1)), car.s);
     if (nearWorks(car) && Track.openLane(lane, car.s + car.dir * 150) !== lane) return false; // (not in a lane a diversion closes just ahead)
     if (!laneClear(car, lane, 25) || Wreckage.blocked(lane, car.s)) return false;
+    // (nor on top of one still moving out of that lane: its lane says the new one, its body is still in this)
+    const at = Track.laneOffset(lane, car.s);
+    if (cars.some(o => o !== car && o.active && !o.junction && Math.abs(o.s - car.s) < 25 && Math.abs(o.lat - at) < o.hw + 1.4)) return false;
     outfit(car, kind, lane);
     ghostMark(car); // (only a car dealt out on the road: not a pursuit's or a tractor)
     Radiation.deal(car); // (a share of a radiated level's traffic comes infected: car.infected, which blank() puts back)
@@ -2555,8 +2558,11 @@ export const Traffic = (() => {
         if (Track.medianHalf && !works) aim = car.dir > 0 ? Math.max(aim, Track.medianHalf + car.hw) : Math.min(aim, -Track.medianHalf - car.hw); // (a diversion may lead a way over it: a contraflow)
         const sharp = car.racer && car.attack > 0 && !car.squeeze ? CONFIG.race.passSharp : 1; // (a racer going for a gap moves across sharply)
         // (in roadworks, its lane's own drift across as well, where it is following its lane: see laneDrift)
-        const drift2 = works && !beside && aimLat === Track.laneOffset(car.lane, car.s) ? laneDrift(car) : 0;
-        const across = works && car.hl > 4 ? 2.5 : 6; // (a long vehicle moves over slowly in roadworks: its nose swings out over the next lane)
+        const following = works && !beside && aimLat === Track.laneOffset(car.lane, car.s), drift2 = following ? laneDrift(car) : 0;
+        // (and pointing the way its lane goes, as a real one would, not swung by the yaw's exaggeration: a long vehicle's nose
+        // stays over its lane through a taper)
+        car.laneYaw = following && Math.abs(aimLat - car.lat) < 0.3 ? Math.atan((Track.laneOffset(car.lane, car.s + 1) - Track.laneOffset(car.lane, car.s - 1)) / 2) : null;
+        const across = works ? (car.hl > 4 ? 2 : 2.5) : 6; // (in roadworks it moves over gently, a long vehicle the gentlest: a nose swung out at a lane change goes over the line)
         const wantVel = clamp((aim - car.lat) * CONFIG.trafficLaneChangeRate * sharp, -across * sharp, across * sharp) + drift2;
         car.latVel += (wantVel - car.latVel) * damp(6 * sharp, dt);
       }
@@ -2579,6 +2585,7 @@ export const Traffic = (() => {
       car.lat += (car.latVel + car.slideVel) * dt;
       keepOnRoad(car, 0.3);
       updateYaw(car, dt);
+      if (car.laneYaw != null && !(car.spin > 0) && !(car.stun > 0) && !(car.wobble > 0)) car.yaw = car.laneYaw;
     }
   };
 

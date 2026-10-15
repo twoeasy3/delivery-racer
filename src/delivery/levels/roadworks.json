@@ -1,7 +1,7 @@
 {
   "id": "roadworks",
   "theme": "roadworks",
-  "clock": {"good": 155, "evil": 115},
+  "clock": {"good": 215, "evil": 155},
   "tip": 230,
   "lanes": 4,
   "traffic": {
@@ -37,10 +37,9 @@
     {"from": 2250, "to": 2900, "kind": "cross", "limit": 40}
   ],
   "potholes": [
-    {"s": 1060, "lane": 3},
+    {"s": 1070, "lane": 1},
     {"s": 1100, "lane": 2},
-    {"s": 1140, "lane": 3},
-    {"s": 1170, "lane": 1},
+    {"s": 1150, "lane": 0},
     {"s": 1930, "lane": 3},
     {"s": 1965, "lane": 2},
     {"s": 2010, "lane": 3},
@@ -48,6 +47,9 @@
     {"s": 3010, "lane": 2},
     {"s": 3050, "lane": 3},
     {"s": 3090, "lane": 2}
+  ],
+  "tarmac": [
+    {"from": 1040, "to": 1180, "lane": 3}
   ],
   "siteWorks": [
     {"kind": "trench", "from": 380, "to": 460, "side": "right"},
@@ -122,7 +124,7 @@
     {"s": 360, "lane": 3, "kind": "bale"},
     {"s": 450, "lane": 2, "kind": "cone"},
     {"s": 480, "lane": 3, "kind": "trafficDrum"},
-    {"s": 1150, "lane": 2, "kind": "barrier"},
+    {"s": 1205, "lane": 3, "kind": "barrier"},
     {"s": 1210, "lane": 0, "kind": "bale"},
     {"s": 1860, "lane": 3, "kind": "worksSign"},
     {"s": 1900, "lane": 2, "kind": "crate"},

@@ -604,6 +604,18 @@ export const Gambles = {
   // it (`clean` s from full), and the car's top speed is down by `slow` of itself with the tyres full: slower
   // than the queue. So it pays in short hops, and costs for a while after a long one
   onTar(s, lat) { return Track.isMain(s) ? this.tars.find(z => s >= z.from && s <= z.to && lat >= z.lo && lat <= z.hi) || null : null; },
+  // room for a car to move over into `lane` here: nothing in it (nor the player) alongside, or close enough ahead or behind to meet it
+  roomIn(car, lane) {
+    const lat = Track.laneOffset(lane, car.s), mine = Math.abs(car.vs);
+    for (let i = 0; i <= Traffic.cars.length; i++) {
+      const o = i < Traffic.cars.length ? Traffic.cars[i] : Player;
+      if (o === car || !o.active || o.junction || (o.isPlayer ? Player.ghost > 0 : o.dir !== car.dir)) continue;
+      if (Math.abs(o.lat - lat) > o.hw + car.hw + 0.3 && (o.isPlayer || o.lane !== lane)) continue;
+      const ahead = (o.s - car.s) * car.dir, theirs = o.isPlayer ? Player.speed : Math.abs(o.vs);
+      if (ahead > -(o.hl + car.hl + 2 + Math.max(0, theirs - mine) * 1.2) && ahead < o.hl + car.hl + 2 + Math.max(0, mine - theirs) * 1.2) return false;
+    }
+    return true;
+  },
   tarPace(tar = this.tar) { return carStats().maxSpeed * (1 - CONFIG.tarmac.slow * tar); },
   updateTar(dt) {
     const T = CONFIG.tarmac, P = Player;
@@ -613,7 +625,13 @@ export const Gambles = {
       const [first, last] = Track.laneRange(1, (z.from + z.to) / 2), other = z.lane > first ? z.lane - 1 : z.lane + 1;
       for (const car of Traffic.cars) { // (the traffic keeps off it, and crawls past it)
         if (!car.active || car.dir < 0 || car.junction || this.event(car) || !Track.isMain(car.s) || car.s > z.to || car.s < z.from - T.keepClear) continue;
-        if (car.lane === z.lane && !car.fixed && other <= last) { car.signal = other - car.lane; car.lane = other; car.pendingLane = null; }
+        // (it moves over only into room there, in a lane open on ahead: never into the side of another car. With no room yet it
+        // signals and crawls on in its own lane, as the queue does, and moves over as soon as there is; the tar can be driven on)
+        if (car.lane === z.lane && !car.fixed && other <= last) {
+          car.signal = other - car.lane;
+          car.pendingLane = null;
+          if (Track.openLane(other, car.s + 60) === other && this.roomIn(car, other)) car.lane = other;
+        }
         this.crawl(car, T.queue, z.from, z.to);
       }
       if (P.active && Track.isMain(P.s) && P.s > z.from - T.sign && P.s < z.from) this.once('tarAhead');

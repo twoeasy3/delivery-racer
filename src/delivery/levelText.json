@@ -685,5 +685,13 @@
       "evil": "A bucket of glitter for the fresh tarmac. Clip the cones, cut the tapers fine and squeeze past the queue before the contraflow."
     },
     "cargo": { "good": "coffee", "evil": "glitter" }
+  },
+  "roadworks-night": {
+    "name": "Roadworks by Night",
+    "description": {
+      "good": "Late coffee for the night shift. Follow the arrow boards and the yellow lines: a lane closed, the lanes shifted, then a contraflow under the lights.",
+      "evil": "Glitter for the night shift's fresh tarmac. Cut the tapers in the dark, clip the cones and race the queue to the contraflow."
+    },
+    "cargo": { "good": "coffee", "evil": "glitter" }
   }
 }
