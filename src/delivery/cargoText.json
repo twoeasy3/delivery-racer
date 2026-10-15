@@ -78,5 +78,7 @@
   "spider": { "name": "Spider on a Fishing Line", "blurb": "A rubber spider dangled from a rod, price tag and all.", "states": ["Hanging","Bobbing","Dropped"] },
   "stolenbust": { "name": "Stolen Marble Bust", "blurb": "A marble bust under a dust sheet, stolen and not happy about it.", "states": ["Under a sheet","Sheet slipping","Glaring"] },
   "ink": { "name": "Disappearing Ink", "blurb": "A bottle of disappearing ink and a quill, on a blotter.", "states": ["Corked","Blotting","Splashing"] },
-  "scarabs": { "name": "Crate of Scarabs", "blurb": "A nailed-down crate of scarab beetles that want out.", "states": ["Lid nailed down","Scuttling inside","Swarming out"] }
+  "scarabs": { "name": "Crate of Scarabs", "blurb": "A nailed-down crate of scarab beetles that want out.", "states": ["Lid nailed down","Scuttling inside","Swarming out"] },
+  "bubbletea": { "name": "Tray of Bubble Teas", "blurb": "Four bubble teas in a cardboard tray, pearls bobbing, straws in." },
+  "hamsterball": { "name": "Pet-Shop Hamster Ball", "blurb": "A hamster in its exercise ball, and it has somewhere to be.", "states": ["Nibbling","Rolling","Bouncing loose"] }
 }

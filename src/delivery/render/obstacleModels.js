@@ -8,6 +8,7 @@ import { AUTUMN_OBSTACLES } from './themes/autumnModels.js';
 import { RAINFOREST_OBSTACLES } from './themes/rainforestModels.js';
 import { TUSCANY_OBSTACLES } from './themes/tuscanyModels.js';
 import { DESERT_OBSTACLES } from './themes/desertModels.js';
+import { MALL_OBSTACLES } from './themes/mallModels.js';
 
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 // a model made of boxes: parts are [material, width, height, length, x, y, z]
@@ -1189,3 +1190,4 @@ Object.assign(OBSTACLE_MODELS, RAINFOREST_OBSTACLES); // (the rainforest's three
 Object.assign(OBSTACLE_MODELS, TUSCANY_OBSTACLES); // Tuscany's: wineCrates, hayRoll, terracottaPot (themes/tuscanyModels.js)
 // the desert dunes' own (render/themes/desertModels.js): a stack of jerrycans, a rolled tent, a rally marker flag
 Object.assign(OBSTACLE_MODELS, DESERT_OBSTACLES);
+Object.assign(OBSTACLE_MODELS, MALL_OBSTACLES); // the mall's (render/themes/mallModels.js): cartons on a sack truck, a row of nested trolleys, a WET FLOOR sign

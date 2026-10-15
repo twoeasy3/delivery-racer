@@ -656,6 +656,7 @@ export const CONFIG = {
     // ...for a rock (sized by its radius, as a rock is):
     lavaRock: { damage: 39, speedKept: 0.6 },       // the volcano's: cooled lava, glowing in its cracks
     jerryStack: { damage: 31, speedKept: 0.75 }, tentRoll: { damage: 38, speedKept: 0.75 }, rallyFlag: { damage: 3, speedKept: 0.94, light: true }, // the desert's: stacked jerrycans (a crate), a rolled tent (a bale), a rally marker flag (a cone)
+    boxStack: { damage: 31, speedKept: 0.75 }, trolleyRow: { damage: 38, speedKept: 0.75 }, wetFloorSign: { damage: 3, speedKept: 0.94, light: true }, // the mall's: cartons on a sack truck (a crate), nested shopping trolleys (a bale), a WET FLOOR A-frame (a cone)
   },
   // drifters: obstacles moving about the road in patterns (a level's "drifters")
   drifters: {
@@ -1355,6 +1356,7 @@ export const CONFIG = {
     camEase: 35,           // m over which camera dips before portal and rises after
     lampEvery: 12,         // m between the ceiling lamps
     echo: 0.45,            // how much of the engine comes back off the walls, well inside (0 = none)
+    litEcho: 0.5,          // ...and the share of that a LIT tunnel keeps (a mall's halls: a hall's reverb, not a tube's: render/tunnelshape.js)
   },
   // a burst water main (a level's "waterMains": { s, lane, length? }, see Hazards): a fountain out of its lane for
   // `on` s, then nothing for `off` s, over and over; while it sprays, `length` m of that lane beyond it is under

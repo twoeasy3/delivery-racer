@@ -1078,7 +1078,7 @@ const buildRoad = () => {
   if (theme.unmarked) {
     lineMat.visible = centreMat.visible = false;
   }
-  if (theme.unmarked && !theme.water) {
+  if (theme.unmarked && !theme.water && !theme.bare) { // (bare: no ruts either: a polished floor, the mall's)
     const rut = flat(new THREE.Color(theme.road).multiplyScalar(0.8).getHex());
     for (const x of exits) { // (each side road's lanes: as many as it ever has, each where it is open)
       for (let lane = 0; lane < Math.max(2, ...x.lanes.map(l => l.count)); lane++) {

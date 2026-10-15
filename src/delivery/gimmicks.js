@@ -12,7 +12,7 @@ import { CONFIG } from './config.js';
 import { LEVELS, HIDDEN_LEVELS, levelLabel } from './levels.js';
 import { levelName } from './levelText.js';
 import { nameOf, blurbOf, slug } from './words.js';
-import { themedKind } from './themes.js';
+import { themedKind, tunnelLit } from './themes.js';
 import { LEVEL_CARS, amphibiousCars } from './cars.js';
 import { MODELS, AMBULANCE_BOX } from './render/models.js';
 import './render/trafficModels.js';
@@ -51,6 +51,7 @@ const JUNK_NAMES = { umbrella: 'beach umbrellas', surfboard: 'surfboards', coole
   chairStack: 'stacks of chairs', riceBasket: 'baskets of rice', wasteDrum: 'drums of waste', present: 'presents', toyDrum: 'toy drums', cafeTable: 'cafe tables', wheelieBin: 'wheelie bins', snowdrift: 'heaps of snow',
   wineCrates: 'stacks of wine crates', hayRoll: 'hay bales', terracottaPot: 'terracotta pots', sackStack: 'stacks of sacks', hawkerCart: 'hawkers\' carts', bagStack: 'heaps of bags', bananaCrate: 'crates of bananas', fallenLog: 'piles of logs', termiteMound: 'termite mounds', beachBall: 'beach balls', tumbleweed: 'tumbleweeds', flagStand: 'flags on stands', brimstone: 'spikes of brimstone', lavaRock: 'lava boulders', mine: 'sea mines' };
 Object.assign(JUNK, { jerryStack: {}, tentRoll: {}, rallyFlag: {} }); Object.assign(JUNK_NAMES, { jerryStack: 'stacks of jerrycans', tentRoll: 'rolled tents', rallyFlag: 'rally marker flags' }); // (the desert's)
+Object.assign(JUNK, { boxStack: {}, trolleyRow: {}, wetFloorSign: {} }); Object.assign(JUNK_NAMES, { boxStack: 'sack trucks of cartons', trolleyRow: 'rows of trolleys', wetFloorSign: 'wet-floor signs' }); // (the mall's)
 Object.assign(JUNK, { pumpkinCrate: {}, harvestCrate: {}, leafPile: {}, smallPumpkin: {} }); Object.assign(JUNK_NAMES, { pumpkinCrate: 'crates of pumpkins', harvestCrate: 'crates of pumpkins', leafPile: 'heaps of leaves', smallPumpkin: 'small pumpkins' }); // (Halloween's crate, and autumn's)
 // the kinds that drift on a level (not the darting ones: those are another card), as its theme has them
 const driftingKinds = (level) => [...new Set((level.drifters || []).filter(d => d.pattern !== 'dart').map(d => themedKind(level.theme, d.kind || 'cone', true)))].filter(k => JUNK[k]);
@@ -811,7 +812,7 @@ export const GROUPS = [
     } },
   ] },
   { name: 'City streets', cards: [
-    { name: 'Tunnels', color: 0x4a4f5c, has: (l) => l.tunnels?.length, rules: [
+    { name: 'Tunnels', color: 0x4a4f5c, has: (l) => l.tunnels?.length && !tunnelLit(l), rules: [
       `The road goes under cover: no sky, the dark closing in over ${T.edge} m at each portal, and nothing to see by but the ceiling lamps (one every ${T.lampEvery} m) and your own headlights, which come on by themselves.`,
       `You see about ${T.far} m ahead inside, a good deal less than outside. The camera drops in close behind the car, and the engine echoes off the walls.`,
       'Nothing else changes: the traffic, the police and the shoulders are as outside.',
@@ -1142,6 +1143,7 @@ const DRESS = [ // [kind, name, what it stands in for, where, the card's colour]
 ];
 DRESS.push(['harvestCrate', 'Crate of pumpkins', 'crate', 'autumn', 0xe8751a], ['leafPile', 'Heap of leaves', 'bale', 'autumn', 0xc8421e], ['smallPumpkin', 'Small pumpkin', 'cone', 'autumn', 0xf08a1c]);
 DRESS.push(['jerryStack', 'Stack of jerrycans', 'crate', 'the desert', 0xc8321f], ['tentRoll', 'Rolled tent', 'bale', 'the desert', 0xc4452a], ['rallyFlag', 'Rally marker flag', 'cone', 'the desert', 0xd8262b]);
+DRESS.push(['boxStack', 'Cartons on a sack truck', 'crate', 'the mall', 0xc89a62], ['trolleyRow', 'Row of trolleys', 'bale', 'the mall', 0x9aa0a8], ['wetFloorSign', 'Wet-floor sign', 'cone', 'the mall', 0xf2c21d]);
 // the kinds of plain obstacle a level's road has, as its theme has them
 const dressingKinds = (l) => new Set([...(l.obstacles || []).map(o => themedKind(l.theme, o.kind || 'barrier')), ...(l.shoulderRows || []).map(r => themedKind(l.theme, r.kind || 'cone')),
   ...(l.drifters || []).map(d => themedKind(l.theme, d.kind || 'cone', true))]);

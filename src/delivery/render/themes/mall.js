@@ -1,0 +1,470 @@
+// ---- the mall: a shopping mall the road drives through. The whole level but its ends is ONE LIT TUNNEL (a level's
+// "tunnels", lit by the theme: themes.js `tunnel.lit`, so no dark, no fog closing in, no headlights), and its halls are the
+// level's zones (their `scenery`: fashion, atrium, foodcourt, escalators, electronics, kids), each with a ceiling height of
+// its own (themes.js `tunnel.heights`, eased from one hall to the next: render/tunnelshape.js), a palette, and its own
+// dressing. The theme draws the whole shell itself (tunnel.js leaves it: `shell: false`): a polished tiled floor over the
+// road, the walls as rows of shop fronts (a pier, a glass front, a facia with the shop's name on it, a dark interior behind
+// with its displays lit), the ceiling with its panel lights (and their shine on the floor), the atrium's glass roof and
+// galleries, the food court's counters and tables, the escalator hall's escalators (their steps moving: the one thing that
+// moves) and mezzanine bridge, the play zone's balloon arch and ball pit, and at each end a facade: the mall's entrance
+// (a glass canopy on columns, the name over the doors, flags, planters) and the loading dock. Outside the tunnel it is a car
+// park (the regular outdoors: the theme's flat ground, painted bays, lamp posts, trolley bays, hedges). Every sign is drawn in
+// code on a small canvas (mallModels.js signTexture), the names invented. No people, no mannequins. All instanced (one draw
+// call per kind of thing) and laid out from a seed of the level's own: the same every run.
+import * as THREE from 'three';
+import { CONFIG } from '../../config.js';
+import { LEVEL } from '../../levels.js';
+import { Track } from '../../track.js';
+import { heightOf } from '../tunnelshape.js';
+import { everyFrame } from './sceneryClock.js';
+import { signTexture, GLYPHS, openBoxGeometry } from './mallModels.js';
+
+const BAY = 12;            // m: one shop front
+const FACIA = 4.9;         // m: the top of a shop front (its facia's top); the wall above goes up to the ceiling
+const GALLERY = 5.6;       // m: the atrium's gallery floor
+// the halls' looks: the floor's two tile tones, the wall above the shops, the ceiling, the facias' colours, the shops' interiors
+const PAL = {
+  fashion: { floor: 0xe9e3d7, floor2: 0xd9d1c3, wall: 0xf4f1ec, roof: 0xf7f5f0, facia: [0x6b2d5c, 0x1f6f7a, 0xc89a1e, 0x1f3a6e, 0x9a2f3a], inside: 0x3a3238, lights: 1 },
+  atrium: { floor: 0xdedbd5, floor2: 0xcac6be, wall: 0xeeebe4, roof: 0xbcd6ea, facia: [0x2f6f8a, 0x8a4a2f, 0x3a7a4a, 0x6b2d5c], inside: 0x33303a, lights: 0.6 },
+  foodcourt: { floor: 0xc9a27a, floor2: 0xb8906a, wall: 0xe8dcc8, roof: 0x3a3a3c, facia: [0xd8262b, 0xf2c21d, 0x2e9b3d, 0xe8751a], inside: 0x4a3a2a, lights: 0 },
+  escalators: { floor: 0xd9d6cf, floor2: 0xc8c5be, wall: 0xdfe2e6, roof: 0xf2f2f4, facia: [0x4a5a6a, 0x2f6f8a], inside: 0x3a3c42, lights: 1 },
+  electronics: { floor: 0x4a4c52, floor2: 0x3e4046, wall: 0x3a3c42, roof: 0x24262b, facia: [0x1a1b1e, 0x2a2c33, 0x101114], inside: 0x16171a, lights: 0.5 },
+  kids: { floor: 0x6fb3ea, floor2: 0x5aa0d8, wall: 0xfff2b8, roof: 0xffffff, facia: [0xf04a5e, 0xf2c21d, 0x3ab0e8, 0x5fc04a, 0xf28ac0], inside: 0x4a3a52, lights: 1 },
+};
+// the shops, by hall: a name (invented: no real brand), the sign's colours, its mark
+const SHOPS = {
+  fashion: [['THREADS', '#6b2d5c', '#f8e8f0', 'hanger'], ['SOLE MATES', '#1f6f7a', '#e8f8f8', 'shoe'], ['SPARKLE', '#1f3a6e', '#ffe8a0', 'gem'], ['PETAL PUSHER', '#3a7a4a', '#ffffff', 'flower'], ['CUT ABOVE', '#9a2f3a', '#ffffff', 'scissors'], ['WRAP STAR', '#c89a1e', '#3a2a10', 'bow']],
+  atrium: [['PAGE TURNER', '#2f6f8a', '#ffffff', 'book'], ['SPARKLE', '#1f3a6e', '#ffe8a0', 'gem'], ['THREADS', '#6b2d5c', '#f8e8f0', 'hanger'], ['SCOOP', '#f28ac0', '#3a1a2a', 'cone']],
+  foodcourt: [['BEAN THERE', '#4a2a1a', '#f8e8d0', 'cup'], ['SLICE OF LIFE', '#d8262b', '#fff2c0', 'slice'], ['NOODLE BAR', '#2e9b3d', '#ffffff', 'bowl'], ['BURGER BARN', '#e8751a', '#fff8e0', 'burger'], ['SCOOP', '#f28ac0', '#3a1a2a', 'cone']],
+  escalators: [['PAGE TURNER', '#2f6f8a', '#ffffff', 'book'], ['CUT ABOVE', '#9a2f3a', '#ffffff', 'scissors']],
+  electronics: [['GADGET GROTTO', '#101114', '#3ad8ff', 'phone'], ['PIXEL PLAY', '#16171a', '#ff4fd8', 'joystick'], ['BYTE SIZE', '#1a1b1e', '#7fff6a', 'phone']],
+  kids: [['TOY CHEST', '#f04a5e', '#fff8e0', 'bear'], ['SCOOP', '#f28ac0', '#3a1a2a', 'cone'], ['PIXEL PLAY', '#16171a', '#ff4fd8', 'joystick'], ['BUBBLE UP', '#3ab0e8', '#ffffff', 'bubble']],
+};
+const NAME = 'GALLERIA';   // the mall's own name, over its doors
+
+// (the signs' textures, made once and kept: every level of the theme shares them)
+const signs = new Map();
+const sign = (name, bg, fg, glyph) => { const k = name + bg; if (!signs.has(k)) signs.set(k, signTexture(name, bg, fg, 256, 64, GLYPHS[glyph])); return signs.get(k); };
+// the floor's tile: one pale tile with a dark grout line round it and a faint marbling, repeated every 2 m (drawn once, when first wanted)
+let tile = null;
+const tileTexture = () => {
+  if (tile) return tile;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 256;
+  const g = canvas.getContext('2d');
+  g.fillStyle = '#ffffff';
+  g.fillRect(0, 0, 256, 256);
+  g.strokeStyle = 'rgba(0,0,0,0.12)';
+  g.lineWidth = 2;
+  for (let k = 0; k < 40; k++) { // (the marbling: faint arcs)
+    g.beginPath();
+    g.arc(Math.random() * 256, Math.random() * 256, 30 + Math.random() * 90, Math.random() * 6, Math.random() * 6);
+    g.stroke();
+  }
+  g.fillStyle = 'rgba(0,0,0,0.28)';
+  g.fillRect(0, 0, 256, 4);
+  g.fillRect(0, 0, 4, 256);
+  tile = new THREE.CanvasTexture(canvas);
+  tile.wrapS = tile.wrapT = THREE.RepeatWrapping;
+  tile.userData.shared = true;
+  tile.anisotropy = 4;
+  return tile;
+};
+
+export const mall = ({ theme, beside, levelGroup }) => {
+  // (laid out the same every time: a seed of the level's own)
+  let seed = 23 + (LEVEL.id || '').length * 131;
+  const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const p = {}, q = {}, dummy = new THREE.Object3D(), colour = new THREE.Color();
+  dummy.rotation.order = 'YXZ'; // (a thing is turned to the road's heading first, then tilted about its own x: an escalator, a slide)
+  const tunnels = LEVEL.tunnels || [];
+  const zones = (LEVEL.zones || []).slice().sort((a, b) => a.from - b.from);
+  const zoneAt = (s) => zones.find(z => s >= z.from && s < z.to) || null;
+  const hallAt = (s) => { const z = zoneAt(s); return z && PAL[z.scenery] ? z.scenery : null; };
+  const lo = (s) => Track.lo(s) - 0.3, hi = (s) => Track.hi(s) + 0.3; // (the walls stand just outside the shoulders, as every tunnel's)
+  const facing = (side) => side * Math.PI / 2; // (a thing on that side turned to face the road: its +z towards it)
+  const inside = (side, s, d) => beside(side, s, -d); // (d m in from the wall, on the widened floor: where the dressing stands)
+
+  // ---- batches: one InstancedMesh per kind of thing, each instance with a colour of its own if it wants one -----
+  const batches = [];
+  const batch = (geometry, material, glowing = false) => {
+    const b = { geometry, material: material ?? (glowing ? new THREE.MeshBasicMaterial({ color: 0xffffff }) : new THREE.MeshLambertMaterial({ color: 0xffffff })), items: [] };
+    batches.push(b);
+    // at a world point, turned ry (and tilted rx, rz), scaled, in a colour (white: the material's own)
+    b.at = (x, y, z, ry = 0, sx = 1, sy = 1, sz = 1, col = 0xffffff, rx = 0, rz = 0) => { b.items.push([x, y, z, rx, ry, rz, sx, sy, sz, col]); return b.items.length - 1; };
+    // at (s, lat, y over the road), turned `turn` from the road's heading
+    b.on = (s, lat, y, turn = 0, sx = 1, sy = 1, sz = 1, col = 0xffffff, rx = 0, rz = 0) => { const h = Track.toWorld(s, lat, p); return b.at(p.x, p.y + y, p.z, h + turn, sx, sy, sz, col, rx, rz); };
+    return b;
+  };
+  const flush = () => {
+    for (const b of batches) {
+      if (!b.items.length) continue;
+      const mesh = new THREE.InstancedMesh(b.geometry, b.material, b.items.length);
+      b.items.forEach(([x, y, z, rx, ry, rz, sx, sy, sz, col], i) => {
+        dummy.position.set(x, y, z);
+        dummy.rotation.set(rx, ry, rz);
+        dummy.scale.set(sx, sy, sz);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+        mesh.setColorAt(i, colour.set(col));
+      });
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.instanceColor.needsUpdate = true;
+      mesh.frustumCulled = false; // (a hall's worth of fronts: the bounds are not worth working out)
+      levelGroup.add(mesh);
+      b.mesh = mesh;
+    }
+  };
+  // a strip of coloured quads: pos / col / uv lists, one geometry, vertex colours (the floor, the walls over the shops, the ceilings)
+  const sheet = (material) => {
+    const S = { pos: [], col: [], uv: [], idx: [], n: 0, material };
+    // a quad from corners a, b, c, d (each [x, y, z, u, v]), in a colour
+    S.quad = (a, b, c, d, col) => {
+      colour.set(col);
+      for (const v of [a, b, c, d]) { S.pos.push(v[0], v[1], v[2]); S.col.push(colour.r, colour.g, colour.b); S.uv.push(v[3] || 0, v[4] || 0); }
+      S.idx.push(S.n, S.n + 1, S.n + 2, S.n, S.n + 2, S.n + 3);
+      S.n += 4;
+    };
+    S.flush = () => {
+      if (!S.n) return null;
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(S.pos, 3));
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(S.col, 3));
+      geo.setAttribute('uv', new THREE.Float32BufferAttribute(S.uv, 2));
+      geo.setIndex(S.idx);
+      geo.computeVertexNormals();
+      const mesh = new THREE.Mesh(geo, S.material);
+      levelGroup.add(mesh);
+      return mesh;
+    };
+    return S;
+  };
+  const CUBE = new THREE.BoxGeometry(1, 1, 1), TUBE = new THREE.CylinderGeometry(0.5, 0.5, 1, 10), BALL = new THREE.SphereGeometry(0.5, 10, 7);
+  const PLANE = new THREE.PlaneGeometry(1, 1), FLAT = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), CONE = new THREE.ConeGeometry(0.5, 1, 8);
+  const INSIDE = openBoxGeometry(1, 1, 1);
+  const lambert = (color, extra) => new THREE.MeshLambertMaterial({ color, ...extra });
+  const glow = (color, extra) => new THREE.MeshBasicMaterial({ color, ...extra });
+
+  // the kinds of thing
+  const piers = batch(CUBE), facias = batch(CUBE), plinths = batch(CUBE, lambert(0x3a3238)), uppers = batch(CUBE);
+  const glass = batch(PLANE, new THREE.MeshBasicMaterial({ color: 0xbfe0f4, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false }));
+  const insides = batch(INSIDE), displays = batch(CUBE), doors = batch(CUBE, lambert(0x8a9096));
+  const signPlanes = new Map(); // texture -> batch
+  const signBatch = (texture) => { if (!signPlanes.has(texture)) signPlanes.set(texture, batch(PLANE, new THREE.MeshBasicMaterial({ map: texture }))); return signPlanes.get(texture); };
+  const panels = batch(CUBE, null, true), shine = batch(FLAT, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.14, depthWrite: false, blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+  const columns = batch(TUBE, lambert(0xd8d4cc)), mullions = batch(CUBE, lambert(0xe8ecf0)), rails = batch(CUBE, lambert(0x8a9096)), posts = batch(TUBE, lambert(0x8a9096));
+  const planters = batch(CUBE, lambert(0x6b6f74)), leaves = batch(BALL, lambert(0x3f8a3a)), trunks = batch(TUBE, lambert(0x7a5a3a)), fronds = batch(CONE, lambert(0x4a9a48));
+  const benches = batch(CUBE, lambert(0x8a6a48)), bins = batch(TUBE, lambert(0x4a4f57)), banners = batch(PLANE, new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide }));
+  const counters = batch(CUBE), menus = batch(CUBE, null, true), pendants = batch(BALL, glow(0xffb060)), cords = batch(TUBE, lambert(0x1a1b1e));
+  const tables = batch(TUBE, lambert(0xf4f1ec)), legs = batch(TUBE, lambert(0x6f757d)), chairs = batch(CUBE);
+  const trusses = batch(CUBE, lambert(0x6f757d)), balustrades = batch(CUBE, new THREE.MeshBasicMaterial({ color: 0xbfe0f4, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+  const handrails = batch(CUBE, lambert(0x1a1b1e)), steps = batch(CUBE, lambert(0x9aa0a8)), neon = batch(CUBE, null, true), screens = batch(PLANE, null, true);
+  const balloons = batch(BALL), balls = batch(BALL), blocks = batch(CUBE), slides = batch(CUBE, lambert(0xd8262b));
+  const bays = batch(CUBE, glow(0xf4f1ec)), lamps = batch(TUBE, lambert(0x4a4f57)), lampHeads = batch(CUBE, null, true), hedges = batch(CUBE, lambert(0x2f6a2a)), bollards = batch(TUBE, lambert(0x4a4f57)), trolleyBays = batch(INSIDE, lambert(0x8a9096));
+  const flags = batch(PLANE, new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide })), poles = batch(TUBE, lambert(0xd8d4cc)), canopies = batch(CUBE, new THREE.MeshBasicMaterial({ color: 0xbfe0f4, transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false }));
+  const facades = batch(CUBE), rollers = batch(CUBE);
+
+  // ---- the floor: over the road inside the tunnel, 2 m tiles in the hall's two tones by turns, the tile texture over it. In
+  // quads 4 m along and 2 m across, each its own colour (a little over the road at 2 cm, under the ice sheets at 2.5 cm, over
+  // the lane dashes, which it hides: a mall has no lane lines)
+  const floor = sheet(new THREE.MeshLambertMaterial({ map: tileTexture(), vertexColors: true, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
+  for (const t of tunnels) {
+    for (let s = t.from; s < t.to; s += 4) {
+      const s1 = Math.min(t.to, s + 4), hall = hallAt(s + 2) || 'fashion', P = PAL[hall];
+      const a = lo(s), b = hi(s), a1 = lo(s1), b1 = hi(s1), cols = Math.ceil((b - a) / 2);
+      for (let c = 0; c < cols; c++) {
+        const la = a + (b - a) * c / cols, lb = a + (b - a) * (c + 1) / cols, la1 = a1 + (b1 - a1) * c / cols, lb1 = a1 + (b1 - a1) * (c + 1) / cols;
+        const tone = (c + Math.round(s / 4)) % 2 ? P.floor : P.floor2;
+        Track.toWorld(s, la, p); const A = [p.x, p.y + 0.024, p.z, la / 2, s / 2];
+        Track.toWorld(s, lb, p); const B = [p.x, p.y + 0.024, p.z, lb / 2, s / 2];
+        Track.toWorld(s1, lb1, p); const C = [p.x, p.y + 0.024, p.z, lb1 / 2, s1 / 2];
+        Track.toWorld(s1, la1, p); const D = [p.x, p.y + 0.024, p.z, la1 / 2, s1 / 2];
+        floor.quad(A, D, C, B, tone);
+      }
+    }
+  }
+  floor.flush();
+
+  // ---- the shell: the walls above the shop fronts and the ceilings, in the hall's colours; the walls' lower 4.9 m are the
+  // shop fronts (below). Both as sheets of quads 4 m along
+  // (both unlit: a ceiling faces down and the hemisphere light would make it the ground's grey; the walls a shade darker than their colour)
+  const walls = sheet(new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+  const roofs = sheet(new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+  for (const t of tunnels) {
+    const hAt = heightOf(t);
+    for (let s = t.from; s < t.to; s += 4) {
+      const s1 = Math.min(t.to, s + 4), hall = hallAt(s + 2) || 'fashion', P = PAL[hall];
+      const foot = hall === 'atrium' ? GALLERY + FACIA : FACIA; // (the atrium's wall has a second row of shops, on the gallery)
+      for (const side of [-1, 1]) {
+        const edge = side < 0 ? lo : hi;
+        Track.toWorld(s, edge(s), p); Track.toWorld(s1, edge(s1), q);
+        walls.quad([p.x, p.y + foot, p.z], [p.x, p.y + hAt(s), p.z], [q.x, q.y + hAt(s1), q.z], [q.x, q.y + foot, q.z], colour.set(P.wall).multiplyScalar(0.9).getHex());
+      }
+      Track.toWorld(s, lo(s), p); Track.toWorld(s1, lo(s1), q);
+      const A = [p.x, p.y + hAt(s), p.z], D = [q.x, q.y + hAt(s1), q.z];
+      Track.toWorld(s, hi(s), p); Track.toWorld(s1, hi(s1), q);
+      roofs.quad(A, [p.x, p.y + hAt(s), p.z], [q.x, q.y + hAt(s1), q.z], D, P.roof);
+    }
+  }
+  walls.flush();
+  roofs.flush();
+
+  // ---- the shop fronts: along both walls, one each BAY m where the hall has shops (the escalator hall and the food court have
+  // other things there). A front: a pier at its start, a plinth, a glass front with a door in the middle, a facia over it with
+  // the shop's name, and behind the glass a dark interior with lit display blocks in it. `y0`: the floor it stands on
+  const front = (s, side, hall, y0 = 0) => {
+    const list = SHOPS[hall] || SHOPS.fashion, P = PAL[hall], [name, bg, fg, glyph] = list[Math.floor(rand() * list.length)];
+    const facia = P.facia[Math.floor(rand() * P.facia.length)], edge = side < 0 ? lo : hi, w = BAY - 0.9;
+    const mid = s + BAY / 2, latW = edge(mid), h = Track.toWorld(mid, latW, p), turn = h + facing(side);
+    piers.on(s + 0.45, edge(s + 0.45), y0 + FACIA / 2, 0, 0.9, FACIA, 0.6, P.wall);
+    plinths.on(mid, latW, y0 + 0.2, 0, 0.5, 0.4, w);
+    glass.at(p.x, p.y + y0 + 2.0, p.z, turn, w, 3.2, 1);
+    doors.at(p.x, p.y + y0 + 1.5, p.z, turn, 0.12, 2.6, 2.4);
+    facias.at(p.x, p.y + y0 + 4.2, p.z, turn, w, 1.4, 0.5, facia);
+    // (the sign: on the facia's road-side face)
+    const dx = Math.sin(turn), dz = Math.cos(turn);
+    signBatch(sign(name, bg, fg, glyph)).at(p.x + dx * 0.27, p.y + y0 + 4.2, p.z + dz * 0.27, turn, 7, 1.0, 1);
+    // the interior: an open box behind the glass, its open face to the road
+    insides.at(p.x - dx * 3.0, p.y + y0 + 2.45, p.z - dz * 3.0, turn, w, FACIA, 6, P.inside);
+    for (let k = 0; k < 3; k++) {
+      const u = -w / 2 + 1.5 + k * (w - 3) / 2, d = -(1.2 + rand() * 2.5);
+      const dlat = Math.cos(turn), dlz = -Math.sin(turn); // (across the front)
+      displays.at(p.x + dlat * u + dx * d, p.y + y0 + 0.5 + rand() * 0.8, p.z + dlz * u + dz * d, turn, 0.8 + rand() * 0.8, 1 + rand() * 1.6, 0.8, P.facia[(k + 1) % P.facia.length]);
+    }
+    if (hall === 'electronics') {
+      neon.at(p.x + dx * 0.3, p.y + y0 + 3.45, p.z + dz * 0.3, turn, w, 0.08, 0.08, rand() < 0.5 ? 0x3ad8ff : 0xff4fd8);
+      screens.at(p.x - dx * 2.2, p.y + y0 + 2.2, p.z - dz * 2.2, turn, 2.4, 1.4, 1, 0x7fc8ff);
+    }
+  };
+  // ---- the lights: panels under the ceiling in two rows, a shine on the floor under each (the polish); the food court has
+  // pendant lamps instead, hung low over the counters
+  const lights = (t) => {
+    const hAt = heightOf(t);
+    for (let s = t.from + 3; s < t.to; s += 6) {
+      const hall = hallAt(s) || 'fashion', P = PAL[hall], h = hAt(s);
+      if (P.lights === 0) { // (the food court: pendants)
+        for (const side of [-1, 1]) {
+          const lat = beside(side, s, -1.2);
+          pendants.on(s, lat, h - 2.4, 0, 0.6, 0.45, 0.6);
+          cords.on(s, lat, h - 1.1, 0, 0.03, 2.4, 0.03);
+        }
+        continue;
+      }
+      for (const lat of [-2.0, 2.0]) {
+        if (rand() > P.lights) continue;
+        panels.on(s, lat, h - 0.08, 0, 2.6, 0.12, 0.9, hall === 'electronics' ? 0xcfe8ff : 0xffffff);
+        shine.on(s, lat, 0.045, 0, 2.2, 1, 5.0);
+      }
+    }
+  };
+  // ---- the atrium: a glass roof (the ceiling is pale blue: a lattice of mullions under it), galleries along both walls at
+  // GALLERY m with balustrades and a second row of shops, the floor between them widened (the level's run-off): potted palms,
+  // planters, benches and bins, banners hung from the roof
+  const atrium = (z, t) => {
+    const hAt = heightOf(t), from = Math.max(z.from, t.from), to = Math.min(z.to, t.to);
+    for (let s = from + 8; s < to - 8; s += 8) { // (the mullions: across the roof every 8 m, and along it)
+      const h = hAt(s), w = hi(s) - lo(s);
+      mullions.on(s, (lo(s) + hi(s)) / 2, h - 0.2, Math.PI / 2, w, 0.25, 0.25);
+    }
+    for (const k of [-0.3, 0, 0.3]) mullions.on((from + to) / 2, (lo((from + to) / 2) + hi((from + to) / 2)) / 2 + k * (hi(from) - lo(from)), hAt((from + to) / 2) - 0.2, 0, 0.25, 0.25, to - from);
+    for (const side of [-1, 1]) {
+      const edge = side < 0 ? lo : hi;
+      // the gallery: a slab out from the wall over the ground-floor shops, a balustrade along its edge
+      for (let s = from; s < to; s += 8) {
+        const s1 = Math.min(to, s + 8), mid = (s + s1) / 2;
+        uppers.on(mid, edge(mid) - side * 1.6, GALLERY - 0.3, 0, 3.2, 0.6, s1 - s + 0.05, 0xd8d4cc);
+        balustrades.on(mid, edge(mid) - side * 3.1, GALLERY + 0.55, 0, 0.06, 1.1, s1 - s);
+        rails.on(mid, edge(mid) - side * 3.1, GALLERY + 1.12, 0, 0.1, 0.06, s1 - s);
+        for (let q = s; q < s1; q += 2) posts.on(q, edge(q) - side * 3.1, GALLERY + 0.55, 0, 0.08, 1.1, 0.08);
+      }
+      for (let s = from; s + BAY <= to; s += BAY) { front(s, side, 'atrium'); front(s, side, 'atrium', GALLERY); }
+      // the ground floor's run-off: palms in pots, planters, benches, bins, by turns
+      for (let s = from + 6; s < to - 6; s += 14) {
+        const lat = inside(side, s, 1.8), k = Math.floor(rand() * 4);
+        if (k === 0) { planters.on(s, lat, 0.45, 0, 1.6, 0.9, 1.6, 0x6b6f74); trunks.on(s, lat, 2.4, 0, 0.3, 3.2, 0.3); for (let f = 0; f < 6; f++) fronds.on(s, lat, 4.3, f * 1.05, 0.5, 2.2, 0.5, 0xffffff, 0.9, 0); }
+        else if (k === 1) { planters.on(s, lat, 0.35, 0, 2.4, 0.7, 1.2); leaves.on(s, lat, 1.1, 0, 2.2, 1.2, 1.2); }
+        else if (k === 2) { benches.on(s, lat, 0.45, 0, 0.5, 0.1, 2.2); for (const d of [-0.9, 0.9]) benches.on(s + d, lat, 0.2, 0, 0.4, 0.4, 0.08); }
+        else bins.on(s, lat, 0.5, 0, 0.6, 1.0, 0.6);
+      }
+    }
+    for (let s = from + 20; s < to - 20; s += 40) { // (the banners: hung from the roof over the road, in the shops' colours)
+      const h = hAt(s);
+      banners.on(s, 0, h - 3.2, Math.PI / 2, 2.4, 4.4, 1, PAL.atrium.facia[Math.floor(rand() * 4)]);
+    }
+  };
+  // ---- the food court: counters along both walls (a counter, a lit menu board over it, a canopy in the stall's colour), the
+  // widened floor with tables and chairs; its lights are the pendants
+  const foodcourt = (z, t) => {
+    const from = Math.max(z.from, t.from), to = Math.min(z.to, t.to);
+    for (const side of [-1, 1]) {
+      const edge = side < 0 ? lo : hi;
+      for (let s = from; s + BAY <= to; s += BAY) {
+        const [name, bg, fg, glyph] = SHOPS.foodcourt[Math.floor(rand() * SHOPS.foodcourt.length)], col = PAL.foodcourt.facia[Math.floor(rand() * 4)];
+        const mid = s + BAY / 2, latW = edge(mid), h = Track.toWorld(mid, latW, p), turn = h + facing(side), dx = Math.sin(turn), dz = Math.cos(turn), w = BAY - 0.9;
+        piers.on(s + 0.45, edge(s + 0.45), FACIA / 2, 0, 0.9, FACIA, 0.6, PAL.foodcourt.wall);
+        insides.at(p.x - dx * 2.5, p.y + 2.45, p.z - dz * 2.5, turn, w, FACIA, 5, PAL.foodcourt.inside);
+        counters.at(p.x + dx * 0.6, p.y + 0.55, p.z + dz * 0.6, turn, w - 1, 1.1, 1.2, col);
+        counters.at(p.x + dx * 0.6, p.y + 1.15, p.z + dz * 0.6, turn, w - 0.8, 0.1, 1.4, 0xf4f1ec);
+        menus.at(p.x - dx * 1.2, p.y + 3.4, p.z - dz * 1.2, turn, w - 3, 1.0, 0.1, 0xfff4d0);
+        facias.at(p.x + dx * 0.3, p.y + 4.2, p.z + dz * 0.3, turn, w, 1.4, 0.6, col);
+        signBatch(sign(name, bg, fg, glyph)).at(p.x + dx * 0.62, p.y + 4.2, p.z + dz * 0.62, turn, 7, 1.0, 1);
+      }
+      for (let s = from + 6; s < to - 4; s += 5) { // (the tables, two deep on the widened floor)
+        for (const d of [1.2, 2.6]) {
+          const lat = inside(side, s, d);
+          if (rand() < 0.15) continue;
+          tables.on(s, lat, 0.74, 0, 0.9, 0.05, 0.9);
+          legs.on(s, lat, 0.36, 0, 0.08, 0.72, 0.08);
+          for (const c of [-1, 1]) chairs.on(s + c * 0.7, lat, 0.45, 0, 0.42, 0.06, 0.42, PAL.foodcourt.facia[Math.floor(rand() * 4)]);
+        }
+      }
+    }
+  };
+  // ---- the escalator hall: a mezzanine along both walls at GALLERY m, reached by escalators rising from the floor along the
+  // road (their steps move: everyFrame), with glass balustrades; a bridge across the road between the two mezzanines
+  const movers = [];
+  const escalators = (z, t) => {
+    const hAt = heightOf(t), from = Math.max(z.from, t.from), to = Math.min(z.to, t.to), RISE = GALLERY, RUN = 22;
+    for (const side of [-1, 1]) {
+      const edge = side < 0 ? lo : hi;
+      for (let s = from; s + BAY <= to; s += BAY) front(s, side, 'escalators'); // (shops under the mezzanine)
+      for (let s = from; s < to; s += 8) { // (the mezzanine and its balustrade)
+        const s1 = Math.min(to, s + 8), mid = (s + s1) / 2;
+        uppers.on(mid, edge(mid) - side * 1.6, GALLERY - 0.3, 0, 3.2, 0.6, s1 - s + 0.05, 0xd8d4cc);
+        balustrades.on(mid, edge(mid) - side * 3.1, GALLERY + 0.55, 0, 0.06, 1.1, s1 - s);
+        rails.on(mid, edge(mid) - side * 3.1, GALLERY + 1.12, 0, 0.1, 0.06, s1 - s);
+      }
+      // the escalators: one up and one down, on the widened floor, climbing along the road to the mezzanine
+      for (const [k, s0] of [[0, from + 40], [1, from + 180]]) {
+        const dir = k ? -1 : 1, lat = inside(side, s0 + RUN / 2, 1.5), tilt = Math.atan2(RISE, RUN), len = Math.hypot(RISE, RUN);
+        const h = Track.toWorld(s0 + RUN / 2, lat, p);
+        trusses.at(p.x, p.y + RISE / 2 - 0.35, p.z, h, 1.5, 0.5, len, 0xffffff, -tilt, 0);
+        for (const x of [-0.78, 0.78]) {
+          const across = Math.cos(h) * x, alongZ = -Math.sin(h) * x;
+          balustrades.at(p.x + across, p.y + RISE / 2 + 0.5, p.z + alongZ, h, 0.05, 1.0, len, 0xffffff, -tilt, 0);
+          handrails.at(p.x + across, p.y + RISE / 2 + 1.0, p.z + alongZ, h, 0.1, 0.08, len + 0.4, 0xffffff, -tilt, 0);
+        }
+        const count = 22, first = steps.items.length;
+        for (let i = 0; i < count; i++) steps.on(s0 + RUN * i / count, lat, RISE * i / count + 0.1, 0, 1.4, 0.2, 0.5, 0x9aa0a8);
+        movers.push({ first, count, s0, lat, RUN, RISE, dir, phase: rand() });
+      }
+    }
+    // the bridge: across the road at the hall's middle, between the mezzanines, with its balustrades
+    const mid = (from + to) / 2, w = hi(mid) - lo(mid);
+    uppers.on(mid, (lo(mid) + hi(mid)) / 2, GALLERY - 0.3, 0, w + 0.2, 0.6, 4, 0xd8d4cc);
+    for (const d of [-1.95, 1.95]) { balustrades.on(mid + d, (lo(mid) + hi(mid)) / 2, GALLERY + 0.55, Math.PI / 2, 0.06, 1.1, w); rails.on(mid + d, (lo(mid) + hi(mid)) / 2, GALLERY + 1.12, Math.PI / 2, 0.1, 0.06, w); }
+    void hAt;
+  };
+  // ---- the play zone: a balloon arch over the road at its start, a ball pit and giant blocks and a slide on the widened floor
+  const kids = (z, t) => {
+    const from = Math.max(z.from, t.from), to = Math.min(z.to, t.to), COLS = PAL.kids.facia;
+    for (const side of [-1, 1]) for (let s = from; s + BAY <= to; s += BAY) front(s, side, 'kids');
+    const s0 = from + 30, w = hi(s0) - lo(s0), R = w / 2 + 1.5;
+    for (let k = 0; k <= 24; k++) { // (the arch)
+      const a = Math.PI * k / 24;
+      balloons.on(s0, (lo(s0) + hi(s0)) / 2 + Math.cos(a) * R, Math.sin(a) * R + 0.2, 0, 0.9, 1.1, 0.9, COLS[k % COLS.length]);
+    }
+    for (const side of [-1, 1]) {
+      for (let s = from + 50; s < to - 20; s += 60) {
+        const k = Math.floor(rand() * 3), lat = inside(side, s, 2.0);
+        if (k === 0) { // the ball pit: a tray and the balls in it
+          planters.on(s, lat, 0.4, 0, 3.2, 0.8, 7, 0x3ab0e8);
+          for (let b = 0; b < 40; b++) balls.on(s - 3 + rand() * 6, inside(side, s, 0.8 + rand() * 2.4), 0.75 + rand() * 0.4, 0, 0.55, 0.55, 0.55, COLS[b % COLS.length]);
+        } else if (k === 1) { // giant blocks stacked
+          for (let b = 0; b < 5; b++) blocks.on(s - 1.5 + (b % 3) * 1.4, inside(side, s, 1.6 + Math.floor(b / 3) * 0.2), 0.65 + Math.floor(b / 3) * 1.3, rand() * 0.4, 1.2, 1.2, 1.2, COLS[(b + 2) % COLS.length]);
+        } else { // the slide: a ladder of posts up to a platform, the chute down along the road
+          posts.on(s - 2, lat, 1.3, 0, 0.12, 2.6, 0.12);
+          posts.on(s - 2, inside(side, s, 1.0), 1.3, 0, 0.12, 2.6, 0.12);
+          uppers.on(s - 2, inside(side, s, 1.5), 2.6, 0, 1.4, 0.15, 1.4, 0xf2c21d);
+          slides.on(s + 1.2, inside(side, s, 1.5), 1.4, 0, 1.0, 0.15, 6.4, 0xffffff, 0.42, 0);
+        }
+      }
+    }
+  };
+  // ---- the facades: the mall's entrance at the tunnel's start (a wall with the opening, a glass canopy out over the approach
+  // on columns, the name over the doors, flags on poles, planters and bollards) and the loading dock at its end (roller doors
+  // beside the opening, DELIVERIES over it)
+  const facade = (t, s, entrance) => {
+    const hAt = heightOf(t), H = hAt(s), w = hi(s) - lo(s), mid = (lo(s) + hi(s)) / 2, dir = entrance ? -1 : 1; // (dir: out of the tunnel)
+    const col = entrance ? 0xe4dfd6 : 0x9a9ea4;
+    facades.on(s, mid, H + 2.2, 0, w + 24, 4.4, 1.4, col);                                        // the lintel, and a parapet
+    facades.on(s, mid, H + 4.6, 0, w + 24, 0.5, 2.0, 0x6f757d);
+    for (const side of [-1, 1]) facades.on(s, mid + side * (w / 2 + 6), H / 2, 0, 12, H, 1.4, col);  // the piers
+    if (entrance) {
+      signBatch(sign(NAME, '#1f3a6e', '#ffe8a0', null)).on(s + dir * 0.75, mid, H + 2.2, Math.PI, 10, 2.5, 1);
+      signBatch(sign(NAME, '#1f3a6e', '#ffe8a0', null)).on(s + dir * 0.75, mid, H + 2.2, 0, 10, 2.5, 1);
+      // the canopy: glass out over the approach, on columns at the run-off's edges
+      canopies.on(s + dir * 7, mid, 6.2, 0, w + 10, 0.25, 14);
+      for (const side of [-1, 1]) for (const d of [2, 12]) columns.on(s + dir * d, mid + side * (w / 2 + 4.2), 3.1, 0, 0.5, 6.2, 0.5);
+      for (const side of [-1, 1]) {
+        for (const d of [16, 20, 24]) { poles.on(s + dir * d, mid + side * (w / 2 + 6), 4, 0, 0.12, 8, 0.12); flags.on(s + dir * d, mid + side * (w / 2 + 6) + side * 0.9, 7.2, Math.PI / 2, 1.8, 1.1, 1, PAL.kids.facia[d % 5]); }
+        for (const d of [3, 6, 9]) { planters.on(s + dir * d, mid + side * (w / 2 + 2.4), 0.4, 0, 1.4, 0.8, 1.4, 0x6b6f74); leaves.on(s + dir * d, mid + side * (w / 2 + 2.4), 1.1, 0, 1.4, 1.2, 1.4); }
+        for (let d = 14; d <= 30; d += 2.5) bollards.on(s + dir * d, mid + side * (w / 2 + 3.2), 0.5, 0, 0.22, 1.0, 0.22);
+      }
+    } else {
+      signBatch(sign('DELIVERIES', '#1a1b1e', '#f2c21d', null)).on(s + dir * 0.75, mid, H + 2.2, Math.PI, 9, 2.2, 1);
+      for (const side of [-1, 1]) for (let k = 0; k < 3; k++) rollers.on(s + dir * 0.72, mid + side * (w / 2 + 2.6 + k * 3.4), 2.0, 0, 3.0, 4.0, 0.1, k % 2 ? 0xc8ccd2 : 0xb0b4ba);
+      for (const side of [-1, 1]) for (let d = 8; d <= 30; d += 2.5) bollards.on(s + dir * d, mid + side * (w / 2 + 3.2), 0.5, 0, 0.22, 1.0, 0.22);
+    }
+  };
+  // ---- the car park outside: painted bays along both sides, lamp posts, trolley bays, hedges (the ground is asphalt)
+  const carpark = (from, to) => {
+    for (const side of [-1, 1]) {
+      // (the road's edge lines, white: the theme is unmarked, so these are its own)
+      for (let s = from; s < to; s += 8) { const s1 = Math.min(to, s + 8), lat = (q) => (side < 0 ? Track.laneLo(q) : Track.laneHi(q)) + side * 0.15; bays.on((s + s1) / 2, lat((s + s1) / 2), 0.03, 0, 0.14, 0.02, s1 - s + 0.1); }
+      for (let s = from + 4; s < to - 4; s += 2.7) bays.on(s, beside(side, s, 7.4), 0.03, 0, 0.12, 0.02, 4.8);
+      bays.on((from + to) / 2, beside(side, (from + to) / 2, 5.0), 0.03, 0, 0.12, 0.02, to - from - 8);
+      for (let s = from + 15; s < to - 10; s += 36) { lamps.on(s, beside(side, s, 4.6), 4, 0, 0.18, 8, 0.18); lampHeads.on(s, beside(side, s, 4.6) - side * 0.6, 7.9, 0, 0.5, 0.2, 1.4, 0xfff4d0); }
+      for (let s = from + 30; s < to - 10; s += 60) trolleyBays.on(s, beside(side, s, 11), 1.1, facing(side), 2.4, 2.2, 4);
+      for (let s = from + 2; s < to - 2; s += 4) hedges.on(s, beside(side, s, 13.5), 0.5, 0, 1.2, 1.0, 4.1);
+    }
+  };
+
+  // ---- lay it out (an error here is said, not swallowed: road.js redraws a level when its theme's file arrives, inside a promise)
+  try {
+  for (const t of tunnels) {
+    lights(t);
+    for (const z of zones) {
+      if (z.to <= t.from || z.from >= t.to) continue;
+      const from = Math.max(z.from, t.from), to = Math.min(z.to, t.to);
+      if (z.scenery === 'atrium') atrium(z, t);
+      else if (z.scenery === 'foodcourt') foodcourt(z, t);
+      else if (z.scenery === 'escalators') escalators(z, t);
+      else if (z.scenery === 'kids') kids(z, t);
+      else for (const side of [-1, 1]) for (let s = from; s + BAY <= to; s += BAY) front(s, side, PAL[z.scenery] ? z.scenery : 'fashion');
+    }
+    facade(t, t.from, true);
+    facade(t, t.to, false);
+    carpark(Track.start, t.from - 2);
+    carpark(t.to + 2, Track.end);
+  }
+  } catch (e) { console.error('mall scenery:', e); }
+  if (!tunnels.length) carpark(Track.start, Track.end);
+  flush();
+
+  // ---- the escalators' steps move: each step rides up (or down) its escalator's slope and comes round again
+  if (movers.length && steps.mesh) {
+    const mesh = steps.mesh;
+    everyFrame(levelGroup, (t) => {
+      for (const m of movers) {
+        for (let i = 0; i < m.count; i++) {
+          const u = (((i / m.count) + m.dir * t * 0.028 + m.phase) % 1 + 1) % 1;
+          const h = Track.toWorld(m.s0 + m.RUN * u, m.lat, p);
+          dummy.position.set(p.x, p.y + m.RISE * u + 0.1, p.z);
+          dummy.rotation.set(0, h, 0);
+          dummy.scale.set(1.4, 0.2, 0.5);
+          dummy.updateMatrix();
+          mesh.setMatrixAt(m.first + i, dummy.matrix);
+        }
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+    });
+  }
+
+  // ---- the level's ice patches are freshly polished stretches: the sheet a warm wet-white, the shine kept
+  for (const m of levelGroup.children) {
+    if (!m.isMesh || !m.material || !m.material.color || m.material.type !== 'MeshBasicMaterial' || !m.material.transparent) continue;
+    if (m.material.color.getHex() === 0xd6eef8) { m.material.color.set(0xf8f6f2); m.material.opacity = 0.55; }
+  }
+  void theme; void CONFIG; void q;
+};

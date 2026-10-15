@@ -39,5 +39,8 @@
   "termiteMound": { "name": "Termite mound", "blurb": "Stands in for a cone in the rainforest." },
   "jerryStack": { "name": "Stack of jerrycans", "blurb": "Stands in for a crate in the desert." },
   "tentRoll": { "name": "Rolled tent", "blurb": "Stands in for a bale in the desert." },
-  "rallyFlag": { "name": "Rally marker flag", "blurb": "Stands in for a cone in the desert." }
+  "rallyFlag": { "name": "Rally marker flag", "blurb": "Stands in for a cone in the desert." },
+  "boxStack": { "name": "Cartons on a sack truck", "blurb": "Stands in for a crate in the mall." },
+  "trolleyRow": { "name": "Row of trolleys", "blurb": "Stands in for a bale in the mall: three trolleys nested." },
+  "wetFloorSign": { "name": "Wet-floor sign", "blurb": "Stands in for a cone in the mall: a yellow A-frame." }
 }

@@ -104,6 +104,7 @@ if (opt('levels', false) || opt('cars', false) || shots.some(([, address]) => ad
   Object.assign(CINE, { 'endurance-road': '&at=60&ff=2&car=windsong&cineout=-1&cineup=10&cineback=30' }); // (Saturday's: the grandstand on the start straight, the Wind-Song and its rival, from above the road: the usual place is inside the stand)
   Object.assign(CINE, { 'foliage-run': '&at=1360&ff=1&cineout=-1&cineup=9&cineback=26' }); // (Foliage Run, a hidden level: the covered bridge ahead over its stream, the forest in the fall on both sides, leaves coming down)
   Object.assign(CINE, { 'dakar-dash': '&at=620&ff=1' }); // (Dakar Dash, hidden for now: the rock arch over the track with the windsocks before it, the sun low ahead)
+  Object.assign(CINE, { 'mall-dash': '&at=960&ff=1&cineout=-1.2&cineup=7&cineback=24' }); // (Mall Dash, hidden: the atrium from over the road, the galleries and the glass roof; the usual place is inside a shop)
   Object.assign(CINE, { 'haunted-hollow': '&at=2610&ff=1' }); // (Haunted Hollow, hidden: the haunted house on its hill over the tunnel mouth, the harvest moon and bats over it)
   Object.assign(CINE, { 'hong-kong': '&at=400&ff=1&car=postvan' }); // (Hong Kong Harbour: the first ferry pier's clock tower and lanterns ahead on the promenade, the neon and the towers on the left; a tier-6 car, so the level starts)
   Object.assign(CINE, { 'jungle-highway': '&at=900&ff=1&cineout=-1&cineup=9&cineback=28' }); // (Jungle Highway, hidden: the first bridge's old truss overgrown ahead, the wet jungle either side, a macaw over the road; over the road because the usual place is in the tree wall)
@@ -117,7 +118,7 @@ if (opt('levels', false) || opt('cars', false) || shots.some(([, address]) => ad
       if (only(opt('levels')) && only(opt('levels')).includes(id)) shots.push([id, `?autostart${side}&hidden=${id}&ghost&cine${FF(id)}${CINE[id] || ''}`, !!PAIR.folder]);
     }
     // (a hidden level that is to be revealed on the menu later, with its picture made for then: named, with its own CINE place)
-    for (const id of ['dakar-dash']) if (only(opt('levels')) && only(opt('levels')).includes(id)) shots.push([id, `?autostart${side}&hidden=${id}&ghost&cine${FF(id)}${CINE[id] || ''}`, !!PAIR.folder]);
+    for (const id of ['dakar-dash', 'mall-dash']) if (only(opt('levels')) && only(opt('levels')).includes(id)) shots.push([id, `?autostart${side}&hidden=${id}&ghost&cine${FF(id)}${CINE[id] || ''}`, !!PAIR.folder]);
   }
   if (opt('cars', false)) {
     for (const car of [...cars.CARS, ...Object.values(cars.LEVEL_CARS), ...Object.values(cars.SECRET_CARS)]) {

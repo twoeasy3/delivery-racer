@@ -216,10 +216,16 @@ export const THEMES = {
     light: { sky: 0xfff3d8, ground: 0xc58c4e, ambient: 1.55, sun: 0xffe6b8, sunlight: 1.5 } },
 };
 // autumn: New England in the fall (render/themes/autumn.js): a low golden sun in a hazy sky, hills (terrain) under forest in red, orange and gold, leaves drifting down and lying in a carpet along the verges, stone walls, white clapboard houses, pumpkin and apple stands, stacked firewood, a sawmill, a lake in the valleys; a tunnel is a covered bridge. Its wet-leaf patches are the level's "ice"
-// mall (SPIKE, throwaway): a shopping mall: the whole level is one lit tunnel; no scenery file (nothing outside it)
-THEMES.mall = { sky: 0xe9e6df, ground: 0xd8d3c9, road: 0xd9d2c4, scenery: 'mall', line: 0xc9c1b2, centre: 0xc9c1b2, lit: true,
-  tunnel: { wall: 0xf2eee7, tiles: 0xd7cfc2, roof: 0xf8f6f1, face: 0xe4dfd6, lamp: 0xffffff, lintel: 1.5, pier: 1.2 },
-  light: { sky: 0xffffff, ground: 0xd0cabf, ambient: 1.6, sun: 0xfff8ee, sunlight: 0.9 } };
+// mall: a shopping mall (render/themes/mall.js): the whole level but its ends is ONE LIT TUNNEL whose halls are the level's zones
+// (tunnel.heights: the ceiling's height by zone scenery, tunnelshape.js; lit: no dark, no fog, no headlights, a hall's echo;
+// shell: false: the theme draws the walls, ceilings, lights and the entrance facade itself; camHeight/camBack: the chase camera
+// inside). Outside the tunnel it is a car park: asphalt, painted bays, lamp posts, trolley bays, hedges. The road inside is a
+// polished tiled floor; the level's ice patches are freshly polished stretches
+THEMES.mall = { sky: 0x9fc4e8, ground: 0x6f7174, road: 0x3a3d42, scenery: 'mall', unmarked: true, bare: true, lit: true,
+  sets: ['approach', 'fashion', 'atrium', 'foodcourt', 'escalators', 'electronics', 'kids', 'dock'], // (its halls, what a zone's scenery can be: the car park outside, then the halls) // (unmarked and bare: no lane lines, no ruts: the floor is tiles; the car park's lines are the theme's own)
+  tunnel: { lit: true, shell: false, camHeight: 6.5, camBack: 13, wall: 0xf1ede6, roof: 0xf8f6f1, lamp: 0xffffff, face: 0xe4dfd6,
+    heights: { fashion: 8.5, atrium: 16, foodcourt: 10, escalators: 12, electronics: 8.5, kids: 10 } },
+  light: { sky: 0xffffff, ground: 0x9a948a, ambient: 1.5, sun: 0xfff6ea, sunlight: 1.0 } };
 THEMES.autumn = { sky: 0xeccfa0, ground: 0x9a8a3e, road: 0x4a4a4e, scenery: 'autumn', line: 0xf2eede, centre: 0xe6b422, terrain: { gentle: 0xa8923c, steep: 0x7a4c2a, rough: 0.5, flat: 5, rise: 45 }, target: { height: 4.2, beam: true }, tunnel: { wall: 0x8a2f22, tiles: 0xa8743e, roof: 0x5a2a1c, face: 0x7e2a1e, lamp: 0xffc878, lintel: 2.4, pier: 2.6 }, channel: { shallow: 0x7fa6a8, deep: 0x2c5a6a, glint: 0xa8cfd0 }, light: { sky: 0xffe6bc, ground: 0xb89464, ambient: 1.3, sun: 0xffc27a, sunlight: 1.2 } };
 
 // ---- the themes' own obstacles ---------------------------------------------------------------------------
@@ -256,6 +262,7 @@ const OBSTACLES = {
   tuscany: { crate: 'wineCrates', bale: 'hayRoll', cone: 'terracottaPot' }, // (a stack of wine crates; a round hay bale on its side; a pot with a lemon tree. The roadworks' cones are the hazard's own)
   hongkong: { crate: 'hawkerCart', bale: 'bagStack' }, // (a hawker's cart under its awning; a heap of red-white-blue bags; the cones are roadworks and stay)
   autumn: { crate: 'harvestCrate', bale: 'leafPile', cone: 'smallPumpkin' }, // (a crate of pumpkins; a heap of raked leaves; a small pumpkin on a stake)
+  mall: { crate: 'boxStack', bale: 'trolleyRow', cone: 'wetFloorSign' }, // (delivery cartons on a sack truck; three shopping trolleys nested; a WET FLOOR A-frame)
   // (the port keeps its crates, the farm and the Wild West their bales: there they belong)
 };
 // drifting: the same, for the things of a level's "drifters" alone, where what moves about the road wants to be
@@ -290,3 +297,6 @@ const WASHBOARDS = {
 };
 for (const [name, look] of Object.entries(WASHBOARDS)) THEMES[name].washboard = look;
 export const washboardLook = (theme) => { const T = THEMES[theme || 'city']; return T?.washboard || THEMES[T?.scenery]?.washboard || 'dirt'; };
+// is a level's tunnel LIT (a mall's halls): its theme says (tunnel.lit), or every tunnel of its own does ({ lit: true })? Then there
+// is no dark, no fog closing in, no headlights, no "Tunnel!" message, no shadow from the low sun, and no Tunnels card (gimmicks.js)
+export const tunnelLit = (level) => !!(THEMES[level?.theme || 'city'] || THEMES.city).tunnel?.lit || ((level?.tunnels || []).length > 0 && level.tunnels.every(t => t.lit));

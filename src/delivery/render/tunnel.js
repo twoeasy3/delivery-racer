@@ -3,7 +3,8 @@
 // road with a line of lamps down it, and at each end a portal, a face of concrete round the opening.
 // Inside, the dark closes in (the scene's fog drawn right in and its colour taken to the tunnel's, the
 // sky gone with it), the player's headlights come on if the level doesn't have them anyway, and the
-// engine echoes (Sound.echo). All of it eases in and out over the portals.
+// engine echoes (Sound.echo). All of it eases in and out over the portals. A tunnel's height can vary along it and a theme
+// can light its tunnels and draw their shell itself (tunnelshape.js; a mall's halls: render/themes/mall.js).
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { LEVEL } from '../levels.js';
@@ -15,6 +16,7 @@ import { scene, tmp } from './scene.js';
 import { buildStrip } from './road.js';
 import { setHeadlights } from './headlights.js';
 import { Sound } from './audio.js';
+import { heightOf, tunnelsLit } from './tunnelshape.js'; // (the ceiling's height along a tunnel: the usual, the tunnel's own, or the theme's by zone)
 
 const group = new THREE.Group();
 scene.add(group);
@@ -22,17 +24,7 @@ const USUAL = { near: 120, far: 520 };
 const dark = new THREE.Color(), outside = new THREE.Color();
 let inside = 0, lightsOwn = false, has = false;
 
-// SPIKE: the ceiling's height at s for a tunnel: its `profile` [[s, h], ...], eased between points; its `height`; or the usual
-export const heightOf = (t, usual) => {
-  const P = t.profile;
-  if (!P) { const h = t.height ?? usual; return () => h; }
-  return (s) => {
-    if (s <= P[0][0]) return P[0][1];
-    for (let i = 1; i < P.length; i++) if (s <= P[i][0]) { const u = (s - P[i - 1][0]) / (P[i][0] - P[i - 1][0]), k = u * u * (3 - 2 * u); return P[i - 1][1] + (P[i][1] - P[i - 1][1]) * k; }
-    return P[P.length - 1][1];
-  };
-};
-// SPIKE: a roof strip whose height varies along s (buildStrip, with y a function of s)
+// a roof strip whose height varies along s (buildStrip, with y a function of s: a ceiling that climbs into an atrium)
 const roofStrip = (sFrom, sTo, latA, latB, yAt, step = 4) => {
   const pos = [], idx = [];
   for (let n = 0; ; n++) {
@@ -54,7 +46,7 @@ const build = () => {
   has = !!(LEVEL.tunnels || []).length;
   lightsOwn = !!(THEMES[LEVEL.theme] || THEMES.city).headlights;
   if (!has) return;
-  const T = CONFIG.tunnel, H = T.height;
+  const T = CONFIG.tunnel;
   // (a theme may give a tunnel its colours, `tunnel` in themes.js: a cardboard box in the toy room)
   const look = { wall: 0x5a5d63, tiles: 0xd9dcd2, roof: 0x3d4046, lamp: 0xfff3d0, face: 0x6b6e74, ...(THEMES[LEVEL.theme] || THEMES.city).tunnel };
   const wall = new THREE.MeshLambertMaterial({ color: look.wall, side: THREE.DoubleSide });
@@ -64,10 +56,11 @@ const build = () => {
   const face = new THREE.MeshLambertMaterial({ color: look.face, side: THREE.DoubleSide });
   const add = (geo, mat) => { if (!geo.attributes.normal) geo.computeVertexNormals(); const mesh = new THREE.Mesh(geo, mat); group.add(mesh); return mesh; };
   const spot = new THREE.Object3D();
+  if (look.shell === false) return; // (the theme draws the whole shell itself, walls, ceiling, lamps and portals: a mall's halls, render/themes/mall.js)
   for (const t of LEVEL.tunnels) {
     const lo = (s) => Track.lo(s) - 0.3, hi = (s) => Track.hi(s) + 0.3;
-    // SPIKE: the ceiling's height along the tunnel: a `profile` [[s, h], ...] (eased from one point to the next), a `height`, or the usual
-    const hAt = heightOf(t, H);
+    // the ceiling's height along the tunnel (tunnelshape.js): the usual H, the tunnel's own `height` or `profile`, or the theme's by zone
+    const hAt = heightOf(t), varies = hAt(t.from) !== hAt(t.to) || !!t.profile || !!look.heights;
     // the walls: a vertical strip each side, from the road up to the ceiling (built as a flat strip, stood up:
     // one quad per 4 m along, its two edges the foot and the top of the wall)
     for (const side of [-1, 1]) {
@@ -85,7 +78,7 @@ const build = () => {
       geo.setIndex(idx);
       add(geo, wall);
       // the band of tiles along it, at headlight height
-      const band = pos.map((v, i) => i % 3 === 1 ? (i % 6 === 1 ? v + 0.9 : pos[i - 3] + 2.1) : v); // (SPIKE: the top from the foot, not the ceiling)
+      const band = pos.map((v, i) => i % 3 === 1 ? (i % 6 === 1 ? v + 0.9 : pos[i - 3] + 2.1) : v); // (the top from the foot, whatever the ceiling's height)
       const bandGeo = new THREE.BufferGeometry();
       bandGeo.setAttribute('position', new THREE.Float32BufferAttribute(band, 3));
       bandGeo.setIndex(idx);
@@ -93,7 +86,7 @@ const build = () => {
       b.position.x += 0; // (flush: it is the same wall, a lighter band of it)
       b.scale.setScalar(1.001);
     }
-    add(t.profile ? roofStrip(t.from, t.to, lo, hi, hAt, 4) : buildStrip(t.from, t.to, lo, hi, hAt(t.from), 4), roof);
+    add(varies ? roofStrip(t.from, t.to, lo, hi, hAt, 4) : buildStrip(t.from, t.to, lo, hi, hAt(t.from), 4), roof);
     // the lamps down the middle of the ceiling
     const count = Math.floor((t.to - t.from) / T.lampEvery);
     const lamps = new THREE.InstancedMesh(new THREE.BoxGeometry(0.5, 0.12, 2.2), lamp, count);
@@ -107,7 +100,7 @@ const build = () => {
     group.add(lamps);
     // the portals: a face of concrete round each opening, wide and tall, the hillside the tunnel goes into
     for (const end of [t.from, t.to]) {
-      const H = hAt(end); // (SPIKE: the portal as tall as the tunnel is there)
+      const H = hAt(end); // (the portal as tall as the tunnel is there)
       const w = hi(end) - lo(end);
       const h = Track.toWorld(end, (lo(end) + hi(end)) / 2, tmp);
       const slab = add(new THREE.BoxGeometry(w + 16, H + 9, 1.2), face);
@@ -137,7 +130,8 @@ export const syncTunnel = () => {
   }
   const T = CONFIG.tunnel, want = Game.state === 'start' ? 0 : Track.tunnel(Player.s);
   if (!inside && !want) return;
-  if (LEVEL.tunnels.every(t => t.lit)) { inside = want; Sound.echo(inside * T.echo * 0.6); return; } // (SPIKE: a lit tunnel: no dark, no fog, no headlights; a little echo)
+  // (a LIT tunnel, a mall's halls: no dark, no fog closing in, no headlights; only a little of the echo, a hall's: T.litEcho)
+  if (tunnelsLit()) { inside = want; Sound.echo(inside * T.echo * (T.litEcho ?? 0.5)); return; }
   if (!inside) outside.copy(scene.background); // (going in: the sky as it was, to put back)
   inside = want;
   dark.set(T.color);

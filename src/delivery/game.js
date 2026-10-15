@@ -1,5 +1,6 @@
 import { CONFIG } from './config.js';
 import { LEVEL, LEVEL_INDEX, LEVELS, SCREENSAVER_LEVEL, selectLevel, selectSpecial, nextOnTab, isRace } from './levels.js';
+import { tunnelLit } from './themes.js';
 import { Progress } from './progress.js';
 import { Nav } from './nav.js';
 import { CAR, useLevelCar, returnCar, earnedFor, ownedAmphibious, carAllowed, carRule, carStats } from './cars.js';
@@ -440,7 +441,7 @@ export const Game = {
       this.inFog = fog;
       // and into a tunnel (a level's "tunnels")
       const tunnel = Track.tunnel(Player.s) > 0;
-      if (tunnel && !this.inTunnel) Message.say('events', 'tunnel');
+      if (tunnel && !this.inTunnel && !tunnelLit(LEVEL)) Message.say('events', 'tunnel'); // (no "lights on" in a lit one: a mall's halls)
       this.inTunnel = tunnel;
     }
     if (playing) Crossings.update(dt);

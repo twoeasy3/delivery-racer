@@ -168,7 +168,7 @@
 //                                  'chairStack', 'riceBasket', 'present', 'toyDrum', 'sackStack', 'beachBall',
 //                                  'tumbleweed', 'cafeTable', 'wheelieBin', 'snowdrift', 'brimstone', 'flagStand',
 //                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'wineCrates', 'hayRoll', 'terracottaPot' (Tuscany's). All of them are on the Gimmicks page, last,
-//                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'jerryStack', 'tentRoll' and
+//                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'boxStack', 'trolleyRow', 'wetFloorSign' (the mall's), 'jerryStack', 'tentRoll' and
 //                                  'rallyFlag' (the desert's: stacked jerrycans, a rolled tent, a rally marker flag). All of them are on the Gimmicks page, last,
 //                                  under Road dressing (gimmicks.html?group=road-dressing)
 //   dropBears  { from, to, count } drop bears up in the trees over that stretch, dropping onto the
@@ -527,8 +527,7 @@ import monsoon from './levels/monsoon.json';
 import hauntedHollow from './levels/haunted-hollow.json'; // (hidden: HIDDEN_LEVELS)
 import chiantiRun from './levels/chianti-run.json'; // (hidden: HIDDEN_LEVELS below)
 import dakarDash from './levels/dakar-dash.json';
-import mallSpike from './levels/mall-spike.json'; // (SPIKE, throwaway)
-import mallSpikeLow from './levels/mall-spike-low.json'; // (SPIKE, throwaway: a 4 m ceiling with today's tunnel camera, 5.5 m up)
+import mallDash from './levels/mall-dash.json'; // (the mall's level, hidden: HIDDEN_LEVELS below)
 
 // the numbered levels, and the special ones (S1, S2...), which always come after them on the
 // menu. All of them unlock in this order, each by delivering the one before, and saved progress
@@ -632,7 +631,7 @@ export const SCREENSAVER_LEVEL = chaos;
 export const EVENT_MAPS = { 'pocket-town': pocketTown, 'solstice-cliffs': solsticeCliffs, 'grand-boulevard': grandBoulevard, 'turbo-quay': turboQuay, 'neon-edge': neonEdge, 'endurance-road': enduranceRoad };
 export const HIDDEN_LEVELS = { testbed, 'grand-prix': grandPrix, 'gimmick-road': gimmickRoad, 'gimmick-road-2': gimmickRoad2, 'gimmick-road-3': gimmickRoad3, 'chianti-run': chiantiRun, 'jungle-highway': jungleHighway, ...EVENT_MAPS };
 HIDDEN_LEVELS['dakar-dash'] = dakarDash; // Dakar Dash (the desert dunes): hidden until the owner reveals it, ?hidden=dakar-dash
-HIDDEN_LEVELS['mall-spike'] = mallSpike; HIDDEN_LEVELS['mall-spike-low'] = mallSpikeLow; // MALL SPIKE (throwaway): a lit tunnel of varying height, ?hidden=mall-spike
+HIDDEN_LEVELS['mall-dash'] = mallDash; // Mall Dash (the shopping mall, a lit tunnel of halls): hidden until the owner reveals it, ?hidden=mall-dash
 HIDDEN_LEVELS['haunted-hollow'] = hauntedHollow; // Haunted Hollow (Halloween): hidden until the owner reveals it, ?hidden=haunted-hollow
 import foliageRun from './levels/foliage-run.json';
 Object.assign(HIDDEN_LEVELS, { 'foliage-run': foliageRun }); // Foliage Run (the autumn theme's level): ?hidden=foliage-run, until it is revealed
