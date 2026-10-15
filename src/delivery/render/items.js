@@ -419,6 +419,7 @@ const buildItems = () => {
   pickupMeshes = Pickups.items.map((p) => place(makePickup(p)));
   targetMeshes = Targets.items.map((t) => place(makeTarget(t)));
 };
+buildItems.loadWeight = 2; // (the loading screen's bar: render/loadscreen.js)
 Game.onLoad.push(buildItems);
 // the level's items built afresh from its data, after a change to it (the level editor's 3D view: see render/fly.js)
 export const rebuildItems = () => {

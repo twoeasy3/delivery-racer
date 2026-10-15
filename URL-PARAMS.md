@@ -246,6 +246,18 @@ Comma separated. Works on any page of the game (menu, Shop, packs).
 
 Example (tried, badge and plain page seen): `/delivery/?lite=all&shop&inside=standard`. Saves? Normal.
 
+## 8a. Level loading (the loading screen: `render/loadscreen.js`, CHECKLIST 345)
+
+A run started from the menu (Start, Enter, Next level) is built in steps under a loading screen that shows only when the load
+passes 300 ms. These switches are for measuring and looking at it; none of them saves anything by itself (saving stays Normal).
+
+| Param | Values | What it does | Example | Saves? | Tried |
+|---|---|---|---|---|---|
+| `loadlog` | bare | Prints a table of where each start's time went (theme file, rules, each drawing hook, shaders, Game.start, the first frames) in the console, and keeps it in `window.__loadlog`. `scripts/perf-load.mjs` reads it. | `/delivery/?loadlog` | Normal | yes (headless) |
+| `nostage` | bare | Starts a level in one go, as before the loading screen (no screen): to compare. | `/delivery/?loadlog&nostage` | Normal | yes (headless) |
+| `slowload` | ms | Waits that long at every loading step, so the screen and its bar can be seen (a check, a picture). | `/delivery/?slowload=800` | Normal | yes (headless) |
+| `loadafter` | ms | Moves the 300 ms threshold (a check: no screen for a load under it). | `/delivery/?loadafter=60000` | Normal | yes (headless) |
+
 ## 9. The other pages
 
 The game has seven pages, all under `/delivery/`:

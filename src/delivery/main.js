@@ -1,5 +1,6 @@
 // Entry point: loads the game logic, then the rendering, and runs the frame loop.
 // Game logic (src/*.js) never imports rendering (src/render/*.js), so it can run headless.
+import { useRenderer } from './render/loadscreen.js'; // (FIRST: it names each level-drawing hook as the render modules register them; the staged start and its loading screen)
 import './style.css';
 import './lite.js'; // (?lite=<list>: the tablet flicker's bisect switches, and `sheet-up` under a sheet: lite.js)
 import * as THREE from 'three';
@@ -95,6 +96,7 @@ import { Message } from './messages.js';
 // With any of those, ?fly freezes the level and gives a free camera to fly round it (render/fly.js).
 // With it, ?level=3 picks the level (locked or not), ?at=1650 starts that many metres along
 // the expressway and ?ff=5 runs the game for that many seconds before the first frame is drawn.
+useRenderer(renderer, scene, camera); // (a staged start compiles the level's shaders before its first frame: render/loadscreen.js)
 const params = new URLSearchParams(location.search);
 // ?eventsnow=2026-11-05: the events' clock (Events.now) set to that day for the visit (a look at an event over, or not
 // yet open: the menu, the Shop, the showroom's "Where to get it"); nothing saved
