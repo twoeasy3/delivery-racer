@@ -409,15 +409,15 @@ try {
     const unc = draw('comet-special', { random: dice(5), featured: ['postvan'] }).at(-1);
     check(unc.featured && unc.car === 'postvan' && unc.rarity === 'uncommon', 'a featured Uncommon (postvan) is shown as Uncommon, featured (' + unc.rarity + ')');
     // (b) Legendary x3 + a Bespoke key, 3:3:3:1: the key about a tenth of the last slots; a key never twice; an owned key never
-    const llb = [{ car: 'rocketfin', weight: 3 }, { car: 'swancar', weight: 3 }, { car: 'solarracer', weight: 3 }, { car: 'monowheel', weight: 1, key: true }];
+    const llb = [{ car: 'rocketfin', weight: 3 }, { car: 'swancar', weight: 3 }, { car: 'solarracer', weight: 3 }, { car: 'moonrover', weight: 1, key: true }];
     const t2 = tally(llb, 12e6);
-    check(Math.abs(share(t2, 'key:monowheel') - 0.1) < 0.012 && ['rocketfin', 'swancar', 'solarracer'].every(id => Math.abs(share(t2, id) - 0.3) < 0.025),
-      '3:3:3:1 with a Bespoke key: the key about 1/10 of the last slots (' + pctS(share(t2, 'key:monowheel')) + '), each Legendary about 3/10 (' + ['rocketfin', 'swancar', 'solarracer'].map(id => pctS(share(t2, id))).join(', ') + ')');
+    check(Math.abs(share(t2, 'key:moonrover') - 0.1) < 0.012 && ['rocketfin', 'swancar', 'solarracer'].every(id => Math.abs(share(t2, id) - 0.3) < 0.025),
+      '3:3:3:1 with a Bespoke key: the key about 1/10 of the last slots (' + pctS(share(t2, 'key:moonrover')) + '), each Legendary about 3/10 (' + ['rocketfin', 'swancar', 'solarracer'].map(id => pctS(share(t2, id))).join(', ') + ')');
     check(t2.all.every(cards => cards.filter(c => c.key).every(c => c.rarity === 'bespoke' && c.n === 1 && c.featured)), 'a featured key card is Bespoke, x1');
-    const heavyKey = [{ car: 'rocketfin', weight: 1 }, { car: 'monowheel', weight: 20, key: true }];
+    const heavyKey = [{ car: 'rocketfin', weight: 1 }, { car: 'moonrover', weight: 20, key: true }];
     const t3 = tally(heavyKey, 13e6);
-    check(t2.keyTwice === 0 && t3.keyTwice === 0 && (t3.inPack['key:monowheel'] || 0) > NW * 0.9, 'a key is never given twice in one pack (a key weighted 20:1 too: in ' + pctS((t3.inPack['key:monowheel'] || 0) / NW) + ' of packs, never twice)');
-    const ownedKey = (id) => id === 'monowheel';
+    check(t2.keyTwice === 0 && t3.keyTwice === 0 && (t3.inPack['key:moonrover'] || 0) > NW * 0.9, 'a key is never given twice in one pack (a key weighted 20:1 too: in ' + pctS((t3.inPack['key:moonrover'] || 0) / NW) + ' of packs, never twice)');
+    const ownedKey = (id) => id === 'moonrover';
     const t4 = tally(llb, 14e6, { owned: ownedKey });
     check(!t4.all.some(cards => cards.some(c => c.key)) && ['rocketfin', 'swancar', 'solarracer'].every(id => Math.abs(share(t4, id) - 1 / 3) < 0.025),
       'a key already owned never drops; the weights shift to 3:3:3 (' + ['rocketfin', 'swancar', 'solarracer'].map(id => pctS(share(t4, id))).join(', ') + ')');
@@ -472,7 +472,7 @@ try {
       'every featured car maxed: nothing featured drops (no duplicates); the last slot is an ordinary filler');
     const t9 = tally(llb, 19e6, { maxed: allMax, owned: ownedKey });
     check(t9.last.filler === NW && !t9.all.some(cards => cards.some(c => c.key || c.featured)), 'every entry exhausted, a key among them: no featured card, no key; the last slot a filler');
-    const keysOnly = [{ car: 'monowheel', key: true }, { car: 'swancar', key: true, weight: 2 }];
+    const keysOnly = [{ car: 'moonrover', key: true }, { car: 'swancar', key: true, weight: 2 }];
     const t10 = tally(keysOnly, 20e6, { owned: () => true });
     check(t10.last.filler === NW && !t10.all.some(cards => cards.some(c => c.key || c.featured)) && t10.all.every(cards => rank(cards.at(-1).rarity) >= rank('epic')),
       'all keys and all owned: nothing to feature, the last slot an Epic-or-better filler, no key');
@@ -521,7 +521,7 @@ try {
       const bad = [{ car: 'silvercomet', weight: 0 }, { car: 'jetcar', weight: -2 }, { car: 'dragster', weight: 'x' }, { car: 'nocar' }, { car: 'gullwing', key: true },
         { car: 'swancar', amount: 0 }, { car: 'swancar', amount: [5, 2] }, { car: 'rocketfin', amount: 2.5 }];
       const lines = bad.map(x => { fe.entries = [x]; return Events.problems().join(' | '); });
-      fe.entries = [{ car: 'silvercomet', weight: 9, amount: 3 }, { car: 'silvercomet', weight: 1, amount: [10, 15] }, { car: 'monowheel', key: true, weight: 0.5 }];
+      fe.entries = [{ car: 'silvercomet', weight: 9, amount: 3 }, { car: 'silvercomet', weight: 1, amount: [10, 15] }, { car: 'moonrover', key: true, weight: 0.5 }];
       const good = Events.problems();
       check(lines.every(l => /pack comet-special: featured entry 1/.test(l)) && !good.length, 'events.js (through packProblems) reports each bad featured entry of a pack (weight 0, -2, "x", no car, a key of a non-Bespoke car, amount 0, [5, 2], 2.5), and a sound list passes: ' + lines.map(l => l.replace(/^packs\.json: pack comet-special: /, '').replace(/ \(a car id.*$/, '')).join('; '));
       ev.raw.featured = ['silvercomet'];
@@ -798,7 +798,7 @@ try {
     check(two.featured && two.car === one.id && two.n === 3, 'a featured entry with an amount works for them (' + one.id + ' x' + two.n + ')');
     // (the Bespoke, Legendary and earned cars are as they were: none is featurable, noPacks or in the roster)
     const others = [...g.cars.BESPOKE_CARS, ...g.cars.EARNED_CARS, ...g.cars.EVENT_CARS, ...g.cars.CARS];
-    check(others.every(c => !c.featurable && !ids.has(c.id)) && g.cars.BESPOKE_CARS.length === 14 && g.cars.BESPOKE_CARS.every(c => c.rarity === 'legendary' || c.rarity === 'epic'),
+    check(others.every(c => !c.featurable && !ids.has(c.id)) && g.cars.BESPOKE_CARS.length === 13 && g.cars.BESPOKE_CARS.every(c => c.rarity === 'legendary' || c.rarity === 'epic'),
       'the Bespoke, event, earned and garage cars are not in the roster and not featurable');
     Progress.reset(); Progress.noSave = true;
   }

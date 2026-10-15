@@ -6,8 +6,8 @@
 // may also REFRESH the slot for Crazey Cash (a fresh draw, seed = date + slot + the refresh count, all stock back).
 // THE POOL (the owner, 14-Oct: first "all Evergreen blueprints, including the ones for Key Cars", then "remove all the key car blueprints
 // except the ones already available in standard packs"): exactly the blueprints the STANDARD pack can drop (packs.js poolOf of
-// packs.json standard): the 56 ordinary evergreen cars and the 5 key cars whose blueprints it holds (rocketfin, swancar, solarracer,
-// moonrover, monowheel). Jim sells BLUEPRINTS only, never a key. Out: every key car not in the Standard pack's pool (silvercomet, snocat,
+// packs.json standard): the 56 ordinary evergreen cars and the key cars whose blueprints it holds (rocketfin, swancar, solarracer,
+// moonrover; the Monowheel until 15-Oct, an idea again since). Jim sells BLUEPRINTS only, never a key. Out: every key car not in the Standard pack's pool (silvercomet, snocat,
 // hotdog, horseshoe and the six concept cars: noPacks), earned and super cars, the Tank, `off` cars, and the noPacks cars that are not
 // key cars (the Blower, Coach, City EV, Coupe Cross).
 // KEY CARS are dear and rare (the economy warning: a concept car's key needs max ECU = 20 blueprints): JIM.keyMult on the price,

@@ -1,6 +1,6 @@
 // ---- CAR KEYS: a 3D key for each Bespoke KEY car (the owner, 12-Oct, after Asphalt 9's CAR KEY card; 13-Oct: one each) ---
 // Nine models, one a key car (cars.js keyModel): the first three below (12-Oct) and six made for their cars (13-Oct, after
-// smart): fin (the Rocket Fin Coupe), wheel (the Monowheel), solar (the Solar Racer), lunar (the Moon Rover), snowboot (the
+// smart): fin (the Rocket Fin Coupe), wheel (made for the Monowheel, an idea again since 15-Oct: the key waits for its next car), solar (the Solar Racer), lunar (the Moon Rover), snowboot (the
 // Snowcat) and bun (the Hot Dog Car). The first three went to the Silver Comet (fob), the Swan Car (classic) and the
 // Horseshoe Hypercar (smart). The 12-Oct notes follow.
 // "The agent needs to make a car key model and render it as part of the blueprint. Try 3 models please." Three keys in
@@ -374,7 +374,7 @@ const fin = (car, { rarity = 'bespoke' } = {}) => {
   return idle(group, merged(k));
 };
 
-// ---- (e) the WHEEL (the Monowheel): the bow is a wheel, a rubber tyre round a rim of the car's colour on six chrome
+// ---- (e) the WHEEL (made for the Monowheel, 13-Oct; the Monowheel went back to the ideas lot on 15-Oct): the bow is a wheel, a rubber tyre round a rim of the car's colour on six chrome
 // spokes, the initial on its hub; the split ring through the tyre at the top, a double-bit blade (teeth both sides) below
 const wheel = (car, { rarity = 'bespoke' } = {}) => {
   const group = new THREE.Group(), k = new THREE.Group();

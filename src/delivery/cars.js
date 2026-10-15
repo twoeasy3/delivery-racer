@@ -456,7 +456,7 @@ export const EVENT_CARS = [
 // A car flagged `bespoke: true` is a Bespoke key car: its KEY is a Bespoke card (the top rarity: the keys themselves),
 // dropped by the packs whose pool has keys (packs.js), and its BLUEPRINTS are Legendary cards (`rarity`). It is a KEY
 // car (ecu.js): driveable once its key is had, and on the event cars' ladder (no tier: max ECU 5, the 0.06 step of
-// scripts/ecu-tables.mjs). The Silver Comet (EVENT_CARS, the Comet Hunt's prize too) was the first; these five were car
+// scripts/ecu-tables.mjs). The Silver Comet (EVENT_CARS, the Comet Hunt's prize too) was the first; these four were car
 // ideas (ideas.js), moved out of the ideas lot into the roster as the fillers were: their models are still built by
 // render/ideaModels*.js (put in MODELS by the same names, render/models.js). Kept out of CARS: never for sale, never
 // lent by Car Swap, never dealt by "Unlock everything"; no price, no tier. Their only source is a Bespoke key card (no
@@ -466,12 +466,12 @@ export const EVENT_CARS = [
 // and since 13-Oct a key of its OWN (the owner: "a unique car key model per key car ... evocative of the car it belongs
 // to"): the first three models went to the cars they fit (the fob stays the Silver Comet's, the brass classic is the 1910
 // Swan Car's, the glossy smart key the hypercar's), six were made for the rest (render/keyModels.js)
-const KEY_STYLE = { horseshoe: 'smart', swancar: 'classic', rocketfin: 'fin', solarracer: 'solar', moonrover: 'lunar', monowheel: 'wheel', snocat: 'snowboot', hotdog: 'bun',
+const KEY_STYLE = { horseshoe: 'smart', swancar: 'classic', rocketfin: 'fin', solarracer: 'solar', moonrover: 'lunar', snocat: 'snowboot', hotdog: 'bun',
   // (the six CONCEPT key cars, CHECKLIST 211: each the key made for it, once an ordinary key: render/keyModels.js CONCEPT_KEYS)
   fishbowl: 'keikey', midsummer: 'wing', sixteen: 'artisan', quadturbo: 'carbonfob', knifeedge: 'wedgefob', windsong: 'startfob' };
 // the Key cars' star ratings (the owner, 12-Oct: "add star ratings to the current key cars too"): magenta stars as a mark of how strong the
 // car is against the tiers, NOT a tier (`rating`, not `tier`: no level rule, no ECU ladder (a key car's max stays 5) reads it)
-const KEY_RATING = { horseshoe: 5, rocketfin: 5, solarracer: 5, monowheel: 3, hotdog: 4, moonrover: 4, swancar: 4, snocat: 3,
+const KEY_RATING = { horseshoe: 5, rocketfin: 5, solarracer: 5, hotdog: 4, moonrover: 4, swancar: 4, snocat: 3,
   fishbowl: 2, midsummer: 3, sixteen: 4, quadturbo: 5, knifeedge: 5, windsong: 5 }; // (the concept cars: the owner, 13-Oct: "2, 3, 4, 5, 5, 5 stars")
 const bespoke = (car) => ({ ...car, rating: KEY_RATING[car.id] || 0, bespoke: true, rarity: 'legendary', placeholder: true, price: 0, keyModel: KEY_STYLE[car.id] || 'fob' });
 export const BESPOKE_CARS = [
@@ -491,10 +491,8 @@ export const BESPOKE_CARS = [
   bespoke({ id: 'moonrover', name: 'Moon Rover', basedOn: 'Apollo Lunar Roving Vehicle', model: 'moonrover', color: 0xd9c89a, evilColor: 0x3a3a44,
     hw: 0.95, hl: 1.6, height: 1.65, note: 'An open frame on wire wheels with two bucket seats, a T-handle to steer by and a dish on a mast.',
     maxSpeed: 41, accel: 18, agility: 1.6, crossing: 1, health: 150, mass: 1, sound: 'mini' }),
-  // the weaver: narrower than anything, the quickest getaway and the quickest sideways, fragile
-  bespoke({ id: 'monowheel', name: 'Monowheel', basedOn: 'Dynasphere monowheel (1932)', model: 'monowheel', color: 0xe8a317, evilColor: 0x6a3a8a,
-    hw: 0.5, hl: 1.0, height: 2.0, note: 'One wheel taller than its rider, who sits inside it. It rolls; he does not.',
-    maxSpeed: 38, accel: 15, agility: 1.8, crossing: 0.5, health: 110, mass: 1, sound: 'junker' }),
+  // (the Monowheel was a Bespoke key car here until 15-Oct, when the owner sent it back to the ideas lot: "its design style doesn't suit the
+  // game anymore". Its id is an idea's again (ideas.js); a save that owned its key or blueprints keeps them harmlessly: an idea is free to drive)
   // (no key to be had for now: `keyAvailable: false`: in no pack's Bespoke pool and in no event; the owner, 12-Oct. Their blueprints still drop)
   // the expedition: a glass cab on tracks, slow to start, takes the deep snow and shrugs off a crash
   bespoke({ id: 'snocat', name: 'Snowcat', basedOn: 'Tucker Sno-Cat 443', model: 'snocat', color: 0xe8482a, evilColor: 0x1f4a6a, keyAvailable: false, noPacks: true,

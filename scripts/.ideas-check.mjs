@@ -25,8 +25,8 @@ try {
   // (five that were ideas are the Bespoke key cars now (cars.js BESPOKE_CARS, 12-Oct): in the roster, out of the lot, not in CARS, no price, no tier)
   {
     const { BESPOKE_CARS = [] } = g.cars;
-    check(BESPOKE_CARS.length === 14 && BESPOKE_CARS.filter(c => c.concept).length === 6 && BESPOKE_CARS.every(c => c.bespoke && c.rarity === (c.concept && c.rating <= 3 ? 'epic' : 'legendary') && !c.idea && !c.tier && c.price === 0 && !IDEA_CARS.some(i => i.id === c.id) && !CARS.includes(c)),
-      'the 14 Bespoke key cars (6 of them the concept cars) are out of the ideas lot and not in CARS: ' + BESPOKE_CARS.map(c => c.id).join(', '));
+    check(BESPOKE_CARS.length === 13 && BESPOKE_CARS.filter(c => c.concept).length === 6 && BESPOKE_CARS.every(c => c.bespoke && c.rarity === (c.concept && c.rating <= 3 ? 'epic' : 'legendary') && !c.idea && !c.tier && c.price === 0 && !IDEA_CARS.some(i => i.id === c.id) && !CARS.includes(c)),
+      'the 13 Bespoke key cars (6 of them the concept cars; the Monowheel an idea again, 15-Oct) are out of the ideas lot and not in CARS: ' + BESPOKE_CARS.map(c => c.id).join(', '));
   }
   // (eighteen that were ideas are evergreen BLUEPRINT cars now (cars.js FILLER_CARS, CHECKLIST item 115): in the roster, out of the lot)
   {
