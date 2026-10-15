@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const THREE = await import(join(ROOT, 'node_modules/three/build/three.module.js'));
-const TOL = 0.015;
+const TOL = 0.015, A_PILLAR_MIN = 0.12;
 const { load, close } = await startModels();
 const failures = [];
 try {
@@ -100,8 +100,11 @@ try {
         if (Math.max(e.a[1], e.b[1]) < p.y0 + 0.03) continue; // the belt edge (both ends at the belt)
         let nz = -dy / len, ny = dz / len; // a normal, turned outward (away from the window's middle)
         if ((e.a[2] - cz) * nz + (e.a[1] - cy) * ny < 0) { nz = -nz; ny = -ny; }
-        const ts = [];
-        for (let t = 0.05; t <= len - 0.05; t += 0.01) { const d = cross(e.a[2] + dz * t / len, e.a[1] + dy * t / len, nz, ny); if (d !== null) ts.push(d); }
+        const sample = (clear) => { const out = []; for (let t = clear; t <= len - clear; t += 0.01) { const d = cross(e.a[2] + dz * t / len, e.a[1] + dy * t / len, nz, ny); if (d !== null) out.push(d); } return out; };
+        let ts = sample(0.05);
+        // (a pillar edge's corner zone grows with its inset: the normal ray from near a roof corner meets the roof, not the pillar, within about 1.3 x the
+        // inset of the corner; a sturdy A-pillar (over 8 cm) is measured clear of that zone. A thin one is measured exactly as before.)
+        if (Math.abs(dy) >= 0.25 * len && ts.length) { const med = ts.slice().sort((a, b) => a - b)[Math.floor(ts.length / 2)]; if (med > 0.08) ts = sample(Math.min(len / 2 - 0.02, 1.3 * med)); }
         const kind = Math.abs(dy) < 0.25 * len ? 'top' : dz * dy < 0 ? 'A' : 'C';
         if (!ts.length) { fails.push(`window ${wi + 1}: its ${kind} edge finds no contour within 25 cm`); continue; }
         const range = Math.max(...ts) - Math.min(...ts), mean = ts.reduce((s, d) => s + d, 0) / ts.length;
@@ -175,6 +178,8 @@ try {
       notes.push(`${name}: screen top ${(r.roofGap * 100).toFixed(1)} cm below the roof height beside it`);
       if (r.roofGap > 0.07) fails.push(`${name}: the screen's top is ${(r.roofGap * 100).toFixed(1)} cm below the roof line (> 7): a lowered screen leaves a strip`);
       if (r.hidden) fails.push(`${name}: the screen's top edge is under the body (the glass is not proud of the body face there: its visible top is lower, with a strip of body over it)`);
+      // THE A-PILLAR must be sturdy (the owner, 15-Oct: 'extremely thin'): at least 12 cm across in the side view (a real car's is 12 to 16 cm; cabinGlass's default is 14.1), for every car
+      if (f && r.wTop < A_PILLAR_MIN) fails.push(`${name}: the pillar is only ${(r.wTop * 100).toFixed(1)} cm across in the side view (< ${A_PILLAR_MIN * 100}): too thin`);
       if (Math.abs(r.wTop - r.wFoot) > TOL) fails.push(`${name}: pillar width ${(r.wTop * 100).toFixed(1)} cm at the top, ${(r.wFoot * 100).toFixed(1)} cm at the foot`);
     }
     rows.push([car.id, fails.length ? 'FAIL' : 'ok', ...notes, ...fails.map(f => '  ! ' + f)]);

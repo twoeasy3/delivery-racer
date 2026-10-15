@@ -10,8 +10,8 @@
 // Helpers: ideaModelsDkit.js.
 import * as THREE from 'three';
 import {
-  TRIM, CHROME, GLASS, LAMP, TAIL, AMBER, shared, place, merge, parts, bx, curve, extrudeSide, narrowAt, panel,
-  sideGlass, slopeGlass, shadeBy, low, flare, wheel,
+  TRIM, CHROME, GLASS, LAMP, TAIL, AMBER, shared, place, merge, parts, bx, curve, extrudeSide,
+  shadeBy, low, flare, wheel, cabinGlass,
 } from './ideaModelsDkit.js';
 
 // a block of square lamps ("pixels") on a flat face: `rows` are strings, '.' empty; column 0 is the INNER one; `s` the square,
@@ -39,13 +39,13 @@ export const IDEA_MODELS_BATCH_E4 = {
     const BEV = 0.05, BW = 2.2, HALF = BW / 2, NOSE = 2.6, TAILZ = -2.55, CBK = -0.95, BELT = 1.12, ROOF = 1.72, FLOOR = 0.3;
     const TAPER = [BELT, ROOF, 0.12];
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
-    const WSF = [0.9, BELT], WST = [0.32, ROOF - 0.07];
+    const WSF = [0.9, BELT], WST = [0.243, ROOF], TH = [CBK, 1.15]; // (TH: a point on the straight cab back, the rear glass's foot)
     const outline = [
       [NOSE, FLOOR], [NOSE, 0.96], ...curve([NOSE, 0.96], [NOSE, 1.02], [NOSE - 0.04, 1.04], [NOSE - 0.14, 1.04], 3),
-      [1.9, 1.07], WSF, WST, ...curve(WST, [0.28, ROOF], [0.22, ROOF], [0.1, ROOF], 3),
-      [CBK + 0.2, ROOF], [CBK, ROOF - 0.2], [CBK, FLOOR],
+      [1.9, 1.07], WSF, WST,
+      [CBK, ROOF], TH, [CBK, FLOOR],
     ];
-    const FZ = NOSE + BEV, BZ = CBK - BEV;
+    const FZ = NOSE + BEV;
     const wall = (s) => extrudeSide([[TAILZ, FLOOR + 0.04], [TAILZ, BELT], [CBK, BELT], [CBK, FLOOR + 0.04]], 0.1, 0.02, null, 1, 0.02).translate(s * (HALF - 0.05), 0, 0);
     const body = place(group, shared(k + 'body', () => shadeBy(merge([
       extrudeSide(outline, BW, BEV, TAPER, 1, 0.07),
@@ -56,13 +56,12 @@ export const IDEA_MODELS_BATCH_E4 = {
       bx(2.2, 0.2, 0.14, 0, 0.4, TAILZ + 0.02),                                          // the rear bumper
       bx(2.0, 0.3, 0.05, 0, 0.5, -0.9),                                                  // under the bed floor, behind the cab
     ]), low(0.45, 1.2, [0.66, 0.6, 0.55]))), paint);
-    const LIFT = 0.006, gx = (y) => narrowAt(HALF, y, TAPER);
-    const zWS = (y) => WSF[0] + (WST[0] - WSF[0]) * (y - WSF[1]) / (WST[1] - WSF[1]);
-    parts(group, k + 'glass', GLASS, () => [
-      slopeGlass([zWS(1.2), 1.2], [zWS(1.64), 1.64], gx(1.2) - 0.1, gx(1.64) - 0.1, BEV + LIFT),
-      ...sideGlass([[[zWS(1.22) - 0.06, 1.22], [CBK + 0.12, 1.22], [CBK + 0.2, 1.62], [zWS(1.62) - 0.06, 1.62]]], HALF, TAPER, LIFT),
-      panel([[-0.78, 1.24, BZ - LIFT], [0.78, 1.24, BZ - LIFT], [0.7, 1.6, BZ - LIFT], [-0.7, 1.6, BZ - LIFT]].reverse()),
-    ]);
+    // ALL the glass from the cab's own side profile (cabinGlass: one inset outline, level tops): the one door window follows the raked A-pillar,
+    // the roof and the cab-back chamfer; the rear cab glass keeps a pickup's width (sideInset 0.3), the windscreen its own (0.1). A pickup's cab
+    // has one door glass a side (no quarter window), so there is no front-to-rear proportion to set.
+    const INS = { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, ARGS = { from: outline.findIndex(p => p[0] === WSF[0] && p[1] === WSF[1]), to: outline.indexOf(TH), belt: BELT + 0.03, half: HALF, taper: TAPER, grow: BEV, inset: INS, lift: BEV + 0.006, sideLift: 0.006 };
+    const glass = cabinGlass(outline, { ...ARGS, sideInset: 0.3 }), screen = cabinGlass(outline, { ...ARGS, sideInset: 0.1 });
+    parts(group, k + 'glass', GLASS, () => [...glass.sides, screen.front, glass.rear]);
     parts(group, k + 'black', TRIM, () => [
       bx(1.76, 0.2, 0.15, 0, 0.3, FZ - 0.02),                       // the air dam, standing out and down
       bx(1.3, 0.14, 0.03, 0, 0.52, FZ),                             // the lower intake
@@ -96,28 +95,23 @@ export const IDEA_MODELS_BATCH_E4 = {
     const TAPER = [BELT, ROOF, 0.12];
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
     const ACC = { good: 0x3d4147, evil: 0xe8821e }, trim = new THREE.MeshLambertMaterial({ color: ACC.good });
-    const WSF = [1.05, 1.12], WST = [0.4, 1.55], RGT = [-1.74, 1.44], RGB = [-2.22, 1.1];
+    const WSF = [1.05, 1.12], WST = [0.324, ROOF], RGT = [-1.57, ROOF - 0.04], RGB = [-2.22, 1.1];
     const outline = [
       [NOSE, FLOOR], [NOSE, 0.95], ...curve([NOSE, 0.95], [NOSE, 1.0], [NOSE - 0.04, 1.03], [NOSE - 0.18, 1.05], 3),
-      WSF, WST, ...curve(WST, [0.36, ROOF], [0.3, ROOF], [0.2, ROOF], 3),
-      [-1.4, ROOF - 0.03], ...curve([-1.4, ROOF - 0.03], [-1.58, ROOF - 0.05], [-1.66, 1.5], RGT, 3),
+      WSF, WST, RGT,
       RGB, [TAILZ, 1.06], [TAILZ, FLOOR],
     ];
     const FZ = NOSE + BEV, RZ = TAILZ - BEV;
     const body = place(group, shared(k + 'body', () => shadeBy(merge([
       extrudeSide(outline, BW, BEV, TAPER, 1, 0.07),
     ]), low(0.4, 1.1, [0.7, 0.66, 0.62]))), paint);
-    const LIFT = 0.006, gx = (y) => narrowAt(HALF, y, TAPER);
-    const zWS = (y) => WSF[0] + (WST[0] - WSF[0]) * (y - WSF[1]) / (WST[1] - WSF[1]);
-    const zRG = (y) => RGT[0] + (RGB[0] - RGT[0]) * (y - RGT[1]) / (RGB[1] - RGT[1]);
-    parts(group, k + 'glass', GLASS, () => [
-      slopeGlass([zWS(1.2), 1.2], [zWS(1.52), 1.52], gx(1.2) - 0.1, gx(1.52) - 0.1, BEV + LIFT),
-      slopeGlass([zRG(1.4), 1.4], [zRG(1.14), 1.14], gx(1.4) - 0.14, gx(1.14) - 0.14, BEV + LIFT),
-      ...sideGlass([
-        [[zWS(1.2) - 0.06, 1.2], [0.0, 1.2], [0.0, 1.52], [zWS(1.52) - 0.06, 1.52]],
-        [[-0.2, 1.2], [-1.45, 1.22], [-1.66, 1.45], [-0.2, 1.52]],
-      ], HALF, TAPER, LIFT),
-    ]);
+    // ALL the glass from the body's own side profile (cabinGlass: one inset outline, level tops). Like the Ioniq 5 it follows, four doors' worth
+    // of glass: the front door window is the longest, the rear door window a little shorter, then the quarter window running up the hatch's
+    // slope; the hatch glass is the whole slope from the roof's end to the tail (RGT to RGB); the windscreen's foot is the bonnet (second call).
+    const INS = { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, ARGS = { from: outline.findIndex(p => p[0] === WSF[0] && p[1] === WSF[1]), to: outline.indexOf(RGB), half: HALF, taper: TAPER, grow: BEV, inset: INS, lift: BEV + 0.006, sideLift: 0.006, sideInset: 0.1 };
+    const glass = cabinGlass(outline, { ...ARGS, belt: 1.18, windows: [[-0.10, 9], [-1.0, -0.24], [-9, -1.14]] });
+    const screen = cabinGlass(outline, { ...ARGS, belt: WSF[1] + 0.03 });
+    parts(group, k + 'glass', GLASS, () => [...glass.sides, screen.front, glass.rear]);
     parts(group, k + 'black', TRIM, () => [
       bx(1.1, 0.14, 0.03, 0, 0.45, FZ),                             // the lower intake
       bx(0.5, 0.1, 0.03, 0, 0.7, FZ),                               // a closed panel in the nose

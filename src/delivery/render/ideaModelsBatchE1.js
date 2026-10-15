@@ -10,12 +10,11 @@
 import * as THREE from 'three';
 import {
   TRIM, CHROME, GLASS, LAMP, TAIL, AMBER, shared, place, merge, parts, bx, curve, extrudeSide,
-  panel, sideGlass, slopeGlass, shadeBy, low, wheel,
+  shadeBy, low, wheel, cabinGlass,
 } from './ideaModelsDkit.js';
 
 const LIFT = 0.006;
 
-const lineZ = (a, b) => (y) => a[0] + (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]); // z along a straight [z, y] line, at height y
 
 export const IDEA_MODELS_BATCH_E1 = {
   // ---- the Kei Van (after the Suzuki Every) --------------------------------------------------------------------------
@@ -28,23 +27,22 @@ export const IDEA_MODELS_BATCH_E1 = {
     const R = 0.3, TW = 0.16, HALF = 0.72, WX = car.hw - 0.01 - TW / 2, AF = 1.12, AR = -1.31;
     const BEV = 0.05, NOSE = 1.65, TAILZ = -1.65, ROOF = 1.83;
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
-    const WSF = [1.58, 1.08], WST = [1.12, 1.8];
+    const WSF = [1.58, 1.08], WST = [1.1008, ROOF], TH = [TAILZ, 1.2]; // (TH: a point on the straight tail, the tail glass's foot)
     const outline = [
       [1.62, 0.33], [NOSE, 0.4], [NOSE, 0.98], ...curve([NOSE, 0.98], [NOSE, 1.04], [1.62, 1.06], WSF, 3),
-      WST, ...curve(WST, [1.1, 1.83], [1.06, ROOF], [1.0, ROOF], 3),
-      [-1.58, ROOF], ...curve([-1.58, ROOF], [TAILZ, ROOF], [TAILZ, 1.78], [TAILZ, 1.7], 3),
-      [TAILZ, 0.5], [-1.62, 0.33],
+      WST,
+      [TAILZ, ROOF],
+      TH, [TAILZ, 0.5], [-1.62, 0.33],
     ];
-    const FZ = NOSE + BEV, BZ = TAILZ - BEV, zWS = lineZ(WSF, WST);
+    const FZ = NOSE + BEV, BZ = TAILZ - BEV;
     const body = place(group, shared(k + 'body', () => shadeBy(merge([extrudeSide(outline, 2 * HALF, BEV, null, 2, 0.1)]), low(0.3, 1.0, [0.66, 0.6, 0.55]))), paint);
-    parts(group, k + 'glass', GLASS, () => [
-      slopeGlass([zWS(1.2), 1.2], [zWS(1.72), 1.72], HALF - 0.1, HALF - 0.1, BEV + LIFT),
-      ...sideGlass([
-        [[zWS(1.18) - 0.1, 1.18], [0.3, 1.18], [0.3, 1.7], [zWS(1.7) - 0.06, 1.7]],
-        [[0.14, 1.18], [-0.95, 1.18], [-0.95, 1.7], [0.14, 1.7]],
-      ], HALF, null, LIFT),
-      panel([[-0.58, 1.25, BZ - LIFT], [0.58, 1.25, BZ - LIFT], [0.58, 1.7, BZ - LIFT], [-0.58, 1.7, BZ - LIFT]].reverse()),
-    ]);
+    // ALL the glass from the body's own side profile (cabinGlass: one inset outline, level tops). A van's own proportion: the cab door glass and
+    // the long sliding-door window are near equal (door the longer, as the cab is the part you look into); the sliding window ends in a pillar well
+    // before the tail, where a steel panel stands (as on the Every); the windscreen's foot is the cowl line (belt 1.11).
+    const INS = { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, ARGS = { from: outline.findIndex(p => p[0] === WSF[0] && p[1] === WSF[1]), to: outline.indexOf(TH), half: HALF, taper: null, grow: BEV, inset: INS, lift: BEV + LIFT, sideLift: LIFT };
+    const glass = cabinGlass(outline, { ...ARGS, belt: 1.18, windows: [[0.3, 9], [-0.95, 0.14]] });
+    const screen = cabinGlass(outline, { ...ARGS, belt: WSF[1] + 0.03 });
+    parts(group, k + 'glass', GLASS, () => [...glass.sides, screen.front, glass.rear]);
     parts(group, k + 'black', TRIM, () => [
       bx(1.6, 0.2, 0.1, 0, 0.45, FZ + 0.0), bx(1.6, 0.2, 0.1, 0, 0.45, BZ - 0.0),   // bumpers
       bx(0.6, 0.22, 0.03, 0, 0.82, FZ - 0.0),                                           // the grille panel
