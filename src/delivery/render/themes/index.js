@@ -40,6 +40,8 @@ const THEME_FILES = {
   desert: () => import('./desert.js'),
   mall: () => import('./mall.js'),
   city: () => import('./city.js'), // (the default theme: the city's streets, and every theme drawn as it, night, flooded)
+  alpinepass: () => import('./alpine.js'), // (the alpine theme's scenery; the snow theme's is 'snowpass', in road.js)
+  // (batch E: Las Vegas strip, Alpine pass, Steelworks: new themes go above this line)
 };
 
 const loading = {};

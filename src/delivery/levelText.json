@@ -693,5 +693,13 @@
       "evil": "Glitter for the night shift's fresh tarmac. Cut the tapers in the dark, clip the cones and race the queue to the contraflow."
     },
     "cargo": { "good": "coffee", "evil": "glitter" }
+  },
+  "alpine-pass": {
+    "name": "Alpine Pass",
+    "description": {
+      "good": "A wheel of mountain cheese for the hut at the col. Mind the cows in the meadow, the black ice in the shade and the rocks over the hairpins.",
+      "evil": "A fondue of no known cheese, boiling over. Scatter the cows, take the shade flat out and race the rockfall up to the snow."
+    },
+    "cargo": { "good": "cheesewheel", "evil": "fondue" }
   }
 }

@@ -48,5 +48,9 @@
   "sandPile": { "name": "Heap of sand", "blurb": "Stands in for a bale in the roadworks." },
   "trafficDrum": { "name": "Traffic drum", "blurb": "A cone's size and cost, in the roadworks." },
   "pipePallet": { "name": "Pallet of pipes", "blurb": "A crate's size and cost, in the roadworks." },
-  "worksSign": { "name": "Works sign", "blurb": "A sign's size and cost, in the roadworks." }
+  "worksSign": { "name": "Works sign", "blurb": "A sign's size and cost, in the roadworks." },
+  "cheeseWheels": { "name": "Cheese wheels", "blurb": "Stands in for a crate on the alpine pass." },
+  "woodpile": { "name": "Woodpile", "blurb": "Stands in for a bale on the alpine pass." },
+  "milkChurn": { "name": "Milk churn", "blurb": "Stands in for a cone on the alpine pass." },
+  "snowBlock": { "name": "Block of snow", "blurb": "Stands in for a barrier on the alpine pass." }
 }

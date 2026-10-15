@@ -169,7 +169,8 @@
 //                                  'tumbleweed', 'cafeTable', 'wheelieBin', 'snowdrift', 'brimstone', 'flagStand',
 //                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'wineCrates', 'hayRoll', 'terracottaPot' (Tuscany's). All of them are on the Gimmicks page, last,
 //                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'boxStack', 'trolleyRow', 'wetFloorSign', 'planter', 'palmPot', 'kiosk', 'bench', 'playBlock', 'bin' (the mall's), 'jerryStack', 'tentRoll' and
-//                                  'rallyFlag' (the desert's: stacked jerrycans, a rolled tent, a rally marker flag). All of them are on the Gimmicks page, last,
+//                                  'rallyFlag' (the desert's: stacked jerrycans, a rolled tent, a rally marker flag), 'cheeseWheels', 'woodpile', 'milkChurn',
+//                                  'snowBlock' (the alpine pass's). All of them are on the Gimmicks page, last,
 //                                  under Road dressing (gimmicks.html?group=road-dressing)
 //   dropBears  { from, to, count } drop bears up in the trees over that stretch, dropping onto the
 //              road as the player comes near (see CONFIG.dropBear)
@@ -661,6 +662,8 @@ import roadworks from './levels/roadworks.json';
 HIDDEN_LEVELS.roadworks = roadworks; // Roadworks (the city's road under repair: its diversions, roadworks.js): ?hidden=roadworks, until it is put in the career
 import roadworksNight from './levels/roadworks-night.json';
 HIDDEN_LEVELS['roadworks-night'] = roadworksNight; // Roadworks by Night (the same works after dark, lit by their own lamps): ?hidden=roadworks-night
+import alpinePass from './levels/alpine-pass.json';
+HIDDEN_LEVELS['alpine-pass'] = alpinePass; // Alpine Pass (the alpine theme's switchbacks to the col): ?hidden=alpine-pass, until the owner decides
 // THE HIDDEN LEVELS MENU (the owner, 15-Oct; Options > Hidden levels, render/hiddenlevels.js): every level of HIDDEN_LEVELS that is a
 // real level, so a hidden level added later is listed without a word here. TEST_LEVELS are the developer's test tracks (a testbed and the three
 // Gimmick Roads: gimmicks.js calls them 'Test'), left out of it. A run started from it is ?hidden=<id>: it banks nothing (game.js).

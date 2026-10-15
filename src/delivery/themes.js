@@ -54,7 +54,7 @@ export const THEMES = {
   // airport: an airport going up in flames: a smoky orange sky, dry grass between concrete aprons, the runway
   airport: { sky: 0xc98e62, ground: 0x8c8f62, road: 0x45484d, scenery: 'airport' },
   // snow: an alpine pass in winter. terrain: true = the land is a mountainside (see buildTerrain)
-  snow: { sky: 0xd3dfe9, ground: 0xf0f4f7, road: 0x4f535a, scenery: 'alpine', terrain: true, channel: { shallow: 0x9fc4d0, deep: 0x24566f, glint: 0x3a7391 } },
+  snow: { sky: 0xd3dfe9, ground: 0xf0f4f7, road: 0x4f535a, scenery: 'snowpass', terrain: true, channel: { shallow: 0x9fc4d0, deep: 0x24566f, glint: 0x3a7391 } },
   // canberra: the bush capital: dry grass, gum trees and concrete, a grassy median
   canberra: { sky: 0xb9d8ee, ground: 0xa3ad66, road: 0x4a4c50, scenery: 'canberra', median: 0x7f9a4f },
   // hood: the same suburb gone to seed (rundown: see the suburb scenery): dead grass and bare dirt, drab
@@ -237,6 +237,18 @@ THEMES.roadworks = { sky: 0xaebccb, ground: 0x6f8752, road: 0x3b3e43, scenery: '
 // light towers' pools of light
 THEMES.roadworksNight = { sky: 0x070a14, ground: 0x2c3a28, road: 0x41444a, scenery: 'city', sets: THEMES.city.sets, lit: true, headlights: true, night: true,
   light: { sky: 0x5d72b0, ground: 0x10141c, ambient: 0.32, sun: 0x9fb4ff, sunlight: 0.25 } };
+// alpine: a high alpine pass in early summer (render/themes/alpine.js, scenery 'alpinepass': the 'snow' theme's scenery is the older
+// 'snowpass' of road.js, called 'alpine' until this theme took the name): green meadows low down with cows, snow on the heights and plough-cut snow walls at the col, the land
+// (terrain) climbing with the road's switchbacks, rock faces between them; red-and-white snow poles, stone retaining walls, steel
+// rails; a valley village of timber chalets round a church spire, a chair lift and a gondola over the road, a frozen lake under a
+// glacier, cloud banks. Its tunnel is an avalanche gallery (lit: a concrete roof on columns, open to the valley: the theme draws it,
+// shell: false); a bright cold sky. alpineDusk: the same pass at golden hour (dusk: the light low and warm, the peaks lit pink)
+THEMES.alpine = { sky: 0xc4dcf0, ground: 0x86a35a, road: 0x505257, scenery: 'alpinepass', line: 0xf4f4ef, centre: 0xf2c21c,
+  terrain: { gentle: 0x7f9d52, steep: 0x837f79, rough: 1.4, flat: -6, rise: 14 }, target: { height: 4.2, beam: true },
+  tunnel: { lit: true, shell: false, camHeight: 5.6, camBack: 12, wall: 0xb9b6ae, roof: 0x9d9a93, face: 0xc7c3b9, lamp: 0xfff3d0 },
+  light: { sky: 0xeef6ff, ground: 0x6f7a5c, ambient: 1.2, sun: 0xfff8ee, sunlight: 1.25 } };
+THEMES.alpineDusk = { ...THEMES.alpine, sky: 0xf0c9a0, dusk: true, line: 0xf4efe4,
+  light: { sky: 0xffd9b8, ground: 0x5a4a4a, ambient: 1.0, sun: 0xffb87a, sunlight: 1.1 } };
 THEMES.autumn = { sky: 0xeccfa0, ground: 0x9a8a3e, road: 0x4a4a4e, scenery: 'autumn', line: 0xf2eede, centre: 0xe6b422, terrain: { gentle: 0xa8923c, steep: 0x7a4c2a, rough: 0.5, flat: 5, rise: 45 }, target: { height: 4.2, beam: true }, tunnel: { wall: 0x8a2f22, tiles: 0xa8743e, roof: 0x5a2a1c, face: 0x7e2a1e, lamp: 0xffc878, lintel: 2.4, pier: 2.6 }, channel: { shallow: 0x7fa6a8, deep: 0x2c5a6a, glint: 0xa8cfd0 }, light: { sky: 0xffe6bc, ground: 0xb89464, ambient: 1.3, sun: 0xffc27a, sunlight: 1.2 } };
 
 // ---- the themes' own obstacles ---------------------------------------------------------------------------
@@ -273,6 +285,7 @@ const OBSTACLES = {
   tuscany: { crate: 'wineCrates', bale: 'hayRoll', cone: 'terracottaPot' }, // (a stack of wine crates; a round hay bale on its side; a pot with a lemon tree. The roadworks' cones are the hazard's own)
   hongkong: { crate: 'hawkerCart', bale: 'bagStack' }, // (a hawker's cart under its awning; a heap of red-white-blue bags; the cones are roadworks and stay)
   autumn: { crate: 'harvestCrate', bale: 'leafPile', cone: 'smallPumpkin' }, // (a crate of pumpkins; a heap of raked leaves; a small pumpkin on a stake)
+  alpine: { crate: 'cheeseWheels', bale: 'woodpile', cone: 'milkChurn', barrier: 'snowBlock' }, // (cheese wheels on a pallet, a woodpile, a milk churn, a cut block of snow with snow poles)
   mall: { crate: 'boxStack', bale: 'trolleyRow', cone: 'wetFloorSign' },
   roadworks: { barrier: 'barrierBlock', crate: 'cableReel', bale: 'sandPile' }, // (a water-filled barrier, a cable drum, a heap of sand; the cones are roadworks and stay)
   roadworksNight: { barrier: 'barrierBlock', crate: 'cableReel', bale: 'sandPile' }, // (the same road by night) // (delivery cartons on a sack truck; three shopping trolleys nested; a WET FLOOR A-frame)

@@ -98,6 +98,7 @@ if (opt('levels', false) || opt('cars', false) || shots.some(([, address]) => ad
   Object.assign(CINE, { 'pocket-town': '&at=660&ff=2&car=fishbowl' }); // (the Concept Strike's Monday, an event map: market day in the square, the Fishbowl in it)
   Object.assign(CINE, { 'solstice-cliffs': '&at=1000&ff=2&car=midsummer' }); // (Tuesday's: the Sea Cliff Bridge, the Midsummer on it)
   Object.assign(CINE, { 'chianti-run': '&at=1230&ff=1&cineup=12' }); // (Chianti Run, hidden: the hill village and its bell tower over the cypress lane, a farmhouse beside the road; the start is an avenue)
+  Object.assign(CINE, { 'alpine-pass': '&at=930&ff=1&cineside=left&cineout=8&cineup=16&cineback=20' }); // (Alpine Pass, hidden: a hairpin over the meadows, the chair lift crossing, chalets below, the snow on the peaks)
   Object.assign(CINE, { 'grand-boulevard': '&at=1120&ff=2&car=sixteen' }); // (Wednesday's: the lake bridge, the wide load and the Sixteen on it)
   Object.assign(CINE, { 'turbo-quay': '&at=1250&ff=2&car=quadturbo' }); // (Thursday's: the quay, a gantry crane over the level crossing, the Quad-Turbo)
   Object.assign(CINE, { 'neon-edge': '&at=300&ff=2&car=knifeedge' }); // (Friday's: the elevated expressway at night between the towers, the Knife-Edge on it)

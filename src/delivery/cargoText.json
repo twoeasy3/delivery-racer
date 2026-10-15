@@ -80,5 +80,7 @@
   "ink": { "name": "Disappearing Ink", "blurb": "A bottle of disappearing ink and a quill, on a blotter.", "states": ["Corked","Blotting","Splashing"] },
   "scarabs": { "name": "Crate of Scarabs", "blurb": "A nailed-down crate of scarab beetles that want out.", "states": ["Lid nailed down","Scuttling inside","Swarming out"] },
   "bubbletea": { "name": "Tray of Bubble Teas", "blurb": "Four bubble teas in a cardboard tray, pearls bobbing, straws in." },
-  "hamsterball": { "name": "Pet-Shop Hamster Ball", "blurb": "A hamster in its exercise ball, and it has somewhere to be.", "states": ["Nibbling","Rolling","Bouncing loose"] }
+  "hamsterball": { "name": "Pet-Shop Hamster Ball", "blurb": "A hamster in its exercise ball, and it has somewhere to be.", "states": ["Nibbling","Rolling","Bouncing loose"] },
+  "cheesewheel": { "name": "Wheel of Mountain Cheese", "blurb": "A great wheel of mountain cheese, one wedge already cut." },
+  "fondue": { "name": "Suspicious Fondue", "blurb": "A fondue of no known cheese, and it is turning green.", "states": ["Simmering","Bubbling green","Boiling over"] }
 }
