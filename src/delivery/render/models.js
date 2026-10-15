@@ -1588,8 +1588,8 @@ export const MODELS = {
     box(shell, paint, w * 0.98, 0.08, l * 0.74, 0, 1.92, -l * 0.1);                // ...its roof
     screen(shell, glass, w * 0.9, 0.05, 0.55, 0, 1.6, l * 0.28, 0.5);                // windscreen
     for (const z of [0.25, 0.04, -0.17, -0.4]) for (const side of [-1, 1]) box(shell, paint, 0.08, 0.54, 0.12, side * w * 0.485, 1.62, l * z); // pillars: three rows of windows
-    for (const side of [-1, 1]) box(shell, trim, 0.06, 0.06, l * 0.62, side * w * 0.38, 2.0, -l * 0.1); // roof rack rails...
-    for (const z of [0.1, -0.15, -0.38]) box(shell, trim, w * 0.8, 0.05, 0.06, 0, 2.03, l * z);         // ...and bars
+    for (const side of [-1, 1]) box(shell, trim, 0.06, 0.06, l * 0.62, side * w * 0.38, 2.0, -l * 0.1).userData.prop = 'roof'; // roof rack rails...
+    for (const z of [0.1, -0.15, -0.38]) box(shell, trim, w * 0.8, 0.05, 0.06, 0, 2.03, l * z).userData.prop = 'roof'; // ...and bars
     box(shell, chrome, w * 0.6, 0.34, 0.06, 0, 1.12, l / 2 + 0.02);                // the chrome grille...
     for (const y of [1.02, 1.12, 1.22]) box(shell, trim, w * 0.58, 0.03, 0.04, 0, y, l / 2 + 0.05); // ...its bars
     box(shell, chrome, w + 0.1, 0.26, 0.2, 0, 0.58, l / 2 + 0.06);                 // chrome bumpers
