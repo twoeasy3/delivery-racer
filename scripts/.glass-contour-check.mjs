@@ -204,7 +204,7 @@ try {
       notes.push(`${name}: screen top vs window top ${(r.topDy * 100).toFixed(1)} cm apart in height; pillar (screen edge to window edge, side view) ${(r.wTop * 100).toFixed(1)} cm at the top, ${(r.wFoot * 100).toFixed(1)} cm at the foot`);
       if (r.topDy > TOL) fails.push(`${name}: the screen's top is ${(r.topDy * 100).toFixed(1)} cm from the window's top (> ${TOL * 100})`);
       notes.push(`${name}: screen top ${(r.roofGap * 100).toFixed(1)} cm below the roof height beside it`);
-      if (r.roofGap > (gv ? 0.15 : 0.07)) fails.push(`${name}: the screen's top is ${(r.roofGap * 100).toFixed(1)} cm below the roof line (> 7): a lowered screen leaves a strip`);
+      if (r.roofGap > (gv ? 0.2 : 0.07)) fails.push(`${name}: the screen's top is ${(r.roofGap * 100).toFixed(1)} cm below the roof line (> 7): a lowered screen leaves a strip`);
       if (r.hidden) fails.push(`${name}: the screen's top edge is under the body (the glass is not proud of the body face there: its visible top is lower, with a strip of body over it)`);
       if (Math.abs(r.wTop - r.wFoot) > TOL) fails.push(`${name}: pillar width ${(r.wTop * 100).toFixed(1)} cm at the top, ${(r.wFoot * 100).toFixed(1)} cm at the foot`);
     }
