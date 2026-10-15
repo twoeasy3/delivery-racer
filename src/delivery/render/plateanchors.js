@@ -18,9 +18,20 @@ import { PLATE_TABLE, PLATE_VARIANTS, PLATE_NONE } from './plateanchorstable.js'
 export const HAND = {
   mini: { ends: 'rear' }, autobahnestate: { ends: 'rear' }, // (something stands over a third of the front place: rear only)
   dodgem: { ends: 'rear' }, // (the bumper car's nose is a blob: a front plate half sinks into it)
+  // the plate placement audit (CHECKLIST 307, scripts/plate-placement-audit.mjs: measured, then looked at):
+  toybota: { r: null }, // (an outboard motor's leg stands on the centre line behind the bed: the only flat place left was its motor housing, 1 m up)
+  hotrod: { f: null }, // (a bare radiator between the wheels and no bumper: the plate could only stand in the grille bars)
+  suv: { r: [0.43, -2.27, 0.46, -0.9] }, // (the spare wheel covers the tailgate's centre line from 0.5 to 1.15 m: the plate goes on the bumper under it, not on the tyre)
+  tank: { f: [0.56, 2.15, 0.52, 0] }, amphibioustank: { f: [0.56, 2.15, 0.52, 0] }, // (low on the hull's nose between the tracks, under the glacis: the search's only flat place was the turret's face, which turns)
+  moke: { f: [0.76, 1.544, 0.52, -12.2] }, // (kept at full size on the sloping nose: the search's 0.46 plate leaned 2 degrees more and lost its top row seen from ahead)
+  centreseat: { f: [0.46, 2.111, 0.52, 0] }, // (the bumper bar is 11 cm, the plate 13: kept at full size, a centimetre over at top and bottom, rather than a 30 cm plate in the grille slot)
 };
 // models that can wear no plate though the generator found a place (a taste call) -- or that have a place nobody wants a plate on
-export const HAND_NONE = ['swancar']; // (the Swan Car's tail is all teardrop curve: the generator's flat place sits inside the body)
+// the Swan Car: its tail is all teardrop curve, the generator's flat place sits inside the body. The Monster Truck (15-Oct audit): its body
+// rides 1.2 m up on its frame, at plate height there are only axles and frame tubes (the old plates hung in the air between them). The
+// Farm Tractor (15-Oct audit): its back is the drawbar between the big wheels (the old rear plate was under its middle); the only flat
+// front place is the bonnet's sloping nose, whose lip hides the plate's top.
+export const HAND_NONE = ['swancar', 'monster', 'farmtractor'];
 
 export const PLATE_W_H = 4; // a plate is 4 times as wide as high (render/platedesigns.js draws it so)
 
