@@ -90,3 +90,45 @@ textarea.json { width: 100%; min-height: 50vh; font-family: ui-monospace, Consol
 .panes button.on.edited::after { color: #1b2029; }
 svg.glass { width: 100%; max-width: 360px; background: #1b2330; border-radius: 8px; touch-action: none; display: block; }
 pre.json { white-space: pre-wrap; word-break: break-all; min-height: 0; margin-top: 8px; padding: 8px; background: #1b2330; border-radius: 8px; }
+/* the Placements tab (render/placementedit.js): big targets (44 px) for a finger */
+body.placing .viewButtons.tools:not(.placeTools), body.placing .stats { display: none; }
+.placeTools[hidden] { display: none; }
+.seg.big button, .buttons.big button { min-height: 44px; min-width: 44px; padding: 8px 12px; }
+.plTabs { display: flex; width: 100%; margin-bottom: 8px; }
+.plTabs button { flex: 1; }
+.plTabs button.dirty::after, .seg button.dirty::after { content: ' \2022'; }
+.plHead { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.plHead .wide { flex: 1; min-width: 150px; }
+.pf { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
+.pf.wide { margin-top: 8px; }
+.pf input, .pf select { min-height: 40px; font-size: 15px; width: 100%; }
+.pgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+.plChecks { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; margin-top: 8px; }
+.plChecks label.check { min-height: 36px; display: inline-flex; align-items: center; gap: 6px; }
+.plChecks .small, .buttons .small { color: var(--muted); font-size: 12px; }
+.buttons.big { display: flex; gap: 6px; }
+.buttons.big button { flex: 1; font-weight: 700; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; min-height: 24px; }
+.chip { font-size: 12px; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--edge); background: #232a36; white-space: nowrap; }
+.chip.good { background: #1f4d33; border-color: #2f8a55; color: #c9f5d9; font-weight: 700; }
+.chip.warn { background: #4d3d1a; border-color: #e0a030; color: #ffd690; }
+.chip.bad { background: #4d2022; border-color: var(--bad); color: #ffc7c2; font-weight: 700; }
+.plWrite { margin-top: 12px; border-top: 1px solid var(--edge); padding-top: 8px; }
+.plWrite .buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+.plWrite .buttons button { min-height: 44px; }
+pre.plRow, pre.plDiff, .plLast pre { max-height: 220px; overflow: auto; font-size: 11px; }
+.plLast summary { font-size: 12px; color: var(--muted); cursor: pointer; min-height: 32px; }
+#placeBox.busy { opacity: .6; pointer-events: none; }
+@media (max-width: 900px) {
+  .placeTools { top: 58px; }
+  .pf input, .pf select { font-size: 16px; } /* (no zoom on focus on a phone) */
+  /* placing on a phone: the car picker, undo and the tabs only above the Places panel */
+  body.placing #side > header, body.placing #side .buttons:has(#damageSeg), body.placing #side .buttons:has(#download) { display: none; }
+  body.placing #side > section:first-of-type { padding-bottom: 4px; }
+  body.placing .viewButtons.top { display: none; }
+  body.placing .placeTools { top: 10px; }
+}
+.locked { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; }
+.locked .why { color: var(--muted); }
+.locked input { flex: 1; min-height: 40px; }
+.lockBtn { min-height: 40px; }

@@ -47,7 +47,7 @@ export const makeView = (model, { glassy, wheels = new Set() } = {}) => {
 };
 
 // the first surface along the car's length at (x, y) seen from outside the end: { z, kind } or null
-const shoot = (view, end, x, y) => {
+export const shoot = (view, end, x, y) => {
   const s = end === 'rear' ? -1 : 1, L = view.box.max.z - view.box.min.z + 5;
   const o = new THREE.Vector3(x, y, s * L).applyMatrix4(view.model.matrixWorld), d = new THREE.Vector3(0, 0, -s).transformDirection(view.model.matrixWorld);
   view.ray.set(o, d); view.ray.far = 2 * L;
@@ -56,14 +56,14 @@ const shoot = (view, end, x, y) => {
   return { z: hit.point.clone().applyMatrix4(view.inv).z, kind: hit.object.userData._plateKind };
 };
 // is anything of the car in front of the plate's face point p (model space) seen along dir (pointing out, model space)?
-const blocked = (view, p, dir) => {
+export const blocked = (view, p, dir) => {
   const o = p.clone().addScaledVector(dir, 30).applyMatrix4(view.model.matrixWorld), d = dir.clone().negate().transformDirection(view.model.matrixWorld);
   view.ray.set(o, d); view.ray.far = 30 - 0.002;
   return view.ray.intersectObjects(view.meshes, false).length > 0;
 };
 
 // least squares z = a + b * dy + c * x
-const fitPlane = (rows) => {
+export const fitPlane = (rows) => {
   let n = rows.length, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0, sz = 0, sxz = 0, syz = 0;
   for (const [x, dy, z] of rows) { sx += x; sy += dy; sxx += x * x; syy += dy * dy; sxy += x * dy; sz += z; sxz += x * z; syz += dy * z; }
   const M = [[n, sy, sx], [sy, syy, sxy], [sx, sxy, sxx]], R = [sz, syz, sxz];

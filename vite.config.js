@@ -2,7 +2,8 @@ import { defineConfig } from 'vite'
 import { execSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { readFileSync, readdirSync } from 'node:fs'
-import { posix } from 'node:path'
+import { posix, relative, resolve } from 'node:path'
+import { applyChanges } from './scripts/placements-lib.mjs'
 
 // Delivery Racer only. The pages are in delivery/ (served at /delivery/ by `vite`); the code is src/delivery.
 // Deployed as a static-assets Cloudflare Worker (wrangler.jsonc): no Worker script, so no Cloudflare plugin here.
@@ -43,7 +44,42 @@ const BUILD = {
   logic,
 }
 
+// THE MODEL EDITOR'S PLACEMENTS, WRITTEN INTO THE BUILD (the owner, 15-Oct: "I don't want them as patches but definitive build commands"):
+// under `vite` (the dev server only, never the build), POST /__placements takes the editor's change file and writes the car's hand rows
+// into src/delivery/render/propanchors/slice-<n>.json and its plate entries into render/plateanchors.js (scripts/placements-lib.mjs, the same
+// code as `node scripts/bake-placements.mjs <file>`, the way in for a page with no dev server). GET says it is there. Same-origin only.
+// The page that wrote does not reload for its own write (it updates itself); others see the files on their next load.
+const placementsWriter = () => {
+  const written = new Map() // file -> when this endpoint wrote it
+  return {
+    name: 'placements-writer',
+    apply: 'serve',
+    configureServer(server) {
+      const root = server.config.root
+      server.middlewares.use('/__placements', (req, res) => {
+        const send = (code, body) => { res.statusCode = code; res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(body)) }
+        const origin = req.headers.origin
+        if (origin && new URL(origin).host !== req.headers.host) return send(403, { ok: false, error: 'not from this page' })
+        if (req.method === 'GET') return send(200, { ok: true, write: true })
+        if (req.method !== 'POST') return send(405, { ok: false, error: 'GET or POST' })
+        let body = ''
+        req.on('data', (c) => { body += c; if (body.length > 500000) req.destroy() })
+        req.on('end', () => {
+          try {
+            const file = JSON.parse(body)
+            const out = applyChanges(root, file, { dry: !!file.dry })
+            for (const f of out.files) written.set(resolve(f), Date.now())
+            send(200, { ok: true, dry: !!file.dry, results: out.results, diff: out.diff, files: out.files.map(f => relative(root, f).replace(/\\/g, '/')) })
+          } catch (err) { send(400, { ok: false, error: err.message }) }
+        })
+      })
+    },
+    hotUpdate({ file }) { const t = written.get(resolve(file)); if (t && Date.now() - t < 5000) return [] },
+  }
+}
+
 export default defineConfig({
+  plugins: [placementsWriter()],
   define: { __BUILD__: JSON.stringify(BUILD) },
   build: {
     rollupOptions: {

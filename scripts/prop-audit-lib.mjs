@@ -277,17 +277,17 @@ export const measureShape = (g, B, slot, shape, s, x, y, z, inset, allow) => {
 //         airRows (a wing: the rear row of the footprint may hang over nothing), widthCap (a wing: no wider than the body there) }
 // -> { s, x, z, top, inset, base } or null
 export const feasible = (g, o, s, z) => {
-  const d = dims(o.B, o.shape, s);
+  const d = dims(o.B, o.shape, s), ox = o.x || 0; // (o.x: the shape's centre across the car; the searches use 0, the model editor any)
   if (o.widthCap) { const bw = g.widthAt(z, o.widthYMin ?? 0.3, o.allow).w; if (d.W > bw * o.widthCap + 0.01) return null; } // (quick: the body's width)
   const pts = footprint(d, o.slot);
   // the levels to try: the up-facing surfaces under the footprint's centre (and its front, for an overhanging wing)
   const levels = new Set();
   if (o.debug) console.log('feasible', o.slot, o.shape, s, z);
-  for (const [fx, fz] of [[0, 0], [0, 0.85], [0.3, 0.85], [-0.3, 0.85]]) for (const h of g.rays(fx * d.W / 2, z + fz * d.D / 2, o.allow)) if (h.ny > 0.05 && o.level(h.y, z)) levels.add(Math.round(h.y * 200) / 200);
+  for (const [fx, fz] of [[0, 0], [0, 0.85], [0.3, 0.85], [-0.3, 0.85]]) for (const h of g.rays(ox + fx * d.W / 2, z + fz * d.D / 2, o.allow)) if (h.ny > 0.05 && o.level(h.y, z)) levels.add(Math.round(h.y * 200) / 200);
   for (const L of [...levels].sort((a, b) => b - a)) {
     let top = -Infinity, low = Infinity, bad = false, air = 0;
     for (const [fx, fz] of pts) {
-      const px = fx * d.W / 2, pz = z + fz * d.D / 2;
+      const px = ox + fx * d.W / 2, pz = z + fz * d.D / 2;
       const h = g.support(px, pz, L + 0.01, o.allow);
       const isAir = !h || L - h.y > (o.maxInset + 0.4);
       const why = (w) => { if (o.debug) console.log('  L', L, 's', s, 'z', z, [fx, fz], w, h && h.y, h && g.meshes[h.m].name); };
@@ -310,13 +310,13 @@ export const feasible = (g, o, s, z) => {
     // a wing no wider than the SURFACE it stands on (the cross-section within 0.15 m under it: a roof's width at its rear edge, a boot's)
     if (o.widthCap) { const sw = g.widthAt(z, top - 0.15, o.allow).w; if (d.W > sw * o.widthCap + 0.01) { if (o.debug) console.log('  L', L, 'wider than the surface', sw); continue; } }
     const base = top - inset;
-    const vol = volume(d, 0, base, z, top + TOL);
+    const vol = volume(d, ox, base, z, top + TOL);
     if (effDepth(g, g.intrude(vol, o.allow)) > 0.01) { if (o.debug) { const r = g.intrude(vol, o.allow); console.log('  L', L, 'intrude', r.depth, [...r.meshes].map(([mi, dd]) => g.meshes[mi].name + '/' + g.meshes[mi].kind + ' ' + dd.toFixed(3)).join(', ')); } continue; }
-    if (o.avoid && o.avoid.some(a => overlap(volume(d, 0, base, z), a) > 0)) { if (o.debug) console.log('  L', L, 'avoid'); continue; }
+    if (o.avoid && o.avoid.some(a => overlap(volume(d, ox, base, z), a) > 0)) { if (o.debug) console.log('  L', L, 'avoid'); continue; }
     if (o.frontLimit != null && z + d.D / 2 > o.frontLimit + 1e-9) continue;
     if (o.rearLimit != null && z - d.D / 2 < o.rearLimit - 1e-9) continue;
     if (o.maxTop && base + d.H > o.maxTop(base) + 1e-9) continue;
-    return { s, x: 0, z, top, inset, base, y: top + d.H / 2, air };
+    return { s, x: ox, z, top, inset, base, y: top + d.H / 2, air };
   }
   return null;
 };
@@ -372,10 +372,9 @@ const bestSoft = (g, o) => {
   const soft = best(g, { ...o, maxInset: Math.min(o.maxInset, SOFT_INSET) });
   return soft && soft.s >= hard.s * SOFT_SHARE - 1e-9 ? { ...soft, sMax: hard.sMax } : hard;
 };
-export const optimum = (g, P, kind, o = {}) => {
-  const maxInset = o.maxInset ?? MAX_INSET, high = o.high || {};
+// the car's glasshouse and body top, as the searches read them (the model editor's Placements tab reads them too)
+export const carInfo = (g) => {
   const tail = g.box.min.z, len = g.box.max.z - g.box.min.z, height = g.box.max.y;
-  const hideSlot = (slot) => (m) => g.meshes[m].tag !== slot;
   let glassTop = -Infinity, glassMinZ = Infinity, rearGlassFoot = Infinity, bodyTop = -Infinity;
   for (let t = 0; t < g.T; t++) {
     const mm = g.meshes[g.M[t]];
@@ -388,6 +387,12 @@ export const optimum = (g, P, kind, o = {}) => {
   }
   if (glassMinZ < Infinity) for (let t = 0; t < g.T; t++) if ((g.meshes[g.M[t]].kind === 'glass' || g.meshes[g.M[t]].kind === 'clear') && !g.meshes[g.M[t]].tag) for (let v = 0; v < 3; v++) if (g.P[t * 9 + v * 3 + 2] < glassMinZ + 0.3 && g.P[t * 9 + v * 3 + 1] > height * 0.4) rearGlassFoot = Math.min(rearGlassFoot, g.P[t * 9 + v * 3 + 1]);
   const hasGlass = glassTop > -Infinity;
+  return { tail, len, height, glassTop, glassMinZ, rearGlassFoot, bodyTop, hasGlass, roofFloor: hasGlass ? glassTop - 0.06 : bodyTop - 0.5 };
+};
+export const optimum = (g, P, kind, o = {}) => {
+  const maxInset = o.maxInset ?? MAX_INSET, high = o.high || {};
+  const { tail, len, height, glassTop, glassMinZ, rearGlassFoot, bodyTop, hasGlass } = carInfo(g);
+  const hideSlot = (slot) => (m) => g.meshes[m].tag !== slot;
   const topAt = (z, allow) => { const h = g.rays(0, z, allow).find(q => q.ny > 0.05 && g.meshes[q.m].kind !== 'clear'); return h ? h.y : -Infinity; };
   const vols = (slot, r) => (r ? ['box', 'cyl'].map(sh => volume(dims(P.PROP_BOUNDS[slot], sh, r.s), 0, r.base, r.z)) : []);
   const opt = {};
