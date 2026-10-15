@@ -92,6 +92,7 @@ export const KINDS = {
   halftrack: 'halftrack', keivan: 'van', supermini: 'hatch', minibus: 'van', sporttruck: 'pickup', pixelev: 'hatch', sprinthatch: 'hatch',
   autobahnestate: 'estate', finlandyacht: 'saloon', trophytruck: 'pickup', armouredlimo: 'saloon', cranelorry: 'truck', moorrover: 'suv',
   touringcar: 'saloon', hillclimb: 'hatch', monowheel: 'bike', // (the Monowheel: a Bespoke key car until 15-Oct, an idea again)
+  paddleduck: 'bus', // (the Paddle-Wheel Amphibian: a flat canopy roof over a tour boat; no load deck; its funnel is a wing-slot prop)
 };
 export const kindOf = (car) => KINDS[car.id] || KINDS[car.model || car.id] || 'car';
 
