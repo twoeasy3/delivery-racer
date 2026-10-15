@@ -29,6 +29,7 @@ const RIM = lam(0x6a4a2a);        // its rim band
 const CREAM = lam(0xe9dfc8);      // a seat cushion
 const MELON = shared(new THREE.MeshLambertMaterial({ vertexColors: true })); // striped by vertex colour
 const STEEL = lam(0x8d949c);      // a steel pallet disc
+const ROPE = shared(new THREE.MeshLambertMaterial({ color: 0x2f6a24, side: THREE.DoubleSide })); // the Junker's green rope
 const NECK = lam(0xe9e9e4);       // a cylinder's shoulder
 
 export const cargoPaint = (hex) => new THREE.MeshLambertMaterial({ color: hex });
@@ -45,6 +46,55 @@ const band = (parent, material, part, axis, width, at) => {
   const dims = { x: [width, g.height + e, g.depth + e], y: [g.width + e, width, g.depth + e], z: [g.width + e, g.height + e, width] }[axis];
   const off = { x: [at, 0, 0], y: [0, at, 0], z: [0, 0, at] }[axis];
   const m = box(parent, material, ...dims, p.x + off[0], p.y + off[1], p.z + off[2], part.rotation.y); return m;
+};
+
+// the JUNKER'S TARPAULIN as a prop (render/modelsOrig3.js junker: one long peaked tent over a lumpy load, soft at its ends, pulled in by two green
+// ropes, darker in its hollows and low down, creases down the slopes). Rebuilt as a parametric tent: the Junker's own arc over the top (hem, slope,
+// ridge, slope, hem) swept along the bed with a pillow taper to each end, the load's lumps bulging it, the ropes' pull. The cloth is the PAINT
+// (vertex colours darken the hollows and fold lines, warm-rusty where they are darkest); the ropes are the Junker's green.
+const junkerTarp = (paint) => {
+  paint.vertexColors = true; paint.needsUpdate = true;
+  const g = new THREE.Group();
+  const U = 12, Z = 9, HZ = 0.57, BASE = -0.4, KX = 0.465, KY = 0.68, CY = BASE + 0.1;
+  const arcPts = [[1.06, 1.17], [0.58, 1.66], [0.04, 2.04], [-0.6, 1.64], [-1.06, 1.17]].map(([x, y]) => new THREE.Vector3(x, y - 1.17, 0));
+  const curve = new THREE.CatmullRomCurve3(arcPts, false, 'centripetal');
+  const lumps = [[0.25, -0.05, -0.33, 0.05, 0.2], [-0.24, 0.02, 0.2, 0.06, 0.22], [0.04, 0.2, 0.38, 0.04, 0.18], [0.12, 0.1, 0.02, -0.04, 0.2], [-0.15, 0.08, -0.38, -0.03, 0.17]];
+  const ROPES = [-0.19, 0.19];
+  const lift = (x, y, z) => {                                                              // the load's bulge and the ropes' pull, 0 on the hems
+    let bump = 0; for (const [lx, ly, lz, a, r] of lumps) bump += a * Math.exp(-((x - lx) ** 2 + (y - ly) ** 2 + (z - lz) ** 2) / (r * r));
+    const pull = ROPES.reduce((q, rz) => q - 0.03 * Math.exp(-(((z - rz) / 0.045) ** 2)), 0);
+    return { bump, pull };
+  };
+  const surf = (u, z, out = 0) => {
+    const a = curve.getPoint(u), t = z / HZ, e = Math.sqrt(Math.max(0, 1 - t ** 4));      // (a pillow: lower and narrower towards each end)
+    let x = a.x * KX * e, y = BASE + a.y * KY * e;
+    const { bump, pull } = lift(x, y, z), k = (bump + pull) * Math.min(1, a.y / 0.3), dx = x, dy = y - CY, d = Math.hypot(dx, dy) || 1;
+    x += (k + out) * dx / d; y += (k + out) * dy / d;
+    return { x, y: Math.max(BASE, y), bump, pull, up: a.y / 0.87 };
+  };
+  const pos = [], col = [], idx = [], c = new THREE.Color();
+  for (let j = 0; j <= Z; j++) for (let i = 0; i <= U; i++) {
+    const z = -HZ + 2 * HZ * j / Z, q = surf(i / U, z);
+    pos.push(q.x, q.y, z);
+    let v = 0.97 - 0.3 * (1 - Math.min(1, q.up / 0.5)) ** 2 + 2.2 * Math.min(0, q.bump) + q.pull * 3;
+    if (Math.cos(i * 2.1 + j * 1.3) > 0.7 && i > 0 && i < U) v -= 0.08;                    // a fold down the slope
+    v = Math.max(0.45, Math.min(1, v));
+    col.push(v, v * (0.88 + 0.12 * v), v * (0.76 + 0.24 * v));                              // the hollows go warm and rusty
+  }
+  for (let j = 0; j < Z; j++) for (let i = 0; i < U; i++) { const a = j * (U + 1) + i, b = a + 1, d = a + U + 1, e = d + 1; idx.push(a, d, b, b, d, e); }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.setIndex(idx);
+  geo.computeVertexNormals();
+  if (geo.attributes.normal.getY(Math.floor(U / 2) + (Z >> 1) * (U + 1)) < 0) { geo.setIndex(idx.map((v, n, all) => all[n - (n % 3) + [0, 2, 1][n % 3]])); geo.computeVertexNormals(); }
+  g.add(new THREE.Mesh(geo, paint));
+  for (const rz of ROPES) {                                                                // a rope over the tent at each tie, 6 mm off the cloth
+    const rp = [], ri = [];
+    for (let i = 0; i <= U; i++) for (const dz of [-0.02, 0.02]) { const q = surf(i / U, rz + dz, 0.008); rp.push(q.x, q.y, rz + dz); }
+    for (let i = 1; i < U - 0; i++) { const a = i * 2; ri.push(a - 2, a - 1, a, a, a - 1, a + 1); }
+    const rg = new THREE.BufferGeometry(); rg.setAttribute('position', new THREE.Float32BufferAttribute(rp, 3)); rg.setIndex(ri); rg.computeVertexNormals();
+    g.add(new THREE.Mesh(rg, ROPE));
+  }
+  return g;
 };
 
 export const MORE_CARGO = [
@@ -140,6 +190,9 @@ export const MORE_CARGO = [
     const root = new THREE.Group(); root.add(g);                                           // (an inner group: the placement owns the root's yaw)
     return root;
   } },
+  // 7. the JUNKER'S TARPAULIN (the owner, 15-Oct): the Junker's trademark load as a prop, a lumpy tent roped down with green rope. The cloth is the car's
+  //    colour (darker and rusty in the hollows). Box 1 x 0.8 x 1.2: the hems on y -0.4, the ridge under y 0.4
+  { id: 'cargo-junkertarp', name: 'Junker tarp', shape: 'box', colourFrom: 'mixed', build: junkerTarp },
 ];
 export const cargoById = (id) => MORE_CARGO.find(p => p.id === id) || null;
 export const buildCargo = (id, paint = cargoPaint(0xffffff)) => {

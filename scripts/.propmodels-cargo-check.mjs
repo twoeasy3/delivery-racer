@@ -20,7 +20,7 @@ try {
   const P = await load('render/propanchors.js');
   const v = new THREE.Vector3();
   const all = C.MORE_CARGO;
-  check(all.length === 6 && all.every(p => /^cargo-[a-z]+$/.test(p.id)) && new Set(all.map(p => p.id)).size === 6, 'six props with distinct cargo- ids (' + all.map(p => p.id).join(', ') + ')');
+  check(all.length === 7 && all.every(p => /^cargo-[a-z]+$/.test(p.id)) && new Set(all.map(p => p.id)).size === 7, 'seven props with distinct cargo- ids (' + all.map(p => p.id).join(', ') + ')');
   check(all.every(p => ['box', 'cylinder'].includes(p.shape) && ['car', 'mixed', 'fixed'].includes(p.colourFrom) && p.name && typeof p.build === 'function'), 'shape box|cylinder, colourFrom car|mixed|fixed, a name and build() on each');
   check(all.filter(p => p.shape === 'cylinder').length >= 2 && all.filter(p => p.shape === 'box').length >= 2, 'a mix of shapes (' + all.filter(p => p.shape === 'box').length + ' box, ' + all.filter(p => p.shape === 'cylinder').length + ' cylinder)');
   check(all.every(p => !M.propById(p.id)) && all.every(p => C.cargoById(p.id) === p), 'ids do not collide with propmodels.js; cargoById finds each');
@@ -95,7 +95,7 @@ try {
     const f = P.fitProp(id, 'cargo', p.shape);
     if (!f || !(f.scale > 0) || f.scale > 1.6 + 1e-9 || !f.position.every(Number.isFinite)) bad.push(id + ' ' + p.id); else placed++;
   }
-  check(!bad.length && placed === 12, 'fitProp gives a transform with scale <= 1.6 for each of the six on the sporttruck and the moke (' + placed + ' placed)' + (bad.length ? ': ' + bad.join('; ') : ''));
+  check(!bad.length && placed === 14, 'fitProp gives a transform with scale <= 1.6 for each of the seven on the sporttruck and the moke (' + placed + ' placed)' + (bad.length ? ': ' + bad.join('; ') : ''));
   const { logicFiles } = await import(ROOT + '/vite.config.js');
   check(![...logicFiles()].some(f => /propmodelscargo/.test(f)), 'propmodelscargo.js is not in the replay fingerprint (vite.config.js logicFiles)');
 } finally { await close(); }
