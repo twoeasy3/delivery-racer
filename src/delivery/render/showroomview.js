@@ -205,7 +205,11 @@ const snap = typeof location !== 'undefined' && /[?&]closeup=/.test(location.sea
 const size = new THREE.Vector2();
 const draw = (now) => {
   raf = requestAnimationFrame(draw);
-  const dt = Math.min(0.05, (now - (last || now)) / 1000);
+  frameAt(now);
+};
+// one frame of the view (the loop's, and the one show() draws at once for a SWITCH: see there)
+const frameAt = (now) => {
+  const dt = Math.max(0, Math.min(0.05, (now - (last || now)) / 1000)); // (never negative: a frame drawn at once by show() may be later than the next animation frame's own time)
   last = now;
   zoom += ((closeup ? 1 : 0) - zoom) * Math.min(1, dt * 6); // (eased toward the close-up or back, a few frames)
   if (Math.abs(zoom - (closeup ? 1 : 0)) < 0.002) zoom = closeup ? 1 : 0;
@@ -249,7 +253,7 @@ const draw = (now) => {
   renderer.clear();
   renderer.render(v.scene, v.camera);
   v.ctx.clearRect(0, 0, w, h);
-  v.ctx.globalAlpha = ShowroomView.hold >= 0 ? 1 : o.alpha; // (held for a picture: not faded)
+  v.ctx.globalAlpha = ShowroomView.hold >= 0 || v.swapped ? 1 : o.alpha; // (held for a picture: not faded; a switch from another car: not faded either, the car is in the air at once and lands)
   v.ctx.drawImage(renderer.domElement, 0, size.y - h, w, h, 0, 0, w, h);
   v.ctx.globalAlpha = 1;
   if (v.key) drawKey(renderer, still, dt, ratio, now);
@@ -316,6 +320,7 @@ export const ShowroomView = {
       v.ctx = v.canvas.getContext('2d');
     }
     const fresh = v.car !== car || v.dark !== dark || !v.scene;
+    const swapped = fresh && !!v.scene && !!v.car && v.landAt != null; // (a SWITCH: another car after one was on screen; CHECKLIST 303)
     if (v.el !== el) {
       v.el = el;
       el.append(v.canvas);
@@ -326,7 +331,7 @@ export const ShowroomView = {
     }
     if (fresh) {
       drop();
-      Object.assign(v, { car, evil, dark, landAt: null, landing: true, lift: 0 }); // (landAt: its first frame drawn)
+      Object.assign(v, { car, evil, dark, landAt: null, landing: true, lift: 0, swapped }); // (landAt: its first frame drawn)
       try { build(); } catch (error) { console.warn('No model for the showroom: ' + (error?.message || error)); drop(); v.car = null; return false; }
       if (!held) { yaw = -0.64; spinBy = 0; idleAt = performance.now(); } // (a new car: from the cards' pose, then turning)
     } else if (v.evil !== evil) this.side(evil);
@@ -335,6 +340,11 @@ export const ShowroomView = {
     else if (!v.key || fresh) { dropKey(); try { buildKey(car, keyEl, dark); } catch (error) { console.warn('No key for the showroom: ' + (error?.message || error)); dropKey(); } }
     else if (v.key.el !== keyEl) { v.key.el = keyEl; keyEl.append(v.keyCanvas); }
     if (!raf) { last = 0; raf = requestAnimationFrame(draw); }
+    // A SWITCH draws the new car's first frame HERE, in the same task that put the new words in the page, not on the next
+    // animation frame: the shaders' compile and the textures' upload (a stall, long on a 3x tablet) then happen before the
+    // browser paints, so the old picture stays up until the new car is in the canvas, and the canvas is never shown empty
+    // (it used to be: the old car vanished, an empty stage for the compile's stall, then the new one faded up from alpha 0).
+    if (swapped && fresh) { try { frameAt(performance.now()); } catch (error) { console.warn('Showroom switch frame: ' + (error?.message || error)); } }
     return true;
   },
   // the side's livery on the car shown (a dark one stays dark)
