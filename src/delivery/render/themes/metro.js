@@ -10,7 +10,8 @@
 //   bore         an arched single bore lined with segments, cable trays, lamps down its crown, kilometre markers
 //   interchange  a tall hall with concourses each side behind a low glass barrier: stairs down, ticket gates, columns, big signs
 //                in two lines' colours hung over the road
-// and the tunnel junctions (hazards.js) as cross passages, open, lit, the works train's line in their floor. Then up a ramp and
+// and the LEVEL CROSSINGS (crossing.js, Canberra's own: lights, booms, the bullet train's carriages across the road) in cross passages, open,
+// lit, the line out of sight beyond them (themes.js crossingReach). Then up a ramp and
 // out to the DEPOT: sidings with trains stabled on them, lighting masts, a maintenance shed. The theme draws the whole shell
 // itself (tunnel.js leaves it: `shell: false`), and a lid of ground over the tunnel so nothing of it shows from the cutting.
 // The floor is ONE continuous floor, wall to wall: nothing drawn on it (the owner: zero floor markings). Everything that looks
@@ -392,7 +393,8 @@ export const metro = ({ levelGroup }) => {
     return [mid + half * Math.cos(a), h - SPRING + SPRING * Math.sin(a)];
   };
   const archTop = (s, lat) => { const mid = (L(s) + R(s)) / 2, half = (R(s) - L(s)) / 2, u = Math.min(1, Math.abs(lat - mid) / half); return hAt(s) - SPRING + SPRING * Math.sqrt(1 - u * u); };
-  const mouths = (LEVEL.tunnelJunctions || []).map(j => ({ s: Track.place(j), side: j.side === 'left' ? -1 : 1 }));
+  // the cross passages: where a level crossing's line (crossing.js, Canberra's) or a tunnel junction's side tunnel crosses the road
+  const mouths = [...(LEVEL.crossings || []).filter(c => c.road !== 'side'), ...(LEVEL.tunnelJunctions || [])].map(j => ({ s: Track.place(j) }));
   const MOUTH = 5;      // m each side of a junction's middle: its mouth
   const inMouth = (s) => mouths.some(m => Math.abs(s - m.s) < MOUTH);
   const mouthBreaks = mouths.flatMap(m => [m.s - MOUTH, m.s + MOUTH]);
@@ -465,8 +467,8 @@ export const metro = ({ levelGroup }) => {
     for (let s = from + 75; s < to - 40; s += 150) clock(s, L(s) - HALL * 0.45, 5.0);
   };
 
-  // ---- a JUNCTION's cross passage: beyond each mouth a short tunnel, open and lit, the works line's rails in its floor, its far end
-  // dark (the tunnel goes on). `edge(s)` the wall it opens from, `height` its roof
+  // ---- a CROSS PASSAGE (a level crossing's line, or a junction's side tunnel): beyond each mouth a short tunnel, open and lit, its far
+  // end dark (the line goes on); the line itself, its ballast, sleepers and rails, is the crossing's own (render/roadside.js). `edge(s)` the wall it opens from, `height` its roof
   const passage = (m, side, edge, height, LEN = 26) => {
     const W = MOUTH, s = m.s, o = pt(s, edge(s), 0);
     Track.toWorld(s, edge(s) + side, p); const out = [p.x - o[0], p.z - o[2]], ol = Math.hypot(out[0], out[1]); out[0] /= ol; out[1] /= ol;
@@ -480,7 +482,6 @@ export const metro = ({ levelGroup }) => {
         plainS.quad(at(t, u, 0), at(t1, u, 0), at(t1, u, 1.0), at(t, u, 1.0), C.dado);
         concS.quad([...at(t, u, 1.0), t / 4, 0], [...at(t1, u, 1.0), t1 / 4, 0], [...at(t1, u, height), t1 / 4, 1], [...at(t, u, height), t / 4, 1], C.conc);
       }
-      for (const u of [-0.72, 0.72]) onS.quad(at(t, u - 0.04, 0.03), at(t1, u - 0.04, 0.03), at(t1, u + 0.04, 0.03), at(t, u + 0.04, 0.03), C.rail);
     }
     for (let t = 3; t < LEN; t += 7) { const [x, y, z] = at(t, 0, height - 0.08); lamps.at(x, y, z, Math.atan2(out[0], out[1]), 0.35, 0.12, 1.6, C.white); }
     plainS.quad(at(LEN, -W, 0), at(LEN, W, 0), at(LEN, W, height), at(LEN, -W, height), 0x0c0e12); // (its far end: dark)
@@ -600,19 +601,16 @@ export const metro = ({ levelGroup }) => {
         if (m.s < t.from || m.s > t.to) continue;
         const kind = kindAt(m.s);
         for (const side of [-1, 1]) {
-          if (kind === 'interchange') passage(m, side, (s) => (side < 0 ? L(s) : R(s)) + side * HALL, 7, 22);
-          else passage(m, side, side < 0 ? L : R, hAt(m.s) - SPRING, 26);
+          if (kind === 'interchange') passage(m, side, (s) => (side < 0 ? L(s) : R(s)) + side * HALL, 7, 26);
+          else passage(m, side, side < 0 ? L : R, hAt(m.s) - SPRING, 37); // (the line in it drawn out to 40 m: themes.js crossingReach)
         }
         if (kind === 'interchange') for (const side of [-1, 1]) { // (the back wall over the passage's roof)
           const back = (s) => (side < 0 ? L(s) : R(s)) + side * HALL, edge = side < 0 ? L : R;
           tileS.ribbon(m.s - MOUTH, m.s + MOUTH, (s) => [back(s), 7], (s) => [back(s), hAt(s)], C.hallTile, { u: 1.2, v: 1.2 });
-          // a frame over the mouth on the wall line (the junction's beacons stand on it: render/hazards.js), in the line's colour
+          // a frame over the mouth on the wall line, in the line's colour
           for (const d of [-MOUTH - 0.15, MOUTH + 0.15]) cubes.on(m.s + d, edge(m.s + d) + side * 0.12, 2.95, 0, 0.3, 5.9, 0.3, 0x3a3d42);
           plainS.ribbon(m.s - MOUTH - 0.3, m.s + MOUTH + 0.3, (s) => [edge(s) + side * 0.12, 5.6], (s) => [edge(s) + side * 0.12, 6.2], side < 0 ? LINE.blue : LINE.green);
           plainS.ribbon(m.s - MOUTH - 0.3, m.s + MOUTH + 0.3, (s) => [edge(s) - side * 0.1, 5.55], (s) => [edge(s) + side * 0.34, 5.55], 0x3a3d42);
-          // and a post on the wall line where its CROSS TRAFFIC board hangs out over the road, 45 m before
-          const b = m.s - 45;
-          if (kindAt(b) === 'interchange') cubes.on(b, edge(b) + side * 0.1, 2.25, 0, 0.22, 4.5, 0.22, 0x3a3d42);
         }
       }
       lid(t);

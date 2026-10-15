@@ -1276,4 +1276,4 @@ Object.assign(OBSTACLE_MODELS, TUSCANY_OBSTACLES); // Tuscany's: wineCrates, hay
 Object.assign(OBSTACLE_MODELS, DESERT_OBSTACLES);
 Object.assign(OBSTACLE_MODELS, MALL_OBSTACLES); // the mall's (render/themes/mallModels.js): cartons on a sack truck, a row of nested trolleys, a WET FLOOR sign
 Object.assign(OBSTACLE_MODELS, ROADWORKS_OBSTACLES); // the roadworks' (render/themes/roadworksModels.js): barrier blocks, a cable drum, a heap of sand; a traffic drum, a pallet of pipes, a works sign
-Object.assign(OBSTACLE_MODELS, METRO_OBSTACLES); // the metro's (render/themes/metroModels.js): a ticket gate, a floor scrubber, a track lamp; a rail trolley, a wayfinding board; a junction's shuttle of Canberra carriages
+Object.assign(OBSTACLE_MODELS, METRO_OBSTACLES); // the metro's (render/themes/metroModels.js): a ticket gate, a floor scrubber, a track lamp; a rail trolley, a wayfinding board

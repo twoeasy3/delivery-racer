@@ -119,12 +119,14 @@ Game.onLoad.push(() => {
   const C = CONFIG.crossing;
   for (const c of LEVEL.crossings || []) {
     const s = Track.place(c);
-    // the line: ballast, sleepers and two rails, right across the road and out either side
-    group.add(new THREE.Mesh(buildStrip(s - 1.5, s + 1.5, -C.reach, C.reach, 0.03, 1), flat(0x5b544c, -3)));
-    const sleepers = new THREE.InstancedMesh(new THREE.BoxGeometry(2.6, 0.08, 0.25), lambert(0x4a3a2c), Math.floor(2 * C.reach / 0.7));
+    // the line: ballast, sleepers and two rails, right across the road and out either side (out to the theme's `crossingReach` where it
+    // has one: the metro's line runs in a cross passage and no further in sight; its train is drawn only there: see syncRoadside)
+    const T = THEMES[LEVEL.theme] || THEMES.city, REACH = T.crossingReach ?? C.reach;
+    group.add(new THREE.Mesh(buildStrip(s - 1.5, s + 1.5, -REACH, REACH, 0.03, 1), flat(0x5b544c, -3)));
+    const sleepers = new THREE.InstancedMesh(new THREE.BoxGeometry(2.6, 0.08, 0.25), lambert(0x4a3a2c), Math.floor(2 * REACH / 0.7));
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
     for (let k = 0; k < sleepers.count; k++) {
-      const lat = -C.reach + k * 0.7;
+      const lat = -REACH + k * 0.7;
       const h = Track.toWorld(s, lat, tmp);
       m.compose(tmp.clone().setY(tmp.y + 0.06), q.setFromAxisAngle(up, h), new THREE.Vector3(1, 1, 1));
       sleepers.setMatrixAt(k, m);
@@ -132,13 +134,16 @@ Game.onLoad.push(() => {
     group.add(sleepers);
     for (const off of [-0.75, 0.75]) {
       Track.toWorld(s + off, 0, tmp);
-      const rail = add(group, new THREE.BoxGeometry(0.1, 0.14, 2 * C.reach), lambert(0x9aa0a6), tmp.x, tmp.y + 0.12, tmp.z);
+      const rail = add(group, new THREE.BoxGeometry(0.1, 0.14, 2 * REACH), lambert(0x9aa0a6), tmp.x, tmp.y + 0.12, tmp.z);
       rail.rotation.y = across(s + off, -1, 1);
     }
     // the posts and booms at each stop line, on the right of the traffic coming up to it
-    const ours = s - C.stopLine, theirs = s + C.stopLine;
-    const lamps = [...crossingPost(ours, Track.hi(ours) - 0.6, 0), ...crossingPost(theirs, Track.lo(theirs) + 0.6, Math.PI)];
-    const booms = [crossingBoom(ours, Track.laneHi(ours) + 0.4), crossingBoom(theirs, Track.laneLo(theirs) - 0.4)];
+    const ours = s - C.stopLine, theirs = s + C.stopLine, oneWay = Track.flow === 'north', inset = T.crossingPostsOut ? -0.25 : 0.6; // (the metro's posts against its walls)
+    // (a one-way road: both booms on the way in, one from each side, meeting in the middle: Crossings.boom is one boom right across;
+    // and both posts facing the way in)
+    const lamps = oneWay ? [...crossingPost(ours, Track.hi(ours) - inset, 0), ...crossingPost(ours, Track.lo(ours) + inset, 0)]
+      : [...crossingPost(ours, Track.hi(ours) - inset, 0), ...crossingPost(theirs, Track.lo(theirs) + inset, Math.PI)];
+    const booms = oneWay ? [crossingBoom(ours, Track.laneHi(ours) + 0.4), crossingBoom(ours, Track.laneLo(ours) - 0.4)] : [crossingBoom(ours, Track.laneHi(ours) + 0.4), crossingBoom(theirs, Track.laneLo(theirs) - 0.4)];
     // the train: short, its carriages the bullet train's, cut down; or the Wild West's steam train, the
     // locomotive leading, its pieces spaced out to the same length. Each piece: { model, at (m from the nose
     // to its middle), back (true: it faces the way it came) }
@@ -157,7 +162,7 @@ Game.onLoad.push(() => {
       }
     }
     for (const { model } of carriages) { model.visible = false; group.add(model); }
-    crossings.push({ lamps, booms, carriages, steam: carriages[0].model.userData.animate });
+    crossings.push({ lamps, booms, carriages, steam: carriages[0].model.userData.animate, broke: oneWay ? [0, 0] : [0, 1], reach: T.crossingReach ?? Infinity });
   }
   // stop / go: the oncoming lane and its shoulder dug up, spoil beside them, and the workers with their signs
   for (const z of LEVEL.stopGo || []) {
@@ -246,13 +251,13 @@ export const syncRoadside = (dt) => {
     mesh.lamps.forEach((lamp, i) => lamp.color.setHex(on && i % 2 === phase ? LAMP_ON : LAMP_OFF));
     const down = Crossings.lowered(c);
     mesh.booms.forEach((boom, i) => {
-      boom.visible = !c.broken[i];
+      boom.visible = !c.broken[mesh.broke[i]];
       boom.rotation.z = (1 - down) * Math.PI / 2 * 0.95;
     });
     for (const { model, at, back } of mesh.carriages) {
-      model.visible = c.state === 'train';
-      if (!model.visible) continue;
       const lat = c.train - c.dir * at; // (each piece so far behind the nose)
+      model.visible = c.state === 'train' && Math.abs(lat) < mesh.reach + CONFIG.crossing.carLength / 2; // (beyond a theme's reach, out of sight: in the rock)
+      if (!model.visible) continue;
       Track.toWorld(c.s, lat, tmp);
       model.position.copy(tmp);
       // (nose first the way it is going; the bullet train's last carriage's nose points back)

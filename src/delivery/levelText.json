@@ -697,8 +697,8 @@
   "metro-run": {
     "name": "Metro Run",
     "description": {
-      "good": "Ticket rolls for the machines before the first train. Down the ramp, through two stations and the interchange, out to the depot. Mind the side tunnels.",
-      "evil": "A cage of tunnel rats for the depot. Race the trains through the tunnels, ride the travelators and never pick the dead lane."
+      "good": "Ticket rolls for the machines before the first train. Down the ramp, through two stations and the interchange, out to the depot. Mind the level crossings.",
+      "evil": "A cage of tunnel rats for the depot. Beat the trains over the crossings, ride the travelators and never pick the dead lane."
     },
     "cargo": { "good": "ticketrolls", "evil": "rats" }
   }

@@ -10,7 +10,6 @@
 // ============================================================================
 import { CONFIG } from './config.js';
 import { LEVEL } from './levels.js';
-import { THEMES } from './themes.js';
 import { Track } from './track.js';
 import { Player } from './player.js';
 import { Traffic } from './traffic.js';
@@ -101,8 +100,7 @@ export const Hazards = {
     this.tunnelJunctions = (LEVEL.tunnelJunctions || []).map((c) => {
       const s = Track.place(c), side = c.side === 'left' ? -1 : 1, M = CONFIG.tunnelJunction.mouth;
       const from = side < 0 ? Track.lo(s) - 1 : Track.hi(s) + 1, to = side < 0 ? Track.hi(s) + M / 2 : Track.lo(s) - M / 2;
-      const kinds = (THEMES[LEVEL.theme] || THEMES.city).junctionTrain || ['tug', 'trolley', 'trolley']; // (the theme's own: the metro's battery locomotive and flat wagons, the same boxes and costs)
-      const train = kinds.map(kind => put(kind, s, from));
+      const train = [put('tug', s, from), put('trolley', s, from), put('trolley', s, from)];
       const j = { s, side, from, to, state: 'idle', t: 0, train };
       this.parkTrain(j);
       return j;

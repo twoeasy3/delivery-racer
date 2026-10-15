@@ -3,8 +3,10 @@
 // interchange) and the cuttings and the depot outside; every tunnel zone at least 8.5 m high (the owner: no lit tunnel lower than
 // today's tunnel); no shoulder in the tunnel; the chase camera under the ceiling everywhere (and under a bore's arch at the
 // furthest the car can be from the middle); the tunnel's roof under the ground (the lid metro.js lays over it), so nothing pokes
-// out. The junctions: each in a bore or the interchange (where metro.js draws its cross passages; never across the train line),
-// clear of the zones' ends and of the pads. Obstacles: every one the level places is a real obstacle with a box and a cost (the
+// out. The level crossings (Canberra's gimmick, crossing.js): one at each cross passage, in a bore or the interchange (never across
+// the train line), clear of the zones' ends, the pads and the dead ends, nothing placed within 30 m, no pickup baiting a car into
+// the booms; the telegraph's lead; a gap always (easing off at the lights gets the car over after the train), the danger real
+// (holding on, it is wrecked some runs), a car left on the line wrecked, a lowered boom 10 health right across the one-way road. Obstacles: every one the level places is a real obstacle with a box and a cost (the
 // theme's own the box and cost of what they stand in for), and driven into, each kind of the metro's knocks the car (it
 // collides: nothing in the road is decoration). Pickups: on the lanes, cash in rows of two or more, none in a dead end's last
 // 50 m. The train line: a span of running tunnels and stations for the passing trains.
@@ -60,17 +62,74 @@ try {
   for (let s = t.from; s <= t.to; s += 2) { const top = roadY(s) + h(s) + 0.3 - GROUND; if (top > roof) { roof = top; roofAt = s; } }
   check(roof < -0.2, 'the tunnel\'s roof stays under the ground (the lid over it) everywhere: highest ' + roof.toFixed(2) + ' m below it at ' + roofAt);
   check(roadY(t.from) - GROUND < -8.5 && roadY(t.to) - GROUND < -8.5, 'the portals are deep enough for their openings (road ' + (GROUND - roadY(t.from)).toFixed(1) + ' and ' + (GROUND - roadY(t.to)).toFixed(1) + ' m under the ground)');
-  // ---- the junctions
-  for (const j of level.tunnelJunctions) {
-    const k = kindAt(j.s), z = zones.find(z => j.s >= z.from && j.s < z.to);
-    const pads = (level.boostPads || []).filter(b => j.s > b.from - 20 && j.s < b.to + 20);
-    check((k === 'bore' || k === 'interchange') && j.s - z.from >= 40 && z.to - j.s >= 40 && !pads.length, 'junction at ' + j.s + ' (' + j.side + '): in ' + (k === 'interchange' ? 'the interchange' : 'a ' + k) + ' (its cross passages; not across the train line), ' + Math.round(Math.min(j.s - z.from, z.to - j.s)) + ' m from the zone\'s ends, clear of the pads');
+  // ---- the LEVEL CROSSINGS (crossing.js, Canberra's own gimmick: lights, bell, booms, the bullet train's carriages): one at each cross
+  // passage, in a bore or the interchange (never across the train line beside the road), clear of the zones' ends and of the pads
+  const { Crossings } = await g.load('crossing.js');
+  const XC = CONFIG.crossing;
+  check(!(level.tunnelJunctions || []).length && (level.crossings || []).length >= 2, (level.crossings || []).length + ' level crossings, the cross passages (the junction gimmick is not used here: the crossings are the junctions, counted once)');
+  for (const c of level.crossings) {
+    const k = kindAt(c.s), z = zones.find(z => c.s >= z.from && c.s < z.to);
+    const pads = (level.boostPads || []).filter(b => c.s > b.from - 30 && c.s < b.to + 30), ends = (level.deadEnds || []).filter(d => Math.abs(d.s - c.s) < 60);
+    check((k === 'bore' || k === 'interchange') && c.s - z.from >= 40 && z.to - c.s >= 40 && !pads.length && !ends.length, 'crossing at ' + c.s + ': in ' + (k === 'interchange' ? 'the interchange' : 'a ' + k) + ', ' + Math.round(Math.min(c.s - z.from, z.to - c.s)) + ' m from the zone\'s ends, clear of the pads and the dead ends');
+    const near = level.obstacles.filter(o => Math.abs(o.s - c.s) < 30), baits = level.pickups.filter(q => q.s > c.s - 45 && q.s < c.s + 15);
+    check(!near.length && !baits.length, '...nothing placed within 30 m of it, and no pickup in the 45 m before it to lure a car into its booms');
   }
-  // ---- the junctions' train: the Canberra carriages, cut down, at the tug's and the trolleys' boxes and costs (the gimmick's rules unchanged)
-  const pieces = g.Collision.obstacles.filter(o => o.hazard && /^metroCar/.test(o.kind)), like = { metroCarFront: 'tug', metroCarMid: 'trolley', metroCarBack: 'trolley' };
-  check(pieces.length === 3 * level.tunnelJunctions.length && pieces.every(o => JSON.stringify(CONFIG.obstacleKinds[o.kind]) === JSON.stringify(CONFIG.obstacleKinds[like[o.kind]])),
-    'each junction\'s train is three cut-down Canberra carriages, at the tug\'s and the trolleys\' costs (' + [...new Set(pieces.map(o => o.kind))].join(', ') + ')');
-  check(pieces.every(o => [o.hw, o.hl].join() === (like[o.kind] === 'tug' ? [0.7, 1.0] : [0.45, 0.6]).join()), '...and at their boxes (tug 1.4 x 2.0 m, trolley 0.9 x 1.2 m)');
+  check(Crossings.lead >= 5, 'the telegraph: the lights come on ' + Crossings.lead.toFixed(2) + ' s before the train reaches the road (' + XC.warn + ' s of lights, then ' + (XC.reach / XC.speed).toFixed(2) + ' s of the train coming), the booms down ' + XC.lower + ' s after the lights');
+  // driving at one: easing off when the lights come on always gets the car over after the train; holding on is a gamble; the booms
+  const at = (c, lane, v, offset, how) => {
+    G.start();
+    for (const car of g.Traffic.cars) car.active = false;
+    for (const o of g.Collision.obstacles) if (!o.laneEnd && !o.hazard) o.gone = true;
+    const x = Crossings.list.find(q => Math.abs(q.s - T.place(c)) < 1);
+    x.offset = offset;
+    Object.assign(P, { s: x.s - 260, lat: T.laneOffset(lane, x.s - 260), speed: v, launching: false, shield: 0, ghost: 0, tank: 0, armour: 0 });
+    P.testGhost = false;
+    let wrecked = false, lit = null, h0 = P.health, dbg = null;
+    g.run(30, () => {
+      if (lit === null && Crossings.flashing(x)) lit = x.s - P.s;
+      const flashing = Crossings.flashing(x) || x.state === 'raise';
+      g.drive(how === 'ease' && flashing ? -1 : 1, 0);
+      if (how === 'hold') P.speed = v;
+      P.lat = T.laneOffset(lane, P.s);
+      if (P.health <= 0 || !P.active) { wrecked = true; dbg = { s: Math.round(P.s - x.s), v: P.speed.toFixed(1), state: x.state, train: Math.round(x.train), lat: P.lat.toFixed(1), health: P.health }; return true; }
+      return P.s > x.s + 30;
+    });
+    return { wrecked, lit, lost: h0 - P.health, x, dbg };
+  };
+  let cases = 0, gap = 0, easeOk = 0, floorOk = 0, held = 0, heldWrecked = 0, litLeast = Infinity;
+  for (const c of level.crossings) for (const lane of [0, 1]) for (const offset of [XC.timing.min, 0, XC.timing.max]) {
+    if ((level.deadEnds || []).some(d => d.lane === lane && d.s > c.s - 270 && d.s < c.s)) continue; // (a dead lane in the run-up: that lane's wall, not the crossing)
+    const e = at(c, lane, 25, offset, 'ease'), f = at(c, lane, 25, offset, 'floor'); cases++;
+    if (!e.wrecked) easeOk++; if (!f.wrecked) floorOk++; if (!e.wrecked || !f.wrecked) gap++; else if (process.env.DBG) console.log('    both wrecked:', c.s, lane, offset, JSON.stringify(e.dbg), JSON.stringify(f.dbg));
+    if (e.lit !== null) litLeast = Math.min(litLeast, e.lit);
+    const h = at(c, lane, 25, offset, 'hold'); held++; if (h.wrecked) heldWrecked++;
+  }
+  check(gap === cases, 'a gap always, as at Canberra\'s crossings: easing off at the lights or putting the foot down, one of them gets the car over every time (' + gap + ' of ' + cases + ': each crossing, every lane open in the run-up, the earliest, middle and latest train; easing off alone ' + easeOk + ', the foot down alone ' + floorOk + ')');
+  check(litLeast > 60, '...the lights come on ' + Math.round(litLeast) + ' m or more before the line at 90 km/h');
+  check(heldWrecked > 0, 'and the danger is real: holding 90 km/h whatever, the train wrecks the car in ' + heldWrecked + ' of ' + held + ' runs');
+  { // a car left on the line: wrecked
+    G.start();
+    for (const car of g.Traffic.cars) car.active = false;
+    const x = Crossings.list[0];
+    Object.assign(P, { s: x.s, lat: T.laneOffset(0, x.s), speed: 0.5, shield: 0, ghost: 0, tank: 0, armour: 0 });
+    P.testGhost = false;
+    Crossings.start(x);
+    let wrecked = false;
+    g.run(10, () => { g.drive(0, 0); P.s = x.s; P.speed = 0.5; if (P.health <= 0 || !P.active) { wrecked = true; return true; } return false; });
+    check(wrecked, 'a car left on the line is wrecked by the train (as at Canberra\'s crossings)');
+  }
+  for (const lane of [0, 1]) { // a boom down: 10 health, no slowing, right across the one-way road
+    G.start();
+    for (const car of g.Traffic.cars) car.active = false;
+    const x = Crossings.list[0];
+    Object.assign(P, { s: x.s - 40, lat: T.laneOffset(lane, x.s - 40), speed: 20, shield: 0, ghost: 0, tank: 0, armour: 0 });
+    P.testGhost = false;
+    Crossings.start(x); x.t = XC.lower + 0.05;
+    const h0 = P.health;
+    let v = 0;
+    g.run(1.8, () => { g.drive(1, 0); P.lat = T.laneOffset(lane, P.s); if (Math.abs(P.s - (x.s - XC.stopLine)) < 1) v = P.speed; return P.s > x.s - XC.stopLine + 4; });
+    check(Math.abs(h0 - P.health - XC.boomDamage) < 0.01 && v > 19, 'lane ' + lane + ': driving through a lowered boom costs ' + (h0 - P.health) + ' health (' + XC.boomDamage + '), no slowing; the boom is right across the road on the way in');
+  }
   // ---- the train line: spans of running tunnels and stations
   const spans = zones.filter(z => z.scenery === 'running' || z.scenery === 'station');
   check(spans.length >= 2, 'the train line runs beside the road in ' + spans.length + ' zones (' + spans.map(z => z.id).join(', ') + ')');

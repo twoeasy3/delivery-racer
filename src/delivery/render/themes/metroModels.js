@@ -2,8 +2,7 @@
 // The theme's plain obstacles, each the box and cost of the kind it stands in for (registered in ../obstacleModels.js;
 // config.js obstacleKinds, collision.js SIZE): a ticket gate (a crate), a ride-on floor scrubber (a bale), a red track lamp
 // on its tripod (a cone); named outright a rail trolley with sleepers on it (a crate) and a wayfinding board on its legs (a
-// sign); and a tunnel junction's train (themes.js junctionTrain): a shuttle of the Canberra train's carriages cut down to the
-// tug's and the trolleys' boxes and costs. Each is ONE merged mesh in vertex colours (and one lit mesh for its lamps):
+// sign). Each is ONE merged mesh in vertex colours (and one lit mesh for its lamps):
 // a draw call or two, not one a part. Each faces local +z, its feet on y = 0. No people anywhere.
 // The pictures (every one drawn in code on a canvas, the first time it is wanted, then kept): glazed wall tiles, concrete,
 // a tunnel's lining segments, the polished floor, the tactile strip, the signs (pictograms and
@@ -297,12 +296,6 @@ export const METRO_OBSTACLES = {
     }
     return grounded(group, 1.1);
   },
-  // a tunnel junction's train (hazards.js, themes.js junctionTrain): a SHUTTLE OF THE CANBERRA TRAIN'S CARRIAGES, cut down (as a level
-  // crossing's train is: render/roadside.js) to the hit boxes the junction's train has always had: its lead car the tug's box and cost,
-  // the two behind a trolley's each; the last one's nose points back. Their windows lit (a tunnel's train)
-  metroCarFront: () => shuttleCar('front'),
-  metroCarMid: () => shuttleCar('mid'),
-  metroCarBack: () => shuttleCar('back'),
 };
 
 // ---- THE CANBERRA TRAIN'S CARRIAGES, for the metro (render/trainModel.js makeCarriage: the bullet train's white and blue shell, its
@@ -351,12 +344,6 @@ export const canberraCar = (kind, w, h, l, litGlass = 0xffe9b8) => {
   const out = flatten(holder, litGlass);
   carriageCache.set(key, out);
   return out;
-};
-const shuttleCar = (kind) => { // (the junction's: 2.5 m a car, 1.9 m tall; the lead car 1.2 m wide (its box 1.4), the others 1.0 (theirs 0.9))
-  const g = canberraCar(kind, kind === 'front' ? 1.2 : 1.0, 1.9, 2.5), group = new THREE.Group();
-  if (g.solid) group.add(new THREE.Mesh(g.solid, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide })));
-  if (g.lit) group.add(new THREE.Mesh(g.lit, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })));
-  return group;
 };
 // the metro's side-line train: a Canberra carriage CAR_LENGTH m long (cut down from 25, as a level crossing's train is, so it keeps to
 // the bore in a 40 m bend), 2.7 m wide, its full 3.6 m tall
