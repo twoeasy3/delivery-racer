@@ -1191,8 +1191,8 @@ export const MODELS = {
     box(group, glass, w * 0.92, 0.42, l * 0.18, 0, 1.5, l * 0.12);                  // its glass
     box(group, paint, w * 0.94, 0.07, l * 0.2, 0, 1.74, l * 0.12);                  // its roof
     screen(group, glass, w * 0.9, 0.05, 0.5, 0, 1.47, l * 0.215, 0.3);               // windscreen
-    box(group, trim, w * 0.8, 0.08, 0.2, 0, 1.82, l * 0.12);                         // the light bar's base
-    for (const side of [-1, 1]) box(group, amber, w * 0.3, 0.1, 0.16, side * w * 0.22, 1.89, l * 0.12); // and its lamps
+    box(group, trim, w * 0.8, 0.08, 0.2, 0, 1.82, l * 0.12).userData.prop = 'roof';   // the light bar's base (tagged: a chosen roof prop hides the bar)
+    for (const side of [-1, 1]) box(group, amber, w * 0.3, 0.1, 0.16, side * w * 0.22, 1.89, l * 0.12).userData.prop = 'roof'; // and its lamps
     for (const side of [-1, 1]) box(group, paint, 0.42, 0.62, l * 0.42, side * (w / 2 - 0.21), 1.0, -l * 0.24); // the tool boxes
     box(group, trim, w * 0.5, 0.06, l * 0.42, 0, 0.78, -l * 0.24);                   // the deck between them
     const foot = [0, 1.2, -l * 0.1], tip = [0, 2.3, -l * 0.5 - 0.2];                 // the boom, from its foot to its tip

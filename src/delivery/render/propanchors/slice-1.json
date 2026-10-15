@@ -1337,19 +1337,20 @@
   "super-towtruck": {
    "roof": {
     "box": [
-     0.52,
+     1.37,
      0,
-     1.905,
-     0.34
+     2.117,
+     0.68
     ],
     "cyl": [
-     0.46,
+     1.22,
      0,
-     1.89,
-     0.34
+     2.08,
+     0.68
     ],
     "from": "roof",
-    "lim": "d"
+    "lim": "d",
+    "existing": true
    },
    "cargo": {
     "no": "the deck behind the cabin is too small (under 0.3 x 0.3 m)"
@@ -1458,19 +1459,20 @@
   "towtruck": {
    "roof": {
     "box": [
-     0.52,
+     1.37,
      0,
-     1.905,
-     0.34
+     2.117,
+     0.68
     ],
     "cyl": [
-     0.46,
+     1.22,
      0,
-     1.89,
-     0.34
+     2.08,
+     0.68
     ],
     "from": "roof",
-    "lim": "d"
+    "lim": "d",
+    "existing": true
    },
    "cargo": {
     "no": "the deck behind the cabin is too small (under 0.3 x 0.3 m)"
@@ -1729,6 +1731,10 @@
     "from": "roof-edge",
     "lim": "hand",
     "existing": true
+   },
+   "cargo": {
+    "no": "the bed under the load measures as no usable deck (the Super's kit and stripe), though the Junker itself has one",
+    "existing": true
    }
   },
   "super-keitruck": {
@@ -1767,6 +1773,23 @@
     "from": "roof-edge",
     "lim": "hand",
     "existing": true
+   },
+   "roof": {
+    "box": [
+     0.72,
+     0,
+     2.75,
+     -0.38
+    ],
+    "cyl": [
+     0.64,
+     0,
+     2.73,
+     -0.38
+    ],
+    "from": "roof",
+    "lim": "hand",
+    "existing": true
    }
   },
   "super-lovebus": {
@@ -1784,6 +1807,23 @@
      -1.909
     ],
     "from": "roof-edge",
+    "lim": "hand",
+    "existing": true
+   },
+   "roof": {
+    "box": [
+     1.5,
+     0,
+     2.475,
+     -0.04
+    ],
+    "cyl": [
+     1.5,
+     0,
+     2.475,
+     -0.04
+    ],
+    "from": "roof",
     "lim": "hand",
     "existing": true
    }
@@ -1955,6 +1995,51 @@
     ],
     "from": "roof-edge",
     "lim": "hand",
+    "existing": true
+   }
+  },
+  "rotary": {
+   "wing": {
+    "box": [
+     0.61,
+     0,
+     1.047,
+     -1.898
+    ],
+    "cyl": [
+     0.61,
+     0,
+     1.031,
+     -1.898
+    ],
+    "from": "deck",
+    "lim": "hand",
+    "inset": [
+     0.07,
+     0.07
+    ]
+   }
+  },
+  "super-rotary": {
+   "wing": {
+    "box": [
+     0.61,
+     0,
+     1.067,
+     -1.898
+    ],
+    "cyl": [
+     0.61,
+     0,
+     1.051,
+     -1.898
+    ],
+    "from": "deck",
+    "lim": "hand",
+    "inset": [
+     0.08,
+     0.08
+    ],
     "existing": true
    }
   }
