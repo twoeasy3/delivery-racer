@@ -19,6 +19,7 @@
 //   userData.livery   (evil) => void: the beak accent (orange / red-orange)
 //   userData.stripe   (hex) => void: the beak accent in a colour of one's own
 import * as THREE from 'three';
+import { shapesLive } from './shapeedits.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const keep = (m) => { m.userData.shared = true; return m; };
@@ -30,6 +31,7 @@ const LAMP = keep(basic(0xfff3c4)), TAIL = keep(basic(0xc0141c)), STOP = keep(ba
 
 const SHARED = new Map();
 const shared = (key, make) => {
+  if (shapesLive()) return make(); // (a model built with shape edits, or recorded by the model editor, caches nothing: render/shapeedits.js)
   if (!SHARED.has(key)) { const geo = make(); geo.userData.shared = true; SHARED.set(key, geo); }
   return SHARED.get(key);
 };

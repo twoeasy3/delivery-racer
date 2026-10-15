@@ -42,7 +42,14 @@
 //      "Write to build" writes the car's hand row into render/propanchors/slice-<n>.json and the plate into render/plateanchors.js (the dev
 //      server's POST /__placements, vite.config.js); with no dev server, Download gives the change for scripts/bake-placements.mjs. Not a patch.
 //      ?tab=place&slot=roof|cargo|wing|plate&end=front&prop=<prop id>
-//   ?car=<id>  ?damage=<0..5|percent>  ?evil  ?tab=parts|part|place|json  ?part=<part id>  ?pane=<pane name>  ?mirror=off  ?view=front|rear|left|right|top|34  ?dark
+//   9. SHAPES (the owner, 15-Oct: "edit ANY extruded shape ... a plain build at the end ... Mirrored mode on"): every extruded, flat or lathed
+//      outline the car's code builds is recorded as the model is BUILT (render/shapeedits.js), so a part made of one or more lists them
+//      (Shapes, numbered); tap the car on one and it opens: its points are numbered handles ON THE CAR, dragged there in the shape's own plane
+//      (a tap on a number picks it, a long press removes it, a tap on the outline between two adds one; Snap: 2 cm steps, else 5 mm), and the
+//      same points in a side / top / front drawing in the Part tab (drag, type, add after, remove, Zoom in) as the precise route. The edit is the patch's `shapes` table, read as the model is built (the same code
+//      makes the edited outline: bevels, merges, draw calls as before). Mirror on: the shape across the car (found by its vertices) gets the
+//      mirrored edit in the same commit. `node scripts/bake-shapes.mjs <car>` writes the points into the car's source (a plain build, no patch).
+//   ?car=<id>  ?damage=<0..5|percent>  ?evil  ?tab=parts|part|place|json  ?part=<part id>  ?pane=<pane name>  ?shape=<shape id>  ?mirror=off  ?view=front|rear|left|right|top|34  ?dark
 //   ?lights  ?brake  ?hazards  ?lampmarks  (those lamp toggles on from the start; also ?left ?right ?steady)
 import './render/modeleditorshim.js'; // (first: the game's modules' elements, stood in for)
 import * as THREE from 'three';
@@ -58,6 +65,7 @@ import { silhouetteFor } from './render/silhouette.js';
 import { findZFights } from './render/zfight.js';
 import { extractParts, applyPatch, modelStats, triangles, BUDGET, emptyPatch, withSet, withDelete, withAdd, withDuplicate, withMirror, withGlass, tidyPatch, PRIMITIVES, symmetryOf, mirroredTransform } from './render/modelpatch.js';
 import { withGlassEdits, glassEditsReport } from './render/ideaModelsDkit.js';
+import { setShapeOverride, lastShapeReport, locateShapes, shapePartners, mirrorPoints, withShape, outlineInModel, shapeView, shapePlane, modelToShape } from './render/shapeedits.js';
 import { lampsFor, lampKey, lampSource, makeLampMarkers } from './render/carlights.js';
 import { addLamps, placeLamps, setLampLights } from './render/lampfx.js';
 import { LOCAL_KEY, PATCHES, patchesReady, localPatches, setModelPatching } from './render/modelpatchapply.js';
@@ -130,12 +138,17 @@ scene.add(selBox, hoverBox, twinBox);
 const paneLines = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xffd23f, depthTest: false }));
 paneLines.renderOrder = 11; paneLines.visible = false;
 scene.add(paneLines);
+// the selected SHAPE on the car: its outline (yellow, both faces) and its points' numbers, drawn over everything
+const shapeMarks = new THREE.Group();
+shapeMarks.renderOrder = 12;
+scene.add(shapeMarks);
 
 // ---- the state -------------------------------------------------------------------------------------------------
 const S = {
   car: null, evil: params.has('evil'), share: damageFromParam(params.get('damage')), model: null, parts: [], nodes: new Map(), base: '', patch: null, result: null,
   sel: null, hover: null, history: [], at: -1, hidden: new Set(), solo: null, locked: new Set(), tab: 'parts', search: '',
   mirror: params.get('mirror') !== 'off', sym: new Map(), pane: null, // (Mirror; the parts' partners across the car; the selected window pane's name)
+  shapes: [], shapePairs: new Map(), shapeRep: null, shape: null, pt: -1, zoom: false, // (the outlines the build recorded, their partners, the selected one's id, its point, the 2D view zoomed on it)
 };
 const partOf = (id) => S.parts.find(p => p.id === id) || null;
 let placements = null; // (the Placements tab: render/placementedit.js, made once the view is up)
@@ -146,7 +159,7 @@ const save = () => {
   try {
     const all = localPatches();
     const p = tidyPatch(S.patch);
-    if (p.ops.length || p.evil.length) all[S.car.id] = p; else delete all[S.car.id];
+    if (p.ops.length || p.evil.length || p.glass || p.shapes) all[S.car.id] = p; else delete all[S.car.id];
     localStorage.setItem(LOCAL_KEY, JSON.stringify(all));
   } catch { /* (no storage: the edits last as long as the page) */ }
 };
@@ -164,7 +177,11 @@ const rebuild = () => {
   const keep = S.sel;
   disposeModel(S.model);
   // (the patch's glass edits go into the BUILD: cabinGlass reads them, render/ideaModelsDkit.js)
-  const model = withGlassEdits(S.patch.glass || null, () => buildInspectModel(S.car, S.evil));
+  // (and its shape edits: every outline recorded as it is built, the edited ones built from their edited points: render/shapeedits.js)
+  setShapeOverride({ edits: S.patch.shapes || null, record: true });
+  let model;
+  try { model = withGlassEdits(S.patch.glass || null, () => buildInspectModel(S.car, S.evil)); } finally { setShapeOverride(null); }
+  const shapeRep = lastShapeReport();
   const glassRep = glassEditsReport();
   if (glassRep.edits) model.userData.glassEdits = { used: Object.keys(glassRep.edits).filter(k => !glassRep.unused.includes(k)), unused: glassRep.unused };
   model.position.set(0, 0, 0); model.rotation.set(0, 0, 0);
@@ -173,6 +190,8 @@ const rebuild = () => {
   const { parts, nodes, base } = extractParts(model);
   S.model = model; S.parts = parts; S.nodes = nodes;
   S.sym = symmetryOf(model);
+  S.shapeRep = shapeRep; S.shapes = locateShapes(model, shapeRep.records).filter(r => r.mesh); S.shapePairs = shapePartners(S.shapes);
+  for (const id of shapeRep.unused) { S.result.unmatched.push('shape:' + id); S.result.warnings.push('shape edits: no outline "' + id + '" in this build (the code changed?)'); }
   damageModel(model, S.share); // (after the parts are listed from the clean model, before the lamp effects go in)
   recount();
   buildLamps(model);
@@ -182,6 +201,7 @@ const rebuild = () => {
   ground.scale.set(Math.max(0.5, foot.x * 1.5), Math.max(0.5, foot.z * 1.35), 1);
   applyViewFlags();
   select(keep && nodes.has(keep) ? keep : null, false);
+  drawShape();
   renderList(); renderStats(); renderJson();
   if (S.tab === 'part') renderPart();
   if (S.tab === 'zfight') scanZ();
@@ -250,7 +270,7 @@ const loadCar = (id, { keepView = false } = {}) => {
   $('preview').href = './?garage&' + (car.idea ? 'tab=ideas&' : '') + 'inspect=' + encodeURIComponent(car.id) + (S.evil ? '&evil' : '') + '&modelpatch=local';
   const r = S.result;
   const pairs = [...S.sym.values()].filter(v => v.partner).length / 2, selfs = [...S.sym.values()].filter(v => v.self).length;
-  status(car.name + ': ' + S.parts.length + ' parts' + (pairs || selfs ? ' (' + (pairs ? pairs + ' mirrored pairs' : '') + (pairs && selfs ? ', ' : '') + (selfs ? selfs + ' symmetric in themselves' : '') + ')' : '') + '.' + (S.patch.ops.length ? ' ' + S.patch.ops.length + ' edits kept.' : '') + (S.patch.glass ? ' ' + Object.keys(S.patch.glass).length + ' window edits.' : '') + (r.unmatched.length ? ' ' + r.unmatched.length + ' edits no longer match a part (see JSON).' : ''), r.unmatched.length > 0);
+  status(car.name + ': ' + S.parts.length + ' parts' + (pairs || selfs ? ' (' + (pairs ? pairs + ' mirrored pairs' : '') + (pairs && selfs ? ', ' : '') + (selfs ? selfs + ' symmetric in themselves' : '') + ')' : '') + '.' + (S.patch.ops.length ? ' ' + S.patch.ops.length + ' edits kept.' : '') + (S.patch.glass ? ' ' + Object.keys(S.patch.glass).length + ' window edits.' : '') + (S.patch.shapes ? ' ' + Object.keys(S.patch.shapes).length + ' shape edits.' : '') + (r.unmatched.length ? ' ' + r.unmatched.length + ' edits no longer match a part (see JSON).' : ''), r.unmatched.length > 0);
   syncUrl();
 };
 const syncUrl = () => {
@@ -261,6 +281,7 @@ const syncUrl = () => {
   if (S.tab !== 'parts') q.set('tab', S.tab);
   if (S.sel) q.set('part', S.sel);
   if (S.pane) q.set('pane', S.pane);
+  if (S.shape) q.set('shape', S.shape);
   if (!S.mirror) q.set('mirror', 'off');
   for (const id of LAMP_IDS) if ($(id).checked) q.set(LAMP_PARAMS[id], '');
   placements?.urlParams(q);
@@ -283,7 +304,13 @@ const frame = (name = view, box = null) => {
   camera.lookAt(c);
   orbit.update();
   document.querySelectorAll('[data-view]').forEach(b2 => b2.classList.toggle('on', b2.dataset.view === name));
+  if (S.tab === 'part' && S.shape) renderPart(); // (the shape's drawing as the camera now shows it)
 };
+orbit.addEventListener('end', () => { // (the shape's drawing follows the camera to the other side)
+  const rec = S.tab === 'part' && S.shape && shapeById(S.shape), v = rec && shapeView(rec);
+  if (v && v.ok && screenFlips(v).join() !== shapeFlips.join()) renderPart();
+  else drawShape(); // (the near one of a mirrored pair takes the handles)
+});
 const resize = () => {
   const box = $('viewBox').getBoundingClientRect();
   renderer.setSize(Math.max(1, box.width), Math.max(1, box.height), false);
@@ -398,14 +425,16 @@ const hit = (e) => {
   ray.setFromCamera(pointer, camera);
   ray.layers.set(0);
   const hits = ray.intersectObject(S.model, true).filter(h => h.object.isMesh && isShown(h.object) && !inFx(h.object));
-  hitPane = null;
+  hitPane = null; hitShape = null;
   for (const h of hits) {
     const id = pickable(h.object);
-    if (id) { hitPane = paneAt(h.object, h.face) ; return id; }
+    if (id) { hitPane = paneAt(h.object, h.face); hitShape = shapeAt(h.object, h.faceIndex); return id; }
   }
   return null;
 };
-let hitPane = null; // (the window pane the last hit() landed on: its name, or null)
+let hitPane = null, hitShape = null; // (the window pane / the shape the last hit() landed on: its name / id, or null)
+const shapesOf = (node) => S.shapes.filter(r => r.mesh === node);
+const shapeAt = (node, faceIndex) => { if (faceIndex == null) return null; const v = faceIndex * 3; const r = S.shapes.find(q => q.mesh === node && v >= q.start && v < q.start + q.count); return r ? r.id : null; };
 const panesOf = (node) => node?.geometry?.userData?.panes || null;
 const paneAt = (node, face) => { const ps = panesOf(node); if (!ps || !face) return null; const p = ps.find(q => face.a >= q.start && face.a < q.start + q.count); return p ? p.name : null; };
 const isShown = (n) => { for (let p = n; p; p = p.parent) if (!p.visible) return false; return true; };
@@ -424,7 +453,7 @@ canvas.addEventListener('pointerup', (e) => {
   down = null;
   if (moved > 8 || long > 600 || gizmoHot) return;
   const id = hit(e);
-  select(id, true, hitPane);
+  select(id, true, hitPane, hitShape);
 });
 canvas.addEventListener('pointermove', (e) => {
   if (e.pointerType !== 'mouse' || e.buttons || placements?.on) return;
@@ -441,7 +470,7 @@ let gizmoHot = false; // (the pointer went down on the gizmo: not a tap on a par
 gizmo.addEventListener('mouseDown', () => { gizmoHot = true; });
 gizmo.addEventListener('mouseUp', () => { setTimeout(() => { gizmoHot = false; }, 0); });
 
-const select = (id, show = true, pane = undefined) => {
+const select = (id, show = true, pane = undefined, shape = undefined) => {
   S.sel = id && S.nodes.has(id) ? id : null;
   const node = S.sel ? S.nodes.get(S.sel) : null;
   selBox.visible = !!node;
@@ -453,6 +482,9 @@ const select = (id, show = true, pane = undefined) => {
   if (pane !== undefined) S.pane = pane;
   if (!ps || !ps.some(q => q.name === S.pane)) S.pane = null;
   drawPane();
+  if (shape !== undefined && shape !== S.shape) { S.shape = shape; S.pt = -1; }
+  if (!node || !shapesOf(node).some(r => r.id === S.shape)) S.shape = null;
+  drawShape();
   const twin = S.sel && mirrorPartner(partOf(S.sel));
   twinBox.visible = !!twin;
   if (twin) twinBox.setFromObject(S.nodes.get(twin));
@@ -502,7 +534,7 @@ const setFor = (patch, part, values, opts = {}) => {
   return p;
 };
 const syncMirror = () => { $('mirrorMode').textContent = 'Mirror: ' + (S.mirror ? 'on' : 'off'); $('mirrorMode').classList.toggle('on', S.mirror); };
-$('mirrorMode').addEventListener('click', () => { S.mirror = !S.mirror; syncMirror(); if (S.sel) select(S.sel); else syncUrl(); status('Mirror ' + (S.mirror ? 'on: an edit goes to the part across the car too.' : 'off: one side only.')); });
+$('mirrorMode').addEventListener('click', () => { S.mirror = !S.mirror; syncMirror(); if (S.sel) select(S.sel); else syncUrl(); drawShape(); status('Mirror ' + (S.mirror ? 'on: an edit goes to the part across the car too.' : 'off: one side only.')); });
 syncMirror();
 
 // ---- WINDOW PANES: the selected pane's outline in the view, and its edges redrawn in a side view (the Part tab) -----------------------------
@@ -610,6 +642,229 @@ const wirePaneEditor = (box, node, pane) => {
     c.addEventListener('pointermove', move); c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up);
   }));
 };
+// ---- SHAPES: the selected outline on the car (yellow, its points numbered) and its points in a side / top / front view (the Part tab) ------
+const shapeById = (id) => S.shapes.find(r => r.id === id) || null;
+const numberTex = new Map(); // (a number's sprite picture, made once)
+const numberSprite = (n, on) => {
+  const k = n + (on ? '*' : '');
+  if (!numberTex.has(k)) {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d');
+    g.fillStyle = on ? '#ff8c42' : '#ffd23f'; g.beginPath(); g.arc(32, 32, 28, 0, Math.PI * 2); g.fill();
+    g.lineWidth = 4; g.strokeStyle = '#1b2029'; g.stroke();
+    g.fillStyle = '#1b2029'; g.font = 'bold ' + (n >= 10 ? 28 : 34) + 'px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(n), 32, 34);
+    numberTex.set(k, new THREE.CanvasTexture(c));
+  }
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: numberTex.get(k), depthTest: false, sizeAttenuation: false }));
+  sp.scale.setScalar((on ? 34 : 26) / Math.max(200, canvas.clientHeight) / 1.6); sp.renderOrder = on ? 14 : 13; // (about 26 px across whatever the view's size; the picked one 34)
+  return sp;
+};
+// (live: the points being dragged on the view, before they are committed; the partner's mirrored with them)
+let shapeHandles = []; // (the numbers drawn on the car: [{ i, pos (model space) }], for picking them with a finger)
+const drawShape = (live = null) => {
+  for (const c of shapeMarks.children) { if (!c.isSprite) c.geometry?.dispose(); c.material?.dispose(); } // (a number's picture is kept: numberTex; sprites share one geometry)
+  shapeMarks.clear(); shapeHandles = [];
+  let rec = S.shape && shapeById(S.shape);
+  document.body.classList.toggle('shaping', !!rec); // (a phone: the view's extra toggles step aside for the handles, modeleditor.css)
+  if (!rec) return;
+  // (of a mirrored pair, the handles go on the one facing the camera: the edit is the same either way)
+  const near = shapeTwin(rec), dist = (r) => { const at = outlineInModel(r, openPts(r.now), 0); return at.length ? at.reduce((c, q) => c.add(q), new THREE.Vector3()).multiplyScalar(1 / at.length).applyMatrix4(S.model.matrixWorld).distanceTo(camera.position) : Infinity; };
+  if (!live && near && dist(near) < dist(rec) - 0.1) { S.shape = near.id; rec = near; if (S.tab === 'part') renderPart(); syncUrl(); }
+  if (S.model) { shapeMarks.matrix.copy(S.model.matrixWorld); shapeMarks.matrixAutoUpdate = false; }
+  const pts = live || openPts(rec.now);
+  const lineMat = new THREE.LineBasicMaterial({ color: 0xffd23f, depthTest: false });
+  const faces = rec.kind === 'extrude' ? [0, rec.opts.depth] : [0];
+  for (const w of faces) {
+    const loop = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(outlineInModel(rec, pts, w)), lineMat);
+    loop.renderOrder = 12; shapeMarks.add(loop);
+  }
+  const twin = shapeTwin(rec);
+  if (twin) {
+    const tp = live ? mirrorPoints(rec, twin, live) : twin.now;
+    const l = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(outlineInModel(twin, tp, 0)), new THREE.LineBasicMaterial({ color: 0xff8c42, depthTest: false }));
+    l.renderOrder = 12; shapeMarks.add(l);
+    if (live && S.pt >= 0) { const tq = outlineInModel(twin, [tp[Math.min(S.pt, tp.length - 1)]], 0)[0]; if (tq) { const sp = numberSprite(S.pt + 1, true); sp.position.copy(tq); sp.material.opacity = 0.75; shapeMarks.add(sp); } } // (the partner's point, following)
+  }
+  const at = outlineInModel(rec, pts, 0), step = Math.max(1, Math.ceil(at.length / 40)); // (a number on every point; on every few of a very long outline)
+  at.forEach((p, i) => { if (i % step && i !== S.pt) return; const sp = numberSprite(i + 1, i === S.pt); sp.position.copy(p); shapeMarks.add(sp); shapeHandles.push({ i, pos: p }); });
+};
+// ---- dragging a shape's points ON THE CAR (the owner, 15-Oct: "I want to be able to edit it directly on the model view"): a finger or the
+// mouse on a number drags that point in the shape's own plane (a capture listener: neither the gizmo nor the camera takes the drag); a tap on a
+// number picks it, a long press (0.6 s) removes it, a tap on the outline between two numbers adds a point there. One commit when let go (with
+// its mirror: one undo). A tap anywhere else does what it did (pick a part, or let go of it).
+const HANDLE_PX = 24, LINE_PX = 12;
+const toScreen = (p) => { const r = canvas.getBoundingClientRect(), v = p.clone().applyMatrix4(S.model.matrixWorld).project(camera); return [(v.x + 1) / 2 * r.width + r.left, (1 - v.y) / 2 * r.height + r.top, v.z]; };
+const onPlane = (rec, e) => {
+  const r = canvas.getBoundingClientRect();
+  ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+  const plane = shapePlane(rec), inv = new THREE.Matrix4().copy(S.model.matrixWorld).invert();
+  const local = ray.ray.clone().applyMatrix4(inv), hitP = new THREE.Vector3();
+  return plane && local.intersectPlane(plane, hitP) ? hitP : null;
+};
+let viewDrag = null;
+canvas.addEventListener('pointerdown', (e) => {
+  const rec = !placements?.on && S.shape && shapeById(S.shape);
+  if (!rec || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  const near = shapeHandles.map(h => { const [x, y, z] = toScreen(h.pos); return { ...h, d: Math.hypot(x - e.clientX, y - e.clientY), z }; }).filter(h => h.d < HANDLE_PX && h.z < 1).sort((a, b) => a.d - b.d)[0];
+  let seg = null;
+  if (!near) { // (on the outline between two numbers: a point added there on a tap)
+    const pts = openPts(rec.now), at = outlineInModel(rec, pts, 0).map(toScreen);
+    for (let i = 0; i < at.length; i++) {
+      const a = at[i], b = at[(i + 1) % at.length], dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy;
+      const t = l2 ? Math.max(0, Math.min(1, ((e.clientX - a[0]) * dx + (e.clientY - a[1]) * dy) / l2)) : 0;
+      const d = Math.hypot(a[0] + dx * t - e.clientX, a[1] + dy * t - e.clientY);
+      if (t > 0.15 && t < 0.85 && d < LINE_PX && (!seg || d < seg.d)) seg = { i, d };
+    }
+  }
+  if (!near && !seg) return;
+  e.stopImmediatePropagation(); e.preventDefault();
+  try { canvas.setPointerCapture(e.pointerId); } catch { /* (a pointer the page did not see go down) */ }
+  viewDrag = { rec, i: near ? near.i : -1, seg, x: e.clientX, y: e.clientY, t: performance.now(), moved: false, pts: openPts(rec.now).map(q => q.slice()), id: e.pointerId };
+  if (near) { S.pt = near.i; drawShape(); }
+  down = null; // (not a tap on a part)
+}, { capture: true });
+canvas.addEventListener('pointermove', (e) => {
+  const d = viewDrag;
+  if (!d || e.pointerId !== d.id) return;
+  e.stopImmediatePropagation();
+  if (d.i < 0) return;
+  if (!d.moved && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 6) return;
+  d.moved = true;
+  const p = onPlane(d.rec, e);
+  if (!p) return;
+  const view = shapeView(d.rec), step = $('snap').checked ? 0.02 : 0.005; // (5 mm; Snap: 2 cm, in the shape's side / top / front view)
+  const [h, v] = view.toView(modelToShape(d.rec, p));
+  d.pts[d.i] = view.fromView([Math.round(h / step) * step, Math.round(v / step) * step]);
+  drawShape(d.pts);
+}, { capture: true });
+const endViewDrag = (e, cancel = false) => {
+  const d = viewDrag;
+  if (!d || e.pointerId !== d.id) return;
+  e.stopImmediatePropagation();
+  viewDrag = null;
+  const rec = d.rec;
+  if (cancel) { drawShape(); return; }
+  if (d.i >= 0 && d.moved) { setShape(rec, d.pts, 'point ' + (d.i + 1) + ' moved on the car'); return; }
+  const tap = Math.hypot(e.clientX - d.x, e.clientY - d.y) < 8;
+  if (d.i >= 0 && tap && performance.now() - d.t > 600) { // (a long press: the point goes)
+    if (d.pts.length > 3) { S.pt = -1; setShape(rec, d.pts.filter((_, j) => j !== d.i), 'point ' + (d.i + 1) + ' removed'); } else status('A shape keeps three points at least.');
+    return;
+  }
+  if (d.seg && tap) { // (a tap on the outline: a point there, on the plane under the finger)
+    const p = onPlane(rec, e), next = d.pts.map(q => q.slice());
+    if (!p) return;
+    next.splice(d.seg.i + 1, 0, modelToShape(rec, p)); S.pt = d.seg.i + 1;
+    setShape(rec, next, 'point ' + (d.seg.i + 2) + ' added');
+    return;
+  }
+  if (S.tab === 'part') renderPart(); else drawShape(); // (a tap on a number: picked)
+};
+canvas.addEventListener('pointerup', (e) => endViewDrag(e), { capture: true });
+canvas.addEventListener('pointercancel', (e) => endViewDrag(e, true), { capture: true });
+// the shape across the car (Mirror on and it has one), and its edit as one commit with the shape's
+const shapeTwin = (rec) => { if (!S.mirror || !rec) return null; const p = S.shapePairs.get(rec.id); return p?.partner ? shapeById(p.partner) : null; };
+const setShape = (rec, pts, words) => {
+  let p = withShape(S.patch, rec.id, pts);
+  const twin = shapeTwin(rec);
+  if (twin) p = withShape(p, twin.id, mirrorPoints(rec, twin, pts));
+  commit(p, 'Shape ' + shapeNo(rec) + ': ' + words + (twin ? ', and its mirror' : '') + '.');
+};
+const resetShape = (rec) => {
+  let p = withShape(S.patch, rec.id, null);
+  const twin = shapeTwin(rec);
+  if (twin) p = withShape(p, twin.id, null);
+  commit(p, 'Shape ' + shapeNo(rec) + ': back as the code builds it' + (twin ? ', and its mirror' : '') + '.');
+};
+const shapeNo = (rec) => shapesOf(rec.mesh).indexOf(rec) + 1;
+const SW = 340, SH = 230, SPAD = 26;
+// which way the view's two axes run on the screen just now (+1 / -1 each), so the drawing is the shape as the camera shows it (the Left view's
+// nose to the left, the Right view's to the right); an axis seen end on keeps +1
+let shapeFlips = [1, 1];
+const screenFlips = (view) => {
+  if (!S.model) return [1, 1];
+  const c = modelBox().getCenter(new THREE.Vector3()), p0 = c.clone().project(camera);
+  const ph = c.clone().setComponent(view.H, c.getComponent(view.H) + 0.5).project(camera), pv = c.clone().setComponent(view.V, c.getComponent(view.V) + 0.5).project(camera);
+  const sh = ph.x - p0.x, sv = pv.y - p0.y;
+  return [Math.abs(sh) > 0.01 ? Math.sign(sh) : 1, Math.abs(sv) > 0.01 ? Math.sign(sv) : 1];
+};
+const shapeFit = (pts, at = null) => { // (the whole shape; zoomed: four times closer, on point `at`)
+  const hs = pts.map(q => q[0]), vs = pts.map(q => q[1]), h0 = Math.min(...hs), h1 = Math.max(...hs), v0 = Math.min(...vs), v1 = Math.max(...vs);
+  let k = Math.min((SW - 2 * SPAD) / Math.max(0.05, h1 - h0), (SH - 2 * SPAD) / Math.max(0.05, v1 - v0)), ch = (h0 + h1) / 2, cv = (v0 + v1) / 2;
+  if (at) { k *= 4; [ch, cv] = at; }
+  const [sx, sy] = shapeFlips;
+  return { k, sx, sy, x: (h) => SW / 2 + sx * (h - ch) * k, y: (v) => SH / 2 - sy * (v - cv) * k };
+};
+// the points to edit: an outline that ends on its first point again (a closed path) is shown without that last copy (the shape closes itself)
+const openPts = (pts) => (pts.length > 3 && Math.hypot(pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]) < 1e-4 ? pts.slice(0, -1) : pts);
+const shapeFitFor = (rec, view) => { shapeFlips = screenFlips(view); const now = openPts(rec.now).map(view.toView); return shapeFit([...now, ...rec.pts.map(view.toView)], S.zoom ? now[Math.max(0, Math.min(now.length - 1, S.pt))] : null); };
+const handleR = (now, f) => Math.max(9, Math.min(15, 0.55 * Math.min(...now.map((q, i) => { const n = now[(i + 1) % now.length]; return Math.hypot(f.x(q[0]) - f.x(n[0]), f.y(q[1]) - f.y(n[1])) || 99; }))));
+const VIEW_WORDS = { side: ['from the side, as on screen', 'along', 'up'], top: ['from above', 'along', 'across'], front: ['from the front', 'across', 'up'] };
+const shapeEditor = (rec) => {
+  const view = shapeView(rec);
+  if (!view || !view.ok) return '<p class="note">This shape cannot be drawn flat (its plane is turned edge on).</p>';
+  const now = openPts(rec.now).map(view.toView), orig = rec.pts.map(view.toView), f = shapeFitFor(rec, view);
+  const path = (pts) => pts.map((q, i) => (i ? 'L' : 'M') + f.x(q[0]).toFixed(1) + ' ' + f.y(q[1]).toFixed(1)).join(' ') + ' Z';
+  // the car's other shapes seen the same way, faint (where this one sits)
+  const ctx = S.shapes.filter(r => r !== rec && r.toModel && shapeView(r)?.name === view.name).map(r => { const vv = shapeView(r); return r.now.map(q => { const [h, w] = vv.toView(q); return [h, w]; }); });
+  const r = handleR(now, f), twin = shapeTwin(rec), pair = S.shapePairs.get(rec.id), [vw, hw, ww] = VIEW_WORDS[view.name];
+  const stored = S.patch.shapes?.[rec.id] ? rec.id : S.patch.shapes?.[rec.key] ? rec.key : null;
+  const order = now.map((q, i) => i).filter(i => i !== S.pt).concat(S.pt >= 0 && S.pt < now.length ? [S.pt] : []); // (the picked point on top)
+  const handles = order.map(i => [now[i], i]).map(([q, i]) => '<g class="sh' + (i === S.pt ? ' on' : '') + '" data-sp="' + i + '"><circle cx="' + f.x(q[0]).toFixed(1) + '" cy="' + f.y(q[1]).toFixed(1) + '" r="' + (r + 8).toFixed(1) + '" fill="transparent"/>'
+    + '<circle cx="' + f.x(q[0]).toFixed(1) + '" cy="' + f.y(q[1]).toFixed(1) + '" r="' + (i === S.pt ? Math.max(r, 14) : r).toFixed(1) + '" fill="' + (i === S.pt ? '#ff8c42' : '#ffd23f') + '" stroke="#1b2029" stroke-width="1.5"/>'
+    + '<text x="' + f.x(q[0]).toFixed(1) + '" y="' + (f.y(q[1]) + (i === S.pt ? Math.max(r, 14) : r) * 0.36).toFixed(1) + '" font-size="' + ((i === S.pt ? Math.max(r, 14) : r) * (i >= 9 ? 0.95 : 1.1)).toFixed(1) + '" font-weight="700" text-anchor="middle" fill="#1b2029">' + (i + 1) + '</text></g>').join('');
+  return '<h2 style="margin-top:12px">Shape ' + shapeNo(rec) + ' <span class="small">' + vw + ' · drag a number, here or on the car</span></h2>'
+    + '<svg id="shapeSvg" class="glass" viewBox="0 0 ' + SW + ' ' + SH + '">'
+    + ctx.map(q => '<path d="' + path(q) + '" fill="#2a3446" stroke="#5a6678" stroke-width="1"/>').join('')
+    + '<path d="' + path(orig) + '" fill="none" stroke="#ffd23f" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>'
+    + '<path id="shapeNow" d="' + path(now) + '" fill="#4f6a95" fill-opacity="0.75" stroke="#ffd23f" stroke-width="2"/>'
+    + handles + '</svg>'
+    + '<p class="kv">' + (twin ? 'Mirror: shape across the car follows' : pair?.self ? 'One shape across the car' : S.mirror && !pair?.partner ? 'No mirror shape' : 'Mirror off: this one only') + (stored ? ' · edited' : '') + (rec.holes ? ' · its ' + rec.holes + ' hole(s) stay' : '') + '</p>'
+    + '<div class="buttons"><button id="sZoom" title="Four times closer, on the picked point (tap a number to pick it)">' + (S.zoom ? 'Zoom out' : 'Zoom in') + '</button><button id="sReset"' + (stored ? '' : ' disabled') + '>Reset shape</button></div>'
+    + '<div class="pts spts"><div class="vec"><span>#</span><span>' + hw + '</span><span>' + ww + '</span><span></span><span></span></div>' + now.map((q, i) => '<div class="vec' + (i === S.pt ? ' on' : '') + '" data-srow="' + i + '"><span>' + (i + 1) + '</span>' + num(q[0], 0.01) + num(q[1], 0.01)
+      + '<button data-sadd="' + i + '" title="A point after this one">+</button><button data-sdel="' + i + '" title="Remove this point"' + (now.length <= 3 ? ' disabled' : '') + '>×</button></div>').join('') + '</div>';
+};
+const wireShapeEditor = (box, rec) => {
+  const view = shapeView(rec);
+  if (!view || !view.ok) return;
+  const now = openPts(rec.now).map(view.toView), f = shapeFitFor(rec, view);
+  const back = (pts) => pts.map(view.fromView);
+  box.querySelectorAll('[data-shape]').forEach(b => b.addEventListener('click', () => select(S.sel, true, undefined, b.dataset.shape)));
+  box.querySelectorAll('[data-srow] input').forEach(inp => inp.addEventListener('focus', () => { const i = +inp.closest('[data-srow]').dataset.srow; if (S.pt !== i) { S.pt = i; drawShape(); box.querySelectorAll('[data-srow]').forEach(r => r.classList.toggle('on', +r.dataset.srow === i)); } }));
+  box.querySelectorAll('[data-srow]').forEach(row => row.addEventListener('change', () => {
+    const i = +row.dataset.srow, [a, b] = [...row.querySelectorAll('input')].map(x => +x.value || 0), next = now.map(q => q.slice());
+    next[i] = [a, b]; S.pt = i; setShape(rec, back(next), 'point ' + (i + 1) + ' set');
+  }));
+  box.querySelectorAll('[data-sadd]').forEach(b => b.addEventListener('click', () => {
+    const i = +b.dataset.sadd, a = now[i], c = now[(i + 1) % now.length], next = now.map(q => q.slice());
+    next.splice(i + 1, 0, [(a[0] + c[0]) / 2, (a[1] + c[1]) / 2]); S.pt = i + 1; setShape(rec, back(next), 'point ' + (i + 2) + ' added');
+  }));
+  box.querySelectorAll('[data-sdel]').forEach(b => b.addEventListener('click', () => { const i = +b.dataset.sdel; if (now.length > 3) { S.pt = -1; setShape(rec, back(now.filter((_, j) => j !== i)), 'point ' + (i + 1) + ' removed'); } }));
+  box.querySelector('#sReset')?.addEventListener('click', () => resetShape(rec));
+  box.querySelector('#sZoom')?.addEventListener('click', () => { S.zoom = !S.zoom; if (S.zoom && S.pt < 0) S.pt = 0; renderPart(); drawShape(); });
+  const svg = box.querySelector('#shapeSvg');
+  svg.querySelectorAll('[data-sp]').forEach(g => g.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); try { g.setPointerCapture(e.pointerId); } catch { /* (a pointer the page did not see go down) */ }
+    const i = +g.dataset.sp, next = now.map(q => q.slice()), c0 = now[i].slice();
+    S.pt = i; drawShape();
+    const r0 = svg.getBoundingClientRect(), px0 = (e.clientX - r0.left) * SW / r0.width, py0 = (e.clientY - r0.top) * SH / r0.height;
+    let moved = false;
+    const move = (ev) => {
+      const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * SW / r.width, py = (ev.clientY - r.top) * SH / r.height;
+      if (!moved && Math.hypot(px - px0, py - py0) < 2) return;
+      moved = true;
+      next[i] = [Math.round((c0[0] + f.sx * (px - px0) / f.k) * 200) / 200, Math.round((c0[1] - f.sy * (py - py0) / f.k) * 200) / 200]; // (to 5 mm, from where it was: no jump on touch)
+      const dy = +g.querySelector('text').getAttribute('y') - +g.querySelectorAll('circle')[1].getAttribute('cy');
+      g.querySelectorAll('circle').forEach(c => { c.setAttribute('cx', f.x(next[i][0]).toFixed(1)); c.setAttribute('cy', f.y(next[i][1]).toFixed(1)); });
+      g.querySelector('text').setAttribute('x', f.x(next[i][0]).toFixed(1)); g.querySelector('text').setAttribute('y', (f.y(next[i][1]) + dy).toFixed(1));
+      $('shapeNow').setAttribute('d', next.map((q, j) => (j ? 'L' : 'M') + f.x(q[0]).toFixed(1) + ' ' + f.y(q[1]).toFixed(1)).join(' ') + ' Z');
+    };
+    const up = () => {
+      g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up);
+      if (moved) setShape(rec, back(next), 'point ' + (i + 1) + ' moved'); else renderPart(); // (a tap picks the point: its row and its number on the car light up)
+    };
+    g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
+  }));
+};
 const setMode = (mode) => {
   gizmo.setMode(mode);
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
@@ -699,6 +954,13 @@ const renderPart = () => {
     + (geo ? '<h2 style="margin-top:12px">Sizes ' + (p.editable ? '' : '<span class="small">set in its code (move or scale the part instead)</span>') + '</h2><div class="params">'
       + geo.filter(k => typeof p.params[k] === 'number').map(k => '<label class="param">' + k + '<input type="number" data-param="' + k + '" step="' + (/Segments|segments/.test(k) ? 1 : 0.01) + '" value="' + (Math.round(p.params[k] * 1000) / 1000) + '"' + (p.editable ? '' : ' disabled') + '></label>').join('') + '</div>' : '')
     + (p.kind === 'SideExtrudeGeometry' && p.editable ? pointsEditor(p.params.points) : '')
+    + (() => { // (the outlines this part is built from: render/shapeedits.js)
+      const node = S.nodes.get(p.id), list = node ? shapesOf(node) : [];
+      if (!list.length) return '';
+      const rec = S.shape && list.find(r => r.id === S.shape);
+      return '<h2 style="margin-top:12px">Shapes <span class="small">' + (list.length > 1 ? 'pick one' : '') + '</span></h2><div class="panes">' + list.map((r, i) => '<button data-shape="' + esc(r.id) + '" class="' + (rec === r ? 'on' : '') + (S.patch.shapes?.[r.id] || S.patch.shapes?.[r.key] ? ' edited' : '') + '">' + (i + 1) + ' · ' + openPts(r.now).length + ' pts</button>').join('') + '</div>'
+        + (rec ? shapeEditor(rec) : '');
+    })()
     + (p.panes ? (S.pane && panesOf(S.nodes.get(p.id)).find(q => q.name === S.pane) ? paneEditor(S.nodes.get(p.id), panesOf(S.nodes.get(p.id)).find(q => q.name === S.pane))
       : '<h2 style="margin-top:12px">Windows <span class="small">tap a pane in the view, or here</span></h2><div class="panes">' + p.panes.map(n => '<button data-pane="' + esc(n) + '"' + (panesOf(S.nodes.get(p.id)).find(q => q.name === n)?.edited ? ' class="edited"' : '') + '>' + esc(n) + '</button>').join('') + '</div>') : '')
     + (p.color ? '<div class="paint"><label>Colour <input type="color" id="pColor" value="' + p.color + '"></label>'
@@ -740,6 +1002,7 @@ const renderPart = () => {
       c.addEventListener('pointermove', move); c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up);
     }));
   }
+  { const node = S.nodes.get(p.id), rec = S.shape && node && shapesOf(node).find(r => r.id === S.shape); if (rec) wireShapeEditor(box, rec); else box.querySelectorAll('[data-shape]').forEach(b => b.addEventListener('click', () => select(S.sel, true, undefined, b.dataset.shape))); }
   if (p.panes) { const pane = S.pane && panesOf(S.nodes.get(p.id)).find(q => q.name === S.pane); if (pane) wirePaneEditor(box, S.nodes.get(p.id), pane); else box.querySelectorAll('[data-pane]').forEach(b => b.addEventListener('click', () => select(S.sel, true, b.dataset.pane))); }
   $('pName').addEventListener('change', (e) => { if (p.added) set({ name: e.target.value }); else { S.nodes.get(p.id).name = e.target.value; set({ name: e.target.value }); } });
   $('pRole').addEventListener('change', (e) => set({ role: e.target.value }));
@@ -761,6 +1024,8 @@ const renderPart = () => {
     const twin = mirrorPartner(p);
     next.ops = next.ops.filter(op => op.add || (op.id !== p.id && op.id !== twin));
     next.evil = (next.evil || []).filter(op => op.id !== p.id && op.id !== twin);
+    for (const id of [p.id, twin]) { const node = id && S.nodes.get(id); if (node && next.shapes) for (const r of shapesOf(node)) { delete next.shapes[r.id]; const t = shapeTwin(r); if (t) delete next.shapes[t.id]; } }
+    if (next.shapes && !Object.keys(next.shapes).length) delete next.shapes;
     commit(next, (p.name || p.role) + ': back as the code builds it.');
   });
 };
@@ -778,7 +1043,7 @@ const renderStats = () => {
     + '<span>Draw calls <b>' + s.materials + '</b> once merged</span>'
     + (S.share > 0 ? '<span class="dmg" title="Damage ' + DAMAGE_STATES[damageIndex(S.share)].label + ': triangles and draw calls, clean against damaged (the cut-finer panels add triangles; paint is shared, so no draw call)">Damaged <b>' + dc.damaged.triangles.toLocaleString('en') + '</b> tris (clean ' + dc.clean.triangles.toLocaleString('en') + ', <b>&times;' + dc.factor.toFixed(2) + '</b>) &middot; draw calls <b>' + dc.damaged.materials + '</b> (clean ' + dc.clean.materials + ')</span>' : '')
     + '<span class="lamp" title="Where the lamp effects (Lights, Brake, Hazards, Lamp markers) are placed">lamps: <b>' + esc(fxSource) + '</b></span>'
-    + '<span>Edits <b>' + S.patch.ops.length + (S.patch.evil?.length ? ' + ' + S.patch.evil.length + ' Evil' : '') + (S.patch.glass ? ' + ' + Object.keys(S.patch.glass).length + ' windows' : '') + '</b></span>'
+    + '<span>Edits <b>' + S.patch.ops.length + (S.patch.evil?.length ? ' + ' + S.patch.evil.length + ' Evil' : '') + (S.patch.glass ? ' + ' + Object.keys(S.patch.glass).length + ' windows' : '') + (S.patch.shapes ? ' + ' + Object.keys(S.patch.shapes).length + ' shapes' : '') + '</b></span>'
     + '<span title="Mirror: an edit goes to the part across the car too">Mirror <b>' + (S.mirror ? 'on' : 'off') + '</b></span>'
     + (r.unmatched.length ? '<span class="bad">Stale <b>' + r.unmatched.length + '</b></span>' : '')
     + (r.stale ? '<span class="warn">Code changed since the patch</span>' : '');
@@ -807,10 +1072,11 @@ $('copy').addEventListener('click', () => navigator.clipboard?.writeText($('json
 $('bake').addEventListener('click', () => {
   const g = S.patch.glass, out = $('bakeOut');
   out.hidden = false;
-  if (!g || !Object.keys(g).length) { out.textContent = 'No window edits in this patch (pick a window pane of a cabinGlass car and drag its corners).'; return; }
+  const sh = S.patch.shapes && Object.keys(S.patch.shapes).length ? '// shape edits (' + Object.keys(S.patch.shapes).length + '): put the patch in src/delivery/modelpatches/' + S.car.id + '.json and run\n//   node scripts/bake-shapes.mjs ' + S.car.id + '\n// (it writes the points into the car\'s code where each outline is written, and proves the code builds the same model)\n' : '';
+  if (!g || !Object.keys(g).length) { out.textContent = sh || 'No window or shape edits in this patch.'; if (sh) navigator.clipboard?.writeText(sh); return; }
   const fmt = (v) => (Array.isArray(v) ? '[' + v.map(fmt).join(', ') + ']' : v && typeof v === 'object' ? '{ ' + Object.entries(v).map(([k, x]) => k + ': ' + fmt(x)).join(', ') + ' }' : String(Math.round(v * 1000) / 1000));
   const key = (k) => (/^[a-z_]\w*$/i.test(k) ? k : "'" + k.replace(/'/g, "\\'") + "'");
-  out.textContent = '// put the patch in src/delivery/modelpatches/' + S.car.id + '.json and run:\n//   node scripts/bake-glass.mjs ' + S.car.id + '\n// or paste this above the car\'s cabinGlass call and give the call `overrides: GLASS_EDITS`:\nconst GLASS_EDITS = { ' + Object.entries(g).map(([k, v]) => key(k) + ': ' + fmt(v)).join(', ') + ' };';
+  out.textContent = sh + '// put the patch in src/delivery/modelpatches/' + S.car.id + '.json and run:\n//   node scripts/bake-glass.mjs ' + S.car.id + '\n// or paste this above the car\'s cabinGlass call and give the call `overrides: GLASS_EDITS`:\nconst GLASS_EDITS = { ' + Object.entries(g).map(([k, v]) => key(k) + ': ' + fmt(v)).join(', ') + ' };';
   navigator.clipboard?.writeText(out.textContent).then(() => status('The bake snippet is shown and copied.'), () => status('The bake snippet is shown.'));
 });
 
@@ -974,9 +1240,10 @@ patchesReady.then(() => {
   loadCar(params.get('car') || 'commuter');
   setDamage(S.share, true);
   showTab(params.get('tab'));
-  if (params.get('part')) select(params.get('part'), true, params.get('pane') || undefined);
+  if (params.get('part')) select(params.get('part'), true, params.get('pane') || undefined, params.get('shape') || undefined);
+  else if (params.get('shape')) { const r = shapeById(params.get('shape')); if (r) select(idOf(r.mesh), true, undefined, r.id); } // (?shape= alone: the part it is in)
   if (params.get('tab')) showTab(params.get('tab'));
   frame(view);
   loop();
-  window.__modelEditor = Object.assign(S, { three: { camera, scene, gizmo, renderer, THREE }, api: { select, commit, undo, mirror, duplicate, remove, setFor, setPane, resetPane, mirrorPartner }, placements }); // (for the checks and a curious console)
+  window.__modelEditor = Object.assign(S, { three: { camera, scene, gizmo, renderer, THREE }, api: { select, commit, undo, mirror, duplicate, remove, setFor, setPane, resetPane, mirrorPartner, setShape, resetShape, shapeTwin, shapesOf, shapeView, shapeOnScreen: () => shapeHandles.map(h => ({ i: h.i, xy: toScreen(h.pos) })) }, placements }); // (for the checks and a curious console)
 });

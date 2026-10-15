@@ -11,6 +11,7 @@
 // userData.animate (seconds) => void, userData.livery (evil) => void and (the Dodgem's ring, the Resurfacer's stripe)
 // userData.stripe (hex). render/ideaModels.js spreads IDEA_MODELS_TOPUP_C into IDEA_MODELS. State-free.
 import * as THREE from 'three';
+import { shapesLive } from './shapeedits.js';
 import { cabinGlass, mergeFlat } from './ideaModelsDkit.js'; // (mergeFlat: keeps the glass panes' ranges on the merged geometry, for the model editor)
 
 const keep = (m) => { m.userData.shared = true; return m; };
@@ -22,6 +23,7 @@ const LAMP = basic(0xfff3c4), TAIL = basic(0xff2a2a), AMBER = basic(0xffa31a), S
 
 const SHARED = new Map();
 const shared = (key, make) => {
+  if (shapesLive()) return make(); // (a model built with shape edits, or recorded by the model editor, caches nothing: render/shapeedits.js)
   if (!SHARED.has(key)) { const geo = make(); geo.userData.shared = true; SHARED.set(key, geo); }
   return SHARED.get(key);
 };

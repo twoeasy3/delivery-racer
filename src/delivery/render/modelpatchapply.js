@@ -26,6 +26,13 @@ export const glassEditsFor = (car) => {
   const patch = patchFor(car.id) || (car.legend ? patchFor(car.legend) : null);
   return patch && patch.glass && typeof patch.glass === 'object' && Object.keys(patch.glass).length ? patch.glass : null;
 };
+// the car's SHAPE EDITS table (render/shapeedits.js: an outline's id -> its edited points), read as the car's own model is BUILT (carShapes in
+// render/showcar.js, items.js, ideaslot.js): null when it has none or patching is off (the model editor sets its own: setShapeOverride)
+export const shapeEditsFor = (car) => {
+  if (!on || !car) return null;
+  const patch = patchFor(car.id) || (car.legend ? patchFor(car.legend) : null);
+  return patch && patch.shapes && typeof patch.shapes === 'object' && Object.keys(patch.shapes).length ? patch.shapes : null;
+};
 // patch a model just built for this car (once: a model already patched is left), painted for the side
 export const patchModel = (model, car, evil = false) => {
   if (!on || !model || !car || model.userData.patched) return model;

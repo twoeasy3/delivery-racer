@@ -21,6 +21,9 @@
 //       { add: { id: 'm:3.1', from: '3.1', mirror: true } },   // a copy of a part (mirror: across the model's X)
 //     ], evil: [ { id, sig, set: { color, emissive, opacity, visible } } ],   // the Evil side's paint over the ops
 //     glass: { 'door window': [[z, y], ...], 'quarter window R': [[z, y], ...], windscreen: { foot: [z, y], top: [z, y] } } }
+//   shapes: { 's<hash>#<n>': [[u, v], ...] } } (render/shapeedits.js): the OUTLINES of extruded / flat / lathed shapes, read as the car's own model
+//   is BUILT (carShapes): an id names one outline (the hash of its points as the code makes them, and which one of those); an id the build never
+//   makes is reported and skipped. scripts/bake-shapes.mjs writes them into the car's code.
 //   `glass` (a car whose windows cabinGlass builds, render/ideaModelsDkit.js): the WINDOW EDGES, read as the model is BUILT (not an op on
 //   a part): a side window's id names both flanks (one polygon, so the car stays symmetric) or one (' L' / ' R'); an id the build never
 //   asks for is reported (a warning) and skipped. withGlass() edits the table; the model editor's Glass tool draws it.
@@ -238,6 +241,8 @@ export const BUDGET = { shapes: [40, 55], triangles: [1800, 3000], hard: 4000 };
 // ---- applying a patch ------------------------------------------------------------------------------------------
 const resolver = (root) => {
   const byPath = new Map(), bySig = new Map();
+  // (a model built with shape or window edits has parts whose geometry is not the code's own: at its path, a part of the same kind still answers)
+  const rebuilt = !!(root.userData.shapeEdits || root.userData.glassEdits), kind = (sig) => String(sig).split(':').slice(0, 2).join(':');
   walk(root, (node, path) => {
     byPath.set(path, node);
     const sig = sigOf(node);
@@ -245,7 +250,7 @@ const resolver = (root) => {
   });
   return (id, sig) => {
     const at = byPath.get(id);
-    if (at && (!sig || sigOf(at) === sig)) return at;
+    if (at && (!sig || sigOf(at) === sig || (rebuilt && kind(sigOf(at)) === kind(sig)))) return at;
     if (sig && bySig.get(sig)) return bySig.get(sig);
     return null;
   };
@@ -351,7 +356,8 @@ export const applyPatch = (root, patch, { evil = false } = {}) => {
   if (!patch || !Array.isArray(patch.ops)) return out;
   const warn = (w) => out.warnings.push(w);
   const base = modelSignature(root);
-  if (patch.base && patch.base !== base) { out.stale = true; warn('the model\'s code changed since this patch was made (base ' + patch.base + ', now ' + base + ')'); }
+  // (a model built with shape or window edits is not the code's own build: there is no base to compare it with)
+  if (patch.base && patch.base !== base && !root.userData.shapeEdits && !root.userData.glassEdits) { out.stale = true; warn('the model\'s code changed since this patch was made (base ' + patch.base + ', now ' + base + ')'); }
   const find0 = resolver(root);
   const added = new Map();
   const inAdded = (id) => { // ('n1/0.2': a part inside an added copy)
@@ -409,6 +415,10 @@ export const applyPatch = (root, patch, { evil = false } = {}) => {
     const g = root.userData.glassEdits;
     if (!g) warn('glass edits: this model is not built with cabinGlass, so its window edges cannot be set');
     else for (const id of g.unused) { out.unmatched.push('glass:' + id); warn('glass edits: no window called "' + id + '" (' + (g.used.length ? 'the windows are ' + g.used.join(', ') : 'none used') + ')'); }
+  }
+  // the shape edits: read as the model was built (render/shapeedits.js carShapes, userData.shapeEdits)
+  if (patch.shapes && typeof patch.shapes === 'object' && Object.keys(patch.shapes).length && root.userData.shapeEdits) {
+    for (const id of root.userData.shapeEdits.unused) { out.unmatched.push('shape:' + id); warn('shape edits: no outline "' + id + '" in this build'); }
   }
   root.userData.patched = { car: patch.car, ops: patch.ops.length, unmatched: out.unmatched.length };
   return out;
@@ -540,5 +550,6 @@ export const tidyPatch = (patch) => {
   p.ops = p.ops.filter(op => op.add || op.delete || (op.set && Object.keys(op.set).length));
   p.evil = (p.evil || []).filter(op => op.set && Object.keys(op.set).length);
   if (p.glass && (typeof p.glass !== 'object' || !Object.keys(p.glass).length)) delete p.glass;
+  if (p.shapes && (typeof p.shapes !== 'object' || !Object.keys(p.shapes).length)) delete p.shapes;
   return p;
 };

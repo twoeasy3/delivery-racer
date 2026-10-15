@@ -22,7 +22,8 @@ import { damageShare, dentModel, scorch } from './dents.js';
 import { SpeedCameras } from '../cameras.js';
 import { Hazards } from '../hazards.js';
 import { Delivery } from '../delivery.js';
-import { patchModel } from './modelpatchapply.js';
+import { patchModel, shapeEditsFor } from './modelpatchapply.js';
+import { carShapes } from './shapeedits.js';
 import { addLegend } from './legenddecal.js';
 import { dressCosmetics } from './showcar.js';
 import { LAMP_DEBUG, lampKey, lampsFor, makeLampMarkers } from './carlights.js';
@@ -37,7 +38,7 @@ let shownCar = CAR; // the car the player's model is currently shaped as
 const playerModels = {};
 const playerModel = (car) => {
   if (!playerModels[car.id]) {
-    const model = car.idea ? makeIdeaModel(car) : MODELS[car.model](car); // (a car idea's is its own: ideas.js, render/ideaModels.js)
+    const model = carShapes(shapeEditsFor(car), () => (car.idea ? makeIdeaModel(car) : MODELS[car.model](car))); // (a car idea's is its own: ideas.js, render/ideaModels.js; built with its patch's shape edits, if any: render/shapeedits.js)
     if (car.super || car.superKit) addSuperKit(model, car); // (a Super car, or an earned car built as one: its base car's model with the body kit on)
     if (car.legend) addLegend(model, car); // (a Legendary car: black and gold, the wreath on its flanks)
     patchModel(model, car); // (its model patch, if it has one: render/modelpatchapply.js)

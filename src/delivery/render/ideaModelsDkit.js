@@ -1,5 +1,6 @@
 // ---- the shared kit for the ideas batch D (ideaModelsD.js, ideaModelsD2.js): the helpers of ideaModelsTopupC.js, exported once. State-free.
 import * as THREE from 'three';
+import { shapesLive } from './shapeedits.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export const keep = (m) => { m.userData.shared = true; return m; };
@@ -38,6 +39,7 @@ const editFor = (name, side, literal) => {
   return own != null ? own : look(literal);
 };
 export const shared = (key, make) => {
+  if (shapesLive()) return make(); // (a model built with shape edits, or recorded by the model editor, caches nothing: render/shapeedits.js)
   const k = key + glassSalt;
   if (!SHARED.has(k)) { const geo = make(); geo.userData.shared = true; SHARED.set(k, geo); }
   return SHARED.get(k);

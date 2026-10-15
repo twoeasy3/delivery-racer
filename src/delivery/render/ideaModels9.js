@@ -8,6 +8,7 @@
 // void, and userData.livery (evil) => void (the seats' leather). ideaModels.js spreads IDEA_MODELS_9 into IDEA_MODELS.
 // State-free: nothing here knows about the game.
 import * as THREE from 'three';
+import { shapesLive } from './shapeedits.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
@@ -17,7 +18,7 @@ const LAMP = new THREE.MeshBasicMaterial({ color: 0xfff3c4 }), TAIL = new THREE.
 const AMBER = new THREE.MeshBasicMaterial({ color: 0xffa31a });
 // one geometry for each set of identical parts (four wheels, a pair of lamps), made the first time it is asked for
 const SHARED = new Map();
-const shared = (key, make) => { if (!SHARED.has(key)) SHARED.set(key, make()); return SHARED.get(key); };
+const shared = (key, make) => { if (shapesLive()) return make(); if (!SHARED.has(key)) SHARED.set(key, make()); return SHARED.get(key); };
 const place = (parent, geo, material, x, y, z) => {
   const mesh = new THREE.Mesh(geo, material);
   mesh.position.set(x, y, z);

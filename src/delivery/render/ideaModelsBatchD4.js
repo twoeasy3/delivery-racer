@@ -7,6 +7,7 @@
 // Each builder takes the idea's entry and returns a group, front facing local +z, with userData.body (the paint mesh),
 // userData.animate (sits still) and, for the Yacht, userData.livery (evil) (its roof). No people. State-free.
 import * as THREE from 'three';
+import { shapesLive } from './shapeedits.js';
 import { cabinGlass, mergeFlat } from './ideaModelsDkit.js'; // (mergeFlat: keeps the glass panes' ranges on the merged geometry, for the model editor)
 
 const keep = (m) => { m.userData.shared = true; return m; };
@@ -120,7 +121,7 @@ const shadeLow = (geo, y0, y1, low) => {
 };
 // a wheel: a fat tyre and a plain hub disc, each a mesh of its own (the tyre a disc on its side: the suspension finds it)
 const GEOS = new Map();
-const cached = (key, make) => { if (!GEOS.has(key)) { const g = make(); g.userData.shared = true; GEOS.set(key, g); } return GEOS.get(key); };
+const cached = (key, make) => { if (shapesLive()) return make(); if (!GEOS.has(key)) { const g = make(); g.userData.shared = true; GEOS.set(key, g); } return GEOS.get(key); };
 const wheel = (parent, R, width, x, z, hubMat = SILVER, hubK = 0.55) => {
   place(parent, cached('tyre' + [R, width], () => new THREE.CylinderGeometry(R, R, width, 14).rotateZ(Math.PI / 2)), TYRE, x, R, z);
   place(parent, cached('hub' + [R, width, hubK], () => new THREE.CylinderGeometry(R * hubK, R * hubK, width + 0.016, 12).rotateZ(Math.PI / 2)), hubMat, x, R, z);
