@@ -33,7 +33,7 @@ export const carGeometry = (model, glassy) => {
     if (!m || m.visible === false) return;
     let kind = 'body';
     if (m.transparent && m.opacity < 0.95) kind = 'clear';
-    // (a lamp glows: a faint emissive tint is paint, not a lamp: the Legendary skin's dark gold 0x1c1404 on every body part, CHECKLIST 431)
+    // (a lamp glows: a faint emissive tint is paint, not a lamp: the Legendary skin's dark gold 0x1c1404 on every body part, CHECKLIST 309)
     else if (m.isMeshBasicMaterial || (m.emissive && Math.max(m.emissive.r, m.emissive.g, m.emissive.b) * (m.emissiveIntensity ?? 1) > 0.12 && (m.emissiveIntensity ?? 1) > 0.25)) kind = 'lamp';
     else if (n !== body && m !== bodyMat && glassy(m)) kind = 'glass';
     else if (n.geometry.type === 'CylinderGeometry' && n.geometry.parameters.radiusTop >= 0.18 && Math.abs(Math.abs(n.rotation.z) - Math.PI / 2) < 0.02) kind = 'wheel';

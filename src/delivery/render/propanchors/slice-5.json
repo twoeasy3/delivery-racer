@@ -721,7 +721,7 @@
     "cyl": [0.85, 0, 1.937, -0.731],
     "from": "roof-edge",
     "lim": "hand",
-    "hand": "on the canopy roof rear edge, as before CHECKLIST 431: with the faint-emissive fix the generator moved it to the rear deck, which pushed the load onto the bench seat"
+    "hand": "on the canopy roof rear edge, as before CHECKLIST 309: with the faint-emissive fix the generator moved it to the rear deck, which pushed the load onto the bench seat"
    },
    "cargo": {
     "box": [0.56, 0, 0.994, -0.951],

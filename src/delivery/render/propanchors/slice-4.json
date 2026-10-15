@@ -773,15 +773,6 @@
     "existing": true
    }
   },
-  "showdown": {
-   "wing": {
-    "box": [1.3, 0, 1.278, -2.1],
-    "cyl": [1.3, 0, 1.245, -2.1],
-    "from": "deck",
-    "lim": "hand",
-    "existing": true
-   }
-  },
   "horseshoe": {
    "wing": {
     "no": "its own wing (tagged) stands over the canopy glass that runs to 0.2 m from the tail; behind the glass the deck drops 13 cm across the depth of a wing: no place off the glass with at most 5 cm of inset",
