@@ -105,13 +105,18 @@ const BLOCK = new THREE.BoxGeometry(0.5, 0.82, 1.18); // (a water-filled barrier
 const BLOCK_RIB = new THREE.BoxGeometry(0.56, 0.12, 1.2);
 const barrierMats = [lambert(0xd8262b), lambert(0xf2f2f2)];
 for (const x of [BLOCK, BLOCK_RIB, ...barrierMats]) x.userData.shared = true;
-// barrier blocks, as two instanced meshes (red and white): [s, lat, across, k] each, across: turned square to the road, k: its colour (0 red, 1 white)
+const LAMP = new THREE.BoxGeometry(0.16, 0.16, 0.16);
+LAMP.userData.shared = true;
+// barrier blocks, as two instanced meshes (red and white): [s, lat, across, k, lamp] each, across: turned square to the road, k: its
+// colour (0 red, 1 white), lamp: an amber lamp on top of it (every sixth along a run: they flash with the beacons; lit at night)
 const barriers = (spots) => {
   const n = spots.length;
   if (!n) return;
   const meshes = barrierMats.map(m => new THREE.InstancedMesh(BLOCK, m, n)), ribs = barrierMats.map(m => new THREE.InstancedMesh(BLOCK_RIB, m, n));
+  const tops = new THREE.InstancedMesh(LAMP, lampOff, n);
+  let lit = 0;
   const count = [0, 0], spot = new THREE.Object3D();
-  spots.forEach(([s, lat, across, k]) => {
+  spots.forEach(([s, lat, across, k, lamp]) => {
     spot.rotation.set(0, Track.toWorld(s, lat, tmp) + (across ? Math.PI / 2 : 0), 0);
     spot.position.set(tmp.x, tmp.y + 0.41, tmp.z);
     spot.updateMatrix();
@@ -120,8 +125,11 @@ const barriers = (spots) => {
     spot.updateMatrix();
     ribs[1 - k].setMatrixAt(count[k], spot.matrix); // (a band of the other colour round it)
     count[k]++;
+    if (lamp) { spot.position.y = tmp.y + 0.92; spot.updateMatrix(); tops.setMatrixAt(lit++, spot.matrix); }
   });
   for (let k = 0; k < 2; k++) { meshes[k].count = ribs[k].count = count[k]; group.add(meshes[k], ribs[k]); }
+  tops.count = lit;
+  if (lit) { group.add(tops); lamps.push(tops); }
 };
 // a sign on two posts on the verge, its face to traffic coming way dir
 const verge = (s, dir, texture, size = 1.5) => {
@@ -145,8 +153,15 @@ const arrowBoard = (s, lat, dir, way) => {
   for (const x of [-1.1, 1.1]) lamps.push(add(g, new THREE.BoxGeometry(0.22, 0.22, 0.22), lampOff, x, 4.7, 0)); // (beacons on top)
 };
 // a light tower on its trailer: a mast and four lamps turned to the road
-const lightTower = (s, lat, face) => {
+const POOL = new THREE.MeshBasicMaterial({ color: 0xffe2a8, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false,
+  polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+POOL.userData.shared = true;
+const lightTower = (s, lat, face, night) => {
   const g = at(s, lat);
+  if (night) { // (at night the pool of light it throws on the road: a soft disc laid on it, over the lanes beside)
+    const pool = add(g, new THREE.CircleGeometry(9, 24), POOL, -face * 4, 0.04, 0);
+    pool.rotation.x = -Math.PI / 2;
+  }
   add(g, new THREE.BoxGeometry(1.4, 0.9, 2.2), lambert(0xf2b51c), 0, 0.75, 0);
   add(g, new THREE.CylinderGeometry(0.09, 0.12, 6.5, 8), lambert(0x8a9096), 0, 4.2, 0);
   add(g, new THREE.BoxGeometry(1.6, 0.12, 0.12), lambert(0x6f757d), 0, 7.2, 0);
@@ -167,16 +182,20 @@ Game.onLoad.push(() => {
   const span = (side, s) => { const p = Track.divert(side, s); return [side * (HM + p.ci * LW) + p.d, side * (HM + (n[side] - p.co) * LW) + p.d]; };
   const between = (side, k, s) => { const p = Track.divert(side, s); return side * (HM + k * LW) + p.d; };
   const both = (side, k, s) => { const p = Track.divert(side, s); return p.ci <= k - 1 + 0.02 && p.co <= n[side] - 1 - k + 0.02; };
-  const yellow = new THREE.MeshBasicMaterial({ color: YELLOW, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
-  const strip = (a, b, lat, w = 0.15) => { const m = new THREE.Mesh(buildStrip(a, b, (s) => lat(s) - w / 2, (s) => lat(s) + w / 2, 0.02, 2), yellow); group.add(m); };
-  const spots = [], milled = new THREE.MeshBasicMaterial({ color: 0x303236, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }); // (unlit, as the road's own markings: a strip has no normals)
+  // (painted on the road as road.js paints its lines: on a lit theme, a night's, a lit surface the headlights and lamps show up,
+  // so a strip is given its normals; by day an unlit one, as a strip has none)
+  const surface = (color, offset) => new (theme.lit ? THREE.MeshLambertMaterial : THREE.MeshBasicMaterial)({ color, polygonOffset: true, polygonOffsetFactor: offset, polygonOffsetUnits: offset });
+  const laid = (geo) => { if (theme.lit) geo.computeVertexNormals(); return geo; };
+  const yellow = surface(YELLOW, -2);
+  const strip = (a, b, lat, w = 0.15) => { const m = new THREE.Mesh(laid(buildStrip(a, b, (s) => lat(s) - w / 2, (s) => lat(s) + w / 2, 0.02, 2)), yellow); group.add(m); };
+  const spots = [], milled = surface(0x303236, -1);
   for (const d of list) {
     const sides = [-1, 1].filter(side => d.ramps.some(r => r.side === side));
     // ---- the temporary markings (none on an unmarked road)
     if (!theme.unmarked) {
       for (const side of sides) {
         strip(d.from, d.to, (s) => span(side, s)[1] - side * 0.2); // (its kerb's edge line)
-        for (let k = 1; k < n[side]; k++) group.add(new THREE.Mesh(buildDashes(d.from, d.to, (s) => between(side, k, s), (s) => both(side, k, s) && both(side, k, s + CONFIG.dashLength)), yellow));
+        for (let k = 1; k < n[side]; k++) group.add(new THREE.Mesh(laid(buildDashes(d.from, d.to, (s) => between(side, k, s), (s) => both(side, k, s) && both(side, k, s + CONFIG.dashLength))), yellow));
       }
       if (Track.leftLanes && Track.rightLanes && Track.flow === 'both') { // (each way's inner edge: a double line where they meet)
         strip(d.from, d.to, (s) => span(-1, s)[0] - 0.2);
@@ -189,10 +208,10 @@ Game.onLoad.push(() => {
       for (const l of lines) {
         const steady = Math.abs(lineSlope(s, l.zone, l.into)) < 0.004; // (a taper: cones there)
         if (l.zone === 'mid' && l.width < 1.6) { // (a strip between the ways too narrow for a row along each side: one down its middle, once it runs straight)
-          if (l.into > 0 && l.width >= 0.9 && steady && Math.abs(lineSlope(s, 'mid', -1)) < 0.004) spots.push([s, l.lat + l.width / 2, false, Math.round(s / 1.25) % 2]);
+          if (l.into > 0 && l.width >= 0.9 && steady && Math.abs(lineSlope(s, 'mid', -1)) < 0.004) spots.push([s, l.lat + l.width / 2, false, Math.round(s / 1.25) % 2, Math.round(s / 1.25) % 6 === 0]);
           continue;
         }
-        if (steady && l.width >= 1.6) spots.push([s, l.lat + l.into * 0.55, false, Math.round(s / 1.25) % 2]);
+        if (steady && l.width >= 1.6) spots.push([s, l.lat + l.into * 0.55, false, Math.round(s / 1.25) % 2, Math.round(s / 1.25) % 6 === 0]);
       }
     }
     // ---- the works themselves: the closed road planed off, a darker patch inside the barriers (where a zone runs on, 2.5 m wide or more)
@@ -208,7 +227,7 @@ Game.onLoad.push(() => {
           if (b - a > 10) {
             const lo = (q) => { const l = edge(q, near); return l ? l.lat + near * 1.0 : 0; };
             const hi = (q) => { const l = edge(q, near); return !l ? 0 : zone === 'mid' ? edge(q, -1).lat - 1.0 : zone === 'right' ? Track.hi(q) - 0.6 : Track.lo(q) + 0.6; };
-            group.add(new THREE.Mesh(buildStrip(a + 4, b - 4, zone === 'left' ? hi : lo, zone === 'left' ? lo : hi, 0.012, 2), milled));
+            group.add(new THREE.Mesh(laid(buildStrip(a + 4, b - 4, zone === 'left' ? hi : lo, zone === 'left' ? lo : hi, 0.012, 2)), milled));
           }
           a = null;
         }
@@ -235,7 +254,7 @@ Game.onLoad.push(() => {
     for (let s = d.from + 70; s < d.to - 50; s += 140) {
       for (const l of zoneLines(s, [])) {
         if (l.width < 3 || Math.abs(lineSlope(s, l.zone, l.into)) > 0.004 || (l.zone === 'mid' && l.into < 0)) continue;
-        lightTower(s, l.zone === 'mid' ? l.lat + l.width / 2 : l.lat + l.into * (l.width - 1.2), -l.into);
+        lightTower(s, l.zone === 'mid' ? l.lat + l.width / 2 : l.lat + l.into * (l.width - 1.2), -l.into, !!theme.night || !!theme.headlights);
       }
     }
     // ---- the signs, before it for each way whose lanes it moves (and the end of it after)

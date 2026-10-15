@@ -232,6 +232,11 @@ THEMES.mall = { sky: 0x9fc4e8, ground: 0x6f7174, road: 0x3a3d42, scenery: 'mall'
 // diversions' cones, barriers, arrow boards and signs wherever a level has them
 THEMES.roadworks = { sky: 0xaebccb, ground: 0x6f8752, road: 0x3b3e43, scenery: 'city', sets: THEMES.city.sets,
   light: { sky: 0xe4e8ee, ground: 0x5a5a50, ambient: 1.2, sun: 0xf2efe6, sunlight: 0.8 } };
+// roadworksNight: the same road under repair after dark (the Roadworks level's night, a level of its own as Night Drive is the
+// city's): the city's night (lit surfaces, headlights), the works lit by their own: arrow boards, beacons, barrier lamps, the
+// light towers' pools of light
+THEMES.roadworksNight = { sky: 0x070a14, ground: 0x2c3a28, road: 0x41444a, scenery: 'city', sets: THEMES.city.sets, lit: true, headlights: true, night: true,
+  light: { sky: 0x5d72b0, ground: 0x10141c, ambient: 0.32, sun: 0x9fb4ff, sunlight: 0.25 } };
 THEMES.autumn = { sky: 0xeccfa0, ground: 0x9a8a3e, road: 0x4a4a4e, scenery: 'autumn', line: 0xf2eede, centre: 0xe6b422, terrain: { gentle: 0xa8923c, steep: 0x7a4c2a, rough: 0.5, flat: 5, rise: 45 }, target: { height: 4.2, beam: true }, tunnel: { wall: 0x8a2f22, tiles: 0xa8743e, roof: 0x5a2a1c, face: 0x7e2a1e, lamp: 0xffc878, lintel: 2.4, pier: 2.6 }, channel: { shallow: 0x7fa6a8, deep: 0x2c5a6a, glint: 0xa8cfd0 }, light: { sky: 0xffe6bc, ground: 0xb89464, ambient: 1.3, sun: 0xffc27a, sunlight: 1.2 } };
 
 // ---- the themes' own obstacles ---------------------------------------------------------------------------
@@ -269,7 +274,8 @@ const OBSTACLES = {
   hongkong: { crate: 'hawkerCart', bale: 'bagStack' }, // (a hawker's cart under its awning; a heap of red-white-blue bags; the cones are roadworks and stay)
   autumn: { crate: 'harvestCrate', bale: 'leafPile', cone: 'smallPumpkin' }, // (a crate of pumpkins; a heap of raked leaves; a small pumpkin on a stake)
   mall: { crate: 'boxStack', bale: 'trolleyRow', cone: 'wetFloorSign' },
-  roadworks: { barrier: 'barrierBlock', crate: 'cableReel', bale: 'sandPile' }, // (a water-filled barrier, a cable drum, a heap of sand; the cones are roadworks and stay) // (delivery cartons on a sack truck; three shopping trolleys nested; a WET FLOOR A-frame)
+  roadworks: { barrier: 'barrierBlock', crate: 'cableReel', bale: 'sandPile' }, // (a water-filled barrier, a cable drum, a heap of sand; the cones are roadworks and stay)
+  roadworksNight: { barrier: 'barrierBlock', crate: 'cableReel', bale: 'sandPile' }, // (the same road by night) // (delivery cartons on a sack truck; three shopping trolleys nested; a WET FLOOR A-frame)
   // (the port keeps its crates, the farm and the Wild West their bales: there they belong)
 };
 // drifting: the same, for the things of a level's "drifters" alone, where what moves about the road wants to be
