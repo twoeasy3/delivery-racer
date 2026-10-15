@@ -189,3 +189,10 @@ taxi sign, antenna ornaments, a load in a bed, crates, barrels, tarps, ladders, 
 into a body mesh cannot be tagged: keep decorative props as their own meshes when you model them, so they can be hidden). Design so the slots work: keep a
 flat roof area clear of vents, a bed or deck that is a real flat surface, and a rear edge or deck for the wing. Say in your report, per car, the three slots
 (supported or not, with the reason) and which of the car's own props you tagged.
+- A decorative item that sits in a slot (a TAXI SIGN, a police light bar, a roof lamp or rack) may be tagged as a prop to hide when a cosmetic is equipped
+  (the owner, 15-Oct: "for cars like the Taxi, mark the taxi sign as a prop to hide when equipping"): decide per car and say which items you tagged and why. Do
+  not tag what is part of the vehicle's function (a fire engine's ladder, a crane) unless it is clearly decorative.
+- A roof with NO FLAT SPOT (curved, domed or tapering) is not automatically unsupported: INSET the roof prop's bounding box (and cylinder) into the roof (the
+  owner, 15-Oct) so its base has several points of contact with the curved surface: record the depth as `inset` (metres, at most about 8 cm, never through glass
+  or into the cabin) in the car's table entry; `fitProp` lowers the prop by it. Only roofs still too curved or small after a maximum inset, and the open and
+  dome cases above, are unsupported (with the reason). The same inset may be used for a rounded boot deck (wing) or load area (cargo).
