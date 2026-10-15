@@ -4,7 +4,12 @@
 // live view (render/showroomview.js: the menu's one renderer, turning on its floor, a drag turns it), and a choice applies to
 // it at once (render/wheelcosmetic.js recolours every live car: no reload). "Wheels close-up" eases the same camera in to
 // the wheels. The page never reloads and the start screen stays a menu.
-// SLOTS: a list down the side. WHEELS is the only live one (one row of wheel SETS, each a tyre + hub, for every car; 'Custom' shows when the saved pair is no set); the others are greyed
+// PER CAR (15-Oct, the owner: "change the customisation to be car specific now"): a choice is made for THE CAR ON SHOW ('This car', the
+// default each time the screen opens) or for EVERY CAR without its own ('All cars': the default), a small switch over the tabs
+// (render/loadoutstore.js keeps both). In 'This car', a slot the car has no choice of its own for shows the default's, marked 'from
+// default'; the header marks a car whose look differs from the default ('Custom'), and two buttons beside the switch put the car back
+// to the default ('Reset car') or make its look every car's ('Copy to all': cars with their own looks too, after a second tap).
+// SLOTS: a list down the side. WHEELS (one row of wheel SETS, each a tyre + hub; 'Custom' shows when the saved pair is no set); the others are greyed
 // "coming later" entries that open nothing: the framework costs a line each. EVERYTHING IS FREE AND OPEN for now: `owned` is
 // the one place the unlock check goes (a chip it says no to is shown locked and cannot be equipped).
 // Keys: arrows move between the choices (left / right along a row, up / down between rows), Enter or Space equips the one
@@ -23,6 +28,7 @@ import { sharedRenderer, drawStill } from './modelviews.js';
 import { ShowroomView } from './showroomview.js';
 import { stillCar } from './carstill.js';
 import { onLoadout } from './loadout.js';
+import * as Store from './loadoutstore.js'; // (per car over a default: the switch, the marks, Reset car, Copy to all)
 import { carInUse, CARS } from '../cars.js';
 import { Game } from '../game.js';
 import { ownsCosmetic } from './cosmetics.js';
@@ -52,8 +58,24 @@ const make = (tag, className, ...children) => {
 };
 const hexOf = (hex, fallback) => '#' + (hex === null ? fallback : hex.toString(16).padStart(6, '0'));
 
-let built = false, stage, carName, status, slotList, setRow, customChip, closeBtn, viewBtns, sections = {}, propSecs = {}, tabMsg, plateRow, plateInput, plateMsg, plateStatus, plateChip, openSlot = 'wheels';
-let state = { open: false, car: null, evil: false, onClose: null, inMenu: false, close: false };
+let built = false, stage, carName, customMark, scopeBtns, resetCarBtn, copyBtn, copyArmed = 0, status, slotList, setRow, customChip, closeBtn, viewBtns, sections = {}, propSecs = {}, tabMsg, plateRow, plateInput, plateMsg, plateStatus, plateChip, openSlot = 'wheels';
+let state = { open: false, car: null, evil: false, onClose: null, inMenu: false, close: false, scope: 'car' };
+// whose choice the screen shows and changes: the car on show ('This car') or the default ('All cars')
+const cid = () => (state.scope === 'car' && state.car ? state.car.id : null);
+const tgt = cid;
+// the small tag by a section's title: 'from default' when this car has no choice of its own for the slot; in 'All cars', that this car keeps its own
+const tags = {};
+const tagFor = (slot) => { const t = make('span', 'cz-tag'); tags[slot] = t; return t; };
+const tagShown = () => {
+  const car = state.car;
+  if (!car) return;
+  for (const [slot, t] of Object.entries(tags)) {
+    const own = Store.hasOwn(car.id, slot);
+    t.textContent = state.scope === 'car' ? (own ? '' : 'from default') : (own && Store.differs(car.id, slot) ? 'not on this car' : '');
+    t.title = state.scope === 'car' ? (own ? '' : 'The same as All cars') : (t.textContent ? 'This car has its own' : '');
+    t.hidden = !t.textContent;
+  }
+};
 
 const chip = (kind, id, name, swatch, pick, slot = 'wheels') => {
   const b = make('button', 'cz-chip');
@@ -66,10 +88,10 @@ const chip = (kind, id, name, swatch, pick, slot = 'wheels') => {
 const swatchOf = (css, stock) => { const s = make('span', 'cz-swatch' + (stock ? ' stock' : '')); if (css) s.style.background = css; return s; };
 
 const shown = () => {
-  const id = wheelSet(), set = WHEEL_SETS.find(x => x.id === id);
+  const id = wheelSet(cid()), set = WHEEL_SETS.find(x => x.id === id);
   for (const b of setRow.children) { const on = b.dataset.set === id; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('equipped', on); b.classList.toggle('locked', !owned('wheels', b.dataset.set)); }
   customChip.hidden = id !== 'custom'; // (the equipped state when the saved pair is no set: shown, ticked, not pressable)
-  status.textContent = 'Wheels: ' + (set ? set.name : 'Custom (a mix that is not one of the sets)') + (wheelRim() !== 'none' && ShowroomView.model && rimStatus(ShowroomView.model) !== 'ok' ? '. No rims for this car' : '');
+  status.textContent = 'Wheels: ' + (set ? set.name : 'Custom (a mix that is not one of the sets)') + (wheelRim(cid()) !== 'none' && state.scope === 'car' && ShowroomView.model && rimStatus(ShowroomView.model) !== 'ok' ? '. No rims for this car' : '');
 };
 // a rim set's chip: the rim itself, drawn small (the tyre, the dish, the spokes or blades, the cap)
 const miniRim = (rim, hub, tyre, ring) => {
@@ -102,7 +124,7 @@ const miniPlate = (id, text) => {
   return c;
 };
 const plateShown = () => {
-  const id = plateDesign(), text = plateText(), worn = shownDesign();
+  const id = plateDesign(cid()), text = plateText(cid()), worn = shownDesign(cid());
   for (const b of plateRow.children) {
     const on = b.dataset.plate === id;
     b.setAttribute('aria-pressed', String(on)); b.classList.toggle('equipped', on); b.classList.toggle('locked', !owned('plate', b.dataset.plate));
@@ -117,18 +139,20 @@ const plateShown = () => {
 };
 const commitText = () => {
   if (!plateInput) return;
-  const r = setPlateText(plateInput.value);
+  const r = setPlateText(plateInput.value, tgt());
   plateInput.value = r.ok ? r.text : '';
   flash(plateMsg, r.reason === 'blocked' ? 'That plate is not allowed, so it shows ' + DEFAULT_TEXT + ' instead.' : r.reason === 'empty' ? 'Empty: it shows ' + DEFAULT_TEXT + '.' : 'Plate saved.');
   if (r.reason) plateInput.value = '';
 };
+// the field shows the saved text of whoever is being changed (empty: the default text, as its placeholder)
+const syncPlateInput = () => { if (plateInput && document.activeElement !== plateInput) { const t = plateText(cid()); plateInput.value = t === DEFAULT_TEXT ? '' : t; } };
 const buildPlate = () => {
   plateRow = make('div', 'cz-row cz-plates');
   plateRow.setAttribute('role', 'group');
   plateRow.setAttribute('aria-label', 'Plate design');
-  for (const d of PLATE_DESIGNS) plateRow.append(chip('plate', d.id, d.name, miniPlate(d.id, plateText()), (id) => { if (setPlateDesign(id)) flash(plateMsg, ''); }, 'plate'));
+  for (const d of PLATE_DESIGNS) plateRow.append(chip('plate', d.id, d.name, miniPlate(d.id, plateText()), (id) => { if (setPlateDesign(id, tgt())) flash(plateMsg, ''); }, 'plate'));
   plateInput = make('input', 'cz-text');
-  plateInput.type = 'text'; plateInput.maxLength = MAX_LEN; plateInput.placeholder = DEFAULT_TEXT; plateInput.value = plateText() === DEFAULT_TEXT ? '' : plateText();
+  plateInput.type = 'text'; plateInput.maxLength = MAX_LEN; plateInput.placeholder = DEFAULT_TEXT; syncPlateInput();
   plateInput.setAttribute('autocapitalize', 'characters'); plateInput.setAttribute('autocomplete', 'off'); plateInput.setAttribute('autocorrect', 'off'); plateInput.setAttribute('spellcheck', 'false');
   plateInput.setAttribute('enterkeyhint', 'done'); plateInput.setAttribute('aria-label', 'Your plate text: up to ' + MAX_LEN + ' letters, numbers, spaces or dashes');
   plateInput.addEventListener('input', () => {
@@ -136,14 +160,14 @@ const buildPlate = () => {
     const clean = sanitizePlateText(plateInput.value);
     if (clean !== plateInput.value.toUpperCase()) flash(plateMsg, 'Letters, numbers, space and dash only.'); else flash(plateMsg, '');
     plateInput.value = clean;
-    previewPlateText(clean.trim() ? clean : null);
+    previewPlateText(clean.trim() ? clean : null, tgt());
   });
   plateInput.addEventListener('compositionstart', () => { plateInput.dataset.composing = '1'; });
   plateInput.addEventListener('compositionend', () => { delete plateInput.dataset.composing; plateInput.dispatchEvent(new Event('input')); });
   // the field's keys stay in the field: nothing reaches the menu's or the game's own key handling
   for (const type of ['keydown', 'keyup', 'keypress']) plateInput.addEventListener(type, (e) => {
     if (type === 'keydown' && e.key === 'Enter') { e.preventDefault(); commitText(); plateInput.blur(); }
-    if (type === 'keydown' && e.key === 'Escape') { previewPlateText(null); plateInput.value = plateText() === DEFAULT_TEXT ? '' : plateText(); return; } // (the screen's own Escape then closes it)
+    if (type === 'keydown' && e.key === 'Escape') { previewPlateText(null); syncPlateInput(); return; } // (the screen's own Escape then closes it)
     e.stopPropagation();
   });
   plateInput.addEventListener('blur', () => { if (state.open && plateInput.value.trim()) commitText(); else previewPlateText(null); });
@@ -152,10 +176,10 @@ const buildPlate = () => {
   plateChip = make('div', 'cz-plate-chip');
   plateStatus = make('p', 'cz-status'); plateStatus.setAttribute('aria-live', 'polite');
   const reset = make('button', 'cz-reset', 'Reset to stock'); reset.type = 'button';
-  reset.addEventListener('click', () => { resetPlate(); plateInput.value = ''; flash(plateMsg, ''); Sound.play('menuMove', 0.4); });
+  reset.addEventListener('click', () => { resetPlate(tgt()); syncPlateInput(); flash(plateMsg, ''); Sound.play('menuMove', 0.4); });
   return make('section', 'cz-section cz-plate',
-    make('h2', '', 'Number plate'),
-    make('p', 'cz-note', 'A design is something you unlock; the text is yours. It goes on both ends where the car has room, and covers its own plate. Real size everywhere.'),
+    make('h2', '', 'Number plate', tagFor('plate')),
+    make('p', 'cz-note', 'A design is something you unlock; the text is yours. It goes on both ends where the car has room.'),
     make('h3', '', 'Design'), plateRow,
     make('h3', '', 'Your plate'),
     make('div', 'cz-textrow', plateInput, ok, plateChip), plateMsg,
@@ -188,7 +212,7 @@ const buildPropSection = (slot) => {
   const pick = (id) => () => {
     if (!slotStatus(state.car, slot).ok) return;
     if (id !== 'none' && !owned(slot, id)) return flash(plateMsg, 'Locked: unlock it to wear it.');
-    if (setProp(slot, id)) Sound.play('menuPick', 0.4);
+    if (setProp(slot, id, tgt())) Sound.play('menuPick', 0.4);
   };
   const none = make('button', 'cz-chip cz-propchip');
   none.type = 'button'; none.dataset.prop = 'none';
@@ -210,15 +234,15 @@ const buildPropSection = (slot) => {
     b.type = 'button'; b.dataset.paint = paintValueOf(c); b.title = c.name; b.setAttribute('aria-label', c.name);
     b.append(c.hex === null ? make('span', 'cz-dot match') : swatchOf('#' + c.hex.toString(16).padStart(6, '0')));
     b.firstChild.classList.add('cz-dot');
-    b.addEventListener('click', () => { if (slotStatus(state.car, slot).ok && propById(shownProp(slot))?.colourFrom !== 'fixed' && setPropPaint(slot, b.dataset.paint)) Sound.play('menuMove', 0.4); });
+    b.addEventListener('click', () => { if (slotStatus(state.car, slot).ok && propById(shownProp(slot, cid()))?.colourFrom !== 'fixed' && setPropPaint(slot, b.dataset.paint, tgt())) Sound.play('menuMove', 0.4); });
     paints.append(b);
   }
   const why = make('div', 'cz-why'); why.setAttribute('role', 'status');
   const stat = make('p', 'cz-status'); stat.setAttribute('aria-live', 'polite');
   const reset = make('button', 'cz-reset', 'Reset to stock'); reset.type = 'button';
-  reset.addEventListener('click', () => { resetProp(slot); Sound.play('menuMove', 0.4); });
+  reset.addEventListener('click', () => { resetProp(slot, tgt()); Sound.play('menuMove', 0.4); });
   const colourHead = make('h3', '', 'Colour');
-  const node = make('section', 'cz-section cz-prop', make('h2', '', title), why, make('h3', '', 'Choose'), row, colourHead, paints, make('div', 'cz-foot', stat, reset));
+  const node = make('section', 'cz-section cz-prop', make('h2', '', title, tagFor(slot)), why, make('h3', '', 'Choose'), row, colourHead, paints, make('div', 'cz-foot', stat, reset));
   propSecs[slot] = { node, row, paints, why, stat, none, reset };
   return node;
 };
@@ -235,7 +259,7 @@ const propShown = () => {
   if (propSlotNow() && !slotStatus(car, openSlot).ok) { flash(tabMsg, ''); openSection('wheels'); return; } // (the open tab is locked on this car: back to Wheels)
   const model = ShowroomView.model, own = model ? new Set(existingProps(model).map(e => e.slot)) : new Set();
   for (const slot of Object.keys(PROP_TEXT)) {
-    const sec = propSecs[slot], st = slotStatus(car, slot), worn = shownProp(slot), chosen = propChoice(slot), paint = propPaintChoice(slot);
+    const sec = propSecs[slot], st = slotStatus(car, slot), worn = shownProp(slot, cid()), chosen = propChoice(slot, cid()), paint = propPaintChoice(slot, cid());
     sec.node.classList.toggle('unsupported', !st.ok);
     sec.why.hidden = st.ok;
     sec.why.replaceChildren(...(st.ok ? [] : [make('strong', '', st.legend ? 'Not available for this car' : 'Not available for this car yet'), ...(st.why ? [make('span', '', st.why.charAt(0).toUpperCase() + st.why.slice(1) + '.')] : [])]));
@@ -273,7 +297,7 @@ const propSlotNow = () => (SLOTS.find(s => s.id === openSlot)?.prop ? openSlot :
 const focusOf = (slot) => {
   const car = state.car, s = car && propSlots(car.id)[slot];
   if (!s || !s.supported) return null;
-  const prop = propById(shownProp(slot)), sh = prop && prop.shape === 'cylinder' ? s.cylinder : s.box, v = PROP_VIEW[slot];
+  const prop = propById(shownProp(slot, car.id)), sh = prop && prop.shape === 'cylinder' ? s.cylinder : s.box, v = PROP_VIEW[slot];
   return { at: sh.centre.slice(), span: Math.max(...(sh.size || [sh.radius * 2, sh.height, sh.radius * 2])) * v.wide, yaw: v.yaw, lift: v.lift };
 };
 
@@ -284,8 +308,22 @@ const build = () => {
   back.title = 'Back (Escape)';
   back.addEventListener('click', () => Cosmetics.close());
   closeBtn = back;
-  carName = make('p', 'cz-sub');
-  const top = make('div', 'cz-top', back, make('div', 'cz-title', make('h1', '', 'Cosmetics'), carName));
+  carName = make('span', '');
+  customMark = make('span', 'cz-custom', 'Custom');
+  customMark.title = 'This car differs from All cars';
+  const top = make('div', 'cz-top', back, make('div', 'cz-title', make('h1', '', 'Cosmetics'), make('p', 'cz-sub', carName, customMark)));
+  // whose look is changed: the car on show, or every car (the default); and the car's two actions
+  const seg = (name, scope) => { const b = make('button', 'cz-seg', name); b.type = 'button'; b.dataset.scope = scope; b.addEventListener('click', () => setScope(scope)); return b; };
+  scopeBtns = [seg('This car', 'car'), seg('All cars', 'all')];
+  const scopeSwitch = make('div', 'cz-scopes', ...scopeBtns);
+  scopeSwitch.setAttribute('role', 'group'); scopeSwitch.setAttribute('aria-label', 'Change this car or all cars');
+  resetCarBtn = make('button', 'cz-act', 'Reset car'); resetCarBtn.type = 'button';
+  resetCarBtn.title = 'Back to the All cars look';
+  resetCarBtn.addEventListener('click', () => { if (state.car && Store.resetCar(state.car.id)) { syncPlateInput(); Sound.play('menuMove', 0.4); } });
+  copyBtn = make('button', 'cz-act', 'Copy to all'); copyBtn.type = 'button';
+  copyBtn.title = "This car's look on every car";
+  copyBtn.addEventListener('click', copyToAll);
+  const scopeBar = make('div', 'cz-scopebar', scopeSwitch, make('div', 'cz-acts', resetCarBtn, copyBtn));
   // the live car
   stage = make('div', 'cz-pic');
   stage.title = 'Drag to turn it';
@@ -306,17 +344,18 @@ const build = () => {
     if (!slot.live) b.setAttribute('aria-disabled', 'true'); // (greyed: nothing behind it yet; it is skipped by the keys)
     b.dataset.slot = slot.id;
     if (slot.prop) b.append(make('small', 'cz-lockline'));
+    if (slot.live) b.append(make('i', 'cz-own'));
     if (slot.live) b.addEventListener('click', () => { if (slot.prop && !slotStatus(state.car, slot.id).ok) flash(tabMsg, lockReason(slot.id)); else { flash(tabMsg, ''); openSection(slot.id); } });
     slotList.append(b);
   }
   // the Wheels section
   setRow = make('div', 'cz-row cz-sets');
   setRow.setAttribute('role', 'group');
-  setRow.setAttribute('aria-label', 'Wheel set: a complete wheel, tyre and hub, for every car');
+  setRow.setAttribute('aria-label', 'Wheel set: a complete wheel, tyre and hub');
   for (const w of WHEEL_SETS) {
     const d = WHEEL_DESIGNS.find(x => x.id === w.design), c = WHEEL_COLOURS.find(x => x.id === w.hub);
     const tyre = hexOf(d.tyre, '1b1b1d'), ring = d.ring ? hexOf(d.ring.hex) : tyre, hub = hexOf(c.hex !== null ? c.hex : d.hub, '9aa3b2'); // (a hub colour wins over the design's hub)
-    setRow.append(chip('set', w.id, w.name, w.rim ? miniRim(w.rim, c.hex !== null || d.hub !== null ? hub : '#cfd3d9', tyre, ring) : swatchOf('radial-gradient(circle,' + hub + ' 0 30%,' + tyre + ' 30% 46%,' + ring + ' 46% 66%,' + tyre + ' 66%)'), setWheelSet));
+    setRow.append(chip('set', w.id, w.name, w.rim ? miniRim(w.rim, c.hex !== null || d.hub !== null ? hub : '#cfd3d9', tyre, ring) : swatchOf('radial-gradient(circle,' + hub + ' 0 30%,' + tyre + ' 30% 46%,' + ring + ' 46% 66%,' + tyre + ' 66%)'), (id) => setWheelSet(id, tgt())));
   }
   customChip = make('div', 'cz-chip equipped custom', swatchOf(null, true), make('span', 'cz-name', 'Custom'), make('span', 'cz-tick', '✓'));
   customChip.hidden = true;
@@ -325,21 +364,59 @@ const build = () => {
   status.setAttribute('aria-live', 'polite');
   const reset = make('button', 'cz-reset', 'Reset to stock');
   reset.type = 'button';
-  reset.addEventListener('click', () => { setWheelSet('stock'); Sound.play('menuMove', 0.4); });
+  reset.addEventListener('click', () => { setWheelSet('stock', tgt()); Sound.play('menuMove', 0.4); });
   const wheels = make('section', 'cz-section',
-    make('h2', '', 'Wheels'),
-    make('p', 'cz-note', 'A wheel set is a tyre and rim together. It applies to every car you drive, in the garage and on the road.'),
+    make('h2', '', 'Wheels', tagFor('wheels')),
+    make('p', 'cz-note', 'A wheel set is a tyre and rim together.'),
     setRow, customChip,
     make('div', 'cz-foot', status, reset));
   tabMsg = make('p', 'cz-tabmsg'); tabMsg.setAttribute('role', 'status');
   sections = { wheels, plate: buildPlate(), roof: buildPropSection('roof'), cargo: buildPropSection('cargo'), wing: buildPropSection('wing') };
-  root.replaceChildren(make('div', 'cz-backdrop'), top, stageBox, make('div', 'cz-panel', slotList, tabMsg, wheels, sections.plate, sections.roof, sections.cargo, sections.wing));
+  root.replaceChildren(make('div', 'cz-backdrop'), top, stageBox, make('div', 'cz-panel', scopeBar, slotList, tabMsg, wheels, sections.plate, sections.roof, sections.cargo, sections.wing));
   openSection('wheels');
   onWheelColour(shown);
   onPlate(() => { if (state.open) plateShown(); });
   onProp(() => { if (state.open) propShown(); });
+  Store.onStore(() => { if (state.open) { shown(); plateShown(); propShown(); scopeShown(); } });
   onLoadout(() => { if (state.open && !ShowroomView.model) requestAnimationFrame(() => { if (state.open && !ShowroomView.model) stillCar(stage, state.car, state.evil); }); }); // (no WebGL: its picture drawn again in the new loadout, render/carstill.js)
   setCloseUp(false);
+};
+// the switch, the header's mark, the tabs' dots (a slot this car has its own of), the actions (only for 'This car')
+const scopeShown = () => {
+  const car = state.car;
+  if (!car || !scopeBtns) return;
+  for (const b of scopeBtns) b.setAttribute('aria-pressed', String(b.dataset.scope === state.scope));
+  customMark.hidden = !Store.differs(car.id);
+  for (const b of slotList.children) b.classList.toggle('own', !!b.dataset.slot && Store.differs(car.id, b.dataset.slot));
+  resetCarBtn.parentNode.hidden = state.scope !== 'car';
+  resetCarBtn.disabled = !Store.ownSlots(car.id).length;
+  copyBtn.disabled = !Store.differs(car.id);
+  if (copyArmed && performance.now() > copyArmed) { copyArmed = 0; copyBtn.textContent = 'Copy to all'; }
+  tagShown();
+};
+const setScope = (scope) => {
+  if (plateInput && document.activeElement === plateInput) plateInput.blur(); // (a text being typed is kept for whom it was typed)
+  state.scope = scope === 'all' ? 'all' : 'car';
+  copyArmed = 0; if (copyBtn) copyBtn.textContent = 'Copy to all';
+  Sound.play('menuMove', 0.4);
+  syncPlateInput(); shown(); plateShown(); propShown(); scopeShown();
+};
+// this car's look on every car; when other cars have looks of their own, a second tap is asked for (their looks go too)
+const copyToAll = () => {
+  const car = state.car;
+  if (!car) return;
+  const others = Store.customCars().filter(id => id !== car.id).length;
+  if (others && !(copyArmed && performance.now() <= copyArmed)) {
+    copyArmed = performance.now() + 4000;
+    copyBtn.textContent = 'Replace ' + others + (others === 1 ? ' car?' : ' cars?'); // (the other cars with looks of their own: a second tap replaces them too)
+    copyBtn.title = 'Tap again: those cars lose their own look too';
+    setTimeout(() => { if (copyArmed && performance.now() > copyArmed) scopeShown(); }, 4100);
+    return;
+  }
+  copyArmed = 0; copyBtn.textContent = 'Copy to all'; copyBtn.title = "This car's look on every car";
+  Store.copyToAll(car.id);
+  flash(tabMsg, 'Copied to all cars.');
+  Sound.play('menuPick', 0.4);
 };
 const setCloseUp = (on, end = null, slot = null) => {
   const focus = on && slot ? focusOf(slot) : null;
@@ -368,7 +445,7 @@ const openSection = (id) => {
 };
 
 // arrows: along a row, or to the nearest choice above / below
-const choices = () => [...root.querySelectorAll('button.cz-chip:not(.locked), .cz-paint:not(.locked), .cz-reset:not(:disabled), .cz-view:not(:disabled), .cz-back')].filter(el => el.offsetParent !== null);
+const choices = () => [...root.querySelectorAll('button.cz-chip:not(.locked), .cz-paint:not(.locked), .cz-reset:not(:disabled), .cz-view:not(:disabled), .cz-back, .cz-seg, .cz-act:not(:disabled)')].filter(el => el.offsetParent !== null);
 const move = (dx, dy) => {
   const all = choices(), at = document.activeElement, from = all.includes(at) ? at : null;
   if (!from) { (root.querySelector('.cz-chip.equipped') || all[0])?.focus(); return; }
@@ -399,8 +476,9 @@ window.addEventListener('keydown', (e) => {
 const showCar = () => {
   const car = state.car;
   carName.textContent = 'On your ' + car.name;
+  syncPlateInput();
   if (!ShowroomView.show(stage, car, { evil: state.evil })) requestAnimationFrame(() => { if (state.open) stillCar(stage, car, state.evil); }); // (no WebGL: its picture)
-  if (built) { shown(); plateShown(); propShown(); }
+  if (built) { shown(); plateShown(); propShown(); scopeShown(); }
 };
 
 export const Cosmetics = {
@@ -410,7 +488,7 @@ export const Cosmetics = {
     if (state.open || !root) return;
     if (!built) build();
     const use = car || carInUse();
-    state = { open: true, car: use.silhouette || use.id === 'null-car' ? CARS.find(c => !c.silhouette) : use, evil, onClose, inMenu: Game.inMenu, close: false };
+    state = { open: true, car: use.silhouette || use.id === 'null-car' ? CARS.find(c => !c.silhouette) : use, evil, onClose, inMenu: Game.inMenu, close: false, scope: new URLSearchParams(location.search).get('scope') === 'all' ? 'all' : 'car' }; // (?scope=all: 'All cars', for a picture)
     Game.inMenu = true; // (the menu's keys leave it alone)
     root.classList.remove('hidden');
     root.classList.toggle('evil', evil);
@@ -438,7 +516,8 @@ export const Cosmetics = {
     done?.();
   },
   // for a check or a picture
-  get shown() { return { props: { roof: shownProp('roof'), cargo: shownProp('cargo'), wing: shownProp('wing') }, prop: state.prop || null, plate: shownDesign(), plateText: plateText(), openSlot, end: state.end || null, open: state.open, car: state.car?.id || null, closeUp: state.close, design: wheelDesign(), colour: wheelColour(), set: wheelSet(), view: ShowroomView.state }; },
+  get shown() { const c = cid(); return { scope: state.scope, custom: !!state.car && Store.differs(state.car.id), props: { roof: shownProp('roof', c), cargo: shownProp('cargo', c), wing: shownProp('wing', c) }, prop: state.prop || null, plate: shownDesign(c), plateText: plateText(c), openSlot, end: state.end || null, open: state.open, car: state.car?.id || null, closeUp: state.close, design: wheelDesign(c), colour: wheelColour(c), set: wheelSet(c), view: ShowroomView.state }; },
+  scope: (scope) => setScope(scope),
   closeUp: setCloseUp,
 };
 // the live car is drawn while this screen is up
