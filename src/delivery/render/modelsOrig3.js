@@ -572,7 +572,7 @@ export const ORIG3_MODELS = {
     const group = new THREE.Group();
     const L = car.hl, w = car.hw * 2, R = 0.48, WX = w / 2 - 0.05, FZ = L * 0.62, RZ = -L * 0.6, ucw = w * 0.92;
     const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(CHROME), trim = lambert(TRIM), dark = lambert(0x121418);
-    const bar = lambert(0x1d2238), plate = lambert(0xece6cc);
+    const bar = lambert(0x1d2238), plate = lambert(0xece6cc), sportsBar = [];
     const worn = new THREE.MeshLambertMaterial({ map: wear(), transparent: true, depthWrite: false });
     // the front end and the cab's doors, below the waist
     side(group, paint, w, [[2.5, 0.95, 0.04], [2.52, 1.5, 0.05], [0.4, 1.5], [-0.6, 1.5], [-0.6, 0.95]], 0.05);
@@ -604,14 +604,16 @@ export const ORIG3_MODELS = {
       // the lift: long shocks at each wheel, the frame rails
       for (const z of [FZ, RZ]) box(group, trim, 0.07, 0.56, 0.07, s * 0.62, 0.74, z - 0.18);
       box(group, trim, 0.1, 0.14, 4.6, s * 0.48, 0.86, 0);
-      // the sports bar over the bed, just behind the cab
-      rod(group, bar, 0.04, 0.62, s * 0.86, 1.86, -0.82, 'y', 8);
+      // the sports bar over the bed, just behind the cab (tagged userData.prop = 'roof': a chosen roof prop hides it; its meshes are kept
+      // out of the merge below, so they stay their own meshes)
+      sportsBar.push(rod(group, bar, 0.04, 0.62, s * 0.86, 1.86, -0.82, 'y', 8));
       for (const x of [0.22, 0.58]) {
-        rod(group, bar, 0.09, 0.1, s * x, 2.2, -0.8, 'z', 10);
-        rod(group, LAMP, 0.075, 0.02, s * x, 2.2, -0.745, 'z', 10);
+        sportsBar.push(rod(group, bar, 0.09, 0.1, s * x, 2.2, -0.8, 'z', 10));
+        sportsBar.push(rod(group, LAMP, 0.075, 0.02, s * x, 2.2, -0.745, 'z', 10));
       }
     }
-    box(group, bar, 1.82, 0.08, 0.08, 0, 2.15, -0.82);
+    sportsBar.push(box(group, bar, 1.82, 0.08, 0.08, 0, 2.15, -0.82));
+    for (const m of sportsBar) m.userData.prop = 'roof';
     // the grille: chrome framed, dark, a bar across it
     box(group, chrome, 0.98, 0.32, 0.03, 0, 1.26, 2.58);
     box(group, dark, 0.92, 0.26, 0.03, 0, 1.26, 2.59);
@@ -628,6 +630,7 @@ export const ORIG3_MODELS = {
     const keep = new Set();
     const geo = wheelGeo(R, 0.42), tyre = lambert(0x141414), hub = lambert(0xb8bcc2);
     for (const s of [-1, 1]) for (const z of [FZ, RZ]) for (const part of wheel(group, geo, s * WX, R, z, tyre, hub)) keep.add(part);
+    for (const m of sportsBar) { m.geometry = m.geometry.toNonIndexed(); keep.add(m); } // (the same triangles as the merge made them: non-indexed)
     const merged = mergeByMaterial(group, keep);
     group.userData = {
       body: merged.get(paint),
