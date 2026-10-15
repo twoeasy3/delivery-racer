@@ -18,9 +18,14 @@ import { PLATE_TABLE, PLATE_VARIANTS, PLATE_NONE } from './plateanchorstable.js'
 export const HAND = {
   mini: { ends: 'rear' }, autobahnestate: { ends: 'rear' }, // (something stands over a third of the front place: rear only)
   dodgem: { ends: 'rear' }, // (the bumper car's nose is a blob: a front plate half sinks into it)
+  // the plate placement audit (CHECKLIST 305, scripts/plate-placement-audit.mjs: measured, then looked at):
+  farmtractor: { r: null }, // (the back is the drawbar between the big wheels: no panel on the centre line; the old rear place was under the tractor's middle)
+  toybota: { r: null }, // (a post stands on the centre line behind the bed: the only flat place left was a plate hung on it, 1 m up)
+  hotrod: { f: null }, // (a bare radiator between the wheels and no bumper: the plate could only stand in the grille bars)
+  centreseat: { f: [0.46, 2.111, 0.52, 0] }, // (the bumper bar is 11 cm, the plate 13: kept at full size, a centimetre over at top and bottom, rather than a 30 cm plate in the grille slot)
 };
 // models that can wear no plate though the generator found a place (a taste call) -- or that have a place nobody wants a plate on
-export const HAND_NONE = ['swancar']; // (the Swan Car's tail is all teardrop curve: the generator's flat place sits inside the body)
+export const HAND_NONE = ['swancar', 'monster']; // (the Swan Car's tail is all teardrop curve: the generator's flat place sits inside the body; the Monster Truck's body rides 1.2 m up on its frame: at plate height there are only axles and frame tubes, the old plates hung in the air between them)
 
 export const PLATE_W_H = 4; // a plate is 4 times as wide as high (render/platedesigns.js draws it so)
 
