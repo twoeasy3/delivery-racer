@@ -17,6 +17,7 @@
 // Output: /tmp/prop-audit/audit.csv (a row per car and slot, worst first), audit.json (everything), and the flag counts.
 //   node scripts/prop-placement-audit.mjs [car ids...] [--jobs 3] [--out /tmp/prop-audit] [--table <json>: audit a candidate table instead]
 //   --nohand: the generated rows alone (the slice files' hand fixes ignored)
+//   --props <id,id...>: the real props measured as worn are these (any slot's) instead of the usual few (REAL)
 //   (--part i/n: one worker's share; the parent spawns them)
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { spawn } from 'node:child_process';
@@ -27,7 +28,7 @@ const args = process.argv.slice(2);
 const flag = (n, f = null) => (args.includes(n) ? args[args.indexOf(n) + 1] : f);
 import { MAX_INSET } from './prop-audit-lib.mjs';
 const OUT = flag('--out', '/tmp/prop-audit'), part = flag('--part'), jobs = Number(flag('--jobs', 3));
-const only = args.filter((a, i) => !a.startsWith('--') && !['--out', '--part', '--jobs', '--table', '--tag'].includes(args[i - 1]));
+const only = args.filter((a, i) => !a.startsWith('--') && !['--out', '--part', '--jobs', '--table', '--tag', '--props'].includes(args[i - 1]));
 const REAL = { wing: ['winggt', 'winglip', 'wing-race', 'wingtube'], roof: ['roofbox', 'roofsign', 'roof-dish'], cargo: ['cargocrates', 'cargobarrel'] };
 const CARGO_KINDS = new Set(['pickup', 'flatbed', 'halftrack', 'open', 'truck', 'special']);
 const NO_ROOF = new Set(['open', 'canopy', 'craft', 'tank', 'micro', 'bike']), NO_WING = new Set(['canopy', 'craft', 'tank', 'micro', 'bike']);
@@ -65,6 +66,7 @@ async function worker(k, n) {
     const { makeShowCar } = await load('render/showcar.js');
     const { glassy } = await load('render/dents.js');
     const PM = await load('render/propmodels.js');
+    if (flag('--props')) { for (const k of Object.keys(REAL)) REAL[k] = []; for (const id of flag('--props').split(',')) REAL[PM.propSlotOf(id)]?.push(id); } // (--props a,b: measure these real props as worn instead of the usual few)
     if (flag('--table')) { // (a candidate table: { <car id>: { roof, cargo, wing } } replaces the merged one's rows)
       const t = JSON.parse(readFileSync(flag('--table'), 'utf8'));
       for (const [id, e] of Object.entries(t)) { P.PROP_TABLE[id] = e; delete P.HAND[id]; }
