@@ -614,6 +614,9 @@ export const CONFIG = {
     // a pallet of pipes (a crate), a works sign on its frame (a sign)
     barrierBlock: { damage: 34, speedKept: 0.6 }, cableReel: { damage: 31, speedKept: 0.75 }, sandPile: { damage: 38, speedKept: 0.75 },
     trafficDrum: { damage: 3, speedKept: 0.94, light: true }, pipePallet: { damage: 31, speedKept: 0.75 }, worksSign: { damage: 32, speedKept: 0.8 },
+    // the Las Vegas Strip's own (themes.js; render/themes/vegasObstacles.js): each the cost of what it stands in for: a velvet rope on
+    // brass posts (a barrier), a slot machine (a crate), a bellhop's luggage cart (a bale), a giant red die (a cone)
+    velvetRope: { damage: 34, speedKept: 0.6 }, slotMachine: { damage: 31, speedKept: 0.75 }, luggageCart: { damage: 38, speedKept: 0.75 }, casinoDie: { damage: 3, speedKept: 0.94, light: true },
     laneEnd: { damage: 0, speedKept: 1 }, // a dead-end lane's end (lanegimmicks.js): no ordinary knock: a wreck outright, or passed through (see Collision.hitObstacles)
     runner: { damage: 10, speedKept: 0.88, light: true },
     waterTable: { damage: 6, speedKept: 0.9, light: true },

@@ -80,5 +80,7 @@
   "ink": { "name": "Disappearing Ink", "blurb": "A bottle of disappearing ink and a quill, on a blotter.", "states": ["Corked","Blotting","Splashing"] },
   "scarabs": { "name": "Crate of Scarabs", "blurb": "A nailed-down crate of scarab beetles that want out.", "states": ["Lid nailed down","Scuttling inside","Swarming out"] },
   "bubbletea": { "name": "Tray of Bubble Teas", "blurb": "Four bubble teas in a cardboard tray, pearls bobbing, straws in." },
-  "hamsterball": { "name": "Pet-Shop Hamster Ball", "blurb": "A hamster in its exercise ball, and it has somewhere to be.", "states": ["Nibbling","Rolling","Bouncing loose"] }
+  "hamsterball": { "name": "Pet-Shop Hamster Ball", "blurb": "A hamster in its exercise ball, and it has somewhere to be.", "states": ["Nibbling","Rolling","Bouncing loose"] },
+  "pokerchips": { "name": "Box of Poker Chips", "blurb": "Racks of chips in a baize-lined box, two dice on top." },
+  "fakechips": { "name": "Case of Counterfeit Chips", "blurb": "Fake chips in a locked case, a dye pack in the lid.", "states": ["Snapped shut","Rattling","Dye pack burst"] }
 }

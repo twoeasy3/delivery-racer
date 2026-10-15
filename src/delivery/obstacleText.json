@@ -48,5 +48,9 @@
   "sandPile": { "name": "Heap of sand", "blurb": "Stands in for a bale in the roadworks." },
   "trafficDrum": { "name": "Traffic drum", "blurb": "A cone's size and cost, in the roadworks." },
   "pipePallet": { "name": "Pallet of pipes", "blurb": "A crate's size and cost, in the roadworks." },
-  "worksSign": { "name": "Works sign", "blurb": "A sign's size and cost, in the roadworks." }
+  "worksSign": { "name": "Works sign", "blurb": "A sign's size and cost, in the roadworks." },
+  "velvetRope": { "name": "Velvet rope", "blurb": "Stands in for a barrier in Las Vegas: brass posts, a red rope." },
+  "slotMachine": { "name": "Slot machine", "blurb": "Stands in for a crate in Las Vegas." },
+  "luggageCart": { "name": "Luggage cart", "blurb": "Stands in for a bale in Las Vegas: a bellhop's cart of cases." },
+  "casinoDie": { "name": "Giant die", "blurb": "Stands in for a cone in Las Vegas." }
 }

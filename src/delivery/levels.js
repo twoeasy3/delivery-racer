@@ -661,6 +661,10 @@ import roadworks from './levels/roadworks.json';
 HIDDEN_LEVELS.roadworks = roadworks; // Roadworks (the city's road under repair: its diversions, roadworks.js): ?hidden=roadworks, until it is put in the career
 import roadworksNight from './levels/roadworks-night.json';
 HIDDEN_LEVELS['roadworks-night'] = roadworksNight; // Roadworks by Night (the same works after dark, lit by their own lamps): ?hidden=roadworks-night
+import vegasStrip from './levels/vegas-strip.json';
+import vegasNight from './levels/vegas-night.json';
+HIDDEN_LEVELS['vegas-strip'] = vegasStrip; // Vegas Strip (the Las Vegas theme: three ramps over the jam, each fed by a moving walkway): ?hidden=vegas-strip, until the owner decides
+HIDDEN_LEVELS['vegas-night'] = vegasNight; // Vegas by Night (the same Strip after dark, its hero look): ?hidden=vegas-night
 // THE HIDDEN LEVELS MENU (the owner, 15-Oct; Options > Hidden levels, render/hiddenlevels.js): every level of HIDDEN_LEVELS that is a
 // real level, so a hidden level added later is listed without a word here. TEST_LEVELS are the developer's test tracks (a testbed and the three
 // Gimmick Roads: gimmicks.js calls them 'Test'), left out of it. A run started from it is ?hidden=<id>: it banks nothing (game.js).

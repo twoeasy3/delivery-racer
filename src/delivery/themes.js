@@ -237,6 +237,16 @@ THEMES.roadworks = { sky: 0xaebccb, ground: 0x6f8752, road: 0x3b3e43, scenery: '
 // light towers' pools of light
 THEMES.roadworksNight = { sky: 0x070a14, ground: 0x2c3a28, road: 0x41444a, scenery: 'city', sets: THEMES.city.sets, lit: true, headlights: true, night: true,
   light: { sky: 0x5d72b0, ground: 0x10141c, ambient: 0.32, sun: 0x9fb4ff, sunlight: 0.25 } };
+// vegas: the Las Vegas Strip (render/themes/vegas.js): a casino boulevard across the desert: resorts each a landmark (a glass pyramid, a
+// lattice tower, a screen of a sphere, a castle, an observation tower, towers with neon crowns), pylon signs of chasing bulbs and
+// marquees, wedding chapels, LED billboards, palms; a dancing fountain on the right, the monorail on its beam on the left, a wheel
+// far off, the desert's mountains round the horizon. pad: a boost pad is a moving walkway (render/lanegimmicks.js)
+THEMES.vegas = { sky: 0xa9cfe8, ground: 0xc9a77a, road: 0x3a3c41, scenery: 'vegas', pad: 'travelator', target: { offset: 2.4, height: 4.6, beam: true },
+  light: { sky: 0xfff4e0, ground: 0xb08a5e, ambient: 1.3, sun: 0xfff0d8, sunlight: 1.15 } };
+// vegasNight: the same Strip after dark (its hero look): a deep indigo sky, the facades' windows, every sign, bulb and screen lit, the
+// lamps' pools of light, a beam of light up from the pyramid; lit surfaces and headlights as the city's night
+THEMES.vegasNight = { sky: 0x0d0b26, ground: 0x3a3226, road: 0x3c3e44, scenery: 'vegas', pad: 'travelator', lit: true, headlights: true, night: true, target: { offset: 2.4, height: 4.6, beam: true },
+  light: { sky: 0x8f8cff, ground: 0x2a1c30, ambient: 0.62, sun: 0xffd8c8, sunlight: 0.35 } };
 THEMES.autumn = { sky: 0xeccfa0, ground: 0x9a8a3e, road: 0x4a4a4e, scenery: 'autumn', line: 0xf2eede, centre: 0xe6b422, terrain: { gentle: 0xa8923c, steep: 0x7a4c2a, rough: 0.5, flat: 5, rise: 45 }, target: { height: 4.2, beam: true }, tunnel: { wall: 0x8a2f22, tiles: 0xa8743e, roof: 0x5a2a1c, face: 0x7e2a1e, lamp: 0xffc878, lintel: 2.4, pier: 2.6 }, channel: { shallow: 0x7fa6a8, deep: 0x2c5a6a, glint: 0xa8cfd0 }, light: { sky: 0xffe6bc, ground: 0xb89464, ambient: 1.3, sun: 0xffc27a, sunlight: 1.2 } };
 
 // ---- the themes' own obstacles ---------------------------------------------------------------------------
@@ -275,6 +285,7 @@ const OBSTACLES = {
   autumn: { crate: 'harvestCrate', bale: 'leafPile', cone: 'smallPumpkin' }, // (a crate of pumpkins; a heap of raked leaves; a small pumpkin on a stake)
   mall: { crate: 'boxStack', bale: 'trolleyRow', cone: 'wetFloorSign' },
   roadworks: { barrier: 'barrierBlock', crate: 'cableReel', bale: 'sandPile' }, // (a water-filled barrier, a cable drum, a heap of sand; the cones are roadworks and stay)
+  vegas: { barrier: 'velvetRope', crate: 'slotMachine', bale: 'luggageCart', cone: 'casinoDie' }, // (a velvet rope on brass posts; a slot machine; a bellhop's luggage cart; a giant red die)
   roadworksNight: { barrier: 'barrierBlock', crate: 'cableReel', bale: 'sandPile' }, // (the same road by night) // (delivery cartons on a sack truck; three shopping trolleys nested; a WET FLOOR A-frame)
   // (the port keeps its crates, the farm and the Wild West their bales: there they belong)
 };
@@ -307,6 +318,7 @@ const WASHBOARDS = {
   iceroad: 'ice', snow: 'ice', christmas: 'ice',
   city: 'cobbles', suburb: 'cobbles', hood: 'cobbles', canberra: 'cobbles', montreal: 'cobbles', singapore: 'cobbles', favela: 'cobbles', mumbai: 'cobbles', flooded: 'cobbles',
   toyroom: 'ribs', volcano: 'lava', hell: 'lava',
+  vegas: 'cobbles',
 };
 for (const [name, look] of Object.entries(WASHBOARDS)) THEMES[name].washboard = look;
 export const washboardLook = (theme) => { const T = THEMES[theme || 'city']; return T?.washboard || THEMES[T?.scenery]?.washboard || 'dirt'; };
