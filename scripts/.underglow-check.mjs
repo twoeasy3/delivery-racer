@@ -32,7 +32,7 @@ try {
   const Store = await load('render/loadoutstore.js');
   const L = await load('render/loadout.js');
   const R = await load('render/cosmeticslots.js');
-  const { COSMETICS, grantAll, clearCosmetics } = await load('render/cosmetics.js');
+  const { COSMETICS, grantAll } = await load('render/cosmetics.js');
   grantAll(); // (earned cosmetics, CHECKLIST 437: 999 of each look, so each can be worn)
   const all = [...C.CARS, ...C.FILLER_CARS, ...C.BESPOKE_CARS, ...C.EVENT_CARS, ...C.EARNED_CARS, ...Object.values(C.SECRET_CARS), ...IDEA_CARS];
   const car = (id) => all.find(c => c.id === id);
