@@ -83,6 +83,8 @@ const GROUPS = {
     seconds: 300,
     tests: [t('.modelviews-check.mjs'), t('.dents-check.mjs'), t('.decal-zones-check.mjs'), t('.keys-check.mjs'), t('.keyshots-check.mjs'), t('.suspension-check.mjs'), t('.inspector-check.mjs'), t('.mergemodel-check.mjs'), t('.keyspin-check.mjs'), t('.phone-menu-check.mjs'), t('.modelpatch-check.mjs'), t('.editor-mirror-check.mjs'), t('.shape-edits-check.mjs'), t('.glass-window-check.mjs'), t('.window-corners-check.mjs'), t('.placements-bake-check.mjs'), t('.keypose-check.mjs'), t('.propanchors-check.mjs'), t('.proptag-check.mjs'), t('.propmodels-check.mjs'), t('.propmodels-roof-check.mjs'), t('.propmodels-roof2-check.mjs'), t('.propmodels-cargo-check.mjs'), t('.propmodels-cargo2-check.mjs'), t('.propmodels-wing-check.mjs'), t('.propmodels-wingclassic-check.mjs'), t('.propmodels-wing2-check.mjs'), t('.platetag-check.mjs'), t('.propcosmetic-ui-check.mjs'), t('.cosmetics-tabs-check.mjs'), t('.loadout-key-check.mjs'), t('.city-budget-check.mjs'), t('.loadout-store-check.mjs'), t('.steelworks-check.mjs'), t('.vegas-check.mjs'), t('.alpine-check.mjs'), t('.loadscreen-check.mjs'), t('.carstage-check.mjs'), t('.underglow-check.mjs'), t('.icepatch-check.mjs'), t('.windscreen-audit-check.mjs'), t('.killfx-check.mjs'), t('.killfx-more-check.mjs'), t('.rims-check.mjs'), t('.treads-check.mjs'), t('.airtrail-check.mjs'), t('.tunnelthemes-check.mjs'), t('.decalcosmetic-check.mjs'), t('.giantsound-check.mjs')],
     files: [/src\/delivery\/render\//, /\.css$/, /keyshots|keyModels|keys-png/, /mysteries\.js/],
+    // (more tests and words for the group, on lines of their own: branches that add to the long lines above merge without a conflict)
+    more: [[t('.editor-camera-check.mjs'), 'the model editor\'s camera in edit mode (.editor-camera-check: in headless Chromium as a touch phone, a touch tablet and a mouse, a part selected in Move / Rotate / Scale: one finger or the left button on the view turns the camera, two fingers or the right button pan, a pinch or the wheel zoom, a handle drag edits and never moves the camera, a second finger during it is ignored, the camera on again after, the view buttons hold, Fit / double tap / Reset, no page scroll, the toggles folded under More on a phone; CHECKLIST 434)']],
   },
   replay: {
     about: 'Determinism: every level replays exactly from its seeds (a run hashed each second, twice the same, once another); runs recorded and played back by replay.js (pause, rewind, refusals); kept and watched as the player has them (replaystore.js: the save untouched); the replay fingerprint (.replay-stable-check: adding a car or a level refuses no replay, changing the car, level or rules it used does; scripts/logic-hash.mjs). Heavy.',
@@ -99,6 +101,7 @@ const GROUPS = {
   },
 };
 // (a group is heavy if any test in it is; --fast is every group with none)
+for (const g of Object.values(GROUPS)) for (const [test, words] of g.more || []) { g.tests.push(test); g.about += '; ' + words; }
 for (const g of Object.values(GROUPS)) g.heavy = g.tests.some(x => x.heavy);
 
 const args = process.argv.slice(2);
