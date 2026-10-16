@@ -832,7 +832,7 @@ Working list, from the owner's ideas of 2026-10-09. `[x]` done, `[~]` partly don
     - 1000 animate frames per effect with stable array lengths;
     - the tab appears on the sample cars and not on the excluded ones;
     - the replay fingerprint is unchanged (61 logic files, hash 019645c1af, the same as where the branch left origin/main).
-    `.propcosmetic-ui-check` was widened to expect the Glow tab. Results of the other checks: see the commit.
+    `.propcosmetic-ui-check` was widened to expect the Glow tab and `.cosmetics-own-check` to count the underglow keys. `.cosmetics-tabs-check`, `.propcosmetic-ui-check`, `.wheelcosmetic-check`, `.loadout-store-check`, `.cosmetics-own-check`, `.loadout-key-check` and `.suspension-check` pass. `node scripts/delivery-tests.mjs --group render --no-lock`: 33 of 34 pass. The one failure, `.glass-window-check`, is known on this base (it expects `scripts/plate-placement-audit.mjs` to read glassnames.js). node --check and eslint pass on every changed file.
   - SEEN (stills via scripts/shots.mjs, read):
     - every look on the Sports Compact (front 3/4 at night; low side by day);
     - the Hot Hatch at night, by day, on snow and on the stage floor;
