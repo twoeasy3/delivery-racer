@@ -33,14 +33,28 @@ import { IDLE_RATE, CLAMP, BLUR_FROM, BLUR_FULL, BLUR, rimFrame } from './rims.j
 
 const TAU = Math.PI * 2;
 // n: block rows round the tyre (the pitch, for the clamp); h: how far proud of the tyre's tread (in R); dir: directional (built both ways);
-// walls: where its faces square to the axle lie, either side of the middle (in W): kept 5 mm off a body face in the same plane (z-fighting)
+// walls: where its faces square to the axle lie, either side of the middle (in W): kept 5 mm off a body face in the same plane (z-fighting).
+// (walls are worked out from the design's own footprints, below: every block edge that runs round the tyre at one place across)
+// 16-Oct (the owner: "The treads are not rendering on the customisation screen"): the relief raised about a quarter, and every tread now
+// also wears a PATTERN BAND (a code-drawn texture of its own footprints, light blocks on dark grooves, just over the running surface)
+// and a SHOULDER RING on the tyre's outer face (the same pattern where it meets the sidewall), so it reads from the side and at phone
+// size, and on cars with no room for raised blocks (an arch dipping into the tyre) the band and ring still show it.
 export const TREAD_DESIGNS = [
   { id: 'none', name: 'Stock', n: 0 },
-  { id: 'knobbly', name: 'Knobbly', n: 12, h: 0.065, walls: [0.5, 0.14, 0.22] },
-  { id: 'chevron', name: 'Chevron', n: 14, h: 0.05, dir: true, walls: [0.5] },
-  { id: 'ribs', name: 'Road ribs', n: 10, h: 0.05, kMin: 0.45, walls: [0.5, 0.24, 0.13] }, // (kMin: its ring's flattest facet must stay clear of the tyre's corners)
-  { id: 'lugs', name: 'Tractor', n: 12, h: 0.085, dir: true, walls: [0.5, 0.12] },
-  { id: 'studs', name: 'Winter', n: 10, h: 0.045, pin: 0.025, walls: [0.5, 0.04, 0.22, 0.32] }, // (pin: the studs stand that much over the blocks)
+  { id: 'knobbly', name: 'Knobbly', n: 12, h: 0.08 },
+  { id: 'chevron', name: 'Chevron', n: 14, h: 0.065, dir: true },
+  { id: 'ribs', name: 'Road ribs', n: 10, h: 0.06, kMin: 0.45 }, // (kMin: its ring's flattest facet must stay clear of the tyre's corners)
+  { id: 'lugs', name: 'Tractor', n: 12, h: 0.1, dir: true },
+  { id: 'studs', name: 'Winter', n: 10, h: 0.055, pin: 0.025 }, // (pin: the studs stand that much over the blocks)
+  // 16-Oct: eight more
+  { id: 'slick', name: 'Slick', n: 16, h: 0.03, kMin: 0.7, plain: true }, // (two smooth ribs and a centre groove; plain: the band darker, a racing slick)
+  { id: 'trail', name: 'Trail', n: 10, h: 0.075 },        // (all-terrain: shoulder blocks with a centre block between each pair)
+  { id: 'zigzag', name: 'Zigzag', n: 10, h: 0.065 },      // (a zig-zag centre rib cut into short bars, shoulder blocks taking turns)
+  { id: 'paddle', name: 'Paddle', n: 8, h: 0.11 },        // (sand paddles: straight bars right across, tall and few)
+  { id: 'diamond', name: 'Diamond', n: 12, h: 0.06 },     // (a lattice of diamonds)
+  { id: 'mud', name: 'Mud', n: 10, h: 0.1 },              // (mud terrain: big offset blocks, wide voids)
+  { id: 'honeycomb', name: 'Honeycomb', n: 10, h: 0.06 }, // (hexagon blocks, staggered)
+  { id: 'spikes', name: 'Spikes', n: 12, h: 0.09 },       // (pyramid spikes, staggered)
 ];
 export const treadById = (id) => TREAD_DESIGNS.find(d => d.id === id) || TREAD_DESIGNS[0];
 export const LOWS = [1, 0.7, 0.45, 0.3]; // a tread's height steps (of the design's own): the tallest that fits under the bodywork over the tyre
@@ -78,11 +92,17 @@ export const globalTread = (carId = null) => (askedTread ? treadById(askedTread)
 export const treadPatch = (id, target = null) => ({ tread: { ...savedTreadChoice(target), all: treadById(id).id } });
 
 // ---- the geometry ----
+// FOOT: while a design is built for its footprints (footprintsOf), every block, strip and rib also records its footprint here:
+// { pts: [[angle, z]...] } (a polygon round the tyre, angle absolute) or { z0, z1 } (a rib right round); steel: a stud
+let FOOT = null;
 // a block: its footprint corners [s, z] (s: radians round from angle a; z: across, -0.5..0.5 of W), in order round it; feet at BASE,
-// top at r1; vertex colours top / side (linear [r, g, b])
-const block = (pos, col, a, corners, r1, top, side) => {
+// top at r1; vertex colours top / side (linear [r, g, b]); shrink: the top's corners drawn in toward its middle (1: a block, under 1: a
+// spike's frustum)
+const block = (pos, col, a, corners, r1, top, side, shrink = 1) => {
+  if (FOOT) FOOT.push({ pts: corners.map(([s, z]) => [a + s, z]), steel: top === STEEL });
   const P = (r, [s, z]) => [r * Math.cos(a + s), r * Math.sin(a + s), z];
-  const tops = corners.map(c => P(r1, c)), feet = corners.map(c => P(BASE, c));
+  const ms = corners.reduce((n, c) => n + c[0], 0) / corners.length, mz = corners.reduce((n, c) => n + c[1], 0) / corners.length;
+  const tops = corners.map(([s, z]) => P(r1, [ms + (s - ms) * shrink, mz + (z - mz) * shrink])), feet = corners.map(c => P(BASE, c));
   let area = 0; // (the footprint's winding in (s, z): each side's outward normal from it)
   for (let i = 0; i < corners.length; i++) { const [s0, z0] = corners[i], [s1, z1] = corners[(i + 1) % corners.length]; area += s0 * z1 - s1 * z0; }
   const tri = (p, q, w, c, out) => { // (turned to face `out`)
@@ -115,6 +135,7 @@ const strip = (pos, col, a, w, z0, z1, skew, n, r1, top, side) => {
   };
   const quad = (p, q, x, y, c, out) => { tri(p, q, x, c, out); tri(p, x, y, c, out); };
   const at = (k) => ({ z: z0 + (z1 - z0) * k, s: skew * k });
+  if (FOOT) for (let k = 0; k < n; k++) { const A = at(k / n), B = at((k + 1) / n); FOOT.push({ pts: [[a + A.s - w / 2, A.z], [a + A.s + w / 2, A.z], [a + B.s + w / 2, B.z], [a + B.s - w / 2, B.z]] }); }
   const tan = (s) => [-Math.sin(a + s), Math.cos(a + s), 0], rad = (s) => [Math.cos(a + s), Math.sin(a + s), 0];
   const sgn = Math.sign(z1 - z0) || 1; // (the long walls face round either way; the end walls along z)
   for (let k = 0; k < n; k++) {
@@ -131,6 +152,7 @@ const strip = (pos, col, a, w, z0, z1, skew, n, r1, top, side) => {
 };
 // (a rib built from boxes would put a wall between each two facets: coplanar walls back to back; so the rib is built here by hand)
 const ring = (pos, col, z0, z1, r1, seg, top, side) => {
+  if (FOOT) FOOT.push({ z0, z1 });
   const P = (r, ang, z) => [r * Math.cos(ang), r * Math.sin(ang), z];
   const quad = (p, q, w, x, c, outward) => {
     // p q w x round a quad; outward: the direction its normal should point (a vector)
@@ -200,21 +222,159 @@ const BUILD = {
       block(pos, col, a + sc, [[-d, zc - 0.05], [d, zc - 0.05], [0, zc + 0.06]], r1 + pin, STEEL, times(STEEL, 0.7));
     }
   },
+  // SLICK: two smooth ribs right round with one groove down the middle (22 facets: no common tyre facet count, so no face of a rib
+  // lies parallel and close to one of the tyre's)
+  slick: (pos, col, { h, top, side }) => {
+    ring(pos, col, -0.5, -0.05, 1 + h, 22, top, side);
+    ring(pos, col, 0.05, 0.5, 1 + h, 22, top, side);
+  },
+  // TRAIL: all-terrain: a block at each shoulder, and a centre block half a row on, between each pair
+  trail: (pos, col, { rows, h, top, side }) => {
+    const p = TAU / rows, w = p * 0.56, r1 = 1 + h;
+    for (let i = 0; i < rows; i++) {
+      const a = i * p;
+      box(pos, col, a, -w / 2, w / 2, -0.5, -0.2, r1, top, side);
+      box(pos, col, a, -w / 2, w / 2, 0.2, 0.5, r1, top, side);
+      box(pos, col, a + p / 2, -w * 0.42, w * 0.42, -0.14, 0.14, r1, top, side);
+    }
+  },
+  // ZIGZAG: a centre rib that zigs and zags round the tyre (short slanted bars, a sipe between each), shoulder blocks taking turns
+  zigzag: (pos, col, { rows, h, top, side }) => {
+    const p = TAU / rows, r1 = 1 + h, w = p * 0.14; // (each bar's ends clear of the next one's by 0.02 of a row: no two tops overlap)
+    for (let i = 0; i < rows; i++) {
+      const a = i * p;
+      strip(pos, col, a, w, -0.26, 0.26, p * 0.34, 1, r1, top, side);
+      strip(pos, col, a + p / 2, w, 0.26, -0.26, p * 0.34, 1, r1, top, side);
+      const s = i % 2 ? 1 : -1;
+      box(pos, col, a + p / 4, -p * 0.3, p * 0.3, s > 0 ? 0.34 : -0.5, s > 0 ? 0.5 : -0.34, r1, top, side);
+    }
+  },
+  // PADDLE: sand paddles: one straight bar right across each row
+  paddle: (pos, col, { rows, h, top, side }) => {
+    const p = TAU / rows, r1 = 1 + h;
+    for (let i = 0; i < rows; i++) box(pos, col, i * p, -p * 0.11, p * 0.11, -0.5, 0.5, r1, top, side);
+  },
+  // DIAMOND: a lattice of diamonds, one in the middle and a pair at the shoulders, row by row
+  diamond: (pos, col, { rows, h, top, side }) => {
+    const p = TAU / rows, r1 = 1 + h, ds = p * 0.46, dz = 0.17;
+    const dia = (a, zc) => block(pos, col, a, [[-ds, zc], [0, zc - dz], [ds, zc], [0, zc + dz]], r1, top, side);
+    for (let i = 0; i < rows; i++) { const a = i * p; if (i % 2) dia(a, 0); else { dia(a, -0.33); dia(a, 0.33); } }
+  },
+  // MUD: big blocks from each shoulder, one long and one short a row, swapping sides; wide voids between rows
+  mud: (pos, col, { rows, h, top, side }) => {
+    const p = TAU / rows, r1 = 1 + h, w = p * 0.5;
+    for (let i = 0; i < rows; i++) {
+      const a = i * p, s = i % 2 ? 1 : -1;
+      box(pos, col, a, -w / 2, w / 2, s > 0 ? -0.5 : -0.06, s > 0 ? 0.06 : 0.5, r1, top, side);
+      box(pos, col, a, -w / 2, w / 2, s > 0 ? 0.18 : -0.5, s > 0 ? 0.5 : -0.18, r1, top, side);
+    }
+  },
+  // HONEYCOMB: hexagon blocks, a pair then one between them, row by row
+  honeycomb: (pos, col, { rows, h, top, side }) => {
+    const p = TAU / rows, r1 = 1 + h, rs = p * 0.34, rz = 0.15;
+    const hex = (a, zc) => block(pos, col, a, [0, 1, 2, 3, 4, 5].map(k => { const t = k / 6 * TAU; return [Math.cos(t) * rs, zc + Math.sin(t) * rz]; }), r1, top, side);
+    for (let i = 0; i < rows; i++) { const a = i * p; if (i % 2) hex(a, 0); else { hex(a, -0.33); hex(a, 0.33); } }
+  },
+  // SPIKES: square-footed pyramids (a small flat tip), a pair then one between them
+  spikes: (pos, col, { rows, h, top, side }) => {
+    const p = TAU / rows, r1 = 1 + h, ds = p * 0.3, dz = 0.13;
+    const spike = (a, zc) => block(pos, col, a, [[-ds, zc - dz], [ds, zc - dz], [ds, zc + dz], [-ds, zc + dz]], r1, top, side, 0.22);
+    for (let i = 0; i < rows; i++) { const a = i * p; if (i % 2) spike(a, 0); else { spike(a, -0.3); spike(a, 0.3); } }
+  },
 };
-const LITE_ROWS = { knobbly: 8, chevron: 10, ribs: 8, lugs: 10, studs: 8 };
+const LITE_ROWS = { knobbly: 8, chevron: 10, ribs: 8, lugs: 10, studs: 8, slick: 16, trail: 8, zigzag: 8, paddle: 6, diamond: 8, mud: 8, honeycomb: 8, spikes: 8 };
 const geos = new Map();
+// ---- the PATTERN'S COLOURS (16-Oct: a black pattern on a black tyre did not read at phone size). The TINT of a tread: on a dark
+// rubber a worn mid grey (PATTERN of it is about sRGB #6f: the blocks' tops and the band's blocks), on a coloured or light rubber the
+// rubber itself; the grooves are GROOVE of it (near black). A plain design (the slick) is darker all over.
+const PATTERN = 0.83, GROOVE = 0.045, DARK_TINT = 0.2;
+const tintOf = (hex, d) => {
+  const c = lin(hex), l = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  const t = l < 0.12 ? [DARK_TINT, DARK_TINT, DARK_TINT * 1.04] : c.map(v => Math.min(1, v * 1.15));
+  return d.plain ? times(t, 0.6) : t;
+};
+// ---- FOOTPRINTS: a design built once with FOOT on, for its band's texture, its chip's picture and its walls ----
+const feet = new Map();
+export const footprintsOf = (id, dir = 1, lite = false) => {
+  const d = treadById(id), key = id + ':' + dir + (lite ? ':lite' : '');
+  if (!d.n) return [];
+  if (!feet.has(key)) {
+    FOOT = [];
+    try { BUILD[id]([], [], { rows: lite ? LITE_ROWS[id] : d.n, h: d.h, pin: d.pin || 0, dir, top: [1, 1, 1], side: [1, 1, 1] }); } finally { feet.set(key, FOOT); FOOT = null; }
+  }
+  return feet.get(key);
+};
+// a design's walls: where a block edge runs round the tyre at one place across (|z|, in W): a face square to the axle there
+for (const d of TREAD_DESIGNS) if (d.n) {
+  const zs = new Set();
+  for (const f of footprintsOf(d.id)) {
+    if (f.pts) f.pts.forEach(([a0, z0], i) => { const [a1, z1] = f.pts[(i + 1) % f.pts.length]; if (Math.abs(z1 - z0) < 1e-9 && Math.abs(a1 - a0) > 1e-9) zs.add(Math.abs(z0).toFixed(3)); });
+    else { zs.add(Math.abs(f.z0).toFixed(3)); zs.add(Math.abs(f.z1).toFixed(3)); }
+  }
+  d.walls = [...zs].map(Number);
+}
+// draw a design's footprints into a 2D context: across (z) along one axis, round the tyre along the other; `rows` rows shown. For
+// the band's texture (TILE: two rows round x the tread's width) and the chips' pictures (render/cosmeticsui.js). value(kind): the
+// fill for 'groove', 'block', 'steel'.
+// tile: the texture's way (every footprint folded into `rows` rows, which must be a whole number of the design's repeat, 2); otherwise a
+// stretch of the tyre from `from` rows on (a chip)
+export const drawTread = (g, id, { w, h, rows = 2, dir = 1, lite = false, around = 'x', value, tile = false, from = -0.5 }) => {
+  const d = treadById(id);
+  g.fillStyle = value('groove'); g.fillRect(0, 0, w, h);
+  if (!d.n) return;
+  const p = TAU / (lite ? LITE_ROWS[id] : d.n), L = around === 'x' ? w : h, X = around === 'x' ? h : w;
+  const map = (ang, z, shift) => { const u = ((ang + shift) / (rows * p) - (tile ? 0 : from / rows)) * L, v = (z + 0.5) * X; return around === 'x' ? [u, v] : [v, u]; };
+  const shifts = tile ? [...Array(Math.ceil(TAU / (rows * p)) + 3).keys()].map(k => (1 - k) * rows * p) : [0, -TAU];
+  for (const steel of [false, true]) {
+    g.fillStyle = value(steel ? 'steel' : 'block');
+    for (const f of footprintsOf(id, dir, lite)) {
+      if (!!f.steel !== steel) continue;
+      if (!f.pts) { const [a, b] = [map(0, f.z0, 0), map(0, f.z1, 0)]; if (around === 'x') g.fillRect(0, a[1], w, b[1] - a[1]); else g.fillRect(a[0], 0, b[0] - a[0], h); continue; }
+      for (const shift of shifts) {
+        g.beginPath();
+        f.pts.forEach(([ang, z], i) => { const [x, y] = map(ang, z, shift); if (i) g.lineTo(x, y); else g.moveTo(x, y); });
+        g.closePath(); g.fill();
+      }
+    }
+  }
+};
+// the band's texture: one per design, way round and lite (128 x 128, a few kB each; light blocks on dark grooves, a grey the tint colours)
+export const TILE = 128;
+const texes = new Map();
+const grey = (v) => { const n = Math.round(Math.pow(v, 1 / 2.2) * 255); return 'rgb(' + n + ',' + n + ',' + n + ')'; }; // (linear to an sRGB canvas grey)
+const treadTexture = (id, dir, lite) => {
+  const key = id + ':' + dir + (lite ? ':lite' : '');
+  if (!texes.has(key)) {
+    const c = typeof document !== 'undefined' ? document.createElement('canvas') : null;
+    let tex = null;
+    if (c) {
+      c.width = c.height = TILE;
+      const g = c.getContext && c.getContext('2d');
+      if (g) drawTread(g, id, { w: TILE, h: TILE, rows: 2, dir, lite, tile: true, value: (k) => grey(k === 'groove' ? GROOVE : k === 'steel' ? 1 : PATTERN) });
+      tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.ClampToEdgeWrapping; tex.flipY = false;
+      tex.userData.shared = true;
+    }
+    texes.set(key, tex);
+  }
+  return texes.get(key);
+};
 // the shared geometry of a design in one rubber colour (hex) and variant
 export const treadGeometry = (id, hex, { k = 1, lite = false, dir = 1 } = {}) => {
   const d = treadById(id);
   const key = id + ':' + hex + ':' + k + (lite ? ':lite' : '') + (d.dir ? ':' + dir : '');
   if (!geos.has(key)) {
-    const pos = [], col = [], base = lin(hex), top = base.map(v => Math.min(1, v * 1.3 + 0.035)), side = times(base, 0.6); // (the tops a worn, lighter rubber, the sides in shade: the pattern reads on a black tyre)
+    const pos = [], col = [], tint = tintOf(hex, d), top = times(tint, PATTERN), side = times(tint, PATTERN * 0.45); // (the tops the band's blocks' grey, the sides in shade)
     BUILD[id](pos, col, { rows: lite ? LITE_ROWS[id] : d.n, h: d.h * k, pin: (d.pin || 0) * Math.max(k, 0.7), dir, top, side });
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
     g.computeVertexNormals(); g.computeBoundingBox(); g.computeBoundingSphere();
     g.userData.shared = true;
+    // the lowest point of the blocks' tops (in R): a flat top is lower in its middle than at its corners (the pattern band stays FIT_GAP under it)
+    let low = Infinity;
+    for (let i = 0; i < pos.length; i += 9) if (col[i] === top[0] && col[i + 1] === top[1]) low = Math.min(low, Math.hypot((pos[i] + pos[i + 3] + pos[i + 6]) / 3, (pos[i + 1] + pos[i + 4] + pos[i + 7]) / 3));
+    g.userData.topLow = low === Infinity ? 1 + d.h * k : low;
     geos.set(key, g);
   }
   return geos.get(key);
@@ -234,6 +394,68 @@ const bandGeometry = (id, k) => {
     g.userData.shared = true; geos.set(key, g);
   }
   return geos.get(key);
+};
+
+// ---- the PATTERN BAND and the SHOULDER RING (16-Oct) ----
+// the band: an open tube over the tread's width just outside the tyre (rb, in R: SKIN_M over its farthest vertex, so never more proud
+// than the lowest step's graze), the texture wrapped round it, two rows a repeat. SKIN_SEG facets: a prime, so no facet of it lies
+// parallel to one of a tyre's (10 to 48 facets) and 3 to 5 mm off it.
+export const SKIN_M = [0.003, 0.0045], SKIN_SEG = 47;
+export const skinRadius = (R) => 1 + Math.min(SKIN_M[1], Math.max(SKIN_M[0], 0.012 * R)) / R;
+const skinGeometry = (rows, rb) => {
+  const key = 'skin:' + rows + ':' + rb.toFixed(3);
+  if (!geos.has(key)) {
+    const pos = [], uv = [], nor = [], r = rb / Math.cos(Math.PI / SKIN_SEG); // (the facets' middles at rb)
+    for (let i = 0; i < SKIN_SEG; i++) {
+      const a0 = i / SKIN_SEG * TAU, a1 = (i + 1) / SKIN_SEG * TAU, u0 = a0 / TAU * rows / 2, u1 = a1 / TAU * rows / 2;
+      const P = (a, z) => [r * Math.cos(a), r * Math.sin(a), z];
+      for (const [a, z, u, v] of [[a0, -0.5, u0, 0], [a1, -0.5, u1, 0], [a1, 0.5, u1, 1], [a0, -0.5, u0, 0], [a1, 0.5, u1, 1], [a0, 0.5, u0, 1]]) { pos.push(...P(a, z)); uv.push(u, v); nor.push(Math.cos(a), Math.sin(a), 0); }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    g.computeBoundingBox(); g.computeBoundingSphere(); g.userData.shared = true;
+    geos.set(key, g);
+  }
+  return geos.get(key);
+};
+// the shoulder ring: a flat annulus on the tyre's outer face (RING_IN..RING_OUT of R: outside a whitewall's 0.88 and a rim's lip at 0.8,
+// inside the tyre's outline), facing out along +z (sign 1) or -z, showing the band's pattern where it meets that shoulder (z from
+// FACE_Z to the edge), so the tread reads side on. Placed FACE_GAP off the tyre's face (the sidewall rings' 5 mm).
+export const RING_IN = 0.89, RING_OUT = 0.97, FACE_Z = 0.3, FACE_GAP = 0.005;
+const faceGeometry = (rows, sign) => {
+  const key = 'face:' + rows + ':' + sign;
+  if (!geos.has(key)) {
+    const pos = [], uv = [], nor = [], seg = SKIN_SEG;
+    const v = (r) => { const k = (r - RING_IN) / (RING_OUT - RING_IN), z = FACE_Z + (0.5 - FACE_Z) * k; return sign > 0 ? z + 0.5 : 0.5 - z; };
+    for (let i = 0; i < seg; i++) {
+      const a0 = i / seg * TAU, a1 = (i + 1) / seg * TAU, u0 = a0 / TAU * rows / 2, u1 = a1 / TAU * rows / 2;
+      const P = (a, r) => [r * Math.cos(a), r * Math.sin(a), 0];
+      const quad = [[a0, RING_IN, u0], [a1, RING_IN, u1], [a1, RING_OUT, u1], [a0, RING_IN, u0], [a1, RING_OUT, u1], [a0, RING_OUT, u0]];
+      const order = sign < 0 ? quad : [quad[0], quad[2], quad[1], quad[3], quad[5], quad[4]]; // (wound to face out: the quad as listed faces -z)
+      for (const [a, r, u] of order) { pos.push(...P(a, r)); uv.push(u, v(r)); nor.push(0, 0, sign); }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    g.computeBoundingBox(); g.computeBoundingSphere(); g.userData.shared = true;
+    geos.set(key, g);
+  }
+  return geos.get(key);
+};
+// their materials: per design / way round / lite and tint (every dark rubber shares one tint), the pattern's; and per tint a plain one
+// for the band and ring while the blur band shows (a turning pattern would strobe)
+const skinMats = new Map();
+const skinMaterial = (id, dir, lite, hex) => {
+  const d = treadById(id), tint = tintOf(hex, d), key = id + ':' + dir + (lite ? ':lite' : '') + ':' + tint.map(v => v.toFixed(3)).join(',');
+  if (!skinMats.has(key)) {
+    const m = new THREE.MeshLambertMaterial({ color: new THREE.Color(...tint), map: treadTexture(id, dir, lite) });
+    m.userData.shared = true; m.userData.wheelHub = true; skinMats.set(key, m);
+  }
+  return skinMats.get(key);
+};
+const softMaterial = (hex, d) => {
+  const tint = tintOf(hex, d), key = 'soft:' + tint.map(v => v.toFixed(3)).join(',');
+  if (!skinMats.has(key)) { const m = new THREE.MeshLambertMaterial({ color: new THREE.Color(...times(tint, (PATTERN + GROOVE) / 2)) }); m.userData.shared = true; m.userData.wheelHub = true; skinMats.set(key, m); }
+  return skinMats.get(key);
 };
 
 // ---- the materials: ONE for every tread (white: the colours are in the vertices); the blur band one per rubber colour and step ----
@@ -369,10 +591,13 @@ const roomFor = (model, found) => {
   // the line between them is half-way, the tread EDGE short of it)
   for (const t of found.rimInfo) {
     t.tz = [-(t.half - EDGE) * SPAN, (t.half - EDGE) * SPAN];
+    t.twin = { '-1': false, '1': false }; // (a twin tyre against that face: no shoulder ring there)
     const at = (u) => (t.axleX ? u.centre.x : u.centre.z);
     for (const u of found.rimInfo) {
       if (u === t || u.axleX !== t.axleX || Math.abs(u.centre.y - t.centre.y) > 0.1 * t.r || Math.abs((t.axleX ? u.centre.z - t.centre.z : u.centre.x - t.centre.x)) > 0.1 * t.r) continue;
       const d = at(u) - at(t);
+      if (Math.abs(d) > t.half + u.half + 0.04) continue;
+      t.twin[d > 0 ? '1' : '-1'] = true;
       if (Math.abs(d) > t.half + u.half + 0.02) continue;
       if (d > 0) t.tz[1] = Math.min(t.tz[1], d / 2 - EDGE); else t.tz[0] = Math.max(t.tz[0], d / 2 + EDGE);
     }
@@ -405,12 +630,13 @@ const roomFor = (model, found) => {
     }
     // the room over the tread: every part's triangles within the tread's width, round the tyre bar the floor's quarter; a face square to
     // the axle (a body side the wheel is set into) is let be: the tread goes into it as the tyre does, edge on, nothing shows through
-    let room = Infinity;
+    let room = Infinity, near = Infinity; // (near: the least room over the tyre from the parts that stay outside it, even where another dips in)
     for (const tri of tris) {
       if (squareToAxle(tri)) continue;
       for (const [lo, hi, over] of [[0.35 * t.R, Infinity, true], [-0.7 * t.R, 0.35 * t.R, false]]) {
         const s = shell(tri, t.tz[0], t.tz[1], lo, hi);
         if (!s || s.max <= t.R) continue; // (nothing there, or wholly inside the tyre: hidden)
+        if (s.min > t.R) near = Math.min(near, s.min - t.R);
         if (s.min > t.R) room = Math.min(room, s.min - t.R);
         else if (over) room = 0; // (over the tyre, an arch dips into it: a tread turning past would show through it)
         // (low down, a sill or a bumper run through the stock tyre: the tread goes in with the tyre)
@@ -420,6 +646,17 @@ const roomFor = (model, found) => {
     t.squares = [];
     for (const tri of wallTris) if (squareToAxle(tri)) { const z = (tri[0][0] + tri[1][0] + tri[2][0]) / 3; if (z > t.tz[0] - 0.006 && z < t.tz[1] + 0.006) { const sh = shell(tri, z - 0.003, z + 0.003, -0.7 * t.R, Infinity); if (sh && sh.min < t.R * (1 + hMax) && sh.max > BASE * t.R) t.squares.push(z); } }
     t.treadRoom = t.wallBlocked || t.R < MIN_R ? 0 : room; // (m over the tyre's tread before bodywork; Infinity: open; 0: none)
+    // the PATTERN BAND's lift over the tyre (m): SKIN_M, or less where a part over the tyre is closer than that plus FIT_GAP (a face of it
+    // within 4 mm of the band would z-fight); under 2 mm: no band on that tyre. Where bodywork dips into the tyre the band goes in with it, as
+    // the tyre itself does (only the parts that stay outside the tyre count)
+    t.skinLift = Math.min((skinRadius(t.R) - 1) * t.R, near - FIT_GAP);
+    // the SHOULDER RING on each outer face: nothing of the bodywork or the wheel's own parts within a few mm of the ring's plane over its
+    // annulus, and no twin tyre against that face
+    t.faceOk = {};
+    for (const f of [-1, 1]) {
+      const F = f * (t.half + FACE_GAP), z0 = f > 0 ? F - 0.002 : F - 0.009, z1 = f > 0 ? F + 0.009 : F + 0.002;
+      t.faceOk[f] = t.R >= MIN_R && !t.twin[String(f)] && !wallTris.some(tri => { const s = shell(tri, z0, z1, -Infinity, Infinity); return s && s.max > (RING_IN - 0.03) * t.R && s.min < (RING_OUT + 0.025) * t.R; });
+    }
   }
   // the axles (tyres within a third of a radius along the car): the least room of the axle
   const axles = [];
@@ -454,58 +691,84 @@ export const addTreads = (model, worn = true) => {
     if (!d.n) continue;
     const tyre = t.tyre, ghost = tyre.userData.solidMat, current = ghost || tyre.material;
     if (current !== t.stock && current !== model.userData.wheelRubberClones?.get(t.stock)) continue; // (blacked out: no tread)
-    const fit = fitOf(t, d);
-    if (!fit) continue;
-    const side = t.outer || 1, lite = found.treadLite || t.R < SMALL_R;
+    if (t.R < MIN_R) continue; // (too small to read, and too tight)
+    // RAISED blocks where they fit (fit: the height step); else (bodywork close over the tyre, or dipping into it) the pattern band alone
+    let fit = fitOf(t, d);
+    const side = t.outer || 1, lite = found.treadLite || t.R < SMALL_R, hex = current.color.getHex(), dirKey = d.dir ? side : 1;
     axis.set(t.axleX ? side : 0, 0, t.axleX ? 0 : side);
-    // which way round is forward at the top, in the mesh's own frame: the rim's sense (render/rims.js turns by side * angle)
-    const geo = treadGeometry(d.id, current.color.getHex(), { k: fit, lite, dir: side });
     q.setFromUnitVectors(Z, axis);
     // across, from the tyre's middle along the axle (+x / +z of the model): clear of its sidewalls and of a twin beside it; moved aside (and
     // narrowed to stay within the tyre) while one of the design's walls lies within 5 mm of a body face in its plane
     let lo = t.tz[0], hi = t.tz[1];
-    const clash = (l, h) => t.squares.some(z => d.walls.some(f => Math.abs((l + h) / 2 + f * (h - l) - z) < 0.005 || Math.abs((l + h) / 2 - f * (h - l) - z) < 0.005));
-    for (const sh of [0.006, -0.006, 0.012, -0.012, 0.018, -0.018]) { if (!clash(lo, hi)) break; if (!clash(t.tz[0] + Math.abs(sh) + sh, t.tz[1] - Math.abs(sh) + sh)) { lo = t.tz[0] + Math.abs(sh) + sh; hi = t.tz[1] - Math.abs(sh) + sh; } } // (moved aside and narrowed, so it stays within the tyre)
-    if (clash(lo, hi)) continue; // (no way clear: that tyre stays stock)
-    const W = Math.max(0.03, hi - lo);
-    pos.copy(t.centre); if (t.axleX) pos.x += (lo + hi) / 2; else pos.z += (lo + hi) / 2;
+    if (fit) {
+      const clash = (l, h) => t.squares.some(z => d.walls.some(f => Math.abs((l + h) / 2 + f * (h - l) - z) < 0.005 || Math.abs((l + h) / 2 - f * (h - l) - z) < 0.005));
+      for (const sh of [0.006, -0.006, 0.012, -0.012, 0.018, -0.018]) { if (!clash(lo, hi)) break; if (!clash(t.tz[0] + Math.abs(sh) + sh, t.tz[1] - Math.abs(sh) + sh)) { lo = t.tz[0] + Math.abs(sh) + sh; hi = t.tz[1] - Math.abs(sh) + sh; } } // (moved aside and narrowed, so it stays within the tyre)
+      if (clash(lo, hi)) { fit = null; lo = t.tz[0]; hi = t.tz[1]; } // (no way clear for the blocks' walls: the band alone, which has none)
+    }
+    const W = Math.max(0.03, hi - lo), mid = (lo + hi) / 2;
+    pos.copy(t.centre); if (t.axleX) pos.x += mid; else pos.z += mid;
     pose.compose(pos, q, scl.set(t.R, t.R, W)).premultiply(t.toTyre);
-    const mesh = new THREE.Mesh(geo, treadMaterial());
+    const rows = treadRows(d.id, lite), sharp = skinMaterial(d.id, dirKey, lite, hex), soft = softMaterial(hex, d);
+    // the band: under raised blocks, FIT_GAP or more under their tops (a top close over it would z-fight); none if under 2 mm
+    const blocks = fit ? treadGeometry(d.id, hex, { k: fit, lite, dir: side }) : null;
+    const lift = fit ? Math.min(t.skinLift, (blocks.userData.topLow - 1) * t.R - FIT_GAP) : t.skinLift;
+    const skinGeo = lift >= 0.002 ? skinGeometry(rows, Math.round((1 + lift / t.R) * 1000) / 1000) : null;
+    if (!fit && !skinGeo && !(t.outer ? t.faceOk[t.outer] : t.faceOk[-1] || t.faceOk[1])) continue; // (no blocks, no band, no ring: stock)
+    // which way round is forward at the top, in the mesh's own frame: the rim's sense (render/rims.js turns by side * angle)
+    const mesh = fit ? new THREE.Mesh(blocks, treadMaterial()) : skinGeo ? new THREE.Mesh(skinGeo, sharp) : new THREE.Object3D();
     pose.decompose(mesh.position, mesh.quaternion, mesh.scale);
     mesh.userData.wheelRing = true;
-    const bl = blurMaterials(current.color.getHex());
-    const blur = new THREE.Mesh(bandGeometry(d.id, fit), bl[1]);
-    blur.userData.wheelRing = true; blur.visible = false;
-    mesh.add(blur);
-    const rows = treadRows(d.id, lite);
-    mesh.userData.tread = { id: d.id, side, fit, lite, rows, q0: mesh.quaternion.clone(), a: 0, f: 0, level: 0, gap: TAU / rows, r: t.r, tyre, x0: tyre.rotation.x, rolls: !!model.userData.rollsWheels, blur, blurs: bl };
-    if (ghost) { mesh.userData.solidMat = mesh.material; mesh.material = tyre.material; blur.userData.solidMat = blur.material; blur.material = tyre.material; }
+    const skins = [];
+    if (fit && skinGeo) { const s = new THREE.Mesh(skinGeo, sharp); s.userData.wheelRing = true; mesh.add(s); skins.push(s); } else if (skinGeo) skins.push(mesh);
+    // the shoulder rings, on the outer face(s) with room (a centre wheel: both), in the mesh's frame: its z is the axle times `side`
+    for (const f of t.outer ? [t.outer] : [-1, 1]) {
+      if (!t.faceOk[f]) continue;
+      const ring = new THREE.Mesh(faceGeometry(rows, side * f), sharp);
+      ring.position.z = side * (f * (t.half + FACE_GAP) - mid) / W;
+      ring.userData.wheelRing = true; ring.userData.treadFace = f;
+      mesh.add(ring); skins.push(ring);
+    }
+    let blur = null, bl = null;
+    if (fit) {
+      bl = blurMaterials(hex);
+      blur = new THREE.Mesh(bandGeometry(d.id, fit), bl[1]);
+      blur.userData.wheelRing = true; blur.visible = false;
+      mesh.add(blur);
+    }
+    mesh.userData.tread = { id: d.id, side, fit, lite, rows, q0: mesh.quaternion.clone(), a: 0, f: 0, level: 0, gap: TAU / rows, r: t.r, tyre, x0: tyre.rotation.x, rolls: !!model.userData.rollsWheels, blur, blurs: bl, skins, sharp, soft };
+    if (ghost) for (const part of [mesh, ...mesh.children]) if (part.isMesh) { part.userData.solidMat = part.material; part.material = tyre.material; }
     tyre.add(mesh);
     found.treads.list.push(mesh);
     for (const part of t.ownTread || []) if (part.visible) { part.visible = false; found.treads.hidden.push(part); }
   }
   return found.treads.list.length;
 };
-// 'ok' (it wears treads), 'skip' (RIM_SKIP, Legendary) or 'none' (no tyre found, or no room on any)
+// 'ok' (raised blocks on some tyre), 'flat' (the pattern band and shoulder rings only: bodywork close over or into every tyre), 'skip'
+// (RIM_SKIP, Legendary) or 'none' (no tyre found, or every tyre under MIN_R)
 export const treadStatus = (model) => {
   const found = model?.userData.wheelHubs;
   if (!found) return 'none';
   if (found.rimSkip || found.legend) return 'skip';
   if (!found.rimInfo || !found.rimInfo.length) return 'none';
   if (!found.treadRoomChecked) roomFor(model, found);
-  return found.rimInfo.some(t => TREAD_DESIGNS.some(d => d.n && fitOf(t, d))) ? 'ok' : 'none';
+  if (found.rimInfo.some(t => t.R >= MIN_R && TREAD_DESIGNS.some(d => d.n && fitOf(t, d)))) return 'ok';
+  return found.rimInfo.some(t => t.R >= MIN_R) ? 'flat' : 'none';
 };
+// can this car wear a tread at all (the Cosmetics screen's Tread row is shown only then)
+export const treadSupported = (model) => { const s = treadStatus(model); return s === 'ok' || s === 'flat'; };
 
 // ---- turning ----
 const Q = new THREE.Quaternion();
 const levelOf = (f) => (f < BLUR_FROM ? 0 : Math.min(BLUR.length - 1, 1 + Math.floor((f - BLUR_FROM) / (BLUR_FULL - BLUR_FROM) * (BLUR.length - 1))));
 const setLevel = (u, level) => {
   if (u.level === level) return;
-  const b = u.blur, cur = b.userData.solidMat || b.material;
-  if (!u.blurs.includes(cur)) return;
+  const b = u.blur;
+  if (b && !u.blurs.includes(b.userData.solidMat || b.material)) return;
   u.level = level;
-  b.visible = level > 0;
-  if (level > 0) { if (b.userData.solidMat) b.userData.solidMat = u.blurs[level]; else b.material = u.blurs[level]; }
+  if (b) { b.visible = level > 0; if (level > 0) { if (b.userData.solidMat) b.userData.solidMat = u.blurs[level]; else b.material = u.blurs[level]; } }
+  // the pattern band and rings: plain while it blurs (a turning pattern would strobe); a stand-in (a ghost's) keeps theirs in solidMat
+  const m = level > 0 ? u.soft : u.sharp;
+  for (const s of u.skins) { if (s.userData.solidMat) s.userData.solidMat = m; else if (s.material === u.sharp || s.material === u.soft) s.material = m; }
 };
 export const treadFrame = (model, dt, dist) => {
   const st = model.userData.wheelHubs?.treads;
@@ -514,7 +777,7 @@ export const treadFrame = (model, dt, dist) => {
   for (let i = 0; i < st.list.length; i++) {
     const mesh = st.list[i], u = mesh.userData.tread;
     let da = dist === null ? IDLE_RATE * dt : dist / (u.r * scale);
-    u.f += (Math.abs(da) / u.gap - u.f) * 0.25;
+    u.f = dist === null ? 0 : u.f + (Math.abs(da) / u.gap - u.f) * 0.25; // (on show the idle turn is slow: never blurred, even at a low frame rate)
     const lim = CLAMP * u.gap;
     if (da > lim) da = lim; else if (da < -lim) da = -lim;
     setLevel(u, levelOf(u.f));
