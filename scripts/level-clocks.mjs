@@ -26,6 +26,12 @@ try {
   const levels = await load('/src/delivery/levels.js');
   const { cleanRun } = await load('/src/delivery/cleanrun.js'); // (the run and the sum: the level editor's button uses the same)
   const C = (await load('/src/delivery/config.js')).CONFIG.clock;
+  const { Game } = await load('/src/delivery/game.js');
+  // The clock is worked out in the reference car on EVERY level: the garage's car rule (tiers.js: a level's tier, or its own
+  // "allowedCars") is off for the timing. Left on, Game.start refused every level whose tier is not the reference car's
+  // ("No car for this level"): no run at all, so the level printed "NOT DELIVERED (still driving)" alone, or, after
+  // another level, a 0.0 s "clean run" (the last level's outcome, never reset). A level's own vehicle ("car") still wins.
+  (await load('/src/delivery/cars.js')).setTierHooks({ rule: () => null });
   const all = [...levels.LEVELS, ...Object.values(levels.HIDDEN_LEVELS)];
   const off = [];
   for (const id of ALL ? all.map(l => l.id) : IDS) {
@@ -33,7 +39,10 @@ try {
     if (!level) { console.log(`${id}: no such level`); continue; }
     if (levels.LEVELS.includes(level)) levels.selectLevel(levels.LEVELS.indexOf(level));
     else levels.selectSpecial(level);
+    Game.outcome = ''; // (no outcome left from the last level's run can pass for this one's)
+    if (!Game.canStart) { console.log(`${id}: NOT STARTED (Game.canStart refused the reference car)`); continue; }
     const run = cleanRun(SEED);
+    if (!(run.time > 0)) { console.log(`${id}: NOT STARTED (no run: ${run.outcome})`); continue; }
     if (!run.delivered) { console.log(`${id}: NOT DELIVERED (${run.outcome})`); continue; }
     const { clock, pluses } = run;
     console.log(`${id}: clean run ${run.time.toFixed(1)} s in the ${run.car}, ${pluses} time plus${pluses === 1 ? '' : 'es'}: ` +
