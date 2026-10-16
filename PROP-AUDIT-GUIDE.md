@@ -175,6 +175,12 @@ cargo 1 x 0.8 x 1.2, wing 1.4 x 0.35 x 0.3. Seen in stills /tmp/prop-maxscale/*.
 | wing | wing-flame (Flame wing) | 1.4 | 1.88 x 0.49 x 0.39 | flames past half a metre swamp a car |
 | wing | wing-rockets (Rocket pods) | 1.4 | 1.68 x 0.32 x 0.36 | pods ~0.3 m across |
 | wing | wing-hoops (Hoop wing) | 1.5 | 1.95 x 0.45 x 0.45 | hoops ~0.45 m |
+| wing | wing-whale (Whale tail) | 1.5 | 2.04 x 0.40 x 0.43 | a deck-lid tray: about the lid's width (~1.6 m on a coupe); past 1.5 the tray reads as a second boot |
+| wing | wing-plank (Drag plank) | 1.3 | 1.79 x 0.45 x 0.32 | a drag spoiler's sheet is ~0.3-0.45 m tall; taller is a billboard |
+| wing | wing-touring (Touring wing) | 1.8 | 2.51 x 0.62 x 0.50 | as the GT wing (end plates are the mounts) |
+| wing | wing-blade (Carbon blade) | 1.7 | 2.33 x 0.59 x 0.44 | a thin blade on struts: as the GT wing, a touch less so the struts stay slender |
+| wing | wing-visor (Roof visor) | 1.8 | 2.38 x 0.49 x 0.53 | a roof spoiler spans the roof's edge (as the hatch roof spoiler) |
+| wing | wing-loop (Loop spoiler) | 1.5 | 1.92 x 0.49 x 0.34 | a hoop spoiler is ~1.4-1.6 m wide, ~0.3 m tall; bigger is a goalpost |
 
 ## Number plate rules (CHECKLIST 352)
 
