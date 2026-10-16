@@ -183,7 +183,7 @@ export const IDEA_MODELS_WEDGE = {
     place(group, shared(k + 'vents', () => merge([intake(1), intake(-1), cover()])), vent).name = 'louvres';
 
     // ---- lamps: the pop-up pods' lenses (the headlamps), white and amber in the nose's face, the tail's clusters and its light bar
-    const podFront = (s) => { const g = bx(0.24, 0.035, 0.02, 0, 0.012, 0.17).rotateX(slope); return g.translate(s * 0.69, podY + 0.03, podZ); };
+    const podFront = (s) => bx(0.24, 0.035, 0.02, 0, 0.045, 0.172).rotateX(slope).translate(s * 0.69, podY, podZ); // (in the pod's frame: on its face, near its top)
     place(group, shared(k + 'lamp', () => merge([podFront(1), podFront(-1),
       ...[-1, 1].map(s => bx(0.16, 0.055, 0.02, s * 0.46, 0.37, FZ + 0.006)),       // the parking lamps in the nose
       ...[-1, 1].map(s => bx(0.1, 0.1, 0.02, s * 0.34, 0.66, BZ - 0.031)),          // the reversing lamps on the tail band
@@ -246,7 +246,7 @@ export const IDEA_MODELS_WEDGE = {
       geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
       return merge([geo]);
     };
-    const doorway = (s) => bx(0.004, 0.465, 1.22, s * (XF + 0.003), 0.4725, 0); // (up to the shoulder's crease)
+    const doorway = (s) => bx(0.004, 0.465, 1.22, s * (XF + 0.0055), 0.4725, 0); // (up to the shoulder's crease)
     const doors = [];
     for (const [i, s] of [[0, 1], [1, -1]]) {
       const hinge = new THREE.Group(), inner = new THREE.Group();
@@ -266,9 +266,11 @@ export const IDEA_MODELS_WEDGE = {
     }
     group.userData = {
       body,
-      garageOnly: true, // (its doors move in the garage and on the card only: the road draws it with them shut, render/cars.js)
+      garageOnly: true, // (its doors move in the garage and on the card only: traffic draws it with them shut, render/cars.js)
       animate: (t) => { // (shut for a while, then up, held, and down again; shut at t = 0)
-        const open = Math.max(0, Math.min(1, Math.sin(t * 0.6) * 1.6 - 0.2)), ease = open * open * (3 - 2 * open);
+        // (the player's car is animated on the road too, render/items.js, which sets userData.roll for the rims: there the doors stay shut)
+        const road = group.userData.roll !== undefined;
+        const open = road ? 0 : Math.max(0, Math.min(1, Math.sin(t * 0.6) * 1.6 - 0.2)), ease = open * open * (3 - 2 * open);
         for (const d of doors) { d.hinge.rotation.x = ease * 1.05; for (const m of d.show) m.visible = ease > 0.01; d.hide.visible = ease <= 0.01; }
       },
     };

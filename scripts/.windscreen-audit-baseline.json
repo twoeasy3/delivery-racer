@@ -96,7 +96,7 @@
 "filler|hardtop": {"ws":"found","rw":"found"},
 "filler|midnight": {"ws":"found","rw":"found"},
 "filler|splitwindow": {"ws":"found","rw":"found"},
-"filler|wedge": {"ws":"found","rw":"none"},
+"filler|wedge": {"ws":"found","rw":"found"},
 "filler|jetcar": {"ws":"ambiguous","rw":"ambiguous"},
 "filler|dragster": {"ws":"none","rw":"none"},
 "filler|flyingcar": {"ws":"found","rw":"none"},
