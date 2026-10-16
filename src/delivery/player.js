@@ -450,6 +450,9 @@ export const Player = {
     const slowest = LEVEL.laps ? CONFIG.minSpeed : 0;
     const WM = Track.wet; // (the water's numbers on this level: CONFIG.waterMain's, scaled by its "wetness")
     const grip = this.onIce ? (this.onWater ? WM : CONFIG.ice).brakeGrip : 1 - (1 - WM.brakeGrip) * this.wetTyres; // (braking on ice, or on a burst main's water or standing water, or on the wet tyres it leaves)
+    // (and the engine's pull: wheelspin on ice or water, fading back over the wet tail; only the car's own acceleration, never its top
+    // speed, the turbo's or a boost pad's pull, the pull-away after a drop or a tank's)
+    const pull = this.launching || this.tank > 0 ? 1 : this.onIce ? (this.onWater ? WM : CONFIG.ice).accelGrip : 1 - (1 - WM.accelGrip) * this.wetTyres;
     // (but with a flat tyre, not: the car can be brought to a stop to change it, and stays there)
     if (drive <= 0 && (this.launching || this.speed < CONFIG.minSpeed) && !this.puncture && !(drive < 0 && !this.launching && slowest < CONFIG.minSpeed)) drive = 1;
     if (drive === 0 && boosted && !lifting) drive = 1; // the turbo pulls unless you brake (or lift off)
@@ -460,7 +463,7 @@ export const Player = {
       // (or on washboard dirt: dragged down to its `most`)
       this.speed = Math.max(top, this.speed - (rails || wet || mud ? R.bite : afloat ? CONFIG.water.drag : board ? B.drag : CONFIG.brake * 0.5) * dt);
     } else if (drive > 0) {
-      this.speed = Math.min(top, this.speed + drive * (boosted ? CONFIG.turboAccel : drives.accel * (held ? held.accel : 1)) * (this.puncture ? CONFIG.puncture.accel : 1) * seaAccel * dt);
+      this.speed = Math.min(top, this.speed + drive * (boosted ? CONFIG.turboAccel : drives.accel * (held ? held.accel : 1) * pull) * (this.puncture ? CONFIG.puncture.accel : 1) * seaAccel * dt);
     } else if (drive < 0 && this.puncture) { // (a flat tyre: hard, and all the way down to a stop)
       this.speed = Math.max(0, this.speed + drive * CONFIG.brake * CONFIG.puncture.brake * grip * dt);
     } else if (drive < 0 && this.speed > slowest) {
@@ -518,7 +521,7 @@ export const Player = {
     if (icy) this.yawVel += (random() - 0.5) * 8 * Math.min(1, this.speed / 25) * dt; // (and twitches about on it)
     this.onIce = icy;
     this.onWater = icy && !!patch.water; // (a burst main's water, or standing water: slippery by its own numbers, see CONFIG.waterMain and Track.wet)
-    // water leaves wet tyres: for wetAfter m past a burst main's water (or standing water), its braking, steering and lane-change
+    // water leaves wet tyres: for wetAfter m past a burst main's water (or standing water), its braking, steering, lane-change and acceleration
     // numbers fade back to normal (it's no ice: no sliding, no understeer). Ice lets go the moment the car is off it
     const WM = Track.wet; // (CONFIG.waterMain's numbers, scaled by the level's "wetness": one source, track.js waterNumbers)
     this.wetTyres = this.onWater ? 1 : icy ? 0 : Math.max(0, this.wetTyres - this.speed * dt / WM.wetAfter);

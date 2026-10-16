@@ -4,14 +4,14 @@ import { levelName } from './levelText.js';
 import { random } from './util.js';
 
 // The water's numbers on a level (a burst main's water, standing water, and the wet tyres either leaves): CONFIG.waterMain's,
-// scaled by the level's "wetness" { strength, tail } (its surface: a tiled floor slips more than tarmac). Each of the three
-// shares of grip loses strength times what it loses at 1, no lower than CONFIG.waterMain.floor; wetAfter is times tail.
+// scaled by the level's "wetness" { strength, tail } (its surface: a tiled floor slips more than tarmac). Each of the four
+// shares of grip (brakes, steering, lane speed, acceleration) loses strength times what it loses at 1, no lower than CONFIG.waterMain.floor; wetAfter is times tail.
 // Strength 1 and tail 1 (the default) are CONFIG.waterMain's numbers exactly; strength 0 is no slip at all (Track.icy).
 // The one source of these numbers: the player reads them as Track.wet
 export const waterNumbers = (level) => {
   const W = CONFIG.waterMain, k = level?.wetness?.strength ?? 1, tail = level?.wetness?.tail ?? 1;
   const share = (key) => k === 1 ? W[key] : Math.min(1, Math.max(W.floor[key], 1 - (1 - W[key]) * k));
-  return { strength: k, tail, brakeGrip: share('brakeGrip'), steerGrip: share('steerGrip'), laneSpeed: share('laneSpeed'), wetAfter: W.wetAfter * tail };
+  return { strength: k, tail, brakeGrip: share('brakeGrip'), steerGrip: share('steerGrip'), laneSpeed: share('laneSpeed'), accelGrip: share('accelGrip'), wetAfter: W.wetAfter * tail };
 };
 
 // ============================================================================

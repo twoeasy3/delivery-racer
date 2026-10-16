@@ -261,9 +261,9 @@ export const FIELDS = {
     settings: { traffic: { type: 'mix', label: 'Traffic here', choices: VEHICLE_KINDS, required: true, init: { police: 0.05 } } } },
 
   // ---- hazards on the road ----
-  waterPatches: { shape: 'stretch', group: 'hazards', label: 'Standing water', span: 60, minSpan: 10, help: 'Standing water on that lane (no lane: across the road), there all the time: a burst main\'s water with no main. Weaker brakes and slower lane changes on it, and the tyres stay wet a little after it.',
+  waterPatches: { shape: 'stretch', group: 'hazards', label: 'Standing water', span: 60, minSpan: 10, help: 'Standing water on that lane (no lane: across the road), there all the time: a burst main\'s water with no main. Weaker brakes, slower acceleration and slower lane changes on it, and the tyres stay wet a little after it.',
     settings: { lane: lane('Lane', { help: 'Left out: across the road.' }) } },
-  ice: { shape: 'stretch', group: 'hazards', label: 'Ice', help: 'An ice patch on that lane (no lane: across the road). On it the car brakes with a share of its brakes and changes lane more slowly.', settings: { lane: lane('Lane', { help: 'Left out: across the road.' }) } },
+  ice: { shape: 'stretch', group: 'hazards', label: 'Ice', help: 'An ice patch on that lane (no lane: across the road). On it the car brakes with a share of its brakes, speeds up and changes lane more slowly.', settings: { lane: lane('Lane', { help: 'Left out: across the road.' }) } },
   crosswinds: { shape: 'stretch', group: 'hazards', label: 'Crosswind', span: 500, help: 'An exposed stretch with a gusting wind across it: tall cars are pushed harder, a tall vehicle alongside gives shelter.',
     settings: { dir: pick('Blows to the', SIDES, { required: true, init: 'left' }), strength: num('Strength (m/s²)', { min: 0.5, max: 50, step: 0.5, default: C.crosswind?.strength }),
       every: num('A gust every (s)', { min: 1, max: 60, step: 0.5, default: C.crosswind?.every }), length: num('A gust lasts (s)', { min: 0.5, max: 60, step: 0.1, default: C.crosswind?.length }) } },
@@ -293,7 +293,7 @@ export const FIELDS = {
   mud: { shape: 'stretch', group: 'hazards', label: 'Mud', help: 'The road gives way to mud: a car is slowed in it by how well it crosses.' },
   fog: { shape: 'stretch', group: 'hazards', label: 'Fog bank', span: 300, help: 'The fog closes right in, and the police see less.' },
   potholes: { shape: 'point', group: 'hazards', label: 'Pothole', road: 'both', help: 'A jolt, and maybe a flat tyre.', settings: { lane: lane('Lane', { required: true }), r: num('Radius (m)', { min: 0.2, max: 5, step: 0.1, default: C.site?.potholeR }) } },
-  waterMains: { shape: 'point', group: 'hazards', label: 'Burst water main', road: 'both', help: 'A fountain out of its lane, on and off; while it sprays that stretch of the lane is as slippery as ice: weaker brakes and slower lane changes on its water.',
+  waterMains: { shape: 'point', group: 'hazards', label: 'Burst water main', road: 'both', help: 'A fountain out of its lane, on and off; while it sprays that stretch of the lane is as slippery as ice: weaker brakes, slower acceleration and slower lane changes on its water.',
     settings: { lane: lane('Lane', { required: true, init: 0 }), length: num('Slippery for (m)', { min: 1, max: 500, default: C.waterMain?.length }) } },
   landmines: { shape: 'stretch', group: 'hazards', label: 'Landmines', road: 'both', help: 'Scattered down the lanes: whatever touches one is destroyed outright.', settings: { count: count(8) } },
   rockfall: { shape: 'stretch', group: 'hazards', label: 'Rockfall', road: 'both', help: 'Rocks tumbling down onto the road from that side as the player comes near.',

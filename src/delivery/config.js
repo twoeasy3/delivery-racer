@@ -302,15 +302,18 @@ export const CONFIG = {
     leadMood: 0.03, pressure: 15, pressureMood: 0.05, passMood: 0.15, passedMood: 0.1, frontSwing: 3,
     killWindow: 3, killMood: 0.5 },
   // Ice (a level's "ice": patches on the road). On it the player's car slews round as it arrives
-  // (only the look of it: yaw never changes where a car goes), brakes and steers with less grip,
+  // (only the look of it: yaw never changes where a car goes), brakes, steers and pulls away with less grip,
   // and in a bend it understeers: it slides to the outside, the more so the faster, heavier and
   // less agile it is. A traffic car hitting it may spin out (and blow up), the likelier the faster.
-  // (The brakes and the steering are the player's car's only: traffic on ice brakes and changes lane as ever.
-  // A burst main's water is ice in every way but those two and laneSpeed, which it has of its own: see waterMain.)
+  // (The brakes, the steering and the acceleration are the player's car's only: traffic on ice brakes, changes lane and
+  // speeds up as ever. A burst main's water is ice in every way but those, which it has of its own: see waterMain.)
   ice: {
     brakeGrip: 0.35,       // share of its braking (or braking by itself for a car ahead) that works on ice
     steerGrip: 0.3,        // share of its steering's grip: of how quickly the car takes up the way it is steered...
     laneSpeed: 0.55,       // ...and share of the speed it moves across the road at, steered (so a lane change takes about twice as long)
+    accelGrip: 0.45,       // share of its engine's acceleration that works on ice (wheelspin): a multiplier on the car's own accel, so a
+                           // slow car loses less in m/s^2. Never its top speed, nor the turbo's or a boost pad's pull, nor the
+                           // pull-away after a drop, nor a tank's (player.js updateSpeed)
     grip: 6,               // m/s^2 of cornering the tyres still hold on ice; beyond it...
     understeer: 0.4,       // ...this share of the rest pushes the car to the outside of the bend
     weightRef: 2.28,       // hw x hl x height of a car that weighs 1 (the Commuter); a car's weight goes
@@ -1391,15 +1394,16 @@ export const CONFIG = {
     warn: 150,             // m short of one ahead that the player is warned
     spread: 1.4,           // s the pools take to spread down the lane as it begins to spray...
     dry: 1.6,              // ...and to shrink away when it stops (the look of it only)
-    // on its water the player's car brakes and steers with less grip, as on ice (CONFIG.ice) but by numbers of its own:
+    // on its water the player's car brakes, steers and pulls away with less grip, as on ice (CONFIG.ice) but by numbers of its own:
     brakeGrip: 0.35,       // share of its braking (or braking by itself for a car ahead) that works on the water
     steerGrip: 0.3,        // share of its steering's grip: of how quickly the car takes up the way it is steered...
     laneSpeed: 0.55,       // ...and share of the speed it moves across the road at, steered
-    wetAfter: 45,          // m past its water the tyres stay wet: those three numbers fade back to normal over this distance (ice has no such tail: it lets go the moment the car is off it)
+    accelGrip: 0.5,        // share of its engine's acceleration that works on the water (as ice's: never top speed, turbo, pads)
+    wetAfter: 45,          // m past its water the tyres stay wet: those four numbers fade back to normal over this distance (ice has no such tail: it lets go the moment the car is off it)
     // (the same water lies, without a main, in a level's "waterPatches": standing water, always there. And a level's
-    // "wetness" { strength, tail } scales all four for the whole level, its surface: each share's loss times strength,
+    // "wetness" { strength, tail } scales all five for the whole level, its surface: each share's loss times strength,
     // never below `floor` (so the car still answers), wetAfter times tail; 1 and 1, these numbers exactly: Track.wet)
-    floor: { brakeGrip: 0.2, steerGrip: 0.15, laneSpeed: 0.3 }, // (brakes: a fifth still sheds 4 m/s a second; steering half the ice's; a lane change from 30 m/s within 2 s)
+    floor: { brakeGrip: 0.2, steerGrip: 0.15, laneSpeed: 0.3, accelGrip: 0.25 }, // (brakes: a fifth still sheds 4 m/s a second; steering half the ice's; a lane change from 30 m/s within 2 s; a quarter of the engine: a 5 m/s^2 car still gains 1.25 m/s a second)
   },
   // rockfall (a level's "rockfall": { from, to, count, side }): rocks tumbling down from that side
   // onto the road as the player comes near. Obstacles: only the player can hit them
