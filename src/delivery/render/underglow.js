@@ -58,7 +58,7 @@ export const UNDERGLOWS = [
   { id: 'rainbow', name: 'Rainbow', hex: 0xffffff, fx: 3 },
 ];
 const css = (hex) => '#' + hex.toString(16).padStart(6, '0');
-const swatchOf = (g) => (g.fx === 3 ? 'linear-gradient(90deg,#ff2a2a,#ffd21a,#3dff5a,#2fb4ff,#b23bff)' : g.id === 'match' ? 'linear-gradient(135deg,#d8dde6 0 50%,#2a2d33 50%)'
+const swatchOf = (g) => (g.fx === 1 ? 'radial-gradient(circle,' + css(g.hex) + ' 0 14%,#101319 18% 30%,' + css(g.hex) + 'cc 34% 44%,transparent 62%),#101319' : g.fx === 3 ? 'linear-gradient(90deg,#ff2a2a,#ffd21a,#3dff5a,#2fb4ff,#b23bff)' : g.id === 'match' ? 'linear-gradient(135deg,#d8dde6 0 50%,#2a2d33 50%)'
   : g.fx === 2 ? 'linear-gradient(90deg,#0b2a38,' + css(g.hex) + ',#0b2a38)' : 'radial-gradient(ellipse at 50% 55%,' + css(g.hex) + ' 0 28%,' + css(g.hex) + '88 50%,transparent 74%),#101319');
 export const underglowById = (id) => UNDERGLOWS.find(g => g.id === id) || null;
 registerCosmetics(UNDERGLOWS.map(g => ({ slot: 'underglow', id: g.id, name: g.name, free: true, price: 300 })));

@@ -13,6 +13,8 @@
 //   registerSlot({ id: 'horn', label: 'Horn', scope: 'player', items: () => HORNS });     // a new slot: added before Kill FX
 // registerSlot merges into an entry with the same id (fields given win), else inserts a new one before 'killfx'.
 // DEMO (?cosmetics=all, URL-PARAMS.md): the dormant slots get two 'Sample' items each and Decal shows on every car, so all eight tabs can be seen.
+// GLOW IS AWAKE (16-Oct): render/underglow.js registers its looks and merges its supports / items / chosen / pick into the 'underglow' entry
+// (whoever imports render/showcar.js has it: the screen, the game, unlockall.js); the demo adds no Samples to it.
 // Off by default; nothing is registered in render/cosmetics.js and nothing is stored. Render-only: no rules module imports this.
 import { COSMETICS } from './cosmetics.js';
 import { slotStatus } from './propdress.js';
@@ -33,7 +35,7 @@ export const SLOT_LIST = [
   { id: 'roof', label: 'Roof', name: 'Roof prop', scope: 'car', prop: true, supports: prop('roof'), items: registered('roof') },
   { id: 'cargo', label: 'Cargo', name: 'Cargo prop', scope: 'car', prop: true, supports: prop('cargo'), items: registered('cargo') },
   { id: 'wing', label: 'Wing', name: 'Rear wing', scope: 'car', prop: true, supports: prop('wing'), items: registered('wing') },
-  // DORMANT until their work lands: no items (and, for Decal, no car with a zone row), so no tab
+  // DORMANT until their work lands: no items (and, for Decal, no car with a zone row), so no tab (Glow: woken by render/underglow.js)
   { id: 'decal', label: 'Decal', name: 'Decal', scope: 'car', supports: () => demo, items: dormant('decal') },
   { id: 'underglow', label: 'Glow', name: 'Underglow', scope: 'car', supports: () => true, items: dormant('underglow') },
   { id: 'killfx', label: 'Kill FX', name: 'Kill effect', scope: 'player', supports: () => true, items: dormant('killfx') },
