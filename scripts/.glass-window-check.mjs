@@ -13,7 +13,8 @@
 //  - MIRROR: the editor's twin of every sided cabinGlass pane is found from either spelling; hand-built window parts pair across the car
 //    (symmetryOf) as before, renamed in either spelling;
 //  - THE TOOLS: render/dents.js, render/carExtras.js and the plate / prop audits take a part named or marked a window, in either spelling,
-//    for glass (their source reads render/glassnames.js isWindowNode); the editor reads the table through glassTable / windowKey;
+//    for glass (their source reads render/glassnames.js isWindowNode; the plate audit through plate-search's surfaceKind, checked by
+//    behaviour: window-named parts come out 'glass'); the editor reads the table through glassTable / windowKey;
 //  - THE SURVEY (scripts/glass-window-survey.mjs) finds no see-through part the rule misses.
 //  - with --base [ref]: every car built by the code at `ref` (default: the commit before render/glassnames.js came) and by this code has the
 //    same vertices, plain and with trial patches written the old way ('rear glass', 'door window', a windscreen; a colour op), vertex for vertex.
@@ -174,9 +175,25 @@ try {
 
   // ---- the tools and the editor read the rule
   const src = (f) => readFileSync(join(ROOT, f), 'utf8');
-  const tools = { 'src/delivery/render/dents.js': /isWindowNode/, 'src/delivery/render/carExtras.js': /isWindowNode/, 'scripts/plate-search.mjs': /isWindowNode/, 'scripts/plate-placement-audit.mjs': /isWindowNode/, 'scripts/prop-audit-lib.mjs': /isWindowNode/, 'scripts/bake-glass.mjs': /glassTable/, 'scripts/model-patch.mjs': /glassTable/, 'src/delivery/render/modelpatchapply.js': /glassTable/, 'src/delivery/render/ideaModelsDkit.js': /lookupWindow/ };
+  const tools = { 'src/delivery/render/dents.js': /isWindowNode/, 'src/delivery/render/carExtras.js': /isWindowNode/, 'scripts/plate-search.mjs': /isWindowNode/, 'scripts/prop-audit-lib.mjs': /isWindowNode/, 'scripts/bake-glass.mjs': /glassTable/, 'scripts/model-patch.mjs': /glassTable/, 'src/delivery/render/modelpatchapply.js': /glassTable/, 'src/delivery/render/ideaModelsDkit.js': /lookupWindow/ };
   const notReading = Object.entries(tools).filter(([f, re]) => !re.test(src(f))).map(([f]) => f);
   check(!notReading.length, 'the dents, the stripes, the plate and prop audits, the bake, model-patch, the game\'s patch reader and cabinGlass read render/glassnames.js' + (notReading.length ? ': NOT ' + notReading.join(', ') : ''));
+  // the plate search and the plate audit class a window as glass by behaviour, not by a word in their source: since the plate-rules
+  // integration (v1.1.146) the audit's kindOf asks plate-search's surfaceKind (the bumper-first rule's surface classes), and surfaceKind
+  // asks isWindowNode; so an opaque part named or marked a window, in either spelling, is 'glass' (never a plate surface, ON_GLASS)
+  const THREE = await import('three');
+  const { surfaceKind } = await import('file://' + join(ROOT, 'scripts/plate-search.mjs'));
+  const paint = () => new THREE.MeshStandardMaterial({ color: 0x884422 }), box = new THREE.BoxGeometry(1, 1, 1);
+  const body = new THREE.Mesh(box, paint()); body.name = 'body';
+  const part = (name, setup) => { const n = new THREE.Mesh(box, paint()); n.name = name; if (setup) setup(n); return n; };
+  const winParts = [part('rear window'), part('rear glass'), part('door glass L'), part('door window R'), part('windscreen'), part('windshield'),
+    part('trim', n => { n.userData.patchRole = 'window'; }), part('trim 2', n => { n.material.name = 'glass'; }), part('pane', n => { n.geometry = new THREE.BoxGeometry(1, 1, 1); n.geometry.userData = { panes: [{ name: 'p' }] }; })];
+  const notGlass = winParts.filter(n => surfaceKind(n, body, () => false) !== 'glass').map(n => n.name);
+  const others = [part('rear bumper'), part('window frame'), part('wiper'), body].filter(n => surfaceKind(n, body, () => false) !== 'ok').map(n => n.name);
+  const audit = src('scripts/plate-placement-audit.mjs');
+  const auditAsks = /import \{[^}]*\bsurfaceKind\b[^}]*\} from '\.\/plate-search\.mjs'/.test(audit) && /const kindOf = [\s\S]{0,800}?surfaceKind\(n, model\.userData\.body, glassy\)/.test(audit);
+  check(!notGlass.length && !others.length && auditAsks, 'the plate search\'s surfaceKind (which the plate audit\'s kindOf asks) classes an opaque part named or marked a window, either spelling (rear window / rear glass / door glass L / door window R / windscreen / windshield / role window / material glass / panes), as glass; a bumper, a window frame, a wiper and the body stay plate surfaces'
+    + (notGlass.length ? ': NOT GLASS ' + notGlass.join(', ') : '') + (others.length ? ': WRONGLY GLASS ' + others.join(', ') : '') + (auditAsks ? '' : ': the audit\'s kindOf no longer asks plate-search\'s surfaceKind'));
   const ed = src('src/delivery/modeleditor.js');
   check(!/S\.patch\.glass\b/.test(ed) && !/\.slice\(0, -2\)/.test(ed) && /glassTable\(S\.patch\)/.test(ed) && /windowBase/.test(ed) && !/'glass'/.test(src('src/delivery/render/modelpatch.js').replace(/\/\/.*$/gm, '')),
     'the editor reads the table through glassTable / windowKey (no raw patch.glass, no name slicing) and modelpatch.js has no \'glass\' role left');
