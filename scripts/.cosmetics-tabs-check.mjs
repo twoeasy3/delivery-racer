@@ -1,7 +1,8 @@
 // A check of the COSMETICS SCREEN'S TABS (render/cosmeticslots.js, render/cosmeticsui.js; the owner, 16-Oct: "reword 'Coming Soon/Locked'
 // to just not rendering if the car does not support it"):
 //   - for a sample of cars (a closed hatch with no cargo slot, a pickup, a car with no wing slot, a kei truck, a canopy-roofed car with no
-//     prop slot, the Classic GT, a Legendary car) the tabs drawn are exactly Wheels, Plate and the prop slots slotStatus allows, in order
+//     prop slot, the Classic GT, a Legendary car, the Tank, the Saucer) the tabs drawn are exactly Wheels, Plate and the prop slots slotStatus
+//     allows, in order (CHECKLIST 340: no Wheels on the Tank / Saucer / UFO, no Plate where the plate table says 'none')
 //   - no tab says 'Locked' or 'Coming'; the screen's source has no lock line, no 'Coming later', no lock reason; the CSS no lock styles
 //   - the open tab falls back to the first drawn (Wheels) when the car has no tab for it, and stays when it has
 //   - Decal and Glow (underglow) never show without ?cosmetics=all, on any car; with it (setDemo) they show on the pickup; the labels are
@@ -28,10 +29,12 @@ try {
   const car = (id) => all.find(c => c.id === id);
   const tabs = (c) => R.shownSlots(c).map(s => s.id).join();
   const PROPS = ['roof', 'cargo', 'wing'];
-  const want = (c) => ['wheels', 'plate', ...PROPS.filter(sl => D.slotStatus(c, sl).ok)].join();
+  const { plateAnchorsFor } = await load('render/plateanchors.js');
+  // (CHECKLIST 340: no Wheels tab on the Tank, the Saucer or the UFO; no Plate tab where the plate table says none can be worn)
+  const want = (c) => [...(c.tank || c.ufo ? [] : ['wheels']), ...(plateAnchorsFor(c).status === 'none' ? [] : ['plate']), ...PROPS.filter(sl => D.slotStatus(c, sl).ok)].join();
 
   check(!R.isDemo(), 'the demo is off by default');
-  const sample = { hothatch: 'wheels,plate,roof,wing', pickup: 'wheels,plate,roof,cargo,wing', splitwindow: 'wheels,plate,roof', keitruck: 'wheels,plate,roof,cargo,wing', rocketfin: 'wheels,plate', classicgt: 'wheels,plate,wing' };
+  const sample = { hothatch: 'wheels,plate,roof,wing', pickup: 'wheels,plate,roof,cargo,wing', splitwindow: 'wheels,plate,roof', keitruck: 'wheels,plate,roof,cargo,wing', rocketfin: 'wheels', classicgt: 'wheels,plate,wing', tank: 'plate', 'earned-ufo': '' };
   for (const [id, exp] of Object.entries(sample)) check(car(id) && tabs(car(id)) === exp && tabs(car(id)) === want(car(id)), id + ': the tabs are ' + (car(id) ? tabs(car(id)) : 'no car') + ' (expected ' + exp + ')');
   const legend = all.find(c => c.legend);
   check(legend && tabs(legend) === 'wheels,plate', 'a Legendary car (' + legend?.id + '): Wheels and Plate only');
@@ -54,7 +57,7 @@ try {
   const before = COSMETICS.length;
   R.setDemo(true);
   check(tabs(car('pickup')) === 'wheels,plate,roof,cargo,wing,decal,underglow' && R.shownSlots(car('pickup')).length === 7, 'with ?cosmetics=all: the dormant tabs on the pickup too (' + tabs(car('pickup')) + '; Kill FX comes with its items, below)');
-  check(tabs(car('rocketfin')) === 'wheels,plate,decal,underglow', '...and the canopy car still has no prop tab (' + tabs(car('rocketfin')) + ')');
+  check(tabs(car('rocketfin')) === 'wheels,decal,underglow', '...and the canopy car still has no prop tab (nor a Plate: CHECKLIST 340) (' + tabs(car('rocketfin')) + ')');
   check(dormant.every(id => R.slotById(id).items().every(it => it.sample && /^Sample/.test(it.name))) && COSMETICS.length === before, '...its items are labelled Sample and nothing is put in the cosmetics registry');
   R.setDemo(false);
   check(!R.shownSlots(car('pickup')).some(s => dormant.includes(s.id)), '...and off again: the dormant tabs are gone');
