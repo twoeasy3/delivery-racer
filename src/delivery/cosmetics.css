@@ -189,4 +189,5 @@
 #cosmetics .cz-row .cz-chip.cz-cardchip.equipped { box-shadow: 0 0 0 3px var(--accent); }
 
 /* the screen's one commit (Confirm; Back reverts) */
-#cosmetics .cz-confirm { margin-left: auto; min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--accent); color: var(--accent-ink, #10131a); font: inherit; font-weight: 800; font-size: 16px; text-transform: uppercase; letter-spacing: .04em; cursor: pointer; }
+#cosmetics .cz-title { min-width: 0; }
+#cosmetics .cz-confirm { flex: none; margin-left: auto; min-height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--accent); color: var(--accent-ink, #10131a); font: inherit; font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: .03em; cursor: pointer; }
