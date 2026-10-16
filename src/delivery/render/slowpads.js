@@ -15,7 +15,7 @@ export const SLOW_SKINS = ['plain', 'travelator', 'conveyor', 'sand'];
 export const slowSkin = (theme) => SLOW_SKINS.includes(theme.slowPad) ? theme.slowPad : theme.pad === 'travelator' || theme.pad === 'conveyor' ? theme.pad : 'plain';
 // by skin: the belt's colour, its chevrons' (null: none), its lit edges' (null: none) and how fast its picture creeps back (m/s)
 export const SLOW_LOOK = {
-  plain: { base: '#6e4424', chevron: '#f0e0b8', edge: 0xff9a1a, creep: 1.2 },
+  plain: { base: '#8a4a1e', chevron: '#f6e6c0', edge: 0xff9a1a, creep: 1.2 },
   travelator: { base: '#2a2d33', chevron: '#ff3a2a', edge: 0xff5a2a, creep: 1.6 },
   conveyor: { base: '#1d1e21', chevron: '#ff3a2a', edge: 0xf2c21d, creep: 1.6 },
   sand: { base: '#c48a44', chevron: null, edge: null, creep: 0 },
@@ -30,7 +30,7 @@ const picture = (skin) => {
   const c = canvas.getContext('2d');
   c.fillStyle = L.base;
   c.fillRect(0, 0, 64, 256);
-  if (skin === 'plain') { c.strokeStyle = '#4e2e16'; c.lineWidth = 5; for (let y = -64; y < 256; y += 16) { c.beginPath(); c.moveTo(0, y); c.lineTo(64, y + 64); c.stroke(); } } // (hatched)
+  if (skin === 'plain') { c.strokeStyle = '#5e3014'; c.lineWidth = 6; for (let y = -64; y < 256; y += 24) { c.beginPath(); c.moveTo(0, y); c.lineTo(64, y + 64); c.stroke(); } } // (hatched)
   if (skin === 'travelator') { c.fillStyle = '#4a4f57'; for (let y = 0; y < 256; y += 16) c.fillRect(0, y, 64, 3); } // (the walkway's ridges)
   if (skin === 'conveyor') { c.fillStyle = '#3a3c42'; for (let y = 0; y < 256; y += 32) c.fillRect(4, y, 56, 6); } // (the belt's cleats)
   if (skin === 'sand') { // ripples across, light crests and dark troughs, wavy
@@ -42,8 +42,9 @@ const picture = (skin) => {
   }
   if (L.chevron) { // pointing back: the point toward the bottom of the picture (the player's end; the boost pad's point the other way)
     c.strokeStyle = L.chevron;
-    c.lineWidth = 7;
-    for (const y of [40, 168]) { c.beginPath(); c.moveTo(10, y); c.lineTo(32, y + 40); c.lineTo(54, y); c.stroke(); }
+    c.lineWidth = 11;
+    c.lineJoin = 'miter';
+    for (const y of [20, 148]) { c.beginPath(); c.moveTo(8, y); c.lineTo(32, y + 88); c.lineTo(56, y); c.stroke(); } // (each 1.4 m long: it reads from the chase camera)
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -76,7 +77,7 @@ export const buildSlowPads = (pads, theme) => {
   for (const p of pads) {
     const lat = (s) => Track.laneOffset(p.lane, s), w = sk === 'sand' ? half + 0.3 : half; // (sand drifts a little wider)
     strips.push(strip(p.from, p.to, (s) => lat(s) - w, (s) => lat(s) + w, 0.03));
-    if (L.edge !== null) for (const side of [-1, 1]) edges.push(strip(p.from, p.to, (s) => lat(s) + side * (half + 0.02), (s) => lat(s) + side * (half + 0.12), 0.035));
+    if (L.edge !== null) for (const side of [-1, 1]) edges.push(strip(p.from, p.to, (s) => lat(s) + side * (half + 0.02), (s) => lat(s) + side * (half + 0.2), 0.035)); // (0.18 m wide: lit, it carries further than the belt)
     if (sk === 'travelator' || sk === 'conveyor') for (const end of [p.from, p.to]) { // a comb plate (a travelator's) or a drum let into the road (a conveyor's) at each end
       const s = end + (end === p.from ? 0.3 : -0.3), at = new THREE.Vector3(), yaw = Track.toWorld(s, lat(s), at);
       const m = sk === 'conveyor' ? new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, half * 2 + 0.2, 14).rotateZ(Math.PI / 2), lambert(0x8a9096))
