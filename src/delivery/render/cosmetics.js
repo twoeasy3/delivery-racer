@@ -15,19 +15,39 @@
 // (Progress.exportCode / tidy) lives in progress.js, ownership is NOT carried in a save code; it stays in this browser.
 // The list is kept in localStorage under KEY, a JSON array of 'slot:id' keys, read once, cleaned, every access in try/catch, not
 // written on a test visit (Progress.noSave: held for the visit only), cleared by the menu's Reset progress.
+// ---- EARNED COSMETICS, A STOCK OF EACH (the owner, 16-Oct: "Plates will be earned. Cosmetics will be earned and 1 will be consumed when
+// equipped to a vehicle"; CHECKLIST 437, EARNED-COSMETICS.md). The slots in EARNED_SLOTS are no longer free and have no cash price: each item
+// is held as a COUNT (how many the player has ever been given, render/cosmeticearn.js gives them: medals, crates, tier sets). Equipping one on
+// a car takes one of them; what is free to equip is that count less the cars wearing it (render/cosmeticstock.js counts the wearers from the
+// loadout store, so taking one off, replacing it or resetting a car gives it back by itself: no refund bookkeeping to go wrong). Each
+// earned slot's own 'nothing' look (Stock plate, no prop, Classic kill effect, no glow) stays free and unlimited. The wheels stay free for now.
+// STORAGE: the counts are a second localStorage key, STOCK_KEY { v: 1, n: { key: count }, inf?: true, mig?: 1, claimed: [...], crates: n };
+// the old list (KEY, an array of keys) is still written, as the keys with a count, so an older build (or a rollback) still finds them owned.
+// A key in the old list with no count is read as 1 (a grant made by an older build). inf: "Unlock everything: Absolutely" (unlockall.js):
+// every item unlimited. claimed / crates: render/cosmeticearn.js's ledger (which rewards were given), here so that Reset progress clears it.
+// ownsCosmetic(slot, id) still means "has at least one" (what a render module asks before it draws a choice); the per-car count is
+// render/cosmeticstock.js's. Everything stays outside progress.js and outside the replay fingerprint, as before.
 import { Progress } from '../progress.js';
+import * as Store from './loadoutstore.js';
 export const KEY = 'delivery.cosmetics';
-const MOST = 300;
-
+export const STOCK_KEY = 'delivery.cosmetics.stock';
+const MOST = 300, MOST_EACH = 999;
+// the slots whose items are earned (a stock each) and each one's own free look (worn when nothing is chosen; never counted)
+export const EARNED_SLOTS = Object.freeze({ plate: 'stock', roof: 'none', cargo: 'none', wing: 'none', kill: 'classic', underglow: 'none' });
+// the field of a loadout slot that names its item (render/loadoutstore.js)
+export const ITEM_FIELD = Object.freeze({ plate: 'design', roof: 'id', cargo: 'id', wing: 'id', kill: 'id', underglow: 'id' });
+export const isEarnedSlot = (slot) => Object.prototype.hasOwnProperty.call(EARNED_SLOTS, slot);
 
 export const COSMETICS = [];
 export const cosmeticKey = (slot, id) => slot + ':' + id;
-// add items (one entry per key: a repeat is ignored); returns a function that takes them out again (for a check's fixture)
+// add items (one entry per key: a repeat is ignored); returns a function that takes them out again (for a check's fixture).
+// An item of an EARNED slot is earned (free: false, no price) unless it is that slot's own free look; other slots keep their `free`.
 export const registerCosmetics = (items) => {
   const added = [];
   for (const item of items) {
     if (!item || !item.slot || !item.id || COSMETICS.some(c => c.slot === item.slot && c.id === item.id)) continue;
-    const entry = { slot: String(item.slot), id: String(item.id), name: String(item.name || item.id), free: item.free === true, price: Number.isFinite(item.price) ? item.price : 0 }; // (price: a placeholder for a later shop; nothing reads it yet)
+    const slot = String(item.slot), id = String(item.id), earned = isEarnedSlot(slot) && id !== EARNED_SLOTS[slot];
+    const entry = { slot, id, name: String(item.name || item.id), free: isEarnedSlot(slot) ? !earned : item.free === true, earned, price: earned ? 0 : (Number.isFinite(item.price) ? item.price : 0) }; // (price: no cosmetic is sold; an earned one has none)
     COSMETICS.push(entry);
     added.push(entry);
   }
@@ -35,26 +55,84 @@ export const registerCosmetics = (items) => {
 };
 // every cosmetic key there is ('wheels:whitewall-silver'), free ones included: what "Absolutely everything" grants
 export const cosmeticKeys = () => COSMETICS.map(c => cosmeticKey(c.slot, c.id));
-export const isFreeCosmetic = (slot, id) => COSMETICS.some(c => c.slot === slot && c.id === id && c.free);
+export const isFreeCosmetic = (slot, id) => COSMETICS.some(c => c.slot === slot && c.id === id && c.free) || (isEarnedSlot(slot) && id === EARNED_SLOTS[slot]);
+export const cosmeticOf = (slot, id) => COSMETICS.find(c => c.slot === slot && c.id === id) || null;
 
 // the list, cleaned as a loaded save is: text keys of the right shape, no repeats, no more than MOST (anything else is dropped)
-export const cleanCosmetics = (list) => [...new Set((Array.isArray(list) ? list : []).filter(k => typeof k === 'string' && /^[a-z0-9-]{1,40}:[A-Za-z0-9_-]{1,40}$/.test(k)))].slice(0, MOST);
-let owned = null;
-const load = () => {
-  if (owned === null) {
-    owned = [];
-    try { owned = cleanCosmetics(JSON.parse(localStorage.getItem(KEY))); } catch { /* (no storage, or a broken value: none) */ }
-  }
-  return owned;
+const KEY_RE = /^[a-z0-9-]{1,40}:[A-Za-z0-9_-]{1,40}$/;
+export const cleanCosmetics = (list) => [...new Set((Array.isArray(list) ? list : []).filter(k => typeof k === 'string' && KEY_RE.test(k)))].slice(0, MOST);
+const cleanCounts = (n) => {
+  const out = {};
+  if (!n || typeof n !== 'object' || Array.isArray(n)) return out;
+  for (const [k, v] of Object.entries(n).slice(0, MOST)) { const c = Math.floor(Number(v)); if (KEY_RE.test(k) && c > 0) out[k] = Math.min(MOST_EACH, c); }
+  return out;
 };
-const store = () => { if (!Progress.noSave) { try { localStorage.setItem(KEY, JSON.stringify(owned)); } catch { /* (no storage: for this visit) */ } } };
-// the keys owned that are not free-by-registry (as stored; 'abs' lists free ones too, harmlessly)
-export const ownedCosmetics = () => [...load()];
-// free, or its key is in the list
-export const ownsCosmetic = (slot, id) => isFreeCosmetic(slot, id) || load().includes(cosmeticKey(slot, id));
-// keys given to the player (unlockall.js 'abs'): cleaned, kept once each
-export const grantCosmetics = (keys) => { owned = cleanCosmetics([...load(), ...keys]); store(); };
+const cleanStock = (raw) => {
+  const v = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  return { v: 1, n: cleanCounts(v.n), ...(v.inf === true ? { inf: true } : {}), ...(v.mig ? { mig: 1 } : {}),
+    claimed: [...new Set((Array.isArray(v.claimed) ? v.claimed : []).filter(k => typeof k === 'string' && /^[A-Za-z0-9:_.-]{1,80}$/.test(k)))].slice(0, 2000),
+    crates: Math.max(0, Math.min(100000, Math.floor(Number(v.crates) || 0))) };
+};
+let stock = null;
+const read = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
+// the items worn in the loadout store (the default or any car's own): each made at least 1 on the first load (the full count, one a car, is
+// render/cosmeticstock.js's migration), so a look worn before cosmetics were earned is never lost, not even for a frame
+const wornKeys = () => {
+  const out = new Set();
+  try {
+    const snap = Store.snapshot();
+    for (const look of [snap.default, ...Object.values(snap.cars || {})]) {
+      for (const slot of Object.keys(EARNED_SLOTS)) { const id = look?.[slot]?.[ITEM_FIELD[slot]]; if (id && id !== EARNED_SLOTS[slot]) out.add(cosmeticKey(slot, id)); }
+    }
+  } catch { /* (no store: none) */ }
+  return out;
+};
+const load = () => {
+  if (stock === null) {
+    const had = read(STOCK_KEY), old = cleanCosmetics(read(KEY));
+    stock = cleanStock(had);
+    for (const k of old) if (!stock.n[k]) stock.n[k] = 1; // (the old list, or an older build's grant: one each)
+    if (!had) { // (the first load of this version: what is worn is owned; an 'abs' player stays unlimited)
+      for (const k of wornKeys()) if (!stock.n[k]) stock.n[k] = 1;
+      if (old.length && Progress.data?.unlockMode === 'abs') stock.inf = true;
+    }
+  }
+  return stock;
+};
+const store = () => {
+  if (Progress.noSave) return;
+  try { localStorage.setItem(STOCK_KEY, JSON.stringify(stock)); } catch { /* (no storage: for this visit) */ }
+  try { localStorage.setItem(KEY, JSON.stringify(Object.keys(stock.n).slice(0, MOST))); } catch { /* (the old list, for an older build) */ }
+};
+// the keys with at least one (as stored; 'abs' lists free ones too, harmlessly)
+export const ownedCosmetics = () => Object.keys(load().n);
+// how many of an item the player has ever been given: Infinity for a free one or under 'abs', else the count (0: locked)
+export const cosmeticCount = (slot, id) => (isFreeCosmetic(slot, id) || load().inf ? Infinity : load().n[cosmeticKey(slot, id)] || 0);
+// free, unlimited, or at least one
+export const ownsCosmetic = (slot, id) => cosmeticCount(slot, id) > 0;
+export const unlimitedCosmetics = () => !!load().inf;
+// keys given to the player: one more of each (unlockall.js 'abs' gives them all and makes them unlimited, setUnlimited)
+export const grantCosmetics = (keys, n = 1) => {
+  const s = load();
+  for (const k of cleanCosmetics(keys)) if (s.n[k] || Object.keys(s.n).length < MOST) s.n[k] = Math.min(MOST_EACH, (s.n[k] || 0) + Math.max(1, Math.floor(n) || 1));
+  store();
+};
+// make a count at least n (the migration: render/cosmeticstock.js)
+export const topUpCosmetic = (key, n) => { const s = load(); if (KEY_RE.test(key) && (s.n[key] || 0) < n && (s.n[key] || Object.keys(s.n).length < MOST)) { s.n[key] = Math.min(MOST_EACH, n); store(); } };
+export const setUnlimited = (on) => { const s = load(); if (on) s.inf = true; else delete s.inf; store(); };
+// the earn ledger (render/cosmeticearn.js) and the migration mark: read and written here, so Reset progress clears them too
+export const stockMeta = () => { const s = load(); return { claimed: s.claimed, crates: s.crates, mig: !!s.mig }; };
+export const setStockMeta = ({ claimed, crates, mig } = {}) => {
+  const s = load();
+  if (claimed) s.claimed = cleanStock({ claimed }).claimed;
+  if (crates !== undefined) s.crates = cleanStock({ crates }).crates;
+  if (mig) s.mig = 1;
+  store();
+};
 // Reset progress: all given cosmetics forgotten (the free ones stay free)
-export const clearCosmetics = () => { owned = []; if (!Progress.noSave) { try { localStorage.removeItem(KEY); } catch { /* (no storage) */ } } };
+export const clearCosmetics = () => {
+  stock = cleanStock({});
+  if (!Progress.noSave) { try { localStorage.removeItem(KEY); localStorage.removeItem(STOCK_KEY); } catch { /* (no storage) */ } }
+};
 // read again from storage (for a check)
-export const reloadCosmetics = () => { owned = null; };
+export const reloadCosmetics = () => { stock = null; };

@@ -209,5 +209,14 @@ export const copyToAll = (carId, { others = 'clear' } = {}) => {
   tell({ slot: null, target: null });
   return true;
 };
+// put the whole store back as a snapshot() had it (the Cosmetics screen's try-on: a choice that would use an earned cosmetic is worn at once
+// and taken back on Cancel, render/cosmeticsui.js); one notice to every listener (slot null: every slot redraws)
+export const restore = (snap) => {
+  const c = clean(snap);
+  if (Progress.noSave) visit = c; else { readSaved(); saved = c; }
+  write();
+  tell({ slot: null, target: null });
+  return true;
+};
 // for a check: forget what was read (the next read is from storage again), and the visit's own
 export const reloadStore = () => { saved = null; visit = null; };
