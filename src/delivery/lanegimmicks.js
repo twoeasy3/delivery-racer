@@ -5,6 +5,9 @@
 //              over its own top speed (Player.update reads Track.padAt). Flush with the road unless it says rails: true
 //              (the mall's travelators): then along both edges stand its HANDRAILS, ordinary obstacles of kind `handrail`
 //              (a cone's box and cost), blown away on contact like any obstacle. (Off by default: the owner, 16-Oct)
+//   slowPads   { from, to, lane }: the boost pad turned round (SLOW-PAD-DESIGN.md): a car on it is slowed (Player.updateSpeed reads
+//              Track.slowPadAt; CONFIG.slowPad). Flush, no rails. The level reports one that would pad every lane of the player's side
+//              at once, sits on a boost pad, ice or standing water, comes too close before a jam ramp or a drawbridge, or is in a race
 //   deadEnds   { s, lane, kind: 'shutter' | 'wall', length? }: the lane runs on as usual for `length` m and ENDS at s
 //              (obstacle kind `laneEnd`). A SHUTTER has road behind it: a Ghost passes through, a tank or an armoured car
 //              smashes through, any other car is wrecked. A WALL has nothing behind it: a SUPER INSTAKILL, the car wrecked
@@ -36,6 +39,7 @@ let attached = false;
 
 export const LaneGimmicks = {
   pads: [],  // { from, to, lane }
+  slowPads: [], // { from, to, lane }: the slow pads (drawn by render/lanegimmicks.js)
   ends: [],  // { s, from, lane, warned }
   groups: [], // pillars: { from, to, lane, warned }
   ladles: [], // { s, first, last, lat, hw, hl, free, way, t, pour, now }: t s since its warning, pour s since it tipped (-1: not yet)
@@ -57,6 +61,8 @@ export const LaneGimmicks = {
       }
       return { from, to, lane: p.lane };
     });
+    this.slowPads = (LEVEL.slowPads || []).map(p => ({ from: p.from, to: p.to, lane: p.lane }));
+    this.slowPadProblems();
     this.ends = (LEVEL.deadEnds || []).map((d) => {
       const s = Track.place(d), len = d.length ?? D.length, lat = Track.laneOffset(d.lane, s);
       const beside = d.lane > 0 ? d.lane - 1 : d.lane + 1, openLat = Track.laneOffset(beside, s);
@@ -86,6 +92,26 @@ export const LaneGimmicks = {
       const way = free.length ? Math.sign(Track.laneOffset(free[0], s) - lat) : 1; // (+: the free lane is to the right)
       return { s, first, last, lat, hw: (last - first + 1) * LW / 2 - L.edge, hl: L.length / 2, free, way, t: -1, pour: -1, now: false };
     });
+  },
+  // what is wrong with the level's slow pads (Track.problems; SLOW-PAD-DESIGN.md): every lane of the player's side padded at one
+  // spot (no way round), on a boost pad, on ice or standing water in its lane, within CONFIG.slowPad.clear m before a jam ramp or a
+  // drawbridge (a jump needs its speed), or in a race (the racers are not slowed)
+  slowPadProblems() {
+    const pads = this.slowPads, clear = CONFIG.slowPad.clear, say = (p, what) => Track.problems.push('slow pad at ' + p.from + ': ' + what);
+    const lanesHit = (p, list) => list.some(q => (q.lane === undefined || q.lane === p.lane) && q.from < p.to && q.to > p.from);
+    if (pads.length && LEVEL.grid) Track.problems.push('slow pads: not in a race (the racers are not slowed)');
+    for (const p of pads) {
+      if (!(p.from < p.to)) say(p, 'from before to');
+      for (let s = p.from; s <= p.to; s += 5) {
+        const [first, last] = Track.laneRange(1, s);
+        let covered = true;
+        for (let k = first; k <= last && covered; k++) covered = pads.some(q => q.lane === k && s >= q.from && s <= q.to);
+        if (covered) { say(p, 'every lane is padded at ' + s + ': leave one clear'); break; }
+      }
+      if (lanesHit(p, LEVEL.boostPads || [])) say(p, 'on a boost pad');
+      if (lanesHit(p, [...(LEVEL.ice || []), ...(LEVEL.waterPatches || [])])) say(p, 'on ice or standing water');
+      for (const r of [...(LEVEL.jamRamps || []), ...(LEVEL.drawbridges || [])]) if (r.s >= p.from && r.s - p.to < clear) say(p, 'within ' + clear + ' m before the jump at ' + r.s);
+    }
   },
   // a ladle's pool now: { k: how far it has spread (0..1), hot: an instakill, cool: 0..1 crusted over }, or null before it pours
   pool(l) {

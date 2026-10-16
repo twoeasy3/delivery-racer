@@ -78,6 +78,7 @@ export const Replay = {
     this.recording = null;
     if (Game.screensaver || Game.raceWatch || !(LEVELS.includes(LEVEL) || STAGE_LEVELS.includes(LEVEL))) return;
     if (CONFIG.trueSpeed.driven.tune !== 1) return; // (?lanescrub=: the lane scrub tried at another strength, main.js; a replay would not play back)
+    if (CONFIG.slowPad.tune !== 1) return; // (?slowpad=: the slow pads tried at another strength, main.js; the same)
     this.recording = {
       format: FORMAT,
       header: {

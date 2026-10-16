@@ -644,6 +644,13 @@ const createTrack = () => {
     for (const p of pads) if (s >= p.from && s <= p.to && Math.abs(lat - laneOffset(p.lane, s)) <= LW / 2) return p;
     return null;
   };
+  // ...and on a slow pad (a level's "slowPads": { from, to, lane }, the boost pad turned round: Player.updateSpeed)? The pad, or null
+  const slowPadsHere = LEVEL.slowPads || [];
+  const slowPadAt = (s, lat) => {
+    if (!isMain(s)) return null;
+    for (const p of slowPadsHere) if (s >= p.from && s <= p.to && Math.abs(lat - laneOffset(p.lane, s)) <= LW / 2) return p;
+    return null;
+  };
   // a dead-end lane's divider (a level's "deadEnds", lanegimmicks.js): from its sign (CONFIG.deadEnd.sign m before its end) to
   // its end, a car in the lane beside cannot steer INTO the dead lane (it is held at the line, as the road's edge holds it);
   // a car already in the dead lane leaves it freely. The lat the car ends up at, from where it was and where it would go
@@ -1520,7 +1527,7 @@ const createTrack = () => {
     apart, laneCount: LANES, leftLanes: LEFT, rightLanes: RIGHT, medianLanes: MID, medianHalf: HM, shoulder: SH, flow: FLOW, mirrored: MIRRORED,
     toWorld, fromWorld, grade, hilly, transfer, along, progress, finished, inBounds, spawnAt, place, isMain,
     laneOffset, spanOffset, openLane, nearestLane, laneRange, assistOffset, flyHeight,
-    lanesOn, edge, extraLane, onBridge, icy, wet, puddles, padAt, divider, diverting, divertedSide, divert, works, bounds, carry, diversionAt, diversions: dvs, sprays, slicks, muddy, gravels, gravelBand, gravelAt, water, waters, foggy, tunnel, bend, pathScale, onRails, railTracks, railLat, junctions, zoneAt, lo, hi, laneLo, laneHi, shoulderOffset, onShoulder, rampLaneZone, sideOpen, sideWidth, sideLeft, sideOncoming,
+    lanesOn, edge, extraLane, onBridge, icy, wet, puddles, padAt, slowPadAt, divider, diverting, divertedSide, divert, works, bounds, carry, diversionAt, diversions: dvs, sprays, slicks, muddy, gravels, gravelBand, gravelAt, water, waters, foggy, tunnel, bend, pathScale, onRails, railTracks, railLat, junctions, zoneAt, lo, hi, laneLo, laneHi, shoulderOffset, onShoulder, rampLaneZone, sideOpen, sideWidth, sideLeft, sideOncoming,
     flyPillar, sideDistance, mainDistance, exits, crossable, crossLo,
   };
 };

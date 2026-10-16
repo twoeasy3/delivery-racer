@@ -28,7 +28,7 @@ export const THEMES = {
     light: { sky: 0xd8dde4, ground: 0x4a5a5e, ambient: 1.1, sun: 0xe8ecf2, sunlight: 0.6 } },
   farm: { sky: 0xc4e6f5, ground: 0x8fb556, road: 0x57514a, scenery: 'farm' },
   // beach: sand, a stormy sky, the sea along the right, palms and beach huts
-  beach: { sky: 0x7e8d9e, ground: 0xdccb95, road: 0x45484e, scenery: 'beach' },
+  beach: { sky: 0x7e8d9e, ground: 0xdccb95, road: 0x45484e, scenery: 'beach', slowPad: 'sand' },
   // space: no ground and no road surface, only glowing lane lines among the stars
   // singapore: the garden city: towers and housing blocks, rain trees, Supertrees and Marina Bay Sands
   singapore: { sky: 0xc9dde6, ground: 0x6d9a52, road: 0x3a3d42, scenery: 'singapore',
@@ -165,7 +165,7 @@ export const THEMES = {
   // (batch C: theme park, volcano island, container port: new themes go above this line)
   // wildwest: the old Wild West (render/themes/wildwest.js): a dirt road over red desert, a town of false-front wooden buildings
   // every 800 m with the road for its main street, a railway and its steam train along the left, mesas on the skyline
-  wildwest: { sky: 0x7fb8e6, ground: 0xc8754a, road: 0xd6b083, scenery: 'wildwest', unmarked: true, train: 'steam', // (its level crossings' train: see crossing.js)
+  wildwest: { sky: 0x7fb8e6, ground: 0xc8754a, road: 0xd6b083, scenery: 'wildwest', unmarked: true, slowPad: 'sand', train: 'steam', // (its level crossings' train: see crossing.js)
     target: { offset: 2, height: 4.6, beam: true }, // (at the street's edge, over the hitching rails: the buildings' faces are 6 m off)
     tunnel: { wall: 0x6b4a32, tiles: 0x8f6a44, roof: 0x4a3526, face: 0x97492f, lamp: 0xffc870 } },
   // favela: a hillside of houses (render/themes/favela.js): boxes in every colour stacked row over row up land that climbs with the
@@ -211,7 +211,7 @@ export const THEMES = {
   // on the windward faces and darker in the lee, rippled by the wind; a pale hot hazy sky with a pale sun in it; rock arches,
   // mesas and hoodoos; rally service camps of tents, flags and trucks every so often; camels, dry scrub, an oasis; a pale
   // sandy track with tyre ruts, unmarked; sand blowing across it, thicker in a crosswind (a level's "crosswinds")
-  desert: { sky: 0xf0e4c6, ground: 0xe3aa5e, road: 0xe6d3a6, scenery: 'desert', unmarked: true, washboard: 'sand', terrain: { gentle: 0xf0bb68, steep: 0xb9602c, rough: 1.5, flat: 12, rise: 80 },
+  desert: { sky: 0xf0e4c6, ground: 0xe3aa5e, road: 0xe6d3a6, scenery: 'desert', unmarked: true, washboard: 'sand', slowPad: 'sand', terrain: { gentle: 0xf0bb68, steep: 0xb9602c, rough: 1.5, flat: 12, rise: 80 },
     target: { offset: 2, height: 4.6, beam: true },
     light: { sky: 0xfff3d8, ground: 0xc58c4e, ambient: 1.55, sun: 0xffe6b8, sunlight: 1.5 } },
 };

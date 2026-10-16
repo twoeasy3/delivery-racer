@@ -204,6 +204,7 @@ const audit = (level) => {
         if (o.s > length - END_CLEAR) flags.push('AT_DROP ' + Math.round(o.s));
         for (const t of L.tunnels || []) if (o.s > t.from + MOUTH[0] && o.s < t.from + MOUTH[1]) flags.push('TUNNEL_MOUTH ' + Math.round(o.s));
         for (const pd of L.boostPads || []) if (o.s > pd.from - 20 && o.s < pd.to + speed * 1.5 && Math.abs(o.lat - T.laneOffset(pd.lane, o.s)) < LW / 2 + o.hw) flags.push('PAD ' + Math.round(o.s));
+        for (const pd of L.slowPads || []) if (o.s > pd.from - 5 && o.s < pd.to + 5 && Math.abs(o.lat - T.laneOffset(pd.lane, o.s)) < LW / 2 + o.hw) flags.push('SLOW_PAD ' + Math.round(o.s)); // (nothing on a slow pad: SLOW-PAD-DESIGN.md)
         const twin = gr.obs.find(q => q !== o && q.lane === o.lane && q.s > o.s && q.s - o.s < 4);
         if (twin && Math.abs(T.bend(o.s)) > 0.004) flags.push('JAGGED line on a bend at ' + Math.round(o.s));
       }

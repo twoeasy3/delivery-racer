@@ -7,6 +7,10 @@
 // dead-end lane: its floor coloured red all along (darker, and striped in hazard yellow and black, over the last
 // CONFIG.deadEnd.stripes m), a DEAD END sign on a gantry over the lane `sign` m before the end with amber beacons on it
 // (flashing while the player is in the lane with `warn` m to go), and a red arrow on the floor pointing to the open lane
+// A SLOW PAD (SLOW-PAD-DESIGN.md) is the boost pad turned round: the same belt over the lane, but dull and hatched, its chevrons
+// pointing BACK at the player and creeping toward the car, amber edges; skinned by the theme as the boost pad is (`slowSkin`):
+// a reverse travelator, a reverse conveyor, or (a theme's `slowPad: 'sand'`) a drift of soft sand. All of a level's slow pads are
+// ONE mesh (their strips merged; one canvas picture) and their edges one more: two draw calls however many pads
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { LEVEL } from '../levels.js';
@@ -17,6 +21,7 @@ import { Player } from '../player.js';
 import { LaneGimmicks } from '../lanegimmicks.js';
 import { scene, tmp, clearGroup } from './scene.js';
 import { buildStrip } from './road.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { ceilingAt } from './tunnelshape.js';
 import { syncLadles } from './ladles.js'; // (the steelworks' ladles: their crane, pour and pool)
 
@@ -27,6 +32,50 @@ const glow = (color, extra) => new THREE.MeshBasicMaterial({ color, ...extra });
 const flat = (color, offset, extra) => new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: offset, polygonOffsetUnits: offset, ...extra });
 const BEACON_ON = 0xffb020, BEACON_OFF = 0x5a4010;
 let belts = [], ends = [], pillarSigns = [];
+
+// the slow pad's picture, 64 x 256 as the boost pad's (one repeat every 4 m), by skin: 'plain' a rust-brown strip hatched across with
+// cream chevrons pointing back; 'travelator' and 'conveyor' the boost pad's belts with RED chevrons pointing back; 'sand' soft sand,
+// rippled across (no chevrons: it reads by its colour). Made once each, kept
+export const SLOW_SKINS = ['plain', 'travelator', 'conveyor', 'sand'];
+export const slowSkin = (theme) => SLOW_SKINS.includes(theme.slowPad) ? theme.slowPad : theme.pad === 'travelator' || theme.pad === 'conveyor' ? theme.pad : 'plain';
+const SLOW_LOOK = { // base, chevron, edge colour (null: no lit edge), how fast the picture creeps back (m/s)
+  plain: { base: '#6e4424', chevron: '#f0e0b8', edge: 0xff9a1a, creep: 1.2 },
+  travelator: { base: '#2a2d33', chevron: '#ff3a2a', edge: 0xff5a2a, creep: 1.6 },
+  conveyor: { base: '#1d1e21', chevron: '#ff3a2a', edge: 0xf2c21d, creep: 1.6 },
+  sand: { base: '#c48a44', chevron: null, edge: null, creep: 0 },
+};
+const slowPictures = {};
+const slowPicture = (skin) => {
+  if (slowPictures[skin]) return slowPictures[skin];
+  const L = SLOW_LOOK[skin], canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 256;
+  const c = canvas.getContext('2d');
+  c.fillStyle = L.base;
+  c.fillRect(0, 0, 64, 256);
+  if (skin === 'plain') { c.strokeStyle = '#4e2e16'; c.lineWidth = 5; for (let y = -64; y < 256; y += 16) { c.beginPath(); c.moveTo(0, y); c.lineTo(64, y + 64); c.stroke(); } } // (hatched)
+  if (skin === 'travelator') { c.fillStyle = '#4a4f57'; for (let y = 0; y < 256; y += 16) c.fillRect(0, y, 64, 3); }
+  if (skin === 'conveyor') { c.fillStyle = '#3a3c42'; for (let y = 0; y < 256; y += 32) c.fillRect(4, y, 56, 6); }
+  if (skin === 'sand') { // ripples across, light crests and dark troughs, wavy
+    for (let y = 4; y < 256; y += 14) for (const [dy, colour] of [[0, '#e2ad62'], [4, '#9c6630']]) {
+      c.strokeStyle = colour; c.lineWidth = 3; c.beginPath();
+      for (let x = 0; x <= 64; x += 4) c.lineTo(x, y + dy + Math.sin((x / 64 + y / 70) * Math.PI * 2) * 2.5);
+      c.stroke();
+    }
+  }
+  if (L.chevron) { // pointing back: the point at the bottom of the picture (the player's end)
+    c.strokeStyle = L.chevron;
+    c.lineWidth = 7;
+    for (const y of [40, 168]) { c.beginPath(); c.moveTo(10, y); c.lineTo(32, y + 40); c.lineTo(54, y); c.stroke(); }
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.userData.shared = true;
+  slowPictures[skin] = texture;
+  return texture;
+};
+let slowBelt = null; // { material, speed }: the slow pads' one belt, scrolled back toward the player
 
 // the belt's picture, 64 x 256 (repeated every 4 m along the pad): a travelator's dark belt with pale ridges and a yellow
 // chevron; a plain pad's blue strip with a white chevron. Made once each, kept
@@ -120,6 +169,26 @@ Game.onLoad.push(() => {
     }
     return { material, speed: 1 / 4 * 3.5 }; // (the picture moves 3.5 m/s along the pad: one repeat is 4 m)
   });
+  // ---- the slow pads: every one in one belt mesh and one edge mesh (merged), the ends of a travelator's or conveyor's per pad
+  slowBelt = null;
+  if (LaneGimmicks.slowPads.length) {
+    const sk = slowSkin(theme), L = SLOW_LOOK[sk], half = LW / 2 - 0.45, strips = [], edges = [];
+    for (const p of LaneGimmicks.slowPads) {
+      const lat = (s) => Track.laneOffset(p.lane, s);
+      strips.push(belt(p.from, p.to, lat, sk === 'sand' ? half + 0.3 : half, 0.03));
+      if (L.edge !== null) for (const side of [-1, 1]) edges.push(buildStrip(p.from, p.to, (s) => lat(s) + side * (half + 0.02), (s) => lat(s) + side * (half + 0.12), 0.035, 2));
+      if (sk === 'travelator' || sk === 'conveyor') for (const end of [p.from, p.to]) { // the comb plate (a travelator) or the drum (a conveyor) at each end
+        const e = at(end + (end === p.from ? 0.3 : -0.3), lat(end), sk === 'conveyor' ? -0.24 : 0.04);
+        if (sk === 'conveyor') add(e, new THREE.CylinderGeometry(0.3, 0.3, half * 2 + 0.2, 14), lambert(0x8a9096)).rotation.z = Math.PI / 2;
+        else add(e, new THREE.BoxGeometry(half * 2 + 0.3, 0.05, 0.6), lambert(0xc8ccd2));
+      }
+    }
+    const material = new THREE.MeshBasicMaterial({ map: slowPicture(sk).clone(), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    material.map.needsUpdate = true;
+    add(group, mergeGeometries(strips), material).name = 'slowPads';
+    if (edges.length) add(group, mergeGeometries(edges), flat(L.edge, -3)).name = 'slowPadEdges';
+    slowBelt = { material, speed: L.creep / 4 };
+  }
   // ---- the dead ends
   const D = CONFIG.deadEnd;
   ends = LaneGimmicks.ends.map((e) => {
@@ -177,6 +246,7 @@ Game.onLoad.push(() => {
 export const syncLaneGimmicks = (dt, now) => {
   syncLadles(now);
   for (const b of belts) b.material.map.offset.y -= b.speed * dt;
+  if (slowBelt) slowBelt.material.map.offset.y += slowBelt.speed * dt; // (creeping back toward the player)
   const on = Math.floor(now / 250) % 2 === 0;
   for (const { lamps, e } of ends) {
     const live = Player.active && e.s - Player.s > 0 && e.s - Player.s <= CONFIG.deadEnd.warn && LaneGimmicks.inDeadLane(Player.s, Player.lat) === e;

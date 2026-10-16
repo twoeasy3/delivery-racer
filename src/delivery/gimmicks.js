@@ -862,6 +862,20 @@ export const GROUPS = [
       for (const x of [-1.5, 1.5]) for (let z = -3; z <= 3; z += 2) { const r = ob('handrail'); r.position.set(x, 0, z); g.add(r); }
       return { model: g, tick: (t) => { chevrons.forEach((c, k) => { c.position.z = -4.5 + ((k * 1.5 + t * 2.5) % 9.5); }); } };
     } },
+    { name: 'Slow pads', color: 0xff9a1a, has: (l) => l.slowPads?.length, rules: [
+      `A boost pad turned round: on it the car loses ${pct(CONFIG.slowPad.held)} of its speed every ${CONFIG.slowPad.per} m with the accelerator held, ${pct(CONFIG.slowPad.coast)} off it. Never more than ${pct(CONFIG.slowPad.most)} a pad.`,
+      'Its chevrons point back at you. A turbo or a tank rides over it; a ghost is slowed too. Another lane is always clear.',
+    ], build: () => {
+      const g = road(9, 14), chevrons = [];
+      g.add(box(3.0, 0.04, 11, lambert(0x6e4424), 0, 0.03, 0));
+      for (const x of [-1.55, 1.55]) g.add(box(0.1, 0.05, 11, glow(0xff9a1a), x, 0.04, 0));
+      for (let z = -4.5; z < 5; z += 1.5) { // (each a V pointing back, toward the near end)
+        const c = group(box(1.1, 0.012, 0.22, glow(0xf0e0b8), -0.48, 0, 0.3), box(1.1, 0.012, 0.22, glow(0xf0e0b8), 0.48, 0, 0.3));
+        c.children[0].rotation.y = -0.55; c.children[1].rotation.y = 0.55;
+        c.position.set(0, 0.06, z); chevrons.push(c); g.add(c);
+      }
+      return { model: g, tick: (t) => { chevrons.forEach((c, k) => { c.position.z = 4.5 - ((k * 1.5 + t * 1.2) % 9.5); }); } };
+    } },
     { name: 'Dead-end lanes', color: 0xd8262b, has: (l) => l.deadEnds?.length, rules: [
       `A lane that ends: its floor is coloured, a DEAD END sign hangs over it ${CONFIG.deadEnd.sign} m before, beacons and a bell go with ${CONFIG.deadEnd.warn} m to go. Another lane is always open: change lanes.`,
       'Shutter: wrecks you; a Ghost passes through, a tank or armour smashes through. Wall: wrecks everything.',

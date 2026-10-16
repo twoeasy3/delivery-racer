@@ -343,6 +343,9 @@
 //   boostPads  { from, to, lane, rails? }: a boost pad in that lane (a travelator in the mall, lanegimmicks.js): a car on it is
 //              pulled on over its own top speed for CONFIG.boostPad.time s; flush with the road, unless rails: true (the mall's):
 //              then handrails (ordinary obstacles, kind `handrail`, a cone's box and cost) stand along both its edges. Never in a bend
+//   slowPads   { from, to, lane }: a slow pad in that lane, the boost pad turned round (SLOW-PAD-DESIGN.md; lanegimmicks.js): the
+//              player's car on it is slowed (CONFIG.slowPad: a share of its speed every 10 m, less with the accelerator held, never
+//              below minSpeed); a turbo or a tank rides over it. Flush with the road. Another lane always clear; not in a race
 //   deadEnds   { s, lane, kind: 'shutter' | 'wall', length? }: the lane runs on for `length` m (CONFIG.deadEnd.length) and
 //              ends at s. 'shutter': the road goes on behind a rolling shutter: a Ghost passes through, a tank or an armoured car
 //              smashes through, any other car is wrecked. 'wall': nothing behind it: wrecked whatever protects the car. A DEAD END
@@ -704,10 +707,12 @@ import metroRun from './levels/metro-run.json';
 HIDDEN_LEVELS['metro-run'] = metroRun; // Metro Run (a metro system: running tunnels, stations, an interchange, the depot: render/themes/metro.js): ?hidden=metro-run, until it is put in the career
 import obstacleLab from './levels/obstacle-lab.json';
 HIDDEN_LEVELS['obstacle-lab'] = obstacleLab; // Obstacle Lab (a test track: every obstacle formation of OBSTACLE-STAGE-DESIGN.md once, barriers only): ?hidden=obstacle-lab, never on the menus
+import slowPadLab from './levels/slow-pad.json';
+HIDDEN_LEVELS['slow-pad'] = slowPadLab; // Slow Pad Lab (the slow pads' demo, SLOW-PAD-DESIGN.md: slow pads on tempting lines, boost pads beside): ?hidden=slow-pad, never on the menus
 // THE HIDDEN LEVELS MENU (the owner, 15-Oct; Options > Hidden levels, render/hiddenlevels.js): every level of HIDDEN_LEVELS that is a
 // real level, so a hidden level added later is listed without a word here. TEST_LEVELS are the developer's test tracks (a testbed and the three
 // Gimmick Roads: gimmicks.js calls them 'Test'), left out of it. A run started from it is ?hidden=<id>: it banks nothing (game.js).
-export const TEST_LEVELS = ['testbed', 'gimmick-road', 'gimmick-road-2', 'gimmick-road-3', 'obstacle-lab'];
+export const TEST_LEVELS = ['testbed', 'gimmick-road', 'gimmick-road-2', 'gimmick-road-3', 'obstacle-lab', 'slow-pad'];
 export const playableHidden = () => Object.entries(HIDDEN_LEVELS).filter(([id]) => !TEST_LEVELS.includes(id)).map(([id, level]) => ({ id, level, event: id in EVENT_MAPS }));
 // the class every race is run in: 'f1', 'gt' (GT road cars) or 'lmp' (Le Mans prototypes): the player's car
 // and the grid (the menu's Race cars button; ?gt or ?lmp for that class whatever it says)

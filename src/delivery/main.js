@@ -115,6 +115,12 @@ if (params.get('lanescrub') !== null && Number.isFinite(Number(params.get('lanes
   CONFIG.trueSpeed.driven.tune = Math.max(0, Number(params.get('lanescrub')));
   Progress.noSave = true;
 }
+// ?slowpad=2: a slow pad's drain (CONFIG.slowPad.tune) that many times as strong for the visit, to try a feel (0: pads do
+// nothing; SLOW-PAD-DESIGN.md). A test, as ?lanescrub is: nothing saved and no replay recorded
+if (params.get('slowpad') !== null && Number.isFinite(Number(params.get('slowpad')))) {
+  CONFIG.slowPad.tune = Math.max(0, Number(params.get('slowpad')));
+  Progress.noSave = true;
+}
 // ?beaten=expressway,back-roads:evil,farm:both and ?owns=lovebus,wagon&money=500: a state to look at (the level tiers:
 // medals are best times; nothing is saved). A level listed alone is a Good medal.
 if (params.get('beaten')) {

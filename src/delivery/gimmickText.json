@@ -67,6 +67,7 @@
   "tunnels": { "name": "Tunnels", "blurb": "No sky, the dark closing in, and only lamps and headlights." },
   "wet-floor": { "name": "Wet floor", "blurb": "Standing water: little grip on it, wet tyres after it." },
   "boost-pads": { "name": "Boost pads", "blurb": "Drive over one and the car is pulled on over its top speed." },
+  "slow-pads": { "name": "Slow pads", "blurb": "A boost pad turned round: driving over one drains speed. Keep your foot down, or go round." },
   "molten-ladles": { "name": "Molten ladles", "blurb": "A crane pours molten metal on a lane. It wrecks all but a Ghost." },
   "pillars": { "name": "Pillars", "blurb": "Solid columns in a lane: hit one and you are wrecked. Go round." },
   "dead-end-lanes": { "name": "Dead-end lanes", "blurb": "A lane that ends. Shutter: wrecks you; Ghost and tank pass. Wall: all." },
