@@ -166,7 +166,6 @@ export const IDEA_MODELS_WEDGE = {
       bx(0.62, 0.06, 0.03, 0, 0.345, FZ + 0.004),                   // the intake slot in the nose
       bx(1.78, 0.2, 0.03, 0, 0.66, BZ - 0.004),                     // the tail's black band (the lamps on it)
       bx(1.7, 0.12, 0.1, 0, 0.36, BZ - 0.02),                       // the valance: a bumper bar under it
-      bx(1.5, 0.06, 0.22, 0, 0.2, BZ + 0.08),                       // and a diffuser under that
       ...[-1, 1].map(s => bx(0.2, 0.15, 0.025, s * 0.77, 0.925, -0.645 - 0.004)), // the air boxes' mouths
       ...[-1, 1].map(s => bx(0.03, 0.12, 1.5, s * (XF + 0.003), 0.23, -0.04)),    // the black sills between the arches
     ])), TRIM);
