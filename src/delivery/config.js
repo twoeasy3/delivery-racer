@@ -1535,7 +1535,7 @@ export const CONFIG = {
   tunnelJunction: { trigger: 150, warn: 2.2, speed: 4.5, spacing: 2.6, rest: 8, mouth: 10 },
   // a boost pad ("boostPads": { from, to, lane }, lanegimmicks.js; a travelator in the mall): a car driving over it is
   // pulled on for `time` s at up to `speed` m/s over its own top speed (as a turbo pulls: CONFIG.turboAccel), the clock
-  // refilled for as long as it is on the pad; a ghost too (it is the floor, as ice is). Beside it stand its handrails,
+  // refilled for as long as it is on the pad; a ghost too (it is the floor, as ice is). A pad with rails: true has handrails,
   // `rail` m sections every `rail` m along both edges, `railGap` m short of each end: ordinary obstacles (obstacleKinds.handrail)
   boostPad: { time: 2.5, speed: 12, rail: 3, railGap: 3 }, // (a rail is 3 m long, 0.24 m thick: collision.js SIZE.handrail)
   // a dead-end lane ("deadEnds": { s, lane, kind, length? }, lanegimmicks.js): the lane runs on as usual for `length` m and

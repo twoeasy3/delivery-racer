@@ -323,9 +323,9 @@
 //   trolleys   { from, to, count }: shopping trolleys rolling across the road with its camber
 //   marathons  { s, lane, count, water? }: runners in one lane behind a pace car; water: where its water station stands
 //   stampedes  { from, to, count, kind: 'cow' | 'kangaroo' }: animals charging down the road at the player
-//   boostPads  { from, to, lane }: a boost pad in that lane (a travelator in the mall, lanegimmicks.js): a car on it is pulled
-//              on over its own top speed for CONFIG.boostPad.time s; handrails (ordinary obstacles, kind `handrail`, a cone's
-//              box and cost) stand along both its edges. Never in a bend
+//   boostPads  { from, to, lane, rails? }: a boost pad in that lane (a travelator in the mall, lanegimmicks.js): a car on it is
+//              pulled on over its own top speed for CONFIG.boostPad.time s; flush with the road, unless rails: true (the mall's):
+//              then handrails (ordinary obstacles, kind `handrail`, a cone's box and cost) stand along both its edges. Never in a bend
 //   deadEnds   { s, lane, kind: 'shutter' | 'wall', length? }: the lane runs on for `length` m (CONFIG.deadEnd.length) and
 //              ends at s. 'shutter': the road goes on behind a rolling shutter: a Ghost passes through, a tank or an armoured car
 //              smashes through, any other car is wrecked. 'wall': nothing behind it: wrecked whatever protects the car. A DEAD END

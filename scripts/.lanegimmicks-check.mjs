@@ -51,7 +51,7 @@ try {
   // the handrails: ordinary obstacles, a cone's box and cost
   const rails = g.Collision.obstacles.filter(o => o.kind === 'handrail');
   const K = CONFIG.obstacleKinds;
-  check(rails.length > 0 && JSON.stringify(K.handrail) === JSON.stringify(K.cone), rails.length + ' handrail sections, each at a cone\'s cost');
+  check(rails.length === 144 && level.boostPads.every(p => p.rails === true) && JSON.stringify(K.handrail) === JSON.stringify(K.cone), rails.length + ' handrail sections (144 expected: the mall\'s pads say rails: true), each at a cone\'s cost');
   // (the rails' boxes: as thin as the rail, nothing of them in the lane beside, and the pad's lane keeps room for a car between them)
   const LW = CONFIG.laneWidth, outer = Math.max(...rails.map(o => Math.abs(o.lat - lane(pad.lane, o.s)) + o.hw)), inner = Math.min(...rails.map(o => Math.abs(o.lat - lane(pad.lane, o.s)) - o.hw));
   check(outer <= LW / 2 && inner * 2 >= P.hw * 2 + 0.5, 'the rails reach ' + outer.toFixed(2) + ' m from the pad lane\'s centre (the lane\'s edge is at ' + (LW / 2).toFixed(2) + '): nothing in the lane beside; ' + (inner * 2).toFixed(2) + ' m clear between them for a car ' + (P.hw * 2).toFixed(2) + ' m wide');
@@ -111,6 +111,13 @@ try {
   check(D.warn > need && D.sign > need * 0.8, 'the warning distance ' + D.warn + ' m (the sign ' + D.sign + ' m) is longer than a lane change at the fastest top speed, ' + fastest.toFixed(0) + ' m/s, with 0.6 s to read it: ' + need.toFixed(0) + ' m');
   const near = (a, b, d) => Math.abs(a - b) < d;
   check(LaneGimmicks.ends.every(e => !(level.tunnelJunctions || []).some(j => near(j.s, e.s, 40)) && !LaneGimmicks.pads.some(p => e.s > p.from - 40 && e.s < p.to + 40 || e.from < p.to && e.s > p.from && e.lane === p.lane)), 'no dead end\'s wall within 40 m of a junction\'s mouth, nor on a pad');
+  // (handrails are OFF by default, the owner 16-Oct: a pad that does not say rails: true has none; every level's pads, listed)
+  for (const other of [...g.levels.LEVELS, ...Object.values(g.levels.HIDDEN_LEVELS)].filter(l => l.boostPads?.length)) {
+    g.select(other);
+    G.load();
+    const n = g.Collision.obstacles.filter(o => o.kind === 'handrail').length, want = other.boostPads.some(p => p.rails === true);
+    check(want ? n > 0 : n === 0, other.id + ': ' + other.boostPads.length + ' pads, ' + (want ? n + ' handrail sections (rails: true)' : 'no handrails'));
+  }
   // ---- both lanes dead at once: a level problem
   g.select({ ...level, id: 'both-dead', deadEnds: [{ s: 490, lane: 1, kind: 'shutter', length: 120 }, { s: 470, lane: 0, kind: 'wall', length: 100 }] });
   start(100, 0, 0);

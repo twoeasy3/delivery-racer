@@ -45,6 +45,8 @@ try {
     check(T.length >= 3200 && T.length <= 3800, `${id}: between 3.2 and 3.8 km`);
     check(!!g.levels.HIDDEN_LEVELS[id] && !g.levels.LEVELS.includes(level), `${id}: a hidden level, not on the menu`);
     check((level.tunnels || []).length >= 1 && (level.crossings || []).length && (level.boostPads || []).length && (level.wreckage || []).some(e => e.kind === 'blast'), `${id}: its halls, ingot-train crossings, conveyors and blasts`);
+    // the conveyors: flush with the road, no handrails (pads have none unless they say rails: true: the owner, 16-Oct)
+    check(level.boostPads.every(p => p.rails !== true) && !g.Collision.obstacles.some(o => o.kind === 'handrail'), `${id}: its ${level.boostPads.length} conveyors are flush: no handrails`);
     // the obstacles: all the theme's own, each hit by driving into it
     const obs = g.Collision.obstacles.filter(o => level.obstacles.some(x => x.s === o.s));
     check(obs.length === level.obstacles.length && obs.every(o => Object.values(map).includes(o.kind)), `${id}: its ${obs.length} plain obstacles are all the steelworks' own (${[...new Set(obs.map(o => o.kind))].join(', ')})`);

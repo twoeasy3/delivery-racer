@@ -301,7 +301,7 @@ try {
     const mall = g.select('mall-dash');
     G.load(); // (loaded, not started: whether the current car may drive it is the tier rule's business, not this check's)
     const rails = g.Collision.obstacles.filter(o => o.kind === 'handrail').length;
-    check(mall.boostPads.every(p => p.rails === undefined) && rails > 0, 'Mall Dash: its pads keep their handrails (' + rails + ' sections)');
+    check(mall.boostPads.every(p => p.rails === true) && rails === 144, 'Mall Dash: its pads keep their handrails (rails: true; ' + rails + ' sections, 144 expected)'); // (handrails are off by default since 16-Oct)
   }
 } catch (error) {
   failures++;

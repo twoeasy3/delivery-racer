@@ -849,7 +849,7 @@ export const GROUPS = [
     } },
     { name: 'Boost pads', color: 0x3ad8ff, has: (l) => l.boostPads?.length, rules: [
       `Drive over one and the car is pulled on for ${CONFIG.boostPad.time} s at up to ${kmh(CONFIG.boostPad.speed)} over its own top speed, as a turbo does. A ghost too.`,
-      `Handrails stand along both edges: ordinary obstacles (${CONFIG.obstacleKinds.handrail.damage} damage, ${pct(CONFIG.obstacleKinds.handrail.speedKept)} of your speed kept). In the mall a pad is a travelator; the metro's have no handrails.`,
+      `Flush with the road. The mall's travelators have handrails along both edges: ordinary obstacles (${CONFIG.obstacleKinds.handrail.damage} damage, ${pct(CONFIG.obstacleKinds.handrail.speedKept)} of your speed kept).`,
     ], build: () => {
       const g = road(9, 14), belt = box(3.0, 0.04, 11, lambert(0x2a2d33), 0, 0.03, 0), chevrons = [];
       for (let z = -4.5; z < 5; z += 1.5) { const c = box(1.6, 0.012, 0.5, glow(0xffd23f), 0, 0.06, z); chevrons.push(c); g.add(c); }
