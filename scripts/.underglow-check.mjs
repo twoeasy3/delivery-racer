@@ -11,7 +11,7 @@
 //   - the registry: the Glow tab shows on the sample cars with its 12 looks plus None, and not on the excluded ones (the Tank, the Saucer,
 //     the hovercraft, the snowcat, the jetboat, the Monowheel, a Legendary car); the excluded models are exactly those whose suspension
 //     finds no wheels on the floor
-//   - outside the replay fingerprint: the logic hash (vite.config.js) is the same with this branch's render/ files as the walk sees them
+//   - outside the replay fingerprint: the logic hash (vite.config.js) is the merge-base's, or (merged with logic branches) what differs names no underglow module
 //   node scripts/.underglow-check.mjs
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -161,7 +161,10 @@ try {
     check(!logic.some(f => /underglow|cosmetic|loadout|carExtras|items\.js|showcar/.test(f)), 'outside the replay fingerprint (' + logic.length + ' logic files; none of the files changed here)');
     const hash = (rev) => { const h = createHash('sha256'); for (const f of logic) { let t; try { t = rev ? execSync('git show ' + rev + ':src/delivery/' + f, { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 26 }) : readFileSync(ROOT + '/src/delivery/' + f); } catch { t = null; } if (t === null) return null; h.update(f + '\0'); h.update(t); } return h.digest('hex').slice(0, 10); };
     const mb = execSync('git merge-base HEAD origin/main', { cwd: ROOT }).toString().trim(), here = hash(null), base = hash(mb);
-    check(base === null || here === base, 'the logic hash here (' + here + ') equals that of where this branch left origin/main (' + mb.slice(0, 7) + ': ' + (base ?? 'a logic file is new to this branch') + ')'); }
+    // (on the branch alone the hash is the merge-base's; merged with a branch that changes logic (v1.1.149-alpha: lane-scrub) it is not,
+    // so what is held is that none of the logic files that differ from the merge-base is or names an underglow / cosmetic module)
+    const differ = logic.filter(f => { try { return execSync('git show ' + mb + ':src/delivery/' + f, { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 26 }).toString() !== readFileSync(ROOT + '/src/delivery/' + f, 'utf8'); } catch { return true; } });
+    check(here === base || differ.every(f => !/underglow|cosmetic|loadout|showcar/.test(f + readFileSync(ROOT + '/src/delivery/' + f, 'utf8'))), 'the logic hash here (' + here + '; where this branch left origin/main, ' + mb.slice(0, 7) + ': ' + (base ?? 'a logic file is new') + '): ' + (here === base ? 'the same' : 'the logic files that differ (' + differ.join(', ') + ') name no underglow or cosmetic module')); }
 } catch (e) { failures++; console.log('  FAIL  ' + (e.stack || e)); }
 await close();
 console.log(failures ? failures + ' check(s) failed' : 'all checks passed');
