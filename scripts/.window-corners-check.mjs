@@ -10,7 +10,8 @@
 //    the handles numbered 1..n and named, a tap 30 px from every corner picks none, a tap 17 px off corner 2 (off its dot) picks it (orange,
 //    its row lit, the readout naming it), the nudge buttons and step buttons 44 px or more, ▲ stopped by the roof line (said, nothing stored),
 //    ▼ 1 cm lowers it in the patch's table under 'door window' (both flanks), Reset corner puts it back at its automatic place, Undo undoes that, a touch drag of corner 3 reads out
-//    live and commits on release; Mirror off: a nudge stored under 'door window L'; the windscreen's top nudged down stays on its pillar.
+//    live and commits on release; the drawing runs as the camera shows the flank (Left view: nose to the left, ◀ toward the front;
+//    Right view: nose to the right); Mirror off: a nudge stored under 'door window L'; the windscreen's top nudged down stays on its pillar.
 //   node scripts/.window-corners-check.mjs [--browser=<path>] [--shots=<dir>]
 import { createServer } from 'vite';
 import { spawn } from 'node:child_process';
@@ -139,8 +140,8 @@ else {
     };
     await page('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
     await page('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 3, mobile: true, screenWidth: 390, screenHeight: 844 });
-    const open = async (q) => {
-      await page('Page.navigate', { url: `http://localhost:${port}/delivery/modeleditor.html?car=touringcar&view=left&tab=part${q}` });
+    const open = async (q, view = 'left') => {
+      await page('Page.navigate', { url: `http://localhost:${port}/delivery/modeleditor.html?car=touringcar&view=${view}&tab=part${q}` });
       for (let k = 0; k < 240; k++) { await sleep(250); try { if (await evaluate('!!(window.__modelEditor && document.querySelector("#glassSvg [data-gp]"))', 5000)) return true; } catch { /* (loading) */ } }
       return false;
     };
@@ -154,7 +155,7 @@ else {
       const btn = (sel) => [...document.querySelectorAll(sel)].map(b => { const r = b.getBoundingClientRect(); return { w: r.width, h: r.height, x: r.left + r.width / 2, y: r.top + r.height / 2, d: b.disabled, t: b.dataset.gn || b.dataset.gstep || b.id }; });
       return { hs, sr: { x: sr.left, y: sr.top, w: sr.width, h: sr.height }, read: document.getElementById('gRead').textContent, rows: [...document.querySelectorAll('[data-grow]')].map(r => ({ t: r.firstElementChild.textContent, on: r.classList.contains('on') })),
         glass: JSON.parse(JSON.stringify(S.patch.glass || null)), pane: S.pane, auto: pane.auto, now: pane.now, edge: pane.edge || null, at: S.at, mirror: S.mirror,
-        nudges: btn('[data-gn]'), steps: btn('[data-gstep]'), corner: btn('#gCorner')[0], undo: btn('#gUndo')[0] };
+        head: document.querySelector('#gHead .small')?.textContent || '', nudges: btn('[data-gn]'), steps: btn('[data-gstep]'), corner: btn('#gCorner')[0], undo: btn('#gUndo')[0] };
     })()`;
     const state = () => evaluate(STATE);
     const press = async (b) => { await evaluate(`(() => { const el = document.querySelector(${JSON.stringify(b)}); el.scrollIntoView({ block: 'center' }); })()`); await sleep(150); const r = await evaluate(`(() => { const r = document.querySelector(${JSON.stringify(b)}).getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()`); await tap(r[0], r[1]); await sleep(400); };
@@ -169,6 +170,10 @@ else {
       'opened on a phone, the side view scrolled into sight (' + Math.round(s.sr.y) + '..' + Math.round(s.sr.y + s.sr.h) + ' of 844) with every corner in it');
     check(!s.hs.some(h => h.on) && s.nudges.every(b => b.d) && /Tap a corner/.test(s.read), 'nothing picked at first: the nudges off, the readout asks for a tap');
     await shot('phone-open');
+    // the drawing as the camera shows the flank: the Left view's nose to the left, the arrows with it
+    const side = (st) => { const at = (n) => st.hs.find(h => h.name === n); return Math.sign(at('front-bottom').x - at('rear-bottom').x); };
+    check(side(s) < 0 && /nose to the left/.test(s.head) && s.nudges.map(b => b.t).join() === 'front,up,down,rear' && s.nudges[0].x < s.nudges[3].x,
+      'the Left view: the window drawn nose to the left as the car is, "' + s.head + '", ◀ toward the front, ▶ toward the rear');
     // a tap far from every corner picks none
     let far = null;
     for (let y = s.sr.y + 10; !far && y < s.sr.y + s.sr.h - 10; y += 6) for (let x = s.sr.x + 10; !far && x < s.sr.x + s.sr.w - 10; x += 6) if (s.hs.every(h => Math.hypot(h.x - x, h.y - y) > 30)) far = [x, y];
@@ -196,7 +201,8 @@ else {
     await toSvg(); s = await state();
     const h3 = s.hs[2], z3 = s.now[2][0];
     await touch('touchStart', h3.x, h3.y); await sleep(60);
-    for (let k = 1; k <= 4; k++) { await touch('touchMove', h3.x - 5 * k, h3.y + 5 * k); await sleep(60); } // (down and toward the rear: inside the cabin)
+    const rearward = side(s) < 0 ? 1 : -1; // (the rear is to the right with the nose to the left)
+    for (let k = 1; k <= 4; k++) { await touch('touchMove', h3.x + rearward * 5 * k, h3.y + 5 * k); await sleep(60); } // (down and toward the rear: inside the cabin)
     const mid = await evaluate('[document.getElementById("gRead").textContent, (window.__modelEditor.patch.glass || {})["door window"]?.[2]?.[0]]');
     await touch('touchEnd'); await sleep(500); s = await state();
     check(mid[0].startsWith('3 ') && !mid[0].includes(z3.toFixed(3)) && near(mid[1], z3, 1e-3), 'mid-drag the readout follows corner 3 ("' + mid[0] + '") before anything is committed');
@@ -207,6 +213,11 @@ else {
     await press('[data-gn="rear"]'); s = await state();
     check(!s.mirror && Array.isArray(s.glass?.['door window L']) && s.hs[0].on, 'Mirror off: a nudge of corner 1 is stored for this flank only, as "door window L"');
     await press('#mirrorMode');
+    // the Right view: the other flank drawn nose to the right, ◀ toward the rear
+    if (!await open('&part=1&pane=door%20window%20R', 'right')) throw new Error('the editor did not open the right door window');
+    await sleep(500); s = await state();
+    check(side(s) > 0 && /nose to the right/.test(s.head) && s.nudges.map(b => b.t).join() === 'rear,up,down,front', 'the Right view: the window drawn nose to the right, "' + s.head + '", ◀ toward the rear');
+    await shot('phone-right');
     // the windscreen: its top nudged down stays on its pillar
     if (!await open('&part=1&pane=windscreen&corner=2')) throw new Error('the editor did not open the windscreen');
     await sleep(500); s = await state();

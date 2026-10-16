@@ -319,11 +319,12 @@ const frame = (name = view, box = null) => {
   camera.lookAt(c);
   orbit.update();
   document.querySelectorAll('[data-view]').forEach(b2 => b2.classList.toggle('on', b2.dataset.view === name));
-  if (S.tab === 'part' && S.shape) renderPart(); // (the shape's drawing as the camera now shows it)
+  if (S.tab === 'part' && (S.shape || S.pane)) renderPart(); // (the shape's or window's drawing as the camera now shows it)
 };
 orbit.addEventListener('end', () => { // (the shape's drawing follows the camera to the other side)
   const rec = S.tab === 'part' && S.shape && shapeById(S.shape), v = rec && shapeView(rec);
-  if (v && v.ok && screenFlips(v).join() !== shapeFlips.join()) renderPart();
+  if (S.tab === 'part' && S.pane && !S.shape && $('glassSvg') && gPick.side && gPick.sx !== paneFlip()) renderPart(); // (a side window's drawing follows the camera round)
+  else if (v && v.ok && screenFlips(v).join() !== shapeFlips.join()) renderPart();
   else drawShape(); // (the near one of a mirrored pair takes the handles)
 });
 const resize = () => {
@@ -599,25 +600,28 @@ const resetPane = (pane) => {
   commit(p, pane.name + ': back to the automatic outline.');
 };
 const GW = 340, GH = 200, GPAD = 16;
-const glassFit = (pane, zoom = false) => {
+// sx: +1 the nose (+z) to the right, -1 to the left, as the camera shows the car (the Left view's nose to the left: screenFlips)
+const glassFit = (pane, zoom = false, sx = 1) => {
   const c = pane.cabin, own = pane.kind === 'side' ? [...pane.now, ...pane.auto] : [pane.now.foot, pane.now.top, pane.auto.foot, pane.auto.top];
   const pts = zoom ? own : [...c.chain, ...c.profile.filter(q => q[1] >= c.belt - 0.35)];
   const zs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
   const mz = zoom ? Math.max(0.12, (Math.max(...zs) - Math.min(...zs)) * 0.35) : 0, my = zoom ? Math.max(0.12, (Math.max(...ys) - Math.min(...ys)) * 0.35) : 0; // (Zoom: the window, its automatic outline and a margin)
   const z0 = Math.min(...zs) - 0.1 - mz, z1 = Math.max(...zs) + 0.1 + mz, y0 = Math.min(...ys) - 0.05 - my, y1 = Math.max(...ys) + 0.08 + my;
   const k = Math.min((GW - 2 * GPAD) / Math.max(0.3, z1 - z0), (GH - 2 * GPAD) / Math.max(0.3, y1 - y0));
-  return { k, x: (z) => GW / 2 + (z - (z0 + z1) / 2) * k, y: (y) => GH / 2 - (y - (y0 + y1) / 2) * k, z: (px) => (px - GW / 2) / k + (z0 + z1) / 2, v: (py) => -(py - GH / 2) / k + (y0 + y1) / 2 };
+  return { k, sx, x: (z) => GW / 2 + sx * (z - (z0 + z1) / 2) * k, y: (y) => GH / 2 - (y - (y0 + y1) / 2) * k, z: (px) => sx * (px - GW / 2) / k + (z0 + z1) / 2, v: (py) => -(py - GH / 2) / k + (y0 + y1) / 2 };
 };
+const paneFlip = () => screenFlips({ H: 2, V: 1 })[0]; // (which way +z runs on the screen just now; end on: +1)
 const inside = (poly, [z, y]) => { let on = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [zi, yi] = poly[i], [zj, yj] = poly[j]; if ((yi > y) !== (yj > y) && z < (zj - zi) * (y - yi) / (yj - yi) + zi) on = !on; } return on; };
 const nearest = ([a, b], [z, y]) => { const dz = b[0] - a[0], dy = b[1] - a[1], l2 = dz * dz + dy * dy; const t = Math.max(0.02, Math.min(0.98, l2 ? ((z - a[0]) * dz + (y - a[1]) * dy) / l2 : 0)); return [a[0] + dz * t, a[1] + dy * t]; };
 const r3g = (q) => [Math.round(q[0] * 1000) / 1000, Math.round(q[1] * 1000) / 1000];
 // the picked corner (kept across the rebuild a commit makes, for the same window) and the nudge step
-const gPick = { pane: null, i: -1, step: NUDGE_STEPS[1], zoom: true }; // (Zoom on: the drawing framed on the window, its corners apart)
+const gPick = { pane: null, i: -1, step: NUDGE_STEPS[1], zoom: true, sx: 1, side: false }; // (Zoom on: the drawing framed on the window, its corners apart)
 const pickedIn = (pane, n) => (gPick.pane === pane.name && gPick.i >= 0 && gPick.i < n ? gPick.i : -1);
 const cornerWords = (pane, i, names) => (i + 1) + ' ' + names[i];
 const GHIT = 24; // (CSS px: a tap this close to a corner picks it, a 48 px target for a finger)
 const paneEditor = (node, pane) => {
-  const f = glassFit(pane, gPick.zoom), c = pane.cabin, ps = panesOf(node);
+  gPick.side = pane.kind === 'side'; gPick.sx = gPick.side ? paneFlip() : 1; // (a side window drawn as the camera shows its flank; a screen in profile, nose to the right)
+  const f = glassFit(pane, gPick.zoom, gPick.sx), c = pane.cabin, ps = panesOf(node);
   const path = (pts, close = true) => pts.map((q, i) => (i ? 'L' : 'M') + f.x(q[0]).toFixed(1) + ' ' + f.y(q[1]).toFixed(1)).join(' ') + (close ? ' Z' : '');
   const side = pane.kind === 'side';
   const now = side ? pane.now : [pane.now.foot, pane.now.top], auto = side ? pane.auto : [pane.auto.foot, pane.auto.top];
@@ -626,15 +630,17 @@ const paneEditor = (node, pane) => {
   const order = now.map((q, i) => i).filter(i => i !== sel).concat(sel >= 0 ? [sel] : []); // (the picked corner drawn on top)
   const handles = order.map(i => {
     const q = now[i], x = f.x(q[0]), y = f.y(q[1]), on = i === sel, r = on ? 13 : 11;
-    const lx = side ? (q[0] >= cz ? 1 : -1) : 1, ly = side ? (q[1] >= cy ? -1 : 1) : 0; // (the name outside the pane, away from its middle)
+    const lx = side ? (q[0] >= cz ? f.sx : -f.sx) : 1, ly = side ? (q[1] >= cy ? -1 : 1) : 0; // (the name outside the pane, away from its middle)
     return '<g class="gh' + (on ? ' on' : '') + '" data-gp="' + i + '"><circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r + '" fill="' + (on ? '#ff8c42' : '#ffd23f') + '" stroke="' + (on ? '#ffffff' : '#1b2029') + '" stroke-width="' + (on ? 2.5 : 1.5) + '"/>'
       + '<text x="' + x.toFixed(1) + '" y="' + (y + 4).toFixed(1) + '" font-size="13" font-weight="700" text-anchor="middle" fill="#1b2029">' + (i + 1) + '</text>'
       + '<text class="gname" x="' + (x + lx * 15).toFixed(1) + '" y="' + (y + ly * 14 + 4).toFixed(1) + '" font-size="10" text-anchor="' + (lx > 0 ? 'start' : 'end') + '">' + names[i] + '</text></g>';
   }).join('');
   const stored = storedFor(pane);
   const canReset = sel >= 0 && auto.length === now.length && (Math.abs(auto[sel][0] - now[sel][0]) > 1e-4 || Math.abs(auto[sel][1] - now[sel][1]) > 1e-4);
-  const nudges = side ? [['rear', '◀', 'Toward the rear'], ['up', '▲', 'Up'], ['down', '▼', 'Down'], ['front', '▶', 'Toward the front']] : [['down', '▼', 'Down the pillar'], ['up', '▲', 'Up the pillar']];
-  return '<h2 id="gHead" style="margin-top:12px">Window: ' + esc(pane.name) + ' <span class="small">' + (side ? 'nose to the right · tap or drag a numbered corner' : 'its foot and top slide along the pillar') + '</span></h2>'
+  const fwd = ['front', '▶', 'Toward the front'], back = ['rear', '◀', 'Toward the rear'];
+  if (f.sx < 0) { fwd[1] = '◀'; back[1] = '▶'; } // (the arrows as the drawing runs: nose left, ◀ is toward the front)
+  const nudges = side ? [f.sx < 0 ? fwd : back, ['up', '▲', 'Up'], ['down', '▼', 'Down'], f.sx < 0 ? back : fwd] : [['down', '▼', 'Down the pillar'], ['up', '▲', 'Up the pillar']];
+  return '<h2 id="gHead" style="margin-top:12px">Window: ' + esc(pane.name) + ' <span class="small">' + (side ? 'nose to the ' + (f.sx < 0 ? 'left' : 'right') + ' · tap or drag a numbered corner' : 'its foot and top slide along the pillar') + '</span></h2>'
     + '<div class="panes">' + ps.map(q => '<button data-pane="' + esc(q.name) + '" class="' + (q.name === pane.name ? 'on' : '') + (q.edited ? ' edited' : '') + '" title="' + (q.edited ? 'edited' : 'automatic') + '">' + esc(q.name) + '</button>').join('') + '</div>'
     + '<svg id="glassSvg" class="glass" viewBox="0 0 ' + GW + ' ' + GH + '">'
     + '<path d="' + path(c.profile) + '" fill="#2a3446" stroke="#5a6678" stroke-width="1"/>'            // the body's profile
@@ -658,7 +664,7 @@ const cornerReadout = (pane, q, a, i, names) => '<b>' + esc(cornerWords(pane, i,
   + (a ? ' <span class="small">(auto ' + a[0].toFixed(2) + ', ' + a[1].toFixed(2) + ')</span>' : '') + (pane.kind === 'side' && S.mirror ? ' <span class="small">both sides</span>' : '');
 const wirePaneEditor = (box, node, pane) => {
   box.querySelectorAll('[data-pane]').forEach(b => b.addEventListener('click', () => select(S.sel, true, b.dataset.pane)));
-  const side = pane.kind === 'side', f = glassFit(pane, gPick.zoom);
+  const side = pane.kind === 'side', f = glassFit(pane, gPick.zoom, gPick.sx);
   const now = (side ? pane.now : [pane.now.foot, pane.now.top]).map(q => q.slice());
   const auto = side ? pane.auto : [pane.auto.foot, pane.auto.top], names = side ? cornerNames(now) : ['foot', 'top'];
   const pack = (pts) => (side ? pts.map(r3g) : { foot: r3g(pts[0]), top: r3g(pts[1]) });
@@ -733,7 +739,7 @@ const wirePaneEditor = (box, node, pane) => {
       const { px, py } = toView(ev);
       if (!moved && Math.hypot(px - px0, py - py0) < 2) return;
       moved = true;
-      next[i] = clamp(i, [Math.round((c0[0] + (px - px0) / f.k) * 200) / 200, Math.round((c0[1] - (py - py0) / f.k) * 200) / 200], next[i]); // (to 5 mm, from where it was: no jump on touch)
+      next[i] = clamp(i, [Math.round((c0[0] + f.sx * (px - px0) / f.k) * 200) / 200, Math.round((c0[1] - (py - py0) / f.k) * 200) / 200], next[i]); // (to 5 mm, from where it was: no jump on touch)
       const x = f.x(next[i][0]), y = f.y(next[i][1]), [dot, nr, nm] = [g.querySelector('circle'), ...g.querySelectorAll('text')];
       const dx = +nm.getAttribute('x') - +dot.getAttribute('cx'), dy = +nm.getAttribute('y') - +dot.getAttribute('cy');
       dot.setAttribute('cx', x.toFixed(1)); dot.setAttribute('cy', y.toFixed(1));
