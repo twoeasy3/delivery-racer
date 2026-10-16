@@ -6,6 +6,7 @@
 //   node scripts/level-clocks.mjs mountain-pass tour-de-coast --write  and writes the clocks into their files
 //   node scripts/level-clocks.mjs --all                                every level's, and which written clocks are far off
 //   node scripts/level-clocks.mjs --all --table                        and a table: clean run, written clocks, their ratio to it
+//   node scripts/level-clocks.mjs --all --from=backlot                 every level from that one on (a long run cut short, picked up)
 // The run is seeded from the level's id, so a level's clock is the same every time (--seed=x: other dice).
 import { logicServer } from './delivery-headless.mjs'; // (a Vite server that shares no cache with any other run)
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -14,6 +15,7 @@ const WRITE = process.argv.includes('--write');
 const SEED = (process.argv.find(a => a.startsWith('--seed=')) || '').slice(7); // (other dice: the run is seeded from the level's id, so it is the same every time)
 const ALL = process.argv.includes('--all'); // (every level, and at the end those whose written clock is more than a rounding step from the one worked out)
 const TABLE = process.argv.includes('--table'); // (a Markdown table at the end: each level's clean run and its written clock / the clean run)
+const FROM = (process.argv.find(a => a.startsWith('--from=')) || '').slice(7); // (with --all: start at that level)
 const IDS = process.argv.slice(2).filter(a => !a.startsWith('--'));
 if (!IDS.length && !ALL) { console.log('Name the levels to time: node scripts/level-clocks.mjs <id> ... [--write]'); process.exit(1); }
 
@@ -36,7 +38,8 @@ try {
   (await load('/src/delivery/cars.js')).setTierHooks({ rule: () => null });
   const all = [...levels.LEVELS, ...Object.values(levels.HIDDEN_LEVELS)];
   const off = [], rows = [];
-  for (const id of ALL ? all.map(l => l.id) : IDS) {
+  const ids = ALL ? all.map(l => l.id) : IDS;
+  for (const id of FROM && ids.includes(FROM) ? ids.slice(ids.indexOf(FROM)) : ids) {
     const level = all.find(l => l.id === id);
     if (!level) { console.log(`${id}: no such level`); continue; }
     if (levels.LEVELS.includes(level)) levels.selectLevel(levels.LEVELS.indexOf(level));
