@@ -11,6 +11,7 @@ import { CAR } from '../cars.js';
 import { Packages } from '../packages.js';
 import { makeParticles, classicExplode, classicBurst, rnd, FIRE_COLORS } from './particles.js';
 import { createKillFx, chosenKill, KILL_FX } from './killfx.js';
+import { crushedBy, giantSilences } from './giantsound.js';
 
 // ---- particles: smoke, fire and debris as instanced cubes (the machinery: render/particles.js) ---------------------
 export const Particles = makeParticles(500, new THREE.MeshBasicMaterial(), scene); // debris, flames, trails
@@ -100,13 +101,13 @@ const updateTyres = (dt) => {
 
 // an explosion, in the player's KILL EFFECT (render/killfx.js; Classic: the code it always was, render/particles.js classicExplode).
 // The rules queued the same event whichever: only the look is chosen here (render-only, not in the replay fingerprint)
-const explode = (e) => {
+const explode = (e, quiet = false) => { // (quiet: no kill effect's extra sound, for a giant's crush: render/giantsound.js)
   const h = Track.toWorld(e.s, e.lat, tmp);
   const vx = Math.sin(h) * e.vs * 0.4, vz = Math.cos(h) * e.vs * 0.4;
   if (e.tyres) throwTyres(tmp.x, tmp.y, tmp.z, vx, vz);
   const look = chosenKill(CAR.id);
   if (look === 'classic' || !KillFx.explode(look, tmp.x, tmp.y, tmp.z, vx, vz, e)) classicExplode(CLASSIC, tmp.x, tmp.y, tmp.z, vx, vz, e);
-  else if (KILL_FX[look].sound) Sound.play(KILL_FX[look].sound.name, KILL_FX[look].sound.volume * near(e));
+  else if (KILL_FX[look].sound && !quiet) Sound.play(KILL_FX[look].sound.name, KILL_FX[look].sound.volume * near(e));
   // nearby blasts rattle the camera
   const distance = Math.abs(e.s - Player.s);
   if (distance < 60) Game.shake = Math.max(Game.shake, 1 - distance / 80);
@@ -176,11 +177,13 @@ const fxBoom = (dt) => {
 };
 
 // plays the effects the game logic queued this frame, then advances every particle and tyre
+// (the GIANT is silent: no footstep, no crush, its crushed cars' explosions drawn without a sound: render/giantsound.js, CHECKLIST 386)
 export const updateEffects = (dt) => {
   for (const e of FxQueue) {
     // (a sound from a spot on the road, and every visual effect, is quieter the further away it is)
     const near = e.s === undefined ? 1 : 1 - Math.abs(Track.along(e.s) - Track.along(Player.s)) / 160;
-    if (e.type === 'sound') { Sound.play(e.name, e.volume * near); continue; }
+    if (e.type === 'sound') { if (!(Player.giant && giantSilences(e.name))) Sound.play(e.name, e.volume * near); continue; }
+    if (Player.giant && crushedBy(e, Player)) { explode(e, true); continue; }
     if (e.type === 'burst') { if (!packageHit(e)) burst(e); } else (e.type === 'gift' ? gift : explode)(e);
     // each visual effect has a sound of its own, unless it names another
     Sound.play(e.sound || (e.type === 'explode' && e.big ? 'explodeBig' : e.type), near);
