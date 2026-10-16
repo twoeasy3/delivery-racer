@@ -338,6 +338,9 @@ try {
   check(Ecu.pinned === null && carStats(car('hotrod')).ecu === 3, '...and after it, the car is at its own ECU again (3)');
   const oldRec = JSON.parse(JSON.stringify(rec));
   delete oldRec.header.ecu;
+  // (a replay from before the ECUs is also from before the prints of CHECKLIST 167 (replay-stable): no prints, figures or roster, and its
+  // rules the legacy fingerprint; v1.1.151-alpha integration)
+  { const { BUILD } = await g.load('version.js'); delete oldRec.header.prints; delete oldRec.header.figures; delete oldRec.header.roster; oldRec.header.logic = BUILD.legacy; }
   const oldBack = play(oldRec);
   const hr = car('hotrod'), todayHr = [hr.agility ?? 1, hr.crossing ?? C.railCrossing.usual, hr.mass ?? 1, DELIVERY.hotrod, 1, C.dangerTime].join(' ');
   check(oldBack.ok && oldBack.health === car('hotrod').health && oldBack.second === todayHr, 'an old replay (no ECU in its header) plays at the max ECU (health ' + oldBack.health + ' of ' + car('hotrod').health + '; the second set its maxed: ' + oldBack.second + ')');
