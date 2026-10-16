@@ -226,7 +226,15 @@
     "hhWoods": ["The Hollow woods - mind the little stone bridge"],
     "hhGraves": ["Hollow Cemetery - dead slow, please"],
     "hhHill": ["The house on the hill - every window lit"],
-    "hhVillage": ["Hollow Green - trick or treat, lamp posts and all"]
+    "hhVillage": ["Hollow Green - trick or treat, lamp posts and all"],
+    "tutSteer": ["Steer: grab the cash"],
+    "tutSpeed": ["Hold the gas: top speed wins"],
+    "tutBoost": ["Boost pad: drive over it"],
+    "tutClock": ["Clock +: more time"],
+    "tutObstacles": ["Obstacles hurt: steer round"],
+    "tutTraffic": ["Traffic: pass, brake, or the shoulder"],
+    "tutSides": ["Good gives gifts. Evil throws fire."],
+    "tutDrop": ["The drop! Nearly there"]
   },
   "bustCount": {
     "1": ["First Offence - "],
