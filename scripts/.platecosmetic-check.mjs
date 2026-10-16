@@ -9,6 +9,7 @@
 //   - storage: kept under delivery.platedesign / delivery.platetext, ignored with Progress.noSave, a failing storage does not break it
 //   - texture cache: one texture per (design, text) shared by every car and both ends; at most two kept; the memory
 //   - dents: the plate is measured with the car, and at each stage of damage how much of it is still seen from behind / in front (burial list)
+//   - the families (CHECKLIST 431) and the SHAPED designs: built as their own outline, inside the anchor's box, UVs on the canvas
 //   - the ghost's stand-in and a blackout silhouette; nothing written onto a car's entry; no rules module imports the cosmetic
 //   node scripts/.platecosmetic-check.mjs            (add car ids to see only those; --nodents skips the damage part)
 import * as THREE from 'three';
@@ -111,6 +112,30 @@ try {
 
   // ---- designs: each draws and equips; the ghost and blackout ----
   for (const d of D.PLATE_DESIGNS.filter(d => d.id !== 'stock')) { grantCosmetics(['plate:' + d.id]); check(P.setPlateDesign(d.id) && P.shownDesign() === d.id && P.plateCacheStats().textures <= 2, 'design ' + d.id + ' equips'); }
+  // ---- the families and the shaped designs (CHECKLIST 431): every design in a family; a shaped one is a shaped mesh inside the anchor's box ----
+  const fams = new Set(D.PLATE_FAMILIES.map(f => f.id));
+  check(D.PLATE_DESIGNS.every(d => fams.has(d.family)) && D.PLATE_FAMILIES.every(f => D.PLATE_DESIGNS.some(d => d.family === f.id)) && D.PLATE_DESIGNS.length >= 37, 'every design is in a family (' + D.PLATE_FAMILIES.map(f => f.label + ' ' + D.PLATE_DESIGNS.filter(d => d.family === f.id).length).join(', ') + '; ' + D.PLATE_DESIGNS.length + ' with Stock)');
+  const shapedBad = [], shapedTris = new Set();
+  for (const d of D.PLATE_DESIGNS.filter(x => x.pieces)) {
+    P.setPlateDesign(d.id);
+    for (const b of built) {
+      const plan = P.platePlan(b.model), a = A.plateAnchorsFor(b.car);
+      if (b.car.legend || a.status !== 'ok') continue;
+      if (plan.worn.join() !== a.ends.join()) shapedBad.push(d.id + ' ' + b.car.id + ' ends');
+      for (const end of a.ends) {
+        const g = plan.groups[end], w = a[end].size[0], h = w / 4;
+        if (!g || g.userData.plateShape !== d.id) { shapedBad.push(d.id + ' ' + b.car.id + ' ' + end + ' not built'); continue; }
+        const fb = new THREE.Box3().setFromBufferAttribute(g.children[1].geometry.attributes.position), sb = new THREE.Box3().setFromBufferAttribute(g.children[0].geometry.attributes.position);
+        if (fb.max.x - fb.min.x > w + 1e-6 || fb.max.y - fb.min.y > h + 1e-6 || sb.max.x - sb.min.x > w + P.MARGIN + 1e-6 || sb.max.y - sb.min.y > h + P.MARGIN + 1e-6) shapedBad.push(d.id + ' ' + b.car.id + ' ' + end + ' outside the anchor box');
+        const uv = g.children[1].geometry.attributes.uv; for (let i = 0; i < uv.count; i++) if (uv.getX(i) < -1e-6 || uv.getX(i) > 1 + 1e-6 || uv.getY(i) < -1e-6 || uv.getY(i) > 1 + 1e-6) { shapedBad.push(d.id + ' uv'); break; }
+        shapedTris.add(d.id + ':' + (allTris(g)));
+      }
+    }
+  }
+  check(!shapedBad.length, 'each shaped design (' + D.PLATE_DESIGNS.filter(x => x.pieces).map(x => x.id).join(', ') + ') is built as its own outline on every anchored end, inside the anchor\'s 4:1 box (the edge within the margin), its UVs on the canvas' + (shapedBad.length ? ': ' + shapedBad.slice(0, 6).join('; ') : ''));
+  console.log('        triangles an end, shaped: ' + [...new Set([...shapedTris])].sort().join(' '));
+  P.setPlateDesign('classic');
+  check(built.filter(b => !b.car.legend && A.plateAnchorsFor(b.car).status === 'ok').every(b => Object.values(P.platePlan(b.model).groups).every(g => !g || (g.userData.plateShape === 'rect' && allTris(g) === 14))), 'back to a plain design: the plain 14-triangle plate again');
   const probe = built.find(b => b.car.id === 'pickup') || built.find(b => A.plateAnchorsFor(b.car).status === 'ok');
   const face = P.platePlan(probe.model).groups[P.platePlan(probe.model).worn[0]].children[1];
   const own = face.material; face.userData.solidMat = own; face.material = { ghost: true };
@@ -123,6 +148,8 @@ try {
   dark.traverse((m) => { if (m.isMesh) m.material = SILHOUETTE; });
   P.setPlateText('DARK 1');
   check(P.platePlan(dark).groups.rear?.children.every(m => m.material === SILHOUETTE) ?? P.platePlan(dark).groups.front?.children.every(m => m.material === SILHOUETTE), 'a blacked-out model\'s plate is the flat silhouette');
+  P.setPlateDesign('dice');
+  check(['rear', 'front'].map(e => P.platePlan(dark).groups[e]).filter(Boolean).every(g => g.userData.plateShape === 'dice' && g.children.every(m => m.material === SILHOUETTE)), 'a blacked-out model\'s SHAPED plate is the flat silhouette, in its own outline');
   P.setPlateText('PLATE 1'); P.setPlateDesign('classic');
 
   // ---- Stock restores ----

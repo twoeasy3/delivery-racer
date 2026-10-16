@@ -163,3 +163,8 @@
 #cosmetics .cz-kills .cz-chip { flex: 1 1 calc(33% - 8px); }
 #cosmetics .cz-killicon { border-radius: 6px; background: #1b2030; box-shadow: none; flex-basis: 28px; width: 28px; height: 28px; }
 @media (max-width: 760px) and (min-height: 521px), (max-width: 519px) { #cosmetics .cz-kills .cz-chip { flex-basis: calc(50% - 6px); } }
+/* the Plate tab's families (CHECKLIST 431): Plain | Frame | Print | Holder | Shape | Season, one family's chips shown at a time */
+#cosmetics .cz-platefam { display: flex; flex-wrap: wrap; margin: 0 0 8px; }
+#cosmetics .cz-platefam .cz-seg { flex: 1 1 auto; min-height: 30px; padding: 0 8px; }
+#cosmetics .cz-plates .cz-chip[hidden] { display: none; }
+@media (max-width: 760px) and (min-height: 521px), (max-width: 519px) { #cosmetics .cz-platefam .cz-seg { padding: 0 5px; font-size: 10px; letter-spacing: .03em; } }

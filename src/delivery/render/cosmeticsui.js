@@ -24,7 +24,7 @@ import { WHEEL_COLOURS, WHEEL_DESIGNS, TYRE_COLOURS, WHEEL_SETS, wheelColour, wh
 import { rimStatus, RIM_DESIGNS } from './rims.js';
 import { TREAD_DESIGNS, treadStatus } from './treads.js';
 import { PLATE_DESIGNS, designById, plateDesign, shownDesign, setPlateDesign, plateText, setPlateText, previewPlateText, resetPlate, onPlate, platePlan } from './platecosmetic.js';
-import { drawPlate } from './platedesigns.js';
+import { drawPlate, PLATE_FAMILIES } from './platedesigns.js';
 import { MAX_LEN, DEFAULT_TEXT, sanitizePlateText } from './platetext.js';
 import { PROP_PAINTS, paintValueOf, PROPS, propChoice, shownProp, setProp, propPaintChoice, setPropPaint, resetProp, onProp, slotStatus } from './propdress.js';
 import { propById, buildProp, propPaint } from './propmodels.js';
@@ -60,7 +60,7 @@ const make = (tag, className, ...children) => {
 };
 const hexOf = (hex, fallback) => '#' + (hex === null ? fallback : hex.toString(16).padStart(6, '0'));
 
-let partRows = {}, hubSegs = [], hubMode = null;
+let partRows = {}, hubSegs = [], hubMode = null, plateSegs = [], plateFamily = null; // (the Plate tab's family switch: Plain, Frame, Print, Holder, Shape, Season; CHECKLIST 431)
 let built = false, panelBox, scopeBar, tabs = {}, panels = {}, stage, carName, customMark, scopeBtns, resetCarBtn, copyBtn, copyArmed = 0, status, slotList, setRow, customChip, closeBtn, viewBtns, sections = {}, propSecs = {}, tabMsg, plateRow, plateInput, plateMsg, plateStatus, plateChip, openSlot = 'wheels';
 let state = { open: false, car: null, evil: false, onClose: null, inMenu: false, close: false, scope: 'car' };
 // whose choice the screen shows and changes: the car on show ('This car') or the default ('All cars')
@@ -176,8 +176,11 @@ const miniPlate = (id, text) => {
 };
 const plateShown = () => {
   const id = plateDesign(cid()), text = plateText(cid()), worn = shownDesign(cid());
+  if (!plateFamily) plateFamily = designById(id).family || 'plain';
+  for (const b of plateSegs) b.setAttribute('aria-pressed', String(b.dataset.family === plateFamily));
   for (const b of plateRow.children) {
     const on = b.dataset.plate === id;
+    b.hidden = b.dataset.family !== plateFamily;
     b.setAttribute('aria-pressed', String(on)); b.classList.toggle('equipped', on); b.classList.toggle('locked', !owned('plate', b.dataset.plate));
     const old = b.querySelector('canvas'); if (old && b.dataset.plate !== 'stock') old.replaceWith(miniPlate(b.dataset.plate, text));
   }
@@ -201,7 +204,11 @@ const buildPlate = () => {
   plateRow = make('div', 'cz-row cz-plates');
   plateRow.setAttribute('role', 'group');
   plateRow.setAttribute('aria-label', 'Plate design');
-  for (const d of PLATE_DESIGNS) plateRow.append(chip('plate', d.id, d.name, miniPlate(d.id, plateText()), (id) => { if (setPlateDesign(id, tgt())) flash(plateMsg, ''); }, 'plate'));
+  for (const d of PLATE_DESIGNS) { const c = chip('plate', d.id, d.name, miniPlate(d.id, plateText()), (id) => { if (setPlateDesign(id, tgt())) flash(plateMsg, ''); }, 'plate'); c.dataset.family = d.family || 'plain'; plateRow.append(c); }
+  // the designs in families, one family shown at a time (20+ chips stay one short list on a phone); the worn design's family opens first
+  plateSegs = PLATE_FAMILIES.filter(f => PLATE_DESIGNS.some(d => (d.family || 'plain') === f.id)).map((f) => { const b = make('button', 'cz-seg', f.label); b.type = 'button'; b.dataset.family = f.id; b.addEventListener('click', () => { plateFamily = f.id; plateShown(); }); return b; });
+  const plateSwitch = make('div', 'cz-scopes cz-platefam', ...plateSegs);
+  plateSwitch.setAttribute('role', 'group'); plateSwitch.setAttribute('aria-label', 'Plate family');
   plateInput = make('input', 'cz-text');
   plateInput.type = 'text'; plateInput.maxLength = MAX_LEN; plateInput.placeholder = DEFAULT_TEXT; syncPlateInput();
   plateInput.setAttribute('autocapitalize', 'characters'); plateInput.setAttribute('autocomplete', 'off'); plateInput.setAttribute('autocorrect', 'off'); plateInput.setAttribute('spellcheck', 'false');
@@ -231,7 +238,7 @@ const buildPlate = () => {
   return make('section', 'cz-section cz-plate',
     make('h2', '', 'Number plate', tagFor('plate')),
     make('p', 'cz-note', 'A design is something you unlock; the text is yours. It goes on both ends where the car has room.'),
-    make('h3', '', 'Design'), plateRow,
+    make('h3', '', 'Design'), plateSwitch, plateRow,
     make('h3', '', 'Your plate'),
     make('div', 'cz-textrow', plateInput, ok, plateChip), plateMsg,
     make('div', 'cz-foot', plateStatus, reset));
@@ -618,6 +625,7 @@ const showCar = () => {
   const car = state.car;
   carName.textContent = 'On your ' + car.name;
   syncPlateInput();
+  plateFamily = null; // (the worn design's family opens)
   if (!ShowroomView.show(stage, car, { evil: state.evil })) requestAnimationFrame(() => { if (state.open) stillCar(stage, car, state.evil); }); // (no WebGL: its picture)
   if (built) { const at = renderTabs(); if (at !== openSlot) openSection(at); shown(); plateShown(); propShown(); killShown(); scopeShown(); panels[openSlot]?.refresh(); }
 };
