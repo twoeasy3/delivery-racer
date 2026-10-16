@@ -31,6 +31,10 @@ const BREATH = 3;       // s: obstacles closer than this at the speed are one gr
 
 const g = await boot();
 const { CONFIG } = g;
+// The audit drives every level in the car it judges (--car): the garage's car rule (tiers.js: a level's tier, or its own
+// "allowedCars") is off for it. Left on, Game.start refused every level whose tier is not that car's ("No car for this
+// level"), built nothing, and the audit fell over on the empty track (TypeError at Track.length).
+g.cars.setTierHooks({ rule: () => null });
 const LW = CONFIG.laneWidth;
 const carId = opt('car', CONFIG.clock.car);
 const carDef = g.cars.CARS.find(c => c.id === carId);
@@ -53,6 +57,7 @@ const audit = (level) => {
   g.Game.evil = false;
   g.Game.loaded = null;
   g.Game.start();
+  if (g.Game.state !== 'playing') throw new Error(level.id + ': Game.start refused it (Game.canStart), nothing built');
   const T = g.track.Track, L = level, size = g.Collision.size;
   const length = T.length;
   const K = CONFIG.obstacleKinds;
