@@ -187,7 +187,7 @@ export const CARS = [
   { id: 'junker', tier: 1, name: 'Junker', price: 30, color: 0x6b7343, evilColor: 0x6f6c66, fixedLivery: true, model: 'junker',
     maxSpeed: 25, accel: 9.5, crossing: 0.7, health: 100, hw: 1.0, hl: 2.5, height: 1.95 },
   { id: 'darkvan', tier: 1, name: 'Darkvan', price: 80, color: 0x9be37a, evilColor: 0x242d55, fixedLivery: true, model: 'darkvan',
-    maxSpeed: 24, accel: 8.5, crossing: 0.65, health: 150, hw: 1.05, hl: 2.45, height: 2.4 },
+    maxSpeed: 26, accel: 8.5, crossing: 0.65, health: 150, hw: 1.05, hl: 2.45, height: 2.4 },
   // ---- tier 1, Blue Stars
   { id: 'postvan', tier: 1, blue: true, name: 'Post Van', price: 270, color: 0xd8262b, evilColor: 0xe0a81c, fixedLivery: true, model: 'postvan',
     maxSpeed: 24.5, accel: 9, crossing: 0.65, health: 160, hw: 0.9, hl: 2.1, height: 1.85 },

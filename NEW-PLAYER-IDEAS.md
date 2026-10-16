@@ -80,6 +80,9 @@ overtake; read the wrecks, not the times.)
    Darkvan for Farm Lanes trades top speed (the game's most important stat) for health (+50%) and delivery. On Farm Lanes
    (cows, tractors) that is the right trade in the numbers above (1 wreck in six against 5 and 6), but a nudge must say
    "tougher", never "faster". (The nudge built here only ever shows the stats the ride is better at: for the Darkvan, Health.)
+   **DONE (the owner, at v1.1.150-alpha: "Bump the darkvan to be faster than the junker"):** the Darkvan's top speed is now
+   26 m/s (was 24; the Junker 25), acceleration 8.5 and health 150 kept (cars.js, ecus.json). The nudge now shows Top speed
+   90 > 94 km/h and Health 100 > 150 (.ridenudge-check).
 3. Nothing steers a new player to a car: the showroom buries the two cars he can buy under eight he cannot.
 4. The results screen pushes Restart, not Next level, and never says what the bank can do.
 5. There is no teaching of the controls in play: everything is in Options > How to play. Good vs Evil is a toggle with no
@@ -199,7 +202,7 @@ focus and the lot's focus (idea 2). The rides are a table in render/rides.js: `b
 
 ## 5. Proposals that need the owner (numbers)
 - Back Roads tip **$40 > $60** (idea 8).
-- If the Darkvan is to be THE car for ★3: its top speed **24 > 25 m/s** (equal to the Junker; still below every ★★ car's
+- (Done differently by the owner at v1.1.150-alpha: 24 > **26** m/s, above the Junker.) If the Darkvan is to be THE car for ★3: its top speed **24 > 25 m/s** (equal to the Junker; still below every ★★ car's
   26+ but the Love Bus's 24), keeping its acceleration 8.5. Otherwise the nudge keeps saying "tougher", not "faster".
 - If the Commuter should be weaker still: health **85 > 75** (it already wrecks most); its top speed left alone.
 - A hard lock on ★2 / ★3 (idea 7) only with idea 8 or 20.

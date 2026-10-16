@@ -43,7 +43,7 @@ try {
   const bars = (a, b) => betterStats(a, b).map(s => s.label + ' ' + s.from + '>' + s.to).join(', ');
   const cj = betterStats(commuter, junker), jd = betterStats(junker, darkvan);
   check(cj[0]?.label === 'Top speed' && cj.every(s => s.to > s.from), 'Commuter to Junker: ' + bars(commuter, junker));
-  check(jd.length >= 1 && jd.every(s => s.label !== 'Top speed' && s.to > s.from), 'Junker to Darkvan (no faster: not claimed): ' + bars(junker, darkvan));
+  check(jd[0]?.label === 'Top speed' && jd[0].from === Math.round(junker.maxSpeed * 3.6) && jd[0].to === Math.round(darkvan.maxSpeed * 3.6) && jd.every(s => s.to > s.from), 'Junker to Darkvan (faster since the v1.1.150-alpha Darkvan bump, 25 -> 26 m/s): ' + bars(junker, darkvan));
   // ---- not part of the rules ----
   const { logicFiles } = await import('../vite.config.js');
   const files = logicFiles();
