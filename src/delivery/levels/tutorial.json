@@ -1,0 +1,65 @@
+{
+  "id": "tutorial",
+  "theme": "suburb",
+  "clock": { "good": 150, "evil": 150 },
+  "tip": 30,
+  "lanes": 4,
+  "traffic": { "commuter": 0.3, "minivan": 0.25, "wagon": 0.2, "taxi": 0.25 },
+  "trafficCount": 6,
+  "oncomingCount": 4,
+  "segments": [
+    { "length": 520, "curve": 0 },
+    { "length": 300, "curve": 0.0008 },
+    { "length": 480, "curve": 0 },
+    { "length": 300, "curve": -0.0008 },
+    { "length": 400, "curve": 0 }
+  ],
+  "zones": [
+    { "id": "tutSteer", "from": 0, "to": 300, "scenery": "park" },
+    { "id": "tutSpeed", "from": 300, "to": 540, "scenery": "park" },
+    { "id": "tutBoost", "from": 540, "to": 800, "scenery": "park" },
+    { "id": "tutClock", "from": 800, "to": 1040, "scenery": "park" },
+    { "id": "tutObstacles", "from": 1040, "to": 1340, "scenery": "park" },
+    { "id": "tutTraffic", "from": 1340, "to": 1660, "scenery": "highstreet" },
+    { "id": "tutSides", "from": 1660, "to": 1880, "scenery": "park" },
+    { "id": "tutDrop", "from": 1880, "to": 2000, "scenery": "park" }
+  ],
+  "quietZones": [
+    { "from": 0, "to": 1340, "density": 0 }
+  ],
+  "boostPads": [
+    { "from": 600, "to": 660, "lane": 2 },
+    { "from": 700, "to": 760, "lane": 3 }
+  ],
+  "pickups": [
+    { "type": "cash20", "s": 90, "lane": 3 },
+    { "type": "cash5", "s": 90, "lane": 2 },
+    { "type": "cash20", "s": 160, "lane": 2 },
+    { "type": "cash5", "s": 160, "lane": 3 },
+    { "type": "cash20", "s": 230, "lane": 3 },
+    { "type": "cash5", "s": 230, "lane": 2 },
+    { "type": "cash10", "s": 450, "lane": 2 },
+    { "type": "cash10", "s": 450, "lane": 3 },
+    { "type": "turbo", "s": 780, "lane": 2 },
+    { "type": "cash10", "s": 780, "lane": 3 },
+    { "type": "timePlus", "s": 880, "lane": 2 },
+    { "type": "timePlus", "s": 880, "lane": 3 },
+    { "type": "cash10", "s": 970, "lane": 2 },
+    { "type": "cash10", "s": 970, "lane": 3 },
+    { "type": "cash10", "s": 1120, "lane": 3 },
+    { "type": "cash10", "s": 1200, "lane": 2 },
+    { "type": "wrench", "s": 1300, "lane": 2 },
+    { "type": "wrench", "s": 1300, "lane": 3 },
+    { "type": "cash20", "s": 1460, "lane": "right" },
+    { "type": "cash10", "s": 1460, "lane": 3 },
+    { "type": "cash20", "s": 1560, "lane": "right" },
+    { "type": "cash10", "s": 1560, "lane": 3 },
+    { "type": "cash10", "s": 1760, "lane": 2 },
+    { "type": "cash10", "s": 1760, "lane": 3 }
+  ],
+  "obstacles": [
+    { "s": 1120, "lane": 2 },
+    { "s": 1200, "lane": 3 },
+    { "s": 1270, "lane": 2 }
+  ]
+}

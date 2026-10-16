@@ -745,5 +745,13 @@
       "evil": "Tunnel rats for the depot. The cash is on the tracks, and so are the trains. Pillars in the lane: pick a track or wreck."
     },
     "cargo": { "good": "ticketrolls", "evil": "rats" }
+  },
+  "tutorial": {
+    "name": "Driving Lesson",
+    "description": {
+      "good": "A quiet road to learn on: steer, speed, boost, time, obstacles, traffic. One thing at a time, nothing at stake.",
+      "evil": "A quiet road to learn on before the fun starts. One thing at a time, nothing at stake."
+    },
+    "cargo": { "good": "pizza", "evil": "parcel" }
   }
 }

@@ -73,6 +73,8 @@ import './render/touch.js';
 import './render/album.js';
 import './render/milestones.js';
 import './render/hiddenlevels.js';
+import './render/lessoncue.js'; // (the Driving Lesson's prompts, large: render only)
+import './render/ridenudge.js'; // (the Better ride nudge, behind ?nudge: render only)
 import './render/savecode.js';
 import './render/packs.js';
 import './render/shop.js'; // (the Shop: card packs for a placeholder currency, ?shop / ?shopcash=<n> / ?debug)

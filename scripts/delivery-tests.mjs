@@ -30,10 +30,10 @@ const GROUPS = {
     files: [/levelText|Text\.json|words\.js|messages|levelinfo|gimmickspage|poweruppage|cargopage/],
   },
   levels: {
-    about: 'Level data: the schema, every level builds with no problems, lapped levels close their loop, every import resolves, the Concept Strike\'s levels timed in its cars',
+    about: 'Level data: the schema, every level builds with no problems, the Driving Lesson (its lessons, a Commuter delivers it), lapped levels close their loop, every import resolves, the Concept Strike\'s levels timed in its cars',
     seconds: 135,
-    tests: [t('.schema-check.mjs'), t('.loop-check.mjs'), t('.bundle-check.mjs'), t('.merge-cross-check.mjs'), t('delivery-levels-check.mjs', { heavy: true }), t('tiers.mjs', { args: ['check'] }), t('.strike-levels-check.mjs')],
-    files: [/src\/delivery\/levels\//, /levels\.js$/, /events\.json/, /levelSchema|track\.js|physics\.js|editor/, /tiers\.json/],
+    tests: [t('.schema-check.mjs'), t('.loop-check.mjs'), t('.bundle-check.mjs'), t('.merge-cross-check.mjs'), t('delivery-levels-check.mjs', { heavy: true }), t('tiers.mjs', { args: ['check'] }), t('.strike-levels-check.mjs'), t('.tutorial-check.mjs')],
+    files: [/src\/delivery\/levels\//, /levels\.js$/, /events\.json/, /levelSchema|track\.js|physics\.js|editor/, /tiers\.json/, /lessoncue/],
   },
   'smoke-levels': {
     about: 'The smoke test\'s per-level section only, for the levels named with --levels=id,id (with --changed, the levels whose files changed): '
@@ -45,8 +45,8 @@ const GROUPS = {
   tiers: {
     about: 'Level tiers and progression: what opens and when, the car rule (a tier, a level\'s own list, a car lock), events (their times and rewards), labels, medals, saves, milestones, card packs (pools, odds, awards, the save), the Shop (its offers, buying), the showroom\'s cards (and the cars hidden until available: cars.js hideUnlessAvailable), where a car\'s key and blueprints come from (carsources.js), the Blue Star and earned cars\' figures, who a touch belongs to (the stick in a run, the screens else)',
     seconds: 110,
-    tests: [t('.tiers-check.mjs'), t('.levelrules-check.mjs'), t('.events-check.mjs'), t('.hunt-check.mjs'), t('.earned-check.mjs'), t('.balance-check.mjs'), t('.save-check.mjs'), t('.unlockall-check.mjs'), t('.milestones-check.mjs'), t('.packs-check.mjs'), t('.shop-check.mjs'), t('.jimshop-check.mjs'), t('.showroom-check.mjs'), t('.hidden-cars-check.mjs'), t('.carsources-check.mjs'), t('.carsources-dom-check.mjs'), t('.nav-check.mjs'), t('.hiddenlevels-check.mjs'), t('.touch-check.mjs'), t('.extras-hit-check.mjs'), t('.lite-check.mjs'), t('.packcar-check.mjs')],
-    files: [/tiers|progress\.js|milestones|menus|menu2|garage|cars\.js|levelSchema|events|packs|ecu|shop|jimshop|showroom|carsources|nav\.js|input\.js|hiddenlevels|hunt/],
+    tests: [t('.tiers-check.mjs'), t('.levelrules-check.mjs'), t('.events-check.mjs'), t('.hunt-check.mjs'), t('.earned-check.mjs'), t('.balance-check.mjs'), t('.save-check.mjs'), t('.unlockall-check.mjs'), t('.milestones-check.mjs'), t('.packs-check.mjs'), t('.shop-check.mjs'), t('.jimshop-check.mjs'), t('.showroom-check.mjs'), t('.hidden-cars-check.mjs'), t('.carsources-check.mjs'), t('.carsources-dom-check.mjs'), t('.nav-check.mjs'), t('.hiddenlevels-check.mjs'), t('.ridenudge-check.mjs'), t('.touch-check.mjs'), t('.extras-hit-check.mjs'), t('.lite-check.mjs'), t('.packcar-check.mjs')],
+    files: [/tiers|progress\.js|milestones|menus|menu2|garage|cars\.js|levelSchema|events|packs|ecu|shop|jimshop|showroom|carsources|nav\.js|input\.js|hiddenlevels|hunt|rides|ridenudge/],
   },
   cars: {
     about: 'The cars: traits, the tank, the ideas as cars (43 placeholders), mystery effects on the Super cars, the auto brake strength, the lane-change scrub (held flat out against off); the ECUs (ecu.js, ecus.json: the ladder, equal steps, respawn times, key and blueprint unlocking, the save, old saves, replays at an ECU)',
