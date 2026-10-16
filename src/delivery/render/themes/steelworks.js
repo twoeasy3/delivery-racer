@@ -19,6 +19,7 @@
 // Materials shared; one canvas texture for cladding (steelworksModels.js). Seeded from the level's id: the same every run.
 import * as THREE from 'three';
 import { LEVEL } from '../../levels.js';
+import { CONFIG } from '../../config.js';
 import { Track } from '../../track.js';
 import { heightOf } from '../tunnelshape.js';
 import { everyFrame } from './sceneryClock.js';
@@ -65,8 +66,11 @@ export const steelworks = ({ theme, offRoads, levelGroup }) => {
   // the buildings that blow (a level's blasts): nothing of ours on their side of the road there
   const blasts = (LEVEL.wreckage || []).filter(e => e.kind === 'blast').map(e => ({ s: e.at, side: e.from === 'left' ? -1 : 1 }));
   const blastNear = (s, side, pad = 22) => blasts.some(b => Math.abs(b.s - s) < pad && (!side || b.side === side));
+  // the level's ladle cranes and their MOLTEN METAL gantries (render/ladles.js): no span, lamp mast or rack post at them
+  const ladleSites = (LEVEL.ladles || []).flatMap(l => [l.s, l.s - CONFIG.ladle.sign]);
+  const ladleNear = (s, pad) => ladleSites.some(x => Math.abs(x - s) < pad);
   // where nothing may stand beside the road: a hall (it has its own), a crossing's line, a blast's building
-  const busy = (s, side, pad = 0) => !!hallAt(s, pad + 4) || crossingNear(s, pad + 14) || blastNear(s, side, pad + 22) || within(LEVEL.bridges, s, pad + 10);
+  const busy = (s, side, pad = 0) => !!hallAt(s, pad + 4) || ladleNear(s, pad + 8) || crossingNear(s, pad + 14) || blastNear(s, side, pad + 22) || within(LEVEL.bridges, s, pad + 10);
   // ...and nothing out to `d` m off: the halls are BAY m deep each side, their facades wider
   const busyOut = (s, side, d, pad = 0) => (d < 40 && !!hallAt(s, pad + 8)) || crossingNear(s, pad + 12) || (d < 34 && blastNear(s, side, pad + 22)) || within(LEVEL.bridges, s, pad + 10);
 

@@ -9,6 +9,7 @@ import { Traffic } from './traffic.js';
 import { Message } from './messages.js';
 import { UfoStrike } from './ufostrike.js';
 import { BulletTrain } from './bullettrain.js';
+import { LaneGimmicks } from './lanegimmicks.js';
 import { Tide } from './tide.js';
 import { Water } from './water.js';
 import { Wreckage } from './wreckage.js';
@@ -142,6 +143,9 @@ export const Player = {
         this.dropOncoming = true;
       }
     }
+    // (wrecked under a ladle's pour, or near it: set down in the lane it leaves free, never into the pool: lanegimmicks.js)
+    const free = LaneGimmicks.ladleDrop(this.s, lane);
+    if (free !== null) lane = free;
     this.lat = Track.laneOffset(lane, this.s);
   },
   // a fresh car at a standstill (the helicopter has just set it down)

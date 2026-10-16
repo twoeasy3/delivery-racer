@@ -335,6 +335,10 @@
 //              car is wrecked, whatever protects it but the Ghost (as at a dead end's wall). A PILLARS sign, beacons, a bell and a
 //              warning before them; the way past is the lane beside. On an edge railway (the metro) the lanes beside are the
 //              tracks: no train sets off while the player is at a group, and the two tracks never both have one near it
+//   ladles     { s, lanes: [first, last] }: a crane brings a LADLE of molten metal over those lanes as the player comes (CONFIG.ladle;
+//              lanegimmicks.js, the steelworks' scripted event): a MOLTEN METAL sign, beacons, a bell and a warning, then it
+//              tips and pours onto the road: the pool, while molten, wrecks a car whatever protects it but the Ghost; then it
+//              crusts over. Leaves a lane of the player's side free; out in the open, on straight level road
 //   tunnelJunctions { s, side: 'left' | 'right' }: a side tunnel crossing the road inside a tunnel (a mall's concourse): a
 //              mouth in each wall; as the player comes near, beacons flash and a bell rings, then a train (an electric tug
 //              and two trolleys) comes out of the `side` mouth and crosses into the other. A knock, never a stop or a bust.

@@ -115,6 +115,8 @@ export const RULES = {
   closedLoop: { text: 'The road must come back round to where it starts (a closed loop)', broken: (f) => !f.closed },
   battle: { text: 'Only with "battle"', broken: (f) => !f.level.battle },
   notRace: { text: 'Not on a race, nor the Battlefield', broken: (f) => !!(f.level.laps || f.level.battle || (f.level.grid && !f.level.grid.rival)) },
+  outdoors: { text: 'Out in the open: 20 m clear of a tunnel', broken: (f, e, [a, b]) => (f.level.tunnels || []).some(t => !t.road && a < t.to + 20 && b > t.from - 20) },
+  sparesALane: { text: 'Leaves a lane of the player\'s side free', broken: (f, e) => { const l = e.lanes || [], lo = Math.min(...l), hi = Math.max(...l); for (let k = f.playerFirst; k < f.playerFirst + f.playerLanes; k++) if (k < lo || k > hi) return false; return true; } },
   zonesTheme: { text: 'Shown on a level whose theme is in zones (coast, safari)', broken: () => false },
 };
 
@@ -306,6 +308,9 @@ export const FIELDS = {
     settings: { lane: lane('Lane', { required: true }), kind: pick('Kind', ['shutter', 'wall'], { default: 'shutter' }), length: num('Dead for (m)', { min: 40, max: 400, default: C.deadEnd?.length ?? 100 }) } },
   pillars: { shape: 'point', group: 'hazards', label: 'Pillars', help: 'Solid columns in a lane: hit one and the car is wrecked (a Ghost passes). A sign and beacons before them; the lane beside is the way past.',
     settings: { lane: lane('Lane', { required: true }), count: int('How many', { min: 1, max: 8, default: CONFIG.pillar.count }), gap: num('Apart (m)', { min: 8, max: 60, step: 1, default: CONFIG.pillar.gap }) } },
+  ladles: { shape: 'point', group: 'scripted', label: 'Molten ladle', rules: ['straight', 'level', 'outdoors', 'sparesALane'], reach: () => (C.ladle?.length ?? 12) / 2 + 2,
+    help: 'A crane brings a ladle of molten metal over those lanes as you come, and pours: the pool wrecks anything but a Ghost until it crusts over. Leave a lane free.',
+    settings: { lanes: lanes('Lanes it pours on (first, last)', { span: true, required: true }) } },
   tunnelJunctions: { shape: 'point', group: 'hazards', label: 'Tunnel junction', help: 'Inside a tunnel: a side tunnel crosses the road. Beacons and a bell, then a tug and trolleys come out of that side and cross.',
     settings: { side: pick('From', ['left', 'right'], { default: 'right' }) } },
   balloons: { shape: 'point', group: 'hazards', label: 'Hot-air balloon', road: 'both', help: 'Comes down on those lanes, sits, and lifts off again.', settings: { lanes: lanes('Lanes (first, last)', { span: true, required: true }) } },

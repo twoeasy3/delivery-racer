@@ -760,6 +760,16 @@ export const Collision = (() => {
   // an asteroid can only be hit while some of it is at the height of the car
   const atRoadLevel = (o) => o.h - o.r < Player.height && o.h + o.r > 0;
 
+  // wrecked outright at `at` (a dead end's wall, a pillar, a molten pool): set at `lat` (the open lane beside), where the
+  // helicopter drops the next car; the explosion and the message
+  const wreck = (at, lat, message) => {
+    Player.health = 0;
+    Player.lat = lat;
+    Game.shake = 1;
+    FxQueue.push({ type: 'explode', s: at.s, lat: at.lat, vs: 0, big: true });
+    Message.say('events', message);
+  };
+  const instakills = []; // (others' instakills, each (car) => { at, openLat, message } or null: lanegimmicks.js's ladles)
   const hitObstacles = () => {
     // a dead-end lane's end, or a PILLAR in a lane (lanegimmicks.js: laneEnd 'pillar', a wreck as at a wall, but a Ghost passes
     // through it: there is road behind it), checked before any protection is honoured. A SHUTTER (o.laneEnd 'shutter', the
@@ -782,12 +792,15 @@ export const Collision = (() => {
             continue;
           }
         }
-        Player.health = 0;
-        Player.lat = o.openLat;
-        Game.shake = 1;
-        FxQueue.push({ type: 'explode', s: o.s, lat: o.lat, vs: 0, big: true });
-        Message.say('events', o.laneEnd === 'pillar' ? 'pillarHit' : 'deadEndHit');
+        wreck(o, o.openLat, o.laneEnd === 'pillar' ? 'pillarHit' : 'deadEndHit');
         break;
+      }
+      // ...and the same for whatever else is an instakill where the car is (instakills: a ladle's molten pool, lanegimmicks.js):
+      // a Ghost passes through, nothing else protects the car
+      for (const deadly of instakills) {
+        if (Player.health <= 0 || Player.ghost > 0) break;
+        const hit = deadly(Player);
+        if (hit) { wreck(hit.at, hit.openLat, hit.message); break; }
       }
     }
     if (!Player.active || Player.shield > 0 || Player.ghost > 0) return;
@@ -1032,5 +1045,5 @@ export const Collision = (() => {
     }
   };
 
-  return { get bodies() { return getBodies(); }, obstacles, loaders, loadLevel, resetObstacles, updateObstacles, atRoadLevel, check, overlap, size: SIZE, ownBox: OWN_BOX };
+  return { get bodies() { return getBodies(); }, obstacles, loaders, loadLevel, resetObstacles, updateObstacles, atRoadLevel, check, overlap, instakills, size: SIZE, ownBox: OWN_BOX };
 })();

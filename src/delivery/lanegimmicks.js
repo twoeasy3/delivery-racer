@@ -15,6 +15,14 @@
 //              'pillar': a wreck as at a dead end's wall, whatever protects the car but the Ghost, which passes through). The
 //              telegraph a dead end's: a PILLARS sign over the lane, beacons, a bell and a warning; the way past is the lane
 //              beside (the metro's: a track, kept clear of trains past them: bullettrain.js reads pillarHold).
+//   ladles     { s, lanes: [first, last] }: a SCRIPTED EVENT (the steelworks'), by the player's distance, the same every run: with
+//              CONFIG.ladle.warn m to go a crane's trolley brings a ladle of molten metal out over those lanes (beacons, a bell,
+//              "LADLE OVERHEAD! Keep left/right!", a MOLTEN METAL sign before it); with `pourAt` m to go it tips and pours onto
+//              the road: the stream, then a pool spreading over the lanes. While it falls and the pool is molten it is an
+//              INSTAKILL (Collision.hitObstacles, through Collision.instakills: the dead end's wreck): whatever protects the car
+//              (shield, tank, armour, an invincible mystery) but the Ghost, which passes through. Then it crusts over, harmless.
+//              A lane of the player's side is always left free (the level reports one that is not); a car wrecked by a pool is
+//              set in it, and the helicopter sets the next car down in it (Player.prepareDrop: ladleDrop). Traffic: untouched
 // ============================================================================
 import { CONFIG } from './config.js';
 import { LEVEL } from './levels.js';
@@ -30,11 +38,14 @@ export const LaneGimmicks = {
   pads: [],  // { from, to, lane }
   ends: [],  // { s, from, lane, warned }
   groups: [], // pillars: { from, to, lane, warned }
+  ladles: [], // { s, first, last, lat, hw, hl, free, way, t, pour, now }: t s since its warning, pour s since it tipped (-1: not yet)
+  ladleNow: false, // (a test address, ?ladle=1: the next ladle ahead comes out now and pours as soon as it is there: main.js)
 
   attach() {
     if (attached) return;
     attached = true;
     Collision.loaders.push((add) => this.load(add));
+    Collision.instakills.push((car) => this.moltenAt(car)); // (a molten pool: wrecks the player as a dead end's wall does)
   },
   load(add) {
     const LW = CONFIG.laneWidth, B = CONFIG.boostPad, D = CONFIG.deadEnd;
@@ -64,6 +75,44 @@ export const LaneGimmicks = {
       }
       return { from, to: from + (n - 1) * gap, lane: g.lane, warned: false };
     });
+    const L = CONFIG.ladle;
+    this.ladles = (LEVEL.ladles || []).map((d) => {
+      const s = Track.place(d), first = Math.min(...d.lanes), last = Math.max(...d.lanes), lat = (Track.laneOffset(first, s) + Track.laneOffset(last, s)) / 2;
+      const [p0, p1] = Track.laneRange(1, s), free = [];
+      for (let k = p0; k <= p1; k++) if (k < first || k > last) free.push(k);
+      free.sort((a, b) => Math.min(Math.abs(a - first), Math.abs(a - last)) - Math.min(Math.abs(b - first), Math.abs(b - last))); // (the nearest first)
+      if (!free.length) Track.problems.push('ladle at ' + d.s + ': it pours on every lane of the player\'s side: leave one free');
+      if ((LEVEL.tunnels || []).some(t => !t.road && s > t.from - 20 && s < t.to + 20)) Track.problems.push('ladle at ' + d.s + ': out in the open, 20 m clear of a tunnel');
+      const way = free.length ? Math.sign(Track.laneOffset(free[0], s) - lat) : 1; // (+: the free lane is to the right)
+      return { s, first, last, lat, hw: (last - first + 1) * LW / 2 - L.edge, hl: L.length / 2, free, way, t: -1, pour: -1, now: false };
+    });
+  },
+  // a ladle's pool now: { k: how far it has spread (0..1), hot: an instakill, cool: 0..1 crusted over }, or null before it pours
+  pool(l) {
+    const L = CONFIG.ladle, p = l.pour;
+    if (p < 0) return null;
+    const touch = L.fall * 0.8; // (the stream's tip down to a car's roof)
+    return { k: Math.max(0, Math.min(1, (p - touch) / L.spread)), hot: p >= touch && p < L.pour + L.molten, cool: Math.max(0, Math.min(1, (p - L.pour - L.molten) / L.cool)) };
+  },
+  // the molten pool (or the falling stream) `car` is in, as { message, at: { s, lat }, openLat }, or null
+  moltenAt(car) {
+    for (const l of this.ladles) {
+      const q = this.pool(l);
+      if (!q || !q.hot || Math.abs(car.s - l.s) > l.hl + car.hl + 2) continue;
+      const zone = { s: l.s, lat: l.lat, yaw: 0, hw: Math.max(0.5, l.hw * q.k), hl: Math.max(0.5, l.hl * q.k) };
+      if (Collision.overlap(car, zone)) return { message: 'ladleHit', at: zone, openLat: Track.laneOffset(l.free[0] ?? l.first, car.s) };
+    }
+    return null;
+  },
+  // where the helicopter sets a car down that was wrecked at or near a ladle's pool (Player.prepareDrop): the free lane nearest
+  // `lane` if `lane` is under the pour and s within CONFIG.ladle.clear m of the pool, else null (as on any level)
+  ladleDrop(s, lane) {
+    const C = CONFIG.ladle.clear;
+    for (const l of this.ladles) {
+      if (Math.abs(s - l.s) > l.hl + C || lane < l.first || lane > l.last || !l.free.length) continue;
+      return [...l.free].sort((a, b) => Math.abs(a - lane) - Math.abs(b - lane))[0];
+    }
+    return null;
   },
   // the pillar group the player is coming up to or passing (from `warn` m before its first to its last), or null
   pillarsAt(s) {
@@ -77,9 +126,15 @@ export const LaneGimmicks = {
     if (this.pillarsAt(s)) return true;
     return !!other && this.groups.some(g => s <= g.to + 2 && g.from - s < CONFIG.pillar.hold);
   },
+  say(l) { // (a ladle's warning: to a player still coming, once)
+    if (!Player.active || Player.s > l.s + l.hl) return;
+    Message.say('events', 'ladle', l.way > 0 ? 'right' : 'left');
+    sfxAt('bell', l.s, 1);
+  },
   reset() {
     for (const e of this.ends) e.warned = false;
     for (const g of this.groups) g.warned = false;
+    for (const l of this.ladles) { l.t = l.pour = -1; l.now = false; }
   },
   // the dead end whose lane the player is driving down (between its start and its wall), or null
   inDeadLane(s, lat) {
@@ -87,7 +142,14 @@ export const LaneGimmicks = {
     for (const e of this.ends) if (s >= e.from && s <= e.s && Math.abs(lat - Track.laneOffset(e.lane, s)) <= LW / 2) return e;
     return null;
   },
-  update() {
+  update(dt = 0) {
+    // the ladles: out over the lanes with `warn` m to go (or at once for ?ladle=1), tipped with `pourAt` m to go once there
+    const L = CONFIG.ladle;
+    if (this.ladleNow) { const next = this.ladles.find(l => l.t < 0 && l.s + l.hl > Player.s); if (next) { next.t = 0; next.now = true; this.say(next); } this.ladleNow = false; }
+    for (const l of this.ladles) {
+      if (l.t < 0) { if (Player.s >= l.s - L.warn) { l.t = 0; this.say(l); } } else l.t += dt;
+      if (l.pour < 0) { if (l.t >= L.arrive && (l.now || Player.s >= l.s - L.pourAt)) { l.pour = 0; sfxAt('rumble', l.s, 1); sfxAt('burst', l.s, 0.8); } } else l.pour += dt;
+    }
     for (const g of this.groups) { // (the pillars' warning: once a group, to a player in its lane or not)
       const ahead = g.from - Player.s;
       if (ahead > CONFIG.pillar.warn + 20 || ahead < -(g.to - g.from) - 20) { g.warned = false; continue; }

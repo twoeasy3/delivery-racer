@@ -68,6 +68,8 @@
     "deadEndHit": ["Dead end. Wrecked."],
     "pillars": ["PILLARS AHEAD! Take a clear track!"],
     "pillarHit": ["Hit a pillar. Wrecked."],
+    "ladle": { "left": ["LADLE OVERHEAD! Keep left!"], "right": ["LADLE OVERHEAD! Keep right!"] },
+    "ladleHit": ["Molten metal. Wrecked."],
     "shutterSmashed": ["Straight through the shutter!"],
     "beached": ["Beached in the gravel!"],
     "balloon": ["A hot-air balloon is coming down on the road!"],
