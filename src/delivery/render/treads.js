@@ -535,6 +535,46 @@ export const turnWheels = (model, t) => {
   const roll = model.userData.roll;
   let dist = null;
   if (typeof roll === 'number') { dist = st.roll === undefined ? 0 : roll - st.roll; st.roll = roll; }
+  if (LOG?.stopAt && !model.userData.onShow && (LOG.models.get(model)?.rows.length || 0) >= LOG.stopAt) return; // (?treadstop=K: the wheels held at the run's K-th frame, for a still)
   if (found.rims?.list.length) rimFrame(model, dt, dist);
   if (found.treads?.list.length) treadFrame(model, dt, dist);
+  if (LOG) logFrame(model, found, dt, dist);
+};
+
+// ---- PROOF IN A REAL RUN (?treadlog, the owner, 15-Oct: "Check that the tread do actually spin"): render-only, off unless asked. Each
+// frame of a dressed model it measures how far every tread and rim mesh has really turned about its axle, in the model's own frame (a
+// point on the mesh, as scripts/.treads-check.mjs measures: whatever turns it, its own turn or a tyre that turns itself), with the
+// distance rolled; after LOG_FRAMES frames it prints one summary line (console.warn, which scripts/shots.mjs prints under a picture).
+const LOG = typeof location !== 'undefined' && /[?&]treadlog\b/.test(location.search) ? { models: new Map(), stopAt: +(/[?&]treadstop=(\d+)/.exec(location.search)?.[1] || 0) } : null;
+const LOG_FRAMES = 60, LOG_EACH = LOG ? /[?&]treadlog=(\d+)/.exec(location.search)?.[1] | 0 : 0, lp = new THREE.Vector3(), lm = new THREE.Matrix4();
+const logFrame = (model, found, dt, dist) => {
+  let st = LOG.models.get(model);
+  if (!st) { st = { car: found.carId, rows: [], last: null, done: false }; LOG.models.set(model, st); console.warn('TREADLOG start car=' + found.carId + ' treads=' + (found.treads?.list.length || 0) + ' rims=' + (found.rims?.list.length || 0) + ' tyres=' + (found.rimInfo?.length || 0) + ' on show=' + !!model.userData.onShow); }
+  if (st.done) return;
+  model.updateMatrixWorld(true);
+  lm.copy(model.matrixWorld).invert();
+  const angleOf = (mesh, u) => {
+    const t = found.rimInfo.find(x => x.tyre === u.tyre);
+    lp.set(0, 0.9, 0).applyMatrix4(mesh.matrixWorld).applyMatrix4(lm).sub(t.centre);
+    return t.axleX ? Math.atan2(lp.z, lp.y) : Math.atan2(-lp.x, lp.y); // (forward: the top going to the front, +z)
+  };
+  const tr = (found.treads?.list || []).map(m => angleOf(m, m.userData.tread)), rm = (found.rims?.list || []).map(m => angleOf(m, m.userData.rim));
+  const r = found.treads?.list[0]?.userData.tread.r || found.rims?.list[0]?.userData.rim.r || 1;
+  const wrap = (d) => { while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; return d; };
+  if (st.last) st.rows.push({ dt, dist, want: dist === null ? IDLE_RATE * dt : dist / (r * (model.matrixWorld.getMaxScaleOnAxis() || 1)), tread: tr.map((a, i) => wrap(a - st.last.tr[i])), rim: rm.map((a, i) => wrap(a - st.last.rm[i])), level: found.treads?.list[0]?.userData.tread.level ?? null, gap: found.treads?.list[0]?.userData.tread.gap ?? null });
+  st.last = { tr, rm };
+  const x = st.rows[st.rows.length - 1];
+  if (x && st.rows.length <= LOG_EACH) console.warn('TREADLOG frame ' + st.rows.length + ' car=' + st.car + ' dist=' + (x.dist === null ? 'idle' : x.dist.toFixed(4)) + ' want=' + x.want.toFixed(4) + ' treads=' + x.tread.map(v => v.toFixed(4)).join('/') + ' rims=' + x.rim.map(v => v.toFixed(4)).join('/') + ' blur=' + x.level);
+  if (st.rows.length < LOG_FRAMES) return;
+  st.done = true;
+  const f4 = (v) => (v === null ? 'idle' : v.toFixed(4)), rows = st.rows;
+  const moving = rows.filter(x => x.dist !== null && Math.abs(x.dist) > 1e-6), stopped = rows.filter(x => x.dist !== null && Math.abs(x.dist) <= 1e-6), idle = rows.filter(x => x.dist === null);
+  const allTurn = moving.length ? (found.treads?.list || []).map((_, i) => moving.filter(x => Math.abs(x.tread[i]) > 1e-5).length / moving.length) : [];
+  const together = rows.filter(x => x.rim.length && x.tread.length).map(x => Math.abs(x.tread[0] - x.rim[0]));
+  console.warn('TREADLOG car=' + st.car + ' treads=' + tr.length + ' rims=' + rm.length + ' frames=' + rows.length + ' moving=' + moving.length + ' stopped=' + stopped.length + ' idle=' + idle.length
+    + ' | every tread turning on moving frames: ' + allTurn.map(v => (v * 100).toFixed(0) + '%').join(',')
+    + ' | stopped frames, largest tread turn: ' + (stopped.length ? Math.max(...stopped.flatMap(x => x.tread.map(Math.abs))).toExponential(1) : '-')
+    + ' | tread - rim per frame, largest: ' + (together.length ? Math.max(...together).toFixed(4) : '-')
+    + ' | pitch ' + (rows[0]?.gap ?? 0).toFixed(3) + ' clamp ' + (CLAMP * (rows[0]?.gap ?? 0)).toFixed(3)
+    + ' | frames (dist m, want rad, tread0..n rad, rim0 rad, blur step): ' + rows.filter((_, i) => i % 5 === 0).slice(0, 12).map(x => [f4(x.dist), x.want.toFixed(4), x.tread.map(v => v.toFixed(4)).join('/'), x.rim.length ? x.rim[0].toFixed(4) : '-', x.level].join(' ')).join(' ; '));
 };
