@@ -60,6 +60,8 @@ const SAMPLES = {
   sideswipe: 'Short Crash Side Swipe',
   headOn: 'Head On Collision',
   heavy: ['Crash 1', 'Head On Collision'],    // TANK RAGE flattening something
+  crush: ['Short Crash with Glass', 'Collide1'], // the GIANT crushing cars: one crunch at a time (render/giantsound.js, CHECKLIST 386)
+  stomp: null,                  // ...and its footsteps: a low thump (synthesised only: see SYNTH)
   cannon: 'Tank Fire',
   tank: 'Tank Rage',
   tankPiece: 'Tank Rage Build', // a piece of the tank found (the fifth: tank)
@@ -324,6 +326,7 @@ const SYNTH = {
   puncture: (v) => { tone(300, 120, 0.08, 0.4 * v, 'square'); noise(5000, 2500, 0.7, 0.3 * v, 'bandpass'); }, // a bang, and the hiss
   explode: (v) => { noise(1400, 60, 0.7, 0.7 * v); tone(110, 28, 0.6, 0.6 * v); },   // a boom
   crash: (v) => { noise(900, 300, 0.14, 0.6 * v, 'bandpass'); tone(130, 70, 0.12, 0.4 * v, 'square'); }, // a metal thud
+  stomp: (v) => { tone(85, 32, 0.3, 0.5 * v); noise(240, 50, 0.2, 0.35 * v); }, // a giant's footstep: a low thump, no crash in it
   cannon: (v) => { tone(90, 30, 0.35, 0.8 * v); noise(2500, 300, 0.2, 0.5 * v); },
   pickup: (v) => [660, 880, 1100].forEach((f, i) => tone(f, f, 0.1, 0.2 * v, 'triangle', i * 0.06)),
   turbo: (v) => { tone(220, 1100, 0.45, 0.25 * v, 'sawtooth'); noise(400, 3000, 0.45, 0.2 * v, 'bandpass'); },
@@ -338,7 +341,7 @@ const SYNTH = {
   warble: (v) => [0, 0.09, 0.18, 0.27].forEach((d, i) => tone(i % 2 ? 1320 : 990, i % 2 ? 1500 : 880, 0.1, 0.16 * v, 'sine', d)),
 };
 Object.assign(SYNTH, {
-  explodeBig: SYNTH.explode, crashHard: SYNTH.crash, sideswipe: SYNTH.crash, headOn: SYNTH.crash, heavy: SYNTH.crash,
+  explodeBig: SYNTH.explode, crashHard: SYNTH.crash, crush: SYNTH.crash, sideswipe: SYNTH.crash, headOn: SYNTH.crash, heavy: SYNTH.crash,
   ghost: SYNTH.pickup, wrench: SYNTH.pickup, passenger: SYNTH.pickup, badGas: SYNTH.pickup, heavyMass: SYNTH.pickup,
   armour: SYNTH.pickup, bigSplash: SYNTH.pickup, butterfingers: SYNTH.pickup,
   timePlus: SYNTH.pickup, timeMinus: SYNTH.pickup,
