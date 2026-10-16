@@ -21,6 +21,7 @@ import { Hazards } from './hazards.js';
 import { Gambles } from './gambles.js';
 import { Radiation } from './radiation.js';
 import { Roadworks } from './roadworks.js';
+import { levelTier, tierWeights, swapKind } from './tiertraffic.js';
 
 // ---- traffic ---------------------------------------------------------------
 // One pool of cars recycled ahead of the player: some northbound (the player's way), the
@@ -81,7 +82,7 @@ export const Traffic = (() => {
   const weightsAt = (s) => {
     const weights = { ...(LEVEL.traffic || {}) };
     if (s !== undefined) for (const z of LEVEL.trafficZones || []) if (s >= z.from && s < z.to) Object.assign(weights, z.traffic);
-    return weights;
+    return tierWeights(weights, levelTier(LEVEL)); // (a tiered level: only exclusive kinds and garage cars of its tier and below: tiertraffic.js)
   };
   // (and on a level with water stages, only the kinds that can be at s, going way dir: see Water.allows)
   const mix = (s, dir) => Object.entries(weightsAt(s)).filter(([kind, rate]) => CONFIG.vehicles[kind] && rate > 0 && Water.allows(kind, s, dir));
@@ -533,7 +534,8 @@ export const Traffic = (() => {
     const C = CONFIG.convoy, L = LEVEL.convoys, size = L.size || C.size;
     const spare = cars.filter(c => !c.active && c.unused);
     if (spare.length < size + 1 || !Player.active || !Track.isMain(Player.s) || !mix().length) return false;
-    const kind = L.kind && CONFIG.vehicles[L.kind] ? L.kind : pickKind(Player.s);
+    const own = L.kind && CONFIG.vehicles[L.kind] ? swapKind(L.kind, levelTier(LEVEL)) : null; // (its own kind, or what stands in for it on a tiered level)
+    const kind = own || pickKind(Player.s);
     const type = CONFIG.vehicles[kind];
     for (let tries = 0; tries < 4; tries++) {
       const s0 = Track.spawnAt(Player.s, 150 + random() * 150, dir);
