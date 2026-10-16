@@ -237,7 +237,10 @@ try {
     check(['commuter', 'pickup', 'sport'].every(id => /^wheels,plate/.test(ids(C.carById(id)))), 'a car with a model keeps Wheels and Plate first');
     // the game's own Tank (render/items.js ownTank) is dressCosmetics(makeTankMesh(...), car): its plate is worn, as here
     const P = await load('render/platecosmetic.js');
-    P.setPlateDesign('yellow');
+    // (since CHECKLIST 437 an earned plate is per car only and must be in the hand: one given and worn on the Tank itself; v1.1.151-alpha merge)
+    const Cz = await load('render/cosmetics.js');
+    if (!Cz.isFreeCosmetic('plate', 'yellow')) Cz.awardCosmetic('plate:yellow', 1, { source: 'check' });
+    P.setPlateDesign('yellow', tank.id);
     const { makeTankMesh } = await load('render/cars.js'), { dressCosmetics } = await load('render/showcar.js');
     const t = dressCosmetics(makeTankMesh(tank.color), tank);
     check(t.userData.platePlan?.worn.length > 0, 'a Tank model dressed as the game dresses it wears its plate (' + (t.userData.platePlan?.worn.length || 0) + ')');
