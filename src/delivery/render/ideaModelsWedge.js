@@ -285,6 +285,7 @@ export const IDEA_MODELS_WEDGE = {
     const hidDecals = new Set();
     group.userData = {
       body,
+      stockRim: 'dial', // (its telephone-dial wheels are the rim design 'dial', render/rims.js: put on over the hub caps below, so the Wheels tab changes them)
       garageOnly: true, // (its doors move in the garage and on the card only: traffic draws it with them shut, render/cars.js)
       animate: (t) => { // (shut for a while, then up, held, and down again; shut at t = 0)
         // (the player's car is animated on the road too, render/items.js, which sets userData.roll for the rims: there the doors stay shut)
