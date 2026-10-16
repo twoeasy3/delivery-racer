@@ -16,6 +16,7 @@
 //   propById(id) -> the prop; buildProp(id, paint) -> the group; propPaint(hex) -> a paint material for it.
 import * as THREE from 'three';
 import { MORE_ROOF } from './propmodelsroof.js';
+import { MORE_ROOF_2 } from './propmodelsroof2.js';
 import { MORE_CARGO } from './propmodelscargo.js';
 import { MORE_CARGO_2 } from './propmodelscargo2.js';
 import { MORE_WING } from './propmodelswing.js';
@@ -136,7 +137,7 @@ export const BASE_PROPS = {
 // The extras live in their own files (propmodelsroof / cargo / wing / wingclassic, each with a MORE_* list and colourFrom: 'car' | 'mixed' |
 // 'fixed'); their ids are 'roof-...', 'cargo-...', 'wing-...' and never collide with the nine.
 export const PROPS = {
-  roof: [...BASE_PROPS.roof, ...MORE_ROOF],
+  roof: [...BASE_PROPS.roof, ...MORE_ROOF, ...MORE_ROOF_2],
   cargo: [...BASE_PROPS.cargo, ...MORE_CARGO, ...MORE_CARGO_2],
   wing: [...BASE_PROPS.wing, ...MORE_WING_CLASSIC, ...MORE_WING_2, ...MORE_WING],
 };

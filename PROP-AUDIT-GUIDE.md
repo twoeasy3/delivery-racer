@@ -150,6 +150,12 @@ cargo 1 x 0.8 x 1.2, wing 1.4 x 0.35 x 0.3. Seen in stills /tmp/prop-maxscale/*.
 | roof | roof-dish (Satellite dish) | 0.9 | 0.56 x 0.44 x 0.55 | a small dish (~0.5 m) |
 | roof | roof-pennant (Pennant mast) | 1.4 | 0.88 x 0.70 x 0.56 | a 0.7 m mast with its pennant |
 | roof | roof-cactus (Rooftop cactus) | 1.1 | 0.90 x 0.54 x 0.95 | a potted cactus; at 1.3 the pot read as a big bowl |
+| roof | roof-bike (Bike rack) | 2.0 | 1.88 x 0.94 x 1.57 | a bike ~1.6-1.7 m long (the 1.88 is the rack's bars; the bike itself is ~0.2 m wide); under it a child's bike |
+| roof | roof-ladder (Trade ladder) | 1.6 | 1.54 x 0.25 x 1.25 | a ladder ~0.48 m wide (it is short: the bound is 0.8 deep) and a ~19 cm pipe tube |
+| roof | roof-basket (Roof basket) | 1.5 | 1.42 x 0.64 x 1.13 | an expedition basket ~1.4 x 1.1 m, its spare tyre 0.6 m |
+| roof | roof-horns (Speakers) | 1.6 | 0.60 x 0.79 x 1.22 | two big PA horns (0.6 m rims); at 1.2 they were specks on a van |
+| roof | roof-donut (Giant doughnut) | 1.6 | 0.66 x 0.78 x 0.25 | a shop's novelty sign: a doughnut ~0.65 m across |
+| roof | roof-cones (Cone stack) | 1.5 | 1.44 x 0.72 x 0.38 | road-works cones ~0.7 m tall, 0.36 m bases |
 | cargo | cargocrates (Crate stack) | 1.5 | 1.44 x 1.13 x 1.71 | crates up to ~0.9 m; a truck bed takes a big stack |
 | cargo | cargobarrel (Barrel) | 0.9 | 0.82 x 0.72 x 0.84 | a cask / drum (~0.6-0.8 m); at 1.1 it read as a vat |
 | cargo | cargotarp (Tarp load) | 2.0 | 1.96 x 1.56 x 2.32 | a tarp covers whatever: as big as the bed |
