@@ -693,7 +693,7 @@ const wirePaneEditor = (box, node, pane) => {
   box.querySelectorAll('[data-gn]').forEach(b => b.addEventListener('click', () => {
     const i = sel(); if (i < 0) return;
     const next = now.map(q => q.slice()), to = clamp(i, nudged(now[i], b.dataset.gn, gPick.step, edge), now[i]);
-    if (to === now[i]) { status('Corner ' + cornerWords(pane, i, names) + ': ' + (side ? 'the cabin outline stops it there.' : 'the pillar ends there.')); return; }
+    if (to === now[i]) { const why = side ? 'the cabin outline stops it there.' : 'the pillar ends there.'; status('Corner ' + cornerWords(pane, i, names) + ': ' + why); const el = $('gRead'); if (el) el.innerHTML = cornerReadout(pane, now[i], auto.length === now.length ? auto[i] : null, i, names) + ' <span class="bad">' + why + '</span>'; return; } // (said by the drawing too: on a phone the status line is scrolled away)
     next[i] = to; setPane(pane, pack(next), 'corner ' + cornerWords(pane, i, names) + ' nudged ' + b.dataset.gn + ' ' + stepWords(gPick.step));
   }));
   const svg = box.querySelector('#glassSvg'), groups = new Map([...svg.querySelectorAll('[data-gp]')].map(g => [+g.dataset.gp, g]));
@@ -1131,7 +1131,7 @@ const renderPart = () => {
   if (p.panes) { const pane = S.pane && panesOf(S.nodes.get(p.id)).find(q => q.name === S.pane); if (pane?.cabin) wirePaneEditor(box, S.nodes.get(p.id), pane); else box.querySelectorAll('[data-pane]').forEach(b => b.addEventListener('click', () => select(S.sel, true, b.dataset.pane))); }
   { // (a window just opened: its editor scrolled into sight, it sits far down the panel; not again on every rebuild of the same one)
     const gh = box.querySelector('#gHead'), at = gh ? S.sel + '|' + S.pane : null;
-    if (gh && at !== shownPane && box.offsetParent) gh.scrollIntoView({ block: 'start' });
+    if (gh && at !== shownPane && box.offsetParent) box.querySelector('#glassSvg').scrollIntoView({ block: 'start' }); // (the drawing, its readout and nudges in sight: on a phone's sheet the heading and window buttons are just above)
     shownPane = gh && !box.offsetParent ? null : at;
   }
   $('pName').addEventListener('change', (e) => { if (p.added) set({ name: e.target.value }); else { S.nodes.get(p.id).name = e.target.value; set({ name: e.target.value }); } });
