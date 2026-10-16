@@ -10,6 +10,7 @@
 import { Ecu } from '../ecu.js';
 import { statShown, LOCKED_WORDS } from '../showroomData.js';
 import { Sound } from './audio.js';
+import { enqueue } from './cinequeue.js';
 import '../ecuupgrade.css';
 
 const make = (tag, className, ...children) => {
@@ -45,16 +46,15 @@ export const upgradeWords = (up) => {
 // ---- THE ECU UP MOMENT (the owner, 14-Oct: the glow and the cinematic are the PURCHASE's, not the blueprints': "Bought") ----
 // A purchase made here sets `fresh` (the car and the ECU just bought): the showroom's next draw glows that pip and shows an "ECU UP" flag
 // (upFlash, freshLevel), and the ECU UP cinematic (render/ecucine.js through unlockcine.js; ECU MAX when it was the last step) plays over the
-// screen, loaded only now. It is skipped with reduced motion, `&nocine` (for a still), or when WebGL is missing (playUnlock gives null).
+// screen, loaded only then: render/cinequeue.js queues it from Ecu.buy's 'ecuchange' (CHECKLIST 437: once, after the save, in turn with
+// any other cutscene; the Cutscenes setting, `&nocine`, no WebGL: none). Reduced motion: the fade-only version.
 // Reaching the blueprints for an ECU only writes a quiet "Upgrade ready" (blueprintcard.js progressBar, the showroom's bar and pips).
 let fresh = null, freshTimer = 0;
 export const freshLevel = (card) => (fresh && card && fresh.car === card.id ? fresh.to : 0);
 export const upFlash = (card) => (freshLevel(card)
   ? make('p', 'sr-upflash' + (fresh.to >= fresh.max ? ' max' : ''), make('b', '', 'ECU UP'), ' ' + (fresh.to >= fresh.max ? 'MAX ECU ' + fresh.to + ' bought' : 'ECU ' + fresh.to + ' bought')) : null);
-export const playUpgrade = (car, to, max, { evil = false } = {}) => {
-  if (typeof window === 'undefined' || /[?&]nocine\b/.test(location.search) || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return Promise.resolve(null);
-  return import('./unlockcine.js').then(m => m.playUnlock({ mode: to >= max ? 'ecumax' : 'ecu', carId: car.id, level: to, evil })).catch(() => null);
-};
+// (queued in render/cinequeue.js with the livery on show; Ecu.buy's 'ecuchange' queues the same for any other buyer, once: true if queued)
+export const playUpgrade = (car, to, max, { evil = false } = {}) => Promise.resolve(enqueue({ mode: to >= max ? 'ecumax' : 'ecu', carId: car.id, level: to, evil }));
 // the moment of a purchase (a result of Ecu.buy that went through): the flag and glow for the next draw, the sound, the cinematic
 export const upMoment = (card, result, { evil = false } = {}) => {
   fresh = { car: card.id, to: result.to, max: Ecu.max(card.car) };

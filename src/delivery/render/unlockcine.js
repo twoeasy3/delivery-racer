@@ -1,8 +1,8 @@
 // ---- UNLOCK CINEMATICS: a new car's reveal, and a more dramatic one for a car's KEY (the owner, 13-Oct: "a cinematic
 // unlock animation, and a more dramatic one for a key unlock", "only viewable from link for now"; then "different camera
 // shots", "the car unlock exactly 5 seconds"; 14-Oct: tap to dismiss at the end, a real ignition, more shots of the car,
-// a fob that unlocks the car for the keys with no blade). Reached ONLY by the address for now (main.js loads this file
-// only then); nothing in the menus or in play starts one yet.
+// a fob that unlocks the car for the keys with no blade). Reached by the address (main.js loads this file then) and,
+// since CHECKLIST 437, from the game itself: render/cinequeue.js plays them, one at a time, as cars, keys and ECUs are had.
 //   ?unlockcine=car:<id>   the CAR unlock, 5.0 s, four shots, then held:
 //       0.00-1.25 SILHOUETTE  a low wide hero shot from the front left, in the dark: a spotlight beam sweeps across
 //                              behind the car, a glow rises behind it, the car a black shape with a rim of light
@@ -402,10 +402,12 @@ const css = `
 `;
 
 // ---- one play ----
-export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loop = false, still = null, level = null } = {}) => {
+// (from the game, render/cinequeue.js: lite: true the fade-only version (a low-end device); short: true straight to the held end
+// (the Cutscenes setting's Short); onClose: called once, when it is closed, whatever closed it)
+export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loop = false, still = null, level = null, lite: liteAsked = false, short = false, onClose = null } = {}) => {
   const car = carById(carId) || carById('commuter');
   if (!car) return null;
-  const lite = !!(LITE.size || stillViews());
+  const lite = !!(liteAsked || LITE.size || stillViews());
   const style = Object.assign(document.createElement('style'), { textContent: css + (DIRECTORS[mode]?.css || '') });
   const root = Object.assign(document.createElement('div'), { className: 'ucine' });
   const canvas = document.createElement('canvas');
@@ -742,6 +744,7 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     for (const x of s.own) x.dispose?.();
     renderer.dispose();
     renderer.forceContextLoss();
+    try { onClose?.(); } catch (error) { console.error(error); }
   };
   // a tap or a key: while it plays, to the held end; at the end (or a still), closed
   const skip = () => { if (held || still !== null) close(); else hold(); };
@@ -754,6 +757,7 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
   addEventListener('keydown', onKey, true);
 
   if (still !== null) { const t = clamp(still, 0, total); requestAnimationFrame(() => { resize(); frame(t); }); }
+  else if (short) requestAnimationFrame(() => { if (!done) { resize(); hold(); } }); // (Short: the held end at once, no sound)
   else raf = requestAnimationFrame(tick);
   return { close, skip, get done() { return done; }, get held() { return held; }, total };
 };
