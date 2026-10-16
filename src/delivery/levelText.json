@@ -539,6 +539,14 @@
     "name": "Obstacle Lab",
     "cargo": { "good": "pizza", "evil": "parcel" }
   },
+  "slow-pad": {
+    "name": "Slow Pad Lab",
+    "description": {
+      "good": "A pizza across town. The cash sits on the slow pads: keep your foot down, or go round.",
+      "evil": "A parcel nobody wants. The cash sits on the slow pads: grab it or keep your speed."
+    },
+    "cargo": { "good": "pizza", "evil": "parcel" }
+  },
   "chaos": {
     "name": "Pile-Up Parade",
     "cargo": { "good": "pancakes", "evil": "piranhas" }

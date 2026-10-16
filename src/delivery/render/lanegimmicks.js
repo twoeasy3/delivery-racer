@@ -7,6 +7,9 @@
 // dead-end lane: its floor coloured red all along (darker, and striped in hazard yellow and black, over the last
 // CONFIG.deadEnd.stripes m), a DEAD END sign on a gantry over the lane `sign` m before the end with amber beacons on it
 // (flashing while the player is in the lane with `warn` m to go), and a red arrow on the floor pointing to the open lane
+// A SLOW PAD (SLOW-PAD-DESIGN.md) is the boost pad turned round: the same belt over the lane, but dull and hatched, its chevrons
+// pointing BACK at the player and creeping toward the car, amber edges; skinned by the theme as the boost pad is: built in
+// render/slowpads.js (all of a level's slow pads one mesh, their edges one more)
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { LEVEL } from '../levels.js';
@@ -17,6 +20,7 @@ import { Player } from '../player.js';
 import { LaneGimmicks } from '../lanegimmicks.js';
 import { scene, tmp, clearGroup } from './scene.js';
 import { buildStrip } from './road.js';
+import { buildSlowPads } from './slowpads.js'; // (the slow pads: one merged mesh)
 import { ceilingAt } from './tunnelshape.js';
 import { syncLadles } from './ladles.js'; // (the steelworks' ladles: their crane, pour and pool)
 
@@ -27,6 +31,8 @@ const glow = (color, extra) => new THREE.MeshBasicMaterial({ color, ...extra });
 const flat = (color, offset, extra) => new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: offset, polygonOffsetUnits: offset, ...extra });
 const BEACON_ON = 0xffb020, BEACON_OFF = 0x5a4010;
 let belts = [], ends = [], pillarSigns = [];
+
+let slowBelt = null; // { material, speed }: the slow pads' one belt, scrolled back toward the player
 
 // the belt's picture, 64 x 256 (repeated every 4 m along the pad): a travelator's dark belt with pale ridges and a yellow
 // chevron; a plain pad's blue strip with a white chevron. Made once each, kept
@@ -120,6 +126,13 @@ Game.onLoad.push(() => {
     }
     return { material, speed: 1 / 4 * 3.5 }; // (the picture moves 3.5 m/s along the pad: one repeat is 4 m)
   });
+  // ---- the slow pads: every one in one belt mesh and one edge mesh (render/slowpads.js)
+  slowBelt = null;
+  if (LaneGimmicks.slowPads.length) {
+    const built = buildSlowPads(LaneGimmicks.slowPads, theme);
+    group.add(...built.meshes);
+    slowBelt = built.belt;
+  }
   // ---- the dead ends
   const D = CONFIG.deadEnd;
   ends = LaneGimmicks.ends.map((e) => {
@@ -177,6 +190,7 @@ Game.onLoad.push(() => {
 export const syncLaneGimmicks = (dt, now) => {
   syncLadles(now);
   for (const b of belts) b.material.map.offset.y -= b.speed * dt;
+  if (slowBelt) slowBelt.material.map.offset.y += slowBelt.speed * dt; // (creeping back toward the player)
   const on = Math.floor(now / 250) % 2 === 0;
   for (const { lamps, e } of ends) {
     const live = Player.active && e.s - Player.s > 0 && e.s - Player.s <= CONFIG.deadEnd.warn && LaneGimmicks.inDeadLane(Player.s, Player.lat) === e;

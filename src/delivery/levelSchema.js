@@ -311,6 +311,8 @@ export const FIELDS = {
   trolleys: { shape: 'stretch', group: 'hazards', label: 'Shopping trolleys', road: 'both', help: 'Rolling across the road with its camber.', settings: { count: count(6) } },
   boostPads: { shape: 'stretch', group: 'hazards', label: 'Boost pad', help: 'A pad in that lane: driving over it pulls the car on over its top speed. Flush with the road; with Handrails on, rails stand along both edges (obstacles).',
     settings: { lane: lane('Lane', { required: true }), rails: flag('Handrails', { default: false }) } },
+  slowPads: { shape: 'stretch', group: 'hazards', label: 'Slow pad', span: 60, minSpan: 20, help: 'A boost pad turned round: driving over it drains speed (less with the accelerator held). Flush with the road. Leave a lane clear.',
+    settings: { lane: lane('Lane', { required: true }) } },
   deadEnds: { shape: 'point', group: 'hazards', label: 'Dead-end lane', help: 'That lane ends here. Shutter: wrecks you; a Ghost or a tank passes. Wall: wrecks everything.',
     settings: { lane: lane('Lane', { required: true }), kind: pick('Kind', ['shutter', 'wall'], { default: 'shutter' }), length: num('Dead for (m)', { min: 40, max: 400, default: C.deadEnd?.length ?? 100 }) } },
   pillars: { shape: 'point', group: 'hazards', label: 'Pillars', help: 'Solid columns in a lane: hit one and the car is wrecked (a Ghost passes). A sign and beacons before them; the lane beside is the way past.',

@@ -98,6 +98,7 @@ const SAMPLES = {
   camera: null,                 // a speed camera catching the player (a shutter's click and whine)
   bell: null,                   // a level crossing's bell, ringing while its lights flash
   jet: null,                    // a jet screaming over (the Battlefield's airstrikes)
+  slowPad: null,                // onto a slow pad (the turbo's sweep turned round: a falling one; CONFIG.slowPad)
   drum: null,                   // a parade's bass drum
   jingle: null,                 // an ice-cream van's chimes
   cargoDrop: ['Collide1', 'Plop Up'], // a load coming off a truck
@@ -327,6 +328,7 @@ const SYNTH = {
   cannon: (v) => { tone(90, 30, 0.35, 0.8 * v); noise(2500, 300, 0.2, 0.5 * v); },
   pickup: (v) => [660, 880, 1100].forEach((f, i) => tone(f, f, 0.1, 0.2 * v, 'triangle', i * 0.06)),
   turbo: (v) => { tone(220, 1100, 0.45, 0.25 * v, 'sawtooth'); noise(400, 3000, 0.45, 0.2 * v, 'bandpass'); },
+  slowPad: (v) => { tone(700, 140, 0.5, 0.22 * v, 'sawtooth'); noise(2400, 300, 0.5, 0.2 * v, 'bandpass'); }, // (the turbo's, falling: onto a slow pad)
   tank: (v) => [55, 82.5, 110].forEach((f) => tone(f, f * 0.98, 1.1, 0.3 * v, 'sawtooth')), // a low power chord
   siren: (v) => { for (let i = 0; i < 4; i++) tone(i % 2 ? 620 : 820, i % 2 ? 620 : 820, 0.22, 0.16 * v, 'square', i * 0.22); },
   tick: (v) => tone(1000, 1000, 0.06, 0.25 * v, 'square'),

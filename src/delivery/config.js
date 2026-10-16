@@ -1580,6 +1580,15 @@ export const CONFIG = {
   // refilled for as long as it is on the pad; a ghost too (it is the floor, as ice is). A pad with rails: true has handrails,
   // `rail` m sections every `rail` m along both edges, `railGap` m short of each end: ordinary obstacles (obstacleKinds.handrail)
   boostPad: { time: 2.5, speed: 12, rail: 3, railGap: 3 }, // (a rail is 3 m long, 0.24 m thick: collision.js SIZE.handrail)
+  // a SLOW PAD ("slowPads": { from, to, lane }, lanegimmicks.js; the boost pad turned round, SLOW-PAD-DESIGN.md): while the player's
+  // car is on it, it drains speed as a drag does (growing with speed^2, so every car loses the same SHARE over the same length:
+  // a slow car is not punished twice), and the engine cannot win any back until the car is off it (braking still brakes).
+  // `held`: the share of its speed lost every `per` m with the accelerator held; `coast`: off it (hands off or braking);
+  // `most`: the most one pad takes of the speed the car came onto it with; never below CONFIG.minSpeed. A turbo pickup running
+  // or a tank rides over it untouched; it ends a boost pad's push; a ghost is slowed too (it is the floor). Traffic and racers
+  // are not (so never in a race: the level reports it). `clear`: no pad that many m before a jam ramp or a drawbridge.
+  // `tune` multiplies the drain (0: pads do nothing; ?slowpad=<x> for a visit, main.js). An 80 m pad: about 15% held, 25% coasting
+  slowPad: { held: 0.02, coast: 0.035, per: 10, most: 0.3, clear: 170, tune: 1 },
   // a dead-end lane ("deadEnds": { s, lane, kind, length? }, lanegimmicks.js): the lane runs on as usual for `length` m and
   // ENDS at s (obstacleKinds.laneEnd): a 'shutter' (road behind it: a Ghost passes, a tank or armour smashes through, any
   // other car is wrecked) or a 'wall' (nothing behind it: wrecked whatever protects the car). The telegraph: the lane's floor

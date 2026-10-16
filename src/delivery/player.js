@@ -50,6 +50,8 @@ export const Player = {
   dropOncoming: false, // the helicopter is setting the car down on the oncoming side (no dry lane on its own)
   turbo: 0,            // s of turbocharger left
   boost: 0,            // s of a boost pad's push left (lanegimmicks.js, Track.padAt)
+  slowPad: null,       // the slow pad the car is on (Track.slowPadAt; CONFIG.slowPad), null off one; slowFrom: the speed it came onto it at
+  slowFrom: 0,
   ghost: 0,            // s of passing through cars and barriers left
   passenger: 0,        // s of legal shoulder driving left
   radar: 0,            // s of radar detector left: the police can't bust the car
@@ -164,6 +166,7 @@ export const Player = {
     this.launching = true;
     this.turbo = 0;
     this.boost = 0;
+    this.slowPad = null; this.slowFrom = 0; this.slowSaid = false; // (a slow pad's: see updateSpeed; slowSaid: its message, once a run)
     this.ghost = 0;
     this.passenger = 0;
     this.radar = 0;
@@ -390,6 +393,18 @@ export const Player = {
     // hands off, the speed simply holds; pulling away and recovering from a hit are automatic
     // (a boost pad under the car: its push for CONFIG.boostPad.time s, refilled for as long as the car is on it; a ghost too, it is the floor)
     if (this.active && Track.padAt(this.s, this.lat)) this.boost = CONFIG.boostPad.time;
+    // (a slow pad under the car, CONFIG.slowPad: it ends a boost pad's push. A turbo running or a tank rides over it untouched; a ghost
+    // is slowed, it is the floor. Its drag is below, once the top speed is known)
+    const slowPad = this.active && this.turbo <= 0 && this.tank <= 0 ? Track.slowPadAt(this.s, this.lat) : null;
+    if (slowPad !== this.slowPad) {
+      if (slowPad) {
+        this.slowFrom = this.speed;
+        sfx('slowPad', 0.6);
+        if (!this.slowSaid) { this.slowSaid = true; Message.say('events', 'slowPad'); }
+      }
+      this.slowPad = slowPad;
+    }
+    if (slowPad) this.boost = 0;
     const padded = this.boost > 0;
     this.boost = Math.max(0, this.boost - dt);
     const boosted = this.turbo > 0 || padded;
@@ -457,6 +472,15 @@ export const Player = {
     const sea = Water.feel(this.s, Water.floats(CAR) || this.tank > 0), afloat = sea.depth > 0, seaAccel = sea.accel, seaBrake = sea.brake;
     // (the Amphibious Tank keeps a share of its own)
     top *= this.rageTank && afloat ? 1 + (this.rageTank.afloat - 1) * Math.min(1, sea.depth / CONFIG.water.afloat) : sea.top;
+    // on a slow pad: a drag growing with speed^2 (the same share lost over the same metres, whatever the car), less with the
+    // accelerator held, never more than `most` of the speed it came on at nor under minSpeed; and the engine wins nothing back
+    // while on it (its top speed is where the drag left it). Braking still brakes, below
+    if (slowPad) {
+      const SP = CONFIG.slowPad, floor = Math.max(CONFIG.minSpeed, this.slowFrom * (1 - SP.most));
+      const rate = -Math.log(1 - (throttle > 0 ? SP.held : SP.coast)) / SP.per * SP.tune; // (per m, of the speed)
+      if (this.speed > floor) this.speed = Math.max(floor, this.speed * Math.exp(-rate * this.speed * dt));
+      top = Math.min(top, Math.max(this.speed, floor));
+    }
     let drive = throttle;
     this.speedTop = top;
     // the slowest the brakes bring it: on a lapped circuit, minSpeed; anywhere else, to a stop, for as long
@@ -480,7 +504,7 @@ export const Player = {
       const accel = drive * (boosted ? CONFIG.turboAccel : drives.accel * (held ? held.accel : 1) * pull) * (this.puncture ? CONFIG.puncture.accel : 1) * seaAccel;
       this.speed = Math.min(top, this.speed + accel * dt);
       // (the driven lane scrub's: the car's own pull with the accelerator held; not the turbo's or a pad's, the pull-away, or afloat)
-      if (throttle > 0 && !boosted && !this.launching && !afloat) { this.pulling = accel; this.pullDrive = drive; }
+      if (throttle > 0 && !boosted && !this.launching && !afloat && !slowPad) { this.pulling = accel; this.pullDrive = drive; } // (nor on a slow pad: it is the cost there)
     } else if (drive < 0 && this.puncture) { // (a flat tyre: hard, and all the way down to a stop)
       this.speed = Math.max(0, this.speed + drive * CONFIG.brake * CONFIG.puncture.brake * grip * dt);
     } else if (drive < 0 && this.speed > slowest) {

@@ -1,0 +1,249 @@
+{
+  "id": "slow-pad",
+  "theme": "city",
+  "clock": { "good": 80, "evil": 65 },
+  "tip": 60,
+  "lanes": 3,
+  "flow": "north",
+  "traffic": {
+    "commuter": 1
+  },
+  "trafficCount": 6,
+  "oncomingCount": 0,
+  "cargo": {
+    "good": "pizza",
+    "evil": "parcel"
+  },
+  "segments": [
+    {
+      "length": 320,
+      "curve": 0
+    },
+    {
+      "length": 260,
+      "curve": 0
+    },
+    {
+      "length": 260,
+      "curve": 0.006
+    },
+    {
+      "length": 340,
+      "curve": 0
+    },
+    {
+      "length": 260,
+      "curve": -0.006
+    },
+    {
+      "length": 360,
+      "curve": 0
+    }
+  ],
+  "boostPads": [
+    {
+      "from": 150,
+      "to": 230,
+      "lane": 0
+    },
+    {
+      "from": 950,
+      "to": 1030,
+      "lane": 2
+    },
+    {
+      "from": 1480,
+      "to": 1560,
+      "lane": 2
+    }
+  ],
+  "slowPads": [
+    {
+      "from": 380,
+      "to": 460,
+      "lane": 1
+    },
+    {
+      "from": 650,
+      "to": 750,
+      "lane": 0
+    },
+    {
+      "from": 950,
+      "to": 1030,
+      "lane": 0
+    },
+    {
+      "from": 1250,
+      "to": 1350,
+      "lane": 2
+    },
+    {
+      "from": 1500,
+      "to": 1580,
+      "lane": 1
+    }
+  ],
+  "pickups": [
+    {
+      "type": "cash10",
+      "s": 395,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 415,
+      "lane": 1
+    },
+    {
+      "type": "cash10",
+      "s": 435,
+      "lane": 1
+    },
+    {
+      "type": "cash5",
+      "s": 520,
+      "lane": 0
+    },
+    {
+      "type": "cash5",
+      "s": 520,
+      "lane": 2
+    },
+    {
+      "type": "cash5",
+      "s": 532,
+      "lane": 0
+    },
+    {
+      "type": "cash5",
+      "s": 532,
+      "lane": 2
+    },
+    {
+      "type": "cash5",
+      "s": 680,
+      "lane": 0
+    },
+    {
+      "type": "cash5",
+      "s": 700,
+      "lane": 0
+    },
+    {
+      "type": "cash5",
+      "s": 720,
+      "lane": 0
+    },
+    {
+      "type": "cash5",
+      "s": 880,
+      "lane": 1
+    },
+    {
+      "type": "cash5",
+      "s": 880,
+      "lane": 2
+    },
+    {
+      "type": "cash5",
+      "s": 892,
+      "lane": 1
+    },
+    {
+      "type": "cash5",
+      "s": 892,
+      "lane": 2
+    },
+    {
+      "type": "cash5",
+      "s": 1100,
+      "lane": 0
+    },
+    {
+      "type": "cash5",
+      "s": 1100,
+      "lane": 1
+    },
+    {
+      "type": "cash5",
+      "s": 1112,
+      "lane": 0
+    },
+    {
+      "type": "cash5",
+      "s": 1112,
+      "lane": 1
+    },
+    {
+      "type": "cash5",
+      "s": 1124,
+      "lane": 0
+    },
+    {
+      "type": "cash5",
+      "s": 1124,
+      "lane": 1
+    },
+    {
+      "type": "cash5",
+      "s": 1280,
+      "lane": 2
+    },
+    {
+      "type": "cash5",
+      "s": 1300,
+      "lane": 2
+    },
+    {
+      "type": "cash5",
+      "s": 1320,
+      "lane": 2
+    },
+    {
+      "type": "cash20",
+      "s": 1520,
+      "lane": 1
+    },
+    {
+      "type": "cash20",
+      "s": 1540,
+      "lane": 1
+    },
+    {
+      "type": "cash5",
+      "s": 1650,
+      "lane": 0
+    },
+    {
+      "type": "cash5",
+      "s": 1650,
+      "lane": 1
+    },
+    {
+      "type": "cash5",
+      "s": 1650,
+      "lane": 2
+    },
+    {
+      "type": "cash5",
+      "s": 1662,
+      "lane": 0
+    },
+    {
+      "type": "cash5",
+      "s": 1662,
+      "lane": 1
+    },
+    {
+      "type": "cash5",
+      "s": 1662,
+      "lane": 2
+    },
+    {
+      "type": "turbo",
+      "s": 600,
+      "lane": 1
+    }
+  ]
+}
