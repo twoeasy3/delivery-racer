@@ -35,13 +35,14 @@ try {
   const K = await load('render/killfx.js');
   const PT = await load('render/particles.js');
   const Store = await load('render/loadoutstore.js');
-  const { COSMETICS, cosmeticKeys } = await load('render/cosmetics.js');
+  const { COSMETICS, cosmeticKeys, grantAll } = await load('render/cosmetics.js');
+  grantAll(); // (earned cosmetics, CHECKLIST 437: 999 of each, so every effect can be equipped)
   const { Progress } = await load('progress.js');
   const ids = K.KILL_IDS.filter(id => id !== 'classic');
 
   // ---- the registry ----
   const reg = COSMETICS.filter(c => c.slot === 'kill');
-  check(K.KILL_IDS[0] === 'classic' && reg.length === K.KILL_IDS.length && reg.every(c => c.free && 'price' in c && c.name.length <= 10) && K.KILL_IDS.every(id => cosmeticKeys().includes('kill:' + id)), 'the registry: ' + reg.length + ' kill effects, Classic first, slot \'kill\', free, a placeholder price, short names (' + reg.map(c => c.name).join(', ') + ')');
+  check(K.KILL_IDS[0] === 'classic' && reg.length === K.KILL_IDS.length && reg.every(c => (c.id === 'classic' ? c.free : c.earned && !c.free) && 'price' in c && c.name.length <= 10) && K.KILL_IDS.every(id => cosmeticKeys().includes('kill:' + id)), 'the registry: ' + reg.length + ' kill effects, Classic first (free), the rest earned (CHECKLIST 437), slot \'kill\', short names (' + reg.map(c => c.name).join(', ') + ')');
   check(K.KILL_IDS.every(id => typeof K.KILL_FX[id].icon === 'function') && ids.every(id => typeof K.KILL_FX[id].explode === 'function' && typeof K.KILL_FX[id].trail === 'function'), 'every effect has an icon, an explosion and a trail');
 
   // ---- every effect, small and big: spawns, its cost ----
@@ -164,15 +165,16 @@ try {
   raw.setItem('delivery.loadout', JSON.stringify({ v: 1, default: { kill: { id: 'nonsense' } }, cars: { sport: { kill: { id: 'x<script>' } } } })); Store.reloadStore(); K.forgetKillCache();
   check(K.shownKill('sport') === 'classic' && K.shownKill(null) === 'classic' && !Store.snapshot().cars.sport, 'an unknown id is Classic; garbage is dropped by the store');
   wipe();
-  K.setKill('confetti');
+  K.setKill('confetti', 'commuter');
   K.setKill('coins', 'sport');
-  check(K.chosenKill('commuter') === 'confetti' && K.chosenKill('sport') === 'coins' && K.shownKill(null) === 'confetti', 'per car over the All-cars default: the commuter follows the default (Confetti), the sport has its own (Coins)');
-  K.setKill('confetti', 'sport');
-  check(!Store.hasOwn('sport', 'kill') && K.chosenKill('sport') === 'confetti', 'a car\'s choice equal to the default is dropped (the cache follows the change)');
-  check(K.setKill('nope') === false && K.shownKill(null) === 'confetti', 'setKill refuses an unknown id');
-  check(JSON.parse(raw.getItem('delivery.loadout')).default.kill.id === 'confetti' && raw.getItem('delivery.wheeldesign') !== 'confetti', 'stored in the one loadout key (delivery.loadout), never mirrored into the old global keys');
+  K.setKill('bubbles'); // (All cars: an earned item is per car only, CHECKLIST 437: ignored)
+  check(K.chosenKill('commuter') === 'confetti' && K.chosenKill('sport') === 'coins' && K.chosenKill('pickup') === 'classic', 'PER CAR (earned, CHECKLIST 437): the commuter Confetti, the sport Coins, a car with none Classic (All cars is no car\'s)');
+  K.setKill('classic', 'sport');
+  check(!Store.hasOwn('sport', 'kill') && K.chosenKill('sport') === 'classic', 'a car put back to Classic (the free look) has no entry of its own (the cache follows the change)');
+  check(K.setKill('nope', 'commuter') === false && K.shownKill('commuter') === 'confetti', 'setKill refuses an unknown id');
+  check(JSON.parse(raw.getItem('delivery.loadout')).cars.commuter.kill.id === 'confetti' && raw.getItem('delivery.wheeldesign') !== 'confetti', 'stored in the one loadout key (delivery.loadout), never mirrored into the old global keys');
   const L = await load('render/loadout.js');
-  const k1 = L.loadoutKey('commuter'); K.setKill('bubbles');
+  const k1 = L.loadoutKey('commuter'); K.setKill('bubbles', 'commuter');
   check(L.loadoutKey('commuter') === k1, 'loadoutKey (the model caches) does not move with the kill effect (no model is rebuilt for it)');
   Progress.noSave = true; Store.reloadStore(); K.forgetKillCache();
   check(K.shownKill('commuter') === 'classic', 'a visit with test switches (Progress.noSave) starts from Classic, the save untouched');
@@ -201,7 +203,7 @@ try {
     FX.KillFx.explode = (id, ...a) => { tally.killCalls[id] = (tally.killCalls[id] || 0) + 1; if (a[5]?.scale === 0.45) tally.playerHit++; return killExplode(id, ...a); };
     FX.KillFx.trail = (...a) => { tally.killTrail++; return killTrail(...a); };
     const runLevel = (id, seconds, look, { evil = false } = {}) => {
-      wipe(); if (look) K.setKill(look);
+      wipe(); if (look) K.setKill(look, cars.carInUse().id); // (per car: the car the run is driven in)
       const all = [...levels.LEVELS, ...Object.values(levels.HIDDEN_LEVELS)], lv = all.find(l => l.id === id);
       if (levels.LEVELS.includes(lv)) levels.selectLevel(levels.LEVELS.indexOf(lv)); else levels.selectSpecial(lv);
       Game.evil = evil; Progress.data.evil = evil;

@@ -1,67 +1,95 @@
-# Earned cosmetics: a stock of each, one used per car (CHECKLIST 437, prototype)
+# Earned cosmetics, like cards (CHECKLIST 437, prototype)
 
-Owner, 16-Oct: "Plates will be earned. Cosmetics will be earned and 1 will be consumed when equipped to a vehicle."
-Branch `claude/earned-cosmetics` (from `claude/plate-cosmetics`). Not merged, no version bump. Render-only: the replay
-fingerprint stays 33a7d9d56d, and progress.js is untouched.
+What the owner asked for, 16-Oct:
+- "Plates will be earned. Cosmetics will be earned and 1 will be consumed when equipped to a vehicle."
+- "Treat cosmetics exactly like cards: if the player has 1 of it, it is unlocked. Equipping it takes 1 from their stock.
+  Unequipping gives it back."
+- "Drop All cars. Per car only."
+- "Unlock everything: Absolutely" gives 999 of each.
+- Where cosmetics are earned is the owner's decision. They are awarded the way cards and blueprints are: through card packs.
 
-## Model
-- Earned slots: plate, roof, cargo, wing, kill FX, underglow (`EARNED_SLOTS` in `render/cosmetics.js`). Each slot's own free
-  look (the Stock plate, no prop, the Classic kill effect, no glow) stays free and unlimited. **Wheels (tyre, hub, rim, tread)
-  stay free in v1**: they are a three-part, per-axle set, so they need their own rule (open question).
-- No cosmetic has a cash price. Nothing read the old placeholder prices; an earned item is now registered with `price: 0`.
-- `render/cosmetics.js` stores how many of each item the player has been GIVEN (`delivery.cosmetics.stock`, localStorage).
-  `render/cosmeticstock.js` counts how many are WORN from the loadout store. **spare = given - worn.** Nothing is stored
-  per equip, so the stock cannot drift away from what the cars wear.
-- What counts as worn: every garage car (Progress.owns) whose look has the item, through its own choice or All cars,
-  provided it can wear the slot (a Legendary car keeps its gold plates; a prop needs the slot; a glow needs wheels on the
-  road). Plus any car outside the garage that the player dressed with its own choice.
+This is branch `claude/earned-cosmetics`, made from `claude/plate-cosmetics`. It is not merged and the version is not
+bumped. It is render-only: the replay fingerprint stays 33a7d9d56d and progress.js is untouched. packs.js and
+unlockall.js are both outside the fingerprint (vite.config.js NOT_RULES).
 
-## Edge-case decisions
+## The rule
+- **Earned slots:** plate, roof, cargo, wing, kill FX and glow (`EARNED_SLOTS`, `render/cosmetics.js`). No cosmetic has
+  a cash price. Each slot's own free look (the Stock plate, no prop, the Classic kill effect, no glow) stays free.
+  Wheels (tyre, hub, rim, tread) stay free.
+- **Count:** each item is a count of how many the player has been given. One or more means it is unlocked.
+- **Hand:** the hand is the count less the cars wearing it (`render/cosmeticstock.js`).
+  - Equipping it on a car takes 1 from the hand.
+  - Taking it off, choosing another, Reset to stock or Reset car puts it back.
+  - Nothing is stored per equip, so the hand cannot drift away from what the cars wear.
+  - A car that cannot wear the slot is never counted, for example a Legendary car's gold plates.
+  - The kill effect counts one per car, never per kill.
+- **Per car only:** the earned item is never taken from the All-cars default (`loadoutstore.js` PER_CAR).
+  - On an earned tab the screen hides All cars and Copy to all.
+  - Copy to all, from the Wheels tab, copies the wheels only.
+  - The default still carries the non-item fields: a plate's text and a prop's paint.
+- **Try-on:** tapping a chip you have in your hand wears it at once, and a light sheet asks to confirm.
+  - Equip keeps it. Cancel, Escape, Back or a tap outside puts the look back.
+  - If the hand is empty, the change is refused, with the cars wearing it named.
+- **Not earned:** a chip greyed "Not earned" opens a neutral "Not earned yet" sheet. The source is the owner's to decide,
+  so the sheet names none.
+- **Absolutely:** "Unlock everything: Absolutely" gives 999 of every item, as a real stock (`grantAll`), shown as x999.
+  There is no unlimited mode.
+
+## How cosmetics are awarded: the card packs
+How cards and blueprints are awarded today:
+- **Source:** a card pack (`packs.js`), defined in `packs.json` and placed by the owner. Packs come from three places:
+  - a Career level's first delivery (`givenBy.career`);
+  - a special event's stage, prize or every run (`givenBy.event`);
+  - the Shop.
+- **Trigger:** `Packs.grant`, then `Packs.open`, which deals the cards and gives each one: a blueprint through
+  `Ecu.addBlueprints`, a key through `grantKey`.
+- **Storage:** what is held is in Progress.data.packs. The open log is Progress.data.packLog.
+- **Message:** the results line says "A <pack>! Opening...". The pack reveal (`render/packs.js`) then shows the cards.
+
+Cosmetics ride the same mechanism as another kind of card:
+- **Pack definition:** a pack in `packs.json` may have `"cosmetics": [{ "item": "plate:hex" | "any": "plate",
+  "chance": 0..1 (default 1), "n": copies (default 1) }]`.
+- **When the pack opens:** each entry is rolled on its own chance. A hit is awarded through the one entry point, logged
+  in the pack log, and shown on the reveal in a "Cosmetics for your cars" row under the blueprint cards.
+- **Validation:** `packProblems` checks the list.
+- **Current packs:** no pack carries any cosmetics today. Where they drop is the owner's to place.
+- **Entry point:** `awardCosmetic(key, n, { source })` in `render/cosmetics.js` is the only way a cosmetic is given. It
+  tells `onAward` listeners and dispatches a window `cosmeticaward` event.
+- **Debug switches:**
+  - `?czgive=plate:ev*3` on the Cosmetics screen (a test visit or the dev server only);
+  - `?pack=<id>&cosmetics=plate:ev:1x2,any-underglow` (a pack opened for a look, nothing saved).
+
+## Edge cases
 | Case | Rule |
 |---|---|
-| Swap to another design / take it off / Reset car / Reset to stock | The old one goes back to stock at once, because the counts are derived. |
-| The same design on several cars | One each. |
-| All cars (the default) | One for each garage car that follows the default and can wear the slot. If the player doesn't have enough, the change is refused and the sheet says how many are needed. |
-| Copy to all | Gated the same way: confirmed if it uses items, refused if there aren't enough. |
-| A car joins the garage while the default has an earned item | It wears the item anyway. Spare shows 0 (never below), and nothing is taken off another car. (Open question 1.) |
-| Selling or destroying a car | No sale exists in the game today. If a car leaves the garage, its item returns automatically. |
-| Free Stock or default look | Unlimited, never used up. |
-| Kill FX | One used per car it is set on, never per kill. |
-| Preview / try-on | Tapping an owned chip puts it on at once (free) and opens a sheet. Equip keeps it; Cancel, Escape, Back or a tap outside puts the whole look back. Locked items (none earned) cannot be tried on yet; tapping one shows how to earn it. |
-| "Unlock everything: Absolutely" | Grants all items as before and sets `inf`: every item unlimited (shown as ∞). |
-| Migration | First load of this version: each key in the old owned list becomes 1, and each item worn anywhere becomes at least 1, so nothing falls back to Stock even for a frame. Once per browser (`mig`), each worn item is topped up to the number of cars wearing it. An older 'abs' save becomes unlimited. The old list key is still written, so rolling back to an older build keeps its items. |
-| Reset progress | Clears the counts and the earn ledger (as before). |
+| Swap or remove | The item goes back to the hand at once. |
+| The same item on several cars | One each. |
+| All cars / Copy to all | Not for earned slots. Copy to all copies the wheels only. |
+| A car leaves the garage | No sale exists in the game. A car's own items stay counted while its loadout entry exists. |
+| Free looks | Unlimited, never taken. |
+| Preview | Free: worn as a try-on, taken only on Equip. An item not earned cannot be tried on yet. |
+| Reset progress | Clears the counts. |
 | Test visit (`?car=`, Progress.noSave) | Nothing is written. |
 
-## Earn table (v1, `render/cosmeticearn.js`)
-Every reward is read from save state, so it applies retroactively: an old save receives what it has already won. A ledger
-records each reward id that has been given, so nothing is given twice.
-- **Starter**: the first on-time delivery gives Classic white, Yellow rear and Retro cream plates.
-- **Good medal** on each tier level: the next plate design in Plate-tab order. The list wraps, so later levels give second copies.
-- **Evil medal** on each tier level: the next "loud" item, taking kill effects, glows and wings in turn. A one-sided level gives both.
-- **Tier set**: every medal in a tier gives 2 crates.
-- **Delivery crate**: one every 5 on-time deliveries (`stats.levelsDelivered`). It gives the earned item the player has the
-  fewest of, which fills the collection first and then makes spares.
-- When rewards are given: at the end of a delivered run (a `Game.onFinish` hook from main.js; the results line gets
-  "Cosmetics earned: ..."), and when the Cosmetics screen opens. Nothing is given during replay playback.
-- Locked chip hint: "Earn it: the Good medal on <level> (or N more), or a delivery crate (one every 5 deliveries)."
+## Migration (chosen to be generous: nobody loses a look)
+1. **First load of this version** (`render/cosmetics.js`):
+   - each key in the old owned list becomes 1;
+   - each item worn anywhere becomes at least 1;
+   - an older "Absolutely" save gets 999 of each key it held.
+2. **Once per browser** (`render/cosmeticstock.js` migrateStock, run from main.js at start and when the Cosmetics
+   screen opens):
+   - an earned item on the old All-cars default is moved onto every garage car that followed it (no item of its own, and
+     able to wear the slot);
+   - the default then keeps only the free look, plus its text and paint;
+   - each item's count is topped up to the number of cars wearing it, so the hand starts at 0, never below.
 
-## UI (phone-first)
-- Each chip in an earned slot shows `xN` (spare). A chip with none earned is greyed and shows "locked". A chip with all its
-  copies on other cars gets a brown count.
-- Confirm sheet (a bottom sheet with 44 px buttons): "Equip EV green stripe on your Pick-Up? Uses 1: x3 spare now, x2 after."
-  The item being replaced shows "+1 back to your stock".
-- Not-enough sheet: how many are needed, how many are spare, which cars wear it, and how to earn more.
-- Test switches: `?czgive=plate:ev*3,plate:classic` (only on a test visit or the dev server) and `?cztap=<id>` (taps a
-  chip after the screen opens, for stills).
+   The stricter alternative is one line to change: cap the move by stock and send the rest to the free look.
+3. The old list key is still written, so a rollback to an older build keeps its items.
 
 ## Open questions for the owner
-1. When a new car joins the garage, should it ride the All-cars default for free (current behaviour), drop to Stock in
-   that slot, or use one from spare stock if there is one?
-2. Should replacing an item really refund it (the current recommendation)? Or is "consumed" meant literally, with the old
-   one lost? The non-refund version means decrementing the count in `gate`.
-3. Wheels: should they be earned too, and per part (tread / tyre / hub / rim) or per preset?
-4. Earn rates: is plates for Good and loud items for Evil the right split? Is every 5 deliveries the right crate rate? Should
-   repeat deliveries (re-running a medalled level) give more?
-5. Should locked items be tryable as a free preview?
-6. Should Classic white, Yellow rear and Retro cream (free before this change) stay free?
+1. Which packs carry which cosmetics, at what chance and how many? None does today.
+2. Should the migration be strict (capped by stock) instead of generous?
+3. Should wheels be earned too, and per part or per preset?
+4. Should an item not yet earned be tryable as a free preview?
+5. Should the plate text become per car too, now that All cars is gone for earned slots? Today the default text is still
+   shared.
