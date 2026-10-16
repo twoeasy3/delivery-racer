@@ -11,7 +11,7 @@ import { CAR } from '../cars.js';
 import { Packages } from '../packages.js';
 import { makeParticles, classicExplode, classicBurst, rnd, FIRE_COLORS } from './particles.js';
 import { createKillFx, chosenKill, KILL_FX } from './killfx.js';
-import { createGiantGate, crushedBy } from './giantsound.js';
+import { crushedBy, giantSilences } from './giantsound.js';
 
 // ---- particles: smoke, fire and debris as instanced cubes (the machinery: render/particles.js) ---------------------
 export const Particles = makeParticles(500, new THREE.MeshBasicMaterial(), scene); // debris, flames, trails
@@ -177,20 +177,17 @@ const fxBoom = (dt) => {
 };
 
 // plays the effects the game logic queued this frame, then advances every particle and tyre
-// (the GIANT's crushes and footsteps: one crunch at a time, a stomp for a step, not a crash WAV for each: render/giantsound.js, CHECKLIST 386)
-const giantGate = createGiantGate();
+// (the GIANT is silent: no footstep, no crush, its crushed cars' explosions drawn without a sound: render/giantsound.js, CHECKLIST 386)
 export const updateEffects = (dt) => {
-  giantGate.begin(dt, Player.giant);
   for (const e of FxQueue) {
     // (a sound from a spot on the road, and every visual effect, is quieter the further away it is)
     const near = e.s === undefined ? 1 : 1 - Math.abs(Track.along(e.s) - Track.along(Player.s)) / 160;
-    if (e.type === 'sound') { const play = giantGate.sound(e.name, e.volume * near); if (play) Sound.play(play[0], play[1]); continue; }
-    if (giantGate.on && crushedBy(e, Player)) { const drawn = giantGate.crushed(e, near); if (drawn) explode(drawn, true); continue; } // (its sound: one crunch, below)
+    if (e.type === 'sound') { if (!(Player.giant && giantSilences(e.name))) Sound.play(e.name, e.volume * near); continue; }
+    if (Player.giant && crushedBy(e, Player)) { explode(e, true); continue; }
     if (e.type === 'burst') { if (!packageHit(e)) burst(e); } else (e.type === 'gift' ? gift : explode)(e);
     // each visual effect has a sound of its own, unless it names another
     Sound.play(e.sound || (e.type === 'explode' && e.big ? 'explodeBig' : e.type), near);
   }
-  for (const [name, volume] of giantGate.end()) Sound.play(name, volume);
   FxQueue.length = 0;
   if (FX_BOOM) fxBoom(dt);
   Particles.update(dt);
