@@ -165,6 +165,16 @@ export const syncLamps = (group, v, show, braking, turnX, hazards, flashing, key
 export const carMesh = makeCarMesh(CAR.color);
 shapeCarMesh(carMesh, Player);
 addLamps(carMesh);
+// How far up off the road the player's car is drawn (m; CHECKLIST 436): the mesh as main.js, the helicopter and the water
+// placed it this frame (a jump's Player.air, a drawbridge's leaf, an earthquake's wave, dangling, afloat) less the road
+// under it. What rides with the car (the turbo's exhaust, its damage smoke) is drawn that far up. Render-only: read, never set
+const liftAt = new THREE.Vector3();
+export const playerLift = () => carMesh.position.y - (Track.toWorld(Player.s, Player.lat, liftAt), liftAt.y);
+// the height of a point of the player's car `back` m behind its middle, `up` m over its floor: the road's there, the lift,
+// and its pitch in the air (nose up: its tail lower). On the ground, the road's own height there plus `up`, as it always was
+export const playerPointY = (roadY, back, up) => roadY + playerLift() - Math.sin(Player.pitch || 0) * back + up;
+// the car off the ground (a jump, a crest, a ramp, a gamble's flight): nothing is thrown up off its wheels or the road under it
+export const playerAirborne = () => Player.air > 0.05;
 // a different car picked in the garage: the player's model takes its shape
 // (its colour is set every frame, in items.js)
 // a flying saucer, shown in place of the car's body when the car in use is a UFO

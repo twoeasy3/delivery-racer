@@ -9,7 +9,7 @@ import { Pickups, Targets } from '../pickups.js';
 import { Game } from '../game.js';
 import { scene, tmp, clearGroup } from './scene.js';
 import { buildStrip, THEMES, landAt } from './road.js';
-import { carMesh, passengerMesh, makeTankMesh, shapeCarMesh, ufoMesh, trafficMeshes, syncLamps } from './cars.js';
+import { carMesh, passengerMesh, makeTankMesh, shapeCarMesh, ufoMesh, trafficMeshes, syncLamps, playerPointY, playerAirborne } from './cars.js';
 import { Traffic } from '../traffic.js';
 import { Particles, rnd, perSecond } from './effects.js';
 import { MODELS } from './models.js';
@@ -605,7 +605,7 @@ export const syncPickups = (dt) => {
     roofSiren.userData.blue.visible = !flash;
   }
   // a boat's wake: white water churned up behind it, the more the faster it goes
-  if (Player.active && CAR.wake && Player.speed > 3) {
+  if (Player.active && CAR.wake && Player.speed > 3 && !playerAirborne()) { // (none in the air: CHECKLIST 436)
     const h = Track.toWorld(Player.s - Player.hl, Player.lat, tmp);
     for (let n = perSecond(120, dt); n > 0; n--) { // (two a frame at 60 Hz, as it was)
       Particles.emit(tmp.x + rnd(0.6), tmp.y + 0.05, tmp.z + rnd(0.6), // (life, size, grow, gravity: a fine spray that falls back)
@@ -625,11 +625,13 @@ export const syncPickups = (dt) => {
         0.45 + Math.random() * 0.3, 0.16, 0.8, 6, Math.random() < 0.6 ? 0xffffff : 0xcfe9f2, tmp.y);
     }
   }
-  // turbo exhaust
+  // turbo exhaust: out of the car's tail, wherever the car is drawn. In the air it is the car's own height (its jump,
+  // nose-up or down), not the road's under it (CHECKLIST 436: it was the road's, a trail along the tarmac under a flying
+  // car); on the ground playerPointY is the road's height there plus 0.6, as it always was
   if (Player.active && powerShown(Player.turbo)) {
-    const h = Track.toWorld(Player.s - Player.hl, Player.lat, tmp);
+    const h = Track.toWorld(Player.s - Player.hl, Player.lat, tmp), y = playerPointY(tmp.y, Player.hl, 0.6);
     for (let n = perSecond(120, dt); n > 0; n--) { // (two a frame at 60 Hz, as it was)
-      Particles.emit(tmp.x + rnd(0.5), tmp.y + 0.6, tmp.z + rnd(0.5),
+      Particles.emit(tmp.x + rnd(0.5), y, tmp.z + rnd(0.5),
         Math.sin(h) * Player.speed * 0.5 + rnd(1), Math.random(), Math.cos(h) * Player.speed * 0.5 + rnd(1),
         0.3, 0.5, 0.5, 0, Math.random() < 0.5 ? TURBO_COLOR : 0xffffff);
     }

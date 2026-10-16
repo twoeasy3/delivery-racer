@@ -311,6 +311,7 @@ if (params.get('racewatch') !== null) {
   if (params.get('ladle')) LaneGimmicks.ladleNow = true; // ?ladle=1: the next ladle ahead comes out at once and pours as soon as it is there (stills)
   if (params.get('pieces')) Game.tankPieces = Math.min(CONFIG.tankPieces - 1, Number(params.get('pieces')) || 0); // ?pieces=3: that many pieces of the tank found already
   if (params.get('rage') !== null) { Game.tankPieces = CONFIG.tankPieces; Player.startTank(); } // ?rage: in TANK RAGE from the start (a check, a picture: on an amphibious level, the Amphibious Tank)
+  if (params.get('turbo') !== null) Player.turbo = Number(params.get('turbo')) || 99; // ?turbo (or ?turbo=8): the turbo running from the start, that many s (bare: 99; stills of its exhaust, CHECKLIST 436)
   if (params.get('fly') !== null) startFly();
   const photo = params.get('photo') !== null; // ?photo: paused, in photo mode, once ?ff has run (a check of render/photo.js)
   // ?cine: a still for the level select. The traffic is dealt out afresh around the car, ?ff lets

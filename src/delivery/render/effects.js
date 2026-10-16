@@ -12,6 +12,7 @@ import { Packages } from '../packages.js';
 import { makeParticles, classicExplode, classicBurst, rnd, FIRE_COLORS } from './particles.js';
 import { createKillFx, chosenKill, KILL_FX } from './killfx.js';
 import { crushedBy, giantSilences } from './giantsound.js';
+import { playerPointY, playerAirborne } from './cars.js';
 
 // ---- particles: smoke, fire and debris as instanced cubes (the machinery: render/particles.js) ---------------------
 export const Particles = makeParticles(500, new THREE.MeshBasicMaterial(), scene); // debris, flames, trails
@@ -36,6 +37,7 @@ const emitSmoke = (v, dt) => {
   v.smoke += amount * CONFIG.smokeRate * dt;
   if (v.smoke < 1) return;
   const h = Track.toWorld(v.s + v.dir * v.hl * 0.6, v.lat, tmp);
+  if (v === Player) tmp.y = playerPointY(tmp.y, -v.hl * 0.6, 0); // (the player's car in the air: from its engine up there, not the road under it; CHECKLIST 436)
   const vx = Math.sin(h) * v.vs * 0.3, vz = Math.cos(h) * v.vs * 0.3;
   const grey = Math.round(190 - 160 * amount);
   while (v.smoke >= 1) {
@@ -152,7 +154,7 @@ const gift = (e) => {
 // a car in a gravel trap (see Track.gravelAt) throws stones up behind its wheels, and a haze of dust
 const emitGravel = (v, dt) => {
   const speed = Math.abs(v.vs ?? v.speed ?? 0), G = CONFIG.gravel;
-  if (speed < G.sprayFrom || Math.random() > dt * 60 * Math.min(1, speed / 20)) return;
+  if (speed < G.sprayFrom || (v === Player && playerAirborne()) || Math.random() > dt * 60 * Math.min(1, speed / 20)) return; // (none off the wheels of a car in the air: CHECKLIST 436)
   const h = Track.toWorld(v.s - v.dir * v.hl * 0.7, v.lat, tmp), fx = Math.sin(h) * v.dir, fz = Math.cos(h) * v.dir;
   for (let n = 0; n < 2; n++) {
     Particles.emit(tmp.x + rnd(v.hw), tmp.y + 0.15, tmp.z + rnd(v.hw), -fx * speed * 0.25 + rnd(3), 2 + Math.random() * 4, -fz * speed * 0.25 + rnd(3),
