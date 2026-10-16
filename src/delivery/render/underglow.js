@@ -4,17 +4,17 @@
 // file; vite.config.js logicFiles walks no render/ file). The choice is PER CAR over a DEFAULT (render/loadoutstore.js slot underglow = { id }).
 //
 // WHAT IT IS: NOT a light (no PointLight, so three.js recompiles nothing and every material stays as it was): ONE flat mesh lying on the
-// road 5 mm over the car's floor, a few rounded rectangles one inside another (a fan in the middle, rings out to nothing), with two numbers
+// road 3 cm over the car's floor (over the lane dashes and the game's road overlays), a few rounded rectangles one inside another (a fan in the middle, rings out to nothing), with two numbers
 // per vertex: `light` (how much colour it adds) and `cover` (how much of the road under it it takes away). Drawn with premultiplied
 // blending (out = colour * light + road * (1 - cover)): on a dark road (night, a tunnel, the showroom's floor) it is plain added light;
 // on a bright road (tarmac by day, snow) the cover tints the road toward the colour, so it still reads where added light would be lost.
 // The profile is a DARKER CORE (the shade under the car, a little colour) and a BRIGHT BAND along the line under the body's sides and
 // ends (where the tubes would be), fading out past the body by a margin. It lights the road only: a flat mesh on the floor never touches
 // the body. Its size comes from the model: the band runs under the body's sides (the body's half-width, less a little) and from just
-// behind the rear wheels to just ahead of the front ones, never past the body's own length; the glow spills out by about half a metre
-// at the sides and a third of one at the ends (shorter than the car, wider than the body). The tyres stand in it and hide it where
+// behind the rear wheels to just ahead of the front ones, never past the body's own length; the glow spills out by about 0.9 m at the
+// sides (so the chase camera, from behind and above, sees it either side of the car) and up to 0.45 m at the ends, inside the body's length. The tyres stand in it and hide it where
 // they are (depth test on, no depth write).
-// One shared program (a ShaderMaterial per model, for its own colour and time), one draw call per car, about 600 triangles.
+// One shared program (a ShaderMaterial per model, for its own colour and time), one draw call per car, 680 triangles.
 // LOOKS (UNDERGLOWS): eight colours, 'Match car' (the car's own paint for its side, carPrimary, brought up to full brightness as a lamp is),
 // and three EFFECTS that move: Pulse (breathes), Chase (a bright band runs from the nose to the tail) and Rainbow (the hue runs along the
 // car). All on the graphics card from ONE time uniform, set from the model's animate hook (userData.animate(t), which the showroom, the
@@ -81,7 +81,9 @@ const listeners = new Set();
 export const onUnderglow = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
 
 // ---- the glow's shape, measured on the model (its own frame: +z the nose, the floor its lowest point) ----
-const MARGIN_SIDE = 0.85, MARGIN_END = 0.45, LIFT = 0.005;
+// LIFT: over everything the game lays on the road (lane dashes at 2 cm, render/road.js; the mall's tiled floor at 2.4 cm and the ice sheets at
+// 2.5 cm, render/themes/mall.js), as the Super kit's own glow is (3 cm): at 5 mm it was hidden under the mall floor and the dashes
+const MARGIN_SIDE = 0.85, MARGIN_END = 0.45, LIFT = 0.03;
 export const glowFootprint = (model) => {
   const s = prepareSuspension(model);
   model.updateMatrixWorld(true);
