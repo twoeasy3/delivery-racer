@@ -9,11 +9,14 @@
 // TO ADD A SLOT, OR WAKE A DORMANT ONE: register it; its tab appears by itself, in this list's order.
 //   import { registerSlot } from './cosmeticslots.js';
 //   registerSlot({ id: 'kill', panel: () => buildKill(), refresh: () => killShown() });  // Kill effect (cosmeticsui.js): items { slot: 'kill', ... } (render/killfx.js)
-//   registerSlot({ id: 'decal', supports: (car) => !!DECAL_ZONES[car.model || car.id] });  // Decal: shows on cars with a flank zone row
+//   registerSlot({ id: 'decal', supports: (car) => decalSupported(car) });  // Decal (render/decalcosmetic.js): shows on cars with a flank zone row
 //   registerSlot({ id: 'horn', label: 'Horn', scope: 'player', items: () => HORNS });     // a new slot: added before Kill FX
 // registerSlot merges into an entry with the same id (fields given win), else inserts a new one before 'kill'.
-// DEMO (?cosmetics=all, URL-PARAMS.md): the dormant slots (Decal, Glow) get two 'Sample' items each and Decal shows on every car, so every tab
-// can be seen. (The Kill effect is a real slot since CHECKLIST 405, no samples.)
+// DEMO (?cosmetics=all, URL-PARAMS.md): the dormant slot (Glow) gets two 'Sample' items, so every tab can be seen. (The Kill effect is a
+// real slot since CHECKLIST 405, the Decal since CHECKLIST 423 (a trial on the six cars of the zone table): no samples.)
+// DECAL IS AWAKE (CHECKLIST 423): render/decalcosmetic.js registers its designs (slot 'decal') and merges its supports (a car whose model
+// has a zone row, render/decalzonestable.js; never a Legendary car) into the entry below; whoever imports render/showcar.js has it (the
+// screen, the game, unlockall.js). Without that module the entry has no items and no car, so no tab.
 // Off by default; nothing is registered in render/cosmetics.js and nothing is stored. Render-only: no rules module imports this.
 import { COSMETICS } from './cosmetics.js';
 import { slotStatus } from './propdress.js';
@@ -34,8 +37,9 @@ export const SLOT_LIST = [
   { id: 'roof', label: 'Roof', name: 'Roof prop', scope: 'car', prop: true, supports: prop('roof'), items: registered('roof') },
   { id: 'cargo', label: 'Cargo', name: 'Cargo prop', scope: 'car', prop: true, supports: prop('cargo'), items: registered('cargo') },
   { id: 'wing', label: 'Wing', name: 'Rear wing', scope: 'car', prop: true, supports: prop('wing'), items: registered('wing') },
-  // DORMANT until their work lands: no items (and, for Decal, no car with a zone row), so no tab
-  { id: 'decal', label: 'Decal', name: 'Decal', scope: 'car', supports: () => demo, items: dormant('decal') },
+  // the DECAL (CHECKLIST 423): its designs and its cars come from render/decalcosmetic.js (registerSlot); until it is loaded, no tab
+  { id: 'decal', label: 'Decal', name: 'Decal', scope: 'car', supports: () => false, items: registered('decal') },
+  // DORMANT until its work lands: no items, so no tab
   { id: 'underglow', label: 'Glow', name: 'Underglow', scope: 'car', supports: () => true, items: dormant('underglow') },
   // the KILL EFFECT (CHECKLIST 405, render/killfx.js registers its items as slot 'kill'): PER CAR over the All-cars default like the others
   // (the loadout slot 'kill', render/loadoutstore.js), so 'car' scope; its panel is cosmeticsui.js buildKill, given by registerSlot there

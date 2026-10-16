@@ -12,8 +12,8 @@
 // SLOTS: tabs over the panel, from the registry render/cosmeticslots.js (the owner, 16-Oct: a slot the car cannot wear, or one with nothing
 // in it yet, has NO tab: nothing greyed, nothing 'coming later'). WHEELS: the THREE-PART wheel set (the owner, 15-Oct: "tread - tyre colour -
 // hub colour or rim or spinner"): a Tread row, a Tyre row, a Hub row (a Colour | Rim | Spinner switch and that kind's chips), then the
-// Presets (one tap sets all three; 'Custom' shows when the parts are no preset); Plate, Roof / Cargo / Wing (where the car has the slot), and
-// the dormant Decal, Glow and Kill FX (their tabs appear when their items are registered: see that file's head). The open tab falls back to
+// Presets (one tap sets all three; 'Custom' shows when the parts are no preset); Plate, Roof / Cargo / Wing (where the car has the slot), the
+// Decal (CHECKLIST 423: design chips and a colour row, on a car with a zone row only), and the dormant Glow and Kill FX (their tabs appear when their items are registered: see that file's head). The open tab falls back to
 // the first one drawn when this car has no tab for it.
 // A 'player' slot hides the 'This car / All cars' switch and the car's buttons. EVERYTHING IS FREE AND OPEN for now: `owned` is
 // the one place the unlock check goes (a chip it says no to is shown locked and cannot be equipped).
@@ -43,6 +43,9 @@ import { KillPreview } from './killpreview.js';
 import { Nav } from '../nav.js';
 import { Sound } from './audio.js';
 import { SLOT_LIST, slotById, shownSlots, tabToOpen, isDemo, registerSlot } from './cosmeticslots.js';
+import { DESIGNS as DECALS, DECAL_PAINTS, designById as decalById, decalChoice, shownDecal, setDecal, setDecalColour, resetDecal, inkOf as decalInk } from './decalcosmetic.js';
+import { drawPreview as drawDecalPreview } from './decaldesigns.js';
+import { carPrimary } from './propmodelsroof.js';
 
 // the slots, in order (the registry: a later cosmetic registers there and its tab appears by itself)
 export const SLOTS = SLOT_LIST;
@@ -267,6 +270,56 @@ const killShown = () => {
 // the Kill effect's tab: its panel and refresh given to the slot registry (render/cosmeticslots.js entry 'kill': per car over the All-cars
 // default, so the 'This car / All cars' switch shows on it); the panel is made the first time the tab opens (cosmeticsui.js panelOf)
 registerSlot({ id: 'kill', panel: () => buildKill(), refresh: () => killShown() });
+
+// ---- the DECAL (CHECKLIST 423, a trial on the zone table's cars; render/decalcosmetic.js): the designs as chips (each drawn small on the
+// car's own paint, in the colour chosen), then the colour row (the props' swatches; a design with colours of its own leaves it greyed)
+let decalRow, decalPaints, decalStatus;
+const pickDecal = (id) => { if (id !== 'none' && !owned('decal', id)) return flash(tabMsg, 'Locked: unlock it to wear it.'); if (setDecal(id, tgt())) Sound.play('menuPick', 0.4); };
+const buildDecal = () => {
+  decalRow = make('div', 'cz-row cz-props cz-decals');
+  decalRow.setAttribute('role', 'group'); decalRow.setAttribute('aria-label', 'Decal design');
+  for (const d of [{ id: 'none', name: 'None' }, ...DECALS]) {
+    const b = make('button', 'cz-chip cz-propchip'), prev = make('span', 'cz-prev' + (d.id === 'none' ? ' stock' : ''));
+    b.type = 'button'; b.dataset.decal = d.id;
+    if (d.id !== 'none') { const c = make('canvas'); c.width = 112; c.height = 80; prev.append(c); }
+    b.append(prev, make('span', 'cz-name', d.name), make('span', 'cz-tick', '✓'));
+    b.addEventListener('click', () => pickDecal(d.id));
+    decalRow.append(b);
+  }
+  decalPaints = make('div', 'cz-row cz-paints');
+  decalPaints.setAttribute('role', 'group'); decalPaints.setAttribute('aria-label', 'Decal colour');
+  for (const c of DECAL_PAINTS) {
+    const b = make('button', 'cz-paint');
+    b.type = 'button'; b.dataset.paint = c.hex === null ? 'match' : c.hex.toString(16).padStart(6, '0'); b.title = c.name; b.setAttribute('aria-label', c.name);
+    b.append(c.hex === null ? make('span', 'cz-dot match') : swatchOf('#' + b.dataset.paint));
+    b.firstChild.classList.add('cz-dot');
+    b.addEventListener('click', () => { const d = decalById(shownDecal(cid()).id); if (!(d && d.colourFrom === 'fixed') && setDecalColour(b.dataset.paint, tgt())) Sound.play('menuMove', 0.4); });
+    decalPaints.append(b);
+  }
+  decalStatus = make('p', 'cz-status'); decalStatus.setAttribute('aria-live', 'polite');
+  const reset = make('button', 'cz-reset', 'Reset'); reset.type = 'button';
+  reset.addEventListener('click', () => { resetDecal(tgt()); Sound.play('menuMove', 0.4); });
+  return make('section', 'cz-section cz-prop cz-decal',
+    make('h2', '', 'Decal', tagFor('decal')),
+    make('h3', '', 'Design'), decalRow, make('h3', '', 'Colour'), decalPaints,
+    make('div', 'cz-foot', decalStatus, reset));
+};
+const decalShown = () => {
+  const car = state.car;
+  if (!decalRow || !car) return;
+  const c = cid(), choice = decalChoice(c), worn = shownDecal(c), d = worn.id !== 'none' ? decalById(worn.id) : null, paint = carPrimary(car, state.evil) ?? 0x888888;
+  for (const b of decalRow.children) {
+    const id = b.dataset.decal, on = id === choice.id && (id === 'none' || owned('decal', id));
+    b.setAttribute('aria-pressed', String(on)); b.classList.toggle('equipped', on); b.classList.toggle('locked', id !== 'none' && !owned('decal', id));
+    const cv = b.querySelector('canvas'), dd = decalById(id), g = cv && cv.getContext('2d');
+    if (g && dd) { try { drawDecalPreview(g, dd, decalInk(dd, choice.colour, car, state.evil), paint, cv.width, cv.height); } catch { /* (no picture: the name stays) */ } }
+  }
+  const fixed = !!d && d.colourFrom === 'fixed';
+  for (const b of decalPaints.children) { const on = b.dataset.paint === choice.colour; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('equipped', on && !fixed); b.classList.toggle('locked', fixed); }
+  decalPaints.title = fixed ? 'This one keeps its own colours' : '';
+  decalStatus.textContent = d ? d.name + (fixed ? '' : ' (' + (DECAL_PAINTS.find(p => (p.hex === null ? 'match' : p.hex.toString(16).padStart(6, '0')) === worn.colour)?.name || '#' + worn.colour) + ')') : 'No decal';
+};
+registerSlot({ id: 'decal', panel: () => buildDecal(), refresh: () => decalShown() });
 
 // ---- the PROP slots: Roof, Cargo, Wing (CHECKLIST 302; the choice and the dressing are render/propdress.js) ----
 const PROP_IDS = ['roof', 'cargo', 'wing'];
@@ -511,7 +564,7 @@ const build = () => {
   onWheelColour(shown);
   onPlate(() => { if (state.open) plateShown(); });
   onProp(() => { if (state.open) propShown(); });
-  Store.onStore(() => { if (state.open) { shown(); plateShown(); propShown(); killShown(); scopeShown(); } });
+  Store.onStore(() => { if (state.open) { shown(); plateShown(); propShown(); killShown(); decalShown(); scopeShown(); } });
   onLoadout(() => { if (state.open && !ShowroomView.model) requestAnimationFrame(() => { if (state.open && !ShowroomView.model) stillCar(stage, state.car, state.evil); }); }); // (no WebGL: its picture drawn again in the new loadout, render/carstill.js)
   setCloseUp(false);
 };
@@ -533,7 +586,7 @@ const setScope = (scope) => {
   state.scope = scope === 'all' ? 'all' : 'car';
   copyArmed = 0; if (copyBtn) copyBtn.textContent = 'Copy to all';
   Sound.play('menuMove', 0.4);
-  syncPlateInput(); shown(); plateShown(); propShown(); killShown(); scopeShown();
+  syncPlateInput(); shown(); plateShown(); propShown(); killShown(); decalShown(); scopeShown();
 };
 // this car's look on every car; when other cars have looks of their own, a second tap is asked for (their looks go too)
 const copyToAll = () => {
@@ -617,7 +670,7 @@ const showCar = () => {
   carName.textContent = 'On your ' + car.name;
   syncPlateInput();
   if (!ShowroomView.show(stage, car, { evil: state.evil })) requestAnimationFrame(() => { if (state.open) stillCar(stage, car, state.evil); }); // (no WebGL: its picture)
-  if (built) { const at = renderTabs(); if (at !== openSlot) openSection(at); shown(); plateShown(); propShown(); killShown(); scopeShown(); panels[openSlot]?.refresh(); }
+  if (built) { const at = renderTabs(); if (at !== openSlot) openSection(at); shown(); plateShown(); propShown(); killShown(); decalShown(); scopeShown(); panels[openSlot]?.refresh(); }
 };
 
 export const Cosmetics = {
@@ -658,7 +711,7 @@ export const Cosmetics = {
     done?.();
   },
   // for a check or a picture
-  get shown() { const c = cid(); return { kill: shownKill(c), tabs: slotList ? [...slotList.children].map(b => b.dataset.slot) : [], scopeHidden: !!scopeBar?.hidden, scope: state.scope, custom: !!state.car && Store.differs(state.car.id), props: { roof: shownProp('roof', c), cargo: shownProp('cargo', c), wing: shownProp('wing', c) }, prop: state.prop || null, plate: shownDesign(c), plateText: plateText(c), openSlot, end: state.end || null, open: state.open, car: state.car?.id || null, closeUp: state.close, design: wheelDesign(c), colour: wheelColour(c), set: wheelSet(c), view: ShowroomView.state }; },
+  get shown() { const c = cid(); return { kill: shownKill(c), decal: shownDecal(c), tabs: slotList ? [...slotList.children].map(b => b.dataset.slot) : [], scopeHidden: !!scopeBar?.hidden, scope: state.scope, custom: !!state.car && Store.differs(state.car.id), props: { roof: shownProp('roof', c), cargo: shownProp('cargo', c), wing: shownProp('wing', c) }, prop: state.prop || null, plate: shownDesign(c), plateText: plateText(c), openSlot, end: state.end || null, open: state.open, car: state.car?.id || null, closeUp: state.close, design: wheelDesign(c), colour: wheelColour(c), set: wheelSet(c), view: ShowroomView.state }; },
   scope: (scope) => setScope(scope),
   closeUp: setCloseUp,
 };

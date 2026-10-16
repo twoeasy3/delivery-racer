@@ -70,9 +70,10 @@ const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 // see-through material while the ghost lasts: the parts' own materials are put aside and
 // given back afterwards. Colour changes meanwhile go to the part's own paint (paintOf).
 const GHOST_MAT = new THREE.MeshLambertMaterial({ color: 0xdfe9ff, emissive: 0x4a6cff, transparent: true, opacity: 0.45 });
+const GHOST_HIDE = new THREE.MeshBasicMaterial({ visible: false }); // (a flank decal while the ghost lasts: the pale material would show its whole rectangle; render/decalcosmetic.js)
 const ghostify = (group, on) => group.traverse((mesh) => {
   if (!mesh.isMesh) return;
-  if (on && !mesh.userData.solidMat) { mesh.userData.solidMat = mesh.material; mesh.material = GHOST_MAT; }
+  if (on && !mesh.userData.solidMat) { mesh.userData.solidMat = mesh.material; mesh.material = mesh.userData.flankDecal ? GHOST_HIDE : GHOST_MAT; }
   else if (!on && mesh.userData.solidMat) { mesh.material = mesh.userData.solidMat; mesh.userData.solidMat = null; }
 });
 const paintOf = (mesh) => mesh.userData.solidMat || mesh.material;
