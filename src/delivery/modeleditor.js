@@ -42,6 +42,11 @@
 //      pillar. With Mirror on the edit is stored once for both flanks ('door window'); off, for that flank only ('door window L'). The edit
 //      is a `glass` table in the patch, read by cabinGlass as the model is BUILT (withGlassEdits), never a change to the built mesh; "Reset to
 //      automatic" takes it out. "Bake" (JSON tab) prints it as a code literal for the car's cabinGlass call (scripts/bake-glass.mjs <car>).
+//      THE CORNERS (CHECKLIST 336, "Genuinely don't know which corner"): numbered handles (1..n, the order stored) named as drawn
+//      (front-top, rear-top, rear-bottom, front-bottom: render/panecorners.js), a tap within 24 px of one picks the nearest (a finger's
+//      44 px), the picked one orange and ringed, its row lit and its place read out live as it is dragged (z along the car, y up, and the
+//      automatic place); nudge buttons (rear / up / down / front, a screen's foot or top up / down its pillar) by 5 mm, 1 cm or 5 cm;
+//      "Reset corner" puts the picked one back at its automatic place; Undo is the editor's undo. The editor scrolls to the window opened.
 //   8. PLACES (the Placements tab, render/placementedit.js): the car's roof, cargo and wing prop slots and its number plates, moved on the car
 //      (tap the car, drag the shape, or Move / Turn / Size handles) or typed, with Snap, Fit max, Reset and the audit's measures as chips.
 //      "Write to build" writes the car's hand row into render/propanchors/slice-<n>.json and the plate into render/plateanchors.js (the dev
@@ -54,7 +59,7 @@
 //      same points in a side / top / front drawing in the Part tab (drag, type, add after, remove, Zoom in) as the precise route. The edit is the patch's `shapes` table, read as the model is built (the same code
 //      makes the edited outline: bevels, merges, draw calls as before). Mirror on: the shape across the car (found by its vertices) gets the
 //      mirrored edit in the same commit. `node scripts/bake-shapes.mjs <car>` writes the points into the car's source (a plain build, no patch).
-//   ?car=<id>  ?damage=<0..5|percent>  ?evil  ?tab=parts|part|place|json  ?part=<part id>  ?pane=<pane name>  ?shape=<shape id>  ?mirror=off  ?view=front|rear|left|right|top|34  ?dark
+//   ?car=<id>  ?damage=<0..5|percent>  ?evil  ?tab=parts|part|place|json  ?part=<part id>  ?pane=<pane name>  ?corner=<1..n>  ?shape=<shape id>  ?mirror=off  ?view=front|rear|left|right|top|34  ?dark
 //   ?lights  ?brake  ?hazards  ?lampmarks  (those lamp toggles on from the start; also ?left ?right ?steady)
 import './render/modeleditorshim.js'; // (first: the game's modules' elements, stood in for)
 import * as THREE from 'three';
@@ -76,6 +81,7 @@ import { lampsFor, lampKey, lampSource, makeLampMarkers } from './render/carligh
 import { addLamps, placeLamps, setLampLights } from './render/lampfx.js';
 import { LOCAL_KEY, PATCHES, patchesReady, localPatches, setModelPatching } from './render/modelpatchapply.js';
 import { createPlacements } from './render/placementedit.js';
+import { cornerNames, nudged, NUDGE_STEPS, stepWords } from './render/panecorners.js';
 
 setModelPatching(false); // (the code's own model here: this page applies the patch being edited itself)
 const $ = (id) => document.getElementById(id);
@@ -313,11 +319,12 @@ const frame = (name = view, box = null) => {
   camera.lookAt(c);
   orbit.update();
   document.querySelectorAll('[data-view]').forEach(b2 => b2.classList.toggle('on', b2.dataset.view === name));
-  if (S.tab === 'part' && S.shape) renderPart(); // (the shape's drawing as the camera now shows it)
+  if (S.tab === 'part' && (S.shape || S.pane)) renderPart(); // (the shape's or window's drawing as the camera now shows it)
 };
 orbit.addEventListener('end', () => { // (the shape's drawing follows the camera to the other side)
   const rec = S.tab === 'part' && S.shape && shapeById(S.shape), v = rec && shapeView(rec);
-  if (v && v.ok && screenFlips(v).join() !== shapeFlips.join()) renderPart();
+  if (S.tab === 'part' && S.pane && !S.shape && $('glassSvg') && gPick.side && gPick.sx !== paneFlip()) renderPart(); // (a side window's drawing follows the camera round)
+  else if (v && v.ok && screenFlips(v).join() !== shapeFlips.join()) renderPart();
   else drawShape(); // (the near one of a mirrored pair takes the handles)
 });
 const resize = () => {
@@ -593,23 +600,47 @@ const resetPane = (pane) => {
   commit(p, pane.name + ': back to the automatic outline.');
 };
 const GW = 340, GH = 200, GPAD = 16;
-const glassFit = (pane) => {
-  const c = pane.cabin, pts = [...c.chain, ...c.profile.filter(q => q[1] >= c.belt - 0.35)];
-  const zs = pts.map(q => q[0]), ys = pts.map(q => q[1]), z0 = Math.min(...zs) - 0.1, z1 = Math.max(...zs) + 0.1, y0 = Math.min(...ys) - 0.05, y1 = Math.max(...ys) + 0.08;
+// sx: +1 the nose (+z) to the right, -1 to the left, as the camera shows the car (the Left view's nose to the left: screenFlips)
+const glassFit = (pane, zoom = false, sx = 1) => {
+  const c = pane.cabin, own = pane.kind === 'side' ? [...pane.now, ...pane.auto] : [pane.now.foot, pane.now.top, pane.auto.foot, pane.auto.top];
+  const pts = zoom ? own : [...c.chain, ...c.profile.filter(q => q[1] >= c.belt - 0.35)];
+  const zs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+  const mz = zoom ? Math.max(0.12, (Math.max(...zs) - Math.min(...zs)) * 0.35) : 0, my = zoom ? Math.max(0.12, (Math.max(...ys) - Math.min(...ys)) * 0.35) : 0; // (Zoom: the window, its automatic outline and a margin)
+  const z0 = Math.min(...zs) - 0.1 - mz, z1 = Math.max(...zs) + 0.1 + mz, y0 = Math.min(...ys) - 0.05 - my, y1 = Math.max(...ys) + 0.08 + my;
   const k = Math.min((GW - 2 * GPAD) / Math.max(0.3, z1 - z0), (GH - 2 * GPAD) / Math.max(0.3, y1 - y0));
-  return { k, x: (z) => GW / 2 + (z - (z0 + z1) / 2) * k, y: (y) => GH / 2 - (y - (y0 + y1) / 2) * k, z: (px) => (px - GW / 2) / k + (z0 + z1) / 2, v: (py) => -(py - GH / 2) / k + (y0 + y1) / 2 };
+  return { k, sx, x: (z) => GW / 2 + sx * (z - (z0 + z1) / 2) * k, y: (y) => GH / 2 - (y - (y0 + y1) / 2) * k, z: (px) => sx * (px - GW / 2) / k + (z0 + z1) / 2, v: (py) => -(py - GH / 2) / k + (y0 + y1) / 2 };
 };
+const paneFlip = () => screenFlips({ H: 2, V: 1 })[0]; // (which way +z runs on the screen just now; end on: +1)
 const inside = (poly, [z, y]) => { let on = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [zi, yi] = poly[i], [zj, yj] = poly[j]; if ((yi > y) !== (yj > y) && z < (zj - zi) * (y - yi) / (yj - yi) + zi) on = !on; } return on; };
 const nearest = ([a, b], [z, y]) => { const dz = b[0] - a[0], dy = b[1] - a[1], l2 = dz * dz + dy * dy; const t = Math.max(0.02, Math.min(0.98, l2 ? ((z - a[0]) * dz + (y - a[1]) * dy) / l2 : 0)); return [a[0] + dz * t, a[1] + dy * t]; };
 const r3g = (q) => [Math.round(q[0] * 1000) / 1000, Math.round(q[1] * 1000) / 1000];
+// the picked corner (kept across the rebuild a commit makes, for the same window) and the nudge step
+const gPick = { pane: null, i: -1, step: NUDGE_STEPS[1], zoom: true, sx: 1, side: false }; // (Zoom on: the drawing framed on the window, its corners apart)
+const pickedIn = (pane, n) => (gPick.pane === pane.name && gPick.i >= 0 && gPick.i < n ? gPick.i : -1);
+const cornerWords = (pane, i, names) => (i + 1) + ' ' + names[i];
+const GHIT = 24; // (CSS px: a tap this close to a corner picks it, a 48 px target for a finger)
 const paneEditor = (node, pane) => {
-  const f = glassFit(pane), c = pane.cabin, ps = panesOf(node);
+  gPick.side = pane.kind === 'side'; gPick.sx = gPick.side ? paneFlip() : 1; // (a side window drawn as the camera shows its flank; a screen in profile, nose to the right)
+  const f = glassFit(pane, gPick.zoom, gPick.sx), c = pane.cabin, ps = panesOf(node);
   const path = (pts, close = true) => pts.map((q, i) => (i ? 'L' : 'M') + f.x(q[0]).toFixed(1) + ' ' + f.y(q[1]).toFixed(1)).join(' ') + (close ? ' Z' : '');
   const side = pane.kind === 'side';
   const now = side ? pane.now : [pane.now.foot, pane.now.top], auto = side ? pane.auto : [pane.auto.foot, pane.auto.top];
-  const handles = now.map((q, i) => '<circle data-gp="' + i + '" cx="' + f.x(q[0]).toFixed(1) + '" cy="' + f.y(q[1]).toFixed(1) + '" r="8" fill="#ffd23f" fill-opacity="0.9"/><text x="' + (f.x(q[0]) + 9).toFixed(1) + '" y="' + (f.y(q[1]) - 9).toFixed(1) + '" font-size="10" fill="#cbd5e1">' + (side ? i : i ? 'top' : 'foot') + '</text>').join('');
-  const key = paneKey(pane), stored = storedFor(pane);
-  return '<h2 style="margin-top:12px">Window: ' + esc(pane.name) + ' <span class="small">' + (side ? 'side view, nose to the right: drag a corner (it stays inside the cabin outline, on the flank as the build lays it)' : 'its foot and top slide along the pillar') + '</span></h2>'
+  const names = side ? cornerNames(now) : ['foot', 'top'], sel = pickedIn(pane, now.length);
+  const cz = now.reduce((a, q) => a + q[0], 0) / now.length, cy = now.reduce((a, q) => a + q[1], 0) / now.length;
+  const order = now.map((q, i) => i).filter(i => i !== sel).concat(sel >= 0 ? [sel] : []); // (the picked corner drawn on top)
+  const handles = order.map(i => {
+    const q = now[i], x = f.x(q[0]), y = f.y(q[1]), on = i === sel, r = on ? 13 : 11;
+    const lx = side ? (q[0] >= cz ? f.sx : -f.sx) : 1, ly = side ? (q[1] >= cy ? -1 : 1) : 0; // (the name outside the pane, away from its middle)
+    return '<g class="gh' + (on ? ' on' : '') + '" data-gp="' + i + '"><circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r + '" fill="' + (on ? '#ff8c42' : '#ffd23f') + '" stroke="' + (on ? '#ffffff' : '#1b2029') + '" stroke-width="' + (on ? 2.5 : 1.5) + '"/>'
+      + '<text x="' + x.toFixed(1) + '" y="' + (y + 4).toFixed(1) + '" font-size="13" font-weight="700" text-anchor="middle" fill="#1b2029">' + (i + 1) + '</text>'
+      + '<text class="gname" x="' + (x + lx * 15).toFixed(1) + '" y="' + (y + ly * 14 + 4).toFixed(1) + '" font-size="10" text-anchor="' + (lx > 0 ? 'start' : 'end') + '">' + names[i] + '</text></g>';
+  }).join('');
+  const stored = storedFor(pane);
+  const canReset = sel >= 0 && auto.length === now.length && (Math.abs(auto[sel][0] - now[sel][0]) > 1e-4 || Math.abs(auto[sel][1] - now[sel][1]) > 1e-4);
+  const fwd = ['front', '▶', 'Toward the front'], back = ['rear', '◀', 'Toward the rear'];
+  if (f.sx < 0) { fwd[1] = '◀'; back[1] = '▶'; } // (the arrows as the drawing runs: nose left, ◀ is toward the front)
+  const nudges = side ? [f.sx < 0 ? fwd : back, ['up', '▲', 'Up'], ['down', '▼', 'Down'], f.sx < 0 ? back : fwd] : [['down', '▼', 'Down the pillar'], ['up', '▲', 'Up the pillar']];
+  return '<h2 id="gHead" style="margin-top:12px">Window: ' + esc(pane.name) + ' <span class="small">' + (side ? 'nose to the ' + (f.sx < 0 ? 'left' : 'right') + ' · tap or drag a numbered corner' : 'its foot and top slide along the pillar') + '</span></h2>'
     + '<div class="panes">' + ps.map(q => '<button data-pane="' + esc(q.name) + '" class="' + (q.name === pane.name ? 'on' : '') + (q.edited ? ' edited' : '') + '" title="' + (q.edited ? 'edited' : 'automatic') + '">' + esc(q.name) + '</button>').join('') + '</div>'
     + '<svg id="glassSvg" class="glass" viewBox="0 0 ' + GW + ' ' + GH + '">'
     + '<path d="' + path(c.profile) + '" fill="#2a3446" stroke="#5a6678" stroke-width="1"/>'            // the body's profile
@@ -619,15 +650,23 @@ const paneEditor = (node, pane) => {
     + '<path d="' + path(auto, side) + '" fill="none" stroke="#ffd23f" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>'  // the automatic outline
     + (side ? '<path id="glassNow" d="' + path(now) + '" fill="#4f6a95" fill-opacity="0.8" stroke="#ffd23f" stroke-width="1.5"/>' : '<path id="glassNow" d="' + path(now, false) + '" fill="none" stroke="#ffd23f" stroke-width="4"/>')
     + handles + '</svg>'
-    + '<div class="pts">' + now.map((q, i) => '<div class="vec" data-grow="' + i + '"><span>' + (side ? i : i ? 'top' : 'foot') + '</span>' + num(q[0], 0.01) + num(q[1], 0.01)
+    + '<p class="gread" id="gRead">' + (sel >= 0 ? cornerReadout(pane, now[sel], auto.length === now.length ? auto[sel] : null, sel, names) : 'Tap a corner to pick it') + '</p>'
+    + '<div class="gnudge">' + nudges.map(([d, a, t]) => '<button data-gn="' + d + '" title="' + t + '"' + (sel >= 0 ? '' : ' disabled') + '>' + a + '</button>').join('')
+    + '<span class="seg">' + NUDGE_STEPS.map(s => '<button data-gstep="' + s + '" class="' + (s === gPick.step ? 'on' : '') + '">' + stepWords(s) + '</button>').join('') + '</span></div>'
+    + '<div class="buttons"><button id="gCorner"' + (canReset ? '' : ' disabled') + ' title="The picked corner back to its automatic place">Reset corner</button><button id="gUndo"' + (S.at > 0 ? '' : ' disabled') + '>Undo</button><button id="gZoom">' + (gPick.zoom ? 'Zoom out' : 'Zoom in') + '</button></div>'
+    + '<div class="pts gpts"><div class="vec"><span>corner</span><span>z (along)</span><span>y (up)</span><span></span><span></span></div>' + now.map((q, i) => '<div class="vec' + (i === sel ? ' on' : '') + '" data-grow="' + i + '"><span>' + cornerWords(pane, i, names) + '</span>' + num(q[0], 0.01) + num(q[1], 0.01)
       + (side ? '<button data-gadd="' + i + '" title="A corner after this one">+</button><button data-gdel="' + i + '" title="Remove this corner"' + (now.length <= 3 ? ' disabled' : '') + '>×</button>' : '<span></span><span></span>') + '</div>').join('') + '</div>'
-    + '<p class="kv">' + (stored ? 'Edited: stored as "' + esc(stored) + '" in the patch\'s glass table' + (side && windowKey(stored) === key && S.mirror ? ' (both flanks)' : '') : 'Automatic (from the body\'s profile)') + (side ? '. Mirror ' + (S.mirror ? 'on: an edit goes to both flanks.' : 'off: this flank only.') : '') + '</p>'
-    + '<div class="buttons"><button id="gReset"' + (pane.edited || stored ? '' : ' disabled') + '>Reset to automatic</button></div>';
+    + '<p class="kv">' + (stored ? 'Edited: stored as "' + esc(stored) + '" in the patch\'s glass table' + (side && windowKey(stored) === paneKey(pane) && S.mirror ? ' (both flanks)' : '') : 'Automatic (from the body\'s profile)') + (side ? '. Mirror ' + (S.mirror ? 'on: an edit goes to both flanks.' : 'off: this flank only.') : '') + '</p>'
+    + '<div class="buttons"><button id="gReset"' + (pane.edited || stored ? '' : ' disabled') + '>Reset window</button></div>';
 };
+// the picked corner's place, read out (live while it is dragged)
+const cornerReadout = (pane, q, a, i, names) => '<b>' + esc(cornerWords(pane, i, names)) + '</b> z ' + q[0].toFixed(3) + ' · y ' + q[1].toFixed(3)
+  + (a ? ' <span class="small">(auto ' + a[0].toFixed(2) + ', ' + a[1].toFixed(2) + ')</span>' : '') + (pane.kind === 'side' && S.mirror ? ' <span class="small">both sides</span>' : '');
 const wirePaneEditor = (box, node, pane) => {
   box.querySelectorAll('[data-pane]').forEach(b => b.addEventListener('click', () => select(S.sel, true, b.dataset.pane)));
-  const side = pane.kind === 'side', f = glassFit(pane);
+  const side = pane.kind === 'side', f = glassFit(pane, gPick.zoom, gPick.sx);
   const now = (side ? pane.now : [pane.now.foot, pane.now.top]).map(q => q.slice());
+  const auto = side ? pane.auto : [pane.auto.foot, pane.auto.top], names = side ? cornerNames(now) : ['foot', 'top'];
   const pack = (pts) => (side ? pts.map(r3g) : { foot: r3g(pts[0]), top: r3g(pts[1]) });
   const edge = side ? null : pane.edge;
   const clamp = (i, q, prev) => {
@@ -636,29 +675,86 @@ const wirePaneEditor = (box, node, pane) => {
     const other = now[1 - i];
     return (i === 0 ? on[1] < other[1] - 0.02 : on[1] > other[1] + 0.02) ? on : prev;
   };
+  const pick = (i) => { gPick.pane = pane.name; gPick.i = i; };
+  const sel = () => pickedIn(pane, now.length);
+  box.querySelectorAll('[data-grow] input').forEach(inp => inp.addEventListener('focus', () => { const i = +inp.closest('[data-grow]').dataset.grow; if (sel() !== i) { pick(i); markPick(); } }));
   box.querySelectorAll('[data-grow]').forEach(row => row.addEventListener('change', () => {
     const i = +row.dataset.grow, [a, b] = [...row.querySelectorAll('input')].map(x => +x.value || 0), next = now.map(q => q.slice());
-    next[i] = clamp(i, [a, b], now[i]); setPane(pane, pack(next), (side ? 'corner ' : '') + (side ? i : i ? 'top' : 'foot') + ' set');
+    pick(i); next[i] = clamp(i, [a, b], now[i]); setPane(pane, pack(next), 'corner ' + cornerWords(pane, i, names) + ' set');
   }));
   box.querySelectorAll('[data-gadd]').forEach(b => b.addEventListener('click', () => {
     const i = +b.dataset.gadd, a = now[i], c2 = now[(i + 1) % now.length], next = now.map(q => q.slice());
-    next.splice(i + 1, 0, [(a[0] + c2[0]) / 2, (a[1] + c2[1]) / 2]); setPane(pane, pack(next), 'a corner added');
+    next.splice(i + 1, 0, [(a[0] + c2[0]) / 2, (a[1] + c2[1]) / 2]); pick(i + 1); setPane(pane, pack(next), 'corner ' + (i + 2) + ' added');
   }));
-  box.querySelectorAll('[data-gdel]').forEach(b => b.addEventListener('click', () => { if (now.length > 3) setPane(pane, pack(now.filter((_, i) => i !== +b.dataset.gdel)), 'a corner removed'); }));
-  box.querySelector('#gReset')?.addEventListener('click', () => resetPane(pane));
-  const svg = box.querySelector('#glassSvg');
-  svg.querySelectorAll('[data-gp]').forEach(c => c.addEventListener('pointerdown', (e) => {
-    e.preventDefault(); c.setPointerCapture(e.pointerId);
-    const i = +c.dataset.gp, next = now.map(q => q.slice());
+  box.querySelectorAll('[data-gdel]').forEach(b => b.addEventListener('click', () => { const i = +b.dataset.gdel; if (now.length > 3) { pick(-1); setPane(pane, pack(now.filter((_, j) => j !== i)), 'corner ' + cornerWords(pane, i, names) + ' removed'); } }));
+  box.querySelector('#gReset')?.addEventListener('click', () => { pick(-1); resetPane(pane); });
+  box.querySelector('#gUndo')?.addEventListener('click', () => undo(-1));
+  box.querySelector('#gZoom')?.addEventListener('click', () => { gPick.zoom = !gPick.zoom; renderPart(); });
+  box.querySelector('#gCorner')?.addEventListener('click', () => {
+    const i = sel(); if (i < 0 || auto.length !== now.length) return;
+    const next = now.map(q => q.slice()); next[i] = auto[i].slice();
+    setPane(pane, pack(next), 'corner ' + cornerWords(pane, i, names) + ' back to automatic');
+  });
+  box.querySelectorAll('[data-gstep]').forEach(b => b.addEventListener('click', () => { gPick.step = +b.dataset.gstep; box.querySelectorAll('[data-gstep]').forEach(x => x.classList.toggle('on', x === b)); }));
+  box.querySelectorAll('[data-gn]').forEach(b => b.addEventListener('click', () => {
+    const i = sel(); if (i < 0) return;
+    const next = now.map(q => q.slice()), to = clamp(i, nudged(now[i], b.dataset.gn, gPick.step, edge), now[i]);
+    if (to === now[i]) { const why = side ? 'the cabin outline stops it there.' : 'the pillar ends there.'; status('Corner ' + cornerWords(pane, i, names) + ': ' + why); const el = $('gRead'); if (el) el.innerHTML = cornerReadout(pane, now[i], auto.length === now.length ? auto[i] : null, i, names) + ' <span class="bad">' + why + '</span>'; return; } // (said by the drawing too: on a phone the status line is scrolled away)
+    next[i] = to; setPane(pane, pack(next), 'corner ' + cornerWords(pane, i, names) + ' nudged ' + b.dataset.gn + ' ' + stepWords(gPick.step));
+  }));
+  const svg = box.querySelector('#glassSvg'), groups = new Map([...svg.querySelectorAll('[data-gp]')].map(g => [+g.dataset.gp, g]));
+  const readout = (i, q) => { const el = $('gRead'); if (el) el.innerHTML = cornerReadout(pane, q, auto.length === now.length ? auto[i] : null, i, names); };
+  // the picked corner lit without a rebuild (a tap that does not move it): its handle, its row, the readout, the buttons that need one
+  const markPick = () => {
+    const i = sel();
+    groups.forEach((g, j) => {
+      const on = j === i, c = g.querySelector('circle');
+      g.classList.toggle('on', on); c.setAttribute('r', on ? 13 : 11); c.setAttribute('fill', on ? '#ff8c42' : '#ffd23f'); c.setAttribute('stroke', on ? '#ffffff' : '#1b2029'); c.setAttribute('stroke-width', on ? 2.5 : 1.5);
+      if (on) svg.appendChild(g); // (on top)
+    });
+    box.querySelectorAll('[data-grow]').forEach(r => r.classList.toggle('on', +r.dataset.grow === i));
+    box.querySelectorAll('[data-gn]').forEach(b => { b.disabled = i < 0; });
+    const rc = box.querySelector('#gCorner');
+    if (rc) rc.disabled = !(i >= 0 && auto.length === now.length && (Math.abs(auto[i][0] - now[i][0]) > 1e-4 || Math.abs(auto[i][1] - now[i][1]) > 1e-4));
+    if (i >= 0) readout(i, now[i]);
+  };
+  // the corner nearest a pointer, within GHIT CSS px (the whole drawing listens: a finger need not land on the dot)
+  const toView = (ev) => { const r = svg.getBoundingClientRect(); return { px: (ev.clientX - r.left) * GW / r.width, py: (ev.clientY - r.top) * GH / r.height, s: r.width / GW }; };
+  const nearestCorner = (ev) => {
+    const { px, py, s } = toView(ev);
+    let best = -1, bd = Infinity;
+    now.forEach((q, i) => { const d = Math.hypot(f.x(q[0]) - px, f.y(q[1]) - py) * s; if (d < bd || (d === bd && i === sel())) { bd = d; best = i; } });
+    return bd <= GHIT ? best : -1;
+  };
+  svg.addEventListener('pointermove', (ev) => { if (ev.buttons) return; const i = nearestCorner(ev); groups.forEach((g, j) => g.classList.toggle('hov', j === i)); svg.classList.toggle('near', i >= 0); });
+  svg.addEventListener('pointerleave', () => { groups.forEach(g => g.classList.remove('hov')); svg.classList.remove('near'); });
+  svg.addEventListener('pointerdown', (e) => {
+    const i = nearestCorner(e);
+    if (i < 0) return;
+    e.preventDefault(); try { svg.setPointerCapture(e.pointerId); } catch { /* (a pointer the page did not see go down) */ }
+    pick(i); markPick();
+    const g = groups.get(i), next = now.map(q => q.slice()), c0 = now[i].slice(), { px: px0, py: py0 } = toView(e);
+    let moved = false;
     const move = (ev) => {
-      const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * GW / r.width, py = (ev.clientY - r.top) * GH / r.height;
-      next[i] = clamp(i, [Math.round(f.z(px) * 200) / 200, Math.round(f.v(py) * 200) / 200], next[i]); // (to 5 mm)
-      c.setAttribute('cx', f.x(next[i][0]).toFixed(1)); c.setAttribute('cy', f.y(next[i][1]).toFixed(1));
+      const { px, py } = toView(ev);
+      if (!moved && Math.hypot(px - px0, py - py0) < 2) return;
+      moved = true;
+      next[i] = clamp(i, [Math.round((c0[0] + f.sx * (px - px0) / f.k) * 200) / 200, Math.round((c0[1] - (py - py0) / f.k) * 200) / 200], next[i]); // (to 5 mm, from where it was: no jump on touch)
+      const x = f.x(next[i][0]), y = f.y(next[i][1]), [dot, nr, nm] = [g.querySelector('circle'), ...g.querySelectorAll('text')];
+      const dx = +nm.getAttribute('x') - +dot.getAttribute('cx'), dy = +nm.getAttribute('y') - +dot.getAttribute('cy');
+      dot.setAttribute('cx', x.toFixed(1)); dot.setAttribute('cy', y.toFixed(1));
+      nr.setAttribute('x', x.toFixed(1)); nr.setAttribute('y', (y + 4).toFixed(1));
+      nm.setAttribute('x', (x + dx).toFixed(1)); nm.setAttribute('y', (y + dy).toFixed(1));
       $('glassNow').setAttribute('d', next.map((q, j) => (j ? 'L' : 'M') + f.x(q[0]).toFixed(1) + ' ' + f.y(q[1]).toFixed(1)).join(' ') + (side ? ' Z' : ''));
+      readout(i, next[i]);
+      const ins = box.querySelectorAll('[data-grow="' + i + '"] input'); if (ins.length === 2) { ins[0].value = next[i][0]; ins[1].value = next[i][1]; }
     };
-    const up = () => { c.removeEventListener('pointermove', move); c.removeEventListener('pointerup', up); c.removeEventListener('pointercancel', up); setPane(pane, pack(next), (side ? 'corner ' + i : i ? 'top' : 'foot') + ' moved'); };
-    c.addEventListener('pointermove', move); c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up);
-  }));
+    const up = () => {
+      svg.removeEventListener('pointermove', move); svg.removeEventListener('pointerup', up); svg.removeEventListener('pointercancel', up);
+      if (moved) setPane(pane, pack(next), 'corner ' + cornerWords(pane, i, names) + ' moved');
+    };
+    svg.addEventListener('pointermove', move); svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
+  });
 };
 // ---- SHAPES: the selected outline on the car (yellow, its points numbered) and its points in a side / top / front view (the Part tab) ------
 const shapeById = (id) => S.shapes.find(r => r.id === id) || null;
@@ -967,6 +1063,7 @@ const pointsEditor = (pts) => {
     + '<div class="pts">' + pts.map((q, i) => '<div class="vec" data-row="' + i + '"><span>' + i + '</span>' + num(q[0], 0.05) + num(q[1], 0.05)
       + '<button data-ptadd="' + i + '" title="A point after this one">+</button><button data-ptdel="' + i + '" title="Remove this point"' + (pts.length <= 3 ? ' disabled' : '') + '>×</button></div>').join('') + '</div>';
 };
+let shownPane = null; // (the window whose editor was last scrolled to)
 const renderPart = () => {
   const box = $('partBox');
   const p = S.sel && partOf(S.sel);
@@ -1038,6 +1135,11 @@ const renderPart = () => {
   }
   { const node = S.nodes.get(p.id), rec = S.shape && node && shapesOf(node).find(r => r.id === S.shape); if (rec) wireShapeEditor(box, rec); else box.querySelectorAll('[data-shape]').forEach(b => b.addEventListener('click', () => select(S.sel, true, undefined, b.dataset.shape))); }
   if (p.panes) { const pane = S.pane && panesOf(S.nodes.get(p.id)).find(q => q.name === S.pane); if (pane?.cabin) wirePaneEditor(box, S.nodes.get(p.id), pane); else box.querySelectorAll('[data-pane]').forEach(b => b.addEventListener('click', () => select(S.sel, true, b.dataset.pane))); }
+  { // (a window just opened: its editor scrolled into sight, it sits far down the panel; not again on every rebuild of the same one)
+    const gh = box.querySelector('#gHead'), at = gh ? S.sel + '|' + S.pane : null;
+    if (gh && at !== shownPane && box.offsetParent) box.querySelector('#glassSvg').scrollIntoView({ block: 'start' }); // (the drawing, its readout and nudges in sight: on a phone's sheet the heading and window buttons are just above)
+    shownPane = gh && !box.offsetParent ? null : at;
+  }
   $('pName').addEventListener('change', (e) => { if (p.added) set({ name: e.target.value }); else { S.nodes.get(p.id).name = e.target.value; set({ name: e.target.value }); } });
   $('pRole').addEventListener('change', (e) => set({ role: e.target.value }));
   const paint = (key, value) => {
@@ -1274,6 +1376,7 @@ patchesReady.then(() => {
   loadCar(params.get('car') || 'commuter');
   setDamage(S.share, true);
   showTab(params.get('tab'));
+  if (params.get('part') && params.get('pane') && +params.get('corner') > 0) { gPick.pane = params.get('pane'); gPick.i = +params.get('corner') - 1; } // (?corner=<1..n>: that corner picked)
   if (params.get('part')) select(params.get('part'), true, params.get('pane') || undefined, params.get('shape') || undefined);
   else if (params.get('shape')) { const r = shapeById(params.get('shape')); if (r) select(idOf(r.mesh), true, undefined, r.id); } // (?shape= alone: the part it is in)
   if (params.get('tab')) showTab(params.get('tab'));
