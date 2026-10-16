@@ -203,10 +203,12 @@
 //              a kind away), a later one over an earlier. With police only in such stretches, a police
 //              car stays on station at the edge of its stretch (The Hood)
 //   ice        { from, to, lane }  an ice patch on that lane (no lane: across the road): on it the car brakes
-//              with a share of its brakes and changes lane more slowly (see CONFIG.ice: brakeGrip, steerGrip, laneSpeed)
+//              with a share of its brakes, speeds up with a share of its acceleration (never its top speed) and changes
+//              lane more slowly (see CONFIG.ice: brakeGrip, steerGrip, laneSpeed, accelGrip)
 //   waterPatches { from, to, lane }  standing water on that lane (no lane: across the road), shaped as ice is: a burst
 //              main's water with no main, there all the time (a puddle, a flooded dip, the mall's mopped floor). On it the car
-//              brakes, steers and changes lane by the water's numbers (CONFIG.waterMain: brakeGrip, steerGrip, laneSpeed), and
+//              brakes, steers, speeds up and changes lane by the water's numbers (CONFIG.waterMain: brakeGrip, steerGrip, laneSpeed,
+//              accelGrip), and
 //              after it the tyres stay wet for wetAfter m, the grip coming back little by little (ice lets go at once). Warned
 //              of CONFIG.waterMain.warn m out (a theme's standingWater: its words, its tint). (Its own key, not an option on
 //              waterMains: a main is a point with one lane, a fountain and a cycle; a patch is a stretch, with or without a lane)
@@ -324,8 +326,9 @@
 //   schoolCrossings { s }: a lollipop person stops the traffic for the children; running it is a bust
 //   waterMains { s, lane, length? }: a burst water main in that lane: a fountain out of the road for CONFIG.waterMain.on
 //              s, then nothing for .off s, over and over. While it sprays, `length` m of that lane beyond it (.length,
-//              if not given) is under water and as slippery as ice: on it the car brakes with a share of its brakes
-//              and changes lane more slowly, by numbers of its own (CONFIG.waterMain: brakeGrip, steerGrip, laneSpeed)
+//              if not given) is under water and as slippery as ice: on it the car brakes with a share of its brakes,
+//              speeds up with a share of its acceleration and changes lane more slowly, by numbers of its own
+//              (CONFIG.waterMain: brakeGrip, steerGrip, laneSpeed, accelGrip)
 //   balloons   { s, lanes: [first, last] }: a hot-air balloon comes down on those lanes, sits, and lifts off again
 //   drawbridges { s }: bells, booms, and two leaves that lift: the car goes up the near one and jumps the gap if it
 //              came fast enough (a board gives the speed), or stops short, or drops in. On straight road

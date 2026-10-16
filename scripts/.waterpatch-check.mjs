@@ -2,6 +2,8 @@
 // standing water is a burst main's water with no main (the same numbers, the same wet tyres after it), the wetness scales
 // both for the whole level (strength 1 = CONFIG.waterMain's numbers exactly, 0 = no slip, floors kept), and Mall Dash's
 // wet floor is standing water now (no ice). It also prints what the mall's wetness does to a car, against tarmac's.
+// And the acceleration grip (accelGrip, on ice and on water, fading back over the wet tail): only the engine's pull is
+// scaled, never the top speed, the turbo's pull or the pull-away after a drop.
 //   node scripts/.waterpatch-check.mjs
 import { boot } from './delivery-headless.mjs';
 
@@ -26,15 +28,17 @@ try {
 
   // ---- the numbers (track.js waterNumbers)
   const one = waterNumbers({}), same = waterNumbers({ wetness: { strength: 1, tail: 1 } });
-  check(['brakeGrip', 'steerGrip', 'laneSpeed', 'wetAfter'].every(k => one[k] === W[k] && same[k] === W[k]), 'wetness 1 (and none at all): CONFIG.waterMain\'s numbers exactly (' + ['brakeGrip', 'steerGrip', 'laneSpeed', 'wetAfter'].map(k => k + ' ' + one[k]).join(', ') + ')');
+  check(['brakeGrip', 'steerGrip', 'laneSpeed', 'accelGrip', 'wetAfter'].every(k => one[k] === W[k] && same[k] === W[k]), 'wetness 1 (and none at all): CONFIG.waterMain\'s numbers exactly (' + ['brakeGrip', 'steerGrip', 'laneSpeed', 'accelGrip', 'wetAfter'].map(k => k + ' ' + one[k]).join(', ') + ')');
   const up = waterNumbers({ wetness: { strength: 1.5, tail: 2 } });
   const want = (k) => Math.max(W.floor[k], 1 - (1 - W[k]) * 1.5);
-  check(['brakeGrip', 'steerGrip', 'laneSpeed'].every(k => Math.abs(up[k] - want(k)) < 1e-12) && up.wetAfter === W.wetAfter * 2,
-    'wetness 1.5, tail 2: each share 1 - loss x 1.5, floored (' + ['brakeGrip', 'steerGrip', 'laneSpeed'].map(k => k + ' ' + up[k].toFixed(3)).join(', ') + '), wet tail ' + up.wetAfter + ' m');
+  check(['brakeGrip', 'steerGrip', 'laneSpeed', 'accelGrip'].every(k => Math.abs(up[k] - want(k)) < 1e-12) && up.wetAfter === W.wetAfter * 2,
+    'wetness 1.5, tail 2: each share 1 - loss x 1.5, floored (' + ['brakeGrip', 'steerGrip', 'laneSpeed', 'accelGrip'].map(k => k + ' ' + up[k].toFixed(3)).join(', ') + '), wet tail ' + up.wetAfter + ' m');
   const top = waterNumbers({ wetness: { strength: 3 } });
-  check(['brakeGrip', 'steerGrip', 'laneSpeed'].every(k => top[k] === W.floor[k]), 'wetness 3: every share at its floor (' + JSON.stringify(W.floor) + ')');
+  check(['brakeGrip', 'steerGrip', 'laneSpeed', 'accelGrip'].every(k => top[k] === W.floor[k]), 'wetness 3: every share at its floor (' + JSON.stringify(W.floor) + ')');
   const dry = waterNumbers({ wetness: { strength: 0 } });
-  check(['brakeGrip', 'steerGrip', 'laneSpeed'].every(k => dry[k] === 1), 'wetness 0: no share lost');
+  check(['brakeGrip', 'steerGrip', 'laneSpeed', 'accelGrip'].every(k => dry[k] === 1), 'wetness 0: no share lost');
+  check(W.floor.accelGrip >= 0.2 && W.accelGrip > W.floor.accelGrip && g.CONFIG.ice.accelGrip >= 0.2 && g.CONFIG.ice.accelGrip < 1,
+    'accelGrip: ice ' + g.CONFIG.ice.accelGrip + ', water ' + W.accelGrip + ', floor ' + W.floor.accelGrip + ' (the car always pulls: never below 0.2)');
 
   // ---- a test road: Gimmick Road 2 with everything taken off it, standing water (both lanes 4 and 5) and a burst main held
   // spraying over each of lanes 4 and 5, on two straight stretches
@@ -46,7 +50,7 @@ try {
   const [dryAt, patchAt, mainAt] = spots;
   check(spots.length === 3, 'three straight stretches to try it on (at ' + spots.join(', ') + ')');
   const road = (wetness) => g.select({ ...base, id: 'standing-water-road', exits: [], pickups: [], schoolCrossings: [], trolleys: [], marathons: [], balloons: [], drawbridges: [], wreckage: [], cameras: [], potholes: [], crossings: [], stampedes: [], wideLoads: [], targets: [], obstacles: [],
-    ice: [], waterPatches: [{ from: patchAt, to: patchAt + SPAN, lane: 4 }, { from: patchAt, to: patchAt + SPAN, lane: 5 }],
+    ice: [{ from: patchAt, to: patchAt + SPAN, lane: 3 }], waterPatches: [{ from: patchAt, to: patchAt + SPAN, lane: 4 }, { from: patchAt, to: patchAt + SPAN, lane: 5 }],
     waterMains: [{ s: mainAt, lane: 4, length: SPAN }, { s: mainAt, lane: 5, length: SPAN }], ...(wetness ? { wetness } : {}) });
   const hold = () => { quiet(); Hazards.mains.forEach((m, i) => { m.on = true; m.t = 0; T().sprays[i].on = true; }); };
   // m to brake 30 -> 10 m/s; s to move one lane across at full steer from 20 m/s (at s + 10, wholly on the water)
@@ -60,7 +64,8 @@ try {
   check(!T().problems.length, 'the test road loads without problems (' + (T().problems.join(' | ') || 'none') + ')');
   const pIcy = T().icy(patchAt + 50, lane(4, patchAt + 50));
   check(pIcy && pIcy.water === true, 'standing water: Track.icy gives water there');
-  check(!T().icy(patchAt + 50, lane(3, patchAt + 50)), 'standing water: the lane beside is dry');
+  check(T().icy(patchAt + 50, lane(3, patchAt + 50)) && !T().icy(patchAt + 50, lane(3, patchAt + 50)).water, 'standing water: the lane beside is ice, not water (the acceleration test\'s)');
+  check(!T().icy(patchAt + 50, lane(2, patchAt + 50)), 'and the lane past that is dry');
   check(T().icy(patchAt + 50, lane(4, patchAt + 50)) && T().icy(patchAt + 50, lane(4, patchAt + 50)) === T().icy(patchAt + 120, lane(4, patchAt + 120)), 'standing water: always there (no main, no cycle)');
   const b = { dry: braking(dryAt), patch: braking(patchAt), main: braking(mainAt) }, a = { dry: across(dryAt), patch: across(patchAt), main: across(mainAt) };
   console.log('         (braking 30 to 10 m/s: dry ' + m1(b.dry.d) + ' m, standing water ' + m1(b.patch.d) + ' m, a main\'s water ' + m1(b.main.d) + ' m)');
@@ -81,6 +86,37 @@ try {
   console.log('         (the slew on arriving, as on a main\'s water: standing water ' + (kicked > 0) + ', a main\'s ' + (kickedMain > 0) + ')');
   check((kicked > 0) === (kickedMain > 0), 'the arrival slew (look only) is as a main\'s water\'s');
 
+  // ---- the acceleration grip: m/s gained over half a second flooring it from 10 m/s, in lane n at s (wet: the tyres' wetness to start with)
+  const gain = (at, n = 4, { wet = 0, v = 10, turbo = 0, launching = false, t = 0.5 } = {}) => {
+    start(at, n, v); Object.assign(P, { wetTyres: wet, turbo, launching, lat: lane(n, at) }); hold(); g.drive(1, 0); g.run(t - 1e-9, () => { hold(); return false; });
+    return { dv: P.speed - v, onIce: P.onIce, onWater: P.onWater, wet: P.wetTyres };
+  };
+  const stats = g.cars.carStats(g.cars.CAR);
+  const gDry = gain(dryAt + 20), gIce = gain(patchAt + 20, 3), gWater = gain(patchAt + 20, 4), gMain = gain(mainAt + 20, 4);
+  console.log('         (gained in 0.5 s from 10 m/s, flooring it, ' + g.cars.CAR.id + ' accel ' + stats.accel + ': dry ' + s2(gDry.dv) + ', ice ' + s2(gIce.dv) + ', standing water ' + s2(gWater.dv) + ', a main\'s ' + s2(gMain.dv) + ' m/s)');
+  check(gIce.onIce && !gIce.onWater && Math.abs(gIce.dv / gDry.dv - g.CONFIG.ice.accelGrip) < 1e-6, 'on ice the engine pulls at CONFIG.ice.accelGrip of dry (' + s2(gIce.dv / gDry.dv) + ')');
+  check(gWater.onWater && Math.abs(gWater.dv / gDry.dv - W.accelGrip) < 1e-6 && Math.abs(gMain.dv - gWater.dv) < 1e-9, 'on water (standing or a main\'s) at CONFIG.waterMain.accelGrip (' + s2(gWater.dv / gDry.dv) + ')');
+  // the wet tail: just past the water at full wetness the pull is the water's, fading to dry; a short step so wetTyres barely moves
+  const gTail1 = gain(patchAt + SPAN + 1, 4, { wet: 1, t: 1 / 60 }), gDry1 = gain(dryAt + 20, 4, { t: 1 / 60 }), gTailHalf = gain(patchAt + SPAN + 1, 4, { wet: 0.5, t: 1 / 60 });
+  const mixAt = (w) => 1 - (1 - W.accelGrip) * w;
+  check(Math.abs(gTail1.dv / gDry1.dv - mixAt(gTail1.wet)) < 1e-6 && Math.abs(gTailHalf.dv / gDry1.dv - mixAt(gTailHalf.wet)) < 1e-6,
+    'on the wet tail the pull fades back with the tyres (' + s2(gTail1.dv / gDry1.dv) + ' at wet ' + s2(gTail1.wet) + ', ' + s2(gTailHalf.dv / gDry1.dv) + ' at wet ' + s2(gTailHalf.wet) + ')');
+  const gPast = gain(patchAt + SPAN + W.wetAfter + 5, 4);
+  check(Math.abs(gPast.dv - gDry.dv) < 1e-9 && gPast.wet === 0, 'and past the tail it is the dry road\'s');
+  // never the turbo's pull, nor the pull-away after a drop
+  const tDry = gain(dryAt + 20, 4, { turbo: 3 }), tWet = gain(patchAt + 20, 4, { turbo: 3 }), tIce = gain(patchAt + 20, 3, { turbo: 3 });
+  check(Math.abs(tWet.dv - tDry.dv) < 1e-9 && Math.abs(tIce.dv - tDry.dv) < 1e-9, 'the turbo pulls as hard on ice and water as dry (' + s2(tDry.dv) + ' m/s)');
+  const lDry = gain(dryAt + 20, 4, { v: 0, launching: true }), lIce = gain(patchAt + 20, 3, { v: 0, launching: true });
+  check(Math.abs(lIce.dv - lDry.dv) < 1e-9, 'the pull-away after a drop (launching) is not slowed on ice');
+  // the top speed: flooring it on the water and on the ice, the car still reaches its own top speed, exactly, and holds it
+  for (const [name, n] of [['ice', 3], ['standing water', 4]]) {
+    start(patchAt + 5, n, stats.maxSpeed - 4); hold(); g.drive(1, 0); g.run(6, () => { hold(); return false; });
+    check(P.onIce && P.speed === stats.maxSpeed, 'on ' + name + ', held flat out, the car reaches its top speed exactly (' + P.speed + ' of ' + stats.maxSpeed + ')');
+  }
+  // from a standstill on the patch the car never stalls: with its foot off, it creeps up to minSpeed by itself
+  start(patchAt + 20, 3, 0); g.drive(0, 0); const creep = g.run(10, () => P.speed >= g.CONFIG.minSpeed);
+  check(creep < 10, 'stopped on ice, hands off, the car pulls back up to minSpeed (' + s2(creep) + ' s)');
+
   // ---- wetness 1.5, tail 2: the same road, slipperier
   road({ strength: 1.5, tail: 2 }); G.start();
   check(T().wet.wetAfter === W.wetAfter * 2 && Math.abs(T().wet.laneSpeed - want('laneSpeed')) < 1e-12, 'wetness 1.5: Track.wet is waterNumbers\' (wet tail ' + T().wet.wetAfter + ' m)');
@@ -90,9 +126,16 @@ try {
   check(Math.abs(m15.d - b15.d) < 1e-9, 'wetness 1.5: a burst main\'s water is scaled the same');
   check(at(t15.rows, 40) > 0.45 && at(t15.rows, 40) < 0.6 && at(t15.rows, 2 * W.wetAfter + 2) === 0, 'wetness tail 2: the tyres dry over ' + 2 * W.wetAfter + ' m');
   check(a15.t < 3, 'wetness 1.5: a lane change still within 3 s (the floors)');
+  const gDry15 = gain(dryAt + 20), gWater15 = gain(patchAt + 20, 4);
+  check(Math.abs(gWater15.dv / gDry15.dv - want('accelGrip')) < 1e-6, 'wetness 1.5: the pull on the water is ' + s2(want('accelGrip')) + ' of dry');
+  road({ strength: 3 }); G.start();
+  const gDry3 = gain(dryAt + 20), gWater3 = gain(patchAt + 20, 4);
+  check(Math.abs(gWater3.dv / gDry3.dv - W.floor.accelGrip) < 1e-6, 'wetness 3: the pull on the water is the floor\'s ' + W.floor.accelGrip);
   // ---- wetness 0: no slip anywhere
   road({ strength: 0 }); G.start();
   const b0 = braking(patchAt), m0 = braking(mainAt), a0 = across(patchAt);
+  const gW0 = gain(patchAt + 20, 4), gD0 = gain(dryAt + 20);
+  check(Math.abs(gW0.dv - gD0.dv) < 1e-9, 'wetness 0: the pull on the water is the dry road\'s');
   check(!T().icy(patchAt + 50, lane(4, patchAt + 50)) && Math.abs(b0.d - b.dry.d) < 1e-9 && Math.abs(m0.d - b.dry.d) < 1e-9 && Math.abs(a0.t - a.dry.t) < 1e-9, 'wetness 0: standing water and a main\'s water are the dry road (braking ' + m1(b0.d) + ' m)');
 
   // ---- Mall Dash: its wet floor is standing water
@@ -107,7 +150,7 @@ try {
   const ps = [...mall.waterPatches].sort((x, y) => x.from - y.from);
   const gaps = ps.slice(1).map((p, i) => [ps[i], p, p.from - ps[i].to]);
   console.log('         (gaps between patches, m: ' + gaps.map(([x, y, d]) => x.from + '-' + x.to + ' -> ' + y.from + ': ' + d).join(', ') + ')');
-  check(gaps.every(([, , d]) => d > M.wetAfter), 'Mall Dash: no patch reached before the tyres are dry from the one before (gaps ' + Math.min(...gaps.map(x => x[2])) + ' m and up, tail ' + M.wetAfter + ' m)');
+  check(gaps.every(([, , d]) => d > M.wetAfter), 'Mall Dash: no patch reached before the tyres are dry from the one before (gaps ' + Math.min(...gaps.map(x => x[2])) + ' m and up, tail ' + M.wetAfter + ' m): the pull (' + s2(M.accelGrip) + ' on it) is back to full before the next');
   // the warning
   start(ps[0].from - 200, ps[0].lane ?? 0, 25); g.run(8, () => { quiet(); return P.s > ps[0].from; });
   check(g.said.some(t => /WET FLOOR/.test(t)), 'Mall Dash: WET FLOOR! said before the first patch');

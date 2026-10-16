@@ -4,7 +4,7 @@
   "lanes-closing": { "name": "Lanes closing", "blurb": "The outer lanes close and everyone squeezes in." },
   "roadworks-diversions": { "name": "Roadworks diversions", "blurb": "Cones move the lanes over: follow them, or knock them flying." },
   "bridges": { "name": "Bridges", "blurb": "No shoulder on a bridge: steel stands beside the outer lanes." },
-  "ice": { "name": "Ice", "blurb": "Brakes and steering lose most of their grip, and the car slews." },
+  "ice": { "name": "Ice", "blurb": "Little grip to brake, steer or speed up, and the car slews." },
   "mud": { "name": "Mud", "blurb": "Mud slows the car, a nimble sports car worst of all." },
   "the-tide": { "name": "The tide", "blurb": "The sea floods your side of the road, wave by wave." },
   "the-bullet-train": { "name": "The bullet train", "blurb": "Rails down the middle of the road, or both edges, slow a car on them." },
