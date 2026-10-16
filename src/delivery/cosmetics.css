@@ -37,11 +37,12 @@
 
 /* the panel: the slots, then the open slot's choices */
 #cosmetics .cz-panel { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding-right: 4px; overscroll-behavior: contain; }
-#cosmetics .cz-slots { display: flex; flex-wrap: wrap; gap: 6px; }
-#cosmetics .cz-slot { display: inline-flex; flex-direction: column; justify-content: center; min-height: 44px; padding: 5px 14px; border-radius: 8px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line); font: 700 13px/1.1 system-ui, sans-serif; text-align: left; }
-#cosmetics .cz-slot small { font-size: 10px; font-weight: 600; letter-spacing: .04em; }
+/* the TABS (render/cosmeticslots.js: only the slots this car has; up to 8): one row on a desktop, rows of at most four on a phone (--cz-n, --cz-cols set by the screen) */
+#cosmetics .cz-slots { display: grid; grid-template-columns: repeat(var(--cz-n, 5), minmax(0, 1fr)); gap: 4px; }
+#cosmetics .cz-slot { display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 44px; padding: 4px 2px; border-radius: 8px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line); font: 700 12px/1.1 system-ui, sans-serif; text-align: center; }
+#cosmetics .cz-slot .cz-label { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+#cosmetics .cz-slot:hover { box-shadow: inset 0 0 0 1px var(--accent); }
 #cosmetics .cz-slot.on { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
-#cosmetics .cz-slot.later { opacity: .45; cursor: default; }
 #cosmetics .cz-section { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); }
 #cosmetics .cz-section h2 { font: italic 800 20px/1 var(--display); font-stretch: condensed; letter-spacing: .05em; text-transform: uppercase; }
 #cosmetics .cz-section h3 { margin-top: 4px; font: 700 11px/1 system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
@@ -72,9 +73,7 @@
   #cosmetics .cz-title h1 { font-size: 24px; }
   #cosmetics .cz-view { padding: 0 9px; font-size: 11px; }
   #cosmetics .cz-hint { display: none; }
-  #cosmetics .cz-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-  #cosmetics .cz-slot { padding: 4px 6px; font-size: 12px; }
-  #cosmetics .cz-slot small { font-size: 9px; }
+  #cosmetics .cz-slots { grid-template-columns: repeat(var(--cz-cols, 4), minmax(0, 1fr)); }
   #cosmetics .cz-section { padding: 10px; gap: 6px; }
   #cosmetics .cz-note { font-size: 11px; }
   #cosmetics .cz-chip { gap: 6px; padding: 4px 9px 4px 6px; font-size: 12px; }
@@ -85,14 +84,15 @@
   #cosmetics { grid-template-columns: min(380px, 46vw) 1fr; gap: 6px 12px; padding-top: 6px; }
   #cosmetics .cz-title h1 { font-size: 22px; }
   #cosmetics .cz-section { padding: 8px; gap: 6px; }
+  #cosmetics .cz-slots { grid-template-columns: repeat(var(--cz-cols, 4), minmax(0, 1fr)); }
 }
 @media (pointer: coarse) { #cosmetics .cz-chip, #cosmetics .cz-slot, #cosmetics .cz-reset, #cosmetics .cz-back, #cosmetics .cz-view { min-height: 44px; } }
 @media (prefers-reduced-motion: reduce) { #cosmetics * { transition: none !important; animation: none !important; } }
 
 /* the NUMBER PLATE section (CHECKLIST 286): design chips with a mini plate, the text field, its preview chip */
 #cosmetics .cz-section[hidden] { display: none; }
-#cosmetics .cz-slot[aria-selected="true"]:not(.later) { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
-#cosmetics .cz-slot:not(.on):not(.later) { opacity: .9; }
+#cosmetics .cz-slot[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+#cosmetics .cz-slot:not(.on) { opacity: .9; }
 #cosmetics .cz-view[hidden], #cosmetics .cz-view:disabled { display: none; }
 #cosmetics .cz-plates .cz-chip { flex: 1 1 calc(50% - 6px); }
 #cosmetics .cz-mini { flex: 0 0 72px; width: 72px; height: 18px; border-radius: 3px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .45); }
@@ -109,8 +109,6 @@
 @media (max-width: 760px) and (min-height: 521px), (max-width: 519px) { #cosmetics .cz-views { flex-wrap: wrap; justify-content: flex-end; max-width: 92%; } #cosmetics .cz-mini { flex-basis: 60px; width: 60px; height: 15px; } }
 
 /* the PROP slots (Roof, Cargo, Wing; CHECKLIST 302): chips with a small picture of the prop, a colour row, and the reason when the car cannot wear the slot */
-#cosmetics .cz-slot.na { opacity: .55; }
-#cosmetics .cz-slot.na.on, #cosmetics .cz-slot.na[aria-selected="true"] { opacity: .8; }
 #cosmetics .cz-props .cz-chip { flex: 1 1 calc(50% - 6px); }
 #cosmetics .cz-prev { flex: 0 0 56px; position: relative; width: 56px; height: 40px; border-radius: 6px; overflow: hidden; background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 1px var(--line); }
 #cosmetics .cz-prev.stock { background: repeating-conic-gradient(#9aa3b2 0 25%, #596273 0 50%) 0 0 / 8px 8px; opacity: .5; }
@@ -122,19 +120,12 @@
 #cosmetics .cz-paint.locked { opacity: .4; cursor: default; }
 #cosmetics .cz-paint .cz-dot { display: block; width: 22px; height: 22px; flex: none; border-radius: 50%; }
 #cosmetics .cz-dot.match { background: conic-gradient(from 45deg, #d8262b, #ff7a1a, #d9a92a, #22a84f, #2563d6, #d8262b); box-shadow: 0 0 0 1px rgba(255, 255, 255, .55), inset 0 0 0 5px rgba(20, 25, 36, .9), inset 0 0 0 1px rgba(0, 0, 0, .35); }
-#cosmetics .cz-why { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; line-height: 1.35; color: var(--ink-dim); }
-#cosmetics .cz-why strong { color: #fff; font-size: 13px; }
-#cosmetics .cz-why[hidden] { display: none; }
+#cosmetics .cz-prev.cz-sample { background: repeating-linear-gradient(135deg, rgba(255, 255, 255, .16) 0 6px, rgba(255, 255, 255, .04) 6px 12px); }
 #cosmetics .cz-prop.unsupported .cz-props, #cosmetics .cz-prop.unsupported .cz-paints { opacity: .45; pointer-events: none; }
 @media (max-width: 760px) and (min-height: 521px), (max-width: 519px) { #cosmetics .cz-prev { flex-basis: 48px; width: 48px; height: 34px; } #cosmetics .cz-props .cz-chip { padding-left: 5px; } }
 #cosmetics .cz-reset:disabled { opacity: .4; cursor: default; }
 
-/* a LOCKED prop tab (the car cannot wear the slot): a padlock and 'Locked', dimmed, no panel behind it; the reason is its tooltip, its aria-label and, on a tap, the line under the tabs */
-#cosmetics .cz-lockline { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; letter-spacing: .04em; min-height: 11px; }
-#cosmetics .cz-slot.locked { opacity: .5; cursor: not-allowed; background: rgba(34, 41, 56, .5); }
-#cosmetics .cz-slot.locked[aria-selected="true"] { background: rgba(34, 41, 56, .5); color: inherit; }
-#cosmetics .cz-lock { position: relative; flex: none; width: 8px; height: 6px; margin-top: 4px; border-radius: 1px; background: currentColor; }
-#cosmetics .cz-lock::before { content: ""; position: absolute; left: 1px; top: -4px; width: 4px; height: 4px; border: 1.5px solid currentColor; border-bottom: 0; border-radius: 3px 3px 0 0; }
+/* the line under the tabs ('Copied to all cars.') */
 #cosmetics .cz-tabmsg { min-height: 0; font-size: 12px; color: var(--accent); }
 #cosmetics .cz-tabmsg:empty { display: none; }
 
@@ -145,7 +136,7 @@
 #cosmetics .cz-seg { min-height: 36px; padding: 0 12px; border-radius: 7px; font: 700 12px/1 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-dim); }
 #cosmetics .cz-seg[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 #cosmetics .cz-acts { display: flex; gap: 6px; }
-#cosmetics .cz-acts[hidden] { display: none; }
+#cosmetics .cz-acts[hidden], #cosmetics .cz-scopebar[hidden] { display: none; }
 #cosmetics .cz-act { white-space: nowrap; min-height: 36px; padding: 0 11px; border-radius: 7px; box-shadow: inset 0 0 0 1px var(--line); font: 700 12px/1 system-ui, sans-serif; letter-spacing: .03em; color: var(--ink-dim); }
 #cosmetics .cz-act:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--accent); color: #fff; }
 #cosmetics .cz-act:disabled { opacity: .35; cursor: default; }
