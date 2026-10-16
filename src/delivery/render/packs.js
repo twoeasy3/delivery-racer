@@ -191,7 +191,7 @@ const show = (result, { look = false } = {}) => {
       make('div', 'pr-body',
         make('div', 'pr-pack', make('div', 'pr-burst'), packArt(result.kind, 1, result.car)),
         slots.length ? make('div', 'pr-cards' + (many ? ' many' : ''), slots.map(s => s.slot)) : cosRow.length ? null : make('p', 'pr-empty', 'This pack came out empty: there are no cards for it.'),
-        cosRow.length ? make('div', 'pr-cosmetics', make('h3', '', 'Cosmetic' + (cosRow.length > 1 ? 's' : '') + ' for your cars'), make('div', 'pr-cards pr-cos-cards', cosRow)) : null),
+        cosRow.length ? make('div', 'pr-cosmetics', make('h3', '', 'Cosmetics'), make('div', 'pr-cards pr-cos-cards', cosRow)) : null),
       make('footer', 'pr-foot', hint, again, done)));
   overlay.className = 'pack-reveal opening k-' + result.kind;
   const wasInMenu = Game.inMenu;

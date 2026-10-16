@@ -242,7 +242,6 @@ const buildPlate = () => {
   reset.addEventListener('click', () => { resetPlate(tgt()); syncPlateInput(); flash(plateMsg, ''); Sound.play('menuMove', 0.4); });
   return make('section', 'cz-section cz-plate',
     make('h2', '', 'Number plate', tagFor('plate')),
-    make('p', 'cz-note', 'Designs are earned, like cards; the text is yours. x2 = two in your hand: equipping takes one, taking it off gives it back.'),
     make('h3', '', 'Design'), plateSwitch, plateRow,
     make('h3', '', 'Your plate'),
     make('div', 'cz-textrow', plateInput, ok, plateChip), plateMsg,
@@ -267,7 +266,6 @@ const buildKill = () => {
   reset.addEventListener('click', () => { setKill('classic', tgt()); Sound.play('menuMove', 0.4); });
   return make('section', 'cz-section cz-kill',
     make('h2', '', 'Kill effect', tagFor('kill')),
-    make('p', 'cz-note', 'Every explosion, and your package trail. Earned, like cards: one in your hand for each car.'),
     killRow, make('div', 'cz-foot', killStatus, reset));
 };
 const killShown = () => {
@@ -649,23 +647,27 @@ const showCar = () => {
 };
 
 // ---- EARNED COSMETICS, LIKE CARDS (CHECKLIST 437, EARNED-COSMETICS.md): 1 of it = unlocked; equipping takes 1 from the hand, taking it off
-// gives it back (render/cosmeticstock.js). Every chip of an earned slot shows how many are in the HAND (x2), or is greyed ('Not earned yet');
+// gives it back (render/cosmeticstock.js). Every chip of an earned slot shows how many are in the HAND (x2), or is dimmed (none: a tap does nothing);
 // a choice that takes one is worn at once (a free try-on) and a light sheet asks to confirm: Equip keeps it, Cancel (Escape, Back) puts it back.
 // an earned item's chip becomes its CARD (render/blueprintcard.js, the same card as a blueprint, in the item's rarity: cosmetics.js
-// COSMETIC_RARITY, Uncommon): the chip's own picture moved into the card's art, the card's ×N badge = how many in the hand, 'Not earned'
-// over the art when none; the chip (the button) keeps its data, its tick and its equipped / locked marks
+// COSMETIC_RARITY, Uncommon): the chip's own picture moved into the card's art, the card's ×N badge = how many in the hand, dimmed
+// when none; the chip (the button) keeps its data, its tick and its equipped / locked marks
 const asCard = (b, slot, id) => {
   if (b.querySelector('.bp-card')) return;
   const picture = b.querySelector('canvas, .cz-prev, .cz-swatch');
   const name = cosmeticOf(slot, id)?.name || b.querySelector('.cz-name')?.textContent || id;
   const { node } = blueprintCard(null, { rarity: cosmeticRarity(slot, id), n: 1 }, { compact: true, item: { name, line: COSMETIC_SLOT_WORDS[slot] || slot, tab: 'COSMETIC', picture } });
-  node.querySelector('.bp-art')?.append(make('span', 'cz-notearned', 'Not earned'));
   b.classList.add('cz-cardchip');
   b.replaceChildren(node, make('span', 'cz-tick', '✓'));
 };
 const countChips = (row, slot, attr) => {
   if (!row || !isEarnedSlot(slot)) return;
   const use = usage();
+  // the order (the owner, 16-Oct): the free look first, then the items owned, then the rest, each in the tab's own order
+  [...row.children].forEach((b, i) => { if (b.dataset.ord === undefined) b.dataset.ord = String(i); });
+  const rank = (b) => { const id = b.dataset[attr]; return !id || id === 'none' || isFreeCosmetic(slot, id) ? 0 : cosmeticCount(slot, id) > 0 ? 1 : 2; };
+  const sorted = [...row.children].sort((a, b) => rank(a) - rank(b) || Number(a.dataset.ord) - Number(b.dataset.ord));
+  if (sorted.some((b, i) => row.children[i] !== b)) row.append(...sorted);
   for (const b of row.children) {
     const id = b.dataset[attr];
     if (!id || id === 'none' || b.dataset.sample) continue;
@@ -675,7 +677,7 @@ const countChips = (row, slot, attr) => {
     if (badge) { badge.hidden = n === 0; badge.querySelector('b').textContent = String(sp); }
     b.classList.toggle('locked', n === 0);
     b.classList.toggle('nospare', n > 0 && sp === 0);
-    b.title = n === 0 ? 'Not earned yet' : sp + ' in your hand, ' + (n - sp) + ' on cars';
+    b.title = n === 0 ? '' : 'x' + sp;
   }
 };
 let sheet = null, sheetDone = null;
@@ -707,10 +709,7 @@ const showSheet = ({ title, lines = [], okLabel = 'OK', cancelLabel = null, done
 };
 const cars = (ids) => (ids.length > 3 ? ids.slice(0, 3).map(carNameOf).join(', ') + ' and ' + (ids.length - 3) + ' more' : ids.map(carNameOf).join(', '));
 // a locked chip: what it is and how it is earned
-const lockedSheet = (slot, id) => {
-  showSheet({ title: (cosmeticOf(slot, id)?.name || id), lines: ['Not earned yet.', 'Cosmetics are earned like cards. Equipping one takes it from your hand; taking it off gives it back.'], okLabel: 'OK' });
-  Sound.play('menuMove', 0.4);
-};
+const lockedSheet = () => {}; // (a card not earned is only dimmed: a tap does nothing, the owner, 16-Oct)
 // do a change of the look (apply: returns false when it did nothing); if it puts an earned item on more cars, wear it and ask
 const gate = (apply, { title = null, done = null } = {}) => {
   const before = Store.snapshot(), was = usage();
@@ -721,16 +720,14 @@ const gate = (apply, { title = null, done = null } = {}) => {
   if (d.short.length) { // (not enough: taken back at once, and said why)
     Store.restore(before);
     const u = d.short[0], free = Math.max(0, u.count - u.before), on = (was.get(u.key) || []);
-    showSheet({ title: 'Not enough ' + u.name, lines: [
-      'This needs ' + u.more + ' (one for each car wearing it); you have ' + free + ' in your hand.',
-      on.length ? 'On: ' + cars(on) + '. Take one off a car to get it back.' : null], okLabel: 'OK' });
+    void free;
+    showSheet({ title: u.name + ': none left', lines: [on.length ? cars(on) : null], okLabel: 'OK' });
     Sound.play('menuMove', 0.4);
     return false;
   }
-  const lines = d.uses.map(u => 'Takes ' + u.more + ' from your hand: x' + Math.max(0, u.count - u.before) + ' now, x' + (u.count - u.after) + ' after.');
-  for (const g of d.gives) lines.push(g.name + ' goes back to your hand (+' + (-g.more) + ').');
   const u = d.uses[0];
-  showSheet({ title: title || (d.uses.length === 1 ? 'Equip ' + u.name + ' on ' + who + '?' : 'Equip on ' + who + '?'), lines, okLabel: 'Equip', cancelLabel: 'Cancel',
+  void who;
+  showSheet({ title: title || (d.uses.length === 1 ? u.name : 'Equip?'), lines: [], okLabel: 'Equip', cancelLabel: 'Cancel',
     done: (ok) => { if (ok) { Sound.play('menuPick', 0.4); done?.(); } else Store.restore(before); } });
   return true;
 };

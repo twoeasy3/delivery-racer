@@ -926,16 +926,16 @@ Working list, from the owner's ideas of 2026-10-09. `[x]` done, `[~]` partly don
     - **Absolutely** gives 999 of each (a real stock; no unlimited mode).
     - **One entry point.** `awardCosmetic(key, n, { source })` tells onAward listeners and dispatches a window `cosmeticaward` event. It is called by the card packs: a pack's optional `cosmetics` list in packs.json, [{ item: slot:id | any: slot, chance, n }], is rolled when the pack opens, logged in packLog, checked by packProblems, and shown on the reveal. NO pack carries any: placement is the owner's. The earlier earn table (medals, crates, tier sets, ledger) was removed.
     - **Debug switches.** `?czgive=` (a test visit or the dev server only) and `?pack=<id>&cosmetics=...` (a look, nothing saved). Also `?cztap=`. All are in URL-PARAMS.md.
-    - **UI.** Each earned chip is an Uncommon blueprint card: `blueprintCard` opts.item, rarity constant `COSMETIC_RARITY`. The ×N badge is the hand; 'Not earned' is greyed. A light confirm sheet ("Takes 1 from your hand: x3 now, x2 after"); a not-earned sheet; a not-enough sheet. The pack reveal shows awarded items as the same cards.
+    - **UI.** Each earned chip is an Uncommon blueprint card: `blueprintCard` opts.item, rarity constant `COSMETIC_RARITY`. The ×N badge is the hand; a card not earned is only dimmed (no text, a tap does nothing); cards sorted free look, owned, the rest. Terse UI (the owner's new rule, added to CLOUD-AGENT-README.md): no explainer paragraphs under the headings; the confirm sheet is the item's name with Equip / Cancel; none left: the item's name and the cars wearing it; the reveal caption is "Cosmetics". The pack reveal shows awarded items as the same cards.
   - CHECKED (all pass):
     - node --check and eslint on every changed file;
     - `.cosmetics-own-check`, extended: stock, per-car hand, awardCosmetic, pack cosmetic cards, migration, 999. Its snapshot part now finds node_modules above a worktree. origin/main has moved on (1b59b5202d); the logic files that differ from it are cars.js, ecus.json and levels.js, none cosmetic;
     - `.loadout-store-check`, `.loadout-key-check`, `.killfx-check`, `.underglow-check`, `.propcosmetic-ui-check` and `.platecosmetic-check`, all updated to earned and per-car-only;
     - `.cosmetics-tabs-check`, `.packs-check`, the vite build.
   - SEEN (scripts/shots.mjs at 390x844, read):
-    - the Plate tab as cards (x2 / x3 badges, greyed 'Not earned', Stock ticked);
+    - the Plate tab as cards after the terse pass (x2 / x3 / x1 badges, unowned dimmed with no text, owned sorted first, Stock first and ticked);
     - the Roof and Glow tabs as cards;
-    - the 'Not earned yet' sheet and the Equip sheet over a live try-on;
+    - the Equip sheet over a live try-on;
     - a Standard pack's reveal with an EV green stripe x2 and a Teal glow as Uncommon cards under the blueprints.
   - NOT VERIFIED:
     - a real pack given in play (no pack carries cosmetics);

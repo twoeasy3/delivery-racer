@@ -27,13 +27,14 @@ unlockall.js are both outside the fingerprint (vite.config.js NOT_RULES).
   - On an earned tab the screen hides All cars and Copy to all.
   - Copy to all, from the Wheels tab, copies the wheels only.
   - The default still carries the non-item fields: a plate's text and a prop's paint.
-- **Try-on:** tapping a chip you have in your hand wears it at once, and a light sheet asks to confirm.
-  - Equip keeps it. Cancel, Escape, Back or a tap outside puts the look back.
-  - If the hand is empty, the change is refused, with the cars wearing it named.
-- **Not earned:** a chip greyed "Not earned" opens a neutral "Not earned yet" sheet. The source is the owner's to decide,
-  so the sheet names none.
+- **Try-on:** tapping a card in your hand wears it at once; a sheet with only the item's name asks Equip / Cancel (no
+  counts: the ×N badge shows them). Cancel, Escape, Back or a tap outside puts it back. None left: refused; the sheet
+  names the item and the cars wearing it.
+- **Not earned:** the card is only dimmed, with no text; a tap does nothing.
 - **Absolutely:** "Unlock everything: Absolutely" gives 999 of every item, as a real stock (`grantAll`), shown as x999.
   There is no unlimited mode.
+
+UI text follows the owner's terse rule (CLOUD-AGENT-README.md): no explainer paragraphs, no before/after counts.
 
 ## The card look
 Every earned item is drawn with the same card as an Uncommon blueprint. `render/blueprintcard.js` blueprintCard takes an
@@ -42,9 +43,9 @@ copied. The rarity is one constant, `COSMETIC_RARITY = 'uncommon'` in `render/co
 later with its own `rarity` field (cosmeticRarity).
 - **Cosmetics tabs:** each earned chip is a card, three across on a phone.
   - The ×N badge shows how many are in your hand.
-  - A card with none earned is greyed and shows "Not earned" across its art.
+  - A card with none earned is dimmed, with no text. Cards are sorted: the free look first, then owned, then the rest.
   - The equipped card has the accent ring and tick.
-- **Pack reveal:** awarded items appear face up under the blueprint cards, under the heading "Cosmetics for your cars".
+- **Pack reveal:** awarded items appear face up under the blueprint cards, under the heading "Cosmetics".
 
 ## How cosmetics are awarded: the card packs
 How cards and blueprints are awarded today:
@@ -61,7 +62,7 @@ Cosmetics ride the same mechanism as another kind of card:
 - **Pack definition:** a pack in `packs.json` may have `"cosmetics": [{ "item": "plate:hex" | "any": "plate",
   "chance": 0..1 (default 1), "n": copies (default 1) }]`.
 - **When the pack opens:** each entry is rolled on its own chance. A hit is awarded through the one entry point, logged
-  in the pack log, and shown on the reveal in a "Cosmetics for your cars" row under the blueprint cards.
+  in the pack log, and shown on the reveal in a "Cosmetics" row under the blueprint cards.
 - **Validation:** `packProblems` checks the list.
 - **Current packs:** no pack carries any cosmetics today. Where they drop is the owner's to place.
 - **Entry point:** `awardCosmetic(key, n, { source })` in `render/cosmetics.js` is the only way a cosmetic is given. It
