@@ -8,14 +8,14 @@
 import { boot } from './delivery-headless.mjs';
 import { execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, symlinkSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const g = await boot();
 const { Progress } = await g.load('progress.js');
-const { COSMETICS, registerCosmetics, cosmeticKeys, isFreeCosmetic, ownsCosmetic, grantCosmetics, ownedCosmetics, reloadCosmetics, clearCosmetics, KEY: OWN_KEY } = await g.load('render/cosmetics.js');
+const { COSMETICS, registerCosmetics, cosmeticKeys, isFreeCosmetic, ownsCosmetic, grantCosmetics, ownedCosmetics, reloadCosmetics, clearCosmetics, KEY: OWN_KEY, STOCK_KEY, cosmeticCount, awardCosmetic, onAward, MOST_EACH } = await g.load('render/cosmetics.js');
 const { unlockEverything } = await g.load('unlockall.js');
 const wheels = await g.load('render/wheelcosmetic.js');
 let failures = 0;
@@ -43,6 +43,7 @@ check(!ownsCosmetic('plate', 'fixture-gold') && ownedCosmetics().length === 0, "
 unlockEverything('abs');
 check(ownsCosmetic('plate', 'fixture-gold') && ownsCosmetic('wheels', 'fixture-set'), "unlocked after unlockEverything('abs')");
 check(cosmeticKeys().every(k => ownedCosmetics().includes(k)), "'abs' grants every key in the registry (" + ownedCosmetics().length + ', free ones too)');
+check(cosmeticCount('plate', 'fixture-gold') === MOST_EACH && MOST_EACH === 999 && COSMETICS.filter(c => c.earned).every(c => cosmeticCount(c.slot, c.id) === 999), "'abs' gives 999 of every earned item: a real stock, not unlimited (CHECKLIST 437)");
 unlockEverything('abs');
 check(new Set(ownedCosmetics()).size === ownedCosmetics().length, 'granting twice does not repeat a key');
 
@@ -62,22 +63,23 @@ check(ownedCosmetics().join() === listed.join() && ownsCosmetic('plate', 'fixtur
   Progress.save();
   check(cookie() === withList && Progress.saved() === saveWith, 'the cookie and the whole progress save are byte-identical with the cosmetics granted and without (' + withList.length + ' bytes)');
   grantCosmetics(listed);
-  localStorage.removeItem(OWN_KEY); reloadCosmetics();
-  check(ownedCosmetics().length === 0 && !ownsCosmetic('plate', 'fixture-gold') && ownsCosmetic('wheels', 'stock'), 'with its key gone the fixture is locked again and the free sets are not');
+  localStorage.removeItem(OWN_KEY); localStorage.removeItem(STOCK_KEY); reloadCosmetics();
+  check(ownedCosmetics().length === 0 && !ownsCosmetic('plate', 'fixture-gold') && ownsCosmetic('wheels', 'stock'), 'with its keys gone (the old list and the counts) the fixture is locked again and the free sets are not');
 }
 
 // the cleaner, and storage that is broken
 {
-  const put = (v) => { localStorage.setItem(OWN_KEY, typeof v === 'string' ? v : JSON.stringify(v)); reloadCosmetics(); return ownedCosmetics(); };
+  localStorage.removeItem(STOCK_KEY);
+  const put = (v) => { localStorage.removeItem(STOCK_KEY); localStorage.setItem(OWN_KEY, typeof v === 'string' ? v : JSON.stringify(v)); reloadCosmetics(); return ownedCosmetics(); };
   check(put(['plate:a', 'plate:a', 7, null, '<img>', 'x', 'wheels:ok_1', 'a:' + 'b'.repeat(41)]).join() === 'plate:a,wheels:ok_1', "the list is cleaned: repeats, non-text, bad keys dropped");
   check(put('not json{').length === 0 && put('"text"').length === 0 && put({ a: 1 }).length === 0, 'a broken or wrong-kind value falls back to none');
   check(put(Array.from({ length: 500 }, (_, i) => 'plate:p' + i)).length === 300, 'no more than 300 keys');
-  localStorage.removeItem(OWN_KEY); reloadCosmetics();
+  localStorage.removeItem(OWN_KEY); localStorage.removeItem(STOCK_KEY); reloadCosmetics();
   check(ownedCosmetics().length === 0, 'a browser from before has none: default []');
   // a test visit (noSave) holds a grant for the visit and writes nothing
   Progress.noSave = true;
   grantCosmetics([KEY]);
-  check(ownsCosmetic('plate', 'fixture-gold') && localStorage.getItem(OWN_KEY) === null, 'a test visit (noSave): granted for the visit, nothing written');
+  check(ownsCosmetic('plate', 'fixture-gold') && localStorage.getItem(OWN_KEY) === null && localStorage.getItem(STOCK_KEY) === null, 'a test visit (noSave): granted for the visit, nothing written');
   Progress.noSave = false; clearCosmetics(); reloadCosmetics();
   // blocked storage: nothing throws
   const real = globalThis.localStorage;
@@ -96,7 +98,7 @@ check(ownedCosmetics().join() === listed.join() && ownsCosmetic('plate', 'fixtur
   const mine = hashOf(here, f => readFileSync('src/delivery/' + f));
   const dir = mkdtempSync(join(tmpdir(), 'main-snapshot-'));
   execSync('git archive origin/main package.json vite.config.js scripts src/delivery | tar -x -C ' + dir); // (scripts: vite.config.js imports scripts/placements-lib.mjs)
-  symlinkSync(join(process.cwd(), 'node_modules'), join(dir, 'node_modules'));
+  { let up = process.cwd(); while (!existsSync(join(up, 'node_modules')) && dirname(up) !== up) up = dirname(up); symlinkSync(join(up, 'node_modules'), join(dir, 'node_modules')); } // (a worktree finds the repository's node_modules above it)
   const cwd = process.cwd();
   process.chdir(dir);
   const theirFiles = (await import(pathToFileURL(join(dir, 'vite.config.js')).href)).logicFiles();
@@ -133,6 +135,47 @@ check(ownedCosmetics().join() === listed.join() && ownsCosmetic('plate', 'fixtur
   try { wheels.setWheelSet('no-such-set'); wheels.setWheelDesign('no-such-design'); wheels.setWheelColour('no-such-colour'); } catch { ok = false; }
   check(ok && wheels.wheelDesign() === 'stock' && wheels.wheelColour() === 'stock' && wheels.wheelSet() === 'stock', 'an unknown set / design / colour id: no error, Stock is worn');
   wheels.setWheelSet('stock');
+}
+// ---- EARNED COSMETICS, LIKE CARDS (CHECKLIST 437): 1 = unlocked; equipping takes 1 from the hand, taking it off gives it back, per car ----
+{
+  Progress.reset(); clearCosmetics();
+  const Store = await g.load('render/loadoutstore.js'), stock = await g.load('render/cosmeticstock.js'), P = await g.load('render/platecosmetic.js');
+  Store.reloadStore(); Progress.noSave = true;
+  const heard = []; const off = onAward(a => heard.push(a));
+  const a = awardCosmetic('plate:ev', 2, { source: 'check' });
+  check(a && a.key === 'plate:ev' && a.n === 2 && a.count === 2 && heard.length === 1 && awardCosmetic('not a key') === null, 'awardCosmetic (the one entry point): 2 given, the listener told; a bad key refused');
+  off();
+  check(ownsCosmetic('plate', 'ev') && stock.spare('plate', 'ev') === 2 && !ownsCosmetic('plate', 'hex') && P.setPlateDesign('hex', 'commuter') === false, 'unlocked with 1 or more; x2 in the hand; one not earned cannot be equipped');
+  P.setPlateDesign('ev', 'commuter');
+  check(stock.spare('plate', 'ev') === 1 && stock.wornBy('plate', 'ev').join() === 'commuter', 'equipped on a car: 1 taken from the hand');
+  P.setPlateDesign('ev', 'pickup');
+  check(stock.spare('plate', 'ev') === 0, '...a second car takes the second');
+  P.setPlateDesign('stock', 'commuter');
+  check(stock.spare('plate', 'ev') === 1, 'taken off (back to Stock): back in the hand');
+  Store.resetCar('pickup');
+  check(stock.spare('plate', 'ev') === 2, 'Reset car: back in the hand');
+  P.setPlateDesign('ev', null);
+  check(P.plateDesign('commuter') === 'stock' && stock.spare('plate', 'ev') === 2, 'per car only: a design set on All cars is no car\'s (nothing taken)');
+  const kill = await g.load('render/killfx.js');
+  check(stock.spare('kill', 'classic') === Infinity && ownsCosmetic('plate', 'stock'), 'the free looks (Stock plate, Classic kill effect) are unlimited');
+  // a migration: an older All-cars look moved onto the garage cars that followed it, the stock made enough for them
+  clearCosmetics(); Store.restore({ v: 1, default: { plate: { design: 'ev', text: 'OLD' } }, cars: {} }); clearCosmetics();
+  const moved = stock.migrateStock(), owners = Store.snapshot().cars, onCars = Object.keys(owners).filter(id => owners[id].plate?.design === 'ev');
+  check(moved && onCars.length > 0 && Store.snapshot().default.plate?.design === undefined && cosmeticCount('plate', 'ev') === onCars.length && stock.spare('plate', 'ev') === 0 && P.plateText(onCars[0]) === 'OLD', 'migration: an old All-cars plate moved onto the ' + onCars.length + ' garage car(s) that followed it, the stock made that many (none lost), the default keeps its text');
+  check(stock.migrateStock() === false, '...once only');
+  Progress.noSave = false; clearCosmetics(); Store.reloadStore(); void kill;
+}
+// ---- the card packs: a pack's `cosmetics` list (packs.json, the owner's to place) awards through awardCosmetic ----
+{
+  const packs = await g.load('packs.js');
+  Progress.reset(); clearCosmetics(); Progress.noSave = true;
+  check(Object.values(packs.PACKS).every(p => p.cosmetics === undefined) && packs.packProblems().length === 0, 'no pack carries cosmetics today (where they drop is the owner\'s), and packs.json has no problems');
+  check(packs.cosmeticProblems([{ item: 'plate:ev', chance: 2 }, { any: 'plate', item: 'plate:x' }, { n: 0, item: 'x' }, { item: 'plate:ev', z: 1 }]).length >= 4 && !packs.cosmeticProblems([{ item: 'plate:ev' }, { any: 'underglow', chance: 0.5, n: 2 }]).length, 'a pack\'s cosmetics list is checked (item or any, chance 0 to 1, n whole, nothing else)');
+  packs.Packs.cosmeticsOverride = [{ item: 'plate:ev', n: 2 }, { item: 'plate:hex', chance: 0 }];
+  const r = packs.Packs.open(packs.PACK_IDS[0], { free: true });
+  packs.Packs.cosmeticsOverride = null;
+  check(r && r.cosmetics.length === 1 && r.cosmetics[0].key === 'plate:ev' && r.cosmetics[0].n === 2 && cosmeticCount('plate', 'ev') === 2 && cosmeticCount('plate', 'hex') === 0 && Progress.data.packLog[0].cosmetics?.[0] === 'plate:ev*2', 'a pack opened: its cosmetic card (chance 1) awarded x2 and logged, the chance-0 one not (' + r.cosmetics.map(x => x.name).join(', ') + ')');
+  Progress.noSave = false; clearCosmetics(); Progress.reset();
 }
 undo();
 check(!cosmeticKeys().includes(KEY) && cosmeticKeys().length === shipped.length, 'the fixture is taken out again (nothing shipped changed)');
