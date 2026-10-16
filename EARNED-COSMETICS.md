@@ -35,6 +35,17 @@ unlockall.js are both outside the fingerprint (vite.config.js NOT_RULES).
 - **Absolutely:** "Unlock everything: Absolutely" gives 999 of every item, as a real stock (`grantAll`), shown as x999.
   There is no unlimited mode.
 
+## The card look
+Every earned item is drawn with the same card as an Uncommon blueprint. `render/blueprintcard.js` blueprintCard takes an
+`item` option (name, small line, tab COSMETIC, the item's own picture) in place of a car; the component is shared, not
+copied. The rarity is one constant, `COSMETIC_RARITY = 'uncommon'` in `render/cosmetics.js`. An item can override it
+later with its own `rarity` field (cosmeticRarity).
+- **Cosmetics tabs:** each earned chip is a card, three across on a phone.
+  - The ×N badge shows how many are in your hand.
+  - A card with none earned is greyed and shows "Not earned" across its art.
+  - The equipped card has the accent ring and tick.
+- **Pack reveal:** awarded items appear face up under the blueprint cards, under the heading "Cosmetics for your cars".
+
 ## How cosmetics are awarded: the card packs
 How cards and blueprints are awarded today:
 - **Source:** a card pack (`packs.js`), defined in `packs.json` and placed by the owner. Packs come from three places:

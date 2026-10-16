@@ -25,6 +25,7 @@ import '../packs.css';
 import { Packs, packName, packIdOf, revealCards, revealOrder, revealProgress, RARITIES, flickPlan, debugAmounts, debugFeatured, debugMarks, debugDouble, debugCosmetics } from '../packs.js';
 import { drawPlate, designById } from './platedesigns.js';
 import { cosmeticRarity, COSMETIC_SLOT_WORDS } from './cosmetics.js';
+import { slotById } from './cosmeticslots.js';
 import { flickPile } from './flick.js';
 import { Progress } from '../progress.js';
 import { carById } from '../cars.js';
@@ -161,6 +162,8 @@ const show = (result, { look = false } = {}) => {
   // COSMETIC CARDS (CHECKLIST 437): what the pack's `cosmetics` list awarded (already given: render/cosmetics.js awardCosmetic), a row under the cards
   const cosRow = (result.cosmetics || []).map(a => {
     let pic = make('span', 'cz-prev pr-cos-pic');
+    const swatch = slotById(a.slot)?.items?.().find(i => i.id === a.id)?.swatch; // (a glow's colour: its tab's own swatch)
+    if (swatch) pic.style.background = swatch;
     if (a.slot === 'plate') { const c = document.createElement('canvas'); c.width = 120; c.height = 30; c.className = 'pr-cos-pic'; try { drawPlate(c.getContext('2d'), designById(a.id), 'DELIVERY', 120, 30); } catch { /* (no picture) */ } pic = c; }
     // the same card as a blueprint (render/blueprintcard.js), in the item's rarity (cosmetics.js COSMETIC_RARITY: Uncommon), face up
     const { node } = blueprintCard(null, { rarity: cosmeticRarity(a.slot, a.id), n: a.n, isNew: a.count === a.n }, { item: { name: a.name, line: COSMETIC_SLOT_WORDS[a.slot] || a.slot, tab: 'COSMETIC', picture: pic } });
