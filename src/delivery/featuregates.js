@@ -74,19 +74,26 @@ export const GATES = [
 export const GATE_IDS = GATES.map(g => g.id);
 export const gateOf = (id) => GATES.find(g => g.id === id);
 
-// EVERY MENU SECTION (the front screen, the Options sheet, the results, the showroom's top), each with its gate or 'always' (the check holds
-// that nothing on the menu is left out: scripts/.featuregates-check.mjs reads delivery/index.html for the ids)
+// EVERY MENU SECTION (the front screen, the Options sheet, the car lot, the results, the showroom), each with its gate or 'always', and, when
+// the gate's `hides` do not name it, where it is hidden from (the check holds that nothing on the menu is left out:
+// scripts/.featuregates-check.mjs reads delivery/index.html for the ids): [selector, label, gate, via?]
+const X = 'in #menuOptions section.pg-extras';
 export const SECTIONS = [
   ['#tabDelivery', 'Career tab', 'always'], ['#tabEvents', 'Events tab and its dot', 'events'], ['#tabRaces', 'Races tab', 'races'],
   ['#bank', 'Bank', 'always'], ['#shopBtn', 'Shop chip (card packs, daily pack dot)', 'shop'], ['#jimBtn', 'Jim chip (blueprint stall)', 'blueprints'],
   ['#optionsBtn', 'Options', 'always'], ['#levelGroups', 'Tier chips', 'always'], ['#stage', 'Level card', 'always'], ['#levels', 'Level strip', 'always'],
-  ['#shop', 'Car card (Showroom, Crazey Jim’s lot)', 'always'], ['#raceMenu', 'Race chips (Races tab only)', 'races'],
-  ['#sideBtn', 'Good / Evil switch (Good always)', 'evil'], ['#sideNote', 'Side note', 'always'], ['#startBtn', 'Start', 'always'],
+  ['#shop', 'Car card (Showroom, Crazey Jim’s lot)', 'always'], ['#raceMenu', 'Race chips', 'races', 'shown on the Races tab only'],
+  ['#raceClassBtn', 'Race cars', 'races', 'in #raceMenu'], ['#raceTrackBtn', 'Race track', 'races', 'in #raceMenu'], ['#raceWatchBtn', 'Race screensaver (Races tab)', 'races', 'in #raceMenu'],
+  ['#optionsCloseBtn', 'Options: Close', 'always'], ['#unlockAllBtn', 'Unlock mode: Everything', 'always'], ['#unlockAbsBtn', 'Unlock mode: Absolutely everything', 'always'],
+  ['#garageTabBtn', 'Car lot: Crazey Jim’s', 'always'], ['#ideasTabBtn', 'Car lot: Car ideas', 'always'], ['#garageBackBtn', 'Car lot: Back', 'always'],
+  ['#garageAction', 'Car lot: Buy', 'always'], ['#garageUse', 'Car lot: Use', 'always'], ['#garageInspect', 'Car lot: Inspect', 'always'],
+  ['#sideBtn [data-side="evil"]', 'Good / Evil switch: its Evil half (Good always)', 'evil'], ['#sideNote', 'Side note', 'always'], ['#startBtn', 'Start', 'always'],
   ['#stage .replays', 'Replays chip', 'replays'], ['#stage .ribbon .half.evil', 'Evil medal', 'evil'],
   ['#muteBtn', 'Sound', 'always'], ['#touchBtn', 'On-screen controls', 'always'], ['#autoGasBtn', 'Auto accelerate', 'always'],
-  ['#autoBrakeBtn', 'Auto brake', 'always'], ['#ghostBtn', 'Ghost', 'always'], ['#wheelsOpenBtn', 'Customise wheels (Cosmetics)', 'style'],
-  ['#albumBtn', 'Postcards', 'extras'], ['#milestonesBtn', 'Milestones', 'extras'], ['#hiddenLevelsBtn', 'Hidden levels', 'extras'],
-  ['#screensaverBtn', 'Screensaver', 'extras'], ['#raceWatchBtn2', 'Race screensaver', 'extras'], ['#screensaverLink', 'Screensaver link', 'extras'],
+  ['#autoBrakeBtn', 'Auto brake', 'always'], ['#ghostBtn', 'Ghost', 'always'], ['#wheelsOpenBtn', 'Customise wheels (Cosmetics)', 'style', 'in #menuOptions section.wheels'],
+  ['#albumBtn', 'Postcards', 'extras', X], ['#milestonesBtn', 'Milestones', 'extras', X], ['#hiddenLevelsBtn', 'Hidden levels (the Driving Lesson too)', 'extras', X],
+  ['#screensaverBtn', 'Screensaver', 'extras', X], ['#raceWatchBtn2', 'Race screensaver', 'extras', X], ['#screensaverLink', 'Screensaver link', 'extras', X],
+  ['#menuOptions a[href="?racewatch"]', 'Race screensaver link', 'extras', X],
   ['#menuOptions a[href="powerups.html"]', 'Guide: Power-ups', 'always'], ['#menuOptions a[href="gimmicks.html"]', 'Guide: Gimmicks', 'always'],
   ['#menuOptions a[href="cargo.html"]', 'Guide: Cargo', 'always'], ['#menuOptions a[href="sides.html"]', 'Guide: Good & Evil', 'evil'],
   ['#menuOptions a[href="police.html"]', 'Guide: Police', 'always'], ['#menuOptions .editor-link', 'Level editor, Model editor', 'editor'],

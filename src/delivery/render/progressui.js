@@ -71,6 +71,7 @@ if (mode !== 'off') {
       }
     }
     card.classList.toggle('hidden', !shown);
+    if (stage) halve();
   };
   const seen = (ids) => { if (markSeen(d(), ids)) save(); apply(); };
   all.addEventListener('click', () => seen(GATES.map(g => g.id)));
@@ -89,6 +90,18 @@ if (mode !== 'off') {
     if (!up || e.ctrlKey || e.metaKey || e.altKey) return;
     if ((e.code === 'KeyE' && !open.has('evil')) || (e.code === 'KeyT' && menuUp() && (!open.has('races') || !open.has('events')))) e.stopImmediatePropagation();
   }, true);
+  // (Evil shut: the tier's medals line counts Good's only, "0/5", not "0/10": both medals of a level are counted by the menu)
+  const stage = document.getElementById('stage');
+  const halve = () => {
+    if (open.has('evil')) return;
+    for (const p of stage.querySelectorAll('p.prize:not([data-pg-halved])')) {
+      const text = [...p.childNodes].find(n => n.nodeType === 3 && /medals \d+\/\d+/.test(n.textContent));
+      if (!text) continue;
+      p.dataset.pgHalved = '1';
+      text.textContent = text.textContent.replace(/medals (\d+)\/(\d+)/, (m, a, b) => 'medals ' + a + '/' + Math.round(b / 2));
+    }
+  };
+  if (stage) new MutationObserver(halve).observe(stage, { childList: true, subtree: true });
   for (const type of ['progresschange', 'carchange', 'packschange', 'shopchange']) window.addEventListener(type, apply);
   setInterval(apply, 700); // (a delivery, a purchase, a pack: the save changes in many places; the table is cheap to read)
   apply();
