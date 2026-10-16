@@ -19,6 +19,13 @@ const read = () => {
   if (!data || data.v !== 1 || typeof data.last !== 'object' || typeof data.best !== 'object' || !Array.isArray(data.saved)) {
     data = { v: 1, last: {}, best: {}, saved: [] };
   }
+  // a replay recorded before the prints of CHECKLIST 167 that still plays is given them, once (replay.js upgrade): from
+  // then on adding a car or a level does not refuse it. (Hooked by replay.js; the key and its layout are unchanged)
+  if (ReplayStore.upgrade) {
+    let upgraded = 0;
+    for (const rec of [...Object.values(data.last), ...Object.values(data.best), ...data.saved]) if (rec?.header && ReplayStore.upgrade(rec)) upgraded++;
+    if (upgraded) write();
+  }
   return data;
 };
 const write = () => {
@@ -35,7 +42,8 @@ export const ReplayStore = {
     const h = rec.header;
     if (h.outcome === 'left' && h.steps < SHORTEST) return;
     const d = read(), k = slot(h), best = d.best[k];
-    const better = h.outcome === 'delivered' && (!best || best.header.logic !== h.logic || !(best.header.spare >= h.spare));
+    const stale = best && (ReplayStore.playable ? !ReplayStore.playable(best) : best.header.logic !== h.logic); // (replay.js: can it still be played)
+    const better = h.outcome === 'delivered' && (!best || stale || !(best.header.spare >= h.spare));
     if (better) d.best[k] = rec;
     d.last[k] = better ? rec : { ...rec, path: undefined }; // (the ghost's path kept with the best only: the last is to watch)
     write();
@@ -71,4 +79,6 @@ export const ReplayStore = {
   get ghostOn() { try { return localStorage.getItem(GHOST_KEY) !== 'off'; } catch { return true; } },
   set ghostOn(on) { try { localStorage.setItem(GHOST_KEY, on ? 'on' : 'off'); } catch { /* (no storage: for this visit) */ } },
   forget() { data = null; }, // (read again from storage next time: the checks)
+  playable: null, // (rec) => can it be played under this build (replay.js check)
+  upgrade: null,  // (rec) => an old recording given the prints, if it still plays (replay.js upgrade)
 };
