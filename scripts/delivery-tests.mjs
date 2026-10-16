@@ -85,10 +85,10 @@ const GROUPS = {
     files: [/src\/delivery\/render\//, /\.css$/, /keyshots|keyModels|keys-png/],
   },
   replay: {
-    about: 'Determinism: every level replays exactly from its seeds (a run hashed each second, twice the same, once another); runs recorded and played back by replay.js (pause, rewind, refusals); kept and watched as the player has them (replaystore.js: the save untouched). Heavy.',
-    seconds: 360,
-    tests: [t('.replay-check.mjs', { heavy: true }), t('.replay-record-check.mjs', { heavy: true }), t('.replay-store-check.mjs', { heavy: true })],
-    files: [/game\.js|physics\.js|traffic\.js|config\.js|player\.js|collision\.js|track\.js|replay\.js|replaystore\.js|replayui\.js|input\.js|util\.js|main\.js|random/],
+    about: 'Determinism: every level replays exactly from its seeds (a run hashed each second, twice the same, once another); runs recorded and played back by replay.js (pause, rewind, refusals); kept and watched as the player has them (replaystore.js: the save untouched); the replay fingerprint (.replay-stable-check: adding a car or a level refuses no replay, changing the car, level or rules it used does; scripts/logic-hash.mjs). Heavy.',
+    seconds: 420,
+    tests: [t('.replay-check.mjs', { heavy: true }), t('.replay-record-check.mjs', { heavy: true }), t('.replay-store-check.mjs', { heavy: true }), t('.replay-stable-check.mjs', { heavy: true })],
+    files: [/game\.js|physics\.js|traffic\.js|config\.js|player\.js|collision\.js|track\.js|replay\.js|replaystore\.js|replayui\.js|input\.js|util\.js|main\.js|random|logic-hash|vite\.config|cars\.js|ecus?\.js|levels\.js/],
   },
   'smoke-quick': {
     about: 'The whole quick smoke test: every level\'s checks (no full drive) and ~30 sections of mechanics (traffic, police, railway, tide, '
