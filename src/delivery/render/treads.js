@@ -10,9 +10,12 @@
 // the tread's width W (the tyre's width less 7 mm a side, so no face of the tread lies within 4 mm of the tyre's sidewall); the mesh is
 // scaled (R, R, W). Blocks rise from 0.93 R (inside the tyre's flattest facet, 0.95 R at 10 segments) to 1 + h; a block has a top and
 // four sides (10 triangles; none underneath: it is buried); faces turned out from the block's middle.
-// COLOUR: the tread is the tyre's own rubber, whatever colour it wears now (render/wheelcosmetic.js's tyre colour), shaded by vertex
-// colours (tops lit, sides darker; the winter studs bright steel) on ONE shared white material. So the geometry is shared per design,
-// rubber colour and variant (low / lite / which way it points), and every tread of every car shares the one material.
+// COLOUR (16-Oct, CHECKLIST 430): a tyre's whole tread is ONE mesh: the raised blocks (where there is room), the PATTERN BAND (an open tube
+// 2 to 4.5 mm over the running surface, a code-drawn texture of the design's own footprints: light blocks on dark grooves) and a SHOULDER
+// RING on each outer face with room (the pattern where it meets the sidewall, so it reads side on), in one geometry per tyre layout and one
+// material per design / way round / tint: the TINT is the rubber's colour (render/wheelcosmetic.js's tyre colour), or on a dark rubber a
+// worn mid grey, so the pattern reads on a black tyre; vertex colours shade it (tops 1, walls darker, studs bright steel). Where bodywork
+// dips into a tyre (no room for blocks) the band and ring still show the pattern.
 // VARIANTS: lower (LOWS: 0.7, 0.45 or 0.3 of the height) where bodywork sits close over a tyre (rays out from its tread, render/rims.js's way;
 // an axle takes its worse tyre's answer; no room even for the lowest: no tread there); 'lite' (fewer blocks round) on a car with more than four
 // tyres or a small tyre (R < 0.24 m). Directional designs (chevron, lugs) are built both ways and put on so the V points FORWARD when
@@ -658,7 +661,7 @@ const roomFor = (model, found) => {
     let room = Infinity, near = Infinity; // (near: the least room over the tyre from the parts that stay outside it, even where another dips in)
     for (const tri of tris) {
       if (squareToAxle(tri)) continue;
-      for (const [lo, hi, over] of [[0.35 * t.R, Infinity, true], [-0.7 * t.R, 0.35 * t.R, false]]) {
+      for (const [lo, hi, over] of [[0.3 * t.R, Infinity, true], [-0.7 * t.R, 0.3 * t.R, false]]) { // (over: from 0.3 R up, a little under the check's 0.35 of the box radius)
         const s = shell(tri, t.tz[0], t.tz[1], lo, hi);
         if (!s || s.max <= t.R) continue; // (nothing there, or wholly inside the tyre: hidden)
         if (s.min > t.R) near = Math.min(near, s.min - t.R);
@@ -682,6 +685,13 @@ const roomFor = (model, found) => {
       const F = f * (t.half + FACE_GAP), z0 = f > 0 ? F - 0.002 : F - 0.009, z1 = f > 0 ? F + 0.009 : F + 0.002;
       t.faceOk[f] = t.R >= MIN_R && !t.twin[String(f)] && !wallTris.some(tri => { const s = shell(tri, z0, z1, -Infinity, Infinity); return s && s.max > (RING_IN - 0.03) * t.R && s.min < (RING_OUT + 0.025) * t.R; });
     }
+  }
+  // tyres so close in one plane that their shoulder rings would overlap (tandem axles whose tyres touch, as on the Mixer): no ring on either
+  for (const t of found.rimInfo) for (const u of found.rimInfo) {
+    if (u === t || u.axleX !== t.axleX) continue;
+    const along = (v) => (t.axleX ? v.centre.x : v.centre.z), across = Math.hypot(u.centre.y - t.centre.y, t.axleX ? u.centre.z - t.centre.z : u.centre.x - t.centre.x);
+    if (across >= RING_OUT * (t.R + u.R) + 0.01) continue;
+    for (const f of [-1, 1]) for (const g of [-1, 1]) if (Math.abs(along(t) + f * t.half - (along(u) + g * u.half)) < 0.02) { t.faceOk[f] = false; u.faceOk[g] = false; }
   }
   // the axles (tyres within a third of a radius along the car): the least room of the axle
   const axles = [];
@@ -721,9 +731,12 @@ export const addTreads = (model, worn = true) => {
   model.updateMatrixWorld(true);
   toModel.copy(model.matrixWorld).invert();
   if (!found.treadRoomChecked) atRest(model, () => roomFor(model, found));
+  const done = [];
   for (const t of found.rimInfo) {
     const d = treadById(resolveTread(found.carId, t.axle));
     if (!d.n) continue;
+    if (done.some(u => u.axleX === t.axleX && u.centre.distanceTo(t.centre) < 0.02)) continue; // (a tyre built twice in one place, as on the Mixer and the Wrecker: one tread, or the two coincide)
+    done.push(t);
     const tyre = t.tyre, ghost = tyre.userData.solidMat, current = ghost || tyre.material;
     if (current !== t.stock && current !== model.userData.wheelRubberClones?.get(t.stock)) continue; // (blacked out: no tread)
     if (t.R < MIN_R) continue; // (too small to read, and too tight)

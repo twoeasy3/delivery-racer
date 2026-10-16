@@ -209,6 +209,7 @@ try {
     WC.setWheelSet('stock');
     let cars = fleet.filter(car => { const m = mk2(car); return m && R.rimStatus(m) === 'ok'; });
     if (QUICK) cars = cars.filter((_, i) => i % Math.ceil(cars.length / 30) === 0);
+    if (process.env.ONLY) cars = cars.filter(c => process.env.ONLY.split(',').includes(c.id)); // (ONLY=id,id: the fleet part on those cars, for a look at one)
     const ownTread = [], noTread = [], partial = [];
     const o = new THREE.Vector3(), e = new THREE.Vector3(), v = new THREE.Vector3();
     for (const d of (QUICK ? designs : designs)) {
