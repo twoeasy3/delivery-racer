@@ -1,4 +1,4 @@
-// A check of the RIMS' names, turning and the themed designs (render/rims.js; CHECKLIST 310 and 451, the owner, 15-Oct: "Let's fix
+// A check of the RIMS' names, turning and the themed designs (render/rims.js; CHECKLIST 310 and 398, the owner, 15-Oct: "Let's fix
 // the rims right. Some of the rims say spinner. Lets have a Halloween Pumpkin rim and a Candy Cane rim"). Headless, no picture:
 //   - no rim and no wheel set is NAMED a spinner; every rim design turns with the car (kind 'speed'; no fixed-pace kind is left);
 //   - EVERY design, on a live car: rolling, a rim turns by the distance over its wheel's radius (in proportion: twice the speed,
@@ -45,7 +45,7 @@ try {
   const D = RM.RIM_DESIGNS, designs = D.filter(d => d.kind === 'speed'), spinners = D.filter(d => d.kind === 'spin');
 
   // ---- names and kinds ----
-  // (since the three-part wheel set, CHECKLIST 385: the SPINNERS are back as their own kind, with new ids; every RIM still turns with the car)
+  // (since the three-part wheel set, CHECKLIST 399: the SPINNERS are back as their own kind, with new ids; every RIM still turns with the car)
   const named = [...designs.map(d => d.name), ...WC.WHEEL_SETS.filter(s => designs.some(d => d.id === s.rim)).map(s => s.name)];
   check(!named.some(n => /spinner/i.test(n)), 'no rim and no rim set is named a spinner (' + designs.map(d => d.name).join(', ') + ')');
   check(D.slice(1).every(d => d.kind === 'speed' || d.kind === 'spin') && spinners.length === 2 && spinners.every(d => /spinner/i.test(d.name) && !['blade3', 'twinspin'].includes(d.id)) && RM.SPIN_RATE === 6, 'every rim turns with the car (kind speed); the spinners (' + spinners.map(d => d.id + ' "' + d.name + '"').join(', ') + ') are their own kind, at SPIN_RATE ' + RM.SPIN_RATE + ' rad/s, new ids (blade3 / twinspin stay the rims)');

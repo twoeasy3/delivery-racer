@@ -1,4 +1,4 @@
-// The flank decal FEASIBILITY prototype (CHECKLIST 383, src/delivery/DECAL-FEASIBILITY.md; render/flankdecal.js, render/decalzonestable.js):
+// The flank decal FEASIBILITY prototype (CHECKLIST 414, src/delivery/DECAL-FEASIBILITY.md; render/flankdecal.js, render/decalzonestable.js):
 //   1. the zone table is well formed (every row [id, z0 < z1, y0 < y1, flat >= 0, curve >= 0], a known id, R: 'L' or rows)
 //   2. OFF BY DEFAULT: with no ?decaltest the dressing adds nothing (the model's meshes and triangles unchanged)
 //   3. with ?decaltest=1 every car of the table gets ONE decal mesh (one draw call), triangles within a budget, the number reading

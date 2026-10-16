@@ -1,4 +1,4 @@
-// THE FLANK DECAL ZONE SEARCH (a feasibility prototype, CHECKLIST 383, src/delivery/DECAL-FEASIBILITY.md). For one side of a car
+// THE FLANK DECAL ZONE SEARCH (a feasibility prototype, CHECKLIST 414, src/delivery/DECAL-FEASIBILITY.md). For one side of a car
 // model it lays a grid of rays along x over the side view (STEP apart, the model's own frame: x across, y up, the nose at +z) and classes
 // what each meets first with the game's own rule (src/delivery/render/flankdecal.js flankHit: 'paint' facing out sideways, 'curve'
 // paint turned away, 'glass', 'wheel', 'lamp', 'graphic', 'trim', 'air'). A CELL (between four rays) is CLEAN where all four corners are

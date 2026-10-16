@@ -1,4 +1,4 @@
-// ---- the KILL EFFECT's preview on the Cosmetics screen (render/cosmeticsui.js; CHECKLIST 390): 'Test' (and picking a chip) throws a
+// ---- the KILL EFFECT's preview on the Cosmetics screen (render/cosmeticsui.js; CHECKLIST 405): 'Test' (and picking a chip) throws a
 // package at the car on the stage, trailing the effect's bits, which bursts on it and then the car "goes up" in the effect, drawn in the
 // showroom view's own scene (render/showroomview.js overlay) by a kill-effect system of its own (render/killfx.js createKillFx) and, for
 // Classic, a small set of classic pools (render/particles.js), so it is exactly what the game draws. Nothing here touches the game.

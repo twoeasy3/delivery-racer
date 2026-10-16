@@ -1,7 +1,7 @@
 # Cracked glass on damage: exploration notes (16-Oct)
 
 The owner: "Lets explore adding a cracked glass texture to the front and back windows on damage model." Then, on the first stills: "The cracks
-contrast too well." Branch `claude/cracked-glass` (from main v1.1.146), CHECKLIST 396. A PROTOTYPE, **off for every player**: nothing changes
+contrast too well." Branch `claude/cracked-glass` (from main v1.1.146), CHECKLIST 406. A PROTOTYPE, **off for every player**: nothing changes
 unless the address has `?crack`. The audit it stands on: `WINDSCREEN-AUDIT.md`.
 
 ## Try it

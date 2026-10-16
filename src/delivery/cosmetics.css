@@ -153,13 +153,13 @@
   #cosmetics .cz-act { padding: 0 8px; font-size: 11px; }
 }
 @media (pointer: coarse) { #cosmetics .cz-seg, #cosmetics .cz-act { min-height: 40px; } }
-/* THE THREE-PART WHEEL SET (CHECKLIST 385): Tread, Tyre and Hub rows (the Hub's Colour | Rim | Spinner switch shows one row at a time), then
+/* THE THREE-PART WHEEL SET (CHECKLIST 399): Tread, Tyre and Hub rows (the Hub's Colour | Rim | Spinner switch shows one row at a time), then
    the Presets */
 #cosmetics .cz-row[hidden] { display: none; }
 #cosmetics .cz-section h3.cz-partlabel { display: flex; align-items: center; gap: 10px; margin: 10px 0 5px; font: 700 11px/1.2 system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); }
 #cosmetics .cz-hubkind .cz-seg { min-height: 30px; padding: 0 10px; }
 #cosmetics .cz-tread { border-radius: 6px; }
-/* the Kill effect tab (CHECKLIST 390): chips with a little drawn icon */
+/* the Kill effect tab (CHECKLIST 405): chips with a little drawn icon */
 #cosmetics .cz-kills .cz-chip { flex: 1 1 calc(33% - 8px); }
 #cosmetics .cz-killicon { border-radius: 6px; background: #1b2030; box-shadow: none; flex-basis: 28px; width: 28px; height: 28px; }
 @media (max-width: 760px) and (min-height: 521px), (max-width: 519px) { #cosmetics .cz-kills .cz-chip { flex-basis: calc(50% - 6px); } }

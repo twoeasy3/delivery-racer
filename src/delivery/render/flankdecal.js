@@ -1,4 +1,4 @@
-// ---- FLANK DECALS: a FEASIBILITY PROTOTYPE (CHECKLIST 383, src/delivery/DECAL-FEASIBILITY.md; the owner, 15-Oct: "Choose 6 very
+// ---- FLANK DECALS: a FEASIBILITY PROTOTYPE (CHECKLIST 414, src/delivery/DECAL-FEASIBILITY.md; the owner, 15-Oct: "Choose 6 very
 // different cars to do a feasibility check on tagging their side profiles for a decal cosmetic"). OFF unless the address asks:
 //   ?decaltest=1 (or =decal)   every dressed car with a zone row wears the TEST decal: a race-number roundel and a stripe
 //   ?decaltest=zones           the found ZONES drawn instead, as tinted see-through patches (door blue, quarter green, fender orange,

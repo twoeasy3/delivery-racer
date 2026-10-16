@@ -1,4 +1,4 @@
-// ---- the KILL EFFECTS themselves (render/killfx.js is the engine, the registry and the choice; CHECKLIST 390). One entry each:
+// ---- the KILL EFFECTS themselves (render/killfx.js is the engine, the registry and the choice; CHECKLIST 405). One entry each:
 //   name      the chip's name (short)
 //   icon(g,s) its chip's little picture, drawn on an s x s canvas (code, no image files)
 //   explode(S, x, y, z, vx, vz, k, ks, e)   an explosion at x, y, z (y: the road's height) carrying vx, vz; k: its size (1, 1.5 big,
@@ -322,7 +322,7 @@ export const KILL_DEFS = {
 
 };
 
-// CUT after the experiment (CHECKLIST 390): not on the Cosmetics screen, but kept and wearable for a visit with ?killfx=pixels / candy.
+// CUT after the experiment (CHECKLIST 405): not on the Cosmetics screen, but kept and wearable for a visit with ?killfx=pixels / candy.
 // Pixels: tumbling cubes read too close to Classic's own cube debris. Candy: in motion it is Confetti with sweets in (too close to it).
 export const KILL_EXTRA = {
   // PIXELS: chunky bright cubes in an arcade palette, tumbling and bouncing; a square shock of white cubes along the road

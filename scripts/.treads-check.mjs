@@ -1,4 +1,4 @@
-// A check of the TYRE TREADS and the THREE-PART WHEEL SET (render/treads.js, render/wheelcosmetic.js, render/rims.js; CHECKLIST 385, the
+// A check of the TYRE TREADS and the THREE-PART WHEEL SET (render/treads.js, render/wheelcosmetic.js, render/rims.js; CHECKLIST 399, the
 // owner, 15-Oct: "introducing different tyre treads and animating these with the rims"; "Wheel sets would now be - tread - tyre colour - hub
 // colour or rim or spinner"). Headless, no picture:
 //   - the designs: names, triangles a tyre (full and lite) under the budget, one geometry per design / colour / variant, ONE material;

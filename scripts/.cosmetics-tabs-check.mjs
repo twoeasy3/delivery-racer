@@ -6,7 +6,7 @@
 //   - the open tab falls back to the first drawn (Wheels) when the car has no tab for it, and stays when it has
 //   - Decal and Glow (underglow) never show without ?cosmetics=all, on any car; with it (setDemo) they show on the pickup; the labels are
 //     short (7 characters at most)
-//   - the KILL EFFECT (slot 'kill', CHECKLIST 390, joined to the registry at the v1.1.148-alpha merge): a 'car' slot (per car over the
+//   - the KILL EFFECT (slot 'kill', CHECKLIST 405, joined to the registry at the v1.1.148-alpha merge): a 'car' slot (per car over the
 //     default); its tab shows on every car once render/killfx.js has registered its items, and cosmeticsui.js gives it its panel;
 //     registering a kill-effect item in render/cosmetics.js brings its tab on every car (and removing it takes it away); registerSlot
 //     merges into the dormant entry; the demo is off by default and registers nothing in the cosmetics registry

@@ -1,5 +1,5 @@
 // A check of the KILL EFFECTS (render/killfx.js, render/killfxdefs.js, render/particles.js; the owner, 15-Oct: "alternative explosion
-// effects ... a 'Kill effects' equip ... It should also affect the trace that throwing packages leaves behind"; CHECKLIST 390). Headless:
+// effects ... a 'Kill effects' equip ... It should also affect the trace that throwing packages leaves behind"; CHECKLIST 405). Headless:
 //   - every effect spawns for a small and a big event (and the tank shell's scale / smoke) and the package hit, and its trail, without throwing
 //   - its cost: pools (draw calls), live particles, triangles, JS ms a spawn (printed: the budget table)
 //   - the GIANT-CAR case: 200 explosions in a second stay under every pool's cap (and the LOW version kicks in); after 1000 spawns the

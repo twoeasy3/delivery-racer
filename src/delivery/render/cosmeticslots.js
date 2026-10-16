@@ -13,7 +13,7 @@
 //   registerSlot({ id: 'horn', label: 'Horn', scope: 'player', items: () => HORNS });     // a new slot: added before Kill FX
 // registerSlot merges into an entry with the same id (fields given win), else inserts a new one before 'kill'.
 // DEMO (?cosmetics=all, URL-PARAMS.md): the dormant slots (Decal, Glow) get two 'Sample' items each and Decal shows on every car, so every tab
-// can be seen. (The Kill effect is a real slot since CHECKLIST 390, no samples.)
+// can be seen. (The Kill effect is a real slot since CHECKLIST 405, no samples.)
 // Off by default; nothing is registered in render/cosmetics.js and nothing is stored. Render-only: no rules module imports this.
 import { COSMETICS } from './cosmetics.js';
 import { slotStatus } from './propdress.js';
@@ -37,7 +37,7 @@ export const SLOT_LIST = [
   // DORMANT until their work lands: no items (and, for Decal, no car with a zone row), so no tab
   { id: 'decal', label: 'Decal', name: 'Decal', scope: 'car', supports: () => demo, items: dormant('decal') },
   { id: 'underglow', label: 'Glow', name: 'Underglow', scope: 'car', supports: () => true, items: dormant('underglow') },
-  // the KILL EFFECT (CHECKLIST 390, render/killfx.js registers its items as slot 'kill'): PER CAR over the All-cars default like the others
+  // the KILL EFFECT (CHECKLIST 405, render/killfx.js registers its items as slot 'kill'): PER CAR over the All-cars default like the others
   // (the loadout slot 'kill', render/loadoutstore.js), so 'car' scope; its panel is cosmeticsui.js buildKill, given by registerSlot there
   { id: 'kill', label: 'Kill FX', name: 'Kill effect', scope: 'car', supports: () => true, items: registered('kill') },
 ];

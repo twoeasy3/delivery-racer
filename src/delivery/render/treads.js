@@ -1,5 +1,5 @@
 // ---- TYRE TREADS: the first of a WHEEL SET's three parts (the owner, 15-Oct: "introducing different tyre treads and animating these with
-// the rims"; "Wheel sets would now be - tread - tyre colour - hub colour or rim or spinner"; CHECKLIST 385). RENDER-ONLY like
+// the rims"; "Wheel sets would now be - tread - tyre colour - hub colour or rim or spinner"; CHECKLIST 399). RENDER-ONLY like
 // render/rims.js and render/wheelcosmetic.js (which call this): nothing here is read by a rule, written into a save or hashed into the
 // replay fingerprint (vite.config.js logicFiles walks no render/ file). Only the player's car is dressed (traffic and the ghost are not).
 // A TREAD is a ring of raised blocks, ribs or lugs round a tyre's RUNNING SURFACE (the cylinder's outer face between its sidewalls):

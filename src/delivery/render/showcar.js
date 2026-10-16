@@ -12,7 +12,7 @@ import { addLegend } from './legenddecal.js';
 import { dressWheels } from './wheelcosmetic.js'; // (the player's global wheel colour on its hubs: render-only)
 import { dressPlates } from './platecosmetic.js'; // (an equipped number plate hides the model's own plates: render-only)
 import { dressProps } from './propdress.js'; // (an equipped roof prop, cargo prop or rear wing hides the model's own: render-only)
-import { dressFlankDecal } from './flankdecal.js'; // (the flank decal FEASIBILITY prototype: nothing unless ?decaltest=, CHECKLIST 383)
+import { dressFlankDecal } from './flankdecal.js'; // (the flank decal FEASIBILITY prototype: nothing unless ?decaltest=, CHECKLIST 414)
 
 // THE PLAYER'S COSMETICS on a model, all in one place (wheel set and rim, number plate, props; a later cosmetic joins here):
 // every model of the player's car goes through this (makeShowCar below, render/items.js playerModel). stock: true leaves the

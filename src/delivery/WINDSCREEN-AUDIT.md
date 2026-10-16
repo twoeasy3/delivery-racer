@@ -1,6 +1,6 @@
 # Windscreen and rear window audit (16-Oct)
 
-The owner: "Are all front screens tagged properly on all cars? Agent audit." Branch `claude/cracked-glass` (from main v1.1.146), CHECKLIST 396.
+The owner: "Are all front screens tagged properly on all cars? Agent audit." Branch `claude/cracked-glass` (from main v1.1.146), CHECKLIST 406.
 
 **Measured, not guessed.** `node scripts/windscreen-audit.mjs` builds every vehicle the game builds headless (276 vehicles, 184 models: the
 roster, supers, fillers, bespoke / event / earned / Legendary / secret / level cars, the car ideas and the traffic kinds, through

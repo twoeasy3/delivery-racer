@@ -1,4 +1,4 @@
-// ---- SIX MORE REAR WINGS, set 3 (the owner, 15-Oct: "have 3 more agents each build roof cosmetics, cargo and wings"; CHECKLIST 382,
+// ---- SIX MORE REAR WINGS, set 3 (the owner, 15-Oct: "have 3 more agents each build roof cosmetics, cargo and wings"; CHECKLIST 400,
 // a placeholder number). RENDER-ONLY, the sister of render/propmodelswing.js (the playful six) and propmodelswingclassic.js (the classic
 // six): real aero and style, each a silhouette the other wings do not have (from behind: a low slab with a black lip, a tall sheet, a
 // goalpost, a thin U on a V, an overhanging shelf with a light bar, a round arch). Each is built to the REAR WING slot's canonical BOX

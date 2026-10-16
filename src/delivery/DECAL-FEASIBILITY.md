@@ -1,4 +1,4 @@
-# Flank decals: a feasibility check (15-Oct, CHECKLIST 383)
+# Flank decals: a feasibility check (15-Oct, CHECKLIST 414)
 
 The owner asked to choose 6 very different cars and check whether their side profiles can be tagged for a decal cosmetic.
 A decal cosmetic is a design the player picks (a stripe, a race number, flames, a roundel) stuck on the car's flanks, like

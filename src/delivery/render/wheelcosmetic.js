@@ -285,7 +285,7 @@ export const setHubColour = (id, target = null) => { Store.setSlot(target, 'whee
 // spinner (none: the hub colour alone), tread (none: the car's own). The equipped preset is DERIVED from the saved parts ('custom' if
 // they are no preset). The ids are ownership keys and never change: the old sets whose design carried a hub (red-white, white-on-black,
 // whitewall-gold) now say it as tyre + hub, the same look; blade-spinner / twin-spinner are the speed rims Blade / Twin blade (CHECKLIST
-// 451); the spinners are the presets spinner-blade / spinner-twin.
+// 398); the spinners are the presets spinner-blade / spinner-twin.
 export const WHEEL_SETS = [
   { id: 'stock', name: 'Stock', design: 'stock', hub: 'stock' },
   { id: 'whitewall-silver', name: 'Whitewall + silver', design: 'whitewall', hub: 'silver' },

@@ -237,7 +237,7 @@ const buildPlate = () => {
     make('div', 'cz-foot', plateStatus, reset));
 };
 
-// ---- the KILL EFFECT (CHECKLIST 390): every explosion's look and the trail behind your packages (render/killfx.js), tried on the stage
+// ---- the KILL EFFECT (CHECKLIST 405): every explosion's look and the trail behind your packages (render/killfx.js), tried on the stage
 let killRow, killStatus;
 const killIcon = (id) => {
   const c = make('canvas', 'cz-swatch cz-killicon'); c.width = c.height = 48;

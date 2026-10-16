@@ -45,7 +45,7 @@ export const RIM_DESIGNS = [
   { id: 'candycane', name: 'Candy cane', kind: 'speed', n: 5, own: true, blur: 0xe8a0a8 },
   // SPINNERS (the owner, 15-Oct: "hub colour or rim or spinner"): a hub that keeps turning at SPIN_RATE, stopped or not, whatever the
   // car does (main's 'Blade spinner' and 'Twin spinner' of CHECKLIST 310, back as their own kind). NEW ids: blade3 / twinspin stay the
-  // speed rims Blade / Twin blade (CHECKLIST 451), so a saved blade3 / twinspin keeps meaning what it has meant since then.
+  // speed rims Blade / Twin blade (CHECKLIST 398), so a saved blade3 / twinspin keeps meaning what it has meant since then.
   { id: 'spinblade', name: 'Blade spinner', kind: 'spin', n: 3 },
   { id: 'spintwin', name: 'Twin spinner', kind: 'spin', n: 2 },
 ];

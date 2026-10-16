@@ -1,4 +1,4 @@
-// A check of the THIRD SET OF SIX REAR WINGS (render/propmodelswing2.js MORE_WING_2; CHECKLIST 382), the logic of .propmodels-check.mjs: each is built
+// A check of the THIRD SET OF SIX REAR WINGS (render/propmodelswing2.js MORE_WING_2; CHECKLIST 400), the logic of .propmodels-check.mjs: each is built
 // with a paint (merged by material: at most three meshes) and
 //   - lies INSIDE the wing slot's canonical bound at scale 1 (box 1.4 x 0.35 x 0.3, or the cylinder of radius 0.15 and length 1.4 across the car;
 //     2 mm of tolerance), is finite, and its base reaches the bound's floor (3 mm)

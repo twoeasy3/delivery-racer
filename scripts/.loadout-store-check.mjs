@@ -169,7 +169,7 @@ try {
   for (const car of fleet) Store.resetCar(car.id);
   check(raw.getItem('delivery.loadout').length < 600, 'every car reset: the key is small again (' + raw.getItem('delivery.loadout').length + ' chars)');
 
-  // ---- THE THREE-PART WHEEL SET (CHECKLIST 385): every OLD saved wheels pair (the six old designs x the nine hub colours, x a rim or none),
+  // ---- THE THREE-PART WHEEL SET (CHECKLIST 399): every OLD saved wheels pair (the six old designs x the nine hub colours, x a rim or none),
   // saved as the default (the old global keys AND the store) and as a car's own (the store), reads back as the SAME LOOK: the tyre's rubber
   // colour, its sidewall ring and the hub colour (the old rule: a chosen hub colour wins; Stock lets the design's own hub show)
   {

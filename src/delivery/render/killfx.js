@@ -1,6 +1,6 @@
 // ---- KILL EFFECTS: the look of every explosion, and of the trail the player's thrown package leaves, as a cosmetic (the owner,
 // 15-Oct: "experiment with alternative explosion effects. It will go into customisation as a 'Kill effects' equip. It should also
-// affect the trace that throwing packages leaves behind"). CHECKLIST 390.
+// affect the trace that throwing packages leaves behind"). CHECKLIST 405.
 // RENDER-ONLY. The rules never see it: they keep pushing the same FxQueue event ({ type: 'explode', s, lat, vs, big, scale, smoke });
 // render/effects.js, the queue's one consumer, asks chosenKill() which look to draw it in. No rules module imports this file (it is in
 // render/, which vite.config.js logicFiles never walks), so the choice is not in the replay fingerprint; a replay or a ghost run is
