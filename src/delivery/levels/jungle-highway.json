@@ -7,8 +7,8 @@
   "shoulder": 2.5,
   "cargo": {"good": "fruit", "evil": "snakes"},
   "traffic": {"pickup": 0.2, "keitruck": 0.14, "jeep": 0.11, "van": 0.1, "commuter": 0.1, "wagon": 0.08, "bus": 0.07, "minivan": 0.07, "lovebus": 0.04, "rickshaw": 0.05, "police": 0.03},
-  "trafficCount": 8,
-  "oncomingCount": 6,
+  "trafficCount": 10,
+  "oncomingCount": 7,
   "pursuits": {"every": {"min": 70, "max": 100}},
   "segments": [
     {"length": 350, "curve": 0},
@@ -50,7 +50,10 @@
     {"from": 4300, "to": 4380, "depth": 0.8}
   ],
   "elephants": [
-    {"from": 3520, "to": 3760, "count": 2}
+    {"from": 520, "to": 760, "count": 2},
+    {"from": 2660, "to": 2920, "count": 2},
+    {"from": 3500, "to": 3820, "count": 3},
+    {"from": 5250, "to": 5480, "count": 2}
   ],
   "ruts": [
     {"from": 3230, "to": 3400}
@@ -64,8 +67,8 @@
     {"s": 540, "lane": 3, "r": 1.0},
     {"s": 820, "lane": 3, "r": 1.2},
     {"s": 1330, "lane": 2, "r": 1.1},
-    {"s": 2700, "lane": 3, "r": 1.1},
-    {"s": 2760, "lane": 2, "r": 1.0},
+    {"s": 2470, "lane": 3, "r": 1.1},
+    {"s": 2520, "lane": 2, "r": 1.0},
     {"s": 3180, "lane": 3, "r": 1.2},
     {"s": 4020, "lane": 2, "r": 1.1},
     {"s": 4140, "lane": 3, "r": 1.0},
@@ -80,14 +83,14 @@
   "targets": [
     {"s": 430, "side": "right"},
     {"s": 1260, "side": "left"},
-    {"s": 2820, "side": "right"},
+    {"s": 2960, "side": "right"},
     {"s": 4560, "side": "left"},
-    {"s": 5300, "side": "right"}
+    {"s": 5530, "side": "right"}
   ],
   "obstacles": [
     {"s": 300, "lane": 3, "kind": "crate"},
-    {"s": 640, "lane": 2, "kind": "cone"},
-    {"s": 700, "lane": 3, "kind": "cone"},
+    {"s": 800, "lane": 2, "kind": "cone"},
+    {"s": 880, "lane": 3, "kind": "cone"},
     {"s": 900, "lane": 2, "kind": "bale"},
     {"s": 1230, "lane": 3, "kind": "crate"},
     {"s": 1480, "lane": 2, "kind": "bale"},
@@ -95,7 +98,7 @@
     {"s": 2000, "lane": 2, "kind": "crate"},
     {"s": 2300, "lane": 3, "kind": "bale"},
     {"s": 2420, "lane": 2, "kind": "cone"},
-    {"s": 2880, "lane": 3, "kind": "crate"},
+    {"s": 2950, "lane": 3, "kind": "crate"},
     {"s": 3300, "lane": 2, "kind": "bale"},
     {"s": 3460, "lane": 3, "kind": "crate"},
     {"s": 3850, "lane": 2, "kind": "cone"},

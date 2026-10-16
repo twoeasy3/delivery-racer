@@ -15,23 +15,23 @@
     "pickup": 0.22,
     "wagon": 0.16,
     "suv": 0.12,
-    "cargotruck": 0.1,
-    "semi": 0.08,
+    "cargotruck": 0.16,
+    "semi": 0.04,
     "van": 0.08,
     "commuter": 0.08,
     "minivan": 0.06,
     "junker": 0.05,
     "police": 0.03
   },
-  "trafficCount": 9,
+  "trafficCount": 16,
   "oncomingCount": 7,
   "convoys": {
     "every": {
-      "min": 26,
-      "max": 42
+      "min": 24,
+      "max": 36
     },
     "size": 3,
-    "kind": "semi"
+    "kind": "cargotruck"
   },
   "segments": [
     {
@@ -108,68 +108,20 @@
       "to": 1590
     }
   ],
-  "ice": [
-    {
-      "from": 470,
-      "to": 515
-    },
-    {
-      "from": 700,
-      "to": 745,
-      "lane": 3
-    },
-    {
-      "from": 1130,
-      "to": 1175
-    },
-    {
-      "from": 1740,
-      "to": 1780,
-      "lane": 2
-    },
-    {
-      "from": 2090,
-      "to": 2130
-    },
-    {
-      "from": 2440,
-      "to": 2480,
-      "lane": 4
-    },
-    {
-      "from": 2840,
-      "to": 2890
-    },
-    {
-      "from": 3190,
-      "to": 3230,
-      "lane": 3
-    },
-    {
-      "from": 3600,
-      "to": 3640
-    },
-    {
-      "from": 3860,
-      "to": 3900,
-      "lane": 2
-    }
-  ],
   "tractors": [
-    {
-      "s": 900,
-      "lane": 4
-    },
-    {
-      "s": 2640,
-      "lane": 3
-    }
+    { "s": 700, "lane": 3 },
+    { "s": 700, "lane": 4 },
+    { "s": 830, "lane": 2 },
+    { "s": 1880, "lane": 2 },
+    { "s": 1880, "lane": 3 },
+    { "s": 2420, "lane": 3 },
+    { "s": 2420, "lane": 4 },
+    { "s": 3560, "lane": 2 },
+    { "s": 3560, "lane": 4 }
   ],
   "fog": [
-    {
-      "from": 2780,
-      "to": 3080
-    }
+    { "from": 1180, "to": 1350 },
+    { "from": 2780, "to": 3080 }
   ],
   "parked": [
     {
@@ -193,7 +145,7 @@
     {
       "from": 3330,
       "to": 3480,
-      "kind": "crate",
+      "kind": "bale",
       "count": 5,
       "pattern": "sweep"
     }
@@ -641,7 +593,7 @@
       "kind": "cone"
     },
     {
-      "s": 790,
+      "s": 600,
       "lane": 2,
       "kind": "bale"
     },
@@ -661,8 +613,8 @@
       "kind": "bale"
     },
     {
-      "s": 2120,
-      "lane": 2,
+      "s": 2250,
+      "lane": 3,
       "kind": "crate"
     },
     {
@@ -691,7 +643,7 @@
       "kind": "cone"
     },
     {
-      "s": 3700,
+      "s": 3470,
       "lane": 3,
       "kind": "bale"
     },
