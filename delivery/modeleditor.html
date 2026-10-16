@@ -79,6 +79,7 @@
     <span class="seg" role="group" aria-label="Gizmo"><button data-mode="translate" class="on" title="Move (G)">Move</button><button data-mode="rotate" title="Rotate (R)">Rotate</button><button data-mode="scale" title="Scale (S)">Scale</button></span>
     <label class="check"><input type="checkbox" id="snap"><span>Snap</span></label>
     <button id="mirrorMode" class="on" title="Mirror: an edit to a part (move, turn, scale, size, colour, delete) goes to its partner across the car too, and a window's edges to both flanks; found per part by its shape">Mirror: on</button>
+    <button id="camMore" class="more" aria-expanded="false" title="The view's other toggles">More</button>
     <label class="check"><input type="checkbox" id="wire"><span>Wire</span></label>
     <label class="check"><input type="checkbox" id="bbox"><span>Bounds</span></label>
     <label class="check"><input type="checkbox" id="hitbox"><span>Hitbox</span></label>
@@ -95,6 +96,7 @@
     </span>
   </div>
   <div class="viewButtons tools placeTools" id="placeTools" hidden></div>
+  <div class="camButtons" role="group" aria-label="Camera"><button id="camFit" title="The camera on the selected part (F, or double tap it)">Fit</button><button id="camReset" title="The whole car, 3/4 view">Reset</button></div>
   <button id="panelToggle" class="panelToggle" aria-label="Show or hide the panel">Panel</button>
   <div class="stats" id="stats"></div>
 </main>

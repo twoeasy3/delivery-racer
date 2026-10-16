@@ -327,6 +327,30 @@ const resize = () => {
   camera.updateProjectionMatrix();
 };
 new ResizeObserver(resize).observe($('viewBox'));
+// THE CAMERA IN EDIT MODE (the owner, 16-Oct, on a phone / Mi Pad: "Fix the camera controls on the editor when edit mode is selected"; CHECKLIST 434).
+// One finger / the left button on the view turns round the car, two fingers / the right button pan, a pinch / the wheel zoom, whatever tool is
+// up and whatever is selected; a finger on a gizmo HANDLE edits and the camera stays (see `the view's pointers` below). Fit (F, a double tap
+// on a part) puts the camera on the selected part, keeping its direction; Reset puts the whole car back in the 3/4 view. A view button, Fit
+// and Reset first stop what the camera's damping still had to turn (it turned the camera on after a view was set: a snap off the view).
+const stillCamera = () => { const d = orbit.enableDamping; orbit.enableDamping = false; orbit.update(); orbit.enableDamping = d; };
+const fitBox = (box) => {
+  stillCamera();
+  const c = box.getCenter(new THREE.Vector3()), r = Math.max(0.15, box.getSize(new THREE.Vector3()).length() / 2);
+  const dist = Math.max(orbit.minDistance, r / Math.sin((camera.fov * Math.PI / 180) / 2) * (camera.aspect < 1 ? 1.25 / camera.aspect : 1.05));
+  const dir = camera.position.clone().sub(orbit.target);
+  if (dir.lengthSq() < 1e-8) dir.set(0, 0.4, 1);
+  camera.position.copy(c).addScaledVector(dir.normalize(), dist);
+  orbit.target.copy(c);
+  orbit.update();
+};
+const fitSelected = () => {
+  const node = S.sel && S.nodes.get(S.sel);
+  fitBox(node ? new THREE.Box3().setFromObject(node) : modelBox());
+};
+const viewTo = (name) => { stillCamera(); orbit.enabled = true; gizmo.enabled = true; frame(name); };
+$('camFit').addEventListener('click', fitSelected);
+$('camReset').addEventListener('click', () => viewTo('34'));
+$('camMore').addEventListener('click', () => { const open = document.body.classList.toggle('moreOpen'); $('camMore').classList.toggle('on', open); $('camMore').setAttribute('aria-expanded', open); });
 
 // ---- what is shown: eyes, solo, wireframe, boxes, the hitbox, the wheels ----------------------------------------
 const flags = () => ({ wire: $('wire').checked, bbox: $('bbox').checked, hitbox: $('hitbox').checked, wheels: $('wheels').checked, dark: $('dark').checked });
@@ -453,15 +477,45 @@ const pickable = (node) => {
   for (let p = node; p && p !== S.model; p = p.parent) if (S.locked.has(idOf(p))) return null;
   return idOf(node);
 };
-let down = null;
+// ---- the view's pointers: who takes a finger, the camera (OrbitControls) or the gizmo (TransformControls). Both listen on the canvas, the
+// camera first; before this, a finger on a handle was taken by both (the camera then turned off by the gizmo's dragging-changed), a second
+// finger during a handle drag moved the part to it and could end the drag, and the camera could be left holding a finger it never saw lifted
+// (the next one-finger drag then read as two: a pan, not a turn). Now, ahead of both (a capture listener): the FIRST finger on a handle is the
+// gizmo's alone (the camera off before it sees it); any other finger while a handle is dragged is nobody's; a second finger while the camera
+// has one makes a camera gesture (pinch, pan: the gizmo off until every finger is up); when the last finger lifts the camera is always on.
+const viewPtrs = new Set(), strayPtrs = new Set();
+let multiTouch = false; // (more than one finger in this gesture: not a tap)
+const ndc = (e) => { const r = canvas.getBoundingClientRect(); return { x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -((e.clientY - r.top) / r.height) * 2 + 1, button: -1 }; };
+canvas.addEventListener('pointerdown', (e) => {
+  if (gizmo.dragging) { strayPtrs.add(e.pointerId); e.stopImmediatePropagation(); return; } // (a palm or a thumb during a handle drag)
+  if (!viewPtrs.size) multiTouch = false;
+  viewPtrs.add(e.pointerId);
+  if (viewPtrs.size > 1) { multiTouch = true; gizmo.enabled = false; gizmo.axis = null; orbit.enabled = true; return; }
+  gizmo.enabled = true; orbit.enabled = true;
+  if (!gizmo.object || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  gizmo.pointerHover(ndc(e)); // (a finger has no hover: is it on a handle?)
+  if (gizmo.axis) orbit.enabled = false; // (the camera never sees this one: the gizmo's drag; on again when it is let go)
+}, { capture: true });
+canvas.addEventListener('pointermove', (e) => { if (strayPtrs.has(e.pointerId)) e.stopImmediatePropagation(); }, { capture: true });
+const letGo = (e) => {
+  if (strayPtrs.delete(e.pointerId)) { e.stopImmediatePropagation(); return; }
+  viewPtrs.delete(e.pointerId);
+  if (!viewPtrs.size) { gizmo.enabled = true; if (!gizmo.dragging) orbit.enabled = true; } // (a handle's drag: on again by dragging-changed, just after)
+};
+canvas.addEventListener('pointerup', letGo, { capture: true });
+canvas.addEventListener('pointercancel', letGo, { capture: true });
+let down = null, lastTap = null;
 canvas.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
 canvas.addEventListener('pointerup', (e) => {
   if (placements?.on) { down = null; return; } // (placing: the tab's own taps)
-  if (!down || gizmo.dragging) { down = null; return; }
+  if (!down || gizmo.dragging || multiTouch) { down = null; return; }
   const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y), long = performance.now() - down.t;
   down = null;
   if (moved > 8 || long > 600 || gizmoHot) return;
-  const id = hit(e);
+  const id = hit(e), now = performance.now();
+  // a double tap on a part: Fit (the camera on it)
+  if (id && lastTap && lastTap.id === id && now - lastTap.t < 450 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) { lastTap = null; if (S.sel !== id) select(id, true, hitPane, hitShape); fitSelected(); return; }
+  lastTap = { id, t: now, x: e.clientX, y: e.clientY };
   select(id, true, hitPane, hitShape);
 });
 canvas.addEventListener('pointermove', (e) => {
@@ -1052,7 +1106,7 @@ const renderPart = () => {
   $('pDup').addEventListener('click', duplicate);
   $('pMirror').addEventListener('click', mirror);
   $('pDelete').addEventListener('click', remove);
-  $('pFrame').addEventListener('click', () => frame(view, new THREE.Box3().setFromObject(S.nodes.get(p.id))));
+  $('pFrame').addEventListener('click', fitSelected);
   $('pReset').addEventListener('click', () => {
     const next = JSON.parse(JSON.stringify(S.patch));
     const twin = mirrorPartner(p);
@@ -1206,7 +1260,7 @@ $('evil').addEventListener('click', () => setSide(true));
 $('undo').addEventListener('click', () => undo(-1));
 $('redo').addEventListener('click', () => undo(1));
 pick.addEventListener('change', () => loadCar(pick.value));
-document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => frame(b.dataset.view)));
+document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => viewTo(b.dataset.view)));
 $('download').addEventListener('click', () => {
   const p = tidyPatch(S.patch);
   p.base = S.base;
@@ -1245,7 +1299,7 @@ window.addEventListener('keydown', (e) => {
   else if (k === 'r') setMode('rotate');
   else if (k === 's') setMode('scale');
   else if (k === 'm') mirror();
-  else if (k === 'f' && S.sel) frame(view, new THREE.Box3().setFromObject(S.nodes.get(S.sel)));
+  else if (k === 'f') fitSelected();
   else if (k === 'delete' || k === 'backspace') remove();
   else if (k === 'escape') select(null);
 });
@@ -1279,5 +1333,5 @@ patchesReady.then(() => {
   if (params.get('tab')) showTab(params.get('tab'));
   frame(view);
   loop();
-  window.__modelEditor = Object.assign(S, { three: { camera, scene, gizmo, renderer, THREE }, api: { select, commit, undo, mirror, duplicate, remove, setFor, setPane, resetPane, mirrorPartner, setShape, resetShape, shapeTwin, shapesOf, shapeView, shapeOnScreen: () => shapeHandles.map(h => ({ i: h.i, xy: toScreen(h.pos) })) }, placements }); // (for the checks and a curious console)
+  window.__modelEditor = Object.assign(S, { three: { camera, scene, gizmo, orbit, renderer, THREE }, api: { select, commit, undo, mirror, duplicate, remove, setFor, setPane, resetPane, mirrorPartner, setShape, resetShape, shapeTwin, shapesOf, shapeView, shapeOnScreen: () => shapeHandles.map(h => ({ i: h.i, xy: toScreen(h.pos) })) }, placements }); // (for the checks and a curious console)
 });
