@@ -189,7 +189,7 @@ const ATLAS = {
 
 // ---- THE FITTINGS
 const cube = new THREE.BoxGeometry(1, 1, 1);
-const pipe = new THREE.CylinderGeometry(0.5, 0.5, 1, 10).rotateX(Math.PI / 2); // (along the road)
+const pipe = new THREE.CylinderGeometry(0.5, 0.5, 1, 8).rotateX(Math.PI / 2); // (along the road)
 const icicle = new THREE.ConeGeometry(0.5, 1, 6).rotateX(Math.PI);           // (point down)
 const GEOS = { cube, pipe, icicle };
 const p = new THREE.Vector3(), q = new THREE.Vector3(), dummy = new THREE.Object3D();
@@ -214,7 +214,8 @@ export const planDress = (kind, tunnels, hAtOf) => {
   // a sign: a cell of the atlas on a quad, `facing` 'front' (to a driver coming along) or a side (-1 / 1: flat on that wall, to the road)
   const sign = (cell, s, lat, y, w, h, facing) => {
     quads.push({ cell, s, lat, y, w, h, facing });
-    fittings.push({ kind: 'sign', s, s1: s, latLo: lat - w / 2, latHi: lat + w / 2, y0: y - h / 2, y1: y + h / 2 });
+    const half = facing === 'front' ? w / 2 : 0.01; // (one flat on a wall is w m along it, not across)
+    fittings.push({ kind: 'sign', s: facing === 'front' ? s : s - w / 2, s1: facing === 'front' ? s : s + w / 2, latLo: lat - half, latHi: lat + half, y0: y - h / 2, y1: y + h / 2 });
   };
   // a run of something along a wall (a pipe, a tray), in pieces of `step` m that follow the bends
   const run = (geo, color, t, side, d, y, w, h, step = 6, glow = false) => {
@@ -233,7 +234,7 @@ export const planDress = (kind, tunnels, hAtOf) => {
           const lat = mid(s) + off, y = H - 0.95;
           box('pipe', 0x9aa1a8, s, lat, y, 0.95, 0.95, 3.4);
           box('pipe', 0x2a2d31, s - 1.75, lat, y, 1.02, 1.02, 0.16); box('pipe', 0x2a2d31, s + 1.75, lat, y, 1.02, 1.02, 0.16);
-          box('cube', 0x4a4f55, s - 1.0, lat, H - 0.27, 0.1, 0.55, 0.1); box('cube', 0x4a4f55, s + 1.0, lat, H - 0.27, 0.1, 0.55, 0.1);
+          for (const ds of [-1, 1]) box('cube', 0x4a4f55, s + ds, lat, hAt(s + ds) - 0.29, 0.1, 0.58, 0.1); // (the straps, up to the ceiling where each is)
         }
       }
       // SOS niches and emergency doors, sides in turn; reflector posts down both walls
@@ -266,9 +267,9 @@ export const planDress = (kind, tunnels, hAtOf) => {
       }
       // the fire main (red) and a water pipe (blue) down the walls, high, on brackets
       for (const side of [-1, 1]) {
-        run('pipe', side < 0 ? 0xb3261e : 0x2f5f9e, t, side, 0.42, 5.9, 0.42, 0.42);
-        run('pipe', side < 0 ? 0x2f5f9e : 0x7a8088, t, side, 0.35, 6.7, 0.3, 0.3);
-        for (let s = t.from + 3; s < t.to; s += 6) box('cube', 0x2a2e33, s, wallAt(side, s, 0.3), 6.3, 0.6, 1.2, 0.12);
+        run('pipe', side < 0 ? 0xb3261e : 0x2f5f9e, t, side, 0.42, 6.62, 0.42, 0.42, 12);
+        run('pipe', side < 0 ? 0x2f5f9e : 0x7a8088, t, side, 0.35, 7.35, 0.3, 0.3, 12);
+        for (let s = t.from + 6; s < t.to; s += 12) box('cube', 0x2a2e33, s, wallAt(side, s, 0.3), 6.98, 0.6, 1.2, 0.12);
       }
       // BERTH boards on the walls, sides in turn
       for (let s = t.from + 50, k = 0; s < t.to - 20; s += 70, k++) {
@@ -285,8 +286,8 @@ export const planDress = (kind, tunnels, hAtOf) => {
       sign('limit', t.from - 0.66, mid(t.from) + 8.3, H0 + 3.4, 1.9, 1.9, 'front');
     } else if (kind === 'rock') {
       // a cable tray high on the near wall, the lamps' brackets on the far one (tunnel.js puts the lamps there: rows -1)
-      run('cube', 0x6d7278, t, -1, 0.4, 6.4, 0.6, 0.12, 6);
-      for (let s = t.from + 3; s < t.to; s += 6) box('cube', 0x3a3d42, s, wallAt(-1, s, 0.25), 6.25, 0.5, 0.3, 0.08);
+      run('cube', 0x6d7278, t, -1, 0.4, 6.7, 0.6, 0.12, 6);
+      for (let s = t.from + 3; s < t.to; s += 6) box('cube', 0x3a3d42, s, wallAt(-1, s, 0.25), 6.55, 0.5, 0.3, 0.08);
       for (let k = 0; ; k++) { const s = t.from + 14 * (k + 0.5); if (s > t.to) break; box('cube', 0x3a3d42, s, wallAt(1, s, 0.45), hAt(s) - 1.45, 0.9, 0.1, 0.12); }
       // the blue cavern half way through: blue light along both walls' feet and up them, for 60 m
       const c0 = t.from + L / 2 - 30, c1 = c0 + 60;
@@ -349,11 +350,12 @@ export const planDress = (kind, tunnels, hAtOf) => {
         sign('phone', s, wallAt(side, s, 0.21), 1.75, 1.0, 0.44, side);
       }
       // a cable tray down each wall over the dado, and the exit board hung over the lanes near the far end
-      for (const side of [-1, 1]) run('cube', 0x55575c, t, side, 0.2, 5.4, 0.4, 0.1, 6);
+      for (const side of [-1, 1]) run('cube', 0x55575c, t, side, 0.13, 5.4, 0.25, 0.1, 6);
       const se = t.to - Math.min(90, L * 0.3), He = hAt(se);
       box('cube', 0x2a2b2e, se, mid(se) - 3, He - 0.4, 0.12, 0.8, 0.12); box('cube', 0x2a2b2e, se, mid(se) + 3, He - 0.4, 0.12, 0.8, 0.12);
-      box('cube', 0x1f6b3c, se, mid(se), He - 1.3, 9.2, 1.8, 0.2);
-      sign('exit', se - 0.12, mid(se), He - 1.3, 8.8, 1.7, 'front');
+      const we = Math.min(9.2, hi(se) - lo(se) - 0.6);
+      box('cube', 0x1f6b3c, se, mid(se), He - 1.3, we, 1.8, 0.2);
+      sign('exit', se - 0.12, mid(se), He - 1.3, we - 0.4, 1.7, 'front');
       const H0 = hAt(t.from);
       sign('name', t.from - 0.66, mid(t.from), H0 + 3.4, 12, 3.4, 'front');
     } else if (kind === 'shuto') {
