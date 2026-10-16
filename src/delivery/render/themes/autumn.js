@@ -620,13 +620,8 @@ export const autumn = ({ theme, offRoads, beside, inJunction, levelGroup }) => {
     claim(0, 0, 0);
   }
 
-  // ---- wet leaves: the level's ice patches, repainted: a dark, wet sheet and a gold shine, strewn with fallen leaves
-  for (const m of levelGroup.children) {
-    if (!m.isMesh || !m.material || !m.material.color || m.material.type !== 'MeshBasicMaterial' || !m.material.transparent) continue;
-    const hex = m.material.color.getHex();
-    if (hex === 0xd6eef8) { m.material.color.set(0x5a3416); m.material.opacity = 0.8; }       // (the ice's sheet)
-    else if (hex === 0xffffff && Math.abs(m.material.opacity - 0.8) < 0.01) { m.material.color.set(0xd98a28); m.material.opacity = 0.62; } // (its shine)
-  }
+  // ---- wet leaves: the level's ice patches (drawn by render/icepatch.js in its autumn look, ICE_LOOKS.autumn: a dark, wet
+  // sheet and a gold shine), strewn with fallen leaves
   const LW = CONFIG.laneWidth;
   for (const patch of LEVEL.ice || []) {
     const len = patch.to - patch.from, wide = patch.lane === undefined ? Track.laneHi(patch.from) - Track.laneLo(patch.from) : LW - 0.3;

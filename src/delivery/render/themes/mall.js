@@ -631,10 +631,6 @@ export const mall = ({ theme, beside, levelGroup }) => {
     });
   }
 
-  // ---- the level's ice patches are freshly MOPPED stretches (the Wet floor card): the sheet dark and wet, the shine kept
-  for (const m of levelGroup.children) {
-    if (!m.isMesh || !m.material || !m.material.color || m.material.type !== 'MeshBasicMaterial' || !m.material.transparent) continue;
-    if (m.material.color.getHex() === 0xd6eef8) { m.material.color.set(0x5f7a8c); m.material.opacity = 0.4; } // (a mopped, wet stretch: dark and glossy; its white streaks are the shine)
-  }
+  // (the level's ice patches are freshly MOPPED stretches (the Wet floor card): render/icepatch.js draws them so, ICE_LOOKS.mall)
   void theme; void CONFIG; void q;
 };
