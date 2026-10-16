@@ -128,9 +128,14 @@ export const spec = () => Object.assign(q, DEFAULTS);
 const color = new THREE.Color(), euler = new THREE.Euler(0, 0, 0, 'YXZ'), quat = new THREE.Quaternion(), turn = new THREE.Quaternion(),
   pos = new THREE.Vector3(), scl = new THREE.Vector3(), mtx = new THREE.Matrix4(), fwd = new THREE.Vector3(), Z_AXIS = new THREE.Vector3(0, 0, 1);
 
-const makePool = (parent, name) => {
+// SETTLE (the Cosmetics preview's system only, render/killpreview.js; the game's is made without it and is exactly as before): a
+// particle that falls to a floor is not let die in the air but lands, lies there `rest` seconds (paper and coins laid flat), then
+// fades as usual; a coin lies flat on the floor (its floor is its half thickness over the ground). { ground, rest }
+const LAYS_FLAT = { quad: true, coin: true };
+const makePool = (parent, name, settle = null) => {
   const type = POOL_TYPES[name], max = type.max, mode = type.mode;
   const data = new Float32Array(max * F);
+  const rested = settle ? new Float32Array(max) : null, flat = settle && LAYS_FLAT[name];
   const mesh = new THREE.InstancedMesh(geo(type.geo), mat(name), max);
   mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(max * 3), 3);
@@ -153,6 +158,7 @@ const makePool = (parent, name) => {
     data[o + DRAG] = s.drag; data[o + FLOOR] = s.floor; data[o + AX] = s.ax; data[o + AY] = s.ay; data[o + SAX] = s.sax; data[o + SAY] = s.say;
     data[o + DELAY] = s.delay; data[o + FLUT] = s.flutter; data[o + PHASE] = s.phase; data[o + FD] = s.fade; data[o + TOCAM] = s.toCam;
     data[o + BOUNCE] = s.bounce; data[o + SHADE] = s.shade; data[o + LEN] = s.len;
+    if (rested) { rested[i] = 0; if (name === 'coin' && s.floor > -1e8) data[o + FLOOR] = Math.min(s.floor, settle.ground + 0.06 * s.size + 0.005); }
     color.setHex(s.color);
     data[o + R] = color.r; data[o + G] = color.g; data[o + B] = color.b;
     spawned++;
@@ -172,7 +178,7 @@ const makePool = (parent, name) => {
       data[o + LIFE] -= dt;
       if (data[o + LIFE] <= 0) { // dead: the last live one moves into its place
         live--;
-        if (i < live) { data.copyWithin(o, live * F, live * F + F); i--; }
+        if (i < live) { data.copyWithin(o, live * F, live * F + F); if (rested) rested[i] = rested[live]; i--; }
         continue;
       }
       // motion
@@ -195,6 +201,14 @@ const makePool = (parent, name) => {
       }
       data[o + AX] += data[o + SAX] * dt;
       data[o + AY] += data[o + SAY] * dt;
+      if (rested && data[o + FLOOR] > -1e8 && data[o + GRAV] > 0) { // (settle: kept until it has landed and lain there)
+        if (data[o + Y] <= data[o + FLOOR] && data[o + VY] === 0) {
+          rested[i] += dt;
+          if (flat) { const a = data[o + AX], goal = Math.round((a - Math.PI / 2) / Math.PI) * Math.PI + Math.PI / 2; data[o + AX] = a + (goal - a) * Math.min(1, dt * 14); data[o + SAX] = 0;
+            if (name === 'coin') { const y = data[o + AY], face = Math.round(y / Math.PI) * Math.PI; data[o + AY] = y + (face - y) * Math.min(1, dt * 14); data[o + SAY] = 0; } } // (a coin face up: lit, not edge-dark)
+        }
+        if (rested[i] < settle.rest) data[o + LIFE] = Math.max(data[o + LIFE], data[o + MAXL] * 0.34);
+      }
       // size and colour over its life
       const t = 1 - data[o + LIFE] / data[o + MAXL], fade = data[o + FD];
       let s = data[o + SIZE] * (1 + data[o + GROW] * t), dim = 1;
@@ -236,9 +250,10 @@ const makePool = (parent, name) => {
 };
 
 // ---- a SYSTEM: the pools of one scene, made as an effect first needs them ----
-export const createKillFx = (parent) => {
+// (settle: { ground, rest } for the Cosmetics preview only: see makePool; the game's system has none)
+export const createKillFx = (parent, { settle = null } = {}) => {
   const pools = {};
-  const pool = (name) => pools[name] ||= makePool(parent, name);
+  const pool = (name) => pools[name] ||= makePool(parent, name, settle);
   let load = 0; // (explosions lately: decays by half every 0.35 s; over LOW_AT the spawns are the low version)
   const LOW_AT = 5;
   const S = {

@@ -64,6 +64,12 @@ const CLOSE = 0.5;
 let closeup = false, zoom = 0, alsoVisible = () => false;
 // an OVERLAY drawn in the view's scene each frame (the Cosmetics screen's kill-effect preview, render/killpreview.js): fn(scene, dt, camera)
 let overlay = null;
+// the stage's FLOOR height (the model stood on it, the floor patch and shadow just over it): what an overlay lands things on
+const FLOOR_Y = 0;
+// the car GONE (the kill-effect preview: the car is what goes up, render/killpreview.js): the body (the model and every cosmetic on it:
+// wheels, plate, props, decal, underglow) and its shadow hidden; back: a quick pop up off the floor (POP s, a little overshoot)
+const POP = 0.35;
+let gone = false, popT = POP;
 // the NUMBER PLATE close-up (CHECKLIST 286): the same ease, but turned to show one end of the car and aimed at its plate (closeEnd: 'rear' | 'front' | null = the wheels')
 let closeEnd = null;
 // the PROP close-up (CHECKLIST 302, render/cosmeticsui.js): the same ease, turned to a yaw and aimed at a point of the car (a prop slot's centre from
@@ -155,7 +161,7 @@ const build = () => {
   const bounds = new THREE.Box3().setFromObject(model);
   if (model.userData.animate) for (let t = 0; t < 4; t += 0.25) { model.userData.animate(t); model.updateMatrixWorld(true); bounds.union(new THREE.Box3().setFromObject(model)); }
   const size = bounds.getSize(new THREE.Vector3()), mid = bounds.getCenter(new THREE.Vector3());
-  model.position.set(-mid.x, -bounds.min.y, -mid.z); // (stood on the floor, its middle over the turntable's)
+  model.position.set(-mid.x, FLOOR_Y - bounds.min.y, -mid.z); // (stood on the floor, its middle over the turntable's)
   const rxz = Math.hypot(size.x, size.z) / 2;
   floorMap ||= patch('rgba(190, 210, 255, 0.55)', 'rgba(190, 210, 255, 0)');
   shadowMap ||= patch('rgba(0, 0, 0, 0.85)', 'rgba(0, 0, 0, 0)');
@@ -163,13 +169,13 @@ const build = () => {
   const floor = new THREE.Mesh(floorGeometry, floorMaterial);
   floor.rotation.x = -Math.PI / 2;
   floor.scale.set(rxz * 2.9, rxz * 2.9, 1);
-  floor.position.y = 0.002;
+  floor.position.y = FLOOR_Y + 0.002;
   floor.renderOrder = -2;
   scene.add(floor);
   const shadow = new THREE.Mesh(floorGeometry, shadowMaterial);
   shadow.rotation.x = -Math.PI / 2;
   shadow.scale.set(size.x * 1.25, size.z * 1.2, 1);
-  shadow.position.y = 0.004;
+  shadow.position.y = FLOOR_Y + 0.004;
   shadow.renderOrder = -1;
   turn.add(shadow);
   const camera = new THREE.PerspectiveCamera(FOV, 1.6, 0.1, 400);
@@ -204,6 +210,8 @@ const frame = (aspect) => {
   camera.updateProjectionMatrix();
 };
 
+// the pop back: 0.15 to 1, a little past it and settling (an ease out with overshoot)
+const popOut = (u) => { if (u >= 1) return 1; const c = 1.9, x = u - 1; return 0.15 + 0.85 * (1 + (c + 1) * x * x * x + c * x * x); };
 const snap = typeof location !== 'undefined' && /[?&]closeup=/.test(location.search); // (a picture asked for with ?closeup=: turned at once, a slow frame rate must not leave it half way)
 const size = new THREE.Vector2();
 const draw = (now) => {
@@ -245,6 +253,12 @@ const frameAt = (now) => {
   applySuspension(v.model, v.body, o); // (the body on its springs, the wheels kept on the floor: render/carsuspension.js)
   v.shadow.scale.set(v.shadowScale[0] * o.shadow, v.shadowScale[1] * o.shadow, 1);
   v.shadow.material.opacity = 0.75 * Math.min(1, Math.max(0.4, 1 - 6 * o.y));
+  // gone (the kill preview) or popping back
+  v.body.visible = v.shadow.visible = !gone;
+  if (!gone && popT < POP) popT = Math.min(POP, popT + Math.min(dt, 1 / 30));
+  const pop = gone ? 1 : popOut(popT / POP); // (hidden at its own size: a zero scale would leave the springs' matrices singular)
+  v.body.scale.setScalar(pop);
+  v.shadow.scale.multiplyScalar(Math.min(1, pop));
   v.landing = !bounceDone(since);
   v.lift = o.y;
   if (v.model.userData.lamps && v.car.ufo) v.model.userData.lamps.rotation.y = t * 4; // (the saucer's ring of lights)
@@ -372,6 +386,10 @@ export const ShowroomView = {
   get scene() { return v?.scene || null; },
   get height() { return v?.height || 0; },
   overlay(fn) { overlay = fn; },
+  get floorY() { return FLOOR_Y; },
+  // the car gone from the stage (true) or back (false: it pops back up); render/killpreview.js
+  carGone(on) { on = !!on; if (on === gone) return; gone = on; popT = on ? POP : 0; },
+  get carHidden() { return gone; },
   closeUp(on, end = null, focus = null) { closeup = !!on; closeEnd = on && (end === 'rear' || end === 'front') ? end : null; closeFocus = on && focus ? focus : null; },
   // whether the corner key may be drawn now (no sheet over the showroom: render/showroom.js says)
   keyWhen(fn) { keyVisible = fn; },
@@ -384,9 +402,10 @@ export const ShowroomView = {
     closeEnd = null;
     closeFocus = null;
     zoom = 0;
+    gone = false; popT = POP;
     drop();
     if (v) { v.car = null; v.canvas?.remove(); v.el = null; }
   },
   // for a check or a picture: what is shown
-  get state() { return v?.scene ? { car: v.car.id, evil: v.evil, dark: v.dark, yaw, running: !!raf, landing: !!v.landing, lift: v.lift || 0, key: v.key ? { turn: v.key.turn, dark: v.key.dark, frames: v.key.frames } : null, since: v.landAt == null ? null : v.landT / this.slow, pitch: v.body.rotation.x } : null; },
+  get state() { return v?.scene ? { car: v.car.id, evil: v.evil, dark: v.dark, yaw, running: !!raf, landing: !!v.landing, lift: v.lift || 0, key: v.key ? { turn: v.key.turn, dark: v.key.dark, frames: v.key.frames } : null, since: v.landAt == null ? null : v.landT / this.slow, pitch: v.body.rotation.x, hidden: !v.body.visible, carScale: v.body.scale.x } : null; },
 };

@@ -11,6 +11,8 @@
 //   - IN A RUN (headless, the scene stubbed): every 'explode' event the rules queue is drawn in the chosen effect (none by the classic
 //     fireball), 'burst' and 'gift' events from others are untouched, the player's own package trail follows the choice, the player's own
 //     flaming package bursts in it; with Classic chosen, no kill-effect pool is touched
+//   - THE COSMETICS PREVIEW (render/killpreview.js): the car hidden when it goes up and back after; the effect set off at the stage's floor
+//     height; nothing under the floor, what falls lies on it; rapid Test does not stack nor leave the car hidden; the game's system unsettled
 //   - the replay fingerprint (vite.config.js logicFiles) walks no render/ file, and no logic file names a kill-effect module (render-only)
 //   node scripts/.killfx-check.mjs
 import { startModels } from './modelpatch-load.mjs';
@@ -232,6 +234,52 @@ try {
     const g = runLevel(lvId, 20, 'coins', { evil: false });
     check(g.gift === 0 || g.particles > 0, 'Good: the gifts\' arrival (\'gift\' events, ' + g.gift + ') still the classic confetti puff; the trail Coins (' + g.killTrail + ' frames)');
     FX.Fire.emit = fireEmit; FX.Particles.emit = partEmit; FX.KillFx.explode = killExplode; FX.KillFx.trail = killTrail;
+  }
+
+  // ---- THE COSMETICS PREVIEW (render/killpreview.js): the car hidden while it goes up and back after; the effect on the stage's floor ----
+  {
+    const SV = (await load('render/showroomview.js')).ShowroomView;
+    const { KillPreview } = await load('render/killpreview.js');
+    const scene = new THREE.Scene(), pcam = new THREE.PerspectiveCamera(30, 0.6, 0.1, 400); pcam.position.set(0, 3, 10); pcam.lookAt(0, 0.6, 0); pcam.updateMatrixWorld();
+    const floor = SV.floorY, T = KillPreview.timeline, step = (s) => { for (let t = 0; t < s - 1e-9; t += 1 / 60) KillPreview.frame(scene, 1 / 60, pcam); };
+    KillPreview.test('confetti', pcam, 1.4); // (makes its system)
+    const ys = [];
+    const sysP = KillPreview.fx, real = sysP.explode;
+    sysP.explode = (id, x, y, ...a) => { ys.push(y); return real.call(sysP, id, x, y, ...a); };
+    const rows = [], bad = [];
+    for (const id of K.KILL_IDS) {
+      ys.length = 0;
+      KillPreview.test(id, pcam, 1.4);
+      const before = SV.carHidden;
+      step(T.kill - 0.05); const flying = SV.carHidden;
+      step(0.1); const gone = SV.carHidden, marks = KillPreview.state.marks;
+      // what fell: settled on the floor, none under it (every instance's height, every pool)
+      step(Math.min(2.4, T.backMin - T.kill - 0.15));
+      let under = 0, onFloor = 0;
+      for (const p of Object.values(sysP.pools)) { const M = p.mesh.instanceMatrix.array; for (let i = 0; i < p.mesh.count; i++) { const sc = Math.hypot(M[i * 16], M[i * 16 + 1], M[i * 16 + 2]); if (!sc) continue; const y = M[i * 16 + 13]; if (y < floor - 1e-3) under++; else if (y < floor + 0.6) onFloor++; } }
+      step(T.back + 0.1 - (T.kill + Math.min(2.4, T.backMin - T.kill - 0.15) + 0.05));
+      const back = !SV.carHidden;
+      rows.push(id + ': ' + onFloor + ' on the floor' + (marks ? ', ' + marks + ' mark' + (marks > 1 ? 's' : '') : ''));
+      if (before || flying || !gone || !back) bad.push(id + ' (car hidden before the kill ' + flying + ', at it ' + gone + ', back after ' + back + ')');
+      if (id !== 'classic' && !(ys.length === 2 && ys.every(y => y === floor))) bad.push(id + ' spawned at heights ' + ys.join(', ') + ' (the floor: ' + floor + ')');
+      if (under) bad.push(id + ': ' + under + ' particles under the floor');
+      if (id !== 'classic' && id !== 'bubbles' && !onFloor) bad.push(id + ': nothing lying on the floor');
+    }
+    sysP.explode = real;
+    check(!bad.length, 'the preview, every effect: the car hidden when it goes up (not before) and back once it has played out (by ' + T.back.toFixed(1) + ' s); the package hit and the explosion set off at the stage\'s floor height (' + floor + '); nothing under the floor; what falls lies on it (' + rows.join('; ') + ')' + (bad.length ? ': ' + bad.join('; ') : ''));
+    // rapid Test: nothing stacks, the car never left hidden
+    KillPreview.test('confetti', pcam, 1.4); step(T.kill + 0.5); const one = KillPreview.state.live; const hid = SV.carHidden;
+    let most = 0, hiddenAfterTest = false;
+    for (let n = 0; n < 6; n++) { KillPreview.test('confetti', pcam, 1.4); hiddenAfterTest ||= SV.carHidden; step(T.kill + 0.5); most = Math.max(most, KillPreview.state.live); }
+    KillPreview.test('coins', pcam, 1.4); hiddenAfterTest ||= SV.carHidden; step(0.3);
+    const live0 = KillPreview.state.live;
+    KillPreview.clear(); const cleared = !SV.carHidden && KillPreview.state.live === 0 && KillPreview.state.marks === 0;
+    check(hid && !hiddenAfterTest && most <= one * 1.5 && live0 < one && cleared, 'Test pressed again and again: each press clears the last (live ' + one + ' after one, at most ' + most + ' after six in a row), the car back at once on a new Test, clear() leaves nothing and the car shown');
+    // the game's system is made without settle: a confetti piece still in the air at the end of its life is gone (as before)
+    const g2 = K.createKillFx(new THREE.Group()), s2 = K.createKillFx(new THREE.Group(), { settle: { ground: 0, rest: 0.7 } });
+    Math.random = seeded(11); g2.explode('confetti', 0, 0, 0, 0, 0, { big: false }); Math.random = seeded(11); s2.explode('confetti', 0, 0, 0, 0, 0, { big: false }); Math.random = realRandom;
+    for (let f = 0; f < 60 * 3; f++) { g2.update(1 / 60, pcam); s2.update(1 / 60, pcam); }
+    check(g2.live() === 0 && s2.live() > 0, 'the game\'s system (no settle) still lets every bit go by its life (' + g2.live() + ' left at 3 s); the preview\'s settling one keeps the falling ones till they have lain on the floor (' + s2.live() + ')');
   }
 
   // ---- the replay fingerprint ----
