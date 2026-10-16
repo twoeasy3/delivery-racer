@@ -18,10 +18,13 @@ import * as THREE from 'three';
 import { unitBox } from './particles.js';
 import { registerCosmetics, ownsCosmetic } from './cosmetics.js';
 import * as Store from './loadoutstore.js';
-import { KILL_DEFS as SHIPPED, KILL_EXTRA } from './killfxdefs.js';
+import { KILL_DEFS as SHIPPED_FIRST, KILL_EXTRA } from './killfxdefs.js';
+import { KILL_MORE } from './killfxmore.js';
 
 // ---- the registry: id -> { name, icon, explode, trail, ... } (classic first; its explode/trail are render/particles.js's) ----
 // (KILL_DEFS: the shipped ones and the experiment's cut ones; KILL_IDS, the registry and the screen: the shipped only)
+// (KILL_MORE, render/killfxmore.js: the eight added after the first seven, CHECKLIST 432)
+const SHIPPED = { ...SHIPPED_FIRST, ...KILL_MORE };
 const KILL_DEFS = { ...SHIPPED, ...KILL_EXTRA };
 export const KILL_FX = KILL_DEFS;
 export const KILL_IDS = Object.keys(SHIPPED);
@@ -80,6 +83,45 @@ const TEXTURES = {
     g.restore();
     g.fillStyle = 'rgba(255,255,255,0.9)'; g.beginPath(); g.arc(27, 10, 3, 0, Math.PI * 2); g.fill();
   }],
+  // (CHECKLIST 432: the eight more effects' pictures, 64 x 64, white or grey: tinted by each particle's colour)
+  blot: [64, 64, (g) => { // an ink splat: a blob, round drops and a few thrown spikes about it (fixed, so every splat is the same shape, turned)
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(32, 32, 15, 0, Math.PI * 2); g.fill();
+    for (let i = 0; i < 9; i++) { const a = i * 2.39, d = 13 + (i * 7) % 9, rad = 4 + (i * 5) % 5; g.beginPath(); g.arc(32 + Math.sin(a) * d, 32 + Math.cos(a) * d, rad, 0, Math.PI * 2); g.fill(); }
+    for (let i = 0; i < 7; i++) { const a = i * 0.9 + 0.4, d = 24 + (i * 3) % 6; g.beginPath(); g.arc(32 + Math.sin(a) * d, 32 + Math.cos(a) * d, 1.6 + (i % 3) * 0.7, 0, Math.PI * 2); g.fill(); }
+  }],
+  blob: [64, 64, (g) => { // a glossy drop: a body a shade under white, darker to its rim, a white highlight up and left
+    const r = g.createRadialGradient(26, 24, 2, 32, 32, 30); r.addColorStop(0, '#f2f2f2'); r.addColorStop(0.6, '#c4c4c4'); r.addColorStop(1, '#8a8a8a');
+    g.fillStyle = r; g.beginPath(); g.arc(32, 32, 29, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#fff'; g.beginPath(); g.ellipse(22, 19, 8, 5, -0.6, 0, Math.PI * 2); g.fill();
+  }],
+  heart: [64, 64, (g) => {
+    g.beginPath(); g.moveTo(32, 56); g.bezierCurveTo(4, 36, 4, 10, 20, 9); g.bezierCurveTo(27, 9, 31, 14, 32, 19); g.bezierCurveTo(33, 14, 37, 9, 44, 9); g.bezierCurveTo(60, 10, 60, 36, 32, 56); g.closePath();
+    g.fillStyle = '#d8d8d8'; g.fill(); g.lineWidth = 3; g.strokeStyle = '#9a9a9a'; g.stroke();
+    g.fillStyle = '#fff'; g.beginPath(); g.ellipse(21, 20, 6, 4, -0.7, 0, Math.PI * 2); g.fill();
+  }],
+  gear: [64, 64, (g) => { // a cog: ten teeth, a darker ring, four holes and the axle hole cut out
+    g.fillStyle = '#e6e6e6'; g.beginPath();
+    for (let i = 0; i < 40; i++) { const a = i / 40 * Math.PI * 2, rad = i % 4 < 2 ? 30 : 23; g.lineTo(32 + Math.sin(a) * rad, 32 - Math.cos(a) * rad); }
+    g.closePath(); g.fill();
+    g.strokeStyle = '#a8a8a8'; g.lineWidth = 3; g.beginPath(); g.arc(32, 32, 18, 0, Math.PI * 2); g.stroke();
+    g.globalCompositeOperation = 'destination-out';
+    for (let i = 0; i < 4; i++) { const a = i / 4 * Math.PI * 2 + 0.785; g.beginPath(); g.arc(32 + Math.sin(a) * 11, 32 + Math.cos(a) * 11, 4, 0, Math.PI * 2); g.fill(); }
+    g.beginPath(); g.arc(32, 32, 5, 0, Math.PI * 2); g.fill();
+    g.globalCompositeOperation = 'source-over';
+  }],
+  flake: [64, 64, (g) => { // a snowflake: six arms, each with two pairs of twigs
+    g.strokeStyle = '#fff'; g.lineCap = 'round'; g.lineWidth = 4.5;
+    for (let i = 0; i < 6; i++) {
+      const a = i / 6 * Math.PI * 2, dx = Math.sin(a), dy = -Math.cos(a), arm = (d, t) => [32 + dx * d + dy * t, 32 + dy * d - dx * t];
+      g.beginPath(); g.moveTo(32, 32); g.lineTo(...arm(28, 0)); g.stroke();
+      for (const [d, t] of [[13, 8], [21, 6]]) { g.beginPath(); g.moveTo(...arm(d - 4, 0)); g.lineTo(...arm(d + 3, t)); g.moveTo(...arm(d - 4, 0)); g.lineTo(...arm(d + 3, -t)); g.stroke(); }
+    }
+  }],
+  leaf: [64, 64, (g) => { // a leaf, point up, its midrib and veins a shade darker, a stalk
+    g.fillStyle = '#e8e8e8'; g.beginPath(); g.moveTo(32, 3); g.bezierCurveTo(56, 18, 54, 44, 32, 56); g.bezierCurveTo(10, 44, 8, 18, 32, 3); g.fill();
+    g.strokeStyle = '#a6a6a6'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(32, 62); g.lineTo(32, 8); g.stroke();
+    g.lineWidth = 1.6; for (let i = 0; i < 4; i++) { const y = 46 - i * 9; g.beginPath(); g.moveTo(32, y); g.lineTo(44 - i, y - 8); g.moveTo(32, y); g.lineTo(20 + i, y - 8); g.stroke(); }
+  }],
 };
 
 // ---- shared geometry and materials (made once, on first use; shared by every system: the game's and the preview's) ----
@@ -88,9 +130,37 @@ const geo = (name) => GEO[name] ||= (() => { // (marked shared below: scene.js c
   if (name === 'box') return unitBox;
   const g = name === 'quad' ? new THREE.PlaneGeometry(1, 1) : name === 'candyquad' ? new THREE.PlaneGeometry(1, 0.5)
     : name === 'coin' ? new THREE.CylinderGeometry(0.5, 0.5, 0.12, 10, 1).rotateX(Math.PI / 2) : null; // (a coin: its faces along z)
-  if (g) { g.userData.shared = true; return g; }
+  const g2 = g || (MORE_GEO[name] && MORE_GEO[name]());
+  if (g2) { g2.userData.shared = true; return g2; }
   throw new Error('no geometry ' + name);
 })();
+// (CHECKLIST 432) shades baked in as vertex colours (the materials are unlit): x one particle's colour
+const shaded = (g, shadeOf) => {
+  const pos = g.attributes.position, n = pos.count, c = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { const v = shadeOf(pos.getX(i), pos.getY(i), pos.getZ(i), i); c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = v; }
+  g.setAttribute('color', new THREE.BufferAttribute(c, 3));
+  return g;
+};
+const MORE_GEO = {
+  // a paper dart, nose along +z, 1 m long: two wings with a little dihedral and a keel under them (6 triangles); the keel a shade darker
+  dart: () => {
+    const v = [0, 0, 0.5, -0.36, 0.07, -0.5, 0, 0, -0.5, 0, 0, 0.5, 0, 0, -0.5, 0.36, 0.07, -0.5, 0, 0, 0.5, 0, -0.16, -0.5, 0, 0, -0.5];
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(v), 3));
+    return shaded(g, (x, y, z, i) => (i >= 6 ? 0.72 : i % 3 === 1 || i === 5 ? 0.9 : 1));
+  },
+  // a gear on edge: a quad facing along x (so turning it about x rolls it, and its yaw is the way it rolls)
+  edgequad: () => new THREE.PlaneGeometry(1, 1).rotateY(Math.PI / 2),
+  // an ice shard: a four-sided spike standing on its base (its pivot), white at the tip to the colour at the foot
+  shard: () => shaded(new THREE.ConeGeometry(0.5, 1, 4, 1).translate(0, 0.5, 0).toNonIndexed(), (x, y) => 0.55 + 0.45 * y),
+  // a domino standing on its bottom edge (its pivot: it topples about it), 0.5 wide, 1 tall, 0.16 thick; the faces shaded as if lit
+  // from above and in front (unlit material: the shade is baked)
+  domino: () => {
+    const g = new THREE.BoxGeometry(0.5, 1, 0.16).translate(0, 0.5, 0);
+    const face = [0.78, 0.78, 1, 0.5, 0.92, 0.66]; // (BoxGeometry's faces: +x, -x, +y, -y, +z, -z, four vertices each)
+    return shaded(g, (x, y, z, i) => face[Math.floor(i / 4)]);
+  },
+};
 const basic = (o) => new THREE.MeshBasicMaterial(o);
 const ADD = { transparent: true, blending: THREE.AdditiveBlending, depthWrite: false };
 // mode: 'solid' (turned by its two angles: tumbling, or set once), 'billboard' (faces the camera, turned in the picture by its angle),
@@ -107,21 +177,35 @@ export const POOL_TYPES = {
   bubble: { geo: 'quad', mat: () => basic({ map: tex('bubble'), transparent: true, depthWrite: false }), mode: 'billboard', max: 200 },
   candy: { geo: 'candyquad', mat: () => basic({ map: tex('candy'), alphaTest: 0.5, side: THREE.DoubleSide }), mode: 'billboard', max: 140 },
   puff: { geo: 'quad', mat: () => basic({ map: tex('dot'), transparent: true, opacity: 0.6, depthWrite: false }), mode: 'billboard', max: 200 }, // soft smoke
+  // (CHECKLIST 432: the eight more effects' pools)
+  dart: { geo: 'dart', mat: () => basic({ vertexColors: true, side: THREE.DoubleSide }), mode: 'streak', glide: true, max: 120 }, // paper planes (nose along their way)
+  blot: { geo: 'quad', mat: () => basic({ map: tex('blot'), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }), mode: 'solid', max: 120 }, // ink on the road (laid flat)
+  blob: { geo: 'quad', mat: () => basic({ map: tex('blob'), alphaTest: 0.5 }), mode: 'billboard', max: 240 }, // drops: ink, jelly
+  heart: { geo: 'quad', mat: () => basic({ map: tex('heart'), alphaTest: 0.5 }), mode: 'billboard', max: 160 },
+  gear: { geo: 'edgequad', mat: () => basic({ map: tex('gear'), alphaTest: 0.5, side: THREE.DoubleSide }), mode: 'solid', max: 120 }, // cogs, rolling on edge
+  shard: { geo: 'shard', mat: () => basic({ vertexColors: true }), mode: 'solid', lenY: true, max: 120 }, // ice spikes out of the road
+  flake: { geo: 'quad', mat: () => basic({ map: tex('flake'), alphaTest: 0.4 }), mode: 'billboard', max: 240 }, // snowflakes
+  leaf: { geo: 'quad', mat: () => basic({ map: tex('leaf'), alphaTest: 0.5, side: THREE.DoubleSide }), mode: 'solid', lenY: true, max: 200 },
+  domino: { geo: 'domino', mat: () => basic({ vertexColors: true }), mode: 'solid', max: 160 }, // toppling tiles
 };
 const MAT = {};
 const keep = (thing) => { thing.userData.shared = true; if (thing.map) thing.map.userData.shared = true; return thing; }; // (scene.js clearGroup keeps it)
 const mat = (name) => MAT[name] ||= keep(POOL_TYPES[name].mat());
 export const triangles = (name) => { const g = geo(POOL_TYPES[name].geo); return (g.index ? g.index.count : g.attributes.position.count) / 3; };
 
-// ---- a particle: 28 numbers in a Float32Array ----
-const F = 28;
+// ---- a particle: 34 numbers in a Float32Array ----
+const F = 34;
 const X = 0, Y = 1, Z = 2, VX = 3, VY = 4, VZ = 5, LIFE = 6, MAXL = 7, SIZE = 8, GROW = 9, GRAV = 10, DRAG = 11, FLOOR = 12,
-  AX = 13, AY = 14, SAX = 15, SAY = 16, DELAY = 17, FLUT = 18, PHASE = 19, R = 20, G = 21, B = 22, FD = 23, TOCAM = 24, BOUNCE = 25, SHADE = 26, LEN = 27;
+  AX = 13, AY = 14, SAX = 15, SAY = 16, DELAY = 17, FLUT = 18, PHASE = 19, R = 20, G = 21, B = 22, FD = 23, TOCAM = 24, BOUNCE = 25, SHADE = 26, LEN = 27,
+  // (CHECKLIST 432; 0 = none, so the first seven effects are drawn exactly as before) TURN: its heading turns (rad/s, a glider's circle,
+  // a whirlwind); JEL: jelly (wobbles, more when it lands); WOB: the wobble now; BEAT: a heartbeat (beats a second); TOP: topples (its
+  // tilt speeds up as a falling domino's does); AXM: the tilt it stops at (lying down)
+  TURN = 28, JEL = 29, WOB = 30, BEAT = 31, TOP = 32, AXM = 33;
 // fade: how it goes. SHRINK: shrinks away at the end (as the classic cubes); DIM: its colour dims to nothing (additive: dark = gone);
 // FLICKER: dims, twinkling; POP: swells a little and is gone at once (a bubble); FLASH: snaps in, holds, shrinks fast (a comic burst)
 export const FADE = { SHRINK: 0, DIM: 1, FLICKER: 2, POP: 3, FLASH: 4 };
 // the one spec object a definition fills for each particle (spec() resets it: nothing is allocated per particle)
-const DEFAULTS = Object.freeze({ x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, life: 1, size: 1, grow: 0, gravity: 0, drag: 0, floor: -1e9, ax: 0, ay: 0, sax: 0, say: 0, delay: 0, flutter: 0, phase: 0, color: 0xffffff, fade: 0, toCam: 0, bounce: 0, shade: 0, len: 1 });
+const DEFAULTS = Object.freeze({ x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, life: 1, size: 1, grow: 0, gravity: 0, drag: 0, floor: -1e9, ax: 0, ay: 0, sax: 0, say: 0, delay: 0, flutter: 0, phase: 0, color: 0xffffff, fade: 0, toCam: 0, bounce: 0, shade: 0, len: 1, turn: 0, jelly: 0, beat: 0, topple: 0, axMax: 0 });
 const q = { ...DEFAULTS };
 export const spec = () => Object.assign(q, DEFAULTS);
 
@@ -131,7 +215,7 @@ const color = new THREE.Color(), euler = new THREE.Euler(0, 0, 0, 'YXZ'), quat =
 // SETTLE (the Cosmetics preview's system only, render/killpreview.js; the game's is made without it and is exactly as before): a
 // particle that falls to a floor is not let die in the air but lands, lies there `rest` seconds (paper and coins laid flat), then
 // fades as usual; a coin lies flat on the floor (its floor is its half thickness over the ground). { ground, rest }
-const LAYS_FLAT = { quad: true, coin: true };
+const LAYS_FLAT = { quad: true, coin: true, leaf: true };
 const makePool = (parent, name, settle = null) => {
   const type = POOL_TYPES[name], max = type.max, mode = type.mode;
   const data = new Float32Array(max * F);
@@ -158,6 +242,7 @@ const makePool = (parent, name, settle = null) => {
     data[o + DRAG] = s.drag; data[o + FLOOR] = s.floor; data[o + AX] = s.ax; data[o + AY] = s.ay; data[o + SAX] = s.sax; data[o + SAY] = s.say;
     data[o + DELAY] = s.delay; data[o + FLUT] = s.flutter; data[o + PHASE] = s.phase; data[o + FD] = s.fade; data[o + TOCAM] = s.toCam;
     data[o + BOUNCE] = s.bounce; data[o + SHADE] = s.shade; data[o + LEN] = s.len;
+    data[o + TURN] = s.turn; data[o + JEL] = s.jelly; data[o + WOB] = s.jelly * 0.3; data[o + BEAT] = s.beat; data[o + TOP] = s.topple; data[o + AXM] = s.axMax;
     if (rested) { rested[i] = 0; if (name === 'coin' && s.floor > -1e8) data[o + FLOOR] = Math.min(s.floor, settle.ground + 0.06 * s.size + 0.005); }
     color.setHex(s.color);
     data[o + R] = color.r; data[o + G] = color.g; data[o + B] = color.b;
@@ -189,18 +274,24 @@ const makePool = (parent, name, settle = null) => {
       data[o + Y] += data[o + VY] * dt;
       data[o + Z] += data[o + VZ] * dt;
       const age = data[o + MAXL] - data[o + LIFE];
+      const tn = data[o + TURN];
+      if (tn) { const c = Math.cos(tn * dt), sn = Math.sin(tn * dt), vx = data[o + VX]; data[o + VX] = vx * c + data[o + VZ] * sn; data[o + VZ] = data[o + VZ] * c - vx * sn; }
       const flut = data[o + FLUT];
       if (flut) { const ph = data[o + PHASE] + age * 6; data[o + X] += Math.cos(ph) * flut * dt; data[o + Z] += Math.sin(ph * 1.3) * flut * dt; }
       if (data[o + Y] < data[o + FLOOR]) { // landed: a bounce if it is bouncy and falling fast, else it skids and settles
         data[o + Y] = data[o + FLOOR];
+        if (data[o + JEL] && data[o + VY] < -2) data[o + WOB] = Math.max(data[o + WOB], Math.min(0.5, -data[o + VY] * 0.05 * data[o + JEL])); // (a jelly lands: it squashes)
         const b = data[o + BOUNCE];
         data[o + VY] = b > 0 && data[o + VY] < -2 ? -data[o + VY] * b : 0;
         data[o + VX] *= skid; data[o + VZ] *= skid;
         data[o + SAX] *= skid; data[o + SAY] *= skid;
         data[o + FLUT] = 0;
       }
+      if (data[o + TOP]) data[o + SAX] += data[o + TOP] * Math.sin(data[o + AX]) * dt; // (a domino: the further over, the faster it goes)
       data[o + AX] += data[o + SAX] * dt;
       data[o + AY] += data[o + SAY] * dt;
+      const axm = data[o + AXM];
+      if (axm && data[o + AX] > axm) { data[o + AX] = axm; data[o + SAX] = 0; } // (down: it lies there)
       if (rested && data[o + FLOOR] > -1e8 && data[o + GRAV] > 0) { // (settle: kept until it has landed and lain there)
         if (data[o + Y] <= data[o + FLOOR] && data[o + VY] === 0) {
           rested[i] += dt;
@@ -218,6 +309,10 @@ const makePool = (parent, name, settle = null) => {
       else if (fade === 3) s *= Math.min(1, age / 0.08) * (1 + 0.25 * t);
       else s *= Math.min(1, age / 0.05) * Math.min(1, (1 - t) * 4);
       if (data[o + SHADE]) dim *= 0.45 + 0.55 * Math.abs(Math.cos(data[o + AY])); // (a coin: bright face on, dark edge on)
+      const beat = data[o + BEAT];
+      if (beat) { const b = Math.max(0, Math.sin(age * beat * 6.2832)); s *= 1 + 0.32 * b * b * b * b; }
+      let wx = 1, wy = 1;
+      if (data[o + JEL]) { const w = data[o + WOB]; data[o + WOB] = w - w * Math.min(1, dt * 3.2); const sq = w * Math.sin(age * 17 + data[o + PHASE]); wx = 1 + sq; wy = 1 - sq; }
       C[i * 3] = data[o + R] * dim; C[i * 3 + 1] = data[o + G] * dim; C[i * 3 + 2] = data[o + B] * dim;
       // the matrix
       pos.set(data[o + X], data[o + Y], data[o + Z]);
@@ -226,13 +321,14 @@ const makePool = (parent, name, settle = null) => {
         turn.setFromAxisAngle(Z_AXIS, data[o + AX]);
         const tc = data[o + TOCAM];
         if (tc) pos.addScaledVector(fwd, tc);
-        mtx.compose(pos, turn.premultiply(quat), scl.set(s, s * len, s)); // (the camera's turn, then its own in the picture)
+        mtx.compose(pos, turn.premultiply(quat), scl.set(s * wx, s * len * wy, s)); // (the camera's turn, then its own in the picture)
       } else {
         if (mode === 'streak') {
           const vx = data[o + VX], vy = data[o + VY], vz = data[o + VZ], sp = Math.hypot(vx, vy, vz);
           if (sp > 0.05) { data[o + AY] = Math.atan2(vx, vz); data[o + AX] = -Math.asin(Math.max(-1, Math.min(1, vy / sp))); }
-          scl.set(s, s, s * len * Math.max(1, sp * 0.12));
-        } else if (type.lenY) scl.set(s, s * len, s); // (a flat quad: long the way it is tall)
+          if (type.glide) scl.set(s, s, s); // (a paper plane: turned to its way, not stretched)
+          else scl.set(s, s, s * len * Math.max(1, sp * 0.12));
+        } else if (type.lenY) scl.set(s * wx, s * len * wy, s); // (a flat quad: long the way it is tall)
         else scl.set(s, s, s * len);
         euler.set(data[o + AX], data[o + AY], 0, 'YXZ');
         turn.setFromEuler(euler);
