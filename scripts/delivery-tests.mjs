@@ -30,10 +30,10 @@ const GROUPS = {
     files: [/levelText|Text\.json|words\.js|messages|levelinfo|gimmickspage|poweruppage|cargopage/],
   },
   levels: {
-    about: 'Level data: the schema, every level builds with no problems, lapped levels close their loop, every import resolves, the Concept Strike\'s levels timed in its cars',
+    about: 'Level data: the schema, every level builds with no problems, the Driving Lesson (its lessons, a Commuter delivers it), lapped levels close their loop, every import resolves, the Concept Strike\'s levels timed in its cars',
     seconds: 135,
-    tests: [t('.schema-check.mjs'), t('.loop-check.mjs'), t('.bundle-check.mjs'), t('.merge-cross-check.mjs'), t('delivery-levels-check.mjs', { heavy: true }), t('tiers.mjs', { args: ['check'] }), t('.strike-levels-check.mjs')],
-    files: [/src\/delivery\/levels\//, /levels\.js$/, /events\.json/, /levelSchema|track\.js|physics\.js|editor/, /tiers\.json/],
+    tests: [t('.schema-check.mjs'), t('.loop-check.mjs'), t('.bundle-check.mjs'), t('.merge-cross-check.mjs'), t('delivery-levels-check.mjs', { heavy: true }), t('tiers.mjs', { args: ['check'] }), t('.strike-levels-check.mjs'), t('.tutorial-check.mjs')],
+    files: [/src\/delivery\/levels\//, /levels\.js$/, /events\.json/, /levelSchema|track\.js|physics\.js|editor/, /tiers\.json/, /lessoncue/],
   },
   'smoke-levels': {
     about: 'The smoke test\'s per-level section only, for the levels named with --levels=id,id (with --changed, the levels whose files changed): '
