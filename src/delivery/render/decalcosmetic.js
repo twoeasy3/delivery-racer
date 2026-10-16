@@ -116,7 +116,7 @@ export const decalLayout = (d, zones, S = 1) => {
       if (last && o.z0 - last.z1 <= 0.01) { last.z1 = Math.max(last.z1, o.z1); last.zone += '+' + o.id; } else pieces.push({ z0: o.z0, z1: o.z1, zone: o.id });
     }
     return pieces.map(p => {
-      const z0 = p.z0 + INSET, z1 = p.z1 - INSET, reps = Math.max(1, Math.round((z1 - z0) / (best.h * d.aspect)));
+      const z0 = p.z0 + INSET, z1 = p.z1 - INSET, u = d.unit || d.aspect, reps = Math.max(u, Math.round((z1 - z0) / best.h / u) * u) / d.aspect; // (a whole number of motifs: none cut in half)
       return { z0, z1, y0: best.ya, y1: best.yb, cell: [0, 0, reps, 1], zone: p.zone };
     });
   }
