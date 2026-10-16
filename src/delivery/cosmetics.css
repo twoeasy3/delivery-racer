@@ -182,3 +182,15 @@
 #cosmetics .cz-sheet-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
 #cosmetics .cz-sheet-btns button { min-height: 44px; min-width: 96px; font-size: 15px; }
 #cosmetics .cz-sheet-ok { background: #2f7de1; color: #fff; }
+/* an earned item's chip is its CARD (render/blueprintcard.js, the Uncommon blueprint card; CHECKLIST 437): three across on a phone */
+#cosmetics .cz-row .cz-chip.cz-cardchip { display: block; flex: 0 0 calc(33.33% - 4px); padding: 4px; min-height: 0; background: transparent; border: 0; border-radius: 10px; }
+#cosmetics .cz-chip.cz-cardchip.equipped { background: transparent; box-shadow: 0 0 0 3px var(--accent); }
+#cosmetics .cz-chip.cz-cardchip .cz-tick { position: absolute; right: 2px; bottom: 2px; z-index: 3; }
+#cosmetics .cz-chip.cz-cardchip .bp-card { font-size: 11px; }
+#cosmetics .cz-chip.cz-cardchip .bp-amount[hidden] { display: none; }
+#cosmetics .cz-notearned { display: none; position: absolute; inset: auto 0 38% 0; z-index: 4; text-align: center; font: 800 11px/1.6 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: rgba(16, 19, 26, .78); }
+#cosmetics .cz-chip.cz-cardchip.locked { opacity: 1; filter: none; }
+#cosmetics .cz-chip.cz-cardchip.locked .bp-card { filter: grayscale(1) brightness(.75); }
+#cosmetics .cz-chip.cz-cardchip.locked .cz-notearned { display: block; }
+#cosmetics .cz-chip.cz-cardchip.nospare:not(.equipped) .bp-amount { filter: hue-rotate(-90deg) saturate(.6); }
+@media (min-width: 761px) { #cosmetics .cz-row .cz-chip.cz-cardchip { flex-basis: calc(25% - 5px); } }

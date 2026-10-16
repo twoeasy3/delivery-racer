@@ -24,6 +24,7 @@
 import '../packs.css';
 import { Packs, packName, packIdOf, revealCards, revealOrder, revealProgress, RARITIES, flickPlan, debugAmounts, debugFeatured, debugMarks, debugDouble, debugCosmetics } from '../packs.js';
 import { drawPlate, designById } from './platedesigns.js';
+import { cosmeticRarity, COSMETIC_SLOT_WORDS } from './cosmetics.js';
 import { flickPile } from './flick.js';
 import { Progress } from '../progress.js';
 import { carById } from '../cars.js';
@@ -36,7 +37,6 @@ import { variedPoses } from '../carposes.js';
 import { Sound } from './audio.js';
 import { Events } from '../events.js';
 
-const COSMETIC_SLOT_WORDS = { plate: 'Number plate', roof: 'Roof prop', cargo: 'Cargo prop', wing: 'Rear wing', kill: 'Kill effect', underglow: 'Underglow' };
 const make = (tag, className, ...inside) => {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -160,9 +160,11 @@ const show = (result, { look = false } = {}) => {
   }).filter(Boolean);
   // COSMETIC CARDS (CHECKLIST 437): what the pack's `cosmetics` list awarded (already given: render/cosmetics.js awardCosmetic), a row under the cards
   const cosRow = (result.cosmetics || []).map(a => {
-    let pic = make('span', 'pr-cos-pic');
+    let pic = make('span', 'cz-prev pr-cos-pic');
     if (a.slot === 'plate') { const c = document.createElement('canvas'); c.width = 120; c.height = 30; c.className = 'pr-cos-pic'; try { drawPlate(c.getContext('2d'), designById(a.id), 'DELIVERY', 120, 30); } catch { /* (no picture) */ } pic = c; }
-    return make('div', 'pr-cos', pic, make('span', 'pr-cos-words', make('small', '', COSMETIC_SLOT_WORDS[a.slot] || a.slot), make('b', '', a.name)), make('span', 'pr-cos-n', 'x' + a.n));
+    // the same card as a blueprint (render/blueprintcard.js), in the item's rarity (cosmetics.js COSMETIC_RARITY: Uncommon), face up
+    const { node } = blueprintCard(null, { rarity: cosmeticRarity(a.slot, a.id), n: a.n, isNew: a.count === a.n }, { item: { name: a.name, line: COSMETIC_SLOT_WORDS[a.slot] || a.slot, tab: 'COSMETIC', picture: pic } });
+    return make('div', 'pr-slot pr-cos-slot r-' + cosmeticRarity(a.slot, a.id), node);
   });
   const event = result.from ? Events.specials.find(e => String(e.id) === String(result.from)) : null;
   const kicker = look ? 'A look: nothing saved' : event ? event.name : 'Pack opened';
@@ -186,7 +188,7 @@ const show = (result, { look = false } = {}) => {
       make('div', 'pr-body',
         make('div', 'pr-pack', make('div', 'pr-burst'), packArt(result.kind, 1, result.car)),
         slots.length ? make('div', 'pr-cards' + (many ? ' many' : ''), slots.map(s => s.slot)) : cosRow.length ? null : make('p', 'pr-empty', 'This pack came out empty: there are no cards for it.'),
-        cosRow.length ? make('div', 'pr-cosmetics', make('h3', '', 'Cosmetic' + (cosRow.length > 1 ? 's' : '') + ' for your cars'), ...cosRow) : null),
+        cosRow.length ? make('div', 'pr-cosmetics', make('h3', '', 'Cosmetic' + (cosRow.length > 1 ? 's' : '') + ' for your cars'), make('div', 'pr-cards pr-cos-cards', cosRow)) : null),
       make('footer', 'pr-foot', hint, again, done)));
   overlay.className = 'pack-reveal opening k-' + result.kind;
   const wasInMenu = Game.inMenu;

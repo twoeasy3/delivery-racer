@@ -37,7 +37,8 @@ import { onLoadout } from './loadout.js';
 import * as Store from './loadoutstore.js'; // (per car over a default: the switch, the marks, Reset car, Copy to all)
 import { carInUse, CARS } from '../cars.js';
 import { Game } from '../game.js';
-import { ownsCosmetic, cosmeticCount, isFreeCosmetic, isEarnedSlot, awardCosmetic, cosmeticOf } from './cosmetics.js';
+import { ownsCosmetic, cosmeticCount, isFreeCosmetic, isEarnedSlot, awardCosmetic, cosmeticOf, cosmeticRarity, COSMETIC_SLOT_WORDS } from './cosmetics.js';
+import { blueprintCard } from './blueprintcard.js'; // (an earned item's chip is a CARD: the Uncommon blueprint card, CHECKLIST 437)
 import { usage, spare, diffUsage, migrateStock, carName as carNameOf } from './cosmeticstock.js'; // (earned cosmetics, CHECKLIST 437: one a car)
 import { Progress } from '../progress.js';
 import { KILL_FX, KILL_IDS, shownKill, setKill } from './killfx.js';
@@ -650,18 +651,28 @@ const showCar = () => {
 // ---- EARNED COSMETICS, LIKE CARDS (CHECKLIST 437, EARNED-COSMETICS.md): 1 of it = unlocked; equipping takes 1 from the hand, taking it off
 // gives it back (render/cosmeticstock.js). Every chip of an earned slot shows how many are in the HAND (x2), or is greyed ('Not earned yet');
 // a choice that takes one is worn at once (a free try-on) and a light sheet asks to confirm: Equip keeps it, Cancel (Escape, Back) puts it back.
+// an earned item's chip becomes its CARD (render/blueprintcard.js, the same card as a blueprint, in the item's rarity: cosmetics.js
+// COSMETIC_RARITY, Uncommon): the chip's own picture moved into the card's art, the card's ×N badge = how many in the hand, 'Not earned'
+// over the art when none; the chip (the button) keeps its data, its tick and its equipped / locked marks
+const asCard = (b, slot, id) => {
+  if (b.querySelector('.bp-card')) return;
+  const picture = b.querySelector('canvas, .cz-prev, .cz-swatch');
+  const name = cosmeticOf(slot, id)?.name || b.querySelector('.cz-name')?.textContent || id;
+  const { node } = blueprintCard(null, { rarity: cosmeticRarity(slot, id), n: 1 }, { compact: true, item: { name, line: COSMETIC_SLOT_WORDS[slot] || slot, tab: 'COSMETIC', picture } });
+  node.querySelector('.bp-art')?.append(make('span', 'cz-notearned', 'Not earned'));
+  b.classList.add('cz-cardchip');
+  b.replaceChildren(node, make('span', 'cz-tick', '✓'));
+};
 const countChips = (row, slot, attr) => {
   if (!row || !isEarnedSlot(slot)) return;
   const use = usage();
   for (const b of row.children) {
     const id = b.dataset[attr];
     if (!id || id === 'none' || b.dataset.sample) continue;
-    let tag = b.querySelector('.cz-count');
-    if (isFreeCosmetic(slot, id)) { if (tag) tag.hidden = true; continue; }
-    if (!tag) { tag = make('span', 'cz-count'); b.insertBefore(tag, b.querySelector('.cz-tick')); }
-    const n = cosmeticCount(slot, id), sp = spare(slot, id, use);
-    tag.hidden = false;
-    tag.textContent = n === 0 ? 'Not earned' : 'x' + sp;
+    if (isFreeCosmetic(slot, id)) continue;
+    asCard(b, slot, id);
+    const n = cosmeticCount(slot, id), sp = spare(slot, id, use), badge = b.querySelector('.bp-amount');
+    if (badge) { badge.hidden = n === 0; badge.querySelector('b').textContent = String(sp); }
     b.classList.toggle('locked', n === 0);
     b.classList.toggle('nospare', n > 0 && sp === 0);
     b.title = n === 0 ? 'Not earned yet' : sp + ' in your hand, ' + (n - sp) + ' on cars';

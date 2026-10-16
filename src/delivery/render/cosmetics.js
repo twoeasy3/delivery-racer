@@ -38,6 +38,9 @@ export const MOST_EACH = 999; // (the most of one item; what 'Absolutely' gives 
 export const EARNED_SLOTS = Object.freeze({ plate: 'stock', roof: 'none', cargo: 'none', wing: 'none', kill: 'classic', underglow: 'none' });
 // the field of a loadout slot that names its item (render/loadoutstore.js)
 export const ITEM_FIELD = Object.freeze({ plate: 'design', roof: 'id', cargo: 'id', wing: 'id', kill: 'id', underglow: 'id' });
+// THE RARITY an earned cosmetic's CARD shows (the owner, 16-Oct: "render each cosmetic item using the same card as an Uncommon Blueprint"):
+// one constant for now; an item may carry its own `rarity` (registerCosmetics keeps it), read through cosmeticRarity
+export const COSMETIC_RARITY = 'uncommon';
 export const isEarnedSlot = (slot) => Object.prototype.hasOwnProperty.call(EARNED_SLOTS, slot);
 
 export const COSMETICS = [];
@@ -49,7 +52,7 @@ export const registerCosmetics = (items) => {
   for (const item of items) {
     if (!item || !item.slot || !item.id || COSMETICS.some(c => c.slot === item.slot && c.id === item.id)) continue;
     const slot = String(item.slot), id = String(item.id), earned = isEarnedSlot(slot) && id !== EARNED_SLOTS[slot];
-    const entry = { slot, id, name: String(item.name || item.id), free: isEarnedSlot(slot) ? !earned : item.free === true, earned, price: earned ? 0 : (Number.isFinite(item.price) ? item.price : 0) }; // (price: no cosmetic is sold; an earned one has none)
+    const entry = { slot, id, name: String(item.name || item.id), free: isEarnedSlot(slot) ? !earned : item.free === true, earned, price: earned ? 0 : (Number.isFinite(item.price) ? item.price : 0), ...(typeof item.rarity === 'string' && /^[a-z]{1,20}$/.test(item.rarity) ? { rarity: item.rarity } : {}) }; // (price: no cosmetic is sold; an earned one has none)
     COSMETICS.push(entry);
     added.push(entry);
   }
@@ -59,6 +62,9 @@ export const registerCosmetics = (items) => {
 export const cosmeticKeys = () => COSMETICS.map(c => cosmeticKey(c.slot, c.id));
 export const isFreeCosmetic = (slot, id) => COSMETICS.some(c => c.slot === slot && c.id === id && c.free) || (isEarnedSlot(slot) && id === EARNED_SLOTS[slot]);
 export const cosmeticOf = (slot, id) => COSMETICS.find(c => c.slot === slot && c.id === id) || null;
+export const cosmeticRarity = (slot, id) => cosmeticOf(slot, id)?.rarity || COSMETIC_RARITY;
+// the small line over a cosmetic card's name (the card: render/blueprintcard.js opts.item)
+export const COSMETIC_SLOT_WORDS = Object.freeze({ plate: 'Number plate', roof: 'Roof prop', cargo: 'Cargo prop', wing: 'Rear wing', kill: 'Kill effect', underglow: 'Underglow' });
 
 // the list, cleaned as a loaded save is: text keys of the right shape, no repeats, no more than MOST (anything else is dropped)
 const KEY_RE = /^[a-z0-9-]{1,40}:[A-Za-z0-9_-]{1,40}$/;
