@@ -367,10 +367,12 @@ const chipPanel = (slot) => {
     const on = slot.chosen ? slot.chosen(target()) : local;
     for (const b of row.children) { const eq = b.dataset.item === on; b.setAttribute('aria-pressed', String(eq)); b.classList.toggle('equipped', eq); b.classList.toggle('locked', b.dataset.item !== 'none' && !b.dataset.sample && !owned(slot.id, b.dataset.item)); }
   };
-  const add = (id, name, sample) => {
+  const add = (id, name, sample, swatch) => {
     const b = make('button', 'cz-chip cz-propchip');
     b.type = 'button'; b.dataset.item = id; if (sample) b.dataset.sample = '1';
-    b.append(make('span', 'cz-prev' + (id === 'none' ? ' stock' : ' cz-sample')), make('span', 'cz-name', name), make('span', 'cz-tick', '✓'));
+    const prev = make('span', 'cz-prev' + (id === 'none' ? ' stock' : swatch ? ' cz-swatchprev' : ' cz-sample'));
+    if (swatch) prev.style.background = swatch; // (an item's own swatch: a CSS background, e.g. an underglow's colour)
+    b.append(prev, make('span', 'cz-name', name), make('span', 'cz-tick', '✓'));
     b.addEventListener('click', () => {
       if (b.classList.contains('locked')) return;
       if (slot.pick) { if (slot.pick(id, target()) === false) return; } else local = id;
@@ -380,7 +382,7 @@ const chipPanel = (slot) => {
   };
   add('none', 'None');
   const items = slot.items();
-  for (const it of items) add(it.id, it.name, it.sample);
+  for (const it of items) add(it.id, it.name, it.sample, it.swatch);
   const node = make('section', 'cz-section cz-prop', make('h2', '', slot.name), items.every(it => it.sample) ? make('p', 'cz-note', 'Demo: samples only, nothing is worn.') : null, row);
   return { node, refresh };
 };
@@ -511,7 +513,7 @@ const build = () => {
   onWheelColour(shown);
   onPlate(() => { if (state.open) plateShown(); });
   onProp(() => { if (state.open) propShown(); });
-  Store.onStore(() => { if (state.open) { shown(); plateShown(); propShown(); killShown(); scopeShown(); } });
+  Store.onStore(() => { if (state.open) { shown(); plateShown(); propShown(); killShown(); scopeShown(); panels[openSlot]?.refresh(); } }); // (a registry slot's panel too: its tick)
   onLoadout(() => { if (state.open && !ShowroomView.model) requestAnimationFrame(() => { if (state.open && !ShowroomView.model) stillCar(stage, state.car, state.evil); }); }); // (no WebGL: its picture drawn again in the new loadout, render/carstill.js)
   setCloseUp(false);
 };
@@ -533,7 +535,7 @@ const setScope = (scope) => {
   state.scope = scope === 'all' ? 'all' : 'car';
   copyArmed = 0; if (copyBtn) copyBtn.textContent = 'Copy to all';
   Sound.play('menuMove', 0.4);
-  syncPlateInput(); shown(); plateShown(); propShown(); killShown(); scopeShown();
+  syncPlateInput(); shown(); plateShown(); propShown(); killShown(); scopeShown(); panels[openSlot]?.refresh();
 };
 // this car's look on every car; when other cars have looks of their own, a second tap is asked for (their looks go too)
 const copyToAll = () => {

@@ -70,7 +70,9 @@ try {
     check(locked('moke') === 'roof' && locked('touringcar') === 'cargo' && locked('minibus') === 'cargo' && locked('sporttruck') === '' && locked(noEntry.id) === 'roof,cargo,wing', 'unsupported slots (no tab): moke roof (an open car; its rear deck takes a wing since the placement audit, CHECKLIST 307), touringcar cargo, minibus cargo, sporttruck none, a car with no table entry (' + noEntry.id + ') all three');
     const { shownSlots } = await load('render/cosmeticslots.js');
     const tabsOf = (id) => shownSlots(car(id) || noEntry).map(s => s.id).join();
-    check(['moke', 'touringcar', 'minibus', 'sporttruck', noEntry.id].every(id => tabsOf(id) === ['wheels', 'plate', ...SLOTS.filter(sl => st(id, sl).ok || (id === noEntry.id && D.slotStatus(noEntry, sl).ok)), 'kill'].join()), 'the tabs drawn are exactly Wheels, Plate, the slots slotStatus allows and the Kill effect (every car, since the v1.1.148-alpha merge) (moke ' + tabsOf('moke') + '; ' + noEntry.id + ' ' + tabsOf(noEntry.id) + ')');
+    const { underglowSupported } = await load('render/underglow.js'); // (the Glow tab, 16-Oct: on every car that can wear an underglow)
+    const glow = (id) => (underglowSupported(car(id) || noEntry) ? ['underglow'] : []);
+    check(['moke', 'touringcar', 'minibus', 'sporttruck', noEntry.id].every(id => tabsOf(id) === ['wheels', 'plate', ...SLOTS.filter(sl => st(id, sl).ok || (id === noEntry.id && D.slotStatus(noEntry, sl).ok)), ...glow(id), 'kill'].join()), 'the tabs drawn are exactly Wheels, Plate, the slots slotStatus allows Glow where an underglow fits and the Kill effect (every car) (moke ' + tabsOf('moke') + '; ' + noEntry.id + ' ' + tabsOf(noEntry.id) + ')');
     check(!/lockReason|cz-lockline|Coming later|Not available for this car yet/.test(ui) && /openSlot = renderTabs\(\)/.test(ui) && /tabToOpen\(list, openSlot\)/.test(ui), "no 'Locked' / 'Coming later' tab, no lock reason line; the open tab falls back to the first drawn (renderTabs)");
   }
 
