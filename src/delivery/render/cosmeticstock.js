@@ -9,7 +9,7 @@
 import { Progress } from '../progress.js';
 import { CARS, EARNED_CARS, EVENT_CARS, BESPOKE_CARS, FILLER_CARS, SECRET_CARS, carById } from '../cars.js';
 import * as Store from './loadoutstore.js';
-import { EARNED_SLOTS, ITEM_FIELD, cosmeticKey, cosmeticCount, cosmeticOf, stockMeta, setStockMeta, topUpCosmetic } from './cosmetics.js';
+import { EARNED_SLOTS, ITEM_FIELD, cosmeticKey, cosmeticCount, cosmeticOf, stockMeta, setStockMeta, topUpCosmetic, clearTryOn } from './cosmetics.js';
 import { slotStatus } from './propdress.js';
 import { underglowSupported } from './underglow.js';
 
@@ -84,3 +84,26 @@ export const migrateStock = () => {
   return true;
 };
 export const carName = (id) => carById(id)?.name || id;
+// ---- THE SCREEN'S ONE CONFIRM (the owner, 16-Oct: no per-item sheet; the loadout is confirmed once, Back reverts it). The Cosmetics screen
+// keeps the store as it was on entry (Store.snapshot()); every tap is worn at once and the hand shown live (usage()). Back / leaving:
+// revertLoadout(entry) puts the whole store back (any stock used returns). Confirm: settleLoadout(entry) drops what cannot be kept (an item
+// tried on and not owned, or one on more cars than were given) back to what that car wore on entry, and keeps the rest. Both end the try-ons.
+export const revertLoadout = (entry) => { clearTryOn(); Store.restore(entry); };
+export const settleLoadout = (entry) => {
+  clearTryOn();
+  const snap = Store.snapshot(), dropped = [];
+  for (const [key, ids] of usage(snap)) {
+    const [slot, id] = key.split(':'), n = cosmeticCount(slot, id), f = ITEM_FIELD[slot];
+    let over = ids.length - n;
+    for (const carId of ids) {
+      if (over <= 0) break;
+      const was = entry.cars?.[carId]?.[slot]?.[f] ?? EARNED_SLOTS[slot];
+      if (was === id) continue; // (worn on entry: kept; only this visit's changes are dropped)
+      snap.cars[carId][slot][f] = was;
+      dropped.push({ key, car: carId });
+      over--;
+    }
+  }
+  if (dropped.length) Store.restore(snap);
+  return dropped;
+};
