@@ -25,7 +25,7 @@ the `?...` part was **not tried** (the container cannot reach the live site), so
 at. "untried" means it was read from the code only.
 
 **Switches that turn saving off for the whole visit:** `autostart`, `hidden`, `test`, `edited`, `pick`, `car`,
-`ghost`, `mystery`, `theme`, `beaten`, `owns`, `event` (main.js), and also `pack`, `bp` (with `showroom`), `shopcash`,
+`ghost`, `mystery`, `theme`, `beaten`, `owns`, `event`, `lanescrub` (main.js), and also `pack`, `bp` (with `showroom`), `shopcash`,
 `shopbuys`, `maxed` / `owned` (on the Shop), and `demo`. Add any of them (e.g. `&ghost`) to a visit if you want to be
 sure nothing sticks.
 
@@ -63,6 +63,7 @@ These need `?autostart` (or `?hidden`, `?test`, `?edited`) to do anything; witho
 | `infected` | bare, or `armour` | You are infected (radiation) from the start; `=armour` also under armour. | `/delivery/?autostart&level=53&infected` | No | untried |
 | `rad` | `from-to` or `from-to:lane` (metres) | Adds a radiated stretch on top of the level's own. | `/delivery/?autostart&level=1&rad=300-500:2` | No | untried |
 | `radcar` | bare (0.5) or a share 0 to 1 | That share of traffic starts infected. | `/delivery/?autostart&level=1&radcar=0.3` | No | untried |
+| `lanescrub` | a number, `0` up (default 1) | The lane-change scrub with the accelerator held (CHECKLIST 421, `CONFIG.trueSpeed.driven`) that many times as strong, to try a feel: `2` twice as strong, `0.5` half, `0` as before 421 (only the small scrub that acts whatever the pedals do). Off the accelerator it changes nothing. A test: nothing is saved and no replay is recorded. Works without autostart. | `/delivery/?autostart&level=1&lanescrub=2` | No | untried (read from the code; the strength is checked headless by `scripts/.lanescrub-check.mjs`) |
 
 ## 2. Pictures, cameras and HUD checks (in a run)
 

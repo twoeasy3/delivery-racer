@@ -19,6 +19,7 @@
 //           means the run has drifted (another browser's maths, a change the fingerprints missed): it stops, and says so
 // Only runs on a level of the menu or a special event's stage are recorded (not a screensaver, a hidden level or the editor's).
 // ============================================================================
+import { CONFIG } from './config.js';
 import { Input } from './input.js';
 import { Game } from './game.js';
 import { LEVEL, LEVELS, LEVEL_INDEX, selectLevel, selectSpecial, setRaceClass } from './levels.js';
@@ -76,6 +77,7 @@ export const Replay = {
     if (this.playing) return; // (a playback is not recorded again)
     this.recording = null;
     if (Game.screensaver || Game.raceWatch || !(LEVELS.includes(LEVEL) || STAGE_LEVELS.includes(LEVEL))) return;
+    if (CONFIG.trueSpeed.driven.tune !== 1) return; // (?lanescrub=: the lane scrub tried at another strength, main.js; a replay would not play back)
     this.recording = {
       format: FORMAT,
       header: {

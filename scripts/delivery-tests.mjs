@@ -49,9 +49,9 @@ const GROUPS = {
     files: [/tiers|progress\.js|milestones|menus|menu2|garage|cars\.js|levelSchema|events|packs|ecu|shop|jimshop|showroom|carsources|nav\.js|input\.js|hiddenlevels|hunt/],
   },
   cars: {
-    about: 'The cars: traits, the tank, the ideas as cars (43 placeholders), mystery effects on the Super cars, the auto brake strength; the ECUs (ecu.js, ecus.json: the ladder, equal steps, respawn times, key and blueprint unlocking, the save, old saves, replays at an ECU)',
-    seconds: 180,
-    tests: [t('.traits-check.mjs'), t('.tank-check.mjs'), t('.mysteries-check.mjs'), t('.autobrake-check.mjs'), t('.ideas-check.mjs', { heavy: true }), t('.ecu-check.mjs', { heavy: true })],
+    about: 'The cars: traits, the tank, the ideas as cars (43 placeholders), mystery effects on the Super cars, the auto brake strength, the lane-change scrub (held flat out against off); the ECUs (ecu.js, ecus.json: the ladder, equal steps, respawn times, key and blueprint unlocking, the save, old saves, replays at an ECU)',
+    seconds: 205,
+    tests: [t('.traits-check.mjs'), t('.tank-check.mjs'), t('.mysteries-check.mjs'), t('.autobrake-check.mjs'), t('.lanescrub-check.mjs'), t('.ideas-check.mjs', { heavy: true }), t('.ecu-check.mjs', { heavy: true })],
     files: [/cars\.js|ideas\.js|carText|player\.js|ecu\.js|ecus\.json|progress\.js|replay\.js/],
   },
   cargo: {

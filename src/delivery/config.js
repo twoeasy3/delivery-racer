@@ -178,7 +178,22 @@ export const CONFIG = {
   // bend is shorter and the outside longer (Track.pathScale); `least` / `most` bound the scale (a lane is never past the
   // bend's centre). Lane changes also scrub speed a little: `laneScrub` m/s^2 at full sideways speed, over the car's
   // agility (a nimble car loses less)
-  trueSpeed: { on: true, least: 0.4, most: 2.5, laneScrub: 1.2 },
+  // `laneScrub` acts whatever the pedals do, and alone it is nothing to a car with the accelerator held (its pull out-pulls it,
+  // and at top speed the pull simply tops it back up). So `driven` (CHECKLIST 421) adds a scrub only while the engine is
+  // pulling with the accelerator held: at full sideways speed it takes back `cancel` of the engine's own pull (1: the pedal
+  // does nothing mid-change) and scrubs `lose` m/s^2 over the car's agility on top (never more than `most` m/s^2: a lane
+  // change is no brake), both growing with across^2 as laneScrub does. All of it only near the top of the speed range,
+  // where the pull has run out: it is weighed by how near top speed the car was as the steer went on (a smoothstep from
+  // `from` to `full` of its top speed then), kept while the steer is held, never less than `least` (a car still climbing
+  // gets only that: a little slower than no lane change, not much). Top speed itself is never touched. Off the
+  // accelerator (hands off, braking) only laneScrub acts, exactly as before. Not under a turbo or a boost pad, pulling away
+  // after a drop, afloat, or for traffic and racers (traffic.js has none of this). `tune` multiplies all of it (0: as
+  // before 421; ?lanescrub=<x> sets it for a visit). MEASURED (.lanescrub-check --table, stock ECU): one lane at top
+  // speed, flat out, dips 0.7 (Mini) to 2.6 m/s (Polygon Truck): 3 to 7% of top speed, 1.3 m/s for the Sportscompact,
+  // won back in a fraction of a second; two lanes 2.0 to 6.1 m/s. From half top speed it costs 0.16 to 0.99 m/s more than
+  // before over one or two lanes and 0.01 to 0.07 s more to top speed. Hands off at top speed: 0.24 to 0.75 m/s, as before
+  trueSpeed: { on: true, least: 0.4, most: 2.5, laneScrub: 1.2,
+    driven: { cancel: 1, lose: 4, most: 6, from: 0.8, full: 0.95, least: 0.05, tune: 1 } },
   cornering: { grip: 22 },   // m/s^2 of cornering a car of weight 1 and agility 1 holds
   // A race (a level's "grid", "understeer", "wallDamage", "nudge": see levels.js). Its understeer is
   // `understeer` times as hard as on ice, and sliding wide scrubs off speed: `scrub` m/s^2 for every
