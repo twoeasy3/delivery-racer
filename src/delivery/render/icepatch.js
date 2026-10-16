@@ -23,7 +23,7 @@ export const ICE_LOOKS = {
   iceroad: { glaze: 0x3d7096, deep: 0x24506f, rim: 0xe6f2fa, glazeA: 0.72, rimA: 0.9, crack: 0xeef7ff, crackAmt: 0.85, frost: 0.9, glint: 1, sheen: 0.45 },
   // the mall: a freshly mopped stretch of floor (the Wet floor card): a dark glossy film, no frost, no cracks
   // (lifted 4 cm, not 2.5: the mall's tiled floor lies over the road at 2.4 cm, and hid the old sheets entirely)
-  mall: { glaze: 0x5f7a8c, deep: 0x4c6577, rim: 0x9db0bd, glazeA: 0.5, rimA: 0.6, crack: 0x5f7a8c, crackAmt: 0, frost: 0, glint: 0.8, sheen: 0.7, lift: 0.04 },
+  mall: { glaze: 0x587486, deep: 0x46606f, rim: 0xd6e4ec, glazeA: 0.55, rimA: 0.75, crack: 0x5f7a8c, crackAmt: 0, frost: 0, glint: 0.8, sheen: 0.7, lift: 0.04 },
   // autumn: wet leaves (autumn.js strews the leaves on it): a dark wet sheet with a gold shine
   autumn: { glaze: 0x5a3416, deep: 0x47280f, rim: 0x6b4420, glazeA: 0.8, rimA: 0.75, crack: 0xd98a28, crackAmt: 0.25, frost: 0, glint: 0.6, sheen: 0.4 },
 };
@@ -117,7 +117,7 @@ export const icePatchesOf = (ice, Track, LW) => (ice || []).map((p) => ({ from: 
 export function buildIceGeometry(patches, toWorld, look, y = look.lift ?? 0.025) {
   const pos = [], col = [], uv = [], rim = [], idx = [];
   const c = new THREE.Color(), glaze = new THREE.Color(look.glaze), deep = new THREE.Color(look.deep), rimC = new THREE.Color(look.rim);
-  const v = new THREE.Vector3();
+  const v = new THREE.Vector3(), a3 = new THREE.Vector3(), sl = [];
   for (const p of patches) {
     const rand = seeded(p.seed);
     const ph = [rand(), rand(), rand(), rand(), rand(), rand()].map(x => x * Math.PI * 2);
@@ -126,8 +126,25 @@ export function buildIceGeometry(patches, toWorld, look, y = look.lift ?? 0.025)
     // the rows: closer in the rounded ends than along the middle
     const rows = [];
     for (let s = s0; s < s0 + taper; s += taper / 5) rows.push(s);
-    const mid = Math.max(1, Math.round((len - 2 * taper) / 4));
-    for (let k = 0; k < mid; k++) rows.push(s0 + taper + (len - 2 * taper) * k / mid);
+    // (along the middle every 4 m, or closer where the road crests or bends: a row step is halved until the straight line
+    // between two rows stays within 1 cm of the road's height across the patch (so the sheet never sinks into a crest)
+    // and within 6 cm of its line (the road itself is laid in 2 m pieces: a few cm of a tight bend is the road's own)
+    const sag = (s, step) => {
+      let worst = 0;
+      const lo = p.lo(s), hi = p.hi(s);
+      for (const lat of [lo - RIM, (lo + hi) / 2, hi + RIM]) {
+        toWorld(s, lat, v); a3.copy(v); toWorld(s + step, lat, v); a3.add(v).multiplyScalar(0.5);
+        toWorld(s + step / 2, lat, v);
+        worst = Math.max(worst, Math.abs(a3.y - v.y) / 0.01, Math.hypot(a3.x - v.x, a3.z - v.z) / 0.06);
+      }
+      return worst;
+    };
+    for (let s = s0 + taper, end = s1 - taper; s < end - 0.01;) {
+      rows.push(s);
+      let step = Math.min(4, end - s);
+      while (step > 0.75 && sag(s, step) > 1) step /= 2;
+      s += step;
+    }
     for (let k = 0; k <= 5; k++) rows.push(s1 - taper + taper * k / 5);
     const ou = rand() * TILE, ov = rand() * TILE;
     // (every row has the same columns, so the rows join: one interior column per 3.5 m of the patch's width at its middle)
@@ -156,6 +173,7 @@ export function buildIceGeometry(patches, toWorld, look, y = look.lift ?? 0.025)
         toWorld(s, lat, v);
         pos.push(v.x, v.y + y, v.z);
         uv.push((lat + ou) / TILE, (s + ov) / TILE);
+        sl.push(s, lat);
         let alpha;
         if (outer) { c.copy(rimC); alpha = 0; }
         else if (edge) { c.copy(rimC); alpha = look.rimA; }
@@ -185,6 +203,7 @@ export function buildIceGeometry(patches, toWorld, look, y = look.lift ?? 0.025)
   geo.setAttribute('iceRim', new THREE.Float32BufferAttribute(rim, 1));
   geo.setIndex(idx);
   geo.computeBoundingSphere();
+  geo.userData.sl = sl; // (each vertex's s and lat on the road: for the check, scripts/.icepatch-check.mjs)
   return geo;
 }
 

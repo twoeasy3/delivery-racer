@@ -11,7 +11,7 @@ import { boot } from './delivery-headless.mjs';
 const g = await boot({ cars: ['commuter'] });
 let failures = 0;
 const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' : '  FAIL  ') + what); };
-const BUDGET = 260; // triangles for a 50 m patch on one lane (a whole-road patch has more columns)
+const BUDGET = 260; // triangles for a 50 m patch on one lane on a straight road (a whole-road patch has more columns, a bend more rows)
 try {
   const { buildIceGeometry, iceMaterial, icePatchesOf, iceLookOf, ICE_LOOKS } = await g.load('render/icepatch.js');
   const LW = g.CONFIG.laneWidth;
@@ -43,7 +43,8 @@ try {
     const ms = performance.now() - t0;
     const tris = geo.index.count / 3;
     const one = buildIceGeometry([patches[0]], toWorld, look).index.count / 3;
-    check(one <= BUDGET, `a 50 m one-lane patch: ${one} triangles (budget ${BUDGET}); both patches ${tris}, built in ${ms.toFixed(1)} ms`);
+    const straight = buildIceGeometry([patches[0]], (s, lat, out) => out.set(lat, 0, -s), look).index.count / 3;
+    check(straight <= BUDGET && one <= 2 * BUDGET, `a 50 m one-lane patch: ${straight} triangles on a straight road (budget ${BUDGET}), ${one} on the 60 m bend over a crest; both patches ${tris}, built in ${ms.toFixed(1)} ms`);
     const again = buildIceGeometry(patches, toWorld, look);
     check(geo.attributes.position.array.every((x, i) => x === again.attributes.position.array[i]) && geo.attributes.color.array.every((x, i) => x === again.attributes.color.array[i]), 'the same patches give the same vertices and colours twice');
     const other = buildIceGeometry([{ ...patches[0], seed: 99 }], toWorld, look);
@@ -60,7 +61,7 @@ try {
       if (!p) { stray = Infinity; continue; }
       stray = Math.max(stray, p.lo(s) - lat, lat - p.hi(s));
     }
-    check(stray <= 0.55, `no vertex strays more than the rim beyond its patch's bounds (worst ${stray.toFixed(2)} m)`);
+    check(stray <= 0.6, `no vertex strays more than the rim (0.5 m, and the 12 cm the middle sways) beyond its patch's bounds (worst ${stray.toFixed(2)} m)`);
     // (the middle of each patch, every metre, lies inside a triangle with some alpha: a point-in-triangle test in (s, lat))
     const idx = geo.index.array, sl = [];
     for (let i = 0; i < pos.length / 3; i++) sl.push(toWorld.inverse(v.set(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2])));
@@ -84,6 +85,7 @@ try {
     if (!level.ice || !level.ice.length) continue;
     levelsWithIce++;
     g.select(level.id);
+    g.track.buildTrack(); // (the level's road)
     const Track = g.track.Track;
     const patches = icePatchesOf(g.levels.LEVEL.ice, Track, LW), look = iceLookOf(level.theme);
     const t0 = performance.now();
@@ -93,16 +95,18 @@ try {
     const pos = geo.attributes.position.array;
     let bad = 0;
     for (let i = 0; i < pos.length / 3; i++) if (!isFinite(pos[i * 3]) || !isFinite(pos[i * 3 + 1]) || !isFinite(pos[i * 3 + 2])) bad++;
-    // (between two rows along a patch's middle, the chord's midpoint against the road at the middle s)
-    let worst = 0;
-    for (const p of patches) {
-      for (let s = p.from; s < p.to; s += 4) {
-        const lat = (p.lo(s) + p.hi(s)) / 2;
-        Track.toWorld(s, lat, v); const a = v.clone(); Track.toWorld(s + 4, lat, v); const b = v.clone(); Track.toWorld(s + 2, lat, w);
-        worst = Math.max(worst, a.add(b).multiplyScalar(0.5).distanceTo(w));
+    // (every edge of the sheet that runs along the road: its midpoint against the road's own point at its middle s and lat)
+    const sl = geo.userData.sl, idx = geo.index.array, lift = look.lift ?? 0.025;
+    let worst = 0, flat = 0;
+    for (let k = 0; k < idx.length; k += 3) {
+      for (const [i, j] of [[idx[k], idx[k + 1]], [idx[k + 1], idx[k + 2]], [idx[k + 2], idx[k]]]) {
+        if (Math.abs(sl[i * 2] - sl[j * 2]) < 0.01) continue;
+        Track.toWorld((sl[i * 2] + sl[j * 2]) / 2, (sl[i * 2 + 1] + sl[j * 2 + 1]) / 2, w);
+        v.set((pos[i * 3] + pos[j * 3]) / 2, (pos[i * 3 + 1] + pos[j * 3 + 1]) / 2 - lift, (pos[i * 3 + 2] + pos[j * 3 + 2]) / 2);
+        worst = Math.max(worst, Math.abs(v.y - w.y)); flat = Math.max(flat, Math.hypot(v.x - w.x, v.z - w.z));
       }
     }
-    check(bad === 0 && worst < 0.03, `${level.id} (${level.theme}): ${patches.length} patches, ONE geometry, ${tris} triangles (${Math.round(tris / patches.length)} a patch), ${ms.toFixed(1)} ms; a 4 m row step leaves the road by at most ${(worst * 100).toFixed(1)} cm`);
+    check(bad === 0 && worst < 0.015 && flat < 0.12, `${level.id} (${level.theme}): ${patches.length} patches, ONE geometry, ${tris} triangles (${Math.round(tris / patches.length)} a patch), ${ms.toFixed(1)} ms; between rows the sheet is within ${(worst * 100).toFixed(1)} cm of the road's height (1.5 allowed: it is lifted 2.5) and ${(flat * 100).toFixed(1)} cm of its line (the road is laid in 2 m pieces; 12 allowed)`);
   }
   check(levelsWithIce >= 6, `${levelsWithIce} levels have ice`);
 
