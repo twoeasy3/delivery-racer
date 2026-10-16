@@ -282,8 +282,10 @@ export const WHEEL_SETS = [
   { id: 'spoke5', name: '5-spoke', design: 'stock', hub: 'silver', rim: 'spoke5' },
   { id: 'twin-spoke', name: 'Twin spoke', design: 'stock', hub: 'white', rim: 'twin10' },
   { id: 'turbine', name: 'Turbine', design: 'redline', hub: 'silver', rim: 'turbine' },
-  { id: 'blade-spinner', name: 'Blade spinner', design: 'stock', hub: 'gold', rim: 'blade3' },
-  { id: 'twin-spinner', name: 'Twin spinner', design: 'stock', hub: 'red', rim: 'twinspin' },
+  { id: 'blade-spinner', name: 'Blade', design: 'stock', hub: 'gold', rim: 'blade3' }, // (the ids stay: ownership keys; named spinners until 15-Oct)
+  { id: 'twin-spinner', name: 'Twin blade', design: 'stock', hub: 'red', rim: 'twinspin' },
+  { id: 'pumpkin', name: 'Pumpkin', design: 'stock', hub: 'orange', rim: 'pumpkin' }, // (themed rims: their own colours; candidates for Halloween / Christmas events, nothing seasonal wired)
+  { id: 'candy-cane', name: 'Candy cane', design: 'stock', hub: 'white', rim: 'candycane' },
 ];
 registerCosmetics(WHEEL_SETS.map(s => ({ slot: 'wheels', id: s.id, name: s.name, free: true }))); // (all free today; cosmetics.js)
 export const CUSTOM_SET = 'custom';
