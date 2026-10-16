@@ -61,7 +61,7 @@ const make = () => {
 };
 // the marks: laid at the kill (grown in fast), faded out as the car comes back
 const markOn = () => {
-  const list = MARKS[look] || [];
+  const list = MARKS[look] || KILL_FX[look]?.mark || []; // (an effect may carry its own: render/killfxmore.js)
   marks.forEach((m, i) => {
     const d = list[i];
     m.visible = !!d;

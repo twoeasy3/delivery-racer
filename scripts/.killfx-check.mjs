@@ -263,7 +263,7 @@ try {
       if (before || flying || !gone || !back) bad.push(id + ' (car hidden before the kill ' + flying + ', at it ' + gone + ', back after ' + back + ')');
       if (id !== 'classic' && !(ys.length === 2 && ys.every(y => y === floor))) bad.push(id + ' spawned at heights ' + ys.join(', ') + ' (the floor: ' + floor + ')');
       if (under) bad.push(id + ': ' + under + ' particles under the floor');
-      if (id !== 'classic' && id !== 'bubbles' && !onFloor) bad.push(id + ': nothing lying on the floor');
+      if (id !== 'classic' && !K.KILL_FX[id].floats && !onFloor) bad.push(id + ': nothing lying on the floor');
     }
     sysP.explode = real;
     check(!bad.length, 'the preview, every effect: the car hidden when it goes up (not before) and back once it has played out (by ' + T.back.toFixed(1) + ' s); the package hit and the explosion set off at the stage\'s floor height (' + floor + '); nothing under the floor; what falls lies on it (' + rows.join('; ') + ')' + (bad.length ? ': ' + bad.join('; ') : ''));
