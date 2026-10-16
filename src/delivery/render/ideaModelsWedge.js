@@ -10,8 +10,8 @@
 // and the underside only (a crisp car: no weathering). Two small canvas textures: the louvres (128 x 64) and the telephone-dial wheel face
 // (128 x 128).
 // THE DOORS go up (scissor doors, hinged at the screen's foot) in the garage and on the card only (userData.garageOnly, as the Gullwing:
-// render/cars.js keeps them shut on the road). Shut, the door is just its window over the body (the door skin and the dark doorway behind it
-// are hidden), so there is no shut line, no second skin and nothing coplanar; they show only while the door is up.
+// render/cars.js keeps them shut on the road; the player's road car too, below). Shut, the door is just the body and its window (the door's
+// skin and the dark doorway are hidden), so there is no shut line, no second skin and nothing coplanar; they show only while the door is up.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { keep, shared, place, merge, plain, bx, dsc, extrudeSide, narrowAt, cabinGlass, insetOutline, shadeBy, texture, GLASS, TRIM, CHROME,
@@ -138,8 +138,6 @@ export const IDEA_MODELS_WEDGE = {
     const cabin = [[0.62, CB], WSF, WST, RR0, RW1, [-1.1, CB]];
     const glass = cabinGlass(cabin, { from: cabin.indexOf(WSF), to: cabin.indexOf(RW1), belt: BELT, half: CW, taper: TAPER, grow: BEV,
       inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.08 }, lift: BEV + 0.006, sideLift: 0.006, windows: [[-0.62, 9]] });
-    const way = cabinGlass(cabin, { from: cabin.indexOf(WSF), to: cabin.indexOf(RW1), belt: BELT, half: CW, taper: TAPER, grow: BEV,
-      inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.08 }, lift: BEV + 0.006, sideLift: 0.002, windows: [[-0.62, 9]] }); // (the doorway's dark, under the window)
     const gx = (y) => narrowAt(CW, y, TAPER); // (the cabin's flank at a height)
 
     // the air boxes on the shoulders behind the side windows, their mouths to the front; the pop-up lamps' pods on the fenders
@@ -154,9 +152,9 @@ export const IDEA_MODELS_WEDGE = {
       ...[extrudeSide(cabin, CW * 2, BEV, TAPER, 1, BEV), airbox(1), airbox(-1), pod(1), pod(-1)].map(g => tint(g))], false)), paint);
     body.name = 'body';
 
-    // ---- glass: the screen and the small rear window are fixed; each side window rides its door
-    const pane = place(group, shared(k + 'glass', () => merge([glass.front, glass.rear])), GLASS);
-    pane.name = 'windscreen and rear window';
+    // ---- glass: one mesh, every pane (the screen, the small rear window, the side windows: a raised door carries a copy of its own)
+    const pane = place(group, shared(k + 'glass', () => merge([glass.front, glass.rear, ...glass.sides])), GLASS);
+    pane.name = 'glass';
 
     // ---- the black: splitter, the nose's intake, the tail's band and valance, the side intakes' rims, the air boxes' mouths, mirrors
     const FZ = NOSE, BZ = TAILZ;
@@ -220,9 +218,10 @@ export const IDEA_MODELS_WEDGE = {
       wheel(s, AR, RR, TWR, XF - TWR / 2 - 0.015);
     }
 
-    // ---- the doors: hinged at the screen's foot, they swing up (the garage only). Shut, a door is its window on the cabin's leaning flank.
-    // Up, it is one flat door: a skin from the sill to over the window's top (its outline the window's grown 4 cm), the window laid on it,
-    // and the doorway behind it dark; the leaning window is hidden while it is up
+    // ---- the doors: hinged at the screen's foot, they swing up (the garage only). Shut, a door is the body and its window (the one glass mesh
+    // above): nothing of its own is drawn. Up, it is one flat door: a skin from the sill to over the window's top (its outline the window's
+    // grown 4 cm) with the window's shape on it in near-black, a mirror on it, and the doorway behind it dark (the side window left on the
+    // cabin reads as the dark way in)
     const HZ = 0.58, HY = BELT, SX = XF + 0.028; // (the skin's outer face)
     const doorOutline = (win) => {
       const big = insetOutline(win, win.map(() => -0.04)), n = big.length;
@@ -254,15 +253,14 @@ export const IDEA_MODELS_WEDGE = {
       hinge.add(inner); group.add(hinge);
       const side = s > 0 ? 'L' : 'R';
       const outline = glass.sides[i].userData.pane.now; // (the window's [z, y] polygon, edits and all)
-      const win = place(inner, shared(k + 'window' + side, () => merge([glass.sides[i]])), GLASS);
-      win.name = 'side window ' + side;
-      const flat = place(inner, shared(k + 'doorglass' + side, () => flatGlass(s, outline)), GLASS);
+      // (the raised door's window in the trim's near-black, not the glass: it is no window part of its own, the side window stays one pane)
+      const flat = place(inner, shared(k + 'doorglass' + side, () => flatGlass(s, outline)), TRIM);
       place(inner, shared(k + 'mirror' + side, () => bx(0.12, 0.07, 0.15, s * mirrorX, 0.82, 0.4)), TRIM).name = 'mirror ' + side; // (on the door top)
       const skinMesh = place(inner, shared(k + 'skin' + side, () => tint(skin(s, outline))), paint);
-      const hole = place(group, shared(k + 'doorway' + side, () => { way.sides[i].userData = {}; return merge([doorway(s), way.sides[i]]); }), TRIM); // (not a window: its pane name dropped)
+      const hole = place(group, shared(k + 'doorway' + side, () => doorway(s)), TRIM); // (the side window left on the cabin is dark already)
       skinMesh.visible = hole.visible = flat.visible = false;
-      skinMesh.name = 'door ' + side; hole.name = 'doorway ' + side; flat.name = 'door window ' + side + ' (up)';
-      doors.push({ hinge, show: [skinMesh, hole, flat], hide: win });
+      skinMesh.name = 'door ' + side; hole.name = 'doorway ' + side; flat.name = 'door top ' + side;
+      doors.push({ hinge, show: [skinMesh, hole, flat] });
     }
     group.userData = {
       body,
@@ -271,7 +269,7 @@ export const IDEA_MODELS_WEDGE = {
         // (the player's car is animated on the road too, render/items.js, which sets userData.roll for the rims: there the doors stay shut)
         const road = group.userData.roll !== undefined;
         const open = road ? 0 : Math.max(0, Math.min(1, Math.sin(t * 0.6) * 1.6 - 0.2)), ease = open * open * (3 - 2 * open);
-        for (const d of doors) { d.hinge.rotation.x = ease * 1.05; for (const m of d.show) m.visible = ease > 0.01; d.hide.visible = ease <= 0.01; }
+        for (const d of doors) { d.hinge.rotation.x = ease * 1.05; for (const m of d.show) m.visible = ease > 0.01; }
       },
     };
     return group;
