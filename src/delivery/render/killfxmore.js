@@ -14,7 +14,7 @@
 import { FADE_DIM, FADE_FLICKER, FADE_POP, FADE_FLASH, TAU, r, rr, pick, sq, flash, puffs, outward } from './killfxdefs.js';
 
 const PAPER = [0xffffff, 0xffffff, 0xfff6dc, 0xdcefff, 0xffe0ec];
-const INK = [0x140c26, 0x1c1238, 0x241650];
+const INK = [0x3434e0, 0x5a2ee0, 0x2a62f0]; // (a bright blue-violet ink: a black one is lost on the road)
 const HEART = [0xff3b6b, 0xff6f9a, 0xe0185a, 0xff9ec0, 0xff4fa0];
 const METAL = [0xd8a93c, 0xc8ccd4, 0xc97b45, 0xe8c25a];
 const ICE = [0xffffff, 0xd6f3ff, 0xaee4ff];
@@ -113,7 +113,7 @@ export const KILL_MORE = {
   // INK: a splat spreads on the road under it, thick drops are flung out and fall, and where they fall smaller splats spread
   ink: {
     name: 'Ink', icon: icon.ink,
-    mark: [['scorch', 0x241650, 0.45, 4.4]],
+    mark: [['scorch', 0x3434e0, 0.3, 4.4]],
     explode(S, x, y, z, vx, vz, k) {
       const sk = sq(k);
       let p = S.spec();
@@ -164,8 +164,8 @@ export const KILL_MORE = {
         const d = outward(0.1), sp = rr(4, 8) * sk;
         p = S.spec();
         p.x = x; p.y = cy; p.z = z; p.vx = vx * 0.3 + d.x * sp; p.vy = d.y * sp + 2; p.vz = vz * 0.3 + d.z * sp;
-        p.gravity = -1.6; p.drag = 2.4; p.flutter = rr(1.2, 2.2); p.phase = Math.random() * TAU; p.beat = rr(1.8, 2.8);
-        p.delay = rr(0, 0.25); p.size = rr(0.45, 0.85) * sk; p.life = rr(1.6, 2.4); p.fade = FADE_POP; p.color = pick(HEART);
+        p.gravity = -0.6; p.drag = 2.4; p.flutter = rr(1.2, 2.2); p.phase = Math.random() * TAU; p.beat = rr(1.8, 2.8);
+        p.delay = rr(0, 0.25); p.size = rr(0.45, 0.85) * sk; p.life = rr(1.8, 2.6); p.fade = FADE_POP; p.color = pick(HEART);
         S.add('heart');
       }
     },
@@ -282,10 +282,10 @@ export const KILL_MORE = {
         p.life = rr(2.4, 3.2); p.color = pick(AUTUMN);
         S.add('leaf');
       }
-      for (let i = 0, n = S.n(6 * ks); i < n; i++) { // dust, swept round
-        const p = S.spec(), a = i / 6 * TAU, d = 1.2 * sk;
+      for (let i = 0, n = S.n(3 * ks); i < n; i++) { // a little dust, swept round
+        const p = S.spec(), a = i / n * TAU, d = 1.2 * sk;
         p.x = x + Math.sin(a) * d; p.y = y + 0.5; p.z = z + Math.cos(a) * d; p.vx = Math.cos(a) * 3 * spin; p.vy = 1.5; p.vz = -Math.sin(a) * 3 * spin; p.turn = -spin * 2.5; p.drag = 1;
-        p.size = rr(1, 1.5) * ks; p.grow = 1; p.life = rr(0.9, 1.3); p.color = 0xc9b48c; p.ax = Math.random() * TAU;
+        p.size = rr(0.45, 0.65) * ks; p.grow = 0.6; p.life = rr(0.5, 0.7); p.color = 0x7d6e52; p.ax = Math.random() * TAU;
         S.add('puff');
       }
     },
