@@ -200,11 +200,34 @@ export const resetCar = (carId, slot = null) => {
   tell({ slot, target: String(carId) });
   return true;
 };
-// this car's look becomes the default; others: 'clear' (every car wears it: their own looks dropped) or 'keep' (cars with their own keep them)
+// COPY TO ALL (CHECKLIST 340; the screen's 'Copy to all'): only the slots THIS CAR CHANGED (those it differs from the default in: copySlots)
+// are copied. For each such slot: the car's look of it becomes the default, and every other car's own choice OF THAT SLOT is dropped (so
+// every car wears it; others: 'keep' leaves those too). Every other slot is untouched, on every car and on the default: a car's own roof
+// survives a copy of wheels. Returns the slots copied (an empty list: the car follows the default everywhere, nothing to copy).
+export const copySlots = (carId) => SLOTS.filter(sl => differs(carId, sl));
+// the other cars a copy changes (they have their own choice of a slot that would be copied): the screen's 'Replace N cars?'
+export const copyAffects = (carId) => { const slots = copySlots(carId); return customCars().filter(id => id !== String(carId) && slots.some(sl => differs(id, sl))); };
 export const copyToAll = (carId, { others = 'clear' } = {}) => {
+  const s = state(), id = String(carId), slots = copySlots(id);
+  const looks = Object.fromEntries(slots.map(sl => [sl, cleanSlot(sl, get(id, sl)) || {}])); // (read before anything moves)
+  for (const slot of slots) {
+    s.default[slot] = looks[slot];
+    for (const [other, car] of Object.entries(s.cars)) {
+      if (other !== id && others === 'keep') continue;
+      delete car[slot];
+      if (!Object.keys(car).length) delete s.cars[other];
+    }
+  }
+  if (!slots.length) return slots;
+  write();
+  tell({ slot: null, target: null });
+  return slots;
+};
+// RESET PROGRESS (render/menu.js, CHECKLIST 340): every choice forgotten, the default's and every car's: all back to Stock (the old keys
+// mirrored as Stock too, so neither a reload nor an older build finds the old look). Progress.noSave: the visit's own only.
+export const resetAll = () => {
   const s = state();
-  for (const slot of SLOTS) s.default[slot] = cleanSlot(slot, get(carId, slot)) || {};
-  if (others === 'clear') s.cars = {}; else delete s.cars[carId];
+  s.default = {}; s.cars = {};
   write();
   tell({ slot: null, target: null });
   return true;

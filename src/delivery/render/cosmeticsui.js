@@ -8,7 +8,8 @@
 // default each time the screen opens) or for EVERY CAR without its own ('All cars': the default), a small switch over the tabs
 // (render/loadoutstore.js keeps both). In 'This car', a slot the car has no choice of its own for shows the default's, marked 'from
 // default'; the header marks a car whose look differs from the default ('Custom'), and two buttons beside the switch put the car back
-// to the default ('Reset car') or make its look every car's ('Copy to all': cars with their own looks too, after a second tap).
+// to the default ('Reset car') or put what it changed on every car ('Copy to all': only the slots this car changed; a car with its own choice
+// of one of those slots loses that choice after a second tap, and keeps its other slots: CHECKLIST 340).
 // SLOTS: tabs over the panel, from the registry render/cosmeticslots.js (the owner, 16-Oct: a slot the car cannot wear, or one with nothing
 // in it yet, has NO tab: nothing greyed, nothing 'coming later'). WHEELS: the THREE-PART wheel set (the owner, 15-Oct: "tread - tyre colour -
 // hub colour or rim or spinner"): a Tread row, a Tyre row, a Hub row (a Colour | Rim | Spinner switch and that kind's chips), then the
@@ -447,7 +448,7 @@ const build = () => {
   resetCarBtn.title = 'Back to the All cars look';
   resetCarBtn.addEventListener('click', () => { if (state.car && Store.resetCar(state.car.id)) { syncPlateInput(); Sound.play('menuMove', 0.4); } });
   copyBtn = make('button', 'cz-act', 'Copy to all'); copyBtn.type = 'button';
-  copyBtn.title = "This car's look on every car";
+  copyBtn.title = "What this car changed, on every car";
   copyBtn.addEventListener('click', copyToAll);
   scopeBar = make('div', 'cz-scopebar', scopeSwitch, make('div', 'cz-acts', resetCarBtn, copyBtn));
   // the live car
@@ -537,19 +538,20 @@ const setScope = (scope) => {
   Sound.play('menuMove', 0.4);
   syncPlateInput(); shown(); plateShown(); propShown(); killShown(); scopeShown(); panels[openSlot]?.refresh();
 };
-// this car's look on every car; when other cars have looks of their own, a second tap is asked for (their looks go too)
+// the slots this car changed, on every car (render/loadoutstore.js copyToAll: other slots untouched); when other cars have their own
+// choice of one of those slots, a second tap is asked for (their choice of THOSE slots goes; their other slots stay)
 const copyToAll = () => {
   const car = state.car;
   if (!car) return;
-  const others = Store.customCars().filter(id => id !== car.id).length;
+  const others = Store.copyAffects(car.id).length;
   if (others && !(copyArmed && performance.now() <= copyArmed)) {
     copyArmed = performance.now() + 4000;
     copyBtn.textContent = 'Replace ' + others + (others === 1 ? ' car?' : ' cars?'); // (the other cars with looks of their own: a second tap replaces them too)
-    copyBtn.title = 'Tap again: those cars lose their own look too';
+    copyBtn.title = 'Tap again: those cars lose their own choice of these slots';
     setTimeout(() => { if (copyArmed && performance.now() > copyArmed) scopeShown(); }, 4100);
     return;
   }
-  copyArmed = 0; copyBtn.textContent = 'Copy to all'; copyBtn.title = "This car's look on every car";
+  copyArmed = 0; copyBtn.textContent = 'Copy to all'; copyBtn.title = "What this car changed, on every car";
   Store.copyToAll(car.id);
   flash(tabMsg, 'Copied to all cars.');
   Sound.play('menuPick', 0.4);

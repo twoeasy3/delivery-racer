@@ -216,6 +216,28 @@ try {
     clearCosmetics();
   }
 
+  // ---- (CHECKLIST 340) the cars with no model of their own: the tabs they get, and the Tank's plate as the game dresses it ----
+  {
+    const { shownSlots } = await load('render/cosmeticslots.js');
+    const ids = (car) => shownSlots(car).map(s => s.id).join(',');
+    const lists = [...C.CARS, ...Object.values(C.LEVEL_CARS), ...Object.values(C.SECRET_CARS), ...C.EARNED_CARS, ...Object.values(C.EVENT_CARS || {}), ...Object.values(C.BESPOKE_CARS || {}), ...Object.values(C.CONCEPT_CARS || {}), ...Object.values(C.FILLER_CARS || {})].filter(c => c && c.id);
+    const noModel = [...new Set(lists.filter(c => !c.model && !c.idea).map(c => c.id))].sort();
+    check(noModel.join() === 'earned-ufo,tank,ufo', 'the cars with no model of their own (garage, level, secret, earned, event, bespoke, concept, filler): ' + noModel.join(', '));
+    const tank = C.carById('tank'), saucer = C.EARNED_CARS.find(c => c.id === 'earned-ufo'), ufo = C.LEVEL_CARS.ufo || Object.values(C.LEVEL_CARS).find(c => c.id === 'ufo');
+    check(!ids(tank).includes('wheels') && ids(tank).includes('plate') && ids(tank).includes('kill'), 'the Tank: no Wheels tab (its road wheels sit in the tracks), a Plate and a Kill FX tab (' + ids(tank) + ')');
+    check(ids(saucer) === 'kill' && ids(ufo) === 'kill', 'the Saucer and the UFO: the Kill FX tab only (no wheels, no plate) (' + ids(saucer) + ' / ' + ids(ufo) + ')');
+    check(['commuter', 'pickup', 'sport'].every(id => /^wheels,plate/.test(ids(C.carById(id)))), 'a car with a model keeps Wheels and Plate first');
+    // the game's own Tank (render/items.js ownTank) is dressCosmetics(makeTankMesh(...), car): its plate is worn, as here
+    const P = await load('render/platecosmetic.js');
+    P.setPlateDesign('yellow');
+    const { makeTankMesh } = await load('render/cars.js'), { dressCosmetics } = await load('render/showcar.js');
+    const t = dressCosmetics(makeTankMesh(tank.color), tank);
+    check(t.userData.platePlan?.worn.length > 0, 'a Tank model dressed as the game dresses it wears its plate (' + (t.userData.platePlan?.worn.length || 0) + ')');
+    P.resetPlate();
+    const src = readFileSync(ROOT + '/src/delivery/render/items.js', 'utf8');
+    check(/dressCosmetics\(makeTankMesh\(car\.color\), car\)/.test(src) && /CAR\.tank \? ownTank\(CAR\)/.test(src), 'render/items.js: the garage Tank drives its own dressed model (TANK RAGE keeps the plain one)');
+  }
+
   // ---- render-only: not in the replay fingerprint ----
   {
     const { logicFiles } = await import('../vite.config.js');
