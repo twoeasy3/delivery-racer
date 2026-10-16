@@ -26,6 +26,7 @@ import { patchModel, shapeEditsFor } from './modelpatchapply.js';
 import { carShapes } from './shapeedits.js';
 import { addLegend } from './legenddecal.js';
 import { dressCosmetics } from './showcar.js';
+import { setUnderglowLevel } from './underglow.js';
 import { LAMP_DEBUG, lampKey, lampsFor, makeLampMarkers } from './carlights.js';
 
 // Everything here that belongs to the loaded level (bridges, obstacles, pickups, targets)
@@ -70,7 +71,7 @@ const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 // given back afterwards. Colour changes meanwhile go to the part's own paint (paintOf).
 const GHOST_MAT = new THREE.MeshLambertMaterial({ color: 0xdfe9ff, emissive: 0x4a6cff, transparent: true, opacity: 0.45 });
 const ghostify = (group, on) => group.traverse((mesh) => {
-  if (!mesh.isMesh) return;
+  if (!mesh.isMesh || mesh.userData.underglow) return; // (an underglow keeps its own look: render/underglow.js)
   if (on && !mesh.userData.solidMat) { mesh.userData.solidMat = mesh.material; mesh.material = GHOST_MAT; }
   else if (!on && mesh.userData.solidMat) { mesh.material = mesh.userData.solidMat; mesh.userData.solidMat = null; }
 });
@@ -539,6 +540,7 @@ export const syncPickups = (dt) => {
     custom.userData.lastS = Player.s;
     custom.userData.roll = (custom.userData.roll || 0) + (Math.abs(ds) < 8 ? ds / Track.pathScale(Player.s, Player.lat) : 0);
     custom.userData.animate(performance.now() / 1000);
+    setUnderglowLevel(custom, Player.afloat ? 0 : Math.max(0, 1 - (Player.air || 0) / 1.5) * (1 + 0.2 * Math.min(1, Player.speed / 40))); // (a worn underglow: gone afloat, fading in the air, a little brighter with speed)
     paintOf(custom.userData.body).color.setHex(livery);
     dentModel(custom, custom.userData.body, worn);
     scorch(paintOf(custom.userData.body).color, worn);

@@ -232,6 +232,7 @@ export const addSuperKit = (model, car) => {
     const glow = new THREE.Mesh(new THREE.PlaneGeometry(w * 1.9, l * 1.3), glowMat);
     glow.rotation.x = -Math.PI / 2;
     glow.position.y = 0.03;
+    glow.userData.ownUnderglow = true; // (a worn underglow cosmetic replaces it: render/underglow.js)
     model.add(glow); // (on the road, not on the body: it stays put when the body hops or sways)
   }
   model.add(parts);

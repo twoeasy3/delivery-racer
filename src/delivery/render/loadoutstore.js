@@ -1,7 +1,8 @@
 // ---- the LOADOUT STORE: every cosmetic choice, PER CAR with a DEFAULT for all cars (the owner, 15-Oct: "Let's change the customisation to
 // be car specific now"). One localStorage key, KEY (JSON), read through this one module:
 //   { v: 1, default: { <slot>: {...} }, cars: { <carId>: { <slot>: {...} } } }
-// slots and their fields (SLOTS): wheels { design, hub, rim: { all, front?, rear? } }, plate { design, text }, roof | cargo | wing { id, paint }.
+// slots and their fields (SLOTS): wheels { design, hub, rim: { all, front?, rear? } }, plate { design, text }, roof | cargo | wing { id, paint },
+// underglow { id } (16-Oct, render/underglow.js; a store written before it has none: absent = 'none', an unknown id is none there too).
 // RESOLUTION: get(carId, slot) = the car's own entry for that slot (field by field) over the default's, over STOCK. carId null = the default.
 // A car stores only what it changes (an OVERRIDE, a whole slot at a time: an edit copies the car's resolved slot and changes a field), so
 // the key stays small; an override that comes out the same as the default is dropped (the car follows the default again). Per AXLE: the
@@ -21,7 +22,7 @@
 import { Progress } from '../progress.js';
 
 export const KEY = 'delivery.loadout';
-export const SLOTS = ['wheels', 'plate', 'roof', 'cargo', 'wing'];
+export const SLOTS = ['wheels', 'plate', 'roof', 'cargo', 'wing', 'underglow'];
 export const PROP_SLOTS = ['roof', 'cargo', 'wing'];
 export const MAX_CARS = 400;
 export const STOCK = Object.freeze({
@@ -30,6 +31,7 @@ export const STOCK = Object.freeze({
   roof: Object.freeze({ id: 'none', paint: 'match' }),
   cargo: Object.freeze({ id: 'none', paint: 'match' }),
   wing: Object.freeze({ id: 'none', paint: 'match' }),
+  underglow: Object.freeze({ id: 'none' }),
 });
 // the old global keys (read for the migration, mirrored from the default)
 export const LEGACY = { design: 'delivery.wheeldesign', hub: 'delivery.wheelcolour', rim: 'delivery.wheelrim', plateDesign: 'delivery.platedesign', plateText: 'delivery.platetext', prop: (slot) => 'delivery.prop.' + slot, paint: (slot) => 'delivery.prop.' + slot + '.paint' };
@@ -49,7 +51,7 @@ export const cleanRim = (v) => {
 const FIELDS = {
   wheels: { design: word, hub: word, rim: cleanRim },
   plate: { design: word, text },
-  roof: { id: word, paint: word }, cargo: { id: word, paint: word }, wing: { id: word, paint: word },
+  roof: { id: word, paint: word }, cargo: { id: word, paint: word }, wing: { id: word, paint: word }, underglow: { id: word },
 };
 const cleanSlot = (slot, v) => {
   if (!obj(v)) return undefined;
