@@ -1,6 +1,170 @@
-# Level archetypes (plan only)
+# Level archetypes (a plan, nothing built)
 
-WIP: the audit (section 1) is being written.
+The owner (15/16-Oct): "All of our levels have been quite samey without a true plan." This is the plan: what the
+levels ask of the player today (section 1), fifteen kinds of level (archetypes) each with ONE idea (section 2),
+which level becomes which (section 3), how to use this (section 4) and questions (section 5).
+
+**This is a document only.** No game code or level was changed, nothing was built or played. The numbers in section 1
+were read from the level files and from the clock tool on 16-Oct (main at v1.1.147-alpha, `c907cd9`).
+
+## 1. Audit: what the levels ask of the player today
+
+### 1.1 What was counted, and how
+
+- Every level file in `src/delivery/levels/` (99 files). The menu holds 56 numbered levels, 9 specials (S), 5
+  amphibious (A) and 3 races (R) (`levels.js`: `FIRST_LEVELS`, `THEME_LEVELS`, `SPECIAL_LEVELS`, `AMPHIBIOUS_LEVELS`,
+  `CIRCUIT_LEVELS`); 21 more are hidden or event maps (h). Test tracks, the Gimmick Roads and the screensaver are left
+  out of the table.
+- **Clock G / E**: the written clock, Good / Evil, in s. **Clean**: the clean run worked out today by
+  `node scripts/level-clocks.mjs` (a ghost in the Sportscompact, flat out, nothing in the way; a level's own car if it
+  has one). **G ÷ clean**: how many clean runs the Good clock gives (below 1 = you need time pluses).
+  **n/c** = not checked: the tool did not finish that level (see 1.4).
+- **+T / −T**: time pluses / time minuses on the road. **$**: cash pickups.
+- **Kinds**: kinds of gimmick in the level file, traffic events included (pursuits, convoys, emergencies), side roads,
+  tunnels and parked cars not counted.
+- **Beats /km**: things that happen on the road per km (each gimmick placement and each obstacle; things within 40 m
+  of each other count as one).
+- **Obst /km**: plain obstacles per km. **Cars same / onc**: traffic at once, the player's way / oncoming
+  (`trafficCount` / `oncomingCount`; 16 / 12 is the default). **Lanes**: player's way / oncoming.
+- Worked out by a throwaway script over the JSON (not committed). Not checked: how any of it plays; the real traffic
+  a run meets; the side roads' own contents (left out of the beats).
+
+### 1.2 Table
+
+| # | Level | km | Clock G / E | Clean | G ÷ clean | +T / −T | $ | Kinds | Beats /km | Obst /km | Cars same / onc | Lanes | Flow |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Expressway | 2.0 | 110 / 85 | 74 | 1.48 | 0 / 0 | 13 | 0 | 2.5 | 2.5 | 11 / 8 | 2/2 | two-way |
+| 2 | Back Roads | 1.8 | 115 / 90 | 76 | 1.51 | 0 / 0 | 16 | 0 | 2.8 | 3.9 | 11 / 8 | 2/2 | two-way |
+| 3 | Farm Lanes | 2.0 | 105 / 80 | 71 | 1.49 | 0 / 0 | 12 | 2 | 5.5 | 3.5 | 11 / 8 | 2/2 | two-way |
+| 4 | Big Business | 2.4 | 125 / 95 | 82 | 1.52 | 0 / 0 | 19 | 0 | 2.1 | 2.5 | 16 / 12 | 2/2 | one way |
+| 5 | Hurricane | 2.4 | 130 / 100 | 87 | 1.49 | 0 / 0 | 15 | 2 | 10.4 | 10 | 7 / 0 | 2/2 | one way |
+| 6 | Night Drive | 2.5 | 168 / 119 | 78 | 2.15 | 0 / 0 | 3 | 2 | 1.2 | 1.2 | 10 / 8 | 2/2 | two-way |
+| 7 | Mystery Meadows | 3.0 | 234 / 166 | 108 | 2.16 | 0 / 0 | 0 | 3 | 5.7 | 1.7 | 16 / 13 | 2/2 | two-way |
+| 8 | City Suburbs | 3.2 | 35 / 25 | 104 | 0.34 | 11 / 3 | 3 | 2 | 1.6 | 1.3 | 8 / 6 | 2/2 | two-way |
+| 9 | Australian Capital Territory | 3.0 | 180 / 128 | 115 | 1.57 | 2 / 0 | 0 | 1 | 3.7 | 10 | 7 / 8 | 1/1 | two-way |
+| 10 | Monte Carlo | 3.3 | 174 / 123 | 134 | 1.30 | 1 / 0 | 0 | 1 | 6.9 | 0 | 6 / 7 | 1/1 | two-way |
+| 11 | Garden City | 1.9 | 132 / 94 | 61 | 2.17 | 0 / 0 | 0 | 0 | 0 | 0 | 10 / 9 | 2/2 | two-way |
+| 12 | Jewel of the East | 3.9 | 210 / 149 | n/c | ? | 1 / 0 | 0 | 0 | 0 | 0 | 12 / 11 | 2/2 | two-way |
+| 13 | Sydney to Kiama | 10.5 | 480 / 340 | n/c | ? | 2 / 0 | 3 | 4 | 0.8 | 0 | 12 / 10 | 2/2 | two-way |
+| 14 | Passage du Gois | 5.6 | 348 / 247 | n/c | ? | 4 / 0 | 2 | 2 | 0.7 | 0 | 10 / 9 | 3/2 | two-way |
+| 15 | Safari | 4.4 | 252 / 179 | n/c | ? | 3 / 0 | 6 | 5 | 1.4 | 0 | 12 / 0 | 3 | one way |
+| 16 | Airport Apocalypse | 3.7 | 210 / 149 | n/c | ? | 2 / 0 | 0 | 1 | 0 | 0 | 14 / 0 | 4 | one way |
+| 17 | Construction Site | 3.2 | 246 / 174 | n/c | ? | 2 / 0 | 0 | 4 | 16.6 | 33.4 | 4 / 0 | 3 | one way |
+| 18 | The Hood | 4.8 | 304 / 215 | n/c | ? | 1 / 0 | 3 | 2 | 1.7 | 1.7 | 10 / 8 | 2/2 | two-way |
+| 19 | Panorama Avenue | 5.6 | 360 / 255 | n/c | ? | 1 / 0 | 0 | 2 | 1.4 | 0 | 12 / 10 | 2/2 | two-way |
+| 20 | Speed Trap Alley | 4.2 | 240 / 180 | n/c | ? | 3 / 1 | 34 | 4 | 4 | 0 | 9 / 7 | 2/2 | two-way |
+| 21 | Mountain Pass | 3.6 | 195 / 155 | n/c | ? | 1 / 0 | 32 | 5 | 5 | 0 | 5 / 6 | 1/1 | two-way |
+| 22 | Outback Express | 5.2 | 225 / 170 | n/c | ? | 2 / 0 | 36 | 6 | 3.3 | 0 | 8 / 8 | 2/2 | two-way |
+| 23 | Tour de Coast | 4.8 | 210 / 160 | n/c | ? | 2 / 0 | 36 | 3 | 2.5 | 0 | 9 / 7 | 2/2 | two-way |
+| 24 | Ring Road | 4.6 | 265 / 200 | n/c | ? | 2 / 0 | 37 | 4 | 2.6 | 1.7 | 10 / 8 | 2/2 | two-way |
+| 25 | Market Town | 4.0 | 185 / 140 | n/c | ? | 2 / 0 | 36 | 6 | 5 | 0.8 | 7 / 6 | 1/1 | two-way |
+| 26 | Quarry Run | 4.4 | 215 / 165 | n/c | ? | 2 / 0 | 36 | 10 | 5.7 | 1.1 | 8 / 6 | 1/1 | two-way |
+| 27 | Hong Kong Harbour | 3.7 | 225 / 165 | n/c | ? | 2 / 0 | 36 | 4 | 3.8 | 4.9 | 11 / 9 | 2/2 | two-way |
+| 28 | Tokyo Expressway | 4.2 | 190 / 140 | n/c | ? | 1 / 0 | 3 | 7 | 2.4 | 1.4 | 12 / 10 | 2/2 | two-way |
+| 29 | Mumbai Monsoon | 3.4 | 230 / 170 | 111 | 2.07 | 1 / 0 | 2 | 5 | 5.3 | 1.5 | 12 / 10 | 2/2 | two-way |
+| 30 | Stelvio Pass | 4.2 | 300 / 230 | 191 | 1.57 | 4 / 0 | 20 | 4 | 2.6 | 0 | 5 / 6 | 1/1 | two-way |
+| 31 | Christmas Eve | 3.3 | 180 / 135 | 108 | 1.67 | 1 / 0 | 3 | 4 | 4.2 | 0.9 | 9 / 8 | 2/2 | two-way |
+| 32 | Toy Room | 4.6 | 215 / 165 | n/c | ? | 2 / 0 | 27 | 12 | 3.5 | 1.3 | 13 / 8 | 3/2 | two-way |
+| 33 | Twenty Thousand Leaks | 4.5 | 210 / 160 | n/c | ? | 2 / 0 | 32 | 8 | 2 | 0.7 | 11 / 5 | 3/1 | two-way |
+| 34 | Tranquility Base | 4.9 | 230 / 175 | n/c | ? | 2 / 0 | 36 | 10 | 5.1 | 1.4 | 12 / 7 | 3/2 | two-way |
+| 35 | Quiet on Set | 4.2 | 200 / 150 | n/c | ? | 2 / 0 | 29 | 12 | 4.6 | 2.4 | 12 / 8 | 3/2 | two-way |
+| 36 | Acqua Alta | 4.5 | 185 / 140 | n/c | ? | 2 / 0 | 35 | 10 | 3.6 | 1.6 | 9 / 8 | 2/2 | two-way |
+| 37 | Northern Lights | 4.6 | 200 / 150 | n/c | ? | 2 / 0 | 37 | 8 | 5.2 | 1.1 | 9 / 7 | 3/2 | two-way |
+| 38 | Thrill Park | 5.0 | 225 / 170 | n/c | ? | 3 / 0 | 31 | 11 | 2.6 | 1 | 12 / 8 | 3/2 | two-way |
+| 39 | Cinder Island | 5.0 | 225 / 170 | n/c | ? | 3 / 0 | 29 | 10 | 2.6 | 0.8 | 11 / 8 | 3/2 | two-way |
+| 40 | Dock Run | 4.7 | 215 / 160 | n/c | ? | 2 / 0 | 27 | 14 | 4.5 | 0.9 | 12 / 9 | 3/3 | two-way |
+| 41 | High Noon | 4.8 | 205 / 155 | n/c | ? | 3 / 0 | 37 | 12 | 5.4 | 1.7 | 11 / 8 | 2/2 | two-way |
+| 42 | Favela Heights | 4.9 | 220 / 165 | n/c | ? | 3 / 0 | 37 | 12 | 4.5 | 0.6 | 9 / 6 | 2/1 | two-way |
+| 43 | Emerald Steps | 4.6 | 205 / 155 | n/c | ? | 3 / 0 | 35 | 13 | 5.2 | 0.7 | 8 / 6 | 2/1 | two-way |
+| 44 | Toy Box Derby | 3.8 | 155 / 120 | n/c | ? | 2 / 0 | 37 | 10 | 5.3 | 1.9 | 14 / 0 | 4 | one way |
+| 45 | Seaquake | 3.7 | 165 / 120 | n/c | ? | 2 / 0 | 35 | 12 | 5.4 | 1.6 | 10 / 8 | 2/2 | two-way |
+| 46 | Far Side | 5.6 | 265 / 200 | n/c | ? | 2 / 0 | 37 | 10 | 4.8 | 1.1 | 10 / 6 | 2/1 | two-way |
+| 47 | Stunt Double | 3.6 | 150 / 115 | n/c | ? | 2 / 0 | 37 | 11 | 3.9 | 1.9 | 14 / 0 | 4 | one way |
+| 48 | Seven Bridges | 4.0 | 175 / 135 | n/c | ? | 2 / 0 | 34 | 7 | 4.5 | 2.5 | 8 / 5 | 2/1 | two-way |
+| 49 | After Hours | 3.8 | 150 / 110 | n/c | ? | 3 / 0 | 34 | 11 | 5.3 | 2.4 | 13 / 0 | 4 | one way |
+| 50 | Eruption Day | 5.5 | 250 / 190 | n/c | ? | 3 / 0 | 37 | 12 | 4.7 | 3.1 | 14 / 3 | 3/1 | two-way |
+| 51 | Cattle Drive | 5.6 | 255 / 195 | 170 | 1.50 | 3 / 0 | 36 | 13 | 5.7 | 1.8 | 9 / 5 | 2/1 | two-way |
+| 52 | Spring Thaw | 5.5 | 265 / 205 | 185 | 1.43 | 2 / 0 | 35 | 11 | 4.1 | 1.8 | 9 / 6 | 2/2 | two-way |
+| 53 | Hot Zone | 4.7 | 195 / 150 | 138 | 1.42 | 2 / 0 | 37 | 3 | 3.7 | 1.9 | 10 / 7 | 2/2 | two-way |
+| 54 | Night Shift | 3.6 | 160 / 120 | 118 | 1.36 | 3 / 0 | 48 | 12 | 4.1 | 1.1 | 12 / 7 | 3/2 | two-way |
+| 55 | Mudslide | 3.4 | 170 / 125 | 119 | 1.43 | 2 / 0 | 39 | 8 | 3.6 | 0.9 | 9 / 6 | 2/1 | two-way |
+| 56 | Monsoon | 5.3 | 235 / 175 | 170 | 1.38 | 4 / 0 | 77 | 13 | 6.8 | 2.8 | 9 / 6 | 2/1 | two-way |
+| S1 | All Heck | 2.7 | 156 / 111 | 84 | 1.87 | 0 / 0 | 0 | 0 | 3.3 | 3.3 | 16 / 12 | 8 | all oncoming |
+| S2 | Mother Ship | 3.2 | 144 / 102 | 55 | 2.63 | 0 / 0 | 0 | 1 | 0.9 | 0 | 16 / 12 | 4/4 | two-way |
+| S3 | Marina Bay | 4.9 x3 | 396 / 281 | 229 | 1.73 | 0 / 0 | 0 | 0 | 0 | 0 | 0 / 0 | 2 | one way |
+| S4 | Oh Mine! | 4.2 | 264 / 187 | 125 | 2.12 | 0 / 0 | 0 | 1 | 18.3 | 86.2 | 9 / 0 | 8 | one way |
+| S5 | Montreal | 4.3 x3 | 348 / 247 | 202 | 1.72 | 0 / 0 | 0 | 0 | 0 | 0 | 0 / 0 | 2 | one way |
+| S6 | Mount Panorama | 6.2 x2 | 360 / 255 | 176 | 2.04 | 0 / 0 | 0 | 0 | 0 | 0 | 0 / 0 | 2 | one way |
+| S7 | Rival Run | 5.5 | 300 / 285 | 167 | 1.79 | 1 / 0 | 0 | 1 | 3.8 | 3.1 | 10 / 9 | 2/2 | two-way |
+| S8 | Showdown | 5.2 | 200 / 190 | n/c | ? | 0 / 0 | 0 | 0 | 1.5 | 2.3 | 11 / 9 | 2/2 | two-way |
+| S9 | Battlefield | 4.5 | 312 / 221 | 142 | 2.19 | 0 / 0 | 2 | 4 | 0.4 | 0 | 7 / 18 | 3/3 | mixed |
+| A1 | Slipway Beach | 2.8 | 165 / 125 | 113 | 1.46 | 1 / 0 | 3 | 2 | 3.9 | 2.9 | 12 / 10 | 2/2 | two-way |
+| A2 | Harbour Lights | 3.5 | 235 / 175 | 162 | 1.45 | 2 / 0 | 4 | 2 | 2.6 | 1.1 | 12 / 11 | 2/2 | two-way |
+| A3 | High Water | 3.3 | 225 / 170 | 157 | 1.43 | 2 / 0 | 4 | 5 | 4.8 | 1.5 | 16 / 0 | 3 | one way |
+| A4 | Hippo Ford | 3.6 | 215 / 160 | 150 | 1.43 | 2 / 0 | 4 | 4 | 2.2 | 0 | 13 / 0 | 3 | one way |
+| A5 | Fjord Crossing | 3.6 | 210 / 160 | 146 | 1.44 | 2 / 0 | 6 | 5 | 3.3 | 0.8 | 10 / 10 | 2/2 | two-way |
+| R1 | Monza | 5.8 x3 | 365 / 280 | 249 | 1.47 | 0 / 0 | 0 | 0 | 0 | 0 | 0 / 0 | 2 | one way |
+| R2 | Spa-Francorchamps | 7.0 x2 | 300 / 230 | 207 | 1.45 | 0 / 0 | 0 | 0 | 0 | 0 | 0 / 0 | 2 | one way |
+| R3 | Albert Park | 5.3 x3 | 335 / 260 | 229 | 1.46 | 0 / 0 | 0 | 0 | 0 | 0 | 0 / 0 | 2 | one way |
+| h | Alpine Pass | 3.5 | 165 / 125 | 116 | 1.42 | 2 / 0 | 24 | 3 | 4.5 | 6 | 5 / 5 | 2/1 | two-way |
+| h | Chianti Run | 4.4 | 190 / 145 | 133 | 1.43 | 2 / 0 | 45 | 5 | 3.7 | 2.5 | 6 / 6 | 1/1 | two-way |
+| h | Dakar Dash | 5.7 | 255 / 195 | 178 | 1.44 | 2 / 0 | 67 | 3 | 4.1 | 3.5 | 11 / 0 | 4 | one way |
+| h | Endurance Road | 2.5 | 90 / 70 | 76 | 1.18 | 0 / 0 | 22 | 1 | 2.8 | 2.4 | 9 / 7 | 2/2 | two-way |
+| h | Foliage Run | 4.2 | 185 / 140 | 130 | 1.43 | 2 / 0 | 66 | 5 | 6.3 | 3.4 | 9 / 7 | 3/2 | two-way |
+| h | Grand Boulevard | 2.1 | 95 / 75 | 71 | 1.35 | 0 / 0 | 24 | 5 | 3.7 | 2.3 | 10 / 9 | 3/3 | two-way |
+| h | Singapore Grand Prix | 4.2 x3 | 336 / 238 | 231 | 1.46 | 0 / 0 | 0 | 0 | 0 | 0 | 0 / 0 | 2/2 | one way |
+| h | Haunted Hollow | 4.4 | 175 / 135 | 128 | 1.36 | 3 / 0 | 37 | 4 | 6.1 | 5.2 | 8 / 7 | 2/2 | two-way |
+| h | Jungle Highway | 5.7 | 245 / 185 | 178 | 1.38 | 4 / 0 | 62 | 6 | 6.7 | 3.7 | 8 / 6 | 2/2 | two-way |
+| h | Mall Dash | 3.0 | 125 / 95 | 91 | 1.38 | 2 / 0 | 45 | 5 | 13 | 20 | 0 / 0 | 2 | one way |
+| h | Metro Run | 3.5 | 160 / 120 | 96 | 1.67 | 2 / 0 | 105 | 4 | 7.4 | 4.6 | 0 / 0 | 3 | one way |
+| h | Neon Edge | 2.5 | 90 / 70 | 76 | 1.18 | 0 / 0 | 25 | 6 | 3.6 | 2 | 11 / 9 | 2/2 | two-way |
+| h | Pocket Town | 1.7 | 95 / 75 | 51 | 1.85 | 0 / 0 | 26 | 7 | 8.7 | 3.5 | 7 / 6 | 2/2 | two-way |
+| h | Roadworks by Night | 3.4 | 215 / 155 | 106 | 2.04 | 1 / 0 | 52 | 4 | 6.5 | 5.9 | 8 / 6 | 2/2 | two-way |
+| h | Roadworks | 3.4 | 215 / 155 | 106 | 2.04 | 1 / 0 | 52 | 4 | 6.5 | 5.9 | 10 / 8 | 2/2 | two-way |
+| h | Solstice Cliffs | 2.0 | 90 / 70 | 59 | 1.53 | 0 / 0 | 24 | 4 | 4.6 | 2.6 | 8 / 7 | 2/2 | two-way |
+| h | Steelworks by Night | 3.5 | 150 / 115 | 107 | 1.40 | 2 / 0 | 72 | 3 | 10.3 | 9.4 | 8 / 6 | 2/2 | two-way |
+| h | Steelworks Run | 3.5 | 150 / 115 | 107 | 1.40 | 2 / 0 | 72 | 3 | 10.3 | 9.4 | 8 / 6 | 2/2 | two-way |
+| h | Turbo Quay | 2.4 | 95 / 75 | 79 | 1.21 | 0 / 0 | 24 | 6 | 4.2 | 4.2 | 11 / 8 | 3/3 | two-way |
+| h | Vegas by Night | 3.5 | 160 / 120 | 114 | 1.40 | 2 / 0 | 60 | 3 | 8.2 | 5.6 | 8 / 6 | 3/3 | two-way |
+| h | Vegas Strip | 3.5 | 160 / 120 | 114 | 1.40 | 2 / 0 | 60 | 3 | 8.2 | 5.6 | 10 / 8 | 3/3 | two-way |
+
+### 1.3 Where they are samey (the headline)
+
+1. **One clock model for every level.** The clock is 1.5 clean runs (Good) and 1.15 (Evil), less 5 s per time plus
+   (`CONFIG.clock`, `cleanrun.js`); a plus gives 10 s back (`CONFIG.timePickup`). Of the 57 levels the tool timed, 27
+   sit at 1.40 to 1.60 clean runs. Most others are LOOSER, not different: old levels never re-timed (Night Drive
+   2.15, Mystery Meadows 2.16, Garden City 2.17, Mumbai 2.07, Battlefield 2.19) and races and specials. Only **City
+   Suburbs** is a different clock: 35 s against a 104 s clean run (0.34), with 11 time pluses and 3 minuses. It is
+   set by hand; no note says why. It is already the owner's Time Rush in its numbers.
+2. **Same time plus habit.** Levels 20 to 56 have 1 to 4 time pluses each, almost all 2 or 3, placed about a third
+   and two thirds of the way. In the whole career only Suburbs (3) and Speed Trap Alley (1) have time minuses.
+3. **Same size.** Levels 20 to 56: 3.3 to 5.6 km (median 4.5), Good clock 150 to 300 s (median 210). Only Sydney to
+   Kiama is long (10.5 km); nothing is a short sprint in the career after tier 1 (the short ones are event maps).
+4. **One of everything.** Levels 32 to 56 carry 3 to 14 kinds of gimmick each (median 11), against the owner's rule
+   ("one idea and a few thematic gimmicks"). Levels 1 to 19 carry a median of 2. The same filler is everywhere:
+   pursuits (21 of 56 numbered levels), convoys (21), fog (19), drifters (16), potholes (15), emergencies (13),
+   cushions (13). The 10-Oct "standard" (10 to 16 kinds, something every 150 to 300 m, `SCRATCHPAD-10-Oct-dropped.md`)
+   is the cause; it was later called an upper bound, but the levels were built to it.
+5. **Same rhythm.** Levels 32 to 56 have 2 to 6.8 beats a km (median 4.5): something every 150 to 250 m, all the way.
+   Few have a long calm stretch or a real climax.
+6. **Same pickups.** Levels 20 to 56: 34 to 37 cash in 23 of 37 levels, in 8 to 16 side-by-side rows (the standard
+   again). The pickups never change what the player is chasing.
+7. **Same road.** 48 of the 56 numbered levels are two-way; traffic 8 to 14 cars each way on most; lanes 2/1, 3/2 or
+   4. Obstacles are light (about 1 to 2 a km) except Construction Site (33) and a few hidden levels.
+8. **What IS different today**: Construction Site and Oh Mine! (dense obstacles), Sydney to Kiama (length), the
+   mountain roads (Mountain Pass, Stelvio, Panorama Avenue: climbs), Rival Run / Showdown / Toy Box Derby (a rival),
+   Hot Zone (radiation), Passage du Gois (the tide), City Suburbs (the clock). These are the seeds of the archetypes.
+
+### 1.4 What could not be checked
+
+- **The clock tool did not finish 37 levels today**: `level-clocks.mjs --all` printed a 0.0 s "clean run" for most
+  of levels 10 to 50; timed one at a time, Tokyo, Toy Room and Sydney to Kiama come back "NOT DELIVERED (still
+  driving)" after 900 s of ghost driving. Monte Carlo, Garden City and Christmas Eve timed fine on their own. Showdown
+  gives 0.0 s even alone. So these levels' clocks were NOT re-checked: their written clocks are the 1.5 / 1.15 shape
+  (Good about 1.3 x Evil), which suggests they came from the same rule, but that is a guess. Why the ghost stalls was
+  not looked into (likely a gimmick in its lane; maybe a regression worth its own item).
+- Nobody played anything for this doc. "Samey" is read from the data, not felt in a run.
+- Traffic on the road during a run, the side roads' contents, and how hard any gimmick is were not measured.
 
 ## 2. Archetype briefs
 
