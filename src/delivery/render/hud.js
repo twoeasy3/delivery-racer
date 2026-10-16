@@ -13,6 +13,7 @@ import { Replay } from '../replay.js';
 
 // ---- HUD -------------------------------------------------------------------
 import { Social } from '../social.js';
+import { UpTrain } from '../bullettrain.js';
 const hudTimer = document.getElementById('timer');
 const hudProblems = document.getElementById('levelProblems');
 const hudCamAlert = document.getElementById('camAlert');
@@ -71,27 +72,38 @@ const rivalLine = () => '\nBUSTS ' + Game.busts + ' / ' + CONFIG.maxBusts; // (o
 // towards them (tipped and moved over to the side of the road they are on), and how far back they are
 const hudBehind = document.getElementById('behind'), hudBehindArrow = hudBehind.querySelector('.arrow');
 const hudBehindLabel = document.getElementById('behindLabel');
+// (the overtaking train's tint: signal red, apart from a rival's magenta and the close state's orange)
+const TRAIN_TINT = 0xff3a2a;
 const syncBehind = (raced) => {
   const B = CONFIG.behind;
-  let shown = null;
-  if (LEVEL.grid && Game.state === 'playing' && Player.active && !Game.screensaver && !Game.paused) {
-    const me = raced(Game.lap, Player.s);
-    let gap = LEVEL.grid.rival ? B.rivalRange : B.raceRange;
-    for (const c of Traffic.cars) {
-      if (!c.racer || !c.active) continue;
-      const g = me - raced(c.laps || 0, c.s); // (how far behind the player it is)
-      if (g > 0 && g < gap) { gap = g; shown = c; }
+  let shown = null, gap = Infinity, lat = 0, label = '', tint = null;
+  if (Game.state === 'playing' && Player.active && !Game.screensaver && !Game.paused) {
+    if (LEVEL.grid) {
+      const me = raced(Game.lap, Player.s);
+      let range = LEVEL.grid.rival ? B.rivalRange : B.raceRange, car = null;
+      for (const c of Traffic.cars) {
+        if (!c.racer || !c.active) continue;
+        const g = me - raced(c.laps || 0, c.s); // (how far behind the player it is)
+        if (g > 0 && g < range) { range = g; car = c; }
+      }
+      if (car) {
+        const place = 2 + Traffic.cars.filter(c => c.racer && raced(c.laps || 0, c.s) > me).length; // (its place: the one after the player's)
+        shown = car; gap = range; lat = car.lat;
+        label = LEVEL.grid.rival ? (car.rivalName || 'rival').toUpperCase() : 'P' + place;
+        tint = car.markColor ?? (LEVEL.grid.rival ? 0xff2bd6 : null); // (a rival in its own colour)
+      }
     }
+    // (the overtaking train on an edge railway, bullettrain.js UpTrain.behind: from its announcement until it passes; the nearer
+    // pursuer is the one shown)
+    const train = UpTrain.behind();
+    if (train && train.gap < gap) { shown = UpTrain; gap = train.gap; lat = train.lat; label = 'TRAIN'; tint = TRAIN_TINT; }
     if (shown) {
-      const place = 2 + Traffic.cars.filter(c => c.racer && raced(c.laps || 0, c.s) > me).length; // (its place: the one after the player's)
-      const across = (shown.lat - Player.lat) * (Track.mirrored ? -1 : 1); // (m to the right of the player, as seen)
+      const across = (lat - Player.lat) * (Track.mirrored ? -1 : 1); // (m to the right of the player, as seen)
       const turn = Math.atan2(across, Math.max(gap, 4));
       setStyle(hudBehind, 'transform', `translateX(calc(-50% + ${Math.max(-B.slide, Math.min(B.slide, across * B.slidePerM))}px))`);
       setStyle(hudBehindArrow, 'transform', `rotate(${-turn}rad)`);
-      setText(hudBehindLabel, (LEVEL.grid.rival ? (shown.rivalName || 'rival').toUpperCase() + '  ' : 'P' + place + '  ') + Math.round(gap) + ' m');
+      setText(hudBehindLabel, label + '  ' + Math.round(gap) + ' m');
       hudBehind.classList.toggle('close', gap < B.close);
-      // (a rival in its own colour)
-      const tint = shown.markColor ?? (LEVEL.grid.rival ? 0xff2bd6 : null);
       hudBehind.style.setProperty('--tint', tint === null ? '' : '#' + tint.toString(16).padStart(6, '0'));
     }
   }

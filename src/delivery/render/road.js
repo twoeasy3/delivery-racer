@@ -8,6 +8,7 @@ import { Game } from '../game.js';
 import { Player } from '../player.js';
 import { scene, tmp, applySky, applyLight, clearGroup } from './scene.js';
 import { setHeadlights } from './headlights.js';
+import { buildIceGeometry, iceMaterial, iceLookOf, icePatchesOf } from './icepatch.js';
 import { THEMES } from '../themes.js';
 import { CIRCUITS } from './circuits/index.js';
 import { THEME_SCENERY, loadTheme, themeLoaded, themeNames } from './themes/index.js';
@@ -1172,22 +1173,14 @@ const buildRoad = () => {
       add(buildStrip(s, s + l, lat - w, lat + w, 0.014, 1), puddle);
     }
   }
-  // ice patches: a pale, glassy sheet over the lane (or the whole road), with brighter streaks on it
-  if (LEVEL.ice) {
-    const sheet = new THREE.MeshBasicMaterial({ color: 0xd6eef8, transparent: true, opacity: 0.72, depthWrite: false,
-      side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
-    const shine = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, depthWrite: false,
-      side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
-    for (const p of LEVEL.ice) {
-      const a = (s) => p.lane === undefined ? Track.laneLo(s) : Track.laneOffset(p.lane, s) - LW / 2 + 0.15;
-      const b = (s) => p.lane === undefined ? Track.laneHi(s) : Track.laneOffset(p.lane, s) + LW / 2 - 0.15;
-      add(buildStrip(p.from, p.to, a, b, 0.025, 2), sheet);
-      for (let k = 0; k < 3; k++) { // (streaks, staggered along it)
-        const from = p.from + (p.to - p.from) * (0.1 + k * 0.27), to = from + (p.to - p.from) * 0.18, at = 0.25 + k * 0.25;
-        const lat = (s) => a(s) + (b(s) - a(s)) * at;
-        add(buildStrip(from, to, (s) => lat(s) - 0.12, (s) => lat(s) + 0.12, 0.03, 2), shine);
-      }
-    }
+  // ice patches: soft-edged glazed blobs over the lane (or the whole road), all of a level's in one mesh: see render/icepatch.js
+  if (LEVEL.ice && LEVEL.ice.length) {
+    const look = iceLookOf(LEVEL.theme);
+    const geo = buildIceGeometry(icePatchesOf(LEVEL.ice, Track, LW), (s, lat, v) => Track.toWorld(s, lat, v), look);
+    add(geo, iceMaterial(look, !!theme.lit));
+    const ice = levelGroup.children[levelGroup.children.length - 1];
+    ice.userData.ice = true;
+    ice.renderOrder = 1; // (after the road's other see-through sheets)
   }
   // start and finish lines
   add(buildStrip(-1, 0, Track.lo, Track.hi, 0.03, 1), lineMat);

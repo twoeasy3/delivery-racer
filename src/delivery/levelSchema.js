@@ -25,7 +25,8 @@
 //   settings  { name: { type, label, ... } }, each one of:
 //             number  min, max, step, int      choice  choices: [value] or [{ value, label }]
 //             flag    text    colour           range   { min, max }: its own min, max, step
-//             lane    a lane number (shoulders: true = or 'left' / 'right'; player: true = the player's side only)
+//             lane    a lane number (shoulders: true = or 'left' / 'right'; player: true = the player's side only; halves: true = or a lane
+//                     line, x.5: a wide obstacle's, whose "span" track.js checks)
 //             lanes   lane numbers: a list, or (span: true) [first, last]; width: n = exactly n lanes wide
 //             mix     { kind: weight } over `choices`          metres  another spot along the same road
 //             object  { settings }                              list    [{ settings }] or (item) [value]
@@ -115,6 +116,8 @@ export const RULES = {
   closedLoop: { text: 'The road must come back round to where it starts (a closed loop)', broken: (f) => !f.closed },
   battle: { text: 'Only with "battle"', broken: (f) => !f.level.battle },
   notRace: { text: 'Not on a race, nor the Battlefield', broken: (f) => !!(f.level.laps || f.level.battle || (f.level.grid && !f.level.grid.rival)) },
+  outdoors: { text: 'Out in the open: 20 m clear of a tunnel', broken: (f, e, [a, b]) => (f.level.tunnels || []).some(t => !t.road && a < t.to + 20 && b > t.from - 20) },
+  sparesALane: { text: 'Leaves a lane of the player\'s side free', broken: (f, e) => { const l = e.lanes || [], lo = Math.min(...l), hi = Math.max(...l); for (let k = f.playerFirst; k < f.playerFirst + f.playerLanes; k++) if (k < lo || k > hi) return false; return true; } },
   zonesTheme: { text: 'Shown on a level whose theme is in zones (coast, safari)', broken: () => false },
 };
 
@@ -179,6 +182,9 @@ export const FIELDS = {
   noTankRage: { shape: 'flag', group: 'modes', label: 'No TANK RAGE', help: 'TANK RAGE is off: no targets, no pieces found, and the pieces the player has are neither used nor lost here. A special event\'s stages have it on by default.' },
   amphibious: { shape: 'flag', group: 'modes', label: 'Amphibious level', help: 'It can only be started in an amphibious car. Water stages need it.' },
   noPackages: { shape: 'flag', group: 'modes', label: 'No packages', help: 'Nobody throws packages.' },
+  wetness: { shape: 'object', group: 'road', label: 'Wetness', help: 'How slippery water is on this surface, for the whole level (burst mains and standing water): 1 is tarmac, more is slipperier (a tiled floor), 0 is no slip.',
+    settings: { strength: num('Strength', { min: 0, max: 3, step: 0.05, default: 1, help: 'Each share of grip on the water loses this times what it loses at 1 (never below a floor).' }),
+      tail: num('Wet tail', { min: 0.1, max: 5, step: 0.1, default: 1, help: 'Times the ' + C.waterMain?.wetAfter + ' m the tyres stay wet after the water.' }) } },
   understeer: { shape: 'flag', group: 'modes', label: 'Understeer', help: 'Every car understeers in bends as on ice (and none slows for a bend by itself).' },
   wallDamage: { shape: 'flag', group: 'modes', label: 'Wall damage', help: 'A car going sideways into the road\'s edge takes damage.' },
   nudge: { shape: 'flag', group: 'modes', label: 'Nudging', help: 'A car steering into another\'s side knocks it aside.' },
@@ -199,7 +205,8 @@ export const FIELDS = {
   pickups: { shape: 'point', group: 'items', label: 'Pickup', road: 'both', sub: 'type', help: 'A pickup in a lane (or on a shoulder).',
     settings: { type: pick('Type', PICKUP_TYPES, { required: true, init: 'turbo' }), lane: lane('Lane', { shoulders: true, required: true }) } },
   obstacles: { shape: 'point', group: 'items', label: 'Obstacle', road: 'both', sub: 'kind', help: 'Something on the road that explodes when hit.',
-    settings: { lane: lane('Lane', { shoulders: true, required: true }), kind: pick('Kind', OBSTACLE_KINDS, { default: 'barrier' }), drift: pick('Darts about', ['dart'], { help: 'It darts about its spot at random.' }) } },
+    settings: { lane: lane('Lane', { shoulders: true, required: true, halves: true }), kind: pick('Kind', OBSTACLE_KINDS, { default: 'barrier' }), drift: pick('Darts about', ['dart'], { help: 'It darts about its spot at random.' }),
+      span: num('Lanes wide', { min: 1, max: 4, step: 0.5, help: 'A barrier only: this many lanes wide, from its lane rightwards. One block, one hit.' }) } },
   targets: { shape: 'point', group: 'items', label: 'TANK RAGE target', road: 'both', help: 'A target beside the road. How it stands is the theme\'s, unless set here.',
     settings: { side: side(), offset: num('Beyond the pavement (m)', { min: -4, max: 30, step: 0.1 }), height: num('Ring height (m)', { min: 1.5, max: 14, step: 0.1 }),
       style: pick('Style', C.target.styles), base: num('Wall top (m)', { min: 0, max: 12, step: 0.1 }), arm: num('Gantry arm (m)', { min: 0.5, max: 8, step: 0.1 }), beam: flag('Beam of light') } },
@@ -258,7 +265,9 @@ export const FIELDS = {
     settings: { traffic: { type: 'mix', label: 'Traffic here', choices: VEHICLE_KINDS, required: true, init: { police: 0.05 } } } },
 
   // ---- hazards on the road ----
-  ice: { shape: 'stretch', group: 'hazards', label: 'Ice', help: 'An ice patch on that lane (no lane: across the road). On it the car brakes with a share of its brakes and changes lane more slowly.', settings: { lane: lane('Lane', { help: 'Left out: across the road.' }) } },
+  waterPatches: { shape: 'stretch', group: 'hazards', label: 'Standing water', span: 60, minSpan: 10, help: 'Standing water on that lane (no lane: across the road), there all the time: a burst main\'s water with no main. Weaker brakes, slower acceleration and slower lane changes on it, and the tyres stay wet a little after it.',
+    settings: { lane: lane('Lane', { help: 'Left out: across the road.' }) } },
+  ice: { shape: 'stretch', group: 'hazards', label: 'Ice', help: 'An ice patch on that lane (no lane: across the road). On it the car brakes with a share of its brakes, speeds up and changes lane more slowly.', settings: { lane: lane('Lane', { help: 'Left out: across the road.' }) } },
   crosswinds: { shape: 'stretch', group: 'hazards', label: 'Crosswind', span: 500, help: 'An exposed stretch with a gusting wind across it: tall cars are pushed harder, a tall vehicle alongside gives shelter.',
     settings: { dir: pick('Blows to the', SIDES, { required: true, init: 'left' }), strength: num('Strength (m/s²)', { min: 0.5, max: 50, step: 0.5, default: C.crosswind?.strength }),
       every: num('A gust every (s)', { min: 1, max: 60, step: 0.5, default: C.crosswind?.every }), length: num('A gust lasts (s)', { min: 0.5, max: 60, step: 0.1, default: C.crosswind?.length }) } },
@@ -288,7 +297,7 @@ export const FIELDS = {
   mud: { shape: 'stretch', group: 'hazards', label: 'Mud', help: 'The road gives way to mud: a car is slowed in it by how well it crosses.' },
   fog: { shape: 'stretch', group: 'hazards', label: 'Fog bank', span: 300, help: 'The fog closes right in, and the police see less.' },
   potholes: { shape: 'point', group: 'hazards', label: 'Pothole', road: 'both', help: 'A jolt, and maybe a flat tyre.', settings: { lane: lane('Lane', { required: true }), r: num('Radius (m)', { min: 0.2, max: 5, step: 0.1, default: C.site?.potholeR }) } },
-  waterMains: { shape: 'point', group: 'hazards', label: 'Burst water main', road: 'both', help: 'A fountain out of its lane, on and off; while it sprays that stretch of the lane is as slippery as ice: weaker brakes and slower lane changes on its water.',
+  waterMains: { shape: 'point', group: 'hazards', label: 'Burst water main', road: 'both', help: 'A fountain out of its lane, on and off; while it sprays that stretch of the lane is as slippery as ice: weaker brakes, slower acceleration and slower lane changes on its water.',
     settings: { lane: lane('Lane', { required: true, init: 0 }), length: num('Slippery for (m)', { min: 1, max: 500, default: C.waterMain?.length }) } },
   landmines: { shape: 'stretch', group: 'hazards', label: 'Landmines', road: 'both', help: 'Scattered down the lanes: whatever touches one is destroyed outright.', settings: { count: count(8) } },
   rockfall: { shape: 'stretch', group: 'hazards', label: 'Rockfall', road: 'both', help: 'Rocks tumbling down onto the road from that side as the player comes near.',
@@ -300,12 +309,15 @@ export const FIELDS = {
   shoulderRows: { shape: 'stretch', group: 'hazards', label: 'Row on the shoulder', help: 'A row of obstacles standing on the shoulder. Exit and merge lanes are left clear.',
     settings: { kind: pick('Kind', OBSTACLE_KINDS, { required: true, init: 'cone' }), every: num('One every (m)', { min: 1, max: 500, required: true, init: 12 }), side: pick('Side', ['left', 'right', 'both'], { default: 'both' }) } },
   trolleys: { shape: 'stretch', group: 'hazards', label: 'Shopping trolleys', road: 'both', help: 'Rolling across the road with its camber.', settings: { count: count(6) } },
-  boostPads: { shape: 'stretch', group: 'hazards', label: 'Boost pad', help: 'A pad in that lane: driving over it pulls the car on over its top speed. Handrails stand along it unless turned off.',
-    settings: { lane: lane('Lane', { required: true }), rails: flag('Handrails', { default: true }) } },
+  boostPads: { shape: 'stretch', group: 'hazards', label: 'Boost pad', help: 'A pad in that lane: driving over it pulls the car on over its top speed. Flush with the road; with Handrails on, rails stand along both edges (obstacles).',
+    settings: { lane: lane('Lane', { required: true }), rails: flag('Handrails', { default: false }) } },
   deadEnds: { shape: 'point', group: 'hazards', label: 'Dead-end lane', help: 'That lane ends here. Shutter: wrecks you; a Ghost or a tank passes. Wall: wrecks everything.',
     settings: { lane: lane('Lane', { required: true }), kind: pick('Kind', ['shutter', 'wall'], { default: 'shutter' }), length: num('Dead for (m)', { min: 40, max: 400, default: C.deadEnd?.length ?? 100 }) } },
   pillars: { shape: 'point', group: 'hazards', label: 'Pillars', help: 'Solid columns in a lane: hit one and the car is wrecked (a Ghost passes). A sign and beacons before them; the lane beside is the way past.',
     settings: { lane: lane('Lane', { required: true }), count: int('How many', { min: 1, max: 8, default: CONFIG.pillar.count }), gap: num('Apart (m)', { min: 8, max: 60, step: 1, default: CONFIG.pillar.gap }) } },
+  ladles: { shape: 'point', group: 'scripted', label: 'Molten ladle', rules: ['straight', 'level', 'outdoors', 'sparesALane'], reach: () => (C.ladle?.length ?? 12) / 2 + 2,
+    help: 'A crane brings a ladle of molten metal over those lanes as you come, and pours: the pool wrecks anything but a Ghost until it crusts over. Leave a lane free.',
+    settings: { lanes: lanes('Lanes it pours on (first, last)', { span: true, required: true }) } },
   tunnelJunctions: { shape: 'point', group: 'hazards', label: 'Tunnel junction', help: 'Inside a tunnel: a side tunnel crosses the road. Beacons and a bell, then a tug and trolleys come out of that side and cross.',
     settings: { side: pick('From', ['left', 'right'], { default: 'right' }) } },
   balloons: { shape: 'point', group: 'hazards', label: 'Hot-air balloon', road: 'both', help: 'Comes down on those lanes, sits, and lifts off again.', settings: { lanes: lanes('Lanes (first, last)', { span: true, required: true }) } },
@@ -614,7 +626,7 @@ const checkSetting = (S, v, name, out = []) => {
     case 'text': if (typeof v !== 'string') bad('text'); break;
     case 'colour': if (S.numeric ? !(Number.isInteger(v) && v >= 0 && v <= 0xffffff) : !(typeof v === 'string' && /^#[0-9a-f]{3,8}$/i.test(v))) bad(S.numeric ? 'a colour, as a number' : 'a colour, as #rrggbb'); break;
     case 'choice': if (!S.choices.some(c => choiceValue(c) === v)) bad('"' + v + '" is not one of ' + S.choices.map(choiceValue).join(', ')); break;
-    case 'lane': if (!(Number.isInteger(v) && v >= 0 && v < 16) && !(S.shoulders && (v === 'left' || v === 'right'))) bad('a lane number' + (S.shoulders ? ', or left / right (a shoulder)' : '')); break;
+    case 'lane': if (!((S.halves ? Number.isInteger(v * 2) : Number.isInteger(v)) && v >= 0 && v < 16) && !(S.shoulders && (v === 'left' || v === 'right'))) bad('a lane number' + (S.halves ? ' (or a lane line, x.5, for a wide barrier)' : '') + (S.shoulders ? ', or left / right (a shoulder)' : '')); break;
     case 'lanes':
       if (!Array.isArray(v) || !v.length || !v.every(l => Number.isInteger(l) && l >= 0 && l < 16)) bad('a list of lane numbers');
       else if (S.span && (v.length !== 2 || v[0] > v[1])) bad('[first, last]');

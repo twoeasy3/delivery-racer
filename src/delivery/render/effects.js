@@ -5,69 +5,23 @@ import { FxQueue } from '../physics.js';
 import { Player } from '../player.js';
 import { Collision } from '../collision.js';
 import { Game } from '../game.js';
-import { scene, tmp } from './scene.js';
-import { unitBox } from './cars.js';
+import { scene, camera, tmp } from './scene.js';
 import { Sound } from './audio.js';
+import { CAR } from '../cars.js';
+import { Packages } from '../packages.js';
+import { makeParticles, classicExplode, classicBurst, rnd, FIRE_COLORS } from './particles.js';
+import { createKillFx, chosenKill, KILL_FX } from './killfx.js';
 
-// ---- particles: smoke, fire and debris as instanced cubes ---------------------
-const makeParticles = (MAX, material) => {
-  const FIELDS = 12; // x y z vx vy vz life maxLife size grow gravity floor
-  const data = new Float32Array(MAX * FIELDS);
-  const mesh = new THREE.InstancedMesh(unitBox, material, MAX);
-  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-  mesh.frustumCulled = false;
-  const color = new THREE.Color();
-  for (let i = 0; i < MAX; i++) mesh.setColorAt(i, color);
-  const M = mesh.instanceMatrix.array, C = mesh.instanceColor.array;
-  M.fill(0); // zero scale = hidden
-  scene.add(mesh);
-  let next = 0;
-
-  // floor = the height of the road where it was emitted: falling particles land on it
-  const emit = (x, y, z, vx, vy, vz, life, size, grow, gravity, hex, floor = 0) => {
-    const i = next, o = i * FIELDS;
-    next = (next + 1) % MAX;
-    data[o] = x; data[o + 1] = y; data[o + 2] = z;
-    data[o + 3] = vx; data[o + 4] = vy; data[o + 5] = vz;
-    data[o + 6] = life; data[o + 7] = life;
-    data[o + 8] = size; data[o + 9] = grow; data[o + 10] = gravity; data[o + 11] = floor;
-    color.setHex(hex);
-    C[i * 3] = color.r; C[i * 3 + 1] = color.g; C[i * 3 + 2] = color.b;
-    mesh.instanceColor.needsUpdate = true;
-  };
-
-  const update = (dt) => {
-    for (let i = 0; i < MAX; i++) {
-      const o = i * FIELDS, m = i * 16;
-      if (data[o + 6] <= 0) continue;
-      data[o + 6] -= dt;
-      if (data[o + 6] <= 0) { M[m] = M[m + 5] = M[m + 10] = 0; continue; }
-      data[o + 4] -= data[o + 10] * dt;
-      data[o] += data[o + 3] * dt;
-      data[o + 1] += data[o + 4] * dt;
-      data[o + 2] += data[o + 5] * dt;
-      if (data[o + 1] < data[o + 11] + 0.1) { // debris lands and skids
-        data[o + 1] = data[o + 11] + 0.1; data[o + 4] = 0;
-        const skid = Math.pow(0.9, dt * 60); // (0.9 a 60th of a second, whatever the frame rate)
-        data[o + 3] *= skid; data[o + 5] *= skid;
-      }
-      const t = 1 - data[o + 6] / data[o + 7];
-      const scale = data[o + 8] * (1 + data[o + 9] * t) * Math.min(1, (1 - t) * 3);
-      M[m] = M[m + 5] = M[m + 10] = scale;
-      M[m + 12] = data[o]; M[m + 13] = data[o + 1]; M[m + 14] = data[o + 2]; M[m + 15] = 1;
-    }
-    mesh.instanceMatrix.needsUpdate = true;
-  };
-
-  return { emit, update };
-};
-export const Particles = makeParticles(500, new THREE.MeshBasicMaterial()); // debris, flames, trails
+// ---- particles: smoke, fire and debris as instanced cubes (the machinery: render/particles.js) ---------------------
+export const Particles = makeParticles(500, new THREE.MeshBasicMaterial(), scene); // debris, flames, trails
 export const Fire = makeParticles(400, new THREE.MeshBasicMaterial({ // explosion fireballs
-  transparent: true, opacity: 0.5, depthWrite: false }));
+  transparent: true, opacity: 0.5, depthWrite: false }), scene);
 export const Smoke = makeParticles(600, new THREE.MeshBasicMaterial({
-  transparent: true, opacity: 0.35, depthWrite: false }));
-
-export const rnd = (range) => (Math.random() - 0.5) * 2 * range;
+  transparent: true, opacity: 0.35, depthWrite: false }), scene);
+const CLASSIC = { Particles, Fire, Smoke };
+export { rnd, FIRE_COLORS };
+// the KILL EFFECTS' pools in the game's scene (render/killfx.js): every explosion not in Classic, and the trails behind the player's packages
+export const KillFx = createKillFx(scene);
 // how many of something emitted `rate` times a second come out this frame (a whole number, right on average):
 // so a wake or an exhaust is as thick at 30, 60 or 120 frames a second
 export const perSecond = (rate, dt) => Math.floor(rate * dt + Math.random());
@@ -144,48 +98,40 @@ const updateTyres = (dt) => {
   }
 };
 
-export const FIRE_COLORS = [0xffffff, 0xffd23f, 0xff8c1a, 0xff3b1a];
+// an explosion, in the player's KILL EFFECT (render/killfx.js; Classic: the code it always was, render/particles.js classicExplode).
+// The rules queued the same event whichever: only the look is chosen here (render-only, not in the replay fingerprint)
 const explode = (e) => {
   const h = Track.toWorld(e.s, e.lat, tmp);
   const vx = Math.sin(h) * e.vs * 0.4, vz = Math.cos(h) * e.vs * 0.4;
   if (e.tyres) throwTyres(tmp.x, tmp.y, tmp.z, vx, vz);
-  // (scale: a bigger blast, the tank's shell; smoke: how much smoke, if not the usual)
-  const k = (e.big ? 1.5 : 1) * (e.scale || 1);
-  const ks = (e.big ? 1.5 : 1) * (e.smoke ?? 1);
-  for (let i = 0; i < 35 * k; i++) { // fireball
-    Fire.emit(tmp.x + rnd(1), tmp.y + 0.5 + Math.random() * 1.2, tmp.z + rnd(1),
-      vx + rnd(6), 2 + Math.random() * 8, vz + rnd(6),
-      0.4 + Math.random() * 0.6, (0.5 + Math.random() * 0.7) * k, 1.2, 8,
-      FIRE_COLORS[Math.floor(Math.random() * FIRE_COLORS.length)]);
-  }
-  for (let i = 0; i < 7 * ks; i++) { // smoke column
-    const grey = 20 + Math.floor(Math.random() * 50);
-    Smoke.emit(tmp.x + rnd(2), tmp.y + 1 + Math.random() * 2, tmp.z + rnd(2),
-      vx * 0.5 + rnd(3), 3 + Math.random() * 6, vz * 0.5 + rnd(3),
-      1.2 + Math.random() * 1.3, (0.8 + Math.random() * 0.8) * ks, 1.5, 0,
-      grey << 16 | grey << 8 | grey);
-  }
-  // glowing debris (no dark bits: the only dark things flying out are the tyres, which stand out for it)
-  for (let i = 0; i < 7 * k; i++) {
-    Particles.emit(tmp.x + rnd(1), tmp.y + 0.8, tmp.z + rnd(1),
-      vx * 1.5 + rnd(10), 5 + Math.random() * 9, vz * 1.5 + rnd(10),
-      1.5 + Math.random(), 0.25 + Math.random() * 0.5, 0, 25, 0xff8c1a, tmp.y);
-  }
+  const look = chosenKill(CAR.id);
+  if (look === 'classic' || !KillFx.explode(look, tmp.x, tmp.y, tmp.z, vx, vz, e)) classicExplode(CLASSIC, tmp.x, tmp.y, tmp.z, vx, vz, e);
+  else if (KILL_FX[look].sound) Sound.play(KILL_FX[look].sound.name, KILL_FX[look].sound.volume * near(e));
   // nearby blasts rattle the camera
   const distance = Math.abs(e.s - Player.s);
   if (distance < 60) Game.shake = Math.max(Game.shake, 1 - distance / 80);
 };
+// the player's own package bursting on a car or the road (an Evil player's flaming one: a 'burst' at the very spot the package was, as
+// packages.js queues it): drawn as a small explosion in the kill effect, when there is one (Classic: the burst it always was)
+const PACKAGE_HIT = { big: false, scale: 0.45, smoke: 0.3 };
+const playerPackageAt = (e) => {
+  for (const p of Packages.list) if (!p.active && p.owner === Player && p.s === e.s && p.lat === e.lat) return true;
+  return false;
+};
+const packageHit = (e) => {
+  const look = chosenKill(CAR.id);
+  if (look === 'classic' || !playerPackageAt(e)) return false;
+  const h = Track.toWorld(e.s, e.lat, tmp);
+  const vx = Math.sin(h) * e.vs * 0.6, vz = Math.cos(h) * e.vs * 0.6;
+  return KillFx.explode(look, tmp.x, tmp.y, tmp.z, vx, vz, PACKAGE_HIT);
+};
+const near = (e) => (e.s === undefined ? 1 : 1 - Math.abs(Track.along(e.s) - Track.along(Player.s)) / 160);
 
-// small fire puff where a package lands
+// small fire puff where a package lands (render/particles.js classicBurst: the same code, moved)
 const burst = (e) => {
   const h = Track.toWorld(e.s, e.lat, tmp);
   const vx = Math.sin(h) * e.vs * 0.6, vz = Math.cos(h) * e.vs * 0.6;
-  for (let i = 0; i < 18; i++) {
-    Particles.emit(tmp.x + rnd(0.5), tmp.y + 0.8 + Math.random(), tmp.z + rnd(0.5),
-      vx + rnd(5), 1 + Math.random() * 6, vz + rnd(5),
-      0.3 + Math.random() * 0.4, 0.5 + Math.random() * 0.6, 1, 6,
-      FIRE_COLORS[Math.floor(Math.random() * FIRE_COLORS.length)]);
-  }
+  classicBurst(CLASSIC, tmp.x, tmp.y, tmp.z, vx, vz);
 };
 
 // a care package arriving: a puff of bright confetti, no fire (green for a TANK RAGE target)
@@ -217,19 +163,33 @@ export const emitVehicleSmoke = (dt) => {
   for (const v of Collision.bodies) if (v.active && !v.junction) { emitSmoke(v, dt); if (v.inGravel) emitGravel(v, dt); }
 };
 
+// ?fxboom (a still of the kill effect in a run, render-only, the rules untouched): every 1.2 s of drawing, the nearest obstacle 15 to 60 m
+// ahead is drawn exploding where it stands (only drawn: it stays in the road), or, with none, the road 25 m ahead
+const FX_BOOM = (() => { try { return new URLSearchParams(location.search).has('fxboom'); } catch { return false; } })();
+let boomWait = 0.3;
+const fxBoom = (dt) => {
+  if ((boomWait -= dt) > 0 || !Player.active) return;
+  boomWait = 1.2;
+  let at = null;
+  for (const o of Collision.obstacles) if (!o.gone && o.s - Player.s > 15 && o.s - Player.s < 60 && (!at || o.s < at.s)) at = o;
+  explode({ type: 'explode', s: at ? at.s : Player.s + 25, lat: at ? at.lat : Player.lat, vs: 0, big: false });
+};
+
 // plays the effects the game logic queued this frame, then advances every particle and tyre
 export const updateEffects = (dt) => {
   for (const e of FxQueue) {
     // (a sound from a spot on the road, and every visual effect, is quieter the further away it is)
     const near = e.s === undefined ? 1 : 1 - Math.abs(Track.along(e.s) - Track.along(Player.s)) / 160;
     if (e.type === 'sound') { Sound.play(e.name, e.volume * near); continue; }
-    (e.type === 'burst' ? burst : e.type === 'gift' ? gift : explode)(e);
+    if (e.type === 'burst') { if (!packageHit(e)) burst(e); } else (e.type === 'gift' ? gift : explode)(e);
     // each visual effect has a sound of its own, unless it names another
     Sound.play(e.sound || (e.type === 'explode' && e.big ? 'explodeBig' : e.type), near);
   }
   FxQueue.length = 0;
+  if (FX_BOOM) fxBoom(dt);
   Particles.update(dt);
   updateTyres(dt);
   Smoke.update(dt);
   Fire.update(dt);
+  KillFx.update(dt, camera);
 };

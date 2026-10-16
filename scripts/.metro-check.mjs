@@ -146,6 +146,24 @@ try {
     check(!a.wrecked && !b.wrecked && a.passed && b.passed && a.gone && b.gone, 'a car in lane ' + n + ' is untouched as each train goes by, and each is gone after');
   }
   check(!drive(BulletTrain, lane(2, 900)).wrecked && !drive(UpTrain, lane(0, 900)).wrecked, 'each train keeps to its own track (a car on the other track untouched)');
+  { // the 'behind' marker (render/hud.js syncBehind reads UpTrain.behind()): on exactly while the overtaking train is live behind
+    // the player, on the right track's side; off once it has passed; never for the train coming the other way
+    G.start();
+    for (const car of g.Traffic.cars) car.active = false;
+    Object.assign(P, { s: 900, lat: lane(1, 900), speed: 20, launching: false, ghost: 0, shield: 0 });
+    BulletTrain.active = UpTrain.active = false; BulletTrain.next = UpTrain.next = Infinity;
+    UpTrain.start(true); BulletTrain.start(true);
+    let wrong = 0, on = 0, first = 0, side = true, downMarked = false;
+    g.run(10, () => {
+      BulletTrain.next = UpTrain.next = Infinity; P.lat = lane(1, P.s);
+      const b = UpTrain.behind(), live = UpTrain.active && !UpTrain.passed;
+      if (!!b !== live) wrong++;
+      if (b) { on++; first ||= b.gap; side &&= b.lat > P.lat && Math.abs(b.lat - T.railLat(1, P.s)) < 1e-6; }
+      if (BulletTrain.behind()) downMarked = true;
+      return !UpTrain.active && !BulletTrain.active;
+    });
+    check(!wrong && on > 0 && side && !downMarked, 'the HUD\'s \'behind\' marker for the overtaking train: on from ' + Math.round(first) + ' m behind until it passes (' + on + ' steps), on the right track\'s side, off after; none for the oncoming train');
+  }
   check(!drive(BulletTrain, lane(0, 900), { ghost: true }).wrecked && !drive(UpTrain, lane(2, 900), { ghost: true }).wrecked, 'a ghost on a track is passed through');
   { // the tracks slow a car on them, as Canberra's rails do (by how well it crosses: CONFIG.railCrossing)
     G.start();
@@ -182,10 +200,41 @@ try {
       return wrecked;
     };
     check(hitPillar(), 'a car driven into a pillar is wrecked outright (the dead end\'s wall\'s way: Collision.hitObstacles, laneEnd \'pillar\')');
-    check(hitPillar({ shield: true }) && hitPillar({ tank: true }) && hitPillar({ armour: true }), '...a fresh drop\'s shield, a tank, armour: wrecked all the same (solid structure, as a wall)');
+    check(hitPillar({ tank: true }) && hitPillar({ armour: true }), '...a tank, armour: wrecked all the same (solid structure, as a wall)');
+    check(!hitPillar({ shield: true }), '...a fresh drop\'s respawn shield takes the car through it (a pillar only: a dead end\'s wall still wrecks it)');
     check(!hitPillar({ ghost: true }), '...a Ghost passes through (there is road behind it, as behind a shutter)');
     check(!hitPillar({ lat: lane(0, groups[0].from) }) && !hitPillar({ lat: lane(2, groups[0].from) }), '...a car on either track beside them passes untouched (no train about)');
     check(pillars.every(o => !o.gone), 'the pillars still stand after all that (never knocked down)');
+  }
+  { // THE DROP after a pillar wreck (the owner: "The respawn invulnerability on the Metro does not prevent instant wreckage from the
+    // same pillar. The Heli should respawn the player on a clear track."): for every column of every group, driven into it, wrecked,
+    // the helicopter's delivery waited for, then driven on flat out: where the new car lands, its shield, a second wreck, a train
+    const rows = [], bad = [];
+    for (const forced of [false, true]) for (const v of [15, 35, 60]) for (const q of groups) for (let k = 0; k < PC.count; k++) {
+      const col = q.from + k * PC.gap;
+      G.start();
+      for (const car of g.Traffic.cars) car.active = false;
+      for (const o of g.Collision.obstacles) if (o.kind !== 'pillar') o.gone = true;
+      BulletTrain.active = UpTrain.active = false;
+      Object.assign(P, { s: col - 8 - v * 0.05, lat: lane(1, col), speed: v, launching: false, shield: 0, ghost: 0, tank: 0, armour: 0 });
+      P.testGhost = false;
+      let phase = 0, drop = null, wrecks = 0, trainNear = false, after = 0;
+      g.run(16, (t) => {
+        if (forced) BulletTrain.next = UpTrain.next = 0; else BulletTrain.next = UpTrain.next = Infinity; // (forced: both tracks' trains due all the time)
+        if (phase === 0) { g.drive(1, 0); P.lat = lane(1, P.s); if (!P.active || P.health <= 0) { phase = 1; wrecks++; } return false; }
+        if (phase === 1) { if (P.active) { phase = 2; after = t; drop = { s: P.s, lat: P.lat, lane: T.nearestLane(P.lat, P.s), shield: P.shield, busy: [BulletTrain, UpTrain].some((tr, j) => tr.active && Math.abs(T.railLat(j, P.s) - P.lat) < 1) }; } return false; }
+        g.drive(1, 0); P.lat = drop.lat - lane(drop.lane, drop.s) + lane(drop.lane, P.s); // (kept on its track, flat out)
+        for (const [j, tr] of [BulletTrain, UpTrain].entries()) if (tr.active && Math.abs(T.railLat(j, P.s) - P.lat) < 1 && Math.abs(tr.s - P.s) < 300) trainNear = true;
+        if (!P.active || P.health <= 0) { wrecks++; return true; }
+        return P.s > q.to + 40 && t - after > 3;
+      });
+      const among = drop && drop.s > q.from - PC.clear + 0.5 && drop.s < q.to + PC.clear - 0.5;
+      const ok = drop && wrecks === 1 && (drop.lane === 0 || drop.lane === 2) && !among && drop.shield > 0 && !drop.busy;
+      rows.push(drop ? drop.s - col : NaN);
+      if (!ok) bad.push((forced ? 'trains due ' : '') + v + ' m/s, group ' + q.from + ' column ' + k + ': ' + (drop ? 'set down at ' + drop.s.toFixed(1) + ' lane ' + drop.lane : 'never set down') + ', ' + wrecks + ' wrecks' + (trainNear ? ', a train near' : ''));
+    }
+    check(!bad.length, 'wrecked at each of the ' + groups.length * PC.count + ' pillars (at 15, 35 and 60 m/s, with and without trains due on both tracks: ' + rows.length + ' runs): set down on a clear TRACK (lane 0 or 2), ' + PC.clear +
+      ' m clear of the group (behind or past it, the nearer: ' + Math.min(...rows).toFixed(0) + ' to ' + Math.max(...rows).toFixed(0) + ' m from the column), shielded, never on a train, and driven on past the group with no second wreck' + (bad.length ? ': ' + bad.slice(0, 4).join(' | ') : ''));
   }
   { // THE COUNTERPLAY GUARANTEE: past every group of pillars at most one track has a train on it, and no train sets off from
     // CONFIG.pillar.warn m before a group to its last pillar. Measured: the whole level driven at 15 to 60 m/s with trains due every
@@ -301,7 +350,7 @@ try {
     const mall = g.select('mall-dash');
     G.load(); // (loaded, not started: whether the current car may drive it is the tier rule's business, not this check's)
     const rails = g.Collision.obstacles.filter(o => o.kind === 'handrail').length;
-    check(mall.boostPads.every(p => p.rails === undefined) && rails > 0, 'Mall Dash: its pads keep their handrails (' + rails + ' sections)');
+    check(mall.boostPads.every(p => p.rails === true) && rails === 144, 'Mall Dash: its pads keep their handrails (rails: true; ' + rails + ' sections, 144 expected)'); // (handrails are off by default since 16-Oct)
   }
 } catch (error) {
   failures++;

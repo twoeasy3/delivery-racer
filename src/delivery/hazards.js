@@ -43,6 +43,7 @@ let attached = false;
 export const Hazards = {
   schools: [],   // { s, state: 'idle' | 'stop', t, next, started }
   mains: [],     // { from, to, lane, lat, on, t, warned }: its patch of ice is Track.sprays' (same order)
+  puddles: [],   // { from, to, lane, warned }: the level's standing water ("waterPatches", Track.puddles), for its warning
   balloons: [],  // { s, lat0, lat1, state: 'idle' | 'descend' | 'sit' | 'rise' | 'gone', t, hit }
   bridges: [],   // { s, state: 'idle' | 'warn' | 'open' | 'close', t, next, started, bell }
   loads: [],     // { s0, ends(s) (the two places it swings between), load, escort (obstacles), on, t, passed, done }
@@ -135,6 +136,7 @@ export const Hazards = {
     });
     Track.sprays.length = 0;
     for (const m of this.mains) Track.sprays.push({ from: m.from, to: m.to, lane: m.lane, on: false, water: true }); // (water: see Player.onWater)
+    this.puddles = Track.puddles.map(p => ({ from: p.from, to: p.to, lane: p.lane, warned: false }));
     this.balloons = (LEVEL.balloons || []).map((b) => {
       const s = place(b), LW = CONFIG.laneWidth;
       return { s, lat0: Track.laneOffset(b.lanes[0], s) - LW / 2, lat1: Track.laneOffset(b.lanes[1], s) + LW / 2, state: 'idle', t: 0, hit: false };
@@ -342,6 +344,10 @@ export const Hazards = {
       Track.sprays[i].on = m.on;
       if (!m.warned && Player.active && m.from - Player.s > 0 && m.from - Player.s < M.warn) { m.warned = true; Message.say('events', 'waterMain'); }
     });
+    // ---- standing water ("waterPatches"): warned of as a main is (a theme can have words of its own: the mall's WET FLOOR)
+    for (const p of this.puddles) {
+      if (!p.warned && Player.active && p.from - Player.s > 0 && p.from - Player.s < M.warn) { p.warned = true; Message.say('events', THEMES[LEVEL.theme]?.standingWater?.say || 'standingWater'); }
+    }
 
     // ---- hot-air balloons
     const B = CONFIG.balloon;

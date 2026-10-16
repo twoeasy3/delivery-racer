@@ -8,7 +8,8 @@ import { updateYaw, keepOnRoad, sfx, cornerSpeed } from './physics.js';
 import { Traffic } from './traffic.js';
 import { Message } from './messages.js';
 import { UfoStrike } from './ufostrike.js';
-import { BulletTrain } from './bullettrain.js';
+import { BulletTrain, TRAINS } from './bullettrain.js';
+import { LaneGimmicks } from './lanegimmicks.js';
 import { Tide } from './tide.js';
 import { Water } from './water.js';
 import { Wreckage } from './wreckage.js';
@@ -41,7 +42,7 @@ export const Player = {
   brakeLight: false,   // braking at all: the brake lights are on
   onIce: false,        // on an ice patch (see CONFIG.ice), or anything as slippery (see Track.icy)...
   onWater: false,      // ...and that being a burst main's water (see CONFIG.waterMain: its own share of the brakes and the steering)
-  wetTyres: 0,         // 1 .. 0: after a burst main's water, the tyres stay wet for CONFIG.waterMain.wetAfter m (ice lets go the moment the car is off it)
+  wetTyres: 0,         // 1 .. 0: after a burst main's water or standing water, the tyres stay wet for Track.wet.wetAfter m (ice lets go the moment the car is off it)
   wading: 0,           // how deep the tide's water is where the car is (see Tide): 0 = dry, 1 = full depth
   afloat: false,       // afloat on a water stage (see Water), and how deep its water is where the car is: 0 = dry road .. 1
   waterDepth: 0,
@@ -142,6 +143,15 @@ export const Player = {
         this.dropOncoming = true;
       }
     }
+    // (wrecked at a group of PILLARS, lanegimmicks.js: set down clear of the group, behind or past it, in the lane beside, the
+    // track with no train on it on an edge railway: TRAINS[k] runs on track k, lane 0 the left, the last lane the right)
+    const busy = (l) => TRAINS.some((train, k) => train.active && train.onTrack && l === (k ? Track.laneCount - 1 : 0));
+    const clear = LaneGimmicks.pillarDrop(this.s, this.lat, busy);
+    if (clear) { this.s = clear.s; lane = clear.lane; }
+    // ...and (wrecked under a ladle's pour, or near it: set down in the lane it leaves free, never into the pool: lanegimmicks.js),
+    // from where the pillars' rule put it (the two never meet on one level today: pillars are the metro's, ladles the steelworks')
+    const free = LaneGimmicks.ladleDrop(this.s, lane);
+    if (free !== null) lane = free;
     this.lat = Track.laneOffset(lane, this.s);
   },
   // a fresh car at a standstill (the helicopter has just set it down)
@@ -175,6 +185,7 @@ export const Player = {
     this.onIce = false;
     this.onWater = false;
     this.wetTyres = 0;
+    this.pulling = 0; this.scrubNear = 0; this.steered = false; // (the driven lane scrub's: see update)
     this.wading = 0;
     this.afloat = false;
     this.waterDepth = 0;
@@ -359,6 +370,8 @@ export const Player = {
   // auto: the accelerator is held down by auto accelerate alone (input.js auto): the player is not on it, so the car lets go
   // of it for a slower car close ahead, and brakes by itself as it does off the accelerator (below)
   updateSpeed(dt, throttle, stopping, auto = false) {
+    this.pulling = 0; // (m/s^2 the engine pulled with this step, by the accelerator held: the driven lane scrub's, in update)
+    this.speedTop = Infinity; // (and the top speed it pulls for, below)
     if (stopping) {
       this.speed = Math.max(0, this.speed - CONFIG.brake * dt);
       this.brakeLight = this.speed > 0;
@@ -445,10 +458,15 @@ export const Player = {
     // (the Amphibious Tank keeps a share of its own)
     top *= this.rageTank && afloat ? 1 + (this.rageTank.afloat - 1) * Math.min(1, sea.depth / CONFIG.water.afloat) : sea.top;
     let drive = throttle;
+    this.speedTop = top;
     // the slowest the brakes bring it: on a lapped circuit, minSpeed; anywhere else, to a stop, for as long
     // as the brake is held (let go, it rolls on up to minSpeed again by itself)
     const slowest = LEVEL.laps ? CONFIG.minSpeed : 0;
-    const grip = this.onIce ? (this.onWater ? CONFIG.waterMain : CONFIG.ice).brakeGrip : 1 - (1 - CONFIG.waterMain.brakeGrip) * this.wetTyres; // (braking on ice, or on a burst main's water, or on the wet tyres it leaves)
+    const WM = Track.wet; // (the water's numbers on this level: CONFIG.waterMain's, scaled by its "wetness")
+    const grip = this.onIce ? (this.onWater ? WM : CONFIG.ice).brakeGrip : 1 - (1 - WM.brakeGrip) * this.wetTyres; // (braking on ice, or on a burst main's water or standing water, or on the wet tyres it leaves)
+    // (and the engine's pull: wheelspin on ice or water, fading back over the wet tail; only the car's own acceleration, never its top
+    // speed, the turbo's or a boost pad's pull, the pull-away after a drop or a tank's)
+    const pull = this.launching || this.tank > 0 ? 1 : this.onIce ? (this.onWater ? WM : CONFIG.ice).accelGrip : 1 - (1 - WM.accelGrip) * this.wetTyres;
     // (but with a flat tyre, not: the car can be brought to a stop to change it, and stays there)
     if (drive <= 0 && (this.launching || this.speed < CONFIG.minSpeed) && !this.puncture && !(drive < 0 && !this.launching && slowest < CONFIG.minSpeed)) drive = 1;
     if (drive === 0 && boosted && !lifting) drive = 1; // the turbo pulls unless you brake (or lift off)
@@ -459,7 +477,10 @@ export const Player = {
       // (or on washboard dirt: dragged down to its `most`)
       this.speed = Math.max(top, this.speed - (rails || wet || mud ? R.bite : afloat ? CONFIG.water.drag : board ? B.drag : CONFIG.brake * 0.5) * dt);
     } else if (drive > 0) {
-      this.speed = Math.min(top, this.speed + drive * (boosted ? CONFIG.turboAccel : drives.accel * (held ? held.accel : 1)) * (this.puncture ? CONFIG.puncture.accel : 1) * seaAccel * dt);
+      const accel = drive * (boosted ? CONFIG.turboAccel : drives.accel * (held ? held.accel : 1) * pull) * (this.puncture ? CONFIG.puncture.accel : 1) * seaAccel;
+      this.speed = Math.min(top, this.speed + accel * dt);
+      // (the driven lane scrub's: the car's own pull with the accelerator held; not the turbo's or a pad's, the pull-away, or afloat)
+      if (throttle > 0 && !boosted && !this.launching && !afloat) { this.pulling = accel; this.pullDrive = drive; }
     } else if (drive < 0 && this.puncture) { // (a flat tyre: hard, and all the way down to a stop)
       this.speed = Math.max(0, this.speed + drive * CONFIG.brake * CONFIG.puncture.brake * grip * dt);
     } else if (drive < 0 && this.speed > slowest) {
@@ -516,10 +537,10 @@ export const Player = {
     }
     if (icy) this.yawVel += (random() - 0.5) * 8 * Math.min(1, this.speed / 25) * dt; // (and twitches about on it)
     this.onIce = icy;
-    this.onWater = icy && !!patch.water; // (a burst main's water: slippery by its own numbers, see CONFIG.waterMain)
-    // water leaves wet tyres: for wetAfter m past a burst main's water, its braking, steering and lane-change numbers fade back
-    // to normal (it's no ice: no sliding, no understeer). Ice lets go the moment the car is off it
-    const WM = CONFIG.waterMain;
+    this.onWater = icy && !!patch.water; // (a burst main's water, or standing water: slippery by its own numbers, see CONFIG.waterMain and Track.wet)
+    // water leaves wet tyres: for wetAfter m past a burst main's water (or standing water), its braking, steering, lane-change and acceleration
+    // numbers fade back to normal (it's no ice: no sliding, no understeer). Ice lets go the moment the car is off it
+    const WM = Track.wet; // (CONFIG.waterMain's numbers, scaled by the level's "wetness": one source, track.js waterNumbers)
     this.wetTyres = this.onWater ? 1 : icy ? 0 : Math.max(0, this.wetTyres - this.speed * dt / WM.wetAfter);
     const wetMix = (key) => 1 - (1 - WM[key]) * this.wetTyres;
     const slippery = icy ? (this.onWater ? WM : CONFIG.ice) : this.wetTyres > 0 ? { steerGrip: wetMix('steerGrip'), laneSpeed: wetMix('laneSpeed') } : null;
@@ -589,11 +610,20 @@ export const Player = {
       const across = Math.min(1, Math.abs(this.latVel) / (CONFIG.steerSpeed * this.agility));
       this.speed = Math.max(CONFIG.minSpeed, this.speed - CONFIG.mystery.noBrakes.steerScrub * Math.abs(steer) * across * dt);
     }
-    // changing lanes scrubs a little speed, the less the more agile the car (CONFIG.trueSpeed)
+    // changing lanes scrubs a little speed, the less the more agile the car (CONFIG.trueSpeed); and with the accelerator
+    // held near top speed, more: the engine's pull taken back and a scrub on top (CONFIG.trueSpeed.driven), so it is felt
     if (steer !== 0 && !this.busted && this.speed > CONFIG.minSpeed) {
+      const T = CONFIG.trueSpeed, D = T.driven;
       const across = Math.min(1, Math.abs(this.latVel) / (CONFIG.steerSpeed * this.agility));
-      this.speed = Math.max(CONFIG.minSpeed, this.speed - CONFIG.trueSpeed.laneScrub * across * across / this.agility * dt);
+      // (how near top speed the car was as the steer went on, kept for as long as it is held: a car that starts the change at
+      // top speed is scrubbed all the way through it, however much it loses, and a car still climbing through the range is not)
+      // (and a car still climbing gets `least` of it: a lane change while pulling away is a little slower than none)
+      if (!this.steered) { const k = clamp((this.speed / this.speedTop - D.from) / (D.full - D.from), 0, 1); this.scrubNear = D.least + (1 - D.least) * k * k * (3 - 2 * k); }
+      const near = this.pulling > 0 ? this.scrubNear : 0;
+      const driven = near > 0 ? D.tune * near * (D.cancel * this.pulling + Math.min(D.most, D.lose / this.agility) * this.pullDrive) : 0;
+      this.speed = Math.max(CONFIG.minSpeed, this.speed - (T.laneScrub * across * across / this.agility + driven * across * across) * dt);
     }
+    this.steered = steer !== 0; // (the steer held last step: the driven lane scrub's, above)
     // (where walls hurt, "wallDamage", nothing stops the slide carrying the car into one: see keepOnRoad)
     if (!LEVEL.wallDamage) this.latVel += slide * dt;
 

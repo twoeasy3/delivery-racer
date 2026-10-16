@@ -198,7 +198,7 @@ try {
     W.setWheelDesign('redwhite');
     const born = build(cars.find(c => c.id === 'commuter') || hubbed[0].car);
     check(ringsOf(born).length === 0 && born.userData.wheelHubs.hubs.every(h => h.mesh.material.color.getHex() === 0xf4f4f2) && born.userData.wheelHubs.info.every(t => t.tyre.material.color.getHex() === 0xd8262b), 'a car built under Red tyres, white hubs wears them from the start');
-    W.setWheelDesign('goldwall');
+    W.setWheelColour('stock'); W.setWheelDesign('goldwall'); // (since the three-part set the hub is its own choice: the old gold-hub design brings its gold only where the hub was Stock)
     const born2 = build(cars.find(c => c.id === 'commuter') || hubbed[0].car);
     check(ringsOf(born2).length > 0 && born2.userData.wheelHubs.hubs.every(h => h.mesh.material.color.getHex() === 0xd9a92a), 'a car built under Gold hubs, whitewall wears them from the start');
 
@@ -337,8 +337,8 @@ try {
     server.moduleGraph.invalidateAll();
     const S = await load('render/wheelcosmetic.js'), { Progress: P3 } = await load('progress.js');
     const sets = S.WHEEL_SETS;
-    check(sets.length >= 10 && sets.length <= 20 && new Set(sets.map(x => x.id)).size === sets.length, sets.length + ' sets, ids unique');
-    check(new Set(sets.map(x => x.design + '/' + x.hub + '/' + (x.rim || 'none'))).size === sets.length, 'no two sets are the same design + hub + rim');
+    check(sets.length >= 10 && sets.length <= 30 && new Set(sets.map(x => x.id)).size === sets.length, sets.length + ' sets, ids unique');
+    check(new Set(sets.map(x => x.design + '/' + x.hub + '/' + (x.rim || 'none') + '/' + (x.tread || 'none'))).size === sets.length, 'no two presets are the same tyre colour + hub + rim + tread');
     check(sets.every(x => S.WHEEL_DESIGNS.some(d => d.id === x.design) && S.WHEEL_COLOURS.some(c => c.id === x.hub)), 'every set uses an existing design and hub colour');
     check(sets[0].id === 'stock' && sets[0].design === 'stock' && sets[0].hub === 'stock', 'the first set is Stock');
     check(S.wheelSet() === 'stock', 'nothing saved: the equipped set is Stock');
@@ -408,7 +408,7 @@ try {
     const mk = (car) => { try { return make(car); } catch { return null; } };
     const rimsOf = (model) => model.userData.wheelHubs?.rims?.list || [];
     const D = RM.RIM_DESIGNS, rimSets = WC.WHEEL_SETS.filter(x => x.rim);
-    check(D[0].id === 'none' && D.filter(d => d.kind === 'speed').length >= 3 && D.filter(d => d.kind === 'spin').length >= 2, 'rim designs: ' + D.slice(1).map(d => d.id + ' (' + d.kind + ', ' + RM.rimTriangles(d.id) + ' triangles a face)').join(', '));
+    check(D[0].id === 'none' && D.slice(1).every(d => d.kind === 'speed' || d.kind === 'spin') && D.length >= 8, 'rim designs (a rim turns with the car, a spinner at its own pace): ' + D.slice(1).map(d => d.id + ' (' + d.kind + ', ' + RM.rimTriangles(d.id) + ' triangles a face)').join(', '));
     check(rimSets.length >= 5 && rimSets.every(x => D.some(d => d.id === x.rim && d.kind)) && !WC.WHEEL_SETS[0].rim && D.slice(1).every(d => rimSets.some(x => x.rim === d.id)), rimSets.length + ' sets carry a rim (every design in one), Stock carries none: ' + rimSets.map(x => x.id).join(', '));
     check(WC.wheelRim() === 'none' && RM.resolveRim('commuter', 'front') === 'none', 'nothing saved: no rim');
 
@@ -419,7 +419,7 @@ try {
     for (const set of rimSets) {
       WC.setWheelSet(set.id);
       const list = rimsOf(pu), hex = (WC.WHEEL_COLOURS.find(c => c.id === set.hub).hex ?? RM.DEFAULT_HEX);
-      check(WC.wheelSet() === set.id && WC.wheelRim() === set.rim && list.length === 4 && list.every(m => m.userData.rim.id === set.rim && m.material === RM.rimMaterial(hex) && m.geometry === RM.rimGeometry(set.rim)), set.id + ': equipped, the live Pick-Up wears ' + list.length + ' ' + set.rim + ' rims in the set\'s hub colour (one shared geometry and material)');
+      check(WC.wheelSet() === set.id && WC.wheelRim() === set.rim && list.length === 4 && list.every(m => m.userData.rim.id === set.rim && m.material === RM.rimMaterial(RM.rimHex(set.rim, hex)) && m.geometry === RM.rimGeometry(set.rim)), set.id + ': equipped, the live Pick-Up wears ' + list.length + ' ' + set.rim + ' rims in the set\'s hub colour (one shared geometry and material)');
       check(list.every(m => found.rimInfo.some(t => t.tyre === m.parent)) && list.every(m => m.userData.wheelRing && m.material.userData.wheelHub && (!m.userData.rim.blur || (m.userData.rim.blur.userData.wheelRing && m.userData.rim.blur.material.userData.wheelHub))), set.id + ': every rim is a child of its own tyre, tagged wheelRing, its material wheelHub (and the blur disc too)');
       check(new Set(list.map(m => m.parent)).size === list.length || found.rimInfo.some(t => !t.outer), set.id + ': one rim per tyre face (never one mesh across wheels)');
       check(!hubsVisible(), set.id + ': the stock hubs under the rims are hidden');
@@ -549,10 +549,10 @@ try {
       delete com.userData.roll; com.userData.wheelHubs.rims.roll = undefined;
       const idle = run(com, null, 30, false);
       check(idle.every(x => Math.abs(x.perFrame - RM.IDLE_RATE / 60) < 1e-4), 'with no speed to follow (garage, showroom) a speed rim idles at ' + RM.IDLE_RATE + ' rad/s');
-      WC.setWheelSet('blade-spinner');
+      WC.setWheelSet('blade-spinner'); // (the Blade: a spinner until 15-Oct, now a rim like the rest: scripts/.rims-check.mjs turns every design)
       const sp = mk(fleetAll.find(c => c.id === 'commuter'));
-      const still = run(sp, 0, 30), moving = run(sp, 30, 30), noSpeed = (() => { delete sp.userData.roll; sp.userData.wheelHubs.rims.roll = undefined; return run(sp, null, 30, false); })();
-      check([still, moving, noSpeed].every(rs => rs.every(x => Math.abs(x.perFrame - RM.SPIN_RATE / 60) < 1e-4)), 'a spinner turns at ' + RM.SPIN_RATE + ' rad/s stopped, at 30 m/s and on show alike');
+      const still = run(sp, 0, 30), moving = run(sp, 2, 30);
+      check(still.every(x => Math.abs(x.perFrame) < 1e-6) && moving.every(x => Math.abs(x.perFrame - 2 / x.r / 60) < 0.002 * (2 / x.r / 60) + 1e-4), 'the Blade (once a spinner) stands still with the car stopped and turns by distance over radius rolling');
       // an old model whose tyres turn themselves (render/models.js wheelTurn): the rim's turn is still distance over radius, not doubled
       WC.setWheelSet('spoke5');
       const f1 = fleetAll.find(c => c.id === 'f1');
@@ -626,7 +626,7 @@ try {
       const dressedCar = mk2(car), stockCar = mk2(car, { stock: true });
       const worn = (m) => ({ rims: m.userData.wheelHubs?.rims?.list.length || 0, plate: PC.platePlan(m)?.worn?.length || 0, props: PD.propPlan(m)?.worn?.length || 0, cos: (() => { let n = 0; m.traverse(x => { if (x.userData.propCosmetic || x.userData.wheelRing || x.userData.plateFace) n++; }); return n; })() });
       const dw = worn(dressedCar), sw = worn(stockCar);
-      check(plateOn && propOn && dw.rims > 0 && dw.plate > 0 && dw.props > 0 && dw.cos > 0, 'a loadout on (blade spinner set, a plate design, a roof prop): a car on show wears it (' + JSON.stringify(dw) + ')');
+      check(plateOn && propOn && dw.rims > 0 && dw.plate > 0 && dw.props > 0 && dw.cos > 0, 'a loadout on (Blade set, a plate design, a roof prop): a car on show wears it (' + JSON.stringify(dw) + ')');
       check(!stockCar.userData.wheelHubs && !PC.platePlan(stockCar) && !PD.propPlan(stockCar) && sw.cos === 0 && sw.rims === 0, 'makeShowCar(car, { stock: true }): the car as it comes, no wheel set, rim, plate or prop (' + JSON.stringify(sw) + ')');
       const { readFileSync } = await import('node:fs');
       const src = (f) => readFileSync('src/delivery/' + f, 'utf8');

@@ -18,6 +18,7 @@ import { LaneGimmicks } from '../lanegimmicks.js';
 import { scene, tmp, clearGroup } from './scene.js';
 import { buildStrip } from './road.js';
 import { ceilingAt } from './tunnelshape.js';
+import { syncLadles } from './ladles.js'; // (the steelworks' ladles: their crane, pour and pool)
 
 const group = new THREE.Group();
 scene.add(group);
@@ -174,6 +175,7 @@ Game.onLoad.push(() => {
 });
 
 export const syncLaneGimmicks = (dt, now) => {
+  syncLadles(now);
   for (const b of belts) b.material.map.offset.y -= b.speed * dt;
   const on = Math.floor(now / 250) % 2 === 0;
   for (const { lamps, e } of ends) {

@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { makeShowCar, paintShowCar } from './showcar.js';
 import { CONFIG } from '../config.js';
 import { dentLevel, dentModel, scorch } from './dents.js';
+import { crackShare, crackModel } from './cracks.js';
 
 // (an idea with no model yet stands as a plain block of its size, as in the ideas lot: render/ideaslot.js)
 const block = (car) => {
@@ -24,6 +25,7 @@ export const buildInspectModel = (car, evil = false) => {
   if (!model) model = block(car);
   model.parent?.remove(model);
   paintInspectModel(model, car, evil);
+  model.userData.crackKey = car.id; // (render/cracks.js: the car's own crack pattern)
   return model;
 };
 export const paintInspectModel = (model, car, evil) => {
@@ -79,6 +81,7 @@ export const damageModel = (model, share) => {
   if (!body || !body.geometry) return 0;
   const level = dentLevel(share), mat = paintMat(body);
   if (level > 0 || model.userData.dentLevel) dentModel(model, body, share); // (clean and never dented: left alone, nothing measured)
+  crackModel(model, crackShare(share) === null ? null : share, model.userData.crackKey); // (the glass cracked too, with ?crack in the address: render/cracks.js)
   if (mat?.color) {
     const kept = model.userData.damageClean || (share > 0 ? (model.userData.damageClean = mat.color.clone()) : null);
     if (kept) { mat.color.copy(kept); scorch(mat.color, share); if (share <= 0) model.userData.damageClean = null; }

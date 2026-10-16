@@ -16,9 +16,12 @@
 //   propById(id) -> the prop; buildProp(id, paint) -> the group; propPaint(hex) -> a paint material for it.
 import * as THREE from 'three';
 import { MORE_ROOF } from './propmodelsroof.js';
+import { MORE_ROOF_2 } from './propmodelsroof2.js';
 import { MORE_CARGO } from './propmodelscargo.js';
+import { MORE_CARGO_2 } from './propmodelscargo2.js';
 import { MORE_WING } from './propmodelswing.js';
 import { MORE_WING_CLASSIC } from './propmodelswingclassic.js';
+import { MORE_WING_2 } from './propmodelswing2.js';
 
 const shared = (m) => { m.userData.shared = true; return m; };
 const DARK = shared(new THREE.MeshLambertMaterial({ color: 0x23252a }));      // black plastic, stands, rails
@@ -134,9 +137,9 @@ export const BASE_PROPS = {
 // The extras live in their own files (propmodelsroof / cargo / wing / wingclassic, each with a MORE_* list and colourFrom: 'car' | 'mixed' |
 // 'fixed'); their ids are 'roof-...', 'cargo-...', 'wing-...' and never collide with the nine.
 export const PROPS = {
-  roof: [...BASE_PROPS.roof, ...MORE_ROOF],
-  cargo: [...BASE_PROPS.cargo, ...MORE_CARGO],
-  wing: [...BASE_PROPS.wing, ...MORE_WING_CLASSIC, ...MORE_WING],
+  roof: [...BASE_PROPS.roof, ...MORE_ROOF, ...MORE_ROOF_2],
+  cargo: [...BASE_PROPS.cargo, ...MORE_CARGO, ...MORE_CARGO_2],
+  wing: [...BASE_PROPS.wing, ...MORE_WING_CLASSIC, ...MORE_WING_2, ...MORE_WING],
 };
 export const propById = (id) => Object.values(PROPS).flat().find(p => p.id === id) || null;
 export const propSlotOf = (id) => Object.keys(PROPS).find(slot => PROPS[slot].some(p => p.id === id)) || null;

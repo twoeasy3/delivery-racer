@@ -119,7 +119,9 @@ try {
         // that side; from 30 m out it is committed)
         if (d > 30 || !side) {
           side = 0;
-          for (let v = Math.ceil(g.cars.CAR.maxSpeed); v >= 14 && !side; v--) {
+          // (planned a little under top speed: a sweep across the road flat out at top speed scrubs about 1 m/s since
+          // CHECKLIST 421, CONFIG.trueSpeed.driven, and a pass planned at the very top speed then arrives late)
+          for (let v = Math.floor(g.cars.CAR.maxSpeed) - 1; v >= 14 && !side; v--) {
             const { gaps } = look(v);
             const pick = gaps[prefer] >= room ? prefer : gaps[-prefer] >= room ? -prefer : 0;
             if (pick) { side = pick; speed = v; }

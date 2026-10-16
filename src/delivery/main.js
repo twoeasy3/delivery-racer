@@ -60,6 +60,7 @@ import { UfoStrike } from './ufostrike.js';
 import { syncStorm } from './render/storm.js';
 import { syncMovers } from './render/movers.js';
 import { syncTunnel } from './render/tunnel.js';
+import { LaneGimmicks } from './lanegimmicks.js';
 import { syncLaneGimmicks } from './render/lanegimmicks.js'; // (the boost pads' belts scroll, the dead ends' beacons flash)
 import { syncRoadworks } from './render/roadworks.js'; // (a diversion's arrow boards and beacons flash)
 import { syncReversible } from './render/reversible.js';
@@ -107,6 +108,13 @@ if (params.has('freetry')) for (const e of Events.specials) if (e.days) Events.s
 // A visit with any of these is a test, not play: it lends cars and opens levels, so none of it is saved
 // (Progress.noSave: the save stays as it was before the visit, whatever is delivered, bought or counted in it)
 if (['autostart', 'hidden', 'test', 'edited', 'pick', 'car', 'ghost', 'mystery', 'theme', 'beaten', 'owns', 'event', 'unlockall'].some(key => params.get(key) !== null)) Progress.noSave = true;
+// ?lanescrub=2: the lane-change scrub with the accelerator held (CONFIG.trueSpeed.driven) that many times as strong for the
+// visit, to try a feel (0: as before CHECKLIST 421). A test, not play: nothing saved and no replay recorded (a replay
+// played back without it would not drive the same)
+if (params.get('lanescrub') !== null && Number.isFinite(Number(params.get('lanescrub')))) {
+  CONFIG.trueSpeed.driven.tune = Math.max(0, Number(params.get('lanescrub')));
+  Progress.noSave = true;
+}
 // ?beaten=expressway,back-roads:evil,farm:both and ?owns=lovebus,wagon&money=500: a state to look at (the level tiers:
 // medals are best times; nothing is saved). A level listed alone is a Good medal.
 if (params.get('beaten')) {
@@ -294,6 +302,7 @@ if (params.get('racewatch') !== null) {
   if (params.get('speed')) Object.assign(Player, { speed: Number(params.get('speed')), launching: false }); // ?speed=31: doing that many m/s from the start (with ?ff: hands off, the speed holds)
   if (params.get('lane')) Player.lat = Track.laneOffset(Number(params.get('lane')), Player.s); // ?lane=4: in that lane
   if (params.get('trainsin')) { const [a, b = a] = params.get('trainsin').split(',').map(Number); if (BulletTrain.timed) BulletTrain.next = a; if (UpTrain.timed) UpTrain.next = b; } // ?trainsin=2,2.5: the railway's next trains due in that many s (down, up: a still of both)
+  if (params.get('ladle')) LaneGimmicks.ladleNow = true; // ?ladle=1: the next ladle ahead comes out at once and pours as soon as it is there (stills)
   if (params.get('pieces')) Game.tankPieces = Math.min(CONFIG.tankPieces - 1, Number(params.get('pieces')) || 0); // ?pieces=3: that many pieces of the tank found already
   if (params.get('rage') !== null) { Game.tankPieces = CONFIG.tankPieces; Player.startTank(); } // ?rage: in TANK RAGE from the start (a check, a picture: on an amphibious level, the Amphibious Tank)
   if (params.get('fly') !== null) startFly();

@@ -169,6 +169,32 @@ try {
   for (const car of fleet) Store.resetCar(car.id);
   check(raw.getItem('delivery.loadout').length < 600, 'every car reset: the key is small again (' + raw.getItem('delivery.loadout').length + ' chars)');
 
+  // ---- THE THREE-PART WHEEL SET (CHECKLIST 399): every OLD saved wheels pair (the six old designs x the nine hub colours, x a rim or none),
+  // saved as the default (the old global keys AND the store) and as a car's own (the store), reads back as the SAME LOOK: the tyre's rubber
+  // colour, its sidewall ring and the hub colour (the old rule: a chosen hub colour wins; Stock lets the design's own hub show)
+  {
+    const OLD = { stock: [null, null, null], whitewall: [null, 'w', null], redline: [null, 'r', null], redwhite: [0xd8262b, null, 0xf4f4f2], whiteblack: [null, null, 0xf4f4f2], goldwall: [null, 'w', 0xd9a92a] };
+    const ringOf = (t) => (t.ring ? (t.ring.hex === 0xd8262b ? 'r' : 'w') : null);
+    const bad = [];
+    let n = 0;
+    for (const [design, [rubber, ring, ownHub]] of Object.entries(OLD)) for (const hub of W.WHEEL_COLOURS) for (const rim of ['none', 'turbine']) for (const how of ['keys', 'default', 'car']) {
+      wipe();
+      if (how === 'keys') { raw.setItem('delivery.wheeldesign', design); raw.setItem('delivery.wheelcolour', hub.id); raw.setItem('delivery.wheelrim', JSON.stringify({ all: rim })); }
+      else raw.setItem('delivery.loadout', JSON.stringify({ v: 1, default: how === 'default' ? { wheels: { design, hub: hub.id, rim: { all: rim } } } : {}, cars: how === 'car' ? { pickup: { wheels: { design, hub: hub.id, rim: { all: rim } } } } : {} }));
+      Store.reloadStore();
+      const id = how === 'car' ? 'pickup' : null, t = W.TYRE_COLOURS.find(x => x.id === W.wheelTyre(id)), h = W.WHEEL_COLOURS.find(x => x.id === W.wheelColour(id));
+      const want = [rubber, ring, hub.hex !== null ? hub.hex : ownHub, rim], got = [t.tyre, ringOf(t), h.hex, R.resolveRim(id, 'front')];
+      n++;
+      if (JSON.stringify(want) !== JSON.stringify(got)) bad.push(how + ' ' + design + '+' + hub.id + '+' + rim + ': ' + JSON.stringify(got) + ' not ' + JSON.stringify(want));
+    }
+    check(!bad.length, 'every old saved wheels pair (' + n + ': 6 designs x 9 hub colours x rim or none, as the old keys, the default and a car\'s own) reads back as the same tyre, ring and hub colour in the three-part set' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));
+    wipe();
+    raw.setItem('delivery.wheeldesign', 'goldwall'); raw.setItem('delivery.wheelcolour', 'stock');
+    Store.reloadStore();
+    check(W.wheelSet() === 'whitewall-gold' && W.wheelTread() === 'none', 'an old save wearing the Whitewall + gold set (its design carried the gold hub) is that preset still, with no tread');
+    wipe();
+  }
+
   // ---- the fingerprint ----
   const { logicFiles } = await import('../vite.config.js');
   check(!logicFiles().some(f => /loadout|cosmetic|render\//.test(f)), 'the replay fingerprint (vite.config.js logicFiles, ' + logicFiles().length + ' files) includes no loadout or cosmetic module');

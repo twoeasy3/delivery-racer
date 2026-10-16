@@ -3,6 +3,17 @@ import { LEVEL } from './levels.js';
 import { levelName } from './levelText.js';
 import { random } from './util.js';
 
+// The water's numbers on a level (a burst main's water, standing water, and the wet tyres either leaves): CONFIG.waterMain's,
+// scaled by the level's "wetness" { strength, tail } (its surface: a tiled floor slips more than tarmac). Each of the four
+// shares of grip (brakes, steering, lane speed, acceleration) loses strength times what it loses at 1, no lower than CONFIG.waterMain.floor; wetAfter is times tail.
+// Strength 1 and tail 1 (the default) are CONFIG.waterMain's numbers exactly; strength 0 is no slip at all (Track.icy).
+// The one source of these numbers: the player reads them as Track.wet
+export const waterNumbers = (level) => {
+  const W = CONFIG.waterMain, k = level?.wetness?.strength ?? 1, tail = level?.wetness?.tail ?? 1;
+  const share = (key) => k === 1 ? W[key] : Math.min(1, Math.max(W.floor[key], 1 - (1 - W[key]) * k));
+  return { strength: k, tail, brakeGrip: share('brakeGrip'), steerGrip: share('steerGrip'), laneSpeed: share('laneSpeed'), accelGrip: share('accelGrip'), wetAfter: W.wetAfter * tail };
+};
+
 // ============================================================================
 // TRACK - path sampled by distance along track (s) and lateral offset (lat)
 // heading h: forward = (sin h, cos h) in (x, z); +lat is the driver's right
@@ -607,10 +618,18 @@ const createTrack = () => {
   };
   const onShoulder = (lat, s) => lat > laneHi(s) || lat < laneLo(s);
   // the level's ice patch at (s, lat), if any: on the expressway, over one lane or (with no lane) all of them
+  // (or a burst main's water, or standing water, "waterPatches": shaped as ice is, but water: { water: true }, see
+  // Player.onWater; with the level's wetness at 0, water is no more slippery than the dry road: see wet below)
   const ice = LEVEL.ice || [], slicks = [], sprays = [];
+  const wet = waterNumbers(LEVEL), soaked = wet.strength > 0;
+  const puddles = (LEVEL.waterPatches || []).map(p => ({ from: p.from, to: p.to, lane: p.lane, water: true }));
   const icy = (s, lat) => {
-    for (const p of sprays) if (p.on && s >= p.from && s <= p.to && Math.abs(lat - laneOffset(p.lane, s)) <= LW / 2) return p;
+    if (soaked) for (const p of sprays) if (p.on && s >= p.from && s <= p.to && Math.abs(lat - laneOffset(p.lane, s)) <= LW / 2) return p;
     if (!isMain(s)) return null;
+    if (soaked) for (const p of puddles) {
+      if (s < p.from || s > p.to) continue;
+      if (p.lane === undefined ? lat >= laneLo(s) && lat <= laneHi(s) : Math.abs(lat - laneOffset(p.lane, s)) <= LW / 2) return p;
+    }
     for (const p of ice) {
       if (s < p.from || s > p.to) continue;
       if (p.lane === undefined ? lat >= laneLo(s) && lat <= laneHi(s) : Math.abs(lat - laneOffset(p.lane, s)) <= LW / 2) return p;
@@ -764,6 +783,14 @@ const createTrack = () => {
   const shut = (x) => x > 0.01 ? Math.ceil(x - 0.01) : 0;
 
   // the lane itself, or the lane it has merged into where the expressway is narrower
+  // a WIDE obstacle's centre (a level's obstacle with "span": lanes wide, 1 to 4, from its lane rightwards: see Collision.loadLevel):
+  // between its lane's centre and the centre of the lane `span - 1` further right, by the lanes' own offsets at s (so on a bend,
+  // in a taper or a diversion it follows them as a lane does)
+  const spanOffset = (lane, span, s) => {
+    if (!(span > 1) || typeof lane !== 'number') return laneOffset(lane, s);
+    const far = lane + span - 1, k = Math.floor(far), u = far - k, a = laneOffset(k, s);
+    return (laneOffset(lane, s) + (u > 0 ? a + (laneOffset(k + 1, s) - a) * u : a)) / 2;
+  };
   const openLane = (lane, s) => {
     if (kindOf(s) === SIDE_ROAD && typeof lane === 'number') return Math.max(sideLeft(s) > 0.5 ? 0 : 1, Math.min(sideLast(s), lane));
     if (!isMain(s) || lane < 0 || lane >= LANES || inMedian(lane)) return lane;
@@ -1088,6 +1115,11 @@ const createTrack = () => {
       if (J.arms.some(arm => arm.length < J.half + 100)) problems.push(name + ': an arm runs into the road within 100 m');
       if (J.s < 60 || J.end > length - 20) problems.push(name + ': too near the start or the finish');
     }
+    for (const p of LEVEL.waterPatches || []) {
+      if (!(p.from < p.to) || p.from < 0 || p.to > length) problems.push('standing water at ' + p.from + '-' + p.to + ': from before to, on the road');
+      else if (p.lane !== undefined && !(Number.isInteger(p.lane) && p.lane >= 0 && p.lane < LANES)) problems.push('standing water at ' + p.from + ': no lane ' + p.lane);
+    }
+    if (LEVEL.wetness && !(wet.strength >= 0 && wet.strength <= 3 && wet.tail > 0 && wet.tail <= 5)) problems.push('wetness: strength 0 to 3, tail above 0 to 5');
     for (const p of ice) {
       if (!(p.from < p.to) || p.from < 0 || p.to > length) problems.push('ice at ' + p.from + '-' + p.to + ': from before to, on the road');
       else if (p.lane !== undefined && !(Number.isInteger(p.lane) && p.lane >= 0 && p.lane < LANES)) problems.push('ice at ' + p.from + ': no lane ' + p.lane);
@@ -1130,7 +1162,7 @@ const createTrack = () => {
     const straight = (from, to) => { for (let s = from; s <= to; s += 5) if (curveAt(s)) return false; return true; };
     // (whatever is put at a place can be on a side road: { road: 'side', exit: n }, s (or from, to) then m along it.
     // See levels.js for the kinds that can: those that can't say so here)
-    for (const [name, list] of [['ice', LEVEL.ice], ['stop / go', LEVEL.stopGo], ['parked car', LEVEL.parked], ['roadblock', LEVEL.roadblocks], ['ice-cream stop', LEVEL.iceCreamStops],
+    for (const [name, list] of [['ice', LEVEL.ice], ['standing water', LEVEL.waterPatches], ['stop / go', LEVEL.stopGo], ['parked car', LEVEL.parked], ['roadblock', LEVEL.roadblocks], ['ice-cream stop', LEVEL.iceCreamStops],
       ['reversible lane', LEVEL.reversible], ['wreckage', LEVEL.wreckage], ['machinery', LEVEL.machinery], ['site works', LEVEL.siteWorks], ['parade', LEVEL.parades], ['hippos', LEVEL.hippos],
       ['elephants', LEVEL.elephants], ['fog', (LEVEL.fog || []).filter(z => !z.count)], ['mud', LEVEL.mud], ['quarry', LEVEL.quarries], ['tunnel', LEVEL.tunnels], ['bridge', LEVEL.bridges]]) {
       for (const item of list || []) if (item.road === 'side') problems.push(name + ' at ' + (item.s ?? item.from ?? item.at) + ': there are none on a side road (only on the expressway)');
@@ -1442,16 +1474,24 @@ const createTrack = () => {
         } else if (item.lane === 'left' || item.lane === 'right') {
           // (on that shoulder, as on a side road: laneOffset puts it there. It used to fall through to the test
           // below, which knows only numbered lanes, and be reported "merged away")
-        } else if (!Number.isInteger(item.lane)) {
+        } else if (!Number.isInteger(item.lane) && !(what === 'obstacle' && item.span > 1 && Number.isInteger(item.lane * 2))) { // (a wide barrier may start on a lane line)
           problems.push(name + ': its lane is a number, or left or right (a shoulder)');
-        } else if (item.lane < 0 || item.lane >= LANES) {
+        } else if (item.lane < 0 || item.lane >= LANES) { // (a wide barrier's lanes are checked above)
           problems.push(name + ': no lane ' + item.lane);
-        } else if (openLane(item.lane, item.s) !== item.lane) {
+        } else if (Number.isInteger(item.lane) && openLane(item.lane, item.s) !== item.lane) {
           problems.push(name + ': lane ' + item.lane + ' is merged away there');
         }
-        const s = place(item), lat = laneOffset(item.lane, s);
-        if (spots.some(o => Math.abs(o.s - s) < 8 && Math.abs(o.lat - lat) < 2)) problems.push(name + ': on top of another item');
-        spots.push({ s, lat });
+        // (a wide obstacle, "span": a barrier only, its lanes all open and on the expressway; it is that much wider each way)
+        const span = what === 'obstacle' && item.span !== undefined ? item.span : 1, wide = (span - 1) * LW / 2;
+        if (span !== 1) {
+          if (!(span >= 1 && span <= 4)) problems.push(name + ': span is 1 to 4 lanes');
+          else if ((item.kind || 'barrier') !== 'barrier') problems.push(name + ': only a barrier can span lanes');
+          else if (item.road === 'side' || !Number.isInteger(item.lane * 2) || item.lane < 0) problems.push(name + ': a wide obstacle stands on the expressway\'s lanes, from a lane or a lane line');
+          else for (let l = Math.floor(item.lane); l <= Math.ceil(item.lane + span - 1); l++) if (l >= LANES || openLane(l, item.s) !== l) problems.push(name + ': it spans lane ' + l + ', not open there');
+        }
+        const s = place(item), lat = span > 1 && typeof item.lane === 'number' ? spanOffset(item.lane, span, s) : laneOffset(item.lane, s);
+        if (spots.some(o => Math.abs(o.s - s) < 8 && Math.abs(o.lat - lat) < 2 + o.wide + wide)) problems.push(name + ': on top of another item');
+        spots.push({ s, lat, wide });
       }
     }
     for (const kind of Object.keys(LEVEL.traffic || {})) {
@@ -1479,8 +1519,8 @@ const createTrack = () => {
     length, start: -LEAD_IN, end: length + LEAD_OUT, loop: LOOP, problems,
     apart, laneCount: LANES, leftLanes: LEFT, rightLanes: RIGHT, medianLanes: MID, medianHalf: HM, shoulder: SH, flow: FLOW, mirrored: MIRRORED,
     toWorld, fromWorld, grade, hilly, transfer, along, progress, finished, inBounds, spawnAt, place, isMain,
-    laneOffset, openLane, nearestLane, laneRange, assistOffset, flyHeight,
-    lanesOn, edge, extraLane, onBridge, icy, padAt, divider, diverting, divertedSide, divert, works, bounds, carry, diversionAt, diversions: dvs, sprays, slicks, muddy, gravels, gravelBand, gravelAt, water, waters, foggy, tunnel, bend, pathScale, onRails, railTracks, railLat, junctions, zoneAt, lo, hi, laneLo, laneHi, shoulderOffset, onShoulder, rampLaneZone, sideOpen, sideWidth, sideLeft, sideOncoming,
+    laneOffset, spanOffset, openLane, nearestLane, laneRange, assistOffset, flyHeight,
+    lanesOn, edge, extraLane, onBridge, icy, wet, puddles, padAt, divider, diverting, divertedSide, divert, works, bounds, carry, diversionAt, diversions: dvs, sprays, slicks, muddy, gravels, gravelBand, gravelAt, water, waters, foggy, tunnel, bend, pathScale, onRails, railTracks, railLat, junctions, zoneAt, lo, hi, laneLo, laneHi, shoulderOffset, onShoulder, rampLaneZone, sideOpen, sideWidth, sideLeft, sideOncoming,
     flyPillar, sideDistance, mainDistance, exits, crossable, crossLo,
   };
 };

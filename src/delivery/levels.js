@@ -160,6 +160,9 @@
 //                                  'sewage', 'pile' and 'beam', or the beach's 'umbrella',
 //                                  'surfboard', 'cooler' and 'chair' (a lifeguard chair), or 'mine' (a sea mine, afloat).
 //                                  With drift: 'dart', it darts about its spot at random (see CONFIG.drifters)
+//                                  With span: n (a barrier only, 1 to 4 in halves): a WIDE barrier, n lanes wide from its lane
+//                                  rightwards, one block (0.55 m in from the outer lanes' lines, as a barrier is in its lane) that
+//                                  costs a barrier's hit, however wide, and is blown away whole (see Collision.loadLevel)
 //                                  A theme can have obstacles of its own (themes.js, its `obstacles`): there a
 //                                  level's 'crate' is a barrel (the Wild West), a diving helmet (the sea bed), a
 //                                  supply pod (the Moon)...: the same box and the same cost, only the thing itself
@@ -203,7 +206,20 @@
 //              a kind away), a later one over an earlier. With police only in such stretches, a police
 //              car stays on station at the edge of its stretch (The Hood)
 //   ice        { from, to, lane }  an ice patch on that lane (no lane: across the road): on it the car brakes
-//              with a share of its brakes and changes lane more slowly (see CONFIG.ice: brakeGrip, steerGrip, laneSpeed)
+//              with a share of its brakes, speeds up with a share of its acceleration (never its top speed) and changes
+//              lane more slowly (see CONFIG.ice: brakeGrip, steerGrip, laneSpeed, accelGrip)
+//   waterPatches { from, to, lane }  standing water on that lane (no lane: across the road), shaped as ice is: a burst
+//              main's water with no main, there all the time (a puddle, a flooded dip, the mall's mopped floor). On it the car
+//              brakes, steers, speeds up and changes lane by the water's numbers (CONFIG.waterMain: brakeGrip, steerGrip, laneSpeed,
+//              accelGrip), and
+//              after it the tyres stay wet for wetAfter m, the grip coming back little by little (ice lets go at once). Warned
+//              of CONFIG.waterMain.warn m out (a theme's standingWater: its words, its tint). (Its own key, not an option on
+//              waterMains: a main is a point with one lane, a fountain and a cycle; a patch is a stretch, with or without a lane)
+//   wetness    { strength, tail }: how slippery water is on this level's surface, for the whole level: a burst main's water,
+//              standing water, and the wet tyres either leaves (not the tide, fords or water stages: numbers of their own).
+//              Each share of grip loses strength x what it loses at 1, never below CONFIG.waterMain.floor; the wet tail is
+//              tail x wetAfter. Left out, 1 and 1: CONFIG.waterMain's numbers exactly. Strength 0: water does not slip at
+//              all; above 1, slipperier (Mall Dash's tiled floor: 1.3, tail 1.6). See track.js waterNumbers, Track.wet
 //   tide       { from, to, start, end, waves: { every: { min, max }, reach: { min, max } } }: a causeway
 //              the sea comes in over, on the player's side of the road only, from the kerb in. It
 //              floods `start` lane widths in from the pavement's edge (the shoulder counts as one)
@@ -313,8 +329,9 @@
 //   schoolCrossings { s }: a lollipop person stops the traffic for the children; running it is a bust
 //   waterMains { s, lane, length? }: a burst water main in that lane: a fountain out of the road for CONFIG.waterMain.on
 //              s, then nothing for .off s, over and over. While it sprays, `length` m of that lane beyond it (.length,
-//              if not given) is under water and as slippery as ice: on it the car brakes with a share of its brakes
-//              and changes lane more slowly, by numbers of its own (CONFIG.waterMain: brakeGrip, steerGrip, laneSpeed)
+//              if not given) is under water and as slippery as ice: on it the car brakes with a share of its brakes,
+//              speeds up with a share of its acceleration and changes lane more slowly, by numbers of its own
+//              (CONFIG.waterMain: brakeGrip, steerGrip, laneSpeed, accelGrip)
 //   balloons   { s, lanes: [first, last] }: a hot-air balloon comes down on those lanes, sits, and lifts off again
 //   drawbridges { s }: bells, booms, and two leaves that lift: the car goes up the near one and jumps the gap if it
 //              came fast enough (a board gives the speed), or stops short, or drops in. On straight road
@@ -323,9 +340,9 @@
 //   trolleys   { from, to, count }: shopping trolleys rolling across the road with its camber
 //   marathons  { s, lane, count, water? }: runners in one lane behind a pace car; water: where its water station stands
 //   stampedes  { from, to, count, kind: 'cow' | 'kangaroo' }: animals charging down the road at the player
-//   boostPads  { from, to, lane }: a boost pad in that lane (a travelator in the mall, lanegimmicks.js): a car on it is pulled
-//              on over its own top speed for CONFIG.boostPad.time s; handrails (ordinary obstacles, kind `handrail`, a cone's
-//              box and cost) stand along both its edges. Never in a bend
+//   boostPads  { from, to, lane, rails? }: a boost pad in that lane (a travelator in the mall, lanegimmicks.js): a car on it is
+//              pulled on over its own top speed for CONFIG.boostPad.time s; flush with the road, unless rails: true (the mall's):
+//              then handrails (ordinary obstacles, kind `handrail`, a cone's box and cost) stand along both its edges. Never in a bend
 //   deadEnds   { s, lane, kind: 'shutter' | 'wall', length? }: the lane runs on for `length` m (CONFIG.deadEnd.length) and
 //              ends at s. 'shutter': the road goes on behind a rolling shutter: a Ghost passes through, a tank or an armoured car
 //              smashes through, any other car is wrecked. 'wall': nothing behind it: wrecked whatever protects the car. A DEAD END
@@ -335,6 +352,10 @@
 //              car is wrecked, whatever protects it but the Ghost (as at a dead end's wall). A PILLARS sign, beacons, a bell and a
 //              warning before them; the way past is the lane beside. On an edge railway (the metro) the lanes beside are the
 //              tracks: no train sets off while the player is at a group, and the two tracks never both have one near it
+//   ladles     { s, lanes: [first, last] }: a crane brings a LADLE of molten metal over those lanes as the player comes (CONFIG.ladle;
+//              lanegimmicks.js, the steelworks' scripted event): a MOLTEN METAL sign, beacons, a bell and a warning, then it
+//              tips and pours onto the road: the pool, while molten, wrecks a car whatever protects it but the Ghost; then it
+//              crusts over. Leaves a lane of the player's side free; out in the open, on straight level road
 //   tunnelJunctions { s, side: 'left' | 'right' }: a side tunnel crossing the road inside a tunnel (a mall's concourse): a
 //              mouth in each wall; as the player comes near, beacons flash and a bell rings, then a train (an electric tug
 //              and two trolleys) comes out of the `side` mouth and crosses into the other. A knock, never a stop or a bust.
@@ -681,10 +702,12 @@ import alpinePass from './levels/alpine-pass.json';
 HIDDEN_LEVELS['alpine-pass'] = alpinePass; // Alpine Pass (the alpine theme's switchbacks to the col): ?hidden=alpine-pass, until the owner decides
 import metroRun from './levels/metro-run.json';
 HIDDEN_LEVELS['metro-run'] = metroRun; // Metro Run (a metro system: running tunnels, stations, an interchange, the depot: render/themes/metro.js): ?hidden=metro-run, until it is put in the career
+import obstacleLab from './levels/obstacle-lab.json';
+HIDDEN_LEVELS['obstacle-lab'] = obstacleLab; // Obstacle Lab (a test track: every obstacle formation of OBSTACLE-STAGE-DESIGN.md once, barriers only): ?hidden=obstacle-lab, never on the menus
 // THE HIDDEN LEVELS MENU (the owner, 15-Oct; Options > Hidden levels, render/hiddenlevels.js): every level of HIDDEN_LEVELS that is a
 // real level, so a hidden level added later is listed without a word here. TEST_LEVELS are the developer's test tracks (a testbed and the three
 // Gimmick Roads: gimmicks.js calls them 'Test'), left out of it. A run started from it is ?hidden=<id>: it banks nothing (game.js).
-export const TEST_LEVELS = ['testbed', 'gimmick-road', 'gimmick-road-2', 'gimmick-road-3'];
+export const TEST_LEVELS = ['testbed', 'gimmick-road', 'gimmick-road-2', 'gimmick-road-3', 'obstacle-lab'];
 export const playableHidden = () => Object.entries(HIDDEN_LEVELS).filter(([id]) => !TEST_LEVELS.includes(id)).map(([id, level]) => ({ id, level, event: id in EVENT_MAPS }));
 // the class every race is run in: 'f1', 'gt' (GT road cars) or 'lmp' (Le Mans prototypes): the player's car
 // and the grid (the menu's Race cars button; ?gt or ?lmp for that class whatever it says)

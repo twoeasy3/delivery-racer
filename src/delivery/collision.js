@@ -282,7 +282,12 @@ export const Collision = (() => {
   for (const [kind, like] of Object.entries({ planter: 'bale', palmPot: 'bale', kiosk: 'bale', bench: 'crate', playBlock: 'crate', bin: 'cone' })) SIZE[kind] = SIZE[like]; // (the mall's set dressing)
   SIZE.handrail = [0.12, 1.5, 1.0]; // a boost pad's handrail section (lanegimmicks.js): as thin as the rail, 3 m long (a cone's cost: config.js)
   for (const [kind, like] of Object.entries({ barrierBlock: 'barrier', cableReel: 'crate', sandPile: 'bale', trafficDrum: 'cone', pipePallet: 'crate', worksSign: 'sign' })) SIZE[kind] = SIZE[like]; // (the roadworks')
-  for (const [kind, like] of Object.entries({ ingotStack: 'crate', steelCoil: 'bale', hotSign: 'cone', rebarBundle: 'barrier' })) SIZE[kind] = SIZE[like]; // (the steelworks')
+  // the steelworks' own: the plain kinds' COST (config.js) on bigger boxes of their own (the owner, 16-Oct: "The obstacles are too
+  // small again"): heavy industry's sizes, each within a lane with room beside it (render/themes/steelworksModels.js
+  // STEELWORKS_SIZES draws them at these: scripts/.steelworks-check.mjs holds the two equal)
+  Object.assign(SIZE, { ingotStack: [1.2, 0.9, 1.6], steelCoil: [1.1, 0.9, 1.95], hotSign: [0.6, 0.6, 2.4], rebarBundle: [1.5, 0.7, 1.4] });
+  // (a theme's kinds with a box of their own, not their plain kind's: scripts/.obstacles-check.mjs lets these alone differ in size)
+  const OWN_BOX = new Set(['ingotStack', 'steelCoil', 'hotSign', 'rebarBundle']);
   for (const [kind, like] of Object.entries({ velvetRope: 'barrier', slotMachine: 'crate', luggageCart: 'bale', casinoDie: 'cone' })) SIZE[kind] = SIZE[like]; // (the Las Vegas Strip's)
   for (const [kind, like] of Object.entries({ ticketGate: 'crate', scrubber: 'bale', trackLamp: 'cone', railTrolley: 'crate', infoTotem: 'sign' })) SIZE[kind] = SIZE[like]; // (the metro's)
   SIZE.trackBarrier = SIZE.railBarrier; // the metro's track-work barrier (railBarrier's box: wholly inside a passing train)
@@ -318,6 +323,13 @@ export const Collision = (() => {
     obstacles.length = 0;
     for (const load of loaders) load(add);
     for (const o of LEVEL.obstacles || []) {
+      if (o.span > 1) { // a WIDE barrier ("span": lanes wide, from its lane rightwards): one box, the barrier's 0.55 m in from the outer lanes'
+        // lines as a barrier is in its lane, its cost a barrier's (one hit, however wide), blown away whole. Not the theme's swap: drawn as
+        // the plain barrier stretched (render/obstacleModels.js builds a barrier to its box), one continuous block
+        const s = Track.place(o), lat = Track.spanOffset(o.lane, o.span, s), hw = SIZE.barrier[0] + (o.span - 1) * CONFIG.laneWidth / 2;
+        add('barrier', s, lat, { hw, wide: hw / SIZE.barrier[0] });
+        continue;
+      }
       const s = Track.place(o), lat = Track.laneOffset(o.lane, s), D = CONFIG.drifters;
       add(themed(o.kind || 'barrier'), s, lat, o.drift === 'dart' ? { drift: 'dart', time: 0, homeS: s, homeLat: lat, along: D.dartAlong, across: D.dartAcross } : undefined);
     }
@@ -755,6 +767,16 @@ export const Collision = (() => {
   // an asteroid can only be hit while some of it is at the height of the car
   const atRoadLevel = (o) => o.h - o.r < Player.height && o.h + o.r > 0;
 
+  // wrecked outright at `at` (a dead end's wall, a pillar, a molten pool): set at `lat` (the open lane beside), where the
+  // helicopter drops the next car; the explosion and the message
+  const wreck = (at, lat, message) => {
+    Player.health = 0;
+    Player.lat = lat;
+    Game.shake = 1;
+    FxQueue.push({ type: 'explode', s: at.s, lat: at.lat, vs: 0, big: true });
+    Message.say('events', message);
+  };
+  const instakills = []; // (others' instakills, each (car) => { at, openLat, message } or null: lanegimmicks.js's ladles)
   const hitObstacles = () => {
     // a dead-end lane's end, or a PILLAR in a lane (lanegimmicks.js: laneEnd 'pillar', a wreck as at a wall, but a Ghost passes
     // through it: there is road behind it), checked before any protection is honoured. A SHUTTER (o.laneEnd 'shutter', the
@@ -768,6 +790,7 @@ export const Collision = (() => {
       for (const o of obstacles) {
         if (!o.laneEnd || o.gone || Math.abs(o.s - Player.s) > CONFIG.broadPhaseDistance || !overlap(Player, o)) continue;
         if (o.laneEnd !== 'wall' && Player.ghost > 0) continue; // (a shutter or a pillar: through it, as through anything; only a wall has nothing behind it)
+        if (o.laneEnd === 'pillar' && Player.shield > 0) continue; // (a fresh drop's shield takes it through a pillar: a pillar only, never a dead end)
         if (o.laneEnd === 'shutter') {
           if (Player.tank > 0 || Player.armour > 0) { // (smashed through: the shutter is gone)
             o.gone = true;
@@ -777,12 +800,15 @@ export const Collision = (() => {
             continue;
           }
         }
-        Player.health = 0;
-        Player.lat = o.openLat;
-        Game.shake = 1;
-        FxQueue.push({ type: 'explode', s: o.s, lat: o.lat, vs: 0, big: true });
-        Message.say('events', o.laneEnd === 'pillar' ? 'pillarHit' : 'deadEndHit');
+        wreck(o, o.openLat, o.laneEnd === 'pillar' ? 'pillarHit' : 'deadEndHit');
         break;
+      }
+      // ...and the same for whatever else is an instakill where the car is (instakills: a ladle's molten pool, lanegimmicks.js):
+      // a Ghost passes through, nothing else protects the car
+      for (const deadly of instakills) {
+        if (Player.health <= 0 || Player.ghost > 0) break;
+        const hit = deadly(Player);
+        if (hit) { wreck(hit.at, hit.openLat, hit.message); break; }
       }
     }
     if (!Player.active || Player.shield > 0 || Player.ghost > 0) return;
@@ -837,6 +863,7 @@ export const Collision = (() => {
       Game.shake = Math.max(Game.shake, cost.light ? 0.3 : 1);
       // (a cyclist goes up on its own, small, its wheels flying: the rest of the bunch rides on)
       FxQueue.push(o.ride ? { type: 'explode', s: o.s, lat: o.lat, vs: Player.speed, big: false, scale: 0.55, smoke: 0.5, tyres: true }
+        : o.wide ? { type: 'explode', s: o.s, lat: o.lat, vs: Player.speed, big: false, scale: Math.sqrt(o.wide) } // (a wide barrier: a bigger blast, as wide as it is)
         : { type: 'explode', s: o.s, lat: o.lat, vs: Player.speed, big: false });
       if ((o.kind === 'cyclist' || o.kind === 'runner' || o.kind === 'marcher') && Traffic.policeNear()) Player.bust(o.kind); // (knocking a cyclist off, or a runner or bandsman down, in front of the police: each its own words, messages.json busts)
     }
@@ -1027,5 +1054,5 @@ export const Collision = (() => {
     }
   };
 
-  return { get bodies() { return getBodies(); }, obstacles, loaders, loadLevel, resetObstacles, updateObstacles, atRoadLevel, check, overlap, size: SIZE };
+  return { get bodies() { return getBodies(); }, obstacles, loaders, loadLevel, resetObstacles, updateObstacles, atRoadLevel, check, overlap, instakills, size: SIZE, ownBox: OWN_BOX };
 })();

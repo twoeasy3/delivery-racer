@@ -178,7 +178,22 @@ export const CONFIG = {
   // bend is shorter and the outside longer (Track.pathScale); `least` / `most` bound the scale (a lane is never past the
   // bend's centre). Lane changes also scrub speed a little: `laneScrub` m/s^2 at full sideways speed, over the car's
   // agility (a nimble car loses less)
-  trueSpeed: { on: true, least: 0.4, most: 2.5, laneScrub: 1.2 },
+  // `laneScrub` acts whatever the pedals do, and alone it is nothing to a car with the accelerator held (its pull out-pulls it,
+  // and at top speed the pull simply tops it back up). So `driven` (CHECKLIST 421) adds a scrub only while the engine is
+  // pulling with the accelerator held: at full sideways speed it takes back `cancel` of the engine's own pull (1: the pedal
+  // does nothing mid-change) and scrubs `lose` m/s^2 over the car's agility on top (never more than `most` m/s^2: a lane
+  // change is no brake), both growing with across^2 as laneScrub does. All of it only near the top of the speed range,
+  // where the pull has run out: it is weighed by how near top speed the car was as the steer went on (a smoothstep from
+  // `from` to `full` of its top speed then), kept while the steer is held, never less than `least` (a car still climbing
+  // gets only that: a little slower than no lane change, not much). Top speed itself is never touched. Off the
+  // accelerator (hands off, braking) only laneScrub acts, exactly as before. Not under a turbo or a boost pad, pulling away
+  // after a drop, afloat, or for traffic and racers (traffic.js has none of this). `tune` multiplies all of it (0: as
+  // before 421; ?lanescrub=<x> sets it for a visit). MEASURED (.lanescrub-check --table, stock ECU): one lane at top
+  // speed, flat out, dips 0.7 (Mini) to 2.6 m/s (Polygon Truck): 3 to 7% of top speed, 1.3 m/s for the Sportscompact,
+  // won back in a fraction of a second; two lanes 2.0 to 6.1 m/s. From half top speed it costs 0.16 to 0.99 m/s more than
+  // before over one or two lanes and 0.01 to 0.07 s more to top speed. Hands off at top speed: 0.24 to 0.75 m/s, as before
+  trueSpeed: { on: true, least: 0.4, most: 2.5, laneScrub: 1.2,
+    driven: { cancel: 1, lose: 4, most: 6, from: 0.8, full: 0.95, least: 0.05, tune: 1 } },
   cornering: { grip: 22 },   // m/s^2 of cornering a car of weight 1 and agility 1 holds
   // A race (a level's "grid", "understeer", "wallDamage", "nudge": see levels.js). Its understeer is
   // `understeer` times as hard as on ice, and sliding wide scrubs off speed: `scrub` m/s^2 for every
@@ -302,15 +317,18 @@ export const CONFIG = {
     leadMood: 0.03, pressure: 15, pressureMood: 0.05, passMood: 0.15, passedMood: 0.1, frontSwing: 3,
     killWindow: 3, killMood: 0.5 },
   // Ice (a level's "ice": patches on the road). On it the player's car slews round as it arrives
-  // (only the look of it: yaw never changes where a car goes), brakes and steers with less grip,
+  // (only the look of it: yaw never changes where a car goes), brakes, steers and pulls away with less grip,
   // and in a bend it understeers: it slides to the outside, the more so the faster, heavier and
   // less agile it is. A traffic car hitting it may spin out (and blow up), the likelier the faster.
-  // (The brakes and the steering are the player's car's only: traffic on ice brakes and changes lane as ever.
-  // A burst main's water is ice in every way but those two and laneSpeed, which it has of its own: see waterMain.)
+  // (The brakes, the steering and the acceleration are the player's car's only: traffic on ice brakes, changes lane and
+  // speeds up as ever. A burst main's water is ice in every way but those, which it has of its own: see waterMain.)
   ice: {
     brakeGrip: 0.35,       // share of its braking (or braking by itself for a car ahead) that works on ice
     steerGrip: 0.3,        // share of its steering's grip: of how quickly the car takes up the way it is steered...
     laneSpeed: 0.55,       // ...and share of the speed it moves across the road at, steered (so a lane change takes about twice as long)
+    accelGrip: 0.45,       // share of its engine's acceleration that works on ice (wheelspin): a multiplier on the car's own accel, so a
+                           // slow car loses less in m/s^2. Never its top speed, nor the turbo's or a boost pad's pull, nor the
+                           // pull-away after a drop, nor a tank's (player.js updateSpeed)
     grip: 6,               // m/s^2 of cornering the tyres still hold on ice; beyond it...
     understeer: 0.4,       // ...this share of the rest pushes the car to the outside of the bend
     weightRef: 2.28,       // hw x hl x height of a car that weighs 1 (the Commuter); a car's weight goes
@@ -1391,11 +1409,16 @@ export const CONFIG = {
     warn: 150,             // m short of one ahead that the player is warned
     spread: 1.4,           // s the pools take to spread down the lane as it begins to spray...
     dry: 1.6,              // ...and to shrink away when it stops (the look of it only)
-    // on its water the player's car brakes and steers with less grip, as on ice (CONFIG.ice) but by numbers of its own:
+    // on its water the player's car brakes, steers and pulls away with less grip, as on ice (CONFIG.ice) but by numbers of its own:
     brakeGrip: 0.35,       // share of its braking (or braking by itself for a car ahead) that works on the water
     steerGrip: 0.3,        // share of its steering's grip: of how quickly the car takes up the way it is steered...
     laneSpeed: 0.55,       // ...and share of the speed it moves across the road at, steered
-    wetAfter: 45,          // m past its water the tyres stay wet: those three numbers fade back to normal over this distance (ice has no such tail: it lets go the moment the car is off it)
+    accelGrip: 0.5,        // share of its engine's acceleration that works on the water (as ice's: never top speed, turbo, pads)
+    wetAfter: 45,          // m past its water the tyres stay wet: those four numbers fade back to normal over this distance (ice has no such tail: it lets go the moment the car is off it)
+    // (the same water lies, without a main, in a level's "waterPatches": standing water, always there. And a level's
+    // "wetness" { strength, tail } scales all five for the whole level, its surface: each share's loss times strength,
+    // never below `floor` (so the car still answers), wetAfter times tail; 1 and 1, these numbers exactly: Track.wet)
+    floor: { brakeGrip: 0.2, steerGrip: 0.15, laneSpeed: 0.3, accelGrip: 0.25 }, // (brakes: a fifth still sheds 4 m/s a second; steering half the ice's; a lane change from 30 m/s within 2 s; a quarter of the engine: a 5 m/s^2 car still gains 1.25 m/s a second)
   },
   // rockfall (a level's "rockfall": { from, to, count, side }): rocks tumbling down from that side
   // onto the road as the player comes near. Obstacles: only the player can hit them
@@ -1535,7 +1558,7 @@ export const CONFIG = {
   tunnelJunction: { trigger: 150, warn: 2.2, speed: 4.5, spacing: 2.6, rest: 8, mouth: 10 },
   // a boost pad ("boostPads": { from, to, lane }, lanegimmicks.js; a travelator in the mall): a car driving over it is
   // pulled on for `time` s at up to `speed` m/s over its own top speed (as a turbo pulls: CONFIG.turboAccel), the clock
-  // refilled for as long as it is on the pad; a ghost too (it is the floor, as ice is). Beside it stand its handrails,
+  // refilled for as long as it is on the pad; a ghost too (it is the floor, as ice is). A pad with rails: true has handrails,
   // `rail` m sections every `rail` m along both edges, `railGap` m short of each end: ordinary obstacles (obstacleKinds.handrail)
   boostPad: { time: 2.5, speed: 12, rail: 3, railGap: 3 }, // (a rail is 3 m long, 0.24 m thick: collision.js SIZE.handrail)
   // a dead-end lane ("deadEnds": { s, lane, kind, length? }, lanegimmicks.js): the lane runs on as usual for `length` m and
@@ -1549,8 +1572,19 @@ export const CONFIG = {
   // end's wall). The telegraph as a dead end's: a PILLARS sign over the lane `sign` m before the first, beacons, a bell and a warning
   // with `warn` m to go, hazard stripes round each. The way past is the lane beside (in the metro a TRACK): on an edge railway no
   // train sets off while the player is between `warn` m before a group and its last pillar, and none while the other track's train
-  // is still about from `hold` m before it (bullettrain.js): at least one track is always clear past the pillars
-  pillar: { count: 3, gap: 18, sign: 150, warn: 170, hold: 800 },
+  // is still about from `hold` m before it (bullettrain.js): at least one track is always clear past the pillars. A car wrecked
+  // at them is set down `clear` m behind or past the group (the nearer), on a track with no train, and its respawn shield lets it
+  // through a pillar (Collision.hitObstacles: a pillar only; a dead end's wall wrecks it all the same)
+  pillar: { count: 3, gap: 18, sign: 150, warn: 170, hold: 800, clear: 12 }, // (clear: m from a group's first or last pillar a wrecked car is set down: Player.prepareDrop)
+  // a LADLE of molten metal on a crane over the road ("ladles": { s, lanes: [first, last] }, lanegimmicks.js; the steelworks): a
+  // scripted event, by the player's distance (replay-safe). With `warn` m to go the crane's trolley brings the ladle out over the
+  // lanes (`arrive` s), beacons flash, a bell and "LADLE OVERHEAD! Keep left/right!"; a MOLTEN METAL sign hangs `sign` m before.
+  // With `pourAt` m to go (and the ladle there) it TIPS: the stream reaches the road `fall` s later, pours for `pour` s, and the
+  // pool spreads over `spread` s to `length` m along and the lanes' width (less `edge` each side). From the stream's touch until
+  // `molten` s after the pour ends it is an INSTAKILL (Collision.hitObstacles, the dead end's wreck: whatever protects the car but
+  // the Ghost); then it cools to a dark crust over `cool` s, harmless. It always leaves a lane of the player's side free. A car
+  // wrecked within `clear` m of a pool is set down in that free lane (Player.prepareDrop). Traffic is not touched by it
+  ladle: { sign: 150, warn: 170, pourAt: 90, arrive: 1.5, fall: 0.45, pour: 1.8, spread: 0.7, molten: 4.0, cool: 1.5, length: 12, edge: 0.2, clear: 10 },
   // a roadworks diversion ("diversions": { from, to, kind: 'merge' | 'shift' | 'cross', by?, limit? }; roadworks.js, and Track's
   // lateral-offset layer): a lane closes through a `taper` m row of cones (smoothstep), lanes with traffic in them move across over
   // `shiftTaper` m (a long vehicle can follow that), run on their temporary line

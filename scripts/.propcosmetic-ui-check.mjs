@@ -46,10 +46,11 @@ try {
 
   // ---- the registry and the screen ----
   const keys = SLOTS.flatMap(s => PM.PROPS[s].map(p => s + ':' + p.id));
-  check(keys.length === 34 && keys.every(k => cosmeticKeys().includes(k)) && COSMETICS.filter(c => SLOTS.includes(c.slot)).every(c => c.free && 'price' in c), 'the registry holds all 34 props (9 roof, 10 cargo, 15 wing) as roof:<id> / cargo:<id> / wing:<id>, free, a placeholder price');
+  check(keys.length === 52 && keys.every(k => cosmeticKeys().includes(k)) && COSMETICS.filter(c => SLOTS.includes(c.slot)).every(c => c.free && 'price' in c), 'the registry holds all 52 props (15 roof, 16 cargo, 21 wing) as roof:<id> / cargo:<id> / wing:<id>, free, a placeholder price');
   const ui = readFileSync(ROOT + '/src/delivery/render/cosmeticsui.js', 'utf8');
-  check(/id: 'roof', name: 'Roof', live: true, prop: true/.test(ui) && /id: 'cargo', name: 'Cargo', live: true, prop: true/.test(ui) && /id: 'wing', name: 'Wing', live: true, prop: true/.test(ui) && !/Roof ornament/.test(ui) && /id: 'underglow'[^}]*live: false/.test(ui), "the screen's tabs: Roof, Cargo, Wing live, Underglow still greyed, 'Roof ornament' gone");
-  check(/for \(const p of PROPS\[slot\]\)/.test(ui) && /'None'/.test(ui) && /Stock/.test(ui) && /PROP_PAINTS/.test(ui) && /Not available for this car yet/.test(ui) && /propSlots\(car\.id\)/.test(ui) && SLOTS.every((s, i) => PM.PROPS[s].length === [9, 10, 15][i]), 'every tab lists all its props as chips plus None / Stock and the colour row; an unsupported car shows "Not available for this car yet" (data-driven from the table)');
+  const reg = readFileSync(ROOT + '/src/delivery/render/cosmeticslots.js', 'utf8');
+  check(/id: 'roof', label: 'Roof'[^}]*prop: true, supports: prop\('roof'\)/.test(reg) && /id: 'cargo', label: 'Cargo'[^}]*prop: true, supports: prop\('cargo'\)/.test(reg) && /id: 'wing', label: 'Wing'[^}]*prop: true, supports: prop\('wing'\)/.test(reg) && !/Roof ornament/.test(ui) && /id: 'underglow'[^}]*items: dormant\('underglow'\)/.test(reg), "the screen's tabs (render/cosmeticslots.js): Roof, Cargo, Wing shown where slotStatus is ok, Underglow dormant (no items: no tab), 'Roof ornament' gone");
+  check(/for \(const p of PROPS\[slot\]\)/.test(ui) && /'None'/.test(ui) && /Stock/.test(ui) && /PROP_PAINTS/.test(ui) && /propSlots\(car\.id\)/.test(ui) && SLOTS.every((s, i) => PM.PROPS[s].length === [15, 16, 21][i]), 'every tab lists all its props as chips plus None / Stock and the colour row');
   const swatches = D.PROP_PAINTS;
   const hexes = swatches.map(p => p.hex);
   check(swatches.length === 8 && swatches[0].id === 'match' && [0x1b1c20, 0xf2f2ee].every(h => hexes.includes(h)) && ['red', 'orange', 'blue', 'green', 'gold'].every(n => swatches.some(p => p.id === n)), 'the colour row: match car colour, black, white, red, orange, blue, green, gold');
@@ -63,13 +64,16 @@ try {
   check(noEntry && SLOTS.every(s => !D.slotStatus(noEntry, s).ok && D.slotStatus(noEntry, s).why === ''), 'a car with no table entry (' + noEntry?.id + '): every slot not available, no reason');
   check(D.slotStatus({ ...car('rally'), legend: true }, 'roof').legend === true && !D.slotStatus({ ...car('rally'), legend: true }, 'roof').ok, 'a Legendary car keeps its own look');
 
-  // ---- locked tabs (the owner, 15-Oct: a slot the car cannot wear has its TAB locked, not selectable, with the reason; the open tab falls back to Wheels) ----
+  // ---- hidden tabs (the owner, 16-Oct: a slot the car cannot wear has NO tab; the open tab falls back to the first drawn; was 'locked' on 15-Oct) ----
   {
     const locked = (id) => SLOTS.filter(sl => !st(id, sl).ok).join();
-    check(locked('moke') === 'roof' && locked('touringcar') === 'cargo' && locked('minibus') === 'cargo' && locked('sporttruck') === '' && locked(noEntry.id) === 'roof,cargo,wing', 'locked tabs: moke roof (an open car; its rear deck takes a wing since the placement audit, CHECKLIST 307), touringcar cargo, minibus cargo, sporttruck none, a car with no table entry (' + noEntry.id + ') all three');
-    check(/tab\.setAttribute\('aria-disabled', String\(!st\.ok\)\)/.test(ui) && /tab\.setAttribute\('aria-label', st\.ok \? [^:]+: lockReason\(slot\)\)/.test(ui) && /tab\.title = st\.ok/.test(ui) && /cz-lockline/.test(ui) && /Not available for this car yet/.test(ui), "a locked tab is aria-disabled, carries the reason in its aria-label and tooltip, and shows a padlock and 'Locked'");
-    check(/if \(slot\.prop && !slotStatus\(state\.car, slot\.id\)\.ok\) flash\(tabMsg, lockReason\(slot\.id\)\)/.test(ui) && /!slotStatus\(car, openSlot\)\.ok\) \{ flash\(tabMsg, ''\); openSection\('wheels'\)/.test(ui), 'a tap on a locked tab opens nothing and shows the one-line reason; a locked open tab falls back to Wheels');
-    check(!/aria-disabled', String\(!st\.ok\)\);\n\s*b\.classList/.test(ui) && /sec\.node\.classList\.toggle\('unsupported'/.test(ui), 'wheels and number plate tabs are not made lockable (only slots flagged prop)');
+    check(locked('moke') === 'roof' && locked('touringcar') === 'cargo' && locked('minibus') === 'cargo' && locked('sporttruck') === '' && locked(noEntry.id) === 'roof,cargo,wing', 'unsupported slots (no tab): moke roof (an open car; its rear deck takes a wing since the placement audit, CHECKLIST 307), touringcar cargo, minibus cargo, sporttruck none, a car with no table entry (' + noEntry.id + ') all three');
+    const { shownSlots } = await load('render/cosmeticslots.js');
+    const tabsOf = (id) => shownSlots(car(id) || noEntry).map(s => s.id).join();
+    const { underglowSupported } = await load('render/underglow.js'); // (the Glow tab, 16-Oct: on every car that can wear an underglow)
+    const glow = (id) => (underglowSupported(car(id) || noEntry) ? ['underglow'] : []);
+    check(['moke', 'touringcar', 'minibus', 'sporttruck', noEntry.id].every(id => tabsOf(id) === ['wheels', 'plate', ...SLOTS.filter(sl => st(id, sl).ok || (id === noEntry.id && D.slotStatus(noEntry, sl).ok)), ...glow(id), 'kill'].join()), 'the tabs drawn are exactly Wheels, Plate, the slots slotStatus allows Glow where an underglow fits and the Kill effect (every car) (moke ' + tabsOf('moke') + '; ' + noEntry.id + ' ' + tabsOf(noEntry.id) + ')');
+    check(!/lockReason|cz-lockline|Coming later|Not available for this car yet/.test(ui) && /openSlot = renderTabs\(\)/.test(ui) && /tabToOpen\(list, openSlot\)/.test(ui), "no 'Locked' / 'Coming later' tab, no lock reason line; the open tab falls back to the first drawn (renderTabs)");
   }
 
   // ---- equip on the five cars ----

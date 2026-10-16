@@ -150,6 +150,12 @@ cargo 1 x 0.8 x 1.2, wing 1.4 x 0.35 x 0.3. Seen in stills /tmp/prop-maxscale/*.
 | roof | roof-dish (Satellite dish) | 0.9 | 0.56 x 0.44 x 0.55 | a small dish (~0.5 m) |
 | roof | roof-pennant (Pennant mast) | 1.4 | 0.88 x 0.70 x 0.56 | a 0.7 m mast with its pennant |
 | roof | roof-cactus (Rooftop cactus) | 1.1 | 0.90 x 0.54 x 0.95 | a potted cactus; at 1.3 the pot read as a big bowl |
+| roof | roof-bike (Bike rack) | 2.0 | 1.88 x 0.94 x 1.57 | a bike ~1.6-1.7 m long (the 1.88 is the rack's bars; the bike itself is ~0.2 m wide); under it a child's bike |
+| roof | roof-ladder (Trade ladder) | 1.6 | 1.54 x 0.25 x 1.25 | a ladder ~0.48 m wide (it is short: the bound is 0.8 deep) and a ~19 cm pipe tube |
+| roof | roof-basket (Roof basket) | 1.5 | 1.42 x 0.64 x 1.13 | an expedition basket ~1.4 x 1.1 m, its spare tyre 0.6 m |
+| roof | roof-horns (Speakers) | 1.6 | 0.60 x 0.79 x 1.22 | two big PA horns (0.6 m rims); at 1.2 they were specks on a van |
+| roof | roof-donut (Giant doughnut) | 1.6 | 0.66 x 0.78 x 0.25 | a shop's novelty sign: a doughnut ~0.65 m across |
+| roof | roof-cones (Cone stack) | 1.5 | 1.44 x 0.72 x 0.38 | road-works cones ~0.7 m tall, 0.36 m bases |
 | cargo | cargocrates (Crate stack) | 1.5 | 1.44 x 1.13 x 1.71 | crates up to ~0.9 m; a truck bed takes a big stack |
 | cargo | cargobarrel (Barrel) | 0.9 | 0.82 x 0.72 x 0.84 | a cask / drum (~0.6-0.8 m); at 1.1 it read as a vat |
 | cargo | cargotarp (Tarp load) | 2.0 | 1.96 x 1.56 x 2.32 | a tarp covers whatever: as big as the bed |
@@ -160,6 +166,12 @@ cargo 1 x 0.8 x 1.2, wing 1.4 x 0.35 x 0.3. Seen in stills /tmp/prop-maxscale/*.
 | cargo | cargo-tyres (Tyre stack) | 1.0 | 0.90 x 0.76 x 0.93 | van / light-truck tyres (~0.9 m); at 1.1 truck tyres in a pickup |
 | cargo | cargo-armchair (Armchair on straps) | 1.1 | 1.03 x 0.87 x 1.11 | an armchair is ~0.9 m wide and tall |
 | cargo | cargo-junkertarp (Junker tarp) | 2.0 | 2.00 x 1.20 x 2.28 | a tarp: as big as the bed |
+| cargo | cargo-mixer (Cement mixer) | 1.2 | 0.99 x 0.85 x 1.21 | a site mixer: drum ~0.7 m across, ~1.4 m long with its wheels; past 1.2 a concrete truck's drum |
+| cargo | cargo-logs (Log pile) | 1.4 | 1.20 x 0.98 x 1.57 | logs ~0.35 m thick, 1.6 m long (firewood lengths); a flatbed's load, not a timber lorry's |
+| cargo | cargo-dinghy (Rubber dinghy) | 1.6 | 1.50 x 0.93 x 1.82 | a small tender is ~1.9 x 1.4 m; it sits on bunks so it shows over a bed's sides |
+| cargo | cargo-speakers (Party speakers) | 1.1 | 1.02 x 0.79 x 0.90 | PA cabinets ~0.8 m tall; at 1.3 they read as a stage stack |
+| cargo | cargo-trophy (Giant trophy) | 1.3 | 0.94 x 1.01 x 0.68 | a joke: a cup a metre tall, giant but still a cup (on the kei truck at its room, 1.27) |
+| cargo | cargo-washer (Washing machine) | 1.15 | 0.85 x 0.89 x 0.85 | a washer is 0.6 m wide, 0.85 m tall: the machine 0.71 x 0.81 at 1.15 |
 | wing | winggt (GT wing) | 1.8 | 2.52 x 0.59 x 0.50 | conventional wings span the car, up to a bus / van (~2.5 m) |
 | wing | winglip (Duck-tail lip) | 1.8 | 2.34 x 0.31 x 0.50 | follows the body's width |
 | wing | wingtube (Tube wing) | 1.8 | 2.41 x 0.54 x 0.41 | as the GT wing |
@@ -175,6 +187,12 @@ cargo 1 x 0.8 x 1.2, wing 1.4 x 0.35 x 0.3. Seen in stills /tmp/prop-maxscale/*.
 | wing | wing-flame (Flame wing) | 1.4 | 1.88 x 0.49 x 0.39 | flames past half a metre swamp a car |
 | wing | wing-rockets (Rocket pods) | 1.4 | 1.68 x 0.32 x 0.36 | pods ~0.3 m across |
 | wing | wing-hoops (Hoop wing) | 1.5 | 1.95 x 0.45 x 0.45 | hoops ~0.45 m |
+| wing | wing-whale (Whale tail) | 1.5 | 2.04 x 0.40 x 0.43 | a deck-lid tray: about the lid's width (~1.6 m on a coupe); past 1.5 the tray reads as a second boot |
+| wing | wing-plank (Drag plank) | 1.3 | 1.79 x 0.45 x 0.32 | a drag spoiler's sheet is ~0.3-0.45 m tall; taller is a billboard |
+| wing | wing-touring (Touring wing) | 1.8 | 2.51 x 0.62 x 0.50 | as the GT wing (end plates are the mounts) |
+| wing | wing-blade (Carbon blade) | 1.7 | 2.33 x 0.59 x 0.44 | a thin blade on struts: as the GT wing, a touch less so the struts stay slender |
+| wing | wing-visor (Roof visor) | 1.8 | 2.38 x 0.49 x 0.53 | a roof spoiler spans the roof's edge (as the hatch roof spoiler) |
+| wing | wing-loop (Loop spoiler) | 1.5 | 1.92 x 0.49 x 0.34 | a hoop spoiler is ~1.4-1.6 m wide, ~0.3 m tall; bigger is a goalpost |
 
 ## Number plate rules (CHECKLIST 352)
 

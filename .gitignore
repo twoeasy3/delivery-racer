@@ -6,3 +6,4 @@ __pycache__/
 .claude/
 .wrangler/
 delivery/propcars.json
+delivery/decalcars.json
