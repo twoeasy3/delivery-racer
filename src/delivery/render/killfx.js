@@ -23,7 +23,7 @@ import { KILL_MORE } from './killfxmore.js';
 
 // ---- the registry: id -> { name, icon, explode, trail, ... } (classic first; its explode/trail are render/particles.js's) ----
 // (KILL_DEFS: the shipped ones and the experiment's cut ones; KILL_IDS, the registry and the screen: the shipped only)
-// (KILL_MORE, render/killfxmore.js: the eight added after the first seven, CHECKLIST 432)
+// (KILL_MORE, render/killfxmore.js: the eight added after the first seven, CHECKLIST 426)
 const SHIPPED = { ...SHIPPED_FIRST, ...KILL_MORE };
 const KILL_DEFS = { ...SHIPPED, ...KILL_EXTRA };
 export const KILL_FX = KILL_DEFS;
@@ -83,7 +83,7 @@ const TEXTURES = {
     g.restore();
     g.fillStyle = 'rgba(255,255,255,0.9)'; g.beginPath(); g.arc(27, 10, 3, 0, Math.PI * 2); g.fill();
   }],
-  // (CHECKLIST 432: the eight more effects' pictures, 64 x 64, white or grey: tinted by each particle's colour)
+  // (CHECKLIST 426: the eight more effects' pictures, 64 x 64, white or grey: tinted by each particle's colour)
   blot: [64, 64, (g) => { // an ink splat: a blob, round drops and a few thrown spikes about it (fixed, so every splat is the same shape, turned)
     g.fillStyle = '#fff'; g.beginPath(); g.arc(32, 32, 15, 0, Math.PI * 2); g.fill();
     for (let i = 0; i < 9; i++) { const a = i * 2.39, d = 13 + (i * 7) % 9, rad = 4 + (i * 5) % 5; g.beginPath(); g.arc(32 + Math.sin(a) * d, 32 + Math.cos(a) * d, rad, 0, Math.PI * 2); g.fill(); }
@@ -134,7 +134,7 @@ const geo = (name) => GEO[name] ||= (() => { // (marked shared below: scene.js c
   if (g2) { g2.userData.shared = true; return g2; }
   throw new Error('no geometry ' + name);
 })();
-// (CHECKLIST 432) shades baked in as vertex colours (the materials are unlit): x one particle's colour
+// (CHECKLIST 426) shades baked in as vertex colours (the materials are unlit): x one particle's colour
 const shaded = (g, shadeOf) => {
   const pos = g.attributes.position, n = pos.count, c = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) { const v = shadeOf(pos.getX(i), pos.getY(i), pos.getZ(i), i); c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = v; }
@@ -177,7 +177,7 @@ export const POOL_TYPES = {
   bubble: { geo: 'quad', mat: () => basic({ map: tex('bubble'), transparent: true, depthWrite: false }), mode: 'billboard', max: 200 },
   candy: { geo: 'candyquad', mat: () => basic({ map: tex('candy'), alphaTest: 0.5, side: THREE.DoubleSide }), mode: 'billboard', max: 140 },
   puff: { geo: 'quad', mat: () => basic({ map: tex('dot'), transparent: true, opacity: 0.6, depthWrite: false }), mode: 'billboard', max: 200 }, // soft smoke
-  // (CHECKLIST 432: the eight more effects' pools)
+  // (CHECKLIST 426: the eight more effects' pools)
   dart: { geo: 'dart', mat: () => basic({ vertexColors: true, side: THREE.DoubleSide }), mode: 'streak', glide: true, max: 120 }, // paper planes (nose along their way)
   blot: { geo: 'quad', mat: () => basic({ map: tex('blot'), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }), mode: 'solid', max: 120 }, // ink on the road (laid flat)
   blob: { geo: 'quad', mat: () => basic({ map: tex('blob'), alphaTest: 0.5 }), mode: 'billboard', max: 240 }, // drops: ink, jelly
@@ -197,7 +197,7 @@ export const triangles = (name) => { const g = geo(POOL_TYPES[name].geo); return
 const F = 34;
 const X = 0, Y = 1, Z = 2, VX = 3, VY = 4, VZ = 5, LIFE = 6, MAXL = 7, SIZE = 8, GROW = 9, GRAV = 10, DRAG = 11, FLOOR = 12,
   AX = 13, AY = 14, SAX = 15, SAY = 16, DELAY = 17, FLUT = 18, PHASE = 19, R = 20, G = 21, B = 22, FD = 23, TOCAM = 24, BOUNCE = 25, SHADE = 26, LEN = 27,
-  // (CHECKLIST 432; 0 = none, so the first seven effects are drawn exactly as before) TURN: its heading turns (rad/s, a glider's circle,
+  // (CHECKLIST 426; 0 = none, so the first seven effects are drawn exactly as before) TURN: its heading turns (rad/s, a glider's circle,
   // a whirlwind); JEL: jelly (wobbles, more when it lands); WOB: the wobble now; BEAT: a heartbeat (beats a second); TOP: topples (its
   // tilt speeds up as a falling domino's does); AXM: the tilt it stops at (lying down)
   TURN = 28, JEL = 29, WOB = 30, BEAT = 31, TOP = 32, AXM = 33;

@@ -1,4 +1,4 @@
-// A check of THE TUNNEL THEMES (render/tunneldress.js, CHECKLIST 422): the looks and fittings of the tunnels of the themes that had
+// A check of THE TUNNEL THEMES (render/tunneldress.js, CHECKLIST 424): the looks and fittings of the tunnels of the themes that had
 // only the plain one (city, port, snow, hongkong, tokyo), headless:
 //   - each look is for a theme with no tunnel of its own in themes.js (a theme with one keeps it: never touched), and has a dressing;
 //   - every look builds on every level of its theme with tunnels, and on three other tunnel levels (one of them the mall's, a long

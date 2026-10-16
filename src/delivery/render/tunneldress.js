@@ -1,4 +1,4 @@
-// ---- TUNNEL DRESSING: a tunnel of its own for the themes that had only the plain one (CHECKLIST 422). render/tunnel.js builds
+// ---- TUNNEL DRESSING: a tunnel of its own for the themes that had only the plain one (CHECKLIST 424). render/tunnel.js builds
 // every tunnel's shell (walls, ceiling, lamps, portals); this gives five themes a look for it and the fittings along it:
 //   city      a bypass tunnel: white tiles over a dark dado and a blue stripe, cool lamps along both ceiling corners, jet fans in
 //             pairs, blue SOS niches and green emergency doors, reflector posts; a blue name board and a height sign on the portal

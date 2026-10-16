@@ -1,4 +1,4 @@
-// ---- EIGHT MORE KILL EFFECTS (CHECKLIST 432; the first seven and the cut two: render/killfxdefs.js; the engine: render/killfx.js). Each
+// ---- EIGHT MORE KILL EFFECTS (CHECKLIST 426; the first seven and the cut two: render/killfxdefs.js; the engine: render/killfx.js). Each
 // differs from every one before it in how it moves and in its shapes:
 //   Planes    paper darts launched out of a puff, gliding off in wide turns and sinking to the road (nose along their way)
 //   Ink       a splat that spreads flat ON THE ROAD, thick drops flung out that fall and leave splats of their own

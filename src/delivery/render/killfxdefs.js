@@ -48,7 +48,7 @@ const BOLT = [0xffffff, 0xd8f0ff, 0x8fd0ff];
 const CANDY = [0xff4f8b, 0x4fd1ff, 0xffd23f, 0x8be04f, 0xb07cff, 0xff8a3d];
 const SPRINKLE = [0xff3b6b, 0xffd23f, 0x3bd16f, 0x3fa9ff, 0xffffff, 0xb46bff, 0xff8fd0];
 const PIXEL = [0xff004d, 0xffa300, 0xffec27, 0x00e436, 0x29adff, 0xff77a8, 0xffffff];
-// (the helpers, for render/killfxmore.js's eight more: CHECKLIST 432)
+// (the helpers, for render/killfxmore.js's eight more: CHECKLIST 426)
 export { FADE_DIM, FADE_FLICKER, FADE_POP, FADE_FLASH, TAU, r, rr, pick, sq, flash, puffs, outward };
 
 // ---- the chips' icons (s x s canvas, transparent) ----

@@ -1,4 +1,4 @@
-// A check of the EIGHT MORE KILL EFFECTS (render/killfxmore.js over render/killfx.js; CHECKLIST 432). Headless, no browser:
+// A check of the EIGHT MORE KILL EFFECTS (render/killfxmore.js over render/killfx.js; CHECKLIST 426). Headless, no browser:
 //   - each is registered (slot 'kill', free, a placeholder price, a short name), shipped (on the screen's list, so in Unlock everything
 //     and the Test preview), has an icon that draws, an explosion, a trail, and none is one of the first seven or the cut two
 //   - SPAWNED 200 TIMES EACH (small, big, the tank shell's, the package hit, mixed; a trail every frame between): no pool ever over its
