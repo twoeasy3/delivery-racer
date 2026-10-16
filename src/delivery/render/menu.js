@@ -9,6 +9,7 @@ import { CARS, SECRET_CARS, useLevelCar, selectCar, amphibiousCars, carRule, rul
 import { Tiers } from '../tiers.js';
 import { Progress } from '../progress.js';
 import { clearCosmetics } from './cosmetics.js';
+import { resetAll as resetLoadout } from './loadoutstore.js';
 import { unlockMode, setUnlockMode, unlockEverything } from '../unlockall.js';
 import { Shop } from '../shop.js';
 import { Game } from '../game.js';
@@ -167,9 +168,10 @@ Game.askStart = async () => {
 }
 
 document.getElementById('resetBtn').addEventListener('click', async () => {
-  if (!await ask({ title: 'Reset progress', lines: ['Erase your bank, unlocked levels and cars?'], ok: 'Erase', danger: true })) return;
+  if (!await ask({ title: 'Reset progress', lines: ['Erase your bank, unlocked levels, cars and cosmetics?'], ok: 'Erase', danger: true })) return;
   Progress.reset();
   clearCosmetics();
+  resetLoadout(); // (every car's cosmetic choices and the All cars default back to Stock: render/loadoutstore.js, CHECKLIST 340)
   selectLevel(0);
   window.dispatchEvent(new Event('carchange')); // (the car in use may have been one that was bought)
   showAutoGas(); // (a reset forgets the choice)

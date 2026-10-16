@@ -104,6 +104,20 @@ try {
   W.setWheelSet('blackout', 'commuter');
   Store.copyToAll('commuter');
   check(W.wheelSet('sport') === 'blackout' && W.wheelSet('pickup') === 'blackout' && !Object.keys(Store.snapshot().cars).length && raw.getItem('delivery.wheelcolour') === 'black', 'Copy to all (the screen\'s: clear): every car wears it, no car keeps its own; the old keys follow');
+  // (CHECKLIST 340) only the slots the car CHANGED are copied; another car keeps its own choice of every other slot
+  D.setProp('roof', 'roofbeacon', 'sport'); W.setWheelSet('turbine', 'sport'); P.setPlateText('SPORT', 'pickup'); W.setWheelSet('red-hot', 'commuter');
+  const roofBefore = D.propChoice('roof'), plateBefore = P.plateText();
+  check(JSON.stringify(Store.copySlots('commuter')) === '["wheels"]' && JSON.stringify(Store.copyAffects('commuter')) === '["sport"]', 'Copy to all: the commuter changed its wheels only (copySlots ' + JSON.stringify(Store.copySlots('commuter')) + '); it would change the sport\'s own wheels, not the pick-up (its own plate)');
+  const copied = Store.copyToAll('commuter');
+  check(JSON.stringify(copied) === '["wheels"]' && W.wheelSet() === 'red-hot' && W.wheelSet('sport') === 'red-hot' && W.wheelSet('pickup') === 'red-hot' && !Store.hasOwn('commuter', 'wheels'), '...copied: every car wears its wheels, the sport\'s own wheels dropped');
+  check(D.propChoice('roof', 'sport') === 'roofbeacon' && Store.hasOwn('sport', 'roof') && P.plateText('pickup') === 'SPORT' && D.propChoice('roof') === roofBefore && P.plateText() === plateBefore, '...the sport keeps its own roof, the pick-up its own plate, the default\'s roof and plate untouched');
+  check(Store.copyToAll('commuter').length === 0 && W.wheelSet('sport') === 'red-hot', 'Copy to all on a car that follows the default everywhere: nothing copied, nothing changed');
+  // (CHECKLIST 340) Reset progress clears every choice (render/menu.js calls resetAll beside clearCosmetics)
+  Store.resetAll();
+  check(W.wheelSet('sport') === 'stock' && W.wheelSet() === 'stock' && D.propChoice('roof', 'sport') === 'none' && D.propChoice('roof') === 'none' && P.plateText('pickup') === P.plateText() && !Object.keys(Store.snapshot().cars).length && !Object.keys(Store.snapshot().default).length, 'resetAll (Reset progress): every car and the default back to Stock');
+  Store.reloadStore();
+  check(!Store.wasMigrated() && W.wheelSet() === 'stock' && raw.getItem('delivery.prop.roof') === null && raw.getItem('delivery.wheelcolour') === 'stock', '...written: a reload reads the empty store (not the old keys), and the old keys are Stock too');
+  W.setWheelSet('blackout'); P.setPlateDesign('yellow'); P.setPlateText('MINE 2', 'commuter'); // (the state before these lines, for what follows)
 
   // ---- ownership: global, gating each car's choice ----
   grantCosmetics(['plate:blackgold']);

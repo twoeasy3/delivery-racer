@@ -134,6 +134,16 @@ check(ownedCosmetics().join() === listed.join() && ownsCosmetic('plate', 'fixtur
   check(ok && wheels.wheelDesign() === 'stock' && wheels.wheelColour() === 'stock' && wheels.wheelSet() === 'stock', 'an unknown set / design / colour id: no error, Stock is worn');
   wheels.setWheelSet('stock');
 }
+// RESET PROGRESS (CHECKLIST 340): the menu's Reset forgets what is owned AND every car's choices (render/loadoutstore.js resetAll)
+{
+  const menu = readFileSync('src/delivery/render/menu.js', 'utf8');
+  const handler = menu.slice(menu.indexOf("getElementById('resetBtn')"), menu.indexOf("getElementById('resetBtn')") + 700);
+  check(/clearCosmetics\(\);\s*resetLoadout\(\);/.test(handler) && /import \{ resetAll as resetLoadout \} from '\.\/loadoutstore\.js'/.test(menu), "the menu's Reset progress clears the owned cosmetics and the loadout store (every car's choices)");
+  const Store = await g.load('render/loadoutstore.js');
+  wheels.setWheelSet('whitewall-silver', 'commuter'); wheels.setWheelSet('whitewall-silver');
+  Progress.reset(); clearCosmetics(); Store.resetAll();
+  check(wheels.wheelSet('commuter') === 'stock' && wheels.wheelSet() === 'stock' && !Store.customCars().length, '...after it, every car and All cars wear Stock');
+}
 undo();
 check(!cosmeticKeys().includes(KEY) && cosmeticKeys().length === shipped.length, 'the fixture is taken out again (nothing shipped changed)');
 console.log(failures ? failures + ' FAILED' : 'all checks passed');

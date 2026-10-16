@@ -516,7 +516,10 @@ export const syncPickups = (dt) => {
   }
   // (on an amphibious level the rage is in the Amphibious Tank, in its own livery for each side: Player.rageTank)
   const amphibian = tank ? Player.rageTank : null;
-  tankMesh.visible = tank && !amphibian;
+  const garageTank = tank && !amphibian && CAR.tank ? ownTank(CAR) : null; // (the Tank's own, dressed: see ownTank)
+  for (const id in ownTanks) ownTanks[id].visible = ownTanks[id] === garageTank;
+  if (garageTank) paintOf(garageTank.userData.body).color.setHex(livery);
+  tankMesh.visible = tank && !amphibian && !garageTank;
   amphibiousTankMesh.visible = !!amphibian;
   if (amphibian) {
     paintOf(amphibiousTankMesh.userData.body).color.setHex(Player.evil ? amphibian.evilColor : amphibian.color);
@@ -648,6 +651,18 @@ const TANK_OLIVE = 0x4b5a2a;
 const tankMesh = makeTankMesh(TANK_OLIVE);
 tankMesh.visible = false;
 carMesh.add(tankMesh);
+// ...the garage's TANK (a car with no model of its own: CAR.tank) drives its own copy, DRESSED in its loadout as the showroom's is (its plate;
+// its kill effect needs no model): CHECKLIST 340. TANK RAGE in any other car keeps the plain shared one above (the rage is not that car's look).
+const ownTanks = {};
+const ownTank = (car) => {
+  if (!ownTanks[car.id]) {
+    const model = dressCosmetics(makeTankMesh(car.color), car);
+    model.visible = false;
+    carMesh.add(model);
+    ownTanks[car.id] = model;
+  }
+  return ownTanks[car.id];
+};
 // ...and the one it turns into on an amphibious level (cars.js AMPHIBIOUS_TANK)
 const amphibiousTankMesh = makeAmphibiousTankMesh(AMPHIBIOUS_TANK.color);
 amphibiousTankMesh.visible = false;
