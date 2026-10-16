@@ -106,7 +106,7 @@ const boxOf = (mesh, inv) => {
 const meshesOf = (group) => {
   const list = [], fx = group.userData.lamps?.lamps;
   const walk = (node) => {
-    if (node !== group && (node === fx || node.userData.body || node.userData.animate)) return;
+    if (node !== group && (node === fx || node.userData.body || node.userData.animate || node.userData.crackOverlay)) return; // (the cracked glass, render/cracks.js, rides its glass: never dented)
     if (node.isMesh && node.geometry?.attributes?.position && !node.isInstancedMesh && !node.userData.wheelRing) list.push(node); // (a wheel design's sidewall ring: rigid with its tyre)
     for (const child of node.children) walk(child);
   };
