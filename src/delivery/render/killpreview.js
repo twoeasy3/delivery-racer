@@ -3,6 +3,12 @@
 // showroom view's own scene (render/showroomview.js overlay) by a kill-effect system of its own (render/killfx.js createKillFx) and, for
 // Classic, a small set of classic pools (render/particles.js), so it is exactly what the game draws. Nothing here touches the game.
 // ?killtest=<s> (with ?cosmetics&slot=kill): fires once the car has landed and holds the picture <s> seconds into it (for a still).
+// THE CAR GOES (the owner, 16-Oct: "The kill fx preview should hide the car and have the effect land on the ground"): when it goes up the
+// car (its model and every cosmetic on it, and its shadow) is hidden (ShowroomView.carGone) and the effect is set off ON THE STAGE'S FLOOR
+// (ShowroomView.floorY, given as the road's height is in the game: the effects' own floors are that height plus their own offsets), by a
+// system made with `settle` (render/killfx.js): what falls lands on the floor and lies there a moment (paper and coins flat) instead of
+// fading in the air; a MARK is left on the floor where it went up (a scorch, a splash: per effect, below). The car pops back once the
+// effect has played out (BACK). A new Test clears the last one first (nothing stacks) and brings the car back; clear() always does.
 import * as THREE from 'three';
 import { createKillFx, KILL_FX } from './killfx.js';
 import { makeParticles, classicExplode, classicTrail, classicBurst } from './particles.js';
@@ -11,13 +17,29 @@ import { ShowroomView } from './showroomview.js';
 import { Sound } from './audio.js';
 
 const FLIGHT = 0.8, KILL_AFTER = 0.3; // (s: the package's flight; the car's explosion after the package bursts)
+const KILL_AT = FLIGHT + KILL_AFTER, BACK_MIN = 1.6, BACK = 3.6, REST = 0.7; // (s after the kill: the car back once all has gone and not before BACK_MIN, or at BACK whatever; REST: how long a landed bit lies there)
 const HIT = { big: false, scale: 0.45, smoke: 0.3 }, KILL = { big: false };
-let group = null, fx = null, classic = null, box = null, run = null, look = 'classic', hold = -1;
+let group = null, fx = null, classic = null, box = null, marks = null, run = null, look = 'classic', hold = -1;
+const floorY = () => ShowroomView.floorY ?? 0;
+// the MARK each effect leaves on the floor: [texture, colour, opacity, size m, additive]; none where what fell is the mark (paper, coins)
+const MARKS = {
+  classic: [['scorch', 0x000000, 0.75, 4.2]],
+  fireworks: [['scorch', 0x000000, 0.6, 3.6], ['ring', 0xff4f8b, 0.55, 3.4, true]],
+  bubbles: [['scorch', 0x9fdcff, 0.45, 3.8]],
+  comic: [['star', 0x111111, 0.55, 3.6]],
+  lightning: [['scorch', 0x000000, 0.7, 3.6], ['ring', 0x7fc8ff, 0.8, 3.2, true]],
+};
+const markTexture = (draw) => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); if (g) draw(g); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };
+const MARK_TEX = {
+  scorch: (g) => { const r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.45, 'rgba(255,255,255,0.8)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); },
+  ring: (g) => { g.strokeStyle = '#fff'; g.lineWidth = 4; g.beginPath(); g.arc(32, 32, 27, 0, Math.PI * 2); g.stroke(); },
+  star: (g) => { g.beginPath(); for (let i = 0; i < 24; i++) { const a = i / 24 * Math.PI * 2, r = i % 2 ? 14 + (i % 3) * 2 : 30 - (i % 5); g.lineTo(32 + Math.sin(a) * r, 32 - Math.cos(a) * r); } g.closePath(); g.fillStyle = '#fff'; g.fill(); },
+};
 const flag = (mesh) => { mesh.userData.shared = true; return mesh; }; // (the showroom letting its scene go must not dispose ours)
 const make = () => {
   group = new THREE.Group();
   group.name = 'kill-preview';
-  fx = createKillFx(group);
+  fx = createKillFx(group, { settle: { ground: floorY(), rest: REST } });
   const mat = (o) => new THREE.MeshBasicMaterial(o);
   classic = {
     Particles: makeParticles(240, mat(), group),
@@ -29,7 +51,41 @@ const make = () => {
   box.scale.setScalar(0.7);
   box.visible = false;
   group.add(box);
+  marks = [0, 1].map(() => { // (two flat meshes on the floor, just over the floor patch and the shadow; their texture set per effect)
+    const m = flag(new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false })));
+    m.rotation.x = -Math.PI / 2; m.position.y = floorY() + 0.006; m.renderOrder = -0.5; m.visible = false;
+    group.add(m);
+    return m;
+  });
+  for (const name in MARK_TEX) MARK_TEX[name] = markTexture(MARK_TEX[name]);
 };
+// the marks: laid at the kill (grown in fast), faded out as the car comes back
+const markOn = () => {
+  const list = MARKS[look] || [];
+  marks.forEach((m, i) => {
+    const d = list[i];
+    m.visible = !!d;
+    if (!d) return;
+    m.material.map = MARK_TEX[d[0]]; m.material.color.setHex(d[1]); m.material.blending = d[4] ? THREE.AdditiveBlending : THREE.NormalBlending; m.material.needsUpdate = true;
+    m.userData.mark = { opacity: d[2], size: d[3], age: 0, out: -1 };
+  });
+};
+const markFrame = (dt) => {
+  for (const m of marks) {
+    const d = m.userData.mark;
+    if (!m.visible || !d) continue;
+    d.age += dt;
+    if (d.out >= 0) d.out += dt;
+    const grow = Math.min(1, 0.35 + d.age / 0.15), fade = d.out < 0 ? 1 : Math.max(0, 1 - d.out / 0.5);
+    m.scale.set(d.size * grow, d.size * grow, 1);
+    m.material.opacity = d.opacity * fade;
+    if (fade <= 0) m.visible = false;
+  }
+};
+const marksOff = (now = false) => { for (const m of marks || []) { if (now) m.visible = false; else if (m.userData.mark && m.userData.mark.out < 0) m.userData.mark.out = 0; } };
+// the classic pools emptied (makeParticles has no clear: a long step lets every particle's life run out)
+const purgeClassic = () => { for (const p of Object.values(classic || {})) p.update(1e9); };
+const liveNow = () => (look === 'classic' ? classic.Fire.live() + classic.Smoke.live() + classic.Particles.live() : fx.live());
 try { const v = new URLSearchParams(location.search).get('killtest'); if (v !== null) hold = Math.max(0, Number(v) || 0); } catch { /* (headless) */ }
 
 const right = new THREE.Vector3(), up = new THREE.Vector3(), from = new THREE.Vector3(), to = new THREE.Vector3(), at = new THREE.Vector3();
@@ -55,20 +111,29 @@ const frame = (scene, dt, camera) => {
       run.hit = true;
       box.visible = false;
       if (look === 'classic') classicBurst(classic, to.x, to.y - 0.8, to.z, 0, 0); // (the small fire puff, as the game's)
-      else fx.explode(look, to.x, 0, to.z, 0, 0, HIT);
+      else fx.explode(look, to.x, floorY(), to.z, 0, 0, HIT);
       Sound.play('burst', 0.5);
-    } else if (!run.kill && run.t >= FLIGHT + KILL_AFTER) {
+    } else if (!run.kill && run.t >= KILL_AT) {
       run.kill = true;
-      if (look === 'classic') classicExplode(classic, 0, 0, 0, 0, 0, KILL);
-      else fx.explode(look, 0, 0, 0, 0, 0, KILL);
+      ShowroomView.carGone(true); // (the car is what goes up)
+      markOn();
+      const y = floorY(); // (on the floor under the car, as the game's at the road's height)
+      if (look === 'classic') classicExplode(classic, 0, y, 0, 0, 0, KILL);
+      else fx.explode(look, 0, y, 0, 0, 0, KILL);
       Sound.play('explode', 0.6);
       const extra = KILL_FX[look]?.sound;
       if (extra) Sound.play(extra.name, extra.volume);
     }
-    if (run.t > FLIGHT + KILL_AFTER + 3 && hold < 0) run = null;
+    else if (run.kill && !run.back && run.t >= KILL_AT + BACK_MIN && (run.t >= KILL_AT + BACK || liveNow() === 0)) { // played out: the car back
+      run.back = true;
+      ShowroomView.carGone(false);
+      marksOff();
+    }
+    if (run.back && run.t > KILL_AT + BACK + 1.5 && hold < 0) run = null;
   }
   fx.update(dt, camera);
   for (const p of Object.values(classic)) p.update(dt);
+  markFrame(dt);
 };
 ShowroomView.overlay(frame);
 
@@ -76,20 +141,27 @@ export const KillPreview = {
   // the effect `id` on the car on show: a package thrown, its trail, its burst, the explosion
   test(id, camera = ShowroomView.camera, height = ShowroomView.height) {
     if (!group) make();
+    // (a new Test: the last one cleared at once, its marks gone, the car back: nothing stacks)
+    fx.clear(); purgeClassic(); marksOff(true);
+    if (ShowroomView.carHidden) ShowroomView.carGone(false);
     look = KILL_FX[id] ? id : 'classic';
-    run = { t: 0, hit: false, kill: false };
+    run = { t: 0, hit: false, kill: false, back: false };
     camera?.updateMatrixWorld?.();
     if (camera) { right.set(1, 0, 0).applyQuaternion(camera.quaternion); up.set(0, 1, 0); } else { right.set(1, 0, 0); up.set(0, 1, 0); }
     right.y = 0; right.normalize();
     const h = Math.max(1, height || 1.4);
     from.copy(right).multiplyScalar(-5).addScaledVector(up, h + 0.8);
-    to.set(0, h * 0.75, 0);
+    to.set(0, floorY() + h * 0.75, 0);
     Sound.play('throw', 0.5);
     // (a still, ?killtest=<s>: played on to <s> s at once, in 60ths, so a slow frame rate cannot leave it short)
     if (hold >= 0 && ShowroomView.scene) { while (run.t < hold - 1e-6) frame(ShowroomView.scene, Math.min(1 / 60, hold - run.t), camera); }
   },
-  clear() { run = null; fx?.clear(); if (box) box.visible = false; },
+  clear() { run = null; fx?.clear(); purgeClassic(); marksOff(true); if (box) box.visible = false; ShowroomView.carGone(false); },
   get hold() { return hold; },
   // for a check or a picture: what is alive
-  get state() { return { look, t: run ? run.t : null, live: fx ? fx.live() : 0, classic: classic ? classic.Fire.live() + classic.Smoke.live() + classic.Particles.live() : 0 }; },
+  get state() { return { look, t: run ? run.t : null, live: fx ? fx.live() : 0, classic: classic ? classic.Fire.live() + classic.Smoke.live() + classic.Particles.live() : 0, carHidden: ShowroomView.carHidden, marks: marks ? marks.filter(m => m.visible).length : 0, back: !!run?.back }; },
+  // for a check: the pools of the preview's own system (their particles' floors and heights) and the timeline
+  get fx() { return fx; },
+  get timeline() { return { kill: KILL_AT, backMin: KILL_AT + BACK_MIN, back: KILL_AT + BACK, rest: REST }; },
+  frame,
 };
