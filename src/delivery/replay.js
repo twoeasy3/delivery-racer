@@ -3,7 +3,8 @@
 // time from its two seeds (the level load's and its own: util.js random), its set-up and the player's inputs, at a
 // fixed step (main.js). So a recording is a header and the inputs, each at the logic step it came in on (not the
 // clock: a pause is no step, and the rewind mystery turns the clock back but never the step count):
-//   header  the build's rules (version.js logic), the level and its fingerprint, the car and its fingerprint, the
+//   header  the build's rules (version.js logic), the level and its fingerprint, the car and its fingerprint (and, since
+//           `prints: 2`, CHECKLIST 167, the car's figures and the garage's cars: see "The fingerprints" below), the
 //           side, the tank pieces, the race class, a rival, a forced mystery, the two seeds, the car's ECU (ecu.js: played
 //           back at it; a recording with none, from before the ECUs, plays at the car's max ECU); and once over, the steps
 //           it ran and how it ended
@@ -24,8 +25,8 @@ import { Input } from './input.js';
 import { Game } from './game.js';
 import { LEVEL, LEVELS, LEVEL_INDEX, selectLevel, selectSpecial, setRaceClass } from './levels.js';
 import { STAGE_LEVELS } from './events.js';
-import { CAR, pinCar, carById, carStats } from './cars.js';
-import { Ecu } from './ecu.js';
+import { CAR, CARS, pinCar, carById, carStats, superOf } from './cars.js';
+import { Ecu, NEW_STATS } from './ecu.js';
 import { Player } from './player.js';
 import { Traffic } from './traffic.js';
 import { Collision } from './collision.js';
@@ -37,6 +38,8 @@ const EVENTS = new Set(['throw', 'horn', 'confirm']);
 const CHECK_EVERY = 1200; // logic steps between fingerprints of the state (10 s at 120 a second)
 const PATH_EVERY = 24;   // logic steps between the path's points (0.2 s: the ghost is drawn between them)
 const FORMAT = 1;
+const PRINTS = 2; // the fingerprints' kind: 2 (CHECKLIST 167) the rules as code with each car's and level's own rows left out, and the
+// car's figures and the garage's printed apart; none (until v1.1.149) the rules files' whole text (version.js `legacy`)
 
 // FNV-1a over a list of numbers and words (numbers to 1e-3: what a replay would show)
 const fnv = (items) => {
@@ -54,6 +57,26 @@ const levelPrint = (level) => fnv([JSON.stringify(level, (k, v) => (k === 'car' 
 const LEVEL_PRINTS = new Map([...LEVELS, ...STAGE_LEVELS].map(level => [level.id, levelPrint(level)])); // (a special event's stages too: events.js)
 // a car's fingerprint: what it is (its figures, its model, its perks), not its words
 const carPrint = (car) => fnv([JSON.stringify(car, (k, v) => (typeof v === 'function' || k === 'name' || k === 'perk' ? undefined : v))]);
+// ---- The fingerprints (CHECKLIST 167: "invalidating all replays because I added something is really harsh") ----
+// The build's `logic` (scripts/logic-hash.mjs) leaves out of the rules each car's own rows and entries (cars.js, ecu.js,
+// ecus.json, the ideas) and each level's filing (levels.js), so adding one changes nothing. What a run reads of them
+// is printed here instead, at run time, from the data as the game has it:
+//   the car's FIGURES  its row (carPrint), its own new stats (ecu.js NEW_STATS, from the tables by its id), its ECU
+//                      table's row at the ECU played and at its max (a level's own vehicle drives at the max), its
+//                      kind (key, blueprint), and all the same of its Super version (the souped up mystery)
+//   the ROSTER         the garage's cars, in order, each as above at its max: traffic drives them (CONFIG.vehicles:
+//                      a garage car cruises at its own top speed, traffic.js) and Car Swap lends one at random. So
+//                      adding a car to the garage's own list (CARS) still refuses a replay; adding it anywhere else not
+//   the LEVEL          levelPrint (above), as before
+const ecuRow = (car, ecu) => {
+  const entry = Ecu.table[car.id];
+  if (!entry) return null;
+  const n = entry.ecus.length;
+  return [n, entry.ecus[Math.max(1, Math.min(n, Math.round(ecu) || n)) - 1]];
+};
+const figures = (car, ecu) => car ? [carPrint(car), Ecu.kind(car), Object.entries(NEW_STATS).map(([k, d]) => [k, d.of(car)]), ecuRow(car, ecu), ecuRow(car, 0)] : null;
+const figuresPrint = (car, ecu) => fnv([JSON.stringify([figures(car, ecu), figures(superOf(car), 0)])]);
+const rosterPrint = () => fnv([JSON.stringify(CARS.map(car => figures(car, 0)))]);
 // where everything is, as numbers: the clock, the player, every vehicle in play, every obstacle in play
 const stateNow = () => {
   const n = [Game.time, Game.state, Player.s, Player.lat, Player.speed, Player.health];
@@ -81,10 +104,11 @@ export const Replay = {
     this.recording = {
       format: FORMAT,
       header: {
-        logic: BUILD.logic, version: BUILD.version, level: LEVEL.id, levelPrint: LEVEL_PRINTS.get(LEVEL.id),
+        prints: PRINTS, logic: BUILD.logic, version: BUILD.version, level: LEVEL.id, levelPrint: LEVEL_PRINTS.get(LEVEL.id),
         car: CAR.id, carPrint: carPrint(CAR), ...(carStats(CAR)?.ecu ? { ecu: carStats(CAR).ecu } : {}), evil: !!Game.evil, tankPieces: Progress.data.tankPieces || 0,
         raceClass: LEVEL.grid && !LEVEL.grid.rival ? LEVEL.grid.kind || null : null, rival: Game.rival || null,
         mystery: Player.nextMystery || '', autoBrake: Player.autoBrake, seed: Game.seed, loadSeed: Game.loadSeed, date: new Date().toISOString(),
+        figures: figuresPrint(CAR, carStats(CAR)?.ecu), roster: rosterPrint(),
       },
       inputs: [], events: [], checks: [], path: [],
       at: { steer: 0, throttle: 0, auto: 0 },
@@ -157,17 +181,28 @@ export const Replay = {
   },
 
   // ---- playing back ----
-  // can this recording be played under this build? { ok } or { ok: false, why }
+  // can this recording be played under this build? { ok } or { ok: false, why }. One recorded before the prints of
+  // CHECKLIST 167 (no `prints`): only while the rules files are as they were then, byte for byte (version.js legacy)
   check(rec) {
     const h = rec?.header;
     if (!h || rec.format !== FORMAT) return { ok: false, why: 'This is not a replay this game can read.' };
-    if (h.logic !== BUILD.logic) return { ok: false, why: 'The game has been updated since this replay was recorded.' };
+    const now = h.prints === PRINTS;
+    if (h.logic !== (now ? BUILD.logic : BUILD.legacy)) return { ok: false, why: 'The game has been updated since this replay was recorded.' };
     if (!LEVEL_PRINTS.has(h.level)) return { ok: false, why: 'The level of this replay is no longer in the game.' };
     if (LEVEL_PRINTS.get(h.level) !== h.levelPrint) return { ok: false, why: 'This level has changed since the replay was recorded.' };
     const car = carById(h.car);
     if (!car) return { ok: false, why: 'The car of this replay is no longer in the game.' };
-    if (carPrint(car) !== h.carPrint) return { ok: false, why: 'The car has changed since the replay was recorded.' };
+    if (carPrint(car) !== h.carPrint || (now && figuresPrint(car, h.ecu) !== h.figures)) return { ok: false, why: 'The car has changed since the replay was recorded.' };
+    if (now && rosterPrint() !== h.roster) return { ok: false, why: 'The cars in the garage have changed since this replay was recorded.' };
     return { ok: true };
+  },
+  // a recording from before the prints of CHECKLIST 167 that still plays (its rules byte for byte these): given them, so
+  // it goes on playing after a car or a level is added (replaystore.js, as the kept replays are read). True if it was
+  upgrade(rec) {
+    const h = rec?.header;
+    if (!h || h.prints === PRINTS || !this.check(rec).ok) return false;
+    Object.assign(h, { prints: PRINTS, logic: BUILD.logic, figures: figuresPrint(carById(h.car), h.ecu), roster: rosterPrint() });
+    return true;
   },
   // play a recording back: the level, the side, the car and the rest of the set-up as recorded, both seeds, and its
   // inputs fed in step by step. The save is put back as it was when it ends (stop). False: it can't be (see check)
@@ -249,3 +284,7 @@ export const Replay = {
   },
 };
 Input.tap = (action) => Replay.tap(action); // (every event passed on: recorded while a run is)
+ReplayStore.playable = (rec) => Replay.check(rec).ok; // (is a kept best still good: replaystore.js)
+ReplayStore.upgrade = (rec) => Replay.upgrade(rec);   // (the kept replays, brought up to the prints as they are read)
+// (the prints, for the checks: scripts/.replay-stable-check.mjs)
+Replay.prints = { levelPrint, carPrint, figuresPrint, rosterPrint, PRINTS };

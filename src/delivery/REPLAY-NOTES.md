@@ -215,6 +215,11 @@ Two quirks:
   source files and whatever they import, followed through: vite.config.js logicFiles; a change to words, menus, pages
   or a model that is only drawn leaves it alone; a model a rule measured would be in it), the level's data as loaded, the
   car's figures; and the state every 1200 steps, played back against them (a recording that drifts stops: onDrift).
+- Since CHECKLIST 167 (16-Oct): the build's logic is taken by `scripts/logic-hash.mjs` as code (comments and layout
+  never count), with each car's own rows and entries and each level's filing left out, so adding a car or a level
+  refuses no replay; the header (`prints: 2`) records the car's `figures` (its row, ECU rows, tables by its id, its
+  Super version) and the garage's `roster` instead. A header without `prints` plays only under `BUILD.legacy` (the old
+  whole-text hash) and is given the prints as the kept replays are read. Check: `scripts/.replay-stable-check.mjs`.
 - The build on the front screen, bottom right (under START on a phone): "v1.0.0 · <commit>" (`version.js`).
 - Checks: `scripts/.replay-record-check.mjs` (replay group): runs on expressway, tokyo, noon; night and Mystery Meadows
   paused 3 s with keys held and a throw tried, and a forced rewind; a second run on a loaded level; recordings of
