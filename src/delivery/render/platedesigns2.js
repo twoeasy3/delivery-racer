@@ -75,7 +75,7 @@ export const MORE_PLATES = [
   { id: 'neon', family: 'frame', name: 'Neon', price: 600, bg: '#0d0b16', text: '#ffffff', border: '#ff7be6', edge: '#050409', font: SANS, pad: [17, 13, 13], glow: '#5ef2ff',
     frame: (g, body) => { g.shadowBlur = 6; g.shadowColor = '#ff3fd2'; band(g, body, 6, 2.6, '#ff8ce9'); g.shadowColor = '#22d8ff'; band(g, body, 10.5, 2, '#7ff5ff'); g.shadowBlur = 0; } },
   { id: 'candy', family: 'season', name: 'Candy cane', price: 350, bg: '#fffaf6', text: '#b5121b', border: '#b5121b', edge: '#7a0c12', font: HEAVY, pad: [17, 13, 13],
-    frame: (g, body) => { band(g, body, 7.5, 9, '#fffaf6'); g.save(); pathOf(g, inset(body || RECT, 3)); pathOf(g, inset(body || RECT, 12)); g.clip('evenodd'); g.fillStyle = '#d8262b'; for (let x = -64; x < 300; x += 10) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 5, 0); g.lineTo(x + 5 + 40, 64); g.lineTo(x + 40, 64); g.closePath(); g.fill(); } g.restore(); band(g, body, 12.2, 1.2, '#b5121b'); } },
+    frame: (g, body) => { band(g, body, 7.5, 9, '#fffaf6'); g.save(); g.beginPath(); for (const ring of [inset(body || RECT, 3), inset(body || RECT, 12)]) { ring.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); } g.clip('evenodd'); /* (the band only: both rings in one path) */ g.fillStyle = '#d8262b'; for (let x = -64; x < 300; x += 10) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 5, 0); g.lineTo(x + 5 + 40, 64); g.lineTo(x + 40, 64); g.closePath(); g.fill(); } g.restore(); band(g, body, 12.2, 1.2, '#b5121b'); } },
 
   // ---- PRINTS ----
   { id: 'sunset', family: 'print', name: 'Sunset', price: 450, bg: '#ff8a3c', text: '#ffffff', border: '#2a0f3a', edge: '#2a0f3a', font: HEAVY, outline: '#2a0f3a',
@@ -122,12 +122,12 @@ export const MORE_PLATES = [
       g.fillStyle = grad(g, 0, 46, 0, 59, ['#e8394a', '#c41e2e']); g.fillRect(44, 46, 168, 13); g.fillStyle = '#7a0c16'; g.fillRect(44, 46, 168, 1.2);
       g.fillStyle = 'rgba(0,0,0,.3)'; for (const x of [44, 196]) g.fillRect(x, 51, 16, 8); g.strokeStyle = '#ffd34a'; g.lineWidth = 1; g.beginPath(); g.moveTo(52, 49.5); g.lineTo(204, 49.5); g.moveTo(52, 55.5); g.lineTo(204, 55.5); g.stroke(); } },
   { id: 'dice', family: 'holder', name: 'Fuzzy dice', price: 550, bg: '#f5f4ee', text: '#15161a', border: '#15161a', edge: '#202226', font: SANS,
-    pieces: () => [{ pts: hold(44) }, { pts: [[29, 44], [31, 44], [31, 47], [29, 47]], slab: false }, { pts: rr(21, 47, 18, 16, 3, 3) }, { pts: [[225, 44], [227, 44], [227, 46], [225, 46]], slab: false }, { pts: rr(217, 46, 18, 17, 3, 3) }],
-    over: (g) => { g.fillStyle = '#e8e2d4'; g.fillRect(29, 44, 2, 3); g.fillRect(225, 44, 2, 2);
-      for (const [x, y, w, h, fill, pip, n] of [[21, 47, 18, 16, '#f4f2ec', '#15161a', 5], [217, 46, 18, 17, '#d8262b', '#ffffff', 3]]) {
+    pieces: () => [{ pts: hold(41) }, { pts: [[29, 41], [31, 41], [31, 43], [29, 43]], slab: false }, { pts: rr(19, 43, 22, 21, 3, 3) }, { pts: [[225, 41], [227, 41], [227, 42], [225, 42]], slab: false }, { pts: rr(214, 42, 24, 22, 3, 3) }],
+    over: (g) => { g.fillStyle = '#e8e2d4'; g.fillRect(29, 41, 2, 2); g.fillRect(225, 41, 2, 1);
+      for (const [x, y, w, h, fill, pip, n] of [[19, 43, 22, 21, '#f4f2ec', '#15161a', 5], [214, 42, 24, 22, '#d8262b', '#ffffff', 3]]) {
         g.fillStyle = fill; g.beginPath(); g.roundRect(x, y, w, h, 3); g.fill(); g.strokeStyle = fill; g.lineWidth = 1; for (let i = 0; i < 24; i++) { const a = i / 24 * T, cx = x + w / 2, cy = y + h / 2; g.beginPath(); g.moveTo(cx + Math.cos(a) * w * 0.42, cy + Math.sin(a) * h * 0.42); g.lineTo(cx + Math.cos(a) * w * 0.52, cy + Math.sin(a) * h * 0.52); g.stroke(); }
         const p = n === 5 ? [[0.28, 0.28], [0.72, 0.28], [0.5, 0.5], [0.28, 0.72], [0.72, 0.72]] : [[0.28, 0.28], [0.5, 0.5], [0.72, 0.72]];
-        for (const [px, py] of p) disc(g, x + px * w, y + py * h, 1.7, pip);
+        for (const [px, py] of p) disc(g, x + px * w, y + py * h, 2.2, pip);
       } } },
 
   // ---- SHAPES (the outline is the plate's own: a shaped mesh, inside the anchor's box) ----
@@ -147,10 +147,10 @@ export const MORE_PLATES = [
     paint: (g, b) => { g.strokeStyle = '#c45a08'; g.lineWidth = 2.2; for (let i = 1; i < 9; i++) { const x = b.x + i * b.w / 9; g.beginPath(); g.moveTo(x, b.y); g.quadraticCurveTo(x + (i < 4.5 ? -6 : 6), b.y + b.h / 2, x, b.y + b.h); g.stroke(); }
       g.strokeStyle = '#3f7a1c'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(b.x + 4, b.y + 6); g.bezierCurveTo(b.x + 40, b.y + 2, b.x + 60, b.y + 12, b.x + 90, b.y + 5); g.moveTo(b.x + b.w - 4, b.y + 6); g.bezierCurveTo(b.x + b.w - 40, b.y + 2, b.x + b.w - 60, b.y + 12, b.x + b.w - 90, b.y + 5); g.stroke();
       for (const x of [26, 64, b.w - 26, b.w - 64]) { g.fillStyle = '#4f9a24'; g.beginPath(); g.ellipse(b.x + x, b.y + 7, 6, 3, x < b.w / 2 ? -0.4 : 0.4, 0, T); g.fill(); } } },
-  { id: 'snow', family: 'season', name: 'Snowy', price: 400, bg: '#d8ecfb', text: '#14365e', border: '#14365e', edge: '#14365e', font: SANS, pad: [12, 14, 8],
-    paint: (g, b, d) => { const r = seeded(d.id); g.fillStyle = grad(g, 0, b.y, 0, b.y + b.h, ['#eef7ff', '#b9d9f5']); g.fillRect(b.x, b.y, b.w, b.h); for (let i = 0; i < 12; i++) { const x = i % 2 ? b.x + 6 + r() * 26 : b.x + b.w - 32 + r() * 26; flake(g, x, b.y + 16 + r() * (b.h - 22), 2.5 + r() * 2.5, '#ffffff'); }
-      g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x + b.w, b.y); for (let x = b.w; x >= 0; x -= 8) g.lineTo(b.x + x, b.y + 9 + Math.sin(x * 0.7) * 2.5); g.closePath(); g.fill();
-      g.fillStyle = 'rgba(255,255,255,.9)'; for (let x = 18; x < b.w - 10; x += 29) { const y = b.y + 10 + Math.sin(x * 0.7) * 2.5; g.beginPath(); g.moveTo(b.x + x - 2.5, y - 1); g.lineTo(b.x + x + 2.5, y - 1); g.lineTo(b.x + x, y + 6); g.closePath(); g.fill(); } } },
+  { id: 'snow', family: 'season', name: 'Snowy', price: 400, bg: '#3f74b8', text: '#ffffff', border: '#ffffff', edge: '#14365e', font: SANS, pad: [12, 15, 8], outline: '#14365e',
+    paint: (g, b, d) => { const r = seeded(d.id); g.fillStyle = grad(g, 0, b.y, 0, b.y + b.h, ['#6d9fdc', '#24508e']); g.fillRect(b.x, b.y, b.w, b.h); for (let i = 0; i < 12; i++) { const x = i % 2 ? b.x + 6 + r() * 26 : b.x + b.w - 32 + r() * 26; flake(g, x, b.y + 16 + r() * (b.h - 22), 2.5 + r() * 2.5, '#ffffff'); }
+      g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x + b.w, b.y); for (let x = b.w; x >= 0; x -= 8) g.lineTo(b.x + x, b.y + 12 + Math.sin(x * 0.7) * 2.5); g.closePath(); g.fill();
+      g.fillStyle = 'rgba(255,255,255,.9)'; for (let x = 18; x < b.w - 10; x += 29) { const y = b.y + 13 + Math.sin(x * 0.7) * 2.5; g.beginPath(); g.moveTo(b.x + x - 2.5, y - 1); g.lineTo(b.x + x + 2.5, y - 1); g.lineTo(b.x + x, y + 6); g.closePath(); g.fill(); } } },
   { id: 'hearts', family: 'season', name: 'Hearts', price: 400, bg: '#ffc2d6', text: '#7a0a33', border: '#7a0a33', edge: '#5a0626', font: HEAVY, outline: '#ffe6ee',
     paint: (g, b, d) => { const r = seeded(d.id); for (let i = 0; i < 26; i++) { const s = 6 + r() * 9; heart(g, b.x + r() * b.w, b.y - 4 + r() * b.h, s, i % 3 ? 'rgba(255,127,168,.85)' : 'rgba(255,255,255,.8)'); } } },
 ];

@@ -11,7 +11,7 @@
 //   - dents: the plate is measured with the car, and at each stage of damage how much of it is still seen from behind / in front (burial list)
 //   - the families (CHECKLIST 431) and the SHAPED designs: built as their own outline, inside the anchor's box, UVs on the canvas
 //   - the ghost's stand-in and a blackout silhouette; nothing written onto a car's entry; no rules module imports the cosmetic
-//   node scripts/.platecosmetic-check.mjs            (add car ids to see only those; --nodents skips the damage part)
+//   node scripts/.platecosmetic-check.mjs            (add car ids to see only those; --nodents skips the damage part; --design=<id> dents that design)
 import * as THREE from 'three';
 import { readFileSync } from 'node:fs';
 import { startModels } from './modelpatch-load.mjs';
@@ -212,7 +212,8 @@ try {
 
   // ---- dents: the plate follows; burial at each stage ----
   if (!noDents) {
-    clearCosmetics(); grantCosmetics(['plate:classic']); P.setPlateDesign('classic'); P.setPlateText('DENT 42');
+    const dd = (process.argv.find(x => x.startsWith('--design=')) || '--design=classic').slice(9); // (--design=<id>: the damage part with another design, a shaped one say)
+    clearCosmetics(); grantCosmetics(['plate:' + dd]); P.setPlateDesign(dd); P.setPlateText('DENT 42');
     const ray = new THREE.Raycaster(), buried = [], follows = [], notFollowing = [];
     const stages = [0, 0.3, 0.55, 0.75, 0.95], atRest = [];
     for (const b of built) {
