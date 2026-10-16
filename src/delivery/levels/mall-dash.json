@@ -67,7 +67,8 @@
     {"from": 2880, "to": 3000, "side": "left", "width": 4},
     {"from": 2880, "to": 3000, "side": "right", "width": 4}
   ],
-  "ice": [
+  "wetness": {"strength": 1.3, "tail": 1.6},
+  "waterPatches": [
     {"from": 420, "to": 480, "lane": 0},
     {"from": 580, "to": 660, "lane": 0},
     {"from": 1020, "to": 1120},

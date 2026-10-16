@@ -16,7 +16,8 @@ import { Hazards } from '../hazards.js';
 import { scene, tmp, clearGroup } from './scene.js';
 import { buildStrip } from './road.js';
 import { makeWorker } from './siteModels.js';
-import { makePuddle, makeFountain } from './watermains.js';
+import { makePuddle, makeFountain, puddleTexture } from './watermains.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const lambert = (color, extra) => new THREE.MeshLambertMaterial({ color, ...extra });
 const glow = (color) => new THREE.MeshBasicMaterial({ color });
@@ -81,7 +82,7 @@ const boom = (length) => {
 
 const group = new THREE.Group();
 scene.add(group);
-let schools = [], mains = [], balloons = [], bridges = [], junctions = [];
+let schools = [], mains = [], balloons = [], bridges = [], junctions = [], standing = null;
 // a short sign on a small canvas (256 x 64): words on a colour
 const smallBoard = (text, bg, fg, w, h) => {
   const canvas = document.createElement('canvas');
@@ -195,6 +196,39 @@ Game.onLoad.push(() => {
     cover.add(jet);
     return { from, lat: lat(from + 1.5), pools, jet, wet, sheet, foam, x: cover.position.x, y: cover.position.y, z: cover.position.z };
   });
+  // ---- standing water ("waterPatches", Track.puddles): a burst main's wet lane at full spread, for good and with no main: the
+  // thin sheet of water over its lane (or every lane), a pale wet rim down each edge and across each end, and a run of pools
+  // with the light on them. A theme can tint it (its standingWater: the mall's is a mopped floor's grey sheen). Every patch's
+  // pieces are merged by material: four meshes for the level, whatever the count (the mall has six)
+  standing = null;
+  if (Track.puddles.length) {
+    const look = (THEMES[LEVEL.theme] || {}).standingWater || {}, sheets = [], rims = [], pools = [], R = 0.09;
+    let k = 0;
+    for (const p of Track.puddles) {
+      const lo = (s) => p.lane === undefined ? Track.laneLo(s) + 0.1 : Track.laneOffset(p.lane, s) - LW / 2 + 0.1;
+      const hi = (s) => p.lane === undefined ? Track.laneHi(s) - 0.1 : Track.laneOffset(p.lane, s) + LW / 2 - 0.1;
+      sheets.push(buildStrip(p.from, p.to, lo, hi, 0.022, 2));
+      rims.push(buildStrip(p.from, p.to, (s) => lo(s) - R, (s) => lo(s) + R, 0.026, 2), buildStrip(p.from, p.to, (s) => hi(s) - R, (s) => hi(s) + R, 0.026, 2));
+      for (const end of [p.from, p.to - 0.18]) rims.push(buildStrip(end, end + 0.18, lo, hi, 0.026, 1));
+      for (const n of p.lane === undefined ? [...Array(Track.laneCount).keys()] : [p.lane]) {
+        for (let s = p.from + 4; s < p.to - 3; s += 7, k++) {
+          const lat = Track.laneOffset(n, s);
+          if (lat < Track.laneLo(s) || lat > Track.laneHi(s)) continue;
+          const length = Math.min(10 + (k % 3) * 2, (p.to - s) * 2), h = Track.toWorld(s, lat + ((k * 7) % 3 - 1) * 0.15, tmp);
+          const plane = new THREE.PlaneGeometry(LW * (1.15 + (k % 2) * 0.1), length).rotateX(-Math.PI / 2).rotateY(h + (k % 2 ? Math.PI : 0)).translate(tmp.x, tmp.y + 0.03, tmp.z);
+          pools.push(plane);
+        }
+      }
+    }
+    const water = flat(look.water ?? 0x3f93c9, -3, { transparent: true, opacity: look.opacity ?? 0.42, depthWrite: false });
+    const rim = flat(look.edge ?? 0xe6f8ff, -3, { transparent: true, opacity: 0.75, depthWrite: false });
+    const pool = new THREE.MeshBasicMaterial({ map: puddleTexture(97, false), color: look.pool ?? 0xffffff, transparent: true, opacity: 0.7, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+    const sheen = new THREE.MeshBasicMaterial({ map: puddleTexture(104, true), transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
+    const one = (list, material) => { const mesh = new THREE.Mesh(mergeGeometries(list), material); list.forEach(g => g.dispose()); group.add(mesh); return mesh; };
+    one(sheets, water); one(rims, rim);
+    if (pools.length) { const merged = mergeGeometries(pools); group.add(new THREE.Mesh(merged, pool)); const lit = new THREE.Mesh(merged.clone().translate(0, 0.004, 0), sheen); group.add(lit); pools.forEach(g => g.dispose()); }
+    standing = { rim, sheen };
+  }
   // ---- hot-air balloons
   balloons = (LEVEL.balloons || []).map((b) => {
     const s = Track.place(b), lat = (Track.laneOffset(b.lanes[0], s) + Track.laneOffset(b.lanes[1], s)) / 2;
@@ -339,6 +373,7 @@ export const syncHazards = (now) => {
     mesh.foam.opacity = (0.8 + 0.12 * Math.sin(t * 5 + k)) * shown;
     mesh.jet.userData.set(m.on ? Math.min(1, m.t / 0.5) : Math.max(0, 1 - m.t / 0.4), t, mesh.x, mesh.y, mesh.z, Game.paused || !close);
   });
+  if (standing) { standing.sheen.opacity = 0.3 + 0.08 * Math.sin(t * 2.3); standing.rim.opacity = 0.7 + 0.08 * Math.sin(t * 3.1); } // (the light on standing water)
   Hazards.balloons.forEach((b, k) => {
     const mesh = balloons[k];
     if (!mesh) return;

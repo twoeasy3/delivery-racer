@@ -58,6 +58,8 @@
     "towed": ["Wreck cleared! That's what a tow truck is for."],
     "schoolCrossing": ["School crossing! Stop for the lollipop!"],
     "waterMain": ["Burst water main! It's slippery while it sprays."],
+    "standingWater": ["Standing water! Slippery, and wet tyres after."],
+    "wetFloor": ["WET FLOOR!"],
     "tunnelJunction": ["Side tunnel ahead! Mind what comes out."],
     "trainAhead": ["TRAIN COMING!!! Off the left track!"],
     "trainBehind": ["TRAIN BEHIND!!! Off the right track!"],

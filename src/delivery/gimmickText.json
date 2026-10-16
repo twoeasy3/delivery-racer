@@ -65,7 +65,7 @@
   "stampedes": { "name": "Stampedes", "blurb": "Cows or kangaroos charge down the road at you, weaving." },
   "road-train-jackknife": { "name": "Road-train jackknife", "blurb": "A road train locks its brakes and its trailers swing across." },
   "tunnels": { "name": "Tunnels", "blurb": "No sky, the dark closing in, and only lamps and headlights." },
-  "wet-floor": { "name": "Wet floor", "blurb": "A mopped stretch of the mall floor: little grip, a sign before it." },
+  "wet-floor": { "name": "Wet floor", "blurb": "Standing water: little grip on it, wet tyres after it." },
   "boost-pads": { "name": "Boost pads", "blurb": "Drive over one and the car is pulled on over its top speed." },
   "pillars": { "name": "Pillars", "blurb": "Solid columns in a lane: hit one and you are wrecked. Go round." },
   "dead-end-lanes": { "name": "Dead-end lanes", "blurb": "A lane that ends. Shutter: wrecks you; Ghost and tank pass. Wall: all." },

@@ -631,7 +631,8 @@ export const mall = ({ theme, beside, levelGroup }) => {
     });
   }
 
-  // ---- the level's ice patches are freshly MOPPED stretches (the Wet floor card): the sheet dark and wet, the shine kept
+  // ---- an ice patch on a mall level is drawn as a freshly MOPPED stretch: the sheet dark and wet, the shine kept. (Mall Dash's wet
+  // floor is standing water now, its "waterPatches", drawn with the theme's standingWater tint in render/hazards.js: this is kept for safety)
   for (const m of levelGroup.children) {
     if (!m.isMesh || !m.material || !m.material.color || m.material.type !== 'MeshBasicMaterial' || !m.material.transparent) continue;
     if (m.material.color.getHex() === 0xd6eef8) { m.material.color.set(0x5f7a8c); m.material.opacity = 0.4; } // (a mopped, wet stretch: dark and glossy; its white streaks are the shine)

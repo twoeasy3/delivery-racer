@@ -566,7 +566,7 @@ $('redo').addEventListener('click', redo);
 // what is wrong with the level: what the game finds (Track.problems: text) and what the schema finds
 // ({ key, i, text }), each traced to what causes it where it can be
 const TRACK_NAMES = { 'quiet zone': 'quietZones', camera: 'cameras', 'level crossing': 'crossings', 'stop / go': 'stopGo', tunnel: 'tunnels', parade: 'parades', roadblock: 'roadblocks',
-  'ice-cream stop': 'iceCreamStops', 'reversible lane': 'reversible', 'water main': 'waterMains', quarry: 'quarries', pothole: 'potholes', peloton: 'pelotons', 'school crossing': 'schoolCrossings',
+  'ice-cream stop': 'iceCreamStops', 'reversible lane': 'reversible', 'water main': 'waterMains', 'standing water': 'waterPatches', quarry: 'quarries', pothole: 'potholes', peloton: 'pelotons', 'school crossing': 'schoolCrossings',
   drawbridge: 'drawbridges', balloon: 'balloons', 'wide load': 'wideLoads', marathon: 'marathons', stampede: 'stampedes', 'parked car': 'parked', bridge: 'bridges', pickup: 'pickups',
   obstacle: 'obstacles', target: 'targets', 'site works': 'siteWorks', exit: 'exits', split: 'splits', junction: 'junctions', 'traffic zone': 'trafficZones', segment: 'segments',
   potties: 'potties', 'side road': 'exits', zone: 'zones', 'water stage': 'water' };

@@ -11,6 +11,7 @@ import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { LEVELS, HIDDEN_LEVELS, levelLabel } from './levels.js';
 import { levelName } from './levelText.js';
+import { waterNumbers } from './track.js';
 import { nameOf, blurbOf, slug } from './words.js';
 import { themedKind, tunnelLit } from './themes.js';
 import { LEVEL_CARS, amphibiousCars } from './cars.js';
@@ -99,6 +100,7 @@ export const where = (has) => [...LEVELS.map((level, i) => has(level) ? `<span>$
 // { name, has: (level) => bool (the levels it is in), rules: [...], build: (level?) => { model, tick?(t, dt) },
 //   line: (level) => the card's line on that level's own road card, if not rules[0] (null: rules[0]),
 //   color (its card's glow) }
+const MALL_WET = waterNumbers([...LEVELS, ...Object.values(HIDDEN_LEVELS)].find(l => l.id === 'mall-dash')); // (the water on Mall Dash's tiled floor, its "wetness": the card's example)
 const S = CONFIG.site, MA = CONFIG.machinery, W = CONFIG.wreckage, BT = CONFIG.bulletTrain, TI = CONFIG.tide, IC = CONFIG.ice;
 const H = { school: CONFIG.schoolCrossing, main: CONFIG.waterMain, balloon: CONFIG.balloon, bridge: CONFIG.drawbridge, load: CONFIG.wideLoad, run: CONFIG.marathon, herd: CONFIG.stampede }; // (Gimmick Road 2's)
 const T = CONFIG.tunnel, PA = CONFIG.parade, RB = CONFIG.roadblock, CG = CONFIG.cargo, IS = CONFIG.iceCream, RL = CONFIG.reversible, CV = CONFIG.convoy, RN = CONFIG.rubberneck; // (the city streets')
@@ -837,9 +839,9 @@ export const GROUPS = [
     } },
   ] },
   { name: 'City streets', cards: [
-    { name: 'Wet floor', color: 0x7fb8d8, has: (l) => l.theme === 'mall' && l.ice?.length, rules: [
-      `A freshly mopped stretch of the mall's floor, a WET FLOOR sign before it: on it the car brakes at ${pct(IC.brakeGrip)} and steers at ${pct(IC.steerGrip)} of its grip (as on ice).`,
-      'Read the sign and ease off.',
+    { name: 'Wet floor', color: 0x7fb8d8, has: (l) => l.waterPatches?.length, rules: [
+      `Standing water: a burst main's water with no main, there all the time (in the mall, a mopped floor behind a WET FLOOR sign). Brakes at ${pct(H.main.brakeGrip)}, steering at ${pct(H.main.steerGrip)}, across at ${pct(H.main.laneSpeed)}, and the tyres stay wet ${H.main.wetAfter} m after it.`,
+      `A level's floor can be slipperier: the mall's tiles take the brakes to ${pct(MALL_WET.brakeGrip)}, the steering to ${pct(MALL_WET.steerGrip)}, and keep the tyres wet ${MALL_WET.wetAfter} m.`,
     ], build: () => {
       const g = road(9, 12, 0xd9d2c4);
       g.add(mesh(new THREE.PlaneGeometry(4.2, 8).rotateX(-Math.PI / 2), lambert(0x5f7a8c, { transparent: true, opacity: 0.45 }), -2.2, 0.03, 0));

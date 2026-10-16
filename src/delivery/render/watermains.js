@@ -1,5 +1,6 @@
 // ---- BURST WATER MAINS: the water's two models (what a main does: ../hazards.js; where they are put and how they
 // are moved: render/hazards.js) ----
+// (puddleTexture is shared with a level's standing water, render/hazards.js)
 // makePuddle: the water on the road: an irregular, soft-edged pool with a sheen on it, that spreads and shrinks
 // away as it is told. makeFountain: white water up out of the road, breaking up into droplets that fall round
 // about, and mist.
@@ -11,7 +12,7 @@ const seeded = (seed) => () => ((seed = (seed * 1103515245 + 12345) % 2147483648
 
 // a puddle's picture: lobes of soft-edged water overlapping into one irregular pool, never reaching the
 // picture's edge; or (sheen) the light on it: a few pale streaks and glints, inside the same shape
-const puddleTexture = (seed, sheen) => {
+export const puddleTexture = (seed, sheen) => {
   const N = 192, canvas = document.createElement('canvas'), random = seeded(seed);
   canvas.width = canvas.height = N;
   const c = canvas.getContext('2d');

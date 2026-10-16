@@ -1396,6 +1396,10 @@ export const CONFIG = {
     steerGrip: 0.3,        // share of its steering's grip: of how quickly the car takes up the way it is steered...
     laneSpeed: 0.55,       // ...and share of the speed it moves across the road at, steered
     wetAfter: 45,          // m past its water the tyres stay wet: those three numbers fade back to normal over this distance (ice has no such tail: it lets go the moment the car is off it)
+    // (the same water lies, without a main, in a level's "waterPatches": standing water, always there. And a level's
+    // "wetness" { strength, tail } scales all four for the whole level, its surface: each share's loss times strength,
+    // never below `floor` (so the car still answers), wetAfter times tail; 1 and 1, these numbers exactly: Track.wet)
+    floor: { brakeGrip: 0.2, steerGrip: 0.15, laneSpeed: 0.3 }, // (brakes: a fifth still sheds 4 m/s a second; steering half the ice's; a lane change from 30 m/s within 2 s)
   },
   // rockfall (a level's "rockfall": { from, to, count, side }): rocks tumbling down from that side
   // onto the road as the player comes near. Obstacles: only the player can hit them

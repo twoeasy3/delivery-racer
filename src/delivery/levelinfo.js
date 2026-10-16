@@ -87,6 +87,7 @@ const GIMMICKS = [
   ['Police pursuit', (l) => l.pursuits],
   ['Fog', (l) => some(l.fog)],
   ['Ice', (l) => some(l.ice)],
+  ['Standing water', (l) => some(l.waterPatches)],
   ['Mud', (l) => some(l.mud)],
   ['Potholes', (l) => some(l.potholes)],
   ['Frogs', (l) => some(l.frogs)],
