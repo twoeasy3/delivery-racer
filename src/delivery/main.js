@@ -88,7 +88,7 @@ import { ShowroomView } from './render/showroomview.js';
 import { Cosmetics } from './render/cosmeticsui.js';
 import { Sound } from './render/audio.js';
 import { Social } from './social.js';
-import { CAR, CARS, FILLER_CARS, BESPOKE_CARS, EVENT_CARS, EARNED_CARS, LEVEL_CARS, lendCar, superOf, ownedAmphibious, carStats } from './cars.js';
+import { CAR, CARS, FILLER_CARS, BESPOKE_CARS, EVENT_CARS, EARNED_CARS, LEVEL_CARS, lendCar, superOf, ownedAmphibious, carStats, setTierHooks } from './cars.js';
 import { IDEA_CARS } from './ideas.js';
 import { Message } from './messages.js';
 
@@ -265,6 +265,9 @@ if (params.get('racewatch') !== null) {
   // clean run is driven here, at once, and the page that asked is told what clock it gives (cleanrun.js)
   let told = { problem: edited.problem || (edited.level ? '' : 'no level was handed over') };
   if (!told.problem) {
+    // (the clock is the reference car's: the garage's car rule, e.g. an edited level's "allowedCars", is off on this page, which
+    // is never played, or Game.start refused the run and the editor was told 'still driving'. scripts/level-clocks.mjs does the same)
+    setTierHooks({ rule: () => null });
     try { selectSpecial(edited.level); told = cleanRun(); } catch (e) { told = { problem: 'it could not be driven (' + (e && e.message || e) + ')' }; }
   }
   if (window.parent !== window) window.parent.postMessage({ type: 'clock', ...told }, '*');
