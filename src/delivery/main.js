@@ -3,6 +3,7 @@
 import { useRenderer } from './render/loadscreen.js'; // (FIRST: it names each level-drawing hook as the render modules register them; the staged start and its loading screen)
 import './style.css';
 import './lite.js'; // (?lite=<list>: the tablet flicker's bisect switches, and `sheet-up` under a sheet: lite.js)
+import './render/progressui.js'; // (progressive unlock, behind ?progress=new: render only. Early: its key guard comes before the menu's)
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { Track } from './track.js';
