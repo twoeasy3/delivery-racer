@@ -11,7 +11,7 @@
 //   3. the tab: the Decal tab shows on exactly the cars whose model has a zone row, never on a Legendary car, the Tank or the Saucer
 //   4. dents: at 100% damage the decal is crumpled with the body (its vertices move, as the paint's); clean again at 0
 //   5. not on Legendary: a Legendary car is never dressed; blackout: hidden; the Ghost: hidden (render/items.js ghostify)
-//   6. render-only: no logic file is or imports a decal module, and the replay 'logic' fingerprint equals main's (merge base)
+//   6. render-only: no logic file is or imports a decal module, and the replay 'logic' fingerprint equals main's (merge base), or what differs names no decal module
 //   node scripts/.decalcosmetic-check.mjs        (headless, about 20 s)
 import * as THREE from 'three';
 import { readFileSync } from 'node:fs';
@@ -206,7 +206,10 @@ try {
       base = execSync('git merge-base HEAD origin/main', { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
       baseHash = hash(f => execSync('git show ' + base + ':src/delivery/' + f, { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64 << 20 }));
     } catch { /* (no git, or no origin/main: the file test above stands) */ }
-    check(baseHash === null || here === baseHash, "the replay 'logic' fingerprint: " + here + (baseHash ? ' (main at the merge base ' + base.slice(0, 7) + ': ' + baseHash + ')' : ' (no git to compare with)'));
+    // (on the branch alone the fingerprint is the merge base's; in an integration with branches that change logic (v1.1.150-alpha: the
+    // tutorial level, the Darkvan) it moves, so what is held then is that none of the logic files that differ is or names a decal module)
+    const differ = baseHash === null || here === baseHash ? [] : files.filter(f => { try { return execSync('git show ' + base + ':src/delivery/' + f, { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64 << 20 }).toString() !== readFileSync(ROOT + '/src/delivery/' + f, 'utf8'); } catch { return true; } });
+    check(baseHash === null || here === baseHash || differ.every(f => !/decal|cosmetic|loadout/.test(f + readFileSync(ROOT + '/src/delivery/' + f, 'utf8'))), "the replay 'logic' fingerprint: " + here + (baseHash ? ' (main at the merge base ' + base.slice(0, 7) + ': ' + baseHash + (differ.length ? '; the logic files that differ, ' + differ.join(', ') + ', name no decal, cosmetic or loadout module' : '') + ')' : ' (no git to compare with)'));
   }
 } catch (e) { failures++; console.log('  FAIL  ' + (e.stack || e)); }
 await close();
