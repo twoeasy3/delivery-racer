@@ -81,7 +81,7 @@ const listeners = new Set();
 export const onUnderglow = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
 
 // ---- the glow's shape, measured on the model (its own frame: +z the nose, the floor its lowest point) ----
-const MARGIN_SIDE = 0.5, MARGIN_END = 0.32, LIFT = 0.005;
+const MARGIN_SIDE = 0.85, MARGIN_END = 0.45, LIFT = 0.005;
 export const glowFootprint = (model) => {
   const s = prepareSuspension(model);
   model.updateMatrixWorld(true);
@@ -101,14 +101,14 @@ export const glowFootprint = (model) => {
     front = Math.min(front, Math.max(...zs) + r * 1.1); rear = Math.max(rear, Math.min(...zs) - r * 1.1);
   }
   // the band: under the body's sides; the spill: never past the body's own nose and tail
-  const ex = Math.max(0.3, halfW * 0.9), mz = Math.min(MARGIN_END, (body.max.z - body.min.z) * 0.08);
+  const ex = Math.max(0.3, halfW), mz = Math.min(MARGIN_END, (body.max.z - body.min.z) * 0.1);
   front = Math.min(front, body.max.z - mz); rear = Math.max(rear, body.min.z + mz);
-  const cz = (front + rear) / 2, ez = Math.max(0.3, (front - rear) / 2), mx = MARGIN_SIDE + Math.min(0.15, halfW * 0.08);
+  const cz = (front + rear) / 2, ez = Math.max(0.3, (front - rear) / 2), mx = MARGIN_SIDE + Math.min(0.2, halfW * 0.1);
   return { cx, cz, ex, ez, mx, mz, y: s.ground + LIFT, halfW, body: { minX: body.min.x, maxX: body.max.x, minZ: body.min.z, maxZ: body.max.z } };
 };
 // rings, inside out: [scale of the band (inside) or share of the margin (outside), light, cover]
-const PROFILE = [['in', 0, 0.26, 0.34], ['in', 0.55, 0.3, 0.36], ['in', 0.8, 0.46, 0.4], ['in', 0.93, 0.8, 0.44], ['out', 0, 1, 0.46], ['out', 0.12, 0.82, 0.4],
-  ['out', 0.3, 0.46, 0.25], ['out', 0.58, 0.17, 0.1], ['out', 1, 0, 0]];
+const PROFILE = [['in', 0, 0.26, 0.34], ['in', 0.55, 0.3, 0.36], ['in', 0.8, 0.46, 0.42], ['in', 0.93, 0.8, 0.48], ['out', 0, 1, 0.5], ['out', 0.1, 0.92, 0.46],
+  ['out', 0.25, 0.7, 0.34], ['out', 0.45, 0.45, 0.2], ['out', 0.7, 0.2, 0.08], ['out', 1, 0, 0]];
 const N = 40;
 const squircle = (a) => { const c = Math.cos(a), s = Math.sin(a); return [Math.sign(c) * Math.sqrt(Math.abs(c)), Math.sign(s) * Math.sqrt(Math.abs(s))]; };
 export const glowGeometry = (f) => {
@@ -148,7 +148,7 @@ void main() {
   else if (uFx == 2) { float p = 1.4 - 2.8 * fract(uTime / 1.2), d = vAlong - p; l *= 0.3 + 1.2 * exp(-d * d * 9.0); } // chase: nose to tail every 1.2 s
   else if (uFx == 3) col = hue(fract(uTime * 0.2 - vAlong * 0.35));                                    // rainbow: the hue runs along the car
   l *= uLevel; c *= min(uLevel, 1.0);
-  gl_FragColor = vec4(col * l * l * 1.15, c);
+  gl_FragColor = vec4(col * pow(l, 1.5) * 1.15, c);
   #include <colorspace_fragment>
 }`;
 const makeMaterial = (f) => {

@@ -1,6 +1,6 @@
 // A check of the UNDERGLOW cosmetic (render/underglow.js; the owner, 16-Oct: "One agent to work on underglows"). Headless (no renderer):
 //   - every look builds on a sample of cars (a hatch, a pickup, a bus, a sports car, a lorry, a wedge, a kei truck, a Super kit car) as ONE
-//     mesh (one draw call) under the car: inside its footprint + margin (no wider than the body + 0.75 m a side, no longer than the body),
+//     mesh (one draw call) under the car: inside its footprint + margin (no wider than the body + 1.2 m a side, no longer than the body),
 //     wider than the body, 4 to 6 mm over the floor (no z-fight with the road), flat, tagged userData.underglow, its material
 //     blackout 'hide' (render/silhouette.js silhouetteFor gives the hidden material), held on the floor by the suspension (a planted part)
 //   - a Super car's own glow (render/carExtras.js, userData.ownUnderglow) stays with none worn and is hidden under a worn one
@@ -60,7 +60,7 @@ try {
       const floor = s.ground, lift = b.min.y - floor, flat = b.max.y - b.min.y;
       const out = [];
       if (!(lift >= 0.004 && lift <= 0.006 && flat < 1e-6)) out.push('lift ' + lift.toFixed(4) + ' flat ' + flat);
-      if (!(b.min.x >= body.min.x - 0.75 && b.max.x <= body.max.x + 0.75)) out.push('too wide');
+      if (!(b.min.x >= body.min.x - 1.2 && b.max.x <= body.max.x + 1.2)) out.push('too wide');
       if (!(b.min.x < body.min.x && b.max.x > body.max.x)) out.push('not wider than the body');
       if (!(b.min.z >= body.min.z - 1e-6 && b.max.z <= body.max.z + 1e-6)) out.push('longer than the body');
       if (!s.plantedMeshes.includes(mesh) && !s.planted.includes(mesh)) out.push('not planted');
@@ -72,7 +72,7 @@ try {
       if (look === 'neon-blue') sizes.push(id + ' ' + (b.max.x - b.min.x).toFixed(2) + 'x' + (b.max.z - b.min.z).toFixed(2) + ' (body ' + (body.max.x - body.min.x).toFixed(2) + 'x' + (body.max.z - body.min.z).toFixed(2) + ', ' + (mesh.geometry.index.count / 3) + ' tris)');
     }
   }
-  check(!bad.length && built === SAMPLE.length * ids.length, 'every look on ' + SAMPLE.join(', ') + ' (' + built + ' models): ONE flat mesh 4-6 mm over the floor, wider than the body and inside it + 0.75 m a side, no longer than the body, planted, blackout hide, not pickable' + (bad.length ? ': ' + bad.slice(0, 6).join('; ') : ''));
+  check(!bad.length && built === SAMPLE.length * ids.length, 'every look on ' + SAMPLE.join(', ') + ' (' + built + ' models): ONE flat mesh 4-6 mm over the floor, wider than the body and inside it + 1.2 m a side, no longer than the body, planted, blackout hide, not pickable' + (bad.length ? ': ' + bad.slice(0, 6).join('; ') : ''));
   console.log('        sizes (glow w x l): ' + sizes.join('; '));
 
   // the suspension, measured with the glow on from the start (a model dressed, then prepareSuspension afresh), finds it planted too
