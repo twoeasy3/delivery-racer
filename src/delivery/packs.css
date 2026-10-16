@@ -128,3 +128,9 @@
   padding: 1cqw 2.4cqw; border-radius: 2cqw; background: #3a4150; color: #fff; transform: rotate(-4deg); box-shadow: 0 2px 6px rgba(0, 0, 0, .4); }
 .pack-reveal .bp-cap b { font: italic 900 max(9px, 6.5cqw)/1 var(--display); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
 .pack-reveal .bp-cap small { font: 700 max(8px, 5cqw)/1 var(--display); color: #ffe27a; white-space: nowrap; }
+
+/* COSMETIC CARDS (CHECKLIST 437): what a pack's cosmetics list awarded, blueprint cards (Uncommon) face up under the blueprint cards */
+.pack-reveal .pr-cosmetics { width: 100%; max-width: 980px; margin: 18px auto 0; }
+.pack-reveal .pr-cosmetics h3 { margin: 0 0 10px; text-align: center; font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: #ffd84a; }
+.pack-reveal.opening .pr-cos-cards { opacity: 1; }
+.pack-reveal .pr-cos-slot { perspective: none; }

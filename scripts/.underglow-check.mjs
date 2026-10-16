@@ -32,17 +32,20 @@ try {
   const Store = await load('render/loadoutstore.js');
   const L = await load('render/loadout.js');
   const R = await load('render/cosmeticslots.js');
-  const { COSMETICS } = await load('render/cosmetics.js');
+  const { COSMETICS, grantAll } = await load('render/cosmetics.js');
+  grantAll(); // (earned cosmetics, CHECKLIST 437: 999 of each look, so each can be worn)
   const all = [...C.CARS, ...C.FILLER_CARS, ...C.BESPOKE_CARS, ...C.EVENT_CARS, ...C.EARNED_CARS, ...Object.values(C.SECRET_CARS), ...IDEA_CARS];
   const car = (id) => all.find(c => c.id === id);
   const fresh = () => { globalThis.localStorage.removeItem(Store.KEY); Store.reloadStore(); }; // (a store with nothing in it)
+  // a look on EVERY car: earned items are per car only (CHECKLIST 437), so each car is given its own (one write)
+  const wearAll = (id) => { const s = Store.snapshot(); for (const c of all) ((s.cars[c.id] ||= {}).underglow = { id }); s.cars = Object.fromEntries(Object.entries(s.cars).slice(0, Store.MAX_CARS)); Store.restore(s); };
   const SAMPLE = ['hothatch', 'pickup', 'bus', 'sport', 'cranelorry', 'wedge', 'keitruck', 'hellrod'];
   const glows = (model) => { const l = []; model.traverse(o => { if (o.isMesh && o.userData.underglow) l.push(o); }); return l; };
   const boxOf = (model, skip) => { model.updateMatrixWorld(true); const b = new THREE.Box3(), t = new THREE.Box3(); model.traverse(o => { if (o.isMesh && !skip(o)) { o.geometry.computeBoundingBox(); b.union(t.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld)); } }); return b; };
   const realBox = (mesh) => { const b = new THREE.Box3(); const p = mesh.geometry.attributes.position; for (let i = 0; i < p.count; i++) b.expandByPoint(new THREE.Vector3().fromBufferAttribute(p, i).applyMatrix4(mesh.matrixWorld)); return b; };
 
-  check(U.UNDERGLOWS.length >= 10 && U.UNDERGLOWS.filter(g => g.fx).length === 3 && U.UNDERGLOWS.some(g => g.id === 'match') && COSMETICS.filter(c => c.slot === 'underglow').length === U.UNDERGLOWS.length && COSMETICS.filter(c => c.slot === 'underglow').every(c => c.free && c.price === 300),
-    'the looks: ' + U.UNDERGLOWS.map(g => g.name).join(', ') + ' (3 effects, Match car), each a free cosmetic, placeholder price 300');
+  check(U.UNDERGLOWS.length >= 10 && U.UNDERGLOWS.filter(g => g.fx).length === 3 && U.UNDERGLOWS.some(g => g.id === 'match') && COSMETICS.filter(c => c.slot === 'underglow').length === U.UNDERGLOWS.length && COSMETICS.filter(c => c.slot === 'underglow').every(c => c.earned && !c.free),
+    'the looks: ' + U.UNDERGLOWS.map(g => g.name).join(', ') + ' (3 effects, Match car), each an earned cosmetic (CHECKLIST 437)');
 
   // every look on every sample car
   const ids = U.UNDERGLOWS.map(g => g.id);
@@ -52,7 +55,7 @@ try {
     const c = car(id);
     if (!c) { bad.push(id + ': no such car'); continue; }
     for (const look of ids) {
-      fresh(); Store.setSlot(null, 'underglow', { id: look });
+      fresh(); wearAll(look);
       const model = S.makeShowCar(c);
       const g = glows(model), plan = U.underglowPlan(model);
       if (g.length !== 1) { bad.push(id + '/' + look + ': ' + g.length + ' meshes'); continue; }
@@ -76,11 +79,11 @@ try {
   console.log('        sizes (glow w x l): ' + sizes.join('; '));
 
   // the suspension, measured with the glow on from the start (a model dressed, then prepareSuspension afresh), finds it planted too
-  { fresh(); Store.setSlot(null, 'underglow', { id: 'lime' }); const m = S.makeShowCar(car('hothatch')); delete m.userData.suspension; const s = Su.prepareSuspension(m); const g = glows(m)[0];
+  { fresh(); wearAll('lime'); const m = S.makeShowCar(car('hothatch')); delete m.userData.suspension; const s = Su.prepareSuspension(m); const g = glows(m)[0];
     check(s.plantedMeshes.includes(g) && s.wheels === 4, 'measured afresh with the glow on, the suspension holds it on the floor as a decal (and still finds 4 wheels)'); }
 
   // a bounce: the body moves, the glow stays put
-  { fresh(); Store.setSlot(null, 'underglow', { id: 'lime' }); const m = S.makeShowCar(car('pickup')); const body = new THREE.Group(); body.add(m); Su.prepareSuspension(m);
+  { fresh(); wearAll('lime'); const m = S.makeShowCar(car('pickup')); const body = new THREE.Group(); body.add(m); Su.prepareSuspension(m);
     const g = glows(m)[0]; m.updateMatrixWorld(true); const before = new THREE.Vector3().setFromMatrixPosition(g.matrixWorld);
     Su.applySuspension(m, body, { y: -0.03, pitch: 0.02, roll: 0.01, wheelY: 0 }); body.updateMatrixWorld(true);
     const after = new THREE.Vector3().setFromMatrixPosition(g.matrixWorld), bodyMoved = Math.abs(body.position.y) > 0.005;
@@ -89,25 +92,25 @@ try {
   // the Super car's own glow
   { fresh(); const m = S.makeShowCar(car('hellrod')); const own = []; m.traverse(o => { if (o.userData.ownUnderglow) own.push(o); });
     check(own.length === 1 && own[0].visible && glows(m).length === 0, "a Super kit car (Hell Rod) with none worn: its own glow shows, no cosmetic mesh");
-    Store.setSlot(null, 'underglow', { id: 'teal' });
+    wearAll('teal');
     check(!own[0].visible && glows(m).length === 1 && glows(m)[0].visible, '...a worn glow (set while it is on show) replaces it: its own is hidden');
-    Store.setSlot(null, 'underglow', { id: 'none' });
+    wearAll('none');
     check(own[0].visible && !glows(m)[0].visible, '...back to None: its own glow again, the cosmetic hidden'); }
 
   // blacked out, unknown ids, not owned, match
-  { fresh(); Store.setSlot(null, 'underglow', { id: 'red' }); const m = S.makeShowCar(car('hothatch'));
+  { fresh(); wearAll('red'); const m = S.makeShowCar(car('hothatch'));
     m.traverse(o => { if (o.isMesh) o.material = Si.silhouetteFor(o.material); });
     const g = glows(m)[0]; check(g.material !== Si.SILHOUETTE && g.material.colorWrite === false, 'a model blacked out after dressing (the car lot, the showroom): the glow is not drawn (the hidden material)');
-    Store.setSlot(null, 'underglow', { id: 'purple' }); check(true, '...and a change of look meanwhile does not break on it');
+    wearAll('purple'); check(true, '...and a change of look meanwhile does not break on it');
     const dark = S.makeShowCar(car('pickup'), { stock: true }); dark.userData.body.material = Si.SILHOUETTE;
     U.dressUnderglow(dark, car('pickup')); check(glows(dark).length === 0 && !U.underglowPlan(dark).worn, 'a model blacked out before dressing wears none (nothing built)'); }
-  { fresh(); Store.setSlot(null, 'underglow', { id: 'no-such-glow' }); const m = S.makeShowCar(car('hothatch'));
+  { fresh(); wearAll('no-such-glow'); const m = S.makeShowCar(car('hothatch'));
     check(U.underglowChoice('hothatch') === 'none' && glows(m).length === 0 && !/\|g=/.test(L.loadoutKey('hothatch')), 'an unknown id in the store: none worn, nothing built, no |g= in the key'); }
   { const { grantCosmetics, clearCosmetics, COSMETICS: list } = await load('render/cosmetics.js'); void grantCosmetics; void clearCosmetics;
-    const entry = list.find(c => c.slot === 'underglow' && c.id === 'amber'); entry.free = false;
-    fresh(); Store.setSlot(null, 'underglow', { id: 'amber' });
-    check(U.shownUnderglow('hothatch') === 'none' && U.setUnderglow('amber', null) === false, 'a look the player does not own: worn as none, and cannot be set'); entry.free = true; }
-  { fresh(); Store.setSlot(null, 'underglow', { id: 'match' }); const c = car('hothatch'), m = S.makeShowCar(c);
+    void list; clearCosmetics(); // (nothing earned)
+    fresh(); wearAll('amber');
+    check(U.shownUnderglow('hothatch') === 'none' && U.setUnderglow('amber', 'hothatch') === false, 'a look the player does not own: worn as none, and cannot be set'); grantAll(); }
+  { fresh(); wearAll('match'); const c = car('hothatch'), m = S.makeShowCar(c);
     S.paintShowCar(m, c, false); const good = U.underglowPlan(m).material.uniforms.uColor.value.getHex();
     S.paintShowCar(m, c, true); const evil = U.underglowPlan(m).material.uniforms.uColor.value.getHex();
     const ch = (h) => [h >> 16, (h >> 8) & 255, h & 255];
@@ -121,17 +124,17 @@ try {
     fresh();
     const k0 = L.loadoutKey('hothatch');
     check(!/\|g=/.test(k0) && !/underglow/.test(k0), 'with none worn, the loadout key is as before (' + k0 + ')');
-    Store.setSlot(null, 'underglow', { id: 'neon-blue' });
+    Store.setSlot(null, 'underglow', { id: 'neon-blue' }); Store.setSlot('pickup', 'underglow', { id: 'neon-blue' });
     const k1 = L.loadoutKey('hothatch'); Store.setSlot('hothatch', 'underglow', { id: 'rainbow' });
-    check(/\|g=neon-blue/.test(k1) && /\|g=rainbow/.test(L.loadoutKey('hothatch')) && /\|g=neon-blue/.test(L.loadoutKey('pickup')) && U.underglowChoice('pickup') === 'neon-blue' && U.underglowChoice('hothatch') === 'rainbow',
-      'per car over the default: All cars Neon blue, the hatch its own Rainbow; the key says so per car');
+    check(!/\|g=/.test(k1) && /\|g=rainbow/.test(L.loadoutKey('hothatch')) && /\|g=neon-blue/.test(L.loadoutKey('pickup')) && U.underglowChoice('pickup') === 'neon-blue' && U.underglowChoice('hothatch') === 'rainbow',
+      'PER CAR only (CHECKLIST 437): All cars Neon blue is no car\'s; the pick-up its own Neon blue, the hatch its own Rainbow; the key says so per car');
     check(!/\|g=/.test(L.loadoutKey('hovercraft')) && !/\|g=/.test(L.loadoutKey('tank')), '...an excluded car never has |g= in its key');
-    Store.resetCar('hothatch'); check(U.underglowChoice('hothatch') === 'neon-blue', '...Reset car: the default again'); }
+    Store.resetCar('hothatch'); check(U.underglowChoice('hothatch') === 'none', '...Reset car: the free look (none) again'); }
 
   // animation: 1000 frames allocate nothing that grows
   { fresh(); const counts = [];
     for (const look of ['pulse', 'chase', 'rainbow']) {
-      Store.setSlot(null, 'underglow', { id: look }); const m = S.makeShowCar(car('sport')); const g = glows(m)[0], u = g.material.uniforms;
+      wearAll(look); const m = S.makeShowCar(car('sport')); const g = glows(m)[0], u = g.material.uniforms;
       const sig = () => [g.geometry.attributes.position.array.length, g.geometry.index.array.length, Object.keys(u).length, m.children.length, Object.keys(g.material).length].join();
       const first = sig(), times = [];
       for (let f = 0; f < 1000; f++) { m.userData.animate(f / 60); times.push(u.uTime.value); }

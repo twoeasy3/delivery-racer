@@ -16,7 +16,8 @@
 //    enlarged for play. The Ghost power-up and a blackout treat it as any mesh (a blacked-out model's new plate is made black too).
 //    TEXTURES: one 256 x 64 canvas (64 KB, 85 KB with mipmaps) per distinct (design, text) pair, cached, shared by every car and both
 //    ends (the material and the texture are flagged `shared`); only the equipped pair and the one before it are kept.
-//    Geometry: the face is 2 triangles, the slab 12 (one pair per plate size, shared).
+//    Geometry: the face is 2 triangles, the slab 12 (one pair per plate size, shared); a SHAPED design (platedesigns2.js pieces: CHECKLIST
+//    431) is its outline's polygons instead, still inside the anchor's 4:1 box (one pair per size and outline, shared).
 // STORAGE: PER CAR over a default (15-Oct): the loadout store's plate slot (render/loadoutstore.js: one localStorage key, try/catch; ignored
 // and not written with Progress.noSave, i.e. test switches); delivery.platedesign and delivery.platetext are the old global keys, read once
 // as the default and kept in step with it. ?platedesign=<id> and ?platetext=<text> for one visit, every car (stills; never saved, the text
@@ -35,7 +36,7 @@
 // for a visit (stills).
 import * as THREE from 'three';
 import { registerCosmetics, ownsCosmetic } from './cosmetics.js';
-import { PLATE_DESIGNS, designById, drawPlate, W, H } from './platedesigns.js';
+import { PLATE_DESIGNS, designById, drawPlate, piecesOf, W, H } from './platedesigns.js';
 import { plateAnchorsFor } from './plateanchors.js';
 import { DEFAULT_TEXT, checkPlateText } from './platetext.js';
 import { forgetDents } from './dents.js';
@@ -149,13 +150,32 @@ const prune = () => {
 };
 export const plateCacheStats = () => ({ textures: cache.size, bytes: cache.size * W * H * 4, bytesWithMips: Math.round(cache.size * W * H * 4 * 4 / 3), keys: [...cache.keys()] });
 
-// ---- the plate meshes: shared geometry per (end, width) ----
+// ---- the plate meshes: shared geometry per (end, width, outline) ----
+// A shaped design (platedesigns2.js `pieces`: a pill, a hex, a plate with dice under it...) is a shaped mesh: its face is the outline's
+// polygons (a ShapeGeometry, its UVs the canvas's own pixels, so the drawing lands on it), its edge each piece pulled out by the margin and
+// given the slab's depth. It never leaves the anchor's 4:1 box. A plain design keeps the 2-triangle face and the 12-triangle box.
 const geos = new Map();
-const geoFor = (end, w) => {
-  const key = end + w;
+const shapeKey = (d) => (d && d.pieces ? d.id : 'rect');
+const geoFor = (end, w, d = null) => {
+  const pieces = piecesOf(d), key = end + w + '|' + shapeKey(d);
   if (!geos.has(key)) {
     const h = w / (W / H), s = end === 'rear' ? -1 : 1;
-    const face = new THREE.PlaneGeometry(w, h), slab = new THREE.BoxGeometry(w + MARGIN, h + MARGIN, SLAB);
+    let face, slab;
+    if (pieces) {
+      const toM = ([x, y]) => new THREE.Vector2((x / W - 0.5) * w, (0.5 - y / H) * h);
+      face = new THREE.ShapeGeometry(pieces.map(p => new THREE.Shape(p.pts.map(toM))));
+      const pos = face.attributes.position, uv = face.attributes.uv;
+      for (let i = 0; i < pos.count; i++) uv.setXY(i, pos.getX(i) / w + 0.5, pos.getY(i) / h + 0.5);
+      const mx = MARGIN / 2 / w * W, my = MARGIN / 2 / h * H; // (the edge's margin in canvas pixels, each way)
+      const grown = pieces.filter(p => p.slab !== false).map((p) => {
+        let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const [x, y] of p.pts) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+        const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, sx = (x1 - x0 + 2 * mx) / (x1 - x0), sy = (y1 - y0 + 2 * my) / (y1 - y0);
+        return new THREE.Shape(p.pts.map(([x, y]) => toM([cx + (x - cx) * sx, cy + (y - cy) * sy])));
+      });
+      slab = new THREE.ExtrudeGeometry(grown, { depth: SLAB, bevelEnabled: false, curveSegments: 1 });
+      slab.translate(0, 0, -SLAB / 2);
+      if (end === 'rear') slab.rotateY(Math.PI);
+    } else { face = new THREE.PlaneGeometry(w, h); slab = new THREE.BoxGeometry(w + MARGIN, h + MARGIN, SLAB); }
     if (end === 'rear') face.rotateY(Math.PI);
     face.translate(0, 0, s * STAND);
     face.userData.shared = true; slab.userData.shared = true;
@@ -170,9 +190,10 @@ const slabMaterial = (hex) => {
 };
 const blackedOut = (model) => { const m = model.userData.body?.material; return !!m && (m === SILHOUETTE || (m.isMeshBasicMaterial && m.color.getHex() < 0x0a0a0e)); };
 
-const buildEnd = (model, end, anchor) => {
+const buildEnd = (model, end, anchor, d) => {
   const group = new THREE.Group();
-  const { face, slab } = geoFor(end, anchor.size[0]);
+  const { face, slab } = geoFor(end, anchor.size[0], d);
+  group.userData.plateShape = shapeKey(d);
   const edge = new THREE.Mesh(slab, slabMaterial(0x202226)), front = new THREE.Mesh(face, slabMaterial(0x202226));
   group.userData.platecosmetic = end;
   edge.userData.platecosmetic = front.userData.platecosmetic = end;
@@ -205,10 +226,11 @@ const apply = (model) => {
   const text = plateText(info.carId);
   let changed = false;
   // ends that have a plate group and should not, and the other way
+  const dWorn = designById(design);
   for (const end of ['rear', 'front']) {
     const have = info.groups[end];
-    if (have && !want.includes(end)) { have.removeFromParent(); info.groups[end] = null; changed = true; }
-    else if (!have && want.includes(end)) { info.groups[end] = buildEnd(model, end, info[end]); changed = true; }
+    if (have && (!want.includes(end) || have.userData.plateShape !== shapeKey(dWorn))) { have.removeFromParent(); info.groups[end] = null; changed = true; } // (another outline: built again)
+    if (!info.groups[end] && want.includes(end)) { info.groups[end] = buildEnd(model, end, info[end], dWorn); changed = true; }
   }
   if (want.length) {
     const hit = plateTexture(design, text), dark = blackedOut(model);

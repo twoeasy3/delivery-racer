@@ -44,28 +44,30 @@ export const makerLine = (car, key = false) => {
 // chance (words for the compact foot), marks (nodes), pose, dark (a blacked-out car's card, the showroom's Where to get it:
 // its picture, car or key, a black silhouette (.silhouette) and its name withheld, 'Locked car', as the blacked-out
 // showroom card; nothing on the card names it: no data-car, no name in its label) }
-export const blueprintCard = (car, card, { compact = false, chance = null, marks = [], pose = 'front', dark = false } = {}) => {
+// opts.item (CHECKLIST 437, a COSMETIC card: the same card for an earned cosmetic, car null): { name, line (the small line: 'Number plate'),
+// tab ('COSMETIC'), picture (a node: the item's own small picture, centred in the art) }. No stars, no car; the rest is the card's own.
+export const blueprintCard = (car, card, { compact = false, chance = null, marks = [], pose = 'front', dark = false, item = null } = {}) => {
   const rarity = card.rarity || 'common';
-  const pic = make('div', 'bp-pic' + (dark ? ' silhouette' : ''));
-  const st = stars(car) ? make('span', 'bp-stars', stars(car)) : null; // (an event car has no stars: its small line says so)
+  const pic = make('div', 'bp-pic' + (dark ? ' silhouette' : '') + (item ? ' bp-itempic' : ''), item?.picture || null);
+  const st = !item && stars(car) ? make('span', 'bp-stars', stars(car)) : null; // (an event car has no stars: its small line says so)
   st?.style.setProperty('color', starColour(car));
-  st?.setAttribute('data-n', String(stars(car).length)); // (five or six stars: set a size smaller so they clear the rarity word)
-  const tab = make('span', 'bp-tab', make('b', '', card.key ? 'CAR KEY' : 'BLUEPRINT'));
+  st?.setAttribute('data-n', String(stars(car)?.length || 0)); // (five or six stars: set a size smaller so they clear the rarity word)
+  const tab = make('span', 'bp-tab', make('b', '', item ? item.tab || 'COSMETIC' : card.key ? 'CAR KEY' : 'BLUEPRINT'));
   const letter = make('span', 'bp-letter', RARITY_WORD[rarity] || rarity); // (the word, not a letter: Common, Uncommon...)
   letter.title = RARITY_WORD[rarity] || rarity;
   // a KEY card shows the car's KEY (render/keycard.js draws it, lazily, by itself); the `pic` handed back is then a
   // stand-in kept out of the page, so the caller's car still (carstill.js) is never drawn on a key card
   const count = card.n ? make('span', 'bp-amount', make('small', '', '×'), make('b', '', String(card.n))) : null; // (how many of it the slot gave: the card's own data, packs.json)
-  const art = make('div', 'bp-art', card.key ? keyPicture(car, rarity, { dark }) : pic, st, tab, letter, count,
+  const art = make('div', 'bp-art', card.key && !item ? keyPicture(car, rarity, { dark }) : pic, st, tab, letter, count,
     card.isNew && !card.key ? make('span', 'bp-new', 'NEW') : null,
     card.featured ? make('span', 'bp-featured', 'Featured') : null);
-  const name = make('div', 'bp-name', make('small', '', makerLine(car, card.key)), make('strong', '', dark ? 'Locked car' : car.name));
+  const name = item ? make('div', 'bp-name', make('small', '', item.line || ''), make('strong', '', item.name)) : make('div', 'bp-name', make('small', '', makerLine(car, card.key)), make('strong', '', dark ? 'Locked car' : car.name));
   const foot = compact ? make('div', 'bp-foot chance', chance !== null ? make('b', '', chance) : null, ...marks) : null;
-  const kind = card.key ? '' : car.bespoke || car.event ? ' kind-key' : safe(() => Ecu.isBlueprint(car), false) ? ' kind-blueprint' : ''; // (a card of a Blueprint car or a Key car: a background of its own, so it reads as working differently)
+  const kind = item ? ' kind-cosmetic' : card.key ? '' : car.bespoke || car.event ? ' kind-key' : safe(() => Ecu.isBlueprint(car), false) ? ' kind-blueprint' : ''; // (a card of a Blueprint car or a Key car: a background of its own, so it reads as working differently)
   const node = make('div', 'bp-card r-' + rarity + kind + (compact ? ' compact' : '') + (card.key ? ' key' : '') + (card.featured ? ' featured' : '') + (dark ? ' dark' : '') + ' pose-' + pose,
     art, name, foot);
-  if (!dark) node.dataset.car = car.id;
-  node.setAttribute('aria-label', (RARITY_WORD[rarity] || rarity) + ' ' + (card.key ? 'key' : 'blueprint') + ': ' + (dark ? 'Locked car' : car.name) + (card.n > 1 ? ', ×' + card.n : '') + (card.isNew ? ', new' : ''));
+  if (!dark && car) node.dataset.car = car.id;
+  node.setAttribute('aria-label', (RARITY_WORD[rarity] || rarity) + ' ' + (item ? 'cosmetic' : card.key ? 'key' : 'blueprint') + ': ' + (item ? item.name : dark ? 'Locked car' : car.name) + (card.n > 1 ? ', ×' + card.n : '') + (card.isNew ? ', new' : ''));
   return { node, pic };
 };
 

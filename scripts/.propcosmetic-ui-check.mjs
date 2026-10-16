@@ -30,7 +30,8 @@ try {
   const PM = await load('render/propmodels.js');
   const PA = await load('render/propanchors.js');
   const PC = await load('render/propcosmetic.js');
-  const { COSMETICS, cosmeticKeys, ownedCosmetics, clearCosmetics, reloadCosmetics, ownsCosmetic } = await load('render/cosmetics.js');
+  const { COSMETICS, cosmeticKeys, ownedCosmetics, clearCosmetics, reloadCosmetics, ownsCosmetic, grantAll } = await load('render/cosmetics.js');
+  const Store = await load('render/loadoutstore.js');
   const { Progress } = await load('progress.js');
   const { unlockEverything } = await load('unlockall.js');
   const { SILHOUETTE } = await load('render/silhouette.js');
@@ -40,13 +41,19 @@ try {
   const car = (id) => all.find(c => c.id === id);
   const SLOTS = ['roof', 'cargo', 'wing'];
   Progress.noSave = false;
-  clearCosmetics();
+  clearCosmetics(); grantAll(); // (earned cosmetics, CHECKLIST 437: 999 of each prop, so each can be worn)
+  // EARNED PROPS ARE PER CAR ONLY (CHECKLIST 437): a choice is put on each car this check builds (and the default, for its paint), and read
+  // back on one of them (TC)
+  const TC = 'sporttruck', DRESS = ['minibus', 'touringcar', 'sporttruck', 'moke', 'rally'];
+  const setP = (slot, id) => { const r = D.setProp(slot, id, TC); if (r !== false) for (const c of DRESS) Store.setSlot(c, slot, { id }); return r; };
+  const setPaint = (slot, v) => { const r = D.setPropPaint(slot, v); if (r !== false) for (const c of DRESS) Store.setSlot(c, slot, { paint: D.propPaintChoice(slot) }); return r; };
+  const resetP = (slot) => { D.resetProp(slot); for (const c of DRESS) D.resetProp(slot, c); };
   const wipe = () => { for (const s of SLOTS) { localStorage.removeItem('delivery.prop.' + s); localStorage.removeItem('delivery.prop.' + s + '.paint'); } };
   wipe();
 
   // ---- the registry and the screen ----
   const keys = SLOTS.flatMap(s => PM.PROPS[s].map(p => s + ':' + p.id));
-  check(keys.length === 52 && keys.every(k => cosmeticKeys().includes(k)) && COSMETICS.filter(c => SLOTS.includes(c.slot)).every(c => c.free && 'price' in c), 'the registry holds all 52 props (15 roof, 16 cargo, 21 wing) as roof:<id> / cargo:<id> / wing:<id>, free, a placeholder price');
+  check(keys.length === 52 && keys.every(k => cosmeticKeys().includes(k)) && COSMETICS.filter(c => SLOTS.includes(c.slot)).every(c => c.earned && !c.free && 'price' in c), 'the registry holds all 52 props (15 roof, 16 cargo, 21 wing) as roof:<id> / cargo:<id> / wing:<id>, earned (CHECKLIST 437)');
   const ui = readFileSync(ROOT + '/src/delivery/render/cosmeticsui.js', 'utf8');
   const reg = readFileSync(ROOT + '/src/delivery/render/cosmeticslots.js', 'utf8');
   check(/id: 'roof', label: 'Roof'[^}]*prop: true, supports: prop\('roof'\)/.test(reg) && /id: 'cargo', label: 'Cargo'[^}]*prop: true, supports: prop\('cargo'\)/.test(reg) && /id: 'wing', label: 'Wing'[^}]*prop: true, supports: prop\('wing'\)/.test(reg) && !/Roof ornament/.test(ui) && /id: 'underglow'[^}]*items: dormant\('underglow'\)/.test(reg), "the screen's tabs (render/cosmeticslots.js): Roof, Cargo, Wing shown where slotStatus is ok, Underglow dormant (no items: no tab), 'Roof ornament' gone");
@@ -84,12 +91,12 @@ try {
     const c = car(id), t = PA.propSlots(id);
     for (const slot of SLOTS) {
       for (const p of PM.PROPS[slot]) {
-        for (const x of SLOTS) { D.setProp(x, 'none'); D.setPropPaint(x, 'match'); }
+        for (const x of SLOTS) { setP(x, 'none'); setPaint(x, 'match'); }
         const model = makeShowCar(c);
         const others = SLOTS.filter(s => s !== slot);
         const ownBefore = Object.fromEntries(SLOTS.map(s => [s, ownOf(model, s).map(e => e.mesh.visible).join()]));
         const kids = model.children.length;
-        D.setProp(slot, p.id);
+        setP(slot, p.id);
         const plan = D.propPlan(model), g = plan.groups[slot];
         if (!t[slot].supported) {
           if (g || plan.worn.length || model.children.length !== kids || ownOf(model, slot).some(e => !e.mesh.visible)) bad.push(id + ' ' + slot + ' ' + p.id + ' unsupported but changed');
@@ -115,7 +122,7 @@ try {
           const sus = prepareSuspension(model), planted = sus.planted, held = (n) => (planted && (planted.has ? planted.has(n) : planted.includes(n)));
           g.traverse(m => { if (m.isMesh && held(m)) why += ' planted'; });
         }
-        D.setProp(slot, 'none');
+        setP(slot, 'none');
         if (D.propPlan(model).groups[slot] || ownOf(model, slot).some(e => !e.mesh.visible) || model.children.length !== kids) why += ' None did not restore';
         if (why) bad.push(id + ' ' + slot + ' ' + p.id + ': ' + why); else dressed++;
       }
@@ -124,85 +131,86 @@ try {
   check(bad.length === 0, dressed + ' prop / slot / car combinations dress and restore on the five cars, each worn at min(the slot\'s room, the prop\'s own maxScale) (' + capped + ' at their max)' + (bad.length ? ' (' + bad.slice(0, 6).join('; ') + ')' : ''));
   const hasOwn = ['minibus roof', 'moke cargo', 'rally roof', 'rally wing', 'touringcar wing'].filter(k => ownOf(makeShowCar(car(k.split(' ')[0])), k.split(' ')[1]).length);
   check(hasOwn.length === 5, "the cars with their own tagged prop hide it for a worn prop and show it for None (" + hasOwn.join(', ') + ')');
-  D.setProp('roof', 'none');
+  setP('roof', 'none');
 
   // ---- Legendary and unsupported ----
   {
-    D.setProp('roof', 'roofbox'); D.setProp('wing', 'winggt');
+    setP('roof', 'roofbox'); setP('wing', 'winggt');
     const legend = makeShowCar({ ...car('rally'), legend: true });
     check(D.propPlan(legend).worn.length === 0 && D.propPlan(legend).status === 'legend', 'a Legendary car is not dressed with props');
     const moke = makeShowCar(car('moke'));
     check(D.propPlan(moke).worn.join() === 'wing', 'the Moke: roof unsupported (an open car), so only the wing is worn');
     const traffic = new THREE.Group();
     check(D.propPlan(traffic) === null && D.dressProps(traffic, null) === traffic && D.propPlan(traffic).worn.length === 0, 'a model that is not dressed (traffic) has no plan; dressing one with no car adds nothing');
-    D.setProp('roof', 'none'); D.setProp('wing', 'none');
+    setP('roof', 'none'); setP('wing', 'none');
   }
 
   // ---- paint ----
   {
     const model = makeShowCar(car('sporttruck'));
-    D.setProp('roof', 'roofbox'); D.setPropPaint('roof', 'match');
+    setP('roof', 'roofbox'); setPaint('roof', 'match');
     const g = D.propPlan(model).groups.roof, main = () => { let m = null; g.traverse(o => { if (o.isMesh && o.material.userData.ownPaint) m = o.material; }); return m; };
     const body = model.userData.body.material;
     check(main() && main().color === body.color, "'match' follows the car: the prop's paint shares the body's Color (not its vertex-coloured material)");
     body.color.setHex(0x44aa22);
     check(main().color.getHex() === 0x44aa22, '...so a livery / Good / Evil change reaches it');
-    D.setPropPaint('roof', 'd8262b');
+    setPaint('roof', 'd8262b');
     const g2 = D.propPlan(model).groups.roof;
     let m2 = null; g2.traverse(o => { if (o.isMesh && o.material.userData.ownPaint) m2 = o.material; });
     check(g2 !== g && m2.color.getHex() === 0xd8262b && body.color.getHex() === 0x44aa22, 'a hex paint is the prop\'s own colour (the car is not recoloured); a change refreshes the model already built');
-    check(!D.setPropPaint('roof', 'zzzzzz') && !D.setPropPaint('roof', 'red') && D.propPaintChoice('roof') === 'd8262b' && D.setPropPaint('roof', '#1B1C20') && D.propPaintChoice('roof') === '1b1c20', 'a bad paint is refused; #hex is taken, lower-cased');
+    check(!setPaint('roof', 'zzzzzz') && !setPaint('roof', 'red') && D.propPaintChoice('roof') === 'd8262b' && setPaint('roof', '#1B1C20') && D.propPaintChoice('roof') === '1b1c20', 'a bad paint is refused; #hex is taken, lower-cased');
     // a blackout
     const dark = makeShowCar(car('sporttruck'));
     dark.userData.body.material = SILHOUETTE;
-    D.setPropPaint('roof', 'd8262b');
+    setPaint('roof', 'd8262b');
     const meshes = []; D.propPlan(dark).groups.roof.traverse(o => { if (o.isMesh) meshes.push(o); });
     check(meshes.length && meshes.every(o => o.material === SILHOUETTE), "a blacked-out model's prop is the flat black silhouette");
-    D.setProp('roof', 'none'); D.setPropPaint('roof', 'match');
+    setP('roof', 'none'); setPaint('roof', 'match');
   }
 
   // ---- ownership: an unowned saved prop wears Stock; unknown ids ----
   {
     const entry = COSMETICS.find(c => c.slot === 'wing' && c.id === 'winggt');
-    D.setProp('wing', 'winggt');
-    check(D.shownProp('wing') === 'winggt', 'an owned prop is worn');
-    entry.free = false;
-    check(D.shownProp('wing') === 'none' && D.propChoice('wing') === 'winggt' && !ownsCosmetic('wing', 'winggt') && D.setProp('wing', 'winggt') === false, 'equipped but not owned: Stock is worn (the choice is kept) and it cannot be equipped');
-    entry.free = true;
-    check(D.shownProp('wing') === 'winggt', '...and owning it again brings it back');
-    check(D.setProp('wing', 'no-such-prop') === false && D.setProp('roof', 'winggt') === false && D.setProp('bumper', 'x') === false, 'an unknown id, a prop of another slot and an unknown slot are refused, no error');
-    D.resetProp('wing');
-    check(D.propChoice('wing') === 'none' && D.propPaintChoice('wing') === 'match' && localStorage.getItem('delivery.prop.wing') === null, 'Reset to stock: none, match, the keys removed');
+    setP('wing', 'winggt');
+    check(D.shownProp('wing', TC) === 'winggt', 'an owned prop is worn');
+    clearCosmetics();
+    check(D.shownProp('wing', TC) === 'none' && D.propChoice('wing', TC) === 'winggt' && !ownsCosmetic('wing', 'winggt') && setP('wing', 'winggt') === false, 'equipped but not owned: Stock is worn (the choice is kept) and it cannot be equipped');
+    grantAll(); void entry;
+    check(D.shownProp('wing', TC) === 'winggt', '...and owning it again brings it back');
+    check(setP('wing', 'no-such-prop') === false && setP('roof', 'winggt') === false && setP('bumper', 'x') === false, 'an unknown id, a prop of another slot and an unknown slot are refused, no error');
+    resetP('wing');
+    check(D.propChoice('wing', TC) === 'none' && D.propPaintChoice('wing') === 'match' && localStorage.getItem('delivery.prop.wing') === null, 'Reset to stock: none, match, the keys removed');
   }
 
   // ---- storage ----
   {
-    wipe(); for (const s of SLOTS) D.resetProp(s);
-    D.setProp('roof', 'roofsign'); D.setPropPaint('roof', 'ff7a1a'); D.setProp('cargo', 'cargobarrel'); D.setProp('wing', 'wingtube');
-    check(localStorage.getItem('delivery.prop.roof') === 'roofsign' && localStorage.getItem('delivery.prop.roof.paint') === 'ff7a1a' && localStorage.getItem('delivery.prop.cargo') === 'cargobarrel' && localStorage.getItem('delivery.prop.wing') === 'wingtube', 'kept in localStorage: delivery.prop.roof | .cargo | .wing and delivery.prop.<slot>.paint');
+    wipe(); for (const s of SLOTS) resetP(s);
+    setP('roof', 'roofsign'); setPaint('roof', 'ff7a1a'); setP('cargo', 'cargobarrel'); setP('wing', 'wingtube');
+    const ownOfTC = JSON.parse(localStorage.getItem('delivery.loadout')).cars[TC];
+    check(ownOfTC.roof.id === 'roofsign' && ownOfTC.cargo.id === 'cargobarrel' && ownOfTC.wing.id === 'wingtube' && localStorage.getItem('delivery.prop.roof.paint') === 'ff7a1a' && localStorage.getItem('delivery.prop.roof') === null, 'kept in localStorage: each car\'s props in delivery.loadout (per car only, CHECKLIST 437); the old global keys mirror the default (its paint; no prop, as the default holds none)');
     check(!document.cookie.includes('prop') && !Progress.saved().includes('prop') && !JSON.stringify(Progress.data).includes('roofsign'), 'never the cookie or the save code');
     // a visit that saves nothing
     Progress.noSave = true;
-    const before = ['roof', 'cargo', 'wing'].map(s => localStorage.getItem('delivery.prop.' + s)).join();
-    check(D.propChoice('roof') === 'none', 'with Progress.noSave the saved choice is ignored (a test visit shows Stock)');
-    D.setProp('roof', 'roofbeacon');
-    check(D.propChoice('roof') === 'roofbeacon' && localStorage.getItem('delivery.prop.roof') === 'roofsign' && ['roof', 'cargo', 'wing'].map(s => localStorage.getItem('delivery.prop.' + s)).join() === before, '...a change lasts the visit and writes nothing');
+    const before = ['roof', 'cargo', 'wing'].map(s => localStorage.getItem('delivery.prop.' + s)).join() + localStorage.getItem('delivery.loadout');
+    check(D.propChoice('roof', TC) === 'none', 'with Progress.noSave the saved choice is ignored (a test visit shows Stock)');
+    setP('roof', 'roofbeacon');
+    check(D.propChoice('roof', TC) === 'roofbeacon' && ['roof', 'cargo', 'wing'].map(s => localStorage.getItem('delivery.prop.' + s)).join() + localStorage.getItem('delivery.loadout') === before, '...a change lasts the visit and writes nothing');
     Progress.noSave = false;
-    check(D.propChoice('roof') === 'roofsign', '...and the saved choice is back');
+    check(D.propChoice('roof', TC) === 'roofsign', '...and the saved choice is back');
     // the test switches
     globalThis.location = { search: '?roofprop=roofbeacon&roofpaint=00ff00&cargoprop=none&wingprop=winglip' };
-    check(D.propChoice('roof') === 'roofbeacon' && D.propPaintChoice('roof') === '00ff00' && D.shownProp('roof') === 'roofbeacon' && D.propChoice('cargo') === 'none' && D.shownProp('wing') === 'winglip' && localStorage.getItem('delivery.prop.roof') === 'roofsign', '?roofprop= ?roofpaint= ?cargoprop= ?wingprop= are the visit\'s own and write nothing');
+    check(D.propChoice('roof', TC) === 'roofbeacon' && D.propPaintChoice('roof') === '00ff00' && D.shownProp('roof', TC) === 'roofbeacon' && D.propChoice('cargo', TC) === 'none' && D.shownProp('wing', TC) === 'winglip' && JSON.parse(localStorage.getItem('delivery.loadout')).cars[TC].roof.id === 'roofsign', '?roofprop= ?roofpaint= ?cargoprop= ?wingprop= are the visit\'s own and write nothing');
     globalThis.location = { search: '?roofprop=bogus&roofpaint=nope' };
-    check(D.propChoice('roof') === 'roofsign' && D.propPaintChoice('roof') === 'ff7a1a', 'a bad switch is ignored');
+    check(D.propChoice('roof', TC) === 'roofsign' && D.propPaintChoice('roof') === 'ff7a1a', 'a bad switch is ignored');
     delete globalThis.location;
     // blocked storage
     const real = globalThis.localStorage;
     globalThis.localStorage = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); }, removeItem() { throw new Error('blocked'); } };
     let threw = false;
-    try { D.setProp('cargo', 'cargotarp'); D.setPropPaint('cargo', 'f2f2ee'); D.resetProp('cargo'); D.propChoice('wing'); } catch { threw = true; }
+    try { setP('cargo', 'cargotarp'); setPaint('cargo', 'f2f2ee'); resetP('cargo'); D.propChoice('wing', TC); } catch { threw = true; }
     globalThis.localStorage = real;
     check(!threw, 'blocked storage: nothing throws');
-    for (const s of SLOTS) D.resetProp(s);
+    for (const s of SLOTS) resetP(s);
   }
 
   // ---- unlock everything: Absolutely ----

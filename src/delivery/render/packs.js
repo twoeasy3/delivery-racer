@@ -22,7 +22,10 @@
 // &featured=<list> (packs.js debugFeatured: id[!key][:weight[xamount]]) a special pack's featured list; &maxed=<ids>,
 // &owned=<ids> (debugMarks) cars counted as maxed / keys owned: all for the visit, never saved.
 import '../packs.css';
-import { Packs, packName, packIdOf, revealCards, revealOrder, revealProgress, RARITIES, flickPlan, debugAmounts, debugFeatured, debugMarks, debugDouble } from '../packs.js';
+import { Packs, packName, packIdOf, revealCards, revealOrder, revealProgress, RARITIES, flickPlan, debugAmounts, debugFeatured, debugMarks, debugDouble, debugCosmetics } from '../packs.js';
+import { drawPlate, designById } from './platedesigns.js';
+import { cosmeticRarity, COSMETIC_SLOT_WORDS } from './cosmetics.js';
+import { slotById } from './cosmeticslots.js';
 import { flickPile } from './flick.js';
 import { Progress } from '../progress.js';
 import { carById } from '../cars.js';
@@ -156,6 +159,16 @@ const show = (result, { look = false } = {}) => {
       onLand: (k, instant) => { prog.step(k, instant); if (!instant) blip('menuMove', 0.22); } });
     return { slot, prog, card, car, pic, pose: poses[i], plan, flick };
   }).filter(Boolean);
+  // COSMETIC CARDS (CHECKLIST 437): what the pack's `cosmetics` list awarded (already given: render/cosmetics.js awardCosmetic), a row under the cards
+  const cosRow = (result.cosmetics || []).map(a => {
+    let pic = make('span', 'cz-prev pr-cos-pic');
+    const swatch = slotById(a.slot)?.items?.().find(i => i.id === a.id)?.swatch; // (a glow's colour: its tab's own swatch)
+    if (swatch) pic.style.background = swatch;
+    if (a.slot === 'plate') { const c = document.createElement('canvas'); c.width = 120; c.height = 30; c.className = 'pr-cos-pic'; try { drawPlate(c.getContext('2d'), designById(a.id), 'DELIVERY', 120, 30); } catch { /* (no picture) */ } pic = c; }
+    // the same card as a blueprint (render/blueprintcard.js), in the item's rarity (cosmetics.js COSMETIC_RARITY: Uncommon), face up
+    const { node } = blueprintCard(null, { rarity: cosmeticRarity(a.slot, a.id), n: a.n, isNew: a.count === a.n }, { item: { name: a.name, line: COSMETIC_SLOT_WORDS[a.slot] || a.slot, tab: 'COSMETIC', picture: pic } });
+    return make('div', 'pr-slot pr-cos-slot r-' + cosmeticRarity(a.slot, a.id), node);
+  });
   const event = result.from ? Events.specials.find(e => String(e.id) === String(result.from)) : null;
   const kicker = look ? 'A look: nothing saved' : event ? event.name : 'Pack opened';
   const hint = make('p', 'pr-hint', 'Tap to reveal all');
@@ -174,10 +187,11 @@ const show = (result, { look = false } = {}) => {
   overlay.replaceChildren(
     make('div', 'pr-box',
       make('header', 'pr-head', make('div', 'pr-title', make('small', '', kicker), make('h2', '', packName(result.kind))),
-        make('span', 'pr-count', slots.length + (slots.length === 1 ? ' card' : ' cards')), shut),
+        make('span', 'pr-count', (slots.length + cosRow.length) + (slots.length + cosRow.length === 1 ? ' card' : ' cards')), shut),
       make('div', 'pr-body',
         make('div', 'pr-pack', make('div', 'pr-burst'), packArt(result.kind, 1, result.car)),
-        slots.length ? make('div', 'pr-cards' + (many ? ' many' : ''), slots.map(s => s.slot)) : make('p', 'pr-empty', 'This pack came out empty: there are no cards for it.')),
+        slots.length ? make('div', 'pr-cards' + (many ? ' many' : ''), slots.map(s => s.slot)) : cosRow.length ? null : make('p', 'pr-empty', 'This pack came out empty: there are no cards for it.'),
+        cosRow.length ? make('div', 'pr-cosmetics', make('h3', '', 'Cosmetics'), make('div', 'pr-cards pr-cos-cards', cosRow)) : null),
       make('footer', 'pr-foot', hint, again, done)));
   overlay.className = 'pack-reveal opening k-' + result.kind;
   const wasInMenu = Game.inMenu;
@@ -245,6 +259,7 @@ window.addEventListener('keydown', (event) => {
     Progress.noSave = true;
     Packs.featuredOverride = debugFeatured(params); // (&featured=silvercomet:9x3,silvercomet:1x15,rocketfin!key:1: a special pack's featured list for this visit)
     debugDouble(params); // (&double=0.5&base=2: the doubling chance and base amount, for this visit)
+    Packs.cosmeticsOverride = debugCosmetics(params); // (&cosmetics=plate:ev:1x2,any-underglow: the pack's cosmetic cards for this visit, CHECKLIST 437)
     debugMarks(params); // (&maxed=<ids>&owned=<ids>: cars counted as maxed / keys owned, for this visit)
     for (const token of (params.get('bp') || '').split(',').filter(Boolean)) { const [id, n] = token.split(':'); (Progress.data.blueprints ||= {})[id] = Number(n) || 0; } // (&bp=woody:4: blueprints held before the pack, for a look at its bars; nothing saved)
     for (const token of (params.get('ecu') || '').split(',').filter(Boolean)) { const [id, n] = token.split(':'); (Progress.data.ecuBought ||= {})[id] = Math.max(0, Math.floor(Number(n)) || 0); } // (&ecu=sport:2: ECUs bought)

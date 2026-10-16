@@ -50,6 +50,8 @@ groups above, and the quick smoke only when asked. Syntax-check changed files wi
 
 ## Rules (the owner's)
 
+- UI text is terse (the owner, 16-Oct). No explanatory paragraphs, no 'before/after' arithmetic, no labels that restate what the
+  visuals already show. Prefer an icon, a number or nothing. If a sentence can be cut without losing a decision the player must make, cut it.
 - Never remove `.wav` (or any sound) assets, even when nothing seems to use them (the owner, 13-Oct).
 - This repository deploys on push to `main` (Cloudflare builds `npm run build` and runs `npx wrangler deploy`): check
   before merging to `main`. Never add bindings (database, buckets) or a Worker script without the owner. Pushing to

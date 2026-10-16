@@ -26,6 +26,7 @@ try {
   const P = await load('render/platecosmetic.js');
   const D = await load('render/propdress.js');
   const S = await load('render/carstill.js');
+  const Store = await load('render/loadoutstore.js');
   const { Progress } = await load('progress.js');
   const { clearCosmetics, grantCosmetics, cosmeticKeys } = await load('render/cosmetics.js');
   Progress.noSave = true; // (the visit's own choices: nothing stored)
@@ -44,17 +45,17 @@ try {
     ['a rim alone', () => W.setWheelRim('turbine')],
     ['a wheel colour', () => W.setWheelColour('gold')],
     ['a wheel design', () => W.setWheelDesign('redline')],
-    ['a plate design', () => P.setPlateDesign('yellow')],
-    ['the plate text', () => P.setPlateText('LOADOUT')],
-    ['the plate text being typed', () => P.previewPlateText('TYPING')],
+    ['a plate design', () => P.setPlateDesign('yellow', 'commuter')],
+    ['the plate text', () => P.setPlateText('LOADOUT', 'commuter')],
+    ['the plate text being typed', () => P.previewPlateText('TYPING', 'commuter')],
     ['the typing let go', () => P.previewPlateText(null)],
     ['the raw plates switch', () => P.setPlatesEquipped(true)],
     ['the raw plates switch off', () => P.setPlatesEquipped(false)],
-    ['a roof prop', () => D.setProp('roof', 'roofbox')],
-    ['the roof prop\'s paint', () => D.setPropPaint('roof', 'd8262b')],
-    ['a cargo prop', () => D.setProp('cargo', 'cargocrates')],
-    ['a wing', () => D.setProp('wing', 'winggt')],
-    ['the wing\'s paint', () => D.setPropPaint('wing', 'f2f2ee')],
+    ['a roof prop', () => D.setProp('roof', 'roofbox', 'commuter')],
+    ['the roof prop\'s paint', () => D.setPropPaint('roof', 'd8262b', 'commuter')],
+    ['a cargo prop', () => D.setProp('cargo', 'cargocrates', 'commuter')],
+    ['a wing', () => D.setProp('wing', 'winggt', 'commuter')],
+    ['the wing\'s paint', () => D.setPropPaint('wing', 'f2f2ee', 'commuter')],
   ];
   let prev = k0;
   const seen = new Set([k0]), moved = [];
@@ -78,7 +79,7 @@ try {
     check(lk === 'legend' && lk2 !== lk && L.loadoutKey(legend) === lk, 'a Legendary car (' + legend.id + ') is not dressed: "legend", whatever the loadout, moved only by the raw plates switch');
   } else check(false, 'a Legendary car to try');
   // back to Stock: the first key again
-  W.setWheelSet('stock'); P.resetPlate(); for (const s of D.SLOTS) D.resetProp(s);
+  W.setWheelSet('stock'); P.resetPlate(); for (const s of D.SLOTS) D.resetProp(s); Store.resetCar('commuter'); // (the earned slots were set on the commuter: per car only, CHECKLIST 437)
   check(L.loadoutKey('commuter') === k0, 'everything back to Stock: the first key again');
 
   // ---- the still cache's keys ----
@@ -88,7 +89,7 @@ try {
   check(dressedStock !== stockKey && /\/stock\//.test(stockKey) && !/\/stock\//.test(dressedStock), 'a stock picture and a dressed one never share a key, even with every cosmetic on Stock (' + stockKey + ' / ' + dressedStock + ')');
   check(S.stillKey(e, car, true, 'front', true) === stockKey && S.stillKey(e, car, true, 'front', false) !== dressedStock, 'a stock picture is the Good one whatever side is asked; a dressed one keeps its side');
   check(S.stillKey(e, car, false, 'front', false) === dressedStock, 'a dressed key is stable while nothing changes');
-  D.setProp('roof', 'roofbox');
+  D.setProp('roof', 'roofbox', 'commuter');
   const dressedRoof = S.stillKey(e, car, false, 'front', false);
   check(dressedRoof !== dressedStock && S.stillKey(e, car, false, 'front', true) === stockKey, 'a cosmetic changed: the dressed key moves, the stock key does not');
   check(S.stillKey(e, C.carById('sport'), false, 'front', false) !== dressedRoof && S.stillKey(el(400, 240), car, false, 'front', false) !== dressedRoof && S.stillKey(e, car, false, 'hero', false) !== dressedRoof, 'keyed per car id, size and pose too');
