@@ -30,6 +30,7 @@ import { makeTractorModel, makeUfo } from './render/carExtras.js';
 import { makePillbox } from './render/battleModels.js';
 import { makeWindsock, makeTransporter, makeHeightBar, makeDepthPost, makeCushion, makeShadeTree } from './render/gambleModels.js';
 import { makeAreaPatch, makeInfection } from './render/radiationModels.js';
+import { buildIceGeometry, iceMaterial, ICE_LOOKS } from './render/icepatch.js';
 
 const kmh = (ms) => Math.round(ms * 3.6) + ' km/h';
 const pct = (x) => Math.round(x * 100) + '%';
@@ -194,11 +195,12 @@ export const GROUPS = [
       'In a bend it understeers: it slides to the outside, the more so the faster, heavier and clumsier it is.',
       `Traffic hitting it may spin out and blow up: the faster, the likelier (${pct(IC.spinPerSpeed)} for every m/s).`,
     ], build: () => {
-      const g = road(9, 12);
-      const sheet = mesh(new THREE.PlaneGeometry(4.2, 8).rotateX(-Math.PI / 2), lambert(0xd6eef8, { transparent: true, opacity: 0.75 }), -2.2, 0.03, 0);
-      g.add(sheet);
-      for (let k = 0; k < 3; k++) { const st = box(0.12, 0.01, 3 + k, glow(0xffffff), -3 + k * 0.8, 0.05, k - 1); st.rotation.y = 0.3; g.add(st); }
-      return { model: g, tick: (t) => { sheet.material.opacity = 0.65 + Math.sin(t * 3) * 0.1; } };
+      // (an ice patch as the game draws one: render/icepatch.js, its snow look, over the left lane)
+      const g = road(9, 12), look = ICE_LOOKS.snow;
+      const geo = buildIceGeometry([{ from: -3.6, to: 3.6, lo: () => -4.3, hi: () => -0.15, seed: 4242 }], (s, lat, v) => v.set(lat, 0, -s), look, 0.03);
+      geo.computeVertexNormals();
+      g.add(new THREE.Mesh(geo, iceMaterial(look, true)));
+      return { model: g };
     } },
     { name: 'Mud', color: 0x7a5a38, has: (l) => l.mud?.length, rules: [
       'The road gives way to mud. It slows a car as a railway track does, by how well the car crosses rough ground: a nimble sports car worst of all.',
