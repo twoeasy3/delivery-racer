@@ -11,9 +11,11 @@
 // THE DECAL: the feasibility prototype's method (render/flankdecal.js, the shared core): rays find the PAINT under each piece's rectangle,
 // a lattice as coarse as keeps within 2 mm of it, every point 4 mm out along its normal, polygon offset -4, no depth write, alpha-tested;
 // where something covers the paint (glass, a handle, a wheel, trim) the vertices' alpha is 0, so it never shows on a window. Laid on the
-// zones BOTH flanks share (pairedZones), the same rectangles each side, mapped nose-ward (a chevron points forward on both). Layout
-// (decalLayout): a band runs along the zones that hold it at one height (touching zones joined; between zones, a gap), its tile
-// repeated; a panel sits on the zone it is biggest in, at that zone's nose end; a badge in the middle of the roomiest zone. SIZE: the
+// zones BOTH flanks share (pairedZones) for a badge or a panel, mapped nose-ward (a chevron points forward on both). Layout
+// (decalLayout): a BAND runs as far as the PAINT goes on unbroken at its height (paintRuns: rays every 2 cm, paint facing out at every
+// row, smooth as its normals predict within 4 mm, 1 cm clear of a tyre), started from a clean zone; each flank its own runs (the bus's
+// doors are on one side only), the unbroken height preferred (the Post Van's band is one piece, 4.16 m); its tile clipped at the end;
+// a panel sits on the zone it is biggest in, at that zone's nose end; a badge in the middle of the roomiest zone. SIZE: the
 // design's own (band height, picture height) times the vehicle's scale S = its length / 4.4 m, between 1 and 2.2 (the bus 2.2), never
 // more than the zone takes (85% of a band's zone height, 90% of a badge's).
 // ONE MESH a car (both flanks), ONE material per design + ink (a 256 x 64 / 128 / 256 canvas, made when first worn, kept while a dressed
@@ -29,7 +31,7 @@
 import * as THREE from 'three';
 import { registerCosmetics, ownsCosmetic } from './cosmetics.js';
 import { registerSlot } from './cosmeticslots.js';
-import { flankView, wrapRect, pairedZones, FLANK, DECAL_TEST } from './flankdecal.js';
+import { flankView, flankHit, wrapRect, pairedZones, zonesFor, FLANK, DECAL_TEST } from './flankdecal.js';
 import { DECAL_ZONES } from './decalzonestable.js';
 import { forgetDents } from './dents.js';
 import { SILHOUETTE } from './silhouette.js';
@@ -94,31 +96,38 @@ export const inkOf = (d, colour, car, evil = false) => (d.colourFrom === 'fixed'
 // ---- the layout on a car's zones (model frame: z the nose +, y up from the road) ----
 const INSET = 0.03; // m: kept in from a zone's ends
 export const vehicleScale = (length) => Math.max(1, Math.min(2.2, length / 4.4));
-// [{ z0, z1, y0, y1, cell: [u0, v0, u1, v1], zone }]: the same on both flanks
-export const decalLayout = (d, zones, S = 1) => {
+// [{ z0, z1, y0, y1, cell: [u0, v0, u1, v1], zone, side? }]: a badge or a panel the same on both flanks (the zones both share); a band
+// at one height on both flanks, along each flank's own RUNS when opts.runs(side, ya, yb) -> [{ z0, z1 }] is given (the paint followed
+// by rays, see paintRuns: one unbroken piece wherever the paint goes on smooth and paint-faced, zones or not; side 'L' / 'R'), else
+// along the shared zones themselves (zones that touch joined). A band's motif runs on to the piece's end and is CLIPPED there (a part
+// motif at the end, nothing stretched or dropped).
+export const decalLayout = (d, zones, S = 1, opts = {}) => {
   if (!d || !zones.length) return [];
   if (d.kind === 'band') {
-    const want = d.h * S;
+    const want = d.h * S, sides = opts.runs ? ['L', 'R'] : [null], seeds = opts.seeds || zones;
+    const piecesAt = (side, ya, yb) => {
+      if (opts.runs) return opts.runs(side, ya, yb).filter(r => r.z1 - r.z0 >= 0.3 && (opts.zonesOf?.(side) || zones).some(o => o.y0 <= yb && o.y1 >= ya && Math.min(o.z1, r.z1) - Math.max(o.z0, r.z0) >= 0.15)); // (a run that meets a clean zone)
+      const out = [];
+      for (const o of zones.filter(o => o.y0 <= ya + 1e-6 && o.y1 >= yb - 1e-6).sort((p, q) => p.z0 - q.z0)) {
+        const last = out[out.length - 1];
+        if (last && o.z0 - last.z1 <= 0.01) { last.z1 = Math.max(last.z1, o.z1); last.zone += '+' + o.id; } else out.push({ z0: o.z0 + INSET, z1: o.z1, zone: o.id });
+      }
+      for (const p of out) p.z1 -= INSET;
+      return out.filter(p => p.z1 - p.z0 >= 0.3);
+    };
     let best = null;
-    for (const z of zones) {
+    for (const z of seeds) {
       const h = Math.min(want, (z.y1 - z.y0) * 0.85);
-      for (const yc of [(z.y0 + z.y1) / 2, z.y1 - h / 2 - 0.01, z.y0 + h / 2 + 0.01]) {
-        const ya = yc - h / 2, yb = yc + h / 2;
-        const run = zones.filter(o => o.y0 <= ya + 1e-6 && o.y1 >= yb - 1e-6 && o.z1 - o.z0 - 2 * INSET >= 0.3).sort((a, b) => a.z0 - b.z0);
-        const score = run.reduce((t, o) => t + o.z1 - o.z0, 0) * Math.min(1, h / want);
-        if (run.length && (!best || score > best.score + 1e-6)) best = { score, h, ya, yb, run };
+      for (const yc of [(z.y0 + z.y1) / 2, ...[0, 1, 2, 3, 4].map(k => z.y1 - h / 2 - 0.005 - k * 0.02), z.y0 + h / 2 + 0.01]) { // (the middle, a few heights from the top down, the bottom)
+        if (yc - h / 2 < z.y0 - 1e-6) continue;
+        const ya = yc - h / 2, yb = yc + h / 2, per = sides.map(side => ({ side, pieces: piecesAt(side, ya, yb) }));
+        const lens = per.flatMap(p => p.pieces.map(r => r.z1 - r.z0)), long = Math.max(0, ...lens); // (an unbroken band wins: its longest piece counts in full, the others a third)
+        const score = (long + (lens.reduce((t, l) => t + l, 0) - long) / 3) * Math.sqrt(Math.min(1, h / want)); // (a thinner unbroken band over a broken full-height one)
+        if (score > 0 && (!best || score > best.score + 1e-6)) best = { score, h, ya, yb, per };
       }
     }
     if (!best) return [];
-    const pieces = [];
-    for (const o of best.run) { // (zones that touch are one piece; between zones, even a 4 cm step, a gap)
-      const last = pieces[pieces.length - 1];
-      if (last && o.z0 - last.z1 <= 0.01) { last.z1 = Math.max(last.z1, o.z1); last.zone += '+' + o.id; } else pieces.push({ z0: o.z0, z1: o.z1, zone: o.id });
-    }
-    return pieces.map(p => {
-      const z0 = p.z0 + INSET, z1 = p.z1 - INSET, u = d.unit || d.aspect, reps = Math.max(u, Math.round((z1 - z0) / best.h / u) * u) / d.aspect; // (a whole number of motifs: none cut in half)
-      return { z0, z1, y0: best.ya, y1: best.yb, cell: [0, 0, reps, 1], zone: p.zone };
-    });
+    return best.per.flatMap(({ side, pieces }) => pieces.map(p => ({ z0: p.z0, z1: p.z1, y0: best.ya, y1: best.yb, cell: [0, 0, (p.z1 - p.z0) / (best.h * d.aspect), 1], zone: p.zone || 'run', ...(side ? { side } : {}) })));
   }
   // a panel or a badge: on the zone it is biggest in (a tie: the one nearer the nose)
   const cap = d.h * S;
@@ -133,6 +142,49 @@ export const decalLayout = (d, zones, S = 1) => {
   return [{ z0: z1 - w, z1, y0: yc - h / 2, y1: yc + h / 2, cell: [0, 0, 1, 1], zone: z.id }];
 };
 
+// ---- the paint along a flank, by rays (for a band's runs): a 2 cm lattice along the side view, each ray's first hit, made row by row as
+// a band asks (kept per car). A COLUMN of a band's rows is good where every row meets PAINT facing out (render/flankdecal.js flankHit:
+// not glass, a wheel, a lamp, trim or a curve) and moves from the column before as its normals predict, within SMOOTH (so a 4 cm step,
+// a panel's edge standing out, an arch's lip break it; a flat door shut line does not). A run is good columns in a row, ends inset 1 cm.
+const STEP = 0.02, SMOOTH = 0.004;
+const PAINT = new Map();
+const paintRuns = (view, car) => {
+  const key = car.id;
+  if (!PAINT.has(key)) PAINT.set(key, { rows: { L: new Map(), R: new Map() }, rays: 0 });
+  const P = PAINT.get(key), z0 = view.box.min.z, nz = Math.floor((view.box.max.z - z0) / STEP) + 1;
+  const row = (side, y) => { // (a row of rays at height y, kept by the centimetre)
+    const j = Math.round(y * 100);
+    let r = P.rows[side].get(j);
+    if (r) return r;
+    const s = side === 'L' ? -1 : 1;
+    r = { ok: new Uint8Array(nz), wheel: new Uint8Array(nz), x: new Float32Array(nz), slope: new Float32Array(nz) };
+    for (let i = 0; i < nz; i++) {
+      const h = flankHit(view, s, y, z0 + i * STEP); P.rays++;
+      if (h.kind === 'paint') { r.ok[i] = 1; r.x[i] = h.point.x; r.slope[i] = -h.normal.z / h.normal.x; }
+      if (h.kind === 'wheel') r.wheel[i] = 1;
+    }
+    P.rows[side].set(j, r);
+    return r;
+  };
+  const runs = (side, ya, yb) => {
+    const rows = [];
+    const n = Math.max(2, Math.ceil((yb - ya - 0.02) / STEP) + 1); // (its edges, 1 cm in, and rows no more than 2 cm apart between)
+    for (let k = 0; k < n; k++) rows.push(row(side, ya + 0.01 + (yb - ya - 0.02) * k / (n - 1)));
+    const margin = [row(side, ya - 0.01), row(side, yb + 0.01)]; // (1 cm clear of a tyre's top, whose round would slip between the columns)
+    const out = [];
+    let start = -1;
+    const good = (i) => rows.every(r => r.ok[i]) && !margin.some(r => r.wheel[i]), smooth = (i) => rows.every(r => Math.abs(r.x[i] - r.x[i - 1] - (r.slope[i] + r.slope[i - 1]) / 2 * STEP) <= SMOOTH);
+    for (let i = 0; i <= nz; i++) {
+      const g = i < nz && good(i), joined = g && start >= 0 && smooth(i);
+      if (start >= 0 && !joined) { out.push({ z0: z0 + start * STEP + 0.01, z1: z0 + (i - 1) * STEP - 0.01 }); start = -1; }
+      if (g && start < 0) start = i;
+    }
+    return out;
+  };
+  return { runs, stats: P };
+};
+export const forgetPaintRuns = () => PAINT.clear(); // (for a check)
+
 // ---- the wrapped geometry, per car + design (model frame), kept ----
 const GEO = new Map();
 const wrapDecal = (model, car, d) => {
@@ -140,11 +192,12 @@ const wrapDecal = (model, car, d) => {
   if (GEO.has(k)) return GEO.get(k);
   const t0 = (typeof performance !== 'undefined' ? performance : Date).now();
   const view = flankView(model), length = view.box.max.z - view.box.min.z, S = vehicleScale(length);
-  const rects = decalLayout(d, pairedZones(decalKey(car)), S), out = { pos: [], nor: [], uv: [], col: [] }, pieces = [];
-  for (const [s, side] of [[-1, 'L'], [1, 'R']]) for (const r of rects) pieces.push({ side, zone: r.zone, rect: r, ...wrapRect(view, s, r, { cell: r.cell, map: 'forward', adaptive: true }, out, FLANK.LIFT) });
+  const key = decalKey(car), paint = d.kind === 'band' ? paintRuns(view, car) : null, rays0 = paint ? paint.stats.rays : 0;
+  const rects = decalLayout(d, pairedZones(key), S, paint ? { runs: paint.runs, seeds: [...zonesFor(key, 'L'), ...zonesFor(key, 'R')], zonesOf: (side) => zonesFor(key, side) } : {}), out = { pos: [], nor: [], uv: [], col: [] }, pieces = [];
+  for (const [s, side] of [[-1, 'L'], [1, 'R']]) for (const r of rects) if (!r.side || r.side === side) pieces.push({ side, zone: r.zone, rect: r, ...wrapRect(view, s, r, { cell: r.cell, map: 'forward', adaptive: true }, out, FLANK.LIFT) });
   const flat = (list) => { const a = new Float32Array(list.length * 3); list.forEach((p, i) => { a[i * 3] = p.x; a[i * 3 + 1] = p.y; a[i * 3 + 2] = p.z; }); return a; };
   const g = { pos: flat(out.pos), nor: flat(out.nor), uv: Float32Array.from(out.uv), col: Float32Array.from(out.col),
-    stats: { S, length, rects, pieces, triangles: out.pos.length / 3, rays: pieces.reduce((a, p) => a + p.rays, 0), ms: (typeof performance !== 'undefined' ? performance : Date).now() - t0 } };
+    stats: { S, length, rects, pieces, triangles: out.pos.length / 3, rays: pieces.reduce((a, p) => a + p.rays, 0) + (paint ? paint.stats.rays - rays0 : 0), ms: (typeof performance !== 'undefined' ? performance : Date).now() - t0 } };
   GEO.set(k, g);
   return g;
 };

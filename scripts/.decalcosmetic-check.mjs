@@ -1,7 +1,9 @@
 // A check of the DECAL COSMETIC, a trial on the six cars of the zone table (CHECKLIST 423; render/decalcosmetic.js, render/decaldesigns.js,
 // the shared core render/flankdecal.js, the zones render/decalzonestable.js):
 //   1. every design on each of the six cars (Post Van, People's Bug, Wedge, Flatbed, City Bus, Woody) builds ONE flat mesh (one draw call)
-//      with a piece on EACH flank, every piece inside a zone both flanks share, every shown vertex just proud of the paint under it (2 to
+//      with a piece on EACH flank, a badge or panel inside a zone both flanks share, a BAND on paint all along (rays every 4 cm along its
+//      edges and middle: paint facing out, no glass, wheel, lamp or step) and meeting a zone of its flank, one unbroken band on the Post
+//      Van, the same rectangles on both flanks of a car whose flanks are alike, every shown vertex just proud of the paint under it (2 to
 //      8 mm: the 4 mm lift, the 2 mm chord), the same rectangles on both sides, within a triangle budget; SCALED (the bus's band and badge
 //      bigger than the Post Van's / Wedge's); the canvases at most 256 x 256; a second dressing casts no rays (the geometry kept)
 //   2. the store: a store from before the decal has none (migration), a car's own over the default, Reset car, garbage dropped, the
@@ -35,6 +37,7 @@ try {
   const { dentModel } = await load('render/dents.js');
   const { silhouetteFor } = await load('render/silhouette.js');
   const { cosmeticKeys } = await load('render/cosmetics.js');
+  const { DECAL_ZONES } = await load('render/decalzonestable.js');
   const all = [...C.CARS, ...C.FILLER_CARS, ...C.BESPOKE_CARS, ...C.EVENT_CARS, ...C.EARNED_CARS, ...Object.values(C.SECRET_CARS), ...IDEA_CARS];
   const car = (id) => all.find(c => c.id === id);
   const decals = (m) => { const out = []; m.traverse(n => { if (n.userData.decalCosmetic) out.push(n); }); return out; };
@@ -61,6 +64,7 @@ try {
     check(!!c && DC.decalSupported(c), id + ': a car whose model (' + c?.model + ') has a zone row');
     const paired = FD.pairedZones(DC.decalKey(c));
     let worst = '', tris = 0, meshes = 0, proud = [Infinity, -Infinity], inside = true, bothSides = true, mirrored = true;
+    const offPaint = [], longest = [], alike = DECAL_ZONES[DC.decalKey(c)].R === 'L';
     for (const d of DC.DESIGNS) {
       globalThis.location = { search: '?decal=' + d.id };
       const m = makeShowCar(c), plan = DC.decalPlan(m), list = decals(m);
@@ -69,10 +73,17 @@ try {
       const mesh = list[0], g = mesh.geometry, P = g.attributes.position, A = g.attributes.color, T = toModel(m, mesh), st = plan.stats;
       tris = Math.max(tris, P.count / 3);
       sizes[id + ':' + d.id] = st.rects;
-      for (const r of st.rects) for (let z = r.z0; z <= r.z1 + 1e-9; z += Math.min(0.05, r.z1 - r.z0)) if (!paired.some(o => z >= o.z0 - 1e-6 && z <= o.z1 + 1e-6 && r.y0 >= o.y0 - 1e-6 && r.y1 <= o.y1 + 1e-6)) inside = false; // (a band over zones that touch: covered all along)
+      const view0 = FD.flankView(m);
+      for (const r of st.rects) {
+        if (d.kind !== 'band') { if (!paired.some(o => r.z0 >= o.z0 - 1e-6 && r.z1 <= o.z1 + 1e-6 && r.y0 >= o.y0 - 1e-6 && r.y1 <= o.y1 + 1e-6)) inside = false; continue; }
+        const sides = r.side ? [r.side] : ['L', 'R']; // ('curve' below: paint turning past 45 degrees between the 2 cm columns, at a run's end on the Bug: still paint; its vertex there is see-through)
+        if (!sides.every(sd => FD.zonesFor(DC.decalKey(c), sd).some(o => o.y0 <= r.y1 && o.y1 >= r.y0 && Math.min(o.z1, r.z1) - Math.max(o.z0, r.z0) >= 0.15))) inside = false;
+        for (const sd of sides) for (let z = r.z0; z <= r.z1 + 1e-9; z += 0.04) for (const y of [r.y0 + 0.01, (r.y0 + r.y1) / 2, r.y1 - 0.01]) if (!['paint', 'curve'].includes(FD.flankHit(view0, sd === 'L' ? -1 : 1, y, z).kind)) { inside = false; offPaint.push(id + ' ' + d.id + ' ' + sd + ' z' + z.toFixed(3) + ' y' + y.toFixed(3) + ' ' + FD.flankHit(view0, sd === 'L' ? -1 : 1, y, z).kind); }
+      }
+      if (id === 'postvan' && d.kind === 'band') longest.push(st.rects.filter(r => !r.side || r.side === 'L').length);
       const L = st.pieces.filter(p => p.side === 'L'), R = st.pieces.filter(p => p.side === 'R');
       if (!L.some(p => p.quads) || !R.some(p => p.quads)) bothSides = false;
-      if (L.length !== R.length || L.some((p, i) => JSON.stringify(p.rect) !== JSON.stringify(R[i].rect))) mirrored = false;
+      if (alike && (L.length !== R.length || L.some((p, i) => JSON.stringify({ ...p.rect, side: 0 }) !== JSON.stringify({ ...R[i].rect, side: 0 })))) mirrored = false;
       // proud of the paint: each shown vertex against a paint ray at its (y, z)
       const view = FD.flankView(m), v = new THREE.Vector3();
       for (let k = 0; k < P.count; k += 3) {
@@ -87,8 +98,9 @@ try {
     globalThis.location = { search: '' };
     if (decals(makeShowCar(c)).length) worst = 'dressed with no choice';
     check(meshes === DC.DESIGNS.length && !worst, id + ': every design builds ONE mesh, one draw call (' + meshes + '/' + DC.DESIGNS.length + (worst ? '; ' + worst : '') + ')');
-    check(bothSides && mirrored, id + ': a piece on EACH flank, the same rectangles on both');
-    check(inside, id + ': every piece inside a zone both flanks share');
+    check(bothSides && mirrored, id + ': a piece on EACH flank' + (alike ? ', the same rectangles on both' : ' (its flanks differ: each band follows its own)'));
+    check(inside, id + ': every badge / panel inside a zone both flanks share; every band on paint all along (no glass, wheel, lamp, trim) and meeting a zone' + (offPaint.length ? ' (off: ' + offPaint.slice(0, 3).join(', ') + ')' : ''));
+    if (id === 'postvan') check(longest.length && longest.every(n => n === 1), 'postvan: every band is ONE unbroken piece a flank (' + longest.join(',') + ')');
     check(proud[0] >= 1.5 && proud[1] <= 8.5, id + ': every shown vertex just proud of the paint under it (' + proud[0].toFixed(1) + ' to ' + proud[1].toFixed(1) + ' mm)');
     check(tris > 0 && tris <= BUDGET, id + ': at most ' + tris + ' triangles a design (budget ' + BUDGET + ')');
     table.push(id);
@@ -146,8 +158,8 @@ try {
 
   // ---- 4. dents ----
   {
-    globalThis.location = { search: '?decal=stripes' };
     for (const id of ['postvan', 'bus', 'bug']) {
+      globalThis.location = { search: id === 'bus' ? '?decal=tiger' : '?decal=stripes' }; // (the bus's stripes run along its top, out of the dents' reach (and its nose is held by the glass): its tiger band, low down)
       const m = makeShowCar(car(id)), mesh = decals(m)[0];
       if (!mesh) { check(false, id + ': dressed for the dents'); continue; }
       const clean = mesh.geometry;

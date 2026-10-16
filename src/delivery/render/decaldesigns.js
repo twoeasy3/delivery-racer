@@ -3,7 +3,7 @@
 // each design fixed in place; colours both from the car and chosen (as the props: colourFrom 'car' | 'mixed' | 'fixed' plus swatches);
 // contrast part of each design (the feasibility's GO-IF 3): every shape has an EDGE, dark under a light ink and light under a dark one.
 //   kind 'band'   a strip along the flank, its tile repeated nose-ward (tile = aspect x 1 in units of the band's height): stripes, checker...
-//                 `unit`: its motif's width (a dot, a square pair); a band is cut to a whole number of motifs, so none is cut in half
+//                 the tile runs on to the band's end and is clipped there (a part motif at the end)
 //   kind 'panel'  one picture, aspect x 1, laid on one zone at its nose end (flames, the bolt)
 //   kind 'badge'  one square picture on the roomiest zone (star, target, parcel)
 // The pictures face the NOSE at the canvas's right (u = 1): the decal is mapped nose-ward on both flanks, so a chevron or a flame points
@@ -16,14 +16,14 @@
 // Render-only (no rules module imports this).
 
 export const DESIGNS = [
-  { id: 'stripes', unit: 0.5, name: 'Stripes', kind: 'band', aspect: 4, h: 0.17, colourFrom: 'car' },
-  { id: 'checker', unit: 1, name: 'Checker', kind: 'band', aspect: 4, h: 0.17, colourFrom: 'mixed' },
-  { id: 'chevrons', unit: 1, name: 'Chevrons', kind: 'band', aspect: 4, h: 0.18, colourFrom: 'car' },
-  { id: 'waves', unit: 0.5, name: 'Waves', kind: 'band', aspect: 4, h: 0.18, colourFrom: 'car' },
-  { id: 'dots', unit: 1, name: 'Dots', kind: 'band', aspect: 4, h: 0.16, colourFrom: 'car' },
-  { id: 'diamonds', unit: 1, name: 'Diamonds', kind: 'band', aspect: 4, h: 0.18, colourFrom: 'car' },
-  { id: 'hex', unit: 1, name: 'Hex', kind: 'band', aspect: 4, h: 0.18, colourFrom: 'car' },
-  { id: 'tiger', unit: 2, name: 'Tiger', kind: 'band', aspect: 2, h: 0.34, colourFrom: 'car' },
+  { id: 'stripes', name: 'Stripes', kind: 'band', aspect: 4, h: 0.17, colourFrom: 'car' },
+  { id: 'checker', name: 'Checker', kind: 'band', aspect: 4, h: 0.17, colourFrom: 'mixed' },
+  { id: 'chevrons', name: 'Chevrons', kind: 'band', aspect: 4, h: 0.18, colourFrom: 'car' },
+  { id: 'waves', name: 'Waves', kind: 'band', aspect: 4, h: 0.18, colourFrom: 'car' },
+  { id: 'dots', name: 'Dots', kind: 'band', aspect: 4, h: 0.16, colourFrom: 'car' },
+  { id: 'diamonds', name: 'Diamonds', kind: 'band', aspect: 4, h: 0.18, colourFrom: 'car' },
+  { id: 'hex', name: 'Hex', kind: 'band', aspect: 4, h: 0.18, colourFrom: 'car' },
+  { id: 'tiger', name: 'Tiger', kind: 'band', aspect: 2, h: 0.34, colourFrom: 'car' },
   { id: 'flames', name: 'Flames', kind: 'panel', aspect: 2, h: 0.3, colourFrom: 'fixed' },
   { id: 'bolt', name: 'Bolt', kind: 'panel', aspect: 2, h: 0.28, colourFrom: 'car' },
   { id: 'star', name: 'Star', kind: 'badge', aspect: 1, h: 0.46, colourFrom: 'car' },
