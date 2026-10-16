@@ -16,6 +16,7 @@ import './render/platecosmetic.js'; // (registers the number plate designs, slot
 import './render/propdress.js'; // (registers the roof / cargo / wing props, slots 'roof' 'cargo' 'wing')
 import './render/killfx.js'; // (registers the kill effects, slot 'kill')
 import './render/underglow.js'; // (registers the underglow looks, slot 'underglow')
+import './render/decalcosmetic.js'; // (registers the decal designs, slot 'decal')
 import './render/wheelcosmetic.js'; // (registers the wheel sets; a later cosmetic slot's module is imported here too, so that 'abs' sees its items)
 import { Ecu } from './ecu.js';
 

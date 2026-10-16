@@ -7,16 +7,20 @@
 //   &cars=<id>,<id>,...   a sheet: each car a cell (pair), two columns     &damage=<percent>  dented as the game does (render/inspectmodel.js)
 //   &evil=1  the Evil livery      &blackout=1  every part in the blacked-out look (render/silhouette.js)
 //   &decaltest=zones|1|both|curve  &decallift=<mm>  &decalnum=<n>  (read by render/flankdecal.js itself)
+//   THE DECAL COSMETIC (CHECKLIST 423, render/decalcosmetic.js dressDecal, as dressCosmetics calls it): &decal=<id>[,<colour>] (read by the
+//   module itself: every car wears it), or &designs=all|<id>,<id>  a sheet of ONE car (&car=) in each design (&colour=<swatch|hex|match>)
 import * as THREE from 'three';
 import { MODELS } from '/src/delivery/render/models.js';
 import { makeIdeaModel } from '/src/delivery/render/ideaModels.js';
 import { addSuperKit } from '/src/delivery/render/carExtras.js';
 import { patchModel } from '/src/delivery/render/modelpatchapply.js';
 import { dressFlankDecal } from '/src/delivery/render/flankdecal.js';
+import { dressDecal, DESIGNS } from '/src/delivery/render/decalcosmetic.js';
 import { dentModel, scorch } from '/src/delivery/render/dents.js';
 import { silhouetteFor } from '/src/delivery/render/silhouette.js';
 const q = new URLSearchParams(location.search), view = q.get('view') || 'pair';
-const ids = (q.get('cars') || q.get('car') || 'postvan').split(',');
+const designs = q.get('designs') ? (q.get('designs') === 'all' ? DESIGNS.map(d => d.id) : q.get('designs').split(',')) : null;
+const ids = designs ? designs.map(() => q.get('car') || 'postvan') : (q.get('cars') || q.get('car') || 'postvan').split(',');
 const W = +q.get('w') || 1400, cols = ids.length > 1 ? 2 : 1, rows = Math.ceil(ids.length / cols);
 const cellH = ids.length > 1 ? 440 : (+q.get('h') || 900), H = cellH * rows;
 // (the cars as JSON, written by scripts/decal-zones.mjs: the game's cars.js cannot be imported without the whole game's page)
@@ -52,6 +56,7 @@ ids.forEach((id, k) => {
   const model = car.idea ? patchModel(makeIdeaModel(car), car) : MODELS[car.model](car);
   if (!car.idea && (car.super || car.superKit)) addSuperKit(model, car);
   if (!car.idea) patchModel(model, car);
+  dressDecal(model, car, designs ? { look: { id: designs[k], colour: q.get('colour') || 'match' } } : {});
   dressFlankDecal(model, car);
   const evil = q.get('evil') === '1';
   model.userData.body?.material.color.setHex((evil ? car.evilColor : car.color) ?? car.color); // (render/showcar.js paintShowCar)
@@ -74,9 +79,11 @@ for (const { car, model, scene, k } of scenes) {
   // the cost: draw calls and triangles with the decal and without it (one more frame of the first view, counted)
   const decals = decalOf(model), count = (on) => { decals.forEach(n => { n.visible = on; }); r.info.reset(); r.setScissor(0, 0, 1, 1); r.setViewport(0, 0, 1, 1); r.render(scene, cam(model, 'left', 1)); return { calls: r.info.render.calls, tris: r.info.render.triangles }; };
   const on = count(true), off = count(false); decals.forEach(n => { n.visible = true; });
-  const st = model.userData.flankDecal_decal || model.userData.flankDecal_zones;
+  const plan = model.userData.decalPlan, ps = plan?.worn && plan.stats;
+  const st = model.userData.flankDecal_decal || model.userData.flankDecal_zones || (ps && { triangles: ps.triangles, rays: ps.rays });
+  const size = ps ? '\n' + plan.worn.id + ' ' + plan.worn.colour + '  S ' + ps.S.toFixed(2) + ': ' + ps.rects.map(r => r.zone + ' ' + (r.z1 - r.z0).toFixed(2) + ' x ' + (r.y1 - r.y0).toFixed(2) + ' m').join(', ') : '';
   const text = car.name + ' (' + (car.model || car.id) + ')' + (q.get('damage') ? '  damage ' + q.get('damage') + '%' : '') + (q.get('evil') === '1' ? '  Evil' : '  Good')
-    + (st ? '\ndecal: +' + (on.calls - off.calls) + ' draw call, +' + (on.tris - off.tris) + ' triangles drawn (' + st.triangles + ' built), ' + st.rays + ' rays' : '\nno decal');
+    + (st ? '\ndecal: +' + (on.calls - off.calls) + ' draw call, +' + (on.tris - off.tris) + ' triangles drawn (' + st.triangles + ' built), ' + st.rays + ' rays' : '\nno decal') + size;
   if (parts.length > 1) { label(x0, y0, text + '\nLEFT flank (seen from the left)'); label(x0, y0 + cellH / 2, 'RIGHT flank (seen from the right)'); } else label(x0, y0, text + '\n' + view);
 }
 // a repaint of the views after the counting frames (the counting drew into a corner)

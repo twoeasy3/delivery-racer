@@ -123,7 +123,27 @@ export const wrapRect = (view, s, rect, piece, out, lift = FLANK.LIFT) => {
       if (ok) { best = [cz, cy]; break search; }
     }
   }
-  const [cz, cy] = best, sz = nz / cz, sy = ny / cy, [u0, v0, u1, v1] = piece.cell, tint = piece.tint || [1, 1, 1];
+  let cols = Array.from({ length: best[0] + 1 }, (_, k) => k * nz / best[0]), rows = Array.from({ length: best[1] + 1 }, (_, k) => k * ny / best[1]);
+  // piece.adaptive (the decal cosmetic, render/decalcosmetic.js): a RECTILINEAR lattice instead, any fine column or row kept or dropped
+  // (no T-joints, so no cracks): a line is dropped where every fine point between its neighbours stays within CHORD of the faces and
+  // shows or hides as it did (the vertex alpha, interpolated, on the same side of the alpha test's 0.5). A flank curved only near a seam
+  // keeps its few columns there instead of the whole power-of-two lattice.
+  if (piece.adaptive) {
+    const fits = (cs, rs, i0, i1, j0, j1) => {
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const ci = Math.max(0, cs.findIndex(c => c >= i) - 1), cj = Math.max(0, rs.findIndex(r => r >= j) - 1);
+        const ia = cs[ci], ib = cs[ci + 1], ja = rs[cj], jb = rs[cj + 1], a = (i - ia) / (ib - ia), b = (j - ja) / (jb - ja);
+        const q00 = F(ia, ja), q10 = F(ib, ja), q01 = F(ia, jb), q11 = F(ib, jb), mix = (f) => (f(q00) * (1 - a) + f(q10) * a) * (1 - b) + (f(q01) * (1 - a) + f(q11) * a) * b;
+        if (Math.abs(mix(q => q.p.x) - F(i, j).p.x) > FLANK.CHORD) return false;
+        if ((mix(q => (q.shown ? 1 : 0)) >= 0.5) !== F(i, j).shown) return false;
+      }
+      return true;
+    };
+    cols = Array.from({ length: nz + 1 }, (_, k) => k); rows = Array.from({ length: ny + 1 }, (_, k) => k);
+    for (let k = 1; k < cols.length - 1;) { const t = cols.filter((_, x) => x !== k); if (fits(t, rows, cols[k - 1], cols[k + 1], 0, ny)) cols = t; else k++; }
+    for (let k = 1; k < rows.length - 1;) { const t = rows.filter((_, x) => x !== k); if (fits(cols, t, 0, nz, rows[k - 1], rows[k + 1])) rows = t; else k++; }
+  }
+  const [u0, v0, u1, v1] = piece.cell, tint = piece.tint || [1, 1, 1];
   const uvOf = (i, j) => {
     const fz = i / nz, fy = j / ny;
     const fu = piece.map === 'read' ? (s > 0 ? 1 - fz : fz) : fz; // (seen from side s the screen's right is -s z: a number reads; a forward piece runs to the nose)
@@ -131,8 +151,8 @@ export const wrapRect = (view, s, rect, piece, out, lift = FLANK.LIFT) => {
   };
   const tris = s > 0 ? [[0, 2, 1], [0, 3, 2]] : [[0, 1, 2], [0, 2, 3]];
   let quads = 0;
-  for (let j = 0; j < cy; j++) for (let i = 0; i < cz; i++) {
-    const q = [[i * sz, j * sy], [(i + 1) * sz, j * sy], [(i + 1) * sz, (j + 1) * sy], [i * sz, (j + 1) * sy]];
+  for (let j = 0; j + 1 < rows.length; j++) for (let i = 0; i + 1 < cols.length; i++) {
+    const q = [[cols[i], rows[j]], [cols[i + 1], rows[j]], [cols[i + 1], rows[j + 1]], [cols[i], rows[j + 1]]];
     if (!q.some(([a, b]) => F(a, b).shown)) continue;
     quads++;
     for (const t of tris) for (const k of t) {
@@ -143,7 +163,7 @@ export const wrapRect = (view, s, rect, piece, out, lift = FLANK.LIFT) => {
       out.col.push(...tint, f.shown ? 1 : 0);
     }
   }
-  return { quads, rays, holes, fine: [nz, ny], used: [cz, cy] };
+  return { quads, rays, holes, fine: [nz, ny], used: [cols.length - 1, rows.length - 1] };
 };
 // the pieces' lists as one mesh, parented where the body is (positions taken from the model's frame into the parent's)
 export const meshOf = (model, out, material, name) => {

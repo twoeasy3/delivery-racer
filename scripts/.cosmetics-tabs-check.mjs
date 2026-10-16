@@ -4,8 +4,8 @@
 //     prop slot, the Classic GT, a Legendary car) the tabs drawn are exactly Wheels, Plate and the prop slots slotStatus allows, in order
 //   - no tab says 'Locked' or 'Coming'; the screen's source has no lock line, no 'Coming later', no lock reason; the CSS no lock styles
 //   - the open tab falls back to the first drawn (Wheels) when the car has no tab for it, and stays when it has
-//   - Decal and Glow (underglow) never show without ?cosmetics=all, on any car; with it (setDemo) they show on the pickup; the labels are
-//     short (7 characters at most)
+//   - Decal and Glow (underglow) never show without ?cosmetics=all, on any car (the Decal's own module, render/decalcosmetic.js, is not
+//     loaded here: .decalcosmetic-check covers its tab); with it (setDemo) Glow shows on the pickup; the labels are short (7 characters at most)
 //   - the KILL EFFECT (slot 'kill', CHECKLIST 405, joined to the registry at the v1.1.148-alpha merge): a 'car' slot (per car over the
 //     default); its tab shows on every car once render/killfx.js has registered its items, and cosmeticsui.js gives it its panel;
 //     registering a kill-effect item in render/cosmetics.js brings its tab on every car (and removing it takes it away); registerSlot
@@ -53,9 +53,10 @@ try {
   // the demo (?cosmetics=all)
   const before = COSMETICS.length;
   R.setDemo(true);
-  check(tabs(car('pickup')) === 'wheels,plate,roof,cargo,wing,decal,underglow' && R.shownSlots(car('pickup')).length === 7, 'with ?cosmetics=all: the dormant tabs on the pickup too (' + tabs(car('pickup')) + '; Kill FX comes with its items, below)');
-  check(tabs(car('rocketfin')) === 'wheels,plate,decal,underglow', '...and the canopy car still has no prop tab (' + tabs(car('rocketfin')) + ')');
-  check(dormant.every(id => R.slotById(id).items().every(it => it.sample && /^Sample/.test(it.name))) && COSMETICS.length === before, '...its items are labelled Sample and nothing is put in the cosmetics registry');
+  // (the Decal is no longer dormant since CHECKLIST 423: its tab is render/decalcosmetic.js's, on the zone table's cars only, no samples)
+  check(tabs(car('pickup')) === 'wheels,plate,roof,cargo,wing,underglow' && R.shownSlots(car('pickup')).length === 6, 'with ?cosmetics=all: the dormant Glow tab on the pickup too, no Decal (' + tabs(car('pickup')) + '; Kill FX comes with its items, below)');
+  check(tabs(car('rocketfin')) === 'wheels,plate,underglow', '...and the canopy car still has no prop tab (' + tabs(car('rocketfin')) + ')');
+  check(R.slotById('underglow').items().every(it => it.sample && /^Sample/.test(it.name)) && R.slotById('decal').items().length === 0 && COSMETICS.length === before, '...its items are labelled Sample, the Decal gets none, and nothing is put in the cosmetics registry');
   R.setDemo(false);
   check(!R.shownSlots(car('pickup')).some(s => dormant.includes(s.id)), '...and off again: the dormant tabs are gone');
   check(R.slotById('kill').scope === 'car' && !R.slotById('killfx') && R.SLOT_LIST.filter(s => s.scope === 'player').length === 0, "Kill FX is the 'kill' slot, per car like the others (the car / all cars switch shows on it); no 'player' slot today");
