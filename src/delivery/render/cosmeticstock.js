@@ -1,18 +1,11 @@
-// ---- THE STOCK OF EACH EARNED COSMETIC, PER CAR (CHECKLIST 437, EARNED-COSMETICS.md; the owner, 16-Oct: "Cosmetics will be earned and 1 will
-// be consumed when equipped to a vehicle"). render/cosmetics.js keeps how many of each item the player was given (cosmeticCount); this file
-// counts how many are ON CARS, from the loadout store (render/loadoutstore.js), so that
-//   spare = given - worn.
-// THE RULE OF ONE A CAR: an item is worn by
-//   - every car in the garage (Progress.owns) whose look has it, its own choice or the All-cars default's, and that can wear the slot
-//     (a prop slot the car has, a glow on a car that takes one, a plate on any but a Legendary car: their gold plates stay);
-//   - any other car the player dressed with it itself (a car on show in the showroom that is not owned yet, its own choice only).
-// So: two cars need two; the All-cars default needs one for each garage car that follows it; taking one off, choosing another, Reset car
-// or a car leaving the garage gives it back at once (nothing is stored per equip, so nothing can drift). Free looks (Stock plate, no prop,
-// Classic kill effect, no glow) and 'Unlock everything: Absolutely' are unlimited. The kill effect is counted per car it is set on, never
-// per kill.
-// A car that JOINS the garage while the default has an earned item rides on it (the default is not taken off it); the spare count then
-// shows 0, never less, and nothing is taken off any car. Open question in EARNED-COSMETICS.md.
-// Render-only (no rules module imports this; not in the replay fingerprint).
+// ---- THE HAND OF EACH EARNED COSMETIC, PER CAR (CHECKLIST 437, EARNED-COSMETICS.md; the owner, 16-Oct: "treat cosmetics exactly like cards:
+// if the player has 1 of it, it is unlocked. Equipping it takes 1 from their stock. Unequipping gives it back"; "drop All cars: per car only").
+// render/cosmetics.js keeps how many of each item the player was given (cosmeticCount); this file counts how many are ON CARS, from the
+// loadout store (each car's own item: render/loadoutstore.js PER_CAR, never the All-cars default), so that
+//   hand = given - on cars.
+// One for each car wearing it (a car that cannot wear the slot, such as a Legendary car's plates, is not wearing it). Nothing is stored per
+// equip: taking one off, choosing another or Reset car puts it back in the hand at once. Free looks and 'Absolutely' are unlimited; the kill
+// effect is one a car, never per kill. Render-only (not in the replay fingerprint).
 import { Progress } from '../progress.js';
 import { CARS, EARNED_CARS, EVENT_CARS, BESPOKE_CARS, FILLER_CARS, SECRET_CARS, carById } from '../cars.js';
 import * as Store from './loadoutstore.js';
@@ -34,29 +27,23 @@ export const wearsSlot = (car, slot) => {
 let rosterList = null;
 const roster = () => (rosterList ||= [...new Map([...CARS, ...EARNED_CARS, ...EVENT_CARS, ...BESPOKE_CARS, ...FILLER_CARS, ...Object.values(SECRET_CARS), ...(Progress.freeCars || [])]
   .filter(c => c && c.id).map(c => [c.id, c])).values()]);
-const resolve = (snap, carId, slot) => ({ ...Store.STOCK[slot], ...(snap.default?.[slot] || {}), ...(snap.cars?.[carId]?.[slot] || {}) });
-// every earned item worn: Map key -> [car ids], for a store snapshot (default: the store as it is)
+// every earned item on a car: Map key -> [car ids], for a store snapshot (default: the store as it is)
 export const usage = (snap = Store.snapshot()) => {
-  const out = new Map(), seen = new Set();
-  const add = (car, slots) => {
-    for (const slot of slots) {
-      const id = resolve(snap, car.id, slot)[ITEM_FIELD[slot]];
+  const out = new Map();
+  for (const [carId, look] of Object.entries(snap.cars || {})) {
+    const car = carById(carId);
+    for (const slot of SLOTS) {
+      const id = look?.[slot]?.[ITEM_FIELD[slot]];
       if (!id || id === EARNED_SLOTS[slot] || !wearsSlot(car, slot)) continue;
       const key = cosmeticKey(slot, id);
       if (!out.has(key)) out.set(key, []);
-      out.get(key).push(car.id);
+      out.get(key).push(carId);
     }
-  };
-  for (const car of roster()) { if (Progress.owns(car.id)) { seen.add(car.id); add(car, SLOTS); } }
-  for (const id of Object.keys(snap.cars || {})) { // (a car not in the garage that the player dressed: its own choices only)
-    if (seen.has(id)) continue;
-    const car = carById(id);
-    if (car) add(car, SLOTS.filter(slot => snap.cars[id][slot]));
   }
   return out;
 };
 export const wornBy = (slot, id, use = usage()) => use.get(cosmeticKey(slot, id)) || [];
-// the ones free to equip: Infinity (free, or unlimited), else given less worn, never under 0
+// the HAND: Infinity (free, or unlimited), else given less on cars, never under 0
 export const spare = (slot, id, use = usage()) => { const n = cosmeticCount(slot, id); return n === Infinity ? Infinity : Math.max(0, n - wornBy(slot, id, use).length); };
 // what a change of the store did to the stock: before and after are usage() maps. uses: items now on more cars; gives: on fewer.
 // short: the uses that need more than the player has (and more than were already worn: a stock already over is never made worse)
@@ -73,10 +60,25 @@ export const diffUsage = (before, after) => {
   const short = uses.filter(u => u.after > u.count);
   return { uses, gives, short };
 };
-// THE MIGRATION (once a browser): every item worn is made at least as many as the cars wearing it (render/cosmetics.js has already made
-// each worn item at least 1 on its first load), so nobody loses a look when cosmetics become earned
+// THE MIGRATION (once a browser, from main.js and the Cosmetics screen): an All-cars default from before (an earned item on the default) is
+// moved onto EVERY GARAGE CAR that followed it (no item of its own, can wear the slot), and the default keeps only the free look; then every
+// item on cars is made at least as many as the cars wearing it. So nobody loses a look and the hand never starts below 0 (the choice made:
+// generous, as the looks were free or owned once before; render/cosmetics.js has already made each worn item at least 1 on its first load).
 export const migrateStock = () => {
   if (stockMeta().mig) return false;
+  const snap = Store.snapshot();
+  let moved = false;
+  for (const slot of SLOTS) {
+    const f = ITEM_FIELD[slot], item = snap.default?.[slot]?.[f];
+    if (!item || item === EARNED_SLOTS[slot]) continue;
+    for (const car of roster()) {
+      if (!Progress.owns(car.id) || !wearsSlot(car, slot) || snap.cars?.[car.id]?.[slot]?.[f]) continue;
+      ((snap.cars[car.id] ||= {})[slot] ||= {})[f] = item;
+    }
+    delete snap.default[slot][f];
+    moved = true;
+  }
+  if (moved) Store.restore(snap);
   for (const [key, ids] of usage()) topUpCosmetic(key, ids.length);
   setStockMeta({ mig: 1 });
   return true;

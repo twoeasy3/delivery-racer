@@ -48,6 +48,8 @@ import { syncRadiation } from './render/radiation.js';
 import { Radiation } from './radiation.js';
 import { Replay } from './replay.js';
 import './render/replayui.js';
+import { migrateStock } from './render/cosmeticstock.js'; // (earned cosmetics, CHECKLIST 437: an older All-cars look moved onto the cars, once)
+try { migrateStock(); } catch (error) { console.warn('cosmetic stock: ' + (error?.message || error)); }
 import { syncGhost, clearGhost } from './render/ghostcar.js';
 import { syncBattle } from './render/battle.js';
 import { raceCamera, raceAudio, syncRaceWatch, auditCameras } from './render/racewatch.js';

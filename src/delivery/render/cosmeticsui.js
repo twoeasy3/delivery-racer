@@ -76,6 +76,7 @@ const tagShown = () => {
   if (!car) return;
   for (const [slot, t] of Object.entries(tags)) {
     const own = Store.hasOwn(car.id, slot);
+    if (isEarnedSlot(slot)) { t.hidden = true; continue; } // (per car only: no 'from default')
     t.textContent = state.scope === 'car' ? (own ? '' : 'from default') : (own && Store.differs(car.id, slot) ? 'not on this car' : '');
     t.title = state.scope === 'car' ? (own ? '' : 'The same as All cars') : (t.textContent ? 'This car has its own' : '');
     t.hidden = !t.textContent;
@@ -565,7 +566,9 @@ const copyToAll = () => {
     return;
   }
   copyArmed = 0; copyBtn.textContent = 'Copy to all'; copyBtn.title = "This car's look on every car";
-  gate(() => Store.copyToAll(car.id), { title: 'Copy this look to all cars?', done: () => flash(tabMsg, 'Copied to all cars.') });
+  Store.copyToAll(car.id); // (the wheels only: the earned slots are per car, CHECKLIST 437)
+  flash(tabMsg, 'Wheels copied to all cars.');
+  Sound.play('menuPick', 0.4);
 };
 const setCloseUp = (on, end = null, slot = null) => {
   const focus = on && slot ? focusOf(slot) : null;
@@ -588,6 +591,10 @@ const openSection = (id) => {
   for (const [key, node] of Object.entries(sections)) node.hidden = key !== id;
   for (const b of slotList.children) { const on = b.dataset.slot === id; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; }
   scopeBar.hidden = slotById(id)?.scope === 'player';
+  // an EARNED slot is per car only (CHECKLIST 437: no All cars, no Copy to all on its tab)
+  const perCar = isEarnedSlot(id);
+  scopeBtns[1].hidden = perCar; copyBtn.hidden = perCar;
+  if (perCar && state.scope === 'all') { state.scope = 'car'; syncPlateInput(); shown(); plateShown(); propShown(); killShown(); scopeShown(); }
   p.refresh();
   viewBtns[1].hidden = id !== 'wheels'; viewBtns[2].hidden = viewBtns[3].hidden = id !== 'plate'; viewBtns[5].hidden = id !== 'kill';
   if (id !== 'kill') KillPreview.clear(); // (the Kill effect's panel refreshes itself: p.refresh() above)

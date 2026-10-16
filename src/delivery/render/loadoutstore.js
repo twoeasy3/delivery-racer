@@ -27,6 +27,11 @@ export const KEY = 'delivery.loadout';
 export const SLOTS = ['wheels', 'plate', 'roof', 'cargo', 'wing', 'kill', 'underglow'];
 export const PROP_SLOTS = ['roof', 'cargo', 'wing'];
 export const MAX_CARS = 400;
+// PER-CAR ITEMS (CHECKLIST 437, the owner, 16-Oct: "drop All cars. Cosmetics are per car only"): the EARNED slots' item field (a plate's
+// design, a prop's id, the kill effect, the glow) is never taken from the default: a car wears the item it was given itself, or the slot's
+// free look. The slot's other fields (a plate's text, a prop's paint) still come from the default as before. render/cosmetics.js EARNED_SLOTS
+// names the same slots; render/cosmeticstock.js migrateStock moves an older default's items onto the cars that wore them.
+export const PER_CAR = Object.freeze({ plate: 'design', roof: 'id', cargo: 'id', wing: 'id', kill: 'id', underglow: 'id' });
 export const STOCK = Object.freeze({
   wheels: Object.freeze({ design: 'stock', hub: 'stock', rim: Object.freeze({ all: 'none' }), tread: Object.freeze({ all: 'none' }) }),
   plate: Object.freeze({ design: 'stock', text: null }),
@@ -155,7 +160,10 @@ export const defaultSlot = (slot) => ({ ...STOCK[slot], ...(state().default[slot
 // the car's slot as worn: its own fields over the default's over Stock (carId null / undefined: the default)
 export const get = (carId, slot) => {
   const s = state(), own = carId != null ? s.cars[carId]?.[slot] : null;
-  return own ? { ...STOCK[slot], ...(s.default[slot] || {}), ...own } : defaultSlot(slot);
+  const out = own ? { ...STOCK[slot], ...(s.default[slot] || {}), ...own } : defaultSlot(slot);
+  const f = PER_CAR[slot];
+  if (f && carId != null) out[f] = own?.[f] ?? STOCK[slot][f]; // (an earned item: the car's own, never the default's)
+  return out;
 };
 export const own = (carId, slot) => (carId != null ? state().cars[carId]?.[slot] || null : null); // (a car's own fields of a slot, as stored)
 export const hasOwn = (carId, slot) => carId != null && !!state().cars[carId]?.[slot];
@@ -173,13 +181,17 @@ export const onStore = (fn) => { listeners.add(fn); return () => listeners.delet
 export const setSlot = (target, slot, patch) => {
   if (!SLOTS.includes(slot)) return false;
   const s = state();
+  const f = PER_CAR[slot];
   if (target == null) {
-    s.default[slot] = cleanSlot(slot, { ...defaultSlot(slot), ...patch }) || {};
+    const p = { ...patch };
+    if (f) delete p[f]; // (an earned item is never the default's: per car only)
+    s.default[slot] = cleanSlot(slot, { ...defaultSlot(slot), ...p }) || {};
   } else {
     if (!CAR.test(String(target))) return false;
     const id = String(target), next = cleanSlot(slot, { ...get(id, slot), ...patch });
     const car = s.cars[id] || {};
-    if (!next || same(sorted({ ...STOCK[slot], ...next }), sorted(defaultSlot(slot)))) delete car[slot]; // (the same as the default: the car follows the default again)
+    const ownItem = f && next && (next[f] ?? STOCK[slot][f]) !== STOCK[slot][f]; // (a car wearing an earned item keeps its own entry)
+    if (!next || (!ownItem && same(sorted({ ...STOCK[slot], ...next, ...(f ? { [f]: STOCK[slot][f] } : {}) }), sorted({ ...defaultSlot(slot), ...(f ? { [f]: STOCK[slot][f] } : {}) })))) delete car[slot]; // (the same as the default: the car follows the default again)
     else car[slot] = next;
     if (Object.keys(car).length) {
       if (!s.cars[id] && Object.keys(s.cars).length >= MAX_CARS) return false;
@@ -201,10 +213,12 @@ export const resetCar = (carId, slot = null) => {
   return true;
 };
 // this car's look becomes the default; others: 'clear' (every car wears it: their own looks dropped) or 'keep' (cars with their own keep them)
+// (the EARNED slots, PER_CAR, are left alone: per car only, CHECKLIST 437; so only the wheels are copied)
 export const copyToAll = (carId, { others = 'clear' } = {}) => {
-  const s = state();
-  for (const slot of SLOTS) s.default[slot] = cleanSlot(slot, get(carId, slot)) || {};
-  if (others === 'clear') s.cars = {}; else delete s.cars[carId];
+  const s = state(), shared = SLOTS.filter(slot => !PER_CAR[slot]);
+  for (const slot of shared) s.default[slot] = cleanSlot(slot, get(carId, slot)) || {};
+  const drop = (id) => { const car = s.cars[id]; if (!car) return; for (const slot of shared) delete car[slot]; if (!Object.keys(car).length) delete s.cars[id]; };
+  if (others === 'clear') for (const id of Object.keys(s.cars)) drop(id); else drop(carId);
   write();
   tell({ slot: null, target: null });
   return true;
