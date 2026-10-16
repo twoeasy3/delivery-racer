@@ -160,6 +160,9 @@
 //                                  'sewage', 'pile' and 'beam', or the beach's 'umbrella',
 //                                  'surfboard', 'cooler' and 'chair' (a lifeguard chair), or 'mine' (a sea mine, afloat).
 //                                  With drift: 'dart', it darts about its spot at random (see CONFIG.drifters)
+//                                  With span: n (a barrier only, 1 to 4 in halves): a WIDE barrier, n lanes wide from its lane
+//                                  rightwards, one block (0.55 m in from the outer lanes' lines, as a barrier is in its lane) that
+//                                  costs a barrier's hit, however wide, and is blown away whole (see Collision.loadLevel)
 //                                  A theme can have obstacles of its own (themes.js, its `obstacles`): there a
 //                                  level's 'crate' is a barrel (the Wild West), a diving helmet (the sea bed), a
 //                                  supply pod (the Moon)...: the same box and the same cost, only the thing itself
@@ -699,10 +702,12 @@ import alpinePass from './levels/alpine-pass.json';
 HIDDEN_LEVELS['alpine-pass'] = alpinePass; // Alpine Pass (the alpine theme's switchbacks to the col): ?hidden=alpine-pass, until the owner decides
 import metroRun from './levels/metro-run.json';
 HIDDEN_LEVELS['metro-run'] = metroRun; // Metro Run (a metro system: running tunnels, stations, an interchange, the depot: render/themes/metro.js): ?hidden=metro-run, until it is put in the career
+import obstacleLab from './levels/obstacle-lab.json';
+HIDDEN_LEVELS['obstacle-lab'] = obstacleLab; // Obstacle Lab (a test track: every obstacle formation of OBSTACLE-STAGE-DESIGN.md once, barriers only): ?hidden=obstacle-lab, never on the menus
 // THE HIDDEN LEVELS MENU (the owner, 15-Oct; Options > Hidden levels, render/hiddenlevels.js): every level of HIDDEN_LEVELS that is a
 // real level, so a hidden level added later is listed without a word here. TEST_LEVELS are the developer's test tracks (a testbed and the three
 // Gimmick Roads: gimmicks.js calls them 'Test'), left out of it. A run started from it is ?hidden=<id>: it banks nothing (game.js).
-export const TEST_LEVELS = ['testbed', 'gimmick-road', 'gimmick-road-2', 'gimmick-road-3'];
+export const TEST_LEVELS = ['testbed', 'gimmick-road', 'gimmick-road-2', 'gimmick-road-3', 'obstacle-lab'];
 export const playableHidden = () => Object.entries(HIDDEN_LEVELS).filter(([id]) => !TEST_LEVELS.includes(id)).map(([id, level]) => ({ id, level, event: id in EVENT_MAPS }));
 // the class every race is run in: 'f1', 'gt' (GT road cars) or 'lmp' (Le Mans prototypes): the player's car
 // and the grid (the menu's Race cars button; ?gt or ?lmp for that class whatever it says)

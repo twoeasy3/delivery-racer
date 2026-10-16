@@ -783,6 +783,14 @@ const createTrack = () => {
   const shut = (x) => x > 0.01 ? Math.ceil(x - 0.01) : 0;
 
   // the lane itself, or the lane it has merged into where the expressway is narrower
+  // a WIDE obstacle's centre (a level's obstacle with "span": lanes wide, 1 to 4, from its lane rightwards: see Collision.loadLevel):
+  // between its lane's centre and the centre of the lane `span - 1` further right, by the lanes' own offsets at s (so on a bend,
+  // in a taper or a diversion it follows them as a lane does)
+  const spanOffset = (lane, span, s) => {
+    if (!(span > 1) || typeof lane !== 'number') return laneOffset(lane, s);
+    const far = lane + span - 1, k = Math.floor(far), u = far - k, a = laneOffset(k, s);
+    return (laneOffset(lane, s) + (u > 0 ? a + (laneOffset(k + 1, s) - a) * u : a)) / 2;
+  };
   const openLane = (lane, s) => {
     if (kindOf(s) === SIDE_ROAD && typeof lane === 'number') return Math.max(sideLeft(s) > 0.5 ? 0 : 1, Math.min(sideLast(s), lane));
     if (!isMain(s) || lane < 0 || lane >= LANES || inMedian(lane)) return lane;
@@ -1466,16 +1474,24 @@ const createTrack = () => {
         } else if (item.lane === 'left' || item.lane === 'right') {
           // (on that shoulder, as on a side road: laneOffset puts it there. It used to fall through to the test
           // below, which knows only numbered lanes, and be reported "merged away")
-        } else if (!Number.isInteger(item.lane)) {
+        } else if (!Number.isInteger(item.lane) && !(what === 'obstacle' && item.span > 1 && Number.isInteger(item.lane * 2))) { // (a wide barrier may start on a lane line)
           problems.push(name + ': its lane is a number, or left or right (a shoulder)');
-        } else if (item.lane < 0 || item.lane >= LANES) {
+        } else if (item.lane < 0 || item.lane >= LANES) { // (a wide barrier's lanes are checked above)
           problems.push(name + ': no lane ' + item.lane);
-        } else if (openLane(item.lane, item.s) !== item.lane) {
+        } else if (Number.isInteger(item.lane) && openLane(item.lane, item.s) !== item.lane) {
           problems.push(name + ': lane ' + item.lane + ' is merged away there');
         }
-        const s = place(item), lat = laneOffset(item.lane, s);
-        if (spots.some(o => Math.abs(o.s - s) < 8 && Math.abs(o.lat - lat) < 2)) problems.push(name + ': on top of another item');
-        spots.push({ s, lat });
+        // (a wide obstacle, "span": a barrier only, its lanes all open and on the expressway; it is that much wider each way)
+        const span = what === 'obstacle' && item.span !== undefined ? item.span : 1, wide = (span - 1) * LW / 2;
+        if (span !== 1) {
+          if (!(span >= 1 && span <= 4)) problems.push(name + ': span is 1 to 4 lanes');
+          else if ((item.kind || 'barrier') !== 'barrier') problems.push(name + ': only a barrier can span lanes');
+          else if (item.road === 'side' || !Number.isInteger(item.lane * 2) || item.lane < 0) problems.push(name + ': a wide obstacle stands on the expressway\'s lanes, from a lane or a lane line');
+          else for (let l = Math.floor(item.lane); l <= Math.ceil(item.lane + span - 1); l++) if (l >= LANES || openLane(l, item.s) !== l) problems.push(name + ': it spans lane ' + l + ', not open there');
+        }
+        const s = place(item), lat = span > 1 && typeof item.lane === 'number' ? spanOffset(item.lane, span, s) : laneOffset(item.lane, s);
+        if (spots.some(o => Math.abs(o.s - s) < 8 && Math.abs(o.lat - lat) < 2 + o.wide + wide)) problems.push(name + ': on top of another item');
+        spots.push({ s, lat, wide });
       }
     }
     for (const kind of Object.keys(LEVEL.traffic || {})) {
@@ -1503,7 +1519,7 @@ const createTrack = () => {
     length, start: -LEAD_IN, end: length + LEAD_OUT, loop: LOOP, problems,
     apart, laneCount: LANES, leftLanes: LEFT, rightLanes: RIGHT, medianLanes: MID, medianHalf: HM, shoulder: SH, flow: FLOW, mirrored: MIRRORED,
     toWorld, fromWorld, grade, hilly, transfer, along, progress, finished, inBounds, spawnAt, place, isMain,
-    laneOffset, openLane, nearestLane, laneRange, assistOffset, flyHeight,
+    laneOffset, spanOffset, openLane, nearestLane, laneRange, assistOffset, flyHeight,
     lanesOn, edge, extraLane, onBridge, icy, wet, puddles, padAt, divider, diverting, divertedSide, divert, works, bounds, carry, diversionAt, diversions: dvs, sprays, slicks, muddy, gravels, gravelBand, gravelAt, water, waters, foggy, tunnel, bend, pathScale, onRails, railTracks, railLat, junctions, zoneAt, lo, hi, laneLo, laneHi, shoulderOffset, onShoulder, rampLaneZone, sideOpen, sideWidth, sideLeft, sideOncoming,
     flyPillar, sideDistance, mainDistance, exits, crossable, crossLo,
   };

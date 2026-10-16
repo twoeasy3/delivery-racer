@@ -25,7 +25,8 @@
 //   settings  { name: { type, label, ... } }, each one of:
 //             number  min, max, step, int      choice  choices: [value] or [{ value, label }]
 //             flag    text    colour           range   { min, max }: its own min, max, step
-//             lane    a lane number (shoulders: true = or 'left' / 'right'; player: true = the player's side only)
+//             lane    a lane number (shoulders: true = or 'left' / 'right'; player: true = the player's side only; halves: true = or a lane
+//                     line, x.5: a wide obstacle's, whose "span" track.js checks)
 //             lanes   lane numbers: a list, or (span: true) [first, last]; width: n = exactly n lanes wide
 //             mix     { kind: weight } over `choices`          metres  another spot along the same road
 //             object  { settings }                              list    [{ settings }] or (item) [value]
@@ -204,7 +205,8 @@ export const FIELDS = {
   pickups: { shape: 'point', group: 'items', label: 'Pickup', road: 'both', sub: 'type', help: 'A pickup in a lane (or on a shoulder).',
     settings: { type: pick('Type', PICKUP_TYPES, { required: true, init: 'turbo' }), lane: lane('Lane', { shoulders: true, required: true }) } },
   obstacles: { shape: 'point', group: 'items', label: 'Obstacle', road: 'both', sub: 'kind', help: 'Something on the road that explodes when hit.',
-    settings: { lane: lane('Lane', { shoulders: true, required: true }), kind: pick('Kind', OBSTACLE_KINDS, { default: 'barrier' }), drift: pick('Darts about', ['dart'], { help: 'It darts about its spot at random.' }) } },
+    settings: { lane: lane('Lane', { shoulders: true, required: true, halves: true }), kind: pick('Kind', OBSTACLE_KINDS, { default: 'barrier' }), drift: pick('Darts about', ['dart'], { help: 'It darts about its spot at random.' }),
+      span: num('Lanes wide', { min: 1, max: 4, step: 0.5, help: 'A barrier only: this many lanes wide, from its lane rightwards. One block, one hit.' }) } },
   targets: { shape: 'point', group: 'items', label: 'TANK RAGE target', road: 'both', help: 'A target beside the road. How it stands is the theme\'s, unless set here.',
     settings: { side: side(), offset: num('Beyond the pavement (m)', { min: -4, max: 30, step: 0.1 }), height: num('Ring height (m)', { min: 1.5, max: 14, step: 0.1 }),
       style: pick('Style', C.target.styles), base: num('Wall top (m)', { min: 0, max: 12, step: 0.1 }), arm: num('Gantry arm (m)', { min: 0.5, max: 8, step: 0.1 }), beam: flag('Beam of light') } },
@@ -624,7 +626,7 @@ const checkSetting = (S, v, name, out = []) => {
     case 'text': if (typeof v !== 'string') bad('text'); break;
     case 'colour': if (S.numeric ? !(Number.isInteger(v) && v >= 0 && v <= 0xffffff) : !(typeof v === 'string' && /^#[0-9a-f]{3,8}$/i.test(v))) bad(S.numeric ? 'a colour, as a number' : 'a colour, as #rrggbb'); break;
     case 'choice': if (!S.choices.some(c => choiceValue(c) === v)) bad('"' + v + '" is not one of ' + S.choices.map(choiceValue).join(', ')); break;
-    case 'lane': if (!(Number.isInteger(v) && v >= 0 && v < 16) && !(S.shoulders && (v === 'left' || v === 'right'))) bad('a lane number' + (S.shoulders ? ', or left / right (a shoulder)' : '')); break;
+    case 'lane': if (!((S.halves ? Number.isInteger(v * 2) : Number.isInteger(v)) && v >= 0 && v < 16) && !(S.shoulders && (v === 'left' || v === 'right'))) bad('a lane number' + (S.halves ? ' (or a lane line, x.5, for a wide barrier)' : '') + (S.shoulders ? ', or left / right (a shoulder)' : '')); break;
     case 'lanes':
       if (!Array.isArray(v) || !v.length || !v.every(l => Number.isInteger(l) && l >= 0 && l < 16)) bad('a list of lane numbers');
       else if (S.span && (v.length !== 2 || v[0] > v[1])) bad('[first, last]');
