@@ -42,14 +42,15 @@ try {
   const { makeShowCar } = await load('render/showcar.js'), { CARS, LEVEL_CARS, SECRET_CARS, superOf } = await load('cars.js'), { findZFights } = await load('render/zfight.js');
   const { showroomCars } = await load('showroomData.js'), { IDEA_CARS } = await load('ideas.js');
   const fleet = [...new Set([...showroomCars(), ...Object.values(LEVEL_CARS), ...Object.values(SECRET_CARS), ...IDEA_CARS, ...CARS.map(superOf).filter(Boolean)])];
-  const D = RM.RIM_DESIGNS, designs = D.filter(d => d.kind);
+  const D = RM.RIM_DESIGNS, designs = D.filter(d => d.kind === 'speed'), spinners = D.filter(d => d.kind === 'spin');
 
   // ---- names and kinds ----
-  const named = [...D.map(d => d.name), ...WC.WHEEL_SETS.map(s => s.name)];
-  check(!named.some(n => /spinner/i.test(n)), 'no rim and no wheel set is named a spinner (' + designs.map(d => d.name).join(', ') + ')');
-  check(designs.every(d => d.kind === 'speed') && !('SPIN_RATE' in RM), 'every rim design turns with the car (kind speed), and no fixed-pace rate is left');
-  check(designs.every(d => WC.WHEEL_SETS.some(s => s.rim === d.id)), 'every design is in a wheel set: ' + WC.WHEEL_SETS.filter(s => s.rim).map(s => s.name).join(', '));
-  check(Math.max(...WC.WHEEL_SETS.map(s => s.name.length)) <= 22 && designs.every(d => d.name.length <= 12), 'names short enough for a chip on a phone (longest set name ' + Math.max(...WC.WHEEL_SETS.map(s => s.name.length)) + ' letters)');
+  // (since the three-part wheel set, CHECKLIST 385: the SPINNERS are back as their own kind, with new ids; every RIM still turns with the car)
+  const named = [...designs.map(d => d.name), ...WC.WHEEL_SETS.filter(s => designs.some(d => d.id === s.rim)).map(s => s.name)];
+  check(!named.some(n => /spinner/i.test(n)), 'no rim and no rim set is named a spinner (' + designs.map(d => d.name).join(', ') + ')');
+  check(D.slice(1).every(d => d.kind === 'speed' || d.kind === 'spin') && spinners.length === 2 && spinners.every(d => /spinner/i.test(d.name) && !['blade3', 'twinspin'].includes(d.id)) && RM.SPIN_RATE === 6, 'every rim turns with the car (kind speed); the spinners (' + spinners.map(d => d.id + ' "' + d.name + '"').join(', ') + ') are their own kind, at SPIN_RATE ' + RM.SPIN_RATE + ' rad/s, new ids (blade3 / twinspin stay the rims)');
+  check([...designs, ...spinners].every(d => WC.WHEEL_SETS.some(s => s.rim === d.id)), 'every design is in a wheel set: ' + WC.WHEEL_SETS.filter(s => s.rim).map(s => s.name).join(', '));
+  check(Math.max(...WC.WHEEL_SETS.map(s => s.name.length)) <= 22 && D.every(d => d.name.length <= 13), 'names short enough for a chip on a phone (longest set name ' + Math.max(...WC.WHEEL_SETS.map(s => s.name.length)) + ' letters)');
   check(['pumpkin', 'candycane'].every(id => D.some(d => d.id === id && d.own)), 'the Pumpkin and the Candy cane are there, with their own colours');
 
   // ---- the old ids ----
@@ -118,6 +119,12 @@ try {
     check(stop.every(x => Math.abs(x.per) < 1e-6) && show.every(x => near(x.per, R.IDLE_RATE / 60)),
       d.name + ': a car stopped in the game stands still; on show (no speed) it only idles at ' + R.IDLE_RATE + ' rad/s');
     check(fast.every(x => near(x.per, R.CLAMP * x.gap) && x.level === R.BLUR.length - 1 && x.blur), d.name + ': at 45 m/s clamped to ' + R.CLAMP + ' of its gap a frame, the blur disc on');
+  }
+  for (const d of spinners) {
+    const { m } = meshesOf(commuter, d.id);
+    const stop = run(m, 0, 30), move = run(m, 3, 30), back = run(m, -3, 30), show = run(m, null, 30);
+    const near = (a, b) => Math.abs(a - b) < 0.002 * Math.abs(b) + 1e-4, rate = RM.SPIN_RATE / 60;
+    check(stop.length > 0 && [stop, move, back, show].every(rs => rs.every(x => near(x.per, rate))), d.name + ': a spinner turns at ' + RM.SPIN_RATE + ' rad/s stopped, moving, reversing and on show (' + stop[0].per.toFixed(4) + ' rad a frame)');
   }
   W.setWheelSet('stock');
 } catch (e) { failures++; console.log('  FAIL  ' + (e && e.stack || e)); }

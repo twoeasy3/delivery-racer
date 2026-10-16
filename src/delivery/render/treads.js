@@ -250,17 +250,19 @@ const blurMaterials = (hex) => {
 const Z = new THREE.Vector3(0, 0, 1), axis = new THREE.Vector3(), q = new THREE.Quaternion(), pos = new THREE.Vector3(), scl = new THREE.Vector3(), pose = new THREE.Matrix4();
 const toModel = new THREE.Matrix4(), m1 = new THREE.Matrix4(), v3 = new THREE.Vector3(), box3 = new THREE.Box3();
 const ray = new THREE.Raycaster(); const o3 = new THREE.Vector3(), e3 = new THREE.Vector3(), d3 = new THREE.Vector3();
-// THE ROOM over a tyre at one place, from a point inside it (o: 0.8 R) out past where a tread would reach (e), with the tyre's surface at
-// `skin` along the way: every surface met, either facing; null if one lies within the tyre's own outer band (o to the skin: the car's
-// bodywork already cuts into the stock tyre there, as a sill or an arch can, and a tread goes in with the tyre); else how far past the
-// skin the nearest one is (Infinity: nothing). Shared with scripts/.treads-check.mjs so the check measures pokes the same way.
-export const clearance = (others, o, e, skin) => {
+// FOR A CHECK (scripts/.treads-check.mjs measures pokes with rays, independently of roomFor's triangles, by the same rules): the surfaces
+// met from a point inside a tyre (o: 0.8 R) out to a point of its tread (e), the tyre's surface `skin` along the way, either facing, a face
+// square to the axle (`axle`, world) let be; null if one lies within the tyre's own outer band (bodywork that already cuts into the stock
+// tyre); else how far past the skin the nearest one is (Infinity: none).
+const nm = new THREE.Matrix3(), fn = new THREE.Vector3();
+export const clearance = (others, o, e, skin, axle = null) => {
   cd3.subVectors(e, o); const len = cd3.length(); cd3.normalize();
   let least = Infinity;
+  const square = (h) => axle && h.face && Math.abs(fn.copy(h.face.normal).applyMatrix3(nm.getNormalMatrix(h.object.matrixWorld)).normalize().dot(axle)) > 0.995;
   ray.set(o, cd3); ray.near = 0; ray.far = len;
-  for (const h of ray.intersectObjects(others, false)) least = Math.min(least, h.distance);
+  for (const h of ray.intersectObjects(others, false)) if (!square(h)) least = Math.min(least, h.distance);
   ray.set(e, cd3.negate()); ray.far = len;
-  for (const h of ray.intersectObjects(others, false)) least = Math.min(least, len - h.distance);
+  for (const h of ray.intersectObjects(others, false)) if (!square(h)) least = Math.min(least, len - h.distance);
   if (least <= skin + 0.0005) return null;
   return least - skin;
 };
@@ -296,8 +298,60 @@ const ownTread = (model, t, meshes) => {
   }
   return out;
 };
+// ---- the room over a tyre, from the triangles of the parts near it (no rays: exact, and cheap) ----
+// trianglesNear: every triangle of those meshes, in the tyre's own terms: [axial, across, up] from its centre, in the model's units
+const tv = new THREE.Vector3();
+const trianglesNear = (meshes, t) => {
+  const out = [];
+  for (const m of meshes) {
+    const g = m.geometry, p = g.attributes.position, idx = g.index, n = idx ? idx.count : p.count;
+    m1.multiplyMatrices(toModel, m.matrixWorld);
+    const pt = (i) => { tv.fromBufferAttribute(p, idx ? idx.getX(i) : i).applyMatrix4(m1).sub(t.centre); return t.axleX ? [tv.x, tv.z, tv.y] : [tv.z, tv.x, tv.y]; };
+    for (let i = 0; i + 2 < n; i += 3) {
+      const a = pt(i), b = pt(i + 1), c = pt(i + 2);
+      const far = 1.4 * t.R + 0.02; // (a quick cut: wholly beyond the tyre's reach on one side)
+      if (Math.min(a[1], b[1], c[1]) > far || Math.max(a[1], b[1], c[1]) < -far || Math.min(a[2], b[2], c[2]) > far || Math.max(a[2], b[2], c[2]) < -far) continue;
+      if (Math.min(a[0], b[0], c[0]) > t.half + 0.02 || Math.max(a[0], b[0], c[0]) < -t.half - 0.02) continue;
+      out.push([a, b, c]);
+    }
+  }
+  return out;
+};
+const squareToAxle = ([a, b, c]) => {
+  const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+  const n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]], l = Math.hypot(...n);
+  return l > 0 && Math.abs(n[0]) / l > 0.995;
+};
+// a polygon clipped to where f(p) >= 0
+const clip = (poly, f) => {
+  const out = [];
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i], b = poly[(i + 1) % poly.length], fa = f(a), fb = f(b);
+    if (fa >= 0) out.push(a);
+    if ((fa >= 0) !== (fb >= 0)) { const k = fa / (fa - fb); out.push([a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]); }
+  }
+  return out;
+};
+// the part of a triangle within the slab z0..z1 across and between heights lo..hi (up, from the axle): how near to the axle and how far
+// from it it comes (the nearest: the distance from the axle to the clipped polygon seen along the axle; 0 if it goes round it), or null
+const shell = (tri, z0, z1, lo, hi) => {
+  let poly = clip(tri, p => p[0] - z0);
+  if (poly.length) poly = clip(poly, p => z1 - p[0]);
+  if (poly.length) poly = clip(poly, p => p[2] - lo);
+  if (poly.length && hi !== Infinity) poly = clip(poly, p => hi - p[2]);
+  if (poly.length < 3) return null;
+  let max = 0, min = Infinity, inside = true, sign = 0;
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i], b = poly[(i + 1) % poly.length];
+    max = Math.max(max, Math.hypot(a[1], a[2]));
+    const ex = b[1] - a[1], ey = b[2] - a[2], l2 = ex * ex + ey * ey, k = l2 ? Math.max(0, Math.min(1, -(a[1] * ex + a[2] * ey) / l2)) : 0;
+    min = Math.min(min, Math.hypot(a[1] + ex * k, a[2] + ey * k));
+    const cr = ex * -a[2] - ey * -a[1]; // (which side of the edge the axle is)
+    if (Math.abs(cr) > 1e-12) { const sg = Math.sign(cr); if (!sign) sign = sg; else if (sg !== sign) inside = false; }
+  }
+  return { min: inside && sign ? 0 : min, max };
+};
 // per tyre: t.R (true radius), t.ownTread, t.treadRoom (m), t.tz (its tread's extent across); per axle t.axleRoom (in R): the least of the axle
-export const RAYS = 72; // round the tyre (each at points 2.5 cm apart across its tread; only parts near the tyre are tried)
 const roomFor = (model, found) => {
   model.updateMatrixWorld(true);
   toModel.copy(model.matrixWorld).invert();
@@ -324,44 +378,31 @@ const roomFor = (model, found) => {
   for (const t of found.rimInfo) {
     t.R = trueRadius(t);
     sphere.center.copy(t.centre).applyMatrix4(model.matrixWorld); sphere.radius = (t.R * 1.35 + t.half) * scale; // (only the parts near this tyre are tried)
-    const nearby = meshes.filter(m => boxes.get(m).intersectsSphere(sphere)), nearSides = nearby.filter(m => !rubberAll.has(m));
+    const nearby = meshes.filter(m => boxes.get(m).intersectsSphere(sphere) && !rubberAll.has(m));
+    t.ownTread = ownTread(model, t, meshes);
+    const mine = new Set([...t.ownTread, ...t.rubber]);
+    const tris = trianglesNear(nearby.filter(m => !mine.has(m)), t);
     // beside the tread: bodywork standing close to its side walls (a skirt or a mudguard's side within the tyre's width, inside 8 mm of
-    // a wall: the z-fight finder's 4 mm and some): that wall comes in until it is clear (at most a third of the tread's width)
+    // a wall: the z-fight finder's 4 mm and some) brings that wall in until it is clear (the tread kept to 70 % of its width or more)
     for (const end of [0, 1]) {
       for (let tries = 0; tries < 4; tries++) {
-        const z = t.tz[end], out = end ? 1 : -1;
-        let near = false;
-        for (let i = 0; i < 16 && !near; i++) for (const rk of [0.97, 1.03, 1.08]) {
-          const a = i / 16 * TAU, up = Math.sin(a) * rk * t.R, across = Math.cos(a) * rk * t.R;
-          const p = (zz) => (t.axleX ? [zz, up, across] : [across, up, zz]);
-          const [ax, ay, az] = p(z - out * 0.002), [bx, by, bz] = p(z + out * 0.008);
-          o3.set(t.centre.x + ax, t.centre.y + ay, t.centre.z + az).applyMatrix4(model.matrixWorld);
-          e3.set(t.centre.x + bx, t.centre.y + by, t.centre.z + bz).applyMatrix4(model.matrixWorld);
-          d3.subVectors(e3, o3); const len = d3.length(); d3.normalize();
-          if (nearest(nearSides, o3, d3, len) !== null || nearest(nearSides, e3, d3.negate(), len) !== null) { near = true; break; }
-        }
+        const out = end ? 1 : -1, z0 = t.tz[end] - out * 0.002, z1 = t.tz[end] + out * 0.008;
+        const near = tris.some(tri => { const s = shell(tri, Math.min(z0, z1), Math.max(z0, z1), -0.7 * t.R, Infinity); return s && s.min < t.R * (1 + hMax) && s.max > BASE * t.R; });
         if (!near || t.tz[1] - t.tz[0] < (t.half - EDGE) * SPAN * 1.4) break;
         t.tz[end] -= out * 0.008;
       }
     }
-    t.ownTread = ownTread(model, t, meshes);
-    const mine = new Set([...t.ownTread, ...t.rubber]);
-    const others = nearby.filter(m => !mine.has(m));
+    // the room over the tread: every part's triangles within the tread's width, round the tyre bar the floor's quarter; a face square to
+    // the axle (a body side the wheel is set into) is let be: the tread goes into it as the tyre does, edge on, nothing shows through
     let room = Infinity;
-    const nz = Math.max(3, Math.ceil((t.tz[1] - t.tz[0]) / 0.025) + 1); // (across the tread, every 2.5 cm or closer)
-    for (let i = 0; i < RAYS; i++) {
-      const a = i / RAYS * TAU; // (0: forward; round over the top and down the back; the bottom quarter is the floor's)
-      const y = Math.sin(a), x = Math.cos(a);
-      if (y < -0.7) continue;
-      for (let zi = 0; zi < nz; zi++) {
-        const zk = zi / (nz - 1), z = t.tz[0] + zk * (t.tz[1] - t.tz[0]);
-        const at = (k) => { const across = x * k, up = y * k; return t.axleX ? [z, up, across] : [across, up, z]; };
-        const [ox, oy, oz] = at(t.R * 0.8), [ex, ey, ez] = at(t.R * (1 + hMax) + FIT_GAP * 2);
-        o3.set(t.centre.x + ox, t.centre.y + oy, t.centre.z + oz).applyMatrix4(model.matrixWorld);
-        e3.set(t.centre.x + ex, t.centre.y + ey, t.centre.z + ez).applyMatrix4(model.matrixWorld);
-        const over = clearance(others, o3, e3, 0.2 * t.R * scale);
-        if (over === null) { t.cut = (t.cut || 0) + 1; continue; } // (the car's own bodywork cuts into the stock tyre here: the tread goes in with it)
-        room = Math.min(room, over / scale);
+    for (const tri of tris) {
+      if (squareToAxle(tri)) continue;
+      for (const [lo, hi, over] of [[0.35 * t.R, Infinity, true], [-0.7 * t.R, 0.35 * t.R, false]]) {
+        const s = shell(tri, t.tz[0], t.tz[1], lo, hi);
+        if (!s || s.max <= t.R) continue; // (nothing there, or wholly inside the tyre: hidden)
+        if (s.min > t.R) room = Math.min(room, s.min - t.R);
+        else if (over) room = 0; // (over the tyre, an arch dips into it: a tread turning past would show through it)
+        // (low down, a sill or a bumper run through the stock tyre: the tread goes in with the tyre)
       }
     }
     t.treadRoom = room; // (m over the tyre's tread before bodywork; Infinity: open)
