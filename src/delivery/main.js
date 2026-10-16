@@ -108,6 +108,13 @@ if (params.has('freetry')) for (const e of Events.specials) if (e.days) Events.s
 // A visit with any of these is a test, not play: it lends cars and opens levels, so none of it is saved
 // (Progress.noSave: the save stays as it was before the visit, whatever is delivered, bought or counted in it)
 if (['autostart', 'hidden', 'test', 'edited', 'pick', 'car', 'ghost', 'mystery', 'theme', 'beaten', 'owns', 'event', 'unlockall'].some(key => params.get(key) !== null)) Progress.noSave = true;
+// ?lanescrub=2: the lane-change scrub with the accelerator held (CONFIG.trueSpeed.driven) that many times as strong for the
+// visit, to try a feel (0: as before CHECKLIST 421). A test, not play: nothing saved and no replay recorded (a replay
+// played back without it would not drive the same)
+if (params.get('lanescrub') !== null && Number.isFinite(Number(params.get('lanescrub')))) {
+  CONFIG.trueSpeed.driven.tune = Math.max(0, Number(params.get('lanescrub')));
+  Progress.noSave = true;
+}
 // ?beaten=expressway,back-roads:evil,farm:both and ?owns=lovebus,wagon&money=500: a state to look at (the level tiers:
 // medals are best times; nothing is saved). A level listed alone is a Good medal.
 if (params.get('beaten')) {
