@@ -359,27 +359,39 @@ const treadTexture = (id, dir, lite) => {
   }
   return texes.get(key);
 };
-// the shared geometry of a design in one rubber colour (hex) and variant
+// THE BLOCKS of a design and variant (no colour: the tyre's tint is the material's; vertex colours are the shading, 1 on the tops, SIDE on
+// the walls, a stud's steel over 1 so it stays bright on any tint), uv from where each point is round and across (the band's texture: a
+// block's top samples its own footprint there). Shared by every tyre and rubber colour.
+const SIDE = 0.45, STUD = STEEL.map(v => v / DARK_TINT);
 export const treadGeometry = (id, hex, { k = 1, lite = false, dir = 1 } = {}) => {
   const d = treadById(id);
-  const key = id + ':' + hex + ':' + k + (lite ? ':lite' : '') + (d.dir ? ':' + dir : '');
+  const key = id + ':' + k + (lite ? ':lite' : '') + (d.dir ? ':' + dir : '');
   if (!geos.has(key)) {
-    const pos = [], col = [], tint = tintOf(hex, d), top = times(tint, PATTERN), side = times(tint, PATTERN * 0.45); // (the tops the band's blocks' grey, the sides in shade)
-    BUILD[id](pos, col, { rows: lite ? LITE_ROWS[id] : d.n, h: d.h * k, pin: (d.pin || 0) * Math.max(k, 0.7), dir, top, side });
+    const rows = lite ? LITE_ROWS[id] : d.n, pos = [], col = [], top = [1, 1, 1], side = [SIDE, SIDE, SIDE];
+    BUILD[id](pos, col, { rows, h: d.h * k, pin: (d.pin || 0) * Math.max(k, 0.7), dir, top, side });
+    const steelSide = times(STEEL, 0.7), uv = [];
+    for (let i = 0; i < col.length; i += 3) {
+      if (col[i] === STEEL[0] && col[i + 1] === STEEL[1]) col.splice(i, 3, ...STUD); else if (col[i] === steelSide[0] && col[i + 1] === steelSide[1]) col.splice(i, 3, ...times(STUD, 0.7));
+    }
+    for (let i = 0; i < pos.length; i += 9) { // (each triangle's angles unwrapped from its first point's, so none straddles the seam)
+      const a0 = Math.atan2(pos[i + 1], pos[i]);
+      for (let j = 0; j < 3; j++) { let a = Math.atan2(pos[i + j * 3 + 1], pos[i + j * 3]); while (a - a0 > Math.PI) a -= TAU; while (a - a0 < -Math.PI) a += TAU; uv.push(a / TAU * rows / 2, pos[i + j * 3 + 2] + 0.5); }
+    }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
     g.computeVertexNormals(); g.computeBoundingBox(); g.computeBoundingSphere();
     g.userData.shared = true;
     // the lowest point of the blocks' tops (in R): a flat top is lower in its middle than at its corners (the pattern band stays FIT_GAP under it)
     let low = Infinity;
-    for (let i = 0; i < pos.length; i += 9) if (col[i] === top[0] && col[i + 1] === top[1]) low = Math.min(low, Math.hypot((pos[i] + pos[i + 3] + pos[i + 6]) / 3, (pos[i + 1] + pos[i + 4] + pos[i + 7]) / 3));
+    for (let i = 0; i < pos.length; i += 9) if (col[i] === 1 && col[i + 1] === 1) low = Math.min(low, Math.hypot((pos[i] + pos[i + 3] + pos[i + 6]) / 3, (pos[i + 1] + pos[i + 4] + pos[i + 7]) / 3));
     g.userData.topLow = low === Infinity ? 1 + d.h * k : low;
     geos.set(key, g);
   }
   return geos.get(key);
 };
-export const treadTriangles = (id, opts) => treadGeometry(id, 0x1b1b1d, opts).attributes.position.count / 3;
+export const treadTriangles = (id, opts) => treadGeometry(id, null, opts).attributes.position.count / 3; // (the blocks; the band and rings: SKIN_SEG x 2 and SKIN_SEG x 2 a face)
 export const treadRows = (id, lite = false) => (lite ? LITE_ROWS[id] : treadById(id).n);
 // the blur band: an open tube just over the blocks' tops (its flattest facet 2 % of R over them) and two side rings
 const BAND_SEG = 20;
@@ -401,7 +413,15 @@ const bandGeometry = (id, k) => {
 // than the lowest step's graze), the texture wrapped round it, two rows a repeat. SKIN_SEG facets: a prime, so no facet of it lies
 // parallel to one of a tyre's (10 to 48 facets) and 3 to 5 mm off it.
 export const SKIN_M = [0.003, 0.0045], SKIN_SEG = 47;
+const BULGE = 1.03 / Math.cos(Math.PI / 47) - 1.03; // (in R: how much higher the band's corners stand than its facets' middles)
 export const skinRadius = (R) => 1 + Math.min(SKIN_M[1], Math.max(SKIN_M[0], 0.012 * R)) / R;
+const plainGeometry = (pos, nor, uv) => {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(new Array(pos.length).fill(1), 3)); // (white: the tint and the texture colour it)
+  g.computeBoundingBox(); g.computeBoundingSphere(); g.userData.shared = true;
+  return g;
+};
 const skinGeometry = (rows, rb) => {
   const key = 'skin:' + rows + ':' + rb.toFixed(3);
   if (!geos.has(key)) {
@@ -411,10 +431,7 @@ const skinGeometry = (rows, rb) => {
       const P = (a, z) => [r * Math.cos(a), r * Math.sin(a), z];
       for (const [a, z, u, v] of [[a0, -0.5, u0, 0], [a1, -0.5, u1, 0], [a1, 0.5, u1, 1], [a0, -0.5, u0, 0], [a1, 0.5, u1, 1], [a0, 0.5, u0, 1]]) { pos.push(...P(a, z)); uv.push(u, v); nor.push(Math.cos(a), Math.sin(a), 0); }
     }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-    g.computeBoundingBox(); g.computeBoundingSphere(); g.userData.shared = true;
-    geos.set(key, g);
+    geos.set(key, plainGeometry(pos, nor, uv));
   }
   return geos.get(key);
 };
@@ -434,9 +451,22 @@ const faceGeometry = (rows, sign) => {
       const order = sign < 0 ? quad : [quad[0], quad[2], quad[1], quad[3], quad[5], quad[4]]; // (wound to face out: the quad as listed faces -z)
       for (const [a, r, u] of order) { pos.push(...P(a, r)); uv.push(u, v(r)); nor.push(0, 0, sign); }
     }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-    g.computeBoundingBox(); g.computeBoundingSphere(); g.userData.shared = true;
+    geos.set(key, plainGeometry(pos, nor, uv));
+  }
+  return geos.get(key);
+};
+// ONE geometry for a tyre's whole tread: the blocks (k: their height step; none: no room), the band (rb: its radius in R; none), and a
+// shoulder ring per face ([z in the mesh's frame, which way it faces]); shared by every tyre laid out the same
+export const tyreTreadGeometry = (id, { k = null, lite = false, dir = 1, rb = null, faces = [] } = {}) => {
+  const d = treadById(id), rows = lite ? LITE_ROWS[id] : d.n;
+  const key = 'tyre:' + id + ':' + k + (lite ? ':lite' : '') + ':' + (d.dir ? dir : 1) + ':' + rb + ':' + faces.map(f => f.join('/')).join(',');
+  if (!geos.has(key)) {
+    const parts = [];
+    if (k) parts.push(treadGeometry(id, null, { k, lite, dir }));
+    if (rb) parts.push(skinGeometry(rows, rb));
+    for (const [z, sign] of faces) parts.push(faceGeometry(rows, sign).clone().translate(0, 0, z));
+    const g = parts.length ? mergeGeometries(parts.map(x => { const c = x.clone(); for (const n of Object.keys(c.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(n)) c.deleteAttribute(n); return c; }), false) : null;
+    if (g) { g.computeBoundingBox(); g.computeBoundingSphere(); g.userData.shared = true; g.userData.parts = { blocks: !!k, band: !!rb, rings: faces.length }; }
     geos.set(key, g);
   }
   return geos.get(key);
@@ -447,23 +477,18 @@ const skinMats = new Map();
 const skinMaterial = (id, dir, lite, hex) => {
   const d = treadById(id), tint = tintOf(hex, d), key = id + ':' + dir + (lite ? ':lite' : '') + ':' + tint.map(v => v.toFixed(3)).join(',');
   if (!skinMats.has(key)) {
-    const m = new THREE.MeshLambertMaterial({ color: new THREE.Color(...tint), map: treadTexture(id, dir, lite) });
+    const m = new THREE.MeshLambertMaterial({ color: new THREE.Color(...tint), map: treadTexture(id, dir, lite), vertexColors: true });
     m.userData.shared = true; m.userData.wheelHub = true; skinMats.set(key, m);
   }
   return skinMats.get(key);
 };
 const softMaterial = (hex, d) => {
   const tint = tintOf(hex, d), key = 'soft:' + tint.map(v => v.toFixed(3)).join(',');
-  if (!skinMats.has(key)) { const m = new THREE.MeshLambertMaterial({ color: new THREE.Color(...times(tint, (PATTERN + GROOVE) / 2)) }); m.userData.shared = true; m.userData.wheelHub = true; skinMats.set(key, m); }
+  if (!skinMats.has(key)) { const m = new THREE.MeshLambertMaterial({ color: new THREE.Color(...times(tint, (PATTERN + GROOVE) / 2)), vertexColors: true }); m.userData.shared = true; m.userData.wheelHub = true; skinMats.set(key, m); }
   return skinMats.get(key);
 };
 
-// ---- the materials: ONE for every tread (white: the colours are in the vertices); the blur band one per rubber colour and step ----
-let mat = null;
-export const treadMaterial = () => {
-  if (!mat) { mat = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true }); mat.userData.shared = true; mat.userData.wheelHub = true; }
-  return mat;
-};
+// ---- the blur band's materials: one per rubber colour and step ----
 const blurs = new Map();
 const blurMaterials = (hex) => {
   if (!blurs.has(hex)) {
@@ -649,7 +674,7 @@ const roomFor = (model, found) => {
     // the PATTERN BAND's lift over the tyre (m): SKIN_M, or less where a part over the tyre is closer than that plus FIT_GAP (a face of it
     // within 4 mm of the band would z-fight); under 2 mm: no band on that tyre. Where bodywork dips into the tyre the band goes in with it, as
     // the tyre itself does (only the parts that stay outside the tyre count)
-    t.skinLift = Math.min((skinRadius(t.R) - 1) * t.R, near - FIT_GAP);
+    t.skinLift = Math.min((skinRadius(t.R) - 1) * t.R, near - FIT_GAP - BULGE * t.R);
     // the SHOULDER RING on each outer face: nothing of the bodywork or the wheel's own parts within a few mm of the ring's plane over its
     // annulus, and no twin tyre against that face
     t.faceOk = {};
@@ -664,6 +689,16 @@ const roomFor = (model, found) => {
   for (const ax of axles) { const room = Math.min(...ax.tyres.map(t => t.treadRoom / t.R)); for (const t of ax.tyres) t.axleRoom = room; } // (in R)
   found.treadLite = found.rimInfo.length > LITE_FROM;
   found.treadRoomChecked = true;
+};
+// the room is measured AT REST: on the Cosmetics screen a tread is put on the live model, whose suspension (render/carsuspension.js) may be
+// mid-bounce, its tyres and low parts held or squashed by matrices of their own; those are set back to their rest pose for the measure
+const atRest = (model, fn) => {
+  const s = model.userData.suspension;
+  if (!s || !s.active) return fn();
+  const nodes = [...s.planted, ...s.squash.map(p => p.node)], saved = nodes.map(n => n.matrix.clone());
+  for (const n of nodes) n.updateMatrix();
+  model.updateMatrixWorld(true);
+  try { return fn(); } finally { nodes.forEach((n, i) => n.matrix.copy(saved[i])); model.updateMatrixWorld(true); }
 };
 // how a design fits a tyre: the height step k (LOWS) that fits under what is over it (the lowest may graze it by GRAZE), or null
 const fitOf = (t, d) => t.axleRoom <= 0 ? null : LOWS.find((k, i) => k >= (d.kMin || 0) && (t.axleRoom >= treadHeight(d, k) + FIT_GAP / t.R || (i === LOWS.length - 1 && t.axleRoom >= treadHeight(d, k) - GRAZE / t.R))) || null;
@@ -685,7 +720,7 @@ export const addTreads = (model, worn = true) => {
   if (!found.rimInfo.some(t => resolveTread(found.carId, t.axle) !== 'none')) return 0;
   model.updateMatrixWorld(true);
   toModel.copy(model.matrixWorld).invert();
-  if (!found.treadRoomChecked) roomFor(model, found);
+  if (!found.treadRoomChecked) atRest(model, () => roomFor(model, found));
   for (const t of found.rimInfo) {
     const d = treadById(resolveTread(found.carId, t.axle));
     if (!d.n) continue;
@@ -710,24 +745,19 @@ export const addTreads = (model, worn = true) => {
     pose.compose(pos, q, scl.set(t.R, t.R, W)).premultiply(t.toTyre);
     const rows = treadRows(d.id, lite), sharp = skinMaterial(d.id, dirKey, lite, hex), soft = softMaterial(hex, d);
     // the band: under raised blocks, FIT_GAP or more under their tops (a top close over it would z-fight); none if under 2 mm
-    const blocks = fit ? treadGeometry(d.id, hex, { k: fit, lite, dir: side }) : null;
-    const lift = fit ? Math.min(t.skinLift, (blocks.userData.topLow - 1) * t.R - FIT_GAP) : t.skinLift;
-    const skinGeo = lift >= 0.002 ? skinGeometry(rows, Math.round((1 + lift / t.R) * 1000) / 1000) : null;
-    if (!fit && !skinGeo && !(t.outer ? t.faceOk[t.outer] : t.faceOk[-1] || t.faceOk[1])) continue; // (no blocks, no band, no ring: stock)
-    // which way round is forward at the top, in the mesh's own frame: the rim's sense (render/rims.js turns by side * angle)
-    const mesh = fit ? new THREE.Mesh(blocks, treadMaterial()) : skinGeo ? new THREE.Mesh(skinGeo, sharp) : new THREE.Object3D();
+    const blocks = fit ? treadGeometry(d.id, null, { k: fit, lite, dir: side }) : null;
+    const lift = fit ? Math.min(t.skinLift, (blocks.userData.topLow - 1 - BULGE) * t.R - FIT_GAP) : t.skinLift;
+    const rb = lift >= 0.002 ? Math.round((1 + lift / t.R) * 1000) / 1000 : null;
+    // the shoulder rings, on the outer face(s) with room (a centre wheel: both), in the mesh's frame: its z is the axle times `side`
+    const faces = (t.outer ? [t.outer] : [-1, 1]).filter(f => t.faceOk[f]).map(f => [Math.round(side * (f * (t.half + FACE_GAP) - mid) / W * 1000) / 1000, side * f]);
+    const geo = tyreTreadGeometry(d.id, { k: fit, lite, dir: side, rb, faces });
+    if (!geo) continue; // (no blocks, no band, no ring: stock)
+    // ONE mesh a tyre (one draw call, as before): the blocks, the band and the rings in one geometry, one material (the pattern's texture,
+    // the tint, the shading in vertex colours)
+    const mesh = new THREE.Mesh(geo, sharp);
     pose.decompose(mesh.position, mesh.quaternion, mesh.scale);
     mesh.userData.wheelRing = true;
-    const skins = [];
-    if (fit && skinGeo) { const s = new THREE.Mesh(skinGeo, sharp); s.userData.wheelRing = true; mesh.add(s); skins.push(s); } else if (skinGeo) skins.push(mesh);
-    // the shoulder rings, on the outer face(s) with room (a centre wheel: both), in the mesh's frame: its z is the axle times `side`
-    for (const f of t.outer ? [t.outer] : [-1, 1]) {
-      if (!t.faceOk[f]) continue;
-      const ring = new THREE.Mesh(faceGeometry(rows, side * f), sharp);
-      ring.position.z = side * (f * (t.half + FACE_GAP) - mid) / W;
-      ring.userData.wheelRing = true; ring.userData.treadFace = f;
-      mesh.add(ring); skins.push(ring);
-    }
+    const skins = [mesh];
     let blur = null, bl = null;
     if (fit) {
       bl = blurMaterials(hex);
@@ -736,7 +766,7 @@ export const addTreads = (model, worn = true) => {
       mesh.add(blur);
     }
     mesh.userData.tread = { id: d.id, side, fit, lite, rows, q0: mesh.quaternion.clone(), a: 0, f: 0, level: 0, gap: TAU / rows, r: t.r, tyre, x0: tyre.rotation.x, rolls: !!model.userData.rollsWheels, blur, blurs: bl, skins, sharp, soft };
-    if (ghost) for (const part of [mesh, ...mesh.children]) if (part.isMesh) { part.userData.solidMat = part.material; part.material = tyre.material; }
+    if (ghost) for (const part of [mesh, ...mesh.children]) { part.userData.solidMat = part.material; part.material = tyre.material; }
     tyre.add(mesh);
     found.treads.list.push(mesh);
     for (const part of t.ownTread || []) if (part.visible) { part.visible = false; found.treads.hidden.push(part); }
@@ -750,7 +780,7 @@ export const treadStatus = (model) => {
   if (!found) return 'none';
   if (found.rimSkip || found.legend) return 'skip';
   if (!found.rimInfo || !found.rimInfo.length) return 'none';
-  if (!found.treadRoomChecked) roomFor(model, found);
+  if (!found.treadRoomChecked) atRest(model, () => roomFor(model, found));
   if (found.rimInfo.some(t => t.R >= MIN_R && TREAD_DESIGNS.some(d => d.n && fitOf(t, d)))) return 'ok';
   return found.rimInfo.some(t => t.R >= MIN_R) ? 'flat' : 'none';
 };

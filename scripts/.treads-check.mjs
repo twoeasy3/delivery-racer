@@ -58,7 +58,7 @@ try {
     const full = TR.treadTriangles(d.id), lite = TR.treadTriangles(d.id, { lite: true }), low = TR.treadTriangles(d.id, { k: 0.3 });
     check(full <= BUDGET && lite <= full && low === full, d.name + ': ' + full + ' triangles a tyre (lite, on a car of more than ' + TR.LITE_FROM + ' tyres or a small tyre: ' + lite + '), ' + d.n + ' rows round (pitch ' + (360 / d.n).toFixed(0) + ' deg), ' + (d.h * 100).toFixed(1) + ' % of the radius proud');
   }
-  check(TR.treadGeometry('knobbly', 0x1b1b1d) === TR.treadGeometry('knobbly', 0x1b1b1d) && TR.treadGeometry('knobbly', 0x1b1b1d) !== TR.treadGeometry('knobbly', 0xd8262b), 'one geometry per design and rubber colour (shared), one material for every tread');
+  check(TR.treadGeometry('knobbly', 0x1b1b1d) === TR.treadGeometry('knobbly', 0xd8262b) && TR.treadGeometry('knobbly') !== TR.treadGeometry('knobbly', null, { lite: true }), 'one blocks geometry per design and variant, whatever the rubber colour (the colour is the material\'s tint; 16-Oct)');
 
   // ---- the sample cars ----
   const sample = [['hatch', 'sprinthatch'], ['truck', 'flatbed'], ['sports car', 'sport'], ['bus', 'coach'], ['six-wheeler', 'sixwheeler']].map(([what, id]) => [what, fleet.find(c => c.id === id)]);
@@ -70,15 +70,18 @@ try {
     for (const [what, car] of sample) {
       const m = mk(car), found = m.userData.wheelHubs, list = treadsOf(m);
       const parents = list.every(x => found.rimInfo.some(t => t.tyre === x.parent)) && new Set(list.map(x => x.parent)).size === list.length;
-      const tags = list.every(x => x.userData.wheelRing && x.material.userData.wheelHub && x.userData.tread.blur.userData.wheelRing && x.userData.tread.blur.material.userData.wheelHub);
-      const shared = list.every(x => x.material === TR.treadMaterial() && x.geometry.userData.shared);
+      // (16-Oct: raised blocks wear the one tread material; a tyre with no room for blocks wears the pattern band alone; every part under
+      // a tread, its band, shoulder rings and blur band, is tagged and shared)
+      const parts = list.flatMap(x => [x, ...x.children]);
+      const tags = parts.every(x => x.userData.wheelRing && x.material.userData.wheelHub);
+      const shared = list.every(x => !!x.material.map && x.material.vertexColors) && parts.every(x => x.geometry.userData.shared && x.material.userData.shared);
       const zf = findZFights(m).filter(f => [f.a, f.b].some(x => x.userData.tread || x.parent?.userData.tread));
       const tris = list.map(trisOf), most = Math.max(0, ...tris);
       if (list.length) worn++;
-      if (!(parents && tags && shared && !zf.length && most <= BUDGET)) ok = false;
-      lines.push(what + ' ' + list.length + '/' + found.rimInfo.length + ' tyres' + (list.some(x => x.userData.tread.lite) ? ' (lite)' : '') + ', steps ' + [...new Set(list.map(x => x.userData.tread.fit))].join('/') + ', ' + tris.reduce((a, b) => a + b, 0) + ' tris' + (zf.length ? ', Z-FIGHT ' + zf.length : ''));
+      if (!(parents && tags && shared && !zf.length && most <= BUDGET + 6 * TR.SKIN_SEG)) ok = false; // (the blocks, and the band and a ring a face: 2 x SKIN_SEG each)
+      lines.push(what + ' ' + list.length + '/' + found.rimInfo.length + ' tyres' + (list.some(x => x.userData.tread.lite) ? ' (lite)' : '') + ', steps ' + [...new Set(list.map(x => x.userData.tread.fit || 'band'))].join('/') + ', ' + list.reduce((n, x) => n + (x.geometry.userData.parts?.rings || 0), 0) + ' rings, ' + tris.reduce((a, b) => a + b, 0) + ' tris' + (zf.length ? ', Z-FIGHT ' + zf.length : ''));
     }
-    check(ok && worn >= sample.length - 1, d.name + ' on ' + worn + ' of the ' + sample.length + ' sample cars (one may have no room): ' + lines.join('; ') + ': children of their tyres, tagged, shared, no z-fight');
+    check(ok && worn >= sample.length, d.name + ' on ' + worn + ' of the ' + sample.length + ' sample cars (one may have no room): ' + lines.join('; ') + ': children of their tyres, tagged, shared, no z-fight');
   }
   W.setWheelTread('none');
 
@@ -151,8 +154,8 @@ try {
     W.setWheelSet('stock');
     W.setWheelTread('chevron'); W.setWheelTyre('white'); W.setWheelRim('turbine');
     const m = mk(commuter), f = m.userData.wheelHubs, list = treadsOf(m);
-    const white = new THREE.Color(0xe9e9e4), c = list[0]?.geometry.attributes.color;
-    check(W.wheelTread() === 'chevron' && W.wheelTyre() === 'white' && W.wheelRim() === 'turbine' && W.hubKind() === 'rim' && list.length && rimsOf(m).length && f.parts.some(p => p.mesh.material.color.getHex() === 0xe9e9e4) && c && Math.abs(c.getX(c.count - 1) / 0.6 - white.r) < 0.02,
+    const white = new THREE.Color(0xe9e9e4), tint = list[0]?.material.color; // (16-Oct: the tread's colour is its material's tint: a light rubber's own colour, a little brighter)
+    check(W.wheelTread() === 'chevron' && W.wheelTyre() === 'white' && W.wheelRim() === 'turbine' && W.hubKind() === 'rim' && list.length && rimsOf(m).length && f.parts.some(p => p.mesh.material.color.getHex() === 0xe9e9e4) && tint && Math.abs(tint.r - Math.min(1, white.r * 1.15)) < 0.02 && Math.abs(tint.g - tint.b) < 0.05,
       'Chevron + White tyres + Turbine: all three worn at once; the tread is the tyre\'s white');
     W.setHubColour('red');
     check(W.wheelRim() === 'none' && W.wheelColour() === 'red' && W.hubKind() === 'colour' && W.wheelTread() === 'chevron' && W.wheelTyre() === 'white' && !rimsOf(m).length && treadsOf(m).length, 'a hub colour takes the rim off (one hub kind at a time) and leaves the tread and the tyre colour');
@@ -255,7 +258,7 @@ try {
       check(!zf.length, d.name + ' on ' + perCar.length + ' cars: no tread in a z-fight pair (' + (zf.slice(0, 8).join('; ') || 'none') + ')');
       check(!poke.length, d.name + ': no tread pokes through bodywork over the tyre (more than ' + TR.GRAZE * 1000 + ' mm, the lowest step\'s graze) (' + (poke.slice(0, 8).join('; ') || 'none') + ')');
       if (lowPoke.length) console.log('        ' + d.name + ': low down, into a sill or bumper the stock tyre itself runs through (let be, as the tyre): ' + lowPoke.join('; '));
-      console.log('        ' + d.name + ': a 4-tyre car +4 draw calls (+1 a tyre while the blur band shows), +' + (typical[0]?.tris ?? '-') + ' to +' + Math.max(0, ...typical.map(c => c.tris)) + ' triangles; the most: ' + worst.id + ' ' + worst.meshes + ' meshes, +' + worst.tris + ' triangles');
+      console.log('        ' + d.name + ': a 4-tyre car +4 draw calls (the blocks, the pattern band and the shoulder ring are one mesh a tyre; +1 a tyre while the blur band shows), +' + (typical[0]?.tris ?? '-') + ' to +' + Math.max(0, ...typical.map(c => c.tris)) + ' triangles; the most: ' + worst.id + ' ' + worst.meshes + ' meshes, +' + worst.tris + ' triangles');
     }
     console.log('        cars wearing rims: ' + cars.length + '; no tread on any tyre (no room): ' + (noTread.join(', ') || 'none'));
     console.log('        some axles stock (bodywork too close over them): ' + (partial.join(', ') || 'none'));
