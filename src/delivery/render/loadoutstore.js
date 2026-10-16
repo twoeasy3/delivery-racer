@@ -2,7 +2,8 @@
 // be car specific now"). One localStorage key, KEY (JSON), read through this one module:
 //   { v: 1, default: { <slot>: {...} }, cars: { <carId>: { <slot>: {...} } } }
 // slots and their fields (SLOTS): wheels { design, hub, rim: { all, front?, rear? }, tread: { all, front?, rear? } } (the THREE-PART wheel
-// set: tread, tyre colour = `design`, hub = a colour `hub` or a rim / spinner `rim`; render/wheelcosmetic.js), plate { design, text }, roof | cargo | wing { id, paint }.
+// set: tread, tyre colour = `design`, hub = a colour `hub` or a rim / spinner `rim`; render/wheelcosmetic.js), plate { design, text }, roof | cargo | wing { id, paint },
+// kill { id } (the KILL EFFECT, every explosion's look: render/killfx.js; not a model's dressing, so not in render/loadout.js loadoutKey).
 // RESOLUTION: get(carId, slot) = the car's own entry for that slot (field by field) over the default's, over STOCK. carId null = the default.
 // A car stores only what it changes (an OVERRIDE, a whole slot at a time: an edit copies the car's resolved slot and changes a field), so
 // the key stays small; an override that comes out the same as the default is dropped (the car follows the default again). Per AXLE: the
@@ -22,7 +23,7 @@
 import { Progress } from '../progress.js';
 
 export const KEY = 'delivery.loadout';
-export const SLOTS = ['wheels', 'plate', 'roof', 'cargo', 'wing'];
+export const SLOTS = ['wheels', 'plate', 'roof', 'cargo', 'wing', 'kill'];
 export const PROP_SLOTS = ['roof', 'cargo', 'wing'];
 export const MAX_CARS = 400;
 export const STOCK = Object.freeze({
@@ -31,6 +32,7 @@ export const STOCK = Object.freeze({
   roof: Object.freeze({ id: 'none', paint: 'match' }),
   cargo: Object.freeze({ id: 'none', paint: 'match' }),
   wing: Object.freeze({ id: 'none', paint: 'match' }),
+  kill: Object.freeze({ id: 'classic' }), // (the explosions' look: render/killfx.js; absent or unknown = Classic)
 });
 // the old global keys (read for the migration, mirrored from the default)
 export const LEGACY = { design: 'delivery.wheeldesign', hub: 'delivery.wheelcolour', rim: 'delivery.wheelrim', plateDesign: 'delivery.platedesign', plateText: 'delivery.platetext', prop: (slot) => 'delivery.prop.' + slot, paint: (slot) => 'delivery.prop.' + slot + '.paint' };
@@ -51,6 +53,7 @@ const FIELDS = {
   wheels: { design: word, hub: word, rim: cleanRim, tread: cleanRim },
   plate: { design: word, text },
   roof: { id: word, paint: word }, cargo: { id: word, paint: word }, wing: { id: word, paint: word },
+  kill: { id: word },
 };
 // THE THREE-PART WHEEL SET (the owner, 15-Oct: "tread - tyre colour - hub colour or rim or spinner"): the wheels' `design` is now the
 // TYRE COLOUR alone (render/wheelcosmetic.js TYRE_COLOURS). Three old designs also carried a hub colour, worn when the hub colour was

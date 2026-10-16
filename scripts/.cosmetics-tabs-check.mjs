@@ -4,9 +4,11 @@
 //     prop slot, the Classic GT, a Legendary car) the tabs drawn are exactly Wheels, Plate and the prop slots slotStatus allows, in order
 //   - no tab says 'Locked' or 'Coming'; the screen's source has no lock line, no 'Coming later', no lock reason; the CSS no lock styles
 //   - the open tab falls back to the first drawn (Wheels) when the car has no tab for it, and stays when it has
-//   - Decal, Glow (underglow) and Kill FX never show without ?cosmetics=all, on any car; with it (setDemo) all eight show on the pickup,
-//     Kill FX is a 'player' slot; the labels are short (7 characters at most)
-//   - registering a kill-effect item in render/cosmetics.js brings its tab on every car (and removing it takes it away); registerSlot
+//   - Decal and Glow (underglow) never show without ?cosmetics=all, on any car; with it (setDemo) they show on the pickup; the labels are
+//     short (7 characters at most)
+//   - the KILL EFFECT (slot 'kill', CHECKLIST 390, joined to the registry at the v1.1.148-alpha merge): a 'car' slot (per car over the
+//     default); its tab shows on every car once render/killfx.js has registered its items, and cosmeticsui.js gives it its panel;
+//     registering a kill-effect item in render/cosmetics.js brings its tab on every car (and removing it takes it away); registerSlot
 //     merges into the dormant entry; the demo is off by default and registers nothing in the cosmetics registry
 //   - the registry and the screen are outside the replay fingerprint (vite.config.js logicFiles)
 //   node scripts/.cosmetics-tabs-check.mjs
@@ -35,11 +37,11 @@ try {
   check(legend && tabs(legend) === 'wheels,plate', 'a Legendary car (' + legend?.id + '): Wheels and Plate only');
   const bad = all.filter(c => tabs(c) !== want(c));
   check(bad.length === 0, 'every one of ' + all.length + ' cars: the tabs are exactly Wheels, Plate and its supported prop slots' + (bad.length ? ' (' + bad.slice(0, 5).map(c => c.id).join(', ') + ')' : ''));
-  const dormant = ['decal', 'underglow', 'killfx'];
-  check(all.every(c => !R.shownSlots(c).some(s => dormant.includes(s.id))), 'without ?cosmetics=all, Decal, Glow and Kill FX never show, on any car');
+  const dormant = ['decal', 'underglow'];
+  check(all.every(c => !R.shownSlots(c).some(s => dormant.includes(s.id) || s.id === 'kill')), 'without ?cosmetics=all (and before render/killfx.js registers its items), Decal, Glow and Kill FX never show, on any car');
 
   // the open tab
-  check(R.tabToOpen(R.shownSlots(car('hothatch')), 'cargo') === 'wheels' && R.tabToOpen(R.shownSlots(car('rocketfin')), 'wing') === 'wheels' && R.tabToOpen(R.shownSlots(car('pickup')), 'cargo') === 'cargo' && R.tabToOpen(R.shownSlots(car('classicgt')), 'killfx') === 'wheels', 'the open tab: kept when the car has it (pickup cargo), else the first drawn, Wheels (hatch cargo, canopy car wing, a dormant Kill FX)');
+  check(R.tabToOpen(R.shownSlots(car('hothatch')), 'cargo') === 'wheels' && R.tabToOpen(R.shownSlots(car('rocketfin')), 'wing') === 'wheels' && R.tabToOpen(R.shownSlots(car('pickup')), 'cargo') === 'cargo' && R.tabToOpen(R.shownSlots(car('classicgt')), 'underglow') === 'wheels', 'the open tab: kept when the car has it (pickup cargo), else the first drawn, Wheels (hatch cargo, canopy car wing, a dormant Glow)');
 
   // the words
   const ui = readFileSync(ROOT + '/src/delivery/render/cosmeticsui.js', 'utf8'), css = readFileSync(ROOT + '/src/delivery/cosmetics.css', 'utf8'), reg = readFileSync(ROOT + '/src/delivery/render/cosmeticslots.js', 'utf8');
@@ -51,28 +53,31 @@ try {
   // the demo (?cosmetics=all)
   const before = COSMETICS.length;
   R.setDemo(true);
-  check(tabs(car('pickup')) === 'wheels,plate,roof,cargo,wing,decal,underglow,killfx' && R.shownSlots(car('pickup')).length === 8, 'with ?cosmetics=all: all 8 tabs on the pickup (' + tabs(car('pickup')) + ')');
-  check(tabs(car('rocketfin')) === 'wheels,plate,decal,underglow,killfx', '...and the canopy car still has no prop tab (' + tabs(car('rocketfin')) + ')');
+  check(tabs(car('pickup')) === 'wheels,plate,roof,cargo,wing,decal,underglow' && R.shownSlots(car('pickup')).length === 7, 'with ?cosmetics=all: the dormant tabs on the pickup too (' + tabs(car('pickup')) + '; Kill FX comes with its items, below)');
+  check(tabs(car('rocketfin')) === 'wheels,plate,decal,underglow', '...and the canopy car still has no prop tab (' + tabs(car('rocketfin')) + ')');
   check(dormant.every(id => R.slotById(id).items().every(it => it.sample && /^Sample/.test(it.name))) && COSMETICS.length === before, '...its items are labelled Sample and nothing is put in the cosmetics registry');
   R.setDemo(false);
   check(!R.shownSlots(car('pickup')).some(s => dormant.includes(s.id)), '...and off again: the dormant tabs are gone');
-  check(R.slotById('killfx').scope === 'player' && R.SLOT_LIST.filter(s => s.scope === 'player').map(s => s.id).join() === 'killfx', "Kill FX is the one 'player' slot (the car / all cars switch is hidden on it)");
-  check(/scopeBar\.hidden = slotById\(id\)\?\.scope === 'player'/.test(ui), '...the screen hides the switch and the car buttons on a player slot');
+  check(R.slotById('kill').scope === 'car' && !R.slotById('killfx') && R.SLOT_LIST.filter(s => s.scope === 'player').length === 0, "Kill FX is the 'kill' slot, per car like the others (the car / all cars switch shows on it); no 'player' slot today");
+  check(/scopeBar\.hidden = slotById\(id\)\?\.scope === 'player'/.test(ui), '...the screen still hides the switch and the car buttons on a player slot (for a later one)');
+  check(/registerSlot\(\{ id: 'kill', panel: \(\) => buildKill\(\), refresh: \(\) => killShown\(\) \}\)/.test(ui) && /viewBtns\[5\]\.hidden = id !== 'kill'/.test(ui), "the screen gives the Kill effect tab its panel (buildKill, with the Test button) through registerSlot");
 
   // the extension point
-  const undo = registerCosmetics([{ slot: 'killfx', id: 'confetti', name: 'Confetti', free: true }]);
-  check(all.every(c => R.shownSlots(c).some(s => s.id === 'killfx')), 'a kill effect registered in render/cosmetics.js: the Kill FX tab shows on every car');
+  const undo = registerCosmetics([{ slot: 'kill', id: 'zzz-test', name: 'Test', free: true }]);
+  check(all.every(c => R.shownSlots(c).some(s => s.id === 'kill')), 'a kill effect registered in render/cosmetics.js: the Kill FX tab shows on every car');
   undo();
-  check(!R.shownSlots(car('pickup')).some(s => s.id === 'killfx'), '...removed: gone again');
+  check(!R.shownSlots(car('pickup')).some(s => s.id === 'kill'), '...removed: gone again');
+  await load('render/killfx.js');
+  check(all.every(c => R.shownSlots(c).some(s => s.id === 'kill')) && R.slotById('kill').items().length >= 2, 'render/killfx.js loaded: its effects registered, the Kill FX tab on every car (' + R.slotById('kill').items().map(i => i.id).join(', ') + ')');
   const orig = R.slotById('decal').supports;
   R.registerSlot({ id: 'decal', supports: (c) => c.id === 'pickup' });
   const undoDecal = registerCosmetics([{ slot: 'decal', id: 'roundel', name: 'Roundel', free: true }]);
   check(tabs(car('pickup')).includes('decal') && !tabs(car('hothatch')).includes('decal') && R.SLOT_LIST.filter(s => s.id === 'decal').length === 1, 'registerSlot merges into the dormant Decal: its supports() decides per car (a zone table row)');
   undoDecal(); R.registerSlot({ id: 'decal', supports: orig });
   R.registerSlot({ id: 'horn', label: 'Horn', scope: 'player', items: () => [{ id: 'a', name: 'A' }] });
-  check(R.SLOT_LIST.map(s => s.id).indexOf('horn') === R.SLOT_LIST.map(s => s.id).indexOf('killfx') - 1, 'a new slot goes in before Kill FX');
+  check(R.SLOT_LIST.map(s => s.id).indexOf('horn') === R.SLOT_LIST.map(s => s.id).indexOf('kill') - 1, 'a new slot goes in before Kill FX');
   R.SLOT_LIST.splice(R.SLOT_LIST.findIndex(s => s.id === 'horn'), 1);
-  check(/to add a slot/i.test(reg) && /registerSlot\(\{ id: 'killfx'/.test(reg) && /registerSlot\(\{ id: 'decal'/.test(reg), 'the registry says how to add a slot (Kill FX and Decal examples)');
+  check(/to add a slot/i.test(reg) && /registerSlot\(\{ id: 'kill'/.test(reg) && /registerSlot\(\{ id: 'decal'/.test(reg), 'the registry says how to add a slot (Kill FX and Decal examples)');
   check(/`cosmetics=all`|cosmetics=all/.test(readFileSync(ROOT + '/URL-PARAMS.md', 'utf8')), '?cosmetics=all is in URL-PARAMS.md');
 
   // the replay fingerprint

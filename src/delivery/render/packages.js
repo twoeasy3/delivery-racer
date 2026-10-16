@@ -3,7 +3,11 @@ import { Track } from '../track.js';
 import { Packages } from '../packages.js';
 import { scene, tmp } from './scene.js';
 import { unitBox } from './cars.js';
-import { Particles, rnd, FIRE_COLORS } from './effects.js';
+import { Particles, KillFx } from './effects.js';
+import { classicTrail } from './particles.js';
+import { chosenKill } from './killfx.js';
+import { Player } from '../player.js';
+import { CAR } from '../cars.js';
 
 // ---- packages: plain boxes for the player's gifts, flaming ones from evil cars, cannon shells ----
 const PACKAGE_LOOK = { gift: [0xc8955a, 0.7], fire: [0xff9d2e, 0.7], bomb: [0xff9d2e, 0.7], shell: [0x1c1c1c, 0.45] };
@@ -13,6 +17,7 @@ const packageMeshes = Packages.list.map(() => {
   scene.add(mesh);
   return mesh;
 });
+const CLASSIC = { Particles };
 export const syncPackages = (dt) => {
   for (let i = 0; i < Packages.list.length; i++) {
     const p = Packages.list[i], mesh = packageMeshes[i];
@@ -32,11 +37,12 @@ export const syncPackages = (dt) => {
     mesh.position.set(tmp.x, tmp.y + p.h, tmp.z);
     mesh.rotation.x += dt * 9;
     mesh.rotation.z += dt * 6;
+    // the TRAIL: the player's own packages (gifts, flaming ones, the 8x8's shells) leave the bits of the player's KILL EFFECT
+    // (render/killfx.js; render-only); in Classic, and on everybody else's (an evil car's bombs, an army's shells), the flames as always
+    // (a Classic gift leaves none)
+    const look = p.owner === Player ? chosenKill(CAR.id) : 'classic';
+    if (look !== 'classic' && KillFx.trail(look, tmp.x, tmp.y + p.h, tmp.z, tmp.y)) continue;
     if (p.kind === 'gift') continue;
-    for (let n = 0; n < 2; n++) { // flame trail
-      Particles.emit(tmp.x + rnd(0.2), tmp.y + p.h + rnd(0.2), tmp.z + rnd(0.2),
-        rnd(1), 1 + Math.random() * 2, rnd(1), 0.3, 0.55, 0.4, 0,
-        FIRE_COLORS[1 + Math.floor(Math.random() * 3)]);
-    }
+    classicTrail(CLASSIC, tmp.x, tmp.y + p.h, tmp.z); // (flame trail)
   }
 };

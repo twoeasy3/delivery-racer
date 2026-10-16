@@ -62,6 +62,8 @@ const flat = (map, opacity) => new THREE.MeshBasicMaterial({ map, transparent: t
 // (CLOSE = how much of the full distance is left); `closeup` is where it is heading, `zoom` how far it has got (0 = the whole car)
 const CLOSE = 0.5;
 let closeup = false, zoom = 0, alsoVisible = () => false;
+// an OVERLAY drawn in the view's scene each frame (the Cosmetics screen's kill-effect preview, render/killpreview.js): fn(scene, dt, camera)
+let overlay = null;
 // the NUMBER PLATE close-up (CHECKLIST 286): the same ease, but turned to show one end of the car and aimed at its plate (closeEnd: 'rear' | 'front' | null = the wheels')
 let closeEnd = null;
 // the PROP close-up (CHECKLIST 302, render/cosmeticsui.js): the same ease, turned to a yaw and aimed at a point of the car (a prop slot's centre from
@@ -76,7 +78,7 @@ let yaw = -0.64, spinBy = 0, held = null, idleAt = 0, raf = 0, last = 0, visible
 const drop = () => {
   if (!v?.scene) return;
   v.scene.traverse((node) => {
-    if (node === v.floor || node === v.shadow) return;
+    if (node === v.floor || node === v.shadow || node.userData.shared) return; // (shared: an overlay's pools, render/killpreview.js)
     node.geometry?.dispose();
     for (const material of [].concat(node.material || [])) if (material !== SILHOUETTE) { material.map?.dispose(); material.dispose(); }
   });
@@ -247,6 +249,7 @@ const frameAt = (now) => {
   v.lift = o.y;
   if (v.model.userData.lamps && v.car.ufo) v.model.userData.lamps.rotation.y = t * 4; // (the saucer's ring of lights)
   frame(r.width / r.height);
+  if (overlay) { try { overlay(v.scene, dt, v.camera); } catch (error) { console.warn('Showroom overlay: ' + (error?.message || error)); overlay = null; } }
   renderer.getSize(size);
   if (w > size.x || h > size.y) renderer.setSize(size.x = Math.max(size.x, w), size.y = Math.max(size.y, h), false);
   renderer.setViewport(0, 0, w, h);
@@ -365,6 +368,10 @@ export const ShowroomView = {
   also(fn) { alsoVisible = fn; },
   // the wheels close-up on or off (eased); stop() puts it back
   get model() { return v?.model || null; },
+  get camera() { return v?.camera || null; },
+  get scene() { return v?.scene || null; },
+  get height() { return v?.height || 0; },
+  overlay(fn) { overlay = fn; },
   closeUp(on, end = null, focus = null) { closeup = !!on; closeEnd = on && (end === 'rear' || end === 'front') ? end : null; closeFocus = on && focus ? focus : null; },
   // whether the corner key may be drawn now (no sheet over the showroom: render/showroom.js says)
   keyWhen(fn) { keyVisible = fn; },
