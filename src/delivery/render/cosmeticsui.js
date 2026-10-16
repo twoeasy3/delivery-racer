@@ -32,6 +32,8 @@ import * as Store from './loadoutstore.js'; // (per car over a default: the swit
 import { carInUse, CARS } from '../cars.js';
 import { Game } from '../game.js';
 import { ownsCosmetic } from './cosmetics.js';
+import { KILL_FX, KILL_IDS, shownKill, setKill } from './killfx.js';
+import { KillPreview } from './killpreview.js';
 import { Nav } from '../nav.js';
 import { Sound } from './audio.js';
 
@@ -42,6 +44,7 @@ export const SLOTS = [
   { id: 'roof', name: 'Roof', live: true, prop: true },
   { id: 'cargo', name: 'Cargo', live: true, prop: true },
   { id: 'wing', name: 'Wing', live: true, prop: true },
+  { id: 'kill', name: 'Kill effect', live: true },
   { id: 'underglow', name: 'Underglow', live: false },
 ];
 // THE place for "does the player own it?" It asks cosmetics.js ownsCosmetic (free, or in its own stored list; the registry is there too).
@@ -184,6 +187,34 @@ const buildPlate = () => {
     make('h3', '', 'Your plate'),
     make('div', 'cz-textrow', plateInput, ok, plateChip), plateMsg,
     make('div', 'cz-foot', plateStatus, reset));
+};
+
+// ---- the KILL EFFECT (CHECKLIST 390): every explosion's look and the trail behind your packages (render/killfx.js), tried on the stage
+let killRow, killStatus;
+const killIcon = (id) => {
+  const c = make('canvas', 'cz-swatch cz-killicon'); c.width = c.height = 48;
+  const g = c.getContext('2d');
+  if (g) { try { KILL_FX[id].icon(g, 48); } catch { /* (no picture: the name stays) */ } }
+  return c;
+};
+const testKill = () => { KillPreview.test(shownKill(cid())); };
+const buildKill = () => {
+  killRow = make('div', 'cz-row cz-kills');
+  killRow.setAttribute('role', 'group'); killRow.setAttribute('aria-label', 'Kill effect');
+  for (const id of KILL_IDS) killRow.append(chip('kill', id, KILL_FX[id].name, killIcon(id), (pick) => { if (setKill(pick, tgt())) testKill(); }, 'kill'));
+  killStatus = make('p', 'cz-status'); killStatus.setAttribute('aria-live', 'polite');
+  const reset = make('button', 'cz-reset', 'Reset'); reset.type = 'button';
+  reset.addEventListener('click', () => { setKill('classic', tgt()); Sound.play('menuMove', 0.4); });
+  return make('section', 'cz-section cz-kill',
+    make('h2', '', 'Kill effect', tagFor('kill')),
+    make('p', 'cz-note', 'Every explosion, and your package trail.'),
+    killRow, make('div', 'cz-foot', killStatus, reset));
+};
+const killShown = () => {
+  if (!killRow) return;
+  const id = shownKill(cid());
+  for (const b of killRow.children) { const on = b.dataset.kill === id; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('equipped', on); b.classList.toggle('locked', !owned('kill', b.dataset.kill)); }
+  killStatus.textContent = 'Kill effect: ' + KILL_FX[id].name;
 };
 
 // ---- the PROP slots: Roof, Cargo, Wing (CHECKLIST 302; the choice and the dressing are render/propdress.js) ----
@@ -330,7 +361,8 @@ const build = () => {
   const view = (name, close) => { const b = make('button', 'cz-view', name); b.type = 'button'; b.addEventListener('click', () => setCloseUp(close)); return b; };
   const endView = (name, end) => { const b = make('button', 'cz-view', name); b.type = 'button'; b.dataset.end = end; b.addEventListener('click', () => setCloseUp(true, end)); return b; };
   const propView = () => { const b = make('button', 'cz-view', 'Close-up'); b.type = 'button'; b.hidden = true; b.addEventListener('click', () => { const ps = propSlotNow(); if (ps) setCloseUp(true, null, ps); }); return b; };
-  viewBtns = [view('Whole car', false), view('Wheels close-up', true), endView('Rear plate', 'rear'), endView('Front plate', 'front'), propView()];
+  const killTest = make('button', 'cz-view', 'Test'); killTest.type = 'button'; killTest.hidden = true; killTest.addEventListener('click', testKill); // (the kill effect tried on the car)
+  viewBtns = [view('Whole car', false), view('Wheels close-up', true), endView('Rear plate', 'rear'), endView('Front plate', 'front'), propView(), killTest];
   const stageBox = make('div', 'cz-stage', stage, make('div', 'cz-views', ...viewBtns), make('p', 'cz-hint', 'Drag to turn the car'));
   // the slots
   slotList = make('div', 'cz-slots');
@@ -371,13 +403,13 @@ const build = () => {
     setRow, customChip,
     make('div', 'cz-foot', status, reset));
   tabMsg = make('p', 'cz-tabmsg'); tabMsg.setAttribute('role', 'status');
-  sections = { wheels, plate: buildPlate(), roof: buildPropSection('roof'), cargo: buildPropSection('cargo'), wing: buildPropSection('wing') };
-  root.replaceChildren(make('div', 'cz-backdrop'), top, stageBox, make('div', 'cz-panel', scopeBar, slotList, tabMsg, wheels, sections.plate, sections.roof, sections.cargo, sections.wing));
+  sections = { wheels, plate: buildPlate(), roof: buildPropSection('roof'), cargo: buildPropSection('cargo'), wing: buildPropSection('wing'), kill: buildKill() };
+  root.replaceChildren(make('div', 'cz-backdrop'), top, stageBox, make('div', 'cz-panel', scopeBar, slotList, tabMsg, wheels, sections.plate, sections.roof, sections.cargo, sections.wing, sections.kill));
   openSection('wheels');
   onWheelColour(shown);
   onPlate(() => { if (state.open) plateShown(); });
   onProp(() => { if (state.open) propShown(); });
-  Store.onStore(() => { if (state.open) { shown(); plateShown(); propShown(); scopeShown(); } });
+  Store.onStore(() => { if (state.open) { shown(); plateShown(); propShown(); killShown(); scopeShown(); } });
   onLoadout(() => { if (state.open && !ShowroomView.model) requestAnimationFrame(() => { if (state.open && !ShowroomView.model) stillCar(stage, state.car, state.evil); }); }); // (no WebGL: its picture drawn again in the new loadout, render/carstill.js)
   setCloseUp(false);
 };
@@ -399,7 +431,7 @@ const setScope = (scope) => {
   state.scope = scope === 'all' ? 'all' : 'car';
   copyArmed = 0; if (copyBtn) copyBtn.textContent = 'Copy to all';
   Sound.play('menuMove', 0.4);
-  syncPlateInput(); shown(); plateShown(); propShown(); scopeShown();
+  syncPlateInput(); shown(); plateShown(); propShown(); killShown(); scopeShown();
 };
 // this car's look on every car; when other cars have looks of their own, a second tap is asked for (their looks go too)
 const copyToAll = () => {
@@ -436,7 +468,8 @@ const openSection = (id) => {
   openSlot = id;
   for (const [key, node] of Object.entries(sections)) node.hidden = key !== id;
   for (const b of slotList.children) { const on = b.dataset.slot === id; b.classList.toggle('on', on && !b.classList.contains('later')); b.setAttribute('aria-selected', String(on)); }
-  viewBtns[1].hidden = id !== 'wheels'; viewBtns[2].hidden = viewBtns[3].hidden = id !== 'plate';
+  viewBtns[1].hidden = id !== 'wheels'; viewBtns[2].hidden = viewBtns[3].hidden = id !== 'plate'; viewBtns[5].hidden = id !== 'kill';
+  if (id === 'kill') killShown(); else KillPreview.clear();
   const keep = state.close && (id === 'plate' ? !!state.end : id === 'wheels' ? !state.end && !state.prop : state.prop === id);
   if (state.close && !keep) setCloseUp(false);
   if (id === 'plate') plateShown();
@@ -478,7 +511,7 @@ const showCar = () => {
   carName.textContent = 'On your ' + car.name;
   syncPlateInput();
   if (!ShowroomView.show(stage, car, { evil: state.evil })) requestAnimationFrame(() => { if (state.open) stillCar(stage, car, state.evil); }); // (no WebGL: its picture)
-  if (built) { shown(); plateShown(); propShown(); scopeShown(); }
+  if (built) { shown(); plateShown(); propShown(); killShown(); scopeShown(); }
 };
 
 export const Cosmetics = {
@@ -500,6 +533,7 @@ export const Cosmetics = {
     shown();
     openSection(openSlot);
     showCar();
+    if (openSlot === 'kill' && KillPreview.hold >= 0) setTimeout(() => { if (state.open) testKill(); }, 1500); // (?killtest=<s>: tried once the car has landed, held at <s> s)
     if (q.get('platetype') !== null) { plateInput.value = q.get('platetype'); plateInput.dispatchEvent(new Event('input')); commitText(); } // (?platetype=TEXT: types it and confirms, for a picture of the filter's message)
     requestAnimationFrame(() => (root.querySelector('.cz-row .cz-chip.equipped') || closeBtn)?.focus({ preventScroll: true }));
   },
@@ -508,6 +542,7 @@ export const Cosmetics = {
     const done = state.onClose;
     if (plateInput && document.activeElement === plateInput) plateInput.blur();
     previewPlateText(null);
+    KillPreview.clear();
     state.open = false;
     root.classList.add('hidden');
     Nav.leave('cosmetics');
@@ -516,7 +551,7 @@ export const Cosmetics = {
     done?.();
   },
   // for a check or a picture
-  get shown() { const c = cid(); return { scope: state.scope, custom: !!state.car && Store.differs(state.car.id), props: { roof: shownProp('roof', c), cargo: shownProp('cargo', c), wing: shownProp('wing', c) }, prop: state.prop || null, plate: shownDesign(c), plateText: plateText(c), openSlot, end: state.end || null, open: state.open, car: state.car?.id || null, closeUp: state.close, design: wheelDesign(c), colour: wheelColour(c), set: wheelSet(c), view: ShowroomView.state }; },
+  get shown() { const c = cid(); return { kill: shownKill(c), scope: state.scope, custom: !!state.car && Store.differs(state.car.id), props: { roof: shownProp('roof', c), cargo: shownProp('cargo', c), wing: shownProp('wing', c) }, prop: state.prop || null, plate: shownDesign(c), plateText: plateText(c), openSlot, end: state.end || null, open: state.open, car: state.car?.id || null, closeUp: state.close, design: wheelDesign(c), colour: wheelColour(c), set: wheelSet(c), view: ShowroomView.state }; },
   scope: (scope) => setScope(scope),
   closeUp: setCloseUp,
 };

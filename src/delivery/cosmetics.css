@@ -162,3 +162,7 @@
   #cosmetics .cz-act { padding: 0 8px; font-size: 11px; }
 }
 @media (pointer: coarse) { #cosmetics .cz-seg, #cosmetics .cz-act { min-height: 40px; } }
+/* the Kill effect tab (CHECKLIST 390): chips with a little drawn icon */
+#cosmetics .cz-kills .cz-chip { flex: 1 1 calc(33% - 8px); }
+#cosmetics .cz-killicon { border-radius: 6px; background: #1b2030; box-shadow: none; flex-basis: 28px; width: 28px; height: 28px; }
+@media (max-width: 760px) and (min-height: 521px), (max-width: 519px) { #cosmetics .cz-kills .cz-chip { flex-basis: calc(50% - 6px); } }
