@@ -635,8 +635,8 @@
   "foliage-run": {
     "name": "Foliage Run",
     "description": {
-      "good": "Pumpkin pie for the church supper, over the hills at peak colour. Ease off on the wet leaves, mind the covered bridge and the pumpkin crates.",
-      "evil": "Maple syrup, stolen, with the whole county after it. Skid the wet leaves, hit the covered bridge flat out and flatten the pumpkin stands."
+      "good": "Pumpkin pie for the church supper, over the hills at harvest time. Get round the tractors and mind the loads off the harvest trucks.",
+      "evil": "Maple syrup, stolen, with the whole county after it. Thread the tractors, dodge the falling hay and hit the covered bridge flat out."
     },
     "cargo": { "good": "pie", "evil": "syrup" }
   },
