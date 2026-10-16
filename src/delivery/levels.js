@@ -204,6 +204,17 @@
 //              car stays on station at the edge of its stretch (The Hood)
 //   ice        { from, to, lane }  an ice patch on that lane (no lane: across the road): on it the car brakes
 //              with a share of its brakes and changes lane more slowly (see CONFIG.ice: brakeGrip, steerGrip, laneSpeed)
+//   waterPatches { from, to, lane }  standing water on that lane (no lane: across the road), shaped as ice is: a burst
+//              main's water with no main, there all the time (a puddle, a flooded dip, the mall's mopped floor). On it the car
+//              brakes, steers and changes lane by the water's numbers (CONFIG.waterMain: brakeGrip, steerGrip, laneSpeed), and
+//              after it the tyres stay wet for wetAfter m, the grip coming back little by little (ice lets go at once). Warned
+//              of CONFIG.waterMain.warn m out (a theme's standingWater: its words, its tint). (Its own key, not an option on
+//              waterMains: a main is a point with one lane, a fountain and a cycle; a patch is a stretch, with or without a lane)
+//   wetness    { strength, tail }: how slippery water is on this level's surface, for the whole level: a burst main's water,
+//              standing water, and the wet tyres either leaves (not the tide, fords or water stages: numbers of their own).
+//              Each share of grip loses strength x what it loses at 1, never below CONFIG.waterMain.floor; the wet tail is
+//              tail x wetAfter. Left out, 1 and 1: CONFIG.waterMain's numbers exactly. Strength 0: water does not slip at
+//              all; above 1, slipperier (Mall Dash's tiled floor: 1.3, tail 1.6). See track.js waterNumbers, Track.wet
 //   tide       { from, to, start, end, waves: { every: { min, max }, reach: { min, max } } }: a causeway
 //              the sea comes in over, on the player's side of the road only, from the kerb in. It
 //              floods `start` lane widths in from the pavement's edge (the shoulder counts as one)

@@ -220,9 +220,10 @@ export const THEMES = {
 // (tunnel.heights: the ceiling's height by zone scenery, tunnelshape.js; lit: no dark, no fog, no headlights, a hall's echo;
 // shell: false: the theme draws the walls, ceilings, lights and the entrance facade itself; camHeight/camBack: the chase camera
 // inside). Outside the tunnel it is a car park: asphalt, painted bays, lamp posts, trolley bays, hedges. The road inside is a
-// polished tiled floor; the level's ice patches are freshly polished stretches
+// polished tiled floor; the level's standing water ("waterPatches") is freshly mopped stretches
 THEMES.mall = { sky: 0x9fc4e8, ground: 0x6f7174, road: 0x3a3d42, scenery: 'mall', unmarked: true, bare: true, lit: true,
   sets: ['approach', 'fashion', 'atrium', 'foodcourt', 'escalators', 'electronics', 'kids', 'dock'], // (its halls, what a zone's scenery can be: the car park outside, then the halls) // (unmarked and bare: no lane lines, no ruts: the floor is tiles; the car park's lines are the theme's own)
+  standingWater: { say: 'wetFloor', patchy: true, water: 0x6f7c86, opacity: 0.16, edge: null, puddle: ['#5a6268', '#68717a', '#8a9095'], poolOpacity: 0.5, sheen: 0.3 }, // (a level's standing water is a freshly MOPPED floor, not a flood: no sheet, no rim, faint neutral puddles with dry gaps and a soft gloss: render/hazards.js)
   pad: 'travelator', laneEnd: 'mall', // (a boost pad is a travelator, a dead end a mall shutter or a back-of-house wall: render/lanegimmicks.js, obstacleModels.js)
   tunnel: { lit: true, shell: false, camHeight: 6.5, camBack: 13, wall: 0xf1ede6, roof: 0xf8f6f1, lamp: 0xffffff, face: 0xe4dfd6,
     heights: { fashion: 8.5, atrium: 16, foodcourt: 10, escalators: 12, electronics: 8.5, kids: 10 } },

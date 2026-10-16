@@ -179,6 +179,9 @@ export const FIELDS = {
   noTankRage: { shape: 'flag', group: 'modes', label: 'No TANK RAGE', help: 'TANK RAGE is off: no targets, no pieces found, and the pieces the player has are neither used nor lost here. A special event\'s stages have it on by default.' },
   amphibious: { shape: 'flag', group: 'modes', label: 'Amphibious level', help: 'It can only be started in an amphibious car. Water stages need it.' },
   noPackages: { shape: 'flag', group: 'modes', label: 'No packages', help: 'Nobody throws packages.' },
+  wetness: { shape: 'object', group: 'road', label: 'Wetness', help: 'How slippery water is on this surface, for the whole level (burst mains and standing water): 1 is tarmac, more is slipperier (a tiled floor), 0 is no slip.',
+    settings: { strength: num('Strength', { min: 0, max: 3, step: 0.05, default: 1, help: 'Each share of grip on the water loses this times what it loses at 1 (never below a floor).' }),
+      tail: num('Wet tail', { min: 0.1, max: 5, step: 0.1, default: 1, help: 'Times the ' + C.waterMain?.wetAfter + ' m the tyres stay wet after the water.' }) } },
   understeer: { shape: 'flag', group: 'modes', label: 'Understeer', help: 'Every car understeers in bends as on ice (and none slows for a bend by itself).' },
   wallDamage: { shape: 'flag', group: 'modes', label: 'Wall damage', help: 'A car going sideways into the road\'s edge takes damage.' },
   nudge: { shape: 'flag', group: 'modes', label: 'Nudging', help: 'A car steering into another\'s side knocks it aside.' },
@@ -258,6 +261,8 @@ export const FIELDS = {
     settings: { traffic: { type: 'mix', label: 'Traffic here', choices: VEHICLE_KINDS, required: true, init: { police: 0.05 } } } },
 
   // ---- hazards on the road ----
+  waterPatches: { shape: 'stretch', group: 'hazards', label: 'Standing water', span: 60, minSpan: 10, help: 'Standing water on that lane (no lane: across the road), there all the time: a burst main\'s water with no main. Weaker brakes and slower lane changes on it, and the tyres stay wet a little after it.',
+    settings: { lane: lane('Lane', { help: 'Left out: across the road.' }) } },
   ice: { shape: 'stretch', group: 'hazards', label: 'Ice', help: 'An ice patch on that lane (no lane: across the road). On it the car brakes with a share of its brakes and changes lane more slowly.', settings: { lane: lane('Lane', { help: 'Left out: across the road.' }) } },
   crosswinds: { shape: 'stretch', group: 'hazards', label: 'Crosswind', span: 500, help: 'An exposed stretch with a gusting wind across it: tall cars are pushed harder, a tall vehicle alongside gives shelter.',
     settings: { dir: pick('Blows to the', SIDES, { required: true, init: 'left' }), strength: num('Strength (m/s²)', { min: 0.5, max: 50, step: 0.5, default: C.crosswind?.strength }),

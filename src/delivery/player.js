@@ -41,7 +41,7 @@ export const Player = {
   brakeLight: false,   // braking at all: the brake lights are on
   onIce: false,        // on an ice patch (see CONFIG.ice), or anything as slippery (see Track.icy)...
   onWater: false,      // ...and that being a burst main's water (see CONFIG.waterMain: its own share of the brakes and the steering)
-  wetTyres: 0,         // 1 .. 0: after a burst main's water, the tyres stay wet for CONFIG.waterMain.wetAfter m (ice lets go the moment the car is off it)
+  wetTyres: 0,         // 1 .. 0: after a burst main's water or standing water, the tyres stay wet for Track.wet.wetAfter m (ice lets go the moment the car is off it)
   wading: 0,           // how deep the tide's water is where the car is (see Tide): 0 = dry, 1 = full depth
   afloat: false,       // afloat on a water stage (see Water), and how deep its water is where the car is: 0 = dry road .. 1
   waterDepth: 0,
@@ -448,7 +448,8 @@ export const Player = {
     // the slowest the brakes bring it: on a lapped circuit, minSpeed; anywhere else, to a stop, for as long
     // as the brake is held (let go, it rolls on up to minSpeed again by itself)
     const slowest = LEVEL.laps ? CONFIG.minSpeed : 0;
-    const grip = this.onIce ? (this.onWater ? CONFIG.waterMain : CONFIG.ice).brakeGrip : 1 - (1 - CONFIG.waterMain.brakeGrip) * this.wetTyres; // (braking on ice, or on a burst main's water, or on the wet tyres it leaves)
+    const WM = Track.wet; // (the water's numbers on this level: CONFIG.waterMain's, scaled by its "wetness")
+    const grip = this.onIce ? (this.onWater ? WM : CONFIG.ice).brakeGrip : 1 - (1 - WM.brakeGrip) * this.wetTyres; // (braking on ice, or on a burst main's water or standing water, or on the wet tyres it leaves)
     // (but with a flat tyre, not: the car can be brought to a stop to change it, and stays there)
     if (drive <= 0 && (this.launching || this.speed < CONFIG.minSpeed) && !this.puncture && !(drive < 0 && !this.launching && slowest < CONFIG.minSpeed)) drive = 1;
     if (drive === 0 && boosted && !lifting) drive = 1; // the turbo pulls unless you brake (or lift off)
@@ -516,10 +517,10 @@ export const Player = {
     }
     if (icy) this.yawVel += (random() - 0.5) * 8 * Math.min(1, this.speed / 25) * dt; // (and twitches about on it)
     this.onIce = icy;
-    this.onWater = icy && !!patch.water; // (a burst main's water: slippery by its own numbers, see CONFIG.waterMain)
-    // water leaves wet tyres: for wetAfter m past a burst main's water, its braking, steering and lane-change numbers fade back
-    // to normal (it's no ice: no sliding, no understeer). Ice lets go the moment the car is off it
-    const WM = CONFIG.waterMain;
+    this.onWater = icy && !!patch.water; // (a burst main's water, or standing water: slippery by its own numbers, see CONFIG.waterMain and Track.wet)
+    // water leaves wet tyres: for wetAfter m past a burst main's water (or standing water), its braking, steering and lane-change
+    // numbers fade back to normal (it's no ice: no sliding, no understeer). Ice lets go the moment the car is off it
+    const WM = Track.wet; // (CONFIG.waterMain's numbers, scaled by the level's "wetness": one source, track.js waterNumbers)
     this.wetTyres = this.onWater ? 1 : icy ? 0 : Math.max(0, this.wetTyres - this.speed * dt / WM.wetAfter);
     const wetMix = (key) => 1 - (1 - WM[key]) * this.wetTyres;
     const slippery = icy ? (this.onWater ? WM : CONFIG.ice) : this.wetTyres > 0 ? { steerGrip: wetMix('steerGrip'), laneSpeed: wetMix('laneSpeed') } : null;
