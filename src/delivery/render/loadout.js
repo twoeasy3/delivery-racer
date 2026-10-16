@@ -14,7 +14,7 @@
 // moves the key of every car that follows the default and of no car that has its own for that slot. Every cache is keyed per car id.
 // Render-only (no rules module imports it; not in the replay fingerprint).
 import { carById } from '../cars.js';
-import { wheelDesign, wheelColour, wornRim, onWheelColour } from './wheelcosmetic.js';
+import { wheelDesign, wheelColour, wornRim, wornTread, onWheelColour } from './wheelcosmetic.js';
 import { shownDesign, plateText, platesEquipped, onPlate, onPlatesEquipped } from './platecosmetic.js';
 import { SLOTS, shownProp, propPaintChoice, onProp } from './propdress.js';
 
@@ -23,7 +23,7 @@ const carOf = (car) => (car && typeof car === 'object' ? car : carById(car) || {
 export const loadoutKey = (car) => {
   const c = carOf(car), id = c.id, raw = platesEquipped() ? '|x' : '';
   if (c.legend) return 'legend' + raw;
-  const wheels = 'w=' + wheelDesign(id) + '.' + wheelColour(id) + '.' + wornRim(id, 'front') + '.' + wornRim(id, 'rear');
+  const wheels = 'w=' + wheelDesign(id) + '.' + wheelColour(id) + '.' + wornRim(id, 'front') + '.' + wornRim(id, 'rear') + '.' + wornTread(id, 'front') + '.' + wornTread(id, 'rear');
   const design = shownDesign(id), plate = '|p=' + design + (design !== 'stock' ? '.' + plateText(id) : '');
   const props = SLOTS.map((slot) => { const p = shownProp(slot, id); return '|' + slot + '=' + (p === 'none' ? '-' : p + '.' + propPaintChoice(slot, id)); }).join('');
   return wheels + plate + props + raw;
