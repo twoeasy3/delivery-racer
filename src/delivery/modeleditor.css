@@ -160,3 +160,4 @@ svg.glass .gh.hov:not(.on) circle { stroke: #ffffff; stroke-width: 2; }
 .pts.gpts .vec:first-child > span { font-size: 11px; color: var(--muted); }
 #glassSvg { scroll-margin-top: 66px; } /* (under the sticky tabs) */
 .gread .bad { color: #ff8c42; }
+@media (max-width: 900px) and (min-width: 600px) { svg.glass#glassSvg { max-width: 560px; } } /* (a tablet's sheet: the window drawn bigger, its corners further apart) */
