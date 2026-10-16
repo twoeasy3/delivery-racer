@@ -118,19 +118,27 @@ export const IDEA_MODELS_WEDGE = {
     const BELT = 0.77, ROOF = 1.065, CB = BELT - 0.01;   // the cabin sits on the deck at the belt
     const xf = along([[NOSE, 0.8], [1.97, 0.9], [1.85, 0.95], [1.6, XF], [-1.97, XF], [TAILZ, 0.93]]);  // the plan: a chamfered nose
     const yb = along([[NOSE, 0.26], [1.97, 0.2], [1.85, 0.17], [-1.9, 0.17], [-1.97, 0.2], [TAILZ, 0.26]]); // the floor
-    const crest = along([[NOSE, 0.44], [1.97, 0.5], [1.5, 0.67], [1.2, 0.74], [0.86, 0.76], [0.58, BELT], [-0.62, BELT], [-1.05, 0.9], [TAILZ, 0.9]]); // the fenders' tops
+    const crest = along([[NOSE, 0.44], [1.97, 0.5], [1.5, 0.67], [1.2, 0.74], [0.86, 0.76], [0.62, BELT], [-0.62, BELT], [-1.05, 0.9], [TAILZ, 0.9]]); // the fenders' tops
     const deck = along([[NOSE, 0.42], [1.97, 0.47], [0.58, BELT], [-0.62, BELT], [-1.05, 0.9], [TAILZ, 0.9]]); // the bonnet's / deck's middle
     // the arches: trapezoids cut up into the flank, their roofs following the body (a front foot, its top corners, a back foot)
     const arch = { 1.6: 'foot', 1.5: 0.6, 1.2: 0.645, 0.86: 0.68, 0.76: 'foot', [-0.84]: 'foot', [-0.92]: 0.755, [-1.05]: 0.76, [-1.66]: 0.76, [-1.74]: 'foot' };
-    const Z = [NOSE, 1.97, 1.85, 1.6, 1.5, 1.2, 0.86, 0.76, 0.58, -0.62, -0.84, -0.92, -1.05, -1.66, -1.74, -1.97, TAILZ];
-    const stations = Z.map((z) => {
+    // THE DOOR OPENING: a recess in the flank from the sill to the shoulder's crease, between the arches (z DZR to DZF, in to x RX), dark inside.
+    // Shut, the door's skin fills it flush (the same paint, the same shading: no line shows); up, the cavity shows with a seat and a dash in it
+    const DZF = 0.62, DZR = -0.62, SILL = 0.3, DT = BELT - CH, RX = 0.5;
+    // (each end of the opening has two stations at the same z, without and with it: the walls between them are the opening's ends)
+    const Z = [NOSE, 1.97, 1.85, 1.6, 1.5, 1.2, 0.86, 0.76, DZF, [DZF], [0.58], [DZR], DZR, -0.84, -0.92, -1.05, -1.66, -1.74, -1.97, TAILZ];
+    const stations = Z.map((zz) => {
+      const door = Array.isArray(zz), z = door ? zz[0] : zz;
       const f = xf(z), b = yb(z), top = crest(z), mid = deck(z), a = typeof arch[z] === 'number' ? arch[z] : b;
       const xs = f - CI, xm = Math.min(0.6, xs - 0.05);
-      return { z, pts: [[0, b], [XL, b], [XL, a], [f, a], [f, top - CH], [xs, top], [xm, mid], [0, mid]] };
+      // (the same eleven points at every station: where there is no opening, the recess's four collapse onto the flank's foot)
+      const recess = door ? [[f, SILL], [RX, SILL], [RX, DT]] : [[f, a], [f, a], [f, a]];
+      return { z, pts: [[0, b], [XL, b], [XL, a], [f, a], ...recess, [f, top - CH], [xs, top], [xm, mid], [0, mid]] };
     });
-    const dark = 0.24;
+    const dark = 0.24, inside = 0.3;
     const low = (y) => 0.8 + 0.2 * Math.min(1, Math.max(0, (y - 0.2) / 0.35));
-    const bodyGeo = () => loft(stations, (nrm, c, p) => (nrm.y < -0.55 || (Math.abs(nrm.x) > 0.6 && Math.abs(c.x) < XL + 0.03) ? dark : low(p[1])));
+    const inRecess = (c) => Math.abs(c.z) < DZF + 0.005 && c.y > SILL - 0.005 && c.y < DT + 0.005 && Math.abs(c.x) > RX - 0.005 && Math.abs(c.x) < XF - 0.003;
+    const bodyGeo = () => loft(stations, (nrm, c, p) => (inRecess(c) ? inside : nrm.y < -0.55 || (Math.abs(nrm.x) > 0.6 && Math.abs(c.x) < XL + 0.03) ? dark : low(p[1])));
 
     // ---- the cabin: its own side view, extruded narrower than the body, its flanks leaning in
     const CW = 0.86, TAPER = [CB, ROOF, 0.3], BEV = 0.012;
@@ -166,12 +174,13 @@ export const IDEA_MODELS_WEDGE = {
       bx(1.7, 0.12, 0.1, 0, 0.36, BZ - 0.02),                       // the valance: a bumper bar under it
       ...[-1, 1].map(s => bx(0.2, 0.15, 0.025, s * 0.77, 0.925, -0.645 - 0.004)), // the air boxes' mouths
       ...[-1, 1].map(s => bx(0.03, 0.12, 1.5, s * (XF + 0.003), 0.23, -0.04)),    // the black sills between the arches
+      ...[-1, 1].map(s => bx(0.12, 0.07, 0.15, s * mirrorX, 0.82, 0.4)),           // the mirrors, by the screen's foot
     ])), TRIM);
     // the intakes behind the doors and the engine cover's louvres: one picture, two places
     const vent = new THREE.MeshLambertMaterial({ map: louvres() });
     const intake = (s) => {
-      const pts = [[-0.6, 0.4], [-0.8, 0.4], [-0.86, 0.7], [-0.63, 0.7]]; // (a parallelogram, its back edge along the arch's front edge)
-      return quad(pts.map(([z, y]) => [s * (XF + 0.005), y, z]), pts.map(([z, y]) => [(z + 0.6) * 4, (y - 0.4) * 4]), [s, 0, 0]);
+      const pts = [[-0.64, 0.4], [-0.81, 0.4], [-0.87, 0.7], [-0.66, 0.7]]; // (a parallelogram behind the door's opening, its back edge along the arch's front edge)
+      return quad(pts.map(([z, y]) => [s * (XF + 0.005), y, z]), pts.map(([z, y]) => [(z + 0.64) * 4, (y - 0.4) * 4]), [s, 0, 0]);
     };
     const cover = () => {
       const geo = new THREE.PlaneGeometry(0.92, 0.72).rotateX(-Math.PI / 2).translate(0, 0.904, -1.5), uv = geo.attributes.uv;
@@ -218,26 +227,28 @@ export const IDEA_MODELS_WEDGE = {
       wheel(s, AR, RR, TWR, XF - TWR / 2 - 0.015);
     }
 
-    // ---- the doors: hinged at the screen's foot, they swing up (the garage only). Shut, a door is the body and its window (the one glass mesh
-    // above): nothing of its own is drawn. Up, it is one flat door: a skin from the sill to over the window's top (its outline the window's
-    // grown 4 cm) with the window's shape on it in near-black, a mirror on it, and the doorway behind it dark (the side window left on the
-    // cabin reads as the dark way in)
-    const HZ = 0.58, HY = BELT, SX = XF + 0.028; // (the skin's outer face)
-    const doorOutline = (win) => {
-      const big = insetOutline(win, win.map(() => -0.04)), n = big.length;
-      const up = big.map((p, j) => j).filter(j => big[j][1] > BELT + 0.001);
-      const start = up.find(j => !up.includes((j + n - 1) % n)), chain = [];
-      for (let j = start; up.includes(j) && chain.length < n; j = (j + 1) % n) chain.push(big[j]);
-      if (chain[0][0] > chain[chain.length - 1][0]) chain.reverse(); // (from its back to its front)
-      const zr = Math.min(-0.62, chain[0][0]), zf = 0.62;
-      return [[zf, 0.24], [zr, 0.24], [zr, BELT], ...chain, [zf, BELT]];
+    // ---- the doors (scissor doors, up in the garage only). A door is a thick skin that fills the opening flush when shut (shaded as the flank
+    // is, so no line shows), hinged at its front top corner by the screen's foot; it swings up 65 degrees. While it is up it also shows its
+    // upper frame round a near-black window (the side window itself stays on the cabin, dark: the way in), a hinge block, the seal round the
+    // opening, a seat and a dash in the cavity. A flank decal (render/flankdecal.js) is hidden while a door is up and put back when it shuts
+    const HZ = DZF - 0.02, HY = DT + 0.03, OPEN = 1.13, T = 0.04; // (the hinge; the angle up; the door's thickness)
+    const seat = new THREE.MeshLambertMaterial({ color: 0x4a3426 });
+    const shadeDoor = (geo, s) => { // (its outer face shaded as the flank, every other face the dark of the inside)
+      const g = plain(geo), pos = g.attributes.position, nrm = g.attributes.normal, col = new Float32Array(pos.count * 3);
+      for (let i = 0; i < pos.count; i++) col.fill(nrm.getX(i) * s > 0.5 ? low(pos.getY(i)) : inside, i * 3, i * 3 + 3);
+      g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+      return g;
     };
-    const skin = (s, win) => {
-      const shape = new THREE.Shape(doorOutline(win).map(([z, y]) => new THREE.Vector2(z, y)));
-      return new THREE.ExtrudeGeometry(shape, { depth: 0.02, bevelEnabled: false }).rotateY(-Math.PI / 2).translate(s > 0 ? SX : -SX + 0.02, 0, 0);
+    const slabX = (pts, x0, x1) => { // (a side-view polygon [z, y] made solid from x0 to x1)
+      const shape = new THREE.Shape(pts.map(([z, y]) => new THREE.Vector2(z, y)));
+      return new THREE.ExtrudeGeometry(shape, { depth: x1 - x0, bevelEnabled: false }).rotateY(-Math.PI / 2).translate(x1, 0, 0);
     };
-    const flatGlass = (s, win) => { // (a fan: the window is convex)
-      const pts = win.map(([z, y]) => [s * (SX + 0.003), y, z]), pos = [];
+    const frameOutline = (win) => { // (the door's upper frame: the window grown 4 cm, its two lowest corners brought down to the crease)
+      const big = insetOutline(win, win.map(() => -0.04)), lowest = big.map((p, j) => j).sort((u, v) => big[u][1] - big[v][1]).slice(0, 2);
+      return big.map(([z, y], j) => [Math.min(DZF, Math.max(DZR, z)), lowest.includes(j) ? DT : y]);
+    };
+    const flatGlass = (s, win, x) => { // (a fan: the window is convex)
+      const pts = win.map(([z, y]) => [s * x, y, z]), pos = [];
       const a = new THREE.Vector3(...pts[0]), n = new THREE.Vector3().crossVectors(new THREE.Vector3(...pts[1]).sub(a), new THREE.Vector3(...pts[2]).sub(a));
       const flip = n.x * s < 0;
       for (let j = 1; j + 1 < pts.length; j++) pos.push(...pts[0], ...(flip ? [...pts[j + 1], ...pts[j]] : [...pts[j], ...pts[j + 1]]));
@@ -245,23 +256,33 @@ export const IDEA_MODELS_WEDGE = {
       geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
       return merge([geo]);
     };
-    const doorway = (s) => bx(0.004, 0.465, 1.22, s * (XF + 0.0055), 0.4725, 0); // (up to the shoulder's crease)
+    const xs2 = (s, a, b) => (s > 0 ? [a, b] : [-b, -a]); // (an x range on the side s)
     const doors = [];
     for (const [i, s] of [[0, 1], [1, -1]]) {
+      const side = s > 0 ? 'L' : 'R', win = glass.sides[i].userData.pane.now; // (the window's [z, y] polygon, edits and all)
       const hinge = new THREE.Group(), inner = new THREE.Group();
       hinge.position.set(0, HY, HZ); inner.position.set(0, -HY, -HZ);
       hinge.add(inner); group.add(hinge);
-      const side = s > 0 ? 'L' : 'R';
-      const outline = glass.sides[i].userData.pane.now; // (the window's [z, y] polygon, edits and all)
-      // (the raised door's window in the trim's near-black, not the glass: it is no window part of its own, the side window stays one pane)
-      const flat = place(inner, shared(k + 'doorglass' + side, () => flatGlass(s, outline)), TRIM);
-      place(inner, shared(k + 'mirror' + side, () => bx(0.12, 0.07, 0.15, s * mirrorX, 0.82, 0.4)), TRIM).name = 'mirror ' + side; // (on the door top)
-      const skinMesh = place(inner, shared(k + 'skin' + side, () => tint(skin(s, outline))), paint);
-      const hole = place(group, shared(k + 'doorway' + side, () => doorway(s)), TRIM); // (the side window left on the cabin is dark already)
-      skinMesh.visible = hole.visible = flat.visible = false;
-      skinMesh.name = 'door ' + side; hole.name = 'doorway ' + side; flat.name = 'door top ' + side;
-      doors.push({ hinge, show: [skinMesh, hole, flat] });
+      const skinMesh = place(inner, shared(k + 'door' + side, () => shadeDoor(slabX([[DZF, SILL], [DZR, SILL], [DZR, DT], [DZF, DT]], ...xs2(s, XF - T, XF)), s)), paint);
+      skinMesh.name = 'door ' + side;
+      const frame = place(inner, shared(k + 'doorframe' + side, () => shadeDoor(slabX(frameOutline(win), ...xs2(s, XF - T + 0.005, XF - 0.005)), s)), paint);
+      const top = place(inner, shared(k + 'doorwin' + side, () => flatGlass(s, win, XF + 0.004)), TRIM); // (near-black, not glass: no window part of its own)
+      frame.name = 'door frame ' + side; top.name = 'door top ' + side;
+      // the cavity's furniture and the opening's seal, and the hinge block (shown while the door is up)
+      const cave = place(group, shared(k + 'cave' + side, () => merge([
+        bx(0.02, 0.012, 1.22, s * (XF - 0.012), SILL + 0.008, 0), bx(0.02, 0.012, 1.22, s * (XF - 0.012), DT - 0.008, 0), // the seal along the sill and the top
+        bx(0.02, DT - SILL - 0.004, 0.012, s * (XF - 0.012), (SILL + DT) / 2, DZF - 0.008), bx(0.02, DT - SILL - 0.004, 0.012, s * (XF - 0.012), (SILL + DT) / 2, DZR + 0.008),
+        bx(0.32, 0.12, 0.3, s * 0.69, 0.5, DZF - 0.17),             // the dash's end, at the front of the cavity
+        bx(0.05, 0.07, 0.12, s * (XF - 0.03), HY, HZ + 0.03),       // the hinge block
+      ])), TRIM);
+      const chair = place(group, shared(k + 'seat' + side, () => merge([
+        bx(0.3, 0.09, 0.42, s * 0.67, SILL + 0.046, -0.16),          // the seat's cushion
+        bx(0.3, 0.38, 0.1, s * 0.67, SILL + 0.2, -0.43, -0.25),      // and its back, raked
+      ])), seat);
+      cave.name = 'door opening ' + side; chair.name = 'seat ' + side;
+      doors.push({ hinge, show: [frame, top, cave, chair] });
     }
+    const hidDecals = new Set();
     group.userData = {
       body,
       garageOnly: true, // (its doors move in the garage and on the card only: traffic draws it with them shut, render/cars.js)
@@ -269,7 +290,11 @@ export const IDEA_MODELS_WEDGE = {
         // (the player's car is animated on the road too, render/items.js, which sets userData.roll for the rims: there the doors stay shut)
         const road = group.userData.roll !== undefined;
         const open = road ? 0 : Math.max(0, Math.min(1, Math.sin(t * 0.6) * 1.6 - 0.2)), ease = open * open * (3 - 2 * open);
-        for (const d of doors) { d.hinge.rotation.x = ease * 1.05; for (const m of d.show) m.visible = ease > 0.01; }
+        const up = ease > 0.01;
+        for (const d of doors) { d.hinge.rotation.x = ease * OPEN; for (const m of d.show) m.visible = up; }
+        // (a flank decal stays on the body: hidden while a door is up, and only the ones hidden here put back)
+        if (up) group.traverse(o => { if (o.userData.flankDecal && o.visible) { o.visible = false; hidDecals.add(o); } });
+        else if (hidDecals.size) { for (const o of hidDecals) o.visible = true; hidDecals.clear(); }
       },
     };
     return group;
