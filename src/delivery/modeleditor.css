@@ -143,3 +143,19 @@ svg.glass .sh.on circle:last-of-type { stroke-width: 2.5; }
 @media (max-width: 900px) {
   body.shaping .viewButtons.tools > .seg, body.shaping .viewButtons.tools > .lampRow, body.shaping .viewButtons.tools > label.check:not(:has(#snap)) { display: none; }
 }
+/* a window's corners (modeleditor.js paneEditor, CHECKLIST 336): numbered, named, the picked one orange; a finger-sized reach */
+svg.glass.near { cursor: grab; }
+svg.glass .gh text.gname { fill: #e2e8f0; paint-order: stroke; stroke: #1b2330; stroke-width: 3px; pointer-events: none; }
+svg.glass .gh.on text.gname { fill: #ff8c42; font-weight: 700; }
+svg.glass .gh.hov:not(.on) circle { stroke: #ffffff; stroke-width: 2; }
+.gread { font-size: 13px; margin: 6px 0 0; min-height: 18px; }
+.gread b { color: #ff8c42; }
+.gnudge { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; align-items: center; }
+.gnudge > button { min-width: 44px; min-height: 44px; font-size: 16px; padding: 0; }
+.gnudge .seg { display: inline-flex; margin-left: auto; }
+.gnudge .seg button { min-height: 44px; font-size: 12px; padding: 0 8px; }
+.gnudge .seg button.on { background: var(--accent); color: #1b2029; border-color: var(--accent); font-weight: 700; }
+.pts.gpts .vec { grid-template-columns: 92px 1fr 1fr 34px 34px; }
+.pts.gpts .vec > span:first-child { font-size: 11px; white-space: nowrap; }
+.pts.gpts .vec:first-child > span { font-size: 11px; color: var(--muted); }
+#gHead { scroll-margin-top: 64px; } /* (under the sticky tabs) */
