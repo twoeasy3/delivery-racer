@@ -11,11 +11,10 @@
 //   - IN A RUN (headless, the scene stubbed): every 'explode' event the rules queue is drawn in the chosen effect (none by the classic
 //     fireball), 'burst' and 'gift' events from others are untouched, the player's own package trail follows the choice, the player's own
 //     flaming package bursts in it; with Classic chosen, no kill-effect pool is touched
-//   - the replay fingerprint (vite.config.js logicFiles) walks no render/ file, and its hash is the merge-base's (render-only)
+//   - the replay fingerprint (vite.config.js logicFiles) walks no render/ file, and no logic file names a kill-effect module (render-only)
 //   node scripts/.killfx-check.mjs
 import { startModels } from './modelpatch-load.mjs';
-import { spawnSync, execSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -239,14 +238,10 @@ try {
   const { logicFiles } = await import('../vite.config.js');
   const files = logicFiles();
   check(!files.some(f => /render\/|killfx|killpreview|particles/.test(f)), 'the replay fingerprint (vite.config.js logicFiles, ' + files.length + ' files) walks no render/ file');
-  const hashOf = (read) => { const h = createHash('sha256'); for (const f of files) h.update(f + '\0' + read(f)); return h.digest('hex').slice(0, 10); };
-  const here = hashOf((f) => readFileSync(new URL('../src/delivery/' + f, import.meta.url)));
-  let base = null, baseRef = '';
-  try {
-    baseRef = execSync('git merge-base HEAD origin/main', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
-    base = hashOf((f) => execSync('git show ' + baseRef + ':src/delivery/' + f, { stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64 << 20 }));
-  } catch { /* (no git history: skipped) */ }
-  check(base === null || base === here, 'the logic hash is the merge-base\'s (' + here + (base ? ' = ' + baseRef.slice(0, 7) + '\'s ' + base : ', merge-base not found: not compared') + '): render-only');
+  // (render-only: no logic file imports or names a kill-effect module. This used to compare the whole logic hash with the merge-base's,
+  // which only holds on the kill-effects branch alone: an integration of several branches changes logic files of its own, v1.1.148-alpha)
+  const named = files.filter(f => /killfx|killpreview|particles\.js/.test(readFileSync(new URL('../src/delivery/' + f, import.meta.url), 'utf8')));
+  check(!named.length, 'no logic file imports or names a kill-effect module (' + (named.join(', ') || 'none') + '): render-only');
 } finally {
   Math.random = realRandom;
   await session.close();
