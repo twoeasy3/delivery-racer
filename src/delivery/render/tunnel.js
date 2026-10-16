@@ -17,12 +17,13 @@ import { buildStrip } from './road.js';
 import { setHeadlights } from './headlights.js';
 import { Sound } from './audio.js';
 import { heightOf, tunnelsLit } from './tunnelshape.js'; // (the ceiling's height along a tunnel: the usual, the tunnel's own, or the theme's by zone)
+import { TUNNEL_LOOKS, wallTexture, glowTexture, dressTunnels, dressStats } from './tunneldress.js'; // (the looks and fittings of the themes whose tunnels had none)
 
 const group = new THREE.Group();
 scene.add(group);
 const USUAL = { near: 120, far: 520 };
 const dark = new THREE.Color(), outside = new THREE.Color();
-let inside = 0, lightsOwn = false, has = false;
+let inside = 0, lightsOwn = false, has = false, darkColor = null;
 
 // a roof strip whose height varies along s (buildStrip, with y a function of s: a ceiling that climbs into an atrium)
 const roofStrip = (sFrom, sTo, latA, latB, yAt, step = 4) => {
@@ -48,10 +49,16 @@ const build = () => {
   if (!has) return;
   const T = CONFIG.tunnel;
   // (a theme may give a tunnel its colours, `tunnel` in themes.js: a cardboard box in the toy room)
-  const look = { wall: 0x5a5d63, tiles: 0xd9dcd2, roof: 0x3d4046, lamp: 0xfff3d0, face: 0x6b6e74, ...(THEMES[LEVEL.theme] || THEMES.city).tunnel };
-  const wall = new THREE.MeshLambertMaterial({ color: look.wall, side: THREE.DoubleSide });
+  // (and a theme with none of its own may have a look here: render/tunneldress.js, by the theme's name: a bypass, a dock tunnel, a
+  // rock tunnel under the fjord, the cross-harbour tunnel, a Shuto tunnel. Its texture on the walls, its lamps, their glow, its fittings)
+  const own = (THEMES[LEVEL.theme] || THEMES.city).tunnel;
+  const look = { wall: 0x5a5d63, tiles: 0xd9dcd2, roof: 0x3d4046, lamp: 0xfff3d0, face: 0x6b6e74, ...(own ? {} : TUNNEL_LOOKS[LEVEL.theme] || TUNNEL_LOOKS[LEVEL.theme === undefined ? 'city' : '']), ...own };
+  darkColor = look.dark ?? null;
+  const wallTex = wallTexture(look.wallMap), roofTex = look.roofMap ? wallTex : null;
+  const wall = new THREE.MeshLambertMaterial({ color: look.wall, side: THREE.DoubleSide, map: wallTex?.map ?? null,
+    ...(look.selfLit ? { emissive: look.selfLit, emissiveMap: wallTex?.map ?? null } : {}) });
   const tiles = new THREE.MeshLambertMaterial({ color: look.tiles, side: THREE.DoubleSide });
-  const roof = new THREE.MeshLambertMaterial({ color: look.roof, side: THREE.DoubleSide });
+  const roof = new THREE.MeshLambertMaterial({ color: roofTex ? 0xffffff : look.roof, side: THREE.DoubleSide, map: roofTex?.map ?? null });
   const lamp = new THREE.MeshBasicMaterial({ color: look.lamp });
   const face = new THREE.MeshLambertMaterial({ color: look.face, side: THREE.DoubleSide });
   const add = (geo, mat) => { if (!geo.attributes.normal) geo.computeVertexNormals(); const mesh = new THREE.Mesh(geo, mat); group.add(mesh); return mesh; };
@@ -68,18 +75,21 @@ const build = () => {
     // one quad per 4 m along, its two edges the foot and the top of the wall)
     for (const side of [-1, 1]) {
       const edge = side < 0 ? lo : hi;
-      const pos = [], idx = [];
+      const pos = [], idx = [], uv = [];
       let n = 0;
       for (let s = t.from; s <= t.to + 0.001; s += 4, n++) {
         const q = Math.min(s, t.to);
         Track.toWorld(q, edge(q), tmp);
         pos.push(tmp.x, tmp.y, tmp.z, tmp.x, tmp.y + hAt(q), tmp.z);
+        if (wallTex) uv.push((q - t.from) / wallTex.U, 0, (q - t.from) / wallTex.U, hAt(q) / wallTex.V); // (the texture's metres along and up)
         if (n && !inMouth(q - 2)) { const a = (n - 1) * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } // (no wall across a junction's mouth)
       }
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
       geo.setIndex(idx);
+      if (wallTex) geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
       add(geo, wall);
+      if (look.band === false) continue; // (the look's texture has its own)
       // the band of tiles along it, at headlight height
       const band = pos.map((v, i) => i % 3 === 1 ? (i % 6 === 1 ? v + 0.9 : pos[i - 3] + 2.1) : v); // (the top from the foot, whatever the ceiling's height)
       const bandGeo = new THREE.BufferGeometry();
@@ -89,7 +99,13 @@ const build = () => {
       b.position.x += 0; // (flush: it is the same wall, a lighter band of it)
       b.scale.setScalar(1.001);
     }
-    add(varies ? roofStrip(t.from, t.to, lo, hi, hAt, 4) : buildStrip(t.from, t.to, lo, hi, hAt(t.from), 4), roof);
+    const roofGeo = varies ? roofStrip(t.from, t.to, lo, hi, hAt, 4) : buildStrip(t.from, t.to, lo, hi, hAt(t.from), 4);
+    if (roofTex) { // (the texture over the ceiling too: a rock tunnel's. The strips' points go in pairs, 4 m apart along)
+      const P = roofGeo.attributes.position, uv = [];
+      for (let i = 0; i < P.count; i++) uv.push(Math.floor(i / 2) * 4 / roofTex.U, (i % 2) * (hi(t.from) - lo(t.from)) / roofTex.V);
+      roofGeo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    }
+    add(roofGeo, roof);
     // the side tunnels of its junctions: a stub each side, as tall as the tunnel there, 20 m long, the dark at its end
     for (const m of mouths) {
       if (m <= t.from || m >= t.to) continue;
@@ -104,17 +120,32 @@ const build = () => {
         group.add(stub);
       }
     }
-    // the lamps down the middle of the ceiling
-    const count = Math.floor((t.to - t.from) / T.lampEvery);
-    const lamps = new THREE.InstancedMesh(new THREE.BoxGeometry(0.5, 0.12, 2.2), lamp, count);
+    // the lamps down the middle of the ceiling (or the look's: in rows `rows` m in from both walls, or one wall (`side`), every `every`
+    // m, `size`, `drop` m under the ceiling), and the look's glow under each (`glow`: a halo, added light)
+    const LA = look.lamps || {}, every = LA.every ?? T.lampEvery, size = LA.size ?? [0.5, 0.12, 2.2], drop = LA.drop ?? 0.1;
+    const rows = LA.rows ? LA.rows.flatMap(d => (LA.side ? [LA.side] : [-1, 1]).map(side => [side, d])) : [[0, 0]];
+    const count = Math.floor((t.to - t.from) / every), at = [];
     for (let k = 0; k < count; k++) {
-      const s = t.from + T.lampEvery * (k + 0.5);
-      spot.rotation.y = Track.toWorld(s, 0, tmp);
-      spot.position.set(tmp.x, tmp.y + hAt(s) - 0.1, tmp.z);
+      const s = t.from + every * (k + 0.5);
+      for (const [side, d] of rows) at.push([s, side ? (side < 0 ? lo(s) + d : hi(s) - d) : 0]);
+    }
+    const lamps = new THREE.InstancedMesh(new THREE.BoxGeometry(...size), lamp, at.length);
+    const halo = look.glow ? new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: look.lamp, map: glowTexture('spot'), transparent: true, opacity: look.glow * 2, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), at.length) : null;
+    at.forEach(([s, lat], k) => {
+      spot.rotation.y = Track.toWorld(s, lat, tmp);
+      spot.position.set(tmp.x, tmp.y + hAt(s) - drop, tmp.z);
+      spot.scale.set(1, 1, 1);
       spot.updateMatrix();
       lamps.setMatrixAt(k, spot.matrix);
-    }
+      if (!halo) return;
+      spot.position.y -= size[1] / 2 + 0.03; // (just under the lamp, a soft spot of light round it, five times as wide, twice as long)
+      spot.scale.set(size[0] * 5 + 1, 1, size[2] * 2 + 1);
+      spot.updateMatrix();
+      halo.setMatrixAt(k, spot.matrix);
+    });
     group.add(lamps);
+    if (halo) group.add(halo);
     // the portals: a face of concrete round each opening, wide and tall, the hillside the tunnel goes into
     for (const end of [t.from, t.to]) {
       const H = hAt(end); // (the portal as tall as the tunnel is there)
@@ -137,6 +168,8 @@ const build = () => {
       }
     }
   }
+  // the look's fittings, all the level's tunnels' together (render/tunneldress.js)
+  dressStats.last = dressTunnels(look.dress, LEVEL.tunnels, heightOf, group);
 };
 Game.onLoad.push(build);
 
@@ -155,7 +188,7 @@ export const syncTunnel = () => {
   const F = litFog || T;
   if (!inside) outside.copy(scene.background); // (going in: the sky as it was, to put back)
   inside = want;
-  dark.set(F.color);
+  dark.set(litFog ? F.color : darkColor ?? F.color); // (a look's own dark: render/tunneldress.js)
   // (never less fog than a fog bank in the tunnel already has: see render/roadside.js)
   scene.fog.near = Math.min(scene.fog.near, USUAL.near + (F.near - USUAL.near) * inside);
   scene.fog.far = Math.min(scene.fog.far, USUAL.far + (F.far - USUAL.far) * inside);

@@ -3139,7 +3139,8 @@ const buildRoad = () => {
         posts.push([s, beside(side, s, 0.5), 0.4, 0.12, 0.8, 0.12]);
         // (each rail a run from one post to the next, tipped to the slope, as the circuits' walls: no steps on a hill)
         rails.push([s, beside(side, s, 0.45), 0.65, 0.08, 0.3, 4.02, [s + 4, beside(side, s + 4, 0.45)]]);
-        if (Math.random() < 0.6) banks.push([s + Math.random() * 4, beside(side, s, -0.1), 0.1, 1.2 + Math.random(), 0.7, 2 + Math.random() * 2]);
+        // (no snow piled more than 12 m into a tunnel: only what has blown in at its mouths)
+        if (Math.random() < 0.6 && !(LEVEL.tunnels || []).some(t => s > t.from + 12 && s < t.to - 12)) banks.push([s + Math.random() * 4, beside(side, s, -0.1), 0.1, 1.2 + Math.random(), 0.7, 2 + Math.random() * 2]);
       }
     }
     instances(cube, 0x5a5f66, posts);
@@ -3419,7 +3420,9 @@ const buildRoad = () => {
     }
     // neon signs hung out over the road on arms from posts at the kerb, both sides, each a slab of colour
     // (a few stacked, as Nathan Road's) and a glow laid on the road under it
+    const underCover = (s) => (LEVEL.tunnels || []).some(t => s > t.from - 6 && s < t.to + 6); // (none hung inside a tunnel)
     for (let s = Track.start + 20, k = 0; s < Track.end; s += 34, k++) {
+      if (underCover(s)) continue;
       const side = k % 3 === 2 ? 1 : -1; // (more on the city side)
       signPosts.push([s, beside(side, s, 0.9), 4, 0.25, 8, 0.25]);
       arms.push([s, beside(side, s, -2.6), 7.6, 7.4, 0.14, 0.14]);
@@ -3427,6 +3430,7 @@ const buildRoad = () => {
       for (let j = 0; j < n; j++) signs[(k + j) % NEON.length].push([s, beside(side, s, -3.5 - j * 0.2), 6.6 - j * 1.4, 2.6 + Math.random() * 2, 1.0, 0.18]);
     }
     for (let s = Track.start, k = 0; s < Track.end; s += 40, k++) { // street lamps along the pavement, each side in turn
+      if (underCover(s)) continue;
       const side = k % 2 ? 1 : -1;
       lampPosts.push([s, beside(side, s, 0.7), 3, 0.16, 6, 0.16]);
       lampHeads.push([s, beside(side, s, 0.1), 5.95, 1.2, 0.18, 0.4]);
