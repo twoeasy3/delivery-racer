@@ -21,9 +21,10 @@
 // Keys: arrows move between the choices (left / right along a row, up / down between rows), Enter or Space equips the one
 // focused, Escape goes back. Touch: every choice is at least 44 px tall. Storage and the test switches are wheelcosmetic.js's.
 import '../cosmetics.css';
+import * as THREE from 'three';
 import { WHEEL_COLOURS, WHEEL_DESIGNS, TYRE_COLOURS, WHEEL_SETS, wheelColour, wheelDesign, wheelSet, wheelRim, wheelTread, setWheelSet, setWheelTread, setWheelTyre, setWheelRim, setHubColour, hubKind, onWheelColour } from './wheelcosmetic.js';
 import { rimStatus, RIM_DESIGNS } from './rims.js';
-import { TREAD_DESIGNS, treadStatus } from './treads.js';
+import { TREAD_DESIGNS, treadStatus, drawTread } from './treads.js';
 import { PLATE_DESIGNS, designById, plateDesign, shownDesign, setPlateDesign, plateText, setPlateText, previewPlateText, resetPlate, onPlate, platePlan } from './platecosmetic.js';
 import { drawPlate } from './platedesigns.js';
 import { MAX_LEN, DEFAULT_TEXT, sanitizePlateText } from './platetext.js';
@@ -64,7 +65,7 @@ const make = (tag, className, ...children) => {
 };
 const hexOf = (hex, fallback) => '#' + (hex === null ? fallback : hex.toString(16).padStart(6, '0'));
 
-let partRows = {}, hubSegs = [], hubMode = null;
+let partRows = {}, hubSegs = [], hubMode = null, hubWorn = null, treadLabel = null, partLook = '';
 let built = false, panelBox, scopeBar, tabs = {}, panels = {}, stage, carName, customMark, scopeBtns, resetCarBtn, copyBtn, copyArmed = 0, status, slotList, setRow, customChip, closeBtn, viewBtns, sections = {}, propSecs = {}, tabMsg, plateRow, plateInput, plateMsg, plateStatus, plateChip, openSlot = 'wheels';
 let state = { open: false, car: null, evil: false, onClose: null, inMenu: false, close: false, scope: 'car' };
 // whose choice the screen shows and changes: the car on show ('This car') or the default ('All cars')
@@ -100,31 +101,40 @@ const shown = () => {
   customChip.hidden = id !== 'custom'; // (the equipped state when the saved pair is no set: shown, ticked, not pressable)
   // the three parts: each row ticks the part worn; the hub row shows the kind worn unless another was picked on the switch
   const c = cid(), kind = hubKind(c), worn = { tread: wheelTread(c), tyre: wheelDesign(c), colour: kind === 'colour' ? wheelColour(c) : null, rim: kind !== 'colour' ? wheelRim(c) : null };
-  if (!hubMode) hubMode = kind;
+  if (!hubMode || kind !== hubWorn) hubMode = kind; // (the switch shows the kind worn; another kind picked on it stays until the worn kind changes)
+  hubWorn = kind;
   for (const [key, row] of Object.entries(partRows)) for (const b of row.children) { const on = b.dataset.part === worn[key === 'spin' ? 'rim' : key]; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('equipped', on); }
   for (const b of hubSegs) b.setAttribute('aria-pressed', String(b.dataset.kind === hubMode));
   partRows.colour.hidden = hubMode !== 'colour'; partRows.rim.hidden = hubMode !== 'rim'; partRows.spin.hidden = hubMode !== 'spin';
   const model = state.scope === 'car' ? ShowroomView.model : null;
-  status.textContent = 'Wheels: ' + (set ? set.name : 'Custom') + (wheelRim(c) !== 'none' && model && rimStatus(model) !== 'ok' ? '. No rims for this car' : '') + (worn.tread !== 'none' && model && treadStatus(model) !== 'ok' ? '. No tread for this car' : '');
+  // the Tread row only where this car can wear one (the registry's rule: render/cosmeticslots.js); in 'All cars' always
+  const treadOk = slotById('wheels').rows.tread(state.car, { model });
+  partRows.tread.hidden = treadLabel.hidden = !treadOk;
+  // the part chips drawn in what is worn: the treads in the tyre's colour, the rims and spinners in the hub colour
+  const tyreHex = TYRE_COLOURS.find(t => t.id === worn.tyre)?.tyre ?? null, hubHex = WHEEL_COLOURS.find(x => x.id === wheelColour(c))?.hex ?? null, look = tyreHex + '/' + hubHex;
+  if (look !== partLook) {
+    partLook = look;
+    for (const b of partRows.tread.children) b.firstChild.replaceWith(miniTread(b.dataset.part, tyreHex));
+    for (const b of [...partRows.rim.children, ...partRows.spin.children]) b.firstChild.replaceWith(miniRim(b.dataset.part, hexOf(hubHex, 'cfd3d9'), '#1b1b1d', '#1b1b1d'));
+  }
+  status.textContent = 'Wheels: ' + (set ? set.name : 'Custom') + (wheelRim(c) !== 'none' && model && rimStatus(model) !== 'ok' ? '. No rims for this car' : '') + (worn.tread !== 'none' && model && !['ok', 'flat'].includes(treadStatus(model)) ? '. No tread for this car' : '');
 };
-// a tread's chip: a patch of the tyre's running surface seen from above, the pattern drawn as it is built (render/treads.js)
-const miniTread = (id) => {
+// a tread's chip: a patch of the tyre's running surface seen from above, three rows of it, drawn from the design's own footprints (the
+// blocks render/treads.js builds), in the tyre's colour (tyre: a hex; null: the car's own black, the pattern a worn grey)
+const miniTread = (id, tyre = null) => {
   const c = make('canvas', 'cz-swatch cz-tread'); c.width = c.height = 48;
   const g = c.getContext('2d');
   if (!g) return c;
-  g.fillStyle = '#26272b'; g.fillRect(0, 0, 48, 48);
-  g.fillStyle = '#8a8f98';
-  const poly = (pts) => { g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.fill(); };
+  g.fillStyle = '#26272b'; g.fillRect(0, 0, 48, 48); // (the shoulders)
   if (id === 'none') { g.fillStyle = '#3a3c42'; g.fillRect(4, 0, 40, 48); return c; }
-  if (id === 'knobbly') for (let r = -1; r < 5; r++) { const y = r * 12; if (r % 2) poly([[17, y + 2], [31, y + 2], [31, y + 9], [17, y + 9]]); else { poly([[3, y + 2], [16, y + 2], [16, y + 9], [3, y + 9]]); poly([[32, y + 2], [45, y + 2], [45, y + 9], [32, y + 9]]); } }
-  if (id === 'chevron') for (let r = -1; r < 5; r++) { const y = r * 11; poly([[24, y], [45, y + 9], [45, y + 14], [24, y + 5], [3, y + 14], [3, y + 9]]); }
-  if (id === 'ribs') { g.fillRect(3, 0, 12, 48); g.fillRect(33, 0, 12, 48); for (let r = 0; r < 5; r++) g.fillRect(19, r * 10 + 1, 10, 7); }
-  if (id === 'lugs') for (let r = -1; r < 4; r++) { const y = r * 14; poly([[2, y + 14], [2, y + 20], [27, y + 9], [27, y + 3]]); poly([[46, y + 21], [46, y + 27], [21, y + 16], [21, y + 10]]); }
-  if (id === 'studs') for (let r = -1; r < 6; r++) { const y = r * 10, s = r % 2 ? 2 : -2; poly([[3, y + 2 - s], [22, y + 2 + s], [22, y + 8 + s], [3, y + 8 - s]]); poly([[26, y + 2 + s], [45, y + 2 - s], [45, y + 8 - s], [26, y + 8 + s]]); g.fillStyle = '#eef2f6'; g.beginPath(); g.arc(r % 2 ? 35 : 12, y + 5, 1.8, 0, Math.PI * 2); g.fill(); g.fillStyle = '#8a8f98'; }
+  const col = tyre === null ? null : new THREE.Color(tyre), light = !col || col.r + col.g + col.b < 0.25 ? '#8a8f98' : '#' + col.getHexString(), groove = !col || col.r + col.g + col.b < 0.25 ? '#16171a' : '#' + col.clone().multiplyScalar(0.35).getHexString();
+  g.save(); g.translate(4, 0);
+  try { drawTread(g, id, { w: 40, h: 48, rows: 3, around: 'y', value: (k) => (k === 'groove' ? groove : k === 'steel' ? '#eef2f6' : light) }); } catch { /* (no picture: the name stays) */ }
+  g.restore();
   return c;
 };
 // a rim set's chip: the rim itself, drawn small (the tyre, the dish, the spokes or blades, the cap)
-const miniRim = (rim, hub, tyre, ring) => {
+const miniRim = (rim, hub, tyre, ring, tread = null) => {
   const c = make('canvas', 'cz-swatch cz-rim'); c.width = c.height = 48;
   const g = c.getContext('2d');
   if (!g) return c;
@@ -133,6 +143,8 @@ const miniRim = (rim, hub, tyre, ring) => {
   g.translate(R, R);
   disc(R, tyre);
   if (ring !== tyre) { disc(R * 0.92, ring); disc(R * 0.85, tyre); }
+  if (tread && tread !== 'none') { g.fillStyle = '#8a8f98'; for (let i = 0; i < 14; i++) { g.save(); g.rotate(i * Math.PI * 2 / 14); g.fillRect(-2.2, -R, 4.4, 3.4); g.restore(); } } // (a tread: blocks round the edge)
+  if (!rim || rim === 'none') { disc(R * 0.62, hub); disc(R * 0.2, '#00000033'); return c; } // (no rim: the hub in its colour)
   const T = Math.PI * 2, wedges = (r, n, a, b) => { for (let i = 0; i < n; i++) { g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, r, i * T / n, (i + 1) * T / n); g.closePath(); g.fillStyle = i % 2 ? b : a; g.fill(); } };
   const shape = (pts, fill) => { g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x * R, -y * R) : g.moveTo(x * R, -y * R))); g.closePath(); g.fillStyle = fill; g.fill(); };
   if (rim === 'pumpkin') { // (its own colours, as render/rims.js builds it: a lobed orange face, rib lines, carved eyes and grin glowing, a green stem)
@@ -165,6 +177,10 @@ const miniRim = (rim, hub, tyre, ring) => {
   if (rim === 'twin10') for (let i = 0; i < 5; i++) for (const s of [-0.14, 0.14]) blade(i * T / 5 + s, 3, R * 0.72, 1, 1);
   if (rim === 'turbine') for (let i = 0; i < 10; i++) blade(i * T / 10, 4, R * 0.72, 1.5, 3, 2);
   if (rim === 'blade3' || rim === 'spinblade') for (let i = 0; i < 3; i++) blade(i * T / 3, 2, R * 0.78, 4, 2, 4);
+  if (rim === 'star6') for (let i = 0; i < 6; i++) blade(i * T / 6, 3, R * 0.72, 2.6, 1.4, 2.5);
+  if (rim === 'wire') { g.globalAlpha = 0.9; for (let i = 0; i < 16; i++) blade(i * T / 16, 3, R * 0.72, 0.6, 0.6, 1.5); g.globalAlpha = 1; }
+  if (rim === 'steelie') { disc(R * 0.72, hub); g.fillStyle = '#202226'; for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(Math.cos(i * T / 6) * R * 0.47, Math.sin(i * T / 6) * R * 0.47, R * 0.08, 0, T); g.fill(); } g.fillStyle = hub; }
+  if (rim === 'dish') { disc(R * 0.8, hub); disc(R * 0.5, '#202226'); g.fillStyle = hub; for (let i = 0; i < 5; i++) { g.beginPath(); g.arc(Math.cos(i * T / 5) * R * 0.3, Math.sin(i * T / 5) * R * 0.3, 1.6, 0, T); g.fill(); } }
   if (rim === 'twinspin' || rim === 'spintwin') { disc(R * 0.5, hub); for (let i = 0; i < 2; i++) blade(i * Math.PI, R * 0.4, R * 0.78, 3.5, 2); g.fillStyle = '#202226'; g.beginPath(); g.arc(R * 0.3, 0, 2.6, 0, T); g.fill(); g.fillStyle = hub; }
   disc(R * 0.17, hub);
   return c;
@@ -475,6 +491,12 @@ const renderTabs = () => {
 
 // where the close-up of a slot looks: the slot's centre on this car (its box, or the worn cylinder prop's), as wide as the prop with the car around it
 const focusOf = (slot) => {
+  if (slot === 'tread') { // (the front tyre on the car's right, or its left: the camera low in front of it, the car turned to show its face and running surface)
+    const model = ShowroomView.model, info = model?.userData.wheelHubs?.rimInfo;
+    if (!info || !info.length) return null;
+    const t = info.filter(x => x.axle === 'front').sort((a, b) => b.centre.x - a.centre.x)[0] || info[0], k = model.scale.x || 1, side = t.centre.x >= 0 ? 1 : -1;
+    return { at: [t.centre.x * k, t.centre.y * k, t.centre.z * k], span: (t.R || t.r) * k * 3.2, yaw: -side * 0.62, lift: 0.14 };
+  }
   const car = state.car, s = car && propSlots(car.id)[slot];
   if (!s || !s.supported) return null;
   const prop = propById(shownProp(slot, car.id)), sh = prop && prop.shape === 'cylinder' ? s.cylinder : s.box, v = PROP_VIEW[slot];
@@ -511,7 +533,8 @@ const build = () => {
   const endView = (name, end) => { const b = make('button', 'cz-view', name); b.type = 'button'; b.dataset.end = end; b.addEventListener('click', () => setCloseUp(true, end)); return b; };
   const propView = () => { const b = make('button', 'cz-view', 'Close-up'); b.type = 'button'; b.hidden = true; b.addEventListener('click', () => { const ps = propSlotNow(); if (ps) setCloseUp(true, null, ps); }); return b; };
   const killTest = make('button', 'cz-view', 'Test'); killTest.type = 'button'; killTest.hidden = true; killTest.addEventListener('click', testKill); // (the kill effect tried on the car)
-  viewBtns = [view('Whole car', false), view('Wheels close-up', true), endView('Rear plate', 'rear'), endView('Front plate', 'front'), propView(), killTest];
+  const treadView = make('button', 'cz-view', 'Tread'); treadView.type = 'button'; treadView.addEventListener('click', () => setCloseUp(true, null, 'tread')); // (one wheel, close, turned to its running surface)
+  viewBtns = [view('Whole car', false), view('Wheels close-up', true), endView('Rear plate', 'rear'), endView('Front plate', 'front'), propView(), killTest, treadView];
   const stageBox = make('div', 'cz-stage', stage, make('div', 'cz-views', ...viewBtns), make('p', 'cz-hint', 'Drag to turn the car'));
   // the slots (the tabs this car has: renderTabs)
   slotList = make('div', 'cz-slots');
@@ -524,13 +547,14 @@ const build = () => {
   for (const w of WHEEL_SETS) {
     const d = WHEEL_DESIGNS.find(x => x.id === w.design), c = WHEEL_COLOURS.find(x => x.id === w.hub);
     const tyre = hexOf(d.tyre, '1b1b1d'), ring = d.ring ? hexOf(d.ring.hex) : tyre, hub = hexOf(c.hex !== null ? c.hex : d.hub, '9aa3b2'); // (a hub colour wins over the design's hub)
-    setRow.append(chip('set', w.id, w.name, w.tread && !w.rim ? miniTread(w.tread) : w.rim ? miniRim(w.rim, c.hex !== null || d.hub !== null ? hub : '#cfd3d9', tyre, ring) : swatchOf('radial-gradient(circle,' + hub + ' 0 30%,' + tyre + ' 30% 46%,' + ring + ' 46% 66%,' + tyre + ' 66%)'), (id) => setWheelSet(id, tgt())));
+    // (the whole set drawn: tyre and its line, tread blocks round the edge, the rim or the plain hub in the set's colour)
+    setRow.append(chip('set', w.id, w.name, miniRim(w.rim || null, c.hex !== null || d.hub !== null ? hub : w.rim ? '#cfd3d9' : '#9aa3b2', tyre, ring, w.tread), (id) => setWheelSet(id, tgt())));
   }
   // the three parts (free, no ownership: the presets are what is owned): a chip each, short names
   const part = (key, id, name, swatch, pick) => { const b = make('button', 'cz-chip cz-part'); b.type = 'button'; b.dataset.part = id; b.append(swatch, make('span', 'cz-name', name), make('span', 'cz-tick', '✓')); b.addEventListener('click', () => { pick(id); Sound.play('menuPick', 0.4); }); return b; };
   const rowOf = (key, label) => { const r = make('div', 'cz-row cz-parts'); r.setAttribute('role', 'group'); r.setAttribute('aria-label', label); partRows[key] = r; return r; };
   const treadRow = rowOf('tread', 'Tread');
-  for (const d of TREAD_DESIGNS) treadRow.append(part('tread', d.id, d.name, miniTread(d.id), (id) => setWheelTread(id, tgt())));
+  for (const d of TREAD_DESIGNS) treadRow.append(part('tread', d.id, d.name, miniTread(d.id), (id) => { setWheelTread(id, tgt()); if (state.close && !state.end && !state.prop && id !== 'none') setCloseUp(true, null, 'tread'); })); // (the close-up turns to the tread)
   const tyreRow = rowOf('tyre', 'Tyre colour');
   for (const t of TYRE_COLOURS) { const rub = hexOf(t.tyre, '1b1b1d'), ring = t.ring ? hexOf(t.ring.hex) : rub; tyreRow.append(part('tyre', t.id, t.name, t.id === 'stock' ? swatchOf(null, true) : swatchOf('radial-gradient(circle,#9aa3b2 0 34%,' + rub + ' 34% 52%,' + ring + ' 52% 72%,' + rub + ' 72%)'), (id) => setWheelTyre(id, tgt()))); }
   const colourRow = rowOf('colour', 'Hub colour');
@@ -552,7 +576,7 @@ const build = () => {
   reset.addEventListener('click', () => { setWheelSet('stock', tgt()); Sound.play('menuMove', 0.4); });
   const wheels = make('section', 'cz-section',
     make('h2', '', 'Wheels', tagFor('wheels')),
-    label('Tread'), treadRow,
+    (treadLabel = label('Tread')), treadRow,
     label('Tyre'), tyreRow,
     label('Hub', hubSwitch), colourRow, rimRow, spinRow,
     label('Presets'), setRow, customChip,
@@ -618,7 +642,8 @@ const setCloseUp = (on, end = null, slot = null) => {
   ShowroomView.closeUp(on, end, focus);
   viewBtns[0].setAttribute('aria-pressed', String(!on));
   viewBtns[1].setAttribute('aria-pressed', String(on && !end && !slot));
-  viewBtns[4].setAttribute('aria-pressed', String(on && !!slot));
+  viewBtns[4].setAttribute('aria-pressed', String(on && !!slot && slot !== 'tread'));
+  viewBtns[6].setAttribute('aria-pressed', String(on && slot === 'tread'));
   viewBtns[2].setAttribute('aria-pressed', String(on && end === 'rear'));
   viewBtns[3].setAttribute('aria-pressed', String(on && end === 'front'));
 };
@@ -631,9 +656,9 @@ const openSection = (id) => {
   for (const b of slotList.children) { const on = b.dataset.slot === id; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; }
   scopeBar.hidden = slotById(id)?.scope === 'player';
   p.refresh();
-  viewBtns[1].hidden = id !== 'wheels'; viewBtns[2].hidden = viewBtns[3].hidden = id !== 'plate'; viewBtns[5].hidden = id !== 'kill';
+  viewBtns[1].hidden = viewBtns[6].hidden = id !== 'wheels'; viewBtns[2].hidden = viewBtns[3].hidden = id !== 'plate'; viewBtns[5].hidden = id !== 'kill';
   if (id !== 'kill') KillPreview.clear(); // (the Kill effect's panel refreshes itself: p.refresh() above)
-  const keep = state.close && (id === 'plate' ? !!state.end : id === 'wheels' ? !state.end && !state.prop : state.prop === id);
+  const keep = state.close && (id === 'plate' ? !!state.end : id === 'wheels' ? !state.end && (!state.prop || state.prop === 'tread') : state.prop === id);
   if (state.close && !keep) setCloseUp(false);
   if (id === 'plate') plateShown();
   if (propSlotNow()) { propShown(); drawPreviews(id); }
@@ -697,6 +722,7 @@ export const Cosmetics = {
     shown();
     openSection(openSlot);
     showCar();
+    if (cu === 'tread' && openSlot === 'wheels') setCloseUp(true, null, 'tread'); // (?closeup=tread: the Tread view, once the car is built)
     if (openSlot === 'kill' && KillPreview.hold >= 0) setTimeout(() => { if (state.open) testKill(); }, 1500); // (?killtest=<s>: tried once the car has landed, held at <s> s)
     if (q.get('platetype') !== null) { plateInput.value = q.get('platetype'); plateInput.dispatchEvent(new Event('input')); commitText(); } // (?platetype=TEXT: types it and confirms, for a picture of the filter's message)
     requestAnimationFrame(() => (root.querySelector('.cz-row .cz-chip.equipped') || closeBtn)?.focus({ preventScroll: true }));

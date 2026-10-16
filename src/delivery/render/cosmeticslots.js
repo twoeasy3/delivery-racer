@@ -23,6 +23,7 @@
 import { COSMETICS } from './cosmetics.js';
 import { slotStatus } from './propdress.js';
 import { plateAnchorsFor } from './plateanchors.js';
+import { treadSupported } from './treads.js';
 
 let demo = false;
 try { demo = typeof location !== 'undefined' && new URLSearchParams(location.search).get('cosmetics') === 'all'; } catch { /* (no address) */ }
@@ -38,7 +39,9 @@ export const SLOT_LIST = [
   // (CHECKLIST 340: the cars with no model of their own cannot wear these: the Tank's road wheels sit inside its tracks, with no tyre or hub
   // the wheel set can find, and the Saucer and the UFO have no wheels; a vehicle the plate table says cannot carry a plate (the Saucer,
   // the F1, the hovercraft...: render/plateanchors.js status 'none') has no Plate tab. The Tank wears its plate and kill effect in a run.)
-  { id: 'wheels', label: 'Wheels', name: 'Wheels', scope: 'car', supports: (car) => !car.tank && !car.ufo, items: () => [true] },
+  // (rows: a part row of the panel shown only where the car on show can wear it; ctx.model its live model. The Tread row: not on a car
+  // with no tyre found, Legendary or RIM_SKIP cars, or tyres too small: render/treads.js treadSupported)
+  { id: 'wheels', label: 'Wheels', name: 'Wheels', scope: 'car', supports: (car) => !car.tank && !car.ufo, items: () => [true], rows: { tread: (car, ctx = {}) => !ctx.model || treadSupported(ctx.model) } },
   { id: 'plate', label: 'Plate', name: 'Number plate', scope: 'car', supports: (car) => plateAnchorsFor(car).status !== 'none', items: () => [true] },
   { id: 'roof', label: 'Roof', name: 'Roof prop', scope: 'car', prop: true, supports: prop('roof'), items: registered('roof') },
   { id: 'cargo', label: 'Cargo', name: 'Cargo prop', scope: 'car', prop: true, supports: prop('cargo'), items: registered('cargo') },
