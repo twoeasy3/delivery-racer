@@ -264,6 +264,8 @@ body.touch-controls .throw { display: block; }
   /* ...and the message lines at the foot of the screen, on the road behind the car: above the on-screen
      controls and between the two THROW buttons, if those are up */
   #messages { position: fixed; left: 16px; right: 16px; bottom: calc(64px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; justify-content: flex-end; }
+  /* (who is behind: under the messages, which sit from 64 px up; Pause and Exit are at the top of an upright phone) */
+  body #behind { bottom: calc(10px + env(safe-area-inset-bottom)); } /* (body: the plain #behind rule comes later in the file) */
   #messages .line { min-height: 0; font-size: clamp(14px, 3.6vw, 20px); }
   body.touch-controls #messages { left: 112px; right: 112px; bottom: calc(var(--zone-h) + 12px); }
 }

@@ -768,6 +768,7 @@ export const Collision = (() => {
       for (const o of obstacles) {
         if (!o.laneEnd || o.gone || Math.abs(o.s - Player.s) > CONFIG.broadPhaseDistance || !overlap(Player, o)) continue;
         if (o.laneEnd !== 'wall' && Player.ghost > 0) continue; // (a shutter or a pillar: through it, as through anything; only a wall has nothing behind it)
+        if (o.laneEnd === 'pillar' && Player.shield > 0) continue; // (a fresh drop's shield takes it through a pillar: a pillar only, never a dead end)
         if (o.laneEnd === 'shutter') {
           if (Player.tank > 0 || Player.armour > 0) { // (smashed through: the shutter is gone)
             o.gone = true;

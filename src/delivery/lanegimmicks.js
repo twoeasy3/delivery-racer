@@ -70,6 +70,18 @@ export const LaneGimmicks = {
     const W = CONFIG.pillar.warn;
     return this.groups.find(g => s >= g.from - W && s <= g.to + 2) || null;
   },
+  // where the helicopter sets a car down that was wrecked at or among a group of PILLARS (Player.prepareDrop): never at them, nor
+  // between a group's columns: the s moved clear of the group, behind it or past it, whichever is nearer (CONFIG.pillar.clear m
+  // from its first or last), and the lane the lane beside the pillars' that `busy(lane)` (a train on that track: bullettrain.js)
+  // does not rule out, the one nearer `lat` if both are free. Null where no group is near s (the drop as on any level)
+  pillarDrop(s, lat, busy = () => false) {
+    const C = CONFIG.pillar.clear, g = this.groups.find(q => s > q.from - C && s < q.to + C);
+    if (!g) return null;
+    const to = s - (g.from - C) <= (g.to + C) - s ? g.from - C : g.to + C;
+    const lanes = [g.lane - 1, g.lane + 1].filter(l => l >= 0 && l < Track.laneCount);
+    lanes.sort((a, b) => (busy(a) - busy(b)) || Math.abs(Track.laneOffset(a, to) - lat) - Math.abs(Track.laneOffset(b, to) - lat));
+    return { s: to, lane: lanes[0] ?? g.lane };
+  },
   // whether a train on an edge railway is held back now (bullettrain.js): the player is at a group of pillars (the tracks are the
   // way past: none sets off), or coming up to one within CONFIG.pillar.hold m while `other` (the other track's train) is about
   pillarHold(s, other) {
