@@ -12,8 +12,8 @@
 //    (so a gate never closes again, whatever the bank does).
 // Losing `seen` (a cookie-only restore, a save code: neither carries it) makes a save with progress read as LEGACY: everything shown,
 // never anything hidden from a player who had it.
-// Menu only: no rule of a run reads this (vite.config.js NOT_RULES), and Progress.data.evil is never changed here (the UI hides the
-// Evil half of the switch, nothing more).
+// Menu only: no rule of a run reads this (vite.config.js NOT_RULES). Good and Evil are BOTH open from the start (the owner, 16-Oct: "I want
+// Evil to be selectable from the start"): no gate touches the side, its switch, its medals or Progress.data.evil.
 // ============================================================================
 import { LEVELS, isRace } from './levels.js';
 
@@ -55,9 +55,6 @@ export const GATES = [
     hides: ['#watchBtn', '#saveReplayBtn', '#lookBtn', '#stage .replays'], mark: null },
   { id: 'style', label: 'Style', trigger: d => owned(d) >= 2 || deliveries(d) >= 3, intro: 'Wheels, plates and more: Showroom, Style.',
     hides: ['#menuOptions section.wheels', '#showroom .sr-cosm'], mark: '#shop' },
-  { id: 'evil', label: 'Evil', trigger: d => deliveries(d) >= 3, intro: 'Less time, fire packages, a second medal.',
-    hides: ['#sideBtn [data-side="evil"]', '#showroom .sr-side [data-side="evil"]', '#liveryBtn [data-side="evil"]', '#stage .ribbon .half.evil', '#menuOptions a[href="sides.html"]'],
-    mark: '#sideBtn' },
   { id: 'races', label: 'Races', trigger: d => deliveries(d) >= 4, intro: 'Lapped circuits, any time.',
     hides: ['#tabRaces'], mark: '#tabRaces' },
   { id: 'shop', label: 'Shop', trigger: d => deliveries(d) >= 5 || some(d.packs) || (Array.isArray(d.packLog) && d.packLog.length > 0),
@@ -72,6 +69,9 @@ export const GATES = [
     hides: ['#menuOptions .editor-link'], mark: '#optionsBtn' },
 ];
 export const GATE_IDS = GATES.map(g => g.id);
+// Good vs Evil in two words each, inside the switch's halves for a save on the ladder (render/progressui.js): the Driving Lesson's line
+// "Good gives gifts. Evil throws fire." and the menu's side note ("More time..." / "Less time...") said shortly. Not a gate
+export const SIDE_HINTS = { good: 'gifts · more time', evil: 'fire · less time' };
 export const gateOf = (id) => GATES.find(g => g.id === id);
 
 // EVERY MENU SECTION (the front screen, the Options sheet, the car lot, the results, the showroom), each with its gate or 'always', and, when
@@ -87,15 +87,15 @@ export const SECTIONS = [
   ['#optionsCloseBtn', 'Options: Close', 'always'], ['#unlockAllBtn', 'Unlock mode: Everything', 'always'], ['#unlockAbsBtn', 'Unlock mode: Absolutely everything', 'always'],
   ['#garageTabBtn', 'Car lot: Crazey Jim’s', 'always'], ['#ideasTabBtn', 'Car lot: Car ideas', 'always'], ['#garageBackBtn', 'Car lot: Back', 'always'],
   ['#garageAction', 'Car lot: Buy', 'always'], ['#garageUse', 'Car lot: Use', 'always'], ['#garageInspect', 'Car lot: Inspect', 'always'],
-  ['#sideBtn [data-side="evil"]', 'Good / Evil switch: its Evil half (Good always)', 'evil'], ['#sideNote', 'Side note', 'always'], ['#startBtn', 'Start', 'always'],
-  ['#stage .replays', 'Replays chip', 'replays'], ['#stage .ribbon .half.evil', 'Evil medal', 'evil'],
+  ['#sideBtn', 'Good / Evil switch (both halves, from the start)', 'always'], ['#sideNote', 'Side note', 'always'], ['#startBtn', 'Start', 'always'],
+  ['#stage .replays', 'Replays chip', 'replays'], ['#stage .ribbon .half.evil', 'Evil medal', 'always'],
   ['#muteBtn', 'Sound', 'always'], ['#touchBtn', 'On-screen controls', 'always'], ['#autoGasBtn', 'Auto accelerate', 'always'],
   ['#autoBrakeBtn', 'Auto brake', 'always'], ['#ghostBtn', 'Ghost', 'always'], ['#wheelsOpenBtn', 'Customise wheels (Cosmetics)', 'style', 'in #menuOptions section.wheels'],
   ['#albumBtn', 'Postcards', 'extras', X], ['#milestonesBtn', 'Milestones', 'extras', X], ['#hiddenLevelsBtn', 'Hidden levels (the Driving Lesson too)', 'extras', X],
   ['#screensaverBtn', 'Screensaver', 'extras', X], ['#raceWatchBtn2', 'Race screensaver', 'extras', X], ['#screensaverLink', 'Screensaver link', 'extras', X],
   ['#menuOptions a[href="?racewatch"]', 'Race screensaver link', 'extras', X],
   ['#menuOptions a[href="powerups.html"]', 'Guide: Power-ups', 'always'], ['#menuOptions a[href="gimmicks.html"]', 'Guide: Gimmicks', 'always'],
-  ['#menuOptions a[href="cargo.html"]', 'Guide: Cargo', 'always'], ['#menuOptions a[href="sides.html"]', 'Guide: Good & Evil', 'evil'],
+  ['#menuOptions a[href="cargo.html"]', 'Guide: Cargo', 'always'], ['#menuOptions a[href="sides.html"]', 'Guide: Good & Evil', 'always'],
   ['#menuOptions a[href="police.html"]', 'Guide: Police', 'always'], ['#menuOptions .editor-link', 'Level editor, Model editor', 'editor'],
   ['#exportBtn', 'Export save', 'always'], ['#importBtn', 'Import save', 'always'], ['#completeBtn', 'Unlock everything', 'always'],
   ['#cashBtn', 'Add Crazey Cash', 'shop'], ['#resetBtn', 'Reset progress', 'always'],

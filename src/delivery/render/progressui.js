@@ -6,12 +6,15 @@
 //  - a gate just opened: its thing gets a pulsing outline, and a small card says what it is in one line (OK, or using the thing, and it
 //    is seen: Progress.data.seen). Three or more opening at once (Unlock everything) are taken as seen without a card
 //  - Options > Save gets "Show all menus" while anything is shut (a returning player's way out: every gate seen, kept)
-//  - Evil shut: the Good half alone, and neither it (a toggle) nor E flips the side; T does not cycle onto a shut tab
+//  - Good and Evil: both from the start (the owner, 16-Oct), untouched. A save on the ladder gets a plain line in each half of the switch,
+//    "gifts · more time" / "fire · less time" (the Driving Lesson's "Good gives gifts. Evil throws fire.", in two words each): the phone
+//    hides the menu's side note, so this is the explanation there
+//  - T (the menu's tab key) is off while the Races or Events tab is shut, so it cannot land on a hidden tab
 // Render only: imported early by main.js (its key guard must come before the menu's own, render/menustage.js). Progress.data.evil is never
 // written here; nothing a run does is touched (vite.config.js NOT_RULES: featuregates.js).
 // ============================================================================
 import { Progress } from '../progress.js';
-import { GATES, gatesMode, openGates, pendingIntros, adopt, markSeen, cleanSeen, gateOf } from '../featuregates.js';
+import { GATES, SIDE_HINTS, isProgressive, gatesMode, openGates, pendingIntros, adopt, markSeen, cleanSeen, gateOf } from '../featuregates.js';
 
 const mode = typeof document !== 'undefined' && typeof document.createElement === 'function' ? gatesMode() : 'off';
 const css = () => GATES.map(g => g.hides.length ? g.hides.map(s => 'body.pg-off-' + g.id + ' ' + s).join(',\n') + ' { display: none !important; }' : '').join('\n') + `
@@ -24,7 +27,9 @@ const css = () => GATES.map(g => g.hides.length ? g.hides.map(s => 'body.pg-off-
 #pgIntro b { grid-column: 1; font-size: 17px; font-weight: 800; }
 #pgIntro span { grid-column: 1; font-size: 13px; color: #d7dde8; }
 #pgIntro button { grid-column: 2; grid-row: 1 / span 3; min-width: 64px; padding: 10px 14px; border: 0; border-radius: 10px; background: #ffd23f; color: #141414; font: 800 15px system-ui, sans-serif; cursor: pointer; }
-#pgIntro.hidden, #pgAllBtn.hidden { display: none; }`;
+#pgIntro.hidden, #pgAllBtn.hidden { display: none; }
+#sideBtn .pg-hint { display: none; }
+body.pg-ladder #sideBtn .pg-hint { display: block; margin-top: 3px; white-space: normal; font: 600 11px/1.15 system-ui, sans-serif; letter-spacing: 0; text-transform: none; font-style: normal; opacity: .85; }`;
 
 if (mode !== 'off') {
   const d = () => Progress.data;
@@ -71,7 +76,7 @@ if (mode !== 'off') {
       }
     }
     card.classList.toggle('hidden', !shown);
-    if (stage) halve();
+    document.body.classList.toggle('pg-ladder', mode === 'on' && isProgressive(d()));
   };
   const seen = (ids) => { if (markSeen(d(), ids)) save(); apply(); };
   all.addEventListener('click', () => seen(GATES.map(g => g.id)));
@@ -79,29 +84,18 @@ if (mode !== 'off') {
   document.addEventListener('click', (e) => {
     for (const g of pendingIntros(d(), mode)) if (g.mark && e.target?.closest?.(g.mark)) seen(g.id);
   }, true);
-  // (Evil shut: the Good half is a toggle elsewhere: here it stays Good)
-  document.addEventListener('click', (e) => {
-    if (open.has('evil') || !e.target?.closest?.('[data-side]') || !e.target.closest('#sideBtn, #showroom .sr-side, #liveryBtn')) return;
-    e.stopImmediatePropagation();
-    e.preventDefault();
-  }, true);
   window.addEventListener('keydown', (e) => {
     const up = menuUp() || !document.getElementById('showroom')?.classList.contains('hidden');
     if (!up || e.ctrlKey || e.metaKey || e.altKey) return;
-    if ((e.code === 'KeyE' && !open.has('evil')) || (e.code === 'KeyT' && menuUp() && (!open.has('races') || !open.has('events')))) e.stopImmediatePropagation();
+    if (e.code === 'KeyT' && menuUp() && (!open.has('races') || !open.has('events'))) e.stopImmediatePropagation();
   }, true);
-  // (Evil shut: the tier's medals line counts Good's only, "0/5", not "0/10": both medals of a level are counted by the menu)
-  const stage = document.getElementById('stage');
-  const halve = () => {
-    if (open.has('evil')) return;
-    for (const p of stage.querySelectorAll('p.prize:not([data-pg-halved])')) {
-      const text = [...p.childNodes].find(n => n.nodeType === 3 && /medals \d+\/\d+/.test(n.textContent));
-      if (!text) continue;
-      p.dataset.pgHalved = '1';
-      text.textContent = text.textContent.replace(/medals (\d+)\/(\d+)/, (m, a, b) => 'medals ' + a + '/' + Math.round(b / 2));
-    }
-  };
-  if (stage) new MutationObserver(halve).observe(stage, { childList: true, subtree: true });
+  // (Good vs Evil, plainly, in the switch itself, for a save on the ladder: SIDE_HINTS)
+  for (const b of document.querySelectorAll('#sideBtn [data-side]')) {
+    const hint = document.createElement('small');
+    hint.className = 'pg-hint';
+    hint.textContent = SIDE_HINTS[b.dataset.side] || '';
+    b.append(hint);
+  }
   for (const type of ['progresschange', 'carchange', 'packschange', 'shopchange']) window.addEventListener(type, apply);
   setInterval(apply, 700); // (a delivery, a purchase, a pack: the save changes in many places; the table is cheap to read)
   apply();

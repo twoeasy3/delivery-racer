@@ -76,9 +76,17 @@ try {
   const one = delivered(['expressway']); one.seen = [];
   check([...openGates(one)].join() === 'cars' && pendingIntros(one).map(x => x.id).join() === 'cars', 'after the first delivery: Better cars, introduced');
   one.cars.push('junker');
-  check(openGates(one).has('style') && !openGates(one).has('evil'), 'a car bought: Style opens (Evil still shut)');
+  check(openGates(one).has('style') && !openGates(one).has('races'), 'a car bought: Style opens (Races still shut)');
   const three = delivered(T1.slice(0, 3)); three.seen = ['cars', 'replays', 'style'];
-  check(pendingIntros(three).map(x => x.id).join() === 'evil', 'after three deliveries: Evil to introduce');
+  check(pendingIntros(three).length === 0 && !openGates(three).has('races'), 'after three deliveries (Style seen): nothing new to introduce (no Evil rung any more), Races still shut');
+  // ---- Good and Evil: both from the start (the owner, 16-Oct) ----
+  const sideSel = ['#sideBtn', '#stage .ribbon .half.evil', '#menuOptions a[href="sides.html"]'];
+  check(!GATE_IDS.includes('evil') && !GATES.some(x => [...x.hides, x.mark || ''].some(h => /evil|sideBtn|sr-side|liveryBtn|ribbon/.test(h))),
+    'no gate is Evil, and no gate hides or marks the side switch, the Evil medal or a livery switch');
+  check(sideSel.every(sel => SECTIONS.find(x => x[0] === sel)?.[2] === 'always'), 'the Good / Evil switch, the Evil medal and Guide > Good & Evil are always shown');
+  check(Object.values(F.SIDE_HINTS).every(h => h.length <= 18) && /gift/.test(F.SIDE_HINTS.good) && /fire/.test(F.SIDE_HINTS.evil), 'the switch\'s plain hints, short: ' + JSON.stringify(F.SIDE_HINTS));
+  const ui = readFileSync(ROOT + '/src/delivery/render/progressui.js', 'utf8');
+  check(!/medals|KeyE|data-side="evil"|open\.has\('evil'\)/.test(ui), 'render/progressui.js does nothing to Evil: no medals rewrite (x/10 as today), no E key or Good-tap block');
   const pk = blank(); pk.seen = []; pk.packLog = [{ kind: 'career', cards: [] }]; pk.blueprints = { sport: 1 };
   check(openGates(pk).has('shop') && openGates(pk).has('blueprints') && !openGates(pk).has('events'), 'a first pack opens the Shop, a first blueprint the blueprints, at once');
 
@@ -89,7 +97,7 @@ try {
   const dirty = { seen: ['shop', 'shop', 'bogus', 7] }; cleanSeen(dirty);
   const notArr = { seen: 'x' }; cleanSeen(notArr);
   check(dirty.seen.join() === 'shop' && notArr.seen === undefined, 'seen cleaned as read (duplicates, unknown ids, not an array)');
-  const evilBefore = sticky.evil; markSeen(sticky, GATE_IDS); adopt(sticky);
+  const evilBefore = sticky.evil; markSeen(sticky, GATE_IDS); adopt(sticky); // (the save's evil flag untouched by any gate call)
   check(sticky.evil === evilBefore && openGates(sticky).size === GATES.length, 'Show all menus: every gate open; the save\'s evil flag untouched');
   // through Progress.save and a reload (local storage, the store of record)
   P.reset();
@@ -97,6 +105,11 @@ try {
   P.save();
   P.reload();
   check(Array.isArray(P.data.seen) && P.data.seen.join() === 'cars' && !isLegacy(P.data), 'seen kept through Progress.save and a reload (local storage)');
+  P.data.evil = true; P.save(); P.reload(); // (Evil picked on a brand-new ladder save, as the menu's switch does: pickSide sets data.evil and saves)
+  check(P.data.evil === true && Array.isArray(P.data.seen) && !isLegacy(P.data) && P.data.seen.join() === 'cars' && [...openGates(P.data)].join() === 'cars',
+    'Evil picked on a ladder save: kept through a save and reload, the save stays on the ladder (its seen and open gates as before)');
+  const newEvil = blank(); adopt(newEvil); newEvil.evil = true;
+  check(openGates(newEvil).size === 0 && !isLegacy(newEvil), 'a brand-new save that picks Evil at once: still on the ladder (adopted first), nothing else opened');
   const backup = localStorage.getItem('delivery_racer_progress_backup');
   check(JSON.stringify(P.data.seen).length <= 120 && JSON.stringify(GATE_IDS).length <= 120, '`seen` is tiny: ' + JSON.stringify(P.data.seen).length + ' bytes now, ' + JSON.stringify(GATE_IDS).length + ' with every gate');
   // the cookie alone (local storage lost): it does not carry `seen` (progress.js COOKIE_KEYS is a replay rule file: not changed), so the save
@@ -115,7 +128,7 @@ try {
   const nb = blank(); adopt(nb);
   const shownNew = SECTIONS.filter(([, , gate]) => gate === 'always').map(s => s[1]);
   check(hiddenFor(nb).length === SECTIONS.filter(s => s[2] !== 'always').length && shownNew.includes('Start') && shownNew.includes('Car card (Showroom, Crazey Jim’s lot)') && !shownNew.includes('Events tab and its dot'),
-    'a brand-new save hides the ' + hiddenFor(nb).length + ' gated entries and shows the ' + shownNew.length + ' always ones (Career, the car card, Good, Start, Options\' settings, guide and save)');
+    'a brand-new save hides the ' + hiddenFor(nb).length + ' gated entries and shows the ' + shownNew.length + ' always ones (Career, the car card, Good / Evil, Start, Options\' settings, guide and save)');
   check(hiddenFor(oldFull).length === 0, 'an old full save hides nothing');
   const every = delivered(LEVELS.filter(l => !g.levels.isRace(l)).map(l => l.id)); every.seen = [];
   check(hiddenFor(every).length === 0 && deliveries(every) >= 10, 'a ladder save with everything delivered (Unlock everything): nothing hidden');

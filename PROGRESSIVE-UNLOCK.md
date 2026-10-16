@@ -40,17 +40,16 @@ outline and a small card says what it is in one line (OK, or using the thing, an
 
 | # | Gate | Opens when | Intro (one line) | What it shows | Cost | Risk |
 |---|---|---|---|---|---|---|
-| 0 | (always) | brand-new save | (none) | Career tab, tiers, level card, car card (Showroom, Crazey Jim's lot), **Good**, START, bank, Options: settings, guide, save, how to play | | |
+| 0 | (always) | brand-new save | (none) | Career tab, tiers, level card, car card (Showroom, Crazey Jim's lot), **Good and Evil** (the switch, both medals, E, Guide > Good & Evil; a ladder save also gets a two-word hint in each half: "gifts · more time" / "fire · less time"), START, bank, Options: settings, guide, save, how to play | | |
 | 1 | Better cars | 1st delivery | Your bank buys cars. Tap your car. | (intro only: the car card) | UI | low |
 | 2 | Replays | 2 deliveries | Watch and save your runs. | Results' Watch / Save replay / Look around, the stage's Replays chip | UI | low |
 | 3 | Style | a car bought, or 3 deliveries | Wheels, plates and more: Showroom, Style. | Options > Wheels, the showroom's Style button | UI | low |
-| 4 | Evil | 3 deliveries | Less time, fire packages, a second medal. | The Evil half of every switch, the Evil medal, Guide > Good & Evil | UI | medium: "medals x/10" (halved to x/5 while shut) |
-| 5 | Races | 4 deliveries | Lapped circuits, any time. | The Races tab | UI | low |
-| 6 | Shop | 5 deliveries (the first Career pack), or any pack | Card packs. One free every day. | Shop chip and its dot, the showroom's Shop, Add Crazey Cash | UI | low |
-| 7 | Blueprints | first blueprint, or 6 deliveries | Blueprints unlock cars and ECU upgrades. | Jim's stall chip, the showroom's blueprint and key cars | UI | medium: "1 / 109 cars" still counts them |
-| 8 | Events | 7 deliveries, or any event stage | Car Hunts and events, on for a while. | The Events tab and its dot | UI | medium: a dated event (Christmas Eve) can be missed |
-| 9 | Extras | 8 deliveries | Postcards, milestones, hidden levels. | Options > Extras (Postcards, Milestones, Hidden levels, screensavers) | UI | low |
-| 10 | Editors | 10 deliveries (★★★ open) | Build your own road: Options. | Level editor, Model editor | UI | low |
+| 4 | Races | 4 deliveries | Lapped circuits, any time. | The Races tab | UI | low |
+| 5 | Shop | 5 deliveries (the first Career pack), or any pack | Card packs. One free every day. | Shop chip and its dot, the showroom's Shop, Add Crazey Cash | UI | low |
+| 6 | Blueprints | first blueprint, or 6 deliveries | Blueprints unlock cars and ECU upgrades. | Jim's stall chip, the showroom's blueprint and key cars | UI | medium: "1 / 109 cars" still counts them |
+| 7 | Events | 7 deliveries, or any event stage | Car Hunts and events, on for a while. | The Events tab and its dot | UI | medium: a dated event (Christmas Eve) can be missed |
+| 8 | Extras | 8 deliveries | Postcards, milestones, hidden levels. | Options > Extras (Postcards, Milestones, Hidden levels, screensavers) | UI | low |
+| 9 | Editors | 10 deliveries (★★★ open) | Build your own road: Options. | Level editor, Model editor | UI | low |
 
 Three or more gates opening at once (Unlock everything, Show all menus) are taken as seen: no wall of cards.
 
@@ -70,7 +69,7 @@ open, money, a second car, Evil picked, a pack held or opened, a blueprint, an e
 ECU or a Shop purchase. A legacy save sees everything and is never written. A save with no progress at all (brand new, or an old one
 that only failed a run or changed a setting) is given `seen: []` the first time the gates see it, and climbs the ladder.
 
-**`seen`** (Progress.data.seen): the gate ids whose introduction was seen, at most ten short ids (88 bytes with all). A gate is open
+**`seen`** (Progress.data.seen): the gate ids whose introduction was seen, at most nine short ids (81 bytes with all). A gate is open
 when its trigger holds OR it is in `seen`, so nothing ever closes again.
 
 **Escape hatches.** Options > Save > **Show all menus** (shown while anything is shut): every gate seen, kept. `?progress=all`: everything
@@ -80,7 +79,9 @@ prototype off. A returning player whose save was lost would use Import save (a c
 **The Driving Lesson and the nudge.** The lesson is a hidden level (Options > Hidden levels, under Extras: shut for a new player in this
 prototype). If the owner takes NEW-PLAYER-IDEAS idea 15 (the lesson as a brand-new save's first START), it needs no menu entry; else a
 "Learn" chip beside START while deliveries is 0 (idea 15 B). The lesson's zone 7 already says "Good gives gifts. Evil throws fire":
-with the ladder, Evil opens at 3 deliveries, so the lesson's line is a preview, not a promise. The Better ride nudge (`?nudge`) needs
+Evil is open from the start (the owner, 16-Oct: "I want Evil to be selectable from the start"), so the lesson's line and the switch's
+hints say the same thing in the same words: the lesson teaches it in play (zone 7), the hints keep it on the front screen (the phone
+layout hides the menu's own side note, "More time. Care packages..." / "Less time. Flaming packages..."). Neither gates anything. The Better ride nudge (`?nudge`) needs
 nothing shut: it lives on the results and in the showroom, both open from the start, and the showroom with blueprint cars hidden puts
 the Junker 2nd and the Darkvan 4th (the audit's finding 3, solved by the gate).
 
@@ -96,7 +97,7 @@ Recommended: keep the Events gate at 7, and **open it early while a dated event 
 5), so `seen` is NOT in the cookie in this version: local storage (the store of record) has it. A save restored from the cookie alone,
 or from a save code (neither carries `seen`), reads as legacy when it has progress: everything shown, never hidden. Proposal: add
 `seen` to COOKIE_KEYS and to the save code's `tidy` with the next logic change of progress.js (a full save's cookie is 1,911 bytes;
-with `seen` about 2,077; the room is 3,600).
+with `seen` about 2,064; the room is 3,600).
 
 ## 4. The first version (built, behind a switch)
 
@@ -104,8 +105,9 @@ with `seen` about 2,077; the room is 3,600).
   entry with its gate or 'always'), and the rules (`gatesMode`, `isLegacy`, `hasProgress`, `deliveries`, `openGates`, `visible`,
   `pendingIntros`, `adopt`, `markSeen`, `cleanSeen`). No DOM; in NOT_RULES (vite.config.js) so it is not a replay rule.
 - `src/delivery/render/progressui.js`: off, it does nothing. On: one CSS rule per hidden selector under `body.pg-off-<id>`; the
-  intro card and the outline; Show all menus; with Evil shut the Good half does not toggle and E does not flip the side (and T, the menu's
-  tab key, is off while a tab is shut); "medals x/10" shown as x/5. Imported early in main.js (its key guard must come before the menu's).
+  intro card and the outline; Show all menus; the switch's two-word Good / Evil hints on a ladder save; T (the menu's tab key) off while
+  the Races or Events tab is shut. Good and Evil themselves are never touched (E, the switch, the medals: as today). Imported early in
+  main.js (its key guard must come before the menu's).
 - The switch: `?progress=new` (a visit), `?progress=new:on` (remembered in this browser), `?progress=off` (forgotten), `?progress=all`
   (everything, a visit). Local storage key `delivery.progress`. In URL-PARAMS.md.
 - `scripts/.featuregates-check.mjs` (tiers group).
@@ -121,13 +123,13 @@ Try it: `/delivery/?progress=new` in a private window (a brand-new save), then p
   progress.js is NOT changed (it is a rule file): restore keeps unknown keys (`{ ...fresh(), ...saved }`) and saveText writes them,
   the way `unlockMode` (unlockall.js) already lives. Old saves load as before; `.save-check` and `.unlockall-check` pass.
 - **Gates that would need a logic change (not built):** the cookie and save code carrying `seen` (progress.js); a cargo ladder
-  (level files); a tier-1 car rule that keeps Evil runs out of the medal count (tiers.js); first-START lesson (game flow).
+  (level files); first-START lesson (game flow).
 
 ## 6. Open questions for the owner
 
 1. Hidden or teased? Built: hidden (not drawn). Teased rows for the Shop and Events ("after 5 deliveries")?
-2. The ladder's order and numbers: Evil at 3 deliveries, Shop at 5 (the first Career pack), Events at 7: right?
-3. Should Evil open on a lesson (the Driving Lesson's zone 7) rather than a count?
+2. The ladder's order and numbers: Style at a car bought or 3 deliveries, Shop at 5 (the first Career pack), Events at 7: right?
+3. The switch's hints ("gifts · more time" / "fire · less time"): keep them for every new player, or only until a first delivery?
 4. Open Events early while a dated event (Christmas Eve) is live, for a save with 2 deliveries?
 5. Races tab at 4 deliveries, or only after ★ is cleared?
 6. The Car ideas lot (free idea cars) in Crazey Jim's: gate it too (with Style or Extras)?
