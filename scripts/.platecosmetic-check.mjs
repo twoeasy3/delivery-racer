@@ -30,6 +30,7 @@ try {
   const A = await load('render/plateanchors.js');
   const D = await load('render/platedesigns.js');
   const { COSMETICS, grantCosmetics, clearCosmetics, ownsCosmetic, cosmeticKeys } = await load('render/cosmetics.js');
+  const Store = await load('render/loadoutstore.js');
   const { Progress } = await load('progress.js');
   const { dentModel } = await load('render/dents.js');
   const { SILHOUETTE } = await load('render/silhouette.js');
@@ -39,7 +40,7 @@ try {
   const plates = COSMETICS.filter(c => c.slot === 'plate');
   const free = plates.filter(c => c.free);
   check(plates.length === D.PLATE_DESIGNS.length && plates.length >= 7, 'the registry holds every plate design as plate:<id> (' + plates.length + ': ' + free.length + ' free incl. Stock, ' + (plates.length - free.length) + ' locked)');
-  check(free.some(c => c.id === 'stock') && free.length >= 3 && free.length <= 5 && plates.every(c => 'price' in c), 'Stock and 2-3 designs are free; every entry carries a (placeholder) price');
+  check(free.length === 1 && free[0].id === 'stock' && plates.filter(c => c.id !== 'stock').every(c => c.earned && c.price === 0), 'Stock is the one free design; every other is earned, with no price (CHECKLIST 437)');
   check(D.PLATE_DESIGNS.filter(d => d.id !== 'stock').every(d => d.bg && d.text && d.border && d.edge), 'every design is data: background, text colour, border, edge');
   clearCosmetics();
 
@@ -57,9 +58,14 @@ try {
   add('level', C.AMPHIBIOUS_TANK);
   for (const car of IDEA_CARS) add('idea', car);
   const list = cars.filter(c => !only.length || only.includes(c.car.id));
+  // EARNED PLATES ARE PER CAR ONLY (CHECKLIST 437): a design is put on EVERY car this check builds (one write), and read back on TC; the
+  // default keeps the text (setPD returns what setPlateDesign said for TC: false when not owned or unknown)
+  const TC = 'pickup';
+  const setPD = (id) => { const r = P.setPlateDesign(id, TC); if (r) { const sn = Store.snapshot(); for (const { car } of cars) (sn.cars[car.id] ||= {}).plate = { design: id }; Store.restore(sn); } return r; }; // (the design only on each car: the text stays the default's)
+  const resetPD = () => { P.resetPlate(); setPD('stock'); };
   const entryBefore = new Map(list.map(c => [c.car, plain(c.car)]));
   const allTris = (model) => { let n = 0; model.traverse((m) => { if (m.isMesh && m.geometry) n += (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3; }); return n; };
-  check(P.plateDesign() === 'stock' && P.shownDesign() === 'stock', 'a fresh visit: Stock');
+  check(P.plateDesign(TC) === 'stock' && P.shownDesign(TC) === 'stock', 'a fresh visit: Stock');
 
   const built = [];
   for (const { group, car } of list) {
@@ -72,8 +78,8 @@ try {
 
   // ---- equip a design ----
   Progress.noSave = false;
-  clearCosmetics();
-  check(P.setPlateDesign('classic') === true, 'a free design equips');
+  clearCosmetics(); grantCosmetics(['plate:classic']);
+  check(setPD('classic') === true, 'an owned (earned) design equips');
   P.setPlateText('PLATE 1');
   const stats = { ok: 0, both: 0, rear: 0, front: 0, none: 0, unplaced: 0, legend: 0, hidden: 0, triPerEnd: new Set() };
   const bad = [];
@@ -111,13 +117,13 @@ try {
   P.setPlateText('PLATE 1');
 
   // ---- designs: each draws and equips; the ghost and blackout ----
-  for (const d of D.PLATE_DESIGNS.filter(d => d.id !== 'stock')) { grantCosmetics(['plate:' + d.id]); check(P.setPlateDesign(d.id) && P.shownDesign() === d.id && P.plateCacheStats().textures <= 2, 'design ' + d.id + ' equips'); }
+  for (const d of D.PLATE_DESIGNS.filter(d => d.id !== 'stock')) { grantCosmetics(['plate:' + d.id]); check(setPD(d.id) && P.shownDesign(TC) === d.id && P.plateCacheStats().textures <= 2, 'design ' + d.id + ' equips'); }
   // ---- the families and the shaped designs (CHECKLIST 431): every design in a family; a shaped one is a shaped mesh inside the anchor's box ----
   const fams = new Set(D.PLATE_FAMILIES.map(f => f.id));
   check(D.PLATE_DESIGNS.every(d => fams.has(d.family)) && D.PLATE_FAMILIES.every(f => D.PLATE_DESIGNS.some(d => d.family === f.id)) && D.PLATE_DESIGNS.length >= 37, 'every design is in a family (' + D.PLATE_FAMILIES.map(f => f.label + ' ' + D.PLATE_DESIGNS.filter(d => d.family === f.id).length).join(', ') + '; ' + D.PLATE_DESIGNS.length + ' with Stock)');
   const shapedBad = [], shapedTris = new Set();
   for (const d of D.PLATE_DESIGNS.filter(x => x.pieces)) {
-    P.setPlateDesign(d.id);
+    setPD(d.id);
     for (const b of built) {
       const plan = P.platePlan(b.model), a = A.plateAnchorsFor(b.car);
       if (b.car.legend || a.status !== 'ok') continue;
@@ -134,26 +140,26 @@ try {
   }
   check(!shapedBad.length, 'each shaped design (' + D.PLATE_DESIGNS.filter(x => x.pieces).map(x => x.id).join(', ') + ') is built as its own outline on every anchored end, inside the anchor\'s 4:1 box (the edge within the margin), its UVs on the canvas' + (shapedBad.length ? ': ' + shapedBad.slice(0, 6).join('; ') : ''));
   console.log('        triangles an end, shaped: ' + [...new Set([...shapedTris])].sort().join(' '));
-  P.setPlateDesign('classic');
+  setPD('classic');
   check(built.filter(b => !b.car.legend && A.plateAnchorsFor(b.car).status === 'ok').every(b => Object.values(P.platePlan(b.model).groups).every(g => !g || (g.userData.plateShape === 'rect' && allTris(g) === 14))), 'back to a plain design: the plain 14-triangle plate again');
   const probe = built.find(b => b.car.id === 'pickup') || built.find(b => A.plateAnchorsFor(b.car).status === 'ok');
   const face = P.platePlan(probe.model).groups[P.platePlan(probe.model).worn[0]].children[1];
   const own = face.material; face.userData.solidMat = own; face.material = { ghost: true };
   P.setPlateText('GHOST 1');
   check(face.userData.solidMat !== own && face.userData.solidMat.map && face.material.ghost === true, 'the ghost: its stand-in stays, the plate under it changes');
-  face.userData.solidMat = null; face.material = face.userData.solidMat || P.plateTexture(P.shownDesign(), P.plateText()).material;
+  face.userData.solidMat = null; face.material = face.userData.solidMat || P.plateTexture(P.shownDesign(TC), P.plateText()).material;
   // a blacked-out model gets black plates
   const dark = makeShowCar(probe.car); dark.userData.body.material = SILHOUETTE;
   const fresh = makeShowCar(probe.car); void fresh;
   dark.traverse((m) => { if (m.isMesh) m.material = SILHOUETTE; });
   P.setPlateText('DARK 1');
   check(P.platePlan(dark).groups.rear?.children.every(m => m.material === SILHOUETTE) ?? P.platePlan(dark).groups.front?.children.every(m => m.material === SILHOUETTE), 'a blacked-out model\'s plate is the flat silhouette');
-  P.setPlateDesign('dice');
+  setPD('dice');
   check(['rear', 'front'].map(e => P.platePlan(dark).groups[e]).filter(Boolean).every(g => g.userData.plateShape === 'dice' && g.children.every(m => m.material === SILHOUETTE)), 'a blacked-out model\'s SHAPED plate is the flat silhouette, in its own outline');
-  P.setPlateText('PLATE 1'); P.setPlateDesign('classic');
+  P.setPlateText('PLATE 1'); setPD('classic');
 
   // ---- Stock restores ----
-  P.setPlateDesign('stock');
+  setPD('stock');
   const back = built.filter(b => P.platePlan(b.model).worn.length || b.model.children.length !== b.children || allTris(b.model) !== b.base || P.existingPlates(b.model).map(e => e.face + e.mesh.visible).join() !== b.own);
   check(!back.length, 'Stock: every plate off, the car\'s own plates shown, children and triangles as built' + (back.length ? ': ' + back.slice(0, 5).map(b => b.car.id) : ''));
 
@@ -171,33 +177,34 @@ try {
 
   // ---- ownership ----
   clearCosmetics();
-  check(!ownsCosmetic('plate', 'blackgold') && P.setPlateDesign('blackgold') === false && P.plateDesign() !== 'blackgold', 'a locked design cannot be equipped');
-  check(P.setPlateDesign('nope') === false && D.designById('nope').id === 'stock', 'an unknown design id is Stock');
+  check(!ownsCosmetic('plate', 'blackgold') && setPD('blackgold') === false && P.plateDesign(TC) !== 'blackgold', 'a locked design cannot be equipped');
+  check(setPD('nope') === false && D.designById('nope').id === 'stock', 'an unknown design id is Stock');
   Progress.reset?.();
   unlockEverything('abs');
-  check(cosmeticKeys().filter(k => k.startsWith('plate:')).every(k => ownsCosmetic('plate', k.slice(6))) && P.setPlateDesign('blackgold') === true, "'Absolutely everything' unlocks every plate design");
+  check(cosmeticKeys().filter(k => k.startsWith('plate:')).every(k => ownsCosmetic('plate', k.slice(6))) && setPD('blackgold') === true, "'Absolutely everything' unlocks every plate design");
   clearCosmetics();
-  check(P.plateDesign() === 'blackgold' && P.shownDesign() === 'stock', 'a saved design that is no longer owned wears Stock (the choice is kept)');
-  P.resetPlate();
-  check(P.plateDesign() === 'stock' && P.plateText() === T.DEFAULT_TEXT, 'Reset to stock: Stock and the default text');
+  check(P.plateDesign(TC) === 'blackgold' && P.shownDesign(TC) === 'stock', 'a saved design that is no longer owned wears Stock (the choice is kept)');
+  resetPD();
+  check(P.plateDesign(TC) === 'stock' && P.plateText() === T.DEFAULT_TEXT, 'Reset to stock: Stock and the default text');
 
   // ---- storage ----
   const store = new Map(); const realLS = globalThis.localStorage;
   globalThis.localStorage = { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k) };
-  P.setPlateDesign('classic'); P.setPlateText('Q-7 ZED');
-  check(store.get('delivery.platedesign') === 'classic' && store.get('delivery.platetext') === 'Q-7 ZED', 'kept in localStorage: delivery.platedesign / delivery.platetext');
+  grantCosmetics(['plate:classic', 'plate:yellow']); // (earned: owned again for the storage part)
+  setPD('classic'); P.setPlateText('Q-7 ZED');
+  check(JSON.parse(store.get('delivery.loadout')).cars[TC].plate.design === 'classic' && store.get('delivery.platetext') === 'Q-7 ZED', 'kept in localStorage: each car\'s design in delivery.loadout (per car only), the text mirrored in delivery.platetext');
   P.setPlateText('fuck');
   check(store.get('delivery.platetext') === T.DEFAULT_TEXT, 'a refused text is stored as the default, never itself');
   store.clear(); Progress.noSave = true;
-  P.setPlateDesign('yellow'); P.setPlateText('VISIT 1');
-  check(store.size === 0 && P.shownDesign() === 'yellow' && P.plateText() === 'VISIT 1', 'Progress.noSave: nothing written, the visit still wears it');
+  setPD('yellow'); P.setPlateText('VISIT 1');
+  check(store.size === 0 && P.shownDesign(TC) === 'yellow' && P.plateText() === 'VISIT 1', 'Progress.noSave: nothing written, the visit still wears it');
   Progress.noSave = false;
   globalThis.localStorage = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); }, removeItem() { throw new Error('blocked'); } };
-  let threw = false; try { P.setPlateDesign('classic'); P.setPlateText('NOSTORE'); P.resetPlate(); } catch { threw = true; }
+  let threw = false; try { setPD('classic'); P.setPlateText('NOSTORE'); resetPD(); } catch { threw = true; }
   check(!threw, 'storage that throws does not break it');
   globalThis.localStorage = realLS;
   check(![...store.keys()].some(k => /cookie/i.test(k)) && !/cosmetic|plate/i.test(JSON.stringify(Progress.data)), 'nothing in the cookie or the progress save');
-  P.resetPlate();
+  resetPD();
 
   // ---- the replay fingerprint and the entries ----
   // (the fingerprint's own list, not a text search of vite.config.js: a comment there that names plateanchors.js made the old regex fail)
@@ -213,7 +220,7 @@ try {
   // ---- dents: the plate follows; burial at each stage ----
   if (!noDents) {
     const dd = (process.argv.find(x => x.startsWith('--design=')) || '--design=classic').slice(9); // (--design=<id>: the damage part with another design, a shaped one say)
-    clearCosmetics(); grantCosmetics(['plate:' + dd]); P.setPlateDesign(dd); P.setPlateText('DENT 42');
+    clearCosmetics(); grantCosmetics(['plate:' + dd]); setPD(dd); P.setPlateText('DENT 42');
     const ray = new THREE.Raycaster(), buried = [], follows = [], notFollowing = [];
     const stages = [0, 0.3, 0.55, 0.75, 0.95], atRest = [];
     for (const b of built) {
@@ -255,7 +262,7 @@ try {
     check(follows.every(Boolean), 'dents.js measured the plate with the car (' + follows.length + ' cars)' + (notFollowing.length ? ', NOT: ' + notFollowing.join(', ') : ''));
     console.log('        plates under 60% visible at some stage (' + stages.join(' / ') + ' of damage), rear/front % per stage (the first is the car at rest): ' + buried.length + (buried.length ? '\n          ' + buried.join('\n          ') : ''));
     check(!atRest.length, 'at rest every plate is seen from its end (>= 70% of sample points)' + (atRest.length ? ': ' + atRest.join(', ') : ''));
-    P.resetPlate();
+    resetPD();
   }
 } finally {
   await close();
