@@ -4,7 +4,7 @@
 // loadout store (each car's own item: render/loadoutstore.js PER_CAR, never the All-cars default), so that
 //   hand = given - on cars.
 // One for each car wearing it (a car that cannot wear the slot, such as a Legendary car's plates, is not wearing it). Nothing is stored per
-// equip: taking one off, choosing another or Reset car puts it back in the hand at once. Free looks and 'Absolutely' are unlimited; the kill
+// equip: taking one off, choosing another or Reset car puts it back in the hand at once. Free looks are unlimited ('Absolutely' gives 999 of each, a real stock); the kill
 // effect is one a car, never per kill. Render-only (not in the replay fingerprint).
 import { Progress } from '../progress.js';
 import { CARS, EARNED_CARS, EVENT_CARS, BESPOKE_CARS, FILLER_CARS, SECRET_CARS, carById } from '../cars.js';
@@ -43,7 +43,7 @@ export const usage = (snap = Store.snapshot()) => {
   return out;
 };
 export const wornBy = (slot, id, use = usage()) => use.get(cosmeticKey(slot, id)) || [];
-// the HAND: Infinity (free, or unlimited), else given less on cars, never under 0
+// the HAND: Infinity for a free look, else given less on cars, never under 0
 export const spare = (slot, id, use = usage()) => { const n = cosmeticCount(slot, id); return n === Infinity ? Infinity : Math.max(0, n - wornBy(slot, id, use).length); };
 // what a change of the store did to the stock: before and after are usage() maps. uses: items now on more cars; gives: on fewer.
 // short: the uses that need more than the player has (and more than were already worn: a stock already over is never made worse)
@@ -54,7 +54,7 @@ export const diffUsage = (before, after) => {
     if (a === b) continue;
     const [slot, id] = key.split(':'), count = cosmeticCount(slot, id), name = cosmeticOf(slot, id)?.name || id;
     const row = { key, slot, id, name, count, before: b, after: a, more: a - b };
-    if (count === Infinity) continue; // (free or unlimited: nothing to tell)
+    if (count === Infinity) continue; // (a free look: nothing to tell)
     (a > b ? uses : gives).push(row);
   }
   const short = uses.filter(u => u.after > u.count);

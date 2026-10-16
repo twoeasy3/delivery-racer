@@ -184,7 +184,7 @@ export const setSlot = (target, slot, patch) => {
   const f = PER_CAR[slot];
   if (target == null) {
     const p = { ...patch };
-    if (f) delete p[f]; // (an earned item is never the default's: per car only)
+    if (f) p[f] = STOCK[slot][f]; // (an earned item is never the default's: per car only; the default always holds the free look)
     s.default[slot] = cleanSlot(slot, { ...defaultSlot(slot), ...p }) || {};
   } else {
     if (!CAR.test(String(target))) return false;

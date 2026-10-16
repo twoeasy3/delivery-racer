@@ -25,14 +25,15 @@
 // (Stock plate, no prop, Classic kill effect, no glow) stays free and unlimited. The wheels stay free for now.
 // STORAGE: a second localStorage key, STOCK_KEY { v: 1, n: { key: count }, inf?: true, mig?: 1 }; the old list (KEY, an array of keys) is
 // still written, as the keys with a count, so an older build (or a rollback) still finds them owned. A key in the old list with no count is
-// read as 1. inf: "Unlock everything: Absolutely" (unlockall.js): every item unlimited.
+// read as 1. "Unlock everything: Absolutely" (unlockall.js) gives MOST_EACH (999) of every item: a real stock, as 999 cards of each.
 // ownsCosmetic(slot, id) means "has at least one" (unlocked: what a render module asks before it draws a choice). Everything stays outside
 // progress.js and outside the replay fingerprint, as before.
 import { Progress } from '../progress.js';
 import * as Store from './loadoutstore.js';
 export const KEY = 'delivery.cosmetics';
 export const STOCK_KEY = 'delivery.cosmetics.stock';
-const MOST = 300, MOST_EACH = 999;
+const MOST = 300;
+export const MOST_EACH = 999; // (the most of one item; what 'Absolutely' gives of each)
 // the slots whose items are earned (a stock each) and each one's own free look (worn when nothing is chosen; never counted)
 export const EARNED_SLOTS = Object.freeze({ plate: 'stock', roof: 'none', cargo: 'none', wing: 'none', kill: 'classic', underglow: 'none' });
 // the field of a loadout slot that names its item (render/loadoutstore.js)
@@ -70,7 +71,7 @@ const cleanCounts = (n) => {
 };
 const cleanStock = (raw) => {
   const v = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
-  return { v: 1, n: cleanCounts(v.n), ...(v.inf === true ? { inf: true } : {}), ...(v.mig ? { mig: 1 } : {}) };
+  return { v: 1, n: cleanCounts(v.n), ...(v.mig ? { mig: 1 } : {}) };
 };
 let stock = null;
 const read = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
@@ -90,11 +91,9 @@ const load = () => {
   if (stock === null) {
     const had = read(STOCK_KEY), old = cleanCosmetics(read(KEY));
     stock = cleanStock(had);
-    for (const k of old) if (!stock.n[k]) stock.n[k] = 1; // (the old list, or an older build's grant: one each)
-    if (!had) { // (the first load of this version: what is worn is owned; an 'abs' player stays unlimited)
-      for (const k of wornKeys()) if (!stock.n[k]) stock.n[k] = 1;
-      if (old.length && Progress.data?.unlockMode === 'abs') stock.inf = true;
-    }
+    const abs = !had && old.length && Progress.data?.unlockMode === 'abs'; // (an 'Absolutely' save from before: 999 of each it was given)
+    for (const k of old) if (!stock.n[k]) stock.n[k] = abs ? MOST_EACH : 1; // (the old list, or an older build's grant: one each)
+    if (!had) for (const k of wornKeys()) if (!stock.n[k]) stock.n[k] = 1; // (the first load of this version: what is worn is owned)
   }
   return stock;
 };
@@ -105,12 +104,11 @@ const store = () => {
 };
 // the keys with at least one (as stored; 'abs' lists free ones too, harmlessly)
 export const ownedCosmetics = () => Object.keys(load().n);
-// how many of an item the player has ever been given: Infinity for a free one or under 'abs', else the count (0: locked)
-export const cosmeticCount = (slot, id) => (isFreeCosmetic(slot, id) || load().inf ? Infinity : load().n[cosmeticKey(slot, id)] || 0);
+// how many of an item the player has been given: Infinity for a free one, else the count (0: not earned)
+export const cosmeticCount = (slot, id) => (isFreeCosmetic(slot, id) ? Infinity : load().n[cosmeticKey(slot, id)] || 0);
 // free, unlimited, or at least one
 export const ownsCosmetic = (slot, id) => cosmeticCount(slot, id) > 0;
-export const unlimitedCosmetics = () => !!load().inf;
-// keys given to the player: one more of each (unlockall.js 'abs' gives them all and makes them unlimited, setUnlimited)
+// keys given to the player: n more of each (most MOST_EACH); awardCosmetic below is the game's one way in
 export const grantCosmetics = (keys, n = 1) => {
   const s = load();
   for (const k of cleanCosmetics(keys)) if (s.n[k] || Object.keys(s.n).length < MOST) s.n[k] = Math.min(MOST_EACH, (s.n[k] || 0) + Math.max(1, Math.floor(n) || 1));
@@ -118,7 +116,8 @@ export const grantCosmetics = (keys, n = 1) => {
 };
 // make a count at least n (the migration: render/cosmeticstock.js)
 export const topUpCosmetic = (key, n) => { const s = load(); if (KEY_RE.test(key) && (s.n[key] || 0) < n && (s.n[key] || Object.keys(s.n).length < MOST)) { s.n[key] = Math.min(MOST_EACH, n); store(); } };
-export const setUnlimited = (on) => { const s = load(); if (on) s.inf = true; else delete s.inf; store(); };
+// 'Absolutely' (unlockall.js): MOST_EACH of every key there is
+export const grantAll = (keys = cosmeticKeys()) => { for (const k of cleanCosmetics(keys)) topUpCosmetic(k, MOST_EACH); };
 // the migration mark (render/cosmeticstock.js migrateStock): here, so Reset progress clears it too
 export const stockMeta = () => ({ mig: !!load().mig });
 export const setStockMeta = ({ mig } = {}) => { const s = load(); if (mig) s.mig = 1; store(); };

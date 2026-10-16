@@ -661,10 +661,10 @@ const countChips = (row, slot, attr) => {
     if (!tag) { tag = make('span', 'cz-count'); b.insertBefore(tag, b.querySelector('.cz-tick')); }
     const n = cosmeticCount(slot, id), sp = spare(slot, id, use);
     tag.hidden = false;
-    tag.textContent = n === Infinity ? '∞' : n === 0 ? 'Not earned' : 'x' + sp;
+    tag.textContent = n === 0 ? 'Not earned' : 'x' + sp;
     b.classList.toggle('locked', n === 0);
-    b.classList.toggle('nospare', n !== Infinity && n > 0 && sp === 0);
-    b.title = n === 0 ? 'Not earned yet' : n === Infinity ? 'Unlimited' : sp + ' in your hand, ' + (n - sp) + ' on cars';
+    b.classList.toggle('nospare', n > 0 && sp === 0);
+    b.title = n === 0 ? 'Not earned yet' : sp + ' in your hand, ' + (n - sp) + ' on cars';
   }
 };
 let sheet = null, sheetDone = null;

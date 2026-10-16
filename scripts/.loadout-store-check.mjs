@@ -12,6 +12,8 @@
 //     with no rims, plate or prop slots included; the store's size with an override on every car
 //   - ?wheelrim= ?platedesign= ?roofprop= (a visit's test switches) still dress EVERY car, over its own choice
 //   - the replay fingerprint (vite.config.js logicFiles) includes none of it
+//   - EARNED SLOTS ARE PER CAR ONLY (CHECKLIST 437: plate design, props, kill, glow): a car wears its own item or the free look, never the
+//     default's; a default's other fields (plate text, prop paint) still reach the followers; Copy to all copies the wheels only
 //   node scripts/.loadout-store-check.mjs
 import { startModels } from './modelpatch-load.mjs';
 
@@ -33,7 +35,7 @@ try {
   const raw = globalThis.localStorage;
   const keys = () => { const out = {}; for (const k of ['delivery.loadout', 'delivery.wheeldesign', 'delivery.wheelcolour', 'delivery.wheelrim', 'delivery.platedesign', 'delivery.platetext', 'delivery.prop.roof', 'delivery.prop.roof.paint']) out[k] = raw.getItem(k); return out; };
   const wipe = () => { for (const k of Object.keys(keys())) raw.removeItem(k); for (const s of ['cargo', 'wing']) { raw.removeItem('delivery.prop.' + s); raw.removeItem('delivery.prop.' + s + '.paint'); } Store.reloadStore(); };
-  clearCosmetics();
+  clearCosmetics(); grantCosmetics(cosmeticKeys(), 50); // (earned cosmetics, CHECKLIST 437: plenty of each, so every choice below can be worn)
 
   // ---- MIGRATION ----
   wipe();
@@ -44,7 +46,7 @@ try {
   Store.reloadStore();
   const before = JSON.stringify(keys());
   check(W.wheelSet('commuter') === 'whitewall-silver' && W.wheelSet('pickup') === 'whitewall-silver' && W.wheelSet() === 'whitewall-silver', 'an older save: its global wheel set is the default, on every car');
-  check(P.plateDesign('commuter') === 'yellow' && P.plateText('pickup') === 'OLD 1' && D.propChoice('roof', 'pickup') === 'roofbox' && D.propPaintChoice('roof', 'commuter') === 'd8262b', '...its plate (design, text) and roof prop (and paint) too');
+  check(P.plateDesign() === 'yellow' && P.plateText('pickup') === 'OLD 1' && D.propChoice('roof') === 'roofbox' && D.propPaintChoice('roof', 'commuter') === 'd8262b' && P.plateDesign('commuter') === 'stock' && D.propChoice('roof', 'pickup') === 'none', '...its plate (design, text) and roof prop (and paint) read into the default; the earned items are per car (render/cosmeticstock.js migrateStock moves them onto the cars), so a car reads its own: Stock');
   check(R.resolveRim('sport', 'front') === 'turbine' && W.wheelDesign('sport') === 'whitewall' && R.resolveRim('commuter', 'front') === 'none', 'the old per-car rim (never used by a screen) became that car\'s own rim, its tyre and hub from the default');
   check(Store.wasMigrated() && JSON.stringify(keys()) === before && raw.getItem('delivery.loadout') === null, 'reading wrote nothing: the store is first written at the first change; the old keys untouched');
 
@@ -54,13 +56,13 @@ try {
   check(stored && stored.v === 1 && stored.default.wheels.design === 'whitewall' && stored.cars.commuter.wheels.rim.all === 'spoke5', 'the first change writes the ONE key (' + raw.getItem('delivery.loadout').length + ' chars), the default imported in it');
   check(raw.getItem('delivery.wheeldesign') === 'whitewall' && raw.getItem('delivery.prop.roof') === 'roofbox', 'a car\'s choice is not mirrored into the old keys (they hold the default)');
   check(W.wheelSet('commuter') === 'spoke5' && R.resolveRim('commuter', 'front') === 'spoke5' && R.resolveRim('commuter', 'rear') === 'spoke5' && D.propChoice('roof', 'commuter') === 'roofbeacon', 'the commuter\'s own: 5-spoke on both axles, a beacon');
-  check(W.wheelSet('pickup') === 'whitewall-silver' && R.resolveRim('pickup', 'front') === 'none' && D.propChoice('roof', 'pickup') === 'roofbox', 'the pick-up keeps the default');
+  check(W.wheelSet('pickup') === 'whitewall-silver' && R.resolveRim('pickup', 'front') === 'none' && D.propChoice('roof', 'pickup') === 'none', 'the pick-up keeps the default (no roof prop: earned items are per car)');
   check(D.propPaintChoice('roof', 'commuter') === 'd8262b', 'an edit copies the car\'s resolved slot first (the beacon keeps the red it inherited)');
   W.setWheelSet('gold-rush'); D.setProp('roof', 'roofsign');
-  check(W.wheelSet('pickup') === 'gold-rush' && D.propChoice('roof', 'pickup') === 'roofsign' && W.wheelSet('commuter') === 'spoke5' && D.propChoice('roof', 'commuter') === 'roofbeacon', 'a default change (All cars) reaches the pick-up, not the commuter\'s own');
-  check(raw.getItem('delivery.wheelcolour') === 'gold' && raw.getItem('delivery.wheeldesign') === 'stock' && raw.getItem('delivery.prop.roof') === 'roofsign', '...and the old keys follow the default (a rollback finds the all-cars look)');
+  check(W.wheelSet('pickup') === 'gold-rush' && D.propChoice('roof', 'pickup') === 'none' && W.wheelSet('commuter') === 'spoke5' && D.propChoice('roof', 'commuter') === 'roofbeacon', 'a default change (All cars) reaches the pick-up, not the commuter\'s own; an earned item set on the default is ignored (per car only)');
+  check(raw.getItem('delivery.wheelcolour') === 'gold' && raw.getItem('delivery.wheeldesign') === 'stock' && raw.getItem('delivery.prop.roof') === null, '...and the old keys follow the default (a rollback finds the all-cars look; an earned item set on All cars clears the default\'s to the free look)');
   P.setPlateDesign('classic');
-  check(P.plateDesign('commuter') === 'classic' && P.plateText('commuter') === 'OLD 1' && Store.hasOwn('commuter', 'plate') === false, 'a slot the commuter has none of its own for follows the default');
+  check(P.plateDesign('commuter') === 'stock' && P.plateDesign() === 'stock' && P.plateText('commuter') === 'OLD 1' && Store.hasOwn('commuter', 'plate') === false, 'a slot the commuter has none of its own for follows the default (its text); a design set on All cars is ignored');
   W.setWheelSet('gold-rush', 'commuter');
   check(!Store.hasOwn('commuter', 'wheels') && Store.hasOwn('commuter', 'roof'), 'a car\'s choice equal to the default is dropped (the car follows the default again)');
   check(Store.differs('commuter') && !Store.differs('pickup') && Store.differs('commuter', 'roof') && !Store.differs('commuter', 'wheels'), 'differs(): the Cosmetics screen\'s Custom mark and tab dots');
@@ -72,7 +74,7 @@ try {
   check(L.loadoutKey('commuter') !== kc && L.loadoutKey('pickup') === kp && L.loadoutKey('sport') === ks, 'the commuter changed: its key moves, the pick-up\'s and the sport\'s do not');
   const kc2 = L.loadoutKey('commuter');
   D.setProp('roof', 'roofbeacon');
-  check(L.loadoutKey('commuter') === kc2 && L.loadoutKey('pickup') !== kp && L.loadoutKey('sport') !== ks, 'the default roof changed: the followers\' keys move, the commuter (its own roof) does not');
+  check(L.loadoutKey('commuter') === kc2 && L.loadoutKey('pickup') === kp && L.loadoutKey('sport') === ks, 'a roof set on the default is ignored (per car only): no key moves');
   W.setWheelSet('red-hot');
   check(L.loadoutKey('commuter') !== kc2, '...and a default slot the commuter follows (wheels) moves its key too');
 
@@ -83,9 +85,9 @@ try {
   W.setWheelSet('spoke5', 'commuter'); D.setProp('roof', 'roofbox', 'commuter');
   check(rims(com) === 4 && roof(com) === 'roofbox' && rims(pick) === 0 && roof(pick) === null, 'live: the commuter wears 5-spoke rims and a roof box at once, the pick-up beside it stays stock');
   W.setWheelSet('twin-spoke'); D.setProp('roof', 'roofbeacon');
-  check(rims(pick) === 4 && pick.userData.wheelHubs.rims.list[0].userData.rim.id === 'twin10' && roof(pick) === 'roofbeacon' && com.userData.wheelHubs.rims.list[0].userData.rim.id === 'spoke5' && roof(com) === 'roofbox', 'live: All cars to twin spoke and a beacon: the pick-up follows, the commuter keeps its own');
+  check(rims(pick) === 4 && pick.userData.wheelHubs.rims.list[0].userData.rim.id === 'twin10' && roof(pick) === null && com.userData.wheelHubs.rims.list[0].userData.rim.id === 'spoke5' && roof(com) === 'roofbox', 'live: All cars to twin spoke (and a beacon, ignored: per car): the pick-up follows the wheels, the commuter keeps its own');
   Store.resetCar('commuter');
-  check(com.userData.wheelHubs.rims.list[0]?.userData.rim.id === 'twin10' && roof(com) === 'roofbeacon' && !Store.differs('commuter') && raw.getItem('delivery.loadout').indexOf('commuter') < 0, 'Reset car: the commuter is back on the default, live, and its entry is gone');
+  check(com.userData.wheelHubs.rims.list[0]?.userData.rim.id === 'twin10' && roof(com) === null && !Store.differs('commuter') && raw.getItem('delivery.loadout').indexOf('commuter') < 0, 'Reset car: the commuter is back on the default, live, and its entry is gone');
   const stock = makeShowCar(C.carById('commuter'), { stock: true });
   check(!stock.userData.wheelHubs && !stock.userData.propPlan && !stock.userData.platePlan, 'a STOCK model (unlock reveals, packs, Shop) is not dressed at all');
 
@@ -100,16 +102,16 @@ try {
   // ---- Copy to all ----
   W.setWheelSet('spoke5', 'commuter'); D.setProp('roof', 'roofbox', 'commuter'); W.setWheelSet('turbine', 'sport');
   Store.copyToAll('commuter', { others: 'keep' });
-  check(W.wheelSet() === 'spoke5' && D.propChoice('roof') === 'roofbox' && P.plateText() === 'MINE 2' && !Store.hasOwn('commuter', 'wheels') && W.wheelSet('sport') === 'turbine', 'Copy to all (keep): the commuter\'s look is the default; the sport keeps its own');
+  check(W.wheelSet() === 'spoke5' && D.propChoice('roof') === 'none' && D.propChoice('roof', 'commuter') === 'roofbox' && !Store.hasOwn('commuter', 'wheels') && W.wheelSet('sport') === 'turbine', 'Copy to all (keep): the commuter\'s wheels are the default; its roof stays its own (earned: per car); the sport keeps its own');
   W.setWheelSet('blackout', 'commuter');
   Store.copyToAll('commuter');
-  check(W.wheelSet('sport') === 'blackout' && W.wheelSet('pickup') === 'blackout' && !Object.keys(Store.snapshot().cars).length && raw.getItem('delivery.wheelcolour') === 'black', 'Copy to all (the screen\'s: clear): every car wears it, no car keeps its own; the old keys follow');
+  check(W.wheelSet('sport') === 'blackout' && W.wheelSet('pickup') === 'blackout' && Object.values(Store.snapshot().cars).every(c => !c.wheels) && D.propChoice('roof', 'commuter') === 'roofbox' && raw.getItem('delivery.wheelcolour') === 'black', 'Copy to all (the screen\'s: clear): every car wears its wheels, no car keeps its own wheels; earned items stay per car; the old keys follow');
 
   // ---- ownership: global, gating each car's choice ----
   grantCosmetics(['plate:blackgold']);
   check(P.setPlateDesign('blackgold', 'commuter') && P.shownDesign('commuter') === 'blackgold', 'an owned locked design equips on one car');
   clearCosmetics();
-  check(P.plateDesign('commuter') === 'blackgold' && P.shownDesign('commuter') === 'stock' && P.shownDesign('pickup') === 'yellow' && P.setPlateDesign('blackgold', 'pickup') === false, 'ownership forgotten (Reset progress): that car wears Stock (its choice kept), the others unchanged; it cannot be equipped');
+  check(P.plateDesign('commuter') === 'blackgold' && P.shownDesign('commuter') === 'stock' && P.shownDesign('pickup') === 'stock' && P.setPlateDesign('blackgold', 'pickup') === false, 'ownership forgotten (Reset progress): that car wears Stock (its choice kept), the others unchanged; it cannot be equipped');
   grantCosmetics(['plate:blackgold']);
   check(P.shownDesign('commuter') === 'blackgold', '...owned again: back on that car');
   clearCosmetics();
@@ -139,9 +141,10 @@ try {
   wipe();
   W.setWheelSet('spoke5', 'commuter');
   const saved = JSON.stringify(keys());
+  grantCosmetics(cosmeticKeys(), 5); // (owned again, for the visit's roof below)
   Progress.noSave = true;
   check(W.wheelSet('commuter') === 'stock', 'Progress.noSave: the saved store is not read (a test visit starts Stock)');
-  W.setWheelSet('turbine', 'pickup'); D.setProp('roof', 'roofbox');
+  W.setWheelSet('turbine', 'pickup'); D.setProp('roof', 'roofbox', 'commuter');
   check(W.wheelSet('pickup') === 'turbine' && D.propChoice('roof', 'commuter') === 'roofbox' && JSON.stringify(keys()) === saved, '...its changes last the visit and write nothing');
   Progress.noSave = false;
   check(W.wheelSet('commuter') === 'spoke5' && W.wheelSet('pickup') === 'stock', '...and the saved store is back');
