@@ -26,6 +26,7 @@ const VERGE = 6;        // m beyond the road's edge (shoulders included) the eye
 const START_CLEAR = 150, END_CLEAR = 60, MOUTH = [-30, 60]; // m: the start, the drop, a tunnel's mouth (before / into it)
 const WALL_GAP = 1.2;   // m: a gap between two boxes narrower than this reads as closed (a lane apart: 1.1 m)
 const DT = 1 / 30, LAT_BIN = 0.15, VEL_BIN = 0.5;
+const MARGIN = Number(opt('margin', 0.25)); // m added to each side of every obstacle in the simulation: a person does not thread a line to the centimetre
 const BREATH = 3;       // s: obstacles closer than this at the speed are one group (the design's breather between formations: 3 s)
 
 const g = await boot();
@@ -84,7 +85,6 @@ const audit = (level) => {
   // ---- what the eye sees: the chase camera (camBack behind the car, camHeight up) to the top of the obstacle ----
   const centre = [], p = {};
   for (let s = -100; s <= length + 100; s += 2) { T.toWorld(s, 0, p); centre.push({ s, x: p.x, z: p.z, y: p.y, half: Math.max(-T.lo(s), T.hi(s)), tunnel: T.tunnel(s) > 0.5 }); }
-  const atS = (s) => centre[Math.max(0, Math.min(centre.length - 1, Math.round((s + 100) / 2)))];
   const visible = (sCar, latCar, o) => {
     const a = {}, b = {};
     T.toWorld(sCar - CONFIG.camBack, latCar, a); a.y += CONFIG.camHeight;
@@ -116,7 +116,7 @@ const audit = (level) => {
     const obs = group.obs, sEnd = obs[obs.length - 1].s + obs[obs.length - 1].hl + CAR.hl + 1;
     let s = s0, st = { lat: T.laneOffset(startLane, s0), latVel: 0, yaw: 0 }, t = 0;
     const assist = () => T.laneOffset(startLane, s);
-    const hit = (s, lat, yaw) => { for (const o of obs) if (Math.abs(o.s - s) < o.hl + CAR.hl + 0.5 && overlap({ s, lat, hw: CAR.hw, hl: CAR.hl, yaw }, o)) return true; return false; };
+    const hit = (s, lat, yaw) => { for (const o of obs) if (Math.abs(o.s - s) < o.hl + CAR.hl + 0.5 && overlap({ s, lat, hw: CAR.hw + MARGIN, hl: CAR.hl, yaw }, o)) return true; return false; };
     const bounds = (s) => {
       const [f, l] = T.laneRange(1, s), lo = T.laneOffset(f, s) - LW / 2, hi = T.laneOffset(l, s) + LW / 2;
       if (mode === 'lanes') return [lo, hi];
@@ -222,8 +222,8 @@ const audit = (level) => {
   let fairUpTo = null;
   if (FAIRUP && items.length) {
     const ok = (v) => judge(v, false).every(r => !r.unfair && !r.forced);
-    let a = 15, b = 90;
-    if (!ok(a)) fairUpTo = '<15'; else if (ok(b)) fairUpTo = '>90'; else { for (let i = 0; i < 7; i++) { const m = (a + b) / 2; if (ok(m)) a = m; else b = m; } fairUpTo = Math.floor(a); }
+    let a = 15, b = 75;
+    if (!ok(a)) fairUpTo = '<15'; else if (ok(b)) fairUpTo = ">75"; else { for (let i = 0; i < 7; i++) { const m = (a + b) / 2; if (ok(m)) a = m; else b = m; } fairUpTo = Math.floor(a); }
   }
   return {
     id: L.id, length: Math.round(length), lanes: T.laneCount, twoWay, count: items.length, total: (L.obstacles || []).length, perKm: items.length / (length / 1000), kinds, byRel,
@@ -253,7 +253,7 @@ const report = (r) => {
 let failures = 0;
 try {
   const lc = laneChange(1, { speed: SPEED, agility: CAR.agility });
-  console.log(`(the ${carId}: ${(2 * CAR.hw).toFixed(2)} m wide, agility ${CAR.agility}; a lane change at ${SPEED} m/s takes ${lc.time.toFixed(2)} s, ${Math.round(lc.distance)} m; reading distance ${READ} m; REACT ${REACT} s)`);
+  console.log(`(the ${carId}: ${(2 * CAR.hw).toFixed(2)} m wide, agility ${CAR.agility}; a lane change at ${SPEED} m/s takes ${lc.time.toFixed(2)} s, ${Math.round(lc.distance)} m; reading distance ${READ} m; REACT ${REACT} s; ${MARGIN} m of margin each side of the car)`);
   let levels;
   if (opt('pattern')) {
     const data = JSON.parse(readFileSync(opt('pattern'), 'utf8')), obstacles = Array.isArray(data) ? data : data.obstacles;

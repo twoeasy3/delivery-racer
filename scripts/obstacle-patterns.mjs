@@ -311,9 +311,9 @@ const main = () => {
   const list = entries(rows, o.first ?? 0, o.kind ?? KIND);
   if (o.meta) {
     for (const line of picture(rows, o.lanes ?? 4)) console.error(line);
-    console.error('(' + list.length + ' barriers; at ' + (o.speed ?? 40) + ' m/s the first row must be in plain sight ' + sightNeeded(o.lanes ?? 4, o.speed ?? 40) + ' m ahead for a player in the farthest lane)');
+    console.error('(' + list.length + ' barriers; at ' + (o.speed ?? 40) + ' m/s the first row must be in plain sight ' + sightNeeded(Math.max(1, (o.lanes ?? 4) - 1), o.speed ?? 40) + ' m ahead for a player in the farthest lane)');
   }
   const out = o.cash ? { obstacles: list, pickups: cashLine(rows, { first: o.first ?? 0, lanes: o.lanes ?? 4 }) } : list;
   console.log(JSON.stringify(out, null, o.pretty ? 2 : 0).replace(/\},\{/g, '},\n{'));
 };
-if (import.meta.url === pathToFileURL(process.argv[1]).href) main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();

@@ -1,12 +1,12 @@
 {
   "id": "obstacle-lab",
   "theme": "city",
-  "clock": { "good": 100, "evil": 75 },
+  "clock": { "good": 135, "evil": 105 },
   "tip": 50,
   "lanes": 4,
   "flow": "north",
-  "traffic": { "commuter": 0.4, "van": 0.3, "darkvan": 0.3 },
-  "trafficCount": 4,
+  "traffic": {},
+  "trafficCount": 0,
   "oncomingCount": 0,
   "cargo": { "good": "pizza", "evil": "parcel" },
   "segments": [
@@ -16,9 +16,6 @@
     { "length": 150, "curve": 0, "grade": 0.06 },
     { "length": 150, "curve": 0, "grade": -0.06 },
     { "length": 650, "curve": 0 }
-  ],
-  "quietZones": [
-    { "from": 120, "to": 2620, "density": 0 }
   ],
   "obstacles": [
     { "s": 260, "lane": 0, "kind": "barrier" },
