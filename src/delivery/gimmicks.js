@@ -9,6 +9,7 @@
 // ============================================================================
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
+import { ladleGeometry, poolGeometry, streamGeometry } from './render/ladleModels.js'; // (the steelworks' ladle, for its card)
 import { LEVELS, HIDDEN_LEVELS, levelLabel } from './levels.js';
 import { levelName } from './levelText.js';
 import { nameOf, blurbOf, slug } from './words.js';
@@ -883,6 +884,23 @@ export const GROUPS = [
       for (const x of [-1.6, 1.6]) { const lamp = box(0.3, 0.3, 0.3, glow(0xffb020), x, 3.2, -7); lamps.push(lamp); g.add(lamp); }
       g.add(board);
       return { model: g, tick: (t) => { const on = Math.floor(t * 4) % 2 === 0; for (const l of lamps) l.material.color.setHex(on ? 0xffb020 : 0x5a4010); } };
+    } },
+    { name: 'Molten ladles', color: 0xff6a1a, has: (l) => l.ladles?.length, rules: [
+      `A crane brings a ladle of molten metal out over a lane as you come: a MOLTEN METAL sign ${CONFIG.ladle.sign} m before, beacons, a bell and a warning with ${CONFIG.ladle.warn} m to go.`,
+      'Then it tips and pours. Touch the stream or the glowing pool and you are wrecked, shield, tank, armour or invincible; only a Ghost passes. Another lane is always free.',
+      `The pool crusts over ${CONFIG.ladle.pour + CONFIG.ladle.molten} s after the pour: then it is harmless.`,
+    ], build: () => {
+      const g = road(9, 16), { body, glow: top } = ladleGeometry(), crane = new THREE.Group();
+      const pool = new THREE.Mesh(poolGeometry(), new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+      pool.scale.set(1.5, 1, 4.5); pool.position.set(1.75, 0.03, 0); g.add(pool);
+      const ladle = new THREE.Group();
+      ladle.add(new THREE.Mesh(body, new THREE.MeshLambertMaterial({ vertexColors: true })), new THREE.Mesh(top, new THREE.MeshBasicMaterial({ vertexColors: true })));
+      ladle.rotation.x = -1.2; ladle.scale.setScalar(0.7); ladle.position.set(1.75, 6.2, 1.4); crane.add(ladle);
+      const stream = new THREE.Mesh(streamGeometry(), new THREE.MeshBasicMaterial({ vertexColors: true }));
+      stream.position.set(1.75, 5.6, 0.2); stream.scale.set(0.8, 5.6, 0.8); crane.add(stream);
+      crane.add(box(9.5, 0.6, 0.5, lambert(0xf2c21d), 0, 8.8, 1.4));
+      g.add(crane);
+      return { model: g, tick: (t) => { pool.material.color.setScalar(0.88 + 0.12 * Math.sin(t * 6)); } };
     } },
     { name: 'Tunnel junctions', color: 0xffb020, has: (l) => l.tunnelJunctions?.length, rules: [
       `Inside a tunnel a side tunnel crosses the road. Within ${CONFIG.tunnelJunction.trigger} m the beacons over its mouths flash and a bell rings; ${CONFIG.tunnelJunction.warn} s later a tug and two trolleys come out of one side and cross at ${kmh(CONFIG.tunnelJunction.speed)}.`,

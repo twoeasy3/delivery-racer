@@ -66,7 +66,7 @@ try {
     check(hit === obs.length, `${id}: each obstacle is hit, and hurts, driving into it (${hit} of ${obs.length})`);
     // ---- THE LADLES (the owner, 16-Oct: "Lets have the molten bucket be a scripted event. It dumps its load on the road below
     // and is an other instakill for non ghost and invulnerable."): lanegimmicks.js, CONFIG.ladle
-    const LG = (await g.load('lanegimmicks.js')).LaneGimmicks, LC = CONFIG.ladle, LW = CONFIG.laneWidth;
+    const LG = (await g.load('lanegimmicks.js')).LaneGimmicks, LC = CONFIG.ladle;
     const ladles = LG.ladles, pads = level.boostPads || [], placedObs = level.obstacles || [];
     check(ladles.length >= 2 && ladles.length <= 3, `${id}: ${ladles.length} ladles (${ladles.map(l => Math.round(l.s) + ' m lanes ' + l.first + '-' + l.last).join(', ')})`);
     for (const l of ladles) {
@@ -89,8 +89,11 @@ try {
       if (protect === 'shield') P.shield = 30; else if (protect === 'armour') P.armour = 30; else if (protect === 'tank') P.tank = 30; else if (protect === 'ghost') P.ghost = 30;
       else if (protect === 'invincible') { P.mystery = 'invincible'; P.mysteryTime = 30; }
     };
+    const { Pickups } = await g.load('pickups.js');
     const into = (l, lane, v, protect = null) => {
       G.start(); quiet(); P.testGhost = false; g.said.length = 0;
+      for (const o of g.Collision.obstacles) o.gone = true; // (only the pour in question: no obstacle, no mystery's bullet train on the way)
+      for (const p of Pickups.items) p.taken = true;
       Object.assign(P, { s: l.s - 260, lat: T.laneOffset(lane, l.s - 260), speed: v, launching: false, shield: 0, ghost: 0, tank: 0, armour: 0 });
       keep(protect); g.drive(1, 0);
       let warned = null, wreckedAt = null;
@@ -98,7 +101,7 @@ try {
         quiet(); keep(protect); if (P.active && P.health > 0) { P.speed = v; P.lat = T.laneOffset(lane, P.s); }
         g.drive(1, 0);
         if (warned === null && g.said.some(t => t.includes('LADLE OVERHEAD'))) warned = l.s - P.s;
-        if (wreckedAt === null && P.health <= 0) wreckedAt = { s: P.s, pour: l.pour };
+        if (wreckedAt === null && P.health <= 0) wreckedAt = { s: P.s, pour: l.pour, atPool: Math.abs(P.s - l.s) < l.hl + P.hl + 1 };
         return wreckedAt !== null || P.s > l.s + 40;
       });
       return { warned, wreckedAt, said: [...g.said] };
@@ -111,15 +114,15 @@ try {
     const first = row.plain[0];
     check(first.warned !== null && first.warned <= LC.warn + 2 && first.warned > LC.warn - 30 && first.said.some(t => /LADLE OVERHEAD! Keep (left|right)!/.test(t)), `${id}: the warning (${first.said.find(t => t.includes('LADLE')) || 'none'}) with ${Math.round(first.warned)} m to go`);
     for (const [who, runs] of Object.entries(row)) {
-      const wrecked = runs.filter(r => r.wreckedAt).length, msg = runs.every(r => !r.wreckedAt || r.said.some(t => t.includes('Molten metal')));
+      const wrecked = runs.filter(r => r.wreckedAt?.atPool).length, msg = runs.every(r => !r.wreckedAt || r.said.some(t => t.includes('Molten metal')));
       check(who === 'ghost' ? wrecked === 0 : wrecked === runs.length && msg, `${id}: driven into each pool at 25 m/s, ${who === 'plain' ? 'a plain car' : who === 'invincible' ? 'an invincible mystery' : who === 'ghost' ? 'a Ghost' : 'with ' + who}: ${who === 'ghost' ? 'passes through all ' + runs.length : 'wrecked at ' + wrecked + ' of ' + runs.length + ' (' + runs.map(r => r.wreckedAt ? (r.wreckedAt.s - ladles[runs.indexOf(r)].s).toFixed(1) + ' m, ' + r.wreckedAt.pour.toFixed(2) + ' s into the pour' : '-').join('; ') + ')'}`);
     }
     // the lane it leaves free: driven past unharmed
-    { let ok = 0;
-      for (const l of ladles) { G.start(); quiet(); P.testGhost = false; for (const o of g.Collision.obstacles) o.gone = true; const h = P.health; // (the obstacles out of the way: only the pour is in question) Object.assign(P, { s: l.s - 260, lat: T.laneOffset(l.free[0], l.s - 260), speed: 25, launching: false, shield: 0, ghost: 0, tank: 0, armour: 0 }); g.drive(1, 0);
+    { let ok = 0; const why = [];
+      for (const l of ladles) { G.start(); quiet(); P.testGhost = false; for (const o of g.Collision.obstacles) o.gone = true; const h = P.health; /* (the obstacles out of the way: only the pour is in question) */ Object.assign(P, { s: l.s - 260, lat: T.laneOffset(l.free[0], l.s - 260), speed: 25, launching: false, shield: 0, ghost: 0, tank: 0, armour: 0 }); g.drive(1, 0);
         g.run(20, () => { quiet(); P.speed = 25; P.lat = T.laneOffset(l.free[0], P.s); g.drive(1, 0); return P.s > l.s + 30 || P.health <= 0; });
-        if (P.health >= h && P.active && !G.wrecks && l.pour >= 0) ok++; }
-      check(ok === ladles.length, `${id}: in the lane each ladle leaves free, driven past it while it pours, unharmed (${ok} of ${ladles.length})`); }
+        if (P.health >= h && P.active && !G.wrecks && l.pour >= 0) ok++; else why.push(Math.round(l.s) + ': health ' + Math.round(h) + ' -> ' + Math.round(P.health) + ', wrecks ' + G.wrecks + ', pour ' + l.pour.toFixed(1) + ', at ' + (P.s - l.s).toFixed(0) + ' m, ' + G.state + (G.over ? ' over' : '') + (P.active ? '' : ' inactive') + ' t ' + G.time?.toFixed?.(1)); }
+      check(ok === ladles.length, `${id}: in the lane each ladle leaves free, driven past it while it pours, unharmed (${ok} of ${ladles.length})${why.length ? ': ' + why.join('; ') : ''}`); }
     // wrecked in a pool at 15, 35 and 60 m/s: the helicopter sets the new car down in the free lane, shielded, and it drives on
     // with no second wreck from the same pool
     { const runs = [];
@@ -136,18 +139,18 @@ try {
       const bad = runs.filter(r => r.bad);
       check(!bad.length, `${id}: wrecked in each pool at 15, 35 and 60 m/s (${runs.length} runs): set down in the free lane, shielded, ${runs.map(r => r.landed ? (r.landed.s - r.l.s).toFixed(0) + ' m, ' + r.landed.pour.toFixed(1) + ' s into the pour' : '-').slice(0, 3).join('; ')}..., and driven on with no second wreck${bad.length ? ': ' + bad.map(r => Math.round(r.l.s) + ' at ' + r.v + ': ' + r.bad + (r.landed ? ' (' + (r.landed.s - r.l.s).toFixed(1) + ' m)' : '')).join('; ') : ''}`); }
     // after it has cooled: harmless
-    { const l = ladles[0]; G.start(); quiet(); P.testGhost = false;
+    { const l = ladles[0]; G.start(); quiet(); P.testGhost = false; for (const o of g.Collision.obstacles) o.gone = true;
       Object.assign(P, { s: l.s - 80, lat: T.laneOffset(lane0(l), l.s - 80), speed: 0, launching: false, shield: 0, ghost: 0, tank: 0, armour: 0 });
       g.run(LC.arrive + LC.pour + LC.molten + LC.cool + 2, () => { quiet(); P.speed = 0; return false; });
       const h = P.health;
       g.run(10, () => { quiet(); P.speed = 20; P.lat = T.laneOffset(lane0(l), P.s); g.drive(1, 0); return P.s > l.s + 20 || P.health <= 0; });
-      check(l.pour > LC.pour + LC.molten && P.health >= h && !G.wrecks && P.s > l.s + 10, `${id}: once it has crusted over (${(LC.pour + LC.molten).toFixed(1)} s after it tips), driven over unharmed`); }
+      check(l.pour > LC.pour + LC.molten && P.health >= h && !G.wrecks && P.s > l.s + 10, `${id}: once it has crusted over (${(LC.pour + LC.molten).toFixed(1)} s after it tips), driven over unharmed (pour ${l.pour.toFixed(1)} s, health ${Math.round(h)} -> ${Math.round(P.health)}, wrecks ${G.wrecks}, at ${(P.s - l.s).toFixed(0)} m)`); }
     // traffic: untouched by it (a car of the traffic driven through a molten pool keeps its health and goes on)
     { const l = ladles[0]; G.start(); P.testGhost = true;
       Object.assign(P, { s: l.s - 60, speed: 0, launching: false });
       const car = g.Traffic.cars.find(c => c.dir === 1 || c.bound === P.bound) || g.Traffic.cars[0];
       let met = false, h0 = null;
-      g.run(6, () => { P.speed = 0; if (l.pour > LC.fall + LC.spread && !met && car) { Object.assign(car, { active: true, s: l.s - 12, lat: l.lat }); h0 = car.health; met = true; } return met && car.s > l.s + 12; });
+      g.run(12, () => { P.speed = 0; if (l.pour > LC.fall + LC.spread && !met && car) { Object.assign(car, { active: true, s: l.s - 12, lat: l.lat }); h0 = car.health; met = true; } return met && car.s > l.s + 12; });
       check(met && car.health === h0 && car.active && car.s > l.s + 8, `${id}: a traffic car driven through the molten pool is untouched (health ${h0} -> ${car?.health}, through to ${car ? (car.s - l.s).toFixed(0) : '-'} m past)`);
       P.testGhost = false; }
     // never a wall: at every metre of the level at least one of the player's lanes is clear of obstacles and pools by a car's width

@@ -697,7 +697,7 @@
   "steelworks-run": {
     "name": "Steelworks Run",
     "description": {
-      "good": "Horseshoes for the farrier, straight off the line. Through the melt shop and the rolling mill, wait for the ingot trains and stay clear of the hot steel.",
+      "good": "Horseshoes for the farrier, straight off the line. Through the melt shop and the rolling mill: wait for the ingot trains, and keep out from under the ladles.",
       "evil": "A bar of gold that is mostly not gold. Beat the ingot trains to the crossings, ride the conveyors flat out and be gone before the gilt peels."
     },
     "cargo": { "good": "horseshoes", "evil": "goldbar" }
@@ -705,7 +705,7 @@
   "steelworks-night": {
     "name": "Steelworks by Night",
     "description": {
-      "good": "The night shift's horseshoes. The furnaces and the slag glow in the dark: mind the ingot trains and the hot steel on the road.",
+      "good": "The night shift's horseshoes. The furnaces glow in the dark: mind the ingot trains and the ladles pouring on the road.",
       "evil": "Questionable gold, by the light of the furnaces. Race the ingot trains, ride the conveyors and keep it out of the light."
     },
     "cargo": { "good": "horseshoes", "evil": "goldbar" }
