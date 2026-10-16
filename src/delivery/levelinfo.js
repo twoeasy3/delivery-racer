@@ -7,6 +7,7 @@
 import { CONFIG } from './config.js';
 import { CARS, LEVEL_CARS } from './cars.js';
 import { nameOf, blurbOf } from './words.js';
+import { levelTier, tierWeights } from './tiertraffic.js';
 
 // The medal for delivering a level with `spare` s on the clock, on a side: 'gold', 'silver', 'bronze' (any
 // delivery on time), or null (not delivered). A level's clock is a clean run in the reference car times
@@ -138,9 +139,10 @@ export const levelTraffic = (level) => {
   const raced = level.grid && !level.grid.rival; // (a race: the player and the grid in the same cars)
   if (level.car) add(level.car, raced && level.grid.kind === level.car ? 'grid' : 'drive');
   if (raced) add(level.grid.kind, 'grid');
-  const mix = Object.entries(level.traffic || {}).filter(([, weight]) => weight > 0).sort((a, b) => b[1] - a[1]);
+  const tier = levelTier(level); // (a tiered level's mix as it is driven: tiertraffic.js)
+  const mix = Object.entries(tierWeights(level.traffic || {}, tier)).filter(([, weight]) => weight > 0).sort((a, b) => b[1] - a[1]);
   for (const [kind] of mix) add(kind, 'traffic');
-  for (const zone of level.trafficZones || []) for (const [kind, weight] of Object.entries(zone.traffic || {})) if (weight > 0) add(kind, 'zone');
+  for (const zone of level.trafficZones || []) for (const [kind, weight] of Object.entries(tierWeights(zone.traffic || {}, tier))) if (weight > 0) add(kind, 'zone');
   if (level.tractors?.length) add('tractor', 'traffic');
   return list;
 };

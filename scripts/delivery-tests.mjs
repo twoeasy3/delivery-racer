@@ -30,10 +30,10 @@ const GROUPS = {
     files: [/levelText|Text\.json|words\.js|messages|levelinfo|gimmickspage|poweruppage|cargopage/],
   },
   levels: {
-    about: 'Level data: the schema, every level builds with no problems, the Driving Lesson (its lessons, a Commuter delivers it), lapped levels close their loop, every import resolves, the Concept Strike\'s levels timed in its cars, the level tools (level-clocks, obstacle-audit) driving off-tier levels in the reference car (.level-clocks-check)',
-    seconds: 135,
-    tests: [t('.schema-check.mjs'), t('.loop-check.mjs'), t('.bundle-check.mjs'), t('.merge-cross-check.mjs'), t('delivery-levels-check.mjs', { heavy: true }), t('tiers.mjs', { args: ['check'] }), t('.strike-levels-check.mjs'), t('.level-clocks-check.mjs', { heavy: true }), t('.tutorial-check.mjs')],
-    files: [/src\/delivery\/levels\//, /levels\.js$/, /events\.json/, /levelSchema|track\.js|physics\.js|editor/, /tiers\.json/, /lessoncue/],
+    about: 'Level data: the schema, every level builds with no problems, the Driving Lesson (its lessons, a Commuter delivers it), lapped levels close their loop, every import resolves, the Concept Strike\'s levels timed in its cars, tier traffic (.tiertraffic-check: a tiered level\'s traffic only exclusive kinds and garage cars of its tier and below, the kind table complete, never empty, the untiered levels untouched; about 10 min), the level tools (level-clocks, obstacle-audit) driving off-tier levels in the reference car (.level-clocks-check)',
+    seconds: 735,
+    tests: [t('.schema-check.mjs'), t('.loop-check.mjs'), t('.bundle-check.mjs'), t('.merge-cross-check.mjs'), t('delivery-levels-check.mjs', { heavy: true }), t('tiers.mjs', { args: ['check'] }), t('.strike-levels-check.mjs'), t('.tiertraffic-check.mjs', { heavy: true }), t('.level-clocks-check.mjs', { heavy: true }), t('.tutorial-check.mjs')],
+    files: [/src\/delivery\/levels\//, /levels\.js$/, /events\.json/, /levelSchema|track\.js|physics\.js|editor/, /tiers\.json/, /lessoncue/, /tiertraffic|traffic\.js/],
   },
   'smoke-levels': {
     about: 'The smoke test\'s per-level section only, for the levels named with --levels=id,id (with --changed, the levels whose files changed): '

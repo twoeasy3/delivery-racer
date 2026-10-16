@@ -887,6 +887,25 @@ export const CONFIG = {
     getaway: { hw: 0.95, hl: 2.3, height: 1.3, mass: 1.3, health: 220, speed: 1, special: true, model: 'getaway', livery: 0x7a1420, crit: 0.5 },
     interceptor: { hw: 1.05, hl: 2.45, height: 1.15, mass: 1.7, health: 400, speed: 1, special: true, model: 'interceptor', livery: 0x1a2236, crit: 0, spin: 0 },
   },
+  // TIER TRAFFIC (the owner, 16-Oct: "for the levels with star tiers, ... only use traffic-exclusive cars and cars from their
+  // tier and below"): on a level in a star tier (tiers.json: gold 1-5, Blue 6-10), a vehicle kind that is a garage car of a
+  // LATER tier never turns up. Each kind's tier is derived from cars.js (tiertraffic.js TRAFFIC_TIERS: carTier, gold 1-5 and
+  // Blue 6-10; an amphibious car by its own stars); a kind that is no garage car with stars (a bus, a police car, a semi, a
+  // jeep...) is 'exclusive', always allowed. A kind the tier does not allow hands its weight to `swap`'s kind (a vehicle of the
+  // same size and role; followed again if that is not allowed either), or, swapped to null, is dropped (the sports cars),
+  // the rest of the mix sharing its place. Levels outside the tiers (races, specials, amphibious, events, hidden) as before
+  tierTraffic: {
+    on: true,
+    swap: {
+      // (tier 1, the Commuter, Junker, Darkvan and the Sailing Herald, is allowed on every tiered level: no entry)
+      wagon: 'commuter', lovebus: 'van', lowrider: 'junker', sport: null,     // tier 2
+      hearse: 'darkvan', minivan: 'darkvan', pickup: 'van', hotrod: null,     // tier 3
+      taxi: 'commuter', suv: 'wagon', miata: null,                             // tier 4 (suv: the family car, then the Commuter)
+      postvan: 'van', keitruck: 'pickup',                                      // Blue 1 (tier 6) (keitruck: the farm truck, then the van)
+      floatvan: 'van', toybota: 'commuter', dampervan: 'van', nissank: 'van',  // amphibious (2-5)
+    },
+    fallback: 'commuter', // (a mix left with nothing at all: never empty)
+  },
   // an ice-cream van's stop (a level's "iceCreamStops": { s, lane, wait? }): the van stopped in its lane, its
   // jingle going, and the traffic behind it in a residential street brakes to a halt and waits, nobody
   // pulling out round it; `wait` s after the player comes within `trigger` m, it drives off
