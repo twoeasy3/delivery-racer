@@ -86,7 +86,7 @@ Game.onLoad.push(() => {
     const poolMat = glow({ side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
     const pool = new THREE.Mesh(poolGeometry(), poolMat);
     pool.rotation.y = Track.toWorld(l.s, l.lat, tmp);
-    pool.position.set(tmp.x, tmp.y + 0.05, tmp.z);
+    pool.position.set(tmp.x, tmp.y + 0.12, tmp.z); // (a little proud of the road: it is a few cm thick, and the road is cambered)
     pool.visible = false;
     own.add(pool);
     // where the trolley waits (over the kerb on the pour's side) and where it goes (over the pour's lanes), in the frame's x
