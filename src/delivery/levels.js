@@ -705,7 +705,7 @@ HIDDEN_LEVELS['metro-run'] = metroRun; // Metro Run (a metro system: running tun
 import obstacleLab from './levels/obstacle-lab.json';
 HIDDEN_LEVELS['obstacle-lab'] = obstacleLab; // Obstacle Lab (a test track: every obstacle formation of OBSTACLE-STAGE-DESIGN.md once, barriers only): ?hidden=obstacle-lab, never on the menus
 import tutorial from './levels/tutorial.json';
-HIDDEN_LEVELS.tutorial = tutorial; // Driving Lesson (a calm suburb road that teaches one thing at a time, its zones' welcomes the prompts: NEW-PLAYER-IDEAS.md): ?hidden=tutorial, not in the career until the owner decides
+HIDDEN_LEVELS.tutorial = tutorial; // Driving Lesson (a calm suburb road that teaches one thing at a time, a zone a lesson, its prompts render/lessoncue.js: NEW-PLAYER-IDEAS.md): ?hidden=tutorial, not in the career until the owner decides
 // THE HIDDEN LEVELS MENU (the owner, 15-Oct; Options > Hidden levels, render/hiddenlevels.js): every level of HIDDEN_LEVELS that is a
 // real level, so a hidden level added later is listed without a word here. TEST_LEVELS are the developer's test tracks (a testbed and the three
 // Gimmick Roads: gimmicks.js calls them 'Test'), left out of it. A run started from it is ?hidden=<id>: it banks nothing (game.js).
