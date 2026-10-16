@@ -94,11 +94,23 @@ export const gapBetween = (latA, latB) => Math.abs(latB - latA) - 2 * BOX.hw; //
 // width (two gates one lane apart overlap by 1.1 m, a lane line's width each side: a car on the line nudges 0.6 m, it does not
 // change lane). So one-lane steps are NUDGES; a real lane change needs openings two lanes apart.
 export const centreOf = (k, n) => (k - (n - 1) / 2) * LW;
+// WIDE barriers (a level obstacle's "span", collision.js / track.js spanOffset): `span` lanes wide from lane `lane` rightwards, one box
+// 0.55 m in from the outer lanes' lines (as a barrier is in its lane): 2.4 m wide at 1 lane, 4.15 at 1.5, 5.9 at 2, 7.65 at 2.5, 9.4 at 3
+export const wideHw = (span) => BOX.hw + (span - 1) * LW / 2;
+// the boxes of a row across the road ([left, right] in m): a row is { lanes: [barriers' lanes], wide: [{ lane, span }] } or a plain array of lanes
+export const boxesOf = (b, n) => [...(Array.isArray(b) ? b : b.lanes || []).map(k => ({ lane: k, span: 1 })), ...(Array.isArray(b) ? [] : b.wide || [])]
+  .map(({ lane, span }) => { const c = centreOf(lane + (span - 1) / 2, n), hw = wideHw(span); return [c - hw, c + hw]; });
 export const openings = (blocked, n, hw = CAR.hw + 0.1) => {
-  const spans = blocked.map(k => [centreOf(k, n) - BOX.hw, centreOf(k, n) + BOX.hw]).sort((a, b) => a[0] - b[0]);
+  const spans = boxesOf(blocked, n).sort((a, b) => a[0] - b[0]);
   const out = []; let at = -n * LW / 2;
   for (const [a, b] of [...spans, [n * LW / 2, n * LW / 2]]) { if (a - at >= 2 * hw) out.push([at + hw, a - hw]); at = Math.max(at, b); }
   return out; // (the car's centre's ranges)
+};
+// the open stretches of a row (m wide), whatever car: for the fairness numbers
+export const gapsOf = (blocked, n) => {
+  const spans = boxesOf(blocked, n).sort((a, b) => a[0] - b[0]), out = []; let at = -n * LW / 2;
+  for (const [a, b] of [...spans, [n * LW / 2, n * LW / 2]]) { if (a - at > 0.01) out.push(+(a - at).toFixed(2)); at = Math.max(at, b); }
+  return out;
 };
 export const shiftBetween = (blockedA, blockedB, n) => {
   let best = Infinity;
@@ -110,12 +122,21 @@ export const gapFor = (blockedA, blockedB, n, speed = 40, agility = 1) => {
   const d = shiftBetween(blockedA, blockedB, n);
   return Math.ceil(speed * (shiftChange(d, { speed, agility }).time + SLACK) + 2 * BOX.hl + 2 * CAR.hl + (d > 0 ? 0 : 8));
 };
+// a row closing every lane but `open` (a lane, or a lane line: 1.5 = the line between lanes 1 and 2), each run of closed road ONE
+// wide barrier (a single lane's run is a plain barrier)
+export const wallRow = (n, open) => {
+  const lo = Math.floor(open) === open ? open : open - 0.5, hi = Math.floor(open) === open ? open : open + 0.5; // (the open stretch, in lanes)
+  const row = { lanes: [], wide: [] }, put = (a, b) => { const span = b - a + 1; if (span <= 0) return; if (span < 1) throw new Error('a gap on lane line ' + open + ' leaves half a lane closed at the edge: no barrier is narrower than a lane'); if (span === 1 && Number.isInteger(a)) row.lanes.push(a); else row.wide.push({ lane: a, span }); };
+  if (Number.isInteger(open)) { put(0, open - 1); put(open + 1, n - 1); } else { put(0, lo - 0.5); put(hi + 0.5, n - 1); }
+  return row;
+};
+
 // rows laid one after another, each `gapFor` the one before (or o.spacing)
 const chain = (o, blockedList, notes) => {
   let s = o.s;
-  return blockedList.map((lanes, i) => {
-    if (i) s += o.spacing ?? gapFor(blockedList[i - 1], lanes, o.lanes, o.speed, o.agility);
-    return { s, lanes, note: notes[i] };
+  return blockedList.map((b, i) => {
+    if (i) s += o.spacing ?? gapFor(blockedList[i - 1], b, o.lanes, o.speed, o.agility);
+    return Array.isArray(b) ? { s, lanes: b, note: notes[i] } : { s, lanes: b.lanes || [], wide: b.wide || [], note: notes[i] };
   });
 };
 
@@ -208,6 +229,55 @@ export const PATTERNS = {
       return [{ s: o.s, lanes: A, note: 'bookend in, gap ' + a }, { s: o.s + P, lanes: B, note: 'bookend out, gap ' + b }];
     },
   },
+  // ---- WIDE barriers (span: more than a lane wide, one box, one hit) ----
+  wall: {
+    about: 'WIDE: a wall of wide barriers across the road, ONE lane open (`gap`), each closed run one block; with --lead, a diagonal of single barriers sweeping toward the gap first.',
+    params: { gap: 'the open lane (default the last)', lead: 'm before the wall the lead-in ends (default none)' },
+    rows: (o) => {
+      const gap = clampLane(o.gap ?? o.lanes - 1, o.lanes), rows = [];
+      if (o.lead) { // (a sweep from the far side toward the gap, a barrier a lane every 20 m, ending `lead` m short of the wall)
+        const far = gap >= o.lanes / 2 ? 0 : o.lanes - 1, step = gap > far ? 1 : -1, lanes = []; for (let k = far; k !== gap; k += step) lanes.push(k);
+        lanes.forEach((k, i) => rows.push({ s: o.s - o.lead - (lanes.length - 1 - i) * 2 * LINE_STEP, lanes: [k], note: i ? '' : 'lead-in' }));
+      }
+      const w = wallRow(o.lanes, gap);
+      rows.push({ s: o.s, lanes: w.lanes, wide: w.wide, note: 'wall, gap ' + gap });
+      return rows;
+    },
+  },
+  wideisland: {
+    about: 'WIDE: one block `span` lanes wide in the middle (rows of it `rows` deep), lanes either side: pick a side.',
+    params: { at: 'its left lane (default the middle)', span: 'lanes wide (default 2)', rows: 'how many, 10 m apart (default 2)' },
+    rows: (o) => {
+      const span = o.span ?? 2, at = o.at ?? (o.lanes - span) / 2, rows = [];
+      for (let i = 0; i < (o.rows ?? 2); i++) rows.push({ s: o.s + i * LINE_STEP, lanes: [], wide: [{ lane: at, span }], note: i ? '' : 'wide island, ' + span + ' lanes' });
+      return rows;
+    },
+  },
+  halfstep: {
+    about: 'WIDE: walls whose gaps step HALF a lane at a time (a lane, a lane line, the next lane...): 1.5-lane blocks make a gap centred on a lane line.',
+    params: { from: 'the first gap (default 1)', count: 'walls (default 3)' },
+    rows: (o) => {
+      const opens = [...Array(o.count ?? 3).keys()].map(i => Math.min(o.lanes - 1, (o.from ?? 1) + i / 2));
+      return chain(o, opens.map(g => wallRow(o.lanes, g)), opens.map(g => 'half step, gap ' + g));
+    },
+  },
+  zigzag: {
+    about: 'WIDE: blocks against alternate edges, each wide enough that the way past swings TWO lanes (4.3 m): span n - 1.5 on 4+ lanes, n - 1 on 3.',
+    params: { span: 'lanes wide (default as above)', count: 'blocks (default 4)', first: "'left' (default) or 'right'" },
+    rows: (o) => {
+      const span = o.span ?? (o.lanes >= 4 ? o.lanes - 1.5 : o.lanes - 1), n = o.count ?? 4, left = o.first !== 'right';
+      const rows = [...Array(n).keys()].map(i => ({ lanes: [], wide: [{ lane: (i % 2 === 0) === left ? 0 : o.lanes - span, span }] }));
+      return chain(o, rows, rows.map((r, i) => 'zigzag ' + (i + 1) + ((i % 2 === 0) === left ? ', block left' : ', block right')));
+    },
+  },
+  widechicane: {
+    about: 'WIDE: the chicane in two blocks, each (lanes - 1) wide: open at one edge, then the other (on a bend: the outside first).',
+    params: { first: "the first wall's open lane (default the rightmost)", spacing: 'm between them (default: worked out)' },
+    rows: (o) => {
+      const a = clampLane(o.first ?? o.lanes - 1, o.lanes), b = a === 0 ? o.lanes - 1 : 0;
+      return chain(o, [wallRow(o.lanes, a), wallRow(o.lanes, b)], ['wide chicane in, open ' + a, 'wide chicane out, open ' + b]);
+    },
+  },
 };
 // rows at the same s merged
 const mergeRows = (rows) => {
@@ -221,29 +291,31 @@ export const layRows = (name, opts) => {
   if (!P) throw new Error('no pattern ' + name + ' (' + Object.keys(PATTERNS).join(', ') + ')');
   const o = { speed: 40, agility: 1, lanes: 4, s: 0, ...opts };
   const rows = P.rows(o).map(r => ({ ...r, s: R(r.s), lanes: [...new Set(r.lanes)].sort((a, b) => a - b) }));
-  for (const r of rows) if (r.lanes.length >= o.lanes) throw new Error(name + ': the row at ' + r.s + ' closes every lane');
+  for (const r of rows) if (!openings(r, o.lanes, WIDEST_HW + 0.3).length) throw new Error(name + ': the row at ' + r.s + ' leaves no way through for the widest car');
   return rows;
 };
 // the level JSON's obstacle entries for those rows (first: the level's lane number of the player's leftmost lane)
-export const entries = (rows, first = 0, kind = KIND) => rows.flatMap(r => r.lanes.map(k => ({ s: r.s, lane: first + k, kind })));
+export const entries = (rows, first = 0, kind = KIND) => rows.flatMap(r => [...r.lanes.map(k => ({ s: r.s, lane: first + k, kind })),
+  ...(r.wide || []).map(w => ({ s: r.s, lane: first + w.lane, kind: KIND, span: w.span }))]);
 export const lay = (name, opts = {}) => entries(layRows(name, opts), opts.first ?? 0, opts.kind ?? KIND);
 // a cash line through a formation: pickups on the way through (the open lane of each row, and between rows on the line
 // the car takes), `every` m apart: lures INTO the line the formation wants, never into a barrier
 export const cashLine = (rows, { first = 0, every = 15, type = 'cash5', from, to, lanes = 4 } = {}) => {
-  const open = rows.map(r => ({ s: r.s, lane: allBut(lanes, r.lanes).sort((a, b) => a - b) }));
+  const covered = (r, k) => r.lanes.includes(k) || (r.wide || []).some(w => k > w.lane - 0.75 && k < w.lane + w.span - 0.25);
+  const open = rows.map(r => ({ s: r.s, lane: [...Array(lanes).keys()].filter(k => !covered(r, k)) }));
   const out = [], a = from ?? open[0].s - 30, b = to ?? open[open.length - 1].s + 30;
   for (let s = a; s <= b; s += every) {
     const next = open.find(r => r.s >= s) || open[open.length - 1];
     const lane = next.lane[Math.floor(next.lane.length / 2)];
-    if (rows.some(r => Math.abs(r.s - s) < 9 && r.lanes.includes(lane))) continue; // (never on top of a barrier)
+    if (lane === undefined || rows.some(r => Math.abs(r.s - s) < 9 && covered(r, lane))) continue; // (never on top of a barrier)
     out.push({ type, s: R(s), lane: first + lane });
   }
   return out;
 };
 
 // ---- the lab level (src/delivery/levels/obstacle-lab.json): every pattern once, in a rhythm, on a 4-lane one-way city road ----
-// (`node scripts/obstacle-patterns.mjs lab` prints its obstacles and pickups; the level's shape, a bend at 1150-1400 and a crest
-// at 1950, is in its file). Laid for 40 m/s.
+// (`node scripts/obstacle-patterns.mjs lab` prints its obstacles and pickups; the level's shape, a right-hand bend at 1150-1400, a crest
+// at 1950 and a left-hand bend at 3450-3700, is in its file). Laid for 40 m/s.
 export const LAB = [
   { name: 'gate', s: 260, gap: 2, cash: true },                      // call: one decision
   { name: 'zipper', s: 440, cash: true },                            // response: one shift between two rows
@@ -255,21 +327,33 @@ export const LAB = [
   { name: 'crest', crest: 1950, gap: 1, before: 70, after: 45 },     // trust the gate over the blind crest
   { name: 'slalom', s: 2160, a: 1, b: 3, count: 5, cash: true },     // the climax: a weave, a lane change each row
   { name: 'bookend', s: 2440, in: 0, out: 3, pocket: 120, cash: true }, // the last word: in at one edge, out at the other, cash in the pocket
+  // ---- the second half (the owner, 16-Oct: "attempt some obstacles with widths wider than 1 lane"): WIDE barriers ("span") ----
+  { name: 'wall', s: 2780, gap: 3, lead: 40, cash: true },           // a full-width wall, one lane open, a lead-in sweeping to it
+  { name: 'wideisland', s: 2930, span: 2, rows: 2, cash: 'left' },   // a two-lane block: pick a side
+  { name: 'halfstep', s: 3060, from: 1, count: 3, cash: true },      // gaps stepping half a lane: a drift, not a lane change
+  { name: 'zigzag', s: 3220, count: 4, cash: true },                 // 2.5-lane blocks at alternate edges: a two-lane swing each
+  { name: 'widechicane', s: 3520, first: 3, cash: true },            // on the left-hand bend: the outside (right) first, then the apex
+  { name: 'wall', s: 3800, gap: 1, cash: true },                     // the wide gate: a barrier, the gap, a two-lane block
 ];
 export const layLab = (speed = 40) => {
   const obstacles = [], pickups = [];
   for (const step of LAB) {
     const rows = layRows(step.name, { ...step, lanes: 4, speed });
     obstacles.push(...entries(rows));
-    if (step.cash === 'left') for (let s = step.s - 20; s <= step.s + (step.length ?? 20) + 20; s += 10) pickups.push({ type: 'cash10', s, lane: 0 });
+    if (step.cash === 'left') for (let s = step.s - 20; s <= step.s + (step.length ?? (step.rows ?? 3) * LINE_STEP - LINE_STEP) + 20; s += 10) pickups.push({ type: 'cash10', s, lane: 0 });
     else if (step.cash) pickups.push(...cashLine(rows, { lanes: 4, every: 12, type: 'cash5' }));
   }
   return { obstacles: obstacles.sort((a, b) => a.s - b.s || a.lane - b.lane), pickups: pickups.sort((a, b) => a.s - b.s) };
 };
 
 // a pattern's rows as a picture: one line a row, the lanes left to right, and the shift the car must make from the row before
-export const picture = (rows, n) => rows.map((r, i) => String(r.s).padStart(6) + '  ' + [...Array(n).keys()].map(k => r.lanes.includes(k) ? '[##]' : ' .. ').join('') +
-  (i ? '  +' + String(r.s - rows[i - 1].s).padStart(3) + ' m, shift ' + shiftBetween(rows[i - 1].lanes, r.lanes, n).toFixed(1) + ' m' : '') + (r.note ? '  ' + r.note : ''));
+const cell = (r, k) => { // (a lane wholly covered, half covered, or open)
+  if (r.lanes.includes(k)) return '[##]';
+  for (const w of r.wide || []) { const a = w.lane, b = w.lane + w.span - 1; if (k >= a && k <= b) return k === a || k === b ? (k === a && k === b ? '[##]' : k === a ? (Number.isInteger(a) ? '[###' : ' [##') : (Number.isInteger(b) ? '###]' : '##] ')) : '####'; if (k > b && k < b + 1) return '#]  '; if (k < a && k > a - 1) return '  [#'; }
+  return ' .. ';
+};
+export const picture = (rows, n) => rows.map((r, i) => String(r.s).padStart(6) + '  ' + [...Array(n).keys()].map(k => cell(r, k)).join('') +
+  (i ? '  +' + String(r.s - rows[i - 1].s).padStart(3) + ' m, shift ' + shiftBetween(rows[i - 1], r, n).toFixed(1) + ' m' : '') + (r.note ? '  ' + r.note : '') + ((r.wide || []).length ? '  [open: ' + gapsOf(r, n).join(' / ') + ' m]' : ''));
 
 // ---- the command line ----------------------------------------------------------------------------------------------------
 const main = () => {

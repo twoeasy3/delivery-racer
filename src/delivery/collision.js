@@ -318,6 +318,13 @@ export const Collision = (() => {
     obstacles.length = 0;
     for (const load of loaders) load(add);
     for (const o of LEVEL.obstacles || []) {
+      if (o.span > 1) { // a WIDE barrier ("span": lanes wide, from its lane rightwards): one box, the barrier's 0.55 m in from the outer lanes'
+        // lines as a barrier is in its lane, its cost a barrier's (one hit, however wide), blown away whole. Not the theme's swap: drawn as
+        // the plain barrier stretched (render/obstacleModels.js builds a barrier to its box), one continuous block
+        const s = Track.place(o), lat = Track.spanOffset(o.lane, o.span, s), hw = SIZE.barrier[0] + (o.span - 1) * CONFIG.laneWidth / 2;
+        add('barrier', s, lat, { hw, wide: hw / SIZE.barrier[0] });
+        continue;
+      }
       const s = Track.place(o), lat = Track.laneOffset(o.lane, s), D = CONFIG.drifters;
       add(themed(o.kind || 'barrier'), s, lat, o.drift === 'dart' ? { drift: 'dart', time: 0, homeS: s, homeLat: lat, along: D.dartAlong, across: D.dartAcross } : undefined);
     }
@@ -837,6 +844,7 @@ export const Collision = (() => {
       Game.shake = Math.max(Game.shake, cost.light ? 0.3 : 1);
       // (a cyclist goes up on its own, small, its wheels flying: the rest of the bunch rides on)
       FxQueue.push(o.ride ? { type: 'explode', s: o.s, lat: o.lat, vs: Player.speed, big: false, scale: 0.55, smoke: 0.5, tyres: true }
+        : o.wide ? { type: 'explode', s: o.s, lat: o.lat, vs: Player.speed, big: false, scale: Math.sqrt(o.wide) } // (a wide barrier: a bigger blast, as wide as it is)
         : { type: 'explode', s: o.s, lat: o.lat, vs: Player.speed, big: false });
       if ((o.kind === 'cyclist' || o.kind === 'runner' || o.kind === 'marcher') && Traffic.policeNear()) Player.bust(o.kind); // (knocking a cyclist off, or a runner or bandsman down, in front of the police: each its own words, messages.json busts)
     }

@@ -62,14 +62,16 @@ const audit = (level) => {
     if (o.road === 'side') { skipped.side++; continue; }
     if (o.drift) { skipped.drift++; continue; }
     if (K[kind]?.light) { skipped.light++; continue; }
-    const s = T.place(o), [first, last] = T.laneRange(1, s), lat = T.laneOffset(o.lane, s);
-    const [hw, hl, height] = size[kind];
+    const s = T.place(o), [first, last] = T.laneRange(1, s), span = o.span > 1 ? o.span : 1;
+    const lat = span > 1 ? T.spanOffset(o.lane, span, s) : T.laneOffset(o.lane, s); // (a wide barrier: Collision.loadLevel's own sums)
+    const [hw0, hl, height] = size[span > 1 ? 'barrier' : kind], hw = hw0 + (span - 1) * LW / 2;
     const where = o.lane === 'left' || o.lane === 'right' ? 'shoulder' : o.lane < first ? 'oncoming' : o.lane > last ? 'beyond' : 'lane';
-    items.push({ s, lat, hw, hl, height, kind, lane: o.lane, rel: where === 'lane' ? o.lane - first : null, lanes: last - first + 1, where, first, last });
+    items.push({ s, lat, hw, hl, height, kind, span, lane: o.lane, rel: where === 'lane' ? o.lane - first : null, lanes: last - first + 1, where, first, last });
   }
   items.sort((a, b) => a.s - b.s);
   // ---- the evidence ----
   const inLanes = items.filter(o => o.where === 'lane');
+  const widerThanLane = items.filter(o => 2 * o.hw > LW).length, widest = items.reduce((m, o) => Math.max(m, 2 * o.hw), 0);
   const byRel = {}, kinds = {};
   for (const o of items) kinds[o.kind] = (kinds[o.kind] || 0) + 1;
   for (const o of inLanes) { const key = o.rel + '/' + o.lanes; byRel[key] = (byRel[key] || 0) + 1; }
@@ -210,7 +212,11 @@ const audit = (level) => {
       rows.push({ from: Math.round(firstObs.s), to: Math.round(gr.obs[gr.obs.length - 1].s), n: gr.obs.length, sight: sight.sight, cap: sight.cap, chained, react: worst, worstLane, mode, flags: [...new Set(flags)], unfair, misplaced, forced });
       prevEnd = gr.obs[gr.obs.length - 1].s + gr.obs[gr.obs.length - 1].hl;
       if (detail) {
-        const pic = rowsOf.map(r => String(Math.round(r.s)).padStart(6) + '  ' + lanes.map(k => r.obs.some(o => o.lane === k) ? '[##]' : ' .. ').join('') + (r.obs.some(o => o.where === 'shoulder') ? '  +shoulder' : ''));
+        const pic = rowsOf.map(r => String(Math.round(r.s)).padStart(6) + '  ' + lanes.map(k => { // (a lane whose centre a box covers, or only part of it)
+          const c = T.laneOffset(k, r.s), cover = (o) => Math.min(o.lat + o.hw, c + LW / 2) - Math.max(o.lat - o.hw, c - LW / 2);
+          const most = Math.max(0, ...r.obs.filter(o => o.where !== 'shoulder').map(cover));
+          return most >= 2.3 ? '[##]' : most > 0.6 ? ' [#]' : ' .. ';
+        }).join('') + (r.obs.some(o => o.where === 'shoulder') ? '  +shoulder' : ''));
         rows[rows.length - 1].pic = pic;
       }
     }
@@ -229,7 +235,7 @@ const audit = (level) => {
     id: L.id, length: Math.round(length), lanes: T.laneCount, twoWay, count: items.length, total: (L.obstacles || []).length, perKm: items.length / (length / 1000), kinds, byRel,
     inLanes: inLanes.length, innerShare: inLanes.length ? inner / inLanes.length : 0, shoulders: items.filter(o => o.where === 'shoulder').length,
     oncoming: items.filter(o => o.where === 'oncoming').length, singles, formations, medianGap: gaps.length ? gaps[Math.floor(gaps.length / 2)] : null,
-    minGap: gaps[0] ?? null, skipped, rows, fairUpTo,
+    minGap: gaps[0] ?? null, skipped, rows, fairUpTo, widerThanLane, widest,
   };
 };
 
@@ -237,7 +243,7 @@ const pct = (x) => Math.round(x * 100) + '%';
 const report = (r) => {
   const unfair = r.rows.filter(x => x.unfair), misplaced = r.rows.filter(x => x.misplaced), forced = r.rows.filter(x => x.forced), sightLimited = r.rows.filter(x => x.sight < x.cap && !x.chained);
   console.log(`${r.id}: ${r.total} obstacles, ${r.count} judged (${r.perKm.toFixed(1)}/km over ${r.length} m, ${r.lanes} lanes${r.twoWay ? ' two-way' : ' one-way'}; ${Object.entries(r.kinds).map(([k, n]) => n + ' ' + k).join(', ')}` +
-    `${r.skipped.light ? '; ' + r.skipped.light + ' light ones not judged' : ''})`);
+    `${r.skipped.light ? '; ' + r.skipped.light + ' light ones not judged' : ''}; widest ${r.widest.toFixed(1)} m, ${r.widerThanLane} wider than a lane)`);
   console.log(`  across: ${r.inLanes} in the player's lanes (${Object.entries(r.byRel).sort().map(([k, n]) => 'lane ' + k + ': ' + n).join(', ')}), ${r.shoulders} on shoulders, ${r.oncoming} in oncoming lanes; ` +
     `${pct(r.innerShare)} in the ${r.twoWay ? 'lane by the centre line' : 'middle lanes'}`);
   console.log(`  layout: ${r.singles} of ${r.count} alone (no other within 30 m: ${pct(r.count ? r.singles / r.count : 0)}), ${r.formations} formations (2+ within 30 m), gap median ${r.medianGap ?? '-'} m, least ${r.minGap ?? '-'} m`);
@@ -270,10 +276,10 @@ try {
       const unfair = r.rows.filter(x => x.unfair).length, mis = r.rows.filter(x => x.misplaced).length, forced = r.rows.filter(x => x.forced).length;
       sum.forced = (sum.forced || 0) + forced; sum.mis = (sum.mis || 0) + mis; sum.groups = (sum.groups || 0) + r.rows.length;
       sum.n += r.count; sum.singles += r.singles; sum.inLanes += r.inLanes; sum.inner += r.innerShare * r.inLanes; sum.formations += r.formations; sum.unfair += unfair; sum.levels++;
-      sum.total = (sum.total || 0) + r.total;
+      sum.total = (sum.total || 0) + r.total; sum.wide = (sum.wide || 0) + r.widerThanLane; sum.widest = Math.max(sum.widest || 0, r.widest);
       console.log(`${r.id.padEnd(20)} ${String(r.total).padStart(3)} obst (${String(r.count).padStart(3)} judged) ${r.perKm.toFixed(1).padStart(4)}/km  alone ${pct(r.count ? r.singles / r.count : 0).padStart(4)}  inner ${pct(r.innerShare).padStart(4)}  formations ${String(r.formations).padStart(2)}  unfair@${SPEED} ${unfair}  off-lanes ${forced}  out of place ${mis}`);
     }
-    console.log(`ALL: ${sum.levels} levels, ${sum.total} obstacles, ${sum.n} judged, ${pct(sum.singles / sum.n)} alone, ${pct(sum.inner / sum.inLanes)} in the inner lane(s), ${sum.formations} formations; at ${SPEED} m/s ${sum.groups} groups: ${sum.unfair} unfair, ${sum.forced} passable only off the lanes, ${sum.mis} out of place`);
+    console.log(`ALL: ${sum.levels} levels, ${sum.total} obstacles, ${sum.n} judged, ${pct(sum.singles / sum.n)} alone, ${pct(sum.inner / sum.inLanes)} in the inner lane(s), ${sum.formations} formations, widest judged obstacle ${(sum.widest || 0).toFixed(1)} m, ${sum.wide || 0} wider than a lane (${LW} m); at ${SPEED} m/s ${sum.groups} groups: ${sum.unfair} unfair, ${sum.forced} passable only off the lanes, ${sum.mis} out of place`);
   } else {
     for (const l of levels) {
       const r = audit(l);

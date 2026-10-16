@@ -160,6 +160,9 @@
 //                                  'sewage', 'pile' and 'beam', or the beach's 'umbrella',
 //                                  'surfboard', 'cooler' and 'chair' (a lifeguard chair), or 'mine' (a sea mine, afloat).
 //                                  With drift: 'dart', it darts about its spot at random (see CONFIG.drifters)
+//                                  With span: n (a barrier only, 1 to 4 in halves): a WIDE barrier, n lanes wide from its lane
+//                                  rightwards, one block (0.55 m in from the outer lanes' lines, as a barrier is in its lane) that
+//                                  costs a barrier's hit, however wide, and is blown away whole (see Collision.loadLevel)
 //                                  A theme can have obstacles of its own (themes.js, its `obstacles`): there a
 //                                  level's 'crate' is a barrel (the Wild West), a diving helmet (the sea bed), a
 //                                  supply pod (the Moon)...: the same box and the same cost, only the thing itself

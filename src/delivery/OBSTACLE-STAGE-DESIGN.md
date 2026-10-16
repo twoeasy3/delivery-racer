@@ -219,19 +219,84 @@ camera's actual line of sight over the hill. **Fits:** hills, humpback bridges, 
 Two walls with a safe pocket between them (3 s at the speed, at least the swing). It holds a cash line that crosses it.
 **Parameters:** `in`, `out`, `pocket`. **Fits:** the last word of a section; near the drop (but 60 m clear of it).
 
-### LANE-SPANNING / BETWEEN LANES (CHECKLIST 93): not possible today
-`Track.laneOffset` gives a sensible lat for a fractional lane (lane 1.5 = on the line between 1 and 2), but
-**`Track.problems` refuses a non-integer lane** ("its lane is a number, or left or right"), so a level with one fails the
-level checks. Allowing it is a one-line change in track.js, a logic file: a replay-rules change with a version bump, plus
-the editor's lane picker. What it would give is a barrier on the line between two lanes, spanning lat ±1.2 m around the line.
-That leaves each neighbouring lane 2.3 m clear, a SQUEEZE (0.3 m each side of a 1.7 m car). It would also kill the
-lane-line straddle, which is the one thing the two-lane sides of today's roads need for real lane-change formations. A
-barrier that SPANS two lanes needs its own box and model (`SIZE` per kind), not a stretched one. Not drafted further here.
+### LANE-SPANNING / BETWEEN LANES (CHECKLIST 93): see §5b
+CHECKLIST 93 was left on 13-Oct as "not small". Between lanes was close: a fractional `lane` already gives a sensible lat
+through `Track.laneOffset`, but `Track.problems` refused it. Spanning lanes needed "a width per obstacle (hitbox) and models
+drawn that wide". §5b does the spanning part for the barrier only, and lets a wide barrier start on a lane line. A plain
+barrier on a lane line (span 1 at lane 1.5) is still refused: it leaves each lane beside it 2.3 m, a SQUEEZE.
 
 ### CASH LINES: the lure
 Cash goes ON the line the formation wants: in each gap, and between rows along the way the car takes
 (`cashLine` in the tool, one every 12 m, never within 9 m of a barrier in its lane). On an island it goes on one side only,
 the riskier one if anything. Cash never sits where the only way to it is through a barrier.
+
+## 5b. WIDE obstacles: the barrier more than a lane wide (round 2, the owner 16-Oct)
+
+**Today every obstacle a level places is at most a lane wide.** Counted over all 98 levels: 1,231 obstacle entries, none wider
+than 3.5 m; the widest is the construction site's `beam` (3.3 m). Only gimmicks are wider: the wide load (6.4 m, a vehicle) and
+the bigger asteroids (sized by radius). How the game handles width: `SIZE` in collision.js is ONE box per kind (barrier
+2.4 x 1.2 m). A level entry has only `s`, `lane` (an integer: `Track.problems` refused anything else) and `kind`.
+`Collision.loadLevel` sets `lat = Track.laneOffset(lane)` and takes the kind's box.
+
+**Two routes, both measured:**
+
+- **(a) No code: barriers side by side.** Two in neighbouring lanes make a 5.9 m block with a 1.1 m seam, and three make
+  9.4 m. Seen from the chase camera it reads as a wall with seams. But **the seam doubles the hit**, measured headless: a car
+  on the lane line between two side-by-side barriers touches both, both explode, and it loses **68 health and 0.36 of its
+  speed**. One barrier costs 34 and 0.6. Where the car is fully in one lane, only that segment goes and the rest of the wall
+  stands beside it (harmless: the car is already past). Widths can only be whole lanes: the placement rule refuses items
+  closer than 2 m across within 8 m along, and half lanes need fractional lanes. Verdict: usable for whole-lane walls, but
+  the seam penalty is a trap that looks like one wall and costs two.
+- **(b) A width on the level entry: `span` (PROTOTYPED, this branch).** `{ s, lane, span }`, where `span` is 1 to 4 lanes in
+  halves, laid from `lane` rightwards; `lane` may be a lane line (x.5) for a wide one. It is ONE box: as wide as `span` lanes
+  less 0.55 m at each outer line, as a barrier sits in its lane. That is 2.4 m at 1 lane, 4.15 m at 1.5, 5.9 m at 2, 7.65 m
+  at 2.5 and 9.4 m at 3. Its cost is a barrier's (34, x0.6), **one hit however wide**, it is blown away whole, and its blast
+  is scaled by sqrt(width / 2.4). It is drawn as the plain barrier's model, which already builds itself to its box
+  (render/obstacleModels.js): one stretched block, continuous. It stands square to the road at its s with its centre on the
+  lanes' own lat, so on a bend it follows the lanes with no staircase (seen in the wide chicane's stills).
+  Files changed: `track.js` (`spanOffset`, the span checks in `problems`: barrier only, 1 to 4, its lanes open, the "on top"
+  test widened), `collision.js` (`loadLevel`: the wide box and `wide`; the blast's scale), `levelSchema.js` (the `span`
+  setting, so the editor shows "Lanes wide", and the lane may be x.5 on an obstacle; the editor's lane picker does not offer
+  half lanes yet: it shows "2.5 (no such lane here)" and keeps it), `levels.js` (the doc), `scripts/obstacle-audit.mjs` and
+  `scripts/obstacle-patterns.mjs`. No change was needed in render (the model scales itself), in traffic.js (traffic slows
+  through and rivals steer round any obstacle by its `hw`), or in themes. **A wide barrier is never the theme's swap:** half
+  the swaps' models are not built to their box. **These are logic files: the replay rules fingerprint changes.**
+
+Seen in stills: a wide block is one long low slab, orange with the white band. Close up it reads as a jersey-barrier run.
+From 75 m at chase height a 9.4 m slab reads as a thin line, harder to see than three separate barriers. Not seen: the blast
+of a wide one (a still cannot show it) and a hit in play.
+
+**Recommendation: (b).** It gives true widths (half lanes too), one hit, one continuous block and one entry in the level, and
+it is small (about 40 lines of game code).
+
+### The wide patterns (laid for 40 m/s; `[####]` a wide block, `[#` / `#]` a block's half lane)
+Open widths are between the blocks inside the lanes (each edge's 0.55 m strip runs on into the 3.5 m shoulder).
+- **WALL (one lane open, with a lead-in):** every lane but one shut, each closed run ONE block (lanes 0-2: a 9.4 m block).
+  The lead-in is a diagonal of single barriers sweeping toward the gap, ending 40 m short. Open: 4.05 m at an edge lane
+  (3.5 m + 0.55 m), 4.6 m between blocks. Sight needed: 101 m at 40 m/s and 150 m at 60 m/s for the farthest lane (3 lanes
+  over). The lab's audit: 3.06 s to spare.
+  ```
+  2700  [##] ..  ..  ..   lead-in
+  2720   .. [##] ..  ..
+  2740   ..  .. [##] ..
+  2780  [##########] ..   wall, gap 3  [open 4.05 m]
+  ```
+- **WIDE GATE:** the wall with the gap inside: a barrier, the gap, a 2-lane block (`wall --gap 1`). Open 4.6 m.
+- **WIDE ISLAND:** a 2-lane block (5.9 m) in the middle, two rows 10 m apart; 4.05 m open each side. No reaction rule beyond
+  a one-lane move (70 m in sight at 40 m/s).
+- **HALF STEP:** walls whose gap moves half a lane at a time (lane 1, the line 1|2, lane 2), built from 1.5-lane blocks.
+  Measured, **it is a drift, not a forcing move**: consecutive gaps overlap by more than a car, so shift 0 and 23 m apart.
+  It guides the line gently; it never forces a lane change.
+- **ZIGZAG (the two-lane swing):** blocks 2.5 lanes wide (7.65 m) against alternate edges. Each leaves 5.8 m at the other
+  side, and the car must move **4.3 m** between them (0.78 s). They are 47 m apart at 40 m/s (67 m at 60). Narrower blocks
+  (2 lanes on 4) only ask a 0.8 m nudge, like gates one lane apart. On 3 lanes the zigzag is 2-lane blocks.
+- **WIDE CHICANE (on a bend):** two 3-lane blocks (9.4 m), open at the outside edge, then the inside. The full **7.8 m**
+  swing (1.16 s) needs 62 m at 40 m/s and 90 m at 60. On the lab's left-hand bend each block stands square across the
+  curving road (seen).
+
+Fairness for all: never fully blocked (the generator refuses a row without a way through for the widest car, 2.1 m + 0.6 m);
+the narrowest designed opening is 4.05 m against a 1.7 m car (2.35 m spare). A **1.5-lane block beside a lane line** leaves
+2.3 m: a squeeze, flagged; don't.
 
 ## 6. Rhythm: how a level uses them
 
@@ -245,12 +310,14 @@ A level has ONE idea; formations are its vocabulary, not a second idea. Call and
 7. **Climax:** a SLALOM.
 8. **Last word:** a BOOKEND, at least 60 m short of the drop.
 
-The lab, audited: 10 groups at 40 m/s, none unfair, none off the lanes, none out of place; every group fair in the lanes up
-to 71 m/s (`obstacle-audit obstacle-lab --fairup --strict` passes). Its crest (6% up, 6% down, the default 60 m ease) is
+The lab, audited (both halves, 105 barriers, 14 of them wide): 15 groups at 40 m/s and 6 at 60 m/s, none unfair, none off
+the lanes, none out of place; every group fair in the lanes up to 71 m/s (`obstacle-audit obstacle-lab --fairup --strict`
+passes). It is 4,150 m: the first 2,750 m hold the ten one-lane patterns, the rest the wide ones (§5b), on a second,
+left-hand bend. The clock from level-clocks is 205 / 155. Its crest (6% up, 6% down, the default 60 m ease) is
 NOT blind to the chase camera (11 m up): the echo is in sight from before the crest, seen in a still. A truly blind crest
 wants a sharper hill, which the gambles turn into a jump: a level-by-level choice.
 
-Density: the lab has 85 barriers in 2.75 km (31 per km) because it shows everything. A real level should use 3 to 6
+Density: the lab has 105 barriers in 4.15 km (25 per km) because it shows everything. A real level should use 3 to 6
 formations, about 10 to 15 barriers per km, plus its themed singles.
 
 ## 7. The tools
@@ -261,6 +328,9 @@ formations, about 10 to 15 barriers per km, plus its themed singles.
   JSON obstacle entries (`{ s, lane, kind: 'barrier' }`). `--first` is the level's lane number of the player's leftmost lane
   (2 on a two-way 4-lane road). `--meta` prints the diagram; `--cash` adds a cash line.
 - `node scripts/obstacle-patterns.mjs lab [--meta]`: the lab level's obstacles and pickups (`LAB` in the file).
+- The wide patterns (`wall`, `wideisland`, `halfstep`, `zigzag`, `widechicane`) write `{ s, lane, kind: 'barrier', span }`
+  entries. `--meta` shows each row's open widths in metres; the generator refuses a row with no way through for the widest
+  car. The audit reads `span` with the game's own sums (`Track.spanOffset`) and prints the widest obstacle of each level.
 - `node scripts/obstacle-audit.mjs <level ids> [--speed 40] [--car sport] [--margin 0.25] [--verbose] [--fairup] [--strict]`:
   the evidence and the fairness of each group. `--verbose` draws each group; `--fairup` finds the highest speed at which
   every group is fair in the lanes; `--strict` exits 1 on any unfair or misplaced group. `--all` gives one line per level.
@@ -310,3 +380,7 @@ plays it.
 6. **Sizes:** is a 2.4 m barrier (two make a wall) the right standard, or should a formation kind be a full lane wide
    (3.5 m, its own model) so a wall has no seams?
 7. **How many per level:** 3 to 6 formations (10 to 15 barriers per km) as proposed?
+8. **Wide barriers (§5b):** take route (b), `span`? It is a logic change (replay fingerprint, version bump at merge).
+   Should wide ones be themed (each theme drawing its own long block, e.g. a long rebar rack or a velvet-rope run), or always
+   the plain barrier? Should a wide hit cost more than a barrier's (today: the same, one hit)? Should a 1.5-lane block,
+   which only makes squeezes, be allowed at all?
