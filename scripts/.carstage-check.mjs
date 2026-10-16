@@ -79,8 +79,11 @@ try {
   const threw = rows.filter(r => r.error);
   check(!threw.length, 'every theme in themes.js (' + ids.length + ') and the default studio builds a stage, Good, Evil, tall and phone, without throwing' + (threw.length ? ': ' + threw.map(r => r.theme + ' ' + r.error).join('; ') : ''));
   const ok = rows.filter(r => !r.error);
-  const over = ok.filter(r => r.tall.calls > CALLS || r.phone.calls > CALLS || r.tall.triangles > steel.triangles || r.phone.triangles > steel.triangles || r.evil.triangles > steel.triangles);
-  check(!over.length, 'none dearer than the Steelworks on the Tall card (' + steel.triangles + ' triangles, tall or phone; the Steelworks phone ' + steelLow.triangles + '; at most ' + CALLS + ' draw calls)' + (over.length ? ': ' + over.map(r => r.theme + ' ' + r.tall.triangles + '/' + r.phone.triangles).join(', ') : ''));
+  // (the budget: the Steelworks' tall stage, which was the dearest at 6480 triangles; the steelworks' redrawn obstacles (CHECKLIST 411)
+  // made its stage cheaper, so the budget stays at that figure rather than falling with it: v1.1.148-alpha integration)
+  const TRIS = Math.max(steel.triangles, 6480);
+  const over = ok.filter(r => r.tall.calls > CALLS || r.phone.calls > CALLS || r.tall.triangles > TRIS || r.phone.triangles > TRIS || r.evil.triangles > TRIS);
+  check(!over.length, 'none dearer than the budget, the Steelworks\' old Tall card (' + TRIS + ' triangles, tall or phone; the Steelworks now ' + steel.triangles + ' tall, ' + steelLow.triangles + ' phone; at most ' + CALLS + ' draw calls)' + (over.length ? ': ' + over.map(r => r.theme + ' ' + r.tall.triangles + '/' + r.phone.triangles).join(', ') : ''));
   const slow = ok.filter(r => Math.max(r.tall.ms, r.phone.ms, r.evil.ms) > BUILD_MS);
   check(!slow.length, 'every stage built and framed in under ' + BUILD_MS + ' ms (the slowest: ' + ok.map(r => [r.theme, Math.max(r.tall.ms, r.phone.ms, r.evil.ms)]).sort((a, b) => b[1] - a[1])[0].map(x => typeof x === 'number' ? x.toFixed(1) + ' ms' : x).join(' ') + ')' + (slow.length ? ': ' + slow.map(r => r.theme).join(', ') : ''));
   const bare = ok.filter(r => THEMES[r.theme]?.obstacles && !r.file && r.tall.calls < 4);
