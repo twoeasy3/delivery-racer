@@ -48,6 +48,13 @@ export const WHEEL_COLOURS = [
   { id: 'blue', name: 'Blue', hex: 0x2563d6 },
   { id: 'green', name: 'Green', hex: 0x22a84f },
   { id: 'orange', name: 'Orange', hex: 0xff7a1a },
+  // 16-Oct (wheel sets): more colourways for a hub, a rim or a spinner
+  { id: 'gunmetal', name: 'Gunmetal', hex: 0x4a4f57 },
+  { id: 'bronze', name: 'Bronze', hex: 0xa36a2c },
+  { id: 'pink', name: 'Pink', hex: 0xff5fa2 },
+  { id: 'purple', name: 'Purple', hex: 0x8a4fd8 },
+  { id: 'teal', name: 'Teal', hex: 0x16b3a3 },
+  { id: 'neon', name: 'Neon', hex: 0x9dff2e },
 ];
 const byId = (id) => WHEEL_COLOURS.find(c => c.id === id) || WHEEL_COLOURS[0];
 
@@ -59,6 +66,7 @@ const byId = (id) => WHEEL_COLOURS.find(c => c.id === id) || WHEEL_COLOURS[0];
 export const KEY_DESIGN = 'delivery.wheeldesign';
 const WHITE = 0xf4f4f2, RED = 0xd8262b;
 const whitewall = { inner: 0.64, outer: 0.88, hex: WHITE }, redline = { inner: 0.78, outer: 0.84, hex: RED };
+const goldline = { inner: 0.78, outer: 0.84, hex: 0xe0b030 }, neonline = { inner: 0.76, outer: 0.84, hex: 0x7dff3a }; // (16-Oct)
 export const TYRE_COLOURS = [
   { id: 'stock', name: 'Stock', tyre: null, ring: null, hub: null },
   { id: 'whitewall', name: 'Whitewall', tyre: null, ring: whitewall, hub: null },
@@ -67,6 +75,8 @@ export const TYRE_COLOURS = [
   { id: 'white', name: 'White', tyre: 0xe9e9e4, ring: null, hub: null },
   { id: 'blue', name: 'Blue', tyre: 0x2a5bd0, ring: null, hub: null },
   { id: 'yellow', name: 'Yellow', tyre: 0xf0c020, ring: null, hub: null },
+  { id: 'goldline', name: 'Goldline', tyre: null, ring: goldline, hub: null },
+  { id: 'neonline', name: 'Neon line', tyre: null, ring: neonline, hub: null },
 ];
 export const WHEEL_DESIGNS = TYRE_COLOURS; // (the old name)
 const designById = (id) => TYRE_COLOURS.find(d => d.id === id) || TYRE_COLOURS.find(d => d.id === Store.LEGACY_DESIGNS[id]?.design) || TYRE_COLOURS[0];
@@ -312,6 +322,17 @@ export const WHEEL_SETS = [
   { id: 'rain', name: 'Rain', design: 'stock', hub: 'silver', rim: 'turbine', tread: 'chevron' },
   { id: 'tractor', name: 'Tractor', design: 'stock', hub: 'orange', tread: 'lugs' },
   { id: 'winter', name: 'Winter', design: 'stock', hub: 'white', tread: 'studs' },
+  // 16-Oct (wheel sets): whole looks, one tap
+  { id: 'racing-slicks', name: 'Racing slicks', design: 'stock', hub: 'gunmetal', rim: 'star6', tread: 'slick' },
+  { id: 'retro-whitewall', name: 'Retro whitewall', design: 'whitewall', hub: 'silver', rim: 'steelie' },
+  { id: 'gold-rims', name: 'Gold rims', design: 'stock', hub: 'gold', rim: 'wire' },
+  { id: 'neon', name: 'Neon', design: 'neonline', hub: 'neon', rim: 'turbine' },
+  { id: 'lowrider', name: 'Lowrider', design: 'whitewall', hub: 'silver', rim: 'wire' },
+  { id: 'mud-plugger', name: 'Mud plugger', design: 'stock', hub: 'black', rim: 'steelie', tread: 'mud' },
+  { id: 'dune', name: 'Dune', design: 'stock', hub: 'bronze', rim: 'dish', tread: 'paddle' },
+  { id: 'trail', name: 'Trail', design: 'stock', hub: 'gunmetal', rim: 'spoke5', tread: 'trail' },
+  { id: 'spiked', name: 'Spiked', design: 'stock', hub: 'red', rim: 'star6', tread: 'spikes' },
+  { id: 'hot-rod', name: 'Hot rod', design: 'goldline', hub: 'red', rim: 'dish' },
 ];
 registerCosmetics(WHEEL_SETS.map(s => ({ slot: 'wheels', id: s.id, name: s.name, free: true }))); // (all free today; cosmetics.js)
 export const CUSTOM_SET = 'custom';

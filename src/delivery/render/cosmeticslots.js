@@ -19,6 +19,7 @@
 // Off by default; nothing is registered in render/cosmetics.js and nothing is stored. Render-only: no rules module imports this.
 import { COSMETICS } from './cosmetics.js';
 import { slotStatus } from './propdress.js';
+import { treadSupported } from './treads.js';
 
 let demo = false;
 try { demo = typeof location !== 'undefined' && new URLSearchParams(location.search).get('cosmetics') === 'all'; } catch { /* (no address) */ }
@@ -31,7 +32,9 @@ const dormant = (id) => () => (demo ? [...registered(id)(), ...SAMPLES] : regist
 const prop = (id) => (car) => slotStatus(car, id).ok;
 
 export const SLOT_LIST = [
-  { id: 'wheels', label: 'Wheels', name: 'Wheels', scope: 'car', supports: () => true, items: () => [true] },
+  // (rows: a part row of the panel shown only where the car on show can wear it; ctx.model its live model. The Tread row: not on a car
+  // with no tyre found, Legendary or RIM_SKIP cars, or tyres too small: render/treads.js treadSupported)
+  { id: 'wheels', label: 'Wheels', name: 'Wheels', scope: 'car', supports: () => true, items: () => [true], rows: { tread: (car, ctx = {}) => !ctx.model || treadSupported(ctx.model) } },
   { id: 'plate', label: 'Plate', name: 'Number plate', scope: 'car', supports: () => true, items: () => [true] },
   { id: 'roof', label: 'Roof', name: 'Roof prop', scope: 'car', prop: true, supports: prop('roof'), items: registered('roof') },
   { id: 'cargo', label: 'Cargo', name: 'Cargo prop', scope: 'car', prop: true, supports: prop('cargo'), items: registered('cargo') },
