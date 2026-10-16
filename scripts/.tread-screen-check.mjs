@@ -1,5 +1,5 @@
 // A check of the TREADS ON THE COSMETICS SCREEN'S PATH (the owner, 16-Oct: "The treads are not rendering on the customisation screen";
-// render/treads.js, render/wheelcosmetic.js, render/cosmeticslots.js; CHECKLIST 430). Headless, no picture. The screen does not build its car
+// render/treads.js, render/wheelcosmetic.js, render/cosmeticslots.js; CHECKLIST 431). Headless, no picture. The screen does not build its car
 // again when a tread is picked: its live model (render/showroomview.js: built stock, on a turntable, its suspension prepared and bouncing) is
 // dressed again in place by the loadout store's notice. So, as the screen does it:
 //   - on a sample of cars (a sports car, the Junker, the Pick-Up, a truck, the coach, the Hot Hatch, the Commuter: raised blocks and

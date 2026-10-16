@@ -44,7 +44,7 @@ export const makerLine = (car, key = false) => {
 // chance (words for the compact foot), marks (nodes), pose, dark (a blacked-out car's card, the showroom's Where to get it:
 // its picture, car or key, a black silhouette (.silhouette) and its name withheld, 'Locked car', as the blacked-out
 // showroom card; nothing on the card names it: no data-car, no name in its label) }
-// opts.item (CHECKLIST 437, a COSMETIC card: the same card for an earned cosmetic, car null): { name, line (the small line: 'Number plate'),
+// opts.item (CHECKLIST 433, a COSMETIC card: the same card for an earned cosmetic, car null): { name, line (the small line: 'Number plate'),
 // tab ('COSMETIC'), picture (a node: the item's own small picture, centred in the art) }. No stars, no car; the rest is the card's own.
 export const blueprintCard = (car, card, { compact = false, chance = null, marks = [], pose = 'front', dark = false, item = null } = {}) => {
   const rarity = card.rarity || 'common';

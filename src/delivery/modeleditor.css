@@ -26,7 +26,7 @@ a.button:hover { background: #3a4456; }
 .stats .warn { border-color: #e0a030; } .stats .warn b { color: #ffc266; }
 .stats .bad { border-color: var(--bad); } .stats .bad b { color: var(--bad); }
 .panelToggle { display: none; }
-/* the camera's own buttons (CHECKLIST 434): Fit (the selected part) and Reset (the whole car), on the view's right edge, in a thumb's reach */
+/* the camera's own buttons (CHECKLIST 430): Fit (the selected part) and Reset (the whole car), on the view's right edge, in a thumb's reach */
 .camButtons { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 6px; z-index: 1; }
 .camButtons button { background: rgba(37, 43, 54, .9); min-width: 56px; }
 .viewButtons .more { display: none; }

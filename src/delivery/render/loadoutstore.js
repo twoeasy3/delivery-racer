@@ -28,7 +28,7 @@ export const KEY = 'delivery.loadout';
 export const SLOTS = ['wheels', 'plate', 'roof', 'cargo', 'wing', 'decal', 'kill', 'underglow'];
 export const PROP_SLOTS = ['roof', 'cargo', 'wing'];
 export const MAX_CARS = 400;
-// PER-CAR ITEMS (CHECKLIST 437, the owner, 16-Oct: "drop All cars. Cosmetics are per car only"): the EARNED slots' item field (a plate's
+// PER-CAR ITEMS (CHECKLIST 433, the owner, 16-Oct: "drop All cars. Cosmetics are per car only"): the EARNED slots' item field (a plate's
 // design, a prop's id, the kill effect, the glow) is never taken from the default: a car wears the item it was given itself, or the slot's
 // free look. The slot's other fields (a plate's text, a prop's paint) still come from the default as before. render/cosmetics.js EARNED_SLOTS
 // names the same slots; render/cosmeticstock.js migrateStock moves an older default's items onto the cars that wore them.
@@ -219,7 +219,7 @@ export const resetCar = (carId, slot = null) => {
 // are copied. For each such slot: the car's look of it becomes the default, and every other car's own choice OF THAT SLOT is dropped (so
 // every car wears it; others: 'keep' leaves those too). Every other slot is untouched, on every car and on the default: a car's own roof
 // survives a copy of wheels. Returns the slots copied (an empty list: the car follows the default everywhere, nothing to copy).
-// (the EARNED slots, PER_CAR, are never copied: per car only, CHECKLIST 437; so a copy carries the wheels, a decal's, the shared fields)
+// (the EARNED slots, PER_CAR, are never copied: per car only, CHECKLIST 433; so a copy carries the wheels, a decal's, the shared fields)
 export const copySlots = (carId) => SLOTS.filter(sl => !PER_CAR[sl] && differs(carId, sl));
 // the other cars a copy changes (they have their own choice of a slot that would be copied): the screen's 'Replace N cars?'
 export const copyAffects = (carId) => { const slots = copySlots(carId); return customCars().filter(id => id !== String(carId) && slots.some(sl => differs(id, sl))); };

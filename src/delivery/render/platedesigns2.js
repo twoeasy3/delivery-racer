@@ -1,4 +1,4 @@
-// ---- MORE NUMBER PLATE DESIGNS (the owner, 16-Oct: "More plates"; CHECKLIST 431). Families that look different, not recolours:
+// ---- MORE NUMBER PLATE DESIGNS (the owner, 16-Oct: "More plates"; CHECKLIST 432). Families that look different, not recolours:
 // FRAMES (a frame drawn round a plain plate), PRINTS (a background picture), HOLDERS (something holding the plate: a bracket, a flipped-up
 // cover, a ribbon under it, fuzzy dice), SHAPES (pill, hex, oval, shield, ticket, slim, tiny) and SEASON (pumpkin, snow, hearts, candy cane).
 // Everything is drawn in code on the plate's one 256 x 64 canvas (render/platedesigns.js drawPlate), no image file, no brand, no real

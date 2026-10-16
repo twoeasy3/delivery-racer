@@ -40,8 +40,8 @@ import * as Store from './loadoutstore.js'; // (per car over a default: the swit
 import { carInUse, CARS } from '../cars.js';
 import { Game } from '../game.js';
 import { ownsCosmetic, cosmeticCount, isFreeCosmetic, isEarnedSlot, awardCosmetic, cosmeticOf, cosmeticRarity, COSMETIC_SLOT_WORDS } from './cosmetics.js';
-import { blueprintCard } from './blueprintcard.js'; // (an earned item's chip is a CARD: the Uncommon blueprint card, CHECKLIST 437)
-import { usage, spare, diffUsage, migrateStock, carName as carNameOf } from './cosmeticstock.js'; // (earned cosmetics, CHECKLIST 437: one a car)
+import { blueprintCard } from './blueprintcard.js'; // (an earned item's chip is a CARD: the Uncommon blueprint card, CHECKLIST 433)
+import { usage, spare, diffUsage, migrateStock, carName as carNameOf } from './cosmeticstock.js'; // (earned cosmetics, CHECKLIST 433: one a car)
 import { Progress } from '../progress.js';
 import { KILL_FX, KILL_IDS, shownKill, setKill } from './killfx.js';
 import { KillPreview } from './killpreview.js';
@@ -68,7 +68,7 @@ const make = (tag, className, ...children) => {
 };
 const hexOf = (hex, fallback) => '#' + (hex === null ? fallback : hex.toString(16).padStart(6, '0'));
 
-let partRows = {}, hubSegs = [], hubMode = null, hubWorn = null, treadLabel = null, partLook = '', plateSegs = [], plateFamily = null; // (plateSegs / plateFamily: the Plate tab's family switch: Plain, Frame, Print, Holder, Shape, Season; CHECKLIST 431)
+let partRows = {}, hubSegs = [], hubMode = null, hubWorn = null, treadLabel = null, partLook = '', plateSegs = [], plateFamily = null; // (plateSegs / plateFamily: the Plate tab's family switch: Plain, Frame, Print, Holder, Shape, Season; CHECKLIST 432)
 let built = false, panelBox, scopeBar, tabs = {}, panels = {}, stage, carName, customMark, scopeBtns, resetCarBtn, copyBtn, copyArmed = 0, status, slotList, setRow, customChip, closeBtn, viewBtns, sections = {}, propSecs = {}, tabMsg, plateRow, plateInput, plateMsg, plateStatus, plateChip, openSlot = 'wheels';
 let state = { open: false, car: null, evil: false, onClose: null, inMenu: false, close: false, scope: 'car' };
 // whose choice the screen shows and changes: the car on show ('This car') or the default ('All cars')
@@ -644,7 +644,7 @@ const copyToAll = () => {
     return;
   }
   copyArmed = 0; copyBtn.textContent = 'Copy to all'; copyBtn.title = "What this car changed, on every car";
-  Store.copyToAll(car.id); // (what this car changed; never the earned slots, which are per car: CHECKLIST 437)
+  Store.copyToAll(car.id); // (what this car changed; never the earned slots, which are per car: CHECKLIST 433)
   flash(tabMsg, 'Copied to all cars.');
   Sound.play('menuPick', 0.4);
 };
@@ -670,7 +670,7 @@ const openSection = (id) => {
   for (const [key, node] of Object.entries(sections)) node.hidden = key !== id;
   for (const b of slotList.children) { const on = b.dataset.slot === id; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; }
   scopeBar.hidden = slotById(id)?.scope === 'player';
-  // an EARNED slot is per car only (CHECKLIST 437: no All cars, no Copy to all on its tab)
+  // an EARNED slot is per car only (CHECKLIST 433: no All cars, no Copy to all on its tab)
   const perCar = isEarnedSlot(id);
   scopeBtns[1].hidden = perCar; copyBtn.hidden = perCar;
   if (perCar && state.scope === 'all') { state.scope = 'car'; syncPlateInput(); shown(); plateShown(); propShown(); killShown(); scopeShown(); }
@@ -726,7 +726,7 @@ const showCar = () => {
   if (built) { const at = renderTabs(); if (at !== openSlot) openSection(at); shown(); plateShown(); propShown(); killShown(); decalShown(); scopeShown(); panels[openSlot]?.refresh(); }
 };
 
-// ---- EARNED COSMETICS, LIKE CARDS (CHECKLIST 437, EARNED-COSMETICS.md): 1 of it = unlocked; equipping takes 1 from the hand, taking it off
+// ---- EARNED COSMETICS, LIKE CARDS (CHECKLIST 433, EARNED-COSMETICS.md): 1 of it = unlocked; equipping takes 1 from the hand, taking it off
 // gives it back (render/cosmeticstock.js). Every chip of an earned slot shows how many are in the HAND (x2), or is dimmed (none: a tap does nothing);
 // a choice that takes one is worn at once (a free try-on) and a light sheet asks to confirm: Equip keeps it, Cancel (Escape, Back) puts it back.
 // an earned item's chip becomes its CARD (render/blueprintcard.js, the same card as a blueprint, in the item's rarity: cosmetics.js

@@ -1,4 +1,4 @@
-# Earned cosmetics, like cards (CHECKLIST 437, prototype)
+# Earned cosmetics, like cards (CHECKLIST 433, prototype)
 
 What the owner asked for, 16-Oct:
 - "Plates will be earned. Cosmetics will be earned and 1 will be consumed when equipped to a vehicle."

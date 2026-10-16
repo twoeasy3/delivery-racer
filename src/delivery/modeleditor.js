@@ -334,7 +334,7 @@ const resize = () => {
   camera.updateProjectionMatrix();
 };
 new ResizeObserver(resize).observe($('viewBox'));
-// THE CAMERA IN EDIT MODE (the owner, 16-Oct, on a phone / Mi Pad: "Fix the camera controls on the editor when edit mode is selected"; CHECKLIST 434).
+// THE CAMERA IN EDIT MODE (the owner, 16-Oct, on a phone / Mi Pad: "Fix the camera controls on the editor when edit mode is selected"; CHECKLIST 430).
 // One finger / the left button on the view turns round the car, two fingers / the right button pan, a pinch / the wheel zoom, whatever tool is
 // up and whatever is selected; a finger on a gizmo HANDLE edits and the camera stays (see `the view's pointers` below). Fit (F, a double tap
 // on a part) puts the camera on the selected part, keeping its direction; Reset puts the whole car back in the 3/4 view. A view button, Fit

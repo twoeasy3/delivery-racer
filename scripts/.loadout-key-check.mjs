@@ -79,7 +79,7 @@ try {
     check(lk === 'legend' && lk2 !== lk && L.loadoutKey(legend) === lk, 'a Legendary car (' + legend.id + ') is not dressed: "legend", whatever the loadout, moved only by the raw plates switch');
   } else check(false, 'a Legendary car to try');
   // back to Stock: the first key again
-  W.setWheelSet('stock'); P.resetPlate(); for (const s of D.SLOTS) D.resetProp(s); Store.resetCar('commuter'); // (the earned slots were set on the commuter: per car only, CHECKLIST 437)
+  W.setWheelSet('stock'); P.resetPlate(); for (const s of D.SLOTS) D.resetProp(s); Store.resetCar('commuter'); // (the earned slots were set on the commuter: per car only, CHECKLIST 433)
   check(L.loadoutKey('commuter') === k0, 'everything back to Stock: the first key again');
 
   // ---- the still cache's keys ----

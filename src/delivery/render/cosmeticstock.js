@@ -1,4 +1,4 @@
-// ---- THE HAND OF EACH EARNED COSMETIC, PER CAR (CHECKLIST 437, EARNED-COSMETICS.md; the owner, 16-Oct: "treat cosmetics exactly like cards:
+// ---- THE HAND OF EACH EARNED COSMETIC, PER CAR (CHECKLIST 433, EARNED-COSMETICS.md; the owner, 16-Oct: "treat cosmetics exactly like cards:
 // if the player has 1 of it, it is unlocked. Equipping it takes 1 from their stock. Unequipping gives it back"; "drop All cars: per car only").
 // render/cosmetics.js keeps how many of each item the player was given (cosmeticCount); this file counts how many are ON CARS, from the
 // loadout store (each car's own item: render/loadoutstore.js PER_CAR, never the All-cars default), so that

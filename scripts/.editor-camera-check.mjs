@@ -1,5 +1,5 @@
 // A check of THE MODEL EDITOR'S CAMERA in edit mode (the owner, 16-Oct, on a phone / Mi Pad: "Fix the camera controls on the editor when
-// edit mode is selected"; CHECKLIST 434). In headless Chromium over DevTools (skipped with a note if no browser is found), the editor
+// edit mode is selected"; CHECKLIST 430). In headless Chromium over DevTools (skipped with a note if no browser is found), the editor
 // (delivery/modeleditor.html, src/delivery/modeleditor.js) with a part selected and its gizmo up, as a touch phone (390x844, DPR 3) and a
 // touch tablet (800x1280, DPR 2), and with a mouse (1280x800). For each tool (Move, Rotate, Scale), real input events (Input.dispatchTouchEvent /
 // Input.dispatchMouseEvent: the page's own pointer events, as a finger makes them):

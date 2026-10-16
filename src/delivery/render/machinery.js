@@ -45,7 +45,7 @@ export const syncMachinery = (now) => {
     }
   });
   // mud thrown up from the player's wheels, driving through it
-  if (Player.active && Track.muddy(Player.s) && Player.speed > 4 && !playerAirborne() && Math.random() < 0.8) { // (not in the air: CHECKLIST 436)
+  if (Player.active && Track.muddy(Player.s) && Player.speed > 4 && !playerAirborne() && Math.random() < 0.8) { // (not in the air: CHECKLIST 429)
     const h = Track.toWorld(Player.s - Player.hl, Player.lat + rnd(Player.hw), tmp);
     const back = -Math.min(1, Player.speed / 20) * 4;
     Particles.emit(tmp.x, tmp.y + 0.3, tmp.z, Math.sin(h) * back + rnd(1.5), 2 + Math.random() * 3, Math.cos(h) * back + rnd(1.5),

@@ -49,7 +49,7 @@ import { syncRadiation } from './render/radiation.js';
 import { Radiation } from './radiation.js';
 import { Replay } from './replay.js';
 import './render/replayui.js';
-import { migrateStock } from './render/cosmeticstock.js'; // (earned cosmetics, CHECKLIST 437: an older All-cars look moved onto the cars, once)
+import { migrateStock } from './render/cosmeticstock.js'; // (earned cosmetics, CHECKLIST 433: an older All-cars look moved onto the cars, once)
 try { migrateStock(); } catch (error) { console.warn('cosmetic stock: ' + (error?.message || error)); }
 import { syncGhost, clearGhost } from './render/ghostcar.js';
 import { syncBattle } from './render/battle.js';
@@ -319,7 +319,7 @@ if (params.get('racewatch') !== null) {
   if (params.get('ladle')) LaneGimmicks.ladleNow = true; // ?ladle=1: the next ladle ahead comes out at once and pours as soon as it is there (stills)
   if (params.get('pieces')) Game.tankPieces = Math.min(CONFIG.tankPieces - 1, Number(params.get('pieces')) || 0); // ?pieces=3: that many pieces of the tank found already
   if (params.get('rage') !== null) { Game.tankPieces = CONFIG.tankPieces; Player.startTank(); } // ?rage: in TANK RAGE from the start (a check, a picture: on an amphibious level, the Amphibious Tank)
-  if (params.get('turbo') !== null) Player.turbo = Number(params.get('turbo')) || 99; // ?turbo (or ?turbo=8): the turbo running from the start, that many s (bare: 99; stills of its exhaust, CHECKLIST 436)
+  if (params.get('turbo') !== null) Player.turbo = Number(params.get('turbo')) || 99; // ?turbo (or ?turbo=8): the turbo running from the start, that many s (bare: 99; stills of its exhaust, CHECKLIST 429)
   if (params.get('fly') !== null) startFly();
   const photo = params.get('photo') !== null; // ?photo: paused, in photo mode, once ?ff has run (a check of render/photo.js)
   // ?cine: a still for the level select. The traffic is dealt out afresh around the car, ?ff lets

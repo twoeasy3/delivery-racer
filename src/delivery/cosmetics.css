@@ -163,13 +163,13 @@
 #cosmetics .cz-kills .cz-chip { flex: 1 1 calc(33% - 8px); }
 #cosmetics .cz-killicon { border-radius: 6px; background: #1b2030; box-shadow: none; flex-basis: 28px; width: 28px; height: 28px; }
 @media (max-width: 760px) and (min-height: 521px), (max-width: 519px) { #cosmetics .cz-kills .cz-chip { flex-basis: calc(50% - 6px); } }
-/* the Plate tab's families (CHECKLIST 431): Plain | Frame | Print | Holder | Shape | Season, one family's chips shown at a time */
+/* the Plate tab's families (CHECKLIST 432): Plain | Frame | Print | Holder | Shape | Season, one family's chips shown at a time */
 #cosmetics .cz-platefam { display: flex; flex-wrap: wrap; margin: 0 0 8px; }
 #cosmetics .cz-platefam .cz-seg { flex: 1 1 auto; min-height: 30px; padding: 0 8px; }
 #cosmetics .cz-plates .cz-chip[hidden] { display: none; }
 @media (max-width: 760px) and (min-height: 521px), (max-width: 519px) { #cosmetics .cz-platefam .cz-seg { padding: 0 5px; font-size: 10px; letter-spacing: .03em; } }
 
-/* ---- earned cosmetics (CHECKLIST 437): the spare count on a chip, a greyed locked chip, the equip sheet ---- */
+/* ---- earned cosmetics (CHECKLIST 433): the spare count on a chip, a greyed locked chip, the equip sheet ---- */
 #cosmetics .cz-count { font-size: 11px; font-weight: 700; padding: 1px 5px; border-radius: 8px; background: rgba(255,255,255,0.14); color: #fff; margin-left: 4px; white-space: nowrap; }
 #cosmetics .cz-chip.locked .cz-count { background: transparent; color: #aab; font-weight: 400; }
 #cosmetics .cz-chip.locked { opacity: 0.45; filter: grayscale(0.8); }
@@ -182,7 +182,7 @@
 #cosmetics .cz-sheet-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
 #cosmetics .cz-sheet-btns button { min-height: 44px; min-width: 96px; font-size: 15px; }
 #cosmetics .cz-sheet-ok { background: #2f7de1; color: #fff; }
-/* an earned item's chip is its CARD (render/blueprintcard.js, the Uncommon blueprint card; CHECKLIST 437): three across on a phone */
+/* an earned item's chip is its CARD (render/blueprintcard.js, the Uncommon blueprint card; CHECKLIST 433): three across on a phone */
 #cosmetics .cz-row .cz-chip.cz-cardchip { display: block; flex: 0 0 calc(33.33% - 4px); padding: 4px; min-height: 0; background: transparent; border: 0; border-radius: 10px; }
 #cosmetics .cz-chip.cz-cardchip.equipped { background: transparent; box-shadow: 0 0 0 3px var(--accent); }
 #cosmetics .cz-chip.cz-cardchip .cz-tick { position: absolute; right: 2px; bottom: 2px; z-index: 3; }

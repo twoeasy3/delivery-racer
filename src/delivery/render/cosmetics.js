@@ -17,7 +17,7 @@
 // written on a test visit (Progress.noSave: held for the visit only), cleared by the menu's Reset progress.
 // ---- EARNED COSMETICS: LIKE CARDS (the owner, 16-Oct: "Plates will be earned. Cosmetics will be earned and 1 will be consumed when
 // equipped to a vehicle"; then: "treat cosmetics exactly like cards: if the player has 1 of it, it is unlocked. Equipping it takes 1 from
-// their stock. Unequipping gives it back"; CHECKLIST 437, EARNED-COSMETICS.md). The slots in EARNED_SLOTS have no cash price: each item is
+// their stock. Unequipping gives it back"; CHECKLIST 433, EARNED-COSMETICS.md). The slots in EARNED_SLOTS have no cash price: each item is
 // a COUNT, how many the player has been given. They are given ONLY through awardCosmetic() below, the one entry point, which the card packs
 // call (packs.js: a pack's `cosmetics` list in packs.json, the owner's to place); where they drop is the owner's, nothing here decides it.
 // The HAND (what can still be equipped) is that count less the cars wearing it (render/cosmeticstock.js counts the wearers from the loadout

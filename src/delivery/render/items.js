@@ -605,7 +605,7 @@ export const syncPickups = (dt) => {
     roofSiren.userData.blue.visible = !flash;
   }
   // a boat's wake: white water churned up behind it, the more the faster it goes
-  if (Player.active && CAR.wake && Player.speed > 3 && !playerAirborne()) { // (none in the air: CHECKLIST 436)
+  if (Player.active && CAR.wake && Player.speed > 3 && !playerAirborne()) { // (none in the air: CHECKLIST 429)
     const h = Track.toWorld(Player.s - Player.hl, Player.lat, tmp);
     for (let n = perSecond(120, dt); n > 0; n--) { // (two a frame at 60 Hz, as it was)
       Particles.emit(tmp.x + rnd(0.6), tmp.y + 0.05, tmp.z + rnd(0.6), // (life, size, grow, gravity: a fine spray that falls back)
@@ -626,7 +626,7 @@ export const syncPickups = (dt) => {
     }
   }
   // turbo exhaust: out of the car's tail, wherever the car is drawn. In the air it is the car's own height (its jump,
-  // nose-up or down), not the road's under it (CHECKLIST 436: it was the road's, a trail along the tarmac under a flying
+  // nose-up or down), not the road's under it (CHECKLIST 429: it was the road's, a trail along the tarmac under a flying
   // car); on the ground playerPointY is the road's height there plus 0.6, as it always was
   if (Player.active && powerShown(Player.turbo)) {
     const h = Track.toWorld(Player.s - Player.hl, Player.lat, tmp), y = playerPointY(tmp.y, Player.hl, 0.6);

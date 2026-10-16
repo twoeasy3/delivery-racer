@@ -38,13 +38,13 @@ try {
   const PT = await load('render/particles.js');
   const Store = await load('render/loadoutstore.js');
   const { COSMETICS, cosmeticKeys, grantAll } = await load('render/cosmetics.js');
-  grantAll(); // (earned cosmetics, CHECKLIST 437: 999 of each, so every effect can be equipped)
+  grantAll(); // (earned cosmetics, CHECKLIST 433: 999 of each, so every effect can be equipped)
   const { Progress } = await load('progress.js');
   const ids = K.KILL_IDS.filter(id => id !== 'classic');
 
   // ---- the registry ----
   const reg = COSMETICS.filter(c => c.slot === 'kill');
-  check(K.KILL_IDS[0] === 'classic' && reg.length === K.KILL_IDS.length && reg.every(c => (c.id === 'classic' ? c.free : c.earned && !c.free) && 'price' in c && c.name.length <= 10) && K.KILL_IDS.every(id => cosmeticKeys().includes('kill:' + id)), 'the registry: ' + reg.length + ' kill effects, Classic first (free), the rest earned (CHECKLIST 437), slot \'kill\', short names (' + reg.map(c => c.name).join(', ') + ')');
+  check(K.KILL_IDS[0] === 'classic' && reg.length === K.KILL_IDS.length && reg.every(c => (c.id === 'classic' ? c.free : c.earned && !c.free) && 'price' in c && c.name.length <= 10) && K.KILL_IDS.every(id => cosmeticKeys().includes('kill:' + id)), 'the registry: ' + reg.length + ' kill effects, Classic first (free), the rest earned (CHECKLIST 433), slot \'kill\', short names (' + reg.map(c => c.name).join(', ') + ')');
   check(K.KILL_IDS.every(id => typeof K.KILL_FX[id].icon === 'function') && ids.every(id => typeof K.KILL_FX[id].explode === 'function' && typeof K.KILL_FX[id].trail === 'function'), 'every effect has an icon, an explosion and a trail');
 
   // ---- every effect, small and big: spawns, its cost ----
@@ -169,8 +169,8 @@ try {
   wipe();
   K.setKill('confetti', 'commuter');
   K.setKill('coins', 'sport');
-  K.setKill('bubbles'); // (All cars: an earned item is per car only, CHECKLIST 437: ignored)
-  check(K.chosenKill('commuter') === 'confetti' && K.chosenKill('sport') === 'coins' && K.chosenKill('pickup') === 'classic', 'PER CAR (earned, CHECKLIST 437): the commuter Confetti, the sport Coins, a car with none Classic (All cars is no car\'s)');
+  K.setKill('bubbles'); // (All cars: an earned item is per car only, CHECKLIST 433: ignored)
+  check(K.chosenKill('commuter') === 'confetti' && K.chosenKill('sport') === 'coins' && K.chosenKill('pickup') === 'classic', 'PER CAR (earned, CHECKLIST 433): the commuter Confetti, the sport Coins, a car with none Classic (All cars is no car\'s)');
   K.setKill('classic', 'sport');
   check(!Store.hasOwn('sport', 'kill') && K.chosenKill('sport') === 'classic', 'a car put back to Classic (the free look) has no entry of its own (the cache follows the change)');
   check(K.setKill('nope', 'commuter') === false && K.shownKill('commuter') === 'confetti', 'setKill refuses an unknown id');

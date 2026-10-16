@@ -165,7 +165,7 @@ export const syncLamps = (group, v, show, braking, turnX, hazards, flashing, key
 export const carMesh = makeCarMesh(CAR.color);
 shapeCarMesh(carMesh, Player);
 addLamps(carMesh);
-// How far up off the road the player's car is drawn (m; CHECKLIST 436): the mesh as main.js, the helicopter and the water
+// How far up off the road the player's car is drawn (m; CHECKLIST 429): the mesh as main.js, the helicopter and the water
 // placed it this frame (a jump's Player.air, a drawbridge's leaf, an earthquake's wave, dangling, afloat) less the road
 // under it. What rides with the car (the turbo's exhaust, its damage smoke) is drawn that far up. Render-only: read, never set
 const liftAt = new THREE.Vector3();

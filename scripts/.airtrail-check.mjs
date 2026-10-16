@@ -1,4 +1,4 @@
-// A check that what trails behind the player's car follows the car into the air (CHECKLIST 436; the owner, 16-Oct: "An
+// A check that what trails behind the player's car follows the car into the air (CHECKLIST 429; the owner, 16-Oct: "An
 // airborne car with turbo has the trails rendered on the road itself"). Headless (scripts/modelpatch-load.mjs: the render
 // modules with a stand-in renderer): Gimmick Road 3's ramp over the jam, flown by the Sport on turbo, the car placed each
 // frame as main.js places it, then render/items.js syncPickups (the turbo exhaust) and render/effects.js emitVehicleSmoke

@@ -33,11 +33,11 @@ try {
   const L = await load('render/loadout.js');
   const R = await load('render/cosmeticslots.js');
   const { COSMETICS, grantAll } = await load('render/cosmetics.js');
-  grantAll(); // (earned cosmetics, CHECKLIST 437: 999 of each look, so each can be worn)
+  grantAll(); // (earned cosmetics, CHECKLIST 433: 999 of each look, so each can be worn)
   const all = [...C.CARS, ...C.FILLER_CARS, ...C.BESPOKE_CARS, ...C.EVENT_CARS, ...C.EARNED_CARS, ...Object.values(C.SECRET_CARS), ...IDEA_CARS];
   const car = (id) => all.find(c => c.id === id);
   const fresh = () => { globalThis.localStorage.removeItem(Store.KEY); Store.reloadStore(); }; // (a store with nothing in it)
-  // a look on EVERY car: earned items are per car only (CHECKLIST 437), so each car is given its own (one write)
+  // a look on EVERY car: earned items are per car only (CHECKLIST 433), so each car is given its own (one write)
   const wearAll = (id) => { const s = Store.snapshot(); for (const c of all) ((s.cars[c.id] ||= {}).underglow = { id }); s.cars = Object.fromEntries(Object.entries(s.cars).slice(0, Store.MAX_CARS)); Store.restore(s); };
   const SAMPLE = ['hothatch', 'pickup', 'bus', 'sport', 'cranelorry', 'wedge', 'keitruck', 'hellrod'];
   const glows = (model) => { const l = []; model.traverse(o => { if (o.isMesh && o.userData.underglow) l.push(o); }); return l; };
@@ -45,7 +45,7 @@ try {
   const realBox = (mesh) => { const b = new THREE.Box3(); const p = mesh.geometry.attributes.position; for (let i = 0; i < p.count; i++) b.expandByPoint(new THREE.Vector3().fromBufferAttribute(p, i).applyMatrix4(mesh.matrixWorld)); return b; };
 
   check(U.UNDERGLOWS.length >= 10 && U.UNDERGLOWS.filter(g => g.fx).length === 3 && U.UNDERGLOWS.some(g => g.id === 'match') && COSMETICS.filter(c => c.slot === 'underglow').length === U.UNDERGLOWS.length && COSMETICS.filter(c => c.slot === 'underglow').every(c => c.earned && !c.free),
-    'the looks: ' + U.UNDERGLOWS.map(g => g.name).join(', ') + ' (3 effects, Match car), each an earned cosmetic (CHECKLIST 437)');
+    'the looks: ' + U.UNDERGLOWS.map(g => g.name).join(', ') + ' (3 effects, Match car), each an earned cosmetic (CHECKLIST 433)');
 
   // every look on every sample car
   const ids = U.UNDERGLOWS.map(g => g.id);
@@ -127,7 +127,7 @@ try {
     Store.setSlot(null, 'underglow', { id: 'neon-blue' }); Store.setSlot('pickup', 'underglow', { id: 'neon-blue' });
     const k1 = L.loadoutKey('hothatch'); Store.setSlot('hothatch', 'underglow', { id: 'rainbow' });
     check(!/\|g=/.test(k1) && /\|g=rainbow/.test(L.loadoutKey('hothatch')) && /\|g=neon-blue/.test(L.loadoutKey('pickup')) && U.underglowChoice('pickup') === 'neon-blue' && U.underglowChoice('hothatch') === 'rainbow',
-      'PER CAR only (CHECKLIST 437): All cars Neon blue is no car\'s; the pick-up its own Neon blue, the hatch its own Rainbow; the key says so per car');
+      'PER CAR only (CHECKLIST 433): All cars Neon blue is no car\'s; the pick-up its own Neon blue, the hatch its own Rainbow; the key says so per car');
     check(!/\|g=/.test(L.loadoutKey('hovercraft')) && !/\|g=/.test(L.loadoutKey('tank')), '...an excluded car never has |g= in its key');
     Store.resetCar('hothatch'); check(U.underglowChoice('hothatch') === 'none', '...Reset car: the free look (none) again'); }
 

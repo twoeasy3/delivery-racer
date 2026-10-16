@@ -159,7 +159,7 @@ const show = (result, { look = false } = {}) => {
       onLand: (k, instant) => { prog.step(k, instant); if (!instant) blip('menuMove', 0.22); } });
     return { slot, prog, card, car, pic, pose: poses[i], plan, flick };
   }).filter(Boolean);
-  // COSMETIC CARDS (CHECKLIST 437): what the pack's `cosmetics` list awarded (already given: render/cosmetics.js awardCosmetic), a row under the cards
+  // COSMETIC CARDS (CHECKLIST 433): what the pack's `cosmetics` list awarded (already given: render/cosmetics.js awardCosmetic), a row under the cards
   const cosRow = (result.cosmetics || []).map(a => {
     let pic = make('span', 'cz-prev pr-cos-pic');
     const swatch = slotById(a.slot)?.items?.().find(i => i.id === a.id)?.swatch; // (a glow's colour: its tab's own swatch)
@@ -259,7 +259,7 @@ window.addEventListener('keydown', (event) => {
     Progress.noSave = true;
     Packs.featuredOverride = debugFeatured(params); // (&featured=silvercomet:9x3,silvercomet:1x15,rocketfin!key:1: a special pack's featured list for this visit)
     debugDouble(params); // (&double=0.5&base=2: the doubling chance and base amount, for this visit)
-    Packs.cosmeticsOverride = debugCosmetics(params); // (&cosmetics=plate:ev:1x2,any-underglow: the pack's cosmetic cards for this visit, CHECKLIST 437)
+    Packs.cosmeticsOverride = debugCosmetics(params); // (&cosmetics=plate:ev:1x2,any-underglow: the pack's cosmetic cards for this visit, CHECKLIST 433)
     debugMarks(params); // (&maxed=<ids>&owned=<ids>: cars counted as maxed / keys owned, for this visit)
     for (const token of (params.get('bp') || '').split(',').filter(Boolean)) { const [id, n] = token.split(':'); (Progress.data.blueprints ||= {})[id] = Number(n) || 0; } // (&bp=woody:4: blueprints held before the pack, for a look at its bars; nothing saved)
     for (const token of (params.get('ecu') || '').split(',').filter(Boolean)) { const [id, n] = token.split(':'); (Progress.data.ecuBought ||= {})[id] = Math.max(0, Math.floor(Number(n)) || 0); } // (&ecu=sport:2: ECUs bought)

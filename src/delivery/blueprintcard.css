@@ -169,7 +169,7 @@
 .bp-card.r-epic .bp-art::before, .bp-card.r-legendary .bp-art::before, .bp-card.r-bespoke .bp-art::before { z-index: 0; }
 .bp-card .bp-art::after { z-index: 0; }
 .bp-card .bp-pic { z-index: 1; }
-/* a COSMETIC card (CHECKLIST 437, blueprintCard opts.item): the item's own small picture centred on the rarity stripes */
+/* a COSMETIC card (CHECKLIST 433, blueprintCard opts.item): the item's own small picture centred on the rarity stripes */
 .bp-pic.bp-itempic { display: flex; align-items: center; justify-content: center; padding: 12%; }
 .bp-pic.bp-itempic > canvas, .bp-pic.bp-itempic > span { position: static; width: 100%; height: auto; max-height: 100%; aspect-ratio: auto; border-radius: 3px; }
 .bp-pic.bp-itempic > span.cz-prev, .bp-pic.bp-itempic > canvas.cz-killicon { width: 70%; aspect-ratio: 1; height: auto; }

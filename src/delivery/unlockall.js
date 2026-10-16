@@ -3,7 +3,7 @@
 //   'abs' ABSOLUTELY everything: that, plus every car in the game owned, the unavailable (`off`) earned cars and every Bespoke
 //         and concept key car included (an owned car is its key), every blueprint car and every car at its max ECU, every
 //         event's stages done, a big bank and Crazey Cash, and EVERY COSMETIC (cosmetics.js: each key of the registry, free ones too,
-//         into cosmetics.js's own localStorage list, outside progress.js and so outside the replay fingerprint, never the cookie). Mode 'all' grants no cosmetic. Since cosmetics are earned and one is used a car (CHECKLIST 437), 'abs' gives 999 of each.
+//         into cosmetics.js's own localStorage list, outside progress.js and so outside the replay fingerprint, never the cookie). Mode 'all' grants no cosmetic. Since cosmetics are earned and one is used a car (CHECKLIST 433), 'abs' gives 999 of each.
 // Not a rule of a run, so not in the replay fingerprint (vite.config.js NOT_RULES). Skipped: the packs queue (an unopened
 // pack deals random cards, so none is given), claimed rewards, the milestone counters and the Tank Rage pieces.
 import { CARS, EARNED_CARS, EVENT_CARS, BESPOKE_CARS, FILLER_CARS, SECRET_CARS } from './cars.js';
@@ -45,7 +45,7 @@ export const unlockEverything = (mode = unlockMode()) => {
   d.maxed = [...new Set([...(d.maxed || []), ...ids, ...FILLER_CARS.map(c => c.id)])]; // (max ECU for all, blueprint cars included)
   d.events = { ...(d.events || {}) };
   for (const e of SPECIALS) d.events[e.id] = Math.max(d.events[e.id] || 0, e.stages.length);
-  grantAll(cosmeticKeys()); // (earned cosmetics, CHECKLIST 437: 999 of every item, a real stock, as 999 cards of each)
+  grantAll(cosmeticKeys()); // (earned cosmetics, CHECKLIST 433: 999 of every item, a real stock, as 999 cards of each)
   d.money = Math.max(d.money, ABS_BANK);
   d.shopCash = Math.max(Math.floor(Number(d.shopCash) || 0), ABS_CASH);
   Progress.save();

@@ -10,7 +10,7 @@
 // the tread's width W (the tyre's width less 7 mm a side, so no face of the tread lies within 4 mm of the tyre's sidewall); the mesh is
 // scaled (R, R, W). Blocks rise from 0.93 R (inside the tyre's flattest facet, 0.95 R at 10 segments) to 1 + h; a block has a top and
 // four sides (10 triangles; none underneath: it is buried); faces turned out from the block's middle.
-// COLOUR (16-Oct, CHECKLIST 430): a tyre's whole tread is ONE mesh: the raised blocks (where there is room), the PATTERN BAND (an open tube
+// COLOUR (16-Oct, CHECKLIST 431): a tyre's whole tread is ONE mesh: the raised blocks (where there is room), the PATTERN BAND (an open tube
 // 2 to 4.5 mm over the running surface, a code-drawn texture of the design's own footprints: light blocks on dark grooves) and a SHOULDER
 // RING on each outer face with room (the pattern where it meets the sidewall, so it reads side on), in one geometry per tyre layout and one
 // material per design / way round / tint: the TINT is the rubber's colour (render/wheelcosmetic.js's tyre colour), or on a dark rubber a

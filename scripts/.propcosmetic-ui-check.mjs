@@ -41,8 +41,8 @@ try {
   const car = (id) => all.find(c => c.id === id);
   const SLOTS = ['roof', 'cargo', 'wing'];
   Progress.noSave = false;
-  clearCosmetics(); grantAll(); // (earned cosmetics, CHECKLIST 437: 999 of each prop, so each can be worn)
-  // EARNED PROPS ARE PER CAR ONLY (CHECKLIST 437): a choice is put on each car this check builds (and the default, for its paint), and read
+  clearCosmetics(); grantAll(); // (earned cosmetics, CHECKLIST 433: 999 of each prop, so each can be worn)
+  // EARNED PROPS ARE PER CAR ONLY (CHECKLIST 433): a choice is put on each car this check builds (and the default, for its paint), and read
   // back on one of them (TC)
   const TC = 'sporttruck', DRESS = ['minibus', 'touringcar', 'sporttruck', 'moke', 'rally'];
   const setP = (slot, id) => { const r = D.setProp(slot, id, TC); if (r !== false) for (const c of DRESS) Store.setSlot(c, slot, { id }); return r; };
@@ -53,7 +53,7 @@ try {
 
   // ---- the registry and the screen ----
   const keys = SLOTS.flatMap(s => PM.PROPS[s].map(p => s + ':' + p.id));
-  check(keys.length === 52 && keys.every(k => cosmeticKeys().includes(k)) && COSMETICS.filter(c => SLOTS.includes(c.slot)).every(c => c.earned && !c.free && 'price' in c), 'the registry holds all 52 props (15 roof, 16 cargo, 21 wing) as roof:<id> / cargo:<id> / wing:<id>, earned (CHECKLIST 437)');
+  check(keys.length === 52 && keys.every(k => cosmeticKeys().includes(k)) && COSMETICS.filter(c => SLOTS.includes(c.slot)).every(c => c.earned && !c.free && 'price' in c), 'the registry holds all 52 props (15 roof, 16 cargo, 21 wing) as roof:<id> / cargo:<id> / wing:<id>, earned (CHECKLIST 433)');
   const ui = readFileSync(ROOT + '/src/delivery/render/cosmeticsui.js', 'utf8');
   const reg = readFileSync(ROOT + '/src/delivery/render/cosmeticslots.js', 'utf8');
   check(/id: 'roof', label: 'Roof'[^}]*prop: true, supports: prop\('roof'\)/.test(reg) && /id: 'cargo', label: 'Cargo'[^}]*prop: true, supports: prop\('cargo'\)/.test(reg) && /id: 'wing', label: 'Wing'[^}]*prop: true, supports: prop\('wing'\)/.test(reg) && !/Roof ornament/.test(ui) && /id: 'underglow'[^}]*items: dormant\('underglow'\)/.test(reg), "the screen's tabs (render/cosmeticslots.js): Roof, Cargo, Wing shown where slotStatus is ok, Underglow dormant (no items: no tab), 'Roof ornament' gone");
@@ -187,7 +187,7 @@ try {
     wipe(); for (const s of SLOTS) resetP(s);
     setP('roof', 'roofsign'); setPaint('roof', 'ff7a1a'); setP('cargo', 'cargobarrel'); setP('wing', 'wingtube');
     const ownOfTC = JSON.parse(localStorage.getItem('delivery.loadout')).cars[TC];
-    check(ownOfTC.roof.id === 'roofsign' && ownOfTC.cargo.id === 'cargobarrel' && ownOfTC.wing.id === 'wingtube' && localStorage.getItem('delivery.prop.roof.paint') === 'ff7a1a' && localStorage.getItem('delivery.prop.roof') === null, 'kept in localStorage: each car\'s props in delivery.loadout (per car only, CHECKLIST 437); the old global keys mirror the default (its paint; no prop, as the default holds none)');
+    check(ownOfTC.roof.id === 'roofsign' && ownOfTC.cargo.id === 'cargobarrel' && ownOfTC.wing.id === 'wingtube' && localStorage.getItem('delivery.prop.roof.paint') === 'ff7a1a' && localStorage.getItem('delivery.prop.roof') === null, 'kept in localStorage: each car\'s props in delivery.loadout (per car only, CHECKLIST 433); the old global keys mirror the default (its paint; no prop, as the default holds none)');
     check(!document.cookie.includes('prop') && !Progress.saved().includes('prop') && !JSON.stringify(Progress.data).includes('roofsign'), 'never the cookie or the save code');
     // a visit that saves nothing
     Progress.noSave = true;
@@ -237,7 +237,7 @@ try {
     check(['commuter', 'pickup', 'sport'].every(id => /^wheels,plate/.test(ids(C.carById(id)))), 'a car with a model keeps Wheels and Plate first');
     // the game's own Tank (render/items.js ownTank) is dressCosmetics(makeTankMesh(...), car): its plate is worn, as here
     const P = await load('render/platecosmetic.js');
-    // (since CHECKLIST 437 an earned plate is per car only and must be in the hand: one given and worn on the Tank itself; v1.1.151-alpha merge)
+    // (since CHECKLIST 433 an earned plate is per car only and must be in the hand: one given and worn on the Tank itself; v1.1.151-alpha merge)
     const Cz = await load('render/cosmetics.js');
     if (!Cz.isFreeCosmetic('plate', 'yellow')) Cz.awardCosmetic('plate:yellow', 1, { source: 'check' });
     P.setPlateDesign('yellow', tank.id);

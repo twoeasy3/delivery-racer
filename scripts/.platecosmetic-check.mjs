@@ -9,7 +9,7 @@
 //   - storage: kept under delivery.platedesign / delivery.platetext, ignored with Progress.noSave, a failing storage does not break it
 //   - texture cache: one texture per (design, text) shared by every car and both ends; at most two kept; the memory
 //   - dents: the plate is measured with the car, and at each stage of damage how much of it is still seen from behind / in front (burial list)
-//   - the families (CHECKLIST 431) and the SHAPED designs: built as their own outline, inside the anchor's box, UVs on the canvas
+//   - the families (CHECKLIST 432) and the SHAPED designs: built as their own outline, inside the anchor's box, UVs on the canvas
 //   - the ghost's stand-in and a blackout silhouette; nothing written onto a car's entry; no rules module imports the cosmetic
 //   node scripts/.platecosmetic-check.mjs            (add car ids to see only those; --nodents skips the damage part; --design=<id> dents that design)
 import * as THREE from 'three';
@@ -40,7 +40,7 @@ try {
   const plates = COSMETICS.filter(c => c.slot === 'plate');
   const free = plates.filter(c => c.free);
   check(plates.length === D.PLATE_DESIGNS.length && plates.length >= 7, 'the registry holds every plate design as plate:<id> (' + plates.length + ': ' + free.length + ' free incl. Stock, ' + (plates.length - free.length) + ' locked)');
-  check(free.length === 1 && free[0].id === 'stock' && plates.filter(c => c.id !== 'stock').every(c => c.earned && c.price === 0), 'Stock is the one free design; every other is earned, with no price (CHECKLIST 437)');
+  check(free.length === 1 && free[0].id === 'stock' && plates.filter(c => c.id !== 'stock').every(c => c.earned && c.price === 0), 'Stock is the one free design; every other is earned, with no price (CHECKLIST 433)');
   check(D.PLATE_DESIGNS.filter(d => d.id !== 'stock').every(d => d.bg && d.text && d.border && d.edge), 'every design is data: background, text colour, border, edge');
   clearCosmetics();
 
@@ -58,7 +58,7 @@ try {
   add('level', C.AMPHIBIOUS_TANK);
   for (const car of IDEA_CARS) add('idea', car);
   const list = cars.filter(c => !only.length || only.includes(c.car.id));
-  // EARNED PLATES ARE PER CAR ONLY (CHECKLIST 437): a design is put on EVERY car this check builds (one write), and read back on TC; the
+  // EARNED PLATES ARE PER CAR ONLY (CHECKLIST 433): a design is put on EVERY car this check builds (one write), and read back on TC; the
   // default keeps the text (setPD returns what setPlateDesign said for TC: false when not owned or unknown)
   const TC = 'pickup';
   const setPD = (id) => { const r = P.setPlateDesign(id, TC); if (r) { const sn = Store.snapshot(); for (const { car } of cars) (sn.cars[car.id] ||= {}).plate = { design: id }; Store.restore(sn); } return r; }; // (the design only on each car: the text stays the default's)
@@ -118,7 +118,7 @@ try {
 
   // ---- designs: each draws and equips; the ghost and blackout ----
   for (const d of D.PLATE_DESIGNS.filter(d => d.id !== 'stock')) { grantCosmetics(['plate:' + d.id]); check(setPD(d.id) && P.shownDesign(TC) === d.id && P.plateCacheStats().textures <= 2, 'design ' + d.id + ' equips'); }
-  // ---- the families and the shaped designs (CHECKLIST 431): every design in a family; a shaped one is a shaped mesh inside the anchor's box ----
+  // ---- the families and the shaped designs (CHECKLIST 432): every design in a family; a shaped one is a shaped mesh inside the anchor's box ----
   const fams = new Set(D.PLATE_FAMILIES.map(f => f.id));
   check(D.PLATE_DESIGNS.every(d => fams.has(d.family)) && D.PLATE_FAMILIES.every(f => D.PLATE_DESIGNS.some(d => d.family === f.id)) && D.PLATE_DESIGNS.length >= 37, 'every design is in a family (' + D.PLATE_FAMILIES.map(f => f.label + ' ' + D.PLATE_DESIGNS.filter(d => d.family === f.id).length).join(', ') + '; ' + D.PLATE_DESIGNS.length + ' with Stock)');
   const shapedBad = [], shapedTris = new Set();

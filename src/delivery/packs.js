@@ -36,7 +36,7 @@
 // The Shop's one-line words for a pack are GENERATED from its rules (describePack: never stale); a `blurb` overrides.
 // ============================================================================
 import packData from './packs.json';
-import { awardCosmetic, COSMETICS } from './render/cosmetics.js'; // (COSMETIC CARDS, CHECKLIST 437: a pack's `cosmetics` list awards through the one entry point; render-side, and packs.js is not in the replay fingerprint)
+import { awardCosmetic, COSMETICS } from './render/cosmetics.js'; // (COSMETIC CARDS, CHECKLIST 433: a pack's `cosmetics` list awards through the one entry point; render-side, and packs.js is not in the replay fingerprint)
 import eventData from './events.json';
 import tierData from './tiers.json';
 import * as Cars from './cars.js';
@@ -748,7 +748,7 @@ export const revealProgress = (cards, { owned = (id) => Progress.owns(id) } = {}
   });
 };
 
-// ---- COSMETIC CARDS (CHECKLIST 437): a pack's optional `cosmetics` list in packs.json, [{ "item": "plate:hex" | "any": "plate", "chance": 0..1
+// ---- COSMETIC CARDS (CHECKLIST 433): a pack's optional `cosmetics` list in packs.json, [{ "item": "plate:hex" | "any": "plate", "chance": 0..1
 // (default 1), "n": copies (default 1) }]: each rolled on its own when the pack opens. "item" names one cosmetic (slot:id); "any" one at random
 // of that slot's earned items. No pack carries any today: where cosmetics drop is the owner's to place.
 const COSMETIC_KEY = /^[a-z0-9-]{1,40}:[A-Za-z0-9_-]{1,40}$/;
@@ -885,7 +885,7 @@ export const Packs = {
       if (c.given < (c.n ?? 1) && !c.maxed) c.cut = c.n ?? 1; // (the stack as dealt; n is what was given)
       if (c.cut) c.n = c.given;
     }
-    // COSMETIC CARDS (CHECKLIST 437): each entry of the pack's `cosmetics` list (packs.json, the owner's to place) rolled on its own chance;
+    // COSMETIC CARDS (CHECKLIST 433): each entry of the pack's `cosmetics` list (packs.json, the owner's to place) rolled on its own chance;
     // a hit is awarded through render/cosmetics.js awardCosmetic (the one entry point) and shown on the reveal under the blueprint cards
     const cosmetics = [];
     for (const e of cosmeticEntries(id, this.cosmeticsOverride)) {

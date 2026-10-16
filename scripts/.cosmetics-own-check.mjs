@@ -43,7 +43,7 @@ check(!ownsCosmetic('plate', 'fixture-gold') && ownedCosmetics().length === 0, "
 unlockEverything('abs');
 check(ownsCosmetic('plate', 'fixture-gold') && ownsCosmetic('wheels', 'fixture-set'), "unlocked after unlockEverything('abs')");
 check(cosmeticKeys().every(k => ownedCosmetics().includes(k)), "'abs' grants every key in the registry (" + ownedCosmetics().length + ', free ones too)');
-check(cosmeticCount('plate', 'fixture-gold') === MOST_EACH && MOST_EACH === 999 && COSMETICS.filter(c => c.earned).every(c => cosmeticCount(c.slot, c.id) === 999), "'abs' gives 999 of every earned item: a real stock, not unlimited (CHECKLIST 437)");
+check(cosmeticCount('plate', 'fixture-gold') === MOST_EACH && MOST_EACH === 999 && COSMETICS.filter(c => c.earned).every(c => cosmeticCount(c.slot, c.id) === 999), "'abs' gives 999 of every earned item: a real stock, not unlimited (CHECKLIST 433)");
 unlockEverything('abs');
 check(new Set(ownedCosmetics()).size === ownedCosmetics().length, 'granting twice does not repeat a key');
 
@@ -146,7 +146,7 @@ check(ownedCosmetics().join() === listed.join() && ownsCosmetic('plate', 'fixtur
   Progress.reset(); clearCosmetics(); Store.resetAll();
   check(wheels.wheelSet('commuter') === 'stock' && wheels.wheelSet() === 'stock' && !Store.customCars().length, '...after it, every car and All cars wear Stock');
 }
-// ---- EARNED COSMETICS, LIKE CARDS (CHECKLIST 437): 1 = unlocked; equipping takes 1 from the hand, taking it off gives it back, per car ----
+// ---- EARNED COSMETICS, LIKE CARDS (CHECKLIST 433): 1 = unlocked; equipping takes 1 from the hand, taking it off gives it back, per car ----
 {
   Progress.reset(); clearCosmetics();
   const Store = await g.load('render/loadoutstore.js'), stock = await g.load('render/cosmeticstock.js'), P = await g.load('render/platecosmetic.js');

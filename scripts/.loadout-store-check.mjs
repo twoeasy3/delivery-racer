@@ -12,7 +12,7 @@
 //     with no rims, plate or prop slots included; the store's size with an override on every car
 //   - ?wheelrim= ?platedesign= ?roofprop= (a visit's test switches) still dress EVERY car, over its own choice
 //   - the replay fingerprint (vite.config.js logicFiles) includes none of it
-//   - EARNED SLOTS ARE PER CAR ONLY (CHECKLIST 437: plate design, props, kill, glow): a car wears its own item or the free look, never the
+//   - EARNED SLOTS ARE PER CAR ONLY (CHECKLIST 433: plate design, props, kill, glow): a car wears its own item or the free look, never the
 //     default's; a default's other fields (plate text, prop paint) still reach the followers; Copy to all copies the wheels only
 //   node scripts/.loadout-store-check.mjs
 import { startModels } from './modelpatch-load.mjs';
@@ -35,7 +35,7 @@ try {
   const raw = globalThis.localStorage;
   const keys = () => { const out = {}; for (const k of ['delivery.loadout', 'delivery.wheeldesign', 'delivery.wheelcolour', 'delivery.wheelrim', 'delivery.platedesign', 'delivery.platetext', 'delivery.prop.roof', 'delivery.prop.roof.paint']) out[k] = raw.getItem(k); return out; };
   const wipe = () => { for (const k of Object.keys(keys())) raw.removeItem(k); for (const s of ['cargo', 'wing']) { raw.removeItem('delivery.prop.' + s); raw.removeItem('delivery.prop.' + s + '.paint'); } Store.reloadStore(); };
-  clearCosmetics(); grantCosmetics(cosmeticKeys(), 50); // (earned cosmetics, CHECKLIST 437: plenty of each, so every choice below can be worn)
+  clearCosmetics(); grantCosmetics(cosmeticKeys(), 50); // (earned cosmetics, CHECKLIST 433: plenty of each, so every choice below can be worn)
 
   // ---- MIGRATION ----
   wipe();

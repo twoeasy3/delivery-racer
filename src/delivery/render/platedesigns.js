@@ -9,7 +9,7 @@
 //   shadow           optional colour of a drop shadow under the characters (an embossed look)
 //   font             the canvas font family; weight is bold
 //   family, pieces, paint, frame, over, pad, outline, glow   the newer designs' extras (shaped outlines, pictures, frames, holders):
-//                    render/platedesigns2.js MORE_PLATES says what each is (CHECKLIST 431)
+//                    render/platedesigns2.js MORE_PLATES says what each is (CHECKLIST 432)
 // `stock` is not a design: it means "keep the car's own plates".
 import { MORE_PLATES, PLATE_FAMILIES, boxOf, inset, pathOf } from './platedesigns2.js';
 export { PLATE_FAMILIES };

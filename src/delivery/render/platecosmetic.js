@@ -17,7 +17,7 @@
 //    TEXTURES: one 256 x 64 canvas (64 KB, 85 KB with mipmaps) per distinct (design, text) pair, cached, shared by every car and both
 //    ends (the material and the texture are flagged `shared`); only the equipped pair and the one before it are kept.
 //    Geometry: the face is 2 triangles, the slab 12 (one pair per plate size, shared); a SHAPED design (platedesigns2.js pieces: CHECKLIST
-//    431) is its outline's polygons instead, still inside the anchor's 4:1 box (one pair per size and outline, shared).
+//    432) is its outline's polygons instead, still inside the anchor's 4:1 box (one pair per size and outline, shared).
 // STORAGE: PER CAR over a default (15-Oct): the loadout store's plate slot (render/loadoutstore.js: one localStorage key, try/catch; ignored
 // and not written with Progress.noSave, i.e. test switches); delivery.platedesign and delivery.platetext are the old global keys, read once
 // as the default and kept in step with it. ?platedesign=<id> and ?platetext=<text> for one visit, every car (stills; never saved, the text

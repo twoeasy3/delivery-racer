@@ -17,7 +17,7 @@ import { Game } from '../game.js';
 import { Player } from '../player.js';
 import { Traffic } from '../traffic.js';
 import { scene, tmp, clearGroup } from './scene.js';
-import { carMesh, trafficMeshes, playerAirborne } from './cars.js'; // (playerAirborne: no spray under a car jumping the river, CHECKLIST 436)
+import { carMesh, trafficMeshes, playerAirborne } from './cars.js'; // (playerAirborne: no spray under a car jumping the river, CHECKLIST 429)
 import { Particles, rnd, perSecond } from './effects.js';
 import './boatModels.js'; // (the boats, added to MODELS)
 
