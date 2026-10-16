@@ -82,9 +82,9 @@
     {"s": 2300, "side": "left"}
   ],
   "boostPads": [
-    {"from": 200, "to": 280, "lane": 0},
-    {"from": 1850, "to": 1930, "lane": 0},
-    {"from": 2580, "to": 2660, "lane": 0}
+    {"from": 200, "to": 280, "lane": 0, "rails": true},
+    {"from": 1850, "to": 1930, "lane": 0, "rails": true},
+    {"from": 2580, "to": 2660, "lane": 0, "rails": true}
   ],
   "deadEnds": [
     {"s": 490, "lane": 1, "kind": "shutter", "length": 120},

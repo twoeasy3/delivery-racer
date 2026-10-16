@@ -148,6 +148,10 @@ export const Player = {
     const busy = (l) => TRAINS.some((train, k) => train.active && train.onTrack && l === (k ? Track.laneCount - 1 : 0));
     const clear = LaneGimmicks.pillarDrop(this.s, this.lat, busy);
     if (clear) { this.s = clear.s; lane = clear.lane; }
+    // ...and (wrecked under a ladle's pour, or near it: set down in the lane it leaves free, never into the pool: lanegimmicks.js),
+    // from where the pillars' rule put it (the two never meet on one level today: pillars are the metro's, ladles the steelworks')
+    const free = LaneGimmicks.ladleDrop(this.s, lane);
+    if (free !== null) lane = free;
     this.lat = Track.laneOffset(lane, this.s);
   },
   // a fresh car at a standstill (the helicopter has just set it down)

@@ -52,6 +52,11 @@
     {"from": 2310, "to": 2390, "lane": 2},
     {"from": 3290, "to": 3370, "lane": 3}
   ],
+  "ladles": [
+    {"s": 700, "lanes": [3, 3]},
+    {"s": 1760, "lanes": [1, 2]},
+    {"s": 2990, "lanes": [2, 2]}
+  ],
   "wreckage": [
     {"at": 790, "kind": "blast", "lanes": [2, 3], "from": "right"},
     {"at": 2110, "kind": "blast", "lanes": [2, 3], "from": "right"}
@@ -61,10 +66,10 @@
     {"s": 205, "lane": 2, "kind": "cone"},
     {"s": 240, "lane": 3, "kind": "cone"},
     {"s": 300, "lane": 2, "kind": "bale"},
+    {"s": 470, "lane": 2, "kind": "cone"},
     {"s": 520, "lane": 2, "kind": "crate"},
     {"s": 600, "lane": "right", "kind": "cone"},
-    {"s": 690, "lane": 3, "kind": "barrier"},
-    {"s": 720, "lane": 2, "kind": "cone"},
+    {"s": 630, "lane": 3, "kind": "barrier"},
     {"s": 880, "lane": 2, "kind": "bale"},
     {"s": 940, "lane": 3, "kind": "crate"},
     {"s": 1010, "lane": 2, "kind": "cone"},
@@ -76,7 +81,7 @@
     {"s": 1470, "lane": 3, "kind": "crate"},
     {"s": 1540, "lane": 2, "kind": "bale"},
     {"s": 1680, "lane": 3, "kind": "crate"},
-    {"s": 1740, "lane": 2, "kind": "cone"},
+    {"s": 1720, "lane": 2, "kind": "cone"},
     {"s": 1930, "lane": 3, "kind": "bale"},
     {"s": 2010, "lane": 2, "kind": "crate"},
     {"s": 2180, "lane": 3, "kind": "cone"},
@@ -86,7 +91,7 @@
     {"s": 2660, "lane": 2, "kind": "barrier"},
     {"s": 2740, "lane": 3, "kind": "crate"},
     {"s": 2880, "lane": 2, "kind": "bale"},
-    {"s": 2960, "lane": 3, "kind": "crate"},
+    {"s": 2945, "lane": 2, "kind": "crate"},
     {"s": 3150, "lane": 2, "kind": "cone"},
     {"s": 3200, "lane": 3, "kind": "barrier"},
     {"s": 3420, "lane": 2, "kind": "crate"}

@@ -337,9 +337,9 @@
 //   trolleys   { from, to, count }: shopping trolleys rolling across the road with its camber
 //   marathons  { s, lane, count, water? }: runners in one lane behind a pace car; water: where its water station stands
 //   stampedes  { from, to, count, kind: 'cow' | 'kangaroo' }: animals charging down the road at the player
-//   boostPads  { from, to, lane }: a boost pad in that lane (a travelator in the mall, lanegimmicks.js): a car on it is pulled
-//              on over its own top speed for CONFIG.boostPad.time s; handrails (ordinary obstacles, kind `handrail`, a cone's
-//              box and cost) stand along both its edges. Never in a bend
+//   boostPads  { from, to, lane, rails? }: a boost pad in that lane (a travelator in the mall, lanegimmicks.js): a car on it is
+//              pulled on over its own top speed for CONFIG.boostPad.time s; flush with the road, unless rails: true (the mall's):
+//              then handrails (ordinary obstacles, kind `handrail`, a cone's box and cost) stand along both its edges. Never in a bend
 //   deadEnds   { s, lane, kind: 'shutter' | 'wall', length? }: the lane runs on for `length` m (CONFIG.deadEnd.length) and
 //              ends at s. 'shutter': the road goes on behind a rolling shutter: a Ghost passes through, a tank or an armoured car
 //              smashes through, any other car is wrecked. 'wall': nothing behind it: wrecked whatever protects the car. A DEAD END
@@ -349,6 +349,10 @@
 //              car is wrecked, whatever protects it but the Ghost (as at a dead end's wall). A PILLARS sign, beacons, a bell and a
 //              warning before them; the way past is the lane beside. On an edge railway (the metro) the lanes beside are the
 //              tracks: no train sets off while the player is at a group, and the two tracks never both have one near it
+//   ladles     { s, lanes: [first, last] }: a crane brings a LADLE of molten metal over those lanes as the player comes (CONFIG.ladle;
+//              lanegimmicks.js, the steelworks' scripted event): a MOLTEN METAL sign, beacons, a bell and a warning, then it
+//              tips and pours onto the road: the pool, while molten, wrecks a car whatever protects it but the Ghost; then it
+//              crusts over. Leaves a lane of the player's side free; out in the open, on straight level road
 //   tunnelJunctions { s, side: 'left' | 'right' }: a side tunnel crossing the road inside a tunnel (a mall's concourse): a
 //              mouth in each wall; as the player comes near, beacons flash and a bell rings, then a train (an electric tug
 //              and two trolleys) comes out of the `side` mouth and crosses into the other. A knock, never a stop or a bust.

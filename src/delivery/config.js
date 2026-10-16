@@ -1543,7 +1543,7 @@ export const CONFIG = {
   tunnelJunction: { trigger: 150, warn: 2.2, speed: 4.5, spacing: 2.6, rest: 8, mouth: 10 },
   // a boost pad ("boostPads": { from, to, lane }, lanegimmicks.js; a travelator in the mall): a car driving over it is
   // pulled on for `time` s at up to `speed` m/s over its own top speed (as a turbo pulls: CONFIG.turboAccel), the clock
-  // refilled for as long as it is on the pad; a ghost too (it is the floor, as ice is). Beside it stand its handrails,
+  // refilled for as long as it is on the pad; a ghost too (it is the floor, as ice is). A pad with rails: true has handrails,
   // `rail` m sections every `rail` m along both edges, `railGap` m short of each end: ordinary obstacles (obstacleKinds.handrail)
   boostPad: { time: 2.5, speed: 12, rail: 3, railGap: 3 }, // (a rail is 3 m long, 0.24 m thick: collision.js SIZE.handrail)
   // a dead-end lane ("deadEnds": { s, lane, kind, length? }, lanegimmicks.js): the lane runs on as usual for `length` m and
@@ -1561,6 +1561,15 @@ export const CONFIG = {
   // at them is set down `clear` m behind or past the group (the nearer), on a track with no train, and its respawn shield lets it
   // through a pillar (Collision.hitObstacles: a pillar only; a dead end's wall wrecks it all the same)
   pillar: { count: 3, gap: 18, sign: 150, warn: 170, hold: 800, clear: 12 }, // (clear: m from a group's first or last pillar a wrecked car is set down: Player.prepareDrop)
+  // a LADLE of molten metal on a crane over the road ("ladles": { s, lanes: [first, last] }, lanegimmicks.js; the steelworks): a
+  // scripted event, by the player's distance (replay-safe). With `warn` m to go the crane's trolley brings the ladle out over the
+  // lanes (`arrive` s), beacons flash, a bell and "LADLE OVERHEAD! Keep left/right!"; a MOLTEN METAL sign hangs `sign` m before.
+  // With `pourAt` m to go (and the ladle there) it TIPS: the stream reaches the road `fall` s later, pours for `pour` s, and the
+  // pool spreads over `spread` s to `length` m along and the lanes' width (less `edge` each side). From the stream's touch until
+  // `molten` s after the pour ends it is an INSTAKILL (Collision.hitObstacles, the dead end's wreck: whatever protects the car but
+  // the Ghost); then it cools to a dark crust over `cool` s, harmless. It always leaves a lane of the player's side free. A car
+  // wrecked within `clear` m of a pool is set down in that free lane (Player.prepareDrop). Traffic is not touched by it
+  ladle: { sign: 150, warn: 170, pourAt: 90, arrive: 1.5, fall: 0.45, pour: 1.8, spread: 0.7, molten: 4.0, cool: 1.5, length: 12, edge: 0.2, clear: 10 },
   // a roadworks diversion ("diversions": { from, to, kind: 'merge' | 'shift' | 'cross', by?, limit? }; roadworks.js, and Track's
   // lateral-offset layer): a lane closes through a `taper` m row of cones (smoothstep), lanes with traffic in them move across over
   // `shiftTaper` m (a long vehicle can follow that), run on their temporary line

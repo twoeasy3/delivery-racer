@@ -1,6 +1,6 @@
 // ---- The steelworks' models (see steelworks.js): no game state, so the gimmicks page and the cargo page can show them too.
-//   - the theme's plain obstacles (registered in ../obstacleModels.js, each the box and cost of the kind it stands in for:
-//     collision.js SIZE, config.js obstacleKinds): a stack of hot ingots for a crate, a steel coil lying on its cradle for a
+//   - the theme's plain obstacles (registered in ../obstacleModels.js, each the COST of the kind it stands in for, config.js
+//     obstacleKinds, on a bigger box of its own: STEELWORKS_SIZES, collision.js SIZE): a stack of hot ingots for a crate, a steel coil lying on its cradle for a
 //     bale (its eye to the player: a hoop on its side), a HOT METAL sign on a weighted foot for a cone, two bundles of rebar
 //     on bearers for a barrier
 //   - the ingot train of its level crossings (CONFIG.crossing.trains 'ingot', drawn by ../roadside.js): a shunter, two
@@ -26,14 +26,6 @@ const put = (group, geometry, material, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz 
 };
 const sub = (parent, x = 0, y = 0, z = 0) => { const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); return g; };
 const shared = (...materials) => { for (const m of materials) m.userData.shared = true; };
-// (the dark patch under an obstacle: it sits on the road, not over it)
-const grounded = (group, w, d) => {
-  const shade = put(group, new THREE.PlaneGeometry(w, d), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32,
-    depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }), 0, 0.03, 0);
-  shade.rotation.x = -Math.PI / 2;
-  return group;
-};
-
 // ---- the palette ----
 export const SW = {
   steel: 0x7d858d, dark: 0x3a3e44, darker: 0x26282c, rust: 0x8a4a2a, yellow: 0xf2c21d, black: 0x1b1d22, red: 0xc8321f, blue: 0x2f5f8f,
@@ -93,83 +85,138 @@ export const signTexture = (text, bg = '#1b1d22', fg = '#f2c21d') => texture('si
 });
 
 // ---- THE OBSTACLES ----------------------------------------------------------------------------------
-// a crate: a stack of hot billets, four layers laid crosswise on two skids, the ends of those lying along the road glowing
-// (towards the player), the gaps between the layers glowing faintly; a yellow chalk tag on the top
-const ingotStack = (o) => {
-  const g = new THREE.Group(), w = o.hw * 2 - 0.04, l = o.hl * 2 - 0.04, H = o.height, B = 0.24, n = 4, layer = (H - 0.12) / n;
-  for (const x of [-w / 2 + 0.12, w / 2 - 0.12]) put(g, box(0.16, 0.12, l), DARKER, x, 0.06, 0);
-  for (let k = 0; k < n; k++) {
-    const y = 0.12 + layer * (k + 0.5), along = k % 2 === 1, count = 3, span = along ? w : l;
-    for (let i = 0; i < count; i++) {
-      const c = -span / 2 + B / 2 + 0.02 + i * (span - B - 0.04) / (count - 1);
-      if (along) {
-        put(g, box(B, layer - 0.02, l - 0.08), SCALE, c, y, 0);
-        for (const z of [-1, 1]) put(g, box(B - 0.03, layer - 0.06, 0.03), k === n - 1 ? WHITEHOT : HOT, c, y, z * (l / 2 - 0.04 + 0.012)); // (its glowing ends, just proud of the scale)
-      } else put(g, box(w - 0.08, layer - 0.02, B), SCALE, 0, y, c);
+// Heavy-industry sized (the owner, 16-Oct: "The obstacles are too small again"): each has a box of its own, bigger than the
+// plain kind's (collision.js SIZE: the same numbers as STEELWORKS_SIZES below, checked by scripts/.steelworks-check.mjs) at the
+// plain kind's cost. Each is built at that size whatever box it is handed (the car stage hands it the plain kind's), its parts
+// baked into ONE mesh per material (made once a kind, shared), with hazard stripes and a glowing edge to read at a glance.
+//   hw, hl (half the width across the road and the length along it), height: m
+export const STEELWORKS_SIZES = {
+  ingotStack: [1.2, 0.9, 1.6],   // a stack of hot billets on a striped skid: 2.4 wide, 1.8 along, 1.6 tall
+  steelCoil: [1.1, 0.9, 1.95],   // a 1.8 m coil lying on its side, its eye to the player, on a cradle 2.2 wide
+  hotSign: [0.6, 0.6, 2.4],      // a HOT METAL board on a striped bollard on a weighted foot, 1.2 across, 2.4 tall
+  rebarBundle: [1.5, 0.7, 1.4],  // two bundles of rebar 3.0 m across on bearers, striped end boards
+};
+const bakedKinds = {};
+// parts ([material, geometry already placed]) merged into one geometry per material, kept; a group of meshes sharing them
+const baked = (kind, build) => {
+  if (!bakedKinds[kind]) {
+    const parts = [], byMat = new Map();
+    build((geometry, material, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) => {
+      const m = new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(1, 1, 1));
+      const g = (geometry.index ? geometry.toNonIndexed() : geometry.clone()).applyMatrix4(m);
+      parts.push([material, g]);
+    });
+    for (const [material, g] of parts) { if (!byMat.has(material)) byMat.set(material, []); byMat.get(material).push(g); }
+    bakedKinds[kind] = [...byMat].map(([material, list]) => { const g = mergeGeometries(list); g.userData.shared = true; for (const p of list) p.dispose(); return [material, g]; });
+  }
+  const group = new THREE.Group();
+  for (const [material, g] of bakedKinds[kind]) group.add(new THREE.Mesh(g, material));
+  return group;
+};
+const SHADE = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
+shared(SHADE);
+const shade = (group, w, d) => { const m = put(group, new THREE.PlaneGeometry(w, d), SHADE, 0, 0.03, 0); m.rotation.x = -Math.PI / 2; return group; };
+// hazard stripes: n bands across a w x h face (its middle at x, y, z; facing along z), alternately yellow and black
+const stripes = (add, w, h, d, x, y, z, n = 6) => { for (let k = 0; k < n; k++) add(box(w / n, h, d), k % 2 ? BLACK : YELLOW, x - w / 2 + (k + 0.5) * w / n, y, z); };
+// ...and down the side of a post: bands round it, r its radius
+const banded = (add, r, h, y0, x = 0, z = 0, n = 6) => { for (let k = 0; k < n; k++) add(cyl(r, r, h / n, 12), k % 2 ? BLACK : YELLOW, x, y0 + (k + 0.5) * h / n, z); };
+const EMBER = glow(0xff5a12), EYE = lambert(0x5a6168, { side: THREE.BackSide }), BAND = lambert(SW.blue, { side: THREE.DoubleSide }), ORANGE = lambert(0xff7a1a), LAMP = glow(0xffa21a);
+shared(EMBER, EYE, BAND, ORANGE, LAMP);
+
+// a crate: a stack of hot billets, five layers laid crosswise on a skid striped yellow and black, the ends of those
+// lying along the road glowing (white-hot on top), a glowing seam between the layers, a chalk tag
+const ingotStack = () => {
+  const [HW, HL, H] = STEELWORKS_SIZES.ingotStack, w = HW * 2 - 0.06, l = HL * 2 - 0.06;
+  const g = baked('ingotStack', (add) => {
+    const skid = 0.22, n = 5, layer = (H - skid) / n, B = layer - 0.03;
+    add(box(w, skid, l), DARKER, 0, skid / 2, 0);
+    for (const z of [-1, 1]) stripes(add, w, skid - 0.04, 0.02, 0, skid / 2, z * (l / 2 + 0.01), 8); // (the skid's ends: hazard stripes, both ways)
+    for (const x of [-1, 1]) add(box(0.03, 0.05, l - 0.1), EMBER, x * (w / 2 + 0.005), skid + 0.03, 0); // (a glowing line at the foot of the stack, each side)
+    for (let k = 0; k < n; k++) {
+      const y = skid + layer * (k + 0.5), along = k % 2 === 0, top = k === n - 1;
+      const span = along ? w : l, count = Math.max(3, Math.floor(span / (B + 0.05)));
+      for (let i = 0; i < count; i++) {
+        const c = -span / 2 + B / 2 + i * (span - B) / (count - 1);
+        if (along) {
+          add(box(B, B, l - 0.06), SCALE, c, y, 0);
+          for (const z of [-1, 1]) add(box(B - 0.05, B - 0.05, 0.03), top ? WHITEHOT : HOT, c, y, z * (l / 2 - 0.015)); // (its glowing ends)
+        } else {
+          add(box(w - 0.06, B, B), SCALE, 0, y, c);
+          for (const x of [-1, 1]) add(box(0.03, B - 0.05, B - 0.05), top ? WHITEHOT : HOT, x * (w / 2 - 0.015), y, c);
+        }
+      }
+      if (k) add(box(w - 0.2, 0.03, l - 0.2), REDHOT, 0, skid + layer * k, 0); // (the glow between the layers)
     }
-    put(g, box(w - 0.3, 0.02, l - 0.3), REDHOT, 0, 0.12 + layer * k + 0.005, 0); // (the glow between the layers)
-  }
-  put(g, box(0.3, 0.02, 0.22), YELLOW, 0.1, H + 0.005, -0.1);
-  return grounded(g, w + 0.3, l + 0.3);
+    add(box(0.5, 0.02, 0.36), YELLOW, 0.3, H + 0.01, -0.2);
+  });
+  return shade(g, w + 0.4, l + 0.4);
 };
-// a bale: a steel coil lying on its side, its eye along the road (a hoop to the player coming up to it), on a yellow cradle,
-// two blue bands round it, a red tag on its face
-const coilGeo = {};
-const steelCoil = (o) => {
-  const g = new THREE.Group(), R = Math.min(o.height / 2 - 0.08, o.hw * 0.7), r = R * 0.38, L = Math.min(o.hl * 2 - 0.3, 1.7), y = R + 0.12;
-  const end = coilEnd(), face = end ? lambert(0xffffff, { map: end, side: THREE.DoubleSide }) : COIL;
-  const k = R.toFixed(3) + ':' + L.toFixed(3);
-  coilGeo[k] ||= { shell: cyl(R, R, L, 24, true), eye: cyl(r, r, L, 16, true), ring: new THREE.RingGeometry(r, R, 24, 1) };
-  const G = coilGeo[k];
-  put(g, G.shell, COIL, 0, y, 0, Math.PI / 2);
-  put(g, G.eye, lambert(0x5a6168, { side: THREE.BackSide }), 0, y, 0, Math.PI / 2);
-  // the ring's own uvs are planar over [-R, R]: remapped so the canvas's rings sit on the coil's
-  if (!G.ring.userData.mapped) { const p = G.ring.attributes.position, uv = G.ring.attributes.uv; for (let i = 0; i < p.count; i++) uv.setXY(i, 0.5 + p.getX(i) / (2 * R) * 0.98, 0.5 + p.getY(i) / (2 * R) * 0.98); G.ring.userData.mapped = true; }
-  for (const z of [-1, 1]) put(g, G.ring, face, 0, y, z * L / 2, 0, z > 0 ? 0 : Math.PI);
-  for (const z of [-0.45, 0.45]) put(g, cyl(R + 0.012, R + 0.012, 0.05, 24, true), lambert(SW.blue, { side: THREE.DoubleSide }), 0, y, z * L, Math.PI / 2);
-  for (const x of [-1, 1]) put(g, box(0.3, 0.32, L * 0.9), YELLOW, x * R * 0.72, 0.16, 0); // (the cradle's two rails)
-  put(g, box(R * 1.7, 0.08, L * 0.9), DARK, 0, 0.04, 0);
-  put(g, box(0.26, 0.18, 0.02), RED, R * 0.55, y + R * 0.2, -L / 2 - 0.006);
-  return grounded(g, R * 2.4, L + 0.3);
+const coilGeo = {}; // (the coil's and the sign's own materials, made once)
+// a bale: a 1.8 m steel coil lying on its side, its eye along the road (a hoop to the player coming up to it), on a yellow
+// cradle with striped ends, two blue bands round it, a red tag on its face, a glowing line along the cradle's foot
+const steelCoil = () => {
+  const [HW, HL] = STEELWORKS_SIZES.steelCoil, R = 0.9, r = R * 0.36, L = HL * 2 - 0.2, cradle = 0.15, y = cradle + R;
+  const end = coilEnd(), face = end ? (coilGeo.face ||= Object.assign(lambert(0xffffff, { map: end, side: THREE.DoubleSide }), { userData: { shared: true } })) : COIL;
+  const g = baked('steelCoil', (add) => {
+    add(cyl(R, R, L, 28, true), COIL, 0, y, 0, Math.PI / 2);
+    add(cyl(r, r, L, 16, true), EYE, 0, y, 0, Math.PI / 2);
+    const ring = new THREE.RingGeometry(r, R, 28, 1), p = ring.attributes.position, uv = ring.attributes.uv;
+    for (let i = 0; i < p.count; i++) uv.setXY(i, 0.5 + p.getX(i) / (2 * R) * 0.98, 0.5 + p.getY(i) / (2 * R) * 0.98); // (the canvas's rings on the coil's)
+    for (const z of [-1, 1]) add(ring.clone(), face, 0, y, z * L / 2, 0, z > 0 ? 0 : Math.PI, 0);
+    for (const z of [-0.3, 0.3]) add(cyl(R + 0.015, R + 0.015, 0.08, 28, true), BAND, 0, y, z * L, Math.PI / 2);
+    // the cradle: a dark bed, two yellow saddles the coil sits in, hazard stripes on its ends
+    add(box(HW * 2, cradle, L + 0.1), DARK, 0, cradle / 2, 0);
+    for (const x of [-1, 1]) add(box(0.36, 0.55, L), YELLOW, x * (HW - 0.18), cradle + 0.27, 0);
+    for (const z of [-1, 1]) stripes(add, HW * 2, cradle - 0.03, 0.02, 0, cradle / 2, z * (L / 2 + 0.06), 8);
+    for (const x of [-1, 1]) add(box(0.03, 0.05, L), EMBER, x * (HW + 0.005), 0.05, 0);
+    add(box(0.36, 0.26, 0.02), RED, R * 0.55, y + R * 0.25, -L / 2 - 0.01);
+  });
+  return shade(g, HW * 2 + 0.4, L + 0.4);
 };
-// a cone: a HOT METAL sign, a yellow diamond on a post, on a heavy steel foot striped yellow and black
-const hotSign = (o) => {
-  const g = new THREE.Group(), r = (o.hw || 0.42) * 0.9, H = o.height || 1.12, map = hotFace();
-  put(g, cyl(r, r, 0.16, 14), BLACK, 0, 0.08, 0);
-  put(g, cyl(r * 0.92, r, 0.1, 14), YELLOW, 0, 0.21, 0);
-  put(g, cyl(0.035, 0.035, H - 0.55, 8), STEEL, 0, 0.26 + (H - 0.55) / 2, 0);
-  const plate = map ? lambert(0xffffff, { map, alphaTest: 0.5, side: THREE.DoubleSide }) : YELLOW;
-  put(g, new THREE.PlaneGeometry(0.66, 0.66), plate, 0, H - 0.3, -0.04, 0, Math.PI, 0); // (towards the traffic coming up: local -z)
-  put(g, new THREE.PlaneGeometry(0.66, 0.66), plate, 0, H - 0.3, 0.04);
-  put(g, box(0.05, 0.6, 0.05), DARK, 0, H - 0.3, 0, 0, 0, Math.PI / 4); // (the frame behind it)
-  return grounded(g, r * 2.4, r * 2.4);
+// a cone: a HOT METAL board (a yellow diamond, a flame, HOT), 1.35 m, on a bollard banded yellow and black, on a weighted
+// foot striped the same; an amber lamp glowing on top
+const hotSign = () => {
+  const [HW, , H] = STEELWORKS_SIZES.hotSign, map = hotFace();
+  const plate = map ? (coilGeo.plate ||= Object.assign(lambert(0xffffff, { map, alphaTest: 0.5, side: THREE.DoubleSide }), { userData: { shared: true } })) : YELLOW;
+  const g = baked('hotSign', (add) => {
+    add(box(HW * 2, 0.22, HW * 2), DARKER, 0, 0.11, 0);
+    for (const z of [-1, 1]) stripes(add, HW * 2, 0.16, 0.02, 0, 0.11, z * (HW + 0.01), 6);
+    banded(add, 0.13, H - 1.45, 0.22, 0, 0, 6);
+    const S = 1.35, cy = H - 0.25 - S * 0.7;
+    add(box(S * 0.98, S * 0.98, 0.06), BLACK, 0, cy, 0, 0, 0, Math.PI / 4); // (the board's back plate)
+    add(new THREE.PlaneGeometry(S * 1.4, S * 1.4), plate, 0, cy, -0.04, 0, Math.PI, 0); // (to the traffic coming up: local -z)
+    add(new THREE.PlaneGeometry(S * 1.4, S * 1.4), plate, 0, cy, 0.04);
+    add(cyl(0.14, 0.14, 0.2, 12), LAMP, 0, H - 0.1, 0); // the lamp on top
+    add(cyl(0.16, 0.16, 0.05, 12), BLACK, 0, H - 0.22, 0);
+  });
+  return shade(g, HW * 2 + 0.4, HW * 2 + 0.4);
 };
-// a barrier: two bundles of rebar lying across the lane, one on the other on timber bearers, the bars rust-red, their ends
-// painted (orange on the one, yellow on the other), wire ties round each
-const rebarGeo = {};
-const rebarBundle = (o) => {
-  const g = new THREE.Group(), w = o.hw * 2 - 0.1, l = o.hl * 2 - 0.1, H = Math.min(1.15, o.height);
-  const key = w.toFixed(2) + ':' + l.toFixed(2);
-  if (!rebarGeo[key]) {
-    const bars = [], ends = [], r = 0.045, rows = 4, cols = Math.floor((l - 0.1) / (r * 2.3));
-    for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) {
-      const y = r + i * r * 1.9, z = -l / 2 + 0.08 + j * r * 2.3 + (i % 2) * r;
-      bars.push(cyl(r, r, w - 0.08, 6).rotateZ(Math.PI / 2).translate(0, y, z));
-      for (const x of [-1, 1]) ends.push(cyl(r * 1.05, r * 1.05, 0.05, 6).rotateZ(Math.PI / 2).translate(x * (w / 2 - 0.035), y, z));
+// a barrier: two bundles of rebar 3 m across, one on the other on timber bearers, the bars rust-red, their ends painted
+// (orange on the one, yellow on the other), wire ties round each; a striped board at each end and a red flag on it
+const rebarBundle = () => {
+  const [HW, HL, H] = STEELWORKS_SIZES.rebarBundle, w = HW * 2 - 0.36, l = HL * 2 - 0.1;
+  const g = baked('rebarBundle', (add) => {
+    const r = 0.05, rows = 4, cols = Math.floor((l - 0.12) / (r * 2.3)), layer = (H - 0.36) / 2, sy = layer / (r * 1.9 * (rows - 1) + 2 * r);
+    for (let k = 0; k < 2; k++) {
+      const y0 = 0.12 + k * (layer + 0.12);
+      for (const x of [-w / 3, 0, w / 3]) add(box(0.16, 0.12, l), TIMBER, x, y0 - 0.06, 0);
+      for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) {
+        const y = y0 + (r + i * r * 1.9) * sy, z = -l / 2 + 0.08 + j * r * 2.3 + (i % 2) * r;
+        add(cyl(r, r, w - 0.08, 6), RUST, 0, y, z, 0, 0, Math.PI / 2);
+        for (const x of [-1, 1]) add(cyl(r * 1.08, r * 1.08, 0.06, 6), k ? YELLOW : ORANGE, x * (w / 2 - 0.03), y, z, 0, 0, Math.PI / 2);
+      }
+      for (const x of [-w / 3, w / 3]) add(box(0.05, layer + 0.04, l + 0.03), BLACK, x + 0.25, y0 + layer / 2, 0); // (the wire ties)
     }
-    rebarGeo[key] = { bars: mergeGeometries(bars), ends: mergeGeometries(ends), h: r * 1.9 * (rows - 1) + 2 * r };
-  }
-  const G = rebarGeo[key], layer = (H - 0.24) / 2, s = layer / G.h;
-  for (let k = 0; k < 2; k++) {
-    const y0 = 0.12 + k * (layer + 0.12);
-    for (const x of [-w / 3, 0, w / 3]) put(g, box(0.14, 0.12, l), TIMBER, x, y0 - 0.06, 0);
-    const bundle = sub(g, 0, y0, 0);
-    bundle.scale.set(1, s, 1);
-    put(bundle, G.bars, RUST);
-    put(bundle, G.ends, k ? YELLOW : lambert(0xff7a1a));
-    for (const x of [-w / 3, w / 3]) put(g, box(0.04, layer + 0.02, l + 0.02), BLACK, x + 0.2, y0 + layer / 2, 0); // (the wire ties)
-  }
-  return grounded(g, w + 0.2, l + 0.3);
+    // a post at each end, a red flag on it; a striped plank across the whole width on them, front and back; glowing feet
+    for (const x of [-1, 1]) {
+      const bx = x * (HW - 0.08);
+      add(box(0.16, H, 0.16), DARKER, bx, H / 2, 0);
+      add(box(0.02, 0.32, 0.45), RED, bx, H - 0.16, 0.24);
+      add(box(0.2, 0.04, l), EMBER, bx, 0.02, 0);
+    }
+    for (const z of [-1, 1]) stripes(add, HW * 2, 0.34, 0.05, 0, H * 0.62, z * (l / 2 + 0.05), 10);
+  });
+  return shade(g, HW * 2 + 0.3, l + 0.4);
 };
 export const STEELWORKS_OBSTACLES = { ingotStack, steelCoil, hotSign, rebarBundle };
 

@@ -60,6 +60,7 @@ import { UfoStrike } from './ufostrike.js';
 import { syncStorm } from './render/storm.js';
 import { syncMovers } from './render/movers.js';
 import { syncTunnel } from './render/tunnel.js';
+import { LaneGimmicks } from './lanegimmicks.js';
 import { syncLaneGimmicks } from './render/lanegimmicks.js'; // (the boost pads' belts scroll, the dead ends' beacons flash)
 import { syncRoadworks } from './render/roadworks.js'; // (a diversion's arrow boards and beacons flash)
 import { syncReversible } from './render/reversible.js';
@@ -294,6 +295,7 @@ if (params.get('racewatch') !== null) {
   if (params.get('speed')) Object.assign(Player, { speed: Number(params.get('speed')), launching: false }); // ?speed=31: doing that many m/s from the start (with ?ff: hands off, the speed holds)
   if (params.get('lane')) Player.lat = Track.laneOffset(Number(params.get('lane')), Player.s); // ?lane=4: in that lane
   if (params.get('trainsin')) { const [a, b = a] = params.get('trainsin').split(',').map(Number); if (BulletTrain.timed) BulletTrain.next = a; if (UpTrain.timed) UpTrain.next = b; } // ?trainsin=2,2.5: the railway's next trains due in that many s (down, up: a still of both)
+  if (params.get('ladle')) LaneGimmicks.ladleNow = true; // ?ladle=1: the next ladle ahead comes out at once and pours as soon as it is there (stills)
   if (params.get('pieces')) Game.tankPieces = Math.min(CONFIG.tankPieces - 1, Number(params.get('pieces')) || 0); // ?pieces=3: that many pieces of the tank found already
   if (params.get('rage') !== null) { Game.tankPieces = CONFIG.tankPieces; Player.startTank(); } // ?rage: in TANK RAGE from the start (a check, a picture: on an amphibious level, the Amphibious Tank)
   if (params.get('fly') !== null) startFly();
