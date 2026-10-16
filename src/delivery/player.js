@@ -185,6 +185,7 @@ export const Player = {
     this.onIce = false;
     this.onWater = false;
     this.wetTyres = 0;
+    this.pulling = 0; this.scrubNear = 0; this.steered = false; // (the driven lane scrub's: see update)
     this.wading = 0;
     this.afloat = false;
     this.waterDepth = 0;
@@ -369,6 +370,8 @@ export const Player = {
   // auto: the accelerator is held down by auto accelerate alone (input.js auto): the player is not on it, so the car lets go
   // of it for a slower car close ahead, and brakes by itself as it does off the accelerator (below)
   updateSpeed(dt, throttle, stopping, auto = false) {
+    this.pulling = 0; // (m/s^2 the engine pulled with this step, by the accelerator held: the driven lane scrub's, in update)
+    this.speedTop = Infinity; // (and the top speed it pulls for, below)
     if (stopping) {
       this.speed = Math.max(0, this.speed - CONFIG.brake * dt);
       this.brakeLight = this.speed > 0;
@@ -455,6 +458,7 @@ export const Player = {
     // (the Amphibious Tank keeps a share of its own)
     top *= this.rageTank && afloat ? 1 + (this.rageTank.afloat - 1) * Math.min(1, sea.depth / CONFIG.water.afloat) : sea.top;
     let drive = throttle;
+    this.speedTop = top;
     // the slowest the brakes bring it: on a lapped circuit, minSpeed; anywhere else, to a stop, for as long
     // as the brake is held (let go, it rolls on up to minSpeed again by itself)
     const slowest = LEVEL.laps ? CONFIG.minSpeed : 0;
@@ -473,7 +477,10 @@ export const Player = {
       // (or on washboard dirt: dragged down to its `most`)
       this.speed = Math.max(top, this.speed - (rails || wet || mud ? R.bite : afloat ? CONFIG.water.drag : board ? B.drag : CONFIG.brake * 0.5) * dt);
     } else if (drive > 0) {
-      this.speed = Math.min(top, this.speed + drive * (boosted ? CONFIG.turboAccel : drives.accel * (held ? held.accel : 1) * pull) * (this.puncture ? CONFIG.puncture.accel : 1) * seaAccel * dt);
+      const accel = drive * (boosted ? CONFIG.turboAccel : drives.accel * (held ? held.accel : 1) * pull) * (this.puncture ? CONFIG.puncture.accel : 1) * seaAccel;
+      this.speed = Math.min(top, this.speed + accel * dt);
+      // (the driven lane scrub's: the car's own pull with the accelerator held; not the turbo's or a pad's, the pull-away, or afloat)
+      if (throttle > 0 && !boosted && !this.launching && !afloat) { this.pulling = accel; this.pullDrive = drive; }
     } else if (drive < 0 && this.puncture) { // (a flat tyre: hard, and all the way down to a stop)
       this.speed = Math.max(0, this.speed + drive * CONFIG.brake * CONFIG.puncture.brake * grip * dt);
     } else if (drive < 0 && this.speed > slowest) {
@@ -603,11 +610,20 @@ export const Player = {
       const across = Math.min(1, Math.abs(this.latVel) / (CONFIG.steerSpeed * this.agility));
       this.speed = Math.max(CONFIG.minSpeed, this.speed - CONFIG.mystery.noBrakes.steerScrub * Math.abs(steer) * across * dt);
     }
-    // changing lanes scrubs a little speed, the less the more agile the car (CONFIG.trueSpeed)
+    // changing lanes scrubs a little speed, the less the more agile the car (CONFIG.trueSpeed); and with the accelerator
+    // held near top speed, more: the engine's pull taken back and a scrub on top (CONFIG.trueSpeed.driven), so it is felt
     if (steer !== 0 && !this.busted && this.speed > CONFIG.minSpeed) {
+      const T = CONFIG.trueSpeed, D = T.driven;
       const across = Math.min(1, Math.abs(this.latVel) / (CONFIG.steerSpeed * this.agility));
-      this.speed = Math.max(CONFIG.minSpeed, this.speed - CONFIG.trueSpeed.laneScrub * across * across / this.agility * dt);
+      // (how near top speed the car was as the steer went on, kept for as long as it is held: a car that starts the change at
+      // top speed is scrubbed all the way through it, however much it loses, and a car still climbing through the range is not)
+      // (and a car still climbing gets `least` of it: a lane change while pulling away is a little slower than none)
+      if (!this.steered) { const k = clamp((this.speed / this.speedTop - D.from) / (D.full - D.from), 0, 1); this.scrubNear = D.least + (1 - D.least) * k * k * (3 - 2 * k); }
+      const near = this.pulling > 0 ? this.scrubNear : 0;
+      const driven = near > 0 ? D.tune * near * (D.cancel * this.pulling + Math.min(D.most, D.lose / this.agility) * this.pullDrive) : 0;
+      this.speed = Math.max(CONFIG.minSpeed, this.speed - (T.laneScrub * across * across / this.agility + driven * across * across) * dt);
     }
+    this.steered = steer !== 0; // (the steer held last step: the driven lane scrub's, above)
     // (where walls hurt, "wallDamage", nothing stops the slide carrying the car into one: see keepOnRoad)
     if (!LEVEL.wallDamage) this.latVel += slide * dt;
 

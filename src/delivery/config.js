@@ -178,7 +178,18 @@ export const CONFIG = {
   // bend is shorter and the outside longer (Track.pathScale); `least` / `most` bound the scale (a lane is never past the
   // bend's centre). Lane changes also scrub speed a little: `laneScrub` m/s^2 at full sideways speed, over the car's
   // agility (a nimble car loses less)
-  trueSpeed: { on: true, least: 0.4, most: 2.5, laneScrub: 1.2 },
+  // `laneScrub` acts whatever the pedals do, and alone it is nothing to a car with the accelerator held (its pull out-pulls it,
+  // and at top speed the pull simply tops it back up). So `driven` adds a scrub only while the engine is pulling (the
+  // accelerator held; CHECKLIST 421), and only near the top of the speed range, where the pull has run out: it fades in from
+  // `from` to `full` of the car's top speed at that moment (a smoothstep), so a car still pulling away is barely touched. At
+  // full sideways speed it takes back `cancel` of the engine's own pull (1: the accelerator does nothing mid-change) and
+  // scrubs `lose` m/s^2 over the car's agility on top (never more than `most` m/s^2: a lane change is no brake). Both grow
+  // with across^2 as laneScrub does. Off the accelerator (coasting, braking) only laneScrub acts, as before. Not under a
+  // turbo or a boost pad, pulling away after a drop, afloat, or for traffic. `tune` multiplies all of it (0: as before
+  // 421; ?lanescrub=<x> sets it for a visit). A full lane change at top speed, held flat out, costs about 1.5 to 2.4 m/s
+  // (5 to 9 km/h) and is won back within about a second; one lane mid-range costs next to nothing (.lanescrub-check)
+  trueSpeed: { on: true, least: 0.4, most: 2.5, laneScrub: 1.2,
+    driven: { cancel: 1, lose: 4, most: 6, from: 0.8, full: 0.95, least: 0.05, tune: 1 } },
   cornering: { grip: 22 },   // m/s^2 of cornering a car of weight 1 and agility 1 holds
   // A race (a level's "grid", "understeer", "wallDamage", "nudge": see levels.js). Its understeer is
   // `understeer` times as hard as on ice, and sliding wide scrubs off speed: `scrub` m/s^2 for every
