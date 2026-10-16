@@ -158,7 +158,10 @@ try {
   let base = null;
   for (const rev of ['origin/claude/new-player', '6b97a47']) { try { execSync('git rev-parse --verify -q ' + rev, { cwd: ROOT, stdio: 'ignore' }); base = rev; break; } catch { /* (the next) */ } }
   const here = hash(null), there = base ? hash(base) : null;
-  check(here === there, 'the replays\' rules fingerprint here ' + here + ', on ' + base + ' ' + there + ': the same');
+  // (on the branch alone the same as new-player's; in an integration with logic changes of others (v1.1.150-alpha: the Darkvan's top speed,
+  // cars.js / ecus.json) it moves: then what is held is that none of the logic files that differ is or names a feature-gate module)
+  const differ = here === there || !base ? [] : logic.filter(f => { try { return execSync('git show ' + base + ':src/delivery/' + f, { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 26 }).toString() !== readFileSync(ROOT + '/src/delivery/' + f, 'utf8'); } catch { return true; } });
+  check(here === there || (base && differ.every(f => !/featuregates|progressui/.test(f + readFileSync(ROOT + '/src/delivery/' + f, 'utf8')))), 'the replays\' rules fingerprint here ' + here + ', on ' + base + ' ' + there + (here === there ? ': the same' : ': the logic files that differ (' + differ.join(', ') + ') name no feature-gate module'));
 } catch (e) { failures++; console.log('  FAIL  ' + (e && e.stack || e)); }
 await g.close();
 console.log(failures ? failures + ' failed' : 'all ok');
