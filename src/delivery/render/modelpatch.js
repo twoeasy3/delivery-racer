@@ -41,6 +41,7 @@
 // for a side is re-applied after the model's own livery (userData.livery is wrapped), so the patch's colours win.
 import * as THREE from 'three';
 import { WINDOW_ROLE, isWindowRole, isGlassWord, isWindowNode, glassTable, windowKey, canonicalTable } from './glassnames.js';
+import { paneFacing, splitByFacing, cabinMiddle, zRefOf, REVERSE_RAKE } from './screens.js';
 
 export const PATCH_VERSION = 1;
 // A side view extruded across the car, as the car models draw their bodies: `points` is the outline seen from the left,
@@ -126,7 +127,7 @@ export const triangles = (node) => {
 const firstMat = (node) => [].concat(node.material || [])[0];
 // the nodes under the root, in a fixed order (depth first), with their paths
 const walk = (root, fn) => {
-  const go = (node, path) => node.children.forEach((child, i) => { const p = path ? path + '.' + i : String(i); fn(child, p); go(child, p); });
+  const go = (node, path) => node.children.forEach((child, i) => { if (child.userData.crackOverlay) return; const p = path ? path + '.' + i : String(i); fn(child, p); go(child, p); }); // (the cracked glass, render/cracks.js: appended last, never a part)
   go(root, '');
 };
 const sizeOf = (geo) => { if (!geo.boundingBox) geo.computeBoundingBox(); const s = geo.boundingBox.getSize(new THREE.Vector3()); return [s.x, s.y, s.z].map(v => v.toFixed(2)).join(','); };
@@ -233,6 +234,7 @@ export const extractParts = (root) => {
     parts.push(row);
     nodes.set(row.id, node);
   });
+  faceHandPanes(panes, nodes, root, carBox);
   nameHandPanes(panes);
   for (const row of parts) if (panes.has(row.id)) row.panes = panes.get(row.id).map(q => q.name);
   return { parts, nodes, base: modelSignature(root), panes };
@@ -275,6 +277,54 @@ export const windowPanes = (node, root, carBox) => {
     return { name: '', kind: 'hand', side, face, z: c.z, start: g.lo, count: g.hi - g.lo + 1 };
   });
 };
+// WHICH WAY EACH HAND-BUILT PANE FACES (the owner, 16-Oct: "Are all front screens tagged properly on all cars?"; scripts/windscreen-audit.mjs):
+// measured from its own triangles (render/screens.js paneFacing: each one's normal turned out of the cabin, the cabin's middle the glass's own), not
+// from where its box stands: so a screen behind the car's middle (a cab-forward lorry's, a mid-engined car's) is still the windscreen, a rear
+// window ahead of it still the rear window, half of a split screen (all on one flank) a screen and not a side window, and a steeply raked one
+// a screen (a roof window is within about 14 degrees of flat). A pane that faces several ways (a glasshouse box: its screen, rear window, flanks
+// and top in one; a screen wrapped into its side windows) is cut into the runs of vertices that each face one way where its vertices allow
+// (splitByFacing), so the windscreen of a box-built car is a pane of its own. What cannot be cut keeps one pane, named by its biggest share.
+// A model's own tag wins: `userData.window` ('windscreen' / 'rear') on a glass mesh that is that one window.
+const faceHandPanes = (panes, nodes, root, carBox) => {
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), all = [];
+  for (const [id, list] of panes) {
+    const node = nodes.get(id);
+    if (!node?.geometry) continue;
+    const toModel = new THREE.Matrix4().multiplyMatrices(inv, node.matrixWorld);
+    for (const q of list) all.push({ node, toModel, pane: q.kind === 'hand' ? q : { start: q.start, count: q.count }, hand: q.kind === 'hand', list });
+  }
+  if (!all.some(e => e.hand)) return;
+  const zCar = cabinMiddle(all, carBox), zOf = new Map();
+  for (const e of all) {
+    if (!e.hand) continue;
+    if (!zOf.has(e.node)) zOf.set(e.node, zRefOf(all, e.node, zCar));
+    const zRef = zOf.get(e.node);
+    const q = e.pane, tag = e.node.userData.window;
+    const f = paneFacing(e.node, e.toModel, q, zRef);
+    let face = f.face;
+    if (face === 'mixed') {
+      const runs = splitByFacing(e.node, e.toModel, q, zRef);
+      if (runs && runs.length <= 16) { // (more than 16: a rounded shape, a sphere's facets, not a box: left whole) // (the pane replaced by its runs, in place in the part's list)
+        const at = e.list.indexOf(q);
+        e.list.splice(at, 1, ...runs.map((r) => {
+          const g = paneFacing(e.node, e.toModel, r, zRef), flank = g.box.min.x > 0.01 ? 1 : g.box.max.x < -0.01 ? -1 : 0;
+          if (r.face === 'front' && g.centre.z < zRef - REVERSE_RAKE) r.face = 'rear';
+          return { name: '', kind: 'hand', side: r.face === 'side' ? r.side : r.face === 'front' || r.face === 'rear' ? flank : 0, face: r.face, z: g.centre.z, area: g.area, start: r.start, count: r.count, middle: r.middle };
+        }));
+        continue;
+      }
+      const sh = f.share, big = ['front', 'rear', 'side'].sort((a, b) => sh[b] - sh[a])[0];
+      face = big === 'side' ? (q.side ? 'side' : 'band') : big;
+    } else if (face === 'side' && !q.side) face = 'band'; // (a block through the car showing on both flanks: a bus's window band)
+    else if (face === 'front' && f.centre.z < zRef - REVERSE_RAKE) face = 'rear'; // (a reverse-rake rear window: render/screens.js screenShares)
+    if (tag === 'windscreen' || tag === 'front') face = 'front';
+    else if (tag === 'rear' || tag === 'rear window') face = 'rear';
+    q.face = face;
+    q.z = f.centre.z;
+    q.area = f.area;
+    if (face === 'front' || face === 'rear') q.side = f.box.min.x > 0.01 ? 1 : f.box.max.x < -0.01 ? -1 : 0; // (half of a split screen keeps its flank)
+  }
+};
 // the hand-built panes' names, over the whole model (so the two flanks number alike and a pane's twin across the car has its name)
 const nameHandPanes = (panes) => {
   const hand = [...panes.values()].flat().filter(q => q.kind === 'hand');
@@ -283,7 +333,18 @@ const nameHandPanes = (panes) => {
     const flank = hand.filter(q => q.face === 'side' && q.side === s).sort((a, b) => b.z - a.z); // (from the front)
     flank.forEach((q, i) => { q.name = (flank.length === 1 ? 'side window' : 'window ' + (i + 1)) + (s > 0 ? ' L' : ' R'); });
   }
-  for (const q of hand.filter(x => x.face !== 'side').sort((a, b) => b.z - a.z)) q.name = named(q.face === 'front' ? 'windscreen' : q.face === 'rear' ? 'rear window' : q.face === 'band' ? 'side windows' : 'roof window');
+  const base = (q) => (q.face === 'front' ? 'windscreen' : q.face === 'rear' ? 'rear window' : q.face === 'band' ? 'side windows' : q.face === 'floor' ? 'window underside' : 'roof window');
+  // (a split screen's halves, each on one flank: 'windscreen L' / 'windscreen R', numbered alike on both flanks)
+  for (const s of [1, -1]) {
+    const counts = new Map();
+    for (const q of hand.filter(x => x.face !== 'side' && x.side === s && (x.face === 'front' || x.face === 'rear')).sort((a, b) => (b.area ?? 0) - (a.area ?? 0) || b.z - a.z)) {
+      const n = (counts.get(base(q)) || 0) + 1; counts.set(base(q), n);
+      q.name = base(q) + (n > 1 ? ' ' + n : '') + (s > 0 ? ' L' : ' R');
+    }
+  }
+  // (the biggest of each kind takes the plain name: 'windscreen' is the car's windscreen, 'windscreen 2' a smaller one: a second deck's, a box's
+  // face hidden behind it)
+  for (const q of hand.filter(x => x.face !== 'side' && !((x.face === 'front' || x.face === 'rear') && x.side)).sort((a, b) => (b.area ?? 0) - (a.area ?? 0) || b.z - a.z)) q.name = named(base(q));
 };
 // the builder output's signature (what the patch was made against)
 export const modelSignature = (root) => {

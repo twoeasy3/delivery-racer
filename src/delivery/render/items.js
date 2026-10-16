@@ -19,6 +19,7 @@ import { OBSTACLE_MODELS } from './obstacleModels.js';
 import { makeAmphibiousTankMesh } from './tankModels.js';
 import { addSuperKit } from './carExtras.js';
 import { damageShare, dentModel, scorch } from './dents.js';
+import { CRACK, crackShare, crackModel } from './cracks.js';
 import { SpeedCameras } from '../cameras.js';
 import { Hazards } from '../hazards.js';
 import { Delivery } from '../delivery.js';
@@ -524,7 +525,7 @@ export const syncPickups = (dt) => {
   paintOf(tankMesh.userData.body).color.setHex(!CAR.tank ? TANK_OLIVE : livery);
   paintOf(carMesh.userData.body).color.setHex(livery);
   // a damaged car looks it: its panels crumple in steps and its paint is scorched (see dents.js; not a tank, nor a UFO)
-  const worn = Player.active ? damageShare(Player) : 0;
+  const worn = CRACK.force ?? (Player.active ? damageShare(Player) : 0); // (?crack=<n>: shown as at that share of damage, render/cracks.js: a look only)
   dentModel(carMesh, carMesh.userData.body, worn);
   scorch(paintOf(carMesh.userData.body).color, worn);
   // a car with an animated model of its own shows that in place of the standard box car,
@@ -542,6 +543,7 @@ export const syncPickups = (dt) => {
     paintOf(custom.userData.body).color.setHex(livery);
     dentModel(custom, custom.userData.body, worn);
     scorch(paintOf(custom.userData.body).color, worn);
+    crackModel(custom, crackShare(worn), CAR.id, ghostly); // (the windscreen and rear window cracked: only with ?crack, render/cracks.js)
     custom.userData.livery?.(Player.evil);
     custom.userData.aim?.(Player.turret || 0); // (the 8x8's gun, turned to its target: see Packages)
   }
