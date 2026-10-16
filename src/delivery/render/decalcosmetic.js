@@ -12,7 +12,7 @@
 // a lattice as coarse as keeps within 2 mm of it, every point 4 mm out along its normal, polygon offset -4, no depth write, alpha-tested;
 // where something covers the paint (glass, a handle, a wheel, trim) the vertices' alpha is 0, so it never shows on a window. Laid on the
 // zones BOTH flanks share (pairedZones) for a badge or a panel, mapped nose-ward (a chevron points forward on both). Layout
-// (decalLayout): a BAND runs as far as the PAINT goes on unbroken at its height (paintRuns: rays every 2 cm, paint facing out at every
+// (decalLayout): a BAND runs as far as the PAINT goes on unbroken at its height (paintRuns: rays every 2 cm (its height chosen on an 8 cm probe), paint facing out at every
 // row, smooth as its normals predict within 4 mm, 1 cm clear of a tyre), started from a clean zone; each flank its own runs (the bus's
 // doors are on one side only), the unbroken height preferred (the Post Van's band is one piece, 4.16 m); its tile clipped at the end;
 // a panel sits on the zone it is biggest in, at that zone's nose end; a badge in the middle of the roomiest zone. SIZE: the
@@ -105,8 +105,8 @@ export const decalLayout = (d, zones, S = 1, opts = {}) => {
   if (!d || !zones.length) return [];
   if (d.kind === 'band') {
     const want = d.h * S, sides = opts.runs ? ['L', 'R'] : [null], seeds = opts.seeds || zones;
-    const piecesAt = (side, ya, yb) => {
-      if (opts.runs) return opts.runs(side, ya, yb).filter(r => r.z1 - r.z0 >= 0.3 && (opts.zonesOf?.(side) || zones).some(o => o.y0 <= yb && o.y1 >= ya && Math.min(o.z1, r.z1) - Math.max(o.z0, r.z0) >= 0.15)); // (a run that meets a clean zone)
+    const piecesAt = (side, ya, yb, fine = false) => {
+      if (opts.runs) return opts.runs(side, ya, yb, fine).filter(r => r.z1 - r.z0 >= 0.3 && (opts.zonesOf?.(side) || zones).some(o => o.y0 <= yb && o.y1 >= ya && Math.min(o.z1, r.z1) - Math.max(o.z0, r.z0) >= 0.15)); // (a run that meets a clean zone)
       const out = [];
       for (const o of zones.filter(o => o.y0 <= ya + 1e-6 && o.y1 >= yb - 1e-6).sort((p, q) => p.z0 - q.z0)) {
         const last = out[out.length - 1];
@@ -127,6 +127,7 @@ export const decalLayout = (d, zones, S = 1, opts = {}) => {
       }
     }
     if (!best) return [];
+    if (opts.runs) best.per = sides.map(side => ({ side, pieces: piecesAt(side, best.ya, best.yb, true) })); // (the height chosen on the coarse probe; its runs found on the fine one)
     return best.per.flatMap(({ side, pieces }) => pieces.map(p => ({ z0: p.z0, z1: p.z1, y0: best.ya, y1: best.yb, cell: [0, 0, (p.z1 - p.z0) / (best.h * d.aspect), 1], zone: p.zone || 'run', ...(side ? { side } : {}) })));
   }
   // a panel or a badge: on the zone it is biggest in (a tie: the one nearer the nose)
@@ -146,38 +147,42 @@ export const decalLayout = (d, zones, S = 1, opts = {}) => {
 // a band asks (kept per car). A COLUMN of a band's rows is good where every row meets PAINT facing out (render/flankdecal.js flankHit:
 // not glass, a wheel, a lamp, trim or a curve) and moves from the column before as its normals predict, within SMOOTH (so a 4 cm step,
 // a panel's edge standing out, an arch's lip break it; a flat door shut line does not). A run is good columns in a row, ends inset 1 cm.
-const STEP = 0.02, SMOOTH = 0.004;
+const STEP = 0.02, SMOOTH = 0.004, COARSE = 4, LAT = 0.01;
 const PAINT = new Map();
 const paintRuns = (view, car) => {
   const key = car.id;
   if (!PAINT.has(key)) PAINT.set(key, { rows: { L: new Map(), R: new Map() }, rays: 0 });
   const P = PAINT.get(key), z0 = view.box.min.z, nz = Math.floor((view.box.max.z - z0) / STEP) + 1;
-  const row = (side, y) => { // (a row of rays at height y, kept by the centimetre)
-    const j = Math.round(y * 100);
+  // a row of rays at a height on the 1 cm lattice (shared by every band that asks), each cell cast when first asked
+  const row = (side, j) => {
     let r = P.rows[side].get(j);
-    if (r) return r;
-    const s = side === 'L' ? -1 : 1;
-    r = { ok: new Uint8Array(nz), wheel: new Uint8Array(nz), x: new Float32Array(nz), slope: new Float32Array(nz) };
-    for (let i = 0; i < nz; i++) {
-      const h = flankHit(view, s, y, z0 + i * STEP); P.rays++;
+    if (!r) P.rows[side].set(j, r = { y: j * LAT, s: side === 'L' ? -1 : 1, done: new Uint8Array(nz), ok: new Uint8Array(nz), wheel: new Uint8Array(nz), x: new Float32Array(nz), slope: new Float32Array(nz) });
+    return r;
+  };
+  const cell = (r, i) => {
+    if (!r.done[i]) {
+      const h = flankHit(view, r.s, r.y, z0 + i * STEP); P.rays++;
+      r.done[i] = 1;
       if (h.kind === 'paint') { r.ok[i] = 1; r.x[i] = h.point.x; r.slope[i] = -h.normal.z / h.normal.x; }
       if (h.kind === 'wheel') r.wheel[i] = 1;
     }
-    P.rows[side].set(j, r);
     return r;
   };
-  const runs = (side, ya, yb) => {
-    const rows = [];
-    const n = Math.max(2, Math.ceil((yb - ya - 0.02) / STEP) + 1); // (its edges, 1 cm in, and rows no more than 2 cm apart between)
-    for (let k = 0; k < n; k++) rows.push(row(side, ya + 0.01 + (yb - ya - 0.02) * k / (n - 1)));
-    const margin = [row(side, ya - 0.01), row(side, yb + 0.01)]; // (1 cm clear of a tyre's top, whose round would slip between the columns)
-    const out = [];
-    let start = -1;
-    const good = (i) => rows.every(r => r.ok[i]) && !margin.some(r => r.wheel[i]), smooth = (i) => rows.every(r => Math.abs(r.x[i] - r.x[i - 1] - (r.slope[i] + r.slope[i - 1]) / 2 * STEP) <= SMOOTH);
-    for (let i = 0; i <= nz; i++) {
+  // fine: every 2 cm along, rows 1 cm in from the band's edges and no more than 4 cm apart between, a row 1 cm outside each edge for a
+  // tyre's top; coarse (to choose the band's height): every 8 cm along, its two edge rows and its middle
+  const runs = (side, ya, yb, fine = false) => {
+    const lo = Math.ceil((ya + 0.005) / LAT), hi = Math.max(lo, Math.floor((yb - 0.005) / LAT)), js = [lo, hi];
+    if (fine) for (let j = lo + 4; j < hi; j += 4) js.push(j); else js.push(Math.round((lo + hi) / 2));
+    const rows = [...new Set(js)].map(j => row(side, j)), margin = [row(side, Math.floor((ya - 0.005) / LAT)), row(side, Math.ceil((yb + 0.005) / LAT))];
+    const di = fine ? 1 : COARSE, out = [];
+    const good = (i) => rows.every(r => cell(r, i).ok[i]) && !margin.some(r => cell(r, i).wheel[i]);
+    const smooth = (i) => rows.every(r => Math.abs(r.x[i] - r.x[i - di] - (r.slope[i] + r.slope[i - di]) / 2 * STEP * di) <= SMOOTH * (fine ? 1 : 2));
+    let start = -1, last = -1;
+    for (let i = 0; i < nz + di; i += di) {
       const g = i < nz && good(i), joined = g && start >= 0 && smooth(i);
-      if (start >= 0 && !joined) { out.push({ z0: z0 + start * STEP + 0.01, z1: z0 + (i - 1) * STEP - 0.01 }); start = -1; }
+      if (start >= 0 && !joined) { out.push({ z0: z0 + start * STEP + 0.01, z1: z0 + last * STEP - 0.01 }); start = -1; }
       if (g && start < 0) start = i;
+      if (g) last = i;
     }
     return out;
   };
