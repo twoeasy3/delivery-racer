@@ -752,21 +752,20 @@
   },
   "wedge": {
    "roof": {
-    "box": [0.7, 0, 1.217, -0.32],
-    "cyl": [0.61, 0, 1.201, -0.32],
+    "box": [1.01, 0, 1.327, -0.47],
+    "cyl": [0.89, 0, 1.299, -0.47],
     "from": "roof",
     "lim": "fit",
-    "inset": [0.028, 0.03]
+    "inset": [0.028, 0.029]
    },
    "cargo": {
     "no": "a closed body: no load deck"
    },
    "wing": {
-    "box": [1.28, 0, 1.091, -1.98],
-    "cyl": [1.28, 0, 1.059, -1.98],
+    "box": [1.13, 0, 1.098, -2.05],
+    "cyl": [1.13, 0, 1.069, -2.05],
     "from": "deck-edge",
     "lim": "fit",
-    "inset": [0.005, 0.005],
     "existing": true
    }
   },
@@ -824,14 +823,6 @@
   "fireengine": {
    "cargo": {
     "no": "the ladder and hose bed are the engine's function: no clear load space"
-   }
-  },
-  "wedge": {
-   "roof": {
-    "box": [0.6, 0, 1.2, -0.25],
-    "cyl": [0.6, 0, 1.2, -0.25],
-    "from": "roof",
-    "lim": "hand"
    }
   },
   "dragster": {

@@ -93,7 +93,7 @@ the cars it cannot.
   floatvan (only flat roof glass); herald (its windscreen at 20 % of the car's height: a tall part over it?); bathtub, mower (glass faces every way).
 - **Rear window hidden behind the body** (right for a cab behind a box; LOOK for the others): postvan, polytruck, ambulance, roadsweeper,
   cabledrum, motorhome, funeralcoach (cab windows behind a body: right); cityev, yellowcab (looked: no rear glass shows from behind; right),
-  classicgt, coupecross, teardrop, flyingcar, wedge, lmp / earned-lmp, gyrocar, getaway, pedalo, l-junker, finlandyacht (LOOK).
+  classicgt, coupecross, teardrop, flyingcar, lmp / earned-lmp, gyrocar, getaway, pedalo, l-junker, finlandyacht (LOOK).
 - **No rear glass at all** (vans, roadsters, open cars, lorries: 104 vehicles, mostly right): e.g. darkvan, dampervan, keitruck, hearse,
   snake, gullwing, keiroadster, moke, dunebuggy, foodtruck, mixer, tipper, wrecker, refuselorry, talltourer, tinsnail, armoured...
 - **No windscreen, legitimately** (28): no glass at all: buggy, tank, dragster, farmtractor, moonrover, f1 / earned-f1, apc / earned-apc,
@@ -200,7 +200,7 @@ the cars it cannot.
 | hardtop (Fifties Hardtop) | filler | found | windscreen [hand] | 47 | found | rear window [hand] |  |
 | midnight (Midnight Coupe) | filler | found | windscreen [hand] | 52 | found | rear window [hand] |  |
 | splitwindow (Split-Window Coupe) | filler | found | windscreen [hand] | 51 | found | rear window R [hand] |  |
-| wedge (Wedge Supercar) | filler | found | windscreen [hand] | 62 | none | - |  |
+| wedge (Wedge Supercar) | filler | found | windscreen [cabin] | 69 | found | rear window [cabin] |  |
 | jetcar (Jet Land-Speed Car) | filler | ambiguous | side windows [hand] | 75 | ambiguous | side windows [hand] | front: the front-facing glass is part of "side windows" (front 15%, rear 15%, side 49%, floor 15%): no pane of its own; rear: the rear-facing glass is part of "side windows" (front 15%, rear 15%, side 49%, floor 15%): no pane of its own |
 | dragster (Slingshot Dragster) | filler | none | - | - | none | - | an open car / cockpit; no glass at all |
 | flyingcar (Flying Car) | filler | found | windscreen [hand] | 58 | none | - |  |

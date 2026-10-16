@@ -32,6 +32,7 @@ import { IDEA_MODELS_TOPUP_C } from './ideaModelsTopupC.js'; // (top-up batch C:
 import { IDEA_MODELS_PADDLE_DUCK } from './ideaModelsPaddleDuck.js'; // (the Paddle-Wheel Amphibian)
 import { IDEA_MODELS_BATCH_D1 } from './ideaModelsBatchD1.js';
 import { IDEA_MODELS_SIXWHEEL } from './ideaModelsSixWheel.js'; // (the Six-Wheel Supercar, a Legendary key car: cars.js BESPOKE_CARS)
+import { IDEA_MODELS_WEDGE } from './ideaModelsWedge.js'; // (the Wedge Supercar, rebuilt 16-Oct)
 import { SWAN_MODELS } from './modelsSwan.js';
 import { withGlassEdits, glassEditsReport } from './ideaModelsDkit.js'; // (the glass edits of a car's model patch, read as its cabinGlass windows are built)
 import { glassEditsFor } from './modelpatchapply.js'; // (the Swan Car redone as a covered coupe, 13-Oct: over ideaModels3's open tourer)
@@ -208,6 +209,7 @@ export const IDEA_MODELS = {
   ...IDEA_MODELS_BATCH_E3,
   ...IDEA_MODELS_BATCH_E5,
   ...IDEA_MODELS_SIXWHEEL,
+  ...IDEA_MODELS_WEDGE,
   swancar: SWAN_MODELS.swancar,
   // A bubble car (a BMW Isetta): an egg on wheels. The whole front is its one door, hinged at the side, the
   // windscreen in it; a glass bubble over a bench seat; lamps in pods on its flanks; the two back wheels close
@@ -787,54 +789,6 @@ export const IDEA_MODELS = {
     box(group, trim, w + 0.02, 0.1, 0.1, 0, 0.44, L * 0.97);                              // black bumpers
     box(group, trim, w + 0.02, 0.1, 0.1, 0, 0.46, -L * 0.98);
     group.userData = { body, animate: () => {} };
-    return group;
-  },
-
-  // A wedge of a supercar (a Lamborghini Countach): one flat wedge from a nose on the road to a roof barely
-  // a metre up, air boxes on its shoulders, a huge wing across the tail, enormous back tyres under black
-  // flares, and doors that go straight up. They open and shut
-  wedge: (car) => {
-    const group = new THREE.Group();
-    const w = car.hw * 2, L = car.hl;
-    const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(CHROME), trim = lambert(TRIM);
-    const B = w * 0.94; // (the body, inside its wheel-arch flares)
-    const body = prism(group, paint, B, [[-L, 0.34], [L * 0.98, 0.34], [L, 0.44], [L * 0.3, 0.72], [L * 0.02, 1.03], [-L * 0.26, 1.05], [-L * 0.34, 0.9], [-L, 0.86]]);
-    slab(group, glass, B * 0.8, 0.02, 0.62, 0, 0.89, L * 0.16, Math.atan2(0.31, L * 0.28)); // the windscreen, nearly flat
-    prism(group, glass, B + 0.02, [[L * 0.26, 0.77], [L * 0.03, 1.0], [-L * 0.24, 1.01], [-L * 0.3, 0.9], [-L * 0.3, 0.77]]); // the side windows
-    for (let i = 0; i < 4; i++) box(group, trim, B * 0.5, 0.02, 0.1, 0, 0.9 - i * 0.005, -L * (0.46 + i * 0.1)); // the engine deck's louvres
-    box(group, trim, B * 0.94, 0.26, 0.04, 0, 0.68, -L - 0.01);                           // the tail panel
-    box(group, trim, w * 0.96, 0.06, 0.26, 0, 0.31, L - 0.08);                            // a chin spoiler
-    box(group, paint, w * 0.98, 0.05, 0.44, 0, 1.27, -L * 0.84).userData.prop = 'wing'; // the huge wing (tagged wing: a chosen wing hides it, its end plates and struts),
-    const doors = [];
-    for (const side of [-1, 1]) {
-      box(group, paint, 0.05, 0.2, 0.5, side * w * 0.47, 1.19, -L * 0.84).userData.prop = 'wing'; // its end plates,
-      { const strut = box(group, paint, 0.07, 0.36, 0.16, side * w * 0.3, 1.07, -L * 0.82); strut.rotation.x = 0.3; strut.userData.prop = 'wing'; } // and its struts
-      box(group, paint, 0.3, 0.16, L * 0.3, side * B * 0.34, 0.98, -L * 0.48);            // an air box on each shoulder,
-      box(group, trim, 0.26, 0.12, 0.03, side * B * 0.34, 0.98, -L * 0.33 + 0.01);        // its mouth open to the front
-      box(group, LAMP, w * 0.2, 0.04, 0.04, side * w * 0.3, 0.42, L * 0.99);              // slits of lamps in the nose
-      box(group, TAIL, B * 0.26, 0.14, 0.05, side * B * 0.3, 0.7, -L - 0.02);
-      for (const x of [0.06, 0.16]) disc(group, chrome, 0.04, 0.1, side * x, 0.42, -L - 0.02); // four pipes
-      box(group, trim, 0.1, 0.1, 1.0, side * (w / 2 - 0.05), 0.72, L * 0.6);              // black flares over the wheels,
-      box(group, trim, 0.12, 0.12, 1.12, side * (w / 2 - 0.06), 0.82, -L * 0.6);
-      wheel(group, 0.31, 0.28, side * (w / 2 - 0.15), 0.31, L * 0.6, ALLOY);
-      wheel(group, 0.36, 0.42, side * (w / 2 - 0.22), 0.36, -L * 0.6, ALLOY);             // and enormous back tyres
-      // the door: hinged at its front, it swings straight up
-      box(group, trim, 0.02, 0.34, L * 0.46, side * (B / 2 + 0.005), 0.6, -L * 0.03);     // (the way in, behind it)
-      const door = new THREE.Group();
-      door.position.set(side * (B / 2 + 0.02), 0.5, L * 0.22);
-      group.add(door);
-      box(door, paint, 0.03, 0.36, L * 0.5, 0, 0.1, -L * 0.25);
-      prism(door, glass, 0.03, [[L * 0.04, 0.27], [-L * 0.19, 0.5], [-L * 0.46, 0.51], [-L * 0.5, 0.27]]);
-      prism(door, trim, 0.035, [[-L * 0.1, 0.22], [-L * 0.46, 0.25], [-L * 0.46, 0.05]]); // (the duct let into it)
-      doors.push(door);
-    }
-    group.userData = {
-      body,
-      animate: (t) => { // (shut for a while, then up, held, and down again)
-        const open = Math.max(0, Math.min(1, Math.sin(t * 0.7) * 1.6 + 0.2)), ease = open * open * (3 - 2 * open);
-        for (const door of doors) door.rotation.x = ease * 0.95;
-      },
-    };
     return group;
   },
 
