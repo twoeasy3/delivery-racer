@@ -17,7 +17,7 @@ import { Game } from '../game.js';
 import { Player } from '../player.js';
 import { Traffic } from '../traffic.js';
 import { scene, tmp, clearGroup } from './scene.js';
-import { carMesh, trafficMeshes } from './cars.js';
+import { carMesh, trafficMeshes, playerAirborne } from './cars.js'; // (playerAirborne: no spray under a car jumping the river, CHECKLIST 436)
 import { Particles, rnd, perSecond } from './effects.js';
 import './boatModels.js'; // (the boats, added to MODELS)
 
@@ -184,7 +184,7 @@ export const syncWater = (now, dt) => {
     carMesh.rotation.z = r.roll;
     carMesh.rotation.x += r.pitch - depth * 0.05 * Math.min(1, Player.speed / 30);
     rolled = true;
-    if (Player.active && Player.speed > C.wakeFrom && depth > 0.2) for (let k = perSecond(60, dt); k > 0; k--) { // (once a frame at 60 Hz, as it was)
+    if (Player.active && Player.speed > C.wakeFrom && depth > 0.2 && !playerAirborne()) for (let k = perSecond(60, dt); k > 0; k--) { // (once a frame at 60 Hz, as it was)
       spray(Player.s, Player.lat, Player.hw, Player.hl, Player.speed, 1);
       // (the Amphibious Tank shoulders a big bow wave ahead of it: as much white water again, thrown wider)
       for (let n = 1; n < (Player.rageTank?.bowWave || 1); n++) spray(Player.s + 0.6 * n, Player.lat, Player.hw + 0.5 * n, Player.hl + 0.4, Player.speed * (1 + 0.25 * n), 1);
