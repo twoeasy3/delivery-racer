@@ -190,8 +190,8 @@ export const CONFIG = {
   // after a drop, afloat, or for traffic and racers (traffic.js has none of this). `tune` multiplies all of it (0: as
   // before 421; ?lanescrub=<x> sets it for a visit). MEASURED (.lanescrub-check --table, stock ECU): one lane at top
   // speed, flat out, dips 0.7 (Mini) to 2.6 m/s (Polygon Truck): 3 to 7% of top speed, 1.3 m/s for the Sportscompact,
-  // won back in a fraction of a second; two lanes 2.0 to 6.1 m/s. From half top speed it costs 0.2 to 0.8 m/s more than
-  // before over a change and 0.02 to 0.07 s more to top speed. Hands off at top speed: 0.24 to 0.75 m/s, as before
+  // won back in a fraction of a second; two lanes 2.0 to 6.1 m/s. From half top speed it costs 0.16 to 0.99 m/s more than
+  // before over one or two lanes and 0.01 to 0.07 s more to top speed. Hands off at top speed: 0.24 to 0.75 m/s, as before
   trueSpeed: { on: true, least: 0.4, most: 2.5, laneScrub: 1.2,
     driven: { cancel: 1, lose: 4, most: 6, from: 0.8, full: 0.95, least: 0.05, tune: 1 } },
   cornering: { grip: 22 },   // m/s^2 of cornering a car of weight 1 and agility 1 holds
