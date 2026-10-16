@@ -48,7 +48,6 @@ import { syncRadiation } from './render/radiation.js';
 import { Radiation } from './radiation.js';
 import { Replay } from './replay.js';
 import './render/replayui.js';
-import './render/cosmeticearn.js'; // (earned cosmetics, CHECKLIST 437: what a delivery earns, given at the end of a run)
 import { syncGhost, clearGhost } from './render/ghostcar.js';
 import { syncBattle } from './render/battle.js';
 import { raceCamera, raceAudio, syncRaceWatch, auditCameras } from './render/racewatch.js';

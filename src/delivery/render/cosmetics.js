@@ -15,18 +15,19 @@
 // (Progress.exportCode / tidy) lives in progress.js, ownership is NOT carried in a save code; it stays in this browser.
 // The list is kept in localStorage under KEY, a JSON array of 'slot:id' keys, read once, cleaned, every access in try/catch, not
 // written on a test visit (Progress.noSave: held for the visit only), cleared by the menu's Reset progress.
-// ---- EARNED COSMETICS, A STOCK OF EACH (the owner, 16-Oct: "Plates will be earned. Cosmetics will be earned and 1 will be consumed when
-// equipped to a vehicle"; CHECKLIST 437, EARNED-COSMETICS.md). The slots in EARNED_SLOTS are no longer free and have no cash price: each item
-// is held as a COUNT (how many the player has ever been given, render/cosmeticearn.js gives them: medals, crates, tier sets). Equipping one on
-// a car takes one of them; what is free to equip is that count less the cars wearing it (render/cosmeticstock.js counts the wearers from the
-// loadout store, so taking one off, replacing it or resetting a car gives it back by itself: no refund bookkeeping to go wrong). Each
-// earned slot's own 'nothing' look (Stock plate, no prop, Classic kill effect, no glow) stays free and unlimited. The wheels stay free for now.
-// STORAGE: the counts are a second localStorage key, STOCK_KEY { v: 1, n: { key: count }, inf?: true, mig?: 1, claimed: [...], crates: n };
-// the old list (KEY, an array of keys) is still written, as the keys with a count, so an older build (or a rollback) still finds them owned.
-// A key in the old list with no count is read as 1 (a grant made by an older build). inf: "Unlock everything: Absolutely" (unlockall.js):
-// every item unlimited. claimed / crates: render/cosmeticearn.js's ledger (which rewards were given), here so that Reset progress clears it.
-// ownsCosmetic(slot, id) still means "has at least one" (what a render module asks before it draws a choice); the per-car count is
-// render/cosmeticstock.js's. Everything stays outside progress.js and outside the replay fingerprint, as before.
+// ---- EARNED COSMETICS: LIKE CARDS (the owner, 16-Oct: "Plates will be earned. Cosmetics will be earned and 1 will be consumed when
+// equipped to a vehicle"; then: "treat cosmetics exactly like cards: if the player has 1 of it, it is unlocked. Equipping it takes 1 from
+// their stock. Unequipping gives it back"; CHECKLIST 437, EARNED-COSMETICS.md). The slots in EARNED_SLOTS have no cash price: each item is
+// a COUNT, how many the player has been given. They are given ONLY through awardCosmetic() below, the one entry point, which the card packs
+// call (packs.js: a pack's `cosmetics` list in packs.json, the owner's to place); where they drop is the owner's, nothing here decides it.
+// The HAND (what can still be equipped) is that count less the cars wearing it (render/cosmeticstock.js counts the wearers from the loadout
+// store, so taking one off, replacing it or resetting a car puts it back in the hand by itself). Each earned slot's own 'nothing' look
+// (Stock plate, no prop, Classic kill effect, no glow) stays free and unlimited. The wheels stay free for now.
+// STORAGE: a second localStorage key, STOCK_KEY { v: 1, n: { key: count }, inf?: true, mig?: 1 }; the old list (KEY, an array of keys) is
+// still written, as the keys with a count, so an older build (or a rollback) still finds them owned. A key in the old list with no count is
+// read as 1. inf: "Unlock everything: Absolutely" (unlockall.js): every item unlimited.
+// ownsCosmetic(slot, id) means "has at least one" (unlocked: what a render module asks before it draws a choice). Everything stays outside
+// progress.js and outside the replay fingerprint, as before.
 import { Progress } from '../progress.js';
 import * as Store from './loadoutstore.js';
 export const KEY = 'delivery.cosmetics';
@@ -69,9 +70,7 @@ const cleanCounts = (n) => {
 };
 const cleanStock = (raw) => {
   const v = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
-  return { v: 1, n: cleanCounts(v.n), ...(v.inf === true ? { inf: true } : {}), ...(v.mig ? { mig: 1 } : {}),
-    claimed: [...new Set((Array.isArray(v.claimed) ? v.claimed : []).filter(k => typeof k === 'string' && /^[A-Za-z0-9:_.-]{1,80}$/.test(k)))].slice(0, 2000),
-    crates: Math.max(0, Math.min(100000, Math.floor(Number(v.crates) || 0))) };
+  return { v: 1, n: cleanCounts(v.n), ...(v.inf === true ? { inf: true } : {}), ...(v.mig ? { mig: 1 } : {}) };
 };
 let stock = null;
 const read = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
@@ -120,14 +119,25 @@ export const grantCosmetics = (keys, n = 1) => {
 // make a count at least n (the migration: render/cosmeticstock.js)
 export const topUpCosmetic = (key, n) => { const s = load(); if (KEY_RE.test(key) && (s.n[key] || 0) < n && (s.n[key] || Object.keys(s.n).length < MOST)) { s.n[key] = Math.min(MOST_EACH, n); store(); } };
 export const setUnlimited = (on) => { const s = load(); if (on) s.inf = true; else delete s.inf; store(); };
-// the earn ledger (render/cosmeticearn.js) and the migration mark: read and written here, so Reset progress clears them too
-export const stockMeta = () => { const s = load(); return { claimed: s.claimed, crates: s.crates, mig: !!s.mig }; };
-export const setStockMeta = ({ claimed, crates, mig } = {}) => {
-  const s = load();
-  if (claimed) s.claimed = cleanStock({ claimed }).claimed;
-  if (crates !== undefined) s.crates = cleanStock({ crates }).crates;
-  if (mig) s.mig = 1;
-  store();
+// the migration mark (render/cosmeticstock.js migrateStock): here, so Reset progress clears it too
+export const stockMeta = () => ({ mig: !!load().mig });
+export const setStockMeta = ({ mig } = {}) => { const s = load(); if (mig) s.mig = 1; store(); };
+// ==== THE ONE ENTRY POINT: award cosmetic X (n of it). Called by the card packs (packs.js Packs.open, a pack's `cosmetics` list) and the debug
+// switch (?czgive=, render/cosmeticsui.js). key: 'plate:hex' (or slot and id apart). Returns { key, slot, id, name, n, count } or null (a key of
+// the wrong shape). An id the registry does not hold yet is kept anyway (its module may load later; an unknown one is simply never worn).
+// Tells onAward listeners and dispatches window 'cosmeticaward' (detail: the award).
+const awardListeners = new Set();
+export const onAward = (fn) => { awardListeners.add(fn); return () => awardListeners.delete(fn); };
+export const awardCosmetic = (key, n = 1, { source = null } = {}) => {
+  const k = String(key || '');
+  if (!KEY_RE.test(k)) return null;
+  const many = Math.max(1, Math.min(MOST_EACH, Math.floor(Number(n)) || 1));
+  grantCosmetics([k], many);
+  const [slot, id] = k.split(':'), c = cosmeticOf(slot, id);
+  const award = { key: k, slot, id, name: c?.name || id, n: many, count: load().n[k] || 0, source };
+  for (const fn of [...awardListeners]) { try { fn(award); } catch { /* (a listener's own) */ } }
+  try { window.dispatchEvent?.(new CustomEvent('cosmeticaward', { detail: award })); } catch { /* (no window) */ }
+  return award;
 };
 // Reset progress: all given cosmetics forgotten (the free ones stay free)
 export const clearCosmetics = () => {

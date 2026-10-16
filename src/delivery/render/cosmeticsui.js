@@ -37,9 +37,8 @@ import { onLoadout } from './loadout.js';
 import * as Store from './loadoutstore.js'; // (per car over a default: the switch, the marks, Reset car, Copy to all)
 import { carInUse, CARS } from '../cars.js';
 import { Game } from '../game.js';
-import { ownsCosmetic, cosmeticCount, isFreeCosmetic, isEarnedSlot, grantCosmetics, cosmeticOf } from './cosmetics.js';
+import { ownsCosmetic, cosmeticCount, isFreeCosmetic, isEarnedSlot, awardCosmetic, cosmeticOf } from './cosmetics.js';
 import { usage, spare, diffUsage, migrateStock, carName as carNameOf } from './cosmeticstock.js'; // (earned cosmetics, CHECKLIST 437: one a car)
-import { settleEarnings, hintFor } from './cosmeticearn.js';
 import { Progress } from '../progress.js';
 import { KILL_FX, KILL_IDS, shownKill, setKill } from './killfx.js';
 import { KillPreview } from './killpreview.js';
@@ -241,7 +240,7 @@ const buildPlate = () => {
   reset.addEventListener('click', () => { resetPlate(tgt()); syncPlateInput(); flash(plateMsg, ''); Sound.play('menuMove', 0.4); });
   return make('section', 'cz-section cz-plate',
     make('h2', '', 'Number plate', tagFor('plate')),
-    make('p', 'cz-note', 'Designs are earned (medals, crates); the text is yours. Each car wearing a design uses one: x2 = two spare.'),
+    make('p', 'cz-note', 'Designs are earned, like cards; the text is yours. x2 = two in your hand: equipping takes one, taking it off gives it back.'),
     make('h3', '', 'Design'), plateSwitch, plateRow,
     make('h3', '', 'Your plate'),
     make('div', 'cz-textrow', plateInput, ok, plateChip), plateMsg,
@@ -266,7 +265,7 @@ const buildKill = () => {
   reset.addEventListener('click', () => { setKill('classic', tgt()); Sound.play('menuMove', 0.4); });
   return make('section', 'cz-section cz-kill',
     make('h2', '', 'Kill effect', tagFor('kill')),
-    make('p', 'cz-note', 'Every explosion, and your package trail. Earned; one a car (not per kill).'),
+    make('p', 'cz-note', 'Every explosion, and your package trail. Earned, like cards: one in your hand for each car.'),
     killRow, make('div', 'cz-foot', killStatus, reset));
 };
 const killShown = () => {
@@ -641,9 +640,9 @@ const showCar = () => {
   if (built) { const at = renderTabs(); if (at !== openSlot) openSection(at); shown(); plateShown(); propShown(); killShown(); scopeShown(); panels[openSlot]?.refresh(); }
 };
 
-// ---- EARNED COSMETICS (CHECKLIST 437, EARNED-COSMETICS.md): each earned item is a stock; a car wearing one uses one (render/cosmeticstock.js).
-// Every chip of an earned slot shows how many are SPARE (x2), or is greyed with how to earn it; a choice that would use one is worn at once
-// (a free try-on) and a sheet asks to confirm it: Equip keeps it, Cancel (or Escape, or Back) puts the whole look back as it was.
+// ---- EARNED COSMETICS, LIKE CARDS (CHECKLIST 437, EARNED-COSMETICS.md): 1 of it = unlocked; equipping takes 1 from the hand, taking it off
+// gives it back (render/cosmeticstock.js). Every chip of an earned slot shows how many are in the HAND (x2), or is greyed ('Not earned yet');
+// a choice that takes one is worn at once (a free try-on) and a light sheet asks to confirm: Equip keeps it, Cancel (Escape, Back) puts it back.
 const countChips = (row, slot, attr) => {
   if (!row || !isEarnedSlot(slot)) return;
   const use = usage();
@@ -655,10 +654,10 @@ const countChips = (row, slot, attr) => {
     if (!tag) { tag = make('span', 'cz-count'); b.insertBefore(tag, b.querySelector('.cz-tick')); }
     const n = cosmeticCount(slot, id), sp = spare(slot, id, use);
     tag.hidden = false;
-    tag.textContent = n === Infinity ? '∞' : n === 0 ? 'locked' : 'x' + sp;
+    tag.textContent = n === Infinity ? '∞' : n === 0 ? 'Not earned' : 'x' + sp;
     b.classList.toggle('locked', n === 0);
     b.classList.toggle('nospare', n !== Infinity && n > 0 && sp === 0);
-    b.title = n === 0 ? hintFor(slot, id) : n === Infinity ? 'Unlimited' : sp + ' spare of ' + n + ' earned (on ' + (n - sp) + (n - sp === 1 ? ' car)' : ' cars)');
+    b.title = n === 0 ? 'Not earned yet' : n === Infinity ? 'Unlimited' : sp + ' in your hand, ' + (n - sp) + ' on cars';
   }
 };
 let sheet = null, sheetDone = null;
@@ -689,10 +688,9 @@ const showSheet = ({ title, lines = [], okLabel = 'OK', cancelLabel = null, done
   requestAnimationFrame(() => ok.focus({ preventScroll: true }));
 };
 const cars = (ids) => (ids.length > 3 ? ids.slice(0, 3).map(carNameOf).join(', ') + ' and ' + (ids.length - 3) + ' more' : ids.map(carNameOf).join(', '));
-const plural = (n, one, many = one + 's') => n + ' ' + (n === 1 ? one : many);
 // a locked chip: what it is and how it is earned
 const lockedSheet = (slot, id) => {
-  showSheet({ title: (cosmeticOf(slot, id)?.name || id) + ': not earned yet', lines: [hintFor(slot, id), 'Earned cosmetics are a stock: each car that wears one uses one, and you get it back when you take it off.'], okLabel: 'OK' });
+  showSheet({ title: (cosmeticOf(slot, id)?.name || id), lines: ['Not earned yet.', 'Cosmetics are earned like cards. Equipping one takes it from your hand; taking it off gives it back.'], okLabel: 'OK' });
   Sound.play('menuMove', 0.4);
 };
 // do a change of the look (apply: returns false when it did nothing); if it puts an earned item on more cars, wear it and ask
@@ -706,24 +704,24 @@ const gate = (apply, { title = null, done = null } = {}) => {
     Store.restore(before);
     const u = d.short[0], free = Math.max(0, u.count - u.before), on = (was.get(u.key) || []);
     showSheet({ title: 'Not enough ' + u.name, lines: [
-      'This needs ' + plural(u.more, 'more') + ' (one a car' + (cid() ? '' : ': every car in your garage on All cars') + '). You have ' + free + ' spare of ' + u.count + ' earned.',
-      on.length ? 'Worn on: ' + cars(on) + '. Take one off a car to free it.' : null,
-      hintFor(u.slot, u.id)], okLabel: 'OK' });
+      'This needs ' + u.more + ' (one for each car wearing it); you have ' + free + ' in your hand.',
+      on.length ? 'On: ' + cars(on) + '. Take one off a car to get it back.' : null], okLabel: 'OK' });
     Sound.play('menuMove', 0.4);
     return false;
   }
-  const lines = d.uses.map(u => 'Uses ' + plural(u.more, u.name) + (u.more > 1 ? ' (' + plural(u.more, 'car') + ')' : '') + ': x' + Math.max(0, u.count - u.before) + ' spare now, x' + (u.count - u.after) + ' after.');
-  for (const g of d.gives) lines.push(plural(-g.more, g.name) + ' back to your stock (+' + (-g.more) + ').');
+  const lines = d.uses.map(u => 'Takes ' + u.more + ' from your hand: x' + Math.max(0, u.count - u.before) + ' now, x' + (u.count - u.after) + ' after.');
+  for (const g of d.gives) lines.push(g.name + ' goes back to your hand (+' + (-g.more) + ').');
   const u = d.uses[0];
-  showSheet({ title: title || (d.uses.length === 1 ? 'Equip ' + u.name + ' on ' + who + '?' : 'Equip on ' + who + '?'), lines: [...lines, 'You get it back whenever you take it off.'], okLabel: 'Equip', cancelLabel: 'Cancel',
+  showSheet({ title: title || (d.uses.length === 1 ? 'Equip ' + u.name + ' on ' + who + '?' : 'Equip on ' + who + '?'), lines, okLabel: 'Equip', cancelLabel: 'Cancel',
     done: (ok) => { if (ok) { Sound.play('menuPick', 0.4); done?.(); } else Store.restore(before); } });
   return true;
 };
-// ?czgive=plate:ev*3,plate:classic (a test visit, ?car=, or the dev server only): items given for a picture
+// THE DEBUG SWITCH ?czgive=plate:ev*3,plate:classic (a test visit, ?car=, or the dev server only): awarded through the one entry point
+// (render/cosmetics.js awardCosmetic), as a pack's cosmetic card is
 const visitGive = () => {
   const give = new URLSearchParams(location.search).get('czgive');
   if (!give || !(Progress.noSave || import.meta.env?.DEV)) return;
-  for (const part of give.split(',')) { const [key, n] = part.split('*'); grantCosmetics([key], Number(n) || 1); }
+  for (const part of give.split(',')) { const [key, n] = part.split('*'); awardCosmetic(key, Number(n) || 1, { source: 'debug' }); }
 };
 
 export const Cosmetics = {
@@ -732,8 +730,7 @@ export const Cosmetics = {
   open({ car = null, evil = !!Game.evil, onClose = null } = {}) {
     if (state.open || !root) return;
     if (!built) build();
-    let earned = [];
-    try { visitGive(); migrateStock(); earned = settleEarnings(); } catch (error) { console.warn('cosmetic stock: ' + (error?.message || error)); } // (earned cosmetics: what is due is given as the screen opens)
+    try { visitGive(); migrateStock(); } catch (error) { console.warn('cosmetic stock: ' + (error?.message || error)); } // (earned cosmetics: the debug switch, and the once-a-browser migration)
     const use = car || carInUse();
     state = { open: true, car: use.silhouette || use.id === 'null-car' ? CARS.find(c => !c.silhouette) : use, evil, onClose, inMenu: Game.inMenu, close: false, scope: new URLSearchParams(location.search).get('scope') === 'all' ? 'all' : 'car' }; // (?scope=all: 'All cars', for a picture)
     Game.inMenu = true; // (the menu's keys leave it alone)
@@ -751,7 +748,6 @@ export const Cosmetics = {
     if (openSlot === 'kill' && KillPreview.hold >= 0) setTimeout(() => { if (state.open) testKill(); }, 1500); // (?killtest=<s>: tried once the car has landed, held at <s> s)
     if (q.get('platetype') !== null) { plateInput.value = q.get('platetype'); plateInput.dispatchEvent(new Event('input')); commitText(); } // (?platetype=TEXT: types it and confirms, for a picture of the filter's message)
     requestAnimationFrame(() => (root.querySelector('.cz-row .cz-chip.equipped') || closeBtn)?.focus({ preventScroll: true }));
-    if (earned.length) flash(tabMsg, 'New: ' + earned.map(g => g.name).join(', ') + '.');
     const tap = q.get('cztap'); // (?cztap=<item id>: taps that chip in the open tab once the screen is up, for a picture of the sheet)
     if (tap) setTimeout(() => { if (!state.open) return; const b = [...root.querySelectorAll('.cz-section:not([hidden]) .cz-chip')].find(x => [x.dataset.plate, x.dataset.kill, x.dataset.prop, x.dataset.item, x.dataset.set].includes(tap)); b?.click(); }, Number(q.get('cztapat')) || 1200);
   },

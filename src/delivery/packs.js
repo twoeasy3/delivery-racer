@@ -36,6 +36,7 @@
 // The Shop's one-line words for a pack are GENERATED from its rules (describePack: never stale); a `blurb` overrides.
 // ============================================================================
 import packData from './packs.json';
+import { awardCosmetic, COSMETICS } from './render/cosmetics.js'; // (COSMETIC CARDS, CHECKLIST 437: a pack's `cosmetics` list awards through the one entry point; render-side, and packs.js is not in the replay fingerprint)
 import eventData from './events.json';
 import tierData from './tiers.json';
 import * as Cars from './cars.js';
@@ -576,6 +577,7 @@ export const packProblems = (data = packData) => {
     if (!whole(p.size, 1)) say('its size is not a whole number of 1 or more');
     if (p.featured && typeof p.featured === 'object') for (const k of ['upgradeChance', 'featuredChance']) if (p.featured[k] !== undefined && !(typeof p.featured[k] === 'number' && p.featured[k] >= 0 && p.featured[k] <= 1)) say('featured.' + k + ' is not a chance from 0 to 1');
     if (!['all', 'evergreen'].includes(p.pool)) say('its pool is not "all" or "evergreen"');
+    for (const line of cosmeticProblems(p.cosmetics)) say(line);
     for (const r of Object.keys(p.atLeast || {})) if (rank(r) < 0) say('atLeast names no rarity "' + r + '"');
     if (p.event !== undefined && !events.has(String(p.event))) say('its event "' + p.event + '" is not a special event (events.json special)');
     if (p.featured !== undefined) {
@@ -746,6 +748,45 @@ export const revealProgress = (cards, { owned = (id) => Progress.owns(id) } = {}
   });
 };
 
+// ---- COSMETIC CARDS (CHECKLIST 437): a pack's optional `cosmetics` list in packs.json, [{ "item": "plate:hex" | "any": "plate", "chance": 0..1
+// (default 1), "n": copies (default 1) }]: each rolled on its own when the pack opens. "item" names one cosmetic (slot:id); "any" one at random
+// of that slot's earned items. No pack carries any today: where cosmetics drop is the owner's to place.
+const COSMETIC_KEY = /^[a-z0-9-]{1,40}:[A-Za-z0-9_-]{1,40}$/;
+export const cosmeticProblems = (list) => {
+  if (list === undefined) return [];
+  if (!Array.isArray(list)) return ['"cosmetics" is not a list'];
+  const out = [];
+  list.forEach((e, i) => {
+    const at = 'cosmetics[' + i + ']: ';
+    if (!e || typeof e !== 'object') { out.push(at + 'not an object'); return; }
+    const extra = Object.keys(e).filter(k => !['item', 'any', 'chance', 'n'].includes(k));
+    if (extra.length) out.push(at + 'unknown ' + extra.join(', '));
+    if ((e.item === undefined) === (e.any === undefined)) out.push(at + 'needs "item" (slot:id) or "any" (a slot), one of them');
+    if (e.item !== undefined && !COSMETIC_KEY.test(String(e.item))) out.push(at + '"item" is not slot:id');
+    if (e.any !== undefined && !/^[a-z0-9-]{1,40}$/.test(String(e.any))) out.push(at + '"any" is not a slot name');
+    if (e.chance !== undefined && !(typeof e.chance === 'number' && e.chance >= 0 && e.chance <= 1)) out.push(at + '"chance" is not 0 to 1');
+    if (e.n !== undefined && !(Number.isInteger(e.n) && e.n >= 1)) out.push(at + '"n" is not a whole number of 1 or more');
+  });
+  return out;
+};
+export const cosmeticEntries = (id, override = null) => {
+  const list = override ?? PACKS[id]?.cosmetics;
+  if (!Array.isArray(list) || cosmeticProblems(list).length) return [];
+  return list.map(e => ({ item: e.item ?? null, any: e.any ?? null, chance: e.chance ?? 1, n: e.n ?? 1 }));
+};
+const anyCosmetic = (slot, random) => { const pool = COSMETICS.filter(c => c.slot === slot && c.earned); if (!pool.length) return null; const c = pool[Math.min(pool.length - 1, Math.floor(random() * pool.length))]; return c.slot + ':' + c.id; };
+// &cosmetics=plate:ev:1x2,any-plate:0.5 (with ?pack=): the pack's cosmetic list for the visit (item[:chance][xn], or any-<slot>[:chance][xn])
+export const debugCosmetics = (params) => {
+  const raw = params.get('cosmetics');
+  if (!raw || raw === 'all') return null;
+  return raw.split(',').filter(Boolean).map(t => {
+    const [body, n] = t.split('x'), parts = body.split(':');
+    const any = parts[0].startsWith('any-') ? parts[0].slice(4) : null;
+    const chance = Number(any ? parts[1] : parts[2]);
+    return { ...(any ? { any } : { item: parts[0] + ':' + parts[1] }), ...(Number.isFinite(chance) ? { chance } : {}), ...(Number(n) >= 1 ? { n: Math.floor(Number(n)) } : {}) };
+  });
+};
+
 export const Packs = {
   data: packData,
   // the packs held, by pack id (an old save's 'special:<event>' keys turned into ids: packid.js migrateHeld; Progress
@@ -804,6 +845,7 @@ export const Packs = {
   amountOverride: null,
   featuredOverride: null, // (the debug ?featured=: debugFeatured, for a visit; never saved)
   doubleOverride: null, baseOverride: null, // (the debug &double=0.5&base=2: debugDouble, for a visit; never saved)
+  cosmeticsOverride: null, // (the debug ?pack=<id>&cosmetics=plate:ev:1x2: debugCosmetics, the pack's cosmetic list for a visit; never saved)
   markMaxed: null, markOwned: null, // (the debug ?maxed= / ?owned=: debugMarks, for a visit; never saved)
   // every featured entry of a pack exhausted (the owner, 12-Oct: "If a player has every featured card in a pack greyed
   // out, don't allow them to purchase it")? false for a pack with no featured list. list: the entries (else featuredOf)
@@ -843,12 +885,21 @@ export const Packs = {
       if (c.given < (c.n ?? 1) && !c.maxed) c.cut = c.n ?? 1; // (the stack as dealt; n is what was given)
       if (c.cut) c.n = c.given;
     }
+    // COSMETIC CARDS (CHECKLIST 437): each entry of the pack's `cosmetics` list (packs.json, the owner's to place) rolled on its own chance;
+    // a hit is awarded through render/cosmetics.js awardCosmetic (the one entry point) and shown on the reveal under the blueprint cards
+    const cosmetics = [];
+    for (const e of cosmeticEntries(id, this.cosmeticsOverride)) {
+      if (!(random() < e.chance)) continue;
+      const key = e.item || anyCosmetic(e.any, random);
+      const a = key ? awardCosmetic(key, e.n, { source: 'pack:' + id }) : null;
+      if (a) cosmetics.push(a);
+    }
     const log = (Progress.data.packLog ||= []);
-    log.unshift({ kind: id, cards: cards.map(c => ({ car: c.car, rarity: c.rarity, ...(c.key ? { key: true } : {}), ...(c.featured ? { featured: true } : {}) })) });
+    log.unshift({ kind: id, cards: cards.map(c => ({ car: c.car, rarity: c.rarity, ...(c.key ? { key: true } : {}), ...(c.featured ? { featured: true } : {}) })), ...(cosmetics.length ? { cosmetics: cosmetics.map(a => a.key + (a.n > 1 ? '*' + a.n : '')) } : {}) });
     log.length = Math.min(log.length, Math.max(0, packData.log ?? 20));
     Progress.save();
     window.dispatchEvent?.(new Event('packschange'));
-    return { kind: id, id, from: spec.event ?? null, cards, ...(packHunt(id) ? { car: car || huntCarOf(id) } : {}) }; // (car: a hunt pack's, for its art on the reveal)
+    return { kind: id, id, from: spec.event ?? null, cards, cosmetics, ...(packHunt(id) ? { car: car || huntCarOf(id) } : {}) }; // (car: a hunt pack's, for its art on the reveal)
   },
   // a Career level delivered (Game.finish). firstTime: never delivered before, on either side. The pack's name, or ''
   // (the pack: the one whose givenBy.career lists the level: careerPack)
