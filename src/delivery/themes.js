@@ -223,7 +223,7 @@ export const THEMES = {
 // polished tiled floor; the level's standing water ("waterPatches") is freshly mopped stretches
 THEMES.mall = { sky: 0x9fc4e8, ground: 0x6f7174, road: 0x3a3d42, scenery: 'mall', unmarked: true, bare: true, lit: true,
   sets: ['approach', 'fashion', 'atrium', 'foodcourt', 'escalators', 'electronics', 'kids', 'dock'], // (its halls, what a zone's scenery can be: the car park outside, then the halls) // (unmarked and bare: no lane lines, no ruts: the floor is tiles; the car park's lines are the theme's own)
-  standingWater: { say: 'wetFloor', water: 0x5f7a8c, opacity: 0.45, edge: 0xdfe9ef, pool: 0xb4c4cc }, // (a level's standing water is a MOPPED floor: its warning, and a grey wet sheen, not a blue pool: render/hazards.js)
+  standingWater: { say: 'wetFloor', patchy: true, water: 0x6f7c86, opacity: 0.16, edge: null, puddle: ['#5a6268', '#68717a', '#8a9095'], poolOpacity: 0.5, sheen: 0.3 }, // (a level's standing water is a freshly MOPPED floor, not a flood: no sheet, no rim, faint neutral puddles with dry gaps and a soft gloss: render/hazards.js)
   pad: 'travelator', laneEnd: 'mall', // (a boost pad is a travelator, a dead end a mall shutter or a back-of-house wall: render/lanegimmicks.js, obstacleModels.js)
   tunnel: { lit: true, shell: false, camHeight: 6.5, camBack: 13, wall: 0xf1ede6, roof: 0xf8f6f1, lamp: 0xffffff, face: 0xe4dfd6,
     heights: { fashion: 8.5, atrium: 16, foodcourt: 10, escalators: 12, electronics: 8.5, kids: 10 } },

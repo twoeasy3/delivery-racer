@@ -12,7 +12,7 @@ const seeded = (seed) => () => ((seed = (seed * 1103515245 + 12345) % 2147483648
 
 // a puddle's picture: lobes of soft-edged water overlapping into one irregular pool, never reaching the
 // picture's edge; or (sheen) the light on it: a few pale streaks and glints, inside the same shape
-export const puddleTexture = (seed, sheen) => {
+export const puddleTexture = (seed, sheen, colours = ['#4f86a6', '#6fa3bf', '#a9cbdc']) => { // (colours: deep middle, middle, wet edge)
   const N = 192, canvas = document.createElement('canvas'), random = seeded(seed);
   canvas.width = canvas.height = N;
   const c = canvas.getContext('2d');
@@ -36,9 +36,9 @@ export const puddleTexture = (seed, sheen) => {
   c.globalCompositeOperation = 'source-in';
   if (!sheen) {
     const depth = c.createRadialGradient(N / 2, N / 2, 0, N / 2, N / 2, N * 0.5);
-    depth.addColorStop(0, '#4f86a6');
-    depth.addColorStop(0.55, '#6fa3bf');
-    depth.addColorStop(1, '#a9cbdc');
+    depth.addColorStop(0, colours[0]);
+    depth.addColorStop(0.55, colours[1]);
+    depth.addColorStop(1, colours[2]);
     c.fillStyle = depth;
     c.fillRect(0, 0, N, N);
   } else {
