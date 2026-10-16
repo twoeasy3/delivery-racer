@@ -2,7 +2,7 @@
 // is a plain obstacle in another shape and nothing more. So: every kind a theme names is a real obstacle kind;
 // what it stands in for and what stands in cost the same (CONFIG.obstacleKinds); and on every level of such a
 // theme, loaded with the theme's obstacles and again without, the same obstacles are in the same places with
-// the same hitboxes, only their kinds differing. Headless.
+// the same hitboxes, only their kinds differing (a kind in collision.js OWN_BOX, the steelworks', has a bigger box of its own). Headless.
 //   node scripts/.obstacles-check.mjs
 import { boot } from './delivery-headless.mjs';
 
@@ -49,7 +49,10 @@ try {
       if (!a || !b) { wrong++; continue; }
       if (a.kind === b.kind) continue; // (not the theme's doing: and what a gimmick puts out at random need not match)
       swapped++;
-      if ((map?.[b.kind] !== a.kind && drifting?.[b.kind] !== a.kind) || !same({ ...a, kind: 0 }, { ...b, kind: 0 })) wrong++;
+      // (the same place and size; a kind with a box of its own, bigger than its plain kind's, the same place only: collision.js
+      // OWN_BOX, the steelworks' heavy-industry obstacles, at the plain kind's cost all the same)
+      const box = (o) => g.Collision.ownBox?.has(a.kind) ? { ...o, kind: 0, hw: 0, hl: 0, height: 0 } : { ...o, kind: 0 };
+      if ((map?.[b.kind] !== a.kind && drifting?.[b.kind] !== a.kind) || !same(box(a), box(b))) wrong++;
     }
     check(!wrong && themed.length === plain.length, `${level.id} (${level.theme}): ${swapped} of its ${themed.length} obstacles are the theme's own, each where the plain one was and the same size` + (wrong ? ` (${wrong} are not)` : ''));
   }

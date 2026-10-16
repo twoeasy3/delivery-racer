@@ -282,7 +282,12 @@ export const Collision = (() => {
   for (const [kind, like] of Object.entries({ planter: 'bale', palmPot: 'bale', kiosk: 'bale', bench: 'crate', playBlock: 'crate', bin: 'cone' })) SIZE[kind] = SIZE[like]; // (the mall's set dressing)
   SIZE.handrail = [0.12, 1.5, 1.0]; // a boost pad's handrail section (lanegimmicks.js): as thin as the rail, 3 m long (a cone's cost: config.js)
   for (const [kind, like] of Object.entries({ barrierBlock: 'barrier', cableReel: 'crate', sandPile: 'bale', trafficDrum: 'cone', pipePallet: 'crate', worksSign: 'sign' })) SIZE[kind] = SIZE[like]; // (the roadworks')
-  for (const [kind, like] of Object.entries({ ingotStack: 'crate', steelCoil: 'bale', hotSign: 'cone', rebarBundle: 'barrier' })) SIZE[kind] = SIZE[like]; // (the steelworks')
+  // the steelworks' own: the plain kinds' COST (config.js) on bigger boxes of their own (the owner, 16-Oct: "The obstacles are too
+  // small again"): heavy industry's sizes, each within a lane with room beside it (render/themes/steelworksModels.js
+  // STEELWORKS_SIZES draws them at these: scripts/.steelworks-check.mjs holds the two equal)
+  Object.assign(SIZE, { ingotStack: [1.2, 0.9, 1.6], steelCoil: [1.1, 0.9, 1.95], hotSign: [0.6, 0.6, 2.4], rebarBundle: [1.5, 0.7, 1.4] });
+  // (a theme's kinds with a box of their own, not their plain kind's: scripts/.obstacles-check.mjs lets these alone differ in size)
+  const OWN_BOX = new Set(['ingotStack', 'steelCoil', 'hotSign', 'rebarBundle']);
   for (const [kind, like] of Object.entries({ velvetRope: 'barrier', slotMachine: 'crate', luggageCart: 'bale', casinoDie: 'cone' })) SIZE[kind] = SIZE[like]; // (the Las Vegas Strip's)
   for (const [kind, like] of Object.entries({ ticketGate: 'crate', scrubber: 'bale', trackLamp: 'cone', railTrolley: 'crate', infoTotem: 'sign' })) SIZE[kind] = SIZE[like]; // (the metro's)
   SIZE.trackBarrier = SIZE.railBarrier; // the metro's track-work barrier (railBarrier's box: wholly inside a passing train)
@@ -1027,5 +1032,5 @@ export const Collision = (() => {
     }
   };
 
-  return { get bodies() { return getBodies(); }, obstacles, loaders, loadLevel, resetObstacles, updateObstacles, atRoadLevel, check, overlap, size: SIZE };
+  return { get bodies() { return getBodies(); }, obstacles, loaders, loadLevel, resetObstacles, updateObstacles, atRoadLevel, check, overlap, size: SIZE, ownBox: OWN_BOX };
 })();

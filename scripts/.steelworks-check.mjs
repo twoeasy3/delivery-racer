@@ -27,15 +27,18 @@ try {
   const { themeNames } = await g.load('render/themes/index.js');
   const { CONFIG } = await g.load('config.js');
   const { steelworks, STEELWORKS_BUILT, CLEAR_OUT, CLEAR_IN } = await g.load('render/themes/steelworks.js');
-  const { TEXTURE_BYTES, TEXTURE_SIDE, STEELWORKS_OBSTACLES } = await g.load('render/themes/steelworksModels.js');
+  const { TEXTURE_BYTES, TEXTURE_SIDE, STEELWORKS_OBSTACLES, STEELWORKS_SIZES } = await g.load('render/themes/steelworksModels.js');
   const { heightOf, tunnelCamera, ceilingAt } = await g.load('render/tunnelshape.js');
   check(!!THEMES.steelworks && !!THEMES.steelworksNight && THEMES.steelworksNight.scenery === 'steelworks', 'the theme and its night are in themes.js, the night drawn as the steelworks');
   check(themeNames().includes('steelworks'), 'its scenery has a file of its own (render/themes/index.js THEME_FILES)');
   check(CONFIG.crossing.trains.includes(THEMES.steelworks.train), 'its crossings\' train (' + THEMES.steelworks.train + ') is one of CONFIG.crossing.trains');
   const map = THEMES.steelworks.obstacles || {};
   for (const [plain, own] of Object.entries(map)) {
+    // (its own box, bigger than the plain kind's, the same as the model is drawn at; within a lane, a car's width to spare beside)
+    const [hw, hl, height] = g.Collision.size[own], [pw, pl, ph] = g.Collision.size[plain];
     check(!!STEELWORKS_OBSTACLES[own] && !!CONFIG.obstacleKinds[own] && JSON.stringify(CONFIG.obstacleKinds[own]) === JSON.stringify(CONFIG.obstacleKinds[plain]) &&
-      JSON.stringify(g.Collision.size[own]) === JSON.stringify(g.Collision.size[plain]), `a ${plain} is a ${own} here: modelled, and the ${plain}'s cost and box (${JSON.stringify(g.Collision.size[own])})`);
+      JSON.stringify(g.Collision.size[own]) === JSON.stringify(STEELWORKS_SIZES[own]) && g.Collision.ownBox.has(own) && hw * 2 <= CONFIG.laneWidth - 0.4 && Math.max(hw, hl, height) >= Math.max(pw, pl, ph) * 0.99 && hw * hl * height > pw * pl * ph,
+      `a ${plain} is a ${own} here: modelled, the ${plain}'s cost, a bigger box of its own ${(hw * 2).toFixed(1)} x ${(hl * 2).toFixed(1)} x ${height} m (the ${plain}'s ${(pw * 2).toFixed(1)} x ${(pl * 2).toFixed(1)} x ${ph}), as drawn, within a lane`);
   }
   for (const id of ['steelworks-run', 'steelworks-night']) {
     const level = g.select(id), G = g.Game, P = g.Player;
