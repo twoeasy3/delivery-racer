@@ -535,6 +535,10 @@
     "name": "Gimmick Road 3",
     "cargo": { "good": "pizza", "evil": "tentacle" }
   },
+  "obstacle-lab": {
+    "name": "Obstacle Lab",
+    "cargo": { "good": "pizza", "evil": "parcel" }
+  },
   "chaos": {
     "name": "Pile-Up Parade",
     "cargo": { "good": "pancakes", "evil": "piranhas" }
