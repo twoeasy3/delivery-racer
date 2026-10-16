@@ -8,7 +8,7 @@
 // a rim is on and shown again after), a lip, the spokes or blades, a centre cap; vertex colours shade it, the material's colour
 // is the set's hub colour. It stands RIM_GAP off the tyre's face (or its tread blocks), over the 4 mm the z-fight finder calls
 // one plane and clear of a design's sidewall ring (5 mm).
-// TURNING: EVERY rim turns with the car, as a real wheel's face does (the owner, 15-Oct: "fix the rims right": the two that turned
+// TURNING: EVERY rim (kind 'speed') turns with the car; a SPINNER (kind 'spin', since the three-part wheel set) turns at SPIN_RATE always; as a real wheel's face does (the owner, 15-Oct: "fix the rims right": the two that turned
 // at a fixed pace, stopped or not, were called spinners; they are now ordinary rims, 'Blade' and 'Twin blade', ids kept). The
 // player's model gets userData.roll (metres rolled, from render/items.js) and each frame the rim turns by the distance over its
 // wheel's radius; with no roll (the garage, the showroom, the Cosmetics screen) it idles at IDLE_RATE. Against the wagon-wheel
@@ -43,12 +43,18 @@ export const RIM_DESIGNS = [
   { id: 'twinspin', name: 'Twin blade', kind: 'speed', n: 2 },
   { id: 'pumpkin', name: 'Pumpkin', kind: 'speed', n: 8, own: true, blur: 0xe8661a },
   { id: 'candycane', name: 'Candy cane', kind: 'speed', n: 5, own: true, blur: 0xe8a0a8 },
+  // SPINNERS (the owner, 15-Oct: "hub colour or rim or spinner"): a hub that keeps turning at SPIN_RATE, stopped or not, whatever the
+  // car does (main's 'Blade spinner' and 'Twin spinner' of CHECKLIST 310, back as their own kind). NEW ids: blade3 / twinspin stay the
+  // speed rims Blade / Twin blade (CHECKLIST 451), so a saved blade3 / twinspin keeps meaning what it has meant since then.
+  { id: 'spinblade', name: 'Blade spinner', kind: 'spin', n: 3 },
+  { id: 'spintwin', name: 'Twin spinner', kind: 'spin', n: 2 },
 ];
 export const rimById = (id) => RIM_DESIGNS.find(d => d.id === id) || RIM_DESIGNS[0];
 // cars that cannot wear a rim (by car id or model): a hoop, tracks, hulls, a hovercraft's skirt, discs that are not wheels; and three whose
 // wheels are their look (the Quad Turbo's own alloys, the Circus Wagon's wooden spokes, a dodgem's hidden castors)
 export const RIM_SKIP = new Set(['monowheel', 'hovercraft', 'snocat', 'quadturbo', 'dodgem', 'circuswagon', 'halftrack', 'tank', 'amphibioustank', 'jetboat', 'trawler', 'jetcar', 'moonrover']);
 
+export const SPIN_RATE = 6;    // rad/s: a spinner, everywhere (stopped, moving, on show)
 export const IDLE_RATE = 1.2;  // rad/s: a rim with no speed to follow (a car on show)
 export const CLAMP = 0.45;     // of the spoke gap: the most a speed rim turns in one frame
 export const BLUR_FROM = 0.18, BLUR_FULL = 0.4; // of the spoke gap per frame: the disc starts to show / is at its thickest
@@ -79,7 +85,10 @@ export const cleanRimChoice = (raw) => {
   }
   return out;
 };
-const askedRim = typeof location !== 'undefined' ? /[?&]wheelrim=(\w+)/.exec(location.search)?.[1] : null; // (?wheelrim=spoke5: every car, for stills; never saved)
+const search = typeof location !== 'undefined' ? location.search : '';
+// ?wheelrim=spoke5 (a rim or a spinner id), or ?wheelhub=rim:<id> / spin:<id> / <colour> (a colour: no rim): every car, for stills; never saved
+const askedHub = /[?&]wheelhub=(\w+)(?::(\w+))?/.exec(search);
+const askedRim = /[?&]wheelrim=(\w+)/.exec(search)?.[1] || (askedHub ? (askedHub[2] && /^(rim|spin)$/.test(askedHub[1]) ? askedHub[2] : 'none') : null);
 export const rimAsked = !!askedRim;
 // the stored rim choice of a car (null: the default), as saved, whatever the visit's ?wheelrim= (for the ownership test in wheelcosmetic.js)
 export const savedRimChoice = (carId = null) => cleanRimChoice(Store.get(carId, 'wheels').rim);
@@ -222,7 +231,8 @@ const BUILD = {
   pumpkin: (f) => pumpkin(f),
   candycane: (f) => candycane(f),
 };
-const BLUR_Z = { spoke5: 0.024, twin10: 0.022, turbine: 0.03, blade3: 0.025, twinspin: 0.031, pumpkin: 0.022, candycane: 0.024 }, BLUR_Z_FLAT = 0.003; // (the blur disc, just over the spokes' faces; under the cap's top)
+BUILD.spinblade = BUILD.blade3; BUILD.spintwin = BUILD.twinspin; // (the spinners: main's geometry of the two, as they were)
+const BLUR_Z = { spoke5: 0.024, twin10: 0.022, turbine: 0.03, blade3: 0.025, twinspin: 0.031, spinblade: 0.025, spintwin: 0.031, pumpkin: 0.022, candycane: 0.024 }, BLUR_Z_FLAT = 0.003; // (the blur disc, just over the spokes' faces; under the cap's top)
 const geos = new Map();
 export const rimGeometry = (id, flat = false) => {
   const key = id + (flat ? ':flat' : '');
@@ -391,7 +401,7 @@ export const addRims = (model, hex, worn = true) => {
       blur.userData.wheelRing = true;
       blur.visible = false;
       mesh.add(blur); // (it turns with the rim: a disc, so that cannot be seen)
-      mesh.userData.rim = { id: rim.id, flat, side, q0: mesh.quaternion.clone(), a: 0, f: 0, level: 0, gap: TAU / rim.n, r: t.r, tyre, x0: tyre.rotation.x, rolls: !!model.userData.rollsWheels, blur, blurs };
+      mesh.userData.rim = { id: rim.id, flat, spin: rim.kind === 'spin', side, q0: mesh.quaternion.clone(), a: 0, f: 0, level: 0, gap: TAU / rim.n, r: t.r, tyre, x0: tyre.rotation.x, rolls: !!model.userData.rollsWheels, blur, blurs };
       if (ghost) { mesh.userData.solidMat = mat; mesh.material = tyre.material; if (blur) { blur.userData.solidMat = blur.material; blur.material = tyre.material; } } // (a ghost: pale like the rest)
       tyre.add(mesh);
       found.rims.list.push(mesh);
@@ -428,7 +438,7 @@ export const rimFrame = (model, dt, dist) => {
   const scale = dist === null ? 1 : (model.matrixWorld.getMaxScaleOnAxis() || 1);
   for (let i = 0; i < st.list.length; i++) {
     const mesh = st.list[i], u = mesh.userData.rim;
-    let da = dist === null ? IDLE_RATE * dt : dist / (u.r * scale);
+    let da = u.spin ? SPIN_RATE * dt : dist === null ? IDLE_RATE * dt : dist / (u.r * scale); // (a spinner: its own pace, whatever the car does)
     u.f += (Math.abs(da) / u.gap - u.f) * 0.25; // (the turn per frame as a share of the spoke gap, smoothed: a frame's jitter does not flicker the blur)
     const lim = CLAMP * u.gap;
     if (da > lim) da = lim; else if (da < -lim) da = -lim;

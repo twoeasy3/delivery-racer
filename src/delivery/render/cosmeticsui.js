@@ -9,14 +9,17 @@
 // (render/loadoutstore.js keeps both). In 'This car', a slot the car has no choice of its own for shows the default's, marked 'from
 // default'; the header marks a car whose look differs from the default ('Custom'), and two buttons beside the switch put the car back
 // to the default ('Reset car') or make its look every car's ('Copy to all': cars with their own looks too, after a second tap).
-// SLOTS: a list down the side. WHEELS (one row of wheel SETS, each a tyre + hub; 'Custom' shows when the saved pair is no set); the others are greyed
+// SLOTS: a list down the side. WHEELS: the THREE-PART wheel set (the owner, 15-Oct: "tread - tyre colour - hub colour or rim or spinner"): a
+// Tread row, a Tyre row, a Hub row (a Colour | Rim | Spinner switch and that kind's chips), then the Presets (one tap sets all three;
+// 'Custom' shows when the parts are no preset); the others are greyed
 // "coming later" entries that open nothing: the framework costs a line each. EVERYTHING IS FREE AND OPEN for now: `owned` is
 // the one place the unlock check goes (a chip it says no to is shown locked and cannot be equipped).
 // Keys: arrows move between the choices (left / right along a row, up / down between rows), Enter or Space equips the one
 // focused, Escape goes back. Touch: every choice is at least 44 px tall. Storage and the test switches are wheelcosmetic.js's.
 import '../cosmetics.css';
-import { WHEEL_COLOURS, WHEEL_DESIGNS, WHEEL_SETS, wheelColour, wheelDesign, wheelSet, wheelRim, setWheelSet, onWheelColour } from './wheelcosmetic.js';
-import { rimStatus } from './rims.js';
+import { WHEEL_COLOURS, WHEEL_DESIGNS, TYRE_COLOURS, WHEEL_SETS, wheelColour, wheelDesign, wheelSet, wheelRim, wheelTread, setWheelSet, setWheelTread, setWheelTyre, setWheelRim, setHubColour, hubKind, onWheelColour } from './wheelcosmetic.js';
+import { rimStatus, RIM_DESIGNS } from './rims.js';
+import { TREAD_DESIGNS, treadStatus } from './treads.js';
 import { PLATE_DESIGNS, designById, plateDesign, shownDesign, setPlateDesign, plateText, setPlateText, previewPlateText, resetPlate, onPlate, platePlan } from './platecosmetic.js';
 import { drawPlate } from './platedesigns.js';
 import { MAX_LEN, DEFAULT_TEXT, sanitizePlateText } from './platetext.js';
@@ -58,6 +61,7 @@ const make = (tag, className, ...children) => {
 };
 const hexOf = (hex, fallback) => '#' + (hex === null ? fallback : hex.toString(16).padStart(6, '0'));
 
+let partRows = {}, hubSegs = [], hubMode = null;
 let built = false, stage, carName, customMark, scopeBtns, resetCarBtn, copyBtn, copyArmed = 0, status, slotList, setRow, customChip, closeBtn, viewBtns, sections = {}, propSecs = {}, tabMsg, plateRow, plateInput, plateMsg, plateStatus, plateChip, openSlot = 'wheels';
 let state = { open: false, car: null, evil: false, onClose: null, inMenu: false, close: false, scope: 'car' };
 // whose choice the screen shows and changes: the car on show ('This car') or the default ('All cars')
@@ -91,7 +95,30 @@ const shown = () => {
   const id = wheelSet(cid()), set = WHEEL_SETS.find(x => x.id === id);
   for (const b of setRow.children) { const on = b.dataset.set === id; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('equipped', on); b.classList.toggle('locked', !owned('wheels', b.dataset.set)); }
   customChip.hidden = id !== 'custom'; // (the equipped state when the saved pair is no set: shown, ticked, not pressable)
-  status.textContent = 'Wheels: ' + (set ? set.name : 'Custom (a mix that is not one of the sets)') + (wheelRim(cid()) !== 'none' && state.scope === 'car' && ShowroomView.model && rimStatus(ShowroomView.model) !== 'ok' ? '. No rims for this car' : '');
+  // the three parts: each row ticks the part worn; the hub row shows the kind worn unless another was picked on the switch
+  const c = cid(), kind = hubKind(c), worn = { tread: wheelTread(c), tyre: wheelDesign(c), colour: kind === 'colour' ? wheelColour(c) : null, rim: kind !== 'colour' ? wheelRim(c) : null };
+  if (!hubMode) hubMode = kind;
+  for (const [key, row] of Object.entries(partRows)) for (const b of row.children) { const on = b.dataset.part === worn[key === 'spin' ? 'rim' : key]; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('equipped', on); }
+  for (const b of hubSegs) b.setAttribute('aria-pressed', String(b.dataset.kind === hubMode));
+  partRows.colour.hidden = hubMode !== 'colour'; partRows.rim.hidden = hubMode !== 'rim'; partRows.spin.hidden = hubMode !== 'spin';
+  const model = state.scope === 'car' ? ShowroomView.model : null;
+  status.textContent = 'Wheels: ' + (set ? set.name : 'Custom') + (wheelRim(c) !== 'none' && model && rimStatus(model) !== 'ok' ? '. No rims for this car' : '') + (worn.tread !== 'none' && model && treadStatus(model) !== 'ok' ? '. No tread for this car' : '');
+};
+// a tread's chip: a patch of the tyre's running surface seen from above, the pattern drawn as it is built (render/treads.js)
+const miniTread = (id) => {
+  const c = make('canvas', 'cz-swatch cz-tread'); c.width = c.height = 48;
+  const g = c.getContext('2d');
+  if (!g) return c;
+  g.fillStyle = '#26272b'; g.fillRect(0, 0, 48, 48);
+  g.fillStyle = '#8a8f98';
+  const poly = (pts) => { g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.fill(); };
+  if (id === 'none') { g.fillStyle = '#3a3c42'; g.fillRect(4, 0, 40, 48); return c; }
+  if (id === 'knobbly') for (let r = -1; r < 5; r++) { const y = r * 12; if (r % 2) poly([[17, y + 2], [31, y + 2], [31, y + 9], [17, y + 9]]); else { poly([[3, y + 2], [16, y + 2], [16, y + 9], [3, y + 9]]); poly([[32, y + 2], [45, y + 2], [45, y + 9], [32, y + 9]]); } }
+  if (id === 'chevron') for (let r = -1; r < 5; r++) { const y = r * 11; poly([[24, y], [45, y + 9], [45, y + 14], [24, y + 5], [3, y + 14], [3, y + 9]]); }
+  if (id === 'ribs') { g.fillRect(3, 0, 12, 48); g.fillRect(33, 0, 12, 48); for (let r = 0; r < 5; r++) g.fillRect(19, r * 10 + 1, 10, 7); }
+  if (id === 'lugs') for (let r = -1; r < 4; r++) { const y = r * 14; poly([[2, y + 14], [2, y + 20], [27, y + 9], [27, y + 3]]); poly([[46, y + 21], [46, y + 27], [21, y + 16], [21, y + 10]]); }
+  if (id === 'studs') for (let r = -1; r < 6; r++) { const y = r * 10, s = r % 2 ? 2 : -2; poly([[3, y + 2 - s], [22, y + 2 + s], [22, y + 8 + s], [3, y + 8 - s]]); poly([[26, y + 2 + s], [45, y + 2 - s], [45, y + 8 - s], [26, y + 8 + s]]); g.fillStyle = '#eef2f6'; g.beginPath(); g.arc(r % 2 ? 35 : 12, y + 5, 1.8, 0, Math.PI * 2); g.fill(); g.fillStyle = '#8a8f98'; }
+  return c;
 };
 // a rim set's chip: the rim itself, drawn small (the tyre, the dish, the spokes or blades, the cap)
 const miniRim = (rim, hub, tyre, ring) => {
@@ -134,8 +161,8 @@ const miniRim = (rim, hub, tyre, ring) => {
   if (rim === 'spoke5') for (let i = 0; i < 5; i++) blade(i * T / 5, 3, R * 0.72, 3, 2);
   if (rim === 'twin10') for (let i = 0; i < 5; i++) for (const s of [-0.14, 0.14]) blade(i * T / 5 + s, 3, R * 0.72, 1, 1);
   if (rim === 'turbine') for (let i = 0; i < 10; i++) blade(i * T / 10, 4, R * 0.72, 1.5, 3, 2);
-  if (rim === 'blade3') for (let i = 0; i < 3; i++) blade(i * T / 3, 2, R * 0.78, 4, 2, 4);
-  if (rim === 'twinspin') { disc(R * 0.5, hub); for (let i = 0; i < 2; i++) blade(i * Math.PI, R * 0.4, R * 0.78, 3.5, 2); g.fillStyle = '#202226'; g.beginPath(); g.arc(R * 0.3, 0, 2.6, 0, T); g.fill(); g.fillStyle = hub; }
+  if (rim === 'blade3' || rim === 'spinblade') for (let i = 0; i < 3; i++) blade(i * T / 3, 2, R * 0.78, 4, 2, 4);
+  if (rim === 'twinspin' || rim === 'spintwin') { disc(R * 0.5, hub); for (let i = 0; i < 2; i++) blade(i * Math.PI, R * 0.4, R * 0.78, 3.5, 2); g.fillStyle = '#202226'; g.beginPath(); g.arc(R * 0.3, 0, 2.6, 0, T); g.fill(); g.fillStyle = hub; }
   disc(R * 0.17, hub);
   return c;
 };
@@ -380,8 +407,24 @@ const build = () => {
   for (const w of WHEEL_SETS) {
     const d = WHEEL_DESIGNS.find(x => x.id === w.design), c = WHEEL_COLOURS.find(x => x.id === w.hub);
     const tyre = hexOf(d.tyre, '1b1b1d'), ring = d.ring ? hexOf(d.ring.hex) : tyre, hub = hexOf(c.hex !== null ? c.hex : d.hub, '9aa3b2'); // (a hub colour wins over the design's hub)
-    setRow.append(chip('set', w.id, w.name, w.rim ? miniRim(w.rim, c.hex !== null || d.hub !== null ? hub : '#cfd3d9', tyre, ring) : swatchOf('radial-gradient(circle,' + hub + ' 0 30%,' + tyre + ' 30% 46%,' + ring + ' 46% 66%,' + tyre + ' 66%)'), (id) => setWheelSet(id, tgt())));
+    setRow.append(chip('set', w.id, w.name, w.tread && !w.rim ? miniTread(w.tread) : w.rim ? miniRim(w.rim, c.hex !== null || d.hub !== null ? hub : '#cfd3d9', tyre, ring) : swatchOf('radial-gradient(circle,' + hub + ' 0 30%,' + tyre + ' 30% 46%,' + ring + ' 46% 66%,' + tyre + ' 66%)'), (id) => setWheelSet(id, tgt())));
   }
+  // the three parts (free, no ownership: the presets are what is owned): a chip each, short names
+  const part = (key, id, name, swatch, pick) => { const b = make('button', 'cz-chip cz-part'); b.type = 'button'; b.dataset.part = id; b.append(swatch, make('span', 'cz-name', name), make('span', 'cz-tick', '✓')); b.addEventListener('click', () => { pick(id); Sound.play('menuPick', 0.4); }); return b; };
+  const rowOf = (key, label) => { const r = make('div', 'cz-row cz-parts'); r.setAttribute('role', 'group'); r.setAttribute('aria-label', label); partRows[key] = r; return r; };
+  const treadRow = rowOf('tread', 'Tread');
+  for (const d of TREAD_DESIGNS) treadRow.append(part('tread', d.id, d.name, miniTread(d.id), (id) => setWheelTread(id, tgt())));
+  const tyreRow = rowOf('tyre', 'Tyre colour');
+  for (const t of TYRE_COLOURS) { const rub = hexOf(t.tyre, '1b1b1d'), ring = t.ring ? hexOf(t.ring.hex) : rub; tyreRow.append(part('tyre', t.id, t.name, t.id === 'stock' ? swatchOf(null, true) : swatchOf('radial-gradient(circle,#9aa3b2 0 34%,' + rub + ' 34% 52%,' + ring + ' 52% 72%,' + rub + ' 72%)'), (id) => setWheelTyre(id, tgt()))); }
+  const colourRow = rowOf('colour', 'Hub colour');
+  for (const c of WHEEL_COLOURS) colourRow.append(part('colour', c.id, c.name, c.hex === null ? swatchOf(null, true) : swatchOf('radial-gradient(circle,' + hexOf(c.hex) + ' 0 46%,#1b1b1d 46%)'), (id) => setHubColour(id, tgt())));
+  const rimRow = rowOf('rim', 'Rim'), spinRow = rowOf('spin', 'Spinner');
+  for (const d of RIM_DESIGNS.filter(x => x.kind)) (d.kind === 'spin' ? spinRow : rimRow).append(part(d.kind, d.id, d.name.replace(' spinner', ''), miniRim(d.id, '#cfd3d9', '#1b1b1d', '#1b1b1d'), (id) => setWheelRim(id, tgt())));
+  const hubSeg = (name, kind) => { const b = make('button', 'cz-seg', name); b.type = 'button'; b.dataset.kind = kind; b.addEventListener('click', () => { hubMode = kind; shown(); }); return b; };
+  hubSegs = [hubSeg('Colour', 'colour'), hubSeg('Rim', 'rim'), hubSeg('Spinner', 'spin')];
+  const hubSwitch = make('div', 'cz-scopes cz-hubkind', ...hubSegs);
+  hubSwitch.setAttribute('role', 'group'); hubSwitch.setAttribute('aria-label', 'Hub: a colour, a rim or a spinner');
+  const label = (text, ...extra) => make('h3', 'cz-partlabel', text, ...extra);
   customChip = make('div', 'cz-chip equipped custom', swatchOf(null, true), make('span', 'cz-name', 'Custom'), make('span', 'cz-tick', '✓'));
   customChip.hidden = true;
   customChip.title = 'Your wheels are a mix that is not one of the sets';
@@ -392,8 +435,10 @@ const build = () => {
   reset.addEventListener('click', () => { setWheelSet('stock', tgt()); Sound.play('menuMove', 0.4); });
   const wheels = make('section', 'cz-section',
     make('h2', '', 'Wheels', tagFor('wheels')),
-    make('p', 'cz-note', 'A wheel set is a tyre and rim together.'),
-    setRow, customChip,
+    label('Tread'), treadRow,
+    label('Tyre'), tyreRow,
+    label('Hub', hubSwitch), colourRow, rimRow, spinRow,
+    label('Presets'), setRow, customChip,
     make('div', 'cz-foot', status, reset));
   tabMsg = make('p', 'cz-tabmsg'); tabMsg.setAttribute('role', 'status');
   sections = { wheels, plate: buildPlate(), roof: buildPropSection('roof'), cargo: buildPropSection('cargo'), wing: buildPropSection('wing') };

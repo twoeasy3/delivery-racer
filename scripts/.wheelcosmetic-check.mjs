@@ -198,7 +198,7 @@ try {
     W.setWheelDesign('redwhite');
     const born = build(cars.find(c => c.id === 'commuter') || hubbed[0].car);
     check(ringsOf(born).length === 0 && born.userData.wheelHubs.hubs.every(h => h.mesh.material.color.getHex() === 0xf4f4f2) && born.userData.wheelHubs.info.every(t => t.tyre.material.color.getHex() === 0xd8262b), 'a car built under Red tyres, white hubs wears them from the start');
-    W.setWheelDesign('goldwall');
+    W.setWheelColour('stock'); W.setWheelDesign('goldwall'); // (since the three-part set the hub is its own choice: the old gold-hub design brings its gold only where the hub was Stock)
     const born2 = build(cars.find(c => c.id === 'commuter') || hubbed[0].car);
     check(ringsOf(born2).length > 0 && born2.userData.wheelHubs.hubs.every(h => h.mesh.material.color.getHex() === 0xd9a92a), 'a car built under Gold hubs, whitewall wears them from the start');
 
@@ -337,8 +337,8 @@ try {
     server.moduleGraph.invalidateAll();
     const S = await load('render/wheelcosmetic.js'), { Progress: P3 } = await load('progress.js');
     const sets = S.WHEEL_SETS;
-    check(sets.length >= 10 && sets.length <= 20 && new Set(sets.map(x => x.id)).size === sets.length, sets.length + ' sets, ids unique');
-    check(new Set(sets.map(x => x.design + '/' + x.hub + '/' + (x.rim || 'none'))).size === sets.length, 'no two sets are the same design + hub + rim');
+    check(sets.length >= 10 && sets.length <= 30 && new Set(sets.map(x => x.id)).size === sets.length, sets.length + ' sets, ids unique');
+    check(new Set(sets.map(x => x.design + '/' + x.hub + '/' + (x.rim || 'none') + '/' + (x.tread || 'none'))).size === sets.length, 'no two presets are the same tyre colour + hub + rim + tread');
     check(sets.every(x => S.WHEEL_DESIGNS.some(d => d.id === x.design) && S.WHEEL_COLOURS.some(c => c.id === x.hub)), 'every set uses an existing design and hub colour');
     check(sets[0].id === 'stock' && sets[0].design === 'stock' && sets[0].hub === 'stock', 'the first set is Stock');
     check(S.wheelSet() === 'stock', 'nothing saved: the equipped set is Stock');
@@ -408,7 +408,7 @@ try {
     const mk = (car) => { try { return make(car); } catch { return null; } };
     const rimsOf = (model) => model.userData.wheelHubs?.rims?.list || [];
     const D = RM.RIM_DESIGNS, rimSets = WC.WHEEL_SETS.filter(x => x.rim);
-    check(D[0].id === 'none' && D.slice(1).every(d => d.kind === 'speed') && D.length >= 8, 'rim designs (every one turns with the car): ' + D.slice(1).map(d => d.id + ' (' + d.kind + ', ' + RM.rimTriangles(d.id) + ' triangles a face)').join(', '));
+    check(D[0].id === 'none' && D.slice(1).every(d => d.kind === 'speed' || d.kind === 'spin') && D.length >= 8, 'rim designs (a rim turns with the car, a spinner at its own pace): ' + D.slice(1).map(d => d.id + ' (' + d.kind + ', ' + RM.rimTriangles(d.id) + ' triangles a face)').join(', '));
     check(rimSets.length >= 5 && rimSets.every(x => D.some(d => d.id === x.rim && d.kind)) && !WC.WHEEL_SETS[0].rim && D.slice(1).every(d => rimSets.some(x => x.rim === d.id)), rimSets.length + ' sets carry a rim (every design in one), Stock carries none: ' + rimSets.map(x => x.id).join(', '));
     check(WC.wheelRim() === 'none' && RM.resolveRim('commuter', 'front') === 'none', 'nothing saved: no rim');
 
