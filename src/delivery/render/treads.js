@@ -27,23 +27,26 @@
 // round a tyre's axle reaching past its tread): hidden while a tread is worn, shown again after.
 // SKIPPED: RIM_SKIP cars (hoops, tracks, hulls, discs), Legendary cars (their own wheels), tyres findHubs cannot find, tyres with no room.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import * as Store from './loadoutstore.js';
 import { IDLE_RATE, CLAMP, BLUR_FROM, BLUR_FULL, BLUR, rimFrame } from './rims.js';
 
 const TAU = Math.PI * 2;
-// n: block rows round the tyre (the pitch, for the clamp); h: how far proud of the tyre's tread (in R); dir: directional (built both ways)
+// n: block rows round the tyre (the pitch, for the clamp); h: how far proud of the tyre's tread (in R); dir: directional (built both ways);
+// walls: where its faces square to the axle lie, either side of the middle (in W): kept 5 mm off a body face in the same plane (z-fighting)
 export const TREAD_DESIGNS = [
   { id: 'none', name: 'Stock', n: 0 },
-  { id: 'knobbly', name: 'Knobbly', n: 12, h: 0.065 },
-  { id: 'chevron', name: 'Chevron', n: 14, h: 0.05, dir: true },
-  { id: 'ribs', name: 'Road ribs', n: 10, h: 0.05, kMin: 0.45 }, // (kMin: its ring's flattest facet must stay clear of the tyre's corners)
-  { id: 'lugs', name: 'Tractor', n: 12, h: 0.1, dir: true },
-  { id: 'studs', name: 'Winter', n: 10, h: 0.045, pin: 0.025 }, // (pin: the studs stand that much over the blocks)
+  { id: 'knobbly', name: 'Knobbly', n: 12, h: 0.065, walls: [0.5, 0.14, 0.22] },
+  { id: 'chevron', name: 'Chevron', n: 14, h: 0.05, dir: true, walls: [0.5] },
+  { id: 'ribs', name: 'Road ribs', n: 10, h: 0.05, kMin: 0.45, walls: [0.5, 0.24, 0.13] }, // (kMin: its ring's flattest facet must stay clear of the tyre's corners)
+  { id: 'lugs', name: 'Tractor', n: 12, h: 0.085, dir: true, walls: [0.5, 0.12] },
+  { id: 'studs', name: 'Winter', n: 10, h: 0.045, pin: 0.025, walls: [0.5, 0.04, 0.22, 0.32] }, // (pin: the studs stand that much over the blocks)
 ];
 export const treadById = (id) => TREAD_DESIGNS.find(d => d.id === id) || TREAD_DESIGNS[0];
 export const LOWS = [1, 0.7, 0.45, 0.3]; // a tread's height steps (of the design's own): the tallest that fits under the bodywork over the tyre
 export const LITE_FROM = 4;   // more tyres than this: the lite tread (fewer rows)
 export const SMALL_R = 0.24;  // m: a tyre smaller than this: the lite tread
+export const MIN_R = 0.15;    // m: a tyre smaller than this gets none (a dragster's front wheels, a castor: too small to read, and too tight)
 export const EDGE = 0.007;    // m: the tread stops at least this far in from each sidewall
 export const SPAN = 0.86;     // of the tyre's width (less EDGE a side): the tread's own width (the tyre's square shoulders show either side)
 export const BASE = 0.93;     // of R: the blocks' feet (inside the tyre)
@@ -178,11 +181,11 @@ const BUILD = {
   // TRACTOR LUGS: deep slanted paddles from each shoulder past the middle, left and right taking turns, the inner ends leading. A lug
   // runs a long way round, so it is built as a STRIP of three sections (its top follows the tyre's round, never a flat chord under it)
   lugs: (pos, col, { rows, h, dir, top, side }) => {
-    const p = TAU / rows, w = p * 0.4, r1 = 1 + h, slant = p * 0.9;
+    const p = TAU / rows, w = p * 0.5, r1 = 1 + h, slant = p * 1.1;
     for (let i = 0; i < rows; i++) {
       const a = i * p, s = i % 2 ? 1 : -1; // (s: which shoulder)
       // from the shoulder (z = s * 0.5) to past the middle (z = -s * 0.08), the middle end ahead by `slant`
-      strip(pos, col, a, w, s * 0.5, -s * 0.08, dir * slant, 3, r1, top, side);
+      strip(pos, col, a, w, s * 0.5, -s * 0.12, dir * slant, 3, r1, top, side);
     }
   },
   // WINTER: siped blocks in a zigzag pair each row, a bright steel stud standing out of one of them
@@ -205,7 +208,7 @@ export const treadGeometry = (id, hex, { k = 1, lite = false, dir = 1 } = {}) =>
   const d = treadById(id);
   const key = id + ':' + hex + ':' + k + (lite ? ':lite' : '') + (d.dir ? ':' + dir : '');
   if (!geos.has(key)) {
-    const pos = [], col = [], base = lin(hex), top = base.map(v => Math.min(1, v * 1.25 + 0.012)), side = times(base, 0.7);
+    const pos = [], col = [], base = lin(hex), top = base.map(v => Math.min(1, v * 1.3 + 0.035)), side = times(base, 0.6); // (the tops a worn, lighter rubber, the sides in shade: the pattern reads on a black tyre)
     BUILD[id](pos, col, { rows: lite ? LITE_ROWS[id] : d.n, h: d.h * k, pin: (d.pin || 0) * Math.max(k, 0.7), dir, top, side });
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
@@ -218,14 +221,16 @@ export const treadGeometry = (id, hex, { k = 1, lite = false, dir = 1 } = {}) =>
 };
 export const treadTriangles = (id, opts) => treadGeometry(id, 0x1b1b1d, opts).attributes.position.count / 3;
 export const treadRows = (id, lite = false) => (lite ? LITE_ROWS[id] : treadById(id).n);
-// the blur band: an open tube just over the blocks' tops (its flattest facet 2 % of R over them)
+// the blur band: an open tube just over the blocks' tops (its flattest facet 2 % of R over them) and two side rings
 const BAND_SEG = 20;
 export const treadHeight = (d, k = 1) => d.h * k + (d.pin || 0) * Math.max(k, 0.7); // (in R, over the tyre: the tallest part)
 const bandGeometry = (id, k) => {
   const key = 'band:' + id + ':' + k;
   if (!geos.has(key)) {
     const d = treadById(id), top = 1 + treadHeight(d, k) + 0.02, r = top / Math.cos(Math.PI / BAND_SEG);
-    const g = new THREE.CylinderGeometry(r, r, 1, BAND_SEG, 1, true).rotateX(Math.PI / 2);
+    // the tube, and a flat ring at each side just outside the tread (inside the tyre's width), so the blocks blur seen from the side too
+    const g = mergeGeometries([new THREE.CylinderGeometry(r, r, 1, BAND_SEG, 1, true).rotateX(Math.PI / 2),
+      new THREE.RingGeometry(0.95, r, BAND_SEG, 1).translate(0, 0, 0.56), new THREE.RingGeometry(0.95, r, BAND_SEG, 1).rotateY(Math.PI).translate(0, 0, -0.56)], false);
     g.userData.shared = true; geos.set(key, g);
   }
   return geos.get(key);
@@ -249,7 +254,7 @@ const blurMaterials = (hex) => {
 // ---- room over each tyre, and the tyre's own tread ----
 const Z = new THREE.Vector3(0, 0, 1), axis = new THREE.Vector3(), q = new THREE.Quaternion(), pos = new THREE.Vector3(), scl = new THREE.Vector3(), pose = new THREE.Matrix4();
 const toModel = new THREE.Matrix4(), m1 = new THREE.Matrix4(), v3 = new THREE.Vector3(), box3 = new THREE.Box3();
-const ray = new THREE.Raycaster(); const o3 = new THREE.Vector3(), e3 = new THREE.Vector3(), d3 = new THREE.Vector3();
+const ray = new THREE.Raycaster();
 // FOR A CHECK (scripts/.treads-check.mjs measures pokes with rays, independently of roomFor's triangles, by the same rules): the surfaces
 // met from a point inside a tyre (o: 0.8 R) out to a point of its tread (e), the tyre's surface `skin` along the way, either facing, a face
 // square to the axle (`axle`, world) let be; null if one lies within the tyre's own outer band (bodywork that already cuts into the stock
@@ -267,7 +272,6 @@ export const clearance = (others, o, e, skin, axle = null) => {
   return least - skin;
 };
 const cd3 = new THREE.Vector3();
-const nearest = (others, from, dir, far) => { ray.set(from, dir); ray.near = 0; ray.far = far; const h = ray.intersectObjects(others, false); return h.length ? h[0].distance : null; };
 // a tyre's true radius: its farthest vertex from the axle (in the model's frame)
 const trueRadius = (t) => {
   const g = t.tyre.geometry, p = g.attributes.position;
@@ -382,13 +386,20 @@ const roomFor = (model, found) => {
     t.ownTread = ownTread(model, t, meshes);
     const mine = new Set([...t.ownTread, ...t.rubber]);
     const tris = trianglesNear(nearby.filter(m => !mine.has(m)), t);
-    // beside the tread: bodywork standing close to its side walls (a skirt or a mudguard's side within the tyre's width, inside 8 mm of
-    // a wall: the z-fight finder's 4 mm and some) brings that wall in until it is clear (the tread kept to 70 % of its width or more)
+    // (for the side walls also the wheel's own flat parts: a hub's face or a tyre-coloured ring lying in a wall's plane z-fights the same)
+    const own = [...found.rawHubs.filter(h => h.tyre === t.tyre).map(h => h.mesh), ...t.rubber].filter(m => m.visible && m.geometry?.attributes?.position);
+    const wallTris = tris.concat(trianglesNear(own, t));
+    // beside the tread: a flat face of bodywork lying in the plane of one of its side walls (a skirt or a body side the wheel is set into,
+    // within 5 mm of it: the z-fight finder's 4 mm and a little) brings that wall in 8 mm at a time until it is clear; still close at 60 % of
+    // the tread's width: no tread on that tyre
     for (const end of [0, 1]) {
-      for (let tries = 0; tries < 4; tries++) {
-        const out = end ? 1 : -1, z0 = t.tz[end] - out * 0.002, z1 = t.tz[end] + out * 0.008;
-        const near = tris.some(tri => { const s = shell(tri, Math.min(z0, z1), Math.max(z0, z1), -0.7 * t.R, Infinity); return s && s.min < t.R * (1 + hMax) && s.max > BASE * t.R; });
-        if (!near || t.tz[1] - t.tz[0] < (t.half - EDGE) * SPAN * 1.4) break;
+      for (let tries = 0; tries < 8; tries++) {
+        const z = t.tz[end];
+        // (a face square to the axle within 5 mm of the wall's plane, over the wall's height: the z-fight finder's 4 mm and a little)
+        const near = wallTris.some(tri => { if (!squareToAxle(tri) || tri.some(p => Math.abs(p[0] - z) > 0.005)) return false; const s = shell(tri, z - 0.006, z + 0.006, -0.7 * t.R, Infinity); return s && s.min < t.R * (1 + hMax) && s.max > BASE * t.R; });
+        const out = end ? 1 : -1;
+        if (!near) break;
+        if (t.tz[1] - t.tz[0] < (t.half - EDGE) * SPAN * 1.2) { t.wallBlocked = true; break; } // (still close at 60 % of the width: no tread here)
         t.tz[end] -= out * 0.008;
       }
     }
@@ -405,7 +416,10 @@ const roomFor = (model, found) => {
         // (low down, a sill or a bumper run through the stock tyre: the tread goes in with the tyre)
       }
     }
-    t.treadRoom = room; // (m over the tyre's tread before bodywork; Infinity: open)
+    // faces square to the axle WITHIN the tread's width (a body side or a sill end the wheel is set into): a design's inner walls keep off them
+    t.squares = [];
+    for (const tri of wallTris) if (squareToAxle(tri)) { const z = (tri[0][0] + tri[1][0] + tri[2][0]) / 3; if (z > t.tz[0] - 0.006 && z < t.tz[1] + 0.006) { const sh = shell(tri, z - 0.003, z + 0.003, -0.7 * t.R, Infinity); if (sh && sh.min < t.R * (1 + hMax) && sh.max > BASE * t.R) t.squares.push(z); } }
+    t.treadRoom = t.wallBlocked || t.R < MIN_R ? 0 : room; // (m over the tyre's tread before bodywork; Infinity: open; 0: none)
   }
   // the axles (tyres within a third of a radius along the car): the least room of the axle
   const axles = [];
@@ -415,7 +429,7 @@ const roomFor = (model, found) => {
   found.treadRoomChecked = true;
 };
 // how a design fits a tyre: the height step k (LOWS) that fits under what is over it (the lowest may graze it by GRAZE), or null
-const fitOf = (t, d) => LOWS.find((k, i) => k >= (d.kMin || 0) && (t.axleRoom >= treadHeight(d, k) + FIT_GAP / t.R || (i === LOWS.length - 1 && t.axleRoom >= treadHeight(d, k) - GRAZE / t.R))) || null;
+const fitOf = (t, d) => t.axleRoom <= 0 ? null : LOWS.find((k, i) => k >= (d.kMin || 0) && (t.axleRoom >= treadHeight(d, k) + FIT_GAP / t.R || (i === LOWS.length - 1 && t.axleRoom >= treadHeight(d, k) - GRAZE / t.R))) || null;
 
 export const removeTreads = (model) => {
   const st = model.userData.wheelHubs?.treads;
@@ -447,7 +461,13 @@ export const addTreads = (model, worn = true) => {
     // which way round is forward at the top, in the mesh's own frame: the rim's sense (render/rims.js turns by side * angle)
     const geo = treadGeometry(d.id, current.color.getHex(), { k: fit, lite, dir: side });
     q.setFromUnitVectors(Z, axis);
-    const [lo, hi] = t.tz, W = Math.max(0.03, hi - lo); // (across, from the tyre's middle along the axle (+x / +z of the model): clear of its sidewalls and of a twin beside it)
+    // across, from the tyre's middle along the axle (+x / +z of the model): clear of its sidewalls and of a twin beside it; moved aside (and
+    // narrowed to stay within the tyre) while one of the design's walls lies within 5 mm of a body face in its plane
+    let lo = t.tz[0], hi = t.tz[1];
+    const clash = (l, h) => t.squares.some(z => d.walls.some(f => Math.abs((l + h) / 2 + f * (h - l) - z) < 0.005 || Math.abs((l + h) / 2 - f * (h - l) - z) < 0.005));
+    for (const sh of [0.006, -0.006, 0.012, -0.012, 0.018, -0.018]) { if (!clash(lo, hi)) break; if (!clash(t.tz[0] + Math.abs(sh) + sh, t.tz[1] - Math.abs(sh) + sh)) { lo = t.tz[0] + Math.abs(sh) + sh; hi = t.tz[1] - Math.abs(sh) + sh; } } // (moved aside and narrowed, so it stays within the tyre)
+    if (clash(lo, hi)) continue; // (no way clear: that tyre stays stock)
+    const W = Math.max(0.03, hi - lo);
     pos.copy(t.centre); if (t.axleX) pos.x += (lo + hi) / 2; else pos.z += (lo + hi) / 2;
     pose.compose(pos, q, scl.set(t.R, t.R, W)).premultiply(t.toTyre);
     const mesh = new THREE.Mesh(geo, treadMaterial());

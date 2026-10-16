@@ -407,7 +407,7 @@ const build = () => {
   for (const w of WHEEL_SETS) {
     const d = WHEEL_DESIGNS.find(x => x.id === w.design), c = WHEEL_COLOURS.find(x => x.id === w.hub);
     const tyre = hexOf(d.tyre, '1b1b1d'), ring = d.ring ? hexOf(d.ring.hex) : tyre, hub = hexOf(c.hex !== null ? c.hex : d.hub, '9aa3b2'); // (a hub colour wins over the design's hub)
-    setRow.append(chip('set', w.id, w.name, w.rim ? miniRim(w.rim, c.hex !== null || d.hub !== null ? hub : '#cfd3d9', tyre, ring) : swatchOf('radial-gradient(circle,' + hub + ' 0 30%,' + tyre + ' 30% 46%,' + ring + ' 46% 66%,' + tyre + ' 66%)'), (id) => setWheelSet(id, tgt())));
+    setRow.append(chip('set', w.id, w.name, w.tread && !w.rim ? miniTread(w.tread) : w.rim ? miniRim(w.rim, c.hex !== null || d.hub !== null ? hub : '#cfd3d9', tyre, ring) : swatchOf('radial-gradient(circle,' + hub + ' 0 30%,' + tyre + ' 30% 46%,' + ring + ' 46% 66%,' + tyre + ' 66%)'), (id) => setWheelSet(id, tgt())));
   }
   // the three parts (free, no ownership: the presets are what is owned): a chip each, short names
   const part = (key, id, name, swatch, pick) => { const b = make('button', 'cz-chip cz-part'); b.type = 'button'; b.dataset.part = id; b.append(swatch, make('span', 'cz-name', name), make('span', 'cz-tick', '✓')); b.addEventListener('click', () => { pick(id); Sound.play('menuPick', 0.4); }); return b; };
