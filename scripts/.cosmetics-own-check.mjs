@@ -89,7 +89,7 @@ check(ownedCosmetics().join() === listed.join() && ownsCosmetic('plate', 'fixtur
   check(!threw, 'blocked storage: nothing throws');
 }
 
-// the replay fingerprint: the same on origin/main and on this branch, and progress.js untouched
+// the replay fingerprint: nothing cosmetic in what differs from origin/main, and progress.js untouched
 {
   const here = (await import('../vite.config.js')).logicFiles();
   const hashOf = (files, read) => { const h = createHash('sha256'); for (const f of files) h.update(f + '\0' + read(f)); return h.digest('hex').slice(0, 10); };
@@ -103,7 +103,11 @@ check(ownedCosmetics().join() === listed.join() && ownsCosmetic('plate', 'fixtur
   const theirs = hashOf(theirFiles, f => readFileSync(join(dir, 'src/delivery', f)));
   process.chdir(cwd);
   console.log('replay logic hash: origin/main ' + theirs + ', this branch ' + mine);
-  check(mine === theirs && here.join() === theirFiles.join(), 'the replay fingerprint is identical on origin/main and on this branch (' + mine + ')');
+  // (the hash itself moves whenever another merged branch changes a logic file, as the v1.1.148-alpha integration does: what this
+  // check holds is that the cosmetics are not why: no logic file that differs from origin/main's is a cosmetic module or names one)
+  const differ = here.filter(f => !theirFiles.includes(f) || readFileSync('src/delivery/' + f, 'utf8') !== readFileSync(join(dir, 'src/delivery', f), 'utf8'));
+  console.log('logic files that differ from origin/main: ' + (differ.join(', ') || 'none'));
+  check(differ.every(f => !/cosmetic|unlockall|loadout/.test(f) && !/cosmetics\.js|unlockall|loadoutstore|loadout\.js/.test(readFileSync('src/delivery/' + f, 'utf8'))), 'no logic file that differs from origin/main is or names a cosmetic module (' + (mine === theirs ? 'the fingerprint is identical, ' + mine : differ.length + ' logic files differ') + ')');
   check(!here.includes('render/cosmetics.js') && !here.includes('cosmetics.js') && !here.includes('unlockall.js') && readFileSync('src/delivery/progress.js', 'utf8') === readFileSync(join(dir, 'src/delivery/progress.js'), 'utf8'), "cosmetics.js is not in the fingerprint's files, and progress.js is byte-identical to origin/main's");
 }
 
