@@ -13,6 +13,7 @@
 // main.js); ?side=evil shows the Evil side for the visit; ?options opens the options; ?road the road card.
 import { sheetUp } from '../lite.js';
 import '../menu2.css';
+import { modeStrip, rememberMode, rememberedMode, detailsButton, icon } from './eventmodes.js'; // (the Events tab's mode strip; events-ui.css after menu2.css)
 import { LEVELS, LEVEL, selectLevel, selectSpecial, levelLabel, MAIN_LEVELS, AMPHIBIOUS_LEVELS, DELIVERY_LEVELS, RACE_LEVELS, isRace } from '../levels.js';
 import { levelName, levelDescription } from '../levelText.js';
 import { cargoFor } from '../cargo.js';
@@ -141,6 +142,35 @@ buildTabs();
 // the Events tab's first group, of the single-level events (or null: none on)
 const singlesGroup = () => (TABS.event.groups[0]?.[2] === 'events' ? TABS.event.groups[0] : null);
 const inSingles = (level) => { const g = singlesGroup(), k = TABS.event.list.indexOf(level); return !!g && k >= g[0] && k < g[1]; };
+// THE EVENTS TAB'S MODES (CHECKLIST 446, render/eventmodes.js): one per single-level event (each its own), one per special
+// event of more stages (all its stages): { id, name, special, levels }. The id is the event's (or the one-level event's level's)
+const modesOf = () => {
+  const { list, groups } = TABS.event, out = [];
+  for (const [a, b, kind] of groups) {
+    if (kind === 'events') for (const level of list.slice(a, b)) { const e = Events.stageOf(level)?.event; out.push({ id: e ? e.id : level.id, name: e ? e.name : levelName(level), special: !!e, levels: [level] }); }
+    else { const e = Events.specials.find(x => 'special:' + x.id === kind); if (e) out.push({ id: e.id, name: e.name, special: true, series: e, levels: list.slice(a, b) }); }
+  }
+  return out;
+};
+const modeOf = (level) => modesOf().find(m => m.levels.includes(level)) || null;
+// the level a mode shows when picked: a series' stage to play next (as its group chip did), else its one level
+const modeLevel = (m) => m.series ? (Events.next(m.series) || m.series.stages[m.series.stages.length - 1]).level : m.levels[0];
+const pickMode = (id) => {
+  const m = modesOf().find(x => x.id === id);
+  if (!m || m.levels.includes(cursor)) return;
+  blip('menuMove');
+  show(modeLevel(m));
+};
+// (a swipe across the Events tab: the next or the last mode)
+const stepMode = (by) => {
+  const modes = modesOf(), at = modes.findIndex(m => m.levels.includes(cursor)), to = modes[at + by];
+  if (to) pickMode(to.id);
+};
+// the level the Events tab opens on: the mode last picked (this browser), if it is still on
+const rememberedLevel = () => { const m = modesOf().find(x => x.id === rememberedMode()); return m ? modeLevel(m) : null; };
+let detailsOpen = false; // (the phone's Details: open or folded, kept from event to event)
+// (a stage card's state, terse: events.js's reason, 'Finish stage 3 first', said 'After stage 3'; the others as they are)
+const shortWhy = (why) => String(why || '').replace(/^Finish stage (\d+) first$/, 'After stage $1').replace(/^The event is over$/, 'Over');
 // the level picked: a menu level by its place; a special event's stage is not in the menu's lists (events.js)
 const pickLevel = (level) => { if (Events.isStage(level)) selectSpecial(level); else selectLevel(LEVELS.indexOf(level)); warmTheme(level); }; // (warmTheme: its theme's scenery file starts arriving, render/themes/index.js)
 // a special event's stage, said on its card: what stops it, or the car it is driven in (events.js)
@@ -203,6 +233,7 @@ const show = (level) => {
   cursor = level;
   tab = tabOf(level);
   lastOn[tab] = level;
+  if (tab === 'event') rememberMode(modeOf(level)?.id); // (the mode on the Events tab, for the next visit: eventmodes.js)
   if (isOpen(level)) {
     pickLevel(level);
     useLevelCar(level.car, level.amphibious); // (an amphibious level puts the player in their amphibious car)
@@ -226,7 +257,7 @@ const stepGroup = (by) => {
 const showTab = (name) => {
   if (name === tab || !TABS[name].list.length) return; // (the Events tab with nothing in it is not shown)
   blip('menuMove');
-  show(lastOn[name] || TABS[name].list[0]);
+  show(lastOn[name] || (name === 'event' && rememberedLevel()) || TABS[name].list[0]);
 };
 // Good or Evil: picked here (and remembered), played by START
 Game.evil = !!Progress.data.evil;
@@ -335,10 +366,13 @@ const drawStage = () => {
     toggle.title = toggle.ariaLabel = showDesc ? 'Show the level’s figures' : 'Show the level’s description';
   };
   toggle?.addEventListener('click', () => { showDesc = !showDesc; blip('menuPick'); paintToggle(); });
-  stage.replaceChildren(shot, plate, ...(ribbon ? [ribbon] : []), ...(cargo ? [cargo] : []), ...(extras ? [extras.node] : []), info, ...arrows, ...(toggle ? [toggle] : []));
+  // (an event card on a phone: the road's words, the figures and the chips folded under Details; events-ui.css shows the button there only)
+  const more = extras ? detailsButton(detailsOpen, () => { detailsOpen = !detailsOpen; blip('menuPick'); stage.classList.toggle('ev-open', detailsOpen); more.setAttribute('aria-expanded', String(detailsOpen)); }) : null;
+  stage.replaceChildren(shot, plate, ...(ribbon ? [ribbon] : []), ...(cargo ? [cargo] : []), ...(extras ? [extras.node] : []), info, ...arrows, ...(toggle ? [toggle] : []), ...(more ? [more] : []));
   // (a new level slides in; the other side only swaps the words)
   stage.className = 'menu-stage' + (open ? '' : ' locked') + (extras ? ' has-extras' + (extras.car ? '' : ' no-car') + (extras.tasks ? ' has-tasks' : '') : '')
-    + (hide.size ? ' cx-trim' + (hide.has('medals') ? ' no-medals' : '') + (hide.has('stats') ? ' no-stats' : '') + (hide.has('description') ? ' no-desc' : '') : '') + (drawn && !sameLevel ? ' enter' : drawn && drawn !== key ? ' flip' : '');
+    + (hide.size ? ' cx-trim' + (hide.has('medals') ? ' no-medals' : '') + (hide.has('stats') ? ' no-stats' : '') + (hide.has('description') ? ' no-desc' : '') : '') + (drawn && !sameLevel ? ' enter' : drawn && drawn !== key ? ' flip' : '')
+    + (more && detailsOpen ? ' ev-open' : '');
   startScreen.classList.toggle('cx-card', !!extras); // (a phone: the event card's own stacked layout, the menu scrolling past it: menu2.css)
   if (extras) requestAnimationFrame(extras.draw); // (its car's still, once laid out)
   if (toggle) paintToggle();
@@ -557,6 +591,14 @@ export const draw = () => {
   // (where the groups are a row to swipe along, the one shown is brought into it)
   const chip = groupBox.children[shown];
   if (chip && groupBox.scrollWidth > groupBox.clientWidth) groupBox.scrollTo({ left: chip.offsetLeft - (groupBox.clientWidth - chip.offsetWidth) / 2 });
+  // (the Events tab: the mode strip in the group chips' place, an event at a time, a dot on one with something to play: eventmodes.js)
+  const evTab = tab === 'event';
+  startScreen.classList.toggle('ev-tab', evTab);
+  groupBox.classList.toggle('ev-on', evTab);
+  if (evTab) {
+    const modes = modesOf().map(m => ({ ...m, waiting: m.levels.some(waitingOn) }));
+    groupBox.replaceChildren(modeStrip(modes, modeOf(cursor)?.id, pickMode));
+  }
   // (a stage of a special event of more stages picked: its screen, in place of the level card and the strip. A special event
   // of ONE stage, the Car Hunt, is a single-level event: the level card with its extras (drawStage), the strip under it)
   const special = Events.stageOf(cursor)?.event, series = special && !oneStage(special) ? special : null;
@@ -614,7 +656,8 @@ for (const [name, button] of Object.entries(tabBtns)) button.addEventListener('c
 // not done, a recurring one (played again and again, never done for good) while a run is on and it was never delivered
 const eventsDot = make('span', 'shop-dot tab-dot');
 tabBtns.event.append(eventsDot);
-const eventWaiting = () => TABS.event.list.some(level => {
+// (one level of the Events tab waiting: the tab's dot, and its mode's on the mode strip)
+const waitingOn = (level) => {
   if (Tiers.isEvent(level)) return Tiers.eventLive(level) && !Tiers.beaten(level);
   const at = Events.stageOf(level);
   if (!at || !Events.live(at.event)) return false;
@@ -622,7 +665,8 @@ const eventWaiting = () => TABS.event.list.some(level => {
   if (at.event.repeat) return Events.done(at.event) === 0;
   const st = Events.state(at.event, at.stage.index);
   return st.open && !st.done && !st.needs;
-});
+};
+const eventWaiting = () => TABS.event.list.some(waitingOn);
 const markEventsTab = () => {
   tabBtns.event.hidden = !TABS.event.list.length;
   const waiting = eventWaiting();
@@ -761,15 +805,12 @@ const eventPanel = (event, picked, evil) => {
   const drawLater = [];
   let head;
   if (event.repeat) head = huntHead(event, drawLater); // (a recurring event, played again and again: its car and its pack, no progress)
-  else {
-    const ring = make('div', 'event-ring', make('b', '', Math.round(done / of * 100) + '%'), make('small', '', 'progress'));
-    ring.style.setProperty('--share', done / of);
+  else { // (CHECKLIST 446: the name and ONE status line, the stages done and the countdown; the grand prize a card, its car still; events-ui.css)
     const prizeView = make('div', 'event-car');
-    head = make('div', 'event-head',
-      make('div', 'event-title', make('h2', '', event.name), make('p', '', done + '/' + of + ' stages done'), event.to ? ends(event.to) : null),
-      ring,
-      make('div', 'event-prize', make('small', '', 'Grand prize'), prizeView,
-        make('div', 'event-prize-words', make('strong', '', prize ? prize.name : 'No prize'), make('span', '', won ? 'Won!' : 'Finish all ' + of + ' stages'))));
+    head = make('div', 'ev-head',
+      make('div', 'ev-title', make('h2', '', event.name), make('div', 'ev-status', make('b', '', done + '/' + of), event.to ? ends(event.to) : null)),
+      prize ? make('div', 'ev-prize' + (won ? ' won' : ''), prizeView,
+        make('div', 'ev-prize-words', make('small', '', 'Grand prize'), make('strong', '', prize.name), won ? make('span', 'ev-won', 'Won') : null)) : null);
     if (prize) drawLater.push([prizeView, prize, false, true]); // (what the event OFFERS: the STOCK car in its Good livery, as a pack's card)
   }
   const cards = event.stages.map((stage) => {
@@ -784,7 +825,7 @@ const eventPanel = (event, picked, evil) => {
     const again = !!event.repeat; // (a recurring event's stage: never done for good, READY whenever it is on)
     const card = make('button', 'event-stage' + (st.done && !again ? ' done' : st.open && !st.needs ? ' ready' : ' shut') + (stage.level === picked ? ' picked' : ''),
       make('span', 'event-stage-n', again ? 'Every run: a pack' : 'Stage ' + (stage.index + 1)), view, badge,
-      make('span', 'event-stage-state', ...(st.done && !again ? ['Done'] : !st.open ? [st.why] : st.needs ? [st.why] : rule && !fits ? ['No ', ...richTiers(rule.label.replace(/ cars$/, '')), ' car yet'] : ['Ready'])),
+      make('span', 'event-stage-state', ...(st.done && !again ? ['✓ Done'] : !st.open ? [shortWhy(st.why)] : st.needs ? ['Car needed'] : rule && !fits ? ['No ', ...richTiers(rule.label.replace(/ cars$/, '')), ' car yet'] : ['Ready'])),
       make('span', 'event-stage-map', levelName(stage.level)));
     if (LEVEL_SHOTS[stage.map]) card.style.setProperty('--shot', `url("${LEVEL_SHOTS[stage.map]}")`);
     card.addEventListener('click', () => { if (stage.level !== cursor) { blip('menuMove'); show(stage.level); } });
@@ -797,11 +838,24 @@ const eventPanel = (event, picked, evil) => {
   const replaysBtn = open && ReplayStore.list(picked.id).length ? make('button', 'menu-chip replays', 'Replays') : null;
   roadBtn?.addEventListener('click', () => roadCard(picked));
   replaysBtn?.addEventListener('click', () => replaysCard(picked));
-  const detail = make('div', 'event-detail',
-    make('h3', '', (event.repeat ? '' : 'Stage ' + (at.stage.index + 1) + ': ') + levelName(picked)),
+  // (CHECKLIST 446: the stage picked, its name and a phone's Details button on one line; under it its figures, what it needs and
+  // the road's chips, folded on a phone unless what it needs stops START)
+  const warn = open && !Game.canStart;
+  const more = detailsButton(detailsOpen, () => { detailsOpen = !detailsOpen; blip('menuPick'); panel.classList.toggle('ev-open', detailsOpen); more.setAttribute('aria-expanded', String(detailsOpen)); });
+  const pickLine = make('div', 'ev-pick', make('h3', '', (event.repeat ? '' : 'Stage ' + (at.stage.index + 1) + ' · ') + levelName(picked)), more);
+  const detail = make('div', 'event-detail' + (warn ? ' warn' : ''),
     make('div', 'facts', fact('Clock', formatTime(clockFor(picked, evil))), fact('Tip', money(picked.tip)), fact('Best to spare', best === undefined ? 'Not delivered yet' : formatTime(best))),
-    make('p', 'needs' + (open && !Game.canStart ? ' warn' : ''), ...richTiers(stageLine(picked))),
+    make('p', 'needs' + (warn ? ' warn' : ''), ...richTiers(stageLine(picked))),
     roadBtn || replaysBtn ? make('div', 'road', roadBtn, replaysBtn) : null);
+  // (the stepper: a node a stage, done / ready / a car needed / locked, the one picked ringed, a tap picks it; the grand prize at its end)
+  const steps = event.repeat ? null : make('ol', 'ev-steps', ...event.stages.map((stage) => {
+    const st = Events.state(event, stage.index), kind = st.done ? 'done' : st.open && !st.needs ? 'ready' : st.open ? 'needs' : 'locked';
+    const node = make('button', 'ev-step ' + kind + (stage.level === picked ? ' picked' : ''), st.done ? '✓' : String(stage.index + 1));
+    node.title = node.ariaLabel = 'Stage ' + (stage.index + 1) + (st.done ? ': done' : st.why ? ': ' + st.why : ': ready');
+    node.addEventListener('click', () => { if (stage.level && stage.level !== cursor) { blip('menuMove'); show(stage.level); } });
+    return make('li', st.done ? 'done' : '', node);
+  }), prize ? make('li', '', make('span', 'ev-goal' + (won ? ' won' : ''), icon('trophy'))) : null);
+  if (steps) steps.setAttribute('aria-label', done + ' of ' + of + ' stages done');
   // (the row scrolls sideways with no scroll bar: a swipe, the mouse wheel, or the arrows at its ends, a card at a time;
   // an arrow shows only where there is more that way)
   const row = make('div', 'event-row', ...cards), back = make('button', 'event-arrow back', '‹'), on = make('button', 'event-arrow on', '›');
@@ -822,7 +876,7 @@ const eventPanel = (event, picked, evil) => {
   window.addEventListener('pointerup', () => { if (drag) setTimeout(() => { drag = null; row.classList.remove('dragging'); }, 0); });
   row.addEventListener('click', (e) => { if (drag?.moved > 5) { e.stopPropagation(); e.preventDefault(); } }, true);
   requestAnimationFrame(arrows);
-  const panel = make('div', 'event-panel', head, make('div', 'event-rowbox', row, back, on), detail);
+  const panel = make('div', 'event-panel ev-series' + (detailsOpen ? ' ev-open' : ''), head, steps, make('div', 'event-rowbox', row, back, on), pickLine, detail);
   requestAnimationFrame(() => { for (const [el, car, side = evil, stock = false] of drawLater) stillCar(el, car, side, undefined, stock); }); // (once laid out; a stage's car dressed in the player's loadout, an offer stock)
   return panel;
 };
@@ -973,12 +1027,12 @@ window.addEventListener('keydown', (e) => {
 // touch: a swipe sideways across the stage steps a level
 {
   let from = null;
-  stage.addEventListener('pointerdown', (e) => { from = e.target.closest('button') ? null : { x: e.clientX, y: e.clientY }; });
+  stage.addEventListener('pointerdown', (e) => { from = e.target.closest('button, .event-row') ? null : { x: e.clientX, y: e.clientY }; }); // (the stage cards' row scrolls itself)
   stage.addEventListener('pointerup', (e) => {
     if (!from) return;
     const dx = e.clientX - from.x, dy = e.clientY - from.y;
     from = null;
-    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) step(dx < 0 ? 1 : -1);
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) (tab === 'event' ? stepMode : step)(dx < 0 ? 1 : -1); // (the Events tab: an event at a time, as its tabs)
   });
   stage.addEventListener('pointercancel', () => { from = null; });
 }
@@ -1001,7 +1055,7 @@ export const showEvent = (id) => {
 };
 // ---- for a picture (see the top of the file) -------------------------------------------------------------
 if (params.get('tab') === 'races') { tab = 'race'; cursor = TABS.race.list[0]; if (!isRace(LEVEL)) { selectLevel(LEVELS.indexOf(cursor)); useLevelCar(cursor.car, cursor.amphibious); } } // (?tab=races: the menu opens on the races, for a check)
-if (params.get('tab') === 'events' && TABS.event.list.length) show(TABS.event.list.find(isOpen) || TABS.event.list[0]); // (?tab=events: the menu opens on the events, for a check)
+if (params.get('tab') === 'events' && TABS.event.list.length) show(rememberedLevel() || TABS.event.list.find(isOpen) || TABS.event.list[0]); // (the mode last picked first: eventmodes.js) // (?tab=events: the menu opens on the events, for a check)
 if (params.get('side') === 'evil') Game.evil = true; // (not saved)
 if (params.get('cursor')) { cursor = LEVELS[Math.max(0, Math.min(LEVELS.length - 1, Number(params.get('cursor')) - 1))]; tab = tabOf(cursor); if (isOpen(cursor)) show(cursor); }
 if (params.get('options') !== null) openSheet(options);

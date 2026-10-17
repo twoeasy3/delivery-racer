@@ -97,7 +97,7 @@
   #startScreen.ev-tab.cx-card .menu-side { position: relative; bottom: auto; background: var(--panel); box-shadow: 0 0 0 1px var(--line), 0 14px 40px rgba(0, 0, 0, .45); }
   #startScreen.ev-tab.cx-card .menu-stage { --band: 118px; min-height: 0; gap: 8px; padding: 92px 12px 12px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
   #startScreen.ev-tab.cx-card .menu-stage::-webkit-scrollbar { display: none; }
-  #startScreen.ev-tab.cx-card .menu-stage .arrow { display: none; } /* (the tabs and a swipe step the events) */
+  #startScreen.ev-tab .menu-stage .arrow { display: none; } /* (the tabs and a swipe step the events) */
   #startScreen.ev-tab.cx-card .menu-stage .plate { padding: 5px 22px 4px 10px; }
   #startScreen.ev-tab.cx-card .menu-stage .plate b { font-size: 18px; }
   #startScreen.ev-tab.cx-card .menu-stage.has-extras .cargo3d { top: 44px; right: 8px; width: 150px; flex-direction: row; justify-content: flex-end; gap: 6px; }
@@ -113,11 +113,14 @@
   #startScreen.ev-tab.cx-card .cx-tasks { gap: 4px; margin: 0; }
   #startScreen.ev-tab.cx-card .cx-tasks li { padding: 6px 9px; font-size: 12px; line-height: 1.25; }
   #startScreen.ev-tab.cx-card .menu-stage > .card-extras { order: 2; flex-wrap: nowrap; gap: 8px; margin: 0; }
-  #startScreen.ev-tab.cx-card .cx-car { flex: 1 1 auto; grid-template-columns: minmax(0, 50%) minmax(0, 1fr); padding: 8px 10px 10px 6px; }
-  #startScreen.ev-tab.cx-card .cx-name strong { font-size: 18px; }
+  #startScreen.ev-tab.cx-card .cx-car { flex: 1 1 auto; grid-template-columns: minmax(0, 46%) minmax(0, 1fr); padding: 8px 10px 10px 6px; }
+  #startScreen.ev-tab.cx-card .cx-car > .cx-label { font-size: 11px; letter-spacing: .08em; }
+  #startScreen.ev-tab.cx-card .cx-name strong { font-size: 17px; }
+  #startScreen.ev-tab.cx-card .cx-stars { font-size: 13px; }
   #startScreen.ev-tab.cx-card .cx-odds { font-size: 11px; }
+  #startScreen.ev-tab.cx-card .menu-stage.has-tasks:not(.ev-open) .cx-odds { display: none; } /* (the day's tasks take the room: the odds under Details) */
   #startScreen.ev-tab.cx-card .cx-try { min-height: 44px; margin-top: 8px; font-size: 13px; }
-  #startScreen.ev-tab.cx-card .cx-pack { flex: 0 0 104px; flex-direction: column; justify-content: center; gap: 8px; padding: 10px 6px; }
+  #startScreen.ev-tab.cx-card .cx-pack { flex: 0 0 96px; flex-direction: column; justify-content: center; gap: 8px; padding: 10px 6px; }
   #startScreen.ev-tab.cx-card .cx-art, #startScreen.ev-tab.cx-card .cx-art .event-pack-art { width: 58px; height: 80px; }
   #startScreen.ev-tab.cx-card .cx-art .event-pack-art .shop-packs { transform: scale(.69); }
   #startScreen.ev-tab.cx-card .cx-ribbon { bottom: 12px; font-size: 10px; }
@@ -134,22 +137,28 @@
   #startScreen.ev-tab.cx-card .menu-stage.ev-open.has-extras .info > .desc { display: -webkit-box; -webkit-line-clamp: 6; line-clamp: 6; }
   #startScreen.ev-tab.cx-card .menu-stage .info > .road .menu-chip { min-height: 44px; }
 
+  /* (a tall phone and a card with no tasks, the Car Hunt: the picture band taller, into the room left under it) */
+  @media (min-height: 800px) {
+    #startScreen.ev-tab.cx-card .menu-stage:not(.has-tasks) { --band: 172px; padding-top: 146px; }
+    #startScreen.ev-tab.cx-card .menu-stage:not(.has-tasks).has-extras .cargo3d { top: 54px; }
+  }
   /* the Comet Hunt's screen on a phone */
   #startScreen .ev-series { padding: 10px; gap: 8px; }
   #startScreen .ev-head { flex-wrap: nowrap; gap: 8px; align-items: flex-start; }
   #startScreen .ev-title { flex-basis: auto; gap: 5px; }
   #startScreen .ev-title h2 { font-size: 22px; }
-  #startScreen .ev-status { flex-wrap: wrap; gap: 2px 6px; font-size: 12px; }
+  #startScreen .ev-status { gap: 6px; font-size: 12px; white-space: nowrap; }
   #startScreen .ev-status b::after { margin-left: 6px; }
-  #startScreen .ev-prize { grid-template-columns: 74px minmax(0, auto); max-width: 52%; padding: 4px 10px 4px 4px; gap: 0 6px; }
+  #startScreen .ev-prize { grid-template-columns: 74px minmax(0, auto); max-width: 46%; padding: 4px 10px 4px 4px; gap: 0 6px; }
   #startScreen .ev-prize-words small { font-size: 10px; letter-spacing: .1em; }
   #startScreen .ev-prize-words strong { font-size: 14px; }
   #startScreen .ev-series .event-stage { flex-basis: 44%; min-width: 146px; padding: 9px; }
-  #startScreen .ev-series .event-stage .event-car { aspect-ratio: 16 / 10; }
+  #startScreen .ev-series .event-rowbox { flex: 1 1 auto; max-height: 250px; } /* (the cards take the room there is: the cars larger) */
+  #startScreen .ev-series .event-stage .event-car { flex: 1 1 auto; min-height: 84px; aspect-ratio: auto; }
   #startScreen .ev-pick h3 { font-size: 18px; }
   #startScreen.ev-tab .ev-series .event-detail { display: none; }
   #startScreen.ev-tab .ev-series .event-detail.warn, #startScreen.ev-tab .ev-series.ev-open .event-detail { display: flex; }
-  #startScreen.ev-tab .ev-series .event-detail.warn:not(.open) > :not(.needs) { display: none; }
+  #startScreen.ev-tab .ev-series:not(.ev-open) .event-detail.warn > :not(.needs) { display: none; }
   #startScreen.ev-tab .ev-series .event-detail .road .menu-chip { min-height: 44px; }
 }
 @media (prefers-reduced-motion: reduce) {

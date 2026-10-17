@@ -18,6 +18,7 @@ const ICONS = {
   comet: '<circle cx="15.5" cy="8.5" r="4" fill="currentColor"/><path d="M12.5 11.5 3 21M10.5 8 4.5 14M16 12.5l-6 6"/>',
   gift: '<rect x="3.5" y="9" width="17" height="11.5" rx="1.5"/><path d="M2.5 9h19M12 9v11.5M12 9c-1.5-4-6-5-6-2.2C6 8.6 9 9 12 9c3 0 6-.4 6-2.2C18 4 13.5 5 12 9z"/>',
   flag: '<path d="M5 21.5V3M5 4h12l-2.5 4 2.5 4H5"/>',
+  trophy: '<path d="M7 3.5h10v5a5 5 0 0 1-10 0zM7 5.5H3.5c0 3 1.5 4.5 3.8 4.6M17 5.5h3.5c0 3-1.5 4.5-3.8 4.6M12 13.5v3.5M8 20.5h8M9.5 17h5v3.5h-5z"/>',
 };
 const WORDS = { 'car-hunt': ['hunt', 'Hunt'], 'concept-strike': ['bolt', 'Strike'], 'comet-hunt': ['comet', 'Comet'], christmas: ['gift', 'Xmas'] };
 // a mode's icon and word: its own, or, for an event not named above, a flag (a special event) or a gift (a one-level event)
