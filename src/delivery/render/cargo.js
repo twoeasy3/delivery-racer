@@ -27,6 +27,7 @@ import { Fly } from './fly.js';
 import { Sound } from './audio.js';
 import { carMesh } from './cars.js';
 import { Particles, Smoke, rnd } from './effects.js';
+import { chance } from './gameclock.js'; // (on the game's clock: CHECKLIST 442)
 import { makeCargoModel } from './cargoModels.js';
 import { cornerFrames, addCornerLights, placeCornerCamera } from './cargoview.js';
 
@@ -201,7 +202,7 @@ export const syncCargo = (dt, now) => {
       kerbModel.position.z += Math.cos(a) * r;
       kerbModel.position.y += Math.abs(Math.sin(since * 8)) * 0.55 * act;
       scale *= 1 + 0.18 * Math.abs(Math.sin(since * 6.5)) * act;
-      if (Math.random() < dt * 30) Particles.emit(kerbModel.position.x + rnd(0.5), kerbModel.position.y + 0.8, kerbModel.position.z + rnd(0.5), rnd(4), 2 + Math.random() * 4, rnd(4), 0.5, 0.22, 0, 12, Math.random() < 0.5 ? 0xff3b1a : 0xffd23f, at.y);
+      if (chance(0.5)) Particles.emit(kerbModel.position.x + rnd(0.5), kerbModel.position.y + 0.8, kerbModel.position.z + rnd(0.5), rnd(4), 2 + Math.random() * 4, rnd(4), 0.5, 0.22, 0, 12, Math.random() < 0.5 ? 0xff3b1a : 0xffd23f, at.y);
       // ...and the car shrinks from it
       carMesh.rotation.z = Math.sin(t * 31) * 0.035 * act;
       carMesh.position.y += Math.abs(Math.sin(t * 19)) * 0.06 * act;

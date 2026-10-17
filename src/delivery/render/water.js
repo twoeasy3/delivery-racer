@@ -19,6 +19,7 @@ import { Traffic } from '../traffic.js';
 import { scene, tmp, clearGroup } from './scene.js';
 import { carMesh, trafficMeshes, playerAirborne } from './cars.js'; // (playerAirborne: no spray under a car jumping the river, CHECKLIST 429)
 import { Particles, rnd, perSecond } from './effects.js';
+import { parentVelocity } from './gameclock.js'; // (CHECKLIST 442)
 import './boatModels.js'; // (the boats, added to MODELS)
 
 const STEP = 4, COLS = 6;             // m between rows of the sheet; points across it
@@ -136,18 +137,21 @@ const riding = (s, draft, phase, now) => {
 };
 // white water thrown up by a hull at (s, lat) moving at `speed` (signed, along the road): churned up astern,
 // and curling off each side of the bow
-const spray = (s, lat, hw, hl, speed, dir) => {
+const hull = { s: 0, lat: 0, vs: 0, latVel: 0 }, carried = { x: 0, y: 0, z: 0 };
+const spray = (s, lat, hw, hl, speed, dir, latVel = 0) => {
   const way = Math.sign(speed) || dir, pace = Math.abs(speed);
+  hull.s = s; hull.lat = lat; hull.vs = speed; hull.latVel = latVel;
+  parentVelocity(hull, carried, s - way * hl); // (the hull's own velocity, across the road too: CHECKLIST 442)
   const h = Track.toWorld(s - way * hl, lat, tmp), y = tmp.y + surface(s);
   for (let n = 0; n < 2; n++) {
-    Particles.emit(tmp.x + rnd(hw * 0.7), y + 0.05, tmp.z + rnd(hw * 0.7), Math.sin(h) * speed * 0.15 + rnd(1.2), 1 + Math.random() * 1.6, Math.cos(h) * speed * 0.15 + rnd(1.2),
+    Particles.emit(tmp.x + rnd(hw * 0.7), y + 0.05, tmp.z + rnd(hw * 0.7), carried.x * 0.15 + rnd(1.2), 1 + Math.random() * 1.6, carried.z * 0.15 + rnd(1.2),
       0.5 + Math.random() * 0.3, 0.17, 0.9, 6, Math.random() < 0.6 ? 0xffffff : 0xcfe9f2, y);
   }
   if (pace < 8) return;
   for (const side of [-1, 1]) { // the bow wave: out to each side, the further the faster
     Track.toWorld(s + way * hl * 0.9, lat + side * hw, tmp);
     const out = side * (2 + pace * 0.12) * (Track.mirrored ? -1 : 1);
-    Particles.emit(tmp.x, y + 0.05, tmp.z, Math.cos(h) * out + Math.sin(h) * speed * 0.3, 1.2 + Math.random() * 1.2, -Math.sin(h) * out + Math.cos(h) * speed * 0.3,
+    Particles.emit(tmp.x, y + 0.05, tmp.z, Math.cos(h) * out + carried.x * 0.3, 1.2 + Math.random() * 1.2, -Math.sin(h) * out + carried.z * 0.3,
       0.4 + Math.random() * 0.2, 0.15, 0.7, 7, 0xffffff, y);
   }
 };
@@ -185,7 +189,7 @@ export const syncWater = (now, dt) => {
     carMesh.rotation.x += r.pitch - depth * 0.05 * Math.min(1, Player.speed / 30);
     rolled = true;
     if (Player.active && Player.speed > C.wakeFrom && depth > 0.2 && !playerAirborne()) for (let k = perSecond(60, dt); k > 0; k--) { // (once a frame at 60 Hz, as it was)
-      spray(Player.s, Player.lat, Player.hw, Player.hl, Player.speed, 1);
+      spray(Player.s, Player.lat, Player.hw, Player.hl, Player.speed, 1, Player.latVel);
       // (the Amphibious Tank shoulders a big bow wave ahead of it: as much white water again, thrown wider)
       for (let n = 1; n < (Player.rageTank?.bowWave || 1); n++) spray(Player.s + 0.6 * n, Player.lat, Player.hw + 0.5 * n, Player.hl + 0.4, Player.speed * (1 + 0.25 * n), 1);
     }

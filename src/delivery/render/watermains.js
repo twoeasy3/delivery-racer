@@ -6,6 +6,7 @@
 // about, and mist.
 import * as THREE from 'three';
 import { Particles, Smoke, rnd } from './effects.js';
+import { chance, gameCount } from './gameclock.js'; // (on the game's clock: none while paused, CHECKLIST 442)
 
 // (seeded, so a puddle is the same shape every run)
 const seeded = (seed) => () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
@@ -108,12 +109,12 @@ export const makeFountain = (height) => {
     crown.scale.set(1 + 0.15 * Math.sin(t * 13), 0.6, 1 + 0.15 * Math.cos(t * 11));
     foam.scale.setScalar(0.8 + 0.3 * Math.abs(Math.sin(t * 9)));
     if (paused) return;
-    for (let n = 0; n < 5; n++) { // droplets thrown off the top, falling in a ring round the hole
+    for (let n = gameCount(300); n > 0; n--) { // (five a 60 Hz frame of game time) droplets thrown off the top, falling in a ring round the hole
       const a = Math.random() * Math.PI * 2, out = 1.5 + Math.random() * 3.5;
       Particles.emit(x + rnd(0.3), y + h * (0.75 + Math.random() * 0.25), z + rnd(0.3), Math.cos(a) * out, 1 + Math.random() * 4, Math.sin(a) * out,
         0.9 + Math.random() * 0.5, 0.1 + Math.random() * 0.12, 0.3, 18, Math.random() < 0.6 ? 0xffffff : 0xcfe9f2, y);
     }
-    if (Math.random() < 0.5) Smoke.emit(x + rnd(0.8), y + h * 0.9 + rnd(0.6), z + rnd(0.8), rnd(1.5), -0.5, rnd(1.5), 0.7, 0.3 + Math.random() * 0.3, 1, 2, 0xeef6fb); // (mist)
+    if (chance(0.5)) Smoke.emit(x + rnd(0.8), y + h * 0.9 + rnd(0.6), z + rnd(0.8), rnd(1.5), -0.5, rnd(1.5), 0.7, 0.3 + Math.random() * 0.3, 1, 2, 0xeef6fb); // (mist)
   };
   return g;
 };
