@@ -280,7 +280,7 @@ export const mall = ({ theme, beside, levelGroup }) => {
       return;
     }
     at(insides, 0, 3.0, 2.45, w, FACIA, 6, kind === 'dark' ? 0x1e1b22 : P.inside);
-    at(doors, 0, 0.06, 1.5, 1.4, 2.6, 0.12);
+    at(doors, 0, 0.14, 1.5, 1.4, 2.6, 0.12); // (its face 8 cm behind the glass: at 0.06 its face WAS the glass's plane, a z-fight down every front)
     if (kind === 'poster') { at(posters, 0, 0.4, 2.0, Math.max(2, w - 2), 2.4, 0.06, P.facia[(Math.floor(rand() * P.facia.length))]); return; }
     if (kind === 'dark') return;
     const n = w > 8 ? 3 : 2;
@@ -300,12 +300,25 @@ export const mall = ({ theme, beside, levelGroup }) => {
     Track.toWorld(s0, edge(s0), p); Track.toWorld(s1, edge(s1), q);
     walls2.quad([p.x, p.y, p.z], [p.x, p.y + FACIA, p.z], [q.x, q.y + FACIA, q.z], [q.x, q.y, q.z], colour.set(P.wall).multiplyScalar(0.9).getHex());
   };
+  // how far a flat front `w` m wide (piers and all), set at the wall line at `mid` and facing the road, must stand back for none of it to
+  // come out over the road in a bend: on the inside of one its ends, straight, come in past the curving wall (a pier 0.3 m before the
+  // wall line, its 0.3 m strip; the rest is the bend's). Laid out once, so a few probes are nothing
+  const ends = { x: 0, z: 0 };
+  const setBack = (mid, side, w) => {
+    const edge = side < 0 ? lo : hi, h = Track.toWorld(mid, edge(mid), ends), x = ends.x, z = ends.z, rx = Math.sin(h), rz = Math.cos(h);
+    let most = 0;
+    for (const u of [-w / 2, w / 2]) {
+      const at = Track.fromWorld(x + rx * u, z + rz * u, mid, 20);
+      most = Math.max(most, side < 0 ? at.lat - edge(at.s) : edge(at.s) - at.lat); // (> 0: that end is the road's side of the wall line)
+    }
+    return most > 0.005 ? most + 0.06 : 0;
+  };
   // a unit along the road: from s to s + len on that side, facing the road (where a side corridor opens, `gaps`, plain wall up to its mouth)
   const front = (s, side, hall, y0 = 0, len = BAY) => {
     const gap = y0 === 0 && gaps.find(g => g.side === side && s + len > g.from && s < g.to); // (the gallery runs on over a mouth)
     if (gap) { blank(s, Math.min(s + len, gap.from), side, hall); blank(Math.max(s, gap.to), s + len, side, hall); return; }
-    const edge = side < 0 ? lo : hi, mid = s + len / 2, h = Track.toWorld(mid, edge(mid), p);
-    unit(p.x, p.y, p.z, h + facing(side), hall, len - 0.9, mid, y0);
+    const edge = side < 0 ? lo : hi, mid = s + len / 2, back = setBack(mid, side, len), h = Track.toWorld(mid, edge(mid), p), turn = h + facing(side);
+    unit(p.x - Math.sin(turn) * back, p.y, p.z - Math.cos(turn) * back, turn, hall, len - 0.9, mid, y0);
   };
   // the units along a stretch of wall: BAY m each on a straight, half that in a bend (so their flat fronts keep to the curve)
   const fronts = (from, to, side, hall, y0 = 0) => {
@@ -420,8 +433,11 @@ export const mall = ({ theme, beside, levelGroup }) => {
           continue;
         }
         const [name, bg, fg, glyph] = SHOPS.foodcourt[Math.floor(rand() * SHOPS.foodcourt.length)], col = PAL.foodcourt.facia[Math.floor(rand() * 4)];
-        const mid = s + BAY / 2, latW = edge(mid), h = Track.toWorld(mid, latW, p), turn = h + facing(side), dx = Math.sin(turn), dz = Math.cos(turn), w = BAY - 0.9;
+        // (the pier first: piers.on places itself through the shared `p`, which then has to be the stall's middle for what follows.
+        // It was placed after, so every stall but its pier stood 5.55 m back along the road, the pier through the middle of its sign)
         piers.on(s + 0.45, edge(s + 0.45), FACIA / 2, 0, 0.6, FACIA, 0.9, PAL.foodcourt.wall);
+        const mid = s + BAY / 2, latW = edge(mid), back = setBack(mid, side, BAY), h = Track.toWorld(mid, latW, p), turn = h + facing(side), dx = Math.sin(turn), dz = Math.cos(turn), w = BAY - 0.9;
+        p.x -= dx * back; p.z -= dz * back; // (in a bend: back far enough that nothing of the stall comes out over the road)
         insides.at(p.x - dx * 2.5, p.y + 2.45, p.z - dz * 2.5, turn, w, FACIA, 5, PAL.foodcourt.inside);
         counters.at(p.x - dx * 0.65, p.y + 0.55, p.z - dz * 0.65, turn, w - 1, 1.1, 1.2, col); // (the counter inside the wall line: nothing of it in the road)
         counters.at(p.x - dx * 0.65, p.y + 1.15, p.z - dz * 0.65, turn, w - 0.8, 0.1, 1.4, 0xf4f1ec);
@@ -520,8 +536,8 @@ export const mall = ({ theme, beside, levelGroup }) => {
     if (open) return; // (a tunnel junction's concourse: open, the train comes through it; its beacons and sign are render/hazards.js's)
     // the mouth: a glass barrier across it on posts, the sign on it, a bollard each side
     { const [x, y, z] = at(2.6, 0, 0); // (2.6 m in from the wall line: nothing of it over the road)
-      balustrades.at(x, y + 0.55, z, h, W - 1.4, 1.1, 0.06);
-      rails.at(x, y + 1.12, z, h, W - 1.4, 0.06, 0.1);
+      balustrades.at(x, y + 0.55, z, turn, W - 1.4, 1.1, 0.06); // (turned to the mouth, `turn`: turned `h` it lay along the corridor, 1.4 m of glass out over the road)
+      rails.at(x, y + 1.12, z, turn, W - 1.4, 0.06, 0.1);
       for (const u of [-W / 2 + 0.7, 0, W / 2 - 0.7]) { const [px, py, pz] = at(2.6, u, 0); posts.at(px, py + 0.55, pz, 0, 0.08, 1.1, 0.08); }
       signBatch(sign('CLOSED FOR CLEANING', '#f2c21d', '#1a1b1e', null)).at(x + ox * -0.06, y + 0.75, z + oz * -0.06, turn, 2.8, 0.7, 1);
       for (const u of [-W / 2 + 0.6, W / 2 - 0.6]) { const [px, py, pz] = at(1.8, u, 0); bollards.at(px, py + 0.5, pz, 0, 0.22, 1.0, 0.22); }

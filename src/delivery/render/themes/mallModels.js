@@ -4,6 +4,7 @@
 // for), and the signs: every sign in the mall is drawn in code on a small canvas (nothing downloaded, no real brand: the
 // shops' names are invented). Each model faces local +z, its feet on y = 0.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const lambert = (color, extra) => new THREE.MeshLambertMaterial({ color, ...extra });
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
@@ -150,13 +151,16 @@ export const MALL_OBSTACLES = {
       put(t, box(0.03, H, L), wire, W / 2, Y + H / 2, 0, 0, 0, -0.12);
       put(t, box(W + 0.1, H, 0.03), wire, 0, Y + H / 2, L / 2, -0.25, 0, 0);                  // the nose, raked
       put(t, box(W + 0.1, H, 0.03), wire, 0, Y + H / 2, -L / 2, 0.1, 0, 0);                   // the back (a flap)
-      put(t, box(W + 0.16, 0.04, L + 0.1), frame, 0, Y + H, 0);                               // the rim
+      // the rim: four bars round the basket's mouth, one mesh (it was one solid plate over the top: a lid, the nest read as a table)
+      const bars = [-1, 1].flatMap(k => [box(0.04, 0.04, L + 0.1).translate(k * (W / 2 + 0.06), 0, 0), box(W + 0.16, 0.04, 0.04).translate(0, 0, k * (L / 2 + 0.03))]);
+      put(t, mergeGeometries(bars), frame, 0, Y + H, 0);
+      bars.forEach(b => b.dispose());
       for (const x of [-1, 1]) put(t, box(0.03, Y, 0.03), frame, x * (W / 2 - 0.02), Y / 2, -L / 2 + 0.05); // the back legs
       for (const x of [-1, 1]) put(t, box(0.03, Y + 0.15, 0.03), frame, x * (W / 2 - 0.02), (Y + 0.15) / 2, L / 2 - 0.06, -0.2, 0, 0);
       put(t, box(0.03, 0.4, 0.03), frame, -W / 2, Y + H + 0.2, -L / 2);                       // the handle's stems
       put(t, box(0.03, 0.4, 0.03), frame, W / 2, Y + H + 0.2, -L / 2);
-      put(t, cyl(0.03, 0.03, W + 0.1, 8), red, 0, Y + H + 0.4, -L / 2, 0, 0, Math.PI / 2);   // the handle
-      for (const x of [-1, 1]) for (const z of [-1, 1]) put(t, cyl(0.055, 0.055, 0.04, 10), black, x * (W / 2 - 0.05), 0.055, z * (L / 2 - 0.1), 0, 0, Math.PI / 2); // the wheels
+      put(t, cyl(0.03, 0.03, W + 0.1, 6), red, 0, Y + H + 0.4, -L / 2, 0, 0, Math.PI / 2);   // the handle
+      for (const x of [-1, 1]) for (const z of [-1, 1]) put(t, cyl(0.055, 0.055, 0.04, 8), black, x * (W / 2 - 0.05), 0.055, z * (L / 2 - 0.1), 0, 0, Math.PI / 2); // the wheels (8 sides, 6 the handle: what pays for the rim's bars)
     }
     return grounded(group, 1.15);
   },
@@ -166,16 +170,19 @@ export const MALL_OBSTACLES = {
     const group = new THREE.Group();
     const face = new THREE.MeshBasicMaterial({ map: wetFloorTexture(), side: THREE.DoubleSide });
     face.userData.shared = true;
+    // (each board hangs from the hinge and leans out at its foot: an A. Turned about the floor, as it was, the two leaned apart at
+    // the top, a V standing on its head with the hinge in the air between them)
+    const HINGE = 0.975; // m: the boards' feet (1.02 m down each, leaning 0.3 rad) then just touch the floor
     for (const side of [-1, 1]) {
       const board = new THREE.Group();
-      board.position.set(0, 0, 0);
-      board.rotation.x = side * 0.3;
+      board.position.set(0, HINGE, 0);
+      board.rotation.x = -side * 0.3;
       group.add(board);
-      put(board, box(0.62, 1.08, 0.04), lambert(0xf2c21d), 0, 0.56, side * 0.03);
-      const words = put(board, new THREE.PlaneGeometry(0.5, 0.78), face, 0, 0.56, side * 0.056);
+      put(board, box(0.62, 1.08, 0.04), lambert(0xf2c21d), 0, -0.48, side * 0.03);
+      const words = put(board, new THREE.PlaneGeometry(0.5, 0.78), face, 0, -0.48, side * 0.056);
       if (side < 0) words.rotation.y = Math.PI;
     }
-    put(group, cyl(0.02, 0.02, 0.66, 6), lambert(0x4a4f57), 0, 1.04, 0, 0, 0, Math.PI / 2);   // the hinge
+    put(group, cyl(0.02, 0.02, 0.66, 6), lambert(0x4a4f57), 0, HINGE + 0.03, 0, 0, 0, Math.PI / 2);   // the hinge
     return grounded(group, 0.5);
   },
 };

@@ -9,12 +9,13 @@ import { Track } from '../track.js';
 import { Game } from '../game.js';
 import { Player } from '../player.js';
 import { renderer, scene, camera, tmp, tmp2, aim } from './scene.js';
+import { freeCameraAllowed } from './tunnelshape.js';
 
 const P = CONFIG.photo;
 export const Photo = { on: false, yaw: 0, pitch: 0, far: 0 };
 
 const button = document.getElementById('photoBtn'), bar = document.getElementById('photoBar'), canvas = renderer.domElement;
-const canStart = () => Game.state === 'playing' && Game.paused && !Game.screensaver;
+const canStart = () => Game.state === 'playing' && Game.paused && !Game.screensaver && freeCameraAllowed(); // (no photo mode on an enclosed level: its camera round the car passes through the walls)
 
 export const startPhoto = () => {
   if (!canStart() || Photo.on) return;

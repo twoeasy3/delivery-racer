@@ -69,7 +69,7 @@ try {
   check(users.every(f => /makeShowCar\(/.test(readFileSync(new URL('../src/delivery/render/' + f + '.js', import.meta.url), 'utf8'))), 'every vehicle preview builds its car with makeShowCar (on show): ' + users.join(', '));
   const { fingerprints } = await import('./logic-hash.mjs');
   const fp = fingerprints();
-  check(fp.logic === '057a22806d' && fp.legacy === '661de07fbe', 'the replay fingerprint unchanged (since CHECKLIST 470, no pickup in the air; was 33a0394c26 / dd565f56b3): ' + JSON.stringify(fp));
+  check(fp.logic === '8dbc477d85' && fp.legacy === 'bcc9df44d0', 'the replay fingerprint unchanged (since CHECKLIST 476, the dead-end side rule, was 057a22806d; since CHECKLIST 470, no pickup in the air; was 33a0394c26 / dd565f56b3): ' + JSON.stringify(fp));
 } catch (e) {
   failures++;
   console.log('  FAIL  ' + (g.fixStack ? g.fixStack(e.stack) : e.stack));

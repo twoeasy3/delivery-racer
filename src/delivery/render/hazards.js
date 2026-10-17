@@ -204,7 +204,9 @@ Game.onLoad.push(() => {
   standing = null;
   if (Track.puddles.length) {
     const look = (THEMES[LEVEL.theme] || {}).standingWater || {}, sheets = [], rims = [], pools = [], R = 0.09;
-    const sheetOpacity = look.opacity ?? 0.42, rimOpacity = look.edge === null ? 0 : look.rimOpacity ?? 0.75, patchy = !!look.patchy;
+    // (a patchy look has NO sheet, as said above: the theme's `opacity` was still drawn, a flat grey film over the patch's whole stretch,
+    // dry gaps and all, and on the mall's dark floors it read as a grey wash over the floor round the puddles: the owner, 17-Oct)
+    const patchy = !!look.patchy, sheetOpacity = patchy ? 0 : look.opacity ?? 0.42, rimOpacity = look.edge === null ? 0 : look.rimOpacity ?? 0.75;
     let k = 0;
     const rnd = ((seed) => () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648))(4242); // (seeded: the same floor every run)
     for (const p of Track.puddles) {

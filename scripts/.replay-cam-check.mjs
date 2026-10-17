@@ -10,6 +10,7 @@
 //     COST          the clusters tested a frame (at the pose, and turning round the car for 2 s), and the ms of a frame's test: stated
 //     OFF AGAIN     the orbit off: in 0.4 s nothing faded, the original materials back, the instance matrices plain, and the fade no longer runs
 //   ONCE          photo mode (a free camera round the paused car) fades too, and stops with it
+//   ENCLOSED      the mall and the metro (render/tunnelshape.js freeCameraAllowed): no orbit, no photo mode, no button for either
 //   node scripts/.replay-cam-check.mjs [--themes=city,venice] [--levels=venice,tokyo] [--part=1/3] [--browser=<path>] [--shots=<dir>]
 import { createServer } from 'vite';
 import { spawn } from 'node:child_process';
@@ -29,7 +30,7 @@ let failed = 0;
 const check = (ok, what) => { console.log((ok ? '  ok    ' : '  FAIL  ') + what); if (!ok) failed++; };
 const note = (what) => console.log('  ..    ' + what);
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-const MAIN_PRINT = { logic: '057a22806d', legacy: '661de07fbe' }; // (main v1.1.154-alpha, 5c0d89d)
+const MAIN_PRINT = { logic: '8dbc477d85', legacy: 'bcc9df44d0' }; // (since CHECKLIST 476, a dead end's blocker solid from the side, track.js: was main's 057a22806d / 661de07fbe)
 const COST = { tested: 600, ms: 10 }; // (a frame's test at most: clusters tested; ms in headless SwiftShader's JS, a frame that makes a material's fading copy included)
 
 // ---- the source
@@ -106,6 +107,8 @@ else {
     let todo = ONLY_LEVELS ? levels.filter(l => ONLY_LEVELS.includes(l.id)) : [...pick.values()];
     if (ONLY_THEMES) todo = todo.filter(l => ONLY_THEMES.includes(l.theme));
     if (PART) todo = todo.filter((_, i) => i % PART[1] === PART[0] - 1); // (--part=1/3: every third, for runs side by side)
+    const enclosed = (l) => ['mall', 'metro'].includes(l.theme) ? 1 : 0;
+    todo.sort((a, b) => enclosed(b) - enclosed(a)); // (the enclosed first: the last level loaded, photo mode's below, is one with a free camera)
     console.log(`  ${todo.length} levels, one a theme`);
 
     const M = `const { Game } = await import('/src/delivery/game.js'); const { Player } = await import('/src/delivery/player.js'); const { Track } = await import('/src/delivery/track.js');
@@ -126,6 +129,16 @@ else {
         up = await evaluate(`(async () => { try { const { Game } = await import('/src/delivery/game.js'); if (Game.state !== 'playing') return false; Game.paused = true; return true; } catch { return false; } })()`).catch(() => false);
       }
       if (!up) { check(false, `${label}: the level started`); continue; }
+      // ENCLOSED (the mall, the metro: the owner, 17-Oct): no free camera at all there, so nothing to fade: ?orbit does not turn it
+      // on, a forced Orbit.on is put straight back off, no Orbit or Photo button, photo mode does not start
+      if (['mall', 'metro'].includes(l.theme)) {
+        const e = await evaluate(`(async () => { ${M} const { freeCameraAllowed } = await import('/src/delivery/render/tunnelshape.js'); const { Photo, startPhoto } = await import('/src/delivery/render/photo.js');
+          await frames(3); const wasOn = Orbit.on; Object.assign(Orbit, { on: true, mode: 'button', auto: false, held: true }); await frames(3);
+          startPhoto(); await frames(2); const shown = (id) => { const el = document.getElementById(id); return !!el && el.style.display !== 'none'; };
+          return { allowed: freeCameraAllowed(), wasOn, on: Orbit.on, photo: Photo.on, orbitBtn: shown('orbitBtn'), photoBtn: shown('photoBtn'), frames: F.SceneFade.frames }; })()`);
+        check(!e.allowed && !e.wasOn && !e.on && !e.photo && !e.orbitBtn && !e.photoBtn && e.frames === 0, `${label}: enclosed, no free camera: ?orbit off (${e.wasOn}), forced on put back off (${e.on}), photo mode ${e.photo}, Orbit button ${e.orbitBtn}, Photo button ${e.photoBtn}, fade frames ${e.frames}`);
+        continue;
+      }
       // (the theme's scenery arrives after the road: wait for levelGroup to stop growing)
       await evaluate(`(async () => { ${M} let n = -1, still = 0; for (let i = 0; i < 60 && still < 4; i++) { await wait(250); const k = levelGroup.children.length; still = k === n ? still + 1 : 0; n = k; } return n; })()`);
       // OFF IN PLAY: the chase camera, the run going on: nothing of the fade
@@ -213,7 +226,7 @@ else {
       if (errors.length) check(false, `${label}: page errors: ${errors.slice(0, 3).join(' | ').slice(0, 300)}`);
     }
     // ONCE: photo mode fades too (the last level loaded), and stops with it
-    if (todo.length) {
+    if (todo.length && !enclosed(todo[todo.length - 1])) {
       const ph = await evaluate(`(async () => { ${M} const { Photo, startPhoto } = await import('/src/delivery/render/photo.js');
         Game.paused = true; const n0 = F.SceneFade.frames; startPhoto(); await frames(4); const on = F.SceneFade.frames - n0, was = Photo.on;
         Photo.on = false; document.body.classList.remove('photo'); await settled(F); const n1 = F.SceneFade.frames; await frames(4);

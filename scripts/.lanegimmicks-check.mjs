@@ -5,7 +5,8 @@
 // and an armoured car smash through (the shutter gone, no damage); a WALL wrecks a plain car, a Ghost AND a tank; the
 // wrecked car is set in the open lane; another lane is always open (a level closing both is a problem); the warning
 // distance is longer than a lane change takes at the fastest top speed, with a margin; no dead end's wall at a junction's
-// mouth or on a pad.
+// mouth or on a pad; no one-way barrier along a dead lane (it is entered freely), but its blocker is solid from the side: a car
+// steered at it from the lane beside is held at the line, never wrecked (the owner, 17-Oct); Mall Dash has no pad or turbo.
 //   node scripts/.lanegimmicks-check.mjs
 import { boot } from './delivery-headless.mjs';
 
@@ -17,7 +18,11 @@ try {
   const { CARS, carStats } = await g.load('cars.js');
   const { CONFIG } = g;
   const P = g.Player, G = g.Game, B = CONFIG.boostPad, D = CONFIG.deadEnd;
-  const level = g.select('mall-dash');
+  // (Mall Dash's own travelators and turbos were taken out, the owner 17-Oct: the pads tested here are its three, put back on a copy)
+  const PADS = [{ from: 200, to: 280, lane: 0, rails: true }, { from: 1850, to: 1930, lane: 0, rails: true }, { from: 2580, to: 2660, lane: 0, rails: true }];
+  const mallDash = g.levels.HIDDEN_LEVELS['mall-dash'];
+  check(!(mallDash.boostPads || []).length && !(mallDash.pickups || []).some(p => p.type === 'turbo'), 'Mall Dash itself: no travelator and no turbo pickup (the owner, 17-Oct)');
+  const level = g.select({ ...mallDash, id: 'mall-pads', boostPads: PADS });
   const lane = (n, s) => g.track.Track.laneOffset(n, s);
   const start = (s, n, v, { ghost = false } = {}) => {
     P.testGhost = false;
@@ -85,20 +90,36 @@ try {
   check(!ar.wrecked && ar.past && ar.gone, 'an armoured car smashes through the shutter');
   const wp = into(wall, null), wg = into(wall, 'ghost'), wt = into(wall, 'tank'), wa = into(wall, 'armour');
   check(wp.wrecked && wg.wrecked && wt.wrecked && wa.wrecked, 'the wall wrecks a plain car, a Ghost, a tank and an armoured car alike');
-  // ---- the divider: from the sign on, the dead lane cannot be entered from the side; a car in it can leave
-  { const besideLane = shutter.lane > 0 ? shutter.lane - 1 : shutter.lane + 1;
-    start(shutter.s - D.sign + 10, besideLane, 20);
-    const want = lane(shutter.lane, P.s), was = P.lat;
-    g.run(3, () => { quiet(); P.speed = 20; g.drive(1, Math.sign(want - P.lat)); P.latVel = Math.sign(want - was) * 4; return false; });
-    const line = lane(shutter.lane, P.s) + Math.sign(was - lane(shutter.lane, P.s)) * LW / 2;
-    check(Math.sign(P.lat - line) === Math.sign(was - line) && Math.abs(P.lat - lane(shutter.lane, P.s)) > LW / 2, 'steering into the marked dead lane from the side: held at the line (lat ' + P.lat.toFixed(2) + ', the line at ' + line.toFixed(2) + ')');
+  // ---- no one-way barrier (the owner, 17-Oct): the dead lane is entered and left freely up to its blocker; beside the blocker (a
+  // shutter's face, a wall's face and the block behind it) a car from the open lane is held at the line, never wrecked from the side
+  { const besideOf = (e) => e.lane > 0 ? e.lane - 1 : e.lane + 1;
+    const steerIn = (e, at, secs = 2.5) => {
+      start(at, besideOf(e), 20);
+      const want = lane(e.lane, P.s), was = P.lat, h0 = P.health;
+      g.run(secs, () => { quiet(); P.speed = 20; g.drive(1, Math.sign(want - P.lat)); P.latVel = Math.sign(want - was) * 4; return P.health <= 0 || Math.abs(P.lat - lane(e.lane, P.s)) < 0.3; });
+      const line = lane(e.lane, P.s) + Math.sign(was - lane(e.lane, P.s)) * LW / 2;
+      return { inLane: Math.abs(P.lat - lane(e.lane, P.s)) < 0.5, held: Math.sign(P.lat - line) === Math.sign(was - line) && Math.abs(P.lat - lane(e.lane, P.s)) > LW / 2, wrecked: P.health <= 0 || !P.active, hurt: P.health < h0, lat: P.lat, s: P.s };
+    };
+    for (const e of [shutter, wall]) {
+      const early = steerIn(e, e.s - D.sign + 10);
+      check(early.inLane && !early.wrecked, e.kind + ': after its sign the dead lane is entered freely, no barrier (lat ' + early.lat.toFixed(2) + ')');
+      const run = (at, secs) => { start(at, besideOf(e), 20); const want = lane(e.lane, P.s), was = P.lat, h0 = P.health; let held = true;
+        g.run(secs, () => { quiet(); P.speed = 20; g.drive(1, Math.sign(want - P.lat)); P.latVel = Math.sign(want - was) * 4;
+          const near = P.s > e.s - 4 && P.s < e.s + (e.kind === 'wall' ? 24.3 : 0.4) + 4; if (near && Math.abs(P.lat - lane(e.lane, P.s)) < LW / 2 + P.hw - 0.1) held = false; return P.health <= 0 || P.s > e.s + 40; });
+        return { held, wrecked: P.health <= 0 || !P.active, hurt: P.health < h0 }; };
+      for (const at of [e.s - 3.9, e.s - 2, e.s + 2]) { // (its nose at the face, alongside it, and past it)
+        const r = run(at, 2.2);
+        check(r.held && !r.wrecked && !r.hurt, e.kind + ': steered at its blocker from the side at ' + (at - e.s).toFixed(1) + ' m: held at the line beside it, not wrecked');
+      }
+      if (e.kind === 'wall') for (const at of [e.s + 8, e.s + 18]) {
+        const r = run(at, 0.5);
+        check(r.held && !r.wrecked && !r.hurt, 'wall: steered into the block behind it at ' + (at - e.s) + ' m: held at the line, not wrecked, not through it');
+      }
+    }
     start(shutter.s - D.sign + 10, shutter.lane, 20);
-    const out = lane(besideLane, P.s);
+    const out = lane(besideOf(shutter), P.s);
     g.run(3, () => { quiet(); P.speed = 20; g.drive(1, Math.sign(out - P.lat)); P.latVel = Math.sign(out - lane(shutter.lane, P.s)) * 4; return Math.abs(P.lat - out) < 0.3; });
     check(Math.abs(P.lat - out) < 0.5 && P.health > 0, 'a car in the dead lane leaves it freely (lat ' + P.lat.toFixed(2) + ')');
-    start(shutter.s - D.sign - 40, besideLane, 20);
-    g.run(2, () => { quiet(); P.speed = 20; P.latVel = Math.sign(lane(shutter.lane, P.s) - P.lat) * 4; return Math.abs(P.lat - lane(shutter.lane, P.s)) < 0.3; });
-    check(Math.abs(P.lat - lane(shutter.lane, P.s)) < 0.5, 'before the sign the lane can still be entered (lat ' + P.lat.toFixed(2) + ')');
   }
   // ---- a car in the lane beside drives past unharmed
   start(shutter.s - 200, shutter.lane > 0 ? shutter.lane - 1 : shutter.lane + 1, 25);

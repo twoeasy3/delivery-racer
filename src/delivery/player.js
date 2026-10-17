@@ -662,7 +662,7 @@ export const Player = {
 
     const latWas = this.lat;
     this.lat += this.latVel * dt;
-    this.lat = Track.divider(this.s, latWas, this.lat, this.hw); // (a marked dead-end lane cannot be steered into from the side: lanegimmicks.js)
+    this.lat = Track.divider(this.s, latWas, this.lat, this.hw); // (a dead end's blocker cannot be steered into from the side: lanegimmicks.js)
     keepOnRoad(this, 0);
     updateYaw(this, dt);
 

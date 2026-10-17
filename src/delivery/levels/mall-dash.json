@@ -81,11 +81,6 @@
     {"s": 1580, "side": "right"},
     {"s": 2300, "side": "left"}
   ],
-  "boostPads": [
-    {"from": 200, "to": 280, "lane": 0, "rails": true},
-    {"from": 1850, "to": 1930, "lane": 0, "rails": true},
-    {"from": 2580, "to": 2660, "lane": 0, "rails": true}
-  ],
   "deadEnds": [
     {"s": 490, "lane": 1, "kind": "shutter", "length": 120},
     {"s": 2105, "lane": 0, "kind": "wall", "length": 100},
@@ -162,7 +157,6 @@
   "pickups": [
     {"type": "cash5", "s": 70, "lane": 0},
     {"type": "cash5", "s": 70, "lane": 1},
-    {"type": "turbo", "s": 150, "lane": 1},
     {"type": "cash10", "s": 240, "lane": 0},
     {"type": "cash10", "s": 240, "lane": 1},
     {"type": "cash10", "s": 330, "lane": 0},
@@ -190,7 +184,6 @@
     {"type": "cash20", "s": 1420, "lane": 1},
     {"type": "cash10", "s": 1540, "lane": 0},
     {"type": "cash10", "s": 1600, "lane": 1},
-    {"type": "turbo", "s": 1700, "lane": 0},
     {"type": "cash10", "s": 1800, "lane": 0},
     {"type": "cash10", "s": 1800, "lane": 1},
     {"type": "cash20", "s": 1960, "lane": 0},
@@ -211,7 +204,6 @@
     {"type": "cash10", "s": 2680, "lane": 1},
     {"type": "cash20", "s": 2760, "lane": 0},
     {"type": "cash20", "s": 2760, "lane": 1},
-    {"type": "turbo", "s": 2840, "lane": 1},
     {"type": "cash10", "s": 2900, "lane": 0},
     {"type": "cash10", "s": 2900, "lane": 1},
     {"type": "cash20", "s": 2960, "lane": 0},

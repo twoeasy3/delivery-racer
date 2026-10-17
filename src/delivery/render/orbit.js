@@ -37,6 +37,7 @@ import { landAt } from './road.js';
 import { WatchGhost, watchGhostAvailable, refreshGhost } from './ghostcar.js';
 import { damp } from '../util.js';
 import { fadesAway, fadeProbe, prepareFade } from './scenefade.js';
+import { freeCameraAllowed } from './tunnelshape.js';
 
 const ORBIT = {
   radius: { min: 15, max: 40, start: 25 }, // m from the car (the owner, 15-Oct: close; nothing past 40)
@@ -65,7 +66,8 @@ let traceFirst = false;
 const debug = params.get('orbit') !== null; // ?orbit=yaw,pitch,radius: on from the first frame of a run, held still (for stills)
 
 // ---- when it is on offer ----
-const offered = () => debug ? Game.state !== 'start' : !!Replay.playing && Game.state === 'playing';
+// (never on an enclosed level, the mall's or the metro's: tunnelshape.js freeCameraAllowed; the replay keeps the chase camera)
+const offered = () => freeCameraAllowed() && (debug ? Game.state !== 'start' : !!Replay.playing && Game.state === 'playing');
 
 const clampRadius = (r) => Math.max(ORBIT.radius.min, Math.min(ORBIT.radius.max, r));
 const clampPitch = (p) => Math.max(rad(ORBIT.pitch.min), Math.min(rad(ORBIT.pitch.max), p));
@@ -194,7 +196,7 @@ const touches = new Map(); // (pointer id -> where it is, and where it began)
 let pinch = 0;
 const grab = () => { Orbit.auto = false; Orbit.still = 0; };
 // a drag may take hold of the chase camera: in a replay going on (or paused), not in photo mode, not while the way back is under way
-const dragEnters = () => !Orbit.on && !Orbit.blending && !!Replay.playing && Game.state === 'playing' && !Photo.on && !debug;
+const dragEnters = () => !Orbit.on && !Orbit.blending && freeCameraAllowed() && !!Replay.playing && Game.state === 'playing' && !Photo.on && !debug;
 canvas.addEventListener('pointerdown', (e) => {
   if (!Orbit.on && !dragEnters()) return;
   if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -242,7 +244,7 @@ if (debug) {
   Orbit.auto = false;
   Orbit.held = true; // (a still: it does not turn by itself)
   if (params.get('orbitghost') !== null) WatchGhost.on = true;
-  const start = () => { if (Game.state === 'start') requestAnimationFrame(start); else if (params.get('orbitoff') === null) { Orbit.on = true; Orbit.mode = 'button'; Orbit.auto = false; classes(); } };
+  const start = () => { if (Game.state === 'start') requestAnimationFrame(start); else if (params.get('orbitoff') === null && offered()) { Orbit.on = true; Orbit.mode = 'button'; Orbit.auto = false; classes(); } };
   requestAnimationFrame(start);
 }
 

@@ -65,3 +65,9 @@ export const tunnelCamera = () => {
 // is this level's tunnel lit (a mall's halls: no dark, no fog closing in, no headlights, the Tunnels card and message
 // left out)? The theme's tunnel says (`lit: true`), or a tunnel of the level's own
 export const tunnelsLit = () => tunnelLit(LEVEL);
+
+// may the camera leave the chase view here (the replay's orbit camera, render/orbit.js; photo mode, render/photo.js)? Not on an
+// ENCLOSED level (the owner, 17-Oct: the mall and the metro, all walls and ceiling: a free camera passes through them). Drawn
+// only: a table here, not a theme key (themes.js is in the replay fingerprint), so no replay is refused for it.
+const ENCLOSED = new Set(['mall', 'metro']);
+export const freeCameraAllowed = () => !ENCLOSED.has(LEVEL.theme);

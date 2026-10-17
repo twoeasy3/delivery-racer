@@ -651,13 +651,19 @@ const createTrack = () => {
     for (const p of slowPadsHere) if (s >= p.from && s <= p.to && Math.abs(lat - laneOffset(p.lane, s)) <= LW / 2) return p;
     return null;
   };
-  // a dead-end lane's divider (a level's "deadEnds", lanegimmicks.js): from its sign (CONFIG.deadEnd.sign m before its end) to
-  // its end, a car in the lane beside cannot steer INTO the dead lane (it is held at the line, as the road's edge holds it);
-  // a car already in the dead lane leaves it freely. The lat the car ends up at, from where it was and where it would go
+  // a dead-end lane's blocker, from the side (a level's "deadEnds", lanegimmicks.js): alongside the blocker only (END_SIDE m before its
+  // face to as far past its back, its depth END_BLOCK by kind) a car in the lane beside cannot steer INTO the
+  // dead lane (it is held at the line, as the road's edge holds it): the blocker is solid from the side, never an instakill there;
+  // only its face, met from the front, wrecks. Up to then the dead lane is an ordinary lane, entered and left freely (no one-way
+  // barrier: the owner, 17-Oct). A car already in the dead lane leaves it freely. The lat the car ends up at, from where it was and
+  // where it would go
+  // (END_SIDE m before the face and past the back; END_BLOCK m deep by kind: a wall's face and the structure behind it, a shutter's lintel:
+  // render/obstacleModels.js laneEnd. Kept here, not in CONFIG.deadEnd: one rules file changed, the owner's ask, 17-Oct)
+  const END_SIDE = 4, END_BLOCK = { wall: 24.3, shutter: 0.4 };
   const divider = (s, latFrom, latTo, hw) => {
     for (const d of LEVEL.deadEnds || []) {
-      const D = CONFIG.deadEnd;
-      if (!isMain(s) || s < d.s - D.sign || s > d.s + 2) continue;
+      const back = END_BLOCK[d.kind === 'wall' ? 'wall' : 'shutter'];
+      if (!isMain(s) || s < d.s - END_SIDE || s > d.s + back + END_SIDE) continue;
       const lat = laneOffset(d.lane, s), beside = laneOffset(d.lane > 0 ? d.lane - 1 : d.lane + 1, s), open = Math.sign(beside - lat) || 1;
       const line = lat + open * LW / 2; // (the line between the dead lane and the open one)
       if (open * (latFrom - line) >= hw - 0.05 && open * (latTo - line) < hw) return line + open * hw; // (was on the open side: held there)
