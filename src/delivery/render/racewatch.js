@@ -70,7 +70,8 @@ export const prepareSolids = () => {
   listed = levelGroup.children.length;
   boxed = levelGroup.children.filter(c => !c.userData.terrain).map(c => ({ c, box: new THREE.Box3().setFromObject(c).expandByScalar(0.5) }));
 };
-export const firstSolid = (origin, end) => {
+// skip(object, instanceId, faceIndex): a hit to pass over (the orbit's: what render/scenefade.js dissolves instead)
+export const firstSolid = (origin, end, skip = null) => {
   const flip = scene.scale.x < 0 ? -1 : 1;
   eye.set(origin.x * flip, origin.y, origin.z); // (cast from the car's end, so the first hit is the one nearest it)
   target.set(end.x * flip, end.y, end.z);
@@ -81,12 +82,13 @@ export const firstSolid = (origin, end) => {
   prepareSolids();
   ray.set(eye, dir.normalize());
   ray.far = d;
+  ray.camera = camera; // (a sprite in the scenery cannot be tested without one)
   const near = [];
   for (const { c, box } of boxed) {
-    if (box.isEmpty()) continue;
+    if (box.isEmpty() || (skip && !c.isInstancedMesh && skip(c))) continue;
     if (box.containsPoint(eye) || (ray.ray.intersectBox(box, crossed) && crossed.distanceTo(eye) <= d)) near.push(c);
   }
-  const hit = ray.intersectObjects(near, true).find(h => !h.object.userData.flat && !h.object.material.transparent);
+  const hit = ray.intersectObjects(near, true).find(h => !h.object.userData.flat && !h.object.material.transparent && !(skip && skip(h.object, h.instanceId, h.faceIndex)));
   return hit ? hit.distance : Infinity;
 };
 // a trackside camera for the car: the first of a few tries that sees the road it is coming along

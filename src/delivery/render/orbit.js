@@ -17,6 +17,8 @@
 // eases the usual camera back in half a second (a blend of where it is and where it looks, not a cut; at once where a run is
 // over and "Results" is the way back), and "Ghost" shows the level's best-run ghost beside the car in a replay.
 //
+// The fade (render/scenefade.js, REPLAY-CAM.md): set dressing between the camera and the car, or round the camera, is dissolved
+// (a house, a tree, a lamp post, a wall's run): the nudge below passes over it. The nudge is for what does not fade.
 // The nudge: where the camera would be inside scenery (a stand, a wall, a tunnel's roof, a hillside) it is raised
 // first, then drawn in along the line to the car, using the scenery test of the race screensaver's cameras
 // (racewatch.js firstSolid); where even that leaves it in the car's lap, orbitCamera says so (false) and main.js uses
@@ -37,6 +39,7 @@ import { firstSolid, prepareSolids } from './racewatch.js';
 import { landAt } from './road.js';
 import { WatchGhost, watchGhostAvailable, refreshGhost } from './ghostcar.js';
 import { damp } from '../util.js';
+import { fadesAway, fadeProbe, prepareFade } from './scenefade.js';
 
 const ORBIT = {
   radius: { min: 15, max: 40, start: 25 }, // m from the car (the owner, 15-Oct: close; nothing past 40)
@@ -133,6 +136,7 @@ const follow = () => {
   lastStep = Game.step;
   if (Game.state === 'start' || (!Replay.playing && Game.state === 'playing' && !debug)) { WatchGhost.on = false; } // (a new run, or the menu: the ghost back to off)
   if (can) prepareSolids(); // (the scenery boxed as the orbit comes on offer, not on its first frame; a no-op once it is)
+  if (can && !debug) prepareFade(); // (and the scenery fade's index: render/scenefade.js)
   const mode = !can ? '' : over() ? 'over' : 'replay';
   if (mode !== was) { was = mode; document.body.classList.toggle('after-run', mode === 'over'); }
   // the button: in the row while a replay plays (and, once a run is over, the same row with only it in: body.after-run, style.css), and not while orbiting (the panel has the way back)
@@ -267,10 +271,18 @@ const underLand = (to) => {
   }
   return Infinity;
 };
+// (set dressing that render/scenefade.js dissolves is passed over: the camera keeps its place and the prop fades, REPLAY-CAM.md)
+// (what cannot fade is still the nudge's, so the fade never leaves a pose worse than without it: a camera inside a prop's box is
+// drawn out of it rather than looking through its dissolve, see fadeProbe; and a line to the car's sills too, for a long low block
+// that does not fade and would hide the body under the middle's line)
+const low = new THREE.Vector3();
 const look = (to) => {
-  let hit = Math.min(firstSolid(at, to), underLand(to));
+  fadeProbe(to);
+  let hit = Math.min(firstSolid(at, to, fadesAway), underLand(to));
   side.set(to.z - at.z, 0, at.x - to.x).normalize().multiplyScalar(ORBIT.beam);
-  for (const k of [1, -1]) { edge.copy(to).addScaledVector(side, k); hit = Math.min(hit, firstSolid(at, edge), underLand(edge)); }
+  for (const k of [1, -1]) { edge.copy(to).addScaledVector(side, k); hit = Math.min(hit, firstSolid(at, edge, fadesAway), underLand(edge)); }
+  low.copy(at); low.y -= ORBIT.aim - 0.25;
+  hit = Math.min(hit, firstSolid(low, to, fadesAway));
   return hit;
 };
 const want = new THREE.Vector3(), at = new THREE.Vector3(), probe = new THREE.Vector3();

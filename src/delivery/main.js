@@ -61,6 +61,7 @@ import { raceCamera, raceAudio, syncRaceWatch, auditCameras } from './render/rac
 import { Fly, startFly, flyCamera } from './render/fly.js';
 import { Photo, syncPhoto, photoCamera, startPhoto } from './render/photo.js';
 import { orbitCamera, orbitNote } from './render/orbit.js';
+import { fadeScenery } from './render/scenefade.js';
 import { syncTankCorner } from './render/tankcorner.js';
 import { syncCargo, drawCargoCorner, deliveryOn, deliveryCamera } from './render/cargo.js';
 import { UfoStrike } from './ufostrike.js';
@@ -491,6 +492,7 @@ const frame = (now) => {
 
     syncCargo(dt, now); // (the cargo set down at the kerb, at the end: after the car is placed, before the camera)
     syncPhoto();
+    let freeCamera = Photo.on; // (a camera round the car that set dressing can stand in front of: the scenery fade's, below)
     if (Fly.on) flyCamera(dt); // (flying round a level: see render/fly.js)
     else if (Photo.on) photoCamera(); // (photo mode, while paused: see render/photo.js)
     else {
@@ -499,8 +501,10 @@ const frame = (now) => {
         else if (deliveryOn()) deliveryCamera(); // (a level delivered: round to the kerb, see render/cargo.js)
         else updateCamera(dt, prevState !== 'playing' && Game.state === 'playing');
       };
-      if (!orbitCamera(dt, usual)) { usual(); orbitNote(); } // (the orbit camera, render/orbit.js: round the car in a replay, and once a run is over; or the usual camera, which the orbit takes hold of from)
+      if (orbitCamera(dt, usual)) freeCamera = true; // (the orbit camera, render/orbit.js: round the car in a replay, and once a run is over; or the usual camera, which the orbit takes hold of from)
+      else { usual(); orbitNote(); }
     }
+    fadeScenery(dt, freeCamera); // (set dressing in the way of the orbit or photo camera dissolved: render/scenefade.js; with the chase camera, nothing runs)
     syncMysteries(dt); // (after the camera: the earthquake bobs it)
     syncRaceWatch(now);
     syncEmotes(dt, now);
