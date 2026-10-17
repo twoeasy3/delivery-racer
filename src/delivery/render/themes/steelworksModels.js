@@ -302,24 +302,73 @@ const stated = (group, pose) => {
   group.userData.animate(0);
   return group;
 };
-// a horseshoe: a U of steel, as a torus three quarters round, its two heels
-const shoeGeo = () => new THREE.TorusGeometry(0.12, 0.024, 6, 14, Math.PI * 1.4).rotateZ(-Math.PI * 0.2);
-// a crate of horseshoes: a slatted wooden crate full to the brim with new shoes, more hung on its rim, a lucky one nailed to
-// the front (points up), the shoes jingling as it rides
+// a horseshoe: FLAT (the owner, 17-Oct): an iron plate 16 mm thick cut to a U, a round toe, two straight branches to the heels,
+// four nail holes along each branch (real holes: the dark wall of each shows), a small calkin under each heel. Drawn in the x-y
+// plane, toe at +y, heels at -y, its hoof side at -z; the faces in the first material, the edges and the holes' walls in the second
+const SHOE = { ro: 0.12, ri: 0.078, leg: 0.08, t: 0.018 }; // (a big draught horse's, so it reads at a glance)
+const shoeGeo = () => {
+  const { ro, ri, leg, t } = SHOE, rm = (ro + ri) / 2, shape = new THREE.Shape();
+  shape.moveTo(ro, -leg); shape.lineTo(ro, 0); shape.absarc(0, 0, ro, 0, Math.PI, false); shape.lineTo(-ro, -leg);
+  shape.lineTo(-ri, -leg); shape.lineTo(-ri, 0); shape.absarc(0, 0, ri, Math.PI, 0, true); shape.lineTo(ri, -leg); shape.lineTo(ro, -leg);
+  for (const sx of [-1, 1]) {
+    const at = [[Math.cos(0.2) * rm, Math.sin(0.2) * rm], [Math.cos(0.62) * rm, Math.sin(0.62) * rm], [rm, -0.014], [rm, -0.05]];
+    for (const [x, y] of at) shape.holes.push(new THREE.Path().absarc(sx * x, y, 0.0055, 0, Math.PI * 2, true));
+  }
+  return new THREE.ExtrudeGeometry(shape, { depth: t, bevelEnabled: false, curveSegments: 10 }).translate(0, 0, -t / 2);
+};
+const calkinGeo = () => new THREE.BoxGeometry(0.036, 0.014, 0.008);
+// a crate of horseshoes: a slatted wooden crate packed with straw, new shoes lying flat on it in two piles, two more stood on
+// their heels against the back, a lucky one (gilt) nailed to the front, points up, swinging a little on its nail. Named for
+// render/cargoRules.js
 const makeHorseshoes = () => {
-  const group = new THREE.Group(), body = sub(group), wood = lambert(0xb48a52), dark = lambert(0x7a5a32), shoe = lambert(0x9aa2aa), lucky = lambert(0xd8b04a);
-  put(body, box(0.9, 0.06, 0.7), dark, 0, 0.03, 0);
-  for (const y of [0.14, 0.32, 0.5]) { for (const z of [-1, 1]) put(body, box(0.9, 0.12, 0.03), wood, 0, y, z * 0.34); for (const x of [-1, 1]) put(body, box(0.03, 0.12, 0.7), wood, x * 0.44, y, 0); }
-  for (const x of [-1, 1]) for (const z of [-1, 1]) put(body, box(0.06, 0.6, 0.06), dark, x * 0.42, 0.3, z * 0.32);
-  const G = shoeGeo(), shoes = [];
-  for (let k = 0; k < 9; k++) { const m = put(body, G, shoe, -0.3 + (k % 3) * 0.3, 0.56 + Math.floor(k / 3) * 0.04, -0.2 + Math.floor(k / 3) * 0.2, -Math.PI / 2 + (k % 2 ? 0.15 : -0.1), k * 0.7, 0); shoes.push(m); }
-  const hung = [-0.3, 0, 0.3].map((x, k) => put(body, G, shoe, x, 0.55, 0.36, 0, 0, k % 2 ? Math.PI : 0));
-  const charm = put(body, G, lucky, 0, 0.32, 0.37, 0, 0, Math.PI); // (points up: the luck kept in)
+  const group = new THREE.Group(), body = sub(group), wood = lambert(0xb48a52), dark = lambert(0x7a5a32);
+  const crate = sub(body); crate.name = 'crate';
+  put(crate, box(0.9, 0.06, 0.7), dark, 0, 0.03, 0);
+  for (const y of [0.14, 0.32, 0.5]) {
+    for (const z of [-1, 1]) put(crate, box(0.86, 0.12, 0.03), wood, 0, y, z * 0.34);          // (front and back: their ends inside the sides and posts)
+    for (const x of [-1, 1]) put(crate, box(0.03, 0.108, 0.68), wood, x * 0.44, y, 0);        // (the sides: 6 mm lower and shorter, so no two faces are one)
+  }
+  for (const x of [-1, 1]) for (const z of [-1, 1]) put(crate, box(0.05, 0.6, 0.05), dark, x * 0.415, 0.3, z * 0.315); // (the posts inside, 15 mm off every slat face)
+  const straw = put(crate, box(0.83, 0.41, 0.63), lambert(0xd9c27a), 0, 0.255, 0);          // straw, packed to 0.46
+  straw.name = 'straw';
+  const iron = [lambert(0x5d6268), lambert(0x2a2c30)], gilt = [lambert(0xd8b04a), lambert(0x8a6a22)];
+  const G = shoeGeo(), C = calkinGeo();
+  const shoe = (parent, mats, name) => {
+    const g = sub(parent); g.name = name;
+    put(g, G, mats);
+    for (const sx of [-1, 1]) put(g, C, mats[1], sx * (SHOE.ro + SHOE.ri) / 2, -SHOE.leg + 0.009, -SHOE.t / 2 - 0.001); // (sunk 3 mm into the plate, 5 mm proud)
+    return g;
+  };
+  // lying flat in two piles on the straw
+  const TOP = 0.46, LIFT = SHOE.t + 0.001; // (the bottom one hoof side down, its calkins pressed into the straw; those on it hoof side up, plate on plate, 1 mm apart)
+  const flat = [[-0.2, 0.08, 0.3, 0], [-0.14, 0.12, 1.4, 1], [0.18, 0.1, -0.5, 0], [0.24, 0.06, 0.9, 1]];
+  const shoes = flat.map(([x, z, yaw, level], k) => {
+    const g = shoe(crate, iron, 'shoe' + k);
+    g.position.set(x, TOP + 0.003 + SHOE.t / 2 + level * LIFT, z);
+    g.rotation.set(level ? Math.PI / 2 : -Math.PI / 2, yaw, 0, 'YXZ');
+    return g;
+  });
+  // stood on their heels on the straw, leaning back on the back slats (placed by their own bounds: touching both, 1 mm off)
+  [-0.2, 0.15].forEach((x, k) => {
+    const g = shoe(crate, iron, 'stood' + k);
+    g.rotation.set(-0.2, 0.12 * (k ? 1 : -1), 0, 'YXZ');
+    group.updateMatrixWorld(true);
+    const b = new THREE.Box3().setFromObject(g, true); // (the crate stands untransformed while it is built)
+    g.position.set(x, TOP + 0.001 - b.min.y, -0.325 + 0.001 - b.min.z);
+    shoes.push(g);
+  });
+  // the lucky one (gilt), nailed to the front's middle slat through the last hole of each branch, points up (the luck kept
+  // in), its calkins 2.5 mm off the slat, the plate 7.5 mm
+  const lucky = sub(crate, 0, 0.31, 0.355 + 0.0075 + SHOE.t / 2); lucky.name = 'lucky';
+  shoe(lucky, gilt, '').rotation.z = Math.PI; // (unnamed: its parts are the lucky one's)
+  const nailM = lambert(0x3a3a3a), rm = (SHOE.ro + SHOE.ri) / 2;
+  for (const sx of [-1, 1]) {
+    const nail = sub(lucky, sx * rm, 0.05, 0); nail.name = 'nail'; // (named apart: it goes into the slat)
+    put(nail, cyl(0.009, 0.009, 0.006, 8), nailM, 0, 0, SHOE.t / 2 + 0.001, Math.PI / 2, 0, 0); // (its head, 2 mm into the shoe)
+    put(nail, cyl(0.003, 0.003, 0.04, 6), nailM, 0, 0, -0.012, Math.PI / 2, 0, 0);              // (its shank, through the hole into the slat)
+  }
   return idle(group, (t) => {
     body.rotation.z = Math.sin(t * 1.6) * 0.035;
-    hung.forEach((m, k) => { m.rotation.x = Math.sin(t * 5 + k * 1.7) * 0.25; });
-    shoes.forEach((m, k) => { m.position.y = 0.56 + Math.floor(k / 3) * 0.04 + Math.abs(Math.sin(t * 7 + k)) * 0.012; });
-    charm.rotation.y = Math.sin(t * 2.2) * 0.15;
   });
 };
 // a bar of questionable gold (Evil): a fat bar, gold leaf over something duller, on a velvet cushion. Calm: it gleams, a

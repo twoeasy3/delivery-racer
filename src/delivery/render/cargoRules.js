@@ -1,0 +1,82 @@
+// ---- THE CARGO RULES: what must stay true of each cargo model in every state, at every moment and through every change of
+// state, checked by scripts/.cargo-contain-check.mjs (render group). The vocabulary, with examples: CARGO-RULES.md. A part is a
+// NAME in the model (a mesh's or a group's `.name`; a mesh belongs to its nearest named ancestor); a selector is a regular
+// expression over those names, whole-name; `$1` in a container's or partner's selector is the part's own first capture.
+//   keepOut:  [{ a, b, min = 0.002, states }]       no mesh of A within `min` m of a mesh of B (A = B: different instances);
+//             convex parts only (a torus, a hollow shell, a ring: use `inside` against its shape instead); `$1` in b is
+//             A's own first capture (b '(?:cup|glass)(?!$1)\\d': another cup than A's)
+//   inside:   [{ part, of, shape, margin = 0.003, exits, states }]   every vertex of the part inside `shape`, in the frame of
+//             the node `of`, by `margin`; shape { sphere: r, centre } | { cone: { y0, y1, r0, r1 } } (upright) | { box: { min,
+//             max } }; exits [{ at: [x, y, z], r }]: where it may be outside (a hole, a doorway), in the same frame; only:
+//             a shape, just the vertices in it are held (the band of a collar a head pokes through)
+//   anchors:  [{ part, to, maxGap = 0.004, states }]   each instance of the part within maxGap of `to` (convex), not of
+//             itself: it rests on something (nothing floats; name a loose piece apart to hold it on its own),
+//             or [{ part, of, shape, maxGap }]: within maxGap of that shape's surface (feet on the floor of a ball)
+//   zfight:   { allow: n, why }                      flicker-class pairs known and accepted (0 if absent)
+//   static:   'why'                                  no rules needed (no part moves in or on another): z-fight only
+//   runs:     the check's own runs, if the six standard ones do not suit
+// New or changed cargo registers here (the owner, 17-Oct): add a new kind of rule to the vocabulary (and the check) rather than
+// a one-off check. Not imported by the game: nothing here is drawn or decides a run.
+
+export const CARGO_RULES = {
+  // Cage of Tunnel Rats: the rats keep to the cage, off its door and each other; the bold one leaves by the doorway
+  rats: {
+    keepOut: [{ a: 'rat\\d', b: 'cage|door' }, { a: 'rat\\d', b: 'rat\\d' }],
+  },
+  // Tray of Bubble Teas: the tea, its pearls and the straw inside the cup (6 mm in from its outside), the cups on the carrier
+  // and clear of its walls, dividers and each other
+  bubbletea: {
+    inside: [
+      { part: '(?:tea|pearl)(\\d)', of: 'cup$1', shape: { cone: { y0: 0.002, y1: 0.5, r0: 0.11, r1: 0.15 } }, margin: 0.006 },
+      { part: 'straw(\\d)', of: 'cup$1', shape: { cone: { y0: 0.002, y1: 0.5, r0: 0.11, r1: 0.15 } }, margin: 0.006, only: { box: { min: [-1, -1, -1], max: [1, 0.49, 1] } } },
+    ],
+    keepOut: [{ a: 'cup\\d|glass\\d', b: 'carrier' }, { a: '(?:cup|glass)(\\d)', b: '(?:cup|glass)(?!$1)\\d' }],
+    anchors: [{ part: 'glass\\d', to: 'floor', maxGap: 0.004 }],
+  },
+  // Case of Chianti: the six bottles, rocking, never meet one another (the crate's z-fight: its end posts were one plane with
+  // the slats and the box's ends; now 10 mm proud)
+  winecase: {
+    keepOut: [{ a: 'bottle\\d', b: 'bottle\\d' }],
+  },
+  // Crate of Horseshoes: flat shoes in two piles on the straw and two stood on their heels against the back, none through
+  // another or the crate, each resting on the straw, a shoe below or the crate; the lucky one nailed to the front
+  horseshoes: {
+    keepOut: [{ a: '(?:shoe|stood)\\d', b: '(?:shoe|stood)\\d', min: 0.0005 }, { a: '(?:shoe|stood)\\d|lucky', b: 'crate' }],
+    anchors: [{ part: '(?:shoe|stood)\\d', to: 'straw|crate|(?:shoe|stood)\\d', maxGap: 0.003 }, { part: 'lucky', to: 'nail', maxGap: 0.003 }, { part: 'nail', to: 'crate', maxGap: 0.003 }],
+  },
+  // Wheel of Mountain Cheese: the cut wedge clear of the wheel and the knife, both on the board (the wheel's rind is three
+  // convex pieces, so GJK reads it, gap and all)
+  cheesewheel: {
+    keepOut: [{ a: 'wedge', b: 'wheel|knife', min: 0.006 }],
+    anchors: [{ part: 'wedge|wheel', to: 'board', maxGap: 0.002 }],
+  },
+  // Pet-Shop Hamster Ball: the hamster inside the shell but for its head out of the hole (furious), off the collar, the
+  // rings and the hatch; on its feet on the ball's floor when calm or agitated
+  hamsterball: {
+    inside: [
+      { part: 'hamster|foot', of: 'ball', shape: { sphere: 0.42 }, margin: 0.004, exits: [{ at: [0, 0.42, 0], r: 0.21 }] }, // (its rings are painted on the outside)
+      { part: 'hamster', of: 'ball', shape: { cone: { y0: 0, y1: 2, r0: 0.127, r1: 0.127 } }, only: { cone: { y0: 0.38, y1: 0.41, r0: 0.165, r1: 0.165 } } }, // (through the collar (inner edge 0.133), 6 mm clear of it: what is in the collar's ring is in its opening)
+    ],
+    keepOut: [{ a: 'hamster|foot', b: 'hatch' }],
+    anchors: [{ part: 'foot', of: 'ball', shape: { sphere: 0.42 }, maxGap: 0.012, states: [0, 1] }],
+  },
+};
+
+// the items not yet given rules (17-Oct): their audit is CARGO-AUDIT.md. This list may only shrink (the check holds it to
+// the number it was made with): an item leaves it when it gets an entry above
+export const PENDING_AUDIT = [
+  'cake', 'goldfish', 'cactus', 'clock', 'pizza', 'coffee', 'balloons', 'present', 'bouquet', 'pancakes', 'sundae',
+  'sushi', 'teaset', 'record', 'lavalamp', 'snowglobe', 'bonsai', 'puppy', 'canary', 'ramen', 'globe', 'trophy',
+  'surfboard', 'toolbox', 'telescope', 'porcupine', 'parcel', 'bees', 'doll', 'tentacle', 'egg', 'cooker', 'flytrap',
+  'barrel', 'mirror', 'skunk', 'cannonball', 'mimic', 'fireworks', 'alien', 'teddy', 'bats', 'ice', 'snakes', 'genie',
+  'reactor', 'goose', 'jack', 'cloud', 'piranhas', 'lawyers', 'chainletter', 'glitter', 'recorders', 'subpoena',
+  'telemarketers', 'taxmen', 'wardens', 'consultants', 'inlaws', 'band', 'casserole', 'kittens', 'jumper', 'books',
+  'fruit', 'radio', 'piecatapult', 'airhorn', 'ghost', 'nestedboxes', 'spider', 'ink', 'pumpkin', 'pie', 'syrup',
+  'stolenbust', 'waterjugs', 'scarabs', 'goldbar', 'pokerchips', 'fakechips', 'fondue', 'ticketrolls',
+];
+
+// flicker-class z-fight pairs known on items still pending (CARGO-AUDIT.md); the check fails on any more than these
+export const KNOWN_ZFIGHTS = {
+  pancakes: 1, sushi: 3, mirror: 4, mimic: 1, chainletter: 51, recorders: 2, telemarketers: 3, taxmen: 10, wardens: 17,
+  consultants: 6, inlaws: 3, jumper: 16, books: 2, radio: 1, ink: 1, syrup: 1, // (syrup: being fixed on claude/syrup-fix)
+};

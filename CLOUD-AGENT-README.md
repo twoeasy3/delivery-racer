@@ -68,6 +68,7 @@ groups above, and the quick smoke only when asked. Syntax-check changed files wi
   Do not chase metrics for an hour; land a working version and report.
 - Model quality: a new model has a distinct idea; a black face means an open top; no z-fighting (coplanar faces) and no
   phasing through things; look at it from all sides; draft the ideas before modelling a batch.
+- Cargo: new or changed cargo must register its containment rules (render/cargoRules.js) and pass .cargo-contain-check: no part passes through its container, no floating parts, no flicker-class z-fights, in every state and transition; add new kinds of rule to the table's vocabulary rather than one-off checks (CARGO-RULES.md).
 - Gimmick design: never stop the car, no bust without counterplay, no delivery variants, no more moving explodable
   obstacles; a level has one idea and a few thematic gimmicks, never one of everything; rockfall only under a rock face.
 - Obstacles fit the level: plain obstacles themed to the level, readable at a glance, no generic crates or tyres.
