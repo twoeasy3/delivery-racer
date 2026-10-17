@@ -42,7 +42,7 @@
 import * as THREE from 'three';
 import { WINDOW_ROLE, isWindowRole, isGlassWord, isWindowNode, glassTable, windowKey, canonicalTable } from './glassnames.js';
 import { paneFacing, splitByFacing, cabinMiddle, zRefOf, REVERSE_RAKE } from './screens.js';
-import { applyPaneEdits, isNoEdit } from './paneedit.js';
+import { applyPaneEdits, isNoEdit, asBuiltPaneView } from './paneedit.js';
 
 export const PATCH_VERSION = 1;
 // A side view extruded across the car, as the car models draw their bodies: `points` is the outline seen from the left,
@@ -300,11 +300,11 @@ const faceHandPanes = (panes, nodes, root, carBox) => {
     if (!e.hand) continue;
     if (!zOf.has(e.node)) zOf.set(e.node, zRefOf(all, e.node, zCar));
     const zRef = zOf.get(e.node);
-    const q = e.pane, tag = e.node.userData.window;
-    const f = paneFacing(e.node, e.toModel, q, zRef);
+    const q = e.pane, tag = e.node.userData.window, ab = asBuiltPaneView(e.node, q); // (a pane a contour bent: read as built, its name kept)
+    const f = ab ? paneFacing(ab.node, e.toModel, ab.pane, zRef) : paneFacing(e.node, e.toModel, q, zRef);
     let face = f.face;
     if (face === 'mixed') {
-      const runs = splitByFacing(e.node, e.toModel, q, zRef);
+      const runs = ab ? null : splitByFacing(e.node, e.toModel, q, zRef);
       if (runs && runs.length <= 16) { // (more than 16: a rounded shape, a sphere's facets, not a box: left whole) // (the pane replaced by its runs, in place in the part's list)
         const at = e.list.indexOf(q);
         e.list.splice(at, 1, ...runs.map((r) => {
@@ -676,13 +676,13 @@ export const withGlass = (patch, id, edges) => {
   if (!Object.keys(p.glass).length) delete p.glass;
   return p;
 };
-// one window pane's edit (render/paneedit.js): `edit` { move, turn, size } for the pane `pane` ({ name, start, count }) of `part`; null (or
+// one window pane's edit (render/paneedit.js): `edit` { move, turn, size, contour? } for the pane `pane` ({ name, start, count }: as built, paneAsBuilt) of `part`; null (or
 // an edit that does nothing) takes it out
 export const withPane = (patch, part, pane, edit) => {
   const p = clonePatch(patch), key = part.id + '#' + pane.name;
   p.panes = { ...(p.panes || {}) };
   if (!edit || isNoEdit(edit)) delete p.panes[key];
-  else p.panes[key] = { id: part.id, sig: part.sig, pane: pane.name, start: pane.start, count: pane.count, move: edit.move || [0, 0, 0], turn: edit.turn || [0, 0, 0], size: edit.size || [1, 1] };
+  else p.panes[key] = { id: part.id, sig: part.sig, pane: pane.name, start: pane.start, count: pane.count, move: edit.move || [0, 0, 0], turn: edit.turn || [0, 0, 0], size: edit.size || [1, 1], ...(edit.contour?.length ? { v: 2, contour: edit.contour } : {}) }; // (v 2: a contour, render/paneedit.js; an entry without one reads as before)
   if (!Object.keys(p.panes).length) delete p.panes;
   return p;
 };
