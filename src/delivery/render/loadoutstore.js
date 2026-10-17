@@ -25,14 +25,14 @@
 import { Progress } from '../progress.js';
 
 export const KEY = 'delivery.loadout';
-export const SLOTS = ['wheels', 'plate', 'roof', 'cargo', 'wing', 'decal', 'kill', 'underglow'];
+export const SLOTS = ['wheels', 'plate', 'roof', 'cargo', 'wing', 'decal', 'kill', 'underglow', 'trail']; // (trail { id }: the turbo trail, CHECKLIST 452, render/trailcosmetic.js; absent = Classic)
 export const PROP_SLOTS = ['roof', 'cargo', 'wing'];
 export const MAX_CARS = 400;
 // PER-CAR ITEMS (CHECKLIST 433, the owner, 16-Oct: "drop All cars. Cosmetics are per car only"): the EARNED slots' item field (a plate's
 // design, a prop's id, the kill effect, the glow) is never taken from the default: a car wears the item it was given itself, or the slot's
 // free look. The slot's other fields (a plate's text, a prop's paint) still come from the default as before. render/cosmetics.js EARNED_SLOTS
 // names the same slots; render/cosmeticstock.js migrateStock moves an older default's items onto the cars that wore them.
-export const PER_CAR = Object.freeze({ plate: 'design', roof: 'id', cargo: 'id', wing: 'id', kill: 'id', underglow: 'id' });
+export const PER_CAR = Object.freeze({ plate: 'design', roof: 'id', cargo: 'id', wing: 'id', kill: 'id', underglow: 'id', trail: 'id' });
 export const STOCK = Object.freeze({
   wheels: Object.freeze({ design: 'stock', hub: 'stock', rim: Object.freeze({ all: 'none' }), tread: Object.freeze({ all: 'none' }) }),
   plate: Object.freeze({ design: 'stock', text: null }),
@@ -42,6 +42,7 @@ export const STOCK = Object.freeze({
   decal: Object.freeze({ id: 'none', colour: 'match' }), // (the decal: none; 'match' = a tone of the car's own paint)
   kill: Object.freeze({ id: 'classic' }), // (the explosions' look: render/killfx.js; absent or unknown = Classic)
   underglow: Object.freeze({ id: 'none' }),
+  trail: Object.freeze({ id: 'classic' }), // (the turbo trail: render/trailcosmetic.js; absent or unknown = Classic)
 });
 // the old global keys (read for the migration, mirrored from the default)
 export const LEGACY = { design: 'delivery.wheeldesign', hub: 'delivery.wheelcolour', rim: 'delivery.wheelrim', plateDesign: 'delivery.platedesign', plateText: 'delivery.platetext', prop: (slot) => 'delivery.prop.' + slot, paint: (slot) => 'delivery.prop.' + slot + '.paint' };
@@ -63,7 +64,7 @@ const FIELDS = {
   plate: { design: word, text },
   roof: { id: word, paint: word }, cargo: { id: word, paint: word }, wing: { id: word, paint: word },
   decal: { id: word, colour: word },
-  kill: { id: word }, underglow: { id: word },
+  kill: { id: word }, underglow: { id: word }, trail: { id: word },
 };
 // THE THREE-PART WHEEL SET (the owner, 15-Oct: "tread - tyre colour - hub colour or rim or spinner"): the wheels' `design` is now the
 // TYRE COLOUR alone (render/wheelcosmetic.js TYRE_COLOURS). Three old designs also carried a hub colour, worn when the hub colour was

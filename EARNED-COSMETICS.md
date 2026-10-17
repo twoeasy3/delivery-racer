@@ -13,8 +13,8 @@ bumped. It is render-only: the replay fingerprint stays 33a7d9d56d and progress.
 unlockall.js are both outside the fingerprint (vite.config.js NOT_RULES).
 
 ## The rule
-- **Earned slots:** plate, roof, cargo, wing, kill FX and glow (`EARNED_SLOTS`, `render/cosmetics.js`). No cosmetic has
-  a cash price. Each slot's own free look (the Stock plate, no prop, the Classic kill effect, no glow) stays free.
+- **Earned slots:** plate, roof, cargo, wing, kill FX, glow and turbo trail (`EARNED_SLOTS`, `render/cosmetics.js`; the trail since CHECKLIST 452). No cosmetic has
+  a cash price. Each slot's own free look (the Stock plate, no prop, the Classic kill effect, no glow, the Classic turbo trail) stays free.
   Wheels (tyre, hub, rim, tread) stay free.
 - **Count:** each item is a count of how many the player has been given. One or more means it is unlocked.
 - **Hand:** the hand is the count less the cars wearing it (`render/cosmeticstock.js`).
@@ -35,6 +35,14 @@ unlockall.js are both outside the fingerprint (vite.config.js NOT_RULES).
   There is no unlimited mode.
 
 UI text follows the owner's terse rule (CLOUD-AGENT-README.md): no explainer paragraphs, no before/after counts.
+
+## The Trail slot (CHECKLIST 452)
+- **Items:** Classic (free) and Flame, Twin, Speed lines, Afterimage, Embers, Shockwave, Rarity (earned, Uncommon): render/turbotrails.js's styles. Each card's art is a pictogram drawn in code (`render/trailcosmetic.js` drawTrailIcon).
+- **Per car:** loadout slot `trail { id }`; absent = Classic. Not in loadoutKey (nothing on the model changes, as the kill effect).
+- **Cars:** the wheels' rule: no tab on the Tank(s) or the Saucer; their turbo stays Classic.
+- **In a run:** the car's turbo wears it, picked at each level load; lite on a low-end device; `?turbotrail=` overrides it.
+- **Preview:** the Trail tab streams the worn or tried-on trail behind the car on the stage (the game's own code, the showroom view's renderer); off when the tab closes.
+- **Debug:** `?czgive=trail:flame*3`.
 
 ## The card look
 Every earned item is drawn with the same card as an Uncommon blueprint. `render/blueprintcard.js` blueprintCard takes an

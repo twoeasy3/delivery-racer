@@ -110,7 +110,7 @@ try {
     const together = tr(one).every(x => one.filter(y => !y.tread && y.tyre === x.tyre).every(y => near(y.per, x.per))) && tr(show).every(x => show.filter(y => !y.tread && y.tyre === x.tyre).every(y => near(y.per, x.per)));
     check(tr(one).length > 0 && tr(one).every(x => near(x.per, 1.5 / x.u.r / 60)) && tr(two).every((x, i) => near(x.per, 2 * tr(one)[i].per)) && tr(back).every((x, i) => near(x.per, -tr(one)[i].per)) && together,
       d.name + ' with the 5-spoke: the tread turns by distance over radius (' + tr(one)[0].per.toFixed(4) + ' rad a frame at 1.5 m/s, the same as its rim; twice that at 3 m/s; back when reversing)');
-    check(tr(stop).every(x => Math.abs(x.per) < 1e-6) && tr(show).every(x => near(x.per, RM.IDLE_RATE / 60)), d.name + ': stopped in the game it stands still; on show it idles at ' + RM.IDLE_RATE + ' rad/s in step with the rim');
+    check(tr(stop).every(x => Math.abs(x.per) < 1e-6) && tr(show).every(x => near(x.per, RM.IDLE_RATE / 60)), d.name + ': stopped in the game it stands still; on show (every preview) it stands still too (IDLE_RATE ' + RM.IDLE_RATE + ', CHECKLIST 452) in step with the rim');
     check(tr(fast).every(x => near(x.per, RM.CLAMP * x.u.gap) && x.u.level === RM.BLUR.length - 1 && x.u.blur.visible), d.name + ': at 45 m/s clamped to ' + RM.CLAMP + ' of its pitch a frame (' + (RM.CLAMP * tr(fast)[0].u.gap).toFixed(3) + ' rad), the blur band at its thickest; at what speed it starts to blur on this car: ' + (RM.BLUR_FROM * tr(fast)[0].u.gap * 60 * tr(fast)[0].u.r).toFixed(1) + ' m/s');
   }
   {

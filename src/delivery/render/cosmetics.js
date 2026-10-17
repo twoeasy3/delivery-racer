@@ -35,9 +35,9 @@ export const STOCK_KEY = 'delivery.cosmetics.stock';
 const MOST = 300;
 export const MOST_EACH = 999; // (the most of one item; what 'Absolutely' gives of each)
 // the slots whose items are earned (a stock each) and each one's own free look (worn when nothing is chosen; never counted)
-export const EARNED_SLOTS = Object.freeze({ plate: 'stock', roof: 'none', cargo: 'none', wing: 'none', kill: 'classic', underglow: 'none' });
+export const EARNED_SLOTS = Object.freeze({ plate: 'stock', roof: 'none', cargo: 'none', wing: 'none', kill: 'classic', underglow: 'none', trail: 'classic' }); // (trail: the turbo trail, CHECKLIST 452, render/trailcosmetic.js)
 // the field of a loadout slot that names its item (render/loadoutstore.js)
-export const ITEM_FIELD = Object.freeze({ plate: 'design', roof: 'id', cargo: 'id', wing: 'id', kill: 'id', underglow: 'id' });
+export const ITEM_FIELD = Object.freeze({ plate: 'design', roof: 'id', cargo: 'id', wing: 'id', kill: 'id', underglow: 'id', trail: 'id' });
 // THE RARITY an earned cosmetic's CARD shows (the owner, 16-Oct: "render each cosmetic item using the same card as an Uncommon Blueprint"):
 // one constant for now; an item may carry its own `rarity` (registerCosmetics keeps it), read through cosmeticRarity
 export const COSMETIC_RARITY = 'uncommon';
@@ -64,7 +64,7 @@ export const isFreeCosmetic = (slot, id) => COSMETICS.some(c => c.slot === slot 
 export const cosmeticOf = (slot, id) => COSMETICS.find(c => c.slot === slot && c.id === id) || null;
 export const cosmeticRarity = (slot, id) => cosmeticOf(slot, id)?.rarity || COSMETIC_RARITY;
 // the small line over a cosmetic card's name (the card: render/blueprintcard.js opts.item)
-export const COSMETIC_SLOT_WORDS = Object.freeze({ plate: 'Number plate', roof: 'Roof prop', cargo: 'Cargo prop', wing: 'Rear wing', kill: 'Kill effect', underglow: 'Underglow' });
+export const COSMETIC_SLOT_WORDS = Object.freeze({ plate: 'Number plate', roof: 'Roof prop', cargo: 'Cargo prop', wing: 'Rear wing', kill: 'Kill effect', underglow: 'Underglow', trail: 'Turbo trail' });
 
 // the list, cleaned as a loaded save is: text keys of the right shape, no repeats, no more than MOST (anything else is dropped)
 const KEY_RE = /^[a-z0-9-]{1,40}:[A-Za-z0-9_-]{1,40}$/;

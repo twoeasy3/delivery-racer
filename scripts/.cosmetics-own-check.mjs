@@ -25,7 +25,7 @@ const STORE = 'delivery_racer_progress_backup', cookie = () => document.cookie.s
 // the shipped registry
 const shipped = cosmeticKeys();
 const plateKeys = shipped.filter(k => k.startsWith('plate:'));
-check(wheels.WHEEL_SETS.length >= 12 && shipped.length === wheels.WHEEL_SETS.length + plateKeys.length + shipped.filter(k => /^(roof|cargo|wing|kill|underglow|decal):/.test(k)).length && wheels.WHEEL_SETS.every(s => shipped.includes('wheels:' + s.id)), 'the registry holds the ' + wheels.WHEEL_SETS.length + ' wheel sets as wheels:<id> and the plate designs as plate:<id>, props, decals and underglows by their slots (' + shipped.length + ' keys, ' + plateKeys.length + ' plate designs)');
+check(wheels.WHEEL_SETS.length >= 12 && shipped.length === wheels.WHEEL_SETS.length + plateKeys.length + shipped.filter(k => /^(roof|cargo|wing|kill|underglow|decal|trail):/.test(k)).length && wheels.WHEEL_SETS.every(s => shipped.includes('wheels:' + s.id)), 'the registry holds the ' + wheels.WHEEL_SETS.length + ' wheel sets as wheels:<id> and the plate designs as plate:<id>, props, decals, underglows and turbo trails by their slots (' + shipped.length + ' keys, ' + plateKeys.length + ' plate designs)');
 check(COSMETICS.filter(c => c.slot === 'wheels').every(c => c.free === true) && COSMETICS.filter(c => c.slot === 'plate').some(c => !c.free), 'every wheel set is free; the plate designs are partly locked (CHECKLIST 286)');
 Progress.reset(); clearCosmetics();
 check(ownedCosmetics().length === 0 && wheels.WHEEL_SETS.every(s => ownsCosmetic('wheels', s.id)), 'a fresh start lists none and owns every free set');

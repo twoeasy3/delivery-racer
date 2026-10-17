@@ -62,8 +62,9 @@ const flat = (map, opacity) => new THREE.MeshBasicMaterial({ map, transparent: t
 // (CLOSE = how much of the full distance is left); `closeup` is where it is heading, `zoom` how far it has got (0 = the whole car)
 const CLOSE = 0.5;
 let closeup = false, zoom = 0, alsoVisible = () => false;
-// an OVERLAY drawn in the view's scene each frame (the Cosmetics screen's kill-effect preview, render/killpreview.js): fn(scene, dt, camera)
-let overlay = null;
+// OVERLAYS drawn in the view's scene each frame (the Cosmetics screen's kill-effect preview, render/killpreview.js; the turbo trail's,
+// render/trailpreview.js, CHECKLIST 452): fn(scene, dt, camera), each in the order added; one that throws is dropped
+const overlays = new Set();
 // the stage's FLOOR height (the model stood on it, the floor patch and shadow just over it): what an overlay lands things on
 const FLOOR_Y = 0;
 // the car GONE (the kill-effect preview: the car is what goes up, render/killpreview.js): the body (the model and every cosmetic on it:
@@ -263,7 +264,7 @@ const frameAt = (now) => {
   v.lift = o.y;
   if (v.model.userData.lamps && v.car.ufo) v.model.userData.lamps.rotation.y = t * 4; // (the saucer's ring of lights)
   frame(r.width / r.height);
-  if (overlay) { try { overlay(v.scene, dt, v.camera); } catch (error) { console.warn('Showroom overlay: ' + (error?.message || error)); overlay = null; } }
+  for (const fn of overlays) { try { fn(v.scene, dt, v.camera); } catch (error) { console.warn('Showroom overlay: ' + (error?.message || error)); overlays.delete(fn); } }
   renderer.getSize(size);
   if (w > size.x || h > size.y) renderer.setSize(size.x = Math.max(size.x, w), size.y = Math.max(size.y, h), false);
   renderer.setViewport(0, 0, w, h);
@@ -385,7 +386,9 @@ export const ShowroomView = {
   get camera() { return v?.camera || null; },
   get scene() { return v?.scene || null; },
   get height() { return v?.height || 0; },
-  overlay(fn) { overlay = fn; },
+  overlay(fn) { overlays.add(fn); },
+  get turn() { return v?.turn || null; }, // (the turntable the car stands on: an overlay drawn in the car's own frame, render/trailpreview.js)
+  get car() { return v?.car || null; },
   get floorY() { return FLOOR_Y; },
   // the car gone from the stage (true) or back (false: it pops back up); render/killpreview.js
   // (gone: hidden AT ONCE, in this frame's picture: the overlay calls this after the frame has set the body's visibility, so leaving it to

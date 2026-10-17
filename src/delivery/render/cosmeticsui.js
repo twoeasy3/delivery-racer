@@ -45,6 +45,8 @@ import { usage, spare, migrateStock, settleLoadout, revertLoadout } from './cosm
 import { Progress } from '../progress.js';
 import { KILL_FX, KILL_IDS, shownKill, setKill } from './killfx.js';
 import { KillPreview } from './killpreview.js';
+import { TRAILS, shownTrail, setTrail, drawTrailIcon } from './trailcosmetic.js'; // (the turbo trail, CHECKLIST 452)
+import { TrailPreview } from './trailpreview.js';
 import { Nav } from '../nav.js';
 import { Sound } from './audio.js';
 import { SLOT_LIST, slotById, shownSlots, tabToOpen, isDemo, registerSlot } from './cosmeticslots.js';
@@ -299,6 +301,34 @@ const killShown = () => {
 // the Kill effect's tab: its panel and refresh given to the slot registry (render/cosmeticslots.js entry 'kill': per car over the All-cars
 // default, so the 'This car / All cars' switch shows on it); the panel is made the first time the tab opens (cosmeticsui.js panelOf)
 registerSlot({ id: 'kill', panel: () => buildKill(), refresh: () => killShown() });
+
+// ---- the TURBO TRAIL (CHECKLIST 452, render/trailcosmetic.js): per car, earned; a card each (its own pictogram, drawn in code), and while the
+// tab is open the trail worn (or tried on) streams behind the car on the stage (render/trailpreview.js)
+let trailRow, trailStatus;
+const trailIcon = (id) => {
+  const c = make('canvas', 'cz-swatch cz-killicon cz-trailicon'); c.width = c.height = 96;
+  const g = c.getContext('2d');
+  if (g) { try { drawTrailIcon(g, id, 96); } catch { /* (no picture: the name stays) */ } }
+  return c;
+};
+const buildTrail = () => {
+  trailRow = make('div', 'cz-row cz-kills cz-trails');
+  trailRow.setAttribute('role', 'group'); trailRow.setAttribute('aria-label', 'Turbo trail');
+  for (const t of TRAILS) trailRow.append(chip('trail', t.id, t.name, trailIcon(t.id), (pick) => { setTrail(pick, state.car?.id); }, 'trail'));
+  trailStatus = make('p', 'cz-status'); trailStatus.setAttribute('aria-live', 'polite');
+  const reset = make('button', 'cz-reset', 'Reset'); reset.type = 'button';
+  reset.addEventListener('click', () => { setTrail('classic', state.car?.id); Sound.play('menuMove', 0.4); });
+  return make('section', 'cz-section cz-trail', make('h2', '', 'Turbo trail'), trailRow, make('div', 'cz-foot', trailStatus, reset));
+};
+const trailShown = () => {
+  if (!trailRow || !state.car) return;
+  const id = shownTrail(state.car.id);
+  for (const b of trailRow.children) { const on = b.dataset.trail === id; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('equipped', on); b.classList.toggle('locked', !owned('trail', b.dataset.trail)); }
+  countChips(trailRow, 'trail', 'trail');
+  trailStatus.textContent = 'Trail: ' + (TRAILS.find(t => t.id === id)?.name || id);
+  if (openSlot === 'trail' && state.open) TrailPreview.show(id);
+};
+registerSlot({ id: 'trail', panel: () => buildTrail(), refresh: () => trailShown() });
 
 // ---- the DECAL (CHECKLIST 423, a trial on the zone table's cars; render/decalcosmetic.js): the designs as chips (each drawn small on the
 // car's own paint, in the colour chosen), then the colour row (the props' swatches; a design with colours of its own leaves it greyed)
@@ -678,6 +708,7 @@ const openSection = (id) => {
   p.refresh();
   viewBtns[1].hidden = viewBtns[6].hidden = id !== 'wheels'; viewBtns[2].hidden = viewBtns[3].hidden = id !== 'plate'; viewBtns[5].hidden = id !== 'kill';
   if (id !== 'kill') KillPreview.clear(); // (the Kill effect's panel refreshes itself: p.refresh() above)
+  if (id !== 'trail') TrailPreview.clear(); // (the Trail's: its refresh above starts its preview; any other tab stops it)
   const keep = state.close && (id === 'plate' ? !!state.end : id === 'wheels' ? !state.end && (!state.prop || state.prop === 'tread') : state.prop === id);
   if (state.close && !keep) setCloseUp(false);
   if (id === 'plate') plateShown();
@@ -793,7 +824,7 @@ export const Cosmetics = {
     if (q.get('platetype') !== null) { plateInput.value = q.get('platetype'); plateInput.dispatchEvent(new Event('input')); commitText(); } // (?platetype=TEXT: types it and confirms, for a picture of the filter's message)
     requestAnimationFrame(() => (root.querySelector('.cz-row .cz-chip.equipped') || closeBtn)?.focus({ preventScroll: true }));
     const tap = q.get('cztap'); // (?cztap=<item id>: taps that chip in the open tab once the screen is up, for a picture of the sheet)
-    if (tap) setTimeout(() => { if (!state.open) return; const b = [...root.querySelectorAll('.cz-section:not([hidden]) .cz-chip')].find(x => [x.dataset.plate, x.dataset.kill, x.dataset.prop, x.dataset.item, x.dataset.set].includes(tap)); b?.click(); }, Number(q.get('cztapat')) || 1200);
+    if (tap) setTimeout(() => { if (!state.open) return; const b = [...root.querySelectorAll('.cz-section:not([hidden]) .cz-chip')].find(x => [x.dataset.plate, x.dataset.kill, x.dataset.trail, x.dataset.prop, x.dataset.item, x.dataset.set].includes(tap)); b?.click(); }, Number(q.get('cztapat')) || 1200);
   },
   // the equip sheet (for a check or a picture): open?, its title, and confirm / cancel it
   // CONFIRM (the screen's one commit): what cannot be kept (a try-on not owned, more on cars than given) goes back to the entry look; then shut
@@ -804,6 +835,7 @@ export const Cosmetics = {
     if (plateInput && document.activeElement === plateInput) plateInput.blur();
     previewPlateText(null);
     KillPreview.clear();
+    TrailPreview.clear();
     if (!state.committed) revertLoadout(state.entry); // (Back, Escape, the back button: the loadout as it was on entry, any stock used returned)
     state.open = false;
     root.classList.add('hidden');
@@ -813,7 +845,7 @@ export const Cosmetics = {
     done?.();
   },
   // for a check or a picture
-  get shown() { const c = cid(); return { kill: shownKill(c), decal: shownDecal(c), tabs: slotList ? [...slotList.children].map(b => b.dataset.slot) : [], scopeHidden: !!scopeBar?.hidden, scope: state.scope, custom: !!state.car && Store.differs(state.car.id), props: { roof: shownProp('roof', c), cargo: shownProp('cargo', c), wing: shownProp('wing', c) }, prop: state.prop || null, plate: shownDesign(c), plateText: plateText(c), openSlot, end: state.end || null, open: state.open, car: state.car?.id || null, closeUp: state.close, design: wheelDesign(c), colour: wheelColour(c), set: wheelSet(c), view: ShowroomView.state }; },
+  get shown() { const c = cid(); return { kill: shownKill(c), trail: state.car ? shownTrail(state.car.id) : 'classic', trailPreview: TrailPreview.state, decal: shownDecal(c), tabs: slotList ? [...slotList.children].map(b => b.dataset.slot) : [], scopeHidden: !!scopeBar?.hidden, scope: state.scope, custom: !!state.car && Store.differs(state.car.id), props: { roof: shownProp('roof', c), cargo: shownProp('cargo', c), wing: shownProp('wing', c) }, prop: state.prop || null, plate: shownDesign(c), plateText: plateText(c), openSlot, end: state.end || null, open: state.open, car: state.car?.id || null, closeUp: state.close, design: wheelDesign(c), colour: wheelColour(c), set: wheelSet(c), view: ShowroomView.state }; },
   scope: (scope) => setScope(scope),
   closeUp: setCloseUp,
 };

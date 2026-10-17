@@ -19,8 +19,8 @@ const box = (parent, material, w, h, l, x, y, z) => {
 };
 // how far a model's wheels have turned (rad) at time t (s): the player's car in the game, by the distance it has rolled
 // (userData.roll, m, set each frame by render/items.js) over the wheel's radius r; a car on show (userData.onShow, render/showcar.js)
-// a gentle idle; anything else (traffic) as before, a fixed fast turn
-export const wheelTurn = (group, t, r) => (typeof group.userData.roll === 'number' ? group.userData.roll / r : group.userData.onShow ? t * 3 : t * 30);
+// STILL (the owner, 17-Oct: in the vehicle previews only spinners turn; CHECKLIST 452); anything else (traffic) as before, a fixed fast turn
+export const wheelTurn = (group, t, r) => (typeof group.userData.roll === 'number' ? group.userData.roll / r : group.userData.onShow ? 0 : t * 30);
 // (returns [tyre, hub]; the hub is gold unless given a material of its own)
 const wheel = (parent, radius, width, x, y, z, hubMaterial = lambert(0xe6c15a)) => {
   const tyre = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, width, 16), lambert(0x141414));
