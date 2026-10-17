@@ -17,15 +17,16 @@ import { Track } from '../track.js';
 import { Player } from '../player.js';
 import { Replay } from '../replay.js';
 import { ReplayStore } from '../replaystore.js';
-import { makeCarMesh, shapeCarMesh } from './cars.js';
+import { Mysteries } from '../mysteries.js';
+import { scene } from './scene.js';
+import { ghostMeshFor } from './ghostmodel.js'; // (the recorded car's own model, flattened into one pale mesh)
 
-const ghostMat = new THREE.MeshBasicMaterial({ color: 0xbfefff, transparent: true, opacity: 0.38, depthWrite: false });
-const at = new THREE.Vector3();
+const at = new THREE.Vector3(), where = [0, 0, 0, 0];
 const gap = document.createElement('div');
 gap.id = 'ghostGap';
 document.body.append(gap);
 
-let mesh = null, meshCar = null, path = null, runKey = '';
+let mesh = null, path = null, runKey = '';
 // the ghost in a replay being watched (the orbit camera's panel, render/orbit.js): off unless asked for, and then the best run
 // on this level and side (not the very run being watched: that would sit on the car) goes by the replay's own clock
 export const WatchGhost = { on: false };
@@ -47,16 +48,11 @@ const pick = () => {
   const best = bestFor();
   if (!best) return; // (one recorded before there were paths, or out of date, or the very run being watched)
   path = Replay.unpackPath(best.path);
-  const car = carById(best.header.car) || CAR;
-  if (!mesh) mesh = makeCarMesh(0xffffff);
-  if (meshCar !== car) {
-    shapeCarMesh(mesh, car);
-    mesh.traverse((part) => { if (part.isMesh) { part.material = ghostMat; part.castShadow = false; part.renderOrder = 2; } });
-    meshCar = car;
-  }
+  const car = carById(best.header.car) || CAR; // (its Super version, an idea, a Legendary: as recorded)
+  mesh = ghostMeshFor(car, !!best.header.evil, scene); // (built once for a car and side: render/ghostmodel.js)
 };
 
-// where the ghost was at time t: [s, lat, yaw, air], or null once its run is over
+// where the ghost was at time t: [s, lat, yaw, air] (one array, reused), or null once its run is over
 const sample = (t) => {
   const last = path.length - 1;
   if (t > path[last][0] + 0.5) return null;
@@ -65,7 +61,8 @@ const sample = (t) => {
   const a = path[lo], b = path[Math.min(lo + 1, last)];
   // (between two points, in a straight line: not across a jump from one road to another, or round a lap's end)
   const k = b === a || Math.abs(b[1] - a[1]) > 15 ? 0 : Math.max(0, Math.min(1, (t - a[0]) / (b[0] - a[0])));
-  return [a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k, a[3] + (b[3] - a[3]) * k, a[4] + (b[4] - a[4]) * k];
+  for (let i = 0; i < 4; i++) where[i] = a[i + 1] + (b[i + 1] - a[i + 1]) * k;
+  return where;
 };
 
 // back on the menu (main.js): no ghost, and no line about it
@@ -74,17 +71,17 @@ export const clearGhost = () => { gap.style.display = 'none'; if (mesh) mesh.vis
 export const syncGhost = () => {
   const key = Game.state === 'playing' ? Game.seed + ':' + Game.loadSeed : '';
   if (key !== runKey) { runKey = key; if (key) pick(); else path = null; }
-  const where = path && Game.state === 'playing' ? sample(Game.time) : null;
-  if (mesh) mesh.visible = !!where;
-  if (!where) {
+  const now = path && Game.state === 'playing' ? sample(Game.time) : null;
+  if (mesh) mesh.visible = !!now;
+  if (!now) {
     gap.style.display = path && Game.state === 'playing' ? 'block' : 'none';
     gap.textContent = 'Ghost delivered';
     return;
   }
-  const [s, lat, yaw, air] = where;
+  const [s, lat, yaw, air] = now;
   const heading = Track.toWorld(s, lat, at);
   mesh.position.copy(at);
-  mesh.position.y += air;
+  mesh.position.y += air + Mysteries.heave(s); // (as the player's car: off the road by its jump, riding an earthquake's wave)
   mesh.rotation.y = heading - yaw;
   mesh.rotation.x = -Math.atan(Track.grade(s));
   if (LEVEL.laps) { gap.style.display = 'none'; return; } // (round a circuit, how far apart is not one number)
