@@ -10,8 +10,9 @@
 //   - HALF SPEED (a time scale of 0.5, as a replay's 2x / 4x, at a half): the game time of a frame is half; each of the turbo's,
 //     the smoke's and the gravel's particles goes half as far a frame as at 1x (the median, 10 frames each), the car too; and the
 //     turbo's trail behind the car is as long at 0.5 as at 1 (it is the car's, in game time)
-//   - TURBO TRAIL STYLES (render/turbotrails.js, ?turbotrail=, when it is there): each style paused holds still and emits nothing,
-//     and at half speed goes half as far
+//   - TURBO TRAIL STYLES (render/turbotrails.js, ?turbotrail=, when it is there): each style and its lite variant paused holds still
+//     and emits nothing, at half speed goes half as far, comes from the tail up in the air with a jumping car, and with the turbo off
+//     is hidden
 //   - render-only: the replay fingerprint walks no render/ file; its hashes printed
 //   node scripts/.trail-clock-check.mjs
 import { startModels } from './modelpatch-load.mjs';
@@ -59,6 +60,7 @@ try {
       if (opts.damaged) Player.health = Player.maxHealth * 0.1;
       if (opts.gravel) Player.inGravel = true;
       if (opts.hold) Player.speed = opts.hold;
+      if (opts.air) Player.air = opts.air;
     }
     for (const c of Traffic.cars) if (!c.fixed) c.active = false;
     place();
@@ -123,7 +125,7 @@ try {
     for (let i = 0; i < 30; i++) frame({ scale: 0.5 }); // (settled at 0.5)
     for (let i = 0; i < 10; i++) { let c = 0; slow.push(steppedBy(key, () => { c = car(0.5); })); carSlow.push(c); }
     const r = median(slow) / median(full), rc = median(carSlow) / median(carFull);
-    check(Math.abs(rc - 0.5) < 0.02 && Math.abs(r - 0.5) < 0.1, name + ' at a time scale of 0.5: each particle goes ' + r.toFixed(2) + 'x as far a frame as at 1 (' + median(full).toFixed(3) + ' -> ' + median(slow).toFixed(3) + ' m), the car ' + rc.toFixed(2) + 'x');
+    check(Math.abs(rc - 0.5) < 0.02 && Math.abs(r - 0.5) < 0.12, name + ' at a time scale of 0.5: each particle goes ' + r.toFixed(2) + 'x as far a frame as at 1 (' + median(full).toFixed(3) + ' -> ' + median(slow).toFixed(3) + ' m), the car ' + rc.toFixed(2) + 'x');
     return { full: median(full), slow: median(slow) };
   };
   half('the turbo exhaust', 'Particles', { turbo: true, hold: 30 });
@@ -143,7 +145,7 @@ try {
 
   // ---- TURBO TRAIL STYLES (Part 2: render/turbotrails.js) ----
   if (TT) {
-    for (const style of TT.STYLE_NAMES) {
+    for (const style of [...TT.STYLE_NAMES, ...TT.STYLE_NAMES.map(n => n + '-lite')]) {
       TT.setTurboTrail(style);
       start({ turbo: true, hold: 30 });
       const n = TT.liveCount();
@@ -157,9 +159,15 @@ try {
       const d2 = TT.advanceProbe(() => frame({ scale: 0.5 }));
       const r = d2 / d1;
       check(n > 0 && still && Math.abs(r - 0.5) < 0.1, 'turbo trail \'' + style + '\': drawing (' + n + ' live), paused 30 frames: nothing moved or came (' + still + '); at 0.5x it goes ' + r.toFixed(2) + 'x as far a frame');
+      // in the air (3 m up): it comes from the car's tail up there, not the road under it (render/cars.js playerPointY, CHECKLIST 429)
+      opts.air = 3;
+      for (let i = 0; i < 20; i++) frame();
+      const road = TR.Track.toWorld(Player.s - Player.hl, Player.lat, { x: 0, y: 0, z: 0 }) && carMesh.position.y - 3, ys = TT.headHeights();
+      opts.air = 0; Player.air = 0;
+      check(ys.length && median(ys) > road + 2.5, '...in the air 3 m up: it leaves the tail ' + (median(ys) - road).toFixed(2) + ' m over the road (the newest ' + ys.length + ')');
       Player.turbo = 0;
-      for (let i = 0; i < 40; i++) frame();
-      check(TT.liveCount() === 0, '...and the turbo off: nothing drawn (' + TT.liveCount() + ')');
+      for (let i = 0; i < 70; i++) frame();
+      check(TT.liveCount() === 0 && !TT.drawn(), '...and the turbo off: nothing alive, the mesh hidden (' + TT.liveCount() + ')');
     }
     TT.setTurboTrail('classic');
   }

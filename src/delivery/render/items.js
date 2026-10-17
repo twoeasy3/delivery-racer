@@ -30,6 +30,7 @@ import { dressCosmetics } from './showcar.js';
 import { setUnderglowLevel } from './underglow.js';
 import { LAMP_DEBUG, lampKey, lampsFor, makeLampMarkers } from './carlights.js';
 import { parentVelocity } from './gameclock.js'; // (the parent's own velocity, for its trails: CHECKLIST 442)
+import { turboTrailStyle } from './turbotrails.js'; // (?turbotrail=<name>: another look, drawn there; CHECKLIST 442)
 const carried = { x: 0, y: 0, z: 0 };
 
 // Everything here that belongs to the loaded level (bridges, obstacles, pickups, targets)
@@ -634,7 +635,7 @@ export const syncPickups = (dt) => {
   // turbo exhaust: out of the car's tail, wherever the car is drawn. In the air it is the car's own height (its jump,
   // nose-up or down), not the road's under it (CHECKLIST 429: it was the road's, a trail along the tarmac under a flying
   // car); on the ground playerPointY is the road's height there plus 0.6, as it always was
-  if (Player.active && powerShown(Player.turbo)) {
+  if (Player.active && powerShown(Player.turbo) && turboTrailStyle() === 'classic') {
     parentVelocity(Player, carried, Player.s - Player.hl); // (half the car's own velocity: it falls back behind it, and bends with a lane change)
     Track.toWorld(Player.s - Player.hl, Player.lat, tmp);
     const y = playerPointY(tmp.y, Player.hl, 0.6);
