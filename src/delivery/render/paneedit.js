@@ -110,21 +110,23 @@ export const rimPoints = (node, root, pane, step = 0.04) => {
     const e = edges.get(id); if (e) e.n++; else edges.set(id, { a, b, n: 1 });
   }
   let rim = [...edges.values()].filter(e => e.n === 1);
-  if (!rim.length) rim = [...edges.values()];
+  const closed = !rim.length; // (a closed pane, a glass slab: every edge, both faces': gapOf reads its nearer quarter)
+  if (closed) rim = [...edges.values()];
   const out = [], seen = new Set(), A = new THREE.Vector3(), B = new THREE.Vector3();
   for (const e of rim) {
     A.fromBufferAttribute(pos, e.a).applyMatrix4(M); B.fromBufferAttribute(pos, e.b).applyMatrix4(M);
     const n = Math.max(1, Math.ceil(A.distanceTo(B) / step));
     for (let i = 0; i < n; i++) { const p = A.clone().lerp(B, i / n), k = p.toArray().map(x => Math.round(x * 1000)).join(','); if (!seen.has(k)) { seen.add(k); out.push(p); } }
   }
-  if (out.length > 240) { const k = out.length / 240; return out.filter((_, i) => Math.floor(i % k) === 0).slice(0, 240); }
-  return out;
+  const res = out.length > 240 ? out.filter((_, i) => Math.floor(i % (out.length / 240)) === 0).slice(0, 240) : out;
+  res.closed = closed;
+  return res;
 };
 // what a pane rests on, as triangles in the car's frame: the body's meshes (whole), and the OTHER panes of the car's glass ({ mesh, tris }:
 // their vertex index triples), so a pane that meets another pane (a glass box's faces, a screen wrapped into its side windows) rests
 export const bodyTriangles = (root, items) => {
   root.updateMatrixWorld(true);
-  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), list = [], v = new THREE.Vector3();
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), list = [], glassy = [], v = new THREE.Vector3();
   for (const it of items) {
     const m = it.isMesh ? it : it.mesh, pos = m?.geometry?.attributes?.position; if (!pos) continue;
     const M = new THREE.Matrix4().multiplyMatrices(inv, m.matrixWorld), idx = m.geometry.index?.array;
@@ -134,12 +136,12 @@ export const bodyTriangles = (root, items) => {
     for (let j = 0; j < n; j++) {
       const tri = new Float32Array(9), t = start + j * 3;
       for (let k = 0; k < 3; k++) { v.fromBufferAttribute(pos, triples ? triples[j][k] : idx ? idx[t + k] : t + k).applyMatrix4(M); tri[k * 3] = v.x; tri[k * 3 + 1] = v.y; tri[k * 3 + 2] = v.z; }
-      list.push(tri);
+      list.push(tri); glassy.push(it.isMesh ? 0 : 1);
     }
   }
   const n = list.length, tris = new Float32Array(n * 9), lo = new Float32Array(n * 3), hi = new Float32Array(n * 3);
   list.forEach((t, i) => { tris.set(t, i * 9); for (let a = 0; a < 3; a++) { lo[i * 3 + a] = Math.min(t[a], t[3 + a], t[6 + a]); hi[i * 3 + a] = Math.max(t[a], t[3 + a], t[6 + a]); } });
-  return { n, tris, lo, hi };
+  return { n, tris, lo, hi, glass: Uint8Array.from(glassy) }; // (glass: 1 for another pane's triangle)
 };
 const TRI = new THREE.Triangle(), Q = new THREE.Vector3();
 // the nearest body point to p within `cap` (null beyond it)
@@ -156,62 +158,97 @@ export const nearestBody = (body, p, cap = PANE_CAP) => {
   }
   return at ? { q: at, d: best } : null;
 };
+const quantile = (a, q) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(q * s.length))]; };
 const median = (a) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
-// the gap: { gap (m: the median over the rim of its distance to the body beyond the rest allowance), clear (m: the rim's nearest point to
+// the gap: { gap (m: the median over the rim of its distance to the body beyond the rest allowance, 6 mm; a closed pane, a slab with both faces'
+// edges, its nearer quarter), clear (m: the rim's nearest point to
 // the body; PANE_CAP and more: nothing within reach), points }
-export const gapOf = (pts, body) => {
-  const ds = pts.map(p => nearestBody(body, p)?.d ?? PANE_CAP);
-  return { gap: r4(median(ds.map(d => Math.max(0, d - PANE_CONTACT)))), clear: r4(ds.length ? Math.min(...ds) : PANE_CAP), points: pts.length };
+export const gapOf = (pts, body, closed = !!pts.closed) => {
+  const ds = pts.map(p => nearestBody(body, p)?.d ?? PANE_CAP), g = ds.map(d => Math.max(0, d - PANE_CONTACT));
+  return { gap: r4(closed ? quantile(g, 0.25) : median(g)), clear: r4(ds.length ? Math.min(...ds) : PANE_CAP), points: pts.length };
 };
 export const paneGap = (root, node, pane, body) => gapOf(rimPoints(node, root, pane), body);
 
-// small 6x6 solve (Gaussian elimination with partial pivots)
-const solve = (A, b) => {
-  const n = b.length, M = A.map((r, i) => [...r, b[i]]);
-  for (let c = 0; c < n; c++) {
-    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
-    if (Math.abs(M[p][c]) < 1e-12) return null;
-    [M[c], M[p]] = [M[p], M[c]];
-    for (let r = 0; r < n; r++) if (r !== c) { const f = M[r][c] / M[c][c]; for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k]; }
+// the pane's samples now (the car's frame): its rim, its inside (vertices and triangle middles) and its area normal
+export const paneSamples = (node, root, pane) => {
+  const M = toModelOf(node, root), pos = node.geometry.attributes.position, inner = [], n = new THREE.Vector3(), a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), e1 = new THREE.Vector3(), e2 = new THREE.Vector3();
+  for (const [i, j, k] of paneTris(node.geometry, pane)) {
+    a.fromBufferAttribute(pos, i).applyMatrix4(M); b.fromBufferAttribute(pos, j).applyMatrix4(M); c.fromBufferAttribute(pos, k).applyMatrix4(M);
+    const cr = e1.subVectors(b, a).cross(e2.subVectors(c, a)); if (n.lengthSq() && cr.dot(n) < 0) cr.negate(); n.add(cr);
+    if (inner.length < 400) inner.push(a.clone(), a.clone().add(b).add(c).divideScalar(3));
   }
-  return M.map((r, i) => r[n] / r[i]);
+  return { rim: rimPoints(node, root, pane), inner, n: n.lengthSq() ? n.normalize() : new THREE.Vector3(0, 0, 1) };
 };
-// SNAP: the move and turn (about `pivot`, the pane's centre now) that rest the rim on the body. -> { R: Matrix4 (rotation), t: Vector3,
-// moved (m), turned (deg), before, after: gapOf } or null when the body is out of reach of the whole rim
-export const snapPane = (pts0, body, pivot, { iters = 60, rotate = true } = {}) => {
-  const before = gapOf(pts0, body);
-  let pts = pts0.map(p => p.clone());
-  const R = new THREE.Matrix4(), t = new THREE.Vector3(), c = pivot.clone();
-  let used = 0;
-  for (let it = 0; it < iters; it++) {
-    const pairs = [];
-    for (const p of pts) {
-      const h = nearestBody(body, p); if (!h) continue;
-      const dir = h.d > 1e-6 ? p.clone().sub(h.q).divideScalar(h.d) : null;
-      pairs.push([p, dir ? h.q.clone().addScaledVector(dir, PANE_STANDOFF) : p.clone()]);
-    }
-    used = pairs.length;
-    if (pairs.length < 3) break;
-    // minimise sum |p + w x (p - c') + d - q|^2 over (w, d), c' the pane's centre now
-    const cc = c.clone().add(t), A = Array.from({ length: 6 }, () => new Array(6).fill(0)), b = new Array(6).fill(0);
-    for (const [p, q] of pairs) {
-      const r = p.clone().sub(cc), e = q.clone().sub(p);
-      // the rows of J = [ -[r]x | I ] (3 x 6) : J x = e
-      const J = [[0, r.z, -r.y, 1, 0, 0], [-r.z, 0, r.x, 0, 1, 0], [r.y, -r.x, 0, 0, 0, 1]], E = [e.x, e.y, e.z];
-      for (let k = 0; k < 3; k++) for (let i = 0; i < 6; i++) { b[i] += J[k][i] * E[k]; for (let j = 0; j < 6; j++) A[i][j] += J[k][i] * J[k][j]; }
-    }
-    const lam = 1e-4 * pairs.length; for (let i = 0; i < 6; i++) A[i][i] += i < 3 ? lam * 4 : lam;
-    if (!rotate) for (let i = 0; i < 3; i++) { A[i].fill(0); A.forEach(r => { r[i] = 0; }); A[i][i] = 1; b[i] = 0; }
-    const x = solve(A, b); if (!x) break;
-    const w = new THREE.Vector3(x[0], x[1], x[2]), ang = Math.min(w.length(), 0.035), d = new THREE.Vector3(x[3], x[4], x[5]);
-    const dR = ang > 1e-9 ? new THREE.Matrix4().makeRotationAxis(w.clone().normalize(), ang) : new THREE.Matrix4();
-    pts = pts.map(p => p.clone().sub(cc).applyMatrix4(dR).add(cc).add(d));
-    R.premultiply(dR); t.add(d);
-    if (d.length() < 2e-5 && ang < 2e-5) break;
+const RAY = new THREE.Ray(), HIT = new THREE.Vector3();
+// the body's nearest face along dir from p (within reach): { t, m (its normal, toward p) } or null
+const castBody = (body, list, p, dir, reach, bodyOnly = false) => {
+  RAY.origin.copy(p); RAY.direction.copy(dir);
+  let best = reach, m = null;
+  for (const i of list) {
+    if (bodyOnly && body.glass[i]) continue;
+    const k = i * 9, t = body.tris;
+    TRI.a.set(t[k], t[k + 1], t[k + 2]); TRI.b.set(t[k + 3], t[k + 4], t[k + 5]); TRI.c.set(t[k + 6], t[k + 7], t[k + 8]);
+    if (!RAY.intersectTriangle(TRI.a, TRI.b, TRI.c, false, HIT)) continue;
+    const d = HIT.distanceTo(p); if (d < best) { best = d; m = TRI.getNormal(new THREE.Vector3()); }
   }
-  if (!used) return null;
-  const after = gapOf(pts, body), angle = new THREE.Quaternion().setFromRotationMatrix(R);
-  return { R, t, moved: r4(t.length()), turned: Math.round(2 * Math.acos(Math.min(1, Math.abs(angle.w))) * 57.29577951308232 * 10) / 10, before, after, points: pts };
+  if (!m) return null;
+  const facing = m.dot(dir) > 0; // (its front faces along the ray: away from the pane, seen from beyond: it hides what is behind it)
+  if (facing) m.negate();
+  return { t: best, m, facing };
+};
+export const SNAP_REACH = 0.15, SNAP_TURN = 20; // (m: how far behind the pane the body is looked for; deg: the most it is turned to lie on it)
+const angleOf = (R) => { const q = new THREE.Quaternion().setFromRotationMatrix(R); return 2 * Math.acos(Math.min(1, Math.abs(q.w))) * 57.29577951308232; };
+const RAD = 1 / 57.29577951308232;
+// SNAP TO BODY: the move and turn (about `pivot`, the pane's centre now) that rest the pane on the body: its rim (60 points) brought to 3 mm
+// off the nearest surfaces round it (the body, the other panes), searched move by move and turn by turn (a pattern search, 2 cm and 2 degrees
+// halved down to half a millimetre), from where it is and from where rays along its normal lay it on the body face behind it (a flat pane
+// turned parallel to it). Never into the body: a try that puts more of the pane's inside under a body face facing out is refused. At most
+// 15 cm and 20 degrees. -> { R, t, moved (m), turned (deg), before, after (gapOf), how } or null (nothing within reach, or it rests already)
+export const snapPane = (sample, body, pivot) => {
+  const before = gapOf(sample.rim, body), all = [...sample.inner, ...sample.rim];
+  const box = new THREE.Box3().setFromPoints(all).expandByScalar(SNAP_REACH + 0.05), near = [];
+  for (let i = 0; i < body.n; i++) { const i3 = i * 3; if (body.hi[i3] >= box.min.x && body.lo[i3] <= box.max.x && body.hi[i3 + 1] >= box.min.y && body.lo[i3 + 1] <= box.max.y && body.hi[i3 + 2] >= box.min.z && body.lo[i3 + 2] <= box.max.z) near.push(i); }
+  const sub = { n: near.length, tris: new Float32Array(near.length * 9), lo: new Float32Array(near.length * 3), hi: new Float32Array(near.length * 3), glass: new Uint8Array(near.length) };
+  near.forEach((i, j) => { sub.tris.set(body.tris.subarray(i * 9, i * 9 + 9), j * 9); sub.lo.set(body.lo.subarray(i * 3, i * 3 + 3), j * 3); sub.hi.set(body.hi.subarray(i * 3, i * 3 + 3), j * 3); sub.glass[j] = body.glass[i]; });
+  const ids = sub.glass.map((_, j) => j);
+  const pick = (list, n) => (list.length > n ? list.filter((_, i) => i % Math.ceil(list.length / n) === 0) : list);
+  const rim = pick(sample.rim, 60), inner = pick(sample.inner, 30);
+  const xf = (x) => { const R = new THREE.Matrix4(), w = new THREE.Vector3(x[3], x[4], x[5]); if (w.lengthSq() > 1e-14) R.makeRotationAxis(w.clone().normalize(), w.length()); return { R, t: new THREE.Vector3(x[0], x[1], x[2]) }; };
+  const at = (c, p) => p.clone().sub(pivot).applyMatrix4(c.R).add(pivot).add(c.t);
+  // which side the body is on (rays along the normal: more faces hit, else the nearer), and so which side is OUT
+  const none = xf([0, 0, 0, 0, 0, 0]), shoot = (c, dir, pts) => pts.map(p => castBody(sub, ids, at(c, p), dir, SNAP_REACH)).filter(Boolean);
+  let dir = sample.n.clone().negate(), hits = shoot(none, dir, all);
+  { const other = shoot(none, sample.n, all); if (other.length > hits.length || (other.length === hits.length && other.length && median(other.map(h => h.t)) < median(hits.map(h => h.t)))) { dir = sample.n.clone(); hits = other; } }
+  const sunkOf = (c) => { const out = dir.clone().negate().applyMatrix4(new THREE.Matrix4().extractRotation(c.R)); return inner.length ? inner.filter(p => castBody(sub, ids, at(c, p).addScaledVector(out, 0.0005), out, 0.08, true)?.facing).length / inner.length : 0; };
+  const sunk0 = sunkOf(none);
+  const cost = (c) => { let s2 = 0; for (const p of rim) { const h = nearestBody(sub, at(c, p), SNAP_REACH); s2 += Math.abs((h ? h.d : SNAP_REACH) - PANE_STANDOFF); } return s2 / rim.length; };
+  const ok = (x) => Math.hypot(x[0], x[1], x[2]) <= SNAP_REACH && Math.hypot(x[3], x[4], x[5]) <= SNAP_TURN * RAD;
+  const search = (x0, how) => {
+    const x = x0.slice(); let c = xf(x), J = cost(c), st = 0.02, sr = 2 * RAD, evals = 0;
+    while (st >= 0.0005 && evals < 700) {
+      let better = false;
+      for (let k = 0; k < 6; k++) for (const sg of [1, -1]) {
+        const y = x.slice(); y[k] += sg * (k < 3 ? st : sr); if (!ok(y)) continue;
+        const cy = xf(y), Jy = cost(cy); evals++;
+        if (Jy < J - 1e-6 && sunkOf(cy) <= sunk0 + 0.1) { x.splice(0, 6, ...y); c = cy; J = Jy; better = true; }
+      }
+      if (!better) { st /= 2; sr /= 2; }
+    }
+    return { ...c, J, how, x };
+  };
+  const tries = [search([0, 0, 0, 0, 0, 0], 'rim')];
+  if (hits.length >= 3 && hits.length >= all.length * 0.25) { // (from the body face behind it: turned parallel if flat, laid 3 mm off)
+    const m = hits.reduce((s2, h) => s2.add(h.m), new THREE.Vector3()).normalize().negate();
+    const mid = all.reduce((s2, p) => s2.add(p), new THREE.Vector3()).divideScalar(all.length);
+    const flat = all.every(p => Math.abs(p.clone().sub(mid).dot(sample.n)) < 0.015);
+    const q = flat && dir.angleTo(m) <= SNAP_TURN * RAD ? new THREE.Quaternion().setFromUnitVectors(dir, m) : new THREE.Quaternion();
+    const w = new THREE.Vector3(q.x, q.y, q.z), ang = 2 * Math.acos(Math.min(1, q.w)), rv = w.lengthSq() > 1e-14 ? w.normalize().multiplyScalar(ang) : w;
+    const c0 = xf([0, 0, 0, rv.x, rv.y, rv.z]), d = flat ? m : dir, again = shoot(c0, d, all);
+    if (again.length) { const tt = d.clone().multiplyScalar(Math.min(...again.map(h => h.t)) - PANE_STANDOFF); const x0 = [tt.x, tt.y, tt.z, rv.x, rv.y, rv.z]; if (ok(x0) && sunkOf(xf(x0)) <= sunk0 + 0.1) tries.push(search(x0, 'face')); }
+  }
+  const best = tries.sort((p, q) => p.J - q.J)[0], moved = best.t.length(), turned = angleOf(best.R);
+  if (moved < 2e-4 && turned < 0.05) return null;
+  return { R: best.R, t: best.t, moved: r4(moved), turned: Math.round(turned * 10) / 10, before, after: gapOf(sample.rim.map(p => at(best, p)), body, !!sample.rim.closed), how: best.how };
 };
 // the snap folded into the pane's edit: the turn composed (the snap's about the centre now), the move added
 export const snappedEdit = (edit, snap) => {
