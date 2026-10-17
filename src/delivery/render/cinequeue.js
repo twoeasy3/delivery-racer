@@ -60,7 +60,9 @@ const queue = [];
 const played = new Set(); // (each event once: 'jim:hearse', 'ecu:sport:3', 'key:swancar', ...)
 let busy = null; // the one playing: { item, began, handle, timer }
 const log = [];
-if (typeof window !== 'undefined') window.__cine = { log, queue, get busy() { return busy ? { ...busy.item, held: !!busy.handle?.held } : null; }, look: () => look(), pump: () => pump() };
+let limit = LIMIT_MS;
+if (typeof window !== 'undefined') window.__cine = { log, queue, get busy() { return busy ? { ...busy.item, held: !!busy.handle?.held } : null; }, look: () => look(), pump: () => pump(),
+  set limit(ms) { limit = Number(ms) || LIMIT_MS; } }; // (for scripts/.cine-wire-check.mjs: the log, and a shorter failsafe to try it)
 const note = (item, what) => { log.push({ ...item, what, at: Date.now() }); };
 export const enqueue = (item) => {
   const id = item.mode + ':' + item.carId + (item.level ? ':' + item.level : '');
@@ -95,11 +97,11 @@ export const pump = () => {
   // the failsafe: a load that never comes, a play not at its held end within LIMIT_MS, a run begun: closed
   mine.timer = setInterval(() => {
     if (busy !== mine) return clearInterval(mine.timer);
-    const h = mine.handle, late = Date.now() - mine.began > LIMIT_MS;
+    const h = mine.handle, late = Date.now() - mine.began > limit;
     if (h?.done) return finish('closed');
-    if (Game.state === 'playing') { h?.close(); return finish('run'); }
+    if (Game.state === 'playing') { finish('run'); h?.close(); return; } // (finish first: the close's onClose is then not this one's)
     if (late && !h) return finish('timeout');
-    if (late && !h.held) { h.close(); finish('timeout'); }
+    if (late && !h.held) { finish('timeout'); h.close(); }
   }, 250);
   import('./unlockcine.js').then((m) => {
     if (busy !== mine) return;
