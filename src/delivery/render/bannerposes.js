@@ -13,7 +13,7 @@ export const POSES = {
   showdown: { cars: [{ h: 0.55 }, { h: 0.15, dir: 0.6 }, { h: -0.25, dir: 0.6 }, { h: -0.6, dir: 0.6 }] },
   // the hero close and low in the middle, nose at the camera, the others flanking it behind (a V)
   headon: { lift: 0.04, fov: 30, roll: 3, shiftX: 0, weight: 0.8, gap: 0.6,
-    cars: [{ h: 0 }, { h: 0.22, dir: 1.0, from: 0, min: 2.5 }, { h: -0.22, dir: PI - 1.0, from: 0, min: 2.5 }, { h: -0.3, dir: PI - 0.7, from: 2 }] },
+    cars: [{ h: 0 }, { h: 0.22, dir: 1.0, from: 0, min: 2.5 }, { h: -0.22, dir: PI - 1.0, from: 0, min: 2.5 }, { h: -0.95, dir: PI - 0.45, from: 2, scale: 1.1 }] },
   // the hero big at the front left turned to the camera, the others overlapping behind it to the right
   staggered: { lift: 0.06, fov: 24, roll: -2, shiftX: -0.02, gap: 0.5,
     cars: [{ h: 0.8 }, { h: 0.55, dir: PI - 0.55 }, { h: 0.35, dir: PI - 0.7 }, { h: 0.15, dir: PI - 0.85 }] },
@@ -25,7 +25,7 @@ export const POSES = {
     cars: [{ h: PI - 0.5 }, { h: PI - 0.45, dir: 0.35, scale: 0.92 }, { h: PI - 0.4, dir: 0.35, scale: 0.88 }, { h: PI - 0.35, dir: 0.35, scale: 0.85 }] },
   // the hero alone and big, the others small dark shapes far back
   solo: { lift: 0.06, fov: 30, shiftX: 0, gap: 0.6,
-    cars: [{ h: 0.55 }, { h: 0.2, dir: 1.2, from: 0, min: 10, scale: 0.6, dark: true }, { h: -0.2, dir: PI - 1.2, from: 0, min: 10, scale: 0.6, dark: true }, { h: 0.3, dir: 0.2, from: 1, scale: 0.6, dark: true }] },
+    cars: [{ h: 0.55 }, { h: 0.2, dir: 0.8, from: 0, min: 9, scale: 0.6, dark: true }, { h: -0.2, dir: PI - 0.8, from: 0, min: 9, scale: 0.6, dark: true }, { h: 0.3, dir: 0.2, from: 1, scale: 0.6, dark: true }] },
 };
 export const POSE_NAMES = Object.keys(POSES);
 export const DEFAULT_POSE = 'showdown';

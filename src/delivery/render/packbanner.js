@@ -131,7 +131,7 @@ export const bannerScene = (cars, aspect, { evil = false, config = BANNER, pose 
       model.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(model);
       if (box.isEmpty()) continue;
-      built.push({ car, model, box, size: box.getSize(new THREE.Vector3()) });
+      built.push({ car, model, box, size: box.getSize(new THREE.Vector3()), lamps: lampsOf(model, box) }); // (the lamps found before the model is placed: its parents would move them)
     } catch (error) { console.warn('No model for the banner: ' + (error?.message || error)); }
   }
   if (!built.length) return null;
@@ -179,7 +179,7 @@ export const bannerScene = (cars, aspect, { evil = false, config = BANNER, pose 
     shadow.renderOrder = 2;
     scene.add(shadow);
     // its headlamps, glowing
-    for (const p of slot.dark ? [] : lampsOf(b.model, b.box)) {
+    for (const p of slot.dark ? [] : b.lamps) {
       const local = p.clone().sub(new THREE.Vector3((b.box.min.x + b.box.max.x) / 2, b.box.min.y, (b.box.min.z + b.box.max.z) / 2));
       const world = local.multiplyScalar(b.scale).applyAxisAngle(new THREE.Vector3(0, 1, 0), heading).add(at);
       const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: o.glow.opacity }));
