@@ -6,6 +6,11 @@
 // playerPointY: up in the air with a jumping car, CHECKLIST 429), it is carried by its PARENT's velocity on the PARENT GAME CLOCK
 // (render/gameclock.js: paused nothing moves or comes, half as far at 0.5x), and it grows with the car's actual speed.
 // TURBO-TRAILS.md: the looks, the counts, the cost, the open questions.
+// A COSMETIC since CHECKLIST 452 (render/trailcosmetic.js, the Cosmetics screen's 'Trail' tab): at every level load the style is the one the
+// car in use WEARS (shownTrail(CAR.id); its lite variant on a low-end device: render/lowend.js, or ?fxlow=1 as the kill effects'), unless the
+// address (`?turbotrail=`) or a check (setTurboTrail) has pinned one. The same code draws the Cosmetics screen's PREVIEW (createTrailPreview
+// below): every style reads the car only through a SOURCE (`src`: the game's player car, GAME, or a car standing on show), so the game's
+// frame is drawn as before and the preview is the game's own trail. The replay ghost (render/ghostcar.js) never has one.
 import * as THREE from 'three';
 import { CAR } from '../cars.js';
 import { Track } from '../track.js';
@@ -17,24 +22,19 @@ import { carMesh, playerPointY } from './cars.js';
 import { parentVelocity } from './gameclock.js';
 import { TURBO_COLOR } from './pickupModels.js';
 import { RARITIES, rarityOf } from '../showroomData.js';
+import { makeParticles } from './particles.js';
+import { STYLES, STYLE_NAMES } from './trailstyles.js';
+import { shownTrail, trailSupported } from './trailcosmetic.js';
+import { forceLow } from './killfx.js';
+import { lowEnd } from './lowend.js';
 
-// name: what it looks like (POOLS: its particles, full / lite)
-export const STYLES = {
-  flame: 'a short jet of flame from two nozzles: white-hot at the pipe, orange, red, gone (cones)',
-  twin: 'two cyan ribbons from the tail corners, flat on the air, bending with every lane change',
-  speedlines: 'white streaks rushing back past the body, more and longer the faster it goes (lines)',
-  afterimage: 'cyan silhouettes of the car itself left behind it, fading (its own geometry, merged once)',
-  embers: 'sparks shed from the tail, falling and bouncing on the road (points)',
-  shockwave: 'rings pulsing out of the tail and widening as they fall back (thin tori)',
-  rarity: 'one wide ribbon in the colour of the car\'s card rarity (Common grey ... Legendary orange)',
-};
-export const STYLE_NAMES = Object.keys(STYLES);
-const POOLS = { flame: [40, 20], twin: [28, 16], speedlines: [36, 16], afterimage: [4, 2], embers: [64, 28], shockwave: [5, 3], rarity: [30, 18] };
+// name: what it looks like (render/trailstyles.js); POOLS: its particles, full / lite (classic: the preview's own cubes only)
+export { STYLES, STYLE_NAMES };
+const POOLS = { flame: [40, 20], twin: [28, 16], speedlines: [36, 16], afterimage: [4, 2], embers: [64, 28], shockwave: [5, 3], rarity: [30, 18], classic: [48, 24] };
+// the lite variant wanted on this device (the kill effects' ?fxlow=1, or a low-end device as the cutscenes judge it)
+export const trailLite = () => forceLow || lowEnd();
 
-let style = 'classic', liteOn = false;
 const read = () => { try { return new URLSearchParams(location.search).get('turbotrail'); } catch { return null; } };
-export const turboTrailStyle = () => style;
-export const turboTrailLite = () => liteOn;
 
 // ---- a store of particles: x y z vx vy vz life maxLife a b, and an emission serial a slot (so a probe can tell one re-used) ----
 const F = 10;
@@ -50,13 +50,14 @@ const makeStore = (max) => {
       return i;
     },
     // gravity g, floor (y below which it bounces: NaN none)
-    update(dt, g = 0) {
+    // (sx sz: the frame's own velocity taken off, for a car standing on show that the trail streams back from as if it drove: the preview)
+    update(dt, g = 0, sx = 0, sz = 0) {
       if (!(dt > 0)) return;
       for (let i = 0, o = 0; i < max; i++, o += F) {
         if (d[o + 6] <= 0) continue;
         d[o + 6] -= dt;
         if (g) d[o + 4] -= g * dt;
-        d[o] += d[o + 3] * dt; d[o + 1] += d[o + 4] * dt; d[o + 2] += d[o + 5] * dt;
+        d[o] += (d[o + 3] - sx) * dt; d[o + 1] += d[o + 4] * dt; d[o + 2] += (d[o + 5] - sz) * dt;
         if (g && d[o + 1] < d[o + 9]) { d[o + 1] = d[o + 9]; d[o + 4] = Math.abs(d[o + 4]) * 0.35; d[o + 3] *= 0.7; d[o + 5] *= 0.7; }
       }
     },
@@ -72,17 +73,34 @@ const makeStore = (max) => {
 
 // ---- what a frame gives every style: the tail, the parent's velocity and its speed ----
 const V = { x: 0, y: 0, z: 0 }, T = new THREE.Vector3(), Fw = new THREE.Vector3(), Ac = new THREE.Vector3(), P = new THREE.Vector3();
-const frameInfo = () => {
-  parentVelocity(Player, V, Player.s - Player.hl);
-  Track.toWorld(Player.s - Player.hl, Player.lat, T);
-  const roadY = T.y;
-  T.y = playerPointY(roadY, Player.hl, 0.5);
-  const h = Track.toWorld(Player.s, Player.lat, P);
-  const sp = Math.hypot(V.x, V.z);
-  if (sp > 0.5) Fw.set(V.x / sp, 0, V.z / sp); else Fw.set(Math.sin(h), 0, Math.cos(h));
-  Track.toWorld(Player.s - Player.hl, Player.lat + 1, Ac); Ac.sub(P.set(T.x, roadY, T.z)).setY(0).normalize(); // (+lat across)
-  return { roadY, k: Math.min(1.3, Math.max(0, Player.speed) / 35) };
+const rarityColour = (car) => { try { return parseInt((RARITIES[rarityOf(car)] || RARITIES.common).colour.slice(1), 16); } catch { return TURBO_COLOR; } };
+// THE SOURCE a trail follows (CHECKLIST 452): its size (hw, hl, height), frame() filling V (its velocity), T (the tail at its height), Fw
+// (forward, flat), Ac (+lat across, flat) and giving { roadY, k }; along(dz, off) a point dz m forward of the tail and off m across, on the
+// road; pointY(roadY, h) a height on the car; root() the car's model (the afterimage's shape), anchor(m) its matrix where the trail is drawn,
+// key() its identity; colour() its rarity's; shift: the trail is drawn in the car's own frame (it stands still; the trail streams back).
+// THE GAME'S: the player's car on the track, exactly as before.
+const GAME = {
+  shift: false,
+  get hw() { return Player.hw; }, get hl() { return Player.hl; }, get height() { return Player.height; },
+  frame() {
+    parentVelocity(Player, V, Player.s - Player.hl);
+    Track.toWorld(Player.s - Player.hl, Player.lat, T);
+    const roadY = T.y;
+    T.y = playerPointY(roadY, Player.hl, 0.5);
+    const h = Track.toWorld(Player.s, Player.lat, P);
+    const sp = Math.hypot(V.x, V.z);
+    if (sp > 0.5) Fw.set(V.x / sp, 0, V.z / sp); else Fw.set(Math.sin(h), 0, Math.cos(h));
+    Track.toWorld(Player.s - Player.hl, Player.lat + 1, Ac); Ac.sub(P.set(T.x, roadY, T.z)).setY(0).normalize(); // (+lat across)
+    return { roadY, k: Math.min(1.3, Math.max(0, Player.speed) / 35) };
+  },
+  along: (dz, off, out) => Track.toWorld(Player.s - Player.hl + dz, Player.lat + off, out),
+  pointY: (roadY, h) => playerPointY(roadY, Player.hl, h),
+  root: () => carMesh,
+  key: () => CAR.id + ':' + carMesh.children.length,
+  anchor: (m) => { carMesh.updateMatrixWorld(true); return m.copy(carMesh.matrixWorld); },
+  colour: () => rarityColour(CAR),
 };
+let src = GAME;
 // a point on the tail `across` m to the +lat side, at the tail's height
 const tailAt = (across, out) => out.set(T.x + Ac.x * across, T.y, T.z + Ac.z * across);
 const rnd = (r) => (Math.random() - 0.5) * 2 * r;
@@ -102,7 +120,7 @@ const makeFlame = (max) => {
     emit(dt, { k }) {
       for (acc += dt * 90 * (0.5 + k); acc >= 1; acc--) {
         nozzle = 1 - nozzle;
-        tailAt(nozzle ? 0.35 * Player.hw : -0.35 * Player.hw, P);
+        tailAt(nozzle ? 0.35 * src.hw : -0.35 * src.hw, P);
         S.emit(P.x + rnd(0.05), P.y + rnd(0.04), P.z + rnd(0.05), V.x * 0.8 - Fw.x * (2 + 5 * k), V.y * 0.8, V.z * 0.8 - Fw.z * (2 + 5 * k), 0.13 + 0.05 * k, 0.6 + 1.3 * k);
       }
     },
@@ -144,7 +162,7 @@ const makeRibbon = (max, strands, width, colour) => {
     emit(dt, info) {
       k = info.k;
       for (acc += dt * 60; acc >= 1; acc--) {
-        strands.forEach((across, s) => { tailAt(across * Player.hw, P); stores[s].emit(P.x, P.y, P.z, V.x * 0.5, V.y * 0.5, V.z * 0.5, 0.45); });
+        strands.forEach((across, s) => { tailAt(across * src.hw, P); stores[s].emit(P.x, P.y, P.z, V.x * 0.5, V.y * 0.5, V.z * 0.5, 0.45); });
       }
     },
     draw(live) {
@@ -157,7 +175,7 @@ const makeRibbon = (max, strands, width, colour) => {
         const n = order.length + (live && order.length ? 1 : 0);
         for (let j = 0; j < n; j++) {
           const head = j === order.length;
-          if (head) tailAt(strands[s] * Player.hw, H); else { const o = order[j] * F; H.set(S.d[o], S.d[o + 1], S.d[o + 2]); }
+          if (head) tailAt(strands[s] * src.hw, H); else { const o = order[j] * F; H.set(S.d[o], S.d[o + 1], S.d[o + 2]); }
           const t = head ? 0 : S.age(order[j]);
           // across the strand, flat: the horizontal normal of its run here
           if (j > 0) Q1.set(S.d[order[j - 1] * F], 0, S.d[order[j - 1] * F + 2]); else Q1.set(H.x - Fw.x, 0, H.z - Fw.z);
@@ -194,9 +212,9 @@ const makeSpeedlines = (max) => {
     emit(dt, info) {
       k = info.k;
       for (acc += dt * 80 * k; acc >= 1; acc--) {
-        const side = Math.random() < 0.5 ? -1 : 1, off = side * (Player.hw + 0.25 + Math.random() * 0.8);
-        Track.toWorld(Player.s - Player.hl + Math.random() * Player.hl * 2.2, Player.lat + off, P);
-        const y = playerPointY(info.roadY, Player.hl, 0.2 + Math.random() * (Player.height || 1.4));
+        const side = Math.random() < 0.5 ? -1 : 1, off = side * (src.hw + 0.25 + Math.random() * 0.8);
+        src.along(Math.random() * src.hl * 2.2, off, P);
+        const y = src.pointY(info.roadY, 0.2 + Math.random() * (src.height || 1.4));
         S.emit(P.x, y, P.z, V.x * 0.15, V.y * 0.15, V.z * 0.15, 0.22 + 0.1 * Math.random(), 1.2 + 4 * k);
       }
     },
@@ -219,18 +237,18 @@ const makeSpeedlines = (max) => {
 // the car's own shape, merged once (positions only) for the afterimages: rebuilt when the car changes. Its BODY only (the painted
 // shell: userData.body of the model it shows, render/items.js playerModel), not every part: the parts overlap, and added together a ghost of all of
 // them is a solid block of light
-const shown = (o) => { for (let p = o; p && p !== carMesh; p = p.parent) if (!p.visible) return false; return true; };
-const bodyOf = () => {
-  for (const model of carMesh.children) if (model.userData?.body && model.visible) return model.userData.body; // (the car's own model: render/items.js playerModel)
-  return carMesh.userData.body && shown(carMesh.userData.body) ? carMesh.userData.body : carMesh;
+const shown = (o, root) => { for (let p = o; p && p !== root; p = p.parent) if (!p.visible) return false; return true; };
+const bodyOf = (root) => {
+  for (const model of root.children) if (model.userData?.body && model.visible) return model.userData.body; // (the car's own model: render/items.js playerModel)
+  return root.userData.body && shown(root.userData.body, root) ? root.userData.body : root;
 };
-const mergedCar = () => {
-  carMesh.updateMatrixWorld(true);
-  const inv = new THREE.Matrix4().copy(carMesh.matrixWorld).invert(), parts = [], m = new THREE.Matrix4(), v = new THREE.Vector3();
+const mergedCar = (root = src.root()) => {
+  root.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), parts = [], m = new THREE.Matrix4(), v = new THREE.Vector3();
   let total = 0;
-  bodyOf().traverse((o) => {
+  bodyOf(root).traverse((o) => {
     if (!o.isMesh || o.isInstancedMesh || !o.geometry?.attributes?.position || o.userData.blackout === 'hide') return;
-    if (!shown(o)) return;
+    if (!shown(o, root)) return;
     parts.push(o); total += o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count;
   });
   const pos = new Float32Array(Math.min(total, 60000) * 3);
@@ -252,12 +270,12 @@ const makeAfterimage = (max) => {
   return {
     stores: [S], mesh,
     emit(dt) {
-      const id = CAR.id + ':' + carMesh.children.length;
+      const id = src.key();
       if (builtFor !== id) { mesh.geometry.dispose(); mesh.geometry = mergedCar(); builtFor = id; }
       for (acc += dt / 0.075; acc >= 1; acc--) { // (one every 0.075 s, falling back at 0.7 of the car's speed: spaced about half a car apart at 30 m/s)
-        carMesh.updateMatrixWorld(true);
-        const i = S.emit(carMesh.position.x, carMesh.position.y, carMesh.position.z, V.x * 0.3, V.y * 0.3, V.z * 0.3, 0.3);
-        carMesh.matrixWorld.toArray(snaps, i * 16);
+        const e = src.anchor(AN).elements; // (the car where it is drawn: the game's, its world matrix, as before)
+        const i = S.emit(e[12], e[13], e[14], V.x * 0.3, V.y * 0.3, V.z * 0.3, 0.3);
+        AN.toArray(snaps, i * 16);
       }
     },
     draw() {
@@ -290,7 +308,7 @@ const makeEmbers = (max) => {
     stores: [S], mesh, gravity: 9,
     emit(dt, { k, roadY }) {
       for (acc += dt * 70 * (0.4 + k); acc >= 1; acc--) {
-        tailAt(rnd(Player.hw * 0.6), P);
+        tailAt(rnd(src.hw * 0.6), P);
         S.emit(P.x, P.y, P.z, V.x * 0.6 + rnd(2.2), V.y * 0.6 + 1 + Math.random() * 2.5, V.z * 0.6 + rnd(2.2), 0.45 + Math.random() * 0.35, 0, roadY + 0.03);
       }
     },
@@ -338,37 +356,92 @@ const makeShockwave = (max) => {
   };
 };
 
-const rarityColour = () => { try { return parseInt((RARITIES[rarityOf(CAR)] || RARITIES.common).colour.slice(1), 16); } catch { return TURBO_COLOR; } };
+// CLASSIC for a car on show (the preview only: in the game Classic is render/items.js's cubes in the Particles pool): the same cubes, emitted
+// as items.js emits them (two a frame at 60 Hz from the tail, half the car's velocity, life 0.3, size 0.5 growing by half, cyan or white), in
+// a small pool of its own (render/particles.js makeParticles: one instanced mesh), their velocity taken relative to the car standing still
+const makeClassic = (max) => {
+  const holder = new THREE.Group(), pool = makeParticles(max, new THREE.MeshBasicMaterial(), holder);
+  holder.remove(pool.mesh);
+  let acc = 0;
+  return {
+    stores: [], mesh: pool.mesh, live: pool.live, tick: (dt) => pool.update(dt),
+    emit(dt, { roadY }) {
+      const y = src.pointY(roadY, 0.6);
+      for (acc += dt * 120; acc >= 1; acc--) {
+        tailAt(0, P);
+        pool.emit(P.x + rnd(0.5), y, P.z + rnd(0.5), -V.x * 0.5 + rnd(1), Math.random(), -V.z * 0.5 + rnd(1), 0.3, 0.5, 0.5, 0, Math.random() < 0.5 ? TURBO_COLOR : 0xffffff, roadY);
+      }
+    },
+    draw() {},
+  };
+};
+const AN = new THREE.Matrix4();
 const MAKERS = {
   flame: (n) => makeFlame(n),
-  twin: (n) => makeRibbon(n, liteOn ? [0] : [-0.7, 0.7], 0.26, TURBO_COLOR), // (lite: one strand down the middle)
+  twin: (n, lite) => makeRibbon(n, lite ? [0] : [-0.7, 0.7], 0.26, TURBO_COLOR), // (lite: one strand down the middle)
   speedlines: (n) => makeSpeedlines(n),
   afterimage: (n) => makeAfterimage(n),
   embers: (n) => makeEmbers(n),
   shockwave: (n) => makeShockwave(n),
-  rarity: (n) => makeRibbon(n, [0], 0.5, rarityColour),
+  rarity: (n) => { const s = src; return makeRibbon(n, [0], 0.5, () => s.colour()); },
+  classic: (n) => makeClassic(n),
 };
 
-let fx = null;
-export const setTurboTrail = (name) => {
-  if (fx) { scene.remove(fx.mesh); fx.mesh.geometry.dispose(); fx.mesh.material.dispose(); fx = null; }
-  liteOn = /-lite$/.test(name || '');
+// A TRAIL: one style drawn for one source into one parent (the game's: GAME into the scene; the preview's: a car on show into its turntable)
+const makeTrail = (source, parent) => ({ source, parent, fx: null, style: 'classic', lite: false });
+const liveOf = (fx) => (fx ? fx.stores.reduce((n, S) => n + S.live(), 0) + (fx.live ? fx.live() : 0) : 0);
+const styleTrail = (tr, name) => {
+  const fx = tr.fx;
+  if (fx) { fx.mesh.parent?.remove(fx.mesh); fx.mesh.geometry.dispose(); fx.mesh.material.dispose(); tr.fx = null; }
+  tr.lite = /-lite$/.test(name || '');
   const id = (name || 'classic').replace(/-lite$/, '');
-  style = STYLES[id] ? id : 'classic';
-  if (style === 'classic') return style;
-  fx = MAKERS[style](POOLS[style][liteOn ? 1 : 0]);
-  fx.mesh.frustumCulled = false;
-  fx.mesh.visible = false;
-  fx.mesh.renderOrder = 2;
-  scene.add(fx.mesh);
-  return style;
+  tr.style = STYLES[id] ? id : 'classic';
+  if (tr.style === 'classic' && !tr.source.shift) return tr.style; // (the game's Classic: render/items.js's cubes)
+  src = tr.source;
+  tr.fx = MAKERS[tr.style](POOLS[tr.style][tr.lite ? 1 : 0], tr.lite);
+  tr.fx.mesh.frustumCulled = false;
+  tr.fx.mesh.visible = false;
+  tr.fx.mesh.renderOrder = 2;
+  if (tr.source.shift) tr.fx.mesh.userData.shared = true; // (the showroom letting its scene go must not dispose it: render/showroomview.js)
+  tr.parent?.add(tr.fx.mesh);
+  return tr.style;
 };
+const clearTrail = (tr) => { if (!tr.fx) return; for (const S of tr.fx.stores) S.clear(); if (tr.fx.live) tr.fx.tick(1e9); tr.fx.mesh.visible = false; };
+// one frame of a trail: dt its parent's clock, on: the turbo running (emitting)
+const stepTrail = (tr, dt, on) => {
+  const fx = tr.fx;
+  if (!fx) return;
+  src = tr.source;
+  const any = on || liveOf(fx) > 0;
+  if (!any) { fx.mesh.visible = false; return; }
+  const info = src.frame();
+  const sx = src.shift ? V.x : 0, sz = src.shift ? V.z : 0;
+  fx.stores.forEach(S => S.update(dt, fx.gravity || 0, sx, sz));
+  if (fx.tick && dt > 0) fx.tick(dt);
+  if (on && dt > 0) fx.emit(dt, info);
+  fx.draw(on);
+  fx.mesh.visible = on || liveOf(fx) > 0;
+};
+
+// THE GAME'S TRAIL
+const G = makeTrail(GAME, scene);
+let fx = null; // (the game's style's own, as G.fx: for the probes below)
+let pinned = null; // (a style set by the address or a check: kept over the car's own at every level load)
+export const turboTrailStyle = () => G.style;
+export const turboTrailLite = () => G.lite;
+const applyGame = (name) => { const st = styleTrail(G, name); fx = G.fx; return st; };
+export const setTurboTrail = (name) => { pinned = name || 'classic'; return applyGame(name); };
+// (for a check: back to the car's own trail at each level load, nothing pinned; `now`: picked at once for the car in use)
+export const followLoadout = (now = true) => { pinned = null; if (now) pickForCar(); };
+// the car in use's own trail (render/trailcosmetic.js), its lite variant on a low-end device; Classic on a car with no Trail tab
+export const wornTrail = (car = CAR) => (trailSupported(car) ? shownTrail(car.id) : 'classic') + (trailLite() ? '-lite' : '');
+const pickForCar = () => { const want = pinned ?? wornTrail(); if (want !== G.style + (G.lite ? '-lite' : '') || (!G.fx && G.style !== 'classic')) applyGame(want); };
 {
   const asked = read();
   if (asked === 'list') console.log('?turbotrail=<name> (or <name>-lite): classic (the default), ' + STYLE_NAMES.join(', '));
   else if (asked) setTurboTrail(asked);
 }
-Game.onLoad.push(() => { if (fx) for (const S of fx.stores) S.clear(); });
+Game.onLoad.push(() => { try { pickForCar(); } catch (error) { console.warn('turbo trail: ' + (error?.message || error)); } if (fx) for (const S of fx.stores) S.clear(); });
 
 // how many of the style's particles (ribbon nodes, cones, rings...) are alive
 export const liveCount = () => (fx ? fx.stores.reduce((n, S) => n + S.live(), 0) : 0);
@@ -396,13 +469,56 @@ export const advanceProbe = (run) => {
 };
 
 // main.js's frame, after the car is placed: dt is the GAME time of the frame (render/gameclock.js)
-export const syncTurboTrail = (dt, on = Player.active && Player.turbo > 0 && (Player.turbo > CONFIG.powerUpWarning || Math.floor(Player.turbo * 8) % 2 === 0) && !Game.screensaver) => {
-  if (!fx) return;
-  const any = on || liveCount() > 0;
-  if (!any) { fx.mesh.visible = false; return; }
-  const info = frameInfo();
-  fx.stores.forEach(S => S.update(dt, fx.gravity || 0));
-  if (on && dt > 0) fx.emit(dt, info);
-  fx.draw(on);
-  fx.mesh.visible = on || liveCount() > 0;
+export const syncTurboTrail = (dt, on = Player.active && Player.turbo > 0 && (Player.turbo > CONFIG.powerUpWarning || Math.floor(Player.turbo * 8) % 2 === 0) && !Game.screensaver) => stepTrail(G, dt, on);
+
+// ---- THE PREVIEW (CHECKLIST 452: the Cosmetics screen's Trail tab, render/trailpreview.js): a car standing on show, the trail streaming from
+// its tail at its own height as if it drove at SPEED, drawn by the game's own styles above in the car's frame (shift). One trail, made once and
+// kept (a style change makes that style's small pool; the last one's is let go). show(name) the style ('<id>' or '<id>-lite');
+// frame(dt, model, parent, car, on): one step on the preview's clock (the model: the car on show; parent: what the trail is drawn in, the
+// turntable the model turns on); hide(): nothing drawn, nothing alive. No renderer of its own: whoever draws `parent` draws it.
+export const PREVIEW_SPEED = 30; // m/s: as the game's trail is at 30 m/s
+const L = new THREE.Matrix4(), BX = new THREE.Box3(), BB = new THREE.Box3(), BM = new THREE.Matrix4(), X1 = new THREE.Vector3(1, 0, 0), Z1 = new THREE.Vector3(0, 0, 1);
+export const createTrailPreview = () => {
+  let model = null, parent = null, car = null, box = null, roadY = 0;
+  const S = {
+    shift: true, hw: 0.9, hl: 2.1, height: 1.4,
+    frame() {
+      parent.updateMatrixWorld(true);
+      L.copy(parent.matrixWorld).invert().multiply(model.matrixWorld); // (the model where the trail is drawn)
+      T.set((box.min.x + box.max.x) / 2, box.min.y + Math.min(0.5, (box.max.y - box.min.y) * 0.45), box.min.z).applyMatrix4(L); // (its tail, at its height)
+      Fw.copy(Z1).transformDirection(L).setY(0).normalize(); Ac.copy(X1).transformDirection(L).setY(0).normalize();
+      V.x = Fw.x * PREVIEW_SPEED; V.y = 0; V.z = Fw.z * PREVIEW_SPEED;
+      roadY = P.set((box.min.x + box.max.x) / 2, box.min.y, box.min.z).applyMatrix4(L).y; // (the floor under the tail: its wheels' bottom)
+      return { roadY, k: Math.min(1.3, PREVIEW_SPEED / 35) };
+    },
+    along: (dz, off, out) => out.set(T.x + Fw.x * dz + Ac.x * off, roadY, T.z + Fw.z * dz + Ac.z * off),
+    pointY: (ry, h) => ry + h,
+    root: () => model,
+    key: () => model.uuid,
+    anchor: (m) => m.copy(L),
+    colour: () => rarityColour(car || CAR),
+  };
+  const tr = makeTrail(S, null);
+  // the model's box in its own frame (once a model): its size, its tail
+  const measure = () => {
+    model.updateMatrixWorld(true);
+    BM.copy(model.matrixWorld).invert();
+    BX.makeEmpty();
+    model.traverse((o) => { if (!o.isMesh || !o.geometry?.attributes?.position || !shown(o, model)) return; if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); BB.copy(o.geometry.boundingBox).applyMatrix4(L.multiplyMatrices(BM, o.matrixWorld)); BX.union(BB); });
+    box = BX.isEmpty() ? new THREE.Box3(new THREE.Vector3(-0.9, 0, -2.1), new THREE.Vector3(0.9, 1.4, 2.1)) : BX.clone();
+    S.hw = (box.max.x - box.min.x) / 2; S.hl = (box.max.z - box.min.z) / 2; S.height = box.max.y - box.min.y;
+  };
+  return {
+    get style() { return tr.style + (tr.lite ? '-lite' : ''); },
+    get live() { return liveOf(tr.fx); },
+    get mesh() { return tr.fx?.mesh || null; },
+    show(name) { if (name !== this.style || !tr.fx) { styleTrail(tr, name); if (tr.fx && parent) parent.add(tr.fx.mesh); } },
+    frame(dt, m, p, c, on = true) {
+      if (!tr.fx || !m || !p) return;
+      if (m !== model) { model = m; car = c; measure(); clearTrail(tr); }
+      if (p !== parent) { parent = p; tr.parent = p; p.add(tr.fx.mesh); clearTrail(tr); }
+      stepTrail(tr, Math.min(Math.max(dt, 0), 1 / 20), on);
+    },
+    hide() { clearTrail(tr); },
+  };
 };

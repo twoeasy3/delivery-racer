@@ -24,6 +24,7 @@ import { COSMETICS } from './cosmetics.js';
 import { slotStatus } from './propdress.js';
 import { plateAnchorsFor } from './plateanchors.js';
 import { treadSupported } from './treads.js';
+import { trailSupported } from './trailcosmetic.js'; // (registers the turbo trails, slot 'trail')
 
 let demo = false;
 try { demo = typeof location !== 'undefined' && new URLSearchParams(location.search).get('cosmetics') === 'all'; } catch { /* (no address) */ }
@@ -50,6 +51,9 @@ export const SLOT_LIST = [
   { id: 'decal', label: 'Decal', name: 'Decal', scope: 'car', supports: () => false, items: registered('decal') },
   // the GLOW: woken by render/underglow.js (registerSlot); without it, dormant: no items, so no tab
   { id: 'underglow', label: 'Glow', name: 'Underglow', scope: 'car', supports: () => true, items: dormant('underglow') },
+  // the TURBO TRAIL (CHECKLIST 452, render/trailcosmetic.js): per car, earned; the wheels' rule (no tab on the Tank(s) or the Saucer); its
+  // panel (cards, the looping preview behind the car) is cosmeticsui.js buildTrail, given by registerSlot there
+  { id: 'trail', label: 'Trail', name: 'Turbo trail', scope: 'car', supports: (car) => trailSupported(car), items: registered('trail') },
   // the KILL EFFECT (CHECKLIST 405, render/killfx.js registers its items as slot 'kill'): PER CAR over the All-cars default like the others
   // (the loadout slot 'kill', render/loadoutstore.js), so 'car' scope; its panel is cosmeticsui.js buildKill, given by registerSlot there
   { id: 'kill', label: 'Kill FX', name: 'Kill effect', scope: 'car', supports: () => true, items: registered('kill') },

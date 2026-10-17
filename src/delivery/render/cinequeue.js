@@ -24,6 +24,7 @@ import { Game } from '../game.js';
 import { Packs } from '../packs.js';
 import { CARS, EARNED_CARS, EVENT_CARS, BESPOKE_CARS, FILLER_CARS, SECRET_CARS, carById } from '../cars.js';
 import { LITE } from '../lite.js';
+import { lowEnd } from './lowend.js';
 import * as Load from './loadscreen.js';
 
 export const CINE_KEY = 'delivery_cutscenes';
@@ -45,7 +46,6 @@ const nextMode = (mode) => CINE_MODES[(CINE_MODES.indexOf(mode) + 1) % CINE_MODE
 
 // ---- where it may play ----
 const headless = () => typeof navigator !== 'undefined' && !!navigator.webdriver && !params.has('cineplay');
-const lowEnd = () => typeof navigator !== 'undefined' && ((navigator.hardwareConcurrency || 8) <= 2 || (navigator.deviceMemory || 8) <= 2);
 export const liteWanted = () => params.has('cinelite') || LITE.size > 0 || lowEnd();
 const silent = () => params.has('nocine') || headless() || cineMode() === 'off';
 export const gateOpen = () => {

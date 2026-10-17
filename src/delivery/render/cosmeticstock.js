@@ -12,6 +12,7 @@ import * as Store from './loadoutstore.js';
 import { EARNED_SLOTS, ITEM_FIELD, cosmeticKey, cosmeticCount, cosmeticOf, stockMeta, setStockMeta, topUpCosmetic, clearTryOn } from './cosmetics.js';
 import { slotStatus } from './propdress.js';
 import { underglowSupported } from './underglow.js';
+import { trailSupported } from './trailcosmetic.js';
 
 const SLOTS = Object.keys(EARNED_SLOTS);
 // can this car wear the slot at all? (a car that cannot is never counted)
@@ -20,6 +21,7 @@ export const wearsSlot = (car, slot) => {
   try {
     if (slot === 'plate') return !car.legend;
     if (slot === 'underglow') return underglowSupported(car);
+    if (slot === 'trail') return trailSupported(car);
     if (slot === 'roof' || slot === 'cargo' || slot === 'wing') return slotStatus(car, slot).ok;
     return true; // (kill)
   } catch { return false; }
