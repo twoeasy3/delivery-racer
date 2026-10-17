@@ -152,7 +152,7 @@ else {
               const h = Track.toWorld(s, Player.lat, p), a = h + yaw * Math.PI / 180, pr = pitch * Math.PI / 180, flat = Math.cos(pr) * 25;
               at.set(p.x * flip, p.y + 1.1, p.z);
               want.set((p.x + Math.sin(a) * flat) * flip, at.y + Math.sin(pr) * 25, p.z + Math.cos(a) * flat);
-              dir.subVectors(at, want); const d = dir.length(); ray.set(want, dir.normalize()); ray.far = d - 1.5; F.fadeProbe({ x: want.x * flip, y: want.y, z: want.z });
+              ray.camera = camera; dir.subVectors(at, want); const d = dir.length(); ray.set(want, dir.normalize()); ray.far = d - 1.5; F.fadeProbe({ x: want.x * flip, y: want.y, z: want.z });
               const hits = ray.intersectObject(levelGroup, true).filter(x => !x.object.userData.flat && !x.object.material?.transparent && !x.object.isPoints && !x.object.isLine);
               if (!hits.length) continue;
               if (hits.some(x => !F.fadesAway(x.object, x.instanceId, x.faceIndex))) { blockedBig++; continue; }
@@ -178,7 +178,7 @@ else {
         let obj = null; levelGroup.traverse(o => { if (o.uuid === '${P.id}') obj = o; });
         const fade = F.fadeOf(obj, ${P.inst}, ${P.face});
         // the line from the camera as it is to the car: every fadeable thing on it faded, nothing else on it
-        const ray = new THREE.Raycaster(), dir = at.clone().sub(cam), d = dir.length(); ray.set(cam, dir.normalize()); ray.far = d - 1.0; F.fadeProbe({ x: cam.x * flip, y: cam.y, z: cam.z });
+        const ray = new THREE.Raycaster(), dir = at.clone().sub(cam), d = dir.length(); ray.camera = camera; ray.set(cam, dir.normalize()); ray.far = d - 1.0; F.fadeProbe({ x: cam.x * flip, y: cam.y, z: cam.z });
         const hits = ray.intersectObject(levelGroup, true).filter(x => !x.object.userData.flat && !x.object.material?.transparent && !x.object.isPoints && !x.object.isLine);
         const unfaded = hits.filter(x => F.fadesAway(x.object, x.instanceId, x.faceIndex) && F.fadeOf(x.object, x.instanceId, x.faceIndex) <= 0.9).length, solid = hits.filter(x => !F.fadesAway(x.object, x.instanceId, x.faceIndex)).length;
         // nothing faded off the line: each faded cluster's box within the beam (+ 0.25) of the line or the ball round the camera
@@ -186,7 +186,7 @@ else {
         const segBox = (o, r) => { let t0 = 0, t1 = 1; const P0 = [cam.x * flip, cam.y, cam.z], D = [(at.x - cam.x) * flip, at.y - cam.y, at.z - cam.z]; /* (the clusters' boxes are in the game's terms: x not mirrored) */ for (let k = 0; k < 3; k++) { const lo = C.box[o + k] - r, hi = C.box[o + 3 + k] + r; if (Math.abs(D[k]) < 1e-9) { if (P0[k] < lo || P0[k] > hi) return false; continue; } let a = (lo - P0[k]) / D[k], c = (hi - P0[k]) / D[k]; if (a > c) [a, c] = [c, a]; t0 = Math.max(t0, a); t1 = Math.min(t1, c); if (t0 > t1) return false; } return true; };
         const ball = (o, r) => { const q = [cam.x * flip, cam.y, cam.z]; let s = 0; for (let k = 0; k < 3; k++) { const e = Math.max(C.box[o + k] - q[k], 0, q[k] - C.box[o + 3 + k]); s += e * e; } return s <= r * r; };
         let faded = 0, far = 0;
-        C.fade.forEach((f, c) => { if (f <= 0) return; faded++; if (!segBox(c * 6, B.beam + 0.25) && !ball(c * 6, B.near + 0.25)) far++; });
+        const atMid = at.clone(); C.fade.forEach((f, c) => { if (f <= 0) return; faded++; at.y = atMid.y - 0.85; const low = segBox(c * 6, B.beam + 0.25); at.copy(atMid); if (!segBox(c * 6, B.beam + 0.25) && !low && !ball(c * 6, B.near + 0.25)) far++; }); // (the line to the middle, and the one to the sills)
         const swappedNear = [].concat(obj?.material || []).some(m => m.userData.fadeOf);
         const tested = F.SceneFade.tested, ms = F.SceneFade.ms;
         // COST: turning round the car for 2 s

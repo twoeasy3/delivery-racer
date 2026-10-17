@@ -293,7 +293,10 @@ function* cutStrip(c, take) {
   const g = c.geometry, pos = g.attributes.position, index = g.index, nV = pos.count, nT = (index ? index.count : nV) / 3;
   M.multiplyMatrices(toLocal, c.matrixWorld);
   const vx = new Float32Array(nV * 3);
-  for (let v = 0; v < nV; v++) { V.fromBufferAttribute(pos, v).applyMatrix4(M); vx[v * 3] = V.x; vx[v * 3 + 1] = V.y; vx[v * 3 + 2] = V.z; }
+  for (let v = 0; v < nV; v++) {
+    if ((v & 4095) === 4095 && late()) yield;
+    V.fromBufferAttribute(pos, v).applyMatrix4(M); vx[v * 3] = V.x; vx[v * 3 + 1] = V.y; vx[v * 3 + 2] = V.z;
+  }
   const pieces = new Map(), triPiece = new Int32Array(nT), vPiece = new Int32Array(nV).fill(-1), lo = [], hi = [];
   for (let t = 0; t < nT; t++) {
     if ((t & 511) === 511 && late()) yield;

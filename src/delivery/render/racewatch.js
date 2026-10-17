@@ -82,6 +82,7 @@ export const firstSolid = (origin, end, skip = null) => {
   prepareSolids();
   ray.set(eye, dir.normalize());
   ray.far = d;
+  ray.camera = camera; // (a sprite in the scenery cannot be tested without one)
   const near = [];
   for (const { c, box } of boxed) {
     if (box.isEmpty() || (skip && !c.isInstancedMesh && skip(c))) continue;
