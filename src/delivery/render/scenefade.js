@@ -33,7 +33,7 @@ const BEAM = 0.9;       // m either side of the line from the camera to the car 
 const NEAR = 2.5;       // m round the camera kept clear
 const KEEP = 1.0;       // m of the line at the car's end not tested (what the car is right up against stays)
 const MAX_SIZE = 120;   // m across (x or z): bigger than this is never faded (a city block's podium is up to ~100 m)
-const LOW = 0.35;       // m tall: anything lower never stands in a camera's way over the car
+const LOW = 0.05;       // m tall: anything thinner is not a thing in the way (a rail is: ~0.1 m)
 const CLUSTER_MAX = 40; // m across: a cluster no bigger
 const TOUCH = 0.35;     // m: how close two things are to be one (the cluster test)
 const STRIP_HEIGHT = 30; // m: a strip taller than this (a mountain, a cliff) is not cut up
@@ -171,7 +171,7 @@ function* building() {
       const g = c.geometry.boundingBox, w = c.matrix.elements, a = c.instanceMatrix.array; // (in levelGroup's own terms, the game's: not mirrored)
       const gc = [(g.min.x + g.max.x) / 2, (g.min.y + g.max.y) / 2, (g.min.z + g.max.z) / 2], ge = [(g.max.x - g.min.x) / 2, (g.max.y - g.min.y) / 2, (g.max.z - g.min.z) / 2];
       for (let i = 0; i < c.count; i++) {
-        if ((++ticks & 1023) === 0 && late()) yield;
+        if ((++ticks & 255) === 0 && late()) yield;
         // (the box of the geometry's box turned and scaled: its middle moved, its half-sizes the sum of |matrix| x half-sizes; the
         // instance's matrix, then the mesh's world matrix, each that way: far cheaper than eight corners, for tens of thousands)
         const o = i * 16;
@@ -190,7 +190,7 @@ function* building() {
       if (any) { meshes.push(c); meshUnits.push(units); meshFaded.push(0); meshLo.push(-1); meshHi.push(-1); c.userData.fadeMesh = mi; }
       continue;
     }
-    if ((++ticks & 63) === 0 && late()) yield;
+    if ((++ticks & 15) === 0 && late()) yield;
     const parts = [];
     c.traverse((o) => { if (o.isMesh && !o.isInstancedMesh && [].concat(o.material).every(fadeable)) parts.push(o, o.material); });
     if (!parts.length) continue;
@@ -214,7 +214,7 @@ function* building() {
   for (let u = 0; u < nU; u++) vol[u] = (uBox[u * 6 + 3] - uBox[u * 6]) * (uBox[u * 6 + 4] - uBox[u * 6 + 1]) * (uBox[u * 6 + 5] - uBox[u * 6 + 2]);
   const tmpGrid = new Map(); // units by the cells their boxes cover
   for (let u = 0; u < nU; u++) {
-    if ((++ticks & 1023) === 0 && late()) yield;
+    if ((++ticks & 255) === 0 && late()) yield;
     for (let i = Math.floor(uBox[u * 6] / CELL); i <= Math.floor(uBox[u * 6 + 3] / CELL); i++) {
       for (let j = Math.floor(uBox[u * 6 + 2] / CELL); j <= Math.floor(uBox[u * 6 + 5] / CELL); j++) {
         const k = key(i, j);
@@ -270,7 +270,7 @@ function* building() {
   grid.clear();
   const cells = new Map();
   for (let c = 0; c < nC; c++) {
-    if ((++ticks & 1023) === 0 && late()) yield;
+    if ((++ticks & 255) === 0 && late()) yield;
     const o = c * 6;
     for (let i = Math.floor(cBox[o] / CELL); i <= Math.floor(cBox[o + 3] / CELL); i++) {
       for (let j = Math.floor(cBox[o + 2] / CELL); j <= Math.floor(cBox[o + 5] / CELL); j++) {
@@ -286,7 +286,7 @@ function* building() {
   n = 0;
   for (const [k, l] of cells) { grid.set(k, [n, l.length]); for (const c of l) gItems[n++] = c; }
   built = sig;
-  Object.assign(SceneFade, { units: nU, clusters: nC, big, cells: grid.size });
+  Object.assign(SceneFade, { units: nU, clusters: nC, big, strips: strips.length, cells: grid.size });
 }
 // a strip cut in pieces (see building): the pieces' boxes as units, each vertex's piece, each triangle's unit
 function* cutStrip(c, take) {
@@ -296,7 +296,7 @@ function* cutStrip(c, take) {
   for (let v = 0; v < nV; v++) { V.fromBufferAttribute(pos, v).applyMatrix4(M); vx[v * 3] = V.x; vx[v * 3 + 1] = V.y; vx[v * 3 + 2] = V.z; }
   const pieces = new Map(), triPiece = new Int32Array(nT), vPiece = new Int32Array(nV).fill(-1), lo = [], hi = [];
   for (let t = 0; t < nT; t++) {
-    if ((t & 2047) === 2047 && late()) yield;
+    if ((t & 511) === 511 && late()) yield;
     const a = index ? index.getX(t * 3) : t * 3, b = index ? index.getX(t * 3 + 1) : t * 3 + 1, d = index ? index.getX(t * 3 + 2) : t * 3 + 2;
     const k = key(Math.floor((vx[a * 3] + vx[b * 3] + vx[d * 3]) / 3 / CELL), Math.floor((vx[a * 3 + 2] + vx[b * 3 + 2] + vx[d * 3 + 2]) / 3 / CELL));
     let p = pieces.get(k);
@@ -481,10 +481,10 @@ const CELL_BOX = new Float32Array(6);
 export const prepareFade = () => { advance(); };
 // is this hit (a ray's, on levelGroup) on something the fade takes care of? (the orbit's nudge leaves those to it)
 // (the orbit says where it would put the camera, the game's terms, before it asks about hits: a prop whose cluster's box holds that
-// place is NOT passed over, so the nudge draws the camera out in front of it, not into its dissolve)
+// place, or is within NEAR of it, is NOT passed over, so the nudge draws the camera out in front of it, not into its dissolve)
 const PROBE = [0, 0, 0];
 export const fadeProbe = (v) => { PROBE[0] = v.x; PROBE[1] = v.y; PROBE[2] = v.z; };
-const holdsProbe = (u) => ballBox(cBox, uCluster[u] * 6, PROBE[0], PROBE[1], PROBE[2], 0.3);
+const holdsProbe = (u) => ballBox(cBox, uCluster[u] * 6, PROBE[0], PROBE[1], PROBE[2], NEAR); // (in its box, or as near it as the ball round the camera: a dissolve filling the frame)
 export const fadesAway = (object, instanceId, faceIndex) => {
   if (builder || stale()) return false; // (no index yet: the nudge as it always was)
   while (object.parent && object.parent !== levelGroup) object = object.parent;
