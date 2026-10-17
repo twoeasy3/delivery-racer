@@ -347,12 +347,10 @@ try {
     const C = g.track.Track;
     check(canberra.median === 1 && !canberra.railway.tracks && C.railTracks === 1 && C.railLat(0, 500) === 0 && C.onRails(500, 0, P.hw) && !C.onRails(500, C.laneOffset(0, 500), P.hw) && !UpTrain.timed && UpTrain.next === Infinity && BulletTrain.timed,
       'Canberra: its one track down the median as before (no second train)');
-    // (Mall Dash's own travelators were taken out, the owner 17-Oct: its three, put back on a copy of it, rails: true)
-    const pads = [{ from: 200, to: 280, lane: 0, rails: true }, { from: 1850, to: 1930, lane: 0, rails: true }, { from: 2580, to: 2660, lane: 0, rails: true }];
-    const mall = g.select({ ...g.levels.HIDDEN_LEVELS['mall-dash'], id: 'mall-pads', boostPads: pads });
+    const mall = g.select('mall-dash');
     G.load(); // (loaded, not started: whether the current car may drive it is the tier rule's business, not this check's)
     const rails = g.Collision.obstacles.filter(o => o.kind === 'handrail').length;
-    check(mall.boostPads.every(p => p.rails === true) && rails === 144, 'Mall Dash with pads: they keep their handrails (rails: true; ' + rails + ' sections, 144 expected)'); // (handrails are off by default since 16-Oct)
+    check(mall.boostPads.every(p => p.rails === true) && rails === 144, 'Mall Dash: its pads keep their handrails (rails: true; ' + rails + ' sections, 144 expected)'); // (handrails are off by default since 16-Oct)
   }
 } catch (error) {
   failures++;

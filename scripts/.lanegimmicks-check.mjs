@@ -6,7 +6,7 @@
 // wrecked car is set in the open lane; another lane is always open (a level closing both is a problem); the warning
 // distance is longer than a lane change takes at the fastest top speed, with a margin; no dead end's wall at a junction's
 // mouth or on a pad; no one-way barrier along a dead lane (it is entered freely), but its blocker is solid from the side: a car
-// steered at it from the lane beside is held at the line, never wrecked (the owner, 17-Oct); Mall Dash has no pad or turbo.
+// steered at it from the lane beside is held at the line, never wrecked (the owner, 17-Oct); Mall Dash has no turbo pickup.
 //   node scripts/.lanegimmicks-check.mjs
 import { boot } from './delivery-headless.mjs';
 
@@ -18,11 +18,8 @@ try {
   const { CARS, carStats } = await g.load('cars.js');
   const { CONFIG } = g;
   const P = g.Player, G = g.Game, B = CONFIG.boostPad, D = CONFIG.deadEnd;
-  // (Mall Dash's own travelators and turbos were taken out, the owner 17-Oct: the pads tested here are its three, put back on a copy)
-  const PADS = [{ from: 200, to: 280, lane: 0, rails: true }, { from: 1850, to: 1930, lane: 0, rails: true }, { from: 2580, to: 2660, lane: 0, rails: true }];
-  const mallDash = g.levels.HIDDEN_LEVELS['mall-dash'];
-  check(!(mallDash.boostPads || []).length && !(mallDash.pickups || []).some(p => p.type === 'turbo'), 'Mall Dash itself: no travelator and no turbo pickup (the owner, 17-Oct)');
-  const level = g.select({ ...mallDash, id: 'mall-pads', boostPads: PADS });
+  const level = g.select('mall-dash');
+  check(!(level.pickups || []).some(p => p.type === 'turbo') && level.boostPads?.length === 3, 'Mall Dash: no turbo pickup (the owner, 17-Oct), its three travelators kept');
   const lane = (n, s) => g.track.Track.laneOffset(n, s);
   const start = (s, n, v, { ghost = false } = {}) => {
     P.testGhost = false;
