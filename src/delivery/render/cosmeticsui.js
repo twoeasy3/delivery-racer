@@ -39,9 +39,9 @@ import { onLoadout } from './loadout.js';
 import * as Store from './loadoutstore.js'; // (per car over a default: the switch, the marks, Reset car, Copy to all)
 import { carInUse, CARS } from '../cars.js';
 import { Game } from '../game.js';
-import { ownsCosmetic, cosmeticCount, isFreeCosmetic, isEarnedSlot, awardCosmetic, cosmeticOf, cosmeticRarity, COSMETIC_SLOT_WORDS } from './cosmetics.js';
+import { ownsCosmetic, cosmeticCount, isFreeCosmetic, isEarnedSlot, awardCosmetic, cosmeticOf, cosmeticRarity, COSMETIC_SLOT_WORDS, setTryOn } from './cosmetics.js';
 import { blueprintCard } from './blueprintcard.js'; // (an earned item's chip is a CARD: the Uncommon blueprint card, CHECKLIST 433)
-import { usage, spare, diffUsage, migrateStock, carName as carNameOf } from './cosmeticstock.js'; // (earned cosmetics, CHECKLIST 433: one a car)
+import { usage, spare, migrateStock, settleLoadout, revertLoadout } from './cosmeticstock.js'; // (earned cosmetics, CHECKLIST 433: one a car)
 import { Progress } from '../progress.js';
 import { KILL_FX, KILL_IDS, shownKill, setKill } from './killfx.js';
 import { KillPreview } from './killpreview.js';
@@ -94,7 +94,7 @@ const chip = (kind, id, name, swatch, pick, slot = 'wheels') => {
   b.type = 'button';
   b.dataset[kind] = id;
   b.append(swatch, make('span', 'cz-name', name), make('span', 'cz-tick', '✓')); // (the tick shows on the equipped one)
-  b.addEventListener('click', () => { if (sheetOpen()) return; if (owned(slot, id)) { if (isEarnedSlot(slot)) gate(() => pick(id)); else { pick(id); Sound.play('menuPick', 0.4); } } else lockedSheet(slot, id); });
+  b.addEventListener('click', () => { if (!owned(slot, id)) tryOn(slot, id); if (owned(slot, id)) { pick(id); Sound.play('menuPick', 0.4); } });
   return b;
 };
 const swatchOf = (css, stock) => { const s = make('span', 'cz-swatch' + (stock ? ' stock' : '')); if (css) s.style.background = css; return s; };
@@ -370,9 +370,8 @@ const buildPropSection = (slot) => {
   row.setAttribute('role', 'group'); row.setAttribute('aria-label', title);
   const pick = (id) => () => {
     if (!slotStatus(state.car, slot).ok) return;
-    if (sheetOpen()) return;
-    if (id !== 'none' && !owned(slot, id)) return lockedSheet(slot, id);
-    gate(() => setProp(slot, id, tgt()));
+    if (id !== 'none' && !owned(slot, id)) tryOn(slot, id);
+    if (setProp(slot, id, tgt())) Sound.play('menuPick', 0.4);
   };
   const none = make('button', 'cz-chip cz-propchip');
   none.type = 'button'; none.dataset.prop = 'none';
@@ -458,9 +457,8 @@ const chipPanel = (slot) => {
     if (swatch) prev.style.background = swatch; // (an item's own swatch: a CSS background, e.g. an underglow's colour)
     b.append(prev, make('span', 'cz-name', name), make('span', 'cz-tick', '✓'));
     b.addEventListener('click', () => {
-      if (sheetOpen()) return;
-      if (b.classList.contains('locked')) { if (!sample && id !== 'none') lockedSheet(slot.id, id); return; }
-      if (slot.pick) { if (isEarnedSlot(slot.id)) { gate(() => slot.pick(id, target())); refresh(); return; } if (slot.pick(id, target()) === false) return; } else local = id;
+      if (b.classList.contains('locked')) { if (sample || id === 'none' || !isEarnedSlot(slot.id)) return; tryOn(slot.id, id); }
+      if (slot.pick) { if (slot.pick(id, target()) === false) return; } else local = id;
       Sound.play('menuPick', 0.4); refresh();
     });
     row.append(b);
@@ -525,10 +523,12 @@ const build = () => {
   back.title = 'Back (Escape)';
   back.addEventListener('click', () => Cosmetics.close());
   closeBtn = back;
+  const confirmBtn = make('button', 'cz-confirm', 'Confirm'); confirmBtn.type = 'button'; // (the loadout's one commit; Back reverts)
+  confirmBtn.addEventListener('click', () => Cosmetics.confirm());
   carName = make('span', '');
   customMark = make('span', 'cz-custom', 'Custom');
   customMark.title = 'This car differs from All cars';
-  const top = make('div', 'cz-top', back, make('div', 'cz-title', make('h1', '', 'Cosmetics'), make('p', 'cz-sub', carName, customMark)));
+  const top = make('div', 'cz-top', back, make('div', 'cz-title', make('h1', '', 'Cosmetics'), make('p', 'cz-sub', carName, customMark)), confirmBtn);
   // whose look is changed: the car on show, or every car (the default); and the car's two actions
   const seg = (name, scope) => { const b = make('button', 'cz-seg', name); b.type = 'button'; b.dataset.scope = scope; b.addEventListener('click', () => setScope(scope)); return b; };
   scopeBtns = [seg('This car', 'car'), seg('All cars', 'all')];
@@ -601,7 +601,7 @@ const build = () => {
   for (const id of Object.keys(sections)) panels[id] = { node: sections[id], refresh: () => {} };
   panelBox = make('div', 'cz-panel', scopeBar, slotList, tabMsg, wheels, sections.plate, sections.roof, sections.cargo, sections.wing);
   root.classList.toggle('cz-demo', isDemo());
-  root.replaceChildren(make('div', 'cz-backdrop'), top, stageBox, panelBox, buildSheet());
+  root.replaceChildren(make('div', 'cz-backdrop'), top, stageBox, panelBox);
   openSection('wheels');
   onWheelColour(shown);
   onPlate(() => { if (state.open) plateShown(); });
@@ -707,10 +707,6 @@ const move = (dx, dy) => {
 };
 window.addEventListener('keydown', (e) => {
   if (!state.open || e.ctrlKey || e.metaKey || e.altKey) return;
-  if (sheetOpen()) { // (the equip sheet: Escape cancels, Enter confirms; nothing else reaches the screen)
-    if (e.code === 'Escape' || e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); e.stopImmediatePropagation(); closeSheet(e.code !== 'Escape'); }
-    return;
-  }
   if (e.target === plateInput && e.code !== 'Escape') return; // (typing in the plate field: the field keeps its keys, arrows included)
   const key = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.code];
   if (e.code === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); Cosmetics.close(); }
@@ -755,62 +751,13 @@ const countChips = (row, slot, attr) => {
     asCard(b, slot, id);
     const n = cosmeticCount(slot, id), sp = spare(slot, id, use), badge = b.querySelector('.bp-amount');
     if (badge) { badge.hidden = n === 0; badge.querySelector('b').textContent = String(sp); }
-    b.classList.toggle('locked', n === 0);
+    b.classList.toggle('locked', n === 0); // (dimmed; still tappable: a try-on)
     b.classList.toggle('nospare', n > 0 && sp === 0);
     b.title = n === 0 ? '' : 'x' + sp;
   }
 };
-let sheet = null, sheetDone = null;
-const sheetOpen = () => !!sheet && !sheet.hidden;
-const buildSheet = () => {
-  sheet = make('div', 'cz-sheet');
-  sheet.hidden = true;
-  sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true');
-  sheet.addEventListener('click', (e) => { if (e.target === sheet) closeSheet(false); }); // (a tap outside the card: Cancel)
-  return sheet;
-};
-// close it: ok (Equip / OK) or not (Cancel); its own action runs once
-const closeSheet = (ok) => {
-  if (!sheetOpen()) return;
-  sheet.hidden = true;
-  const done = sheetDone; sheetDone = null;
-  done?.(ok);
-};
-const showSheet = ({ title, lines = [], okLabel = 'OK', cancelLabel = null, done = null }) => {
-  if (!sheet) return;
-  const btns = make('div', 'cz-sheet-btns');
-  if (cancelLabel) { const c = make('button', 'cz-act cz-sheet-no', cancelLabel); c.type = 'button'; c.addEventListener('click', () => { closeSheet(false); Sound.play('menuMove', 0.4); }); btns.append(c); }
-  const ok = make('button', 'cz-act cz-sheet-ok', okLabel); ok.type = 'button'; ok.addEventListener('click', () => closeSheet(true)); btns.append(ok);
-  const card = make('div', 'cz-sheet-card', make('h2', '', title), make('div', 'cz-sheet-body', ...lines.filter(Boolean).map(t => (typeof t === 'string' ? make('p', '', t) : t))), btns);
-  sheet.replaceChildren(card);
-  sheetDone = done;
-  sheet.hidden = false;
-  requestAnimationFrame(() => ok.focus({ preventScroll: true }));
-};
-const cars = (ids) => (ids.length > 3 ? ids.slice(0, 3).map(carNameOf).join(', ') + ' and ' + (ids.length - 3) + ' more' : ids.map(carNameOf).join(', '));
-// a locked chip: what it is and how it is earned
-const lockedSheet = () => {}; // (a card not earned is only dimmed: a tap does nothing, the owner, 16-Oct)
-// do a change of the look (apply: returns false when it did nothing); if it puts an earned item on more cars, wear it and ask
-const gate = (apply, { title = null, done = null } = {}) => {
-  const before = Store.snapshot(), was = usage();
-  if (apply() === false) return false;
-  const d = diffUsage(was, usage());
-  if (!d.uses.length) { Sound.play('menuPick', 0.4); done?.(); return true; }
-  const who = cid() ? 'your ' + state.car.name : 'All cars';
-  if (d.short.length) { // (not enough: taken back at once, and said why)
-    Store.restore(before);
-    const u = d.short[0], free = Math.max(0, u.count - u.before), on = (was.get(u.key) || []);
-    void free;
-    showSheet({ title: u.name + ': none left', lines: [on.length ? cars(on) : null], okLabel: 'OK' });
-    Sound.play('menuMove', 0.4);
-    return false;
-  }
-  const u = d.uses[0];
-  void who;
-  showSheet({ title: title || (d.uses.length === 1 ? u.name : 'Equip?'), lines: [], okLabel: 'Equip', cancelLabel: 'Cancel',
-    done: (ok) => { if (ok) { Sound.play('menuPick', 0.4); done?.(); } else Store.restore(before); } });
-  return true;
-};
+// a card not owned, tapped: TRIED ON (worn for the screen's visit; never stored as owned, never counted; Confirm drops it: cosmeticstock.js)
+const tryOn = (slot, id) => { if (isEarnedSlot(slot) && !isFreeCosmetic(slot, id)) setTryOn(slot, id); };
 // THE DEBUG SWITCH ?czgive=plate:ev*3,plate:classic (a test visit, ?car=, or the dev server only): awarded through the one entry point
 // (render/cosmetics.js awardCosmetic), as a pack's cosmetic card is
 const visitGive = () => {
@@ -827,7 +774,7 @@ export const Cosmetics = {
     if (!built) build();
     try { visitGive(); migrateStock(); } catch (error) { console.warn('cosmetic stock: ' + (error?.message || error)); } // (earned cosmetics: the debug switch, and the once-a-browser migration)
     const use = car || carInUse();
-    state = { open: true, car: use.silhouette || use.id === 'null-car' ? CARS.find(c => !c.silhouette) : use, evil, onClose, inMenu: Game.inMenu, close: false, scope: new URLSearchParams(location.search).get('scope') === 'all' ? 'all' : 'car' }; // (?scope=all: 'All cars', for a picture)
+    state = { open: true, entry: Store.snapshot(), committed: false, car: use.silhouette || use.id === 'null-car' ? CARS.find(c => !c.silhouette) : use, evil, onClose, inMenu: Game.inMenu, close: false, scope: new URLSearchParams(location.search).get('scope') === 'all' ? 'all' : 'car' }; // (?scope=all: 'All cars', for a picture)
     Game.inMenu = true; // (the menu's keys leave it alone)
     root.classList.remove('hidden');
     root.classList.toggle('evil', evil);
@@ -848,15 +795,15 @@ export const Cosmetics = {
     if (tap) setTimeout(() => { if (!state.open) return; const b = [...root.querySelectorAll('.cz-section:not([hidden]) .cz-chip')].find(x => [x.dataset.plate, x.dataset.kill, x.dataset.prop, x.dataset.item, x.dataset.set].includes(tap)); b?.click(); }, Number(q.get('cztapat')) || 1200);
   },
   // the equip sheet (for a check or a picture): open?, its title, and confirm / cancel it
-  get sheet() { return { open: sheetOpen(), title: sheet?.querySelector('h2')?.textContent || '', text: sheet?.querySelector('.cz-sheet-body')?.textContent || '' }; },
-  answer: (ok) => closeSheet(!!ok),
+  // CONFIRM (the screen's one commit): what cannot be kept (a try-on not owned, more on cars than given) goes back to the entry look; then shut
+  confirm() { if (!state.open) return; if (plateInput && document.activeElement === plateInput) commitText(); settleLoadout(state.entry); state.committed = true; Sound.play('menuPick', 0.4); this.close(); },
   close() {
     if (!state.open) return;
     const done = state.onClose;
     if (plateInput && document.activeElement === plateInput) plateInput.blur();
     previewPlateText(null);
     KillPreview.clear();
-    closeSheet(false); // (an equip not confirmed is taken back)
+    if (!state.committed) revertLoadout(state.entry); // (Back, Escape, the back button: the loadout as it was on entry, any stock used returned)
     state.open = false;
     root.classList.add('hidden');
     Nav.leave('cosmetics');

@@ -175,6 +175,29 @@ check(ownedCosmetics().join() === listed.join() && ownsCosmetic('plate', 'fixtur
   check(stock.migrateStock() === false, '...once only');
   Progress.noSave = false; clearCosmetics(); Store.reloadStore(); void kill;
 }
+// ---- THE SCREEN'S ONE CONFIRM: taps worn at once, a try-on of an item not owned, Confirm keeps what can be kept, Back reverts ----
+{
+  Progress.reset(); clearCosmetics();
+  const Store = await g.load('render/loadoutstore.js'), stock = await g.load('render/cosmeticstock.js'), P = await g.load('render/platecosmetic.js');
+  const { setTryOn, isTryOn } = await g.load('render/cosmetics.js');
+  Store.reloadStore(); Progress.noSave = true;
+  awardCosmetic('plate:ev', 1);
+  P.setPlateDesign('ev', 'pickup');
+  let entry = Store.snapshot();
+  check(P.setPlateDesign('hex', 'commuter') === false, 'an item not owned cannot be set without a try-on');
+  setTryOn('plate', 'hex');
+  check(P.setPlateDesign('hex', 'commuter') && P.shownDesign('commuter') === 'hex' && cosmeticCount('plate', 'hex') === 0 && stock.spare('plate', 'hex') === 0, 'a TRY-ON of an item not owned: worn on the car, nothing given, nothing counted');
+  P.setPlateDesign('ev', 'sport');
+  check(stock.spare('plate', 'ev') === 0 && P.shownDesign('sport') === 'ev', 'an owned item on a second car with none in the hand: worn (a preview), the hand shown live at 0');
+  const dropped = stock.settleLoadout(entry);
+  check(P.plateDesign('commuter') === 'stock' && P.plateDesign('sport') === 'stock' && P.plateDesign('pickup') === 'ev' && dropped.length === 2 && !isTryOn('plate', 'hex') && !ownsCosmetic('plate', 'hex'), 'Confirm: the try-on and the one too many go back to what those cars wore on entry; the car worn on entry keeps its own; try-ons end');
+  entry = Store.snapshot();
+  P.setPlateDesign('stock', 'pickup'); setTryOn('plate', 'hex'); P.setPlateDesign('hex', 'pickup');
+  check(stock.spare('plate', 'ev') === 1, 'taken off: back in the hand at once (live)');
+  stock.revertLoadout(entry);
+  check(P.plateDesign('pickup') === 'ev' && stock.spare('plate', 'ev') === 0 && !isTryOn('plate', 'hex') && JSON.stringify(Store.snapshot()) === JSON.stringify(entry), 'Back: the loadout exactly as on entry (the stock used returned, the try-on gone)');
+  Progress.noSave = false; clearCosmetics(); Store.reloadStore(); Progress.reset();
+}
 // ---- the card packs: a pack's `cosmetics` list (packs.json, the owner's to place) awards through awardCosmetic ----
 {
   const packs = await g.load('packs.js');

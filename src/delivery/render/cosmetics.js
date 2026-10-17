@@ -113,7 +113,13 @@ export const ownedCosmetics = () => Object.keys(load().n);
 // how many of an item the player has been given: Infinity for a free one, else the count (0: not earned)
 export const cosmeticCount = (slot, id) => (isFreeCosmetic(slot, id) ? Infinity : load().n[cosmeticKey(slot, id)] || 0);
 // free, unlimited, or at least one
-export const ownsCosmetic = (slot, id) => cosmeticCount(slot, id) > 0;
+// TRY-ON (CHECKLIST, cosmetics flow): an item not owned may be WORN on the Cosmetics screen as a preview, for the screen's visit only (never
+// stored, never counted): its key is in this set while the screen is open (render/cosmeticsui.js), and Confirm / Back clear it
+const tryOn = new Set();
+export const setTryOn = (slot, id) => { tryOn.add(cosmeticKey(slot, id)); };
+export const clearTryOn = () => { tryOn.clear(); };
+export const isTryOn = (slot, id) => tryOn.has(cosmeticKey(slot, id));
+export const ownsCosmetic = (slot, id) => cosmeticCount(slot, id) > 0 || tryOn.has(cosmeticKey(slot, id));
 // keys given to the player: n more of each (most MOST_EACH); awardCosmetic below is the game's one way in
 export const grantCosmetics = (keys, n = 1) => {
   const s = load();

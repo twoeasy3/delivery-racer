@@ -27,10 +27,10 @@ unlockall.js are both outside the fingerprint (vite.config.js NOT_RULES).
   - On an earned tab the screen hides All cars and Copy to all.
   - Copy to all, from the Wheels tab, copies the wheels only.
   - The default still carries the non-item fields: a plate's text and a prop's paint.
-- **Try-on:** tapping a card in your hand wears it at once; a sheet with only the item's name asks Equip / Cancel (no
-  counts: the ×N badge shows them). Cancel, Escape, Back or a tap outside puts it back. None left: refused; the sheet
-  names the item and the cars wearing it.
-- **Not earned:** the card is only dimmed, with no text; a tap does nothing.
+- **One Confirm (stock while uncommitted):**
+  1. Every tap is worn at once, with no sheet. The ×N hand is shown live (on-car counts include this visit's taps), and a dimmed card (not owned) is tried on.
+  2. **Confirm** keeps the loadout. Anything that can't be kept (a try-on not owned, or more on cars than were given) goes back to what that car wore on entry.
+  3. **Back**, Escape or leaving puts the whole loadout back as it was on entry, so any stock used returns. A try-on never gives or counts stock.
 - **Absolutely:** "Unlock everything: Absolutely" gives 999 of every item, as a real stock (`grantAll`), shown as x999.
   There is no unlimited mode.
 
@@ -79,7 +79,7 @@ Cosmetics ride the same mechanism as another kind of card:
 | All cars / Copy to all | Not for earned slots. Copy to all copies the wheels only. |
 | A car leaves the garage | No sale exists in the game. A car's own items stay counted while its loadout entry exists. |
 | Free looks | Unlimited, never taken. |
-| Preview | Free: worn as a try-on, taken only on Equip. An item not earned cannot be tried on yet. |
+| Preview | Free: any card, owned or not, is worn on tap; only Confirm keeps it, and only within stock. |
 | Reset progress | Clears the counts. |
 | Test visit (`?car=`, Progress.noSave) | Nothing is written. |
 
@@ -102,6 +102,6 @@ Cosmetics ride the same mechanism as another kind of card:
 1. Which packs carry which cosmetics, at what chance and how many? None does today.
 2. Should the migration be strict (capped by stock) instead of generous?
 3. Should wheels be earned too, and per part or per preset?
-4. Should an item not yet earned be tryable as a free preview?
+4. (Answered: an item not earned can be tried on; Confirm drops it.)
 5. Should the plate text become per car too, now that All cars is gone for earned slots? Today the default text is still
    shared.
