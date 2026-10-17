@@ -283,7 +283,7 @@ export const syncWreckage = (now) => {
       mesh.position.copy(target);
       mesh.rotation.set(0, heading, 0);
       mesh.userData.swing(u);
-      if (u < 1 && Math.abs(e.at - Player.s) < 300) { // (tyre smoke as they go)
+      if (u < 1 && Math.abs(e.at - Player.s) < 300 && chance(1)) { // (tyre smoke as they go: one a 60 Hz frame of game time)
         Track.toWorld(e.at + rnd(e.depth / 2), e.lat0 + Math.random() * (e.lat1 - e.lat0), tmp);
         Smoke.emit(tmp.x, tmp.y + 0.3, tmp.z, rnd(2), 1 + Math.random() * 2, rnd(2), 1.5, 1 + Math.random(), 2, 0, 0xd8d8d8);
       }
@@ -338,7 +338,7 @@ export const syncWreckage = (now) => {
     if (T.t >= 0 && !towerState.went) { towerState.went = true; burst(120, 6); }
     if (T.down && !towerState.down) { towerState.down = true; burst(300, 55 * CONFIG.wreckage.towerScale); }
     if (T.t < 0) towerState.went = towerState.down = false; // (a new run)
-    if (T.down && T.t < CONFIG.wreckage.towerFall + 3 && Math.random() < 0.8) { // (a cloud of dust where it came down)
+    if (T.down && T.t < CONFIG.wreckage.towerFall + 3 && chance(0.8)) { // (a cloud of dust where it came down)
       const h = Track.toWorld(T.at, 0, tmp), lx = Math.cos(h), lz = -Math.sin(h), d = Math.random() * 55 * CONFIG.wreckage.towerScale; // (along it, to its left)
       Smoke.emit(towerBase[0] + lx * d + rnd(3), 1 + Math.random() * 3, towerBase[2] + lz * d + rnd(3), rnd(3), 2 + Math.random() * 3, rnd(3),
         3, 3 + Math.random() * 2, 2, 0, 0x8a8076);
@@ -346,7 +346,7 @@ export const syncWreckage = (now) => {
   }
   // the fires out on the airfield: flames, and a column of black smoke
   for (const f of fires) {
-    if (Math.abs(f.s - Player.s) > 450 || Math.random() > 0.35) continue;
+    if (Math.abs(f.s - Player.s) > 450 || !chance(0.35)) continue;
     Track.toWorld(f.s + rnd(4), f.lat + rnd(4), tmp);
     Fire.emit(tmp.x, 1 + Math.random() * 2, tmp.z, rnd(1), 3 + Math.random() * 3, rnd(1), 0.6, 1.5 * f.size, 1, 0, FIRE_COLORS[1 + Math.floor(Math.random() * 3)]);
     const grey = 20 + Math.floor(Math.random() * 25);

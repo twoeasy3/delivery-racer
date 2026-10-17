@@ -12,7 +12,7 @@ import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { Track } from '../track.js';
 
-export const GameClock = { dt: 1 / 60, wall: 1 / 60, scale: 1, frozen: false, steps: 0 };
+export const GameClock = { dt: 1 / 60, wall: 1 / 60, scale: 1, frozen: false, steps: 0, time: 0 }; // (time: s of game time drawn so far, for a wobble that should hold still paused)
 
 // main.js's frame: the logic stepped in whole steps of CONFIG.maxStep (the replay's rule: REPLAY-NOTES.md), the wall time times
 // `scale` added to what is carried over (scale: a replay's 2x / 4x; 0.5 a slow motion), none while paused. `update(step)` is
@@ -30,7 +30,7 @@ export const stepGame = (wall, { paused = false, scale = 1, update } = {}) => {
 };
 // (or set straight: a frame of `wall` s in which `dt` s of game time passed)
 export const tickGameClock = (wall, dt, scale = wall > 0 ? dt / wall : 1, steps = Math.round(dt / CONFIG.maxStep)) => {
-  GameClock.wall = wall; GameClock.dt = dt; GameClock.scale = scale; GameClock.frozen = !(dt > 0); GameClock.steps = steps;
+  GameClock.wall = wall; GameClock.dt = dt; GameClock.scale = scale; GameClock.frozen = !(dt > 0); GameClock.steps = steps; GameClock.time += dt;
   return dt;
 };
 export const resetGameClock = () => { carry = 0; tickGameClock(1 / 60, 1 / 60, 1); };
