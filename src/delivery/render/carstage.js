@@ -13,6 +13,8 @@
 //   - the lights: the card's own two (render/modelviews.js lit), only recoloured from the theme's `light` (no new shader)
 // Every theme has a stage with NO file of its own (its sky, ground, road, light and obstacles are in themes.js); a theme
 // that wants more (a skyline, its own props) adds ONE small file in render/stages/ and ONE line in STAGE_FILES below.
+// A file's `props` name OBSTACLE_MODELS kinds or its own `models` (makers built from the theme's models and render/stages/kit.js's
+// shared shapes: merged like the rest); its `plinth(pal)` gives the plinth's colour (boards, earth...) instead of the road's, `ground(pal)` the ground disc's.
 // quality: 'high' all the props; 'low' two (a small card: the phone's); 'off' no stage at all (the plain card).
 // THE FALLBACK (cardStage below): a level with no theme, or a theme that is not in themes.js: the DEFAULT studio (backdrop and plinth,
 // no props); a theme whose stage threw (built, framed or painted): the default studio from then on; the default studio throwing too:
@@ -25,19 +27,29 @@ import { OBSTACLE_MODELS } from './obstacleModels.js';
 import { sharedRenderer } from './modelviews.js';
 import { Progress } from '../progress.js';
 
+// the themes whose stage is a row of render/stages/table.js (one module for them all)
+const TABLE_THEMES = ['singapore', 'singaporeNight', 'coast', 'safari', 'construction', 'airport', 'canberra', 'suburb', 'battlefield', 'bathurst', 'panorama',
+  'monza', 'spa', 'albert-park', 'montreal', 'sea', 'space', 'tokyo', 'hell'];
 // a theme's own stage file (a skyline, a prop list), loaded when first wanted; by theme name, else by its scenery's
 export const STAGE_FILES = {
   city: () => import('./stages/city.js'),
   vegas: () => import('./stages/vegas.js'),
   alpinepass: () => import('./stages/alpine.js'),
   steelworks: () => import('./stages/steelworks.js'),
+  volcano: () => import('./stages/volcano.js'),
+  port: () => import('./stages/port.js'),
+  wildwest: () => import('./stages/wildwest.js'),
+  farm: () => import('./stages/farm.js'),
+  // (the rest, one table: render/stages/table.js; by THEME name only, never another theme's scenery: hood and christmas are
+  // drawn as the suburb but keep their own stages)
+  ...Object.fromEntries(TABLE_THEMES.map((name) => [name, () => import('./stages/table.js').then((m) => ({ stage: m.stageOf(name) }))])),
   // (new stages go above this line: one line each)
 };
 const loaded = {}, loading = {}, warned = new Set();
 const warnOnce = (what) => { if (!warned.has(what)) { warned.add(what); console.warn(what); } };
 // (for the checks and a picture of the fallback: ?stagethrow=<theme> or '*' makes that stage's build throw)
 export const STAGE_TEST = { throwOn: null };
-const fileOf = (theme) => (STAGE_FILES[theme] ? theme : STAGE_FILES[THEMES[theme]?.scenery] ? THEMES[theme].scenery : null);
+const fileOf = (theme) => (STAGE_FILES[theme] ? theme : STAGE_FILES[THEMES[theme]?.scenery] && !TABLE_THEMES.includes(THEMES[theme].scenery) ? THEMES[theme].scenery : null);
 // the stage file of a theme, now if it has arrived (else null, and it is asked for: onLoad is called when it comes)
 export const stageFile = (theme, onLoad) => {
   const name = fileOf(theme);
@@ -175,7 +187,7 @@ export const makeStage = (theme, { evil = false, quality = 'high' } = {}) => {
   // (A CAR SWITCH builds nothing here: the props stay as they stand, for a car within half a metre of the last one's size the
   // same; for another size they are built again when the page is next idle, not in the switch's own frame)
   let idle = 0, lastCamera = null, gone = false;
-  const later = window.requestIdleCallback || ((fn) => setTimeout(fn, 60));
+  const later = window.requestIdleCallback ? (fn) => window.requestIdleCallback(fn, { timeout: 400 }) : (fn) => setTimeout(fn, 60); // (timeout: a page that is never idle, its car turning, still gets them)
   const buildProps = (camera, now = false) => {
     const slots = (file?.props || SLOTS).slice(0, quality === 'low' ? LOW : 99);
     const r = Math.max(1, Math.round(car.r * 2) / 2);
@@ -186,6 +198,8 @@ export const makeStage = (theme, { evil = false, quality = 'high' } = {}) => {
     propKey = key;
     const p0 = performance.now();
     if (props) { group.remove(props); props.geometry.dispose(); props = null; }
+    plinthMat.color.copy(file?.plinth ? col(file.plinth(pal)) : pal.road); // (a file's own plinth colour: boards, earth...)
+    groundMat.color.copy(file?.ground ? col(file.ground(pal)) : pal.ground.clone().lerp(pal.far, 0.25)); // (and its ground's)
     const halfTan = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / camera.zoom * camera.aspect;
     const models = [];
     // (a slot whose kind the theme has no own model for takes one of the theme's own in turn: never a generic crate or bale)
@@ -194,11 +208,11 @@ export const makeStage = (theme, { evil = false, quality = 'high' } = {}) => {
     for (const [kind, side, depth, turn, scale = 1, like] of slots) { // (like: a file's prop's kind of box, crate / bale / cone / barrier)
       let real = file?.props ? kind : themedKind(theme, kind);
       if (!file?.props && real === kind) { if (!own.length) continue; real = own[next++ % own.length]; } // (a theme with no obstacles of its own: no props)
-      const make = OBSTACLE_MODELS[real];
+      const make = file?.models?.[real] || OBSTACLE_MODELS[real]; // (a file's own model first: the theme's own pieces, built from its models)
       if (!make) continue;
       const [hw, hl, height] = BOX[like] || BOX[kind] || BOX.crate;
       let model;
-      try { model = make({ kind: real, hw, hl, height }); } catch { continue; }
+      try { model = make({ kind: real, hw, hl, height, r: Math.min(hw, hl) }); } catch { continue; } // (r: a rock's size: lavaRock without one was NaN)
       const tris = trianglesOf(model);
       if (used + tris > PROP_TRIANGLES) { model.traverse((node) => { node.geometry?.dispose(); }); continue; } // (over the budget: left out)
       used += tris;
