@@ -1,0 +1,157 @@
+/* THE EVENTS TAB (CHECKLIST 446, EVENTS-UI.md; render/eventmodes.js, render/menustage.js). Loaded after menu2.css; its tokens
+   (--accent, --accent-ink, --panel, --panel-2, --line, --ink-dim, --display) are #startScreen's. Three parts:
+   1. the MODE STRIP over the Events tab, at every size: a segmented control, a button per event (icon + one word), the one shown
+      filled with the accent (as the Cosmetics screen's tabs), a green dot (the Shop's) on one with something to play;
+   2. a PHONE held upright (the menu's phone query): one event on the screen at a time, the level strip gone (the strip is the
+      tab's), the Car Hunt / Concept Strike card fitted to the screen (a short picture band, the name, one status line, the car
+      and the pack side by side; the words, figures and road under 'Details'), the menu itself no longer scrolling;
+   3. a special event of more stages (the Comet Hunt), at every size: the name and one status line, the grand prize card, a
+      stepper of the stages (done / next / locked), the stage cards, the stage picked and its Details.
+   Motion: colour and shadow transitions only, none under prefers-reduced-motion. */
+
+/* ---- 1. the mode strip ---- */
+#startScreen .menu-groups.ev-on { padding: 0; overflow: visible; }
+#startScreen .ev-modes { display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); }
+#startScreen .ev-modes .ev-mode { position: relative; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 0; min-height: 32px;
+  padding: 0 14px; border-radius: 7px; font: 700 13px/1 system-ui, sans-serif; letter-spacing: .02em; color: var(--ink-dim); background: transparent; box-shadow: none;
+  transition: background .15s, color .15s; }
+#startScreen .ev-modes .ev-mode:hover { color: #fff; background: var(--panel-2); }
+#startScreen .ev-modes .ev-mode.on { color: var(--accent-ink); background: var(--accent); }
+#startScreen .ev-modes .ev-mode:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+#startScreen .ev-icon { display: inline-flex; flex: 0 0 auto; }
+#startScreen .ev-icon svg { display: block; width: 18px; height: 18px; }
+#startScreen .ev-word { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+#startScreen .ev-dot { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: #3fc46a; box-shadow: 0 0 0 2px #10151f, 0 0 6px rgba(63, 196, 106, .8); pointer-events: none; }
+#startScreen .ev-mode.on .ev-dot { box-shadow: 0 0 0 2px var(--accent); }
+#startScreen .ev-dot[hidden] { display: none; }
+/* (the Details button is a phone's: elsewhere everything it folds is shown) */
+#startScreen .ev-more-btn { display: none; }
+
+/* ---- 3. a special event of more stages (the Comet Hunt), every size ---- */
+#startScreen .ev-series { gap: 10px; }
+#startScreen .ev-head { display: flex; align-items: center; gap: 14px; }
+#startScreen .ev-title { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+#startScreen .ev-title h2 { margin: 0; font: italic 800 clamp(24px, 2.2vw, 42px)/1 var(--display); font-stretch: condensed; text-transform: uppercase; }
+#startScreen .ev-status { display: flex; align-items: baseline; gap: 8px; font: 800 13px/1.2 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+#startScreen .ev-status b { color: var(--accent); }
+#startScreen .ev-status b::after { content: "·"; margin-left: 8px; color: var(--ink-dim); }
+#startScreen .ev-status .event-ends { margin: 0; color: #ff8a7a; }
+#startScreen .ev-status .event-ends.next { color: #3fd3ff; }
+/* (the grand prize: a card, its car's still on the left, as the Car Hunt's car card) */
+#startScreen .ev-prize { flex: 0 0 auto; display: grid; grid-template-columns: clamp(96px, 9vw, 170px) minmax(0, auto); align-items: center; gap: 0 10px; padding: 6px 14px 6px 6px; border-radius: 12px;
+  background: linear-gradient(165deg, rgba(38, 62, 104, .94), rgba(16, 21, 33, .96) 75%); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12), 0 8px 22px rgba(0, 0, 0, .45); }
+#startScreen .ev-prize .event-car { aspect-ratio: 16 / 10; filter: drop-shadow(0 8px 8px rgba(0, 0, 0, .5)); }
+#startScreen .ev-prize-words { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
+#startScreen .ev-prize-words small { font: 800 11px/1 system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+#startScreen .ev-prize-words strong { font: italic 800 clamp(16px, 1.3vw, 22px)/1.05 var(--display); text-transform: uppercase; }
+#startScreen .ev-won { padding: 2px 8px; border-radius: 5px; font: 800 11px/1.3 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; background: #1d7f47; }
+/* (the stepper: a node per stage on a line, done / next / locked, the picked one ringed; the prize at its end) */
+#startScreen .ev-steps { list-style: none; margin: 0; padding: 0 2px; display: flex; align-items: center; }
+#startScreen .ev-steps li { position: relative; flex: 1 1 0; display: flex; justify-content: center; }
+#startScreen .ev-steps li + li::before { content: ""; position: absolute; top: 50%; right: 50%; width: 100%; height: 3px; margin-top: -1.5px; background: rgba(255, 255, 255, .14); }
+#startScreen .ev-steps li.done + li::before { background: var(--accent); }
+#startScreen .ev-steps .ev-step { position: relative; z-index: 1; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+  font: 800 13px/1 var(--display); color: var(--ink-dim); background: #222a3a; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .16); transition: box-shadow .15s, background .15s; }
+#startScreen .ev-steps .ev-step.done { color: var(--accent-ink); background: var(--accent); box-shadow: none; }
+#startScreen .ev-steps .ev-step.ready { color: #fff; background: #1d2433; box-shadow: inset 0 0 0 2px var(--accent); }
+#startScreen .ev-steps .ev-step.needs { color: #ffb4a8; box-shadow: inset 0 0 0 2px #8a2a1f; }
+#startScreen .ev-steps .ev-step.locked { opacity: .7; }
+#startScreen .ev-steps .ev-step.picked { box-shadow: 0 0 0 3px #10151f, 0 0 0 5px #fff; }
+#startScreen .ev-steps .ev-goal { position: relative; z-index: 1; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; color: var(--ink-dim); background: #222a3a; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .16); }
+#startScreen .ev-steps .ev-goal.won { color: var(--accent-ink); background: var(--accent); box-shadow: none; }
+#startScreen .ev-steps .ev-goal svg { width: 16px; height: 16px; }
+@media (pointer: coarse) { #startScreen .ev-steps .ev-step::after { content: ""; position: absolute; inset: -8px; } } /* (a finger's 44 px) */
+/* (the stage cards: the map's picture a band over the top, the car over it, the car rule and the state at the foot) */
+#startScreen .ev-series .event-rowbox { min-height: 0; }
+#startScreen .ev-series .event-stage { gap: 6px; padding: 10px; border-radius: 12px; background: linear-gradient(180deg, #1f2738, #151b27);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1), 0 6px 16px rgba(0, 0, 0, .35); transition: box-shadow .15s; }
+#startScreen .ev-series .event-stage::before { inset: 0 0 46% 0; clip-path: none; opacity: .5; -webkit-mask: linear-gradient(180deg, #000 55%, transparent); mask: linear-gradient(180deg, #000 55%, transparent); }
+#startScreen .ev-series .event-stage.picked { box-shadow: inset 0 0 0 3px var(--accent), 0 6px 16px rgba(0, 0, 0, .35); }
+#startScreen .ev-series .event-stage.shut { filter: none; }
+#startScreen .ev-series .event-stage.shut .event-car { filter: saturate(.35) brightness(.75); }
+#startScreen .ev-series .event-stage-n { font-size: clamp(13px, 1vw, 18px); text-shadow: 0 1px 3px #000; }
+#startScreen .ev-series .event-stage .event-car { filter: drop-shadow(0 8px 8px rgba(0, 0, 0, .5)); }
+#startScreen .ev-series .event-badge { border-radius: 999px; padding: 3px 9px 2px; font-size: 11px; }
+#startScreen .ev-series .event-stage-state { align-self: flex-start; padding: 3px 9px 2px; border-radius: 999px; font-size: 11px; letter-spacing: .08em; color: #ffb4a8; background: rgba(0, 0, 0, .35); }
+#startScreen .ev-series .event-stage.ready .event-stage-state { color: var(--accent-ink); background: var(--accent); }
+#startScreen .ev-series .event-stage.done .event-stage-state { color: #fff; background: #1d7f47; }
+#startScreen .ev-series .event-stage-map { font-size: 12px; }
+/* (the stage picked: its name, then its figures, what it needs and the road's chips) */
+#startScreen .ev-pick { display: flex; align-items: center; gap: 10px; }
+#startScreen .ev-pick h3 { flex: 1 1 auto; min-width: 0; margin: 0; font: italic 800 clamp(17px, 1.4vw, 26px)/1.1 var(--display); text-transform: uppercase; }
+#startScreen .ev-series .event-detail { gap: 6px; }
+
+/* ---- 2. a phone held upright (menu2.css's phone query) ---- */
+@media (max-width: 760px) and (min-height: 521px), (max-width: 519px) {
+  #startScreen .ev-modes { flex: 1 1 auto; width: 100%; box-sizing: border-box; }
+  #startScreen .ev-modes .ev-mode { flex: 1 1 0; gap: 5px; min-height: 44px; padding: 0 4px; font-size: 12px; }
+  #startScreen .ev-icon svg { width: 17px; height: 17px; }
+  #startScreen.ev-tab .menu-strip { display: none; } /* (the tabs say what the strip said: one event at a time) */
+  #startScreen.ev-tab .ev-more-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 14px; font-size: 13px; }
+  #startScreen.ev-tab .ev-more-btn::after { content: ""; width: 7px; height: 7px; margin: -3px 0 0 9px; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform .15s; }
+  #startScreen.ev-tab .ev-more-btn[aria-expanded="true"]::after { margin-top: 3px; transform: rotate(-135deg); }
+
+  /* the Car Hunt / Concept Strike card: the screen's height, not a page that scrolls (menu2.css .cx-card made it one); what does
+     not fit scrolls inside the card, the car and START where they always are */
+  #startScreen.ev-tab.cx-card { grid-template-rows: auto auto minmax(210px, 1fr) auto auto; align-content: stretch; }
+  #startScreen.ev-tab.cx-card .menu-side { position: relative; bottom: auto; background: var(--panel); box-shadow: 0 0 0 1px var(--line), 0 14px 40px rgba(0, 0, 0, .45); }
+  #startScreen.ev-tab.cx-card .menu-stage { --band: 118px; min-height: 0; gap: 8px; padding: 92px 12px 12px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+  #startScreen.ev-tab.cx-card .menu-stage::-webkit-scrollbar { display: none; }
+  #startScreen.ev-tab.cx-card .menu-stage .arrow { display: none; } /* (the tabs and a swipe step the events) */
+  #startScreen.ev-tab.cx-card .menu-stage .plate { padding: 5px 22px 4px 10px; }
+  #startScreen.ev-tab.cx-card .menu-stage .plate b { font-size: 18px; }
+  #startScreen.ev-tab.cx-card .menu-stage.has-extras .cargo3d { top: 44px; right: 8px; width: 150px; flex-direction: row; justify-content: flex-end; gap: 6px; }
+  #startScreen.ev-tab.cx-card .menu-stage.has-extras .cargo3d .ring { flex: 0 0 auto; width: 42px; height: 42px; }
+  #startScreen.ev-tab.cx-card .menu-stage.has-extras .cargo3d .cargo-name { font-size: 11px; text-align: left; }
+  #startScreen.ev-tab.cx-card .menu-stage.no-medals.has-extras .cargo3d { top: 8px; }
+  /* (the order: the tags, the name and the status line; the day's tasks; the car and the pack; Details; what it folds) */
+  #startScreen.ev-tab.cx-card .menu-stage .info > .cx-tags, #startScreen.ev-tab.cx-card .menu-stage .info > h2, #startScreen.ev-tab.cx-card .menu-stage .info > .event-ends { order: 0; }
+  #startScreen.ev-tab.cx-card .menu-stage h2 { font-size: 28px; line-height: 1; }
+  #startScreen.ev-tab.cx-card .menu-stage .info > .event-ends { margin-top: -3px; font-size: 13px; }
+  #startScreen.ev-tab.cx-card .cx-tag { padding: 4px 8px 3px; font-size: 11px; }
+  #startScreen.ev-tab.cx-card .cx-tag.often { display: none; }
+  #startScreen.ev-tab.cx-card .cx-tasks { gap: 4px; margin: 0; }
+  #startScreen.ev-tab.cx-card .cx-tasks li { padding: 6px 9px; font-size: 12px; line-height: 1.25; }
+  #startScreen.ev-tab.cx-card .menu-stage > .card-extras { order: 2; flex-wrap: nowrap; gap: 8px; margin: 0; }
+  #startScreen.ev-tab.cx-card .cx-car { flex: 1 1 auto; grid-template-columns: minmax(0, 50%) minmax(0, 1fr); padding: 8px 10px 10px 6px; }
+  #startScreen.ev-tab.cx-card .cx-name strong { font-size: 18px; }
+  #startScreen.ev-tab.cx-card .cx-odds { font-size: 11px; }
+  #startScreen.ev-tab.cx-card .cx-try { min-height: 44px; margin-top: 8px; font-size: 13px; }
+  #startScreen.ev-tab.cx-card .cx-pack { flex: 0 0 104px; flex-direction: column; justify-content: center; gap: 8px; padding: 10px 6px; }
+  #startScreen.ev-tab.cx-card .cx-art, #startScreen.ev-tab.cx-card .cx-art .event-pack-art { width: 58px; height: 80px; }
+  #startScreen.ev-tab.cx-card .cx-art .event-pack-art .shop-packs { transform: scale(.69); }
+  #startScreen.ev-tab.cx-card .cx-ribbon { bottom: 12px; font-size: 10px; }
+  #startScreen.ev-tab.cx-card .cx-pack-words { align-items: center; }
+  #startScreen.ev-tab.cx-card .cx-pack-words > small, #startScreen.ev-tab.cx-card .cx-pack-words > span, #startScreen.ev-tab.cx-card .cx-pack-words strong { display: none; }
+  #startScreen.ev-tab.cx-card .cx-pack-words .event-inside { min-height: 44px; margin: 0; padding: 0 8px; font-size: 12px; }
+  #startScreen.ev-tab.cx-card .menu-stage > .ev-more-btn { order: 3; align-self: flex-start; }
+  /* (folded: the road's name and words, the figures, the car line, the road's chips; a car line that stops START stays) */
+  #startScreen.ev-tab.cx-card .menu-stage .info > .cx-road, #startScreen.ev-tab.cx-card .menu-stage.has-extras .info > .desc, #startScreen.ev-tab.cx-card .menu-stage .info > .facts,
+  #startScreen.ev-tab.cx-card .menu-stage.has-extras .info > .needs:not(.warn), #startScreen.ev-tab.cx-card .menu-stage .info > .road, #startScreen.ev-tab.cx-card .menu-stage .info > .prize { display: none; order: 5; }
+  #startScreen.ev-tab.cx-card .menu-stage.ev-open .info > .cx-road, #startScreen.ev-tab.cx-card .menu-stage.ev-open.has-extras .info > .desc, #startScreen.ev-tab.cx-card .menu-stage.ev-open .info > .facts,
+  #startScreen.ev-tab.cx-card .menu-stage.ev-open.has-extras .info > .needs:not(.cx-rule), #startScreen.ev-tab.cx-card .menu-stage.ev-open .info > .road, #startScreen.ev-tab.cx-card .menu-stage.ev-open .info > .prize { display: flex; }
+  #startScreen.ev-tab.cx-card .menu-stage.ev-open .info > .cx-road, #startScreen.ev-tab.cx-card .menu-stage.ev-open.has-extras .info > .needs:not(.cx-rule), #startScreen.ev-tab.cx-card .menu-stage.ev-open .info > .prize { display: block; }
+  #startScreen.ev-tab.cx-card .menu-stage.ev-open.has-extras .info > .desc { display: -webkit-box; -webkit-line-clamp: 6; line-clamp: 6; }
+  #startScreen.ev-tab.cx-card .menu-stage .info > .road .menu-chip { min-height: 44px; }
+
+  /* the Comet Hunt's screen on a phone */
+  #startScreen .ev-series { padding: 10px; gap: 8px; }
+  #startScreen .ev-head { flex-wrap: nowrap; gap: 8px; align-items: flex-start; }
+  #startScreen .ev-title { flex-basis: auto; gap: 5px; }
+  #startScreen .ev-title h2 { font-size: 22px; }
+  #startScreen .ev-status { flex-wrap: wrap; gap: 2px 6px; font-size: 12px; }
+  #startScreen .ev-status b::after { margin-left: 6px; }
+  #startScreen .ev-prize { grid-template-columns: 74px minmax(0, auto); max-width: 52%; padding: 4px 10px 4px 4px; gap: 0 6px; }
+  #startScreen .ev-prize-words small { font-size: 10px; letter-spacing: .1em; }
+  #startScreen .ev-prize-words strong { font-size: 14px; }
+  #startScreen .ev-series .event-stage { flex-basis: 44%; min-width: 146px; padding: 9px; }
+  #startScreen .ev-series .event-stage .event-car { aspect-ratio: 16 / 10; }
+  #startScreen .ev-pick h3 { font-size: 18px; }
+  #startScreen.ev-tab .ev-series .event-detail { display: none; }
+  #startScreen.ev-tab .ev-series .event-detail.warn, #startScreen.ev-tab .ev-series.ev-open .event-detail { display: flex; }
+  #startScreen.ev-tab .ev-series .event-detail.warn:not(.open) > :not(.needs) { display: none; }
+  #startScreen.ev-tab .ev-series .event-detail .road .menu-chip { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #startScreen .ev-modes .ev-mode, #startScreen .ev-steps .ev-step, #startScreen .ev-series .event-stage, #startScreen .ev-more-btn::after { transition: none; }
+}
