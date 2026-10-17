@@ -40,7 +40,7 @@ outline and a small card says what it is in one line (OK, or using the thing, an
 
 | # | Gate | Opens when | Intro (one line) | What it shows | Cost | Risk |
 |---|---|---|---|---|---|---|
-| 0 | (always) | brand-new save | (none) | Career tab, tiers, level card, car card (Showroom, Crazey Jim's lot), **Good and Evil** (the switch, both medals, E, Guide > Good & Evil; a ladder save also gets a two-word hint in each half: "gifts · more time" / "fire · less time"), START, bank, Options: settings, guide, save, how to play | | |
+| 0 | (always) | brand-new save | (none) | Career tab, tiers, level card, car card (Showroom: pick and buy; the Garage is under Options since CHECKLIST 440), **Good and Evil** (the switch, both medals, E, Guide > Good & Evil; a ladder save also gets a two-word hint in each half: "gifts · more time" / "fire · less time"), START, bank, Options: settings, guide, save, how to play | | |
 | 1 | Better cars | 1st delivery | Your bank buys cars. Tap your car. | (intro only: the car card) | UI | low |
 | 2 | Replays | 2 deliveries | Watch and save your runs. | Results' Watch / Save replay / Look around, the stage's Replays chip | UI | low |
 | 3 | Style | a car bought, or 3 deliveries | Wheels, plates and more: Showroom, Style. | Options > Wheels, the showroom's Style button | UI | low |

@@ -100,7 +100,7 @@ Also need `autostart` (or a hidden level).
 | `cursor` | level number | Moves the menu to that level (shown only if it is open to you). | `/delivery/?cursor=3` | Normal | untried |
 | `tab` | `races`, `events` | The menu opens on the Races or Events tab. (Means something else with `garage` and in the editor.) | `/delivery/?tab=races` | Normal | yes (`races`) |
 | `side` | `evil` | Plays Evil (not saved as a choice). The showroom then opens on Evil too. (On cargo.html it filters: section 9.) | `/delivery/?side=evil` | Normal | untried |
-| `options` | bare | The Options sheet open. | `/delivery/?options` | Normal | untried |
+| `options` | bare | The Options sheet open (its Settings has the Garage button since CHECKLIST 440). | `/delivery/?options` | Normal | yes (CHECKLIST 440 stills) |
 | `road` | bare | The "What's on this road" card open (for the picked level: works with `pick`). | `/delivery/?pick=27&road` | Normal / No with pick | untried |
 | `do` | comma list of `key:<code>`, `click:<css selector>`, `swipe:left`/`swipe:right` | Works the menu step by step, one every 0.15 s (encode `#` as `%23`). | `/delivery/?do=key:ArrowRight,key:ArrowRight` | Normal | yes (moved to level 3) |
 | `car` | car id | (without autostart) The menu with that car in use for the visit, owned or not. | `/delivery/?car=hotrod` | No | untried |
@@ -129,11 +129,13 @@ Also need `autostart` (or a hidden level).
 | `debug` | bare | On the Shop: a "+1000 (debug)" button on the wallet. What it adds **is saved**. | `/delivery/?shop&debug` | **YES** (pressing it) | untried |
 | `freetry` | bare | The rotating event's featured car (Concept Strike) as the free try, as its card's chip does. | `/delivery/?tab=events&freetry` | Normal (the try itself is never saved) | untried |
 
-## 5. Garage (Crazey Jim's car lot) and the Showroom
+## 5. Garage and the Showroom
+
+CHECKLIST 440 (17-Oct): Crazey Jim's car lot is retired as the shop. Cars are BOUGHT in the Showroom's full view (`?showroom&look=<id>&full`: one Buy button with the price, greyed when the bank is short; `&money=<n>` to try both). The lot itself is now the GARAGE, opened from Options > Settings > Garage (its Back returns to Options) and by `?garage`, which works as before (its Buy goes through the same purchase code, render/carbuy.js). The Kind filter's chip `garage` reads **Career** (the id `kind:garage` in `&filter=` is unchanged).
 
 | Param | Values | What it does | Example | Saves? | Tried |
 |---|---|---|---|---|---|
-| `garage` | bare, or `evil` | Opens the car lot (Evil livery with `=evil`). | `/delivery/?garage=evil` | Normal (buying there is real) | yes |
+| `garage` | bare, or `evil` | Opens the Garage (was the car lot; Evil livery with `=evil`). | `/delivery/?garage=evil` | Normal (buying there is real) | yes |
 | `tab` | `ideas` | With `garage`: the Car ideas lot. | `/delivery/?garage=evil&tab=ideas` | Normal | yes |
 | `look` | car id (an idea's id on the ideas tab) | With `garage`: that car tapped (its stats and the comparison card). On the ideas tab only the idea cars count (e.g. `limo`, `hovercraft`; list at the end): `look=sixteen` there does nothing (tried). | `/delivery/?garage=evil&tab=ideas&look=limo` | Normal | yes |
 | `hover` | car id | With `garage`: that car's tooltip shown. | `/delivery/?garage&hover=commuter` | Normal | yes |
@@ -161,7 +163,7 @@ Also need `autostart` (or a hidden level).
 | `full` (old name `sheet`) | bare | With `showroom`: the picked car's full view open. | `/delivery/?showroom&look=sport&full` | Normal | yes |
 | `nostats` | bare | With `showroom&full`: the stats hidden. | `/delivery/?showroom&look=sport&full&nostats` | Normal | untried |
 | `evil` | bare | With `showroom`: opens on the Evil side. | `/delivery/?showroom&evil` | Normal | untried |
-| `filter` | `group:chip,chip;group:...;sort:<s>` groups `stars` (1-6), `colour` (gold, blue, magenta, green), `rarity` (common, uncommon, epic, legendary), `kind` (garage, blueprint, key, special), `state` (ready, locked, upgradable, maxed, inuse, barred, allowed, event); sort `tier`, `rarity`, `ecu`, `name`, `speed` | With `showroom`: a filter for the visit (not remembered). Note: the `tier:g3,b1` form in showroom.js's comments is out of date and is ignored. | `/delivery/?showroom&filter=stars:2;sort:speed&filters` | Normal | yes |
+| `filter` | `group:chip,chip;group:...;sort:<s>` groups `stars` (1-6), `colour` (gold, blue, magenta, green), `rarity` (common, uncommon, epic, legendary), `kind` (garage (shown as Career), blueprint, key, special), `state` (ready, locked, upgradable, maxed, inuse, barred, allowed, event); sort `tier`, `rarity`, `ecu`, `name`, `speed` | With `showroom`: a filter for the visit (not remembered). Note: the `tier:g3,b1` form in showroom.js's comments is out of date and is ignored. | `/delivery/?showroom&filter=stars:2;sort:speed&filters` | Normal | yes |
 | `filters` | bare | With `showroom`: the filter sheet open. | (as above) | Normal | yes |
 | `bp` | `carId:n,carId:n` | With `showroom`: those blueprint counts for the visit. | `/delivery/?showroom&bp=sport:7,hotrod:3&look=sport&full` | No | untried |
 | `bounce` | seconds | With `showroom&full`: the car's landing frozen that far in (0.16: down on its springs; 0.31: up off them). | `/delivery/?showroom&look=sport&full&bounce=0.16` | Normal | untried |
@@ -207,7 +209,7 @@ Also need `autostart` (or a hidden level).
 | `w` / `h` | pixels | With `banner`: its size (default 1600x800). | (above) | Normal | yes |
 | `evil` / `labels` | bare / `0` | With `banner`: Evil livery / no names. | `...&banner=wedge,midnight&evil&labels=0` | Normal | untried |
 
-## 7a. Crazey Jim's Blueprint Stall (branch claude/blueprint-shop, not on main yet)
+## 7a. Crazey Jim's Blueprint Stall (on main; KEPT by CHECKLIST 440: it is a Shop section, separate from the retired car lot)
 
 A section at the top of the Shop where Jim sells blueprints for tip money (the bank, `$`): six offers that change every 6 local hours
 (00:00, 06:00, 12:00, 18:00; render/jimshop.js, rules in jimshop.js). `jimshop` opens the Shop with it expanded. Fake saves

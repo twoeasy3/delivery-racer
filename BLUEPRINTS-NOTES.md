@@ -6,7 +6,7 @@ live in data files so they can be tuned by hand.
 
 ## Words
 - SHOWROOM: the new UI-based menu where cars are selected (replaces the garage as the place you pick a car).
-- CAR LOT: the current garage, kept as the place to BUY the current cars, rebranded "Crazey Jim's Used Cars".
+- CAR LOT: the current garage, kept as the place to BUY the current cars, rebranded "Crazey Jim's Used Cars". (RETIRED as the shop, CHECKLIST 440, 17-Oct: cars are bought in the showroom; the lot is the Garage under Options. See DEPRECATE-JIM.md.)
 - ECU: a car's upgrade level. ECU0 = locked / not driveable.
 - KEY car: starts at ECU1; blueprints upgrade it; not selectable until the key is obtained. Garage (car lot) cars are key
   cars (the key = buying it; an earned/won car's key = winning it). A locked key car CAN be upgraded (blueprints count before the key).
