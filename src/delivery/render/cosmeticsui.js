@@ -185,6 +185,7 @@ const miniRim = (rim, hub, tyre, ring, tread = null) => {
   if (rim === 'wire') { g.globalAlpha = 0.9; for (let i = 0; i < 16; i++) blade(i * T / 16, 3, R * 0.72, 0.6, 0.6, 1.5); g.globalAlpha = 1; }
   if (rim === 'steelie') { disc(R * 0.72, hub); g.fillStyle = '#202226'; for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(Math.cos(i * T / 6) * R * 0.47, Math.sin(i * T / 6) * R * 0.47, R * 0.08, 0, T); g.fill(); } g.fillStyle = hub; }
   if (rim === 'dish') { disc(R * 0.8, hub); disc(R * 0.5, '#202226'); g.fillStyle = hub; for (let i = 0; i < 5; i++) { g.beginPath(); g.arc(Math.cos(i * T / 5) * R * 0.3, Math.sin(i * T / 5) * R * 0.3, 1.6, 0, T); g.fill(); } }
+  if (rim === 'dial') { disc(R * 0.74, hub); disc(R * 0.6, '#00000022'); g.fillStyle = '#2a2c30'; for (let i = 0; i < 5; i++) { const a = i * T / 5 - Math.PI / 2; g.beginPath(); g.arc(Math.cos(a) * R * 0.34, Math.sin(a) * R * 0.34, R * 0.13, 0, T); g.fill(); } g.fillStyle = hub; }
   if (rim === 'twinspin' || rim === 'spintwin') { disc(R * 0.5, hub); for (let i = 0; i < 2; i++) blade(i * Math.PI, R * 0.4, R * 0.78, 3.5, 2); g.fillStyle = '#202226'; g.beginPath(); g.arc(R * 0.3, 0, 2.6, 0, T); g.fill(); g.fillStyle = hub; }
   disc(R * 0.17, hub);
   return c;

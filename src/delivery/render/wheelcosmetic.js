@@ -257,7 +257,8 @@ export const dressWheels = (model, car) => {
   for (const t of found.rimInfo) { t.stock = t.tyre.material; t.axle = t.centre.z > midZ + 0.01 ? 'front' : 'rear'; }
   found.carId = car ? car.id : null;
   found.rimSkip = !!(car && (RIM_SKIP.has(car.id) || RIM_SKIP.has(car.model)));
-  found.info = found.hubs.length ? found.info.filter(t => hubbed.has(t.tyre) && plain(t.tyre)) : [];
+  const ownRim = !!model.userData.stockRim; // (a model whose wheel is a rim design, as the Wedge's: its tyres take a tyre colour though its own hub is not plain)
+  found.info = found.hubs.length || ownRim ? found.info.filter(t => (ownRim || hubbed.has(t.tyre)) && plain(t.tyre)) : [];
   found.parts = [];
   for (const t of found.info) {
     t.stock = t.tyre.material;
@@ -269,7 +270,7 @@ export const dressWheels = (model, car) => {
   // the rims, spinners and treads turn as the model is drawn: its animate(t) also turns them, in one pass (render/treads.js turnWheels)
   const animate = model.userData.animate;
   model.userData.animate = (t, a, b, c) => { const r = animate ? animate(t, a, b, c) : undefined; turnWheels(model, t); return r; };
-  if (wheelColour(found.carId) !== 'stock' || wheelDesign(found.carId) !== 'stock' || found.rimInfo.some(t => resolveRim(found.carId, t.axle) !== 'none' || resolveTread(found.carId, t.axle) !== 'none')) dressed(model);
+  if (ownRim || wheelColour(found.carId) !== 'stock' || wheelDesign(found.carId) !== 'stock' || found.rimInfo.some(t => resolveRim(found.carId, t.axle) !== 'none' || resolveTread(found.carId, t.axle) !== 'none')) dressed(model);
   return model;
 };
 
@@ -316,6 +317,7 @@ export const WHEEL_SETS = [
   { id: 'twin-spinner', name: 'Twin blade', design: 'stock', hub: 'red', rim: 'twinspin' },
   { id: 'pumpkin', name: 'Pumpkin', design: 'stock', hub: 'orange', rim: 'pumpkin' }, // (themed rims: their own colours; candidates for Halloween / Christmas events, nothing seasonal wired)
   { id: 'candy-cane', name: 'Candy cane', design: 'stock', hub: 'white', rim: 'candycane' },
+  { id: 'dial', name: 'Dial', design: 'stock', hub: 'silver', rim: 'dial' }, // (the Wedge's own wheel, 16-Oct)
   { id: 'spinner-blade', name: 'Blade spinner', design: 'stock', hub: 'gold', rim: 'spinblade' }, // (the spinners, back: turn at their own pace)
   { id: 'spinner-twin', name: 'Twin spinner', design: 'stock', hub: 'red', rim: 'spintwin' },
   { id: 'off-road', name: 'Off-road', design: 'stock', hub: 'black', tread: 'knobbly' }, // (tread-led presets)

@@ -89,7 +89,7 @@ try {
   for (const { car, model, snap, hubs } of models) {
     const hubSet = new Set(hubs.map(h => h.mesh));
     model.traverse(n => {
-      if (!n.isMesh) return;
+      if (!n.isMesh || n.userData.wheelRing || !snap.has(n)) return; // (a rim, ring or tread put on by the dressing, e.g. the Wedge's stock Dial rim, rebuilt on a change: not a part of the car)
       const was = snap.get(n);
       if (hubSet.has(n)) { if (n.material === was.material || n.material.color.getHex() !== green) bad.push(car.id + ' hub not green'); }
       else if (n.material !== was.material || n.material.color?.getHex?.() !== was.hex) bad.push(car.id + ' non-hub changed');
@@ -102,7 +102,8 @@ try {
   const legends = models.filter(({ car }) => car.legend);
   check(legends.every(({ hubs }) => !hubs.length), 'Legendary cars: no hub is recoloured (' + legends.length + ' cars)');
   W.setWheelColour('stock');
-  check(models.every(({ model, snap }) => { let ok = true; model.traverse(n => { if (n.isMesh && n.material !== snap.get(n).material) ok = false; }); return ok; }), 'Stock puts every very same stock material back, on every car');
+  // (a rim the dressing put on, as the Wedge's stock Dial, is no stock part: only the parts snapped at build are compared)
+  check(models.every(({ model, snap }) => { let ok = true; model.traverse(n => { if (n.isMesh && snap.has(n) && n.material !== snap.get(n).material) ok = false; }); return ok; }), 'Stock puts every very same stock material back, on every car');
 
   // the ghost: its stand-in material is on the parts, their own paint put aside in userData.solidMat (render/items.js ghostify)
   {
@@ -145,10 +146,10 @@ try {
   // ---- DESIGNS ----
   {
     const D = W.WHEEL_DESIGNS, ids = D.map(d => d.id);
-    check(D.length >= 5 && D.length <= 8 && D[0].id === 'stock', 'the designs: ' + ids.join(', '));
+    check(D.length >= 5 && D.length <= 12 && D[0].id === 'stock', 'the designs: ' + ids.join(', '));
     check(W.wheelDesign() === 'stock', 'a fresh visit: design Stock');
     const hubbed = models.filter(({ car, hubs }) => !car.legend && hubs.length);
-    const ringsOf = (model) => { const r = []; model.traverse(n => { if (n.userData.wheelRing) r.push(n); }); return r; };
+    const ringsOf = (model) => { const r = []; model.traverse(n => { if (n.userData.ringSide !== undefined) r.push(n); }); return r; };
     const hubbedTyres = ({ model }) => new Set(model.userData.wheelHubs.info.map(t => t.tyre)).size;
     for (const design of D.slice(1)) {
       W.setWheelDesign(design.id);
@@ -158,7 +159,7 @@ try {
         const mine = ringsOf(model), found = model.userData.wheelHubs;
         const expect = design.ring ? found.info.reduce((n, t) => n + (t.outer ? 1 : 2), 0) : 0;
         if (mine.length !== expect) bad.push(car.id + ' rings ' + mine.length + '/' + expect);
-        if (car.legend || !hubs.length) { if (mine.length) bad.push(car.id + ' left-stock car has rings'); }
+        if (car.legend || (!hubs.length && !model.userData.stockRim)) { if (mine.length) bad.push(car.id + ' left-stock car has rings'); } // (a model whose wheel is a rim design, the Wedge, takes tyre colours)
         for (const r of mine) { rings++; geos.add(r.geometry); tris.add(r.geometry.index.count / 3); if (!found.info.some(t => t.tyre === r.parent)) bad.push(car.id + ' ring not on a hubbed tyre'); }
         const partSet = new Set(found.parts.map(p => p.mesh)), hubSet = new Set(hubs.map(h => h.mesh));
         model.traverse(n => {
@@ -188,7 +189,7 @@ try {
     if (!only) check(tyresDone / tyresAll >= 0.95, 'designs reach 95% or more of the tyres');
     // Stock restores everything
     W.setWheelDesign('stock');
-    check(models.every(({ model, snap }) => { let ok = !ringsOf(model).length; model.traverse(n => { if (n.isMesh && n.material !== snap.get(n)?.material) ok = false; }); return ok; }), 'design Stock removes every ring and puts every very same stock material back');
+    check(models.every(({ model, snap }) => { let ok = !ringsOf(model).length; model.traverse(n => { if (n.isMesh && !n.userData.wheelRing && n.material !== snap.get(n)?.material) ok = false; }); return ok; }), 'design Stock removes every ring and puts every very same stock material back');
     // back and forth does not pile up rings
     for (const id of ['whitewall', 'redline', 'whitewall']) W.setWheelDesign(id);
     check(models.every(m => ringsOf(m.model).length === (m.model.userData.wheelHubs.info.reduce((n, t) => n + (t.outer ? 1 : 2), 0))), 'changing design again and again leaves one set of rings');
@@ -337,7 +338,7 @@ try {
     server.moduleGraph.invalidateAll();
     const S = await load('render/wheelcosmetic.js'), { Progress: P3 } = await load('progress.js');
     const sets = S.WHEEL_SETS;
-    check(sets.length >= 10 && sets.length <= 30 && new Set(sets.map(x => x.id)).size === sets.length, sets.length + ' sets, ids unique');
+    check(sets.length >= 10 && sets.length <= 40 && new Set(sets.map(x => x.id)).size === sets.length, sets.length + ' sets, ids unique');
     check(new Set(sets.map(x => x.design + '/' + x.hub + '/' + (x.rim || 'none') + '/' + (x.tread || 'none'))).size === sets.length, 'no two presets are the same tyre colour + hub + rim + tread');
     check(sets.every(x => S.WHEEL_DESIGNS.some(d => d.id === x.design) && S.WHEEL_COLOURS.some(c => c.id === x.hub)), 'every set uses an existing design and hub colour');
     check(sets[0].id === 'stock' && sets[0].design === 'stock' && sets[0].hub === 'stock', 'the first set is Stock');

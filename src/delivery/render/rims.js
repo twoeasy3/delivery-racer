@@ -43,6 +43,9 @@ export const RIM_DESIGNS = [
   { id: 'twinspin', name: 'Twin blade', kind: 'speed', n: 2 },
   { id: 'pumpkin', name: 'Pumpkin', kind: 'speed', n: 8, own: true, blur: 0xe8661a },
   { id: 'candycane', name: 'Candy cane', kind: 'speed', n: 5, own: true, blur: 0xe8a0a8 },
+  // the Wedge Supercar's own telephone-dial wheel (16-Oct, the owner: its rims could not be changed), built as a rim: its STOCK rim (the
+  // model says so: userData.stockRim, render/ideaModelsWedge.js), painted the hub colour, and a choice for any car
+  { id: 'dial', name: 'Dial', kind: 'speed', n: 5 },
   // 16-Oct (wheel sets): four more, painted the hub colour like the first five
   { id: 'steelie', name: 'Steelie', kind: 'speed', n: 6 },   // (a pressed steel wheel: a painted dish, six round holes, a hub cap)
   { id: 'star6', name: 'Six-star', kind: 'speed', n: 6 },    // (six slim spokes, swept)
@@ -235,10 +238,14 @@ const BUILD = {
 
   pumpkin: (f) => pumpkin(f),
   candycane: (f) => candycane(f),
+  // DIAL: a silver face, a darker inner disc, five round holes, a domed centre nut (the Wedge's own); flat: the face, holes and nut
+  dial: (f) => { const holes = (z) => [0, 1, 2, 3, 4].map(i => circle(0.13, z, 12, DARK).translate(Math.cos(i * TAU / 5 + Math.PI / 2) * 0.34, Math.sin(i * TAU / 5 + Math.PI / 2) * 0.34, 0)); return f
+    ? [...flatLip(), cap(0.13, -0.003, 0.0045, 12, 1)] // (flat: the lip and the nut, as the steelie)
+    : [circle(0.74, 0, 24, 0.95), circle(0.6, 0.006, 24, 0.8), ...holes(0.012), cap(0.13, 0.006, 0.03, 12, 1)]; },
   // (16-Oct) STEELIE: the dish in the hub colour, six dark holes 4.5 mm over it, the lip, a domed cap; flat: the dish and lip side by side
   steelie: (f) => { const holes = (z) => [0, 1, 2, 3, 4, 5].map(i => circle(0.075, z, 10, DARK).translate(Math.cos(i * TAU / 6) * 0.47, Math.sin(i * TAU / 6) * 0.47, 0)); return f
-    ? [circle(0.7, 0, 24, 0.9), ring(0.7, 0.8, 0, 20, 1), ...holes(0.0045), cap(0.19, -0.003, 0.0045, 12, 1)]
-    : [circle(0.74, 0, 24, 0.9), ring(0.68, 0.8, 0.008, 20, 1), ...holes(0.0045), cap(0.2, 0.001, 0.024, 12, 1)]; },
+    ? [...flatLip(), cap(0.19, -0.003, 0.0045, 12, 1)] // (flat: no dish, which would lie in the plane of a car's own hub parts there: the lip and the cap)
+    : [circle(0.74, 0, 24, 0.9), ring(0.68, 0.8, 0.008, 20, 1), ...holes(0.006), cap(0.2, 0.001, 0.024, 12, 1)]; }, // (layers 6 mm apart: a model built small, as the Monster Truck, brings 4.5 mm under the z-fight line)
   // SIX-STAR: six slim swept spokes
   star6: (f) => f ? [...flatLip(), ...[0, 1, 2, 3, 4, 5].map(i => bar(0.12, 0.15, 0.68, -0.009, 0, i * TAU / 6, 1, { taper: 0.45, sweep: 0.07 })), cap(0.17, -0.003, 0.0045, 12, 0.85)]
     : [...base(), ...[0, 1, 2, 3, 4, 5].map(i => bar(0.12, 0.15, 0.72, -0.006, 0.018, i * TAU / 6, 1, { taper: 0.45, sweep: 0.08 })), cap(0.17, 0, 0.03, 12, 0.85)],
@@ -251,7 +258,7 @@ const BUILD = {
     : [circle(0.74, 0, 24, DARK), ring(0.5, 0.8, 0.008, 24, 1), ...nuts(0, 0.02), cap(0.14, 0, 0.026, 10, 1)]; },
 };
 BUILD.spinblade = BUILD.blade3; BUILD.spintwin = BUILD.twinspin; // (the spinners: main's geometry of the two, as they were)
-const BLUR_Z = { spoke5: 0.024, twin10: 0.022, turbine: 0.03, blade3: 0.025, twinspin: 0.031, spinblade: 0.025, spintwin: 0.031, pumpkin: 0.022, candycane: 0.024, steelie: 0.014, star6: 0.024, wire: 0.016, dish: 0.014 }, BLUR_Z_FLAT = 0.003; // (the blur disc, just over the spokes' faces; under the cap's top)
+const BLUR_Z = { spoke5: 0.024, twin10: 0.022, turbine: 0.03, blade3: 0.025, twinspin: 0.031, spinblade: 0.025, spintwin: 0.031, pumpkin: 0.022, candycane: 0.024, steelie: 0.014, star6: 0.024, wire: 0.016, dish: 0.014, dial: 0.018 }, BLUR_Z_FLAT = 0.003; // (the blur disc, just over the spokes' faces; under the cap's top)
 const geos = new Map();
 export const rimGeometry = (id, flat = false) => {
   const key = id + (flat ? ':flat' : '');
@@ -390,13 +397,15 @@ export const addRims = (model, hex, worn = true) => {
   if (!found) return 0;
   if (!found.rims) found.rims = { list: [], hidden: [], t: null, roll: undefined };
   removeRims(model);
-  if (!worn || found.rimSkip || !found.rimInfo || !found.rimInfo.length) return 0; // (worn false: the saved set is not owned, so Stock)
+  if ((!worn && !model.userData.stockRim) || found.rimSkip || !found.rimInfo || !found.rimInfo.length) return 0; // (worn false: the saved set is not owned, so Stock)
   model.updateMatrixWorld(true);
   toModel.copy(model.matrixWorld).invert();
   if (!found.roomChecked) roomFor(model, found);
   const colour = hex === null || hex === undefined ? DEFAULT_HEX : hex;
+  const stock = rimById(model.userData.stockRim); // (a model whose own wheel is a rim design: worn when no rim is chosen, or the set is not owned)
   for (const t of found.rimInfo) {
-    const rim = rimById(resolveRim(found.carId, t.axle));
+    let rim = worn ? rimById(resolveRim(found.carId, t.axle)) : RIM_DESIGNS[0];
+    if (!rim.kind) rim = stock;
     if (!rim.kind) continue;
     const tyre = t.tyre, ghost = tyre.userData.solidMat, current = ghost || tyre.material;
     if (current !== t.stock && current !== model.userData.wheelRubberClones?.get(t.stock)) continue; // (blacked out: no rim)
