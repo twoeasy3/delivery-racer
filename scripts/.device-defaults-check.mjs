@@ -46,7 +46,7 @@ if (!ONLY_SHOTS) {
   check(/say\(group, \.\.\.keys\) \{\s*if \(!shows\(group, keys\[0\]\)\) return null;/.test(msgs), 'messages.js: Message.say asks the Verbosity first');
   const { fingerprints, logicFiles } = await import(new URL('file://' + join(ROOT, 'scripts/logic-hash.mjs')).href);
   const prints = fingerprints(join(ROOT, 'src/delivery/'));
-  check(prints.logic === '33a0394c26' && prints.legacy === 'dd565f56b3', `the replay fingerprint main's (logic ${prints.logic}, legacy ${prints.legacy})`);
+  check(prints.logic === '057a22806d' && prints.legacy === '661de07fbe', `the replay fingerprint unmoved by them: the one after CHECKLIST 457's rule (logic ${prints.logic}, legacy ${prints.legacy})`);
   check(!logicFiles(join(ROOT, 'src/delivery/')).some(f => /render\/(device|verbosity|touch|menu)\.js$/.test(f)), 'render/device.js, verbosity.js, touch.js, menu.js outside the rules files');
 }
 

@@ -61,10 +61,10 @@ const GROUPS = {
     files: [/cargo|delivery\.js|packages/],
   },
   gimmicks: {
-    about: 'The gimmicks: Gimmick Road 2 and 3 (hazards, gambles, crests), the slow pads (.slowpad-check: Slow Pad Lab, the drain per car class held and coasting, the floor, turbo / tank / ghost / boost, the reports, every skin built), roadworks diversions, the metro (Metro Run), gravel, police pursuit, radiation, the UFO strike, traffic with quirks',
+    about: 'The gimmicks: Gimmick Road 2 and 3 (hazards, gambles, crests; no pickup collected in the air: .airpickup-check, CHECKLIST 457), the slow pads (.slowpad-check: Slow Pad Lab, the drain per car class held and coasting, the floor, turbo / tank / ghost / boost, the reports, every skin built), roadworks diversions, the metro (Metro Run), gravel, police pursuit, radiation, the UFO strike, traffic with quirks',
     seconds: 200,
-    tests: [t('.hazards-check.mjs'), t('.tunneljunction-check.mjs'), t('.lanegimmicks-check.mjs'), t('.slowpad-check.mjs'), t('.roadworks-check.mjs'), t('.metro-check.mjs'), t('.gimmicks3-check.mjs'), t('.gravel-check.mjs'), t('.pursuit-check.mjs'), t('.radiation-check.mjs'), t('.ufo-check.mjs'), t('.traffic-quirks-check.mjs')],
-    files: [/hazards|gambles|gimmicks\.js|gravel|pursuit|radiation|ufostrike|crossing|bullettrain|police|slowpads|slow-pad/],
+    tests: [t('.hazards-check.mjs'), t('.airpickup-check.mjs'), t('.tunneljunction-check.mjs'), t('.lanegimmicks-check.mjs'), t('.slowpad-check.mjs'), t('.roadworks-check.mjs'), t('.metro-check.mjs'), t('.gimmicks3-check.mjs'), t('.gravel-check.mjs'), t('.pursuit-check.mjs'), t('.radiation-check.mjs'), t('.ufo-check.mjs'), t('.traffic-quirks-check.mjs')],
+    files: [/hazards|gambles|pickups\.js|gimmicks\.js|gravel|pursuit|radiation|ufostrike|crossing|bullettrain|police|slowpads|slow-pad/],
   },
   obstacles: {
     about: 'Obstacles, pickups and targets: the themes\' own obstacles, items on the shoulders, TANK RAGE targets, dents',

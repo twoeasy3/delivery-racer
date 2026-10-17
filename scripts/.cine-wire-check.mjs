@@ -40,7 +40,7 @@ const want = (part) => !ONLY || String(ONLY).split(',').includes(part);
 let failed = 0;
 const check = (ok, what) => { console.log((ok ? '  ok    ' : '  FAIL  ') + what); if (!ok) failed++; };
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-const MAIN_PRINT = { logic: '33a0394c26', legacy: 'dd565f56b3' }; // (main v1.1.151-alpha, 9687d66)
+const MAIN_PRINT = { logic: '057a22806d', legacy: '661de07fbe' }; // (since CHECKLIST 457, no pickup in the air: was 33a0394c26 / dd565f56b3, main v1.1.151-alpha to v1.1.153)
 
 // ---- the source
 const src = (p) => readFileSync(join(ROOT, 'src/delivery', p), 'utf8');

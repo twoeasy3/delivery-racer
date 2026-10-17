@@ -99,6 +99,7 @@ export const CONFIG = {
     gun: { damage: 2, splash: 1.6, scale: 1.4 } }, // (and a gun's shell, the Battlefield 8x8's: times the damage, the splash's reach, the blast's size)
   butterfingers: { time: 10 },             // s the player can't throw
   cashPickup: { cash5: 5, cash10: 10, cash20: 20 }, // $ a cash pickup is worth: banked with the tip on delivery
+  pickupAirReach: 1.2,     // m: a car higher in the air than this passes over a pickup and does not collect it (a little hop still does; the owner, 17-Oct)
   timePickup: 10,          // s a stopwatch puts on the clock (time plus) or takes off it (time minus);
                            // in the tip countdown it moves that too. Instant: the powerup running carries on
   powerUpWarning: 4,       // s before a turbo, ghost, passenger or mystery runs out that its warning sound
