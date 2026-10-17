@@ -17,7 +17,6 @@ const resultTitle = document.getElementById('resultTitle');
 const resultTime = document.getElementById('resultTime');
 const resultNote = document.getElementById('resultNote');
 const restartBtn = document.getElementById('restartBtn');
-const nextBtn = document.getElementById('nextBtn');
 const watchBtn = document.getElementById('watchBtn');
 const saveBtn = document.getElementById('saveReplayBtn');
 const speedBtn = document.getElementById('speedBtn');
@@ -37,17 +36,16 @@ export const watch = (rec) => {
   return can.ok;
 };
 
-// the results screen's buttons for what it is showing: a run of the player's own (Restart, Next, Watch, Save), or a
+// the results screen's buttons for what it is showing: a run of the player's own (Retry, Continue, Watch, Save), or a
 // playback (Watch again; nothing saved, nothing restarted)
 const buttons = (playback) => {
   restartBtn.style.display = playback ? 'none' : '';
-  if (playback) nextBtn.style.display = 'none';
   watchBtn.style.display = shown ? '' : 'none';
-  watchBtn.textContent = playback ? 'Watch again' : 'Watch replay';
+  watchBtn.textContent = playback ? 'Watch again' : 'Watch';
   saveBtn.style.display = shown && !playback ? '' : 'none';
   const saved = !!shown && ReplayStore.isSaved(shown);
   saveBtn.disabled = saved;
-  saveBtn.textContent = saved ? 'Replay saved' : 'Save replay';
+  saveBtn.textContent = saved ? 'Saved' : 'Save';
 };
 
 // a run over (or left: Exit fires this too, with no results to show)
@@ -66,7 +64,7 @@ Replay.onOver = (why) => {
   resultTitle.textContent = why === 'drift' ? 'Replay stopped' : 'End of the replay';
   resultTime.textContent = why === 'drift' ? '' : 'The run was left here, ' + formatTime(Game.time) + ' in';
   resultNote.textContent = why === 'drift'
-    ? 'This replay no longer plays as it was driven (it may have been recorded in another browser), so it was stopped at ' + formatTime(Game.time) + '.'
+    ? 'No longer plays as driven: stopped at ' + formatTime(Game.time)
     : (h.evil ? 'Evil' : 'Good') + '  |  Wrecked: ' + Game.wrecks + '  |  Busted: ' + Game.busts + '  |  Recorded ' + new Date(h.date).toLocaleString();
   resultScreen.classList.add('failed');
   buttons(true);

@@ -1,21 +1,18 @@
 // ============================================================================
-// THE ORBIT CAMERA: a camera that circles the player's car, for watching a replay and for looking round once a live run
-// is over. Drawn only: nothing here is read by a rule (render/ is outside the replay fingerprint, vite.config.js), so a
+// THE ORBIT CAMERA: a camera that circles the player's car, for watching a replay. Drawn only: nothing here is read by a rule (render/ is outside the replay fingerprint, vite.config.js), so a
 // saved replay stays good. Its numbers live here, not in config.js (which IS in the fingerprint).
 //
-// When: in a replay being watched (playing, paused or held at its end), and once a live run has finished (during the
-// delivery at the kerb, and with the results up). Never in a live run's play. The usual camera stays the default everywhere.
+// When: in a replay being watched (playing or paused), until it finishes. Never in a live run, and not once a run is over
+// (the results' "Look around" was taken out, the owner, 17-Oct: "Look Around is not useful"; STAGE-CARD.md). The usual camera stays the default everywhere.
 // In a replay that is PLAYING (or paused) a drag on the game view takes hold of the chase camera where it is, with no cut
 // (the first frame is the chase frame; its aim then eases onto the car), and the replay goes on, at any speed; a plain tap
 // or click, or a wheel or pinch on the chase camera, does nothing. The Orbit button in the run's button row (or O) starts the
-// turning-by-itself kind instead, and so does "Look around" on the results of a run that is over (a drag there would fight
-// the tap that skips the delivery).
+// turning-by-itself kind instead.
 //
 // Control: drag (one finger or the mouse) to swing round and up and down, wheel or two fingers to zoom, all inside
 // RADIUS and PITCH below (nothing past 40 m). A drag-started orbit never turns by itself; the button's kind does, until the
 // player takes hold, and goes on again after a few seconds of being left alone. A small panel while it is on: "Chase view"
-// eases the usual camera back in half a second (a blend of where it is and where it looks, not a cut; at once where a run is
-// over and "Results" is the way back), and "Ghost" shows the level's best-run ghost beside the car in a replay.
+// eases the usual camera back in half a second (a blend of where it is and where it looks, not a cut), and "Ghost" shows the level's best-run ghost beside the car in a replay.
 //
 // The nudge: where the camera would be inside scenery (a stand, a wall, a tunnel's roof, a hillside) it is raised
 // first, then drawn in along the line to the car, using the scenery test of the race screensaver's cameras
@@ -65,8 +62,7 @@ let traceFirst = false;
 const debug = params.get('orbit') !== null; // ?orbit=yaw,pitch,radius: on from the first frame of a run, held still (for stills)
 
 // ---- when it is on offer ----
-const offered = () => debug ? Game.state !== 'start' : (!!Replay.playing && Game.state !== 'start') || Game.state === 'finished';
-const over = () => Game.state === 'finished'; // (the run is over: the button row is gone, the results are the way back)
+const offered = () => debug ? Game.state !== 'start' : !!Replay.playing && Game.state === 'playing';
 
 const clampRadius = (r) => Math.max(ORBIT.radius.min, Math.min(ORBIT.radius.max, r));
 const clampPitch = (p) => Math.max(rad(ORBIT.pitch.min), Math.min(rad(ORBIT.pitch.max), p));
@@ -76,7 +72,6 @@ const orbitBtn = document.getElementById('orbitBtn');
 const panel = document.getElementById('orbitPanel');
 const backBtn = document.getElementById('orbitBackBtn');
 const ghostBtn = document.getElementById('orbitGhostBtn');
-const lookBtn = document.getElementById('lookBtn'); // (on the results: "Look around")
 
 let setReach = () => {}; // (set below, with the camera)
 const classes = () => {
@@ -110,7 +105,6 @@ export const setOrbit = (on, mode = 'button') => {
   classes();
 };
 orbitBtn?.addEventListener('click', () => setOrbit(!Orbit.on));
-lookBtn?.addEventListener('click', () => setOrbit(true));
 backBtn?.addEventListener('click', () => setOrbit(false));
 ghostBtn?.addEventListener('click', () => {
   if (!watchGhostAvailable()) return;
@@ -124,7 +118,6 @@ window.addEventListener('keydown', (e) => {
 // what the buttons say and show, every frame (cheap: only what changed is written)
 const shown = new Map();
 const put = (el, key, value, write) => { if (el && shown.get(key) !== value) { shown.set(key, value); write(el, value); } };
-let was = '';
 let lastStep = 0;
 const follow = () => {
   const can = offered();
@@ -133,14 +126,10 @@ const follow = () => {
   lastStep = Game.step;
   if (Game.state === 'start' || (!Replay.playing && Game.state === 'playing' && !debug)) { WatchGhost.on = false; } // (a new run, or the menu: the ghost back to off)
   if (can) prepareSolids(); // (the scenery boxed as the orbit comes on offer, not on its first frame; a no-op once it is)
-  const mode = !can ? '' : over() ? 'over' : 'replay';
-  if (mode !== was) { was = mode; document.body.classList.toggle('after-run', mode === 'over'); }
-  // the button: in the row while a replay plays (and, once a run is over, the same row with only it in: body.after-run, style.css), and not while orbiting (the panel has the way back)
+  // the button: in the row while a replay plays, and not while orbiting (the panel has the way back)
   put(orbitBtn, 'btn', can && !Orbit.on, (el, v) => { el.style.display = v ? '' : 'none'; });
 
-  put(lookBtn, 'look', can && over(), (el, v) => { el.style.display = v ? '' : 'none'; });
   put(panel, 'panel', Orbit.on, (el, v) => { el.style.display = v ? '' : 'none'; });
-  put(backBtn, 'back', over() ? 'Results' : 'Chase view', (el, v) => { el.textContent = v; });
   const ghostHere = watchGhostAvailable() && Game.state === 'playing';
   put(ghostBtn, 'ghost', ghostHere ? (WatchGhost.on ? 'Ghost: on' : 'Ghost: off') : '', (el, v) => { el.style.display = v ? '' : 'none'; el.textContent = v; });
   requestAnimationFrame(follow);

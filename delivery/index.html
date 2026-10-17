@@ -252,16 +252,25 @@
 <!-- and the hidden levels menu (render/hiddenlevels.js; Options > Hidden levels) -->
 <div id="hiddenLevels" class="overlay menu hidden" role="dialog" aria-label="Hidden levels"></div>
 
-<div id="resultScreen" class="overlay hidden">
-  <h1 id="resultTitle">Delivered!</h1>
-  <div id="resultTime"></div>
-  <p id="resultNote"></p>
-  <button id="restartBtn">Restart</button>
-  <button id="nextBtn" class="level">Next level</button>
-  <button id="watchBtn" class="replay">Watch replay</button>
-  <button id="saveReplayBtn" class="replay">Save replay</button>
-  <button id="lookBtn" class="replay" style="display:none">Look around</button>
-  <button id="menuBtn" class="level">Menu</button>
+<!-- the end-of-stage card (render/stagecard.js draws it from the run; stagecard.css). game.js and render/replayui.js write the
+     three lines in .sc-src (kept, unseen: the card reads them) -->
+<div id="resultScreen" class="overlay hidden" role="dialog" aria-label="Results">
+  <div class="sc-src" hidden><h1 id="resultTitle">Delivered!</h1><div id="resultTime"></div><p id="resultNote"></p></div>
+  <div class="sc-panel">
+    <div class="sc-head"><span class="sc-kicker"></span><h2 class="sc-headline"></h2><span class="sc-sub"></span></div>
+    <div class="sc-tiles"></div>
+    <div class="sc-rewards"></div>
+    <div class="sc-extra"></div>
+    <details class="sc-details"><summary>Details</summary><div class="sc-more"></div></details>
+    <div class="sc-actions">
+      <button id="restartBtn">Retry</button>
+      <button id="menuBtn">Menu</button>
+    </div>
+    <div class="sc-replay">
+      <button id="watchBtn" class="replay">Watch replay</button>
+      <button id="saveReplayBtn" class="replay">Save replay</button>
+    </div>
+  </div>
 </div>
 
 <script type="module" src="/src/delivery/main.js"></script>

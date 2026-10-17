@@ -1,0 +1,125 @@
+/* THE END-OF-STAGE CARD (render/stagecard.js; STAGE-CARD.md). The menu's look (menu2.css / events-ui.css tokens: Good's gold or
+   Evil's red accent, the condensed italic capitals, the event cards' panels, START's slanted primary). One card that fits the screen:
+   a phone upright (390x844), on its side (844x390: two columns), a desktop. Motion: the tiles and rewards come in (opacity and
+   transform only), the money counted up (an animated integer custom property drawn by a CSS counter: no script, no canvas); none
+   under prefers-reduced-motion. */
+@property --sc-n { syntax: '<integer>'; inherits: false; initial-value: 0; }
+
+#resultScreen {
+  --accent: #ffd23f; --accent-ink: #1c1500; --accent-dim: rgba(255, 210, 63, .14);
+  --panel: rgba(20, 25, 36, .9); --panel-2: rgba(34, 41, 56, .92); --line: rgba(255, 255, 255, .11); --ink-dim: rgba(255, 255, 255, .66);
+  --gold: #ffcf3a; --silver: #cfd6df; --bronze: #c9814a; --bad: #ff8a7a;
+  --display: "Bahnschrift", "DIN Alternate", "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
+  z-index: 20; box-sizing: border-box; padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  gap: 0; text-align: left; overflow: hidden; touch-action: manipulation;
+  background: radial-gradient(80% 60% at 50% 0%, var(--accent-dim), transparent 70%), rgba(9, 12, 18, .8);
+}
+#resultScreen.evil { --accent: #ff4a33; --accent-ink: #fff; --accent-dim: rgba(255, 64, 40, .16); }
+#resultScreen:not(.win) { --accent-dim: rgba(255, 255, 255, .05); }
+#resultScreen .sc-src { display: none; }
+
+#resultScreen .sc-panel { position: relative; width: min(420px, 100%); max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px;
+  padding: 16px 14px 14px; border-radius: 14px; overflow: hidden; background: linear-gradient(180deg, #1f2738, #151b27);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1), 0 14px 40px rgba(0, 0, 0, .5); }
+#resultScreen .sc-panel::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--accent); }
+#resultScreen:not(.win) .sc-panel::before { background: #8a2a1f; }
+
+/* the head */
+#resultScreen .sc-head { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+#resultScreen .sc-kicker { display: flex; align-items: center; gap: 8px; min-width: 0; font: 800 11px/1.2 system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); }
+#resultScreen .sc-side, #resultScreen .sc-tag { flex: 0 0 auto; padding: 3px 8px 2px; border-radius: 999px; color: var(--accent-ink); background: var(--accent); }
+#resultScreen .sc-tag { color: #fff; background: #c8102e; }
+#resultScreen .sc-level { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+#resultScreen .sc-headline { margin: 0; font: italic 800 clamp(36px, 10vw, 52px)/.95 var(--display); font-stretch: condensed; letter-spacing: .01em; text-transform: uppercase; color: #fff; }
+#resultScreen.win .sc-headline { color: var(--accent); }
+#resultScreen:not(.win) .sc-headline { color: var(--bad); }
+#resultScreen .sc-sub { font: 800 13px/1.2 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+#resultScreen .sc-sub:empty { display: none; }
+
+/* the tiles */
+#resultScreen .sc-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 6px; }
+#resultScreen .sc-tile { position: relative; display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 9px 8px 8px; border-radius: 10px; background: var(--panel-2);
+  box-shadow: inset 0 0 0 1px var(--line); animation: sc-in .35s ease-out both; animation-delay: calc(80ms + var(--i, 0) * 60ms); }
+#resultScreen .sc-value { display: block; min-width: 0; overflow: hidden; white-space: nowrap; font: italic 800 22px/1 var(--display); font-variant-numeric: tabular-nums; color: #fff; }
+#resultScreen .sc-label { font: 800 10px/1.1 system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); }
+#resultScreen .sc-badge { align-self: flex-start; padding: 2px 6px 1px; border-radius: 5px; font: 800 10px/1.3 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--accent-ink); background: var(--accent); }
+#resultScreen .sc-tsub { font: 700 11px/1.1 system-ui, sans-serif; color: var(--ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#resultScreen .sc-tile.bad .sc-value { color: var(--bad); }
+#resultScreen .sc-tile[data-stat="bank"] .sc-value { color: var(--accent); }
+/* (counted up: the figure is the counter, the words are for a screen reader) */
+#resultScreen .sc-count { --sc-n: var(--sc-to); counter-reset: sc var(--sc-n); animation: sc-count .9s cubic-bezier(.2, .7, .3, 1) .25s both; }
+#resultScreen .sc-count::before { content: attr(data-pre) counter(sc); }
+#resultScreen .sc-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* (the medal: the menu's discs) */
+#resultScreen .sc-medal { display: inline-flex; align-items: center; gap: 6px; text-transform: capitalize; font-size: 17px; }
+#resultScreen .sc-disc { flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; }
+#resultScreen .sc-disc.gold { background: radial-gradient(circle at 35% 30%, #fff3b0, var(--gold) 55%, #b98a00); box-shadow: 0 0 8px rgba(255, 207, 58, .6); }
+#resultScreen .sc-disc.silver { background: radial-gradient(circle at 35% 30%, #fff, var(--silver) 55%, #7d8794); }
+#resultScreen .sc-disc.bronze { background: radial-gradient(circle at 35% 30%, #f3c39b, var(--bronze) 55%, #7a4420); }
+
+/* the rewards: small cards, the event cards' prize card look */
+#resultScreen .sc-rewards { display: flex; flex-wrap: wrap; gap: 6px; }
+#resultScreen .sc-rewards:empty { display: none; }
+#resultScreen .sc-reward { flex: 1 1 140px; min-width: 0; display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 10px;
+  background: linear-gradient(165deg, rgba(38, 62, 104, .94), rgba(16, 21, 33, .96) 75%); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12), 0 6px 16px rgba(0, 0, 0, .35);
+  animation: sc-in .35s ease-out both; animation-delay: calc(300ms + var(--i, 0) * 80ms); }
+#resultScreen .sc-reward .ev-icon { display: inline-grid; place-items: center; flex: 0 0 auto; width: 30px; height: 30px; border-radius: 8px; color: var(--accent-ink); background: var(--accent); }
+#resultScreen .sc-reward .ev-icon svg { width: 18px; height: 18px; }
+#resultScreen .sc-rwords { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+#resultScreen .sc-rwords small { font: 800 10px/1 system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+#resultScreen .sc-rwords strong { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: italic 800 15px/1.1 var(--display); text-transform: uppercase; }
+#resultScreen .sc-extra:empty { display: none; }
+#resultScreen .sc-extra #rideNudge { margin: 0; max-width: none; }
+
+/* the details fold (as the Events tab's) */
+#resultScreen .sc-details[hidden] { display: none; }
+#resultScreen .sc-details summary { display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 7px; list-style: none; cursor: pointer;
+  font: 700 12px/1 system-ui, sans-serif; letter-spacing: .04em; color: var(--ink-dim); background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); }
+#resultScreen .sc-details summary::-webkit-details-marker { display: none; }
+#resultScreen .sc-details summary::after { content: ""; width: 6px; height: 6px; margin: -3px 0 0 8px; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+#resultScreen .sc-details[open] summary::after { margin-top: 3px; transform: rotate(-135deg); }
+#resultScreen .sc-more { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 2px 0; font: 600 12px/1.3 system-ui, sans-serif; color: var(--ink-dim); }
+#resultScreen .sc-row b { margin-left: 5px; color: #fff; }
+
+/* the buttons: START's slanted primary, the menu's chips */
+#resultScreen button { font: inherit; margin: 0; border: 0; border-radius: 0; cursor: pointer; box-sizing: border-box; }
+#resultScreen .sc-actions { display: flex; gap: 8px; margin-top: 2px; }
+#resultScreen .sc-actions button { flex: 1 1 0; min-height: 50px; padding: 0 12px; border-radius: 8px; font: italic 800 19px/1 var(--display); letter-spacing: .08em; text-transform: uppercase;
+  color: #fff; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line); transition: transform .1s, filter .15s, background .15s; }
+#resultScreen .sc-actions button:hover { background: #3a455c; }
+#resultScreen .sc-actions button.primary { flex: 1.6 1 0; border-radius: 0; font-size: 24px; letter-spacing: .12em; color: var(--accent-ink); background: var(--accent); box-shadow: none;
+  clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
+#resultScreen .sc-actions button.primary:hover { filter: brightness(1.12); }
+#resultScreen .sc-actions button:active { transform: scale(.98); }
+#resultScreen .sc-replay { display: flex; gap: 6px; }
+#resultScreen .sc-replay:not(:has(button:not([style*="none"]))) { display: none; }
+#resultScreen .sc-replay button { flex: 1 1 0; min-height: 36px; padding: 0 10px; border-radius: 7px; font: 700 13px/1 system-ui, sans-serif; letter-spacing: .03em;
+  color: var(--ink-dim); background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+#resultScreen .sc-replay button:hover:not(:disabled) { color: #fff; box-shadow: inset 0 0 0 1px var(--accent); }
+#resultScreen .sc-replay button:disabled { opacity: .55; cursor: default; }
+#resultScreen :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (pointer: coarse) { #resultScreen .sc-replay button, #resultScreen .sc-details summary { min-height: 44px; } }
+
+/* a phone on its side (menu2.css's query): two columns, the head and the tiles on the left, the rest on the right */
+@media (max-height: 520px) and (min-width: 520px) {
+  #resultScreen { padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+  #resultScreen .sc-panel { width: min(780px, 100%); display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-rows: auto auto 1fr auto auto;
+    grid-template-areas: "head rewards" "tiles rewards" "tiles extra" "tiles actions" "tiles replay"; gap: 8px 14px; padding: 12px 14px; }
+  #resultScreen .sc-head { grid-area: head; }
+  #resultScreen .sc-tiles { grid-area: tiles; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; }
+  #resultScreen .sc-rewards { grid-area: rewards; align-content: start; }
+  #resultScreen .sc-extra { grid-area: extra; overflow: auto; }
+  #resultScreen .sc-details { grid-area: extra; align-self: end; }
+  #resultScreen .sc-actions { grid-area: actions; }
+  #resultScreen .sc-replay { grid-area: replay; }
+  #resultScreen .sc-headline { font-size: 36px; }
+  #resultScreen .sc-reward { flex-basis: 100%; padding: 6px 10px; }
+}
+
+@keyframes sc-in { from { opacity: 0; transform: translateY(8px) scale(.97); } }
+@keyframes sc-count { from { --sc-n: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  #resultScreen .sc-tile, #resultScreen .sc-reward, #resultScreen .sc-count { animation: none; }
+  #resultScreen .sc-actions button { transition: none; }
+}

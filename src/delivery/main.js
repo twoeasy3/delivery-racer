@@ -53,6 +53,7 @@ import { syncRadiation } from './render/radiation.js';
 import { Radiation } from './radiation.js';
 import { Replay } from './replay.js';
 import './render/replayui.js';
+import './render/stagecard.js'; // (the end-of-stage card: render only)
 import { migrateStock } from './render/cosmeticstock.js'; // (earned cosmetics, CHECKLIST 433: an older All-cars look moved onto the cars, once)
 try { migrateStock(); } catch (error) { console.warn('cosmetic stock: ' + (error?.message || error)); }
 import { syncGhost, clearGhost } from './render/ghostcar.js';
