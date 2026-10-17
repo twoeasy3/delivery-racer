@@ -8,7 +8,8 @@
 //     Retry starts the run again (Game.state 'playing', the card hidden), Continue / Menu goes to the menu (state 'start');
 //     Enter presses the primary;
 //   - the headline says the outcome, the stat tiles are up (and the Earned tile's figure is the run's), the side on the card
-//     (Evil: the card's .evil); the rewards game.js writes (a stage, a prize, packs) as reward cards;
+//     (Evil: the card's .evil); nothing else on the card unless the run gave something new (a best, a medal, a level, a stage,
+//     a prize, packs: a small card each); nothing new, no card;
 //   - a playback's card (Watch replay): no Retry, one primary (Menu).
 //   node scripts/.stage-card-check.mjs [--browser=<path>] [--shots=<dir>] [--prefix=<name>] [--only=win,fail,...]
 // --shots saves a PNG of each state (<prefix>-<state>-<size>.png).
@@ -28,7 +29,8 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 // [name, outcome, evil, level id, extra]
 const STATES = [
-  ['win', 'delivered', false, 'expressway', { fresh: true }],
+  ['win', 'delivered', false, 'expressway', {}],
+  ['unlock', 'delivered', false, 'expressway', { fresh: true }],
   ['fail', 'timeout', false, 'expressway', {}],
   ['evil-win', 'delivered', true, 'back-roads', {}],
   ['busted', 'busted', true, 'expressway', {}],
@@ -54,7 +56,11 @@ const RUN = (outcome, evil, levelId, fresh, inject = '') => `(async () => {
   const { Progress } = await import('/src/delivery/progress.js');
   const { Delivery } = await import('/src/delivery/delivery.js');
   if (${fresh}) { Progress.reset(); Object.assign(Progress.data, { money: 120 }); Progress.save(); }
-  else Object.assign(Progress.data, { money: 1234 });
+  else { // (nothing new to win: a best better than the run's, every level open)
+    Object.assign(Progress.data, { money: 1234, unlocked: Math.max(Progress.data.unlocked, L.LEVELS.length), tierBase: Math.max(Progress.data.tierBase || 0, L.LEVELS.length) });
+    const id = '${levelId}'.startsWith('hidden:') ? null : '${levelId}';
+    if (id) { Progress.data.bestTime.good[id] = 999; Progress.data.bestTime.evil[id] = 999; }
+  }
   if ('${levelId}'.startsWith('hidden:')) L.selectSpecial(L.HIDDEN_LEVELS['${levelId}'.slice(7)]); // (a hidden level, as ?hidden= plays it)
   else L.selectLevel(L.LEVELS.findIndex(l => l.id === '${levelId}'));
   Game.evil = ${evil};
@@ -91,6 +97,8 @@ const MEASURE = `(() => {
     tiles: [...card.querySelectorAll('.sc-tile')].filter(shown).map(t => t.dataset.stat + '=' + (t.querySelector('.sc-value')?.getAttribute('aria-label') || t.querySelector('.sc-value')?.textContent.trim())),
     rewards: [...card.querySelectorAll('.sc-reward')].filter(shown).map(r => r.dataset.kind + ':' + [...r.querySelectorAll('small, strong')].map(t => t.textContent.trim()).join(' ')),
     evil: card.classList.contains('evil'), win: card.classList.contains('win'),
+    extra: (() => { const c = card.querySelector('.sc-panel').cloneNode(true); c.querySelectorAll('.sc-headline, .sc-tiles, .sc-rewards, button, .sc-sr').forEach(n => n.remove());
+      return c.textContent.replace(/\\s+/g, ' ').trim(); })(),
     old: /look around|next level/i.test(text) || !!document.getElementById('lookBtn') || !!document.getElementById('nextBtn') };
 })()`;
 
@@ -166,9 +174,12 @@ else {
         check(m.primary.length === 1 && m.primary[0] === want, `${what}: one primary button, ${want} (${m.buttons.map(b => (b.primary ? '*' : '') + b.text).join(' | ')})`);
         if (phone) check(m.buttons.every(b => b.h >= 44), `${what}: its buttons 44 px or taller (${m.buttons.map(b => b.h).join(', ')})`);
         check(m.headline.length > 0 && m.headline.length <= 22 && m.win === (outcome === 'delivered'), `${what}: headline "${m.headline}"`);
-        check(m.tiles.length >= 3 && (outcome !== 'delivered' || m.tiles.includes('earned=' + r.earned)), `${what}: tiles ${m.tiles.join(', ')}`);
+        check(m.tiles.length === 3 && (outcome !== 'delivered' || m.tiles.includes('earned=' + r.earned)), `${what}: tiles ${m.tiles.join(', ')}`);
         check(m.evil === evil, `${what}: the side (${evil ? 'Evil' : 'Good'}) on the card`);
-        if (extra.inject) check(m.rewards.join(',') === 'stage:Stage done 5 of 5,prize:Grand prize Comet,pack:Pack Comet Pack,pack:Pack Career Pack', `${what}: the rewards as cards (${m.rewards.join(', ') || 'none'})`);
+        check(!m.extra, `${what}: nothing on the card but the outcome, the tiles, what is new and the buttons ("${m.extra}")`);
+        if (extra.inject) check(m.rewards.join(',') === 'stage:Stage 5 of 5,prize:Prize Comet,pack:Pack Comet Pack,pack:Pack Career Pack', `${what}: what is new as cards (${m.rewards.join(', ') || 'none'})`);
+        else if (extra.fresh) check(m.rewards.some(r => /^best:/.test(r)), `${what}: a first delivery: its new best (and what it opened) as cards (${m.rewards.join(', ') || 'none'})`);
+        else check(!m.rewards.length, `${what}: nothing new, no card (${m.rewards.join(', ') || 'none'})`);
         // the buttons, once per state at the first size
         if (sz !== '390x844' || extra.inject) continue;
         const again = await press('restartBtn');
@@ -188,13 +199,13 @@ else {
     await size(390, 844, true);
     await open(false, 'delivered', false, levelId);
     const watched = await evaluate(`(async () => { const b = document.getElementById('watchBtn'); if (!b || b.offsetParent === null) return 'no Watch button';
-      b.click(); await new Promise(r => setTimeout(r, 1500));
+      b.click(); await new Promise(r => setTimeout(r, 200));
       const { Game } = await import('/src/delivery/game.js'); const { Replay } = await import('/src/delivery/replay.js');
       if (!Replay.playing) return 'not playing';
-      Game.finish('delivered');
+      if (Replay.playing.over) { Replay.playing.over = ''; Game.paused = false; Game.state = 'playing'; } Game.finish('delivered'); // (the short recording may have run out and held the playback: finished all the same)
       const { Delivery } = await import('/src/delivery/delivery.js');
       const t0 = performance.now();
-      while ((document.getElementById('resultScreen').classList.contains('hidden') || document.body.classList.contains('delivering')) && performance.now() - t0 < 40000) { if (Delivery.active) Delivery.skip(); await new Promise(r => setTimeout(r, 100)); }
+      while ((document.getElementById('resultScreen').classList.contains('hidden') || document.body.classList.contains('delivering')) && performance.now() - t0 < 40000) { if (Delivery.active) Delivery.finish(); await new Promise(r => setTimeout(r, 100)); }
       await new Promise(r => setTimeout(r, 450));
       return document.getElementById('resultScreen').classList.contains('hidden') || document.body.classList.contains('delivering')
         ? 'card not up: ' + [Game.state, Game.paused, Delivery.active, Delivery.t, document.body.className, document.getElementById('resultScreen').className].join(' / ') : 'ok'; })()`);

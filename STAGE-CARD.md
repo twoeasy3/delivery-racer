@@ -3,21 +3,18 @@
 The owner, 17-Oct: "Lets make a nicer end of stage card that suits the rest of the UI. 'Next Level' is not very relevant any
 more. 'Look Around' is not useful." Then: "replays do not work in hidden levels".
 
-## What the card is now
+## What the card is now (after the owner's "nothing verbose", 17-Oct)
 
-`render/stagecard.js` + `stagecard.css`, the menu's look (Good gold / Evil red accent, the condensed italic capitals, the event
-cards' panels, START's slanted primary). Drawn when the card comes up, from the run and from the three lines game.js writes
-(game.js is in the replays' rules fingerprint, so its words are read, not changed: as render/bank.js already did).
+`render/stagecard.js` + `stagecard.css`, the menu's look (Good gold / Evil red: the side is the card's colour).
 
-- Head: side pill (GOOD / EVIL), the level's name, the outcome in a word or two (DELIVERED, TOO LATE, OUT OF TIME, BUSTED; a
-  rival's place under it; REPLAY pill on a playback).
-- Tiles. Delivered: Spare (NEW BEST, or Best x), Earned (counted up, CSS only), Medal, Bank. Failed: Distance % (or Tip left of
-  $n when late), Wrecks, Busts, Bank.
-- Rewards as small cards (the event cards' prize-card look): car earned, event reward, stage n of m, grand prize, key, tasks,
-  each pack. Anything else game.js adds shows as a plain "Reward" card, so nothing is lost.
-- Details fold: tip / cash / fines, wrecks / busts on a delivery, "test run" on a hidden level, a playback's date.
-- 390x844: one column, tiles 2 x 2. 844x390: two columns (head + tiles | rewards + buttons). Desktop: one column, tiles 4 across.
-  The run's HUD and touch pads are hidden while it is up.
+- The outcome word: DELIVERED, TOO LATE, OUT OF TIME, BUSTED (REPLAY on a playback). No level name, no side label, no sentences.
+- Three tiles. Delivered: Spare, Earned (counted up, CSS only), Bank. Failed: Distance % (Tip when late), Wrecks, Busts.
+- ONLY when the run gave something new, a small card each (a few words): New best, Medal (better than the side's before),
+  Unlocked <level>, Car, Reward, Prize, Stage n of m, Key, Tasks, Pack. Nothing new: no card at all. (What was so before the run
+  is noted as Game.start begins; the rest is read from game.js's own line, game.js being a replay rules file.)
+- No Details fold (it held only explanatory lines), no hints, no rival line.
+- 390x844 and desktop: one column; 844x390: two columns. The HUD and touch pads hidden while it is up.
+- Not detected yet: a cosmetic earned by the run (no card for it).
 
 ## The buttons, and why
 
