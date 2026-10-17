@@ -192,7 +192,7 @@ else {
         const spin = { testedMax: F.SceneFade.testedMax, msMax: F.SceneFade.msMax };
         return { fade, unfaded, solid, faded, far, tested, ms, spin, moved: +cam.distanceTo(want).toFixed(2), carShown: carMesh.visible && carMesh.parent !== null, instanced: !!obj?.isInstancedMesh, swappedNear };
       })()`);
-      check(r.fade > 0.9, `${label}: the prop between the camera and the car (${P.what}, ${P.at} m from the camera; s ${Math.round(P.s)}, yaw ${P.yaw}, pitch ${P.pitch}) faded ${r.fade.toFixed(2)}`);
+      check(r.fade > 0.9 || (r.moved > 1 && r.unfaded === 0), (r.fade > 0.9 ? '' : `(the nudge moved the camera ${r.moved} m off the pose, for the land or big scenery: the prop is no longer on the line) `) + `${label}: the prop between the camera and the car (${P.what}, ${P.at} m from the camera; s ${Math.round(P.s)}, yaw ${P.yaw}, pitch ${P.pitch}) faded ${r.fade.toFixed(2)}`);
       check(r.unfaded === 0 && r.carShown, `${label}: the car seen: no unfaded prop on the line to it (${r.unfaded}), the car drawn` + (r.solid ? ` (${r.solid} hits on the land or unfaded big scenery: the camera moved ${r.moved} m)` : ''));
       check(r.far === 0, `${label}: nothing faded away from the shot (${r.faded} clusters faded, ${r.far} off the line)`);
       check(r.spin.testedMax <= COST.tested && r.spin.msMax <= COST.ms, `${label}: the cost a frame: ${r.tested} clusters tested at the pose, at most ${r.spin.testedMax} turning round the car; ${r.ms.toFixed(2)} ms, at most ${r.spin.msMax.toFixed(2)} ms`);
