@@ -42,39 +42,61 @@ const stated = (group, pose) => {
   return group;
 };
 
-// ---- a tray of bubble teas: a cardboard carrier with four cup holes, four tall clear cups (milk tea, strawberry, matcha,
-// taro), a domed lid and a fat striped straw in each, black pearls at the bottom bobbing, the tea's top sloshing
+// ---- a tray of bubble teas: a cardboard carrier with four cells and a handle, four tall clear cups (milk tea, strawberry,
+// matcha, taro), each tapered, with a lip at its rim, a card sleeve, a smooth clear dome lid and a fat straw out of it, the tea
+// inside the cup (never through it) with black pearls on the bottom, its top sloshing as the carrier rocks. The parts are named
+// for render/cargoRules.js
+const CUP = { h: 0.5, r0: 0.11, r1: 0.15 }; // the cup: height, bottom and top radius (outside)
+const cupR = (y) => CUP.r0 + (CUP.r1 - CUP.r0) * y / CUP.h;
 const makeBubbleTea = () => {
   const group = new THREE.Group(), body = sub(group);
   const card = lambert(0xc8a070), dark = lambert(0x9a7448);
-  part(body, box(0.84, 0.05, 0.84), card, 0, 0.1, 0);                                       // the carrier
-  for (const x of [-1, 1]) part(body, box(0.05, 0.14, 0.84), dark, x * 0.4, 0.17, 0);
-  for (const z of [-1, 1]) part(body, box(0.84, 0.14, 0.05), dark, 0, 0.17, z * 0.4);
-  part(body, box(0.05, 0.14, 0.84), dark, 0, 0.17, 0);
-  part(body, box(0.84, 0.14, 0.05), dark, 0, 0.17, 0);
-  part(body, box(0.06, 0.5, 0.06), dark, 0, 0.45, 0);                                       // the carrier's handle
-  part(body, box(0.3, 0.06, 0.06), dark, 0, 0.72, 0);
-  const TEAS = [0xc89a5e, 0xf08aa8, 0x8dc26a, 0xb48ad8], cups = [];
+  const carrier = sub(body); carrier.name = 'carrier';
+  part(carrier, box(0.84, 0.03, 0.84), card, 0, 0.015, 0).name = 'floor';                    // the carrier: its floor,
+  for (const x of [-1, 1]) part(carrier, box(0.04, 0.13, 0.84), dark, x * 0.4, 0.085, 0);     // its walls (set into the floor),
+  for (const z of [-1, 1]) part(carrier, box(0.76, 0.13, 0.04), dark, 0, 0.085, z * 0.4);
+  part(carrier, box(0.03, 0.11, 0.76), card, 0, 0.075, 0);                                    // the cells' dividers
+  for (const z of [-1, 1]) part(carrier, box(0.37, 0.11, 0.03), card, z * 0.2, 0.075, 0);
+  part(carrier, box(0.05, 0.6, 0.05), dark, 0, 0.42, 0);                                      // and its handle
+  part(carrier, box(0.26, 0.06, 0.07), dark, 0, 0.74, 0);
+  const TEAS = [0xc89a5e, 0xf08aa8, 0x8dc26a, 0xb48ad8], SLEEVES = [0x7a4a2a, 0xd8262b, 0x2e7d32, 0x5b3a9a], cups = [];
+  const glass = lambert(0xe8f4ff, { transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false });
+  const lidM = lambert(0xf8fbff, { transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false });
+  const white = lambert(0xf4f6f8), pearlM = lambert(0x1a1214);
+  const FILL = 0.38, WALL = 0.006; // (the tea's top, and how far it keeps inside the cup's outside)
   [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]].forEach(([x, z], k) => {
-    const cup = sub(body, x, 0.12, z);
-    part(cup, cyl(0.15, 0.12, 0.56, 14), lambert(0xe8f4ff, { transparent: true, opacity: 0.35 }), 0, 0.28, 0);   // the clear cup
-    const tea = part(cup, cyl(0.135, 0.115, 0.42, 14), lambert(TEAS[k], { transparent: true, opacity: 0.9 }), 0, 0.23, 0);
-    const top = part(cup, cyl(0.137, 0.137, 0.03, 14), glow(TEAS[k]), 0, 0.45, 0);
-    part(cup, sphere(0.16, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), lambert(0xf4f1e6, { transparent: true, opacity: 0.8 }), 0, 0.56, 0); // the domed lid
-    const straw = part(cup, cyl(0.022, 0.022, 0.5, 8), lambert(k % 2 ? 0xd8262b : 0x2f86d8), 0, 0.72, 0.02, 0.12, 0, 0.1 * (k % 2 ? -1 : 1));
+    const cup = sub(body, x, 0.03, z); cup.name = 'cup' + k;                                  // (standing on the carrier's floor)
+    part(cup, cyl(CUP.r1, CUP.r0, CUP.h, 24, 1, true), glass, 0, CUP.h / 2, 0).name = 'glass' + k; // the clear cup, open at the top,
+    part(cup, new THREE.CircleGeometry(CUP.r0, 24), glass, 0, 0.002, 0, -Math.PI / 2, 0, 0);     // its bottom,
+    part(cup, new THREE.TorusGeometry(CUP.r1, 0.008, 6, 28), white, 0, CUP.h, 0, Math.PI / 2, 0, 0); // the lip at its rim
+    part(cup, cyl(cupR(0.31) + 0.006, cupR(0.17) + 0.006, 0.14, 24, 1, true), lambert(SLEEVES[k], { side: THREE.DoubleSide }), 0, 0.24, 0); // a card sleeve round it
+    const cap = Math.asin(CUP.r1 / 0.21);                                                      // the dome lid: a cap of a 0.21 m ball, resting on the lip
+    part(cup, new THREE.SphereGeometry(0.21, 24, 6, 0, Math.PI * 2, 0, cap), lidM, 0, CUP.h + 0.008 - 0.21 * Math.cos(cap), 0);
+    const teaM = lambert(TEAS[k], { transparent: true, opacity: 0.88 });
+    const tea = part(cup, cyl(cupR(FILL - 0.006) - WALL - 0.004, CUP.r0 - WALL - 0.004, FILL - 0.016, 24), teaM, 0, 0.01 + (FILL - 0.016) / 2, 0); // the tea, inside the cup
+    tea.name = 'tea' + k;
+    const top = part(cup, cyl(cupR(FILL) - WALL - 0.012, cupR(FILL) - WALL - 0.012, 0.024, 24), teaM, 0, FILL - 0.006, 0); // its top, which sloshes
+    top.name = 'tea' + k;
+    const straw = sub(cup, 0.03, 0.04, 0); straw.name = 'straw' + k;                          // a fat straw, from the bottom out through the lid
+    part(straw, cyl(0.024, 0.024, 0.72, 10), lambert(k % 2 ? 0xd8262b : 0x2f86d8), 0, 0.36, 0);
+    straw.rotation.z = 0.1 * (k % 2 ? 1 : -1) + 0.05;
     const pearls = [];
-    for (let i = 0; i < 6; i++) { const a = i * 1.05; pearls.push(part(cup, sphere(0.028, 7, 5), lambert(0x1a1214), Math.cos(a) * 0.07, 0.06 + (i % 3) * 0.03, Math.sin(a) * 0.07)); }
-    cups.push({ cup, tea, top, straw, pearls, k });
+    for (let i = 0; i < 7; i++) {                                                              // the pearls, on the bottom
+      const a = i * 0.9, rr = i === 6 ? 0 : 0.055;
+      const p = part(cup, sphere(0.022, 8, 6), pearlM, Math.cos(a) * rr - (i === 6 ? 0.03 : 0), 0.032, Math.sin(a) * rr);
+      p.name = 'pearl' + k;
+      pearls.push(p);
+    }
+    cups.push({ top, straw, pearls, k });
   });
   return idle(group, (t) => {
     body.rotation.z = Math.sin(t * 1.4) * 0.05;
     body.rotation.x = Math.sin(t * 1.1 + 1) * 0.04;
-    for (const { tea, top, straw, pearls, k } of cups) {
-      tea.rotation.z = Math.sin(t * 2.8 + k) * 0.08;
-      top.rotation.z = Math.sin(t * 2.8 + k) * 0.18;
-      top.position.y = 0.45 + Math.sin(t * 3.4 + k * 2) * 0.012;
-      straw.rotation.x = 0.12 + Math.sin(t * 1.9 + k) * 0.05;
-      pearls.forEach((p, i) => { p.position.y = 0.06 + (i % 3) * 0.03 + Math.abs(Math.sin(t * 2.2 + i * 1.3 + k)) * 0.05; });
+    for (const { top, straw, pearls, k } of cups) {
+      top.rotation.z = -body.rotation.z * 1.2 + Math.sin(t * 2.8 + k) * 0.03; // (the tea's top keeps level, and sways)
+      top.rotation.x = -body.rotation.x * 1.2;
+      straw.rotation.x = Math.sin(t * 1.9 + k) * 0.03;
+      pearls.forEach((p, i) => { p.position.y = 0.032 + Math.abs(Math.sin(t * 2.2 + i * 1.3 + k)) * 0.04 * (i % 2); });
     }
   });
 };

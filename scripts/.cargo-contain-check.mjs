@@ -85,9 +85,11 @@ const checkRules = (id, rules) => {
     for (const r of rules.keepOut || []) {
       if (!inState(r, state)) continue;
       const min = r.min ?? 0.002, A = instances(m, r.a).map(i => ({ ...i, h: i.meshes.filter(visibleUp).map(hull) }));
-      const B = r.a === r.b ? A : instances(m, r.b).map(i => ({ ...i, h: i.meshes.filter(visibleUp).map(hull) }));
-      for (const a of A) for (const b of B) {
-        if (a.node === b.node || (A === B && a.node.id > b.node.id)) continue;
+      const Bof = (sel) => sel === r.a ? A : instances(m, sel).map(i => ({ ...i, h: i.meshes.filter(visibleUp).map(hull) }));
+      const B0 = r.b.includes('$') ? null : Bof(r.b), A_is_B = r.a === r.b;
+      for (const a of A) for (const b of B0 || Bof(sub$(r.b, a.match))) { // (`$1` in b: a's own capture, e.g. another cup than a's)
+        const B = B0;
+        if (a.node === b.node || (A_is_B && B && a.node.id > b.node.id)) continue;
         for (const x of a.h) for (const y of b.h) if (near(x.b, y.b, min) && overlaps(x.p, y.p, min)) fail('keepOut ' + a.node.name + ' x ' + b.node.name, at, where(x.o) + ' meets ' + where(y.o));
       }
     }

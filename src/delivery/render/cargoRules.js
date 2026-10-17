@@ -3,7 +3,8 @@
 // NAME in the model (a mesh's or a group's `.name`; a mesh belongs to its nearest named ancestor); a selector is a regular
 // expression over those names, whole-name; `$1` in a container's or partner's selector is the part's own first capture.
 //   keepOut:  [{ a, b, min = 0.002, states }]       no mesh of A within `min` m of a mesh of B (A = B: different instances);
-//             convex parts only (a torus, a hollow shell, a ring: use `inside` against its shape instead)
+//             convex parts only (a torus, a hollow shell, a ring: use `inside` against its shape instead); `$1` in b is
+//             A's own first capture (b '(?:cup|glass)(?!$1)\\d': another cup than A's)
 //   inside:   [{ part, of, shape, margin = 0.003, exits, states }]   every vertex of the part inside `shape`, in the frame of
 //             the node `of`, by `margin`; shape { sphere: r, centre } | { cone: { y0, y1, r0, r1 } } (upright) | { box: { min,
 //             max } }; exits [{ at: [x, y, z], r }]: where it may be outside (a hole, a doorway), in the same frame; only:
@@ -20,6 +21,16 @@ export const CARGO_RULES = {
   // Cage of Tunnel Rats: the rats keep to the cage, off its door and each other; the bold one leaves by the doorway
   rats: {
     keepOut: [{ a: 'rat\\d', b: 'cage|door' }, { a: 'rat\\d', b: 'rat\\d' }],
+  },
+  // Tray of Bubble Teas: the tea, its pearls and the straw inside the cup (6 mm in from its outside), the cups on the carrier
+  // and clear of its walls, dividers and each other
+  bubbletea: {
+    inside: [
+      { part: '(?:tea|pearl)(\\d)', of: 'cup$1', shape: { cone: { y0: 0.002, y1: 0.5, r0: 0.11, r1: 0.15 } }, margin: 0.006 },
+      { part: 'straw(\\d)', of: 'cup$1', shape: { cone: { y0: 0.002, y1: 0.5, r0: 0.11, r1: 0.15 } }, margin: 0.006, only: { box: { min: [-1, -1, -1], max: [1, 0.49, 1] } } },
+    ],
+    keepOut: [{ a: 'cup\\d|glass\\d', b: 'carrier' }, { a: '(?:cup|glass)(\\d)', b: '(?:cup|glass)(?!$1)\\d' }],
+    anchors: [{ part: 'glass\\d', to: 'floor', maxGap: 0.004 }],
   },
   // Pet-Shop Hamster Ball: the hamster inside the shell but for its head out of the hole (furious), off the collar, the
   // rings and the hatch; on its feet on the ball's floor when calm or agitated
