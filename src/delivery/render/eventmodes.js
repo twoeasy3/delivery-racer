@@ -75,6 +75,15 @@ export const detailsButton = (open, toggle) => {
   b.className = 'menu-chip ev-more-btn';
   b.setAttribute('aria-expanded', String(open));
   b.textContent = 'Details';
-  b.addEventListener('click', toggle);
+  b.addEventListener('click', () => {
+    toggle();
+    if (b.getAttribute('aria-expanded') !== 'true') return;
+    // (opened: what it unfolded brought up into the card's view, the button at its top)
+    const box = b.closest('.event-panel') || b.closest('.menu-stage');
+    if (box && box.scrollHeight > box.clientHeight) {
+      const top = b.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 8;
+      box.scrollTo({ top, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    }
+  });
   return b;
 };

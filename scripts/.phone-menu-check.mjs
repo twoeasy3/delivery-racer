@@ -11,6 +11,9 @@
 // For each: the start screen no taller than innerHeight and not past its foot; START, the level strip, the tabs, the bank and
 // the car's card (the showroom / garage's way in) inside the screen and on top (elementFromPoint at the centre); the build tag
 // inside the screen, on top, its text the version, 10 px or more; with the menu scrolled to its end as well (a card that scrolls).
+// The EVENTS TAB held upright (CHECKLIST 446, events-ui.css): one event at a time under its mode strip (render/eventmodes.js), the
+// level strip not drawn (the strip's job is the mode strip's), the event cards fitted to the screen: there the mode strip is
+// checked on the screen and on top in the strip's place, and an event card is a card that FITS (the menu not scrolling).
 //   node scripts/.phone-menu-check.mjs [--browser=<path>] [--report] [--shots=<dir>] [--prefix=<name>] [--only=<size,...>]
 // --report prints the measurements; --shots saves a PNG of each state (<prefix>-<state>-<size>.png).
 import { createServer } from 'vite';
@@ -55,13 +58,14 @@ const MEASURE = (end) => `(() => {
   const inside = (b) => !!b && b.w > 0 && b.h > 0 && b.x >= -0.5 && b.y >= -0.5 && b.r <= iw + 0.5 && b.b <= ih + 0.5;
   const tag = document.getElementById('buildTag'), st = getComputedStyle(tag);
   const els = { start: document.getElementById('startBtn'), strip: document.getElementById('levels'), tabs: document.getElementById('tabs'),
-    bank: document.getElementById('bank'), car: document.getElementById('shop'), tag };
+    bank: document.getElementById('bank'), car: document.getElementById('shop'), tag, modes: document.querySelector('#levelGroups .ev-modes') };
   const out = { ih, iw, vv: window.visualViewport ? Math.round(visualViewport.height) : null, card: ss.classList.contains('cx-card'),
     ss: box(ss), sizing: getComputedStyle(ss).boxSizing, scrollH: ss.scrollHeight, clientH: ss.clientHeight, scrollTop: ss.scrollTop,
     menuH: getComputedStyle(document.documentElement).getPropertyValue('--menu-h').trim(),
+    evTab: ss.classList.contains('ev-tab'), stripGone: getComputedStyle(document.getElementById('levels')).display === 'none',
     tagText: tag.textContent.trim(), tagFont: parseFloat(st.fontSize), tagOpacity: parseFloat(st.opacity), tagColor: st.color, tagDisplay: st.display };
   // (the event card's taps, CHECKLIST 222: Free try, What's inside, What's on this road, the level arrows: 44 px or more)
-  out.taps = [...ss.querySelectorAll('.cx-try, .event-inside, .menu-stage .road .menu-chip, .menu-stage .arrow')].filter(e => e.offsetParent)
+  out.taps = [...ss.querySelectorAll('.cx-try, .event-inside, .menu-stage .road .menu-chip, .menu-stage .arrow, .ev-more-btn, .ev-mode')].filter(e => e.offsetParent)
     .map(e => { const r = e.getBoundingClientRect(); return { c: String(e.className).split(' ')[0], w: Math.round(r.width), h: Math.round(r.height) }; });
   for (const [k, el] of Object.entries(els)) { const b = box(el); out[k] = b; out[k + 'In'] = inside(b); out[k + 'Top'] = onTop(el, k === 'tag'); }
   return out;
@@ -132,7 +136,8 @@ else {
       check(m.ss.h <= m.ih + 0.5 && m.ss.b <= m.ih + 0.5, `${what}: the menu ${m.ss.h.toFixed(0)} tall, the screen ${m.ih} (foot at ${m.ss.b.toFixed(0)})`);
       check(m.startIn && m.startTop, `${what}: START on the screen and on top (its foot at ${m.start.b.toFixed(0)} of ${m.ih})`);
       check(m.tagIn && m.tagTop && /^v\d+\.\d+\.\d+/.test(m.tagText) && m.tagFont >= 10, `${what}: the build tag "${m.tagText}" on the screen and on top (${m.tag ? `${m.tag.x.toFixed(0)},${m.tag.y.toFixed(0)} ${m.tag.w.toFixed(0)}x${m.tag.h.toFixed(0)}` : 'none'}, ${m.tagFont} px)`);
-      if (full) check(m.stripIn && m.stripTop, `${what}: the level strip on the screen and on top (its foot at ${m.strip.b.toFixed(0)})`);
+      if (full && m.evTab && m.stripGone) check(m.modesIn && m.modesTop, `${what}: the Events tab's mode strip on the screen and on top, in the level strip's place (${m.modes ? m.modes.y.toFixed(0) + '..' + m.modes.b.toFixed(0) : 'none'})`);
+      else if (full) check(m.stripIn && m.stripTop, `${what}: the level strip on the screen and on top (its foot at ${m.strip.b.toFixed(0)})`);
       if (m.scrollTop === 0) check(m.tabsIn && m.bankIn && m.carIn && m.carTop, `${what}: the tabs, the bank and the car's card (the showroom's way in) on the screen`);
     };
     // the desktop and the tablet (no phone media query): as they were. With --report, every box in the menu is written
@@ -163,9 +168,11 @@ else {
         await sleep(3500);
         await evaluate(`document.fonts.ready.then(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))))`);
         const top = await evaluate(MEASURE(false));
-        const card = top.card && h > w; // (an event card held upright: a page that scrolls, its foot sticky)
-        if (card) check(top.taps.length >= 3 && top.taps.every(t => t.h >= 44 && t.w >= 44) && top.scrollH > top.clientH, `${state} ${size}: the event card a page that scrolls (${top.scrollH} in ${top.clientH}), its taps 44 px (${top.taps.map(t => t.c + ' ' + t.w + 'x' + t.h).join(', ')})`);
-        look(top, `${state} ${size}`, !card);
+        // (an event card held upright: since CHECKLIST 446 one event at a time on the Events tab, the card fitted to the screen and
+        // the menu not scrolling (it was a page that scrolled, its foot sticky); its taps 44 px, the mode strip's too)
+        const card = top.card && h > w;
+        if (card) check(top.taps.length >= 3 && top.taps.every(t => t.h >= 44 && t.w >= 44) && top.scrollH <= top.clientH + 1, `${state} ${size}: the event card fits the screen (the menu ${top.scrollH} in ${top.clientH}), its taps 44 px (${top.taps.map(t => t.c + ' ' + t.w + 'x' + t.h).join(', ')})`);
+        look(top, `${state} ${size}`, true);
         await shot(`${state}-${size}`);
         if (top.scrollH > top.clientH + 1) {
           const end = await evaluate(MEASURE(true));
@@ -181,7 +188,7 @@ else {
           await evaluate(`new Promise(done => { const t0 = performance.now(); const tick = () => (getComputedStyle(document.documentElement).getPropertyValue('--menu-h').trim() === innerHeight + 'px'
             || performance.now() - t0 > 8000) ? requestAnimationFrame(() => done()) : setTimeout(tick, 50); tick(); })`);
           const a = await evaluate(MEASURE(false));
-          look(a, `${state} ${size} bar (resized)`, !card);
+          look(a, `${state} ${size} bar (resized)`, true);
           await shot(`${state}-${size}-bar-resized`);
           await metrics(w, h);
           await sleep(400);
@@ -189,7 +196,7 @@ else {
           await evaluate(`(() => { const real = window.innerHeight; Object.defineProperty(window, 'innerHeight', { configurable: true, get: () => real - ${BAR} });
             window.dispatchEvent(new Event('resize')); return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); })()`);
           const b = await evaluate(MEASURE(false));
-          look(b, `${state} ${size} bar (innerHeight)`, !card);
+          look(b, `${state} ${size} bar (innerHeight)`, true);
           await shot(`${state}-${size}-bar-inner`);
         }
       }
