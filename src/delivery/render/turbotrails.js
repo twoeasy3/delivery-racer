@@ -447,6 +447,7 @@ Game.onLoad.push(() => { try { pickForCar(); } catch (error) { console.warn('tur
 export const liveCount = () => (fx ? fx.stores.reduce((n, S) => n + S.live(), 0) : 0);
 export const pools = () => ({});
 export const drawn = () => !!fx?.mesh.visible;
+export const trailMesh = () => G.fx?.mesh || null; // (for a check: the game's style's one mesh, in the scene, never under the car)
 // (for a check and TURBO-TRAILS.md: what the style costs drawn at its fullest: 1 draw call, its triangles / line segments / points, its pool)
 export const cost = () => {
   if (!fx) return null;

@@ -29,5 +29,6 @@ export const TrailPreview = {
   // for a check or a picture
   get state() { return { style: want, drawn: preview?.style || null, live: preview?.live || 0, visible: !!preview?.mesh?.visible, t }; },
   // (for a check with no showroom: one step of the preview on any model in any parent)
-  step(dt, model, parent, car = null) { preview ||= createTrailPreview(); preview.show((want || 'classic') + (trailLite() ? '-lite' : '')); preview.frame(dt, model, parent, car); return preview; },
+  // (name: the full style asked, '<id>' or '<id>-lite'; default the one shown, lite on a low-end device)
+  step(dt, model, parent, car = null, name = null) { preview ||= createTrailPreview(); preview.show(name || (want || 'classic') + (trailLite() ? '-lite' : '')); preview.frame(dt, model, parent, car); return preview; },
 };

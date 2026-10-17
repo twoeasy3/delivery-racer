@@ -31,15 +31,15 @@ try {
   const PROPS = ['roof', 'cargo', 'wing'];
   const { plateAnchorsFor } = await load('render/plateanchors.js');
   // (CHECKLIST 340: no Wheels tab on the Tank, the Saucer or the UFO; no Plate tab where the plate table says none can be worn)
-  const want = (c) => [...(c.tank || c.ufo ? [] : ['wheels']), ...(plateAnchorsFor(c).status === 'none' ? [] : ['plate']), ...PROPS.filter(sl => D.slotStatus(c, sl).ok)].join();
+  const want = (c) => [...(c.tank || c.ufo ? [] : ['wheels']), ...(plateAnchorsFor(c).status === 'none' ? [] : ['plate']), ...PROPS.filter(sl => D.slotStatus(c, sl).ok), ...(c.tank || c.ufo ? [] : ['trail'])].join(); // (trail: the turbo trail, CHECKLIST 452, the wheels' rule)
 
   check(!R.isDemo(), 'the demo is off by default');
-  const sample = { hothatch: 'wheels,plate,roof,wing', pickup: 'wheels,plate,roof,cargo,wing', splitwindow: 'wheels,plate,roof', keitruck: 'wheels,plate,roof,cargo,wing', rocketfin: 'wheels', classicgt: 'wheels,plate,wing', tank: 'plate', 'earned-ufo': '' };
+  const sample = { hothatch: 'wheels,plate,roof,wing,trail', pickup: 'wheels,plate,roof,cargo,wing,trail', splitwindow: 'wheels,plate,roof,trail', keitruck: 'wheels,plate,roof,cargo,wing,trail', rocketfin: 'wheels,trail', classicgt: 'wheels,plate,wing,trail', tank: 'plate', 'earned-ufo': '' };
   for (const [id, exp] of Object.entries(sample)) check(car(id) && tabs(car(id)) === exp && tabs(car(id)) === want(car(id)), id + ': the tabs are ' + (car(id) ? tabs(car(id)) : 'no car') + ' (expected ' + exp + ')');
   const legend = all.find(c => c.legend);
-  check(legend && tabs(legend) === 'wheels,plate', 'a Legendary car (' + legend?.id + '): Wheels and Plate only');
+  check(legend && tabs(legend) === 'wheels,plate,trail', 'a Legendary car (' + legend?.id + '): Wheels, Plate and Trail only');
   const bad = all.filter(c => tabs(c) !== want(c));
-  check(bad.length === 0, 'every one of ' + all.length + ' cars: the tabs are exactly Wheels, Plate and its supported prop slots' + (bad.length ? ' (' + bad.slice(0, 5).map(c => c.id).join(', ') + ')' : ''));
+  check(bad.length === 0, 'every one of ' + all.length + ' cars: the tabs are exactly Wheels, Plate, its supported prop slots and Trail (not on the Tank(s) or the Saucer)' + (bad.length ? ' (' + bad.slice(0, 5).map(c => c.id).join(', ') + ')' : ''));
   const dormant = ['decal', 'underglow'];
   check(all.every(c => !R.shownSlots(c).some(s => dormant.includes(s.id) || s.id === 'kill')), 'without ?cosmetics=all (and before render/killfx.js registers its items), Decal, Glow and Kill FX never show, on any car');
 
@@ -51,14 +51,14 @@ try {
   check(R.SLOT_LIST.every(s => !/lock|coming/i.test(s.label + s.name)), 'no tab label or name says Locked or Coming');
   check(!/Coming later|'Locked'|lockReason|lockIcon|cz-lockline|is locked: |Not available for this car|not audited/.test(ui) && !/cz-lock|\.later|\.cz-slot\.na|\.cz-slot\.locked/.test(css), "the screen's source and CSS: no 'Locked' / 'Coming later' tab, no lock line, no lock reason, no greyed-tab styles");
   check(/role', 'tab'/.test(ui) && /aria-label', slot\.name/.test(ui) && /button\.cz-slot/.test(ui), "a tab is a role=tab button named by the slot's full name (no lock wording), and the arrow keys reach the tabs drawn (choices())");
-  check(R.SLOT_LIST.every(s => s.label.length <= 7) && R.SLOT_LIST.map(s => s.label).join() === 'Wheels,Plate,Roof,Cargo,Wing,Decal,Glow,Kill FX', 'the labels, in order and short: ' + R.SLOT_LIST.map(s => s.label).join(', '));
+  check(R.SLOT_LIST.every(s => s.label.length <= 7) && R.SLOT_LIST.map(s => s.label).join() === 'Wheels,Plate,Roof,Cargo,Wing,Decal,Glow,Trail,Kill FX', 'the labels, in order and short: ' + R.SLOT_LIST.map(s => s.label).join(', '));
 
   // the demo (?cosmetics=all)
   const before = COSMETICS.length;
   R.setDemo(true);
   // (the Decal is no longer dormant since CHECKLIST 423: its tab is render/decalcosmetic.js's, on the zone table's cars only, no samples)
-  check(tabs(car('pickup')) === 'wheels,plate,roof,cargo,wing,underglow' && R.shownSlots(car('pickup')).length === 6, 'with ?cosmetics=all: the dormant Glow tab on the pickup too, no Decal (' + tabs(car('pickup')) + '; Kill FX comes with its items, below)');
-  check(tabs(car('rocketfin')) === 'wheels,underglow', '...and the canopy car still has no prop tab (nor a Plate: CHECKLIST 340) (' + tabs(car('rocketfin')) + ')');
+  check(tabs(car('pickup')) === 'wheels,plate,roof,cargo,wing,underglow,trail' && R.shownSlots(car('pickup')).length === 7, 'with ?cosmetics=all: the dormant Glow tab on the pickup too, no Decal (' + tabs(car('pickup')) + '; Kill FX comes with its items, below)');
+  check(tabs(car('rocketfin')) === 'wheels,underglow,trail', '...and the canopy car still has no prop tab (nor a Plate: CHECKLIST 340) (' + tabs(car('rocketfin')) + ')');
   check(R.slotById('underglow').items().every(it => it.sample && /^Sample/.test(it.name)) && R.slotById('decal').items().length === 0 && COSMETICS.length === before, '...its items are labelled Sample, the Decal gets none, and nothing is put in the cosmetics registry');
   R.setDemo(false);
   check(!R.shownSlots(car('pickup')).some(s => dormant.includes(s.id)), '...and off again: the dormant tabs are gone');
