@@ -43,10 +43,33 @@ Not swept (rush): about 26 themes, those after the ones above in the sweep's ord
   the big things.
 - Off with the chase camera: nothing runs (no index, no test). No new WebGL context; no allocation of ours per frame.
 
-Cost (`.replay-cam-check`): 5 to 24 clusters tested a frame (median 11), at most 1.4 ms in headless SwiftShader, 0 when off.
+Cost (`.replay-cam-check`, all 62 themes): clusters tested a frame at the poses median 9-17 by batch, at most 77 turning round the car (Metro Run); the fade's JS under 1 ms a frame once the copies exist; 0 when off (nothing built or run).
 
-## Known gaps (not faded)
+## Round 2 (after the owner read the pairs)
 
-Huge merged/shell meshes over 60 m: the Mall's hall (mall-dash), the Metro's station/tunnel shell (metro-run), terrain (alpine
-mountains, hills), the coast's cliff mesh (grand-pacific), tunnel shells. The nudge still handles them as before (raise / pull in).
-ShaderMaterial scenery (steelworks halos) is not faded.
+- NEVER WORSE THAN MAIN: what cannot fade is the old nudge's again. The nudge passes over a fading prop only when the prop's
+  cluster box neither holds the camera nor lies within 2.5 m of it (`fadeProbe`: no camera inside a dissolve), and it now also
+  tests a line to the car's sills (a long low block that does not fade, Night s 1468). Wild West s 2705: identical to main.
+- LONG STRIPS: a single mesh more than 120 m across but at most 30 m tall (a hall's shell, a gallery, a tunnel lining; at most
+  200,000 vertices) is cut at index time into 12 m pieces by where its triangles are; each piece is a unit, its fade a per-vertex
+  attribute (`aFade`) read by a third kind of fading copy. Mall Dash: the camera keeps its 25 m (main pulled it in to 7 m).
+- SIZES: faded up to 120 m across (was 60), and anything over 0.05 m tall (a rail counts; was 0.35 m); a big block keeps the
+  windows on its face in its cluster.
+- INDEX BUILD: sliced, 6 ms a frame (a generator), so no pause: Venice 27,311 props in 3,928 clusters, ~133 ms of work over ~17
+  frames (the longest slice ~18 ms headless). Until it is ready nothing fades and the nudge works as on main.
+- HITCH FOUND AND FIXED: a fading copy of a styled material (the city's and Vegas' buildings) deep-copied its userData through JSON,
+  turning a canvas texture into a data URL: 200-800 ms frames. Now cloned without it (0.3-0.5 ms frames after).
+- A sprite in the scenery made the orbit's ray throw (Raycaster.camera unset; Haunted Hollow, Dakar Dash): fixed in
+  racewatch.firstSolid.
+- Stills: matched pairs, round 1 `replay-cam/pairs/`, round 2 `replay-cam/pairs2/` (each with LIST.md) in the session scratchpad.
+
+## Known gaps
+
+- METRO RUN: the station's shell is now cut in pieces and fades round the line, so the car is clear, but the dissolved piece reads
+  as a HOLE in the station (the dark tunnel shows through). Left as it is (the owner, 17-Oct).
+- Terrain (alpine mountains, hills), cliffs and anything taller than 30 m and wider than 120 m: not faded; the nudge as on main.
+- Moving set dressing (a crane, a carrier): its box is where it stood when the index was built.
+- ShaderMaterial scenery (steelworks halos), points, lines and sprites: not faded.
+- Themes where the check found no pose blocked only by fading props (nothing to show there, or only the land in the way): beach,
+  moon, iceroad, iceroad thaw, space, roadworks, alpine, canberra, safari, toyroom, sea, battlefield, rainforest, halloween, farm,
+  airport, volcano, volcano erupting, hell, autumn.
