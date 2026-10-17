@@ -450,13 +450,16 @@ else {
     // the lite version, none left (and nothing above the floor) 6 s into the held end; a skip holds with none
     if (want('fireworks')) {
       await go('index.html?cineplay', 2500);
-      const PLAY = (o) => evaluate(`import('/src/delivery/render/unlockcine.js').then(m => { window.__h = m.playUnlock(${JSON.stringify(o)}); window.__fwAt = m.FW.shells[0]; return !!window.__h; })`);
+      // (the time is the PAGE's, read in the same evaluation as the count, from just before playUnlock: never behind the cutscene's
+      // own clock, which starts at its first frame. The check's wall clock was: a slow round trip let a sample taken at the last
+      // shot count as 'before', the flaky "a rocket before the last shot")
+      const PLAY = (o) => evaluate(`import('/src/delivery/render/unlockcine.js').then(m => { window.__t0 = performance.now(); window.__h = m.playUnlock(${JSON.stringify(o)}); window.__fwAt = m.FW.shells[0]; return !!window.__h; })`);
       const H = (e) => evaluate(`(() => { const h = window.__h; return ${e}; })()`);
       for (const carId of ['swancar', 'horseshoe']) {
         await PLAY({ mode: 'key', carId });
-        const t0 = Date.now(), first = await evaluate('window.__fwAt');
+        const first = await evaluate('window.__fwAt');
         let before = 0, most = 0;
-        for (;;) { const t = (Date.now() - t0) / 1000; const n = await H('h.fireworks()'); if (t < first - 0.4) before = Math.max(before, n); else most = Math.max(most, n); if (await H('h.held')) break; await sleep(150); }
+        for (;;) { const [n, t] = await H('[h.fireworks(), (performance.now() - window.__t0) / 1000]'); if (t < first - 0.1) before = Math.max(before, n); else most = Math.max(most, n); if (await H('h.held')) break; await sleep(150); }
         await sleep(6000);
         const [left, air] = await H('[h.fireworks(), h.airborne()]');
         check(before === 0 && most > 40 && left === 0 && air === 0, `key ${carId}${carId === 'horseshoe' ? ' (fob)' : ' (blade)'}: fireworks only in the last shot (${before} before it, up to ${most} dots), none left and nothing above the floor 6 s into the held end`);
