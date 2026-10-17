@@ -119,6 +119,8 @@ try {
   const scene = new THREE.Scene(), pcam = new THREE.PerspectiveCamera(30, 0.6, 0.1, 400); pcam.position.set(0, 3, 10); pcam.lookAt(0, 0.6, 0); pcam.updateMatrixWorld();
   KillPreview.test('confetti', pcam, 1.4); // (makes its system)
   const sysP = KillPreview.fx, real = sysP.explode;
+  // (particles drawn at a size now: a delayed one is drawn at no size until it is out)
+  const drawn = (sys) => { let n = 0; for (const p of Object.values(sys.pools)) { const M = p.mesh.instanceMatrix.array; for (let i = 0; i < p.mesh.count; i++) if (M[i * 16] ** 2 + M[i * 16 + 1] ** 2 + M[i * 16 + 2] ** 2 > 0) n++; } return n; };
   let pv = [];
   sysP.explode = (id, x, y, z, vx, vz, e) => { pv.push(e); return real.call(sysP, id, x, y, z, vx, vz, e); };
   const prev = {}, pbad = [];
@@ -127,26 +129,27 @@ try {
     KillPreview.test(id, pcam, 1.4);
     const impact = KillPreview.state.impactAt;
     if (impact !== KP.impactAt(id)) pbad.push(id + ': the run\'s impact ' + impact + ' is not impactAt ' + KP.impactAt(id));
-    let wasBox = false, landed = null, explosion = null, hidden = null, sound = null, lastT = 0;
+    let wasBox = false, landed = null, explosion = null, hidden = null, sound = null, lastT = 0, drawnAt = -1;
     for (let f = 0; f < fps * 2 && (landed === null || explosion === null || f <= landed + 2); f++) {
       pv = []; sounds = []; const fire0 = KillPreview.state.classicFire;
       KillPreview.frame(scene, dt, pcam);
       const st = KillPreview.state;
       if (st.box) { wasBox = true; lastT = st.t; }
       else if (wasBox && landed === null) landed = f;
-      if (explosion === null && (id === 'classic' ? st.classicFire > fire0 : pv.some(e => !(e.scale < 1)))) explosion = f; // (the car's: not the package's small HIT)
+      if (explosion === null && (id === 'classic' ? st.classicFire > fire0 : pv.some(e => !(e.scale < 1)))) { explosion = f; drawnAt = id === 'classic' ? 1 : drawn(sysP); } // (the car's: not the package's small HIT)
       if (hidden === null && st.carHidden) hidden = f;
       if (sound === null && sounds.includes('explode')) sound = f;
     }
     // (its last drawn place: within one frame's flight of the car)
     if (!(impact - lastT <= dt + 1e-9)) pbad.push(id + ' @' + fps + ': the package last drawn ' + (impact - lastT).toFixed(3) + ' s short of the impact');
+    if (!(drawnAt > 0)) pbad.push(id + ' @' + fps + ': nothing of the explosion drawn on its first frame (every particle delayed)');
     prev[id + '@' + fps] = { landed, explosion, hidden, sound };
     const worst = Math.max(...[explosion, hidden, sound].map(v => (v === null || landed === null ? Infinity : Math.abs(v - landed))));
     if (worst > 1) pbad.push(id + ' @' + fps + ': landed frame ' + landed + ', explosion ' + explosion + ', car hidden ' + hidden + ', sound ' + sound);
   }
   sysP.explode = real;
   KillPreview.clear();
-  check(!pbad.length, 'THE PREVIEW, every effect at 60 and 30 fps: the package gone (landed), the car\'s explosion, the car hidden and the \'explode\' sound on the same frame, the package last drawn within a frame of the car, the impact time the effect\'s impactAt (' + KP.impactAt('confetti') + ' s)' + (pbad.length ? ': ' + pbad.slice(0, 8).join('; ') : ''));
+  check(!pbad.length, 'THE PREVIEW, every effect at 60 and 30 fps: the package gone (landed), the car\'s explosion, the car hidden and the \'explode\' sound on the same frame, some of the explosion drawn on that frame (not all delayed), the package last drawn within a frame of the car, the impact time the effect\'s impactAt (' + KP.impactAt('confetti') + ' s)' + (pbad.length ? ': ' + pbad.slice(0, 8).join('; ') : ''));
 
   // ---- the preview matches the run ----
   const gap = (k) => (k.explosion === null || k.landed === null ? null : k.explosion - k.landed);

@@ -103,7 +103,7 @@ const frame = (scene, dt, camera) => {
     if (hold >= 0 && run.t >= hold) dt = 0; // (held for a still)
     run.t += dt;
     const at0 = run.impactAt;
-    if (run.t < at0) { // the package in the air: an arc from the camera's left onto the car, its trail behind it
+    if (run.t < at0 - 1e-6) { // the package in the air: an arc from the camera's left onto the car, its trail behind it (1e-6: a sum of 60ths that is the impact time to a float's error is it)
       const u = run.t / at0;
       at.lerpVectors(from, to, u);
       at.y += 2.2 * 4 * u * (1 - u);
