@@ -196,6 +196,7 @@ body.touch-controls #touchControls { display: block; }
   border: 2px solid rgba(255,255,255,.3); background: rgba(255,255,255,.08); color: rgba(255,255,255,.75);
   font-size: 34px; pointer-events: none; /* (the pad takes the touch) */ }
 #touchControls button.down { background: rgba(255,255,255,.3); }
+body.one-pedal #touchControls .pedals button:last-child { display: none; } /* (one pedal: the brake the pad's width, render/touch.js) */
 .throw { display: none; position: fixed; width: 88px; height: 88px; border-radius: 50%;
   bottom: calc(var(--zone-h) + 12px);
   border: 3px solid rgba(255,255,255,.7); background: rgba(255,122,26,.55); color: #fff;

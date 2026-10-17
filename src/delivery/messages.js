@@ -17,6 +17,7 @@
 // ============================================================================
 import MESSAGES from './messages.json';
 import { CONFIG } from './config.js';
+import { shows } from './render/verbosity.js'; // (the Verbosity setting: what is said at all)
 
 // each message has a kind, which sets its colour (see style.css, #messages) and how important
 // it is, least first: reaction (white), pickup (yellow), rage (red: TANK RAGE, its pieces, a
@@ -56,6 +57,7 @@ export const Message = {
   // shows a message, by its path in messages.json, e.g. say('powerups', 'turbo') or
   // say('powerups', 'mystery', 'toad'). Returns the line it is on (its text can still be added to)
   say(group, ...keys) {
+    if (!shows(group, keys[0])) return null; // (hidden at this Verbosity: render/verbosity.js)
     const text = this.pick(group, ...keys);
     if (!text) return null;
     const now = performance.now(), [top, bottom] = this.lines;
