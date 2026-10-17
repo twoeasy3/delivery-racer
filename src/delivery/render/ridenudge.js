@@ -19,7 +19,7 @@ import { Replay } from '../replay.js';
 import { nudgeOn, nudgeFor, betterStats } from './rides.js';
 import { Garage } from './garage.js';
 import { Showroom } from './showroom.js';
-import { buyCar } from './carbuy.js'; // (a car bought: the showroom's one purchase path, which plays the sale cutscene: CHECKLIST 438 / 440)
+import { buyCar } from './carbuy.js'; // (a car bought: the showroom's one purchase path, which plays the sale cutscene: CHECKLIST 438 / 451)
 
 const css = `
 #rideNudge { margin: 8px auto 10px; max-width: 340px; padding: 10px 12px; border-radius: 12px; background: rgba(14, 20, 30, .88);
