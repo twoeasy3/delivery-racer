@@ -29,6 +29,8 @@ import { addLegend } from './legenddecal.js';
 import { dressCosmetics } from './showcar.js';
 import { setUnderglowLevel } from './underglow.js';
 import { LAMP_DEBUG, lampKey, lampsFor, makeLampMarkers } from './carlights.js';
+import { parentVelocity } from './gameclock.js'; // (the parent's own velocity, for its trails: CHECKLIST 442)
+const carried = { x: 0, y: 0, z: 0 };
 
 // Everything here that belongs to the loaded level (bridges, obstacles, pickups, targets)
 // lives in this group and is rebuilt by buildItems() each time a level is loaded.
@@ -605,11 +607,14 @@ export const syncPickups = (dt) => {
     roofSiren.userData.blue.visible = !flash;
   }
   // a boat's wake: white water churned up behind it, the more the faster it goes
+  // (dt here, and in all of this file's trails, is the GAME time of the frame and each trail is carried by its parent's own velocity:
+  // render/gameclock.js, CHECKLIST 442. Paused, nothing comes out and nothing drifts)
   if (Player.active && CAR.wake && Player.speed > 3 && !playerAirborne()) { // (none in the air: CHECKLIST 429)
-    const h = Track.toWorld(Player.s - Player.hl, Player.lat, tmp);
+    parentVelocity(Player, carried, Player.s - Player.hl);
+    Track.toWorld(Player.s - Player.hl, Player.lat, tmp);
     for (let n = perSecond(120, dt); n > 0; n--) { // (two a frame at 60 Hz, as it was)
       Particles.emit(tmp.x + rnd(0.6), tmp.y + 0.05, tmp.z + rnd(0.6), // (life, size, grow, gravity: a fine spray that falls back)
-        Math.sin(h) * Player.speed * 0.15 + rnd(1.2), 1 + Math.random() * 1.5, Math.cos(h) * Player.speed * 0.15 + rnd(1.2),
+        carried.x * 0.15 + rnd(1.2), 1 + Math.random() * 1.5, carried.z * 0.15 + rnd(1.2),
         0.45 + Math.random() * 0.3, 0.16, 0.8, 6, Math.random() < 0.6 ? 0xffffff : 0xcfe9f2, tmp.y);
     }
   }
@@ -618,10 +623,11 @@ export const syncPickups = (dt) => {
   for (const car of Traffic.cars) {
     if (!car.active || !CONFIG.vehicles[car.kind]?.boat || Math.abs(car.vs) < 3 || Math.abs(car.s - Player.s) > 220) continue;
     if (Track.water(car.s) > 0.2) continue;
-    const h = Track.toWorld(car.s - car.hl * car.dir, car.lat, tmp);
+    parentVelocity(car, carried, car.s - car.hl * car.dir);
+    Track.toWorld(car.s - car.hl * car.dir, car.lat, tmp);
     for (let n = perSecond(60, dt); n > 0; n--) { // (one a frame at 60 Hz, as it was)
       Particles.emit(tmp.x + rnd(car.hw * 0.6), tmp.y + 0.05, tmp.z + rnd(car.hw * 0.6),
-        Math.sin(h) * car.vs * 0.15 + rnd(1.2), 1 + Math.random() * 1.5, Math.cos(h) * car.vs * 0.15 + rnd(1.2),
+        carried.x * 0.15 + rnd(1.2), 1 + Math.random() * 1.5, carried.z * 0.15 + rnd(1.2),
         0.45 + Math.random() * 0.3, 0.16, 0.8, 6, Math.random() < 0.6 ? 0xffffff : 0xcfe9f2, tmp.y);
     }
   }
@@ -629,10 +635,12 @@ export const syncPickups = (dt) => {
   // nose-up or down), not the road's under it (CHECKLIST 429: it was the road's, a trail along the tarmac under a flying
   // car); on the ground playerPointY is the road's height there plus 0.6, as it always was
   if (Player.active && powerShown(Player.turbo)) {
-    const h = Track.toWorld(Player.s - Player.hl, Player.lat, tmp), y = playerPointY(tmp.y, Player.hl, 0.6);
+    parentVelocity(Player, carried, Player.s - Player.hl); // (half the car's own velocity: it falls back behind it, and bends with a lane change)
+    Track.toWorld(Player.s - Player.hl, Player.lat, tmp);
+    const y = playerPointY(tmp.y, Player.hl, 0.6);
     for (let n = perSecond(120, dt); n > 0; n--) { // (two a frame at 60 Hz, as it was)
       Particles.emit(tmp.x + rnd(0.5), y, tmp.z + rnd(0.5),
-        Math.sin(h) * Player.speed * 0.5 + rnd(1), Math.random(), Math.cos(h) * Player.speed * 0.5 + rnd(1),
+        carried.x * 0.5 + rnd(1), Math.random(), carried.z * 0.5 + rnd(1),
         0.3, 0.5, 0.5, 0, Math.random() < 0.5 ? TURBO_COLOR : 0xffffff);
     }
   }

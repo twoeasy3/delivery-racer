@@ -7,6 +7,7 @@ import { Hippos } from '../hippos.js';
 import { scene, tmp } from './scene.js';
 import { Particles, rnd } from './effects.js';
 import { makeHippo } from './hippoModel.js';
+import { chance } from './gameclock.js'; // (per 60 Hz frame, on the game's clock: none while paused, CHECKLIST 442)
 
 
 const pool = [];
@@ -36,7 +37,7 @@ export const syncHippos = () => {
           0.6 + Math.random() * 0.5, 0.25 + Math.random() * 0.3, 0, 18, Math.random() < 0.5 ? 0xffffff : 0x9fd0e0, -0.2);
       }
     }
-    if (charging && Math.random() < 0.6) {
+    if (charging && chance(0.6)) {
       const wet = h.lat > Track.hi(h.s) + CONFIG.hippo.bank;
       Particles.emit(tmp.x + rnd(1), h.y + 0.2, tmp.z + rnd(1), rnd(2), 1 + Math.random() * 2, rnd(2),
         0.5 + Math.random() * 0.4, wet ? 0.25 : 0.5, wet ? 0 : 1.5, wet ? 12 : 1, wet ? 0xe8f4f8 : 0xb8956a, tmp.y);

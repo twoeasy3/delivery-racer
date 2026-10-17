@@ -11,6 +11,7 @@ import { Elephants } from '../elephants.js';
 import { scene, tmp, clearGroup } from './scene.js';
 import { Particles, rnd } from './effects.js';
 import { makeElephant } from './elephantModel.js';
+import { chance } from './gameclock.js'; // (per 60 Hz frame, on the game's clock: none while paused, CHECKLIST 442)
 
 
 const group = new THREE.Group();
@@ -44,7 +45,7 @@ export const syncElephants = (now) => {
   });
   // the migration's dust: kicked up by the herd near the player as it streams across
   for (const o of Collision.obstacles) {
-    if (!o.migrate || o.gone || Math.abs(o.s - Player.s) > 250 || Math.random() > 0.08) continue;
+    if (!o.migrate || o.gone || Math.abs(o.s - Player.s) > 250 || !chance(0.08)) continue;
     Track.toWorld(o.s, o.lat, tmp);
     Particles.emit(tmp.x + rnd(1), tmp.y + 0.3, tmp.z + rnd(1), rnd(1.5), 0.8 + Math.random() * 1.5, rnd(1.5),
       1.2 + Math.random() * 0.8, 0.8 + Math.random() * 0.6, 2.5, 0.5, 0xc4a77a, tmp.y);

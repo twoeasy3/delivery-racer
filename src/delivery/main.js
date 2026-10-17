@@ -24,6 +24,7 @@ import { renderer, scene, camera, tmp, updateCamera, Cinematic } from './render/
 import { syncZones } from './render/road.js';
 import { carMesh, syncTraffic } from './render/cars.js';
 import { emitVehicleSmoke, updateEffects } from './render/effects.js';
+import { stepGame } from './render/gameclock.js';
 import { syncPackages } from './render/packages.js';
 import { syncEmotes } from './render/emotes.js';
 import { syncPickups, syncTargets, syncToads } from './render/items.js';
@@ -411,7 +412,8 @@ const hudCheck = params.get('hudcheck') === null ? null : () => {
   for (const line of Message.lines) line.at = performance.now();
 };
 
-let last = performance.now(), carry = 0; // (carry: s of the logic not yet stepped, see below)
+let last = performance.now();
+const logicStep = (step) => { const before = Game.step; Game.update(step); return Game.step !== before; }; // (false: no step taken, paused or a playback held at its end)
 let prevState = Game.state;
 const frame = (now) => {
   const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)) || 0.001; // (never less than nothing: a first frame's `now` can be before `last`, after ?ff)
@@ -426,13 +428,9 @@ const frame = (now) => {
     // added to what is carried over, and as many whole steps taken as it holds (a hair under one counts, so a
     // 60 Hz frame is two steps, not one or three); the rest waits for the next frame. Frozen while paused. A replay
     // played at 2x or 4x takes that many steps for the time (replay.js speed)
-    if (Game.paused) carry = 0;
-    else {
-      const speed = Replay.playing ? Replay.speed : 1;
-      carry = Math.min(carry + dt * speed, 0.1 * speed);
-      while (carry > CONFIG.maxStep * 0.98) { Game.update(CONFIG.maxStep); carry -= CONFIG.maxStep; }
-      carry = Math.max(0, carry);
-    }
+    // (render/gameclock.js stepGame: the same steps, and GameClock.dt, the game time they made, is what every trail, smoke,
+    // spray and particle pool below runs on: none while paused or in photo mode, 2x in a 2x replay; CHECKLIST 442)
+    const gdt = stepGame(dt, { paused: Game.paused, scale: Replay.playing ? Replay.speed : 1, update: logicStep });
 
     // then bring the scene up to date with it
     const heading = Track.toWorld(Player.s, Player.lat, tmp);
@@ -457,7 +455,7 @@ const frame = (now) => {
     syncBulletTrain();
     syncJunctions(now);
     syncTide(now);
-    syncWater(now, dt); // (after the car and the traffic are placed: it floats them)
+    syncWater(now, gdt); // (after the car and the traffic are placed: it floats them)
     syncHippos();
     syncElephants(now);
     syncWreckage(now);
@@ -476,11 +474,11 @@ const frame = (now) => {
     syncZones(dt);
     syncStorm(dt);
     syncMovers(dt);
-    emitVehicleSmoke(dt);
-    syncPackages(dt);
-    syncPickups(dt);
+    emitVehicleSmoke(gdt);
+    syncPackages(gdt);
+    syncPickups(gdt);
     syncTargets(dt);
-    updateEffects(dt);
+    updateEffects(gdt);
 
     syncCargo(dt, now); // (the cargo set down at the kerb, at the end: after the car is placed, before the camera)
     syncPhoto();

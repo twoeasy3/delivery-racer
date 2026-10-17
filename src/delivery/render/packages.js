@@ -8,6 +8,7 @@ import { classicTrail } from './particles.js';
 import { chosenKill } from './killfx.js';
 import { Player } from '../player.js';
 import { CAR } from '../cars.js';
+import { GameClock } from './gameclock.js';
 
 // ---- packages: plain boxes for the player's gifts, flaming ones from evil cars, cannon shells ----
 const PACKAGE_LOOK = { gift: [0xc8955a, 0.7], fire: [0xff9d2e, 0.7], bomb: [0xff9d2e, 0.7], shell: [0x1c1c1c, 0.45] };
@@ -40,6 +41,8 @@ export const syncPackages = (dt) => {
     // the TRAIL: the player's own packages (gifts, flaming ones, the 8x8's shells) leave the bits of the player's KILL EFFECT
     // (render/killfx.js; render-only); in Classic, and on everybody else's (an evil car's bombs, an army's shells), the flames as always
     // (a Classic gift leaves none)
+    // (on the game's clock, render/gameclock.js: a package held still by a pause leaves no more of it; CHECKLIST 442)
+    if (GameClock.frozen) continue;
     const look = p.owner === Player ? chosenKill(CAR.id) : 'classic';
     if (look !== 'classic' && KillFx.trail(look, tmp.x, tmp.y + p.h, tmp.z, tmp.y)) continue;
     if (p.kind === 'gift') continue;

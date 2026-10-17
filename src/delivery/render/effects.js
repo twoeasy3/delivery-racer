@@ -13,13 +13,18 @@ import { makeParticles, classicExplode, classicBurst, rnd, FIRE_COLORS } from '.
 import { createKillFx, chosenKill, KILL_FX } from './killfx.js';
 import { crushedBy, giantSilences } from './giantsound.js';
 import { playerPointY, playerAirborne } from './cars.js';
+import { GameClock, parentVelocity } from './gameclock.js';
 
 // ---- particles: smoke, fire and debris as instanced cubes (the machinery: render/particles.js) ---------------------
-export const Particles = makeParticles(500, new THREE.MeshBasicMaterial(), scene); // debris, flames, trails
-export const Fire = makeParticles(400, new THREE.MeshBasicMaterial({ // explosion fireballs
-  transparent: true, opacity: 0.5, depthWrite: false }), scene);
-export const Smoke = makeParticles(600, new THREE.MeshBasicMaterial({
-  transparent: true, opacity: 0.35, depthWrite: false }), scene);
+// (on the PARENT GAME CLOCK, render/gameclock.js, CHECKLIST 442: main.js advances them by the game time its steps made, so while
+// paused or in photo mode they hold still with the frozen cars they came from; and in a frame in which no game time passed they
+// take no new particle, so nothing goes on pouring from a car that is not moving into a pool that is not moving)
+const onGameClock = (pool) => { const emit = pool.emit; pool.emit = (...a) => { if (!GameClock.frozen) emit(...a); }; return pool; };
+export const Particles = onGameClock(makeParticles(500, new THREE.MeshBasicMaterial(), scene)); // debris, flames, trails
+export const Fire = onGameClock(makeParticles(400, new THREE.MeshBasicMaterial({ // explosion fireballs
+  transparent: true, opacity: 0.5, depthWrite: false }), scene));
+export const Smoke = onGameClock(makeParticles(600, new THREE.MeshBasicMaterial({
+  transparent: true, opacity: 0.35, depthWrite: false }), scene));
 const CLASSIC = { Particles, Fire, Smoke };
 export { rnd, FIRE_COLORS };
 // the KILL EFFECTS' pools in the game's scene (render/killfx.js): every explosion not in Classic, and the trails behind the player's packages
@@ -28,7 +33,9 @@ export const KillFx = createKillFx(scene);
 // so a wake or an exhaust is as thick at 30, 60 or 120 frames a second
 export const perSecond = (rate, dt) => Math.floor(rate * dt + Math.random());
 
-// damaged cars trail smoke from the engine: thicker and darker as health drops, then flames
+// damaged cars trail smoke from the engine: thicker and darker as health drops, then flames (carried at 0.3 of the car's own
+// velocity, along the road and across it: render/gameclock.js parentVelocity)
+const carried = { x: 0, y: 0, z: 0 };
 const emitSmoke = (v, dt) => {
   // a car spinning out from damage pours smoke; one that skidded on ice smokes only as much as its damage
   const health = v.spin > 0 && !v.spinIce ? 0 : v.health / v.maxHealth;
@@ -36,9 +43,10 @@ const emitSmoke = (v, dt) => {
   const amount = 1 - health / CONFIG.smokeStart;
   v.smoke += amount * CONFIG.smokeRate * dt;
   if (v.smoke < 1) return;
-  const h = Track.toWorld(v.s + v.dir * v.hl * 0.6, v.lat, tmp);
+  parentVelocity(v, carried);
+  Track.toWorld(v.s + v.dir * v.hl * 0.6, v.lat, tmp);
   if (v === Player) tmp.y = playerPointY(tmp.y, -v.hl * 0.6, 0); // (the player's car in the air: from its engine up there, not the road under it; CHECKLIST 429)
-  const vx = Math.sin(h) * v.vs * 0.3, vz = Math.cos(h) * v.vs * 0.3;
+  const vx = carried.x * 0.3, vz = carried.z * 0.3;
   const grey = Math.round(190 - 160 * amount);
   while (v.smoke >= 1) {
     v.smoke--;
@@ -178,7 +186,8 @@ const fxBoom = (dt) => {
   explode({ type: 'explode', s: at ? at.s : Player.s + 25, lat: at ? at.lat : Player.lat, vs: 0, big: false });
 };
 
-// plays the effects the game logic queued this frame, then advances every particle and tyre
+// plays the effects the game logic queued this frame, then advances every particle and tyre (dt: the GAME time of the frame,
+// render/gameclock.js: 0 while paused, so nothing drifts on from a frozen car)
 // (the GIANT is silent: no footstep, no crush, its crushed cars' explosions drawn without a sound: render/giantsound.js, CHECKLIST 386)
 export const updateEffects = (dt) => {
   for (const e of FxQueue) {

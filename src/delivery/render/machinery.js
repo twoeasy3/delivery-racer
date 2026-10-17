@@ -12,6 +12,7 @@ import { scene, tmp, clearGroup } from './scene.js';
 import { Particles, rnd } from './effects.js';
 import { playerAirborne } from './cars.js';
 import { makeMachine, BEACON_ON, BEACON_OFF } from './machineModels.js';
+import { chance } from './gameclock.js'; // (per 60 Hz frame, on the game's clock: none while paused, CHECKLIST 442)
 
 
 const group = new THREE.Group();
@@ -40,12 +41,12 @@ export const syncMachinery = (now) => {
       : heading + (m.dir > 0 ? -Math.PI / 2 : Math.PI / 2);
     mesh.userData.beacon.material = Math.floor(now / 250 + i) % 2 ? BEACON_ON : BEACON_OFF;
     if (mesh.userData.boom) mesh.userData.boom.rotation.x = -0.6 + 0.2 * Math.sin(now / 700 + i);
-    if (m.rest <= 0 && Math.random() < 0.15) { // (a puff of exhaust as it works)
+    if (m.rest <= 0 && chance(0.15)) { // (a puff of exhaust as it works)
       Particles.emit(tmp.x + rnd(1), tmp.y + 4.5, tmp.z + rnd(1), rnd(0.5), 2, rnd(0.5), 1, 0.4, 1.5, 0, 0x3a3a3a, tmp.y);
     }
   });
   // mud thrown up from the player's wheels, driving through it
-  if (Player.active && Track.muddy(Player.s) && Player.speed > 4 && !playerAirborne() && Math.random() < 0.8) { // (not in the air: CHECKLIST 429)
+  if (Player.active && Track.muddy(Player.s) && Player.speed > 4 && !playerAirborne() && chance(0.8)) { // (not in the air: CHECKLIST 429)
     const h = Track.toWorld(Player.s - Player.hl, Player.lat + rnd(Player.hw), tmp);
     const back = -Math.min(1, Player.speed / 20) * 4;
     Particles.emit(tmp.x, tmp.y + 0.3, tmp.z, Math.sin(h) * back + rnd(1.5), 2 + Math.random() * 3, Math.cos(h) * back + rnd(1.5),
