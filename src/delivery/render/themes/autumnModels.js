@@ -112,7 +112,7 @@ const syrupJet = (parent, material, dropGeo, sx, mouth) => {
   const shine = put(parent, tube(), glow(0xffd9a0), sx, mouth, 0);
   body.userData.syrupJet = true;
   const drops = Array.from({ length: DROPS + SPIRALS }, () => put(parent, dropGeo, material));
-  const G = -5.2, VX = 0.5, VY = 0.95, VZ = 0.12, FLOOR = 0.03 - mouth;              // (FLOOR: the ground, from the mouth)
+  const G = -5.2, VX = 0.55, VY = 1.2, VZ = 0.14, FLOOR = 0.03 - mouth;              // (FLOOR: the ground, from the mouth)
   const v = new THREE.Vector3(), tan = new THREE.Vector3(), nUp = new THREE.Vector3(), bin = new THREE.Vector3(), lit = new THREE.Vector3(), q = new THREE.Vector3();
   let vx = VX, vy = VY, vz = VZ, wob = 0, phase = 0;
   const at = (s, out) => out.set(vx * s, vy * s + 0.5 * G * s * s, vz * s);       // the arc, from the mouth
@@ -153,7 +153,7 @@ const syrupJet = (parent, material, dropGeo, sx, mouth) => {
     vx = VX * surge * (0.6 + 0.4 * rage); vy = VY * surge * (0.55 + 0.45 * rage); vz = VZ * surge;
     wob = 0.014 * rage; phase = t * 14;
     const T = land(), sTube = T * 0.72 * rage;                                          // (the ribbon grows out of the spout as the state comes on)
-    const r0 = 0.034 * (0.85 + 0.15 * hop) * rage;
+    const r0 = 0.044 * (0.85 + 0.15 * hop) * rage;
     write(body.geometry, sTube, r0, 0, 1, 0.97);
     write(shine.geometry, sTube, r0, 0.82, 0.3, 0.86); // (the same rings, so it rides on the ribbon's top)
     // drops going on along the arc to the ground, smaller as they go
@@ -304,9 +304,9 @@ export const AUTUMN_CARGO = {
       lid.position.set(-rage * (0.12 + Math.sin(t * 2.6) * 0.03), 0.1 + rage * (0.3 + Math.abs(Math.sin(t * 3.4)) * 0.25), -rage * 0.06); // (blown up and back, clear of the jet)
       lid.rotation.set(rage * t * 6, 0, rage * 0.6);
       puddle.scale.setScalar(Math.max(0.001, 0.55 + up * 0.5 + rage * 1.0));
-      drips.forEach((d, k) => { const len = (up * (0.14 + k * 0.05) + rage * (0.3 + k * 0.07)) * (0.6 + 0.4 * Math.sin(t * 1.4 + k)); d.scale.y = Math.max(0.001, len); d.position.y = TOP - 0.01 - len / 2; });
-      back.forEach((d, k) => { const len = rage * (0.25 + k * 0.1); d.scale.y = Math.max(0.001, len); d.position.y = TOP - 0.01 - len / 2; });
-      { const len = rage * (0.28 + 0.06 * Math.sin(t * 2.1)) + up * 0.06; side.scale.y = Math.max(0.001, len); side.position.y = TOP - 0.01 - len / 2; }
+      drips.forEach((d, k) => { const len = (up * (0.14 + k * 0.05) + rage * (0.3 + k * 0.07)) * (0.6 + 0.4 * Math.sin(t * 1.4 + k)); d.visible = len > 0.004; d.scale.y = Math.max(0.001, len); d.position.y = TOP - 0.01 - len / 2; });
+      back.forEach((d, k) => { const len = rage * (0.25 + k * 0.1); d.visible = len > 0.004; d.scale.y = Math.max(0.001, len); d.position.y = TOP - 0.01 - len / 2; });
+      { const len = rage * (0.28 + 0.06 * Math.sin(t * 2.1)) + up * 0.06; side.visible = len > 0.004; side.scale.y = Math.max(0.001, len); side.position.y = TOP - 0.01 - len / 2; }
       const p = 0.085 * (0.35 * up + rage * (0.9 + 0.1 * hop));
       pool.scale.set(Math.max(0.001, p), Math.max(0.001, p * 0.16), Math.max(0.001, p));
       const c = 0.058 * clamp01(up * 1.2 + rage);
