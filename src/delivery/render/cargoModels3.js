@@ -1203,55 +1203,182 @@ const makeBooks = () => {
   });
 };
 
-// ---- C59 the new neighbour's fruit basket: an open wicker basket, fruit heaped up over its rim, a
-// handle arching over with a bow and a WELCOME tag; the fruit shuffles, and the pineapple's crown sways
+// ---- C59 the new neighbour's fruit basket: a woven wicker basket with a rope rim and a handle arching over
+// with a bow, lined with paper shred; a pineapple at the back, apples (red and green), oranges, a pear,
+// grapes and a bunch of bananas lying on top, every piece resting on the shred or on another; a plain
+// card on a pick. All solid, closed shapes coloured by vertex (no textures); the basket rocks a little and
+// the pineapple's crown and the card sway
+const FRUIT = {}; // (the shared geometries and materials, made once)
+const fruitParts = () => {
+  if (FRUIT.vc) return FRUIT;
+  const c = new THREE.Color();
+  // a non-indexed geometry from a list of triangles ([[x, y, z] x 3, colour per corner]) with flat normals
+  const tris = (list) => {
+    const pos = [], col = [];
+    for (const [p, cs] of list) p.forEach((v, k) => { pos.push(...v); c.setHex(cs[k]); col.push(c.r, c.g, c.b); });
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    g.computeVertexNormals();
+    return g;
+  };
+  // colour each face of a geometry (made non-indexed): fn(face index) -> hex
+  const faces = (geometry, fn) => {
+    const g = geometry.index ? geometry.toNonIndexed() : geometry;
+    const n = g.attributes.position.count, col = new Float32Array(n * 3);
+    for (let f = 0; f < n / 3; f++) { c.setHex(fn(f)); for (let k = 0; k < 3; k++) col.set([c.r, c.g, c.b], (f * 3 + k) * 3); }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    return g;
+  };
+  const RADIAL = 24, ROWS = 7; // the weave: over-and-under squares in two tans
+  const weave = (light, dark) => (f) => { const q = f >> 1, row = Math.floor(q / RADIAL), col = q % RADIAL; return (row + col) % 2 ? light : dark; };
+  FRUIT.outer = faces(new THREE.CylinderGeometry(0.3, 0.2, 0.26, RADIAL, ROWS, true).translate(0, 0.13, 0), weave(0xd09a52, 0xa8743a));
+  FRUIT.inner = faces(new THREE.CylinderGeometry(0.278, 0.185, 0.23, RADIAL, 2, true).translate(0, 0.145, 0), weave(0xd8b47a, 0xc49a60));
+  // a rope: a torus striped on the twist
+  const rope = (r, t, arc, n) => faces(new THREE.TorusGeometry(r, t, 6, n, arc), (f) => { const q = f >> 1, j = Math.floor(q / n), i = q % n; return ((i + j) >> 1) % 2 ? 0xc89050 : 0x8e6230; });
+  FRUIT.rim = rope(0.29, 0.024, Math.PI * 2, 48);
+  FRUIT.handle = rope(0.29, 0.02, Math.PI, 28);
+  FRUIT.foot = rope(0.2, 0.014, Math.PI * 2, 32);
+  FRUIT.base = new THREE.CircleGeometry(0.2, RADIAL).rotateX(FLAT); // (underneath, facing down)
+  // the paper shred: a low dome in straw, cream and pale green
+  const SHRED = [0xf0dc9a, 0xe4c878, 0xf6ecc8, 0xc8d88a];
+  FRUIT.shred = faces(new THREE.SphereGeometry(1, 18, 5, 0, Math.PI * 2, 0, Math.PI / 2).scale(0.25, 0.08, 0.25), (f) => SHRED[(f * 7 + (f >> 3)) % 4]);
+  // the pineapple: a barrel of diamonds, each a low pyramid, dark brown-orange at its eye and golden at its corners
+  {
+    const S = 10, R = 10, H = 0.24, RM = 0.085, GOLD = 0xe6a22e, EYE = 0x8a4a12;
+    const rad = (v) => RM * Math.sqrt(Math.max(0, 1 - ((v - 0.45) / 0.6) ** 2));
+    const at = (k, j, bump = 1) => { const a = (k + 0.5 * (j % 2)) * Math.PI * 2 / S, r = rad(j / R) * bump; return [r * Math.sin(a), H * j / R, r * Math.cos(a)]; };
+    const eye = (k, j) => { const a = (k + 0.5 * (j % 2)) * Math.PI * 2 / S, r = rad((j + 1) / R) * 1.08; return [r * Math.sin(a), H * (j + 1) / R, r * Math.cos(a)]; };
+    const list = [], G3 = [GOLD, GOLD, GOLD];
+    for (let j = 0; j <= R - 2; j++) for (let k = 0; k < S; k++) {
+      const odd = j % 2, b = at(k, j), t = at(k, j + 2), l = at(odd ? k : k - 1, j + 1), r = at(odd ? k + 1 : k, j + 1), m = eye(k, j);
+      const cs = [GOLD, GOLD, EYE];
+      list.push([[b, r, m], cs], [[r, t, m], cs], [[t, l, m], cs], [[l, b, m], cs]);
+    }
+    for (let k = 0; k < S; k++) { // (the ends: the half-diamonds and the poles)
+      list.push([[at(k, 0), at(k + 1, 0), at(k, 1)], G3], [[at(k, R - 1), at(k + 1, R), at(k, R)], G3]);
+      list.push([[[0, -0.006, 0], at(k + 1, 0), at(k, 0)], [0xb07a28, GOLD, GOLD]], [[[0, H + 0.008, 0], at(k, R), at(k + 1, R)], [0x7a8a2a, GOLD, GOLD]]);
+    }
+    FRUIT.pineapple = tris(list);
+    FRUIT.pineappleH = H;
+  }
+  // a banana: a five-sided sweep along a curve, closed to a point at both ends; green by the stem, brown at the tip
+  {
+    const N = 12, SIDES = 5, RC = 0.13, SPAN = 1.5, RMAX = 0.021;
+    const pos = [], col = [], idx = [];
+    for (let i = 0; i <= N; i++) {
+      const t = i / N, th = (t - 0.5) * SPAN, r = RMAX * Math.pow(Math.sin(Math.PI * t), 0.55);
+      const p = [RC * Math.sin(th), RC * (1 - Math.cos(th))], nx = -Math.sin(th), ny = Math.cos(th);
+      c.setHex(t > 0.93 ? 0x4a2e14 : t < 0.12 ? 0xb4be3a : 0xf6d43c);
+      for (let s = 0; s < SIDES; s++) {
+        const f = s * Math.PI * 2 / SIDES, u = Math.cos(f) * r, w = Math.sin(f) * r;
+        pos.push(p[0] + nx * u, p[1] + ny * u, w);
+        col.push(c.r, c.g, c.b);
+      }
+    }
+    for (let i = 0; i < N; i++) for (let s = 0; s < SIDES; s++) {
+      const a = i * SIDES + s, b = i * SIDES + (s + 1) % SIDES, d = a + SIDES, e = b + SIDES;
+      idx.push(a, b, d, b, e, d);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    g.setIndex(idx);
+    g.computeVertexNormals();
+    FRUIT.banana = g;
+    FRUIT.bananaEnd = [-RC * Math.sin(SPAN / 2), RC * (1 - Math.cos(SPAN / 2)), SPAN / 2]; // (the stem end, and how far its curve has turned there)
+  }
+  const lathe = (pts, n = 14) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), n);
+  FRUIT.apple = lathe([[0, 0.012], [0.03, 0], [0.058, 0.018], [0.072, 0.05], [0.068, 0.088], [0.046, 0.116], [0.022, 0.114], [0, 0.1]]);
+  FRUIT.pear = lathe([[0, 0], [0.036, 0.004], [0.054, 0.026], [0.056, 0.05], [0.044, 0.078], [0.03, 0.1], [0.024, 0.124], [0.014, 0.142], [0, 0.146]]);
+  FRUIT.orange = sphere(1, 12, 9);
+  FRUIT.grape = sphere(0.022, 7, 5);
+  FRUIT.stem = cyl(0.005, 0.006, 1, 5).translate(0, 0.5, 0); // (a stalk, one metre: scaled to length)
+  FRUIT.leaf = cone(1, 1, 4).translate(0, 0.5, 0); // (a blade, scaled: wide, long, thin)
+  FRUIT.vc = lambert(0xffffff, { vertexColors: true });
+  FRUIT.innerMat = lambert(0xffffff, { vertexColors: true, side: THREE.BackSide });
+  FRUIT.mats = { red: lambert(0xd42a22), green: lambert(0x8cc83a), orange: lambert(0xff8a1e), pear: lambert(0xcfd24a), grapeA: lambert(0x5a2a7a), grapeB: lambert(0x7c3e9c), brown: lambert(0x5a3a1c), leafA: lambert(0x2f9a3a), leafB: lambert(0x56c04a), bow: lambert(0xd8283a), card: lambert(0xfff4d6), wicker: lambert(0x8e6230) };
+  return FRUIT;
+};
 const makeFruit = () => {
+  const P = fruitParts(), M = P.mats;
   const group = new THREE.Group();
   const all = sub(group);
-  const wicker = lambert(0xc49a5a, { side: THREE.DoubleSide }), wickerDark = lambert(0x9a7238);
-  // the basket: an open lathe (no top), the black shade of its inside just under the rim
-  part(all, new THREE.LatheGeometry([[0.02, 0], [0.22, 0], [0.26, 0.06], [0.3, 0.2], [0.31, 0.28]].map(([r, y]) => new THREE.Vector2(r, y)), 20), wicker);
-  part(all, new THREE.CircleGeometry(0.3, 20), SHADE, 0, 0.266, 0, -FLAT);
-  for (let k = 0; k < 4; k++) part(all, torus(0.23 + k * 0.022, 0.012, 20), wickerDark, 0, 0.04 + k * 0.06, 0, FLAT);
-  part(all, torus(0.31, 0.022, 20), wickerDark, 0, 0.28, 0, FLAT);
-  part(all, torus(0.3, 0.02, 24, Math.PI), wickerDark, 0, 0.28, 0); // (the handle, over the top)
-  // the bow and the tag on the handle
-  const bow = sub(all, 0, 0.58, 0);
-  for (const d of [-1, 1]) part(bow, torus(0.04, 0.014, 10), lambert(0xd83a4a), d * 0.045, 0.02, 0, 0, 0, d * 0.4).scale.set(1.2, 1, 0.5);
-  part(bow, sphere(0.022, 8, 6), lambert(0xd83a4a), 0, 0.02, 0);
-  const tag = sub(all, -0.2, 0.48, 0.04);
-  part(tag, cyl(0.003, 0.003, 0.08, 5), lambert(0xd8d8e0), 0, 0.04, 0);
-  part(tag, plane(0.12, 0.06), lettered('WELCOME!', 0x3a2a20, 0xfff1b8, 192, 72), 0, -0.03, 0);
-  // the fruit, heaped: every piece stands proud of the shade
-  const fruit = [];
-  const add = (mesh, k) => { mesh.userData.k = k; mesh.userData.at = mesh.position.clone(); fruit.push(mesh); return mesh; };
-  add(part(all, sphere(0.075, 12, 10), lambert(0xd83a2a), -0.16, 0.3, 0.1), 0); // apples
-  add(part(all, sphere(0.07, 12, 10), lambert(0x8ac83a), 0.13, 0.29, 0.14), 1);
-  add(part(all, sphere(0.08, 12, 10), lambert(0xff8a2a), 0.17, 0.3, -0.1), 2); // an orange
-  add(part(all, sphere(0.06, 12, 10), lambert(0xffd23f), -0.02, 0.28, 0.21), 3); // a lemon
-  fruit[3].scale.set(1.3, 0.9, 0.9);
-  const bunch = sub(all, -0.17, 0.3, -0.12); // (grapes)
-  for (let k = 0; k < 9; k++) part(bunch, sphere(0.03, 8, 6), lambert(0x6a3a8a), Math.sin(k * 2.4) * 0.05, (k % 3) * 0.04 - 0.02, Math.cos(k * 2.4) * 0.05);
-  add(bunch, 4);
-  const bananas = sub(all, 0.1, 0.43, 0.06);
-  for (let k = 0; k < 3; k++) part(bananas, torus(0.09, 0.02, 10, 2), lambert(0xf4d35e), k * 0.035, 0, k * 0.02, 0, 0.3, 0.5);
-  add(bananas, 5);
-  const pineapple = sub(all, -0.03, 0.3, 0.0);
-  part(pineapple, sphere(0.1, 12, 10), lambert(0xc8a040), 0, 0.1, 0).scale.set(1, 1.5, 1);
-  for (let k = 0; k < 10; k++) part(pineapple, sphere(0.02, 5, 4), lambert(0x8a6a20), Math.sin(k * 2.4) * 0.09, 0.02 + (k % 5) * 0.045, Math.cos(k * 2.4) * 0.09);
-  const crown = sub(pineapple, 0, 0.25, 0);
-  const leaves = Array.from({ length: 9 }, (_, k) => { const a = k * 0.7; const l = part(crown, cone(0.022, 0.2, 4), lambert(0x3f9b4b), Math.sin(a) * 0.03, 0.08, Math.cos(a) * 0.03, Math.cos(a) * (0.3 + (k % 3) * 0.2), 0, -Math.sin(a) * (0.3 + (k % 3) * 0.2)); l.userData.a = a; return l; });
+  // the basket: woven walls (a lighter inside), a rope rim and foot, and the handle over the top
+  part(all, P.outer, P.vc);
+  part(all, P.inner, P.innerMat);
+  part(all, P.base, M.wicker);
+  part(all, P.foot, P.vc, 0, 0.012, 0, FLAT);
+  part(all, P.rim, P.vc, 0, 0.27, 0, FLAT);
+  part(all, P.handle, P.vc, 0, 0.27, 0);
+  part(all, P.shred, P.vc, 0, 0.16, 0);
+  // the bow on the handle: two loops and two tails
+  const bow = sub(all, 0, 0.56, 0.02);
+  for (const d of [-1, 1]) {
+    part(bow, torus(0.04, 0.013, 10), M.bow, d * 0.042, 0.012, d * 0.004, 0, 0, d * 0.4).scale.set(1.2, 1, 0.5);
+    part(bow, box(0.022, 0.08, 0.006), M.bow, d * 0.02, -0.045, 0.014 + d * 0.004, 0, 0, d * 0.35);
+  }
+  part(bow, sphere(0.02, 8, 6), M.bow, 0, 0.004, 0);
+  // the fruit sits on the shred (its top: y = shredAt(r)) or on each other
+  const shredAt = (x, z) => 0.16 + 0.08 * Math.sqrt(Math.max(0, 1 - (x * x + z * z) / 0.0625));
+  const stalk = (parent, y, h, tilt = 0.15) => part(parent, P.stem, M.brown, 0, y - 0.01, 0, tilt, 0, tilt * 0.6).scale.set(1, h, 1);
+  const leaf = (parent, x, y, z, len, w, rx, ry, rz, mat = M.leafA) => part(parent, P.leaf, mat, x, y, z, rx, ry, rz).scale.set(w, len, w * 0.28);
+  const apple = (x, z, mat, turn) => {
+    const g = sub(all, x, shredAt(x, z) - 0.016, z);
+    g.rotation.set(0.12 * Math.sin(turn), turn, 0.12 * Math.cos(turn));
+    part(g, P.apple, mat);
+    stalk(g, 0.106, 0.035);
+    leaf(g, 0.006, 0.124, 0, 0.045, 0.014, 0, 0, -1.2, M.leafB);
+    return g;
+  };
+  apple(-0.14, 0.09, M.red, 0.5);
+  apple(0.165, -0.085, M.green, 2);
+  const orange = (x, z, r) => part(all, P.orange, M.orange, x, shredAt(x, z) + r - 0.014, z).scale.setScalar(r);
+  orange(0.035, 0.15, 0.072);
+  orange(-0.17, -0.08, 0.066);
+  const pear = sub(all, 0.17, shredAt(0.17, 0.085) - 0.016, 0.085);
+  pear.rotation.set(0.18, 0, -0.22);
+  part(pear, P.pear, M.pear);
+  stalk(pear, 0.14, 0.03, 0.3);
+  // the grapes: a cluster lying between the red apple and the orange, its stalk to the back
+  const grapes = sub(all, -0.055, shredAt(-0.055, 0.115) + 0.008, 0.115);
+  grapes.rotation.set(0, -0.3, 0);
+  [[0, 0, 0], [0.04, 0, -0.01], [-0.04, 0, -0.01], [0.02, 0, 0.034], [-0.02, 0, 0.034], [0, 0, 0.066], [0.022, 0.03, 0.012], [-0.022, 0.03, 0.012], [0, 0.03, -0.024], [0, 0.028, 0.044], [0.04, 0.02, -0.04], [-0.04, 0.02, -0.04]]
+    .forEach(([x, y, z], k) => part(grapes, P.grape, k % 3 ? M.grapeA : M.grapeB, x, y, z));
+  part(grapes, P.stem, M.brown, 0, 0.03, -0.035, -1.9, 0, 0).scale.set(1.2, 0.05, 1.2);
+  // the pineapple at the back, its crown of leaves fanning up
+  const PH = P.pineappleH;
+  const pineapple = sub(all, 0, shredAt(0, -0.1) - 0.03, -0.1);
+  part(pineapple, P.pineapple, P.vc);
+  const crown = sub(pineapple, 0, PH, 0);
+  const leaves = Array.from({ length: 12 }, (_, k) => {
+    const inner = k < 4, a = inner ? k * Math.PI / 2 + 0.4 : (k - 4) * Math.PI / 4;
+    const hold = sub(crown);
+    hold.rotation.y = a;
+    leaf(hold, 0, 0, 0, inner ? 0.19 : 0.13, inner ? 0.019 : 0.021, inner ? 0.2 : 0.6, 0, 0, inner ? M.leafA : M.leafB);
+    return hold;
+  });
+  // the bananas: three, from one stalk, lying across the front on the orange and the pear
+  const bunch = sub(all, 0.085, 0.349, 0.115);
+  bunch.rotation.set(0, -0.5, -0.12);
+  const [ex, ey, th] = P.bananaEnd;
+  [[-0.036, 0.008, -0.18], [0, 0.022, 0], [0.036, 0.008, 0.18]].forEach(([z, y, yaw]) => {
+    const b = sub(bunch, ex, ey, 0);
+    b.rotation.y = yaw;
+    part(b, P.banana, P.vc, -ex, y - ey, z * Math.cos(yaw));
+  });
+  part(bunch, P.stem, M.brown, ex + Math.cos(th) * 0.008, ey + 0.012 - Math.sin(th) * 0.008, 0, 0, 0, Math.PI / 2 - th).scale.set(2.4, 0.035, 2.4); // (the stalk, out along the curve)
+  // the card on its pick (no words: a cream card)
+  const card = sub(all, -0.1, shredAt(-0.1, 0.005) - 0.02, 0.005);
+  part(card, P.stem, M.wicker, 0, 0, 0).scale.set(0.6, 0.2, 0.6);
+  const face = sub(card, 0, 0.21, 0);
+  part(face, box(0.09, 0.06, 0.004), M.card, 0, 0, 0, -0.15, 0.35, 0);
   return idle(group, (t) => {
-    fruit.forEach((f) => { // (a shuffle: each settles, now and then)
-      const k = f.userData.k, u = ((t * 0.5 + k / 8) % 1), hop = Math.pow(Math.max(0, Math.sin(u * Math.PI * 2)), 4);
-      f.position.set(f.userData.at.x + Math.sin(k) * hop * 0.02, f.userData.at.y + hop * 0.03, f.userData.at.z);
-      f.rotation.y = Math.sin(t * 0.7 + k) * 0.3;
-    });
-    crown.rotation.set(Math.sin(t * 1.3) * 0.15, 0, Math.cos(t * 1.1) * 0.15);
-    leaves.forEach((l, k) => { l.rotation.z = -Math.sin(l.userData.a) * (0.3 + (k % 3) * 0.2) + Math.sin(t * 2 + k) * 0.05; });
-    pineapple.rotation.y = Math.sin(t * 0.5) * 0.1;
-    tag.rotation.y = Math.sin(t * 1.1) * 0.3;
-    bow.scale.setScalar(1 + Math.sin(t * 3) * 0.04);
+    all.rotation.z = Math.sin(t * 0.9) * 0.025; // (a gentle rock: the fruit rides with the basket)
+    crown.rotation.set(Math.sin(t * 1.3) * 0.06, 0, Math.cos(t * 1.1) * 0.06);
+    leaves.forEach((l, k) => { l.rotation.z = Math.sin(t * 2 + k) * 0.04; });
+    face.rotation.y = Math.sin(t * 1.1) * 0.25;
+    bow.scale.setScalar(1 + Math.sin(t * 3) * 0.03);
   });
 };
 
