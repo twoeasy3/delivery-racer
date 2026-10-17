@@ -36,6 +36,8 @@ const MAX_SIZE = 120;   // m across (x or z): bigger than this is never faded (a
 const LOW = 0.35;       // m tall: anything lower never stands in a camera's way over the car
 const CLUSTER_MAX = 40; // m across: a cluster no bigger
 const TOUCH = 0.35;     // m: how close two things are to be one (the cluster test)
+const STRIP_HEIGHT = 30; // m: a strip taller than this (a mountain, a cliff) is not cut up
+const STRIP_VERTS = 200000; // and none of more vertices than this
 const LEVELS = 16;      // steps of a loose object's dissolve (the dither has 16)
 const HOLD = Math.min(1, Math.max(0, Number(new URLSearchParams(location.search).get('fadehold')) || 1)); // (?fadehold=0.5: the fade held part way, for a still of the dissolve)
 const AIM = 1.1;        // m up the car the line ends (where the orbit camera looks)
@@ -58,27 +60,36 @@ mat4 fadeRawIM() { return instanceMatrix; }
 mat4 fadeIM;
 void main() {
   fadeIM = fadeRawIM(); vFade = fadeIM[0].w; fadeIM[0].w = 0.0;`;
+// (a long strip of scenery, cut in pieces: each vertex's piece's fade in an attribute of its own)
+const VERTEX_STRIP = `
+attribute float aFade;
+varying float vFade;
+void main() {
+  vFade = aFade;`;
 const fragment = (src) => `${BAYER}
 ${src === 'vFade' ? 'varying float vFade;' : 'uniform float uFade;'}
 void main() {
   if (${src} > fadeBayer(gl_FragCoord.xy) + 0.03) discard;`;
-const copies = new Map(); // original material -> { inst, steps[] }
-const copyOf = (orig, instanced, step) => {
+const copies = new Map(); // original material -> { i: the instanced copy, v: the strip copy, q: [a copy a step] }
+// kind: 'i' an instanced mesh (the fade in the instance matrix), 'v' a strip (the fade a vertex), 'q' a loose object (a step of LEVELS)
+const copyOf = (orig, kind, step = 0) => {
   let c = copies.get(orig);
-  if (!c) copies.set(orig, c = { inst: null, steps: [] });
-  if (instanced ? c.inst : c.steps[step]) return instanced ? c.inst : c.steps[step];
+  if (!c) copies.set(orig, c = { i: null, v: null, q: [] });
+  const have = kind === 'q' ? c.q[step] : c[kind];
+  if (have) return have;
   const m = orig.clone();
   const own = orig.onBeforeCompile, key = orig.customProgramCacheKey();
   const uFade = { value: step / LEVELS };
   m.onBeforeCompile = (shader, renderer) => {
     own.call(orig, shader, renderer);
-    if (instanced) shader.vertexShader = shader.vertexShader.replace(MAIN, VERTEX);
+    if (kind === 'i') shader.vertexShader = shader.vertexShader.replace(MAIN, VERTEX);
+    else if (kind === 'v') shader.vertexShader = shader.vertexShader.replace(MAIN, VERTEX_STRIP);
     else shader.uniforms.uFade = uFade;
-    shader.fragmentShader = shader.fragmentShader.replace(MAIN, fragment(instanced ? 'vFade' : 'uFade'));
+    shader.fragmentShader = shader.fragmentShader.replace(MAIN, fragment(kind === 'q' ? 'uFade' : 'vFade'));
   };
-  m.customProgramCacheKey = () => key + (instanced ? '|fade-i' : '|fade-q');
+  m.customProgramCacheKey = () => key + '|fade-' + kind;
   m.userData = { ...orig.userData, fadeOf: orig, shared: false };
-  if (instanced) c.inst = m; else c.steps[step] = m;
+  if (kind === 'q') c.q[step] = m; else c[kind] = m;
   return m;
 };
 // (a copy follows what may change on its original as the level goes on: a colour, a glow, an opacity)
@@ -95,6 +106,9 @@ let built = null; // what it was built for: [children, first, last]
 // units: a box each (world terms), and what it is: an instanced mesh's instance or a loose object
 let nU = 0, uBox = new Float32Array(0), uMesh = new Int32Array(0), uInst = new Int32Array(0), uCluster = new Int32Array(0);
 const meshes = [];       // the instanced meshes (uMesh >= 0 indexes it)
+const meshUnits = [];    // per instanced mesh: each instance's unit, or -1
+const looseUnit = [];    // per loose object: its unit
+const strips = [];       // the long strips cut in pieces (uMesh = -2 - its index, uInst its piece)
 const loose = [];        // the loose objects: [ [mesh, original material(s)] ... ] each (uMesh = -1, uInst indexes it)
 // (every box in levelGroup's own terms, the game's: x not mirrored)
 // clusters: a box each, their members (CSR), their fade and target
@@ -108,7 +122,8 @@ const meshLo = [], meshHi = []; // per instanced mesh: the instance range writte
 let stamp = 0;
 
 const key = (i, j) => i * 65536 + j;
-const toLocal = new THREE.Matrix4(), box = new THREE.Box3(), MID = [0, 0, 0], HALF = [0, 0, 0], LO = [0, 0, 0], HI = [0, 0, 0];
+let boxesCount = () => 0;
+const M = new THREE.Matrix4(), V = new THREE.Vector3(), toLocal = new THREE.Matrix4(), box = new THREE.Box3(), MID = [0, 0, 0], HALF = [0, 0, 0], LO = [0, 0, 0], HI = [0, 0, 0];
 
 // put back everything faded (before an index is dropped, and when it is over)
 const restoreAll = () => {
@@ -117,17 +132,25 @@ const restoreAll = () => {
   flushMeshes();
 };
 
-const build = () => {
-  const t0 = performance.now();
+// (built a slice at a time, BUDGET ms a frame, so a level of tens of thousands of props makes no pause: until it is done, nothing
+// fades and the orbit's nudge works as it always did)
+const BUDGET = 6;
+let builder = null, deadline = 0, slices = 0, worked = 0, slowest = 0;
+const late = () => performance.now() > deadline;
+function* building() {
   restoreAll();
-  for (const c of copies.values()) { c.inst?.dispose(); for (const s of c.steps) s?.dispose(); }
+  built = null;
+  const sig = [levelGroup.children.length, levelGroup.children[0], levelGroup.children[levelGroup.children.length - 1]];
+  let ticks = 0;
+  for (const c of copies.values()) { c.i?.dispose(); c.v?.dispose(); for (const q of c.q) q?.dispose(); }
   copies.clear();
-  meshes.length = 0; loose.length = 0; meshFaded.length = 0; meshLo.length = 0; meshHi.length = 0;
+  meshes.length = 0; meshUnits.length = 0; loose.length = 0; looseUnit.length = 0; strips.length = 0; meshFaded.length = 0; meshLo.length = 0; meshHi.length = 0;
   levelGroup.updateMatrixWorld(true);
   toLocal.copy(levelGroup.matrixWorld).invert();
-  for (const c of levelGroup.children) { delete c.userData.fadeMesh; delete c.userData.fadeLoose; }
+  for (const c of levelGroup.children) { delete c.userData.fadeMesh; delete c.userData.fadeLoose; delete c.userData.fadeStrip; }
   const boxes = [], mIdx = [], iIdx = [];
   let big = 0;
+  boxesCount = () => mIdx.length;
   const take = (b, mi, ii) => {
     const sx = b.max.x - b.min.x, sz = b.max.z - b.min.z, sy = b.max.y - b.min.y;
     if (b.isEmpty() || !Number.isFinite(sx + sy + sz)) return false;
@@ -143,11 +166,12 @@ const build = () => {
       if (!c.geometry.boundingBox) c.geometry.computeBoundingBox();
       if (!c.boundingBox) c.computeBoundingBox(); // (both made now, while every instance matrix is plain: see VERTEX)
       if (!c.boundingSphere) c.computeBoundingSphere();
-      const mi = meshes.length;
+      const mi = meshes.length, units = new Int32Array(c.count).fill(-1);
       let any = false;
       const g = c.geometry.boundingBox, w = c.matrix.elements, a = c.instanceMatrix.array; // (in levelGroup's own terms, the game's: not mirrored)
       const gc = [(g.min.x + g.max.x) / 2, (g.min.y + g.max.y) / 2, (g.min.z + g.max.z) / 2], ge = [(g.max.x - g.min.x) / 2, (g.max.y - g.min.y) / 2, (g.max.z - g.min.z) / 2];
       for (let i = 0; i < c.count; i++) {
+        if ((++ticks & 1023) === 0 && late()) yield;
         // (the box of the geometry's box turned and scaled: its middle moved, its half-sizes the sum of |matrix| x half-sizes; the
         // instance's matrix, then the mesh's world matrix, each that way: far cheaper than eight corners, for tens of thousands)
         const o = i * 16;
@@ -161,16 +185,25 @@ const build = () => {
           LO[r] = mid - half; HI[r] = mid + half;
         }
         box.min.fromArray(LO); box.max.fromArray(HI);
-        if (take(box, mi, i)) any = true;
+        if (take(box, mi, i)) { any = true; units[i] = mIdx.length - 1; }
       }
-      if (any) { meshes.push(c); meshFaded.push(0); meshLo.push(-1); meshHi.push(-1); c.userData.fadeMesh = mi; }
+      if (any) { meshes.push(c); meshUnits.push(units); meshFaded.push(0); meshLo.push(-1); meshHi.push(-1); c.userData.fadeMesh = mi; }
       continue;
     }
+    if ((++ticks & 63) === 0 && late()) yield;
     const parts = [];
     c.traverse((o) => { if (o.isMesh && !o.isInstancedMesh && [].concat(o.material).every(fadeable)) parts.push(o, o.material); });
     if (!parts.length) continue;
     box.setFromObject(c).applyMatrix4(toLocal); // (world, then back into levelGroup's own terms)
-    if (take(box, -1, loose.length)) { loose.push(parts); c.userData.fadeLoose = loose.length - 1; }
+    // a long strip (a hall's shell, a gallery, a tunnel's lining: one mesh along the road, too long to fade whole, no taller than
+    // STRIP_HEIGHT): cut into pieces of CELL m by where its triangles are, each piece a unit of its own
+    if ((box.max.x - box.min.x > MAX_SIZE || box.max.z - box.min.z > MAX_SIZE) && c.isMesh && !c.children.length && !Array.isArray(c.material)
+      && fadeable(c.material) && !c.geometry.userData.shared && box.max.y - box.min.y <= STRIP_HEIGHT && box.max.y - box.min.y >= LOW
+      && c.geometry.attributes.position.count <= STRIP_VERTS) {
+      yield* cutStrip(c, take);
+      continue;
+    }
+    if (take(box, -1, loose.length)) { loose.push(parts); looseUnit.push(mIdx.length - 1); c.userData.fadeLoose = loose.length - 1; }
   }
   nU = mIdx.length;
   uBox = new Float32Array(boxes); uMesh = Int32Array.from(mIdx); uInst = Int32Array.from(iIdx);
@@ -181,6 +214,7 @@ const build = () => {
   for (let u = 0; u < nU; u++) vol[u] = (uBox[u * 6 + 3] - uBox[u * 6]) * (uBox[u * 6 + 4] - uBox[u * 6 + 1]) * (uBox[u * 6 + 5] - uBox[u * 6 + 2]);
   const tmpGrid = new Map(); // units by the cells their boxes cover
   for (let u = 0; u < nU; u++) {
+    if ((++ticks & 1023) === 0 && late()) yield;
     for (let i = Math.floor(uBox[u * 6] / CELL); i <= Math.floor(uBox[u * 6 + 3] / CELL); i++) {
       for (let j = Math.floor(uBox[u * 6 + 2] / CELL); j <= Math.floor(uBox[u * 6 + 5] / CELL); j++) {
         const k = key(i, j);
@@ -190,6 +224,7 @@ const build = () => {
     }
   }
   for (let u = 0; u < nU; u++) {
+    if ((++ticks & 255) === 0 && late()) yield;
     const o = u * 6, cx = (uBox[o] + uBox[o + 3]) / 2, cz = (uBox[o + 2] + uBox[o + 5]) / 2;
     const list = tmpGrid.get(key(Math.floor(cx / CELL), Math.floor(cz / CELL)));
     let host = -1;
@@ -235,6 +270,7 @@ const build = () => {
   grid.clear();
   const cells = new Map();
   for (let c = 0; c < nC; c++) {
+    if ((++ticks & 1023) === 0 && late()) yield;
     const o = c * 6;
     for (let i = Math.floor(cBox[o] / CELL); i <= Math.floor(cBox[o + 3] / CELL); i++) {
       for (let j = Math.floor(cBox[o + 2] / CELL); j <= Math.floor(cBox[o + 5] / CELL); j++) {
@@ -249,9 +285,60 @@ const build = () => {
   gItems = new Int32Array(n);
   n = 0;
   for (const [k, l] of cells) { grid.set(k, [n, l.length]); for (const c of l) gItems[n++] = c; }
-  built = [levelGroup.children.length, levelGroup.children[0], levelGroup.children[levelGroup.children.length - 1]];
-  Object.assign(SceneFade, { units: nU, clusters: nC, big, cells: grid.size, buildMs: +(performance.now() - t0).toFixed(1) });
+  built = sig;
+  Object.assign(SceneFade, { units: nU, clusters: nC, big, cells: grid.size });
+}
+// a strip cut in pieces (see building): the pieces' boxes as units, each vertex's piece, each triangle's unit
+function* cutStrip(c, take) {
+  const g = c.geometry, pos = g.attributes.position, index = g.index, nV = pos.count, nT = (index ? index.count : nV) / 3;
+  M.multiplyMatrices(toLocal, c.matrixWorld);
+  const vx = new Float32Array(nV * 3);
+  for (let v = 0; v < nV; v++) { V.fromBufferAttribute(pos, v).applyMatrix4(M); vx[v * 3] = V.x; vx[v * 3 + 1] = V.y; vx[v * 3 + 2] = V.z; }
+  const pieces = new Map(), triPiece = new Int32Array(nT), vPiece = new Int32Array(nV).fill(-1), lo = [], hi = [];
+  for (let t = 0; t < nT; t++) {
+    if ((t & 2047) === 2047 && late()) yield;
+    const a = index ? index.getX(t * 3) : t * 3, b = index ? index.getX(t * 3 + 1) : t * 3 + 1, d = index ? index.getX(t * 3 + 2) : t * 3 + 2;
+    const k = key(Math.floor((vx[a * 3] + vx[b * 3] + vx[d * 3]) / 3 / CELL), Math.floor((vx[a * 3 + 2] + vx[b * 3 + 2] + vx[d * 3 + 2]) / 3 / CELL));
+    let p = pieces.get(k);
+    if (p === undefined) { pieces.set(k, p = lo.length / 3); lo.push(Infinity, Infinity, Infinity); hi.push(-Infinity, -Infinity, -Infinity); }
+    triPiece[t] = p;
+    for (const v of [a, b, d]) {
+      if (vPiece[v] < 0) vPiece[v] = p;
+      for (let r = 0; r < 3; r++) { lo[p * 3 + r] = Math.min(lo[p * 3 + r], vx[v * 3 + r]); hi[p * 3 + r] = Math.max(hi[p * 3 + r], vx[v * 3 + r]); }
+    }
+  }
+  const nP = lo.length / 3, si = strips.length, unit = new Int32Array(nP).fill(-1);
+  let any = false;
+  for (let p = 0; p < nP; p++) {
+    box.min.set(lo[p * 3], lo[p * 3 + 1], lo[p * 3 + 2]); box.max.set(hi[p * 3], hi[p * 3 + 1], hi[p * 3 + 2]);
+    if (take(box, -2 - si, p)) { unit[p] = boxesCount() - 1; any = true; }
+  }
+  if (!any) return;
+  // each piece's vertices in a row (CSR), for writing its fade
+  const start = new Int32Array(nP + 1);
+  for (let v = 0; v < nV; v++) if (vPiece[v] >= 0) start[vPiece[v] + 1]++;
+  for (let p = 0; p < nP; p++) start[p + 1] += start[p];
+  const fillAt = start.slice(0, nP), verts = new Int32Array(start[nP]);
+  for (let v = 0; v < nV; v++) if (vPiece[v] >= 0) verts[fillAt[vPiece[v]]++] = v;
+  const triUnit = new Int32Array(nT);
+  for (let t = 0; t < nT; t++) triUnit[t] = unit[triPiece[t]];
+  if (!g.attributes.aFade) g.setAttribute('aFade', new THREE.BufferAttribute(new Float32Array(nV), 1));
+  strips.push({ mesh: c, orig: c.material, attr: g.attributes.aFade, start, verts, fade: new Float32Array(nP), faded: 0, dirty: false, triUnit });
+  c.userData.fadeStrip = si;
+}
+// a slice of the build (a new one begun if the scenery changed); true once the index is ready
+const advance = () => {
+  if (!stale() && !builder) return true;
+  if (!builder) { builder = building(); slices = 0; worked = 0; slowest = 0; }
+  const t0 = performance.now();
+  deadline = t0 + BUDGET;
+  const done = builder.next().done;
+  const ms = performance.now() - t0;
+  slices++; worked += ms; slowest = Math.max(slowest, ms);
+  if (done) { builder = null; Object.assign(SceneFade, { buildMs: +worked.toFixed(1), buildFrames: slices, buildSlowest: +slowest.toFixed(1) }); }
+  return done && !stale();
 };
+export const fadeReady = () => !builder && !stale();
 const stale = () => !built || built[0] !== levelGroup.children.length || built[1] !== levelGroup.children[0] || built[2] !== levelGroup.children[levelGroup.children.length - 1];
 
 // ---- the fade, put on what draws it ----
@@ -262,14 +349,24 @@ const setLoose = (parts, f) => {
     if (step <= 0) { mesh.material = orig; continue; }
     if (Array.isArray(orig)) {
       if (!Array.isArray(mesh.material) || mesh.material === orig) mesh.material = orig.slice();
-      for (let q = 0; q < orig.length; q++) { mesh.material[q] = copyOf(orig[q], false, step); follow(mesh.material[q]); }
-    } else { mesh.material = copyOf(orig, false, step); follow(mesh.material); }
+      for (let q = 0; q < orig.length; q++) { mesh.material[q] = copyOf(orig[q], 'q', step); follow(mesh.material[q]); }
+    } else { mesh.material = copyOf(orig, 'q', step); follow(mesh.material); }
   }
 };
 const applyCluster = (c, f) => {
   for (let k = cStart[c]; k < cStart[c + 1]; k++) {
     const u = cMembers[k], mi = uMesh[u], i = uInst[u];
-    if (mi < 0) { setLoose(loose[i], f); continue; }
+    if (mi === -1) { setLoose(loose[i], f); continue; }
+    if (mi < -1) {
+      const st = strips[-2 - mi], was = st.fade[i];
+      if (was === f) continue;
+      if (was === 0 && f > 0) st.faded++; else if (was > 0 && f === 0) st.faded--;
+      st.fade[i] = f;
+      const a = st.attr.array;
+      for (let k = st.start[i]; k < st.start[i + 1]; k++) a[st.verts[k]] = f;
+      st.dirty = true;
+      continue;
+    }
     const mesh = meshes[mi], arr = mesh.instanceMatrix.array, was = arr[i * 16 + 3];
     if (was === f) continue;
     if (was === 0 && f > 0) meshFaded[mi]++; else if (was > 0 && f === 0) meshFaded[mi]--;
@@ -280,6 +377,13 @@ const applyCluster = (c, f) => {
 };
 // the instanced meshes written this frame: their changed range sent, and the fading copy of their material on while any instance fades
 const flushMeshes = () => {
+  for (const st of strips) {
+    if (!st.dirty) continue;
+    st.dirty = false;
+    st.attr.needsUpdate = true;
+    st.mesh.material = st.faded > 0 ? copyOf(st.orig, 'v') : st.orig;
+    if (st.faded > 0) follow(st.mesh.material);
+  }
   for (let mi = 0; mi < meshes.length; mi++) {
     if (meshLo[mi] < 0) continue;
     const mesh = meshes[mi], attr = mesh.instanceMatrix;
@@ -287,7 +391,7 @@ const flushMeshes = () => {
     attr.needsUpdate = true;
     meshLo[mi] = meshHi[mi] = -1;
     const orig = mesh.material.userData.fadeOf || mesh.material;
-    mesh.material = meshFaded[mi] > 0 ? copyOf(orig, true, 0) : orig;
+    mesh.material = meshFaded[mi] > 0 ? copyOf(orig, 'i') : orig;
     if (meshFaded[mi] > 0) follow(mesh.material);
   }
 };
@@ -324,7 +428,7 @@ export const fadeScenery = (dt, on) => {
   stamp++;
   let tested = 0;
   if (on) {
-    if (stale()) build();
+    if (!advance()) on = false; // (not ready yet: what was faded eases back, nothing new fades)
     // (everything in the game's terms, levelGroup's own: the camera as drawn is mirrored on a left-hand level, so it is put back)
     const flip = scene.scale.x < 0 ? -1 : 1, cam = CAM.set(camera.position.x * flip, camera.position.y, camera.position.z);
     Track.toWorld(Player.s, Player.lat, car); // (the car's middle, in the game's terms)
@@ -374,31 +478,36 @@ export const fadeScenery = (dt, on) => {
 const CELL_BOX = new Float32Array(6);
 
 // the index made ahead of need (render/orbit.js: as a replay's orbit camera comes on offer, so its first frame does not stall)
-export const prepareFade = () => { if (stale()) build(); };
+export const prepareFade = () => { advance(); };
 // is this hit (a ray's, on levelGroup) on something the fade takes care of? (the orbit's nudge leaves those to it)
-export const fadesAway = (object, instanceId) => {
-  if (stale()) build(); // (the orbit's first look can come before its first fade)
+// (the orbit says where it would put the camera, the game's terms, before it asks about hits: a prop whose cluster's box holds that
+// place is NOT passed over, so the nudge draws the camera out in front of it, not into its dissolve)
+const PROBE = [0, 0, 0];
+export const fadeProbe = (v) => { PROBE[0] = v.x; PROBE[1] = v.y; PROBE[2] = v.z; };
+const holdsProbe = (u) => ballBox(cBox, uCluster[u] * 6, PROBE[0], PROBE[1], PROBE[2], 0.3);
+export const fadesAway = (object, instanceId, faceIndex) => {
+  if (builder || stale()) return false; // (no index yet: the nudge as it always was)
   while (object.parent && object.parent !== levelGroup) object = object.parent;
+  let u = -1;
   if (object.isInstancedMesh) {
     const mi = object.userData.fadeMesh;
-    return mi !== undefined && meshes[mi] === object && uIndexOf(mi, instanceId) >= 0;
-  }
-  return object.userData.fadeLoose !== undefined && loose[object.userData.fadeLoose] !== undefined;
+    if (mi !== undefined && meshes[mi] === object) u = uIndexOf(mi, instanceId);
+  } else if (object.userData.fadeLoose !== undefined && loose[object.userData.fadeLoose] !== undefined) u = looseUnit[object.userData.fadeLoose];
+  else if (object.userData.fadeStrip !== undefined && strips[object.userData.fadeStrip]?.mesh === object && faceIndex !== undefined) u = strips[object.userData.fadeStrip].triUnit[faceIndex] ?? -1;
+  return u >= 0 && !holdsProbe(u);
 };
-// (an instance's unit: found by a lookup built with the index)
-const uIndexOf = (mi, i) => {
-  if (!instUnit || instUnitFor !== built) { instUnitFor = built; instUnit = new Map(); for (let u = 0; u < nU; u++) if (uMesh[u] >= 0) instUnit.set(uMesh[u] * 1e7 + uInst[u], u); }
-  return instUnit.get(mi * 1e7 + i) ?? -1;
-};
-let instUnit = null, instUnitFor = null;
+// (an instance's unit, or -1)
+const uIndexOf = (mi, i) => meshUnits[mi]?.[i] ?? -1;
+
 
 // the fade of whatever this is (a top-level object of levelGroup, or an instanced mesh and an instance): for the check
-export const fadeOf = (object, instanceId) => {
+export const fadeOf = (object, instanceId, faceIndex) => {
   if (stale() || !object) return 0;
   while (object.parent && object.parent !== levelGroup) object = object.parent;
   let u = -1;
   if (object.isInstancedMesh && object.userData.fadeMesh !== undefined) u = uIndexOf(object.userData.fadeMesh, instanceId);
-  else if (object.userData.fadeLoose !== undefined) for (let v = 0; v < nU; v++) if (uMesh[v] < 0 && uInst[v] === object.userData.fadeLoose) { u = v; break; }
+  else if (object.userData.fadeLoose !== undefined) u = looseUnit[object.userData.fadeLoose] ?? -1;
+  else if (object.userData.fadeStrip !== undefined && faceIndex !== undefined) u = strips[object.userData.fadeStrip]?.triUnit[faceIndex] ?? -1;
   return u < 0 ? -1 : cFade[uCluster[u]];
 };
 // for the check: is every fade at 0 or 1 (nothing on its way)?

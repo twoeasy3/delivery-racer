@@ -132,9 +132,9 @@ else {
         return { frames: F.SceneFade.frames, units: F.SceneFade.units, swapped, on: Orbit.on }; })()`);
       check(!off.on && off.frames === 0 && off.units === 0 && off.swapped === 0, `${label}: in play (chase camera) the fade never ran (frames ${off.frames}, index ${off.units} units, ${off.swapped} materials swapped)`);
       // the index: the orbit on for a few frames, then off again (so the search below sees nothing faded)
-      const idx = await evaluate(`(async () => { ${M} Object.assign(Orbit, { on: true, mode: 'button', auto: false, held: true }); await frames(4); Orbit.on = false; await settled(F);
-        const { units, clusters, big, buildMs, active } = F.SceneFade; return { units, clusters, big, buildMs, active }; })()`);
-      note(`${label}: index ${idx.units} props in ${idx.clusters} clusters, ${idx.big} too big to fade, built in ${idx.buildMs} ms`);
+      const idx = await evaluate(`(async () => { ${M} Object.assign(Orbit, { on: true, mode: 'button', auto: false, held: true }); for (let i = 0; i < 300 && !F.fadeReady(); i++) await frames(1); await frames(2); Orbit.on = false; await settled(F);
+        const { units, clusters, big, buildMs, buildFrames, buildSlowest, active } = F.SceneFade; return { units, clusters, big, buildMs, buildFrames, buildSlowest, active }; })()`);
+      note(`${label}: index ${idx.units} props in ${idx.clusters} clusters, ${idx.big} too big to fade, built in ${idx.buildMs} ms over ${idx.buildFrames} frames (the longest ${idx.buildSlowest} ms)`);
       // OBSTRUCTED: a pose where the line from the camera to the car goes through a prop that fades, and nothing that does not
       const pose = await evaluate(`(async () => { ${M}
         const THREE = await import('/node_modules/three/build/three.module.js'); const ray = new THREE.Raycaster(), p = new THREE.Vector3(), at = new THREE.Vector3(), want = new THREE.Vector3(), dir = new THREE.Vector3();
@@ -150,12 +150,12 @@ else {
               const h = Track.toWorld(s, Player.lat, p), a = h + yaw * Math.PI / 180, pr = pitch * Math.PI / 180, flat = Math.cos(pr) * 25;
               at.set(p.x * flip, p.y + 1.1, p.z);
               want.set((p.x + Math.sin(a) * flat) * flip, at.y + Math.sin(pr) * 25, p.z + Math.cos(a) * flat);
-              dir.subVectors(at, want); const d = dir.length(); ray.set(want, dir.normalize()); ray.far = d - 1.5;
+              dir.subVectors(at, want); const d = dir.length(); ray.set(want, dir.normalize()); ray.far = d - 1.5; F.fadeProbe({ x: want.x * flip, y: want.y, z: want.z });
               const hits = ray.intersectObject(levelGroup, true).filter(x => !x.object.userData.flat && !x.object.material?.transparent && !x.object.isPoints && !x.object.isLine);
               if (!hits.length) continue;
-              if (hits.some(x => !F.fadesAway(x.object, x.instanceId))) { blockedBig++; continue; }
+              if (hits.some(x => !F.fadesAway(x.object, x.instanceId, x.faceIndex))) { blockedBig++; continue; }
               const t = top(hits[0].object);
-              found = { s, yaw, pitch, want: want.toArray(), id: t.uuid, inst: hits[0].instanceId ?? -1, what: (t.isInstancedMesh ? 'instance of ' : '') + (t.name || t.type) + ' #' + (hits[0].object.material?.color?.getHexString?.() || ''), at: +hits[0].distance.toFixed(1) };
+              found = { s, yaw, pitch, want: want.toArray(), id: t.uuid, inst: hits[0].instanceId ?? -1, face: hits[0].faceIndex ?? -1, what: (t.isInstancedMesh ? 'instance of ' : '') + (t.name || t.type) + ' #' + (hits[0].object.material?.color?.getHexString?.() || ''), at: +hits[0].distance.toFixed(1) };
               break;
             }
             if (found) break;
@@ -174,11 +174,11 @@ else {
         const at = new THREE.Vector3(p.x * flip, p.y + Player.air + 1.1, p.z), cam = camera.position.clone();
         const want = new THREE.Vector3(...${JSON.stringify(P.want)});
         let obj = null; levelGroup.traverse(o => { if (o.uuid === '${P.id}') obj = o; });
-        const fade = F.fadeOf(obj, ${P.inst});
+        const fade = F.fadeOf(obj, ${P.inst}, ${P.face});
         // the line from the camera as it is to the car: every fadeable thing on it faded, nothing else on it
-        const ray = new THREE.Raycaster(), dir = at.clone().sub(cam), d = dir.length(); ray.set(cam, dir.normalize()); ray.far = d - 1.0;
+        const ray = new THREE.Raycaster(), dir = at.clone().sub(cam), d = dir.length(); ray.set(cam, dir.normalize()); ray.far = d - 1.0; F.fadeProbe({ x: cam.x * flip, y: cam.y, z: cam.z });
         const hits = ray.intersectObject(levelGroup, true).filter(x => !x.object.userData.flat && !x.object.material?.transparent && !x.object.isPoints && !x.object.isLine);
-        const unfaded = hits.filter(x => F.fadesAway(x.object, x.instanceId) && F.fadeOf(x.object, x.instanceId) <= 0.9).length, solid = hits.filter(x => !F.fadesAway(x.object, x.instanceId)).length;
+        const unfaded = hits.filter(x => F.fadesAway(x.object, x.instanceId, x.faceIndex) && F.fadeOf(x.object, x.instanceId, x.faceIndex) <= 0.9).length, solid = hits.filter(x => !F.fadesAway(x.object, x.instanceId, x.faceIndex)).length;
         // nothing faded off the line: each faded cluster's box within the beam (+ 0.25) of the line or the ball round the camera
         const C = F.fadeClusters(), B = F.FADE_SIZES;
         const segBox = (o, r) => { let t0 = 0, t1 = 1; const P0 = [cam.x * flip, cam.y, cam.z], D = [(at.x - cam.x) * flip, at.y - cam.y, at.z - cam.z]; /* (the clusters' boxes are in the game's terms: x not mirrored) */ for (let k = 0; k < 3; k++) { const lo = C.box[o + k] - r, hi = C.box[o + 3 + k] + r; if (Math.abs(D[k]) < 1e-9) { if (P0[k] < lo || P0[k] > hi) return false; continue; } let a = (lo - P0[k]) / D[k], c = (hi - P0[k]) / D[k]; if (a > c) [a, c] = [c, a]; t0 = Math.max(t0, a); t1 = Math.min(t1, c); if (t0 > t1) return false; } return true; };
@@ -204,7 +204,7 @@ else {
         let obj = null; levelGroup.traverse(o => { if (o.uuid === '${P.id}') obj = o; });
         let swapped = 0, bent = 0; levelGroup.traverse(o => { if (o.material && [].concat(o.material).some(m => m.userData.fadeOf)) swapped++; if (o.isInstancedMesh) { const a = o.instanceMatrix.array; for (let i = 3; i < o.count * 16; i += 16) if (a[i] !== 0) { bent++; break; } } });
         const n0 = F.SceneFade.frames; Game.paused = false; await frames(15); Game.paused = true; const n1 = F.SceneFade.frames;
-        return { fade: F.fadeOf(obj, ${P.inst}), active: F.SceneFade.active, swapped, bent, ran: n1 - n0, took: Math.round(took), fps: F.SceneFade.fps };
+        return { fade: F.fadeOf(obj, ${P.inst}, ${P.face}), active: F.SceneFade.active, swapped, bent, ran: n1 - n0, took: Math.round(took), fps: F.SceneFade.fps };
       })()`);
       check(back.fade === 0 && back.active === 0 && back.swapped === 0 && back.bent === 0 && back.ran === 0,
         `${label}: the orbit off: all back (in ${back.took} ms at ${back.fps} frames a second; fade ${back.fade}, ${back.active} active, ${back.swapped} materials still swapped, ${back.bent} instanced meshes with a fade left), then not run (${back.ran} frames)`);

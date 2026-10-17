@@ -39,7 +39,7 @@ import { firstSolid, prepareSolids } from './racewatch.js';
 import { landAt } from './road.js';
 import { WatchGhost, watchGhostAvailable, refreshGhost } from './ghostcar.js';
 import { damp } from '../util.js';
-import { fadesAway, prepareFade } from './scenefade.js';
+import { fadesAway, fadeProbe, prepareFade } from './scenefade.js';
 
 const ORBIT = {
   radius: { min: 15, max: 40, start: 25 }, // m from the car (the owner, 15-Oct: close; nothing past 40)
@@ -272,10 +272,17 @@ const underLand = (to) => {
   return Infinity;
 };
 // (set dressing that render/scenefade.js dissolves is passed over: the camera keeps its place and the prop fades, REPLAY-CAM.md)
+// (what cannot fade is still the nudge's, so the fade never leaves a pose worse than without it: a camera inside a prop's box is
+// drawn out of it rather than looking through its dissolve, see fadeProbe; and a line to the car's sills too, for a long low block
+// that does not fade and would hide the body under the middle's line)
+const low = new THREE.Vector3();
 const look = (to) => {
+  fadeProbe(to);
   let hit = Math.min(firstSolid(at, to, fadesAway), underLand(to));
   side.set(to.z - at.z, 0, at.x - to.x).normalize().multiplyScalar(ORBIT.beam);
   for (const k of [1, -1]) { edge.copy(to).addScaledVector(side, k); hit = Math.min(hit, firstSolid(at, edge, fadesAway), underLand(edge)); }
+  low.copy(at); low.y -= ORBIT.aim - 0.25;
+  hit = Math.min(hit, firstSolid(low, to, fadesAway));
   return hit;
 };
 const want = new THREE.Vector3(), at = new THREE.Vector3(), probe = new THREE.Vector3();
