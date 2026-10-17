@@ -10,7 +10,7 @@
 //     COST          the clusters tested a frame (at the pose, and turning round the car for 2 s), and the ms of a frame's test: stated
 //     OFF AGAIN     the orbit off: in 0.4 s nothing faded, the original materials back, the instance matrices plain, and the fade no longer runs
 //   ONCE          photo mode (a free camera round the paused car) fades too, and stops with it
-//   node scripts/.replay-cam-check.mjs [--themes=city,venice] [--levels=venice,tokyo] [--browser=<path>] [--shots=<dir>]
+//   node scripts/.replay-cam-check.mjs [--themes=city,venice] [--levels=venice,tokyo] [--part=1/3] [--browser=<path>] [--shots=<dir>]
 import { createServer } from 'vite';
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -23,6 +23,7 @@ const args = process.argv.slice(2);
 const opt = (name, fallback) => { const a = args.find(x => x === '--' + name || x.startsWith('--' + name + '=')); return a === undefined ? fallback : a.includes('=') ? a.slice(name.length + 3) : true; };
 const SHOTS = opt('shots', null);
 const ONLY_THEMES = typeof opt('themes', null) === 'string' ? opt('themes').split(',') : null;
+const PART = typeof opt('part', null) === 'string' ? opt('part').split('/').map(Number) : null;
 const ONLY_LEVELS = typeof opt('levels', null) === 'string' ? opt('levels').split(',') : null;
 let failed = 0;
 const check = (ok, what) => { console.log((ok ? '  ok    ' : '  FAIL  ') + what); if (!ok) failed++; };
@@ -104,6 +105,7 @@ else {
     for (const l of levels) if (!pick.has(l.theme) || (pick.get(l.theme).hidden && !l.hidden)) pick.set(l.theme, l);
     let todo = ONLY_LEVELS ? levels.filter(l => ONLY_LEVELS.includes(l.id)) : [...pick.values()];
     if (ONLY_THEMES) todo = todo.filter(l => ONLY_THEMES.includes(l.theme));
+    if (PART) todo = todo.filter((_, i) => i % PART[1] === PART[0] - 1); // (--part=1/3: every third, for runs side by side)
     console.log(`  ${todo.length} levels, one a theme`);
 
     const M = `const { Game } = await import('/src/delivery/game.js'); const { Player } = await import('/src/delivery/player.js'); const { Track } = await import('/src/delivery/track.js');
