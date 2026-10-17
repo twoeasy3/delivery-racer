@@ -8,7 +8,7 @@
 //     Retry starts the run again (Game.state 'playing', the card hidden), Continue / Menu goes to the menu (state 'start');
 //     Enter presses the primary;
 //   - the headline says the outcome, the stat tiles are up (and the Earned tile's figure is the run's), the side on the card
-//     (Evil: the card's .evil); a first delivery of a Career level shows its pack as a reward card;
+//     (Evil: the card's .evil); the rewards game.js writes (a stage, a prize, packs) as reward cards;
 //   - a playback's card (Watch replay): no Retry, one primary (Menu).
 //   node scripts/.stage-card-check.mjs [--browser=<path>] [--shots=<dir>] [--prefix=<name>] [--only=win,fail,...]
 // --shots saves a PNG of each state (<prefix>-<state>-<size>.png).
@@ -33,6 +33,8 @@ const STATES = [
   ['evil-win', 'delivered', true, 'back-roads', {}],
   ['busted', 'busted', true, 'expressway', {}],
   ['late', 'late', false, 'expressway', {}],
+  // (rewards: game.js's own words for them written onto the line, as a Comet Hunt stage with a prize and its packs would; the card drawn again)
+  ['rewards', 'delivered', false, 'expressway', { inject: "  |  Stage 5 of 5 done  |  You won the Comet!  |  2 packs: Comet Pack, Career Pack! Opening..." }],
 ].filter(s => !ONLY || String(ONLY).split(',').includes(s[0]));
 const SIZES = [[390, 844, true], [844, 390, true], [1100, 650, false]];
 
@@ -46,15 +48,15 @@ const browser = opt('browser', null) || ['/opt/pw-browsers/chromium-1194/chrome-
   'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Google/Chrome/Application/chrome.exe'].find(existsSync);
 
 // in the page: a save, the level, the side; the run started and finished; the kerb skipped; resolves once the card is up
-const RUN = (outcome, evil, levelId, fresh) => `(async () => {
+const RUN = (outcome, evil, levelId, fresh, inject = '') => `(async () => {
   const { Game } = await import('/src/delivery/game.js');
   const L = await import('/src/delivery/levels.js');
   const { Progress } = await import('/src/delivery/progress.js');
   const { Delivery } = await import('/src/delivery/delivery.js');
   if (${fresh}) { Progress.reset(); Object.assign(Progress.data, { money: 120 }); Progress.save(); }
   else Object.assign(Progress.data, { money: 1234 });
-  const at = L.LEVELS.findIndex(l => l.id === '${levelId}');
-  L.selectLevel(at);
+  if ('${levelId}'.startsWith('hidden:')) L.selectSpecial(L.HIDDEN_LEVELS['${levelId}'.slice(7)]); // (a hidden level, as ?hidden= plays it)
+  else L.selectLevel(L.LEVELS.findIndex(l => l.id === '${levelId}'));
   Game.evil = ${evil};
   Game.start();
   await new Promise(r => setTimeout(r, 600));
@@ -62,12 +64,14 @@ const RUN = (outcome, evil, levelId, fresh) => `(async () => {
   const earned = '$' + Math.floor(Math.max(0, Game.tip + Game.cash - Game.fines));
   Game.finish('${outcome}');
   const t0 = performance.now();
-  while (document.getElementById('resultScreen').classList.contains('hidden') && performance.now() - t0 < 15000) {
+  while ((document.getElementById('resultScreen').classList.contains('hidden') || document.body.classList.contains('delivering')) && performance.now() - t0 < 40000) {
     if (Delivery.active) Delivery.skip();
     await new Promise(r => setTimeout(r, 100));
   }
+  if (${JSON.stringify(inject)}) { const c = document.getElementById('resultScreen'); document.getElementById('resultNote').textContent += ${JSON.stringify(inject)};
+    c.classList.add('hidden'); await new Promise(r => setTimeout(r, 30)); c.classList.remove('hidden'); }
   await new Promise(r => setTimeout(r, 450)); // (the tiles' entrance; a pack opens over the card 700 ms after it is up)
-  return { up: !document.getElementById('resultScreen').classList.contains('hidden'), state: Game.state, earned };
+  return { up: !document.getElementById('resultScreen').classList.contains('hidden'), state: Game.state, earned, why: [Delivery.active, Delivery.t, Delivery.delivered, document.body.className, document.getElementById('resultScreen').className].join(' / ') };
 })()`;
 
 // what is measured on the card
@@ -85,7 +89,7 @@ const MEASURE = `(() => {
     buttons: buttons.map(b => ({ id: b.id, text: b.textContent.trim(), primary: b.classList.contains('primary'), h: Math.round(box(b).h) })),
     primary: primary.map(b => b.id), headline: card.querySelector('.sc-headline')?.textContent.trim() || '',
     tiles: [...card.querySelectorAll('.sc-tile')].filter(shown).map(t => t.dataset.stat + '=' + (t.querySelector('.sc-value')?.getAttribute('aria-label') || t.querySelector('.sc-value')?.textContent.trim())),
-    rewards: [...card.querySelectorAll('.sc-reward')].filter(shown).map(r => r.dataset.kind + ':' + r.textContent.trim().replace(/\\s+/g, ' ')),
+    rewards: [...card.querySelectorAll('.sc-reward')].filter(shown).map(r => r.dataset.kind + ':' + [...r.querySelectorAll('small, strong')].map(t => t.textContent.trim()).join(' ')),
     evil: card.classList.contains('evil'), win: card.classList.contains('win'),
     old: /look around|next level/i.test(text) || !!document.getElementById('lookBtn') || !!document.getElementById('nextBtn') };
 })()`;
@@ -138,10 +142,11 @@ else {
       await page('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: phone ? 2 : 1, mobile: phone, screenWidth: w, screenHeight: h });
       await page('Emulation.setTouchEmulationEnabled', phone ? { enabled: true, maxTouchPoints: 5 } : { enabled: false });
     };
-    const open = async (fresh, outcome, evil, levelId) => {
+    const open = async (fresh, outcome, evil, levelId, inject) => {
+      await page('Page.navigate', { url: 'about:blank' });
       await page('Page.navigate', { url: `http://localhost:${port}/delivery/index.html?nocine` });
       await sleep(3000);
-      return evaluate(RUN(outcome, evil, levelId, fresh));
+      return evaluate(RUN(outcome, evil, levelId, fresh, inject));
     };
     const press = (id) => evaluate(`(async () => { document.getElementById('${id}').click(); await new Promise(r => setTimeout(r, 900));
       const { Game } = await import('/src/delivery/game.js'); return { state: Game.state, card: !document.getElementById('resultScreen').classList.contains('hidden'),
@@ -150,11 +155,11 @@ else {
       const sz = w + 'x' + h;
       for (const [name, outcome, evil, levelId, extra] of STATES) {
         await size(w, h, phone);
-        const r = await open(!!extra.fresh, outcome, evil, levelId);
+        const r = await open(!!extra.fresh, outcome, evil, levelId, extra.inject);
         const m = await evaluate(MEASURE);
         await shot(`${name}-${sz}`);
         const what = `${name} ${sz}`;
-        check(r.up && m.cardUp, `${what}: the card is up (state ${r.state})`);
+        check(r.up && m.cardUp, `${what}: the card is up (state ${r.state}${r.up && m.cardUp ? '' : '; ' + r.why})`);
         check(!m.out.length && m.scroll[0] <= m.scroll[1] + 1, `${what}: fits the screen, not scrolling (${m.scroll.join(' in ')}${m.out.length ? '; out: ' + m.out.join(', ') : ''})`);
         check(!m.old, `${what}: no "Look around", no "Next level" in the page`);
         const want = outcome === 'delivered' ? 'menuBtn' : 'restartBtn';
@@ -163,9 +168,9 @@ else {
         check(m.headline.length > 0 && m.headline.length <= 22 && m.win === (outcome === 'delivered'), `${what}: headline "${m.headline}"`);
         check(m.tiles.length >= 3 && (outcome !== 'delivered' || m.tiles.includes('earned=' + r.earned)), `${what}: tiles ${m.tiles.join(', ')}`);
         check(m.evil === evil, `${what}: the side (${evil ? 'Evil' : 'Good'}) on the card`);
-        if (extra.fresh && sz === '390x844') check(m.rewards.some(x => /^pack:/.test(x)), `${what}: the first delivery's pack as a reward card (${m.rewards.join(', ') || 'none'})`);
+        if (extra.inject) check(m.rewards.join(',') === 'stage:Stage done 5 of 5,prize:Grand prize Comet,pack:Pack Comet Pack,pack:Pack Career Pack', `${what}: the rewards as cards (${m.rewards.join(', ') || 'none'})`);
         // the buttons, once per state at the first size
-        if (sz !== '390x844') continue;
+        if (sz !== '390x844' || extra.inject) continue;
         const again = await press('restartBtn');
         check(again.state === 'playing' && !again.card, `${what}: Retry starts the run again (${JSON.stringify(again)})`);
         await open(false, outcome, evil, levelId);
@@ -177,24 +182,27 @@ else {
         check(enter === (outcome === 'delivered' ? 'start' : 'playing'), `${what}: Enter presses the primary (state ${enter})`);
       }
     }
-    // a playback's card: no Retry, the one primary is Menu
+    // a playback's card: no Retry, the one primary is Menu; on a menu level and on a hidden one (the owner, 17-Oct: "replays do not
+    // work in hidden levels": replay.js recorded only the menu's levels and the events' stages)
+    for (const levelId of ['expressway', 'hidden:gimmick-road-2']) {
     await size(390, 844, true);
-    await open(false, 'delivered', false, 'expressway');
+    await open(false, 'delivered', false, levelId);
     const watched = await evaluate(`(async () => { const b = document.getElementById('watchBtn'); if (!b || b.offsetParent === null) return 'no Watch button';
-      b.click(); await new Promise(r => setTimeout(r, 500));
+      b.click(); await new Promise(r => setTimeout(r, 1500));
       const { Game } = await import('/src/delivery/game.js'); const { Replay } = await import('/src/delivery/replay.js');
       if (!Replay.playing) return 'not playing';
       Game.finish('delivered');
       const { Delivery } = await import('/src/delivery/delivery.js');
       const t0 = performance.now();
-      while (document.getElementById('resultScreen').classList.contains('hidden') && performance.now() - t0 < 15000) { if (Delivery.active) Delivery.skip(); await new Promise(r => setTimeout(r, 100)); }
+      while ((document.getElementById('resultScreen').classList.contains('hidden') || document.body.classList.contains('delivering')) && performance.now() - t0 < 40000) { if (Delivery.active) Delivery.skip(); await new Promise(r => setTimeout(r, 100)); }
       await new Promise(r => setTimeout(r, 450)); return 'ok'; })()`);
     if (watched === 'ok') {
       const m = await evaluate(MEASURE);
-      await shot('playback-390x844');
-      check(m.primary.length === 1 && m.primary[0] === 'menuBtn' && !m.buttons.some(b => b.id === 'restartBtn'), `playback 390x844: no Retry, one primary, Menu (${m.buttons.map(b => (b.primary ? '*' : '') + b.text).join(' | ')})`);
-      check(/replay/i.test(m.headline + ' ' + (await evaluate(`document.querySelector('#resultScreen .sc-kicker')?.textContent || ''`))), `playback 390x844: the card says it is a replay`);
-    } else check(false, 'playback: ' + watched);
+      await shot('playback-' + levelId.replace(':', '-') + '-390x844');
+      check(m.primary.length === 1 && m.primary[0] === 'menuBtn' && !m.buttons.some(b => b.id === 'restartBtn'), `playback ${levelId} 390x844: no Retry, one primary, Menu (${m.buttons.map(b => (b.primary ? '*' : '') + b.text).join(' | ')})`);
+      check(/replay/i.test(m.headline + ' ' + (await evaluate(`document.querySelector('#resultScreen .sc-kicker')?.textContent || ''`))), `playback ${levelId} 390x844: the card says it is a replay`);
+    } else check(false, `playback ${levelId}: ` + watched);
+    }
   } catch (e) { failed++; console.log('  FAIL  ' + (e && e.stack || e)); }
   try { socket?.close(); } catch { /* */ }
   try { child?.kill(); } catch { /* */ }

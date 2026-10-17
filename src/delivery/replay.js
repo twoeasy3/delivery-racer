@@ -18,12 +18,13 @@
 //           path is the run as its clock ended up: a rewind never adds its ten seconds to a ghost (the owner, 11-Oct)
 //   checks  a fingerprint of where everything was every CHECK_EVERY steps: played back, a fingerprint that differs
 //           means the run has drifted (another browser's maths, a change the fingerprints missed): it stops, and says so
-// Only runs on a level of the menu or a special event's stage are recorded (not a screensaver, a hidden level or the editor's).
+// Only runs on a level of the menu, a special event's stage or a hidden level (levels.js HIDDEN_LEVELS: the gimmick roads, the test track,
+// the unlisted ones; the owner, 17-Oct: "replays do not work in hidden levels") are recorded (not a screensaver or the editor's).
 // ============================================================================
 import { CONFIG } from './config.js';
 import { Input } from './input.js';
 import { Game } from './game.js';
-import { LEVEL, LEVELS, LEVEL_INDEX, selectLevel, selectSpecial, setRaceClass } from './levels.js';
+import { LEVEL, LEVELS, LEVEL_INDEX, HIDDEN_LEVELS, selectLevel, selectSpecial, setRaceClass } from './levels.js';
 import { STAGE_LEVELS } from './events.js';
 import { CAR, CARS, pinCar, carById, carStats, superOf } from './cars.js';
 import { Ecu, NEW_STATS } from './ecu.js';
@@ -54,7 +55,8 @@ const fnv = (items) => {
 // a level's fingerprint: its data as loaded, but not its car and grid, which the race class rewrites (recorded apart)
 const levelPrint = (level) => fnv([JSON.stringify(level, (k, v) => (k === 'car' || k === 'grid' ? undefined : v))]);
 // taken once, as every level was loaded, before any run could change one (a rival rewrites its level's grid)
-const LEVEL_PRINTS = new Map([...LEVELS, ...STAGE_LEVELS].map(level => [level.id, levelPrint(level)])); // (a special event's stages too: events.js)
+const HIDDEN = Object.values(HIDDEN_LEVELS).filter(level => level && level.id && !LEVELS.some(l => l.id === level.id) && !STAGE_LEVELS.some(l => l.id === level.id)); // (off the menu: played by ?hidden= or Options > Hidden levels)
+const LEVEL_PRINTS = new Map([...HIDDEN, ...LEVELS, ...STAGE_LEVELS].map(level => [level.id, levelPrint(level)])); // (a special event's stages too: events.js; and the hidden levels)
 // a car's fingerprint: what it is (its figures, its model, its perks), not its words
 const carPrint = (car) => fnv([JSON.stringify(car, (k, v) => (typeof v === 'function' || k === 'name' || k === 'perk' ? undefined : v))]);
 // ---- The fingerprints (CHECKLIST 167: "invalidating all replays because I added something is really harsh") ----
@@ -99,7 +101,7 @@ export const Replay = {
   begin() {
     if (this.playing) return; // (a playback is not recorded again)
     this.recording = null;
-    if (Game.screensaver || Game.raceWatch || !(LEVELS.includes(LEVEL) || STAGE_LEVELS.includes(LEVEL))) return;
+    if (Game.screensaver || Game.raceWatch || !(LEVELS.includes(LEVEL) || STAGE_LEVELS.includes(LEVEL) || HIDDEN.includes(LEVEL))) return; // (not the editor's level: not one of these)
     if (CONFIG.trueSpeed.driven.tune !== 1) return; // (?lanescrub=: the lane scrub tried at another strength, main.js; a replay would not play back)
     if (CONFIG.slowPad.tune !== 1) return; // (?slowpad=: the slow pads tried at another strength, main.js; the same)
     this.recording = {
@@ -217,8 +219,8 @@ export const Replay = {
     this.speed = 1;
     Progress.noSave = true;
     Progress.data.tankPieces = h.tankPieces;
-    const stage = STAGE_LEVELS.find(level => level.id === h.level);
-    if (stage) selectSpecial(stage); // (a special event's stage: off the menu's list)
+    const stage = STAGE_LEVELS.find(level => level.id === h.level) || (LEVELS.some(level => level.id === h.level) ? null : HIDDEN.find(level => level.id === h.level));
+    if (stage) selectSpecial(stage); // (a special event's stage, or a hidden level: off the menu's list)
     else selectLevel(LEVELS.findIndex(level => level.id === h.level));
     if (h.raceClass) setRaceClass(h.raceClass);
     Game.evil = h.evil;
