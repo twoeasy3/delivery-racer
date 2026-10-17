@@ -119,7 +119,7 @@ const makeRats = () => {
       } else { // (the others gnaw, then run round)
         const a = t * 4 + i * 3;
         r.position.set(x * (1 - rage) + rage * Math.cos(a) * 0.2, 0.08, z * (1 - rage) + rage * Math.sin(a) * 0.12);
-        r.rotation.y = turn * (1 - rage) + rage * (-a + Math.PI);
+        r.rotation.y = turn * (1 - rage) + rage * Math.atan2(-Math.sin(a) * 0.2, Math.cos(a) * 0.12); // (nose along the way it runs: the path's velocity)
         head.position.z = 0.13 + up * Math.abs(Math.sin(t * 20 + i)) * 0.03;
       }
     });
