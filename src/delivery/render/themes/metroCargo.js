@@ -111,13 +111,14 @@ const makeRats = () => {
   return stated(group, (t, up, rage) => {
     all.position.y = rage * Math.abs(Math.sin(t * 7)) * 0.08;
     all.rotation.z = up * Math.sin(t * 23) * 0.025 + rage * Math.sin(t * 13) * 0.06;
-    door.rotation.y = -rage * (1.6 + Math.sin(t * 5) * 0.4); // (swings OUT, to the front: it is hinged on the doorway's left, so the turn is negative)
+    door.rotation.y = -(Math.min(1, rage * 2) * 1.5 + rage * Math.sin(t * 5) * 0.15); // (swings OUT, to the front, and is wide open (1.35 rad at least) before the bold one reaches it; hinged on the doorway's left, so the turn is negative)
     rats.forEach(({ r, head, tail, x, z, turn }, i) => {
       head.rotation.x = Math.sin(t * (12 + i * 3)) * 0.1;
       head.rotation.y = Math.sin(t * 1.5 + i) * 0.4 * (1 - up - rage);
       tail.rotation.z = Math.sin(t * 3 + i) * 0.3 + (up + rage) * Math.sin(t * 15 + i) * 0.3;
       if (i === 0) { // (the bold one: to the door, then half out of it)
-        r.position.set(x + (up + rage) * 0.1, 0.08, z + up * 0.2 + rage * 0.42);
+        const go = rage * rage; // (it holds back until the door is wide open, then goes out through the doorway's middle, clear of the door and the frame)
+        r.position.set(x + up * 0.1 + go * 0.26, 0.08, z + up * 0.2 + go * 0.42);
         r.rotation.y = turn * (1 - up - rage) + (up + rage) * 0.1;
         r.rotation.x = -rage * 0.3;
       } else { // (the others gnaw, then run round)
