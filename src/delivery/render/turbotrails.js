@@ -1,4 +1,4 @@
-// TURBO TRAIL STYLES (CHECKLIST 442, part 2; the owner: "Let's experiment with a few turbo trail effects"). An EXPERIMENT behind the
+// TURBO TRAIL STYLES (CHECKLIST 456, part 2; the owner: "Let's experiment with a few turbo trail effects"). An EXPERIMENT behind the
 // address only: `?turbotrail=<name>` (`<name>-lite` for its lite variant, `list` logs the names). No player-facing switch yet; with no
 // address (or `classic`) the game draws the turbo as it always did (render/items.js, the cyan and white cubes in the Particles pool).
 // Every style: geometry or points only (no texture), its own small fixed pool, one draw call (the twin ribbon's two strands are one
@@ -6,7 +6,7 @@
 // playerPointY: up in the air with a jumping car, CHECKLIST 429), it is carried by its PARENT's velocity on the PARENT GAME CLOCK
 // (render/gameclock.js: paused nothing moves or comes, half as far at 0.5x), and it grows with the car's actual speed.
 // TURBO-TRAILS.md: the looks, the counts, the cost, the open questions.
-// A COSMETIC since CHECKLIST 452 (render/trailcosmetic.js, the Cosmetics screen's 'Trail' tab): at every level load the style is the one the
+// A COSMETIC since CHECKLIST 466 (render/trailcosmetic.js, the Cosmetics screen's 'Trail' tab): at every level load the style is the one the
 // car in use WEARS (shownTrail(CAR.id); its lite variant on a low-end device: render/lowend.js, or ?fxlow=1 as the kill effects'), unless the
 // address (`?turbotrail=`) or a check (setTurboTrail) has pinned one. The same code draws the Cosmetics screen's PREVIEW (createTrailPreview
 // below): every style reads the car only through a SOURCE (`src`: the game's player car, GAME, or a car standing on show), so the game's
@@ -74,7 +74,7 @@ const makeStore = (max) => {
 // ---- what a frame gives every style: the tail, the parent's velocity and its speed ----
 const V = { x: 0, y: 0, z: 0 }, T = new THREE.Vector3(), Fw = new THREE.Vector3(), Ac = new THREE.Vector3(), P = new THREE.Vector3();
 const rarityColour = (car) => { try { return parseInt((RARITIES[rarityOf(car)] || RARITIES.common).colour.slice(1), 16); } catch { return TURBO_COLOR; } };
-// THE SOURCE a trail follows (CHECKLIST 452): its size (hw, hl, height), frame() filling V (its velocity), T (the tail at its height), Fw
+// THE SOURCE a trail follows (CHECKLIST 466): its size (hw, hl, height), frame() filling V (its velocity), T (the tail at its height), Fw
 // (forward, flat), Ac (+lat across, flat) and giving { roadY, k }; along(dz, off) a point dz m forward of the tail and off m across, on the
 // road; pointY(roadY, h) a height on the car; root() the car's model (the afterimage's shape), anchor(m) its matrix where the trail is drawn,
 // key() its identity; colour() its rarity's; shift: the trail is drawn in the car's own frame (it stands still; the trail streams back).
@@ -472,7 +472,7 @@ export const advanceProbe = (run) => {
 // main.js's frame, after the car is placed: dt is the GAME time of the frame (render/gameclock.js)
 export const syncTurboTrail = (dt, on = Player.active && Player.turbo > 0 && (Player.turbo > CONFIG.powerUpWarning || Math.floor(Player.turbo * 8) % 2 === 0) && !Game.screensaver) => stepTrail(G, dt, on);
 
-// ---- THE PREVIEW (CHECKLIST 452: the Cosmetics screen's Trail tab, render/trailpreview.js): a car standing on show, the trail streaming from
+// ---- THE PREVIEW (CHECKLIST 466: the Cosmetics screen's Trail tab, render/trailpreview.js): a car standing on show, the trail streaming from
 // its tail at its own height as if it drove at SPEED, drawn by the game's own styles above in the car's frame (shift). One trail, made once and
 // kept (a style change makes that style's small pool; the last one's is let go). show(name) the style ('<id>' or '<id>-lite');
 // frame(dt, model, parent, car, on): one step on the preview's clock (the model: the car on show; parent: what the trail is drawn in, the

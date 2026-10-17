@@ -1,4 +1,4 @@
-// THE PARENT GAME CLOCK (CHECKLIST 442, the owner: "Smoke and boost (and all other trails) should continue to be calculated by
+// THE PARENT GAME CLOCK (CHECKLIST 456, the owner: "Smoke and boost (and all other trails) should continue to be calculated by
 // their parent's actual game speed when paused"). Render-only: the one place the trails, smoke, sprays, wakes, exhausts and the
 // particle pools (render/effects.js, items.js, water.js, machinery.js, packages.js, killfx.js...) read their time and their
 // parents' speed from.

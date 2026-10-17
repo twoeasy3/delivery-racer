@@ -11,7 +11,7 @@ import { Elephants } from '../elephants.js';
 import { scene, tmp, clearGroup } from './scene.js';
 import { Particles, rnd } from './effects.js';
 import { makeElephant } from './elephantModel.js';
-import { chance } from './gameclock.js'; // (per 60 Hz frame, on the game's clock: none while paused, CHECKLIST 442)
+import { chance } from './gameclock.js'; // (per 60 Hz frame, on the game's clock: none while paused, CHECKLIST 456)
 
 
 const group = new THREE.Group();

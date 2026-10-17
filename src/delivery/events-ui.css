@@ -1,4 +1,4 @@
-/* THE EVENTS TAB (CHECKLIST 446, EVENTS-UI.md; render/eventmodes.js, render/menustage.js). Loaded after menu2.css; its tokens
+/* THE EVENTS TAB (CHECKLIST 460, EVENTS-UI.md; render/eventmodes.js, render/menustage.js). Loaded after menu2.css; its tokens
    (--accent, --accent-ink, --panel, --panel-2, --line, --ink-dim, --display) are #startScreen's. Three parts:
    1. the MODE STRIP over the Events tab, at every size: a segmented control, a button per event (icon + one word), the one shown
       filled with the accent (as the Cosmetics screen's tabs), a green dot (the Shop's) on one with something to play;

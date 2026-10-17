@@ -1,4 +1,4 @@
-// A check that a KILL EFFECT's projectile landing and the car's explosion are ONE moment (CHECKLIST 443; the owner: "There is a slight
+// A check that a KILL EFFECT's projectile landing and the car's explosion are ONE moment (CHECKLIST 457; the owner: "There is a slight
 // delay in the Kill FX projectile landing and the car exploding"). Headless, no browser. For EVERY shipped effect, at 60 and at 30 frames
 // a second:
 //   - IN A RUN (render/effects.js, render/packages.js, render/cars.js driven as main.js drives them: the logic in CONFIG.maxStep steps,

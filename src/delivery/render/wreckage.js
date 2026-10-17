@@ -24,7 +24,7 @@ import { Fire, Smoke, Particles, rnd, FIRE_COLORS } from './effects.js';
 import { lambert, CHAR, STEEL, WHITE, GLASS, add, box, across, makeAirliner, makeTower } from './airportModels.js';
 import { THEMES } from '../themes.js';
 import { makeConverterShed } from './themes/steelworksModels.js';
-import { chance, gameCount } from './gameclock.js'; // (per 60 Hz frame, on the game's clock: none while paused, CHECKLIST 442)
+import { chance, gameCount } from './gameclock.js'; // (per 60 Hz frame, on the game's clock: none while paused, CHECKLIST 456)
 export { makeAirliner }; // (as before)
 
 

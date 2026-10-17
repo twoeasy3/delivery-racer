@@ -19,7 +19,7 @@ import { Traffic } from '../traffic.js';
 import { scene, tmp, clearGroup } from './scene.js';
 import { carMesh, trafficMeshes, playerAirborne } from './cars.js'; // (playerAirborne: no spray under a car jumping the river, CHECKLIST 429)
 import { Particles, rnd, perSecond } from './effects.js';
-import { parentVelocity } from './gameclock.js'; // (CHECKLIST 442)
+import { parentVelocity } from './gameclock.js'; // (CHECKLIST 456)
 import './boatModels.js'; // (the boats, added to MODELS)
 
 const STEP = 4, COLS = 6;             // m between rows of the sheet; points across it
@@ -141,7 +141,7 @@ const hull = { s: 0, lat: 0, vs: 0, latVel: 0 }, carried = { x: 0, y: 0, z: 0 };
 const spray = (s, lat, hw, hl, speed, dir, latVel = 0) => {
   const way = Math.sign(speed) || dir, pace = Math.abs(speed);
   hull.s = s; hull.lat = lat; hull.vs = speed; hull.latVel = latVel;
-  parentVelocity(hull, carried, s - way * hl); // (the hull's own velocity, across the road too: CHECKLIST 442)
+  parentVelocity(hull, carried, s - way * hl); // (the hull's own velocity, across the road too: CHECKLIST 456)
   const h = Track.toWorld(s - way * hl, lat, tmp), y = tmp.y + surface(s);
   for (let n = 0; n < 2; n++) {
     Particles.emit(tmp.x + rnd(hw * 0.7), y + 0.05, tmp.z + rnd(hw * 0.7), carried.x * 0.15 + rnd(1.2), 1 + Math.random() * 1.6, carried.z * 0.15 + rnd(1.2),

@@ -10,7 +10,7 @@ import { Traffic } from '../traffic.js';
 import { Gambles } from '../gambles.js';
 import { scene, tmp, clearGroup } from './scene.js';
 import { Particles, rnd } from './effects.js';
-import { GameClock } from './gameclock.js'; // (the spray clouds bob on the game's clock: still while paused, CHECKLIST 442)
+import { GameClock } from './gameclock.js'; // (the spray clouds bob on the game's clock: still while paused, CHECKLIST 456)
 import { carMesh, trafficMeshes } from './cars.js';
 import { makeWindsock, makeSign, makeTransporter, makeHeightBar, makeDepthPost, makeCushion, makeShadeTree } from './gambleModels.js';
 import { buildStrip } from './road.js';

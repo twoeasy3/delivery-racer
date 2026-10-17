@@ -1,4 +1,4 @@
-// ---- the TRAIL cosmetic (CHECKLIST 452; the owner, 17-Oct: "build the trail FX tab on the cosmetics"): the look of a car's TURBO TRAIL, one of
+// ---- the TRAIL cosmetic (CHECKLIST 466; the owner, 17-Oct: "build the trail FX tab on the cosmetics"): the look of a car's TURBO TRAIL, one of
 // render/turbotrails.js's styles, chosen PER CAR on the Cosmetics screen's 'Trail' tab and worn by that car's turbo in a run.
 //   Items: 'classic' (the turbo as it always was: the free look, never counted) and the seven styles (flame, twin, speedlines, afterimage,
 //   embers, shockwave, rarity), EARNED like every earned cosmetic (render/cosmetics.js EARNED_SLOTS: a count each, given only through

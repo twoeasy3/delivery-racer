@@ -1,4 +1,4 @@
-// A check of the TRAIL cosmetic (CHECKLIST 452: render/trailcosmetic.js, the Cosmetics screen's 'Trail' tab, render/trailpreview.js):
+// A check of the TRAIL cosmetic (CHECKLIST 466: render/trailcosmetic.js, the Cosmetics screen's 'Trail' tab, render/trailpreview.js):
 //   - the registry: Classic (free, never counted) and the seven turbo trail styles as earned items, Uncommon, no price
 //   - the store: per car only (never the All-cars default's), a store from before has none (Classic), Reset car clears it
 //   - stock: awarded through awardCosmetic (and ?czgive=trail:flame*3); equipping takes one from the hand, taking it off gives it back

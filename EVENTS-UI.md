@@ -1,4 +1,4 @@
-# The Events tab on a phone, and the Comet Hunt's screen (CHECKLIST 446)
+# The Events tab on a phone, and the Comet Hunt's screen (CHECKLIST 460)
 
 Branch `claude/events-ui` from main v1.1.152-alpha (954c288). Render only: `render/eventmodes.js` (new), `events-ui.css` (new),
 `render/menustage.js` (wiring, the Comet Hunt panel's markup). `events.js` / `events.json` untouched; replay fingerprint

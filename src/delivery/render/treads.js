@@ -21,7 +21,7 @@
 // tyres or a small tyre (R < 0.24 m). Directional designs (chevron, lugs) are built both ways and put on so the V points FORWARD when
 // the car rolls forward (a centre wheel and either side alike).
 // TURNING (with the rim: render/wheelcosmetic.js's animate hook calls turnWheels below, ONE pass for the rims and the treads, no
-// allocation): by the distance rolled (userData.roll, render/items.js) over the wheel's radius (the rim's: the tyre's box, so the two match); standing still on show (IDLE_RATE 0, CHECKLIST 452); stopped, still; reversing,
+// allocation): by the distance rolled (userData.roll, render/items.js) over the wheel's radius (the rim's: the tyre's box, so the two match); standing still on show (IDLE_RATE 0, CHECKLIST 466); stopped, still; reversing,
 // back. Against the wagon-wheel effect a tread is clamped to CLAMP of its PITCH (one block row: TAU / n) a frame, and above BLUR_FROM
 // of the pitch a translucent band of the tyre's rubber fades in over the blocks (BLUR steps). The rim and the tread of a wheel take the
 // same distance in the same frame and turn by the same angle until one of them is clamped (the tread first: its pitch is finer); by
@@ -33,7 +33,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import * as Store from './loadoutstore.js';
 import { IDLE_RATE, CLAMP, BLUR_FROM, BLUR_FULL, BLUR, rimFrame } from './rims.js';
-import { atRest as restPose, hasRest } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 444)
+import { atRest as restPose, hasRest } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 458)
 
 const TAU = Math.PI * 2;
 // n: block rows round the tyre (the pitch, for the clamp); h: how far proud of the tyre's tread (in R); dir: directional (built both ways);

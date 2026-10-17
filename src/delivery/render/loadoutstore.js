@@ -25,7 +25,7 @@
 import { Progress } from '../progress.js';
 
 export const KEY = 'delivery.loadout';
-export const SLOTS = ['wheels', 'plate', 'roof', 'cargo', 'wing', 'decal', 'kill', 'underglow', 'trail']; // (trail { id }: the turbo trail, CHECKLIST 452, render/trailcosmetic.js; absent = Classic)
+export const SLOTS = ['wheels', 'plate', 'roof', 'cargo', 'wing', 'decal', 'kill', 'underglow', 'trail']; // (trail { id }: the turbo trail, CHECKLIST 466, render/trailcosmetic.js; absent = Classic)
 export const PROP_SLOTS = ['roof', 'cargo', 'wing'];
 export const MAX_CARS = 400;
 // PER-CAR ITEMS (CHECKLIST 433, the owner, 16-Oct: "drop All cars. Cosmetics are per car only"): the EARNED slots' item field (a plate's

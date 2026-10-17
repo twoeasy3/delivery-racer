@@ -13,7 +13,7 @@ bumped. It is render-only: the replay fingerprint stays 33a7d9d56d and progress.
 unlockall.js are both outside the fingerprint (vite.config.js NOT_RULES).
 
 ## The rule
-- **Earned slots:** plate, roof, cargo, wing, kill FX, glow and turbo trail (`EARNED_SLOTS`, `render/cosmetics.js`; the trail since CHECKLIST 452). No cosmetic has
+- **Earned slots:** plate, roof, cargo, wing, kill FX, glow and turbo trail (`EARNED_SLOTS`, `render/cosmetics.js`; the trail since CHECKLIST 466). No cosmetic has
   a cash price. Each slot's own free look (the Stock plate, no prop, the Classic kill effect, no glow, the Classic turbo trail) stays free.
   Wheels (tyre, hub, rim, tread) stay free.
 - **Count:** each item is a count of how many the player has been given. One or more means it is unlocked.
@@ -36,7 +36,7 @@ unlockall.js are both outside the fingerprint (vite.config.js NOT_RULES).
 
 UI text follows the owner's terse rule (CLOUD-AGENT-README.md): no explainer paragraphs, no before/after counts.
 
-## The Trail slot (CHECKLIST 452)
+## The Trail slot (CHECKLIST 466)
 - **Items:** Classic (free) and Flame, Twin, Speed lines, Afterimage, Embers, Shockwave, Rarity (earned, Uncommon): render/turbotrails.js's styles. Each card's art is a pictogram drawn in code (`render/trailcosmetic.js` drawTrailIcon).
 - **Per car:** loadout slot `trail { id }`; absent = Classic. Not in loadoutKey (nothing on the model changes, as the kill effect).
 - **Cars:** the wheels' rule: no tab on the Tank(s) or the Saucer; their turbo stays Classic.

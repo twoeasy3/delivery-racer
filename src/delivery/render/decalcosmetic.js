@@ -39,7 +39,7 @@ import { carPrimary } from './propmodelsroof.js';
 import { PROP_PAINTS, paintValueOf } from './propdress.js';
 import * as Store from './loadoutstore.js';
 import { DESIGNS, designById, canvasSize, drawDesign, toneOf } from './decaldesigns.js';
-import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 444)
+import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 458)
 
 export { DESIGNS, designById };
 export const DECAL_PAINTS = PROP_PAINTS; // (the swatches: Match car and the seven colours, as the props)

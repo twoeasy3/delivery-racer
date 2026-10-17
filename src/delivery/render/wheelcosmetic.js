@@ -36,7 +36,7 @@ import { registerCosmetics, ownsCosmetic } from './cosmetics.js';
 import { addRims, rimPatch, globalRim, savedRimChoice, resolveRim, rimAsked, rimById, RIM_SKIP } from './rims.js'; // (a set's rim or spinner: render/rims.js)
 import { addTreads, turnWheels, treadPatch, globalTread, savedTreadChoice, resolveTread, treadAsked, treadById } from './treads.js'; // (a set's tread: render/treads.js)
 import * as Store from './loadoutstore.js'; // (the choice: per car over a default)
-import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 444)
+import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 458)
 
 export const KEY = 'delivery.wheelcolour';
 export const WHEEL_COLOURS = [

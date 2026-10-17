@@ -1,6 +1,6 @@
 // A check that EVERY COSMETIC SITS WHERE IT BELONGS ON EVERY CAR, even one that animates (the owner, 17-Oct: "The lowrider and super lowrider
 // are really glitched with customisation": tread rings twice the tyre's size floating off the front wheels, dressing anchored to the
-// pre-bounce pose; and a worn Glow on a car with its own glow gave two; CHECKLIST 444). Headless, no picture. For every car:
+// pre-bounce pose; and a worn Glow on a car with its own glow gave two; CHECKLIST 458). Headless, no picture. For every car:
 //   - THE SCREEN'S WAY vs THE BUILD'S: the car built STOCK, its suspension prepared, ANIMATED to a phase (the Lowrider at the top of its hop),
 //     then dressed in place by the loadout store's notice (a tread, a rim, a tyre line, a plate design, a roof prop, a decal, a glow), as
 //     the Cosmetics screen does; and the same car built already dressed (at rest). Every dressing part must have the same parent and sit

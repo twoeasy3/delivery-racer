@@ -1,4 +1,4 @@
-// A check of THE EVENTS TAB'S MODES (CHECKLIST 446, EVENTS-UI.md; render/eventmodes.js, render/menustage.js, events-ui.css):
+// A check of THE EVENTS TAB'S MODES (CHECKLIST 460, EVENTS-UI.md; render/eventmodes.js, render/menustage.js, events-ui.css):
 //   SOURCE      events-ui.css loaded after menu2.css; render-only (the replay fingerprint main's: no logic file touched)
 //   PHONE       in headless Chromium over DevTools (skipped with a note if no browser is found), 390x844, touch, on a real save
 //               (the Comet Hunt two stages in): the mode strip over the Events tab, a tab per event (Xmas, Hunt, Strike, Comet),

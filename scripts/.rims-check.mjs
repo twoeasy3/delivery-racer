@@ -3,7 +3,7 @@
 //   - no rim and no wheel set is NAMED a spinner; every rim design turns with the car (kind 'speed'; no fixed-pace kind is left);
 //   - EVERY design, on a live car: rolling, a rim turns by the distance over its wheel's radius (in proportion: twice the speed,
 //     twice the turn), reversing turns it back; a car stopped in the game stands still; a car on show (no speed) stands still
-//     (IDLE_RATE 0 since CHECKLIST 452: only a spinner turns in a preview); at speed the turn is clamped and the blur disc shows;
+//     (IDLE_RATE 0 since CHECKLIST 466: only a spinner turns in a preview); at speed the turn is clamped and the blur disc shows;
 //   - the old ids blade3 and twinspin still resolve (a saved choice, a bare id, the old global key, ?wheelrim=), now named Blade and
 //     Twin blade; the sets that carry them keep their ids;
 //   - the Pumpkin and the Candy cane build on a sample of cars (a hatch, a truck, a sports car, a bus): one mesh per tyre face, each a
@@ -117,7 +117,7 @@ try {
     check(one.length > 0 && one.every(x => near(x.per, 1.5 / x.r / 60)) && two.every((x, i) => near(x.per, 2 * one[i].per)) && back.every((x, i) => near(x.per, -one[i].per)),
       d.name + ': rolling, it turns by distance over radius (' + one[0].per.toFixed(4) + ' rad a frame at 1.5 m/s, twice that at 3 m/s, back when reversing)');
     check(stop.every(x => Math.abs(x.per) < 1e-6) && show.every(x => near(x.per, R.IDLE_RATE / 60)),
-      d.name + ': a car stopped in the game stands still; on show (no speed, every preview) it stands still too (IDLE_RATE ' + R.IDLE_RATE + ', CHECKLIST 452)');
+      d.name + ': a car stopped in the game stands still; on show (no speed, every preview) it stands still too (IDLE_RATE ' + R.IDLE_RATE + ', CHECKLIST 466)');
     check(fast.every(x => near(x.per, R.CLAMP * x.gap) && x.level === R.BLUR.length - 1 && x.blur), d.name + ': at 45 m/s clamped to ' + R.CLAMP + ' of its gap a frame, the blur disc on');
   }
   for (const d of spinners) {

@@ -1,4 +1,4 @@
-// A check of the PREVIEW SPIN RULE (CHECKLIST 452; the owner, 17-Oct: "make non-spinners stop rotating in all vehicle previews"; "threads and
+// A check of the PREVIEW SPIN RULE (CHECKLIST 466; the owner, 17-Oct: "make non-spinners stop rotating in all vehicle previews"; "threads and
 // rims should not be rotating"): a car ON SHOW (render/showcar.js makeShowCar, the one builder of every vehicle preview: the garage, the
 // showroom, the Cosmetics screen, the menu's car card, the stills, the inspector, the pack banners and the unlock cutscenes) has no speed to
 // follow, and then

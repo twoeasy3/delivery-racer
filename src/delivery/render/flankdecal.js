@@ -27,7 +27,7 @@ import { isWindowNode } from './glassnames.js';
 import { glassy, forgetDents } from './dents.js';
 import { prepareSuspension } from './carsuspension.js';
 import { DECAL_ZONES } from './decalzonestable.js';
-import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 444)
+import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 458)
 
 const param = (name) => (typeof location !== 'undefined' && new RegExp('[?&]' + name + '=([\\w.-]+)').exec(location.search)?.[1]) || null;
 export const DECAL_TEST = { mode: param('decaltest'), lift: param('decallift'), num: param('decalnum') };

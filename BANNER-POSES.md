@@ -1,4 +1,4 @@
-# Pack banner poses and backdrops (CHECKLIST 447)
+# Pack banner poses and backdrops (CHECKLIST 461)
 
 - Poses: `src/delivery/render/bannerposes.js` (`POSES`): showdown (the old row, default), headon, staggered, abreast, chase, solo. Each has a slot per car (1 to 4 cars), the camera's lift / lens / roll; the no-overlap step-out and the fit-every-box framing are packbanner.js's and apply to all.
 - Backdrops: `src/delivery/render/bannerbackdrops.js` (`BACKDROPS`): town (the old one, default), neon, tunnel, coast, desert, snow, rain, circuit, synthwave, showroom. CSS gradients and small inline SVGs only; each carries a glow tint, a rim light colour and the ground's stops.

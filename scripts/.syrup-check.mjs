@@ -1,4 +1,4 @@
-// A check of the STOLEN MAPLE SYRUP cargo (render/themes/autumnModels.js AUTUMN_CARGO.syrup; CHECKLIST 449), built headless:
+// A check of the STOLEN MAPLE SYRUP cargo (render/themes/autumnModels.js AUTUMN_CARGO.syrup; CHECKLIST 463), built headless:
 //   - no flicker-class z-fighting (render/zfight.js, two different colours or a texture, planes within 4 mm) in any state, at
 //     several times, and half-way through a change of state; and none within 6 mm (every layer at least that far apart)
 //   - the furious JET: shown furious, hidden calm and agitated; its ribbon grows from the spout's mouth, lies in a sane box beside

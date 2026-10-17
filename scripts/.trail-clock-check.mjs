@@ -1,4 +1,4 @@
-// A check that the trails run on their PARENT'S GAME CLOCK (CHECKLIST 442; the owner: "Smoke and boost (and all other trails) should
+// A check that the trails run on their PARENT'S GAME CLOCK (CHECKLIST 456; the owner: "Smoke and boost (and all other trails) should
 // continue to be calculated by their parent's actual game speed when paused"). Headless (scripts/modelpatch-load.mjs: the render
 // modules with a stand-in renderer). The frame is main.js's: render/gameclock.js stepGame steps the logic and gives the GAME time
 // of the frame, and the car is placed, then render/effects.js emitVehicleSmoke, render/items.js syncPickups (the turbo exhaust) and
@@ -68,7 +68,7 @@ try {
   let steps = 0;
   const logicStep = (st) => { const before = Game.step; Game.update(st); steps++; return Game.step !== before; };
   let opts = {};
-  // one frame of wall time `wall`, main.js's way (oldClock: the wall time handed to the effects, as before CHECKLIST 442)
+  // one frame of wall time `wall`, main.js's way (oldClock: the wall time handed to the effects, as before CHECKLIST 456)
   const frame = ({ wall = 1 / 60, scale = 1, oldClock = false } = {}) => {
     let gdt = GC.stepGame(wall, { paused: Game.paused, scale, update: logicStep });
     if (oldClock) { GC.tickGameClock(wall, wall, 1); gdt = wall; }

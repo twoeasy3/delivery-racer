@@ -1,4 +1,4 @@
-// ---- THE GHOST'S MODEL (render/ghostcar.js; CHECKLIST 445): the best run's car as its own model, the one the player's car
+// ---- THE GHOST'S MODEL (render/ghostcar.js; CHECKLIST 459): the best run's car as its own model, the one the player's car
 // shows in play (render/items.js playerModel: the model, its Super kit, its model patch; the Tank's tank, the Saucer's saucer
 // at its hover height; a car with no model of its own the shaped box car, as in play), in Good or Evil as recorded, and
 // with NOTHING of the player's loadout: no wheel set, plate, props, decal, underglow, no Super glow, no Legendary wreath

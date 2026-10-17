@@ -27,7 +27,7 @@ import { Fly } from './fly.js';
 import { Sound } from './audio.js';
 import { carMesh } from './cars.js';
 import { Particles, Smoke, rnd } from './effects.js';
-import { chance } from './gameclock.js'; // (on the game's clock: CHECKLIST 442)
+import { chance } from './gameclock.js'; // (on the game's clock: CHECKLIST 456)
 import { makeCargoModel } from './cargoModels.js';
 import { cornerFrames, addCornerLights, placeCornerCamera } from './cargoview.js';
 

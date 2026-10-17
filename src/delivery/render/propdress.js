@@ -33,7 +33,7 @@ import { existingProps } from './propcosmetic.js';
 import { forgetDents } from './dents.js';
 import { SILHOUETTE } from './silhouette.js';
 import * as Store from './loadoutstore.js'; // (the choice: per car over a default)
-import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 444)
+import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 458)
 
 export { PROPS, SLOTS };
 export const KEY = (slot) => 'delivery.prop.' + slot;

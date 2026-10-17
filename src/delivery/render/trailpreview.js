@@ -1,4 +1,4 @@
-// ---- the TURBO TRAIL's preview on the Cosmetics screen (render/cosmeticsui.js, the Trail tab; CHECKLIST 452): while the tab is open the car
+// ---- the TURBO TRAIL's preview on the Cosmetics screen (render/cosmeticsui.js, the Trail tab; CHECKLIST 466): while the tab is open the car
 // on show stands still and its trail streams back from its tail at its own height, looping, as if it drove at 30 m/s: the game's own trail
 // code (render/turbotrails.js createTrailPreview, the car's frame), drawn in the showroom view's scene (render/showroomview.js overlay: its
 // renderer, no WebGL context of its own), one small pool kept for the visit. Tab closed (clear): nothing drawn, nothing stepped.

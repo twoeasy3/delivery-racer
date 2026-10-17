@@ -1,4 +1,4 @@
-# Turbo trail styles (an experiment, CHECKLIST 442 part 2)
+# Turbo trail styles (an experiment, CHECKLIST 456 part 2)
 
 The owner: "Let's experiment with a few turbo trail effects." Seven styles for the player's turbo, behind the address only:
 `?turbotrail=<name>` (`<name>-lite` for the lite variant; `?turbotrail=list` logs the names). No address, or `classic`, is

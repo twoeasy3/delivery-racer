@@ -1,4 +1,4 @@
-// A check of ONE WINDOW PANE EDITED ON ITS OWN in the model editor (CHECKLIST 448, the owner: "The model editor still doesn't let me change
+// A check of ONE WINDOW PANE EDITED ON ITS OWN in the model editor (CHECKLIST 462, the owner: "The model editor still doesn't let me change
 // the angle or placement of a single window, there are some cars with floating windscreens that I can't fix"; render/paneedit.js, the
 // patch's `panes` table).
 //  HEADLESS, on three cars whose windscreen is a glass part of its own (the Hot Hatch, the Muscle car, the Gullwing) and one whose glass is ONE

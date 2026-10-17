@@ -16,7 +16,7 @@ import { playerPointY, playerAirborne } from './cars.js';
 import { GameClock, parentVelocity } from './gameclock.js';
 
 // ---- particles: smoke, fire and debris as instanced cubes (the machinery: render/particles.js) ---------------------
-// (on the PARENT GAME CLOCK, render/gameclock.js, CHECKLIST 442: main.js advances them by the game time its steps made, so while
+// (on the PARENT GAME CLOCK, render/gameclock.js, CHECKLIST 456: main.js advances them by the game time its steps made, so while
 // paused or in photo mode they hold still with the frozen cars they came from; and in a frame in which no game time passed they
 // take no new particle, so nothing goes on pouring from a car that is not moving into a pool that is not moving)
 const onGameClock = (pool) => { const emit = pool.emit; pool.emit = (...a) => { if (!GameClock.frozen) emit(...a); }; return pool; };

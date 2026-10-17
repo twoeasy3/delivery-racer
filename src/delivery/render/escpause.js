@@ -1,4 +1,4 @@
-// ESCAPE PAUSES A RUN (CHECKLIST 442, part 3; the owner: "The game should pause when pressing Escape."). Escape during a run is the
+// ESCAPE PAUSES A RUN (CHECKLIST 456, part 3; the owner: "The game should pause when pressing Escape."). Escape during a run is the
 // Pause button and P (Game.togglePause: the same pause, its PAUSED banner and Resume / Photo / Exit level buttons, its silence, the
 // sim clock and the replay frozen with it); Escape again resumes. Before this, Escape did nothing in a run (only photo mode's: back
 // to the pause). Escape keeps every other meaning it has: it toggles the pause ONLY while a level is being played (not the

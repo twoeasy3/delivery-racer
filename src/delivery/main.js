@@ -25,8 +25,8 @@ import { syncZones } from './render/road.js';
 import { carMesh, syncTraffic } from './render/cars.js';
 import { emitVehicleSmoke, updateEffects } from './render/effects.js';
 import { stepGame } from './render/gameclock.js';
-import { syncTurboTrail } from './render/turbotrails.js'; // (?turbotrail=<name>: the turbo trail experiments, CHECKLIST 442)
-import './render/escpause.js'; // (Escape pauses a run and resumes it: CHECKLIST 442)
+import { syncTurboTrail } from './render/turbotrails.js'; // (?turbotrail=<name>: the turbo trail experiments, CHECKLIST 456)
+import './render/escpause.js'; // (Escape pauses a run and resumes it: CHECKLIST 456)
 import { syncPackages } from './render/packages.js';
 import { syncEmotes } from './render/emotes.js';
 import { syncPickups, syncTargets, syncToads } from './render/items.js';
@@ -333,7 +333,7 @@ if (params.get('racewatch') !== null) {
   if (cine) Traffic.reset();
   for (let t = 0; t < Number(params.get('ff') || 0); t += CONFIG.maxStep) Game.update(CONFIG.maxStep);
   // ?pauseafter=<s>: paused (with ?photo, in photo mode) once that much GAME time has been DRAWN after ?ff, frame by frame, so the
-  // trails and smoke, which only come out in drawn game time (render/gameclock.js, CHECKLIST 442), are in the still
+  // trails and smoke, which only come out in drawn game time (render/gameclock.js, CHECKLIST 456), are in the still
   pauseAfter = Number(params.get('pauseafter')) || 0;
   if (pauseAfter > 0) pauseWithPhoto = photo;
   else if (photo) { Game.paused = true; startPhoto(); }
@@ -436,7 +436,7 @@ const frame = (now) => {
     // 60 Hz frame is two steps, not one or three); the rest waits for the next frame. Frozen while paused. A replay
     // played at 2x or 4x takes that many steps for the time (replay.js speed)
     // (render/gameclock.js stepGame: the same steps, and GameClock.dt, the game time they made, is what every trail, smoke,
-    // spray and particle pool below runs on: none while paused or in photo mode, 2x in a 2x replay; CHECKLIST 442)
+    // spray and particle pool below runs on: none while paused or in photo mode, 2x in a 2x replay; CHECKLIST 456)
     const gdt = stepGame(dt, { paused: Game.paused, scale: Replay.playing ? Replay.speed : 1, update: logicStep });
     if (pauseAfter > 0 && Game.state === 'playing' && (pauseAfter -= gdt) <= 1e-6) { pauseAfter = 0; Game.paused = true; if (pauseWithPhoto) startPhoto(); }
 

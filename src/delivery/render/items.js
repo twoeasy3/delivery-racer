@@ -29,8 +29,8 @@ import { addLegend } from './legenddecal.js';
 import { dressCosmetics } from './showcar.js';
 import { setUnderglowLevel } from './underglow.js';
 import { LAMP_DEBUG, lampKey, lampsFor, makeLampMarkers } from './carlights.js';
-import { parentVelocity } from './gameclock.js'; // (the parent's own velocity, for its trails: CHECKLIST 442)
-import { turboTrailStyle } from './turbotrails.js'; // (?turbotrail=<name>: another look, drawn there; CHECKLIST 442)
+import { parentVelocity } from './gameclock.js'; // (the parent's own velocity, for its trails: CHECKLIST 456)
+import { turboTrailStyle } from './turbotrails.js'; // (?turbotrail=<name>: another look, drawn there; CHECKLIST 456)
 const carried = { x: 0, y: 0, z: 0 };
 
 // Everything here that belongs to the loaded level (bridges, obstacles, pickups, targets)
@@ -609,7 +609,7 @@ export const syncPickups = (dt) => {
   }
   // a boat's wake: white water churned up behind it, the more the faster it goes
   // (dt here, and in all of this file's trails, is the GAME time of the frame and each trail is carried by its parent's own velocity:
-  // render/gameclock.js, CHECKLIST 442. Paused, nothing comes out and nothing drifts)
+  // render/gameclock.js, CHECKLIST 456. Paused, nothing comes out and nothing drifts)
   if (Player.active && CAR.wake && Player.speed > 3 && !playerAirborne()) { // (none in the air: CHECKLIST 429)
     parentVelocity(Player, carried, Player.s - Player.hl);
     Track.toWorld(Player.s - Player.hl, Player.lat, tmp);

@@ -6,7 +6,7 @@
 // about, and mist.
 import * as THREE from 'three';
 import { Particles, Smoke, rnd } from './effects.js';
-import { chance, gameCount } from './gameclock.js'; // (on the game's clock: none while paused, CHECKLIST 442)
+import { chance, gameCount } from './gameclock.js'; // (on the game's clock: none while paused, CHECKLIST 456)
 
 // (seeded, so a puddle is the same shape every run)
 const seeded = (seed) => () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);

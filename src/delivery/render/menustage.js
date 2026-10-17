@@ -143,7 +143,7 @@ buildTabs();
 // the Events tab's first group, of the single-level events (or null: none on)
 const singlesGroup = () => (TABS.event.groups[0]?.[2] === 'events' ? TABS.event.groups[0] : null);
 const inSingles = (level) => { const g = singlesGroup(), k = TABS.event.list.indexOf(level); return !!g && k >= g[0] && k < g[1]; };
-// THE EVENTS TAB'S MODES (CHECKLIST 446, render/eventmodes.js): one per single-level event (each its own), one per special
+// THE EVENTS TAB'S MODES (CHECKLIST 460, render/eventmodes.js): one per single-level event (each its own), one per special
 // event of more stages (all its stages): { id, name, special, levels }. The id is the event's (or the one-level event's level's)
 const modesOf = () => {
   const { list, groups } = TABS.event, out = [];
@@ -817,7 +817,7 @@ const eventPanel = (event, picked, evil) => {
   const drawLater = [];
   let head;
   if (event.repeat) head = huntHead(event, drawLater); // (a recurring event, played again and again: its car and its pack, no progress)
-  else { // (CHECKLIST 446: the name and ONE status line, the stages done and the countdown; the grand prize a card, its car still; events-ui.css)
+  else { // (CHECKLIST 460: the name and ONE status line, the stages done and the countdown; the grand prize a card, its car still; events-ui.css)
     const prizeView = make('div', 'event-car');
     head = make('div', 'ev-head',
       make('div', 'ev-title', make('h2', '', event.name), make('div', 'ev-status', make('b', '', done + '/' + of), event.to ? ends(event.to) : null)),
@@ -850,7 +850,7 @@ const eventPanel = (event, picked, evil) => {
   const replaysBtn = open && ReplayStore.list(picked.id).length ? make('button', 'menu-chip replays', 'Replays') : null;
   roadBtn?.addEventListener('click', () => roadCard(picked));
   replaysBtn?.addEventListener('click', () => replaysCard(picked));
-  // (CHECKLIST 446: the stage picked, its name and a phone's Details button on one line; under it its figures, what it needs and
+  // (CHECKLIST 460: the stage picked, its name and a phone's Details button on one line; under it its figures, what it needs and
   // the road's chips, folded on a phone unless what it needs stops START)
   const warn = open && !Game.canStart;
   const more = detailsButton(detailsOpen, () => { detailsOpen = !detailsOpen; blip('menuPick'); panel.classList.toggle('ev-open', detailsOpen); more.setAttribute('aria-expanded', String(detailsOpen)); });

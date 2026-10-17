@@ -310,7 +310,7 @@ export const IDEA_MODELS_3 = {
     }
     group.userData = {
       body, noBounce: true, // (no springs: the carriage hangs from rollers on the hoop's rims; it lands with no bounce: render/carsuspension.js)
-      animate: (t) => { hoopGroup.rotation.x = typeof group.userData.roll === 'number' ? group.userData.roll / Rt : group.userData.onShow ? 0 : t * 1.6; /* (on show: still, CHECKLIST 452) */ driver.position.y = 0.96 + Math.abs(Math.sin(t * 3.2)) * 0.012; },
+      animate: (t) => { hoopGroup.rotation.x = typeof group.userData.roll === 'number' ? group.userData.roll / Rt : group.userData.onShow ? 0 : t * 1.6; /* (on show: still, CHECKLIST 466) */ driver.position.y = 0.96 + Math.abs(Math.sin(t * 3.2)) * 0.012; },
     };
     return group;
   },

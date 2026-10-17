@@ -1,5 +1,5 @@
 // ---- ONE WINDOW PANE, MOVED ON ITS OWN (the owner, 17-Oct: "The model editor still doesn't let me change the angle or placement of a
-// single window, there are some cars with floating windscreens that I can't fix"; CHECKLIST 448). A window part is often ONE mesh with
+// single window, there are some cars with floating windscreens that I can't fix"; CHECKLIST 462). A window part is often ONE mesh with
 // several panes in it (cabinGlass's merged glass, a hand-built car's glass merged by material): a pane is a run of that mesh's vertices
 // (render/modelpatch.js windowPanes, cabinGlass's userData.panes). The patch's `panes` table moves, turns and sizes one run, in place:
 //   panes: { '<part id>#<pane name>': { id, sig, pane, start, count, move: [x, y, z], turn: [yaw, pitch, roll], size: [w, h] } }

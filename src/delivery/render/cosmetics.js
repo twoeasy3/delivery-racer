@@ -35,7 +35,7 @@ export const STOCK_KEY = 'delivery.cosmetics.stock';
 const MOST = 300;
 export const MOST_EACH = 999; // (the most of one item; what 'Absolutely' gives of each)
 // the slots whose items are earned (a stock each) and each one's own free look (worn when nothing is chosen; never counted)
-export const EARNED_SLOTS = Object.freeze({ plate: 'stock', roof: 'none', cargo: 'none', wing: 'none', kill: 'classic', underglow: 'none', trail: 'classic' }); // (trail: the turbo trail, CHECKLIST 452, render/trailcosmetic.js)
+export const EARNED_SLOTS = Object.freeze({ plate: 'stock', roof: 'none', cargo: 'none', wing: 'none', kill: 'classic', underglow: 'none', trail: 'classic' }); // (trail: the turbo trail, CHECKLIST 466, render/trailcosmetic.js)
 // the field of a loadout slot that names its item (render/loadoutstore.js)
 export const ITEM_FIELD = Object.freeze({ plate: 'design', roof: 'id', cargo: 'id', wing: 'id', kill: 'id', underglow: 'id', trail: 'id' });
 // THE RARITY an earned cosmetic's CARD shows (the owner, 16-Oct: "render each cosmetic item using the same card as an Uncommon Blueprint"):

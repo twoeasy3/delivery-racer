@@ -59,7 +59,7 @@
 //      same points in a side / top / front drawing in the Part tab (drag, type, add after, remove, Zoom in) as the precise route. The edit is the patch's `shapes` table, read as the model is built (the same code
 //      makes the edited outline: bevels, merges, draw calls as before). Mirror on: the shape across the car (found by its vertices) gets the
 //      mirrored edit in the same commit. `node scripts/bake-shapes.mjs <car>` writes the points into the car's source (a plain build, no patch).
-//  10. ONE PANE ON ITS OWN (CHECKLIST 448, the owner: "doesn't let me change the angle or placement of a single window"; render/paneedit.js): a
+//  10. ONE PANE ON ITS OWN (CHECKLIST 462, the owner: "doesn't let me change the angle or placement of a single window"; render/paneedit.js): a
 //      pane picked (tap it, or its button in the Windows row) takes the gizmo itself, on its centre, its axes its own (X across, Y up its
 //      face): Move / Rotate / Scale act on that pane alone, even when it is one of several in one merged glass mesh. The Part tab: gap / clear
 //      chips, X Y Z (its centre, m), ° Yaw Pitch Roll, W H (m), Snap (rests it on the body: the line says how far), Reset, Part (the whole
@@ -667,7 +667,7 @@ const resetPane = (pane) => {
   }
   commit(p, pane.name + ': back to the automatic outline.');
 };
-// ---- ONE PANE ON ITS OWN (CHECKLIST 448, render/paneedit.js): the gizmo on a stand-in at the pane's centre, its axes the pane's own (X across,
+// ---- ONE PANE ON ITS OWN (CHECKLIST 462, render/paneedit.js): the gizmo on a stand-in at the pane's centre, its axes the pane's own (X across,
 // Y up its face, Z out of it), so Move / Turn / Size act on that pane alone; letting go writes the patch's `panes` entry (one undo)
 const paneProxy = new THREE.Object3D();
 scene.add(paneProxy);

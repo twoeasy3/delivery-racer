@@ -11,7 +11,7 @@
 // For each: the start screen no taller than innerHeight and not past its foot; START, the level strip, the tabs, the bank and
 // the car's card (the showroom / garage's way in) inside the screen and on top (elementFromPoint at the centre); the build tag
 // inside the screen, on top, its text the version, 10 px or more; with the menu scrolled to its end as well (a card that scrolls).
-// The EVENTS TAB held upright (CHECKLIST 446, events-ui.css): one event at a time under its mode strip (render/eventmodes.js), the
+// The EVENTS TAB held upright (CHECKLIST 460, events-ui.css): one event at a time under its mode strip (render/eventmodes.js), the
 // level strip not drawn (the strip's job is the mode strip's), the event cards fitted to the screen: there the mode strip is
 // checked on the screen and on top in the strip's place, and an event card is a card that FITS (the menu not scrolling).
 //   node scripts/.phone-menu-check.mjs [--browser=<path>] [--report] [--shots=<dir>] [--prefix=<name>] [--only=<size,...>]
@@ -168,7 +168,7 @@ else {
         await sleep(3500);
         await evaluate(`document.fonts.ready.then(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))))`);
         const top = await evaluate(MEASURE(false));
-        // (an event card held upright: since CHECKLIST 446 one event at a time on the Events tab, the card fitted to the screen and
+        // (an event card held upright: since CHECKLIST 460 one event at a time on the Events tab, the card fitted to the screen and
         // the menu not scrolling (it was a page that scrolled, its foot sticky); its taps 44 px, the mode strip's too)
         const card = top.card && h > w;
         if (card) check(top.taps.length >= 3 && top.taps.every(t => t.h >= 44 && t.w >= 44) && top.scrollH <= top.clientH + 1, `${state} ${size}: the event card fits the screen (the menu ${top.scrollH} in ${top.clientH}), its taps 44 px (${top.taps.map(t => t.c + ' ' + t.w + 'x' + t.h).join(', ')})`);

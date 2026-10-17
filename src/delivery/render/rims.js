@@ -11,7 +11,7 @@
 // TURNING: EVERY rim (kind 'speed') turns with the car; a SPINNER (kind 'spin', since the three-part wheel set) turns at SPIN_RATE always; as a real wheel's face does (the owner, 15-Oct: "fix the rims right": the two that turned
 // at a fixed pace, stopped or not, were called spinners; they are now ordinary rims, 'Blade' and 'Twin blade', ids kept). The
 // player's model gets userData.roll (metres rolled, from render/items.js) and each frame the rim turns by the distance over its
-// wheel's radius; with no roll (the garage, the showroom, the Cosmetics screen: every preview) it stands still (IDLE_RATE 0, CHECKLIST 452). Against the wagon-wheel
+// wheel's radius; with no roll (the garage, the showroom, the Cosmetics screen: every preview) it stands still (IDLE_RATE 0, CHECKLIST 466). Against the wagon-wheel
 // effect a turn is never more than CLAMP of the gap between two spokes in one frame, and above BLUR_FROM of the gap a translucent
 // disc fades in over the spokes (in steps: BLUR shared materials). A model whose tyres turn themselves (userData.rollsWheels: the
 // three old cars of render/models.js) has that turn taken off the rim's own.
@@ -29,7 +29,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import * as Store from './loadoutstore.js'; // (the choice, per car over the default)
-import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 444)
+import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 458)
 
 export const KEY_RIM = 'delivery.wheelrim';
 // kind: 'speed' (every rim: it turns with the car; null: none); n: the spokes (or blades, ribs) round it, for the wagon-wheel clamp;
@@ -64,7 +64,7 @@ export const rimById = (id) => RIM_DESIGNS.find(d => d.id === id) || RIM_DESIGNS
 export const RIM_SKIP = new Set(['monowheel', 'hovercraft', 'snocat', 'quadturbo', 'dodgem', 'circuswagon', 'halftrack', 'tank', 'amphibioustank', 'jetboat', 'trawler', 'jetcar', 'moonrover']);
 
 export const SPIN_RATE = 6;    // rad/s: a spinner, everywhere (stopped, moving, on show)
-export const IDLE_RATE = 0;    // rad/s: a rim with no speed to follow (a car on show): STILL (the owner, 17-Oct: "threads and rims should not be rotating" in the vehicle previews; CHECKLIST 452). Only a spinner turns on show.
+export const IDLE_RATE = 0;    // rad/s: a rim with no speed to follow (a car on show): STILL (the owner, 17-Oct: "threads and rims should not be rotating" in the vehicle previews; CHECKLIST 466). Only a spinner turns on show.
 export const CLAMP = 0.45;     // of the spoke gap: the most a speed rim turns in one frame
 export const BLUR_FROM = 0.18, BLUR_FULL = 0.4; // of the spoke gap per frame: the disc starts to show / is at its thickest
 export const BLUR = [0, 0.3, 0.55, 0.8]; // the disc's opacity steps (one shared material each, per colour)

@@ -1,4 +1,4 @@
-// FLOATING WINDOWS (the owner, 17-Oct: "there are some cars with floating windscreens that I can't fix"; CHECKLIST 448): every vehicle the game
+// FLOATING WINDOWS (the owner, 17-Oct: "there are some cars with floating windscreens that I can't fix"; CHECKLIST 462): every vehicle the game
 // builds (scripts/audit-windows.mjs buildAll: roster, supers, fillers, bespoke / event / earned / Legendary / secret / level cars, ideas,
 // traffic), headless, read-only. Each window pane the model editor lists (render/modelpatch.js extractParts) is measured against the car's
 // body (every shown part that is not a window or a wheel) and the car's other panes (a pane meeting another pane rests) with the editor's own measure (render/paneedit.js gapOf): GAP = the median over

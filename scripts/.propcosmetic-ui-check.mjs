@@ -79,7 +79,7 @@ try {
     const tabsOf = (id) => shownSlots(car(id) || noEntry).map(s => s.id).join();
     const { underglowSupported } = await load('render/underglow.js'); // (the Glow tab, 16-Oct: on every car that can wear an underglow)
     const glow = (id) => (underglowSupported(car(id) || noEntry) ? ['underglow'] : []);
-    check(['moke', 'touringcar', 'minibus', 'sporttruck', noEntry.id].every(id => tabsOf(id) === ['wheels', 'plate', ...SLOTS.filter(sl => st(id, sl).ok || (id === noEntry.id && D.slotStatus(noEntry, sl).ok)), ...glow(id), 'trail', 'kill'].join()), 'the tabs drawn are exactly Wheels, Plate, the slots slotStatus allows, Glow where an underglow fits, the Turbo trail (CHECKLIST 452) and the Kill effect (every car) (moke ' + tabsOf('moke') + '; ' + noEntry.id + ' ' + tabsOf(noEntry.id) + ')');
+    check(['moke', 'touringcar', 'minibus', 'sporttruck', noEntry.id].every(id => tabsOf(id) === ['wheels', 'plate', ...SLOTS.filter(sl => st(id, sl).ok || (id === noEntry.id && D.slotStatus(noEntry, sl).ok)), ...glow(id), 'trail', 'kill'].join()), 'the tabs drawn are exactly Wheels, Plate, the slots slotStatus allows, Glow where an underglow fits, the Turbo trail (CHECKLIST 466) and the Kill effect (every car) (moke ' + tabsOf('moke') + '; ' + noEntry.id + ' ' + tabsOf(noEntry.id) + ')');
     check(!/lockReason|cz-lockline|Coming later|Not available for this car yet/.test(ui) && /openSlot = renderTabs\(\)/.test(ui) && /tabToOpen\(list, openSlot\)/.test(ui), "no 'Locked' / 'Coming later' tab, no lock reason line; the open tab falls back to the first drawn (renderTabs)");
   }
 

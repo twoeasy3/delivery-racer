@@ -63,7 +63,7 @@ const flat = (map, opacity) => new THREE.MeshBasicMaterial({ map, transparent: t
 const CLOSE = 0.5;
 let closeup = false, zoom = 0, alsoVisible = () => false;
 // OVERLAYS drawn in the view's scene each frame (the Cosmetics screen's kill-effect preview, render/killpreview.js; the turbo trail's,
-// render/trailpreview.js, CHECKLIST 452): fn(scene, dt, camera), each in the order added; one that throws is dropped
+// render/trailpreview.js, CHECKLIST 466): fn(scene, dt, camera), each in the order added; one that throws is dropped
 const overlays = new Set();
 // the stage's FLOOR height (the model stood on it, the floor patch and shadow just over it): what an overlay lands things on
 const FLOOR_Y = 0;
@@ -392,7 +392,7 @@ export const ShowroomView = {
   get floorY() { return FLOOR_Y; },
   // the car gone from the stage (true) or back (false: it pops back up); render/killpreview.js
   // (gone: hidden AT ONCE, in this frame's picture: the overlay calls this after the frame has set the body's visibility, so leaving it to
-  // the next frame drew the car one frame into its own explosion; CHECKLIST 443)
+  // the next frame drew the car one frame into its own explosion; CHECKLIST 457)
   carGone(on) { on = !!on; if (on === gone) return; gone = on; popT = on ? POP : 0; if (on && v?.body) v.body.visible = v.shadow.visible = false; },
   get carHidden() { return gone; },
   closeUp(on, end = null, focus = null) { closeup = !!on; closeEnd = on && (end === 'rear' || end === 'front') ? end : null; closeFocus = on && focus ? focus : null; },

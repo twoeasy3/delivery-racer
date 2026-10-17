@@ -31,7 +31,7 @@ try {
   const PROPS = ['roof', 'cargo', 'wing'];
   const { plateAnchorsFor } = await load('render/plateanchors.js');
   // (CHECKLIST 340: no Wheels tab on the Tank, the Saucer or the UFO; no Plate tab where the plate table says none can be worn)
-  const want = (c) => [...(c.tank || c.ufo ? [] : ['wheels']), ...(plateAnchorsFor(c).status === 'none' ? [] : ['plate']), ...PROPS.filter(sl => D.slotStatus(c, sl).ok), ...(c.tank || c.ufo ? [] : ['trail'])].join(); // (trail: the turbo trail, CHECKLIST 452, the wheels' rule)
+  const want = (c) => [...(c.tank || c.ufo ? [] : ['wheels']), ...(plateAnchorsFor(c).status === 'none' ? [] : ['plate']), ...PROPS.filter(sl => D.slotStatus(c, sl).ok), ...(c.tank || c.ufo ? [] : ['trail'])].join(); // (trail: the turbo trail, CHECKLIST 466, the wheels' rule)
 
   check(!R.isDemo(), 'the demo is off by default');
   const sample = { hothatch: 'wheels,plate,roof,wing,trail', pickup: 'wheels,plate,roof,cargo,wing,trail', splitwindow: 'wheels,plate,roof,trail', keitruck: 'wheels,plate,roof,cargo,wing,trail', rocketfin: 'wheels,trail', classicgt: 'wheels,plate,wing,trail', tank: 'plate', 'earned-ufo': '' };

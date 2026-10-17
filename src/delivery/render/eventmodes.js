@@ -1,4 +1,4 @@
-// THE EVENTS TAB'S MODE STRIP (CHECKLIST 446; EVENTS-UI.md; the owner, 17-Oct: "Car Hunt and Concept Strike vertically on a
+// THE EVENTS TAB'S MODE STRIP (CHECKLIST 460; EVENTS-UI.md; the owner, 17-Oct: "Car Hunt and Concept Strike vertically on a
 // phone. I don't want this ... Maybe some other toggles to flick through screens"). One segmented strip over the Events tab, a
 // button per mode (each single-level event, the Car Hunt, the Concept Strike; each special event of more stages, the Comet
 // Hunt): an icon and one short word, the one shown filled, a dot on one with something waiting. One mode on the screen at a

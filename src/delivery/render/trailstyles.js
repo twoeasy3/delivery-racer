@@ -1,4 +1,4 @@
-// ---- the TURBO TRAIL STYLES as data (CHECKLIST 442; a cosmetic since CHECKLIST 452): their ids, names and looks, with nothing drawn here, so the
+// ---- the TURBO TRAIL STYLES as data (CHECKLIST 456; a cosmetic since CHECKLIST 466): their ids, names and looks, with nothing drawn here, so the
 // Trail cosmetic (render/trailcosmetic.js) and unlockall.js can list them without the game's scene. render/turbotrails.js draws them.
 // 'classic' is the turbo as it always was (the cyan and white cubes, render/items.js): the Trail slot's free look.
 export const STYLES = {

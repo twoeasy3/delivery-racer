@@ -1,4 +1,4 @@
-// ---- A MODEL'S REST POSE, for the cosmetics (the owner, 17-Oct: "The lowrider and super lowrider are really glitched with customisation"; CHECKLIST 444).
+// ---- A MODEL'S REST POSE, for the cosmetics (the owner, 17-Oct: "The lowrider and super lowrider are really glitched with customisation"; CHECKLIST 458).
 // Some models move parts of themselves every frame (the Lowrider's hydraulics lift its chassis and its front axle; the showroom's
 // suspension holds the wheels on the floor while the body bounces; doors, sways). A cosmetic put on such a model LATER (picked on the
 // Cosmetics screen while the car is turning and hopping) must be measured against the model as it was BUILT, at rest, and then parented

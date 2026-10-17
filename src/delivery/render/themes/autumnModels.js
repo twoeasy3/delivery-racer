@@ -89,7 +89,7 @@ export const AUTUMN_OBSTACLES = {
 };
 
 // ---- the cargo ---------------------------------------------------------------------------------------------------
-// THE SYRUP'S JET (CHECKLIST 449): a ballistic ribbon of syrup from a spout's mouth at (sx, mouth) in `parent`: one tube of RINGS
+// THE SYRUP'S JET (CHECKLIST 463): a ballistic ribbon of syrup from a spout's mouth at (sx, mouth) in `parent`: one tube of RINGS
 // rings deformed along p(s) = v0 s + g s^2 / 2 every frame (thick at the spout, tapering to a point), a pale glossy streak along
 // its top, then drops carrying on along the same arc to the ground and a few spiralling off it. All pooled: two tubes, DROPS +
 // SPIRALS spheres, written in place each frame, nothing made after the build. jet(t, rage, hop): rage the state's weight (it
@@ -256,7 +256,7 @@ export const AUTUMN_CARGO = {
   // EVIL: a tin of maple syrup that is not the carrier's. Calm: sealed, a stolen tag on its handle, a sticky ring. Agitated: it
   // sweats, syrup oozes from under the cap and beads down the spout, drips run off the shoulder and a puddle spreads, the tin hums.
   // Furious: the cap blows and a JET of syrup shoots from the spout in an arc (syrupJet), surging as the tin hops; it pools round
-  // the spout, runs down the sides, strands drip off the shoulder, the whole tin shakes. (CHECKLIST 449: the shoulder stands 9 mm
+  // the spout, runs down the sides, strands drip off the shoulder, the whole tin shakes. (CHECKLIST 463: the shoulder stands 9 mm
   // proud of the tin's top and the labels 7 mm off its faces, so no two surfaces share a plane.)
   syrup: () => {
     const g = new THREE.Group(), all = sub(g);

@@ -16,7 +16,7 @@ import { unitBox } from './particles.js';
 import { ShowroomView } from './showroomview.js';
 import { Sound } from './audio.js';
 
-// ONE IMPACT TIME (CHECKLIST 443; the owner: "a slight delay in the Kill FX projectile landing and the car exploding"): the package's
+// ONE IMPACT TIME (CHECKLIST 457; the owner: "a slight delay in the Kill FX projectile landing and the car exploding"): the package's
 // flight IS the impact. impactAt(id) (an effect's own `flight` s, else FLIGHT) is read by the package's motion (u = t / impactAt) and by
 // the impact itself: on the first frame t reaches it the package is gone, its burst, the car's explosion, the car hidden, the mark and the
 // sounds all happen together, as in a run (the rules queue the package's 'burst' and the car's 'explode' in the same step: render/effects.js

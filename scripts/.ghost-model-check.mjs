@@ -1,11 +1,11 @@
-// A check of the best run's GHOST car's model (render/ghostmodel.js, drawn by render/ghostcar.js; CHECKLIST 445): for about
+// A check of the best run's GHOST car's model (render/ghostmodel.js, drawn by render/ghostcar.js; CHECKLIST 459): for about
 // 25 cars (box-car-sized commuters, Super versions, Legendary cars, car ideas, amphibious cars, the tall and odd ones: the
 // monster truck, the bus, the Tank, the Saucer, the hovercraft...) the ghost is built as the game builds it and must be the
 // car's OWN model (not the box car: only a car with no model of its own is that, as in play), one mesh in the shared ghost
 // material (see-through, no depth write, no shadow, drawn late), the same triangles and bounds as the car's stock model
 // (render/showcar.js makeShowCar with stock: true, less a Super car's glow and a Legendary car's wreaths), with nothing of the
 // player's loadout on it (a wheel set is worn here, and it does dress the show cars), and swapping cars disposes the last
-// one's geometry and leaves nothing behind in the scene. No picture: stills of it are taken in a browser (CHECKLIST 445).
+// one's geometry and leaves nothing behind in the scene. No picture: stills of it are taken in a browser (CHECKLIST 459).
 //   node scripts/.ghost-model-check.mjs
 import { createServer } from 'vite';
 import { tmpdir } from 'node:os';

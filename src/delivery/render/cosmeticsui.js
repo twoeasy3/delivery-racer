@@ -45,7 +45,7 @@ import { usage, spare, migrateStock, settleLoadout, revertLoadout } from './cosm
 import { Progress } from '../progress.js';
 import { KILL_FX, KILL_IDS, shownKill, setKill } from './killfx.js';
 import { KillPreview } from './killpreview.js';
-import { TRAILS, shownTrail, setTrail, drawTrailIcon } from './trailcosmetic.js'; // (the turbo trail, CHECKLIST 452)
+import { TRAILS, shownTrail, setTrail, drawTrailIcon } from './trailcosmetic.js'; // (the turbo trail, CHECKLIST 466)
 import { TrailPreview } from './trailpreview.js';
 import { Nav } from '../nav.js';
 import { Sound } from './audio.js';
@@ -302,7 +302,7 @@ const killShown = () => {
 // default, so the 'This car / All cars' switch shows on it); the panel is made the first time the tab opens (cosmeticsui.js panelOf)
 registerSlot({ id: 'kill', panel: () => buildKill(), refresh: () => killShown() });
 
-// ---- the TURBO TRAIL (CHECKLIST 452, render/trailcosmetic.js): per car, earned; a card each (its own pictogram, drawn in code), and while the
+// ---- the TURBO TRAIL (CHECKLIST 466, render/trailcosmetic.js): per car, earned; a card each (its own pictogram, drawn in code), and while the
 // tab is open the trail worn (or tried on) streams behind the car on the stage (render/trailpreview.js)
 let trailRow, trailStatus;
 const trailIcon = (id) => {

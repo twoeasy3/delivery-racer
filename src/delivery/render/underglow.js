@@ -41,7 +41,7 @@ import { prepareSuspension } from './carsuspension.js';
 import { SILHOUETTE } from './silhouette.js';
 import { carPrimary } from './propmodelsroof.js';
 import * as Store from './loadoutstore.js';
-import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 444)
+import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 458)
 
 // ---- the looks ----
 export const UNDERGLOWS = [
