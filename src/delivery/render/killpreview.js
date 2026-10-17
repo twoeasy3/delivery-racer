@@ -165,7 +165,7 @@ export const KillPreview = {
   clear() { run = null; fx?.clear(); purgeClassic(); marksOff(true); if (box) box.visible = false; ShowroomView.carGone(false); },
   get hold() { return hold; },
   // for a check or a picture: what is alive
-  get state() { return { look, t: run ? run.t : null, impactAt: run ? run.impactAt : null, impactFrame: run ? run.impactFrame : null, box: !!box?.visible, live: fx ? fx.live() : 0, classic: classic ? classic.Fire.live() + classic.Smoke.live() + classic.Particles.live() : 0, carHidden: ShowroomView.carHidden, marks: marks ? marks.filter(m => m.visible).length : 0, back: !!run?.back }; },
+  get state() { return { look, t: run ? run.t : null, impactAt: run ? run.impactAt : null, impactFrame: run ? run.impactFrame : null, box: !!box?.visible, live: fx ? fx.live() : 0, classic: classic ? classic.Fire.live() + classic.Smoke.live() + classic.Particles.live() : 0, classicFire: classic ? classic.Fire.live() : 0, carHidden: ShowroomView.carHidden, marks: marks ? marks.filter(m => m.visible).length : 0, back: !!run?.back }; },
   // for a check: the pools of the preview's own system (their particles' floors and heights) and the timeline
   get fx() { return fx; },
   // (kill = impact: the package lands and the car goes up on the same frame; of the effect on test)
