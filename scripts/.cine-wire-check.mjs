@@ -16,6 +16,11 @@
 //   HEADLESS   without ?cineplay a headless browser plays none (logged 'headless')
 //   BULK       more than BULK cars at once (Unlock everything): none
 //   FINGERPRINT the replay rules fingerprint (scripts/logic-hash.mjs) is main's (no logic file touched)
+//   HELD      (CHECKLIST 440) every cinematic (car, key, fob, jim, ecu, ecumax) held at its end keeps drawing; nothing above the
+//              floor 6 s in (Jim's confetti still falling 0.5 s in); a skip holds at once with nothing in the air
+//   LAMPS     (CHECKLIST 440) sample cars (hand-written, generated, a Legendary, an idea) light their render/carlights.js TABLE lamps
+//              (each one, one scale from the table's metres); a car whose headlamps the guess missed; a car with no entry guesses
+//   --only=purchase,ecu,pack,rest,held,lamps,stills runs those parts; --shots also takes Jim's key, its held end at 0.5 and 3 s
 //   node scripts/.cine-wire-check.mjs [--browser=<path>] [--shots=<dir>]
 // --shots saves the phone stills (purchase, ECU up, pack unlock, the setting).
 import { createServer } from 'vite';
