@@ -204,7 +204,7 @@ Also need `autostart` (or a hidden level).
 | `card` | bare | With `keys`: card-size pictures only, no side views. | `/delivery/?keys=ordinary&card` | Normal | yes |
 | `keymodel` | a key model name | Every card draws that key model for the visit (to compare). | `/delivery/?shop&inside=comet-special&keymodel=artisan` | Normal | untried |
 | `banner` | 1 to 3 car ids (hero first) | Just a pack banner over everything, to re-shoot. | `/delivery/?banner=wedge,midnight,splitwindow&w=1000&h=500` | Normal | yes |
-| `packbanner` | a pack id, or `sheet` | A pack's banner full-size (`&pose=<name>` to override; `&w=&h=`); `sheet`: every pose with 1 to 4 cars (`&cars=<ids>`). Poses: render/bannerposes.js. | `/delivery/?packbanner=record-special&pose=headon` | Normal | yes |
+| `packbanner` | a pack id, `sheet`, `backdrops` or `all` | A pack's banner full-size (`&pose=`, `&backdrop=` to override; `&w=&h=`); `sheet`: every pose with 1 to 4 cars (`&cars=<ids>`, `&backdrop=`); `backdrops`: every backdrop (`&pose=`); `all`: every pose x backdrop. render/bannerposes.js, bannerbackdrops.js. | `/delivery/?packbanner=record-special&pose=headon` | Normal | yes |
 | `w` / `h` | pixels | With `banner`: its size (default 1600x800). | (above) | Normal | yes |
 | `evil` / `labels` | bare / `0` | With `banner`: Evil livery / no names. | `...&banner=wedge,midnight&evil&labels=0` | Normal | untried |
 
