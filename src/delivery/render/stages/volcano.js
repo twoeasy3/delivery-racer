@@ -43,7 +43,7 @@ export const stage = {
     g.fillStyle = css(pal.far.clone().lerp(pal.top, dark ? 0.7 : 0.45)); // a ridge in front, low
     g.beginPath(); g.moveTo(0, hy + 1); for (let x = 0; x <= w; x += w / 10) g.lineTo(x, hy - hy * (0.04 + rnd() * 0.07)); g.lineTo(w, hy + 1); g.fill();
   },
-  plinth: () => 0x241f22, // (basalt)
+  plinth: (pal) => (pal.evil ? 0x4d4044 : 0x241f22), // (basalt; paler under the Evil side's black car)
   models: { lavaRockBig: rock(1.0), lavaRock: rock(0.7), lavaRockSmall: rock(0.45), basalt, lavaPool },
   // [model, side, depth (car radii behind), turn, scale, kind of box]
   props: [['basalt', -0.78, 1.9, 0.3, 1], ['lavaRockBig', 0.74, 1.6, 0.6, 0.9], ['lavaPool', -0.5, 3.2, 0.2, 1.2], ['lavaRock', 0.3, 4.8, 0, 1], ['lavaRockSmall', 0.97, 0.2, 1, 1]],
