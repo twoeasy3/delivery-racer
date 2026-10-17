@@ -86,11 +86,15 @@ const makeRats = () => {
   for (let x = -W / 2; x <= W / 2 + 0.001; x += W / 10) for (const z of [-D / 2, D / 2]) if (!(z > 0 && Math.abs(x) < 0.14)) part(all, cyl(0.008, 0.008, H, 4), wire, x, 0.08 + H / 2, z);
   for (let z = -D / 2; z <= D / 2 + 0.001; z += D / 6) for (const x of [-W / 2, W / 2]) part(all, cyl(0.008, 0.008, H, 4), wire, x, 0.08 + H / 2, z);
   part(all, box(W + 0.02, 0.02, D + 0.02), wire, 0, 0.08 + H, 0);                          // the top
-  for (const y of [0.25, 0.45]) { part(all, box(W, 0.012, 0.012), wire, 0, y, D / 2); part(all, box(W, 0.012, 0.012), wire, 0, y, -D / 2); }
+  for (const y of [0.25, 0.45]) {
+    part(all, box(W, 0.012, 0.012), wire, 0, y, -D / 2);
+    for (const s of [-1, 1]) part(all, box(W / 2 - 0.14, 0.012, 0.012), wire, s * (W / 2 + 0.14) / 2, y, D / 2); // (the front's rails stop at the doorway: the door carries its own)
+  }
   part(all, box(0.08, 0.04, 0.5), wire, 0, 0.08 + H + 0.03, 0);                             // its handle
   const door = sub(all, -0.14, 0.08, D / 2);                                                 // the door, hinged on its left
   for (let x = 0.02; x < 0.28; x += 0.045) part(door, cyl(0.008, 0.008, H * 0.8, 4), wire, x, H * 0.4, 0);
   part(door, box(0.28, 0.012, 0.012), wire, 0.14, H * 0.8, 0);
+  for (const y of [0.25, 0.45]) part(door, box(0.28, 0.012, 0.012), wire, 0.14, y - 0.08, 0); // (its rails, level with the cage's)
   const rat = (x, z, turn) => {
     const r = sub(all, x, 0.08, z);
     r.rotation.y = turn;
@@ -107,7 +111,7 @@ const makeRats = () => {
   return stated(group, (t, up, rage) => {
     all.position.y = rage * Math.abs(Math.sin(t * 7)) * 0.08;
     all.rotation.z = up * Math.sin(t * 23) * 0.025 + rage * Math.sin(t * 13) * 0.06;
-    door.rotation.y = rage * (1.6 + Math.sin(t * 5) * 0.4);
+    door.rotation.y = -rage * (1.6 + Math.sin(t * 5) * 0.4); // (swings OUT, to the front: it is hinged on the doorway's left, so the turn is negative)
     rats.forEach(({ r, head, tail, x, z, turn }, i) => {
       head.rotation.x = Math.sin(t * (12 + i * 3)) * 0.1;
       head.rotation.y = Math.sin(t * 1.5 + i) * 0.4 * (1 - up - rage);
