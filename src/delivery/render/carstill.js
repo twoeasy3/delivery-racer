@@ -24,6 +24,11 @@ export const POSES = {
   front: { lift: 0.24, angle: 0.62, fov: 28, margin: 0.88 },           // eye height, front three-quarter, nose to the right
   rear: { lift: 0.2, angle: Math.PI + 0.72, fov: 30, marginX: 0.86, marginY: 0.72, shiftY: 0.04 },  // rear three-quarter, tail to the left
 };
+// REVIEW ONLY (scripts/pose-sheet.mjs, the owner's sheet of every pose of every car): the four above and `side`, a flat side
+// profile on a long lens, nose to the left (tried on the cards and removed, CHECKLIST 164; its numbers from branch
+// claude/blueprint-pose-lab). The game never asks for it: carposes.js still picks from the four, and poseOf below does not know it.
+export const REVIEW_POSES = { ...POSES, side: { lift: 0.05, angle: -Math.PI / 2, fov: 16, marginX: 0.88, marginY: 0.66, shiftY: 0.04 } };
+export const REVIEW_POSE_NAMES = ['top', 'hero', 'front', 'rear', 'side'];
 const poseOf = (pose) => (typeof pose === 'string' ? POSES[pose] || STILL_POSE : pose || STILL_POSE);
 const poseKey = (pose) => (typeof pose === 'string' ? pose : pose && pose !== STILL_POSE ? JSON.stringify(pose) : 'still');
 
