@@ -13,6 +13,8 @@
 //   - TURBO TRAIL STYLES (render/turbotrails.js, ?turbotrail=, when it is there): each style and its lite variant paused holds still
 //     and emits nothing, at half speed goes half as far, comes from the tail up in the air with a jumping car, and with the turbo off
 //     is hidden
+//   - ESCAPE (render/escpause.js, part 3): Escape in a run pauses it (the sim clock, the trails and the replay recording stop),
+//     Escape again resumes it with no key held over; and nothing in photo mode, under a dialog, on a repeat, in the screensaver
 //   - render-only: the replay fingerprint walks no render/ file; its hashes printed
 //   node scripts/.trail-clock-check.mjs
 import { startModels } from './modelpatch-load.mjs';
@@ -187,6 +189,44 @@ try {
       check(TT.liveCount() === 0 && !TT.drawn(), '...and the turbo off: nothing alive, the mesh hidden (' + TT.liveCount() + ')');
     }
     TT.setTurboTrail('classic');
+  }
+
+  // ---- ESCAPE PAUSES A RUN (part 3: render/escpause.js, the Pause button's and P's Game.togglePause) ----
+  {
+    await load('render/escpause.js');
+    const { Input } = await load('input.js');
+    const { Replay } = await load('replay.js');
+    const classes = new Set(); Object.assign(document.body.classList, { add: (c) => classes.add(c), remove: (c) => classes.delete(c), contains: (c) => classes.has(c) });
+    TT?.setTurboTrail('twin');
+    start({ turbo: true, damaged: true, hold: 30 });
+    check(Game.state === 'playing' && !Game.paused, 'a run: playing, not paused (state ' + Game.state + ')');
+    press('keydown', 'Escape'); press('keyup', 'Escape');
+    check(Game.paused === true, 'Escape in a run: paused');
+    const s0 = Player.s, step0 = Game.step, m0 = snap(), t0 = TT?.state(), rec0 = JSON.stringify(Replay.recording?.inputs || null);
+    press('keydown', 'ArrowUp'); // (a key pressed and let go while paused: nothing of it when the run goes on)
+    for (let i = 0; i < 40; i++) frame();
+    press('keyup', 'ArrowUp');
+    check(Player.s === s0 && Game.step === step0, 'paused 40 frames: the sim clock stopped (step ' + Game.step + ', the car where it was)');
+    check(moved(m0, snap()) === 0 && (!TT || TT.state() === t0), '...the turbo exhaust, the smoke and the twin trail held still (nothing drifted or came)');
+    check(JSON.stringify(Replay.recording?.inputs || null) === rec0, '...the replay recording took nothing while paused (' + (Replay.recording ? Replay.recording.inputs.length + ' inputs' : 'no recording here') + ')');
+    press('keydown', 'Escape'); press('keyup', 'Escape');
+    check(Game.paused === false, 'Escape again: resumed');
+    check(Input.throttle === 0 && Input.steer === 0, '...no key held over from the pause (throttle ' + Input.throttle + ', steer ' + Input.steer + ')');
+    const s1 = Player.s, m1 = snap();
+    for (let i = 0; i < 10; i++) frame();
+    check(Player.s > s1 && Game.step > step0 && moved(m1, snap()) > 0.05, '...and the run goes on, its trails with it');
+    // Escape keeps its other meanings: nothing toggled in photo mode (its own Escape goes back to the pause), with a menu or dialog
+    // over the run (Game.inMenu), a key repeat, a key taken by something else first, in the screensaver, off a run
+    Game.paused = true; classes.add('photo'); // (photo mode: render/photo.js's class on the page; its module wants the real renderer)
+    press('keydown', 'Escape');
+    check(Game.paused === true, 'in photo mode: Escape does not resume the run (photo mode\'s own Escape: back to the pause)');
+    classes.delete('photo'); Game.paused = false;
+    Game.inMenu = true; press('keydown', 'Escape'); check(!Game.paused, 'a dialog or sheet up (Game.inMenu): Escape is its, the run not paused'); Game.inMenu = false;
+    press('keydown', 'Escape', { repeat: true }); check(!Game.paused, 'a held Escape\'s repeats: nothing');
+    press('keydown', 'Escape', { defaultPrevented: true }); check(!Game.paused, 'an Escape already taken (defaultPrevented): nothing');
+    Game.screensaver = true; press('keydown', 'Escape'); check(!Game.paused, 'the screensaver: nothing (P and the Pause button still pause it)'); Game.screensaver = false;
+    const state = Game.state; Game.state = 'finished'; press('keydown', 'Escape'); check(!Game.paused, 'off a run (finished): nothing'); Game.state = state;
+    TT?.setTurboTrail('classic');
   }
 
   // ---- render-only ----

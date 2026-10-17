@@ -26,6 +26,7 @@ import { carMesh, syncTraffic } from './render/cars.js';
 import { emitVehicleSmoke, updateEffects } from './render/effects.js';
 import { stepGame } from './render/gameclock.js';
 import { syncTurboTrail } from './render/turbotrails.js'; // (?turbotrail=<name>: the turbo trail experiments, CHECKLIST 442)
+import './render/escpause.js'; // (Escape pauses a run and resumes it: CHECKLIST 442)
 import { syncPackages } from './render/packages.js';
 import { syncEmotes } from './render/emotes.js';
 import { syncPickups, syncTargets, syncToads } from './render/items.js';
