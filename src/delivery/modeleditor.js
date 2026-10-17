@@ -59,6 +59,12 @@
 //      same points in a side / top / front drawing in the Part tab (drag, type, add after, remove, Zoom in) as the precise route. The edit is the patch's `shapes` table, read as the model is built (the same code
 //      makes the edited outline: bevels, merges, draw calls as before). Mirror on: the shape across the car (found by its vertices) gets the
 //      mirrored edit in the same commit. `node scripts/bake-shapes.mjs <car>` writes the points into the car's source (a plain build, no patch).
+//  10. ONE PANE ON ITS OWN (CHECKLIST 448, the owner: "doesn't let me change the angle or placement of a single window"; render/paneedit.js): a
+//      pane picked (tap it, or its button in the Windows row) takes the gizmo itself, on its centre, its axes its own (X across, Y up its
+//      face): Move / Rotate / Scale act on that pane alone, even when it is one of several in one merged glass mesh. The Part tab: gap / clear
+//      chips, X Y Z (its centre, m), ° Yaw Pitch Roll, W H (m), Snap (rests it on the body: the line says how far), Reset, Part (the whole
+//      part again). Mirror: the pane named the other way (L / R) gets the mirrored edit. The edit is the patch's `panes` table, applied after
+//      the ops wherever the game builds the car (a Super car wears its base car's); scripts/window-gap-audit.mjs lists floating panes.
 //   ?car=<id>  ?damage=<0..5|percent>  ?evil  ?tab=parts|part|place|json  ?part=<part id>  ?pane=<pane name>  ?corner=<1..n>  ?shape=<shape id>  ?mirror=off  ?view=front|rear|left|right|top|34  ?dark
 //   ?lights  ?brake  ?hazards  ?lampmarks  (those lamp toggles on from the start; also ?left ?right ?steady)
 import './render/modeleditorshim.js'; // (first: the game's modules' elements, stood in for)
@@ -73,7 +79,8 @@ import { buildInspectModel, DAMAGE_STATES, damageFromParam, damageIndex, damageM
 import { renderer } from './render/scene.js';
 import { silhouetteFor } from './render/silhouette.js';
 import { findZFights } from './render/zfight.js';
-import { extractParts, applyPatch, modelStats, triangles, BUDGET, emptyPatch, withSet, withDelete, withAdd, withDuplicate, withMirror, withGlass, tidyPatch, PRIMITIVES, symmetryOf, mirroredTransform, isWindowPart } from './render/modelpatch.js';
+import { extractParts, applyPatch, modelStats, triangles, BUDGET, emptyPatch, withSet, withDelete, withAdd, withDuplicate, withMirror, withGlass, withPane, tidyPatch, PRIMITIVES, symmetryOf, mirroredTransform, isWindowPart } from './render/modelpatch.js';
+import { paneFrame, applyPaneEdit, turnMatrix, turnOf, mirroredEdit, rimPoints, paneSamples, restItems, gapOf, snapPane, snappedEdit, paneKeyOf } from './render/paneedit.js';
 import { glassTable, canonTable, windowKey, windowBase, sameWindow } from './render/glassnames.js';
 import { withGlassEdits, glassEditsReport } from './render/ideaModelsDkit.js';
 import { setShapeOverride, lastShapeReport, locateShapes, shapePartners, mirrorPoints, withShape, outlineInModel, shapeView, shapePlane, modelToShape } from './render/shapeedits.js';
@@ -173,7 +180,7 @@ const save = () => {
   try {
     const all = localPatches();
     const p = tidyPatch(S.patch);
-    if (p.ops.length || p.evil.length || glassTable(p) || p.shapes) all[S.car.id] = p; else delete all[S.car.id];
+    if (p.ops.length || p.evil.length || glassTable(p) || p.shapes || p.panes) all[S.car.id] = p; else delete all[S.car.id];
     localStorage.setItem(LOCAL_KEY, JSON.stringify(all));
   } catch { /* (no storage: the edits last as long as the page) */ }
 };
@@ -545,13 +552,16 @@ const select = (id, show = true, pane = undefined, shape = undefined) => {
   const node = S.sel ? S.nodes.get(S.sel) : null;
   selBox.visible = !!node;
   if (node) selBox.setFromObject(node);
-  if (node && !S.locked.has(S.sel)) gizmo.attach(node); else gizmo.detach();
   hoverBox.visible = false;
   // its window pane (kept across a rebuild when the same part is selected again), and its partner across the car
   const ps = panesOf(node);
   if (pane !== undefined) S.pane = pane;
   const at = ps && S.pane && ps.find(q => q.name === S.pane || sameWindow(q.name, S.pane)); // (?pane=rear glass finds the rear window)
   S.pane = at ? at.name : null;
+  // the gizmo: on the PANE when one is picked (it moves, turns and sizes that pane alone: render/paneedit.js), else on the part
+  const sp = node && !S.locked.has(S.sel) ? paneSel() : null;
+  if (sp) gizmo.attach(placeProxy(sp)); else if (node && !S.locked.has(S.sel)) gizmo.attach(node); else gizmo.detach();
+  if (S.pane) selBox.visible = false; // (a pane: its own outline, not its whole part's box)
   drawPane();
   if (shape !== undefined && shape !== S.shape) { S.shape = shape; S.pt = -1; }
   if (!node || !shapesOf(node).some(r => r.id === S.shape)) S.shape = null;
@@ -576,6 +586,7 @@ const select = (id, show = true, pane = undefined, shape = undefined) => {
 gizmo.addEventListener('dragging-changed', (e) => {
   orbit.enabled = !e.value;
   if (e.value || !S.sel) return;
+  if (gizmo.object === paneProxy) { const sp = paneSel(); if (sp) setPaneEdit(sp, proxyEdit(sp), ({ translate: 'moved', rotate: 'turned', scale: 'sized' })[gizmo.getMode()]); return; }
   const node = S.nodes.get(S.sel), part = partOf(S.sel);
   if (!node || !part) return;
   const r3 = (v) => Math.round(v * 1000) / 1000;
@@ -583,7 +594,10 @@ gizmo.addEventListener('dragging-changed', (e) => {
     position: node.position.toArray().map(r3), rotation: [node.rotation.x, node.rotation.y, node.rotation.z].map(r3), scale: node.scale.toArray().map(r3),
   }), (part.name || part.role) + ' ' + ({ translate: 'moved', rotate: 'turned', scale: 'scaled' })[gizmo.getMode()] + mirrorWords(part));
 });
-gizmo.addEventListener('objectChange', () => { if (S.sel) selBox.setFromObject(S.nodes.get(S.sel)); });
+gizmo.addEventListener('objectChange', () => {
+  if (gizmo.object === paneProxy) { const sp = paneSel(); if (sp) { paneProxy.scale.z = 1; applyPaneEdit(sp.node, S.model, sp.pane, proxyEdit(sp)); drawPane(); } } // (a look while it is dragged; the patch on letting go)
+  if (S.sel) selBox.setFromObject(S.nodes.get(S.sel));
+});
 
 // ---- MIRROR: the part across the car gets the same edit, mirrored (render/modelpatch.js symmetryOf, mirroredTransform) ---------------------
 // the partner's id when Mirror is on and the part has one (never its own mirror copy, which follows it anyway)
@@ -652,6 +666,78 @@ const resetPane = (pane) => {
     else if (shared) p = withGlass(p, pane.name, pane.auto); // (the other flank keeps the shared edit: this one is pinned to the automatic outline)
   }
   commit(p, pane.name + ': back to the automatic outline.');
+};
+// ---- ONE PANE ON ITS OWN (CHECKLIST 448, render/paneedit.js): the gizmo on a stand-in at the pane's centre, its axes the pane's own (X across,
+// Y up its face, Z out of it), so Move / Turn / Size act on that pane alone; letting go writes the patch's `panes` entry (one undo)
+const paneProxy = new THREE.Object3D();
+scene.add(paneProxy);
+const paneSel = () => {
+  const node = S.sel && S.nodes.get(S.sel), part = partOf(S.sel), pane = S.pane && panesOf(node)?.find(q => q.name === S.pane);
+  if (!node?.isMesh || !part || !pane) return null;
+  const key = paneKeyOf(part.id, pane.name), e = S.patch.panes?.[key];
+  return { node, part, pane, key, f: paneFrame(node, S.model, pane), edit: { move: e?.move || [0, 0, 0], turn: e?.turn || [0, 0, 0], size: e?.size || [1, 1] } };
+};
+const basisQ = (f) => new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(f.u, f.v, f.n));
+const placeProxy = (sp) => {
+  const { f, edit } = sp;
+  paneProxy.position.set(f.c.x + edit.move[0], f.c.y + edit.move[1], f.c.z + edit.move[2]).applyMatrix4(S.model.matrixWorld);
+  paneProxy.quaternion.setFromRotationMatrix(turnMatrix(edit.turn)).multiply(basisQ(f));
+  paneProxy.scale.set(edit.size[0], edit.size[1], 1);
+  paneProxy.updateMatrixWorld(true);
+  return paneProxy;
+};
+const r3p = (v) => Math.round(v * 1000) / 1000;
+const proxyEdit = (sp) => {
+  const p = paneProxy.position.clone().applyMatrix4(S.model.matrixWorld.clone().invert());
+  const R = new THREE.Matrix4().makeRotationFromQuaternion(paneProxy.quaternion.clone().multiply(basisQ(sp.f).invert()));
+  return { move: [p.x - sp.f.c.x, p.y - sp.f.c.y, p.z - sp.f.c.z].map(r3p), turn: turnOf(R), size: [Math.max(0.05, paneProxy.scale.x), Math.max(0.05, paneProxy.scale.y)].map(r3p) };
+};
+// the pane across the car (its name with L / R swapped, in any window part), for Mirror
+const paneTwinOf = (sp) => {
+  const m = / ([LR])$/.exec(sp.pane.name); if (!m || !S.mirror) return null;
+  const name = sp.pane.name.slice(0, -1) + (m[1] === 'L' ? 'R' : 'L');
+  for (const p of S.parts) { if (!p.panes?.includes(name)) continue; const q = panesOf(S.nodes.get(p.id))?.find(x => x.name === name); if (q) return { part: p, pane: q }; }
+  return null;
+};
+const setPaneEdit = (sp, edit, words) => {
+  let p = withPane(S.patch, sp.part, sp.pane, edit);
+  const twin = paneTwinOf(sp);
+  if (twin) p = withPane(p, twin.part, twin.pane, mirroredEdit(edit));
+  commit(p, sp.pane.name + ' ' + words + (twin ? ' (and ' + twin.pane.name + ')' : '') + '.');
+};
+// what the pane rests on, and its gap: render/paneedit.js
+const paneRest = (sp) => restItems(S.model, { parts: S.parts, nodes: S.nodes, panes: new Map(S.parts.filter(p => p.panes?.length).map(p => [p.id, panesOf(S.nodes.get(p.id)) || []])) }, isWindowPart, sp.node, sp.pane);
+const paneGapNow = (sp) => withoutFx(() => gapOf(rimPoints(sp.node, S.model, sp.pane), paneRest(sp)));
+let lastSnap = null; // (the last Snap's line: shown under the pane's fields)
+const snapSel = () => {
+  const sp = paneSel(); if (!sp) return;
+  const pivot = sp.f.c.clone().add(new THREE.Vector3(...sp.edit.move));
+  const sn = withoutFx(() => snapPane(paneSamples(sp.node, S.model, sp.pane), paneRest(sp), pivot));
+  if (!sn) { lastSnap = { key: sp.key, words: '—' }; status(sp.pane.name + ': nothing to close (no body within 15 cm, or it rests).'); renderPart(); return; }
+  lastSnap = { key: sp.key, words: '↦ ' + (sn.moved * 100).toFixed(1) + ' cm · ' + sn.turned + '° · gap ' + (sn.before.gap * 100).toFixed(1) + ' → ' + (sn.after.gap * 100).toFixed(1) + ' cm' };
+  setPaneEdit(sp, snappedEdit(sp.edit, sn), 'snapped to the body: ' + lastSnap.words);
+};
+const paneBlock = (sp) => {
+  const { f, edit } = sp, g = paneGapNow(sp), cm = (m) => (m * 100).toFixed(1);
+  const c = [f.c.x + edit.move[0], f.c.y + edit.move[1], f.c.z + edit.move[2]];
+  const row = (k, label, vals, step) => '<div class="vec" data-pv="' + k + '"><span>' + label + '</span>' + vals.map(v => num(v, step)).join('') + '</div>';
+  return '<div id="paneBox"><h2 style="margin-top:12px">' + esc(sp.pane.name) + ' <span class="small">pane</span> <button id="paneWhole" title="The whole part">Part</button></h2>'
+    + '<p class="kv"><span class="chip' + (g.gap > 0.01 ? ' bad' : '') + '" id="paneGap">gap ' + cm(g.gap) + ' cm</span> <span class="chip">clear ' + (g.clear >= 0.3 ? '30+' : cm(g.clear)) + ' cm</span></p>'
+    + row('pos', 'XYZ', c, 0.005) + row('turn', '° YPR', edit.turn, 1) + row('size', 'W H', [f.width * edit.size[0], f.height * edit.size[1]], 0.01)
+    + '<div class="buttons"><button id="paneSnap" title="Rest its edges on the body">Snap</button><button id="paneReset" title="As built">Reset</button></div>'
+    + (lastSnap && lastSnap.key === sp.key ? '<p class="kv" id="paneSnapLine">' + esc(lastSnap.words) + '</p>' : '') + '</div>';
+};
+const wirePaneBlock = (box, sp) => {
+  box.querySelectorAll('[data-pv]').forEach(r => r.addEventListener('change', () => {
+    const k = r.dataset.pv, v = [...r.querySelectorAll('input')].map(i => +i.value || 0), e = { ...sp.edit };
+    if (k === 'pos') e.move = [v[0] - sp.f.c.x, v[1] - sp.f.c.y, v[2] - sp.f.c.z].map(r3p);
+    else if (k === 'turn') e.turn = v.map(x => Math.round(x * 100) / 100);
+    else e.size = [Math.max(0.05, v[0] / Math.max(1e-6, sp.f.width)), Math.max(0.05, v[1] / Math.max(1e-6, sp.f.height))].map(r3p);
+    setPaneEdit(sp, e, ({ pos: 'moved', turn: 'turned', size: 'sized' })[k]);
+  }));
+  box.querySelector('#paneSnap')?.addEventListener('click', snapSel);
+  box.querySelector('#paneReset')?.addEventListener('click', () => setPaneEdit(sp, null, 'as built'));
+  box.querySelector('#paneWhole')?.addEventListener('click', () => select(S.sel, true, null));
 };
 const GW = 340, GH = 200, GPAD = 16;
 // sx: +1 the nose (+z) to the right, -1 to the left, as the camera shows the car (the Left view's nose to the left: screenFlips)
@@ -1075,7 +1161,7 @@ const renderWindows = () => {
   if (!box) return;
   const ws = S.parts.filter(p => p.panes?.length);
   box.hidden = !ws.length;
-  box.innerHTML = ws.length ? '<span class="cap">Windows</span>' + ws.flatMap(p => p.panes.map(n => '<button data-wpart="' + esc(p.id) + '" data-wpane="' + esc(n) + '" class="' + (S.sel === p.id && S.pane === n ? 'on' : '') + (panesOf(S.nodes.get(p.id))?.find(q => q.name === n)?.edited ? ' edited' : '') + '">' + esc(n) + '</button>')).join('') : '';
+  box.innerHTML = ws.length ? '<span class="cap">Windows</span>' + ws.flatMap(p => p.panes.map(n => '<button data-wpart="' + esc(p.id) + '" data-wpane="' + esc(n) + '" class="' + (S.sel === p.id && S.pane === n ? 'on' : '') + (panesOf(S.nodes.get(p.id))?.find(q => q.name === n)?.edited || S.patch.panes?.[paneKeyOf(p.id, n)] ? ' edited' : '') + '">' + esc(n) + '</button>')).join('') : '';
 };
 $('windows')?.addEventListener('click', (e) => { const b = e.target.closest('[data-wpart]'); if (b) { select(b.dataset.wpart, true, b.dataset.wpane); renderWindows(); } });
 $('parts').addEventListener('click', (e) => {
@@ -1142,11 +1228,11 @@ const renderPart = () => {
     })()
     + (p.panes ? (() => {
       const node = S.nodes.get(p.id), ps = panesOf(node), pane = S.pane && ps.find(q => q.name === S.pane);
-      if (pane && pane.cabin) return paneEditor(node, pane);
+      const sp = pane && paneSel(), pb = sp ? paneBlock(sp) : '';
+      if (pane && pane.cabin) return pb + paneEditor(node, pane);
       const buttons = '<div class="panes">' + ps.map(q => '<button data-pane="' + esc(q.name) + '" class="' + (q === pane ? 'on' : '') + (q.edited ? ' edited' : '') + '">' + esc(q.name) + '</button>').join('') + '</div>';
       if (!pane) return '<h2 style="margin-top:12px">Windows <span class="small">tap one in the view, or here</span></h2>' + buttons;
-      return '<h2 style="margin-top:12px">Window: ' + esc(pane.name) + ' <span class="small">hand-built</span></h2>' + buttons // (no cabinGlass outline: its edges are the code's)
-        + '<p class="kv">Edges: as the code builds them' + (shapesOf(node).length ? ' (edit them as a Shape, above)' : '') + '. Colour, opacity and place: below.</p>';
+      return pb + buttons; // (no cabinGlass outline: its edges are the code's; a Shape's, above)
     })() : '')
     + (p.color ? '<div class="paint"><label>Colour <input type="color" id="pColor" value="' + p.color + '"></label>'
       + (p.emissive ? '<label>Glow <input type="color" id="pEmissive" value="' + p.emissive + '"></label>' : '')
@@ -1188,7 +1274,7 @@ const renderPart = () => {
     }));
   }
   { const node = S.nodes.get(p.id), rec = S.shape && node && shapesOf(node).find(r => r.id === S.shape); if (rec) wireShapeEditor(box, rec); else box.querySelectorAll('[data-shape]').forEach(b => b.addEventListener('click', () => select(S.sel, true, undefined, b.dataset.shape))); }
-  if (p.panes) { const pane = S.pane && panesOf(S.nodes.get(p.id)).find(q => q.name === S.pane); if (pane?.cabin) wirePaneEditor(box, S.nodes.get(p.id), pane); else box.querySelectorAll('[data-pane]').forEach(b => b.addEventListener('click', () => select(S.sel, true, b.dataset.pane))); }
+  if (p.panes) { const pane = S.pane && panesOf(S.nodes.get(p.id)).find(q => q.name === S.pane); if (pane?.cabin) wirePaneEditor(box, S.nodes.get(p.id), pane); else box.querySelectorAll('[data-pane]').forEach(b => b.addEventListener('click', () => select(S.sel, true, b.dataset.pane))); const sp = pane && paneSel(); if (sp) wirePaneBlock(box, sp); }
   { // (a window just opened: its editor scrolled into sight, it sits far down the panel; not again on every rebuild of the same one)
     const gh = box.querySelector('#gHead'), at = gh ? S.sel + '|' + S.pane : null;
     if (gh && at !== shownPane && box.offsetParent) box.querySelector('#glassSvg').scrollIntoView({ block: 'start' }); // (the drawing, its readout and nudges in sight: on a phone's sheet the heading and window buttons are just above)
@@ -1233,7 +1319,7 @@ const renderStats = () => {
     + '<span>Draw calls <b>' + s.materials + '</b> once merged</span>'
     + (S.share > 0 ? '<span class="dmg" title="Damage ' + DAMAGE_STATES[damageIndex(S.share)].label + ': triangles and draw calls, clean against damaged (the cut-finer panels add triangles; paint is shared, so no draw call)">Damaged <b>' + dc.damaged.triangles.toLocaleString('en') + '</b> tris (clean ' + dc.clean.triangles.toLocaleString('en') + ', <b>&times;' + dc.factor.toFixed(2) + '</b>) &middot; draw calls <b>' + dc.damaged.materials + '</b> (clean ' + dc.clean.materials + ')</span>' : '')
     + '<span class="lamp" title="Where the lamp effects (Lights, Brake, Hazards, Lamp markers) are placed">lamps: <b>' + esc(fxSource) + '</b></span>'
-    + '<span>Edits <b>' + S.patch.ops.length + (S.patch.evil?.length ? ' + ' + S.patch.evil.length + ' Evil' : '') + (glassTable(S.patch) ? ' + ' + Object.keys(glassTable(S.patch)).length + ' windows' : '') + (S.patch.shapes ? ' + ' + Object.keys(S.patch.shapes).length + ' shapes' : '') + '</b></span>'
+    + '<span>Edits <b>' + S.patch.ops.length + (S.patch.evil?.length ? ' + ' + S.patch.evil.length + ' Evil' : '') + (glassTable(S.patch) ? ' + ' + Object.keys(glassTable(S.patch)).length + ' windows' : '') + (S.patch.shapes ? ' + ' + Object.keys(S.patch.shapes).length + ' shapes' : '') + (S.patch.panes ? ' + ' + Object.keys(S.patch.panes).length + ' panes' : '') + '</b></span>'
     + '<span title="Mirror: an edit goes to the part across the car too">Mirror <b>' + (S.mirror ? 'on' : 'off') + '</b></span>'
     + (r.unmatched.length ? '<span class="bad">Stale <b>' + r.unmatched.length + '</b></span>' : '')
     + (r.stale ? '<span class="warn">Code changed since the patch</span>' : '');
@@ -1436,5 +1522,5 @@ patchesReady.then(() => {
   if (params.get('tab')) showTab(params.get('tab'));
   frame(view);
   loop();
-  window.__modelEditor = Object.assign(S, { three: { camera, scene, gizmo, orbit, renderer, THREE }, api: { select, commit, undo, mirror, duplicate, remove, setFor, setPane, resetPane, mirrorPartner, setShape, resetShape, shapeTwin, shapesOf, shapeView, shapeOnScreen: () => shapeHandles.map(h => ({ i: h.i, xy: toScreen(h.pos) })) }, placements }); // (for the checks and a curious console)
+  window.__modelEditor = Object.assign(S, { three: { camera, scene, gizmo, orbit, renderer, THREE }, api: { select, commit, undo, mirror, duplicate, remove, setFor, setPane, resetPane, mirrorPartner, setShape, resetShape, shapeTwin, shapesOf, shapeView, shapeOnScreen: () => shapeHandles.map(h => ({ i: h.i, xy: toScreen(h.pos) })), paneSel, setPaneEdit, snapSel, paneGapNow, setMode, frame: (v) => viewTo(v) }, placements }); // (for the checks and a curious console)
 });
