@@ -21,4 +21,6 @@ export const stage = {
     g.fillStyle = css(pal.ground.clone().lerp(pal.top, dark ? 0.6 : 0.35)); // (firs)
     for (let x = rnd() * 6; x < w; x += 5 + rnd() * 9) { const t = 6 + rnd() * 9; g.beginPath(); g.moveTo(x - t * 0.3, hy + 1); g.lineTo(x, hy - t); g.lineTo(x + t * 0.3, hy + 1); g.fill(); }
   },
+  // (the theme's own obstacles where the plain slots put them, named here so alpineDusk, which has no obstacle list, has them too)
+  props: [['woodpile', -0.8, 1.9, 0.5, 1, 'bale'], ['cheeseWheels', 0.82, 1.5, -0.4, 1, 'crate'], ['milkChurn', 0.95, -1.5, 0.3, 1, 'cone'], ['milkChurn', 0.55, 3.6, 0.2, 1, 'cone'], ['snowBlock', -0.4, 5, 0.1, 1, 'barrier']],
 };
