@@ -72,6 +72,64 @@ export const GLYPHS = {
   bubble: (g) => { g.beginPath(); g.moveTo(-12, -12); g.lineTo(-9, 16); g.lineTo(9, 16); g.lineTo(12, -12); g.closePath(); g.stroke(); for (const [x, y] of [[-5, 10], [2, 11], [-1, 5]]) { g.beginPath(); g.arc(x, y, 2.5, 0, Math.PI * 2); g.fill(); } g.beginPath(); g.moveTo(2, -12); g.lineTo(10, -22); g.stroke(); },
 };
 
+// ---- the nested trolleys (the bale): three supermarket trolleys, each a wire basket (a rim, a floor, a few uprights round
+// it: open, no panels) that narrows and lifts its floor to the nose, on a low U-shaped tube base open at the back, a caster
+// right under each corner of the base (a small fork over a small wheel, no legs), two tubes up the back to a red handle.
+// Nested as real ones are: each one's nose in the open back of the one ahead, its basket a few cm inside and above that one's,
+// every wheel on the floor. One trolley faces local +z; the nest runs along local x (noses to +x). The parts merged by
+// material over all three: 4 meshes (and the shadow), the materials shared by every nest (kept between levels).
+// trolleys(n): { wire, fork, red, black } geometries (the caller owns them); n = 1: one trolley facing +z (the rolling
+// trolleys and a junction's train wear it too: ../obstacleModels.js trolley)
+export const TROLLEY = { wire: lambert(0xc4c9d0), fork: lambert(0x4a4f57), red: lambert(0xd8262b), black: lambert(0x1a1b1e) };
+for (const m of Object.values(TROLLEY)) m.userData.shared = true;
+const UP = new THREE.Vector3(0, 1, 0), tv = new THREE.Vector3(), tq = new THREE.Quaternion(), tm = new THREE.Matrix4(), ONE = new THREE.Vector3(1, 1, 1);
+// a straight tube from a to b ([x, y, z]), r its corners' radius, `sides` sides, open ends (each end runs r on, into what it meets)
+const tube = (a, b, r, sides = 3) => {
+  tv.set(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+  const length = tv.length();
+  tq.setFromUnitVectors(UP, tv.normalize());
+  tv.set((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2);
+  return new THREE.CylinderGeometry(r, r, length + 2 * r, sides, 1, true).applyMatrix4(tm.compose(tv, tq, ONE));
+};
+const mix = (a, b, u) => a.map((v, i) => v + (b[i] - v) * u);
+export const trolleys = (n = 3) => {
+  const parts = { wire: [], fork: [], red: [], black: [] };
+  // the basket's corners: B bottom, T top; back (at the handle) and nose; x the half width
+  const BB = [0.245, 0.54, -0.42], BN = [0.15, 0.60, 0.40], TB = [0.27, 0.97, -0.45], TN = [0.20, 0.92, 0.50];
+  const P = (s, u, v) => { const p = mix(mix(BB, BN, u), mix(TB, TN, u), v); p[0] *= s; return p; }; // (s: the side, u: back to nose, v: floor to rim)
+  const RIM = 0.016, WIRE = 0.011, TUBE = 0.015, BASE = 0.17, R = 0.06;
+  const one = [];
+  for (const s of [-1, 1]) {
+    one.push(['wire', tube(P(s, 0, 1), P(s, 1, 1), RIM)]);                                   // the rim (none across the back: the gate)
+    for (const v of [0, 0.5]) one.push(['wire', tube(P(s, 0, v), P(s, 1, v), WIRE)]);         // the floor's edge, a wire half way up
+    for (const u of [0, 1 / 3, 2 / 3, 1]) one.push(['wire', tube(P(s, u, 0), P(s, u, 1), WIRE)]); // the uprights round the sides
+    one.push(['wire', tube([s * 0.26, BASE, -0.40], [s * 0.15, BASE, 0.38], TUBE)]);          // the base's side tubes,
+    one.push(['wire', tube([s * 0.26, BASE, -0.40], [s * 0.28, 1.0, -0.46], TUBE)]);          // up the back to the handle,
+    one.push(['wire', tube([s * 0.15, BASE, 0.38], P(s, 1, 0), TUBE)]);                       // up the front to the basket's nose
+  }
+  one.push(['wire', tube(P(-1, 1, 1), P(1, 1, 1), RIM)], ['wire', tube(P(-1, 1, 0.5), P(1, 1, 0.5), WIRE)]); // the nose: its rim, a wire
+  for (const u of [0, 1]) one.push(['wire', tube(P(-1, u, 0), P(1, u, 0), WIRE)]);           // the floor's ends,
+  for (const w of [1 / 3, 2 / 3]) {
+    const floor = (u) => mix(P(-1, u, 0), P(1, u, 0), w);
+    one.push(['wire', tube(floor(0), floor(1), WIRE)], ['wire', tube(mix(P(-1, 1, 0), P(1, 1, 0), w), mix(P(-1, 1, 1), P(1, 1, 1), w), WIRE)]); // its wires, the nose's
+  }
+  one.push(['wire', tube([-0.15, BASE, 0.38], [0.15, BASE, 0.38], TUBE)]);                    // the base's front (open at the back: the next one's base runs in)
+  one.push(['red', cyl(0.024, 0.024, 0.62, 6).rotateZ(Math.PI / 2).translate(0, 1.0, -0.465)]); // the handle
+  // the casters, right under the base's corners: the wheel (its flat side on the floor) and a little fork over it
+  for (const [x, z] of [[-0.26, -0.40], [0.26, -0.40], [-0.15, 0.36], [0.15, 0.36]]) {
+    one.push(['black', cyl(R, R, 0.035, 6).rotateZ(Math.PI / 2).translate(x, R * Math.cos(Math.PI / 6), z)]);
+    one.push(['fork', tube([x, 0.1, z - 0.015], [x, BASE, z], 0.03, 4)]);
+  }
+  // the nest: 0.45 m apart, noses to +x, each one's nose in the back of the one ahead (its tubes 4 mm or more clear of that one's)
+  for (let k = 0; k < n; k++) {
+    tm.makeRotationY(n > 1 ? Math.PI / 2 : 0).setPosition((k - (n - 1) / 2) * 0.45, 0, 0);
+    for (const [part, geometry] of one) parts[part].push(k < n - 1 ? geometry.clone().applyMatrix4(tm) : geometry.applyMatrix4(tm));
+  }
+  const out = {};
+  for (const [part, list] of Object.entries(parts)) { out[part] = mergeGeometries(list); list.forEach(g => g.dispose()); }
+  return out;
+};
+
 // ---- the obstacles --------------------------------------------------------------------------------------------
 export const MALL_OBSTACLES = {
   // the set dressing along the halls' sides, as obstacles (the owner: real, colliding): each a bale's, a crate's or a cone's box
@@ -135,33 +193,10 @@ export const MALL_OBSTACLES = {
     put(group, box(0.72, 0.09, 0.52), lambert(0xd8262b), 0, y - 0.1, 0.04);                   // the FRAGILE band
     return grounded(group, 0.7);
   },
-  // the mall's bale: three shopping trolleys nested one in the next, across the road as a bale stands (hw 1.1): wire baskets
-  // (grey frames and panels), red handles, four black wheels each. The nest runs along local x
+  // the mall's bale: three shopping trolleys nested one in the next, across the road as a bale stands (hw 1.1). See trolleys
   trolleyRow: () => {
-    const group = new THREE.Group(), wire = lambert(0xc4c9d0), frame = lambert(0x5f656d), red = lambert(0xd8262b), black = lambert(0x1a1b1e);
-    for (let k = 0; k < 3; k++) {
-      const t = new THREE.Group();
-      t.position.x = -0.62 + k * 0.62;
-      t.rotation.y = Math.PI / 2; // (each trolley's nose along the row)
-      group.add(t);
-      // the basket: a tray that widens to the top, open at the top; panels thin, frame bars along the rims
-      const W = 0.56, L = 0.9, H = 0.5, Y = 0.5;
-      put(t, box(W, 0.03, L), wire, 0, Y, 0);                                                 // the floor of it
-      put(t, box(0.03, H, L), wire, -W / 2, Y + H / 2, 0, 0, 0, 0.12);
-      put(t, box(0.03, H, L), wire, W / 2, Y + H / 2, 0, 0, 0, -0.12);
-      put(t, box(W + 0.1, H, 0.03), wire, 0, Y + H / 2, L / 2, -0.25, 0, 0);                  // the nose, raked
-      put(t, box(W + 0.1, H, 0.03), wire, 0, Y + H / 2, -L / 2, 0.1, 0, 0);                   // the back (a flap)
-      // the rim: four bars round the basket's mouth, one mesh (it was one solid plate over the top: a lid, the nest read as a table)
-      const bars = [-1, 1].flatMap(k => [box(0.04, 0.04, L + 0.1).translate(k * (W / 2 + 0.06), 0, 0), box(W + 0.16, 0.04, 0.04).translate(0, 0, k * (L / 2 + 0.03))]);
-      put(t, mergeGeometries(bars), frame, 0, Y + H, 0);
-      bars.forEach(b => b.dispose());
-      for (const x of [-1, 1]) put(t, box(0.03, Y, 0.03), frame, x * (W / 2 - 0.02), Y / 2, -L / 2 + 0.05); // the back legs
-      for (const x of [-1, 1]) put(t, box(0.03, Y + 0.15, 0.03), frame, x * (W / 2 - 0.02), (Y + 0.15) / 2, L / 2 - 0.06, -0.2, 0, 0);
-      put(t, box(0.03, 0.4, 0.03), frame, -W / 2, Y + H + 0.2, -L / 2);                       // the handle's stems
-      put(t, box(0.03, 0.4, 0.03), frame, W / 2, Y + H + 0.2, -L / 2);
-      put(t, cyl(0.03, 0.03, W + 0.1, 6), red, 0, Y + H + 0.4, -L / 2, 0, 0, Math.PI / 2);   // the handle
-      for (const x of [-1, 1]) for (const z of [-1, 1]) put(t, cyl(0.055, 0.055, 0.04, 8), black, x * (W / 2 - 0.05), 0.055, z * (L / 2 - 0.1), 0, 0, Math.PI / 2); // the wheels (8 sides, 6 the handle: what pays for the rim's bars)
-    }
+    const group = new THREE.Group();
+    for (const [part, geometry] of Object.entries(trolleys(3))) put(group, geometry, TROLLEY[part]);
     return grounded(group, 1.15);
   },
   // the mall's cone: a yellow A-frame WET FLOOR sign: two boards leaning together, the words on both, a hinge bar across the top.

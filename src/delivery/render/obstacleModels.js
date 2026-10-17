@@ -8,7 +8,7 @@ import { AUTUMN_OBSTACLES } from './themes/autumnModels.js';
 import { RAINFOREST_OBSTACLES } from './themes/rainforestModels.js';
 import { TUSCANY_OBSTACLES } from './themes/tuscanyModels.js';
 import { DESERT_OBSTACLES } from './themes/desertModels.js';
-import { MALL_OBSTACLES } from './themes/mallModels.js';
+import { MALL_OBSTACLES, TROLLEY, trolleys } from './themes/mallModels.js';
 import { ROADWORKS_OBSTACLES } from './themes/roadworksModels.js';
 import { STEELWORKS_OBSTACLES } from './themes/steelworksModels.js';
 import { VEGAS_OBSTACLES } from './themes/vegasObstacles.js';
@@ -585,21 +585,19 @@ OBSTACLE_MODELS.landmine = () => {
 };
 
 // ---- Gimmick Road 2's (see ../hazards.js) ---------------------------------------------------------
-// a shopping trolley: a wire basket on four little wheels, a red handle, a bag or two in it
+// a shopping trolley: the mall's nested trolley alone (render/themes/mallModels.js trolleys: a wire basket, casters under
+// its base, a red handle), a bag or two in it, sat on the basket's floor (it rises 0.06 m to the nose: the bags tilted with it)
+const BAGS = [[lambert(0xb07a3a), 0.28, 0.34, 0.3, 0, 0.12], [lambert(0x39a04a), 0.22, 0.22, 0.22, 0.09, -0.2]];
+for (const [m] of BAGS) m.userData.shared = true;
 OBSTACLE_MODELS.trolley = () => {
-  const wire = lambert(0xc4c9ce), group = boxModel([
-    [wire, 0.8, 0.06, 1.1, 0, 0.42, 0],                                   // the basket's floor,
-    [wire, 0.06, 0.5, 1.1, -0.4, 0.68, 0], [wire, 0.06, 0.5, 1.1, 0.4, 0.68, 0], // its sides,
-    [wire, 0.8, 0.5, 0.06, 0, 0.68, 0.55], [wire, 0.8, 0.4, 0.06, 0, 0.72, -0.55], // its ends
-    [lambert(0xd8262b), 0.9, 0.07, 0.07, 0, 1.05, -0.62],                 // the handle
-    [lambert(0x8a9096), 0.06, 0.36, 0.06, -0.36, 0.22, 0.45], [lambert(0x8a9096), 0.06, 0.36, 0.06, 0.36, 0.22, 0.45],
-    [lambert(0x8a9096), 0.06, 0.36, 0.06, -0.36, 0.22, -0.45], [lambert(0x8a9096), 0.06, 0.36, 0.06, 0.36, 0.22, -0.45],
-    [lambert(0xb07a3a), 0.4, 0.45, 0.4, -0.12, 0.72, 0.15], [lambert(0x39a04a), 0.3, 0.3, 0.3, 0.18, 0.62, -0.2], // shopping
-  ]);
-  for (const x of [-0.36, 0.36]) for (const z of [-0.45, 0.45]) {
-    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.06, 8).rotateZ(Math.PI / 2), lambert(0x1b1d22));
-    wheel.position.set(x, 0.08, z);
-    group.add(wheel);
+  const group = new THREE.Group();
+  for (const [part, geometry] of Object.entries(trolleys(1))) group.add(new THREE.Mesh(geometry, TROLLEY[part]));
+  const tilt = Math.atan2(0.06, 0.82), floor = (z) => 0.54 + 0.06 * (z + 0.42) / 0.82 + 0.011; // (the floor wires' tops)
+  for (const [material, w, h, d, x, z] of BAGS) {
+    const bag = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+    bag.position.set(x, floor(z) + h / 2 / Math.cos(tilt), z);
+    bag.rotation.x = -tilt;
+    group.add(bag);
   }
   group.scale.setScalar(1.25); // (bigger than life: easier to see)
   return group;
