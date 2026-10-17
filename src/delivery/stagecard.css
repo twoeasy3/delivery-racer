@@ -52,7 +52,7 @@ body:has(#resultScreen:not(.hidden)) :is(#hud, #touchControls, .throw, #messages
 #resultScreen .sc-tile[data-stat="bank"] .sc-value { color: var(--accent); }
 /* (counted up: the figure is the counter, the words are for a screen reader) */
 #resultScreen .sc-count { --sc-n: var(--sc-to); counter-reset: sc var(--sc-n); animation: sc-count .9s cubic-bezier(.2, .7, .3, 1) .25s both; }
-#resultScreen .sc-count::before { content: attr(data-pre) counter(sc); }
+#resultScreen .sc-count::before { content: attr(data-pre) counter(sc) attr(data-suf); }
 #resultScreen .sc-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 /* (the medal: the menu's discs) */
 #resultScreen .sc-medal { display: inline-flex; align-items: center; gap: 6px; text-transform: capitalize; font-size: 17px; }

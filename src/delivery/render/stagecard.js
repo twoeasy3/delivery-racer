@@ -38,7 +38,7 @@ const tile = (t, i) => {
   const value = el('b', 'sc-value');
   value.setAttribute('aria-label', t.value);
   if (t.node) value.append(t.node);
-  else if (t.count !== undefined) { value.classList.add('sc-count'); value.dataset.pre = t.pre || ''; value.style.setProperty('--sc-to', t.count); value.append(el('span', 'sc-sr', t.value)); }
+  else if (t.count !== undefined) { value.classList.add('sc-count'); value.dataset.pre = t.pre || ''; value.dataset.suf = t.suf || ''; value.style.setProperty('--sc-to', t.count); value.append(el('span', 'sc-sr', t.value)); }
   else value.textContent = t.value;
   box.append(value, el('small', 'sc-label', t.label));
   if (t.badge) box.append(el('span', 'sc-badge', t.badge));
@@ -115,7 +115,7 @@ const draw = () => {
     tiles.push({ stat: 'wrecks', label: 'Wrecks', value: String(Game.wrecks) }, { stat: 'busts', label: 'Busts', value: String(Game.busts) });
   } else {
     const pct = Math.max(0, Math.min(100, Math.floor(Game.progress * 100)));
-    tiles.push({ stat: 'distance', label: 'Distance', value: pct + '%', count: pct, pre: '' });
+    tiles.push({ stat: 'distance', label: 'Distance', value: pct + '%', count: pct, suf: '%' });
     tiles.push({ stat: 'wrecks', label: 'Wrecks', value: String(Game.wrecks) }, { stat: 'busts', label: 'Busts', value: String(Game.busts), cls: Game.busts ? 'bad' : '' });
   }
   if (!playback) tiles.push({ stat: 'bank', label: 'Bank', value: '$' + Math.floor(Progress.data.money), node: bankFigure(Progress.data.money) });

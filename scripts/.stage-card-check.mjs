@@ -195,7 +195,9 @@ else {
       const { Delivery } = await import('/src/delivery/delivery.js');
       const t0 = performance.now();
       while ((document.getElementById('resultScreen').classList.contains('hidden') || document.body.classList.contains('delivering')) && performance.now() - t0 < 40000) { if (Delivery.active) Delivery.skip(); await new Promise(r => setTimeout(r, 100)); }
-      await new Promise(r => setTimeout(r, 450)); return 'ok'; })()`);
+      await new Promise(r => setTimeout(r, 450));
+      return document.getElementById('resultScreen').classList.contains('hidden') || document.body.classList.contains('delivering')
+        ? 'card not up: ' + [Game.state, Game.paused, Delivery.active, Delivery.t, document.body.className, document.getElementById('resultScreen').className].join(' / ') : 'ok'; })()`);
     if (watched === 'ok') {
       const m = await evaluate(MEASURE);
       await shot('playback-' + levelId.replace(':', '-') + '-390x844');
