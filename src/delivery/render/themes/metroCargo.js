@@ -92,41 +92,55 @@ const makeRats = () => {
   }
   part(all, box(0.08, 0.04, 0.5), wire, 0, 0.08 + H + 0.03, 0);                             // its handle
   const door = sub(all, -0.14, 0.08, D / 2);                                                 // the door, hinged on its left
+  door.name = 'door';
   for (let x = 0.02; x < 0.28; x += 0.045) part(door, cyl(0.008, 0.008, H * 0.8, 4), wire, x, H * 0.4, 0);
   part(door, box(0.28, 0.012, 0.012), wire, 0.14, H * 0.8, 0);
   for (const y of [0.25, 0.45]) part(door, box(0.28, 0.012, 0.012), wire, 0.14, y - 0.08, 0); // (its rails, level with the cage's)
-  const rat = (x, z, turn) => {
-    const r = sub(all, x, 0.08, z);
-    r.rotation.y = turn;
+  // a rat (four fifths of the size it was, so three fit the cage nose to tail): its origin under its middle, on the tray
+  const rat = (k) => {
+    const r = sub(all, 0, 0.08, 0);
+    r.name = 'rat' + k;
+    r.scale.setScalar(0.8);
     const b = part(r, sphere(0.09, 12, 8), fur, 0, 0.08, 0); b.scale.set(0.9, 0.8, 1.5);
     const head = sub(r, 0, 0.1, 0.13);
     part(head, new THREE.ConeGeometry(0.06, 0.14, 10), fur, 0, 0, 0.05, Math.PI / 2, 0, 0);
     part(head, sphere(0.015, 6, 5), pink, 0, 0, 0.12);
     for (const s of [-1, 1]) { part(head, sphere(0.03, 8, 6), pink, s * 0.045, 0.045, -0.01).scale.set(1, 1, 0.4); part(head, sphere(0.012, 6, 5), bead, s * 0.03, 0.02, 0.04); }
-    const tail = part(r, cyl(0.008, 0.015, 0.26, 6), pink, 0, 0.04, -0.24, Math.PI / 2 - 0.15, 0, 0);
+    const tail = sub(r, 0, 0.05, -0.11); // (the tail hangs from a root under the rump and swings from it)
+    part(tail, cyl(0.007, 0.014, 0.17, 6), pink, 0, -0.01, -0.085, Math.PI / 2 - 0.12, 0, 0);
     part(r, sphere(0.05, 8, 6), pale, 0, 0.04, 0.05).scale.set(1, 0.6, 1.4);
-    return { r, head, tail, x, z, turn };
+    return { r, head, tail };
   };
-  const rats = [rat(-0.22, -0.05, 0.4), rat(0.18, 0.06, -2.3), rat(0.02, -0.1, 1.6)];
+  const rats = [rat(0), rat(1), rat(2)];
+  // where each one is, per state: [x, z, heading (0 faces the door, +z), pitch (+ nose down)]; the cage's inside is x +-0.39,
+  // z +-0.24 (the bars' centres at 0.4 and 0.25), and a rat is 0.45 long nose to tail tip, so they keep to their own thirds:
+  // calm: the bold one in the middle sniffing towards the door, the others either side facing the back. Agitated: the bold one
+  // gnaws the door, the others the back bars. Furious: the door swings OUT (wide open, 1.35 rad at least, by half way), and only
+  // then does the bold one go out through the doorway's middle (clear of the door's tip and the doorway's bars) till it is half
+  // out, nose dipping over the tray's edge; the others climb the back bars in a frenzy
+  const POSE = [
+    [[0.0, 0.0, 0.25, 0], [0.24, -0.03, -2.9, 0], [-0.24, -0.03, 3.0, 0]],
+    [[0.0, 0.008, 0, 0], [0.2, -0.008, -Math.PI, 0], [-0.2, -0.008, Math.PI, 0]],
+  ];
+  const smooth = (e0, e1, v) => { const u = Math.max(0, Math.min(1, (v - e0) / (e1 - e0))); return u * u * (3 - 2 * u); };
   return stated(group, (t, up, rage) => {
+    const calm = Math.max(0, 1 - up - rage);
     all.position.y = rage * Math.abs(Math.sin(t * 7)) * 0.08;
     all.rotation.z = up * Math.sin(t * 23) * 0.025 + rage * Math.sin(t * 13) * 0.06;
-    door.rotation.y = -(Math.min(1, rage * 2) * 1.5 + rage * Math.sin(t * 5) * 0.15); // (swings OUT, to the front, and is wide open (1.35 rad at least) before the bold one reaches it; hinged on the doorway's left, so the turn is negative)
-    rats.forEach(({ r, head, tail, x, z, turn }, i) => {
+    door.rotation.y = -(Math.min(1, rage * 2) * 1.5 + rage * Math.sin(t * 5) * 0.15); // (swings OUT, to the front; hinged on the doorway's left, so the turn is negative)
+    rats.forEach(({ r, head, tail }, i) => {
+      const [c, a] = [POSE[0][i], POSE[1][i]];
+      let f;
+      if (i === 0) { const out = smooth(0.55, 1, rage); f = [0.0, 0.008 + out * 0.3, 0, smooth(0.7, 1, out) * 0.3]; } // (out only once the door is wide open)
+      else f = [a[0] + Math.sin(t * 19 + i) * 0.012, a[1], a[2] + Math.sin(t * 9 + i) * 0.08, -0.55 - Math.abs(Math.sin(t * 15 + i * 2)) * 0.1]; // (up the back bars, scrabbling)
+      const mix = (k) => c[k] * calm + a[k] * up + f[k] * rage;
+      r.position.set(mix(0), 0.08 + (i ? rage * 0.06 : 0), mix(1)); // (a climber's rump sits on the tray)
+      r.rotation.set(mix(3), mix(2), 0, 'YXZ');
       head.rotation.x = Math.sin(t * (12 + i * 3)) * 0.1;
-      head.rotation.y = Math.sin(t * 1.5 + i) * 0.4 * (1 - up - rage);
-      tail.rotation.z = Math.sin(t * 3 + i) * 0.3 + (up + rage) * Math.sin(t * 15 + i) * 0.3;
-      if (i === 0) { // (the bold one: to the door, then half out of it)
-        const go = rage * rage; // (it holds back until the door is wide open, then goes out through the doorway's middle, clear of the door and the frame)
-        r.position.set(x + up * 0.1 + go * 0.26, 0.08, z + up * 0.2 + go * 0.42);
-        r.rotation.y = turn * (1 - up - rage) + (up + rage) * 0.1;
-        r.rotation.x = -rage * 0.3;
-      } else { // (the others gnaw, then run round)
-        const a = t * 4 + i * 3;
-        r.position.set(x * (1 - rage) + rage * Math.cos(a) * 0.2, 0.08, z * (1 - rage) + rage * Math.sin(a) * 0.12);
-        r.rotation.y = turn * (1 - rage) + rage * Math.atan2(-Math.sin(a) * 0.2, Math.cos(a) * 0.12); // (nose along the way it runs: the path's velocity)
-        head.position.z = 0.13 + up * Math.abs(Math.sin(t * 20 + i)) * 0.03;
-      }
+      head.rotation.y = Math.sin(t * 1.5 + i) * 0.35 * calm;
+      head.position.z = 0.13 + up * Math.abs(Math.sin(t * 20 + i)) * 0.012; // (gnawing)
+      tail.rotation.x = i ? -mix(3) * 0.9 : -mix(3); // (the tail lies along the tray, whatever the body's pitch)
+      tail.rotation.y = Math.sin(t * 3 + i) * 0.25 + (up + rage) * Math.sin(t * 15 + i) * 0.2;
     });
   });
 };
