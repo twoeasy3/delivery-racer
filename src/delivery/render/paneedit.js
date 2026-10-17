@@ -108,7 +108,7 @@ export const applyPaneEdits = (root, table, find, out) => {
   }
 };
 
-// ---- CONTOUR (CHECKLIST 472, the owner: "It should follow the body's contour if any as well") ------------------------------------------------
+// ---- CONTOUR (CHECKLIST 474, the owner: "It should follow the body's contour if any as well") ------------------------------------------------
 // A contour is the pane BENT off its plane, along its own (turned) normal: `contour: [[s, t, mm], ...]` in its entry (v: 2), anchors on its rim at
 // (s, t), its place across and up its as-built face (0..1, contourFrame's u and v over its width and height: a slab's two faces at one (s, t)
 // move alike), each how far that rim point goes

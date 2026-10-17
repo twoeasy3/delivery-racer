@@ -717,7 +717,7 @@ const snapSel = () => {
   lastSnap = { key: sp.key, words: '↦ ' + (sn.moved * 100).toFixed(1) + ' cm · ' + sn.turned + '° · gap ' + (sn.before.gap * 100).toFixed(1) + ' → ' + (sn.after.gap * 100).toFixed(1) + ' cm' };
   setPaneEdit(sp, snappedEdit(sp.edit, sn), 'snapped to the body: ' + lastSnap.words);
 };
-// CONTOUR (CHECKLIST 472): Snap with its turn capped at 8 degrees, then the rim bent onto the body along the pane's normal (render/paneedit.js fitPane)
+// CONTOUR (CHECKLIST 474): Snap with its turn capped at 8 degrees, then the rim bent onto the body along the pane's normal (render/paneedit.js fitPane)
 const contourSel = () => {
   const sp = paneSel(); if (!sp) return;
   const before = paneGapNow(sp), fit = withoutFx(() => fitPane(sp.node, S.model, sp.ab, sp.edit, paneRest(sp)));

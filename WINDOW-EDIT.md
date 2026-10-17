@@ -20,7 +20,7 @@ Saved like every edit: the patch's `panes` table (`render/paneedit.js`), kept in
 (`render/modelpatchapply.js`) wherever it builds the car: garage, showroom, the run, the stills. A Super car wears its base car's window edits;
 a Legendary its base car's patch. Render only: the replay fingerprint does not move.
 
-## Contour (CHECKLIST 472)
+## Contour (CHECKLIST 474)
 
 The owner, 17-Oct: "Add a 'snap to body' for the windows in model editor. It should follow the body's contour if any as well."
 

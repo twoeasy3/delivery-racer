@@ -1,4 +1,4 @@
-# The end-of-stage card (CHECKLIST 472; branch `claude/stage-card`, a DRAFT for the owner to look at)
+# The end-of-stage card (CHECKLIST 473; branch `claude/stage-card`, a DRAFT for the owner to look at)
 
 The owner, 17-Oct: "Lets make a nicer end of stage card that suits the rest of the UI. 'Next Level' is not very relevant any
 more. 'Look Around' is not useful." Then: "replays do not work in hidden levels".
