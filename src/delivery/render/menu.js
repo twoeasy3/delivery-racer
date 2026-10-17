@@ -8,6 +8,8 @@ import { levelName } from '../levelText.js';
 import { SECRET_CARS, useLevelCar, selectCar } from '../cars.js';
 import { Tiers } from '../tiers.js';
 import { Progress } from '../progress.js';
+import { applyVerbosity } from './device.js'; // (first: a first visit's defaults for the device, before the buttons read them)
+import { VERBOSITY_LEVELS, VERBOSITY_NAMES } from './verbosity.js';
 import { clearCosmetics } from './cosmetics.js';
 import { resetAll as resetLoadout } from './loadoutstore.js';
 import { unlockMode, setUnlockMode, unlockEverything } from '../unlockall.js';
@@ -68,6 +70,7 @@ autoGasBtn.addEventListener('click', () => {
   Progress.data.autoGas = !Progress.data.autoGas;
   Progress.save();
   showAutoGas();
+  window.dispatchEvent(new Event('controlschange')); // (the on-screen pedals: render/touch.js)
 });
 showAutoGas();
 // auto brake: how hard the car brakes by itself behind a slower car, off the accelerator (player.js): a tap steps
@@ -83,8 +86,22 @@ autoBrakeBtn.addEventListener('click', () => {
   Progress.data.autoBrake = BRAKE_STEPS[(at + 1) % BRAKE_STEPS.length];
   Progress.save();
   showAutoBrake();
+  window.dispatchEvent(new Event('controlschange'));
 });
 showAutoBrake();
+// Verbosity: which messages a run says (render/verbosity.js): a tap steps High, Medium, Low, Very low, and round again
+const verbosityBtn = document.getElementById('verbosityBtn');
+const showVerbosity = () => {
+  applyVerbosity();
+  verbosityBtn.textContent = 'Verbosity: ' + VERBOSITY_NAMES[VERBOSITY_LEVELS.includes(Progress.data.verbosity) ? Progress.data.verbosity : 'high'];
+};
+verbosityBtn.addEventListener('click', () => {
+  const steps = [...VERBOSITY_LEVELS].reverse(), at = steps.indexOf(VERBOSITY_LEVELS.includes(Progress.data.verbosity) ? Progress.data.verbosity : 'high');
+  Progress.data.verbosity = steps[(at + 1) % steps.length];
+  Progress.save();
+  showVerbosity();
+});
+showVerbosity();
 
 // the race class: every race (and the race screensaver) in F1 cars, or in GT road cars
 const raceClassBtn = document.getElementById('raceClassBtn');
@@ -176,6 +193,8 @@ document.getElementById('resetBtn').addEventListener('click', async () => {
   window.dispatchEvent(new Event('carchange')); // (the car in use may have been one that was bought)
   showAutoGas(); // (a reset forgets the choice)
   showAutoBrake();
+  showVerbosity();
+  window.dispatchEvent(new Event('controlschange'));
   showRaceClass();
   MenuStage.follow();
 });
@@ -191,6 +210,7 @@ window.addEventListener('progresschange', () => {
   Sound.toggleMute(); toggleMute(); // (twice, so as it was saved: this sets the volume by it, and the button's words)
   showAutoGas();
   showAutoBrake();
+  showVerbosity();
   showRaceClass();
   showRaceTrack();
   MenuStage.follow();

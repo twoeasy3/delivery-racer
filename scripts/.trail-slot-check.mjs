@@ -101,7 +101,7 @@ check(!/WebGLRenderer|getContext\(['"]webgl/.test(src), 'no renderer or WebGL co
 // ---- render-only ----
 const { fingerprints } = await import('./logic-hash.mjs');
 const fp = fingerprints();
-check(fp.logic === '33a0394c26' && fp.legacy === 'dd565f56b3', 'the replay fingerprint unchanged: ' + JSON.stringify(fp));
+check(fp.logic === '057a22806d' && fp.legacy === '661de07fbe', 'the replay fingerprint unchanged (since CHECKLIST 470, no pickup in the air; was 33a0394c26 / dd565f56b3): ' + JSON.stringify(fp));
 
 Progress.noSave = false;
 console.log(failures ? failures + ' FAILED' : 'all ok');

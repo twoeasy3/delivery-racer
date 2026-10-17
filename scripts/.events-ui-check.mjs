@@ -25,7 +25,7 @@ const SHOTS = opt('shots', null);
 let failed = 0;
 const check = (ok, what) => { console.log((ok ? '  ok    ' : '  FAIL  ') + what); if (!ok) failed++; };
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-const MAIN_PRINT = { logic: '33a0394c26', legacy: 'dd565f56b3' }; // (main v1.1.152-alpha, 954c288)
+const MAIN_PRINT = { logic: '057a22806d', legacy: '661de07fbe' }; // (since CHECKLIST 470, no pickup in the air: was 33a0394c26 / dd565f56b3, main v1.1.152-alpha, 954c288)
 const NOW = '&eventsnow=2026-10-17'; // (all four events on: Christmas Eve, the Car Hunt, the Concept Strike, the Comet Hunt)
 
 // ---- the source

@@ -41,6 +41,7 @@ export const Pickups = (() => {
     for (const p of items) {
       if (p.taken || Math.abs(p.s - Player.s) > Player.hl + 1 ||
           Math.abs(p.lat - Player.lat) > Player.hw + 1) continue;
+      if (Player.air > CONFIG.pickupAirReach) continue; // (in the air, over the top of it: left where it is, for the way down or a lap after)
       p.taken = true;
       Player.collect(p.type);
       // (cash says how much: powerups.cashBonus, its ${dollar} filled in)

@@ -43,9 +43,9 @@ const GROUPS = {
     files: [/src\/delivery\/levels\/.*\.json$/],
   },
   tiers: {
-    about: 'Level tiers and progression: what opens and when, the car rule (a tier, a level\'s own list, a car lock), events (their times and rewards), labels, medals, saves, milestones, card packs (pools, odds, awards, the save), the Shop (its offers, buying), the showroom\'s cards (and the cars hidden until available: cars.js hideUnlessAvailable), where a car\'s key and blueprints come from (carsources.js), the Blue Star and earned cars\' figures, who a touch belongs to (the stick in a run, the screens else)',
+    about: 'Level tiers and progression: what opens and when, the car rule (a tier, a level\'s own list, a car lock), events (their times and rewards), labels, medals, saves, milestones, card packs (pools, odds, awards, the save), the Shop (its offers, buying), the showroom\'s cards (and the cars hidden until available: cars.js hideUnlessAvailable), where a car\'s key and blueprints come from (carsources.js), the Blue Star and earned cars\' figures, who a touch belongs to (the stick in a run, the screens else), the first visit\'s device defaults, Verbosity and the one-pedal controls (.device-defaults-check: CHECKLIST 468, 469)',
     seconds: 110,
-    tests: [t('.tiers-check.mjs'), t('.levelrules-check.mjs'), t('.events-check.mjs'), t('.hunt-check.mjs'), t('.earned-check.mjs'), t('.balance-check.mjs'), t('.save-check.mjs'), t('.unlockall-check.mjs'), t('.milestones-check.mjs'), t('.packs-check.mjs'), t('.shop-check.mjs'), t('.jimshop-check.mjs'), t('.showroom-check.mjs'), t('.hidden-cars-check.mjs'), t('.carsources-check.mjs'), t('.carsources-dom-check.mjs'), t('.nav-check.mjs'), t('.hiddenlevels-check.mjs'), t('.ridenudge-check.mjs'), t('.featuregates-check.mjs'), t('.touch-check.mjs'), t('.extras-hit-check.mjs'), t('.lite-check.mjs'), t('.packcar-check.mjs')],
+    tests: [t('.tiers-check.mjs'), t('.levelrules-check.mjs'), t('.events-check.mjs'), t('.hunt-check.mjs'), t('.earned-check.mjs'), t('.balance-check.mjs'), t('.save-check.mjs'), t('.unlockall-check.mjs'), t('.milestones-check.mjs'), t('.packs-check.mjs'), t('.shop-check.mjs'), t('.jimshop-check.mjs'), t('.showroom-check.mjs'), t('.hidden-cars-check.mjs'), t('.carsources-check.mjs'), t('.carsources-dom-check.mjs'), t('.nav-check.mjs'), t('.hiddenlevels-check.mjs'), t('.ridenudge-check.mjs'), t('.featuregates-check.mjs'), t('.touch-check.mjs'), t('.device-defaults-check.mjs'), t('.extras-hit-check.mjs'), t('.lite-check.mjs'), t('.packcar-check.mjs')],
     files: [/tiers|progress\.js|milestones|menus|menu2|garage|cars\.js|levelSchema|events|packs|ecu|shop|jimshop|showroom|carsources|nav\.js|input\.js|hiddenlevels|hunt|rides|ridenudge|featuregates|progressui/],
   },
   cars: {
@@ -61,10 +61,10 @@ const GROUPS = {
     files: [/cargo|delivery\.js|packages/],
   },
   gimmicks: {
-    about: 'The gimmicks: Gimmick Road 2 and 3 (hazards, gambles, crests), the slow pads (.slowpad-check: Slow Pad Lab, the drain per car class held and coasting, the floor, turbo / tank / ghost / boost, the reports, every skin built), roadworks diversions, the metro (Metro Run), gravel, police pursuit, radiation, the UFO strike, traffic with quirks',
+    about: 'The gimmicks: Gimmick Road 2 and 3 (hazards, gambles, crests; no pickup collected in the air: .airpickup-check, CHECKLIST 470), the slow pads (.slowpad-check: Slow Pad Lab, the drain per car class held and coasting, the floor, turbo / tank / ghost / boost, the reports, every skin built), roadworks diversions, the metro (Metro Run), gravel, police pursuit, radiation, the UFO strike, traffic with quirks',
     seconds: 200,
-    tests: [t('.hazards-check.mjs'), t('.tunneljunction-check.mjs'), t('.lanegimmicks-check.mjs'), t('.slowpad-check.mjs'), t('.roadworks-check.mjs'), t('.metro-check.mjs'), t('.gimmicks3-check.mjs'), t('.gravel-check.mjs'), t('.pursuit-check.mjs'), t('.radiation-check.mjs'), t('.ufo-check.mjs'), t('.traffic-quirks-check.mjs')],
-    files: [/hazards|gambles|gimmicks\.js|gravel|pursuit|radiation|ufostrike|crossing|bullettrain|police|slowpads|slow-pad/],
+    tests: [t('.hazards-check.mjs'), t('.airpickup-check.mjs'), t('.tunneljunction-check.mjs'), t('.lanegimmicks-check.mjs'), t('.slowpad-check.mjs'), t('.roadworks-check.mjs'), t('.metro-check.mjs'), t('.gimmicks3-check.mjs'), t('.gravel-check.mjs'), t('.pursuit-check.mjs'), t('.radiation-check.mjs'), t('.ufo-check.mjs'), t('.traffic-quirks-check.mjs')],
+    files: [/hazards|gambles|pickups\.js|gimmicks\.js|gravel|pursuit|radiation|ufostrike|crossing|bullettrain|police|slowpads|slow-pad/],
   },
   obstacles: {
     about: 'Obstacles, pickups and targets: the themes\' own obstacles, items on the shoulders, TANK RAGE targets, dents',
