@@ -8,8 +8,8 @@ import { BACKDROP_NAMES, DEFAULT_BACKDROP } from './bannerbackdrops.js';
 export const PAIRINGS = {
   'supercar-special': { pose: 'showdown', backdrop: 'town' },   // the template's own pack keeps its look
   'classic-special': { pose: 'abreast', backdrop: 'coast' },    // a road trip: side by side, by the sea
-  'record-special': { pose: 'headon', backdrop: 'tunnel' },     // record cars, at the camera, at speed
-  'cruiser-special': { pose: 'staggered', backdrop: 'neon' },   // the big saloons, overlapping, at night
+  'record-special': { pose: 'chase', backdrop: 'tunnel' },      // record cars from behind, at speed (head-on hid the jet car's length)
+  'cruiser-special': { pose: 'headon', backdrop: 'neon' },      // the big saloons' grilles, at night
   'car-hunt-special': { pose: 'solo', backdrop: 'showroom' },   // (one car: no banner today; ready if it gets one)
   'comet-special': { pose: 'chase', backdrop: 'synthwave' },    // (the same)
 };

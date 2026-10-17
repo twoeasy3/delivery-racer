@@ -18,7 +18,7 @@ export const POSES = {
   staggered: { lift: 0.06, fov: 24, roll: -2, shiftX: -0.02, gap: 0.5,
     cars: [{ h: 0.8 }, { h: 0.55, dir: PI - 0.55 }, { h: 0.35, dir: PI - 0.7 }, { h: 0.15, dir: PI - 0.85 }] },
   // line abreast: all three-quarter, noses a little to the left, one size, a fanned arc
-  abreast: { lift: 0.09, fov: 20, shiftX: 0, weight: 1, gap: 0.5,
+  abreast: { lift: 0.09, fov: 20, shiftX: 0.08, shiftY: -0.02, weight: 1, gap: 0.5,
     cars: [{ h: -0.5 }, { h: -0.5, dir: PI - 0.25 }, { h: -0.5, dir: PI - 0.4 }, { h: -0.5, dir: PI - 0.55 }] },
   // a chase from behind: rear three-quarters, the hero leading in the near lane, the others trailing to the left
   chase: { lift: 0.13, fov: 22, roll: 2, shiftX: 0, gap: 0.7,
