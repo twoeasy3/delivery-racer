@@ -142,6 +142,19 @@
     #startScreen.ev-tab.cx-card .menu-stage:not(.has-tasks) { --band: 172px; padding-top: 146px; }
     #startScreen.ev-tab.cx-card .menu-stage:not(.has-tasks).has-extras .cargo3d { top: 54px; }
   }
+  /* (a short phone, 360x740: the band, the name, the tasks and the car card closer, the car card's label left out) */
+  @media (max-height: 760px) {
+    #startScreen.ev-tab.cx-card .menu-stage { --band: 98px; padding-top: 74px; gap: 6px; }
+    #startScreen.ev-tab.cx-card .menu-stage.has-extras .cargo3d { top: 40px; }
+    #startScreen.ev-tab.cx-card .menu-stage.no-medals.has-extras .cargo3d { top: 6px; }
+    #startScreen.ev-tab.cx-card .menu-stage h2 { font-size: 24px; }
+    #startScreen.ev-tab.cx-card .cx-tasks li { padding: 4px 8px; font-size: 11.5px; }
+    #startScreen.ev-tab.cx-card .menu-stage.has-tasks .cx-car > .cx-label { display: none; }
+    #startScreen.ev-tab.cx-card .cx-name { margin-top: 2px; }
+    #startScreen.ev-tab.cx-card .cx-name strong { font-size: 15px; }
+    #startScreen.ev-tab.cx-card .cx-try { margin-top: 6px; }
+    #startScreen.ev-tab.cx-card .cx-pack { gap: 4px; padding: 6px; }
+  }
   /* the Comet Hunt's screen on a phone */
   #startScreen .ev-series { padding: 10px; gap: 8px; }
   #startScreen .ev-head { flex-wrap: nowrap; gap: 8px; align-items: flex-start; }
