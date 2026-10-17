@@ -102,8 +102,10 @@ try {
     check(c.stage?.theme === 'default', 'no theme at all (undefined: no level): the default studio (a LEVEL with no theme is the city\'s, as road.js draws it: the menu\'s glue)');
     c.sync(v, 'no-such-theme', false);
     check(c.stage?.theme === 'default', 'a theme not in themes.js: the default studio');
-    c.sync(v, 'farm', false);
-    check(c.stage?.theme === 'farm' && c.stage.stats.meshes === 3 && !c.stage.stats.file, 'a theme with no entry in STAGE_FILES and no obstacles (farm): its own colours, no props, no generic crates');
+    THEMES.bareTest = { sky: 0xc4e6f5, ground: 0x8fb556, road: 0x57514a, scenery: 'bareTest' }; // (every real theme has a stage file or props now: a made-up one)
+    c.sync(v, 'bareTest', false);
+    check(c.stage?.theme === 'bareTest' && c.stage.stats.meshes === 3 && !c.stage.stats.file, 'a theme with no entry in STAGE_FILES and no obstacles: its own colours, no props, no generic crates');
+    delete THEMES.bareTest;
     const keep = THEMES.toyroom.obstacles;
     delete THEMES.toyroom.obstacles;
     let t = null;

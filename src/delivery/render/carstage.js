@@ -13,6 +13,8 @@
 //   - the lights: the card's own two (render/modelviews.js lit), only recoloured from the theme's `light` (no new shader)
 // Every theme has a stage with NO file of its own (its sky, ground, road, light and obstacles are in themes.js); a theme
 // that wants more (a skyline, its own props) adds ONE small file in render/stages/ and ONE line in STAGE_FILES below.
+// A file's `props` name OBSTACLE_MODELS kinds or its own `models` (makers built from the theme's models and render/stages/kit.js's
+// shared shapes: merged like the rest); its `plinth(pal)` gives the plinth's colour (boards, earth...) instead of the road's.
 // quality: 'high' all the props; 'low' two (a small card: the phone's); 'off' no stage at all (the plain card).
 // THE FALLBACK (cardStage below): a level with no theme, or a theme that is not in themes.js: the DEFAULT studio (backdrop and plinth,
 // no props); a theme whose stage threw (built, framed or painted): the default studio from then on; the default studio throwing too:
@@ -31,6 +33,10 @@ export const STAGE_FILES = {
   vegas: () => import('./stages/vegas.js'),
   alpinepass: () => import('./stages/alpine.js'),
   steelworks: () => import('./stages/steelworks.js'),
+  volcano: () => import('./stages/volcano.js'),
+  port: () => import('./stages/port.js'),
+  wildwest: () => import('./stages/wildwest.js'),
+  farm: () => import('./stages/farm.js'),
   // (new stages go above this line: one line each)
 };
 const loaded = {}, loading = {}, warned = new Set();
@@ -186,6 +192,7 @@ export const makeStage = (theme, { evil = false, quality = 'high' } = {}) => {
     propKey = key;
     const p0 = performance.now();
     if (props) { group.remove(props); props.geometry.dispose(); props = null; }
+    plinthMat.color.copy(file?.plinth ? col(file.plinth(pal)) : pal.road); // (a file's own plinth colour: boards, earth...)
     const halfTan = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / camera.zoom * camera.aspect;
     const models = [];
     // (a slot whose kind the theme has no own model for takes one of the theme's own in turn: never a generic crate or bale)
@@ -194,7 +201,7 @@ export const makeStage = (theme, { evil = false, quality = 'high' } = {}) => {
     for (const [kind, side, depth, turn, scale = 1, like] of slots) { // (like: a file's prop's kind of box, crate / bale / cone / barrier)
       let real = file?.props ? kind : themedKind(theme, kind);
       if (!file?.props && real === kind) { if (!own.length) continue; real = own[next++ % own.length]; } // (a theme with no obstacles of its own: no props)
-      const make = OBSTACLE_MODELS[real];
+      const make = file?.models?.[real] || OBSTACLE_MODELS[real]; // (a file's own model first: the theme's own pieces, built from its models)
       if (!make) continue;
       const [hw, hl, height] = BOX[like] || BOX[kind] || BOX.crate;
       let model;
