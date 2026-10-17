@@ -132,14 +132,15 @@ const makeWineCase = () => {
   const group = new THREE.Group(), all = sub(group);
   const pine = lambert(0xe6c78e), slat = lambert(0xa9824a), glass = lambert(0x1c3a20), foil = lambert(0xd8262b), label = lambert(0xf4ead0);
   put(all, box(0.86, 0.3, 0.56), pine, 0, 0.15, 0);
-  for (const dy of [0.07, 0.25]) put(all, box(0.89, 0.04, 0.59), slat, 0, dy, 0);
-  for (const x of [-1, 1]) put(all, box(0.05, 0.34, 0.59), slat, x * 0.405, 0.17, 0);
+  for (const dy of [0.07, 0.25]) put(all, box(0.87, 0.04, 0.59), slat, 0, dy, 0);       // (their ends inside the end posts, not 5 mm under their faces)
+  for (const x of [-1, 1]) put(all, box(0.06, 0.34, 0.61), slat, x * 0.41, 0.17, 0);       // (the end posts stand 10 mm proud of the slats and of the box's ends: their faces were one plane, and fought)
   put(all, box(0.7, 0.03, 0.4), lambert(0xd9b85c), 0, 0.31, 0);
-  const front = put(all, new THREE.PlaneGeometry(0.62, 0.17), lettered('CHIANTI', 0x7a1a1a, 0xe6c78e), 0, 0.15, 0.285);
+  const front = put(all, new THREE.PlaneGeometry(0.62, 0.17), lettered('CHIANTI', 0x7a1a1a, 0xe6c78e), 0, 0.15, 0.287);
   front.renderOrder = 1;
   const bottles = [];
   for (let k = 0; k < 6; k++) {
     const b = sub(all, (k % 3 - 1) * 0.22, 0.32, (k < 3 ? -1 : 1) * 0.12);
+    b.name = 'bottle' + k; // (named for render/cargoRules.js)
     put(b, cyl(0.075, 0.08, 0.34, 10), glass, 0, 0.17, 0);
     put(b, cyl(0.035, 0.075, 0.1, 10), glass, 0, 0.39, 0);
     put(b, cyl(0.032, 0.035, 0.12, 8), glass, 0, 0.5, 0);

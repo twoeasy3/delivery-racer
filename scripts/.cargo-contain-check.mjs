@@ -146,7 +146,7 @@ for (const id of ids) {
   if (!rules.keepOut && !rules.inside && !rules.anchors) continue;
   const found = checkRules(id, rules);
   const n = (rules.keepOut?.length || 0) + (rules.inside?.length || 0) + (rules.anchors?.length || 0);
-  ok(id + ': ' + n + ' rule' + (n > 1 ? 's' : '') + ' hold every 0.04 s in every state and change', !found.size, [...found].map(([k, v]) => k + ' (' + v.n + ' part-frames, first ' + v.first + ')').join(' | '));
+  ok(id + ': ' + n + (n > 1 ? ' rules hold' : ' rule holds') + ' every 0.04 s in every state and change', !found.size, [...found].map(([k, v]) => k + ' (' + v.n + ' part-frames, first ' + v.first + ')').join(' | '));
 }
 
 // ---- z-fighting, every item

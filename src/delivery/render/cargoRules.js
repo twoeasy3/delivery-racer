@@ -32,6 +32,11 @@ export const CARGO_RULES = {
     keepOut: [{ a: 'cup\\d|glass\\d', b: 'carrier' }, { a: '(?:cup|glass)(\\d)', b: '(?:cup|glass)(?!$1)\\d' }],
     anchors: [{ part: 'glass\\d', to: 'floor', maxGap: 0.004 }],
   },
+  // Case of Chianti: the six bottles, rocking, never meet one another (the crate's z-fight: its end posts were one plane with
+  // the slats and the box's ends; now 10 mm proud)
+  winecase: {
+    keepOut: [{ a: 'bottle\\d', b: 'bottle\\d' }],
+  },
   // Pet-Shop Hamster Ball: the hamster inside the shell but for its head out of the hole (furious), off the collar, the
   // rings and the hatch; on its feet on the ball's floor when calm or agitated
   hamsterball: {
