@@ -1,5 +1,5 @@
 // A check of the EIGHT MORE KILL EFFECTS (render/killfxmore.js over render/killfx.js; CHECKLIST 426). Headless, no browser:
-//   - each is registered (slot 'kill', free, a placeholder price, a short name), shipped (on the screen's list, so in Unlock everything
+//   - each is registered (slot 'kill', earned: not free, no price, a short name), shipped (on the screen's list, so in Unlock everything
 //     and the Test preview), has an icon that draws, an explosion, a trail, and none is one of the first seven or the cut two
 //   - SPAWNED 200 TIMES EACH (small, big, the tank shell's, the package hit, mixed; a trail every frame between): no pool ever over its
 //     cap, the same pools / arrays / meshes after as after the first (nothing grows), the scene holds only the system's pool meshes (one
@@ -31,7 +31,7 @@ try {
   // ---- registered, shipped, distinct ----
   const reg = Object.fromEntries(COSMETICS.filter(c => c.slot === 'kill').map(c => [c.id, c]));
   check(Object.keys(KILL_MORE).join() === MORE.join() && MORE.every(id => !BEFORE.includes(id)), 'eight new effects, none of the first seven nor the cut two (' + MORE.join(', ') + ')');
-  check(MORE.every(id => K.KILL_IDS.includes(id) && reg[id] && reg[id].free && reg[id].price === 500 && reg[id].name.length <= 9), 'each on the screen\'s list (Unlock everything, the Test preview), registered as kill:<id>, free, placeholder price 500, a short name (' + MORE.map(id => reg[id]?.name).join(', ') + ')');
+  check(MORE.every(id => K.KILL_IDS.includes(id) && reg[id] && reg[id].earned && !reg[id].free && reg[id].price === 0 && reg[id].name.length <= 9), 'each on the screen\'s list (Unlock everything, the Test preview), registered as kill:<id>, EARNED (the Kill slot is an earned slot since CHECKLIST 433: not free, no price; was free at 500), a short name (' + MORE.map(id => reg[id]?.name).join(', ') + ')');
   let iconErr = null;
   const ctx = new Proxy({}, { get: (t, k) => (k in t ? t[k] : () => ({ addColorStop() {} })), set: (t, k, v) => { t[k] = v; return true; } });
   for (const id of MORE) { try { K.KILL_FX[id].icon(ctx, 48); } catch (e) { iconErr ||= id + ': ' + e.message; } }
