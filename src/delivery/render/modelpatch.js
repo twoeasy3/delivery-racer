@@ -42,6 +42,7 @@
 import * as THREE from 'three';
 import { WINDOW_ROLE, isWindowRole, isGlassWord, isWindowNode, glassTable, windowKey, canonicalTable } from './glassnames.js';
 import { paneFacing, splitByFacing, cabinMiddle, zRefOf, REVERSE_RAKE } from './screens.js';
+import { applyPaneEdits, isNoEdit } from './paneedit.js';
 
 export const PATCH_VERSION = 1;
 // A side view extruded across the car, as the car models draw their bodies: `points` is the outline seen from the left,
@@ -517,6 +518,8 @@ export const applyPatch = (root, patch, { evil = false } = {}) => {
     const copy = added.get(op.add.id), src = ctx.find(op.add.from, op.add.fromSig);
     if (copy && src) { try { mirrorInto(copy, src, root); } catch (e) { warn('mirror ' + op.add.id + ': ' + e.message); } }
   }
+  // ONE PANE moved, turned or sized on its own (render/paneedit.js: the `panes` table), after the ops, on the part's own geometry
+  if (patch.panes && typeof patch.panes === 'object') applyPaneEdits(root, patch.panes, ctx.find, out);
   // the side's paint: the ops' colours, then the Evil side's over them; re-applied after the model's own livery
   const evilOps = (Array.isArray(patch.evil) ? patch.evil : []).map(op => [op, ctx.find(op.id, op.sig)]);
   for (const [op, node] of evilOps) if (!node) out.unmatched.push('evil:' + op.id);
@@ -673,6 +676,16 @@ export const withGlass = (patch, id, edges) => {
   if (!Object.keys(p.glass).length) delete p.glass;
   return p;
 };
+// one window pane's edit (render/paneedit.js): `edit` { move, turn, size } for the pane `pane` ({ name, start, count }) of `part`; null (or
+// an edit that does nothing) takes it out
+export const withPane = (patch, part, pane, edit) => {
+  const p = clonePatch(patch), key = part.id + '#' + pane.name;
+  p.panes = { ...(p.panes || {}) };
+  if (!edit || isNoEdit(edit)) delete p.panes[key];
+  else p.panes[key] = { id: part.id, sig: part.sig, pane: pane.name, start: pane.start, count: pane.count, move: edit.move || [0, 0, 0], turn: edit.turn || [0, 0, 0], size: edit.size || [1, 1] };
+  if (!Object.keys(p.panes).length) delete p.panes;
+  return p;
+};
 // the patch without ops that do nothing (an empty set)
 export const tidyPatch = (patch) => {
   const p = clonePatch(patch);
@@ -682,5 +695,6 @@ export const tidyPatch = (patch) => {
   delete p.windows;
   if (g) p.glass = canonicalTable(g); else delete p.glass;
   if (p.shapes && (typeof p.shapes !== 'object' || !Object.keys(p.shapes).length)) delete p.shapes;
+  if (p.panes && (typeof p.panes !== 'object' || !Object.keys(p.panes).length)) delete p.panes;
   return p;
 };
