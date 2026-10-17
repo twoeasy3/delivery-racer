@@ -65,7 +65,7 @@ export const editMatrix = (edit, f) => {
 export const turnOf = (m) => { const e = new THREE.Euler().setFromRotationMatrix(new THREE.Matrix4().extractRotation(m), 'YXZ'); return [e.y, e.x, e.z].map(a => Math.round(a * 57.29577951308232 * 100) / 100); };
 // the same edit for the pane across the car (x mirrored): x, yaw and roll change sign
 // (a contour's anchors: s across the pane runs the other way on its twin, paneFrame's u being up x n)
-export const mirroredEdit = (e) => ({ ...e, move: e.move ? [-e.move[0], e.move[1], e.move[2]] : undefined, turn: e.turn ? [-e.turn[0], e.turn[1], -e.turn[2]] : undefined, ...(e.contour ? { contour: e.contour.map(a => [r3(1 - a[0]), ...a.slice(1)]) } : {}) });
+export const mirroredEdit = (e) => ({ ...e, move: e.move ? [-e.move[0], e.move[1], e.move[2]] : undefined, turn: e.turn ? [-e.turn[0], e.turn[1], -e.turn[2]] : undefined, ...(e.contour ? { contour: e.contour.map(a => [r3(1 - a[0]), a[1], a[2]]) } : {}) });
 
 // write the pane's vertices from the part's as-built copy through the edit (an empty edit puts them back)
 export const applyPaneEdit = (node, root, pane, edit) => {
@@ -110,17 +110,17 @@ export const applyPaneEdits = (root, table, find, out) => {
 
 // ---- CONTOUR (CHECKLIST 465, the owner: "It should follow the body's contour if any as well") ------------------------------------------------
 // A contour is the pane BENT off its plane, along its own (turned) normal: `contour: [[s, t, mm], ...]` in its entry (v: 2), anchors on its rim at
-// (s, t), its place across and up its as-built face (0..1, paneFrame's u and v over its width and height; a pane thicker than 1 cm adds h, m
-// out of the face: [s, t, mm, h], so a slab's two faces bend apart), each how far that rim point goes
+// (s, t), its place across and up its as-built face (0..1, contourFrame's u and v over its width and height: a slab's two faces at one (s, t)
+// move alike), each how far that rim point goes
 // out (+) or in (-) along the normal, in mm; every vertex between moves by the anchors' inverse-distance mean (Shepard, power 2: a smooth sheet,
 // exact at each anchor). An anchor with no body within reach is 0: that rim stays put. The pane is cut finer once, where the patch is applied
 // (each triangle into 4, 16 or 64 by its count: 2^L along each edge), in place: its run grows, the runs after it move up
 // (geometry.userData.paneRuns records it; paneAsBuilt maps a run back), cabinGlass's named panes follow. Build only: no per-frame work.
 export const CONTOUR_REACH = 0.08, CONTOUR_STANDOFF = 0.002, CONTOUR_TURN = 8, CONTOUR_ROUNDS = 3; // (m: how far a rim point looks for the body along the normal; m: its lay off it; deg: the rigid turn's cap in a contour fit)
-export const contourAt = (anchors, s, t, W, H, h = 0) => {
+export const contourAt = (anchors, s, t, W, H) => {
   let sw = 0, sd = 0;
   for (const a of anchors) {
-    const du = (s - a[0]) * W, dv = (t - a[1]) * H, dh = a.length > 3 ? h - a[3] : 0, r2 = du * du + dv * dv + dh * dh;
+    const du = (s - a[0]) * W, dv = (t - a[1]) * H, r2 = du * du + dv * dv;
     if (r2 < 1e-10) return a[2] / 1000;
     const w = 1 / r2; sw += w; sd += w * a[2];
   }
@@ -135,8 +135,23 @@ const levelOf = (node, root, pane) => {
   let L = 0; while (L < 3 && long / (1 << L) > CUT_EDGE && tris.length * (1 << (2 * (L + 1))) <= CUT_TRIS) L++;
   return L;
 };
-// (s, t: across and up the as-built face, 0..1; h: how far out of it, m: a thick pane's (a slab's, a dome's) two faces kept apart)
-const stOf = (f, p) => { const dx = p.x - f.c.x, dy = p.y - f.c.y, dz = p.z - f.c.z; return [(dx * f.u.x + dy * f.u.y + dz * f.u.z) / Math.max(1e-6, f.width) + 0.5, (dx * f.v.x + dy * f.v.y + dz * f.v.z) / Math.max(1e-6, f.height) + 0.5, dx * f.n.x + dy * f.n.y + dz * f.n.z]; };
+// (s, t: across and up the as-built face, 0..1)
+const stOf = (f, p) => { const dx = p.x - f.c.x, dy = p.y - f.c.y, dz = p.z - f.c.z; return [(dx * f.u.x + dy * f.u.y + dz * f.u.z) / Math.max(1e-6, f.width) + 0.5, (dx * f.v.x + dy * f.v.y + dz * f.v.z) / Math.max(1e-6, f.height) + 0.5]; };
+// the contour's own frame: the pane's BIGGEST FACE's normal (a slab's front, not paneFrame's sum over all its faces), out of the car as
+// paneFrame's; u across and level, v up it; width and height over the pane (so a slab bends front and back alike: its thickness kept)
+const contourFrame = (node, root, pane, f) => {
+  const v = asBuiltView(node), pos = v.geometry.attributes.position, M = f.M, ns = [], A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3();
+  for (const t of paneTris(v.geometry, pane)) { A.fromBufferAttribute(pos, t[0]).applyMatrix4(M); B.fromBufferAttribute(pos, t[1]).applyMatrix4(M); C.fromBufferAttribute(pos, t[2]).applyMatrix4(M); const c = B.sub(A).cross(C.sub(A)); if (c.lengthSq() > 1e-16) ns.push(c.clone()); }
+  let best = null, bestA = -1;
+  for (const a of ns) { const u = a.clone().normalize(); let area = 0; for (const b of ns) if (Math.abs(u.dot(b.clone().normalize())) > 0.95) area += b.length(); if (area > bestA + 1e-9) { bestA = area; best = u; } }
+  const n = new THREE.Vector3();
+  if (best) for (const b of ns) { const d = best.dot(b.clone().normalize()); if (Math.abs(d) > 0.95) n.addScaledVector(b, Math.sign(d)); }
+  if (n.lengthSq() < 1e-16) n.copy(f.n); n.normalize(); if (n.dot(f.n) < 0) n.negate();
+  const u = Math.abs(n.y) > 0.95 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0).cross(n).normalize(), w = new THREE.Vector3().crossVectors(n, u);
+  let u0 = Infinity, u1 = -Infinity, w0 = Infinity, w1 = -Infinity;
+  for (let i = pane.start; i < pane.start + pane.count; i++) { A.fromBufferAttribute(pos, i).applyMatrix4(M).sub(f.c); const pu = A.dot(u), pw = A.dot(w); u0 = Math.min(u0, pu); u1 = Math.max(u1, pu); w0 = Math.min(w0, pw); w1 = Math.max(w1, pw); }
+  return { c: f.c, u, v: w, n, width: Math.max(1e-4, u1 - u0), height: Math.max(1e-4, w1 - w0), M };
+};
 // the barycentric weights of a triangle cut 2^L along each edge: its points and its triangles (indices into the points, the same winding)
 const cutOf = (L) => {
   const N = 1 << L, pts = [], at = new Map(), tris = [];
@@ -148,9 +163,9 @@ const cutOf = (L) => {
 // cut the pane (its as-built run, already moved by applyPaneEdit) finer in place, and bend it by its contour
 export const applyContour = (node, root, pane, edit, f) => {
   const geo = node.geometry, idx = geo.index?.array, tris = paneTris(geo, pane), L = levelOf(node, root, pane), cut = cutOf(L), base = node.userData.paneBase;
-  const n0 = f.n.clone().applyMatrix4(turnMatrix(edit.turn)), Minv = f.M.clone().invert();
+  const cf = contourFrame(node, root, pane, f), n0 = cf.n.clone().applyMatrix4(turnMatrix(edit.turn)), Minv = f.M.clone().invert();
   const dirL = n0.clone().applyMatrix3(new THREE.Matrix3().setFromMatrix4(Minv)); // (a metre along the normal, in the mesh's own units)
-  const names = Object.keys(geo.attributes), Wd = f.width * (edit.size?.[0] ?? 1), Hd = f.height * (edit.size?.[1] ?? 1);
+  const names = Object.keys(geo.attributes), Wd = cf.width * (edit.size?.[0] ?? 1), Hd = cf.height * (edit.size?.[1] ?? 1);
   const P = new THREE.Vector3();
   // the new vertices of each of the pane's triangles: every attribute by its barycentric weights, then the position bent along the normal
   const perTri = idx ? cut.pts.length : cut.tris.length * 3, added = tris.length * perTri, oldCount = pane.count;
@@ -161,7 +176,7 @@ export const applyContour = (node, root, pane, edit, f) => {
       const o = ti * perTri + vi;
       for (const a of names) { const A = geo.attributes[a], sz = A.itemSize; for (let c = 0; c < sz; c++) block[a][o * sz + c] = w[0] * A.array[t[0] * sz + c] + w[1] * A.array[t[1] * sz + c] + w[2] * A.array[t[2] * sz + c]; }
       P.set(0, 0, 0); for (let k = 0; k < 3; k++) P.x += w[k] * base.pos[t[k] * 3], P.y += w[k] * base.pos[t[k] * 3 + 1], P.z += w[k] * base.pos[t[k] * 3 + 2];
-      const [s, tt, h] = stOf(f, P.applyMatrix4(f.M)), d = contourAt(edit.contour, s, tt, Wd, Hd, h), p = block.position;
+      const [s, tt] = stOf(cf, P.applyMatrix4(f.M)), d = contourAt(edit.contour, s, tt, Wd, Hd), p = block.position;
       p[o * 3] += dirL.x * d; p[o * 3 + 1] += dirL.y * d; p[o * 3 + 2] += dirL.z * d;
     });
   });
@@ -337,7 +352,7 @@ export const snapPane = (sample, body, pivot, opt = {}) => {
   for (let i = 0; i < body.n; i++) { const i3 = i * 3; if (body.hi[i3] >= box.min.x && body.lo[i3] <= box.max.x && body.hi[i3 + 1] >= box.min.y && body.lo[i3 + 1] <= box.max.y && body.hi[i3 + 2] >= box.min.z && body.lo[i3 + 2] <= box.max.z) near.push(i); }
   const sub = { n: near.length, tris: new Float32Array(near.length * 9), lo: new Float32Array(near.length * 3), hi: new Float32Array(near.length * 3), glass: new Uint8Array(near.length) };
   near.forEach((i, j) => { sub.tris.set(body.tris.subarray(i * 9, i * 9 + 9), j * 9); sub.lo.set(body.lo.subarray(i * 3, i * 3 + 3), j * 3); sub.hi.set(body.hi.subarray(i * 3, i * 3 + 3), j * 3); sub.glass[j] = body.glass[i]; });
-  const ids = sub.glass.map((_, j) => j);
+  const ids = Array.from(sub.glass, (_, j) => j);
   const pick = (list, n) => (list.length > n ? list.filter((_, i) => i % Math.ceil(list.length / n) === 0) : list);
   const rim = pick(sample.rim, 60), inner = pick(sample.inner, 30);
   const xf = (x) => { const R = new THREE.Matrix4(), w = new THREE.Vector3(x[3], x[4], x[5]); if (w.lengthSq() > 1e-14) R.makeRotationAxis(w.clone().normalize(), w.length()); return { R, t: new THREE.Vector3(x[0], x[1], x[2]) }; };
@@ -410,9 +425,9 @@ const asBuiltView = (node) => {
   return { geometry: { attributes: { position: new THREE.BufferAttribute(b.pos, 3) }, index: b.idx ? { array: b.idx } : null }, matrixWorld: node.matrixWorld };
 };
 export const samplesUnder = (node, root, paneAB, edit, f = paneFrame(node, root, paneAB)) => {
-  const view = asBuiltView(node), E = editMatrix(edit, f), n0 = f.n.clone().applyMatrix4(turnMatrix(edit?.turn)), an = edit?.contour || [];
-  const Wd = f.width * (edit?.size?.[0] ?? 1), Hd = f.height * (edit?.size?.[1] ?? 1);
-  const map = (p, st) => p.clone().applyMatrix4(E).addScaledVector(n0, an.length ? contourAt(an, st[0], st[1], Wd, Hd, st[2]) : 0);
+  const view = asBuiltView(node), E = editMatrix(edit, f), cf = contourFrame(node, root, paneAB, f), n0 = cf.n.clone().applyMatrix4(turnMatrix(edit?.turn)), an = edit?.contour || [];
+  const Wd = cf.width * (edit?.size?.[0] ?? 1), Hd = cf.height * (edit?.size?.[1] ?? 1);
+  const map = (p, st) => p.clone().applyMatrix4(E).addScaledVector(n0, an.length ? contourAt(an, st[0], st[1], Wd, Hd) : 0);
   // the pane cut as applyContour cuts it (as built, the car's frame): its vertices (inner) and its rim's (the outline, or a slab's creases)
   const pos = view.geometry.attributes.position, tris = paneTris(view.geometry, paneAB), cut = cutOf(levelOf(node, root, paneAB)), M = f.M, innerSt = [], inner = [], rim = [], rimSt = [];
   const A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3(), at = new Map(), pts = [], edges = new Map();
@@ -430,10 +445,9 @@ export const samplesUnder = (node, root, paneAB, edit, f = paneFrame(node, root,
   const closed = !rimE.length;
   if (closed) { rimE = [...edges.values()].filter(e => e.sharp); if (!rimE.length) rimE = [...edges.values()]; }
   const onRim = new Set(rimE.flatMap(e => [e.a, e.b]));
-  pts.forEach((p, i) => { const st = stOf(f, p), q = map(p, st); innerSt.push(st); inner.push(q); if (onRim.has(i)) { rimSt.push(st); rim.push(q); } });
+  pts.forEach((p, i) => { const st = stOf(cf, p), q = map(p, st); innerSt.push(st); inner.push(q); if (onRim.has(i)) { rimSt.push(st); rim.push(q); } });
   rim.closed = closed;
-  const hs = [...rimSt, ...innerSt].map(q => q[2]);
-  return { rim, rimSt, inner, innerSt, n: n0, Wd, Hd, f, thick: Math.max(...hs) - Math.min(...hs) > 0.01 };
+  return { rim, rimSt, inner, innerSt, n: n0, Wd, Hd, f };
 };
 const nearOf = (body, pts, pad) => {
   const box = new THREE.Box3().setFromPoints(pts).expandByScalar(pad), near = [];
@@ -453,32 +467,41 @@ export const rimFit = (smp, body) => {
   return { max: r4(max), n, of: smp.rim.length };
 };
 const solveContour = (smp, sub, ids, old) => {
-  const n0 = smp.n, neg = n0.clone().negate(), anchors = [], q = new THREE.Vector3();
+  const n0 = smp.n, neg = n0.clone().negate(), anchors = [], q = new THREE.Vector3(), groups = new Map();
   let conformed = 0;
+  // each rim point's move along the normal: to 2 mm off the first surface it meets (if that brings it nearer the body), else none
   smp.rim.forEach((p, i) => {
-    const [s, t, h] = smp.rimSt[i], cur = contourAt(old, s, t, smp.Wd, smp.Hd, h);
-    let best = null;
-    for (const [dir, sg] of [[n0, 1], [neg, -1]]) { const h = castBody(sub, ids, p, dir, CONTOUR_REACH); if (h && (!best || h.t < best.t)) best = { t: h.t, sg }; }
-    let d = cur;
+    const [s, t] = smp.rimSt[i];
+    let best = null, delta = 0;
+    for (const [dir, sg] of [[n0, 1], [neg, -1]]) { const hit = castBody(sub, ids, p, dir, CONTOUR_REACH); if (hit && (!best || hit.t < best.t)) best = { t: hit.t, sg }; }
     if (best) {
-      const delta = best.sg * (best.t - CONTOUR_STANDOFF);
-      q.copy(p).addScaledVector(n0, delta);
+      const dl = best.sg * (best.t - CONTOUR_STANDOFF);
+      q.copy(p).addScaledVector(n0, dl);
       const was = nearestBody(sub, p, PANE_CAP)?.d ?? PANE_CAP, now = nearestBody(sub, q, PANE_CAP)?.d ?? PANE_CAP;
-      if (now < was - 0.0002 || now <= CONTOUR_STANDOFF + 0.001) { d = cur + delta; if (Math.abs(delta) > 0.0005) conformed++; }
+      // (a surface far along the normal while another is near beside it: a rim over a body's edge, not resting on it: stays put)
+      if ((now < was - 0.0002 || now <= CONTOUR_STANDOFF + 0.001) && best.t <= 1.6 * was + 0.003) delta = dl;
     }
-    d = Math.max(-CONTOUR_REACH, Math.min(CONTOUR_REACH, d));
-    anchors.push(smp.thick ? [r3(s), r3(t), Math.round(d * 10000) / 10, r3(h)] : [r3(s), r3(t), Math.round(d * 10000) / 10]);
+    // a thin slab's two faces share their (s, t): one move for both, the smaller (its face nearer the body stops 2 mm off; none if they disagree)
+    const k = Math.round(s * 500) + ',' + Math.round(t * 500), g = groups.get(k);
+    if (!g) groups.set(k, { s, t, deltas: [delta], n: 1 }); else { g.deltas.push(delta); g.n++; }
   });
+  for (const g of groups.values()) {
+    const pos = g.deltas.every(d => d >= 0), negs = g.deltas.every(d => d <= 0);
+    const delta = pos || negs ? g.deltas.reduce((a, d) => (Math.abs(d) < Math.abs(a) ? d : a), g.deltas[0]) : 0;
+    const cur = contourAt(old, g.s, g.t, smp.Wd, smp.Hd), d = Math.max(-CONTOUR_REACH, Math.min(CONTOUR_REACH, cur + delta));
+    if (Math.abs(delta) > 0.0005) conformed += g.n;
+    anchors.push([r3(g.s), r3(g.t), Math.round(d * 10000) / 10]);
+  }
   // never through a surface: a vertex the bend would carry through one stops 2 mm short (an anchor of its own)
   for (let round = 0; round < 3; round++) {
     let added = 0;
     smp.inner.forEach((p, i) => {
-      const [s, t, h] = smp.innerSt[i], dOld = contourAt(old, s, t, smp.Wd, smp.Hd, h), dNew = contourAt(anchors, s, t, smp.Wd, smp.Hd, h), D = dNew - dOld;
+      const [s, t] = smp.innerSt[i], dOld = contourAt(old, s, t, smp.Wd, smp.Hd), dNew = contourAt(anchors, s, t, smp.Wd, smp.Hd), D = dNew - dOld;
       if (Math.abs(D) < 0.0003) return;
       const hit = castBody(sub, ids, p, D > 0 ? n0 : neg, Math.abs(D) + CONTOUR_STANDOFF);
       if (!hit || hit.t >= Math.abs(D) + CONTOUR_STANDOFF - 0.0001) return;
       const d = Math.round((dOld + Math.sign(D) * Math.max(0, hit.t - CONTOUR_STANDOFF)) * 10000) / 10;
-      anchors.push(smp.thick ? [r3(s), r3(t), d, r3(h)] : [r3(s), r3(t), d]); added++;
+      anchors.push([r3(s), r3(t), d]); added++;
     });
     if (!added) break;
   }
@@ -486,23 +509,42 @@ const solveContour = (smp, sub, ids, old) => {
 };
 const turnAngle = (a, b) => angleOf(turnMatrix(a).multiply(turnMatrix(b).invert()));
 // -> { edit (the fitted edit: move, turn, size, contour), before, rigid, after (gapOf), fit (rimFit after), moved (m), turned (deg), conformed, rim, rounds } or null
+// the points carried INTO the body on their way from `from` to `to`: each straight path entering a body face (its front, by its winding;
+// another pane's faces do not count; one that starts in or on the body, a slab's end in its pillar, is not asked)
+export const throughBody = (from, to, sub, ids = Array.from(sub.glass, (_, j) => j)) => {
+  const out = [], d = new THREE.Vector3(), o = new THREE.Vector3();
+  from.forEach((p, i) => {
+    d.subVectors(to[i], p); const len = d.length(); if (len < 1e-4) return; d.divideScalar(len);
+    const nb = nearestBody(sub, p, 0.1); if (nb && !nb.glass && (nb.d < 0.003 || p.clone().sub(nb.q).dot(nb.n) < 0)) return; // (it starts in or on the body)
+    for (let k = 0, at = 0.0005; k < 6 && at < len; k++) { const h = castBody(sub, ids, o.copy(p).addScaledVector(d, at), d, len - at, true); if (!h) break; if (!h.facing) { out.push(i); break; } at += h.t + 0.0005; }
+  });
+  return out;
+};
 export const fitPane = (node, root, paneAB, edit, body) => {
   const f = paneFrame(node, root, paneAB), e0 = { move: [...(edit?.move || [0, 0, 0])], turn: [...(edit?.turn || [0, 0, 0])], size: [...(edit?.size || [1, 1])], ...(edit?.contour?.length ? { contour: edit.contour } : {}) };
   const s0 = samplesUnder(node, root, paneAB, e0, f), before = gapOf(s0.rim, body), fit0 = rimFit(s0, body);
+  const { sub: wide, ids: wideIds } = nearOf(body, s0.inner, SNAP_REACH + 0.25), through = (a, b) => throughBody(a.inner, b.inner, wide, wideIds);
   let e = e0, rigid = null, after = before, fit = fit0, conformed = 0, rounds = 0;
   for (; rounds < CONTOUR_ROUNDS; rounds++) {
     const s = samplesUnder(node, root, paneAB, e, f), left = CONTOUR_TURN - turnAngle(e.turn, e0.turn);
     const sn = snapPane(s, body, f.c.clone().add(new THREE.Vector3(...e.move)), { turn: Math.max(0, left) });
-    const er = sn ? snappedEdit(e, sn) : e;
+    let er = sn ? snappedEdit(e, sn) : e;
     if (!rounds) rigid = gapOf(samplesUnder(node, root, paneAB, er, f).rim, body);
-    const s2 = samplesUnder(node, root, paneAB, er, f), { sub, ids } = nearOf(body, [...s2.rim, ...s2.inner], CONTOUR_REACH + 0.02);
-    const c = solveContour(s2, sub, ids, er.contour || []);
-    const en = { ...er, contour: c.anchors.some(a => Math.abs(a[2]) >= 0.1) ? c.anchors : undefined };
-    if (!en.contour) delete en.contour;
-    const s3 = samplesUnder(node, root, paneAB, en, f), g = gapOf(s3.rim, body), fz = rimFit(s3, body);
+    const s2 = samplesUnder(node, root, paneAB, er, f), { sub, ids } = nearOf(body, [...s2.rim, ...s2.inner], CONTOUR_REACH + 0.02), old = er.contour || [];
+    const c = solveContour(s2, sub, ids, old);
+    let en = { ...er, contour: c.anchors }, s3 = samplesUnder(node, root, paneAB, en, f);
+    const flat = samplesUnder(node, root, paneAB, { ...er, contour: undefined }, f); // (the move and turn alone: the bend is measured from there)
+    for (let k = 0; k < 4; k++) { // (a vertex the bend leaves inside the body: pinned where it was)
+      const bad = through(flat, s3); if (!bad.length) break; // (the bend never carries a vertex into the body: Snap's move and turn keep Snap's own guard)
+      for (const i of bad) { const [ss, tt] = s2.innerSt[i]; en.contour.push([r3(ss), r3(tt), 0]); }
+      s3 = samplesUnder(node, root, paneAB, en, f);
+    }
+    if (through(flat, s3).length) { en = { ...er, contour: undefined }; s3 = samplesUnder(node, root, paneAB, en, f); }
+    if (!en.contour?.some(a2 => Math.abs(a2[2]) >= 0.1)) { en = { ...en }; delete en.contour; }
+    const g = gapOf(s3.rim, body), fz = rimFit(s3, body);
     const better = fz.max < fit.max - 0.0003 || g.gap < after.gap - 0.0003;
     if (rounds && !better) break;
-    e = en; after = g; fit = fz; conformed = Math.max(conformed, c.conformed);
+    e = en; after = g; fit = fz; conformed = en.contour ? Math.max(conformed, c.conformed) : conformed;
     if (fz.max <= CONTOUR_STANDOFF + 0.001) { rounds++; break; }
   }
   const moved = Math.hypot(...e.move.map((v, i) => v - e0.move[i])), turned = turnAngle(e.turn, e0.turn);
