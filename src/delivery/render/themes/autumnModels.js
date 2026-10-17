@@ -89,6 +89,93 @@ export const AUTUMN_OBSTACLES = {
 };
 
 // ---- the cargo ---------------------------------------------------------------------------------------------------
+// THE SYRUP'S JET (CHECKLIST 449): a ballistic ribbon of syrup from a spout's mouth at (sx, mouth) in `parent`: one tube of RINGS
+// rings deformed along p(s) = v0 s + g s^2 / 2 every frame (thick at the spout, tapering to a point), a pale glossy streak along
+// its top, then drops carrying on along the same arc to the ground and a few spiralling off it. All pooled: two tubes, DROPS +
+// SPIRALS spheres, written in place each frame, nothing made after the build. jet(t, rage, hop): rage the state's weight (it
+// grows out of the spout as the tin turns furious), hop the tin's bounce (the jet surges with it).
+const RINGS = 22, SIDES = 8, DROPS = 5, SPIRALS = 3;
+const syrupJet = (parent, material, dropGeo, sx, mouth) => {
+  const tube = () => {
+    const n = RINGS * SIDES, pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), index = [];
+    for (let i = 0; i + 1 < RINGS; i++) for (let k = 0; k < SIDES; k++) {
+      const a = i * SIDES + k, b = i * SIDES + (k + 1) % SIDES, c = a + SIDES, e = b + SIDES;
+      index.push(a, c, b, b, c, e);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+    geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3).setUsage(THREE.DynamicDrawUsage));
+    geo.setIndex(index);
+    return geo;
+  };
+  const body = put(parent, tube(), material, sx, mouth, 0);
+  const shine = put(parent, tube(), glow(0xffd9a0), sx, mouth, 0);
+  body.userData.syrupJet = true;
+  const drops = Array.from({ length: DROPS + SPIRALS }, () => put(parent, dropGeo, material));
+  const G = -5.2, VX = 0.55, VY = 1.2, VZ = 0.14, FLOOR = 0.03 - mouth;              // (FLOOR: the ground, from the mouth)
+  const v = new THREE.Vector3(), tan = new THREE.Vector3(), nUp = new THREE.Vector3(), bin = new THREE.Vector3(), lit = new THREE.Vector3(), q = new THREE.Vector3();
+  let vx = VX, vy = VY, vz = VZ, wob = 0, phase = 0;
+  const at = (s, out) => out.set(vx * s, vy * s + 0.5 * G * s * s, vz * s);       // the arc, from the mouth
+  const land = () => (vy + Math.sqrt(vy * vy + 2 * G * FLOOR)) / -G;                  // when it meets the ground
+  const write = (geo, sEnd, r0, lift, rk, stop) => {
+    const pos = geo.attributes.position.array, nor = geo.attributes.normal.array;
+    bin.set(vx, vy, vz).cross(q.set(0, G, 0)).normalize();                           // the arc's plane is fixed: v0 x g
+    if (bin.z < 0) bin.negate();
+    for (let i = 0; i < RINGS; i++) {
+      const u = i / (RINGS - 1), s = -0.04 + (sEnd + 0.04) * u;                      // (it starts 4 cm down the spout's throat)
+      at(Math.max(0, s), v);
+      if (s < 0) v.y += s * 0.5;
+      v.addScaledVector(bin, wob * u * u * Math.sin(u * 9 - phase));                  // a ripple travelling down it
+      tan.set(vx, vy + G * Math.max(0, s), vz).normalize();
+      nUp.crossVectors(bin, tan).normalize();
+      if (nUp.y < 0) nUp.negate();
+      const r = (u < stop ? r0 * (1 - 0.72 * u) * (1 + 0.12 * Math.sin(u * 14 - phase * 1.3)) : 0.0005) * rk; // (thick, tapering, beaded; a point at the end)
+      lit.copy(nUp).multiplyScalar(0.8).addScaledVector(bin, 0.6).normalize();
+      if (lift) v.addScaledVector(lit, r0 * (1 - 0.72 * u) * lift);
+      for (let k = 0; k < SIDES; k++) {
+        const a = (k / SIDES) * Math.PI * 2, cx = Math.cos(a), sn = Math.sin(a), o = (i * SIDES + k) * 3;
+        const nx = nUp.x * cx + bin.x * sn, ny = nUp.y * cx + bin.y * sn, nz = nUp.z * cx + bin.z * sn;
+        pos[o] = v.x + nx * r; pos[o + 1] = v.y + ny * r; pos[o + 2] = v.z + nz * r;
+        nor[o] = nx; nor[o + 1] = ny; nor[o + 2] = nz;
+      }
+    }
+    geo.attributes.position.needsUpdate = true;
+    geo.attributes.normal.needsUpdate = true;
+    geo.computeBoundingBox();
+    geo.computeBoundingSphere();
+  };
+  return (t, rage, hop) => {
+    const on = rage > 0.02;
+    body.visible = shine.visible = on;
+    for (const m of drops) m.visible = on;
+    if (!on) return;
+    const surge = 0.8 + 0.2 * hop;                                                    // it surges as the tin hops
+    vx = VX * surge * (0.6 + 0.4 * rage); vy = VY * surge * (0.55 + 0.45 * rage); vz = VZ * surge;
+    wob = 0.014 * rage; phase = t * 14;
+    const T = land(), sTube = T * 0.72 * rage;                                          // (the ribbon grows out of the spout as the state comes on)
+    const r0 = 0.044 * (0.85 + 0.15 * hop) * rage;
+    write(body.geometry, sTube, r0, 0, 1, 0.97);
+    write(shine.geometry, sTube, r0, 0.82, 0.3, 0.86); // (the same rings, so it rides on the ribbon's top)
+    // drops going on along the arc to the ground, smaller as they go
+    for (let k = 0; k < DROPS; k++) {
+      const u = (((t * 2.2 + k / DROPS) % 1) + 1) % 1, s = sTube + (T - sTube) * u, m = drops[k];
+      at(s, m.position).add(q.set(sx, mouth, 0));
+      show(m, rage * 0.022 * (1 - 0.5 * u) * (0.8 + 0.4 * ((k * 0.37) % 1)));
+      m.scale.y *= 1.35;                                                              // (drawn out as they fall)
+    }
+    // a few spiralling off the ribbon: let go at a point along it, they wind round it as they fall away
+    for (let k = 0; k < SPIRALS; k++) {
+      const age = (((t * 0.9 + k / SPIRALS) % 1) + 1) % 1, s = sTube * (0.35 + 0.22 * k), m = drops[DROPS + k];
+      at(s + age * 0.18, v);
+      const ang = age * 11 + k * 2.1, rr = 0.03 + age * 0.09;
+      v.y += Math.cos(ang) * rr - age * age * 0.25;
+      v.z += Math.sin(ang) * rr;
+      m.position.copy(v).add(q.set(sx, mouth, 0));
+      show(m, rage * 0.015 * (1 - age * 0.6));
+    }
+  };
+};
+
 const TRANSITION = 0.5;
 // puffs rising and fading
 const cycle = (list, t, rate, fn) => list.forEach((m, k) => fn(m, (((t * rate + k / list.length) % 1) + 1) % 1, k));
@@ -167,23 +254,28 @@ export const AUTUMN_CARGO = {
     });
   },
   // EVIL: a tin of maple syrup that is not the carrier's. Calm: sealed, a stolen tag on its handle, a sticky ring. Agitated: it
-  // sweats, drips run down its sides and a puddle spreads, the tin hums. Furious: the cap blows, syrup pours from the spout and
-  // over the sides, strands drip off the handle, the whole tin shakes
+  // sweats, syrup oozes from under the cap and beads down the spout, drips run off the shoulder and a puddle spreads, the tin hums.
+  // Furious: the cap blows and a JET of syrup shoots from the spout in an arc (syrupJet), surging as the tin hops; it pools round
+  // the spout, runs down the sides, strands drip off the shoulder, the whole tin shakes. (CHECKLIST 449: the shoulder stands 9 mm
+  // proud of the tin's top and the labels 7 mm off its faces, so no two surfaces share a plane.)
   syrup: () => {
     const g = new THREE.Group(), all = sub(g);
     const W = 0.46, H = 0.62, D = 0.28;
-    const tin = lambert(0xc23b1c), trim = lambert(0xe6b34a), amber = glow(0xe08a14);
+    const tin = lambert(0xc23b1c), trim = lambert(0xe6b34a);
+    const amber = new THREE.MeshPhongMaterial({ color: 0xb8640f, emissive: 0x3a1a03, specular: 0xffe2a8, shininess: 80 });
     const front = label((ctx, w, h) => {
       ctx.fillStyle = '#f3d8a0'; ctx.fillRect(10, 24, w - 20, h - 48);
       mapleLeaf(ctx, w / 2, h * 0.42, 34, '#c23b1c');
       ctx.fillStyle = '#7a2a10'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('PURE MAPLE', w / 2, h * 0.8);
     }, 0xc23b1c);
+    const TOP = H + 0.039;                                                               // the shoulder's top: the tin's own (H + 0.03) buried 9 mm under it
     put(all, box(W, H, D), tin, 0, H / 2 + 0.03, 0);
-    put(all, box(W + 0.02, 0.05, D + 0.02), trim, 0, 0.055, 0);                           // the base...
-    put(all, box(W + 0.02, 0.05, D + 0.02), trim, 0, H + 0.005, 0);                       // ...and the shoulder
-    for (const s of [-1, 1]) { const f = put(all, new THREE.PlaneGeometry(0.36, 0.36), front, 0, 0.33, s * (D / 2 + 0.003)); f.rotation.y = s < 0 ? Math.PI : 0; }
-    const cap = sub(all, 0.13, H + 0.03, 0);                                             // the spout and its cap
+    put(all, box(W + 0.02, 0.05, D + 0.02), trim, 0, 0.049, 0);                          // the base (6 mm under the tin's bottom)...
+    put(all, box(W + 0.02, 0.05, D + 0.02), trim, 0, TOP - 0.025, 0);                    // ...and the shoulder, over the tin's top
+    for (const s of [-1, 1]) { const f = put(all, new THREE.PlaneGeometry(0.36, 0.36), front, 0, 0.33, s * (D / 2 + 0.007)); f.rotation.y = s < 0 ? Math.PI : 0; }
+    const SX = 0.13, MOUTH = TOP + 0.1;                                                  // the spout (its mouth's height in `all`)
+    const cap = sub(all, SX, TOP, 0);                                                    // the spout and its cap
     put(cap, cyl(0.045, 0.05, 0.1, 10), trim, 0, 0.05, 0);
     const lid = sub(cap, 0, 0.1, 0);
     put(lid, cyl(0.055, 0.055, 0.04, 10), lambert(0x2f3a8a), 0, 0.02, 0);
@@ -191,26 +283,36 @@ export const AUTUMN_CARGO = {
     put(handle, new THREE.TorusGeometry(0.1, 0.02, 6, 12, Math.PI), lambert(0x4a4a50), 0, 0.01, 0);
     const tag = sub(handle, 0.04, 0.03, 0.02);                                          // a paper tag on a string: STOLEN
     put(tag, box(0.1, 0.07, 0.006), label((ctx, w, h) => { ctx.fillStyle = '#d81e1e'; ctx.font = 'bold 22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('STOLEN', w / 2, h / 2); }, 0xfbf7ea, 128, 64), 0, -0.04, 0);
-    const puddle = put(all, new THREE.CircleGeometry(0.3, 18), glow(0xe08a14, { transparent: true, opacity: 0.9, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), 0, 0.012, 0);
+    const puddle = put(all, new THREE.CircleGeometry(0.3, 18), glow(0xa85a10, { transparent: true, opacity: 0.9, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), 0, 0.012, 0);
     puddle.rotation.x = -FLAT;
-    const drips = [-0.17, 0.0, 0.14].map(x => put(all, box(0.04, 1, 0.012), amber, x, H, D / 2 + 0.012));
-    const back = [-0.12, 0.1].map(x => put(all, box(0.04, 1, 0.012), amber, x, H, -D / 2 - 0.012));
-    const stream = put(all, cyl(0.03, 0.045, 1, 8), amber, 0.13, H, 0);
-    const blobs = [0, 1, 2, 3].map(() => put(all, sphere(0.04, 6, 5), amber));
+    // runs off the shoulder's lip (13 mm off the tin's face, 6 mm clear of the label), down the front, back and the spout's side
+    const runs = (xs, z) => xs.map(x => put(all, box(0.04, 1, 0.012), amber, x, H, z));
+    const drips = runs([-0.17, 0.0, 0.14], D / 2 + 0.019);
+    const back = runs([-0.12, 0.1], -D / 2 - 0.019);
+    const side = put(all, box(0.012, 1, 0.04), amber, W / 2 + 0.019, H, 0.04);
+    const dropGeo = sphere(1, 8, 6);
+    // what pools round the spout (a flat dome, never a disc on the shoulder), the ooze under the cap and a bead running down the spout
+    const pool = put(all, dropGeo, amber, SX, TOP, 0.0);
+    const collar = put(all, dropGeo, amber, SX, MOUTH - 0.004, 0);
+    const bead = put(all, dropGeo, amber);
+    const jet = syrupJet(all, amber, dropGeo, SX, MOUTH);
     return stated(g, (t, up, rage) => {
       const calm = 1 - Math.min(1, up + rage), out = clamp01(up + rage);
-      all.position.set(rage * jitter(t, 2) * 0.02, rage * Math.abs(Math.sin(t * 9)) * 0.03, 0);
+      const hop = Math.abs(Math.sin(t * 9));
+      all.position.set(rage * jitter(t, 2) * 0.02, rage * hop * 0.03, 0);
       all.rotation.z = out * Math.sin(t * 5) * 0.015 + rage * Math.sin(t * 11) * 0.06;
-      lid.position.set(rage * (0.1 + Math.sin(t * 2.6) * 0.04), 0.1 + rage * (0.25 + Math.abs(Math.sin(t * 3.4)) * 0.3), 0);
+      lid.position.set(-rage * (0.12 + Math.sin(t * 2.6) * 0.03), 0.1 + rage * (0.3 + Math.abs(Math.sin(t * 3.4)) * 0.25), -rage * 0.06); // (blown up and back, clear of the jet)
       lid.rotation.set(rage * t * 6, 0, rage * 0.6);
       puddle.scale.setScalar(Math.max(0.001, 0.55 + up * 0.5 + rage * 1.0));
-      drips.forEach((d, k) => { const len = (up * (0.14 + k * 0.05) + rage * (0.3 + k * 0.07)) * (0.6 + 0.4 * Math.sin(t * 1.4 + k)); d.scale.y = Math.max(0.001, len); d.position.y = H - len / 2; });
-      back.forEach((d, k) => { const len = rage * (0.25 + k * 0.1); d.scale.y = Math.max(0.001, len); d.position.y = H - len / 2; });
-      const flow = rage * (0.6 + 0.4 * Math.abs(Math.sin(t * 4))); // the stream from the spout, arcing down to the side
-      stream.scale.set(1, Math.max(0.001, flow * 0.45), 1);
-      stream.position.set(0.13 + flow * 0.05, H + 0.05 + flow * 0.12, 0);
-      stream.rotation.z = -0.5;
-      cycle(blobs, t, 1.8, (b, u, k) => { show(b, rage); b.position.set(0.16 + u * 0.28, H + 0.2 - u * u * (H + 0.18) - 0.0, (k - 1.5) * 0.04); });
+      drips.forEach((d, k) => { const len = (up * (0.14 + k * 0.05) + rage * (0.3 + k * 0.07)) * (0.6 + 0.4 * Math.sin(t * 1.4 + k)); d.visible = len > 0.004; d.scale.y = Math.max(0.001, len); d.position.y = TOP - 0.01 - len / 2; });
+      back.forEach((d, k) => { const len = rage * (0.25 + k * 0.1); d.visible = len > 0.004; d.scale.y = Math.max(0.001, len); d.position.y = TOP - 0.01 - len / 2; });
+      { const len = rage * (0.28 + 0.06 * Math.sin(t * 2.1)) + up * 0.06; side.visible = len > 0.004; side.scale.y = Math.max(0.001, len); side.position.y = TOP - 0.01 - len / 2; }
+      const p = 0.085 * (0.35 * up + rage * (0.9 + 0.1 * hop));
+      pool.scale.set(Math.max(0.001, p), Math.max(0.001, p * 0.16), Math.max(0.001, p));
+      const c = 0.058 * clamp01(up * 1.2 + rage);
+      collar.scale.set(Math.max(0.001, c), Math.max(0.001, c * 0.35), Math.max(0.001, c));
+      cycle([bead], t, 0.45, (b, u) => { show(b, up * 0.018 * (1 - 0.4 * u)); b.position.set(SX + 0.049 - u * 0.004, MOUTH - 0.01 - u * 0.088, 0.02); });
+      jet(t, rage, hop);
       tag.rotation.z = Math.sin(t * (1.5 + rage * 6)) * (0.2 + rage * 0.3);
       puddle.material.opacity = 0.55 + out * 0.4 + calm * 0.0;
     });
