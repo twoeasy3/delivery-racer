@@ -80,6 +80,7 @@ const makeTicketRolls = () => {
 // sprung open and swings, the cage hops, one rat is half out of the door and the others run round
 const makeRats = () => {
   const group = new THREE.Group(), all = sub(group);
+  all.name = 'cage'; // (the names are the parts render/cargoRules.js checks)
   const wire = lambert(0x9aa0a8), tray = lambert(0x4a4f57), fur = lambert(0x8c8c90), pale = lambert(0xc8c4c0), pink = lambert(0xe8a0a8), bead = lambert(0x111111);
   part(all, box(0.86, 0.08, 0.56), tray, 0, 0.04, 0);
   const W = 0.8, D = 0.5, H = 0.55;

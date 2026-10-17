@@ -80,62 +80,83 @@ const makeBubbleTea = () => {
 };
 
 // ---- a pet-shop hamster ball (Evil): a clear ball on a cardboard ring, a golden hamster inside with a seed in its paws, a
-// round hatch on top. Calm: still, nibbling. Agitated: it runs, the ball spins on the spot and rocks. Furious: the ball bounces
-// and spins fast, the hatch pops off and tumbles above it, the hamster hangs half out of the hole
+// round yellow hatch over the hole in its top. Calm: still, nibbling on the ball's floor. Agitated: it runs on the floor, the
+// ball spins on the spot and rocks. Furious: the ball bounces and spins fast, the hatch pops off and tumbles above it, the
+// hamster stands up under the hole with its head out of it. The parts are named for render/cargoRules.js
+const R = 0.42, HOLE = 0.145; // the ball's radius, and its hole's (the hatch covers it)
 const makeHamsterBall = () => {
   const group = new THREE.Group(), all = sub(group);
   part(all, cyl(0.36, 0.4, 0.08, 16), lambert(0xc8a070), 0, 0.04, 0);                       // the cardboard ring it sits on
   const ball = sub(all, 0, 0.5, 0);    // (it rocks)
-  const spinner = sub(ball);           // (and spins about its upright axis inside the rocking, so the hatch stays at the top of the ball and the hole keeps its place)
-  const shell = part(spinner, sphere(0.42, 18, 12), lambert(0xd8f0ff, { transparent: true, opacity: 0.28 }));
-  // (the ball's lines: three rings, so the spin shows)
-  for (const r of [0, 1, 2]) part(spinner, new THREE.TorusGeometry(0.42, 0.012, 5, 28), lambert(0x7fb8d8), 0, 0, 0, r === 0 ? Math.PI / 2 : 0, r === 2 ? Math.PI / 2 : 0, 0);
-  const hatch = part(ball, cyl(0.12, 0.12, 0.03, 14), lambert(0xf2c21d), 0, 0.42, 0);
-  const vents = [0, 1, 2, 3].map(k => part(spinner, cyl(0.025, 0.025, 0.02, 6), lambert(0x1a1b1e), Math.cos(k * 1.57) * 0.2, 0.37, Math.sin(k * 1.57) * 0.2));
+  ball.name = 'ball';
+  const spinner = sub(ball);           // (and spins about its upright axis inside the rocking, so the hole keeps its place)
+  const top = Math.asin(HOLE / R);     // (the shell is open over the top: a real hole for the hatch and the head)
+  const shell = part(spinner, new THREE.SphereGeometry(R, 22, 14, 0, Math.PI * 2, top, Math.PI - top), lambert(0xd8f0ff, { transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }));
+  shell.name = 'shell';
+  // the ball's lines, so the spin shows: the equator and two great circles tilted 50 degrees, clear of the hole
+  const rings = sub(spinner); rings.name = 'rings';
+  const ringM = lambert(0x7fb8d8);
+  part(rings, new THREE.TorusGeometry(R + 0.006, 0.006, 5, 32), ringM, 0, 0, 0, Math.PI / 2, 0, 0); // (painted on the outside)
+  for (const s of [-1, 1]) part(rings, new THREE.TorusGeometry(R + 0.006, 0.006, 5, 32), ringM, 0, 0, 0, Math.PI / 2 + s * 0.87, 0, 0).rotation.order = 'XYZ';
+  const rim = part(ball, new THREE.TorusGeometry(HOLE, 0.012, 6, 20), lambert(0xd8a810), 0, Math.sqrt(R * R - HOLE * HOLE), 0, Math.PI / 2, 0, 0); // (the hole's yellow collar)
+  rim.name = 'rim';
+  const hatch = part(ball, cyl(HOLE + 0.012, HOLE + 0.012, 0.03, 18), lambert(0xf2c21d), 0, Math.sqrt(R * R - HOLE * HOLE) + 0.03, 0); // (sits on the collar)
+  hatch.name = 'hatch';
+  const vents = [0, 1, 2, 3].map(k => { // (air holes round the hatch, each a dark stud set in the shell, along its normal)
+    const n = new THREE.Vector3(Math.cos(k * 1.57 + 0.78) * 0.5, 0.86, Math.sin(k * 1.57 + 0.78) * 0.5).normalize();
+    const v = part(spinner, cyl(0.022, 0.022, 0.012, 8), lambert(0x1a1b1e), n.x * R, n.y * R, n.z * R);
+    v.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), n);
+    return v;
+  });
   // the hamster: a golden egg of a body, a paler belly, two round ears, black bead eyes, a pink nose, little paws, a stub tail
-  const ham = sub(all, 0, 0.3, 0); // (NOT in the ball: the ball spins and rocks, the hamster stays on its feet and follows the hole only when it climbs out)
+  const perch = sub(all, 0, 0.5, 0); // (at the ball's middle, NOT in the ball: the ball spins round it; it rocks with the ball only when furious)
+  const ham = sub(perch, 0, -0.2, 0);
+  ham.name = 'hamster';
   const fur = lambert(0xe0a048), pale = lambert(0xf4e2c0), bead = lambert(0x111111);
   const bodyM = part(ham, sphere(0.2, 14, 10), fur, 0, 0.14, 0);
-  bodyM.scale.set(1, 0.85, 1.2);
+  bodyM.scale.set(0.95, 0.85, 1.15);
   part(ham, sphere(0.15, 12, 8), pale, 0, 0.09, 0.06).scale.set(0.9, 0.7, 1);
   const head = sub(ham, 0, 0.26, 0.17);
   part(head, sphere(0.13, 12, 9), fur);
-  for (const x of [-1, 1]) part(head, sphere(0.045, 8, 6), fur, x * 0.09, 0.1, -0.02);
-  for (const x of [-1, 1]) part(head, sphere(0.03, 8, 6), lambert(0xf0b0b0), x * 0.09, 0.1, -0.01);
+  const ears = [-1, 1].map(x => [part(head, sphere(0.045, 8, 6), fur, x * 0.09, 0.1, -0.02), part(head, sphere(0.03, 8, 6), lambert(0xf0b0b0), x * 0.09, 0.1, -0.01), x]);
   for (const x of [-1, 1]) part(head, sphere(0.022, 6, 5), bead, x * 0.055, 0.03, 0.11);
   part(head, sphere(0.025, 6, 5), lambert(0xf08aa8), 0, -0.02, 0.13);
   const seed = part(head, sphere(0.03, 6, 5), lambert(0x6b4a2a), 0, -0.07, 0.12);
   seed.scale.set(0.7, 1, 1.4);
   const paws = [-1, 1].map(x => part(ham, sphere(0.035, 6, 5), pale, x * 0.07, 0.12, 0.2));
-  const feet = [-1, 1].map(x => part(ham, sphere(0.045, 6, 5), pale, x * 0.09, 0.0, 0.05));
-  part(ham, sphere(0.03, 6, 5), pale, 0, 0.1, -0.22);                                       // the tail
-  return stated(group, (t, up, rage) => {
+  const feet = [-1, 1].map(x => { const f = part(ham, sphere(0.045, 6, 5), pale, x * 0.09, 0.0, 0.05); f.name = 'foot'; return f; });
+  part(ham, sphere(0.03, 6, 5), pale, 0, 0.1, -0.21);                                       // the tail
+  let spun = 0;
+  const FLOOR = 0.5 - R + 0.066; // (the hamster's origin when it stands on the ball's floor: its feet on the shell)
+  return stated(group, (t, up, rage, dt) => {
     // the ball: still, then spinning on the spot and rocking, then bouncing and spinning fast
-    const spin = up * 2.2 + rage * 9;
-    spinner.rotation.y += spin * 0.016; // (spins on the spot, about its upright axis: the hatch stays on top)
+    spun += (up * 2.2 + rage * 9) * dt;
+    spinner.rotation.y = spun;
     ball.rotation.z = up * Math.sin(t * 7) * 0.12 + rage * Math.sin(t * 11) * 0.25;
     ball.position.y = 0.5 + rage * Math.abs(Math.sin(t * 6)) * 0.35;
     all.position.x = rage * jitter(t, 2) * 0.04;
     shell.material.opacity = 0.28 + rage * 0.1;
-    // the hamster stays on its feet inside the ball (the ball turns round it); furious: it climbs under the hatch's hole and its
-    // head comes out of it (the hole is where the top of the ball is, rocked with it)
-    const rz = ball.rotation.z, hx = -0.42 * Math.sin(rz), hy = ball.position.y + 0.42 * Math.cos(rz);
+    // the hamster stands on the ball's floor; furious: it stands up under the hole (pitched up, a little smaller) with its head
+    // out of it (the hole is where the top of the ball is, rocked with it)
+    perch.position.y = ball.position.y;
+    perch.rotation.z = ball.rotation.z * Math.min(1, rage * 2.5); // (furious: under the hole, wherever the rocking puts it)
     const run = up + rage;
-    // furious: it stands up under the hole (pitched up, a little smaller so its body clears the shell) with its head poking out of it
-    const pitch = -1.1 * rage, sc = 1 - 0.28 * rage, cp = Math.cos(pitch), sp = Math.sin(pitch);
+    const rear = Math.min(1, rage * 1.6), climb = rage * rage * rage; // (it rears up and shrinks first, then climbs into the hole)
+    const pitch = -0.66 * rear, sc = 1 - 0.28 * rear, cp = Math.cos(pitch), sp = Math.sin(pitch), neck = 0.26 + 0.1 * rear; // (it stretches its neck up through the collar)
+    head.position.y = neck;
     ham.scale.setScalar(sc);
-    ham.rotation.set(pitch, 0, 0);
-    ham.position.set(rage * hx * 0.9, (ball.position.y - 0.2) * (1 - rage) + rage * (hy - 0.04 - sc * (0.26 * cp - 0.17 * sp)), -sc * (0.26 * sp + 0.17 * cp) * rage);
-    ham.rotation.y = Math.sin(t * 2) * 0.3 * (1 - run) + rage * Math.sin(t * 9) * 0.3;
+    ham.rotation.set(pitch, Math.sin(t * 2) * 0.3 * (1 - run) + climb * Math.sin(t * 9) * 0.2, 0, 'YXZ'); // (looking about once it is up)
+    ham.position.set(0, (FLOOR - 0.5) * (1 - climb) + climb * (R + 0.03 - sc * (neck * cp - 0.17 * sp)), -sc * (neck * sp + 0.17 * cp) * rear); // (its head over the hole as soon as it rears) // (its head's middle in the hole)
     head.rotation.x = -0.2 + Math.sin(t * 9) * 0.06 * (1 - run) + run * Math.sin(t * 14) * 0.15; // nibbling, then looking about
     head.rotation.y = Math.sin(t * 1.3) * 0.25 * (1 - run);
     seed.visible = rage < 0.5;
-    paws.forEach((p, i) => { p.position.y = 0.12 + run * Math.abs(Math.sin(t * 16 + i * Math.PI)) * 0.06; p.position.z = 0.2 + run * Math.sin(t * 16 + i * Math.PI) * 0.05; });
-    feet.forEach((f, i) => { f.position.z = 0.05 + run * Math.sin(t * 16 + i * Math.PI) * 0.08; });
-    // the hatch: on, rattling, then off and tumbling above the ball
-    hatch.position.set(rage * 0.3, 0.42 + up * Math.abs(Math.sin(t * 13)) * 0.03 + rage * (0.5 + Math.abs(Math.sin(t * 5)) * 0.2), rage * 0.1);
+    for (const [ear, inner, x] of ears) { ear.position.x = inner.position.x = x * (0.09 - 0.035 * rage); ear.position.z = -0.02; inner.position.z = ear.position.z + 0.01; } // (furious: its ears flat back, to squeeze through)
+    paws.forEach((p, i) => { p.position.y = 0.12 + up * Math.abs(Math.sin(t * 16 + i * Math.PI)) * 0.06; p.position.z = 0.2 + up * Math.sin(t * 16 + i * Math.PI) * 0.05 - rage * 0.03; }); // (running; furious: held to its chest)
+    feet.forEach((f, i) => { const z = 0.05 + up * Math.sin(t * 16 + i * Math.PI) * 0.07; f.position.z = z; f.position.y = (1 - rage) * (Math.sqrt(R * R - 0.0081 - 0.0025) - Math.sqrt(R * R - 0.0081 - z * z)); }); // (a stride, the foot on the ball's curved floor)
+    // the hatch: on, rattling, then off and tumbling above the ball, off to the side of the head
+    hatch.position.set(rage * 0.32, Math.sqrt(R * R - HOLE * HOLE) + 0.03 + up * Math.abs(Math.sin(t * 13)) * 0.02 + rage * (0.5 + Math.abs(Math.sin(t * 5)) * 0.2), rage * -0.12);
     hatch.rotation.set(rage * t * 6, 0, rage * (0.6 + Math.sin(t * 3) * 0.2));
-    for (const [k, v] of vents.entries()) v.scale.setScalar(1 + rage * (1 + Math.sin(t * 8 + k)) * 0.3);
+    for (const [k, v] of vents.entries()) v.scale.setScalar(1 + rage * (1 + Math.sin(t * 8 + k)) * 0.15);
   });
 };
 
