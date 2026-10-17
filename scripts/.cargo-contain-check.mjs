@@ -81,6 +81,13 @@ const checkRules = (id, rules) => {
   const found = new Map(); // what failed -> { n, first }
   const fail = (key, at, detail) => { const f = found.get(key); if (!f) { found.set(key, { n: 1, first: at }); if (verbose) console.log('    ' + id + ': ' + key + ' ' + at + ': ' + detail); } else f.n++; };
   const inState = (r, state) => !r.states || !stated || r.states.includes(state); // (a rule for some states holds once the item has settled in one)
+  { // (a rule whose part names nothing in the model would hold for nothing: that is a failure)
+    const m = makeCargoModel(id);
+    for (const r of [...(rules.keepOut || []), ...(rules.inside || []), ...(rules.anchors || [])]) for (const sel of [r.a, r.b, r.part, r.to, r.of].filter(Boolean)) {
+      if (sel.includes('$')) continue;
+      if (!instances(m, sel).length && !(() => { let hit = false; const re = new RegExp('^(?:' + sel + ')$'); m.traverse(o => { if (re.test(o.name)) hit = true; }); return hit; })()) found.set('a rule names "' + sel + '", which is no part of the model', { n: 1, first: '-' });
+    }
+  }
   play(id, rules.runs || (stated ? RUNS : IDLE), (m, at, state) => {
     for (const r of rules.keepOut || []) {
       if (!inState(r, state)) continue;
@@ -117,10 +124,10 @@ const checkRules = (id, rules) => {
         }
         continue;
       }
-      const to = instances(m, r.to).flatMap(i => i.meshes.filter(visibleUp).map(hull));
-      for (const p of instances(m, r.part)) for (const o of p.meshes.filter(visibleUp)) {
-        const x = hull(o);
-        if (!to.some(y => y.o !== o && near(x.b, y.b, gap) && overlaps(x.p, y.p, gap))) fail('anchors ' + p.node.name + ' floats off ' + r.to, at, where(o));
+      const to = instances(m, r.to).flatMap(i => i.meshes.filter(visibleUp).map(h => ({ ...hull(h), node: i.node })));
+      for (const p of instances(m, r.part)) { // (an instance rests on something not its own: one of its meshes within maxGap of `to`)
+        const own = p.meshes.filter(visibleUp).map(hull);
+        if (!own.some(x => to.some(y => y.node !== p.node && near(x.b, y.b, gap) && overlaps(x.p, y.p, gap)))) fail('anchors ' + p.node.name + ' floats off ' + r.to, at, where(p.meshes[0]));
       }
     }
   });

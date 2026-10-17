@@ -9,7 +9,8 @@
 //             the node `of`, by `margin`; shape { sphere: r, centre } | { cone: { y0, y1, r0, r1 } } (upright) | { box: { min,
 //             max } }; exits [{ at: [x, y, z], r }]: where it may be outside (a hole, a doorway), in the same frame; only:
 //             a shape, just the vertices in it are held (the band of a collar a head pokes through)
-//   anchors:  [{ part, to, maxGap = 0.004, states }]   every mesh of the part within maxGap of `to` (convex; nothing floats),
+//   anchors:  [{ part, to, maxGap = 0.004, states }]   each instance of the part within maxGap of `to` (convex), not of
+//             itself: it rests on something (nothing floats; name a loose piece apart to hold it on its own),
 //             or [{ part, of, shape, maxGap }]: within maxGap of that shape's surface (feet on the floor of a ball)
 //   zfight:   { allow: n, why }                      flicker-class pairs known and accepted (0 if absent)
 //   static:   'why'                                  no rules needed (no part moves in or on another): z-fight only
@@ -36,6 +37,12 @@ export const CARGO_RULES = {
   // the slats and the box's ends; now 10 mm proud)
   winecase: {
     keepOut: [{ a: 'bottle\\d', b: 'bottle\\d' }],
+  },
+  // Crate of Horseshoes: flat shoes in two piles on the straw and two stood on their heels against the back, none through
+  // another or the crate, each resting on the straw, a shoe below or the crate; the lucky one nailed to the front
+  horseshoes: {
+    keepOut: [{ a: '(?:shoe|stood)\\d', b: '(?:shoe|stood)\\d', min: 0.0005 }, { a: '(?:shoe|stood)\\d|lucky', b: 'crate' }],
+    anchors: [{ part: '(?:shoe|stood)\\d', to: 'straw|crate|(?:shoe|stood)\\d', maxGap: 0.003 }, { part: 'lucky', to: 'nail', maxGap: 0.003 }, { part: 'nail', to: 'crate', maxGap: 0.003 }],
   },
   // Pet-Shop Hamster Ball: the hamster inside the shell but for its head out of the hole (furious), off the collar, the
   // rings and the hatch; on its feet on the ball's floor when calm or agitated
