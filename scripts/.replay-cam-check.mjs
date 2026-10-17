@@ -181,8 +181,8 @@ else {
         const unfaded = hits.filter(x => F.fadesAway(x.object, x.instanceId) && F.fadeOf(x.object, x.instanceId) <= 0.9).length, solid = hits.filter(x => !F.fadesAway(x.object, x.instanceId)).length;
         // nothing faded off the line: each faded cluster's box within the beam (+ 0.25) of the line or the ball round the camera
         const C = F.fadeClusters(), B = F.FADE_SIZES;
-        const segBox = (o, r) => { let t0 = 0, t1 = 1; const P0 = cam.toArray(), D = at.clone().sub(cam).toArray(); for (let k = 0; k < 3; k++) { const lo = C.box[o + k] - r, hi = C.box[o + 3 + k] + r; if (Math.abs(D[k]) < 1e-9) { if (P0[k] < lo || P0[k] > hi) return false; continue; } let a = (lo - P0[k]) / D[k], c = (hi - P0[k]) / D[k]; if (a > c) [a, c] = [c, a]; t0 = Math.max(t0, a); t1 = Math.min(t1, c); if (t0 > t1) return false; } return true; };
-        const ball = (o, r) => { const q = cam.toArray(); let s = 0; for (let k = 0; k < 3; k++) { const e = Math.max(C.box[o + k] - q[k], 0, q[k] - C.box[o + 3 + k]); s += e * e; } return s <= r * r; };
+        const segBox = (o, r) => { let t0 = 0, t1 = 1; const P0 = [cam.x * flip, cam.y, cam.z], D = [(at.x - cam.x) * flip, at.y - cam.y, at.z - cam.z]; /* (the clusters' boxes are in the game's terms: x not mirrored) */ for (let k = 0; k < 3; k++) { const lo = C.box[o + k] - r, hi = C.box[o + 3 + k] + r; if (Math.abs(D[k]) < 1e-9) { if (P0[k] < lo || P0[k] > hi) return false; continue; } let a = (lo - P0[k]) / D[k], c = (hi - P0[k]) / D[k]; if (a > c) [a, c] = [c, a]; t0 = Math.max(t0, a); t1 = Math.min(t1, c); if (t0 > t1) return false; } return true; };
+        const ball = (o, r) => { const q = [cam.x * flip, cam.y, cam.z]; let s = 0; for (let k = 0; k < 3; k++) { const e = Math.max(C.box[o + k] - q[k], 0, q[k] - C.box[o + 3 + k]); s += e * e; } return s <= r * r; };
         let faded = 0, far = 0;
         C.fade.forEach((f, c) => { if (f <= 0) return; faded++; if (!segBox(c * 6, B.beam + 0.25) && !ball(c * 6, B.near + 0.25)) far++; });
         const swappedNear = [].concat(obj?.material || []).some(m => m.userData.fadeOf);

@@ -32,12 +32,14 @@ const CELL = 12;        // m: the grid's squares
 const BEAM = 0.9;       // m either side of the line from the camera to the car kept clear
 const NEAR = 2.5;       // m round the camera kept clear
 const KEEP = 1.0;       // m of the line at the car's end not tested (what the car is right up against stays)
-const MAX_SIZE = 60;    // m across (x or z): bigger than this is never faded
+const MAX_SIZE = 120;   // m across (x or z): bigger than this is never faded (a city block's podium is up to ~100 m)
 const LOW = 0.35;       // m tall: anything lower never stands in a camera's way over the car
 const CLUSTER_MAX = 40; // m across: a cluster no bigger
 const TOUCH = 0.35;     // m: how close two things are to be one (the cluster test)
 const LEVELS = 16;      // steps of a loose object's dissolve (the dither has 16)
+const HOLD = Math.min(1, Math.max(0, Number(new URLSearchParams(location.search).get('fadehold')) || 1)); // (?fadehold=0.5: the fade held part way, for a still of the dissolve)
 const AIM = 1.1;        // m up the car the line ends (where the orbit camera looks)
+const AIM_LOW = 0.25;   // m up the car the second line ends (its sills)
 
 export const FADE_SIZES = { beam: BEAM, near: NEAR, time: FADE_TIME, cell: CELL, maxSize: MAX_SIZE };
 // what the check and the console can read (render-only stats)
@@ -94,6 +96,7 @@ let built = null; // what it was built for: [children, first, last]
 let nU = 0, uBox = new Float32Array(0), uMesh = new Int32Array(0), uInst = new Int32Array(0), uCluster = new Int32Array(0);
 const meshes = [];       // the instanced meshes (uMesh >= 0 indexes it)
 const loose = [];        // the loose objects: [ [mesh, original material(s)] ... ] each (uMesh = -1, uInst indexes it)
+// (every box in levelGroup's own terms, the game's: x not mirrored)
 // clusters: a box each, their members (CSR), their fade and target
 let nC = 0, cBox = new Float32Array(0), cStart = new Int32Array(0), cMembers = new Int32Array(0), cFade = new Float32Array(0), cStamp = new Uint32Array(0), cHit = new Uint32Array(0);
 let cActive = new Int32Array(0), cIsActive = new Uint8Array(0), nActive = 0;
@@ -105,7 +108,7 @@ const meshLo = [], meshHi = []; // per instanced mesh: the instance range writte
 let stamp = 0;
 
 const key = (i, j) => i * 65536 + j;
-const box = new THREE.Box3(), MID = [0, 0, 0], HALF = [0, 0, 0], LO = [0, 0, 0], HI = [0, 0, 0];
+const toLocal = new THREE.Matrix4(), box = new THREE.Box3(), MID = [0, 0, 0], HALF = [0, 0, 0], LO = [0, 0, 0], HI = [0, 0, 0];
 
 // put back everything faded (before an index is dropped, and when it is over)
 const restoreAll = () => {
@@ -121,6 +124,7 @@ const build = () => {
   copies.clear();
   meshes.length = 0; loose.length = 0; meshFaded.length = 0; meshLo.length = 0; meshHi.length = 0;
   levelGroup.updateMatrixWorld(true);
+  toLocal.copy(levelGroup.matrixWorld).invert();
   for (const c of levelGroup.children) { delete c.userData.fadeMesh; delete c.userData.fadeLoose; }
   const boxes = [], mIdx = [], iIdx = [];
   let big = 0;
@@ -141,7 +145,7 @@ const build = () => {
       if (!c.boundingSphere) c.computeBoundingSphere();
       const mi = meshes.length;
       let any = false;
-      const g = c.geometry.boundingBox, w = c.matrixWorld.elements, a = c.instanceMatrix.array;
+      const g = c.geometry.boundingBox, w = c.matrix.elements, a = c.instanceMatrix.array; // (in levelGroup's own terms, the game's: not mirrored)
       const gc = [(g.min.x + g.max.x) / 2, (g.min.y + g.max.y) / 2, (g.min.z + g.max.z) / 2], ge = [(g.max.x - g.min.x) / 2, (g.max.y - g.min.y) / 2, (g.max.z - g.min.z) / 2];
       for (let i = 0; i < c.count; i++) {
         // (the box of the geometry's box turned and scaled: its middle moved, its half-sizes the sum of |matrix| x half-sizes; the
@@ -165,7 +169,7 @@ const build = () => {
     const parts = [];
     c.traverse((o) => { if (o.isMesh && !o.isInstancedMesh && [].concat(o.material).every(fadeable)) parts.push(o, o.material); });
     if (!parts.length) continue;
-    box.setFromObject(c);
+    box.setFromObject(c).applyMatrix4(toLocal); // (world, then back into levelGroup's own terms)
     if (take(box, -1, loose.length)) { loose.push(parts); c.userData.fadeLoose = loose.length - 1; }
   }
   nU = mIdx.length;
@@ -201,7 +205,9 @@ const build = () => {
     if (a === b) continue;
     const A = a * 6, B = b * 6;
     const x0 = Math.min(ext[A], ext[B]), z0 = Math.min(ext[A + 2], ext[B + 2]), x1 = Math.max(ext[A + 3], ext[B + 3]), z1 = Math.max(ext[A + 5], ext[B + 5]);
-    if (x1 - x0 > CLUSTER_MAX || z1 - z0 > CLUSTER_MAX) continue;
+    // (no bigger than CLUSTER_MAX, or than the host's own cluster was: a big block keeps the windows on its face)
+    const cap = Math.max(CLUSTER_MAX, ext[B + 3] - ext[B], ext[B + 5] - ext[B + 2]) + 2 * TOUCH;
+    if (x1 - x0 > cap || z1 - z0 > cap) continue;
     parent[a] = b;
     for (let k = 0; k < 3; k++) { ext[B + k] = Math.min(ext[A + k], ext[B + k]); ext[B + 3 + k] = Math.max(ext[A + 3 + k], ext[B + 3 + k]); }
   }
@@ -310,7 +316,7 @@ const slab = (b, o, r) => {
 
 // every frame, once the camera is placed (main.js): on while the orbit camera (render/orbit.js) or photo mode (render/photo.js)
 // has the camera. Off (the chase camera back): what is faded comes back in FADE_TIME, then nothing runs at all
-const car = new THREE.Vector3();
+const car = new THREE.Vector3(), CAM = new THREE.Vector3();
 export const fadeScenery = (dt, on) => {
   if (!on && !nActive) return;
   const t0 = performance.now();
@@ -319,12 +325,14 @@ export const fadeScenery = (dt, on) => {
   let tested = 0;
   if (on) {
     if (stale()) build();
-    const flip = scene.scale.x < 0 ? -1 : 1, cam = camera.position; // (the camera as drawn: world terms, mirrored on a left-hand level)
-    Track.toWorld(Player.s, Player.lat, car); // (the car's middle, a metre up: the game's terms, so mirrored here)
-    const ax = car.x * flip, ay = car.y + Player.air + AIM, az = car.z;
+    // (everything in the game's terms, levelGroup's own: the camera as drawn is mirrored on a left-hand level, so it is put back)
+    const flip = scene.scale.x < 0 ? -1 : 1, cam = CAM.set(camera.position.x * flip, camera.position.y, camera.position.z);
+    Track.toWorld(Player.s, Player.lat, car); // (the car's middle, in the game's terms)
+    const ax = car.x, ay = car.y + Player.air + AIM, az = car.z;
     let dx = ax - cam.x, dy = ay - cam.y, dz = az - cam.z;
     const len = Math.hypot(dx, dy, dz), k = len > KEEP ? (len - KEEP) / len : 0;
     dx *= k; dy *= k; dz *= k;
+    const ly = dy - (AIM - AIM_LOW) * k; // (and a second line, to the car's sills: a low wall can hide the body under the middle's line)
     const reach = BEAM + NEAR;
     const i0 = Math.floor((Math.min(cam.x, cam.x + dx) - reach) / CELL), i1 = Math.floor((Math.max(cam.x, cam.x + dx) + reach) / CELL);
     const j0 = Math.floor((Math.min(cam.z, cam.z + dz) - reach) / CELL), j1 = Math.floor((Math.max(cam.z, cam.z + dz) + reach) / CELL);
@@ -341,7 +349,7 @@ export const fadeScenery = (dt, on) => {
           if (cStamp[c] === stamp) continue;
           cStamp[c] = stamp;
           tested++;
-          if (segBox(cBox, c * 6, cam.x, cam.y, cam.z, dx, dy, dz, BEAM) || ballBox(cBox, c * 6, cam.x, cam.y, cam.z, NEAR)) {
+          if (segBox(cBox, c * 6, cam.x, cam.y, cam.z, dx, dy, dz, BEAM) || segBox(cBox, c * 6, cam.x, cam.y, cam.z, dx, ly, dz, BEAM) || ballBox(cBox, c * 6, cam.x, cam.y, cam.z, NEAR)) {
             cHit[c] = stamp;
             if (!cIsActive[c]) { cIsActive[c] = 1; cActive[nActive++] = c; }
           }
@@ -355,7 +363,7 @@ export const fadeScenery = (dt, on) => {
   for (let a = 0; a < nActive; a++) {
     const c = cActive[a], want = on && cHit[c] === stamp ? 1 : 0;
     if (want) hits++;
-    const f = want ? Math.min(1, cFade[c] + step) : Math.max(0, cFade[c] - step);
+    const f = want ? Math.min(HOLD, cFade[c] + step) : Math.max(0, cFade[c] - step);
     if (f !== cFade[c]) { cFade[c] = f; applyCluster(c, f); }
     if (f === 0 && !want) { cIsActive[c] = 0; cActive[a] = cActive[--nActive]; a--; }
   }
