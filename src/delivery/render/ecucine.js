@@ -98,6 +98,41 @@ const dropKey = (car, length) => {
   return rig;
 };
 
+// ---- CRAZEY JIM'S KEY (CHECKLIST 440, the owner: "a less nice key"): a lot key, not the car's own. A plain worn brass blade
+// key (a round head with its hole, four cut teeth), on a cheap split ring with a manila paper tag on a bit of string, the tag
+// scuffed and scrawled on (dark marks, no text, no texture). Flat colours only; 15 small meshes, shared box geometry.
+const lotKey = (s, length) => {
+  const { keep } = s;
+  const cube = keep(new THREE.BoxGeometry(1, 1, 1));
+  const mat = (color, metal, rough) => keep(new THREE.MeshStandardMaterial({ color, metalness: metal, roughness: rough }));
+  const brass = mat(0xa8873e, 0.55, 0.62), steel = mat(0x9aa0a8, 0.7, 0.45), tag = mat(0xd6c08a, 0, 0.95), scuff = mat(0xa38f5f, 0, 1), ink = mat(0x2b2d33, 0, 0.9), twine = mat(0xbfb497, 0, 1);
+  const g = new THREE.Group();
+  const part = (geo, m, x, y, z, sx = 1, sy = 1, sz = 1, rz = 0) => { const p = new THREE.Mesh(geo, m); p.position.set(x, y, z); p.scale.set(sx, sy, sz); p.rotation.z = rz; g.add(p); return p; };
+  // the key: its head (a disc, the hole a dark disc a hair proud on each face), shoulder, blade and teeth
+  const disc = keep(new THREE.CylinderGeometry(1, 1, 1, 20).rotateX(Math.PI / 2));
+  part(disc, brass, 0, -0.1, 0, 0.075, 0.075, 0.018);
+  part(disc, ink, 0, -0.06, 0, 0.016, 0.016, 0.022);
+  part(cube, brass, 0, -0.185, 0, 0.06, 0.03, 0.016);
+  part(cube, brass, -0.004, -0.33, 0, 0.032, 0.27, 0.008);
+  [0.06, 0.035, 0.05, 0.025].forEach((h, i) => part(cube, brass, 0.012 + h / 4, -0.24 - i * 0.05, 0, h / 2, 0.03, 0.008)); // (the cut, uneven)
+  // the ring through the hole, the string from the ring, the tag
+  const ring = new THREE.Mesh(keep(new THREE.TorusGeometry(0.045, 0.005, 6, 20)), steel);
+  ring.rotation.y = Math.PI / 2; ring.position.set(0, -0.03, 0); g.add(ring);
+  part(cube, twine, 0.08, -0.05, 0, 0.155, 0.006, 0.006, -0.26); // (ring to eyelet)
+  part(cube, tag, 0.17, -0.16, 0, 0.11, 0.2, 0.004, -0.12);
+  part(disc, steel, 0.155, -0.07, 0, 0.011, 0.011, 0.007); // (the tag's eyelet)
+  part(cube, scuff, 0.19, -0.2, 0.0025, 0.05, 0.012, 0.001, 0.4); // (scuffs)
+  part(cube, scuff, 0.15, -0.23, 0.0025, 0.03, 0.009, 0.001, -0.6);
+  part(cube, ink, 0.165, -0.13, 0.0027, 0.06, 0.008, 0.001, -0.08); // (a scrawl: the stock number)
+  part(cube, ink, 0.17, -0.15, 0.0027, 0.045, 0.008, 0.001, -0.15);
+  g.updateMatrixWorld(true);
+  const b = new THREE.Box3().setFromObject(g), size = b.getSize(v3()), mid = b.getCenter(v3());
+  g.position.set(-mid.x, -mid.y, -mid.z);
+  const scaled = new THREE.Group(); scaled.add(g); scaled.scale.setScalar(length / Math.max(size.y, 0.01));
+  const rig = new THREE.Group(); rig.add(scaled);
+  return rig;
+};
+
 // ---- the dyno ROLLERS' art (the owner, 14-Oct: "the single stripe strobes"): two canvases drawn once (ROLLER_ART:
 // 64 x 16 px each): KNURL, 16 even bands round the roller (light and dark, so no single line flickers); STREAK, the same
 // steel smeared round (even all the way round, faint rings along its length) for a fast spin. cap: the most it turns,
@@ -201,16 +236,16 @@ const jim = (kx) => {
   // dust where it lands, confetti over the hero shot
   const dustMat = keep(new THREE.MeshBasicMaterial({ vertexColors: true, color: 0x8f8a80, transparent: true, opacity: 0, depthWrite: false }));
   const dust = [[-1, 1], [1, 1], [-1, -1], [1, -1]].map(([x, z]) => { const g = facing(s, s.softGeo, dustMat); g.position.set(x * W * 0.45, 0.25, z * L * 0.33); scene.add(g); return g; });
-  const CONF = 180, confGeo = keep(new THREE.BufferGeometry()), confSeeds = [];
+  const CONF_FLOOR = 0.012, CONF = 180, confGeo = keep(new THREE.BufferGeometry()), confSeeds = [];
   const confPos = new Float32Array(CONF * 3), confCol = [];
-  for (let i = 0; i < CONF; i++) { confSeeds.push({ x: (r() - 0.5) * 9, z: (r() - 0.5) * 7, late: r() * 1.6, speed: 0.9 + r() * 0.8, sway: r() * 6 }); c.setHex(FLAGS[i % FLAGS.length]); confCol.push(c.r, c.g, c.b); }
+  for (let i = 0; i < CONF; i++) { confSeeds.push({ x: (r() - 0.5) * 9, z: (r() - 0.5) * 7, late: r() * 1.6, speed: 0.9 + r() * 0.8, sway: r() * 6, top: 3 + r() * 3.5 }); c.setHex(FLAGS[i % FLAGS.length]); confCol.push(c.r, c.g, c.b); }
   confGeo.setAttribute('position', new THREE.BufferAttribute(confPos, 3));
   confGeo.setAttribute('color', new THREE.Float32BufferAttribute(confCol, 3));
   const confetti = new THREE.Points(confGeo, keep(new THREE.PointsMaterial({ size: 0.09, vertexColors: true })));
   confetti.frustumCulled = false;
   scene.add(confetti);
   // the KEY, tossed in and caught
-  const key = dropKey(car, 0.75); scene.add(key);
+  const key = lotKey(s, 0.75); scene.add(key); // (a used-car lot's key: plain, worn, on a paper tag; never the car's own premium key)
   const keyGlint = facing(s, s.softGeo, keep(glowMat(0xffffff))); scene.add(keyGlint);
   const pool = s.pool; pool.material.color.setHex(0xffd9a0);
   // the words
@@ -222,13 +257,13 @@ const jim = (kx) => {
   return {
     total: 6.5, hint: 6.0,
     reveal: { tag: 4.7, big: 4.75, name: 5.0, stars: 5.2, sub: 5.45 },
-    shots: (k) => {
+    shots: (k, aspect = 1.6) => {
       const tall = Math.max(1, H / 1.6);
       return [
         { from: 0, to: 1.2, cam: (u) => [v3(-5.4 * k + u * 0.6, 3.4 - u * 0.5, (L / 2 + 7) * k - u * 0.6), v3(0, 1.0, 0.4), 40] }, // THE LOT
         { from: 1.2, to: 2.3, cam: (u) => [v3(S.x + 0.9 - u * 0.25, S.y + 0.2, S.z + 2.3 - u * 0.45), S.clone().add(v3(0.1, 0, 0)), 36] }, // SOLD
         { from: 2.3, to: 3.4, cam: (u) => [v3((W / 2 + 3.2) * k - u * 0.4, 0.55, (L / 2 + 5.2) * k - u * 0.5), v3(0, H * 0.55, 0), 42] }, // THE DROP
-        { from: 3.4, to: 4.5, cam: (u) => [v3(2.6 + u * 0.15, 1.3, L / 2 + 3.7 - u * 0.15), v3(0.1, 1.05, L / 2 + 0.7), 40] }, // THE KEYS
+        { from: 3.4, to: 4.5, cam: (u) => [v3(2.6 + u * 0.15, 1.3, L / 2 + 3.7 - u * 0.15), v3(0.1, 1.05, L / 2 + 0.7).lerp(P1, aspect < 1 ? 0.8 : 0.25), 40] }, // THE KEYS (a tall screen: on the key)
         { from: 4.5, to: 6.5, cam: (u) => { const d = lerp(8.4, 7.4, easeOut(u)) * k * tall; return [v3(d * 0.34, 1.2 + H * 0.3, d * 0.94), v3(0, H * 0.5 + 0.5, 0), 46, 0.2]; } }, // HERO
       ];
     },
@@ -251,7 +286,8 @@ const jim = (kx) => {
       s.model.userData.animate?.(lt === 99 ? 2.4 : t);
       setLamp(s.lamps, 'head', lt >= 3.05 ? 1 : 0, 0.8);
       setLamp(s.lamps, 'tail', lt >= 3.05 ? 1 : 0, 0.7);
-      setLamp(s.lamps, 'amber', 0);
+      setLamp(s.lamps, 'brake', lt >= 3.05 && lt < 3.4 ? 1 : 0, 1); // (a dab on the brake as it wakes)
+      setLamp(s.lamps, 'amber', !kx.lite && lt >= 3.4 && lt < 4.4 && (lt - 3.4) % 0.5 < 0.25 ? 1 : 0, 1.2); // (hazards twice: sold)
       // dust at the landing
       const dU = span(lt, LAND, LAND + 0.8);
       dustMat.opacity = lt >= LAND && lt < LAND + 0.8 ? 0.55 * (1 - dU) : 0;
@@ -287,7 +323,7 @@ const jim = (kx) => {
       } else {
         const a = lt - CATCH;
         key.position.copy(P1);
-        key.rotation.set(0.2, -0.5 + Math.sin(a * 5) * 0.25 * Math.exp(-a * 2.5), Math.sin(a * 7) * 0.3 * Math.exp(-a * 3));
+        key.rotation.set(0.15, 0.55 + Math.sin(a * 5) * 0.25 * Math.exp(-a * 2.5), Math.sin(a * 7) * 0.3 * Math.exp(-a * 3)); // (its face and tag to the camera)
       }
       if (lt >= 4.5) key.visible = false; // (the hero shot: the car)
       keyGlint.position.copy(P1);
@@ -296,11 +332,11 @@ const jim = (kx) => {
       // confetti over the hero shot
       const cp = confGeo.attributes.position;
       let m = 0;
-      for (const sd of confSeeds) {
-        const age = lt === 99 ? 1.6 + sd.late : t - 4.5 - sd.late * 0.4;
+      for (const sd of confSeeds) { // (each falls once and lies where it lands: the held end leaves none in the air, CHECKLIST 440)
+        const age = lt === 99 ? 99 : t - 4.5 - sd.late * 0.4;
         if (age < 0) continue;
-        const y = 6.5 - ((age * sd.speed * 1.6) % 6.5);
-        cp.setXYZ(m++, sd.x + Math.sin(age * 2 + sd.sway) * 0.3, y, sd.z);
+        const fallV = sd.speed * 2, landAt = (sd.top - CONF_FLOOR) / fallV, a = Math.min(age, landAt);
+        cp.setXYZ(m++, sd.x + Math.sin(a * 2 + sd.sway) * 0.3, Math.max(CONF_FLOOR, sd.top - age * fallV), sd.z);
       }
       confGeo.setDrawRange(0, m); cp.needsUpdate = true;
       kx.flashMat.opacity = !kx.lite && t >= 1.75 && t < 1.9 ? 0.12 * (1 - span(t, 1.75, 1.9)) : 0; // (the SOLD moment)
@@ -506,7 +542,7 @@ const ecu = (kx) => {
       const flare = (at) => (t >= at && t < at + 0.35 ? Math.exp(-(t - at) * 9) : 0);
       const f = lite ? 0 : Math.max(flare(2.5), flare(2.9)) + (t >= 2.0 && t < 3.4 ? 0.15 + 0.1 * Math.sin(t * 40) : 0);
       rig.flameMat.opacity = clamp(f); rig.flames.forEach((g) => g.scale.setScalar(0.35 + f * 0.6));
-      setLamp(s.lamps, 'head', 1, 0.5); setLamp(s.lamps, 'tail', lt >= 2.0 ? 1 : 0, 0.8); setLamp(s.lamps, 'amber', 0);
+      setLamp(s.lamps, 'head', 1, 0.5); setLamp(s.lamps, 'tail', lt >= 2.0 ? 1 : 0, 0.8); setLamp(s.lamps, 'brake', lt >= 2.0 && lt < 2.3 ? 1 : 0); setLamp(s.lamps, 'amber', 0);
       s.model.userData.animate?.(lt === 99 ? 2.4 : t);
       kx.flashMat.opacity = pulse * 0.18; kx.flashMat.color.copy(accent).lerp(WHITE, 0.5);
       kx.fadeMat.opacity = 1 - (lite ? span(t, 0, 0.5) : span(t, 0, 0.3));
@@ -616,7 +652,7 @@ const ecumax = (kx) => {
       const f = lite ? 0 : t >= 3.0 && t < BOOM + 0.3 ? 0.55 + 0.45 * Math.abs(Math.sin(t * 37)) * span(t, 3.0, 3.6) : t >= 2.4 && t < 3.0 ? 0.2 : 0;
       rig.flameMat.opacity = clamp(f); rig.flameMat.color.setHex(rev > 0.9 ? 0x6ab8ff : 0xff7a1a);
       rig.flames.forEach((g) => g.scale.set(0.4 + f * 0.9, 0.3 + f * 0.5, 1));
-      setLamp(s.lamps, 'head', lt >= 0.7 ? 1 : 0, 0.6); setLamp(s.lamps, 'tail', lt >= 2.1 ? 1 : 0, 0.8); setLamp(s.lamps, 'amber', 0);
+      setLamp(s.lamps, 'head', lt >= 0.7 ? 1 : 0, 0.6); setLamp(s.lamps, 'tail', lt >= 2.1 ? 1 : 0, 0.8); setLamp(s.lamps, 'brake', lt >= 2.1 && lt < 2.4 ? 1 : 0); setLamp(s.lamps, 'amber', 0);
       s.model.userData.animate?.(lt === 99 ? 2.4 : t);
       // the boom: a flash, the ring along the floor, sparks and rays from the car
       const origin = v3(0, rig.deck + H * 0.5, 0);

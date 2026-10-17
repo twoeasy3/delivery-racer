@@ -61,11 +61,16 @@ import { stillViews } from './modelviews.js';
 import { LITE } from '../lite.js';
 import { Sound } from './audio.js';
 import { DIRECTORS } from './ecucine.js';
+import { TABLE, lampKey } from './carlights.js'; // (the car's own lamp places, as the game's lamp effects use them)
 import { keyPose, FOB } from './keypose.js'; // (the other cinematics: Crazey Jim's sale, ECU up, max ECU)
 
 const params = new URLSearchParams(location.search);
 const LEN = 4.4; // (every car scaled to this length, so the shots fit any car)
 const DURATION = { car: 5.0, key: 10.0, lite: 1.3 };
+export const SETTLE = 4; // s: a skip starts the held end's clock this far on (everything landed)
+export const HELD_STOP = 45; // s: the held end stops drawing after this long (its last frame stays)
+export const FLOOR = 0.05; // m: a particle at or under this is on the floor
+const lookAt = new THREE.Vector3();
 const HINT = { car: 4.7, key: 9.3, lite: 1.0 }; // (when "Tap to continue" shows: the banner settled)
 // the key models with NO BLADE (render/keyModels.js smart, snowboot; render/keyModelsOrdC.js carbonfob, wedgefob;
 // render/keyModelsOrdD.js startfob, artisan): their cars get the fob unlocking the car, not the ignition
@@ -144,13 +149,21 @@ export const beamGeometry = (radius = 1.6, length = 9) => {
 };
 export const shown = (node) => { for (let n = node; n; n = n.parent) if (!n.visible) return false; return true; };
 
-// ---- the car's LAMPS: its headlamps, tail lamps and indicators found by their look and place (as the model editor
-// guesses them: render/modelpatch.js), each with an "off" copy of its material (dimmed) and a glow sprite at it. A car
-// whose lamps are not found gets glows where they would be (the front and rear corners).
-const findLamps = (s) => {
-  const { model, carRig, W, H, L, keep } = s;
-  carRig.updateMatrixWorld(true);
-  const found = { head: [], tail: [], amber: [] }, box = new THREE.Box3(), c = v3(), size = v3(), hsl = {};
+// ---- the car's LAMPS (CHECKLIST 440): the car's OWN lamp table first (render/carlights.js TABLE, as the game's brake lamps,
+// indicators and night glow use it: lampKey / its entries' head, tail (brake: the ones that are), blink), each lamp a lit
+// lens laid a few mm proud of the model's (shown when on) and a glow; the model's own lens parts at those places dimmed while
+// off. A car with no entry (or none for one end) keeps the old GUESS for that end: lamp parts found by their look and place
+// (as the model editor guesses them: render/modelpatch.js), dimmed copies of their materials, glows at them; a car with
+// none found gets glows at its corners. Every glow rides on carRig (a dyno lifts the car, a sale drops it: they go with it).
+// kinds: head, tail, brake (the tail lamps that are brake lamps: a guess has none apart, its tail lamps stand in), amber
+// (indicators; a US car's red ones red)
+const LENS = { head: 0xfff4d8, tail: 0xc8160e, brake: 0xff2a1a, amber: 0xffa21a, red: 0xff2a1a };
+const GLOW = { head: 0xfff1cc, tail: 0xff2a1a, brake: 0xff3a24, amber: 0xffa21a };
+const mirrored = (list = []) => list.flatMap(l => (l.mirror ? [l, { ...l, at: [-l.at[0], l.at[1], l.at[2]] }] : [l]));
+// the model's own small bright lens parts, with a dimmed copy of each one's material (for 'off')
+const lensParts = (s) => {
+  const { model, L, keep } = s;
+  const out = [], box = new THREE.Box3(), c = v3(), size = v3(), hsl = {};
   model.traverse((node) => {
     if (!node.isMesh || !shown(node)) return;
     const mat = [].concat(node.material)[0];
@@ -159,41 +172,101 @@ const findLamps = (s) => {
     if (size.length() > L * 0.3) return;
     mat.color.getHSL(hsl);
     const glow = mat.type === 'MeshBasicMaterial' || (mat.emissive && mat.emissive.getHex() > 0 && (mat.emissiveIntensity ?? 1) > 0);
-    if (!(glow || hsl.l > 0.8)) return;
-    const front = c.z > L / 2 - L * 0.16, rear = c.z < -L / 2 + L * 0.16;
-    const red = (hsl.h < 0.04 || hsl.h > 0.94) && hsl.s > 0.5, amber = hsl.h > 0.04 && hsl.h < 0.13 && hsl.s > 0.5;
-    const kind = front && !red ? (amber ? 'amber' : 'head') : rear && (red || amber) ? (amber ? 'amber' : 'tail') : null;
-    if (!kind) return;
-    const off = keep(mat.clone());
-    off.color.multiplyScalar(kind === 'head' ? 0.16 : 0.22);
-    if (off.emissive) off.emissive.setHex(0);
-    found[kind].push({ node, on: node.material, off, at: c.clone() });
+    out.push({ node, mat, at: c.clone(), radius: size.length() / 2, bright: glow || hsl.l > 0.8, hsl: { ...hsl } });
   });
-  const corners = (z, y) => [-1, 1].map((x) => ({ at: v3(x * W * 0.34, y, z) }));
-  const lamps = {
-    head: found.head.length ? found.head : corners(L / 2 + 0.02, H * 0.36),
-    tail: found.tail.length ? found.tail : corners(-L / 2 - 0.02, H * 0.42),
-    amber: found.amber.length ? found.amber : [...corners(L / 2 + 0.02, H * 0.3), ...corners(-L / 2 - 0.02, H * 0.36)],
+  const dim = (p, kind) => {
+    if (!p.off) { p.off = keep(p.mat.clone()); p.off.color.multiplyScalar(kind === 'head' ? 0.16 : 0.22); if (p.off.emissive) p.off.emissive.setHex(0); }
+    return { node: p.node, on: p.node.material, off: p.off, at: p.at };
   };
-  // the glows (a few a kind: their places merged two by two at most for a car with many small lamp parts)
-  const colours = { head: 0xfff1cc, tail: 0xff2a1a, amber: 0xffa21a };
-  for (const kind of Object.keys(lamps)) {
+  return { parts: out, dim };
+};
+const guessKind = (p, L) => {
+  if (!p.bright) return null;
+  const { h, s: sat } = p.hsl, front = p.at.z > L / 2 - L * 0.16, rear = p.at.z < -L / 2 + L * 0.16;
+  const red = (h < 0.04 || h > 0.94) && sat > 0.5, amber = h > 0.04 && h < 0.13 && sat > 0.5;
+  return front && !red ? (amber ? 'amber' : 'head') : rear && (red || amber) ? (amber ? 'amber' : 'tail') : null;
+};
+export const findLamps = (s, car) => {
+  const { model, carRig, W, H, L, keep, scene } = s;
+  carRig.updateMatrixWorld(true);
+  const def = TABLE[lampKey(car)] || null;
+  const frame = (def?.frame && model.userData[def.frame]) || model;
+  const { parts, dim } = lensParts(s);
+  const lamps = { head: [], tail: [], brake: [], amber: [], source: { front: 'guess', rear: 'guess' } };
+  const frontTable = !!def?.head?.length, rearTable = !!def?.tail?.length;
+  // THE TABLE: a lit lens per lamp (on the model's frame, in its own metres), the model's parts round it to dim
+  const lensGeo = { box: keep(new THREE.BoxGeometry(1, 1, 1)), disc: keep(new THREE.CylinderGeometry(0.5, 0.5, 1, 14).rotateX(Math.PI / 2)) };
+  const lensMat = {};
+  const matOf = (k) => lensMat[k] || (lensMat[k] = keep(new THREE.MeshBasicMaterial({ color: LENS[k] })));
+  const used = new Set(), scaleW = frame.getWorldScale(v3()).x;
+  const fromTable = (list, kind) => mirrored(list).map((l) => {
+    const red = kind === 'amber' && l.red;
+    const lens = new THREE.Mesh(l.round ? lensGeo.disc : lensGeo.box, matOf(red ? 'red' : kind));
+    const dir = Math.sign(l.at[2]) || 1, d = 0.004; // (a thin lit skin on the lens, not a block)
+    lens.position.set(l.at[0], l.at[1], l.at[2] + dir * (0.003 + d / 2) + (kind === 'amber' ? dir * 0.006 : kind === 'brake' ? dir * 0.003 : 0)); // (brake lamps and indicators a touch further out: never coplanar with a lens they share)
+    lens.scale.set((l.size?.[0] || 0.12) * 0.94, (l.size?.[1] || 0.08) * 0.94, d);
+    lens.visible = false;
+    frame.add(lens);
+    const at = frame.localToWorld(v3(l.at[0], l.at[1], l.at[2]));
+    const sizeW = Math.max(l.size?.[0] || 0.1, l.size?.[1] || 0.1) * scaleW, reach = Math.max(0.08, sizeW * 0.75);
+    // the model's own parts at this lamp: dimmed while it is off (not the indicators: they share other lamps' lenses)
+    const own = kind === 'amber' ? [] : parts.filter(p => p.bright && !used.has(p) && p.radius < reach * 2.5 && p.at.distanceTo(at) < reach + p.radius * 0.5);
+    own.forEach(p => used.add(p));
+    return { lens, at, size: sizeW, dims: own.map(p => dim(p, kind)), red };
+  });
+  if (frontTable) { lamps.head = fromTable(def.head, 'head'); lamps.source.front = 'table'; }
+  if (rearTable) {
+    const tails = mirrored(def.tail);
+    lamps.tail = fromTable(def.tail, 'tail');
+    lamps.brake = fromTable(tails.filter(l => l.brake !== false).map(l => (Array.isArray(l.brake) ? { ...l, size: l.brake, mirror: false } : { ...l, mirror: false })), 'brake');
+    lamps.source.rear = 'table';
+  }
+  if (def?.blink?.length) lamps.amber = fromTable(def.blink.filter(l => (l.at[2] > 0 ? frontTable : rearTable)), 'amber');
+  // THE GUESS, for an end the table does not give
+  const guessed = { head: [], tail: [], amber: [] };
+  lamps.guessFound = { head: 0, tail: 0, amber: 0 }; // (what the guess alone would have found: for the check)
+  for (const p of parts) { const k = guessKind(p, L); if (k) lamps.guessFound[k]++; }
+  for (const p of parts) {
+    if (used.has(p)) continue;
+    const kind = guessKind(p, L);
+    if (!kind || (p.at.z > 0 ? frontTable : rearTable)) continue;
+    guessed[kind].push({ ...dim(p, kind), guess: true });
+  }
+  const corners = (z, y) => [-1, 1].map((x) => ({ at: v3(x * W * 0.34, y, z), guess: true }));
+  if (!frontTable) lamps.head = guessed.head.length ? guessed.head : corners(L / 2 + 0.02, H * 0.36);
+  if (!rearTable) { lamps.tail = guessed.tail.length ? guessed.tail : corners(-L / 2 - 0.02, H * 0.42); lamps.brake = lamps.tail; }
+  if (!def?.blink?.length || !frontTable || !rearTable) {
+    const front = guessed.amber.filter(l => l.at.z > 0), rear = guessed.amber.filter(l => l.at.z <= 0);
+    if (!frontTable || !def?.blink?.length) lamps.amber.push(...(front.length ? front : corners(L / 2 + 0.02, H * 0.3)));
+    if (!rearTable || !def?.blink?.length) lamps.amber.push(...(rear.length ? rear : corners(-L / 2 - 0.02, H * 0.36)));
+  }
+  // the glows (8 a kind at most), on carRig
+  for (const kind of ['head', 'tail', 'brake', 'amber']) {
+    if (kind === 'brake' && lamps.brake === lamps.tail) { lamps.brake.glows = lamps.tail.glows; continue; }
     const list = lamps[kind].slice(0, 8);
     lamps[kind].glows = list.map((l) => {
-      const sprite = facing(s, s.softGeo, keep(glowMat(colours[kind])));
+      const sprite = facing(s, s.softGeo, keep(glowMat(l.red ? GLOW.tail : GLOW[kind])));
       sprite.position.copy(l.at).add(v3(0, 0, Math.sign(l.at.z) * 0.06));
-      sprite.scale.setScalar(kind === 'head' ? 0.75 : 0.55);
-      s.scene.add(sprite);
+      sprite.scale.setScalar(l.lens ? clamp(l.size * (kind === 'head' ? 4 : 3.2), 0.3, kind === 'head' ? 0.85 : 0.65) : kind === 'head' ? 0.75 : 0.55);
+      carRig.add(sprite);
       return sprite;
     });
   }
+  if (scene) carRig.updateMatrixWorld(true);
   return lamps;
 };
-// a kind of lamp on (1) or off (0): the material swapped (on from half way), the glow by the level
-const setLamp = (lamps, kind, level, glow = 1) => {
+// a kind of lamp on (1) or off (0): a table lamp's lens shown (its model parts dimmed when off), a guessed part's material
+// swapped (on from half way); the glow by the level. 'brake' brightens the brake lamps over the tail lamps
+export const setLamp = (lamps, kind, level, glow = 1) => {
   const list = lamps[kind];
-  for (const l of list) if (l.node) l.node.material = level > 0.5 ? l.on : l.off;
-  for (const g of list.glows) g.material.opacity = clamp(level) * glow * (kind === 'head' ? 0.75 : 0.65);
+  if (!list) return;
+  const on = level > 0.5;
+  if (kind === 'brake' && list === lamps.tail) { if (on) for (const g of list.glows) g.material.opacity = Math.max(g.material.opacity, 0.9 * glow); return; } // (a guess: its tail lamps stand in, only ever brightened)
+  for (const l of list) {
+    if (l.lens) { l.lens.visible = on; for (const d of l.dims) d.node.material = on ? d.on : d.off; } else if (l.node) l.node.material = on ? l.on : l.off;
+  }
+  const k = kind === 'head' ? 0.75 : kind === 'brake' ? 0.9 : 0.65;
+  for (const g of list.glows) g.material.opacity = clamp(level) * glow * k;
 };
 
 // ---- the stage: one scene for both sequences (the car at the middle, facing +z; the lock in front of it) ----
@@ -279,8 +352,8 @@ const build = (car, evil, mode) => {
   scene.add(streak, flareCore, rays);
 
   const stage = { scene, own, keep, softGeo, facing: facingList, model, carRig, W, H, L, accent, rarity, hemi, keyLight, rim, rim2, floor, pool, shadow, backGlow, beam, beamMat, spotPool, sparks, sparkGeo, seeds, streak, flareCore, rays };
-  stage.lamps = findLamps(stage);
-  if (mode === 'key') buildLock(stage, car);
+  stage.lamps = findLamps(stage, car);
+  if (mode === 'key') { buildLock(stage, car); buildFireworks(stage, car); }
   return stage;
 };
 
@@ -382,6 +455,83 @@ const keyShots = (s, k) => {
     { from: 6.6, to: 7.6, cam: (u) => [v3((W / 2 + 2.6 - u * 0.4) * Math.sqrt(k), H * 0.38, -(L / 2 + 3.4 - u * 0.5) * Math.sqrt(k)), v3(0, H * 0.42, -L * 0.15), 38] }, // REAR: low three-quarter
     { from: 7.6, to: 10.0, cam: (u) => { const d = lerp(10.8, 9.0, easeOut(u)) * k * tall; return [v3(-d * 0.62, 1.35 + H * 0.3, d * 0.78), v3(0, H * 0.42, 0), 32, 0.15]; } }, // HERO (the other side)
   ];
+};
+
+// where a car's lamps are in a cutscene, with no renderer (scripts/.cine-wire-check.mjs): the stage built and given back
+export const lampReport = (carId) => {
+  const car = carById(carId);
+  if (!car) return null;
+  const s = build(car, false, 'car'), L = s.lamps, at = (list) => list.map(l => l.at.toArray());
+  const out = { id: car.id, key: lampKey(car), source: L.source, guessFound: L.guessFound, head: at(L.head), tail: at(L.tail), brake: at(L.brake), amber: at(L.amber), lenses: [...L.head, ...L.tail, ...L.amber].filter(l => l.lens).length };
+  s.scene.traverse((node) => { node.geometry?.dispose(); for (const m of [].concat(node.material || [])) m.dispose?.(); });
+  for (const x of s.own) x.dispose?.();
+  return out;
+};
+
+// ---- FIREWORKS over the key unlock's last shot (CHECKLIST 441, the owner: "fireworks to both key unlocks", in the hero shot that
+// holds; the blade key's and the fob's alike). The SHELL is the kill effect's (render/killfxdefs.js fireworks: a shell of streaks
+// in two colours fanning out from a point, drag and gravity, then a white-gold crackle), drawn here as one pooled Points of
+// FW_SHELLS x (FW_SPARKS + FW_TRAIL) dots, every dot's place a pure function of the time (a still, a skip, the held end: any
+// moment), seeded, no texture. Not the kill effects' engine itself: its pools are textured, random and stepped per frame, and are
+// shared with the game (this stage gives every material back when it closes). Colours: the rarity's (as the flares), lightened on
+// alternate shells; a Bespoke key's a rainbow. Each shell: a rocket rising with a short trail from behind the car, its burst over
+// the car, the sparks slowing, falling and fading out by FW_LIFE (any that reach the floor lie there until then). None in the
+// lite version.
+export const FW = { shells: [7.6, 7.9, 8.25, 8.65], rise: 0.55, sparks: 44, trail: 6, life: [1.2, 1.8], speed: [3.6, 4.8], drag: 2.2, gravity: 5, floor: 0.02 };
+const buildFireworks = (s, car) => {
+  const { keep, scene, W, H, L } = s;
+  const N = FW.shells.length * (FW.sparks + FW.trail);
+  const geo = keep(new THREE.BufferGeometry());
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+  geo.setDrawRange(0, 0);
+  const points = new THREE.Points(geo, keep(new THREE.PointsMaterial({ size: 0.2, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })));
+  points.frustumCulled = false;
+  scene.add(points);
+  const r = rand(car.id.length * 131 + 7), across = [-0.45, 0.4, -0.1, 0.2];
+  const shells = FW.shells.map((at, i) => {
+    const colour = s.accent.clone().lerp(WHITE, i % 2 ? 0.55 : 0.12);
+    return { at, colour, x: across[i] * Math.max(W, 1.8), z: -L * 0.55 - 0.8 - r() * 1.2, top: H + 1.7 + r() * 0.9,
+      sparks: Array.from({ length: FW.sparks }, () => { const u = r() * 1.35 - 0.35, a = r() * Math.PI * 2, h = Math.sqrt(1 - u * u); return { dx: Math.sin(a) * h, dy: u, dz: Math.cos(a) * h, v: lerp(FW.speed[0], FW.speed[1], r()), life: lerp(FW.life[0], FW.life[1], r()), hue: r(), alt: r() < 0.5 }; }) };
+  });
+  s.fireworks = { points, geo, shells, rainbow: !!car.bespoke };
+};
+const fwCol = new THREE.Color();
+let fwN = 0, fwPos = null, fwRgb = null; // (the dot being written: no closure made per frame)
+const fwPut = (x, y, z, c, b) => {
+  const i = fwN * 3;
+  fwPos[i] = x; fwPos[i + 1] = Math.max(FW.floor, y); fwPos[i + 2] = z; fwRgb[i] = c.r * b; fwRgb[i + 1] = c.g * b; fwRgb[i + 2] = c.b * b;
+  fwN++;
+};
+// the fireworks at time t (none: lite); returns how many dots are drawn
+const setFireworks = (s, t, lite) => {
+  const fw = s.fireworks;
+  if (!fw) return 0;
+  const k = FW.drag, g = FW.gravity;
+  fwPos = fw.geo.attributes.position.array; fwRgb = fw.geo.attributes.color.array; fwN = 0;
+  if (!lite) for (const sh of fw.shells) {
+    const a = t - sh.at;
+    if (a < 0) continue;
+    if (a < FW.rise) { // the rocket and its trail, rising (slowing) to the top
+      for (let j = 0; j < FW.trail; j++) {
+        const u = Math.max(0, a - j * 0.035) / FW.rise;
+        fwPut(sh.x, sh.top * (1 - (1 - u) * (1 - u)), sh.z, sh.colour, (1 - j / FW.trail) * 0.9);
+      }
+      continue;
+    }
+    const b = a - FW.rise, e = 1 - Math.exp(-k * b), drop = g * (b / k - e / (k * k)); // (drag k, gravity g: out, slowing, then falling)
+    for (const sp of sh.sparks) {
+      if (b >= sp.life) continue;
+      const fade = 1 - b / sp.life, crackle = b > sp.life * 0.7 ? 0.6 + 0.4 * Math.sin(b * 60 + sp.hue * 20) : 1; // (the crackle: a flicker at the end)
+      if (fw.rainbow) fwCol.setHSL((sp.hue + b * 0.2) % 1, 0.85, 0.62); else fwCol.copy(sh.colour).lerp(WHITE, sp.alt ? 0.35 : 0);
+      if (b > sp.life * 0.7) fwCol.lerp(WHITE, 0.5);
+      const d = sp.v * e / k;
+      fwPut(sh.x + sp.dx * d, sh.top + sp.dy * d - drop, sh.z + sp.dz * d, fwCol, fade * crackle);
+    }
+  }
+  fw.geo.setDrawRange(0, fwN);
+  fw.geo.attributes.position.needsUpdate = true; fw.geo.attributes.color.needsUpdate = true;
+  return fwN;
 };
 
 // ---- the words ----
@@ -554,6 +704,7 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     const [pos, target, fov, lift = 0, shift = 0] = shot.cam(smooth(u) * 0.5 + u * 0.5);
     view.lift = lift * Math.min(1, aspect); // (a tall screen has room under the car as it is)
     view.shift = aspect > 1.1 ? shift : 0; // (sideways: a panel of words beside the car, on a wide screen only)
+    lookAt.copy(target); // (the held end's drift turns the camera round it)
     return [pos, target, fov];
   };
   // a flicker then on: 0 before a, a short blink at a, steady from b
@@ -578,6 +729,7 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     // the lamps: off in the dark, the headlamps flickering on in the detail shot, the tail lamps with the light
     setLamp(s.lamps, 'head', powerOn(lt, 1.4, 1.5), 1 - 0.5 * on);
     setLamp(s.lamps, 'tail', powerOn(lt, 2.25, 2.3), 0.8);
+    setLamp(s.lamps, 'brake', !lite && t >= 2.3 && t < 2.6 ? 1 : 0); // (the brake lamps flare as the tail lamps come on)
     setLamp(s.lamps, 'amber', 0);
     // the beam's sweep (the silhouette shot), then gone
     const b = span(lt, 0, 1.3);
@@ -653,6 +805,7 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     setLamp(s.lamps, 'amber', blink ? 1 : 0, 1.4);
     setLamp(s.lamps, 'head', blink || awake ? 1 : powerOn(lt, 4.85, 5.0), blink ? 1.3 : awake ? 0.35 : 1 - 0.5 * on);
     setLamp(s.lamps, 'tail', blink ? 1 : powerOn(lt, 6.75, 6.8), 0.9);
+    setLamp(s.lamps, 'brake', blink || (!lite && t >= 6.8 && t < 7.1) ? 1 : 0);
     // the light burst at the moment: core, streak, rays (slow motion), sparks; in the hero shot, a soft one behind the car
     const origin = t < 4.6 ? (s.fob ? pose.pos.clone().add(v3(0, 0, -0.7)) : v3(P.x, P.y, P.z + 0.05)) : v3(0, H * 0.55, -L * 0.2);
     s.flareCore.position.copy(origin); s.streak.position.copy(origin); s.rays.position.copy(origin);
@@ -672,6 +825,7 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     if (t < 4.6) setSparks(t, origin, s.fob ? 3.5 : CLICK, 1.1, 2.2, !lite && !press, lite ? 0 : smooth(span(t, 0.2, 1.0)) * (t < 1.4 ? 1 : 0));
     else setSparks(t, origin, 7.6, 0.6, Math.max(s.W, L) * 0.6, !lite, 0);
     s.sparks.material.size = t < 4.6 ? 0.045 : 0.1;
+    setFireworks(s, t, lite); // (the last shot's fireworks)
     s.model.userData.animate?.(lt === 99 ? 2.4 : t);
     // the flash at the moment: white, going to the rarity's colour (the fob's: smaller)
     if (!lite && t >= CLICK && t < CLICK + 0.9) {
@@ -691,32 +845,73 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
       ...(s.fob
         ? [[FOB.press, 'camera', 0.7], [FOB.blinks[0], 'bell', 0.7], [FOB.blinks[1], 'bell', 0.8], [FOB.blinks[1] + 0.02, 'drum', 0.5], [3.5, 'burst', 0.5]]
         : [[1.5, 'throw', 0.5], [1.9, 'camera', 0.8], [2.15, 'camera', 0.8], [2.4, 'camera', 0.9], [3.08, 'crash', 0.9], [3.1, 'drum', 1], [3.14, 'burst', 0.7]]),
-      [4.85, 'camera', 0.5], [5.0, 'turbo', 0.6], [6.8, 'drum', 0.5], [7.8, 'bell', 0.8], [8.65, 'menuPick', 0.7]]
+      [4.85, 'camera', 0.5], [5.0, 'turbo', 0.6], [6.8, 'drum', 0.5], [7.8, 'bell', 0.8], [8.65, 'menuPick', 0.7], ...FW.shells.flatMap(at => [[at, 'throw', 0.25], [at + FW.rise, 'burst', 0.35]])]
     : [[0.05, 'rumble', 0.35], [1.25, 'throw', 0.45], [1.5, 'camera', 0.4], [2.55, 'drum', 0.9], [2.56, 'turbo', 0.5], [3.62, 'menuPick', 0.7], [4.12, 'bell', 0.7]];
 
   // ---- the loop ----
   let raf = 0, startAt = 0, lastT = -1, done = false, held = false;
+  // THE HELD END stays alive (CHECKLIST 440): its clock runs on past `total` (confetti and sparks fall and settle, the bunting
+  // flutters, lamps stay lit, the camera drifts a little round its subject) until the tap. A skip starts that clock SETTLE s on,
+  // so nothing is left in mid-air. Cheap: full rate while anything is in the air (and the first second), then 15 frames a
+  // second, and nothing drawn at all after HELD_STOP s (the last frame stays). Nothing allocated per frame.
+  let heldAt = 0, heldBase = 0, heldT = 0, lastDraw = 0, wordsSet = false;
   const frame = (t) => {
     if (d) d.set(t); else if (mode === 'key') setKey(t); else setCar(t);
+    if (t > total) { // (the drift: a slow turn about the subject, from nothing at the end)
+      const a = 0.05 * Math.sin((t - total) * 0.22), c = Math.cos(a), n = Math.sin(a);
+      const dx = camera.position.x - lookAt.x, dz = camera.position.z - lookAt.z;
+      camera.position.x = lookAt.x + dx * c - dz * n; camera.position.z = lookAt.z + dx * n + dz * c;
+      camera.lookAt(lookAt);
+    }
     camera.aspect = aspect;
     if (view.lift || view.shift) camera.setViewOffset(1000 * aspect, 1000, view.shift * 1000 * aspect, view.lift * 1000, 1000 * aspect, 1000); else camera.clearViewOffset(); // (the picture slid: the subject higher, or to one side)
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld();
     for (const g of s.facing) g.quaternion.copy(camera.quaternion); // (the glows face the camera)
     d?.post?.(t); // (page labels pinned to things in the picture)
-    setWords(t);
+    if (!wordsSet) setWords(t);
+    wordsSet = held && t > hintAt + 1; // (the words settled: not written again)
     renderer.setClearColor(0x000000, 1);
     renderer.clear();
     renderer.render(s.scene, camera);
     renderer.clearDepth();
     renderer.render(over, ortho);
   };
-  // the end: the last frame drawn once and HELD (nothing more drawn) until a tap or a key
-  const hold = () => {
+  // the end, HELD until a tap or a key (skipped: its particles already settled)
+  const heldTick = (now) => {
+    if (done) return;
+    const h = (now - heldAt) / 1000;
+    if (h > HELD_STOP) { raf = 0; return; } // (still from here: nothing drawn)
+    raf = requestAnimationFrame(heldTick);
+    if (h > 1 && airborne() === 0 && now - lastDraw < 1000 / 15) return;
+    lastDraw = now;
+    frame(heldT = heldBase + h);
+  };
+  const hold = (skipped = false) => {
     held = true;
     cancelAnimationFrame(raf); raf = 0;
     d?.stop?.();
-    frame(total);
+    heldBase = total + (skipped ? SETTLE : 0);
+    heldAt = lastDraw = performance.now();
+    frame(heldT = heldBase);
+    if (!loop) raf = requestAnimationFrame(heldTick);
+  };
+  // particles still in the air (above the floor and drawn): the held end draws at full rate while there are any
+  const flying = [];
+  s.scene.traverse((node) => { if (node.isPoints || node.isInstancedMesh) flying.push(node); });
+  const airborne = () => {
+    let n = 0;
+    for (const p of flying) {
+      if (!p.visible) continue;
+      if (p.isPoints) {
+        const pos = p.geometry.attributes.position, count = Math.min(pos.count, p.geometry.drawRange.count);
+        for (let i = 0; i < count; i++) if (pos.getY(i) > FLOOR) n++;
+      } else {
+        const m = p.instanceMatrix.array;
+        for (let i = 0; i < p.count; i++) if ((m[i * 16] || m[i * 16 + 1] || m[i * 16 + 2]) && m[i * 16 + 13] > FLOOR) n++; // (a zero scale: hidden)
+      }
+    }
+    return n;
   };
   const tick = (now) => {
     if (done || held) return;
@@ -747,8 +942,8 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     try { onClose?.(); } catch (error) { console.error(error); }
   };
   // a tap or a key: while it plays, to the held end; at the end (or a still), closed
-  const skip = () => { if (held || still !== null) close(); else hold(); };
-  const onResize = () => { resize(); if (still !== null) frame(still); else if (held) frame(total); };
+  const skip = () => { if (held || still !== null) close(); else hold(true); };
+  const onResize = () => { resize(); if (still !== null) frame(still); else if (held) frame(heldT); };
   const onKey = (e) => {
     if (['Escape', 'Space', 'Enter', 'NumpadEnter'].includes(e.code) || ['Escape', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); skip(); }
   };
@@ -756,13 +951,14 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
   addEventListener('resize', onResize);
   addEventListener('keydown', onKey, true);
 
-  if (still !== null) { const t = clamp(still, 0, total); requestAnimationFrame(() => { resize(); frame(t); }); }
-  else if (short) requestAnimationFrame(() => { if (!done) { resize(); hold(); } }); // (Short: the held end at once, no sound)
+  if (still !== null) { const t = clamp(still, 0, total + HELD_STOP); requestAnimationFrame(() => { resize(); frame(t); }); } // (past `total`: the held end, that long in)
+  else if (short) requestAnimationFrame(() => { if (!done) { resize(); hold(true); } }); // (Short: the held end at once, settled, no sound)
   else raf = requestAnimationFrame(tick);
-  return { close, skip, get done() { return done; }, get held() { return held; }, total };
+  return { close, skip, get done() { return done; }, get held() { return held; }, total, airborne, fireworks: () => (s.fireworks ? s.fireworks.geo.drawRange.count : -1), get drawing() { return raf !== 0; },
+    lamps: { source: s.lamps.source, guessFound: s.lamps.guessFound, key: lampKey(car), head: s.lamps.head.map(l => l.at.toArray()), tail: s.lamps.tail.map(l => l.at.toArray()), brake: s.lamps.brake.map(l => l.at.toArray()), amber: s.lamps.amber.map(l => l.at.toArray()) } };
 };
 
-export { clamp, lerp, span, smooth, easeOut, easeIn, v3, rand, WHITE, setLamp };
+export { clamp, lerp, span, smooth, easeOut, easeIn, v3, rand, WHITE };
 
 // ---- the address: ?unlockcine=car:<id> | key:<id> [&evil] [&loop] [&still=<s>] ----
 const raw = params.get('unlockcine');

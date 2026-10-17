@@ -249,7 +249,7 @@ e.g. Shift).
 | `unlockcine` | `ecumax:<car id>` | MAX ECU, 8.0 s, then held: the workshop lights clunk on, the module drops in and glows, the rev counter into the red, flames, a shockwave, the car's stars flaring, then MAX ECU with every pip lit; a concept car (its key won by delivering it at its max ECU) ends with its key rising into the picture. | `/delivery/?unlockcine=ecumax:sixteen` | Normal | yes (stills) |
 | `evil` | bare | With `unlockcine`: the Evil livery (and "New ride" for a car). | `/delivery/?unlockcine=car:sixteen&evil` | Normal | yes |
 | `loop` | bare | With `unlockcine`: plays again and again, no hold (until skipped). | `/delivery/?unlockcine=key:swancar&loop` | Normal | untried |
-| `still` | seconds | With `unlockcine`: that moment of it, held (no sound), for pictures. | `/delivery/?unlockcine=key:swancar&still=3.4` | Normal | yes |
+| `still` | seconds | With `unlockcine`: that moment of it, held (no sound), for pictures. Past its length: the held end that long in (the confetti falling, then settled; CHECKLIST 440). | `/delivery/?unlockcine=key:swancar&still=3.4` | Normal | yes |
 | `cineplay` | bare | The game's own cutscenes (CHECKLIST 438) play in a headless browser too (a check, a still); without it a headless browser plays none, only logs them in `window.__cine.log`. | `/delivery/?cineplay&garage` | Normal | yes (headless) |
 | `cinelite` | bare | The game's own cutscenes in their fade-only version, as on a low-end device (2 cores or 2 GB or fewer; any `?lite=` does the same). | `/delivery/?cinelite` | Normal | yes (headless) |
 | `nocine` | bare | None of the game's own cutscenes plays for the visit (logged as `nocine`). | `/delivery/?nocine&showroom` | Normal | untried |
