@@ -77,7 +77,12 @@ const copyOf = (orig, kind, step = 0) => {
   if (!c) copies.set(orig, c = { i: null, v: null, q: [] });
   const have = kind === 'q' ? c.q[step] : c[kind];
   if (have) return have;
+  // (clone() deep-copies userData through JSON: a styled material keeps its uniforms there, a canvas texture among them, which
+  // would be turned into a data URL, hundreds of ms: so the userData is left out of the clone and shared, shallow, below)
+  const data = orig.userData;
+  orig.userData = {};
   const m = orig.clone();
+  orig.userData = data;
   const own = orig.onBeforeCompile, key = orig.customProgramCacheKey();
   const uFade = { value: step / LEVELS };
   m.onBeforeCompile = (shader, renderer) => {
