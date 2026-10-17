@@ -9,7 +9,6 @@ import * as THREE from 'three';
 
 const TRANSITION = 0.5; // s from one state to the next: as cargoModels.js's
 const lambert = (color, extra) => new THREE.MeshLambertMaterial({ color, ...extra });
-const glow = (color, extra) => new THREE.MeshBasicMaterial({ color, ...extra });
 const sphere = (r, w = 12, h = 8) => new THREE.SphereGeometry(r, w, h);
 const cyl = (top, bottom, h, n = 14) => new THREE.CylinderGeometry(top, bottom, h, n);
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
