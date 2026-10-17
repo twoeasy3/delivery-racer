@@ -105,7 +105,7 @@ const meshLo = [], meshHi = []; // per instanced mesh: the instance range writte
 let stamp = 0;
 
 const key = (i, j) => i * 65536 + j;
-const box = new THREE.Box3(), geoBox = new THREE.Box3(), m4 = new THREE.Matrix4();
+const box = new THREE.Box3(), MID = [0, 0, 0], HALF = [0, 0, 0], LO = [0, 0, 0], HI = [0, 0, 0];
 
 // put back everything faded (before an index is dropped, and when it is over)
 const restoreAll = () => {
@@ -141,10 +141,23 @@ const build = () => {
       if (!c.boundingSphere) c.computeBoundingSphere();
       const mi = meshes.length;
       let any = false;
+      const g = c.geometry.boundingBox, w = c.matrixWorld.elements, a = c.instanceMatrix.array;
+      const gc = [(g.min.x + g.max.x) / 2, (g.min.y + g.max.y) / 2, (g.min.z + g.max.z) / 2], ge = [(g.max.x - g.min.x) / 2, (g.max.y - g.min.y) / 2, (g.max.z - g.min.z) / 2];
       for (let i = 0; i < c.count; i++) {
-        c.getMatrixAt(i, m4);
-        box.copy(c.geometry.boundingBox).applyMatrix4(m4.premultiply(c.matrixWorld));
-        if (take(box.clone(), mi, i)) any = true;
+        // (the box of the geometry's box turned and scaled: its middle moved, its half-sizes the sum of |matrix| x half-sizes; the
+        // instance's matrix, then the mesh's world matrix, each that way: far cheaper than eight corners, for tens of thousands)
+        const o = i * 16;
+        for (let r = 0; r < 3; r++) {
+          MID[r] = a[o + r] * gc[0] + a[o + 4 + r] * gc[1] + a[o + 8 + r] * gc[2] + a[o + 12 + r];
+          HALF[r] = Math.abs(a[o + r]) * ge[0] + Math.abs(a[o + 4 + r]) * ge[1] + Math.abs(a[o + 8 + r]) * ge[2];
+        }
+        for (let r = 0; r < 3; r++) {
+          const mid = w[r] * MID[0] + w[4 + r] * MID[1] + w[8 + r] * MID[2] + w[12 + r];
+          const half = Math.abs(w[r]) * HALF[0] + Math.abs(w[4 + r]) * HALF[1] + Math.abs(w[8 + r]) * HALF[2];
+          LO[r] = mid - half; HI[r] = mid + half;
+        }
+        box.min.fromArray(LO); box.max.fromArray(HI);
+        if (take(box, mi, i)) any = true;
       }
       if (any) { meshes.push(c); meshFaded.push(0); meshLo.push(-1); meshHi.push(-1); c.userData.fadeMesh = mi; }
       continue;
@@ -153,7 +166,7 @@ const build = () => {
     c.traverse((o) => { if (o.isMesh && !o.isInstancedMesh && [].concat(o.material).every(fadeable)) parts.push(o, o.material); });
     if (!parts.length) continue;
     box.setFromObject(c);
-    if (take(box.clone(), -1, loose.length)) { loose.push(parts); c.userData.fadeLoose = loose.length - 1; }
+    if (take(box, -1, loose.length)) { loose.push(parts); c.userData.fadeLoose = loose.length - 1; }
   }
   nU = mIdx.length;
   uBox = new Float32Array(boxes); uMesh = Int32Array.from(mIdx); uInst = Int32Array.from(iIdx);
@@ -352,9 +365,11 @@ export const fadeScenery = (dt, on) => {
 };
 const CELL_BOX = new Float32Array(6);
 
+// the index made ahead of need (render/orbit.js: as a replay's orbit camera comes on offer, so its first frame does not stall)
+export const prepareFade = () => { if (stale()) build(); };
 // is this hit (a ray's, on levelGroup) on something the fade takes care of? (the orbit's nudge leaves those to it)
 export const fadesAway = (object, instanceId) => {
-  if (stale()) return false;
+  if (stale()) build(); // (the orbit's first look can come before its first fade)
   while (object.parent && object.parent !== levelGroup) object = object.parent;
   if (object.isInstancedMesh) {
     const mi = object.userData.fadeMesh;
@@ -378,5 +393,7 @@ export const fadeOf = (object, instanceId) => {
   else if (object.userData.fadeLoose !== undefined) for (let v = 0; v < nU; v++) if (uMesh[v] < 0 && uInst[v] === object.userData.fadeLoose) { u = v; break; }
   return u < 0 ? -1 : cFade[uCluster[u]];
 };
+// for the check: is every fade at 0 or 1 (nothing on its way)?
+export const settled = () => { for (let a = 0; a < nActive; a++) if (cFade[cActive[a]] > 0 && cFade[cActive[a]] < 1) return false; return true; };
 // for the check: every cluster's box and fade (a copy)
 export const fadeClusters = () => ({ box: Array.from(cBox), fade: Array.from(cFade), size: Array.from({ length: nC }, (_, c) => cStart[c + 1] - cStart[c]) });

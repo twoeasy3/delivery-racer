@@ -29,7 +29,7 @@ const check = (ok, what) => { console.log((ok ? '  ok    ' : '  FAIL  ') + what)
 const note = (what) => console.log('  ..    ' + what);
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const MAIN_PRINT = { logic: '057a22806d', legacy: '661de07fbe' }; // (main v1.1.154-alpha, 5c0d89d)
-const COST = { tested: 600, ms: 4 }; // (a frame's test at most: clusters tested, ms in headless SwiftShader's JS)
+const COST = { tested: 600, ms: 10 }; // (a frame's test at most: clusters tested; ms in headless SwiftShader's JS, a frame that makes a material's fading copy included)
 
 // ---- the source
 const print = fingerprints();
@@ -110,7 +110,9 @@ else {
       const { Orbit } = await import('/src/delivery/render/orbit.js'); const { levelGroup } = await import('/src/delivery/render/road.js'); const { camera, scene } = await import('/src/delivery/render/scene.js');
       const F = await import('/src/delivery/render/scenefade.js'); const { carMesh } = await import('/src/delivery/render/cars.js');
       const frames = (n) => new Promise(r => { const f = () => (--n <= 0 ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); });
-      const wait = (ms) => new Promise(r => setTimeout(r, ms));`;
+      const wait = (ms) => new Promise(r => setTimeout(r, ms));
+      // (until every fade has reached 0 or 1, at least 0.3 s: headless frames are slow, and a frame's dt is capped at 0.05 s)
+      const settled = async (F) => { const t0 = performance.now(); let n = 0; await wait(300); for (; n < 400 && performance.now() - t0 < 8000; n++) { await frames(1); if (F.settled()) break; } F.SceneFade.fps = Math.round(1000 * n / (performance.now() - t0)); };`;
     const costs = [], gaps = [];
     for (const l of todo) {
       const label = `${l.id} (${l.theme})`;
@@ -130,7 +132,7 @@ else {
         return { frames: F.SceneFade.frames, units: F.SceneFade.units, swapped, on: Orbit.on }; })()`);
       check(!off.on && off.frames === 0 && off.units === 0 && off.swapped === 0, `${label}: in play (chase camera) the fade never ran (frames ${off.frames}, index ${off.units} units, ${off.swapped} materials swapped)`);
       // the index: the orbit on for a few frames, then off again (so the search below sees nothing faded)
-      const idx = await evaluate(`(async () => { ${M} Object.assign(Orbit, { on: true, mode: 'button', auto: false, held: true }); await frames(4); Orbit.on = false; await wait(400); await frames(2);
+      const idx = await evaluate(`(async () => { ${M} Object.assign(Orbit, { on: true, mode: 'button', auto: false, held: true }); await frames(4); Orbit.on = false; await settled(F);
         const { units, clusters, big, buildMs, active } = F.SceneFade; return { units, clusters, big, buildMs, active }; })()`);
       note(`${label}: index ${idx.units} props in ${idx.clusters} clusters, ${idx.big} too big to fade, built in ${idx.buildMs} ms`);
       // OBSTRUCTED: a pose where the line from the camera to the car goes through a prop that fades, and nothing that does not
@@ -167,7 +169,7 @@ else {
         const THREE = await import('/node_modules/three/build/three.module.js');
         Player.s = ${P.s}; Object.assign(Orbit, { yaw: ${P.yaw} * Math.PI / 180, pitch: ${P.pitch} * Math.PI / 180, radius: 25, on: true, mode: 'button', auto: false, held: true });
         F.SceneFade.testedMax = 0; F.SceneFade.msMax = 0;
-        await wait(600); await frames(3);
+        await settled(F);
         const flip = scene.scale.x < 0 ? -1 : 1, p = new THREE.Vector3(); Track.toWorld(Player.s, Player.lat, p);
         const at = new THREE.Vector3(p.x * flip, p.y + Player.air + 1.1, p.z), cam = camera.position.clone();
         const want = new THREE.Vector3(...${JSON.stringify(P.want)});
@@ -198,23 +200,23 @@ else {
       await shot(l.id + '-faded');
       // OFF AGAIN
       const back = await evaluate(`(async () => { ${M}
-        Orbit.on = false; await wait(400); await frames(2);
+        Orbit.on = false; const t0 = performance.now(); await settled(F); const took = performance.now() - t0;
         let obj = null; levelGroup.traverse(o => { if (o.uuid === '${P.id}') obj = o; });
         let swapped = 0, bent = 0; levelGroup.traverse(o => { if (o.material && [].concat(o.material).some(m => m.userData.fadeOf)) swapped++; if (o.isInstancedMesh) { const a = o.instanceMatrix.array; for (let i = 3; i < o.count * 16; i += 16) if (a[i] !== 0) { bent++; break; } } });
         const n0 = F.SceneFade.frames; Game.paused = false; await frames(15); Game.paused = true; const n1 = F.SceneFade.frames;
-        return { fade: F.fadeOf(obj, ${P.inst}), active: F.SceneFade.active, swapped, bent, ran: n1 - n0 };
+        return { fade: F.fadeOf(obj, ${P.inst}), active: F.SceneFade.active, swapped, bent, ran: n1 - n0, took: Math.round(took), fps: F.SceneFade.fps };
       })()`);
       check(back.fade === 0 && back.active === 0 && back.swapped === 0 && back.bent === 0 && back.ran === 0,
-        `${label}: the orbit off: back in 0.4 s (fade ${back.fade}, ${back.active} active, ${back.swapped} materials still swapped, ${back.bent} instanced meshes with a fade left), then not run (${back.ran} frames)`);
+        `${label}: the orbit off: all back (in ${back.took} ms at ${back.fps} frames a second; fade ${back.fade}, ${back.active} active, ${back.swapped} materials still swapped, ${back.bent} instanced meshes with a fade left), then not run (${back.ran} frames)`);
       if (errors.length) check(false, `${label}: page errors: ${errors.slice(0, 3).join(' | ').slice(0, 300)}`);
     }
     // ONCE: photo mode fades too (the last level loaded), and stops with it
     if (todo.length) {
       const ph = await evaluate(`(async () => { ${M} const { Photo, startPhoto } = await import('/src/delivery/render/photo.js');
-        const n0 = F.SceneFade.frames; startPhoto(); await wait(300); const on = F.SceneFade.frames - n0;
-        Photo.on = false; document.body.classList.remove('photo'); await wait(400); const n1 = F.SceneFade.frames; await wait(300);
-        return { photo: on, after: F.SceneFade.frames - n1, active: F.SceneFade.active }; })()`);
-      check(ph.photo > 0 && ph.after === 0 && ph.active === 0, `photo mode: the fade runs while it is on (${ph.photo} frames), and stops after it (${ph.after} frames later, ${ph.active} active)`);
+        Game.paused = true; const n0 = F.SceneFade.frames; startPhoto(); await frames(4); const on = F.SceneFade.frames - n0, was = Photo.on;
+        Photo.on = false; document.body.classList.remove('photo'); await settled(F); const n1 = F.SceneFade.frames; await frames(4);
+        return { photo: on, was, after: F.SceneFade.frames - n1, active: F.SceneFade.active }; })()`);
+      check(ph.photo > 0 && ph.after === 0 && ph.active === 0, `photo mode (${ph.was ? 'on' : 'NOT ON'}): the fade runs while it is on (${ph.photo} frames), and stops after it (${ph.after} frames later, ${ph.active} active)`);
     }
     if (costs.length) {
       const worst = costs.reduce((a, b) => (b.max > a.max ? b : a));
