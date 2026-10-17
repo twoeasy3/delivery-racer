@@ -229,7 +229,7 @@ below write nothing (`Progress.noSave`). The rotation is seeded by the local dat
 ## 7b. Unlock cinematics
 
 A full-screen reveal over the menu, drawn in one canvas of its own (render/unlockcine.js). Not the `cine` stills of
-section 2 (those are a frozen camera on a run): these are short played sequences. Since CHECKLIST 437 the game plays them
+section 2 (those are a frozen camera on a run): these are short played sequences. Since CHECKLIST 438 the game plays them
 itself (render/cinequeue.js, CINE-WIRING.md: a car bought, a key, a car unlocked, an ECU bought), as the Options' Cutscenes
 setting (On / Short / Off) says; the addresses below still play one at will.
 A tap or click, Escape, Space or Enter while it plays skips to its end; the end is HELD (the last frame, with "Tap to
@@ -248,7 +248,7 @@ e.g. Shift).
 | `evil` | bare | With `unlockcine`: the Evil livery (and "New ride" for a car). | `/delivery/?unlockcine=car:sixteen&evil` | Normal | yes |
 | `loop` | bare | With `unlockcine`: plays again and again, no hold (until skipped). | `/delivery/?unlockcine=key:swancar&loop` | Normal | untried |
 | `still` | seconds | With `unlockcine`: that moment of it, held (no sound), for pictures. | `/delivery/?unlockcine=key:swancar&still=3.4` | Normal | yes |
-| `cineplay` | bare | The game's own cutscenes (CHECKLIST 437) play in a headless browser too (a check, a still); without it a headless browser plays none, only logs them in `window.__cine.log`. | `/delivery/?cineplay&garage` | Normal | yes (headless) |
+| `cineplay` | bare | The game's own cutscenes (CHECKLIST 438) play in a headless browser too (a check, a still); without it a headless browser plays none, only logs them in `window.__cine.log`. | `/delivery/?cineplay&garage` | Normal | yes (headless) |
 | `cinelite` | bare | The game's own cutscenes in their fade-only version, as on a low-end device (2 cores or 2 GB or fewer; any `?lite=` does the same). | `/delivery/?cinelite` | Normal | yes (headless) |
 | `nocine` | bare | None of the game's own cutscenes plays for the visit (logged as `nocine`). | `/delivery/?nocine&showroom` | Normal | untried |
 

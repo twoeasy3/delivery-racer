@@ -26,7 +26,7 @@ import { ask, tell } from './dialog.js';
 import { sourcesLine } from '../carsources.js';
 import { IDEA_CARS } from '../ideas.js';
 import { Inspector } from './inspector.js';
-import { purchased } from './cinequeue.js'; // (a car bought: Crazey Jim's sale cutscene, CHECKLIST 437)
+import { purchased } from './cinequeue.js'; // (a car bought: Crazey Jim's sale cutscene, CHECKLIST 438)
 
 // The lot: three rows of bays, a long covered garage along the back, the cars parked strictly column by
 // column in order of their stars and price, cheapest first (one with no stars, the Tank, last), and in

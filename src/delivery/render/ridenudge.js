@@ -20,7 +20,7 @@ import { Replay } from '../replay.js';
 import { nudgeOn, nudgeFor, betterStats } from './rides.js';
 import { Garage } from './garage.js';
 import { Showroom } from './showroom.js';
-import { purchased } from './cinequeue.js'; // (a car bought: Crazey Jim's sale cutscene, CHECKLIST 437)
+import { purchased } from './cinequeue.js'; // (a car bought: Crazey Jim's sale cutscene, CHECKLIST 438)
 
 const css = `
 #rideNudge { margin: 8px auto 10px; max-width: 340px; padding: 10px 12px; border-radius: 12px; background: rgba(14, 20, 30, .88);

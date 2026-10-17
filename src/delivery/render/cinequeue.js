@@ -1,4 +1,4 @@
-// ---- THE CUTSCENES IN THE GAME (CHECKLIST 437; CINE-WIRING.md): the unlock cinematics (render/unlockcine.js, its directors in
+// ---- THE CUTSCENES IN THE GAME (CHECKLIST 438; CINE-WIRING.md): the unlock cinematics (render/unlockcine.js, its directors in
 // render/ecucine.js) played from the game's own flow, not only by address. Render side only: no logic file is touched (the
 // replay fingerprint, scripts/logic-hash.mjs, never moves), and the cinematics' code stays a lazy import (loaded at the first one).
 //   jim     a car BOUGHT on the car lot (Crazey Jim's: render/garage.js buy; the results' Better ride, render/ridenudge.js): purchased()

@@ -618,11 +618,14 @@ try {
     {
       server.moduleGraph.invalidateAll();
       const { makeShowCar: mk2 } = await load('render/showcar.js'), W4 = await load('render/wheelcosmetic.js');
-      const { cosmeticKeys: keys2, grantCosmetics } = await load('render/cosmetics.js');
+      const { cosmeticKeys: keys2, grantCosmetics, awardCosmetic } = await load('render/cosmetics.js');
       await load('unlockall.js'); grantCosmetics(keys2());
       const PC = await load('render/platecosmetic.js'), PD = await load('render/propdress.js'), { PLATE_DESIGNS } = await load('render/platedesigns.js'), { PROPS } = await load('render/propmodels.js');
       W4.setWheelSet('blade-spinner');
-      const plateOn = PC.setPlateDesign(PLATE_DESIGNS.find(d => d.id !== 'stock').id), propOn = PD.setProp('roof', PROPS.roof[0].id);
+      // (the plate and the roof prop are EARNED, per car only (CHECKLIST 433): one of each given through awardCosmetic and worn on the car itself)
+      const plateId = PLATE_DESIGNS.find(d => d.id !== 'stock').id, roofId = PROPS.roof[0].id;
+      awardCosmetic('plate:' + plateId, 1, { source: 'check' }); awardCosmetic('roof:' + roofId, 1, { source: 'check' });
+      const plateOn = PC.setPlateDesign(plateId, 'commuter'), propOn = PD.setProp('roof', roofId, 'commuter');
       const car = fleetAll.find(c => c.id === 'commuter');
       const dressedCar = mk2(car), stockCar = mk2(car, { stock: true });
       const worn = (m) => ({ rims: m.userData.wheelHubs?.rims?.list.length || 0, plate: PC.platePlan(m)?.worn?.length || 0, props: PD.propPlan(m)?.worn?.length || 0, cos: (() => { let n = 0; m.traverse(x => { if (x.userData.propCosmetic || x.userData.wheelRing || x.userData.plateFace) n++; }); return n; })() });

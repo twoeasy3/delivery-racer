@@ -1,4 +1,4 @@
-// A check of THE CUTSCENES IN THE GAME (render/cinequeue.js, CHECKLIST 437, CINE-WIRING.md): the unlock cinematics
+// A check of THE CUTSCENES IN THE GAME (render/cinequeue.js, CHECKLIST 438, CINE-WIRING.md): the unlock cinematics
 // (render/unlockcine.js, render/ecucine.js) played from the game's own flow. In headless Chromium over DevTools (skipped with a
 // note if no browser is found), a phone (390x844, touch, DPR 3), each on a real save written first:
 //   PURCHASE   the car lot (?garage&look=<car>, its Buy button, the sheet's Buy): Crazey Jim's sale, once, the car already in the

@@ -46,7 +46,7 @@ export const upgradeWords = (up) => {
 // ---- THE ECU UP MOMENT (the owner, 14-Oct: the glow and the cinematic are the PURCHASE's, not the blueprints': "Bought") ----
 // A purchase made here sets `fresh` (the car and the ECU just bought): the showroom's next draw glows that pip and shows an "ECU UP" flag
 // (upFlash, freshLevel), and the ECU UP cinematic (render/ecucine.js through unlockcine.js; ECU MAX when it was the last step) plays over the
-// screen, loaded only then: render/cinequeue.js queues it from Ecu.buy's 'ecuchange' (CHECKLIST 437: once, after the save, in turn with
+// screen, loaded only then: render/cinequeue.js queues it from Ecu.buy's 'ecuchange' (CHECKLIST 438: once, after the save, in turn with
 // any other cutscene; the Cutscenes setting, `&nocine`, no WebGL: none). Reduced motion: the fade-only version.
 // Reaching the blueprints for an ECU only writes a quiet "Upgrade ready" (blueprintcard.js progressBar, the showroom's bar and pips).
 let fresh = null, freshTimer = 0;
