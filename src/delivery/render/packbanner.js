@@ -21,6 +21,8 @@ import '../shop.css';
 import { makeShowCar, paintShowCar } from './showcar.js';
 import { carById } from '../cars.js';
 import { sharedRenderer, STILL } from './modelviews.js';
+import { POSES, POSE_NAMES, DEFAULT_POSE } from './bannerposes.js';
+import { bannerChoice } from './bannerlook.js';
 
 // ALL the template's numbers (radians, degrees, shares of the picture, three.js light intensities). Settled on stills of
 // several trios (wedge/midnight/splitwindow, gullwing/classicgt/snake, jetcar/dragster/flyingcar, doubledecker/bubble/monster)
@@ -31,9 +33,7 @@ export const BANNER = {
   marginX: 0.86, marginY: 0.8, // the share of the picture's half width / height the whole group may take (never cropped)
   shiftX: 0.1, shiftY: -0.2,  // the group's middle moved right / up by this share of the half picture (room for the labels)
   // the row
-  heading: 0.55,    // the hero's nose turned this far to the right of straight at the camera (a front three-quarter)
-  fan: 0.4,         // each car further back turned this much less (the last one's nose to the left, as in the reference)
-  row: 0.6,         // the row's line: from the hero back to the left, this far round from straight across (more: deeper)
+  // (where each car stands and how it is turned: the POSE, render/bannerposes.js; 'showdown' is this template's row)
   gap: 0.9,         // the space between two cars' footprints (m, at their scaled size): every car's face shows
   weight: 0.6,      // the size pull: 0 real sizes; 1 every car the same size (by length x height); between, part way
   scaleMin: 0.6, scaleMax: 1.6, // and never more than this
@@ -112,7 +112,9 @@ const overlap = (a, b) => {
 };
 // the scene: { scene, camera, offset } for a picture of aspect w/h, or null (no car could be built)
 // cars: car objects (the first the hero); evil: their Evil livery; o: the numbers (BANNER, or a copy with some changed)
-export const bannerScene = (cars, aspect, { evil = false, config: o = BANNER } = {}) => {
+// pose: a name in POSES (render/bannerposes.js: each car's place, heading and size, the camera), its numbers over BANNER's
+export const bannerScene = (cars, aspect, { evil = false, config = BANNER, pose = DEFAULT_POSE } = {}) => {
+  const o = { ...config, ...(POSES[pose] || POSES[DEFAULT_POSE]) }, slots = o.cars;
   const { blot: shadowTex, glow: glowTex, groundTex: floorTex } = textures(o);
   const scene = new THREE.Scene();
   // light: a low warm sky, a key from the camera's right, a strong warm RIM from behind (it outlines roofs and backs),
@@ -141,20 +143,22 @@ export const bannerScene = (cars, aspect, { evil = false, config: o = BANNER } =
   // the row: the hero at the origin, the next to its left and back, each turned a little less
   const mirror = new THREE.Group(); mirror.scale.y = -1; // (the reflections: the same cars upside down under the ground)
   scene.add(mirror);
-  const corners = [], feet = [];
-  let at = new THREE.Vector3(), prev = null;
+  const corners = [], feet = [], dark = new THREE.MeshBasicMaterial({ color: 0x15131a });
+  let at = new THREE.Vector3();
   built.forEach((b, i) => {
-    const heading = o.heading - i * o.fan;
+    const slot = slots[Math.min(i, slots.length - 1)], heading = slot.h;
+    b.scale *= slot.scale || 1;
     const w = b.size.x * b.scale, l = b.size.z * b.scale;
-    if (prev) { // along the row's line from the one before (back and to the left), as close as it can stand: the two
-      // footprints, turned, a `gap` apart (a separating-axis test, stepped out until it is clear of every car before)
-      const rowDir = new THREE.Vector3(-Math.cos(o.row), 0, -Math.sin(o.row));
-      const me = (d) => ({ x: prev.at.x + rowDir.x * d, z: prev.at.z + rowDir.z * d, h: heading, w: w + o.gap, l: l + o.gap });
-      let d = 0.2;
-      while (d < 40 && feet.some(f => overlap(f, me(d)))) d += 0.05;
+    if (i) { // along the slot's line from car `from` (the one before by default), as close as it can stand: the
+      // footprints, turned, a `gap` apart (a separating-axis test, stepped out until it is clear of every car placed)
+      const from = feet[slot.from ?? i - 1], rowDir = new THREE.Vector3(-Math.cos(slot.dir), 0, -Math.sin(slot.dir));
+      const me = (d) => ({ x: from.x + rowDir.x * d, z: from.z + rowDir.z * d, h: heading, w: w + o.gap, l: l + o.gap });
+      let d = Math.max(0.2, slot.min || 0);
+      while (d < 60 && feet.some(f => overlap(f, me(d)))) d += 0.05;
       at = new THREE.Vector3(me(d).x, 0, me(d).z);
     }
     feet.push({ x: at.x, z: at.z, h: heading, w, l });
+    if (slot.dark) b.model.traverse((m) => { if (m.isMesh) m.material = dark; });
     const place = (group) => {
       const holder = new THREE.Group(), turn = new THREE.Group();
       holder.position.set(-(b.box.min.x + b.box.max.x) / 2, -b.box.min.y, -(b.box.min.z + b.box.max.z) / 2);
@@ -175,7 +179,7 @@ export const bannerScene = (cars, aspect, { evil = false, config: o = BANNER } =
     shadow.renderOrder = 2;
     scene.add(shadow);
     // its headlamps, glowing
-    for (const p of lampsOf(b.model, b.box)) {
+    for (const p of slot.dark ? [] : lampsOf(b.model, b.box)) {
       const local = p.clone().sub(new THREE.Vector3((b.box.min.x + b.box.max.x) / 2, b.box.min.y, (b.box.min.z + b.box.max.z) / 2));
       const world = local.multiplyScalar(b.scale).applyAxisAngle(new THREE.Vector3(0, 1, 0), heading).add(at);
       const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: o.glow.opacity }));
@@ -188,7 +192,6 @@ export const bannerScene = (cars, aspect, { evil = false, config: o = BANNER } =
     const c = Math.cos(heading), sn = Math.sin(heading), hx = w / 2, hz = l / 2, h = b.size.y * b.scale;
     for (const x of [-hx, hx]) for (const z of [-hz, hz]) for (const y of [0, h]) corners.push(new THREE.Vector3(at.x + x * c + z * sn, y, at.z - x * sn + z * c));
     if (o.reflections) for (const x of [-hx, hx]) for (const z of [-hz, hz]) corners.push(new THREE.Vector3(at.x + x * c + z * sn, -h * 0.35, at.z - x * sn + z * c)); // (room for the reflections)
-    prev = { at };
   });
   // the ground: dark, a little see-through (the reflections under it dimmed), fading out at its edge into the backdrop
   const mid = new THREE.Box3().setFromPoints(corners).getCenter(new THREE.Vector3());
@@ -207,6 +210,7 @@ export const bannerScene = (cars, aspect, { evil = false, config: o = BANNER } =
   const span = (d) => {
     camera.position.copy(target).addScaledVector(dir, d);
     camera.lookAt(target);
+    camera.rotateZ((o.roll || 0) * Math.PI / 180); // (a dutch angle: the framing below measures it rolled)
     camera.updateMatrixWorld(true);
     camera.updateProjectionMatrix();
     let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
@@ -224,7 +228,7 @@ export const bannerScene = (cars, aspect, { evil = false, config: o = BANNER } =
   for (let i = 0; i < 30; i++) { const d = (near + far) / 2; if (fits(span(d))) far = d; else near = d; }
   const s = span(far);
   // (offset: a share of the picture to slide the view by: the group's middle to (shiftX, shiftY))
-  return { scene, camera, offset: s ? { x: (s.cx - o.shiftX) / 2, y: -(s.cy - o.shiftY) / 2 } : { x: 0, y: 0 } };
+  return { scene, camera, feet, offset: s ? { x: (s.cx - o.shiftX) / 2, y: -(s.cy - o.shiftY) / 2 } : { x: 0, y: 0 } };
 };
 
 const disposeScene = (scene) => scene.traverse((node) => {
@@ -233,22 +237,22 @@ const disposeScene = (scene) => scene.traverse((node) => {
   for (const material of [].concat(node.material || [])) { material.map?.dispose(); material.dispose(); }
 });
 
-// cars as car objects: ids looked up (an unknown id left out), each once, at most three
+// cars as car objects: ids looked up (an unknown id left out), each once, at most four
 const carsOf = (list) => {
   const seen = new Set(), out = [];
   for (const x of list || []) { const car = typeof x === 'string' ? carById(x) : x?.car || x; if (car?.id && !seen.has(car.id)) { seen.add(car.id); out.push(car); } }
-  return out.slice(0, 3);
+  return out.slice(0, 4);
 };
 const rsize = new THREE.Vector2();
 // THE TEMPLATE, rendered: 1 to 3 cars (objects or ids; the first the hero) into a new canvas of width x height device
 // px: the cars, their shadows, reflections and ground, see-through round them (the backdrop is the page's: bannerArt).
 // null: no renderer (no WebGL), no size, no car built
-export const renderPackBanner = (list, { width, height, evil = false, config = BANNER } = {}) => {
+export const renderPackBanner = (list, { width, height, evil = false, config = BANNER, pose = DEFAULT_POSE } = {}) => {
   const cars = carsOf(list), renderer = sharedRenderer();
   if (!cars.length || !renderer || renderer.getContext().isContextLost()) return null;
   const w = Math.max(0, Math.round(width || 0)), h = Math.max(0, Math.round(height || 0));
   if (!w || !h) return null;
-  const view = bannerScene(cars, w / h, { evil, config });
+  const view = bannerScene(cars, w / h, { evil, config, pose });
   if (!view) return null;
   renderer.getSize(rsize);
   if (w > rsize.x || h > rsize.y) renderer.setSize(rsize.x = Math.max(rsize.x, w), rsize.y = Math.max(rsize.y, h), false);
@@ -266,18 +270,18 @@ export const renderPackBanner = (list, { width, height, evil = false, config = B
 
 // ---- drawn once, kept: by the cars (in order), the side and the picture's size in steps of 20 px -------------------
 const pictures = new Map(); // key -> object URL
-const keyOf = (el, cars, evil) => {
+const keyOf = (el, cars, evil, pose) => {
   const r = el.getBoundingClientRect();
-  return cars.map(c => c.id).join('+') + (evil ? '/evil/' : '/good/') + Math.round(r.width / 20) + 'x' + Math.round(r.height / 20);
+  return cars.map(c => c.id).join('+') + '/' + pose + (evil ? '/evil/' : '/good/') + Math.round(r.width / 20) + 'x' + Math.round(r.height / 20);
 };
 const layerOf = (el) => el.querySelector(':scope > .pack-banner-cars') || el.appendChild(Object.assign(document.createElement('div'), { className: 'pack-banner-cars' }));
 const show = (el, url) => { layerOf(el).style.backgroundImage = `url("${url}")`; el.classList.add('drawn'); };
 // draw the banner into `el` now (its own size). False: no renderer, or no size yet, or no car built
-export const drawBanner = (el, cars, evil = false) => {
-  const key = keyOf(el, cars, evil), url = pictures.get(key);
+export const drawBanner = (el, cars, evil = false, pose = DEFAULT_POSE) => {
+  const key = keyOf(el, cars, evil, pose), url = pictures.get(key);
   if (url) { show(el, url); return true; }
   const r = el.getBoundingClientRect(), ratio = Math.min(window.devicePixelRatio || 1, 2);
-  const canvas = renderPackBanner(cars, { width: r.width * ratio, height: r.height * ratio, evil });
+  const canvas = renderPackBanner(cars, { width: r.width * ratio, height: r.height * ratio, evil, pose });
   if (!canvas) return false;
   const done = (u) => { pictures.set(key, u); if (el.isConnected) show(el, u); };
   if (canvas.toBlob) canvas.toBlob((blob) => done(blob ? URL.createObjectURL(blob) : canvas.toDataURL('image/png')), 'image/png');
@@ -285,7 +289,7 @@ export const drawBanner = (el, cars, evil = false) => {
   return true;
 };
 // the cars a pack's banner shows: its featured entries' cars, each once, in order (the first the hero), at most three;
-// null if fewer than two (one featured car keeps the tile's own art)
+// null if fewer than two (one featured car keeps the tile's own art). At most four (a pose has a layout for each count)
 export const bannerCars = (featured = []) => {
   const out = carsOf(featured);
   return out.length >= 2 ? out : null;
@@ -293,7 +297,8 @@ export const bannerCars = (featured = []) => {
 // the banner, as an element to put in the page: the backdrop (BANNER.backdrop: a sky, a blurred town, a vignette), the
 // cars' picture over it (drawn once it has a size, and again at a new size), the cars' names in labels at its foot (the
 // hero first). onFail: no renderer here (no WebGL): the caller takes the element away and shows its old art
-export const bannerArt = (list, { onFail, labels = true, evil = false, className = '' } = {}) => {
+// pack: the pack's id (its pose chosen by render/bannerlook.js), or pose: a pose by name
+export const bannerArt = (list, { onFail, labels = true, evil = false, className = '', pack = '', pose = bannerChoice(pack).pose } = {}) => {
   const cars = carsOf(list), b = BANNER.backdrop;
   const el = document.createElement('div');
   el.className = 'pack-banner' + (className ? ' ' + className : '');
@@ -318,9 +323,9 @@ export const bannerArt = (list, { onFail, labels = true, evil = false, className
     if (!sharedRenderer()) { failed = true; observer?.disconnect(); onFail?.(); return; }
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) return;
-    const key = keyOf(el, cars, evil);
+    const key = keyOf(el, cars, evil, pose);
     if (key === last) return;
-    if (drawBanner(el, cars, evil)) last = key;
+    if (drawBanner(el, cars, evil, pose)) last = key;
   };
   const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(() => requestAnimationFrame(draw)) : null;
   observer?.observe(el);
@@ -341,4 +346,35 @@ if (params?.get('banner')) {
   art.style.width = w + 'px'; art.style.height = h + 'px'; art.style.flex = '0 0 auto';
   page.append(art);
   document.body.append(page);
+}
+// ?packbanner=<packId>[&pose=<name>][&w=&h=] (that pack's featured cars, its pose or the one named);
+// ?packbanner=sheet[&cars=<ids>][&w=&h=] (every pose with 1 to 4 of the sample cars, a row a pose). Terse labels only
+if (params?.get('packbanner')) {
+  const which = params.get('packbanner'), w = Math.max(80, Number(params.get('w')) || 0), h = Math.max(60, Number(params.get('h')) || 0);
+  const page = Object.assign(document.createElement('div'), { className: 'pack-banner-page' });
+  page.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#0b0d14;overflow:auto;padding:8px;color:#ccc;font:12px monospace';
+  document.body.append(page);
+  const cell = (cars, pose, width, height, label) => {
+    const art = bannerArt(cars, { pose, labels: !label, onFail: () => { art.textContent = 'no WebGL'; } });
+    art.style.cssText += `;width:${width}px;height:${height}px`;
+    const box = Object.assign(document.createElement('div'), { style: 'display:inline-block;margin:0 6px 6px 0;vertical-align:top' });
+    box.append(art);
+    if (label) box.append(Object.assign(document.createElement('div'), { textContent: label }));
+    return box;
+  };
+  if (which === 'sheet') {
+    const ids = (params.get('cars') || 'wedge,midnight,splitwindow,jetcar').split(',').filter(Boolean);
+    for (const pose of POSE_NAMES) {
+      const row = document.createElement('div');
+      for (let n = 1; n <= ids.length; n++) row.append(cell(ids.slice(0, n), pose, w > 80 ? w : 360, h > 60 ? h : 180, pose + ' ' + n));
+      page.append(row);
+    }
+  } else {
+    import('../packs.json').then(({ default: data }) => {
+      const entries = data.packs?.[which]?.featured?.entries || [];
+      const ids = entries.map(e => (typeof e === 'string' ? e : e.car)).filter(Boolean);
+      const pose = POSES[params.get('pose')] ? params.get('pose') : bannerChoice(which).pose;
+      page.append(cell(ids, pose, w > 80 ? w : 1280, h > 60 ? h : 640, ''), Object.assign(document.createElement('div'), { textContent: which + ' ' + pose }));
+    });
+  }
 }

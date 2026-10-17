@@ -132,7 +132,7 @@ export const openContents = (host, { kind, title, featured = [] }) => {
     const out = c.shifted.map(f => entryName(f) + ' (' + (f.exhausted === 'owned' ? 'Key obtained' : 'Car Maxed') + ')');
     // two or three featured cars: the pack's BANNER over them (render/packbanner.js; no WebGL: none, the cards say it all)
     const trio = bannerCars(c.featured);
-    const banner = trio ? bannerArt(trio, { className: 'pc-banner', onFail: () => banner.remove() }) : null;
+    const banner = trio ? bannerArt(trio, { className: 'pc-banner', pack: kind, onFail: () => banner.remove() }) : null;
     sections.push(make('section', 'pc-group featured', banner,
       make('h3', '', make('span', 'shop-chip r-bespoke', 'Featured'), make('small', '', 'Guaranteed one of the following')),
       out.length ? make('p', 'pc-shift', make('b', '', 'Weights shifted: '), out.join(', ') + ' out of the pool') : null,
