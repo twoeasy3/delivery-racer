@@ -1,7 +1,7 @@
 // A check of THE CUTSCENES IN THE GAME (render/cinequeue.js, CHECKLIST 438, CINE-WIRING.md): the unlock cinematics
 // (render/unlockcine.js, render/ecucine.js) played from the game's own flow. In headless Chromium over DevTools (skipped with a
 // note if no browser is found), a phone (390x844, touch, DPR 3), each on a real save written first:
-//   PURCHASE   the car lot (?garage&look=<car>, its Buy button, the sheet's Buy): Crazey Jim's sale, once, the car already in the
+//   PURCHASE   the Garage (was the car lot: ?garage&look=<car>, its Buy button, the sheet's Buy) and the SHOWROOM's Buy (CHECKLIST 440): Crazey Jim's sale, once, the car already in the
 //              stored save when the cutscene's page element appears; a tap skips to the held end, a tap closes it; the lot is
 //              still there under it; no plain 'car' unlock for the same car
 //   ECU UP     the showroom's full view (?showroom&look=<car>&full): its Upgrade button: ECU UP at the new level; the next one, to
@@ -39,9 +39,17 @@ const MAIN_PRINT = { logic: '33a0394c26', legacy: 'dd565f56b3' }; // (main v1.1.
 const src = (p) => readFileSync(join(ROOT, 'src/delivery', p), 'utf8');
 const queueJs = src('render/cinequeue.js');
 check(!/^import[^;]*unlockcine/m.test(queueJs) && /import\('\.\/unlockcine\.js'\)/.test(queueJs), 'render/cinequeue.js loads the cinematics only by a dynamic import');
-const statics = ['main.js', 'render/packs.js', 'render/garage.js', 'render/ridenudge.js', 'render/ecuupgrade.js'].filter(f => /^import[^;]*['"][./]*(render\/)?unlockcine\.js['"]/m.test(src(f)));
+const statics = ['main.js', 'render/packs.js', 'render/garage.js', 'render/ridenudge.js', 'render/ecuupgrade.js', 'render/carbuy.js', 'render/showroom.js'].filter(f => /^import[^;]*['"][./]*(render\/)?unlockcine\.js['"]/m.test(src(f)));
 check(!statics.length, 'nothing imports render/unlockcine.js statically' + (statics.length ? ': ' + statics.join(', ') : ''));
 check(!/progress\.js|Progress\.data\.\w+\s*=/.test(queueJs.replace(/import \{ Progress \} from '\.\.\/progress\.js';/, '')) && /localStorage\.setItem\(CINE_KEY/.test(queueJs), 'the setting is kept in localStorage by the queue, never written into the save');
+// (CHECKLIST 440) ONE purchase path: render/carbuy.js buyCar (Progress.buy, then purchased()); the showroom, the Garage and the results'
+// Better ride all buy through it, and nothing else in render/ buys a roster car (menu.js's secret bus aside)
+{
+  const buyJs = src('render/carbuy.js'), users = ['render/showroom.js', 'render/garage.js', 'render/ridenudge.js'].filter(f => /import \{[^}]*\bbuyCar\b[^}]*\} from '\.\/carbuy\.js'/.test(src(f)) && /buyCar\(/.test(src(f).replace(/import[^;]*;/g, '')));
+  check(/Progress\.buy\(car\)/.test(buyJs) && /purchased\(car\)/.test(buyJs), 'render/carbuy.js buys (Progress.buy) and queues the sale cutscene (purchased)');
+  check(users.length === 3, 'the showroom, the Garage and the Better ride card buy through buyCar (' + users.join(', ') + ')');
+  check(!['render/showroom.js', 'render/garage.js', 'render/ridenudge.js'].some(f => /Progress\.buy\(|(?<![.\w])purchased\(/.test(src(f).replace(/\/\/.*$/gm, ''))),'none of them calls Progress.buy or purchased itself');
+}
 const print = fingerprints(join(ROOT, 'src/delivery') + '/');
 check(print.logic === MAIN_PRINT.logic && print.legacy === MAIN_PRINT.legacy, 'the replay rules fingerprint is main\'s: ' + print.logic + ' / ' + print.legacy);
 
@@ -158,6 +166,29 @@ else {
     log = await logOf();
     check(log.filter(e => e.what === 'started').length === 1 && !log.some(e => e.mode === 'car' && e.carId === BUY), 'played once, and no plain car unlock for the car bought (' + log.map(e => e.mode + ':' + e.what).join(', ') + ')');
 
+    }
+    // ---- PURCHASE in the SHOWROOM (CHECKLIST 440: the car lot retired as the shop; the showroom's Buy is the one purchase path,
+    // render/carbuy.js): the full view's Buy and its price, the sheet's Buy, Crazey Jim's sale, the car then drivable there
+    if (want('showroombuy')) {
+    const SR = 'junker';
+    await seed({ money: 5000, cars: ['commuter'], unlocked: 99, tierBase: 99 });
+    await go(`index.html?cineplay&showroom&look=${SR}&full`, 5000);
+    await evaluate(WATCH);
+    const words = await evaluate(`document.querySelector('#showroom .sr-go.buy > span')?.textContent || null`);
+    check(/^Buy \$\d+/.test(words || ''), 'the showroom: the ' + SR + '\'s full view says Buy and its price ("' + words + '")');
+    check(await tap('#showroom .sr-go.buy'), 'its Buy button pressed');
+    const sheet = await until(`!!document.querySelector('.menu-dialog .dialog-ok')`, 8000);
+    check(!!sheet, 'the showroom\'s Buy opens the sheet');
+    await shot('1b-showroom-sheet');
+    await tap('.menu-dialog .dialog-ok');
+    const jim = await until(`window.__watch.seen[0] || null`, 15000);
+    check(jim?.busy?.mode === 'jim' && jim.busy.carId === SR, 'bought in the showroom: Crazey Jim\'s sale cutscene plays for it (' + JSON.stringify(jim?.busy) + ')');
+    check(!!jim?.saved?.cars?.includes(SR) && jim.saved.money < 5000, 'the purchase was in the stored save when the cutscene appeared');
+    await sleep(2600);
+    await shot('2b-showroom-cine');
+    await tap('.ucine'); await sleep(300); await tap('.ucine'); await sleep(500);
+    const after = await evaluate(`({ gone: !document.querySelector('.ucine'), open: !document.getElementById('showroom').classList.contains('hidden'), go: document.querySelector('#showroom .sr-go > span')?.textContent })`);
+    check(after.gone && after.open && /^Drive/.test(after.go || ''), 'closed: back on the showroom, the car now to drive ("' + after.go + '")');
     }
     // ---- ECU UP, then MAX ECU: the showroom's full view
     if (want('ecu')) {

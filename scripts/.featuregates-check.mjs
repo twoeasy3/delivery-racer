@@ -127,7 +127,7 @@ try {
   const hiddenFor = (save) => { const open = openGates(save); return SECTIONS.filter(([, , gate]) => gate !== 'always' && !open.has(gate)).map(s => s[1]); };
   const nb = blank(); adopt(nb);
   const shownNew = SECTIONS.filter(([, , gate]) => gate === 'always').map(s => s[1]);
-  check(hiddenFor(nb).length === SECTIONS.filter(s => s[2] !== 'always').length && shownNew.includes('Start') && shownNew.includes('Car card (Showroom, Crazey Jim’s lot)') && !shownNew.includes('Events tab and its dot'),
+  check(hiddenFor(nb).length === SECTIONS.filter(s => s[2] !== 'always').length && shownNew.includes('Start') && shownNew.includes('Car card (Showroom: pick and buy)') && !shownNew.includes('Events tab and its dot'),
     'a brand-new save hides the ' + hiddenFor(nb).length + ' gated entries and shows the ' + shownNew.length + ' always ones (Career, the car card, Good / Evil, Start, Options\' settings, guide and save)');
   check(hiddenFor(oldFull).length === 0, 'an old full save hides nothing');
   const every = delivered(LEVELS.filter(l => !g.levels.isRace(l)).map(l => l.id)); every.seen = [];

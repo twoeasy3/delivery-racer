@@ -91,7 +91,7 @@ export const SECTIONS = [
   ['#sideBtn', 'Good / Evil switch (both halves, from the start)', 'always'], ['#sideNote', 'Side note', 'always'], ['#startBtn', 'Start', 'always'],
   ['#stage .replays', 'Replays chip', 'replays'], ['#stage .ribbon .half.evil', 'Evil medal', 'always'],
   ['#muteBtn', 'Sound', 'always'], ['#touchBtn', 'On-screen controls', 'always'], ['#autoGasBtn', 'Auto accelerate', 'always'],
-  ['#autoBrakeBtn', 'Auto brake', 'always'], ['#ghostBtn', 'Ghost', 'always'], ['#wheelsOpenBtn', 'Customise wheels (Cosmetics)', 'style', 'in #menuOptions section.wheels'],
+  ['#autoBrakeBtn', 'Auto brake', 'always'], ['#ghostBtn', 'Ghost', 'always'], ['#cineBtn', 'Cutscenes', 'always'], ['#wheelsOpenBtn', 'Customise wheels (Cosmetics)', 'style', 'in #menuOptions section.wheels'],
   ['#albumBtn', 'Postcards', 'extras', X], ['#milestonesBtn', 'Milestones', 'extras', X], ['#hiddenLevelsBtn', 'Hidden levels (the Driving Lesson too)', 'extras', X],
   ['#screensaverBtn', 'Screensaver', 'extras', X], ['#raceWatchBtn2', 'Race screensaver', 'extras', X], ['#screensaverLink', 'Screensaver link', 'extras', X],
   ['#menuOptions a[href="?racewatch"]', 'Race screensaver link', 'extras', X],
