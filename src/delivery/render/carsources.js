@@ -11,7 +11,7 @@ import { rarityName, rarityColour } from '../packs.js';
 import { richTiers } from '../tiers.js';
 import { blueprintCard } from './blueprintcard.js';
 import { drawSoon } from './carstill.js';
-import { posePick } from '../carposes.js';
+import { posePick } from './poseassign.js';
 import shopData from '../shop.json';
 
 const CURRENCY_SIGN = shopData.currency?.sign || '◆';

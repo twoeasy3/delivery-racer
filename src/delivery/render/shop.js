@@ -4,7 +4,7 @@
 // of big tiles, top to bottom (packs.json sections; the offers are the packs' own: shop.js): the FREE DAILY PACK (its
 // button 'Claim', a 'Free' ribbon; claimed, a greyed 'Claimed: next in 7h 12m' counting down to local midnight; the
 // menu's Shop chip wears a small dot while it waits), Featured (a special pack, its featured cars drawn on the tile as the special event's
-// cards draw theirs: carstill.js, the real model, kept as a picture; the four poses are the blueprint cards' only), Card packs, Bundles; then what each
+// cards draw theirs: carstill.js, the real model, kept as a picture; the five poses are the blueprint cards' only), Card packs, Bundles; then what each
 // rarity holds. A tile: its pack drawn in CSS (the foil in the colour of what it promises: grey Common, green
 // Uncommon, purple Epic, gold Legendary, the Bespoke rainbow), a ribbon (Featured, Sale with the share off, New, Best
 // value), what is in it, the drop rates as a bar, and the price on its button. Buying asks first, takes the price, and
