@@ -176,7 +176,7 @@ const featuredTile = (offer) => {
     banner?.remove(); cars.hidden = false; art.classList.remove('banner'); art.closest('.shop-tile')?.classList.remove('has-banner');
     for (const [el, car] of stills) stillSoon(el, car, { side: 'good', stock: true });
   };
-  const banner = trio ? bannerArt(trio, { onFail: fallBack }) : null;
+  const banner = trio ? bannerArt(trio, { onFail: fallBack, pack: offer.pack }) : null;
   if (banner) cars.hidden = true; else drawLater.push(...stills);
   const art = make('div', 'shop-hero-art' + (banner ? ' banner' : ''), banner, cars, packArt(offer.kind, offer.count));
   return make('article', 'shop-tile hero k-' + offer.kind + (banner ? ' has-banner' : ''),
