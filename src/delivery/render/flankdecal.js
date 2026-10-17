@@ -27,6 +27,7 @@ import { isWindowNode } from './glassnames.js';
 import { glassy, forgetDents } from './dents.js';
 import { prepareSuspension } from './carsuspension.js';
 import { DECAL_ZONES } from './decalzonestable.js';
+import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 444)
 
 const param = (name) => (typeof location !== 'undefined' && new RegExp('[?&]' + name + '=([\\w.-]+)').exec(location.search)?.[1]) || null;
 export const DECAL_TEST = { mode: param('decaltest'), lift: param('decallift'), num: param('decalnum') };
@@ -290,7 +291,8 @@ export const buildFlankDecal = (model, key, { mode = 'decal', lift = FLANK.LIFT,
   return { mesh, stats: { triangles: out.pos.length / 3, vertices: out.pos.length, rays: pieces.reduce((a, p) => a + p.rays, 0), ms, pieces } };
 };
 // the dressing (render/showcar.js dressCosmetics): nothing at all unless ?decaltest= asks
-export const dressFlankDecal = (model, car) => {
+export const dressFlankDecal = (model, car) => restPose(model, () => dressFlankDecalNow(model, car)); // (at rest: a model that animates is measured as built, then the cosmetic rides with its part: render/restpose.js)
+const dressFlankDecalNow = (model, car) => {
   if (!DECAL_TEST.mode || !model?.userData || model.userData.flankDecalDone) return model;
   model.userData.flankDecalDone = true;
   const lift = DECAL_TEST.lift ? Math.max(0, Math.min(20, Number(DECAL_TEST.lift))) / 1000 : FLANK.LIFT;

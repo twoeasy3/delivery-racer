@@ -36,6 +36,7 @@ import { registerCosmetics, ownsCosmetic } from './cosmetics.js';
 import { addRims, rimPatch, globalRim, savedRimChoice, resolveRim, rimAsked, rimById, RIM_SKIP } from './rims.js'; // (a set's rim or spinner: render/rims.js)
 import { addTreads, turnWheels, treadPatch, globalTread, savedTreadChoice, resolveTread, treadAsked, treadById } from './treads.js'; // (a set's tread: render/treads.js)
 import * as Store from './loadoutstore.js'; // (the choice: per car over a default)
+import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 444)
 
 export const KEY = 'delivery.wheelcolour';
 export const WHEEL_COLOURS = [
@@ -226,7 +227,8 @@ const addRings = (model, ring) => {
 };
 
 // how a model's wheels are shown now: the chosen design, and the hub colour (a colour chosen apart wins over the design's hubs)
-const dressed = (model) => {
+const dressed = (model) => restPose(model, () => dressedNow(model)); // (at rest: a model that animates is measured as built, then the cosmetic rides with its part: render/restpose.js)
+const dressedNow = (model) => {
   const found = model.userData.wheelHubs;
   if (!found) return; // (no hub found: the colour and rings have nothing to go on, but a rim still may)
   const cid = found.carId;
@@ -244,7 +246,7 @@ export const dressWheels = (model, car) => {
   if (!model || model.userData.wheelHubs) return model;
   if (car && car.legend) { model.userData.wheelHubs = { tyres: [], hubs: [], parts: [], info: [], rings: [], legend: true }; return model; } // (Legendary: black and gold, as designed)
   let found;
-  try { found = findHubs(model); } catch { found = { tyres: [], hubs: [], rubber: [], info: [] }; }
+  try { found = restPose(model, () => findHubs(model)); } catch { found = { tyres: [], hubs: [], rubber: [], info: [] }; }
   // only plain single-colour materials can be tinted: a textured, vertex-coloured or multi-material hub stays as it is
   found.rawHubs = found.hubs.slice(); // (every hub, tintable or not: a rim's dish covers them all)
   found.hubs = found.hubs.filter(({ mesh }) => plain(mesh));

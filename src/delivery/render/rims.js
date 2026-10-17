@@ -29,6 +29,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import * as Store from './loadoutstore.js'; // (the choice, per car over the default)
+import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 444)
 
 export const KEY_RIM = 'delivery.wheelrim';
 // kind: 'speed' (every rim: it turns with the car; null: none); n: the spokes (or blades, ribs) round it, for the wagon-wheel clamp;
@@ -400,7 +401,7 @@ export const addRims = (model, hex, worn = true) => {
   if ((!worn && !model.userData.stockRim) || found.rimSkip || !found.rimInfo || !found.rimInfo.length) return 0; // (worn false: the saved set is not owned, so Stock)
   model.updateMatrixWorld(true);
   toModel.copy(model.matrixWorld).invert();
-  if (!found.roomChecked) roomFor(model, found);
+  if (!found.roomChecked) restPose(model, () => roomFor(model, found));
   const colour = hex === null || hex === undefined ? DEFAULT_HEX : hex;
   const stock = rimById(model.userData.stockRim); // (a model whose own wheel is a rim design: worn when no rim is chosen, or the set is not owned)
   for (const t of found.rimInfo) {
@@ -444,7 +445,7 @@ export const rimStatus = (model) => {
   if (!found) return 'none';
   if (found.rimSkip || found.legend) return 'skip';
   if (!found.rimInfo || !found.rimInfo.length) return 'none';
-  if (!found.roomChecked) { model.updateMatrixWorld(true); toModel.copy(model.matrixWorld).invert(); roomFor(model, found); }
+  if (!found.roomChecked) restPose(model, () => { model.updateMatrixWorld(true); toModel.copy(model.matrixWorld).invert(); roomFor(model, found); });
   return found.rimInfo.some(t => t.faces.length) ? 'ok' : 'none';
 };
 

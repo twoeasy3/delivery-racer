@@ -33,6 +33,7 @@ import { existingProps } from './propcosmetic.js';
 import { forgetDents } from './dents.js';
 import { SILHOUETTE } from './silhouette.js';
 import * as Store from './loadoutstore.js'; // (the choice: per car over a default)
+import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 444)
 
 export { PROPS, SLOTS };
 export const KEY = (slot) => 'delivery.prop.' + slot;
@@ -124,7 +125,8 @@ const attach = (model, group) => {
     parent.add(group);
   } else model.add(group);
 };
-const apply = (model) => {
+const apply = (model) => restPose(model, () => applyNow(model)); // (at rest: a model that animates is measured as built, then the cosmetic rides with its part: render/restpose.js)
+const applyNow = (model) => {
   const info = model.userData.propPlan;
   if (!info) return;
   let changed = false;
