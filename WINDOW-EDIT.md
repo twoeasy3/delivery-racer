@@ -12,7 +12,8 @@ floating windscreens that I can't fix."
 - Part tab: `gap` / `clear` chips, `XYZ` (its centre, m), `° YPR` (yaw, pitch, roll), `W H` (m), **Snap**, **Reset**, **Part** (the whole part
   again). Undo / Redo as for any edit. Mirror on: the pane named the other way (L / R) gets the mirrored edit.
 - **Snap** rests the pane on the body (the line under it: how far it moved and turned, the gap before and after). It never pushes the pane
-  under a body face. At most 15 cm and 20 degrees: anything further is a remodel.
+  under a body face. At most 15 cm and 20 degrees: anything further is a remodel. A screen that stands free by design (a roadster's aero
+  screen, a buggy's, a golf cart's) is laid down by Snap: undo it, or move it by hand.
 - A cabinGlass car (the ideas built with `cabinGlass`) still has its corner drawing (CHECKLIST 336) under the pane's fields.
 
 Saved like every edit: the patch's `panes` table (`render/paneedit.js`), kept in this browser, in Download patch, applied by the game

@@ -146,7 +146,7 @@ export const bodyTriangles = (root, items) => {
 const TRI = new THREE.Triangle(), Q = new THREE.Vector3();
 // the nearest body point to p within `cap` (null beyond it)
 export const nearestBody = (body, p, cap = PANE_CAP) => {
-  let best = cap, at = null;
+  let best = cap, at = null, bi = -1;
   for (let i = 0; i < body.n; i++) {
     const i3 = i * 3;
     if (p.x < body.lo[i3] - best || p.x > body.hi[i3] + best || p.y < body.lo[i3 + 1] - best || p.y > body.hi[i3 + 1] + best || p.z < body.lo[i3 + 2] - best || p.z > body.hi[i3 + 2] + best) continue;
@@ -154,9 +154,11 @@ export const nearestBody = (body, p, cap = PANE_CAP) => {
     TRI.a.set(t[k], t[k + 1], t[k + 2]); TRI.b.set(t[k + 3], t[k + 4], t[k + 5]); TRI.c.set(t[k + 6], t[k + 7], t[k + 8]);
     TRI.closestPointToPoint(p, Q);
     const d = Q.distanceTo(p);
-    if (d < best) { best = d; at = Q.clone(); }
+    if (d < best) { best = d; at = Q.clone(); bi = i; }
   }
-  return at ? { q: at, d: best } : null;
+  if (!at) return null;
+  const k = bi * 9, t = body.tris; TRI.a.set(t[k], t[k + 1], t[k + 2]); TRI.b.set(t[k + 3], t[k + 4], t[k + 5]); TRI.c.set(t[k + 6], t[k + 7], t[k + 8]);
+  return { q: at, d: best, n: TRI.getNormal(new THREE.Vector3()), glass: !!body.glass?.[bi] }; // (n: the face's own normal, by its winding: out of the body)
 };
 const quantile = (a, q) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(q * s.length))]; };
 const median = (a) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
@@ -202,8 +204,9 @@ const RAD = 1 / 57.29577951308232;
 // SNAP TO BODY: the move and turn (about `pivot`, the pane's centre now) that rest the pane on the body: its rim (60 points) brought to 3 mm
 // off the nearest surfaces round it (the body, the other panes), searched move by move and turn by turn (a pattern search, 2 cm and 2 degrees
 // halved down to half a millimetre), from where it is and from where rays along its normal lay it on the body face behind it (a flat pane
-// turned parallel to it). Never into the body: a try that puts more of the pane's inside under a body face facing out is refused. At most
-// 15 cm and 20 degrees. -> { R, t, moved (m), turned (deg), before, after (gapOf), how } or null (nothing within reach, or it rests already)
+// turned parallel to it). Never into the body: a try that puts more of the pane's inside under a body face facing out is refused; at most
+// 15 cm and 20 degrees, and never deeper into it: a try that puts more of the pane's inside behind the body face nearest it (by that face's
+// winding) is refused too. -> { R, t, moved (m), turned (deg), before, after (gapOf), how } or null (nothing within reach, or it rests already)
 export const snapPane = (sample, body, pivot) => {
   const before = gapOf(sample.rim, body), all = [...sample.inner, ...sample.rim];
   const box = new THREE.Box3().setFromPoints(all).expandByScalar(SNAP_REACH + 0.05), near = [];
@@ -220,7 +223,9 @@ export const snapPane = (sample, body, pivot) => {
   let dir = sample.n.clone().negate(), hits = shoot(none, dir, all);
   { const other = shoot(none, sample.n, all); if (other.length > hits.length || (other.length === hits.length && other.length && median(other.map(h => h.t)) < median(hits.map(h => h.t)))) { dir = sample.n.clone(); hits = other; } }
   const sunkOf = (c) => { const out = dir.clone().negate().applyMatrix4(new THREE.Matrix4().extractRotation(c.R)); return inner.length ? inner.filter(p => castBody(sub, ids, at(c, p).addScaledVector(out, 0.0005), out, 0.08, true)?.facing).length / inner.length : 0; };
-  const sunk0 = sunkOf(none);
+  // inside the body: a point behind the body face nearest it (by that face's winding), deeper than 2 mm
+  const insideOf = (c) => { let n = 0; for (const p of inner) { const q = at(c, p), h = nearestBody(sub, q, 0.1); if (h && !h.glass && h.d > 0.002 && q.clone().sub(h.q).dot(h.n) < 0) n++; } return inner.length ? n / inner.length : 0; };
+  const sunk0 = sunkOf(none), in0 = insideOf(none), fine = (c) => sunkOf(c) <= sunk0 + 0.1 && insideOf(c) <= in0 + 0.05;
   const cost = (c) => { let s2 = 0; for (const p of rim) { const h = nearestBody(sub, at(c, p), SNAP_REACH); s2 += Math.abs((h ? h.d : SNAP_REACH) - PANE_STANDOFF); } return s2 / rim.length; };
   const ok = (x) => Math.hypot(x[0], x[1], x[2]) <= SNAP_REACH && Math.hypot(x[3], x[4], x[5]) <= SNAP_TURN * RAD;
   const search = (x0, how) => {
@@ -230,7 +235,7 @@ export const snapPane = (sample, body, pivot) => {
       for (let k = 0; k < 6; k++) for (const sg of [1, -1]) {
         const y = x.slice(); y[k] += sg * (k < 3 ? st : sr); if (!ok(y)) continue;
         const cy = xf(y), Jy = cost(cy); evals++;
-        if (Jy < J - 1e-6 && sunkOf(cy) <= sunk0 + 0.1) { x.splice(0, 6, ...y); c = cy; J = Jy; better = true; }
+        if (Jy < J - 1e-6 && fine(cy)) { x.splice(0, 6, ...y); c = cy; J = Jy; better = true; }
       }
       if (!better) { st /= 2; sr /= 2; }
     }
@@ -244,7 +249,7 @@ export const snapPane = (sample, body, pivot) => {
     const q = flat && dir.angleTo(m) <= SNAP_TURN * RAD ? new THREE.Quaternion().setFromUnitVectors(dir, m) : new THREE.Quaternion();
     const w = new THREE.Vector3(q.x, q.y, q.z), ang = 2 * Math.acos(Math.min(1, q.w)), rv = w.lengthSq() > 1e-14 ? w.normalize().multiplyScalar(ang) : w;
     const c0 = xf([0, 0, 0, rv.x, rv.y, rv.z]), d = flat ? m : dir, again = shoot(c0, d, all);
-    if (again.length) { const tt = d.clone().multiplyScalar(Math.min(...again.map(h => h.t)) - PANE_STANDOFF); const x0 = [tt.x, tt.y, tt.z, rv.x, rv.y, rv.z]; if (ok(x0) && sunkOf(xf(x0)) <= sunk0 + 0.1) tries.push(search(x0, 'face')); }
+    if (again.length) { const tt = d.clone().multiplyScalar(Math.min(...again.map(h => h.t)) - PANE_STANDOFF); const x0 = [tt.x, tt.y, tt.z, rv.x, rv.y, rv.z]; if (ok(x0) && fine(xf(x0))) tries.push(search(x0, 'face')); }
   }
   const best = tries.sort((p, q) => p.J - q.J)[0], moved = best.t.length(), turned = angleOf(best.R);
   if (moved < 2e-4 && turned < 0.05) return null;
