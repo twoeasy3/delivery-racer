@@ -6,7 +6,7 @@ Branch `claude/replay-cam-fade` from main 5c0d89d (v1.1.154-alpha). Render-only:
 
 The replay camera is the orbit camera (`render/orbit.js`: a replay being watched, a run that is over). Its "nudge" ray-tests the
 scenery every 0.1 s and, when anything is in the way, RAISES the camera (up to +34 degrees) or DRAWS IT IN, or gives up to the chase
-camera. Sweep: one level per theme (36 of 62 themes reached before the owner's rush), 3 places x 5 orbit poses each, 390x844.
+camera. Sweep: one level per theme (about 36 of 62 themes reached before the owner's rush), 3 places x 5 orbit poses each, 390x844.
 "blocked" = the line from the wanted camera place to the car meets solid scenery; "struggled" = the nudge raised or pulled in the camera.
 Stills of every pose (before): `/tmp/claude-0/-home-user-delivery-racer/d5c3b697-cfe8-54f1-aad3-35e8af561b80/scratchpad/replay-cam/sweep/<level>-<place%>-<yaw>.png`.
 
@@ -24,7 +24,7 @@ Worst (blocked / struggled of 15):
 | night / expressway (city) | 2 | 9 / 5 | city blocks, lamps (instanced) |
 | noon (wildwest), morro (favela), venice | 3 / 3 / 2 | 7 / 6 / 6 | instanced houses, posts |
 
-Not swept (rush): the remaining themes after metro in the list order were all reached; themes after it in HIDDEN_LEVELS were not.
+Not swept (rush): about 26 themes, those after the ones above in the sweep's order (see `replay-cam/sweep/sweep.json` for the 36 that were).
 
 ## The fix
 
