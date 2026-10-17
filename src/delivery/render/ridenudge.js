@@ -5,7 +5,7 @@
 //  - the results of a delivered career level whose NEXT level has a ride (RIDES), while the car in use is one it betters: a
 //    small card over the buttons, "Better ride for <level>", the car, a bar or two of what it does better, and one button:
 //    Use it (owned), Buy it · $n (the bank has it: bought and put in use, so Next level drives it), or how much is missing
-//  - the showroom and the car lot, opened with such a level picked: that car looked at (scrolled to, picked), and in the
+//  - the showroom and the Garage, opened with such a level picked: that car looked at (scrolled to, picked), and in the
 //    showroom its card tagged "Better ride"
 // Render only (the results screen, the showroom, the lot): what a run does is not touched, so the replays' rules are not
 // (vite.config.js logicFiles: render/ is not followed). Nothing is changed on a save but what the player's own tap buys/picks.
@@ -13,14 +13,13 @@
 import { LEVEL, LEVEL_INDEX } from '../levels.js';
 import { levelName } from '../levelText.js';
 import { Tiers } from '../tiers.js';
-import { Progress } from '../progress.js';
 import { CAR, selectCar } from '../cars.js';
 import { Game } from '../game.js';
 import { Replay } from '../replay.js';
 import { nudgeOn, nudgeFor, betterStats } from './rides.js';
 import { Garage } from './garage.js';
 import { Showroom } from './showroom.js';
-import { purchased } from './cinequeue.js'; // (a car bought: Crazey Jim's sale cutscene, CHECKLIST 438)
+import { buyCar } from './carbuy.js'; // (a car bought: the showroom's one purchase path, which plays the sale cutscene: CHECKLIST 438 / 440)
 
 const css = `
 #rideNudge { margin: 8px auto 10px; max-width: 340px; padding: 10px 12px; border-radius: 12px; background: rgba(14, 20, 30, .88);
@@ -58,9 +57,8 @@ const showCard = () => {
   box.append(el('h3', '', 'Better ride for ' + levelName(next)), el('div', 'car', n.ride.name), ...betterStats(CAR, n.ride).map(bar));
   const button = el('button', 'level', n.offer === 'use' ? 'Use the ' + n.ride.name : n.offer === 'buy' ? 'Buy the ' + n.ride.name + ' · $' + n.ride.price : '$' + n.short + ' more: replay for tips');
   if (n.offer === 'short') button.disabled = true;
-  button.addEventListener('click', () => {
-    if (n.offer === 'buy' && !Progress.buy(n.ride)) return;
-    if (n.offer === 'buy') purchased(n.ride); // (bought and saved: Crazey Jim's sale cutscene over the results, render/cinequeue.js)
+  button.addEventListener('click', async () => {
+    if (n.offer === 'buy' && !await buyCar(n.ride, { confirm: false })) return; // (the button already says the car and its price: bought on the tap; the cutscene plays over the results)
     selectCar(n.ride.id);
     button.disabled = true;
     button.textContent = n.ride.name + ' ready: Next level';

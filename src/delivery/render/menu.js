@@ -5,7 +5,7 @@
 // switches and buttons of the options sheet, the race controls, the secret bus, and the results screen's buttons.
 import { LEVELS, LEVEL_INDEX, LEVEL, selectLevel, nextOnTab, setRaceClass, RACE_CLASSES } from '../levels.js';
 import { levelName } from '../levelText.js';
-import { CARS, SECRET_CARS, useLevelCar, selectCar, amphibiousCars, carRule, ruleAllows } from '../cars.js';
+import { SECRET_CARS, useLevelCar, selectCar } from '../cars.js';
 import { Tiers } from '../tiers.js';
 import { Progress } from '../progress.js';
 import { clearCosmetics } from './cosmetics.js';
@@ -14,7 +14,8 @@ import { unlockMode, setUnlockMode, unlockEverything } from '../unlockall.js';
 import { Shop } from '../shop.js';
 import { Game } from '../game.js';
 import { Replay } from '../replay.js';
-import { Garage } from './garage.js';
+import { Showroom } from './showroom.js'; // (a level refused for want of a car: the showroom, where it is bought)
+import { cheapestWanted } from './carbuy.js';
 import { Sound } from './audio.js';
 import './menuclick.js'; // (every click on a menu plays one sound)
 import { ask } from './dialog.js';
@@ -38,13 +39,12 @@ draw();
 // level only if it is an amphibious one: otherwise the player's amphibious car stays)
 window.addEventListener('carchange', () => { useLevelCar(LEVEL.car, LEVEL.amphibious); draw(); });
 // Start on an amphibious level with no amphibious car owned (see Game.start): nothing starts, and the
-// garage opens at the one to get, to look at and buy (still a menu: no level is built, nothing reloads)
+// showroom opens on the one to get, its full view, to buy (was the car lot: CHECKLIST 440; still a menu: nothing reloads)
 Game.onRefused.push(() => {
   draw();
-  Garage.open();
-  const rule = carRule(); // (a level whose car rule allows only cars the player has none of: the cheapest it allows)
-  const wanted = rule ? CARS.filter(car => ruleAllows(rule, car)) : amphibiousCars();
-  if (wanted.length) Garage.look(wanted.sort((a, b) => a.price - b.price)[0].id); // (the cheapest)
+  Showroom.open();
+  const cheapest = cheapestWanted(); // (a level whose car rule allows only cars the player has none of: the cheapest it allows)
+  if (cheapest) Showroom.look(cheapest.id, true);
 });
 
 // sound on / off: this button, or the M key at any time

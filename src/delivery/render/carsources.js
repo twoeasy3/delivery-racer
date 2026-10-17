@@ -115,10 +115,14 @@ const hider = (car, dark) => {
 // a group's lines: the sources that can give the card, now or later (none that never can: neverGives)
 const lines = (list, flags, hide) => list.filter(s => !neverGives(s)).sort((a, b) => Number(b.available) - Number(a.available)).map(s => line(s, flags, hide));
 
+// Crazey Jim's car lot retired as the shop (CHECKLIST 440): a car for sale is bought in the SHOWROOM. carsources.js (a replay
+// rules file) still names the lot as the source: said as the Showroom here
+export const LOT_SOURCE = 'Showroom';
+const lotRetired = (s) => s && { ...s, keys: s.keys.map(k => k.how === 'lot' ? { ...k, where: LOT_SOURCE } : k) };
 // the section for a car: "Where to get it", its key and its blueprints
 export const renderSources = (car, opts) => {
   style();
-  const s = sourcesOf(car, opts);
+  const s = lotRetired(sourcesOf(car, opts));
   const box = make('details', 'cs-where');
   box.open = chosen ?? opts?.open ?? true; // (opened or shut by the player: kept so from car to car, for the visit)
   box.addEventListener('toggle', () => { chosen = box.open; });
