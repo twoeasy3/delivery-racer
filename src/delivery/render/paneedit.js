@@ -108,7 +108,7 @@ export const applyPaneEdits = (root, table, find, out) => {
   }
 };
 
-// ---- CONTOUR (CHECKLIST 465, the owner: "It should follow the body's contour if any as well") ------------------------------------------------
+// ---- CONTOUR (CHECKLIST 472, the owner: "It should follow the body's contour if any as well") ------------------------------------------------
 // A contour is the pane BENT off its plane, along its own (turned) normal: `contour: [[s, t, mm], ...]` in its entry (v: 2), anchors on its rim at
 // (s, t), its place across and up its as-built face (0..1, contourFrame's u and v over its width and height: a slab's two faces at one (s, t)
 // move alike), each how far that rim point goes
@@ -260,8 +260,9 @@ export const rimPoints = (node, root, pane, step = 0.04) => {
     }
   }
   let rim = [...edges.values()].filter(e => e.n === 1);
-  const closed = !rim.length; // (a closed pane, a glass slab: its creases, both faces' (a flat face's own diagonals, or a contour's cuts, are not): gapOf reads its nearer quarter)
-  if (closed) { rim = [...edges.values()].filter(e => e.sharp); if (!rim.length) rim = [...edges.values()]; }
+  const closed = !rim.length; // (a closed pane, a glass slab: every edge, both faces': gapOf reads its nearer quarter; in a mesh a contour cut finer,
+  // its creases only (its cuts are not edges of the slab))
+  if (closed) { const cut = node.geometry.userData?.paneRuns?.length; rim = [...edges.values()].filter(e => !cut || e.sharp); if (!rim.length) rim = [...edges.values()]; }
   const out = [], seen = new Set();
   for (const e of rim) {
     A.fromBufferAttribute(pos, e.a).applyMatrix4(M); B.fromBufferAttribute(pos, e.b).applyMatrix4(M);

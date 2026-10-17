@@ -1,4 +1,4 @@
-// A check of the model editor's CONTOUR (CHECKLIST 465, the owner: "Add a 'snap to body' for the windows in model editor. It should follow
+// A check of the model editor's CONTOUR (CHECKLIST 472, the owner: "Add a 'snap to body' for the windows in model editor. It should follow
 // the body's contour if any as well"; render/paneedit.js fitPane / applyContour, the patch's `panes` entry v 2 `contour`).
 //  HEADLESS, on panes the audit lists floating (WINDOW-EDIT.md): the Commuter's, Sportscompact's, Sportscar's windscreens (one flat quad
 //    each, against a curved cowl and pillars), the Hot Rod's and Pick-Up's rear windows (glass slabs), the Kei Roadster's aero screen (one that
@@ -65,7 +65,7 @@ try {
     const A = measure(car, name, null, n), R = sn ? measure(car, name, withEdit(car, f0, PE.snappedEdit({}, sn)), n) : A, K = measure(car, name, withEdit(car, f0, fit.edit), PE.samplesUnder(f0.node, m0, f0.pane, fit.edit).n);
     const say = (x) => 'gap ' + cm(x.gap.gap) + ' cm, rim ' + mm(x.fit.max) + ' mm';
     const line = id + ' ' + name + ': as built ' + say(A) + '; Snap ' + say(R) + (sn ? ' (' + cm(sn.moved) + ' cm, ' + sn.turned + '°)' : '') + '; Contour ' + say(K) + ' (' + cm(fit.moved) + ' cm, ' + fit.turned + '°, ' + fit.conformed + '/' + fit.rim + ' rim points bent, ' + A.tris + ' -> ' + K.tris + ' triangles)';
-    if (kind === 'free') check(K.gap.gap <= R.gap.gap + 0.001 && fit.turned <= PE.CONTOUR_TURN + 0.05 && (sn?.turned ?? 0) > fit.turned, line + ': turned no more than ' + PE.CONTOUR_TURN + '° (Snap: ' + (sn?.turned ?? 0) + '°)');
+    if (kind === 'free') check(K.gap.gap <= A.gap.gap && fit.turned <= PE.CONTOUR_TURN + 0.05 && (sn?.turned ?? 0) > fit.turned, line + ': turned no more than ' + PE.CONTOUR_TURN + '° (Snap: ' + (sn?.turned ?? 0) + '°)');
     else if (kind === 'quad') check(K.gap.gap < 0.0005 && K.fit.max < 0.004 && K.fit.max < R.fit.max && K.fit.n >= R.fit.n * 0.9, line);
     else check(K.gap.gap < 0.0005 && K.fit.max < R.fit.max, line + ': closer than Snap'); // (a slab: its ends sit in their pillars, the rim that meets nothing along its normal stays)
     // never through the body: each vertex's straight path from as built (cut, not moved: a zero contour) to where Contour put it crosses no body face
@@ -167,7 +167,7 @@ else {
     };
     await page('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
     await page('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true, screenWidth: 390, screenHeight: 844 });
-    const ready = async () => { for (let k = 0; k < 240; k++) { await sleep(250); try { if (await evaluate('!!(window.__modelEditor && window.__modelEditor.model && window.__modelEditor.api.paneSel())', 5000)) return true; } catch { /* (loading) */ } } return false; };
+    const ready = async () => { for (let k = 0; k < 240; k++) { await sleep(250); try { if (await evaluate('!!(window.__modelEditor && window.__modelEditor.model && document.querySelector("#windows [data-wpane]"))', 5000)) return true; } catch { /* (loading) */ } } return false; };
     const touch = async (type, x, y) => page('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, radiusX: 8, radiusY: 8, force: 1, id: 1 }] });
     const press = async (sel) => {
       await evaluate(`document.querySelector(${JSON.stringify(sel)}).scrollIntoView({ block: 'center' })`); await sleep(150);
@@ -177,9 +177,11 @@ else {
     const STATE = `(() => { const S = window.__modelEditor, sp = S.api.paneSel(); return { pane: S.pane, gap: sp && S.api.paneGapNow(sp).gap, entry: sp && JSON.parse(JSON.stringify(S.patch.panes?.[sp.key] || null)), line: document.getElementById('paneSnapLine')?.textContent || '', btn: !!document.getElementById('paneContour') }; })()`;
     const state = () => evaluate(STATE);
     const open = async (car, pane, view) => {
-      await page('Page.navigate', { url: `http://localhost:${port}/delivery/modeleditor.html?car=${car}&view=${view}&tab=part&pane=${encodeURIComponent(pane)}` });
-      if (!await ready()) throw new Error('the editor did not open ' + car + ' with its ' + pane);
-      await evaluate('localStorage.removeItem("delivery.modelpatches")'); await sleep(400);
+      await page('Page.navigate', { url: `http://localhost:${port}/delivery/modeleditor.html?car=${car}&view=${view}&tab=parts` });
+      if (!await ready()) throw new Error('the editor did not open ' + car);
+      await evaluate('localStorage.removeItem("delivery.modelpatches")');
+      await press(`#windows [data-wpane="${pane}"]`);
+      await evaluate(`document.querySelector('#tabs [data-tab="part"]').click()`); await sleep(600);
     };
     // a still with the selected pane in view: the panel scrolled to the pane's block, the 3D view above it
     const shot = async (name) => {

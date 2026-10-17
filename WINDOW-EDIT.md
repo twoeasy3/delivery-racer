@@ -11,7 +11,7 @@ floating windscreens that I can't fix."
   it is one of several panes merged into one glass mesh. Its axes are the pane's own: X across, Y up its face.
 - Part tab: `gap` / `clear` chips, `XYZ` (its centre, m), `° YPR` (yaw, pitch, roll), `W H` (m), **Snap**, **Reset**, **Part** (the whole part
   again). Undo / Redo as for any edit. Mirror on: the pane named the other way (L / R) gets the mirrored edit.
-- **Snap** rests the pane on the body (the line under it: how far it moved and turned, the gap before and after). It never pushes the pane
+- **Snap** (rigid: moves and turns it) rests the pane on the body (the line under it: how far it moved and turned, the gap before and after). It never pushes the pane
   under a body face. At most 15 cm and 20 degrees: anything further is a remodel. A screen that stands free by design (a roadster's aero
   screen, a buggy's, a golf cart's) is laid down by Snap: undo it, or move it by hand.
 - A cabinGlass car (the ideas built with `cabinGlass`) still has its corner drawing (CHECKLIST 336) under the pane's fields.
@@ -19,6 +19,49 @@ floating windscreens that I can't fix."
 Saved like every edit: the patch's `panes` table (`render/paneedit.js`), kept in this browser, in Download patch, applied by the game
 (`render/modelpatchapply.js`) wherever it builds the car: garage, showroom, the run, the stills. A Super car wears its base car's window edits;
 a Legendary its base car's patch. Render only: the replay fingerprint does not move.
+
+## Contour (CHECKLIST 472)
+
+The owner, 17-Oct: "Add a 'snap to body' for the windows in model editor. It should follow the body's contour if any as well."
+
+- **Contour** (beside Snap in the pane block): Snap first, its turn capped at 8 degrees (so a screen that stands free is not laid down), then
+  the pane BENT: each rim point goes along the pane's normal to 2 mm off the first surface it meets within 8 cm (the body, or another pane),
+  and the glass between follows smoothly (inverse-distance mean of the rim's moves). A rim point with nothing there, or whose surface is far
+  along the normal while another is near beside it (a rim over a body's edge), stays put. A slab's two faces move alike (its thickness kept).
+  The bend never carries a vertex into a body face (such a vertex is pinned); up to 3 rounds while the rim still closes. Line:
+  `↦ 2.2 cm · 2.9° · gap 2.1 → 0.0 cm · contour 32/32` (rim points bent / rim points). Undo / Redo, Reset (as built), Mirror (the twin gets the
+  mirrored bend) as any pane edit. Snap stays the rigid one.
+- Stored in the pane's entry: `v: 2, contour: [[s, t, mm], ...]` (s, t: the anchor's place across and up the pane's biggest face, 0..1;
+  mm: its move along the normal). An entry without `contour` (v 1) builds exactly as before. The game cuts the pane finer where it applies the
+  patch (each triangle 4, 16 or 64 ways, its longest edge to 5 cm, at most 200 triangles a pane: a quad screen 2 -> 128 triangles, a glass slab
+  12 -> 192), in place in its mesh (the runs after it move up; the patch keeps the as-built runs). Build time only: no per-frame work, the
+  same draw calls. A bent pane keeps its name (it is faced as built).
+- While a bent pane's mesh is dragged with the gizmo there is no live look (it lands on letting go).
+
+Gap (the audit's measure, on the BUILT mesh) as built / after Snap / after Contour, and the turn each used:
+
+| Car | Pane | As built | Snap | Contour |
+|---|---|---|---|---|
+| commuter | windscreen | 2.1 cm | 0.0 (2.9°), rim 3 mm | 0.0 (2.9°), rim 2 mm |
+| sport | windscreen | 1.2 | 0.0 (1.6°), rim 3 mm | 0.0 (1.6°), rim 2 mm |
+| sport | rear window | 1.1 | 0.0, rim 3 mm | 0.0, rim 2 mm |
+| lowrider | windscreen | 1.2 | 0.0, rim 3 mm | 0.0, rim 2 mm |
+| miata | windscreen | 1.2 | 0.0 (3.4°), rim 4 mm | 0.0 (3.2°), rim 2 mm |
+| suv | windscreen | 1.1 | 0.0, rim 3 mm | 0.0, rim 2 mm |
+| hotrod | rear window (slab) | 2.7 | 0.0 (13.5°), rim 22 mm | 0.0 (8°), rim 20 mm |
+| pickup | rear window (slab) | 2.9 | 0.0 (9.9°), rim 26 mm | 0.0 (8°), rim 18 mm |
+| knifeedge | windscreen | 3.7 | 1.5 (2.7°) | 0.0 (3.9°) |
+| snailcamper | windscreen | 3.9 | 3.5 (20°) | 0.0 (8°) |
+| sidecar | windscreen L | 6.9 | 2.4 (20°) | 2.5 (8°) |
+| earned-jetboat | rear window | 10.9 | 3.9 (8.2°) | 3.2 (6.9°) |
+| keiroadster | windscreen (free) | 10.0 | 0.1 (20°: laid down) | 0.4 (8°: still stands), nothing bent |
+| tuktuk | windscreen (posts) | 5.2 | 0.0 (19.4°) | 0.8 (8°), nothing bent |
+| dunebuggy | windscreen (frame) | 13.5 | 7.1 (20°) | 6.9 (7.9°), nothing bent |
+| rallywedge | windscreen (canopy) | 10.4 | 5.3 (13.9°) | 6.1 (2.4°) |
+
+(rim: the rim's farthest point from the surface it rests on, among those with a surface within 8 cm along the normal; a slab's reads its outer
+face's edge, a slab's thickness off. A slab's gap after Contour is read on its creases, not its faces' diagonals.) The screens that stand free by design (Kei Roadster, Tuk-Tuk, Dune Buggy, Rally Wedge) are left nearly
+as Snap leaves them but turned less: Contour bends nothing where no body lies behind the rim. `node scripts/.window-contour-check.mjs`.
 
 ## The measure (`node scripts/window-gap-audit.mjs [--md] [ids...]`)
 
