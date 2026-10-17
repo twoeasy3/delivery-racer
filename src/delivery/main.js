@@ -264,6 +264,7 @@ const editedLevel = () => {
   return { level, problem };
 };
 const edited = hidden === 'edited' ? editedLevel() : null;
+let pauseAfter = 0, pauseWithPhoto = false; // (?pauseafter, below: a still once that much game time has been drawn)
 if (params.get('racewatch') !== null) {
   Game.startRaceWatch();
   if (params.get('camcheck') !== null) { // (a check of every trackside camera)
@@ -330,7 +331,11 @@ if (params.get('racewatch') !== null) {
   const cine = params.get('cine') !== null;
   if (cine) Traffic.reset();
   for (let t = 0; t < Number(params.get('ff') || 0); t += CONFIG.maxStep) Game.update(CONFIG.maxStep);
-  if (photo) { Game.paused = true; startPhoto(); }
+  // ?pauseafter=<s>: paused (with ?photo, in photo mode) once that much GAME time has been DRAWN after ?ff, frame by frame, so the
+  // trails and smoke, which only come out in drawn game time (render/gameclock.js, CHECKLIST 442), are in the still
+  pauseAfter = Number(params.get('pauseafter')) || 0;
+  if (pauseAfter > 0) pauseWithPhoto = photo;
+  else if (photo) { Game.paused = true; startPhoto(); }
   if (cine) {
     Cinematic.on = true;
     Cinematic.studio = params.get('cine') === 'car'; // (?cine=car: the car alone, on white)
@@ -432,6 +437,7 @@ const frame = (now) => {
     // (render/gameclock.js stepGame: the same steps, and GameClock.dt, the game time they made, is what every trail, smoke,
     // spray and particle pool below runs on: none while paused or in photo mode, 2x in a 2x replay; CHECKLIST 442)
     const gdt = stepGame(dt, { paused: Game.paused, scale: Replay.playing ? Replay.speed : 1, update: logicStep });
+    if (pauseAfter > 0 && Game.state === 'playing' && (pauseAfter -= gdt) <= 1e-6) { pauseAfter = 0; Game.paused = true; if (pauseWithPhoto) startPhoto(); }
 
     // then bring the scene up to date with it
     const heading = Track.toWorld(Player.s, Player.lat, tmp);

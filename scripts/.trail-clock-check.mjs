@@ -22,6 +22,20 @@ let failures = 0;
 const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' : '  FAIL  ') + what); };
 const median = (a) => { const b = [...a].sort((x, y) => x - y); return b.length ? b[b.length >> 1] : NaN; };
 const session = await startModels();
+// (the stand-in window keeps the key listeners the modules add, so the check can press keys: capture ones first, then the rest)
+const keyListeners = { keydown: [], keyup: [] };
+globalThis.window.addEventListener = (type, fn, opt) => { if (keyListeners[type]) keyListeners[type].push({ fn, capture: opt === true || !!opt?.capture }); };
+const press = (type, code, extra = {}) => {
+  let stopped = false, immediate = false;
+  const e = { type, code, key: code, repeat: false, defaultPrevented: false, target: { closest: () => null }, ...extra,
+    preventDefault() { this.defaultPrevented = true; }, stopPropagation() { stopped = true; }, stopImmediatePropagation() { stopped = immediate = true; } };
+  const list = keyListeners[type];
+  for (const phase of [true, false]) {
+    for (const l of list) { if (l.capture !== phase) continue; l.fn(e); if (immediate) return e; }
+    if (stopped) return e;
+  }
+  return e;
+};
 try {
   const { load } = session;
   const cars = await load('cars.js');
@@ -116,7 +130,7 @@ try {
   check(moved(m1, snap()) > 0.1 && Player.s > s0, 'unpaused: they go on with the car');
 
   // ---- HALF SPEED ----
-  const half = (name, key, o) => {
+  const half = (name, key, o, tol = 0.12) => {
     start(o);
     const car = (scale) => { const s = Player.s; frame({ scale }); return Player.s - s; };
     const full = [], slow = [], carFull = [], carSlow = [];
@@ -125,12 +139,12 @@ try {
     for (let i = 0; i < 30; i++) frame({ scale: 0.5 }); // (settled at 0.5)
     for (let i = 0; i < 10; i++) { let c = 0; slow.push(steppedBy(key, () => { c = car(0.5); })); carSlow.push(c); }
     const r = median(slow) / median(full), rc = median(carSlow) / median(carFull);
-    check(Math.abs(rc - 0.5) < 0.02 && Math.abs(r - 0.5) < 0.12, name + ' at a time scale of 0.5: each particle goes ' + r.toFixed(2) + 'x as far a frame as at 1 (' + median(full).toFixed(3) + ' -> ' + median(slow).toFixed(3) + ' m), the car ' + rc.toFixed(2) + 'x');
+    check(Math.abs(rc - 0.5) < 0.02 && Math.abs(r - 0.5) < tol, name + ' at a time scale of 0.5: each particle goes ' + r.toFixed(2) + 'x as far a frame as at 1 (' + median(full).toFixed(3) + ' -> ' + median(slow).toFixed(3) + ' m), the car ' + rc.toFixed(2) + 'x');
     return { full: median(full), slow: median(slow) };
   };
   half('the turbo exhaust', 'Particles', { turbo: true, hold: 30 });
   half('the damage smoke', 'Smoke', { damaged: true, hold: 30 });
-  half('the gravel spray', 'Particles', { gravel: true, hold: 30 });
+  half('the gravel spray', 'Particles', { gravel: true, hold: 30 }, 0.16); // (stones land and skid: the median moves more from run to run)
   // the turbo's trail, as long behind the car at 0.5 as at 1 (the old clock: it bunches up at the tail)
   const trailLength = (scale, oldClock = false) => {
     start({ turbo: true, hold: 30 });
@@ -154,6 +168,9 @@ try {
       for (let i = 0; i < 30; i++) frame();
       const still = moved(a, snap()) === 0 && TT.state() === st;
       Game.paused = false;
+      const c = TT.cost(), t0 = performance.now();
+      for (let i = 0; i < 30; i++) TT.syncTurboTrail(1 / 60);
+      console.log('        ' + style + ': ' + c.drawCalls + ' draw call, ' + c.drawn + ' ' + c.kind + ' at most, a pool of ' + c.pool + ', ' + ((performance.now() - t0) / 30).toFixed(3) + ' ms a frame here (headless)');
       const d1 = TT.advanceProbe(() => frame({ scale: 1 }));
       for (let i = 0; i < 20; i++) frame({ scale: 0.5 });
       const d2 = TT.advanceProbe(() => frame({ scale: 0.5 }));

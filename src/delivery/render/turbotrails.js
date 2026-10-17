@@ -119,6 +119,8 @@ const makeFlame = (max) => {
         mesh.setColorAt(n++, col);
       }
       mesh.count = n;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     },
   };
 };
@@ -214,16 +216,21 @@ const makeSpeedlines = (max) => {
   };
 };
 
-// the car's own shape, merged once (positions only) for the afterimages: rebuilt when the car changes
+// the car's own shape, merged once (positions only) for the afterimages: rebuilt when the car changes. Its BODY only (the painted
+// shell: userData.body of the model it shows, render/items.js playerModel), not every part: the parts overlap, and added together a ghost of all of
+// them is a solid block of light
+const shown = (o) => { for (let p = o; p && p !== carMesh; p = p.parent) if (!p.visible) return false; return true; };
+const bodyOf = () => {
+  for (const model of carMesh.children) if (model.userData?.body && model.visible) return model.userData.body; // (the car's own model: render/items.js playerModel)
+  return carMesh.userData.body && shown(carMesh.userData.body) ? carMesh.userData.body : carMesh;
+};
 const mergedCar = () => {
   carMesh.updateMatrixWorld(true);
   const inv = new THREE.Matrix4().copy(carMesh.matrixWorld).invert(), parts = [], m = new THREE.Matrix4(), v = new THREE.Vector3();
   let total = 0;
-  carMesh.traverse((o) => {
+  bodyOf().traverse((o) => {
     if (!o.isMesh || o.isInstancedMesh || !o.geometry?.attributes?.position || o.userData.blackout === 'hide') return;
-    for (let p = o; p && p !== carMesh; p = p.parent) if (!p.visible) return;
-    const mat = Array.isArray(o.material) ? o.material[0] : o.material;
-    if (mat?.transparent && mat.opacity < 0.5) return;
+    if (!shown(o)) return;
     parts.push(o); total += o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count;
   });
   const pos = new Float32Array(Math.min(total, 60000) * 3);
@@ -239,7 +246,7 @@ const mergedCar = () => {
 };
 const makeAfterimage = (max) => {
   const S = makeStore(max), snaps = new Float32Array(max * 16);
-  const mesh = new THREE.InstancedMesh(new THREE.BufferGeometry(), additive({ side: THREE.DoubleSide }), max);
+  const mesh = new THREE.InstancedMesh(new THREE.BufferGeometry(), additive(), max); // (front faces only: one layer of light, not two)
   let acc = 0, builtFor = null;
   const base = new THREE.Color(TURBO_COLOR);
   return {
@@ -247,9 +254,9 @@ const makeAfterimage = (max) => {
     emit(dt) {
       const id = CAR.id + ':' + carMesh.children.length;
       if (builtFor !== id) { mesh.geometry.dispose(); mesh.geometry = mergedCar(); builtFor = id; }
-      for (acc += dt / 0.06; acc >= 1; acc--) {
+      for (acc += dt / 0.075; acc >= 1; acc--) { // (one every 0.075 s, falling back at 0.7 of the car's speed: spaced about half a car apart at 30 m/s)
         carMesh.updateMatrixWorld(true);
-        const i = S.emit(carMesh.position.x, carMesh.position.y, carMesh.position.z, V.x * 0.6, V.y * 0.6, V.z * 0.6, 0.24);
+        const i = S.emit(carMesh.position.x, carMesh.position.y, carMesh.position.z, V.x * 0.3, V.y * 0.3, V.z * 0.3, 0.3);
         carMesh.matrixWorld.toArray(snaps, i * 16);
       }
     },
@@ -261,9 +268,11 @@ const makeAfterimage = (max) => {
         M4.fromArray(snaps, i * 16);
         M4.elements[12] = S.d[o]; M4.elements[13] = S.d[o + 1]; M4.elements[14] = S.d[o + 2];
         mesh.setMatrixAt(n, M4);
-        mesh.setColorAt(n++, col.copy(base).multiplyScalar(0.55 * (1 - t)));
+        mesh.setColorAt(n++, col.copy(base).multiplyScalar(0.2 * (1 - t) * Math.min(1, t * 4))); // (faded in: the newest is still on the car)
       }
       mesh.count = n;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     },
   };
 };
@@ -304,13 +313,13 @@ const makeEmbers = (max) => {
 
 const makeShockwave = (max) => {
   const S = makeStore(max);
-  const mesh = new THREE.InstancedMesh(new THREE.TorusGeometry(1, 0.045, 3, 28), additive({ side: THREE.DoubleSide }), max);
+  const mesh = new THREE.InstancedMesh(new THREE.TorusGeometry(1, 0.07, 3, 28), additive({ side: THREE.DoubleSide }), max);
   const base = new THREE.Color(TURBO_COLOR);
   let acc = 0.99;
   return {
     stores: [S], mesh,
     emit(dt, { k }) {
-      for (acc += dt / (0.32 / (0.6 + k)); acc >= 1; acc--) { tailAt(0, P); S.emit(P.x, P.y, P.z, V.x * 0.35, V.y * 0.35, V.z * 0.35, 0.42, 0.35 + 0.3 * k, 1.2 + 1.4 * k); }
+      for (acc += dt / (0.32 / (0.6 + k)); acc >= 1; acc--) { tailAt(0, P); S.emit(P.x, P.y, P.z, V.x * 0.35, V.y * 0.35, V.z * 0.35, 0.42, 0.3 + 0.2 * k, 0.7 + 0.8 * k); }
     },
     draw() {
       let n = 0;
@@ -320,9 +329,11 @@ const makeShockwave = (max) => {
         const o = i * F, t = S.age(i), r = S.d[o + 8] + S.d[o + 9] * Math.sqrt(t);
         M4.compose(P.set(S.d[o], S.d[o + 1], S.d[o + 2]), Q, SC.set(r, r * 0.8, r));
         mesh.setMatrixAt(n, M4);
-        mesh.setColorAt(n++, col.copy(base).lerp(new THREE.Color(0xffffff), 0.4 * (1 - t)).multiplyScalar((1 - t) * 0.9));
+        mesh.setColorAt(n++, col.copy(base).multiplyScalar((1 - t) * 0.85));
       }
       mesh.count = n;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     },
   };
 };
@@ -363,6 +374,13 @@ Game.onLoad.push(() => { if (fx) for (const S of fx.stores) S.clear(); });
 export const liveCount = () => (fx ? fx.stores.reduce((n, S) => n + S.live(), 0) : 0);
 export const pools = () => ({});
 export const drawn = () => !!fx?.mesh.visible;
+// (for a check and TURBO-TRAILS.md: what the style costs drawn at its fullest: 1 draw call, its triangles / line segments / points, its pool)
+export const cost = () => {
+  if (!fx) return null;
+  const g = fx.mesh.geometry, per = g.index ? g.index.count / 3 : g.attributes.position.count / 3, n = fx.stores.reduce((k, S) => k + S.max, 0);
+  const kind = fx.mesh.isPoints ? 'points' : fx.mesh.isLineSegments ? 'lines' : 'triangles';
+  return { drawCalls: 1, kind, drawn: fx.mesh.isInstancedMesh ? per * n : fx.mesh.isPoints ? n : fx.mesh.isLineSegments ? n : per, pool: n };
+};
 // (for a check: the heights of the newest few emitted, the head of the trail)
 export const headHeights = () => { const ys = []; if (fx) for (const S of fx.stores) { S.ordered(order); ys.push(...order.slice(-3).map(i => S.d[i * F + 1])); } return ys; };
 // (for a check: everything the style draws from, as one string; the same paused)
