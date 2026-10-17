@@ -1,7 +1,8 @@
 // ---- THE CUTSCENES IN THE GAME (CHECKLIST 438; CINE-WIRING.md): the unlock cinematics (render/unlockcine.js, its directors in
 // render/ecucine.js) played from the game's own flow, not only by address. Render side only: no logic file is touched (the
 // replay fingerprint, scripts/logic-hash.mjs, never moves), and the cinematics' code stays a lazy import (loaded at the first one).
-//   jim     a car BOUGHT on the car lot (Crazey Jim's: render/garage.js buy; the results' Better ride, render/ridenudge.js): purchased()
+//   jim     a car BOUGHT (render/carbuy.js buyCar, the one purchase path: the showroom's Buy, the Garage, the results' Better ride;
+//           the car lot retired as the shop, CHECKLIST 440): purchased()
 //   ecu     an ECU BOUGHT (ecu.js Ecu.buy's 'ecuchange'): the new level; the car's MAX ECU: ecumax instead
 //   key     a KEY CAR's key had (a pack's key card, an event's prize, ...): seen as the car becoming owned (below)
 //   car     any other car becoming owned (a blueprint car's first ECU, an earned car, an event / tier / prize car, the secret bus)

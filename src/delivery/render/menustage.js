@@ -17,6 +17,7 @@ import { LEVELS, LEVEL, selectLevel, selectSpecial, levelLabel, MAIN_LEVELS, AMP
 import { levelName, levelDescription } from '../levelText.js';
 import { cargoFor } from '../cargo.js';
 import { cargoCircleView } from './cargoview.js';
+import { cheapestWanted } from './carbuy.js';
 import { CARS, CAR, useLevelCar, earnedFor, amphibiousCars, stars, starColour, carById, listRule, ruleAllows } from '../cars.js';
 import { Progress } from '../progress.js';
 import { Tiers, tierStarsNode, richTiers } from '../tiers.js';
@@ -277,11 +278,11 @@ const drawStage = () => {
   const place = Tiers.on() ? Tiers.place(level) : null, rule = Tiers.restriction(level, evil);
   const cheapest = rule !== null ? Tiers.carsOfTier(rule).sort((a, b) => a.price - b.price)[0] : null;
   const needs = Events.isStage(level) ? stageLine(level) : !open ? (Tiers.on() ? Tiers.lockedBecause(level) : 'Locked: deliver level ' + label(list[at - 1]) + ' on time to open it')
-    : rule !== null ? (CAR.silhouette ? 'You own no ' + Tiers.tierName(rule) + ' car: buy one at Crazey Jim’s to play this level (the cheapest is the ' + cheapest.name + ', ' + money(cheapest.price) + ')'
+    : rule !== null ? (CAR.silhouette ? 'You own no ' + Tiers.tierName(rule) + ' car: buy one in the Showroom to play this level (the cheapest is the ' + cheapest.name + ', ' + money(cheapest.price) + ')'
         : 'No medal on ' + (evil ? 'Evil' : 'Good') + ' yet: only ' + Tiers.tierName(rule) + ' cars may be driven. Earn it and any car will do on this side')
     : level.car ? 'Driven in the ' + CAR.name + ': your own car returns on other levels'
       : level.amphibious ? (CAR.amphibious ? 'Amphibious cars only: you drive your ' + CAR.name
-        : 'Needs an amphibious car: get the ' + cheapestAmphibious().name + ' (' + money(cheapestAmphibious().price) + ') at Crazey Jim’s')
+        : 'Needs an amphibious car: get the ' + cheapestAmphibious().name + ' (' + money(cheapestAmphibious().price) + ') in the Showroom')
         : null;
   // (a special level's 6-star car, and the time to spare that earns it: see cars.js EARNED_CARS)
   const prizeLine = open && prize ? '6-star car: ' + prize.name + (Progress.earned(prize) ? ' (earned)'
@@ -501,8 +502,8 @@ const drawCar = () => {
   if (CAR.silhouette) { // (a car of the level's tier is to be bought: a dark outline of the cheapest, and no figures)
     shop.replaceChildren(picture,
       make('span', 'words', make('strong', '', 'No car for this level'), make('span', 'stat', make('small', '', ...(CAR.tierNeeded ? [tierStarsNode(CAR.tierNeeded)] : richTiers(CAR.ruleLabel || '')), ' only'))),
-      make('span', 'go', 'Crazey Jim’s'));
-    shop.title = 'This level needs a car of exactly its tier: buy one at Crazey Jim’s Used Cars';
+      make('span', 'go', 'Showroom'));
+    shop.title = 'This level needs a car of exactly its tier: buy one in the Showroom';
     return;
   }
   const fig = LEVEL.ownEcu && LEVEL.car === CAR.id ? Ecu.drive(CAR) : CAR; // (a free try: the figures it is driven with, at the player's ECU; else the car's own, as ever)
@@ -633,8 +634,13 @@ for (const button of sideBox.querySelectorAll('button')) button.addEventListener
   const evil = button.dataset.side === 'evil';
   pickSide(evil === Game.evil ? (oneSided(cursor) ? Game.evil : !evil) : evil);
 });
-// (the car card: the showroom, where a car is picked; with no car the level allows, straight to the car lot to buy one)
-shop.addEventListener('click', () => { blip('menuPick'); if (Tiers.on() && CAR.silhouette) Garage.open(); else Showroom.open(); });
+// (the car card: the showroom, where a car is picked and bought; with no car the level allows, its full view on the cheapest
+// car the level allows, to buy it there (was the car lot: CHECKLIST 440))
+shop.addEventListener('click', () => {
+  blip('menuPick');
+  Showroom.open();
+  if (Tiers.on() && CAR.silhouette) { const cheapest = cheapestWanted(); if (cheapest) Showroom.look(cheapest.id, true); }
+});
 startBtn.addEventListener('click', () => blip('menuPick'));
 
 // the sheets over the menu (the options; the road card): one open at a time, closed by its button, Escape or a
@@ -662,6 +668,12 @@ for (const node of startScreen.querySelectorAll('.menu-sheet')) node.addEventLis
 const options = document.getElementById('menuOptions');
 document.getElementById('optionsBtn').addEventListener('click', () => openSheet(options));
 document.getElementById('optionsCloseBtn').addEventListener('click', closeSheet);
+// the GARAGE (the owner, 17-Oct, CHECKLIST 440: "move the garage in its entirety into the settings option"): no longer reached
+// from the car card, only from Options (and ?garage); its Back comes back to Options
+document.getElementById('garageBtn').addEventListener('click', () => {
+  closeSheet();
+  Garage.open(Game.evil, () => { startScreen.classList.remove('hidden'); openSheet(options); });
+});
 // (the album, the milestones wall and the save code's panel open over the menu themselves, and the screensavers
 // leave it: the options step aside first, ahead of the button's own doing)
 for (const id of ['albumBtn', 'milestonesBtn', 'exportBtn', 'importBtn', 'screensaverBtn', 'raceWatchBtn2', 'wheelsOpenBtn', 'hiddenLevelsBtn']) document.getElementById(id).addEventListener('click', closeSheet, true);

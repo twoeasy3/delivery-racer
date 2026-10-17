@@ -11,13 +11,13 @@
 // A card clicked opens the FULL VIEW (the owner's Asphalt 9 reference): the whole screen is that car, LIVE in 3D and
 // large (render/showroomview.js: a drag turns it; it lands with a little drop and bounce, render/carbounce.js), its
 // panel at the left (its card, name, stars, rarity, ECU pips and blueprints, its figures at its ECU now with the maxed
-// ones as a ghost bar, respawn, perk, why it is locked), Good / Evil, and DRIVE (or Buy at Crazey Jim's, or the lock).
+// ones as a ghost bar, respawn, perk, why it is locked), Good / Evil, and DRIVE (or Buy and its price, or the lock).
 // Round arrows at the car's sides (and the arrow keys, and a swipe on a phone outside the car) go to the previous / next
 // car OF THE LIST AS FILTERED (round from the last to the first: goTo). Back (the chevron, Escape, the browser's back)
 // returns to the cards where they were. GOOD / EVIL: one choice, switched in the header or the full view (a click on
 // either half flips it): the cards' and the live car's livery, the side whose car rule marks the cards, and the side
-// Drive drives as (it starts on the side being played). A big button takes the player to the car lot, Crazey Jim's Used
-// Cars (render/garage.js), where cars are bought; closing the lot comes back here.
+// Drive drives as (it starts on the side being played). A car for sale is BOUGHT here: its full view's button is Buy and its
+// price (render/carbuy.js; Crazey Jim's car lot, render/garage.js, is retired as the shop: CHECKLIST 440).
 // The layout (showroom.css): on a desktop the cards are TWO ROWS scrolled sideways (a drag, the wheel, the arrows at its
 // ends, the arrow keys); a phone on its side, one row. A PHONE HELD UPRIGHT (isPhone(); showroom-phone.css and
 // render/showroomphone.js): the cards in TWO COLUMNS scrolled down, and the full view is its single-car screen: the car
@@ -31,8 +31,9 @@
 // (not remembered); &filters opens the filter sheet; &bp=sport:7,hotrod:3 gives those blueprints for the visit.
 import '../showroom.css';
 import '../showroom-phone.css';
-import { showroomCars, carCard, LOCKED_WORDS, floorBest, statShown, RARITIES, CAR_LOT, sideName, sideClick, driveWords, barredWhy, driveAs,
-  FILTER_GROUPS, SORTS, imposedFilter, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn, overlayOf, cardTip, kindOf, lentWords } from '../showroomData.js';
+import { showroomCars, carCard, LOCKED_WORDS, floorBest, statShown, RARITIES, sideName, sideClick, driveWords as dataDriveWords, barredWhy, driveAs,
+  FILTER_GROUPS, SORTS, imposedFilter, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn, overlayOf as dataOverlayOf, cardTip as dataCardTip, kindOf, lentWords } from '../showroomData.js';
+import { buyCar, affordable, priceText } from './carbuy.js'; // (BUY, here: the one purchase path, CHECKLIST 440)
 import { CAR, carInUse, setViewSide, STAR_COLOURS, carRule, carFocus } from '../cars.js';
 import { Progress } from '../progress.js';
 import { ShopScreen } from './shop.js'; // (the Shop, reached from the header)
@@ -58,6 +59,20 @@ import { barFill } from './barfill.js';
 import { upgradeBlock, upFlash, freshLevel } from './ecuupgrade.js'; // (the full view's ECU Upgrade button: the bank pays for an ECU its blueprints unlocked)
 
 const panel = document.getElementById('showroom');
+
+// ---- CRAZEY JIM'S CAR LOT RETIRED (the owner, 17-Oct, CHECKLIST 440: "Cars will just be purchaseable in the showroom itself"):
+// a car for sale is BOUGHT HERE, in its full view (one Buy button with its price, greyed when the bank is short), through
+// render/carbuy.js, as the Garage and the results' Better ride buy. The words showroomData.js still has for the lot are
+// said here instead (showroomData.js is a replay rules file, vite.config.js logicFiles: its words are left as they are, so
+// the replay fingerprint does not move): the Kind filter's 'garage' chip reads CAREER ("The term 'Garage' in the filter
+// will change to Career"; its id stays 'garage', so a remembered filter or an address keeps working).
+export const CHIP_WORDS = { kind: { garage: 'Career' } };
+const chipWords = (group, id, label) => CHIP_WORDS[group]?.[id] ?? label;
+// the full view's button: Buy and the price for a car for sale; else showroomData.js's
+const driveWords = (card, evil) => card.state === 'locked' && card.forSale ? 'Buy ' + priceText(card.car.price) : dataDriveWords(card, evil);
+// a car for sale's overlay: its price, 'For sale' (was 'At Crazey Jim's')
+const overlayOf = (card) => { const ov = dataOverlayOf(card); return ov?.kind === 'unpurchased' ? { ...ov, line: 'For sale' } : ov; };
+const cardTip = (card) => card.reason === LOCKED_WORDS.lot ? (card.forSale ? 'For sale: ' + priceText(card.car.price) : 'Not for sale yet') : dataCardTip(card);
 const startScreen = document.getElementById('startScreen');
 const make = (tag, className, ...children) => {
   const node = document.createElement(tag);
@@ -175,9 +190,8 @@ const build = () => {
   sortSel.setAttribute('aria-label', 'Sort by');
   for (const [id, label] of SORTS) { const o = make('option', '', 'Sort: ' + label); o.value = id; sortSel.append(o); }
   sortSel.addEventListener('change', () => { filter.sort = sortSel.value; applyFilter(); });
-  const lot = lotButton('sr-lot');
   top.append(backBtn, make('div', 'sr-title', make('h1', '', 'Showroom'), make('p', '', 'Pick your car')), countEl, bankEl, sideSwitch('sr-side-top'),
-    make('div', 'sr-tools', seg, filterBtn, sortSel), shopButton('sr-shop'), lot);
+    make('div', 'sr-tools', seg, filterBtn, sortSel), shopButton('sr-shop'));
 
   row = make('div', 'sr-row');
   row.style.setProperty('--sr-cols', String(PHONE_COLUMNS)); // (the phone's columns: showroom-phone.css)
@@ -258,12 +272,6 @@ const shopButton = (className) => {
   shop.title = 'The Shop: card packs';
   shop.addEventListener('click', (e) => { e.stopPropagation(); ShopScreen.open(); });
   return shop;
-};
-const lotButton = (className) => {
-  const lot = make('button', className, make('span', 'sr-lot-sign', 'Crazey Jim’s'), make('small', '', 'Used Cars · buy cars'));
-  lot.title = CAR_LOT + ': the car lot, where cars are bought';
-  lot.addEventListener('click', () => toLot());
-  return lot;
 };
 
 // a Good / Evil switch (the header has one, the full view another: both show, and set, the one side). A click on
@@ -357,7 +365,7 @@ const buildSheet = () => {
   };
   for (const group of FILTER_GROUPS) {
     const chips = make('div', 'sr-chips');
-    for (const [id, label] of group.chips) chips.append(chip(group.id, id, label));
+    for (const [id, label] of group.chips) chips.append(chip(group.id, id, chipWords(group.id, id, label)));
     body.append(make('section', 'sr-fgroup', make('h3', '', group.name), chips));
   }
   const sorts = make('div', 'sr-chips');
@@ -480,7 +488,7 @@ const shortLocked = (card) => {
   let reason = card.reason, hint = card.hint || '';
   const bp = /^Collect (\d+) more (blueprints?) to unlock this car$/.exec(reason);
   if (bp) { reason = bp[1] + ' more ' + bp[2] + ' to unlock'; hint = hint.replace(/^Blueprints come in /, 'In '); }
-  else if (reason === LOCKED_WORDS.lot) reason = 'Buy it at the car lot';
+  else if (reason === LOCKED_WORDS.lot) { reason = card.forSale ? '' : 'Not for sale yet'; hint = card.forSale ? '' : hint.replace(/^Not for sale yet(: )?/, ''); } // (for sale: the Buy button says it all)
   else if (reason === LOCKED_WORDS.key) {
     const m = /^The key: ([^.]*)$/.exec(hint);
     if (m) { reason = 'Needs its key (' + m[1].replace(/^an? /, '').replace('card packs', 'packs') + ')'; hint = ''; } else reason = 'Needs its key';
@@ -530,10 +538,14 @@ const showDetail = () => {
     go.disabled = true;
     why = make('p', 'sr-why barred', ...barredWhy(card, evil).flatMap(part => typeof part === 'string' ? [part] : part.tier ? [tierStarsNode(part.tier)] : richTiers(part.rich)));
   } else {
-    go.disabled = !card.forSale;
-    if (card.forSale) go.addEventListener('click', () => toLot(card.id));
+    go.disabled = !card.forSale || !affordable(card.car); // (for sale but the bank is short: greyed, the price still on it)
+    if (card.forSale) {
+      go.classList.add('buy');
+      go.title = affordable(card.car) ? 'Buy the ' + card.name : 'Bank: $' + Math.floor(Progress.data.money);
+      go.addEventListener('click', async () => { if (await buyCar(card.car)) Showroom.reshow(); });
+    }
     const w = shortLocked(card);
-    why = make('p', 'sr-why locked', make('b', '', w.reason), w.hint ? make('span', '', ...richTiers(w.hint)) : null);
+    why = w.reason || w.hint ? make('p', 'sr-why locked', w.reason ? make('b', '', w.reason) : null, w.hint ? make('span', '', ...richTiers(w.hint)) : null) : null;
   }
   // the top: back, where in the list, the bank, the car lot
   const backBtn = make('button', 'sr-fback', '‹');
@@ -542,7 +554,7 @@ const showDetail = () => {
   backBtn.addEventListener('click', () => closeFull());
   const at = list.indexOf(card);
   const bank = make('div', 'sr-bank', make('small', '', 'Bank'), bankFigure(Progress.data.money));
-  const ftop = make('div', 'sr-ftop', backBtn, make('div', 'sr-fpos', make('small', '', 'Showroom'), make('b', '', (at + 1) + ' / ' + list.length)), bank, shopButton('sr-shop sr-shop-full'), lotButton('sr-lot sr-lot-full'));
+  const ftop = make('div', 'sr-ftop', backBtn, make('div', 'sr-fpos', make('small', '', 'Showroom'), make('b', '', (at + 1) + ' / ' + list.length)), bank, shopButton('sr-shop sr-shop-full'));
   // the car on its stage, the round arrows at its sides
   const arrow = (dir) => {
     const b = make('button', 'sr-farrow ' + (dir < 0 ? 'prev' : 'next'), dir < 0 ? '‹' : '›');
@@ -681,14 +693,6 @@ const drive = (card) => {
   blip('menuPick');
   Showroom.close();
 };
-// the car lot (Crazey Jim's): closing it comes back here (the full view as it was)
-const toLot = (look) => {
-  closeFilters();
-  ShowroomView.stop();
-  panel.classList.add('hidden');
-  Garage.open(side, () => Showroom.reshow()); // (the lot in the livery on show here)
-  if (look) Garage.look(look);
-};
 // the next card along in the cards (the arrow keys): two rows on a desktop, so left / right a column, up / down a row
 const perColumn = () => cards.length > 1 && cards[1].node.offsetLeft === cards[0].node.offsetLeft && !isPhone() ? 2 : 1;
 const step = (dir) => {
@@ -754,7 +758,7 @@ export const Showroom = {
     fill();
     requestAnimationFrame(() => cards.find(c => c.data.id === picked)?.node.scrollIntoView({ block: 'nearest', inline: 'center' }));
   },
-  // back from the car lot: everything as it is now (a car bought there is ready to drive), the full view too
+  // drawn again as everything is now (a car just bought here is ready to drive), the full view too
   reshow() {
     if (!this.isOpen) { startScreen.classList.remove('hidden'); return; }
     Game.inMenu = true;
