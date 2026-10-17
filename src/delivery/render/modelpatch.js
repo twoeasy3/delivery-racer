@@ -676,13 +676,13 @@ export const withGlass = (patch, id, edges) => {
   if (!Object.keys(p.glass).length) delete p.glass;
   return p;
 };
-// one window pane's edit (render/paneedit.js): `edit` { move, turn, size } for the pane `pane` ({ name, start, count }) of `part`; null (or
+// one window pane's edit (render/paneedit.js): `edit` { move, turn, size, contour? } for the pane `pane` ({ name, start, count }: as built, paneAsBuilt) of `part`; null (or
 // an edit that does nothing) takes it out
 export const withPane = (patch, part, pane, edit) => {
   const p = clonePatch(patch), key = part.id + '#' + pane.name;
   p.panes = { ...(p.panes || {}) };
   if (!edit || isNoEdit(edit)) delete p.panes[key];
-  else p.panes[key] = { id: part.id, sig: part.sig, pane: pane.name, start: pane.start, count: pane.count, move: edit.move || [0, 0, 0], turn: edit.turn || [0, 0, 0], size: edit.size || [1, 1] };
+  else p.panes[key] = { id: part.id, sig: part.sig, pane: pane.name, start: pane.start, count: pane.count, move: edit.move || [0, 0, 0], turn: edit.turn || [0, 0, 0], size: edit.size || [1, 1], ...(edit.contour?.length ? { v: 2, contour: edit.contour } : {}) }; // (v 2: a contour, render/paneedit.js; an entry without one reads as before)
   if (!Object.keys(p.panes).length) delete p.panes;
   return p;
 };
