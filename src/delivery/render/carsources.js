@@ -115,7 +115,7 @@ const hider = (car, dark) => {
 // a group's lines: the sources that can give the card, now or later (none that never can: neverGives)
 const lines = (list, flags, hide) => list.filter(s => !neverGives(s)).sort((a, b) => Number(b.available) - Number(a.available)).map(s => line(s, flags, hide));
 
-// Crazey Jim's car lot retired as the shop (CHECKLIST 440): a car for sale is bought in the SHOWROOM. carsources.js (a replay
+// Crazey Jim's car lot retired as the shop (CHECKLIST 451): a car for sale is bought in the SHOWROOM. carsources.js (a replay
 // rules file) still names the lot as the source: said as the Showroom here
 export const LOT_SOURCE = 'Showroom';
 const lotRetired = (s) => s && { ...s, keys: s.keys.map(k => k.how === 'lot' ? { ...k, where: LOT_SOURCE } : k) };

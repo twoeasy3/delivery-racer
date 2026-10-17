@@ -1,4 +1,4 @@
-# Jim's Garage deprecated (CHECKLIST 440, branch `claude/jim-deprecate`)
+# Jim's Garage deprecated (CHECKLIST 451, branch `claude/jim-deprecate`)
 
 The owner, 17-Oct: "I have made the tough decision that we will deprecate Jim's Garage. The term 'Garage' in the filter
 will change to Career. Cars will just be purchaseable in the showroom itself." Then: "move the garage in its entirety into

@@ -149,7 +149,7 @@ export const beamGeometry = (radius = 1.6, length = 9) => {
 };
 export const shown = (node) => { for (let n = node; n; n = n.parent) if (!n.visible) return false; return true; };
 
-// ---- the car's LAMPS (CHECKLIST 440): the car's OWN lamp table first (render/carlights.js TABLE, as the game's brake lamps,
+// ---- the car's LAMPS (CHECKLIST 452): the car's OWN lamp table first (render/carlights.js TABLE, as the game's brake lamps,
 // indicators and night glow use it: lampKey / its entries' head, tail (brake: the ones that are), blink), each lamp a lit
 // lens laid a few mm proud of the model's (shown when on) and a glow; the model's own lens parts at those places dimmed while
 // off. A car with no entry (or none for one end) keeps the old GUESS for that end: lamp parts found by their look and place
@@ -468,7 +468,7 @@ export const lampReport = (carId) => {
   return out;
 };
 
-// ---- FIREWORKS over the key unlock's last shot (CHECKLIST 441, the owner: "fireworks to both key unlocks", in the hero shot that
+// ---- FIREWORKS over the key unlock's last shot (CHECKLIST 453, the owner: "fireworks to both key unlocks", in the hero shot that
 // holds; the blade key's and the fob's alike). The SHELL is the kill effect's (render/killfxdefs.js fireworks: a shell of streaks
 // in two colours fanning out from a point, drag and gravity, then a white-gold crackle), drawn here as one pooled Points of
 // FW_SHELLS x (FW_SPARKS + FW_TRAIL) dots, every dot's place a pure function of the time (a still, a skip, the held end: any
@@ -850,7 +850,7 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
 
   // ---- the loop ----
   let raf = 0, startAt = 0, lastT = -1, done = false, held = false;
-  // THE HELD END stays alive (CHECKLIST 440): its clock runs on past `total` (confetti and sparks fall and settle, the bunting
+  // THE HELD END stays alive (CHECKLIST 452): its clock runs on past `total` (confetti and sparks fall and settle, the bunting
   // flutters, lamps stay lit, the camera drifts a little round its subject) until the tap. A skip starts that clock SETTLE s on,
   // so nothing is left in mid-air. Cheap: full rate while anything is in the air (and the first second), then 15 frames a
   // second, and nothing drawn at all after HELD_STOP s (the last frame stays). Nothing allocated per frame.

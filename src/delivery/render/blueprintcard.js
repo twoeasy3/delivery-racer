@@ -29,7 +29,7 @@ export const RARITY_LETTER = { common: 'C', uncommon: 'U', epic: 'E', legendary:
 const RARITY_WORD = { common: 'Common', uncommon: 'Uncommon', epic: 'Epic', legendary: 'Legendary', bespoke: 'Bespoke' };
 
 // the small line over the name (the owner, 12-Oct): what KIND of car the card is for, never what it is based on:
-//   Career Car   one bought with the bank (the garage's own cars; was 'Garage Car': the showroom's Kind chip, renamed Career, CHECKLIST 440)
+//   Career Car   one bought with the bank (the garage's own cars; was 'Garage Car': the showroom's Kind chip, renamed Career, CHECKLIST 451)
 //   Blueprint Car  one that is only ever got from blueprints (the evergreen fillers)
 //   Key Car      a Bespoke key car (the Silver Comet and the like): the card is for its blueprints
 //   Car Key      the key card itself

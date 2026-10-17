@@ -1,4 +1,4 @@
-// ---- buying a car: the ONE purchase path (CHECKLIST 440, the owner, 17-Oct: "Cars will just be purchaseable in the showroom itself") ----
+// ---- buying a car: the ONE purchase path (CHECKLIST 451, the owner, 17-Oct: "Cars will just be purchaseable in the showroom itself") ----
 // Crazey Jim's car lot is retired as the place to buy cars: the showroom's full view has the Buy button, and the results'
 // "Better ride" card and the Garage (now under Options) buy through this same function. What it does is what the lot's
 // buy did (render/garage.js before v1.1.153): the rules are the lot's (cars.js forSale: tiers / lock rules unchanged),

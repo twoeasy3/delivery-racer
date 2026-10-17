@@ -1,6 +1,6 @@
 // ---- garage: a 3D parking lot with a garage behind it, every car parked ---------------------
 // It was the CAR LOT, "Crazey Jim's Used Cars" (the owner, 12-Oct), the place to buy cars. RETIRED as the shop (the owner,
-// 17-Oct, CHECKLIST 440: "deprecate Jim's Garage ... Cars will just be purchaseable in the showroom itself", then "move the
+// 17-Oct, CHECKLIST 451: "deprecate Jim's Garage ... Cars will just be purchaseable in the showroom itself", then "move the
 // garage in its entirety into the settings option"): it is now the GARAGE, opened from Options (render/menu.js #garageBtn) and
 // ?garage, its Back returning there. It still buys a car tapped, through the showroom's own path (render/carbuy.js).
 // Every car in CARS is parked in a bay (the Blue Star ones once they are open: see garageCars; the amphibious ones
@@ -131,7 +131,7 @@ const buildLot = () => {
   box(roof, LOT_W + 5, 0.5, frontZ - backZ + 1.6, mid, H + 0.25, (frontZ + backZ) / 2);
   for (let i = 0; i <= COLS; i += 2) box(wall, 0.4, H, 0.4, left + i * BAY_W, H / 2, frontZ);
   box(trim, LOT_W + 5, 0.5, 0.3, mid, H + 0.25, frontZ + 0.8);
-  const garageSign = label('GARAGE', 512, 96, 60); // (was CRAZEY JIM'S: the lot retired as the shop, CHECKLIST 440)
+  const garageSign = label('GARAGE', 512, 96, 60); // (was CRAZEY JIM'S: the lot retired as the shop, CHECKLIST 451)
   for (let x = mid - Math.floor(COLS / 8) * 8 * BAY_W / 2; x <= right; x += 8 * BAY_W) { // (one every eight bays)
     if (slipways.some(([from, cols]) => Math.abs(x - slipX(from, cols)) < 6.5 + slipW(cols) / 2)) continue; // (the Amphibious section's own sign is there)
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(12, 2.25), new THREE.MeshBasicMaterial({ map: garageSign }));
@@ -205,7 +205,7 @@ const useBtn = document.getElementById('garageUse');
 const inspectBtn = document.getElementById('garageInspect');
 const startScreen = document.getElementById('startScreen');
 const money = (amount) => '$' + amount.toFixed(2);
-// ecu.js's words for a car not drivable, the car lot's retired (CHECKLIST 440): 'For sale' (ecu.js is a rules file: left as it is)
+// ecu.js's words for a car not drivable, the car lot's retired (CHECKLIST 451): 'For sale' (ecu.js is a rules file: left as it is)
 const lockedWords = (car) => { const w = Ecu.lockedWords(car) || ''; return /car lot/.test(w) ? 'For sale' : w; };
 // (the figures of the ECU it has, or would have once its key or blueprints are had: ecu.js; and that ECU of its max)
 const stats = (car) => {
@@ -349,7 +349,7 @@ const pick = (mesh) => {
   looking = mesh.userData.car;
   refresh();
 };
-// Buying: the one purchase path (render/carbuy.js buyCar, CHECKLIST 440), the same as the showroom's Buy: its sheet asks first,
+// Buying: the one purchase path (render/carbuy.js buyCar, CHECKLIST 451), the same as the showroom's Buy: its sheet asks first,
 // and a car bought plays the sale cutscene (render/cinequeue.js purchased, called there)
 const buy = (car) => buyCar(car);
 // the button under the stats: "Switch" (to the car looked at, and its side; stays in the garage) or "Buy"; and

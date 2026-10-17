@@ -8,7 +8,7 @@ only by address (URL-PARAMS.md 7b). They now play from the game itself. Branch
 
 | Event | Cutscene | Where it is caught |
 |---|---|---|
-| A car bought (CHECKLIST 440: the showroom's Buy, the Garage's Buy, the results' Better ride; after the sheet where there is one) | `jim` (Crazey Jim's sale) | render/carbuy.js `buyCar()` calls `purchased(car)` once `Progress.buy` saved it; the showroom, render/garage.js and render/ridenudge.js all call `buyCar` |
+| A car bought (CHECKLIST 451: the showroom's Buy, the Garage's Buy, the results' Better ride; after the sheet where there is one) | `jim` (Crazey Jim's sale) | render/carbuy.js `buyCar()` calls `purchased(car)` once `Progress.buy` saved it; the showroom, render/garage.js and render/ridenudge.js all call `buyCar` |
 | A car bought from the results' "Better ride" card | `jim` | render/ridenudge.js, after `Progress.buy` |
 | An ECU bought (the showroom's Upgrade button) | `ecu` at the new level; `ecumax` when it is the car's last (instead of, never as well as, `ecu`) | render/ecuupgrade.js `upMoment` (with the livery on show), and ecu.js `Ecu.buy`'s existing `ecuchange` event for any other buyer (the same event is queued once) |
 | A KEY car becoming owned (a pack's key card, an event / prize, a concept car's key won at max ECU, anything) | `key` (the fob version for the six bladeless keys, as the cinematic already chooses) | the WATCH (below) |

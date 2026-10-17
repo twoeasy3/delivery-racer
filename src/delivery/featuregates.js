@@ -74,7 +74,7 @@ export const GATE_IDS = GATES.map(g => g.id);
 export const SIDE_HINTS = { good: 'gifts · more time', evil: 'fire · less time' };
 export const gateOf = (id) => GATES.find(g => g.id === id);
 
-// EVERY MENU SECTION (the front screen, the Options sheet, the Garage (under Options since CHECKLIST 440), the results, the showroom), each with its gate or 'always', and, when
+// EVERY MENU SECTION (the front screen, the Options sheet, the Garage (under Options since CHECKLIST 451), the results, the showroom), each with its gate or 'always', and, when
 // the gate's `hides` do not name it, where it is hidden from (the check holds that nothing on the menu is left out:
 // scripts/.featuregates-check.mjs reads delivery/index.html for the ids): [selector, label, gate, via?]
 const X = 'in #menuOptions section.pg-extras';

@@ -98,7 +98,7 @@ const dropKey = (car, length) => {
   return rig;
 };
 
-// ---- CRAZEY JIM'S KEY (CHECKLIST 440, the owner: "a less nice key"): a lot key, not the car's own. A plain worn brass blade
+// ---- CRAZEY JIM'S KEY (CHECKLIST 452, the owner: "a less nice key"): a lot key, not the car's own. A plain worn brass blade
 // key (a round head with its hole, four cut teeth), on a cheap split ring with a manila paper tag on a bit of string, the tag
 // scuffed and scrawled on (dark marks, no text, no texture). Flat colours only; 15 small meshes, shared box geometry.
 const lotKey = (s, length) => {
@@ -332,7 +332,7 @@ const jim = (kx) => {
       // confetti over the hero shot
       const cp = confGeo.attributes.position;
       let m = 0;
-      for (const sd of confSeeds) { // (each falls once and lies where it lands: the held end leaves none in the air, CHECKLIST 440)
+      for (const sd of confSeeds) { // (each falls once and lies where it lands: the held end leaves none in the air, CHECKLIST 452)
         const age = lt === 99 ? 99 : t - 4.5 - sd.late * 0.4;
         if (age < 0) continue;
         const fallV = sd.speed * 2, landAt = (sd.top - CONF_FLOOR) / fallV, a = Math.min(age, landAt);

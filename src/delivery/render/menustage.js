@@ -635,7 +635,7 @@ for (const button of sideBox.querySelectorAll('button')) button.addEventListener
   pickSide(evil === Game.evil ? (oneSided(cursor) ? Game.evil : !evil) : evil);
 });
 // (the car card: the showroom, where a car is picked and bought; with no car the level allows, its full view on the cheapest
-// car the level allows, to buy it there (was the car lot: CHECKLIST 440))
+// car the level allows, to buy it there (was the car lot: CHECKLIST 451))
 shop.addEventListener('click', () => {
   blip('menuPick');
   Showroom.open();
@@ -668,7 +668,7 @@ for (const node of startScreen.querySelectorAll('.menu-sheet')) node.addEventLis
 const options = document.getElementById('menuOptions');
 document.getElementById('optionsBtn').addEventListener('click', () => openSheet(options));
 document.getElementById('optionsCloseBtn').addEventListener('click', closeSheet);
-// the GARAGE (the owner, 17-Oct, CHECKLIST 440: "move the garage in its entirety into the settings option"): no longer reached
+// the GARAGE (the owner, 17-Oct, CHECKLIST 451: "move the garage in its entirety into the settings option"): no longer reached
 // from the car card, only from Options (and ?garage); its Back comes back to Options
 document.getElementById('garageBtn').addEventListener('click', () => {
   closeSheet();

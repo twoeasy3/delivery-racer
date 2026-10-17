@@ -1,7 +1,7 @@
 // A check of THE CUTSCENES IN THE GAME (render/cinequeue.js, CHECKLIST 438, CINE-WIRING.md): the unlock cinematics
 // (render/unlockcine.js, render/ecucine.js) played from the game's own flow. In headless Chromium over DevTools (skipped with a
 // note if no browser is found), a phone (390x844, touch, DPR 3), each on a real save written first:
-//   PURCHASE   the Garage (was the car lot: ?garage&look=<car>, its Buy button, the sheet's Buy) and the SHOWROOM's Buy (CHECKLIST 440): Crazey Jim's sale, once, the car already in the
+//   PURCHASE   the Garage (was the car lot: ?garage&look=<car>, its Buy button, the sheet's Buy) and the SHOWROOM's Buy (CHECKLIST 451): Crazey Jim's sale, once, the car already in the
 //              stored save when the cutscene's page element appears; a tap skips to the held end, a tap closes it; the lot is
 //              still there under it; no plain 'car' unlock for the same car
 //   ECU UP     the showroom's full view (?showroom&look=<car>&full): its Upgrade button: ECU UP at the new level; the next one, to
@@ -16,11 +16,11 @@
 //   HEADLESS   without ?cineplay a headless browser plays none (logged 'headless')
 //   BULK       more than BULK cars at once (Unlock everything): none
 //   FINGERPRINT the replay rules fingerprint (scripts/logic-hash.mjs) is main's (no logic file touched)
-//   HELD      (CHECKLIST 440) every cinematic (car, key, fob, jim, ecu, ecumax) held at its end keeps drawing; nothing above the
+//   HELD      (CHECKLIST 452) every cinematic (car, key, fob, jim, ecu, ecumax) held at its end keeps drawing; nothing above the
 //              floor 6 s in (Jim's confetti still falling 0.5 s in); a skip holds at once with nothing in the air
-//   LAMPS     (CHECKLIST 440) sample cars (hand-written, generated, a Legendary, an idea) light their render/carlights.js TABLE lamps
+//   LAMPS     (CHECKLIST 452) sample cars (hand-written, generated, a Legendary, an idea) light their render/carlights.js TABLE lamps
 //              (each one, one scale from the table's metres); a car whose headlamps the guess missed; a car with no entry guesses
-//   FIREWORKS (CHECKLIST 441) the key unlock's last shot, blade and fob: present only there, none 6 s into the held end, none after
+//   FIREWORKS (CHECKLIST 453) the key unlock's last shot, blade and fob: present only there, none 6 s into the held end, none after
 //              a skip, none in the lite version
 //   --only=purchase,ecu,pack,rest,held,lamps,fireworks,stills runs those parts; --shots also takes Jim's key, its held end at 0.5 and 3 s
 //   node scripts/.cine-wire-check.mjs [--browser=<path>] [--shots=<dir>]
@@ -49,7 +49,7 @@ check(!/^import[^;]*unlockcine/m.test(queueJs) && /import\('\.\/unlockcine\.js'\
 const statics = ['main.js', 'render/packs.js', 'render/garage.js', 'render/ridenudge.js', 'render/ecuupgrade.js', 'render/carbuy.js', 'render/showroom.js'].filter(f => /^import[^;]*['"][./]*(render\/)?unlockcine\.js['"]/m.test(src(f)));
 check(!statics.length, 'nothing imports render/unlockcine.js statically' + (statics.length ? ': ' + statics.join(', ') : ''));
 check(!/progress\.js|Progress\.data\.\w+\s*=/.test(queueJs.replace(/import \{ Progress \} from '\.\.\/progress\.js';/, '')) && /localStorage\.setItem\(CINE_KEY/.test(queueJs), 'the setting is kept in localStorage by the queue, never written into the save');
-// (CHECKLIST 440) ONE purchase path: render/carbuy.js buyCar (Progress.buy, then purchased()); the showroom, the Garage and the results'
+// (CHECKLIST 451) ONE purchase path: render/carbuy.js buyCar (Progress.buy, then purchased()); the showroom, the Garage and the results'
 // Better ride all buy through it, and nothing else in render/ buys a roster car (menu.js's secret bus aside)
 {
   const buyJs = src('render/carbuy.js'), users = ['render/showroom.js', 'render/garage.js', 'render/ridenudge.js'].filter(f => /import \{[^}]*\bbuyCar\b[^}]*\} from '\.\/carbuy\.js'/.test(src(f)) && /buyCar\(/.test(src(f).replace(/import[^;]*;/g, '')));
@@ -174,7 +174,7 @@ else {
     check(log.filter(e => e.what === 'started').length === 1 && !log.some(e => e.mode === 'car' && e.carId === BUY), 'played once, and no plain car unlock for the car bought (' + log.map(e => e.mode + ':' + e.what).join(', ') + ')');
 
     }
-    // ---- PURCHASE in the SHOWROOM (CHECKLIST 440: the car lot retired as the shop; the showroom's Buy is the one purchase path,
+    // ---- PURCHASE in the SHOWROOM (CHECKLIST 451: the car lot retired as the shop; the showroom's Buy is the one purchase path,
     // render/carbuy.js): the full view's Buy and its price, the sheet's Buy, Crazey Jim's sale, the car then drivable there
     if (want('showroombuy')) {
     const SR = 'junker';
@@ -197,7 +197,7 @@ else {
     const after = await evaluate(`({ gone: !document.querySelector('.ucine'), open: !document.getElementById('showroom').classList.contains('hidden'), go: document.querySelector('#showroom .sr-go > span')?.textContent })`);
     check(after.gone && after.open && /^Drive/.test(after.go || ''), 'closed: back on the showroom, the car now to drive ("' + after.go + '")');
     }
-    // ---- THE GARAGE UNDER OPTIONS (CHECKLIST 440): Options > Garage opens it, its Back comes back to Options; the car card opens the
+    // ---- THE GARAGE UNDER OPTIONS (CHECKLIST 451): Options > Garage opens it, its Back comes back to Options; the car card opens the
     // showroom, never the Garage
     if (want('garagenav')) {
     await seed({ money: 500, cars: ['commuter'], unlocked: 99, tierBase: 99 });
@@ -366,7 +366,7 @@ else {
     check(log.some(e => e.carId === spare[1] && e.what === 'headless') && !await evaluate(`window.__watch.seen.length`), 'headless, no ?cineplay: logged, none plays');
     }
 
-    // ---- THE HELD END ALIVE (CHECKLIST 440): every cinematic held at its end keeps drawing, its particles fall and settle
+    // ---- THE HELD END ALIVE (CHECKLIST 452): every cinematic held at its end keeps drawing, its particles fall and settle
     // (none above the floor 6 s in), and a skip holds with nothing in the air at once
     if (want('held')) {
       await go('index.html?cineplay', 2500);
@@ -393,7 +393,7 @@ else {
       }
     }
 
-    // ---- THE CAR'S OWN LAMPS (CHECKLIST 440): a car with an entry in render/carlights.js TABLE has its cutscene lamps there
+    // ---- THE CAR'S OWN LAMPS (CHECKLIST 452): a car with an entry in render/carlights.js TABLE has its cutscene lamps there
     // (every lamp of the entry, mirrored, one affine map from the table's metres to the stage: one scale, no turn); a car with
     // none keeps the guess; a car the guess missed is found
     if (want('lamps')) {
@@ -446,7 +446,7 @@ else {
       }
     }
 
-    // ---- FIREWORKS in the key unlock's last shot (CHECKLIST 441): the blade key's and the fob's; none before the last shot, none in
+    // ---- FIREWORKS in the key unlock's last shot (CHECKLIST 453): the blade key's and the fob's; none before the last shot, none in
     // the lite version, none left (and nothing above the floor) 6 s into the held end; a skip holds with none
     if (want('fireworks')) {
       await go('index.html?cineplay', 2500);
@@ -477,7 +477,7 @@ else {
       }
     }
 
-    // ---- the stills (CHECKLIST 440): Jim's lot key caught, the sale's held end 0.5 s and 3 s in
+    // ---- the stills (CHECKLIST 452): Jim's lot key caught, the sale's held end 0.5 s and 3 s in
     if (want('stills') && SHOTS) {
       for (const [name, t] of [['jim-key', 4.32], ['jim-held-0.5s', 7.0], ['jim-held-3s', 9.5]]) {
         await go(`index.html?unlockcine=jim:hearse&still=${t}`, 6000);

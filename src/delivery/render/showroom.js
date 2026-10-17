@@ -17,7 +17,7 @@
 // returns to the cards where they were. GOOD / EVIL: one choice, switched in the header or the full view (a click on
 // either half flips it): the cards' and the live car's livery, the side whose car rule marks the cards, and the side
 // Drive drives as (it starts on the side being played). A car for sale is BOUGHT here: its full view's button is Buy and its
-// price (render/carbuy.js; Crazey Jim's car lot, render/garage.js, is retired as the shop: CHECKLIST 440).
+// price (render/carbuy.js; Crazey Jim's car lot, render/garage.js, is retired as the shop: CHECKLIST 451).
 // The layout (showroom.css): on a desktop the cards are TWO ROWS scrolled sideways (a drag, the wheel, the arrows at its
 // ends, the arrow keys); a phone on its side, one row. A PHONE HELD UPRIGHT (isPhone(); showroom-phone.css and
 // render/showroomphone.js): the cards in TWO COLUMNS scrolled down, and the full view is its single-car screen: the car
@@ -33,7 +33,7 @@ import '../showroom.css';
 import '../showroom-phone.css';
 import { showroomCars, carCard, LOCKED_WORDS, floorBest, statShown, RARITIES, sideName, sideClick, driveWords as dataDriveWords, barredWhy, driveAs,
   FILTER_GROUPS, SORTS, imposedFilter, noFilter, cleanFilter, parseFilter, filterCount, filterCards, stepIn, overlayOf as dataOverlayOf, cardTip as dataCardTip, kindOf, lentWords } from '../showroomData.js';
-import { buyCar, affordable, priceText } from './carbuy.js'; // (BUY, here: the one purchase path, CHECKLIST 440)
+import { buyCar, affordable, priceText } from './carbuy.js'; // (BUY, here: the one purchase path, CHECKLIST 451)
 import { CAR, carInUse, setViewSide, STAR_COLOURS, carRule, carFocus } from '../cars.js';
 import { Progress } from '../progress.js';
 import { ShopScreen } from './shop.js'; // (the Shop, reached from the header)
@@ -60,7 +60,7 @@ import { upgradeBlock, upFlash, freshLevel } from './ecuupgrade.js'; // (the ful
 
 const panel = document.getElementById('showroom');
 
-// ---- CRAZEY JIM'S CAR LOT RETIRED (the owner, 17-Oct, CHECKLIST 440: "Cars will just be purchaseable in the showroom itself"):
+// ---- CRAZEY JIM'S CAR LOT RETIRED (the owner, 17-Oct, CHECKLIST 451: "Cars will just be purchaseable in the showroom itself"):
 // a car for sale is BOUGHT HERE, in its full view (one Buy button with its price, greyed when the bank is short), through
 // render/carbuy.js, as the Garage and the results' Better ride buy. The words showroomData.js still has for the lot are
 // said here instead (showroomData.js is a replay rules file, vite.config.js logicFiles: its words are left as they are, so

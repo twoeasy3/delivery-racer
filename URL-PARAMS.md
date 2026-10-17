@@ -100,7 +100,7 @@ Also need `autostart` (or a hidden level).
 | `cursor` | level number | Moves the menu to that level (shown only if it is open to you). | `/delivery/?cursor=3` | Normal | untried |
 | `tab` | `races`, `events` | The menu opens on the Races or Events tab. (Means something else with `garage` and in the editor.) | `/delivery/?tab=races` | Normal | yes (`races`) |
 | `side` | `evil` | Plays Evil (not saved as a choice). The showroom then opens on Evil too. (On cargo.html it filters: section 9.) | `/delivery/?side=evil` | Normal | untried |
-| `options` | bare | The Options sheet open (its Settings has the Garage button since CHECKLIST 440). | `/delivery/?options` | Normal | yes (CHECKLIST 440 stills) |
+| `options` | bare | The Options sheet open (its Settings has the Garage button since CHECKLIST 451). | `/delivery/?options` | Normal | yes (CHECKLIST 451 stills) |
 | `road` | bare | The "What's on this road" card open (for the picked level: works with `pick`). | `/delivery/?pick=27&road` | Normal / No with pick | untried |
 | `do` | comma list of `key:<code>`, `click:<css selector>`, `swipe:left`/`swipe:right` | Works the menu step by step, one every 0.15 s (encode `#` as `%23`). | `/delivery/?do=key:ArrowRight,key:ArrowRight` | Normal | yes (moved to level 3) |
 | `car` | car id | (without autostart) The menu with that car in use for the visit, owned or not. | `/delivery/?car=hotrod` | No | untried |
@@ -131,7 +131,7 @@ Also need `autostart` (or a hidden level).
 
 ## 5. Garage and the Showroom
 
-CHECKLIST 440 (17-Oct): Crazey Jim's car lot is retired as the shop. Cars are BOUGHT in the Showroom's full view (`?showroom&look=<id>&full`: one Buy button with the price, greyed when the bank is short; `&money=<n>` to try both). The lot itself is now the GARAGE, opened from Options > Settings > Garage (its Back returns to Options) and by `?garage`, which works as before (its Buy goes through the same purchase code, render/carbuy.js). The Kind filter's chip `garage` reads **Career** (the id `kind:garage` in `&filter=` is unchanged).
+CHECKLIST 451 (17-Oct): Crazey Jim's car lot is retired as the shop. Cars are BOUGHT in the Showroom's full view (`?showroom&look=<id>&full`: one Buy button with the price, greyed when the bank is short; `&money=<n>` to try both). The lot itself is now the GARAGE, opened from Options > Settings > Garage (its Back returns to Options) and by `?garage`, which works as before (its Buy goes through the same purchase code, render/carbuy.js). The Kind filter's chip `garage` reads **Career** (the id `kind:garage` in `&filter=` is unchanged).
 
 | Param | Values | What it does | Example | Saves? | Tried |
 |---|---|---|---|---|---|
@@ -209,7 +209,7 @@ CHECKLIST 440 (17-Oct): Crazey Jim's car lot is retired as the shop. Cars are BO
 | `w` / `h` | pixels | With `banner`: its size (default 1600x800). | (above) | Normal | yes |
 | `evil` / `labels` | bare / `0` | With `banner`: Evil livery / no names. | `...&banner=wedge,midnight&evil&labels=0` | Normal | untried |
 
-## 7a. Crazey Jim's Blueprint Stall (on main; KEPT by CHECKLIST 440: it is a Shop section, separate from the retired car lot)
+## 7a. Crazey Jim's Blueprint Stall (on main; KEPT by CHECKLIST 451: it is a Shop section, separate from the retired car lot)
 
 A section at the top of the Shop where Jim sells blueprints for tip money (the bank, `$`): six offers that change every 6 local hours
 (00:00, 06:00, 12:00, 18:00; render/jimshop.js, rules in jimshop.js). `jimshop` opens the Shop with it expanded. Fake saves
@@ -249,7 +249,7 @@ e.g. Shift).
 | `unlockcine` | `ecumax:<car id>` | MAX ECU, 8.0 s, then held: the workshop lights clunk on, the module drops in and glows, the rev counter into the red, flames, a shockwave, the car's stars flaring, then MAX ECU with every pip lit; a concept car (its key won by delivering it at its max ECU) ends with its key rising into the picture. | `/delivery/?unlockcine=ecumax:sixteen` | Normal | yes (stills) |
 | `evil` | bare | With `unlockcine`: the Evil livery (and "New ride" for a car). | `/delivery/?unlockcine=car:sixteen&evil` | Normal | yes |
 | `loop` | bare | With `unlockcine`: plays again and again, no hold (until skipped). | `/delivery/?unlockcine=key:swancar&loop` | Normal | untried |
-| `still` | seconds | With `unlockcine`: that moment of it, held (no sound), for pictures. Past its length: the held end that long in (the confetti falling, then settled; CHECKLIST 440). | `/delivery/?unlockcine=key:swancar&still=3.4` | Normal | yes |
+| `still` | seconds | With `unlockcine`: that moment of it, held (no sound), for pictures. Past its length: the held end that long in (the confetti falling, then settled; CHECKLIST 452). | `/delivery/?unlockcine=key:swancar&still=3.4` | Normal | yes |
 | `cineplay` | bare | The game's own cutscenes (CHECKLIST 438) play in a headless browser too (a check, a still); without it a headless browser plays none, only logs them in `window.__cine.log`. | `/delivery/?cineplay&garage` | Normal | yes (headless) |
 | `cinelite` | bare | The game's own cutscenes in their fade-only version, as on a low-end device (2 cores or 2 GB or fewer; any `?lite=` does the same). | `/delivery/?cinelite` | Normal | yes (headless) |
 | `nocine` | bare | None of the game's own cutscenes plays for the visit (logged as `nocine`). | `/delivery/?nocine&showroom` | Normal | untried |

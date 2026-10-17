@@ -39,7 +39,7 @@ draw();
 // level only if it is an amphibious one: otherwise the player's amphibious car stays)
 window.addEventListener('carchange', () => { useLevelCar(LEVEL.car, LEVEL.amphibious); draw(); });
 // Start on an amphibious level with no amphibious car owned (see Game.start): nothing starts, and the
-// showroom opens on the one to get, its full view, to buy (was the car lot: CHECKLIST 440; still a menu: nothing reloads)
+// showroom opens on the one to get, its full view, to buy (was the car lot: CHECKLIST 451; still a menu: nothing reloads)
 Game.onRefused.push(() => {
   draw();
   Showroom.open();
