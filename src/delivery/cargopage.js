@@ -4,7 +4,8 @@
 // As the power-ups page: one renderer draws every picture, each into a small canvas of its own in its
 // .view, so it scrolls with the page (render/modelviews.js).
 // ?side=good (or evil) shows only that side's. ?still freezes every model at one moment (&t=<s>: which), for a picture of the page.
-// &turn=<rad> turns every model to that side (0.5 unless asked), for a look at it from another side.
+// &turn=<rad> turns every model to that side (0.5 unless asked), for a look at it from another side. &zoom=<k>&aim=<0..1>&high=<k>:
+// a closer camera, aimed at that height of the model, k times higher.
 import * as THREE from 'three';
 import './powerups.css';
 import './gimmicks.css';
@@ -96,9 +97,12 @@ for (const side of ['good', 'evil']) {
     el.querySelectorAll('.view').forEach((view, k) => makeView(view, item.id, k));
     const size = bounds.getSize(new THREE.Vector3()), mid = bounds.getCenter(new THREE.Vector3());
     const radius = Math.max(size.y, size.x, size.z) * 0.5, far = radius / Math.sin(THREE.MathUtils.degToRad(15));
+    // (&zoom=<k>&aim=<0..1>&high=<k>: closer by k, aimed at that height of it, the camera k times higher: a close look at a part)
+    const zoom = Number(params.get('zoom') || 1), high = Number(params.get('high') || 1);
+    const aimY = params.get('aim') !== null ? bounds.min.y + size.y * Number(params.get('aim')) : mid.y;
     for (const v of views.slice(from)) {
-      v.camera.position.set(0, mid.y + far * 0.3, far * 0.95);
-      v.camera.lookAt(0, mid.y, 0);
+      v.camera.position.set(0, aimY + far * 0.3 * high / zoom, far * 0.95 / zoom);
+      v.camera.lookAt(0, aimY, 0);
     }
   }
 }
