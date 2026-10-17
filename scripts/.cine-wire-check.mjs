@@ -309,6 +309,94 @@ else {
     log = await logOf();
     check(log.some(e => e.carId === spare[1] && e.what === 'headless') && !await evaluate(`window.__watch.seen.length`), 'headless, no ?cineplay: logged, none plays');
     }
+
+    // ---- THE HELD END ALIVE (CHECKLIST 440): every cinematic held at its end keeps drawing, its particles fall and settle
+    // (none above the floor 6 s in), and a skip holds with nothing in the air at once
+    if (want('held')) {
+      await go('index.html?cineplay', 2500);
+      const PLAY = (o) => evaluate(`import('/src/delivery/render/unlockcine.js').then(m => { window.__h = m.playUnlock(${JSON.stringify(o)}); return !!window.__h; })`);
+      const H = (e) => evaluate(`(() => { const h = window.__h; return ${e}; })()`);
+      for (const [mode, carId, level] of [['car', 'hearse'], ['key', 'swancar'], ['key', 'horseshoe'], ['jim', 'hearse'], ['ecu', 'hearse', 2], ['ecumax', 'hearse']]) {
+        await PLAY({ mode, carId, level });
+        const total = await H('h.total');
+        await until(`window.__h.held`, (total + 8) * 1000);
+        await sleep(500);
+        const early = await H('h.airborne()');
+        await sleep(5500);
+        const [left, held, done, drawing] = await H('[h.airborne(), h.held, h.done, h.drawing]');
+        check(left === 0 && held && !done && drawing, `${mode} ${carId}: held and still drawing, nothing above the floor 6 s in (${early} in the air at 0.5 s, ${left} at 6 s)`);
+        if (mode === 'jim') check(early > 0, 'jim: the confetti still falling 0.5 s into the held end (not frozen): ' + early);
+        await H('h.close()');
+        await PLAY({ mode, carId, level });
+        await sleep(1200);
+        await H('h.skip()');
+        await sleep(250);
+        const [sh, sa, sd] = await H('[h.held, h.airborne(), h.drawing]');
+        check(sh && sa === 0 && sd, `${mode} ${carId}: skipped at 1.2 s, held at once with nothing in the air (${sa}), still drawing`);
+        await H('h.close()');
+      }
+    }
+
+    // ---- THE CAR'S OWN LAMPS (CHECKLIST 440): a car with an entry in render/carlights.js TABLE has its cutscene lamps there
+    // (every lamp of the entry, mirrored, one affine map from the table's metres to the stage: one scale, no turn); a car with
+    // none keeps the guess; a car the guess missed is found
+    if (want('lamps')) {
+      await go('index.html?cineplay', 2500);
+      const R = await evaluate(`(async () => {
+        const m = await import('/src/delivery/render/unlockcine.js'), Lm = await import('/src/delivery/render/carlights.js');
+        const C = await import('/src/delivery/cars.js'), I = await import('/src/delivery/ideas.js');
+        const every = [...C.CARS, ...C.FILLER_CARS, ...C.BESPOKE_CARS, ...C.EVENT_CARS, ...C.EARNED_CARS, ...I.IDEA_CARS], all = every.filter(c => !c.off);
+        const mirrored = (list = []) => list.flatMap(l => (l.mirror ? [l, { ...l, at: [-l.at[0], l.at[1], l.at[2]] }] : [l]));
+        // one scale k and offset per axis: world = k * table + b (the same k on x, y and z)
+        const fit = (tab, got) => {
+          if (tab.length !== got.length || !tab.length) return { ok: false, why: tab.length + ' in the table, ' + got.length + ' drawn' };
+          const ks = [];
+          for (let a = 0; a < 3; a++) for (let i = 1; i < tab.length; i++) { const d = tab[i][a] - tab[0][a]; if (Math.abs(d) > 0.05) ks.push((got[i][a] - got[0][a]) / d); }
+          const k = ks.length ? ks.reduce((x, y) => x + y) / ks.length : null;
+          return { ok: k !== null && ks.every(v => Math.abs(v - k) < 0.02 * Math.abs(k)), k };
+        };
+        const sample = ['commuter', 'lowrider', 'hearse', 'sixteen', 'horseshoe'];
+        const legend = every.find(c => c.legend && Lm.TABLE[Lm.lampKey(c)]), idea = I.IDEA_CARS.find(c => Lm.TABLE[Lm.lampKey(c)]);
+        if (legend) sample.push(legend.id); if (idea) sample.push(idea.id);
+        const none = all.find(c => !Lm.TABLE[Lm.lampKey(c)]);
+        const rows = [];
+        for (const id of sample) {
+          const r = m.lampReport(id), def = Lm.TABLE[r.key];
+          rows.push({ id, key: r.key, source: r.source, head: def ? fit(mirrored(def.head).map(l => l.at), r.head) : null, tail: def ? fit(mirrored(def.tail).map(l => l.at), r.tail) : null, guess: r.guessFound, lenses: r.lenses, legend: !!C.carById(id)?.legend, idea: !!C.carById(id)?.idea });
+        }
+        // a car whose lamps the guess misses (no headlamp found by look) that the table has
+        let missed = null, scanned = 0;
+        for (const c of all) {
+          const def = Lm.TABLE[Lm.lampKey(c)];
+          if (!def?.head?.length || !def?.tail?.length) continue;
+          scanned++;
+          const r = m.lampReport(c.id);
+          if (r.guessFound.head === 0 && r.source.front === 'table') { missed = { id: c.id, guess: r.guessFound, heads: r.head.length, fit: fit(mirrored(def.head).map(l => l.at), r.head) }; break; }
+          if (scanned > 120) break;
+        }
+        const plain = none ? m.lampReport(none.id) : null;
+        return { rows, missed, scanned, plain: plain && { id: plain.id, source: plain.source, lenses: plain.lenses } };
+      })()`, 300000);
+      for (const r of R.rows) check(r.source.front === 'table' && r.source.rear === 'table' && r.head?.ok && r.tail?.ok && r.lenses > 0,
+        `${r.id}${r.legend ? ' (Legendary)' : ''}${r.idea ? ' (idea)' : ''}: headlamps and tail lamps from its table entry '${r.key}' (scale ${r.head?.k?.toFixed(3)}; the guess alone found ${r.guess.head} head, ${r.guess.tail} tail)`);
+      check(!!R.missed && R.missed.fit.ok, 'a car whose headlamps the guess missed: ' + (R.missed ? R.missed.id + ' (the guess: ' + JSON.stringify(R.missed.guess) + '; now ' + R.missed.heads + ' from its table)' : 'none in ' + R.scanned));
+      check(!R.plain || (R.plain.source.front === 'guess' && R.plain.lenses === 0), 'a car with no table entry keeps the guess: ' + R.plain?.id);
+      if (R.missed) console.log('  (missed by the guess: ' + R.missed.id + ')');
+      if (SHOTS && R.missed) {
+        await go(`index.html?unlockcine=car:${R.missed.id}&still=1.8`, 6000);
+        await shot('lamps-' + R.missed.id + '-detail');
+        await go(`index.html?unlockcine=car:${R.missed.id}&still=4.9`, 6000);
+        await shot('lamps-' + R.missed.id + '-hero');
+      }
+    }
+
+    // ---- the stills (CHECKLIST 440): Jim's lot key caught, the sale's held end 0.5 s and 3 s in
+    if (want('stills') && SHOTS) {
+      for (const [name, t] of [['jim-key', 4.32], ['jim-held-0.5s', 7.0], ['jim-held-3s', 9.5]]) {
+        await go(`index.html?unlockcine=jim:hearse&still=${t}`, 6000);
+        await shot(name);
+      }
+    }
   } catch (error) {
     check(false, 'the browser part: ' + (error?.stack || error));
   } finally {
