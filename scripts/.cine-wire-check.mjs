@@ -190,6 +190,24 @@ else {
     const after = await evaluate(`({ gone: !document.querySelector('.ucine'), open: !document.getElementById('showroom').classList.contains('hidden'), go: document.querySelector('#showroom .sr-go > span')?.textContent })`);
     check(after.gone && after.open && /^Drive/.test(after.go || ''), 'closed: back on the showroom, the car now to drive ("' + after.go + '")');
     }
+    // ---- THE GARAGE UNDER OPTIONS (CHECKLIST 440): Options > Garage opens it, its Back comes back to Options; the car card opens the
+    // showroom, never the Garage
+    if (want('garagenav')) {
+    await seed({ money: 500, cars: ['commuter'], unlocked: 99, tierBase: 99 });
+    await go('index.html?options', 4000);
+    check(await tap('#garageBtn'), 'Options: the Garage button');
+    await sleep(600);
+    const inG = await evaluate(`({ garage: !document.getElementById('garageUi').classList.contains('hidden'), menu: !document.getElementById('startScreen').classList.contains('hidden'), tab: document.getElementById('garageTabBtn').textContent })`);
+    check(inG.garage && !inG.menu && inG.tab === 'Garage', 'it opens the Garage (tab "' + inG.tab + '"), the menu hidden');
+    await tap('#garageBackBtn');
+    await sleep(600);
+    const back = await evaluate(`({ garage: !document.getElementById('garageUi').classList.contains('hidden'), menu: !document.getElementById('startScreen').classList.contains('hidden'), options: !document.getElementById('menuOptions').classList.contains('hidden') })`);
+    check(!back.garage && back.menu && back.options, 'its Back returns to Options (' + JSON.stringify(back) + ')');
+    await tap('#optionsCloseBtn'); await sleep(300);
+    await tap('#shop'); await sleep(800);
+    const card = await evaluate(`({ showroom: !document.getElementById('showroom').classList.contains('hidden'), garage: !document.getElementById('garageUi').classList.contains('hidden') })`);
+    check(card.showroom && !card.garage, 'the car card opens the showroom, not the Garage');
+    }
     // ---- ECU UP, then MAX ECU: the showroom's full view
     if (want('ecu')) {
     const ECU = 'hearse'; // (max ECU3)
