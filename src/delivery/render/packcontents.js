@@ -1,7 +1,7 @@
 // ---- "What's inside": every card a pack can give (the Shop's tiles: their info button, or a tap on the odds bar) ------
 // A sheet over the Shop listing EVERY card of a kind of pack, read from packs.js contents() (the same pools a pack is
 // drawn from, at the moment the sheet opens: a car added to the roster is listed with no edit here), grouped by rarity
-// (Common to Bespoke), each card a compact BLUEPRINT CARD (render/blueprintcard.js: the car in its own pose, carposes.js
+// (Common to Bespoke), each card a compact BLUEPRINT CARD (render/blueprintcard.js: the car in its own pose, poseassign.js
 // posePick, the same every time; its rarity letter, name, what it is: a blueprint of a blueprint-only car, a car still
 // locked, the KEY to a car) with its chance on a plain slot; a special pack's FEATURED entries at the top (the owner,
 // 12-Oct: "declare featured weights and display them on the What's Inside"): the declared ratio over them ("Featured
@@ -20,7 +20,7 @@ import { Ecu } from '../ecu.js';
 import { Nav } from '../nav.js';
 import { stillsIn } from './carstill.js';
 import { blueprintCard } from './blueprintcard.js';
-import { posePick } from '../carposes.js';
+import { posePick } from './poseassign.js';
 import { bannerCars, bannerArt } from './packbanner.js';
 import { lite } from '../lite.js';
 

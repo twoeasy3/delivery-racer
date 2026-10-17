@@ -25,7 +25,7 @@ import { Events, when as eventTime } from '../events.js';
 import { ask } from './dialog.js';
 import { blueprintCard } from './blueprintcard.js';
 import { stillsIn } from './carstill.js';
-import { posePick } from '../carposes.js';
+import { posePick } from './poseassign.js';
 
 const make = (tag, className, ...inside) => {
   const node = document.createElement(tag);
@@ -76,7 +76,7 @@ const offerTile = (v, anim) => {
   button.disabled = !!v.why;
   button.setAttribute('aria-label', v.why ? v.car.name + ' blueprints: ' + words : 'Buy ' + v.qty + ' ' + v.car.name + ' blueprint' + (v.qty > 1 ? 's' : '') + ' for ' + dollars(v.price));
   if (!v.why) button.addEventListener('click', () => buy(v.id));
-  // the car's own BLUEPRINT POSE, the one the "What's inside" sheet and the showroom give it (carposes.js posePick: stable by id), drawn by the
+  // the car's own BLUEPRINT POSE, the one the "What's inside" sheet and the showroom give it (poseassign.js posePick: fixed, else stable by id), drawn by the
   // same live still (carstill.js) in the Good livery; a key car's card is its blueprint card, never its key (Jim sells blueprints only)
   const pose = posePick(v.car.id);
   const { node, pic } = blueprintCard(v.car, { rarity: v.rarity, n: v.qty }, { pose });
