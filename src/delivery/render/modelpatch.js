@@ -42,7 +42,7 @@
 import * as THREE from 'three';
 import { WINDOW_ROLE, isWindowRole, isGlassWord, isWindowNode, glassTable, windowKey, canonicalTable } from './glassnames.js';
 import { paneFacing, splitByFacing, cabinMiddle, zRefOf, REVERSE_RAKE } from './screens.js';
-import { applyPaneEdits, isNoEdit } from './paneedit.js';
+import { applyPaneEdits, isNoEdit, asBuiltPaneView } from './paneedit.js';
 
 export const PATCH_VERSION = 1;
 // A side view extruded across the car, as the car models draw their bodies: `points` is the outline seen from the left,
@@ -300,11 +300,11 @@ const faceHandPanes = (panes, nodes, root, carBox) => {
     if (!e.hand) continue;
     if (!zOf.has(e.node)) zOf.set(e.node, zRefOf(all, e.node, zCar));
     const zRef = zOf.get(e.node);
-    const q = e.pane, tag = e.node.userData.window;
-    const f = paneFacing(e.node, e.toModel, q, zRef);
+    const q = e.pane, tag = e.node.userData.window, ab = asBuiltPaneView(e.node, q); // (a pane a contour bent: read as built, its name kept)
+    const f = ab ? paneFacing(ab.node, e.toModel, ab.pane, zRef) : paneFacing(e.node, e.toModel, q, zRef);
     let face = f.face;
     if (face === 'mixed') {
-      const runs = splitByFacing(e.node, e.toModel, q, zRef);
+      const runs = ab ? null : splitByFacing(e.node, e.toModel, q, zRef);
       if (runs && runs.length <= 16) { // (more than 16: a rounded shape, a sphere's facets, not a box: left whole) // (the pane replaced by its runs, in place in the part's list)
         const at = e.list.indexOf(q);
         e.list.splice(at, 1, ...runs.map((r) => {

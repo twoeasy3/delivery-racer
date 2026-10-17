@@ -232,6 +232,18 @@ export const paneAsBuilt = (node, pane) => {
   return { ...pane, start: pane.start - shift };
 };
 
+// a contoured pane AS BUILT, for what reads its shape to name it (render/modelpatch.js faceHandPanes: which way it faces): a bent dome may
+// face another way than it was built, and its name (the patch's key) must not move. -> { node (a stand-in: the as-built geometry), pane } or null
+export const asBuiltPaneView = (node, pane) => {
+  const runs = node?.geometry?.userData?.paneRuns, base = node?.userData?.paneBase;
+  if (!runs?.length || !base || !pane) return null;
+  const ab = paneAsBuilt(node, pane);
+  if (!runs.some(r => r.start === ab.start && r.count === ab.count && r.now === pane.count)) return null;
+  const g = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(base.pos, 3));
+  if (base.idx) g.setIndex(new THREE.BufferAttribute(base.idx, 1));
+  return { node: { geometry: g, userData: node.userData, matrixWorld: node.matrixWorld }, pane: { ...pane, start: ab.start, count: ab.count } };
+};
+
 // ---- the GAP and SNAP TO BODY ------------------------------------------------------------------------------------------------------------
 // the pane's rim in the car's frame: its outline's points (the triangle edges used once), and points every 4 cm along each edge
 export const rimPoints = (node, root, pane, step = 0.04) => {
