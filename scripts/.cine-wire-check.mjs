@@ -20,7 +20,9 @@
 //              floor 6 s in (Jim's confetti still falling 0.5 s in); a skip holds at once with nothing in the air
 //   LAMPS     (CHECKLIST 440) sample cars (hand-written, generated, a Legendary, an idea) light their render/carlights.js TABLE lamps
 //              (each one, one scale from the table's metres); a car whose headlamps the guess missed; a car with no entry guesses
-//   --only=purchase,ecu,pack,rest,held,lamps,stills runs those parts; --shots also takes Jim's key, its held end at 0.5 and 3 s
+//   FIREWORKS (CHECKLIST 441) the key unlock's last shot, blade and fob: present only there, none 6 s into the held end, none after
+//              a skip, none in the lite version
+//   --only=purchase,ecu,pack,rest,held,lamps,fireworks,stills runs those parts; --shots also takes Jim's key, its held end at 0.5 and 3 s
 //   node scripts/.cine-wire-check.mjs [--browser=<path>] [--shots=<dir>]
 // --shots saves the phone stills (purchase, ECU up, pack unlock, the setting).
 import { createServer } from 'vite';
@@ -392,6 +394,37 @@ else {
         await shot('lamps-' + R.missed.id + '-detail');
         await go(`index.html?unlockcine=car:${R.missed.id}&still=4.9`, 6000);
         await shot('lamps-' + R.missed.id + '-hero');
+      }
+    }
+
+    // ---- FIREWORKS in the key unlock's last shot (CHECKLIST 441): the blade key's and the fob's; none before the last shot, none in
+    // the lite version, none left (and nothing above the floor) 6 s into the held end; a skip holds with none
+    if (want('fireworks')) {
+      await go('index.html?cineplay', 2500);
+      const PLAY = (o) => evaluate(`import('/src/delivery/render/unlockcine.js').then(m => { window.__h = m.playUnlock(${JSON.stringify(o)}); window.__fwAt = m.FW.shells[0]; return !!window.__h; })`);
+      const H = (e) => evaluate(`(() => { const h = window.__h; return ${e}; })()`);
+      for (const carId of ['swancar', 'horseshoe']) {
+        await PLAY({ mode: 'key', carId });
+        const t0 = Date.now(), first = await evaluate('window.__fwAt');
+        let before = 0, most = 0;
+        for (;;) { const t = (Date.now() - t0) / 1000; const n = await H('h.fireworks()'); if (t < first - 0.4) before = Math.max(before, n); else most = Math.max(most, n); if (await H('h.held')) break; await sleep(150); }
+        await sleep(6000);
+        const [left, air] = await H('[h.fireworks(), h.airborne()]');
+        check(before === 0 && most > 40 && left === 0 && air === 0, `key ${carId}${carId === 'horseshoe' ? ' (fob)' : ' (blade)'}: fireworks only in the last shot (${before} before it, up to ${most} dots), none left and nothing above the floor 6 s into the held end`);
+        await H('h.close()');
+        await PLAY({ mode: 'key', carId });
+        await sleep(1000); await H('h.skip()'); await sleep(250);
+        check(await H('h.held && h.fireworks() === 0 && h.airborne() === 0'), `key ${carId}: skipped, held with no fireworks in the air`);
+        await H('h.close()');
+        await PLAY({ mode: 'key', carId, lite: true });
+        let lite = 0;
+        for (let i = 0; i < 12; i++) { lite = Math.max(lite, await H('h.fireworks()')); await sleep(150); }
+        check(lite === 0, `key ${carId}, the lite version: no fireworks (${lite})`);
+        await H('h.close()');
+      }
+      if (SHOTS) for (const [carId, kind] of [['swancar', 'blade'], ['horseshoe', 'fob']]) for (const [name, t] of [['burst', 8.75], ['held', 10.6]]) {
+        await go(`index.html?unlockcine=key:${carId}&still=${t}`, 6000);
+        await shot(`fireworks-${kind}-${carId}-${name}`);
       }
     }
 

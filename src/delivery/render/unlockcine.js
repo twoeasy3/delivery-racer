@@ -353,7 +353,7 @@ const build = (car, evil, mode) => {
 
   const stage = { scene, own, keep, softGeo, facing: facingList, model, carRig, W, H, L, accent, rarity, hemi, keyLight, rim, rim2, floor, pool, shadow, backGlow, beam, beamMat, spotPool, sparks, sparkGeo, seeds, streak, flareCore, rays };
   stage.lamps = findLamps(stage, car);
-  if (mode === 'key') buildLock(stage, car);
+  if (mode === 'key') { buildLock(stage, car); buildFireworks(stage, car); }
   return stage;
 };
 
@@ -466,6 +466,72 @@ export const lampReport = (carId) => {
   s.scene.traverse((node) => { node.geometry?.dispose(); for (const m of [].concat(node.material || [])) m.dispose?.(); });
   for (const x of s.own) x.dispose?.();
   return out;
+};
+
+// ---- FIREWORKS over the key unlock's last shot (CHECKLIST 441, the owner: "fireworks to both key unlocks", in the hero shot that
+// holds; the blade key's and the fob's alike). The SHELL is the kill effect's (render/killfxdefs.js fireworks: a shell of streaks
+// in two colours fanning out from a point, drag and gravity, then a white-gold crackle), drawn here as one pooled Points of
+// FW_SHELLS x (FW_SPARKS + FW_TRAIL) dots, every dot's place a pure function of the time (a still, a skip, the held end: any
+// moment), seeded, no texture. Not the kill effects' engine itself: its pools are textured, random and stepped per frame, and are
+// shared with the game (this stage gives every material back when it closes). Colours: the rarity's (as the flares), lightened on
+// alternate shells; a Bespoke key's a rainbow. Each shell: a rocket rising with a short trail from behind the car, its burst over
+// the car, the sparks slowing, falling and fading out by FW_LIFE (any that reach the floor lie there until then). None in the
+// lite version.
+export const FW = { shells: [7.6, 7.9, 8.25, 8.65], rise: 0.55, sparks: 44, trail: 6, life: [1.2, 1.8], speed: [3.6, 4.8], drag: 2.2, gravity: 5, floor: 0.02 };
+const buildFireworks = (s, car) => {
+  const { keep, scene, W, H, L } = s;
+  const N = FW.shells.length * (FW.sparks + FW.trail);
+  const geo = keep(new THREE.BufferGeometry());
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+  geo.setDrawRange(0, 0);
+  const points = new THREE.Points(geo, keep(new THREE.PointsMaterial({ size: 0.2, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })));
+  points.frustumCulled = false;
+  scene.add(points);
+  const r = rand(car.id.length * 131 + 7), across = [-0.45, 0.4, -0.1, 0.2];
+  const shells = FW.shells.map((at, i) => {
+    const colour = s.accent.clone().lerp(WHITE, i % 2 ? 0.55 : 0.12);
+    return { at, colour, x: across[i] * Math.max(W, 1.8), z: -L * 0.55 - 0.8 - r() * 1.2, top: H + 1.7 + r() * 0.9,
+      sparks: Array.from({ length: FW.sparks }, () => { const u = r() * 1.35 - 0.35, a = r() * Math.PI * 2, h = Math.sqrt(1 - u * u); return { dx: Math.sin(a) * h, dy: u, dz: Math.cos(a) * h, v: lerp(FW.speed[0], FW.speed[1], r()), life: lerp(FW.life[0], FW.life[1], r()), hue: r(), alt: r() < 0.5 }; }) };
+  });
+  s.fireworks = { points, geo, shells, rainbow: !!car.bespoke };
+};
+const fwCol = new THREE.Color();
+let fwN = 0, fwPos = null, fwRgb = null; // (the dot being written: no closure made per frame)
+const fwPut = (x, y, z, c, b) => {
+  const i = fwN * 3;
+  fwPos[i] = x; fwPos[i + 1] = Math.max(FW.floor, y); fwPos[i + 2] = z; fwRgb[i] = c.r * b; fwRgb[i + 1] = c.g * b; fwRgb[i + 2] = c.b * b;
+  fwN++;
+};
+// the fireworks at time t (none: lite); returns how many dots are drawn
+const setFireworks = (s, t, lite) => {
+  const fw = s.fireworks;
+  if (!fw) return 0;
+  const k = FW.drag, g = FW.gravity;
+  fwPos = fw.geo.attributes.position.array; fwRgb = fw.geo.attributes.color.array; fwN = 0;
+  if (!lite) for (const sh of fw.shells) {
+    const a = t - sh.at;
+    if (a < 0) continue;
+    if (a < FW.rise) { // the rocket and its trail, rising (slowing) to the top
+      for (let j = 0; j < FW.trail; j++) {
+        const u = Math.max(0, a - j * 0.035) / FW.rise;
+        fwPut(sh.x, sh.top * (1 - (1 - u) * (1 - u)), sh.z, sh.colour, (1 - j / FW.trail) * 0.9);
+      }
+      continue;
+    }
+    const b = a - FW.rise, e = 1 - Math.exp(-k * b), drop = g * (b / k - e / (k * k)); // (drag k, gravity g: out, slowing, then falling)
+    for (const sp of sh.sparks) {
+      if (b >= sp.life) continue;
+      const fade = 1 - b / sp.life, crackle = b > sp.life * 0.7 ? 0.6 + 0.4 * Math.sin(b * 60 + sp.hue * 20) : 1; // (the crackle: a flicker at the end)
+      if (fw.rainbow) fwCol.setHSL((sp.hue + b * 0.2) % 1, 0.85, 0.62); else fwCol.copy(sh.colour).lerp(WHITE, sp.alt ? 0.35 : 0);
+      if (b > sp.life * 0.7) fwCol.lerp(WHITE, 0.5);
+      const d = sp.v * e / k;
+      fwPut(sh.x + sp.dx * d, sh.top + sp.dy * d - drop, sh.z + sp.dz * d, fwCol, fade * crackle);
+    }
+  }
+  fw.geo.setDrawRange(0, fwN);
+  fw.geo.attributes.position.needsUpdate = true; fw.geo.attributes.color.needsUpdate = true;
+  return fwN;
 };
 
 // ---- the words ----
@@ -759,6 +825,7 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
     if (t < 4.6) setSparks(t, origin, s.fob ? 3.5 : CLICK, 1.1, 2.2, !lite && !press, lite ? 0 : smooth(span(t, 0.2, 1.0)) * (t < 1.4 ? 1 : 0));
     else setSparks(t, origin, 7.6, 0.6, Math.max(s.W, L) * 0.6, !lite, 0);
     s.sparks.material.size = t < 4.6 ? 0.045 : 0.1;
+    setFireworks(s, t, lite); // (the last shot's fireworks)
     s.model.userData.animate?.(lt === 99 ? 2.4 : t);
     // the flash at the moment: white, going to the rarity's colour (the fob's: smaller)
     if (!lite && t >= CLICK && t < CLICK + 0.9) {
@@ -778,7 +845,7 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
       ...(s.fob
         ? [[FOB.press, 'camera', 0.7], [FOB.blinks[0], 'bell', 0.7], [FOB.blinks[1], 'bell', 0.8], [FOB.blinks[1] + 0.02, 'drum', 0.5], [3.5, 'burst', 0.5]]
         : [[1.5, 'throw', 0.5], [1.9, 'camera', 0.8], [2.15, 'camera', 0.8], [2.4, 'camera', 0.9], [3.08, 'crash', 0.9], [3.1, 'drum', 1], [3.14, 'burst', 0.7]]),
-      [4.85, 'camera', 0.5], [5.0, 'turbo', 0.6], [6.8, 'drum', 0.5], [7.8, 'bell', 0.8], [8.65, 'menuPick', 0.7]]
+      [4.85, 'camera', 0.5], [5.0, 'turbo', 0.6], [6.8, 'drum', 0.5], [7.8, 'bell', 0.8], [8.65, 'menuPick', 0.7], ...FW.shells.flatMap(at => [[at, 'throw', 0.25], [at + FW.rise, 'burst', 0.35]])]
     : [[0.05, 'rumble', 0.35], [1.25, 'throw', 0.45], [1.5, 'camera', 0.4], [2.55, 'drum', 0.9], [2.56, 'turbo', 0.5], [3.62, 'menuPick', 0.7], [4.12, 'bell', 0.7]];
 
   // ---- the loop ----
@@ -887,7 +954,7 @@ export const playUnlock = ({ mode = 'car', carId = 'commuter', evil = false, loo
   if (still !== null) { const t = clamp(still, 0, total + HELD_STOP); requestAnimationFrame(() => { resize(); frame(t); }); } // (past `total`: the held end, that long in)
   else if (short) requestAnimationFrame(() => { if (!done) { resize(); hold(true); } }); // (Short: the held end at once, settled, no sound)
   else raf = requestAnimationFrame(tick);
-  return { close, skip, get done() { return done; }, get held() { return held; }, total, airborne, get drawing() { return raf !== 0; },
+  return { close, skip, get done() { return done; }, get held() { return held; }, total, airborne, fireworks: () => (s.fireworks ? s.fireworks.geo.drawRange.count : -1), get drawing() { return raf !== 0; },
     lamps: { source: s.lamps.source, guessFound: s.lamps.guessFound, key: lampKey(car), head: s.lamps.head.map(l => l.at.toArray()), tail: s.lamps.tail.map(l => l.at.toArray()), brake: s.lamps.brake.map(l => l.at.toArray()), amber: s.lamps.amber.map(l => l.at.toArray()) } };
 };
 
