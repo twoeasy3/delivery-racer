@@ -37,6 +37,7 @@ import { drawSoon } from './carstill.js';
 import { variedPoses } from '../carposes.js';
 import { Sound } from './audio.js';
 import { Events } from '../events.js';
+import { pending as cutscenePending } from './cinequeue.js';
 
 const make = (tag, className, ...inside) => {
   const node = document.createElement(tag);
@@ -221,6 +222,7 @@ overlay.addEventListener('click', () => { if (cur && cur.phase !== 'done') revea
 // may a pack be opened now? Not during a run; over a run's results once they are up; over the menu and its screens
 const canShow = () => {
   if (cur) return false;
+  if (cutscenePending()) return false; // (a cutscene playing or queued goes first: render/cinequeue.js opens the pack after it, Packs.revealNow)
   if (Game.state === 'start') return true;
   const results = document.getElementById('resultScreen');
   return Game.state === 'finished' && !!results && !results.classList.contains('hidden');

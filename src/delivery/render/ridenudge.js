@@ -20,6 +20,7 @@ import { Replay } from '../replay.js';
 import { nudgeOn, nudgeFor, betterStats } from './rides.js';
 import { Garage } from './garage.js';
 import { Showroom } from './showroom.js';
+import { purchased } from './cinequeue.js'; // (a car bought: Crazey Jim's sale cutscene, CHECKLIST 437)
 
 const css = `
 #rideNudge { margin: 8px auto 10px; max-width: 340px; padding: 10px 12px; border-radius: 12px; background: rgba(14, 20, 30, .88);
@@ -59,6 +60,7 @@ const showCard = () => {
   if (n.offer === 'short') button.disabled = true;
   button.addEventListener('click', () => {
     if (n.offer === 'buy' && !Progress.buy(n.ride)) return;
+    if (n.offer === 'buy') purchased(n.ride); // (bought and saved: Crazey Jim's sale cutscene over the results, render/cinequeue.js)
     selectCar(n.ride.id);
     button.disabled = true;
     button.textContent = n.ride.name + ' ready: Next level';

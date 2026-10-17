@@ -26,6 +26,7 @@ import { ask, tell } from './dialog.js';
 import { sourcesLine } from '../carsources.js';
 import { IDEA_CARS } from '../ideas.js';
 import { Inspector } from './inspector.js';
+import { purchased } from './cinequeue.js'; // (a car bought: Crazey Jim's sale cutscene, CHECKLIST 437)
 
 // The lot: three rows of bays, a long covered garage along the back, the cars parked strictly column by
 // column in order of their stars and price, cheapest first (one with no stars, the Tank, last), and in
@@ -368,6 +369,7 @@ const buy = async (car) => {
     await tell({ title: 'Could not buy it', lines: ['The ' + car.name + ' was not bought, and no money was taken.'] });
     return false;
   }
+  purchased(car); // (bought and saved: Crazey Jim's sale cutscene, render/cinequeue.js; it plays over the lot)
   return true;
 };
 // the button under the stats: "Switch" (to the car looked at, and its side; stays in the garage) or "Buy"; and
