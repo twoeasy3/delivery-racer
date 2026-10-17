@@ -388,7 +388,9 @@ export const ShowroomView = {
   overlay(fn) { overlay = fn; },
   get floorY() { return FLOOR_Y; },
   // the car gone from the stage (true) or back (false: it pops back up); render/killpreview.js
-  carGone(on) { on = !!on; if (on === gone) return; gone = on; popT = on ? POP : 0; },
+  // (gone: hidden AT ONCE, in this frame's picture: the overlay calls this after the frame has set the body's visibility, so leaving it to
+  // the next frame drew the car one frame into its own explosion; CHECKLIST 443)
+  carGone(on) { on = !!on; if (on === gone) return; gone = on; popT = on ? POP : 0; if (on && v?.body) v.body.visible = v.shadow.visible = false; },
   get carHidden() { return gone; },
   closeUp(on, end = null, focus = null) { closeup = !!on; closeEnd = on && (end === 'rear' || end === 'front') ? end : null; closeFocus = on && focus ? focus : null; },
   // whether the corner key may be drawn now (no sheet over the showroom: render/showroom.js says)

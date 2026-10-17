@@ -16,8 +16,14 @@ import { unitBox } from './particles.js';
 import { ShowroomView } from './showroomview.js';
 import { Sound } from './audio.js';
 
-const FLIGHT = 0.8, KILL_AFTER = 0.3; // (s: the package's flight; the car's explosion after the package bursts)
-const KILL_AT = FLIGHT + KILL_AFTER, BACK_MIN = 1.6, BACK = 3.6, REST = 0.7; // (s after the kill: the car back once all has gone and not before BACK_MIN, or at BACK whatever; REST: how long a landed bit lies there)
+// ONE IMPACT TIME (CHECKLIST 443; the owner: "a slight delay in the Kill FX projectile landing and the car exploding"): the package's
+// flight IS the impact. impactAt(id) (an effect's own `flight` s, else FLIGHT) is read by the package's motion (u = t / impactAt) and by
+// the impact itself: on the first frame t reaches it the package is gone, its burst, the car's explosion, the car hidden, the mark and the
+// sounds all happen together, as in a run (the rules queue the package's 'burst' and the car's 'explode' in the same step: render/effects.js
+// plays both that frame). It used to wait KILL_AFTER (0.3 s) after the burst before the car went up.
+const FLIGHT = 0.8; // (s: the package's flight, the default impact time)
+export const impactAt = (id) => { const f = KILL_FX[id]?.flight; return f > 0 ? f : FLIGHT; };
+const BACK_MIN = 1.6, BACK = 3.6, REST = 0.7; // (s after the impact: the car back once all has gone and not before BACK_MIN, or at BACK whatever; REST: how long a landed bit lies there)
 const HIT = { big: false, scale: 0.45, smoke: 0.3 }, KILL = { big: false };
 let group = null, fx = null, classic = null, box = null, marks = null, run = null, look = 'classic', hold = -1;
 const floorY = () => ShowroomView.floorY ?? 0;
@@ -96,8 +102,9 @@ const frame = (scene, dt, camera) => {
   if (run) {
     if (hold >= 0 && run.t >= hold) dt = 0; // (held for a still)
     run.t += dt;
-    if (run.t < FLIGHT) { // the package in the air: an arc from the camera's left onto the car, its trail behind it
-      const u = run.t / FLIGHT;
+    const at0 = run.impactAt;
+    if (run.t < at0) { // the package in the air: an arc from the camera's left onto the car, its trail behind it
+      const u = run.t / at0;
       at.lerpVectors(from, to, u);
       at.y += 2.2 * 4 * u * (1 - u);
       box.position.copy(at);
@@ -107,29 +114,28 @@ const frame = (scene, dt, camera) => {
         if (look === 'classic') classicTrail(classic, at.x, at.y, at.z);
         else fx.trail(look, at.x, at.y, at.z, 0);
       }
-    } else if (!run.hit) {
-      run.hit = true;
+    } else if (!run.kill) { // THE IMPACT (this very frame: the package gone, its burst, the car going up, the sounds)
+      run.hit = run.kill = true;
+      run.impactFrame = run.t;
       box.visible = false;
       if (look === 'classic') classicBurst(classic, to.x, to.y - 0.8, to.z, 0, 0); // (the small fire puff, as the game's)
       else fx.explode(look, to.x, floorY(), to.z, 0, 0, HIT);
-      Sound.play('burst', 0.5);
-    } else if (!run.kill && run.t >= KILL_AT) {
-      run.kill = true;
       ShowroomView.carGone(true); // (the car is what goes up)
       markOn();
       const y = floorY(); // (on the floor under the car, as the game's at the road's height)
       if (look === 'classic') classicExplode(classic, 0, y, 0, 0, 0, KILL);
       else fx.explode(look, 0, y, 0, 0, 0, KILL);
+      Sound.play('burst', 0.5);
       Sound.play('explode', 0.6);
       const extra = KILL_FX[look]?.sound;
       if (extra) Sound.play(extra.name, extra.volume);
     }
-    else if (run.kill && !run.back && run.t >= KILL_AT + BACK_MIN && (run.t >= KILL_AT + BACK || liveNow() === 0)) { // played out: the car back
+    else if (!run.back && run.t >= at0 + BACK_MIN && (run.t >= at0 + BACK || liveNow() === 0)) { // played out: the car back
       run.back = true;
       ShowroomView.carGone(false);
       marksOff();
     }
-    if (run.back && run.t > KILL_AT + BACK + 1.5 && hold < 0) run = null;
+    if (run.back && run.t > run.impactAt + BACK + 1.5 && hold < 0) run = null;
   }
   fx.update(dt, camera);
   for (const p of Object.values(classic)) p.update(dt);
@@ -145,7 +151,7 @@ export const KillPreview = {
     fx.clear(); purgeClassic(); marksOff(true);
     if (ShowroomView.carHidden) ShowroomView.carGone(false);
     look = KILL_FX[id] ? id : 'classic';
-    run = { t: 0, hit: false, kill: false, back: false };
+    run = { t: 0, impactAt: impactAt(look), impactFrame: null, hit: false, kill: false, back: false };
     camera?.updateMatrixWorld?.();
     if (camera) { right.set(1, 0, 0).applyQuaternion(camera.quaternion); up.set(0, 1, 0); } else { right.set(1, 0, 0); up.set(0, 1, 0); }
     right.y = 0; right.normalize();
@@ -159,9 +165,10 @@ export const KillPreview = {
   clear() { run = null; fx?.clear(); purgeClassic(); marksOff(true); if (box) box.visible = false; ShowroomView.carGone(false); },
   get hold() { return hold; },
   // for a check or a picture: what is alive
-  get state() { return { look, t: run ? run.t : null, live: fx ? fx.live() : 0, classic: classic ? classic.Fire.live() + classic.Smoke.live() + classic.Particles.live() : 0, carHidden: ShowroomView.carHidden, marks: marks ? marks.filter(m => m.visible).length : 0, back: !!run?.back }; },
+  get state() { return { look, t: run ? run.t : null, impactAt: run ? run.impactAt : null, impactFrame: run ? run.impactFrame : null, box: !!box?.visible, live: fx ? fx.live() : 0, classic: classic ? classic.Fire.live() + classic.Smoke.live() + classic.Particles.live() : 0, carHidden: ShowroomView.carHidden, marks: marks ? marks.filter(m => m.visible).length : 0, back: !!run?.back }; },
   // for a check: the pools of the preview's own system (their particles' floors and heights) and the timeline
   get fx() { return fx; },
-  get timeline() { return { kill: KILL_AT, backMin: KILL_AT + BACK_MIN, back: KILL_AT + BACK, rest: REST }; },
+  // (kill = impact: the package lands and the car goes up on the same frame; of the effect on test)
+  get timeline() { const at0 = impactAt(look); return { impact: at0, kill: at0, backMin: at0 + BACK_MIN, back: at0 + BACK, rest: REST }; },
   frame,
 };
