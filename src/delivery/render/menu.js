@@ -3,7 +3,7 @@
 // a run starts (Game.start). Nothing here reloads the page.
 // The level select, the car and the side are render/menustage.js (which draws them: `draw`); this file has the
 // switches and buttons of the options sheet, the race controls, the secret bus, and the results screen's buttons.
-import { LEVELS, LEVEL_INDEX, LEVEL, selectLevel, nextOnTab, setRaceClass, RACE_CLASSES } from '../levels.js';
+import { LEVELS, LEVEL_INDEX, LEVEL, selectLevel, nextOnTab, isRace, setRaceClass, RACE_CLASSES } from '../levels.js';
 import { levelName } from '../levelText.js';
 import { SECRET_CARS, useLevelCar, selectCar } from '../cars.js';
 import { Tiers } from '../tiers.js';
@@ -224,14 +224,24 @@ for (const id of ['raceWatchBtn', 'raceWatchBtn2']) document.getElementById(id).
 document.getElementById('pauseBtn').addEventListener('click', () => Game.togglePause());
 document.getElementById('exitBtn').addEventListener('click', () => Game.exit());
 
-// results screen buttons
-const next = document.getElementById('nextBtn');
-document.getElementById('menuBtn').addEventListener('click', () => { Game.toMenu(); MenuStage.follow(); });
-next.addEventListener('click', () => Game.nextLevel());
-// when a run ends: the bank and the unlocked levels may have changed, and "Next level"
-// is only offered if there is one. (The menu comes back on the level just run, and so on its tab)
+// the end-of-stage card's buttons (render/stagecard.js lays them out): Retry is game.js's (a restart). Menu, which a delivery calls
+// Continue: back to the menu; after a Career (or race) level delivered, on what is next there when it is open (the tiers' order),
+// so the menu is the way on (there is no "Next level": the owner, 17-Oct; STAGE-CARD.md). Anything else: the level just run
+export const continueTo = () => {
+  if (Game.state !== 'finished' || Game.outcome !== 'delivered' || Replay.playing || LEVEL_INDEX < 0) return null;
+  let next = nextOnTab(LEVEL); // (a race's next is the next race; an event's stage is on no tab: none)
+  if (next && Tiers.on() && !isRace(LEVEL)) next = Tiers.next(LEVEL);
+  if (!next || (Tiers.on() ? !Tiers.isOpen(next) : LEVELS.indexOf(next) >= Progress.data.unlocked)) return null;
+  return next;
+};
+document.getElementById('menuBtn').addEventListener('click', () => {
+  const next = continueTo();
+  Game.toMenu();
+  if (next) { selectLevel(LEVELS.indexOf(next)); useLevelCar(next.car, next.amphibious); } // (as a step along the strip does: render/menustage.js)
+  MenuStage.follow();
+});
+// when a run ends: the bank and the unlocked levels may have changed. (The menu comes back on the level just run, and so on its tab)
 Game.onFinish.push(() => {
-  next.style.display = LEVEL_INDEX >= 0 && nextOnTab(LEVEL) && !Replay.playing ? '' : 'none'; // (not after a replay: render/replayui.js)
   if (LEVEL_INDEX >= 0) MenuStage.follow();
   else draw();
 });

@@ -4,7 +4,7 @@
 // Behind a switch, OFF unless asked: ?nudge for a visit, ?nudge=on to remember it in this browser, ?nudge=off to forget it.
 //  - the results of a delivered career level whose NEXT level has a ride (RIDES), while the car in use is one it betters: a
 //    small card over the buttons, "Better ride for <level>", the car, a bar or two of what it does better, and one button:
-//    Use it (owned), Buy it · $n (the bank has it: bought and put in use, so Next level drives it), or how much is missing
+//    Use it (owned), Buy it · $n (the bank has it: bought and put in use, so the next level, where Continue lands, drives it), or how much is missing
 //  - the showroom and the Garage, opened with such a level picked: that car looked at (scrolled to, picked), and in the
 //    showroom its card tagged "Better ride"
 // Render only (the results screen, the showroom, the lot): what a run does is not touched, so the replays' rules are not
@@ -61,10 +61,10 @@ const showCard = () => {
     if (n.offer === 'buy' && !await buyCar(n.ride, { confirm: false })) return; // (the button already says the car and its price: bought on the tap; the cutscene plays over the results)
     selectCar(n.ride.id);
     button.disabled = true;
-    button.textContent = n.ride.name + ' ready: Next level';
+    button.textContent = n.ride.name + ' ready';
   });
   box.append(button);
-  document.getElementById('resultNote')?.after(box);
+  document.querySelector('#resultScreen .sc-extra')?.append(box); // (the end-of-stage card's room for it: render/stagecard.js)
 };
 
 // the showroom and the lot, opened with a level picked that has a ride for the car in use: that car looked at
