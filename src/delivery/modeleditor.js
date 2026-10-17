@@ -59,6 +59,12 @@
 //      same points in a side / top / front drawing in the Part tab (drag, type, add after, remove, Zoom in) as the precise route. The edit is the patch's `shapes` table, read as the model is built (the same code
 //      makes the edited outline: bevels, merges, draw calls as before). Mirror on: the shape across the car (found by its vertices) gets the
 //      mirrored edit in the same commit. `node scripts/bake-shapes.mjs <car>` writes the points into the car's source (a plain build, no patch).
+//  10. ONE PANE ON ITS OWN (CHECKLIST 448, the owner: "doesn't let me change the angle or placement of a single window"; render/paneedit.js): a
+//      pane picked (tap it, or its button in the Windows row) takes the gizmo itself, on its centre, its axes its own (X across, Y up its
+//      face): Move / Rotate / Scale act on that pane alone, even when it is one of several in one merged glass mesh. The Part tab: gap / clear
+//      chips, X Y Z (its centre, m), ° Yaw Pitch Roll, W H (m), Snap (rests it on the body: the line says how far), Reset, Part (the whole
+//      part again). Mirror: the pane named the other way (L / R) gets the mirrored edit. The edit is the patch's `panes` table, applied after
+//      the ops wherever the game builds the car (a Super car wears its base car's); scripts/window-gap-audit.mjs lists floating panes.
 //   ?car=<id>  ?damage=<0..5|percent>  ?evil  ?tab=parts|part|place|json  ?part=<part id>  ?pane=<pane name>  ?corner=<1..n>  ?shape=<shape id>  ?mirror=off  ?view=front|rear|left|right|top|34  ?dark
 //   ?lights  ?brake  ?hazards  ?lampmarks  (those lamp toggles on from the start; also ?left ?right ?steady)
 import './render/modeleditorshim.js'; // (first: the game's modules' elements, stood in for)
@@ -555,6 +561,7 @@ const select = (id, show = true, pane = undefined, shape = undefined) => {
   // the gizmo: on the PANE when one is picked (it moves, turns and sizes that pane alone: render/paneedit.js), else on the part
   const sp = node && !S.locked.has(S.sel) ? paneSel() : null;
   if (sp) gizmo.attach(placeProxy(sp)); else if (node && !S.locked.has(S.sel)) gizmo.attach(node); else gizmo.detach();
+  if (S.pane) selBox.visible = false; // (a pane: its own outline, not its whole part's box)
   drawPane();
   if (shape !== undefined && shape !== S.shape) { S.shape = shape; S.pt = -1; }
   if (!node || !shapesOf(node).some(r => r.id === S.shape)) S.shape = null;

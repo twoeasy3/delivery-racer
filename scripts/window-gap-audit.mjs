@@ -50,11 +50,19 @@ if (process.argv[1] && /window-gap-audit\.mjs$/.test(process.argv[1])) {
       const row = { id: e.id, name: e.name, group: e.group, also: [], panes: panes.length, bad };
       byModel.set(sig, row); rows.push(row);
     }
-    const flagged = rows.filter(r => r.bad.length);
+    // a Super / Legendary variant: its base car's panes folded into the base's row (named under Also), its own extra panes kept
+    for (const r of rows) {
+      const baseId = r.id.replace(/^(super-|l-)/, ''), base = baseId !== r.id && rows.find(x => x.id === baseId);
+      if (!base) continue;
+      const same = (b) => base.bad.some(x => x.pane === b.pane && Math.abs(x.gap - b.gap) < 0.001);
+      if (r.bad.some(same)) base.also.push(r.id);
+      r.bad = r.bad.filter(b => !same(b));
+    }
+    const flagged = rows.filter(r => r.bad.length).sort((a, b) => Math.max(...b.bad.map(x => x.gap)) - Math.max(...a.bad.map(x => x.gap)));
     const cm = (m) => (m * 100).toFixed(1);
     if (args.includes('--md')) {
-      console.log('| Car | Group | Pane | Gap cm | Clear cm | Also |\n|---|---|---|---|---|---|');
-      for (const r of flagged) for (const b of r.bad) console.log('| ' + r.id + ' (' + r.name + ') | ' + r.group + ' | ' + b.pane + ' [' + b.part + '] | ' + cm(b.gap) + ' | ' + (b.clear >= 0.3 ? '30+' : cm(b.clear)) + ' | ' + r.also.join(', ') + ' |');
+      console.log('| Car | Pane [part] | Gap cm | Clear cm | Also |\n|---|---|---|---|---|');
+      for (const r of flagged) for (const b of r.bad.sort((x, y) => y.gap - x.gap)) console.log('| ' + r.id + ' (' + r.name + ', ' + r.group + ') | ' + b.pane + ' [' + b.part + '] | ' + cm(b.gap) + ' | ' + (b.clear >= 0.3 ? '30+' : b.clear > 0.016 ? '**' + cm(b.clear) + '**' : cm(b.clear)) + ' | ' + r.also.join(', ') + ' |');
     } else {
       for (const r of flagged) console.log(r.id.padEnd(22) + r.bad.map(b => b.pane + ' gap ' + cm(b.gap) + ' cm clear ' + (b.clear >= 0.3 ? '30+' : cm(b.clear)) + ' cm').join('; ') + (r.also.length ? '  (also ' + r.also.join(', ') + ')' : ''));
     }
