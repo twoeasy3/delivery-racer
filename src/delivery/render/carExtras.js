@@ -228,7 +228,8 @@ export const addSuperKit = (model, car) => {
     }
   }
   // the underglow: a pool of light on the road under the car, out past its sides (every Super car has one)
-  if (kit.glow) {
+  let ownGlow = false; model.traverse((o) => { if (o.userData.ownUnderglow) ownGlow = true; }); // (a model with a glow of its own, the Super Lowrider's neon: not a second one)
+  if (kit.glow && !ownGlow) {
     const glow = new THREE.Mesh(new THREE.PlaneGeometry(w * 1.9, l * 1.3), glowMat);
     glow.rotation.x = -Math.PI / 2;
     glow.position.y = 0.03;

@@ -39,6 +39,7 @@ import { carPrimary } from './propmodelsroof.js';
 import { PROP_PAINTS, paintValueOf } from './propdress.js';
 import * as Store from './loadoutstore.js';
 import { DESIGNS, designById, canvasSize, drawDesign, toneOf } from './decaldesigns.js';
+import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 444)
 
 export { DESIGNS, designById };
 export const DECAL_PAINTS = PROP_PAINTS; // (the swatches: Match car and the seven colours, as the props)
@@ -280,7 +281,8 @@ const removeMesh = (model, plan) => {
   plan.mesh.geometry.dispose();
   plan.mesh = null; plan.designId = null;
 };
-const apply = (model) => {
+const apply = (model) => restPose(model, () => applyNow(model)); // (at rest: a model that animates is measured as built, then the cosmetic rides with its part: render/restpose.js)
+const applyNow = (model) => {
   const plan = model.userData.decalPlan;
   if (!plan) return;
   const c = plan.status !== 'ok' || DECAL_TEST.mode ? NONE : plan.forced || shownDecal(plan.carId);

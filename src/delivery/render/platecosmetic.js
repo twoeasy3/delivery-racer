@@ -42,6 +42,7 @@ import { DEFAULT_TEXT, checkPlateText } from './platetext.js';
 import { forgetDents } from './dents.js';
 import { SILHOUETTE } from './silhouette.js';
 import * as Store from './loadoutstore.js'; // (the choice: per car over a default)
+import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 444)
 
 export { PLATE_DESIGNS, designById, DEFAULT_TEXT };
 export const KEY_DESIGN = 'delivery.platedesign', KEY_TEXT = 'delivery.platetext';
@@ -219,7 +220,8 @@ const buildEnd = (model, end, anchor, d) => {
 const planOf = (model) => model.userData.platePlan;
 export const platePlan = (model) => (model && planOf(model)) || null;
 // the model in its current state: plates on its ends (or none), the car's own plates shown or hidden to match
-const apply = (model) => {
+const apply = (model) => restPose(model, () => applyNow(model)); // (at rest: a model that animates is measured as built, then the cosmetic rides with its part: render/restpose.js)
+const applyNow = (model) => {
   const info = model.userData.platePlan;
   if (!info) return;
   const design = shownDesign(info.carId), want = design !== 'stock' && info.status === 'ok' ? info.ends : [];

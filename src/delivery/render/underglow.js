@@ -41,6 +41,7 @@ import { prepareSuspension } from './carsuspension.js';
 import { SILHOUETTE } from './silhouette.js';
 import { carPrimary } from './propmodelsroof.js';
 import * as Store from './loadoutstore.js';
+import { atRest as restPose } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 444)
 
 // ---- the looks ----
 export const UNDERGLOWS = [
@@ -175,6 +176,7 @@ const lamp = (hex) => {
 // ---- dressing a model ----
 const live = new Set(); // WeakRefs to the models dressed
 const blackedOut = (model) => { const m = model.userData.body?.material; return !!m && (m === SILHOUETTE || (m.isMeshBasicMaterial && m.color.getHex() < 0x0a0a0e)); };
+// a car's OWN glow (built into its model: a Super kit's, the Super Lowrider's neon) carries userData.ownUnderglow: hidden while a Glow is worn
 const ownGlows = (model) => { const list = []; model.traverse((o) => { if (o.userData.ownUnderglow) list.push(o); }); return list; };
 const paint = (plan) => {
   const g = plan.look, u = plan.material.uniforms;
@@ -198,7 +200,8 @@ const build = (model, plan) => {
   model.userData.livery = function (evil, ...rest) { const r = livery?.call(this, evil, ...rest); if (plan.evil !== !!evil) { plan.evil = !!evil; if (plan.look) paint(plan); } return r; };
   return mesh;
 };
-const apply = (model) => {
+const apply = (model) => restPose(model, () => applyNow(model)); // (at rest: a model that animates is measured as built, then the cosmetic rides with its part: render/restpose.js)
+const applyNow = (model) => {
   const plan = model.userData.underglowPlan;
   if (!plan) return;
   const id = plan.status === 'ok' ? shownUnderglow(plan.carId) : 'none';

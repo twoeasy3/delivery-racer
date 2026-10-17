@@ -33,6 +33,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import * as Store from './loadoutstore.js';
 import { IDLE_RATE, CLAMP, BLUR_FROM, BLUR_FULL, BLUR, rimFrame } from './rims.js';
+import { atRest as restPose, hasRest } from './restpose.js'; // (measured against the model as built, then riding with its part: CHECKLIST 444)
 
 const TAU = Math.PI * 2;
 // n: block rows round the tyre (the pitch, for the clamp); h: how far proud of the tyre's tread (in R); dir: directional (built both ways);
@@ -702,7 +703,8 @@ const roomFor = (model, found) => {
 };
 // the room is measured AT REST: on the Cosmetics screen a tread is put on the live model, whose suspension (render/carsuspension.js) may be
 // mid-bounce, its tyres and low parts held or squashed by matrices of their own; those are set back to their rest pose for the measure
-const atRest = (model, fn) => {
+const atRest = (model, fn) => (hasRest(model) ? restPose(model, fn) : suspensionAtRest(model, fn)); // (the pose as built, render/restpose.js; a model built elsewhere: at least the suspension's)
+const suspensionAtRest = (model, fn) => {
   const s = model.userData.suspension;
   if (!s || !s.active) return fn();
   const nodes = [...s.planted, ...s.squash.map(p => p.node)], saved = nodes.map(n => n.matrix.clone());

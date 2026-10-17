@@ -344,6 +344,7 @@ export const ORIG2_MODELS = {
       const neon = new THREE.Mesh(new THREE.PlaneGeometry(w * 1.45, L * 2.2), glow);                          // lighting the road
       neon.rotation.x = -Math.PI / 2;
       neon.position.set(0, 0.02, 0);
+      neon.userData.ownUnderglow = true; // (its own glow: hidden while a Glow cosmetic is worn, render/underglow.js)
       group.add(neon);
     }
     P.into(shell);

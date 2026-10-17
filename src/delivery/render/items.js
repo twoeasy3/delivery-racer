@@ -73,7 +73,7 @@ const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 const GHOST_MAT = new THREE.MeshLambertMaterial({ color: 0xdfe9ff, emissive: 0x4a6cff, transparent: true, opacity: 0.45 });
 const GHOST_HIDE = new THREE.MeshBasicMaterial({ visible: false }); // (a flank decal while the ghost lasts: the pale material would show its whole rectangle; render/decalcosmetic.js)
 const ghostify = (group, on) => group.traverse((mesh) => {
-  if (!mesh.isMesh || mesh.userData.underglow) return; // (an underglow keeps its own look: render/underglow.js)
+  if (!mesh.isMesh || mesh.userData.underglow || mesh.userData.ownUnderglow) return; // (an underglow, worn or the car's own, keeps its own look: render/underglow.js)
   if (on && !mesh.userData.solidMat) { mesh.userData.solidMat = mesh.material; mesh.material = mesh.userData.flankDecal ? GHOST_HIDE : GHOST_MAT; }
   else if (!on && mesh.userData.solidMat) { mesh.material = mesh.userData.solidMat; mesh.userData.solidMat = null; }
 });
