@@ -44,6 +44,12 @@ export const CARGO_RULES = {
     keepOut: [{ a: '(?:shoe|stood)\\d', b: '(?:shoe|stood)\\d', min: 0.0005 }, { a: '(?:shoe|stood)\\d|lucky', b: 'crate' }],
     anchors: [{ part: '(?:shoe|stood)\\d', to: 'straw|crate|(?:shoe|stood)\\d', maxGap: 0.003 }, { part: 'lucky', to: 'nail', maxGap: 0.003 }, { part: 'nail', to: 'crate', maxGap: 0.003 }],
   },
+  // Wheel of Mountain Cheese: the cut wedge clear of the wheel and the knife, both on the board (the wheel's rind is three
+  // convex pieces, so GJK reads it, gap and all)
+  cheesewheel: {
+    keepOut: [{ a: 'wedge', b: 'wheel|knife', min: 0.006 }],
+    anchors: [{ part: 'wedge|wheel', to: 'board', maxGap: 0.002 }],
+  },
   // Pet-Shop Hamster Ball: the hamster inside the shell but for its head out of the hole (furious), off the collar, the
   // rings and the hatch; on its feet on the ball's floor when calm or agitated
   hamsterball: {

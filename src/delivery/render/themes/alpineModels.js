@@ -138,27 +138,50 @@ export const cabinGeometry = () => {
 
 // ---- the cargo ------------------------------------------------------------------------------------------------
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
-// a wheel of mountain cheese (Good): a great golden wheel on a wooden board, a wedge cut out of it and lying beside it, the knife
-// stuck in; it turns slowly on the board
+// a wheel of mountain cheese (Good): a great wheel in its brown rind on a wooden board, a wedge cut out of it and set down in
+// front of the gap it left (both cut faces of the wheel and of the wedge drawn: pale cheese with a few eyes, real holes with a
+// pit behind each), the knife stuck in the top. The parts are named for render/cargoRules.js
+const CHEESE_RIND = 0xa8742e, CHEESE_TOP = 0xc08a3e, CHEESE_IN = 0xf3dc86, CHEESE_EYE = 0xa88232;
+// a cut face: the radial rectangle at angle a (three's: x = sin a, z = cos a), centre to rind, with round eyes cut out and a
+// shallow pit behind each, into the cheese (`into` +1: the cheese is at larger angles, -1: smaller)
+const cutFace = (parent, a, into, R, H, eyes, mats) => {
+  const g = new THREE.Group(); g.rotation.y = a + Math.PI / 2; parent.add(g); // (local -x: out along the cut; +z: towards larger angles)
+  const shape = new THREE.Shape([[0, 0], [0, H], [-R, H], [-R, 0]].map(([x, y]) => new THREE.Vector2(x, y)));
+  for (const [rho, y, r] of eyes) shape.holes.push(new THREE.Path().absarc(-rho, y, r, 0, Math.PI * 2, true));
+  g.add(new THREE.Mesh(new THREE.ShapeGeometry(shape, 10), mats.face));
+  for (const [rho, y, r] of eyes) { // (each eye a pit 12 mm deep: its wall and its floor)
+    const pit = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.8, 0.012, 10, 1, true), mats.pit);
+    pit.rotation.x = Math.PI / 2; pit.position.set(-rho, y, into * 0.006); g.add(pit);
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(r * 0.8, 10), mats.pit);
+    floor.position.set(-rho, y, into * 0.012); g.add(floor);
+  }
+  return g;
+};
 const makeCheeseWheel = () => {
   const group = new THREE.Group(), all = sub(group);
-  put(all, box(0.9, 0.06, 0.9), lambert(0x8a5a32), 0, 0.03, 0);
-  const R = 0.38, H = 0.24, gap = 0.6; // (the wedge cut out: gap radians)
-  const wheel = sub(all, 0, 0.06, 0);
-  put(wheel, new THREE.CylinderGeometry(R, R, H, 24, 1, false, gap / 2, Math.PI * 2 - gap), lambert(RIND), 0, H / 2, 0);
-  for (const a of [gap / 2, -gap / 2]) { // (the two cut faces)
-    const face = put(wheel, new THREE.PlaneGeometry(R, H), lambert(CHEESE, { side: THREE.DoubleSide }), Math.sin(a) * R / 2, H / 2, Math.cos(a) * R / 2);
-    face.rotation.y = a + Math.PI / 2;
-  }
-  const holes = lambert(0xd9ac3a);
-  for (const [x, y, z] of [[0.05, 0.1, 0.2], [-0.04, 0.17, 0.25], [0.02, 0.06, 0.3]]) put(wheel, new THREE.SphereGeometry(0.025, 6, 4), holes, x, y, z);
-  const wedge = put(all, new THREE.CylinderGeometry(R, R, H, 6, 1, false, 0, gap), lambert(CHEESE), 0.12, 0.06 + H / 2, 0.42);
-  wedge.rotation.y = 2.3;
-  const knife = sub(all, -0.08, 0.06 + H, 0.15);
+  const board = put(all, box(1.0, 0.06, 1.0), lambert(0x8a5a32), 0, 0.03, 0);
+  board.name = 'board';
+  const R = 0.33, H = 0.24, gap = 0.6, AIM = Math.PI / 4; // (the wedge cut out: gap radians, its middle towards the board's front corner)
+  const rindM = [lambert(CHEESE_RIND), lambert(CHEESE_TOP), lambert(CHEESE_TOP)]; // (side, top, bottom)
+  const mats = { face: lambert(CHEESE_IN, { side: THREE.DoubleSide }), pit: lambert(CHEESE_EYE, { side: THREE.DoubleSide }) };
+  const wheel = sub(all, -0.12, 0.06, -0.12); wheel.name = 'wheel';
+  const rest = Math.PI * 2 - gap; // (the wheel's rind in three pieces, each under half a turn, so each is convex: the check's GJK reads it)
+  for (let k = 0; k < 3; k++) put(wheel, new THREE.CylinderGeometry(R, R, H, 9, 1, false, AIM + gap / 2 + k * rest / 3, rest / 3), rindM, 0, H / 2, 0);
+  cutFace(wheel, AIM + gap / 2, 1, R, H, [[0.12, 0.08, 0.02], [0.23, 0.16, 0.024], [0.28, 0.06, 0.016]], mats);
+  cutFace(wheel, AIM - gap / 2, -1, R, H, [[0.16, 0.15, 0.022], [0.26, 0.07, 0.018], [0.08, 0.07, 0.013]], mats);
+  // the wedge: drawn out of the gap along its middle and turned on the board about its own middle, a cut face to the front
+  const C = 0.22, OUT = 0.34; // (the wedge's middle from its tip; how far it was drawn out)
+  const wedge = sub(all, -0.12 + Math.sin(AIM) * (OUT + C), 0.06, -0.12 + Math.cos(AIM) * (OUT + C)); wedge.name = 'wedge';
+  wedge.rotation.y = 0.6;
+  const piece = sub(wedge, -Math.sin(AIM) * C, 0, -Math.cos(AIM) * C);
+  put(piece, new THREE.CylinderGeometry(R, R, H, 5, 1, false, AIM - gap / 2, gap), rindM, 0, H / 2, 0);
+  cutFace(piece, AIM - gap / 2, 1, R, H, [[0.12, 0.13, 0.022], [0.23, 0.07, 0.018], [0.27, 0.17, 0.014]], mats);
+  cutFace(piece, AIM + gap / 2, -1, R, H, [[0.17, 0.15, 0.024], [0.27, 0.08, 0.016], [0.08, 0.06, 0.012]], mats);
+  const knife = sub(wheel, Math.sin(AIM + Math.PI) * 0.12, H, Math.cos(AIM + Math.PI) * 0.12); knife.name = 'knife'; // (stuck in the top, across from the gap)
   put(knife, box(0.03, 0.18, 0.12), lambert(0xd8dde2), 0, -0.02, 0);
-  put(knife, box(0.04, 0.16, 0.05), lambert(0x3a2a1a), 0, 0.13, 0);
-  knife.rotation.z = 0.25;
-  group.userData.animate = (t) => { wheel.rotation.y = Math.sin(t * 0.4) * 0.15; all.rotation.y = Math.sin(t * 0.25) * 0.05; };
+  put(knife, box(0.05, 0.16, 0.05), lambert(0x3a2a1a), 0, 0.13, 0); // (10 mm wider than the blade each side)
+  knife.rotation.set(0, AIM, 0.25);
+  group.userData.animate = (t) => { all.rotation.y = Math.sin(t * 0.25) * 0.05; knife.rotation.z = 0.25 + Math.sin(t * 1.3) * 0.03; };
   group.userData.animate(0);
   return group;
 };
