@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "carkit/1",
+  "title": "Car kit spec (carkit/1)",
+  "description": "One car, as plain data. Metres, degrees; x across (+x = the car's left), y up (ground y = 0), z along (nose +z). Fields starting with // are comments. engine/validate.mjs is the authority (it also checks cross-references: names, groups, loft point counts); this schema is for editors and other tools.",
+  "type": "object",
+  "required": ["format", "id", "name", "class", "livery", "parts", "wheels", "mounts"],
+  "patternProperties": { "^//": {} },
+  "additionalProperties": false,
+  "properties": {
+    "format": { "const": "carkit/1" },
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,30}$" },
+    "name": { "type": "string", "minLength": 1 },
+    "class": { "enum": ["small", "medium", "large", "tall", "truck"] },
+    "description": { "type": "string" },
+    "notes": {},
+    "asymmetric": { "type": "boolean", "description": "true: the car is meant to be lopsided (the symmetry check is skipped)" },
+    "openWheels": { "type": "boolean", "description": "true: the wheels stand clear of the body on purpose (a racer, a buggy): the under-the-body check is skipped" },
+    "noWindscreen": { "type": "string", "description": "why the car has no windscreen (an open car)" },
+    "livery": {
+      "type": "object", "required": ["good", "evil"], "patternProperties": { "^//": {} }, "additionalProperties": false,
+      "properties": { "good": { "$ref": "#/$defs/side" }, "evil": { "$ref": "#/$defs/side" } }
+    },
+    "colors": {
+      "type": "object", "description": "custom flat colours, used by role paint:<name>",
+      "patternProperties": { "^//": {}, "^[a-z][a-z0-9-]*$": { "oneOf": [{ "$ref": "#/$defs/hex" }, { "type": "object", "required": ["good"], "properties": { "good": { "$ref": "#/$defs/hex" }, "evil": { "$ref": "#/$defs/hex" } }, "additionalProperties": false }] } },
+      "additionalProperties": false
+    },
+    "parts": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/part" } },
+    "wheels": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/wheel" } },
+    "groups": { "type": "array", "items": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string" }, "pivot": { "$ref": "#/$defs/v3" }, "parent": { "type": "string" } }, "patternProperties": { "^//": {} }, "additionalProperties": false } },
+    "animate": { "type": "array", "items": { "type": "object", "required": ["target", "type"], "properties": { "target": { "type": "string" }, "type": { "enum": ["spin", "swing", "bob", "shudder"] }, "axis": { "enum": ["x", "y", "z"] }, "speed": { "type": "number" }, "amount": { "type": "number" }, "note": {} }, "patternProperties": { "^//": {} }, "additionalProperties": false } },
+    "mounts": {
+      "type": "object", "required": ["roof", "cargo", "wing"], "patternProperties": { "^//": {} }, "additionalProperties": false,
+      "properties": {
+        "roof": { "$ref": "#/$defs/propArea" }, "cargo": { "$ref": "#/$defs/propArea" }, "wing": { "$ref": "#/$defs/propArea" },
+        "plate-front": { "$ref": "#/$defs/area" }, "plate-rear": { "$ref": "#/$defs/area" },
+        "decals": { "type": "array", "items": { "allOf": [{ "$ref": "#/$defs/area" }, { "required": ["name"] }] } }
+      }
+    }
+  },
+  "$defs": {
+    "hex": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+    "v2": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+    "v3": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+    "side": { "type": "object", "required": ["body"], "properties": { "body": { "$ref": "#/$defs/hex" }, "accent": { "$ref": "#/$defs/hex" } }, "patternProperties": { "^//": {} }, "additionalProperties": false },
+    "role": { "type": "string", "pattern": "^(body|accent|trim|black|glass|rim|chrome|interior|underbody|plate|light-front|light-rear|light-brake|light-indicator|light-reverse|paint:[a-z][a-z0-9-]*)$" },
+    "part": {
+      "type": "object", "required": ["name", "role", "shape"], "patternProperties": { "^//": {} }, "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" }, "role": { "$ref": "#/$defs/role" },
+        "shape": { "enum": ["box", "cylinder", "cone", "sphere", "wedge", "lathe", "extrude", "loft", "panel"] },
+        "at": { "$ref": "#/$defs/v3" }, "rot": { "$ref": "#/$defs/v3" }, "scale": { "$ref": "#/$defs/v3" },
+        "mirror": { "type": "boolean" }, "group": { "type": "string" }, "smooth": { "type": "boolean" }, "asymmetric": { "type": "boolean" },
+        "tag": { "enum": ["windscreen", "rear-window", "side-window", "roof-window", "headlight", "taillight", "brake-light", "indicator", "reverse-light", "plate-front", "plate-rear", "mirror", "bumper", "grille", "bed", "door", "arch", "exhaust", "spoiler"] },
+        "prop": { "enum": ["roof", "cargo", "wing"] },
+        "size": { "$ref": "#/$defs/v3" }, "front": { "type": "number" }, "back": { "type": "number" }, "topWidth": { "type": "number" },
+        "radius": { "type": "number", "exclusiveMinimum": 0 }, "radii": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 3 },
+        "length": { "type": "number", "exclusiveMinimum": 0 }, "axis": { "enum": ["x", "y", "z"] },
+        "segments": { "oneOf": [{ "type": "integer", "minimum": 3 }, { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 }] },
+        "dome": { "type": "boolean" },
+        "profile": { "type": "array", "minItems": 2, "items": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 3 } },
+        "width": { "type": "number", "exclusiveMinimum": 0 }, "bevel": { "type": "number", "minimum": 0 }, "curveSegments": { "type": "integer", "minimum": 1 },
+        "tumblehome": { "type": "number", "minimum": 0, "maximum": 0.6 },
+        "sections": { "type": "array", "minItems": 2, "items": { "type": "object", "required": ["z"], "properties": { "z": { "type": "number" }, "w": { "type": "number" }, "topW": { "type": "number" }, "y0": { "type": "number" }, "y1": { "type": "number" }, "r": { "type": "number" }, "rTop": { "type": "number" }, "rBottom": { "type": "number" }, "x": { "type": "number" }, "half": { "type": "array", "items": { "$ref": "#/$defs/v2" } } }, "additionalProperties": false } },
+        "cornerSegments": { "type": "integer", "minimum": 1 },
+        "points": { "type": "array", "minItems": 3, "maxItems": 16, "items": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 3 } },
+        "plane": { "const": "x" }, "offset": { "type": "number" }, "thickness": { "type": "number", "minimum": 0 },
+        "note": {}
+      }
+    },
+    "wheel": {
+      "type": "object", "required": ["at", "radius", "width"], "patternProperties": { "^//": {} }, "additionalProperties": false,
+      "properties": { "name": { "type": "string" }, "at": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 3 }, "radius": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }, "width": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }, "hub": { "type": "number" }, "hubRole": { "$ref": "#/$defs/role" }, "axis": { "const": "x" }, "segments": { "type": "integer", "minimum": 8, "maximum": 32 }, "mirror": { "type": "boolean" }, "note": {} }
+    },
+    "area": {
+      "type": "object", "patternProperties": { "^//": {} }, "additionalProperties": false,
+      "properties": { "none": { "type": "string" }, "name": { "type": "string" }, "side": { "enum": ["both", "left", "right", "center"] }, "at": { "$ref": "#/$defs/v3" }, "normal": { "$ref": "#/$defs/v3" }, "u": { "$ref": "#/$defs/v3" }, "size": { "$ref": "#/$defs/v2" }, "height": { "type": "number" }, "surface": { "type": "string" }, "maxDepth": { "type": "number" }, "maxCurve": { "type": "number" }, "note": {} }
+    },
+    "propArea": { "oneOf": [{ "type": "object", "required": ["none"], "properties": { "none": { "type": "string" } } }, { "allOf": [{ "$ref": "#/$defs/area" }, { "required": ["at", "size", "height"] }] }] }
+  }
+}

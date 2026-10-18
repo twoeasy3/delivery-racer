@@ -1,0 +1,38 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Car kit import still</title></head>
+<body style="margin:0;background:#20242c">
+<script type="module">
+// A DEV-ONLY page (served by a Vite dev server from the repo root: scripts/import-carkit.mjs --still): an imported kit model drawn
+// with the GAME'S OWN card code (render/modelviews.js poseView; the blueprint POSES of render/carstill.js, read by the script and passed
+// in ?poses=, as carstill.js pulls in the whole game page), beside a game car's model (render/models.js MODELS, as makeShowCar builds a
+// car with no model patch and no cosmetics), one row each. Not a Vite input: never built, never shipped.
+import * as THREE from 'three';
+import { poseView } from '/src/delivery/render/modelviews.js';
+import { MODELS } from '/src/delivery/render/models.js';
+import { CARS } from '/src/delivery/cars.js';
+const q = new URLSearchParams(location.search);
+const POSES = JSON.parse(q.get('poses'));
+try {
+  const mod = await import(q.get('model'));
+  const car = q.get('compare') ? CARS.find(c => c.id === q.get('compare')) : null;
+  const W = 300, H = 400, poses = ['top', 'hero', 'front', 'rear', 'side'];
+  const rows = [['imported from the kit (' + mod.SPEC.id + ')', () => { const m = mod.build({ color: mod.ENTRY.color }); m.userData.onShow = true; return m; }]];
+  if (car) rows.unshift(['the game\'s ' + car.id + ' (MODELS.' + car.model + ')', () => { const m = MODELS[car.model](car); m.userData.onShow = true; return m; }]);
+  const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(1); renderer.setSize(W, H, false);
+  const sheet = document.createElement('canvas'); sheet.width = poses.length * (W + 8) + 8; sheet.height = rows.length * (H + 30) + 8;
+  const g = sheet.getContext('2d'); g.fillStyle = '#20242c'; g.fillRect(0, 0, sheet.width, sheet.height);
+  rows.forEach(([label, make], r) => {
+    poses.forEach((pose, k) => {
+      const view = poseView(make(), POSES[pose], W / H);
+      view.camera.setViewOffset(W, H, view.offset.x * W, view.offset.y * H, W, H);
+      renderer.setClearColor(0x1d3a66, 1);
+      renderer.render(view.scene, view.camera);
+      g.drawImage(renderer.domElement, 8 + k * (W + 8), 30 + r * (H + 30));
+      g.fillStyle = '#e8e8e8'; g.font = '14px sans-serif'; g.fillText(label + ': ' + pose, 8 + k * (W + 8), 22 + r * (H + 30), W);
+    });
+  });
+  window.stillPng = sheet.toDataURL('image/png');
+} catch (e) { window.stillError = 'error: ' + (e.stack || e); }
+</script>
+</body></html>

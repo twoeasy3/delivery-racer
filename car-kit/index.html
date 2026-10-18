@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Car Kit Viewer</title>
+<script type="importmap">{ "imports": { "three": "./engine/vendor/three.module.min.js" } }</script>
+<style>
+  :root { --bg: #20242c; --panel: #2b313c; --text: #e8e8e8; --accent: #ffd23f; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px sans-serif; overflow: hidden; }
+  #bar { position: fixed; top: 0; left: 0; right: 0; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; background: var(--panel); z-index: 2; align-items: center; }
+  #bar button, #bar select, #bar label { background: #3a4150; color: var(--text); border: 1px solid #555; border-radius: 4px; padding: 4px 8px; font: inherit; }
+  #bar button.on { background: var(--accent); color: #111; }
+  #out { position: fixed; right: 0; bottom: 0; max-height: 45vh; width: min(560px, 100vw); overflow: auto; background: rgba(20, 22, 28, 0.92); font: 12px monospace; white-space: pre-wrap; padding: 8px; box-sizing: border-box; display: none; }
+  .fail { color: #ff7b7b; } .warn { color: #ffd23f; } .pass { color: #8fe08f; }
+  canvas { display: block; }
+</style></head>
+<body>
+<div id="bar">
+  <select id="pick"></select>
+  <label>Open spec <input id="file" type="file" accept=".json" style="width: 9em"></label>
+  <button id="evil">Evil</button>
+  <button id="wire">Wireframe</button>
+  <button id="mounts">Mounts</button>
+  <button id="spin">Spin wheels</button>
+  <button id="check">Check</button>
+  <span id="info"></span>
+</div>
+<div id="out"></div>
+<script type="module">
+// The kit's viewer: a spec turned with the mouse (drag to orbit, wheel to zoom). Run `node tools/serve.mjs` and open the address it prints.
+import * as THREE from 'three';
+import { OrbitControls } from './engine/vendor/OrbitControls.js';
+import { buildCar, mountFrames } from './engine/build.mjs';
+import { runChecks, formatResults } from './engine/checks.mjs';
+import { validateSpec } from './engine/validate.mjs';
+const EXAMPLES = ['examples/junker.car.json', 'examples/hatchback.car.json', 'examples/van.car.json', 'examples/panelvan.car.json'];
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xdfe4ea);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 2.2));
+const sun = new THREE.DirectionalLight(0xffffff, 1.5); sun.position.set(3, 6, 5); scene.add(sun);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshLambertMaterial({ color: 0xc9ced6 })); floor.rotation.x = -Math.PI / 2; floor.position.y = -0.002; scene.add(floor);
+const camera = new THREE.PerspectiveCamera(35, 1, 0.05, 300); camera.position.set(7.5, 4.5, 9);
+const controls = new OrbitControls(camera, renderer.domElement); controls.target.set(0, 0.8, 0);
+const st = { spec: null, model: null, evil: false, wire: false, mounts: false, spin: false, extra: new THREE.Group() };
+scene.add(st.extra);
+const $ = (id) => document.getElementById(id);
+const out = $('out');
+const show = (text, cls = '') => { out.style.display = 'block'; out.innerHTML = ''; for (const line of text.split('\n')) { const d = document.createElement('div'); d.textContent = line; d.className = /^FAIL/.test(line) ? 'fail' : /^WARN/.test(line) ? 'warn' : /^PASS/.test(line) ? 'pass' : cls; out.appendChild(d); } };
+const rebuild = () => {
+  if (st.model) scene.remove(st.model);
+  st.extra.clear();
+  const { errors } = validateSpec(st.spec);
+  if (errors.length) { show('The spec has errors:\n' + errors.join('\n'), 'fail'); return; }
+  st.model = buildCar(THREE, st.spec, { evil: st.evil, wheelTurn: (g, t) => (st.spin ? t * 6 : 0) });
+  scene.add(st.model);
+  st.model.traverse((n) => { if (n.isMesh) n.material.wireframe = st.wire; });
+  if (st.mounts) for (const f of mountFrames(st.spec)) {
+    const h = f.kind === 'prop' ? f.height : 0.02, geo = new THREE.BoxGeometry(f.size[0], f.size[1], h);
+    geo.applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0, h / 2)).applyMatrix4(new THREE.Matrix4().makeBasis(new THREE.Vector3(...f.u), new THREE.Vector3(...f.v), new THREE.Vector3(...f.n))).translate(...f.at);
+    const c = { roof: 0x2f7bff, cargo: 0x22c55e, wing: 0xff3b3b }[f.slot] ?? (f.kind === 'decal' ? 0xffd400 : 0xffffff);
+    st.extra.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.35, depthWrite: false })));
+  }
+  const box = new THREE.Box3().setFromObject(st.model), s = box.getSize(new THREE.Vector3());
+  $('info').textContent = st.spec.name + ' (' + st.spec.class + ')  ' + s.x.toFixed(2) + ' x ' + s.y.toFixed(2) + ' x ' + s.z.toFixed(2) + ' m';
+};
+const load = async (spec) => { st.spec = spec; out.style.display = 'none'; rebuild(); };
+for (const e of EXAMPLES) { const o = document.createElement('option'); o.value = e; o.textContent = e.split('/').pop(); $('pick').appendChild(o); }
+$('pick').onchange = async () => load(await (await fetch($('pick').value)).json());
+$('file').onchange = async (ev) => { const f = ev.target.files[0]; if (!f) return; try { load(JSON.parse(await f.text())); } catch (e) { show('Not valid JSON: ' + e.message, 'fail'); } };
+const toggle = (id, key) => { $(id).onclick = () => { st[key] = !st[key]; $(id).classList.toggle('on', st[key]); rebuild(); }; };
+toggle('evil', 'evil'); toggle('wire', 'wire'); toggle('mounts', 'mounts'); toggle('spin', 'spin');
+$('check').onclick = () => { if (st.spec) show(formatResults(runChecks(THREE, st.spec), st.spec.id)); };
+const q = new URLSearchParams(location.search).get('spec');
+if (q && EXAMPLES.includes(q)) $('pick').value = q;
+load(await (await fetch(q || EXAMPLES[0])).json());
+const resize = () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); };
+addEventListener('resize', resize); resize();
+renderer.setAnimationLoop((ms) => { controls.update(); st.model?.userData.animate(ms / 1000); renderer.render(scene, camera); });
+</script>
+</body></html>

@@ -1276,3 +1276,54 @@ Working list, from the owner's ideas of 2026-10-09. `[x]` done, `[~]` partly don
   - SIZE (initial load of delivery/index.html: every script and stylesheet it names, gzip -9, fresh builds of both): main 7e2ba8b 1,214,485 B -> 1,215,675 B, +1,190 B (delivery.js +708 B, pursuitModels +473 B: the trolley rebuild in obstacleModels.js, inspectmodel +9 B). The new stages (render/stages/*) and the Mall models are lazy chunks, not in the initial load.
   - SEEN (stills READ, headless Chromium, software GL, 1280x800, scratchpad `int156/`, one combined still): the menu card on ?stage=mall: a row of wire trolleys with red handles and casters behind the car (a 2x crop too), boxes and a sign, nothing through the car; ?stage=farm: the red barn and silo on the skyline, fence, hay bales, cows, a gas bottle, the car on a dirt plinth; a Comet Hunt Special reveal (&featured=bug,lovebus,teardrop,darkvan&reveal=all): Teardrop Streamliner in the side pose (flat profile, nose left), the others in their own poses; a 10-pack reveal: every card in a pose, none cut. The version line reads v1.1.156-alpha.
   - NOT VERIFIED: nothing played by hand, no real phone or GPU; Mall Dash in a run (only the stage card); the other stage-polish themes (volcano, port, Wild West, alpineDusk and the rest) were not looked at here (their branch's stills only); the render group, smoke and other groups not run; Crazey Jim's stall and the showroom card's poses (checks only).
+- [x] 481. CAR KIT: CAR MODELLING OUTSOURCED TO AN AGENT WITH NO CONTEXT (the owner, 18-Oct: a self-contained kit to hand over, plus our importer; then "make the Junker the main sample", "tag the mount areas", "ship a decal-ready sample"). Branch `claude/car-kit` from main b54feba; NOT merged, no version bump (nothing the player sees changes).
+  - NEW top-level `car-kit/` (not imported by the game, not a Vite input: the build is byte-identical, see below), zipped as car-kit.zip:
+    - `BRIEF.md`: the game in ten lines, style dos and don'ts, the defect classes, the budgets, the loop and the report.
+    - `FORMAT.md` + `schema/car.schema.json`: the format.
+    - `README.md`.
+    - `engine/`: build.mjs, the import-free spec -> three.js builder, also inlined by the importer; validate.mjs; checks.mjs; zfight.mjs, a port of render/zfight.js; classes.mjs; views.mjs.
+    - `engine/vendor/`: three 0.160.0 min, OrbitControls, the licence.
+    - `tools/`: check.mjs, render.mjs, serve.mjs plus the `index.html` viewer, selftest.mjs, tojson.mjs. No npm deps: the renderer drives Chrome over the DevTools protocol with Node 22's WebSocket.
+    - `examples/`: junker (THE reference, every choice annotated), hatchback, van, panelvan (THE decal reference), as .car.json (+ .car.mjs sources that compute the glass from the outlines), with contact sheets in examples/sheets.
+  - FORMAT carkit/1: JSON, metres, +z nose, +x the car's left, ground y = 0.
+    - Shapes: box, wedge, cylinder, cone, sphere / dome, lathe, extrude (side view with rounded corners, bevel, linear tumblehome), loft (rounded-trapezoid or half-polyline sections), panel.
+    - Parts take at / rot / scale / mirror (L / R names), tag (windscreen, rear-window, side-window, roof-window, headlight, taillight, brake-light, indicator, reverse-light, plates, ...), prop slot, group / pivot.
+    - Roles: body, accent (the livery pair), trim, black, glass, rim, chrome, interior, underbody, plate, five lamp roles, and paint:<name> custom colours with Good / Evil values.
+    - Wheels are their own list. Animations: spin / swing / bob / shudder.
+    - MOUNTS are required: roof, cargo, wing, each an area (at on the surface, normal, size, free height, surface) or { none: why). Optional: plate-front / plate-rear, and decal areas (frame at / normal / u / size, maxDepth / maxCurve, side both / left / right / center).
+  - BUDGETS (measured over the game's 159 wheeled cars: median 1,848 triangles, 38 meshes, 12 materials; p90 3,196 / 69 / 18; Junker 2,404 / 21 / 15):
+    - triangles warn 3,000, fail 4,000 (truck 4,000 / 5,500);
+    - meshes 40 / 60;
+    - materials 16 / 18;
+    - size ranges per class small / medium / large / tall / truck from the survey; width / length warns under 0.38.
+  - CHECKS (tools/check.mjs, about 0.3 s a car): schema; budgets; NaN and zero-area triangles; size and class; centring; ground; wheels (count, ground within 1 cm, pairs, round, visible from the side, under the body: no stalks or gap); symmetry (area and per part); z-fighting; closed and outward shells; floating parts (connectivity); glass (facing its tag, visible, seated within 3 cm of the body including its rim); lamps seen from ahead and behind; mounts (on the surface, flat, free above, apart; decals on paint only, depth and curve, both sides); animations. tools/selftest.mjs breaks the hatchback 17 ways and every defect is caught (18 / 18).
+  - RENDER (tools/render.mjs, about 2 s): 25 views and one labelled contact sheet: front / rear / both sides / top (ortho), front and rear 3/4 in Good and Evil, the game's chase camera at phone size plus a 4x pixel zoom, a 64 px icon, the five blueprint poses (carstill.js POSES, the poseView framing), ground contact per wheel and from the front, wireframe, and the mounts as coloured boxes with a checkerboard test decal (before = the plain side, after = the decal side).
+  - IMPORTER `scripts/import-carkit.mjs`: spec -> `car-kit/examples-imported/<id>.model.js`, a game model module (build(car), userData.body / animate with the game's wheelTurn / livery / rollsWheels; tyres and hubs separate; glass named and userData.window; props userData.prop; plates userData.plate) plus ENTRY (a cars.js row without stats), LAMPS (CAR_LAMPS), PLATES, PROPS (a propanchors hand row scaled from PROP_BOUNDS), DECALS (a decalzonestable row) and DECALS_OTHER. Nothing wired in.
+  - JUNKER ROUND TRIP (`--verify --compare junker --still`), through the game's own loader and code:
+    - render/zfight.js: 0 pairs.
+    - Windscreen audit: windscreen found, rear window found.
+    - carsuspension: 4 wheels.
+    - findHubs: 4 tyres, 4 hubs.
+    - glassnames: 4 windows.
+    - The importer's PROP_BOUNDS equal the game's.
+    - Beside the game's Junker: 2,352 vs 2,404 triangles; 27 vs 21 meshes; 16 vs 15 materials; box 2.24 x 1.905 x 5.259 vs 2.24 x 1.929 x 5.259 (the game's tarp heap is 2.4 cm higher).
+    - The game's meshes are unnamed; the import names every one.
+    - The side-by-side still is in car-kit/examples-imported/junker-vs-game.png.
+  - CHECKED: the replay fingerprint is 8dbc477d85 / bcc9df44d0, unchanged. vite build: dist byte-identical to main's (480 files, md5 each, 22,331,865 B both). node --check on every new file. eslint: scripts/import-carkit.mjs clean, and car-kit/ clean with the recommended rules. The four examples pass check.mjs (Junker 40 pass, 0 warn).
+  - CLEAN ROOM: car-kit.zip was unzipped into a new empty folder and run there, with no repo around it and no npm. check (5 specs), selftest (18 / 18), render (25 views in 2.2 s) and the viewer (served, panel van with mounts shown, Check run) all worked.
+  - SEEN (sheets READ): all four contact sheets, the viewer, and the Junker import beside the game's Junker in the five poses.
+    - The kit's Junker reads as the game's. It lacks the rust texture and the tarp's lumps and printed cloth (flat colours instead), and its mirrors touch the cab (the game's stand 2.5 cm off it).
+    - The panel van's test decal is square and undistorted on the flanks, the bonnet and the back.
+  - CANNOT BE EXPRESSED IN THE KIT (by design or not yet):
+    - Canvas textures and vertex-colour shading (the Junker's rust, tarp picture, shading).
+    - Shapes not built from the primitives (the tarp's noise-bumped sheet).
+    - Per-car code: userData.style / accent / firing hooks, lamps riding a moving frame (CAR_LAMPS frame), legendTouch.
+    - The game's generated tables still come from its own scripts (prop-anchors, plate-anchors, decal-zones). The kit's mounts are converted to hand rows; checking them against the generators was not done.
+    - The game's decals are flank-only (render/flankdecal.js casts sideways). Bonnet, roof and tailgate areas (DECALS_OTHER) would need that ray rule along other normals and a zone format with a facing; NOT built.
+  - NOT VERIFIED:
+    - An imported car in a real run, the garage, the showroom or the model editor UI. The still is the game's card framing (render/modelviews.js poseView) only.
+    - The importer's ENTRY hitbox: hw comes out 1.1 for the Junker against cars.js 1.0 (the tarp hem and bumper ends count).
+    - The LAMPS / PLATES / PROPS / DECALS rows in the game's tables.
+    - A JSON-Schema validator run on schema/car.schema.json (engine/validate.mjs is the authority).
+    - A real external agent using the kit.
+    - Windows or macOS for the browser finder.

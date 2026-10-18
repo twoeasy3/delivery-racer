@@ -1,0 +1,570 @@
+// ---- CAR KIT BUILDER: a car spec (plain JSON, see FORMAT.md) -> a three.js Group ----------------------------------------------
+// Self-contained: NO imports. three.js is passed in (buildCar(THREE, spec, opts)), so this one file runs in Node (the checker), in a
+// browser (the renderer, the viewer) and inside the game (scripts/import-carkit.mjs inlines it). Keep it that way.
+//
+// What it returns (the game's model conventions):
+//   group                       the car, nose at +z, +y up, +x = the car's LEFT, ground at y = 0, metres
+//     shell (Group 'shell')      every part but the wheels (an animation of type 'shudder' moves it)
+//     wheel <XY> (Group)         one per wheel, at the axle centre: 'tyre <XY>' (a round mesh of its own, touching the ground)
+//                                and 'hub <XY>' (a mesh of its own on the same axle). Never merged: the game finds tyres by shape
+//   userData.body               the mesh in the body paint (its material is the livery colour)
+//   userData.livery(evil)        sets the Good or Evil colours (body, accent, custom colours)
+//   userData.animate(t)          poses the model at t seconds (wheels turn by opts.wheelTurn; named animations)
+//   userData.rollsWheels         true (its tyres turn themselves)
+//   userData.wheels              the wheel groups; userData.mounts the spec's mounts; userData.lamps a lamp table entry
+// Glass panes are meshes of their own, named 'windscreen', 'rear window', 'side window L' ... with userData.window
+// ('windscreen' | 'rear' | 'side' | 'roof'). Parts tagged with a prop slot keep their own mesh with userData.prop.
+// opts: { evil = false, merge = true (join the static parts that share a material), wheelTurn(group, t, radius) -> rad }
+
+export const KIT_VERSION = 'carkit/1';
+
+// ---- materials by ROLE ----------------------------------------------------------------------------------------------------
+// lit: MeshLambertMaterial in a flat colour; glow: MeshBasicMaterial (lamps: unlit, always bright)
+export const ROLES = {
+  body: { lit: null, livery: 'body', what: 'the main paint (Good / Evil livery colour)' },
+  accent: { lit: null, livery: 'accent', what: 'a second livery colour (roof, stripes, wings, bumpers in colour)' },
+  trim: { lit: 0x2a2c31, what: 'dark plastic: bumpers, sills, grille surrounds, mirrors' },
+  black: { lit: 0x121418, what: 'near black: grille holes, vents, gaps you can see into' },
+  glass: { lit: 0x232a35, what: 'windows (dark blue-grey, opaque: never see-through)' },
+  tyre: { lit: 0x141414, what: 'tyres (only inside wheels; set automatically)' },
+  rim: { lit: 0xa8acb2, what: 'wheel hubs (silver)' },
+  chrome: { lit: 0xc4c7cb, what: 'bright metal: grille bars, lamp rims, bumpers on old cars' },
+  interior: { lit: 0x1b1d22, what: 'seats and dashboards seen through an open top' },
+  underbody: { lit: 0x15171c, what: 'the floor pan, chassis rails, things under the car' },
+  plate: { lit: 0xece6cc, what: 'a number plate (a blank cream panel)' },
+  'light-front': { glow: 0xfff3c4, what: 'headlamp lenses (cream white, unlit material)' },
+  'light-rear': { glow: 0xff2a2a, what: 'tail lamp lenses (red, unlit)' },
+  'light-brake': { glow: 0xc4101c, what: 'brake lamp lenses (deeper red, unlit)' },
+  'light-indicator': { glow: 0xffa31a, what: 'indicator lenses (amber, unlit)' },
+  'light-reverse': { glow: 0xf4f4f0, what: 'reversing lamp lenses (white, unlit)' },
+};
+export const GLASS_TAGS = { windscreen: 'windscreen', 'rear-window': 'rear', 'side-window': 'side', 'roof-window': 'roof' };
+export const LAMP_TAGS = ['headlight', 'taillight', 'brake-light', 'indicator', 'reverse-light'];
+export const OTHER_TAGS = ['plate-front', 'plate-rear', 'mirror', 'bumper', 'grille', 'bed', 'door', 'arch', 'exhaust', 'spoiler'];
+export const PROP_SLOTS = ['roof', 'cargo', 'wing'];
+export const SHAPES = ['box', 'cylinder', 'cone', 'sphere', 'wedge', 'lathe', 'extrude', 'loft', 'panel'];
+const DEG = Math.PI / 180;
+
+export const hex = (c) => (typeof c === 'number' ? c : parseInt(String(c).replace('#', ''), 16));
+// the role a part's material comes from: a built-in role, or 'paint:<name>' for a colour of spec.colors
+export const roleColour = (spec, role, evil) => {
+  if (role === 'body' || role === 'accent') {
+    const side = spec.livery?.[evil ? 'evil' : 'good'] || spec.livery?.good || {};
+    return hex(side[role] ?? (role === 'accent' ? side.body : 0x888888) ?? 0x888888);
+  }
+  if (role.startsWith('paint:')) {
+    const c = spec.colors?.[role.slice(6)];
+    if (c == null) return 0xff00ff;
+    if (typeof c === 'object') return hex(evil ? (c.evil ?? c.good) : c.good);
+    return hex(c);
+  }
+  const r = ROLES[role];
+  return r ? (r.lit ?? r.glow) : 0xff00ff;
+};
+export const isGlow = (role) => !!ROLES[role]?.glow;
+
+// ---- small geometry helpers --------------------------------------------------------------------------------------------------
+// every geometry ends non-indexed with position + normal only, so any two can be joined
+const plain = (THREE, geo) => {
+  let g = geo.index ? geo.toNonIndexed() : geo;
+  for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal') g.deleteAttribute(k);
+  if (!g.attributes.normal) g.computeVertexNormals();
+  g.clearGroups();
+  return g;
+};
+const flat = (THREE, geo) => { const g = plain(THREE, geo); g.computeVertexNormals(); return g; };
+// a geometry from a list of triangles [[a, b, c] of [x, y, z]], degenerate ones dropped
+const fromTris = (THREE, tris) => {
+  const pos = [];
+  for (const [a, b, c] of tris) {
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+    const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
+    if (Math.hypot(cx, cy, cz) < 1e-10) continue;
+    pos.push(...a, ...b, ...c);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  return g;
+};
+// signed volume (m3) of a closed triangle soup: > 0 when its faces point outward
+export const signedVolume = (geo) => {
+  const p = geo.attributes.position.array, idx = geo.index?.array;
+  const n = idx ? idx.length : p.length / 3;
+  let v = 0;
+  for (let i = 0; i < n; i += 3) {
+    const a = (idx ? idx[i] : i) * 3, b = (idx ? idx[i + 1] : i + 1) * 3, c = (idx ? idx[i + 2] : i + 2) * 3;
+    v += (p[a] * (p[b + 1] * p[c + 2] - p[b + 2] * p[c + 1]) - p[a + 1] * (p[b] * p[c + 2] - p[b + 2] * p[c]) + p[a + 2] * (p[b] * p[c + 1] - p[b + 1] * p[c])) / 6;
+  }
+  return v;
+};
+// reverse every triangle's winding (and its normals) in a non-indexed geometry
+const flip = (geo) => {
+  const p = geo.attributes.position.array, n = geo.attributes.normal?.array;
+  for (let i = 0; i < p.length; i += 9) {
+    for (let k = 0; k < 3; k++) { const t = p[i + 3 + k]; p[i + 3 + k] = p[i + 6 + k]; p[i + 6 + k] = t; }
+    if (n) for (let k = 0; k < 3; k++) { const t = n[i + 3 + k]; n[i + 3 + k] = n[i + 6 + k]; n[i + 6 + k] = t; }
+  }
+  if (n) for (let i = 0; i < n.length; i++) n[i] = -n[i];
+  geo.attributes.position.needsUpdate = true;
+  return geo;
+};
+// a solid of revolution about +y: profile [[r, y], ...]; open ends (r > 0) are capped; a point with r = 0 closes in a fan
+const revolve = (THREE, profile, segments, smooth) => {
+  const pts = profile.map(([r, y]) => [Math.max(0, r), y]);
+  if (pts[0][0] > 1e-6) pts.unshift([0, pts[0][1]]);
+  if (pts[pts.length - 1][0] > 1e-6) pts.push([0, pts[pts.length - 1][1]]);
+  const ring = (r, y) => Array.from({ length: segments }, (_, k) => { const a = k / segments * Math.PI * 2; return [Math.sin(a) * r, y, Math.cos(a) * r]; });
+  const tris = [];
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const [r0, y0] = pts[i], [r1, y1] = pts[i + 1];
+    const A = ring(r0, y0), B = ring(r1, y1);
+    for (let k = 0; k < segments; k++) {
+      const k1 = (k + 1) % segments;
+      if (r0 > 1e-6) tris.push([A[k], A[k1], B[k]]);
+      if (r1 > 1e-6) tris.push([A[k1], B[k1], B[k]]);
+    }
+  }
+  let g = fromTris(THREE, tris);
+  if (signedVolume(g) < 0) { g.computeVertexNormals(); flip(g); }
+  if (smooth) { g = mergeVerts(THREE, g); g.computeVertexNormals(); g = plain(THREE, g); } else g.computeVertexNormals();
+  return g;
+};
+// join vertices at the same place (for smooth normals)
+const mergeVerts = (THREE, geo) => {
+  const p = geo.attributes.position.array, map = new Map(), out = [], idx = [];
+  for (let i = 0; i < p.length; i += 3) {
+    const key = Math.round(p[i] * 1e5) + ',' + Math.round(p[i + 1] * 1e5) + ',' + Math.round(p[i + 2] * 1e5);
+    let j = map.get(key);
+    if (j === undefined) { j = out.length / 3; map.set(key, j); out.push(p[i], p[i + 1], p[i + 2]); }
+    idx.push(j);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3));
+  g.setIndex(idx);
+  return g;
+};
+const orient = (geo, axis) => {
+  // geometry built along +y -> along `axis` ('x' | 'y' | 'z'), its +y end to the +axis end
+  if (axis === 'x') geo.rotateZ(-Math.PI / 2);
+  else if (axis === 'z') geo.rotateX(Math.PI / 2);
+  return geo;
+};
+// a side view outline: [z, y] or [z, y, r] (a corner rounded through a curve of about r), as a THREE.Shape
+const outline = (THREE, points) => {
+  const shape = new THREE.Shape(), n = points.length;
+  points.forEach(([z, y, r = 0], i) => {
+    const [az, ay] = points[(i + n - 1) % n], [cz, cy] = points[(i + 1) % n];
+    if (!r) { if (i) shape.lineTo(z, y); else shape.moveTo(z, y); return; }
+    const la = Math.hypot(az - z, ay - y), lc = Math.hypot(cz - z, cy - y), k = Math.min(r, la / 2, lc / 2);
+    const from = [z + (az - z) / la * k, y + (ay - y) / la * k], to = [z + (cz - z) / lc * k, y + (cy - y) / lc * k];
+    if (i) shape.lineTo(from[0], from[1]); else shape.moveTo(from[0], from[1]);
+    shape.quadraticCurveTo(z, y, to[0], to[1]);
+  });
+  shape.closePath();
+  return shape;
+};
+// a loft section's ring, as [x, y] points counter-clockwise seen from the front (+z), starting at the bottom middle
+export const sectionRing = (s, cornerSegments = 2) => {
+  if (s.half) { // [x, y] from the bottom middle (x = 0) round the +x side to the top middle (x = 0): mirrored to the -x side
+    const h = s.half, right = h.map(([x, y]) => [x, y]);
+    const left = h.slice(1, -1).reverse().map(([x, y]) => [-x, y]);
+    return [...right, ...left];
+  }
+  const w = s.w / 2, tw = (s.topW ?? s.w) / 2, y0 = s.y0, y1 = s.y1;
+  // (a corner of radius 0 is drawn with 3 mm: every ring keeps the same number of points, and no triangle is degenerate)
+  const H = y1 - y0, rb = Math.max(0.003, Math.min(s.rBottom ?? s.r ?? 0, H / 2.01, w * 0.99)), rt = Math.max(0.003, Math.min(s.rTop ?? s.r ?? 0, H / 2.01, tw * 0.99));
+  const n = cornerSegments;
+  const pts = [[0, y0]];
+  // bottom right corner (x+), top right, the top middle, top left, bottom left: each corner n + 1 points
+  const corner = (cx, cy, r, a0, a1) => {
+    for (let k = 0; k <= n; k++) { const a = a0 + (a1 - a0) * k / n; pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); }
+  };
+  corner(w - rb, y0 + rb, rb, -Math.PI / 2, 0);
+  corner(tw - rt, y1 - rt, rt, 0, Math.PI / 2);
+  pts.push([0, y1]);
+  corner(-tw + rt, y1 - rt, rt, Math.PI / 2, Math.PI);
+  corner(-w + rb, y0 + rb, rb, Math.PI, Math.PI * 1.5);
+  return pts;
+};
+
+// ---- the shapes ---------------------------------------------------------------------------------------------------------------
+// Each returns a non-indexed BufferGeometry in the part's own frame (before its at / rot / scale)
+export const shapeGeometry = (THREE, p) => {
+  const smoothDefault = ['cylinder', 'cone', 'sphere', 'lathe'].includes(p.shape);
+  const smooth = p.smooth ?? smoothDefault;
+  switch (p.shape) {
+    case 'box': { const [w, h, l] = p.size; return flat(THREE, new THREE.BoxGeometry(w, h, l)); }
+    case 'cylinder': case 'cone': {
+      const [r0, r1] = p.shape === 'cone' ? [p.radius, 0] : Array.isArray(p.radii) ? p.radii : [p.radius, p.radius];
+      const seg = p.segments ?? 12, L = p.length;
+      return orient(revolve(THREE, [[r0, -L / 2], [r1, L / 2]], seg, smooth), p.axis || 'y');
+    }
+    case 'sphere': {
+      const [rx, ry, rz] = Array.isArray(p.radii) ? p.radii : [p.radius, p.radius, p.radius];
+      const [ws, hs] = p.segments ?? [12, 8];
+      const prof = [];
+      const from = p.dome ? 0 : -Math.PI / 2, steps = p.dome ? Math.max(2, Math.round(hs / 2)) : hs;
+      for (let i = 0; i <= steps; i++) { const a = from + (Math.PI / 2 - from) * i / steps; prof.push([Math.cos(a), Math.sin(a)]); }
+      return revolve(THREE, prof, ws, smooth).scale(rx, ry, rz);
+    }
+    case 'lathe': return orient(revolve(THREE, p.profile, p.segments ?? 12, smooth), p.axis || 'y');
+    case 'wedge': {
+      const [w, h, l] = p.size, f = p.front ?? 1, b = p.back ?? 1, tw = p.topWidth ?? 1, y0 = -h / 2;
+      const B = [[-w / 2, y0, -l / 2], [w / 2, y0, -l / 2], [w / 2, y0, l / 2], [-w / 2, y0, l / 2]];
+      const yb = y0 + h * b, yf = y0 + h * f, tx = w / 2 * tw;
+      const T = [[-tx, yb, -l / 2], [tx, yb, -l / 2], [tx, yf, l / 2], [-tx, yf, l / 2]];
+      const quad = (a, bb, c, d) => [[a, bb, c], [a, c, d]];
+      const tris = [...quad(B[0], B[1], B[2], B[3]), ...quad(T[3], T[2], T[1], T[0]), ...quad(B[3], B[2], T[2], T[3]),
+        ...quad(B[1], B[0], T[0], T[1]), ...quad(B[2], B[1], T[1], T[2]), ...quad(B[0], B[3], T[3], T[0])];
+      let g = fromTris(THREE, tris);
+      g.computeVertexNormals();
+      if (signedVolume(g) < 0) flip(g);
+      return g;
+    }
+    case 'extrude': {
+      const w = p.width, bevel = p.bevel ?? 0;
+      const geo = new THREE.ExtrudeGeometry(outline(THREE, p.profile), {
+        depth: Math.max(0.001, w - 2 * bevel), curveSegments: p.curveSegments ?? 3,
+        bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 1,
+      });
+      geo.rotateY(-Math.PI / 2); // (the outline's x along the car, +z; extruded across it)
+      geo.computeBoundingBox();
+      geo.translate(-(geo.boundingBox.min.x + geo.boundingBox.max.x) / 2, 0, 0);
+      let g = plain(THREE, geo);
+      if (p.tumblehome) { // narrower toward the top, LINEARLY from the shape's lowest point (full width) to its highest (1 - k of it):
+        // linear, so each flank stays one flat plane (a kink part way up would bend the big flank faces, which have no vertices inside)
+        const k = p.tumblehome, pos = g.attributes.position;
+        g.computeBoundingBox();
+        const y0 = g.boundingBox.min.y, y1 = g.boundingBox.max.y;
+        for (let i = 0; i < pos.count; i++) pos.setX(i, pos.getX(i) * (1 - k * (pos.getY(i) - y0) / (y1 - y0)));
+      }
+      g.computeVertexNormals();
+      return g;
+    }
+    case 'loft': {
+      const secs = [...p.sections].sort((a, b) => a.z - b.z);
+      const rings = secs.map(s => sectionRing(s, p.cornerSegments ?? 2).map(([x, y]) => [x + (s.x ?? 0), y, s.z]));
+      const n = rings[0].length, tris = [];
+      let area = 0; // (the first ring's winding seen from +z: counter-clockwise > 0)
+      for (let k = 0; k < n; k++) { const a = rings[0][k], b = rings[0][(k + 1) % n]; area += a[0] * b[1] - b[0] * a[1]; }
+      const ccw = area > 0;
+      for (let i = 0; i + 1 < rings.length; i++) {
+        const A = rings[i], B = rings[i + 1];
+        for (let k = 0; k < n; k++) {
+          const k1 = (k + 1) % n;
+          if (ccw) tris.push([A[k], B[k1], B[k]], [A[k], A[k1], B[k1]]);
+          else tris.push([A[k], B[k], B[k1]], [A[k], B[k1], A[k1]]);
+        }
+      }
+      for (const [ring, back] of [[rings[0], true], [rings[rings.length - 1], false]]) {
+        const contour = ring.map(([x, y]) => new THREE.Vector2(x, y));
+        const faces = THREE.ShapeUtils.triangulateShape(contour, []);
+        for (const [a, b, c] of faces) { // (the back cap faces -z, the front one +z, whatever way the triangulation wound them)
+          const A = ring[a], B = ring[b], C = ring[c], z = (B[0] - A[0]) * (C[1] - A[1]) - (B[1] - A[1]) * (C[0] - A[0]);
+          tris.push((z > 0) === back ? [A, C, B] : [A, B, C]);
+        }
+      }
+      let g = fromTris(THREE, tris);
+      g.computeVertexNormals();
+      // (the winding is made outward whatever order the points came in)
+      const capSigned = signedVolume(g);
+      if (capSigned < 0) flip(g);
+      if (smooth) { g = mergeVerts(THREE, g); g.computeVertexNormals(); g = plain(THREE, g); }
+      return g;
+    }
+    case 'panel': {
+      const pts = p.plane === 'x' ? p.points.map(([z, y]) => [p.offset ?? 0, y, z]) : p.points;
+      const tris = [];
+      for (let i = 1; i + 1 < pts.length; i++) tris.push([pts[0], pts[i], pts[i + 1]]);
+      if (!(p.thickness > 0)) { const g = fromTris(THREE, tris); g.computeVertexNormals(); return g; }
+      // a slab: the polygon and a copy `thickness` behind it (along its normal, inward), joined round the edge
+      const g0 = fromTris(THREE, tris); g0.computeVertexNormals();
+      const nrm = new THREE.Vector3().fromBufferAttribute(g0.attributes.normal, 0).multiplyScalar(-p.thickness);
+      const back = pts.map(q => [q[0] + nrm.x, q[1] + nrm.y, q[2] + nrm.z]);
+      const all = [...tris];
+      for (let i = 1; i + 1 < back.length; i++) all.push([back[0], back[i + 1], back[i]]);
+      for (let i = 0; i < pts.length; i++) { const j = (i + 1) % pts.length; all.push([pts[i], back[i], back[j]], [pts[i], back[j], pts[j]]); }
+      const g = fromTris(THREE, all); g.computeVertexNormals();
+      if (signedVolume(g) < 0) flip(g);
+      return g;
+    }
+    default: throw new Error('unknown shape ' + p.shape);
+  }
+};
+
+// ---- parts expanded: mirrored copies made, names given ---------------------------------------------------------------------
+// -> [{ part (the spec's), name, side: 1 | -1 | 0, mirrored: bool }]
+export const expandParts = (spec) => {
+  const out = [];
+  for (const part of spec.parts || []) {
+    if (part.mirror) {
+      const x = part.at?.[0] ?? 0, plus = x >= 0;
+      out.push({ part, name: part.name + (plus ? ' L' : ' R'), side: plus ? 1 : -1, mirrored: false });
+      out.push({ part, name: part.name + (plus ? ' R' : ' L'), side: plus ? -1 : 1, mirrored: true });
+    } else out.push({ part, name: part.name, side: 0, mirrored: false });
+  }
+  return out;
+};
+// wheels expanded: mirrored partners made, names 'F L' style given -> [{ name, key, x, y, z, radius, width, hub, hubRole, axis, w }]
+export const expandWheels = (spec) => {
+  const out = [];
+  const one = (w, x) => {
+    const [ax, a1, a2] = w.at, y = w.at.length === 3 ? a1 : w.radius, z = w.at.length === 3 ? a2 : a1;
+    out.push({ w, x, y, z, radius: w.radius, width: w.width, hub: w.hub ?? 0.55, hubRole: w.hubRole || 'rim', axis: w.axis || 'x', segments: w.segments ?? 16, ax });
+  };
+  for (const w of spec.wheels || []) { one(w, w.at[0]); if (w.mirror) one(w, -w.at[0]); }
+  // names: front / middle / rear by z, left / right by x
+  const zs = [...new Set(out.map(o => Math.round(o.z * 100) / 100))].sort((a, b) => b - a);
+  for (const o of out) {
+    const i = zs.indexOf(Math.round(o.z * 100) / 100);
+    const axle = zs.length === 1 ? 'M' : i === 0 ? 'F' : i === zs.length - 1 ? 'R' : 'M' + i;
+    o.key = axle + (o.x > 0.01 ? 'L' : o.x < -0.01 ? 'R' : 'C');
+    o.name = o.w.name ? o.w.name + (o.w.mirror ? (o.x >= 0 ? ' L' : ' R') : '') : 'wheel ' + o.key;
+  }
+  return out;
+};
+
+// a part's geometry, in car coordinates (its transform baked in, mirrored if asked)
+export const partGeometry = (THREE, entry) => {
+  const { part, mirrored } = entry;
+  const g = shapeGeometry(THREE, part);
+  const m = new THREE.Matrix4().compose(
+    new THREE.Vector3(...(part.at || [0, 0, 0])),
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(...(part.rot || [0, 0, 0]).map(d => d * DEG), 'XYZ')),
+    new THREE.Vector3(...(part.scale || [1, 1, 1])));
+  g.applyMatrix4(m);
+  if (part.scale && part.scale.filter(s => s < 0).length % 2) flip(g);
+  if (mirrored) { g.applyMatrix4(new THREE.Matrix4().makeScale(-1, 1, 1)); flip(g); g.computeVertexNormals(); }
+  return g;
+};
+
+// join non-indexed geometries (position + normal)
+export const joinGeometries = (THREE, geos) => {
+  let n = 0;
+  for (const g of geos) n += g.attributes.position.array.length;
+  const pos = new Float32Array(n), nrm = new Float32Array(n);
+  let o = 0;
+  for (const g of geos) { pos.set(g.attributes.position.array, o); nrm.set(g.attributes.normal.array, o); o += g.attributes.position.array.length; }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  out.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
+  return out;
+};
+
+// ---- the car ------------------------------------------------------------------------------------------------------------------
+export const buildCar = (THREE, spec, opts = {}) => {
+  const { evil = false, merge = true } = opts;
+  const wheelTurn = opts.wheelTurn || (() => 0);
+  const group = new THREE.Group(), shell = new THREE.Group();
+  group.name = spec.id || 'car';
+  shell.name = 'shell';
+  group.add(shell);
+  // materials: one per role (shared by every part of that role), named for the role (glass ones 'glass': the game's window rule)
+  const mats = new Map();
+  const matFor = (role) => {
+    if (mats.has(role)) return mats.get(role);
+    const colour = roleColour(spec, role, evil);
+    const m = isGlow(role) ? new THREE.MeshBasicMaterial({ color: colour }) : new THREE.MeshLambertMaterial({ color: colour, side: role === 'glass' ? THREE.DoubleSide : THREE.FrontSide });
+    m.name = role === 'glass' ? 'glass' : role;
+    m.userData.role = role;
+    mats.set(role, m);
+    return m;
+  };
+  // the model's middle (to turn each single-sheet panel's face outward)
+  const entries = expandParts(spec), geos = entries.map(e => partGeometry(THREE, e));
+  const all = new THREE.Box3();
+  geos.forEach((g, i) => { if (entries[i].part.shape !== 'panel') { g.computeBoundingBox(); all.union(g.boundingBox); } });
+  const mid = all.isEmpty() ? new THREE.Vector3(0, 0.8, 0) : all.getCenter(new THREE.Vector3());
+  geos.forEach((g, i) => {
+    const p = entries[i].part;
+    if (p.shape !== 'panel' || p.thickness > 0) return;
+    const pos = g.attributes.position, nrm = g.attributes.normal, c = new THREE.Vector3(), n = new THREE.Vector3();
+    for (let k = 0; k < pos.count; k++) c.add(new THREE.Vector3().fromBufferAttribute(pos, k));
+    c.divideScalar(pos.count);
+    n.fromBufferAttribute(nrm, 0);
+    const out = c.clone().sub(new THREE.Vector3(0, mid.y, mid.z));
+    if (Math.abs(n.x) > 0.55) out.set(c.x, 0, 0); // (a side pane faces away from the centre line)
+    if (n.dot(out) < 0) { flip(g); g.computeVertexNormals(); }
+  });
+  // groups (animation pivots): nodes in the shell, at their pivot; parts in them are put relative to it
+  const groupNodes = new Map();
+  const animated = new Set((spec.animate || []).map(a => a.target));
+  for (const gs of spec.groups || []) {
+    const node = new THREE.Group();
+    node.name = gs.name;
+    node.position.set(...(gs.pivot || [0, 0, 0]));
+    node.userData.pivot = (gs.pivot || [0, 0, 0]).slice();
+    groupNodes.set(gs.name, node);
+  }
+  for (const gs of spec.groups || []) {
+    const node = groupNodes.get(gs.name), parent = gs.parent ? groupNodes.get(gs.parent) : shell;
+    (parent || shell).add(node);
+  }
+  const worldOf = (node) => { const v = new THREE.Vector3(); let n = node; while (n && n !== shell) { v.add(n.position); n = n.parent; } return v; };
+  // the parts: kept as a mesh of their own, or put in a bucket to be joined by material
+  const buckets = new Map(), meshes = [], byName = new Map();
+  let body = null;
+  entries.forEach((e, i) => {
+    const p = e.part, g = geos[i], role = p.role;
+    const glass = role === 'glass', tag = p.tag;
+    const own = !merge || glass || p.prop || p.group || animated.has(p.name) || animated.has(e.name) || tag === 'plate-front' || tag === 'plate-rear';
+    if (!own) {
+      if (!buckets.has(role)) buckets.set(role, []);
+      buckets.get(role).push(g);
+      return;
+    }
+    let parent = shell, offset = new THREE.Vector3();
+    if (p.group && groupNodes.has(p.group)) { parent = groupNodes.get(p.group); offset = worldOf(parent); }
+    else if (animated.has(p.name) || animated.has(e.name)) { // (an animated single part: a pivot group at its `at`)
+      const node = new THREE.Group();
+      node.name = e.name + ' pivot';
+      node.position.set(...(p.at || [0, 0, 0]));
+      if (e.mirrored) node.position.x *= -1;
+      shell.add(node);
+      groupNodes.set(e.name, node);
+      if (!groupNodes.has(p.name)) groupNodes.set(p.name, node);
+      parent = node; offset = node.position.clone();
+    }
+    if (offset.lengthSq()) g.translate(-offset.x, -offset.y, -offset.z);
+    const mesh = new THREE.Mesh(g, matFor(role));
+    mesh.name = glass ? glassName(e, spec) : e.name;
+    mesh.userData.part = e.name;
+    mesh.userData.role = role;
+    if (tag) mesh.userData.tag = tag;
+    if (glass) mesh.userData.window = GLASS_TAGS[tag] || 'side';
+    if (p.prop) mesh.userData.prop = p.prop;
+    if (tag === 'plate-front') mesh.userData.plate = 'front';
+    if (tag === 'plate-rear') mesh.userData.plate = 'rear';
+    parent.add(mesh);
+    meshes.push(mesh);
+    byName.set(e.name, mesh);
+    if (role === 'body' && !body) body = mesh;
+  });
+  for (const [role, list] of buckets) {
+    const mesh = new THREE.Mesh(joinGeometries(THREE, list), matFor(role));
+    mesh.name = role;
+    mesh.userData.role = role;
+    shell.add(mesh);
+    meshes.push(mesh);
+    if (role === 'body') body = mesh;
+  }
+  // the wheels: a group each at the axle centre, a tyre and a hub in it (meshes of their own, never joined)
+  const wheels = [];
+  for (const w of expandWheels(spec)) {
+    const node = new THREE.Group();
+    node.name = w.name;
+    node.position.set(w.x, w.y, w.z);
+    const tyreGeo = orient(revolve(THREE, [[w.radius, -w.width / 2], [w.radius, w.width / 2]], w.segments, true), 'x');
+    const hubGeo = orient(revolve(THREE, [[w.radius * w.hub, -w.width / 2 - 0.02], [w.radius * w.hub, w.width / 2 + 0.02]], 12, true), 'x');
+    const tyre = new THREE.Mesh(tyreGeo, matFor('tyre')), hub = new THREE.Mesh(hubGeo, matFor(w.hubRole));
+    tyre.name = 'tyre ' + w.key; hub.name = 'hub ' + w.key;
+    tyre.userData.wheel = w.key; hub.userData.wheel = w.key;
+    node.add(tyre, hub);
+    node.userData = { wheel: w.key, radius: w.radius, width: w.width, axis: w.axis };
+    group.add(node);
+    wheels.push(node);
+  }
+  // animations
+  const anims = (spec.animate || []).map(a => ({ a, node: a.target === 'shell' ? shell : groupNodes.get(a.target) || byName.get(a.target) })).filter(x => x.node);
+  for (const { node } of anims) node.userData.rest = { p: node.position.clone(), r: node.rotation.clone() };
+  const axisOf = (a) => (a === 'x' ? 'x' : a === 'z' ? 'z' : 'y');
+  const animate = (t) => {
+    for (const wh of wheels) { const turn = wheelTurn(group, t, wh.userData.radius); wh.rotation.x = turn; }
+    for (const { a, node } of anims) {
+      const rest = node.userData.rest, ax = axisOf(a.axis);
+      node.position.copy(rest.p); node.rotation.copy(rest.r);
+      const sp = a.speed ?? 1;
+      if (a.type === 'spin') node.rotation[ax] = rest.r[ax] + t * sp;
+      else if (a.type === 'swing') node.rotation[ax] = rest.r[ax] + Math.sin(t * sp * Math.PI * 2) * (a.amount ?? 20) * DEG;
+      else if (a.type === 'bob') node.position[ax] = rest.p[ax] + Math.sin(t * sp * Math.PI * 2) * (a.amount ?? 0.05);
+      else if (a.type === 'shudder') { node.position.y = rest.p.y + Math.sin(t * 31) * (a.amount ?? 0.012); node.rotation.z = rest.r.z + Math.sin(t * 23) * (a.amount ?? 0.012) * 0.66; }
+    }
+  };
+  const livery = (ev) => {
+    for (const [role, m] of mats) if (role === 'body' || role === 'accent' || role.startsWith('paint:')) m.color.setHex(roleColour(spec, role, ev));
+  };
+  group.userData = {
+    body: body || meshes[0],
+    rollsWheels: true,
+    animate,
+    livery,
+    wheels,
+    mounts: spec.mounts || {},
+    mountFrames: mountFrames(spec),
+    lamps: lampTable(THREE, entries, geos),
+    carkit: { id: spec.id, version: KIT_VERSION, parts: byName, materials: mats },
+  };
+  livery(evil);
+  animate(0);
+  return group;
+};
+
+// ---- the mounts: each area as a frame { kind, slot, name, side, at, n, u, v, size: [su, sv], height } (plain arrays, no three.js) -----
+// n: the way the surface faces (out of the body); u: the area's first axis (a decal's width, a roof's ALONG the car), v = n x u.
+// roof / cargo / wing: size [width across, length along], u along the car (+z), height free above. decals: size [along u, along v],
+// u defaults to the car's length direction (toward the nose); side 'both' adds the mirror image at -x. plates: size [width, height].
+const nrm3 = (a) => { const l = Math.hypot(...a) || 1; return a.map(c => c / l); };
+const cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const planeAxis = (n, want, fallback) => { const d = dot3(want, n); let u = want.map((c, i) => c - d * n[i]); if (Math.hypot(...u) < 0.2) { const e = dot3(fallback, n); u = fallback.map((c, i) => c - e * n[i]); } return nrm3(u); };
+export const mountFrames = (spec) => {
+  const out = [], M = spec.mounts || {};
+  const frame = (m, kind, slot, name, side, mirror) => {
+    const flipX = (a) => (mirror ? [-a[0], a[1], a[2]] : a.slice());
+    const defN = kind === 'decal' ? [1, 0, 0] : kind === 'plate' ? [0, 0, slot === 'plate-front' ? 1 : -1] : [0, 1, 0];
+    const n = flipX(nrm3(m.normal || defN));
+    const u = kind === 'plate' ? planeAxis(n, [1, 0, 0], [0, 0, 1]) : m.u ? planeAxis(n, flipX(m.u), [0, 0, 1]) : planeAxis(n, [0, 0, 1], [1, 0, 0]);
+    let v = cross3(n, u);
+    if (kind === 'decal' && v[1] < -0.5) v = v.map(c => -c); // (a flank decal reads upright: v up)
+    // roof / cargo / wing: size is [across, along]; the frame's u is along, so su = along
+    const size = kind === 'prop' ? [m.size[1], m.size[0]] : m.size.slice();
+    out.push({ kind, slot, name, side, at: flipX(m.at), n, u, v, size, height: m.height ?? (kind === 'decal' ? 0.004 : 0.01), surface: m.surface, maxCurve: m.maxCurve ?? 12, maxDepth: m.maxDepth ?? 0.015, spec: m });
+  };
+  for (const slot of ['roof', 'cargo', 'wing']) if (M[slot] && !M[slot].none && M[slot].at) frame(M[slot], 'prop', slot, slot, 0, false);
+  for (const slot of ['plate-front', 'plate-rear']) if (M[slot] && !M[slot].none && M[slot].at) frame(M[slot], 'plate', slot, slot, 0, false);
+  for (const d of M.decals || []) {
+    if (!d || !d.at || !d.size) continue;
+    const s = d.side || (Math.abs(d.at[0]) < 0.01 ? 'center' : 'both'), plus = d.at[0] >= 0;
+    if (s === 'center') { frame(d, 'decal', 'decal', d.name, 0, false); continue; }
+    if (s === 'both') { frame(d, 'decal', 'decal', d.name + (plus ? ' L' : ' R'), plus ? 1 : -1, false); frame(d, 'decal', 'decal', d.name + (plus ? ' R' : ' L'), plus ? -1 : 1, true); }
+    else frame(d, 'decal', 'decal', d.name, s === 'left' ? 1 : -1, false);
+  }
+  return out;
+};
+// a point of a frame: at + a * u * su/2 + b * v * sv/2 + c * n  (a, b in -1..1)
+export const framePoint = (f, a, b, c = 0) => [0, 1, 2].map(i => f.at[i] + f.u[i] * a * f.size[0] / 2 + f.v[i] * b * f.size[1] / 2 + f.n[i] * c);
+
+// a glass pane's mesh name, as the game names windows: 'windscreen', 'rear window', 'side window L' ... (a second of a kind numbered)
+const glassName = (e, spec) => {
+  const base = { windscreen: 'windscreen', 'rear-window': 'rear window', 'side-window': 'side window', 'roof-window': 'roof window' }[e.part.tag] || 'side window';
+  const same = expandParts(spec).filter(x => x.part.role === 'glass' && x.part.tag === e.part.tag);
+  const side = e.side ? (e.side > 0 ? ' L' : ' R') : '';
+  const sameSide = same.filter(x => x.side === e.side);
+  const k = sameSide.indexOf(e);
+  return base + (k > 0 ? ' ' + (k + 1) : '') + side;
+};
+
+// the game's lamp table entry (render/carlights.js CAR_LAMPS) measured from the lamp parts: at = the middle of the lens's outer face
+export const lampTable = (THREE, entries, geos) => {
+  const out = { head: [], tail: [], blink: [], reverse: [] };
+  entries.forEach((e, i) => {
+    const tag = e.part.tag;
+    if (!LAMP_TAGS.includes(tag) || e.mirrored) return;
+    const g = geos[i];
+    g.computeBoundingBox();
+    const b = g.boundingBox, front = (b.min.z + b.max.z) / 2 > 0;
+    const at = [(b.min.x + b.max.x) / 2, (b.min.y + b.max.y) / 2, front ? b.max.z : b.min.z].map(v => Math.round(v * 1000) / 1000);
+    const size = [b.max.x - b.min.x, b.max.y - b.min.y].map(v => Math.round(v * 1000) / 1000);
+    const lamp = { at, size, round: ['cylinder', 'cone', 'sphere', 'lathe'].includes(e.part.shape) || undefined, mirror: !!e.part.mirror || undefined };
+    if (e.part.mirror && at[0] < 0) at[0] = -at[0];
+    if (tag === 'headlight') out.head.push(lamp);
+    else if (tag === 'taillight') out.tail.push({ ...lamp, brake: false });
+    else if (tag === 'brake-light') out.tail.push(lamp);
+    else if (tag === 'indicator') out.blink.push(lamp);
+    else if (tag === 'reverse-light') out.reverse.push(lamp);
+  });
+  for (const k of Object.keys(out)) if (!out[k].length) delete out[k];
+  // (a car with only tail lamps: they brake)
+  if (out.tail && out.tail.every(t => t.brake === false)) for (const t of out.tail) delete t.brake;
+  return JSON.parse(JSON.stringify(out));
+};

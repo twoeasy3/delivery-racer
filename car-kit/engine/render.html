@@ -1,0 +1,11 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>car kit render page</title></head>
+<body style="margin:0;background:#20242c">
+<script type="module">
+// the page tools/render.mjs drives: window.renderSpec(spec) -> { images, sheet, order, labels }
+import * as THREE from './vendor/three.module.min.js';
+import { renderViews } from './views.mjs';
+window.renderSpec = async (spec, opts = {}) => { const out = renderViews(THREE, spec, opts); out.sheet = await out.sheet; return out; };
+window.kitReady = true;
+</script>
+</body></html>

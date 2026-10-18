@@ -1,0 +1,262 @@
+{
+ "//": [
+  "A WINDOWED MINIBUS (class tall): two EXTRUDES. The lower body (flat flanks: the decal area) gives the short bonnet; the glasshouse",
+  "on it (2 cm narrower, its foot buried in the lower body) gives the raked windscreen and the long flat roof, tumblehome narrowing it",
+  "10% toward the roof. The side windows are flat panels on that narrowed flank, the front one parallel to the windscreen pillar, all",
+  "sharing one top line under the roof."
+ ],
+ "format": "carkit/1",
+ "id": "van",
+ "name": "Shuttle Van",
+ "class": "tall",
+ "description": "A boxy windowed minibus: short bonnet, raked screen, a long glasshouse, two-tone.",
+ "livery": {
+  "good": {
+   "body": "#ff9f43",
+   "accent": "#f4f4f4"
+  },
+  "evil": {
+   "body": "#1f3a3a",
+   "accent": "#2b2b30"
+  }
+ },
+ "parts": [
+  {
+   "//": "THE LOWER BODY: a side view, extruded 2.0 m wide with a 6 cm bevel (the outline grows 6 cm all round): flat flanks up to the waist",
+   "name": "body",
+   "role": "body",
+   "shape": "extrude",
+   "width": 2,
+   "bevel": 0.06,
+   "curveSegments": 3,
+   "profile": [
+    [2.42, 0.32],
+    [2.48, 0.78, 0.08],
+    [2.18, 1.06, 0.06],
+    [1.55, 1.2],
+    [-2.45, 1.2],
+    [-2.45, 0.32]
+   ]
+  },
+  {
+   "//": "THE GLASSHOUSE: the raked windscreen face and the roof; its foot (1.04) is inside the lower body; its back 1 cm forward of the body's (never one plane)",
+   "name": "glasshouse",
+   "role": "body",
+   "shape": "extrude",
+   "width": 1.96,
+   "bevel": 0.06,
+   "curveSegments": 3,
+   "tumblehome": 0.1,
+   "profile": [
+    [1.6, 1.1],
+    [0.92, 2.08, 0.1],
+    [-2.3, 2.08, 0.1],
+    [-2.44, 1.95, 0.06],
+    [-2.44, 1.1]
+   ]
+  },
+  {
+   "//": "colour blocking: an accent band along the waist, 6 mm proud of the flank (never in its plane)",
+   "name": "waist band",
+   "role": "accent",
+   "shape": "box",
+   "size": [0.006, 0.1, 4.3],
+   "at": [1.003, 1.14, -0.08],
+   "mirror": true
+  },
+  {
+   "name": "windscreen",
+   "role": "glass",
+   "tag": "windscreen",
+   "shape": "panel",
+   "points": [
+    [-0.8389, 1.3152, 1.5335],
+    [0.8389, 1.3152, 1.5335],
+    [0.7822, 1.9522, 1.0915],
+    [-0.7822, 1.9522, 1.0915]
+   ]
+  },
+  {
+   "name": "side window",
+   "role": "glass",
+   "tag": "side-window",
+   "shape": "panel",
+   "mirror": true,
+   "points": [
+    [0.963, 1.3207, 1.4004],
+    [0.9114, 1.9007, 0.9979],
+    [0.9114, 1.9007, 0.35],
+    [0.963, 1.3207, 0.35]
+   ]
+  },
+  {
+   "name": "side window 2",
+   "role": "glass",
+   "tag": "side-window",
+   "shape": "panel",
+   "mirror": true,
+   "points": [
+    [0.963, 1.3207, 0.2],
+    [0.9114, 1.9007, 0.2],
+    [0.9114, 1.9007, -0.85],
+    [0.963, 1.3207, -0.85]
+   ]
+  },
+  {
+   "name": "side window 3",
+   "role": "glass",
+   "tag": "side-window",
+   "shape": "panel",
+   "mirror": true,
+   "points": [
+    [0.963, 1.3207, -1],
+    [0.9114, 1.9007, -1],
+    [0.9114, 1.9007, -2.2],
+    [0.963, 1.3207, -2.2]
+   ]
+  },
+  {
+   "name": "rear window",
+   "role": "glass",
+   "tag": "rear-window",
+   "shape": "panel",
+   "points": [
+    [-0.72, 1.32, -2.508],
+    [-0.72, 1.9, -2.508],
+    [0.72, 1.9, -2.508],
+    [0.72, 1.32, -2.508]
+   ]
+  },
+  {
+   "name": "headlamp",
+   "role": "light-front",
+   "tag": "headlight",
+   "shape": "box",
+   "size": [0.34, 0.16, 0.05],
+   "at": [0.66, 0.62, 2.55],
+   "mirror": true
+  },
+  {
+   "name": "indicator",
+   "role": "light-indicator",
+   "tag": "indicator",
+   "shape": "box",
+   "size": [0.12, 0.08, 0.04],
+   "at": [0.9, 0.62, 2.545],
+   "mirror": true
+  },
+  {
+   "name": "grille",
+   "role": "black",
+   "tag": "grille",
+   "shape": "box",
+   "size": [0.74, 0.16, 0.04],
+   "at": [0, 0.62, 2.55]
+  },
+  {
+   "name": "front bumper",
+   "role": "trim",
+   "tag": "bumper",
+   "shape": "box",
+   "size": [2.02, 0.2, 0.2],
+   "at": [0, 0.36, 2.52]
+  },
+  {
+   "name": "rear bumper",
+   "role": "trim",
+   "tag": "bumper",
+   "shape": "box",
+   "size": [2.02, 0.2, 0.2],
+   "at": [0, 0.36, -2.5]
+  },
+  {
+   "name": "tail lamp",
+   "role": "light-rear",
+   "tag": "taillight",
+   "shape": "box",
+   "size": [0.16, 0.3, 0.04],
+   "at": [0.84, 1, -2.52],
+   "mirror": true
+  },
+  {
+   "name": "rear plate",
+   "role": "plate",
+   "tag": "plate-rear",
+   "shape": "box",
+   "size": [0.42, 0.12, 0.02],
+   "at": [0, 0.62, -2.517]
+  },
+  {
+   "name": "mirror",
+   "role": "trim",
+   "tag": "mirror",
+   "shape": "box",
+   "size": [0.08, 0.2, 0.14],
+   "at": [1, 1.55, 1.25],
+   "mirror": true
+  },
+  {
+   "//": "a roof vent: a flat dome (a sphere with dome: true is a closed half sphere), left out of the roof mount's area",
+   "name": "roof vent",
+   "role": "trim",
+   "shape": "sphere",
+   "radii": [0.22, 0.08, 0.22],
+   "dome": true,
+   "segments": [12, 6],
+   "at": [0, 2.13, 0.45]
+  }
+ ],
+ "wheels": [
+  {
+   "at": [0.92, 1.62],
+   "radius": 0.38,
+   "width": 0.28,
+   "mirror": true
+  },
+  {
+   "at": [0.92, -1.65],
+   "radius": 0.38,
+   "width": 0.28,
+   "mirror": true
+  }
+ ],
+ "mounts": {
+  "roof": {
+   "at": [0, 2.14, -0.95],
+   "size": [1.4, 2.2],
+   "height": 0.6,
+   "surface": "glasshouse",
+   "note": "the long flat roof behind the vent"
+  },
+  "cargo": {
+   "none": "a minibus is all seats: no load bed or open deck"
+  },
+  "wing": {
+   "at": [0, 2.14, -2.2],
+   "size": [1.4, 0.12],
+   "height": 0.35,
+   "surface": "glasshouse",
+   "note": "the roof's rear edge"
+  },
+  "plate-front": {
+   "at": [0, 0.36, 2.62],
+   "size": [0.42, 0.11],
+   "surface": "front bumper"
+  },
+  "plate-rear": {
+   "at": [0, 0.62, -2.527],
+   "size": [0.42, 0.12],
+   "surface": "rear plate"
+  },
+  "decals": [
+   {
+    "name": "flank",
+    "side": "both",
+    "at": [1, 0.82, -0.02],
+    "size": [2.1, 0.46],
+    "surface": "body",
+    "note": "below the waist band, between the wheels"
+   }
+  ]
+ }
+}
