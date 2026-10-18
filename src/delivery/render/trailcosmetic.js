@@ -8,7 +8,7 @@
 //   loadoutKey, as the kill effect is not: a still or a live model is never rebuilt for it.
 //   Cars: every car but those with no wheels of their own to dress (the wheels' rule, render/cosmeticslots.js: the Tank and the
 //   amphibious tank, car.tank, and the Saucer, car.ufo): no Trail tab on them, and their turbo stays Classic.
-//   In a run: render/turbotrails.js asks shownTrail(CAR.id) at every level load (?turbotrail=<name> still overrides it, for tests).
+//   In a run: render/turbotrails.js asks shownTrail(CAR.id) at every level load and on a loadout or car change (CHECKLIST 482) (?turbotrail=<name> still overrides it, for tests).
 // Render-only: no rules module imports this; it is not in the replay fingerprint.
 import { registerCosmetics, ownsCosmetic } from './cosmetics.js';
 import * as Store from './loadoutstore.js';

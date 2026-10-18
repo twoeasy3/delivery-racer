@@ -5,6 +5,7 @@
 //   - Unlock everything: Absolutely gives 999 of each; the tab hidden on the cars that cannot show it (the wheels' rule: the Tank(s), the Saucer)
 //   - the game: the car's turbo wears its equipped trail (render/turbotrails.js wornTrail; ?turbotrail= / setTurboTrail pins one over it);
 //     the trail mesh is never under the car (the Ghost power-up and a blackout leave it alone); the replay ghost never draws one
+//   - IN A RUN (CHECKLIST 482): equipped between two runs on the SAME level (no level load between), worn, alive, drawn, behind the car
 //   - the PREVIEW: every style (and its lite) drawn by the game's own code behind a car standing still, behind its tail, in the given parent
 //     (no renderer of its own), flagged shared (the showroom's scene let go never disposes it), hidden and empty once cleared
 //   - render-only: the replay fingerprint unchanged
@@ -74,6 +75,66 @@ const { carMesh } = await load('render/cars.js');
 let under = false; carMesh.traverse(o => { if (o === TT.trailMesh()) under = true; });
 check(!under, 'the trail is never under the car: the Ghost power-up (items.js ghostify) and a blackout (render/silhouette.js) leave it alone');
 check(!/turbotrails|syncTurboTrail/.test(readFileSync(new URL('../src/delivery/render/ghostcar.js', import.meta.url), 'utf8')), 'the replay ghost (render/ghostcar.js) draws no turbo trail');
+
+// ---- IN A RUN, as a player gets there (CHECKLIST 482): a run on a level, back to the menu, a trail equipped, the SAME level started again
+// (Game.start builds a level only when it is not the one built already, so no level load comes between), the turbo on: a second of
+// main.js's frame (the logic stepped, the car placed, syncTurboTrail) and the equipped trail must be the one drawn, alive, behind the car.
+// (The bug: the trail was picked only at a level load, so this run kept the Classic cubes.) Then another car put in the same way.
+{
+  const levels = await load('levels.js');
+  const { Game } = await load('game.js');
+  const { Player } = await load('player.js');
+  const { CONFIG } = await load('config.js');
+  const TR = await load('track.js');
+  const GC = await load('render/gameclock.js');
+  const { Traffic } = await load('traffic.js');
+  TT.followLoadout(false); // (nothing pinned: the car's own, as in a real visit)
+  Progress.data.cars = [...new Set([...(Progress.data.cars || []), 'commuter', 'hothatch'])];
+  CONFIG.progression.tiers = false;
+  Store.resetCar('commuter'); Store.resetCar('hothatch');
+  const logicStep = (st) => { const before = Game.step; Game.update(st); return Game.step !== before; };
+  const run = (secs) => { // (main.js's frame, the turbo held on, nothing to hit)
+    for (let i = 0; i < secs * 60; i++) {
+      const gdt = GC.stepGame(1 / 60, { paused: Game.paused, scale: 1, update: logicStep });
+      Player.turbo = 5; Player.speed = Math.max(Player.speed, 30);
+      for (const c of Traffic.cars) if (!c.fixed) c.active = false;
+      const heading = TR.Track.toWorld(Player.s, Player.lat, carMesh.position);
+      carMesh.rotation.y = heading - Player.yaw;
+      TT.syncTurboTrail(gdt);
+    }
+  };
+  const begin = (carId) => {
+    Progress.data.car = carId;
+    Game.start(); GC.resetGameClock();
+    Object.assign(Player, { s: 700, lat: TR.Track.laneOffset(1, 700), speed: 30, launching: false, turbo: 5 });
+    Player.testGhost = true;
+  };
+  // where the live particles are, along the car (metres ahead of its middle: below 0 is behind it)
+  const along = () => {
+    const m = TT.trailMesh(), out = [];
+    const fw = new THREE.Vector3(), mid = new THREE.Vector3(), p = new THREE.Vector3();
+    TR.Track.toWorld(Player.s + 1, Player.lat, fw); TR.Track.toWorld(Player.s, Player.lat, mid); fw.sub(mid).setY(0).normalize();
+    if (m?.isInstancedMesh) { const e = m.instanceMatrix.array; for (let k = 0; k < m.count; k++) out.push(p.set(e[k * 16 + 12], e[k * 16 + 13], e[k * 16 + 14]).sub(mid).dot(fw)); }
+    else if (m) { const a = m.geometry.attributes.position.array, n = m.geometry.drawRange.count === Infinity ? a.length / 3 : Math.min(a.length / 3, m.geometry.drawRange.count); for (let k = 0; k < n; k++) out.push(p.set(a[k * 3], a[k * 3 + 1], a[k * 3 + 2]).sub(mid).dot(fw)); }
+    return out;
+  };
+  levels.selectLevel(0);
+  begin('commuter'); run(0.5);
+  check(TT.turboTrailStyle() === 'classic', 'a first run on the level, nothing equipped: Classic (' + TT.turboTrailStyle() + ')');
+  const built = Game.loaded;
+  Game.exit();
+  for (const [car, style] of [['commuter', 'flame'], ['commuter', 'embers'], ['hothatch', 'twin']]) {
+    T.setTrail(style, car); // (the Cosmetics screen's tap, on that car)
+    begin(car);
+    const sameLevel = Game.loaded === built;
+    run(1);
+    const xs = along(), behind = xs.filter(x => x < 0).length;
+    check(sameLevel && TT.turboTrailStyle() === style && TT.liveCount() > 0 && TT.drawn() && TT.trailMesh()?.parent && xs.length && behind / xs.length > 0.8,
+      'equipped ' + style + ' on the ' + car + ' between two runs on the same level (no level load: ' + sameLevel + '): worn in the run (' + TT.turboTrailStyle() + '), ' + TT.liveCount() + ' alive, ' + (TT.drawn() ? 'drawn' : 'NOT drawn') + ', ' + behind + ' of ' + xs.length + ' points behind the car');
+    Game.exit();
+  }
+  Store.resetCar('commuter'); Store.resetCar('hothatch');
+}
 TT.setTurboTrail('classic');
 
 // ---- the preview ----
