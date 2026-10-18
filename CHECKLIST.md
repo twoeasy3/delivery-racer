@@ -1327,3 +1327,27 @@ Working list, from the owner's ideas of 2026-10-09. `[x]` done, `[~]` partly don
     - A JSON-Schema validator run on schema/car.schema.json (engine/validate.mjs is the authority).
     - A real external agent using the kit.
     - Windows or macOS for the browser finder.
+  - WING FIX (the owner, 18-Oct: "the wing placement box looks too narrow").
+    - The bug: the importer scaled the wing slot by its footprint's depth (0.1 m / 0.3), giving the Junker 0.333 against the game's 1.13.
+    - The game's generator (scripts/prop-audit-lib.mjs) scales a wing by its width, capped at 0.95 of the surface under it, and lets the blade hang over the tail (airRows).
+    - Measured over the game's prop table (195 wing rows, scale median 1.13):
+      - wing width / surface width under it: median 0.92, p10 0.76, p5 0.59, max 0.97;
+      - wing width / car width at its z: median 0.84;
+      - roof width / body width: median 0.66, p10 0.34; roof length / car length: median 0.24, p10 0.15;
+      - cargo width / body width: median 0.31, p5 0.19; cargo length / car length: median 0.17, p10 0.11.
+    - Fixed:
+      - Importer: wing scale = min(width / 1.4, height / 0.35).
+      - The kit's mount frames carry a `bound`: a wing's blade is width x 0.3 / 1.4 deep. The checker's free-above and overlap tests use it, and the debug view draws the bound box plus the footprint.
+      - New checks: mount-wing-width (warn under 75%, fail under 60% or over 102% of the surface under it), mount-roof-size and mount-cargo-size (thresholds as above).
+      - Selftest: two new cases (a too-narrow wing, a sliver roof), 20 / 20 right.
+      - Examples:
+        - Junker wing 1.6 -> 1.58 m (78% of the bed's 2.02; the game's own is 1.58); Junker roof [1.7 x 1.1, 0.6 high] -> [1.9 x 1.3, 0.9 high];
+        - hatchback wing 1.1 -> 1.24 (91%);
+        - van 1.4 -> 1.6 (90%);
+        - panel van 1.6 -> 1.8 (90%).
+    - Imported Junker vs the game's own row:
+      - wing box scale 0.333 -> 1.129 (game 1.13); its height 1.443 (game 1.443); cylinder 1.129 at 1.414 (game 1.13 at 1.415); z -2.43 (game -2.48);
+      - roof 1.2 -> 1.625 (game 1.73);
+      - cargo 1.1 (game 1.06).
+    - Verify still passes. Sheets re-rendered and READ. Before / after of the Junker's mount view in the scratchpad `car-kit/wingfix/`. car-kit.zip re-zipped and run clean.
+    - NOT VERIFIED: the rows in the game's own propanchors table and how a fitted wing looks on the imported car; the wing's "from" kind (the importer writes deck-edge where the game says bed-tail for a bed).

@@ -39,7 +39,7 @@ const spec = {
   mounts: {
     roof: { at: [0, 2.17, -0.8], size: [1.6, 2.6], height: 0.6, surface: 'body' },
     cargo: { none: 'a closed panel van: the load is inside, there is no open deck' },
-    wing: { at: [0, 2.17, -2.35], size: [1.6, 0.12], height: 0.35, surface: 'body', note: 'the roof\'s rear edge' },
+    wing: { at: [0, 2.17, -2.35], size: [1.8, 0.12], height: 0.35, surface: 'body', note: 'the roof\'s rear edge' },
     'plate-front': { at: [0, 0.34, 2.57], size: [0.42, 0.11], surface: 'front bumper' },
     'plate-rear': { at: [0, 0.6, -2.567], size: [0.42, 0.12], surface: 'rear plate' },
     decals: [

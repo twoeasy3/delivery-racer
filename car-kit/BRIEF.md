@@ -99,7 +99,7 @@ The game's median car has about 1,850 triangles. The Junker has 2,352.
 - **Headlights** (`light-front`, tag `headlight`) and **tail lamps** (`light-rear` / `light-brake`, tag `taillight` / `brake-light`).
   Indicators if the real kind of car has them.
 - **Mounts**:
-  - `roof`, `cargo` and `wing`: each is an area, or `none` with the reason.
+  - `roof`, `cargo` and `wing`: each is an area, or `none` with the reason. A wing is as wide as the rear it stands on: 75-100%, the game's median 92%.
   - At least one flank decal area, on both sides.
   - Number plates are recommended.
 

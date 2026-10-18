@@ -150,9 +150,9 @@
   ],
   "mounts": {
     "//": "Where cosmetics go. at = the middle of the free area ON the surface; size = [across, along] (decals: [along, up]); height = free space above it.",
-    "roof": { "at": [0, 1.815, 0.19], "size": [1.7, 1.1], "height": 0.6, "surface": "cab roof", "note": "the flat cab roof" },
+    "roof": { "at": [0, 1.815, 0.19], "size": [1.9, 1.3], "height": 0.9, "surface": "cab roof", "note": "the flat cab roof" },
     "cargo": { "at": [0, 0.8, -1.405], "size": [1.1, 1.7], "height": 0.9, "surface": "bed", "note": "the bed floor between the wheel tubs; the tarpaulin load is the slot's own prop and is hidden when a cargo cosmetic is fitted" },
-    "wing": { "at": [0, 1.245, -2.43], "size": [1.6, 0.1], "height": 0.4, "surface": "tailgate", "note": "across the top of the tailgate, between the rails" },
+    "wing": { "at": [0, 1.245, -2.43], "size": [1.58, 0.1], "height": 0.4, "surface": "tailgate", "note": "the wing's stands on the tailgate top; size [across, along] is its width (78% of the bed's 2.02 m: the game's own Junker wing is 1.58 m) and the stands' footprint; its blade, 0.3 / 1.4 of its width deep (34 cm), may hang over the tail" },
     "plate-front": { "at": [0, 0.44, 2.64], "size": [0.46, 0.115], "surface": "front bumper" },
     "plate-rear": { "at": [0, 0.44, -2.619], "size": [0.4, 0.13], "surface": "rear plate" },
     "decals": [

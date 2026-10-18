@@ -53,7 +53,7 @@ export default {
   mounts: {
     roof: { at: [0, 1.44, -0.4], size: [1.1, 1.2], height: 0.6, surface: 'cabin', note: 'the flat of the roof' },
     cargo: { none: 'a hatchback has no load bed or open deck' },
-    wing: { at: [0, 1.44, -1.1], size: [1.1, 0.08], height: 0.35, surface: 'cabin', note: 'the roof\'s rear edge, over the hatch' },
+    wing: { at: [0, 1.44, -1.1], size: [1.24, 0.08], height: 0.35, surface: 'cabin', note: 'the roof\'s rear edge, over the hatch' },
     'plate-front': { at: [0, 0.33, 2.03], size: [0.42, 0.11], surface: 'front bumper' },
     'plate-rear': { at: [0, 0.55, -1.968], size: [0.42, 0.12], surface: 'rear plate' },
     decals: [{ name: 'door', side: 'both', at: [0.9, 0.59, 0], size: [1.7, 0.32], surface: 'tub', note: 'the flat flank between the wheels, under the shoulder' }],

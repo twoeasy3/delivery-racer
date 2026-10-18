@@ -1,7 +1,7 @@
 // ---- CAR KIT CHECKS: measure a built spec against the rules (three.js passed in; Node or browser) -----------------------------
 // runChecks(THREE, spec) -> { results: [{ id, status: 'pass' | 'warn' | 'fail', what, detail }], stats }
 // Every check is geometry, measured: no pictures. Thresholds are in the code next to each check and in FORMAT.md.
-import { buildCar, expandWheels, expandParts, GLASS_TAGS, mountFrames, framePoint } from './build.mjs';
+import { buildCar, expandWheels, expandParts, GLASS_TAGS, mountFrames, framePoint, boundPoint } from './build.mjs';
 import { validateSpec } from './validate.mjs';
 import { CLASSES, BUDGETS, RATIO } from './classes.mjs';
 import { findZFights } from './zfight.mjs';
@@ -371,9 +371,10 @@ export const runChecks = (THREE, spec) => {
       const clip = new Set();
       for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) {
         const a = -0.95 + 1.9 * i / 4, b = -0.95 + 1.9 * j / 4;
-        const base = V3(framePoint(f, a, b, 0));
+        const base = V3(boundPoint(f, a, b, 0));
         const top = cast(base.clone().addScaledVector(n, 0.3), n.clone().negate(), 0.6).filter(x => !glassMeshes.has(x.object) && !own(x.object) && !x.object.userData.wheel)[0];
-        const from = base.clone().addScaledVector(n, (top ? 0.3 - top.distance : 0) + 0.01);
+        // (over the footprint: from its surface; a wing's blade hanging past it: from the mount's own level)
+        const from = base.clone().addScaledVector(n, (top && Math.abs(0.3 - top.distance) < 0.08 ? 0.3 - top.distance : 0) + 0.01);
         for (const h of cast(from, n, f.height)) if (!own(h.object)) { clip.add(h.object.userData.part || h.object.name); break; }
       }
       if (clip.size) problems.push('not free: ' + [...clip].join(', ') + ' inside the ' + cm(f.height) + ' above it');
@@ -382,12 +383,49 @@ export const runChecks = (THREE, spec) => {
     add('mount-' + f.name.replace(/\s+/g, '-'), problems.length ? 'fail' : notes.length ? 'warn' : 'pass', label + ' area on the body, flat and free',
       (problems.length ? problems.join('; ') + '. ' : notes.length ? notes.join('; ') + '. ' : '') + f.size.map(v => f2(v)).join(' x ') + ' m' + (f.kind === 'prop' ? ', ' + f2(f.height) + ' m free above' : '') + ', at ' + f.at.map(v => v.toFixed(2)).join(',') + ', depth ' + cm(depth) + ', curve ' + curve.toFixed(0) + ' deg');
   }
+  // ---- mount PROPORTIONS against the body (measured from the game's own prop table over its cars, 18-Oct; FORMAT.md):
+  //   wing width / the width of the surface under it (the game caps it at 0.95): median 0.92, p10 0.76, p5 0.59 -> warn under 0.75,
+  //     fail under 0.6, fail over 1.02 (it would overhang the sides)
+  //   roof width / the body's width (no wheels, no mirrors): median 0.66, p10 0.34 -> warn under 0.4, fail under 0.25; roof length /
+  //     the car's length: median 0.24, p10 0.15 -> warn under 0.12
+  //   cargo width / the body's width: median 0.31, p5 0.19 -> warn under 0.25, fail under 0.15; cargo length / the car's length:
+  //     median 0.17, p10 0.11 -> warn under 0.1
+  const bodyBox = new THREE.Box3();
+  for (const p of parts) if (!p.wheel && !p.glass && p.tag !== 'mirror') bodyBox.union(p.box);
+  const bodyW = bodyBox.max.x - bodyBox.min.x, carL = size.z;
+  // the surface's own width under a point: rays down every 2 cm across the car at z, hits within 15 cm under y (and 5 cm over it)
+  const surfaceWidth = (y, z) => {
+    let lo = Infinity, hi = -Infinity;
+    for (let x = bodyBox.min.x - 0.05; x <= bodyBox.max.x + 0.05; x += 0.02) {
+      const h = cast(new THREE.Vector3(x, y + 0.6, z), new THREE.Vector3(0, -1, 0), 1).filter(hh => !glassMeshes.has(hh.object) && !hh.object.userData.wheel && !hh.object.userData.prop)[0];
+      if (h && h.point.y <= y + 0.05 && h.point.y >= y - 0.15) { lo = Math.min(lo, x); hi = Math.max(hi, x); }
+    }
+    return hi > lo ? hi - lo + 0.02 : 0;
+  };
+  const grade2 = (v, warnLo, failLo, failHi = Infinity) => (v < failLo || v > failHi ? 'fail' : v < warnLo ? 'warn' : 'pass');
+  for (const f of frames.filter(fr => fr.kind === 'prop')) {
+    const across = f.size[1], along = f.size[0];
+    if (f.slot === 'wing') {
+      const sw = Math.max(surfaceWidth(f.at[1], f.at[2]), surfaceWidth(f.at[1], f.at[2] + along / 2), surfaceWidth(f.at[1], f.at[2] - along / 2));
+      const r = sw ? across / sw : 0;
+      add('mount-wing-width', grade2(r, 0.75, 0.6, 1.02), 'wing mount as wide as the rear (75-100% of the surface under it)',
+        'the wing is ' + f2(across) + ' m across, the surface under it ' + f2(sw) + ' m: ' + Math.round(r * 100) + '% (the game\'s cars: median 92%, never over 95%; warn under 75%, fail under 60% or over 102%). It takes a blade ' + f2(f.bound[0]) + ' m deep, may hang over the tail');
+    } else if (f.slot === 'roof') {
+      const r = across / bodyW, l = along / carL;
+      add('mount-roof-size', r < 0.25 ? 'fail' : r < 0.4 || l < 0.12 ? 'warn' : 'pass', 'roof mount a sensible share of the car',
+        f2(across) + ' m across = ' + Math.round(r * 100) + '% of the body width ' + f2(bodyW) + ' (game median 66%; warn under 40%, fail under 25%), ' + f2(along) + ' m along = ' + Math.round(l * 100) + '% of the length (median 24%; warn under 12%)');
+    } else if (f.slot === 'cargo') {
+      const r = across / bodyW, l = along / carL;
+      add('mount-cargo-size', r < 0.15 ? 'fail' : r < 0.25 || l < 0.1 ? 'warn' : 'pass', 'cargo mount a sensible share of the car',
+        f2(across) + ' m across = ' + Math.round(r * 100) + '% of the body width (game median 31%; warn under 25%, fail under 15%), ' + f2(along) + ' m along = ' + Math.round(l * 100) + '% of the length (median 17%; warn under 10%)');
+    }
+  }
   // mounts do not overlap each other (their boxes: the area times its free height)
-  const insideFrame = (q, f) => { const d = [q[0] - f.at[0], q[1] - f.at[1], q[2] - f.at[2]]; const a = d[0] * f.u[0] + d[1] * f.u[1] + d[2] * f.u[2], b = d[0] * f.v[0] + d[1] * f.v[1] + d[2] * f.v[2], c = d[0] * f.n[0] + d[1] * f.n[1] + d[2] * f.n[2]; return Math.abs(a) < f.size[0] / 2 && Math.abs(b) < f.size[1] / 2 && c > -0.01 && c < f.height; };
+  const insideFrame = (q, f) => { const d = [q[0] - f.at[0], q[1] - f.at[1], q[2] - f.at[2]]; const a = d[0] * f.u[0] + d[1] * f.u[1] + d[2] * f.u[2], b = d[0] * f.v[0] + d[1] * f.v[1] + d[2] * f.v[2], c = d[0] * f.n[0] + d[1] * f.n[1] + d[2] * f.n[2]; return Math.abs(a) < f.bound[0] / 2 && Math.abs(b) < f.bound[1] / 2 && c > -0.01 && c < f.height; };
   const overlaps = [];
   for (let i = 0; i < frames.length; i++) for (let j = i + 1; j < frames.length; j++) {
     const A = frames[i], B = frames[j]; let hit = false;
-    for (let a = -0.9; a <= 0.91 && !hit; a += 0.3) for (let b = -0.9; b <= 0.91 && !hit; b += 0.3) for (const c of [0.005, A.height / 2, A.height * 0.95]) if (insideFrame(framePoint(A, a, b, c), B)) { hit = true; break; }
+    for (let a = -0.9; a <= 0.91 && !hit; a += 0.3) for (let b = -0.9; b <= 0.91 && !hit; b += 0.3) for (const c of [0.005, A.height / 2, A.height * 0.95]) if (insideFrame(boundPoint(A, a, b, c), B)) { hit = true; break; }
     if (hit) overlaps.push(A.name + ' / ' + B.name);
   }
   if (frames.length) add('mounts-apart', overlaps.length ? 'fail' : 'pass', 'mount areas do not overlap', overlaps.length ? overlaps.join(', ') : frames.length + ' areas, none overlapping');

@@ -518,7 +518,11 @@ export const mountFrames = (spec) => {
     if (kind === 'decal' && v[1] < -0.5) v = v.map(c => -c); // (a flank decal reads upright: v up)
     // roof / cargo / wing: size is [across, along]; the frame's u is along, so su = along
     const size = kind === 'prop' ? [m.size[1], m.size[0]] : m.size.slice();
-    out.push({ kind, slot, name, side, at: flipX(m.at), n, u, v, size, height: m.height ?? (kind === 'decal' ? 0.004 : 0.01), surface: m.surface, maxCurve: m.maxCurve ?? 12, maxDepth: m.maxDepth ?? 0.015, spec: m });
+    // bound: the volume a prop placed there takes. A WING is a blade across the car whose depth goes with its width (the game's
+    // canonical wing box is 1.4 : 0.35 : 0.3, width : height : depth), standing on the footprint `size` and free to hang over the tail,
+    // so its bound is the given width by 0.3 / 1.4 of it along (or the footprint, if deeper); roof and cargo take their area
+    const bound = slot === 'wing' ? [Math.max(size[0], size[1] * 0.3 / 1.4), size[1]] : size.slice();
+    out.push({ kind, slot, name, side, at: flipX(m.at), n, u, v, size, bound, height: m.height ?? (kind === 'decal' ? 0.004 : 0.01), surface: m.surface, maxCurve: m.maxCurve ?? 12, maxDepth: m.maxDepth ?? 0.015, spec: m });
   };
   for (const slot of ['roof', 'cargo', 'wing']) if (M[slot] && !M[slot].none && M[slot].at) frame(M[slot], 'prop', slot, slot, 0, false);
   for (const slot of ['plate-front', 'plate-rear']) if (M[slot] && !M[slot].none && M[slot].at) frame(M[slot], 'plate', slot, slot, 0, false);
@@ -533,6 +537,8 @@ export const mountFrames = (spec) => {
 };
 // a point of a frame: at + a * u * su/2 + b * v * sv/2 + c * n  (a, b in -1..1)
 export const framePoint = (f, a, b, c = 0) => [0, 1, 2].map(i => f.at[i] + f.u[i] * a * f.size[0] / 2 + f.v[i] * b * f.size[1] / 2 + f.n[i] * c);
+// the same over the frame's bound (a wing's blade, which may be deeper than its footprint)
+export const boundPoint = (f, a, b, c = 0) => [0, 1, 2].map(i => f.at[i] + f.u[i] * a * f.bound[0] / 2 + f.v[i] * b * f.bound[1] / 2 + f.n[i] * c);
 
 // a glass pane's mesh name, as the game names windows: 'windscreen', 'rear window', 'side window L' ... (a second of a kind numbered)
 const glassName = (e, spec) => {

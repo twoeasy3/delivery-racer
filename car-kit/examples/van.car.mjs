@@ -46,7 +46,7 @@ const spec = {
   mounts: {
     roof: { at: [0, 2.14, -0.95], size: [1.4, 2.2], height: 0.6, surface: 'glasshouse', note: 'the long flat roof behind the vent' },
     cargo: { none: 'a minibus is all seats: no load bed or open deck' },
-    wing: { at: [0, 2.14, -2.2], size: [1.4, 0.12], height: 0.35, surface: 'glasshouse', note: 'the roof\'s rear edge' },
+    wing: { at: [0, 2.14, -2.2], size: [1.6, 0.12], height: 0.35, surface: 'glasshouse', note: 'the roof\'s rear edge' },
     'plate-front': { at: [0, 0.36, 2.62], size: [0.42, 0.11], surface: 'front bumper' },
     'plate-rear': { at: [0, 0.62, -2.527], size: [0.42, 0.12], surface: 'rear plate' },
     decals: [{ name: 'flank', side: 'both', at: [1.0, 0.82, -0.02], size: [2.1, 0.46], surface: 'body', note: 'below the waist band, between the wheels' }],

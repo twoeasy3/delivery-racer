@@ -143,7 +143,12 @@ export const renderViews = (THREE, spec, { only = null } = {}) => {
     for (const f of frames) {
       const colour = MOUNT_COLOURS[f.kind === 'decal' ? 'decal' : f.slot];
       const h = f.kind === 'prop' ? f.height : 0.02;
-      const geo = new THREE.BoxGeometry(f.size[0], f.size[1], h);
+      const geo = new THREE.BoxGeometry(f.bound[0], f.bound[1], h); // (a wing: its blade's whole bound; its footprint drawn flat below)
+      if (f.slot === 'wing') {
+        const foot = new THREE.BoxGeometry(f.size[0], f.size[1], 0.01).applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0, 0.005))
+          .applyMatrix4(new THREE.Matrix4().makeBasis(new THREE.Vector3(...f.u), new THREE.Vector3(...f.v), new THREE.Vector3(...f.n))).translate(...f.at);
+        extra.push(new THREE.Mesh(foot, new THREE.MeshBasicMaterial({ color: 0x800000 })));
+      }
       const basis = new THREE.Matrix4().makeBasis(new THREE.Vector3(...f.u), new THREE.Vector3(...f.v), new THREE.Vector3(...f.n));
       geo.applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0, h / 2)).applyMatrix4(basis).translate(...f.at);
       const boxMesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: colour, transparent: true, opacity: f.kind === 'decal' ? 0.18 : 0.35, depthWrite: false }));

@@ -11,7 +11,7 @@ no network. three.js 0.160.0 is vendored in `engine/vendor`.
 node tools/check.mjs examples/junker.car.json     # the checks: PASS / WARN / FAIL with numbers, exit 1 on any FAIL (Node only)
 node tools/render.mjs examples/junker.car.json    # 25 views + renders/junker/junker-sheet.png (needs Chrome / Chromium)
 node tools/serve.mjs                              # the interactive viewer: open the address it prints
-node tools/selftest.mjs                           # proves the checker catches each defect (breaks a good car 17 ways)
+node tools/selftest.mjs                           # proves the checker catches each defect (breaks a good car 19 ways)
 node tools/tojson.mjs examples/van.car.mjs        # a scripted spec (.car.mjs) -> .car.json
 ```
 

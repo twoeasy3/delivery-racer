@@ -55,7 +55,7 @@ const rebuild = () => {
   scene.add(st.model);
   st.model.traverse((n) => { if (n.isMesh) n.material.wireframe = st.wire; });
   if (st.mounts) for (const f of mountFrames(st.spec)) {
-    const h = f.kind === 'prop' ? f.height : 0.02, geo = new THREE.BoxGeometry(f.size[0], f.size[1], h);
+    const h = f.kind === 'prop' ? f.height : 0.02, geo = new THREE.BoxGeometry(f.bound[0], f.bound[1], h);
     geo.applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0, h / 2)).applyMatrix4(new THREE.Matrix4().makeBasis(new THREE.Vector3(...f.u), new THREE.Vector3(...f.v), new THREE.Vector3(...f.n))).translate(...f.at);
     const c = { roof: 0x2f7bff, cargo: 0x22c55e, wing: 0xff3b3b }[f.slot] ?? (f.kind === 'decal' ? 0xffd400 : 0xffffff);
     st.extra.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.35, depthWrite: false })));

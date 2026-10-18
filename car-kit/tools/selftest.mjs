@@ -27,6 +27,8 @@ const CASES = [
   ['part under the ground', 'above-ground', (s) => { s.parts.push({ name: 'skid', role: 'underbody', shape: 'box', size: [0.5, 0.1, 0.5], at: [0, 0.03, 0] }); return s; }],
   ['roof mount floating over the roof', 'mount-roof', (s) => { s.mounts.roof.at[1] = 1.6; return s; }],
   ['decal area over the windows', 'mount-door-L', (s) => { s.mounts.decals[0].at = [0.77, 1.12, -0.3]; s.mounts.decals[0].normal = [0.97, 0.25, 0]; return s; }],
+  ['wing mount too narrow for the rear', 'mount-wing-width', (s) => { s.mounts.wing.size[0] = 0.6; return s; }],
+  ['roof mount a sliver', 'mount-roof-size', (s) => { s.mounts.roof.size[0] = 0.3; return s; }],
   ['mount areas overlapping', 'mounts-apart', (s) => { s.mounts.wing.at[2] = -0.6; return s; }],
   ['schema error: a part with no role', 'schema', (s) => { delete part(s, 'grille').role; return s; }],
   ['over the triangle budget', 'budget-tris', (s) => { for (let i = 0; i < 6; i++) s.parts.push({ name: 'blob ' + i, role: 'trim', shape: 'sphere', radius: 0.06, segments: [32, 24], at: [0, 1.0, -1.0 - i * 0.12] }); return s; }],

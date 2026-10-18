@@ -167,9 +167,19 @@ The slots:
 |---|---|---|
 | `roof` | a roof box, a sign, a light bar on the roof | every car with a roof has one; an open car says `none` with the reason |
 | `cargo` | a load: a bed, a flat deck, an open back, a rack | only a car with a real load area; otherwise `{ "none": "a hatchback has no load bed" }` |
-| `wing` | a rear spoiler: across the boot lid or rear deck, or the roof's rear edge on vans, hatches and pickup cabs | every car with a rear edge; `none` only for an open car with no rear structure |
+| `wing` | a rear spoiler: across the boot lid or rear deck, or the roof's rear edge on vans, hatches and pickup cabs. `size` is `[its width, the footprint its stands sit on]`. The prop is scaled by its WIDTH: its blade is 0.3 / 1.4 of the width deep (a 1.6 m wing, 34 cm) and may hang over the tail. The checker draws and tests that whole blade | every car with a rear edge; `none` only for an open car with no rear structure. Make it 75-100% as wide as the surface under it: the game's cars are a median 92%, never over 95% |
 | `plate-front`, `plate-rear` | a flat place about 0.42 x 0.12 m on the centre line, clear of lamps and glass | optional, recommended |
 | `decals` | flat or gently curved panels of PAINT: flanks (both sides), bonnet, tailgate | at least one flank area on both sides |
+
+The proportions checked are measured from the game's own prop table:
+
+| slot | measure | game median | warn under | fail |
+|---|---|---|---|---|
+| wing | width / the surface under it | 92% | 75% | under 60% or over 102% |
+| roof | width / the body | 66% | 40% | under 25% |
+| roof | length / the car | 24% | 12% | |
+| cargo | width / the body | 31% | 25% | under 15% |
+| cargo | length / the car | 17% | 10% | |
 
 To see them drawn, look at the last row of any example's contact sheet (`examples/sheets/<id>-sheet.png`). Each area is a
 translucent box in its slot's colour:

@@ -233,7 +233,7 @@
   },
   "wing": {
    "at": [0, 2.14, -2.2],
-   "size": [1.4, 0.12],
+   "size": [1.6, 0.12],
    "height": 0.35,
    "surface": "glasshouse",
    "note": "the roof's rear edge"

@@ -58,8 +58,13 @@ for (const slot of ['roof', 'cargo', 'wing']) {
   const m = SPEC.mounts[slot];
   if (!m || m.none) { PROPS[slot] = { no: m?.none || 'no area given' }; continue; }
   const [W, L] = m.size, H = m.height, [bw, bh, bd] = PROP_BOUNDS[slot].box, c = PROP_BOUNDS[slot].cylinder;
-  const sb = Math.min(W / bw, L / bd, H / bh), lim = sb === W / bw ? 'w' : sb === L / bd ? 'd' : 'h';
-  const sc = c.axis === 'x' ? Math.min(W / c.height, L / (2 * c.radius), H / (2 * c.radius)) : Math.min(W / (2 * c.radius), L / (2 * c.radius), H / c.height);
+  // a WING is scaled by its width (and the free height) only: its footprint is where its stands sit, and its blade, 0.3 / 1.4 of its
+  // width deep, may hang over the tail as the game's generator lets it (scripts/prop-audit-lib.mjs airRows; WIDTH_CAP 0.95 of the
+  // surface). Scaling it by the footprint's depth made the Junker's 0.33 against the game's 1.13 (CHECKLIST 481). Roof and cargo: the
+  // whole box inside the area and the height
+  const wing = slot === 'wing';
+  const sb = wing ? Math.min(W / bw, H / bh) : Math.min(W / bw, L / bd, H / bh), lim = sb === W / bw ? 'w' : sb === H / bh ? 'h' : 'd';
+  const sc = c.axis === 'x' ? Math.min(W / c.height, H / (2 * c.radius)) : Math.min(W / (2 * c.radius), L / (2 * c.radius), H / c.height);
   const cylH = c.axis === 'x' ? 2 * c.radius : c.height;
   PROPS[slot] = { box: [r3(sb), r3(m.at[0]), r3(m.at[1] + bh * sb / 2), r3(m.at[2]), 0], cyl: [r3(sc), r3(m.at[0]), r3(m.at[1] + cylH * sc / 2), r3(m.at[2]), 0], from: FROM[slot], lim, conf: 'carkit' };
 }
