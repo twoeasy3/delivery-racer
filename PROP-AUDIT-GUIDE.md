@@ -156,6 +156,18 @@ cargo 1 x 0.8 x 1.2, wing 1.4 x 0.35 x 0.3. Seen in stills /tmp/prop-maxscale/*.
 | roof | roof-horns (Speakers) | 1.6 | 0.60 x 0.79 x 1.22 | two big PA horns (0.6 m rims); at 1.2 they were specks on a van |
 | roof | roof-donut (Giant doughnut) | 1.6 | 0.66 x 0.78 x 0.25 | a shop's novelty sign: a doughnut ~0.65 m across |
 | roof | roof-cones (Cone stack) | 1.5 | 1.44 x 0.72 x 0.38 | road-works cones ~0.7 m tall, 0.36 m bases |
+| roof | roof-kayak (Kayak) | 2.0 | 1.88 x 0.38 x 1.58 | a 1.6 m play kayak (the 1.88 is the bars) |
+| roof | roof-lightbar (Light bar) | 1.2 | 1.15 x 0.21 x 0.29 | an emergency light bar ~1.2 m |
+| roof | roof-pizza (Pizza sign) | 1.6 | 0.83 x 0.79 x 0.26 | a shop's novelty sign, as the doughnut |
+| roof | roof-trophy (Trophy) | 1.4 | 0.63 x 0.69 x 0.46 | a novelty cup ~0.7 m tall |
+| roof | roof-bunting (Bunting) | 1.5 | 1.37 x 0.61 x 1.13 | 0.6 m posts at the roof's corners |
+| roof | roof-turbine (Wind turbine) | 1.8 | 0.69 x 0.87 x 0.44 | a small turbine; at 1.6 it read as a speck |
+| roof | roof-luggage (Suitcases) | 1.2 | 1.13 x 0.43 x 0.91 | a large suitcase ~0.75 x 0.85 m |
+| roof | roof-tree (Fir tree) | 2.0 | 0.66 x 0.70 x 1.52 | a 1.5 m tree |
+| roof | roof-fin (Shark fin) | 1.5 | 0.24 x 0.75 x 0.98 | a novelty fin ~0.75 m tall |
+| roof | roof-sofa (Sofa) | 1.8 | 0.93 x 0.69 x 1.37 | a two-seat sofa ~1.4 m |
+| roof | roof-key (Wind-up key) | 1.8 | 0.72 x 0.81 x 0.29 | a novelty key ~0.8 m tall; at 1.5 a speck |
+| roof | roof-solar (Solar panels) | 1.5 | 1.44 x 0.10 x 1.14 | a camper's panels ~1.4 x 1.1 m |
 | cargo | cargocrates (Crate stack) | 1.5 | 1.44 x 1.13 x 1.71 | crates up to ~0.9 m; a truck bed takes a big stack |
 | cargo | cargobarrel (Barrel) | 0.9 | 0.82 x 0.72 x 0.84 | a cask / drum (~0.6-0.8 m); at 1.1 it read as a vat |
 | cargo | cargotarp (Tarp load) | 2.0 | 1.96 x 1.56 x 2.32 | a tarp covers whatever: as big as the bed |
