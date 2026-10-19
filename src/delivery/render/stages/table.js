@@ -122,12 +122,15 @@ const PAINT = {
   },
   // neon signs on the nearer towers (by night)
   neon(g, w, hy, P, count) { if (!P.dark) return; for (let i = 0; i < count; i++) { g.fillStyle = ['#ff3fa4', '#34e1ff', '#ffd23f', '#9b5cff'][i % 4]; g.fillRect(P.rnd() * w, hy - hy * (0.1 + P.rnd() * 0.3), 3, 8 + P.rnd() * 10); } },
-  // a lighthouse on a headland
+  // a lighthouse on a headland: its parts sized by its height, at least most of a short card's sky (the phone's card: a few px of it)
   lighthouse(g, w, hy, P, x, high, t) {
-    const cx = w * x, th = hy * high; g.fillStyle = P.land(t); g.beginPath(); g.moveTo(cx - w * 0.16, hy + 1); g.quadraticCurveTo(cx - w * 0.05, hy - hy * 0.12, cx + w * 0.04, hy - hy * 0.1); g.lineTo(cx + w * 0.08, hy + 1); g.fill();
-    const base = hy - hy * 0.1; g.fillStyle = '#f2f0ea'; g.beginPath(); g.moveTo(cx - 4, base); g.lineTo(cx - 2.5, base - th); g.lineTo(cx + 2.5, base - th); g.lineTo(cx + 4, base); g.fill();
-    g.fillStyle = '#c8392e'; for (const k of [0.25, 0.6]) g.fillRect(cx - 3.6 + k * 1.2, base - th * k - 3, 7.2 - k * 2.4, 4); g.fillRect(cx - 3, base - th - 4, 6, 4);
-    if (P.dark) { g.fillStyle = 'rgba(255,240,170,.4)'; g.beginPath(); g.moveTo(cx, base - th - 2); g.lineTo(cx + w * 0.3, base - th - 14); g.lineTo(cx + w * 0.3, base - th + 8); g.fill(); }
+    const cx = w * x, th = Math.max(hy * high, Math.min(hy * 0.7, 24)), half = Math.max(3, th * 0.11), top = half * 0.62, band = Math.max(2, th * 0.1);
+    g.fillStyle = P.land(t); g.beginPath(); g.moveTo(cx - w * 0.16, hy + 1); g.quadraticCurveTo(cx - w * 0.05, hy - hy * 0.12, cx + w * 0.04, hy - hy * 0.1); g.lineTo(cx + w * 0.08, hy + 1); g.fill();
+    const base = hy - hy * 0.1; g.fillStyle = '#f2f0ea'; g.beginPath(); g.moveTo(cx - half, base); g.lineTo(cx - top, base - th); g.lineTo(cx + top, base - th); g.lineTo(cx + half, base); g.fill();
+    g.fillStyle = '#c8392e'; for (const k of [0.25, 0.6]) { const hw = half + (top - half) * k; g.fillRect(cx - hw, base - th * k - band / 2, hw * 2, band); }
+    g.fillRect(cx - top * 1.25, base - th - band * 1.6, top * 2.5, band * 0.8); // (the cap)
+    g.fillStyle = P.dark ? '#fff2b0' : '#ffd23f'; g.fillRect(cx - top, base - th - band * 0.8, top * 2, band * 0.8); // (the lamp)
+    if (P.dark) { g.fillStyle = 'rgba(255,240,170,.4)'; g.beginPath(); g.moveTo(cx, base - th - band * 0.4); g.lineTo(cx + w * 0.3, base - th - 14); g.lineTo(cx + w * 0.3, base - th + 8); g.fill(); }
   },
   // sails out on the water
   sails(g, w, hy, P, count) { for (let i = 0; i < count; i++) { const x = P.rnd() * w, s = 5 + P.rnd() * 6, y = hy - 2 - P.rnd() * 4; g.fillStyle = P.dark ? 'rgba(200,210,230,.4)' : '#f4f4f0'; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - s * 1.6); g.lineTo(x + s, y); g.fill(); g.fillStyle = P.tone(0.6); g.fillRect(x - s * 0.3, y, s * 1.5, 2); } },
@@ -170,9 +173,12 @@ const vending = (c) => () => { const g = group(); piece(g, BOX, c, 0, 0.95, 0, 1
 const lantern = () => { const g = group(); piece(g, BOX, 0x3a2c20, 0, 1.0, 0, 0.1, 2.0, 0.1); piece(g, BOX, 0x3a2c20, 0.3, 1.95, 0, 0.7, 0.08, 0.08); piece(g, BALL, 0xe2302a, 0.55, 1.55, 0, 0.5, 0.7, 0.5); for (const y of [1.2, 1.9]) piece(g, CYL, 0x1a1a1a, 0.55, y, 0, 0.3, 0.06, 0.3); return g; };
 const picket = () => { const g = group(); for (let k = 0; k < 9; k++) piece(g, BOX, 0xf4f2ec, k * 0.4 - 1.6, 0.5, 0, 0.12, 1.0, 0.05); for (const y of [0.35, 0.75]) piece(g, BOX, 0xf4f2ec, 0, y, -0.04, 3.4, 0.08, 0.04); return g; };
 const letterbox = () => { const g = group(); piece(g, BOX, 0x6e5232, 0, 0.55, 0, 0.1, 1.1, 0.1); piece(g, BOX, 0xc8392e, 0, 1.2, 0, 0.35, 0.3, 0.5); piece(g, BOX, 0xf2c21d, 0.18, 1.3, 0.15, 0.03, 0.18, 0.05); return g; };
+// space's own: a survey beacon (no flag): a weighted foot, a mast with a band, a dish turned up, an orange lamp on top
+const beacon = () => { const g = group(); piece(g, CYL, 0x5a5d66, 0, 0.12, 0, 0.9, 0.24, 0.9); piece(g, BOX, 0xd8dade, 0, 1.3, 0, 0.12, 2.3, 0.12); piece(g, BOX, 0xff6a00, 0, 1.0, 0, 0.16, 0.3, 0.16);
+  piece(g, CYL, 0xe8e8ec, 0, 1.85, 0.22, 1.0, 0.07, 1.0, 0.9); piece(g, BOX, 0x8a8d94, 0, 1.8, 0.1, 0.07, 0.07, 0.25); piece(g, BALL, 0xff6a00, 0, 2.55, 0, 0.26, 0.26, 0.26); return g; };
 const sandbags = () => OBSTACLE_MODELS.sackStack({ hw: 1.1, hl: 1.1, height: 1.5 });
 const opt = (kind, o) => () => OBSTACLE_MODELS[kind](o);
-const MODELS = { tyres, armco, kerb, board3: board(3), board2: board(2), buoyRed: buoy(0xd8352a), buoyGreen: buoy(0x2e8a4a), ring, vendRed: vending(0xd8352a), vendBlue: vending(0x2f6ac0), lantern, picket, letterbox, sandbags,
+const MODELS = { tyres, armco, kerb, board3: board(3), board2: board(2), buoyRed: buoy(0xd8352a), buoyGreen: buoy(0x2e8a4a), ring, beacon, vendRed: vending(0xd8352a), vendBlue: vending(0x2f6ac0), lantern, picket, letterbox, sandbags,
   umbrella: opt('umbrella', { hw: 0.9, hl: 0.9, height: 2.3 }), rockBig: opt('rock', { r: 0.8 }), rockSmall: opt('rock', { r: 0.5 }),
   asteroidBig: opt('asteroid', { r: 0.9 }), asteroidSmall: opt('asteroid', { r: 0.55 }), brimBig: opt('brimstone', { hw: 0.5, hl: 0.5, height: 1.6 }) };
 
@@ -181,7 +187,7 @@ const CIRCUIT_PROPS = [['tyres', -0.85, 1.8, 0.3, 1], ['board3', 0.8, 1.6, -0.5,
 const TABLE = {
   singapore: { sky: [['towers', 10, 0.55, 0.35], ['marina', 0.55, 0.65], ['trees', 'palm', 0.5, 0, 1, 7, 26]],
     props: [['hawkerCart', -0.85, 1.9, 0.5, 1], ['palmPot', 0.82, 1.6, 0, 1, 'bale'], ['bench', 0.98, 0.2, -0.4, 1, 'crate'], ['planter', 0.35, 4.8, 0, 1, 'bale'], ['bin', -0.98, 0.3, 0, 1, 'cone']] },
-  coast: { sky: [['water', 0.08, 'rgba(60,120,170,.75)', 'rgba(20,40,70,.8)'], ['lighthouse', 0.78, 0.3, 0.45], ['sails', 3], ['hills', 0.05, 0.2, 4]],
+  coast: { sky: [['water', 0.08, 'rgba(60,120,170,.75)', 'rgba(20,40,70,.8)'], ['lighthouse', 0.78, 0.4, 0.45], ['sails', 3], ['hills', 0.05, 0.2, 4]],
     props: [['umbrella', -0.82, 1.9, 0, 1], ['cooler', 0.8, 1.4, -0.3, 1, 'crate'], ['surfboard', 0.98, 0.3, 0.4, 1, 'cone'], ['chair', 0.4, 4.6, 0.3, 1, 'crate'], ['ring', -0.98, 0.3, 0.5, 1]], plinth: () => 0x8a7a62 },
   safari: { sky: [['mountain', 0.7, 0.45, 0.32, 0.3, 0.28], ['hills', 0.06, 0.25, 3], ['trees', 'acacia', 0.55, 0, 1, 9, 40]],
     props: [['zebra', -0.85, 2.0, 0.9, 0.9], ['termiteMound', 0.82, 1.6, 0, 1, 'cone'], ['rockBig', 0.97, 0.3, 0, 1], ['wildebeest', 0.3, 5.2, -0.8, 0.9], ['rockSmall', -0.98, 0.3, 0, 1]], plinth: () => 0x7a5a3a },
@@ -201,9 +207,9 @@ const TABLE = {
   spa: { sky: [['hills', 0.32, 0.3, 3], ['trees', 'fir', 0.5, 0, 1, 8, 9], ['stand', 0.62, 0.3, 0.24, 0.85]], props: CIRCUIT_PROPS },
   'albert-park': { sky: [['towers', 9, 0.55, 0.35, 0.45, 1], ['water', 0.05, 'rgba(70,130,170,.7)', 'rgba(20,40,70,.8)'], ['trees', 'palm', 0.5, 0, 0.45, 7, 22], ['stand', 0.05, 0.3, 0.24, 0.85]], props: CIRCUIT_PROPS },
   montreal: { sky: [['towers', 10, 0.5, 0.35, 0.5, 1], ['water', 0.06, 'rgba(70,120,160,.7)', 'rgba(20,40,70,.8)'], ['dome', 0.25, 0.28, 0.6], ['trees', 'round', 0.45, 0, 1, 6, 26]], props: CIRCUIT_PROPS },
-  sea: { sky: [['hills', 0.08, 0.3, 3], ['water', 0.04, 'rgba(40,120,160,.8)', 'rgba(20,40,70,.8)'], ['lighthouse', 0.22, 0.28, 0.4], ['sails', 4]],
+  sea: { sky: [['hills', 0.08, 0.3, 3], ['water', 0.04, 'rgba(40,120,160,.8)', 'rgba(20,40,70,.8)'], ['lighthouse', 0.22, 0.38, 0.4], ['sails', 4]],
     props: [['buoyRed', -0.85, 1.8, 0, 1], ['mooringPosts', 0.82, 1.6, 0, 1, 'crate'], ['buoyGreen', 0.98, 0.3, 0, 1], ['buoyGreen', 0.3, 5, 0, 1], ['ring', -0.98, 0.3, 0.5, 1]], plinth: () => 0x7a5a3a },
-  space: { sky: [['space']], props: [['asteroidBig', -0.85, 1.9, 0, 1], ['supplyPod', 0.82, 1.5, -0.3, 1, 'crate'], ['asteroidSmall', 0.98, 0.3, 0, 1], ['flagStand', 0.3, 5, 0, 1, 'cone'], ['asteroidSmall', -0.98, 0.3, 0, 0.8]],
+  space: { sky: [['space']], props: [['asteroidBig', -0.85, 1.9, 0, 1], ['supplyPod', 0.82, 1.5, -0.3, 1, 'crate'], ['asteroidSmall', 0.98, 0.3, 0, 1], ['beacon', 0.3, 5, 0, 1, 'cone'], ['asteroidSmall', -0.98, 0.3, 0, 0.8]],
     plinth: () => 0x3a3d47, ground: () => 0x3a3d47 },
   tokyo: { sky: [['towers', 10, 0.6, 0.45], ['spire', 0.3, 0.7], ['neon', 14]],
     props: [['vendRed', -0.85, 1.7, 0.4, 1], ['vendBlue', -0.6, 2.6, 0.4, 1], ['lantern', 0.82, 1.5, -0.3, 1], ['trafficDrum', 0.98, 0.3, 0, 1, 'cone'], ['bin', -0.98, 0.3, 0, 1, 'cone']] },
