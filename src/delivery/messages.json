@@ -87,7 +87,7 @@
     "crosswind": ["Crosswind! Watch the windsocks: it gusts."],
     "airborne": ["Airborne! No steering up here."],
     "slipping": ["Losing grip: steering and braking are weak."],
-    "oilSlick": ["Oil!"],
+    "oilSlick": ["Oil! Countersteer"],
     "gluePile": ["Glue!"],
     "emp": ["EMP! No controls."],
     "magma": ["Magma ahead!"],

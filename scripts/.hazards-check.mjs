@@ -256,19 +256,75 @@ try {
     check(oiled && P.onOil && P.onIce && said('Oil!'), 'oil slick: driving over it puts the car on oil (and says so)');
     // braking from 30 m/s for 0.5 s: on the oil against the dry road, and against ice (CONFIG.ice)
     const shed = (setup) => { start(oil.from - 200, 4, 30); setup(); g.drive(-1, 0); const v = P.speed; g.run(0.5, () => { quiet(); setup(); }); return v - P.speed; };
-    const dry = shed(() => {}), slick = shed(() => { P.oiled = O.time; });
+    const dry = shed(() => {}), slick = shed(() => { P.oiled = O.time + O.tail; });
     console.log('         (speed shed braking 0.5 s from 30 m/s: dry ' + dry.toFixed(1) + ', oiled ' + slick.toFixed(1) + ' m/s; the ice\'s brakes ' + Math.round(g.CONFIG.ice.brakeGrip * 100) + '%, the oil\'s ' + Math.round(O.brakeGrip * 100) + '%)');
-    check(slick < dry * 0.2, 'oil slick: the brakes barely bite on it');
+    check(slick < dry * 0.3, 'oil slick: the brakes barely bite on it');
     check(O.brakeGrip < g.CONFIG.ice.brakeGrip && O.steerGrip < g.CONFIG.ice.steerGrip && O.laneSpeed < g.CONFIG.ice.laneSpeed && O.accelGrip < g.CONFIG.ice.accelGrip && O.grip < g.CONFIG.ice.grip, 'oil slick: every grip number below the ice\'s');
     start(oil.from - 40, 4, 30);
     let lasted = 0;
     g.run(8, () => { quiet(); if (P.onOil) lasted += 1 / 60; return P.s > oil.to + 200; });
-    check(!P.onOil && lasted > O.time - 0.2 && lasted < O.time + 1.5, 'oil slick: it wears off ' + lasted.toFixed(2) + ' s after (CONFIG.oilSlick.time ' + O.time + ' s, refilled while on it)');
+    check(!P.onOil && lasted > 1.5 && lasted < O.time + O.tail + 0.3, 'oil slick: it wears off ' + lasted.toFixed(2) + ' s after (CONFIG.oilSlick time ' + O.time + ' s + tail ' + O.tail + ' s, refilled while on it; a car that spins out gets its grip back at once)');
     check(!T.icy(oil.s, lane(4, oil.s)), 'oil slick: traffic\'s road is not slippery there (Track.icy: what traffic slides on)');
     start(oil.from - 40, 4, 30);
     let tankOiled = false;
     g.run(4, () => { quiet(); P.tank = 1; if (P.onOil) tankOiled = true; return P.s > oil.to + 5; });
     check(!tankOiled, 'oil slick: a tank rides over it untouched');
+    start(oil.from - 40, 4, 30);
+    P.shield = 5;
+    let shieldOiled = false;
+    g.run(4, () => { quiet(); P.shield = 5; if (P.onOil) shieldOiled = true; return P.s > oil.to + 5; });
+    check(!shieldOiled, 'oil slick: a car just set down (shielded) rides over it untouched');
+
+    // ---- the slide: a kick the way the car was going, a big yaw, countersteer saves it (CONFIG.oilSlick, Player.oilStep)
+    // A scripted driver: `strat` is 'none', 'with' (steers the way it slides), or a countersteer after `at` s from the kick
+    // (full lock against the yaw until it is nearly straight). Returns the outcome and a trace, to compare runs exactly.
+    const slide = (car, speed, strat, at = 0, { lv = 0, off = 10 } = {}) => {
+      g.cars.pinCar(car);
+      start(oil.from - off, 4, speed);
+      P.latVel = lv;
+      const lat0 = P.lat, h0 = P.health, trace = [];
+      let kick = null, peak = 0, maxLat = 0;
+      g.run(8, (t) => {
+        quiet();
+        if (kick === null && P.oiled > 0) kick = t;
+        let u = 0;
+        if (kick !== null && P.oiled > 0) {
+          if (strat === 'with') u = P.oilSpun ? 0 : Math.sign(P.oilYaw) || P.oilSide;
+          else if (strat === 'counter' && t - kick >= at && Math.abs(P.oilYaw) > 0.1) u = -Math.sign(P.oilYaw);
+        }
+        g.drive(1, u);
+        if (kick !== null) { peak = Math.max(peak, Math.abs(P.yaw)); maxLat = Math.max(maxLat, Math.abs(P.lat - lat0)); if (trace.length < 400) trace.push(Math.round(P.yaw * 1000) + ':' + Math.round((P.lat - lat0) * 1000)); }
+        return kick !== null && P.oiled <= 0 && t - kick > 0.5 || P.busted;
+      });
+      g.cars.pinCar(null);
+      return { spun: P.oilSpun, hurt: Math.round(h0 - P.health), peak: Math.round(peak * 57.3), side: P.oilSide, maxLat, left: Math.abs(P.yaw), trace: trace.join(',') };
+    };
+    const cap = Math.min(g.CONFIG.maxYawDeg, 45) + O.yawExtra;
+    const none = slide('commuter', 40, 'none');
+    console.log('         (commuter 40 m/s, no input: yaw peak ' + none.peak + ' deg (usual clamp ' + Math.min(g.CONFIG.maxYawDeg, 45) + ', this one ' + cap + '), ' + none.maxLat.toFixed(1) + ' m across, health -' + none.hurt + ')');
+    check(none.spun && none.hurt > 0 && none.peak > Math.min(g.CONFIG.maxYawDeg, 45) + 15 && none.maxLat > 3.5, 'oil slick: doing nothing, the yaw builds well past the usual clamp, the car slides over a lane and spins out');
+    check(slide('commuter', 40, 'with').spun, 'oil slick: steering WITH the slide spins the car out');
+    check(slide('commuter', 40, 'none', 0, { lv: 3, off: 1 }).side === 1 && slide('commuter', 40, 'none', 0, { lv: -3, off: 1 }).side === -1, 'oil slick: the kick is the way the car was going (its sideways speed)');
+    // (a run twice over is the same run, to the last hundredth: nothing here draws a die)
+    check(slide('commuter', 40, 'counter', 0.5).trace === slide('commuter', 40, 'counter', 0.5).trace && none.trace === slide('commuter', 40, 'none').trace, 'oil slick: deterministic, the same run twice gives the same yaw and path');
+    const table = [];
+    let saved = true, lost = true;
+    for (const [car, label] of [['mini', 'light'], ['commuter', 'average'], ['polytruck', 'low-agility heavy'], ['sixbysix', 'heavy']]) {
+      for (const v of [25, 40, 60]) {
+        const row = { car: label, v };
+        for (const at of [0.3, 0.5, 0.8]) { const r = slide(car, v, 'counter', at); row['@' + at] = r.spun ? 'SPUN' : r.left > 0.17 ? 'yawed' : 'ok ' + r.peak + ' deg ' + r.maxLat.toFixed(1) + ' m'; if (at <= 0.5 && (r.spun || r.left > 0.17)) saved = false; }
+        const n = slide(car, v, 'none'), w = slide(car, v, 'with');
+        row.none = n.spun ? 'SPUN' : 'ok'; row.with = w.spun ? 'SPUN' : 'ok';
+        if (!n.spun || !w.spun) lost = false;
+        table.push(row);
+      }
+    }
+    console.log('         (countersteer at 0.3 / 0.5 / 0.8 s after the kick, doing nothing, and steering with it:)');
+    for (const r of table) console.log('           ' + r.car.padEnd(18) + String(r.v).padStart(3) + ' m/s  0.3: ' + r['@0.3'].padEnd(16) + ' 0.5: ' + r['@0.5'].padEnd(16) + ' 0.8: ' + r['@0.8'].padEnd(16) + ' none: ' + r.none + '  with: ' + r.with);
+    check(saved, 'oil slick: a countersteer at 0.3 s or 0.5 s after the kick recovers cleanly (no spin, straight again), at 25, 40 and 60 m/s, in a light, an average, a heavy and a low-agility car');
+    check(lost, 'oil slick: doing nothing, or steering with the slide, spins every one of them out');
+    const late = (car) => slide(car, 40, 'counter', 0.7).spun;
+    check(late('mini') && !slide('polytruck', 40, 'counter', 0.7).spun, 'oil slick: the window is shorter in a light, agile car and longer in a heavy, low-agility one (0.7 s late: mini ' + (late('mini') ? 'spins' : 'recovers') + ', polytruck ' + (slide('polytruck', 40, 'counter', 0.7).spun ? 'spins' : 'recovers') + ')');
 
     // ---- glue pile (s 2550, lane 4): held still for CONFIG.gluePile.hold s, then let go at .kept of the speed it came with
     const glue = own('glue'), GP = g.CONFIG.gluePile;

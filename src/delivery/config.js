@@ -1604,7 +1604,35 @@ export const CONFIG = {
   // m/s^2 down to `crawl` m/s (never to a stop)
   empMine: { r: 0.75, damage: 10, time: 4, decel: 12, crawl: 4, flash: { period: 0.8, on: 0.3 } },
   gluePile: { r: 1.2, hold: 0.5, kept: 0.5, rearm: 30 },
-  oilSlick: { length: 7, half: 1.4, time: 2, brakeGrip: 0.1, steerGrip: 0.08, laneSpeed: 0.3, accelGrip: 0.15, grip: 1.5, understeer: 0.7, yawKick: 5 },
+  // The slick is a SLIDE you have to catch (Player.oilStep): the car swings its tail out the way it was going (yaw builds to a
+  // big angle, `yawExtra` deg past the usual clamp, and it travels that way, the nose pointing where it slides), with almost no
+  // steering for `time` s after the pool, then grip comes back over `tail` s. STEER AGAINST THE YAW (away from the slide) inside
+  // `window` s of the kick and the yaw comes back and the grip is rebuilt faster; steer WITH it, or hold straight, and the yaw
+  // grows until the car spins (the usual hurt, a stun, speed lost) or is clipped by the roadside. Slower-turning, heavier cars have
+  // the whole thing slowed in time (Player.oilTime), so their window is longer. Numbers tuned by scripts/.hazards-check.mjs.
+  oilSlick: {
+    length: 7, half: 1.4,
+    time: 1.2,          // s the full slide lasts after the pool (refilled while on it)...
+    tail: 2.4,          // ...and s over which grip then comes back, by the numbers below (so about 3.6 s in all, was 2)
+    brakeGrip: 0.1, steerGrip: 0.08, laneSpeed: 0.3, accelGrip: 0.15, grip: 1.5, understeer: 0.7, // (at their worst, in the full slide; they fade to normal over the tail)
+    yawKick: 1.0,       // rad/s the nose swings round at the kick (at 20 m/s and up), and...
+    yawKickAngle: 0.1,  // ...the rad it is turned at once, the way the car was going (latVel; else the last steer; else the lane's parity)
+    yawExtra: 45,       // deg the yaw may build past CONFIG.maxYawDeg (the render turns the car by it)
+    grow: 7,            // 1/s^2: how hard the yaw feeds on itself in the full slide (tail swinging out)
+    restore: 14,        // 1/s^2: how hard grip pulls it straight again (by the grip share back)
+    damp: 2,            // 1/s: yaw rate lost
+    counter: 15,        // rad/s^2 of yaw a full steer gives (towards the way it is steered: against the slide pulls it in)
+    window: 0.6,        // s after the kick that a countersteer has its full say; ...
+    fade: 0.6,          // ...then over this many s it is down to...
+    lateCounter: 0.55,  // ...this share of it (the longer left, the less it can do)
+    rebuild: 0.9,       // grip share/s given back while countersteering against the yaw (half that, taken back, steering with it); half again once straight
+    slip: 0.21,         // the sideways speed is this share of speed x sin(yaw): the car travels the way its nose points
+    slideResponse: 3,   // 1/s: how quickly the car takes up that sideways speed
+    spinAt: 62,         // deg of yaw held for `spinHold` s is a SPIN-OUT: `spinDamage` health, a stun, `spinKept` of the speed
+    spinHold: 0.2, spinDamage: 25, spinKept: 0.6, spinStun: 0.8,
+    clipFrom: 3, clipDamage: 12, // m/s sideways into the road's edge while sliding: a clip, `clipDamage` health, once a slick
+    tooSlow: 8,         // m/s: under it there is no slide
+  },
   // a boost pad ("boostPads": { from, to, lane }, lanegimmicks.js; a travelator in the mall): a car driving over it is
   // pulled on for `time` s at up to `speed` m/s over its own top speed (as a turbo pulls: CONFIG.turboAccel), the clock
   // refilled for as long as it is on the pad; a ghost too (it is the floor, as ice is). A pad with rails: true has handrails,

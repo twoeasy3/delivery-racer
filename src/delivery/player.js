@@ -4,7 +4,7 @@ import { CAR, CARS, lendCar, returnCar, superOf, rageTankFor, carStats } from '.
 import './ecu.js'; // (the ECUs: the figures a car is driven with, carStats; and the blueprint cars' unlocking)
 import { clamp, damp, random } from './util.js';
 import { Track } from './track.js';
-import { updateYaw, keepOnRoad, sfx, cornerSpeed } from './physics.js';
+import { updateYaw, keepOnRoad, sfx, cornerSpeed, hurt } from './physics.js';
 import { Traffic } from './traffic.js';
 import { Message } from './messages.js';
 import { UfoStrike } from './ufostrike.js';
@@ -23,7 +23,7 @@ import { Mysteries } from './mysteries.js';
 const understeer = (v) => {
   const bend = Track.bend(v.s), asked = v.speed * v.speed * Math.abs(bend) * v.weight / v.agility;
   let grip, hard = 1;
-  const I = v.onOil ? CONFIG.oilSlick : CONFIG.ice; // (on an oil slick's oil: ice, far worse, see Hazards)
+  const I = v.onOil ? v.oilNow : CONFIG.ice; // (on an oil slick's oil: ice, far worse, fading over its tail: see oilStep)
   if (LEVEL.understeer) { // a race: everywhere, and far harder off the ice (see CONFIG.race)
     grip = I.grip;
     if (!v.onIce) hard = CONFIG.race.understeer;
@@ -43,7 +43,11 @@ export const Player = {
   brakeLight: false,   // braking at all: the brake lights are on
   onIce: false,        // on an ice patch (see CONFIG.ice), or anything as slippery (see Track.icy)...
   onOil: false,        // ...or an oil slick's oil, for oiled s after it (CONFIG.oilSlick: ice, far worse; see Hazards)...
-  oiled: 0,
+  oiled: 0,            // s of the slick left: CONFIG.oilSlick.time + .tail while on the pool, counting down after (oilStep: the slide, then the grip coming back)
+  oilYaw: 0, oilRate: 0, // the slide's yaw (rad, + = nose towards +lat, the way it slides) and its rate: Player.yaw while oiled
+  oilAge: 0, oilBonus: 0, oilG: 0, oilSlip: 0, oilSide: 1, oilSpin: 0, oilSpun: false, oilClipped: false, // (its age in slowed time, grip given back by countersteering, grip share now 0 .. 1, the sideways speed it asks for, the way it kicked, the s held spun out, spun / clipped this slick)
+  oilNow: { brakeGrip: 1, steerGrip: 1, laneSpeed: 1, accelGrip: 1, grip: 40, understeer: 0 }, // CONFIG.oilSlick's numbers, faded back to normal by the grip share
+  lastSteer: 0, lastSteerAge: 9, // the steer last held and how long ago (the way a straight-running car kicks)
   glued: 0,            // s left held still on a glue pile (CONFIG.gluePile; see Hazards), and the speed it is let go at
   gluedSpeed: 0,
   emp: 0,              // s left with its electronics out, after an EMP mine (CONFIG.empMine; see Hazards): no accelerator, steering or throwing
@@ -183,7 +187,7 @@ export const Player = {
     this.sling = this.slingTime = this.slingTotal = 0;
     this.bigSplash = 0;
     this.butterfingers = 0;
-    this.oiled = 0; this.onOil = false; // (an oil slick's: see Hazards)
+    this.oiled = 0; this.onOil = false; this.oilYaw = this.oilRate = 0; this.oilBonus = this.oilG = this.oilSlip = 0; this.lastSteer = 0; this.lastSteerAge = 9; // (an oil slick's: see Hazards)
     this.glued = 0; this.gluedSpeed = 0; // (a glue pile's: held still for `glued` s, then let go at gluedSpeed)
     this.emp = 0; // (an EMP mine's: see Hazards)
     this.puncture = 0;   // a flat tyre: -1 (left) or 1 (right), 0 none (see punctureTyre)
@@ -503,7 +507,7 @@ export const Player = {
     // as the brake is held (let go, it rolls on up to minSpeed again by itself)
     const slowest = LEVEL.laps ? CONFIG.minSpeed : 0;
     const WM = Track.wet; // (the water's numbers on this level: CONFIG.waterMain's, scaled by its "wetness")
-    const ICE = this.onOil ? CONFIG.oilSlick : CONFIG.ice; // (an oil slick's oil: ice, far worse)
+    const ICE = this.onOil ? this.oilNow : CONFIG.ice; // (an oil slick's oil: ice, far worse, fading back over its tail)
     const grip = this.onIce ? (this.onWater ? WM : ICE).brakeGrip : 1 - (1 - WM.brakeGrip) * this.wetTyres; // (braking on ice, or on a burst main's water or standing water, or on the wet tyres it leaves)
     // (and the engine's pull: wheelspin on ice or water, fading back over the wet tail; only the car's own acceleration, never its top
     // speed, the turbo's or a boost pad's pull, the pull-away after a drop or a tank's)
@@ -556,6 +560,54 @@ export const Player = {
     this.onShoulder = false;
     this.danger = Social.dangerTime;
   },
+  // an oil slick takes the car (Hazards, the first touch of a slick): the nose kicks round the way the car was going (its sideways
+  // speed; else the steer held in the last 0.6 s; else by the lane it is in, never the dice), and the slide begins
+  oilKick() {
+    const O = CONFIG.oilSlick, k = Math.min(1, this.speed / 20);
+    this.oilSide = Math.abs(this.latVel) > 0.6 ? Math.sign(this.latVel) : this.lastSteer && this.lastSteerAge < 0.6 ? this.lastSteer : (Math.round(this.lat / CONFIG.laneWidth) & 1) ? 1 : -1;
+    this.oilYaw = this.oilSide * O.yawKickAngle * k;
+    this.oilRate = this.oilSide * O.yawKick * k;
+    this.oilAge = this.oilBonus = this.oilSpin = 0; this.oilSpun = this.oilClipped = false;
+    Game.shake = Math.max(Game.shake, 0.5);
+  },
+  // one step of the slide while oiled: the yaw feeds on itself where grip is gone (`grow`), grip pulls it straight as it returns
+  // (`restore`), and steering turns it the way it is steered (`counter`: against the slide pulls it in, with it makes it worse).
+  // Countersteering gives grip back; spun past `spinAt` for `spinHold` s, the car spins out (hurt, stunned, slowed). A heavy or
+  // sluggish car's whole slide is slowed in time (its window longer)
+  oilStep(dt, steer) {
+    const O = CONFIG.oilSlick, N = this.oilNow;
+    const u = this.busted || this.emp > 0 || this.glued > 0 ? 0 : steer;
+    const ds = dt / clamp(Math.pow(this.weight, 0.25) / Math.sqrt(this.agility), 0.85, 1.25);
+    this.oilAge += ds;
+    let psi = this.oilYaw, w = this.oilRate;
+    const against = -u * (Math.sign(psi) || this.oilSide); // + steering against the yaw, - with it
+    const settled = Math.abs(psi) < 0.07 && Math.abs(w) < 0.4;
+    this.oilBonus = clamp(this.oilBonus + (against > 0.3 ? O.rebuild * against : against < -0.3 ? O.rebuild * 0.5 * against : settled ? O.rebuild * 0.5 : 0) * ds, 0, 1);
+    const slow = this.speed < O.tooSlow;
+    const g = slow ? 1 : clamp((this.oiled >= O.tail ? 0 : 1 - this.oiled / O.tail) + this.oilBonus, 0, 1);
+    const A = this.oilAge < O.window ? 1 : 1 + (O.lateCounter - 1) * clamp((this.oilAge - O.window) / O.fade, 0, 1);
+    w += ((O.grow * (1 - g) - O.restore * g) * psi - O.damp * (1 + 3 * g) * w + u * O.counter * A) * ds;
+    psi += w * ds;
+    const cap = (Math.min(CONFIG.maxYawDeg, 45) + O.yawExtra) * Math.PI / 180;
+    if (Math.abs(psi) > cap) { psi = Math.sign(psi) * cap; if (w * psi > 0) w = 0; }
+    this.oilYaw = psi; this.oilRate = w; this.oilG = g;
+    // a spin-out: the yaw held past spinAt (the existing outcome: damage, a stun, speed lost), then the grip is back
+    if (!this.oilSpun && Math.abs(psi) >= O.spinAt * Math.PI / 180) {
+      if ((this.oilSpin += dt) >= O.spinHold) {
+        this.oilSpun = true;
+        if (this.shield <= 0 && this.ghost <= 0) hurt(this, O.spinDamage);
+        this.speed *= O.spinKept; this.stun = Math.max(this.stun, O.spinStun); this.oilBonus = 1;
+        Game.shake = Math.max(Game.shake, 0.9);
+        sfx('screech', 0.9);
+      }
+    } else this.oilSpin = 0;
+    // straight again with the grip back: over
+    if (g >= 1 && Math.abs(psi) < 0.1) this.oiled = 0;
+    N.brakeGrip = O.brakeGrip + (1 - O.brakeGrip) * g; N.steerGrip = O.steerGrip + (1 - O.steerGrip) * g;
+    N.laneSpeed = O.laneSpeed + (1 - O.laneSpeed) * g; N.accelGrip = O.accelGrip + (1 - O.accelGrip) * g;
+    N.grip = O.grip + (40 - O.grip) * g; N.understeer = O.understeer * (1 - g);
+    this.oilSlip = this.speed * Math.sin(psi) * O.slip;
+  },
   update(dt, throttle, steer, stopping, auto = false) {
     this.stun = Math.max(0, this.stun - dt);
     this.shield = Math.max(0, this.shield - dt);
@@ -574,13 +626,16 @@ export const Player = {
     if (this.glued > 0 && (this.glued -= dt) <= 0) { this.glued = 0; this.speed = Math.max(this.speed, this.gluedSpeed); } // (a glue pile lets go)
     // ice: hitting it, the car slews round (the look of it only), with a squeal of tyres
     // (an oil slick's oil, for `oiled` s after touching it: ice, far worse, CONFIG.oilSlick; set by Hazards)
+    if (steer !== 0) { this.lastSteer = Math.sign(steer); this.lastSteerAge = 0; } else this.lastSteerAge += dt;
     this.oiled = Math.max(0, this.oiled - dt);
-    const oil = this.oiled > 0, patch = oil ? CONFIG.oilSlick : Track.icy(this.s, this.lat), icy = !!patch;
-    if (icy && (!this.onIce || (oil && !this.onOil))) {
-      this.yawVel += (random() < 0.5 ? -1 : 1) * (oil ? CONFIG.oilSlick : CONFIG.ice).yawKick * Math.min(1, this.speed / 25);
+    if (this.oiled > 0) this.oilStep(dt, steer);
+    else if (this.oilYaw !== 0) { this.yaw = this.oilYaw; this.yawVel = this.oilRate = this.oilYaw = 0; this.oilG = 0; } // (the slick's over: the yaw it ends with settles as any)
+    const oil = this.oiled > 0, patch = oil ? this.oilNow : Track.icy(this.s, this.lat), icy = !!patch;
+    if (icy && !oil && !this.onIce) {
+      this.yawVel += (random() < 0.5 ? -1 : 1) * CONFIG.ice.yawKick * Math.min(1, this.speed / 25);
       if (this.speed > 8) sfx('brake', 0.5);
     }
-    if (icy) this.yawVel += (random() - 0.5) * 8 * Math.min(1, this.speed / 25) * dt; // (and twitches about on it)
+    if (icy && !oil) this.yawVel += (random() - 0.5) * 8 * Math.min(1, this.speed / 25) * dt; // (and twitches about on it)
     this.onIce = icy;
     this.onOil = oil;
     this.onWater = icy && !!patch.water; // (a burst main's water, or standing water: slippery by its own numbers, see CONFIG.waterMain and Track.wet)
@@ -589,7 +644,7 @@ export const Player = {
     const WM = Track.wet; // (CONFIG.waterMain's numbers, scaled by the level's "wetness": one source, track.js waterNumbers)
     this.wetTyres = this.onWater ? 1 : icy ? 0 : Math.max(0, this.wetTyres - this.speed * dt / WM.wetAfter);
     const wetMix = (key) => 1 - (1 - WM[key]) * this.wetTyres;
-    const slippery = icy ? (this.onWater ? WM : oil ? CONFIG.oilSlick : CONFIG.ice) : this.wetTyres > 0 ? { steerGrip: wetMix('steerGrip'), laneSpeed: wetMix('laneSpeed') } : null;
+    const slippery = icy ? (this.onWater ? WM : oil ? this.oilNow : CONFIG.ice) : this.wetTyres > 0 ? { steerGrip: wetMix('steerGrip'), laneSpeed: wetMix('laneSpeed') } : null;
     // the tide: in deep water the car is damaged, the more so the worse it wades (a ghost skims
     // over the water, and a car just set down is spared)
     this.wading = this.ghost > 0 ? 0 : Tide.depth(this.s, this.lat);
@@ -634,11 +689,14 @@ export const Player = {
     }
     // (a flat tyre drags the car towards its side, the harder the faster it goes)
     if (this.puncture && !this.busted) wantVel += this.puncture * CONFIG.puncture.pull * Math.min(1, this.speed / 15);
+    // (an oil slick's slide: the car travels the way its nose points, the steering's say coming back with the grip)
+    if (this.oiled > 0 && !this.busted) wantVel = wantVel * this.oilG + this.oilSlip * (1 - this.oilG);
     // a hard knock briefly weakens steering
     // (a car sliding wide in a bend, on a level where cars understeer or with no brakes, has lost its grip, as on ice)
     const push = understeer(this), sliding = !this.onIce && push !== 0;
-    const response = CONFIG.steerResponse * (this.stun > 0 ? 0.3 : 1) * Math.sqrt(this.agility) * (slippery ? slippery.steerGrip : sliding ? CONFIG.ice.steerGrip : 1) *
+    let response = CONFIG.steerResponse * (this.stun > 0 ? 0.3 : 1) * Math.sqrt(this.agility) * (slippery ? slippery.steerGrip : sliding ? CONFIG.ice.steerGrip : 1) *
       (this.wading > CONFIG.tide.wet ? CONFIG.tide.steerGrip : 1) * (Track.muddy(this.s) && CAR.trait !== 'mud' ? CONFIG.mud.steerGrip : 1) * (this.inGravel ? CONFIG.gravel.steerGrip : 1) * (1 - this.shaken) * seaGrip; // (and afloat, its steering takes slowly)
+    if (this.oiled > 0 && !this.busted) response = Math.max(response, CONFIG.oilSlick.slideResponse * (1 - this.oilG)); // (and it takes up the slide's sideways speed whatever the steering's grip)
     this.latVel += (wantVel - this.latVel) * damp(response, dt);
     // afloat, a current carries the car sideways and a boat's wake shoves it off the boat's line (see Water.push)
     if (this.afloat && !this.busted) this.latVel += Water.push(this) * dt;
@@ -686,8 +744,16 @@ export const Player = {
     const latWas = this.lat;
     this.lat += this.latVel * dt;
     this.lat = Track.divider(this.s, latWas, this.lat, this.hw); // (a dead end's blocker cannot be steered into from the side: lanegimmicks.js)
+    const edgeWas = this.onWall;
     keepOnRoad(this, 0);
-    updateYaw(this, dt);
+    // (a slide into the road's edge: a clip, once a slick)
+    if (this.oiled > 0 && this.onWall && !edgeWas && !this.oilClipped && Math.abs(this.oilSlip) > CONFIG.oilSlick.clipFrom && !this.busted) {
+      this.oilClipped = true;
+      if (this.shield <= 0 && this.ghost <= 0) hurt(this, CONFIG.oilSlick.clipDamage);
+      Game.shake = Math.max(Game.shake, 0.6);
+      sfx('sideswipe', 0.8);
+    }
+    if (this.oiled > 0) { this.yaw = this.oilYaw; this.yawVel = 0; } else updateYaw(this, dt); // (a slick's yaw is its own, up to CONFIG.oilSlick.yawExtra past the usual clamp)
 
     // the shoulder is only tolerated briefly; back in the lanes the allowance refills
     // (an inflatable passenger makes the shoulder legal)

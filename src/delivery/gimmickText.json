@@ -57,7 +57,7 @@
   "cyclist-pelotons": { "name": "Cyclist pelotons", "blurb": "A bunch of cyclists, two abreast by the kerb." },
   "school-crossings": { "name": "School crossings", "blurb": "The lollipop person's sign turns to STOP and the children cross." },
   "burst-water-mains": { "name": "Burst water mains", "blurb": "A burst main sprays one lane, on and off." },
-  "oil-slicks": { "name": "Oil slicks", "blurb": "A black pool: worse than ice, for a moment." },
+  "oil-slicks": { "name": "Oil slicks", "blurb": "A black pool: the tail swings out. Steer against it." },
   "glue-piles": { "name": "Glue piles", "blurb": "Stuck for a moment, then off at half speed." },
   "emp-mines": { "name": "EMP mines", "blurb": "No accelerator, steering or throwing for a few seconds." },
   "magma": { "name": "Magma", "blurb": "Burns while you are on it." },
