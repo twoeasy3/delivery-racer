@@ -215,8 +215,11 @@ export const Packages = (() => {
       }
     }
     if (victim) {
-      launch(car, { s: victim.s + spread(scatter), lat: victim.lat + spread(scatter),
-        vs: victim.vs, latVel: victim.latVel }, 'bomb');
+      // (at the player, a wider miss as well, along the road and across it: see CONFIG.enemyThrowAtPlayer)
+      const W = victim === Player ? CONFIG.enemyThrowAtPlayer : null;
+      const s = victim.s + spread(scatter) + (W ? spread(W.distance) : 0);
+      const lat = victim.lat + spread(scatter) + (W ? spread(W.lateral) : 0);
+      launch(car, { s, lat, vs: victim.vs, latVel: victim.latVel }, 'bomb');
     } else {
       const s = car.s + car.dir * (10 + random() * 30);
       const lat = Track.laneLo(s) + random() * (Track.laneHi(s) - Track.laneLo(s));

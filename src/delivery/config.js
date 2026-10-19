@@ -1060,6 +1060,9 @@ export const CONFIG = {
   enemyThrowMin: 2,        // s between throws, random between min and max
   enemyThrowMax: 5,
   enemyThrowScatter: 3,    // m, how far from its victim (the player, or another vehicle) a package may land
+  // ...and at the PLAYER, a further error of up to this much across the road and along it (m, uniform either way), so a
+  // car holding its lane is missed now and then (about 4 throws in 10 miss: CHECKLIST 494)
+  enemyThrowAtPlayer: { lateral: 3, distance: 4 },
   enemyThrowCarRange: 45,  // m: the furthest away another vehicle can be for an evil car to throw at it
   splashRadius: 4,         // m
   splashDamage: 6,
