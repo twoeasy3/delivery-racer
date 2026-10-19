@@ -223,11 +223,12 @@ const makeChainletter = () => {
     const e = sub(parent);
     part(e, box(w, h, 0.02), paper);
     const slope = Math.atan2(h * 0.55, w / 2), run = Math.hypot(w / 2, h * 0.55);
-    for (const d of [-1, 1]) part(e, box(run, 0.008, 0.002), fold, d * w / 4, -h * 0.225, 0.0105, 0, 0, -d * slope);
-    part(e, triangle(-w / 2, h / 2, w / 2, h / 2, 0, -h * 0.1), flapMat, 0, 0, 0.0115);
-    part(e, cyl(0.035, 0.035, 0.012, 10), wax, 0, -h * 0.08, 0.014, FLAT);
-    for (let k = 0; k < 3; k++) part(e, box(w * (k ? 0.36 : 0.28), 0.012, 0.002), ink, -w * 0.05, h * 0.05 - k * 0.055, -0.011, 0, Math.PI);
-    part(e, box(w * 0.16, h * 0.28, 0.002), stampMat, w * 0.32, h * 0.26, -0.011, 0, Math.PI);
+    // (each layer stands 4.5 mm proud of the one under it, its back buried, so no two fight for a pixel: CHECKLIST 455)
+    for (const d of [-1, 1]) part(e, box(run, 0.008, 0.009), fold, d * w / 4, -h * 0.225, 0.01, 0, 0, -d * slope);
+    part(e, triangle(-w / 2, h / 2, w / 2, h / 2, 0, -h * 0.1), flapMat, 0, 0, 0.019);
+    part(e, cyl(0.035, 0.035, 0.02, 10), wax, 0, -h * 0.08, 0.0135, FLAT);
+    for (let k = 0; k < 3; k++) part(e, box(w * (k ? 0.36 : 0.28), 0.012, 0.009), ink, -w * 0.05, h * 0.05 - k * 0.055, -0.01, 0, Math.PI);
+    part(e, box(w * 0.16, h * 0.28, 0.009), stampMat, w * 0.32, h * 0.26, -0.01, 0, Math.PI);
     return e;
   };
   const one = envelope(all);
@@ -339,7 +340,7 @@ const makeRecorders = () => {
     const s = sub(crateBox, x, 0.14, -0.12 + k * 0.03);
     s.rotation.set(-0.12, k ? -0.15 : 0.1, 0);
     part(s, plane(0.22, 0.3), paper, 0, 0.15, 0);
-    for (let n = 0; n < 6; n++) part(s, box(0.18, 0.004, 0.001), staff, 0, 0.06 + n * 0.035, 0.001);
+    for (let n = 0; n < 6; n++) part(s, box(0.18, 0.004, 0.006), staff, 0, 0.06 + n * 0.035, 0); // (the staves through the sheet, 3 mm proud each side)
     return s;
   });
   // the music stand beside the crate: a tripod, a rod, a tilted desk with a sheet on it
@@ -350,8 +351,8 @@ const makeRecorders = () => {
   desk.rotation.x = -0.35;
   part(desk, box(0.26, 0.2, 0.01), black, 0, 0.08, 0);
   part(desk, box(0.26, 0.02, 0.03), black, 0, -0.01, 0.01);
-  part(desk, plane(0.2, 0.17), paper, 0, 0.09, 0.0075);
-  for (let n = 0; n < 5; n++) part(desk, box(0.16, 0.004, 0.001), staff, 0, 0.03 + n * 0.03, 0.009);
+  part(desk, plane(0.2, 0.17), paper, 0, 0.09, 0.0095); // (4.5 mm proud of the desk, the staves 3 mm proud of it)
+  for (let n = 0; n < 5; n++) part(desk, box(0.16, 0.004, 0.006), staff, 0, 0.03 + n * 0.03, 0.0095);
   // the notes: dark quavers drifting up / wobbling / red and jagged
   const noteMat = glow(0x3a3a48);
   const notes = Array.from({ length: 8 }, (_, k) => { const n = quaver(all, noteMat); n.userData.k = k; return n; });
@@ -462,7 +463,7 @@ const makeTelemarketers = () => {
   const heads = [[-0.17, 0.02], [0.02, -0.02], [0.19, 0.08]].map(([x, z], k) => {
     const h = sub(crateBox, x, H, z);
     part(h, sphere(0.09, 14, 10), SKIN);
-    part(h, new THREE.SphereGeometry(0.093, 14, 8, 0, Math.PI * 2, 0, Math.PI * 0.45), hairMats[k], 0, 0.004, -0.01);
+    part(h, new THREE.SphereGeometry(0.0945, 14, 8, 0, Math.PI * 2, 0, Math.PI * 0.45), hairMats[k], 0, 0.004, 0, -0.35); // (a cap 4.5 mm clear of the scalp everywhere, tipped back for the hairline: never through the skin, so no seam to fight on)
     for (const d of [-1, 1]) { part(h, sphere(0.013, 6, 5), glow(0xffffff), d * 0.035, 0.015, 0.08); part(h, sphere(0.007, 6, 5), glow(0x101010), d * 0.035, 0.015, 0.09); }
     const mouth = part(h, sphere(0.018, 8, 6), glow(0x4a1014), 0, -0.04, 0.082);
     mouth.scale.set(1.2, 0.6, 0.5);
@@ -573,7 +574,7 @@ const makeTaxmen = () => {
   const strip = Array.from({ length: N }, () => {
     const seg = sub(all);
     part(seg, plane(0.08, 0.1), tapeMat, 0, 0, 0, -FLAT); // (lies along local z, faces local y)
-    for (let n = 0; n < 3; n++) part(seg, box(0.05, 0.001, 0.006), onFace(glow(0x7a7a88)), -0.005, 0.0015, -0.03 + n * 0.03);
+    for (let n = 0; n < 3; n++) part(seg, box(0.05, 0.006, 0.006), onFace(glow(0x7a7a88)), -0.005, 0, -0.03 + n * 0.03); // (through the tape, 3 mm proud each side)
     return seg;
   });
   const basis = new THREE.Matrix4(), T = new THREE.Vector3(), Nv = new THREE.Vector3(), B = new THREE.Vector3(), P = new THREE.Vector3();
@@ -594,9 +595,9 @@ const makeTaxmen = () => {
   const clipboard = (parent) => {
     const g = sub(parent, 0, -0.1, 0.04);
     part(g, box(0.16, 0.22, 0.012), lambert(0x6b4a2a));
-    part(g, box(0.14, 0.18, 0.004), glow(0xfbf7ea), 0, -0.01, 0.008);
+    part(g, box(0.14, 0.18, 0.006), glow(0xfbf7ea), 0, -0.01, 0.006); // (the paper 3 mm proud of the board, the lines 3 mm proud of it)
     part(g, box(0.06, 0.03, 0.02), lambert(0x9a9aa6), 0, 0.1, 0.008);
-    for (let k = 0; k < 4; k++) part(g, box(0.1, 0.008, 0.001), onFace(glow(0x8a8a9a)), 0, 0.05 - k * 0.035, 0.0105);
+    for (let k = 0; k < 4; k++) part(g, box(0.1, 0.008, 0.005), onFace(glow(0x8a8a9a)), 0, 0.05 - k * 0.035, 0.0095);
     return g;
   };
   const arms = [-1, 1].map((d, k) => {
@@ -660,7 +661,7 @@ const makeWardens = () => {
   part(van, box(0.48, 0.14, 0.02), glass, 0, 0.37, 0.3, -0.5); // (the windscreen drawn on)
   for (const x of [-0.251, 0.251]) part(van, box(0.02, 0.12, 0.3), glass, x, 0.33, 0.05); // (side windows)
   for (const [x, z] of [[-0.26, 0.25], [0.26, 0.25], [-0.26, -0.25], [0.26, -0.25]]) part(van, cyl(0.09, 0.09, 0.03, 12), lambert(0x2a2a30), x, 0.1, z, 0, 0, FLAT);
-  for (const x of [-0.12, 0.12]) part(van, new THREE.CircleGeometry(0.035, 10), glow(0xfff3c0), x, 0.3, 0.451);
+  for (const x of [-0.12, 0.12]) part(van, new THREE.CircleGeometry(0.035, 10), glow(0xfff3c0), x, 0.3, 0.4545); // (the headlamps 4.5 mm proud of the bonnet)
   const cap = sub(van, 0, 0.46, -0.1);
   part(cap, cyl(0.13, 0.12, 0.08, 14), navy, 0, 0.04, 0);
   part(cap, cyl(0.135, 0.135, 0.015, 14), lambert(0xffe24a), 0, 0.045, 0);
@@ -674,11 +675,11 @@ const makeWardens = () => {
     const a = arm(root, 0.2);
     const pad = sub(a.prop, 0, 0.01, 0.04);
     part(pad, box(0.1, 0.012, 0.14), ticketMat, 0, 0, 0, 0, 0, 0);
-    for (let n = 0; n < 3; n++) part(pad, box(0.06, 0.002, 0.008), ticketLine, 0, 0.007, -0.04 + n * 0.035);
+    for (let n = 0; n < 3; n++) part(pad, box(0.06, 0.008, 0.008), ticketLine, 0, 0.0055, -0.04 + n * 0.035); // (3.5 mm proud of the pad, its foot buried)
     const pen = part(pad, cyl(0.006, 0.006, 0.12, 6), lambert(0x101018), 0.03, 0.04, 0, 0.5, 0, 0.5);
     return { root, a, pad, pen, k, d };
   });
-  const tickets = Array.from({ length: 16 }, () => { const tk = part(all, plane(0.07, 0.1), ticketMat); part(tk, box(0.04, 0.006, 0.001), ticketLine, 0, 0.02, 0.001); part(tk, box(0.04, 0.006, 0.001), ticketLine, 0, -0.01, 0.001); return tk; });
+  const tickets = Array.from({ length: 16 }, () => { const tk = part(all, plane(0.07, 0.1), ticketMat); part(tk, box(0.04, 0.006, 0.006), ticketLine, 0, 0.02, 0); part(tk, box(0.04, 0.006, 0.006), ticketLine, 0, -0.01, 0); return tk; }); // (the lines through the ticket, 3 mm proud each side)
   // the clamp: a yellow ring with a jaw that snaps, up out of the roof
   const clampRoot = sub(van, 0, 0.46, -0.1);
   const clampArm = arm(clampRoot, 0.22);
@@ -725,7 +726,7 @@ const makeConsultants = () => {
   const all = sub(group);
   const W = 0.6, H = 0.4, D = 0.5;
   const body = crate(all, W, H, D, lambert(0xc6a16a));
-  part(body, plane(0.42, 0.13), lettered('SYNERGY', 0xffffff, 0x1f5fd0, 256, 80), 0, 0.22, D / 2 + 0.016);
+  part(body, plane(0.42, 0.13), lettered('SYNERGY', 0xffffff, 0x1f5fd0, 256, 80), 0, 0.22, D / 2 + 0.0145); // (4.5 mm proud of the planks; the notes 4.5 mm over it)
   const noteColours = [0xfff176, 0xff9ad5, 0x9df0a0, 0x8fd8ff];
   const note = (parent, x, y, z, ry, k) => part(parent, plane(0.09, 0.09), onFace(lambert(noteColours[k % 4], { side: THREE.DoubleSide })), x, y, z, 0, ry, (k % 3 - 1) * 0.2);
   // the easel on the crate: two front legs and a back leg, a board leaning back, a pad of sheets on it
@@ -738,41 +739,43 @@ const makeConsultants = () => {
   board.rotation.x = -0.12;
   part(board, box(0.42, 0.34, 0.016), lambert(0xf0f0f0), 0, 0, 0);
   part(board, box(0.44, 0.03, 0.03), lambert(0x2a2a30), 0, 0.175, 0.004); // (the clamp along the top)
-  const pad = part(board, box(0.38, 0.28, 0.012), lambert(0xffffff), 0, -0.02, 0.014);
+  // (the layers on the board, each 3.5 mm in front of the one under it, so none fights another: the pad (its back buried in
+  // the board), its ink, the sheet that flips, its ink, the laser dot, the notes)
+  const pad = part(board, box(0.38, 0.28, 0.016), lambert(0xffffff), 0, -0.02, 0.012);
   const chartLine = onFace(glow(0x1f5fd0));
-  const inkOn = (parent, z) => { // (a hockey-stick graph: axes, and a line that goes up and up)
-    part(parent, box(0.004, 0.2, 0.001), onFace(glow(0x2a2a30)), -0.13, 0.0, z);
-    part(parent, box(0.28, 0.004, 0.001), onFace(glow(0x2a2a30)), 0.01, -0.1, z);
-    part(parent, box(0.12, 0.008, 0.001), chartLine, -0.07, -0.08, z, 0, 0, 0.15);
-    part(parent, box(0.16, 0.008, 0.001), onFace(glow(0xd81e2a)), 0.05, 0.0, z, 0, 0, 0.9);
+  const inkOn = (parent, z, depth) => { // (a hockey-stick graph: axes, and a line that goes up and up)
+    part(parent, box(0.004, 0.2, depth), onFace(glow(0x2a2a30)), -0.13, 0.0, z);
+    part(parent, box(0.28, 0.004, depth), onFace(glow(0x2a2a30)), 0.01, -0.1, z);
+    part(parent, box(0.12, 0.008, depth), chartLine, -0.07, -0.08, z, 0, 0, 0.15);
+    part(parent, box(0.16, 0.008, depth), onFace(glow(0xd81e2a)), 0.05, 0.0, z, 0, 0, 0.9);
   };
-  inkOn(pad, 0.0065);
-  const dot = part(board, new THREE.CircleGeometry(0.014, 8), onFace(glow(0xff2020)), 0, 0, 0.022);
+  inkOn(pad, 0.0085, 0.006);
+  const dot = part(board, new THREE.CircleGeometry(0.014, 8), onFace(glow(0xff2020)), 0, 0, 0.035);
   // the sheet that flips over the top of the board, again and again
-  const flip = sub(board, 0, 0.155, 0.028);
+  const flip = sub(board, 0, 0.155, 0.027);
   const flipSheet = part(flip, plane(0.38, 0.28), sheetMat(0xffffff), 0, -0.145, 0);
-  inkOn(flipSheet, 0.001);
+  inkOn(flipSheet, 0.00275, 0.0035);
   // the sticky notes: over the crate, then the board and the easel too
   const plastered = Array.from({ length: 20 }, (_, k) => {
     const g = sub(body);
     g.rotation.y = (k % 4) * FLAT;
-    const n = note(g, -0.2 + ((k * 0.37) % 1) * 0.4, 0.06 + ((k * 0.61) % 1) * 0.3, (k % 2 ? W : D) / 2 + 0.016, 0, k);
+    const n = note(g, -0.2 + ((k * 0.37) % 1) * 0.4, 0.06 + ((k * 0.61) % 1) * 0.3, (k % 2 ? W : D) / 2 + 0.019 + (Math.floor(k / 4) % 3) * 0.0025, 0, k); // (notes that overlap stand 2.5 mm apart)
     n.userData.k = k;
     return n;
   });
-  const boardNotes = Array.from({ length: 6 }, (_, k) => note(board, -0.15 + ((k * 0.43) % 1) * 0.3, -0.12 + ((k * 0.71) % 1) * 0.24, 0.024, 0, k + 1));
+  const boardNotes = Array.from({ length: 6 }, (_, k) => note(board, -0.15 + ((k * 0.43) % 1) * 0.3, -0.12 + ((k * 0.71) % 1) * 0.24, 0.0385 + k * 0.002, 0, k + 1));
   const lidNotes = [0, 1, 2].map(k => { const n = note(all, -0.2 + k * 0.2, H + 0.014, 0.18 - (k % 2) * 0.36, 0, k + 2); n.rotation.x = -FLAT; return n; });
   // the pie chart in the air, and the invoice out of the side
   const pie = sub(all, 0, H + 0.95, 0);
   const wedges = [[0, 2.4, 0x1f5fd0], [2.4, 1.6, 0xff8a2a], [4.0, 1.4, 0x9df0a0], [5.4, 0.88, 0xd81e2a]];
   for (const [from, len, colour] of wedges) part(pie, new THREE.CylinderGeometry(0.2, 0.2, 0.05, 16, 1, false, from, len), lambert(colour), 0, 0, 0);
-  const invoice = sub(all, -W / 2 - 0.012, 0, 0);
-  const invoiceBits = Array.from({ length: 8 }, (_, k) => { const b = part(invoice, plane(0.14, 0.12), sheetMat(0xffffff)); if (k % 2) part(b, box(0.09, 0.008, 0.001), onFace(glow(0x5a5a66)), 0, 0, 0.001); return b; });
+  const invoice = sub(all, -W / 2 - 0.0125, 0, 0);
+  const invoiceBits = Array.from({ length: 8 }, (_, k) => { const b = part(invoice, plane(0.14, 0.12), sheetMat(0xffffff)); if (k % 2) part(b, box(0.09, 0.008, 0.006), onFace(glow(0x5a5a66)), 0, 0, 0); return b; }); // (the line through the sheet, 3 mm proud each side)
   const total = part(invoice, plane(0.14, 0.06), lettered('$$$$', 0xd81e2a, 0xffffff, 128, 56));
   const loose = sheets(all, 8);
   return stated(group, (t, flipping, over) => {
     const up = clamp01(flipping + over);
-    dot.position.set(Math.sin(t * (1.7 + up * 6)) * 0.15 + Math.sin(t * 5.3) * 0.03, -0.02 + Math.sin(t * (2.3 + up * 5)) * 0.1, 0.022);
+    dot.position.set(Math.sin(t * (1.7 + up * 6)) * 0.15 + Math.sin(t * 5.3) * 0.03, -0.02 + Math.sin(t * (2.3 + up * 5)) * 0.1, 0.035);
     dot.scale.setScalar(1 + over * 0.6);
     // the page: it lifts, flips right over the top and comes back
     const cycleAt = (t * (0.5 + over * 0.6)) % 1;
@@ -826,24 +829,25 @@ const makeInlaws = () => {
   };
   // the trunk: tartan, brass corners, two latches
   const trunk = makeCase(all, 0.72, 0.3, 0.48, tartan, 0.07);
-  for (const x of [-0.2, 0.0, 0.2]) part(trunk.body, box(0.035, 0.304, 0.484), redLine, x, 0.15, 0);
-  for (const y of [0.1, 0.22]) part(trunk.body, box(0.724, 0.03, 0.484), y > 0.15 ? yellowLine : redLine, 0, y, 0);
-  for (const x of [-0.2, 0.0, 0.2]) part(trunk.lid, box(0.035, 0.074, 0.494), redLine, x, 0.035, 0);
+  // (the tartan's bands stand 4.5 mm proud of the trunk and the red uprights 4.5 mm proud of them, so no two fight: CHECKLIST 455)
+  for (const x of [-0.2, 0.0, 0.2]) part(trunk.body, box(0.035, 0.305, 0.498), redLine, x, 0.1525, 0);
+  for (const y of [0.1, 0.22]) part(trunk.body, box(0.729, 0.03, 0.489), y > 0.15 ? yellowLine : redLine, 0, y, 0);
+  for (const x of [-0.2, 0.0, 0.2]) part(trunk.lid, box(0.035, 0.0745, 0.499), redLine, x, 0.03725, 0);
   for (const [x, z] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) part(trunk.body, box(0.06, 0.06, 0.06), brass, x * 0.345, 0.03, z * 0.225);
-  for (const x of [-0.22, 0.22]) part(trunk.body, box(0.06, 0.05, 0.015), brass, x, 0.27, 0.245);
+  for (const x of [-0.22, 0.22]) part(trunk.body, box(0.06, 0.05, 0.025), brass, x, 0.27, 0.24);
   // the suitcases: leather with two straps, a handle on the front, stickers; floral with one strap and a tag
   const caseA = makeCase(trunk.lid, 0.6, 0.2, 0.4, leather, 0.03);
   caseA.g.position.y = 0.073;
-  for (const x of [-0.16, 0.16]) part(caseA.body, box(0.05, 0.204, 0.404), strapMat, x, 0.1, 0);
-  for (const x of [-0.16, 0.16]) part(caseA.lid, box(0.05, 0.034, 0.414), strapMat, x, 0.015, 0);
+  for (const x of [-0.16, 0.16]) part(caseA.body, box(0.05, 0.205, 0.409), strapMat, x, 0.1025, 0); // (the straps 4.5 mm proud)
+  for (const x of [-0.16, 0.16]) part(caseA.lid, box(0.05, 0.0345, 0.419), strapMat, x, 0.01725, 0);
   part(caseA.body, torus(0.05, 0.012, 10, Math.PI), strapMat, 0, 0.1, 0.2, FLAT, 0, 0).scale.set(1.6, 1, 1);
-  [[-0.22, 0.12, 0], [0.24, 0.08, 1], [0.05, 0.14, 2]].forEach(([x, y, k]) => part(caseA.body, plane(0.09, 0.065), stickers[k], x, y, 0.204, 0, 0, (k - 1) * 0.3));
-  part(caseA.body, plane(0.07, 0.07), stickers[3], 0.0, 0.1, -0.204, 0, Math.PI, 0.2);
+  [[-0.245, 0.12, 0], [0.24, 0.08, 1], [0.05, 0.14, 2]].forEach(([x, y, k]) => part(caseA.body, plane(0.09, 0.065), stickers[k], x, y, 0.2045, 0, 0, (k - 1) * 0.3)); // (4.5 mm proud, clear of the straps)
+  part(caseA.body, plane(0.07, 0.07), stickers[3], 0.0, 0.1, -0.2045, 0, Math.PI, 0.2);
   const caseB = makeCase(caseA.lid, 0.46, 0.16, 0.32, lambert(0xf2c6d0), 0.03);
   caseB.g.position.y = 0.033;
-  part(caseB.body, box(0.05, 0.164, 0.324), strapMat, 0.0, 0.08, 0);
-  part(caseB.lid, box(0.05, 0.034, 0.334), strapMat, 0.0, 0.015, 0);
-  for (let n = 0; n < 6; n++) part(caseB.body, new THREE.CircleGeometry(0.016, 6), onFace(glow([0xd84a7a, 0x6a9ad0, 0xe0a030][n % 3])), -0.18 + n * 0.07 + (n % 2) * 0.02, 0.05 + (n % 2) * 0.06, 0.1625);
+  part(caseB.body, box(0.05, 0.165, 0.329), strapMat, 0.0, 0.0825, 0);
+  part(caseB.lid, box(0.05, 0.0345, 0.339), strapMat, 0.0, 0.01725, 0);
+  for (let n = 0; n < 6; n++) part(caseB.body, new THREE.CircleGeometry(0.016, 6), onFace(glow([0xd84a7a, 0x6a9ad0, 0xe0a030][n % 3])), -0.18 + n * 0.07 + (n % 2) * 0.02, 0.05 + (n % 2) * 0.06, 0.1645);
   part(caseB.body, torus(0.04, 0.01, 10, Math.PI), strapMat, 0.23, 0.08, 0, 0, 0, -FLAT); // (a handle on its end)
   const tag = sub(caseB.body, 0.25, 0.05, 0.1);
   part(tag, cyl(0.004, 0.004, 0.06, 5), lambert(0xd8d8e0), 0, 0.02, 0);
@@ -856,8 +860,8 @@ const makeInlaws = () => {
   part(hatBox, new THREE.CircleGeometry(hatR - 0.004, 20), SHADE, 0, hatH - 0.012, 0, -FLAT);
   const hatLid = sub(hatBox, 0, hatH + 0.003, 0);
   part(hatLid, cyl(hatR + 0.006, hatR + 0.006, 0.03, 20), lambert(0xf4ead8), 0, 0.015, 0);
-  part(hatLid, box(0.03, 0.034, hatR * 2 + 0.014), lambert(0xd84a7a), 0, 0.015, 0);
-  part(hatLid, box(hatR * 2 + 0.014, 0.034, 0.03), lambert(0xd84a7a), 0, 0.015, 0);
+  part(hatLid, box(0.03, 0.032, hatR * 2 + 0.021), lambert(0xd84a7a), 0, 0.0185, 0); // (the ribbon 4.5 mm proud of the lid, its foot 2.5 mm above the rim)
+  part(hatLid, box(hatR * 2 + 0.021, 0.032, 0.03), lambert(0xd84a7a), 0, 0.0185, 0);
   for (const d of [-1, 1]) part(hatLid, torus(0.04, 0.014, 10), lambert(0xd84a7a), d * 0.045, 0.045, 0, 0, 0, d * 0.4).scale.set(1.2, 1, 0.5);
   part(hatLid, sphere(0.022, 8, 6), lambert(0xd84a7a), 0, 0.04, 0);
   const hat = sub(hatBox, 0, hatH - 0.1, 0);
@@ -1100,19 +1104,19 @@ const makeJumper = () => {
   // neck, and the two sleeves hanging from the shoulders
   const jumper = sub(body, 0, 0.02, 0); // (the shoulder bar is inside the shoulders; the hook comes out of the neck)
   part(jumper, box(0.42, 0.46, 0.13), wool, 0, -0.23, 0);
-  part(jumper, box(0.424, 0.08, 0.134), cream, 0, -0.17, 0); // (the fair-isle band, its diamonds front and back)
-  for (let k = 0; k < 5; k++) for (const z of [0.0672, -0.0672]) part(jumper, new THREE.OctahedronGeometry(0.03), wool, -0.14 + k * 0.07, -0.17, z).scale.set(1, 1, 0.1);
-  for (let k = 0; k < 2; k++) part(jumper, box(0.424, 0.012, 0.134), rib, 0, -0.115 - k * 0.11, 0); // (the band's edging)
+  part(jumper, box(0.429, 0.08, 0.143), cream, 0, -0.17, 0); // (the fair-isle band, its diamonds front and back; it and the edging stand 4.5 mm proud of the body)
+  for (let k = 0; k < 5; k++) for (const z of [0.0717, -0.0717]) part(jumper, new THREE.OctahedronGeometry(0.03), wool, -0.14 + k * 0.07, -0.17, z).scale.set(1, 1, 0.1);
+  for (let k = 0; k < 2; k++) part(jumper, box(0.429, 0.012, 0.139), rib, 0, -0.115 - k * 0.11, 0); // (the band's edging)
   const hem = part(jumper, box(0.43, 0.06, 0.136), rib, 0, -0.49, 0);
-  for (let k = 0; k < 14; k++) part(hem, box(0.008, 0.06, 0.004), wool, -0.195 + k * 0.03, 0, 0.069); // (the ribbing's ridges, front)
-  for (let k = 0; k < 14; k++) part(hem, box(0.008, 0.06, 0.004), wool, -0.195 + k * 0.03, 0, -0.069);
+  for (let k = 0; k < 14; k++) part(hem, box(0.008, 0.056, 0.009), wool, -0.195 + k * 0.03, 0, 0.068); // (the ribbing's ridges, front: 4.5 mm proud of the hem)
+  for (let k = 0; k < 14; k++) part(hem, box(0.008, 0.056, 0.009), wool, -0.195 + k * 0.03, 0, -0.068);
   part(jumper, torus(0.09, 0.022, 14), rib, 0, 0.0, 0); // (the ribbed crew neck: an arc over the shoulders)
   const sleeve = (d, len) => {
     const s = sub(jumper, d * 0.2, -0.02, 0);
     s.rotation.z = d * 0.5;
     part(s, cyl(0.065, 0.058, len, 10), wool, 0, -len / 2, 0);
     part(s, cyl(0.062, 0.062, 0.05, 10), rib, 0, -len - 0.01, 0);
-    for (let k = 0; k < 8; k++) { const a = k * 0.785; part(s, box(0.006, 0.05, 0.004), wool, Math.sin(a) * 0.063, -len - 0.01, Math.cos(a) * 0.063, 0, a, 0); }
+    for (let k = 0; k < 8; k++) { const a = k * 0.785; part(s, box(0.006, 0.046, 0.009), wool, Math.sin(a) * 0.0635, -len - 0.01, Math.cos(a) * 0.0635, 0, a, 0); }
     return s;
   };
   const sleeves = [sleeve(-1, 0.4), sleeve(1, 0.46)];
@@ -1190,8 +1194,8 @@ const makeBooks = () => {
   });
   const cover = sub(top, -tw / 2 + 0.006, 0.058, 0);
   part(cover, box(tw, 0.008, td), lambert(colours[4]), tw / 2 - 0.006, 0, 0);
-  part(cover, box(0.2, 0.003, 0.06), gilt, tw / 2, 0.006, 0);
-  part(cover, plane(0.14, 0.05), lettered('OVERDUE', 0xffffff, 0xd81e2a, 192, 64), tw / 2 + 0.05, 0.0045, 0.09, -FLAT);
+  part(cover, box(0.2, 0.006, 0.06), gilt, tw / 2, 0.0055, 0); // (the title and the label 4.5 mm proud of the board)
+  part(cover, plane(0.14, 0.05), lettered('OVERDUE', 0xffffff, 0xd81e2a, 192, 64), tw / 2 + 0.05, 0.0085, 0.09, -FLAT);
   const ribbon = sub(top, 0.1, 0.039, -td / 2 + 0.008);
   part(ribbon, box(0.03, 0.0015, 0.16), lambert(0xd81e2a), 0, 0, -0.08);
   return idle(group, (t) => {
@@ -1397,7 +1401,7 @@ const makeRadio = () => {
   for (let k = 0; k < 5; k++) part(body, box(0.02, 0.24, 0.025), woodDark, -0.22 + k * 0.05, 0.26, 0.152);
   const dialMat = glow(0xffd98a);
   part(body, box(0.2, 0.12, 0.01), dialMat, 0.15, 0.3, 0.152); // (the dial's glass)
-  for (let k = 0; k < 7; k++) part(body, box(0.004, 0.03, 0.002), glow(0x6a4a10), 0.07 + k * 0.027, 0.33, 0.158);
+  for (let k = 0; k < 7; k++) part(body, box(0.004, 0.03, 0.006), glow(0x6a4a10), 0.07 + k * 0.027, 0.33, 0.1585); // (4.5 mm proud of the glass)
   const needle = part(body, box(0.006, 0.11, 0.004), glow(0xd81e2a), 0.15, 0.3, 0.159);
   for (const x of [0.1, 0.2]) part(body, cyl(0.03, 0.03, 0.025, 12), brass, x, 0.15, 0.16, FLAT);
   part(body, box(0.5, 0.02, 0.012), woodDark, 0, 0.09, 0.155);
