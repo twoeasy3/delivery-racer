@@ -156,6 +156,10 @@ const spray = (s, lat, hw, hl, speed, dir, latVel = 0) => {
   }
 };
 
+// m a thing afloat sits down in the water (its draft): the player's car, a traffic vehicle of a kind (render/sidering.js too)
+export const playerDraft = () => Player.rageTank ? Player.rageTank.draft : Player.tank > 0 || CAR.noWheels ? W().boatDraft : CAR.draft ?? W().draft;
+export const trafficDraft = (kind) => { const type = CONFIG.vehicles[kind] || {}; return type.boat ? W().boatDraft : type.draft ?? W().draft; };
+
 let wasAfloat = false, rolled = false;
 export const syncWater = (now, dt) => {
   if (!sheets.length) {
@@ -183,7 +187,7 @@ export const syncWater = (now, dt) => {
   // the player's car afloat: down into the water by its draft, bobbing, its bow up a little at speed
   const depth = Game.screensaver ? 0 : Track.water(Player.s);
   if (depth > 0) {
-    const r = riding(Player.s, Player.rageTank ? Player.rageTank.draft : Player.tank > 0 || CAR.noWheels ? C.boatDraft : CAR.draft ?? C.draft, 0, now);
+    const r = riding(Player.s, playerDraft(), 0, now);
     carMesh.position.y += r.y;
     carMesh.rotation.z = r.roll;
     carMesh.rotation.x += r.pitch - depth * 0.05 * Math.min(1, Player.speed / 30);
@@ -210,8 +214,7 @@ export const syncWater = (now, dt) => {
     if (!car.active || car.junction) continue;
     const d = Track.water(car.s);
     if (d <= 0) { if (mesh.userData.rolled) { mesh.rotation.z = 0; mesh.userData.rolled = false; } continue; }
-    const type = CONFIG.vehicles[car.kind] || {};
-    const r = riding(car.s, type.boat ? C.boatDraft : type.draft ?? C.draft, i * 1.7, now);
+    const r = riding(car.s, trafficDraft(car.kind), i * 1.7, now);
     mesh.position.y += r.y;
     mesh.rotation.z = r.roll;
     mesh.rotation.x += r.pitch;

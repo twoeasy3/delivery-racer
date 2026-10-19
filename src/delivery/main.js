@@ -50,6 +50,7 @@ import { syncRoadside } from './render/roadside.js';
 import { syncHazards } from './render/hazards.js';
 import { syncGambles } from './render/gambles.js';
 import { syncRadiation } from './render/radiation.js';
+import { syncSideRing } from './render/sidering.js'; // (the Good/Evil ring under the cars: Options 'Side ring', 'Traffic rings')
 import { Radiation } from './radiation.js';
 import { Replay } from './replay.js';
 import './render/replayui.js';
@@ -478,6 +479,7 @@ const frame = (now) => {
     syncRoadworks(dt, now);
     syncGambles(now, dt); // (after the car and the traffic are placed: it leans and shakes them)
     syncRadiation(now, dt); // (after the traffic is placed: the infected cars' rings go with them)
+    syncSideRing(); // (after the cars are placed, floated and shaken)
     syncTunnel(); // (after the roadside's fog bank: a tunnel only ever closes the fog in further)
     syncReversible();
     syncBattle(dt);
