@@ -176,7 +176,7 @@
 //                                  'lavaRock' (the volcano's rock), 'wasteDrum' (the fallout zone's), 'ticketGate', 'scrubber', 'trackLamp', 'railTrolley', 'infoTotem' (the metro's), 'boxStack', 'trolleyRow', 'wetFloorSign', 'planter', 'palmPot', 'kiosk', 'bench', 'playBlock', 'bin' (the mall's), 'jerryStack', 'tentRoll' and
 //                                  'rallyFlag' (the desert's: stacked jerrycans, a rolled tent, a rally marker flag), 'ingotStack', 'steelCoil', 'hotSign' and
 //                                  'rebarBundle' (the steelworks': hot billets, a coil, a HOT METAL sign, rebar), 'cheeseWheels', 'woodpile', 'milkChurn',
-//                                  'snowBlock' (the alpine pass's). All of them are on the Gimmicks page, last,
+//                                  'snowBlock' (the alpine pass's), 'fishCrates', 'creelStack', 'fishBoxWall' (the Nordic fjord's). All of them are on the Gimmicks page, last,
 //                                  under Road dressing (gimmicks.html?group=road-dressing)
 //   dropBears  { from, to, count } drop bears up in the trees over that stretch, dropping onto the
 //              road as the player comes near (see CONFIG.dropBear)
@@ -713,6 +713,8 @@ HIDDEN_LEVELS['vegas-strip'] = vegasStrip; // Vegas Strip (the Las Vegas theme: 
 HIDDEN_LEVELS['vegas-night'] = vegasNight; // Vegas by Night (the same Strip after dark, its hero look): ?hidden=vegas-night
 import alpinePass from './levels/alpine-pass.json';
 HIDDEN_LEVELS['alpine-pass'] = alpinePass; // Alpine Pass (the alpine theme's switchbacks to the col): ?hidden=alpine-pass, until the owner decides
+import fjordRoad from './levels/fjord-road.json';
+HIDDEN_LEVELS['fjord-road'] = fjordRoad; // Fjord Road (the nordic theme: fjord, rock tunnels): ?hidden=fjord-road, until the owner decides
 import metroRun from './levels/metro-run.json';
 HIDDEN_LEVELS['metro-run'] = metroRun; // Metro Run (a metro system: running tunnels, stations, an interchange, the depot: render/themes/metro.js): ?hidden=metro-run, until it is put in the career
 import obstacleLab from './levels/obstacle-lab.json';

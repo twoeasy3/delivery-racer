@@ -40,6 +40,7 @@ export const STAGE_FILES = {
   port: () => import('./stages/port.js'),
   wildwest: () => import('./stages/wildwest.js'),
   farm: () => import('./stages/farm.js'),
+  nordic: () => import('./stages/nordic.js'),
   // (the rest, one table: render/stages/table.js; by THEME name only, never another theme's scenery: hood and christmas are
   // drawn as the suburb but keep their own stages)
   ...Object.fromEntries(TABLE_THEMES.map((name) => [name, () => import('./stages/table.js').then((m) => ({ stage: m.stageOf(name) }))])),
