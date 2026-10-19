@@ -44,7 +44,7 @@ Object.assign(MODELS, {
     const group = new THREE.Group(), w = car.hw * 2, l = car.hl * 2, paint = lambert(car.color), cream = lambert(0xfff3d6);
     const body = box(group, paint, w, 0.9, l, 0, 0.85, 0);
     box(group, cream, w * 0.98, 1.0, l * 0.98, 0, 1.75, -0.02);
-    box(group, GLASS, w * 0.9, 0.55, 0.06, 0, 1.75, l / 2);                         // the windscreen
+    box(group, GLASS, w * 0.9, 0.55, 0.06, 0, 1.75, l * 0.49 + 0.005);             // the windscreen, on the cream cab's front (CHECKLIST 502: it stood 4 cm proud of it)
     box(group, GLASS, 0.06, 0.6, l * 0.4, w / 2, 1.75, -l * 0.1);                    // the serving hatch (on its right: local -x is right)
     box(group, GLASS, 0.06, 0.6, l * 0.4, -w / 2, 1.75, -l * 0.1);
     for (let k = 0; k < 5; k++) box(group, lambert(k % 2 ? 0xfff3d6 : 0xff7fb0), 0.5, 0.06, l * 0.08, -w / 2 - 0.25, 2.12, -l * 0.26 + k * l * 0.08).rotation.z = 0.35; // its awning
@@ -65,7 +65,7 @@ Object.assign(MODELS, {
   binlorry: (car) => {
     const group = new THREE.Group(), w = car.hw * 2, l = car.hl * 2, paint = lambert(car.color), steel = lambert(0x9aa0a6);
     box(group, lambert(0xf4f4f4), w * 0.96, 1.9, l * 0.24, 0, 1.55, l * 0.37);       // the cab
-    box(group, GLASS, w * 0.9, 0.7, 0.06, 0, 1.95, l / 2 - 0.02);
+    box(group, GLASS, w * 0.9, 0.7, 0.06, 0, 1.95, l * 0.49 + 0.025);              // the windscreen, on the cab's front (CHECKLIST 502: it stood 3.5 cm proud of it)
     const body = box(group, paint, w, 2.4, l * 0.6, 0, 1.9, -l * 0.07);              // the body
     box(group, steel, w * 0.98, 2.0, l * 0.14, 0, 1.6, -l * 0.43);                   // the hopper at the back...
     box(group, DARK, w * 0.8, 0.9, 0.06, 0, 1.3, -l / 2 + 0.02);                     // ...its mouth
