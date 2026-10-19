@@ -27,6 +27,7 @@ import { IdeasLot } from './ideaslot.js';
 import { sourcesLine } from '../carsources.js';
 import { IDEA_CARS } from '../ideas.js';
 import { Inspector } from './inspector.js';
+import { recordPick } from './lastpick.js'; // (the car taken here is the one a ?hidden level drives: render/lastpick.js)
 import { buyCar } from './carbuy.js'; // (a car bought: the one purchase path, the showroom's; it plays the sale cutscene, CHECKLIST 438 / 451)
 
 // The lot: three rows of bays, a long covered garage along the back, the cars parked strictly column by
@@ -368,6 +369,7 @@ const take = async (leave) => {
     takeSide();
     if (GarageView.settle()) GarageView.rebuild(); // (the choice in Show has no cars left: back to All)
   }
+  recordPick(car.id);
   refresh();
   if (leave) Garage.close(); // (to the menu: the car and its side go with it, as the garage's Back does)
 };

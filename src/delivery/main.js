@@ -101,6 +101,7 @@ import { Sound } from './render/audio.js';
 import { Social } from './social.js';
 import { CAR, CARS, FILLER_CARS, BESPOKE_CARS, EVENT_CARS, EARNED_CARS, LEVEL_CARS, lendCar, superOf, ownedAmphibious, carStats, setTierHooks } from './cars.js';
 import { IDEA_CARS } from './ideas.js';
+import { driveLastPick } from './render/lastpick.js';
 import { Message } from './messages.js';
 
 // ?autostart (or ?autostart=evil) in the address skips the start screen: handy when testing.
@@ -312,6 +313,10 @@ if (params.get('racewatch') !== null) {
   if (params.get('car')) { // ?car=lowrider: drive that car for this visit, owned or not (nothing is saved); ?car=super-sport: its Super version (cars.js superOf)
     lendForVisit(params.get('car').replace(/^super-/, ''));
     Progress.data.car = params.get('car').replace(/^super-/, '');
+  } else if (hidden) {
+    // a hidden level has no car rule of its own: it drives the car last picked in the garage, not an older `car` that a pick made under a
+    // tier's rule left untouched (cars.js selectCar keeps such a pick apart; render/lastpick.js). Nothing is saved (noSave); a level's own car lock still wins
+    driveLastPick(Progress);
   }
   // (an amphibious level straight from the address, with no amphibious car owned: one for this visit, as ?car gives)
   if (LEVEL.amphibious && !ownedAmphibious()) lendForVisit(CONFIG.clock.amphibious);
