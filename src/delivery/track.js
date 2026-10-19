@@ -1490,7 +1490,7 @@ const createTrack = () => {
         } else if (item.lane === 'left' || item.lane === 'right') {
           // (on that shoulder, as on a side road: laneOffset puts it there. It used to fall through to the test
           // below, which knows only numbered lanes, and be reported "merged away")
-        } else if (!Number.isInteger(item.lane) && !(what === 'obstacle' && Number.isInteger(item.lane * 2))) { // (an obstacle may stand ON a lane line, x.5: a wide barrier starts there, a plain one threads it: OBSTACLE-STAGE-DESIGN.md 5c)
+        } else if (!Number.isInteger(item.lane) && !(what === 'obstacle' && Number.isFinite(item.lane) && (item.span > 1 ? Number.isInteger(item.lane * 2) : true))) { // (an obstacle may stand at ANY lane position between two open lanes, e.g. 1.25 or 1.5: the free-position gaps of OBSTACLE-STAGE-DESIGN.md 5c; a wide barrier starts on a lane line, x.5)
           problems.push(name + ': its lane is a number, or left or right (a shoulder)');
         } else if (item.lane < 0 || item.lane >= LANES) { // (a wide barrier's lanes are checked above)
           problems.push(name + ': no lane ' + item.lane);
@@ -1505,8 +1505,8 @@ const createTrack = () => {
           else if (item.road === 'side' || !Number.isInteger(item.lane * 2) || item.lane < 0) problems.push(name + ': a wide obstacle stands on the expressway\'s lanes, from a lane or a lane line');
           else for (let l = Math.floor(item.lane); l <= Math.ceil(item.lane + span - 1); l++) if (l >= LANES || openLane(l, item.s) !== l) problems.push(name + ': it spans lane ' + l + ', not open there');
         }
-        if (span === 1 && what === 'obstacle' && typeof item.lane === 'number' && !Number.isInteger(item.lane) && item.road !== 'side') { // (on a lane line: both lanes it lies between are open there, and it is not a shoulder or the median's)
-          for (const l of [Math.floor(item.lane), Math.ceil(item.lane)]) if (l < 0 || l >= LANES || openLane(l, item.s) !== l || inMedian(l)) problems.push(name + ': on a lane line, but lane ' + l + ' is not open there');
+        if (span === 1 && what === 'obstacle' && typeof item.lane === 'number' && !Number.isInteger(item.lane) && item.road !== 'side') { // (between lanes: both lanes it lies between are open there, and it is not a shoulder or the median's)
+          for (const l of [Math.floor(item.lane), Math.ceil(item.lane)]) if (l < 0 || l >= LANES || openLane(l, item.s) !== l || inMedian(l)) problems.push(name + ': between lanes, but lane ' + l + ' is not open there');
         }
         const s = place(item), lat = span > 1 && typeof item.lane === 'number' ? spanOffset(item.lane, span, s) : laneOffset(item.lane, s);
         if (spots.some(o => Math.abs(o.s - s) < 8 && Math.abs(o.lat - lat) < 2 + o.wide + wide)) problems.push(name + ': on top of another item');

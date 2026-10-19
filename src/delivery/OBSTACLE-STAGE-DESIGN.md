@@ -5,7 +5,7 @@ northbound'", using only the standard exploding obstacle. This is a draft design
 lay and check it, and a hidden lab level that shows every pattern: `?hidden=obstacle-lab` (not `?level=`, which takes a
 menu number). Nothing in the existing levels was changed by the draft itself. **17-Oct additions:** rule 8 now says traffic everywhere except a
 short quiet zone round each formation, rule 9 says both sides of a two-way road carry obstacles, cash is no longer laid round
-formations (§5, CASH), and two opt-in experiments were added: THREAD (§5c, barriers on the lane lines) and MOVERS (§5d).
+formations (§5, CASH), and two opt-in experiments were added: FREE-POSITION SLOTS (§5c, the way through is a slot centred anywhere) and MOVERS (§5d).
 
 Everything below about fairness comes from **simulation**, not from play. Nobody has driven these layouts by hand.
 
@@ -98,7 +98,8 @@ At the level's DESIGN SPEED `v`: the top speed of the tier's cars, since top spe
 1. **Never all lanes shut.** Every row leaves at least one opening of at least `2 x widest half width + 0.6 m` = 2.7 m (the
    widest garage car is about 2.1 m). Barriers are 2.4 m wide, so any opening is a whole lane (3.5 m) or more.
 2. **No squeezes.** A gap between two boxes is either a wall (under 1.2 m) or a way through (2.7 m or more), never in between.
-   The audit flags `SQUEEZE`.
+   The audit flags `SQUEEZE`. The exception is a deliberate SLOT wall (§5c, free-position obstacles), whose gaps are slots of 2.2 to 2.7 m
+   judged by width against the car (`SLOT_TOO_NARROW`).
 3. **A clean line from every lane, kept to the player's own lanes.** It is simulated with the real steering, the yawed car
    and 0.25 m of human margin each side. The shoulder (3 s of meter) and the oncoming lanes are escapes, not the designed line.
    The audit flags `OFF_LANES` where they are the only way.
@@ -320,52 +321,70 @@ Fairness for all: never fully blocked (the generator refuses a row without a way
 the narrowest designed opening is 4.05 m against a 1.7 m car (2.35 m spare). A **1.5-lane block beside a lane line** leaves
 2.3 m: a squeeze, flagged; don't.
 
-## 5c. THREAD: barriers ON the lane lines (OPT-IN, an experiment, 17-Oct)
+## 5c. FREE-POSITION SLOTS: the way through is a gap, not a lane (OPT-IN, 17-Oct, redone 19-Oct)
 
-The owner asked for obstacles BETWEEN lanes, so the player threads the line. **This is opt-in: no real level uses it yet, only the
-lab (`?hidden=obstacle-lab`, from 3,980 m).** It needed one change to rules code: `Track.problems` (track.js) refused any plain
-obstacle at a fractional lane ("its lane is a number, or left or right"); it now lets an obstacle stand at lane x.5 (a wide barrier
-already could), if both lanes it lies between are open there. `Track.laneOffset` already gave x.5 the right lat, and nothing else
-reads an obstacle's lane as a whole number. **The replay rules fingerprint changed** with that edit (track.js is a rules file).
-Level data is `{ s, lane: 1.5, kind: 'barrier' }`.
+The first try (single barriers on a lane line, "thread") was wrong, and the owner said so: it judged paths by LANE CENTRES, but the
+player steers continuously and can sit ANYWHERE across the road, on a lane line, a quarter lane off it. A barrier on a line is just
+a solo obstacle moved sideways. It was removed. What replaces it: **the way through is a SLOT between obstacles, centred at any
+lateral position, only a little wider than the car, and its position changes from wall to wall, so the player steers the car to a
+specific lateral position, not to a lane.** Opt-in: no formation of the existing levels was replaced.
 
-**The geometry (measured, half widths: the 1.7 m reference car 0.85, the widest garage car 1.05; the audit adds 0.25 m of margin):**
+**Rules code changed (twice):** `Track.problems` (track.js) now lets a plain obstacle stand at ANY lane position between two open
+lanes (`{ s, lane: 1.25, kind: 'barrier' }`; 3 decimals; the first round allowed only x.5; a wide barrier still starts on a line),
+and the level schema (levelSchema.js, `halves: true`) takes any such number, not only x.5. `Track.laneOffset` already placed a
+fractional lane by a straight line between lane centres, on a bend too. **The replay rules fingerprint moved with it: 99ec8ffa44 /
+c844ce1038 (x.5 only) -> 0092ac352b / a24b118efc (any fraction + schema); main was 756d432419 / 0da7e18857.** Level JSON moves nothing.
 
-| box on the line | covers | lane centre to its edge | a car at the lane centre | car centre must be at least | room inside the lane for it | the slot beside it |
-|---|---|---|---|---|---|---|
-| **barrier**, 2.4 m wide (hw 1.2) | 1.2 m each side | 0.55 m | hits it by 0.30 m (0.85) / 0.50 m (1.05) | 2.05 m (0.85) / 2.25 m (1.05) from the line | 0.6 m wide for the 0.85 car, **0.2 m for the widest**, none with the 0.25 m margin | the neighbouring lanes' free width: 5.8 m beside the middle line of 4 lanes |
-| **crate**, 1.2 m wide (hw 0.6) | 0.6 m each side | 1.15 m | clear by 0.30 m (0.85) / 0.10 m (1.05) | 1.45 m / 1.65 m | 1.2 m / 0.8 m: **the lane centre is clear** | 2.9 m on a 2-lane side |
+**The slot a car needs** = 2 x its half width + a margin each side (0.25 m; 0.30 m for the widest). The audit car is the Sportscompact:
 
-So **the standard barrier is too wide for a true thread**: it leaves no lane-centre path in the lane beside it (the car must sit 0.3 m
-off its lane centre, towards the far line, and the widest car has 0.2 m to do it in). What it does is a LINE-BLOCKER: the lanes
-beside the line are narrowed to a nudge, and the way past is the outer lanes. Use it only where every opening in the row is a wall
-(under 1.2 m) or a slot of 2.7 m or more for the widest car (2 x 1.05 + 0.6): on a 4-lane side that is the middle line only (any other
-line leaves 2.3 m between the barrier and the lanes' edge: not a squeeze, because the shoulder runs on beside it, but not a slot
-either). The generator refuses a row without a 2.7 m slot and a squeeze between two boxes. The crate (`--linekind crate`) is the
-narrower plain kind of the design doc that does thread a lane centre; it is the one the lab shows for it. Its cost (31, keeps 0.75) is
-not the barrier's, and the owner's "no generic crates" holds for a real level: the theme's own swap is automatic.
+| car class | half width | slot it needs |
+|---|---|---|
+| narrow car | 0.75 m | 2.0 m |
+| reference car (Sportscompact) | 0.85 m | **2.2 m** |
+| wide car | 0.95 m | 2.5 m |
+| widest garage car | 1.05 m | **2.7 m** |
 
+The patterns default to 2.7 m (every car); the audit says which classes a slot fits. **2.2 m is the floor and has no play at all** (the
+reference car with exactly its 0.25 m a side): the audit's simulated driver, which steers full, none or full, cannot thread it and
+falls back to the shoulder (`OFF_LANES`), so a person cannot be asked to. **Tight slots are 2.4 m** (0.1 m of play a side; reference and
+narrow cars), which the simulation threads from every lane: that is what the lab shows.
+
+**How a wall is built** (`slotRow`): obstacles of one kind either side of the slot, their edges at the slot's edges, then one every
+(2 x half width + 1.0 m) outward (a 1.0 m gap reads as closed; no car is under 1.48 m), out to the first and last lane's centre. A box
+cannot stand outside lane 0 .. n-1 (a lane below 0 is the shoulder), so **what a road can hold is limited**: 4 lanes hold a 2.7 m slot
+centred from -2.7 to +2.7 m of the road's middle (lane 0.73 to 2.27); 3 lanes only +-0.95 m (lane 0.73 to 1.27); 2 lanes none
+(fjord-road: no slot). Crates (hw 0.6) hold a little more. The generator says so and refuses.
+
+**The patterns** (`node scripts/obstacle-patterns.mjs <name> --lanes 4 --s 300 --meta`; `kind` any plain kind: `--kind crate` for finer
+control, more boxes, same slots):
+- **`slot`**: one wall, one slot, centred at `--at` (lane units, default the middle lane line; `--at 1.25` a quarter lane off it).
+- **`slotrun`**: a run of walls whose slot drifts `--step` lanes each row (default 0.4 = 1.4 m), bouncing between the edges the road
+  can hold: a continuous weave, hand-steered, never a lane change.
+- **`slotstagger`**: walls leaving their slot alternately either side of a line (`--offset` 0.35 lane = 1.2 m each way).
+- **`needle`**: the same slot `--rows` walls deep, 10 m apart (4 = 30 m): the car holds one lateral position.
 ```
- thread            threadrun (0.5, 1.5, 2.5, 1.5, 0.5)       threadgate (gap 1)
-   ..  ..##..  ..     ..##..  ..  ..                          [##] ..##.. [##]
-                       ..  ..##..  ..   (30 m a row)           slots 2.85 m each
-                       ..  ..  ..##..
+ slotrun, 4 lanes, 2.7 m slots (# = a box, 8 columns a lane):  300 .######. .....### ##...... ######..   slot lane 0.729
+                                                                330 ....#### ##...... ######.. #####...   + 30 m, shift 0.9 m   slot lane 1.129
 ```
-- **`thread`** (`--line 1.5`): ONE barrier on a lane line. Fair at 40 m/s: 5.8 m slots both sides on 4 lanes; seen 150 m.
-- **`threadrun`**: a run stepping along the lines (default 0.5, 1.5, 2.5, 1.5, 0.5 on 4 lanes), 30 m a row (a nudge asks 0.33 s: 13 m
-  at 40 m/s, so 30 m is the readable spacing, not the needed one). Each row is a nudge, never a lane change; the audit finds a line from
-  every lane for all of it.
-- **`threadgate`**: a gate whose gap is TWO lanes with a barrier on the line between them (barriers on the other lanes): the gap splits
-  into two slots of 2.85 m, each fits the widest car with 0.375 m a side. The line-blocker mixed into a gate.
+**Spacing from the real steering:** a slot's usable centre range is its width less the car and its margins (2.7 m for the 0.85 car:
++-0.25 m); the shift is the distance between two slots' centres less both ranges; the road between walls is
+`speed x (shiftChange(shift) + 0.25 s) + the boxes' lengths + the car's` (`slotGap`), at least 30 m so a wall reads. At 40 m/s a
+0.9 m shift is 29 m, a 1.9 m shift (stagger) 36 m, a 1.7 m shift 35 m. `kinematics` prints `shiftChange` for any distance.
 
-**The audit** (obstacle-audit.mjs): a barrier on a line is a deliberate thread, never "off lane" (it counts in `threads:`); the
-squeeze rule skips the strip between a line barrier and the lanes' edge; every row with a line barrier must keep a slot for the widest
-car (flag `NO_WIDE_PATH`, unfair), the narrowest such slot is printed on the group (`thread slot 5.80 m (widest car needs 2.70)`), and the
-usual simulation (real steering, yawed car, 0.25 m margin, 0.75 s reaction) still proves a clean line from every lane. Picture:
-`node scripts/obstacle-picture.mjs <dir>` draws each pattern top-down.
+**The audit** judges by CONTINUOUS lateral clearance: boxes are read at their real lat and width, each gap between two boxes in a
+slot wall is a slot, and the real-steering simulation (the yawed car, 0.25 m margin, 0.75 s reaction) proves a clean line from every
+lane. Flags (unfair, `--strict` fails): `SLOT_TOO_NARROW` (a gap between 1.2 m and the audit car's slot), `NO_PATH` (no slot of the
+car's width in a wall), `UNREACHABLE` (the shift to the next slot does not fit in the road between, at the design speed). Each slot is
+printed: its centre in lane units and metres from the first lane's centre, its width and the car classes it fits, the shift to the
+next and the road it has against what it needs. Pictures: `node scripts/obstacle-picture.mjs <dir>` draws each pattern top-down
+with the slot centre marked, the widest car that fits drawn in it and the width written.
 
-**Not verified:** nobody has driven a thread by hand; the barrier model on a line (the theme swap on a line, the blast beside a lane's
-neighbour) is only seen in a still; the half-lane edit in the level editor's lane picker (it already offers halves for pickups).
+**In the lab** (`?hidden=obstacle-lab`, from 3,980 m): a slot on the middle line, one a quarter lane off it (2.4 m), a six-wall weave, a
+stagger, a needle, and a weave in crates (2.4 m). In `neon-grid` (4 lanes, a slotrun at 2,150 m), `castle-town` (3 lanes, a small slotrun at
+2,270 m), `apron-run` (a needle at 1,510 m, in place of the trolleys there) and `oil-patch` (a slotrun at 330 m); each with a quiet zone (rule 8).
+
+**Not verified:** nobody has driven a slot by hand; the audit's driver is perfect and knows where the slot is; the barrier model and
+its blast beside another box at 1.0 m pitch are seen only in stills; the editor's lane picker for fractions.
 
 ## 5d. MOVERS: what can move, from the level's data (OPT-IN, 17-Oct)
 
@@ -394,7 +413,7 @@ clock from the player's own position (like a `crossings` train, which is set off
 a clean line from every lane for EVERY phase with 0.75 s to spare; a tractor where the car would meet it, closing at speed minus 7.
 A phase with no line, or less than REACT, is `NO_LINE` / `NO_REACTION` (unfair, `--strict` fails). It is an oracle driver: it knows the
 sweeper's path in advance, a person has to read it. Not simulated: the sweeper's wobble beyond what `driftAt` copies, traffic round a
-tractor, the tractor being held up. Opt-in; a quiet zone covers each (rule 8). In the lab from 4,800 m; in `apron-run` (a rollgate
+tractor, the tractor being held up. Opt-in; a quiet zone covers each (rule 8). In the lab from 5,300 m; in `apron-run` (a rollgate
 of tugs at 2,000 m) and `neon-grid` (a sweeping holo barrier at 1,930 m).
 
 ## 6. Rhythm: how a level uses them
@@ -421,14 +440,14 @@ formations, about 10 to 15 barriers per km, plus its themed singles.
 
 ## 7. The tools
 
-- `node scripts/obstacle-patterns.mjs list`: the patterns (and the opt-in thread and mover patterns) and their parameters.
-- `node scripts/obstacle-picture.mjs <dir> [names]`: top-down pictures (SVG, then PNG by headless Chromium) of the thread and mover patterns.
+- `node scripts/obstacle-patterns.mjs list`: the patterns (and the opt-in slot and mover patterns) and their parameters.
+- `node scripts/obstacle-picture.mjs <dir> [names]`: top-down pictures (SVG, then PNG by headless Chromium) of the slot and mover patterns.
 - `node scripts/obstacle-patterns.mjs kinematics [--speed V] [--agility A]`: the lane-change table above.
 - `node scripts/obstacle-patterns.mjs gate --lanes 4 --s 500 --gap 2 [--first 2] [--speed 40] [--meta] [--cash]`: the level
   JSON obstacle entries (`{ s, lane, kind: 'barrier' }`). `--first` is the level's lane number of the player's leftmost lane
   (2 on a two-way 4-lane road). `--meta` prints the diagram; `--cash` adds ONE small pickup 45 m clear (not a line; `--cashline`
   is the old lure); `--oncoming N [--shift 70]` also lays it on the N oncoming lanes (rule 9); `--quiet` adds the `quietZones`
-  it wants (rule 8, 28 m before to 10 m after); `--linekind crate` for the thread patterns (§5c).
+  it wants (rule 8, 28 m before to 10 m after); `--kind crate` for the slot patterns (§5c).
 - `node scripts/obstacle-patterns.mjs rhythm --from 200 --to 3400 --every 70 --lanes 3 --first 2 [--avoid s,s]`: sparse cash pairs
   along the road, 45 m clear of the `avoid` positions.
 - `node scripts/obstacle-patterns.mjs lab [--meta]`: the lab level's obstacles and pickups (`LAB` in the file).

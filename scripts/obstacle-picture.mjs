@@ -1,14 +1,14 @@
 // OBSTACLE PICTURES: a top-down picture of an obstacle pattern on a 4-lane road (dark road, dashed lane lines, orange standard barrier
 // boxes, you driving up from the bottom), drawn as SVG and turned into a PNG by headless Chromium (no Playwright install: the browser
 // is run once per picture with --screenshot). For the owner's phone: look, do not read.
-//   node scripts/obstacle-picture.mjs <out-dir> [name ...]          names: thread threadrun threadgate threadcrate gate zipper rollgate sweeper (default: the thread ones + movers)
+//   node scripts/obstacle-picture.mjs <out-dir> [name ...]          names: slot slotquarter slotrun slotstagger needle slotcrate gate zipper rollgate sweeper (default: the slot ones + movers)
 //   --browser=<path>   (default /opt/pw-browsers/chromium-1194/chrome-linux/chrome)
 // Barriers are drawn to scale (2.4 x 1.2 m), the car 1.7 x 3.8 m, lanes 3.5 m. Green = the way through (a slot the widest car, 2.1 m, fits:
 // the slot's width is written on it); arrows = motion (movers). A mover is drawn at several moments, the earliest faintest.
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
-import { layRows, boxesOf, openings, centreOf, MOVERS, driftDraws, sweepLat, sizeOf } from './obstacle-patterns.mjs';
+import { layRows, boxesOf, rowSlots, centreOf, laneAt, SLOT_CLASSES, MOVERS, driftDraws, sweepLat, sizeOf } from './obstacle-patterns.mjs';
 import { CONFIG } from '../src/delivery/config.js';
 
 const args = process.argv.slice(2);
@@ -17,14 +17,16 @@ const out = resolve(args.find(a => !a.startsWith('--')) || '.');
 const names = args.filter(a => !a.startsWith('--')).slice(1);
 const browser = opt('browser', '/opt/pw-browsers/chromium-1194/chrome-linux/chrome');
 const LW = CONFIG.laneWidth, N = 4, PX = 11, ROADW = N * LW, SH = 2; // px per m; shoulders drawn 2 m
-const W = Math.round((ROADW + 2 * SH) * PX) + 120, M = 20;
+const W = Math.round((ROADW + 2 * SH) * PX) + 150, M = 20;
 
 // scenes: { title, from, to (s range shown), rows, notes[], movers: fn(svgParts) }
 const SCENES = {
-  thread: { title: 'thread: one barrier on the middle line', rows: () => layRows('thread', { lanes: N, s: 100 }), notes: ['barrier on the line: nudge off it,', 'or take lane 0 / 3 (untouched)'] },
-  threadrun: { title: 'threadrun: stepping along the lines', rows: () => layRows('threadrun', { lanes: N, s: 100, lines: '0.5,1.5,2.5,1.5,0.5' }), notes: ['a nudge each row, never a lane change'] },
-  threadgate: { title: 'threadgate: a split gap', rows: () => layRows('threadgate', { lanes: N, s: 100, gap: 1 }), notes: ['gap of two lanes, a barrier on the line:', 'two slots of 2.85 m, take one'] },
-  threadcrate: { title: 'threadrun with crates (1.2 m)', rows: () => layRows('threadrun', { lanes: N, s: 100, lines: '0.5,1.5,2.5', linekind: 'crate' }), notes: ['the lane centres beside a crate line', 'are clear: a true thread'] },
+  slot: { title: 'slot: one wall, one slot on the lane line', rows: () => layRows('slot', { lanes: N, s: 100, at: 1.5, width: 2.7 }), notes: ['slot 2.7 m on the middle line:', 'the widest car fits; steer to the slot'] },
+  slotquarter: { title: 'slot a quarter lane off the line', rows: () => layRows('slot', { lanes: N, s: 100, at: 1.25, width: 2.4 }), notes: ['2.4 m: tight, reference car and smaller', 'centre at lane 1.25'] },
+  slotrun: { title: 'slotrun: the slot drifts 0.4 lane a row', rows: () => layRows('slotrun', { lanes: N, s: 100, count: 6, step: 0.4 }), notes: ['a continuous weave: hand-steer it,', 'never a lane change'] },
+  slotstagger: { title: 'slotstagger: either side of the line', rows: () => layRows('slotstagger', { lanes: N, s: 100, count: 4 }), notes: ['slots alternately left and right', 'of the middle line'] },
+  needle: { title: 'needle: hold one position 30 m', rows: () => layRows('needle', { lanes: N, s: 100, at: 1.5, rows: 4 }), notes: ['the same slot four walls deep'] },
+  slotcrate: { title: 'slotrun in crates (1.2 m), 2.4 m slots', rows: () => layRows('slotrun', { lanes: N, s: 100, count: 5, step: 0.5, kind: 'crate', width: 2.4 }), notes: ['finer control, tight 2.4 m slots'] },
   gate: { title: 'gate (for scale)', rows: () => layRows('gate', { lanes: N, s: 100, gap: 2 }), notes: [] },
   zipper: { title: 'zipper (for scale)', rows: () => layRows('zipper', { lanes: N, s: 100 }), notes: [] },
   rollgate: { title: 'rollgate: tractors, a moving wall', rows: () => [], mover: 'rollgate', notes: ['3 tractors abreast at 7 m/s, gap lane 1', 'you close at 33 m/s'] },
@@ -34,7 +36,7 @@ const SCENES = {
 const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const panel = (key, sc, x0) => {
   const rows = sc.rows(), ss = rows.map(r => r.s);
-  const s0 = sc.mover ? 40 : Math.min(...ss) - 15, s1 = sc.mover ? 190 : Math.max(...ss) + 22, H = Math.round((s1 - s0) * PX) + 150;
+  const s0 = sc.mover ? 40 : Math.min(...ss) - 15, s1 = sc.mover ? 190 : Math.max(...ss) + 22, H = Math.round((s1 - s0) * PX) + 260;
   const X = (lat) => x0 + 60 + (lat + ROADW / 2 + SH) * PX, Y = (s) => M + 40 + (s1 - s) * PX;
   const road = X(-ROADW / 2 - SH), roadW = (ROADW + 2 * SH) * PX, top = M + 40, bot = Y(s0);
   const p = [];
@@ -47,9 +49,12 @@ const panel = (key, sc, x0) => {
   // rows: slots first (under the boxes), then boxes
   for (const r of rows) {
     const hlr = r.lineKind ? sizeOf(r.lineKind).hl : sizeOf().hl;
-    for (const [a, b] of openings(r, N, 1.05 + 0.3).map(([a, b]) => [a - 1.35, b + 1.35])) if (b - a >= 2.7) {
-      p.push(`<rect x="${X(a)}" y="${Y(r.s + 2.2)}" width="${(b - a) * PX}" height="${4.4 * PX}" fill="#3ecf6a" opacity="0.28"/>`);
-      p.push(`<text x="${X((a + b) / 2)}" y="${Y(r.s) + 3}" class="s" text-anchor="middle" fill="#bff5cc">${(b - a).toFixed(1)}</text>`);
+    for (const sl of rowSlots(r, N)) { // the slot: green band, its centre marked, the widest car that fits drawn in it, its width written
+      const fit = [...SLOT_CLASSES].reverse().find(c => c.slot <= sl.w + 0.001) || SLOT_CLASSES[0];
+      p.push(`<rect x="${X(sl.c - sl.w / 2)}" y="${Y(r.s + 2.4)}" width="${sl.w * PX}" height="${4.8 * PX}" fill="#3ecf6a" opacity="0.3"/>`);
+      p.push(`<line x1="${X(sl.c)}" y1="${Y(r.s + 3.4)}" x2="${X(sl.c)}" y2="${Y(r.s - 3.4)}" stroke="#7dffa0" stroke-width="1.5" stroke-dasharray="3 2"/>`);
+      p.push(box(sl.c, r.s - 0.4, fit.hw, 2.1, '#3b7ddd', '#143a7a', 'opacity="0.75"'));
+      p.push(`<text x="${X(sl.c)}" y="${Y(r.s + 2.4) - 3}" class="s" text-anchor="middle" fill="#bff5cc">${sl.w.toFixed(1)} m  (lane ${laneAt(sl.c, N)})</text>`);
     }
     for (const [a, b] of boxesOf(r, N)) p.push(box((a + b) / 2, r.s, (b - a) / 2, hlr, '#f28a1d', '#8a4a08'));
     for (const [a, b] of boxesOf(r, N)) p.push(`<line x1="${X(a)}" y1="${Y(r.s)}" x2="${X(b)}" y2="${Y(r.s)}" stroke="#fff" stroke-width="1" opacity="0.8"/>`);
@@ -81,11 +86,12 @@ const panel = (key, sc, x0) => {
   // scale bar and notes
   p.push(`<line x1="${x0 + 14}" y1="${bot}" x2="${x0 + 14}" y2="${bot - 10 * PX}" stroke="#aaa" stroke-width="2"/><text x="${x0 + 18}" y="${bot - 4 * PX}" class="s" fill="#aaa">10 m</text>`);
   sc.notes.forEach((n, i) => p.push(`<text x="${x0 + 8}" y="${bot + 22 + i * 15}" class="n">${esc(n)}</text>`));
+  if (!sc.mover) SLOT_CLASSES.forEach((c, i) => p.push(`<text x="${x0 + 8}" y="${bot + 22 + (sc.notes.length + i) * 13 + 6}" class="s" fill="#9aa">needs ${c.slot.toFixed(1)} m: ${esc(c.name.split(' (')[0])} (hw ${c.hw})</text>`));
   return { svg: p.join('\n'), H };
 };
 
 mkdirSync(out, { recursive: true });
-const keys = (names.length ? names : ['thread', 'threadrun', 'threadgate', 'threadcrate', 'rollgate', 'sweeper']).filter(k => SCENES[k]);
+const keys = (names.length ? names : ['slot', 'slotquarter', 'slotrun', 'slotstagger', 'needle', 'slotcrate', 'rollgate', 'sweeper']).filter(k => SCENES[k]);
 const defs = `<defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#ffe27a"/></marker></defs><style>.t{font:bold 13px monospace;fill:#eee}.s{font:11px monospace}.n{font:12px monospace;fill:#ccc}</style>`;
 const panels = keys.map((k, i) => panel(k, SCENES[k], i * W));
 const Hmax = Math.max(...panels.map(p => p.H));

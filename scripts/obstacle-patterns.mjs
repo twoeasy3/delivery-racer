@@ -99,13 +99,14 @@ export const centreOf = (k, n) => (k - (n - 1) / 2) * LW;
 export const wideHw = (span) => BOX.hw + (span - 1) * LW / 2;
 // the boxes of a row across the road ([left, right] in m): a row is { lanes: [barriers' lanes], wide: [{ lane, span }] } or a plain array of lanes
 export const boxesOf = (b, n) => {
-  const lines = Array.isArray(b) ? [] : (b.lines || []).map(k => { const c = centreOf(k, n), hw = b.lineHw ?? BOX.hw; return [c - hw, c + hw]; }); // (a barrier ON a lane line, x.5: THREAD, §5c)
+  const free = Array.isArray(b) ? [] : (b.free || []).map(k => { const c = centreOf(k, n), hw = b.freeHw ?? BOX.hw; return [c - hw, c + hw]; }); // (obstacles at ANY lane position, e.g. 1.25: the free-position gaps, §5c)
   return [...(Array.isArray(b) ? b : b.lanes || []).map(k => ({ lane: k, span: 1 })), ...(Array.isArray(b) ? [] : b.wide || [])]
-    .map(({ lane, span }) => { const c = centreOf(lane + (span - 1) / 2, n), hw = wideHw(span); return [c - hw, c + hw]; }).concat(lines);
+    .map(({ lane, span }) => { const c = centreOf(lane + (span - 1) / 2, n), hw = wideHw(span); return [c - hw, c + hw]; }).concat(free);
 };
 // the squeezes of a row: a gap between two boxes of 1.2 m up to the widest car and 0.6 m (a wall or a way through, never between). A strip between
 // a line barrier and the lanes' edge is not one: the shoulder runs on beside it (the audit's rule too)
 export const squeezesOf = (b, n) => {
+  if (!Array.isArray(b) && (b.free || []).length) return []; // (a slot row: its gaps are slots, judged by width, below)
   const spans = boxesOf(b, n).sort((a, c) => a[0] - c[0]), out = [], need = 2 * WIDEST_HW + 0.6; let at = null;
   for (const [a, c] of spans) { if (at !== null && a - at >= 1.2 && a - at < need) out.push(+(a - at).toFixed(2)); at = at === null ? c : Math.max(at, c); }
   return out;
@@ -156,9 +157,68 @@ const chain = (o, blockedList, notes) => {
 const R = (v) => Math.round(v);
 const clampLane = (k, n) => Math.max(0, Math.min(n - 1, k));
 const allBut = (n, open) => { const keep = new Set([].concat(open)); return [...Array(n).keys()].filter(k => !keep.has(k)); };
-const defaultLine = (n) => Math.floor((n - 1) / 2) + 0.5;
-// a row's line barriers (a plain kind, `o.linekind`): the lines, the kind and its half width
-const lineRow = (o, lines) => { const kind = o.linekind || KIND; return { lines, lineKind: kind, lineHw: sizeOf(kind).hw }; };
+// ---- FREE-POSITION SLOTS (OPT-IN, design doc 5c) -------------------------------------------------------------------------
+// The player steers continuously and can sit ANYWHERE across the road, not only on a lane centre. A SLOT is the gap between obstacles, centred
+// at any lateral position (on a lane line, a quarter lane...), only a little wider than the car: the row is a wall of obstacles either side of it,
+// and the slot's position changes from row to row, so the car must be steered to a lateral position, not a lane. Obstacles stand at any lane
+// position (`lane: 1.25`; Track.problems allows it between two open lanes: the replay rules fingerprint moved with that edit).
+// The slot a car needs: 2 x its half width + a margin each side (0.25 m; 0.30 m for the widest): the classes below.
+export const SLOT_MARGIN = 0.25;
+export const slotFor = (hw) => +(2 * hw + 2 * (hw > 0.9 ? 0.30 : SLOT_MARGIN)).toFixed(2);
+export const SLOT_CLASSES = [['narrow car', 0.75], ['reference car (Sportscompact)', 0.85], ['wide car', 0.95], ['widest garage car', 1.05]].map(([name, hw]) => ({ name, hw, slot: slotFor(hw) }));
+export const WALL_MAX = 1.2; // a gap narrower than this reads as closed (no car is that narrow)
+// the lane-unit position of a lateral position, and back (the lanes counted from the left of the player's side, n of them)
+export const laneAt = (m, n) => +((m + n * LW / 2) / LW - 0.5).toFixed(3);
+// the slot centre range (m) a wall of `kind` boxes can hold on n lanes: every box stands at a lane position of 0 or more, so the outermost box
+// centre is the first lane's centre, and the slot must leave room for one box each side
+export const slotRange = (n, width, kind = KIND) => { const hw = sizeOf(kind).hw, c0 = centreOf(0, n); return [c0 + hw + width / 2, -(c0 + hw + width / 2)]; };
+// one wall across n lanes with a slot of `width` m centred at lane position `at` (lane units): boxes of `kind` either side, a pitch of 1.0 m of
+// wall between them, out to the first and last lane's centre. Returns the row's `free` lane positions.
+export const slotRow = (n, at, width, kind = KIND) => {
+  const hw = sizeOf(kind).hw, c = centreOf(at, n), c0 = centreOf(0, n), c1 = centreOf(n - 1, n), pitch = 2 * hw + 1.0, free = [];
+  const [lo, hi] = slotRange(n, width, kind);
+  if (!(lo <= hi)) throw new Error('slot: a ' + width + ' m slot with ' + kind + ' boxes does not fit ' + n + ' lanes (every box stands at a lane position of 0 or more)');
+  if (c < lo - 0.001 || c > hi + 0.001) throw new Error('slot: centre ' + at + ' (' + c.toFixed(2) + ' m) is outside what ' + n + ' lanes can hold, ' + lo.toFixed(2) + ' to ' + hi.toFixed(2) + ' m (lane ' + laneAt(lo, n) + ' to ' + laneAt(hi, n) + ')');
+  for (const dir of [-1, 1]) {
+    let x = c + dir * (width / 2 + hw), prev = null;
+    for (let j = 0; j < 12; j++) {
+      const edge = dir < 0 ? c0 : c1;
+      let at2 = dir < 0 ? Math.max(x, edge) : Math.min(x, edge);
+      if (prev !== null && Math.abs(at2 - prev) < 2.0) break; // (the placement rule: items closer than 2 m across, within 8 m along, are "on top of another")
+      free.push(laneAt(at2, n)); prev = at2;
+      if (at2 === edge || (dir < 0 ? at2 - hw : at2 + hw) * dir >= (n * LW / 2 - 1.1)) break;
+      x += dir * pitch;
+    }
+  }
+  return { free: free.sort((a, b) => a - b), freeKind: kind, freeHw: hw, slot: { at, centre: +c.toFixed(3), width } };
+};
+// the slots of a row (boxes as [left, right] m): every gap of 1.2 m or more between boxes, { c: centre m, w: width m }
+export const slotsOfSpans = (spans) => {
+  const sp = [...spans].sort((a, b) => a[0] - b[0]), out = []; let at = null;
+  for (const [a, b] of sp) { if (at !== null && a - at >= WALL_MAX) out.push({ c: (a + at) / 2, w: a - at }); at = at === null ? b : Math.max(at, b); }
+  return out;
+};
+// the least a car (half width hw + the margin) must move across between two rows of slots: the slots' usable centre ranges (width less the car and
+// its margins) are [c - slack, c + slack], and it moves from one to the other
+export const slotShift = (slotsA, slotsB, hw = CAR.hw) => {
+  let best = Infinity;
+  const slack = (w) => Math.max(0, (w - 2 * (hw + SLOT_MARGIN)) / 2);
+  for (const a of slotsA) for (const b of slotsB) best = Math.min(best, Math.max(0, Math.abs(b.c - a.c) - slack(a.w) - slack(b.w)));
+  return best;
+};
+// the road between two rows (m, centre to centre): the shift's time + a little slack at the speed, the boxes' lengths and the car's
+export const slotGap = (shift, speed = 40, agility = 1, hl = BOX.hl) => Math.ceil(speed * (shiftChange(shift, { speed, agility }).time + SLACK) + 2 * hl + 2 * CAR.hl + (shift > 0 ? 0 : 8));
+// the width of the slots of a row of the given spans, for the audit and the picture
+export const rowSlots = (row, n) => slotsOfSpans(boxesOf(row, n));
+const slotRows = (o, atList, width, kind, notes) => {
+  const rows = atList.map(at => ({ lanes: [], ...slotRow(o.lanes, at, width, kind) }));
+  let s = o.s; const hl = sizeOf(kind).hl;
+  return rows.map((r, i) => { if (i) s += o.spacing ?? Math.max(o.minSpacing ?? 30, slotGap(slotShift(rowSlots(rows[i - 1], o.lanes), rowSlots(r, o.lanes)), o.speed, o.agility, hl)); return { ...r, s, note: notes[i] }; });
+};
+// the default slot centre: the middle lane line, or the nearest position the road can hold with those boxes (3 lanes: the middle lane's centre, a line is out of reach)
+const middleLine = (n, width = 2.7, kind = KIND) => { const [lo, hi] = slotRange(n, width, kind), at = Math.floor((n - 1) / 2) + 0.5, l0 = laneAt(lo, n), l1 = laneAt(hi, n); return +(at >= l0 && at <= l1 ? at : (n - 1) / 2).toFixed(3); };
+const slotWidth = (o) => o.width ?? 2.7;
+
 export const PATTERNS = {
   gate: {
     about: 'A wall across every lane but one: the gap. The plainest decision: find the gap, be in it.',
@@ -242,28 +302,35 @@ export const PATTERNS = {
       return [{ s: o.s, lanes: A, note: 'bookend in, gap ' + a }, { s: o.s + P, lanes: B, note: 'bookend out, gap ' + b }];
     },
   },
-  // ---- THREAD: barriers ON the lane lines (OPT-IN, §5c; needs a Track.problems that lets an obstacle stand at lane x.5) ----
-  thread: {
-    about: 'THREAD (opt-in): ONE barrier on a lane line (x.5). The car in either lane beside it must nudge away from the line; every other lane is clear.',
-    params: { line: 'the lane line, x.5 (default the middle one: 1.5 on 4 lanes)', linekind: "'barrier' (default) or 'crate' (1.2 m: the lane centres beside it are then clear for the widest car)" },
-    rows: (o) => [{ s: o.s, lanes: [], ...lineRow(o, [o.line ?? defaultLine(o.lanes)]), note: 'thread, line ' + (o.line ?? defaultLine(o.lanes)) }],
+  // ---- FREE-POSITION SLOTS (OPT-IN, §5c): the way through is a slot between obstacles, centred anywhere, a little wider than the car ----
+  slot: {
+    about: 'SLOT (opt-in): ONE wall of obstacles across the road with ONE slot in it, centred at any lateral position (default ON a lane line): steer the car to it. Width 2.2 m is the reference car with no play at all, 2.4 m is tight, 2.7 m fits the widest.',
+    params: { at: 'the slot centre in lane units (default the middle lane line, 1.5 on 4 lanes; 1.25 is a quarter lane past lane 1)', width: 'slot width in m (default 2.7; 2.2 only for cars up to the reference car)', kind: "obstacle kind (default 'barrier'; 'crate' for finer control)" },
+    rows: (o) => { const at = o.at ?? middleLine(o.lanes, slotWidth(o), o.kind ?? KIND); return slotRows(o, [at], slotWidth(o), o.kind ?? KIND, ['slot at lane ' + at]); },
   },
-  threadrun: {
-    about: 'THREAD (opt-in): a run of line barriers stepping along the lines (default 0.5, 1.5, 2.5, 1.5, 0.5 on 4 lanes): a small nudge each row, never a lane change.',
-    params: { lines: 'the line of each row, comma separated (x.5)', spacing: 'm between rows (default the least that is 30 m and fair)', linekind: "'barrier' or 'crate'" },
+  slotrun: {
+    about: 'SLOT (opt-in): a run of walls whose slot DRIFTS by a fraction of a lane each row, bouncing between the edges of what the road can hold: a continuous weave, the player hand-steers a thread, never a lane change.',
+    params: { at: 'the first slot centre (lane units, default the lowest the road can hold)', step: 'lanes the slot moves each row (default 0.4 = 1.4 m)', count: 'walls (default 6)', width: 'slot width in m (default 2.7)', kind: "obstacle kind (default 'barrier')", spacing: 'm between walls (default: worked out from the shift, at least 30)' },
     rows: (o) => {
-      const lines = (o.lines !== undefined ? String(o.lines).split(',').map(Number) : o.lanes >= 4 ? [0.5, 1.5, 2.5, 1.5, 0.5] : o.lanes === 3 ? [0.5, 1.5, 0.5, 1.5] : [0.5, 0.5, 0.5]);
-      const rows = lines.map(l => ({ lanes: [], ...lineRow(o, [l]) }));
-      return chain({ ...o, spacing: o.spacing ?? Math.max(30, ...rows.slice(1).map((r, i) => gapFor(rows[i], r, o.lanes, o.speed, o.agility))) }, rows, lines.map((l, i) => 'thread ' + (i + 1) + ', line ' + l));
+      const kind = o.kind ?? KIND, w = slotWidth(o), [lo, hi] = slotRange(o.lanes, w, kind), a = laneAt(lo, o.lanes), b = laneAt(hi, o.lanes), step = o.step ?? 0.4, n = o.count ?? 6;
+      if (!(a < b)) throw new Error('slotrun: ' + o.lanes + ' lanes hold a slot at one position only (' + a + '): use `slot`');
+      const at = []; let x = Math.max(a, Math.min(b, o.at ?? a)), d = 1;
+      for (let i = 0; i < n; i++) { at.push(+x.toFixed(3)); x += d * step; if (x > b) { x = 2 * b - x; d = -1; } else if (x < a) { x = 2 * a - x; d = 1; } }
+      return slotRows(o, at, w, kind, at.map((v, i) => 'slot ' + (i + 1) + ' at lane ' + v));
     },
   },
-  threadgate: {
-    about: 'THREAD (opt-in): a gate whose gap is TWO lanes with a barrier on the line between them: the gap is split into two slots, each fits the widest car (2.85 m on 4 lanes), one is the way.',
-    params: { gap: 'the left lane of the two open lanes (default 1 on 4 lanes)', linekind: "'barrier' or 'crate'" },
+  slotstagger: {
+    about: 'SLOT (opt-in): walls leaving their slot alternately at the two sides of a lane line (`offset` lanes either way): a small steer each row, left of the line then right of it.',
+    params: { line: 'the lane line (default the middle one)', offset: 'lanes either side of it (default 0.35 = 1.2 m)', count: 'walls (default 4)', width: 'slot width in m (default 2.7)', kind: "obstacle kind (default 'barrier')" },
     rows: (o) => {
-      const g = clampLane(o.gap ?? Math.max(0, Math.floor((o.lanes - 2) / 2)), o.lanes - 1);
-      return [{ s: o.s, lanes: allBut(o.lanes, [g, g + 1]), ...lineRow(o, [g + 0.5]), note: 'thread gate, split gap ' + g + '|' + (g + 1) }];
+      const line = o.line ?? middleLine(o.lanes, slotWidth(o), o.kind ?? KIND), off = o.offset ?? 0.35, n = o.count ?? 4, at = [...Array(n).keys()].map(i => +(line + (i % 2 ? off : -off)).toFixed(3));
+      return slotRows(o, at, slotWidth(o), o.kind ?? KIND, at.map((v, i) => 'stagger ' + (i + 1) + ' at lane ' + v));
     },
+  },
+  needle: {
+    about: 'SLOT (opt-in): a long narrow slot, walls `rows` deep 10 m apart with the SAME slot in each: the car holds one lateral position for 20 to 40 m.',
+    params: { at: 'the slot centre (lane units, default the middle line)', rows: 'walls (default 4: 30 m)', width: 'slot width in m (default 2.7)', kind: "obstacle kind (default 'barrier')" },
+    rows: (o) => { const at = o.at ?? middleLine(o.lanes, slotWidth(o), o.kind ?? KIND), n = o.rows ?? 4; return slotRows({ ...o, spacing: LINE_STEP }, Array(n).fill(at), slotWidth(o), o.kind ?? KIND, Array(n).fill('needle at lane ' + at)); },
   },
   // ---- WIDE barriers (span: more than a lane wide, one box, one hit) ----
   wall: {
@@ -392,8 +459,14 @@ export const layRows = (name, opts) => {
   const P = PATTERNS[name];
   if (!P) throw new Error('no pattern ' + name + ' (' + Object.keys(PATTERNS).join(', ') + ')');
   const o = { speed: 40, agility: 1, lanes: 4, s: 0, ...opts };
-  const rows = P.rows(o).map(r => ({ ...r, s: R(r.s), lanes: [...new Set(r.lanes)].sort((a, b) => a - b), ...(r.lines ? { lines: [...new Set(r.lines)].sort((a, b) => a - b) } : {}) }));
+  const rows = P.rows(o).map(r => ({ ...r, s: R(r.s), lanes: [...new Set(r.lanes)].sort((a, b) => a - b), ...(r.free ? { free: [...new Set(r.free)].sort((a, b) => a - b) } : {}) }));
   for (const r of rows) {
+    if (r.free) { // a slot row: every slot at least a reference car's (2.2 m), and one of them there
+      const need = slotFor(CAR.hw), sl = rowSlots(r, o.lanes);
+      if (!sl.some(x => x.w >= need - 0.001)) throw new Error(name + ': the row at ' + r.s + ' has no slot of ' + need + ' m (the reference car)');
+      const thin = sl.filter(x => x.w < need - 0.001); if (thin.length) throw new Error(name + ': the row at ' + r.s + ' has a slot of ' + thin.map(x => x.w.toFixed(2)).join(', ') + ' m, too narrow for the reference car (' + need + ' m)');
+      continue;
+    }
     if (!openings(r, o.lanes, WIDEST_HW + 0.3).length) throw new Error(name + ': the row at ' + r.s + ' leaves no way through for the widest car');
     const sq = squeezesOf(r, o.lanes); if (sq.length) throw new Error(name + ': the row at ' + r.s + ' has a squeeze of ' + sq.join(', ') + ' m between two boxes');
   }
@@ -401,7 +474,7 @@ export const layRows = (name, opts) => {
 };
 // the level JSON's obstacle entries for those rows (first: the level's lane number of the player's leftmost lane)
 export const entries = (rows, first = 0, kind = KIND) => rows.flatMap(r => [...r.lanes.map(k => ({ s: r.s, lane: first + k, kind })),
-  ...(r.lines || []).map(k => ({ s: r.s, lane: first + k, kind: r.lineKind || kind })),
+  ...(r.free || []).map(k => ({ s: r.s, lane: +(first + k).toFixed(3), kind: r.freeKind || kind })),
   ...(r.wide || []).map(w => ({ s: r.s, lane: first + w.lane, kind: KIND, span: w.span }))]);
 export const lay = (name, opts = {}) => entries(layRows(name, opts), opts.first ?? 0, opts.kind ?? KIND);
 // a cash line through a formation: pickups on the way through (the open lane of each row, and between rows on the line
@@ -467,17 +540,19 @@ export const LAB = [
   { name: 'zigzag', s: 3220, count: 4 },                 // 2.5-lane blocks at alternate edges: a two-lane swing each
   { name: 'widechicane', s: 3520, first: 3 },            // on the left-hand bend: the outside (right) first, then the apex
   { name: 'wall', s: 3800, gap: 1 },                     // the wide gate: a barrier, the gap, a two-lane block
-  // ---- THREAD (opt-in, design doc 5c): barriers ON the lane lines. Needs the Track.problems that lets an obstacle stand at lane x.5 ----
-  { name: 'thread', s: 3980, line: 1.5 },                            // one barrier on the middle line: nudge off the line, or take the outer lanes
-  { name: 'threadrun', s: 4130, lines: '0.5,1.5,2.5,1.5,0.5' },      // a run stepping along the lines: a nudge each row
-  { name: 'threadgate', s: 4400, gap: 1 },                           // a gate whose gap is two lanes split by a barrier on the line: two slots of 2.85 m
-  { name: 'threadrun', s: 4560, lines: '0.5,1.5,2.5', linekind: 'crate' }, // the same with the 1.2 m crate: the lane centres beside the line are clear
+  // ---- FREE-POSITION SLOTS (opt-in, design doc 5c): the way through is a slot, centred anywhere ----
+  { name: 'slot', s: 3980, at: 1.5, width: 2.7 },                              // one wall, one slot ON the middle lane line, wide enough for every car
+  { name: 'slot', s: 4130, at: 1.25, width: 2.4 },                             // one slot a quarter lane off the line, tight: reference and narrow cars (2.4 m; 2.2 has no play at all)
+  { name: 'slotrun', s: 4280, count: 6, step: 0.4 },                           // a weave: the slot drifts 0.4 lane a row between the edges the road can hold
+  { name: 'slotstagger', s: 4560, offset: 0.35, count: 4 },                    // slots alternately either side of the middle line
+  { name: 'needle', s: 4760, at: 1.5, rows: 4 },                               // a long narrow slot, 30 m: hold the lateral position
+  { name: 'slotrun', s: 4960, count: 5, step: 0.5, kind: 'crate', width: 2.4 }, // the weave in 1.2 m crates (finer control), tight slots
   // ---- MOVERS (opt-in, design doc 5d): what the level data can already move ----
-  { name: 'rollgate', s: 4800, gap: 1 },                               // three tractors abreast, a moving wall with a fixed gap (they meet the car here at 40 m/s)
-  { name: 'sweeper', s: 5100, from: 5030, to: 5170, count: 1 },        // one barrier sweeping across the road on its own clock
-  { name: 'sweeper', s: 5420, from: 5340, to: 5500, count: 2, prior: 1 }, // a pair, on the level's seeded phases (not opposite: 2.15 rad apart)
+  { name: 'rollgate', s: 5300, gap: 1 },                               // three tractors abreast, a moving wall with a fixed gap (they meet the car here at 40 m/s)
+  { name: 'sweeper', s: 5600, from: 5530, to: 5670, count: 1 },        // one barrier sweeping across the road on its own clock
+  { name: 'sweeper', s: 5920, from: 5840, to: 6000, count: 2, prior: 1 }, // a pair, on the level's seeded phases (not opposite: 2.15 rad apart)
 ];
-export const LAB_END = 5700; // the lab's length (its last segment is stretched to reach it)
+export const LAB_END = 6200; // the lab's length (its last segment is stretched to reach it)
 export const layLab = (speed = 40) => {
   const obstacles = [], pickups = [], avoid = [];
   const extra = { drifters: [], tractors: [] };
@@ -506,18 +581,22 @@ export const fmtJson = (v, ind = '') => {
 };
 
 // a pattern's rows as a picture: one line a row, the lanes left to right, and the shift the car must make from the row before
-const cell = (r, k, n = 4) => { // (a lane wholly covered, half covered, or open; a line barrier marks the lane edge it covers: ' ..#' / '#.. ')
-  if ((r.lines || []).length && !r.lanes.includes(k) && !(r.wide || []).length) {
-    const c = centreOf(k, n), left = r.lines.some(l => Math.abs(centreOf(l, n) - (c - LW / 2)) < 0.01), right = r.lines.some(l => Math.abs(centreOf(l, n) - (c + LW / 2)) < 0.01);
-    return (left ? '#' : ' ') + '..' + (right ? '#' : ' ');
+const cell = (r, k, n = 4) => { // (a lane wholly covered, half covered, or open; in a slot row, quarters of the lane: '#' where a box covers it)
+  if ((r.free || []).length) {
+    const c = centreOf(k, n), spans = boxesOf(r, n);
+    return [...Array(8).keys()].map(q => { const x = c - LW / 2 + (q + 0.5) * LW / 8; return spans.some(([a, b]) => x > a && x < b) ? '#' : '.'; }).join('') + ' ';
   }
-  if ((r.lines || []).length && r.lanes.includes(k)) return '[##]';
   if (r.lanes.includes(k)) return '[##]';
   for (const w of r.wide || []) { const a = w.lane, b = w.lane + w.span - 1; if (k >= a && k <= b) return k === a || k === b ? (k === a && k === b ? '[##]' : k === a ? (Number.isInteger(a) ? '[###' : ' [##') : (Number.isInteger(b) ? '###]' : '##] ')) : '####'; if (k > b && k < b + 1) return '#]  '; if (k < a && k > a - 1) return '  [#'; }
   return ' .. ';
 };
-export const picture = (rows, n) => rows.map((r, i) => String(r.s).padStart(6) + '  ' + [...Array(n).keys()].map(k => cell(r, k, n)).join('') +
-  (i ? '  +' + String(r.s - rows[i - 1].s).padStart(3) + ' m, shift ' + shiftBetween(rows[i - 1], r, n).toFixed(1) + ' m' : '') + (r.note ? '  ' + r.note : '') + ((r.wide || []).length ? '  [open: ' + gapsOf(r, n).join(' / ') + ' m]' : ''));
+export const picture = (rows, n) => rows.map((r, i) => {
+  const slots = (r.free || []).length ? rowSlots(r, n) : [];
+  return String(r.s).padStart(6) + '  ' + [...Array(n).keys()].map(k => cell(r, k, n)).join('') +
+    (i ? '  +' + String(r.s - rows[i - 1].s).padStart(3) + ' m, shift ' + (slots.length && (rows[i - 1].free || []).length ? slotShift(rowSlots(rows[i - 1], n), slots) : shiftBetween(rows[i - 1], r, n)).toFixed(1) + ' m' : '') +
+    (slots.length ? '  slot ' + slots.map(x => 'centre ' + (x.c >= 0 ? '+' : '') + x.c.toFixed(2) + ' m (lane ' + laneAt(x.c, n) + '), ' + x.w.toFixed(2) + ' m wide').join('; ') : '') +
+    (r.note ? '  ' + r.note : '') + ((r.wide || []).length ? '  [open: ' + gapsOf(r, n).join(' / ') + ' m]' : '');
+});
 
 // ---- the command line ----------------------------------------------------------------------------------------------------
 const main = () => {

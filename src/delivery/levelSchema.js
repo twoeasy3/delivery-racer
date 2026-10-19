@@ -25,8 +25,8 @@
 //   settings  { name: { type, label, ... } }, each one of:
 //             number  min, max, step, int      choice  choices: [value] or [{ value, label }]
 //             flag    text    colour           range   { min, max }: its own min, max, step
-//             lane    a lane number (shoulders: true = or 'left' / 'right'; player: true = the player's side only; halves: true = or a lane
-//                     line, x.5: a wide obstacle's, whose "span" track.js checks)
+//             lane    a lane number (shoulders: true = or 'left' / 'right'; player: true = the player's side only; halves: true = or any position between
+//                     lanes (1.25, a lane line 1.5): an obstacle's free-position gap, or a wide one's, whose "span" track.js checks)
 //             lanes   lane numbers: a list, or (span: true) [first, last]; width: n = exactly n lanes wide
 //             mix     { kind: weight } over `choices`          metres  another spot along the same road
 //             object  { settings }                              list    [{ settings }] or (item) [value]
@@ -636,7 +636,7 @@ const checkSetting = (S, v, name, out = []) => {
     case 'text': if (typeof v !== 'string') bad('text'); break;
     case 'colour': if (S.numeric ? !(Number.isInteger(v) && v >= 0 && v <= 0xffffff) : !(typeof v === 'string' && /^#[0-9a-f]{3,8}$/i.test(v))) bad(S.numeric ? 'a colour, as a number' : 'a colour, as #rrggbb'); break;
     case 'choice': if (!S.choices.some(c => choiceValue(c) === v)) bad('"' + v + '" is not one of ' + S.choices.map(choiceValue).join(', ')); break;
-    case 'lane': if (!((S.halves ? Number.isInteger(v * 2) : Number.isInteger(v)) && v >= 0 && v < 16) && !(S.shoulders && (v === 'left' || v === 'right'))) bad('a lane number' + (S.halves ? ' (or a lane line, x.5, for a wide barrier)' : '') + (S.shoulders ? ', or left / right (a shoulder)' : '')); break;
+    case 'lane': if (!((S.halves ? (typeof v === 'number' && Math.abs(v * 1000 - Math.round(v * 1000)) < 1e-6) : Number.isInteger(v)) && v >= 0 && v < 16) && !(S.shoulders && (v === 'left' || v === 'right'))) bad('a lane number' + (S.halves ? ' (or a position between lanes, e.g. 1.25 or a lane line 1.5, for a free-position gap or a wide barrier)' : '') + (S.shoulders ? ', or left / right (a shoulder)' : '')); break;
     case 'lanes':
       if (!Array.isArray(v) || !v.length || !v.every(l => Number.isInteger(l) && l >= 0 && l < 16)) bad('a list of lane numbers');
       else if (S.span && (v.length !== 2 || v[0] > v[1])) bad('[first, last]');
