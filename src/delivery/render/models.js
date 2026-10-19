@@ -461,11 +461,11 @@ export const MODELS = {
     box(shell, white, w * 0.9, 0.07, cabFront - cabBack + 0.25, 0, roof, (cabFront + cabBack) / 2 - 0.12); // the hardtop roof
     for (const side of [-1, 1]) {
       box(shell, glass, 0.03, 0.55, (cabFront - cabBack) * 0.75, side * w * 0.43, 1.2, (cabFront + cabBack) / 2 - 0.05); // side glass
-      box(shell, white, 0.06, 0.62, 0.06, side * w * 0.42, 1.22, cabBack - 0.15);        // the roof's rear pillars
+      box(shell, white, 0.06, 0.62, 0.06, side * w * 0.42, 1.22, cabBack + 0.025);       // the roof's rear pillars, on the lower walls' back corners (CHECKLIST 502: they stood 35 cm off the deck behind them)
       box(shell, chrome, 0.03, 0.03, front * 0.4, side * w * 0.24, 0.95, front * 0.48);  // the bow rails
       box(shell, TAIL, 0.08, 0.08, 0.04, side * w * 0.4, 0.45, -front - 0.01);
     }
-    box(shell, glass, w * 0.7, 0.4, 0.03, 0, 1.2, cabBack - 0.13);                       // the back of the cabin, glass
+    box(shell, glass, w * 0.82, 0.6, 0.03, 0, 1.2175, cabBack + 0.025);                  // the back of the cabin, glass: from the walls' top to the roof, pillar to pillar (it hung free behind them)
     box(shell, dark, 0.34, 0.5, 0.3, -0.3, 0.96, -front * 0.08).userData.figure = true;  // the captain: sat at the wheel... (figure: hidden in the cinematics)
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 8), lambert(0xe0b48c));     // ...the head...
     head.position.set(-0.3, 1.32, -front * 0.08);
