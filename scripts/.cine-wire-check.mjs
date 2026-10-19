@@ -40,7 +40,7 @@ const want = (part) => !ONLY || String(ONLY).split(',').includes(part);
 let failed = 0;
 const check = (ok, what) => { console.log((ok ? '  ok    ' : '  FAIL  ') + what); if (!ok) failed++; };
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-const MAIN_PRINT = { logic: '699e860545', legacy: '978d4efcb0' }; // (since CHECKLIST 494 + 496-499 + 515 (the M1 idea cars), the ram cap, throw spread, tank shell, rickety floor and the oil / glue / EMP / magma hazards: was c0c2c73e68 / 8c50a659a9 after 494 alone, 8dbc477d85 / bcc9df44d0; since CHECKLIST 476, a dead end's blocker solid from the side: was 057a22806d / 661de07fbe; since CHECKLIST 470, no pickup in the air: was 33a0394c26 / dd565f56b3, main v1.1.151-alpha to v1.1.153)
+const MAIN_PRINT = { logic: 'b966fabb73', legacy: 'fbbf9ec5b0' }; // (since CHECKLIST 494 + 496-499 + 515 (the M1 idea cars), the ram cap, throw spread, tank shell, rickety floor and the oil / glue / EMP / magma hazards: was c0c2c73e68 / 8c50a659a9 after 494 alone, 8dbc477d85 / bcc9df44d0; since CHECKLIST 476, a dead end's blocker solid from the side: was 057a22806d / 661de07fbe; since CHECKLIST 470, no pickup in the air: was 33a0394c26 / dd565f56b3, main v1.1.151-alpha to v1.1.153)
 
 // ---- the source
 const src = (p) => readFileSync(join(ROOT, 'src/delivery', p), 'utf8');
