@@ -20,11 +20,12 @@ import { registerCosmetics, ownsCosmetic } from './cosmetics.js';
 import * as Store from './loadoutstore.js';
 import { KILL_DEFS as SHIPPED_FIRST, KILL_EXTRA } from './killfxdefs.js';
 import { KILL_MORE } from './killfxmore.js';
+import { KILL_MORE2 } from './killfxmore2.js';
 
 // ---- the registry: id -> { name, icon, explode, trail, ... } (classic first; its explode/trail are render/particles.js's) ----
 // (KILL_DEFS: the shipped ones and the experiment's cut ones; KILL_IDS, the registry and the screen: the shipped only)
-// (KILL_MORE, render/killfxmore.js: the eight added after the first seven, CHECKLIST 426)
-const SHIPPED = { ...SHIPPED_FIRST, ...KILL_MORE };
+// (KILL_MORE, render/killfxmore.js: the eight added after the first seven, CHECKLIST 426; KILL_MORE2, render/killfxmore2.js: eight more, CHECKLIST 512)
+const SHIPPED = { ...SHIPPED_FIRST, ...KILL_MORE, ...KILL_MORE2 };
 const KILL_DEFS = { ...SHIPPED, ...KILL_EXTRA };
 export const KILL_FX = KILL_DEFS;
 export const KILL_IDS = Object.keys(SHIPPED);
@@ -122,6 +123,27 @@ const TEXTURES = {
     g.strokeStyle = '#a6a6a6'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(32, 62); g.lineTo(32, 8); g.stroke();
     g.lineWidth = 1.6; for (let i = 0; i < 4; i++) { const y = 46 - i * 9; g.beginPath(); g.moveTo(32, y); g.lineTo(44 - i, y - 8); g.moveTo(32, y); g.lineTo(20 + i, y - 8); g.stroke(); }
   }],
+  // (CHECKLIST 512: eight more effects' pictures, 64 x 64 at most, white or grey: tinted by each particle's colour)
+  halo: [64, 64, (g) => { // a soft ring, its brightest at 0.82 of the half-width (a laid-flat ring of smoke, a shock front, a splash)
+    const r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,255,255,0)'); r.addColorStop(0.6, 'rgba(255,255,255,0)'); r.addColorStop(0.82, 'rgba(255,255,255,1)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = r; g.fillRect(0, 0, 64, 64);
+  }],
+  wisp: [32, 64, (g) => { // a soft teardrop flame, point up
+    g.beginPath(); g.moveTo(16, 2); g.bezierCurveTo(22, 20, 31, 34, 30, 46); g.bezierCurveTo(29, 58, 3, 58, 2, 46); g.bezierCurveTo(1, 34, 10, 20, 16, 2); g.closePath(); g.clip();
+    const r = g.createRadialGradient(16, 46, 0, 16, 40, 30); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.45, 'rgba(255,255,255,0.55)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = r; g.fillRect(0, 0, 32, 64);
+  }],
+  swirl: [64, 64, (g) => { // a whirlpool: three spiral arms over a dark heart
+    const r = g.createRadialGradient(32, 32, 0, 32, 32, 30); r.addColorStop(0, 'rgba(255,255,255,0.95)'); r.addColorStop(0.5, 'rgba(255,255,255,0.35)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = r; g.beginPath(); g.arc(32, 32, 30, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#fff'; g.lineCap = 'round';
+    for (let arm = 0; arm < 3; arm++) { g.beginPath(); for (let i = 0; i <= 24; i++) { const u = i / 24, a = arm * 2.094 + u * 4.2, d = 3 + u * 26; g.lineTo(32 + Math.sin(a) * d, 32 + Math.cos(a) * d); } g.lineWidth = 3.5; g.stroke(); }
+  }],
+  pop: [64, 64, (g) => { // a popped kernel: lumps of white round a golden hull
+    for (const [x, y, rad, c] of [[24, 30, 14, '#ffffff'], [40, 26, 13, '#f4f4f4'], [34, 42, 13, '#e8e8e8'], [22, 44, 10, '#f0f0f0'], [44, 41, 10, '#ffffff'], [31, 19, 10, '#ffffff']]) { g.fillStyle = c; g.beginPath(); g.arc(x, y, rad, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = '#c99a3a'; g.beginPath(); g.ellipse(33, 47, 6, 4, 0.4, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(0,0,0,0.12)'; for (const [x, y] of [[30, 34], [38, 33], [27, 40]]) { g.beginPath(); g.arc(x, y, 3, 0, Math.PI * 2); g.fill(); }
+  }],
 };
 
 // ---- shared geometry and materials (made once, on first use; shared by every system: the game's and the preview's) ----
@@ -160,6 +182,17 @@ const MORE_GEO = {
     const face = [0.78, 0.78, 1, 0.5, 0.92, 0.66]; // (BoxGeometry's faces: +x, -x, +y, -y, +z, -z, four vertices each)
     return shaded(g, (x, y, z, i) => face[Math.floor(i / 4)]);
   },
+  // (CHECKLIST 512) a shock dome: a low hemisphere, radius 0.5, bright at its foot and fading to nothing at the top (additive: dark = clear)
+  dome: () => shaded(new THREE.SphereGeometry(0.5, 14, 4, 0, Math.PI * 2, 0, Math.PI / 2), (x, y) => { const u = 1 - y / 0.5; return 0.08 + 0.92 * u * u * u; }),
+  // a rainbow: a half ring standing on its diameter (radius 1, foot at the centre), seven bands from red outside to violet in, the
+  // edges black (additive: they melt into the sky)
+  arc: () => {
+    const g = new THREE.RingGeometry(0.62, 1, 20, 8, 0, Math.PI), pos = g.attributes.position, c = new Float32Array(pos.count * 3);
+    const BANDS = [0x000000, 0x8a4fff, 0x3a5bff, 0x2fb8ff, 0x3cd65a, 0xffe03a, 0xff9a2a, 0xff3b3b, 0x000000], col = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) { const d = Math.hypot(pos.getX(i), pos.getY(i)), b = Math.round((d - 0.62) / 0.38 * 8); col.setHex(BANDS[Math.max(0, Math.min(8, b))]); c[i * 3] = col.r; c[i * 3 + 1] = col.g; c[i * 3 + 2] = col.b; }
+    g.setAttribute('color', new THREE.BufferAttribute(c, 3));
+    return g;
+  },
 };
 const basic = (o) => new THREE.MeshBasicMaterial(o);
 const ADD = { transparent: true, blending: THREE.AdditiveBlending, depthWrite: false };
@@ -187,28 +220,41 @@ export const POOL_TYPES = {
   flake: { geo: 'quad', mat: () => basic({ map: tex('flake'), alphaTest: 0.4 }), mode: 'billboard', max: 240 }, // snowflakes
   leaf: { geo: 'quad', mat: () => basic({ map: tex('leaf'), alphaTest: 0.5, side: THREE.DoubleSide }), mode: 'solid', lenY: true, max: 200 },
   domino: { geo: 'domino', mat: () => basic({ vertexColors: true }), mode: 'solid', max: 160 }, // toppling tiles
+  // (CHECKLIST 512: eight more effects' pools)
+  halo: { geo: 'quad', mat: () => basic({ ...ADD, map: tex('halo'), side: THREE.DoubleSide }), mode: 'solid', max: 48 }, // flat soft rings (laid on or over the road)
+  dome: { geo: 'dome', mat: () => basic({ ...ADD, vertexColors: true, side: THREE.DoubleSide }), mode: 'solid', max: 16 }, // shock domes
+  wisp: { geo: 'quad', mat: () => basic({ ...ADD, map: tex('wisp') }), mode: 'billboard', max: 120 }, // pale flames rising
+  pixel: { geo: 'quad', mat: () => basic(), mode: 'billboard', max: 240 }, // flat squares facing the camera (snapped to a grid)
+  swirl: { geo: 'quad', mat: () => basic({ map: tex('swirl'), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }), mode: 'solid', max: 16 }, // a whirlpool on the road
+  pop: { geo: 'quad', mat: () => basic({ map: tex('pop'), alphaTest: 0.5 }), mode: 'billboard', max: 200 }, // popcorn
+  arc: { geo: 'arc', mat: () => basic({ ...ADD, vertexColors: true, side: THREE.DoubleSide }), mode: 'billboard', max: 16 }, // rainbows
 };
 const MAT = {};
 const keep = (thing) => { thing.userData.shared = true; if (thing.map) thing.map.userData.shared = true; return thing; }; // (scene.js clearGroup keeps it)
 const mat = (name) => MAT[name] ||= keep(POOL_TYPES[name].mat());
 export const triangles = (name) => { const g = geo(POOL_TYPES[name].geo); return (g.index ? g.index.count : g.attributes.position.count) / 3; };
 
-// ---- a particle: 34 numbers in a Float32Array ----
-const F = 34;
+// ---- a particle: 39 numbers in a Float32Array ----
+const F = 39;
 const X = 0, Y = 1, Z = 2, VX = 3, VY = 4, VZ = 5, LIFE = 6, MAXL = 7, SIZE = 8, GROW = 9, GRAV = 10, DRAG = 11, FLOOR = 12,
   AX = 13, AY = 14, SAX = 15, SAY = 16, DELAY = 17, FLUT = 18, PHASE = 19, R = 20, G = 21, B = 22, FD = 23, TOCAM = 24, BOUNCE = 25, SHADE = 26, LEN = 27,
   // (CHECKLIST 426; 0 = none, so the first seven effects are drawn exactly as before) TURN: its heading turns (rad/s, a glider's circle,
   // a whirlwind); JEL: jelly (wobbles, more when it lands); WOB: the wobble now; BEAT: a heartbeat (beats a second); TOP: topples (its
   // tilt speeds up as a falling domino's does); AXM: the tilt it stops at (lying down)
-  TURN = 28, JEL = 29, WOB = 30, BEAT = 31, TOP = 32, AXM = 33;
+  TURN = 28, JEL = 29, WOB = 30, BEAT = 31, TOP = 32, AXM = 33,
+  // (CHECKLIST 512; 0 = none again) EASE: its growth eases out (fast, then slowing: a shock front); SNAP: drawn on a grid of that many
+  // metres, hopping a step now and then and blinking (a glitch); PULL: drawn back to its centre CX, CZ as on a spring (with drag: a
+  // spiral in, a vortex)
+  EASE = 34, SNAP = 35, PULL = 36, CX = 37, CZ = 38;
 // fade: how it goes. SHRINK: shrinks away at the end (as the classic cubes); DIM: its colour dims to nothing (additive: dark = gone);
 // FLICKER: dims, twinkling; POP: swells a little and is gone at once (a bubble); FLASH: snaps in, holds, shrinks fast (a comic burst)
 export const FADE = { SHRINK: 0, DIM: 1, FLICKER: 2, POP: 3, FLASH: 4 };
 // the one spec object a definition fills for each particle (spec() resets it: nothing is allocated per particle)
-const DEFAULTS = Object.freeze({ x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, life: 1, size: 1, grow: 0, gravity: 0, drag: 0, floor: -1e9, ax: 0, ay: 0, sax: 0, say: 0, delay: 0, flutter: 0, phase: 0, color: 0xffffff, fade: 0, toCam: 0, bounce: 0, shade: 0, len: 1, turn: 0, jelly: 0, beat: 0, topple: 0, axMax: 0 });
+const DEFAULTS = Object.freeze({ x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, life: 1, size: 1, grow: 0, gravity: 0, drag: 0, floor: -1e9, ax: 0, ay: 0, sax: 0, say: 0, delay: 0, flutter: 0, phase: 0, color: 0xffffff, fade: 0, toCam: 0, bounce: 0, shade: 0, len: 1, turn: 0, jelly: 0, beat: 0, topple: 0, axMax: 0, ease: 0, snap: 0, pull: 0, cx: 0, cz: 0 });
 const q = { ...DEFAULTS };
 export const spec = () => Object.assign(q, DEFAULTS);
 
+const hash = (n) => { const v = Math.sin(n * 12.9898) * 43758.5453; return v - Math.floor(v); }; // (0..1, the same for the same n)
 const color = new THREE.Color(), euler = new THREE.Euler(0, 0, 0, 'YXZ'), quat = new THREE.Quaternion(), turn = new THREE.Quaternion(),
   pos = new THREE.Vector3(), scl = new THREE.Vector3(), mtx = new THREE.Matrix4(), fwd = new THREE.Vector3(), Z_AXIS = new THREE.Vector3(0, 0, 1);
 
@@ -243,6 +289,7 @@ const makePool = (parent, name, settle = null) => {
     data[o + DELAY] = s.delay; data[o + FLUT] = s.flutter; data[o + PHASE] = s.phase; data[o + FD] = s.fade; data[o + TOCAM] = s.toCam;
     data[o + BOUNCE] = s.bounce; data[o + SHADE] = s.shade; data[o + LEN] = s.len;
     data[o + TURN] = s.turn; data[o + JEL] = s.jelly; data[o + WOB] = s.jelly * 0.3; data[o + BEAT] = s.beat; data[o + TOP] = s.topple; data[o + AXM] = s.axMax;
+    data[o + EASE] = s.ease; data[o + SNAP] = s.snap; data[o + PULL] = s.pull; data[o + CX] = s.cx; data[o + CZ] = s.cz;
     if (rested) { rested[i] = 0; if (name === 'coin' && s.floor > -1e8) data[o + FLOOR] = Math.min(s.floor, settle.ground + 0.06 * s.size + 0.005); }
     color.setHex(s.color);
     data[o + R] = color.r; data[o + G] = color.g; data[o + B] = color.b;
@@ -270,6 +317,8 @@ const makePool = (parent, name, settle = null) => {
       data[o + VY] -= data[o + GRAV] * dt;
       const drag = data[o + DRAG];
       if (drag > 0) { const f = 1 / (1 + drag * dt); data[o + VX] *= f; data[o + VY] *= f; data[o + VZ] *= f; }
+      const pull = data[o + PULL];
+      if (pull) { data[o + VX] -= (data[o + X] - data[o + CX]) * pull * dt; data[o + VZ] -= (data[o + Z] - data[o + CZ]) * pull * dt; }
       data[o + X] += data[o + VX] * dt;
       data[o + Y] += data[o + VY] * dt;
       data[o + Z] += data[o + VZ] * dt;
@@ -302,7 +351,8 @@ const makePool = (parent, name, settle = null) => {
       }
       // size and colour over its life
       const t = 1 - data[o + LIFE] / data[o + MAXL], fade = data[o + FD];
-      let s = data[o + SIZE] * (1 + data[o + GROW] * t), dim = 1;
+      const tg = data[o + EASE] ? 1 - (1 - t) * (1 - t) * (1 - t) : t;
+      let s = data[o + SIZE] * (1 + data[o + GROW] * tg), dim = 1;
       if (fade === 0) s *= Math.min(1, (1 - t) * 3);
       else if (fade === 1) dim = 1 - t;
       else if (fade === 2) dim = (1 - t) * (0.3 + 0.7 * Math.random());
@@ -316,6 +366,12 @@ const makePool = (parent, name, settle = null) => {
       C[i * 3] = data[o + R] * dim; C[i * 3 + 1] = data[o + G] * dim; C[i * 3 + 2] = data[o + B] * dim;
       // the matrix
       pos.set(data[o + X], data[o + Y], data[o + Z]);
+      const snap = data[o + SNAP];
+      if (snap) { // (on the grid; about 11 times a second a new roll: a hop sideways a step, or a blink)
+        const h = hash(Math.floor(age * 11) + data[o + PHASE] * 97);
+        pos.set(Math.round(pos.x / snap) * snap + (h < 0.22 ? (h < 0.11 ? -snap : snap) : 0), Math.round(pos.y / snap) * snap, Math.round(pos.z / snap) * snap);
+        if (h > 0.9) s = 0;
+      }
       const len = data[o + LEN];
       if (mode === 'billboard') {
         turn.setFromAxisAngle(Z_AXIS, data[o + AX]);
