@@ -31,6 +31,7 @@ export const HAND = {
   // (the Paddle-Wheel Amphibian: the generator's rear place is on the turning paddle wheel; the plate goes on the engine housing's flat back,
   // above the wheel, on the centre line; the front one a little higher on the bow's face, under the bill and between the headlamps)
   paddleduck: { r: [1.8, -3.23, 0.52, 0], f: [1.08, 4.492, 0.52, 14.1] },
+  combine: { f: null }, // (the Combine Harvester: the generator's front place is in the header's trough behind the reel: rear only, on the straw chopper)
 };
 // models that can wear no plate though the generator found a place (a taste call) -- or that have a place nobody wants a plate on
 // the Swan Car: its tail is all teardrop curve, the generator's flat place sits inside the body. The Monster Truck (15-Oct audit): its body

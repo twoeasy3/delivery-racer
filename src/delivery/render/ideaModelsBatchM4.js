@@ -78,6 +78,7 @@ export const IDEA_MODELS_BATCH_M4 = {
       bx(1.2, 0.95, 0.06, 0, 1.45, NOSE + BEV + 0.02),                                     // the grille surround
       ...[-4, -3, -2, -1, 0, 1, 2, 3, 4].map(i => bx(0.03, 0.8, 0.02, i * 0.115, 1.45, NOSE + BEV + 0.075)), // its upright bars
       bx(2.5, 0.3, 0.2, 0, 0.62, 4.88),                                                    // the bumper
+      ...[-1, 1].map(s => bx(0.12, 0.4, 0.2, s * 0.5, 0.75, 4.72)),                         // (its brackets, up into the bonnet)
       ...[-1, 1].flatMap(s => [
         bx(0.32, 0.22, 0.02, s * WINGX, 0.9, 4.832),                                       // the lamps' bezels
         new THREE.CylinderGeometry(0.28, 0.28, 1.1, 12).rotateX(Math.PI / 2).translate(s * 0.95, 0.72, 1.55), // the fuel tanks
@@ -141,7 +142,7 @@ export const IDEA_MODELS_BATCH_M4 = {
     const WSF = [4.44, 1.92], WST = [4.24, 2.95], TH = [2.65, 2.3];
     const cab = [[2.65, 0.75], ['arc', AF, 0.75, 0.58], [FRONT, 0.75], [FRONT, 1.35], WSF, WST,
       ...curve(WST, [4.2, 3.05], [4.12, 3.1], [3.98, 3.1], 2), [2.65, 3.1], TH];
-    const TAPER = [2.2, 3.1, 0.06];
+    const TAPER = null; // (a cab-over's flanks stand upright: no taper, and so no faceted shading across the flat white sides)
     const body = place(group, shared(k + 'body', () => shadeBy(extrudeSide(cab, 2 * HALF, BEV, TAPER, 1, 0.08), low(0.7, 1.6, [0.72, 0.7, 0.68]))), paint);
     // ALL the glass from the cab's own side profile (cabinGlass: one inset outline, level tops): the door window (its foot low, as on a
     // cab-over), the big screen (second call) and the small window in the cab's back, over the tank's front end
@@ -151,7 +152,11 @@ export const IDEA_MODELS_BATCH_M4 = {
     // the tank: an oval section (flat-sided where the diamonds sit) extruded along the car, its ends dished by the bevel
     const TA = 1.08, TB = 0.8, TR = 0.64, TBV = 0.12, CY = 1.12 + TB + TBV, Z0 = -4.05, Z1 = 2.35;
     const tankTop = CY + TB + TBV;
-    const tank = place(group, shared(k + 'tank', () => shadeBy(new THREE.ExtrudeGeometry(roundRect(TA, TB, TR), {
+    const section = () => { // (the outline's points once each: roundRect's path ends where it starts, which pinches the bevel)
+      const pts = roundRect(TA, TB, TR).getPoints(5);
+      return new THREE.Shape(pts.filter((q, i) => i === 0 || q.distanceTo(pts[i - 1]) > 1e-4).filter((q, i, a) => i < a.length - 1 || q.distanceTo(a[0]) > 1e-4));
+    };
+    const tank = place(group, shared(k + 'tank', () => shadeBy(new THREE.ExtrudeGeometry(section(), {
       depth: Z1 - Z0, bevelEnabled: true, bevelThickness: 0.22, bevelSize: TBV, bevelSegments: 3, curveSegments: 5,
     }).translate(0, CY, Z0), (y) => { // (a pale band along its shoulder, a little darker underneath)
       const c = 0.78 + 0.22 * Math.exp(-(((y - (CY + 0.62)) / 0.22) ** 2)) - 0.12 * Math.max(0, (CY - 0.3 - y) / 0.6);
@@ -159,11 +164,11 @@ export const IDEA_MODELS_BATCH_M4 = {
     })), tankMat);
     const FZ = FRONT + BEV;
     parts(group, k + 'black', TRIM, () => [
-      ...[-1, 1].map(s => bx(0.14, 0.22, 8.8, s * 0.5, 0.95, 0.2)),                        // chassis rails
+      ...[-1, 1].map(s => bx(0.14, 0.22, 8.6, s * 0.5, 0.95, 0.1)),                        // chassis rails (their front ends inside the cab)
       ...[AF, AR1, AR2].map(z => bx(2.0, 0.14, 0.16, 0, R, z)),                            // axles
       bx(2.46, 0.3, 0.22, 0, 0.62, FRONT + 0.07),                                          // the bumper
       bx(1.3, 0.42, 0.03, 0, 1.6, FZ - 0.005),                                             // the grille panel
-      ...[-1, 1].map(s => bx(0.5, 0.24, 0.03, s * 0.8, 1.12, FZ - 0.005)),                  // the headlamps' dark surrounds
+      ...[-1, 1].map(s => bx(0.65, 0.22, 0.03, s * 0.875, 1.12, FZ + 0.012)),                // the headlamps' dark surrounds (the ambers' too), proud of the face
       bx(2.1, 0.05, 0.32, 0, 3.02, 4.3, -0.2),                                              // the sun visor
       ...[1.6, -1.0, -3.4].map(z => bx(1.0, 0.12, 0.3, 0, 1.1, z)),                         // the tank's saddles
       bx(0.5, 0.06, 5.6, 0, tankTop + 0.01, -0.85),                                         // the walkway
@@ -192,10 +197,10 @@ export const IDEA_MODELS_BATCH_M4 = {
       ...[-1, 1].map(s => bx(0.012, 0.29, 0.29, s * (DX + 0.008), CY, -3.2, Math.PI / 4)),
       bx(0.29, 0.29, 0.012, 0, CY, Z0 - 0.22 - 0.008, 0, 0, Math.PI / 4),
     ]);
-    parts(group, k + 'plate', lambert(0xe8731c), () => [bx(0.4, 0.2, 0.02, 0, 0.62, FRONT + 0.185), bx(0.4, 0.2, 0.02, 0, 0.96, -4.205)]);
-    parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => bx(0.42, 0.16, 0.03, s * 0.8, 1.12, FZ + 0.005)));
+    parts(group, k + 'plate', lambert(0xe8731c), () => [bx(0.4, 0.2, 0.02, 0, 1.12, FZ + 0.012), bx(0.4, 0.2, 0.02, 0, 0.96, -4.205)]);
+    parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => bx(0.42, 0.16, 0.03, s * 0.8, 1.12, FZ + 0.03)));
     parts(group, k + 'amber', AMBER, () => [
-      ...[-1, 1].map(s => bx(0.12, 0.16, 0.03, s * 1.1, 1.12, FZ + 0.005)),
+      ...[-1, 1].map(s => bx(0.12, 0.16, 0.03, s * 1.1, 1.12, FZ + 0.03)),
       ...[-1, 1].map(s => bx(0.16, 0.14, 0.03, s * 0.62, 0.96, -4.205)),
     ]);
     parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.3, 0.14, 0.03, s * 0.95, 0.96, -4.205)));
@@ -212,7 +217,7 @@ export const IDEA_MODELS_BATCH_M4 = {
   // ---- the Combine Harvester (after a Claas Lexion) -----------------------------------------------------------------
   // A wide header out in front (a trough with pointed dividers at its ends, an auger inside it, the reel over it: six bats
   // on spiders, a second colour, on two arms), the feeder house rising from it to a glass cab perched on a deck over the
-  // big front drive wheels (its screen leaning out, a white roof with work lamps and a beacon, a ladder down the left
+  // big front drive wheels (a big near-upright screen, a white roof with work lamps and a beacon, a ladder down the left
   // front), the machine's tall body behind with the grain tank on top, the unloading auger folded along its left flank,
   // a radiator housing and a stack at the back, the straw chopper under the tail, small steering wheels behind. The
   // header is held to the ideas' 3 m width cap (a real one is 6 to 12 m).
@@ -231,9 +236,9 @@ export const IDEA_MODELS_BATCH_M4 = {
     const lower = [[-3.6, 0.75], [1.9, 0.75], [1.9, 2.0], [-3.6, 2.0]];
     const upper = [[-3.95, 1.95], [1.05, 1.95], [1.05, 3.2], [-3.55, 3.2], [-3.95, 2.75]];
     const tankTop = [[-2.5, 3.1], [0.9, 3.1], [0.9, 3.48], [0.76, 3.6], [-2.36, 3.6], [-2.5, 3.48]];
-    // the cab: on its deck at the front, the screen leaning OUT at the top (to see the header), a flat roof
-    const DECK = 2.16, WSF = [2.5, DECK + 0.02], WST = [2.66, 3.42], TH = [1.0, 2.6];
-    const cab = [[1.0, DECK], WSF, WST, [2.58, 3.56], [1.0, 3.58], TH];
+    // the cab: on its deck at the front, the big screen near upright, a flat roof
+    const DECK = 2.16, WSF = [2.56, DECK + 0.02], WST = [2.46, 3.44], TH = [1.0, 2.6];
+    const cab = [[1.0, DECK], WSF, WST, [2.4, 3.56], [1.0, 3.58], TH];
     const CHALF = 0.8;
     // the unloading auger, folded forward along the left flank from its pivot at the back
     const AUG0 = [1.32, 2.6, -3.4], AUG1 = [1.32, 3.25, 0.7], SPOUT = [1.32, 2.98, 0.95];
@@ -248,7 +253,7 @@ export const IDEA_MODELS_BATCH_M4 = {
       rod3(0.15, AUG0, AUG1, 10), rod3(0.13, AUG1, SPOUT, 10),
       rod3(0.18, [1.3, 2.0, -3.4], AUG0, 10),                                            // the auger's upright housing at the back
     ]), low(0.6, 2.4, [0.66, 0.64, 0.6]))), paint);
-    // ALL the glass from the cab's own side profile (cabinGlass: one inset outline, level tops): the side windows down to the deck and the leaning
+    // ALL the glass from the cab's own side profile (cabinGlass: one inset outline, level tops): the side windows down to the deck and the big
     // screen; the cab's back is against the body (no back window)
     const INS = { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, ARGS = { from: cab.indexOf(WSF), to: cab.indexOf(TH), half: CHALF, grow: BEV, inset: INS, lift: BEV + 0.006, sideLift: 0.006 };
     const glass = cabinGlass(cab, { ...ARGS, belt: DECK + 0.12, sideInset: 0.2, windows: [[1.12, 9]] }), screen = cabinGlass(cab, { ...ARGS, belt: DECK + 0.1, sideInset: 0.08 });

@@ -13,9 +13,9 @@ export const BATCH_M4_LAMPS = {
   // wide headlamps in the cab front's lower corners, ambers outboard of them; on the lamp bar under the tank's back, red
   // tail lamps outboard (each brakes whole), ambers inboard
   fueltanker: {
-    head: [{ at: [0.8, 1.12, 4.35], size: [0.42, 0.16], mirror: true }],
+    head: [{ at: [0.8, 1.12, 4.375], size: [0.42, 0.16], mirror: true }],
     tail: [{ at: [0.95, 0.96, -4.42], size: [0.3, 0.14], mirror: true }],
-    blink: [{ at: [1.1, 1.12, 4.35], size: [0.12, 0.16], mirror: true }, { at: [0.62, 0.96, -4.42], size: [0.16, 0.14], mirror: true }],
+    blink: [{ at: [1.1, 1.12, 4.375], size: [0.12, 0.16], mirror: true }, { at: [0.62, 0.96, -4.42], size: [0.16, 0.14], mirror: true }],
   },
   // road headlamps in housings on the cab's deck, ambers outboard of them; tail lamps on the body's back (each brakes
   // whole), ambers inboard. (The four work lamps along the cab roof's front and the beacon are not listed.)

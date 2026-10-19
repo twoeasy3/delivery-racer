@@ -125,6 +125,27 @@
     "lim": "fit"
    }
   },
+  "combine": {
+   "roof": {
+    "box": [2.44, 0, 4.26, -0.801],
+    "cyl": [2.71, 0, 4.328, -0.801],
+    "from": "roof",
+    "lim": "fit",
+    "inset": [0.027, 0.027]
+   },
+   "cargo": {
+    "box": [1.14, 0, 2.506, 0.199],
+    "cyl": [1.21, 0, 2.534, 0.279],
+    "from": "deck",
+    "lim": "fit"
+   },
+   "wing": {
+    "box": [1.36, 0, 3.768, -3.261],
+    "cyl": [1.36, 0, 3.734, -3.261],
+    "from": "roof-edge",
+    "lim": "fit"
+   }
+  },
   "corrugated": {
    "roof": {
     "box": [2.04, 0, 2.83, -0.36],
@@ -256,6 +277,24 @@
     "lim": "fit"
    }
   },
+  "fueltanker": {
+   "roof": {
+    "box": [2.02, 0, 3.655, 3.176],
+    "cyl": [1.79, 0, 3.598, 3.176],
+    "from": "roof",
+    "lim": "fit",
+    "inset": [0.03, 0.029]
+   },
+   "cargo": {
+    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
+   },
+   "wing": {
+    "box": [1.13, 0, 3.139, -4.364],
+    "cyl": [1.13, 0, 3.111, -4.364],
+    "from": "bed-tail",
+    "lim": "fit"
+   }
+  },
   "funeralcoach": {
    "roof": {
     "box": [1.55, 0, 1.988, -0.46],
@@ -377,6 +416,25 @@
     "box": [1.21, 0, 2.272, -2.93],
     "cyl": [1.21, 0, 2.241, -2.93],
     "from": "deck-edge",
+    "lim": "fit"
+   }
+  },
+  "logtruck": {
+   "roof": {
+    "box": [1.87, 0, 3.658, 1.407],
+    "cyl": [1.7, 0, 3.616, 1.407],
+    "from": "roof",
+    "lim": "fit",
+    "inset": [0.037, 0.038]
+   },
+   "cargo": {
+    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing",
+    "existing": true
+   },
+   "wing": {
+    "box": [1.35, 0, 3.601, 0.427],
+    "cyl": [1.35, 0, 3.568, 0.427],
+    "from": "bed-tail",
     "lim": "fit"
    }
   },
@@ -747,6 +805,11 @@
   }
  },
  "hand": {
+  "combine": {
+   "cargo": {
+    "no": "a combine harvester has no load deck: its grain tank is closed under its covers, and the generator's place was the cab's deck"
+   }
+  },
   "gameviewer": {
    "roof": {
     "box": [2.1, 0, 2.915, -0.277],
