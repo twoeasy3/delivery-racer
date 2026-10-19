@@ -81,7 +81,7 @@ export const damageModel = (model, share) => {
   if (!body || !body.geometry) return 0;
   const level = dentLevel(share), mat = paintMat(body);
   if (level > 0 || model.userData.dentLevel) dentModel(model, body, share); // (clean and never dented: left alone, nothing measured)
-  crackModel(model, crackShare(share) === null ? null : share, model.userData.crackKey); // (the glass cracked too, with ?crack in the address: render/cracks.js)
+  crackModel(model, crackShare(share) === null ? null : share, model.userData.crackKey); // (the glass cracked too, unless ?crack=off: render/cracks.js)
   if (mat?.color) {
     const kept = model.userData.damageClean || (share > 0 ? (model.userData.damageClean = mat.color.clone()) : null);
     if (kept) { mat.color.copy(kept); scorch(mat.color, share); if (share <= 0) model.userData.damageClean = null; }

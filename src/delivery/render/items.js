@@ -552,7 +552,7 @@ export const syncPickups = (dt) => {
     paintOf(custom.userData.body).color.setHex(livery);
     dentModel(custom, custom.userData.body, worn);
     scorch(paintOf(custom.userData.body).color, worn);
-    crackModel(custom, crackShare(worn), CAR.id, ghostly); // (the windscreen and rear window cracked: only with ?crack, render/cracks.js)
+    crackModel(custom, crackShare(worn), CAR.id, ghostly); // (the windscreen and rear window cracked, unless ?crack=off: render/cracks.js)
     custom.userData.livery?.(Player.evil);
     custom.userData.aim?.(Player.turret || 0); // (the 8x8's gun, turned to its target: see Packages)
   }

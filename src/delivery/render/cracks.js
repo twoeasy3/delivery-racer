@@ -1,11 +1,12 @@
-// ---- CRACKED GLASS (a PROTOTYPE, off unless asked for: the owner, 16-Oct: "Lets explore adding a cracked glass texture to the front and
-// back windows on damage model"; src/delivery/CRACKED-GLASS-NOTES.md) -----------------------------------------------------------------
+// ---- CRACKED GLASS (the owner, 16-Oct: "Lets explore adding a cracked glass texture to the front and back windows on damage model"; then
+// "Let's change this to all players next round": ON by default, CHECKLIST 484; src/delivery/CRACKED-GLASS-NOTES.md) ---------------------
 // The player's car's WINDSCREEN and REAR WINDOW crack as it is damaged, in three looks on the dents' stages (CONFIG.dents.steps, render/dents.js):
 // a hairline star from an impact point at the first stage, a spreading web at the second and third, the glass shattered (a dense web, frosted
 // cells, a chunk knocked out beside the impact) at the last. Render only: the damage share is the one render/items.js already dents the car by.
-//   ?crack=on       cracks from the real damage (else nothing changes: the game as it was)
-//   ?crack=<0-100>  every car shown cracked (and dented, and scorched) as at that share of damage, for a visit (a picture, a look)
-// Also in the model editor and the inspector (render/inspectmodel.js damageModel: their Damage buttons) when the address has ?crack.
+//   (default)          cracks from the real damage
+//   ?crack=off / 0     no cracks (the game as it was before 484)
+//   ?crack=<1-100>     every car shown cracked (and dented, and scorched) as at that share of damage, for a visit (a picture, a look)
+// Also in the model editor and the inspector (render/inspectmodel.js damageModel: their Damage buttons).
 // HOW: the two windows are found as the tools find them (render/modelpatch.js extractParts: cabinGlass's panes, else a hand-built window's
 // panels, named by which way they face: render/screens.js; the audit scripts/windscreen-audit.mjs measures every car). Each gets an OVERLAY:
 // a copy of the pane's own outer triangles (so its outline is the pane's exactly: crisp edges, no overhang) lifted LIFT off it along the pane's
@@ -13,17 +14,26 @@
 // in code (no image file): R the line's brightness, G / B / A the coverage at stage 1 / 2 / 3, so a stage is a channel and the cracks of a
 // later stage grow out of the earlier ones. Both windows are ONE mesh (one draw call a car). The texture is mapped on the pane in metres with
 // the impact point seeded by the car and the window (a different spot, turn and size on each), so no two windows crack alike.
-// Not drawn: on a pane the audit calls ambiguous (a screen that is part of a glasshouse's one rounded piece: no pane of its own), on side
-// windows ever, on a blacked-out car (silhouette.js: userData.blackout 'hide'), on the ghost power (hidden). A new car (full health) is clean.
+// A CANOPY (a bubble, a dome, a rounded glasshouse: one glass piece facing every way, the audit's 'ambiguous'; CHECKLIST 484): where no pane
+// faces that way (or only a much smaller one, or one well under the canopy: a lamp's glass), the canopy's own triangles that face it (front
+// or rear, not up, not down, not sideways) are the window (canopyFacing).
+// A model's tag `userData.window = 'canopy'` makes a glass mesh a canopy, 'none' keeps it from ever cracking (on the mesh or its material).
+// Glass outside every pane of a cabinGlass mesh (the Glass-Hatch Brake's hatch) is measured as a pane of its own.
+// Not drawn: on side windows ever, on a blacked-out car (silhouette.js: userData.blackout 'hide'), on the ghost power (hidden). A new car (full health) is clean.
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { extractParts } from './modelpatch.js';
-import { paneFacing, paneTriangles, outward, cabinMiddle, zRefOf, screenShares, paneHidden } from './screens.js';
+import { paneFacing, paneTriangles, outward, cabinMiddle, zRefOf, screenShares, paneHidden, faceOf } from './screens.js';
 
-const param = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('crack') : null;
+// ?crack's value -> { on, force }: on unless 'off' or 0; a number above 0 forces that share (null: the real damage)
+export const crackParam = (param) => {
+  const num = param !== null && param !== undefined && /^\d+(\.\d+)?$/.test(param) ? +param : null;
+  return { on: param !== 'off' && num !== 0, force: num ? Math.min(100, num) / 100 : null };
+};
+const asked = crackParam(typeof location !== 'undefined' ? new URLSearchParams(location.search).get('crack') : null);
 export const CRACK = {
-  on: param !== null && param !== 'off',                                                           // (any ?crack but off)
-  force: param !== null && /^\d+(\.\d+)?$/.test(param) ? Math.min(100, +param) / 100 : null,      // (?crack=<n>: that share, every frame)
+  on: asked.on,       // (on unless ?crack=off or ?crack=0)
+  force: asked.force, // (?crack=<n>: that share, every frame)
   lift: 0.004,   // m off the glass (the decals' 3 to 6 mm)
   size: 256,     // px a side, the one texture
   alpha: [0, 0.42, 0.52, 0.62], // the lines' opacity at each stage (hairline, web, shattered): see crackMaterial
@@ -164,6 +174,32 @@ const MIN_AREA = 0.03; // m2 (as the audit)
 // (kept beside the model, not in its userData: a model's userData is copied as JSON when it is cloned, and a mesh in it would read as a hook)
 const SCREENS = new WeakMap(), OVERLAY = new WeakMap(), BUILD_MS = new WeakMap();
 export const crackInfo = (model) => ({ screens: SCREENS.get(model) || null, overlay: OVERLAY.get(model) ?? null, ms: BUILD_MS.get(model) ?? null });
+// A CANOPY's window that way: its triangles facing `dir` (faceOf: front or rear, not side, roof or floor) and not down, their outward normal
+// taken from the canopy's own middle as paneFacing does -> a facing of those alone ({ area, centre, normal, share, face, box, tris }), or null
+const CANOPY_SHARE = 0.08;  // the least share of a canopy facing that way to crack it there
+const CANOPY_DOWN = -0.1;   // a triangle whose outward normal leans down more than this is under the canopy's rim (in the body)
+const CANOPY_TOP = 0.92;    // ... or up more than this is the canopy's top (a roof, about 23 degrees off flat), not its screen
+const CANOPY_OVER = 3;      // a canopy's screen this many times a found pane's area wins (a small pane facing that way: a lamp's glass, a visor)
+const CANOPY_LOW = 0.3;     // m: ... or a bigger canopy's screen when the pane found sits this far under it
+const cn = new THREE.Vector3(), cc = new THREE.Vector3();
+const canopyKeeps = (n, dir) => faceOf(n) === dir && n.y > CANOPY_DOWN && n.y < CANOPY_TOP;
+export const canopyFacing = (e, dir) => {
+  const middle = e.pane.middle ? new THREE.Vector3().fromArray(e.pane.middle) : e.facing.box.getCenter(new THREE.Vector3());
+  const box = new THREE.Box3(), normal = new THREE.Vector3(), centre = new THREE.Vector3();
+  let area = 0, tris = 0;
+  paneTriangles(e.node, e.toModel, e.pane, (a, b, c) => {
+    const s = outward(a, b, c, e.zRef, cn, middle);
+    if (!s || !canopyKeeps(cn, dir)) return;
+    tris++; area += s;
+    normal.addScaledVector(cn, s);
+    centre.addScaledVector(cc.addVectors(a, b).add(c).divideScalar(3), s);
+    box.expandByPoint(a); box.expandByPoint(b); box.expandByPoint(c);
+  });
+  if (!area || normal.lengthSq() === 0) return null;
+  const share = { front: 0, rear: 0, side: 0, roof: 0, floor: 0 };
+  share[dir] = 1;
+  return { area, centre: centre.divideScalar(area), normal: normal.normalize(), share, face: dir, box, tris, canopy: dir, middle };
+};
 // -> { windscreen: [{ node, pane, facing }...], rear: [...] } (a split screen: both halves), measured once and kept on the model
 export const screensOf = (model) => {
   if (SCREENS.has(model)) return SCREENS.get(model);
@@ -185,8 +221,25 @@ export const screensOf = (model) => {
     e.facing = paneFacing(e.node, e.toModel, e.pane, e.zRef);
     const sh = screenShares(e.facing, e.zRef);
     if (sh.reverse) e.facing = { ...e.facing, share: sh, face: 'rear' };
-    const tag = e.node.userData.window || e.pane.window;
-    if (tag) e.facing = { ...e.facing, face: tag === 'windscreen' ? 'front' : 'rear' };
+    const tag = e.node.userData.window || e.pane.window || [].concat(e.node.material)[0]?.userData?.window; // (on a material: a glass-coloured part merged by material, the Junker's bumpers)
+    if (tag === 'canopy') e.facing = { ...e.facing, face: 'mixed' };
+    else if (tag === 'none') e.facing = { ...e.facing, face: 'none' };
+    else if (tag) e.facing = { ...e.facing, face: tag === 'windscreen' ? 'front' : 'rear' };
+  }
+  // (glass a cabinGlass mesh holds outside every pane, the Glass-Hatch Brake's hatch: a pane of its own here, judged against its mesh's cabin)
+  for (const node of new Set(list.map(e => e.node))) {
+    const ps = list.filter(e => e.node === node);
+    if (ps.some(e => e.pane.kind === 'hand' || !Number.isFinite(e.pane.start))) continue;
+    const cover = new Uint8Array(node.geometry.attributes.position.count);
+    for (const e of ps) cover.fill(1, e.pane.start, e.pane.start + e.pane.count);
+    for (let i = 0; i < cover.length;) {
+      if (cover[i]) { i++; continue; }
+      let j = i; while (j < cover.length && !cover[j]) j++;
+      const e = { node, toModel: ps[0].toModel, pane: { start: i, count: j - i }, zRef: ps[0].zRef };
+      e.facing = paneFacing(node, e.toModel, e.pane, e.zRef);
+      list.push(e);
+      i = j;
+    }
   }
   const glass = new Set(list.map(e => e.node)), skip = (o) => glass.has(o) || !!o.userData.crackOverlay;
   const pick = (dir) => {
@@ -196,7 +249,22 @@ export const screensOf = (model) => {
     const halves = cand.filter(q => q !== p && Math.abs(q.facing.centre.y - p.facing.centre.y) < 0.15 && Math.abs(q.facing.centre.z - p.facing.centre.z) < 0.3 && q.facing.area > 0.4 * p.facing.area && Math.abs(q.facing.centre.x) > 0.1 && Math.abs(p.facing.centre.x) > 0.1 && q.facing.centre.x * p.facing.centre.x < 0); // (half of a split screen: the other half across the car, not a second glass over the same place)
     return [p, ...halves.slice(0, 1)];
   };
-  const out = { windscreen: pick('front'), rear: pick('rear') };
+  // no pane faces that way: a canopy's triangles that do (the biggest canopy with enough of them, not hidden)
+  const canopy = (dir) => {
+    const cand = list.filter(e => e.facing.face === 'mixed' && !e.facing.share.reverse && e.facing.share[dir] >= CANOPY_SHARE).sort((a, b) => b.facing.area * b.facing.share[dir] - a.facing.area * a.facing.share[dir]);
+    for (const e of cand) {
+      const f = canopyFacing(e, dir);
+      if (f && f.area >= MIN_AREA && !paneHidden(model, f, skip)) return [{ ...e, facing: f }];
+    }
+    return [];
+  };
+  const choose = (dir) => {
+    const p = pick(dir), area = p.reduce((s, e) => s + e.facing.area, 0);
+    const c = canopy(dir);
+    const low = p.length && p[0].facing.centre.y < (c[0]?.facing.centre.y ?? 0) - CANOPY_LOW; // (a lamp's glass under the canopy)
+    return c.length && (!p.length || c[0].facing.area > CANOPY_OVER * area || (low && c[0].facing.area > area)) ? c : p;
+  };
+  const out = { windscreen: choose('front'), rear: choose('rear') };
   SCREENS.set(model, out);
   return out;
 };
@@ -206,18 +274,23 @@ const hash = (s) => { let h = 2166136261; for (const ch of String(s)) h = Math.i
 const n = new THREE.Vector3(), raw = new THREE.Vector3(), e1 = new THREE.Vector3(), e2 = new THREE.Vector3();
 // one window's triangles for the overlay, in the model's frame: the pane's OUTER face (a glass slab's two faces both face out once turned: its
 // own winding tells the outer one; a one-sided panel has one), lifted along the pane's normal; uv in the crack texture's square
+// (a canopy's: only its triangles that face that way, each judged by its own outward normal, as the canopy curves)
 const windowTris = (e, r, out) => {
-  const N = e.facing.normal, tris = [];
-  let pos = 0, neg = 0;
+  const N = e.facing.normal, tris = [], cap = e.facing.canopy;
+  const middle = cap ? e.facing.middle : e.pane.middle ? new THREE.Vector3().fromArray(e.pane.middle) : null;
+  let pos = 0, neg = 0, posOut = 0, negOut = 0;
   paneTriangles(e.node, e.toModel, e.pane, (a, b, c) => {
-    const s = outward(a, b, c, e.zRef, n, e.pane.middle ? new THREE.Vector3().fromArray(e.pane.middle) : null);
-    if (!s || n.dot(N) < 0.6) return;
+    const s = outward(a, b, c, e.zRef, n, middle);
+    if (!s || (cap ? !canopyKeeps(n, cap) || n.dot(N) < 0.35 : n.dot(N) < 0.6)) return;
     raw.subVectors(b, a).cross(e2.subVectors(c, a)).normalize();
-    const d = raw.dot(N);
+    const d = raw.dot(cap ? n : N);
+    const o = ((a.x + b.x + c.x) * N.x + (a.y + b.y + c.y) * N.y + (a.z + b.z + c.z) * N.z) / 3 * s; // (how far out along the normal)
     tris.push({ p: [a.clone(), b.clone(), c.clone()], d, s });
-    if (d > 0.5) pos += s; else if (d < -0.5) neg += s;
+    if (d > 0.5) { pos += s; posOut += o; } else if (d < -0.5) { neg += s; negOut += o; }
   });
-  const keep = tris.filter(t => (pos >= neg ? t.d > 0.5 : t.d < -0.5));
+  // (a flat slab: both faces turned out, the outer the one further out along the normal, whichever way it is wound; a canopy or one face: the winding's majority)
+  const outer = !cap && pos && neg && Math.abs(posOut / pos - negOut / neg) > 0.003 ? posOut / pos > negOut / neg : pos >= neg;
+  const keep = tris.filter(t => (outer ? t.d > 0.5 : t.d < -0.5));
   if (!keep.length) return;
   // the plane's axes: across (the car's x laid on the pane) and up the pane
   const U = new THREE.Vector3(1, 0, 0).addScaledVector(N, -N.x).normalize(), V = new THREE.Vector3().crossVectors(N, U).normalize();
