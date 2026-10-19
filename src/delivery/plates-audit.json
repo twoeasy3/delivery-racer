@@ -834,6 +834,55 @@
    ]
   },
   {
+   "model": "gritter",
+   "source": "src/delivery/render/ideaModelsBatchM1.js",
+   "plates": [
+    {
+     "face": "front",
+     "type": "box mesh",
+     "centre": [
+      0,
+      0.72,
+      3.28
+     ],
+     "size_wht": [
+      0.52,
+      0.13,
+      0.02
+     ],
+     "colour": "0xe8e6dc",
+     "proud_of_body_m": 0.02,
+     "gap_to_body_m": 0,
+     "source_line": 253,
+     "tagged_as": "mesh.userData.plate = 'front'",
+     "how_to_find": "one 12-triangle box mesh; render/platecosmetic.js existingPlates(model)"
+    },
+    {
+     "face": "rear",
+     "type": "box mesh",
+     "centre": [
+      0,
+      1.5,
+      -2.852
+     ],
+     "size_wht": [
+      0.52,
+      0.13,
+      0.02
+     ],
+     "colour": "0xf2c81e",
+     "proud_of_body_m": 0.02,
+     "gap_to_body_m": 0,
+     "source_line": 254,
+     "tagged_as": "mesh.userData.plate = 'rear'",
+     "how_to_find": "one 12-triangle box mesh; render/platecosmetic.js existingPlates(model)"
+    }
+   ],
+   "cars": [
+    "idea:gritter"
+   ]
+  },
+  {
    "model": "learner",
    "source": "src/delivery/render/trafficModels.js",
    "plates": [
