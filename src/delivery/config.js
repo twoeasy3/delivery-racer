@@ -1281,6 +1281,7 @@ export const CONFIG = {
       'powerups.mystery.earthquake': 'mystery',      // ...the road heaving
       'events.airborne': 'airborne',                 // in the air off a ramp or a gap: no steering until it is down
       'events.slipping': 'slipping',                 // ice or water is costing the car grip: its ring shows how much
+      'events.emp': 'emp',                           // an EMP mine's: the electronics out (no accelerator, steering or throwing) until they come back
       'events.infected': 'infected',                 // infected with radiation (a full meter, or an infected car touched): for the rest of the run (radiation.js)
       // (the good ones are left to the pickup status, which names them while they run: toad, angel,
       // invincible, soupedUp, giant, magnet, trafficFreeze; and sundayDrivers, rushHour, carSwap, moodSwing)
@@ -1583,6 +1584,24 @@ export const CONFIG = {
   // stop, no bust; the counterplay is the warning: time it, or change lane behind the train. `rest` s after, it is
   // ready again (only for a player coming back to it: a lapped level)
   tunnelJunction: { trigger: 150, warn: 2.2, speed: 4.5, spacing: 2.6, rest: 8, mouth: 10 },
+  // an OIL SLICK ("oilSlicks": { s, lane }, hazards.js patchesOf): a black pool `length` m long, `half` m either side of its lane's
+  // middle. It touches the player's car only (traffic drives over it untouched; a tank, a car just set down or in the air too).
+  // Touched, the car is on ice, only far worse, for `time` s (refilled while it is on the pool): the same five numbers as
+  // CONFIG.ice's (brakes, steering, lane speed, acceleration, cornering grip and understeer), and a harder slew as it hits
+  // a GLUE PILE ("gluePiles": { s, lane }, hazards.js patchesOf): a mound `r` m round. The player's car only (as an oil slick):
+  // driven onto, the car is held there, no movement at all, for `hold` s, then let go at `kept` of the speed it came with.
+  // Once a pass (free again `rearm` m off it)
+  // a MAGMA PATCH ("magmaPatches": { s, lane, length? }, hazards.js patchesOf; the volcano levels): `length` m of that lane from s,
+  // `half` m either side of its middle, molten. The player's car only (as an oil slick; a ghost too is spared): `damage` damage
+  // (as any knock: armour and the like count) as it touches it, and again every `every` s while it is on it. Warned `warn` m out
+  magma: { length: 8, half: 1.55, damage: 35, every: 0.5, warn: 150 },
+  // an EMP MINE ("empMines": { s, lane }, hazards.js patchesOf): a flat disc `r` m round, its light flashing (`flash`). The player's
+  // car only (as an oil slick; a ghost passes over it): run over, it goes off, and is gone: `damage` damage (as any knock: armour and
+  // the like count), and the car's electronics are out for `time` s: no accelerator, no steering, no throwing, slowing at `decel`
+  // m/s^2 down to `crawl` m/s (never to a stop)
+  empMine: { r: 0.75, damage: 10, time: 4, decel: 12, crawl: 4, flash: { period: 0.8, on: 0.3 } },
+  gluePile: { r: 1.2, hold: 0.5, kept: 0.5, rearm: 30 },
+  oilSlick: { length: 7, half: 1.4, time: 2, brakeGrip: 0.1, steerGrip: 0.08, laneSpeed: 0.3, accelGrip: 0.15, grip: 1.5, understeer: 0.7, yawKick: 5 },
   // a boost pad ("boostPads": { from, to, lane }, lanegimmicks.js; a travelator in the mall): a car driving over it is
   // pulled on for `time` s at up to `speed` m/s over its own top speed (as a turbo pulls: CONFIG.turboAccel), the clock
   // refilled for as long as it is on the pad; a ghost too (it is the floor, as ice is). A pad with rails: true has handrails,

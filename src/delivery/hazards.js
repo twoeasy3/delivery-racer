@@ -40,6 +40,29 @@ const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 21474836
 
 let attached = false;
 
+// ---- the player's own road hazards, laid flat on the road: oil slicks and magma (a stretch of `length` m of one lane from s), glue
+// piles and EMP mines (a mound, a disc, `r` m round, at s). Each a list in the level ({ s, lane, road?, exit? }). They touch ONLY the player's car:
+// traffic drives over them untouched. A tank, a car just set down (its shield) and a car in the air ride over them too.
+// What each is: { kind, lane, from, to, s (its middle), half (m either side of its lane's middle), point (a mound, not a stretch) }
+export const PATCH_LISTS = { oilSlicks: 'oil', gluePiles: 'glue', empMines: 'emp', magmaPatches: 'magma' };
+const PATCH_SIZE = { oil: () => ({ length: CONFIG.oilSlick.length, half: CONFIG.oilSlick.half }), magma: (c) => ({ length: c.length ?? CONFIG.magma.length, half: CONFIG.magma.half }), glue: () => ({ r: CONFIG.gluePile.r }), emp: () => ({ r: CONFIG.empMine.r }) };
+export const patchesOf = (level) => {
+  const out = [];
+  for (const [list, kind] of Object.entries(PATCH_LISTS)) {
+    for (const c of level[list] || []) {
+      const at = Track.place(c), { length, half, r } = PATCH_SIZE[kind](c);
+      if (r) out.push({ kind, lane: c.lane, from: at - r, to: at + r, s: at, half: r, point: true });
+      else out.push({ kind, lane: c.lane, from: at, to: at + length, s: at + length / 2, half });
+    }
+  }
+  return out;
+};
+// is the player's car on one? (a stretch: a wheel's width of the car over its edge; a mound: any of the car over it)
+const onPatch = (p) => {
+  const P = Player, k = p.point ? 1 : 0.5;
+  return P.s + P.hl * k >= p.from && P.s - P.hl * k <= p.to && Math.abs(P.lat - Track.laneOffset(p.lane, P.s)) <= p.half + P.hw * k;
+};
+
 export const Hazards = {
   schools: [],   // { s, state: 'idle' | 'stop', t, next, started }
   mains: [],     // { from, to, lane, lat, on, t, warned }: its patch of ice is Track.sprays' (same order)
@@ -51,6 +74,8 @@ export const Hazards = {
   marathons: [], // { s0, lane, on, members: obstacles with run: { s0, off } }
   stampedes: [], // { from, to, on, animals: obstacles with charge: { s0, lat0, speed, phase } }
   tunnelJunctions: [], // { s, side, from, to (lat the train sets out from, and crosses to), state: 'idle' | 'warn' | 'cross' | 'done', t, train: obstacles (the tug first) }
+  patches: [],   // the player's own: oil slicks, glue piles, EMP mines, magma (see patchesOf); a pile's `used` while the car is stuck on it, a mine's `gone`
+  magmaWait: 0,  // s until magma can burn the car again (CONFIG.magma.every)
   jump: null,    // the player in the air off a drawbridge's leaf: { bridge, vy (m/s up), vx (along the road), over (been over the gap), sunk (into the far leaf's end) }
   lastS: 0,
 
@@ -157,6 +182,8 @@ export const Hazards = {
       z.on = false;
       for (const o of z.animals) { o.s = o.charge.s0; o.lat = o.charge.lat0; o.h = 0; }
     }
+    this.patches = patchesOf(LEVEL);
+    this.magmaWait = 0;
     this.jump = null;
     Player.air = Player.pitch = 0;
     this.lastS = Player.s;
@@ -485,6 +512,44 @@ export const Hazards = {
         o.lat = Math.max(lo, Math.min(hi, c.lat0 + Math.sin(c.phase) * Z.weave));
         o.h = o.kind === 'kangaroo' ? CONFIG.kangarooHop * Math.abs(Math.sin(c.phase * 1.4)) : 0;
         if (o.s < Player.s - Z.past || o.s < z.floor) o.gone = true;
+      }
+    }
+
+    // ---- the player's own (see patchesOf): an oil slick puts the car on ice, far worse, for a moment; a glue pile holds it
+    // still for a moment, then lets it go at a share of the speed it came with (once a pass: free again `rearm` m off it);
+    // an EMP mine knocks out its electronics for a while (Player.emp), and is gone; magma burns it as it touches it, and every
+    // `every` s while it is on it (warned of as the car comes up to it)
+    const free = Player.active && Player.shield <= 0 && Player.tank <= 0 && Player.air < 0.05 && !Player.busted;
+    this.magmaWait = Math.max(0, this.magmaWait - dt);
+    for (const p of this.patches) {
+      if (p.used && Math.abs(Player.s - p.s) > CONFIG.gluePile.rearm) p.used = false;
+      if (p.kind === 'magma' && !p.warned && Player.active && p.from - Player.s > 0 && p.from - Player.s < CONFIG.magma.warn) { p.warned = true; Message.say('events', 'magma'); }
+      if (!free || !onPatch(p)) continue;
+      if (p.kind === 'oil') {
+        if (!(Player.oiled > 0)) { Message.say('events', 'oilSlick'); sfx('brake', 0.7); }
+        Player.oiled = CONFIG.oilSlick.time;
+      } else if (p.kind === 'emp' && !p.gone && Player.ghost <= 0) { // (an EMP mine: gone off, and gone; a ghost passes over)
+        const E = CONFIG.empMine;
+        p.gone = true;
+        hurt(Player, E.damage);
+        Player.emp = E.time;
+        Game.shake = Math.max(Game.shake, 0.6);
+        Message.say('events', 'emp');
+        sfx('zap', 1);
+      } else if (p.kind === 'magma' && Player.ghost <= 0 && this.magmaWait <= 0) { // (magma: a burn now, and every `every` s on it)
+        const M = CONFIG.magma;
+        this.magmaWait = M.every;
+        hurt(Player, M.damage);
+        Game.shake = Math.max(Game.shake, 0.5);
+        sfx('burst', 0.8);
+      } else if (p.kind === 'glue' && !p.used && !(Player.glued > 0)) {
+        const G = CONFIG.gluePile;
+        p.used = true;
+        Player.glued = G.hold;
+        Player.gluedSpeed = Player.speed * G.kept;
+        Player.speed = Player.latVel = 0;
+        Message.say('events', 'gluePile');
+        sfx('slowPad', 0.8);
       }
     }
   },
