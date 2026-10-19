@@ -93,6 +93,7 @@ export const KINDS = {
   halftrack: 'halftrack', keivan: 'van', supermini: 'hatch', minibus: 'van', sporttruck: 'pickup', pixelev: 'hatch', sprinthatch: 'hatch',
   autobahnestate: 'estate', finlandyacht: 'saloon', trophytruck: 'pickup', armouredlimo: 'saloon', cranelorry: 'truck', moorrover: 'suv',
   touringcar: 'saloon', hillclimb: 'hatch', monowheel: 'bike', // (the Monowheel: a Bespoke key car until 15-Oct, an idea again)
+  haultruck: 'special', bulldozer: 'special', gritter: 'truck', // (batch M1: the haul truck's tray is its load bed, the dozer as the Snowcat)
 };
 export const kindOf = (car) => KINDS[car.id] || KINDS[car.model || car.id] || 'car';
 

@@ -36,14 +36,14 @@ export const IDEA_MODELS_BATCH_M1 = {
     const group = new THREE.Group(), k = 'haul';
     const R = 0.88, FW = 0.56, RW = 0.5, AF = 1.9, AR = -1.2, HALF = 1.5;
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
-    const DECK = 1.95, DECKT = 2.07, CANOPY = 3.12, FRONT = 2.86;
+    const DECK = 1.95, DECKT = 2.07, CANOPY = 3.36, FRONT = 2.86;
     // the cab: on the deck's left (+x), its windscreen raked a little, a flat roof under the canopy
-    const CX = 0.94, CHALF = 0.5, CAB_TAPER = [2.5, 2.92, 0.03];
-    const WSF = [2.62, 2.42], WST = [2.5, 2.92], CBT = [1.3, 2.92], CBB = [1.3, 2.5];
+    const CX = 0.94, CHALF = 0.5, CAB_TAPER = [2.5, 3.12, 0.03];
+    const WSF = [2.62, 2.44], WST = [2.48, 3.12], CBT = [1.3, 3.12], CBB = [1.3, 2.5];
     const cab = [[1.3, DECKT - 0.02], [2.62, DECKT - 0.02], WSF, WST, CBT, CBB];
     const cabGeo = extrudeSide(cab, CHALF * 2, 0.03, CAB_TAPER, 1, 0.03).translate(CX, 0, 0);
     // the dump body's side walls (a profile along the car), the floor in two slopes, the front wall up to the canopy
-    const wall = [[0.9, 1.38], [-1.9, 1.36], [-2.96, 1.86], [-2.96, 2.3], [-2.3, 2.92], [0.9, 3.12]];
+    const wall = [[0.9, 1.8], [-1.9, 1.76], [-2.96, 2.16], [-2.96, 2.6], [-2.3, 3.16], [0.9, CANOPY]];
     const floor = (z0, y0, z1, y1) => {
       const len = Math.hypot(z1 - z0, y1 - y0), a = Math.atan2(y1 - y0, z0 - z1);
       return bx(2.8, 0.1, len, 0, (y0 + y1) / 2, (z0 + z1) / 2, a);
@@ -51,11 +51,10 @@ export const IDEA_MODELS_BATCH_M1 = {
     const painted = merge([
       // the dump body
       ...[-1, 1].map(s => extrudeSide(wall, 0.12, 0.02, null, 1, 0.02).translate(s * (HALF - 0.08), 0, 0)),
-      floor(0.86, 1.46, -1.9, 1.44), floor(-1.9, 1.44, -2.94, 1.94),
-      bx(2.98, 1.8, 0.16, 0, 2.24, 0.86),                                                   // the front wall
+      floor(0.86, 1.88, -1.9, 1.86), floor(-1.9, 1.86, -2.94, 2.24),
+      bx(2.98, CANOPY - 1.8, 0.16, 0, (CANOPY + 1.8) / 2, 0.86),                             // the front wall
       bx(3.0, 0.14, 2.14, 0, CANOPY + 0.07, 1.86),                                          // the canopy over the cab
-      ...[-1, 1].flatMap(s => [0.0, -0.95, -1.85].map(z => bx(0.05, 1.0, 0.14, s * (HALF - 0.025), 1.92 + (z > -1 ? 0.05 : 0), z))), // ribs down the sides
-      ...[-1, 1].map(s => bx(0.16, 0.12, 2.6, s * (HALF - 0.08), 3.0, -0.4, Math.atan2(0.15, 2.6))), // the top rails
+      ...[-1, 1].flatMap(s => [0.1, -0.85, -1.8].map(z => bx(0.06, 1.0, 0.2, s * (HALF - 0.03), 2.38, z))), // ribs down the sides
       // the deck and what stands on it
       bx(3.0, DECKT - DECK, 2.0, 0, (DECK + DECKT) / 2, 1.96),                               // the deck
       cabGeo,
@@ -67,8 +66,8 @@ export const IDEA_MODELS_BATCH_M1 = {
       rod3(0.025, [-1.46, DECKT + 0.55, 2.92], [-1.46, DECKT + 0.55, 1.1], 5),
       rod3(0.022, [-1.46, DECKT, 1.1], [-1.46, DECKT + 0.55, 1.1], 5),
       // the stairway: two stringers climbing across the grille from the lower right to the deck, its treads between
-      ...[0, 0.26].map(dz => rod3(0.03, [-0.95, 0.5, FRONT + 0.06 + dz], [0.38, DECK, FRONT + 0.06 + dz], 6)),
-      ...[0.2, 0.4, 0.6, 0.8].map(t => bx(0.22, 0.04, 0.3, -0.95 + t * 1.33, 0.5 + t * (DECK - 0.5) + 0.02, FRONT + 0.19)),
+      ...[0, 0.26].map(dz => rod3(0.03, [-0.8, 0.8, FRONT + 0.06 + dz], [0.36, DECK, FRONT + 0.06 + dz], 6)),
+      ...[0.2, 0.45, 0.7].map(t => bx(0.22, 0.04, 0.3, -0.8 + t * 1.16, 0.8 + t * (DECK - 0.8) + 0.02, FRONT + 0.19)),
     ]);
     const body = place(group, shared(k + 'paint', () => shadeBy(painted, (y) => {
       const c = low(0.4, 1.9, [0.62, 0.58, 0.5])(y);
@@ -89,12 +88,11 @@ export const IDEA_MODELS_BATCH_M1 = {
       ...[-1.18, -0.92].map(x => new THREE.CylinderGeometry(0.11, 0.11, 0.42, 10).translate(x, DECKT + 0.21, 2.5)), // air cleaners
       bx(0.05, 0.22, 0.14, 1.47, 2.62, 2.7), bx(0.05, 0.22, 0.14, -1.47, 2.62, 2.85),        // mirrors
       rod3(0.015, [1.42, 2.62, 2.62], [1.47, 2.62, 2.7], 4), rod3(0.015, [-1.42, 2.62, 2.85], [-1.47, 2.62, 2.85], 4),
-      bx(1.0, 0.75, 0.45, -0.12, 1.55, 0.9 - 0.3),                                          // the drive train's housing under the body's front
     ]);
     // the grille's bars, and the hoist rams (chrome) between the axles
     parts(group, k + 'chrome', CHROME, () => [
       ...[1.22, 1.42, 1.62].map(y => bx(0.8, 0.04, 0.03, 0, y, FRONT + 0.02)),
-      ...[-1, 1].map(s => rod3(0.07, [s * 0.62, 0.95, 0.45], [s * 0.62, 1.36, -0.05], 8)),
+      ...[-1, 1].map(s => rod3(0.07, [s * 0.5, 1.0, 0.6], [s * 0.5, 1.8, 0.1], 8)),
     ]);
     // the lamps: square headlamps on the bumper block either side of the grille, ambers under them; tail lamps and ambers on the
     // frame's rear crossmember (the tail lamp brakes whole)
@@ -150,7 +148,7 @@ export const IDEA_MODELS_BATCH_M1 = {
     const painted = merge([
       extrudeSide(hood, 1.2, 0.04, null, 1, 0.04),
       extrudeSide(cab, 1.4, 0.03, null, 1, 0.03),
-      ...[-1, 1].map(s => bx(0.66, 0.08, 1.1, s * TX, 0.92, 0.6)),                         // the fenders over the tracks' top runs
+      ...[-1, 1].map(s => bx(0.66, 0.08, 1.7, s * TX, 0.95, 0.5)),                         // the fenders over the tracks' top runs
       bx(1.3, 0.75, 0.42, 0, BODYY + 0.36, CABR - 0.23),                                    // the fuel tank behind the cab
       bx(1.56, 0.08, 1.56, 0, ROOF + 0.04, (CABR + CABF) / 2),                              // the cab's roof, overhanging a little
       extrudeSide(BLADE, 3.0, 0.03, null, 1, 0.03),                                         // the blade, its face curved
@@ -221,28 +219,28 @@ export const IDEA_MODELS_BATCH_M1 = {
     const painted = merge([
       extrudeSide(cab, HALF * 2, 0.05, TAPER, 1, 0.07),
       vee(),
-      bx(2.3, 0.1, 4.1, 0, 1.17, TAILZ + 2.0),                                              // the hopper's subframe
-      ...[0.3, -0.7, -1.7].map(z => bx(2.46, 0.08, 0.1, 0, 3.02, z)),                      // bars across its top
-      ...[-1, 1].map(s => bx(0.08, 0.1, 4.04, s * 1.2, 3.02, TAILZ + 1.99)),                // the rim along each side
-      ...[TAILZ + 0.01, TAILZ + 3.97].map(z => bx(2.48, 0.1, 0.08, 0, 3.02, z)),            // and across its ends
+      ...[0.45, -0.25, -0.95, -1.65].map(z => bx(2.4, 0.08, 0.12, 0, 3.08, z)),            // bars across its top, over the grid
+      ...[-1, 1].map(s => bx(0.1, 0.14, 4.06, s * 1.2, 3.06, TAILZ + 1.99)),                // the rim along each side
+      ...[TAILZ - 0.03, TAILZ + 4.0].map(z => bx(2.5, 0.14, 0.1, 0, 3.06, z)),               // and across its ends
     ]);
     const body = place(group, shared(k + 'paint', () => shadeBy(painted, low(0.6, 2.2, [0.62, 0.58, 0.5]))), paint);
     // the grid over the hopper's top (dark, a little under the rim) and the cab's glass
     const INS = { aPillar: 0.07, roof: 0.05, cPillar: 0.09 };
     const ARGS = { from: cab.indexOf(WSF), to: cab.indexOf(CBB), half: HALF, taper: TAPER, grow: 0.05, inset: INS, lift: 0.056, sideLift: 0.006 };
-    const glass = cabinGlass(cab, { ...ARGS, belt: 1.95, sideInset: 0.55, windows: [[2.3, 9]] }), screen = cabinGlass(cab, { ...ARGS, belt: WSF[1] + 0.04, sideInset: 0.1 });
+    const glass = cabinGlass(cab, { ...ARGS, belt: 1.95, sideInset: 0.55, windows: [[2.08, 9]] }), screen = cabinGlass(cab, { ...ARGS, belt: WSF[1] + 0.04, sideInset: 0.1 });
     parts(group, k + 'glass', GLASS, () => [...glass.sides, screen.front]);
     const FZ = FRONT + 0.05;
     parts(group, k + 'dark', TRIM, () => [
-      bx(2.34, 0.04, 3.96, 0, 2.95, TAILZ + 1.99),                                          // the grid's floor seen through the bars
+      bx(2.32, 0.04, 3.96, 0, 3.03, TAILZ + 1.99),                                          // the grid over the top (dark), under the bars
       ...[-1, 1].map(s => bx(0.16, 0.3, 5.6, s * 0.5, 0.9, -0.0)),                          // the chassis rails
+      bx(1.3, 0.12, 4.1, 0, 1.16, TAILZ + 2.0),                                             // the hopper's subframe
       bx(2.5, 0.3, 0.2, 0, 0.72, FZ + 0.06),                                                // the bumper
       bx(1.4, 0.5, 0.03, 0, 1.24, FZ),                                                      // the grille
       bx(0.5, 0.42, 0.3, 0, 1.0, TAILZ - 0.14),                                             // the chute at the hopper's foot
       new THREE.CylinderGeometry(0.06, 0.06, 0.3, 8).translate(0, 0.78, TAILZ - 0.22),     // the spinner's shaft
       ...[-1, 1].map(s => bx(0.5, 0.06, 0.8, s * (HALF - 0.25), 1.06, AR)),                // the mudguards over the rear wheels
       ...[-1, 1].flatMap(s => [bx(0.05, 0.42, 0.18, s * 1.33, 2.2, FRONT - 0.15), rod3(0.015, [s * 1.2, 2.3, FRONT - 0.15], [s * 1.31, 2.3, FRONT - 0.15], 4)]), // mirrors
-      bx(2.3, 0.36, 0.08, 0, 1.0, TAILZ - 0.06),                                            // the rear board's backing
+      bx(2.36, 0.5, 0.08, 0, 1.06, TAILZ - 0.06),                                           // the rear board's backing
       bx(1.5, 0.06, 0.3, 0, ROOF + 0.07, FRONT - 0.7),                                      // the light bar's base
     ]);
     // the spinner disc with its vanes (spins), under the chute
@@ -252,18 +250,18 @@ export const IDEA_MODELS_BATCH_M1 = {
     ])), steelMat(), 0, 0.6, TAILZ - 0.22);
     // the chevron board across the tail (a small texture drawn in code), the plates
     const chevrons = new THREE.MeshLambertMaterial({ map: chevronMap() });
-    place(group, shared(k + 'chevrons', () => new THREE.PlaneGeometry(2.2, 0.3).rotateY(Math.PI)), chevrons, 0, 1.02, TAILZ - 0.106);
+    place(group, shared(k + 'chevrons', () => new THREE.PlaneGeometry(1.74, 0.36).rotateY(Math.PI)), chevrons, 0, 1.06, TAILZ - 0.106);
     const plateF = keepMat(0xe8e6dc), plateR = keepMat(0xf2c81e);
     parts(group, k + 'plateF', plateF, () => [bx(0.52, 0.13, 0.02, 0, 0.72, FZ + 0.17)]).userData.plate = 'front';
-    parts(group, k + 'plateR', plateR, () => [bx(0.52, 0.13, 0.02, 0, 1.38, TAILZ - 0.03)]).userData.plate = 'rear';
+    parts(group, k + 'plateR', plateR, () => [bx(0.52, 0.13, 0.02, 0, 1.5, TAILZ - 0.072)]).userData.plate = 'rear';
     // the lamps: square headlamps in the bumper's corners with ambers outboard; tail lamps on the rear board's ends (each brakes
     // whole) with ambers inboard
     parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => bx(0.26, 0.14, 0.03, s * 0.8, 0.74, FZ + 0.172)));
     parts(group, k + 'amber', AMBER, () => [
       ...[-1, 1].map(s => bx(0.14, 0.14, 0.03, s * 1.08, 0.74, FZ + 0.172)),
-      ...[-1, 1].map(s => bx(0.12, 0.12, 0.03, s * 0.86, 1.4, TAILZ - 0.03)),
+      ...[-1, 1].map(s => bx(0.14, 0.1, 0.03, s * 1.04, 0.92, TAILZ - 0.115)),
     ]);
-    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.16, 0.12, 0.03, s * 1.06, 1.4, TAILZ - 0.03)));
+    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.16, 0.14, 0.03, s * 1.04, 1.17, TAILZ - 0.115)));
     // the beacons: two on the cab roof's light bar (a roof item: hidden when a roof prop is chosen) and two on the hopper's back corners
     const bar = new THREE.Group();
     bar.userData.prop = 'roof';

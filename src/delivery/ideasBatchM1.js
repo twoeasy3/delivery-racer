@@ -6,7 +6,7 @@
 // ============================================================================
 export const IDEAS_BATCH_M1 = [
   { id: 'haultruck', name: 'Mining Haul Truck', basedOn: 'Caterpillar 797F mining haul truck', model: 'haultruck', color: 0xf2c200, evilColor: 0x3a3e44,
-    hw: 1.5, hl: 3.1, height: 3.26, note: 'Tyres taller than a man, a stairway up the front and a tray that could swallow a house.',
+    hw: 1.5, hl: 3.1, height: 3.5, note: 'Tyres taller than a man, a stairway up the front and a tray that could swallow a house.',
     maxSpeed: 23, accel: 5, agility: 0.85, crossing: 1, health: 350, mass: 3.2, sound: 'sixbysix' },
   { id: 'bulldozer', name: 'Bulldozer', basedOn: 'Caterpillar D9 crawler dozer', model: 'bulldozer', color: 0xf0b400, evilColor: 0x7a2318,
     hw: 1.5, hl: 2.55, height: 3.06, note: 'A blade in front, a ripper behind and tracks that flatten whatever the blade missed.',
