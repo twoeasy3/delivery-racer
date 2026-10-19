@@ -28,6 +28,7 @@ import { IDEA_MODELS_BATCH_E3 } from './ideaModelsBatchE3.js'; // (batch E3: the
 import { IDEA_MODELS_BATCH_D5 } from './ideaModelsBatchD5.js'; // (batch D5: the Trophy Truck, the Armoured Limo)
 import { IDEA_MODELS_BATCH_E5 } from './ideaModelsBatchE5.js'; // (batch E5: the Touring Car, the Hill-Climb Special)
 import { IDEA_MODELS_COMMUTER_IDEAS } from './ideaModelsCommuterIdeas.js'; // (the Smiley Hatch, the Eighties Hatch, the Pebble)
+import { IDEA_MODELS_BATCH_M4 } from './ideaModelsBatchM4.js'; // (batch M4: the Log Truck, the Fuel Tanker, the Combine Harvester)
 import { IDEA_MODELS_TOPUP_C } from './ideaModelsTopupC.js'; // (top-up batch C: the Pocket 4x4, the Dodgem, the Ice Resurfacer)
 import { IDEA_MODELS_PADDLE_DUCK } from './ideaModelsPaddleDuck.js'; // (the Paddle-Wheel Amphibian)
 import { IDEA_MODELS_BATCH_D1 } from './ideaModelsBatchD1.js';
@@ -197,6 +198,7 @@ export const IDEA_MODELS = {
   ...IDEA_MODELS_TOPUP_B,
   ...IDEA_MODELS_TOPUP_C,
   ...IDEA_MODELS_COMMUTER_IDEAS,
+  ...IDEA_MODELS_BATCH_M4,
   ...IDEA_MODELS_PADDLE_DUCK,
   ...IDEA_MODELS_BATCH_D1,
   ...IDEA_MODELS_BATCH_D2,
