@@ -278,6 +278,7 @@ export const Collision = (() => {
   for (const [kind, like] of Object.entries({ jerryStack: 'crate', tentRoll: 'bale', rallyFlag: 'cone' })) SIZE[kind] = SIZE[like]; // (the desert's)
   for (const [kind, like] of Object.entries({ boxStack: 'crate', trolleyRow: 'bale', wetFloorSign: 'cone' })) SIZE[kind] = SIZE[like]; // (the mall's)
   for (const [kind, like] of Object.entries({ cheeseWheels: 'crate', woodpile: 'bale', milkChurn: 'cone', snowBlock: 'barrier' })) SIZE[kind] = SIZE[like]; // (the alpine pass's)
+  for (const [kind, like] of Object.entries({ fishCrates: 'crate', creelStack: 'bale' })) SIZE[kind] = SIZE[like]; // (the Nordic fjord's)
   SIZE.tug = [0.7, 1.0, 1.1]; // a tunnel junction's electric tug (hazards.js)
   for (const [kind, like] of Object.entries({ planter: 'bale', palmPot: 'bale', kiosk: 'bale', bench: 'crate', playBlock: 'crate', bin: 'cone' })) SIZE[kind] = SIZE[like]; // (the mall's set dressing)
   SIZE.handrail = [0.12, 1.5, 1.0]; // a boost pad's handrail section (lanegimmicks.js): as thin as the rail, 3 m long (a cone's cost: config.js)

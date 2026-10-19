@@ -281,7 +281,8 @@ THEMES.vegasNight = { sky: 0x0d0b26, ground: 0x3a3226, road: 0x3c3e44, scenery: 
   light: { sky: 0x8f8cff, ground: 0x2a1c30, ambient: 0.62, sun: 0xffd8c8, sunlight: 0.35 } };
 // nordic: a Norwegian fjord road in summer (render/themes/nordic.js): deep blue water beside the road, steep walls, spruce, red and white
 // timber cabins, snow on the peaks; its tunnels raw blasted rock with sodium lamps (wallMap 'rock': render/tunneldress.js's texture)
-THEMES.nordic = { sky: 0xb8d2e6, ground: 0x5f7f4a, road: 0x45484d, scenery: 'nordic', line: 0xf4f4ef, centre: 0xf2c21c, channel: { shallow: 0x3f7f96, deep: 0x123f5a, glint: 0x6fa8c0 },
+THEMES.nordic = { sky: 0xb8d2e6, ground: 0x5f7f4a, road: 0x45484d, scenery: 'nordic', line: 0xf4f4ef, centre: 0xf2c21c, terrain: { gentle: 0x6f9c46, steep: 0x6c6e70, rough: 1.0, flat: -6, rise: 14 },
+  channel: { shallow: 0x3f7f96, deep: 0x123f5a, glint: 0x6fa8c0 },
   target: { height: 4.2, beam: true },
   tunnel: { wall: 0xffffff, roof: 0x3c3f43, face: 0x6c7075, lamp: 0xffc070, band: false, wallMap: 'rock', roofMap: true, glow: 0.4, dark: 0x070a0f, lamps: { every: 12, size: [0.6, 0.18, 1.2], drop: 0.15 } },
   light: { sky: 0xeef4ff, ground: 0x5a6a58, ambient: 1.15, sun: 0xfff6e8, sunlight: 1.15 } };
@@ -334,6 +335,7 @@ const OBSTACLES = {
   hongkong: { crate: 'hawkerCart', bale: 'bagStack' }, // (a hawker's cart under its awning; a heap of red-white-blue bags; the cones are roadworks and stay)
   autumn: { crate: 'harvestCrate', bale: 'leafPile', cone: 'smallPumpkin' }, // (a crate of pumpkins; a heap of raked leaves; a small pumpkin on a stake)
   alpine: { crate: 'cheeseWheels', bale: 'woodpile', cone: 'milkChurn', barrier: 'snowBlock' }, // (cheese wheels on a pallet, a woodpile, a milk churn, a cut block of snow with snow poles)
+  nordic: { crate: 'fishCrates', bale: 'creelStack' }, // (fish boxes on a pallet, lobster creels stacked; its cones stay cones)
   mall: { crate: 'boxStack', bale: 'trolleyRow', cone: 'wetFloorSign' },
   metro: { crate: 'ticketGate', bale: 'scrubber', cone: 'trackLamp' }, // (a ticket gate; a ride-on floor scrubber, parked; a red track lamp on its tripod)
   roadworks: { barrier: 'barrierBlock', crate: 'cableReel', bale: 'sandPile' }, // (a water-filled barrier, a cable drum, a heap of sand; the cones are roadworks and stay)
