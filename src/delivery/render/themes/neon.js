@@ -70,7 +70,7 @@ export const neon = ({ add, flat, instances, sideStrip, standsClear, beside, exi
   };
   const near = [];
   for (const side of [-1, 1]) {
-    const front = side === NEON_CITY.mono.side ? 14 : 9;
+    const front = side === NEON_CITY.mono.side ? 15 : 11;
     for (let s = Track.start + 15; s < Track.end - 20;) {
       if (blocked(s)) { s += 6; continue; }
       const wide = between(18, 36);
@@ -92,21 +92,24 @@ export const neon = ({ add, flat, instances, sideStrip, standsClear, beside, exi
     geo.setAttribute('color', new THREE.Float32BufferAttribute(c, 3));
     return geo;
   };
-  // a streak on the road: from the kerb out across `reach` m of lanes, `wide` m along, brightest at the kerb, fading out
-  const streak = (s, side, reach, wide, colour) => {
+  // a streak on the road (a light's reflection on wet asphalt runs ALONG the road, toward whoever looks): a narrow band in the lane
+  // nearest the light, `long` m along, `wide` m across, `out` m in from the kerb; brightest in its middle, nothing at its rim
+  const streak = (s, side, out, wide, long, colour, k = 1) => {
     tint.set(colour);
     const pos = [], col = [], edge = side < 0 ? Track.lo(s) : Track.hi(s);
-    const rows = [[edge, 1], [edge - side * reach * 0.35, 0.55], [edge - side * reach, 0]];
-    for (const [lat, k] of rows) for (const ds of [-wide / 2, wide / 2]) {
-      Track.toWorld(s + ds, lat, p);
+    const A = [-0.5, -0.2, 0.2, 0.5], C = [-0.5, 0, 0.5], W = [0, 1, 1, 0], V = [0, 1, 0];
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) {
+      Track.toWorld(s + A[i] * long, edge - side * (out + C[j] * wide), p);
       pos.push(p.x, p.y + 0.03, p.z);
-      const f = k * (0.25 + 0.75 * (1 - Math.abs(ds) / wide)); // (a soft middle along)
+      const f = k * W[i] * V[j] * (i === 1 ? 1 : 0.55); // (stronger nearer the light's foot)
       col.push(tint.r * f, tint.g * f, tint.b * f);
     }
+    const idx = [];
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) { const a = i * 3 + j; idx.push(a, a + 3, a + 1, a + 1, a + 3, a + 4); }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-    geo.setIndex([0, 2, 1, 1, 2, 3, 2, 4, 3, 3, 4, 5]);
+    geo.setIndex(idx);
     streaks.push(geo);
   };
   for (const side of [-1, 1]) {
@@ -133,7 +136,7 @@ export const neon = ({ add, flat, instances, sideStrip, standsClear, beside, exi
       box(s, lat, 6.08, 0.5, 0.16, 0.5, METAL, KIND.METAL);                 // (its cap)
       box(s, lat, 6.75, 0.62, 0.62, 0.62, 0xffffff, KIND.GLOW, HUES.ICE).tilt = Math.PI / 4; // (the light, floating 0.5 m over the cap)
       box(s, lat, 6.75, 1.1, 0.07, 1.1, 0xffffff, KIND.GLOW, h);            // (a ring of colour round it)
-      streak(s, side, 7.5, 2.2, HUE_HEX[h]);
+      streak(s, side, 2.2, 1.1, 14, HUE_HEX[h]);
     }
     for (let s = Track.start + 60 + (side > 0 ? 90 : 0); s < Track.end - 30; s += between(150, 230)) { // (a holo pylon on the pavement)
       if (blocked(s, 'props')) continue;
@@ -141,11 +144,11 @@ export const neon = ({ add, flat, instances, sideStrip, standsClear, beside, exi
       if (!standsClear(s, lat, 1, 6)) continue;
       box(s, lat, 1.6, 0.5, 3.2, 0.5, METAL, KIND.METAL);
       box(s, lat, 6.6, 0.25, 6.6, 4.8, 0xffffff, KIND.HOLO, h).turn = side * 0.5;
-      streak(s, side, 9, 5, HUE_HEX[h]);
+      streak(s, side, 3.2, 2.2, 22, HUE_HEX[h]);
     }
   }
   // a streak at the foot of each near tower's panel too, faint
-  for (const [s, side] of near) if (rand() < 0.5 && !blocked(s, 'props')) streak(s, side, 6, 7, HUE_HEX[hue()]);
+  for (const [s, side] of near) if (rand() < 0.5 && !blocked(s, 'props')) streak(s, side, 4.5, 2.5, 26, HUE_HEX[hue()], 0.5);
 
   // ---- the maglev: a beam on columns along the left, a glowing rail on its top and its flank ----
   const M = NEON_CITY.mono, monoLat = (s) => beside(M.side, s, M.d);

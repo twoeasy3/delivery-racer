@@ -71,17 +71,18 @@ void glassFace(inout vec3 col) {
     col = cap ? hue * 0.15 : mix(pic * grid + hue * scan * 0.6, hue * 1.3, frame);
     return;
   }
-  // glass: dark tinted, faint floor lines every 4 m, the odd pale pane, and the outline lit round the face
-  float floors = clamp((0.05 - abs(fract(f.y / 4.0) - 0.5) + 0.45) / fw.y * 0.25, 0.0, 1.0);
-  float mull = clamp((0.04 - abs(fract(f.x / 3.0) - 0.5) + 0.46) / fw.x * 0.2, 0.0, 1.0);
-  vec2 cell = floor(vec2(f.x / 3.0, f.y / 4.0));
-  float pane = step(0.93, gHash(cell + seed * 7.0)) * (1.0 - floors) * (1.0 - mull);
-  vec3 base = col * 0.22 + vec3(0.01, 0.012, 0.04);
-  base += hue * 0.06 * smoothstep(0.0, 1.0, f.y / max(H, 1.0)); // (the glass catching the sky's glow higher up)
-  base = mix(base, base + hue * 0.1, floors * 0.6 + mull * 0.3);
-  base += vec3(0.45, 0.6, 0.9) * pane * 0.35;
-  float rim = clamp((0.32 - edge) / max(fw.x, fw.y) + 0.5, 0.0, 1.0);
-  float halo = cap ? 0.0 : exp(-edge * 0.9) * 0.35;
+  // glass: dark tinted, faint floor lines every 4 m and mullions every 3 m (fading out far off: no shimmer), the odd pale pane,
+  // and the outline lit round the face
+  float dy = abs(fract(f.y / 4.0 + 0.5) - 0.5) * 4.0, dx = abs(fract(f.x / 3.0 + 0.5) - 0.5) * 3.0;
+  float fade = 1.0 - clamp(max(fw.x, fw.y) * 14.0 - 0.4, 0.0, 1.0);
+  float floors = clamp((0.07 - dy) / fw.y + 0.5, 0.0, 1.0) * fade;
+  float mull = clamp((0.05 - dx) / fw.x + 0.5, 0.0, 1.0) * fade;
+  float storey = floor(f.y / 4.0), lit = step(0.82, gHash(vec2(storey, seed * 13.0))) * (cap ? 0.0 : 1.0); // (now and then a floor softly lit)
+  vec3 base = col * 0.1 + vec3(0.002, 0.002, 0.008);
+  base += hue * 0.025 * smoothstep(0.0, 1.0, f.y / max(H, 1.0)); // (the glass catching the sky's glow higher up)
+  base += hue * 0.07 * max(floors, mull * 0.5) + hue * lit * 0.035;
+  float rim = clamp((0.3 - edge) / max(fw.x, fw.y) + 0.5, 0.0, 1.0);
+  float halo = cap ? 0.0 : exp(-edge * 1.4) * 0.18;
   col = mix(base + hue * halo, hue * 1.4, rim);
 }
 `;
