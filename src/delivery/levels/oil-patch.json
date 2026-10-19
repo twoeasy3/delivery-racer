@@ -12,7 +12,7 @@
     { "from": 302, "to": 430, "density": 0 },
     { "from": 512, "to": 550, "density": 0 },
     { "from": 662, "to": 729, "density": 0 },
-    { "from": 792, "to": 830, "density": 0 },
+    { "from": 812, "to": 882, "density": 0 },
     { "from": 1212, "to": 1334, "density": 0 },
     { "from": 1422, "to": 1518, "density": 0 },
     { "from": 1622, "to": 1712, "density": 0 },
@@ -37,20 +37,6 @@
     { "length": 400, "curve": 0 },
     { "length": 260, "curve": 0 }
   ],
-  "waterPatches": [
-    { "from": 540, "to": 600, "lane": 2 },
-    { "from": 540, "to": 600, "lane": 4 },
-    { "from": 680, "to": 740, "lane": 3 },
-    { "from": 1000, "to": 1060, "lane": 2 },
-    { "from": 1320, "to": 1380, "lane": 0 },
-    { "from": 1440, "to": 1500, "lane": 4 },
-    { "from": 2100, "to": 2160, "lane": 2 },
-    { "from": 2100, "to": 2160, "lane": 3 },
-    { "from": 2250, "to": 2300, "lane": 4 },
-    { "from": 2880, "to": 2940, "lane": 3 },
-    { "from": 2880, "to": 2940, "lane": 4 },
-    { "from": 3050, "to": 3110, "lane": 3 }
-  ],
   "obstacles": [
     { "s": 330, "lane": 2, "kind": "barrier" },
     { "s": 330, "lane": 3.458, "kind": "barrier" },
@@ -65,9 +51,9 @@
     { "s": 540, "lane": 4, "kind": "barrier" },
     { "s": 690, "lane": 0, "kind": "barrier" },
     { "s": 719, "lane": 1, "kind": "barrier" },
-    { "s": 820, "lane": 2, "kind": "barrier" },
-    { "s": 820, "lane": 4, "kind": "barrier" },
-    { "s": 852, "lane": 3, "kind": "barrier" },
+    { "s": 840, "lane": 2, "kind": "barrier" },
+    { "s": 840, "lane": 4, "kind": "barrier" },
+    { "s": 872, "lane": 3, "kind": "barrier" },
     { "s": 1000, "lane": 1, "kind": "barrier" },
     { "s": 1240, "lane": 3, "kind": "barrier" },
     { "s": 1240, "lane": 4, "kind": "barrier" },
@@ -95,7 +81,7 @@
     { "s": 2544, "lane": 4, "kind": "barrier" },
     { "s": 2596, "lane": 2, "kind": "barrier" },
     { "s": 2596, "lane": 3, "kind": "barrier" },
-    { "s": 2700, "lane": 1, "kind": "barrier" },
+    { "s": 2725, "lane": 1, "kind": "barrier" },
     { "s": 2880, "lane": 3, "kind": "barrier" },
     { "s": 2880, "lane": 4, "kind": "barrier" },
     { "s": 3050, "lane": 0, "kind": "barrier" },
@@ -180,17 +166,34 @@
     { "type": "cash10", "s": 3476, "lane": 4 }
   ],
   "oilSlicks": [
+    { "s": 620, "lane": 2 },
+    { "s": 1010, "lane": 3 },
+    { "s": 1400, "lane": 3 },
     { "s": 1800, "lane": 4 },
-    { "s": 3459, "lane": 4 },
-    { "s": 1568, "lane": 4 }
+    { "s": 2220, "lane": 2 },
+    { "s": 2720, "lane": 2 },
+    { "s": 2930, "lane": 4 },
+    { "s": 3430, "lane": 3 }
   ],
   "potholes": [
+    { "s": 470, "lane": 4, "r": 1.1 },
+    { "s": 485, "lane": 3, "r": 1 },
+    { "s": 499, "lane": 4, "r": 1.1 },
+    { "s": 760, "lane": 3, "r": 1.1 },
+    { "s": 775, "lane": 4, "r": 1 },
+    { "s": 789, "lane": 3, "r": 1.1 },
+    { "s": 1150, "lane": 4, "r": 1.1 },
+    { "s": 1165, "lane": 3, "r": 1 },
+    { "s": 1179, "lane": 4, "r": 1.1 },
+    { "s": 1560, "lane": 2, "r": 1.1 },
+    { "s": 1575, "lane": 3, "r": 1 },
+    { "s": 1589, "lane": 2, "r": 1.1 },
     { "s": 2663, "lane": 3, "r": 1.1 },
     { "s": 2678, "lane": 4, "r": 1 },
     { "s": 2692, "lane": 3, "r": 1.1 },
-    { "s": 3140, "lane": 2, "r": 1.1 },
-    { "s": 3155, "lane": 3, "r": 1 },
-    { "s": 3169, "lane": 2, "r": 1.1 }
+    { "s": 3160, "lane": 2, "r": 1.1 },
+    { "s": 3175, "lane": 3, "r": 1 },
+    { "s": 3189, "lane": 2, "r": 1.1 }
   ],
   "mud": [
     { "from": 235, "to": 305 }
