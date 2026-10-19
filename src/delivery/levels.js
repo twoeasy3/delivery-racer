@@ -704,7 +704,7 @@ HIDDEN_LEVELS['vegas-night'] = vegasNight; // Vegas by Night (the same Strip aft
 import alpinePass from './levels/alpine-pass.json';
 HIDDEN_LEVELS['alpine-pass'] = alpinePass; // Alpine Pass (the alpine theme's switchbacks to the col): ?hidden=alpine-pass, until the owner decides
 import oilPatch from './levels/oil-patch.json';
-HIDDEN_LEVELS['oil-patch'] = oilPatch; // Oil Patch (the oil field: spilt crude on the lanes, truck convoys in the clean ones): ?hidden=oil-patch, until the owner decides
+HIDDEN_LEVELS['oil-patch'] = oilPatch; // Oil Patch (the oil field: spilt crude where the pipeline crosses, barrier formations round the leaks): ?hidden=oil-patch, until the owner decides
 import metroRun from './levels/metro-run.json';
 HIDDEN_LEVELS['metro-run'] = metroRun; // Metro Run (a metro system: running tunnels, stations, an interchange, the depot: render/themes/metro.js): ?hidden=metro-run, until it is put in the career
 import obstacleLab from './levels/obstacle-lab.json';

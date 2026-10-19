@@ -43,9 +43,9 @@ export const oilfield = ({ theme, add, flat, sideStrip, offRoads, beside, inJunc
   OILFIELD_BUILT.meshes = [];
   const START = Track.start, END = Track.end;
   const open = (s) => s > START + 4 && s < END - 4 && !inJunction(s) && !Track.onBridge(s) && !(Track.tunnel(s) > 0);
-  const half = (s) => Math.max(Track.hi(s), -Track.lo(s));
+  const half = (s, side) => side < 0 ? -Track.lo(s) : Track.hi(s); // (the road's half on that side: a road may be wider one way)
   // is there room at (s, side, d) for a thing r m round (clear of every road, and of the main road's other stretches)?
-  const room = (s, side, d, r) => { if (!open(s)) return false; Track.toWorld(s, beside(side, s, d), p); return offRoads(p.x, p.z, r) && Track.mainDistance(p.x, p.z) > half(s) + d - 3; };
+  const room = (s, side, d, r) => { if (!open(s)) return false; Track.toWorld(s, beside(side, s, d), p); return offRoads(p.x, p.z, r) && Track.mainDistance(p.x, p.z) > half(s, side) + d - 3; };
   // the ground's height at (s, lat), less the road's there: the oil field is flat (a theme with no terrain), so nothing
   const ground = () => 0;
   // the places taken (a battery, a rig, a station, the pipeline): nothing else stands in one

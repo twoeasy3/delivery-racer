@@ -327,7 +327,7 @@ const OBSTACLES = {
   beach: { bale: 'beachBall' },
   hell: { cone: 'brimstone' },
   desert: { crate: 'jerryStack', bale: 'tentRoll', cone: 'rallyFlag' }, // (jerrycans stacked on a pallet; a rolled tent; a rally marker flag in a heap of sand)
-  oilfield: { crate: 'pipePallet', bale: 'sandPile', cone: 'trafficDrum', barrier: 'barrierBlock' }, // (a pallet of pipe, a heap of sand, a striped drum, a barrier block: the roadworks' own models)
+  oilfield: { crate: 'pipePallet', bale: 'sandPile', cone: 'trafficDrum' }, // (a pallet of pipe, a heap of sand, a striped drum: the roadworks' own models; its barriers stay the plain one, a formation's standard, one mesh: CHECKLIST 522)
   fallout: { crate: 'wasteDrum' }, // (a yellow drum of waste, the trefoil on it; the cones and barriers are a checkpoint's own)
   halloween: { crate: 'pumpkinCrate', cone: 'candleLantern', bale: 'hayGhost' }, // (a crate of pumpkins, a candle lantern, a hay bale in a bedsheet)
   rainforest: { crate: 'bananaCrate', bale: 'fallenLog', cone: 'termiteMound' }, // (a crate of bananas, a pile of fallen logs, a termite mound)

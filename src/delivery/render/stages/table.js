@@ -150,6 +150,7 @@ const PAINT = {
   // the oil field: a flat horizon of nodding donkeys, a derrick or two, a tank battery, a flare stack burning
   oilfield(g, w, hy, P) {
     const far = P.tone(0.35), near = P.tone(0.6);
+    if (P.dark) { const glow = g.createLinearGradient(0, 0, 0, hy); glow.addColorStop(0, 'rgba(60,10,8,.55)'); glow.addColorStop(0.7, 'rgba(150,40,20,.35)'); glow.addColorStop(1, 'rgba(255,110,40,.45)'); g.fillStyle = glow; g.fillRect(0, 0, w, hy); } // (Evil: the flares' glow in a smoky sky)
     g.fillStyle = P.land(0.15); g.fillRect(0, hy - hy * 0.02, w, hy * 0.02 + 1);
     const donkey = (x, s, t) => { g.fillStyle = P.tone(t); g.fillRect(x - 0.6, hy - s * 1.3, 1.6, s * 1.3); g.fillRect(x - s * 1.25, hy - s * 1.45, s * 2.3, 1.8); g.fillRect(x + s * 0.95, hy - s * 1.45, 1.8, s * 0.85); g.fillRect(x - s * 1.4, hy - 1.5, s * 2.6, 1.5); };
     for (let x = P.rnd() * 12; x < w; x += 18 + P.rnd() * 26) donkey(x, 4 + P.rnd() * 3, 0.3);
