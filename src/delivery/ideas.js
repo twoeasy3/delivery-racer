@@ -70,6 +70,7 @@ import { IDEAS_BATCH_M4 } from './ideasBatchM4.js'; // (batch M4: the Log Truck,
 import { IDEAS_COMMUTER_IDEAS } from './ideasCommuterIdeas.js'; // (three city hatchbacks, first drawn as Commuter drafts)
 import { IDEAS_BATCH_M1 } from './ideasBatchM1.js'; // (batch M1, working machines: a mining haul truck, a bulldozer and a gritter)
 import { IDEAS_BATCH_M2 } from './ideasBatchM2.js'; // (batch M2: idea cars, CHECKLIST 516)
+import { IDEAS_BATCH_M3 } from './ideasBatchM3.js'; // (batch M3, CHECKLIST 517)
 export const IDEA_CARS = [
   { id: 'threewheeler', name: 'Three-Wheeler', basedOn: 'Reliant Robin', model: 'threewheeler', color: 0xe0902a, evilColor: 0x3d4a2a,
     hw: 0.71, hl: 1.67, height: 1.37, note: 'One wheel at the front. It leans in a corner, and sometimes keeps going.',
@@ -209,5 +210,6 @@ export const IDEA_CARS = [
   ...IDEAS_BATCH_M1,
   ...IDEAS_BATCH_M2,
   ...IDEAS_BATCH_M4,
+  ...IDEAS_BATCH_M3,
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
