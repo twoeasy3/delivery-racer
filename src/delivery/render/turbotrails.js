@@ -6,7 +6,7 @@
 // playerPointY: up in the air with a jumping car, CHECKLIST 429), it is carried by its PARENT's velocity on the PARENT GAME CLOCK
 // (render/gameclock.js: paused nothing moves or comes, half as far at 0.5x), and it grows with the car's actual speed.
 // TURBO-TRAILS.md: the looks, the counts, the cost, the open questions.
-// A COSMETIC since CHECKLIST 466 (render/trailcosmetic.js, the Cosmetics screen's 'Trail' tab): at every level load the style is the one the
+// A COSMETIC since CHECKLIST 466 (render/trailcosmetic.js, the Cosmetics screen's 'Trail' tab): at every level load (and on a loadout or car change, 482) the style is the one the
 // car in use WEARS (shownTrail(CAR.id); its lite variant on a low-end device: render/lowend.js, or ?fxlow=1 as the kill effects'), unless the
 // address (`?turbotrail=`) or a check (setTurboTrail) has pinned one. The same code draws the Cosmetics screen's PREVIEW (createTrailPreview
 // below): every style reads the car only through a SOURCE (`src`: the game's player car, GAME, or a car standing on show), so the game's
@@ -25,6 +25,8 @@ import { RARITIES, rarityOf } from '../showroomData.js';
 import { makeParticles } from './particles.js';
 import { STYLES, STYLE_NAMES } from './trailstyles.js';
 import { shownTrail, trailSupported } from './trailcosmetic.js';
+import { onStore } from './loadoutstore.js';
+import { onAward } from './cosmetics.js';
 import { forceLow } from './killfx.js';
 import { lowEnd } from './lowend.js';
 
@@ -441,7 +443,14 @@ const pickForCar = () => { const want = pinned ?? wornTrail(); if (want !== G.st
   if (asked === 'list') console.log('?turbotrail=<name> (or <name>-lite): classic (the default), ' + STYLE_NAMES.join(', '));
   else if (asked) setTurboTrail(asked);
 }
-Game.onLoad.push(() => { try { pickForCar(); } catch (error) { console.warn('turbo trail: ' + (error?.message || error)); } if (fx) for (const S of fx.stores) S.clear(); });
+const pickSafe = () => { try { pickForCar(); } catch (error) { console.warn('turbo trail: ' + (error?.message || error)); } };
+Game.onLoad.push(() => { pickSafe(); pickedFor = CAR; stale = false; if (fx) for (const S of fx.stores) S.clear(); });
+// RE-PICKED when the choice can have changed since the level was loaded (CHECKLIST 482): Game.start loads a level only when it is not the one
+// built already, so a trail equipped (or a car picked, a level's or a replay's car put in after the load) between two runs on the same level
+// never reached the run. A loadout change, an award, or a different car marks it; the frame below picks once (nothing allocated otherwise).
+let pickedFor = null, stale = true;
+onStore(() => { stale = true; });
+onAward(() => { stale = true; });
 
 // how many of the style's particles (ribbon nodes, cones, rings...) are alive
 export const liveCount = () => (fx ? fx.stores.reduce((n, S) => n + S.live(), 0) : 0);
@@ -470,7 +479,10 @@ export const advanceProbe = (run) => {
 };
 
 // main.js's frame, after the car is placed: dt is the GAME time of the frame (render/gameclock.js)
-export const syncTurboTrail = (dt, on = Player.active && Player.turbo > 0 && (Player.turbo > CONFIG.powerUpWarning || Math.floor(Player.turbo * 8) % 2 === 0) && !Game.screensaver) => stepTrail(G, dt, on);
+export const syncTurboTrail = (dt, on = Player.active && Player.turbo > 0 && (Player.turbo > CONFIG.powerUpWarning || Math.floor(Player.turbo * 8) % 2 === 0) && !Game.screensaver) => {
+  if (stale || pickedFor !== CAR) { stale = false; pickedFor = CAR; pickSafe(); }
+  stepTrail(G, dt, on);
+};
 
 // ---- THE PREVIEW (CHECKLIST 466: the Cosmetics screen's Trail tab, render/trailpreview.js): a car standing on show, the trail streaming from
 // its tail at its own height as if it drove at SPEED, drawn by the game's own styles above in the car's frame (shift). One trail, made once and

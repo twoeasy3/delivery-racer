@@ -269,6 +269,26 @@ export const setLamp = (lamps, kind, level, glow = 1) => {
   for (const g of list.glows) g.material.opacity = clamp(level) * glow * k;
 };
 
+// the box the car is scaled and framed by: the whole model's, but no higher than its SOLID parts where thin ones (each
+// thinner than THIN of the car's length or width: a mast, a sail, an aerial) tower over them by more than RIG of their
+// height. (The Sailing Herald's mast and sail stand 5 m over a 1 m car: by the whole box it was scaled down and every
+// shot stood back for a 'tall' car, so it sat small and far off. CHECKLIST 490.) Length and width: the whole model's.
+const THIN = 0.04, RIG = 0.5;
+export const fitBox = (model) => {
+  const box = new THREE.Box3().setFromObject(model), size = box.getSize(v3()), part = new THREE.Box3(), ps = v3();
+  const thin = THIN * Math.max(size.x, size.z);
+  let top = -Infinity;
+  model.traverse((node) => {
+    if (!node.isMesh || !node.geometry || !shown(node)) return;
+    if (node.isInstancedMesh) part.setFromObject(node);
+    else { if (!node.geometry.boundingBox) node.geometry.computeBoundingBox(); part.copy(node.geometry.boundingBox).applyMatrix4(node.matrixWorld); }
+    part.getSize(ps);
+    if (Math.min(ps.x, ps.y, ps.z) >= thin) top = Math.max(top, part.max.y);
+  });
+  if (top > box.min.y && box.max.y - top > RIG * (top - box.min.y)) box.max.y = top;
+  return box;
+};
+
 // ---- the stage: one scene for both sequences (the car at the middle, facing +z; the lock in front of it) ----
 const build = (car, evil, mode) => {
   const own = []; // (geometries, materials and textures to give back)
@@ -285,7 +305,7 @@ const build = (car, evil, mode) => {
   model.traverse((node) => { if (node.userData.figure) node.visible = false; }); // (no people in a cutscene, the owner, 14-Oct: a model's driver, rider or helmet, tagged `figure` where it is built)
   model.userData.animate?.(0);
   model.updateMatrixWorld(true);
-  const box = new THREE.Box3().setFromObject(model), size = box.getSize(v3()), mid = box.getCenter(v3());
+  const box = fitBox(model), size = box.getSize(v3()), mid = box.getCenter(v3());
   const scale = LEN / Math.max(size.z, size.x, size.y, 0.01);
   const carRig = new THREE.Group(), holder = new THREE.Group();
   holder.add(model);

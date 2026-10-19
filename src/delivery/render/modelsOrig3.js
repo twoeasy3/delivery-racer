@@ -659,6 +659,7 @@ export const ORIG3_MODELS = {
     const L = car.hl, R = 0.42, WX = 0.95, FZ = L * 0.62, RZ = -L * 0.6;
     const paint = lambert(car.color), glass = lambert(GLASS), chrome = lambert(0xc4c7cb), dark = lambert(0x121418);
     const roof = lambert(0x4f5532), bumper = lambert(0x7d8794), plate = lambert(0xece6cc);
+    bumper.userData.window = 'none'; // (its grey reads as glass to the window tools: never cracked, render/cracks.js)
     const cover = new THREE.MeshLambertMaterial({ vertexColors: true });
     // the body: one flat-sided slab from the nose (its face leaning back at the bottom) to the back of the cab, low in
     // front where the bonnet and the wings sit on it; its back face, above the bed's floor, is the bed's bulkhead

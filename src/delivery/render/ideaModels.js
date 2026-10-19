@@ -973,9 +973,11 @@ export const IDEA_MODELS = {
     const B = w * 0.86;
     const body = prism(group, paint, B, [[-L, 0.36], [L * 0.96, 0.36], [L, 0.42], [L * 0.34, 0.72], [-L * 0.36, 0.9], [-L * 0.84, 0.88], [-L, 1.0], [-L, 0.4]]);
     prism(group, trim, B * 0.7, [[L * 0.3, 0.74], [L * 0.08, 1.04], [-L * 0.3, 1.06], [-L * 0.36, 0.86]]); // the cabin, inside
-    const glass = new THREE.Mesh(new THREE.CylinderGeometry(B * 0.34, B * 0.5, 0.4, 18, 1, true, -1.35, 2.7), visor); // the visor: one curve of glass
-    glass.position.set(0, 0.9, L * 0.33 - B * 0.42);
-    glass.rotation.x = -0.3;
+    // the visor: one curve of glass, raked from the body's top just ahead of the cabin (z 0.5) up to the roof's front edge
+    // (CHECKLIST 502: it stood 24 cm over the bonnet and 13 cm over the roof); its ends run down into the body's sides
+    const glass = new THREE.Mesh(new THREE.CylinderGeometry(B * 0.34, B * 0.5, 0.46, 18, 1, true, -1.35, 2.7), visor);
+    glass.position.set(0, 0.672, -0.289);
+    glass.rotation.x = -0.374;
     group.add(glass);
     box(group, paint, B * 0.68, 0.06, L * 0.4, 0, 1.08, -L * 0.14);                       // the roof,
     box(group, paint, B * 0.74, 0.34, 0.12, 0, 0.94, -L * 0.34);                          // the bulkhead behind the seats,

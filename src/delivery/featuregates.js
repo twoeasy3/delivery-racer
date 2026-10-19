@@ -90,6 +90,7 @@ export const SECTIONS = [
   ['#garageAction', 'Garage: Switch / Buy', 'always'], ['#garageUse', 'Garage: Use', 'always'], ['#garageInspect', 'Garage: Inspect', 'always'],
   ['#sideBtn', 'Good / Evil switch (both halves, from the start)', 'always'], ['#sideNote', 'Side note', 'always'], ['#startBtn', 'Start', 'always'],
   ['#stage .replays', 'Replays chip', 'replays'], ['#stage .ribbon .half.evil', 'Evil medal', 'always'],
+  ['#emojiMarkBtn', 'Side emoji marks', 'always'],
   ['#muteBtn', 'Sound', 'always'], ['#touchBtn', 'On-screen controls', 'always'], ['#autoGasBtn', 'Auto accelerate', 'always'],
   ['#autoBrakeBtn', 'Auto brake', 'always'], ['#verbosityBtn', 'Verbosity', 'always'], ['#ghostBtn', 'Ghost', 'always'], ['#cineBtn', 'Cutscenes', 'always'], ['#wheelsOpenBtn', 'Customise wheels (Cosmetics)', 'style', 'in #menuOptions section.wheels'],
   ['#albumBtn', 'Postcards', 'extras', X], ['#milestonesBtn', 'Milestones', 'extras', X], ['#hiddenLevelsBtn', 'Hidden levels (the Driving Lesson too)', 'extras', X],

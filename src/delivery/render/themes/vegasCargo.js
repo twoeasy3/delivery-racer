@@ -41,7 +41,7 @@ const stated = (group, pose) => {
   return group;
 };
 const CHIPS = [0xd8262b, 0x1f5fd0, 0x2f8a3a, 0x1b1d22, 0xf2efe6];
-const chipGeo = cyl(0.075, 0.075, 0.022, 16), edgeGeo = cyl(0.077, 0.077, 0.008, 16);
+const chipGeo = cyl(0.075, 0.075, 0.022, 16), edgeGeo = cyl(0.0795, 0.0795, 0.008, 16); // (the edge band 4.5 mm proud of the chip)
 // a chip: its colour, a white band round its edge (the edge spots seen from afar)
 const chip = (parent, colour, x, y, z) => {
   const g = sub(parent, x, y, z);
@@ -52,7 +52,7 @@ const chip = (parent, colour, x, y, z) => {
 const die = (parent, x, y, z) => {
   const g = sub(parent, x, y, z);
   part(g, box(0.12, 0.12, 0.12), lambert(0xd8262b, { transparent: true, opacity: 0.92 }));
-  for (const [px, pz] of [[-0.03, -0.03], [0, 0], [0.03, 0.03]]) part(g, cyl(0.011, 0.011, 0.004, 8), lambert(0xffffff), px, 0.061, pz);
+  for (const [px, pz] of [[-0.03, -0.03], [0, 0], [0.03, 0.03]]) part(g, cyl(0.011, 0.011, 0.01, 8), lambert(0xffffff), px, 0.0595, pz); // (4.5 mm proud, sunk 5.5)
   return g;
 };
 

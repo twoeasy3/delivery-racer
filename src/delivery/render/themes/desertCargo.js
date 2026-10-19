@@ -88,7 +88,7 @@ const makeWaterJugs = () => {
 // ---- a crate of scarabs (Evil)
 const makeScarabs = () => {
   const group = new THREE.Group(), all = sub(group);
-  slatted(all, 0.7, 0.4, 0.5);
+  slatted(all, 0.7, 0.4, 0.5).name = 'crate'; // (the names: cargoRules.js)
   // the lid: boards across the top, nailed down (a plank each way), and one beetle sitting on it
   const lid = sub(all, 0, 0.42, 0);
   for (const z of [-0.17, 0, 0.17]) part(lid, box(0.74, 0.04, 0.15), lambert(0xc08a50), 0, 0, z);
@@ -109,7 +109,7 @@ const makeScarabs = () => {
   sitter.position.set(-0.1, 0.07, -0.04);
   const feeler = part(all, cyl(0.007, 0.007, 0.22, 4), LEG, 0.2, 0.52, 0.255);              // a feeler out between the slats
   // the crawlers at the rim (agitated) and the swarm (furious)
-  const crawlers = [0, 1, 2, 3].map(k => { const b = beetle(all, k % 2 ? SHELL2 : SHELL); b.visible = false; return b; });
+  const crawlers = [0, 1, 2, 3].map(k => { const b = beetle(all, k % 2 ? SHELL2 : SHELL); b.visible = false; b.name = 'crawler' + k; return b; });
   const swarm = Array.from({ length: 12 }, (_, k) => { const b = beetle(group, k % 3 ? SHELL : SHELL2); b.visible = false; b.scale.setScalar(1.15); return b; });
   return stated(group, (t, up, rage) => {
     all.position.set(rage * jitter(t, 1) * 0.03, rage * Math.abs(Math.sin(t * 9)) * 0.04, 0);
@@ -126,8 +126,10 @@ const makeScarabs = () => {
       b.visible = show > 0.05;
       const side = k < 2 ? -1 : 1, u = (t * 0.35 + k * 0.27) % 1;
       b.scale.setScalar(Math.max(0.01, show));
-      b.position.set(side * 0.36, 0.4 - u * 0.15, -0.2 + k * 0.14 + Math.sin(t * 6 + k) * 0.03);
-      b.rotation.set(0, side * Math.PI / 2, 0);
+      // (crawling head down the outside of a side, its belly 4 mm off the slats and clear of the posts: it once stood level
+      // through the wall, and its wings met the slats' faces as it grew)
+      b.position.set(side * 0.405, 0.4 - u * 0.15, (k % 2 ? 0.08 : -0.08) + Math.sin(t * 6 + k) * 0.03);
+      b.rotation.set(Math.PI / 2, side * Math.PI / 2, 0, 'YXZ');
     });
     swarm.forEach((b, k) => {
       b.visible = rage > 0.05;

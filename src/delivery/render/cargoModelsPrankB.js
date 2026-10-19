@@ -229,7 +229,7 @@ const makeGhost = () => {
     const s = sub(all, x, 0, 0.34);
     part(s, box(0.15, 0.03, 0.3), sole, 0, 0.015, 0);
     part(s, box(0.14, 0.08, 0.28), shoeMat, 0, 0.07, -0.01);
-    part(s, box(0.142, 0.02, 0.1), stripe, 0, 0.085, 0.03);
+    part(s, box(0.149, 0.02, 0.1), stripe, 0, 0.085, 0.03); // (4.5 mm proud of the shoe)
     part(s, sphere(0.07, 8, 6), shoeMat, 0, 0.055, 0.13).scale.y = 0.75;
     return s;
   });

@@ -441,7 +441,12 @@ export const IDEA_MODELS_2 = {
       tube(group, chrome, 0.09, 0.16, x, 1.08, -L * 0.7);
     }
     tube(group, chrome, 0.045, w * 0.5, 0, 0.5, -L - 0.12, 'x');                              // a pipe across the tail
-    box(group, glass, w * 0.46, 0.22, 0.03, 0, 1.12, L * 0.36).rotation.x = -0.45;           // a tiny windscreen
+    // the scuttle across the tub's front (the dash, closing the step to the nose), and the tiny windscreen ON it in a
+    // chrome frame: two side posts and a top rail (CHECKLIST 502: the screen floated 36 cm over the open floor)
+    box(group, paint, w * 0.57, 0.35, 0.255, 0, 0.825, L * 0.5 - 0.1075);                  // the scuttle: z 0.69 to 0.945 (into the nose), its top 1 cm under the sides'
+    box(group, glass, w * 0.46, 0.22, 0.03, 0, 1.1, L * 0.36).rotation.x = -0.45;            // a tiny windscreen, its foot on the scuttle
+    for (const side of [-1, 1]) rod(group, chrome, 0.014, [side * w * 0.237, 0.99, L * 0.36 + 0.057], [side * w * 0.237, 1.205, L * 0.36 - 0.051]); // its frame's posts,
+    tube(group, chrome, 0.013, w * 0.488, 0, 1.205, L * 0.36 - 0.051, 'x');                    // and top rail
     rod(group, trim, 0.025, [0, 0.8, L * 0.3], [0, 1.05, L * 0.12]);                         // the steering column,
     disc(group, trim, 0.12, 0.03, -w * 0.12, 1.06, L * 0.1).rotation.x = Math.PI / 2 - 0.5;
     group.userData = { body, animate: () => {} };
@@ -910,7 +915,8 @@ export const IDEA_MODELS_2 = {
     // the sidecar: a boat of a tub on its own wheel, a screen, a seat, a nose lamp
     blob(group, paint, 0.27, 0.22, L * 0.78, sx, 0.52, -L * 0.04);
     box(group, seat, 0.3, 0.1, 0.4, sx, 0.74, -L * 0.1);
-    box(group, glass, 0.4, 0.2, 0.03, sx, 0.84, L * 0.2).rotation.x = -0.5;
+    box(group, glass, 0.4, 0.2, 0.03, sx, 0.815, L * 0.2).rotation.x = -0.5;                // its screen, its foot on the tub's nose,
+    for (const side of [-1, 1]) rod(group, chrome, 0.012, [sx + side * 0.2, 0.632, L * 0.2 + 0.091], [sx + side * 0.2, 0.905, L * 0.2 - 0.05]); // held by two stays (CHECKLIST 502)
     fender(group, paint, R + 0.05, 0.13, sx + 0.1, R, -L * 0.14);
     wheel(group, R, 0.12, sx + 0.1, R, -L * 0.14);
     for (const z of [0.0, -0.4]) rod(group, chrome, 0.025, [bx + 0.14, 0.5, L * z], [sx - 0.14, 0.5, L * z]); // two struts joining them

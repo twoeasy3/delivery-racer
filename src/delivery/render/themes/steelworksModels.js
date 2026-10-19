@@ -385,14 +385,14 @@ const makeGoldBar = () => {
   const skin = put(bar, box(0.64, 0.32, 0.32), leaf);                                       // the gold leaf over it
   const top = put(bar, box(0.5, 0.06, 0.22), lambert(0xffd65a, { emissive: 0x4a3600 }), 0, 0.18, 0);
   const strips = [-0.2, 0, 0.2].map((x, k) => { const p = sub(bar, x, 0.165, -0.16); put(p, box(0.16, 0.012, 0.32), leaf, 0, 0, 0.16); p.userData.k = k; return p; });
-  const glint = put(bar, box(0.04, 0.34, 0.34), glow(0xffffff, { transparent: true, opacity: 0.7 }), 0, 0, 0);
+  const glint = put(bar, box(0.04, 0.33, 0.33), glow(0xffffff, { transparent: true, opacity: 0.7 }), 0, 0, 0); // (5 mm over the leaf, clear of the strips' faces)
   const flakes = [];
   for (let k = 0; k < 10; k++) flakes.push(put(all, box(0.05, 0.004, 0.05), leaf, 0, -1, 0));
   return stated(group, (t, up, rage) => {
     const shake = up * Math.sin(t * 31) * 0.01 + rage * Math.sin(t * 17) * 0.03;
     bar.position.set(shake, 0.32 + rage * Math.abs(Math.sin(t * 7)) * 0.12, 0);
     bar.rotation.z = rage * Math.sin(t * 9) * 0.18;
-    glint.position.x = -0.34 + ((t * 0.35) % 1) * 0.68;
+    glint.position.x = -0.28 + ((t * 0.35) % 1) * 0.56; // (it turns back 2 cm short of the bar's ends, never level with them)
     glint.visible = rage < 0.5;
     // the leaf: whole, then thin at the edges (the skin shrinks to show the core's corners), then peeling off in strips
     skin.scale.set(1 - up * 0.04 - rage * 0.06, 1 - up * 0.04 - rage * 0.06, 1 - up * 0.04 - rage * 0.06);

@@ -523,8 +523,11 @@ const ecu = (kx) => {
       const vib = !lite && t >= 2.0 && t < 3.4 ? 0.012 : 0;
       kx.camera.position.copy(pos).add(v3(Math.sin(t * 83) * vib, Math.sin(t * 61) * vib, 0)).add(lite ? v3(0, 0, 0) : kx.shake(t, CLICK, 0.02));
       kx.camera.fov = fov; kx.camera.lookAt(target);
-      s.hemi.intensity = 0.85; s.keyLight.intensity = 1.6; s.keyLight.position.set(-3, 7, 5); s.rim.intensity = 1.2; s.rim2.intensity = 0.8;
-      s.pool.material.opacity = 0.2; s.shadow.material.opacity = 1;
+      // (READOUT, from the front right: the key light crosses to the camera's side and the glow comes up behind the car, as
+      // in ECU MAX's hero, else a dark car (the Fishbowl's bubble, an Evil livery) is a black shape in a dark workshop)
+      const ro = lt >= 3.4 ? 1 : 0;
+      s.hemi.intensity = 0.85 + 0.25 * ro; s.keyLight.intensity = 1.6; s.keyLight.position.set(ro ? 3 : -3, 7, 5); s.rim.intensity = 1.2; s.rim2.intensity = 0.8;
+      s.pool.material.opacity = 0.2; s.shadow.material.opacity = 1; s.backGlow.material.opacity = 0.45 * ro;
       rig.strips.forEach((m) => m.material.color.setHex(0xe8f0ff));
       // the module, its light
       chipAt(rig, lt, 1.1, CLICK);
