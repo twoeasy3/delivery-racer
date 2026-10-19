@@ -428,7 +428,7 @@ const makeBees = () => {
   for (let k = 0; k < 18; k++) {
     const bee = sub(group);
     part(bee, sphere(0.05, 8, 6), yellow).scale.z = 1.5;
-    part(bee, cyl(0.051, 0.051, 0.025, 8), black, 0, 0, 0.005, Math.PI / 2);
+    part(bee, cyl(0.055, 0.055, 0.025, 8), black, 0, 0, 0.005, Math.PI / 2); // (the band 5 mm proud of the body: at 1 mm its sides lay along the body's, CHECKLIST 455)
     part(bee, sphere(0.036, 7, 5), black, 0, 0, 0.075);
     for (const x of [-0.02, 0.02]) part(bee, sphere(0.012, 5, 4), eyeMat, x, 0.012, 0.105);
     part(bee, new THREE.ConeGeometry(0.014, 0.06, 4), black, 0, 0, -0.095, -Math.PI / 2);
@@ -537,7 +537,7 @@ const makeTentacle = () => {
   part(all, new THREE.TorusGeometry(0.3, 0.025, 6, 18), metal, 0, 0.64, 0, Math.PI / 2);
   const label = sub(all, 0, 0.3, 0.315);
   part(label, box(0.26, 0.2, 0.004), lambert(0xfdf4dc));
-  for (const d of [-1, 1]) part(label, box(0.16, 0.03, 0.007), glow(0xd8262b), 0, 0, 0.003, 0, 0, d * Math.PI / 4); // (4.5 mm proud of the label, the back inside it)
+  for (const d of [-1, 1]) part(label, new THREE.PlaneGeometry(0.16, 0.03), glow(0xd8262b), 0, 0, 0.0065, 0, 0, d * Math.PI / 4); // (flat, 4.5 mm proud of the label: CHECKLIST 455)
   const lid = sub(all);
   part(lid, cyl(0.33, 0.33, 0.07, 18), metal, 0, 0.035, 0);
   part(lid, sphere(0.05, 8, 6), metal, 0, 0.09, 0);
