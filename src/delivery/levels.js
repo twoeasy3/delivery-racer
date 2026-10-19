@@ -333,7 +333,7 @@
 //              speeds up with a share of its acceleration and changes lane more slowly, by numbers of its own
 //              (CONFIG.waterMain: brakeGrip, steerGrip, laneSpeed, accelGrip)
 //   oilSlicks  { s, lane }: an oil slick, CONFIG.oilSlick.length m of that lane from s: the player's car, touching it, is on ice
-//              far worse than ice (CONFIG.oilSlick's numbers) for CONFIG.oilSlick.time s. Traffic drives over it untouched
+//              a slide the player must countersteer (CONFIG.oilSlick; Player.oilStep). Traffic drives over it untouched
 //   gluePiles  { s, lane }: a glue pile at s in that lane: the player's car driven onto it is held still there for
 //              CONFIG.gluePile.hold s, then let go at .kept of the speed it came with. Traffic drives over it untouched
 //   empMines   { s, lane }: an EMP mine at s in that lane: run over by the player's car (a ghost passes over), it goes off and is

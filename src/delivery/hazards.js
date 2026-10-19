@@ -526,8 +526,8 @@ export const Hazards = {
       if (p.kind === 'magma' && !p.warned && Player.active && p.from - Player.s > 0 && p.from - Player.s < CONFIG.magma.warn) { p.warned = true; Message.say('events', 'magma'); }
       if (!free || !onPatch(p)) continue;
       if (p.kind === 'oil') {
-        if (!(Player.oiled > 0)) { Message.say('events', 'oilSlick'); sfx('brake', 0.7); }
-        Player.oiled = CONFIG.oilSlick.time;
+        if (!(Player.oiled > 0)) { Message.say('events', 'oilSlick'); sfx('brake', 0.7); Player.oilKick(); }
+        Player.oiled = CONFIG.oilSlick.time + CONFIG.oilSlick.tail;
       } else if (p.kind === 'emp' && !p.gone && Player.ghost <= 0) { // (an EMP mine: gone off, and gone; a ghost passes over)
         const E = CONFIG.empMine;
         p.gone = true;
