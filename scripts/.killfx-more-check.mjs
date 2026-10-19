@@ -1,10 +1,11 @@
-// A check of the EIGHT MORE KILL EFFECTS (render/killfxmore.js over render/killfx.js; CHECKLIST 426). Headless, no browser:
+// A check of the EIGHT MORE KILL EFFECTS (render/killfxmore.js over render/killfx.js; CHECKLIST 426) and the EIGHT AFTER THEM
+// (render/killfxmore2.js; CHECKLIST 512: Rings, Shockwave, Wisps, Glitch, Vortex, Popcorn, Geyser, Rainbow). Headless, no browser:
 //   - each is registered (slot 'kill', earned: not free, no price, a short name), shipped (on the screen's list, so in Unlock everything
 //     and the Test preview), has an icon that draws, an explosion, a trail, and none is one of the first seven or the cut two
 //   - SPAWNED 200 TIMES EACH (small, big, the tank shell's, the package hit, mixed; a trail every frame between): no pool ever over its
 //     cap, the same pools / arrays / meshes after as after the first (nothing grows), the scene holds only the system's pool meshes (one
 //     per pool type used, never more), the heap back within 512 KB, and 5 s later NOTHING left: every pool empty, every mesh hidden, count 0
-//   - the engine's new fields (turn, jelly, topple) are none by default (a plain particle goes straight, unsquashed), and each does what
+//   - the engine's new fields (turn, jelly, topple; 512: ease, snap, pull) are none by default (a plain particle goes straight, unsquashed), and each does what
 //     it says (a probe effect added to the registry for the check and taken out again). The first seven's own numbers: .killfx-check
 //   node scripts/.killfx-more-check.mjs
 import { startModels } from './modelpatch-load.mjs';
@@ -17,7 +18,9 @@ if (typeof globalThis.gc !== 'function' && !process.env.KILLFX_NO_GC) { // (once
 }
 let failures = 0;
 const check = (ok, what) => { if (!ok) failures++; console.log((ok ? '  ok    ' : '  FAIL  ') + what); };
-const MORE = ['planes', 'ink', 'hearts', 'gears', 'frost', 'leaves', 'jelly', 'dominoes'];
+const MORE1 = ['planes', 'ink', 'hearts', 'gears', 'frost', 'leaves', 'jelly', 'dominoes'];
+const MORE2 = ['rings', 'shockwave', 'wisps', 'glitch', 'vortex', 'popcorn', 'geyser', 'rainbow']; // (CHECKLIST 512)
+const MORE = [...MORE1, ...MORE2];
 const BEFORE = ['classic', 'confetti', 'fireworks', 'coins', 'bubbles', 'comic', 'lightning', 'pixels', 'candy'];
 
 const session = await startModels();
@@ -26,11 +29,14 @@ try {
   const THREE = await session.server.ssrLoadModule('three');
   const K = await load('render/killfx.js');
   const { KILL_MORE } = await load('render/killfxmore.js');
+  const { KILL_MORE2 } = await load('render/killfxmore2.js');
   const { COSMETICS } = await load('render/cosmetics.js');
 
   // ---- registered, shipped, distinct ----
   const reg = Object.fromEntries(COSMETICS.filter(c => c.slot === 'kill').map(c => [c.id, c]));
-  check(Object.keys(KILL_MORE).join() === MORE.join() && MORE.every(id => !BEFORE.includes(id)), 'eight new effects, none of the first seven nor the cut two (' + MORE.join(', ') + ')');
+  check(Object.keys(KILL_MORE).join() === MORE1.join() && MORE.every(id => !BEFORE.includes(id)), 'eight new effects, none of the first seven nor the cut two (' + MORE1.join(', ') + ')');
+  check(Object.keys(KILL_MORE2).join() === MORE2.join() && MORE2.every(id => !BEFORE.includes(id) && !MORE1.includes(id)), 'eight more after them (CHECKLIST 512), none an earlier id (' + MORE2.join(', ') + ')');
+  check(K.KILL_IDS.slice(-16).join() === MORE.join(), 'the sixteen on the screen\'s list after the first seven, in order');
   check(MORE.every(id => K.KILL_IDS.includes(id) && reg[id] && reg[id].earned && !reg[id].free && reg[id].price === 0 && reg[id].name.length <= 9), 'each on the screen\'s list (Unlock everything, the Test preview), registered as kill:<id>, EARNED (the Kill slot is an earned slot since CHECKLIST 433: not free, no price; was free at 500), a short name (' + MORE.map(id => reg[id]?.name).join(', ') + ')');
   let iconErr = null;
   const ctx = new Proxy({}, { get: (t, k) => (k in t ? t[k] : () => ({ addColorStop() {} })), set: (t, k, v) => { t[k] = v; return true; } });
@@ -83,11 +89,24 @@ try {
     const wob = at();
     put({ topple: 20, ax: 0.05, axMax: 1.5 }); for (let f = 0; f < 120; f++) sys2.update(1 / 60, cam);
     const M = sys2.pools.quad.mesh.instanceMatrix.array, tilt = Math.atan2(M[6], M[5]); // (its up axis's lean)
+    // (CHECKLIST 512) ease: its growth eased out; snap: drawn on the grid; pull: back to its centre as on a spring
+    put({ size: 1, grow: 1 }); for (let f = 0; f < 90; f++) sys2.update(1 / 60, cam);
+    const linear = at()[3];
+    put({ size: 1, grow: 1, ease: 1 }); for (let f = 0; f < 90; f++) sys2.update(1 / 60, cam);
+    const eased = at()[3];
+    put({ x: 0.13, y: 0.61, z: -0.37, vx: 0.33, snap: 0.25 });
+    let offGrid = 0, frames = 0, hops = 0, last = null;
+    for (let f = 0; f < 120; f++) { sys2.update(1 / 60, cam); const [px, py, pz, sc] = at(); if (!sc) continue; frames++; for (const v of [px, py, pz]) if (Math.abs(v / 0.25 - Math.round(v / 0.25)) > 1e-4) offGrid++; if (last !== null && px !== last) hops++; last = px; }
+    put({ x: 3, vz: 3, pull: 4, cx: 0, cz: 0, drag: 1.5 });
+    let far = 0; for (let f = 0; f < 150; f++) { sys2.update(1 / 60, cam); if (f > 120) far = Math.max(far, Math.hypot(at()[0], at()[2])); }
     delete K.KILL_FX.__probe;
     check(Math.abs(plain[0] - 2) < 0.05 && Math.abs(plain[2]) < 1e-6, 'no new field set: a particle goes straight (x ' + plain[0].toFixed(3) + ' after 0.5 s at 4 m/s, z ' + plain[2].toFixed(3) + ')');
     check(Math.abs(turned[0]) < 0.1 && turned[2] < -2, 'turn: half a turn a second, after 1 s it has come round a circle\'s half (x ' + turned[0].toFixed(2) + ', z ' + turned[2].toFixed(2) + ')');
     check(Math.abs(wob[3] - wob[4]) > 0.02, 'jelly: it squashes (width ' + wob[3].toFixed(3) + ', height ' + wob[4].toFixed(3) + ')');
     check(Math.abs(tilt - 1.5) < 0.02, 'topple: it falls over and lies at its stop (' + tilt.toFixed(3) + ' rad, the stop 1.5)');
+    check(eased > linear * 1.12, 'ease: halfway through its life an eased growth is further on (' + eased.toFixed(3) + ' against ' + linear.toFixed(3) + ')');
+    check(offGrid === 0 && frames > 60 && hops > 2, 'snap: every drawn frame on the 25 cm grid (' + frames + ' frames shown, ' + hops + ' steps sideways)');
+    check(far < 1.2, 'pull: started 3 m out going round, after 2 s it has spiralled in (' + far.toFixed(2) + ' m from its centre)');
   }
 } finally {
   await session.close();
