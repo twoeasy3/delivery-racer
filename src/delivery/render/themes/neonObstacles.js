@@ -79,10 +79,10 @@ export const NEON_OBSTACLES = {
   holoGate: () => {
     const K = kit();
     for (const x of [-1.05, 1.05]) { K.box(0.2, 1.15, 0.3, DARK, x, 0.575, 0); K.box(0.36, 0.08, 0.5, DARK, x, 0.04, 0); }
-    K.glowBox(2.0, 0.5, 0.04, MAGENTA, 0, 0.62, 0);
-    K.box(2.3, 0.1, 0.16, WHITE, 0, 1.13, 0);
-    K.glowBox(2.3, 0.04, 0.17, CYAN, 0, 1.07, 0);
-    K.box(2.0, 0.08, 0.1, DARK, 0, 0.32, 0);
+    K.glowBox(1.9, 0.78, 0.06, MAGENTA, 0, 0.66, 0);               // (the panel: most of the barrier's face, so it reads far off)
+    K.box(2.3, 0.12, 0.2, WHITE, 0, 1.12, 0);
+    K.glowBox(2.32, 0.05, 0.22, CYAN, 0, 1.04, 0);
+    K.box(2.0, 0.1, 0.12, WHITE, 0, 0.22, 0);
     return grounded(K.done(), 1.2);
   },
 };
