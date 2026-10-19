@@ -10,6 +10,6 @@ export const IDEAS_BATCH_M2 = [
     hw: 1.42, hl: 3.5, height: 3.08, note: 'Shelves floor to ceiling, a step at the back, and every book due back next Tuesday.',
     maxSpeed: 22, accel: 5, agility: 0.8, crossing: 0.6, health: 300, mass: 3.0, sound: 'sixbysix' },
   { id: 'jingletruck', name: 'Jingle Truck', basedOn: 'Pakistani decorated truck ("jingle truck"), coachbuilt on a Bedford J-type chassis', model: 'jingletruck', color: 0xe8a21c, evilColor: 0x2a3f7a,
-    hw: 1.48, hl: 3.5, height: 3.5, note: 'Every inch painted, a crown over the cab, and chains along the bumper that sing all the way down the pass.',
+    hw: 1.45, hl: 3.5, height: 3.35, note: 'Every inch painted, a crown over the cab, and chains along the bumper that sing all the way down the pass.',
     maxSpeed: 24, accel: 6, agility: 0.85, crossing: 0.8, health: 320, mass: 3.0, sound: 'sixbysix' },
 ];
