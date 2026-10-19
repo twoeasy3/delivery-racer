@@ -249,7 +249,7 @@ export const IDEA_MODELS_BATCH_M3 = {
         const tint = (geo, c) => shadeBy(geo, () => new THREE.Color(c).toArray());
         const bodyG = sideSolid([[1.85, 0.24], [1.88, 0.6], [1.2, 0.72], [0.5, 1.12], [-1.15, 1.12], [-1.85, 0.76], [-1.88, 0.24]], -0.78, 0.78);
         const glassG = sideSolid([[1.2, 0.74], [0.52, 1.1], [-1.15, 1.1], [-1.87, 0.77]], -0.79, 0.79);
-        const wheelsG = [-1, 1].flatMap(sx => [1.25, -1.25].map(wz => new THREE.CylinderGeometry(0.28, 0.28, 0.16, 8).rotateZ(Math.PI / 2).translate(sx * 0.7, 0.28, wz)));
+        const wheelsG = [-1, 1].flatMap(sx => [1.25, -1.25].map(wz => new THREE.CylinderGeometry(0.28, 0.28, 0.16, 8).rotateZ(Math.PI / 2).translate(sx * 0.74, 0.28, wz)));
         return [tint(bodyG, colour), tint(glassG, 0x1c2330), ...wheelsG.map(g => tint(g, 0x161616))].map(g => plainColour(g).translate(x, y, z));
       };
       return merge2([...one(0xc8202a, 0, LOWER, 1.4), ...one(0xe8e8e4, 0, LOWER, -3.0), ...one(0x8a9aa8, 0, UPPER, 1.25), ...one(0x2a6a3a, 0, UPPER, -3.1)]);
