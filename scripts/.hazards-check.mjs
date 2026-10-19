@@ -244,6 +244,33 @@ try {
   check(crossingWent, 'side road: its level crossing went off as the car came up to it');
   check(said('STAMPEDE') && seen > 0, 'side road: the stampede charged (' + seen + ' of 8 run into or gone by)');
 
+  // ---- the player's own (hazards.js patchesOf): oil slicks, on Gimmick Road 2. Traffic is never touched by them
+  {
+    const T = g.track.Track, own = (kind) => Hazards.patches.find(p => p.kind === kind);
+    // ---- oil slick (s 2350, lane 4): ice, far worse, for CONFIG.oilSlick.time s
+    const oil = own('oil'), O = g.CONFIG.oilSlick;
+    check(!!oil, 'oil slick: on the level');
+    start(oil.from - 40, 4, 30);
+    let oiled = false;
+    g.run(4, () => { quiet(); if (P.onOil) oiled = true; return P.s > oil.to + 5; });
+    check(oiled && P.onOil && P.onIce && said('Oil!'), 'oil slick: driving over it puts the car on oil (and says so)');
+    // braking from 30 m/s for 0.5 s: on the oil against the dry road, and against ice (CONFIG.ice)
+    const shed = (setup) => { start(oil.from - 200, 4, 30); setup(); g.drive(-1, 0); const v = P.speed; g.run(0.5, () => { quiet(); setup(); }); return v - P.speed; };
+    const dry = shed(() => {}), slick = shed(() => { P.oiled = O.time; });
+    console.log('         (speed shed braking 0.5 s from 30 m/s: dry ' + dry.toFixed(1) + ', oiled ' + slick.toFixed(1) + ' m/s; the ice\'s brakes ' + Math.round(g.CONFIG.ice.brakeGrip * 100) + '%, the oil\'s ' + Math.round(O.brakeGrip * 100) + '%)');
+    check(slick < dry * 0.2, 'oil slick: the brakes barely bite on it');
+    check(O.brakeGrip < g.CONFIG.ice.brakeGrip && O.steerGrip < g.CONFIG.ice.steerGrip && O.laneSpeed < g.CONFIG.ice.laneSpeed && O.accelGrip < g.CONFIG.ice.accelGrip && O.grip < g.CONFIG.ice.grip, 'oil slick: every grip number below the ice\'s');
+    start(oil.from - 40, 4, 30);
+    let lasted = 0;
+    g.run(8, () => { quiet(); if (P.onOil) lasted += 1 / 60; return P.s > oil.to + 200; });
+    check(!P.onOil && lasted > O.time - 0.2 && lasted < O.time + 1.5, 'oil slick: it wears off ' + lasted.toFixed(2) + ' s after (CONFIG.oilSlick.time ' + O.time + ' s, refilled while on it)');
+    check(!T.icy(oil.s, lane(4, oil.s)), 'oil slick: traffic\'s road is not slippery there (Track.icy: what traffic slides on)');
+    start(oil.from - 40, 4, 30);
+    let tankOiled = false;
+    g.run(4, () => { quiet(); P.tank = 1; if (P.onOil) tankOiled = true; return P.s > oil.to + 5; });
+    check(!tankOiled, 'oil slick: a tank rides over it untouched');
+  }
+
   // ---- slippery road: ice and a burst main's water against the dry road (CONFIG.ice, CONFIG.waterMain), on
   // three straight stretches of this level with everything else taken off it
   {

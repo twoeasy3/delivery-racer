@@ -1291,6 +1291,9 @@ const createTrack = () => {
     for (const m of LEVEL.waterMains || []) {
       if (!onRoad(m) || !onRoad(m, m.s + (m.length ?? CONFIG.waterMain.length)) || !laneOn(m, m.lane)) problems.push('water main at ' + m.s + where(m) + ': in a lane on the road');
     }
+    for (const [name, list, length] of [['oil slick', LEVEL.oilSlicks, CONFIG.oilSlick.length]]) { // (the player's own: hazards.js patchesOf)
+      for (const p of list || []) if (!onRoad(p) || !onRoad(p, p.s + length) || !laneOn(p, p.lane)) problems.push(name + ' at ' + p.s + where(p) + ': in a lane on the road');
+    }
     for (const [name, list] of [['balloon', LEVEL.balloons], ['wide load', LEVEL.wideLoads]]) {
       for (const b of list || []) {
         if (!onRoad(b)) problems.push(name + ' at ' + b.s + where(b) + ': beyond the road');

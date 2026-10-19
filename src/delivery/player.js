@@ -23,13 +23,14 @@ import { Mysteries } from './mysteries.js';
 const understeer = (v) => {
   const bend = Track.bend(v.s), asked = v.speed * v.speed * Math.abs(bend) * v.weight / v.agility;
   let grip, hard = 1;
+  const I = v.onOil ? CONFIG.oilSlick : CONFIG.ice; // (on an oil slick's oil: ice, far worse, see Hazards)
   if (LEVEL.understeer) { // a race: everywhere, and far harder off the ice (see CONFIG.race)
-    grip = CONFIG.ice.grip;
+    grip = I.grip;
     if (!v.onIce) hard = CONFIG.race.understeer;
-  } else if (v.onIce) grip = CONFIG.ice.grip; // on ice (see CONFIG.ice)
+  } else if (v.onIce) grip = I.grip; // on ice (see CONFIG.ice)
   else if (v.mystery === 'noBrakes') grip = CONFIG.cornering.grip; // no brakes: past the bend's limit (see CONFIG.mystery.noBrakes)
   else return 0;
-  return -Math.sign(bend) * Math.max(0, asked - grip) * CONFIG.ice.understeer * hard;
+  return -Math.sign(bend) * Math.max(0, asked - grip) * I.understeer * hard;
 };
 
 export const Player = {
@@ -41,6 +42,8 @@ export const Player = {
   autoBrake: 1,        // how hard it does so: a share of CONFIG.autoBrake, 0 (off) to 1 (the options; set as a run starts: Game.start)
   brakeLight: false,   // braking at all: the brake lights are on
   onIce: false,        // on an ice patch (see CONFIG.ice), or anything as slippery (see Track.icy)...
+  onOil: false,        // ...or an oil slick's oil, for oiled s after it (CONFIG.oilSlick: ice, far worse; see Hazards)...
+  oiled: 0,
   onWater: false,      // ...and that being a burst main's water (see CONFIG.waterMain: its own share of the brakes and the steering)
   wetTyres: 0,         // 1 .. 0: after a burst main's water or standing water, the tyres stay wet for Track.wet.wetAfter m (ice lets go the moment the car is off it)
   wading: 0,           // how deep the tide's water is where the car is (see Tide): 0 = dry, 1 = full depth
@@ -177,6 +180,7 @@ export const Player = {
     this.sling = this.slingTime = this.slingTotal = 0;
     this.bigSplash = 0;
     this.butterfingers = 0;
+    this.oiled = 0; this.onOil = false; // (an oil slick's: see Hazards)
     this.puncture = 0;   // a flat tyre: -1 (left) or 1 (right), 0 none (see punctureTyre)
     this.fixing = 0;     // s stopped so far, changing it
     this.tyreGrace = 0;  // s since it was changed, still let off the shoulder meter
@@ -487,10 +491,11 @@ export const Player = {
     // as the brake is held (let go, it rolls on up to minSpeed again by itself)
     const slowest = LEVEL.laps ? CONFIG.minSpeed : 0;
     const WM = Track.wet; // (the water's numbers on this level: CONFIG.waterMain's, scaled by its "wetness")
-    const grip = this.onIce ? (this.onWater ? WM : CONFIG.ice).brakeGrip : 1 - (1 - WM.brakeGrip) * this.wetTyres; // (braking on ice, or on a burst main's water or standing water, or on the wet tyres it leaves)
+    const ICE = this.onOil ? CONFIG.oilSlick : CONFIG.ice; // (an oil slick's oil: ice, far worse)
+    const grip = this.onIce ? (this.onWater ? WM : ICE).brakeGrip : 1 - (1 - WM.brakeGrip) * this.wetTyres; // (braking on ice, or on a burst main's water or standing water, or on the wet tyres it leaves)
     // (and the engine's pull: wheelspin on ice or water, fading back over the wet tail; only the car's own acceleration, never its top
     // speed, the turbo's or a boost pad's pull, the pull-away after a drop or a tank's)
-    const pull = this.launching || this.tank > 0 ? 1 : this.onIce ? (this.onWater ? WM : CONFIG.ice).accelGrip : 1 - (1 - WM.accelGrip) * this.wetTyres;
+    const pull = this.launching || this.tank > 0 ? 1 : this.onIce ? (this.onWater ? WM : ICE).accelGrip : 1 - (1 - WM.accelGrip) * this.wetTyres;
     // (but with a flat tyre, not: the car can be brought to a stop to change it, and stays there)
     if (drive <= 0 && (this.launching || this.speed < CONFIG.minSpeed) && !this.puncture && !(drive < 0 && !this.launching && slowest < CONFIG.minSpeed)) drive = 1;
     if (drive === 0 && boosted && !lifting) drive = 1; // the turbo pulls unless you brake (or lift off)
@@ -554,20 +559,23 @@ export const Player = {
     this.butterfingers = Math.max(0, this.butterfingers - dt);
     if (this.mystery && (this.mysteryTime -= dt) <= 0) this.endMystery();
     // ice: hitting it, the car slews round (the look of it only), with a squeal of tyres
-    const patch = Track.icy(this.s, this.lat), icy = !!patch;
-    if (icy && !this.onIce) {
-      this.yawVel += (random() < 0.5 ? -1 : 1) * CONFIG.ice.yawKick * Math.min(1, this.speed / 25);
+    // (an oil slick's oil, for `oiled` s after touching it: ice, far worse, CONFIG.oilSlick; set by Hazards)
+    this.oiled = Math.max(0, this.oiled - dt);
+    const oil = this.oiled > 0, patch = oil ? CONFIG.oilSlick : Track.icy(this.s, this.lat), icy = !!patch;
+    if (icy && (!this.onIce || (oil && !this.onOil))) {
+      this.yawVel += (random() < 0.5 ? -1 : 1) * (oil ? CONFIG.oilSlick : CONFIG.ice).yawKick * Math.min(1, this.speed / 25);
       if (this.speed > 8) sfx('brake', 0.5);
     }
     if (icy) this.yawVel += (random() - 0.5) * 8 * Math.min(1, this.speed / 25) * dt; // (and twitches about on it)
     this.onIce = icy;
+    this.onOil = oil;
     this.onWater = icy && !!patch.water; // (a burst main's water, or standing water: slippery by its own numbers, see CONFIG.waterMain and Track.wet)
     // water leaves wet tyres: for wetAfter m past a burst main's water (or standing water), its braking, steering, lane-change and acceleration
     // numbers fade back to normal (it's no ice: no sliding, no understeer). Ice lets go the moment the car is off it
     const WM = Track.wet; // (CONFIG.waterMain's numbers, scaled by the level's "wetness": one source, track.js waterNumbers)
     this.wetTyres = this.onWater ? 1 : icy ? 0 : Math.max(0, this.wetTyres - this.speed * dt / WM.wetAfter);
     const wetMix = (key) => 1 - (1 - WM[key]) * this.wetTyres;
-    const slippery = icy ? (this.onWater ? WM : CONFIG.ice) : this.wetTyres > 0 ? { steerGrip: wetMix('steerGrip'), laneSpeed: wetMix('laneSpeed') } : null;
+    const slippery = icy ? (this.onWater ? WM : oil ? CONFIG.oilSlick : CONFIG.ice) : this.wetTyres > 0 ? { steerGrip: wetMix('steerGrip'), laneSpeed: wetMix('laneSpeed') } : null;
     // the tide: in deep water the car is damaged, the more so the worse it wades (a ghost skims
     // over the water, and a car just set down is spared)
     this.wading = this.ghost > 0 ? 0 : Tide.depth(this.s, this.lat);

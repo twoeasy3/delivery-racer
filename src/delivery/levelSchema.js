@@ -299,6 +299,8 @@ export const FIELDS = {
   potholes: { shape: 'point', group: 'hazards', label: 'Pothole', road: 'both', help: 'A jolt, and maybe a flat tyre.', settings: { lane: lane('Lane', { required: true }), r: num('Radius (m)', { min: 0.2, max: 5, step: 0.1, default: C.site?.potholeR }) } },
   waterMains: { shape: 'point', group: 'hazards', label: 'Burst water main', road: 'both', help: 'A fountain out of its lane, on and off; while it sprays that stretch of the lane is as slippery as ice: weaker brakes, slower acceleration and slower lane changes on its water.',
     settings: { lane: lane('Lane', { required: true, init: 0 }), length: num('Slippery for (m)', { min: 1, max: 500, default: C.waterMain?.length }) } },
+  oilSlicks: { shape: 'point', group: 'hazards', label: 'Oil slick', road: 'both', help: 'A black pool in its lane: the player\'s car slides on it as on ice, far worse, for a moment. Traffic drives over it.',
+    settings: { lane: lane('Lane', { required: true, init: 0 }) } },
   landmines: { shape: 'stretch', group: 'hazards', label: 'Landmines', road: 'both', help: 'Scattered down the lanes: whatever touches one is destroyed outright.', settings: { count: count(8) } },
   rockfall: { shape: 'stretch', group: 'hazards', label: 'Rockfall', road: 'both', help: 'Rocks tumbling down onto the road from that side as the player comes near.',
     settings: { count: count(5), side: side(), out: num('Waiting (m off the edge)', { min: 0, max: 200, default: C.rockfall?.out }), height: num('Waiting (m up)', { min: 0, max: 200, default: C.rockfall?.height }) } },

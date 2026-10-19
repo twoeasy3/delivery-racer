@@ -12,7 +12,7 @@ import { THEMES } from '../themes.js';
 import { Track } from '../track.js';
 import { Game } from '../game.js';
 import { Player } from '../player.js';
-import { Hazards } from '../hazards.js';
+import { Hazards, patchesOf } from '../hazards.js';
 import { scene, tmp, clearGroup } from './scene.js';
 import { buildStrip } from './road.js';
 import { makeWorker } from './siteModels.js';
@@ -82,7 +82,7 @@ const boom = (length) => {
 
 const group = new THREE.Group();
 scene.add(group);
-let schools = [], mains = [], balloons = [], bridges = [], junctions = [], standing = null;
+let schools = [], mains = [], balloons = [], bridges = [], junctions = [], standing = null, own = null;
 // a short sign on a small canvas (256 x 64): words on a colour
 const smallBoard = (text, bg, fg, w, h) => {
   const canvas = document.createElement('canvas');
@@ -239,6 +239,25 @@ Game.onLoad.push(() => {
     if (pools.length) { const merged = mergeGeometries(pools); group.add(new THREE.Mesh(merged, pool)); const lit = new THREE.Mesh(merged.clone().translate(0, 0.004, 0), sheen); group.add(lit); pools.forEach(g => g.dispose()); }
     standing = { rim, sheen, sheenBase: look.sheen ?? 0.35, rimBase: rimOpacity };
   }
+  // ---- the player's own (../hazards.js patchesOf), flat on the road: an oil slick, a black pool with a sheen on it.
+  // Merged by material: a mesh or two for the level, whatever the count. (Textures: 192 x 192 canvases, two, only on a level with one)
+  own = null;
+  const patches = patchesOf(LEVEL);
+  if (patches.length) {
+    const oil = [], O = CONFIG.oilSlick;
+    for (const p of patches) {
+      const h = Track.toWorld(p.s, Track.laneOffset(p.lane, p.s), tmp);
+      if (p.kind === 'oil') oil.push(new THREE.PlaneGeometry(O.half * 2 + 0.9, O.length + 1.4).rotateX(-Math.PI / 2).rotateY(h).translate(tmp.x, tmp.y + 0.03, tmp.z));
+    }
+    own = {};
+    if (oil.length) {
+      const merged = mergeGeometries(oil);
+      oil.forEach(g => g.dispose());
+      group.add(new THREE.Mesh(merged, new THREE.MeshBasicMaterial({ map: puddleTexture(61, false, ['#040406', '#0c0b11', '#24202c']), transparent: true, opacity: 0.95, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })));
+      own.oilSheen = new THREE.MeshBasicMaterial({ map: puddleTexture(67, true), color: 0xb98cff, transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
+      group.add(new THREE.Mesh(merged.clone().translate(0, 0.004, 0), own.oilSheen));
+    }
+  }
   // ---- hot-air balloons
   balloons = (LEVEL.balloons || []).map((b) => {
     const s = Track.place(b), lat = (Track.laneOffset(b.lanes[0], s) + Track.laneOffset(b.lanes[1], s)) / 2;
@@ -383,6 +402,7 @@ export const syncHazards = (now) => {
     mesh.foam.opacity = (0.8 + 0.12 * Math.sin(t * 5 + k)) * shown;
     mesh.jet.userData.set(m.on ? Math.min(1, m.t / 0.5) : Math.max(0, 1 - m.t / 0.4), t, mesh.x, mesh.y, mesh.z, Game.paused || !close);
   });
+  if (own?.oilSheen) own.oilSheen.opacity = 0.32 + 0.12 * Math.sin(t * 1.7); // (the oil's rainbow sheen, shifting)
   if (standing) { standing.sheen.opacity = standing.sheenBase * (0.85 + 0.25 * Math.sin(t * 2.3)); standing.rim.opacity = standing.rimBase * (0.93 + 0.1 * Math.sin(t * 3.1)); } // (the light on standing water)
   Hazards.balloons.forEach((b, k) => {
     const mesh = balloons[k];

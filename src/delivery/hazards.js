@@ -40,6 +40,26 @@ const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 21474836
 
 let attached = false;
 
+// ---- the player's own road hazards, laid flat on the road: oil slicks (a stretch of `length` m of one lane) and the rest.
+// Each a list in the level ({ s, lane, road?, exit? }). They touch ONLY the player's car: traffic drives over them untouched.
+// A tank, a car just set down (its shield) and a car in the air ride over them too. What each is: { kind, lane, from, to }
+export const PATCH_LISTS = { oilSlicks: 'oil' };
+export const patchesOf = (level) => {
+  const out = [];
+  for (const [list, kind] of Object.entries(PATCH_LISTS)) {
+    for (const c of level[list] || []) {
+      const from = Track.place(c), length = CONFIG.oilSlick.length;
+      out.push({ kind, lane: c.lane, from, to: from + length, s: from + length / 2 });
+    }
+  }
+  return out;
+};
+// is the player's car on one? (a stretch: a wheel's width of the car over its edge)
+const onPatch = (p) => {
+  const P = Player, half = CONFIG.oilSlick.half;
+  return P.s + P.hl * 0.5 >= p.from && P.s - P.hl * 0.5 <= p.to && Math.abs(P.lat - Track.laneOffset(p.lane, P.s)) <= half + P.hw * 0.5;
+};
+
 export const Hazards = {
   schools: [],   // { s, state: 'idle' | 'stop', t, next, started }
   mains: [],     // { from, to, lane, lat, on, t, warned }: its patch of ice is Track.sprays' (same order)
@@ -51,6 +71,7 @@ export const Hazards = {
   marathons: [], // { s0, lane, on, members: obstacles with run: { s0, off } }
   stampedes: [], // { from, to, on, animals: obstacles with charge: { s0, lat0, speed, phase } }
   tunnelJunctions: [], // { s, side, from, to (lat the train sets out from, and crosses to), state: 'idle' | 'warn' | 'cross' | 'done', t, train: obstacles (the tug first) }
+  patches: [],   // the player's own: oil slicks (see patchesOf), each with warned / used as the run goes
   jump: null,    // the player in the air off a drawbridge's leaf: { bridge, vy (m/s up), vx (along the road), over (been over the gap), sunk (into the far leaf's end) }
   lastS: 0,
 
@@ -157,6 +178,7 @@ export const Hazards = {
       z.on = false;
       for (const o of z.animals) { o.s = o.charge.s0; o.lat = o.charge.lat0; o.h = 0; }
     }
+    this.patches = patchesOf(LEVEL);
     this.jump = null;
     Player.air = Player.pitch = 0;
     this.lastS = Player.s;
@@ -485,6 +507,16 @@ export const Hazards = {
         o.lat = Math.max(lo, Math.min(hi, c.lat0 + Math.sin(c.phase) * Z.weave));
         o.h = o.kind === 'kangaroo' ? CONFIG.kangarooHop * Math.abs(Math.sin(c.phase * 1.4)) : 0;
         if (o.s < Player.s - Z.past || o.s < z.floor) o.gone = true;
+      }
+    }
+
+    // ---- the player's own (see patchesOf): an oil slick puts the car on ice, far worse, for a moment
+    const free = Player.active && Player.shield <= 0 && Player.tank <= 0 && Player.air < 0.05 && !Player.busted;
+    for (const p of this.patches) {
+      if (!free || !onPatch(p)) continue;
+      if (p.kind === 'oil') {
+        if (!(Player.oiled > 0)) { Message.say('events', 'oilSlick'); sfx('brake', 0.7); }
+        Player.oiled = CONFIG.oilSlick.time;
       }
     }
   },

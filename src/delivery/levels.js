@@ -332,6 +332,8 @@
 //              if not given) is under water and as slippery as ice: on it the car brakes with a share of its brakes,
 //              speeds up with a share of its acceleration and changes lane more slowly, by numbers of its own
 //              (CONFIG.waterMain: brakeGrip, steerGrip, laneSpeed, accelGrip)
+//   oilSlicks  { s, lane }: an oil slick, CONFIG.oilSlick.length m of that lane from s: the player's car, touching it, is on ice
+//              far worse than ice (CONFIG.oilSlick's numbers) for CONFIG.oilSlick.time s. Traffic drives over it untouched
 //   balloons   { s, lanes: [first, last] }: a hot-air balloon comes down on those lanes, sits, and lifts off again
 //   drawbridges { s }: bells, booms, and two leaves that lift: the car goes up the near one and jumps the gap if it
 //              came fast enough (a board gives the speed), or stops short, or drops in. On straight road

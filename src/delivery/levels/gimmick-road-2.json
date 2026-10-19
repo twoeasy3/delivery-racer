@@ -61,6 +61,9 @@
   "crossings": [
     { "s": 450, "road": "side" }
   ],
+  "oilSlicks": [
+    { "s": 2350, "lane": 4 }
+  ],
   "stampedes": [
     { "from": 600, "to": 760, "count": 8, "kind": "kangaroo", "road": "side" }
   ],

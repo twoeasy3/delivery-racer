@@ -104,7 +104,7 @@ export const where = (has) => [...LEVELS.map((level, i) => has(level) ? `<span>$
 //   color (its card's glow) }
 const MALL_WET = waterNumbers([...LEVELS, ...Object.values(HIDDEN_LEVELS)].find(l => l.id === 'mall-dash')); // (the water on Mall Dash's tiled floor, its "wetness": the card's example)
 const S = CONFIG.site, MA = CONFIG.machinery, W = CONFIG.wreckage, BT = CONFIG.bulletTrain, TI = CONFIG.tide, IC = CONFIG.ice;
-const H = { school: CONFIG.schoolCrossing, main: CONFIG.waterMain, balloon: CONFIG.balloon, bridge: CONFIG.drawbridge, load: CONFIG.wideLoad, run: CONFIG.marathon, herd: CONFIG.stampede }; // (Gimmick Road 2's)
+const H = { school: CONFIG.schoolCrossing, main: CONFIG.waterMain, oil: CONFIG.oilSlick, balloon: CONFIG.balloon, bridge: CONFIG.drawbridge, load: CONFIG.wideLoad, run: CONFIG.marathon, herd: CONFIG.stampede }; // (Gimmick Road 2's)
 const T = CONFIG.tunnel, PA = CONFIG.parade, RB = CONFIG.roadblock, CG = CONFIG.cargo, IS = CONFIG.iceCream, RL = CONFIG.reversible, CV = CONFIG.convoy, RN = CONFIG.rubberneck; // (the city streets')
 const RD = CONFIG.radiation; // (the fallout's: radiation.js)
 const GB = { wind: CONFIG.crosswind, crest: CONFIG.crest, ramp: CONFIG.jamRamp, board: CONFIG.washboard, bar: CONFIG.lowBridge, ford: CONFIG.ford, cushion: CONFIG.cushion, shade: CONFIG.shade, rut: CONFIG.rut, tar: CONFIG.tarmac, spray: CONFIG.spray, sun: CONFIG.lowSun, dust: CONFIG.dust }; // (Gimmick Road 3's: the road gambles)
@@ -772,6 +772,18 @@ export const GROUPS = [
       const jet = mesh(new THREE.CylinderGeometry(0.25, 0.45, 5, 10), new THREE.MeshBasicMaterial({ color: 0xcfeaf7, transparent: true, opacity: 0.6 }), 2.2, 2.5, 3.5);
       g.add(wet, jet, mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.08, 12), lambert(0x3a3b3f), 2.2, 0.04, 3.5));
       return { model: g, tick: (t) => { const on = t % 6 < 3.5; wet.visible = jet.visible = on; jet.scale.set(1 + Math.sin(t * 23) * 0.15, 1, 1 + Math.cos(t * 19) * 0.15); } };
+    } },
+    { name: 'Oil slicks', color: 0x24202c, has: (l) => l.oilSlicks?.length, rules: [
+      `Ice, far worse, for ${H.oil.time} s: brakes ${pct(H.oil.brakeGrip)}, steering ${pct(H.oil.steerGrip)}, acceleration ${pct(H.oil.accelGrip)}.`,
+      'Only you. Traffic drives over it.',
+    ], build: () => {
+      const g = road(9, 12);
+      const pool = mesh(new THREE.CircleGeometry(1.6, 18).rotateX(-Math.PI / 2), glow(0x0c0b11), 2.2, 0.03, 0);
+      pool.scale.set(1, 1, 2.2);
+      const sheen = mesh(new THREE.RingGeometry(0.6, 1.0, 18).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xb98cff, transparent: true, opacity: 0.35 }), 2.2, 0.04, 0.4);
+      sheen.scale.set(1, 1, 2);
+      g.add(pool, sheen);
+      return { model: g, tick: (t) => { sheen.material.opacity = 0.25 + 0.15 * Math.sin(t * 1.7); } };
     } },
     { name: 'Hot-air balloons', color: 0xd8262b, has: (l) => l.balloons?.length, rules: [
       `A balloon comes down on the road about as you arrive: ${H.balloon.descend} s coming down (its landing spot flashes red), ${H.balloon.sit} s sat there, then up and away.`,
