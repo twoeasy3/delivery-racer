@@ -375,7 +375,7 @@ const makeMirror = () => {
       show(s.glint, calm);
       s.glint.position.x = Math.sin(t * 1.1) * 0.08;
       show(s.face, seen * 0.95 + rage * 1.25);
-      s.face.position.set(seen * Math.sin(t * 1.2) * 0.08, 0.05 + Math.sin(t * 1.9) * 0.05 * up, 0.024);
+      s.face.position.set(seen * Math.sin(t * 1.2) * 0.08, 0.05 + Math.sin(t * 1.9) * 0.05 * up, 0.029); // (4.5 mm over the glints)
       s.face.rotation.z = seen * Math.sin(t * 0.9) * 0.2 + rage * jitter(t, 3) * 0.15;
       s.jaw.scale.set(1 + rage * 0.5, 0.5 + seen * 0.4 + rage * (1.8 + Math.sin(t * 9) * 0.4), 1);
       for (const e of s.eyes) e.scale.set(1 + rage * 0.3, 1.5 + rage * 0.5, 1);
@@ -464,7 +464,7 @@ const makeCannonball = () => {
     part(skull, sphere(0.15, 10, 8), white, 0, 0.03, 0.27).scale.set(1, 1, 0.55);
     part(skull, box(0.13, 0.09, 0.05), white, 0, -0.1, 0.325);
     for (const x of [-0.055, 0.055]) part(skull, sphere(0.04, 6, 5), hole, x, 0.03, 0.345);
-    for (const x of [-0.035, 0, 0.035]) part(skull, box(0.008, 0.07, 0.01), hole, x, -0.11, 0.352);
+    for (const x of [-0.035, 0, 0.035]) part(skull, box(0.008, 0.07, 0.018), hole, x, -0.11, 0.348); // (sunk 11 mm into the jaw)
   }
   part(roll, cyl(0.075, 0.09, 0.09, 10), lambert(0x4a4f58), 0, 0.38, 0);
   const fuse = sub(roll, 0, 0.42, 0);

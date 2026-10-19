@@ -183,7 +183,7 @@ const makeLawyers = () => {
   const arms = [0, 1, 2, 3].map(k => {
     const side = sub(all, 0, 0.06 + H * 0.55, 0);
     side.rotation.y = k * FLAT;
-    hole(side, 0.08).position.set(0, 0, W / 2 + 0.012);
+    hole(side, 0.08).position.set(0, 0, W / 2 + 0.0145); // (4.5 mm proud of the planks)
     const a = arm(side, 0.3);
     a.root.position.set(0, 0, W / 2 - 0.02);
     const bc = briefcase(a.prop, k % 2 ? 0x3a2a3c : 0x6b3f22);
@@ -408,7 +408,7 @@ const makeSubpoena = () => {
   part(sheet, plane(0.42, 0.26), paperSheet, 0, 0.02, -0.13, -FLAT); // (the stretch from the scroll to the edge)
   const drop = part(sheet, plane(0.42, 0.5), paperSheet, 0, -0.25, 0);
   const run = part(sheet, plane(0.42, 0.36), paperSheet, 0, -0.5, 0.18, -FLAT);
-  for (let k = 0; k < 6; k++) part(drop, box(0.26, 0.012, 0.001), glow(0x6a6a7a), 0, 0.18 - k * 0.06, 0.002);
+  for (let k = 0; k < 6; k++) part(drop, box(0.26, 0.012, 0.006), glow(0x6a6a7a), 0, 0.18 - k * 0.06, 0); // (the lines through the sheet, 3 mm proud each side)
   // the snake: the paper coiled round the crate, a head of wax rearing off the top
   const snake = sub(all);
   const N = 22, coils = Array.from({ length: N }, (_, k) => {
@@ -595,9 +595,9 @@ const makeTaxmen = () => {
   const clipboard = (parent) => {
     const g = sub(parent, 0, -0.1, 0.04);
     part(g, box(0.16, 0.22, 0.012), lambert(0x6b4a2a));
-    part(g, box(0.14, 0.18, 0.006), glow(0xfbf7ea), 0, -0.01, 0.006); // (the paper 3 mm proud of the board, the lines 3 mm proud of it)
+    part(g, box(0.14, 0.18, 0.009), glow(0xfbf7ea), 0, -0.01, 0.0055); // (the paper 4 mm proud of the board, the lines 4.5 mm proud of it, their backs 2.5 mm from every face)
     part(g, box(0.06, 0.03, 0.02), lambert(0x9a9aa6), 0, 0.1, 0.008);
-    for (let k = 0; k < 4; k++) part(g, box(0.1, 0.008, 0.005), onFace(glow(0x8a8a9a)), 0, 0.05 - k * 0.035, 0.0095);
+    for (let k = 0; k < 4; k++) part(g, box(0.1, 0.008, 0.011), onFace(glow(0x8a8a9a)), 0, 0.05 - k * 0.035, 0.009);
     return g;
   };
   const arms = [-1, 1].map((d, k) => {
@@ -882,7 +882,7 @@ const makeInlaws = () => {
   part(paper, cyl(0.033, 0.033, 0.05, 10), lambert(0xd81e2a), -0.12, 0.03, 0, 0, 0, FLAT); // (its band)
   const photo = sub(caseB.body, 0.05, 0.16, 0.16);
   part(photo, box(0.14, 0.016, 0.12), brass, 0, 0.008, 0.06);
-  part(photo, box(0.11, 0.004, 0.09), lambert(0xe8e0d0), 0, 0.017, 0.06);
+  part(photo, box(0.11, 0.009, 0.09), lambert(0xe8e0d0), 0, 0.0165, 0.06); // (5 mm proud of the frame, sunk 4 mm into it)
   for (const x of [-0.025, 0.03]) part(photo, sphere(0.02, 8, 6), lambert(0xd8d0c8), x, 0.02, 0.05).scale.y = 0.4;
   const gapStuff = [[slipper, trunk, 0.08], [needles, caseA, 0.03], [paper, caseA, 0.06], [photo, caseB, 0.02]];
   return stated(group, (t, bulge, burst) => {
@@ -1001,13 +1001,13 @@ const makeCasserole = () => {
   // the tea towel over it: a strip across the top, hanging down both sides, in a check
   const cloth = sub(lid, 0, 0.1, 0);
   part(cloth, plane(0.74, 0.26), towel, 0, 0.025, 0, -FLAT); // (across the top, the long way)
-  for (const [x, z] of [[-0.25, -0.06], [-0.1, 0.06], [0.05, -0.06], [0.2, 0.06]]) part(cloth, plane(0.1, 0.08), check, x, 0.027, z, -FLAT);
+  for (const [x, z] of [[-0.25, -0.06], [-0.1, 0.06], [0.05, -0.06], [0.2, 0.06]]) part(cloth, plane(0.1, 0.08), check, x, 0.0295, z, -FLAT); // (the checks 4.5 mm over the towel)
   for (const d of [-1, 1]) { // (hanging down over each end, flaring a little at the hem)
     const side = sub(cloth, d * 0.37, 0.02, 0);
     side.rotation.set(0, d * FLAT, -d * 0.12);
     part(side, plane(0.26, 0.3), towel, 0, -0.15, 0);
-    part(side, plane(0.2, 0.05), check, 0, -0.26, 0.002);
-    part(side, plane(0.2, 0.03), check, 0, -0.08, 0.002);
+    part(side, plane(0.2, 0.05), check, 0, -0.26, 0.0045);
+    part(side, plane(0.2, 0.03), check, 0, -0.08, 0.0045);
   }
   const steam = [0, 1, 2, 3].map(() => part(all, sphere(0.05, 7, 5), haze(0xffffff, 0.45)));
   return idle(group, (t) => {

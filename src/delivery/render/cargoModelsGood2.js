@@ -320,14 +320,17 @@ const makeSushi = () => {
     return piece;
   };
   const slider = nigiri(0.26, 0.11, 0xff7a3a);
-  nigiri(-0.06, 0.11, 0xc8203a);
-  nigiri(-0.38, 0.11, 0xffd23f, true);
+  slider.name = 'slider'; // (the names: cargoRules.js)
+  nigiri(-0.06, 0.11, 0xc8203a).name = 'nigiri1';
+  nigiri(-0.38, 0.11, 0xffd23f, true).name = 'nigiri2';
   for (const [x, color] of [[0.36, 0xff7a3a], [0.19, 0x3fb85a], [0.02, 0xff7a3a], [-0.15, 0xffd23f]]) {
     part(boat, cyl(0.075, 0.075, 0.1, 12), nori, x, 0.25, -0.12);
     part(boat, cyl(0.06, 0.06, 0.109, 12), rice, x, 0.25, -0.12); // (the rice 4.5 mm past the nori, the filling 4.5 mm past the rice)
     part(boat, cyl(0.027, 0.027, 0.118, 8), lambert(color), x, 0.25, -0.12);
   }
-  part(boat, sphere(0.05, 8, 6), lambert(0x7ac043), 0.48, 0.23, 0.12).scale.y = 0.7; // wasabi
+  const wasabi = part(boat, sphere(0.05, 8, 6), lambert(0x7ac043), 0.48, 0.23, 0.12); // wasabi
+  wasabi.scale.y = 0.7;
+  wasabi.name = 'wasabi';
   return idle(group, (t) => {
     const rock = Math.sin(t * 1.6);
     boat.rotation.z = rock * 0.1;
