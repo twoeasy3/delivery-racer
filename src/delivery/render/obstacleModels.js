@@ -891,10 +891,10 @@ OBSTACLE_MODELS.supplyPod = () => {
   put(group, new THREE.BoxGeometry(0.03, 0.5, 0.03), dark, 0.12, 1.84, 0);                    // the aerial
   put(group, new THREE.SphereGeometry(0.09, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff3b30 }), 0, 1.68, 0);
   for (let i = 0; i < 3; i++) {
-    const a = i * Math.PI * 2 / 3 + 0.5, leg = put(group, new THREE.BoxGeometry(0.08, 0.78, 0.08), foil, Math.sin(a) * 0.52, 0.34, Math.cos(a) * 0.52);
+    const a = i * Math.PI * 2 / 3 + 0.5, leg = put(group, new THREE.BoxGeometry(0.08, 0.78, 0.08), foil, Math.sin(a) * 0.53, 0.33, Math.cos(a) * 0.53);
     leg.rotation.order = 'YXZ';
     leg.rotation.y = a;
-    leg.rotation.x = 0.5;
+    leg.rotation.x = -0.5; // (its foot out on the pad, its top in under the foil: splayed outward going down)
     put(group, new THREE.CylinderGeometry(0.15, 0.15, 0.05, 8), dark, Math.sin(a) * 0.7, 0.025, Math.cos(a) * 0.7); // its pad
   }
   return grounded(group, 0.9);
