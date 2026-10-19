@@ -32,6 +32,7 @@ import { makePillbox } from './render/battleModels.js';
 import { makeWindsock, makeTransporter, makeHeightBar, makeDepthPost, makeCushion, makeShadeTree } from './render/gambleModels.js';
 import { makeAreaPatch, makeInfection } from './render/radiationModels.js';
 import { buildIceGeometry, iceMaterial, ICE_LOOKS } from './render/icepatch.js';
+import { magmaTexture } from './render/magma.js';
 
 const kmh = (ms) => Math.round(ms * 3.6) + ' km/h';
 const pct = (x) => Math.round(x * 100) + '%';
@@ -773,15 +774,15 @@ export const GROUPS = [
       g.add(wet, jet, mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.08, 12), lambert(0x3a3b3f), 2.2, 0.04, 3.5));
       return { model: g, tick: (t) => { const on = t % 6 < 3.5; wet.visible = jet.visible = on; jet.scale.set(1 + Math.sin(t * 23) * 0.15, 1, 1 + Math.cos(t * 19) * 0.15); } };
     } },
-    { name: 'Oil slicks', color: 0x24202c, has: (l) => l.oilSlicks?.length, rules: [
+    { name: 'Oil slicks', color: 0x8a6cc0, has: (l) => l.oilSlicks?.length, rules: [
       `Ice, far worse, for ${H.oil.time} s: brakes ${pct(H.oil.brakeGrip)}, steering ${pct(H.oil.steerGrip)}, acceleration ${pct(H.oil.accelGrip)}.`,
       'Only you. Traffic drives over it.',
     ], build: () => {
       const g = road(9, 12);
       const pool = mesh(new THREE.CircleGeometry(1.6, 18).rotateX(-Math.PI / 2), glow(0x0c0b11), 2.2, 0.03, 0);
       pool.scale.set(1, 1, 2.2);
-      const sheen = mesh(new THREE.RingGeometry(0.6, 1.0, 18).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xb98cff, transparent: true, opacity: 0.35 }), 2.2, 0.04, 0.4);
-      sheen.scale.set(1, 1, 2);
+      const sheen = mesh(new THREE.CircleGeometry(0.7, 14).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xb98cff, transparent: true, opacity: 0.35 }), 2.5, 0.04, 0.8);
+      sheen.scale.set(1, 1, 1.8);
       g.add(pool, sheen);
       return { model: g, tick: (t) => { sheen.material.opacity = 0.25 + 0.15 * Math.sin(t * 1.7); } };
     } },
@@ -797,18 +798,18 @@ export const GROUPS = [
       `${H.emp.damage} damage, then ${H.emp.time} s with no accelerator, steering or throwing.`,
       'Only you. A ghost passes over. Traffic drives over it.',
     ], build: () => {
-      const g = road(9, 12), lamp = glow(0x16305a);
-      g.add(mesh(new THREE.CylinderGeometry(0.6, 0.75, 0.12, 14), lambert(0x2b2f38), 2.2, 0.06, 0), mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.08, 10), lamp, 2.2, 0.16, 0));
-      return { model: g, lift: 0.7, tick: (t) => { lamp.color.setHex((t / H.emp.flash.period) % 1 < H.emp.flash.on ? 0x4aa8ff : 0x16305a); } };
+      const g = road(9, 12), lamp = glow(0x16305a), halo = new THREE.MeshBasicMaterial({ color: 0x4aa8ff, transparent: true, opacity: 0 });
+      g.add(mesh(new THREE.CircleGeometry(1.8, 18).rotateX(-Math.PI / 2), halo, 2.2, 0.02, 0));
+      g.add(mesh(new THREE.CylinderGeometry(0.9, 1.1, 0.16, 14), lambert(0x2b2f38), 2.2, 0.08, 0), mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.1, 10), lamp, 2.2, 0.2, 0));
+      return { model: g, lift: 0.7, tick: (t) => { const lit = (t / H.emp.flash.period) % 1 < H.emp.flash.on; lamp.color.setHex(lit ? 0x4aa8ff : 0x16305a); halo.opacity = lit ? 0.45 : 0; } };
     } },
     { name: 'Magma', color: 0xff7a14, has: (l) => l.magmaPatches?.length, rules: [
       `${H.magma.damage} damage every ${H.magma.every} s on it.`,
       'Only you. A ghost is spared. Traffic drives over it.',
     ], build: () => {
-      const g = road(9, 12), hot = glow(0xff7a14);
+      const g = road(9, 12), hot = new THREE.MeshBasicMaterial({ map: magmaTexture() });
       g.add(mesh(new THREE.PlaneGeometry(3.1, 8).rotateX(-Math.PI / 2), hot, 2.2, 0.03, 0));
-      for (const [x, z, r] of [[1.6, -2, 0.5], [2.8, 0.5, 0.6], [1.9, 2.6, 0.4]]) g.add(mesh(new THREE.CircleGeometry(r, 6).rotateX(-Math.PI / 2), glow(0x2a0f08), x, 0.04, z));
-      return { model: g, tick: (t) => { const k = 0.86 + 0.14 * Math.sin(t * 2.6); hot.color.setRGB(1, 0.48 * k, 0.08 * k); } };
+      return { model: g, tick: (t) => { const k = 0.86 + 0.14 * Math.sin(t * 2.6); hot.color.setRGB(1, k, k * 0.9); } };
     } },
     { name: 'Hot-air balloons', color: 0xd8262b, has: (l) => l.balloons?.length, rules: [
       `A balloon comes down on the road about as you arrive: ${H.balloon.descend} s coming down (its landing spot flashes red), ${H.balloon.sit} s sat there, then up and away.`,

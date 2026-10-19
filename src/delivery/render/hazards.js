@@ -17,6 +17,7 @@ import { scene, tmp, clearGroup } from './scene.js';
 import { buildStrip } from './road.js';
 import { makeWorker } from './siteModels.js';
 import { makePuddle, makeFountain, puddleTexture } from './watermains.js';
+import { magmaTexture } from './magma.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const lambert = (color, extra) => new THREE.MeshLambertMaterial({ color, ...extra });
@@ -99,7 +100,7 @@ const smallBoard = (text, bg, fg, w, h) => {
   return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), side: THREE.DoubleSide }));
 };
 const BEACON_ON = 0xffb020, BEACON_OFF = 0x5a4010;
-const SPARKS = 9; // (line segments of the EMP's sparks)
+const SPARKS = 10, BOLT = 3; // (the EMP's sparks: so many little bolts, each of so many zigzag segments)
 // a strip of road, `half` m either side of a lane's middle, from..to, with uv (u across, v along: 1 every `tile` m): a decal that
 // follows the road's bends and hills
 const laneStrip = (from, to, lane, half, y, tile, step = 2) => {
@@ -115,42 +116,6 @@ const laneStrip = (from, to, lane, half, y, tile, step = 2) => {
   geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   geo.setIndex(idx);
   return geo;
-};
-// magma's picture (128 x 128, drawn once): molten orange and yellow under plates of black crust, the cracks between glowing,
-// darker towards its two long edges (u 0 and 1). Seeded: the same every run
-let magmaPicture = null;
-const magmaTexture = () => {
-  if (magmaPicture) return magmaPicture;
-  const N = 128, canvas = document.createElement('canvas'), c = canvas.getContext('2d');
-  canvas.width = canvas.height = N;
-  let seed = 7331;
-  const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
-  const melt = c.createLinearGradient(0, 0, N, 0);
-  melt.addColorStop(0, '#b0300a'); melt.addColorStop(0.5, '#ff7a14'); melt.addColorStop(1, '#b0300a');
-  c.fillStyle = melt;
-  c.fillRect(0, 0, N, N);
-  for (let k = 0; k < 18; k++) { // (hot spots)
-    const x = rnd() * N, y = rnd() * N, r = 6 + rnd() * 12, hot = c.createRadialGradient(x, y, 0, x, y, r);
-    hot.addColorStop(0, 'rgba(255,226,90,0.95)'); hot.addColorStop(1, 'rgba(255,160,30,0)');
-    c.fillStyle = hot;
-    for (const dy of [-N, 0, N]) { c.beginPath(); c.arc(x, y + dy, r, 0, Math.PI * 2); c.fill(); } // (tiled along: v repeats)
-  }
-  c.fillStyle = '#2a0f08';
-  for (let k = 0; k < 14; k++) { // (plates of crust, drifting on it)
-    const x = rnd() * N, y = rnd() * N, r = 5 + rnd() * 9;
-    for (const dy of [-N, 0, N]) {
-      c.beginPath();
-      for (let a = 0; a < 6; a++) { const ang = a / 6 * Math.PI * 2 + rnd() * 0.5, rr = r * (0.7 + rnd() * 0.4); c.lineTo(x + Math.cos(ang) * rr, y + dy + Math.sin(ang) * rr); }
-      c.fill();
-    }
-  }
-  const edge = c.createLinearGradient(0, 0, N, 0); // (its edges cooling)
-  edge.addColorStop(0, 'rgba(30,8,4,0.9)'); edge.addColorStop(0.12, 'rgba(30,8,4,0)'); edge.addColorStop(0.88, 'rgba(30,8,4,0)'); edge.addColorStop(1, 'rgba(30,8,4,0.9)');
-  c.fillStyle = edge;
-  c.fillRect(0, 0, N, N);
-  magmaPicture = new THREE.CanvasTexture(canvas);
-  magmaPicture.wrapT = THREE.RepeatWrapping;
-  return magmaPicture;
 };
 
 Game.onLoad.push(() => {
@@ -308,7 +273,8 @@ Game.onLoad.push(() => {
           glue.push(new THREE.SphereGeometry(r, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.28, 1).translate(x, 0, z).rotateY(h).translate(tmp.x, tmp.y, tmp.z));
         }
       }
-      if (p.kind === 'oil') oil.push(new THREE.PlaneGeometry(O.half * 2 + 0.9, O.length + 1.4).rotateX(-Math.PI / 2).rotateY(h).translate(tmp.x, tmp.y + 0.03, tmp.z));
+      // (the oil: cut wide, as the pool's picture fades out well inside its edges)
+      if (p.kind === 'oil') oil.push(new THREE.PlaneGeometry(O.half * 3.2, O.length * 1.5).rotateX(-Math.PI / 2).rotateY(h).translate(tmp.x, tmp.y + 0.03, tmp.z));
     }
     own = { mines: [] };
     if (magma.length) { // (one mesh, unlit: it glows, pulsing a little)
@@ -330,18 +296,24 @@ Game.onLoad.push(() => {
     }
     own.mineLamp = mineLamp; own.mineHalo = mineHalo;
     // (the EMP's sparks about the player's car while its electronics are out: one set of line segments, moved in place)
-    const sparkPos = new Float32Array(SPARKS * 6), sparkGeo = new THREE.BufferGeometry();
+    // (and the same points as bright dots, and a blue glow on the road under the car: three draw calls, only while it lasts)
+    const sparkPos = new Float32Array(SPARKS * BOLT * 6), sparkGeo = new THREE.BufferGeometry();
     sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
-    own.sparks = new THREE.LineSegments(sparkGeo, new THREE.LineBasicMaterial({ color: 0xaee0ff, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending }));
-    own.sparks.frustumCulled = false;
-    own.sparks.visible = false;
-    if (own.mines.length) group.add(own.sparks);
+    const additive = { transparent: true, depthWrite: false, blending: THREE.AdditiveBlending };
+    own.sparks = new THREE.Group();
+    own.sparks.add(new THREE.LineSegments(sparkGeo, new THREE.LineBasicMaterial({ color: 0xbfe8ff, opacity: 1, ...additive })));
+    own.sparks.add(new THREE.Points(sparkGeo, new THREE.PointsMaterial({ color: 0xe8f8ff, size: 5, sizeAttenuation: false, opacity: 1, ...additive })));
+    for (const child of own.sparks.children) child.frustumCulled = false;
+    own.sparkGeo = sparkGeo;
+    own.empGlow = new THREE.Mesh(new THREE.CircleGeometry(2.2, 20).rotateX(-Math.PI / 2), flat(0x3a8cff, -6, { opacity: 0.3, ...additive }));
+    own.empGlow.visible = own.sparks.visible = false;
+    if (own.mines.length) group.add(own.sparks, own.empGlow);
     if (glue.length) { const merged = mergeGeometries(glue); glue.forEach(g => g.dispose()); group.add(new THREE.Mesh(merged, lambert(0xece4c2))); }
     if (oil.length) {
       const merged = mergeGeometries(oil);
       oil.forEach(g => g.dispose());
-      group.add(new THREE.Mesh(merged, new THREE.MeshBasicMaterial({ map: puddleTexture(61, false, ['#040406', '#0c0b11', '#24202c']), transparent: true, opacity: 0.95, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })));
-      own.oilSheen = new THREE.MeshBasicMaterial({ map: puddleTexture(67, true), color: 0xb98cff, transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
+      group.add(new THREE.Mesh(merged, new THREE.MeshBasicMaterial({ map: puddleTexture(61, false, ['#000000', '#030205', '#110e16']), transparent: true, opacity: 1, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })));
+      own.oilSheen = new THREE.MeshBasicMaterial({ map: puddleTexture(67, true), color: 0xc8a0ff, transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
       group.add(new THREE.Mesh(merged.clone().translate(0, 0.004, 0), own.oilSheen));
     }
   }
@@ -498,19 +470,30 @@ export const syncHazards = (now) => {
     // (sparks crackling over the car, a fresh few each frame, while its electronics are out)
     const on = Player.active && Player.emp > 0 && !Game.paused;
     own.sparks.visible = on && Math.floor(now / 60) % 3 !== 0;
+    own.empGlow.visible = on;
+    if (on) {
+      const P = Player, h = Track.toWorld(P.s, P.lat, tmp);
+      own.empGlow.position.set(tmp.x, tmp.y + P.air + 0.04, tmp.z);
+      own.empGlow.material.opacity = 0.18 + 0.2 * Math.random(); // (flickering)
+    }
     if (own.sparks.visible) {
-      const a = own.sparks.geometry.attributes.position, P = Player;
-      for (let i = 0; i < SPARKS; i++) {
-        const h = Track.toWorld(P.s + (Math.random() - 0.5) * 2 * P.hl, P.lat + (Math.random() - 0.5) * 2 * P.hw, tmp), y = tmp.y + P.air + 0.3 + Math.random() * P.height;
-        const dx = (Math.random() - 0.5) * 0.7, dy = (Math.random() - 0.3) * 0.6, dz = (Math.random() - 0.5) * 0.7;
-        a.setXYZ(i * 2, tmp.x, y, tmp.z);
-        a.setXYZ(i * 2 + 1, tmp.x + dx * Math.cos(h) + dz * Math.sin(h), y + dy, tmp.z + dz * Math.cos(h) - dx * Math.sin(h));
+      const a = own.sparkGeo.attributes.position, P = Player;
+      for (let i = 0, v = 0; i < SPARKS; i++) { // (a little zigzag bolt each, somewhere on the car's body)
+        const h = Track.toWorld(P.s + (Math.random() - 0.5) * 2 * P.hl, P.lat + (Math.random() - 0.5) * 2.2 * P.hw, tmp);
+        let x = tmp.x, y = tmp.y + P.air + 0.3 + Math.random() * P.height, z = tmp.z;
+        const c = Math.cos(h), sn = Math.sin(h);
+        for (let j = 0; j < BOLT; j++) {
+          const dx = (Math.random() - 0.5) * 0.9, dy = (Math.random() - 0.2) * 0.7, dz = (Math.random() - 0.5) * 0.9;
+          a.setXYZ(v++, x, y, z);
+          x += dx * c + dz * sn; y += dy; z += dz * c - dx * sn;
+          a.setXYZ(v++, x, y, z);
+        }
       }
       a.needsUpdate = true;
     }
   }
   if (own?.magma) { const k = 0.86 + 0.14 * Math.sin(t * 2.6); own.magma.color.setRGB(1, k, k * 0.9); } // (the magma's glow, breathing)
-  if (own?.oilSheen) own.oilSheen.opacity = 0.32 + 0.12 * Math.sin(t * 1.7); // (the oil's rainbow sheen, shifting)
+  if (own?.oilSheen) own.oilSheen.opacity = 0.5 + 0.15 * Math.sin(t * 1.7); // (the oil's rainbow sheen, shifting)
   if (standing) { standing.sheen.opacity = standing.sheenBase * (0.85 + 0.25 * Math.sin(t * 2.3)); standing.rim.opacity = standing.rimBase * (0.93 + 0.1 * Math.sin(t * 3.1)); } // (the light on standing water)
   Hazards.balloons.forEach((b, k) => {
     const mesh = balloons[k];
