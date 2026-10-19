@@ -1,10 +1,25 @@
 {
   "id": "fjord-road",
   "theme": "nordic",
-  "clock": { "good": 160, "evil": 120 },
+  "clock": {
+    "good": 160,
+    "evil": 120
+  },
   "tip": 200,
-  "lanes": { "north": 2, "south": 1 },
-  "traffic": { "commuter": 0.22, "wagon": 0.2, "van": 0.14, "suv": 0.14, "pickup": 0.1, "postvan": 0.1, "semi": 0.07, "police": 0.03 },
+  "lanes": {
+    "north": 2,
+    "south": 1
+  },
+  "traffic": {
+    "commuter": 0.22,
+    "wagon": 0.2,
+    "van": 0.14,
+    "suv": 0.14,
+    "pickup": 0.1,
+    "postvan": 0.1,
+    "semi": 0.07,
+    "police": 0.03
+  },
   "trafficCount": 5,
   "oncomingCount": 5,
   "segments": [
@@ -25,7 +40,13 @@
     { "from": 2380, "to": 2760 }
   ],
   "rockfall": [
-    { "from": 1520, "to": 1760, "count": 6, "side": "left", "out": 20 }
+    {
+      "from": 1520,
+      "to": 1760,
+      "count": 6,
+      "side": "left",
+      "out": 20
+    }
   ],
   "targets": [
     { "s": 420, "side": "right" },
@@ -33,19 +54,51 @@
     { "s": 3200, "side": "right" }
   ],
   "pickups": [
-    { "type": "cash10", "s": 260, "lane": 1 }, { "type": "cash10", "s": 260, "lane": 2 },
+    { "type": "cash10", "s": 260, "lane": 1 },
+    { "type": "cash10", "s": 260, "lane": 2 },
+    { "type": "cash5", "s": 590, "lane": 1 },
     { "type": "turbo", "s": 600, "lane": 1 },
+    { "type": "cash5", "s": 635, "lane": 2 },
+    { "type": "cash5", "s": 665, "lane": 1 },
+    { "type": "cash5", "s": 695, "lane": 1 },
     { "type": "timePlus", "s": 1100, "lane": 2 },
-    { "type": "cash20", "s": 1450, "lane": 1 }, { "type": "cash20", "s": 1450, "lane": 2 },
+    { "type": "cash20", "s": 1450, "lane": 1 },
+    { "type": "cash20", "s": 1450, "lane": 2 },
     { "type": "wrench", "s": 1850, "lane": 1 },
-    { "type": "cash10", "s": 2200, "lane": 1 }, { "type": "cash10", "s": 2200, "lane": 2 },
+    { "type": "cash5", "s": 1850, "lane": 2 },
+    { "type": "cash5", "s": 1865, "lane": 2 },
+    { "type": "cash5", "s": 1895, "lane": 1 },
+    { "type": "cash5", "s": 1925, "lane": 2 },
+    { "type": "cash5", "s": 1955, "lane": 1 },
+    { "type": "cash5", "s": 1985, "lane": 1 },
+    { "type": "cash20", "s": 2120, "lane": 1 },
+    { "type": "cash20", "s": 2120, "lane": 2 },
     { "type": "timePlus", "s": 2560, "lane": 1 },
-    { "type": "cash20", "s": 3000, "lane": 1 }, { "type": "cash20", "s": 3000, "lane": 2 },
-    { "type": "cash10", "s": 3450, "lane": 1 }, { "type": "cash10", "s": 3450, "lane": 2 }
+    { "type": "cash20", "s": 2920, "lane": 1 },
+    { "type": "cash20", "s": 2920, "lane": 2 },
+    { "type": "cash5", "s": 3285, "lane": 1 },
+    { "type": "cash5", "s": 3314, "lane": 2 },
+    { "type": "cash5", "s": 3343, "lane": 1 },
+    { "type": "cash5", "s": 3372, "lane": 2 },
+    { "type": "cash10", "s": 3450, "lane": 1 },
+    { "type": "cash10", "s": 3450, "lane": 2 }
   ],
   "obstacles": [
-    { "s": 700, "lane": 1, "kind": "bale" },
-    { "s": 1980, "lane": 2, "kind": "crate" },
-    { "s": 3100, "lane": 1, "kind": "bale" }
+    { "s": 400, "lane": 2, "kind": "barrier" },
+    { "s": 620, "lane": 2, "kind": "barrier" },
+    { "s": 649, "lane": 1, "kind": "barrier" },
+    { "s": 678, "lane": 2, "kind": "barrier" },
+    { "s": 1410, "lane": 2, "kind": "barrier" },
+    { "s": 1880, "lane": 1, "kind": "barrier" },
+    { "s": 1909, "lane": 2, "kind": "barrier" },
+    { "s": 1938, "lane": 1, "kind": "barrier" },
+    { "s": 1967, "lane": 2, "kind": "barrier" },
+    { "s": 2190, "lane": 1, "kind": "barrier" },
+    { "s": 2219, "lane": 2, "kind": "barrier" },
+    { "s": 3000, "lane": 2, "kind": "barrier" },
+    { "s": 3029, "lane": 1, "kind": "barrier" },
+    { "s": 3300, "lane": 2, "kind": "barrier" },
+    { "s": 3329, "lane": 1, "kind": "barrier" },
+    { "s": 3358, "lane": 2, "kind": "barrier" }
   ]
 }

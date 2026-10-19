@@ -57,7 +57,24 @@ const creelStack = () => {
   return solid(parts, 1.5);
 };
 
-export const NORDIC_OBSTACLES = { fishCrates, creelStack };
+// a barrier's stand-in: a long low pallet of fish boxes, four across and two high, blue and white by turns, the top row heaped with
+// ice; a barrier's box (2.4 m across, 1.2 deep, 1.2 tall), as long as a barrier along the road
+const fishBoxWall = () => {
+  const parts = [[box(2.4, 0.12, 1.2), PALLET, 0, 0.06, 0]];
+  for (const z of [-0.45, 0, 0.45]) parts.push([box(2.42, 0.06, 0.14), 0x4a321e, 0, 0.01, z]);
+  for (let row = 0; row < 2; row++) {
+    for (let k = 0; k < 4; k++) {
+      const x = -0.9 + k * 0.6, y = 0.12 + row * 0.5, c = (k + row) % 2 ? WHITE : BLUE, rim = c === WHITE ? 0xc9d0d6 : BLUE2;
+      parts.push([box(0.58, 0.48, 1.14), c, x, y + 0.24, 0]);
+      parts.push([box(0.6, 0.05, 1.16), rim, x, y + 0.46, 0]);                       // (its lip)
+      for (const z of [-0.575, 0.575]) parts.push([box(0.24, 0.07, 0.02), 0x1e2a36, x, y + 0.34, z]); // (the hand holes, front and back)
+    }
+  }
+  for (let k = 0; k < 4; k++) parts.push([box(0.5, 0.08, 1.02), ICE, -0.9 + k * 0.6, 1.16, 0]); // (ice in the top boxes)
+  return solid(parts, 1.35);
+};
+
+export const NORDIC_OBSTACLES = { fishCrates, creelStack, fishBoxWall };
 
 // ---- the car ferry: a long white hull with a dark band at the waterline and a red one over it, an open car deck down the middle
 // between two side casings, the bridge on a tower amidships, a funnel, a ramp at each end (raised). ~60 m long; its middle at the

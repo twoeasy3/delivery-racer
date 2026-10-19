@@ -335,7 +335,7 @@ const OBSTACLES = {
   hongkong: { crate: 'hawkerCart', bale: 'bagStack' }, // (a hawker's cart under its awning; a heap of red-white-blue bags; the cones are roadworks and stay)
   autumn: { crate: 'harvestCrate', bale: 'leafPile', cone: 'smallPumpkin' }, // (a crate of pumpkins; a heap of raked leaves; a small pumpkin on a stake)
   alpine: { crate: 'cheeseWheels', bale: 'woodpile', cone: 'milkChurn', barrier: 'snowBlock' }, // (cheese wheels on a pallet, a woodpile, a milk churn, a cut block of snow with snow poles)
-  nordic: { crate: 'fishCrates', bale: 'creelStack' }, // (fish boxes on a pallet, lobster creels stacked; its cones stay cones)
+  nordic: { crate: 'fishCrates', bale: 'creelStack', barrier: 'fishBoxWall' }, // (fish boxes on a pallet, lobster creels stacked, a long pallet of fish boxes; its cones stay cones)
   mall: { crate: 'boxStack', bale: 'trolleyRow', cone: 'wetFloorSign' },
   metro: { crate: 'ticketGate', bale: 'scrubber', cone: 'trackLamp' }, // (a ticket gate; a ride-on floor scrubber, parked; a red track lamp on its tripod)
   roadworks: { barrier: 'barrierBlock', crate: 'cableReel', bale: 'sandPile' }, // (a water-filled barrier, a cable drum, a heap of sand; the cones are roadworks and stay)

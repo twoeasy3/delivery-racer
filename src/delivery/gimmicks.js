@@ -56,7 +56,7 @@ const JUNK_NAMES = { umbrella: 'beach umbrellas', surfboard: 'surfboards', coole
 Object.assign(JUNK, { jerryStack: {}, tentRoll: {}, rallyFlag: {} }); Object.assign(JUNK_NAMES, { jerryStack: 'stacks of jerrycans', tentRoll: 'rolled tents', rallyFlag: 'rally marker flags' }); // (the desert's)
 Object.assign(JUNK, { barrierBlock: { hw: 1.2, hl: 0.6, height: 1.2 }, cableReel: { hw: 0.6, hl: 0.6, height: 1.1 }, sandPile: { hw: 1.1, hl: 1.1, height: 1.5 }, trafficDrum: { hw: 0.42, hl: 0.42, height: 1.12 }, pipePallet: { hw: 0.6, hl: 0.6, height: 1.1 }, worksSign: { hw: 1.1, hl: 0.15, height: 3 } });
 Object.assign(JUNK, { cheeseWheels: {}, woodpile: {}, milkChurn: {}, snowBlock: { hw: 1.2, hl: 0.6, height: 1.2 } }); Object.assign(JUNK_NAMES, { cheeseWheels: 'stacks of cheese wheels', woodpile: 'woodpiles', milkChurn: 'milk churns', snowBlock: 'blocks of snow' }); // (the alpine pass's)
-Object.assign(JUNK, { fishCrates: {}, creelStack: {} }); Object.assign(JUNK_NAMES, { fishCrates: 'stacks of fish boxes', creelStack: 'stacks of creels' }); // (the Nordic fjord's)
+Object.assign(JUNK, { fishCrates: {}, creelStack: {}, fishBoxWall: { hw: 1.2, hl: 0.6, height: 1.2 } }); Object.assign(JUNK_NAMES, { fishCrates: 'stacks of fish boxes', creelStack: 'stacks of creels', fishBoxWall: 'pallets of fish boxes' }); // (the Nordic fjord's)
 Object.assign(JUNK_NAMES, { barrierBlock: 'barrier blocks', cableReel: 'cable drums', sandPile: 'heaps of sand', trafficDrum: 'traffic drums', pipePallet: 'pallets of pipes', worksSign: 'works signs' }); // (the roadworks')
 Object.assign(JUNK, { ingotStack: { hw: 1.2, hl: 0.9, height: 1.6 }, steelCoil: { hw: 1.1, hl: 0.9, height: 1.95 }, hotSign: { hw: 0.6, hl: 0.6, height: 2.4 }, rebarBundle: { hw: 1.5, hl: 0.7, height: 1.4 } }); // (their own boxes: collision.js)
 Object.assign(JUNK_NAMES, { ingotStack: 'stacks of hot billets', steelCoil: 'steel coils', hotSign: 'hot-metal signs', rebarBundle: 'bundles of rebar' }); // (the steelworks')
@@ -1270,7 +1270,7 @@ DRESS.push(['jerryStack', 'Stack of jerrycans', 'crate', 'the desert', 0xc8321f]
 DRESS.push(['boxStack', 'Cartons on a sack truck', 'crate', 'the mall', 0xc89a62], ['trolleyRow', 'Row of trolleys', 'bale', 'the mall', 0x9aa0a8], ['wetFloorSign', 'Wet-floor sign', 'cone', 'the mall', 0xf2c21d]);
 DRESS.push(['cheeseWheels', 'Cheese wheels', 'crate', 'the alpine pass', 0xe8a92c], ['woodpile', 'Woodpile', 'bale', 'the alpine pass', 0x8a5a32], ['milkChurn', 'Milk churn', 'cone', 'the alpine pass', 0xc9d0d6],
   ['snowBlock', 'Block of snow', 'barrier', 'the alpine pass', 0xf4f8fc]);
-DRESS.push(['fishCrates', 'Fish boxes', 'crate', 'the fjord', 0x2f6fb8], ['creelStack', 'Lobster creels', 'bale', 'the fjord', 0x2f4a3a]);
+DRESS.push(['fishCrates', 'Fish boxes', 'crate', 'the fjord', 0x2f6fb8], ['creelStack', 'Lobster creels', 'bale', 'the fjord', 0x2f4a3a], ['fishBoxWall', 'Pallet of fish boxes', 'barrier', 'the fjord', 0x2f6fb8]);
 DRESS.push(['ticketGate', 'Ticket gate', 'crate', 'the metro', 0xd8262b], ['scrubber', 'Floor scrubber', 'bale', 'the metro', 0xf2b51d], ['trackLamp', 'Track lamp', 'cone', 'the metro', 0xff2a1a],
   ['railTrolley', 'Rail trolley', 'crate', 'the metro', 0xe8751a], ['infoTotem', 'Wayfinding board', 'sign', 'the metro', 0x1f6fd0]);
 DRESS.push(['barrierBlock', 'Barrier blocks', 'barrier', 'the roadworks', 0xd8262b], ['cableReel', 'Cable drum', 'crate', 'the roadworks', 0xa8783e], ['sandPile', 'Heap of sand', 'bale', 'the roadworks', 0xd9b36a],
