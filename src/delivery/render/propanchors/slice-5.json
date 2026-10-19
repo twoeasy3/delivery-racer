@@ -56,8 +56,8 @@
   },
   "bulldozer": {
    "roof": {
-    "box": [1.27, 0, 3.198, -0.219],
-    "cyl": [1.12, 0, 3.16, -0.219],
+    "box": [1.22, 0, 3.15, -0.259],
+    "cyl": [1.09, 0, 3.118, -0.259],
     "from": "roof",
     "lim": "fit"
    },
@@ -65,8 +65,8 @@
     "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
    },
    "wing": {
-    "box": [1.06, 0, 3.066, -1.279],
-    "cyl": [0.92, 0, 3.018, -1.279],
+    "box": [1.03, 0, 3.025, -1.239],
+    "cyl": [1.03, 0, 3, -1.239],
     "from": "roof-edge",
     "lim": "fit"
    }
@@ -376,8 +376,8 @@
   },
   "haultruck": {
    "roof": {
-    "box": [2.3, 0, 4.075, 1.98],
-    "cyl": [2.05, 0, 4.013, 1.98],
+    "box": [2.85, 0, 4.213, 1.74],
+    "cyl": [2.53, 0, 4.133, 1.74],
     "from": "roof",
     "lim": "fit"
    },
@@ -862,8 +862,8 @@
   },
   "gritter": {
    "roof": {
-    "box": [1.15, 0, 3.388, 2.24],
-    "cyl": [1.18, 0, 3.395, 2.24],
+    "box": [1.15, 0, 3.338, 2.24],
+    "cyl": [1.18, 0, 3.345, 2.24],
     "from": "roof",
     "lim": "hand",
     "hand": "on the cab roof (where the light bar stands: it is tagged and hidden); the generated box stood on the hopper grid"

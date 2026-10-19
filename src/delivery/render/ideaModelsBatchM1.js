@@ -237,10 +237,9 @@ export const IDEA_MODELS_BATCH_M1 = {
       bx(1.4, 0.5, 0.03, 0, 1.24, FZ),                                                      // the grille
       bx(0.5, 0.42, 0.3, 0, 1.0, TAILZ - 0.14),                                             // the chute at the hopper's foot
       new THREE.CylinderGeometry(0.06, 0.06, 0.3, 8).translate(0, 0.78, TAILZ - 0.22),     // the spinner's shaft
-      ...[-1, 1].map(s => bx(0.5, 0.06, 0.8, s * (HALF - 0.25), 1.06, AR)),                // the mudguards over the rear wheels
+      ...[-1, 1].map(s => bx(0.72, 0.06, 0.8, s * 0.9, 1.06, AR)),                          // the mudguards over the rear wheels (from the chassis rail out)
       ...[-1, 1].flatMap(s => [bx(0.05, 0.42, 0.18, s * 1.33, 2.2, FRONT - 0.15), rod3(0.015, [s * 1.2, 2.3, FRONT - 0.15], [s * 1.31, 2.3, FRONT - 0.15], 4)]), // mirrors
       bx(2.36, 0.5, 0.08, 0, 1.06, TAILZ - 0.06),                                           // the rear board's backing
-      bx(1.5, 0.06, 0.3, 0, ROOF + 0.07, FRONT - 0.7),                                      // the light bar's base
     ]);
     // the spinner disc with its vanes (spins), under the chute
     const spinner = place(group, shared(k + 'spinner', () => merge([
@@ -264,6 +263,7 @@ export const IDEA_MODELS_BATCH_M1 = {
     // the beacons: two on the cab roof's light bar (a roof item: hidden when a roof prop is chosen) and two on the hopper's back corners
     const bar = new THREE.Group();
     bar.userData.prop = 'roof';
+    place(bar, shared(k + 'barbase', () => bx(1.5, 0.06, 0.3, 0, ROOF + 0.07, FRONT - 0.7)), TRIM); // (the bar's base: in the tagged group, hidden with it)
     for (const s of [-1, 1]) place(bar, shared(k + 'beacon', () => new THREE.CylinderGeometry(0.08, 0.09, 0.14, 10)), beacons[s > 0 ? 0 : 1], s * 0.6, ROOF + 0.17, FRONT - 0.7);
     group.add(bar);
     for (const s of [-1, 1]) place(group, shared(k + 'beacon', () => new THREE.CylinderGeometry(0.08, 0.09, 0.14, 10)), beacons[s > 0 ? 1 : 0], s * 1.08, 3.13, TAILZ + 0.1);
