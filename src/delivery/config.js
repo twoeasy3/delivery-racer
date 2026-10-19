@@ -142,6 +142,7 @@ export const CONFIG = {
     rushHour: 2,
     time: 12,              // s the lasting ones last (insuranceUp / insuranceDown, ufo and bulletTrain are over at once)
     rickety: 1.5,          // damage the car takes while rickety, against the usual
+    ricketyFloor: 100,     // ...and never less than this much health a hit, however light (see hurt)
     toadSpeed: 20 / 3.6,   // m/s every toad goes along at in TOAD RAGE
     toad: { hw: 1.2, hl: 1.4, height: 1.8, mass: 1 }, // a toad's hitbox
     // noBrakes: the car no longer slows for a bend by itself. Taken too fast (past cornering.grip),
@@ -1060,6 +1061,9 @@ export const CONFIG = {
   enemyThrowMin: 2,        // s between throws, random between min and max
   enemyThrowMax: 5,
   enemyThrowScatter: 3,    // m, how far from its victim (the player, or another vehicle) a package may land
+  // ...and at the PLAYER, a further error of up to this much across the road and along it (m, uniform either way), so a
+  // car holding its lane is missed now and then (about 4 throws in 10 miss: CHECKLIST 494)
+  enemyThrowAtPlayer: { lateral: 3, distance: 4 },
   enemyThrowCarRange: 45,  // m: the furthest away another vehicle can be for an evil car to throw at it
   splashRadius: 4,         // m
   splashDamage: 6,
@@ -1120,6 +1124,8 @@ export const CONFIG = {
   // wreck a weak car, but a heavy vehicle can. frac = clamp(base + perMass x (mass - 1), base, most): a light car (mass 1 or less)
   // does at most `base` of it, so it takes two hits to wreck a commuter; a bus (4) 1.8x: it can wreck anything at speed)
   damageCap: { base: 0.75, perMass: 0.35, most: 3 },
+  ramDamageMax: 100,       // the most health one car-to-car hit (not a head-on) with the PLAYER in it, ramming or rammed, costs either car: the health
+                           // it loses, after damageCap, damageScale and the rickety floor (so a rickety car rammed loses exactly 100)
   // spin-outs: a traffic car that takes damage may lose control, arc away and blow up.
   // chance per hit = spinPerDamage x (share of full health this hit took)
   //                  x (1 + spinRamp x (share of health now gone) squared)
@@ -1221,10 +1227,11 @@ export const CONFIG = {
   tankHeadOnDamage: 0.2,   // share of full health a head-on costs the tank; nothing else hurts it
   cannonRange: 26,         // m ahead of the tank the shell lands
   cannonCooldown: 0.64,    // s
-  cannonDirectRadius: 4.5, // m: anything this close to the blast is destroyed outright
+  cannonDirectRadius: 4.5, // m (plus half the car's length): the blast's CENTRE, about 0.4 of its splash radius: a car here takes cannonCentreDamage
+  cannonCentreDamage: 10000, // health a car at the blast's centre loses (destroyed outright)
   cannonSplashRadius: 11,  // m
   cannonSplashDamage: 63,
-  cannonCrit: 3,           // times likelier than usual that a car the splash catches takes a critical hit
+  cannonCrit: 3,           // times likelier than usual that a car the splash catches takes a critical hit (TANK RAGE's own shell: always one, see Packages.blast)
   cannonBlastScale: 1.4,   // size of the shell's explosion (fire and debris) against a big wreck's
   cannonSmoke: 0.3,        // and of its smoke: kept light, as the tank drives straight into it
   // broken tracks: a traffic tank's puncture, only ever from a shell's blast or a package's splash. Chance
@@ -1274,6 +1281,7 @@ export const CONFIG = {
       'powerups.mystery.earthquake': 'mystery',      // ...the road heaving
       'events.airborne': 'airborne',                 // in the air off a ramp or a gap: no steering until it is down
       'events.slipping': 'slipping',                 // ice or water is costing the car grip: its ring shows how much
+      'events.emp': 'emp',                           // an EMP mine's: the electronics out (no accelerator, steering or throwing) until they come back
       'events.infected': 'infected',                 // infected with radiation (a full meter, or an infected car touched): for the rest of the run (radiation.js)
       // (the good ones are left to the pickup status, which names them while they run: toad, angel,
       // invincible, soupedUp, giant, magnet, trafficFreeze; and sundayDrivers, rushHour, carSwap, moodSwing)
@@ -1576,6 +1584,24 @@ export const CONFIG = {
   // stop, no bust; the counterplay is the warning: time it, or change lane behind the train. `rest` s after, it is
   // ready again (only for a player coming back to it: a lapped level)
   tunnelJunction: { trigger: 150, warn: 2.2, speed: 4.5, spacing: 2.6, rest: 8, mouth: 10 },
+  // an OIL SLICK ("oilSlicks": { s, lane }, hazards.js patchesOf): a black pool `length` m long, `half` m either side of its lane's
+  // middle. It touches the player's car only (traffic drives over it untouched; a tank, a car just set down or in the air too).
+  // Touched, the car is on ice, only far worse, for `time` s (refilled while it is on the pool): the same five numbers as
+  // CONFIG.ice's (brakes, steering, lane speed, acceleration, cornering grip and understeer), and a harder slew as it hits
+  // a GLUE PILE ("gluePiles": { s, lane }, hazards.js patchesOf): a mound `r` m round. The player's car only (as an oil slick):
+  // driven onto, the car is held there, no movement at all, for `hold` s, then let go at `kept` of the speed it came with.
+  // Once a pass (free again `rearm` m off it)
+  // a MAGMA PATCH ("magmaPatches": { s, lane, length? }, hazards.js patchesOf; the volcano levels): `length` m of that lane from s,
+  // `half` m either side of its middle, molten. The player's car only (as an oil slick; a ghost too is spared): `damage` damage
+  // (as any knock: armour and the like count) as it touches it, and again every `every` s while it is on it. Warned `warn` m out
+  magma: { length: 8, half: 1.55, damage: 35, every: 0.5, warn: 150 },
+  // an EMP MINE ("empMines": { s, lane }, hazards.js patchesOf): a flat disc `r` m round, its light flashing (`flash`). The player's
+  // car only (as an oil slick; a ghost passes over it): run over, it goes off, and is gone: `damage` damage (as any knock: armour and
+  // the like count), and the car's electronics are out for `time` s: no accelerator, no steering, no throwing, slowing at `decel`
+  // m/s^2 down to `crawl` m/s (never to a stop)
+  empMine: { r: 0.75, damage: 10, time: 4, decel: 12, crawl: 4, flash: { period: 0.8, on: 0.3 } },
+  gluePile: { r: 1.2, hold: 0.5, kept: 0.5, rearm: 30 },
+  oilSlick: { length: 7, half: 1.4, time: 2, brakeGrip: 0.1, steerGrip: 0.08, laneSpeed: 0.3, accelGrip: 0.15, grip: 1.5, understeer: 0.7, yawKick: 5 },
   // a boost pad ("boostPads": { from, to, lane }, lanegimmicks.js; a travelator in the mall): a car driving over it is
   // pulled on for `time` s at up to `speed` m/s over its own top speed (as a turbo pulls: CONFIG.turboAccel), the clock
   // refilled for as long as it is on the pad; a ghost too (it is the floor, as ice is). A pad with rails: true has handrails,

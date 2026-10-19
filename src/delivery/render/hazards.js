@@ -12,11 +12,12 @@ import { THEMES } from '../themes.js';
 import { Track } from '../track.js';
 import { Game } from '../game.js';
 import { Player } from '../player.js';
-import { Hazards } from '../hazards.js';
+import { Hazards, patchesOf } from '../hazards.js';
 import { scene, tmp, clearGroup } from './scene.js';
 import { buildStrip } from './road.js';
 import { makeWorker } from './siteModels.js';
 import { makePuddle, makeFountain, puddleTexture } from './watermains.js';
+import { magmaTexture } from './magma.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const lambert = (color, extra) => new THREE.MeshLambertMaterial({ color, ...extra });
@@ -82,7 +83,7 @@ const boom = (length) => {
 
 const group = new THREE.Group();
 scene.add(group);
-let schools = [], mains = [], balloons = [], bridges = [], junctions = [], standing = null;
+let schools = [], mains = [], balloons = [], bridges = [], junctions = [], standing = null, own = null;
 // a short sign on a small canvas (256 x 64): words on a colour
 const smallBoard = (text, bg, fg, w, h) => {
   const canvas = document.createElement('canvas');
@@ -99,6 +100,23 @@ const smallBoard = (text, bg, fg, w, h) => {
   return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), side: THREE.DoubleSide }));
 };
 const BEACON_ON = 0xffb020, BEACON_OFF = 0x5a4010;
+const SPARKS = 10, BOLT = 3; // (the EMP's sparks: so many little bolts, each of so many zigzag segments)
+// a strip of road, `half` m either side of a lane's middle, from..to, with uv (u across, v along: 1 every `tile` m): a decal that
+// follows the road's bends and hills
+const laneStrip = (from, to, lane, half, y, tile, step = 2) => {
+  const pos = [], uv = [], idx = [];
+  for (let n = 0; ; n++) {
+    const s = Math.min(from + n * step, to), lat = Track.laneOffset(lane, s);
+    for (const [k, l] of [[0, lat - half], [1, lat + half]]) { Track.toWorld(s, l, tmp); pos.push(tmp.x, tmp.y + y, tmp.z); uv.push(k, (s - from) / tile); }
+    if (n > 0) { const a = (n - 1) * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    if (s >= to) break;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  return geo;
+};
 
 Game.onLoad.push(() => {
   clearGroup(group); // (freed, not only dropped: audit P7)
@@ -238,6 +256,66 @@ Game.onLoad.push(() => {
     const sheen = new THREE.MeshBasicMaterial({ map: puddleTexture(104, true), transparent: true, opacity: look.sheen ?? 0.35, depthWrite: false, blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
     if (pools.length) { const merged = mergeGeometries(pools); group.add(new THREE.Mesh(merged, pool)); const lit = new THREE.Mesh(merged.clone().translate(0, 0.004, 0), sheen); group.add(lit); pools.forEach(g => g.dispose()); }
     standing = { rim, sheen, sheenBase: look.sheen ?? 0.35, rimBase: rimOpacity };
+  }
+  // ---- the player's own (../hazards.js patchesOf), flat on the road: an oil slick, a black pool with a sheen on it; a glue
+  // pile, a low pale mound with a few blobs splashed round it; an EMP mine, a flat dark disc with a blue light flashing on it
+  // (all the mines' lights one material), gone once it has gone off; magma, a strip of its lane molten under a crust, glowing.
+  // Merged by material: a mesh or two for the level, whatever the count. (Textures: 192 x 192 canvases, two, only on a level with one)
+  own = null;
+  const patches = patchesOf(LEVEL);
+  if (patches.length) {
+    const oil = [], glue = [], magma = [], O = CONFIG.oilSlick, GP = CONFIG.gluePile;
+    for (const p of patches) {
+      const h = Track.toWorld(p.s, Track.laneOffset(p.lane, p.s), tmp);
+      if (p.kind === 'magma') magma.push(laneStrip(p.from, p.to, p.lane, CONFIG.magma.half, 0.03, 8));
+      if (p.kind === 'glue') { // (a squashed dome, and three small ones round it: one mesh for every pile)
+        for (const [x, z, r] of [[0, 0, GP.r], [GP.r * 0.9, GP.r * 0.6, 0.35], [-GP.r * 0.85, -GP.r * 0.3, 0.3], [GP.r * 0.2, -GP.r * 1.05, 0.25]]) {
+          glue.push(new THREE.SphereGeometry(r, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.28, 1).translate(x, 0, z).rotateY(h).translate(tmp.x, tmp.y, tmp.z));
+        }
+      }
+      // (the oil: cut wide, as the pool's picture fades out well inside its edges)
+      if (p.kind === 'oil') oil.push(new THREE.PlaneGeometry(O.half * 3.2, O.length * 1.5).rotateX(-Math.PI / 2).rotateY(h).translate(tmp.x, tmp.y + 0.03, tmp.z));
+    }
+    own = { mines: [] };
+    if (magma.length) { // (one mesh, unlit: it glows, pulsing a little)
+      const merged = mergeGeometries(magma);
+      magma.forEach(g => g.dispose());
+      own.magma = new THREE.MeshBasicMaterial({ map: magmaTexture(), polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+      group.add(new THREE.Mesh(merged, own.magma));
+    }
+    const mineLamp = glow(0x16305a), mineHalo = flat(0x4aa8ff, -6, { transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+    const mineBody = lambert(0x2b2f38), mineRim = lambert(0x5a606a), EM = CONFIG.empMine;
+    for (const p of patches) {
+      if (p.kind !== 'emp') continue;
+      const mine = at(p.s, Track.laneOffset(p.lane, p.s));
+      add(mine, new THREE.CylinderGeometry(EM.r * 0.8, EM.r, 0.12, 14), mineBody, 0, 0.06, 0);
+      add(mine, new THREE.TorusGeometry(EM.r * 0.62, 0.04, 4, 14).rotateX(Math.PI / 2), mineRim, 0, 0.125, 0);
+      add(mine, new THREE.CylinderGeometry(0.16, 0.16, 0.08, 10), mineLamp, 0, 0.16, 0);
+      add(mine, new THREE.CircleGeometry(EM.r * 1.6, 18).rotateX(-Math.PI / 2), mineHalo, 0, 0.03, 0);
+      own.mines.push(mine);
+    }
+    own.mineLamp = mineLamp; own.mineHalo = mineHalo;
+    // (the EMP's sparks about the player's car while its electronics are out: one set of line segments, moved in place)
+    // (and the same points as bright dots, and a blue glow on the road under the car: three draw calls, only while it lasts)
+    const sparkPos = new Float32Array(SPARKS * BOLT * 6), sparkGeo = new THREE.BufferGeometry();
+    sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
+    const additive = { transparent: true, depthWrite: false, blending: THREE.AdditiveBlending };
+    own.sparks = new THREE.Group();
+    own.sparks.add(new THREE.LineSegments(sparkGeo, new THREE.LineBasicMaterial({ color: 0xbfe8ff, opacity: 1, ...additive })));
+    own.sparks.add(new THREE.Points(sparkGeo, new THREE.PointsMaterial({ color: 0xe8f8ff, size: 5, sizeAttenuation: false, opacity: 1, ...additive })));
+    for (const child of own.sparks.children) child.frustumCulled = false;
+    own.sparkGeo = sparkGeo;
+    own.empGlow = new THREE.Mesh(new THREE.CircleGeometry(2.2, 20).rotateX(-Math.PI / 2), flat(0x3a8cff, -6, { opacity: 0.3, ...additive }));
+    own.empGlow.visible = own.sparks.visible = false;
+    if (own.mines.length) group.add(own.sparks, own.empGlow);
+    if (glue.length) { const merged = mergeGeometries(glue); glue.forEach(g => g.dispose()); group.add(new THREE.Mesh(merged, lambert(0xece4c2))); }
+    if (oil.length) {
+      const merged = mergeGeometries(oil);
+      oil.forEach(g => g.dispose());
+      group.add(new THREE.Mesh(merged, new THREE.MeshBasicMaterial({ map: puddleTexture(61, false, ['#000000', '#030205', '#110e16']), transparent: true, opacity: 1, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })));
+      own.oilSheen = new THREE.MeshBasicMaterial({ map: puddleTexture(67, true), color: 0xc8a0ff, transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
+      group.add(new THREE.Mesh(merged.clone().translate(0, 0.004, 0), own.oilSheen));
+    }
   }
   // ---- hot-air balloons
   balloons = (LEVEL.balloons || []).map((b) => {
@@ -383,6 +461,39 @@ export const syncHazards = (now) => {
     mesh.foam.opacity = (0.8 + 0.12 * Math.sin(t * 5 + k)) * shown;
     mesh.jet.userData.set(m.on ? Math.min(1, m.t / 0.5) : Math.max(0, 1 - m.t / 0.4), t, mesh.x, mesh.y, mesh.z, Game.paused || !close);
   });
+  if (own?.mines.length) {
+    const F = CONFIG.empMine.flash, lit = (t / F.period) % 1 < F.on;
+    own.mineLamp.color.setHex(lit ? 0x4aa8ff : 0x16305a);
+    own.mineHalo.opacity = lit ? 0.45 : 0;
+    let k = 0;
+    for (const p of Hazards.patches) if (p.kind === 'emp' && own.mines[k]) own.mines[k++].visible = !p.gone;
+    // (sparks crackling over the car, a fresh few each frame, while its electronics are out)
+    const on = Player.active && Player.emp > 0 && !Game.paused;
+    own.sparks.visible = on && Math.floor(now / 60) % 3 !== 0;
+    own.empGlow.visible = on;
+    if (on) {
+      const P = Player, h = Track.toWorld(P.s, P.lat, tmp);
+      own.empGlow.position.set(tmp.x, tmp.y + P.air + 0.04, tmp.z);
+      own.empGlow.material.opacity = 0.18 + 0.2 * Math.random(); // (flickering)
+    }
+    if (own.sparks.visible) {
+      const a = own.sparkGeo.attributes.position, P = Player;
+      for (let i = 0, v = 0; i < SPARKS; i++) { // (a little zigzag bolt each, somewhere on the car's body)
+        const h = Track.toWorld(P.s + (Math.random() - 0.5) * 2 * P.hl, P.lat + (Math.random() - 0.5) * 2.2 * P.hw, tmp);
+        let x = tmp.x, y = tmp.y + P.air + 0.3 + Math.random() * P.height, z = tmp.z;
+        const c = Math.cos(h), sn = Math.sin(h);
+        for (let j = 0; j < BOLT; j++) {
+          const dx = (Math.random() - 0.5) * 0.9, dy = (Math.random() - 0.2) * 0.7, dz = (Math.random() - 0.5) * 0.9;
+          a.setXYZ(v++, x, y, z);
+          x += dx * c + dz * sn; y += dy; z += dz * c - dx * sn;
+          a.setXYZ(v++, x, y, z);
+        }
+      }
+      a.needsUpdate = true;
+    }
+  }
+  if (own?.magma) { const k = 0.86 + 0.14 * Math.sin(t * 2.6); own.magma.color.setRGB(1, k, k * 0.9); } // (the magma's glow, breathing)
+  if (own?.oilSheen) own.oilSheen.opacity = 0.5 + 0.15 * Math.sin(t * 1.7); // (the oil's rainbow sheen, shifting)
   if (standing) { standing.sheen.opacity = standing.sheenBase * (0.85 + 0.25 * Math.sin(t * 2.3)); standing.rim.opacity = standing.rimBase * (0.93 + 0.1 * Math.sin(t * 3.1)); } // (the light on standing water)
   Hazards.balloons.forEach((b, k) => {
     const mesh = balloons[k];

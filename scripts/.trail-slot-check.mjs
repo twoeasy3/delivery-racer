@@ -162,7 +162,7 @@ check(!/WebGLRenderer|getContext\(['"]webgl/.test(src), 'no renderer or WebGL co
 // ---- render-only ----
 const { fingerprints } = await import('./logic-hash.mjs');
 const fp = fingerprints();
-check(fp.logic === '8dbc477d85' && fp.legacy === 'bcc9df44d0', 'the replay fingerprint unchanged (since CHECKLIST 476, the dead-end side rule, was 057a22806d; since CHECKLIST 470, no pickup in the air; was 33a0394c26 / dd565f56b3): ' + JSON.stringify(fp));
+check(fp.logic === '51eeb6e567' && fp.legacy === '7f39b6494b', 'the replay fingerprint unchanged (since CHECKLIST 494 + 496-499, the ram cap, throw spread, tank shell, rickety floor and the oil / glue / EMP / magma hazards: was c0c2c73e68 / 8c50a659a9 after 494 alone, 8dbc477d85 / bcc9df44d0; since CHECKLIST 476, the dead-end side rule, was 057a22806d; since CHECKLIST 470, no pickup in the air; was 33a0394c26 / dd565f56b3): ' + JSON.stringify(fp));
 
 Progress.noSave = false;
 console.log(failures ? failures + ' FAILED' : 'all ok');

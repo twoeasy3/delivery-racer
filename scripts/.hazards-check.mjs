@@ -166,7 +166,7 @@ try {
   check(knocked > 0 && G.wrecks === 0 && !P.busted && !Hazards.loads[0].load.gone && !Hazards.loads[0].escort.gone && P.health > P.maxHealth * 0.6,
     'wide load: driving into it is a knock (' + Math.round(P.maxHealth - P.health) + ' health), no wreck and no bust, and it is still there');
   g.select({ ...level, id: 'wide-load-two-lanes', lanes: 4, exits: [], pickups: [], waterMains: [], schoolCrossings: [], trolleys: [], marathons: [], balloons: [], drawbridges: [], wreckage: [], cameras: [], potholes: [], crossings: [], stampedes: [],
-    wideLoads: [{ s: 3900, lanes: [2, 3] }] });
+    wideLoads: [{ s: 3900, lanes: [2, 3] }], oilSlicks: [], gluePiles: [], empMines: [], magmaPatches: [] });
   start(3700, 3, 20);
   console.log('         (two lanes a side: ' + (g.track.Track.problems.join(' | ') || 'no problems') + ')');
   passLoad('two lanes a side, in the lane first', -1);
@@ -243,6 +243,117 @@ try {
   check(Site.holes.length === 3 && Site.holes.every(h => !g.track.Track.isMain(h.s)), 'side road: its potholes are on it');
   check(crossingWent, 'side road: its level crossing went off as the car came up to it');
   check(said('STAMPEDE') && seen > 0, 'side road: the stampede charged (' + seen + ' of 8 run into or gone by)');
+
+  // ---- the player's own (hazards.js patchesOf): oil slicks, on Gimmick Road 2. Traffic is never touched by them
+  {
+    const T = g.track.Track, own = (kind) => Hazards.patches.find(p => p.kind === kind);
+    // ---- oil slick (s 2350, lane 4): ice, far worse, for CONFIG.oilSlick.time s
+    const oil = own('oil'), O = g.CONFIG.oilSlick;
+    check(!!oil, 'oil slick: on the level');
+    start(oil.from - 40, 4, 30);
+    let oiled = false;
+    g.run(4, () => { quiet(); if (P.onOil) oiled = true; return P.s > oil.to + 5; });
+    check(oiled && P.onOil && P.onIce && said('Oil!'), 'oil slick: driving over it puts the car on oil (and says so)');
+    // braking from 30 m/s for 0.5 s: on the oil against the dry road, and against ice (CONFIG.ice)
+    const shed = (setup) => { start(oil.from - 200, 4, 30); setup(); g.drive(-1, 0); const v = P.speed; g.run(0.5, () => { quiet(); setup(); }); return v - P.speed; };
+    const dry = shed(() => {}), slick = shed(() => { P.oiled = O.time; });
+    console.log('         (speed shed braking 0.5 s from 30 m/s: dry ' + dry.toFixed(1) + ', oiled ' + slick.toFixed(1) + ' m/s; the ice\'s brakes ' + Math.round(g.CONFIG.ice.brakeGrip * 100) + '%, the oil\'s ' + Math.round(O.brakeGrip * 100) + '%)');
+    check(slick < dry * 0.2, 'oil slick: the brakes barely bite on it');
+    check(O.brakeGrip < g.CONFIG.ice.brakeGrip && O.steerGrip < g.CONFIG.ice.steerGrip && O.laneSpeed < g.CONFIG.ice.laneSpeed && O.accelGrip < g.CONFIG.ice.accelGrip && O.grip < g.CONFIG.ice.grip, 'oil slick: every grip number below the ice\'s');
+    start(oil.from - 40, 4, 30);
+    let lasted = 0;
+    g.run(8, () => { quiet(); if (P.onOil) lasted += 1 / 60; return P.s > oil.to + 200; });
+    check(!P.onOil && lasted > O.time - 0.2 && lasted < O.time + 1.5, 'oil slick: it wears off ' + lasted.toFixed(2) + ' s after (CONFIG.oilSlick.time ' + O.time + ' s, refilled while on it)');
+    check(!T.icy(oil.s, lane(4, oil.s)), 'oil slick: traffic\'s road is not slippery there (Track.icy: what traffic slides on)');
+    start(oil.from - 40, 4, 30);
+    let tankOiled = false;
+    g.run(4, () => { quiet(); P.tank = 1; if (P.onOil) tankOiled = true; return P.s > oil.to + 5; });
+    check(!tankOiled, 'oil slick: a tank rides over it untouched');
+
+    // ---- glue pile (s 2550, lane 4): held still for CONFIG.gluePile.hold s, then let go at .kept of the speed it came with
+    const glue = own('glue'), GP = g.CONFIG.gluePile;
+    check(!!glue, 'glue pile: on the level');
+    start(glue.s - 40, 4, 25);
+    let came = 0, heldAt = null, heldFor = 0, moved = 0, after = null;
+    g.run(6, () => {
+      quiet();
+      if (P.glued > 0) { if (heldAt === null) { heldAt = { s: P.s, lat: P.lat }; came = P.gluedSpeed / GP.kept; } heldFor += 1 / 60; moved = Math.max(moved, Math.abs(P.s - heldAt.s), Math.abs(P.lat - heldAt.lat)); }
+      else if (heldAt && after === null) after = P.speed;
+      return after !== null;
+    });
+    console.log('         (came at ' + came.toFixed(1) + ' m/s, held ' + heldFor.toFixed(2) + ' s, moved ' + moved.toFixed(3) + ' m held, let go at ' + (after ?? 0).toFixed(1) + ' m/s)');
+    check(heldAt && said('Glue!'), 'glue pile: driving onto it sticks the car (and says so)');
+    check(Math.abs(heldFor - GP.hold) < 0.05 && moved < 0.01, 'glue pile: held still, no movement, for ' + GP.hold + ' s');
+    check(after !== null && Math.abs(after - came * GP.kept) < 0.6, 'glue pile: let go at ' + Math.round(GP.kept * 100) + '% of the speed it came with');
+    g.run(2, () => { quiet(); });
+    check(!(P.glued > 0) && P.s > glue.s + 10, 'glue pile: once a pass: the car drives on off it');
+    start(glue.s - 40, 4, 25);
+    let tankGlued = false;
+    g.run(4, () => { quiet(); P.tank = 1; if (P.glued > 0) tankGlued = true; return P.s > glue.s + 10; });
+    check(!tankGlued, 'glue pile: a tank rides over it untouched');
+
+    // ---- EMP mine (s 2750, lane 4): a little damage, then no accelerator, steering or throwing for CONFIG.empMine.time s
+    const emp = own('emp'), E = g.CONFIG.empMine, { Packages } = await g.load('packages.js');
+    check(!!emp, 'EMP mine: on the level');
+    start(emp.s - 40, 4, 30);
+    const hp = P.health;
+    let hit = false;
+    g.run(4, () => { quiet(); if (P.emp > 0) hit = true; return hit; });
+    check(hit && own('emp').gone && said('EMP!'), 'EMP mine: run over, it goes off and is gone (and says so)');
+    check(Math.abs(hp - P.health - E.damage) < 0.01, 'EMP mine: ' + E.damage + ' damage (' + (hp - P.health).toFixed(1) + ')');
+    check(g.Message.sticky.some(h => h.path === 'events.emp'), 'EMP mine: its status icon is up');
+    const flying = () => Packages.list.filter(p => p.active).length, latAt = P.lat, thrown = flying();
+    g.drive(1, 1);
+    Packages.throwOne();
+    let slowest = P.speed, outFor = 0;
+    g.run(E.time + 1, () => { quiet(); if (P.emp > 0) { outFor += 1 / 60; slowest = Math.min(slowest, P.speed); } return P.emp <= 0; });
+    console.log('         (out for ' + outFor.toFixed(2) + ' s, down to ' + slowest.toFixed(1) + ' m/s with the accelerator held, moved ' + Math.abs(P.lat - latAt).toFixed(2) + ' m across steering hard)');
+    check(Math.abs(outFor - E.time) < 0.1, 'EMP mine: the electronics are out for ' + E.time + ' s');
+    check(slowest <= E.crawl + 0.01 && slowest > 0, 'EMP mine: no accelerator: it slows hard, to a crawl (' + E.crawl + ' m/s), never a stop');
+    check(Math.abs(P.lat - latAt) < 0.3, 'EMP mine: no steering');
+    check(flying() === thrown, 'EMP mine: no throwing');
+    const v0 = P.speed;
+    g.run(1, () => { quiet(); });
+    const before = flying();
+    Packages.throwOne();
+    check(P.speed > v0 + 1 && Math.abs(P.lat - latAt) > 0.5 && flying() > before && !g.Message.sticky.some(h => h.path === 'events.emp'), 'EMP mine: after it, the accelerator, steering and throwing answer again, and the icon is gone');
+    start(emp.s - 40, 4, 30, { ghost: true });
+    g.run(3, () => { quiet(); return P.s > emp.s + 10; });
+    check(!(P.emp > 0) && !own('emp').gone, 'EMP mine: a ghost passes over it');
+
+    // ---- magma (s 2950, lane 4): CONFIG.magma.damage as the car touches it, and every .every s while it is on it
+    const M = g.CONFIG.magma, mag = own('magma');
+    check(!!mag, 'magma: on the level');
+    start(mag.from - 140, 4, 30); // (past the EMP mine in the same lane)
+    let h0 = P.health, burns = [];
+    g.run(10, () => { quiet(); if (P.health < h0 - 0.01) { burns.push(h0 - P.health); } h0 = P.health; return P.s > mag.to + 20; });
+    check(said('Magma ahead!'), 'magma: warned of on the way up to it');
+    check(burns.length === 1 && Math.abs(burns[0] - M.damage) < 0.01, 'magma: driven over at speed, one burn of ' + M.damage + ' (' + burns.map(b => b.toFixed(0)).join(', ') + ')');
+    // (held on it for 2 s: a burn as it touches, and every 0.5 s after; a burn a step is counted)
+    const sit = (setup = () => {}) => {
+      start(mag.s, 4, 0);
+      P.health = P.maxHealth = 1e4;
+      setup();
+      let last = P.health, n = 0, total = 0;
+      g.run(2, () => { quiet(); P.s = mag.s; P.speed = 0; setup(); if (P.health < last - 0.01) { n++; total += last - P.health; } last = P.health; });
+      return { n, total };
+    };
+    const held = sit();
+    check(held.n === Math.floor(2 / M.every) && Math.abs(held.total - held.n * M.damage) < 0.1, 'magma: held on it 2 s, burnt ' + held.n + ' times (every ' + M.every + ' s), ' + held.total.toFixed(0) + ' in all');
+    check(sit(() => { P.tank = 1; }).n === 0, 'magma: a tank is not burnt');
+    check(sit(() => { P.testGhost = true; P.ghost = 1; }).n === 0, 'magma: a ghost is not burnt');
+    check(sit(() => { P.shield = 1; }).n === 0, 'magma: a car just set down (its shield) is not burnt');
+    check(sit(() => { P.mystery = 'invincible'; P.mysteryTime = 9; }).total === 0, 'magma: an invincible car takes nothing (damageScale)');
+    const armoured = sit(() => { P.armour = 9; });
+    check(Math.abs(armoured.total - held.total * g.CONFIG.armour.damage) < 0.5, 'magma: armour takes its share off (' + armoured.total.toFixed(0) + ' of ' + held.total.toFixed(0) + ')');
+    // (and traffic: a car stood on each of the four, a second, untouched)
+    start(oil.from - 300, 4, 0);
+    const cars = g.Traffic.cars.slice(0, 4), spots = ['oil', 'glue', 'emp', 'magma'].map(own);
+    let harmed = 0;
+    g.run(1, () => { cars.forEach((car, i) => { Object.assign(car, { active: true, s: spots[i].s, lat: lane(4, spots[i].s), vs: 0, dir: 1, health: car.maxHealth || 100 }); }); });
+    cars.forEach((car, i) => { if (car.health < (car.maxHealth || 100) || car.spin > 0) harmed++; });
+    check(harmed === 0 && !own('emp').gone && P.emp === 0, 'traffic: a car on each of the four is untouched by it (and the mine is not set off)');
+  }
 
   // ---- slippery road: ice and a burst main's water against the dry road (CONFIG.ice, CONFIG.waterMain), on
   // three straight stretches of this level with everything else taken off it
