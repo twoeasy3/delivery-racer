@@ -1276,6 +1276,7 @@ DRESS.push(['barrierBlock', 'Barrier blocks', 'barrier', 'the roadworks', 0xd826
 DRESS.push(['ingotStack', 'Stack of hot billets', 'crate', 'the steelworks', 0xff6a1a], ['steelCoil', 'Steel coil', 'bale', 'the steelworks', 0xb9c1c9], ['hotSign', 'Hot-metal sign', 'cone', 'the steelworks', 0xf2c21d],
   ['rebarBundle', 'Bundles of rebar', 'barrier', 'the steelworks', 0x8a4a2a]);
 DRESS.push(['velvetRope', 'Velvet rope', 'barrier', 'Las Vegas', 0xa3101f], ['slotMachine', 'Slot machine', 'crate', 'Las Vegas', 0xc81d2a], ['luggageCart', 'Luggage cart', 'bale', 'Las Vegas', 0xd9a83a], ['casinoDie', 'Giant die', 'cone', 'Las Vegas', 0xd8262b]);
+DRESS.push(['barricade', 'Barricade', 'barrier', 'the castle town', 0x8a5a32]); Object.assign(JUNK, { barricade: { hw: 1.2, hl: 0.6, height: 1.2 } }); Object.assign(JUNK_NAMES, { barricade: 'barricades' }); // (the castle town's)
 // the kinds of plain obstacle a level's road has, as its theme has them
 const dressingKinds = (l) => new Set([...(l.obstacles || []).map(o => themedKind(l.theme, o.kind || 'barrier')), ...(l.shoulderRows || []).map(r => themedKind(l.theme, r.kind || 'cone')),
   ...(l.drifters || []).map(d => themedKind(l.theme, d.kind || 'cone', true))]);

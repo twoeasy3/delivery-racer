@@ -288,6 +288,7 @@ export const Collision = (() => {
   Object.assign(SIZE, { ingotStack: [1.2, 0.9, 1.6], steelCoil: [1.1, 0.9, 1.95], hotSign: [0.6, 0.6, 2.4], rebarBundle: [1.5, 0.7, 1.4] });
   // (a theme's kinds with a box of their own, not their plain kind's: scripts/.obstacles-check.mjs lets these alone differ in size)
   const OWN_BOX = new Set(['ingotStack', 'steelCoil', 'hotSign', 'rebarBundle']);
+  SIZE.barricade = SIZE.barrier; // (the castle town's)
   for (const [kind, like] of Object.entries({ velvetRope: 'barrier', slotMachine: 'crate', luggageCart: 'bale', casinoDie: 'cone' })) SIZE[kind] = SIZE[like]; // (the Las Vegas Strip's)
   for (const [kind, like] of Object.entries({ ticketGate: 'crate', scrubber: 'bale', trackLamp: 'cone', railTrolley: 'crate', infoTotem: 'sign' })) SIZE[kind] = SIZE[like]; // (the metro's)
   SIZE.trackBarrier = SIZE.railBarrier; // the metro's track-work barrier (railBarrier's box: wholly inside a passing train)

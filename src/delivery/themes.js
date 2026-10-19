@@ -336,7 +336,7 @@ const OBSTACLES = {
   roadworksNight: { barrier: 'barrierBlock', crate: 'cableReel', bale: 'sandPile' }, // (the same road by night) // (delivery cartons on a sack truck; three shopping trolleys nested; a WET FLOOR A-frame)
   steelworks: { crate: 'ingotStack', bale: 'steelCoil', cone: 'hotSign', barrier: 'rebarBundle' }, // (a stack of hot billets, a coil on its cradle, a HOT METAL sign, bundles of rebar; steelworksNight has them too)
   vegas: { barrier: 'velvetRope', crate: 'slotMachine', bale: 'luggageCart', cone: 'casinoDie' }, // (a velvet rope on brass posts; a slot machine; a bellhop's luggage cart; a giant red die)
-  castle: { crate: 'barrel', cone: 'candleLantern' }, // (a barrel, an iron candle lantern; its bales are hay)
+  castle: { barrier: 'barricade', crate: 'barrel', cone: 'candleLantern' }, // (a timber barricade, a barrel, an iron candle lantern; its bales are hay)
   // (the port keeps its crates, the farm and the Wild West their bales: there they belong)
 };
 // drifting: the same, for the things of a level's "drifters" alone, where what moves about the road wants to be
