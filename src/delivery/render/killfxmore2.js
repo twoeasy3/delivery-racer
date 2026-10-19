@@ -121,7 +121,7 @@ export const KILL_MORE2 = {
       const sk = sq(k), d0 = 0.8 * k, grow = 6.5, life = 1.5; // (the dome: 0.8 m across to 6 m, eased)
       flash(S, x, y + 0.5, z, 2.2 * k, 0xdfe8ff, 0.12);
       let p = S.spec();
-      p.x = x; p.y = y; p.z = z; p.size = d0; p.grow = grow; p.ease = 1; p.life = life; p.fade = FADE_DIM; p.color = 0x8aa8e8;
+      p.x = x; p.y = y; p.z = z; p.size = d0; p.grow = grow; p.ease = 1; p.life = life; p.fade = FADE_DIM; p.color = 0x5068a0; // (quieter: at the stage's close camera a brighter dome whited the picture out)
       S.add('dome');
       for (const [wait, c] of [[0, 0x8ea4d0], [0.22, 0x4a5878]]) { // its foot on the road, and a fainter echo after it
         p = S.spec();
