@@ -150,7 +150,9 @@ try {
 
   // ---- 3. the tab ----
   const zoneCars = all.filter(c => DC.decalSupported(c)).map(c => c.id).sort();
-  check(JSON.stringify(zoneCars) === JSON.stringify([...SIX].sort()), 'the cars that can wear one: exactly ' + zoneCars.join(', '));
+  // (CHECKLIST 509: the rest of the roster tagged; the set is now every car whose model has a zone row, the six among them)
+  const rowCars = all.filter(c => !c.legend && !c.tank && !c.ufo && DECAL_ZONES[DC.decalKey(c)]).map(c => c.id).sort();
+  check(JSON.stringify(zoneCars) === JSON.stringify(rowCars) && SIX.every(id => zoneCars.includes(id)), 'the cars that can wear one: exactly the ' + zoneCars.length + ' whose model has a zone row (the six among them)');
   const wrong = all.filter(c => shownSlots(c).some(s => s.id === 'decal') !== DC.decalSupported(c));
   check(!wrong.length, 'the Decal tab shows on exactly those cars, of ' + all.length + (wrong.length ? ' (wrong: ' + wrong.slice(0, 5).map(c => c.id).join(', ') + ')' : ''));
   const legend = all.find(c => c.legend);

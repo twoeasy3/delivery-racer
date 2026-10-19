@@ -107,7 +107,14 @@ export const wrapRect = (view, s, rect, piece, out, lift = FLANK.LIFT) => {
     fine.push(p.point ? { p: p.point, n: p.normal, shown: first.kind === 'paint' } : null);
   }
   const F = (i, j) => fine[j * (nz + 1) + i];
-  if (fine.some(p => !p)) return { quads: 0, rays, holes, fine: [nz, ny], used: [0, 0] };
+  // a point whose ray meets nothing (a band's corner past a sloping end of the paint, CHECKLIST 509): a hidden point at the nearest hit's
+  // depth in its row (else its column), so the piece keeps its alpha edge there instead of being dropped whole
+  if (fine.some(p => !p)) {
+    const near = (i, j) => { for (let d = 1; d <= Math.max(nz, ny); d++) for (const [a, b] of [[i - d, j], [i + d, j], [i, j - d], [i, j + d]]) { const q = a >= 0 && a <= nz && b >= 0 && b <= ny && fine[b * (nz + 1) + a]; if (q) return q; } return null; };
+    const fill = fine.map((p, k) => { if (p) return p; const q = near(k % (nz + 1), Math.floor(k / (nz + 1))); return q && { p: new THREE.Vector3(q.p.x, y0 + h * Math.floor(k / (nz + 1)) / ny, z0 + w * (k % (nz + 1)) / nz), n: q.n, shown: false }; });
+    if (fill.some(p => !p)) return { quads: 0, rays, holes, fine: [nz, ny], used: [0, 0] };
+    fill.forEach((p, k) => { if (!fine[k]) { fine[k] = p; holes++; } });
+  }
   // the coarsest lattice (a power of two each way, a subset of the fine one) whose bilinear faces stay within CHORD of every fine point;
   // where any point is hidden (the rect runs over something), the fine lattice itself, so the alpha edge is as sharp as it can be
   let best = [nz, ny];
