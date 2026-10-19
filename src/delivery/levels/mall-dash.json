@@ -1,7 +1,7 @@
 {
   "id": "mall-dash",
   "theme": "mall",
-  "clock": { "good": 125, "evil": 95 },
+  "clock": { "good": 135, "evil": 105 },
   "tip": 240,
   "lanes": 2,
   "flow": "north",
