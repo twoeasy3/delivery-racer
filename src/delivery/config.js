@@ -697,6 +697,7 @@ export const CONFIG = {
     ingotStack: { damage: 31, speedKept: 0.75 }, steelCoil: { damage: 38, speedKept: 0.75 }, hotSign: { damage: 3, speedKept: 0.94, light: true }, rebarBundle: { damage: 34, speedKept: 0.6 }, // the steelworks': hot billets stacked (a crate), a coil on its cradle (a bale), a HOT METAL sign (a cone), rebar bundles (a barrier)
     ticketGate: { damage: 31, speedKept: 0.75 }, scrubber: { damage: 38, speedKept: 0.75 }, trackLamp: { damage: 3, speedKept: 0.94, light: true }, // the metro's: a ticket gate (a crate), a ride-on floor scrubber (a bale), a track lamp (a cone)
     railTrolley: { damage: 31, speedKept: 0.75 }, infoTotem: { damage: 32, speedKept: 0.8 },
+    cargoPod: { damage: 31, speedKept: 0.75 }, hoverPlanter: { damage: 38, speedKept: 0.75 }, chargePost: { damage: 3, speedKept: 0.94, light: true }, holoGate: { damage: 34, speedKept: 0.6 }, // the neon future city's: a delivery pod (a crate), a hover planter (a bale), a charging post (a cone), a holo barrier (a barrier)
     trackBarrier: { damage: 33, speedKept: 0.6, trainProof: true }, // ...and the metro's railBarrier: a low track-work barrier on a track, a bullet train goes over it and leaves it standing (trainProof: small enough to sit inside the train) // ...and named outright: a rail trolley of sleepers (a crate's), a wayfinding board (a sign's)
     hoistDrum: { damage: 14, speedKept: 0.8, light: true }, // ...and a tunnel junction's load there (themes.js junctionTrain: a cable drum slung under a hoist running on a beam across the road): the tug's cost
   },

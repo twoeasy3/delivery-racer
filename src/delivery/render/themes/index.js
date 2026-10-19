@@ -40,6 +40,7 @@ const THEME_FILES = {
   desert: () => import('./desert.js'),
   mall: () => import('./mall.js'),
   metro: () => import('./metro.js'),
+  neon: () => import('./neon.js'), // (the neon future city, theme neonCity)
   city: () => import('./city.js'), // (the default theme: the city's streets, and every theme drawn as it, night, flooded)
   steelworks: () => import('./steelworks.js'),
   vegas: () => import('./vegas.js'),

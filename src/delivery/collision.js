@@ -286,6 +286,7 @@ export const Collision = (() => {
   // small again"): heavy industry's sizes, each within a lane with room beside it (render/themes/steelworksModels.js
   // STEELWORKS_SIZES draws them at these: scripts/.steelworks-check.mjs holds the two equal)
   Object.assign(SIZE, { ingotStack: [1.2, 0.9, 1.6], steelCoil: [1.1, 0.9, 1.95], hotSign: [0.6, 0.6, 2.4], rebarBundle: [1.5, 0.7, 1.4] });
+  for (const [kind, like] of Object.entries({ cargoPod: 'crate', hoverPlanter: 'bale', chargePost: 'cone', holoGate: 'barrier' })) SIZE[kind] = SIZE[like]; // (the neon future city's)
   // (a theme's kinds with a box of their own, not their plain kind's: scripts/.obstacles-check.mjs lets these alone differ in size)
   const OWN_BOX = new Set(['ingotStack', 'steelCoil', 'hotSign', 'rebarBundle']);
   for (const [kind, like] of Object.entries({ velvetRope: 'barrier', slotMachine: 'crate', luggageCart: 'bale', casinoDie: 'cone' })) SIZE[kind] = SIZE[like]; // (the Las Vegas Strip's)

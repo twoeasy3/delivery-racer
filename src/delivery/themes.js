@@ -279,6 +279,11 @@ THEMES.vegas = { sky: 0xa9cfe8, ground: 0xc9a77a, road: 0x3a3c41, scenery: 'vega
 // lamps' pools of light, a beam of light up from the pyramid; lit surfaces and headlights as the city's night
 THEMES.vegasNight = { sky: 0x0d0b26, ground: 0x3a3226, road: 0x3c3e44, scenery: 'vegas', pad: 'travelator', lit: true, headlights: true, night: true, target: { offset: 2.4, height: 4.6, beam: true },
   light: { sky: 0x8f8cff, ground: 0x2a1c30, ambient: 0.62, sun: 0xffd8c8, sunlight: 0.35 } };
+// neonCity: a clean near-future megacity at night, rain-free (render/themes/neon.js): glass towers outlined in light, abstract holo
+// panels, an elevated maglev beam, skybridges over the road, floating-light lamp posts; a deep indigo sky; the road dark and
+// glossy (coloured streaks of light on it, drawn: render/themes/neon.js). Cyan lane lines, a magenta centre line
+THEMES.neonCity = { sky: 0x120a3a, ground: 0x15162a, road: 0x2a2d40, scenery: 'neon', line: 0x8af4ff, centre: 0xff4fd8, fogColor: 0x2a1a6a, lit: true, headlights: true, night: true,
+  target: { offset: 2.4, height: 4.6, beam: true }, light: { sky: 0x9a8cff, ground: 0x241a40, ambient: 0.7, sun: 0xc8d8ff, sunlight: 0.4 } };
 // alpine: a high alpine pass in early summer (render/themes/alpine.js, scenery 'alpinepass': the 'snow' theme's scenery is the older
 // 'snowpass' of road.js, called 'alpine' until this theme took the name): green meadows low down with cows, snow on the heights and plough-cut snow walls at the col, the land
 // (terrain) climbing with the road's switchbacks, rock faces between them; red-and-white snow poles, stone retaining walls, steel
@@ -328,6 +333,7 @@ const OBSTACLES = {
   hongkong: { crate: 'hawkerCart', bale: 'bagStack' }, // (a hawker's cart under its awning; a heap of red-white-blue bags; the cones are roadworks and stay)
   autumn: { crate: 'harvestCrate', bale: 'leafPile', cone: 'smallPumpkin' }, // (a crate of pumpkins; a heap of raked leaves; a small pumpkin on a stake)
   alpine: { crate: 'cheeseWheels', bale: 'woodpile', cone: 'milkChurn', barrier: 'snowBlock' }, // (cheese wheels on a pallet, a woodpile, a milk churn, a cut block of snow with snow poles)
+  neonCity: { crate: 'cargoPod', bale: 'hoverPlanter', cone: 'chargePost', barrier: 'holoGate' }, // (a delivery pod, a hover planter, a charging post, a holo barrier)
   mall: { crate: 'boxStack', bale: 'trolleyRow', cone: 'wetFloorSign' },
   metro: { crate: 'ticketGate', bale: 'scrubber', cone: 'trackLamp' }, // (a ticket gate; a ride-on floor scrubber, parked; a red track lamp on its tripod)
   roadworks: { barrier: 'barrierBlock', crate: 'cableReel', bale: 'sandPile' }, // (a water-filled barrier, a cable drum, a heap of sand; the cones are roadworks and stay)
