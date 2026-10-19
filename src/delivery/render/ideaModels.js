@@ -32,6 +32,7 @@ import { IDEA_MODELS_TOPUP_C } from './ideaModelsTopupC.js'; // (top-up batch C:
 import { IDEA_MODELS_PADDLE_DUCK } from './ideaModelsPaddleDuck.js'; // (the Paddle-Wheel Amphibian)
 import { IDEA_MODELS_BATCH_D1 } from './ideaModelsBatchD1.js';
 import { IDEA_MODELS_SIXWHEEL } from './ideaModelsSixWheel.js'; // (the Six-Wheel Supercar, a Legendary key car: cars.js BESPOKE_CARS)
+import { IDEA_MODELS_BATCH_M2 } from './ideaModelsBatchM2.js'; // (batch M2, CHECKLIST 516)
 import { IDEA_MODELS_WEDGE } from './ideaModelsWedge.js'; // (the Wedge Supercar, rebuilt 16-Oct)
 import { IDEA_MODELS_BATCH_M1 } from './ideaModelsBatchM1.js'; // (batch M1: working machines)
 import { SWAN_MODELS } from './modelsSwan.js';
@@ -212,6 +213,7 @@ export const IDEA_MODELS = {
   ...IDEA_MODELS_SIXWHEEL,
   ...IDEA_MODELS_WEDGE,
   ...IDEA_MODELS_BATCH_M1,
+  ...IDEA_MODELS_BATCH_M2,
   swancar: SWAN_MODELS.swancar,
   // A bubble car (a BMW Isetta): an egg on wheels. The whole front is its one door, hinged at the side, the
   // windscreen in it; a glass bubble over a bench seat; lamps in pods on its flanks; the two back wheels close

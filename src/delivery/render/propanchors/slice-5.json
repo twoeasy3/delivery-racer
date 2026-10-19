@@ -439,6 +439,27 @@
     "lim": "fit"
    }
   },
+  "jingletruck": {
+   "roof": {
+    "box": [1.22, 0, 2.805, 1.43],
+    "cyl": [1.11, 0, 2.778, 1.43],
+    "from": "roof",
+    "lim": "fit"
+   },
+   "cargo": {
+    "box": [1.56, 0, 1.864, -0.09],
+    "cyl": [1.55, 0, 1.86, 0.07],
+    "from": "deck",
+    "lim": "fit",
+    "existing": true
+   },
+   "wing": {
+    "box": [1.75, 0, 3.296, -3.31],
+    "cyl": [1.75, 0, 3.253, -3.31],
+    "from": "bed-tail",
+    "lim": "fit"
+   }
+  },
   "mixer": {
    "roof": {
     "box": [1.44, 0, 2.81, 2.413],
@@ -457,6 +478,25 @@
     "cyl": [1.41, 0, 2.662, 1.593],
     "from": "roof-edge",
     "lim": "fit"
+   }
+  },
+  "mobilelibrary": {
+   "roof": {
+    "box": [2.73, 0, 3.732, -0.95],
+    "cyl": [3, 0, 3.8, -0.95],
+    "from": "roof",
+    "lim": "fit",
+    "inset": [0.028, 0.021]
+   },
+   "cargo": {
+    "no": "a closed body: no load deck"
+   },
+   "wing": {
+    "box": [1.77, 0, 3.36, -3.13],
+    "cyl": [1.77, 0, 3.315, -3.13],
+    "from": "roof-edge",
+    "lim": "fit",
+    "inset": [0.03, 0.03]
    }
   },
   "motorhome": {
@@ -731,6 +771,25 @@
     "lim": "fit"
    }
   },
+  "stepmpv": {
+   "roof": {
+    "box": [1.73, 0, 2.093, -0.46],
+    "cyl": [1.94, 0, 2.147, -0.46],
+    "from": "roof",
+    "lim": "fit",
+    "inset": [0.028, 0.029]
+   },
+   "cargo": {
+    "no": "a closed body: no load deck"
+   },
+   "wing": {
+    "box": [1.14, 0, 1.864, -1.64],
+    "cyl": [1.14, 0, 1.835, -1.64],
+    "from": "roof-edge",
+    "lim": "fit",
+    "inset": [0.028, 0.028]
+   }
+  },
   "talltourer": {
    "roof": {
     "no": "an open car: no roof"
@@ -806,6 +865,11 @@
   }
  },
  "hand": {
+  "jingletruck": {
+   "wing": {
+    "no": "the cab roof's rear edge is under the body's front wall, and the body is an open tall box: a wing on its tail board's top would stand on a plank over the load"
+   }
+  },
   "gameviewer": {
    "roof": {
     "box": [2.1, 0, 2.915, -0.277],

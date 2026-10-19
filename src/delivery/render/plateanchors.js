@@ -20,6 +20,7 @@ import { PLATE_TABLE, PLATE_VARIANTS, PLATE_NONE } from './plateanchorstable.js'
 export const HAND = {
   mini: { ends: 'rear' }, autobahnestate: { ends: 'rear' }, // (something stands over a third of the front place: rear only)
   dodgem: { ends: 'rear' }, // (the bumper car's nose is a blob: a front plate half sinks into it)
+  mobilelibrary: { r: [0.66, -3.46, 0.52, 0] }, // (the search's rear place was the fold-down step under the bumper: the plate goes on the bumper's face)
   // the plate placement audit (CHECKLIST 309, scripts/plate-placement-audit.mjs: measured, then looked at):
   toybota: { r: null }, // (an outboard motor's leg stands on the centre line behind the bed: the only flat place left was its motor housing, 1 m up)
   hotrod: { f: null }, // (a bare radiator between the wheels and no bumper: the plate could only stand in the grille bars)
