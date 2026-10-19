@@ -131,12 +131,17 @@ export const decalLayout = (d, zones, S = 1, opts = {}) => {
     }
     if (!best) return [];
     if (opts.runs) { // (the height chosen on the coarse probe; its runs found on the fine one. Where the fine probe leaves a flank bare (a sill or a
-      // spear between the coarse rows: CHECKLIST 509), the next best coarse height, a few at most; the first that holds on every flank wins)
+      // spear between the coarse rows: CHECKLIST 509) or keeps under half its coarse length, the next best coarse heights, a few at most:
+      // the first that holds on every flank at half its coarse score wins, else the one that held best)
       cands.sort((a, b) => b.score - a.score);
       let ok = null;
       for (const c of [best, ...cands.filter(c => c.ya !== best.ya || c.h !== best.h)].slice(0, 8)) {
         const per = sides.map(side => ({ side, pieces: piecesAt(side, c.ya, c.yb, true) }));
-        if (per.every(p => p.pieces.length)) { ok = { ...c, per }; break; }
+        if (!per.every(p => p.pieces.length)) continue;
+        const lens = per.flatMap(p => p.pieces.map(r => r.z1 - r.z0)), long = Math.max(...lens);
+        const fine = (long + (lens.reduce((t, l) => t + l, 0) - long) / 3) * Math.sqrt(Math.min(1, c.h / want));
+        if (!ok || fine > ok.fine) ok = { ...c, per, fine };
+        if (fine >= c.score / 2) break;
       }
       if (!ok) return [];
       best = ok;
