@@ -142,6 +142,7 @@ export const CONFIG = {
     rushHour: 2,
     time: 12,              // s the lasting ones last (insuranceUp / insuranceDown, ufo and bulletTrain are over at once)
     rickety: 1.5,          // damage the car takes while rickety, against the usual
+    ricketyFloor: 100,     // ...and never less than this much health a hit, however light (see hurt)
     toadSpeed: 20 / 3.6,   // m/s every toad goes along at in TOAD RAGE
     toad: { hw: 1.2, hl: 1.4, height: 1.8, mass: 1 }, // a toad's hitbox
     // noBrakes: the car no longer slows for a bend by itself. Taken too fast (past cornering.grip),
@@ -1060,6 +1061,9 @@ export const CONFIG = {
   enemyThrowMin: 2,        // s between throws, random between min and max
   enemyThrowMax: 5,
   enemyThrowScatter: 3,    // m, how far from its victim (the player, or another vehicle) a package may land
+  // ...and at the PLAYER, a further error of up to this much across the road and along it (m, uniform either way), so a
+  // car holding its lane is missed now and then (about 4 throws in 10 miss: CHECKLIST 494)
+  enemyThrowAtPlayer: { lateral: 3, distance: 4 },
   enemyThrowCarRange: 45,  // m: the furthest away another vehicle can be for an evil car to throw at it
   splashRadius: 4,         // m
   splashDamage: 6,
@@ -1120,6 +1124,8 @@ export const CONFIG = {
   // wreck a weak car, but a heavy vehicle can. frac = clamp(base + perMass x (mass - 1), base, most): a light car (mass 1 or less)
   // does at most `base` of it, so it takes two hits to wreck a commuter; a bus (4) 1.8x: it can wreck anything at speed)
   damageCap: { base: 0.75, perMass: 0.35, most: 3 },
+  ramDamageMax: 100,       // the most health one car-to-car hit (not a head-on) with the PLAYER in it, ramming or rammed, costs either car: the health
+                           // it loses, after damageCap, damageScale and the rickety floor (so a rickety car rammed loses exactly 100)
   // spin-outs: a traffic car that takes damage may lose control, arc away and blow up.
   // chance per hit = spinPerDamage x (share of full health this hit took)
   //                  x (1 + spinRamp x (share of health now gone) squared)
@@ -1221,10 +1227,11 @@ export const CONFIG = {
   tankHeadOnDamage: 0.2,   // share of full health a head-on costs the tank; nothing else hurts it
   cannonRange: 26,         // m ahead of the tank the shell lands
   cannonCooldown: 0.64,    // s
-  cannonDirectRadius: 4.5, // m: anything this close to the blast is destroyed outright
+  cannonDirectRadius: 4.5, // m (plus half the car's length): the blast's CENTRE, about 0.4 of its splash radius: a car here takes cannonCentreDamage
+  cannonCentreDamage: 10000, // health a car at the blast's centre loses (destroyed outright)
   cannonSplashRadius: 11,  // m
   cannonSplashDamage: 63,
-  cannonCrit: 3,           // times likelier than usual that a car the splash catches takes a critical hit
+  cannonCrit: 3,           // times likelier than usual that a car the splash catches takes a critical hit (TANK RAGE's own shell: always one, see Packages.blast)
   cannonBlastScale: 1.4,   // size of the shell's explosion (fire and debris) against a big wreck's
   cannonSmoke: 0.3,        // and of its smoke: kept light, as the tank drives straight into it
   // broken tracks: a traffic tank's puncture, only ever from a shell's blast or a package's splash. Chance

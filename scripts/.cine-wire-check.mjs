@@ -40,7 +40,7 @@ const want = (part) => !ONLY || String(ONLY).split(',').includes(part);
 let failed = 0;
 const check = (ok, what) => { console.log((ok ? '  ok    ' : '  FAIL  ') + what); if (!ok) failed++; };
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-const MAIN_PRINT = { logic: '8dbc477d85', legacy: 'bcc9df44d0' }; // (since CHECKLIST 476, a dead end's blocker solid from the side: was 057a22806d / 661de07fbe; since CHECKLIST 470, no pickup in the air: was 33a0394c26 / dd565f56b3, main v1.1.151-alpha to v1.1.153)
+const MAIN_PRINT = { logic: 'c0c2c73e68', legacy: '8c50a659a9' }; // (since CHECKLIST 494, the ram cap, throw spread, tank shell and rickety floor: was 8dbc477d85 / bcc9df44d0; since CHECKLIST 476, a dead end's blocker solid from the side: was 057a22806d / 661de07fbe; since CHECKLIST 470, no pickup in the air: was 33a0394c26 / dd565f56b3, main v1.1.151-alpha to v1.1.153)
 
 // ---- the source
 const src = (p) => readFileSync(join(ROOT, 'src/delivery', p), 'utf8');

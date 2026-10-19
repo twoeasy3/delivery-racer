@@ -110,8 +110,11 @@ export const startRivalry = (car, other) => {
   car.mood = Math.max(-1, car.mood - 0.3);
   car.showMood = true;
 };
-export const hurt = (v, amount, crit = 1) => {
-  v.health -= amount * (v.damageScale ?? 1); // (the player's car: see Player.damageScale)
+// what a hit of `taken` health costs a rickety player's car (a mystery): never less than CONFIG.mystery.ricketyFloor
+export const rickety = (v, taken) => (v.isPlayer && v.mystery === 'rickety' && taken > 0 ? Math.max(taken, CONFIG.mystery.ricketyFloor) : taken);
+// a hit: `amount` of health, scaled by the car's damageScale, with the rickety floor, and at most `most` lost (a ram's: see Collision)
+export const hurt = (v, amount, crit = 1, most = Infinity) => {
+  v.health -= Math.min(rickety(v, amount * (v.damageScale ?? 1)), most); // (the player's car: see Player.damageScale)
   maybeSpinOut(v, amount, 1, crit);
   if (!v.isPlayer) v.mood = Math.max(-1, v.mood - amount * CONFIG.moodPerDamage);
 };

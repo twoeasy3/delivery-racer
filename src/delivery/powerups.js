@@ -87,7 +87,7 @@ export const CARDS = [
     `One of these, at random. The lasting ones run for <strong>${M.time} s</strong>; the insurance news and the air strike are over at once.`,
     'Driving a tank? It is always the air strike.',
   ], effects: [
-    ['rickety', `Your car takes <strong>${M.rickety}&times;</strong> the damage.`],
+    ['rickety', `Your car takes <strong>${M.rickety}&times;</strong> the damage, at least <strong>${M.ricketyFloor}</strong> a hit.`],
     ['toad', `Every car on the road turns into a toad: ${kmh(M.toadSpeed)}, straight on, 1 health. Touching one bursts it, and costs you like a frog in the road. They all turn back at the end.`],
     ['angel', 'Every driver adores you, and their moods stay that way afterwards.'],
     ['jerk', 'Every driver hates you: cars going your way come after you, and evil ones throw at you.'],

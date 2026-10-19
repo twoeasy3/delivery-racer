@@ -3,7 +3,7 @@ import { LEVEL } from './levels.js';
 import { themedKind } from './themes.js';
 import { clamp, random } from './util.js';
 import { Track } from './track.js';
-import { FxQueue, startRivalry, hurt, sfx, sfxAt } from './physics.js';
+import { FxQueue, startRivalry, hurt, rickety, sfx, sfxAt } from './physics.js';
 import { Player } from './player.js';
 import { Traffic } from './traffic.js';
 import { Game } from './game.js';
@@ -96,7 +96,7 @@ export const Collision = (() => {
     if (a.isPlayer && a.tank > 0) {
       // TANK RAGE: whatever it touches is wrecked. Only a head-on costs the tank any health.
       b.health = 0;
-      if (headOn) a.health -= a.maxHealth * CONFIG.tankHeadOnDamage;
+      if (headOn) a.health -= rickety(a, a.maxHealth * CONFIG.tankHeadOnDamage);
       a.speed *= Math.max(0.35, 1 - CONFIG.tankRamSlow * b.mass); // ramming does slow it
       Game.shake = Math.max(Game.shake, 0.6);
       sfx('heavy');
@@ -109,7 +109,7 @@ export const Collision = (() => {
     if (headOn && LEVEL.battle && rank(a) && rank(b) && Math.abs(rank(a) - rank(b)) === 1) {
       const [winner, loser] = rank(a) > rank(b) ? [a, b] : [b, a];
       if (loser.mystery !== 'invincible') loser.health = 0;
-      if (winner.mystery !== 'invincible' && !(winner.isPlayer && winner.shield > 0)) winner.health -= winner.maxHealth * CONFIG.battle.win;
+      if (winner.mystery !== 'invincible' && !(winner.isPlayer && winner.shield > 0)) winner.health -= rickety(winner, winner.maxHealth * CONFIG.battle.win);
       if (heard(a, b)) {
         if (a.isPlayer || b.isPlayer) Game.shake = 1;
         sfx('headOn');
@@ -209,8 +209,10 @@ export const Collision = (() => {
       const hit = (v, share) => v === courier ? share * R.share / 0.5 : courier ? share * R.damage : share;
       // (a Mini slips through the gap: a scrape down another car's side costs it nothing: CARS' trait 'slim')
       const slips = (v) => v.isPlayer && scraped && CAR.trait === 'slim' && v.tank <= 0;
-      if (!slips(a)) hurt(a, Math.min(damage * hit(a, shareA) * 2, cap(a, b)));
-      if (!slips(b)) hurt(b, Math.min(damage * hit(b, shareB) * 2, cap(b, a)));
+      // (a hit with the player in it, ramming or rammed, costs either car at most CONFIG.ramDamageMax of health, all told)
+      const most = a.isPlayer || b.isPlayer ? CONFIG.ramDamageMax : Infinity;
+      if (!slips(a)) hurt(a, Math.min(damage * hit(a, shareA) * 2, cap(a, b)), 1, most);
+      if (!slips(b)) hurt(b, Math.min(damage * hit(b, shareB) * 2, cap(b, a)), 1, most);
       if (a.isPlayer || b.isPlayer) Traffic.arrest(a.isPlayer ? b : a); // (under the player's siren)
       if (a.isPlayer) b.grudge = CONFIG.grudgeTime;
       if (b.isPlayer) a.grudge = CONFIG.grudgeTime;

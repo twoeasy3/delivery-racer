@@ -1,6 +1,6 @@
 // Headless measure of crash damage: an attacker (the player's car, given the mass of each kind below) rear-ends a
 // traffic car at several closing speeds, through the real Collision.check(). Each cell: damage to the victim as
-// raw (no limit) / the old flat 15 m/s clamp / now (the mass-aware cap, CONFIG.damageCap), then "p" the damage the
+// raw (no limit) / the old flat 15 m/s clamp / now (the mass-aware cap, CONFIG.damageCap, then CONFIG.ramDamageMax), then "p" the damage the
 // attacker (the player) takes now. A victim is wrecked when the damage reaches its health.
 //   node scripts/delivery-damage-check.mjs
 import { boot } from './delivery-headless.mjs';

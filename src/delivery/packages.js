@@ -215,8 +215,11 @@ export const Packages = (() => {
       }
     }
     if (victim) {
-      launch(car, { s: victim.s + spread(scatter), lat: victim.lat + spread(scatter),
-        vs: victim.vs, latVel: victim.latVel }, 'bomb');
+      // (at the player, a wider miss as well, along the road and across it: see CONFIG.enemyThrowAtPlayer)
+      const W = victim === Player ? CONFIG.enemyThrowAtPlayer : null;
+      const s = victim.s + spread(scatter) + (W ? spread(W.distance) : 0);
+      const lat = victim.lat + spread(scatter) + (W ? spread(W.lateral) : 0);
+      launch(car, { s, lat, vs: victim.vs, latVel: victim.latVel }, 'bomb');
     } else {
       const s = car.s + car.dir * (10 + random() * 30);
       const lat = Track.laneLo(s) + random() * (Track.laneHi(s) - Track.laneLo(s));
@@ -265,10 +268,12 @@ export const Packages = (() => {
       const dist = distance(car, p);
       if (dist < direct + car.hl * 0.5) {
         if (G) hurt(car, G.damage * 2, CONFIG.cannonCrit);
-        else car.health = 0;
+        else hurt(car, CONFIG.cannonCentreDamage, 0); // (TANK RAGE's shell, at the centre of its blast: destroyed outright)
         breakTrack(car, CONFIG.brokenTracks.direct);
       } else if (dist < reach) {
         hurt(car, G ? G.damage * (1 - dist / reach) : CONFIG.cannonSplashDamage, CONFIG.cannonCrit);
+        // (TANK RAGE's shell: anything else its blast catches takes a critical hit, it wobbles, spins out and blows up)
+        if (!G && car.health > 0 && !(car.spin > 0) && !(car.wobble > 0)) car.wobble = CONFIG.critWobbleTime;
         breakTrack(car, CONFIG.brokenTracks.splash);
       }
       if (G && car.health <= 0 && p.owner === Player) car.wreckedByPlayer = true;
