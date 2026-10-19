@@ -68,8 +68,8 @@ const buildKayak = (paint) => {
   const hull = new THREE.Mesh(hullGeo, paint); hull.scale.y = 0.65; hull.position.set(-0.08, -0.155, 0); g.add(hull); // (its keel 5 mm into the bars)
   const rim = cyl(g, DARK, 0.065, 0.065, 0.03, -0.08, -0.075, -0.02, 10); rim.scale.z = 1.5;     // the cockpit's rim, proud of the deck
   for (const z of [-0.2, 0.2]) box(g, STRAP, 0.2, 0.13, 0.03, -0.08, -0.15, z);                 // the straps round the hull, 7 mm proud
-  rod(g, DARK, 0.008, [0.3, -0.175, -0.18], [0.3, -0.175, 0.18], 5);                            // the paddle's shaft, on its edge beside the hull
-  for (const z of [-0.24, 0.24]) box(g, SUNNY, 0.02, 0.07, 0.13, 0.3, -0.18, z);                // its blades upright, 5 mm down into the bars
+  rod(g, DARK, 0.008, [0.3, -0.175, -0.19], [0.3, -0.175, 0.19], 5);                            // the paddle's shaft, on its edge beside the hull
+  for (const z of [-0.245, 0.245]) box(g, SUNNY, 0.02, 0.085, 0.13, 0.3, -0.1875, z);           // its blades upright, 2 cm down into the bars, the shaft 1 cm into each
   return g;
 };
 
