@@ -92,7 +92,8 @@ export const IDEA_MODELS_BATCH_M2 = {
   // One long square box on a lorry chassis, the cab built into its front: a flat lower face with a dark grille and two round
   // lamps in chrome rims, a big two-pane windscreen leaning back a touch, a rounded dome over it with a blank cream board, a
   // flat roof. Down each flank the shelves sit behind blank paint, with a strip of high windows over them in a cream band
-  // under the roof; a door window for the driver. At the back a door with a window and a fold-down step. Single wheels at the
+  // under the roof; a door window for the driver; the readers' door with its step on the near side behind the back wheel.
+  // At the back a door with a window and a fold-down step. Single wheels at the
   // front, twin at the back, under flat flare bands. No text, no textures.
   mobilelibrary: (car) => {
     const group = new THREE.Group();
@@ -131,6 +132,7 @@ export const IDEA_MODELS_BATCH_M2 = {
     };
     parts(group, k + 'glass', GLASS, () => [
       ...sidePanes([doorWin], SX + 0.006), ...sidePanes(high, SX + 0.02),
+      panelAt([[SX + 0.018, 1.5, -2.38], [SX + 0.018, 2.12, -2.38], [SX + 0.018, 2.12, -2.98], [SX + 0.018, 1.5, -2.98]]),
       screen(-HALF + 0.16, -0.04), screen(0.04, HALF - 0.16),
       panelAt([[0.36, 1.62, BZ - 0.016], [-0.36, 1.62, BZ - 0.016], [-0.36, 2.28, BZ - 0.016], [0.36, 2.28, BZ - 0.016]]),
     ]);
@@ -143,6 +145,9 @@ export const IDEA_MODELS_BATCH_M2 = {
       bx(2.62, 0.18, 0.14, 0, 0.66, BZ - 0.04),
       bx(1.0, 1.86, 0.02, 0, 1.53, BZ - 0.002),
       bx(0.9, 0.05, 0.26, 0, 0.5, BZ - 0.13),
+      // the readers' door on the near side (+x), behind the back wheel, and its step
+      bx(0.012, 1.66, 0.74, SX + 0.006, 1.44, -2.68),
+      bx(0.16, 0.05, 0.7, SX + 0.07, 0.52, -2.68),
       ...[-1, 1].flatMap(s => [bx(0.12, 0.04, 0.04, s * (HALF + 0.06), 2.0, NOSE - 0.18), bx(0.06, 0.36, 0.16, s * (HALF + 0.12), 1.95, NOSE - 0.18)]),
     ]);
     // the back door itself (paint, a few cm proud of the frame: the frame shows round it)
