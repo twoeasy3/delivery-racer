@@ -5,7 +5,7 @@
 //   pixels    an 8-bit rainbow carpet: rows of six coloured blocks side by side, stepping left and right, shrinking out in steps
 //   stardust  gold and white four-pointed sparkles (a star drawn in code, 64 x 64) hanging in the air round the tail, twinkling
 //   bubbles   soap bubbles (a ring texture drawn in code, 64 x 64) rising and wobbling, flashing as they pop
-//   leaves    autumn leaves thrown from the tail corners, tumbling and swaying down, lying on the road (lit: dark at night, as leaves are)
+//   leaves    autumn leaves thrown from the tail corners, tumbling and swaying down, lying on the road (lit, with a dim warm glow of their own for the night)
 //   lightning short jagged bolts crackling back from the tail, a new shape every bolt, one branch each
 //   comet     one bright white head behind the tail and a tapering tail of beads, white to blue to violet
 //   helix     two strands of beads twisting round each other behind the car
@@ -88,7 +88,7 @@ export const moreMakers = (ctx) => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute('color', new THREE.BufferAttribute(rgb, 3).setUsage(THREE.DynamicDrawUsage));
-    const mesh = new THREE.Points(g, new THREE.PointsMaterial({ size: 0.36, map: starTexture(), vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    const mesh = new THREE.Points(g, new THREE.PointsMaterial({ size: 0.75, map: starTexture(), vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
     const Gd = new THREE.Color(0xffd86a), Wt = new THREE.Color(0xfff6e0);
     let acc = 0;
     return {
@@ -137,7 +137,7 @@ export const moreMakers = (ctx) => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute('color', new THREE.BufferAttribute(rgb, 3).setUsage(THREE.DynamicDrawUsage));
-    const mat = new THREE.PointsMaterial({ size: 0.34, map: bubbleTexture(), vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+    const mat = new THREE.PointsMaterial({ size: 0.6, map: bubbleTexture(), vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
     const mesh = new THREE.Points(g, mat);
     let acc = 0;
     return {
@@ -154,7 +154,7 @@ export const moreMakers = (ctx) => {
           if (!S.alive(i)) continue;
           const o = i * F, t = S.age(i), sec = S.d[o + 7] - S.d[o + 6], w = Math.sin(sec * 9 + S.d[o + 8]) * 0.12 * Math.min(1, sec * 4);
           pos[n * 3] = S.d[o] + Ac.x * w; pos[n * 3 + 1] = S.d[o + 1]; pos[n * 3 + 2] = S.d[o + 2] + Ac.z * w;
-          const f = t < 0.88 ? 0.6 * Math.min(1, t * 8) : 1.6 * (1 - t) / 0.12; // (faded in; a flash as it pops)
+          const f = t < 0.88 ? 0.85 * Math.min(1, t * 8) : 1.6 * (1 - t) / 0.12; // (faded in; a flash as it pops)
           cl.copy(BUBBLE[S.serial[i] % BUBBLE.length]).multiplyScalar(f);
           rgb[n * 3] = cl.r; rgb[n * 3 + 1] = cl.g; rgb[n * 3 + 2] = cl.b;
           n++;
@@ -176,7 +176,7 @@ export const moreMakers = (ctx) => {
   };
   const makeLeaves = (max) => {
     const S = makeStore(max), rate = max / 0.95;
-    const mesh = new THREE.InstancedMesh(leafGeometry(), new THREE.MeshLambertMaterial({ side: THREE.DoubleSide }), max);
+    const mesh = new THREE.InstancedMesh(leafGeometry(), new THREE.MeshLambertMaterial({ side: THREE.DoubleSide, emissive: 0x4a2410 }) /* (a dim warm glow of its own: still seen at night) */, max);
     let acc = 0;
     return {
       stores: [S], mesh, gravity: 5,
@@ -200,7 +200,7 @@ export const moreMakers = (ctx) => {
           const air = S.d[o + 1] - S.d[o + 9] > 0.03 ? 1 : 0.15, sway = Math.sin(sec * 6 + hash(id) * 6.3) * 0.25 * Math.min(1, sec * 2) * air;
           Ax.set(hash(id * 3 + 1) - 0.5, hash(id * 3 + 2) * 0.6 + 0.2, hash(id * 3 + 3) - 0.5).normalize();
           Qa.setFromAxisAngle(Ax, hash(id * 7) * 6.3 + sec * (6 + 6 * hash(id * 5)) * air);
-          const s = 0.42 * (t < 0.8 ? 1 : (1 - t) / 0.2);
+          const s = 0.6 * (t < 0.8 ? 1 : (1 - t) / 0.2);
           M.compose(Pa.set(S.d[o] + Ac.x * sway, S.d[o + 1], S.d[o + 2] + Ac.z * sway), Qa, Sc.set(s, s, s));
           mesh.setMatrixAt(n, M); mesh.setColorAt(n++, LEAF[id % LEAF.length]);
         }
@@ -294,9 +294,9 @@ export const moreMakers = (ctx) => {
         let n = 0;
         for (let i = 0; i < S.max; i++) {
           if (!S.alive(i)) continue;
-          const o = i * F, t = S.age(i), sec = S.d[o + 7] - S.d[o + 6], a = S.d[o + 8] + sec * 4, r = 0.22 + 0.25 * t, ca = Math.cos(a) * r, sa = Math.sin(a) * r, s = 0.07 * (1 - 0.6 * t);
+          const o = i * F, t = S.age(i), sec = S.d[o + 7] - S.d[o + 6], a = S.d[o + 8] + sec * 4, r = 0.22 + 0.25 * t, ca = Math.cos(a) * r, sa = Math.sin(a) * r, s = 0.13 * (1 - 0.5 * t);
           M.makeScale(s, s, s).setPosition(S.d[o] + Ac.x * ca, S.d[o + 1] + sa, S.d[o + 2] + Ac.z * ca);
-          mesh.setMatrixAt(n, M); mesh.setColorAt(n++, cl.copy(S.d[o + 9] ? Bc : A).multiplyScalar(0.9 * (1 - t)));
+          mesh.setMatrixAt(n, M); mesh.setColorAt(n++, cl.copy(S.d[o + 9] ? Bc : A).multiplyScalar(1 - 0.8 * t));
         }
         done(mesh, n);
       },
@@ -354,4 +354,4 @@ export const moreMakers = (ctx) => {
   };
 };
 // the pools, full / lite (pixels: columns of six blocks; lightning: bolts of ten segments; comet: beads, plus the head)
-export const MORE_POOLS = { pixels: [20, 10], stardust: [48, 24], bubbles: [40, 20], leaves: [36, 18], lightning: [6, 3], comet: [28, 14], helix: [56, 28], chevrons: [12, 8] };
+export const MORE_POOLS = { pixels: [20, 10], stardust: [48, 24], bubbles: [40, 20], leaves: [36, 18], lightning: [6, 3], comet: [28, 14], helix: [80, 40], chevrons: [12, 8] };
