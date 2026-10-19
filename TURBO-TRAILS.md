@@ -23,6 +23,16 @@ Every style:
 | `embers` | sparks shed from the tail, thrown up, falling and bouncing on the road, yellow to orange to dark red (points) | 64 / 28 | 64 / 28 points | 0.01 |
 | `shockwave` | cyan rings pulsing out of the tail every 0.2 to 0.3 s, widening as they fall back (thin tori) | 5 / 3 | 840 / 504 triangles | 0.01 |
 | `rarity` | one wide ribbon in the colour of the car's card rarity (showroomData.js RARITIES: Common grey-blue, Uncommon green, Epic violet, Legendary orange, Bespoke pink, Special magenta) | 30 / 18 nodes | 60 / 36 triangles | 0.01 to 0.08 |
+| `pixels` (513) | an 8-bit rainbow carpet: rows of six coloured blocks side by side behind the tail, stepping left and right, shrinking out in three steps (opaque boxes, unlit) | 20 / 10 columns of 6 | 1,440 / 720 triangles | 0.004 to 0.012 |
+| `stardust` (513) | gold and white four-pointed sparkles hanging round the tail, twinkling (points, a 64 x 64 star drawn in code) | 48 / 24 | 48 / 24 points | about 0.01 |
+| `bubbles` (513) | soap bubbles rising and wobbling, a flash as each pops (points, a 64 x 64 ring drawn in code) | 40 / 20 | 40 / 20 points | 0.01 to 0.02 |
+| `leaves` (513) | autumn leaves thrown from the tail corners, tumbling and swaying down onto the road (flat leaves, MeshLambert: lit, a dim warm emissive for the night) | 36 / 18 | 216 / 108 triangles | 0.04 to 0.05 |
+| `lightning` (513) | short jagged violet bolts crackling back 2.4 to 4.6 m from the tail, one branch each, a new shape every bolt (crossed thin quads) | 6 / 3 bolts of 10 segments | 240 / 120 triangles | 0.04 to 0.28 |
+| `comet` (513) | a bright head behind the tail and a tapering tail of beads, white to blue to violet (icosahedra, additive) | 28 / 14 + the head | 2,320 / 1,200 triangles | 0.01 to 0.07 |
+| `helix` (513) | two bead strands, lime and magenta, twisting round each other behind the car | 80 / 40 | 1,600 / 800 triangles | about 0.01 |
+| `chevrons` (513) | amber arrows stamped on the road under the tail every 1.5 m (lite 2.4 m), pointing forward, popping in and fading where they lie | 12 / 8 | 48 / 32 triangles | 0.01 to 0.2 |
+
+The eight marked 513 are render/turbotrailsmore.js, on the same engine (its stores, sources and parent clock); each one draw call, no light, nothing allocated a frame.
 
 The classic trail: up to 120 live cubes in the shared 500-cube Particles pool (no extra draw call: the pool is drawn anyway).
 

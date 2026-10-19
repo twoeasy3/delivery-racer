@@ -9,8 +9,18 @@ export const STYLES = {
   embers: 'sparks shed from the tail, falling and bouncing on the road (points)',
   shockwave: 'rings pulsing out of the tail and widening as they fall back (thin tori)',
   rarity: 'one wide ribbon in the colour of the car\'s card rarity (Common grey ... Legendary orange)',
+  // CHECKLIST 513 (render/turbotrailsmore.js)
+  pixels: 'an 8-bit rainbow carpet: rows of six coloured blocks side by side, stepping left and right, shrinking out in steps',
+  stardust: 'gold and white four-pointed sparkles hanging in the air round the tail, twinkling',
+  bubbles: 'soap bubbles rising and wobbling behind the car, flashing as they pop',
+  leaves: 'autumn leaves thrown from the tail corners, tumbling and swaying down onto the road',
+  lightning: 'short jagged violet bolts crackling back from the tail, a new shape every bolt',
+  comet: 'a bright white head behind the tail and a tapering tail of beads, white to blue to violet',
+  helix: 'two strands of beads, lime and magenta, twisting round each other',
+  chevrons: 'amber arrows stamped on the road under the car, pointing the way it goes',
 };
 export const STYLE_NAMES = Object.keys(STYLES);
 // the names on the Cosmetics screen's cards
-export const TRAIL_NAMES = { classic: 'Classic', flame: 'Flame', twin: 'Twin', speedlines: 'Speed lines', afterimage: 'Afterimage', embers: 'Embers', shockwave: 'Shockwave', rarity: 'Rarity' };
+export const TRAIL_NAMES = { classic: 'Classic', flame: 'Flame', twin: 'Twin', speedlines: 'Speed lines', afterimage: 'Afterimage', embers: 'Embers', shockwave: 'Shockwave', rarity: 'Rarity',
+  pixels: 'Pixels', stardust: 'Stardust', bubbles: 'Bubbles', leaves: 'Leaves', lightning: 'Lightning', comet: 'Comet', helix: 'Helix', chevrons: 'Chevrons' };
 export const TRAIL_IDS = ['classic', ...STYLE_NAMES];
