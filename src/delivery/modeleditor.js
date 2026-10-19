@@ -1385,7 +1385,7 @@ const scanZ = () => {
     n.layers.set(0);
   });
   let found;
-  try { found = findZFights(S.model); } finally { for (const [n, m, mask] of back) { if (m) n.material = m; n.layers.mask = mask; } if (fxParent) fxParent.add(fx); }
+  try { found = findZFights(S.model, { precise: true }); } finally { for (const [n, m, mask] of back) { if (m) n.material = m; n.layers.mask = mask; } if (fxParent) fxParent.add(fx); }
   S.zf = found; S.zfSel = -1;
   renderZ();
 };

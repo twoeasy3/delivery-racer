@@ -1,13 +1,17 @@
 // Z-FIGHTING, found from a model's geometry (no pictures): every visible mesh's triangles are taken into world space, and
 // each pair that lies in (nearly) the same plane and overlaps in area is a place where the depth buffer cannot tell which
 // surface is in front. A pair is kept only if it could be SEEN: from a point over the overlap, along the face's normal either
-// way (never from underneath the car, never from inside a closed solid of it), a ray meets two or more surfaces at about the plane's depth with nothing nearer in
+// way (never from underneath the car), a ray meets two or more surfaces at about the plane's depth with nothing nearer in
 // front (the ray honours each material's sides, so a face turned away or a surface buried inside the body does not count),
 // (a pair of the same flat colour is kept but marked `sameColour`: it cannot be seen to flicker, but it is a doubled surface;
-// one with a material drawn with a polygon offset is kept but marked `offset`: the offset decides it; two overlays that write
-// no depth (depthWrite false) are left out: they are drawn in order and never fight).
+// one with a polygon-offset material is marked `offset`: the offset decides it).
+// `precise` (CHECKLIST 510; the cars' .zfight-check and the model editor's tab): the ray starts at the middle of the overlap
+// itself (without it, at the mean of two triangles' corners, which can lie off the overlap: a fight missed or misjudged), an
+// eye inside a closed solid of the model does not count, two overlays that write no depth are left out (drawn in order, never
+// fighting), and `sameColour` needs the two lit alike too (one material type, one facing). Without it the detector is as the
+// cargo checks were tuned on (.cargo-contain-check, .syrup-check: CARGO-RULES.md): precise finds more there, left to them.
 // Used by the model editor's Z-fight tab and by scripts/.zfight-check.mjs.
-//   findZFights(model, { gap = 0.004, minArea = 0.0001 }) -> [{ a, b, aMat, bMat, area, gapMin, gapMax, pairs, sameFacing,
+//   findZFights(model, { gap = 0.004, minArea = 0.0001, precise = false }) -> [{ a, b, aMat, bMat, area, gapMin, gapMax, pairs, sameFacing,
 //     normal, at, certain, sameColour, offset, view, sep }] biggest first: the certain (under CERTAIN m apart) before the weak, those
 //     that can be seen to flicker before the same-coloured ones.
 //   sep: how far b's plane stands in front of a's, along the view direction (view * normal; negative: behind), m.
@@ -21,7 +25,7 @@ import * as THREE from 'three';
 export const CERTAIN = 0.0005; // m
 const V = THREE.Vector3;
 
-export const findZFights = (model, { gap: GAP = 0.004, minArea = 0.0001 } = {}) => {
+export const findZFights = (model, { gap: GAP = 0.004, minArea = 0.0001, precise = false } = {}) => {
   model.updateMatrixWorld(true);
   const tris = [];
   model.traverseVisible((node) => {
@@ -80,12 +84,12 @@ export const findZFights = (model, { gap: GAP = 0.004, minArea = 0.0001 } = {}) 
       if (B.lo.y > A.hi.y + GAP || B.hi.y < A.lo.y - GAP || B.lo.z > A.hi.z + GAP || B.hi.z < A.lo.z - GAP || B.hi.x < A.lo.x - GAP) continue;
       const dot = A.n.dot(B.n);
       if (Math.abs(dot) < 0.98) continue;                                            // (not parallel enough to lie together)
-      if (A.m?.depthWrite === false && B.m?.depthWrite === false) continue;          // (two overlays that write no depth: drawn in order, never fighting)
+      if (precise && A.m?.depthWrite === false && B.m?.depthWrite === false) continue;          // (two overlays that write no depth: drawn in order, never fighting)
       if (A.node === B.node && A.p.some(q => B.p.some(r => q.distanceToSquared(r) < 1e-10))) continue; // (neighbours in one surface)
       const gap = Math.max(...B.p.map(q => dist(q, A)), ...A.p.map(q => dist(q, B)));
       if (gap > GAP) continue;
-      const same = colourOf(A.m) === colourOf(B.m) && A.m?.type === B.m?.type && !A.m?.map && !B.m?.map && A.m?.opacity === B.m?.opacity // (the same flat colour,
-        && (A.m?.type === 'MeshBasicMaterial' || dot > 0.9995);                    //  lit alike, vertex shading by height alike: the flicker cannot be seen)
+      const same = colourOf(A.m) === colourOf(B.m) && !A.m?.map && !B.m?.map && A.m?.opacity === B.m?.opacity // (the same flat colour,
+        && (!precise || (A.m?.type === B.m?.type && (A.m?.type === 'MeshBasicMaterial' || dot > 0.9995)));                    //  lit alike, vertex shading by height alike: the flicker cannot be seen)
       const area = overlapArea(A, B);
       if (area < 1e-6) continue;
       const key = Math.min(A.node.id, B.node.id) + '|' + Math.max(A.node.id, B.node.id) + '|' + (dot > 0 ? 's' : 'o') + (same ? 'c' : '');
@@ -121,12 +125,13 @@ export const findZFights = (model, { gap: GAP = 0.004, minArea = 0.0001 } = {}) 
       });
     } finally { mats.forEach((x, k) => { x.side = sides[k]; }); }
   });
+  const middle = (g) => { const { A, B } = g.sample; return new V().addVectors(A.p[0], A.p[1]).add(A.p[2]).add(B.p[0]).add(B.p[1]).add(B.p[2]).multiplyScalar(1 / 6); };
   const seen = (g) => {
-    const { A, B } = g.sample, c = g.sample.mid; // (the middle of the largest overlap: a point both surfaces cover)
+    const { A, B } = g.sample, c = precise ? g.sample.mid : middle(g); // (precise: the middle of the largest overlap, a point both surfaces cover)
     for (const sign of [1, -1]) {
       const view = A.n.clone().multiplyScalar(sign);
       if (view.y < -0.35) continue;                                  // (seen from underneath: the camera is never there)
-      if (insideSolid(c.clone().addScaledVector(view, 0.5))) continue; // (from inside the body: the camera is never there either)
+      if (precise && insideSolid(c.clone().addScaledVector(view, 0.5))) continue; // (from inside the body: the camera is never there either)
       rc.set(c.clone().addScaledVector(view, 0.5), view.clone().negate()); rc.near = 0; rc.far = 1;
       const hits = rc.intersectObject(model, true).filter(h => h.object.visible);
       if (!hits.length || hits[0].distance < 0.5 - GAP - 0.002) continue; // (something else is in front)
@@ -144,7 +149,7 @@ export const findZFights = (model, { gap: GAP = 0.004, minArea = 0.0001 } = {}) 
   }
   // the overlap's middle: the middle of the largest triangle pair's shared area
   for (const g of out) {
-    g.at = g.sample.mid.clone();
+    g.at = precise ? g.sample.mid.clone() : middle(g);
     g.certain = g.gapMin < CERTAIN;
     delete g.setA; delete g.setB; delete g.best;
   }

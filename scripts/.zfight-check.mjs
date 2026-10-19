@@ -64,7 +64,7 @@ try {
       const label = new Map(); // mesh -> what to call it
       for (const [id, node] of nodes) { const p = parts.find(q => q.id === id); label.set(node, p ? { id, name: p.name || '', role: p.role || '' } : { id, name: '', role: '' }); }
 
-      const found = findZFights(model, { gap: GAP, minArea: MIN_AREA });
+      const found = findZFights(model, { gap: GAP, minArea: MIN_AREA, precise: true });
       if (!found.length) continue;
       const why = (g) => (g.sameColour ? 'one colour' : g.offset ? 'polygon offset' : allowed(car, g)?.why || '');
       const bad = found.filter(g => !why(g));
