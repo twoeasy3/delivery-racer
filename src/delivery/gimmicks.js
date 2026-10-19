@@ -104,7 +104,7 @@ export const where = (has) => [...LEVELS.map((level, i) => has(level) ? `<span>$
 //   color (its card's glow) }
 const MALL_WET = waterNumbers([...LEVELS, ...Object.values(HIDDEN_LEVELS)].find(l => l.id === 'mall-dash')); // (the water on Mall Dash's tiled floor, its "wetness": the card's example)
 const S = CONFIG.site, MA = CONFIG.machinery, W = CONFIG.wreckage, BT = CONFIG.bulletTrain, TI = CONFIG.tide, IC = CONFIG.ice;
-const H = { school: CONFIG.schoolCrossing, main: CONFIG.waterMain, oil: CONFIG.oilSlick, glue: CONFIG.gluePile, emp: CONFIG.empMine, balloon: CONFIG.balloon, bridge: CONFIG.drawbridge, load: CONFIG.wideLoad, run: CONFIG.marathon, herd: CONFIG.stampede }; // (Gimmick Road 2's)
+const H = { school: CONFIG.schoolCrossing, main: CONFIG.waterMain, oil: CONFIG.oilSlick, glue: CONFIG.gluePile, emp: CONFIG.empMine, magma: CONFIG.magma, balloon: CONFIG.balloon, bridge: CONFIG.drawbridge, load: CONFIG.wideLoad, run: CONFIG.marathon, herd: CONFIG.stampede }; // (Gimmick Road 2's)
 const T = CONFIG.tunnel, PA = CONFIG.parade, RB = CONFIG.roadblock, CG = CONFIG.cargo, IS = CONFIG.iceCream, RL = CONFIG.reversible, CV = CONFIG.convoy, RN = CONFIG.rubberneck; // (the city streets')
 const RD = CONFIG.radiation; // (the fallout's: radiation.js)
 const GB = { wind: CONFIG.crosswind, crest: CONFIG.crest, ramp: CONFIG.jamRamp, board: CONFIG.washboard, bar: CONFIG.lowBridge, ford: CONFIG.ford, cushion: CONFIG.cushion, shade: CONFIG.shade, rut: CONFIG.rut, tar: CONFIG.tarmac, spray: CONFIG.spray, sun: CONFIG.lowSun, dust: CONFIG.dust }; // (Gimmick Road 3's: the road gambles)
@@ -800,6 +800,15 @@ export const GROUPS = [
       const g = road(9, 12), lamp = glow(0x16305a);
       g.add(mesh(new THREE.CylinderGeometry(0.6, 0.75, 0.12, 14), lambert(0x2b2f38), 2.2, 0.06, 0), mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.08, 10), lamp, 2.2, 0.16, 0));
       return { model: g, lift: 0.7, tick: (t) => { lamp.color.setHex((t / H.emp.flash.period) % 1 < H.emp.flash.on ? 0x4aa8ff : 0x16305a); } };
+    } },
+    { name: 'Magma', color: 0xff7a14, has: (l) => l.magmaPatches?.length, rules: [
+      `${H.magma.damage} damage every ${H.magma.every} s on it.`,
+      'Only you. A ghost is spared. Traffic drives over it.',
+    ], build: () => {
+      const g = road(9, 12), hot = glow(0xff7a14);
+      g.add(mesh(new THREE.PlaneGeometry(3.1, 8).rotateX(-Math.PI / 2), hot, 2.2, 0.03, 0));
+      for (const [x, z, r] of [[1.6, -2, 0.5], [2.8, 0.5, 0.6], [1.9, 2.6, 0.4]]) g.add(mesh(new THREE.CircleGeometry(r, 6).rotateX(-Math.PI / 2), glow(0x2a0f08), x, 0.04, z));
+      return { model: g, tick: (t) => { const k = 0.86 + 0.14 * Math.sin(t * 2.6); hot.color.setRGB(1, 0.48 * k, 0.08 * k); } };
     } },
     { name: 'Hot-air balloons', color: 0xd8262b, has: (l) => l.balloons?.length, rules: [
       `A balloon comes down on the road about as you arrive: ${H.balloon.descend} s coming down (its landing spot flashes red), ${H.balloon.sit} s sat there, then up and away.`,

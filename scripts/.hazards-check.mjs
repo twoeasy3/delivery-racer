@@ -320,6 +320,39 @@ try {
     start(emp.s - 40, 4, 30, { ghost: true });
     g.run(3, () => { quiet(); return P.s > emp.s + 10; });
     check(!(P.emp > 0) && !own('emp').gone, 'EMP mine: a ghost passes over it');
+
+    // ---- magma (s 2950, lane 4): CONFIG.magma.damage as the car touches it, and every .every s while it is on it
+    const M = g.CONFIG.magma, mag = own('magma');
+    check(!!mag, 'magma: on the level');
+    start(mag.from - 140, 4, 30); // (past the EMP mine in the same lane)
+    let h0 = P.health, burns = [];
+    g.run(10, () => { quiet(); if (P.health < h0 - 0.01) { burns.push(h0 - P.health); } h0 = P.health; return P.s > mag.to + 20; });
+    check(said('Magma ahead!'), 'magma: warned of on the way up to it');
+    check(burns.length === 1 && Math.abs(burns[0] - M.damage) < 0.01, 'magma: driven over at speed, one burn of ' + M.damage + ' (' + burns.map(b => b.toFixed(0)).join(', ') + ')');
+    // (held on it for 2 s: a burn as it touches, and every 0.5 s after; a burn a step is counted)
+    const sit = (setup = () => {}) => {
+      start(mag.s, 4, 0);
+      P.health = P.maxHealth = 1e4;
+      setup();
+      let last = P.health, n = 0, total = 0;
+      g.run(2, () => { quiet(); P.s = mag.s; P.speed = 0; setup(); if (P.health < last - 0.01) { n++; total += last - P.health; } last = P.health; });
+      return { n, total };
+    };
+    const held = sit();
+    check(held.n === Math.floor(2 / M.every) && Math.abs(held.total - held.n * M.damage) < 0.1, 'magma: held on it 2 s, burnt ' + held.n + ' times (every ' + M.every + ' s), ' + held.total.toFixed(0) + ' in all');
+    check(sit(() => { P.tank = 1; }).n === 0, 'magma: a tank is not burnt');
+    check(sit(() => { P.testGhost = true; P.ghost = 1; }).n === 0, 'magma: a ghost is not burnt');
+    check(sit(() => { P.shield = 1; }).n === 0, 'magma: a car just set down (its shield) is not burnt');
+    check(sit(() => { P.mystery = 'invincible'; P.mysteryTime = 9; }).total === 0, 'magma: an invincible car takes nothing (damageScale)');
+    const armoured = sit(() => { P.armour = 9; });
+    check(Math.abs(armoured.total - held.total * g.CONFIG.armour.damage) < 0.5, 'magma: armour takes its share off (' + armoured.total.toFixed(0) + ' of ' + held.total.toFixed(0) + ')');
+    // (and traffic: a car stood on each of the four, a second, untouched)
+    start(oil.from - 300, 4, 0);
+    const cars = g.Traffic.cars.slice(0, 4), spots = ['oil', 'glue', 'emp', 'magma'].map(own);
+    let harmed = 0;
+    g.run(1, () => { cars.forEach((car, i) => { Object.assign(car, { active: true, s: spots[i].s, lat: lane(4, spots[i].s), vs: 0, dir: 1, health: car.maxHealth || 100 }); }); });
+    cars.forEach((car, i) => { if (car.health < (car.maxHealth || 100) || car.spin > 0) harmed++; });
+    check(harmed === 0 && !own('emp').gone && P.emp === 0, 'traffic: a car on each of the four is untouched by it (and the mine is not set off)');
   }
 
   // ---- slippery road: ice and a burst main's water against the dry road (CONFIG.ice, CONFIG.waterMain), on

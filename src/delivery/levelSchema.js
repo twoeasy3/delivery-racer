@@ -305,6 +305,8 @@ export const FIELDS = {
     settings: { lane: lane('Lane', { required: true, init: 0 }) } },
   empMines: { shape: 'point', group: 'hazards', label: 'EMP mine', road: 'both', help: 'A flat mine in its lane: run over, a little damage, and the player\'s car loses its accelerator, steering and throwing for a few seconds. Traffic drives over it.',
     settings: { lane: lane('Lane', { required: true, init: 0 }) } },
+  magmaPatches: { shape: 'point', group: 'hazards', label: 'Magma', road: 'both', help: 'A molten strip of its lane: the player\'s car is burnt as it touches it, and again and again while it stays on it. Traffic drives over it. For volcano levels.',
+    settings: { lane: lane('Lane', { required: true, init: 0 }), length: num('Length (m)', { min: 2, max: 60, default: C.magma?.length }) } },
   landmines: { shape: 'stretch', group: 'hazards', label: 'Landmines', road: 'both', help: 'Scattered down the lanes: whatever touches one is destroyed outright.', settings: { count: count(8) } },
   rockfall: { shape: 'stretch', group: 'hazards', label: 'Rockfall', road: 'both', help: 'Rocks tumbling down onto the road from that side as the player comes near.',
     settings: { count: count(5), side: side(), out: num('Waiting (m off the edge)', { min: 0, max: 200, default: C.rockfall?.out }), height: num('Waiting (m up)', { min: 0, max: 200, default: C.rockfall?.height }) } },

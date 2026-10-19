@@ -88,6 +88,11 @@
     { "s": 2810, "lane": 3, "r": 1.1 },
     { "s": 2940, "lane": 2 }
   ],
+  "magmaPatches": [
+    { "s": 990, "lane": 3 },
+    { "s": 1260, "lane": 1 },
+    { "s": 2380, "lane": 3 }
+  ],
   "targets": [
     { "s": 420, "side": "right" },
     { "s": 1990, "side": "left" },

@@ -1584,6 +1584,10 @@ export const CONFIG = {
   // a GLUE PILE ("gluePiles": { s, lane }, hazards.js patchesOf): a mound `r` m round. The player's car only (as an oil slick):
   // driven onto, the car is held there, no movement at all, for `hold` s, then let go at `kept` of the speed it came with.
   // Once a pass (free again `rearm` m off it)
+  // a MAGMA PATCH ("magmaPatches": { s, lane, length? }, hazards.js patchesOf; the volcano levels): `length` m of that lane from s,
+  // `half` m either side of its middle, molten. The player's car only (as an oil slick; a ghost too is spared): `damage` damage
+  // (as any knock: armour and the like count) as it touches it, and again every `every` s while it is on it. Warned `warn` m out
+  magma: { length: 8, half: 1.55, damage: 35, every: 0.5, warn: 150 },
   // an EMP MINE ("empMines": { s, lane }, hazards.js patchesOf): a flat disc `r` m round, its light flashing (`flash`). The player's
   // car only (as an oil slick; a ghost passes over it): run over, it goes off, and is gone: `damage` damage (as any knock: armour and
   // the like count), and the car's electronics are out for `time` s: no accelerator, no steering, no throwing, slowing at `decel`

@@ -339,6 +339,9 @@
 //   empMines   { s, lane }: an EMP mine at s in that lane: run over by the player's car (a ghost passes over), it goes off and is
 //              gone: CONFIG.empMine.damage damage, and for .time s no accelerator, no steering, no throwing, the car slowing
 //              hard to a crawl. Traffic drives over it untouched
+//   magmaPatches { s, lane, length? }: magma, `length` m (CONFIG.magma.length, if not given) of that lane from s, molten: the
+//              player's car is burnt CONFIG.magma.damage as it touches it, and again every .every s while on it (a ghost is
+//              spared). Warned .warn m out. Traffic drives over it untouched. The volcano levels'
 //   balloons   { s, lanes: [first, last] }: a hot-air balloon comes down on those lanes, sits, and lifts off again
 //   drawbridges { s }: bells, booms, and two leaves that lift: the car goes up the near one and jumps the gap if it
 //              came fast enough (a board gives the speed), or stops short, or drops in. On straight road

@@ -74,6 +74,11 @@
   "drawbridges": [
     { "s": 3280 }
   ],
+  "magmaPatches": [
+    { "s": 2200, "lane": 4 },
+    { "s": 3080, "lane": 2 },
+    { "s": 4380, "lane": 3 }
+  ],
   "targets": [
     { "s": 500, "side": "right" },
     { "s": 2250, "side": "left" },

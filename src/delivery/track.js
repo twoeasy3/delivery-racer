@@ -1291,8 +1291,8 @@ const createTrack = () => {
     for (const m of LEVEL.waterMains || []) {
       if (!onRoad(m) || !onRoad(m, m.s + (m.length ?? CONFIG.waterMain.length)) || !laneOn(m, m.lane)) problems.push('water main at ' + m.s + where(m) + ': in a lane on the road');
     }
-    for (const [name, list, length] of [['oil slick', LEVEL.oilSlicks, CONFIG.oilSlick.length], ['glue pile', LEVEL.gluePiles, 0], ['EMP mine', LEVEL.empMines, 0]]) { // (the player's own: hazards.js patchesOf)
-      for (const p of list || []) if (!onRoad(p) || !onRoad(p, p.s + length) || !laneOn(p, p.lane)) problems.push(name + ' at ' + p.s + where(p) + ': in a lane on the road');
+    for (const [name, list, length] of [['oil slick', LEVEL.oilSlicks, CONFIG.oilSlick.length], ['glue pile', LEVEL.gluePiles, 0], ['EMP mine', LEVEL.empMines, 0], ['magma', LEVEL.magmaPatches, null]]) { // (the player's own: hazards.js patchesOf)
+      for (const p of list || []) if (!onRoad(p) || !onRoad(p, p.s + (length ?? p.length ?? CONFIG.magma.length)) || !laneOn(p, p.lane)) problems.push(name + ' at ' + p.s + where(p) + ': in a lane on the road');
     }
     for (const [name, list] of [['balloon', LEVEL.balloons], ['wide load', LEVEL.wideLoads]]) {
       for (const b of list || []) {

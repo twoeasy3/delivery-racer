@@ -100,6 +100,58 @@ const smallBoard = (text, bg, fg, w, h) => {
 };
 const BEACON_ON = 0xffb020, BEACON_OFF = 0x5a4010;
 const SPARKS = 9; // (line segments of the EMP's sparks)
+// a strip of road, `half` m either side of a lane's middle, from..to, with uv (u across, v along: 1 every `tile` m): a decal that
+// follows the road's bends and hills
+const laneStrip = (from, to, lane, half, y, tile, step = 2) => {
+  const pos = [], uv = [], idx = [];
+  for (let n = 0; ; n++) {
+    const s = Math.min(from + n * step, to), lat = Track.laneOffset(lane, s);
+    for (const [k, l] of [[0, lat - half], [1, lat + half]]) { Track.toWorld(s, l, tmp); pos.push(tmp.x, tmp.y + y, tmp.z); uv.push(k, (s - from) / tile); }
+    if (n > 0) { const a = (n - 1) * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    if (s >= to) break;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  return geo;
+};
+// magma's picture (128 x 128, drawn once): molten orange and yellow under plates of black crust, the cracks between glowing,
+// darker towards its two long edges (u 0 and 1). Seeded: the same every run
+let magmaPicture = null;
+const magmaTexture = () => {
+  if (magmaPicture) return magmaPicture;
+  const N = 128, canvas = document.createElement('canvas'), c = canvas.getContext('2d');
+  canvas.width = canvas.height = N;
+  let seed = 7331;
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+  const melt = c.createLinearGradient(0, 0, N, 0);
+  melt.addColorStop(0, '#b0300a'); melt.addColorStop(0.5, '#ff7a14'); melt.addColorStop(1, '#b0300a');
+  c.fillStyle = melt;
+  c.fillRect(0, 0, N, N);
+  for (let k = 0; k < 18; k++) { // (hot spots)
+    const x = rnd() * N, y = rnd() * N, r = 6 + rnd() * 12, hot = c.createRadialGradient(x, y, 0, x, y, r);
+    hot.addColorStop(0, 'rgba(255,226,90,0.95)'); hot.addColorStop(1, 'rgba(255,160,30,0)');
+    c.fillStyle = hot;
+    for (const dy of [-N, 0, N]) { c.beginPath(); c.arc(x, y + dy, r, 0, Math.PI * 2); c.fill(); } // (tiled along: v repeats)
+  }
+  c.fillStyle = '#2a0f08';
+  for (let k = 0; k < 14; k++) { // (plates of crust, drifting on it)
+    const x = rnd() * N, y = rnd() * N, r = 5 + rnd() * 9;
+    for (const dy of [-N, 0, N]) {
+      c.beginPath();
+      for (let a = 0; a < 6; a++) { const ang = a / 6 * Math.PI * 2 + rnd() * 0.5, rr = r * (0.7 + rnd() * 0.4); c.lineTo(x + Math.cos(ang) * rr, y + dy + Math.sin(ang) * rr); }
+      c.fill();
+    }
+  }
+  const edge = c.createLinearGradient(0, 0, N, 0); // (its edges cooling)
+  edge.addColorStop(0, 'rgba(30,8,4,0.9)'); edge.addColorStop(0.12, 'rgba(30,8,4,0)'); edge.addColorStop(0.88, 'rgba(30,8,4,0)'); edge.addColorStop(1, 'rgba(30,8,4,0.9)');
+  c.fillStyle = edge;
+  c.fillRect(0, 0, N, N);
+  magmaPicture = new THREE.CanvasTexture(canvas);
+  magmaPicture.wrapT = THREE.RepeatWrapping;
+  return magmaPicture;
+};
 
 Game.onLoad.push(() => {
   clearGroup(group); // (freed, not only dropped: audit P7)
@@ -242,14 +294,15 @@ Game.onLoad.push(() => {
   }
   // ---- the player's own (../hazards.js patchesOf), flat on the road: an oil slick, a black pool with a sheen on it; a glue
   // pile, a low pale mound with a few blobs splashed round it; an EMP mine, a flat dark disc with a blue light flashing on it
-  // (all the mines' lights one material), gone once it has gone off.
+  // (all the mines' lights one material), gone once it has gone off; magma, a strip of its lane molten under a crust, glowing.
   // Merged by material: a mesh or two for the level, whatever the count. (Textures: 192 x 192 canvases, two, only on a level with one)
   own = null;
   const patches = patchesOf(LEVEL);
   if (patches.length) {
-    const oil = [], glue = [], O = CONFIG.oilSlick, GP = CONFIG.gluePile;
+    const oil = [], glue = [], magma = [], O = CONFIG.oilSlick, GP = CONFIG.gluePile;
     for (const p of patches) {
       const h = Track.toWorld(p.s, Track.laneOffset(p.lane, p.s), tmp);
+      if (p.kind === 'magma') magma.push(laneStrip(p.from, p.to, p.lane, CONFIG.magma.half, 0.03, 8));
       if (p.kind === 'glue') { // (a squashed dome, and three small ones round it: one mesh for every pile)
         for (const [x, z, r] of [[0, 0, GP.r], [GP.r * 0.9, GP.r * 0.6, 0.35], [-GP.r * 0.85, -GP.r * 0.3, 0.3], [GP.r * 0.2, -GP.r * 1.05, 0.25]]) {
           glue.push(new THREE.SphereGeometry(r, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.28, 1).translate(x, 0, z).rotateY(h).translate(tmp.x, tmp.y, tmp.z));
@@ -258,6 +311,12 @@ Game.onLoad.push(() => {
       if (p.kind === 'oil') oil.push(new THREE.PlaneGeometry(O.half * 2 + 0.9, O.length + 1.4).rotateX(-Math.PI / 2).rotateY(h).translate(tmp.x, tmp.y + 0.03, tmp.z));
     }
     own = { mines: [] };
+    if (magma.length) { // (one mesh, unlit: it glows, pulsing a little)
+      const merged = mergeGeometries(magma);
+      magma.forEach(g => g.dispose());
+      own.magma = new THREE.MeshBasicMaterial({ map: magmaTexture(), polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+      group.add(new THREE.Mesh(merged, own.magma));
+    }
     const mineLamp = glow(0x16305a), mineHalo = flat(0x4aa8ff, -6, { transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
     const mineBody = lambert(0x2b2f38), mineRim = lambert(0x5a606a), EM = CONFIG.empMine;
     for (const p of patches) {
@@ -450,6 +509,7 @@ export const syncHazards = (now) => {
       a.needsUpdate = true;
     }
   }
+  if (own?.magma) { const k = 0.86 + 0.14 * Math.sin(t * 2.6); own.magma.color.setRGB(1, k, k * 0.9); } // (the magma's glow, breathing)
   if (own?.oilSheen) own.oilSheen.opacity = 0.32 + 0.12 * Math.sin(t * 1.7); // (the oil's rainbow sheen, shifting)
   if (standing) { standing.sheen.opacity = standing.sheenBase * (0.85 + 0.25 * Math.sin(t * 2.3)); standing.rim.opacity = standing.rimBase * (0.93 + 0.1 * Math.sin(t * 3.1)); } // (the light on standing water)
   Hazards.balloons.forEach((b, k) => {
