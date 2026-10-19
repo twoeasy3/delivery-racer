@@ -1,4 +1,4 @@
-// ---- car ideas' models, batch M2: the Stock Car, the Mobile Library and the Jingle Truck ---------------------------------------
+// ---- car ideas' models, batch M2: the Step-Nose MPV, the Mobile Library and the Jingle Truck ---------------------------------------
 // Drawn as ideas (ideasBatchM2.js). Built as the approved Junker and the Touring Car are (render/modelsOrig3.js,
 // ideaModelsBatchE5.js; the helpers are shared from ideaModelsDkit.js): each body an extrusion of its side view with the
 // edges rounded, flat dark glass laid a few mm proud (cabinGlass: from the body's own profile), parts that share a
@@ -12,79 +12,60 @@ import {
   curve, extrudeSide, narrowAt, cabinGlass, shadeBy, low, flare, wheel, texture,
 } from './ideaModelsDkit.js';
 
-const WHITE = keep(lambert(0xf2f0ea));
 
 export const IDEA_MODELS_BATCH_M2 = {
-  // ---- the Stock Car (after a 1990s NASCAR Cup car, Chevrolet Lumina era) --------------------------------------------
-  // A long, low, wide saloon on a race stance: a low sloping nose with a black air dam right down on the road, a long
-  // bonnet, a fast raked screen, a short roof, a long sloping rear window onto a short deck with a flat spoiler blade
-  // across its edge. A bold contrasting band along each flank, a plain white number disc on each door and on the roof
-  // (discs only: no digits, no logos). Headlamps are flat pale lenses on the nose, as the real cars' are.
-  stockcar: (car) => {
+  // ---- the Step-Nose MPV (after the Fiat Multipla, 1998, first series) ----------------------------------------------
+  // A short, very wide, tall one-box six-seater with the famous step: a low rounded nose with the main lamps and a dark
+  // intake, a short bonnet, then the body steps up into a bulging ledge under the windscreen with a second pair of lamps
+  // in it, and over that a big glasshouse (three side windows a side, thin pillars), a nearly flat roof and an upright
+  // tail with tall lamps either side of the tailgate. Dark bumpers and sills (the real car's grey plastic), slim flares
+  // round the wheels (no wells cut). No textures.
+  stepmpv: (car) => {
     const group = new THREE.Group();
-    const R = 0.34, TW = 0.3, AF = 1.42, AR = -1.4, WX = car.hw - TW / 2;
-    const BEV = 0.05, ACROSS = 0.1, BW = 2.0, HALF = BW / 2;
-    const NOSE = 2.4, TAILZ = -2.42, AY = 0.2, BELT = 0.86, ROOF = 1.3, DECK = 0.98;
-    const k = 'm2sc';
+    const R = 0.31, TW = 0.24, AF = 1.33, AR = -1.34, WX = car.hw - TW / 2;
+    const BEV = 0.05, ACROSS = 0.1, BW = 1.86, HALF = BW / 2;
+    const NOSE = 1.95, TAILZ = -1.95, AY = 0.25, BELT = 1.06, ROOF = 1.6;
+    const k = 'm2mpv';
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
-    const accent = new THREE.MeshLambertMaterial({ color: 0xf2c01e });
-    const TAPER = [BELT, ROOF, 0.17];
-    const WSF = [0.78, 0.84], WST = [-0.18, ROOF];
-    const RW0 = [-0.82, ROOF], RW1 = [-1.85, DECK];
+    const TAPER = [BELT, ROOF, 0.08];
+    const STEP = [[1.56, 0.79], [1.42, 0.8], [1.37, 0.9], [1.36, 1.04]]; // (the bonnet's end rising into the ledge under the windscreen)
+    const WSF = [1.2, BELT], WST = [0.5, ROOF], RW0 = [-1.74, ROOF + 0.015], RW1 = [-1.95, BELT + 0.06];
     const outline = [
-      [NOSE, AY], [NOSE, 0.46], ...curve([NOSE, 0.46], [NOSE, 0.6], [NOSE - 0.12, 0.66], [NOSE - 0.4, 0.7], 3),
-      WSF, WST,
-      ...curve(WST, [-0.26, ROOF + 0.015], [-0.36, ROOF + 0.015], [-0.46, ROOF], 3),
-      RW0, RW1,
-      [TAILZ + 0.08, DECK], ...curve([TAILZ + 0.08, DECK], [TAILZ, DECK], [TAILZ, DECK - 0.04], [TAILZ, DECK - 0.1], 3),
-      [TAILZ, AY],
+      [NOSE, AY], [NOSE, 0.58], ...curve([NOSE, 0.58], [NOSE, 0.72], [NOSE - 0.14, 0.78], [STEP[0][0], STEP[0][1]], 3),
+      ...curve(...STEP, 3), [1.28, BELT], WSF, WST,
+      RW0, // (straight runs only over the cabin: cabinGlass pairs the rear screen with the tidied window's corner count)
+      RW1, [TAILZ, AY],
     ];
     const FZ = NOSE + BEV, BZ = TAILZ - BEV;
     const body = place(group, shared(k + 'body', () => shadeBy(merge([
       extrudeSide(outline, BW, BEV, TAPER, 1, ACROSS),
-      // a slim flare band round each wheel (no well cut: it stands on the flank, the tyre half under it)
-      ...[-1, 1].flatMap(s => [AF, AR].map(z => flare(z, R, R + 0.03, R + 0.1, 0.1).translate(s > 0 ? HALF + 0.08 : -HALF - 0.02, 0, 0))),
-    ]), low(0.2, 0.8, [0.62, 0.6, 0.58]))), paint);
-    // ALL the glass from the body's own profile (cabinGlass): a door window and a small quarter window a side, the windscreen, the rear window
-    const glass = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(RW1), belt: BELT + 0.02, half: HALF, taper: TAPER, grow: BEV,
-      inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: BEV + 0.006, sideLift: 0.006, windows: [[-0.62, 9], [-9, -0.78]] });
+      ...[-1, 1].flatMap(s => [AF, AR].map(z => flare(z, R, R + 0.03, R + 0.1, 0.08).translate(s > 0 ? HALF + 0.06 : -HALF + 0.02, 0, 0))),
+    ]), low(0.25, 0.9, [0.64, 0.62, 0.6]))), paint);
+    // ALL the glass from the body's own profile (cabinGlass): three side windows a side (front door, rear door, the quarter), the
+    // windscreen from the ledge up, the rear window down the tailgate
+    const glass = cabinGlass(outline, { from: outline.indexOf(WSF), to: outline.indexOf(RW1), belt: BELT + 0.03, half: HALF, taper: TAPER, grow: BEV,
+      inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: BEV + 0.006, sideLift: 0.006, windows: [[0.12, 9], [-0.9, 0.02], [-9, -1.0]] });
     parts(group, k + 'glass', GLASS, () => [...glass.sides, glass.front, glass.rear]);
-    // the contrasting band along each flank (on the flat part of the flank, below the belt) and over the nose's face
-    const gx = HALF + 0.006;
-    parts(group, k + 'band', accent, () => [
-      ...[-1, 1].map(s => bx(0.012, 0.2, 4.3, s * gx, 0.5, -0.02)),
-      bx(1.7, 0.08, 0.012, 0, 0.56, FZ + 0.004),
-    ]);
-    // the spoiler: one flat blade across the deck's edge, leaning back (tagged: an equipped wing hides it, render/propcosmetic.js)
-    const spoiler = parts(group, k + 'spoiler', accent, () => [
-      bx(1.78, 0.2, 0.025, 0, DECK + BEV + 0.08, TAILZ + 0.07, -0.55),
-      ...[-1, 1].map(s => bx(0.025, 0.16, 0.2, s * 0.89, DECK + BEV + 0.06, TAILZ + 0.12)),
-    ]);
-    spoiler.userData.prop = 'wing';
-    // dark: the air dam and the splitter on the road, the grille slots, the rear valance, the sill skirts, the mirrors
+    // dark (the real car's grey plastic): the bumpers, the intake between the low lamps, the sills, the mirrors
     parts(group, k + 'black', TRIM, () => [
-      bx(2.02, 0.14, 0.14, 0, 0.2, FZ + 0.02),
-      bx(1.96, 0.03, 0.14, 0, 0.13, FZ + 0.04),
-      bx(0.62, 0.08, 0.02, 0, 0.42, FZ + 0.004),
-      bx(1.2, 0.06, 0.02, 0, 0.22, FZ + 0.095),
-      bx(1.9, 0.12, 0.04, 0, 0.26, BZ - 0.01),
-      ...[-1, 1].map(s => bx(0.06, 0.08, 1.9, s * (HALF + 0.02), 0.22, 0)),
-      ...[-1, 1].map(s => bx(0.09, 0.06, 0.12, s * (narrowAt(HALF, 0.9, TAPER) + 0.03), 0.9, 0.62)),
-      // the dark ring of each number disc (under the white disc)
-      ...[-1, 1].map(s => dsc(0.31, 0.012, s * (HALF + 0.008), 0.62, 0.15, Math.PI / 2, 20)),
-      new THREE.CylinderGeometry(0.29, 0.29, 0.012, 20).translate(0, ROOF + BEV + 0.004, -0.5),
+      bx(1.9, 0.2, 0.12, 0, 0.36, FZ + 0.02),
+      bx(0.7, 0.12, 0.02, 0, 0.56, FZ + 0.002),
+      bx(1.9, 0.22, 0.12, 0, 0.37, BZ - 0.02),
+      ...[-1, 1].map(s => bx(0.05, 0.12, 1.86, s * (HALF + 0.012), 0.31, 0)),
+      ...[-1, 1].map(s => bx(0.08, 0.1, 0.13, s * (narrowAt(HALF, 1.1, TAPER) + 0.035), 1.1, 1.14)),
     ]);
-    // the white number discs: on each door, and one on the roof (no digits)
-    parts(group, k + 'discs', WHITE, () => [
-      ...[-1, 1].map(s => dsc(0.26, 0.012, s * (HALF + 0.013), 0.62, 0.15, Math.PI / 2, 20)),
-      new THREE.CylinderGeometry(0.24, 0.24, 0.012, 20).translate(0, ROOF + BEV + 0.012, -0.5),
+    // the lamps: a round low lamp each side of the intake (in a dark ring), a high lamp each side at the step (a stubby
+    // drum sunk into the ledge, its face its own rim: the ledge is curved), ambers at the nose's corners; at the back a
+    // tall tail lamp each side of the tailgate with an amber under it
+    parts(group, k + 'ring', TRIM, () => [-1, 1].flatMap(s => [dsc(0.11, 0.03, s * 0.62, 0.56, FZ + 0.005, 0, 14), dsc(0.1, 0.14, s * 0.6, 0.95, 1.42, 0, 12)]));
+    parts(group, k + 'lamp', LAMP, () => [-1, 1].flatMap(s => [dsc(0.09, 0.03, s * 0.62, 0.56, FZ + 0.015, 0, 14), dsc(0.08, 0.02, s * 0.6, 0.95, 1.495, 0, 12)]));
+    parts(group, k + 'amber', AMBER, () => [
+      ...[-1, 1].map(s => bx(0.07, 0.07, 0.03, s * 0.8, 0.56, FZ + 0.004)),
+      ...[-1, 1].map(s => bx(0.15, 0.07, 0.03, s * 0.72, 0.67, BZ - 0.004)),
     ]);
-    // the lamps: flat pale headlamp lenses on the nose either side of the grille; a long tail lamp each side (each brakes whole)
-    parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => bx(0.36, 0.1, 0.02, s * 0.6, 0.42, FZ + 0.004)));
-    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.42, 0.1, 0.02, s * 0.6, 0.82, BZ - 0.004)));
+    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.15, 0.24, 0.03, s * 0.72, 0.86, BZ - 0.004)));
     for (const s of [-1, 1]) for (const z of [AF, AR]) wheel(group, k, R, TW, s * WX, z);
-    const colour = (hex) => accent.color.setHex(hex);
-    group.userData = { body, animate: () => {}, livery: (evil) => colour(evil ? 0xd8262b : 0xf2c01e), stripe: colour };
+    group.userData = { body, animate: () => {}, livery: () => {} };
     return group;
   },
 
@@ -114,7 +95,7 @@ export const IDEA_MODELS_BATCH_M2 = {
     const zAt = (y) => NOSE - rake * (y - WSY) / (WTY - WSY); // (the windscreen's face at height y)
     const body = place(group, shared(k + 'body', () => shadeBy(merge([
       extrudeSide(outline, BW, BEV, null, 1, ACROSS),
-      ...[-1, 1].flatMap(s => [[AF, TF], [AR, TR]].map(([z]) => flare(z, AY, R + 0.04, R + 0.13, 0.14).translate(s > 0 ? HALF + 0.12 : -HALF - 0.02, 0, 0))),
+      ...[-1, 1].flatMap(s => [[AF, TF], [AR, TR]].map(([z]) => flare(z, AY, R + 0.04, R + 0.13, 0.14).translate(s > 0 ? HALF + 0.12 : -HALF + 0.02, 0, 0))),
     ]), low(0.6, 1.6, [0.66, 0.62, 0.6]))), paint);
     // the cream band under the roof down both flanks (the shelves' high windows sit on it), and the blank board on the dome
     const BAND = [2.32, 2.86], BZ0 = TAILZ + 0.3, BZ1 = NOSE - 1.22;
@@ -204,10 +185,11 @@ export const IDEA_MODELS_BATCH_M2 = {
       bx(2.5, TOP - DECK + 0.07, 0.08, 0, (TOP + DECK - 0.07) / 2, BACK + 0.04),
       bx(2.5, TOP + 0.25 - DECK, 0.08, 0, (TOP + 0.25 + DECK) / 2, CB - 0.14),
     ]), shade)), paint);
-    // the glass from the cab's own profile: a door window a side, the windscreen, the back window (behind the body's front wall)
+    // the glass from the cab's own profile: a door window a side and the windscreen (no back window: the body's front wall stands 4 cm
+    // behind the cab's back, so it could never be seen)
     const ARGS = { from: 1, to: cab.indexOf(TH), half: CHALF, taper: CTAPER, grow: BEV, inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: BEV + 0.006, sideLift: 0.006 };
     const glass = cabinGlass(cab, { ...ARGS, belt: 1.72, sideInset: 0.24 }), screen = cabinGlass(cab, { ...ARGS, belt: 1.68, sideInset: 0.12 });
-    parts(group, k + 'glass', GLASS, () => [...glass.sides, screen.front, glass.rear]);
+    parts(group, k + 'glass', GLASS, () => [...glass.sides, screen.front]);
     // the headboard: a crown of arches and peaks over the cab, leaning out over the windscreen (accent), and a band of paint along the
     // body's top rail and the tail board's top (accent)
     const crownShape = () => {

@@ -1,12 +1,12 @@
 // The lamp table's entries for batch M2's idea cars (LAMP-PLACEMENT-GUIDE.md), keyed by the model name; merged into the
 // table by render/carlights.js. Same format as CAR_LAMPS. Measured from the models (render/ideaModelsBatchM2.js). None moves (no frame).
 export const BATCH_M2_LAMPS = {
-  // flat pale headlamp lenses on the nose; a long tail lamp each side (each brakes whole); no amber lens anywhere: the front
-  // indicator flashes over the headlamp's outer end, the rear one red over the tail lamp (an American car's)
-  stockcar: {
-    head: [{ at: [0.6, 0.42, 2.464], size: [0.34, 0.09], mirror: true }],
-    tail: [{ at: [0.6, 0.82, -2.484], size: [0.4, 0.09], mirror: true }],
-    blink: [{ at: [0.72, 0.42, 2.464], size: [0.1, 0.08], mirror: true, shared: 'headlamp' }, { at: [0.72, 0.82, -2.484], size: [0.14, 0.09], mirror: true, red: true, shared: 'tail lamp' }],
+  // the low lamps in the nose and the high pair at the step under the windscreen (the Multipla's two tiers: both listed as headlamps),
+  // ambers at the nose's corners; tall tail lamps either side of the tailgate (each brakes whole) with an amber lens under each
+  stepmpv: {
+    head: [{ at: [0.62, 0.56, 2.035], size: [0.18, 0.18], round: true, mirror: true }, { at: [0.6, 0.95, 1.505], size: [0.15, 0.15], round: true, mirror: true }],
+    tail: [{ at: [0.72, 0.86, -2.019], size: [0.15, 0.24], mirror: true }],
+    blink: [{ at: [0.8, 0.56, 2.019], size: [0.07, 0.07], mirror: true }, { at: [0.72, 0.67, -2.019], size: [0.15, 0.07], mirror: true }],
   },
   // round headlamps in chrome rims either side of the grille, a real amber lens outboard of each; at the back a tail lamp over an
   // amber lens each side (each tail lamp brakes whole)

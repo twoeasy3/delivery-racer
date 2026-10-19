@@ -92,7 +92,7 @@ export const KINDS = {
   pocket4x4: 'suv', dodgem: 'open', iceresurfacer: 'special', wedgemicro: 'micro', farmtractor: 'open', flatbed: 'flatbed', moke: 'open',
   halftrack: 'halftrack', keivan: 'van', supermini: 'hatch', minibus: 'van', sporttruck: 'pickup', pixelev: 'hatch', sprinthatch: 'hatch',
   autobahnestate: 'estate', finlandyacht: 'saloon', trophytruck: 'pickup', armouredlimo: 'saloon', cranelorry: 'truck', moorrover: 'suv',
-  touringcar: 'saloon', hillclimb: 'hatch', stockcar: 'saloon', jingletruck: 'flatbed', mobilelibrary: 'bus', monowheel: 'bike', // (the Monowheel: a Bespoke key car until 15-Oct, an idea again)
+  touringcar: 'saloon', hillclimb: 'hatch', stepmpv: 'hatch', jingletruck: 'flatbed', mobilelibrary: 'bus', monowheel: 'bike', // (the Monowheel: a Bespoke key car until 15-Oct, an idea again)
 };
 export const kindOf = (car) => KINDS[car.id] || KINDS[car.model || car.id] || 'car';
 
