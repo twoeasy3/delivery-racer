@@ -209,8 +209,10 @@ export const Collision = (() => {
       const hit = (v, share) => v === courier ? share * R.share / 0.5 : courier ? share * R.damage : share;
       // (a Mini slips through the gap: a scrape down another car's side costs it nothing: CARS' trait 'slim')
       const slips = (v) => v.isPlayer && scraped && CAR.trait === 'slim' && v.tank <= 0;
-      if (!slips(a)) hurt(a, Math.min(damage * hit(a, shareA) * 2, cap(a, b)));
-      if (!slips(b)) hurt(b, Math.min(damage * hit(b, shareB) * 2, cap(b, a)));
+      // (a hit with the player in it, ramming or rammed, costs either car at most CONFIG.ramDamageMax)
+      const most = a.isPlayer || b.isPlayer ? CONFIG.ramDamageMax : Infinity;
+      if (!slips(a)) hurt(a, Math.min(damage * hit(a, shareA) * 2, cap(a, b), most));
+      if (!slips(b)) hurt(b, Math.min(damage * hit(b, shareB) * 2, cap(b, a), most));
       if (a.isPlayer || b.isPlayer) Traffic.arrest(a.isPlayer ? b : a); // (under the player's siren)
       if (a.isPlayer) b.grudge = CONFIG.grudgeTime;
       if (b.isPlayer) a.grudge = CONFIG.grudgeTime;

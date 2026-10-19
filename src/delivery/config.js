@@ -1120,6 +1120,7 @@ export const CONFIG = {
   // wreck a weak car, but a heavy vehicle can. frac = clamp(base + perMass x (mass - 1), base, most): a light car (mass 1 or less)
   // does at most `base` of it, so it takes two hits to wreck a commuter; a bus (4) 1.8x: it can wreck anything at speed)
   damageCap: { base: 0.75, perMass: 0.35, most: 3 },
+  ramDamageMax: 100,       // the most health one car-to-car hit with the PLAYER in it (ramming or rammed) costs either car, after damageCap (before damageScale)
   // spin-outs: a traffic car that takes damage may lose control, arc away and blow up.
   // chance per hit = spinPerDamage x (share of full health this hit took)
   //                  x (1 + spinRamp x (share of health now gone) squared)
