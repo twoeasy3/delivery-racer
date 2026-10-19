@@ -746,6 +746,14 @@
     },
     "cargo": { "good": "cheesewheel", "evil": "fondue" }
   },
+  "neon-grid": {
+    "name": "Neon Grid",
+    "description": {
+      "good": "A bonsai for a sky garden. Ride the light strips; maglev pylons stand in the lane after them.",
+      "evil": "A leaking reactor core. Chain the strips flat out and read the pylons in time."
+    },
+    "cargo": { "good": "bonsai", "evil": "reactor" }
+  },
   "metro-run": {
     "name": "Metro Run",
     "description": {

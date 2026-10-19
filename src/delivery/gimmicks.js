@@ -62,6 +62,7 @@ Object.assign(JUNK_NAMES, { barrierBlock: 'barrier blocks', cableReel: 'cable dr
 Object.assign(JUNK, { ingotStack: { hw: 1.2, hl: 0.9, height: 1.6 }, steelCoil: { hw: 1.1, hl: 0.9, height: 1.95 }, hotSign: { hw: 0.6, hl: 0.6, height: 2.4 }, rebarBundle: { hw: 1.5, hl: 0.7, height: 1.4 } }); // (their own boxes: collision.js)
 Object.assign(JUNK_NAMES, { ingotStack: 'stacks of hot billets', steelCoil: 'steel coils', hotSign: 'hot-metal signs', rebarBundle: 'bundles of rebar' }); // (the steelworks')
 Object.assign(JUNK, { velvetRope: { hw: 1.2, hl: 0.6, height: 1.2 }, slotMachine: { hw: 0.6, hl: 0.6, height: 1.1 }, luggageCart: { hw: 1.1, hl: 1.1, height: 1.5 }, casinoDie: { hw: 0.42, hl: 0.42, height: 1.12 } });
+Object.assign(JUNK, { cargoPod: {}, hoverPlanter: {}, chargePost: {}, holoGate: { hw: 1.2, hl: 0.6, height: 1.2 } }); Object.assign(JUNK_NAMES, { cargoPod: 'delivery pods', hoverPlanter: 'hover planters', chargePost: 'charging posts', holoGate: 'holo barriers' }); // (the neon future city's)
 Object.assign(JUNK_NAMES, { velvetRope: 'velvet ropes', slotMachine: 'slot machines', luggageCart: 'luggage carts', casinoDie: 'giant dice' }); // (the Las Vegas Strip's)
 Object.assign(JUNK, { boxStack: {}, trolleyRow: {}, wetFloorSign: {} }); Object.assign(JUNK_NAMES, { boxStack: 'sack trucks of cartons', trolleyRow: 'rows of trolleys', wetFloorSign: 'wet-floor signs' }); // (the mall's)
 Object.assign(JUNK, { ticketGate: {}, scrubber: {}, trackLamp: {}, railTrolley: { hw: 0.6, hl: 0.6, height: 1.1 }, infoTotem: { hw: 1.1, hl: 0.15, height: 3 } }); Object.assign(JUNK_NAMES, { ticketGate: 'ticket gates', scrubber: 'floor scrubbers', trackLamp: 'track lamps', railTrolley: 'rail trolleys', infoTotem: 'wayfinding boards' }); // (the metro's)
@@ -1309,6 +1310,8 @@ DRESS.push(['boxStack', 'Cartons on a sack truck', 'crate', 'the mall', 0xc89a62
 DRESS.push(['cheeseWheels', 'Cheese wheels', 'crate', 'the alpine pass', 0xe8a92c], ['woodpile', 'Woodpile', 'bale', 'the alpine pass', 0x8a5a32], ['milkChurn', 'Milk churn', 'cone', 'the alpine pass', 0xc9d0d6],
   ['snowBlock', 'Block of snow', 'barrier', 'the alpine pass', 0xf4f8fc]);
 DRESS.push(['fishCrates', 'Fish boxes', 'crate', 'the fjord', 0x2f6fb8], ['creelStack', 'Lobster creels', 'bale', 'the fjord', 0x2f4a3a], ['fishBoxWall', 'Pallet of fish boxes', 'barrier', 'the fjord', 0x2f6fb8]);
+DRESS.push(['cargoPod', 'Delivery pod', 'crate', 'the neon city', 0x2ff4ff], ['hoverPlanter', 'Hover planter', 'bale', 'the neon city', 0xff2fd0], ['chargePost', 'Charging post', 'cone', 'the neon city', 0x2ff4ff],
+  ['holoGate', 'Holo barrier', 'barrier', 'the neon city', 0xff2fd0]);
 DRESS.push(['ticketGate', 'Ticket gate', 'crate', 'the metro', 0xd8262b], ['scrubber', 'Floor scrubber', 'bale', 'the metro', 0xf2b51d], ['trackLamp', 'Track lamp', 'cone', 'the metro', 0xff2a1a],
   ['railTrolley', 'Rail trolley', 'crate', 'the metro', 0xe8751a], ['infoTotem', 'Wayfinding board', 'sign', 'the metro', 0x1f6fd0]);
 DRESS.push(['barrierBlock', 'Barrier blocks', 'barrier', 'the roadworks', 0xd8262b], ['cableReel', 'Cable drum', 'crate', 'the roadworks', 0xa8783e], ['sandPile', 'Heap of sand', 'bale', 'the roadworks', 0xd9b36a],

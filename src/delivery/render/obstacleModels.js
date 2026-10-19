@@ -15,6 +15,7 @@ import { VEGAS_OBSTACLES } from './themes/vegasObstacles.js';
 import { ALPINE_OBSTACLES } from './themes/alpineModels.js';
 import { NORDIC_OBSTACLES } from './themes/nordicModels.js';
 import { METRO_OBSTACLES } from './themes/metroModels.js';
+import { NEON_OBSTACLES } from './themes/neonObstacles.js';
 import { LEVEL } from '../levels.js';
 import { THEMES } from '../themes.js';
 
@@ -1370,5 +1371,6 @@ Object.assign(OBSTACLE_MODELS, STEELWORKS_OBSTACLES); // the steelworks' (render
 Object.assign(OBSTACLE_MODELS, VEGAS_OBSTACLES); // the Las Vegas Strip's (render/themes/vegasObstacles.js): a velvet rope, a slot machine, a luggage cart, a giant die
 Object.assign(OBSTACLE_MODELS, ALPINE_OBSTACLES); // the alpine pass's (render/themes/alpineModels.js): cheese wheels, a woodpile, a milk churn, a block of snow
 Object.assign(OBSTACLE_MODELS, NORDIC_OBSTACLES); // the Nordic fjord's (render/themes/nordicModels.js): fish boxes on a pallet, lobster creels
+Object.assign(OBSTACLE_MODELS, NEON_OBSTACLES); // the neon future city's (render/themes/neonObstacles.js): a delivery pod, a hover planter, a charging post, a holo barrier
 Object.assign(OBSTACLE_MODELS, ROADWORKS_OBSTACLES); // the roadworks' (render/themes/roadworksModels.js): barrier blocks, a cable drum, a heap of sand; a traffic drum, a pallet of pipes, a works sign
 Object.assign(OBSTACLE_MODELS, METRO_OBSTACLES); // the metro's (render/themes/metroModels.js): a ticket gate, a floor scrubber, a track lamp; a rail trolley, a wayfinding board; a junction's hoisted cable drum; a pillar (lanegimmicks.js)

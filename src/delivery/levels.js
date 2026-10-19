@@ -715,6 +715,8 @@ import alpinePass from './levels/alpine-pass.json';
 HIDDEN_LEVELS['alpine-pass'] = alpinePass; // Alpine Pass (the alpine theme's switchbacks to the col): ?hidden=alpine-pass, until the owner decides
 import fjordRoad from './levels/fjord-road.json';
 HIDDEN_LEVELS['fjord-road'] = fjordRoad; // Fjord Road (the nordic theme: fjord, rock tunnels): ?hidden=fjord-road, until the owner decides
+import neonGrid from './levels/neon-grid.json';
+HIDDEN_LEVELS['neon-grid'] = neonGrid; // Neon Grid (the neon future city: boost strips and maglev pylons in the lanes): ?hidden=neon-grid, until the owner decides
 import metroRun from './levels/metro-run.json';
 HIDDEN_LEVELS['metro-run'] = metroRun; // Metro Run (a metro system: running tunnels, stations, an interchange, the depot: render/themes/metro.js): ?hidden=metro-run, until it is put in the career
 import obstacleLab from './levels/obstacle-lab.json';

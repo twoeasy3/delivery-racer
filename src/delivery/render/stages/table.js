@@ -122,6 +122,33 @@ const PAINT = {
   },
   // neon signs on the nearer towers (by night)
   neon(g, w, hy, P, count) { if (!P.dark) return; for (let i = 0; i < count; i++) { g.fillStyle = ['#ff3fa4', '#34e1ff', '#ffd23f', '#9b5cff'][i % 4]; g.fillRect(P.rnd() * w, hy - hy * (0.1 + P.rnd() * 0.3), 3, 8 + P.rnd() * 10); } },
+  // the neon city: dark glass towers outlined in light (cyan, magenta, blue, violet), a holo panel on some, a skybridge between two
+  glassTowers(g, w, hy, P, count, tallest) {
+    const NEON = P.pal.evil ? ['#ff3a5a', '#ff7a3a', '#c83aff', '#ff3ab0'] : ['#2ff4ff', '#ff2fd0', '#3a7bff', '#9a5cff'];
+    const tops = [];
+    for (const [k, t] of [[0.55, 0.55], [1, 0.85]]) { // (a far row, then a near one)
+      let x = -P.rnd() * 20;
+      while (x < w) {
+        const bw = w / count * (0.5 + P.rnd() * 0.6) * (k < 1 ? 0.8 : 1), bh = hy * tallest * k * (0.35 + P.rnd() * 0.65), c = NEON[Math.floor(P.rnd() * 4)];
+        g.fillStyle = P.tone(t); g.fillRect(x, hy - bh, bw - 3, bh + 1);
+        g.strokeStyle = c; g.globalAlpha = k < 1 ? 0.5 : 0.95; g.lineWidth = k < 1 ? 1 : 1.5; g.strokeRect(x + 0.5, hy - bh + 0.5, bw - 4, bh);
+        g.fillStyle = c; g.globalAlpha = 0.18; // (its floors, faint)
+        for (let y = hy - bh + 6; y < hy; y += 6) g.fillRect(x + 1, y, bw - 5, 0.7);
+        if (k === 1 && P.rnd() < 0.35 && bh > hy * 0.25) { const ph = Math.min(bh * 0.3, 18), pw = Math.min(bw * 0.6, ph); g.globalAlpha = 0.75; g.fillStyle = NEON[Math.floor(P.rnd() * 4)]; g.fillRect(x + (bw - pw) / 2, hy - bh * 0.7, pw, ph); }
+        g.globalAlpha = 1;
+        if (k === 1) tops.push([x, bw, bh]);
+        x += bw;
+      }
+    }
+    const i = Math.floor(tops.length * 0.4), a = tops[i], b = tops[i + 1];
+    if (a && b) { const y = hy - Math.min(a[2], b[2]) * 0.55; g.fillStyle = P.tone(0.95); g.fillRect(a[0] + a[1] * 0.5, y, b[0] - a[0], 5); g.fillStyle = NEON[0]; g.fillRect(a[0] + a[1] * 0.5, y + 5, b[0] - a[0], 1); }
+  },
+  // a maglev's beam on its columns along the horizon, a line of light on it
+  maglev(g, w, hy, P, lift) {
+    const y = hy - hy * lift; g.fillStyle = P.tone(1); g.fillRect(0, y, w, 4);
+    for (let x = 10 + P.rnd() * 20; x < w; x += 60) g.fillRect(x, y + 4, 4, hy - y);
+    g.fillStyle = P.pal.evil ? '#ff3a5a' : '#2ff4ff'; g.fillRect(0, y - 1, w, 1.2);
+  },
   // a lighthouse on a headland: its parts sized by its height, at least most of a short card's sky (the phone's card: a few px of it)
   lighthouse(g, w, hy, P, x, high, t) {
     const cx = w * x, th = Math.max(hy * high, Math.min(hy * 0.7, 24)), half = Math.max(3, th * 0.11), top = half * 0.62, band = Math.max(2, th * 0.1);
@@ -178,7 +205,10 @@ const beacon = () => { const g = group(); piece(g, CYL, 0x5a5d66, 0, 0.12, 0, 0.
   piece(g, CYL, 0xe8e8ec, 0, 1.85, 0.22, 1.0, 0.07, 1.0, 0.9); piece(g, BOX, 0x8a8d94, 0, 1.8, 0.1, 0.07, 0.07, 0.25); piece(g, BALL, 0xff6a00, 0, 2.55, 0, 0.26, 0.26, 0.26); return g; };
 const sandbags = () => OBSTACLE_MODELS.sackStack({ hw: 1.1, hl: 1.1, height: 1.5 });
 const opt = (kind, o) => () => OBSTACLE_MODELS[kind](o);
-const MODELS = { tyres, armco, kerb, board3: board(3), board2: board(2), buoyRed: buoy(0xd8352a), buoyGreen: buoy(0x2e8a4a), ring, beacon, vendRed: vending(0xd8352a), vendBlue: vending(0x2f6ac0), lantern, picket, letterbox, sandbags,
+// the neon city's own: a HOLO PILLAR (a dark plinth, a tall glowing column of colour bands, a cap), a CHARGING POST and a HOVER PLANTER
+// are the theme's obstacles (render/themes/neonObstacles.js)
+const holoPillar = () => { const g = group(); piece(g, BOX, 0x23263a, 0, 0.1, 0, 0.7, 0.2, 0.7); for (let k = 0; k < 5; k++) piece(g, BOX, k % 2 ? 0xff2fd0 : 0x2ff4ff, 0, 0.32 + k * 0.4, 0, 0.32, 0.36, 0.32); piece(g, BOX, 0xe8ecf4, 0, 2.3, 0, 0.5, 0.1, 0.5); return g; };
+const MODELS = { holoPillar, tyres, armco, kerb, board3: board(3), board2: board(2), buoyRed: buoy(0xd8352a), buoyGreen: buoy(0x2e8a4a), ring, beacon, vendRed: vending(0xd8352a), vendBlue: vending(0x2f6ac0), lantern, picket, letterbox, sandbags,
   umbrella: opt('umbrella', { hw: 0.9, hl: 0.9, height: 2.3 }), rockBig: opt('rock', { r: 0.8 }), rockSmall: opt('rock', { r: 0.5 }),
   asteroidBig: opt('asteroid', { r: 0.9 }), asteroidSmall: opt('asteroid', { r: 0.55 }), brimBig: opt('brimstone', { hw: 0.5, hl: 0.5, height: 1.6 }) };
 
@@ -213,6 +243,8 @@ const TABLE = {
     plinth: () => 0x3a3d47, ground: () => 0x3a3d47 },
   tokyo: { sky: [['towers', 10, 0.6, 0.45], ['spire', 0.3, 0.7], ['neon', 14]],
     props: [['vendRed', -0.85, 1.7, 0.4, 1], ['vendBlue', -0.6, 2.6, 0.4, 1], ['lantern', 0.82, 1.5, -0.3, 1], ['trafficDrum', 0.98, 0.3, 0, 1, 'cone'], ['bin', -0.98, 0.3, 0, 1, 'cone']] },
+  neonCity: { sky: [['glassTowers', 9, 0.8], ['maglev', 0.18]],
+    props: [['holoPillar', -0.85, 1.8, 0, 1], ['hoverPlanter', 0.82, 1.6, 0, 0.8, 'bale'], ['chargePost', 0.98, 0.3, -0.4, 1, 'cone'], ['holoPillar', 0.4, 4.8, 0, 1.2], ['chargePost', -0.98, 0.3, 0.4, 1, 'cone']], plinth: () => 0x2a2d40 },
   hell: { sky: [['flames']], props: [['brimBig', -0.82, 1.8, 0, 1], ['lavaRock', 0.82, 1.5, 0, 1, 'cone'], ['brimstone', 0.98, 0.3, 0, 1, 'cone'], ['brimBig', 0.3, 5, 0.5, 1.3], ['brimstone', -0.98, 0.3, 0, 1, 'cone']], plinth: () => 0x241010 },
 };
 TABLE.panorama = TABLE.bathurst; // (the same mountain)
