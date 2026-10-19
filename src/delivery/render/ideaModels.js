@@ -37,6 +37,7 @@ import { IDEA_MODELS_SIXWHEEL } from './ideaModelsSixWheel.js'; // (the Six-Whee
 import { IDEA_MODELS_BATCH_M2 } from './ideaModelsBatchM2.js'; // (batch M2, CHECKLIST 516)
 import { IDEA_MODELS_WEDGE } from './ideaModelsWedge.js'; // (the Wedge Supercar, rebuilt 16-Oct)
 import { IDEA_MODELS_BATCH_M1 } from './ideaModelsBatchM1.js'; // (batch M1: working machines)
+import { IDEA_MODELS_BATCH_M5 } from './ideaModelsBatchM5.js'; // (batch M5: the Pace Car, the Stone-Age Car, the Skip Lorry)
 import { SWAN_MODELS } from './modelsSwan.js';
 import { withGlassEdits, glassEditsReport } from './ideaModelsDkit.js'; // (the glass edits of a car's model patch, read as its cabinGlass windows are built)
 import { glassEditsFor } from './modelpatchapply.js'; // (the Swan Car redone as a covered coupe, 13-Oct: over ideaModels3's open tourer)
@@ -218,6 +219,7 @@ export const IDEA_MODELS = {
   ...IDEA_MODELS_WEDGE,
   ...IDEA_MODELS_BATCH_M1,
   ...IDEA_MODELS_BATCH_M2,
+  ...IDEA_MODELS_BATCH_M5,
   swancar: SWAN_MODELS.swancar,
   // A bubble car (a BMW Isetta): an egg on wheels. The whole front is its one door, hinged at the side, the
   // windscreen in it; a glass bubble over a bench seat; lamps in pods on its flanks; the two back wheels close
