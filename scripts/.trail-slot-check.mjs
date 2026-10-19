@@ -1,11 +1,11 @@
 // A check of the TRAIL cosmetic (CHECKLIST 466: render/trailcosmetic.js, the Cosmetics screen's 'Trail' tab, render/trailpreview.js):
-//   - the registry: Classic (free, never counted) and the seven turbo trail styles as earned items, Uncommon, no price
+//   - the registry: Classic (free, never counted) and the fifteen turbo trail styles (seven, and eight more: CHECKLIST 513) as earned items, Uncommon, no price
 //   - the store: per car only (never the All-cars default's), a store from before has none (Classic), Reset car clears it
 //   - stock: awarded through awardCosmetic (and ?czgive=trail:flame*3); equipping takes one from the hand, taking it off gives it back
 //   - Unlock everything: Absolutely gives 999 of each; the tab hidden on the cars that cannot show it (the wheels' rule: the Tank(s), the Saucer)
 //   - the game: the car's turbo wears its equipped trail (render/turbotrails.js wornTrail; ?turbotrail= / setTurboTrail pins one over it);
 //     the trail mesh is never under the car (the Ghost power-up and a blackout leave it alone); the replay ghost never draws one
-//   - IN A RUN (CHECKLIST 482): equipped between two runs on the SAME level (no level load between), worn, alive, drawn, behind the car
+//   - IN A RUN (CHECKLIST 482): equipped between two runs on the SAME level (no level load between), worn, alive, drawn, behind the car (513: each new style too)
 //   - the PREVIEW: every style (and its lite) drawn by the game's own code behind a car standing still, behind its tail, in the given parent
 //     (no renderer of its own), flagged shared (the showroom's scene let go never disposes it), hidden and empty once cleared
 //   - render-only: the replay fingerprint unchanged
@@ -30,8 +30,8 @@ Progress.noSave = true; Store.reloadStore(); Cz.clearCosmetics();
 
 // ---- the registry ----
 const items = Cz.COSMETICS.filter(c => c.slot === 'trail');
-check(items.map(c => c.id).join() === 'classic,flame,twin,speedlines,afterimage,embers,shockwave,rarity', 'the registry: ' + items.map(c => c.name).join(', '));
-check(items[0].free && items.slice(1).every(c => c.earned && !c.free && c.price === 0 && Cz.cosmeticRarity('trail', c.id) === 'uncommon') && Cz.isEarnedSlot('trail') && Cz.EARNED_SLOTS.trail === 'classic', 'Classic free; the seven styles earned, Uncommon, no cash price');
+check(items.map(c => c.id).join() === 'classic,flame,twin,speedlines,afterimage,embers,shockwave,rarity,pixels,stardust,bubbles,leaves,lightning,comet,helix,chevrons', 'the registry: ' + items.map(c => c.name).join(', '));
+check(items[0].free && items.slice(1).every(c => c.earned && !c.free && c.price === 0 && Cz.cosmeticRarity('trail', c.id) === 'uncommon') && Cz.isEarnedSlot('trail') && Cz.EARNED_SLOTS.trail === 'classic', 'Classic free; the ' + (items.length - 1) + ' styles earned, Uncommon, no cash price');
 
 // ---- default, migration, per car ----
 const a = 'sprinthatch', b = 'hothatch';
@@ -123,7 +123,9 @@ check(!/turbotrails|syncTurboTrail/.test(readFileSync(new URL('../src/delivery/r
   check(TT.turboTrailStyle() === 'classic', 'a first run on the level, nothing equipped: Classic (' + TT.turboTrailStyle() + ')');
   const built = Game.loaded;
   Game.exit();
-  for (const [car, style] of [['commuter', 'flame'], ['commuter', 'embers'], ['hothatch', 'twin']]) {
+  // (and each of CHECKLIST 513's eight, equipped the same way)
+  const more = ['pixels', 'stardust', 'bubbles', 'leaves', 'lightning', 'comet', 'helix', 'chevrons'].map((st, i) => [i % 2 ? 'hothatch' : 'commuter', st]);
+  for (const [car, style] of [['commuter', 'flame'], ['commuter', 'embers'], ['hothatch', 'twin'], ...more]) {
     T.setTrail(style, car); // (the Cosmetics screen's tap, on that car)
     begin(car);
     const sameLevel = Game.loaded === built;

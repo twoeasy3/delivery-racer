@@ -1,7 +1,7 @@
 // TURBO TRAIL STYLES (CHECKLIST 456, part 2; the owner: "Let's experiment with a few turbo trail effects"). An EXPERIMENT behind the
 // address only: `?turbotrail=<name>` (`<name>-lite` for its lite variant, `list` logs the names). No player-facing switch yet; with no
 // address (or `classic`) the game draws the turbo as it always did (render/items.js, the cyan and white cubes in the Particles pool).
-// Every style: geometry or points only (no texture), its own small fixed pool, one draw call (the twin ribbon's two strands are one
+// Every style: geometry or points only (no texture; Bubbles, CHECKLIST 513: one 64 x 64 ring drawn in code), its own small fixed pool, one draw call (the twin ribbon's two strands are one
 // mesh), hidden when nothing of it is alive; it comes from the car's TAIL at the car's own height (render/cars.js
 // playerPointY: up in the air with a jumping car, CHECKLIST 429), it is carried by its PARENT's velocity on the PARENT GAME CLOCK
 // (render/gameclock.js: paused nothing moves or comes, half as far at 0.5x), and it grows with the car's actual speed.
@@ -29,10 +29,11 @@ import { onStore } from './loadoutstore.js';
 import { onAward } from './cosmetics.js';
 import { forceLow } from './killfx.js';
 import { lowEnd } from './lowend.js';
+import { moreMakers, MORE_POOLS } from './turbotrailsmore.js'; // (eight more styles, CHECKLIST 513)
 
 // name: what it looks like (render/trailstyles.js); POOLS: its particles, full / lite (classic: the preview's own cubes only)
 export { STYLES, STYLE_NAMES };
-const POOLS = { flame: [40, 20], twin: [28, 16], speedlines: [36, 16], afterimage: [4, 2], embers: [64, 28], shockwave: [5, 3], rarity: [30, 18], classic: [48, 24] };
+const POOLS = { flame: [40, 20], twin: [28, 16], speedlines: [36, 16], afterimage: [4, 2], embers: [64, 28], shockwave: [5, 3], rarity: [30, 18], classic: [48, 24], ...MORE_POOLS };
 // the lite variant wanted on this device (the kill effects' ?fxlow=1, or a low-end device as the cutscenes judge it)
 export const trailLite = () => forceLow || lowEnd();
 
@@ -387,6 +388,8 @@ const MAKERS = {
   shockwave: (n) => makeShockwave(n),
   rarity: (n) => { const s = src; return makeRibbon(n, [0], 0.5, () => s.colour()); },
   classic: (n) => makeClassic(n),
+  // CHECKLIST 513: pixels, stardust, bubbles, leaves, lightning, comet, helix, chevrons (render/turbotrailsmore.js, on this engine)
+  ...moreMakers({ makeStore, F, V, T, Fw, Ac, P, tailAt, rnd, additive, src: () => src }),
 };
 
 // A TRAIL: one style drawn for one source into one parent (the game's: GAME into the scene; the preview's: a car on show into its turntable)
@@ -462,7 +465,7 @@ export const cost = () => {
   if (!fx) return null;
   const g = fx.mesh.geometry, per = g.index ? g.index.count / 3 : g.attributes.position.count / 3, n = fx.stores.reduce((k, S) => k + S.max, 0);
   const kind = fx.mesh.isPoints ? 'points' : fx.mesh.isLineSegments ? 'lines' : 'triangles';
-  return { drawCalls: 1, kind, drawn: fx.mesh.isInstancedMesh ? per * n : fx.mesh.isPoints ? n : fx.mesh.isLineSegments ? n : per, pool: n };
+  return { drawCalls: 1, kind, drawn: fx.mesh.isInstancedMesh ? per * fx.mesh.instanceMatrix.count : fx.mesh.isPoints ? n : fx.mesh.isLineSegments ? n : per, pool: n };
 };
 // (for a check: the heights of the newest few emitted, the head of the trail)
 export const headHeights = () => { const ys = []; if (fx) for (const S of fx.stores) { S.ordered(order); ys.push(...order.slice(-3).map(i => S.d[i * F + 1])); } return ys; };
