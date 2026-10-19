@@ -6,6 +6,7 @@
 // userData.animate (seconds) => void and userData.livery (evil) => void. render/ideaModels.js spreads IDEA_MODELS_BATCH_M3
 // into IDEA_MODELS. State-free.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { keep, lambert, basic, TYRE, CHROME, TRIM, GLASS, LAMP, TAIL, AMBER, shared, place, merge, parts, bx, dsc, shadeBy, low, curve, extrudeSide, flare, wheel, cabinGlass } from './ideaModelsDkit.js';
 
 const PLANK = keep(lambert(0x8a5e32)), ROPE = keep(lambert(0xd8c89a)), STEEL = keep(lambert(0x6a6e74)), SEAT = keep(lambert(0x3a2a22));
@@ -26,13 +27,23 @@ const sideSolid = (pts, x0, x1) => {
 // a pram wheel: a thin solid-rubber tyre (a torus: a mesh of its own, the suspension finds it), and in it a thin steel rim,
 // eight wire spokes and a small hub (one mesh)
 const pramWheel = (parent, key, R, x, z) => {
-  place(parent, shared(key + 'tyre', () => new THREE.TorusGeometry(R - 0.022, 0.022, 6, 18).rotateY(Math.PI / 2)), TYRE, x, R, z);
+  place(parent, shared(key + 'tyre', () => new THREE.TorusGeometry(R - 0.022, 0.022, 4, 16).rotateY(Math.PI / 2)), TYRE, x, R, z);
   place(parent, shared(key + 'spokes', () => merge([
-    new THREE.TorusGeometry(R - 0.05, 0.01, 4, 18).rotateY(Math.PI / 2),
+    new THREE.TorusGeometry(R - 0.05, 0.01, 3, 16).rotateY(Math.PI / 2),
     ...[0, 1, 2, 3].map(i => bx(0.008, 2 * (R - 0.05), 0.008, 0, 0, 0).rotateX(i * Math.PI / 4)),
     new THREE.CylinderGeometry(0.03, 0.03, 0.1, 8).rotateZ(Math.PI / 2),
   ])), CHROME, x, R, z);
 };
+
+// merge keeping vertex colours (the carried cars' one mesh): plain() drops every attribute but position, normal and uv
+const plainColour = (geo) => {
+  const g = geo.index ? geo.toNonIndexed() : geo;
+  for (const name of Object.keys(g.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(name)) g.deleteAttribute(name);
+  if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+  g.clearGroups();
+  return g;
+};
+const merge2 = (geos) => mergeGeometries(geos, false);
 
 export const IDEA_MODELS_BATCH_M3 = {
   // ---- the Soapbox Racer (a soapbox-derby cart, 1930s on) --------------------------------------------------------------
@@ -187,6 +198,72 @@ export const IDEA_MODELS_BATCH_M3 = {
       wheel(group, k + 'r', RR, RTW, s * RX, RZ);
       wheel(group, k + 'f', FR, FTW, s * FX, FZ);
     }
+    group.userData = { body, animate: () => {}, livery: () => {} };
+    return group;
+  },
+  // ---- the Car Transporter (a rigid two-deck car transporter lorry, 1990s) ------------------------------------------------
+  // A flat-fronted cab-over cab with a big windscreen and a dark grille, and behind it two long steel decks, one over the other on
+  // upright posts, each carrying two plain cars nose to tail (one load mesh in four colours, a prop: a chosen cargo cosmetic
+  // hides it). A front axle under the cab and a tandem at the back, a light bar with the tail lamps across the rear.
+  cartransporter: (car) => {
+    const group = new THREE.Group();
+    const k = 'cartrans';
+    const R = 0.5, TW = 0.3, WX = car.hw - TW / 2, FZ = 4.45, RZ = [-2.4, -3.6];
+    const BEV = 0.06, CW = 2.32, HALF = CW / 2, NOSE = 5.2, CABZ = 3.5, ROOF = 2.95, BELT = 1.85, AY = 0.55;
+    const LOWER = 1.08, UPPER = 2.38, DECKF = 3.32, DECKR = -5.27, DW = 2.3;
+    const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
+    const steel = keep(lambert(0x5c6066));
+    // the cab: its face near upright, the screen leaning back a little, a flat roof; an arch over the front wheel
+    const WSF = [NOSE + 0.01, BELT - 0.05], WST = [NOSE - 0.08, ROOF - 0.12];
+    const cab = [[NOSE, AY], WSF, WST, [NOSE - 0.2, ROOF], [CABZ + 0.1, ROOF], [CABZ, ROOF - 0.1], [CABZ, AY], ['arc', FZ, AY, R + 0.1]];
+    const body = place(group, shared(k + 'body', () => shadeBy(extrudeSide(cab, CW, BEV, null, 1, 0.08), low(0.5, 1.6, [0.62, 0.6, 0.6]))), paint);
+    const ARGS = { half: CW / 2, grow: BEV, inset: { aPillar: 0.1, roof: 0.1, cPillar: 0.12 }, lift: BEV + 0.008, sideLift: 0.008, from: 1, to: 6 };
+    const glass = cabinGlass(cab, { ...ARGS, belt: BELT, sideInset: 0.14, windows: [[4.35, 9]] });
+    const screen = cabinGlass(cab, { ...ARGS, belt: BELT - 0.05, sideInset: 0.14 });
+    const rear = cabinGlass(cab, { ...ARGS, belt: 2.0, sideInset: 0.6 });
+    parts(group, k + 'glass', GLASS, () => [...glass.sides, screen.front, rear.rear]);
+    // the chassis and the decks (steel): two frame rails, the lower deck on them, the posts, the upper deck and the rails along
+    // both decks' sides, the light bar and under-run bar at the back
+    const posts = [DECKF - 0.05, -0.85, DECKR + 0.05];
+    parts(group, k + 'steel', steel, () => [
+      bx(DW, 0.06, DECKF - DECKR, 0, LOWER - 0.03, (DECKF + DECKR) / 2),
+      bx(DW, 0.06, DECKF - DECKR, 0, UPPER - 0.03, (DECKF + DECKR) / 2),
+      ...[-1, 1].flatMap(s => [
+        bx(0.08, 0.12, DECKF - DECKR, s * (DW / 2 - 0.04), LOWER + 0.02, (DECKF + DECKR) / 2),
+        bx(0.08, 0.12, DECKF - DECKR, s * (DW / 2 - 0.04), UPPER + 0.02, (DECKF + DECKR) / 2),
+        ...posts.map(z => bx(0.1, UPPER - LOWER, 0.1, s * (DW / 2 - 0.05), (UPPER + LOWER) / 2, z)),
+      ]),
+    ]);
+    parts(group, k + 'black', TRIM, () => [
+      ...[-1, 1].map(s => bx(0.16, 0.3, CABZ - DECKR - 0.1, s * 0.45, 0.85, (CABZ + DECKR) / 2)),   // the frame rails, under the deck
+      bx(CW - 0.1, 0.5, 0.03, 0, 1.15, NOSE + BEV + 0.012),                                          // the grille
+      bx(CW + 0.04, 0.26, 0.14, 0, 0.6, NOSE + BEV + 0.04),                                          // the bumper
+      bx(DW, 0.22, 0.1, 0, 0.78, DECKR - 0.05),                                                       // the light bar
+      bx(DW - 0.3, 0.1, 0.08, 0, 0.5, DECKR - 0.04),                                                  // the under-run bar
+      ...[-1, 1].flatMap(s => [bx(0.06, 0.07, 0.3, s * (HALF + 0.03), 2.3, NOSE - 0.25), bx(0.06, 0.4, 0.14, s * (HALF + 0.08), 2.15, NOSE - 0.35)]), // the mirrors on their arms
+      ...[-1, 1].map(s => bx(0.06, 0.4, 0.06, s * 0.45, 0.78, DECKR + 0.05)),                         // the light bar's hangers
+    ]);
+    // the load: four plain cars, nose forward, two on each deck (one mesh of vertex colours: paint, dark glass, black wheels)
+    const load = place(group, shared(k + 'load', () => {
+      const one = (colour, x, y, z) => {
+        const tint = (geo, c) => shadeBy(geo, () => new THREE.Color(c).toArray());
+        const bodyG = sideSolid([[1.85, 0.24], [1.88, 0.6], [1.2, 0.72], [0.5, 1.12], [-1.15, 1.12], [-1.85, 0.76], [-1.88, 0.24]], -0.78, 0.78);
+        const glassG = sideSolid([[1.2, 0.74], [0.52, 1.1], [-1.15, 1.1], [-1.87, 0.77]], -0.79, 0.79);
+        const wheelsG = [-1, 1].flatMap(sx => [1.25, -1.25].map(wz => new THREE.CylinderGeometry(0.28, 0.28, 0.16, 8).rotateZ(Math.PI / 2).translate(sx * 0.7, 0.28, wz)));
+        return [tint(bodyG, colour), tint(glassG, 0x1c2330), ...wheelsG.map(g => tint(g, 0x161616))].map(g => plainColour(g).translate(x, y, z));
+      };
+      return merge2([...one(0xc8202a, 0, LOWER, 1.4), ...one(0xe8e8e4, 0, LOWER, -3.0), ...one(0x8a9aa8, 0, UPPER, 1.25), ...one(0x2a6a3a, 0, UPPER, -3.1)]);
+    }), new THREE.MeshLambertMaterial({ vertexColors: true }));
+    load.userData.prop = 'cargo';
+    // the lamps: square headlamps in the bumper's ends, ambers beside them; tail lamps and ambers on the light bar
+    const FL = NOSE + BEV + 0.11 + 0.012, BL = DECKR - 0.1 - 0.012;
+    parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => bx(0.26, 0.14, 0.03, s * 0.78, 0.6, FL)));
+    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.22, 0.14, 0.03, s * 0.78, 0.78, BL)));
+    parts(group, k + 'amber', AMBER, () => [
+      ...[-1, 1].map(s => bx(0.12, 0.12, 0.03, s * 1.03, 0.6, FL)),
+      ...[-1, 1].map(s => bx(0.12, 0.14, 0.03, s * 1.02, 0.78, BL)),
+    ]);
+    for (const s of [-1, 1]) for (const z of [FZ, ...RZ]) wheel(group, k, R, TW, s * WX, z);
     group.userData = { body, animate: () => {}, livery: () => {} };
     return group;
   },

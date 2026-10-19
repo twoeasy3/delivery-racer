@@ -15,4 +15,11 @@ export const BATCH_M3_LAMPS = {
     tail: [{ at: [0.56, 1.3, -1.935], size: [0.14, 0.12], mirror: true }],
     blink: [{ at: [0.55, 1.16, 2.221], size: [0.14, 0.06], mirror: true }, { at: [0.74, 1.3, -1.935], size: [0.1, 0.12], mirror: true }],
   },
+  // square headlamps in the bumper's ends, ambers outboard of them; tail lamps on the light bar across the back (each brakes
+  // whole), ambers outboard of them
+  cartransporter: {
+    head: [{ at: [0.78, 0.6, 5.397], size: [0.26, 0.14], mirror: true }],
+    tail: [{ at: [0.78, 0.78, -5.397], size: [0.22, 0.14], mirror: true }],
+    blink: [{ at: [1.03, 0.6, 5.397], size: [0.12, 0.12], mirror: true }, { at: [1.02, 0.78, -5.397], size: [0.12, 0.14], mirror: true }],
+  },
 };

@@ -9,4 +9,7 @@ export const IDEAS_BATCH_M3 = [
   { id: 'backhoe', name: 'Backhoe Loader', basedOn: 'JCB 3CX backhoe loader (1980s on)', model: 'backhoe', color: 0xf0b414, evilColor: 0x4a5058,
     hw: 1.2, hl: 2.85, height: 3.2, note: 'A shovel on the front, a digger on the back and a cab in the middle to argue with both.',
     maxSpeed: 22, accel: 5, agility: 0.9, crossing: 0.9, health: 280, mass: 2.6, sound: 'sixbysix' },
+  { id: 'cartransporter', name: 'Car Transporter', basedOn: 'rigid two-deck car transporter lorry (1990s)', model: 'cartransporter', color: 0x2a5aa8, evilColor: 0x9a1e1e,
+    hw: 1.28, hl: 5.4, height: 3.5, note: 'Four new cars on two decks, and every one of them still has to get there in one piece.',
+    maxSpeed: 25, accel: 5, agility: 0.85, crossing: 0.8, health: 340, mass: 3.4, sound: 'sixbysix' },
 ];

@@ -22,6 +22,24 @@
     "inset": [0.03, 0.03]
    }
   },
+  "backhoe": {
+   "roof": {
+    "box": [1.95, 0, 3.507, -0.31],
+    "cyl": [1.73, 0, 3.452, -0.31],
+    "from": "roof",
+    "lim": "fit",
+    "existing": true
+   },
+   "cargo": {
+    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
+   },
+   "wing": {
+    "box": [1.36, 0, 3.258, -1.29],
+    "cyl": [1.36, 0, 3.224, -1.29],
+    "from": "roof-edge",
+    "lim": "fit"
+   }
+  },
   "bathtub": {
    "roof": {
     "no": "an open car: no roof"
@@ -91,6 +109,28 @@
     "box": [0.97, 0, 2.07, -2.09],
     "cyl": [1.12, 0, 2.068, -2.09],
     "from": "roof-edge",
+    "lim": "fit"
+   }
+  },
+  "cartransporter": {
+   "roof": {
+    "box": [2.04, 0, 3.52, 4.303],
+    "cyl": [1.81, 0, 3.462, 4.303],
+    "from": "roof",
+    "lim": "fit",
+    "inset": [0.029, 0.027]
+   },
+   "cargo": {
+    "box": [1.48, 0, 1.672, 2.503],
+    "cyl": [1.42, 0, 1.648, 2.663],
+    "from": "deck",
+    "lim": "fit",
+    "existing": true
+   },
+   "wing": {
+    "box": [1.4, 0, 2.625, -5.237],
+    "cyl": [1.4, 0, 2.59, -5.237],
+    "from": "bed-tail",
     "lim": "fit"
    }
   },
@@ -647,6 +687,17 @@
   "snailcamper": {
    "roof": {
     "no": "no place over the glasshouse takes the smallest roof prop (scale 0.35) on the body with at most 5 cm of inset, clear of the wing"
+   },
+   "cargo": {
+    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
+   },
+   "wing": {
+    "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
+   }
+  },
+  "soapbox": {
+   "roof": {
+    "no": "an open car: no roof"
    },
    "cargo": {
     "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
