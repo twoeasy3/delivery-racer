@@ -79,8 +79,12 @@ const css = (c) => '#' + c.getHexString();
 // the stage's colours for a theme and a side (Evil: the sky dark and red, the light lower)
 // (the DEFAULT stage, for 'default' or a name that is no theme: a plain studio, grey-blue, no props, no skyline)
 const STUDIO = { sky: 0xb8c4d2, ground: 0x8e98a4, road: 0x4a505a };
+// (the night city's stages, whose own sky and light are near black: a dusk-blue sky and a moonlit light on the card, still night)
+const DUSK = { sky: 0x1d2d55, ground: 0x46583f, light: { sky: 0xc4ceff, ground: 0x4a4c5c, ambient: 1.05, sun: 0xd8e0ff, sunlight: 0.6 } };
+const LIFTED = ['night', 'roadworksNight'];
 export const palette = (theme, evil = false) => {
-  const T = THEMES[theme] || STUDIO, night = !!(T.night || (T.lit && T.headlights)), sky = T.sky ?? 0x9fc4e8;
+  const T0 = THEMES[theme] || STUDIO, T = LIFTED.includes(theme) ? { ...T0, ...DUSK } : T0;
+  const night = !!(T.night || (T.lit && T.headlights)), sky = T.sky ?? 0x9fc4e8;
   const top = night ? mix(sky, 0x000000, 0.35) : mix(sky, 0x2b5a8a, 0.35);
   const haze = night ? mix(sky, T.fogColor ?? 0x6a5a8a, 0.35) : mix(sky, 0xffffff, 0.45);
   const p = { night, top, haze, ground: col(T.ground ?? 0x5d8a4e), road: col(T.road ?? 0x3a3d42), light: T.light || null };
