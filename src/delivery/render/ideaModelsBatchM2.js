@@ -213,8 +213,8 @@ export const IDEA_MODELS_BATCH_M2 = {
     const crownShape = () => {
       const s = new THREE.Shape(), W = CHALF + 0.02;
       s.moveTo(-W, 0); s.lineTo(W, 0); s.lineTo(W, 0.42);
-      // from the right end in: two small arched peaks, then the big centre peak, then the two small ones on the left
-      const peaks = [[0.85, 0.62, 0.2], [0.45, 0.72, 0.2], [0, 1.02, 0.25], [-0.45, 0.72, 0.2], [-0.85, 0.62, 0.2]];
+      // from the right end in: a low rounded shoulder, the broad arch over the middle, the shoulder on the left (the real taj's outline)
+      const peaks = [[0.78, 0.56, 0.3], [0, 0.84, 0.46], [-0.78, 0.56, 0.3]];
       let x = W;
       for (const [cx, h, w] of peaks) {
         s.lineTo(cx + w, 0.42 + (x === W ? 0 : 0.02));
@@ -247,9 +247,9 @@ export const IDEA_MODELS_BATCH_M2 = {
     parts(group, k + 'chrome', CHROME, () => [
       ...[1.0, 1.12, 1.24, 1.36].map(y => bx(0.62, 0.04, 0.03, 0, y, NOSE + BEV + 0.015)),
       ...[-1, 1].map(s => dsc(0.14, 0.03, s * 0.52, 1.18, NOSE + BEV + 0.01, 0, 14)),
-      ...[-0.85, -0.45, 0, 0.45, 0.85].map((x, i) => {
-        const y = i === 2 ? 0.66 : 0.5;
-        return dsc(i === 2 ? 0.13 : 0.08, 0.02, x, 0, 0, 0, 10).translate(0, 0, 0.05).rotateX(-LEAN).translate(0, CY + y * Math.cos(LEAN), CZ + cx(y) + 0.0);
+      ...[-0.78, 0, 0.78].map((x, i) => {
+        const y = i === 1 ? 0.6 : 0.44;
+        return dsc(i === 1 ? 0.11 : 0.07, 0.02, x, 0, 0, 0, 10).translate(0, 0, 0.05).rotateX(-LEAN).translate(0, CY + y * Math.cos(LEAN), CZ + cx(y) + 0.0);
       }),
       ...[-0.85, -0.3, 0.3, 0.85].map(x => dsc(0.06, 0.02, x, 0, 0, 0, 8).translate(0, 0, 0.05).rotateX(-LEAN).translate(0, CY + 0.22 * Math.cos(LEAN), CZ + cx(0.22))),
       ...jingles(NOSE + 0.19, 0.64, 11, 2.1, true),

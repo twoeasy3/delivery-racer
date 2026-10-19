@@ -806,6 +806,11 @@
   }
  },
  "hand": {
+  "jingletruck": {
+   "wing": {
+    "no": "the cab roof's rear edge is under the body's front wall, and the body is an open tall box: a wing on its tail board's top would stand on a plank over the load"
+   }
+  },
   "gameviewer": {
    "roof": {
     "box": [2.1, 0, 2.915, -0.277],
