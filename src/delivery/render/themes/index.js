@@ -44,6 +44,7 @@ const THEME_FILES = {
   steelworks: () => import('./steelworks.js'),
   vegas: () => import('./vegas.js'),
   alpinepass: () => import('./alpine.js'), // (the alpine theme's scenery; the snow theme's is 'snowpass', in road.js)
+  castle: () => import('./castle.js'),
   // (batch E: Las Vegas strip, Alpine pass, Steelworks: new themes go above this line)
 };
 

@@ -761,5 +761,13 @@
       "evil": "A quiet road to learn on before the fun starts. One thing at a time, nothing at stake."
     },
     "cargo": { "good": "pizza", "evil": "parcel" }
+  },
+  "castle-town": {
+    "name": "Castle Town",
+    "description": {
+      "good": "A wedding cake for the feast at the castle. Mind the cows, take the moat bridges gently and squeeze through the town gates.",
+      "evil": "A treasure chest with teeth. Fly the moat bridges, barge through the gates and scatter the market."
+    },
+    "cargo": {"good": "cake", "evil": "mimic"}
   }
 }

@@ -714,6 +714,8 @@ HIDDEN_LEVELS['slow-pad'] = slowPadLab; // Slow Pad Lab (the slow pads' demo, SL
 // THE HIDDEN LEVELS MENU (the owner, 15-Oct; Options > Hidden levels, render/hiddenlevels.js): every level of HIDDEN_LEVELS that is a
 // real level, so a hidden level added later is listed without a word here. TEST_LEVELS are the developer's test tracks (a testbed and the three
 // Gimmick Roads: gimmicks.js calls them 'Test'), left out of it. A run started from it is ?hidden=<id>: it banks nothing (game.js).
+import castleTown from './levels/castle-town.json';
+HIDDEN_LEVELS['castle-town'] = castleTown; // Castle Town (the medieval castle town: its gates squeeze the road): ?hidden=castle-town, until the owner decides
 export const TEST_LEVELS = ['testbed', 'gimmick-road', 'gimmick-road-2', 'gimmick-road-3', 'obstacle-lab', 'slow-pad'];
 export const playableHidden = () => Object.entries(HIDDEN_LEVELS).filter(([id]) => !TEST_LEVELS.includes(id)).map(([id, level]) => ({ id, level, event: id in EVENT_MAPS }));
 // the class every race is run in: 'f1', 'gt' (GT road cars) or 'lmp' (Le Mans prototypes): the player's car
