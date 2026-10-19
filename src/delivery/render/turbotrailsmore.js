@@ -261,7 +261,13 @@ export const moreMakers = (ctx) => {
     const head = (out) => { tailAt(0, out); return out.set(out.x - Fw.x * BACK, out.y, out.z - Fw.z * BACK); };
     return {
       stores: [S], mesh,
-      emit(dt, { k }) { for (acc += dt * rate; acc >= 1; acc--) { head(P); S.emit(P.x + ctx.rnd(0.03), P.y + ctx.rnd(0.03), P.z + ctx.rnd(0.03), V.x * 0.72, V.y * 0.72, V.z * 0.72, 0.5, 0.2 + 0.05 * Math.min(1, k)); } },
+      emit(dt, { k }) {
+        for (acc += dt * rate; acc >= 1;) { // (each bead placed where it was due between frames: no clumps on a slow frame)
+          acc -= 1;
+          const lag = Math.min(dt, acc / rate);
+          head(P); S.emit(P.x - V.x * 0.28 * lag + ctx.rnd(0.03), P.y - V.y * 0.28 * lag + ctx.rnd(0.03), P.z - V.z * 0.28 * lag + ctx.rnd(0.03), V.x * 0.72, V.y * 0.72, V.z * 0.72, 0.5 - lag, 0.2 + 0.05 * Math.min(1, k));
+        }
+      },
       draw(live) {
         let n = 0;
         if (live) { head(Pa); M.makeScale(0.27, 0.27, 0.27).setPosition(Pa); mesh.setMatrixAt(n, M); mesh.setColorAt(n++, cl.setRGB(0.9, 0.95, 1)); }
@@ -288,7 +294,12 @@ export const moreMakers = (ctx) => {
       stores: [S], mesh,
       emit(dt) {
         phase = (phase + dt * OMEGA) % (Math.PI * 2);
-        for (acc += dt * rate; acc >= 1; acc--) { strand = 1 - strand; tailAt(0, P); S.emit(P.x, P.y, P.z, V.x * 0.6, V.y * 0.6, V.z * 0.6, 0.55, phase + strand * Math.PI, strand); }
+        for (acc += dt * rate; acc >= 1;) { // (back-dated as the comet's: evenly spaced on a slow frame)
+          acc -= 1;
+          const lag = Math.min(dt, acc / rate);
+          strand = 1 - strand; tailAt(0, P);
+          S.emit(P.x - V.x * 0.4 * lag, P.y - V.y * 0.4 * lag, P.z - V.z * 0.4 * lag, V.x * 0.6, V.y * 0.6, V.z * 0.6, 0.55 - lag, phase - OMEGA * lag + strand * Math.PI, strand);
+        }
       },
       draw() {
         let n = 0;
