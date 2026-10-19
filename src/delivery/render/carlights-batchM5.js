@@ -14,4 +14,14 @@ export const BATCH_M5_LAMPS = {
     ],
     reverse: [{ at: [0.25, 0.71, -2.426], size: [0.07, 0.09], mirror: true }],
   },
+  // the Stone-Age Car: no lamps on the real (cartoon) car; its own are round glow-stones set in the frame logs' front cut ends and
+  // red stones in their back ones (each brakes whole). No indicator lenses: they flash over those stones (amber at both ends).
+  stonecar: {
+    head: [{ at: [0.88, 0.42, 1.853], size: [0.13, 0.13], round: true, mirror: true }],
+    tail: [{ at: [0.88, 0.42, -1.848], size: [0.12, 0.12], round: true, mirror: true }],
+    blink: [
+      { at: [0.88, 0.42, 1.853], size: [0.1, 0.1], round: true, mirror: true, shared: 'glow-stone' },
+      { at: [0.88, 0.42, -1.848], size: [0.1, 0.1], round: true, mirror: true, shared: 'red stone' },
+    ],
+  },
 };

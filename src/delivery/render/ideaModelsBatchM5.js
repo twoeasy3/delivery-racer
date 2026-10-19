@@ -154,8 +154,8 @@ const logEnd = (r, at, dir, seg = 7) => {
   geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...dir).normalize()));
   return geo.translate(...at);
 };
-const STONE = keep(new THREE.MeshLambertMaterial({ color: 0x8d877c, flatShading: true }));
-const STONE2 = keep(new THREE.MeshLambertMaterial({ color: 0x9f9786, flatShading: true }));
+const STONE = keep(new THREE.MeshLambertMaterial({ color: 0x9a9384, flatShading: true }));
+const STONE2 = keep(new THREE.MeshLambertMaterial({ color: 0xb3a994, flatShading: true }));
 const CUT = keep(lambert(0xdcb98c)), SPOT = keep(new THREE.MeshLambertMaterial({ color: 0x4a2e1a, side: THREE.DoubleSide }));
 
 // ---- the Stone-Age Car (after the Flintstones' car, the 1960 cartoon) ---------------------------------------------------
@@ -169,15 +169,17 @@ IDEA_MODELS_BATCH_M5.stonecar = (car) => {
   const W = car.hw, L = car.hl;
   const k = 'stonecar' + [W, L].join(',');
   const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true, flatShading: true });
-  const R = 0.4, RW = 1.56, FZ = 1.22, BZ = -1.16;   // (the rollers: radius, width, the front and back axles)
-  const FX = W - 0.1, FR = 0.11, FY = R;              // (the frame logs: across, thick, high: on the axles' line)
+  const R = 0.42, RW = 1.56, FZ = 1.22, BZ = -1.16;   // (the rollers: radius, width, the front and back axles)
+  const FX = W - 0.12, FR = 0.13, FY = R;              // (the frame logs: across, thick, high: on the axles' line)
   const FRONT = L - 0.04, BACK = -L + 0.04;
   // the rollers: rough rock drums, each a mesh of its own (the suspension finds them), on log axles
   for (const z of [FZ, BZ]) place(group, shared(k + 'roller', () => new THREE.CylinderGeometry(R, R, RW, 11, 1).rotateZ(Math.PI / 2)), STONE, 0, R, z);
   // the wood: the frame logs, the cross logs at each end, the axles, the poles, the benches' backs, the steering stick
-  const XY = FY + FR + 0.08, PY = 1.86, poles = [[FX - 0.02, 0.62], [-FX + 0.02, 0.62], [FX - 0.02, -0.98], [-FX + 0.02, -0.98]];
+  const XY = FY + FR + 0.08, RAILY = 0.86, PY = 1.74, poles = [[FX - 0.02, 0.62], [-FX + 0.02, 0.62], [FX - 0.02, -0.98], [-FX + 0.02, -0.98]];
   const body = place(group, shared(k + 'wood', () => shadeBy(merge([
     ...[-1, 1].map(s => log(FR, [s * FX, FY, FRONT], [s * FX, FY, BACK])),
+    // the upper side rails: a log down each side of the seats, from the dash to behind the back bench, through the poles
+    ...[-1, 1].map(s => log(0.075, [s * (FX - 0.02), RAILY, 0.86], [s * (FX - 0.02), RAILY, -1.2])),
     // (the cross logs lie on top of the frame logs, near their ends)
     log(0.09, [-FX - 0.07, XY, FRONT - 0.12], [FX + 0.07, XY, FRONT - 0.12]),
     log(0.09, [-FX - 0.07, XY, BACK + 0.12], [FX + 0.07, XY, BACK + 0.12]),
@@ -186,36 +188,52 @@ IDEA_MODELS_BATCH_M5.stonecar = (car) => {
     // the benches' backs: a log across behind each bench, on two stubs
     ...[0.02, -0.82].flatMap(z => [log(0.07, [-FX + 0.06, 0.98, z], [FX - 0.06, 0.98, z]),
       ...[-1, 1].map(s => log(0.045, [s * (FX - 0.25), 0.5, z], [s * (FX - 0.25), 0.98, z], 6))]),
-    log(0.03, [0.42, 0.82, 0.86], [0.42, 1.06, 0.6], 6),   // the steering stick (the driver sits on the car's left)
+    log(0.03, [0.42, 1.0, 0.82], [0.42, 1.12, 0.6], 6),   // the steering stick (the driver sits on the car's left)
   ]), low(0.25, 1.0, [0.72, 0.68, 0.66]))), paint);
   // the logs' cut ends (pale), and the steering wheel: a wooden ring on the stick
   parts(group, k + 'cut', CUT, () => [
     ...[-1, 1].flatMap(s => [logEnd(FR, [s * FX, FY, FRONT + 0.002], [0, 0, 1]), logEnd(FR, [s * FX, FY, BACK - 0.002], [0, 0, -1]),
       logEnd(0.07, [s * (FX + 0.052), R, FZ], [s, 0, 0]), logEnd(0.07, [s * (FX + 0.052), R, BZ], [s, 0, 0])]),
     ...[-1, 1].flatMap(s => [logEnd(0.09, [s * (FX + 0.072), XY, FRONT - 0.12], [s, 0, 0]), logEnd(0.09, [s * (FX + 0.072), XY, BACK + 0.12], [s, 0, 0])]),
-    new THREE.TorusGeometry(0.15, 0.025, 5, 10).rotateX(-0.75).translate(0.42, 1.08, 0.58),
+    new THREE.TorusGeometry(0.15, 0.025, 5, 10).rotateX(-0.75).translate(0.42, 1.14, 0.58),
   ]);
   // the stone: the floor slab between the rollers, the dash before the driver, the two benches
-  parts(group, k + 'stone', STONE2, () => [
-    rock(1, FX - 0.08, 0.09, 0.62, 0, 0.4, -0.2, 0.12),
-    rock(2, FX - 0.1, 0.24, 0.16, 0, 0.72, 0.86, 0.14),
-    rock(3, FX - 0.16, 0.1, 0.22, 0, 0.58, 0.28, 0.12),
-    rock(4, FX - 0.16, 0.1, 0.22, 0, 0.58, -0.54, 0.12),
+  parts(group, k + 'floor', STONE, () => [rock(1, FX - 0.1, 0.12, 0.66, 0, 0.5, -0.2, 0.1)]);
+  // the dash: a big rough boulder over the front roller, sloping up toward the driver (the car's stone bonnet)
+  parts(group, k + 'dash', STONE, () => [rock(2, FX - 0.02, 0.26, 0.4, 0, 0.86, 1.0, 0.16)]);
+  parts(group, k + 'seats', STONE2, () => [
+    rock(3, FX - 0.16, 0.11, 0.22, 0, 0.66, 0.28, 0.12),
+    rock(4, FX - 0.16, 0.11, 0.22, 0, 0.66, -0.54, 0.12),
   ]);
-  // the canopy: a hide sagging between the poles' tops, its edges a little ragged, double-sided; a few dark spots on it
+  // the canopy: a hide sagging between the poles' tops, double-sided; a few dark spots on it
   const hide = new THREE.MeshLambertMaterial({ color: 0xd9b26a, side: THREE.DoubleSide });
   const CX = FX + 0.12, CZ0 = 0.82, CZ1 = -1.2, sag = (x, z) => PY + 0.05 - 0.07 * (1 - (x / CX) ** 2) * (1 - ((z - (CZ0 + CZ1) / 2) / ((CZ0 - CZ1) / 2)) ** 2);
   const sheet = () => {
     const geo = new THREE.PlaneGeometry(2 * CX, CZ0 - CZ1, 6, 6).rotateX(-Math.PI / 2).translate(0, 0, (CZ0 + CZ1) / 2), p = geo.attributes.position;
     for (let i = 0; i < p.count; i++) {
       const x = p.getX(i), z = p.getZ(i), edge = Math.abs(Math.abs(x) - CX) < 1e-6 || Math.abs(z - CZ0) < 1e-6 || Math.abs(z - CZ1) < 1e-6;
-      const j = edge ? 0.05 * Math.sin(i * 2.7) : 0;
-      p.setXYZ(i, x + (Math.abs(Math.abs(x) - CX) < 1e-6 ? Math.sign(x) * j : 0), sag(x, z) - (edge ? 0.03 : 0), z + (Math.abs(Math.abs(x) - CX) < 1e-6 ? 0 : Math.sign(z - (CZ0 + CZ1) / 2) * j));
+      p.setY(i, sag(x, z) - (edge ? 0.03 : 0));
     }
     geo.computeVertexNormals();
     return geo;
   };
-  place(group, shared(k + 'hide', sheet), hide);
+  // (and a ragged flap hanging 10 to 14 cm all round its edge, so the canopy reads from the side as well as from above)
+  const flap = () => {
+    const pos = [], ring = [[-CX, CZ0], [CX, CZ0], [CX, CZ1], [-CX, CZ1]], top = PY + 0.02;
+    ring.forEach((a, e) => {
+      const b = ring[(e + 1) % 4], n = 6;
+      for (let i = 0; i < n; i++) {
+        const p = [a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n], q = [a[0] + (b[0] - a[0]) * (i + 1) / n, a[1] + (b[1] - a[1]) * (i + 1) / n];
+        const dp = 0.1 + 0.04 * ((i + e) % 2), dq = 0.1 + 0.04 * ((i + 1 + e) % 2);
+        pos.push(p[0], top, p[1], q[0], top, q[1], q[0], top - dq, q[1], p[0], top, p[1], q[0], top - dq, q[1], p[0], top - dp, p[1]);
+      }
+    });
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.computeVertexNormals();
+    return geo;
+  };
+  place(group, shared(k + 'hide', () => merge([sheet(), flap()])), hide);
   const spot = (x, z, a, b) => { // (a spot on the hide: a little oval following its sag, 1.2 cm above it)
     const geo = new THREE.CircleGeometry(1, 7).rotateX(-Math.PI / 2).scale(a, 1, b), p = geo.attributes.position;
     for (let i = 0; i < p.count; i++) p.setY(i, sag(x + p.getX(i), z + p.getZ(i)) + 0.012);

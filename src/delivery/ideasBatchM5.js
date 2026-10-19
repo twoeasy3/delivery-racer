@@ -13,7 +13,7 @@ export const IDEAS_BATCH_M5 = [
     hw: 1.06, hl: 2.42, height: 1.42, note: 'Out in front before the green flag, with the lights going on the roof.',
     maxSpeed: 41, accel: 14, agility: 1.15, crossing: 0.35, health: 170, mass: 1.5, sound: 'muscle' },
   { id: 'stonecar', name: 'Stone-Age Car', basedOn: "The Flintstones' car (1960 cartoon)", model: 'stonecar', color: 0x9a6a3c, evilColor: 0x4a3a2e,
-    hw: 1.0, hl: 1.85, height: 2.05, note: 'Rollers of solid rock, a frame of logs and a hide to keep the sun off.',
+    hw: 1.0, hl: 1.85, height: 1.82, note: 'Rollers of solid rock, a frame of logs and a hide to keep the sun off.',
     maxSpeed: 22, accel: 6, agility: 0.9, crossing: 0.8, health: 220, mass: 2.2, sound: 'junker' },
   { id: 'skiplorry', name: 'Skip Lorry', basedOn: 'Leyland Roadrunner skip loader (1980s)', model: 'skiplorry', color: 0xf0c020, evilColor: 0x3f5a3a,
     hw: 1.25, hl: 3.3, height: 3.05, note: 'It lifts a full skip off the kerb and drives off with it swinging on four chains.',
