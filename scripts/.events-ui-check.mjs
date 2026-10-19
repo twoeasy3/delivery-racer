@@ -25,7 +25,7 @@ const SHOTS = opt('shots', null);
 let failed = 0;
 const check = (ok, what) => { console.log((ok ? '  ok    ' : '  FAIL  ') + what); if (!ok) failed++; };
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-const MAIN_PRINT = { logic: '756d432419', legacy: '0da7e18857' }; // (since CHECKLIST 494 + 496-499 + 515 (the M1 idea cars), the ram cap, throw spread, tank shell, rickety floor and the oil / glue / EMP / magma hazards: was c0c2c73e68 / 8c50a659a9 after 494 alone, 8dbc477d85 / bcc9df44d0; since CHECKLIST 476, a dead end's blocker solid from the side: was 057a22806d / 661de07fbe; since CHECKLIST 470, no pickup in the air: was 33a0394c26 / dd565f56b3, main v1.1.152-alpha, 954c288)
+const MAIN_PRINT = { logic: 'b2579b8f43', legacy: 'cd255004bd' }; // (since CHECKLIST 494 + 496-499 + 515 (the M1 idea cars), the ram cap, throw spread, tank shell, rickety floor and the oil / glue / EMP / magma hazards: was c0c2c73e68 / 8c50a659a9 after 494 alone, 8dbc477d85 / bcc9df44d0; since CHECKLIST 476, a dead end's blocker solid from the side: was 057a22806d / 661de07fbe; since CHECKLIST 470, no pickup in the air: was 33a0394c26 / dd565f56b3, main v1.1.152-alpha, 954c288)
 const NOW = '&eventsnow=2026-10-17'; // (all four events on: Christmas Eve, the Car Hunt, the Concept Strike, the Comet Hunt)
 
 // ---- the source

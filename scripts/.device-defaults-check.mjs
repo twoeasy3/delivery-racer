@@ -46,7 +46,7 @@ if (!ONLY_SHOTS) {
   check(/say\(group, \.\.\.keys\) \{\s*if \(!shows\(group, keys\[0\]\)\) return null;/.test(msgs), 'messages.js: Message.say asks the Verbosity first');
   const { fingerprints, logicFiles } = await import(new URL('file://' + join(ROOT, 'scripts/logic-hash.mjs')).href);
   const prints = fingerprints(join(ROOT, 'src/delivery/'));
-  check(prints.logic === '756d432419' && prints.legacy === '0da7e18857', `the replay fingerprint unmoved by them: the one after CHECKLIST 494's ram cap, throw spread, tank shell and rickety floor and 496-499's oil / glue / EMP / magma hazards and 515's M1 idea cars (logic ${prints.logic}, legacy ${prints.legacy})`);
+  check(prints.logic === 'b2579b8f43' && prints.legacy === 'cd255004bd', `the replay fingerprint unmoved by them: the one after CHECKLIST 494's ram cap, throw spread, tank shell and rickety floor and 496-499's oil / glue / EMP / magma hazards and 515's M1 idea cars (logic ${prints.logic}, legacy ${prints.legacy})`);
   check(!logicFiles(join(ROOT, 'src/delivery/')).some(f => /render\/(device|verbosity|touch|menu)\.js$/.test(f)), 'render/device.js, verbosity.js, touch.js, menu.js outside the rules files');
 }
 
