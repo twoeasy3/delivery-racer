@@ -29,6 +29,7 @@ import { addLegend } from './legenddecal.js';
 import { dressCosmetics } from './showcar.js';
 import { setUnderglowLevel } from './underglow.js';
 import { LAMP_DEBUG, lampKey, lampsFor, makeLampMarkers } from './carlights.js';
+import { animateAnimal, ANIMAL_NEAR } from './animalanim.js'; // (the animals' idle and gait: CHECKLIST 514)
 import { parentVelocity } from './gameclock.js'; // (the parent's own velocity, for its trails: CHECKLIST 456)
 import { turboTrailStyle } from './turbotrails.js'; // (?turbotrail=<name>: another look, drawn there; CHECKLIST 456)
 const carried = { x: 0, y: 0, z: 0 };
@@ -473,6 +474,7 @@ export const syncPickups = (dt) => {
       mesh.userData.rock.rotation.x = o.spin || 0;
       placeRock(o, mesh);
     }
+    if (mesh.userData.anim && Math.abs(Track.along(o.s) - here) < ANIMAL_NEAR) animateAnimal(mesh, o, i); // (an animal breathing, walking, hopping)
     if (o.ride) mesh.userData.animate(o.ride.on ? o.ride.t : 0); // (a cyclist pedalling)
     if (o.run && mesh.userData.animate) mesh.userData.animate(o.run.t || 0); // (a marathon runner running)
     if (mesh.userData.beacons) { // (a wide load's escort: its beacons flash while it is moving over to block)
