@@ -1,12 +1,14 @@
 // Z-FIGHTING, found from a model's geometry (no pictures): every visible mesh's triangles are taken into world space, and
 // each pair that lies in (nearly) the same plane and overlaps in area is a place where the depth buffer cannot tell which
 // surface is in front. A pair is kept only if it could be SEEN: from a point over the overlap, along the face's normal either
-// way (never from underneath the car), a ray meets two or more surfaces at about the plane's depth with nothing nearer in
+// way (never from underneath the car, never from inside a closed solid of it), a ray meets two or more surfaces at about the plane's depth with nothing nearer in
 // front (the ray honours each material's sides, so a face turned away or a surface buried inside the body does not count),
-// (a pair of the same flat colour is kept but marked `sameColour`: it cannot be seen to flicker, but it is a doubled surface).
+// (a pair of the same flat colour is kept but marked `sameColour`: it cannot be seen to flicker, but it is a doubled surface;
+// one with a material drawn with a polygon offset is kept but marked `offset`: the offset decides it; two overlays that write
+// no depth (depthWrite false) are left out: they are drawn in order and never fight).
 // Used by the model editor's Z-fight tab and by scripts/.zfight-check.mjs.
 //   findZFights(model, { gap = 0.004, minArea = 0.0001 }) -> [{ a, b, aMat, bMat, area, gapMin, gapMax, pairs, sameFacing,
-//     normal, at, certain, sameColour, view, sep }] biggest first: the certain (under CERTAIN m apart) before the weak, those
+//     normal, at, certain, sameColour, offset, view, sep }] biggest first: the certain (under CERTAIN m apart) before the weak, those
 //     that can be seen to flicker before the same-coloured ones.
 //   sep: how far b's plane stands in front of a's, along the view direction (view * normal; negative: behind), m.
 //   a, b: the meshes (THREE.Mesh); area: m2 of the smaller surface involved; gapMin/gapMax: m between the planes; at: world
@@ -60,10 +62,12 @@ export const findZFights = (model, { gap: GAP = 0.004, minArea = 0.0001 } = {}) 
       }
       poly = out;
     }
-    let s = 0;
-    for (let i = 0; i < poly.length; i++) { const a = poly[i], b = poly[(i + 1) % poly.length]; s += a[0] * b[1] - b[0] * a[1]; }
+    let s = 0, cx = 0, cy = 0;
+    for (let i = 0; i < poly.length; i++) { const a = poly[i], b = poly[(i + 1) % poly.length], k = a[0] * b[1] - b[0] * a[1]; s += k; cx += (a[0] + b[0]) * k; cy += (a[1] + b[1]) * k; }
+    if (Math.abs(s) > 1e-12) mid.copy(A.p[0]).addScaledVector(ax, cx / (3 * s)).addScaledVector(ay, cy / (3 * s)); // (the overlap's own middle)
     return Math.abs(s) / 2;
   };
+  const mid = new V();
   const colourOf = (m) => (m && m.color ? m.color.getHex() : -1);
   const dist = (q, T) => Math.abs(T.n.dot(q) - T.d);
 
@@ -76,6 +80,7 @@ export const findZFights = (model, { gap: GAP = 0.004, minArea = 0.0001 } = {}) 
       if (B.lo.y > A.hi.y + GAP || B.hi.y < A.lo.y - GAP || B.lo.z > A.hi.z + GAP || B.hi.z < A.lo.z - GAP || B.hi.x < A.lo.x - GAP) continue;
       const dot = A.n.dot(B.n);
       if (Math.abs(dot) < 0.98) continue;                                            // (not parallel enough to lie together)
+      if (A.m?.depthWrite === false && B.m?.depthWrite === false) continue;          // (two overlays that write no depth: drawn in order, never fighting)
       if (A.node === B.node && A.p.some(q => B.p.some(r => q.distanceToSquared(r) < 1e-10))) continue; // (neighbours in one surface)
       const gap = Math.max(...B.p.map(q => dist(q, A)), ...A.p.map(q => dist(q, B)));
       if (gap > GAP) continue;
@@ -83,20 +88,44 @@ export const findZFights = (model, { gap: GAP = 0.004, minArea = 0.0001 } = {}) 
       const area = overlapArea(A, B);
       if (area < 1e-6) continue;
       const key = Math.min(A.node.id, B.node.id) + '|' + Math.max(A.node.id, B.node.id) + '|' + (dot > 0 ? 's' : 'o') + (same ? 'c' : '');
-      const g = groups.get(key) || { a: A.node, b: B.node, aMat: A.m, bMat: B.m, area: 0, gapMin: Infinity, gapMax: 0, pairs: 0, at: null, sameFacing: dot > 0, sameColour: same, normal: A.n.clone(), setA: new Set(), setB: new Set(), best: 0, sample: null };
+      const g = groups.get(key) || { a: A.node, b: B.node, aMat: A.m, bMat: B.m, offset: !!(A.m?.polygonOffset || B.m?.polygonOffset), area: 0, gapMin: Infinity, gapMax: 0, pairs: 0, at: null, sameFacing: dot > 0, sameColour: same, normal: A.n.clone(), setA: new Set(), setB: new Set(), best: 0, sample: null };
       g.area += area; g.pairs++; g.gapMin = Math.min(g.gapMin, gap); g.gapMax = Math.max(g.gapMax, gap);
       g.setA.add(i); g.setB.add(j);
-      if (area > g.best) { g.best = area; g.sample = { A, B }; }
+      if (area > g.best) { g.best = area; g.sample = { A, B, mid: mid.clone() }; }
       groups.set(key, g);
     }
   }
 
   const rc = new THREE.Raycaster();
+  // is a point inside a closed solid (a box, a closed cylinder...)? Then an eye there is inside the car's body, where a camera
+  // never is: along every axis ray from it, that one mesh shows more backs than fronts (its material drawn both sides for the test)
+  const meshes = [];
+  model.traverseVisible((n) => { if (n.isMesh && !n.isInstancedMesh && n.geometry?.attributes.position) meshes.push(n); });
+  const AXES = [new V(1, 0, 0), new V(-1, 0, 0), new V(0, 1, 0), new V(0, -1, 0), new V(0, 0, 1), new V(0, 0, -1)];
+  const box3 = new THREE.Box3(), nrm = new THREE.Matrix3();
+  const insideSolid = (eye) => meshes.some((m) => {
+    const mats = [].concat(m.material);
+    if (mats.some(x => !x)) return false;
+    if (!box3.setFromObject(m).containsPoint(eye)) return false;
+    const sides = mats.map(x => x.side);
+    mats.forEach(x => { x.side = THREE.DoubleSide; });
+    try {
+      nrm.getNormalMatrix(m.matrixWorld);
+      return AXES.every((d) => {                       // (the winding along the ray: more of its backs met than fronts, so inside one
+        rc.set(eye, d); rc.near = 0; rc.far = Infinity; //  of its solids at least; a merged mesh's overlapping blocks count right too)
+        const out = []; m.raycast(rc, out);
+        let wind = 0;
+        for (const h of out) if (h.face) wind += h.face.normal.clone().applyMatrix3(nrm).dot(d) > 0 ? 1 : -1;
+        return wind > 0;
+      });
+    } finally { mats.forEach((x, k) => { x.side = sides[k]; }); }
+  });
   const seen = (g) => {
-    const { A, B } = g.sample, c = new V().addVectors(A.p[0], A.p[1]).add(A.p[2]).add(B.p[0]).add(B.p[1]).add(B.p[2]).multiplyScalar(1 / 6);
+    const { A, B } = g.sample, c = g.sample.mid; // (the middle of the largest overlap: a point both surfaces cover)
     for (const sign of [1, -1]) {
       const view = A.n.clone().multiplyScalar(sign);
       if (view.y < -0.35) continue;                                  // (seen from underneath: the camera is never there)
+      if (insideSolid(c.clone().addScaledVector(view, 0.5))) continue; // (from inside the body: the camera is never there either)
       rc.set(c.clone().addScaledVector(view, 0.5), view.clone().negate()); rc.near = 0; rc.far = 1;
       const hits = rc.intersectObject(model, true).filter(h => h.object.visible);
       if (!hits.length || hits[0].distance < 0.5 - GAP - 0.002) continue; // (something else is in front)
@@ -112,10 +141,9 @@ export const findZFights = (model, { gap: GAP = 0.004, minArea = 0.0001 } = {}) 
     if (g.area < minArea || !seen(g)) continue;
     out.push(g);
   }
-  // the overlap's middle: the mean of the sample triangles' middles
+  // the overlap's middle: the middle of the largest triangle pair's shared area
   for (const g of out) {
-    const { A, B } = g.sample;
-    g.at = new V().addVectors(A.p[0], A.p[1]).add(A.p[2]).add(B.p[0]).add(B.p[1]).add(B.p[2]).multiplyScalar(1 / 6);
+    g.at = g.sample.mid.clone();
     g.certain = g.gapMin < CERTAIN;
     delete g.setA; delete g.setB; delete g.best;
   }
