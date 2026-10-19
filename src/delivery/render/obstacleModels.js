@@ -28,6 +28,25 @@ const boxModel = (parts) => {
   }
   return group;
 };
+// THE ANIMALS' RIGS (CHECKLIST 514; render-only, posed by render/animalanim.js): parts re-hinged and gathered under pivot groups,
+// their look at rest unchanged (no new mesh, so no new draw call). hinge: the part turns about the point (dx, dy, dz) off its
+// centre; gather: parts moved under a group (no draw call) at (x, y, z) of their parent, keeping where they are.
+const hinge = (mesh, dx, dy, dz) => {
+  mesh.geometry.translate(-dx, -dy, -dz);
+  mesh.position.set(mesh.position.x + dx, mesh.position.y + dy, mesh.position.z + dz);
+  return mesh;
+};
+const gather = (parent, parts, x, y, z) => {
+  const pivot = new THREE.Group();
+  pivot.position.set(x, y, z);
+  parent.add(pivot);
+  for (const part of parts) { part.position.set(part.position.x - x, part.position.y - y, part.position.z - z); pivot.add(part); }
+  return pivot;
+};
+// a bump 0..1..0 over the first `width` of every `period` s (an ear flick, a blink): 0 the rest of the time, and at t = 0
+const bump = (t, period, width) => { const f = ((t % period) + period) % period; return f > 0 && f < width ? Math.sin(Math.PI * f / width) : 0; };
+// the pose, set every frame near the player: (t idle s, stride gait radians, walk 0..1, lift 0..1 off the ground); all 0 = as built
+const rig = (group, step, pose) => { group.userData.anim = { step, pose, s: NaN, lat: NaN, stride: 0, walk: 0 }; return group; };
 
 // ---- obstacle models, one builder per kind; all face local +z -------------------------------
 export const OBSTACLE_MODELS = {
@@ -162,7 +181,22 @@ export const OBSTACLE_MODELS = {
       pupil.position.set(side * 0.6, 2.2, 1.72);
       group.add(eye, pupil);
     }
-    return group;
+    // the rig: it pitches up from its tail as it hops, its back legs kicking out behind; sat, it breathes, its throat pulsing, and blinks
+    const [body, head, legL, legR, eyeL, pupilL, eyeR, pupilR] = group.children;
+    hinge(body, 0, -0.6, 0);
+    hinge(head, 0, 0.45, 0);                       // (its top: the throat swells below)
+    hinge(legL, 0, 0, 0.85); hinge(legR, 0, 0, 0.85); // (the hip, at the legs' front)
+    const tilt = gather(group, [...group.children], 0, 0, -1.3), eyes = [eyeL, pupilL, eyeR, pupilR];
+    return rig(group, 1, (t, stride, walk, lift) => {
+      tilt.rotation.x = -0.22 * lift;
+      legL.rotation.x = legR.rotation.x = -0.7 * lift;
+      const sat = 1 - lift, throat = Math.sin(t * 6.5) * Math.sin(t * 6.5) * Math.max(0, Math.sin(t * 0.9));
+      body.scale.y = 1 + 0.035 * Math.sin(t * 1.9) * sat;
+      head.scale.y = 1 + 0.12 * throat * sat;
+      head.scale.x = 1 + 0.05 * throat * sat;
+      const lid = 1 - 0.85 * bump(t + 1.1, 3.7, 0.16);
+      for (const e of eyes) e.scale.y = lid;
+    });
   },
   // a black and white cow
   // a drop bear: a koala gone wrong. A round grey body, big furry ears, a black nose, red eyes, claws out
@@ -186,7 +220,17 @@ export const OBSTACLE_MODELS = {
       eye.position.set(side * 0.17, 1.15, 0.4);
       group.add(ear, eye);
     }
-    return group;
+    // the rig: up its tree it swipes, claws out, head cocked and ears twitching; dropping, both arms go up
+    const [, , head, nose, armL, armR, clawL, clawR, earL, eyeL, earR, eyeR] = group.children;
+    const skull = gather(group, [head, nose, earL, eyeL, earR, eyeR], 0, 0.75, 0.1);
+    const arms = [gather(group, [armL, clawL], -0.5, 0.58, 0), gather(group, [armR, clawR], 0.5, 0.58, 0)];
+    return rig(group, 1, (t, stride, walk, lift) => {
+      skull.rotation.z = 0.12 * Math.sin(t * 0.8);
+      skull.rotation.y = 0.18 * Math.sin(t * 0.43);
+      earL.rotation.z = 0.3 * bump(t, 2.6, 0.2);
+      earR.rotation.z = -0.3 * bump(t + 1.3, 3.1, 0.2);
+      arms.forEach((arm, k) => { arm.rotation.x = -0.35 * Math.sin(t * 2.6 + k * Math.PI) * (1 - lift) - 1.1 * lift; });
+    });
   },
   // a kangaroo, upright: big feet and a long tail behind, small arms, ears up
   kangaroo: () => {
@@ -206,7 +250,24 @@ export const OBSTACLE_MODELS = {
       [fur, 0.16, 0.16, 1.1, 0, 0.45, -0.85],      // tail
     ]);
     roo.scale.setScalar(1.5); // (half as big again: they were hard to see)
-    return roo;
+    // the rig: in the air its legs kick back and its tail swings up; at rest it nods, its paws fidget and an ear flicks
+    const [, , head, earL, earR, armL, armR, hauL, hauR, footL, footR, tail] = roo.children;
+    hinge(tail, 0, 0, 0.55);
+    hinge(armL, 0, 0.17, 0); hinge(armR, 0, 0.17, 0);
+    const legs = [gather(roo, [hauL, footL], -0.2, 0.5, 0), gather(roo, [hauR, footR], 0.2, 0.5, 0)];
+    const skull = gather(roo, [head, earL, earR], 0, 1.5, 0.15);
+    hinge(earL, 0, -0.14, 0); hinge(earR, 0, -0.14, 0);
+    return rig(roo, 1, (t, stride, walk, lift) => {
+      const still = 1 - lift;
+      tail.rotation.x = 0.3 * lift;
+      tail.rotation.y = 0.12 * Math.sin(t * 0.8) * still;
+      legs[0].rotation.x = legs[1].rotation.x = 0.45 * lift;
+      armL.rotation.x = -0.3 * lift + 0.15 * Math.sin(t * 1.7) * still;
+      armR.rotation.x = -0.3 * lift + 0.15 * Math.sin(t * 1.9) * still;
+      skull.rotation.x = 0.1 * Math.sin(t * 0.9) * still;
+      earL.rotation.z = 0.4 * bump(t, 2.9, 0.22);
+      earR.rotation.z = -0.4 * bump(t + 1.7, 3.6, 0.22);
+    });
   },
   // a portaloo: a plastic cabin (blue, green or orange), a pale roof, its door at the front with a
   // little vent, and a pipe out of the roof
@@ -284,7 +345,7 @@ export const OBSTACLE_MODELS = {
   // a wildebeest: dark grey-brown, high in the shoulder, a black mane and beard, curved horns
   wildebeest: () => {
     const hide = lambert(0x5d544c), dark = lambert(0x24201d), horn = lambert(0x3a3632);
-    return boxModel([
+    const group = boxModel([
       [hide, 0.9, 0.95, 2.0, 0, 1.25, -0.1],      // body
       [hide, 0.95, 0.5, 0.8, 0, 1.75, 0.45],      // the shoulders' hump
       [dark, 0.2, 0.55, 1.0, 0, 1.95, 0.35],      // mane
@@ -299,6 +360,7 @@ export const OBSTACLE_MODELS = {
       [dark, 0.22, 0.8, 0.22, 0.3, 0.4, -0.85],
       [dark, 0.1, 0.7, 0.1, 0, 1.05, -1.15],      // tail
     ]);
+    return quadruped(group, 2.2, [8, 9, 10, 11], 0.8, [3, 4, 5, 6, 7], [0, 1.6, 0.8], 12);
   },
   // a zebra: white with black stripes all over, a black-and-white mane
   zebra: () => {
@@ -314,11 +376,13 @@ export const OBSTACLE_MODELS = {
     for (const [x, z] of [[-0.25, 0.7], [0.25, 0.7], [-0.25, -0.7], [0.25, -0.7]]) {
       parts.push([white, 0.18, 0.85, 0.18, x, 0.42, z], [black, 0.19, 0.1, 0.19, x, 0.55, z], [black, 0.19, 0.1, 0.19, x, 0.25, z]);
     }
-    return boxModel(parts);
+    const group = boxModel(parts), c = [...group.children]; // (a leg is three parts, the white and its two bands: gathered, at its top)
+    const legs = [0, 1, 2, 3].map(k => gather(group, [c[12 + k * 3], c[13 + k * 3], c[14 + k * 3]], c[12 + k * 3].position.x, 0.845, c[12 + k * 3].position.z));
+    return quadruped(group, 2.2, legs, 0, [1, 2, 3, 4], [0, 1.4, 0.85], -1);
   },
   cow: () => {
     const white = lambert(0xf4f1ea), black = lambert(0x1f1f1f), pink = lambert(0xe8a0a8);
-    return boxModel([
+    const group = boxModel([
       [white, 1.1, 1.0, 2.2, 0, 1.2, 0],          // body
       [black, 1.14, 0.6, 0.8, 0, 1.35, -0.4],     // patches
       [black, 1.14, 0.5, 0.5, 0, 1.1, 0.55],
@@ -329,8 +393,29 @@ export const OBSTACLE_MODELS = {
       [black, 0.25, 0.7, 0.25, -0.38, 0.35, -0.8],
       [black, 0.25, 0.7, 0.25, 0.38, 0.35, -0.8],
     ]);
+    return quadruped(group, 1.5, [5, 6, 7, 8], 0.7, [3, 4], [0, 1.5, 1.0], -1, 4);
   },
 };
+// A FOUR-LEGGED ANIMAL'S RIG (the cow, the wildebeest, the zebra; CHECKLIST 514): its legs swing from the hip as it goes (diagonal
+// pairs, `step` m a stride), its head bobs with the stride and, standing, nods, looks about and dips to graze; a tail swishes; a
+// cow chews (its nose, `chew`). legs: children's indexes (each hinged at `top`) or pivots already made; head: children's indexes,
+// gathered at `neck`; tail: its index (hinged at its top) or -1.
+function quadruped(group, step, legs, top, head, neck, tail, chew = -1) {
+  const c = [...group.children];
+  const nose = chew >= 0 ? c[chew] : null, swish = tail >= 0 ? c[tail] : null;
+  const pivots = legs.map(k => typeof k === 'number' ? hinge(c[k], 0, top - c[k].position.y, 0) : k);
+  const skull = gather(group, head.map(k => c[k]), neck[0], neck[1], neck[2]);
+  if (swish) hinge(swish, 0, 0.35, 0);
+  return rig(group, step, (t, stride, walk) => {
+    const stand = 1 - walk;
+    pivots.forEach((leg, k) => { leg.rotation.x = 0.45 * walk * Math.sin(stride + (k === 0 || k === 3 ? 0 : Math.PI)); });
+    const graze = Math.pow(Math.max(0, Math.sin(t * 0.29)), 3);
+    skull.rotation.x = walk * 0.08 * Math.sin(stride * 2) + stand * (0.05 * Math.sin(t * 1.1) + 0.4 * graze);
+    skull.rotation.y = stand * 0.15 * Math.sin(t * 0.37);
+    if (swish) { swish.rotation.z = 0.3 * Math.sin(t * 2.3) * Math.max(0.3, Math.abs(Math.sin(t * 0.5))); swish.rotation.x = -0.15 * walk; }
+    if (nose) nose.position.x = 0.035 * Math.sin(t * 7) * Math.max(0, Math.sin(t * 0.45 + 1)) * stand;
+  });
+}
 
 // a traffic cone: one mesh, orange with a white band, drawn 1.4 times life size (as its hitbox is)
 const CONE_PROFILE = [[0.32, 0], [0.32, 0.06], [0.22, 0.06], [0.155, 0.34], [0.155, 0.341], [0.118, 0.5], [0.118, 0.501], [0.05, 0.78], [0, 0.78]];

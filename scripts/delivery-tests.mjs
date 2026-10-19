@@ -67,10 +67,10 @@ const GROUPS = {
     files: [/hazards|gambles|pickups\.js|gimmicks\.js|gravel|pursuit|radiation|ufostrike|crossing|bullettrain|police|slowpads|slow-pad/],
   },
   obstacles: {
-    about: 'Obstacles, pickups and targets: the themes\' own obstacles, items on the shoulders, TANK RAGE targets, dents',
-    seconds: 35,
-    tests: [t('.obstacles-check.mjs'), t('.shoulder-items-check.mjs'), t('.targets-check.mjs'), t('.dents-check.mjs')],
-    files: [/themes\.js|collision\.js|pickups\.js|powerups\.js|obstacleText|pickupText|dents/],
+    about: 'Obstacles, pickups and targets: the themes\' own obstacles, items on the shoulders, TANK RAGE targets, dents, the animals\' idle and gait animation (.animals-anim-check: rest as built, moving, back to rest, still paused, not in step; CHECKLIST 514)',
+    seconds: 40,
+    tests: [t('.obstacles-check.mjs'), t('.shoulder-items-check.mjs'), t('.targets-check.mjs'), t('.dents-check.mjs'), t('.animals-anim-check.mjs')],
+    files: [/themes\.js|collision\.js|pickups\.js|powerups\.js|obstacleText|pickupText|dents|obstacleModels|animalanim/],
   },
   water: {
     about: 'The water stages on the amphibious levels: the amphibious car, boats, traffic at the water\'s edge, the amphibious tank',
