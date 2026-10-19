@@ -76,7 +76,7 @@ try {
   const orig = R.slotById('decal').supports;
   R.registerSlot({ id: 'decal', supports: (c) => c.id === 'pickup' });
   const undoDecal = registerCosmetics([{ slot: 'decal', id: 'roundel', name: 'Roundel', free: true }]);
-  check(tabs(car('pickup')).includes('decal') && !tabs(car('hothatch')).includes('decal') && R.SLOT_LIST.filter(s => s.id === 'decal').length === 1, 'registerSlot merges into the dormant Decal: its supports() decides per car (a zone table row)');
+  check(tabs(car('pickup')).includes('decal') && !tabs(car('moonrover')).includes('decal') && R.SLOT_LIST.filter(s => s.id === 'decal').length === 1, 'registerSlot merges into the dormant Decal: its supports() decides per car (a zone table row)');
   undoDecal(); R.registerSlot({ id: 'decal', supports: orig });
   R.registerSlot({ id: 'horn', label: 'Horn', scope: 'player', items: () => [{ id: 'a', name: 'A' }] });
   check(R.SLOT_LIST.map(s => s.id).indexOf('horn') === R.SLOT_LIST.map(s => s.id).indexOf('kill') - 1, 'a new slot goes in before Kill FX');
