@@ -1,5 +1,7 @@
 # Cargo z-fighting survey (CHECKLIST 463)
 
+**Superseded (19-Oct, CHECKLIST 492):** every model below is now at 0 pairs under 0.5 mm; what remains is weak pairs only, listed in 492. The survey is `scripts/cargo-zfight-survey.mjs`.
+
 A report, nothing fixed but the Stolen Maple Syrup (`syrup`, now 0 pairs). Every cargo model (`render/cargoModels.js` CARGO_MODELS), built headless, Evil ones in each state (0 calm, 1 agitated, 2 furious), posed at t = 0.3, 1.3, 2.7 and 4.1 s, run through `render/zfight.js` findZFights (planes within 4 mm, overlap over 1 cm2, seen from outside, not from underneath). Only FLICKER-CLASS pairs are listed (two different colours or a textured one; same flat colour pairs left out). `certain`: under 0.5 mm apart (fights at any distance); the rest only fight on a weak depth buffer or far away. A pair found at several times or states is listed once per state with its biggest overlap. Sizes are the overlap in cm2 (the models are about 0.5 to 1 m across). How: a headless survey script (startModels + findZFights), not checked in.
 
 Models with flicker-class pairs: 51.

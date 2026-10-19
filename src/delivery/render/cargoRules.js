@@ -60,23 +60,33 @@ export const CARGO_RULES = {
     keepOut: [{ a: 'hamster|foot', b: 'hatch' }],
     anchors: [{ part: 'foot', of: 'ball', shape: { sphere: 0.42 }, maxGap: 0.012, states: [0, 1] }],
   },
+  // Sushi Boat: the nigiri that slides along the deck stops short of its neighbour and the wasabi (it once ran 9.5 cm
+  // through the next piece, their toppings one plane: CHECKLIST 455)
+  sushi: {
+    keepOut: [{ a: 'slider', b: 'nigiri\\d|wasabi' }],
+  },
+  // Crate of Scarabs: the agitated ones crawl head down the outside of the sides, never through the slats or the posts (they
+  // once stood level through the wall: CHECKLIST 455)
+  scarabs: {
+    keepOut: [{ a: 'crawler\\d', b: 'crate' }],
+  },
 };
 
 // the items not yet given rules (17-Oct): their audit is CARGO-AUDIT.md. This list may only shrink (the check holds it to
 // the number it was made with): an item leaves it when it gets an entry above
 export const PENDING_AUDIT = [
   'cake', 'goldfish', 'cactus', 'clock', 'pizza', 'coffee', 'balloons', 'present', 'bouquet', 'pancakes', 'sundae',
-  'sushi', 'teaset', 'record', 'lavalamp', 'snowglobe', 'bonsai', 'puppy', 'canary', 'ramen', 'globe', 'trophy',
+  'teaset', 'record', 'lavalamp', 'snowglobe', 'bonsai', 'puppy', 'canary', 'ramen', 'globe', 'trophy',
   'surfboard', 'toolbox', 'telescope', 'porcupine', 'parcel', 'bees', 'doll', 'tentacle', 'egg', 'cooker', 'flytrap',
   'barrel', 'mirror', 'skunk', 'cannonball', 'mimic', 'fireworks', 'alien', 'teddy', 'bats', 'ice', 'snakes', 'genie',
   'reactor', 'goose', 'jack', 'cloud', 'piranhas', 'lawyers', 'chainletter', 'glitter', 'recorders', 'subpoena',
   'telemarketers', 'taxmen', 'wardens', 'consultants', 'inlaws', 'band', 'casserole', 'kittens', 'jumper', 'books',
   'fruit', 'radio', 'piecatapult', 'airhorn', 'ghost', 'nestedboxes', 'spider', 'ink', 'pumpkin', 'pie', 'syrup',
-  'stolenbust', 'waterjugs', 'scarabs', 'goldbar', 'pokerchips', 'fakechips', 'fondue', 'ticketrolls',
+  'stolenbust', 'waterjugs', 'goldbar', 'pokerchips', 'fakechips', 'fondue', 'ticketrolls',
 ];
 
-// flicker-class z-fight pairs known on items still pending (CARGO-AUDIT.md); the check fails on any more than these
-export const KNOWN_ZFIGHTS = {
-  pancakes: 1, sushi: 3, mirror: 4, mimic: 1, chainletter: 51, recorders: 2, telemarketers: 3, taxmen: 10, wardens: 17,
-  consultants: 6, inlaws: 3, jumper: 16, books: 2, radio: 1, ink: 1, syrup: 1, // (syrup: being fixed on claude/syrup-fix)
-};
+// flicker-class z-fight pairs known on items still pending (CARGO-AUDIT.md); the check fails on any more than these. None left
+// (19-Oct, CHECKLIST 455/492: every cargo model at 0 under 0.5 mm; the 17-Oct counts were pancakes 1, sushi 3, mirror 4,
+// mimic 1, chainletter 51, recorders 2, telemarketers 3, taxmen 10, wardens 17, consultants 6, inlaws 3, jumper 16, books 2,
+// radio 1, ink 1, syrup 1)
+export const KNOWN_ZFIGHTS = {};

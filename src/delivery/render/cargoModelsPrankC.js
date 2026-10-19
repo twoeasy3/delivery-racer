@@ -286,7 +286,7 @@ const makeInk = () => {
   const blotMat = onFace(glow(0x1c2fb8)), featherMat = lambert(0xf2eee4, { side: THREE.DoubleSide }), labelMat = lambert(0xfdf4dc);
   // the blotter, leather corners on it
   part(all, box(0.8, 0.03, 0.58), blotterMat, 0, 0.015, 0);
-  for (const x of [-1, 1]) for (const z of [-1, 1]) part(all, box(0.16, 0.012, 0.16), leather, x * 0.38, 0.036, z * 0.27, 0, Math.PI / 4);
+  for (const x of [-1, 1]) for (const z of [-1, 1]) part(all, box(0.16, 0.021, 0.16), leather, x * 0.38, 0.0325, z * 0.27, 0, Math.PI / 4); // (sunk 8 mm into the blotter, not resting level with its top)
   // the bottle: its base's centre at the origin (it rocks on the base's rim, radius BR); a hollow neck
   const BX = -0.12, BZ = 0.02, BR = 0.18;
   const bottle = sub(all, BX, 0.03, BZ);

@@ -210,17 +210,18 @@ const makeClock = () => {
   part(body, box(0.58, 0.06, 0.39), dark, 0, 1.31, 0);
   part(body, new THREE.ConeGeometry(0.3, 0.16, 4), dark, 0, 1.42, 0, 0, Math.PI / 4).scale.z = 0.6;
   for (const x of [-0.24, 0, 0.24]) part(body, sphere(0.035, 8, 6), gold, x, x ? 1.375 : 1.53, 0);
-  part(body, new THREE.CircleGeometry(0.17, 24), lambert(0xfdf4dc), 0, 1.07, 0.168);
+  // (the face 4.5 mm proud of the case, the ticks 4.5 mm over the face, the hands 2.5 and 3 mm over them: CHECKLIST 455)
+  part(body, new THREE.CircleGeometry(0.17, 24), lambert(0xfdf4dc), 0, 1.07, 0.1695);
   part(body, new THREE.TorusGeometry(0.17, 0.018, 6, 24), gold, 0, 1.07, 0.168);
   const ink = glow(0x1c1a17);
   for (let k = 0; k < 12; k++) {
     const a = k / 12 * Math.PI * 2;
-    part(body, box(0.012, k % 3 ? 0.025 : 0.045, 0.004), ink, Math.sin(a) * 0.135, 1.07 + Math.cos(a) * 0.135, 0.171, 0, 0, -a);
+    part(body, box(0.012, k % 3 ? 0.025 : 0.045, 0.014), ink, Math.sin(a) * 0.135, 1.07 + Math.cos(a) * 0.135, 0.167, 0, 0, -a);
   }
-  const hour = sub(body, 0, 1.07, 0.174), minute = sub(body, 0, 1.07, 0.178);
+  const hour = sub(body, 0, 1.07, 0.1785), minute = sub(body, 0, 1.07, 0.1855);
   part(hour, box(0.026, 0.085, 0.004), ink, 0, 0.04, 0);
   part(minute, box(0.016, 0.125, 0.004), ink, 0, 0.06, 0);
-  part(body, sphere(0.014, 6, 5), gold, 0, 1.07, 0.182);
+  part(body, sphere(0.014, 6, 5), gold, 0, 1.07, 0.19);
   const pendulum = sub(body, 0, 0.76, 0.15);
   part(pendulum, box(0.016, 0.4, 0.008), gold, 0, -0.2, 0);
   part(pendulum, cyl(0.06, 0.06, 0.016, 16), gold, 0, -0.42, 0, Math.PI / 2);
@@ -246,7 +247,7 @@ const makePizza = () => {
     else part(b, box(0.64, 0.05, 0.64), card, 0, 0.025, 0);
     // (the band round the sides stops below the card's top: on the open box, whose base is 0.05 high, it once ended
     // level with it, and the two tops fought)
-    part(b, box(0.645, 0.03, 0.645), red, 0, k < 5 ? 0.035 : 0.022, 0);
+    part(b, box(0.649, 0.03, 0.649), red, 0, k < 5 ? 0.035 : 0.022, 0); // (4.5 mm proud of the card)
     boxes.push(b);
     parent = b;
   }
@@ -480,7 +481,7 @@ const makeDoll = () => {
   });
   const head = sub(fig, 0, 0.78, 0);
   part(head, sphere(0.18, 16, 12), china);
-  part(head, new THREE.SphereGeometry(0.19, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.5), hair, 0, 0.01, -0.015);
+  part(head, new THREE.SphereGeometry(0.1845, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.5), hair, 0, 0.01, 0, -0.35); // (a cap 4.5 mm clear of the head, tipped back to the same hairline: it no longer dips through the brow)
   part(head, new THREE.SphereGeometry(0.192, 16, 10, 0, Math.PI, 0, Math.PI * 0.8), hair, 0, 0, -0.01, 0, Math.PI);
   for (const x of [-0.2, 0.2]) {
     part(head, sphere(0.085, 10, 8), hair, x, 0.06, -0.02);
@@ -536,7 +537,7 @@ const makeTentacle = () => {
   part(all, new THREE.TorusGeometry(0.3, 0.025, 6, 18), metal, 0, 0.64, 0, Math.PI / 2);
   const label = sub(all, 0, 0.3, 0.315);
   part(label, box(0.26, 0.2, 0.004), lambert(0xfdf4dc));
-  for (const d of [-1, 1]) part(label, box(0.16, 0.03, 0.005), glow(0xd8262b), 0, 0, 0.002, 0, 0, d * Math.PI / 4);
+  for (const d of [-1, 1]) part(label, box(0.16, 0.03, 0.007), glow(0xd8262b), 0, 0, 0.003, 0, 0, d * Math.PI / 4); // (4.5 mm proud of the label, the back inside it)
   const lid = sub(all);
   part(lid, cyl(0.33, 0.33, 0.07, 18), metal, 0, 0.035, 0);
   part(lid, sphere(0.05, 8, 6), metal, 0, 0.09, 0);
