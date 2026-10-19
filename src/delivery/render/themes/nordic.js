@@ -23,6 +23,9 @@ import { ferryParts } from './nordicModels.js';
 
 const CHUNK = 1000, PINE_CHUNK = 2000; // m of road to a merged mesh, and to a mesh of spruce
 const WATER = 1;                       // the side the fjord is on (the right); the wall is on the other
+const BEYOND = 220;                    // m off the pavement's edge on the wall's side past which the land is not drawn (behind the crest)
+const LIFT = 12.5;                     // m off the pavement's edge before any land is lifted: more than a grid square's diagonal (8 m squares) past
+                                       // the tunnel's wall, so no triangle of lifted land reaches in over the shoulder
 const smooth = (a, b, v) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
 const ridge = (x, z, f, a, b, ph) => { const v = 1 - Math.abs(Math.sin((x * a + z * b) * f + ph) * Math.cos((x * b - z * a) * f * 0.7 + ph * 1.7)); return v * v; };
 // how high a wall stands at (x, z) (m over the water at its top): a massif of ridges, 150 to 380 m
@@ -118,16 +121,16 @@ export const nordic = ({ theme, offRoads, beside, inJunction, levelGroup: group 
     const b = bench(s), sp = spur(s), H = tunnelH(s) + 8;
     const top = wallTop(x, z);
     if (side !== WATER) {
-      const start = 6 + 44 * b, run = 70 + 40 * b;
+      const start = LIFT + 40 * b, run = 70 + 40 * b;
       let y = ry - 0.3 + 1.2 * b * Math.sin(x * 0.07) * Math.sin(z * 0.06) * smooth(10, 30, e) + (WL + top - ry) * smooth(start, start + run, e);
-      if (sp > 0) y = Math.max(y, ry + H * sp * smooth(5, 13, e));
+      if (sp > 0) y = Math.max(y, ry + H * sp * smooth(LIFT, LIFT + 7, e));
       return y;
     }
     const start = 6 + 8 * b, far = farAt(s);
     let y = ry - 0.3 + (WL - 5 - (ry - 0.3)) * smooth(start, start + 12, e) - 9 * smooth(start + 12, start + 60, e); // the shore, then the deep
     y = Math.max(y, WL + top * 0.9 * smooth(far, far + 120, e) - 14 * (1 - smooth(far - 30, far + 20, e)));            // the far wall
     if (sp > 0) { // the spur: the mountain round the tunnel, down to the water further off
-      const spurY = ry + H * smooth(5, 13, e) + (WL + top * 0.75 - ry - H) * smooth(14, 160, e);
+      const spurY = ry + H * smooth(LIFT, LIFT + 7, e) + (WL + top * 0.75 - ry - H) * smooth(LIFT + 8, 160, e);
       y = y + (Math.max(y, spurY) - y) * sp;
     }
     return Math.max(y, base - 400); // (never NaN)
@@ -140,10 +143,10 @@ export const nordic = ({ theme, offRoads, beside, inJunction, levelGroup: group 
     while (cols < N && arr[cols * 3 + 2] === Z0) cols++;
     const rows = Math.floor(N / cols);
     const far = roads.field(X0, Z0, arr[(N - 1) * 3], arr[(N - 1) * 3 + 2]);
-    const E = new Float32Array(N), SIDE = new Int8Array(N);
+    const E = new Float32Array(N), SIDE = new Int8Array(N), FAR = new Float32Array(N);
     for (let i = 0; i < N; i++) {
       const x = arr[i * 3], z = arr[i * 3 + 2], r = far(x, z), e = r.d - W2;
-      E[i] = e; SIDE[i] = r.lat >= 0 ? 1 : -1;
+      E[i] = e; SIDE[i] = r.lat >= 0 ? 1 : -1; FAR[i] = farAt(r.s);
       if (e < 6) continue; // (the flat strip beside the pavement is road.js's, untouched)
       arr[i * 3 + 1] = shape(x, z, e, SIDE[i], r.s, r.y, arr[i * 3 + 1]);
     }
@@ -153,6 +156,13 @@ export const nordic = ({ theme, offRoads, beside, inJunction, levelGroup: group 
       const a = corner(r, c), b = corner(r, c + 1), d = corner(r + 1, c), e = corner(r + 1, c + 1);
       return fx + fz <= 1 ? a + (b - a) * fx + (d - a) * fz : e + (d - e) * (1 - fx) + (b - e) * (1 - fz);
     };
+    // (what no camera on the road sees, left out of the land's triangles: what is all under the water, the wall's side beyond BEYOND m, and
+    // the far side beyond the far wall's crest. Its points stay where they are, for landAt)
+    const index = terrain.geometry.index, I = index.array, keep = [];
+    const unseen = (k) => (SIDE[k] === WATER ? arr[k * 3 + 1] < WL - 0.8 || E[k] > FAR[k] + 170 : E[k] > BEYOND);
+    for (let t = 0; t < I.length; t += 3) if (!(unseen(I[t]) && unseen(I[t + 1]) && unseen(I[t + 2]))) keep.push(I[t], I[t + 1], I[t + 2]);
+    stats.landDropped = (I.length - keep.length) / 3;
+    terrain.geometry.setIndex(keep);
     P.needsUpdate = true;
     terrain.geometry.computeVertexNormals();
     terrain.geometry.computeBoundingSphere();
@@ -160,7 +170,7 @@ export const nordic = ({ theme, offRoads, beside, inJunction, levelGroup: group 
     const C = new THREE.Color();
     const MEADOW = [new THREE.Color(0x5f8f3e), new THREE.Color(0x6f9c46), new THREE.Color(0x7fa64e)], FOREST = new THREE.Color(0x2f4a2c), FOREST2 = new THREE.Color(0x3a5632),
       ROCK = new THREE.Color(0x6c6e70), DARKROCK = new THREE.Color(0x55585b), SCREE = new THREE.Color(0x8d8b85), SNOWC = new THREE.Color(0xf3f6f9), SHORE = new THREE.Color(0x5e5a52),
-      WEED = new THREE.Color(0x4a4a2e), HEATH = new THREE.Color(0x76704a);
+      WEED = new THREE.Color(0x4a4a2e), GRAVEL = new THREE.Color(0x77746c), HEATH = new THREE.Color(0x76704a);
     for (let i = 0; i < N; i++) {
       const x = arr[i * 3], y = arr[i * 3 + 1], z = arr[i * 3 + 2], ny = nor.getY(i), h = y - WL;
       const n1 = Math.sin(x * 0.11) * Math.cos(z * 0.13), n2 = Math.sin(x * 0.031 + z * 0.027);
@@ -173,7 +183,8 @@ export const nordic = ({ theme, offRoads, beside, inJunction, levelGroup: group 
       if (ny > 0.6 && ny < 0.78 && h > 120) C.lerp(SCREE, 0.3 * (1 - steep));
       const snow = smooth(SNOW - 20 + 18 * n2, SNOW + 15 + 18 * n2, y) * (0.35 + 0.65 * smooth(0.55, 0.8, ny));
       if (snow > 0) C.lerp(SNOWC, snow).multiplyScalar(1 + 0.2 * snow);
-      if (h < 3.5 && h > -6) C.lerp(h > 1.2 ? SHORE : WEED, 0.85); // (the rocky shore, the weed under the water's edge)
+      if (E[i] < 9) C.lerp(GRAVEL, 0.8 * smooth(9, 5, E[i])); // (the gravel verge beside the pavement, and inside a tunnel the rock's floor)
+      else if (h < 3.5 && h > -6) C.lerp(h > 1.2 ? SHORE : WEED, 0.85); // (the rocky shore, the weed under the water's edge)
       col.setXYZ(i, C.r, C.g, C.b);
     }
     col.needsUpdate = true;
@@ -635,10 +646,12 @@ export const nordic = ({ theme, offRoads, beside, inJunction, levelGroup: group 
 
   // ---- SPRUCE AND ROCKS over the land: spruce where the forest is thick and the slope will hold them, rock on the steep (outcrops near
   // the road, slabs over the rockfall's slope); a jittered grid over the land on both sides
+  const noTip = (g) => { const T = tpl(g, false), keep = []; for (let i = 0; i < T.idx.length; i += 3) { const ys = [0, 1, 2].map(j => T.pos[T.idx[i + j] * 3 + 1]); if (ys.filter(y => Math.abs(y - Math.max(...ys)) < 1e-6).length < 2) keep.push(T.idx[i], T.idx[i + 1], T.idx[i + 2]); } T.idx = keep; return T; };
   const spruceGeo = (() => {
     const c = { pos: [], nor: [], col: [], idx: [] };
-    M.makeTranslation(0, 0.8, 0); emit(c, tpl(new THREE.CylinderGeometry(0.12, 0.18, 1.6, 4, 1, true), false), M, 0x4a3424);
-    for (const [r, y, h] of [[1.5, 1.0, 3.0], [1.15, 2.6, 2.6], [0.8, 4.0, 2.2], [0.45, 5.3, 1.6]]) { M.makeTranslation(0, y + h / 2, 0); emit(c, tpl(new THREE.ConeGeometry(r, h, 6, 1, true), false), M, 0x2a4428); }
+    M.makeTranslation(0, 0.8, 0); emit(c, tpl(new THREE.CylinderGeometry(0.12, 0.18, 1.6, 3, 1, true), false), M, 0x4a3424);
+    // (three tiers, each a six-sided cone with no floor; a cone's tip is a ring of points in one place, whose triangles are left out)
+    for (const [r, y, h] of [[1.5, 1.0, 3.2], [1.1, 2.8, 2.8], [0.68, 4.4, 2.2]]) { M.makeTranslation(0, y + h / 2, 0); emit(c, noTip(new THREE.ConeGeometry(r, h, 6, 1, true)), M, 0x2a4428); }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(c.pos, 3));
     g.setAttribute('normal', new THREE.Float32BufferAttribute(c.nor, 3));
