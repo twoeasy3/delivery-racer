@@ -43,6 +43,7 @@ export const STAGE_FILES = {
   // (the rest, one table: render/stages/table.js; by THEME name only, never another theme's scenery: hood and christmas are
   // drawn as the suburb but keep their own stages)
   ...Object.fromEntries(TABLE_THEMES.map((name) => [name, () => import('./stages/table.js').then((m) => ({ stage: m.stageOf(name) }))])),
+  apron: () => import('./stages/apron.js'),
   // (new stages go above this line: one line each)
 };
 const loaded = {}, loading = {}, warned = new Set();

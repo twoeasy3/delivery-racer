@@ -53,6 +53,10 @@ export const THEMES = {
   construction: { sky: 0xc4d2dc, ground: 0x9a8160, road: 0x4a4c50, scenery: 'construction' },
   // airport: an airport going up in flames: a smoky orange sky, dry grass between concrete aprons, the runway
   airport: { sky: 0xc98e62, ground: 0x8c8f62, road: 0x45484d, scenery: 'airport' },
+  // apron: a busy airport apron on a clear day, the road a service road across it (render/themes/apron.js): parked airliners at the
+  // terminal's jet bridges and on remote stands, baggage trains, bowsers, stair trucks, the taxiway, hangars, the control tower
+  apron: { sky: 0xa9cde9, ground: 0x8f9a6a, road: 0x4a4d52, scenery: 'apron', line: 0xf2f2f0, centre: 0xf2f2f0, target: { height: 4.4, beam: true },
+    light: { sky: 0xf4f8ff, ground: 0x8a8a80, ambient: 1.2, sun: 0xfff6e8, sunlight: 1.1 } },
   // snow: an alpine pass in winter. terrain: true = the land is a mountainside (see buildTerrain)
   snow: { sky: 0xd3dfe9, ground: 0xf0f4f7, road: 0x4f535a, scenery: 'snowpass', terrain: true, channel: { shallow: 0x9fc4d0, deep: 0x24566f, glint: 0x3a7391 } },
   // canberra: the bush capital: dry grass, gum trees and concrete, a grassy median
@@ -306,6 +310,7 @@ const OBSTACLES = {
   toyroom: { crate: 'toyBlock', cone: 'skittle', bale: 'toyDrum' },
   seabed: { crate: 'divingHelmet' },
   moon: { crate: 'supplyPod' },
+  apron: { barrier: 'barrierBlock' }, // (a water-filled barrier block; the cones are an apron's own and stay)
   backlot: { crate: 'directorChair', bale: 'cameraDolly' },
   venice: { crate: 'mooringPosts', cone: 'cafeTable' },
   iceroad: { crate: 'fuelDrum', cone: 'snowdrift' },
