@@ -128,6 +128,7 @@ export const decalLayout = (d, zones, S = 1, opts = {}) => {
         const score = (long + (lens.reduce((t, l) => t + l, 0) - long) / 3) * Math.sqrt(Math.min(1, h / want)) * both; // (a thinner unbroken band over a broken full-height one)
         if (score > 0) cands.push({ score, h, ya, yb, per });
         if (score > 0 && (!best || score > best.score + 1e-6)) best = { score, h, ya, yb, per };
+        if (score > 0) cands.push({ score, h, ya, yb });
       }
     }
     if (!best) return [];
