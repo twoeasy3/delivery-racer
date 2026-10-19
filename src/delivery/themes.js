@@ -280,7 +280,7 @@ THEMES.vegas = { sky: 0xa9cfe8, ground: 0xc9a77a, road: 0x3a3c41, scenery: 'vega
 THEMES.vegasNight = { sky: 0x0d0b26, ground: 0x3a3226, road: 0x3c3e44, scenery: 'vegas', pad: 'travelator', lit: true, headlights: true, night: true, target: { offset: 2.4, height: 4.6, beam: true },
   light: { sky: 0x8f8cff, ground: 0x2a1c30, ambient: 0.62, sun: 0xffd8c8, sunlight: 0.35 } };
 // nordic: a Norwegian fjord road in summer (render/themes/nordic.js): deep blue water beside the road, steep walls, spruce, red and white
-// timber cabins, snow on the peaks; its tunnels raw blasted rock with sodium lamps (wallMap 'rock': render/tunneldress.js's texture)
+// timber cabins, snow on the peaks; its tunnels raw blasted rock with sodium lamps (wallMap 'rock': the rock texture the snow theme's tunnels have)
 THEMES.nordic = { sky: 0xb8d2e6, ground: 0x5f7f4a, road: 0x45484d, scenery: 'nordic', line: 0xf4f4ef, centre: 0xf2c21c, terrain: { gentle: 0x6f9c46, steep: 0x6c6e70, rough: 1.0, flat: -6, rise: 14 },
   channel: { shallow: 0x3f7f96, deep: 0x123f5a, glint: 0x6fa8c0 },
   target: { height: 4.2, beam: true },
