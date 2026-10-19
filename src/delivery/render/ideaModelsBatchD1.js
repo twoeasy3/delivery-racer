@@ -81,7 +81,7 @@ export const IDEA_MODELS_BATCH_D1 = {
     const BZ = -1.1 - 0.05;
     parts(group, k + 'rim', CHROME, () => [-1, 1].map(s => dsc(0.075, 0.03, s * 0.2, 1.0, NZ + 0.005, 0, 12)));
     parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => dsc(0.055, 0.03, s * 0.2, 1.0, NZ + 0.02, 0, 12)));
-    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.13, 0.1, 0.03, s * 0.4, 0.92, BZ - 0.002)));
+    parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.13, 0.091, 0.03, s * 0.4, 0.92, BZ - 0.002))); // (4.5 mm inside the lamp bar's top and bottom)
     parts(group, k + 'amber', AMBER, () => [-1, 1].map(s => bx(0.1, 0.06, 0.03, s * 0.2, 0.68, NZ + 0.004)));
     for (const s of [-1, 1]) wheel(group, k + 'r', RR, RW, s * RX, RZ, 20);
     for (const s of [-1, 1]) wheel(group, k + 'f', RF, FW, s * FX, FZ, 14);

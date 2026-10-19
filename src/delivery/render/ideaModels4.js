@@ -276,7 +276,7 @@ export const IDEA_MODELS_4 = {
       for (const zc of [L * 0.5, -L * 0.5]) {
         const x = side * (w / 2 - 0.22), half = 0.95;
         curved(group, rubber, 0.42, rounded([[zc - half, 0.1], [zc + half, 0.1], [zc + half + 0.12, 0.32], [zc + half, 0.56], [zc - half, 0.56], [zc - half - 0.12, 0.32]], 0.12), 0.02, x);
-        for (let i = -4; i <= 4; i++) for (const y of [0.09, 0.57]) box(group, steel, 0.46, 0.025, 0.06, x, y, zc + i * 0.21);
+        for (let i = -4; i <= 4; i++) for (const y of [0.09, 0.5725]) box(group, steel, 0.46, 0.025, 0.06, x, y, zc + i * 0.21); // (5 mm proud of the belt's top)
         for (const dz of [-half, half]) disc(group, steel, 0.17, 0.46, x, 0.33, zc + dz).rotation.set(0, 0, Math.PI / 2); // the end wheels, seen through the track's sides
         tube(group, steel, 0.06, 0.3, x, 0.33, zc, 'x');                                   // (the axle stub, seen between)
         box(group, trim, 0.36, 0.1, 0.16, side * (w * 0.25 + 0.18), 0.62, zc);             // the outrigger to the chassis
@@ -284,12 +284,12 @@ export const IDEA_MODELS_4 = {
       }
     }
     // (the pontoons' tracks sit at z = ±L/2 each, so the pairs are rounded first: see above)
-    box(group, trim, w * 0.5, 0.12, 0.04, 0, 1.34, L * 0.76 + 0.01);                      // a grille slot
+    box(group, trim, w * 0.5, 0.12, 0.04, 0, 1.34, L * 0.76 + 0.0055);                    // a grille slot (4.5 mm behind the lamps' faces)
     box(group, chrome, w * 0.7, 0.08, 0.08, 0, 1.0, L * 0.8);                             // a bumper bar
     tube(group, trim, 0.05, 0.6, w * 0.3, 2.35, -L * 0.55, 'y').userData.prop = 'roof';   // the exhaust stack (a roof item: hidden when a roof prop is chosen)
     box(group, trim, 0.12, 0.06, 0.12, w * 0.3, 2.66, -L * 0.55).userData.prop = 'roof';   // its rain cap
     box(group, trim, 0.14, 0.1, 0.14, -w * 0.22, 2.17, L * 0.24).userData.prop = 'roof';   // the spotlight on the roof,
-    disc(group, LAMP, 0.07, 0.06, -w * 0.22, 2.17, L * 0.24 + 0.09).userData.prop = 'roof';
+    disc(group, LAMP, 0.064, 0.06, -w * 0.22, 2.17, L * 0.24 + 0.09).userData.prop = 'roof'; // (6 mm in from its box's sides)
     const lens = beacon(group, 0, 2.12, -L * 0.3);
     group.userData = { body, animate: (t) => flash(lens, t) };
     return group;
@@ -325,7 +325,7 @@ export const IDEA_MODELS_4 = {
       disc(group, LAMP, 0.08, 0.05, side * w * 0.3, 0.84, L * 0.96);                      // lamps in the prow
       for (const z of [L * 0.62, -L * 0.32, -L * 0.66]) {                                 // six wheels under the deck's flare
         wheel(group, R, 0.32, side * (w / 2 - 0.2), R, z);
-        fender(group, paint, 0.5, 0.36, side * (w / 2 - 0.2), R, z);
+        fender(group, paint, 0.5, 0.369, side * (w / 2 - 0.2), R, z); // (its sides 4.5 mm out of the hubs')
       }
     }
     for (let i = 0; i < 4; i++) tube(group, steel, 0.025, w * 0.92, 0, deck + 0.9, well + (i - 1.5) * wellL * 0.26, 'x'); // the hoops across
@@ -333,12 +333,12 @@ export const IDEA_MODELS_4 = {
     box(group, paint, w * 0.96, 0.3, 0.1, 0, deck + 0.15, well + wellL / 2 + 0.05);       // and the bulkhead behind the cab
     disc(group, trim, 0.2, 0.1, w * 0.1, 0.55, -L * 0.93 - 0.06);                         // the propeller's cowl,
     box(group, steel, 0.06, 0.36, 0.08, -w * 0.12, 0.6, -L * 0.93 - 0.08);                // and the rudder beside it
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.05, 8, 18), WHITE);        // a life ring on the side
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.05, 8, 16), WHITE);        // a life ring on the side
     ring.rotation.y = Math.PI / 2;
     ring.position.set(-w / 2 - 0.05, deck + 0.17, well - 0.2);
     group.add(ring);
     for (const k of [0, 1, 2, 3]) {                                                         // its red quarters
-      const q = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.052, 8, 18, Math.PI / 4), lambert(0xd8262b));
+      const q = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.0545, 8, 2, Math.PI / 4), lambert(0xd8262b)); // (its facets on the ring's, 4.5 mm out)
       q.rotation.y = Math.PI / 2; q.rotation.x = k * Math.PI / 2 + Math.PI / 8;
       q.position.copy(ring.position);
       group.add(q);
@@ -358,7 +358,7 @@ export const IDEA_MODELS_4 = {
     box(group, trim, w * 0.5, 0.5, L * 1.6, 0, 0.56, -L * 0.1);                           // the chassis between the wheels
     const body = box(group, paint, w, 0.2, L * 1.62, 0, top - 0.1, -L * 0.09);            // the deck: a slab over everything
     box(group, paint, w * 0.94, 0.56, L * 0.22, 0, 0.58, L * 0.6);                        // the counterweight nose below it
-    for (let i = -3; i <= 3; i++) box(group, i % 2 ? yellow : trim, w * 0.13, 0.4, 0.03, i * w * 0.13, 0.58, L * 0.71 + 0.01).rotation.z = 0.45; // chevrons across it
+    for (let i = -3; i <= 3; i++) box(group, i % 2 ? yellow : trim, w * 0.13, 0.4, 0.03, i * w * 0.13, 0.58, L * 0.71 + (i % 2 ? 0.012 : 0.0075)).rotation.z = 0.45; // chevrons across it (the yellow 4.5 mm proud of the black: their tipped edges overlap)
     box(group, trim, w * 0.94, 0.08, 0.04, 0, 0.84, L * 0.71 + 0.03);                     // a black band above them
     // the cab, perched at the back
     box(group, paint, w * 0.64, 0.22, L * 0.52, 0, top + 0.11, -L * 0.58);
@@ -397,7 +397,7 @@ export const IDEA_MODELS_4 = {
     box(group, glass, w * 0.94, 0.78, L * 0.7, 0, 1.5, L * 0.54);
     box(group, WHITE, w * 0.98, 0.08, L * 0.76, 0, 1.92, L * 0.54);
     for (const side of [-1, 1]) {
-      for (const z of [0.86, 0.54, 0.22]) box(group, paint, 0.08, 0.78, 0.1, side * w * 0.45, 1.5, L * z); // pillars
+      for (const z of [0.86, 0.54, 0.22]) box(group, paint, 0.085, 0.789, 0.1, side * w * 0.45, 1.5, L * z); // pillars (4.5 mm proud of the glass)
       box(group, trim, 0.1, 0.1, 0.12, side * (w / 2 + 0.06), 1.5, L * 0.72);             // mirrors
       box(group, LAMP, 0.18, 0.12, 0.04, side * w * 0.34, 0.9, L * 0.9 + 0.02);           // lamps
       box(group, AMBER, 0.08, 0.12, 0.04, side * w * 0.46, 0.9, L * 0.9 + 0.02);
@@ -453,7 +453,7 @@ export const IDEA_MODELS_4 = {
     box(group, paint, w * 0.98, 0.08, L * 0.32, 0, 2.25, L * 0.84);
     box(group, paint, w * 0.98, 0.1, 0.2, 0, 2.16, L * 0.98 + 0.06);                      // the visor
     for (const side of [-1, 1]) {
-      for (const z of [0.98, 0.7]) box(group, paint, 0.1, 0.76, 0.1, side * w * 0.45, 1.83, L * z); // pillars
+      for (const z of [0.98, 0.7]) box(group, paint, 0.105, 0.769, 0.1, side * w * 0.45, 1.83, L * z); // pillars (4.5 mm proud of the glass)
       box(group, trim, 0.08, 0.3, 0.1, side * (w / 2 + 0.1), 1.9, L * 0.9);               // mirrors on arms
       box(group, trim, 0.04, 0.04, 0.2, side * (w / 2 + 0.04), 1.9, L * 0.9);
       box(group, LAMP, 0.22, 0.12, 0.04, side * w * 0.34, 1.1, L * 0.99 + 0.02);          // lamps
@@ -472,14 +472,14 @@ export const IDEA_MODELS_4 = {
     box(group, trim, w, 0.2, 0.16, 0, 0.78, L * 0.98);                                    // bumpers
     box(group, trim, w * 0.9, 0.12, 0.12, 0, 0.78, -L * 0.98);
     box(group, plank, w, 0.14, L * 1.46, 0, bed - 0.07, -L * 0.26);                       // the bed: planked
-    for (let i = -3; i <= 3; i++) box(group, trim, 0.03, 0.01, L * 1.46, i * w * 0.14, bed + 0.003, -L * 0.26); // the gaps between planks
+    for (let i = -3; i <= 3; i++) box(group, trim, 0.03, 0.01, L * 1.46 - 0.009, i * w * 0.14, bed + 0.003, -L * 0.26); // the gaps between planks (ends 4.5 mm in)
     box(group, paint, w * 0.96, 0.7, 0.06, 0, bed + 0.35, L * 0.47);                      // the headboard
     for (const x of [-0.3, 0, 0.3]) box(group, trim, 0.04, 0.7, 0.02, x * w, bed + 0.35, L * 0.47 + 0.04); // its bars
     // the drum: two wooden flanges, a core wound in black cable, the axle through
     const DR = 1.15, dz = -L * 0.2, dy = bed + DR;
     for (const side of [-1, 1]) {
       load(tube(group, wood, DR, 0.12, side * 0.64, dy, dz, 'x'));
-      for (let i = 0; i < 4; i++) load(box(group, plank, 0.03, 0.14, DR * 1.9, side * 0.71, dy, dz)).rotation.x = i * Math.PI / 4; // the flange's boards
+      for (let i = 0; i < 4; i++) load(box(group, plank, 0.03, 0.14, DR * 1.88, side * 0.71, dy, dz)).rotation.x = i * Math.PI / 4; // the flange's boards
     }
     load(tube(group, cable, DR * 0.84, 1.16, 0, dy, dz, 'x'));
     for (let i = -2; i <= 2; i++) load(tube(group, lambert(0x2c2c30), DR * 0.86, 0.1, i * 0.23, dy, dz, 'x')); // the turns of cable, ridged
@@ -583,7 +583,7 @@ export const IDEA_MODELS_4 = {
         // a wire-mesh wheel: a grey mesh tyre with a darker ring inside and a bright hub
         const [tyre] = wheel(group, R, 0.22, side * (w / 2 - 0.14), R, z, gold);
         tyre.material = mesh;
-        tube(group, trim, R * 0.78, 0.26, side * (w / 2 - 0.14), R, z, 'x');
+        tube(group, trim, R * 0.78, 0.251, side * (w / 2 - 0.14), R, z, 'x'); // (its faces 4.5 mm inside the hub's)
         box(group, paint, 0.3, 0.03, 0.8, side * (w / 2 - 0.14), R + 0.48, z);            // a flat fender over it
         box(group, paint, 0.3, 0.2, 0.03, side * (w / 2 - 0.14), R + 0.39, z - 0.4);       // with a flap behind
         rod(group, steel, 0.025, [side * w * 0.33, 0.53, z], [side * (w / 2 - 0.14), R, z]); // its suspension arm

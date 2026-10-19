@@ -472,7 +472,7 @@ export const IDEA_MODELS = {
       const x = side * (w / 2 + 0.012);
       box(group, maple, 0.04, 0.5, L * 1.18, x, 0.66, -L * 0.39);                         // the timber: a maple frame,
       for (const z of [0.0, -0.39, -0.78]) box(group, mahogany, 0.05, 0.36, L * 0.32, x + side * 0.003, 0.66, L * z); // mahogany panels in it
-      for (const z of [0.2, -0.19, -0.58, -0.96]) box(group, maple, 0.08, 0.5, 0.11, side * w * 0.445, 1.19, L * z); // and maple pillars
+      for (const z of [0.2, -0.19, -0.58, -0.96]) box(group, maple, 0.08, 0.5, 0.114, side * w * 0.445, 1.19, L * z); // and maple pillars (the last 5 mm past the glass's end)
       box(group, maple, 0.05, 0.07, L * 1.2, side * w * 0.45, 1.4, -L * 0.38);
       disc(group, LAMP, 0.12, 0.08, side * w * 0.38, 0.72, L + 0.02);                     // round lamps
       disc(group, chrome, 0.145, 0.05, side * w * 0.38, 0.72, L + 0.01);
@@ -590,8 +590,8 @@ export const IDEA_MODELS = {
       for (const z of [-L + 0.05, -L * 0.24]) box(group, WHITE, 0.06, 1.2, 0.06, side * w * 0.47, deck + 0.6, z); // the roof's posts
       disc(group, LAMP, 0.09, 0.06, side * w * 0.3, deck + 0.12, L + 0.02);
       box(group, TAIL, 0.1, 0.1, 0.04, side * w * 0.4, deck - 0.1, -L - 0.01);
-      wheel(group, R, 0.16, side * (w / 2 - 0.08), R, L * 0.6);                           // tiny wheels
-      wheel(group, R, 0.16, side * (w / 2 - 0.08), R, -L * 0.55);
+      wheel(group, R, 0.16, side * (w / 2 - 0.0845), R, L * 0.6);                         // tiny wheels (their faces 4.5 mm in from the skirt's)
+      wheel(group, R, 0.16, side * (w / 2 - 0.0845), R, -L * 0.55);
     }
     box(group, chrome, w * 0.9, 0.07, 0.06, 0, deck - 0.16, L + 0.03);                    // a bumper bar
     // the crates: six stacks, two abreast, each crate with its bottles' tops showing
@@ -674,7 +674,7 @@ export const IDEA_MODELS = {
     box(group, paint, w * 0.76, 0.05, L * 0.24, 0, 1.225, -L * 0.19);                     // the roof,
     taper(group, paint, [-L * 0.3, w * 0.76, 0.84, 1.25], [-L * 0.93, w * 0.34, 0.74, 0.78]); // running back into the boat tail
     const fall = Math.atan2(0.47, L * 0.63);
-    for (const side of [-1, 1]) slab(group, glass, 0.25, 0.02, 0.5, side * 0.17, 1.12, -L * 0.46, -fall); // the rear window, in two,
+    for (const side of [-1, 1]) slab(group, glass, 0.25, 0.02, 0.5, side * 0.17, 1.1243, -L * 0.46 - 0.0014, -fall); // the rear window, in two (4.5 mm off the tail),
     slab(group, paint, 0.07, 0.04, L * 0.64, 0, 1.025, -L * 0.61, -fall);                 // the spine between them
     // the lamps: a pod each side of the nose, which goes down flush and comes up again
     const pods = [-1, 1].map((side) => {
@@ -1190,8 +1190,8 @@ export const IDEA_MODELS = {
     const body = box(group, paint, w, 1.75, L * 1.52, 0, 1.375, -L * 0.24);
     box(group, paint, w * 0.94, 0.08, L * 1.5, 0, 2.28, -L * 0.24);                       // the roof's crown
     for (let i = 0; i < 10; i++) {                                                        // the ribs, all the way round
-      for (const side of [-1, 1]) box(group, rib, 0.02, 0.045, L * 1.52, side * (w / 2 + 0.006), 0.64 + i * 0.165, -L * 0.24);
-      box(group, rib, w, 0.045, 0.02, 0, 0.64 + i * 0.165, -L - 0.006);
+      for (const side of [-1, 1]) box(group, rib, 0.02, 0.045, L * 1.52 - 0.009, side * (w / 2 + 0.006), 0.64 + i * 0.165, -L * 0.24); // (their ends 4.5 mm in from the body's)
+      box(group, rib, w - 0.009, 0.045, 0.02, 0, 0.64 + i * 0.165, -L - 0.006);
     }
     box(group, glass, w * 0.86, 0.6, 0.04, 0, 1.8, L * 0.52 + 0.01);                      // the flat windscreen,
     box(group, paint, 0.06, 0.6, 0.05, 0, 1.8, L * 0.52 + 0.015);                         // in two
@@ -1241,7 +1241,7 @@ export const IDEA_MODELS = {
     for (const z of [-1, 1]) box(group, chrome, 0.03, 0.03, 0.95, K - 0.44, 2.0, hatchZ + z * (hatchL / 2 - 0.03)).rotation.set(0, Math.PI / 2, -0.75); // its stays
     box(group, lambert(0x8a6a45), 0.04, 0.84, 0.64, K, 1.9, -L * 0.8);                    // the menu board: its frame,
     box(group, inside, 0.05, 0.74, 0.54, K - 0.002, 1.9, -L * 0.8);                       // its slate,
-    for (let i = 0; i < 5; i++) box(group, WHITE, 0.055, 0.03, 0.2 + (i * 7 % 3) * 0.1, K - 0.003, 2.16 - i * 0.13, -L * 0.8 + 0.05); // and what is chalked on it
+    for (let i = 0; i < 5; i++) box(group, WHITE, 0.056, 0.03, 0.2 + (i * 7 % 3) * 0.1, K - 0.0035, 2.16 - i * 0.13, -L * 0.8 + 0.05); // and what is chalked on it
     tube(group, WHITE, 0.62, 0.03, w / 2 + 0.01, 1.85, -L * 0.2, 'x');                    // a roundel on the other side
     tube(group, red, 0.46, 0.04, w / 2 + 0.012, 1.85, -L * 0.2, 'x');
     tube(group, lambert(0xf2d21f), 0.2, 0.05, w / 2 + 0.014, 1.85, -L * 0.2, 'x');
@@ -1441,7 +1441,7 @@ export const IDEA_MODELS = {
     blob(group, chrome, 0.16, 0.18, 0.16, -w * 0.28, 0.98, L + 0.16);                     // and the bell on it
     box(group, trim, w * 0.84, 0.1, L * 0.7, 0, 1.85, -L * 0.56);                         // the hose bed, at the back,
     box(group, hose, w * 0.76, 0.2, L * 0.66, 0, 1.98, -L * 0.56);                        // the hose folded in it
-    for (let i = 0; i < 7; i++) box(group, trim, w * 0.76, 0.21, 0.03, 0, 1.98, -L * (0.26 + i * 0.1));
+    for (let i = 0; i < 7; i++) box(group, trim, w * 0.76 + 0.009, 0.21, 0.03, 0, 1.98, -L * (0.26 + i * 0.1)); // (4.5 mm past the hose's sides)
     box(group, silver, w, 0.08, 0.34, 0, 0.64, -L - 0.12);                                // the back step
     for (const side of [-1, 1]) {
       const x = side * (w / 2 + 0.012);

@@ -1241,9 +1241,9 @@ export const MODELS = {
     box(group, paint, w * 0.9, 0.12, l * 0.24, 0, base + 0.61, l * 0.37);               // the flat bonnet
     const cabFront = l * 0.25, cabBack = l * 0.02, cabZ = (cabFront + cabBack) / 2, cabL = cabFront - cabBack;
     box(group, glass, w * 0.92, 0.55, cabL, 0, base + 0.85, cabZ);                     // the upright cab
-    box(group, paint, w * 0.94, 0.08, cabL, 0, base + 1.16, cabZ);                     // its roof
+    box(group, paint, w * 0.94, 0.08, cabL + 0.018, 0, base + 1.16, cabZ);             // its roof (9 mm over the glass's ends)
     screen(group, glass, w * 0.86, 0.05, 0.56, 0, base + 0.86, cabFront + 0.03, 0.12);  // the near-upright windscreen
-    for (const z of [cabFront - 0.05, cabZ, cabBack + 0.05]) for (const side of [-1, 1]) box(group, paint, 0.08, 0.55, 0.1, side * w * 0.455, base + 0.85, z); // pillars
+    for (const z of [cabFront - 0.05, cabZ, cabBack + 0.05]) for (const side of [-1, 1]) box(group, paint, 0.08, 0.559, 0.109, side * w * 0.455, base + 0.85, z); // pillars (4.5 mm past the glass)
     box(group, trim, w * 0.9, 0.06, cabL, 0, base + 1.25, cabZ).userData.prop = 'roof';   // the roof rack,
     box(group, LAMP, w * 0.7, 0.08, 0.03, 0, base + 1.3, cabFront - 0.05).userData.prop = 'roof'; // and its light bar
     const bedZ = (cabBack - l / 2) / 2, bedL = cabBack + l / 2;
@@ -1562,9 +1562,9 @@ export const MODELS = {
     box(shell, paint, w * 0.96, 0.1, l * 0.2, 0, 1.0, -l * 0.39);                  // short boot deck...
     box(shell, trim, w * 0.9, 0.06, 0.12, 0, 1.08, -l / 2 + 0.06).userData.prop = 'wing'; // ...with a lip spoiler (tagged: a chosen wing prop hides it)
     for (const x of [-0.16, 0.16]) { // twin stripes over the roof, the bonnet and the boot
-      box(shell, stripe, w * 0.12, 0.012, l * 0.28, x * w, 1.42, -l * 0.13);
-      box(shell, stripe, w * 0.12, 0.012, l * 0.42, x * w, 1.045, l * 0.27);
-      box(shell, stripe, w * 0.12, 0.012, l * 0.2, x * w, 1.055, -l * 0.39);
+      box(shell, stripe, w * 0.12, 0.012, l * 0.28 - 0.009, x * w, 1.42, -l * 0.13);     // (each 4.5 mm short of its panel's ends)
+      box(shell, stripe, w * 0.12, 0.012, l * 0.42 - 0.009, x * w, 1.045, l * 0.27);
+      box(shell, stripe, w * 0.12, 0.012, l * 0.2 - 0.009, x * w, 1.055, -l * 0.39);
     }
     box(shell, trim, w * 0.94, 0.32, 0.06, 0, 0.82, l / 2 + 0.02);                 // the wide grille
     box(shell, trim, w + 0.06, 0.2, 0.16, 0, 0.42, l / 2 + 0.04);                  // bumpers

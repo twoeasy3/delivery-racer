@@ -289,7 +289,7 @@ export const IDEA_MODELS_3 = {
     // the carriage inside it: a pan, the engine under the seat, the seat, the handlebars and the rider
     const body = curved(group, paint, 0.5, rounded([[-0.5, 0.48], [0.5, 0.48], [0.56, 0.72], [0.36, 0.84], [-0.36, 0.84], [-0.56, 0.7]], 0.08), 0.05);
     box(group, ALLOY, 0.3, 0.2, 0.34, 0, 0.98, -0.3);                                    // the engine's block,
-    for (let i = 0; i < 4; i++) box(group, ALLOY, 0.36, 0.02, 0.3, 0, 1.1 + i * 0.045, -0.3); // its cooling fins
+    for (let i = 0; i < 4; i++) box(group, ALLOY, 0.351, 0.02, 0.3, 0, 1.1 + i * 0.045, -0.3); // its cooling fins (4.5 mm in from the seat back's sides)
     tube(group, chrome, 0.03, 0.4, 0.14, 0.92, -0.5, 'z');                               // and its exhaust
     box(group, leather, 0.38, 0.08, 0.34, 0, 0.92, 0.02);                                // the seat,
     box(group, leather, 0.36, 0.3, 0.06, 0, 1.14, -0.15).rotation.x = -0.2;              // its back
@@ -419,7 +419,7 @@ export const IDEA_MODELS_3 = {
       tube(group, paint, 0.3, len, x, y, z0, 'z');
       tube(group, accent, 0.305, 0.2, x, y, z0 + len / 2 - 0.35, 'z');                   // a band of the second colour round it
       hoop(group, chrome, 0.27, 0.04, x, y, z0 + len / 2).rotation.set(0, 0, 0);        // the intake's lip,
-      disc(group, trim, 0.26, 0.04, x, y, z0 + len / 2 - 0.02);                          // its throat,
+      disc(group, trim, 0.26, 0.04, x, y, z0 + len / 2 - 0.0155);                        // its throat (4.5 mm out of the nacelle's face),
       const spinner = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.18, 12), chrome);
       spinner.rotation.x = Math.PI / 2;
       spinner.position.set(x, y, z0 + len / 2 + 0.05);
@@ -610,7 +610,7 @@ export const IDEA_MODELS_3 = {
     // the nose: lamps, a grille, a bumper, and the front wheels in their wings
     for (const side of [-1, 1]) {
       blob(group, chrome, 0.135, 0.08, 0.05, side * bw * 0.32, 0.66, L * 0.99 + 0.04);
-      blob(group, LAMP, 0.11, 0.06, 0.05, side * bw * 0.32, 0.66, L * 0.99 + 0.05);
+      blob(group, LAMP, 0.11, 0.06, 0.05, side * bw * 0.32, 0.66, L * 0.99 + 0.056);
       box(group, AMBER, 0.1, 0.04, 0.03, side * bw * 0.32, 0.53, L * 0.99 + 0.07);
       fender(group, paint, R + 0.08, 0.24, side * (bw / 2 + 0.07), R, L * 0.68);
       wheel(group, R, 0.2, side * (bw / 2 + 0.07), R, L * 0.68);
@@ -621,7 +621,7 @@ export const IDEA_MODELS_3 = {
     for (const side of [-1, 1]) {
       const x = side * 0.88;
       box(group, wing, 0.34, 0.08, 1.0, side * 0.75, 1.0, -L * 0.3);                     // the stub,
-      tube(group, chrome, 0.04, 1.0, x, 1.05, -L * 0.3, 'z');                             // the hinge,
+      tube(group, chrome, 0.047, 1.009, x, 1.05, -L * 0.3, 'z');                          // the hinge (its flats and ends 4.5 mm or more past the stub's and the wing's),
       const zw = -L * 0.3;
       curved(group, wing, 0.07, rounded([[zw + 0.5, 1.06], [zw + 0.34, 2.0], [zw - 0.36, 2.0], [zw - 0.5, 1.06]], 0.08), 0.02, x); // the wing, folded up, tapering to its tip
       curved(group, paint, 0.09, rounded([[zw + 0.395, 1.8], [zw + 0.355, 2.012], [zw - 0.372, 2.012], [zw - 0.41, 1.8]], 0.06), 0.02, x); // its tip in the paint,

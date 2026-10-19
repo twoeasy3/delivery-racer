@@ -237,9 +237,9 @@ export const IDEA_MODELS_5 = {
       box(group, chrome, 0.012, 0.025, L * 0.92, fx, 0.745, L * 0.38);
       prism(group, silver, 0.01, [[-L * 0.08, 0.745], [-L * 0.98, 0.845], [-L * 0.98, 0.795]], fx);
       const top = Math.atan2(0.1, L * 0.9), under = Math.atan2(0.05, L * 0.9);
-      slab(group, chrome, 0.02, 0.02, L * 0.91, fx, 0.795, -L * 0.53, top);
-      slab(group, chrome, 0.02, 0.02, L * 0.91, fx, 0.77, -L * 0.53, under);
-      for (const f of [0.25, 0.5, 0.75]) { const s = 0.05 + 0.05 * f; slab(group, rib, 0.016, 0.01, L * 0.81, fx, 0.745 + s * 0.55, -L * 0.575, Math.atan2(s, L * 0.9)); } // its ribs
+      slab(group, chrome, 0.028, 0.02, L * 0.91, fx, 0.795, -L * 0.53, top);             // (each layer 4.5 mm proud of the one under it:
+      slab(group, chrome, 0.028, 0.02, L * 0.91, fx, 0.77, -L * 0.53, under);            // silver, ribs, chrome edges; they meet at the flash's point)
+      for (const f of [0.25, 0.5, 0.75]) { const s = 0.05 + 0.05 * f; slab(group, rib, 0.019, 0.01, L * 0.81, fx, 0.745 + s * 0.55, -L * 0.575, Math.atan2(s, L * 0.9)); } // its ribs
       box(group, chrome, 0.05, 0.025, 0.14, side * (S + 0.012), 0.82, -L * 0.05);           // the door handle
       // the fins, with the tail lamps in their chrome feet
       prism(group, paint, 0.1, [[-L * 0.3, 0.86], [-L - 0.02, 0.86], [-L - 0.02, 1.03], [-L * 0.96, 1.04], [-L * 0.36, 0.92]], side * (S - 0.055));

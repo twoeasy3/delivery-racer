@@ -476,7 +476,7 @@ export const IDEA_MODELS_6 = {
     // tall, skinny wheels, a dark cap in each
     for (const side of [-1, 1]) for (const z of [ZW, -ZW]) {
       wheel(group, R, 0.17, side * (w / 2 - 0.085), R, z, steel);
-      disc(group, black, 0.07, 0.02, side * (w / 2 + 0.006), R, z).rotation.set(0, Math.PI / 2, 0);
+      disc(group, black, 0.07, 0.02, side * (w / 2 + 0.01), R, z).rotation.set(0, Math.PI / 2, 0); // (5 mm proud of the hub)
     }
     group.userData = { body, animate: () => {} };
     return group;

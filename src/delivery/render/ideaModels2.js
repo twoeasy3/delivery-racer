@@ -177,7 +177,7 @@ export const IDEA_MODELS_2 = {
     for (const side of [-1, 1]) {
       const x = side * (w / 2 - 0.012);
       box(group, see, 0.03, 0.55, L * 0.76, x, 1.245, -L * 0.52);                           // the compartment's side glass,
-      for (const z of [-0.28, -0.52, -0.76]) box(group, paint, 0.1, 0.55, 0.1, side * (w / 2 - 0.05), 1.245, L * z); // between pillars
+      for (const z of [-0.28, -0.52, -0.76]) box(group, paint, 0.115, 0.559, 0.1, side * (w / 2 - 0.05), 1.245, L * z); // between pillars (4.5 mm proud of the glass)
       box(group, chrome, 0.05, 0.3, 0.05, side * (w / 2 + 0.01), 1.3, -L * 0.8);            // landau bars on the back pillar
       box(group, chrome, 0.03, 0.03, L * 1.3, side * (w / 2 + 0.01), 0.99, -L * 0.2);      // a chrome strip along the waist
       box(group, chrome, 0.06, 0.04, L * 1.5, side * w * 0.42, 1.62, -L * 0.2);            // roof rails
