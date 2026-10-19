@@ -15,7 +15,7 @@ export const GUESS_LAMPS = {
   steamwagon: { guess: true, head: [{ at: [0.51, 1.3, 1.94], size: [0.2, 0.2], round: true, mirror: true }], tail: [{ at: [0.48, 1.2, -2.38], size: [0.1, 0.1] }] },
   cigar: { guess: true, tail: [{ at: [0, 0.45, -2.16], size: [0.08, 0.08] }] },
   mower: { guess: true, head: [{ at: [0.17, 0.66, 1.065], size: [0.08, 0.08], round: true, mirror: true }] },
-  sidecar: { guess: true, head: [{ at: [-0.29, 1.1, 0.86], size: [0.12, 0.12], round: true }], tail: [{ at: [0, 0.6, -1.25], size: [0.1, 0.07] }] },
+  sidecar: { guess: true, head: [{ at: [-0.29, 1.1, 0.86], size: [0.12, 0.12], round: true }], tail: [{ at: [-0.289, 0.62, -1.12], size: [0.1, 0.07] }, { at: [0.442, 0.6, -0.995], size: [0.1, 0.07] }] }, // (CHECKLIST 502: the scooter's cowl and the tub's tail)
   // (its hull bobs on the chop: the lamps ride in it, model.userData.lampFrame)
   jetboat: { guess: true, frame: 'lampFrame', tail: [{ at: [0.8, 0.47, -2.73], size: [0.08, 0.08], mirror: true }] },
 };
