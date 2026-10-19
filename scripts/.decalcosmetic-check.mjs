@@ -131,7 +131,7 @@ try {
   DC.setDecal('flames', 'postvan');
   check(loadoutKey(car('postvan')).endsWith('|d=flames'), "a 'fixed' design's key has no colour (" + loadoutKey(car('postvan')) + ')');
   DC.setDecal('star', null);
-  check(DC.decalChoice('wedge').id === 'star' && DC.decalChoice('postvan').id === 'flames' && !loadoutKey(car('commuter')).includes('|d='), 'the default (star) on every car without its own; a car with no zone row has no |d= in its key');
+  check(DC.decalChoice('wedge').id === 'star' && DC.decalChoice('postvan').id === 'flames' && !loadoutKey(car('moonrover')).includes('|d='), 'the default (star) on every car without its own; a car with no zone row has no |d= in its key');
   Store.resetCar('postvan');
   check(DC.decalChoice('postvan').id === 'star' && !Store.hasOwn('postvan', 'decal'), 'Reset car: the Post Van follows the default again');
   DC.resetDecal(null);

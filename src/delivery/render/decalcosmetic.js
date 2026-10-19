@@ -123,7 +123,8 @@ export const decalLayout = (d, zones, S = 1, opts = {}) => {
         if (yc - h / 2 < z.y0 - 1e-6) continue;
         const ya = yc - h / 2, yb = yc + h / 2, per = sides.map(side => ({ side, pieces: piecesAt(side, ya, yb) }));
         const lens = per.flatMap(p => p.pieces.map(r => r.z1 - r.z0)), long = Math.max(0, ...lens); // (an unbroken band wins: its longest piece counts in full, the others a third)
-        const score = (long + (lens.reduce((t, l) => t + l, 0) - long) / 3) * Math.sqrt(Math.min(1, h / want)); // (a thinner unbroken band over a broken full-height one)
+        const both = per.every(p => p.pieces.length) ? 1 : 0.25; // (a height that dresses both flanks over one that leaves a flank bare: CHECKLIST 508, the coach)
+        const score = (long + (lens.reduce((t, l) => t + l, 0) - long) / 3) * Math.sqrt(Math.min(1, h / want)) * both; // (a thinner unbroken band over a broken full-height one)
         if (score > 0 && (!best || score > best.score + 1e-6)) best = { score, h, ya, yb, per };
       }
     }

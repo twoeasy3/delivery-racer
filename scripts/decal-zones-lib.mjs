@@ -7,7 +7,7 @@
 //           ASPECT times its height), named by where they sit against the wheels: 'fender' over or ahead of the front wheels, 'quarter' over or
 //           behind the rear ones, between them 'door' (or 'flank' when longer than FLANK_LEN: a bus, a lorry's body)
 //   (a zone whose normals spread more than MAX_CURVE degrees is trimmed edge by edge till flat enough, or dropped when too small: a band
-//   round a roof's shoulder; trimCurve)
+//   round a roof's shoulder; trimCurve); a zone with glass just beyond both its ends is a window PILLAR and dropped (pillar)
 //   FLAT    each zone's plane fitted (x = a + b y + c z) and the most a ray's hit stands off it (mm); CURVE the widest angle between its
 //           normals and their mean (degrees)
 //   ROOM    the largest clean square (a roundel's diameter), the longest clean run STRIPE_H tall (a stripe's length), the clean share
@@ -132,6 +132,12 @@ const trimCurve = (S, r) => {
     t[e] += e.endsWith('0') ? 1 : -1;
   }
 };
+// a WINDOW PILLAR: at the zone's mid-height, glass just beyond BOTH ends along z (within 3 steps, through a frame): a strip of paint between two windows
+// (the Dampervan's pillars took the badge)
+const pillar = (S, r) => {
+  const j = Math.round((r.j0 + r.j1) / 2), glassNear = (i0, di) => { for (let k = 0; k < 3; k++) { const i = i0 + di * k; if (i < 0 || i > S.nz) return false; const h = S.at(i, j); if (h.kind === 'glass') return true; if (!['paint', 'curve', 'trim'].includes(h.kind)) return false; } return false; };
+  return glassNear(r.i0 - 1, -1) && glassNear(r.i1 + 1, 1);
+};
 // the wheels' z extents on this side (clusters of 'wheel' hits)
 const wheelSpans = (S) => {
   const zs = [...new Set(S.hits.map((h, k) => (h.kind === 'wheel' ? k % (S.nz + 1) : null)).filter(k => k !== null))].sort((a, b) => a - b);
@@ -165,6 +171,7 @@ export const searchSide = (view, s, step = SEARCH.STEP) => {
     if (!t) { k--; continue; } // (its cells stay used: a band round a roof's shoulder or a wing's crown is no zone)
     const z = { z0: r3(S.z0 + t.i0 * step), z1: r3(S.z0 + t.i1 * step), y0: r3(S.y0 + t.j0 * step), y1: r3(S.y0 + t.j1 * step), ...t };
     Object.assign(z, flatness(S, z));
+    if (pillar(S, t)) { k--; continue; } // (a window pillar: glass both ends, no place for a badge)
     z.id = nameZone(z, wheels);
     zones.push(z);
   }
