@@ -68,8 +68,8 @@ const buildKayak = (paint) => {
   const hull = new THREE.Mesh(hullGeo, paint); hull.scale.y = 0.65; hull.position.set(-0.08, -0.155, 0); g.add(hull); // (its keel 5 mm into the bars)
   const rim = cyl(g, DARK, 0.065, 0.065, 0.03, -0.08, -0.075, -0.02, 10); rim.scale.z = 1.5;     // the cockpit's rim, proud of the deck
   for (const z of [-0.2, 0.2]) box(g, STRAP, 0.2, 0.13, 0.03, -0.08, -0.15, z);                 // the straps round the hull, 7 mm proud
-  rod(g, DARK, 0.012, [0.3, -0.2, -0.3], [0.3, -0.2, 0.3], 5);                                  // the paddle's shaft, on the bars
-  for (const z of [-0.32, 0.32]) box(g, SUNNY, 0.07, 0.012, 0.14, 0.3, -0.2, z);                // its blades
+  rod(g, DARK, 0.008, [0.3, -0.175, -0.18], [0.3, -0.175, 0.18], 5);                            // the paddle's shaft, on its edge beside the hull
+  for (const z of [-0.24, 0.24]) box(g, SUNNY, 0.02, 0.07, 0.13, 0.3, -0.18, z);                // its blades upright, 5 mm down into the bars
   return g;
 };
 
@@ -93,10 +93,10 @@ const buildPizza = (paint) => {
   box(g, paint, 0.5, 0.04, 0.16, 0, -0.23, 0);                                                   // the plinth, y -0.25 to -0.21
   for (const x of [-0.12, 0.12]) box(g, paint, 0.03, 0.08, 0.03, x, -0.175, 0);                 // the stalks, into the crust
   const crust = cyl(g, DOUGH, 0.04, 0.04, 0.52, 0, -0.11, 0, 7); crust.rotation.z = Math.PI / 2; // the crust, y -0.15 to -0.07
-  gable(g, DOUGH, 0.05, [[-0.24, -0.1], [0.24, -0.1], [0, 0.245]]);                             // the slice
-  gable(g, CHEESE, 0.06, [[-0.21, -0.085], [0.21, -0.085], [0, 0.215]]);                        // the cheese, 5 mm proud of both faces
+  gable(g, DOUGH, 0.04, [[-0.24, -0.1], [0.24, -0.1], [0, 0.245]]);                             // the slice
+  gable(g, CHEESE, 0.064, [[-0.21, -0.085], [0.21, -0.085], [0, 0.215]]);                       // the cheese, 12 mm proud of both faces (5 mm fought on small roofs)
   for (const [x, y] of [[0, 0.08], [-0.09, -0.02], [0.09, -0.02]]) {
-    const p = cyl(g, PEPPERONI, 0.045, 0.045, 0.07, x, y, 0, 10); p.rotation.x = Math.PI / 2;  // the pepperoni, through the slice, 5 mm proud
+    const p = cyl(g, PEPPERONI, 0.045, 0.045, 0.088, x, y, 0, 10); p.rotation.x = Math.PI / 2; // the pepperoni, through the slice, 12 mm proud
   }
   return g;
 };
@@ -116,29 +116,29 @@ const buildTrophy = (paint) => {
   return g;
 };
 
-// ---- 5. BUNTING: four slim posts at the roof's corners, a sagging line across the front and one across the back, each hung with six
-// pennants in the car's colour, white and yellow, their faces to the front and back. Box. The posts 0.46 tall (at 1.5, the max: 0.7 m).
+// ---- 5. BUNTING: four slim posts at the roof's corners, a sagging line across the front and one across the back, each hung with five
+// pennants in the car's colour, white and yellow, their faces to the front and back. Box. The posts 0.4 tall (at 1.5, the max: 0.6 m).
 const buildBunting = (paint) => {
-  const g = new THREE.Group(), X = 0.44, TOP = 0.2, SAG = 0.13;
+  const g = new THREE.Group(), X = 0.42, TOP = 0.14, SAG = 0.07;
   const colours = [paint, WHITE, SUNNY];
   for (const z of [-0.34, 0.34]) {
     for (const x of [-X, X]) {
-      box(g, DARK, 0.06, 0.03, 0.06, x, -0.235, z);                                             // the foot, y -0.25 to -0.22
-      cyl(g, CHROME, 0.012, 0.012, 0.44, x, -0.005, z, 5);                                      // the post, y -0.225 to 0.215
+      box(g, DARK, 0.07, 0.03, 0.07, x, -0.235, z);                                             // the foot, y -0.25 to -0.22
+      cyl(g, CHROME, 0.016, 0.016, 0.38, x, -0.035, z, 6);                                      // the post, y -0.225 to 0.155
     }
-    for (const s of [-1, 1]) rod(g, DARK, 0.006, [s * X, TOP, z], [0, SAG, z], 4);              // the line, sagging to the middle
-    [-0.33, -0.2, -0.07, 0.07, 0.2, 0.33].forEach((x, i) => {
+    for (const s of [-1, 1]) rod(g, DARK, 0.007, [s * X, TOP, z], [0, SAG, z], 4);              // the line, sagging to the middle
+    [-0.29, -0.145, 0, 0.145, 0.29].forEach((x, i) => {
       const y = SAG + (TOP - SAG) * Math.abs(x) / X + 0.004;                                    // (the pennant's top 4 mm over the line's axis)
-      gable(g, colours[i % 3], 0.008, [[x - 0.04, y], [x + 0.04, y], [x, y - 0.1]]).position.z = z;
+      gable(g, colours[i % 3], 0.01, [[x - 0.06, y], [x + 0.06, y], [x, y - 0.15]]).position.z = z;
     });
   }
   return g;
 };
 
 // ---- 6. WIND TURBINE: a white tower on a dark plate, a nacelle of the car's colour, its hub to the back (the chase camera) and three
-// white tapered blades. Cylinder. 0.49 tall (at 1.6, the max: 0.78 m).
+// white tapered blades. Cylinder. 0.49 tall (at 1.8, the max: 0.88 m).
 const bladeGeo = () => {
-  const geo = new THREE.ExtrudeGeometry(new THREE.Shape([[-0.02, 0.015], [0.02, 0.015], [0.008, 0.215], [-0.006, 0.215]].map(([x, y]) => new THREE.Vector2(x, y))), { depth: 0.012, bevelEnabled: false });
+  const geo = new THREE.ExtrudeGeometry(new THREE.Shape([[-0.03, 0.015], [0.03, 0.015], [0.014, 0.215], [-0.008, 0.215]].map(([x, y]) => new THREE.Vector2(x, y))), { depth: 0.012, bevelEnabled: false });
   geo.translate(0, 0, -0.006);
   return geo;
 };
@@ -159,11 +159,11 @@ const buildLuggage = (paint) => {
   const g = new THREE.Group();
   for (const z of [-0.22, 0.22]) box(g, DARK, 0.94, 0.04, 0.05, 0, -0.23, z);                   // the bars, y -0.25 to -0.21
   box(g, paint, 0.62, 0.18, 0.72, -0.12, -0.125, 0);                                             // the big case, y -0.215 to -0.035
-  box(g, DARK, 0.63, 0.02, 0.73, -0.12, -0.1, 0);                                                // its seam, 5 mm proud
+  box(g, DARK, 0.64, 0.02, 0.74, -0.12, -0.1, 0);                                                // its seam, 1 cm proud
   box(g, DARK, 0.14, 0.03, 0.03, -0.12, -0.15, 0.37);                                            // its handle at the front
   box(g, TAN, 0.48, 0.14, 0.52, -0.1, 0.03, 0);                                                  // the leather case, 5 mm down into the big one
-  for (const x of [-0.22, 0.02]) box(g, DARK, 0.05, 0.15, 0.53, x, 0.03, 0);                     // its straps, 5 mm proud
-  for (const x of [-0.28, 0.08]) box(g, CHROME, 0.04, 0.03, 0.015, x, 0.06, 0.265);              // its clasps
+  for (const x of [-0.22, 0.02]) box(g, DARK, 0.05, 0.16, 0.54, x, 0.03, 0);                     // its straps, 1 cm proud
+  for (const x of [-0.28, 0.08]) box(g, CHROME, 0.04, 0.03, 0.03, x, 0.06, 0.262);               // its clasps, 1.7 cm proud
   const bag = cyl(g, OLIVE, 0.1, 0.1, 0.5, 0.34, -0.115, 0, 9); bag.rotation.x = Math.PI / 2;   // the holdall, along the car
   const h = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.01, 3, 6, Math.PI), DARK);            // its handle over the top
   h.position.set(0.34, -0.025, 0); h.rotation.y = Math.PI / 2; g.add(h);
@@ -219,14 +219,14 @@ const buildSofa = (paint) => {
 };
 
 // ---- 11. WIND-UP KEY: a toy's giant wind-up key out of the roof: a dark collar, a chrome shaft, a two-lobed bow of the car's colour facing
-// the back. Cylinder. 0.45 tall, the bow 0.4 across (at 1.5, the max: 0.68 m tall).
+// the back. Cylinder. 0.45 tall, the bow 0.4 across (at 1.8, the max: 0.81 m tall, 0.72 m across).
 const buildKey = (paint) => {
   const g = new THREE.Group();
   cyl(g, DARK, 0.07, 0.08, 0.04, 0, -0.23, 0, 10);                                              // the collar, y -0.25 to -0.21
   cyl(g, CHROME, 0.025, 0.025, 0.21, 0, -0.11, 0, 8);                                            // the shaft, y -0.215 to -0.005
-  const hub = cyl(g, paint, 0.045, 0.045, 0.06, 0, 0.0, 0, 10); hub.rotation.x = Math.PI / 2;  // the bow's hub
+  const hub = cyl(g, CHROME, 0.045, 0.045, 0.06, 0, 0.0, 0, 10); hub.rotation.x = Math.PI / 2; // the bow's hub, 12 mm proud of the lobes
   for (const s of [-1, 1]) {
-    const lobe = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.025, 4, 10), paint); lobe.position.set(s * 0.1, 0.1, 0); g.add(lobe); // a lobe, y 0 to 0.2
+    const lobe = cyl(g, paint, 0.1, 0.1, 0.035, s * 0.1, 0.1, 0, 12); lobe.rotation.x = Math.PI / 2; // a solid lobe, y 0 to 0.2, its face to the back
   }
   return g;
 };
@@ -239,8 +239,8 @@ const buildSolar = () => {
   for (const s of [-1, 1]) {
     box(g, ALU, 0.48, 0.02, 0.76, s * 0.24, -0.22, 0);                                            // the frame, y -0.23 to -0.21
     box(g, CELL, 0.46, 0.03, 0.74, s * 0.24, -0.21, 0);                                           // the cells, y -0.225 to -0.195
-    for (const z of [-0.18, 0, 0.18]) box(g, LINE, 0.44, 0.006, 0.012, s * 0.24, -0.1925, z);     // the grid across
-    box(g, LINE, 0.012, 0.008, 0.72, s * 0.24, -0.1925, 0);                                        // and along
+    for (const z of [-0.18, 0, 0.18]) box(g, LINE, 0.44, 0.016, 0.012, s * 0.24, -0.193, z);      // the grid across, 1 cm proud
+    box(g, LINE, 0.012, 0.02, 0.72, s * 0.24, -0.193, 0);                                          // and along
   }
   return g;
 };
@@ -282,11 +282,11 @@ export const MORE_ROOF_3 = [
   def('roof-pizza', 'Pizza sign', 'box', 'mixed', buildPizza, 'a giant pizza slice standing on a plinth in the car colour', 1.6),
   def('roof-trophy', 'Trophy', 'cylinder', 'mixed', buildTrophy, 'a gold cup on a plinth in the car colour', 1.4),
   def('roof-bunting', 'Bunting', 'box', 'mixed', buildBunting, 'four posts, two lines of pennants in the car colour, white, yellow', 1.5),
-  def('roof-turbine', 'Wind turbine', 'cylinder', 'mixed', buildTurbine, 'a white turbine, its nacelle in the car colour', 1.6),
+  def('roof-turbine', 'Wind turbine', 'cylinder', 'mixed', buildTurbine, 'a white turbine, its nacelle in the car colour', 1.8),
   def('roof-luggage', 'Suitcases', 'box', 'mixed', buildLuggage, 'a hard case in the car colour, a leather case, a holdall', 1.2),
   def('roof-tree', 'Fir tree', 'box', 'fixed', buildTree, 'a fir tree lying on foam blocks, tied with twine, its own colours', 2.0),
   def('roof-fin', 'Shark fin', 'box', 'car', buildFin, 'a big swept fin in the car colour', 1.5),
   def('roof-sofa', 'Sofa', 'box', 'mixed', buildSofa, 'a sofa in the car colour roped on, cream cushions', 1.8),
-  def('roof-key', 'Wind-up key', 'cylinder', 'car', buildKey, 'a toy wind-up key, its bow in the car colour', 1.5),
+  def('roof-key', 'Wind-up key', 'cylinder', 'car', buildKey, 'a toy wind-up key, its bow in the car colour', 1.8),
   def('roof-solar', 'Solar panels', 'box', 'fixed', buildSolar, 'two solar panels in frames, its own colours', 1.5),
 ];
