@@ -364,7 +364,7 @@ const makeHorseshoes = () => {
   const nailM = lambert(0x3a3a3a), rm = (SHOE.ro + SHOE.ri) / 2;
   for (const sx of [-1, 1]) {
     const nail = sub(lucky, sx * rm, 0.05, 0); nail.name = 'nail'; // (named apart: it goes into the slat)
-    put(nail, cyl(0.009, 0.009, 0.006, 8), nailM, 0, 0, SHOE.t / 2 + 0.001, Math.PI / 2, 0, 0); // (its head, 2 mm into the shoe)
+    put(nail, cyl(0.009, 0.009, 0.01, 8), nailM, 0, 0, SHOE.t / 2 - 0.0005, Math.PI / 2, 0, 0); // (its head 4.5 mm proud, its foot 5.5 mm into the shoe: CHECKLIST 455)
     put(nail, cyl(0.003, 0.003, 0.04, 6), nailM, 0, 0, -0.012, Math.PI / 2, 0, 0);              // (its shank, through the hole into the slat)
   }
   return idle(group, (t) => {

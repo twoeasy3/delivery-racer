@@ -228,7 +228,7 @@ const makeSpider = () => {
   const tag = sub(legs[7].knee, 0.06, -0.01, 0);
   part(tag, STRAND, lineMat).scale.y = 0.05;
   part(tag, plane(0.06, 0.045), glow(0xfdf7ea, { side: THREE.DoubleSide }), 0, 0.075, 0, 0, 0, Math.PI);
-  part(tag, disc(0.012), onFace(glow(0xd8262b)), 0, 0.075, 0.001);
+  part(tag, disc(0.012), onFace(glow(0xd8262b)), 0, 0.075, 0.0045); // (4.5 mm proud of the card: CHECKLIST 455)
   tag.rotation.x = Math.PI;
   const TIP = new THREE.Vector3(), AT = new THREE.Vector3(), HANG = new THREE.Vector3(), GROUND = new THREE.Vector3(), LOOP = new THREE.Vector3();
   // where it scuttles: a loop in front of the stand, clear of the base, at a heading along the loop
@@ -291,7 +291,7 @@ const makeInk = () => {
   const BX = -0.12, BZ = 0.02, BR = 0.18;
   const bottle = sub(all, BX, 0.03, BZ);
   part(bottle, cyl(BR, 0.2, 0.05, 18), rim, 0, 0.025, 0);
-  const ink = part(bottle, sphere(0.235, 16, 12), inkMat, 0, 0.27, 0);
+  const ink = part(bottle, sphere(0.23, 16, 12), inkMat, 0, 0.27, 0); // (5 mm inside the glass as it sloshes: CHECKLIST 455)
   ink.scale.y = 0.8;
   ink.renderOrder = 1;
   const belly = part(bottle, sphere(0.26, 18, 14), glass, 0, 0.29, 0);

@@ -33,6 +33,9 @@ const part = (group, geometry, material, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz
 const sub = (parent, x = 0, y = 0, z = 0) => { const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); return g; };
 // shown `k` of the way (0: gone, as near as a scale can be)
 const show = (object, k) => object.scale.setScalar(Math.max(0.001, k));
+// shown `k` of the way, but a flat thing (its face across local x and y) keeps its full thickness from a third of the way
+// up: the layers on its face stay as far apart as at full size (CHECKLIST 455)
+const showFlat = (object, k) => { show(object, k); object.scale.z = Math.max(0.001, k, Math.min(1, k * 3)); };
 // a material's colour, somewhere between two
 const shade = new THREE.Color();
 const tint = (material, from, to, k) => material.color.setHex(from).lerp(shade.setHex(to), clamp01(k));
@@ -287,7 +290,7 @@ const makeGhost = () => {
     // the bubble: a muffled one popping up and sinking / BOO! held up big
     const pop = clamp01(Math.sin(t * 2.2) * 1.6);
     bubble.position.set(0.35 + 0.2 * w, 0.16 + h + 0.05 + boo * Math.sin(t * 9) * 0.03, 0.1);
-    show(bubble, rise * 0.5 * pop + boo * (1 + Math.sin(t * 9) * 0.06));
+    showFlat(bubble, rise * 0.5 * pop + boo * (1 + Math.sin(t * 9) * 0.06));
   });
 };
 

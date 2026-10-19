@@ -637,9 +637,9 @@ const makeRamen = () => {
   part(group, torus(0.468, 0.02, 22), lambert(0xfffaf0), 0, 0.31, 0, FLAT);
   part(group, cyl(0.525, 0.52, 0.02, 22), lambert(0xe0a23e), 0, 0.43, 0); // the broth
   const Y = 0.445;
-  for (const [x, z, r, lift] of [[0, 0.1, 0.17, 0], [-0.1, 0, 0.13, 0.012], [0.1, -0.06, 0.15, 0.02], [-0.02, 0.2, 0.1, 0.03], [0.14, 0.14, 0.09, 0.035]]) part(group, torus(r, 0.024, 16, 5), noodle, x, Y + lift, z, FLAT);
+  for (const [x, z, r, lift] of [[0, 0.1, 0.17, 0], [-0.1, 0, 0.13, 0.012], [0.1, -0.06, 0.15, 0.02], [-0.02, 0.2, 0.1, 0.03], [0.13, 0.13, 0.09, 0.035]]) part(group, torus(r, 0.024, 16, 5), noodle, x, Y + lift, z, FLAT);
   part(group, sphere(0.12, 12, 8), lambert(0xffffff), 0.3, Y + 0.01, 0.2).scale.y = 0.5;       // half an egg
-  part(group, sphere(0.065, 10, 6), lambert(0xffa21a), 0.3, Y + 0.045, 0.2).scale.y = 0.5;
+  part(group, sphere(0.065, 10, 6), lambert(0xffa21a), 0.3, Y + 0.05, 0.2).scale.y = 0.5;
   part(group, cyl(0.1, 0.1, 0.035, 12), lambert(0xffffff), -0.3, Y + 0.02, 0.22);              // a slice of fish cake
   part(group, torus(0.05, 0.016, 12, 5), lambert(0xff5fa2), -0.3, Y + 0.04, 0.22, FLAT);
   for (const [x, z] of [[-0.28, -0.14], [-0.08, -0.32]]) {                                     // pork

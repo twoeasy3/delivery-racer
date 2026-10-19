@@ -53,20 +53,20 @@ const makeTicketRolls = () => {
   [[-0.24, -0.12], [0, -0.12], [0.24, -0.12], [-0.24, 0.12], [0, 0.12], [0.24, 0.12]].forEach(([x, z]) => {
     part(body, cyl(0.11, 0.11, 0.3, 16), paper, x, 0.19, z);
     part(body, cyl(0.112, 0.112, 0.05, 16), lambert(0xe8751a), x, 0.27, z);                // (the orange edge printed on a ticket roll)
-    part(body, cyl(0.035, 0.035, 0.302, 10), core, x, 0.19, z);
+    part(body, cyl(0.035, 0.035, 0.31, 10), core, x, 0.19, z); // (5 mm proud of the roll each end: CHECKLIST 507)
   });
   const top = sub(body, 0, 0.47, 0);                                                        // the roll on top, on its side
   part(top, cyl(0.12, 0.12, 0.3, 16), paper, 0, 0, 0, 0, 0, Math.PI / 2);
   for (const x of [-0.12, 0.12]) part(top, cyl(0.122, 0.122, 0.04, 16), lambert(0xe8751a), x, 0, 0, 0, 0, Math.PI / 2);
-  part(top, cyl(0.04, 0.04, 0.302, 10), core, 0, 0, 0, 0, 0, Math.PI / 2);
+  part(top, cyl(0.04, 0.04, 0.31, 10), core, 0, 0, 0, 0, 0, Math.PI / 2);
   const strip = [], N = 7;                                                                  // the tickets running off it
   for (let i = 0; i < N; i++) {
     const t = sub(i ? strip[i - 1] : top, 0, i ? -0.13 : -0.02, i ? 0 : 0.12);
     part(t, box(0.24, 0.13, 0.006), paper, 0, -0.065, 0);
-    part(t, box(0.24, 0.02, 0.008), lambert(0xe8751a), 0, -0.12, 0);
+    part(t, box(0.231, 0.02, 0.015), lambert(0xe8751a), 0, -0.11, 0); // (the band 4.5 mm proud of the ticket, 4.5 mm in from its ends and 1 cm up from its foot: it lay level with them, CHECKLIST 507)
     strip.push(t);
   }
-  const tab = part(strip[N - 1], box(0.1, 0.05, 0.01), lambert(0xd8262b), 0, -0.15, 0);
+  const tab = part(strip[N - 1], box(0.1, 0.05, 0.01), lambert(0xd8262b), 0, -0.15, 0); // (its top 5 mm under the band)
   return idle(group, (t) => {
     body.rotation.z = Math.sin(t * 1.3) * 0.03;
     top.rotation.x = Math.sin(t * 0.9) * 0.08;

@@ -581,13 +581,13 @@ const makeFireworks = () => {
     const rocket = sub(home);
     part(rocket, box(0.016, 0.5, 0.016), stick, 0, 0.27, 0);
     part(rocket, cyl(0.065, 0.065, 0.46, 10), lambert(main), 0, 0.66, 0);
-    part(rocket, cyl(0.0715, 0.0715, 0.07, 10), lambert(nose), 0, 0.72, 0); // (the band 6.5 mm proud)
+    const band = part(rocket, cyl(0.0715, 0.0715, 0.07, 10), lambert(nose), 0, 0.72, 0); // (the band 6.5 mm proud, and at least 4.5 mm as the rocket grows back: see the pose)
     part(rocket, cone(0.085, 0.18, 10), lambert(nose), 0, 0.98, 0);
     const flame = sub(rocket, 0, 0.43, 0);
-    part(flame, cone(0.07, 0.34, 7), glow(0xff8a1a), 0, -0.17, 0, Math.PI);
-    part(flame, cone(0.04, 0.2, 6), glow(0xfff2a0), 0, -0.1, 0, Math.PI);
+    part(flame, new THREE.ConeGeometry(0.07, 0.34, 7, 1, true), glow(0xff8a1a), 0, -0.17, 0, Math.PI); // (open at the base, which is in the tube: the two bases lay level, CHECKLIST 455)
+    part(flame, new THREE.ConeGeometry(0.04, 0.2, 6, 1, true), glow(0xfff2a0), 0, -0.1, 0, Math.PI);
     const stars = [0, 1, 2, 3, 4, 5].map(() => part(home, sphere(0.055, 5, 4), glow(k % 2 ? nose : main)));
-    return { rocket, flame, stars, k };
+    return { rocket, band, flame, stars, k };
   });
   // the one that fizzes: a spark at its tail, and what it throws
   const fizz = sub(bundle, 0, 1.09, 0);
@@ -600,12 +600,14 @@ const makeFireworks = () => {
     const on = clamp01(hot + rage);
     spin = rage > 0 ? spin + dt * rage * 4.5 : 0;
     bundle.rotation.y = spin;
-    for (const { rocket, flame, stars, k } of rockets) {
+    for (const { rocket, band, flame, stars, k } of rockets) {
       const u = (t * 0.75 + k * 3 / 7) % 1, up = clamp01(u / 0.5), gone = u > 0.5;
       // furious: up on its flame, burst, and a new one pushed up in its place
       const y = rage * (gone ? 0 : up * up * 0.75) + (k === 1 ? hot * Math.abs(Math.sin(t * 21)) * 0.04 : 0);
       rocket.position.y = y;
-      show(rocket, rage > 0.02 && gone ? mix(1, clamp01((u - 0.8) / 0.2), clamp01(rage * 3)) : 1);
+      const size = rage > 0.02 && gone ? mix(1, clamp01((u - 0.8) / 0.2), clamp01(rage * 3)) : 1;
+      show(rocket, size);
+      band.scale.x = band.scale.z = size < 0.06 ? 1 : Math.max(1, (0.065 * size + 0.0045) / (0.0715 * size)); // (growing back, the band keeps 4.5 mm proud of the tube: CHECKLIST 455)
       show(flame, rage * (gone ? 0 : 0.7 + jitter(t, k) * 0.3));
       const v = clamp01((u - 0.5) / 0.4);
       stars.forEach((s, n) => {
@@ -715,7 +717,7 @@ const makeTeddy = () => {
   const fur = lambert(0xb07a44), pad = lambert(0xe6c79a), black = glow(0x14100c), fluff = lambert(0xffffff), eyeMat = glow(0x14100c);
   const fig = sub(group), bear = sub(fig);
   part(bear, sphere(0.24, 14, 10), fur, 0, 0.3, 0).scale.set(1, 1.15, 0.9);
-  part(bear, sphere(0.17, 10, 8), pad, 0, 0.28, 0.14).scale.z = 0.45;
+  part(bear, sphere(0.17, 10, 8), pad, 0, 0.28, 0.146).scale.z = 0.45;
   const rip = sub(bear, 0, 0.28, 0.21);
   part(rip, sphere(0.09, 8, 6), glow(0x2a0a0e)).scale.set(0.7, 1.5, 0.4);
   const guts = [[0, 0, 0.05, 0.085], [-0.06, -0.07, 0.07, 0.07], [0.06, 0.06, 0.06, 0.07], [0.02, -0.14, 0.09, 0.06], [-0.03, 0.12, 0.04, 0.055]].map(([x, y, z, r]) => part(rip, sphere(r, 7, 5), fluff, x, y, z));
@@ -1342,7 +1344,7 @@ const makePiranhas = () => {
   const fish = [0, 1, 2, 3].map((k) => {
     const f = sub(all);
     part(f, sphere(0.1, 10, 8), back).scale.set(0.5, 0.95, 1.3);
-    part(f, sphere(0.085, 10, 8), bellyMat, 0, -0.035, 0.01).scale.set(0.52, 0.8, 1.2);
+    part(f, sphere(0.085, 10, 8), bellyMat, 0, -0.04, 0.01).scale.set(0.52, 0.8, 1.2);
     part(f, cone(0.09, 0.13, 4), back, 0, 0, -0.17, -FLAT).scale.x = 0.25;
     part(f, cone(0.05, 0.09, 4), back, 0, 0.11, -0.02).scale.x = 0.25;
     for (const d of [-1, 1]) { part(f, sphere(0.026, 6, 5), eyeMat, d * 0.045, 0.025, 0.085); part(f, sphere(0.012, 5, 4), glow(0x0a0a0a), d * 0.062, 0.025, 0.095); }
