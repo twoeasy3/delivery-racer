@@ -75,20 +75,94 @@ export const flankView = (model) => {
   return { model, body, meshes, kinds, box, inv, ray: new THREE.Raycaster(), paintMeshes: meshes.filter(n => kinds.get(n) === 'paint') };
 };
 const FROM = new THREE.Vector3(), DIR = new THREE.Vector3(), NM = new THREE.Matrix3();
-// the first thing a ray along -s x meets at (y, z) (model frame); `paintOnly`: the paint alone (what lies under a window or a wheel)
+// THE RAY CASTER. Every ray runs along the model's x, so a ray is a point in the (z, y) side view: the model's triangles are put once
+// (per view) in a 2D grid over that view, and a ray tests the few triangles of its own cell, instead of every triangle of every mesh
+// with three's Raycaster (0.4 ms a ray on the Hot Dog's 7,600 triangles: a decal took 3 s on a low-end device, CHECKLIST 525). The answer is
+// three's own: the nearest front-facing triangle (a mesh's material side honoured: FrontSide culls a back face, BackSide a front one),
+// its face normal carried to the model's frame as before. A mesh three would raycast in a special way (a skinned or instanced mesh, one
+// with a raycast of its own) still goes through the Raycaster.
+const CELL = 0.03; // m: the grid's cell, in z and y
+const buildGrid = (view) => {
+  const { inv } = view, tri = [], odd = [];
+  const T = new THREE.Matrix4(), v = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()], e1 = new THREE.Vector3(), e2 = new THREE.Vector3();
+  for (const n of view.meshes) {
+    const g = n.geometry, pos = g.attributes.position;
+    if (!pos || n.isSkinnedMesh || n.isInstancedMesh || n.raycast !== THREE.Mesh.prototype.raycast || g.morphAttributes?.position) { odd.push(n); continue; }
+    T.multiplyMatrices(inv, n.matrixWorld);
+    const flip = T.determinant() < 0 ? -1 : 1, kind = view.kinds.get(n), paint = kind === 'paint' ? 1 : 0;
+    const mats = [].concat(n.material), idx = g.index, total = idx ? idx.count : pos.count;
+    const ranges = [];
+    if (Array.isArray(n.material)) { for (const gr of g.groups) { const m = mats[gr.materialIndex]; if (m) ranges.push([Math.max(gr.start, g.drawRange.start), Math.min(gr.start + gr.count, g.drawRange.start + g.drawRange.count, total), m.side]); } }
+    else ranges.push([g.drawRange.start, Math.min(g.drawRange.start + g.drawRange.count, total), mats[0]?.side ?? THREE.FrontSide]);
+    for (const [from, to, side] of ranges) for (let i = from; i + 3 <= to; i += 3) {
+      for (let k = 0; k < 3; k++) v[k].fromBufferAttribute(pos, idx ? idx.getX(i + k) : i + k).applyMatrix4(T);
+      e1.subVectors(v[1], v[0]); e2.subVectors(v[2], v[0]);
+      const nx = e1.y * e2.z - e1.z * e2.y, ny = e1.z * e2.x - e1.x * e2.z, nz = e1.x * e2.y - e1.y * e2.x, len = Math.hypot(nx, ny, nz);
+      if (!(len > 0) || Math.abs(nx) < 1e-12 * len) continue; // (a degenerate triangle, or edge-on to the rays)
+      tri.push({ n, kind, paint, side, flip, a: v[0].clone(), b: v[1].clone(), c: v[2].clone(), nx: flip * nx / len, ny: flip * ny / len, nz: flip * nz / len });
+    }
+  }
+  let zmin = Infinity, zmax = -Infinity, ymin = Infinity, ymax = -Infinity;
+  for (const t of tri) for (const p of [t.a, t.b, t.c]) { zmin = Math.min(zmin, p.z); zmax = Math.max(zmax, p.z); ymin = Math.min(ymin, p.y); ymax = Math.max(ymax, p.y); }
+  if (!tri.length) return { tri, odd, cells: null };
+  const gz = Math.max(1, Math.ceil((zmax - zmin) / CELL) + 1), gy = Math.max(1, Math.ceil((ymax - ymin) / CELL) + 1);
+  const lists = new Array(gz * gy);
+  tri.forEach((t, id) => {
+    const lo = (a, b, c) => Math.min(a, b, c), hi = (a, b, c) => Math.max(a, b, c);
+    const i0 = Math.max(0, Math.floor((lo(t.a.z, t.b.z, t.c.z) - zmin) / CELL)), i1 = Math.min(gz - 1, Math.floor((hi(t.a.z, t.b.z, t.c.z) - zmin) / CELL));
+    const j0 = Math.max(0, Math.floor((lo(t.a.y, t.b.y, t.c.y) - ymin) / CELL)), j1 = Math.min(gy - 1, Math.floor((hi(t.a.y, t.b.y, t.c.y) - ymin) / CELL));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) (lists[j * gz + i] ||= []).push(id);
+  });
+  return { tri, odd, lists, zmin, ymin, gz, gy };
+};
+// the first thing a ray along -s x meets at (y, z) in the model's frame: { t, kind, point, normal, object } or null
+const castGrid = (G, s, y, z, paintOnly) => {
+  if (!G.lists) return null;
+  const i = Math.floor((z - G.zmin) / CELL), j = Math.floor((y - G.ymin) / CELL);
+  if (i < 0 || j < 0 || i >= G.gz || j >= G.gy) return null;
+  const list = G.lists[j * G.gz + i];
+  if (!list) return null;
+  let best = null, bestX = -Infinity;
+  const EPS = 1e-9;
+  for (const id of list) {
+    const t = G.tri[id];
+    if (paintOnly && !t.paint) continue;
+    const front = s * t.nx > 0; // (the normal points out of the side the ray comes from: the face is turned to it)
+    if (t.side === THREE.FrontSide ? !front : t.side === THREE.BackSide ? front : false) continue;
+    // the point in the triangle's (z, y) shadow: barycentrics by edge functions (the shadow's edges count)
+    const { a, b, c } = t, d = (b.y - c.y) * (a.z - c.z) + (c.z - b.z) * (a.y - c.y);
+    if (d === 0) continue;
+    const w0 = ((b.y - c.y) * (z - c.z) + (c.z - b.z) * (y - c.y)) / d, w1 = ((c.y - a.y) * (z - c.z) + (a.z - c.z) * (y - c.y)) / d, w2 = 1 - w0 - w1;
+    if (w0 < -EPS || w1 < -EPS || w2 < -EPS) continue;
+    const x = w0 * a.x + w1 * b.x + w2 * c.x, sx = s * x;
+    if (sx > bestX) { bestX = sx; best = t; best.hx = x; }
+  }
+  return best && { t: best, x: best.hx };
+};
+// what a ray along -s x meets first at (y, z) in the model's frame; `paintOnly`: the paint alone (what lies under a window or a wheel)
 export const flankHit = (view, s, y, z, paintOnly = false) => {
-  const { model, inv, ray } = view, reach = Math.max(Math.abs(view.box.min.x), Math.abs(view.box.max.x)) + 2;
-  FROM.set(s * reach, y, z).applyMatrix4(model.matrixWorld);
-  DIR.set(-s, 0, 0).transformDirection(model.matrixWorld);
-  ray.set(FROM, DIR); ray.far = reach * 2;
-  const hit = ray.intersectObjects(paintOnly ? view.paintMeshes : view.meshes, false)[0];
-  if (!hit || !hit.face) return { kind: 'air' };
-  const point = hit.point.clone().applyMatrix4(inv);
-  const normal = hit.face.normal.clone().applyMatrix3(NM.getNormalMatrix(hit.object.matrixWorld)).transformDirection(inv).normalize();
+  const G = view.grid || (view.grid = buildGrid(view));
+  const g = castGrid(G, s, y, z, paintOnly);
+  let point = null, normal = null, kind = null, object = null, hx = -Infinity;
+  if (g) { point = new THREE.Vector3(g.x, y, z); normal = new THREE.Vector3(g.t.nx, g.t.ny, g.t.nz); kind = view.kinds.get(g.t.n); object = g.t.n; hx = s * g.x; }
+  if (G.odd.length) { // (the few meshes three casts itself, nearer than the grid's hit or not)
+    const { model, inv, ray } = view, reach = Math.max(Math.abs(view.box.min.x), Math.abs(view.box.max.x)) + 2;
+    FROM.set(s * reach, y, z).applyMatrix4(model.matrixWorld);
+    DIR.set(-s, 0, 0).transformDirection(model.matrixWorld);
+    ray.set(FROM, DIR); ray.far = reach * 2;
+    const hit = ray.intersectObjects(paintOnly ? G.odd.filter(n => view.kinds.get(n) === 'paint') : G.odd, false)[0];
+    if (hit && hit.face) {
+      const p = hit.point.clone().applyMatrix4(inv);
+      if (s * p.x > hx) {
+        point = p; normal = hit.face.normal.clone().applyMatrix3(NM.getNormalMatrix(hit.object.matrixWorld)).transformDirection(inv).normalize();
+        kind = view.kinds.get(hit.object); object = hit.object;
+      }
+    }
+  }
+  if (!point) return { kind: 'air' };
   const facing = normal.x * s;
-  let kind = view.kinds.get(hit.object);
   if (kind === 'paint' && facing < FLANK.FACING) kind = 'curve';
-  return { kind, point, normal, facing, object: hit.object };
+  return { kind, point, normal, facing, object };
 };
 
 // ---- a piece wrapped on a flank -------------------------------------------------------------------------------------
