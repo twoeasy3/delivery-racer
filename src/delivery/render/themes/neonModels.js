@@ -71,12 +71,12 @@ void glassFace(inout vec3 col) {
     col = cap ? hue * 0.15 : mix(pic * grid + hue * scan * 0.6, hue * 1.3, frame);
     return;
   }
-  // glass: dark tinted, faint floor lines every 4 m and mullions every 3 m (fading out far off: no shimmer), the odd pale pane,
+  // glass: dark tinted, faint floor lines every 4 m and mullions every 3 m, now and then a floor softly lit,
   // and the outline lit round the face
   float dy = abs(fract(f.y / 4.0 + 0.5) - 0.5) * 4.0, dx = abs(fract(f.x / 3.0 + 0.5) - 0.5) * 3.0;
-  float fade = 1.0 - clamp(max(fw.x, fw.y) * 14.0 - 0.4, 0.0, 1.0);
-  float floors = clamp((0.07 - dy) / fw.y + 0.5, 0.0, 1.0) * fade;
-  float mull = clamp((0.05 - dx) / fw.x + 0.5, 0.0, 1.0) * fade;
+  // (a line thinner than a pixel is drawn as its average over the pixel, not as a dotted line: no grain far off)
+  float floors = mix(clamp((0.07 - dy) / fw.y + 0.5, 0.0, 1.0), 0.14 / 4.0, smoothstep(0.015, 0.06, fw.y));
+  float mull = mix(clamp((0.05 - dx) / fw.x + 0.5, 0.0, 1.0), 0.1 / 3.0, smoothstep(0.015, 0.05, fw.x));
   float storey = floor(f.y / 4.0), lit = step(0.82, gHash(vec2(storey, seed * 13.0))) * (cap ? 0.0 : 1.0); // (now and then a floor softly lit)
   vec3 base = col * 0.1 + vec3(0.002, 0.002, 0.008);
   base += hue * 0.025 * smoothstep(0.0, 1.0, f.y / max(H, 1.0)); // (the glass catching the sky's glow higher up)
