@@ -177,6 +177,26 @@ const PAINT = {
     g.fillStyle = '#ff7a1a'; for (let x = 0; x < w; x += 4 + P.rnd() * 5) { const f = hy * (0.03 + P.rnd() * 0.08); g.beginPath(); g.moveTo(x - 3, hy + 1); g.lineTo(x, hy - f); g.lineTo(x + 3, hy + 1); g.fill(); }
     g.fillStyle = '#1a0a08'; for (const [x, s] of [[0.1, 0.5], [0.22, 0.32], [0.7, 0.6], [0.86, 0.38]]) { const cx = w * x, th = hy * s; g.beginPath(); g.moveTo(cx - th * 0.12, hy + 1); g.lineTo(cx - th * 0.03, hy - th); g.lineTo(cx + th * 0.04, hy - th * 0.85); g.lineTo(cx + th * 0.14, hy + 1); g.fill(); }
   },
+  // a castle on its hill (the castle town's): a green hill at x (share of w), a curtain wall with merlons, round towers with
+  // conical roofs, a tall keep, pennants in plain colours; lit windows by night
+  castle(g, w, hy, P, x, t) {
+    const cx = w * x, R = w * 0.2, top = hy - hy * 0.2;
+    g.fillStyle = P.land(t * 0.8); g.beginPath(); g.moveTo(cx - R * 1.6, hy + 1); g.quadraticCurveTo(cx - R * 0.6, top - 2, cx, top); g.quadraticCurveTo(cx + R * 0.7, top - 2, cx + R * 1.5, hy + 1); g.fill();
+    const stone = P.tone(t), roof = P.dark ? P.tone(t + 0.2) : '#5d6276', u = hy * 0.03;
+    g.fillStyle = stone; g.fillRect(cx - R * 0.55, top - u * 3.2, R * 1.1, u * 3.4); // (the curtain wall)
+    for (let k = 0; k < 9; k++) g.fillRect(cx - R * 0.55 + k * R * 1.1 / 8.5, top - u * 4, R * 0.06, u * 0.9);
+    g.fillRect(cx - R * 0.16, top - u * 9, R * 0.32, u * 9); // (the keep)
+    for (let k = 0; k < 4; k++) g.fillRect(cx - R * 0.16 + k * R * 0.32 / 3.5, top - u * 9.9, R * 0.05, u * 1);
+    const flag = (fx, fy, c) => { g.fillStyle = P.tone(t + 0.3); g.fillRect(fx - 0.5, fy - u * 2.4, 1, u * 2.4); g.fillStyle = c; g.beginPath(); g.moveTo(fx + 0.5, fy - u * 2.4); g.lineTo(fx + u * 2.2, fy - u * 1.9); g.lineTo(fx + 0.5, fy - u * 1.5); g.fill(); };
+    for (const [dx, hh, rr] of [[-0.6, 5.2, 0.075], [-0.25, 6.8, 0.06], [0.22, 7.2, 0.06], [0.58, 5.4, 0.075]]) {
+      const tx = cx + R * dx, r = R * rr;
+      g.fillStyle = stone; g.fillRect(tx - r, top - u * hh, r * 2, u * hh);
+      g.fillStyle = roof; g.beginPath(); g.moveTo(tx - r * 1.3, top - u * hh); g.lineTo(tx, top - u * hh - r * 2.6); g.lineTo(tx + r * 1.3, top - u * hh); g.fill();
+      flag(tx, top - u * hh - r * 2.6, P.pal.evil ? '#8a1a1a' : ['#c8262c', '#2f55b5', '#e0b52a', '#2f8a46'][Math.floor(P.rnd() * 4)]);
+    }
+    flag(cx, top - u * 9.9, P.pal.evil ? '#8a1a1a' : '#c8262c');
+    if (P.dark) { g.fillStyle = P.pal.evil ? '#ff8a5a' : '#ffd98a'; for (let k = 0; k < 6; k++) g.fillRect(cx - R * 0.12 + (k % 3) * R * 0.1, top - u * (7 - Math.floor(k / 3) * 2.5), 2, 2); }
+  },
   // space: a black sky full of stars, a ringed planet, the land a grey regolith
   space(g, w, hy, P, h) {
     const sky = g.createLinearGradient(0, 0, 0, hy); sky.addColorStop(0, '#03040a'); sky.addColorStop(1, P.pal.evil ? '#2a0c14' : '#141a30'); g.fillStyle = sky; g.fillRect(0, 0, w, hy);
@@ -208,7 +228,13 @@ const opt = (kind, o) => () => OBSTACLE_MODELS[kind](o);
 // the neon city's own: a HOLO PILLAR (a dark plinth, a tall glowing column of colour bands, a cap), a CHARGING POST and a HOVER PLANTER
 // are the theme's obstacles (render/themes/neonObstacles.js)
 const holoPillar = () => { const g = group(); piece(g, BOX, 0x23263a, 0, 0.1, 0, 0.7, 0.2, 0.7); for (let k = 0; k < 5; k++) piece(g, BOX, k % 2 ? 0xff2fd0 : 0x2ff4ff, 0, 0.32 + k * 0.4, 0, 0.32, 0.36, 0.32); piece(g, BOX, 0xe8ecf4, 0, 2.3, 0, 0.5, 0.1, 0.5); return g; };
-const MODELS = { holoPillar, tyres, armco, kerb, board3: board(3), board2: board(2), buoyRed: buoy(0xd8352a), buoyGreen: buoy(0x2e8a4a), ring, beacon, vendRed: vending(0xd8352a), vendBlue: vending(0x2f6ac0), lantern, picket, letterbox, sandbags,
+// the castle town's: a market stall under a striped awning (no one at it), a stack of barrels, a well, a banner post, a haystack
+const stall = () => { const g = group(); for (const [x, z] of [[-1.4, -0.75], [1.4, -0.75], [-1.4, 0.75], [1.4, 0.75]]) piece(g, BOX, 0x5a3a22, x, 1.2, z, 0.12, 2.4, 0.12); piece(g, BOX, 0x8a6a44, 0, 0.45, 0.1, 2.9, 0.9, 1.3); for (let k = 0; k < 4; k++) piece(g, BOX, k % 2 ? 0xf2ede2 : 0xc8262c, -1.1 + k * 0.73, 2.45, 0, 0.73, 0.08, 2.0, 0.18, 0, 0); for (let k = 0; k < 5; k++) piece(g, BALL, [0xc8452a, 0xe0a02a, 0x6a9a3a, 0x9a3a5a][k % 4], -1.0 + k * 0.5, 1.05, 0.15, 0.38, 0.3, 0.38); return g; };
+const barrelStack = () => { const g = group(); const barrel = (x, y, z) => { piece(g, CYL, 0x7a4a24, x, y + 0.55, z, 0.8, 1.1, 0.8); for (const h of [0.2, 0.9]) piece(g, CYL, 0x2a2a2e, x, y + h, z, 0.84, 0.06, 0.84); }; barrel(-0.42, 0, 0); barrel(0.42, 0, 0); barrel(0, 0, 0.72); barrel(0, 1.1, 0.25); return g; };
+const well = () => { const g = group(); piece(g, CYL, 0x9a9282, 0, 0.45, 0, 2.2, 0.9, 2.2); piece(g, CYL, 0x2c4a52, 0, 0.91, 0, 1.8, 0.02, 1.8); for (const x of [-1, 1]) piece(g, BOX, 0x4a3222, x, 1.3, 0, 0.16, 2.2, 0.16); piece(g, BOX, 0x4a3222, 0, 2.0, 0, 2.2, 0.1, 0.1); for (const s of [-1, 1]) piece(g, BOX, 0x9b4a33, 0, 2.62, s * 0.42, 2.5, 0.08, 1.0, s * 0.6, 0, 0); piece(g, CYL, 0x6a4a2a, 0.25, 1.6, 0, 0.36, 0.36, 0.36); return g; };
+const bannerPost = () => { const g = group(); piece(g, BOX, 0x4a3222, 0, 1.9, 0, 0.14, 3.8, 0.14); piece(g, BOX, 0x4a3222, 0.4, 3.4, 0, 0.9, 0.08, 0.08); piece(g, BOX, 0x2f55b5, 0.45, 2.6, 0, 0.7, 1.5, 0.04); piece(g, BOX, 0xe0b52a, 0.5, 3.95, 0, 0.9, 0.32, 0.03, 0, 0, -0.12); return g; };
+const haystack = () => { const g = group(); piece(g, CYL, 0xd8b45a, 0, 0.6, 0, 2.2, 1.2, 2.2); piece(g, BALL, 0xc9a24a, 0, 1.25, 0, 2.3, 1.7, 2.3); return g; };
+const MODELS = { holoPillar, stall, barrelStack, well, bannerPost, haystack, tyres, armco, kerb, board3: board(3), board2: board(2), buoyRed: buoy(0xd8352a), buoyGreen: buoy(0x2e8a4a), ring, beacon, vendRed: vending(0xd8352a), vendBlue: vending(0x2f6ac0), lantern, picket, letterbox, sandbags,
   umbrella: opt('umbrella', { hw: 0.9, hl: 0.9, height: 2.3 }), rockBig: opt('rock', { r: 0.8 }), rockSmall: opt('rock', { r: 0.5 }),
   asteroidBig: opt('asteroid', { r: 0.9 }), asteroidSmall: opt('asteroid', { r: 0.55 }), brimBig: opt('brimstone', { hw: 0.5, hl: 0.5, height: 1.6 }) };
 
@@ -246,6 +272,8 @@ const TABLE = {
   neonCity: { sky: [['glassTowers', 9, 0.8], ['maglev', 0.18]],
     props: [['holoPillar', -0.85, 1.8, 0, 1], ['hoverPlanter', 0.82, 1.6, 0, 0.8, 'bale'], ['chargePost', 0.98, 0.3, -0.4, 1, 'cone'], ['holoPillar', 0.4, 4.8, 0, 1.2], ['chargePost', -0.98, 0.3, 0.4, 1, 'cone']], plinth: () => 0x2a2d40 },
   hell: { sky: [['flames']], props: [['brimBig', -0.82, 1.8, 0, 1], ['lavaRock', 0.82, 1.5, 0, 1, 'cone'], ['brimstone', 0.98, 0.3, 0, 1, 'cone'], ['brimBig', 0.3, 5, 0.5, 1.3], ['brimstone', -0.98, 0.3, 0, 1, 'cone']], plinth: () => 0x241010 },
+  castle: { sky: [['hills', 0.06, 0.3, 4], ['castle', 0.68, 0.45], ['trees', 'round', 0.5, 0, 0.42, 6, 28], ['houses', 9, 0.55]],
+    props: [['stall', -0.85, 1.9, 0.5, 1, 'bale'], ['barrelStack', 0.82, 1.5, -0.4, 1, 'crate'], ['bannerPost', 0.97, 0.3, -0.3, 1, 'cone'], ['well', 0.35, 4.8, 0, 1, 'bale'], ['haystack', -0.98, 0.3, 0.2, 0.8, 'bale']], plinth: () => 0x8a8478 },
 };
 TABLE.panorama = TABLE.bathurst; // (the same mountain)
 TABLE.singaporeNight = TABLE.singapore; // (its night is in the palette)

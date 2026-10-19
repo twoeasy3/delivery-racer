@@ -14,6 +14,7 @@ import { STEELWORKS_OBSTACLES } from './themes/steelworksModels.js';
 import { VEGAS_OBSTACLES } from './themes/vegasObstacles.js';
 import { ALPINE_OBSTACLES } from './themes/alpineModels.js';
 import { NORDIC_OBSTACLES } from './themes/nordicModels.js';
+import { CASTLE_OBSTACLES } from './themes/castleObstacles.js';
 import { METRO_OBSTACLES } from './themes/metroModels.js';
 import { NEON_OBSTACLES } from './themes/neonObstacles.js';
 import { LEVEL } from '../levels.js';
@@ -1369,6 +1370,7 @@ Object.assign(OBSTACLE_MODELS, DESERT_OBSTACLES);
 Object.assign(OBSTACLE_MODELS, MALL_OBSTACLES); // the mall's (render/themes/mallModels.js): cartons on a sack truck, a row of nested trolleys, a WET FLOOR sign
 Object.assign(OBSTACLE_MODELS, STEELWORKS_OBSTACLES); // the steelworks' (render/themes/steelworksModels.js): hot billets stacked, a coil on its cradle, a HOT METAL sign, bundles of rebar
 Object.assign(OBSTACLE_MODELS, VEGAS_OBSTACLES); // the Las Vegas Strip's (render/themes/vegasObstacles.js): a velvet rope, a slot machine, a luggage cart, a giant die
+Object.assign(OBSTACLE_MODELS, CASTLE_OBSTACLES); // the castle town's (render/themes/castleObstacles.js): a timber barricade
 Object.assign(OBSTACLE_MODELS, ALPINE_OBSTACLES); // the alpine pass's (render/themes/alpineModels.js): cheese wheels, a woodpile, a milk churn, a block of snow
 Object.assign(OBSTACLE_MODELS, NORDIC_OBSTACLES); // the Nordic fjord's (render/themes/nordicModels.js): fish boxes on a pallet, lobster creels
 Object.assign(OBSTACLE_MODELS, NEON_OBSTACLES); // the neon future city's (render/themes/neonObstacles.js): a delivery pod, a hover planter, a charging post, a holo barrier

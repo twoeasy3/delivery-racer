@@ -303,6 +303,8 @@ THEMES.alpine = { sky: 0xc4dcf0, ground: 0x86a35a, road: 0x505257, scenery: 'alp
   light: { sky: 0xeef6ff, ground: 0x6f7a5c, ambient: 1.2, sun: 0xfff8ee, sunlight: 1.25 } };
 THEMES.alpineDusk = { ...THEMES.alpine, sky: 0xf0c9a0, dusk: true, line: 0xf4efe4,
   light: { sky: 0xffd9b8, ground: 0x5a4a4a, ambient: 1.0, sun: 0xffb87a, sunlight: 1.1 } };
+// castle: a medieval castle town (render/themes/castle.js): a cobbled road across strip fields, over a stone bridge across the moat, through the gatehouses of a walled town (its narrowings are the gates), timber-framed houses, a market square, torches, pennants, windmills, haystacks, the castle on its hill
+THEMES.castle = { sky: 0xa9d0ee, ground: 0x7aa452, road: 0x77716a, scenery: 'castle', line: 0xece4d0, washboard: 'cobbles', target: { offset: 1.8, height: 4.6, beam: true }, light: { sky: 0xfff4e0, ground: 0x7a6a4a, ambient: 1.25, sun: 0xfff0d8, sunlight: 1.15 } };
 THEMES.autumn = { sky: 0xeccfa0, ground: 0x9a8a3e, road: 0x4a4a4e, scenery: 'autumn', line: 0xf2eede, centre: 0xe6b422, terrain: { gentle: 0xa8923c, steep: 0x7a4c2a, rough: 0.5, flat: 5, rise: 45 }, target: { height: 4.2, beam: true }, tunnel: { wall: 0x8a2f22, tiles: 0xa8743e, roof: 0x5a2a1c, face: 0x7e2a1e, lamp: 0xffc878, lintel: 2.4, pier: 2.6 }, channel: { shallow: 0x7fa6a8, deep: 0x2c5a6a, glint: 0xa8cfd0 }, light: { sky: 0xffe6bc, ground: 0xb89464, ambient: 1.3, sun: 0xffc27a, sunlight: 1.2 } };
 
 // ---- the themes' own obstacles ---------------------------------------------------------------------------
@@ -348,6 +350,7 @@ const OBSTACLES = {
   roadworksNight: { barrier: 'barrierBlock', crate: 'cableReel', bale: 'sandPile' }, // (the same road by night) // (delivery cartons on a sack truck; three shopping trolleys nested; a WET FLOOR A-frame)
   steelworks: { crate: 'ingotStack', bale: 'steelCoil', cone: 'hotSign', barrier: 'rebarBundle' }, // (a stack of hot billets, a coil on its cradle, a HOT METAL sign, bundles of rebar; steelworksNight has them too)
   vegas: { barrier: 'velvetRope', crate: 'slotMachine', bale: 'luggageCart', cone: 'casinoDie' }, // (a velvet rope on brass posts; a slot machine; a bellhop's luggage cart; a giant red die)
+  castle: { barrier: 'barricade', crate: 'barrel', cone: 'candleLantern' }, // (a timber barricade, a barrel, an iron candle lantern; its bales are hay)
   // (the port keeps its crates, the farm and the Wild West their bales: there they belong)
 };
 // drifting: the same, for the things of a level's "drifters" alone, where what moves about the road wants to be

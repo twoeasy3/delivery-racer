@@ -638,6 +638,7 @@ export const CONFIG = {
     // the Las Vegas Strip's own (themes.js; render/themes/vegasObstacles.js): each the cost of what it stands in for: a velvet rope on
     // brass posts (a barrier), a slot machine (a crate), a bellhop's luggage cart (a bale), a giant red die (a cone)
     velvetRope: { damage: 34, speedKept: 0.6 }, slotMachine: { damage: 31, speedKept: 0.75 }, luggageCart: { damage: 38, speedKept: 0.75 }, casinoDie: { damage: 3, speedKept: 0.94, light: true },
+    barricade: { damage: 34, speedKept: 0.6 }, // the castle town's barrier: a timber barricade on stake trestles (render/themes/castleObstacles.js)
     laneEnd: { damage: 0, speedKept: 1 }, // a dead-end lane's end (lanegimmicks.js): no ordinary knock: a wreck outright, or passed through (see Collision.hitObstacles)
     pillar: { damage: 0, speedKept: 1 }, // a pillar in a lane (lanegimmicks.js "pillars"): no ordinary knock either: a wreck outright, the dead end's way (laneEnd 'pillar': only a Ghost passes)
     runner: { damage: 10, speedKept: 0.88, light: true },

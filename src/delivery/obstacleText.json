@@ -68,6 +68,7 @@
   "fishCrates": { "name": "Fish boxes", "blurb": "Stands in for a crate on the fjord." },
   "creelStack": { "name": "Lobster creels", "blurb": "Stands in for a bale on the fjord." },
   "fishBoxWall": { "name": "Pallet of fish boxes", "blurb": "Stands in for a barrier on the fjord." },
+  "barricade": { "name": "Barricade", "blurb": "Stands in for a barrier in the castle town: a beam on sharp stakes." },
   "ticketGate": { "name": "Ticket gate", "blurb": "Stands in for a crate in the metro." },
   "scrubber": { "name": "Floor scrubber", "blurb": "Stands in for a bale in the metro: a ride-on scrubber, parked." },
   "trackLamp": { "name": "Track lamp", "blurb": "Stands in for a cone in the metro: a red lamp on a tripod." },

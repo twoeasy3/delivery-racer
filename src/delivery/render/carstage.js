@@ -30,7 +30,7 @@ import { Progress } from '../progress.js';
 // the themes whose stage is a row of render/stages/table.js (one module for them all)
 const TABLE_THEMES = ['singapore', 'singaporeNight', 'coast', 'safari', 'construction', 'airport', 'canberra', 'suburb', 'battlefield', 'bathurst', 'panorama',
   'monza', 'spa', 'albert-park', 'montreal', 'sea', 'space', 'tokyo', 'hell',
-  'neonCity'];
+  'neonCity', 'castle'];
 // a theme's own stage file (a skyline, a prop list), loaded when first wanted; by theme name, else by its scenery's
 export const STAGE_FILES = {
   city: () => import('./stages/city.js'),
