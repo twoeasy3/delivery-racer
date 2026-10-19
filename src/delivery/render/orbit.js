@@ -216,7 +216,7 @@ canvas.addEventListener('pointermove', (e) => {
   }
   grab();
   if (touches.size === 1) {
-    Orbit.yaw -= (e.clientX - was.x) * ORBIT.turn;
+    Orbit.yaw -= (e.clientX - was.x) * ORBIT.turn * flipX(); // (a left-hand level is drawn mirrored: the yaw turns the other way so the drag looks the same)
     Orbit.pitch = clampPitch(Orbit.pitch + (e.clientY - was.y) * ORBIT.turn);
   }
   touches.set(e.pointerId, { ...was, x: e.clientX, y: e.clientY });
