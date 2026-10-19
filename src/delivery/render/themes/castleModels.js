@@ -132,3 +132,25 @@ export const cobbleTexture = () => {
   t.anisotropy = 4;
   return t;
 };
+
+// ---- a timber-framed floor's front: a picture 128 x 128 (64 KB) of one bay, repeated along the house: a post each side, a rail
+// top and bottom, two braces, a window with its mullions; the plaster white (the vertex colour tints it), the timber dark
+export const timberTexture = () => {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  g.fillStyle = '#f4f0e6'; g.fillRect(0, 0, 128, 128);
+  g.fillStyle = '#3b2b1f';
+  g.fillRect(0, 0, 9, 128); g.fillRect(119, 0, 9, 128); g.fillRect(0, 0, 128, 10); g.fillRect(0, 116, 128, 12);
+  g.strokeStyle = '#3b2b1f'; g.lineWidth = 8;
+  g.beginPath(); g.moveTo(6, 118); g.lineTo(36, 64); g.moveTo(122, 118); g.lineTo(92, 64); g.stroke();
+  g.fillRect(36, 30, 56, 52); // (the window's frame)
+  g.fillStyle = '#2a3036'; g.fillRect(41, 35, 46, 42);
+  g.fillStyle = '#5a6670'; g.fillRect(43, 37, 19, 18); g.fillRect(66, 37, 19, 18);
+  g.fillStyle = '#3b2b1f'; g.fillRect(62, 35, 4, 42); g.fillRect(41, 55, 46, 4);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+};

@@ -4,14 +4,14 @@
 // far one over the moat again, toward the castle on its hill. No figures anywhere, no lettering, no lights (the flames are colour).
 // The level's NARROWINGS are the gates (each one's middle; a level with none gets three, a quarter of the way apart); its HUMPS
 // (a steep climb and a steep drop: render/themes/tuscany.js reads them the same way) the bridges, the moat under them.
-// COST: everything solid is merged with its colours in its vertices into one mesh a 350 m stretch (render/themes/castleModels.js
+// COST: everything solid is merged with its colours in its vertices into one mesh a 180 m stretch (render/themes/castleModels.js
 // Batch), the flames into one, the land's colour (fields, pavements, the square, the moat) into one, the castle and its hill
 // into one, a windmill's sails one each (turned as they are drawn); the road's cobbles one, a 128 x 128 canvas (64 KB).
 // Laid out from a seed of the level's own: the same every run (no Math.random).
 import * as THREE from 'three';
 import { LEVEL } from '../../levels.js';
 import { Track } from '../../track.js';
-import { BOX, CYL, CONE, LUMP, PRISM, PENNANT, BANNER, gatehouse, Batch, frameAt, cobbleTexture } from './castleModels.js';
+import { BOX, CYL, CONE, LUMP, PRISM, PENNANT, BANNER, gatehouse, Batch, frameAt, cobbleTexture, timberTexture } from './castleModels.js';
 
 const STONE = 0xa69d8b, STONE_DARK = 0x857c6c, CAP = 0xc9c0ab, TIMBER = 0x3b2b1f, IRON = 0x2a2a2e, SLATE = 0x56617a, TILE = 0x9b4a33;
 const PLASTER = [0xece2cb, 0xf3eee3, 0xdcbb82, 0xdcac9c, 0xcfd3bb];
@@ -20,7 +20,7 @@ const CLOTH = [0xc8262c, 0x2f55b5, 0xe0b52a, 0x2f8a46, 0x7a2f8f, 0xf2efe6]; // (
 const CROPS = [0xcfb25a, 0xbfae6a, 0x84a352, 0x8a6c4c, 0x9aa66a, 0x8bab5e, 0xd8c27a];
 const WATER = 0x3f6f78, BANK = 0x5d5a3e, PAVING = 0xb5ab97, SQUARE = 0xb9ae96;
 const DW = 68;       // m from the road's middle to the town's side walls
-const CH = 350;      // m of road a merged mesh of the solid things covers
+const CH = 180;      // m of road a merged mesh of the solid things covers
 const GD = 10;       // m a gatehouse is deep, along the road
 
 export const castle = ({ theme, add, offRoads, inJunction, levelGroup }) => {
@@ -52,17 +52,27 @@ export const castle = ({ theme, add, offRoads, inJunction, levelGroup }) => {
   const humps = [];
   { let s = 0; const segs = LEVEL.segments || []; for (let i = 0; i < segs.length; i++) { const up = segs[i], down = segs[i + 1]; if ((up.grade || 0) >= 0.1 && (down?.grade || 0) <= -0.1) humps.push({ from: s, peak: s + up.length, to: s + up.length + down.length }); s += up.length; } }
   const town = [gates[0], gates[gates.length - 1]];
+  // (a level with no hump by an outer gate still crosses the moat there: a flat stone bridge, the road at the land's height, 40 m out)
+  if (gates.length >= 2) for (const [g, dir] of [[town[0], -1], [town[1], 1]]) if (!humps.some(h => Math.abs(h.peak - g) < 120)) humps.push({ from: g + dir * 52 - 12, peak: g + dir * 52, to: g + dir * 52 + 12, flat: true });
+  humps.sort((a, b) => a.from - b.from);
   const inTown = (s) => s > town[0] && s < town[1];
   const nearGate = (s, d) => gates.some(g => Math.abs(s - g) < d);
   const onHump = (s, d = 0) => humps.some(h => s > h.from - d && s < h.to + d);
   const moats = humps.filter(h => Math.abs(h.peak - town[0]) < 120 || Math.abs(h.peak - town[1]) < 120); // (the bridges by the outer gates)
 
+  // the timber-framed fronts: one quad a floor with the frame drawn on it (castleModels.js timberTexture, 128 x 128), tinted by the plaster
+  const face = { p: [], uv: [], c: [], n: [] }, FC = new THREE.Color(), FV = new THREE.Vector3(), FN = new THREE.Vector3();
+  const facade = (F, x0, x1, y0, y1, z, color, bays) => {
+    FC.set(color); FN.set(0, 0, 1).transformDirection(F);
+    const pts = [[x0, y0, 0, 0], [x1, y0, bays, 0], [x1, y1, bays, 1], [x0, y1, 0, 1]];
+    for (const k of [0, 1, 2, 0, 2, 3]) { const [x, y, u, v] = pts[k]; FV.set(x, y, z).applyMatrix4(F); face.p.push(FV.x, FV.y, FV.z); face.uv.push(u, v); face.c.push(FC.r, FC.g, FC.b); face.n.push(FN.x, FN.y, FN.z); }
+  };
   // ---- the parts every place shares
   const tower = (B, x, y0, z, r, h, roof, flag = true) => {
     const F = frameAt(x, y0, z, rand() * 6.28);
     B.part(CYL(12), F, STONE, 0, -1, 0, r * 2, h + 1, r * 2, 0, 0, 0, 0.04);
     B.part(CONE(12), F, roof, 0, h, 0, r * 2.5, r * 1.9, r * 2.5);
-    for (let k = 0; k < 3; k++) { const a = k * 2.1; B.part(BOX, F, 0x2c2a28, Math.sin(a) * r * 0.98, h * (0.45 + 0.18 * (k % 2)), Math.cos(a) * r * 0.98, 0.3, 1.5, 0.3, 0, a, 0); } // (arrow slits)
+    for (let k = 0; k < 2; k++) { const a = k * 3.1; B.part(BOX, F, 0x2c2a28, Math.sin(a) * r * 0.98, h * (0.45 + 0.18 * (k % 2)), Math.cos(a) * r * 0.98, 0.3, 1.5, 0.3, 0, a, 0); } // (arrow slits)
     if (flag) {
       const top = h + r * 1.9 - 0.3;
       B.part(BOX, F, IRON, 0, top, 0, 0.14, 3.2, 0.14);
@@ -76,7 +86,7 @@ export const castle = ({ theme, add, offRoads, inJunction, levelGroup }) => {
       const t0 = k / n, t1 = (k + 1) / n, x0 = a.x + (b.x - a.x) * t0, z0 = a.z + (b.z - a.z) * t0, x1 = a.x + (b.x - a.x) * t1, z1 = a.z + (b.z - a.z) * t1;
       const len = Math.hypot(x1 - x0, z1 - z0), F = frameAt((x0 + x1) / 2, y0, (z0 + z1) / 2, Math.atan2(x1 - x0, z1 - z0));
       B.part(BOX, F, STONE, 0, -1, 0, 2.4, high + 1, len + 0.3, 0, 0, 0, 0.03);
-      const m = Math.max(1, Math.round(len / 3.3));
+      const m = Math.max(1, Math.round(len / 4.8));
       for (let j = 0; j < m; j++) B.part(BOX, F, STONE, 0, high, -len / 2 + (j + 0.5) * len / m, 2.6, 1.3, 1.6);
     }
   };
@@ -89,12 +99,12 @@ export const castle = ({ theme, add, offRoads, inJunction, levelGroup }) => {
   };
   const haystack = (B, x, z, k = 1) => {
     const F = frameAt(x, 0, z, rand() * 6.28), c = rand() < 0.5 ? 0xd8b45a : 0xc9a24a;
-    B.part(CYL(9), F, c, 0, 0, 0, 2.6 * k, 1.6 * k, 2.6 * k);
-    B.part(CONE(9), F, c, 0, 1.6 * k, 0, 2.9 * k, 2.0 * k, 2.9 * k, 0, 0, 0, 0.05);
+    B.part(CYL(6), F, c, 0, 0, 0, 2.6 * k, 1.6 * k, 2.6 * k);
+    B.part(CONE(6), F, c, 0, 1.6 * k, 0, 2.9 * k, 2.0 * k, 2.9 * k, 0, 0, 0, 0.05);
   };
   const tree = (B, x, z) => {
     const F = frameAt(x, 0, z, rand() * 6.28), h = 2.2 + rand() * 1.4, s = 3.2 + rand() * 1.8;
-    B.part(CYL(6), F, 0x5a4230, 0, 0, 0, 0.5, h + 0.6, 0.5);
+    B.part(CYL(5), F, 0x5a4230, 0, 0, 0, 0.5, h + 0.6, 0.5);
     B.part(LUMP, F, rand() < 0.5 ? 0x4f7a3a : 0x5f8a42, 0, h + s * 0.35, 0, s, s * 0.85, s, 0, 0, 0, 0.06);
   };
   const barrels = (B, F, x, z, n = 3) => {
@@ -145,7 +155,7 @@ export const castle = ({ theme, add, offRoads, inJunction, levelGroup }) => {
   // ---- the bridges: stone walls along both edges from the ground up to a parapet over the road, an arch over the moat
   for (const h of humps) {
     const B = at(h.peak), R = 5, CY = -1.5;
-    const archAt = (s) => { const d = s - h.peak; return Math.abs(d) < R ? Math.max(0, CY + Math.sqrt(R * R - d * d)) : 0; };
+    const archAt = (s) => { const d = s - h.peak; return !h.flat && Math.abs(d) < R ? Math.max(0, CY + Math.sqrt(R * R - d * d)) : 0; };
     for (const side of [-1, 1]) {
       const e = (s) => (side < 0 ? Track.lo(s) : Track.hi(s)), outward = (s) => P(s, e(s) + side).sub(P(s, e(s))).setY(0).normalize();
       for (let s = h.from - 4; s < h.to + 4 - 0.01; s += 1) {
@@ -162,7 +172,7 @@ export const castle = ({ theme, add, offRoads, inJunction, levelGroup }) => {
         B.quad(new THREE.Vector3(i.x, 0, i.z), new THREE.Vector3(o.x, 0, o.z), new THREE.Vector3(o.x, y, o.z), new THREE.Vector3(i.x, y, i.z), STONE, along);
       }
     }
-    for (let s = h.peak - R; s < h.peak + R - 0.01; s += 1) { // (the vault under the road)
+    if (!h.flat) for (let s = h.peak - R; s < h.peak + R - 0.01; s += 1) { // (the vault under the road)
       const sb = s + 1, a = P(s, Track.lo(s)), b = P(sb, Track.lo(sb)), c = P(sb, Track.hi(sb)), d = P(s, Track.hi(s));
       a.y = d.y = archAt(s); b.y = c.y = archAt(sb);
       B.quad(a, b, c, d, STONE_DARK, DOWN);
@@ -179,9 +189,9 @@ export const castle = ({ theme, add, offRoads, inJunction, levelGroup }) => {
     const a = moats[0].peak + 8.5, b = moats[moats.length - 1].peak - 8.5;
     for (const side of [-1, 1]) {
       const lat = (d) => side * d;
-      band(a, b, lat(MW[0]), lat(MW[1]), 0.05, WATER, 8);
-      band(a, b, lat(MW[0] - 1.5), lat(MW[0]), 0.04, BANK, 8);
-      band(a, b, lat(MW[1]), lat(MW[1] + 1.5), 0.04, BANK, 8);
+      band(a, b, lat(MW[0]), lat(MW[1]), 0.05, WATER, 20);
+      band(a, b, lat(MW[0] - 1.5), lat(MW[0]), 0.04, BANK, 20);
+      band(a, b, lat(MW[1]), lat(MW[1] + 1.5), 0.04, BANK, 20);
     }
   }
 
@@ -237,33 +247,26 @@ export const castle = ({ theme, add, offRoads, inJunction, levelGroup }) => {
       return;
     }
     const stoneFloor = rand() < 0.4, tall = rand() < 0.35, gable = rand() < 0.45;
-    B.part(BOX, F, STONE_DARK, 0, -0.5, 0, w, 1.0, dep);
-    B.part(BOX, F, stoneFloor ? STONE : plaster, 0, 0.5, 0, w - 0.1, 3.0, dep - 0.1, 0, 0, 0, 0.04);
+    B.part(BOX, F, stoneFloor ? STONE : plaster, 0, -0.5, 0, w - 0.1, 4.0, dep - 0.1, 0, 0, 0, 0.04);
     const floors = tall ? 2 : 1;
     let top = 3.5, front = dep / 2;
     for (let k = 0; k < floors; k++) {
       const jut = 0.35 * (k + 1), dd = dep + jut * 2;
       B.part(BOX, F, plaster, 0, top, jut, w, 2.7, dd, 0, 0, 0, 0.03);
       front = dd / 2 + jut;
-      const zt = front + 0.02, posts = Math.max(3, Math.round(w / 1.7));
-      for (let j = 0; j <= posts; j++) B.part(BOX, F, TIMBER, -w / 2 + 0.09 + j * (w - 0.18) / posts, top, zt, 0.18, 2.7, 0.14);
-      B.part(BOX, F, TIMBER, 0, top, zt, w, 0.2, 0.14);
-      B.part(BOX, F, TIMBER, 0, top + 2.5, zt, w, 0.2, 0.14);
-      for (const sx of [-1, 1]) B.part(BOX, F, TIMBER, sx * (w / 2 - 0.25), top + 0.15, zt, 0.15, 2.7, 0.12, 0, 0, sx * 0.55);
-      for (let j = 1; j < posts - 1; j++) B.part(BOX, F, j % 2 ? 0x2b2a2e : 0x46525c, -w / 2 + 0.09 + (j + 0.5) * (w - 0.18) / posts, top + 0.85, zt + 0.01, 0.75, 0.95, 0.12);
+      facade(F, -w / 2, w / 2, top, top + 2.7, front + 0.04, plaster, Math.max(1, Math.round(w / 2.4))); // (the timber frame and the windows: a picture)
       top += 2.7;
     }
     const zg = (dep - 0.1) / 2 + 0.02, door = (rand() - 0.5) * (w - 2.4);
-    if (!stoneFloor) for (const sx of [-1, 1]) B.part(BOX, F, TIMBER, sx * (w / 2 - 0.12), 0.5, zg, 0.22, 3.0, 0.16);
     B.part(BOX, F, 0x5a3a22, door, 0.5, zg, 1.1, 2.1, 0.12);
-    B.part(BOX, F, 0x2b2a2e, door > 0 ? door - 2.0 : door + 2.0, 1.6, zg, 1.0, 0.9, 0.12);
+    if (rand() < 0.5) B.part(BOX, F, 0x2b2a2e, door > 0 ? door - 2.0 : door + 2.0, 1.6, zg, 1.0, 0.9, 0.12);
     const rh = 3.2 + rand() * 1.8; // (the roof over the top floor)
     const depth = dep + 0.7 * floors;
     if (gable) {
       B.part(PRISM, F, roof, 0, top, 0.35 * floors, w + 0.6, rh, depth + 1.0, 0, 0, 0, 0.04);
       B.part(BOX, F, TIMBER, 0, top, 0.35 * floors + depth / 2 + 0.5 + 0.03, 0.18, rh * 0.72, 0.12);
     } else B.part(PRISM, F, roof, 0, top, 0.35 * floors, depth + 1.0, rh, w + 0.6, 0, Math.PI / 2, 0, 0.04);
-    B.part(BOX, F, 0x8a7a68, w * 0.28, top + rh * 0.35, 0.35 * floors - 0.9, 0.7, rh * 0.75 + 0.6, 0.7); // (a chimney)
+    if (rand() < 0.6) B.part(BOX, F, 0x8a7a68, w * 0.28, top + rh * 0.35, 0.35 * floors - 0.9, 0.7, rh * 0.75 + 0.6, 0.7); // (a chimney)
   };
   const MARKET = gates.length >= 3 ? (gates[0] + gates[1]) / 2 : (town[0] + town[1]) / 2;
   const CHURCH = gates.length >= 3 ? (gates[1] + gates[2]) / 2 : null;
@@ -275,7 +278,7 @@ export const castle = ({ theme, add, offRoads, inJunction, levelGroup }) => {
         if (!street(s) || !street(s + w)) { s += 4; continue; }
         const square = Math.abs(mid0 - MARKET) < 48, church = CHURCH !== null && side < 0 && Math.abs(mid0 - CHURCH) < 20;
         if (!church) house(mid0, side, square ? 24 : 3.2, w, 7 + rand() * 2, true);
-        if (!square && !church && rand() < 0.85) house(mid0 + (rand() - 0.5) * 2, side, 15 + rand() * 3, w * (0.8 + rand() * 0.4), 7 + rand() * 3, false);
+        if (!square && !church && rand() < 0.55) house(mid0 + (rand() - 0.5) * 2, side, 15 + rand() * 3, w * (0.8 + rand() * 0.4), 7 + rand() * 3, false);
         s += w + (rand() < 0.15 ? 2.5 + rand() * 3 : 0.3);
       }
       // the pavement, pale stone, from the first gate to the last
@@ -348,9 +351,9 @@ export const castle = ({ theme, add, offRoads, inJunction, levelGroup }) => {
       const byTown = s > town[0] - 70 && sb < town[1] + 70 && gates.length >= 2, near = humps.some(h => sb > h.peak - 12 && s < h.peak + 12);
       if (!near) {
         const d0 = byTown ? DW + 24 - half(s) : 8, d1 = d0 + 50 + rand() * 80, crop = pick(CROPS);
-        patch(side, s, sb - 0.8, d0, d1, 0.02, crop, 6);
-        if ((crop === CROPS[0] || crop === CROPS[6] || crop === CROPS[1]) && rand() < 0.75) {
-          for (let k = 0, n = 1 + Math.floor(rand() * 3); k < n; k++) {
+        patch(side, s, sb - 0.8, d0, d1, 0.02, crop, 20);
+        if ((crop === CROPS[0] || crop === CROPS[6] || crop === CROPS[1]) && rand() < 0.45) {
+          for (let k = 0, n = 1 + Math.floor(rand() * 2); k < n; k++) {
             const ss = s + 2 + rand() * (w - 4), p = P(ss, off(side, ss, d0 + 4 + rand() * (d1 - d0 - 8)));
             if (free(p.x, p.z, 2)) haystack(at(ss), p.x, p.z, 0.85 + rand() * 0.3);
           }
@@ -404,9 +407,9 @@ export const castle = ({ theme, add, offRoads, inJunction, levelGroup }) => {
   // eight sides round it, a tower at every corner with its conical roof, the keep in the middle with its turrets, pennants flying
   {
     let spot = null;
-    for (const [f, side, d] of [[0.93, -1, 200], [0.93, 1, 200], [0.8, -1, 220], [0.8, 1, 220], [0.6, -1, 260], [0.6, 1, 260]]) {
+    for (const [f, side, d] of [[0.9, -1, 165], [0.9, 1, 165], [0.8, -1, 180], [0.8, 1, 180], [0.6, -1, 220], [0.6, 1, 220]]) {
       const s = S0 + LEN * f, p = P(s, side * d);
-      if (Track.mainDistance(p.x, p.z) > 150 && offRoads(p.x, p.z, 100)) { spot = p; break; }
+      if (Track.mainDistance(p.x, p.z) > d - 10 && offRoads(p.x, p.z, 100)) { spot = p; break; }
     }
     if (spot) {
       const F = frameAt(spot.x, 0, spot.z, rand() * 6.28), top = 30;
@@ -437,4 +440,12 @@ export const castle = ({ theme, add, offRoads, inJunction, levelGroup }) => {
   if (!glow.empty) levelGroup.add(glow.mesh(new THREE.MeshBasicMaterial({ vertexColors: true })));
   if (!land.empty) { const m = land.mesh(new (theme.lit ? THREE.MeshLambertMaterial : THREE.MeshBasicMaterial)({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })); m.userData.flat = true; levelGroup.add(m); }
   if (!far.empty) levelGroup.add(far.mesh(solidMat));
+  if (face.p.length) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(face.p, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(face.n, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(face.uv, 2));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(face.c, 3));
+    levelGroup.add(new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: timberTexture(), vertexColors: true, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })));
+  }
 };
