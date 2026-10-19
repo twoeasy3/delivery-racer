@@ -142,6 +142,7 @@ export const CONFIG = {
     rushHour: 2,
     time: 12,              // s the lasting ones last (insuranceUp / insuranceDown, ufo and bulletTrain are over at once)
     rickety: 1.5,          // damage the car takes while rickety, against the usual
+    ricketyFloor: 100,     // ...and never less than this much health a hit, however light (see hurt)
     toadSpeed: 20 / 3.6,   // m/s every toad goes along at in TOAD RAGE
     toad: { hw: 1.2, hl: 1.4, height: 1.8, mass: 1 }, // a toad's hitbox
     // noBrakes: the car no longer slows for a bend by itself. Taken too fast (past cornering.grip),
@@ -1123,7 +1124,8 @@ export const CONFIG = {
   // wreck a weak car, but a heavy vehicle can. frac = clamp(base + perMass x (mass - 1), base, most): a light car (mass 1 or less)
   // does at most `base` of it, so it takes two hits to wreck a commuter; a bus (4) 1.8x: it can wreck anything at speed)
   damageCap: { base: 0.75, perMass: 0.35, most: 3 },
-  ramDamageMax: 100,       // the most health one car-to-car hit with the PLAYER in it (ramming or rammed) costs either car, after damageCap (before damageScale)
+  ramDamageMax: 100,       // the most health one car-to-car hit (not a head-on) with the PLAYER in it, ramming or rammed, costs either car: the health
+                           // it loses, after damageCap, damageScale and the rickety floor (so a rickety car rammed loses exactly 100)
   // spin-outs: a traffic car that takes damage may lose control, arc away and blow up.
   // chance per hit = spinPerDamage x (share of full health this hit took)
   //                  x (1 + spinRamp x (share of health now gone) squared)
