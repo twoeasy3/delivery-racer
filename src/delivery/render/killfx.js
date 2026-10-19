@@ -128,10 +128,12 @@ const TEXTURES = {
     const r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,255,255,0)'); r.addColorStop(0.6, 'rgba(255,255,255,0)'); r.addColorStop(0.82, 'rgba(255,255,255,1)'); r.addColorStop(1, 'rgba(255,255,255,0)');
     g.fillStyle = r; g.fillRect(0, 0, 64, 64);
   }],
-  wisp: [32, 64, (g) => { // a soft teardrop flame, point up
-    g.beginPath(); g.moveTo(16, 2); g.bezierCurveTo(22, 20, 31, 34, 30, 46); g.bezierCurveTo(29, 58, 3, 58, 2, 46); g.bezierCurveTo(1, 34, 10, 20, 16, 2); g.closePath(); g.clip();
-    const r = g.createRadialGradient(16, 46, 0, 16, 40, 30); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.45, 'rgba(255,255,255,0.55)'); r.addColorStop(1, 'rgba(255,255,255,0)');
-    g.fillStyle = r; g.fillRect(0, 0, 32, 64);
+  wisp: [32, 64, (g) => { // a soft flame, point up, no hard edge: a glow drawn tall, with a fainter tongue above it
+    g.save(); g.scale(1, 2.2);
+    const r = g.createRadialGradient(16, 20, 0, 16, 20, 14); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.4, 'rgba(255,255,255,0.5)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = r; g.fillRect(0, 0, 32, 30); g.restore();
+    const t = g.createLinearGradient(0, 4, 0, 34); t.addColorStop(0, 'rgba(255,255,255,0)'); t.addColorStop(1, 'rgba(255,255,255,0.35)');
+    g.fillStyle = t; g.beginPath(); g.moveTo(16, 2); g.quadraticCurveTo(22, 24, 16, 36); g.quadraticCurveTo(10, 24, 16, 2); g.fill();
   }],
   swirl: [64, 64, (g) => { // a whirlpool: three spiral arms over a dark heart
     const r = g.createRadialGradient(32, 32, 0, 32, 32, 30); r.addColorStop(0, 'rgba(255,255,255,0.95)'); r.addColorStop(0.5, 'rgba(255,255,255,0.35)'); r.addColorStop(1, 'rgba(255,255,255,0)');

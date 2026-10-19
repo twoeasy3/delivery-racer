@@ -18,7 +18,7 @@ import { FADE_DIM, FADE_FLICKER, FADE_FLASH, TAU, r, rr, pick, sq, flash, outwar
 const SMOKE = [0xd8d8dc, 0xc8c8cc, 0xe4e2de];
 const DUST = [0xb8ad98, 0xa89c86, 0xc4bba8];
 const ASPHALT = [0x4a4a52, 0x5c5c64, 0x3e3e44];
-const WISP = [0x46c8a6, 0x5aa8d8, 0x8a7ad8, 0x6ad8c0];
+const WISP = [0x3ec890, 0x52d8a8, 0x6a9ad8, 0x46b8b0];
 const GLITCH = [0xff2bd6, 0x2bf0ff, 0xffffff, 0x7dff3a, 0x2b6bff];
 const VIOLET = [0xb07cff, 0x7d5bff, 0xff7ae0, 0xe8dcff];
 const CORN = [0xfff8e6, 0xfff1cc, 0xffe9b0, 0xffffff];
@@ -80,16 +80,16 @@ export const KILL_MORE2 = {
       const sk = sq(k);
       flash(S, x, y + 0.6, z, 1.8 * k, 0xffe6c0, 0.14);
       for (let j = 0, m = S.low ? 2 : k > 1.2 ? 4 : 3; j < m; j++) {
-        const wait = j * 0.22, R0 = (0.75 + j * 0.1) * sk, life = rr(1.6, 1.9), grow = 1.5, rise = rr(2.6, 3.1) * sk, y0 = y + 0.45, col = pick(SMOKE);
+        const wait = j * 0.32, R0 = (0.8 + j * 0.1) * sk, life = rr(1.7, 1.9), grow = 1.6, rise = rr(1.5, 1.8) * sk, y0 = y + 0.45, col = pick(SMOKE);
         let p = S.spec();
         p.x = x; p.y = y0; p.z = z; p.vx = vx * 0.15; p.vy = rise; p.vz = vz * 0.15; p.ax = -Math.PI / 2; p.ay = Math.random() * TAU;
-        p.size = R0 / 0.41; p.grow = grow; p.life = life; p.delay = wait; p.fade = FADE_DIM; p.color = 0x6a6a70; // (the halo's ring is at 0.41 of its size)
+        p.size = R0 / 0.41; p.grow = grow; p.life = life; p.delay = wait; p.fade = FADE_DIM; p.color = 0x9a9aa0; // (the halo's ring is at 0.41 of its size)
         S.add('halo');
-        for (let i = 0, n = S.n(8 * sk); i < n; i++) {
+        for (let i = 0, n = S.n(11 * sk); i < n; i++) {
           const a = i / n * TAU + j * 0.4, vr = R0 * grow / life;
           p = S.spec();
           p.x = x + Math.sin(a) * R0; p.y = y0; p.z = z + Math.cos(a) * R0; p.vx = vx * 0.15 + Math.sin(a) * vr; p.vy = rise; p.vz = vz * 0.15 + Math.cos(a) * vr;
-          p.size = rr(0.62, 0.78) * sk; p.grow = 0.7; p.life = life; p.delay = wait; p.ax = Math.random() * TAU; p.sax = r(1.2); p.color = col;
+          p.size = rr(0.42, 0.52) * sk; p.grow = 0.9; p.life = life; p.delay = wait; p.ax = Math.random() * TAU; p.sax = r(1.2); p.color = col;
           S.add('puff');
         }
       }
@@ -123,7 +123,7 @@ export const KILL_MORE2 = {
       let p = S.spec();
       p.x = x; p.y = y; p.z = z; p.size = d0; p.grow = grow; p.ease = 1; p.life = life; p.fade = FADE_DIM; p.color = 0x8aa8e8;
       S.add('dome');
-      for (const [wait, c] of [[0, 0xcfe0ff], [0.22, 0x5a6a90]]) { // its foot on the road, and a fainter echo after it
+      for (const [wait, c] of [[0, 0x8ea4d0], [0.22, 0x4a5878]]) { // its foot on the road, and a fainter echo after it
         p = S.spec();
         p.x = x; p.y = y + 0.04; p.z = z; p.ax = -Math.PI / 2; p.size = d0 * 0.5 / 0.41; p.grow = grow; p.ease = 1; p.life = life - wait; p.delay = wait; p.fade = FADE_DIM; p.color = c;
         S.add('halo');
@@ -173,7 +173,7 @@ export const KILL_MORE2 = {
         p.x = x + Math.sin(a) * d; p.y = y + rr(0.3, 0.9); p.z = z + Math.cos(a) * d;
         p.vx = vx * 0.1 + Math.cos(a) * v * spin; p.vy = rr(1.5, 2.4) * sk; p.vz = vz * 0.1 - Math.sin(a) * v * spin; p.turn = -spin * v / d; // (round the centre)
         p.flutter = rr(0.3, 0.7); p.phase = Math.random() * TAU; p.delay = rr(0, 0.35);
-        p.size = rr(0.75, 1.1) * sk; p.len = 2; p.grow = -0.35; p.life = rr(1.8, 2.5); p.fade = FADE_DIM; p.color = pick(WISP);
+        p.size = rr(1, 1.4) * sk; p.len = 2; p.grow = -0.3; p.life = rr(1.8, 2.5); p.fade = FADE_DIM; p.color = pick(WISP);
         S.add('wisp');
       }
       for (let i = 0, n = S.n(16 * k); i < n; i++) {
@@ -244,7 +244,7 @@ export const KILL_MORE2 = {
         p.x = x + Math.sin(a) * d; p.y = y + rr(0.15, 1.6) * sk; p.z = z + Math.cos(a) * d;
         p.vx = Math.cos(a) * d * w * 0.7 * spin; p.vy = rr(-0.6, 0); p.vz = -Math.sin(a) * d * w * 0.7 * spin; // (round it, at a share of the orbit's speed)
         p.pull = w * w; p.cx = x; p.cz = z; p.drag = 1.6; p.floor = y + 0.05; p.delay = rr(0, 0.3);
-        p.size = 0.09 * sk; p.len = 2.5; p.life = popAt - p.delay + rr(-0.05, 0.05); p.color = pick(VIOLET);
+        p.size = 0.13 * sk; p.len = 2.5; p.life = popAt - p.delay + rr(-0.05, 0.05); p.color = pick(VIOLET);
         S.add('spark');
       }
       flash(S, x, y + 0.7, z, 1.4 * k, 0x8a5bff, 0.6);
@@ -279,7 +279,7 @@ export const KILL_MORE2 = {
       const sk = sq(k);
       flash(S, x, y + 0.7, z, 1.6 * k, 0xfff0b0, 0.12);
       for (let i = 0, n = S.n(32 * k); i < n; i++) {
-        const size = rr(0.32, 0.5) * sk, p = S.spec();
+        const size = rr(0.5, 0.72) * sk, p = S.spec();
         p.x = x + r(1.1) * sk; p.y = y + rr(0.3, 1); p.z = z + r(1.1) * sk; p.vx = vx * 0.3 + r(3); p.vy = rr(5, 9) * sk; p.vz = vz * 0.3 + r(3);
         p.gravity = 20; p.bounce = 0.45; p.floor = y + size * 0.4; p.ax = Math.random() * TAU; p.sax = r(6);
         p.delay = i < 10 ? 0 : rr(0.05, 1.1); p.size = size; p.life = rr(1.4, 1.8); p.fade = FADE_FLASH; p.color = pick(CORN);
@@ -322,7 +322,7 @@ export const KILL_MORE2 = {
       for (let i = 0, n = S.n(40 * k); i < n; i++) { // the column: let go one after another over `jet` s
         p = S.spec();
         p.x = x + r(0.15); p.y = y + 0.2; p.z = z + r(0.15); p.vx = vx * 0.15 + r(1.7) * sk; p.vy = rr(12, 16) * sk; p.vz = vz * 0.15 + r(1.7) * sk;
-        p.gravity = 22; p.floor = y + 0.06; p.delay = i / n * jet; p.size = rr(0.24, 0.4) * sk; p.len = 1.7; p.life = rr(1.45, 1.75); p.color = pick(WATER);
+        p.gravity = 22; p.floor = y + 0.06; p.delay = i / n * jet; p.size = rr(0.26, 0.42) * sk; p.len = 1.25; p.life = rr(1.45, 1.75); p.color = pick(WATER);
         S.add('blob');
       }
       for (let i = 0, n = S.n(12 * k); i < n; i++) { // spatter at its foot
