@@ -761,5 +761,13 @@
       "evil": "A quiet road to learn on before the fun starts. One thing at a time, nothing at stake."
     },
     "cargo": { "good": "pizza", "evil": "parcel" }
+  },
+  "fjord-road": {
+    "name": "Fjord Road",
+    "description": {
+      "good": "Along the fjord and through the mountain. Two long tunnels, rocks off the wall between.",
+      "evil": "Through the rock flat out, and race the rockfall to the quay."
+    },
+    "cargo": { "good": "puppy", "evil": "glitter" }
   }
 }
