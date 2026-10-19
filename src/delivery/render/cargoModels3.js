@@ -269,9 +269,9 @@ const makeGlitter = () => {
   part(tube, new THREE.CylinderGeometry(0.16, 0.16, 0.6, 18, 1, true), lambert(0xff6fa8, { side: THREE.DoubleSide }), 0, 0.3, 0);
   part(tube, new THREE.CircleGeometry(0.159, 18), SHADE, 0, 0.56, 0, -FLAT);
   part(tube, new THREE.CircleGeometry(0.16, 18), tubeMat, 0, 0.0, 0, FLAT);
-  for (let k = 0; k < 4; k++) part(tube, cyl(0.163, 0.163, 0.05, 18), stripe, 0, 0.1 + k * 0.14, 0);
-  part(tube, box(0.05, 0.55, 0.33), ribbon, 0, 0.275, 0);
-  part(tube, box(0.33, 0.55, 0.05), ribbon, 0, 0.275, 0);
+  for (let k = 0; k < 4; k++) part(tube, cyl(0.1645, 0.1645, 0.05, 18), stripe, 0, 0.1 + k * 0.14, 0); // (4.5 mm proud of the tube)
+  part(tube, box(0.05, 0.55, 0.339), ribbon, 0, 0.275, 0); // (the ribbon 5 mm over the stripes)
+  part(tube, box(0.339, 0.55, 0.05), ribbon, 0, 0.275, 0);
   const sparkle = [0xffd23f, 0xff5fa0, 0x5fe0ff, 0xc7ff5f];
   const heap = sub(tube, 0, 0.56, 0);
   part(heap, sphere(0.15, 14, 8), glow(0xffd23f)).scale.y = 0.4;

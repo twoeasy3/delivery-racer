@@ -245,7 +245,7 @@ const makePancakes = () => {
   // the syrup's runs, from the top one's edge
   const drips = [[0.4, 0.42, 0], [1.9, 0.3, 0.3], [3.4, 0.5, 0.55], [4.9, 0.36, 0.8], [5.7, 0.26, 0.15]].map(([a, length, late]) => {
     part(top, sphere(0.085, 8, 6), syrup, Math.sin(a) * 0.36, 0.098, Math.cos(a) * 0.36).scale.set(1, 0.12, 1);
-    const d = drip(top, syrup, 0.03, Math.sin(a) * 0.4, 0.1, Math.cos(a) * 0.4);
+    const d = drip(top, syrup, 0.03, Math.sin(a) * 0.4, 0.1045, Math.cos(a) * 0.4); // (its top 4.5 mm over the cake's, in the pool)
     return { d, length, late };
   });
   return idle(group, (t) => {
@@ -302,21 +302,21 @@ const makeSushi = () => {
   const boat = sub(group, 0, 0.12, 0);
   part(boat, box(0.96, 0.14, 0.4), darkWood, 0, 0.08, 0);
   part(boat, box(1.06, 0.05, 0.5), wood, 0, 0.175, 0);
-  for (const z of [-0.24, 0.24]) part(boat, box(1.06, 0.07, 0.025), darkWood, 0, 0.215, z);
+  for (const z of [-0.2445, 0.2445]) part(boat, box(1.069, 0.07, 0.025), darkWood, 0, 0.215, z); // (the gunwales 7 mm proud of the deck's sides, 4.5 mm past its ends)
   part(boat, box(0.36, 0.06, 0.48), wood, 0.66, 0.27, 0, 0, 0, 0.6);   // the bow, turned up
   part(boat, box(0.2, 0.06, 0.48), wood, -0.58, 0.24, 0, 0, 0, -0.85); // the stern
   part(boat, box(0.05, 0.09, 0.5), darkWood, 0.8, 0.4, 0, 0, 0, 0.6);
   // a mast and its banner
   part(boat, cyl(0.016, 0.016, 0.62, 6), darkWood, -0.36, 0.5, -0.12);
   part(boat, box(0.3, 0.26, 0.012), lambert(0xfffaf0), -0.2, 0.66, -0.12);
-  for (const z of [-0.112, -0.128]) part(boat, new THREE.CircleGeometry(0.075, 14), glow(0xd8262b), -0.2, 0.66, z, 0, z > -0.12 ? 0 : Math.PI);
+  for (const z of [-0.1095, -0.1305]) part(boat, new THREE.CircleGeometry(0.075, 14), glow(0xd8262b), -0.2, 0.66, z, 0, z > -0.12 ? 0 : Math.PI); // (4.5 mm off the banner)
   // the sushi: nigiri along the front, rolls along the back
   const nigiri = (x, z, color, band) => {
     const piece = sub(boat, x, 0.2, z);
     part(piece, new THREE.CapsuleGeometry(0.065, 0.13, 4, 10), rice, 0, 0.055, 0, 0, 0, FLAT).scale.set(0.8, 1, 1);
     part(piece, box(0.27, 0.04, 0.13), lambert(color), 0, 0.125, 0);
-    if (band) part(piece, box(0.055, 0.115, 0.14), nori, 0, 0.085, 0);
-    else for (const sx of [-0.07, 0, 0.07]) part(piece, box(0.02, 0.042, 0.132), lambert(0xffd0b0), sx, 0.125, 0, 0, 0.5, 0);
+    if (band) part(piece, box(0.055, 0.122, 0.14), nori, 0, 0.0885, 0); // (the band and the stripes 4.5 to 6 mm over the topping)
+    else for (const sx of [-0.07, 0, 0.07]) part(piece, box(0.02, 0.049, 0.132), lambert(0xffd0b0), sx, 0.1265, 0, 0, 0.5, 0);
     return piece;
   };
   const slider = nigiri(0.26, 0.11, 0xff7a3a);
@@ -324,15 +324,15 @@ const makeSushi = () => {
   nigiri(-0.38, 0.11, 0xffd23f, true);
   for (const [x, color] of [[0.36, 0xff7a3a], [0.19, 0x3fb85a], [0.02, 0xff7a3a], [-0.15, 0xffd23f]]) {
     part(boat, cyl(0.075, 0.075, 0.1, 12), nori, x, 0.25, -0.12);
-    part(boat, cyl(0.06, 0.06, 0.104, 12), rice, x, 0.25, -0.12);
-    part(boat, cyl(0.027, 0.027, 0.108, 8), lambert(color), x, 0.25, -0.12);
+    part(boat, cyl(0.06, 0.06, 0.109, 12), rice, x, 0.25, -0.12); // (the rice 4.5 mm past the nori, the filling 4.5 mm past the rice)
+    part(boat, cyl(0.027, 0.027, 0.118, 8), lambert(color), x, 0.25, -0.12);
   }
   part(boat, sphere(0.05, 8, 6), lambert(0x7ac043), 0.48, 0.23, 0.12).scale.y = 0.7; // wasabi
   return idle(group, (t) => {
     const rock = Math.sin(t * 1.6);
     boat.rotation.z = rock * 0.1;
     boat.rotation.x = Math.cos(t * 1.1) * 0.03;
-    slider.position.x = 0.2 - Math.sin(t * 1.6 - 0.6) * 0.085; // (it runs downhill, a little behind the boat)
+    slider.position.x = 0.2525 - Math.sin(t * 1.6 - 0.6) * 0.035; // (it runs downhill, a little behind the boat; never into the next piece or the wasabi)
   });
 };
 
@@ -353,7 +353,7 @@ const makeTeaset = () => {
     part(group, torus(0.15, 0.01, 14), k % 2 ? rose : gold, x, 0.095, z, FLAT);
     const cup = sub(group, x, 0.095, z);
     part(cup, cyl(0.11, 0.065, 0.12, 14), china, 0, 0.06, 0);
-    part(cup, cyl(0.1, 0.1, 0.006, 14), tea, 0, 0.115, 0);
+    part(cup, cyl(0.1, 0.1, 0.013, 14), tea, 0, 0.118, 0); // (the tea's face 4.5 mm over the cup's top, not 2 mm under it)
     part(cup, torus(0.11, 0.01, 14), k % 2 ? rose : gold, 0, 0.12, 0, FLAT);
     part(cup, torus(0.04, 0.012, 10), china, Math.sin(a) * 0.12, 0.065, Math.cos(a) * 0.12, 0, a - FLAT, 0);
     return cup;
@@ -391,7 +391,7 @@ const makeRecord = () => {
   part(group, box(0.98, 0.2, 0.78), teal, 0, 0.12, 0);
   for (const x of [-0.4, 0.4]) for (const z of [-0.3, 0.3]) part(group, cyl(0.04, 0.03, 0.03, 8), dark, x, 0.015, z);
   part(group, box(0.92, 0.012, 0.72), creamy, 0, 0.225, 0);
-  part(group, new THREE.CircleGeometry(0.07, 14), dark, -0.25, 0.12, 0.391); // the speaker, and the knobs
+  part(group, new THREE.CircleGeometry(0.07, 14), dark, -0.25, 0.12, 0.3945); // the speaker (4.5 mm proud), and the knobs
   for (const x of [0.2, 0.34]) part(group, cyl(0.035, 0.035, 0.03, 10), creamy, x, 0.12, 0.4, FLAT);
   const lid = sub(group, 0, 0.22, -0.39);
   lid.rotation.x = -0.2;
@@ -402,7 +402,7 @@ const makeRecord = () => {
   part(disc, cyl(0.32, 0.32, 0.014, 24), lambert(0x15151a));
   for (const r of [0.17, 0.23, 0.28]) part(disc, torus(r, 0.004, 24, 4), lambert(0x4a4a55), 0, 0.008, 0, FLAT);
   part(disc, cyl(0.115, 0.115, 0.018, 18), lambert(0xe0304a));
-  part(disc, box(0.07, 0.02, 0.03), creamy, 0.06, 0, 0);
+  part(disc, box(0.07, 0.027, 0.03), creamy, 0.06, 0, 0); // (4.5 mm proud of the label each side)
   part(disc, cyl(0.015, 0.015, 0.05, 6), silver);
   part(group, cyl(0.045, 0.045, 0.09, 10), silver, 0.38, 0.27, -0.24);
   const arm = sub(group, 0.38, 0.33, -0.24);
@@ -739,11 +739,12 @@ const makeSurfboard = () => {
   const rock = sub(group, 0, 0.04, 0);
   const plank = sub(rock);
   part(plank, new THREE.ExtrudeGeometry(outline(), { depth: 0.05, bevelEnabled: true, bevelThickness: 0.018, bevelSize: 0.018, bevelSegments: 2, curveSegments: 10 }).translate(0, 0, -0.025), lambert(0x1fb5b0));
-  part(plank, new THREE.ExtrudeGeometry(outline(), { depth: 0.092, bevelEnabled: false, curveSegments: 10 }).translate(0, 0, -0.046), lambert(0xfff3d0), 0, 0.09, 0).scale.set(0.8, 0.9, 1);
-  part(plank, box(0.03, 1.3, 0.096), lambert(0xff8a1a), 0, 0.76, 0);
-  for (const y of [1.0, 1.08]) part(plank, box(0.5, 0.035, 0.094), lambert(0xff8a1a), 0, y, 0).scale.x = y > 1.04 ? 0.82 : 0.9;
+  // (the deck's panel 4.5 mm proud of the board each side, the stringer and the stripes 4.5 mm proud of the panel)
+  part(plank, new THREE.ExtrudeGeometry(outline(), { depth: 0.095, bevelEnabled: false, curveSegments: 10 }).translate(0, 0, -0.0475), lambert(0xfff3d0), 0, 0.09, 0).scale.set(0.8, 0.9, 1);
+  part(plank, box(0.03, 1.3, 0.104), lambert(0xff8a1a), 0, 0.76, 0);
+  for (const y of [1.0, 1.08]) part(plank, box(0.5, 0.035, 0.104), lambert(0xff8a1a), 0, y, 0).scale.x = y > 1.04 ? 0.82 : 0.9;
   for (const [x, y] of [[0, 0.16], [-0.12, 0.26], [0.12, 0.26]]) part(plank, cone(0.07, 0.18, 4), lambert(0x147a78), x, y, -0.1, -FLAT - 0.5).scale.x = 0.2; // the fins
-  part(plank, box(0.6, 0.11, 0.12), ribbon, 0, 0.6, 0);
+  part(plank, box(0.63, 0.11, 0.12), ribbon, 0, 0.6, 0); // (its ends clear of the board's rail)
   const bow = sub(plank, 0, 0.6, 0.075);
   const loops = [-1, 1].map(d => part(bow, cone(0.11, 0.26, 4), ribbon, d * 0.14, 0.02, 0, 0, 0, d * FLAT));
   for (const loop of loops) loop.scale.z = 0.45;
@@ -774,7 +775,7 @@ const makeToolbox = () => {
   for (const x of [-0.32, 0.32]) part(body, box(0.09, 0.11, 0.02), steel, x, 0.3, 0.24);
   const lid = sub(body, 0, 0.36, -0.23);
   part(lid, box(1.0, 0.1, 0.46), red, 0, 0.05, 0.23);
-  part(lid, box(1.02, 0.03, 0.48), deep, 0, 0.012, 0.23);
+  part(lid, box(1.02, 0.03, 0.48), deep, 0, 0.0105, 0.23); // (the rim 4.5 mm past the lid's underside)
   part(lid, torus(0.12, 0.018, 12, 6, Math.PI), steel, 0, 0.1, 0.23);
   // a spanner, lying along x: a ring at one end, jaws at the other
   const spanner = (x, z, length, turn) => {
@@ -795,7 +796,7 @@ const makeToolbox = () => {
   part(driver, cyl(0.045, 0.04, 0.2, 10), lambert(0xffc21a), 0, 0.38, 0);
   part(driver, cyl(0.047, 0.047, 0.04, 10), lambert(0x22252b), 0, 0.34, 0);
   part(body, cyl(0.085, 0.085, 0.06, 14), lambert(0xffc21a), 0.34, 0.405, 0.12); // a tape measure
-  part(body, cyl(0.045, 0.045, 0.064, 10), lambert(0x22252b), 0.34, 0.405, 0.12);
+  part(body, cyl(0.045, 0.045, 0.069, 10), lambert(0x22252b), 0.34, 0.405, 0.12); // (4.5 mm proud each face)
   return idle(group, (t) => {
     const fit = Math.pow(Math.max(0, Math.sin(t * 1.4)), 2);
     spanners.forEach((s, k) => {
@@ -826,8 +827,8 @@ const makeTelescope = () => {
   part(tube, cyl(0.09, 0.09, 0.8, 16), white, 0, 0, 0.1, FLAT);
   for (const z of [-0.26, 0.42]) part(tube, cyl(0.097, 0.097, 0.05, 16), brass, 0, 0, z, FLAT);
   part(tube, cyl(0.115, 0.105, 0.2, 16), dark, 0, 0, 0.58, FLAT);
-  part(tube, new THREE.CircleGeometry(0.1, 16), glow(0x8fd3ff), 0, 0, 0.682);
-  part(tube, new THREE.CircleGeometry(0.045, 12), glow(0xffffff), -0.03, 0.03, 0.684);
+  part(tube, new THREE.CircleGeometry(0.1, 16), glow(0x8fd3ff), 0, 0, 0.6845); // (the lens 4.5 mm proud of the hood, the glint 4.5 mm over the lens)
+  part(tube, new THREE.CircleGeometry(0.045, 12), glow(0xffffff), -0.03, 0.03, 0.689);
   part(tube, cyl(0.09, 0.05, 0.1, 12), dark, 0, 0, -0.35, FLAT);
   part(tube, cyl(0.035, 0.035, 0.16, 8), dark, 0, 0, -0.46, FLAT);
   part(tube, cyl(0.045, 0.035, 0.05, 8), brass, 0, 0, -0.55, FLAT);

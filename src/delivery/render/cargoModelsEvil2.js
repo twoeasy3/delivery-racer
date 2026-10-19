@@ -287,7 +287,7 @@ const makeBarrel = () => {
     const sign = sub(all);
     sign.rotation.y = turn;
     part(sign, cyl(0.1, 0.1, 0.02, 14), drum, 0, 0.4, 0.335, FLAT);
-    for (let k = 0; k < 3; k++) part(sign, cyl(0.036, 0.036, 0.025, 8), black, Math.sin(k * 2.094) * 0.052, 0.4 + Math.cos(k * 2.094) * 0.052, 0.337, FLAT);
+    for (let k = 0; k < 3; k++) part(sign, cyl(0.036, 0.036, 0.03, 8), black, Math.sin(k * 2.094) * 0.052, 0.4 + Math.cos(k * 2.094) * 0.052, 0.3345, FLAT); // (4.5 mm proud of the disc, its back 5.5 mm behind the disc's)
   }
   const seamMat = glow(0x2a7a10);
   const seam = part(all, torus(0.325, 0.028), seamMat, 0, 0.8, 0, FLAT);
@@ -346,14 +346,15 @@ const makeMirror = () => {
   const sides = [0, Math.PI].map((turn) => {
     const side = sub(frame);
     side.rotation.y = turn;
-    const glint = sub(side, 0, 0, 0.023);
-    part(glint, box(0.05, 0.36, 0.002), glow(0xffffff), -0.1, 0.08, 0, 0, 0, 0.6);
-    part(glint, box(0.025, 0.2, 0.002), glow(0xffffff), 0, -0.02, 0, 0, 0, 0.6);
-    const face = sub(side, 0, 0.05, 0.024);
+    // (the glints 4.5 mm proud of the glass, the face 4.5 mm over them, the eyes and the jaw 4.5 and 7.5 mm over it)
+    const glint = sub(side, 0, 0, 0.02);
+    part(glint, box(0.05, 0.36, 0.009), glow(0xffffff), -0.1, 0.08, 0, 0, 0, 0.6);
+    part(glint, box(0.025, 0.2, 0.009), glow(0xffffff), 0, -0.02, 0, 0, 0, 0.6);
+    const face = sub(side, 0, 0.05, 0.029);
     part(face, new THREE.CircleGeometry(0.17, 14), pale).scale.y = 1.3;
-    const eyes = [-1, 1].map(d => part(face, new THREE.CircleGeometry(0.045, 10), eyeMat, d * 0.07, 0.05, 0.003, 0, 0, d * 0.4));
+    const eyes = [-1, 1].map(d => part(face, new THREE.CircleGeometry(0.045, 10), eyeMat, d * 0.07, 0.05, 0.0045, 0, 0, d * 0.4));
     for (const eye of eyes) eye.scale.y = 1.5;
-    const jaw = part(face, new THREE.CircleGeometry(0.05, 10), hollow, 0, -0.1, 0.003);
+    const jaw = part(face, new THREE.CircleGeometry(0.05, 10), hollow, 0, -0.1, 0.0075);
     const arms = [-1, 1].map(d => {
       const arm = sub(side, d * 0.17, -0.14, 0.02);
       part(arm, capsule(0.055, 0.3), pale, 0, 0, 0.19, FLAT);
@@ -510,7 +511,7 @@ const makeMimic = () => {
   const wood = lambert(0x8a5a2a), band = lambert(0xe2b93a), maw = glow(0x5a0a14), tooth = lambert(0xfffaf0), pink = lambert(0xff5f8a);
   const all = sub(group), body = sub(all);
   part(body, box(0.8, 0.36, 0.5), wood, 0, 0.18, 0);
-  for (const x of [-0.3, 0.3]) part(body, box(0.07, 0.37, 0.52), band, x, 0.18, 0);
+  for (const x of [-0.3, 0.3]) part(body, box(0.07, 0.37, 0.52), band, x, 0.185, 0); // (5 mm over the maw's top, not level with it)
   part(body, box(0.74, 0.02, 0.44), maw, 0, 0.355, 0);
   const lowerTeeth = sub(body, 0, 0.36, 0);
   for (let k = 0; k < 7; k++) part(lowerTeeth, cone(0.04, 0.13, 4), tooth, -0.3 + k * 0.1, 0.06, 0.21);
@@ -580,7 +581,7 @@ const makeFireworks = () => {
     const rocket = sub(home);
     part(rocket, box(0.016, 0.5, 0.016), stick, 0, 0.27, 0);
     part(rocket, cyl(0.065, 0.065, 0.46, 10), lambert(main), 0, 0.66, 0);
-    part(rocket, cyl(0.067, 0.067, 0.07, 10), lambert(nose), 0, 0.72, 0);
+    part(rocket, cyl(0.0715, 0.0715, 0.07, 10), lambert(nose), 0, 0.72, 0); // (the band 6.5 mm proud)
     part(rocket, cone(0.085, 0.18, 10), lambert(nose), 0, 0.98, 0);
     const flame = sub(rocket, 0, 0.43, 0);
     part(flame, cone(0.07, 0.34, 7), glow(0xff8a1a), 0, -0.17, 0, Math.PI);
@@ -1072,7 +1073,7 @@ const makeReactor = () => {
   const all = sub(group);
   for (const [y, top, bottom] of [[0.07, 0.3, 0.34], [0.93, 0.34, 0.3]]) {
     part(all, cyl(top, bottom, 0.14, 16), metal, 0, y, 0);
-    part(all, cyl(0.345, 0.345, 0.035, 16), stripe, 0, y < 0.5 ? 0.12 : 0.88, 0);
+    part(all, cyl(0.345, 0.345, 0.035, 16), stripe, 0, y < 0.5 ? 0.1155 : 0.8845, 0); // (7 mm in from the cap's face, not 2.5)
   }
   const lamp = part(all, sphere(0.075, 8, 6), lampMat, 0, 1.03, 0);
   const core = part(all, capsule(0.085, 0.42), coreMat, 0, 0.5, 0);
@@ -1124,9 +1125,9 @@ const makeGoose = () => {
   const wood = lambert(0xc9a05a), plank = lambert(0xa87f3e), white = lambert(0xffffff), orange = lambert(0xff8a1a), grey = lambert(0xc4ccd6), black = glow(0x14100c);
   const all = sub(group);
   part(all, box(0.72, 0.5, 0.58), wood, 0, 0.25, 0);
-  for (const y of [0.17, 0.34]) part(all, box(0.726, 0.014, 0.586), plank, 0, y, 0);
+  for (const y of [0.17, 0.34]) part(all, box(0.729, 0.014, 0.598), plank, 0, y, 0); // (4.5 mm over the hole, which is 4.5 mm proud of the crate)
   for (const x of [-0.34, 0.34]) for (const z of [-0.27, 0.27]) part(all, box(0.07, 0.52, 0.07), plank, x, 0.26, z);
-  part(all, new THREE.CircleGeometry(0.12, 14), black, 0, 0.28, 0.292);
+  part(all, new THREE.CircleGeometry(0.12, 14), black, 0, 0.28, 0.2945);
   const peek = sub(all, 0, 0.28, 0.25);
   part(peek, cone(0.055, 0.2, 6), orange, 0, 0, 0.08, FLAT).scale.z = 0.7;
   const lids = [-0.245, 0, 0.245].map((x, k) => {
