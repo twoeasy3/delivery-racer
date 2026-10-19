@@ -65,7 +65,7 @@ export const underglowById = (id) => UNDERGLOWS.find(g => g.id === id) || null;
 registerCosmetics(UNDERGLOWS.map(g => ({ slot: 'underglow', id: g.id, name: g.name, free: true, price: 300 })));
 
 // ---- who can wear it ----
-export const NO_GLOW_MODELS = new Set(['hovercraft', 'snocat', 'jetboat', 'monowheel']); // (no wheels on the road: render/carsuspension.js how 'none')
+export const NO_GLOW_MODELS = new Set(['hovercraft', 'snocat', 'jetboat', 'monowheel', 'bulldozer']); // (no wheels on the road: render/carsuspension.js how 'none')
 export const underglowSupported = (car) => !!car && !!(car.model || car.idea) && !car.tank && !car.ufo && !car.legend && !car.silhouette && !NO_GLOW_MODELS.has(car.model);
 
 // ---- the choice ----

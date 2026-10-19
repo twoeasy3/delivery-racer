@@ -61,7 +61,7 @@ export const RIM_DESIGNS = [
 export const rimById = (id) => RIM_DESIGNS.find(d => d.id === id) || RIM_DESIGNS[0];
 // cars that cannot wear a rim (by car id or model): a hoop, tracks, hulls, a hovercraft's skirt, discs that are not wheels; and three whose
 // wheels are their look (the Quad Turbo's own alloys, the Circus Wagon's wooden spokes, a dodgem's hidden castors)
-export const RIM_SKIP = new Set(['monowheel', 'hovercraft', 'snocat', 'quadturbo', 'dodgem', 'circuswagon', 'halftrack', 'tank', 'amphibioustank', 'jetboat', 'trawler', 'jetcar', 'moonrover']);
+export const RIM_SKIP = new Set(['monowheel', 'hovercraft', 'snocat', 'quadturbo', 'dodgem', 'circuswagon', 'halftrack', 'tank', 'amphibioustank', 'jetboat', 'trawler', 'jetcar', 'moonrover', 'bulldozer']);
 
 export const SPIN_RATE = 6;    // rad/s: a spinner, everywhere (stopped, moving, on show)
 export const IDLE_RATE = 0;    // rad/s: a rim with no speed to follow (a car on show): STILL (the owner, 17-Oct: "threads and rims should not be rotating" in the vehicle previews; CHECKLIST 466). Only a spinner turns on show.

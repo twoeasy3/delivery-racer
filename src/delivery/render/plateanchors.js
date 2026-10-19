@@ -37,7 +37,7 @@ export const HAND = {
 // rides 1.2 m up on its frame, at plate height there are only axles and frame tubes (the old plates hung in the air between them). The
 // Farm Tractor (15-Oct audit): its back is the drawbar between the big wheels (the old rear plate was under its middle); the only flat
 // front place is the bonnet's sloping nose, whose lip hides the plate's top.
-export const HAND_NONE = ['swancar', 'monster', 'farmtractor'];
+export const HAND_NONE = ['swancar', 'monster', 'farmtractor', 'bulldozer']; // (the Bulldozer: a ripper over its tail and only the blade's curved face in front)
 
 export const PLATE_W_H = 4; // a plate is 4 times as wide as high (render/platedesigns.js draws it so)
 

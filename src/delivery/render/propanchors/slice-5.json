@@ -54,6 +54,23 @@
     "no": "no rear deck or roof edge takes the smallest wing (scale 0.45) off the glass, with at most 5 cm of inset, touching nothing"
    }
   },
+  "bulldozer": {
+   "roof": {
+    "box": [1.22, 0, 3.15, -0.259],
+    "cyl": [1.09, 0, 3.118, -0.259],
+    "from": "roof",
+    "lim": "fit"
+   },
+   "cargo": {
+    "no": "no deck behind the cab takes the smallest load (scale 0.4) with at most 5 cm of inset, touching nothing"
+   },
+   "wing": {
+    "box": [1.03, 0, 3.025, -1.239],
+    "cyl": [1.03, 0, 3, -1.239],
+    "from": "roof-edge",
+    "lim": "fit"
+   }
+  },
   "cabledrum": {
    "roof": {
     "box": [1.75, 0, 2.727, 3.542],
@@ -325,6 +342,27 @@
     "lim": "fit"
    }
   },
+  "gritter": {
+   "roof": {
+    "box": [2.03, 0, 3.627, -1.12],
+    "cyl": [1.18, 0, 3.395, 2.24],
+    "from": "roof",
+    "lim": "fit",
+    "inset": [0, 0.05]
+   },
+   "cargo": {
+    "box": [1.05, 0, 1.64, 0.6],
+    "cyl": [1.1, 0, 1.66, 0.68],
+    "from": "deck",
+    "lim": "fit"
+   },
+   "wing": {
+    "box": [1.43, 0, 3.3, -2.54],
+    "cyl": [1.43, 0, 3.264, -2.58],
+    "from": "roof-edge",
+    "lim": "fit"
+   }
+  },
   "gyrocar": {
    "roof": {
     "no": "a microcar: too small"
@@ -334,6 +372,27 @@
    },
    "wing": {
     "no": "a microcar"
+   }
+  },
+  "haultruck": {
+   "roof": {
+    "box": [2.85, 0, 4.213, 1.74],
+    "cyl": [2.53, 0, 4.133, 1.74],
+    "from": "roof",
+    "lim": "fit"
+   },
+   "cargo": {
+    "box": [1.91, 0, 2.693, -0.46],
+    "cyl": [1.97, 0, 2.717, -0.3],
+    "from": "deck",
+    "lim": "fit",
+    "inset": [0.015, 0.013]
+   },
+   "wing": {
+    "box": [2.04, 0, 3.857, 0.72],
+    "cyl": [2.04, 0, 3.806, 0.72],
+    "from": "roof-edge",
+    "lim": "fit"
    }
   },
   "hovercraft": {
@@ -794,6 +853,23 @@
     "lim": "hand",
     "existing": true,
     "hand": "on the rear deck where the golf bags ride (the generator put it on the bench seat once the wing took the deck)"
+   }
+  },
+  "haultruck": {
+   "wing": {
+    "no": "no rear deck: the dump body's tail is an open lip that tips, and the canopy's back edge is the tray's mouth"
+   }
+  },
+  "gritter": {
+   "roof": {
+    "box": [1.15, 0, 3.338, 2.24],
+    "cyl": [1.18, 0, 3.345, 2.24],
+    "from": "roof",
+    "lim": "hand",
+    "hand": "on the cab roof (where the light bar stands: it is tagged and hidden); the generated box stood on the hopper grid"
+   },
+   "cargo": {
+    "no": "a covered salt hopper under a grid: no load deck (the generated box sat down inside the hopper, out of sight)"
    }
   }
  }
