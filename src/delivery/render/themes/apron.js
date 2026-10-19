@@ -16,6 +16,8 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { LEVEL } from '../../levels.js';
 import { Track } from '../../track.js';
 import * as M from './apronModels.js';
+import { everyFrame } from './sceneryClock.js';
+import { buildStrip } from '../road.js';
 
 const TERMINAL = 84;          // m off the right-hand pavement: the terminal's glass
 const RED_LINE = 12.5;        // ...the red equipment restraint line (nothing parks beyond it toward a stand's tail)
@@ -23,7 +25,8 @@ const TAIL_R = 14;            // ...where a contact stand's aircraft's tail reac
 const TAXI = [26, 60, 43];    // m off the left-hand pavement: the taxiway's asphalt, from and to, and its centre line
 const TAIL_L = 66;            // ...where a remote stand's aircraft's tail reaches
 const HANGARS = 175;          // ...the hangars' middles
-const CHUNK = 900;            // m of road a merged mesh holds
+const CHUNK = 300;            // m of road a merged mesh holds (out of sight, behind or beyond the camera's 700 m, a whole mesh is skipped)
+const DETAIL = 200, SEEN = 180; // m of road a mesh of small things holds, and how near the camera it is drawn
 const LIVERIES = [0x1f4f99, 0xc8392e, 0x16807a, 0xe07a1f, 0x3b7a3a, 0x5a3f8f, 0x2a2d33, 0x2f8fd0, 0xd9a520];
 const CARGO = [0x8a5a2a, 0x3d4a5a, 0xb0302a];
 const PAINT = [0xf2c21d, 0xe2b93b, 0xd8d0b8];
@@ -32,40 +35,37 @@ export const APRON_BUILT = { meshes: 0, verts: 0, tris: 0, counts: {} };
 
 // ---- a growable store of points, normals (bytes), colours (bytes) and indices: one merged mesh's worth ----
 const grow = (a, n) => { if (n <= a.length) return a; const b = new a.constructor(Math.max(n, a.length * 2)); b.set(a); return b; };
-const store = () => ({ pos: new Float32Array(3 * 8192), nor: new Int8Array(3 * 8192), col: new Uint8Array(3 * 8192), idx: new Uint32Array(3 * 8192), nv: 0, ni: 0 });
+const store = () => ({ pos: new Float32Array(3 * 8192), col: new Uint8Array(3 * 8192), idx: new Uint32Array(3 * 8192), nv: 0, ni: 0 });
 // a template's glowing and plain parts apart, made once a template
 const halves = new WeakMap();
 const split = (t) => {
   if (halves.has(t)) return halves.get(t);
   const out = {};
   for (const glow of [false, true]) {
-    const keep = t.names.map(n => n.startsWith('!') === glow), map = new Int32Array(t.verts).fill(-1), pos = [], nor = [], key = [], index = [];
+    const keep = t.names.map(n => n.startsWith('!') === glow), map = new Int32Array(t.verts).fill(-1), pos = [], key = [], index = [];
     for (let i = 0; i < t.index.length; i += 3) {
       if (!keep[t.key[t.index[i]]]) continue;
       for (let j = 0; j < 3; j++) {
         const v = t.index[i + j];
-        if (map[v] < 0) { map[v] = key.length; key.push(t.key[v]); pos.push(t.pos[v * 3], t.pos[v * 3 + 1], t.pos[v * 3 + 2]); nor.push(t.nor[v * 3], t.nor[v * 3 + 1], t.nor[v * 3 + 2]); }
+        if (map[v] < 0) { map[v] = key.length; key.push(t.key[v]); pos.push(t.pos[v * 3], t.pos[v * 3 + 1], t.pos[v * 3 + 2]); }
         index.push(map[v]);
       }
     }
-    out[glow ? 'glow' : 'lit'] = key.length ? { pos: new Float32Array(pos), nor: new Float32Array(nor), key: new Uint8Array(key), index: new Uint32Array(index), names: t.names, verts: key.length } : null;
+    out[glow ? 'glow' : 'lit'] = key.length ? { pos: new Float32Array(pos), key: new Uint8Array(key), index: new Uint32Array(index), names: t.names, verts: key.length } : null;
   }
   halves.set(t, out);
   return out;
 };
-const v3 = new THREE.Vector3(), nm = new THREE.Matrix3();
+const v3 = new THREE.Vector3();
 // a template into a store, through a matrix, in a palette (by part name; COLOURS for the rest)
 const bakeInto = (S, t, m, palette) => {
   const colours = t.names.map(name => M.colourBytes(palette?.[name] ?? M.COLOURS[name] ?? 0x888888));
-  nm.getNormalMatrix(m);
   const base = S.nv;
-  S.pos = grow(S.pos, (S.nv + t.verts) * 3); S.nor = grow(S.nor, (S.nv + t.verts) * 3); S.col = grow(S.col, (S.nv + t.verts) * 3); S.idx = grow(S.idx, S.ni + t.index.length);
+  S.pos = grow(S.pos, (S.nv + t.verts) * 3); S.col = grow(S.col, (S.nv + t.verts) * 3); S.idx = grow(S.idx, S.ni + t.index.length);
   for (let i = 0; i < t.verts; i++) {
     const o = (base + i) * 3;
     v3.fromArray(t.pos, i * 3).applyMatrix4(m);
     S.pos[o] = v3.x; S.pos[o + 1] = v3.y; S.pos[o + 2] = v3.z;
-    v3.fromArray(t.nor, i * 3).applyMatrix3(nm).normalize();
-    S.nor[o] = Math.round(v3.x * 127); S.nor[o + 1] = Math.round(v3.y * 127); S.nor[o + 2] = Math.round(v3.z * 127);
     const c = colours[t.key[i]];
     S.col[o] = c[0]; S.col[o + 1] = c[1]; S.col[o + 2] = c[2];
   }
@@ -75,7 +75,6 @@ const bakeInto = (S, t, m, palette) => {
 const meshOf = (S, material) => {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(S.pos.slice(0, S.nv * 3), 3));
-  g.setAttribute('normal', new THREE.BufferAttribute(S.nor.slice(0, S.nv * 3), 3, true));
   g.setAttribute('color', new THREE.BufferAttribute(S.col.slice(0, S.nv * 3), 3, true));
   g.setIndex(new THREE.BufferAttribute(S.nv < 65536 ? new Uint16Array(S.idx.subarray(0, S.ni)) : S.idx.slice(0, S.ni), 1));
   g.computeBoundingSphere();
@@ -124,7 +123,10 @@ export const apron = ({ add, sideStrip, beside, inJunction, offRoads, levelGroup
   // ---- the merged meshes, a store each per CHUNK m of road, plain and glowing ----
   const chunks = new Map();
   const chunkAt = (s) => { const k = Math.max(0, Math.floor((s - START) / CHUNK)); if (!chunks.has(k)) chunks.set(k, { lit: store(), glow: store() }); return chunks.get(k); };
-  const bake = (t, m, s, palette) => { const parts = split(t), C = chunkAt(s); if (parts.lit) bakeInto(C.lit, parts.lit, m, palette); if (parts.glow) bakeInto(C.glow, parts.glow, m, palette); };
+  // (detail: the small things, ground equipment and cones, in meshes of their own a DETAIL m, drawn only within SEEN m of the camera)
+  const details = new Map();
+  const detailAt = (s) => { const k = Math.floor((s - START) / DETAIL); if (!details.has(k)) details.set(k, { lit: store(), glow: store() }); return details.get(k); };
+  const bake = (t, m, s, palette, detail = false) => { const parts = split(t), C = detail ? detailAt(s) : chunkAt(s); if (parts.lit) bakeInto(C.lit, parts.lit, m, palette); if (parts.glow) bakeInto(C.glow, parts.glow, m, palette); };
   // the matrix of a thing at (s, lat), y up, turned `turn` from the road's heading (0: along the road; -PI/2: facing out to the
   // right, PI/2 out to the left), scaled
   const at = (s, lat, y = 0, turn = 0, sx = 1, sy = 1, sz = 1) => { const h = Track.toWorld(s, lat, p); return M.mat4(p.x, p.y + y, p.z, 0, h + turn, 0, sx, sy, sz); };
@@ -154,8 +156,8 @@ export const apron = ({ add, sideStrip, beside, inJunction, offRoads, levelGroup
       if (i) paint.idx.push(base - 2, base - 1, base, base - 1, base + 1, base);
     }
   };
-  // a line along the road d m off its edge, from a to b (points every 4 m, 2 m round a bend)
-  const along = (side, a, b, d, w, colour) => { const pts = []; for (let s = a; s < b; s += 3) pts.push([s, beside(side, s, d)]); pts.push([b, beside(side, b, d)]); line(pts, w, colour); };
+  // a line along the road d m off its edge, from a to b (a point every 8 m: on the level's gentlest bends that is 2 cm off the curve)
+  const along = (side, a, b, d, w, colour) => { const pts = []; for (let s = a; s < b; s += 8) pts.push([s, beside(side, s, d)]); pts.push([b, beside(side, b, d)]); line(pts, w, colour); };
   // a line across, out from the road at s, from d0 to d1 off its edge
   const across = (side, s, d0, d1, w, colour) => line([[s, beside(side, s, d0)], [s, beside(side, s, d1)]], w, colour);
   // a bay's outline (white), d0 to d1 off the edge, s0 to s1 along
@@ -164,7 +166,8 @@ export const apron = ({ add, sideStrip, beside, inJunction, offRoads, levelGroup
   // ---- the ground: concrete both sides (and the taxiway's asphalt on the left), one mesh, the slab joints in world squares ----
   const ground = [];
   const surface = (side, d0, d1, colour) => {
-    const g = sideStrip(START, END, (s) => beside(side, s, d0), (s) => beside(side, s, d1), 0, 4);
+    // (sideStrip keeps clear of any other road, in rows 2 m apart; with none, a plain strip in rows 8 m apart does)
+    const g = (Track.exits.length || Track.junctions.length ? sideStrip : buildStrip)(START, END, (s) => beside(side, s, d0), (s) => beside(side, s, d1), 0, 8);
     const n = g.attributes.position.count, uv = new Float32Array(n * 2), col = new Float32Array(n * 3), c = new THREE.Color(colour);
     for (let i = 0; i < n; i++) { uv[i * 2] = g.attributes.position.getX(i) / 7.5; uv[i * 2 + 1] = g.attributes.position.getZ(i) / 7.5; col.set([c.r, c.g, c.b], i * 3); }
     g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
@@ -199,34 +202,34 @@ export const apron = ({ add, sideStrip, beside, inJunction, offRoads, levelGroup
     // what attends it (in its own frame: x across it (+x its left), z nose-ward, metres; the fuselage's skin 2 m out at scale 1)
     const F = (x, z, turn = 0) => inFrame(frame, x, z, turn);
     const skin = 2.0 * k, belt = rand();
-    if (belt < 0.75) { bake(M.beltLoader(), F(-(skin + 3.9), -6.5 * k, Math.PI / 2), s, { body: pick([0xf2c21d, 0xe8eaeb, 0x2f5f8a]) }); count('belt loader'); }
-    if (belt < 0.45) { bake(M.beltLoader(), F(-(skin + 3.9), 7.5 * k, Math.PI / 2), s, { body: 0xf2c21d }); count('belt loader'); }
-    if (rand() < 0.8) { // a train of carts (or containers, beside a wide-body) along the fuselage, its tractor nose-ward
-      const uld = wide || freighter, n = 2 + Math.floor(rand() * 3), x = -(skin + 7.5), paint = { body: pick([0xf2c21d, 0xe2702a, 0xe8eaeb]) };
-      bake(M.tractor(), F(x, -2 * k + 1.5), s, paint);
-      for (let j = 0; j < n; j++) bake(uld ? M.uldDolly() : M.dolly(), F(x, -2 * k - 1.6 - j * (uld ? 2.6 : 3.8) - (uld ? 0.4 : 0.6)), s, { roof: pick([0x3d6a9a, 0x4a5058, 0x2f6a4a]), curtain: pick([0x3d6a9a, 0x7a2e2e, 0x4a5058]) });
+    if (belt < 0.6) { bake(M.beltLoader(), F(-(skin + 3.9), -6.5 * k, Math.PI / 2), s, { body: pick([0xf2c21d, 0xe8eaeb, 0x2f5f8a]) }, true); count('belt loader'); }
+    if (belt < 0.2) { bake(M.beltLoader(), F(-(skin + 3.9), 7.5 * k, Math.PI / 2), s, { body: 0xf2c21d }, true); count('belt loader'); }
+    if (rand() < 0.6) { // a train of carts (or containers, beside a wide-body) along the fuselage, its tractor nose-ward
+      const uld = wide || freighter, n = 2 + Math.floor(rand() * 2), x = -(skin + 7.5), paint = { body: pick([0xf2c21d, 0xe2702a, 0xe8eaeb]) };
+      bake(M.tractor(), F(x, -2 * k + 1.5), s, paint, true);
+      for (let j = 0; j < n; j++) bake(uld ? M.uldDolly() : M.dolly(), F(x, -2 * k - 1.6 - j * (uld ? 2.6 : 3.8) - (uld ? 0.4 : 0.6)), s, { roof: pick([0x3d6a9a, 0x4a5058, 0x2f6a4a]), curtain: pick([0x3d6a9a, 0x7a2e2e, 0x4a5058]) }, true);
       count('train');
     }
-    if (rand() < 0.4) { bake(M.bowser(), F(skin + 9.5 * k, 2.5 * k), s); count('fuel bowser'); }
-    if (rand() < (remote ? 0.15 : 0.45)) { bake(M.pushback(), F(0, (M.AIRLINER.nose + 4) * k, Math.PI), s, { body: pick([0xf2c21d, 0xe8eaeb]) }); count('pushback'); }
+    if (rand() < 0.3) { bake(M.bowser(), F(skin + 9.5 * k, 2.5 * k), s, undefined, true); count('fuel bowser'); }
+    if (rand() < (remote ? 0.15 : 0.45)) { bake(M.pushback(), F(0, (M.AIRLINER.nose + 4) * k, Math.PI), s, { body: pick([0xf2c21d, 0xe8eaeb]) }, true); count('pushback'); }
     if (remote && !wide) { // stair trucks at the front and back doors, an apron bus by the front ones
-      bake(M.stairTruck(), F(skin + 3.35, 12.0, -Math.PI / 2), s, { body: 0xe8eaeb, cab: 0xf0f0ee }); count('stair truck');
-      if (rand() < 0.7) { bake(M.stairTruck(), F(skin + 3.35, -11.5, -Math.PI / 2), s, { body: 0xe8eaeb }); count('stair truck'); }
-      if (rand() < 0.75) { bake(M.apronBus(), F(skin + 12, 9, rand() < 0.5 ? 0 : Math.PI), s); count('apron bus'); }
+      bake(M.stairTruck(), F(skin + 3.35, 12.0, -Math.PI / 2), s, { body: 0xe8eaeb, cab: 0xf0f0ee }, true); count('stair truck');
+      if (rand() < 0.4) { bake(M.stairTruck(), F(skin + 3.35, -11.5, -Math.PI / 2), s, { body: 0xe8eaeb }, true); count('stair truck'); }
+      if (rand() < 0.75) { bake(M.apronBus(), F(skin + 12, 9, rand() < 0.5 ? 0 : Math.PI), s, undefined, true); count('apron bus'); }
     }
-    for (const [x, z] of [[SPAN * k + 0.8, -5.5 * k], [-SPAN * k - 0.8, -5.5 * k], [0, (M.AIRLINER.nose + 1.5) * k], [5.7 * k, 6.5 * k], [-5.7 * k, 6.5 * k]]) if (rand() < 0.8) bake(M.apronCone(), F(x, z), s);
+    for (const [x, z] of [[SPAN * k + 0.8, -5.5 * k], [-SPAN * k - 0.8, -5.5 * k], [0, (M.AIRLINER.nose + 1.5) * k], [5.7 * k, 6.5 * k], [-5.7 * k, 6.5 * k]]) if (rand() < 0.4) bake(M.apronCone(), F(x, z), s, undefined, true);
     return true;
   };
 
   // ---- the contact stands along the right: one aircraft after another, their wingtips 10 m apart ----
-  const contact = []; // [s, nose d, wide]: for the jet bridges
+  const contact = []; // [s, nose d, wide]: for the jet bridges (the door's d from the tail's)
   for (let edge = START + 28; edge < END - 60;) { // (edge: where the last one's wingtip was, and its gap)
     const freighter = inCargo(edge + 20), wide = freighter ? rand() < 0.8 : rand() < 0.28, k = wide ? 1.55 : 1, half = SPAN * k, s = edge + half;
     if (busy(s, half + 4) || s > END - 30) { edge += 20; continue; }
     if (stand(s, 1, TAIL_R, wide, freighter, false) && !freighter) contact.push([s, TAIL_R + (M.AIRLINER.nose - M.AIRLINER.tail) * k, wide]);
     edge = s + half + 10 + rand() * 6;
   }
-  // ---- the red equipment line, and the masts between every other pair of stands ----
+  // ---- the red equipment line, and floodlight masts every 105 m each side ----
   along(1, START + 10, END - 10, RED_LINE, 0.3, 0xc8392e);
   const masts = []; // (the right-hand ones stand in the parking bays' row: the bays keep clear of them)
   for (let s = START + 60; s < END - 40; s += 105) {
@@ -240,7 +243,7 @@ export const apron = ({ add, sideStrip, beside, inJunction, offRoads, levelGroup
 
   // ---- the terminal: long, low, glass all along its front under a deep roof, in pieces that follow the road; a jet bridge to
   // each contact stand's front door. In the middle, the cargo apron's shed instead: grey cladding, a blue band, roller doors
-  const PIECE = 12;
+  const PIECE = 24;
   for (let s = START; s < END; s += PIECE) {
     const mid = s + PIECE / 2, cargo = inCargo(mid), back = cargo ? 34 : 30, hi = cargo ? 15 : 16;
     if (covered(mid, 20)) continue;
@@ -254,15 +257,14 @@ export const apron = ({ add, sideStrip, beside, inJunction, offRoads, levelGroup
     } else {
       block(mid, beside(1, mid, TERMINAL + 2 + (back - 2) / 2), 0, back - 2, hi - 0.5, PIECE + 0.05, 0xd9dcdd);
       block(mid, beside(1, mid, TERMINAL + 1), 0, 2, hi - 1.5, PIECE + 0.05, 0x6d93ab);                     // the glass
-      for (let j = 0; j < 4; j++) block(s + j * 3 + 1.5, beside(1, s + j * 3 + 1.5, TERMINAL - 0.08), 0, 0.2, hi - 1.5, 0.2, 0xe4e6e7); // its mullions
-      for (const y of [4.6, 9.4]) block(mid, beside(1, mid, TERMINAL - 0.06), y, 0.22, 0.24, PIECE + 0.05, 0xe4e6e7);   // and transoms
+      for (let j = 0; j < 4; j++) block(s + j * 6 + 3, beside(1, s + j * 6 + 3, TERMINAL - 0.08), 0, 0.2, hi - 1.5, 0.2, 0xe4e6e7); // its mullions
       block(mid, beside(1, mid, TERMINAL + back / 2 - 3), hi - 0.4, back + 8, 0.8, PIECE + 0.05, 0x8f969c);  // the roof, out over the glass
       block(mid, beside(1, mid, TERMINAL - 7), hi - 0.9, 0.3, 1.4, PIECE + 0.05, mid > cargoTo ? 0x8a3a35 : 0x2f5f8a); // its fascia
-      if (Math.floor((s - START) / PIECE) % 7 === 3) block(mid, beside(1, mid, TERMINAL + 18), hi + 0.4, 8, 2.4, 6, 0xb5bcc2); // plant on the roof
+      if (Math.floor((s - START) / PIECE) % 4 === 2) block(mid, beside(1, mid, TERMINAL + 18), hi + 0.4, 8, 2.4, 6, 0xb5bcc2); // plant on the roof
     }
     count(cargo ? 'shed' : 'terminal');
   }
-  for (const [s, nose, wide] of contact) { // a jet bridge: a rotunda by the glass, a tunnel on a wheeled leg to a cab at the front door
+  for (const [s, , wide] of contact) { // a jet bridge: a rotunda by the glass, a tunnel on a wheeled leg to a cab at the front door
     const k = wide ? 1.55 : 1, skin = 2.0 * k, cab = s - skin - 2.0, dDoor = TAIL_R + (12.5 - M.AIRLINER.tail) * k, y = wide ? 4.6 : 3.1, rs = s - 12, rd = TERMINAL - 3.5;
     if (!clearAt(at(rs, beside(1, rs, rd)), 4)) continue;
     block(rs, beside(1, rs, rd), 0, 1.2, y, 1.2, 0xa9aeb3, 0, true);
@@ -307,17 +309,17 @@ export const apron = ({ add, sideStrip, beside, inJunction, offRoads, levelGroup
     const nose = side > 0 ? s + len : s, step = side > 0 ? -1 : 1;
     if (r < 0.55) {
       const uld = rand() < 0.35, n = Math.min(4, Math.floor((len - 3) / (uld ? 2.6 : 3.8)));
-      bake(M.tractor(), at(nose + step * 1.4, lane(5.5), 0, dir), s, { body: pick([0xf2c21d, 0xe2702a, 0xe8eaeb]) });
-      for (let j = 0; j < n; j++) { const at2 = nose + step * (3.0 + (uld ? 1.4 : 1.9) + j * (uld ? 2.6 : 3.8)); bake(uld ? M.uldDolly() : M.dolly(), at(at2, beside(side, at2, 5.5), 0, dir), s, { roof: pick([0x3d6a9a, 0x4a5058]), curtain: pick([0x3d6a9a, 0x7a2e2e]) }); }
+      bake(M.tractor(), at(nose + step * 1.4, lane(5.5), 0, dir), s, { body: pick([0xf2c21d, 0xe2702a, 0xe8eaeb]) }, true);
+      for (let j = 0; j < n; j++) { const at2 = nose + step * (3.0 + (uld ? 1.4 : 1.9) + j * (uld ? 2.6 : 3.8)); bake(uld ? M.uldDolly() : M.dolly(), at(at2, beside(side, at2, 5.5), 0, dir), s, { roof: pick([0x3d6a9a, 0x4a5058]), curtain: pick([0x3d6a9a, 0x7a2e2e]) }, true); }
       count('parked train');
-    } else if (r < 0.7 && len >= 13) { bake(M.apronBus(), at(s + len / 2, lane(7), 0, dir), s); count('parked bus'); }
-    else if (r < 0.82 && len >= 9) { bake(M.bowser(), at(s + len / 2, lane(7), 0, dir), s); count('parked bowser'); }
-    else { for (let j = 0; j < 2; j++) bake(M.tractor(), at(s + 2 + j * 3.2, lane(5 + j * 0.2), 0, dir + 0.15), s, { body: pick([0xf2c21d, 0xe8eaeb]) }); count('parked tractors'); }
+    } else if (r < 0.7 && len >= 13) { bake(M.apronBus(), at(s + len / 2, lane(7), 0, dir), s, undefined, true); count('parked bus'); }
+    else if (r < 0.82 && len >= 9) { bake(M.bowser(), at(s + len / 2, lane(7), 0, dir), s, undefined, true); count('parked bowser'); }
+    else { for (let j = 0; j < 2; j++) bake(M.tractor(), at(s + 2 + j * 3.2, lane(5 + j * 0.2), 0, dir + 0.15), s, { body: pick([0xf2c21d, 0xe8eaeb]) }, true); count('parked tractors'); }
     s += len;
   }
 
   // ---- all of it into the level: the ground, the paint, and the merged meshes a chunk ----
-  const groundMat = new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true, map: slabTexture() });
+  const groundMat = new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true, map: slabTexture(), side: THREE.DoubleSide });
   add(mergeGeometries(ground), groundMat);
   ground.forEach(g => g.dispose());
   if (paint.idx.length) {
@@ -327,14 +329,20 @@ export const apron = ({ add, sideStrip, beside, inJunction, offRoads, levelGroup
     g.setIndex(paint.idx);
     add(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
   }
-  const lit = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true }), glow = new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true });
+  const lit = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, flatShading: true }), glow = new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true });
   let meshes = 0, verts = 0, tris = 0;
-  for (const C of chunks.values()) {
-    for (const [S, material] of [[C.lit, lit], [C.glow, glow]]) {
-      if (!S.nv) continue;
-      levelGroup.add(meshOf(S, material));
-      meshes++; verts += S.nv; tris += S.ni / 3;
+  const near = [];
+  for (const [list, small] of [[chunks, false], [details, true]]) {
+    for (const C of list.values()) {
+      for (const [S, material] of [[C.lit, lit], [C.glow, glow]]) {
+        if (!S.nv) continue;
+        const mesh = levelGroup.add(meshOf(S, material)).children.at(-1);
+        if (small) near.push(mesh);
+        meshes++; verts += S.nv; tris += S.ni / 3;
+      }
     }
   }
+  // the small things drawn only near the camera (a tractor 400 m off is a few pixels; the aircraft stay)
+  if (near.length) everyFrame(levelGroup, (t, x, y, z) => { for (const m of near) { const c = m.geometry.boundingSphere.center; m.visible = (c.x - x) ** 2 + (c.z - z) ** 2 < (SEEN + m.geometry.boundingSphere.radius * 0.5) ** 2; } });
   Object.assign(APRON_BUILT, { meshes, verts, tris, counts, paint: paint.idx.length / 3 });
 };

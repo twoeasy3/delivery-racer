@@ -33,25 +33,23 @@ const builder = () => {
     parts.push([g, key]);
     return g;
   };
+  // (the points of the parts joined where they coincide in place and colour: the scenery is drawn flat-shaded, its faces'
+  // slopes from the screen, so no point needs a normal and a box's corners serve all three of its faces)
   const done = () => {
-    const names = [];
-    let verts = 0, indices = 0;
-    for (const [g] of parts) { verts += g.attributes.position.count; indices += g.index.count; }
-    const pos = new Float32Array(verts * 3), nor = new Float32Array(verts * 3), key = new Uint8Array(verts), index = new Uint32Array(indices);
-    let v = 0, i = 0;
+    const names = [], pos = [], key = [], index = [], seen = new Map();
     for (const [g, name] of parts) {
       let k = names.indexOf(name);
       if (k < 0) { k = names.length; names.push(name); }
-      const n = g.attributes.position.count;
-      pos.set(g.attributes.position.array, v * 3);
-      nor.set(g.attributes.normal.array, v * 3);
-      key.fill(k, v, v + n);
-      const ix = g.index.array;
-      for (let j = 0; j < ix.length; j++) index[i + j] = ix[j] + v;
-      v += n; i += ix.length;
+      const p = g.attributes.position, local = [];
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), y = p.getY(i), z = p.getZ(i), id = k + ':' + x.toFixed(3) + ',' + y.toFixed(3) + ',' + z.toFixed(3);
+        if (!seen.has(id)) { seen.set(id, key.length); key.push(k); pos.push(x, y, z); }
+        local.push(seen.get(id));
+      }
+      for (const i of g.index.array) index.push(local[i]);
       g.dispose();
     }
-    return { pos, nor, key, index, names, verts, tris: indices / 3 };
+    return { pos: new Float32Array(pos), key: new Uint8Array(key), index: new Uint32Array(index), names, verts: key.length, tris: index.length / 3 };
   };
   return { put, done };
 };
@@ -73,29 +71,28 @@ export const COLOURS = {
 // given it), 'cheat' (a line along the windows). A freighter: 'window' painted 'white' (no windows)
 export const airliner = once('airliner', () => {
   const b = builder(), R = 2.0, Y = 3.3;
-  b.put(cyl(R, R, 27, 16, true).rotateX(Math.PI / 2), 'white', 0, Y, 1.5);                   // the fuselage, z -12 to 15
-  b.put(new THREE.SphereGeometry(R, 16, 6, 0, Math.PI * 2, 0, Math.PI / 2).rotateX(Math.PI / 2), 'white', 0, Y, 15, 0, 0, 0, 1, 1, 1.75); // the nose
-  const tail = b.put(cyl(0.45, R, 7.5, 16, true).rotateX(-Math.PI / 2), 'white', 0, Y, -15.75); // the tail cone, swept up
+  b.put(cyl(R, R, 27, 12, true).rotateX(Math.PI / 2), 'white', 0, Y, 1.5);                   // the fuselage, z -12 to 15
+  b.put(new THREE.SphereGeometry(R, 12, 3, 0, Math.PI * 2, 0, Math.PI / 2).rotateX(Math.PI / 2), 'white', 0, Y, 15, 0, 0, 0, 1, 1, 1.75); // the nose
+  const tail = b.put(cyl(0.45, R, 7.5, 12, true).rotateX(-Math.PI / 2), 'white', 0, Y, -15.75); // the tail cone, swept up
   { const p = tail.attributes.position; for (let i = 0; i < p.count; i++) { const z = p.getZ(i); if (z < -12) p.setY(i, p.getY(i) + (-12 - z) * 0.2); } }
   b.put(box(2.4, 0.5, 0.9), 'window', 0, Y + 0.95, 16.9, -0.55);                             // the flight deck's windows
   for (const x of [-1, 1]) b.put(box(0.06, 0.32, 22), 'window', x * 1.99, Y + 0.55, 1.5);     // the cabin windows
   for (const x of [-1, 1]) b.put(box(0.06, 0.22, 26), 'cheat', x * 1.99, Y + 0.05, 1.5);       // the cheat line under them
-  b.put(box(3.2, 1.0, 9), 'belly', 0, Y - 1.85, 0.4);                                          // the belly fairing at the wings
   for (const side of [-1, 1]) {
     const wing = [[0, 3.2], [16.6 * side, -4.6], [16.9 * side, -6.4], [0, -3.4]];
     b.put(planform(wing, 0.45), 'white', 0.9 * side, 1.95, 0, 0, 0, side * 0.08);              // the wings, swept, a little dihedral
     b.put(profile([[-6.0, 0], [-5.0, 0], [-5.9, 1.9], [-6.5, 1.9]], 0.12), 'tail', 17.6 * side, 3.3, 0);    // the winglets
     b.put(planform([[0, -13.4], [6.2 * side, -17.4], [6.3 * side, -18.6], [0, -17.6]], 0.3), 'white', 0.3 * side, 4.6, 0); // the tailplane
     const ex = 5.7 * side;
-    b.put(cyl(0.98, 0.9, 3.8, 14).rotateX(Math.PI / 2), 'engine', ex, 1.25, 2.6);               // the engines under the wings
-    b.put(cyl(0.82, 0.82, 0.12, 14).rotateX(Math.PI / 2), 'intake', ex, 1.25, 4.46);
+    b.put(cyl(0.98, 0.9, 3.8, 8, true).rotateX(Math.PI / 2), 'engine', ex, 1.25, 2.6);               // the engines under the wings
+    b.put(new THREE.CircleGeometry(0.85, 8), 'intake', ex, 1.25, 4.52);
     b.put(box(0.3, 0.9, 2.6), 'white', ex, 2.05, 1.6);                                           // ...and their pylons
     b.put(box(0.2, 1.7, 0.25), 'gear', 2.4 * side, 1.0, -1.2);                                   // the main gear: a leg, two wheels
-    for (const dz of [-0.45, 0.45]) b.put(cyl(0.56, 0.56, 0.38, 10).rotateZ(Math.PI / 2), 'tyre', 2.4 * side + side * 0.24, 0.56, -1.2 + dz);
+    b.put(box(0.38, 1.12, 2.0), 'tyre', 2.4 * side + side * 0.24, 0.56, -1.2);                   // ...its wheels, two by two
   }
   b.put(profile([[-13.2, 0], [-19.6, 0], [-21.0, 8.6], [-18.4, 8.6]], 0.36), 'tail', 0, 4.9, 0);   // the fin
   b.put(box(0.16, 1.6, 0.16), 'gear', 0, 0.95, 13.0);                                          // the nose gear
-  for (const dx of [-0.2, 0.2]) b.put(cyl(0.36, 0.36, 0.22, 10).rotateZ(Math.PI / 2), 'tyre', dx, 0.36, 13.0);
+  b.put(box(0.62, 0.72, 0.72), 'tyre', 0, 0.36, 13.0);
   return b.done();
 });
 // how far an airliner reaches each way at scale 1: its tail (z), its nose, half its span
@@ -107,24 +104,19 @@ export const tractor = once('tractor', () => {
   const b = builder();
   b.put(box(1.4, 0.35, 2.8), 'dark', 0, 0.45, 0);
   b.put(box(1.36, 0.55, 1.15), 'body', 0, 0.9, 0.78);
-  b.put(box(1.36, 0.2, 1.4), 'body', 0, 0.72, -0.6);
   b.put(box(0.6, 0.18, 0.5), 'seat', 0, 0.95, -0.45);
   b.put(box(0.6, 0.6, 0.1), 'seat', 0, 1.3, -0.72);
-  b.put(box(0.08, 0.65, 0.08), 'dark', 0, 1.3, 0.18, -0.4);
-  b.put(cyl(0.2, 0.2, 0.04, 10), 'dark', 0, 1.62, 0.06, -0.9);
   for (const x of [-0.63, 0.63]) for (const z of [0.25, -1.1]) b.put(box(0.08, 1.3, 0.08), 'frame', x, 1.6, z);
   b.put(box(1.46, 0.08, 1.55), 'body', 0, 2.26, -0.43);
   b.put(box(0.18, 0.14, 0.18), '!amber', 0.4, 2.37, -0.8);
-  b.put(box(0.2, 0.12, 0.45), 'dark', 0, 0.4, -1.55);
-  for (const x of [-0.63, 0.63]) for (const z of [0.95, -0.95]) b.put(cyl(0.32, 0.32, 0.26, 10).rotateZ(Math.PI / 2), 'tyre', x, 0.32, z);
+  for (const x of [-0.63, 0.63]) for (const z of [0.95, -0.95]) b.put(box(0.26, 0.6, 0.6), 'tyre', x, 0.3, z);
   return b.done();
 });
 // a covered baggage cart: a canopy on four posts over a deck of bags, a curtain down one side, a tow bar; 3 m long
 export const dolly = once('dolly', () => {
   const b = builder();
   b.put(box(1.6, 0.14, 3.0), 'frame', 0, 0.52, 0);
-  b.put(box(1.5, 0.05, 2.9), 'deck', 0, 0.62, 0);
-  for (const x of [-0.68, 0.68]) for (const z of [-1.1, 1.1]) b.put(cyl(0.22, 0.22, 0.14, 8).rotateZ(Math.PI / 2), 'tyre', x, 0.22, z);
+  for (const x of [-0.68, 0.68]) for (const z of [-1.1, 1.1]) b.put(box(0.14, 0.42, 0.42), 'tyre', x, 0.21, z);
   for (const x of [-0.76, 0.76]) for (const z of [-1.43, 1.43]) b.put(box(0.07, 1.4, 0.07), 'frame', x, 1.34, z);
   b.put(box(1.68, 0.08, 3.06), 'roof', 0, 2.06, 0);
   b.put(box(0.03, 1.05, 2.8), 'curtain', 0.79, 1.45, 0);
@@ -139,7 +131,7 @@ export const dolly = once('dolly', () => {
 export const uldDolly = once('uldDolly', () => {
   const b = builder();
   b.put(box(1.7, 0.14, 1.9), 'frame', 0, 0.52, 0);
-  for (const x of [-0.7, 0.7]) for (const z of [-0.7, 0.7]) b.put(cyl(0.22, 0.22, 0.14, 8).rotateZ(Math.PI / 2), 'tyre', x, 0.22, z);
+  for (const x of [-0.7, 0.7]) for (const z of [-0.7, 0.7]) b.put(box(0.14, 0.42, 0.42), 'tyre', x, 0.21, z);
   b.put(slab([[-0.78, 0], [0.78, 0], [1.2, 0.55], [1.2, 1.62], [-0.78, 1.62]], 1.53), 'uld', -0.2, 0.6, -0.765);
   b.put(box(1.4, 1.45, 0.03), 'curtain', -0.05, 1.4, 0.78);
   b.put(box(0.08, 0.08, 1.0), 'frame', 0, 0.45, 1.4, 0.12);
@@ -153,13 +145,13 @@ export const bowser = once('bowser', () => {
   b.put(box(2.25, 0.85, 0.06), 'glass', 0, 2.5, 4.61);
   b.put(box(2.47, 0.7, 1.1), 'glass', 0, 2.55, 3.85);
   b.put(box(2.45, 0.3, 0.15), 'dark', 0, 0.85, 4.6);
-  b.put(cyl(1.15, 1.15, 6.2, 14).rotateX(Math.PI / 2), 'tank', 0, 2.3, -0.95, 0, 0, 0, 1.06, 1, 1);
+  b.put(cyl(1.15, 1.15, 6.2, 10).rotateX(Math.PI / 2), 'tank', 0, 2.3, -0.95, 0, 0, 0, 1.06, 1, 1);
   for (const x of [-1, 1]) b.put(box(0.06, 0.26, 6.0), 'stripe', x * 1.2, 2.05, -0.95);
   b.put(box(0.6, 0.06, 5.6), 'frame', 0, 3.5, -0.95);
   b.put(box(2.35, 1.35, 1.0), 'frame', 0, 1.65, -4.3);
   b.put(cyl(0.45, 0.45, 0.5, 12).rotateZ(Math.PI / 2), 'dark', 0, 2.6, -4.3);
   b.put(box(0.2, 0.14, 0.2), '!amber', 0, 3.12, 3.6);
-  for (const x of [-1.05, 1.05]) for (const z of [3.3, -2.3, -3.4]) b.put(cyl(0.5, 0.5, 0.36, 10).rotateZ(Math.PI / 2), 'tyre', x, 0.5, z);
+  for (const x of [-1.05, 1.05]) for (const z of [3.3, -2.3, -3.4]) b.put(box(0.36, 1.00, 1.00), 'tyre', x, 0.5, z);
   return b.done();
 });
 // a stair truck: a small truck, its stairs climbing from the back over the cab to a platform under a canopy, rails both sides
@@ -169,14 +161,14 @@ export const stairTruck = once('stairTruck', () => {
   b.put(box(2.2, 0.4, 6.4), 'dark', 0, 0.7, 0);
   b.put(box(2.2, 1.7, 1.5), 'cab', 0, 1.65, 2.5);
   b.put(box(2.0, 0.7, 0.06), 'glass', 0, 1.95, 3.26);
-  for (const x of [-0.95, 0.95]) for (const z of [2.3, -2.2]) b.put(cyl(0.45, 0.45, 0.3, 10).rotateZ(Math.PI / 2), 'tyre', x, 0.45, z);
+  for (const x of [-0.95, 0.95]) for (const z of [2.3, -2.2]) b.put(box(0.3, 0.90, 0.90), 'tyre', x, 0.45, z);
   const z0 = -3.0, y0 = 1.0, z1 = 1.7, y1 = 3.4, run = Math.hypot(z1 - z0, y1 - y0), tilt = -Math.atan2(y1 - y0, z1 - z0);
   for (const x of [-0.62, 0.62]) {
     b.put(box(0.1, 0.3, run), 'frame', x, (y0 + y1) / 2, (z0 + z1) / 2, tilt);
     b.put(box(0.06, 0.06, run), 'rail', x, (y0 + y1) / 2 + 0.95, (z0 + z1) / 2, tilt);
-    for (let k = 0; k <= 3; k++) { const f = k / 3; b.put(box(0.05, 0.95, 0.05), 'rail', x, y0 + (y1 - y0) * f + 0.48, z0 + (z1 - z0) * f); }
+    for (let k = 0; k <= 1; k++) { const f = k; b.put(box(0.05, 0.95, 0.05), 'rail', x, y0 + (y1 - y0) * f + 0.48, z0 + (z1 - z0) * f); }
   }
-  for (let k = 0; k < 11; k++) { const f = (k + 0.5) / 11; b.put(box(1.2, 0.05, 0.32), 'deck', 0, y0 + (y1 - y0) * f, z0 + (z1 - z0) * f); }
+  for (let k = 0; k < 5; k++) { const f = (k + 0.5) / 5; b.put(box(1.2, 0.05, 0.6), 'deck', 0, y0 + (y1 - y0) * f, z0 + (z1 - z0) * f); }
   b.put(box(1.5, 0.1, 1.5), 'frame', 0, y1, 2.45);
   for (const x of [-0.72, 0.72]) {
     b.put(box(0.06, 0.06, 1.5), 'rail', x, y1 + 0.95, 2.45);
@@ -194,7 +186,7 @@ export const beltLoader = once('beltLoader', () => {
   b.put(box(1.8, 0.4, 7.0), 'dark', 0, 0.55, 0);
   b.put(box(1.2, 1.2, 1.3), 'body', 0.25, 1.35, -2.7);
   b.put(box(1.0, 0.5, 0.06), 'glass', 0.25, 1.65, -2.03);
-  for (const x of [-0.85, 0.85]) for (const z of [2.4, -2.4]) b.put(cyl(0.36, 0.36, 0.26, 10).rotateZ(Math.PI / 2), 'tyre', x, 0.36, z);
+  for (const x of [-0.85, 0.85]) for (const z of [2.4, -2.4]) b.put(box(0.26, 0.72, 0.72), 'tyre', x, 0.36, z);
   const z0 = -1.6, y0 = 1.0, z1 = 3.9, y1 = 2.9, run = Math.hypot(z1 - z0, y1 - y0), tilt = -Math.atan2(y1 - y0, z1 - z0);
   b.put(box(0.85, 0.16, run), 'dark', -0.3, (y0 + y1) / 2, (z0 + z1) / 2, tilt);
   for (const x of [-0.78, 0.18]) b.put(box(0.05, 0.3, run), 'body', x, (y0 + y1) / 2 + 0.25, (z0 + z1) / 2, tilt);
@@ -209,7 +201,7 @@ export const pushback = once('pushback', () => {
   b.put(box(1.72, 0.42, 1.72), 'glass', 0.3, 1.86, -2.0);
   b.put(box(2.9, 0.35, 0.3), 'dark', 0, 0.6, 3.05);
   b.put(box(0.2, 0.14, 0.2), '!amber', 0.3, 2.17, -2.0);
-  for (const x of [-1.25, 1.25]) for (const z of [1.9, -1.9]) b.put(cyl(0.5, 0.5, 0.42, 10).rotateZ(Math.PI / 2), 'tyre', x, 0.5, z);
+  for (const x of [-1.25, 1.25]) for (const z of [1.9, -1.9]) b.put(box(0.42, 1.00, 1.00), 'tyre', x, 0.5, z);
   return b.done();
 });
 // an apron bus: low floored, wide, glass all along, doors down one side; 13 m long
@@ -221,15 +213,14 @@ export const apronBus = once('apronBus', () => {
   b.put(box(2.7, 1.1, 0.05), 'glass', 0, 1.9, 6.51);
   for (const z of [-3.5, 0.5, 4.5]) b.put(box(0.05, 2.0, 1.3), 'dark', 1.47, 1.4, z);
   b.put(box(2.94, 0.3, 13.04), 'stripe2', 0, 0.75, 0);
-  for (const x of [-1.25, 1.25]) for (const z of [4.4, -4.6]) b.put(cyl(0.48, 0.48, 0.34, 10).rotateZ(Math.PI / 2), 'tyre', x, 0.45, z);
+  for (const x of [-1.25, 1.25]) for (const z of [4.4, -4.6]) b.put(box(0.34, 0.96, 0.96), 'tyre', x, 0.45, z);
   return b.done();
 });
 // a traffic cone (orange, a white band, a square foot)
 export const apronCone = once('apronCone', () => {
   const b = builder();
-  b.put(box(0.42, 0.04, 0.42), 'cone', 0, 0.02, 0);
   b.put(cone(0.17, 0.72, 8), 'cone', 0, 0.4, 0);
-  b.put(cyl(0.1, 0.125, 0.12, 8), 'band', 0, 0.48, 0);
+  b.put(cyl(0.1, 0.125, 0.12, 6, true), 'band', 0, 0.48, 0);
   return b.done();
 });
 // a floodlight mast: a tapering pole 30 m up, a head frame with its lamps (unlit by day: light grey panels)
@@ -237,7 +228,7 @@ export const mast = once('mast', () => {
   const b = builder();
   b.put(cyl(0.32, 0.55, 30, 8), 'mast', 0, 15, 0);
   b.put(box(5.0, 2.2, 0.35), 'head', 0, 30.7, 0, -0.25);
-  for (let k = 0; k < 4; k++) for (const y of [30.15, 31.2]) b.put(box(1.0, 0.75, 0.12), 'lamp', -1.8 + k * 1.2, y, 0.23, -0.25);
+  for (const y of [30.15, 31.2]) b.put(box(4.6, 0.75, 0.12), 'lamp', 0, y, 0.23, -0.25);
   b.put(box(0.8, 0.5, 0.8), 'head', 0, 0.25, 0);
   return b.done();
 });
@@ -299,10 +290,12 @@ export const templateMesh = (t, palette = {}) => {
   const per = t.names.map(name => { tint.set(palette[name] ?? COLOURS[name] ?? 0x888888); return [tint.r, tint.g, tint.b]; });
   for (let i = 0; i < t.verts; i++) col.set(per[t.key[i]], i * 3);
   geometry.setAttribute('position', new THREE.BufferAttribute(t.pos.slice(), 3));
-  geometry.setAttribute('normal', new THREE.BufferAttribute(t.nor.slice(), 3));
   geometry.setAttribute('color', new THREE.BufferAttribute(col, 3));
   geometry.setIndex(new THREE.BufferAttribute(t.index.slice(), 1));
+  const flat = geometry.toNonIndexed(); // (flat faces: each its own normal)
+  geometry.dispose();
+  flat.computeVertexNormals();
   const g = new THREE.Group();
-  g.add(new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true })));
+  g.add(new THREE.Mesh(flat, new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true })));
   return g;
 };
