@@ -920,7 +920,8 @@ export const IDEA_MODELS_2 = {
     fender(group, paint, R + 0.05, 0.13, sx + 0.1, R, -L * 0.14);
     wheel(group, R, 0.12, sx + 0.1, R, -L * 0.14);
     for (const z of [0.0, -0.4]) rod(group, chrome, 0.025, [bx + 0.14, 0.5, L * z], [sx - 0.14, 0.5, L * z]); // two struts joining them
-    taillamps(group, w, 0.6, -L * 0.98, 0.0, [0.1, 0.07]);
+    box(group, TAIL, 0.1, 0.07, 0.04, bx, 0.62, -1.1);                                      // a tail lamp on the scooter's cowl,
+    box(group, TAIL, 0.1, 0.07, 0.06, sx, 0.6, -0.965);                                     // and one on the tub's tail (CHECKLIST 502: one lamp hung in the air between them)
     group.userData = { body, animate: (t) => { group.rotation.z = Math.sin(t * 2.4) * 0.006; } };
     return group;
   },
