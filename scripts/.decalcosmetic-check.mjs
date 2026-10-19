@@ -131,7 +131,7 @@ try {
   DC.setDecal('flames', 'postvan');
   check(loadoutKey(car('postvan')).endsWith('|d=flames'), "a 'fixed' design's key has no colour (" + loadoutKey(car('postvan')) + ')');
   DC.setDecal('star', null);
-  check(DC.decalChoice('wedge').id === 'star' && DC.decalChoice('postvan').id === 'flames' && !loadoutKey(car('commuter')).includes('|d='), 'the default (star) on every car without its own; a car with no zone row has no |d= in its key');
+  check(DC.decalChoice('wedge').id === 'star' && DC.decalChoice('postvan').id === 'flames' && !loadoutKey(car('moonrover')).includes('|d='), 'the default (star) on every car without its own; a car with no zone row has no |d= in its key');
   Store.resetCar('postvan');
   check(DC.decalChoice('postvan').id === 'star' && !Store.hasOwn('postvan', 'decal'), 'Reset car: the Post Van follows the default again');
   DC.resetDecal(null);
@@ -150,7 +150,8 @@ try {
 
   // ---- 3. the tab ----
   const zoneCars = all.filter(c => DC.decalSupported(c)).map(c => c.id).sort();
-  check(JSON.stringify(zoneCars) === JSON.stringify([...SIX].sort()), 'the cars that can wear one: exactly ' + zoneCars.join(', '));
+  const rowCars = all.filter(c => !c.legend && !c.tank && !c.ufo && !c.silhouette && DECAL_ZONES[DC.decalKey(c)]).map(c => c.id).sort(); // (CHECKLIST 508: the zone table grew past the six)
+  check(JSON.stringify(zoneCars) === JSON.stringify(rowCars) && SIX.every(id => zoneCars.includes(id)) && !zoneCars.includes('moonrover') && !zoneCars.includes('jetboat'), 'the cars that can wear one: exactly those with a zone row, not Legendary (' + zoneCars.length + ', the six among them)');
   const wrong = all.filter(c => shownSlots(c).some(s => s.id === 'decal') !== DC.decalSupported(c));
   check(!wrong.length, 'the Decal tab shows on exactly those cars, of ' + all.length + (wrong.length ? ' (wrong: ' + wrong.slice(0, 5).map(c => c.id).join(', ') + ')' : ''));
   const legend = all.find(c => c.legend);

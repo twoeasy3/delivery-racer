@@ -107,6 +107,15 @@ export const wrapRect = (view, s, rect, piece, out, lift = FLANK.LIFT) => {
     fine.push(p.point ? { p: p.point, n: p.normal, shown: first.kind === 'paint' } : null);
   }
   const F = (i, j) => fine[j * (nz + 1) + i];
+  // a point whose ray met nothing at all (a band flush with a body's top or end: the edge ray grazes past) takes the nearest hit point of
+  // its column (else of its row), moved to its own y and z and HIDDEN, so the piece keeps its alpha edge instead of being thrown away whole (CHECKLIST 508: the Kei
+  // Roadster, the Milk Float, the Monster Truck)
+  if (piece.adaptive) for (let j = 0; j <= ny; j++) for (let i = 0; i <= nz; i++) {
+    if (fine[j * (nz + 1) + i]) continue;
+    let near = null;
+    for (let d = 1; d <= Math.max(nz, ny) && !near; d++) for (const [a, b] of [[i, j - d], [i, j + d], [i - d, j], [i + d, j]]) if (!near && a >= 0 && a <= nz && b >= 0 && b <= ny && fine[b * (nz + 1) + a]?.n) near = fine[b * (nz + 1) + a];
+    if (near) fine[j * (nz + 1) + i] = { p: near.p.clone().setY(y0 + h * j / ny).setZ(z0 + w * i / nz), n: near.n, shown: false }; // (at its own y, z, on the neighbour's x)
+  }
   if (fine.some(p => !p)) return { quads: 0, rays, holes, fine: [nz, ny], used: [0, 0] };
   // the coarsest lattice (a power of two each way, a subset of the fine one) whose bilinear faces stay within CHORD of every fine point;
   // where any point is hidden (the rect runs over something), the fine lattice itself, so the alpha edge is as sharp as it can be

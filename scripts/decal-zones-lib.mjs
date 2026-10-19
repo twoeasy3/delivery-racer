@@ -6,7 +6,8 @@
 //   ZONES   the largest clean axis-aligned rectangles, greedily (at most MAX_ZONES a side, each at least MIN_W x MIN_H, no longer than
 //           ASPECT times its height), named by where they sit against the wheels: 'fender' over or ahead of the front wheels, 'quarter' over or
 //           behind the rear ones, between them 'door' (or 'flank' when longer than FLANK_LEN: a bus, a lorry's body)
-//   (a zone whose normals spread more than MAX_CURVE degrees is dropped: a band round a roof's shoulder)
+//   (a zone whose normals spread more than MAX_CURVE degrees is trimmed edge by edge till flat enough, or dropped when too small: a band
+//   round a roof's shoulder; trimCurve); a zone with glass just beyond both its ends is a window PILLAR and dropped (pillar)
 //   FLAT    each zone's plane fitted (x = a + b y + c z) and the most a ray's hit stands off it (mm); CURVE the widest angle between its
 //           normals and their mean (degrees)
 //   ROOM    the largest clean square (a roundel's diameter), the longest clean run STRIPE_H tall (a stripe's length), the clean share
@@ -114,6 +115,29 @@ const flatness = (S, z) => {
   for (const h of pts) curve = Math.max(curve, Math.acos(Math.min(1, h.normal.dot(mean))) * 180 / Math.PI);
   return { flat: Math.round(dev * 1000), curve: Math.round(curve) };
 };
+// a rectangle too CURVED (normals spread over MAX_CURVE) is TRIMMED, not dropped whole: the edge row or column whose normals stray
+// furthest from the rectangle's mean goes, again, until it is flat enough (a flank whose rect ran up into the shoulder's roll keeps its
+// flat middle: the Mini, the Classic GT) or under MIN_W x MIN_H (null: a band round a roof's shoulder stays no zone)
+const trimCurve = (S, r) => {
+  const minW = Math.ceil(SEARCH.MIN_W / S.step), minH = Math.ceil(SEARCH.MIN_H / S.step), t = { ...r };
+  for (;;) {
+    if (t.i1 - t.i0 < minW || t.j1 - t.j0 < minH) return null;
+    if (flatness(S, t).curve <= SEARCH.MAX_CURVE) return t;
+    const pts = [];
+    for (let j = t.j0; j <= t.j1; j++) for (let i = t.i0; i <= t.i1; i++) { const h = S.at(i, j); if (h.normal) pts.push(h.normal); }
+    const mean = pts.reduce((m, n) => m.add(n), pts[0].clone().multiplyScalar(0)).normalize();
+    const stray = (i0, i1, j0, j1) => { let w = 0; for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const h = S.at(i, j); if (h.normal) w = Math.max(w, 1 - h.normal.dot(mean)); } return w; };
+    const edges = [['j0', stray(t.i0, t.i1, t.j0, t.j0)], ['j1', stray(t.i0, t.i1, t.j1, t.j1)], ['i0', stray(t.i0, t.i0, t.j0, t.j1)], ['i1', stray(t.i1, t.i1, t.j0, t.j1)]];
+    const [e] = edges.sort((a, b) => b[1] - a[1])[0];
+    t[e] += e.endsWith('0') ? 1 : -1;
+  }
+};
+// a WINDOW PILLAR: at the zone's mid-height, glass just beyond BOTH ends along z (within 3 steps, through a frame): a strip of paint between two windows
+// (the Dampervan's pillars took the badge)
+const pillar = (S, r) => {
+  const j = Math.round((r.j0 + r.j1) / 2), glassNear = (i0, di) => { for (let k = 0; k < 3; k++) { const i = i0 + di * k; if (i < 0 || i > S.nz) return false; const h = S.at(i, j); if (h.kind === 'glass') return true; if (!['paint', 'curve', 'trim'].includes(h.kind)) return false; } return false; };
+  return glassNear(r.i0 - 1, -1) && glassNear(r.i1 + 1, 1);
+};
 // the wheels' z extents on this side (clusters of 'wheel' hits)
 const wheelSpans = (S) => {
   const zs = [...new Set(S.hits.map((h, k) => (h.kind === 'wheel' ? k % (S.nz + 1) : null)).filter(k => k !== null))].sort((a, b) => a - b);
@@ -143,9 +167,11 @@ export const searchSide = (view, s, step = SEARCH.STEP) => {
     const r = largestRect(S, mask, used);
     if (!r) break;
     for (let j = r.j0; j < r.j1; j++) for (let i = r.i0; i < r.i1; i++) used[j * S.nz + i] = 1;
-    const z = { z0: r3(S.z0 + r.i0 * step), z1: r3(S.z0 + r.i1 * step), y0: r3(S.y0 + r.j0 * step), y1: r3(S.y0 + r.j1 * step), ...r };
+    const t = trimCurve(S, r);
+    if (!t) { k--; continue; } // (its cells stay used: a band round a roof's shoulder or a wing's crown is no zone)
+    const z = { z0: r3(S.z0 + t.i0 * step), z1: r3(S.z0 + t.i1 * step), y0: r3(S.y0 + t.j0 * step), y1: r3(S.y0 + t.j1 * step), ...t };
     Object.assign(z, flatness(S, z));
-    if (z.curve > SEARCH.MAX_CURVE) { k--; continue; } // (its cells stay used: a band round a roof's shoulder or a wing's crown is no zone)
+    if (pillar(S, t)) { k--; continue; } // (a window pillar: glass both ends, no place for a badge)
     z.id = nameZone(z, wheels);
     zones.push(z);
   }
