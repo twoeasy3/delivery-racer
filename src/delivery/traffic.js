@@ -1797,16 +1797,19 @@ export const Traffic = (() => {
       if (car.racer) car.shield = Math.max(0, (car.shield || 0) - dt); // (untouchable, just set down)
       if (!car.active) {
         // (a fixed vehicle that has gone stays gone: its slot is not reused this run)
-        // (on, or coming up to, a quiet stretch, a level's "quietZones": everything turning up now the player
-        // meets on it, so only its density's share do; the rest wait a while, then try again)
-        const quiet = (LEVEL.quietZones || []).find(z => Player.s > z.from - CONFIG.spawnMax && Player.s < z.to);
-        if (quiet && (car.quietWait = (car.quietWait || 0) - dt) > 0) continue;
-        if (quiet && random() >= quiet.density) { car.quietWait = CONFIG.quietRetry; continue; }
         if (!car.fixed && !car.unused && mix().length) {
           // (the Battlefield's green army: only ever from behind the player, coming by; with no room there yet, later)
           if (LEVEL.battle && car.dir > 0) { spawnBehind(car); continue; }
           const behind = hesitation() && car.dir === Player.dir && random() < H.behindChance && hesitantAhead();
           if (!(behind && spawnBehind(car))) spawn(car, CONFIG.spawnMin, CONFIG.spawnMax);
+          // (a quiet stretch, a level's "quietZones": only its density's share of the cars that turn up ON it do; the rest turn up
+          // elsewhere, on the next try. Judged where the car lands, not by a zone somewhere in the spawn window: that starved a level
+          // whose zones lay a few hundred metres apart of ALL traffic, Oil Patch's. A car driving into a zone is thinned below.)
+          if (car.active) {
+            const quiet = (LEVEL.quietZones || []).find(z => car.s >= z.from && car.s < z.to);
+            if (quiet && !car.fixed && random() >= quiet.density) car.active = false;
+            else if (quiet) car.quietRoll = quiet;
+          }
         }
         continue;
       }

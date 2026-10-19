@@ -30,7 +30,7 @@ let failed = 0;
 const check = (ok, what) => { console.log((ok ? '  ok    ' : '  FAIL  ') + what); if (!ok) failed++; };
 const note = (what) => console.log('  ..    ' + what);
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-const MAIN_PRINT = { logic: 'b2579b8f43', legacy: 'cd255004bd' }; // (since CHECKLIST 494 + 496-499 + 515 (the M1 idea cars), the ram cap, throw spread, tank shell, rickety floor and the oil / glue / EMP / magma hazards: was c0c2c73e68 / 8c50a659a9 after 494 alone, 8dbc477d85 / bcc9df44d0; since CHECKLIST 476, a dead end's blocker solid from the side, track.js: was main's 057a22806d / 661de07fbe)
+const MAIN_PRINT = { logic: '0e68230b6e', legacy: '283bf203ef' }; // (since CHECKLIST 494 + 496-499 + 515 (the M1 idea cars), the ram cap, throw spread, tank shell, rickety floor and the oil / glue / EMP / magma hazards: was c0c2c73e68 / 8c50a659a9 after 494 alone, 8dbc477d85 / bcc9df44d0; since CHECKLIST 476, a dead end's blocker solid from the side, track.js: was main's 057a22806d / 661de07fbe)
 const COST = { tested: 600, ms: 10 }; // (a frame's test at most: clusters tested; ms in headless SwiftShader's JS, a frame that makes a material's fading copy included)
 
 // ---- the source
