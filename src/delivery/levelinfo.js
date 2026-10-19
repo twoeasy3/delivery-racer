@@ -59,6 +59,7 @@ const GIMMICKS = [
   ['Ice-cream stop', (l) => some(l.iceCreamStops)],
   ['Burst water mains', (l) => some(l.waterMains)],
   ['Oil slicks', (l) => some(l.oilSlicks)],
+  ['Glue piles', (l) => some(l.gluePiles)],
   ['Speed cameras', (l) => some(l.cameras)],
   ['Level crossing', (l) => some(l.crossings)],
   ['Roadworks', (l) => some(l.stopGo)],

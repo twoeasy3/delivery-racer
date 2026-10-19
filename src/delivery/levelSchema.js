@@ -301,6 +301,8 @@ export const FIELDS = {
     settings: { lane: lane('Lane', { required: true, init: 0 }), length: num('Slippery for (m)', { min: 1, max: 500, default: C.waterMain?.length }) } },
   oilSlicks: { shape: 'point', group: 'hazards', label: 'Oil slick', road: 'both', help: 'A black pool in its lane: the player\'s car slides on it as on ice, far worse, for a moment. Traffic drives over it.',
     settings: { lane: lane('Lane', { required: true, init: 0 }) } },
+  gluePiles: { shape: 'point', group: 'hazards', label: 'Glue pile', road: 'both', help: 'A mound in its lane: the player\'s car is held still on it for a moment, then let go at half its speed. Traffic drives over it.',
+    settings: { lane: lane('Lane', { required: true, init: 0 }) } },
   landmines: { shape: 'stretch', group: 'hazards', label: 'Landmines', road: 'both', help: 'Scattered down the lanes: whatever touches one is destroyed outright.', settings: { count: count(8) } },
   rockfall: { shape: 'stretch', group: 'hazards', label: 'Rockfall', road: 'both', help: 'Rocks tumbling down onto the road from that side as the player comes near.',
     settings: { count: count(5), side: side(), out: num('Waiting (m off the edge)', { min: 0, max: 200, default: C.rockfall?.out }), height: num('Waiting (m up)', { min: 0, max: 200, default: C.rockfall?.height }) } },

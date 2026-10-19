@@ -239,17 +239,24 @@ Game.onLoad.push(() => {
     if (pools.length) { const merged = mergeGeometries(pools); group.add(new THREE.Mesh(merged, pool)); const lit = new THREE.Mesh(merged.clone().translate(0, 0.004, 0), sheen); group.add(lit); pools.forEach(g => g.dispose()); }
     standing = { rim, sheen, sheenBase: look.sheen ?? 0.35, rimBase: rimOpacity };
   }
-  // ---- the player's own (../hazards.js patchesOf), flat on the road: an oil slick, a black pool with a sheen on it.
+  // ---- the player's own (../hazards.js patchesOf), flat on the road: an oil slick, a black pool with a sheen on it; a glue
+  // pile, a low pale mound with a few blobs splashed round it.
   // Merged by material: a mesh or two for the level, whatever the count. (Textures: 192 x 192 canvases, two, only on a level with one)
   own = null;
   const patches = patchesOf(LEVEL);
   if (patches.length) {
-    const oil = [], O = CONFIG.oilSlick;
+    const oil = [], glue = [], O = CONFIG.oilSlick, GP = CONFIG.gluePile;
     for (const p of patches) {
       const h = Track.toWorld(p.s, Track.laneOffset(p.lane, p.s), tmp);
+      if (p.kind === 'glue') { // (a squashed dome, and three small ones round it: one mesh for every pile)
+        for (const [x, z, r] of [[0, 0, GP.r], [GP.r * 0.9, GP.r * 0.6, 0.35], [-GP.r * 0.85, -GP.r * 0.3, 0.3], [GP.r * 0.2, -GP.r * 1.05, 0.25]]) {
+          glue.push(new THREE.SphereGeometry(r, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.28, 1).translate(x, 0, z).rotateY(h).translate(tmp.x, tmp.y, tmp.z));
+        }
+      }
       if (p.kind === 'oil') oil.push(new THREE.PlaneGeometry(O.half * 2 + 0.9, O.length + 1.4).rotateX(-Math.PI / 2).rotateY(h).translate(tmp.x, tmp.y + 0.03, tmp.z));
     }
     own = {};
+    if (glue.length) { const merged = mergeGeometries(glue); glue.forEach(g => g.dispose()); group.add(new THREE.Mesh(merged, lambert(0xece4c2))); }
     if (oil.length) {
       const merged = mergeGeometries(oil);
       oil.forEach(g => g.dispose());

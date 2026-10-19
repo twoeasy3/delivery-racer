@@ -166,7 +166,7 @@ try {
   check(knocked > 0 && G.wrecks === 0 && !P.busted && !Hazards.loads[0].load.gone && !Hazards.loads[0].escort.gone && P.health > P.maxHealth * 0.6,
     'wide load: driving into it is a knock (' + Math.round(P.maxHealth - P.health) + ' health), no wreck and no bust, and it is still there');
   g.select({ ...level, id: 'wide-load-two-lanes', lanes: 4, exits: [], pickups: [], waterMains: [], schoolCrossings: [], trolleys: [], marathons: [], balloons: [], drawbridges: [], wreckage: [], cameras: [], potholes: [], crossings: [], stampedes: [],
-    wideLoads: [{ s: 3900, lanes: [2, 3] }] });
+    wideLoads: [{ s: 3900, lanes: [2, 3] }], oilSlicks: [], gluePiles: [], empMines: [], magmaPatches: [] });
   start(3700, 3, 20);
   console.log('         (two lanes a side: ' + (g.track.Track.problems.join(' | ') || 'no problems') + ')');
   passLoad('two lanes a side, in the lane first', -1);
@@ -269,6 +269,28 @@ try {
     let tankOiled = false;
     g.run(4, () => { quiet(); P.tank = 1; if (P.onOil) tankOiled = true; return P.s > oil.to + 5; });
     check(!tankOiled, 'oil slick: a tank rides over it untouched');
+
+    // ---- glue pile (s 2550, lane 4): held still for CONFIG.gluePile.hold s, then let go at .kept of the speed it came with
+    const glue = own('glue'), GP = g.CONFIG.gluePile;
+    check(!!glue, 'glue pile: on the level');
+    start(glue.s - 40, 4, 25);
+    let came = 0, heldAt = null, heldFor = 0, moved = 0, after = null;
+    g.run(6, () => {
+      quiet();
+      if (P.glued > 0) { if (heldAt === null) { heldAt = { s: P.s, lat: P.lat }; came = P.gluedSpeed / GP.kept; } heldFor += 1 / 60; moved = Math.max(moved, Math.abs(P.s - heldAt.s), Math.abs(P.lat - heldAt.lat)); }
+      else if (heldAt && after === null) after = P.speed;
+      return after !== null;
+    });
+    console.log('         (came at ' + came.toFixed(1) + ' m/s, held ' + heldFor.toFixed(2) + ' s, moved ' + moved.toFixed(3) + ' m held, let go at ' + (after ?? 0).toFixed(1) + ' m/s)');
+    check(heldAt && said('Glue!'), 'glue pile: driving onto it sticks the car (and says so)');
+    check(Math.abs(heldFor - GP.hold) < 0.05 && moved < 0.01, 'glue pile: held still, no movement, for ' + GP.hold + ' s');
+    check(after !== null && Math.abs(after - came * GP.kept) < 0.6, 'glue pile: let go at ' + Math.round(GP.kept * 100) + '% of the speed it came with');
+    g.run(2, () => { quiet(); });
+    check(!(P.glued > 0) && P.s > glue.s + 10, 'glue pile: once a pass: the car drives on off it');
+    start(glue.s - 40, 4, 25);
+    let tankGlued = false;
+    g.run(4, () => { quiet(); P.tank = 1; if (P.glued > 0) tankGlued = true; return P.s > glue.s + 10; });
+    check(!tankGlued, 'glue pile: a tank rides over it untouched');
   }
 
   // ---- slippery road: ice and a burst main's water against the dry road (CONFIG.ice, CONFIG.waterMain), on

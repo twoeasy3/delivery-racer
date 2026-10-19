@@ -64,6 +64,9 @@
   "oilSlicks": [
     { "s": 2350, "lane": 4 }
   ],
+  "gluePiles": [
+    { "s": 2550, "lane": 4 }
+  ],
   "stampedes": [
     { "from": 600, "to": 760, "count": 8, "kind": "kangaroo", "road": "side" }
   ],

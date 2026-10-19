@@ -40,24 +40,27 @@ const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 21474836
 
 let attached = false;
 
-// ---- the player's own road hazards, laid flat on the road: oil slicks (a stretch of `length` m of one lane) and the rest.
-// Each a list in the level ({ s, lane, road?, exit? }). They touch ONLY the player's car: traffic drives over them untouched.
-// A tank, a car just set down (its shield) and a car in the air ride over them too. What each is: { kind, lane, from, to }
-export const PATCH_LISTS = { oilSlicks: 'oil' };
+// ---- the player's own road hazards, laid flat on the road: oil slicks (a stretch of `length` m of one lane from s) and glue
+// piles (a mound `r` m round, at s). Each a list in the level ({ s, lane, road?, exit? }). They touch ONLY the player's car:
+// traffic drives over them untouched. A tank, a car just set down (its shield) and a car in the air ride over them too.
+// What each is: { kind, lane, from, to, s (its middle), half (m either side of its lane's middle), point (a mound, not a stretch) }
+export const PATCH_LISTS = { oilSlicks: 'oil', gluePiles: 'glue' };
+const PATCH_SIZE = { oil: () => ({ length: CONFIG.oilSlick.length, half: CONFIG.oilSlick.half }), glue: () => ({ r: CONFIG.gluePile.r }) };
 export const patchesOf = (level) => {
   const out = [];
   for (const [list, kind] of Object.entries(PATCH_LISTS)) {
     for (const c of level[list] || []) {
-      const from = Track.place(c), length = CONFIG.oilSlick.length;
-      out.push({ kind, lane: c.lane, from, to: from + length, s: from + length / 2 });
+      const at = Track.place(c), { length, half, r } = PATCH_SIZE[kind]();
+      if (r) out.push({ kind, lane: c.lane, from: at - r, to: at + r, s: at, half: r, point: true });
+      else out.push({ kind, lane: c.lane, from: at, to: at + length, s: at + length / 2, half });
     }
   }
   return out;
 };
-// is the player's car on one? (a stretch: a wheel's width of the car over its edge)
+// is the player's car on one? (a stretch: a wheel's width of the car over its edge; a mound: any of the car over it)
 const onPatch = (p) => {
-  const P = Player, half = CONFIG.oilSlick.half;
-  return P.s + P.hl * 0.5 >= p.from && P.s - P.hl * 0.5 <= p.to && Math.abs(P.lat - Track.laneOffset(p.lane, P.s)) <= half + P.hw * 0.5;
+  const P = Player, k = p.point ? 1 : 0.5;
+  return P.s + P.hl * k >= p.from && P.s - P.hl * k <= p.to && Math.abs(P.lat - Track.laneOffset(p.lane, P.s)) <= p.half + P.hw * k;
 };
 
 export const Hazards = {
@@ -71,7 +74,7 @@ export const Hazards = {
   marathons: [], // { s0, lane, on, members: obstacles with run: { s0, off } }
   stampedes: [], // { from, to, on, animals: obstacles with charge: { s0, lat0, speed, phase } }
   tunnelJunctions: [], // { s, side, from, to (lat the train sets out from, and crosses to), state: 'idle' | 'warn' | 'cross' | 'done', t, train: obstacles (the tug first) }
-  patches: [],   // the player's own: oil slicks (see patchesOf), each with warned / used as the run goes
+  patches: [],   // the player's own: oil slicks and glue piles (see patchesOf); a pile's `used` while the car is stuck on it
   jump: null,    // the player in the air off a drawbridge's leaf: { bridge, vy (m/s up), vx (along the road), over (been over the gap), sunk (into the far leaf's end) }
   lastS: 0,
 
@@ -510,13 +513,23 @@ export const Hazards = {
       }
     }
 
-    // ---- the player's own (see patchesOf): an oil slick puts the car on ice, far worse, for a moment
+    // ---- the player's own (see patchesOf): an oil slick puts the car on ice, far worse, for a moment; a glue pile holds it
+    // still for a moment, then lets it go at a share of the speed it came with (once a pass: free again `rearm` m off it)
     const free = Player.active && Player.shield <= 0 && Player.tank <= 0 && Player.air < 0.05 && !Player.busted;
     for (const p of this.patches) {
+      if (p.used && Math.abs(Player.s - p.s) > CONFIG.gluePile.rearm) p.used = false;
       if (!free || !onPatch(p)) continue;
       if (p.kind === 'oil') {
         if (!(Player.oiled > 0)) { Message.say('events', 'oilSlick'); sfx('brake', 0.7); }
         Player.oiled = CONFIG.oilSlick.time;
+      } else if (p.kind === 'glue' && !p.used && !(Player.glued > 0)) {
+        const G = CONFIG.gluePile;
+        p.used = true;
+        Player.glued = G.hold;
+        Player.gluedSpeed = Player.speed * G.kept;
+        Player.speed = Player.latVel = 0;
+        Message.say('events', 'gluePile');
+        sfx('slowPad', 0.8);
       }
     }
   },

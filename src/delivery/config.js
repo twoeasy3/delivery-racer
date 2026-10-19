@@ -1580,6 +1580,10 @@ export const CONFIG = {
   // middle. It touches the player's car only (traffic drives over it untouched; a tank, a car just set down or in the air too).
   // Touched, the car is on ice, only far worse, for `time` s (refilled while it is on the pool): the same five numbers as
   // CONFIG.ice's (brakes, steering, lane speed, acceleration, cornering grip and understeer), and a harder slew as it hits
+  // a GLUE PILE ("gluePiles": { s, lane }, hazards.js patchesOf): a mound `r` m round. The player's car only (as an oil slick):
+  // driven onto, the car is held there, no movement at all, for `hold` s, then let go at `kept` of the speed it came with.
+  // Once a pass (free again `rearm` m off it)
+  gluePile: { r: 1.2, hold: 0.5, kept: 0.5, rearm: 30 },
   oilSlick: { length: 7, half: 1.4, time: 2, brakeGrip: 0.1, steerGrip: 0.08, laneSpeed: 0.3, accelGrip: 0.15, grip: 1.5, understeer: 0.7, yawKick: 5 },
   // a boost pad ("boostPads": { from, to, lane }, lanegimmicks.js; a travelator in the mall): a car driving over it is
   // pulled on for `time` s at up to `speed` m/s over its own top speed (as a turbo pulls: CONFIG.turboAccel), the clock
