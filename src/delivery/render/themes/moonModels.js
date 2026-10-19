@@ -13,6 +13,7 @@ const part = (parent, geometry, material, x, y, z, sx = 1, sy = 1, sz = 1) => {
 };
 const BALL = new THREE.SphereGeometry(1, 18, 12), CONE = new THREE.ConeGeometry(1, 1, 12), ROD = new THREE.CylinderGeometry(1, 1, 1, 14), BOX = new THREE.BoxGeometry(1, 1, 1);
 const DOME = new THREE.SphereGeometry(1, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2);
+const UP = new THREE.Vector3(0, 1, 0);
 const BOWL = new THREE.SphereGeometry(1, 20, 8, 0, Math.PI * 2, Math.PI * 0.62, Math.PI * 0.38);
 
 // a tracking dish on a pedestal, turning slowly to and fro, a red lamp at its feed
@@ -46,8 +47,8 @@ export const makeLander = () => {
   part(g, CONE, dark, 0, 1.7, 0, 1.3, 1.6, 1.3);   // the engine bell
   for (let k = 0; k < 4; k++) {
     const a = k / 4 * Math.PI * 2 + Math.PI / 4, x = Math.cos(a), z = Math.sin(a);
-    const leg = part(g, ROD, grey, x * 4.2, 2.2, z * 4.2, 0.14, 5.2, 0.14);
-    leg.rotation.set(z * 0.55, 0, -x * 0.55);
+    const leg = part(g, ROD, grey, x * 4.45, 1.55, z * 4.45, 0.14, 3.8, 0.14); // (from under the descent stage's rim out to its pad: feet wider than the hips)
+    leg.quaternion.setFromUnitVectors(UP, new THREE.Vector3(-x * 2.3, 2.9, -z * 2.3).normalize());
     part(g, ROD, gold, x * 5.6, 0.12, z * 5.6, 0.9, 0.24, 0.9);
   }
   part(g, ROD, grey, 1.6, 8.6, -1, 0.06, 2, 0.06);
