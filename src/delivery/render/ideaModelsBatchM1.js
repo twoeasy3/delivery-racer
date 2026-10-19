@@ -30,7 +30,7 @@ export const IDEA_MODELS_BATCH_M1 = {
   // Two axles of giant tyres (singles in front, duals behind) under a full-width upper deck; on the deck the operator's cab on the
   // left, the engine's cowl in the middle, a handrail across the front; a diagonal stairway climbing across the dark radiator grille;
   // a bumper block with square lamps each side of it. Behind, the huge dump body: a deep tray (empty, its floor sweeping up into a
-  // tail lip, ribs down its sides), its front wall rising into the canopy that shields the cab. Chrome hoist rams between the axles,
+  // tail lip), its front wall rising into the canopy that shields the cab. Chrome hoist rams between the axles,
   // tail lamps on the frame's end under the body's overhang.
   haultruck: (car) => {
     const group = new THREE.Group(), k = 'haul';
@@ -54,7 +54,6 @@ export const IDEA_MODELS_BATCH_M1 = {
       floor(0.86, 1.88, -1.9, 1.86), floor(-1.9, 1.86, -2.94, 2.24),
       bx(2.98, CANOPY - 1.8, 0.16, 0, (CANOPY + 1.8) / 2, 0.86),                             // the front wall
       bx(3.0, 0.14, 2.14, 0, CANOPY + 0.07, 1.86),                                          // the canopy over the cab
-      ...[-1, 1].flatMap(s => [0.1, -0.85, -1.8].map(z => bx(0.06, 1.0, 0.2, s * (HALF - 0.03), 2.38, z))), // ribs down the sides
       // the deck and what stands on it
       bx(3.0, DECKT - DECK, 2.0, 0, (DECK + DECKT) / 2, 1.96),                               // the deck
       cabGeo,
@@ -142,7 +141,7 @@ export const IDEA_MODELS_BATCH_M1 = {
     ]);
     // the paint: the hood, the cab's shell, the fenders over the tracks, the fuel tank, the roof, the blade
     const hood = [[CABF, BODYY - 0.3], [HOODF, BODYY - 0.3], [HOODF, 1.82], [HOODF - 0.1, 1.94], [CABF, 2.0]];
-    const WSF = [CABF, 1.9], WST = [CABF - 0.06, ROOF], CBB = [CABR, 1.9];
+    const WSF = [CABF, 2.02], WST = [CABF - 0.03, ROOF], CBB = [CABR, 2.02];
     const cab = [[CABR, BODYY], [CABF, BODYY], WSF, WST, [CABR, ROOF], CBB];
     const BLADE = [[2.36, 0.08], [2.24, 0.32], [2.17, 0.62], [2.2, 0.96], [2.3, 1.22], [2.38, 1.3], [2.02, 1.3], [1.94, 0.2]];
     const painted = merge([
@@ -150,13 +149,13 @@ export const IDEA_MODELS_BATCH_M1 = {
       extrudeSide(cab, 1.4, 0.03, null, 1, 0.03),
       ...[-1, 1].map(s => bx(0.66, 0.08, 1.7, s * TX, 0.95, 0.5)),                         // the fenders over the tracks' top runs
       bx(1.3, 0.75, 0.42, 0, BODYY + 0.36, CABR - 0.23),                                    // the fuel tank behind the cab
-      bx(1.56, 0.08, 1.56, 0, ROOF + 0.04, (CABR + CABF) / 2),                              // the cab's roof, overhanging a little
+      bx(1.52, 0.05, CABF - CABR + 0.04, 0, ROOF + 0.02, (CABR + CABF) / 2),                              // the cab's roof, overhanging a little
       extrudeSide(BLADE, 3.0, 0.03, null, 1, 0.03),                                         // the blade, its face curved
     ]);
     const body = place(group, shared(k + 'paint', () => shadeBy(painted, low(0.1, 1.6, [0.62, 0.58, 0.5]))), paint);
     // the cab's glass: glazed all round from its own profile (cabinGlass), one big side window a side, the screen and the back glass
-    const ARGS = { from: cab.indexOf(WSF), to: cab.indexOf(CBB), half: 0.7, grow: 0.03, inset: { aPillar: 0.08, roof: 0.06, cPillar: 0.08 }, lift: 0.036, sideLift: 0.006 };
-    const glass = cabinGlass(cab, { ...ARGS, belt: 1.95, sideInset: 0.1 });
+    const ARGS = { from: cab.indexOf(WSF), to: cab.indexOf(CBB), half: 0.7, grow: 0.03, inset: { aPillar: 0.08, roof: 0.04, cPillar: 0.08 }, lift: 0.036, sideLift: 0.006 };
+    const glass = cabinGlass(cab, { ...ARGS, belt: 2.06, sideInset: 0.1 });
     parts(group, k + 'glass', GLASS, () => [...glass.sides, glass.front, glass.rear]);
     // dark: the main frame between the tracks, the grille, the exhaust and pre-cleaner, the push arms, the ripper
     const beam = (w, t, [z0, y0], [z1, y1], x = 0) => {
@@ -186,8 +185,8 @@ export const IDEA_MODELS_BATCH_M1 = {
     // the beacon on the cab's roof (a roof item: hidden when a roof prop is chosen, render/propcosmetic.js), its base dark
     const flasher = new THREE.Group();
     flasher.userData.prop = 'roof';
-    place(flasher, shared(k + 'beaconbase', () => new THREE.CylinderGeometry(0.1, 0.1, 0.05, 10)), TRIM, -0.45, ROOF + 0.105, -0.9);
-    place(flasher, shared(k + 'beacon', () => new THREE.CylinderGeometry(0.075, 0.085, 0.13, 10)), beacon, -0.45, ROOF + 0.195, -0.9);
+    place(flasher, shared(k + 'beaconbase', () => new THREE.CylinderGeometry(0.1, 0.1, 0.05, 10)), TRIM, -0.45, ROOF + 0.07, -0.9);
+    place(flasher, shared(k + 'beacon', () => new THREE.CylinderGeometry(0.075, 0.085, 0.13, 10)), beacon, -0.45, ROOF + 0.16, -0.9);
     group.add(flasher);
     for (const part of group.children) part.position.z += 0.06; // (blade front and ripper tip even about the hitbox)
     group.userData = {
@@ -209,8 +208,8 @@ export const IDEA_MODELS_BATCH_M1 = {
     const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
     const beacons = [0, 1].map(() => new THREE.MeshBasicMaterial({ color: 0xffa31a }));
     const FRONT = 3.22, TAILZ = -2.62, ROOF = 3.0, TAPER = [2.0, ROOF, 0.05];
-    const WSF = [FRONT - 0.02, 1.86], WST = [FRONT - 0.2, 2.86], CBB = [1.88, 1.9];
-    const cab = [[1.88, 0.9], [FRONT, 0.9], [FRONT, 1.76], WSF, WST, [FRONT - 0.32, ROOF], [1.88, ROOF], CBB];
+    const WSF = [FRONT - 0.02, 1.86], WST = [FRONT - 0.24, ROOF], CBB = [1.88, 1.9];
+    const cab = [[1.88, 0.9], [FRONT, 0.9], [FRONT, 1.76], WSF, WST, [1.88, ROOF], CBB];
     // the hopper: a V section along the body, its top rim at 3.0
     const vee = () => {
       const s = new THREE.Shape([[-0.5, 1.22], [0.5, 1.22], [1.2, 2.05], [1.2, 2.98], [-1.2, 2.98], [-1.2, 2.05]].map(([x, y]) => new THREE.Vector2(x, y)));
