@@ -151,9 +151,9 @@ export const IDEA_MODELS_BATCH_D2 = {
     planked.userData.shared = true;
     place(group, shared(k + 'planks', () => new THREE.PlaneGeometry(1.8, 2.34).rotateX(-Math.PI / 2)), planked, 0, 1.105, -1.15);
     parts(group, k + 'wood', WOOD, () => [
-      bx(1.86, 0.78, 0.09, 0, 1.43, -0.04),
+      bx(1.851, 0.78, 0.09, 0, 1.43, -0.04),                                            // (head and tail boards 4.5 mm in from the deck's sides)
       ...[-1, 1].map(s => bx(0.05, 0.3, 2.34, s * 0.905, 1.27, -1.15)),
-      bx(1.86, 0.3, 0.05, 0, 1.27, -2.35),
+      bx(1.851, 0.3, 0.05, 0, 1.27, -2.35),
       ...[-1, 1].flatMap(s => [-0.4, -1.2, -2.3].map(z => bx(0.07, 0.56, 0.08, s * 0.945, 1.38, z))),
     ]);
     // the load: two crates and the tarpaulin mound (tagged userData.prop = 'cargo': a chosen cargo prop hides them, render/propcosmetic.js)

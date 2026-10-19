@@ -135,8 +135,8 @@ IDEA_MODELS_COMMUTER_IDEAS.smileyhatch = (car) => {
   parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => blob(0.085, 0.25, 0.08, s * 0.62, 0.86, TAILZ + 0.01, 0, -s * 0.45, [8, 6])));
   // black: a slim lip low at each end (round the corners), the small oval grille between the eyes, the wide smile under it
   parts(group, k + 'black', TRIM, () => [
-    extrudeSide([[AX + 0.44, 0.15], [NOSE, 0.15], [NOSE + 0.08, 0.19], [NOSE + 0.08, 0.24], [AX + 0.44, 0.24]], BW + 0.01, 0.03, null, 2, 0.18),
-    extrudeSide([[-AX - 0.44, 0.15], [TAILZ, 0.15], [TAILZ - 0.08, 0.19], [TAILZ - 0.08, 0.24], [-AX - 0.44, 0.24]], BW + 0.01, 0.03, null, 2, 0.18),
+    extrudeSide([[AX + 0.44, 0.15], [NOSE, 0.15], [NOSE + 0.0845, 0.19], [NOSE + 0.0845, 0.24], [AX + 0.44, 0.24]], BW + 0.01, 0.03, null, 2, 0.18),
+    extrudeSide([[-AX - 0.44, 0.15], [TAILZ, 0.15], [TAILZ - 0.0845, 0.19], [TAILZ - 0.0845, 0.24], [-AX - 0.44, 0.24]], BW + 0.01, 0.03, null, 2, 0.18), // (4.5 mm past the tail)
     blob(0.17, 0.055, 0.05, 0, 0.63, NOSE + 0.06, 0.25, 0, [12, 5]),
     ...[-1, 1].map(s => blob(0.178, 0.158, 0.1, s * 0.55, 0.72, NOSE - 0.09, 0.3, 0, [8, 5])), // (a dark rim round each eye)
     // the arches' liners: a dark half-tube over each axle between the tyres (no seeing through the arch)
@@ -202,7 +202,7 @@ IDEA_MODELS_COMMUTER_IDEAS.eightieshatch = (car) => {
     extrudeSide([[-AX - RA - 0.01, 0.24], [TAILZ - 0.02, 0.24], [TAILZ - 0.1, 0.28], [TAILZ - 0.1, 0.48], [TAILZ - 0.02, 0.52], [-AX - RA - 0.01, 0.52]], BW + 0.05, 0.03, null, 1, 0.08),
     bx(1.52, 0.22, 0.02, 0, 0.66, FZ + 0.006),
     bx(0.72, 0.2, 0.02, 0, 0.72, TAILZ - BEV - 0.006), // (the garnish between the tail lamps)
-    ...flankPanel([[BP[0], ROOFY - 0.02], [BP[1], ROOFY - 0.02], [BP[1], BELT - 0.02], [BP[0], BELT - 0.02]], { half: CH, taper: TAPER, lift: 0.004 }).map(flip),
+    ...flankPanel([[BP[0], ROOFY - 0.02], [BP[1], ROOFY - 0.02], [BP[1], BELT - 0.02], [BP[0], BELT - 0.02]], { half: CH, taper: TAPER, lift: 0.0045 }).map(flip), // (the B-pillars 4.5 mm off the paint)
     mirror(1), mirror(-1),
     // the arches' liners: a dark half-tube over each axle between the tyres (no seeing through the arch)
     ...[AX, -AX].map(z => liner(RA - 0.01, BW - 0.34, AY, z)),

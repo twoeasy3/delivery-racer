@@ -309,7 +309,7 @@ ORIG4_MODELS.taxi = (car) => {
   place(group, signGeo, sign, 0, top + 0.145, -0.2).userData.prop = 'roof'; // (the roof sign: hidden when a roof prop is chosen)
   // the checker band, down each flank under the belt (the texture repeated along it)
   const bandGeo = shared(k + 'band', () => {
-    const len = 2 * L - 0.5, geos = pair([[SX + 0.003, 0.8, -len / 2], [SX + 0.003, 0.8, len / 2], [SX + 0.003, 0.92, len / 2], [SX + 0.003, 0.92, -len / 2]]);
+    const len = 2 * L - 0.5, geos = pair([[SX + 0.0045, 0.8, -len / 2], [SX + 0.0045, 0.8, len / 2], [SX + 0.0045, 0.92, len / 2], [SX + 0.0045, 0.92, -len / 2]]); // (4.5 mm off the flank)
     const g = merge(geos), uv = g.attributes.uv, pos = g.attributes.position;
     for (let i = 0; i < uv.count; i++) uv.setXY(i, (pos.getZ(i) + len / 2) / 0.12 / 2, pos.getY(i) > 0.86 ? 1 : 0);
     return g;

@@ -269,7 +269,7 @@ export const MODELS = {
       const [r0, r1, ry] = S.roof, [tz, ty] = S.glass[S.glass.length - 2], base = S.glass[S.glass.length - 1][1];
       prism(g, glass, w * 0.78, at([...S.glass.slice(0, 3), [r1, base]]));
       prism(g, paint, w * 0.8, at([[r1, ry], [tz, ty], [tz, base], [r1, base]]));
-      box(g, paint, w * 0.8, 0.05, (r0 - r1) * k, 0, ry + 0.02, (r0 + r1) / 2 * k); // (the roof)
+      box(g, paint, w * 0.8, 0.05, (r0 - r1) * k + 0.009, 0, ry + 0.02, (r0 + r1) / 2 * k); // (the roof: 4.5 mm over the glass's ends)
       const run = (r1 - tz) * k, rise = ry - ty;
       slab(g, glass, w * 0.56, 0.03, Math.hypot(run, rise) * 0.78, 0, (ry + ty) / 2 + 0.02, (r1 + tz) / 2 * k, -Math.atan2(rise, run));
       box(g, dark, w * 0.92, 0.07, 0.3, 0, 0.3, L - 0.1);                          // splitter
@@ -915,12 +915,12 @@ export const MODELS = {
     const body = box(group, paint, w, 0.5, l, 0, 0.58, 0);
     box(group, paint, w * 0.96, 0.08, l * 0.26, 0, 0.86, l * 0.36);                // the bonnet
     box(group, glass, w * 0.88, 0.46, l * 0.58, 0, 1.08, -l * 0.16);               // the glasshouse, right to the tail
-    box(group, paint, w * 0.9, 0.07, l * 0.58, 0, 1.34, -l * 0.16);                // roof
+    box(group, paint, w * 0.9, 0.07, l * 0.58 + 0.009, 0, 1.34, -l * 0.16);        // roof (4.5 mm over the glass's ends)
     screen(group, glass, w * 0.86, 0.05, 0.62, 0, 1.07, l * 0.19, 0.6);              // windscreen
     screen(group, glass, w * 0.86, 0.05, 0.48, 0, 1.08, -l * 0.45, -0.18);           // the upright hatch
     box(group, trim, w * 0.8, 0.04, 0.16, 0, 1.39, -l * 0.43).userData.prop = 'wing'; // the roof spoiler's lip (tagged: a chosen wing prop hides it)
     box(group, trim, w * 0.94, 0.24, 0.05, 0, 0.7, l / 2 + 0.01);                   // the grille, right across
-    box(group, red, w * 0.94, 0.03, 0.06, 0, 0.83, l / 2 + 0.02);                   // edged in red
+    box(group, red, w * 0.94 + 0.009, 0.03, 0.06, 0, 0.83, l / 2 + 0.02);           // edged in red
     for (const side of [-1, 1]) {
       box(group, paint, 0.08, 0.46, l * 0.16, side * w * 0.445, 1.08, -l * 0.36);   // thick rear pillars
       box(group, paint, 0.08, 0.46, 0.1, side * w * 0.445, 1.08, l * 0.0);         // and the door's
@@ -946,7 +946,7 @@ export const MODELS = {
     const body = box(group, paint, w, 0.5, l, 0, 0.62, 0);
     box(group, paint, w * 0.97, 0.08, l * 0.3, 0, 0.9, l * 0.35);                  // the long bonnet
     box(group, glass, w * 0.88, 0.44, l * 0.24, 0, 1.12, l * 0.02);                // the cab
-    box(group, paint, w * 0.9, 0.07, l * 0.24, 0, 1.37, l * 0.02);                 // its roof
+    box(group, paint, w * 0.9, 0.07, l * 0.24 + 0.009, 0, 1.37, l * 0.02);         // its roof (4.5 mm over the cab's ends)
     screen(group, glass, w * 0.86, 0.05, 0.7, 0, 1.1, l * 0.17, 0.62);               // windscreen
     box(group, paint, w * 0.88, 0.44, 0.06, 0, 1.12, -l * 0.1);                     // the cab's back,
     box(group, glass, w * 0.7, 0.28, 0.03, 0, 1.15, -l * 0.1 - 0.035);               // and its little window
@@ -1036,7 +1036,7 @@ export const MODELS = {
     const body = box(group, paint, w, 0.6, l * 0.98, 0, base + 0.3, 0);               // the body
     box(group, paint, w * 0.56, 0.12, l * 0.3, 0, base + 0.66, l * 0.33);               // the bonnet, proud of the wings
     box(group, glass, w * 0.9, 0.55, l * 0.25, 0, base + 0.88, -l * 0.02);              // the cab
-    box(group, paint, w * 0.92, 0.08, l * 0.25, 0, base + 1.19, -l * 0.02);             // its roof
+    box(group, paint, w * 0.92, 0.08, l * 0.25 + 0.009, 0, base + 1.19, -l * 0.02);     // its roof (4.5 mm over the cab's ends)
     screen(group, glass, w * 0.88, 0.05, 0.75, 0, base + 0.87, l * 0.13, 0.7);           // windscreen
     box(group, paint, w * 0.9, 0.55, 0.06, 0, base + 0.88, -l * 0.145);                // the cab's back,
     box(group, glass, w * 0.7, 0.32, 0.03, 0, base + 0.92, -l * 0.145 - 0.035);         // and its window
@@ -1087,7 +1087,7 @@ export const MODELS = {
     box(group, paint, w * 0.96, 0.08, l * 0.3, 0, 0.9, l * 0.35);                   // bonnet
     box(group, trim, w * 0.3, 0.1, 0.42, 0, 0.98, l * 0.3);                          // its scoop
     box(group, glass, w * 0.86, 0.44, l * 0.36, 0, 1.12, -l * 0.02);                // the cabin
-    box(group, paint, w * 0.88, 0.07, l * 0.36, 0, 1.37, -l * 0.02);                // roof
+    box(group, paint, w * 0.88, 0.07, l * 0.36 + 0.009, 0, 1.37, -l * 0.02);        // roof (4.5 mm over the cabin's ends)
     box(group, trim, w * 0.24, 0.06, 0.3, 0, 1.42, l * 0.04).userData.prop = 'roof';  // roof vent (tagged: a chosen roof prop hides it, render/propcosmetic.js)
     screen(group, glass, w * 0.84, 0.05, 0.66, 0, 1.1, l * 0.19, 0.6);               // windscreen
     screen(group, glass, w * 0.84, 0.05, 0.6, 0, 1.1, -l * 0.24, -0.55);             // rear screen
@@ -1100,7 +1100,7 @@ export const MODELS = {
       roundel.position.set(side * (w / 2 + 0.01), 0.66, l * 0.02);
       group.add(roundel);
       box(group, LAMP, w * 0.2, 0.12, 0.06, side * w * 0.34, 0.76, l / 2 + 0.01);  // headlamps
-      disc(group, LAMP, 0.08, 0.06, side * w * 0.3, 0.44, l / 2 + 0.07);            // fog lamps in the bumper
+      disc(group, LAMP, 0.08, 0.06, side * w * 0.3, 0.44, l / 2 + 0.0745);          // fog lamps in the bumper (4.5 mm proud)
       box(group, TAIL, w * 0.22, 0.12, 0.06, side * w * 0.34, 0.76, -l / 2 - 0.01);
       box(group, trim, 0.12, 0.09, 0.1, side * (w / 2 + 0.06), 1.0, l * 0.13);     // mirror
       for (const z of [0.32, -0.31]) {
@@ -1162,7 +1162,7 @@ export const MODELS = {
     const body = box(group, paint, w, 0.5, l, 0, 0.56, 0);
     box(group, paint, w * 0.96, 0.08, l * 0.28, 0, 0.84, l * 0.36);                 // the long, flat bonnet
     box(group, glass, w * 0.88, 0.46, l * 0.6, 0, 1.06, -l * 0.12);                 // the long glasshouse
-    box(group, paint, w * 0.9, 0.07, l * 0.6, 0, 1.32, -l * 0.12);                  // roof
+    box(group, paint, w * 0.9, 0.07, l * 0.6 + 0.009, 0, 1.32, -l * 0.12);          // roof (4.5 mm over the glass's ends)
     screen(group, glass, w * 0.86, 0.05, 0.62, 0, 1.06, l * 0.2, 0.55);              // windscreen
     screen(group, glass, w * 0.86, 0.05, 0.48, 0, 1.06, -l * 0.43, -0.12);           // the upright tailgate
     for (const side of [-1, 1]) {
@@ -1241,9 +1241,9 @@ export const MODELS = {
     box(group, paint, w * 0.9, 0.12, l * 0.24, 0, base + 0.61, l * 0.37);               // the flat bonnet
     const cabFront = l * 0.25, cabBack = l * 0.02, cabZ = (cabFront + cabBack) / 2, cabL = cabFront - cabBack;
     box(group, glass, w * 0.92, 0.55, cabL, 0, base + 0.85, cabZ);                     // the upright cab
-    box(group, paint, w * 0.94, 0.08, cabL, 0, base + 1.16, cabZ);                     // its roof
+    box(group, paint, w * 0.94, 0.08, cabL + 0.018, 0, base + 1.16, cabZ);             // its roof (9 mm over the glass's ends)
     screen(group, glass, w * 0.86, 0.05, 0.56, 0, base + 0.86, cabFront + 0.03, 0.12);  // the near-upright windscreen
-    for (const z of [cabFront - 0.05, cabZ, cabBack + 0.05]) for (const side of [-1, 1]) box(group, paint, 0.08, 0.55, 0.1, side * w * 0.455, base + 0.85, z); // pillars
+    for (const z of [cabFront - 0.05, cabZ, cabBack + 0.05]) for (const side of [-1, 1]) box(group, paint, 0.08, 0.559, 0.109, side * w * 0.455, base + 0.85, z); // pillars (4.5 mm past the glass)
     box(group, trim, w * 0.9, 0.06, cabL, 0, base + 1.25, cabZ).userData.prop = 'roof';   // the roof rack,
     box(group, LAMP, w * 0.7, 0.08, 0.03, 0, base + 1.3, cabFront - 0.05).userData.prop = 'roof'; // and its light bar
     const bedZ = (cabBack - l / 2) / 2, bedL = cabBack + l / 2;
@@ -1341,7 +1341,7 @@ export const MODELS = {
     const body = box(group, paint, w, 0.55, l, 0, 0.72, 0);
     box(group, paint, w * 0.96, 0.1, l * 0.3, 0, 1.04, l * 0.34);                    // bonnet
     box(group, glass, w * 0.9, 0.5, l * 0.22, 0, 1.25, l * 0.04);                    // the cab
-    box(group, paint, w * 0.92, 0.07, l * 0.22, 0, 1.53, l * 0.04);                  // its roof
+    box(group, paint, w * 0.92, 0.07, l * 0.22 + 0.009, 0, 1.53, l * 0.04);          // its roof (4.5 mm over the cab's ends)
     screen(group, glass, w * 0.88, 0.05, 0.64, 0, 1.24, l * 0.18, 0.5);               // windscreen
     for (const side of [-1, 1]) box(group, paint, 0.07, 0.36, l * 0.4, side * (w / 2 - 0.035), 1.16, -l * 0.27); // the bed's sides
     box(group, lambert(0x8a6a45), w, 0.5, 0.08, 0, 1.1, -l / 2 + 0.04);              // the transom board, for the tailgate
@@ -1378,7 +1378,7 @@ export const MODELS = {
     const body = box(group, paint, w, 0.55, l * 0.92, 0, 0.82, 0);
     box(group, paint, w * 0.96, 0.1, l * 0.28, 0, 1.14, l * 0.32);                   // bonnet
     box(group, glass, w * 0.9, 0.5, l * 0.22, 0, 1.35, l * 0.04);                    // the cab
-    box(group, paint, w * 0.92, 0.07, l * 0.22, 0, 1.63, l * 0.04);                  // its roof
+    box(group, paint, w * 0.92, 0.07, l * 0.22 + 0.009, 0, 1.63, l * 0.04);          // its roof (4.5 mm over the cab's ends)
     screen(group, glass, w * 0.88, 0.05, 0.64, 0, 1.34, l * 0.18, 0.5);               // windscreen
     for (const side of [-1, 1]) box(group, paint, 0.07, 0.34, l * 0.38, side * (w / 2 - 0.035), 1.26, -l * 0.26); // the bed's sides
     box(group, paint, w, 0.34, 0.07, 0, 1.26, -l * 0.44);
@@ -1416,8 +1416,8 @@ export const MODELS = {
     box(group, paint, w * 0.94, 0.1, l * 0.24, 0, 0.82, -l * 0.38);                   // the boot, its little fins
     for (const side of [-1, 1]) box(group, paint, 0.08, 0.14, l * 0.2, side * w * 0.44, 0.92, -l * 0.39);
     screen(group, glass, w * 0.86, 0.04, 0.4, 0, 0.98, l * 0.12, 0.35);                // windscreen, the hood down
-    box(group, lambert(0x3a2a20), w * 0.86, 0.2, l * 0.34, 0, 0.82, -l * 0.08);        // the seats
-    box(group, lambert(0x2a2c31), w * 0.86, 0.12, 0.3, 0, 0.94, -l * 0.27);            // the folded hood
+    box(group, lambert(0x3a2a20), w * 0.86 - 0.009, 0.2, l * 0.34, 0, 0.82, -l * 0.08); // the seats (4.5 mm in from the screen's sides)
+    box(group, lambert(0x2a2c31), w * 0.86 - 0.018, 0.12, 0.3, 0, 0.94, -l * 0.27);    // the folded hood (and in from the seats')
     const rig = new THREE.Group(); // (the mast, boom and sail, swaying together)
     rig.position.set(0, 0.8, l * 0.02);
     group.add(rig);
@@ -1562,9 +1562,9 @@ export const MODELS = {
     box(shell, paint, w * 0.96, 0.1, l * 0.2, 0, 1.0, -l * 0.39);                  // short boot deck...
     box(shell, trim, w * 0.9, 0.06, 0.12, 0, 1.08, -l / 2 + 0.06).userData.prop = 'wing'; // ...with a lip spoiler (tagged: a chosen wing prop hides it)
     for (const x of [-0.16, 0.16]) { // twin stripes over the roof, the bonnet and the boot
-      box(shell, stripe, w * 0.12, 0.012, l * 0.28, x * w, 1.42, -l * 0.13);
-      box(shell, stripe, w * 0.12, 0.012, l * 0.42, x * w, 1.045, l * 0.27);
-      box(shell, stripe, w * 0.12, 0.012, l * 0.2, x * w, 1.055, -l * 0.39);
+      box(shell, stripe, w * 0.12, 0.012, l * 0.28 - 0.009, x * w, 1.42, -l * 0.13);     // (each 4.5 mm short of its panel's ends)
+      box(shell, stripe, w * 0.12, 0.012, l * 0.42 - 0.009, x * w, 1.045, l * 0.27);
+      box(shell, stripe, w * 0.12, 0.012, l * 0.2 - 0.009, x * w, 1.055, -l * 0.39);
     }
     box(shell, trim, w * 0.94, 0.32, 0.06, 0, 0.82, l / 2 + 0.02);                 // the wide grille
     box(shell, trim, w + 0.06, 0.2, 0.16, 0, 0.42, l / 2 + 0.04);                  // bumpers

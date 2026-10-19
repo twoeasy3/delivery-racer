@@ -78,7 +78,7 @@ export const IDEA_MODELS_BATCH_E3 = {
       bx(0.2, 0.2, 0.12, 0, 1.92, -0.1),                                                   // the hook block
     ]);
     parts(group, k + 'chrome', CHROME, () => [
-      ...[1.22, 1.38, 1.54].map(y => bx(1.1, 0.05, 0.03, 0, y, FZ + 0.02)),
+      ...[1.22, 1.38, 1.54].map(y => bx(1.091, 0.05, 0.03, 0, y, FZ + 0.02)),               // (the bars' ends 4.5 mm inside the panel's)
       ...[-1, 1].map(s => bx(0.3, 0.24, 0.03, s * 1.0, 1.27, FZ + 0.005)),                 // the lamps' bezels
       rod(0.06, [0.28, 1.75], [-0.55, 2.3]), rod(0.05, [-1.05, 2.7], [-1.35, 2.9], 0.0), // the boom's rams
       rod(0.016, [-0.1, 2.0], [-0.1, 2.56], 0, 5),                                         // the hook's rope

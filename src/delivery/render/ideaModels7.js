@@ -218,7 +218,7 @@ export const IDEA_MODELS_7 = {
       return [z, mirror([[0, yb - 0.08], [wb + grow, yb - 0.08], [wb + grow, yb], [m + grow, (yb + yt) / 2 + 0.03 + grow], [wt + grow, yt + grow], [0, yt + grow]])];
     }), true, true);
     place(group, canopy(-0.75, 1, 0), glass, 0, 0, 0);
-    place(group, canopy(-2, -0.75, 0.012), paint, 0, 0, 0);
+    place(group, canopy(-2, -0.75, 0.012), paint, 0, 0, 0.0045); // (its front cap 4.5 mm into the glass, off the glass's back cap)
     // the engine deck's louvres: a dark panel let into its flat top, slats across it
     const deckY = (z) => along(CANOPY, z)[3] + 0.012;
     merged(group, trim, [bx(0.62, 0.02, 0.95, 0, deckY(-1.4) + 0.008, -1.4, -Math.atan2(deckY(-0.92) - deckY(-1.88), 0.96))]);
@@ -226,7 +226,7 @@ export const IDEA_MODELS_7 = {
     // the nose: a shield of a grille in its point, a slot of an intake under it, the lamps stacked up each wing's edge
     const ZN = 2.23;
     merged(group, chrome, [facing([[-0.27, 0.53], [0.27, 0.53], [0.17, 0.33], [-0.17, 0.33]], 0.04, ZN + 0.012)]);
-    merged(group, trim, [facing([[-0.23, 0.51], [0.23, 0.51], [0.15, 0.355], [-0.15, 0.355]], 0.04, ZN + 0.02), bx(0.9, 0.05, 0.04, 0, 0.31, ZN - 0.005)]);
+    merged(group, trim, [facing([[-0.23, 0.51], [0.23, 0.51], [0.15, 0.355], [-0.15, 0.355]], 0.04, ZN + 0.02), bx(0.9, 0.05, 0.04, 0, 0.31, ZN - 0.0035)]); // (the bar 4.5 mm proud of the chrome)
     merged(group, chrome, [bx(0.4, 0.016, 0.03, 0, 0.44, ZN + 0.03)]);                      // (the grille's one blade)
     merged(group, trim, [-1, 1].map(side => bx(0.1, 0.26, 0.06, side * 0.6, 0.45, ZN - 0.01)));
     merged(group, LAMP, [-1, 1].flatMap(side => [bx(0.035, 0.22, 0.02, side * 0.62, 0.46, ZN + 0.025), bx(0.025, 0.14, 0.02, side * 0.57, 0.48, ZN + 0.025)]));
@@ -241,9 +241,9 @@ export const IDEA_MODELS_7 = {
     merged(group, trim, [bx(1.2, 0.3, 0.03, 0, 0.62, ZT - 0.005), bx(1.5, 0.12, 0.2, 0, 0.27, ZT + 0.08)]);
     merged(group, trim, [-0.45, -0.15, 0.15, 0.45].map(x => bx(0.02, 0.1, 0.16, x, 0.25, ZT - 0.02)));
     merged(group, TAIL, [-1, 1].flatMap(side => [bx(0.05, 0.42, 0.025, side * 0.76, 0.64, ZT - 0.008), bx(0.024, 0.3, 0.025, side * 0.69, 0.68, ZT - 0.008)]));
-    merged(group, LAMP, [-1, 1].map(side => bx(0.1, 0.04, 0.02, side * 0.48, 0.4, ZT - 0.006)));
+    merged(group, LAMP, [-1, 1].map(side => bx(0.1, 0.04, 0.03, side * 0.48, 0.4, ZT - 0.001))); // (their inner faces inside the tail)
     merged(group, chrome, [-1, 1].map(side => cyl(0.045, 0.06, side * 0.12, 0.33, ZT - 0.01, 'z', 10)));
-    box(group, WHITE, 0.4, 0.1, 0.02, 0, 0.42, ZT - 0.008).userData.plate = 'rear';
+    box(group, WHITE, 0.4, 0.1, 0.03, 0, 0.42, ZT - 0.003).userData.plate = 'rear';
     // the spoiler: a raked blade across the tail on two posts, the stop lamp along its back edge
     const spoiler = Math.atan2(0.05, 0.24);
     merged(group, trim, [-1, 1].map(side => bx(0.04, 0.09, 0.08, side * 0.5, topY(-2.12, 0.5) + 0.03, -2.12))).userData.prop = 'wing'; // (the spoiler's posts and blade: a wing prop)
@@ -346,9 +346,9 @@ export const IDEA_MODELS_7 = {
     merged(group, TAIL, [-1, 1].map(side => bx(0.07, 0.36, 0.03, side * 0.66, 0.66, ZT - 0.012)));
     merged(group, trim, [-1, 1].map(side => bx(0.11, 0.4, 0.02, side * 0.66, 0.66, ZT - 0.002)));
     box(group, TAIL, 0.36, 0.03, 0.02, 0, along(CAB, -2.62)[3] - 0.005, -2.632);                // (in the fastback's end)
-    merged(group, LAMP, [-1, 1].map(side => bx(0.12, 0.05, 0.02, side * 0.42, 0.52, ZT - 0.006)));
+    merged(group, LAMP, [-1, 1].map(side => bx(0.12, 0.05, 0.03, side * 0.42, 0.52, ZT - 0.001))); // (their inner faces inside the tail)
     merged(group, chrome, [bx(1.0, 0.03, 0.03, 0, 0.8, ZT - 0.006), ...[-1, 1].map(side => cyl(0.05, 0.08, side * 0.3, 0.42, ZT - 0.01, 'z', 10))]);
-    box(group, WHITE, 0.42, 0.1, 0.02, 0, 0.62, ZT - 0.008).userData.plate = 'rear';
+    box(group, WHITE, 0.42, 0.1, 0.03, 0, 0.62, ZT - 0.003).userData.plate = 'rear';
     alloys(group, AXLES, chrome, 8, trim, false); // (the owner, 14-Oct: the wheel trims bounced with the car: deleted)
     group.userData = { body, animate: () => {}, livery: (evil) => bonnet.color.setHex(evil ? 0x848a96 : 0xd3d6da) };
     return group;
@@ -430,7 +430,7 @@ export const IDEA_MODELS_7 = {
     box(group, dark, 0.9, 0.18, 0.02, 0, 0.45, ZT - 0.004);
     box(group, TAIL, 0.1, 0.08, 0.02, 0, 0.48, ZT - 0.016);
     merged(group, dark, [bx(1.3, 0.2, 0.3, 0, 0.26, ZT + 0.08), ...[-0.4, -0.13, 0.13, 0.4].map(x => bx(0.02, 0.18, 0.34, x, 0.25, ZT + 0.06))]);
-    box(group, dark, 1.5, 0.03, 0.3, 0, 0.13, 2.18);                                        // (the splitter under the nose)
+    box(group, dark, 1.5, 0.03, 0.3, 0, 0.13, 2.1845);                                        // (the splitter under the nose)
     alloys(group, AXLES, lambert(0x9da2a9), 6, lambert(0x2a2c31), false); // (the owner, 14-Oct: the wheel trims did not animate while driving: deleted)
     group.userData = { body, animate: () => {}, livery: (evil) => flame.color.setHex(evil ? 0xff5a1a : 0x1a1a1e) };
     return group;

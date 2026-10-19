@@ -156,7 +156,7 @@ export const IDEA_MODELS_BATCH_D5 = {
     parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => dsc(0.1, 0.03, s * 0.52, 0.8, FZ + 0.01, 0, 14)));
     parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.24, 0.1, 0.03, s * 0.5, 0.88, BZ - 0.006)));
     parts(group, k + 'amber', AMBER, () => [
-      ...[-1, 1].map(s => bx(0.1, 0.07, 0.03, s * 0.28, 0.62, FZ + 0.004)),
+      ...[-1, 1].map(s => bx(0.1, 0.07, 0.03, s * 0.28, 0.62, FZ + 0.0095)),                // (4.5 mm proud of the grille)
       ...[-1, 1].map(s => bx(0.24, 0.07, 0.03, s * 0.5, 0.72, BZ - 0.006)),
     ]);
     // shock stubs standing out of the bonnet and the tail deck (a dark body with a bright yellow spring round it)

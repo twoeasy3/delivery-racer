@@ -289,7 +289,7 @@ export const IDEA_MODELS_3 = {
     // the carriage inside it: a pan, the engine under the seat, the seat, the handlebars and the rider
     const body = curved(group, paint, 0.5, rounded([[-0.5, 0.48], [0.5, 0.48], [0.56, 0.72], [0.36, 0.84], [-0.36, 0.84], [-0.56, 0.7]], 0.08), 0.05);
     box(group, ALLOY, 0.3, 0.2, 0.34, 0, 0.98, -0.3);                                    // the engine's block,
-    for (let i = 0; i < 4; i++) box(group, ALLOY, 0.36, 0.02, 0.3, 0, 1.1 + i * 0.045, -0.3); // its cooling fins
+    for (let i = 0; i < 4; i++) box(group, ALLOY, 0.351, 0.02, 0.3, 0, 1.1 + i * 0.045, -0.3); // its cooling fins (4.5 mm in from the seat back's sides)
     tube(group, chrome, 0.03, 0.4, 0.14, 0.92, -0.5, 'z');                               // and its exhaust
     box(group, leather, 0.38, 0.08, 0.34, 0, 0.92, 0.02);                                // the seat,
     box(group, leather, 0.36, 0.3, 0.06, 0, 1.14, -0.15).rotation.x = -0.2;              // its back
@@ -372,7 +372,7 @@ export const IDEA_MODELS_3 = {
     const towel = lambert(0xf3efe6), band = lambert(0x2a8aa0);
     box(group, towel, 0.03, 0.4, 0.5, 0.72, 1.06, 0.1);
     box(group, towel, 0.16, 0.035, 0.5, 0.66, 1.275, 0.1);
-    for (const y of [0.96, 1.04]) box(group, band, 0.035, 0.04, 0.5, 0.72, y, 0.1);
+    for (const y of [0.96, 1.04]) box(group, band, 0.04, 0.04, 0.509, 0.72, y, 0.1);   // (5 mm proud of the towel, 4.5 mm past its ends)
     // the driver in the suds: bare shoulders, a shower cap, and the wheel on its column up through the water
     const bather = new THREE.Group();
     group.add(bather);
@@ -419,7 +419,7 @@ export const IDEA_MODELS_3 = {
       tube(group, paint, 0.3, len, x, y, z0, 'z');
       tube(group, accent, 0.305, 0.2, x, y, z0 + len / 2 - 0.35, 'z');                   // a band of the second colour round it
       hoop(group, chrome, 0.27, 0.04, x, y, z0 + len / 2).rotation.set(0, 0, 0);        // the intake's lip,
-      disc(group, trim, 0.26, 0.04, x, y, z0 + len / 2 - 0.02);                          // its throat,
+      disc(group, trim, 0.26, 0.04, x, y, z0 + len / 2 - 0.0155);                        // its throat (4.5 mm out of the nacelle's face),
       const spinner = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.18, 12), chrome);
       spinner.rotation.x = Math.PI / 2;
       spinner.position.set(x, y, z0 + len / 2 + 0.05);
@@ -484,7 +484,7 @@ export const IDEA_MODELS_3 = {
       }
       box(group, paint, 0.06, 0.2, len - 0.2, x, 1.16, mid);                               // the bottom rail,
       for (let i = 0; i < 5; i++) tube(group, gold, 0.06, 0.08, x + side * 0.03, 1.16, zb + 0.4 + i * (len - 0.8) / 4, 'x'); // gilt bosses on it
-      box(group, paint, 0.06, 0.3, len - 0.2, x, 2.27, mid);                               // the top rail,
+      box(group, paint, 0.051, 0.3, len - 0.2, x, 2.27, mid);                              // the top rail (4.5 mm in from the cornice's face),
       box(group, lettered('CIRCUS', '#a3202a', '#f1e3c0', 512, 96), 0.02, 0.22, len * 0.6, x + side * 0.035, 2.27, mid); // its board,
       for (let i = 0, n = 15; i < n; i++) tube(group, gold, 0.024, 0.86, x, 1.69, zb + 0.24 + i * (len - 0.48) / (n - 1)); // the bars
       for (const z of [zb + 0.5, zf - 0.5]) { // gilt scrolls up the corners, outside the bars
@@ -570,7 +570,7 @@ export const IDEA_MODELS_3 = {
     box(lean, paint, w * 0.94 + 0.03, 0.3, 0.07, 0, 1.2, -L * 0.12);                    // the door pillar
     for (const side of [-1, 1]) {
       box(lean, accent, 0.02, 0.07, L * 1.5, side * (w * 0.47 + 0.008), 0.8, -L * 0.04); // a stripe along each side,
-      box(lean, trim, 0.02, 0.4, 0.02, side * (w * 0.47 + 0.01), 0.92, L * 0.48);       // the door's shut line
+      box(lean, trim, 0.025, 0.4, 0.02, side * (w * 0.47 + 0.01), 0.92, L * 0.48);      // the door's shut line (4.5 mm proud of the stripe)
       rod(lean, trim, 0.015, [side * w * 0.42, 1.12, L * 0.55], [side * (w * 0.5 + 0.08), 1.18, L * 0.5]); // mirrors on stalks
       box(lean, paint, 0.05, 0.08, 0.12, side * (w * 0.5 + 0.1), 1.19, L * 0.5);
     }
@@ -610,9 +610,9 @@ export const IDEA_MODELS_3 = {
     // the nose: lamps, a grille, a bumper, and the front wheels in their wings
     for (const side of [-1, 1]) {
       blob(group, chrome, 0.135, 0.08, 0.05, side * bw * 0.32, 0.66, L * 0.99 + 0.04);
-      blob(group, LAMP, 0.11, 0.06, 0.05, side * bw * 0.32, 0.66, L * 0.99 + 0.05);
+      blob(group, LAMP, 0.11, 0.06, 0.05, side * bw * 0.32, 0.66, L * 0.99 + 0.056);
       box(group, AMBER, 0.1, 0.04, 0.03, side * bw * 0.32, 0.53, L * 0.99 + 0.07);
-      fender(group, paint, R + 0.08, 0.24, side * (bw / 2 + 0.07), R, L * 0.68);
+      fender(group, paint, R + 0.08, 0.249, side * (bw / 2 + 0.07), R, L * 0.68);          // (4.5 mm past the hub)
       wheel(group, R, 0.2, side * (bw / 2 + 0.07), R, L * 0.68);
     }
     box(group, trim, bw * 0.36, 0.08, 0.04, 0, 0.5, L * 0.99 + 0.08);
@@ -621,11 +621,11 @@ export const IDEA_MODELS_3 = {
     for (const side of [-1, 1]) {
       const x = side * 0.88;
       box(group, wing, 0.34, 0.08, 1.0, side * 0.75, 1.0, -L * 0.3);                     // the stub,
-      tube(group, chrome, 0.04, 1.0, x, 1.05, -L * 0.3, 'z');                             // the hinge,
+      tube(group, chrome, 0.047, 1.009, x, 1.05, -L * 0.3, 'z');                          // the hinge (its flats and ends 4.5 mm or more past the stub's and the wing's),
       const zw = -L * 0.3;
       curved(group, wing, 0.07, rounded([[zw + 0.5, 1.06], [zw + 0.34, 2.0], [zw - 0.36, 2.0], [zw - 0.5, 1.06]], 0.08), 0.02, x); // the wing, folded up, tapering to its tip
       curved(group, paint, 0.09, rounded([[zw + 0.395, 1.8], [zw + 0.355, 2.012], [zw - 0.372, 2.012], [zw - 0.41, 1.8]], 0.06), 0.02, x); // its tip in the paint,
-      box(group, trim, 0.08, 0.66, 0.03, x, 1.36, zw - 0.42).rotation.x = 0.13;          // the aileron's hinge line,
+      box(group, trim, 0.1, 0.66, 0.03, x, 1.36, zw - 0.42).rotation.x = 0.13;           // the aileron's hinge line (5 mm past the hinge and the stub),
       box(group, lettered('G-ROAD', '#1c2a44', '#eef0f2', 256, 64), 0.01, 0.18, 0.66, x + side * 0.04, 1.5, zw); // the registration
       box(group, side < 0 ? TAIL : new THREE.MeshBasicMaterial({ color: 0x2fe05a }), 0.1, 0.06, 0.1, x, 2.04, zw + 0.3); // its light
       // the main wheels under it, on a leg
@@ -722,7 +722,7 @@ export const IDEA_MODELS_3 = {
       for (const z of [L * 0.62, -L * 0.6]) wheel(group, R, 0.2, side * (w / 2 - 0.12), R, z);
     }
     box(group, chrome, w * 0.5, 0.06, 0.06, 0, 0.5, L * 0.98 + 0.13);                   // a smile of a bumper
-    box(group, lambert(0xf2d21f), 0.26, 0.08, 0.02, 0, 0.4, -L * 1.0 - 0.13).userData.plate = 'rear';           // the number plate
+    box(group, lambert(0xf2d21f), 0.26, 0.08, 0.02, 0, 0.4, -L * 1.0 - 0.137).userData.plate = 'rear';           // the number plate
     // the shell: a logarithmic spiral of a tube, banded, wound up from where it sits on the foot
     const cz = -0.4, cy = 1.4, k = 0.115, wide = 2.1, steps = 300, turns = 5 * Math.PI, points = [], radii = [], at = (th) => 1.04 * Math.exp(-k * th);
     for (let i = 0; i <= steps; i++) {
@@ -776,7 +776,7 @@ export const IDEA_MODELS_3 = {
     for (const side of [-1, 1]) {
       for (const z of [0.9, -0.9]) {                                                    // long windows down its sides, rimmed
         blob(group, chrome, 0.05, 0.2, 0.52, side * 0.705, 1.62, z);
-        blob(group, glass, 0.06, 0.15, 0.46, side * 0.705, 1.62, z);
+        blob(group, glass, 0.06, 0.15, 0.46, side * 0.708, 1.62, z);
       }
       box(group, trim, 0.02, 0.62, 0.02, side * 0.965, 0.92, 0.2);                       // a door in the bun, its shut lines,
       box(group, trim, 0.02, 0.62, 0.02, side * 0.965, 0.92, 0.9);
@@ -787,9 +787,9 @@ export const IDEA_MODELS_3 = {
       rod(group, mustard, 0.045, [xa, ya, za], [xb, ya, za + 0.34]);
     }
     for (const side of [-1, 1]) {
-      disc(group, LAMP, 0.11, 0.06, side * 0.67, 0.92, L * 0.72 + 0.17);                  // lamps in the bun's ends
+      disc(group, LAMP, 0.11, 0.06, side * 0.67, 0.92, L * 0.72 + 0.172);                 // lamps in the bun's ends
       disc(group, chrome, 0.13, 0.05, side * 0.67, 0.92, L * 0.72 + 0.16);
-      disc(group, TAIL, 0.1, 0.06, side * 0.67, 0.92, -L * 0.72 - 0.17);
+      disc(group, TAIL, 0.1, 0.06, side * 0.67, 0.92, -L * 0.72 - 0.172);
       for (const z of [L * 0.6, -L * 0.6]) wheel(group, R, 0.26, side * (w / 2 - 0.13), R, z, chrome);
     }
     box(group, lambert(0xf2d21f), 0.36, 0.12, 0.02, 0, 0.62, -L * 0.72 + 0.05 - 0.2).userData.plate = 'rear';

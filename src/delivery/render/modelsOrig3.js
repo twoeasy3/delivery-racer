@@ -532,7 +532,7 @@ export const ORIG3_MODELS = {
       prism(group, glass, 0.02, [[1.38, 1.24], [0.8, 1.8], [0.26, 1.8], [0.26, 1.24]], x);         // the front door's window,
       prism(group, glass, 0.02, [[0.12, 1.24], [0.12, 1.8], [-0.94, 1.8], [-0.94, 1.24]], x);      // the sliding door's,
       prism(group, glass, 0.02, [[-1.1, 1.24], [-1.1, 1.8], [-2.12, 1.8], [-2.2, 1.24]], x);       // and the rear quarter's
-      for (const z of [0.19, -1.02]) box(group, trim, 0.012, 0.56, 0.16, X + s * 0.004, 1.52, z); // the pillars between, blacked out
+      for (const z of [0.19, -1.02]) box(group, trim, 0.02, 0.569, 0.16, X + s * 0.0105, 1.52, z); // the pillars between, blacked out (4.5 mm proud of the glass)
       box(group, trim, 0.12, 0.03, 0.05, s * (w / 2 + 0.05), 1.28, 1.3);                      // the mirror on its arm
       box(group, trim, 0.05, 0.16, 0.2, s * (w / 2 + 0.11), 1.3, 1.3);
       // the front: a rectangular lamp each side in a chrome bezel, an indicator outboard
@@ -540,7 +540,7 @@ export const ORIG3_MODELS = {
       box(group, LAMP, 0.38, 0.18, 0.03, s * 0.66, 0.72, L + 0.012);
       box(group, AMBER, 0.16, 0.18, 0.03, s * 0.96, 0.72, L - 0.005);
       // the tail: tall lamps up the corners (tail lamp over brake lamp)
-      box(group, TAIL, 0.16, 0.22, 0.03, s * 0.9, 1.12, -L);
+      box(group, TAIL, 0.16, 0.22, 0.03, s * 0.9, 1.12, -L - 0.0045);
       box(group, BRAKE, 0.16, 0.18, 0.03, s * 0.9, 0.92, -L);
     }
     // the grille: chrome-framed, black, three chrome bars across
@@ -712,7 +712,7 @@ export const ORIG3_MODELS = {
       place(shell, s > 0 ? pod : pod.clone(), paint, s * 0.8);
       box(shell, bumper, 0.44, 0.16, 0.16, s * 0.88, 0.44, 2.42).rotation.y = s * 0.7;      // (the bumper's ends, round the corners)
     }
-    box(shell, bumper, 2.0, 0.16, 0.16, 0, 0.44, -2.52);
+    box(shell, bumper, 2.009, 0.16, 0.16, 0, 0.44, -2.52);                                 // (its ends 4.5 mm past the bed's sides)
     for (const s of [-1, 1]) {
       for (const y of [1.0, 0.74]) {
         rod(shell, chrome, 0.11, 0.04, s * 0.8, y, 2.56, 'z', 10);

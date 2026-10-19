@@ -137,7 +137,7 @@ export const addSuperKit = (model, car) => {
   };
   // the racing stripe: short lengths laid along the centreline, each on the surface and tipped to its slope
   if (kit.stripe) {
-    const step = 0.22, sw = Math.max(0.12, w * 0.14);
+    const step = 0.22, sw = Math.max(0.12, w * 0.14) + 0.005; // (+5 mm: its edges clear of a car's own stripes and trim, CHECKLIST 510)
     for (let z = -l * 0.49; z < l * 0.49; z += step) {
       const a = top(0, z), b = top(0, Math.min(l * 0.49, z + step));
       if (a === null || b === null || Math.abs(a - b) > 0.5) continue; // (a gap, or a step too steep: a windscreen's foot)
@@ -157,7 +157,7 @@ export const addSuperKit = (model, car) => {
       if (h !== null && (y === null || h < y - 0.01)) { y = h; z = l * k; }
     }
     if (y !== null) {
-      const sl = Math.max(0.3, l * 0.16), sw = Math.max(0.3, w * 0.3);
+      const sl = Math.max(0.3, l * 0.16), sw = Math.max(0.3, w * 0.3) + 0.005; // (+5 mm, as the stripe's)
       box(car.id.includes('darkvan') ? dark : stripeMat, sw, 0.12, sl, 0, y + 0.05, z);
       box(dark, sw * 0.8, 0.08, 0.04, 0, y + 0.06, z + sl / 2 + 0.01); // (the mouth)
     }
@@ -187,7 +187,7 @@ export const addSuperKit = (model, car) => {
   }
   // for a van, a bus or an off-roader: a bull bar across the nose with a pair of spot lamps on it
   if (kit.bullbar) {
-    const z = l / 2 + 0.07, nose = top(0, l * 0.46) ?? H * 0.5, y0 = Math.max(0.2, sill), y1 = Math.max(y0 + 0.3, nose + 0.06);
+    const z = l / 2 + 0.0745 /* (4.5 mm clear of a bumper face at l / 2 + 0.1) */, nose = top(0, l * 0.46) ?? H * 0.5, y0 = Math.max(0.2, sill), y1 = Math.max(y0 + 0.3, nose + 0.06);
     for (const s of [-1, 1]) box(chrome, 0.06, y1 - y0, 0.06, s * w * 0.27, (y0 + y1) / 2, z);
     for (const y of [y0 + 0.03, (y0 + y1) / 2, y1]) box(chrome, w * 0.86, 0.06, 0.06, 0, y, z);
     for (const s of [-1, 1]) {

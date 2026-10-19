@@ -204,11 +204,11 @@ export const IDEA_MODELS_10 = {
     // the wheels: small, at the corners, a white cap in each; dark wells and lips round them
     const tyreGeo = shared('fbTyre', () => new THREE.CylinderGeometry(R, R, TW, 16).rotateZ(Math.PI / 2));
     const capGeo = shared('fbCap', () => new THREE.CylinderGeometry(R * 0.6, R * 0.6, TW + 0.02, 10).rotateZ(Math.PI / 2));
-    const nutGeo = shared('fbNut', () => new THREE.CylinderGeometry(0.05, 0.05, TW + 0.035, 6).rotateZ(Math.PI / 2));
+    const nutGeo = shared('fbNut', () => new THREE.CylinderGeometry(0.05, 0.05, 0.0675, 6).rotateZ(Math.PI / 2)); // (only its outer end out of the cap: the inner one lay 2.5 mm off the well)
     for (const side of [-1, 1]) for (const z of [ZA, -ZA]) {
       place(group, tyreGeo, TYRE, side * (OUT - TW / 2), R, z);
       place(group, capGeo, WHITE, side * (OUT - TW / 2), R, z);
-      place(group, nutGeo, trim, side * (OUT - TW / 2), R, z);
+      place(group, nutGeo, trim, side * (OUT - 0.01625), R, z);
     }
     merged(group, dark, [-1, 1].flatMap(side => [ZA, -ZA].map(z => well(R + 0.06, side * (OUT - TW - 0.01), R, z))));
     // (each lip follows the flank round the arch, so it lies on the body all the way round, where the body narrows too)

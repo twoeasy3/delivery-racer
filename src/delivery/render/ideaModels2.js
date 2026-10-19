@@ -177,7 +177,7 @@ export const IDEA_MODELS_2 = {
     for (const side of [-1, 1]) {
       const x = side * (w / 2 - 0.012);
       box(group, see, 0.03, 0.55, L * 0.76, x, 1.245, -L * 0.52);                           // the compartment's side glass,
-      for (const z of [-0.28, -0.52, -0.76]) box(group, paint, 0.1, 0.55, 0.1, side * (w / 2 - 0.05), 1.245, L * z); // between pillars
+      for (const z of [-0.28, -0.52, -0.76]) box(group, paint, 0.115, 0.559, 0.1, side * (w / 2 - 0.05), 1.245, L * z); // between pillars (4.5 mm proud of the glass)
       box(group, chrome, 0.05, 0.3, 0.05, side * (w / 2 + 0.01), 1.3, -L * 0.8);            // landau bars on the back pillar
       box(group, chrome, 0.03, 0.03, L * 1.3, side * (w / 2 + 0.01), 0.99, -L * 0.2);      // a chrome strip along the waist
       box(group, chrome, 0.06, 0.04, L * 1.5, side * w * 0.42, 1.62, -L * 0.2);            // roof rails
@@ -224,7 +224,7 @@ export const IDEA_MODELS_2 = {
     rod(shell, trim, 0.03, [0, 0.8, L * 0.72], [0, 1.0, L * 0.6]);                           // their stem,
     disc(shell, LAMP, 0.1, 0.12, 0, 0.82, L * 0.76);                                         // and the lamp on the cowl
     disc(shell, chrome, 0.12, 0.06, 0, 0.82, L * 0.72);
-    fender(shell, paint, R + 0.07, 0.2, 0, R, L * 0.78);                                      // the front mudguard
+    fender(shell, paint, R + 0.07, 0.209, 0, R, L * 0.78);                                    // the front mudguard (4.5 mm past the tyre)
     wheel(group, R, 0.2, 0, R, L * 0.78);                                                    // the one front wheel,
     for (const side of [-1, 1]) rod(group, trim, 0.025, [side * 0.1, R, L * 0.78], [side * 0.08, 0.8, L * 0.7]); // on its fork
     box(shell, trim, w * 1.02, 0.07, 0.08, 0, 0.4, -L - 0.01);                               // a rear bumper bar
@@ -339,7 +339,7 @@ export const IDEA_MODELS_2 = {
       spoked(group, R * 0.9, 0.1, side * (w / 2 - 0.03), R * 0.9, L * 0.62, wood);
       fender(group, paint, 0.58, 0.16, side * (w * 0.45), R, -L * 0.62);
       fender(group, paint, 0.52, 0.16, side * (w * 0.45), R * 0.9, L * 0.62);
-      box(group, trim, 0.2, 0.04, L * 0.95, side * (w * 0.46), 0.6, 0.08 * L);              // running boards
+      box(group, trim, 0.206, 0.04, L * 0.95, side * (w * 0.46 - 0.003), 0.6, 0.08 * L);    // running boards (their inner edges clear of the wings')
       disc(group, lambert(0xe6d9a4), 0.12, 0.1, side * w * 0.3, 1.3, L * 0.86);              // brass lamps either side of the bonnet
       disc(group, brass, 0.15, 0.05, side * w * 0.3, 1.3, L * 0.82);
       tube(group, brass, 0.025, 0.4, side * w * 0.3, 1.1, L * 0.8);
@@ -358,7 +358,7 @@ export const IDEA_MODELS_2 = {
     rod(group, brass, 0.025, [0, 1.2, L * 0.3], [0, 1.45, L * 0.18]);                         // the steering column
     disc(group, wood, 0.17, 0.03, -w * 0.15, 1.46, L * 0.17).rotation.x = Math.PI / 2 - 0.6;
     box(group, paint, w * 0.7, 0.4, 0.35, 0, 1.0, -L * 0.98);                                 // the boot
-    box(group, lambert(CHROME), w * 0.86, 0.05, 0.06, 0, 0.82, -L * 0.95);                    // a bumper rail
+    box(group, lambert(CHROME), w * 0.86 + 0.009, 0.05, 0.06, 0, 0.82, -L * 0.95);            // a bumper rail (4.5 mm past the tub's sides)
     box(group, TAIL, 0.1, 0.1, 0.04, w * 0.28, 1.2, -L * 0.99 - 0.18);
     for (let i = 0; i < 3; i++) {                                                             // puffs of steam off the chimney
       const puff = blob(group, WHITE, 0.15, 0.15, 0.15, 0, 1.9, L * 0.55);
@@ -398,7 +398,7 @@ export const IDEA_MODELS_2 = {
       const x = side * (w / 2 - 0.12);
       box(group, glass, 0.03, 0.5, L * 0.26, side * (w * 0.46 + 0.012), 1.78, L * 0.38);
       headlamps(group, w, 1.25, L * 0.97 + 0.015, 0.09, 0.42);
-      fender(group, paint, 0.64, 0.4, x, R, L * 0.6);                                        // over the steering wheel
+      fender(group, paint, 0.64, 0.409, x, R, L * 0.6);                                      // over the steering wheel (4.5 mm past the hub)
       wheel(group, R, 0.36, x, R, L * 0.6, chrome);
       for (const z of [-0.44, -0.72]) {                                                    // the tandem, in duals
         wheel(group, R, 0.34, x, R, L * z, chrome);
@@ -575,7 +575,7 @@ export const IDEA_MODELS_2 = {
     for (const side of [-1, 1]) {
       const x = side * (w / 2 - 0.12);
       box(group, glass, 0.03, 0.55, L * 0.3, side * (w * 0.45 + 0.012), 2.0, L * 0.74);
-      fender(group, paint, 0.64, 0.4, x, R, L * 0.7);
+      fender(group, paint, 0.64, 0.409, x, R, L * 0.7);  // (4.5 mm past the hub)
       wheel(group, R, 0.36, x, R, L * 0.7, chrome);
       for (const z of [-0.5, -0.78]) { wheel(group, R, 0.34, x, R, L * z, chrome); wheel(group, R, 0.34, x - side * 0.4, R, L * z, chrome); }
       box(group, TAIL, 0.14, 0.2, 0.05, side * w * 0.38, 1.0, -L - 0.02);
@@ -611,7 +611,7 @@ export const IDEA_MODELS_2 = {
       box(group, steel, 0.52, 0.04, L * 0.3, side * (w / 2 - 0.02), 1.91, -L * 0.2);
       box(group, trim, 0.52, 0.5, L * 0.28, side * (w / 2 - 0.02), 1.4, -L * 0.62);
       box(group, glass, 0.03, 0.5, L * 0.22, side * (w * 0.46 + 0.012), 1.85, L * 0.38);
-      fender(group, paint, 0.58, 0.38, side * (w / 2 - 0.12), R, L * 0.7);
+      fender(group, paint, 0.58, 0.389, side * (w / 2 - 0.12), R, L * 0.7);  // (4.5 mm past the hub)
       wheel(group, R, 0.34, side * (w / 2 - 0.12), R, L * 0.7, chrome);
       for (const z of [-0.42, -0.7]) { wheel(group, R, 0.32, side * (w / 2 - 0.12), R, L * z, chrome); wheel(group, R, 0.32, side * (w / 2 - 0.52), R, L * z, chrome); }
       box(group, TAIL, 0.14, 0.2, 0.05, side * w * 0.38, 1.1, -L - 0.02);
@@ -648,7 +648,7 @@ export const IDEA_MODELS_2 = {
     for (const side of [-1, 1]) {
       const x = side * (w / 2 + 0.012);
       box(group, WHITE, 0.03, 0.85, L * 0.34, x, 1.35, L * 0.25);                             // the cab door, white
-      box(group, glass, 0.03, 0.36, L * 0.28, x + side * 0.002, 1.85, L * 0.25);
+      box(group, glass, 0.03, 0.36, L * 0.28, x + side * 0.0045, 1.85, L * 0.25);          // (4.5 mm proud of the door)
       for (const z of [-0.2, -0.6]) {                                                         // barred windows in the box
         box(group, glass, 0.03, 0.32, L * 0.26, x, 1.7, L * z);
         for (let i = 0; i < 3; i++) box(group, chrome, 0.045, 0.34, 0.03, x + side * 0.008, 1.7, L * (z - 0.08 + i * 0.08));
@@ -769,11 +769,11 @@ export const IDEA_MODELS_2 = {
       taillamps(group, w, 0.9, -L - 0.015, 0.36, [0.12, 0.08]);
       fender(group, paint, R + 0.07, 0.19, side * (w / 2 - 0.0), R, L * 0.62);               // small arches
       wheel(group, R, 0.17, side * (w / 2 - 0.02), R, L * 0.62, lambert(0x9aa0a8));
-      fender(group, paint, R + 0.07, 0.19, side * (w / 2 - 0.0), R, -L * 0.62);
+      fender(group, paint, R + 0.07, 0.199, side * (w / 2 - 0.0), R, -L * 0.62);             // (4.5 mm past the hub)
       wheel(group, R, 0.19, side * (w / 2 - 0.02), R, -L * 0.62, lambert(0x9aa0a8));
     }
     box(group, glass, w * 0.8, 0.26, 0.03, 0, 0.98, L * 0.3).rotation.x = -0.7;               // the low windscreen
-    box(group, trim, w * 0.5, 0.1, 0.03, 0, 0.58, L * 0.99);                                 // a slot of a grille
+    box(group, trim, w * 0.5, 0.1, 0.03, 0, 0.58, L * 0.99 + 0.006);                         // a slot of a grille (4.5 mm proud)
     box(group, chrome, w * 0.8, 0.05, 0.05, 0, 0.42, L + 0.02);                              // little bumpers
     box(group, chrome, w * 0.8, 0.05, 0.05, 0, 0.42, -L - 0.02);
     group.userData = { body, animate: () => {} };
@@ -795,7 +795,7 @@ export const IDEA_MODELS_2 = {
     hull(group, paint, cab1, L * 0.5, L * 0.5);                                              // the cab
     box(group, paint, w * 0.86, 0.7, L * 0.25, 0, 0.9, L * 0.875);                           // the bonnet
     box(group, glass, w * 0.6, 0.2, 0.03, 0, 1.68, L * 0.75 + 0.01);                         // the windscreen is a slit
-    for (let i = 0; i < 4; i++) box(group, chrome, 0.025, 0.2, 0.04, (i - 1.5) * w * 0.14, 1.68, L * 0.75 + 0.03); // under a grille
+    for (let i = 0; i < 4; i++) box(group, chrome, 0.025, 0.209, 0.04, (i - 1.5) * w * 0.14, 1.68, L * 0.75 + 0.03); // under a grille (4.5 mm past the slit's edges)
     box(group, plate, w * 0.9, 0.12, 0.3, 0, 0.62, L + 0.1);                                 // the bull bar's plate,
     for (const side of [-1, 1]) {
       rod(group, trim, 0.05, [side * w * 0.36, 0.55, L + 0.1], [side * w * 0.36, 1.35, L * 0.97]);
@@ -803,9 +803,9 @@ export const IDEA_MODELS_2 = {
       box(group, glass, 0.03, 0.16, L * 0.26, x - side * 0.0, 1.55, L * 0.5);                // the cab's slits
       for (const z of [0.1, -0.35, -0.8]) box(group, glass, 0.03, 0.14, L * 0.2, x, 1.45, L * z); // the ports along the box
       box(group, plate, 0.04, 0.5, 0.22, x + side * 0.01, 1.0, L * 0.45 - 0.0);               // a door handle plate
-      fender(group, paint, 0.62, 0.42, side * (w / 2 - 0.14), R, L * 0.66);
+      fender(group, paint, 0.62, 0.429, side * (w / 2 - 0.14), R, L * 0.66);  // (4.5 mm past the hub)
       wheel(group, R, 0.38, side * (w / 2 - 0.14), R, L * 0.66, plate);
-      fender(group, paint, 0.62, 0.42, side * (w / 2 - 0.14), R, -L * 0.56);
+      fender(group, paint, 0.62, 0.429, side * (w / 2 - 0.14), R, -L * 0.56);  // (4.5 mm past the hub)
       wheel(group, R, 0.38, side * (w / 2 - 0.14), R, -L * 0.56, plate);
       headlamps(group, w, 0.85, L * 0.995, 0.1, 0.36);
       box(group, TAIL, 0.14, 0.24, 0.04, side * w * 0.4, 1.2, -L - 0.02);

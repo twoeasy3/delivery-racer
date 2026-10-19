@@ -414,13 +414,13 @@ export const ORIG2_MODELS = {
     const stripes = (x0, x1, pts) => { // (a ribbon over the points [z, y], a hair above them)
       for (let i = 1; i < pts.length; i++) {
         const [za, ya] = pts[i - 1], [zb, yb] = pts[i];
-        P.add(stripe, panel([[x0, ya + 0.006, za], [x1, ya + 0.006, za], [x1, yb + 0.006, zb], [x0, yb + 0.006, zb]]));
+        P.add(stripe, panel([[x0, ya + 0.009, za], [x1, ya + 0.009, za], [x1, yb + 0.009, zb], [x0, yb + 0.009, zb]])); // (9 mm: over the bonnet's curve too)
       }
     };
     const bonnetLine = [L - 0.3, frontZ + 0.2, frontZ, frontZ - 0.25, scuttle[0] + 0.02].map(z => [z, bonnetY(z)]);
     for (const sx of [-1, 1]) {
       const x0 = sx * 0.035, x1 = sx * 0.21, [a, b] = sx > 0 ? [x0, x1] : [x1, x0];
-      stripes(a, b, [onEdge(nose[1], nose[2], round + 0.004, 0.1), onEdge(nose[1], nose[2], round + 0.004, 0.9), ...bonnetLine]); // (down the nose too)
+      stripes(a, b, [onEdge(nose[1], nose[2], round + 0.007, 0.1), onEdge(nose[1], nose[2], round + 0.007, 0.9), ...bonnetLine]); // (down the nose too)
       stripes(a, b, [[wsTop[0] - 0.03, gTop + gRound], [rwTop[0] + 0.03, gTop + gRound]]);
       stripes(a, b, [[rw[0] - 0.05, 0.83 + round], [-L + 0.26, 0.83 + round]]);
       P.add(GLASS, flankPane([[aLine(lo, 0.1), lo], [aLine(hi, 0.1), hi], [bPost + 0.03, hi], [bPost + 0.03, lo]], sx, houseHalf)); // the door glass,
@@ -432,7 +432,7 @@ export const ORIG2_MODELS = {
       P.add(paint, bx(0.07, 0.07, 0.13, sx * (houseHalf(gBase) + 0.05), gBase + 0.05, ws[0] - 0.12));
       P.add(TRIM, bx(0.04, 0.04, 0.04, sx * (houseHalf(gBase) + 0.02), gBase + 0.02, ws[0] - 0.1));
       // the nose: a slim headlamp on each corner of its slope, an intake low down
-      P.add(LAMP, edgePanel(nose[1], nose[2], round + 0.006, 0.3, 0.72, sx * 0.42, sx * 0.76));
+      P.add(LAMP, edgePanel(nose[1], nose[2], round + 0.0075, 0.3, 0.72, sx * 0.42, sx * 0.76)); // (4.5 mm proud of its dark bezel)
       P.add(TRIM, edgePanel(nose[1], nose[2], round + 0.003, 0.22, 0.8, sx * 0.38, sx * 0.79));
       P.add(textured('mesh', 0xffffff, meshGrille()), panel([[sx * 0.44, 0.29, L + round + 0.007], [sx * 0.72, 0.29, L + round + 0.007], [sx * 0.72, 0.38, L + round + 0.007], [sx * 0.44, 0.38, L + round + 0.007]]));
       // the tail: the brake lamps at the lamp bar's ends
