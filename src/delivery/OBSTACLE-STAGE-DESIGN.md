@@ -3,7 +3,9 @@
 The owner asked for "better obstacle stage design that isn't just 'random small junk on the middle of the lane in
 northbound'", using only the standard exploding obstacle. This is a draft design language with numbers, two tools that
 lay and check it, and a hidden lab level that shows every pattern: `?hidden=obstacle-lab` (not `?level=`, which takes a
-menu number). Nothing in the existing levels was changed.
+menu number). Nothing in the existing levels was changed by the draft itself. **17-Oct additions:** rule 8 now says traffic everywhere except a
+short quiet zone round each formation, rule 9 says both sides of a two-way road carry obstacles, cash is no longer laid round
+formations (§5, CASH), and two opt-in experiments were added: THREAD (§5c, barriers on the lane lines) and MOVERS (§5d).
 
 Everything below about fairness comes from **simulation**, not from play. Nobody has driven these layouts by hand.
 
@@ -113,9 +115,26 @@ At the level's DESIGN SPEED `v`: the top speed of the tier's cars, since top spe
    inside it (the dark closing in). Nothing on a boost pad's lane or within 1.5 s of its end (the car is over its top speed).
    No line of barriers closer than 4 m apart on a bend: obstacles are placed on the lane's lat and turned to the road, so they
    follow a curve without steps. A continuous wall would need continuous geometry.
-8. **Traffic:** traffic drives through obstacles, and a car parked in the gap would make a fair formation unfair. Formations
-   go where there is no traffic (a quiet zone, `quietZones` density 0, or a level without traffic like the lab). This is a
-   rule for the owner to confirm (§9).
+8. **Traffic: everywhere, except a short quiet zone round each formation** (the owner, 17-Oct: "a lively road"). Traffic
+   drives through obstacles (it slows to 0.6 of its speed as it passes through one), and a car parked in a gap would make a
+   fair formation unfair. So the road keeps its traffic, and each FORMATION (2 or more obstacles within 30 m) gets a
+   `quietZones` entry `{ from, to, density: 0 }` from **28 m before its first row to 10 m past its last**; nothing else is
+   quiet (no zone over a whole straight, no level-long quiet). A single obstacle needs no zone. Oncoming formations
+   (rule 9) get theirs too (a zone covers both ways). `obstacle-patterns.mjs <pattern> --quiet` prints the zones; the audit
+   flags `TRAFFIC` (out of place, `--strict` fails) a formation on a level with traffic that is not covered from 25 m
+   before to 7 m after. The lab, which has no traffic, is exempt.
+9. **Both sides of a two-way road carry obstacles** (the owner, 17-Oct: the oncoming side looked bare and odd). The player is
+   rarely in the oncoming lanes, but a road with nothing on one side does not look lived in, and a player who does swerve
+   over finds it as real as his own. So a two-way level lays on the oncoming lanes a plain subset of what the player's side
+   has: a gate or two, a chicane, a slalom, in the standard `barrier` (the theme's own swap is automatic), at SHIFTED positions
+   (about 60 to 80 m along, so the two sides are not a mirror image), plus a few plain cones, bales or crates where the
+   level uses that kind. The oncoming lanes are numbered 0 .. N-1 from the left (the road's far edge), the player's follow
+   (`--first` is N): `<pattern> ... --oncoming N --shift 70` lays the same pattern on the N oncoming lanes too. The audit judges the
+   oncoming side as its own side (a car in those lanes, driving the same way): a clean line from every oncoming lane, the
+   reaction time, the squeezes; a one-lane oncoming side cannot hold a wall, only a single barrier the car swings round
+   (it counts as the way round, not as off the lanes). Oncoming obstacles never sit in the player's lanes or the centre line
+   gap, so they cannot make the player's own lanes unfair. Keep them out of narrowings (they close the oncoming lanes first)
+   and 60 m clear of a tunnel mouth, the start and the drop, as on the player's side.
 
 ## 5. The pattern catalogue
 
@@ -197,7 +216,7 @@ The barriers stand on the lanes' own lat, so the formation follows the curve exa
 ```
      0   .. [##][##] ..   (three rows, 10 m apart: a block 2 lanes x 20 m)
 ```
-A block in the middle with lanes either side: commit early. Cash on one side makes it a choice of greed, not survival.
+A block in the middle with lanes either side: commit early.
 **Parameters:** `at`, `width`, `length`. **Fair:** two lanes always open. **Fits:** before a fork or exit, a split, a
 junction; on 4+ lanes.
 
@@ -216,7 +235,7 @@ camera's actual line of sight over the hill. **Fits:** hills, humpback bridges, 
      0   .. [##][##][##]  bookend in, gap 0
    120  [##][##][##] ..   +120 m, shift 7.8 m  bookend out, gap 3
 ```
-Two walls with a safe pocket between them (3 s at the speed, at least the swing). It holds a cash line that crosses it.
+Two walls with a safe pocket between them (3 s at the speed, at least the swing). It stays empty of cash (§5, CASH).
 **Parameters:** `in`, `out`, `pocket`. **Fits:** the last word of a section; near the drop (but 60 m clear of it).
 
 ### LANE-SPANNING / BETWEEN LANES (CHECKLIST 93): see §5b
@@ -225,10 +244,13 @@ through `Track.laneOffset`, but `Track.problems` refused it. Spanning lanes need
 drawn that wide". §5b does the spanning part for the barrier only, and lets a wide barrier start on a lane line. A plain
 barrier on a lane line (span 1 at lane 1.5) is still refused: it leaves each lane beside it 2.3 m, a SQUEEZE.
 
-### CASH LINES: the lure
-Cash goes ON the line the formation wants: in each gap, and between rows along the way the car takes
-(`cashLine` in the tool, one every 12 m, never within 9 m of a barrier in its lane). On an island it goes on one side only,
-the riskier one if anything. Cash never sits where the only way to it is through a barrier.
+### CASH: NOT round formations (changed 17-Oct)
+The owner's complaint: formations were surrounded with cash lines and rows. The rule now: **no cash through, beside or in
+a formation.** At most ONE small pickup (`cash5`) well clear of it (45 m past its last row, `--cash`), or none. Cash belongs
+spread along the road on its own rhythm, in pairs side by side, every 60 to 80 m, drifting from lane to lane, each pair at
+least 45 m from any obstacle (`node scripts/obstacle-patterns.mjs rhythm --from 200 --to 3400 --every 70 --lanes 3 --first 2
+--avoid 520,1400`). The old lure (`cashLine`, `--cashline`) is kept for a deliberate choice, never the default; a formation
+that wants a lure (an island: cash on one side) is the owner's call. The lab no longer ringed its patterns with cash.
 
 ## 5b. WIDE obstacles: the barrier more than a lane wide (round 2, the owner 16-Oct)
 
@@ -298,12 +320,89 @@ Fairness for all: never fully blocked (the generator refuses a row without a way
 the narrowest designed opening is 4.05 m against a 1.7 m car (2.35 m spare). A **1.5-lane block beside a lane line** leaves
 2.3 m: a squeeze, flagged; don't.
 
+## 5c. THREAD: barriers ON the lane lines (OPT-IN, an experiment, 17-Oct)
+
+The owner asked for obstacles BETWEEN lanes, so the player threads the line. **This is opt-in: no real level uses it yet, only the
+lab (`?hidden=obstacle-lab`, from 3,980 m).** It needed one change to rules code: `Track.problems` (track.js) refused any plain
+obstacle at a fractional lane ("its lane is a number, or left or right"); it now lets an obstacle stand at lane x.5 (a wide barrier
+already could), if both lanes it lies between are open there. `Track.laneOffset` already gave x.5 the right lat, and nothing else
+reads an obstacle's lane as a whole number. **The replay rules fingerprint changed** with that edit (track.js is a rules file).
+Level data is `{ s, lane: 1.5, kind: 'barrier' }`.
+
+**The geometry (measured, half widths: the 1.7 m reference car 0.85, the widest garage car 1.05; the audit adds 0.25 m of margin):**
+
+| box on the line | covers | lane centre to its edge | a car at the lane centre | car centre must be at least | room inside the lane for it | the slot beside it |
+|---|---|---|---|---|---|---|
+| **barrier**, 2.4 m wide (hw 1.2) | 1.2 m each side | 0.55 m | hits it by 0.30 m (0.85) / 0.50 m (1.05) | 2.05 m (0.85) / 2.25 m (1.05) from the line | 0.6 m wide for the 0.85 car, **0.2 m for the widest**, none with the 0.25 m margin | the neighbouring lanes' free width: 5.8 m beside the middle line of 4 lanes |
+| **crate**, 1.2 m wide (hw 0.6) | 0.6 m each side | 1.15 m | clear by 0.30 m (0.85) / 0.10 m (1.05) | 1.45 m / 1.65 m | 1.2 m / 0.8 m: **the lane centre is clear** | 2.9 m on a 2-lane side |
+
+So **the standard barrier is too wide for a true thread**: it leaves no lane-centre path in the lane beside it (the car must sit 0.3 m
+off its lane centre, towards the far line, and the widest car has 0.2 m to do it in). What it does is a LINE-BLOCKER: the lanes
+beside the line are narrowed to a nudge, and the way past is the outer lanes. Use it only where every opening in the row is a wall
+(under 1.2 m) or a slot of 2.7 m or more for the widest car (2 x 1.05 + 0.6): on a 4-lane side that is the middle line only (any other
+line leaves 2.3 m between the barrier and the lanes' edge: not a squeeze, because the shoulder runs on beside it, but not a slot
+either). The generator refuses a row without a 2.7 m slot and a squeeze between two boxes. The crate (`--linekind crate`) is the
+narrower plain kind of the design doc that does thread a lane centre; it is the one the lab shows for it. Its cost (31, keeps 0.75) is
+not the barrier's, and the owner's "no generic crates" holds for a real level: the theme's own swap is automatic.
+
+```
+ thread            threadrun (0.5, 1.5, 2.5, 1.5, 0.5)       threadgate (gap 1)
+   ..  ..##..  ..     ..##..  ..  ..                          [##] ..##.. [##]
+                       ..  ..##..  ..   (30 m a row)           slots 2.85 m each
+                       ..  ..  ..##..
+```
+- **`thread`** (`--line 1.5`): ONE barrier on a lane line. Fair at 40 m/s: 5.8 m slots both sides on 4 lanes; seen 150 m.
+- **`threadrun`**: a run stepping along the lines (default 0.5, 1.5, 2.5, 1.5, 0.5 on 4 lanes), 30 m a row (a nudge asks 0.33 s: 13 m
+  at 40 m/s, so 30 m is the readable spacing, not the needed one). Each row is a nudge, never a lane change; the audit finds a line from
+  every lane for all of it.
+- **`threadgate`**: a gate whose gap is TWO lanes with a barrier on the line between them (barriers on the other lanes): the gap splits
+  into two slots of 2.85 m, each fits the widest car with 0.375 m a side. The line-blocker mixed into a gate.
+
+**The audit** (obstacle-audit.mjs): a barrier on a line is a deliberate thread, never "off lane" (it counts in `threads:`); the
+squeeze rule skips the strip between a line barrier and the lanes' edge; every row with a line barrier must keep a slot for the widest
+car (flag `NO_WIDE_PATH`, unfair), the narrowest such slot is printed on the group (`thread slot 5.80 m (widest car needs 2.70)`), and the
+usual simulation (real steering, yawed car, 0.25 m margin, 0.75 s reaction) still proves a clean line from every lane. Picture:
+`node scripts/obstacle-picture.mjs <dir>` draws each pattern top-down.
+
+**Not verified:** nobody has driven a thread by hand; the barrier model on a line (the theme swap on a line, the blast beside a lane's
+neighbour) is only seen in a still; the half-lane edit in the level editor's lane picker (it already offers halves for pickups).
+
+## 5d. MOVERS: what can move, from the level's data (OPT-IN, 17-Oct)
+
+**Found by reading the code** (no rules code was added for this): the game has **no obstacle that moves on a timer the level sets.**
+What a level's JSON can move: `drifters` (obstacles of a kind that sweep, circle, zigzag or figure-eight about a stretch,
+collision.js `driftTo`), `tractors` (slow traffic), `herds` (cows, kangaroos), `crossings` (a train), `trolleys`, `wideLoads`,
+`marathons`, `balloons`, `stampedes`, `rockfall`. The pattern vocabulary covers the two a formation can be built from and an audit
+can judge; the rest are gimmicks with their own rules.
+
+- **A drifter's clock is not the level's to set.** Its phase and pace come from a seeded sequence (`driftDraws` in the patterns file repeats
+  it: the first drifter of a level has pace 0.85 and phase 3.43, the second pace 0.96...), and it runs on the LEVEL'S time from the start,
+  so where it is when a player arrives depends on how fast that player drove there. Nothing in the data places it in time.
+- **A tractor** is parked where the level puts it until the player is within `CONFIG.spawnMax` (640 m), then goes 7 m/s in its lane. A
+  car at 40 m/s meets it 7 x 640 / 33 = 136 m on from where it stood; `meetShift`. It takes a car from the traffic pool.
+
+**What new engine support a TIMED crossing would need** (not built): an obstacle entry with a path and a period it keeps by the level
+clock from the player's own position (like a `crossings` train, which is set off by the player's approach), or a drifter with a
+`phase` / `period` and a trigger distance.
+
+| pattern | what | window |
+|---|---|---|
+| **`sweeper`** | a barrier (a drifter, pattern sweep) crossing the road edge to edge, `--count 2` a pair | at 40 m/s a crossing takes 3 s; per lane the clear windows are printed by `sweeper ... --meta` (inner lanes 83% clear in windows of 2.1 to 3.8 s at pace 0.85; the edge lanes are clear in windows of 0.3 s up to 4.5 s) against the lane change 0.68 s + 0.5 s margin |
+| **`rollgate`** | tractors abreast in all lanes but one: a moving wall with a fixed gap | closing at 33 m/s: 150 m of sight is 4.5 s against the 2.46 s a two-lane move and its reaction need |
+
+**The audit judges them**: a sweeper over a whole cycle of arrival phases (16 samples 0.6 s apart: the arrival time is not known) and wants
+a clean line from every lane for EVERY phase with 0.75 s to spare; a tractor where the car would meet it, closing at speed minus 7.
+A phase with no line, or less than REACT, is `NO_LINE` / `NO_REACTION` (unfair, `--strict` fails). It is an oracle driver: it knows the
+sweeper's path in advance, a person has to read it. Not simulated: the sweeper's wobble beyond what `driftAt` copies, traffic round a
+tractor, the tractor being held up. Opt-in; a quiet zone covers each (rule 8). In the lab from 4,800 m; in `apron-run` (a rollgate
+of tugs at 2,000 m) and `neon-grid` (a sweeping holo barrier at 1,930 m).
+
 ## 6. Rhythm: how a level uses them
 
 A level has ONE idea; formations are its vocabulary, not a second idea. Call and response:
 1. **Call:** a single GATE (one decision), after at least 150 m of open road from the start.
 2. **Response:** a two-row formation (ZIPPER or a short GATE RUN).
-3. **Breather:** at least 3 s (120 m at 40 m/s), cash in rows.
+3. **Breather:** at least 3 s (120 m at 40 m/s); cash in pairs on its own rhythm, 45 m clear of the formation.
 4. **Bigger set:** a GATE RUN or a CHICANE on the level's bend.
 5. **Breather, then a guide:** DIAGONAL into a TAPER where the road narrows.
 6. **Feature:** the formation that belongs to the level's geography (BLIND CREST on its hill, CHICANE on its bend).
@@ -322,11 +421,16 @@ formations, about 10 to 15 barriers per km, plus its themed singles.
 
 ## 7. The tools
 
-- `node scripts/obstacle-patterns.mjs list`: the patterns and their parameters.
+- `node scripts/obstacle-patterns.mjs list`: the patterns (and the opt-in thread and mover patterns) and their parameters.
+- `node scripts/obstacle-picture.mjs <dir> [names]`: top-down pictures (SVG, then PNG by headless Chromium) of the thread and mover patterns.
 - `node scripts/obstacle-patterns.mjs kinematics [--speed V] [--agility A]`: the lane-change table above.
 - `node scripts/obstacle-patterns.mjs gate --lanes 4 --s 500 --gap 2 [--first 2] [--speed 40] [--meta] [--cash]`: the level
   JSON obstacle entries (`{ s, lane, kind: 'barrier' }`). `--first` is the level's lane number of the player's leftmost lane
-  (2 on a two-way 4-lane road). `--meta` prints the diagram; `--cash` adds a cash line.
+  (2 on a two-way 4-lane road). `--meta` prints the diagram; `--cash` adds ONE small pickup 45 m clear (not a line; `--cashline`
+  is the old lure); `--oncoming N [--shift 70]` also lays it on the N oncoming lanes (rule 9); `--quiet` adds the `quietZones`
+  it wants (rule 8, 28 m before to 10 m after); `--linekind crate` for the thread patterns (§5c).
+- `node scripts/obstacle-patterns.mjs rhythm --from 200 --to 3400 --every 70 --lanes 3 --first 2 [--avoid s,s]`: sparse cash pairs
+  along the road, 45 m clear of the `avoid` positions.
 - `node scripts/obstacle-patterns.mjs lab [--meta]`: the lab level's obstacles and pickups (`LAB` in the file).
 - The wide patterns (`wall`, `wideisland`, `halfstep`, `zigzag`, `widechicane`) write `{ s, lane, kind: 'barrier', span }`
   entries. `--meta` shows each row's open widths in metres; the generator refuses a row with no way through for the widest
@@ -351,7 +455,7 @@ tunnel, 0.3 m: its walls). The cap is 150 m (120 m in a tunnel, 60 m in fog).
 
 1. **Expressway (level 1, the tutorial).** Today it has 5 single barriers 300 to 400 m apart. Re-lay as: a GATE at 350
    (gap lane 3), a ZIPPER at 750 (one barrier a row on its 2 northbound lanes: the line straddle taught), and a GATE at 1400
-   (gap lane 2), plus a cash line through each. It stays easy and starts teaching walls and the thread.
+   (gap lane 2). It stays easy and starts teaching walls and the thread.
 2. **Steelworks Run** (4 lanes two-way: only 2 northbound, so no real lane-change formations without the shoulder or
    between-lane placement). Keep its themed singles but group them. ZIPPERS of `ingotStack` (the theme's crate) at the yard,
    a BLIND CREST-style lead-in before each hall's tunnel mouth (60 m outside, never in the mouth), and a GATE pair through the
@@ -375,8 +479,7 @@ plays it.
    line goes round them on the shoulder.
 4. **Theme swaps:** may formations use the theme's barrier swap (`rebarBundle`, `velvetRope`, `snowBlock`, `barrierBlock`)?
    It is the same box and cost, and "obstacles fit the level" says yes. And on themes without one, is a plain barrier right?
-5. **Traffic in formations:** quiet zones over every formation, or traffic that avoids barrier lanes (traffic.js would need
-   to read the obstacles: a logic change)?
+5. **Traffic in formations:** ANSWERED 17-Oct (rule 8): traffic everywhere, a quiet zone only from 28 m before a formation to 10 m after it.
 6. **Sizes:** is a 2.4 m barrier (two make a wall) the right standard, or should a formation kind be a full lane wide
    (3.5 m, its own model) so a wall has no seams?
 7. **How many per level:** 3 to 6 formations (10 to 15 barriers per km) as proposed?

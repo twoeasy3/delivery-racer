@@ -13,7 +13,7 @@
 // cone costs 3 health, it is not a wall). Fairness is BY SIMULATION, not by feel: no one has played these numbers.
 import { readFileSync } from 'node:fs';
 import { boot } from './delivery-headless.mjs';
-import { stepLateral, yawFor, REACT, laneChange } from './obstacle-patterns.mjs';
+import { stepLateral, yawFor, REACT, laneChange, driftDraws, driftAt, meetShift } from './obstacle-patterns.mjs';
 
 const args = process.argv.slice(2);
 const opt = (name, fallback) => { const i = args.indexOf('--' + name); return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : fallback; };
@@ -67,15 +67,38 @@ const audit = (level) => {
     if (o.road === 'side') { skipped.side++; continue; }
     if (o.drift) { skipped.drift++; continue; }
     if (K[kind]?.light) { skipped.light++; continue; }
-    const s = T.place(o), [first, last] = T.laneRange(1, s), span = o.span > 1 ? o.span : 1;
+    const s = T.place(o), [pfirst, plast] = T.laneRange(1, s), span = o.span > 1 ? o.span : 1;
+    const onLine = typeof o.lane === 'number' && !Number.isInteger(o.lane) && span === 1; // a barrier ON a lane line (x.5): a deliberate THREAD, never "off lane" (design doc 5c)
     const lat = span > 1 ? T.spanOffset(o.lane, span, s) : T.laneOffset(o.lane, s); // (a wide barrier: Collision.loadLevel's own sums)
     const [hw0, hl, height] = size[span > 1 ? 'barrier' : kind], hw = hw0 + (span - 1) * LW / 2;
-    const where = o.lane === 'left' || o.lane === 'right' ? 'shoulder' : o.lane < first ? 'oncoming' : o.lane > last ? 'beyond' : 'lane';
-    items.push({ s, lat, hw, hl, height, kind, span, lane: o.lane, rel: where === 'lane' ? o.lane - first : null, lanes: last - first + 1, where, first, last });
+    const where = o.lane === 'left' || o.lane === 'right' ? 'shoulder' : Math.ceil(o.lane) < pfirst ? 'oncoming' : Math.floor(o.lane) > plast ? 'beyond' : 'lane';
+    // (an oncoming-lane obstacle is judged for a player who ends up there, driving the same way in the oncoming lanes: its own range)
+    const [first, last] = where === 'oncoming' ? T.laneRange(-1, s) : [pfirst, plast];
+    items.push({ s, lat, hw, hl, height, kind, span, lane: o.lane, rel: where === 'lane' ? o.lane - first : null, lanes: last - first + 1, where, first, last, onLine, side: where === 'oncoming' ? -1 : 1 });
+  }
+  // ---- MOVERS (design doc 5d): the level's sweeping drifters and its tractors, judged over what the car might meet ----
+  // a sweeper's clock is the level's own and the car's arrival time is not known: the audit samples a whole cycle of phases (THETAS) and wants a
+  // line for every one. A tractor sets off when the player is CONFIG.spawnMax away and goes 7 m/s: it is taken where the car would meet it
+  // at the design speed (`meetShift`), as a box moving with the traffic's speed (closing at speed - 7).
+  const movers = [];
+  const D = CONFIG.drifters;
+  for (const d of driftDraws((L.drifters || []).map(z => ({ ...z, kind: z.kind || 'cone' })))) {
+    if (d.dart || !['sweep', 'circle', 'figure8'].includes(d.pattern)) continue;
+    const kind = d.zone.kind || 'cone'; if (K[kind]?.light || !size[kind]) continue;
+    const [pf, pl] = T.laneRange(1, d.centre), [hw, hl, height] = size[kind];
+    const it = { s: d.centre, lat: 0, hw, hl, height, kind, span: 1, lane: 'sweep', rel: null, lanes: pl - pf + 1, where: 'lane', first: pf, last: pl, onLine: false, side: 1, mover: d };
+    items.push(it); movers.push(it);
+  }
+  for (const t of L.tractors || []) {
+    if (t.road === 'side') continue;
+    const s0 = T.place(t), [pf, pl] = T.laneRange(1, s0); if (t.lane < pf || t.lane > pl) continue; // (an oncoming tractor comes at the player: not judged)
+    const s = s0 + meetShift(SPEED), v = CONFIG.vehicles.tractor;
+    const it = { s, lat: T.laneOffset(t.lane, s), hw: v.hw, hl: v.hl, height: v.height, kind: 'tractor', span: 1, lane: t.lane, rel: t.lane - pf, lanes: pl - pf + 1, where: 'lane', first: pf, last: pl, onLine: false, side: 1, vs: CONFIG.tractorSpeed };
+    items.push(it); movers.push(it);
   }
   items.sort((a, b) => a.s - b.s);
   // ---- the evidence ----
-  const inLanes = items.filter(o => o.where === 'lane');
+  const inLanes = items.filter(o => o.where === 'lane' && !o.mover && !o.vs);
   const widerThanLane = items.filter(o => 2 * o.hw > LW).length, widest = items.reduce((m, o) => Math.max(m, 2 * o.hw), 0);
   const byRel = {}, kinds = {};
   for (const o of items) kinds[o.kind] = (kinds[o.kind] || 0) + 1;
@@ -119,15 +142,21 @@ const audit = (level) => {
   // none, full right each step, every line kept); the car's speed min(speed, the bend's corner speed). Survives = a clean line.
   // mode: where the line may go: 'lanes' (the player's own lanes), 'shoulder' (and the shoulders of the player's side), 'road'
   // (anywhere on the pavement: the oncoming lanes too)
-  const through = (group, s0, hold, speed, startLane, mode = 'lanes') => {
+  const throughOne = (group, s0, hold, speed, startLane, mode = 'lanes', dir = 1, theta = 0) => {
     const obs = group.obs, sEnd = obs[obs.length - 1].s + obs[obs.length - 1].hl + CAR.hl + 1;
     let s = s0, st = { lat: T.laneOffset(startLane, s0), latVel: 0, yaw: 0 }, t = 0;
     const assist = () => T.laneOffset(startLane, s);
-    const hit = (s, lat, yaw) => { for (const o of obs) if (Math.abs(o.s - s) < o.hl + CAR.hl + 0.5 && overlap({ s, lat, hw: CAR.hw + MARGIN, hl: CAR.hl, yaw }, o)) return true; return false; };
+    // (a mover is where it is when the car is at s: a sweeper by the level's clock theta + (s - its centre) / speed, a tractor by 7 m/s from the meeting point)
+    const place = (o, s) => {
+      if (o.mover) { const t = theta + (s - o.s) / speed, a = driftAt(o.mover, t), lo = T.lo(o.s) + o.hl, hi = T.hi(o.s) - o.hl; return { s: o.s + a.ds, lat: (lo + hi) / 2 + Math.max(-1, Math.min(1, a.across)) * (hi - lo) / 2 * D.across, hw: o.hw, hl: o.hl }; }
+      if (o.vs) return { s: o.s + o.vs * (s - o.s) / speed, lat: o.lat, hw: o.hw, hl: o.hl };
+      return o;
+    };
+    const hit = (s, lat, yaw) => { for (const o of obs) { const q = place(o, s); if (Math.abs(q.s - s) < q.hl + CAR.hl + 0.5 && overlap({ s, lat, hw: CAR.hw + MARGIN, hl: CAR.hl, yaw }, q)) return true; } return false; };
     const bounds = (s) => {
-      const [f, l] = T.laneRange(1, s), lo = T.laneOffset(f, s) - LW / 2, hi = T.laneOffset(l, s) + LW / 2;
+      const [f, l] = T.laneRange(dir, s), lo = T.laneOffset(f, s) - LW / 2, hi = T.laneOffset(l, s) + LW / 2;
       if (mode === 'lanes') return [lo, hi];
-      if (mode === 'shoulder') return [twoWay ? lo : T.lo(s) + CAR.hw, T.hi(s) - CAR.hw];
+      if (mode === 'shoulder') return dir < 0 ? [T.lo(s) + CAR.hw, twoWay ? hi : T.hi(s) - CAR.hw] : [twoWay ? lo : T.lo(s) + CAR.hw, T.hi(s) - CAR.hw];
       return [T.lo(s) + CAR.hw, T.hi(s) - CAR.hw];
     };
     const v = (s) => Math.min(speed, cornerSpeed(s, 1, CAR.agility));
@@ -156,18 +185,29 @@ const audit = (level) => {
   };
   // groups: obstacles in the player's lanes (and shoulders) with less than BREATH s between them at the speed: what is that close
   // is driven, and planned, as one
-  const groupsAt = (speed) => {
+  const groupsAt = (speed, side = 1) => {
     const out = [];
-    for (const o of items.filter(o => o.where !== 'beyond')) {
+    for (const o of items.filter(o => o.where !== 'beyond' && o.side === side)) {
       const last = out[out.length - 1];
       if (last && o.s - last.obs[last.obs.length - 1].s < speed * BREATH) last.obs.push(o); else out.push({ obs: [o] });
     }
     return out;
   };
+  const quiet0 = (L.quietZones || []).filter(z => z.density <= 0.05).sort((a, b) => a.from - b.from); // (the zones with no traffic)
+  const quietOver = (a, b) => { let at = a; for (const z of quiet0) if (z.from <= at && z.to > at) at = z.to; return at >= b; };
+  const hasTraffic = ((L.trafficCount ?? CONFIG.trafficCount) + (L.oncomingCount ?? CONFIG.oncomingCount)) > 0 && !(L.traffic && !Object.keys(L.traffic).length);
+  const THETAS = [...Array(16).keys()].map(i => i * 0.6); // s: arrival phases sampled for a sweeper (its cycle is 3 to 8 s)
   const judge = (speed, detail) => {
-    const groups = groupsAt(speed), rows = [];
+    const rows = [];
+    for (const side of [1, -1]) rows.push(...judgeSide(speed, detail, side));
+    return rows.sort((a, b) => a.from - b.from);
+  };
+  const judgeSide = (speed, detail, side) => {
+    const groups = groupsAt(speed, side), rows = [];
     let prevEnd = -Infinity;
     for (const gr of groups) {
+      const thetas = gr.obs.some(o => o.mover && o.mover.pattern) ? THETAS : [0];
+      const through = (group, s0, hold, spd, k, m, sd) => thetas.every(th => throughOne(group, s0, hold, spd, k, m, sd, th));
       const firstObs = gr.obs[0], sight = sightOf(firstObs);
       // the player comes on it when it comes into sight, or as it clears the group before (whichever is later)
       const sSee = firstObs.s - sight.sight, chained = prevEnd + 2 > sSee, s0 = chained ? prevEnd + 2 : sSee;
@@ -175,32 +215,38 @@ const audit = (level) => {
       // the latest the player can start steering, from s0 (s), for the worst lane: bisection
       const window = Math.max(0, (firstObs.s - firstObs.hl - CAR.hl - s0) / speed);
       let worst = Infinity, worstLane = null, noLine = [], mode = null;
-      for (const m of ['lanes', 'shoulder', 'road']) if (lanes.every(k => through(gr, s0, 0, speed, k, m))) { mode = m; break; }
-      if (!mode) { mode = 'road'; for (const k of lanes) if (!through(gr, s0, 0, speed, k, mode)) noLine.push(k); worst = -1; worstLane = noLine[0]; }
+      for (const m of ['lanes', 'shoulder', 'road']) if (lanes.every(k => through(gr, s0, 0, speed, k, m, side))) { mode = m; break; }
+      if (!mode) { mode = 'road'; for (const k of lanes) if (!through(gr, s0, 0, speed, k, mode, side)) noLine.push(k); worst = -1; worstLane = noLine[0]; }
       else for (const k of lanes) {
-        if (through(gr, s0, window, speed, k, mode)) { if (window < worst) { worst = window; worstLane = k; } continue; }
+        if (through(gr, s0, window, speed, k, mode, side)) { if (window < worst) { worst = window; worstLane = k; } continue; }
         let a = 0, b = window;
-        for (let i = 0; i < 7; i++) { const m = (a + b) / 2; if (through(gr, s0, m, speed, k, mode)) a = m; else b = m; }
+        for (let i = 0; i < 7; i++) { const m = (a + b) / 2; if (through(gr, s0, m, speed, k, mode, side)) a = m; else b = m; }
         if (a < worst) { worst = a; worstLane = k; }
       }
-      const flags = [];
+      const flags = []; let threadWidth = Infinity;
       // (a group in sight before the one ahead of it was passed: the player has been looking at it since, while driving that one)
       const seenFor = chained ? Math.max(0, (s0 - sSee) / speed) : 0;
       if (noLine.length) flags.push('NO_LINE from lane ' + noLine.join(','));
       else if (worst + seenFor < REACT) flags.push('NO_REACTION ' + (worst + seenFor).toFixed(2) + ' s (lane ' + worstLane + ')');
-      if (mode === 'shoulder' && !noLine.length) flags.push('OFF_LANES: the only way past is the shoulder');
-      if (mode === 'road' && !noLine.length) flags.push('OFF_LANES: the only way past is the oncoming side');
+      const oneLane = side < 0 && lanes.length === 1; // (a one-lane oncoming side: a barrier is passed by swinging out over the centre line, that is its line, not an escape)
+      if (mode === 'shoulder' && !noLine.length && !oneLane) flags.push('OFF_LANES: the only way past is the shoulder');
+      if (mode === 'road' && !noLine.length && !oneLane) flags.push(side < 0 ? 'OFF_LANES: the only way past is the player\'s side' : 'OFF_LANES: the only way past is the oncoming side');
       // a row's gaps: a gap a car would try that is narrower than the widest car, or every lane shut
       const rowsOf = []; for (const o of gr.obs) { const r = rowsOf.find(r => Math.abs(r.s - o.s) < 3); if (r) r.obs.push(o); else rowsOf.push({ s: o.s, obs: [o] }); }
       for (const r of rowsOf) {
         const [lo, hi] = [T.laneOffset(firstObs.first, r.s) - LW / 2, T.laneOffset(firstObs.last, r.s) + LW / 2];
-        const spans = r.obs.filter(o => o.where !== 'shoulder').map(o => [o.lat - o.hw, o.lat + o.hw]).sort((a, b) => a[0] - b[0]);
-        let at = lo, open = 0;
-        for (const [a, b] of [...spans, [hi, hi]]) {
-          const gap = a - at;
-          if (gap >= WALL_GAP && gap < 2 * 1.05 + 0.6) flags.push('SQUEEZE ' + gap.toFixed(1) + ' m at ' + Math.round(r.s));
+        const spans = r.obs.filter(o => o.where !== 'shoulder').map(o => [o.lat - o.hw, o.lat + o.hw, o.onLine]).sort((a, b) => a[0] - b[0]);
+        let at = lo, open = 0, widest = 0;
+        for (const [i, [a, b]] of [...spans, [hi, hi]].entries()) {
+          const gap = a - at, edgeStrip = (i === 0 && spans[0]?.[2]) || (i === spans.length && spans[i - 1]?.[2] && spans[i - 1][1] >= at - 0.01); // (a strip between a LINE barrier and the lanes' edge: the shoulder runs on beside it, not a squeeze)
+          if (gap >= WALL_GAP && gap < 2 * 1.05 + 0.6 && !edgeStrip) flags.push('SQUEEZE ' + gap.toFixed(1) + ' m at ' + Math.round(r.s));
           if (gap >= 2 * CAR.hw + 0.4) open++;
+          widest = Math.max(widest, gap);
           at = Math.max(at, b);
+        }
+        if (spans.some(x => x[2])) { // a row with a line barrier: a slot that fits the WIDEST car (2 x 1.05 + 0.6 m) must exist, and it is measured
+          threadWidth = Math.min(threadWidth, widest);
+          if (widest < 2 * 1.05 + 0.6) flags.push('NO_WIDE_PATH ' + widest.toFixed(2) + ' m at ' + Math.round(r.s));
         }
         if (!open && T.hi(r.s) - hi < 2 * CAR.hw + 0.4 && (twoWay ? true : lo - T.lo(r.s) < 2 * CAR.hw + 0.4) && mode !== 'road') flags.push('ALL_BLOCKED at ' + Math.round(r.s));
       }
@@ -213,9 +259,15 @@ const audit = (level) => {
         const twin = gr.obs.find(q => q !== o && q.lane === o.lane && q.s > o.s && q.s - o.s < 4);
         if (twin && Math.abs(T.bend(o.s)) > 0.004) flags.push('JAGGED line on a bend at ' + Math.round(o.s));
       }
-      const unfair = flags.some(f => /^(NO_LINE|NO_REACTION|ALL_BLOCKED)/.test(f));
-      const misplaced = flags.some(f => /^(START|AT_DROP|TUNNEL_MOUTH|PAD|JAGGED|SQUEEZE)/.test(f)), forced = flags.some(f => /^OFF_LANES/.test(f));
-      rows.push({ from: Math.round(firstObs.s), to: Math.round(gr.obs[gr.obs.length - 1].s), n: gr.obs.length, sight: sight.sight, cap: sight.cap, chained, react: worst, worstLane, mode, flags: [...new Set(flags)], unfair, misplaced, forced });
+      // rule 8: traffic everywhere except a short quiet zone round a formation (28 m before its first row to 10 m past its last: allowed 3 m short)
+      if (hasTraffic) for (let i = 0; i < gr.obs.length;) {
+        let j = i; while (j + 1 < gr.obs.length && gr.obs[j + 1].s - gr.obs[j].s <= 30) j++;
+        if (j > i && !quietOver(gr.obs[i].s - 25, gr.obs[j].s + 7)) flags.push('TRAFFIC: no quiet zone round the formation at ' + Math.round(gr.obs[i].s) + '-' + Math.round(gr.obs[j].s) + ' (28 m before to 10 m after)');
+        i = j + 1;
+      }
+      const unfair = flags.some(f => /^(NO_LINE|NO_REACTION|ALL_BLOCKED|NO_WIDE_PATH)/.test(f));
+      const misplaced = flags.some(f => /^(START|AT_DROP|TUNNEL_MOUTH|PAD|JAGGED|SQUEEZE|TRAFFIC)/.test(f)), forced = flags.some(f => /^OFF_LANES/.test(f));
+      rows.push({ movers: gr.obs.filter(o => o.mover || o.vs).length, side, threadWidth: threadWidth === Infinity ? null : threadWidth, from: Math.round(firstObs.s), to: Math.round(gr.obs[gr.obs.length - 1].s), n: gr.obs.length, sight: sight.sight, cap: sight.cap, chained, react: worst, worstLane, mode, flags: [...new Set(flags)], unfair, misplaced, forced });
       prevEnd = gr.obs[gr.obs.length - 1].s + gr.obs[gr.obs.length - 1].hl;
       if (detail) {
         const pic = rowsOf.map(r => String(Math.round(r.s)).padStart(6) + '  ' + lanes.map(k => { // (a lane whose centre a box covers, or only part of it)
@@ -240,7 +292,7 @@ const audit = (level) => {
   return {
     id: L.id, length: Math.round(length), lanes: T.laneCount, twoWay, count: items.length, total: (L.obstacles || []).length, perKm: items.length / (length / 1000), kinds, byRel,
     inLanes: inLanes.length, innerShare: inLanes.length ? inner / inLanes.length : 0, shoulders: items.filter(o => o.where === 'shoulder').length,
-    oncoming: items.filter(o => o.where === 'oncoming').length, singles, formations, medianGap: gaps.length ? gaps[Math.floor(gaps.length / 2)] : null,
+    oncoming: items.filter(o => o.where === 'oncoming').length, movers: movers.map(m => m.mover ? 'sweeper' : 'tractor'), onLine: items.filter(o => o.onLine).length, singles, formations, medianGap: gaps.length ? gaps[Math.floor(gaps.length / 2)] : null,
     minGap: gaps[0] ?? null, skipped, rows, fairUpTo, widerThanLane, widest,
   };
 };
@@ -252,12 +304,14 @@ const report = (r) => {
     `${r.skipped.light ? '; ' + r.skipped.light + ' light ones not judged' : ''}; widest ${r.widest.toFixed(1)} m, ${r.widerThanLane} wider than a lane)`);
   console.log(`  across: ${r.inLanes} in the player's lanes (${Object.entries(r.byRel).sort().map(([k, n]) => 'lane ' + k + ': ' + n).join(', ')}), ${r.shoulders} on shoulders, ${r.oncoming} in oncoming lanes; ` +
     `${pct(r.innerShare)} in the ${r.twoWay ? 'lane by the centre line' : 'middle lanes'}`);
+  if (r.movers.length) console.log(`  movers: ${r.movers.filter(x => x === 'sweeper').length} sweeping, ${r.movers.filter(x => x === 'tractor').length} tractors (a sweeper is judged over its whole cycle of phases, a tractor where the car meets it, closing at speed - ${CONFIG.tractorSpeed})`);
+  if (r.onLine) console.log(`  threads: ${r.onLine} barriers ON lane lines (deliberate, not off-lane); every row with one keeps a slot for the widest car, and a clean line is simulated from every lane`);
   console.log(`  layout: ${r.singles} of ${r.count} alone (no other within 30 m: ${pct(r.count ? r.singles / r.count : 0)}), ${r.formations} formations (2+ within 30 m), gap median ${r.medianGap ?? '-'} m, least ${r.minGap ?? '-'} m`);
   console.log(`  at ${SPEED} m/s (${carId}): ${r.rows.length} groups, ${unfair.length} unfair (no line / under ${REACT} s to react / all blocked), ${forced.length} passable only off the lanes, ${misplaced.length} out of place, ${sightLimited.length} seen late (crest or bend)` +
     (r.fairUpTo !== null ? `; every group fair in the lanes up to ${r.fairUpTo} m/s` : ''));
   for (const x of r.rows) {
     if (!VERBOSE && !x.unfair && !x.misplaced && !x.forced) continue;
-    console.log(`    ${String(x.from).padStart(5)}${x.to !== x.from ? '-' + x.to : ''}: ${x.n} obstacle${x.n > 1 ? 's' : ''}, seen ${x.sight} m${x.chained ? ' (straight after the group before)' : ''}, latest steer ${x.react < 0 ? 'none' : x.react.toFixed(2) + ' s'} ${x.flags.join('; ')}`);
+    console.log(`    ${String(x.from).padStart(5)}${x.to !== x.from ? '-' + x.to : ''}${x.side < 0 ? ' (oncoming side)' : ''}: ${x.n} obstacle${x.n > 1 ? 's' : ''}${x.movers ? ', ' + x.movers + ' moving' : ''}${x.threadWidth !== null && x.threadWidth !== undefined ? ', thread slot ' + x.threadWidth.toFixed(2) + ' m (widest car needs 2.70)' : ''}, seen ${x.sight} m${x.chained ? ' (straight after the group before)' : ''}, latest steer ${x.react < 0 ? 'none' : x.react.toFixed(2) + ' s'} ${x.flags.join('; ')}`);
     if (x.pic) for (const line of x.pic) console.log('      ' + line);
   }
 };
