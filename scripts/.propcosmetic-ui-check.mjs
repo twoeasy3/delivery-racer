@@ -53,11 +53,11 @@ try {
 
   // ---- the registry and the screen ----
   const keys = SLOTS.flatMap(s => PM.PROPS[s].map(p => s + ':' + p.id));
-  check(keys.length === 52 && keys.every(k => cosmeticKeys().includes(k)) && COSMETICS.filter(c => SLOTS.includes(c.slot)).every(c => c.earned && !c.free && 'price' in c), 'the registry holds all 52 props (15 roof, 16 cargo, 21 wing) as roof:<id> / cargo:<id> / wing:<id>, earned (CHECKLIST 433)');
+  check(keys.length === 64 && keys.every(k => cosmeticKeys().includes(k)) && COSMETICS.filter(c => SLOTS.includes(c.slot)).every(c => c.earned && !c.free && 'price' in c), 'the registry holds all 64 props (27 roof, 16 cargo, 21 wing) as roof:<id> / cargo:<id> / wing:<id>, earned (CHECKLIST 433)');
   const ui = readFileSync(ROOT + '/src/delivery/render/cosmeticsui.js', 'utf8');
   const reg = readFileSync(ROOT + '/src/delivery/render/cosmeticslots.js', 'utf8');
   check(/id: 'roof', label: 'Roof'[^}]*prop: true, supports: prop\('roof'\)/.test(reg) && /id: 'cargo', label: 'Cargo'[^}]*prop: true, supports: prop\('cargo'\)/.test(reg) && /id: 'wing', label: 'Wing'[^}]*prop: true, supports: prop\('wing'\)/.test(reg) && !/Roof ornament/.test(ui) && /id: 'underglow'[^}]*items: dormant\('underglow'\)/.test(reg), "the screen's tabs (render/cosmeticslots.js): Roof, Cargo, Wing shown where slotStatus is ok, Underglow dormant (no items: no tab), 'Roof ornament' gone");
-  check(/for \(const p of PROPS\[slot\]\)/.test(ui) && /'None'/.test(ui) && /Stock/.test(ui) && /PROP_PAINTS/.test(ui) && /propSlots\(car\.id\)/.test(ui) && SLOTS.every((s, i) => PM.PROPS[s].length === [15, 16, 21][i]), 'every tab lists all its props as chips plus None / Stock and the colour row');
+  check(/for \(const p of PROPS\[slot\]\)/.test(ui) && /'None'/.test(ui) && /Stock/.test(ui) && /PROP_PAINTS/.test(ui) && /propSlots\(car\.id\)/.test(ui) && SLOTS.every((s, i) => PM.PROPS[s].length === [27, 16, 21][i]), 'every tab lists all its props as chips plus None / Stock and the colour row');
   const swatches = D.PROP_PAINTS;
   const hexes = swatches.map(p => p.hex);
   check(swatches.length === 8 && swatches[0].id === 'match' && [0x1b1c20, 0xf2f2ee].every(h => hexes.includes(h)) && ['red', 'orange', 'blue', 'green', 'gold'].every(n => swatches.some(p => p.id === n)), 'the colour row: match car colour, black, white, red, orange, blue, green, gold');
