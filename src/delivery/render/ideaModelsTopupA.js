@@ -331,7 +331,7 @@ IDEA_MODELS_TOPUP_A.glassbrake = (car) => {
     inset: { aPillar: 0.07, roof: 0.05, cPillar: 0.09 }, lift: LIFT, sideLift: 0.006, windows: [[-0.64, 9], [-9, -0.74]] });
   bag.add(GLASS, ...glass.sides, screen.front,
     slopeGlass(HT, HM, CH, TAPER, CBEV + 0.03, [0.02, 0], LIFT, [-0.2, 1]),
-    slopeGlass(HM, HF, CH, TAPER, CBEV + 0.03, [-0.08, 0.12], LIFT - 0.002, [-1, 0.6]));
+    slopeGlass(HM, HF, CH, TAPER, CBEV + 0.03, [-0.08, 0.12], LIFT - 0.0015, [-1, 0.6])); // (4.5 mm off the tail)
   // the face: a low wide grille, a round lamp in a chrome ring at each end, split bumpers, amber lamps in their corners
   for (const s of [-1, 1]) {
     bag.add(CHROME, dsc(0.1, 0.03, s * 0.62, 0.62, L - 0.012, 14), bx(0.52, 0.07, 0.08, s * 0.5, 0.41, L + 0.03), bx(0.26, 0.07, 0.08, s * 0.8, 0.41, L - 0.06, 0, s * 0.7));
@@ -473,7 +473,7 @@ IDEA_MODELS_TOPUP_A.talltourer = (car) => {
     bag.add(BLACK, strut([s * 0.5, 1.46, -1.28], [s * 0.53, 1.31, -0.86], 0.015));
   }
   // the chassis rails under the bonnet and the front crossmember the wings' tips meet; the front axle
-  bag.add(BLACK, bx(0.1, 0.12, 3.2, 0.36, 0.52, 0.1), bx(0.1, 0.12, 3.2, -0.36, 0.52, 0.1), bx(1.42, 0.06, 0.08, 0, 0.57, 1.72),
+  bag.add(BLACK, bx(0.1, 0.12, 3.2, 0.36, 0.52, 0.1), bx(0.1, 0.12, 3.2, -0.36, 0.52, 0.1), bx(1.42, 0.06, 0.08, 0, 0.57, 1.7245), // (the cross bar 4.5 mm proud of the radiator)
     rod(0.03, 2 * WX - 0.2, 0, R, AF, 'x', 6));
   // the radiator: a tall brass shell, a dark core, a cap; the windscreen's frame and glass; the tail lamp
   bag.add(brass,

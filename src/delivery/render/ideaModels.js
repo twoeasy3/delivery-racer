@@ -247,7 +247,7 @@ export const IDEA_MODELS = {
       blob(group, paint, 0.12, 0.12, 0.2, side * w * 0.44, 0.78, L * 0.5);              // the lamp pods on its flanks
       disc(group, LAMP, 0.085, 0.05, side * w * 0.44, 0.78, L * 0.5 + 0.18);
       disc(group, chrome, 0.1, 0.03, side * w * 0.44, 0.78, L * 0.5 + 0.165);
-      fender(group, paint, R + 0.07, 0.17, side * (w / 2 - 0.1), R, L * 0.42);          // the front wheels' arches
+      fender(group, paint, R + 0.07, 0.179, side * (w / 2 - 0.1), R, L * 0.42);         // the front wheels' arches (4.5 mm past the hubs)
       wheel(group, R, 0.13, side * (w / 2 - 0.1), R, L * 0.42);
       wheel(group, R, 0.13, side * 0.26, R, -L * 0.62);                                 // the back pair, close together
       disc(group, TAIL, 0.045, 0.06, side * 0.1, 0.62, -L * 0.93);
@@ -440,7 +440,7 @@ export const IDEA_MODELS = {
       box(group, trim, 0.05, 0.05, L * 1.1, side * w * 0.4, 1.45, -L * 0.33).userData.prop = 'roof'; // roof rails (a roof prop)
       box(group, trim, 0.02, 0.07, L * 1.8, side * (w / 2 + 0.01), 0.6, 0);               // rubbing strips
       for (const x of [0.3, 0.42]) box(group, LAMP, w * 0.11, 0.15, 0.04, side * w * x, 0.7, L + 0.0); // square lamps, two a side
-      box(group, AMBER, w * 0.05, 0.15, 0.1, side * w * 0.485, 0.7, L - 0.04);
+      box(group, AMBER, w * 0.05, 0.141, 0.1, side * w * 0.485, 0.7, L - 0.04);               // (4.5 mm inside the lamps' top and foot)
       box(group, TAIL, 0.14, 0.44, 0.05, side * w * 0.43, 0.74, -L + 0.01);               // tall tail lamps
       box(group, trim, 0.1, 0.1, 0.12, side * (w / 2 + 0.05), 0.95, L * 0.3);             // mirrors
       wheel(group, R, 0.22, side * (w / 2 - 0.04), R, L * 0.62);
@@ -561,7 +561,7 @@ export const IDEA_MODELS = {
       box(group, chrome, 0.26, 0.025, 0.05, side * 0.11, 1.03, -L * 0.86).rotation.y = side * 0.5; // the boomerang aerial's arms,
     }
     box(group, chrome, 0.03, 0.14, 0.03, 0, 0.96, -L * 0.86);                             // on its post
-    box(group, chrome, w * 0.34, 0.3, 0.06, 0, 0.7, L + 0.0);                             // the upright grille,
+    box(group, chrome, w * 0.34, 0.3045, 0.06, 0, 0.70225, L + 0.0);                      // the upright grille (its top 4.5 mm over the bonnet's),
     for (let i = -4; i <= 4; i++) box(group, trim, 0.012, 0.24, 0.02, i * w * 0.034, 0.7, L + 0.03); // its bars
     box(group, TAIL, w * 0.92, 0.12, 0.04, 0, 0.72, -L + 0.0);                            // a red bar across the tail
     box(group, chrome, w + 0.12, 0.16, 0.16, 0, 0.42, L + 0.04);                          // chrome bumpers
@@ -728,7 +728,7 @@ export const IDEA_MODELS = {
       wheel(group, 0.34, 0.32, side * (w / 2 - 0.17), 0.34, -L * 0.56, ALLOY);            // fatter tyres at the back
     }
     box(group, trim, w * 0.6, 0.03, L * 0.4, 0, 0.8, -L * 0.2);                           // the open cockpit
-    const mouth = disc(group, trim, 0.15, 0.08, 0, 0.5, L * 0.955);                       // the oval mouth
+    const mouth = disc(group, trim, 0.15, 0.08, 0, 0.5, L * 0.955 + 0.002);               // the oval mouth (4.5 mm proud of the nose)
     mouth.scale.x = 2;
     const windscreen = box(group, glass, w * 0.6, 0.26, 0.03, 0, 0.93, L * 0.04);         // a low windscreen,
     windscreen.rotation.x = -0.5;
@@ -768,11 +768,11 @@ export const IDEA_MODELS = {
     slab(group, glass, w * 0.56, 0.03, 0.5, 0, 1.165, -L * 0.5, -0.4);                    // the rear window
     curved(group, paint, w, rounded([[-L * 0.3, 0.38], [L * 0.3, 0.38], [L * 0.3, 0.84], [-L * 0.3, 0.86]], 0.04), 0.04); // the doors
     for (const side of [-1, 1]) {
-      const x = side * (w / 2 - 0.17);
+      const x = side * (w / 2 - 0.1655);                                                // (the wings 4.5 mm out of the doors' flanks)
       curved(group, paint, 0.34, rounded([[L * 0.2, 0.4], [L * 0.94, 0.4], [L * 0.99, 0.58], [L * 0.9, 0.76], [L * 0.3, 0.86], [L * 0.2, 0.8]], 0.08), 0.06, x); // the front wings, above the bonnet
       disc(group, LAMP, 0.115, 0.1, x, 0.67, L * 0.95).rotation.x = Math.PI / 2 - 0.3;    // a round lamp at each one's tip
       disc(group, chrome, 0.14, 0.07, x, 0.67, L * 0.94).rotation.x = Math.PI / 2 - 0.3;
-      box(group, AMBER, 0.2, 0.05, 0.04, x, 0.48, L * 0.985);
+      box(group, AMBER, 0.2, 0.05, 0.04, x, 0.48, L * 0.97 + 0.0345);                   // (4.5 mm proud of the bumper)
       curved(group, paint, 0.42, rounded([[-L * 0.97, 0.4], [-L * 0.25, 0.4], [-L * 0.25, 0.86], [-L * 0.7, 0.88], [-L * 0.97, 0.68]], 0.1), 0.07, side * (w / 2 - 0.19)); // the wide hips
       wheel(group, R, 0.22, side * (w / 2 - 0.06), R, L * 0.62, ALLOY);
       wheel(group, R + 0.01, 0.28, side * (w / 2 - 0.08), R + 0.01, -L * 0.62, ALLOY);
@@ -787,7 +787,7 @@ export const IDEA_MODELS = {
     for (const side of [-1, 1]) box(group, trim, 0.04, 0.07, 0.56, side * w * 0.455, 1.085, -L * 0.76 - 0.03).userData.prop = 'wing'; // round its sides too
     box(group, TAIL, w * 0.9, 0.09, 0.04, 0, 0.66, -L * 0.97 - 0.05);                     // one red band across the back
     box(group, trim, w + 0.02, 0.1, 0.1, 0, 0.44, L * 0.97);                              // black bumpers
-    box(group, trim, w + 0.02, 0.1, 0.1, 0, 0.46, -L * 0.98);
+    box(group, trim, w + 0.02, 0.1, 0.1, 0, 0.46, -L * 0.98 - 0.006);                    // (6 mm past the hips' tails)
     group.userData = { body, animate: () => {} };
     return group;
   },
@@ -890,11 +890,11 @@ export const IDEA_MODELS = {
     prism(group, glass, w * 0.86, [[L * 0.3, 0.83], [L * 0.08, 1.27], [-L * 0.32, 1.29], [-L * 0.8, 0.87]]); // the glasshouse, a hatch at its back
     box(group, paint, w * 0.88, 0.06, L * 0.42, 0, 1.3, -L * 0.12);                       // the roof
     box(group, black, w * 0.92, 0.05, 0.12, 0, 0.9, -L * 0.93);                           // a lip on the tail
-    box(group, black, w * 0.56, 0.07, 0.03, 0, 0.66, L * 0.97 + 0.03);                    // a slot of a grille
+    box(group, black, w * 0.56, 0.079, 0.03, 0, 0.66, L * 0.97 + 0.03);                   // a slot of a grille (its top 4.5 mm over the lamps')
     box(group, black, w * 0.5, 0.14, 0.03, 0, 0.7, -L * 0.97 - 0.03);                     // the tail's black panel
     const pods = [];
     for (const side of [-1, 1]) {
-      prism(group, paint, 0.14, [[-L * 0.2, 1.3], [-L * 0.33, 1.3], [-L * 0.81, 0.86], [-L * 0.56, 0.86]], side * (w * 0.43 - 0.07)); // the hatch's pillars
+      prism(group, paint, 0.14, [[-L * 0.2, 1.3], [-L * 0.33, 1.3], [-L * 0.81, 0.86], [-L * 0.56, 0.86]], side * (w * 0.43 - 0.0655)); // the hatch's pillars (4.5 mm proud of the glass)
       box(group, paint, 0.07, 0.44, 0.09, side * w * 0.43, 1.06, -L * 0.06);              // the door pillars
       const pod = new THREE.Group();                                                      // a lamp that pops up
       pod.position.set(side * w * 0.33, 0.8, L * 0.84);
@@ -945,7 +945,7 @@ export const IDEA_MODELS = {
     for (const side of [-1, 1]) {
       box(group, paint, 0.05, 0.44, 0.22, side * w * 0.34, 1.15, -L * 0.86).userData.prop = 'wing'; // on two uprights,
       box(group, paint, 0.04, 0.12, 0.34, side * w * 0.46, 1.33, -L * 0.86).userData.prop = 'wing'; // with end plates
-      prism(group, paint, 0.14, [[-L * 0.24, 1.34], [-L * 0.37, 1.34], [-L * 0.67, 0.9], [-L * 0.46, 0.9]], side * (w * 0.42 - 0.07)); // the rear pillars
+      prism(group, paint, 0.14, [[-L * 0.24, 1.34], [-L * 0.37, 1.34], [-L * 0.67, 0.9], [-L * 0.46, 0.9]], side * (w * 0.42 - 0.0655)); // the rear pillars (4.5 mm proud of the glass)
       box(group, paint, 0.07, 0.44, 0.09, side * w * 0.42, 1.1, -L * 0.04);               // the door pillars
       box(group, LAMP, w * 0.2, 0.11, 0.05, side * w * 0.35, 0.78, L - 0.01);             // angular lamps
       box(group, trim, w * 0.15, 0.12, 0.04, side * w * 0.38, 0.44, L + 0.06);            // the bumper's side intakes
@@ -1027,7 +1027,7 @@ export const IDEA_MODELS = {
     box(group, lambert(0x8a6a45), 0.6, 0.16, 0.5, -w * 0.12, 1.94, -L * 0.6).userData.prop = 'roof';             // and a crate
     for (const side of [-1, 1]) {
       box(group, trim, 0.04, 0.12, L * 1.2, side * w * 0.45, 1.9, -L * 0.3).userData.prop = 'roof';              // and its sides
-      for (const z of [0.4, 0.12, -0.2, -0.56, -0.95]) box(group, paint, 0.08, 0.55, 0.1, side * w * 0.46, 1.43, L * z); // pillars
+      for (const z of [0.4, 0.12, -0.2, -0.56, -0.95]) box(group, paint, 0.08, 0.5545, 0.11, side * w * 0.46, 1.42775, L * z); // pillars (from the roof to 4.5 mm under the glass; the last past its end)
       box(group, paint, 0.06, 0.55, L * 0.28, side * w * 0.46, 1.43, -L * 0.76);          // the back's blank sides,
       box(group, glass, 0.03, 0.08, 0.5, side * (w * 0.48 + 0.005), 1.76, -L * 0.52);     // and the little windows in the roof's edge
       disc(group, LAMP, 0.11, 0.06, side * w * 0.36, 0.95, L * 0.98 + 0.02);              // round lamps,
@@ -1100,7 +1100,7 @@ export const IDEA_MODELS = {
     for (let i = 0; i < 6; i++) slab(group, trim, w * 0.84, 0.025, 0.03, 0, 1.6 - i * 0.056 - 0.02, -L * (0.33 + i * 0.108), -down);
     box(group, LAMP, w * 0.96, 0.035, 0.04, 0, 0.965, L + 0.005);                         // a bar of light across the nose,
     box(group, TAIL, w * 0.96, 0.04, 0.04, 0, 1.2, -L - 0.005);                           // and one across the tail
-    box(group, trim, w * 1.0, 0.16, 0.1, 0, 0.6, L - 0.02);                               // black bumpers
+    box(group, trim, w * 1.0 + 0.009, 0.16, 0.1, 0, 0.6, L - 0.02);                       // black bumpers (4.5 mm past the body's sides)
     box(group, trim, w * 1.0, 0.16, 0.1, 0, 0.6, -L + 0.02);
     box(group, trim, w + 0.02, 0.1, L * 1.1, 0, 0.57, 0);                                 // and sills
     for (const side of [-1, 1]) {
@@ -1280,7 +1280,7 @@ export const IDEA_MODELS = {
       const x = side * (w / 2 + 0.012);
       box(group, stripe, 0.02, 0.22, L * 1.96, x, 1.22, 0);                               // the stripe,
       for (let i = 0; i < 4; i++) box(group, stripe, 0.022, 0.12, 0.62, x, 1.62, L * 0.44 - i * 0.36).rotation.x = (i % 2 ? 1 : -1) * 0.95; // and the W flying from it
-      for (const z of [0.62, -0.02, -0.56]) box(group, glass, 0.03, 0.52, L * (z > 0.5 ? 0.24 : 0.36), x, 2.0, L * z); // windows
+      for (const z of [0.62, -0.02, -0.56]) box(group, glass, 0.03, 0.52, L * (z > 0.5 ? 0.24 : 0.36), x + side * 0.001, 2.0, L * z); // windows (4.5 mm proud of the W)
       for (const k of [0.3, 0.41]) disc(group, LAMP, 0.1, 0.06, side * w * k, 0.98, L + 0.01); // twin round lamps
       box(group, TAIL, 0.14, 0.3, 0.04, side * w * 0.42, 1.0, -L - 0.01);
       box(group, trim, 0.1, 0.34, 0.1, side * (w / 2 + 0.12), 1.9, L * 0.9);              // mirrors
@@ -1289,9 +1289,9 @@ export const IDEA_MODELS = {
       box(group, trim, 0.03, 1.5, 0.03, -w * 0.28 + side * 0.17, 1.9, -L - 0.04);         // a ladder up the back
     }
     for (let i = 0; i < 6; i++) box(group, trim, 0.34, 0.03, 0.03, -w * 0.28, 1.25 + i * 0.26, -L - 0.04);
-    box(group, trim, 0.025, 1.5, 0.6, -(w / 2 + 0.012), 1.5, L * 0.3);                    // the door, on the kerb side
-    box(group, paint, 0.03, 1.44, 0.54, -(w / 2 + 0.014), 1.5, L * 0.3);
-    box(group, glass, 0.035, 0.4, 0.3, -(w / 2 + 0.015), 1.95, L * 0.3);
+    box(group, trim, 0.025, 1.5, 0.6, -(w / 2 + 0.015), 1.5, L * 0.3);                    // the door, on the kerb side (4.5 mm proud of the stripe)
+    box(group, paint, 0.03, 1.44, 0.54, -(w / 2 + 0.017), 1.5, L * 0.3);
+    box(group, glass, 0.035, 0.4, 0.3, -(w / 2 + 0.018), 1.95, L * 0.3);
     tube(group, WHITE, 0.09, L * 1.2, -(w / 2 + 0.08), 2.5, -L * 0.2, 'z');               // the awning, rolled up
     box(group, trim, w * 0.42, 0.22, 0.04, 0, 0.98, L + 0.005);                           // the grille
     box(group, chrome, w + 0.04, 0.16, 0.14, 0, 0.6, L + 0.04);                           // bumpers
@@ -1384,7 +1384,7 @@ export const IDEA_MODELS = {
     // the front: the half cab on the driver's side, the bonnet beside it, the radiator between
     box(group, paint, w * 0.48, 0.75, L * 0.26, -w * 0.26, 0.825, L * 0.85);              // the cab, below its windows,
     box(group, glass, w * 0.46, 1.0, L * 0.25, -w * 0.26, 1.7, L * 0.85);                 // and its glass
-    box(group, paint, 0.07, 1.0, 0.07, -w * 0.035, 1.7, L * 0.975);                       // (its corner post)
+    box(group, paint, 0.07, 1.009, 0.07, -w * 0.035, 1.7, L * 0.975);                     // (its corner post: 4.5 mm past the glass's top and foot)
     box(group, paint, w * 0.52, 0.95, L * 0.27, w * 0.24, 0.93, L * 0.855);               // the bonnet,
     box(group, trim, w * 0.3, 0.62, 0.05, w * 0.1, 1.0, L * 0.99 + 0.005);                // the radiator,
     box(group, chrome, w * 0.32, 0.05, 0.06, w * 0.1, 1.33, L * 0.99 + 0.005);            // its chrome top,
@@ -1396,7 +1396,7 @@ export const IDEA_MODELS = {
     // the back: the stairs' corner closed in on the driver's side, the platform open on the other
     box(group, paint, w * 0.5, 1.75, L * 0.28, -w * 0.25, 1.325, -L * 0.86);
     box(group, lambert(0x6a6f76), w, 0.16, L * 0.28, 0, 0.53, -L * 0.86);                 // the platform's floor,
-    box(group, wood, w * 0.5, 1.6, 0.05, w * 0.25, 1.4, -L * 0.72 - 0.03);                // the bulkhead behind it,
+    box(group, wood, w * 0.5 - 0.0045, 1.6, 0.05, w * 0.25 - 0.00225, 1.4, -L * 0.72 - 0.03); // the bulkhead behind it (4.5 mm in from the floor's side),
     tube(group, chrome, 0.035, 1.6, w * 0.42, 1.4, -L * 0.8);                             // and its pole
     box(group, glass, w * 0.36, 0.6, 0.04, -w * 0.25, 1.7, -L - 0.005);
     const advert = lettered('CAR IDEAS', '#c8102e', '#f4f2ec', 512, 80);

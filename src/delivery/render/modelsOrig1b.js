@@ -356,9 +356,9 @@ ORIG1B_MODELS.miata = (car) => {
   // the stripes: two, from the lip up the nose, over the bonnet and the scoop, the roof, the deck and down the tail
   const X0 = 0.17, X1 = 0.4; // (either side of the scoop)
   place(group, shared(k + 'stripes', () => merge([
-    ...ribbon(front, BEV + 0.004, X0, X1),
-    ...ribbon(roof, CBEV + 0.004, X0, X1),
-    ...ribbon([...deck, ...tail], BEV + 0.004, X0, X1),
+    ...ribbon(front, BEV + 0.0045, X0, X1),                                           // (4.5 mm off the paint)
+    ...ribbon(roof, CBEV + 0.0045, X0, X1),
+    ...ribbon([...deck, ...tail], BEV + 0.0045, X0, X1),
     ...ribbon([[NOSE + 0.12, 0.15], [NOSE + 0.02, 0.22], [NOSE - 0.25, 0.22]], 0.024, X0, X1),
   ])), stripe);
   // the glass: windscreen, the fastback's window, and one long window a side

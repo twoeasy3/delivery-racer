@@ -198,10 +198,10 @@ export const IDEA_MODELS_4 = {
       whitewall(group, R, 0.2, side * (w / 2 - 0.1), R, -L * 0.6, chrome);
       box(group, chrome, 0.08, 0.14, 0.08, side * w * 0.14, 0.44, L * 0.9);               // bumper overriders
     }
-    box(group, trim, w * 0.3, 0.14, 0.06, 0, 0.56, L * 0.86 + 0.02);                      // a slot of an intake between the cones,
+    box(group, trim, w * 0.3, 0.14, 0.06, 0, 0.56, L * 0.86 + 0.0245);                    // a slot of an intake between the cones (4.5 mm proud),
     for (let i = -2; i <= 2; i++) box(group, chrome, 0.012, 0.12, 0.03, i * w * 0.055, 0.56, L * 0.86 + 0.05); // barred
     box(group, chrome, w * 0.86, 0.07, 0.07, 0, 0.42, L * 0.88);                          // bumpers
-    box(group, chrome, w * 0.9, 0.07, 0.07, 0, 0.42, -L * 0.99);
+    box(group, chrome, w * 0.9 + 0.009, 0.07, 0.07, 0, 0.42, -L * 0.99);
     disc(group, chrome, 0.17, 0.1, 0, 0.6, -L * 0.985 - 0.04);                            // the jet nozzle in the tail,
     disc(group, trim, 0.12, 0.06, 0, 0.6, -L * 0.985 - 0.1);                              // dark inside
     group.userData = { body, animate: () => {} };
@@ -504,8 +504,8 @@ export const IDEA_MODELS_4 = {
     box(group, TAIL, w * 0.5, 0.03, 0.03, 0, 0.3, -L * 1.0 - 0.005);                       // a strip of a tail lamp
     for (const side of [-1, 1]) {
       box(group, WHITE, 0.01, 0.1, 0.3, side * (w * 0.48 + 0.002), 0.33, L * 0.3);          // a number panel on the flank
-      box(group, trim, 0.012, 0.07, 0.03, side * (w * 0.48 + 0.004), 0.33, L * 0.3 + 0.04);
-      box(group, trim, 0.012, 0.07, 0.03, side * (w * 0.48 + 0.004), 0.33, L * 0.3 - 0.04);
+      box(group, trim, 0.016, 0.07, 0.03, side * (w * 0.48 + 0.0045), 0.33, L * 0.3 + 0.04); // (5.5 mm proud of the panel, backs buried)
+      box(group, trim, 0.016, 0.07, 0.03, side * (w * 0.48 + 0.0045), 0.33, L * 0.3 - 0.04);
       for (const z of [L * 0.55, -L * 0.55]) {
         fender(group, paint, 0.3, 0.22, side * w * 0.3, R, z);                             // the fairing: a bump over the wheel
         wheel(group, R, 0.1, side * w * 0.3, R, z);
@@ -544,7 +544,7 @@ export const IDEA_MODELS_4 = {
     box(group, trim, w * 0.5, 0.14, 0.04, 0, 1.02, L * 0.97 + 0.01);                       // the grille
     for (let i = -2; i <= 2; i++) box(group, chrome, 0.015, 0.12, 0.03, i * 0.08, 1.02, L * 0.97 + 0.03);
     box(group, trim, w * 0.9, 0.12, 0.12, 0, 0.62, L * 0.96);                             // the bumper,
-    for (const x of [-0.5, 0.5]) tube(group, trim, 0.035, 0.6, x * w * 0.66, 0.9, L * 0.99, 'y'); // and the bull bar's uprights
+    for (const x of [-0.5, 0.5]) tube(group, trim, 0.039, 0.6, x * w * 0.66, 0.9, L * 0.99, 'y'); // and the bull bar's uprights
     tube(group, trim, 0.035, w * 0.7, 0, 1.2, L * 0.99, 'x');
     // the tracker's chair, out on the bull bar
     box(group, trim, 0.44, 0.08, 0.36, -w * 0.22, 0.92, L * 0.98);

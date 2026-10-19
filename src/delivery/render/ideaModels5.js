@@ -188,8 +188,8 @@ export const IDEA_MODELS_5 = {
     box(group, chrome, w * 0.84, 0.05, 0.06, 0, 0.42, L + 0.02);                           // the slim front bumper,
     box(group, chrome, w * 0.58, 0.05, 0.06, 0, 0.53, -L - 0.02);                          // the back one,
     box(group, WHITE, 0.32, 0.09, 0.02, 0, 0.62, -L - 0.01).userData.plate = 'rear';                               // the plate above it
-    for (const side of [-1, 1]) slab(group, chrome, 0.1, 0.02, 0.02, side * 0.04, 0.71, -L - 0.012, 0).rotation.z = side * 0.5; // the chevrons on the boot
-    for (const side of [-1, 1]) slab(group, chrome, 0.1, 0.02, 0.02, side * 0.04, 0.68, -L - 0.012, 0).rotation.z = side * 0.5;
+    for (const side of [-1, 1]) slab(group, chrome, 0.1, 0.02, 0.02, side * 0.04, 0.71, -L - 0.0145, 0).rotation.z = side * 0.5; // the chevrons on the boot
+    for (const side of [-1, 1]) slab(group, chrome, 0.1, 0.02, 0.02, side * 0.04, 0.68, -L - 0.0145, 0).rotation.z = side * 0.5; // (4.5 mm proud of the plate)
     tube(group, trim, 0.03, 0.3, -w * 0.25, 0.36, -L * 0.9, 'z');                          // the exhaust
     group.userData = {
       body,

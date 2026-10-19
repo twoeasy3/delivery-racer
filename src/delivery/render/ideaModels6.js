@@ -320,7 +320,7 @@ export const IDEA_MODELS_6 = {
     merged(group, trim, [-1, 1].map(side => cyl(0.02, 0.22, side * (S + 0.1), 2.3, L - 0.15, 'x', 8)));
     merged(group, trim, [-1, 1].map(side => bx(0.06, 0.3, 0.15, side * (S + 0.22), 2.25, L - 0.15)));
     // the door, at the front on the kerb side
-    box(group, glass, 0.02, 2.05, L * 0.15, -(S + 0.015), 1.55, L * 0.87);
+    box(group, glass, 0.02, 2.05, L * 0.15, -(S + 0.0185), 1.55, L * 0.87); // (6.5 mm proud of the bright strip)
     // the back: the engine's louvres, a window up high, tail, stop and reversing lamps, the bumper and the plate
     merged(group, trim, [1.0, 1.12, 1.24, 1.36, 1.48, 1.6].map(y => bx(2.0, 0.04, 0.03, 0, y, -L - 0.01)));
     box(group, glass, 1.6, 0.4, 0.02, 0, 2.75, -L - 0.005);
@@ -403,10 +403,10 @@ export const IDEA_MODELS_6 = {
     // the tail: the light bar along its curve, the black mesh, the exhaust, the diffuser
     const bar = new THREE.CatmullRomCurve3([[-0.88, -2.15], [-0.74, -2.225], [-0.5, -2.28], [0, -2.285], [0.5, -2.28], [0.74, -2.225], [0.88, -2.15]].map(([x, z]) => new THREE.Vector3(x, 0.76, z)));
     place(group, new THREE.TubeGeometry(bar, 14, 0.022, 4, false), TAIL, 0, 0, 0);
-    box(group, trim, 1.0, 0.22, 0.02, 0, 0.5, -2.276);
+    box(group, trim, 1.0, 0.22, 0.03, 0, 0.5, -2.271);                                   // (its inner face well inside the tail)
     disc(group, chrome, 0.075, 0.06, 0, 0.4, -2.28);
     disc(group, trim, 0.055, 0.02, 0, 0.4, -2.305);
-    box(group, trim, 1.0, 0.08, 0.3, 0, 0.33, -2.12);
+    box(group, trim, 1.0, 0.08, 0.3, 0, 0.33, -2.1245);                                  // (4.5 mm past the tail)
     // the wing, and its struts, which rise out of the tail together
     const wing = new THREE.Group();
     group.add(wing);
@@ -541,10 +541,10 @@ export const IDEA_MODELS_6 = {
     // the tail: lamps wrapping round it, reversing lamps, the black bumper, two exhausts, the plate
     const tailCurve = new THREE.CatmullRomCurve3([[0.4, -2.195], [0.62, -2.195], [0.76, -2.19], [0.85, -2.13], [0.915, -2.0]].map(([x, z]) => new THREE.Vector3(x, 1.02, z)));
     for (const side of [-1, 1]) place(group, shared('evoqueTail', () => new THREE.TubeGeometry(tailCurve, 6, 0.04, 3, false)), TAIL, 0, 0, 0).scale.x = side;
-    merged(group, LAMP, [-1, 1].map(side => bx(0.1, 0.05, 0.02, side * 0.35, 0.66, -2.193)));
+    merged(group, LAMP, [-1, 1].map(side => bx(0.1, 0.05, 0.03, side * 0.35, 0.66, -2.188))); // (their inner faces inside the tail)
     box(group, black, 1.3, 0.14, 0.05, 0, 0.56, -2.19);
     merged(group, chrome, [-1, 1].map(side => cyl(0.045, 0.05, side * 0.5, 0.53, -2.215, 'z', 10)));
-    box(group, WHITE, 0.4, 0.1, 0.02, 0, 0.84, -2.188).userData.plate = 'rear';
+    box(group, WHITE, 0.4, 0.1, 0.03, 0, 0.84, -2.183).userData.plate = 'rear';
     // black sills and arch lips; big alloys with a dark cap each; door handles
     merged(group, black, [-1, 1].map(side => bx(0.03, 0.12, 1.5, side * (sideX(0, 0.55) + 0.006), 0.55, 0)));
     merged(group, black, [-1, 1].flatMap(side => AXLES.map(([z]) => lip(R + 0.07, 0.035, side * 0.958, R, z)))); // (clear of the arch's edge)

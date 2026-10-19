@@ -245,8 +245,8 @@ export const IDEA_MODELS_9 = {
       for (const [z, r, width, outer] of AXLES) {
         const x = side * (outer - width / 2);
         place(group, shared('midsummerTyre' + width, () => new THREE.CylinderGeometry(r, r, width, 16).rotateZ(Math.PI / 2)), TYRE, x, r, z);
-        place(group, rim, alloy, x + side * (width / 2 + 0.004), r, z).rotation.y = side < 0 ? Math.PI : 0;
-        place(group, gaps, black, x + side * (width / 2 + 0.008), r, z).rotation.y = side < 0 ? Math.PI : 0;
+        place(group, rim, alloy, x + side * (width / 2 + 0.0045), r, z).rotation.y = side < 0 ? Math.PI : 0; // (4.5 mm steps)
+        place(group, gaps, black, x + side * (width / 2 + 0.009), r, z).rotation.y = side < 0 ? Math.PI : 0;
       }
     }
     group.userData = { body, animate: () => {}, livery: (evil) => leather.color.setHex(evil ? 0x7a1c1c : 0x9a6a44) };
