@@ -292,6 +292,12 @@ THEMES.alpine = { sky: 0xc4dcf0, ground: 0x86a35a, road: 0x505257, scenery: 'alp
 THEMES.alpineDusk = { ...THEMES.alpine, sky: 0xf0c9a0, dusk: true, line: 0xf4efe4,
   light: { sky: 0xffd9b8, ground: 0x5a4a4a, ambient: 1.0, sun: 0xffb87a, sunlight: 1.1 } };
 THEMES.autumn = { sky: 0xeccfa0, ground: 0x9a8a3e, road: 0x4a4a4e, scenery: 'autumn', line: 0xf2eede, centre: 0xe6b422, terrain: { gentle: 0xa8923c, steep: 0x7a4c2a, rough: 0.5, flat: 5, rise: 45 }, target: { height: 4.2, beam: true }, tunnel: { wall: 0x8a2f22, tiles: 0xa8743e, roof: 0x5a2a1c, face: 0x7e2a1e, lamp: 0xffc878, lintel: 2.4, pier: 2.6 }, channel: { shallow: 0x7fa6a8, deep: 0x2c5a6a, glint: 0xa8cfd0 }, light: { sky: 0xffe6bc, ground: 0xb89464, ambient: 1.3, sun: 0xffc27a, sunlight: 1.2 } };
+// oilfield: a dusty desert oil field (render/themes/oilfield.js): flat pale caliche under a white-hot haze, nodding donkeys, tank
+// batteries with their flares, drilling rigs, a pump station, a pipeline beside the road crossing it over and under; a level's
+// standing water ("waterPatches") is spilt crude (standingWater: dark, no rim, an oily sheen)
+THEMES.oilfield = { sky: 0xeee2c4, ground: 0xc4ad82, road: 0x47444a, scenery: 'oilfield', line: 0xeee6d2, centre: 0xf0b428, target: { height: 4.6, beam: true },
+  standingWater: { say: 'oilSpill', water: 0x14110e, opacity: 0.62, edge: 0x2a2018, rimOpacity: 0.5, puddle: ['#120e0b', '#1e1814', '#2e2a3c'], poolOpacity: 0.85, sheen: 0.5 },
+  light: { sky: 0xfff0d6, ground: 0xa88a5e, ambient: 1.4, sun: 0xffe8c0, sunlight: 1.35 } };
 
 // ---- the themes' own obstacles ---------------------------------------------------------------------------
 // obstacles: { crate: 'barrel', ... }: what a level's plain obstacle of a kind IS in this theme. A level goes on
@@ -321,6 +327,7 @@ const OBSTACLES = {
   beach: { bale: 'beachBall' },
   hell: { cone: 'brimstone' },
   desert: { crate: 'jerryStack', bale: 'tentRoll', cone: 'rallyFlag' }, // (jerrycans stacked on a pallet; a rolled tent; a rally marker flag in a heap of sand)
+  oilfield: { crate: 'pipePallet', bale: 'sandPile', cone: 'trafficDrum', barrier: 'barrierBlock' }, // (a pallet of pipe, a heap of sand, a striped drum, a barrier block: the roadworks' own models)
   fallout: { crate: 'wasteDrum' }, // (a yellow drum of waste, the trefoil on it; the cones and barriers are a checkpoint's own)
   halloween: { crate: 'pumpkinCrate', cone: 'candleLantern', bale: 'hayGhost' }, // (a crate of pumpkins, a candle lantern, a hay bale in a bedsheet)
   rainforest: { crate: 'bananaCrate', bale: 'fallenLog', cone: 'termiteMound' }, // (a crate of bananas, a pile of fallen logs, a termite mound)

@@ -714,6 +714,14 @@
     },
     "cargo": { "good": "horseshoes", "evil": "goldbar" }
   },
+  "oil-patch": {
+    "name": "Oil Patch",
+    "description": {
+      "good": "A roughneck's tools, out to the rig. Crude on the lanes where the pipeline leaks: take the clean one, and get round the truck convoys.",
+      "evil": "Fireworks past the flares. Run the spills flat out, cut through the convoys and be gone before anything catches."
+    },
+    "cargo": { "good": "toolbox", "evil": "fireworks" }
+  },
   "steelworks-night": {
     "name": "Steelworks by Night",
     "description": {

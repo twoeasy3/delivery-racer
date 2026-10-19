@@ -147,6 +147,21 @@ const PAINT = {
     g.fillStyle = '#ff7a1a'; for (let x = 0; x < w; x += 4 + P.rnd() * 5) { const f = hy * (0.03 + P.rnd() * 0.08); g.beginPath(); g.moveTo(x - 3, hy + 1); g.lineTo(x, hy - f); g.lineTo(x + 3, hy + 1); g.fill(); }
     g.fillStyle = '#1a0a08'; for (const [x, s] of [[0.1, 0.5], [0.22, 0.32], [0.7, 0.6], [0.86, 0.38]]) { const cx = w * x, th = hy * s; g.beginPath(); g.moveTo(cx - th * 0.12, hy + 1); g.lineTo(cx - th * 0.03, hy - th); g.lineTo(cx + th * 0.04, hy - th * 0.85); g.lineTo(cx + th * 0.14, hy + 1); g.fill(); }
   },
+  // the oil field: a flat horizon of nodding donkeys, a derrick or two, a tank battery, a flare stack burning
+  oilfield(g, w, hy, P) {
+    const far = P.tone(0.35), near = P.tone(0.6);
+    g.fillStyle = P.land(0.15); g.fillRect(0, hy - hy * 0.02, w, hy * 0.02 + 1);
+    const donkey = (x, s, t) => { g.fillStyle = P.tone(t); g.fillRect(x - 0.6, hy - s * 1.3, 1.6, s * 1.3); g.fillRect(x - s * 1.25, hy - s * 1.45, s * 2.3, 1.8); g.fillRect(x + s * 0.95, hy - s * 1.45, 1.8, s * 0.85); g.fillRect(x - s * 1.4, hy - 1.5, s * 2.6, 1.5); };
+    for (let x = P.rnd() * 12; x < w; x += 18 + P.rnd() * 26) donkey(x, 4 + P.rnd() * 3, 0.3);
+    const derrick = (x, th) => { g.strokeStyle = near; g.lineWidth = 1.2; g.beginPath(); g.moveTo(x - th * 0.17, hy); g.lineTo(x - 1.2, hy - th); g.lineTo(x + 1.2, hy - th); g.lineTo(x + th * 0.17, hy); g.stroke();
+      g.lineWidth = 0.7; for (let k = 1; k < 6; k++) { const y = hy - th * k / 6, hw = th * 0.17 * (1 - k / 6) + 1.2; g.beginPath(); g.moveTo(x - hw, y); g.lineTo(x + hw, y); g.lineTo(x - hw - th * 0.03, y + th / 6); g.stroke(); } g.fillStyle = near; g.fillRect(x - 3, hy - th - 3, 6, 3); };
+    derrick(w * 0.2, hy * 0.5); derrick(w * 0.86, hy * 0.36);
+    g.fillStyle = far; for (let k = 0; k < 4; k++) g.fillRect(w * 0.5 + k * hy * 0.075, hy - hy * 0.1, hy * 0.065, hy * 0.1 + 1);
+    const fx = w * 0.66, fh = hy * 0.42; g.fillStyle = near; g.fillRect(fx - 1, hy - fh, 2, fh);
+    g.fillStyle = P.dark ? 'rgba(255,140,40,.95)' : 'rgba(255,150,50,.9)'; g.beginPath(); g.ellipse(fx + 1, hy - fh - 6, 3, 7, 0.2, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255,240,180,.9)'; g.beginPath(); g.ellipse(fx + 0.5, hy - fh - 3.5, 1.4, 3, 0.2, 0, Math.PI * 2); g.fill();
+    for (let k = 0; k < 3; k++) donkey(w * (0.08 + k * 0.38) + P.rnd() * 20, 8 + P.rnd() * 3, 0.65);
+  },
   // space: a black sky full of stars, a ringed planet, the land a grey regolith
   space(g, w, hy, P, h) {
     const sky = g.createLinearGradient(0, 0, 0, hy); sky.addColorStop(0, '#03040a'); sky.addColorStop(1, P.pal.evil ? '#2a0c14' : '#141a30'); g.fillStyle = sky; g.fillRect(0, 0, w, hy);
@@ -172,7 +187,18 @@ const picket = () => { const g = group(); for (let k = 0; k < 9; k++) piece(g, B
 const letterbox = () => { const g = group(); piece(g, BOX, 0x6e5232, 0, 0.55, 0, 0.1, 1.1, 0.1); piece(g, BOX, 0xc8392e, 0, 1.2, 0, 0.35, 0.3, 0.5); piece(g, BOX, 0xf2c21d, 0.18, 1.3, 0.15, 0.03, 0.18, 0.05); return g; };
 const sandbags = () => OBSTACLE_MODELS.sackStack({ hw: 1.1, hl: 1.1, height: 1.5 });
 const opt = (kind, o) => () => OBSTACLE_MODELS[kind](o);
-const MODELS = { tyres, armco, kerb, board3: board(3), board2: board(2), buoyRed: buoy(0xd8352a), buoyGreen: buoy(0x2e8a4a), ring, vendRed: vending(0xd8352a), vendBlue: vending(0x2f6ac0), lantern, picket, letterbox, sandbags,
+// the oil field's: a stack of oil drums, a little nodding donkey, a valve wheel on its post, a length of pipe on chocks
+const drums = () => { const g = group(); for (const [x, z, y, c] of [[0, 0, 0, 0x2f5f8f], [0.66, 0.1, 0, 0xc8321f], [0.33, 0.62, 0, 0x2f5f8f], [0.33, 0.24, 0.9, 0xd8a228]]) { piece(g, CYL, c, x, y + 0.44, z, 0.6, 0.88, 0.6); for (const k of [0.3, 0.6]) piece(g, CYL, 0x1c1c1e, x, y + k, z, 0.62, 0.04, 0.62); } return g; };
+const donkey = () => { const g = group(), paint = 0x2f5a3a, steel = 0x4c5157;
+  piece(g, BOX, steel, 0, 0.1, -0.2, 0.5, 0.2, 2.8);
+  for (const x of [-1, 1]) for (const z of [-1, 1]) piece(g, BOX, paint, x * 0.16, 0.85, z * 0.2, 0.07, 1.5, 0.07, -z * 0.14, 0, x * 0.1);
+  piece(g, BOX, paint, 0, 1.68, 0.05, 0.14, 0.18, 2.2, 0.18); piece(g, BOX, paint, 0, 1.45, 1.15, 0.18, 0.75, 0.32, 0.18);
+  piece(g, BOX, steel, 0, 0.6, -0.95, 0.28, 0.5, 0.5); for (const x of [-1, 1]) { piece(g, BOX, 0x8a3b26, x * 0.2, 0.6, -0.78, 0.1, 0.32, 0.3); piece(g, BOX, steel, x * 0.24, 1.1, -0.9, 0.05, 0.9, 0.05); }
+  piece(g, CYL, 0x9da3a8, 0, 0.25, 1.25, 0.1, 0.5, 0.1); piece(g, BOX, 0x2a2c30, 0, 0.75, 1.3, 0.02, 0.6, 0.02); return g; };
+const valve = () => { const g = group(); piece(g, CYL, 0x8e9499, 0, 0.5, 0, 0.16, 1.0, 0.16); piece(g, CYL, 0x8e9499, 0, 0.2, 0, 0.5, 0.4, 0.5);
+  piece(g, CYL, 0xc8321f, 0, 1.04, 0, 0.62, 0.05, 0.62); piece(g, CYL, 0x1c1c1e, 0, 1.07, 0, 0.44, 0.05, 0.44); for (let k = 0; k < 3; k++) piece(g, BOX, 0xc8321f, 0, 1.09, 0, 0.5, 0.03, 0.04, 0, k * Math.PI / 3, 0); return g; };
+const pipe = () => { const g = group(); for (const z of [-0.9, 0.9]) piece(g, BOX, 0x6b5238, 0, 0.08, z, 0.9, 0.16, 0.2); piece(g, CYL, 0x8e9499, 0, 0.42, 0, 0.5, 2.8, 0.5, Math.PI / 2); piece(g, CYL, 0x5a6067, 0, 0.42, 1.43, 0.56, 0.08, 0.56, Math.PI / 2); return g; };
+const MODELS = { drums, donkey, valve, pipe, tyres, armco, kerb, board3: board(3), board2: board(2), buoyRed: buoy(0xd8352a), buoyGreen: buoy(0x2e8a4a), ring, vendRed: vending(0xd8352a), vendBlue: vending(0x2f6ac0), lantern, picket, letterbox, sandbags,
   umbrella: opt('umbrella', { hw: 0.9, hl: 0.9, height: 2.3 }), rockBig: opt('rock', { r: 0.8 }), rockSmall: opt('rock', { r: 0.5 }),
   asteroidBig: opt('asteroid', { r: 0.9 }), asteroidSmall: opt('asteroid', { r: 0.55 }), brimBig: opt('brimstone', { hw: 0.5, hl: 0.5, height: 1.6 }) };
 
@@ -207,6 +233,7 @@ const TABLE = {
     plinth: () => 0x3a3d47, ground: () => 0x3a3d47 },
   tokyo: { sky: [['towers', 10, 0.6, 0.45], ['spire', 0.3, 0.7], ['neon', 14]],
     props: [['vendRed', -0.85, 1.7, 0.4, 1], ['vendBlue', -0.6, 2.6, 0.4, 1], ['lantern', 0.82, 1.5, -0.3, 1], ['trafficDrum', 0.98, 0.3, 0, 1, 'cone'], ['bin', -0.98, 0.3, 0, 1, 'cone']] },
+  oilfield: { sky: [['oilfield']], props: [['donkey', -0.85, 2.0, 0.9, 1], ['drums', 0.8, 1.5, -0.3, 1], ['valve', 0.98, 0.3, 0, 1], ['pipe', 0.35, 4.8, 0.3, 1], ['valve', -0.98, 0.3, 0.5, 0.8]], plinth: () => 0xb7a27a },
   hell: { sky: [['flames']], props: [['brimBig', -0.82, 1.8, 0, 1], ['lavaRock', 0.82, 1.5, 0, 1, 'cone'], ['brimstone', 0.98, 0.3, 0, 1, 'cone'], ['brimBig', 0.3, 5, 0.5, 1.3], ['brimstone', -0.98, 0.3, 0, 1, 'cone']], plinth: () => 0x241010 },
 };
 TABLE.panorama = TABLE.bathurst; // (the same mountain)

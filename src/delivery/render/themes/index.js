@@ -38,6 +38,7 @@ const THEME_FILES = {
   rainforest: () => import('./rainforest.js'),
   tuscany: () => import('./tuscany.js'),
   desert: () => import('./desert.js'),
+  oilfield: () => import('./oilfield.js'), // (the oil field: CHECKLIST 522)
   mall: () => import('./mall.js'),
   metro: () => import('./metro.js'),
   city: () => import('./city.js'), // (the default theme: the city's streets, and every theme drawn as it, night, flooded)
