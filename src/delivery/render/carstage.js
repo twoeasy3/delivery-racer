@@ -165,6 +165,8 @@ const merged = (models, haze) => {
 // makeStage(theme, { evil, quality }) -> { group, attach(view), detach(), frame(camera, aspect), paint(canvas, camera),
 //   stats, dispose() }. view: a card's { scene, model } (render/modelviews.js standView); frame() stands the camera for the
 // card's shape and puts the props where it shows them; paint() draws the backdrop onto a 2D canvas for that camera.
+// the skyline's design picture (px): its horizon SKY_H down, SKY_W wide; the stages' painters are written for it (about the desktop card's)
+export const SKY_H = 100, SKY_W = 350;
 export const makeStage = (theme, { evil = false, quality = 'high' } = {}) => {
   const t0 = performance.now();
   if (STAGE_TEST.throwOn && (STAGE_TEST.throwOn === '*' || STAGE_TEST.throwOn === theme)) throw new Error('stage ' + theme + ' made to throw (STAGE_TEST)');
@@ -318,11 +320,27 @@ export const makeStage = (theme, { evil = false, quality = 'high' } = {}) => {
       land.addColorStop(1, css(pal.ground.clone().lerp(pal.far, 0.3)));
       g.fillStyle = land;
       g.fillRect(0, hy, w, h - hy);
-      let seed = 7;
+      // THE SKYLINE, at ONE SCALE whatever the card's shape (the painters take a width and a horizon height and scale their shapes
+      // by both, so a card 192 x 69 with its horizon 16 px down, the phone's, stretched a city 12 times wider than tall): they are
+      // always given the same DESIGN picture, SKY_W x SKY_H, drawn with one uniform scale (the horizon's height over SKY_H), the
+      // design centred on the card and cropped where the card is narrower, repeated mirrored (the edges meet) where it is wider
+      let seed;
       const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-      g.save(); g.scale(ratio, ratio);
-      try { file?.skyline?.(g, cw, ch, hy / ratio, pal, rnd, css); } catch (error) { console.warn('Stage skyline: ' + (error?.message || error)); }
-      g.restore();
+      const horizon = hy / ratio, k = horizon / SKY_H;
+      if (k > 0 && file?.skyline) {
+        const tile = SKY_W * k, x0 = (cw - tile) / 2, drop = ch / k; // (drop: the card's height in design px, for a painter that fills the land too)
+        g.save(); g.scale(ratio, ratio);
+        for (let n = Math.floor(-x0 / tile); n <= Math.floor((cw - x0) / tile); n++) {
+          const flip = Math.abs(n) % 2 === 1;
+          g.save();
+          g.translate(x0 + n * tile + (flip ? tile : 0), 0); g.scale(flip ? -k : k, k);
+          g.beginPath(); g.rect(0, 0, SKY_W, drop); g.clip();
+          seed = 7; // (every tile the same picture)
+          try { file.skyline(g, SKY_W, drop, SKY_H, pal, rnd, css); } catch (error) { console.warn('Stage skyline: ' + (error?.message || error)); n = Infinity; }
+          g.restore();
+        }
+        g.restore();
+      }
       return true;
     },
     // what it costs (for ?stagelog and the notes)

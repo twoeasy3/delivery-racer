@@ -162,6 +162,27 @@ try {
     }
     check(!bad.length, 'a card of any size (0x0 to 5000x5000): framed and painted, the backdrop at most 400k px, nothing thrown' + (bad.length ? ': ' + bad.join('; ') : ''));
   }
+  // ---- no stretch: at the phone's shape (a wide short card, its horizon 16 px down) and the desktop's tall one, the backdrop canvas is the card's
+  // shape, and the skyline is drawn from the same design picture (SKY_W x SKY_H) at ONE uniform scale (|sx| = sy), never a stretch
+  {
+    for (const theme of ['castle', 'city', 'tokyo']) {
+      await stageFile(theme); await after(30);
+      const bad = [];
+      for (const [w, h] of [[192, 69], [176, 69], [236, 120], [277, 270], [369, 520], [326, 420]]) {
+        const s = makeStage(theme), v = view(w, h); s.attach(v); s.frame(v.camera);
+        const scales = [], rec = new Proxy({}, { get: (_, name) => (name === 'scale' ? (x, y) => scales.push([x, y]) : () => ({ addColorStop() {} })), set: () => true });
+        const back = { width: 0, height: 0, style: {}, dataset: {}, getContext: () => rec };
+        s.repaint = true; s.paint(back, v.camera, w, h);
+        const ratio = back.width / w;
+        if (Math.abs(back.height / ratio - h) > 1) bad.push(w + 'x' + h + ' canvas ' + back.width + 'x' + back.height);
+        const tiles = scales.slice(1); // (the first: the pixel ratio)
+        if (!tiles.length) bad.push(w + 'x' + h + ' no skyline drawn');
+        for (const [x, y] of tiles) if (Math.abs(Math.abs(x) - y) > 1e-9) bad.push(w + 'x' + h + ' stretched ' + x + ',' + y);
+        s.dispose();
+      }
+      check(!bad.length, theme + ": backdrop the card's shape, skyline at one uniform scale on phone, landscape and desktop cards (no stretch)" + (bad.length ? ': ' + bad.join('; ') : ''));
+    }
+  }
   // ---- the menu: on by default, the picked level's theme, ?stage=off the plain card (and the module not loaded), never in Start's way
   {
     const src = readFileSync(new URL('../src/delivery/render/menustage.js', import.meta.url), 'utf8');
