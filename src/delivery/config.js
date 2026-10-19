@@ -1225,10 +1225,11 @@ export const CONFIG = {
   tankHeadOnDamage: 0.2,   // share of full health a head-on costs the tank; nothing else hurts it
   cannonRange: 26,         // m ahead of the tank the shell lands
   cannonCooldown: 0.64,    // s
-  cannonDirectRadius: 4.5, // m: anything this close to the blast is destroyed outright
+  cannonDirectRadius: 4.5, // m (plus half the car's length): the blast's CENTRE, about 0.4 of its splash radius: a car here takes cannonCentreDamage
+  cannonCentreDamage: 10000, // health a car at the blast's centre loses (destroyed outright)
   cannonSplashRadius: 11,  // m
   cannonSplashDamage: 63,
-  cannonCrit: 3,           // times likelier than usual that a car the splash catches takes a critical hit
+  cannonCrit: 3,           // times likelier than usual that a car the splash catches takes a critical hit (TANK RAGE's own shell: always one, see Packages.blast)
   cannonBlastScale: 1.4,   // size of the shell's explosion (fire and debris) against a big wreck's
   cannonSmoke: 0.3,        // and of its smoke: kept light, as the tank drives straight into it
   // broken tracks: a traffic tank's puncture, only ever from a shell's blast or a package's splash. Chance
