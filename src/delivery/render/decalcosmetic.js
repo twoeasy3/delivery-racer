@@ -117,6 +117,7 @@ export const decalLayout = (d, zones, S = 1, opts = {}) => {
       return out.filter(p => p.z1 - p.z0 >= 0.3);
     };
     let best = null;
+    const cands = [];
     for (const z of seeds) {
       const h = Math.min(want, (z.y1 - z.y0) * 0.85);
       for (const yc of [(z.y0 + z.y1) / 2, ...[0, 1, 2, 3, 4].map(k => z.y1 - h / 2 - 0.005 - k * 0.02), z.y0 + h / 2 + 0.01]) { // (the middle, a few heights from the top down, the bottom)
@@ -125,11 +126,22 @@ export const decalLayout = (d, zones, S = 1, opts = {}) => {
         const lens = per.flatMap(p => p.pieces.map(r => r.z1 - r.z0)), long = Math.max(0, ...lens); // (an unbroken band wins: its longest piece counts in full, the others a third)
         const both = per.every(p => p.pieces.length) ? 1 : 0.25; // (a height that dresses both flanks over one that leaves a flank bare: CHECKLIST 508, the coach)
         const score = (long + (lens.reduce((t, l) => t + l, 0) - long) / 3) * Math.sqrt(Math.min(1, h / want)) * both; // (a thinner unbroken band over a broken full-height one)
+        if (score > 0) cands.push({ score, h, ya, yb, per });
         if (score > 0 && (!best || score > best.score + 1e-6)) best = { score, h, ya, yb, per };
       }
     }
     if (!best) return [];
-    if (opts.runs) best.per = sides.map(side => ({ side, pieces: piecesAt(side, best.ya, best.yb, true) })); // (the height chosen on the coarse probe; its runs found on the fine one)
+    if (opts.runs) { // (the height chosen on the coarse probe; its runs found on the fine one. A flank the fine probe leaves bare (thin ribs the
+      // 8 cm probe stepped over: the Coach's Tiger) passes to the next best height that keeps both flanks dressed, if any: CHECKLIST 508)
+      const fineOf = (c) => sides.map(side => ({ side, pieces: piecesAt(side, c.ya, c.yb, true) }));
+      best.per = fineOf(best);
+      if (!best.per.every(p => p.pieces.length)) {
+        for (const c of cands.filter(c => c !== best && c.per.every(p => p.pieces.length)).sort((a, b) => b.score - a.score).slice(0, 6)) {
+          const per = fineOf(c);
+          if (per.every(p => p.pieces.length)) { best = { ...c, per }; break; }
+        }
+      }
+    }
     return best.per.flatMap(({ side, pieces }) => pieces.map(p => ({ z0: p.z0, z1: p.z1, y0: best.ya, y1: best.yb, cell: [0, 0, (p.z1 - p.z0) / (best.h * d.aspect), 1], zone: p.zone || 'run', ...(side ? { side } : {}) })));
   }
   // a panel or a badge: on the zone it is biggest in (a tie: the one nearer the nose)
