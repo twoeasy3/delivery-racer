@@ -46,6 +46,7 @@ export const Player = {
   oiled: 0,
   glued: 0,            // s left held still on a glue pile (CONFIG.gluePile; see Hazards), and the speed it is let go at
   gluedSpeed: 0,
+  emp: 0,              // s left with its electronics out, after an EMP mine (CONFIG.empMine; see Hazards): no accelerator, steering or throwing
   onWater: false,      // ...and that being a burst main's water (see CONFIG.waterMain: its own share of the brakes and the steering)
   wetTyres: 0,         // 1 .. 0: after a burst main's water or standing water, the tyres stay wet for Track.wet.wetAfter m (ice lets go the moment the car is off it)
   wading: 0,           // how deep the tide's water is where the car is (see Tide): 0 = dry, 1 = full depth
@@ -184,6 +185,7 @@ export const Player = {
     this.butterfingers = 0;
     this.oiled = 0; this.onOil = false; // (an oil slick's: see Hazards)
     this.glued = 0; this.gluedSpeed = 0; // (a glue pile's: held still for `glued` s, then let go at gluedSpeed)
+    this.emp = 0; // (an EMP mine's: see Hazards)
     this.puncture = 0;   // a flat tyre: -1 (left) or 1 (right), 0 none (see punctureTyre)
     this.fixing = 0;     // s stopped so far, changing it
     this.tyreGrace = 0;  // s since it was changed, still let off the shoulder meter
@@ -392,6 +394,12 @@ export const Player = {
     const lifting = this.mystery === 'noBrakes' && throttle < 0;
     if (this.mystery === 'noBrakes') throttle = Math.max(0, throttle);
     if (this.glued > 0) { this.speed = 0; this.brakeLight = false; return; } // (held on a glue pile: see Hazards)
+    if (this.emp > 0) { // (an EMP mine's: no accelerator, slowing hard to a crawl, never a stop; see Hazards)
+      const E = CONFIG.empMine;
+      this.speed = Math.max(Math.min(this.speed, E.crawl), this.speed - E.decel * dt);
+      this.brakeLight = true;
+      return;
+    }
     if (this.busted) { // caught: the police slow the car to a crawl, it keeps rolling (no throttle or brake)
       this.speed = Math.max(Math.min(this.speed, CONFIG.policeCrawlSpeed), this.speed - CONFIG.brake * dt);
       this.brakeLight = true;
@@ -561,6 +569,7 @@ export const Player = {
     this.armour = Math.max(0, this.armour - dt);
     this.bigSplash = Math.max(0, this.bigSplash - dt);
     this.butterfingers = Math.max(0, this.butterfingers - dt);
+    this.emp = Math.max(0, this.emp - dt);
     if (this.mystery && (this.mysteryTime -= dt) <= 0) this.endMystery();
     if (this.glued > 0 && (this.glued -= dt) <= 0) { this.glued = 0; this.speed = Math.max(this.speed, this.gluedSpeed); } // (a glue pile lets go)
     // ice: hitting it, the car slews round (the look of it only), with a squeal of tyres
@@ -612,7 +621,7 @@ export const Player = {
     // steering moves the car freely; hands off, it stays where it is within its lane.
     // Busted, it can't be steered: it rolls straight on until the helicopter has it.
     let wantVel;
-    if (this.busted || this.glued > 0) { // (or held on a glue pile)
+    if (this.busted || this.glued > 0 || this.emp > 0) { // (or held on a glue pile, or with an EMP mine's electronics out)
       wantVel = 0;
     } else if (steer !== 0) {
       wantVel = steer * CONFIG.steerSpeed * this.agility * seaSteer * (slippery ? slippery.laneSpeed : 1) * Math.min(1, Math.max(0, this.speed) / CONFIG.steerFullSpeed); // (afloat, it moves across more slowly; and on ice or a burst main's water)
@@ -717,5 +726,6 @@ Object.assign(Message.conditions, {
   slipping: { on: () => Player.gripLost > 0.02, progress: () => 1 - Player.gripLost }, // (its ring shows the grip lost: the more, the fuller)
   heavy: { on: () => Player.heavy > 0, left: () => Player.heavy },
   butterfingers: { on: () => Player.butterfingers > 0, left: () => Player.butterfingers },
+  emp: { on: () => Player.emp > 0, left: () => Player.emp },
   mystery: { on: (effect) => Player.mystery === effect, left: () => Player.mysteryTime }, // (the effect the message is for: the last of its path)
 });

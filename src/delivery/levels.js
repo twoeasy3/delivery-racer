@@ -336,6 +336,9 @@
 //              far worse than ice (CONFIG.oilSlick's numbers) for CONFIG.oilSlick.time s. Traffic drives over it untouched
 //   gluePiles  { s, lane }: a glue pile at s in that lane: the player's car driven onto it is held still there for
 //              CONFIG.gluePile.hold s, then let go at .kept of the speed it came with. Traffic drives over it untouched
+//   empMines   { s, lane }: an EMP mine at s in that lane: run over by the player's car (a ghost passes over), it goes off and is
+//              gone: CONFIG.empMine.damage damage, and for .time s no accelerator, no steering, no throwing, the car slowing
+//              hard to a crawl. Traffic drives over it untouched
 //   balloons   { s, lanes: [first, last] }: a hot-air balloon comes down on those lanes, sits, and lifts off again
 //   drawbridges { s }: bells, booms, and two leaves that lift: the car goes up the near one and jumps the gap if it
 //              came fast enough (a board gives the speed), or stops short, or drops in. On straight road

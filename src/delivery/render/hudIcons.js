@@ -32,6 +32,8 @@ export const STICKY_ICONS = {
   airborne: '<path class="f" d="M3.5 12.5v-2.6l2.6-.7 1.9-3h5.2l2.4 3 3 .7v2.6z"/><circle cx="7.6" cy="14.4" r="1.7"/><circle cx="16.4" cy="14.4" r="1.7"/><path d="M4 20.5h3.5M10 20.5h4M16.5 20.5H20"/>',
   // slipping: a car with the wavy skid marks behind it
   slipping: '<path class="f" d="M8.5 3.5h7l1.6 5.5v5h-10.2V9z"/><path d="M8.5 17c1.6-1.4 1.6 1.4 3.5 0s1.6 1.4 3.5 0M7.5 21c1.6-1.4 1.6 1.4 3.5 0s1.6 1.4 3.5 0"/>',
+  // emp: a lightning bolt, struck through
+  emp: '<path class="f" d="M13.5 2.5L5.5 13.5h5.2l-1.7 8 8.5-11.5h-5.3z"/><path class="x" d="M4 20L20 4"/>',
   // infected: the radiation trefoil
   infected: '<circle class="f" cx="12" cy="12" r="1.9"/><path class="f" d="M9.75 8.1L7.25 3.77a9.5 9.5 0 0 1 9.5 0L14.25 8.1a4.5 4.5 0 0 0-4.5 0zM16.5 12h5a9.5 9.5 0 0 1-4.75 8.23l-2.5-4.33A4.5 4.5 0 0 0 16.5 12zM9.75 15.9l-2.5 4.33A9.5 9.5 0 0 1 2.5 12h5a4.5 4.5 0 0 0 2.25 3.9z"/>',
   // (any other: a warning triangle, so a line added to the table is never without one)

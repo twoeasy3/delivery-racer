@@ -60,6 +60,7 @@ const GIMMICKS = [
   ['Burst water mains', (l) => some(l.waterMains)],
   ['Oil slicks', (l) => some(l.oilSlicks)],
   ['Glue piles', (l) => some(l.gluePiles)],
+  ['EMP mines', (l) => some(l.empMines)],
   ['Speed cameras', (l) => some(l.cameras)],
   ['Level crossing', (l) => some(l.crossings)],
   ['Roadworks', (l) => some(l.stopGo)],

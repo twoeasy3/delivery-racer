@@ -291,6 +291,35 @@ try {
     let tankGlued = false;
     g.run(4, () => { quiet(); P.tank = 1; if (P.glued > 0) tankGlued = true; return P.s > glue.s + 10; });
     check(!tankGlued, 'glue pile: a tank rides over it untouched');
+
+    // ---- EMP mine (s 2750, lane 4): a little damage, then no accelerator, steering or throwing for CONFIG.empMine.time s
+    const emp = own('emp'), E = g.CONFIG.empMine, { Packages } = await g.load('packages.js');
+    check(!!emp, 'EMP mine: on the level');
+    start(emp.s - 40, 4, 30);
+    const hp = P.health;
+    let hit = false;
+    g.run(4, () => { quiet(); if (P.emp > 0) hit = true; return hit; });
+    check(hit && own('emp').gone && said('EMP!'), 'EMP mine: run over, it goes off and is gone (and says so)');
+    check(Math.abs(hp - P.health - E.damage) < 0.01, 'EMP mine: ' + E.damage + ' damage (' + (hp - P.health).toFixed(1) + ')');
+    check(g.Message.sticky.some(h => h.path === 'events.emp'), 'EMP mine: its status icon is up');
+    const flying = () => Packages.list.filter(p => p.active).length, latAt = P.lat, thrown = flying();
+    g.drive(1, 1);
+    Packages.throwOne();
+    let slowest = P.speed, outFor = 0;
+    g.run(E.time + 1, () => { quiet(); if (P.emp > 0) { outFor += 1 / 60; slowest = Math.min(slowest, P.speed); } return P.emp <= 0; });
+    console.log('         (out for ' + outFor.toFixed(2) + ' s, down to ' + slowest.toFixed(1) + ' m/s with the accelerator held, moved ' + Math.abs(P.lat - latAt).toFixed(2) + ' m across steering hard)');
+    check(Math.abs(outFor - E.time) < 0.1, 'EMP mine: the electronics are out for ' + E.time + ' s');
+    check(slowest <= E.crawl + 0.01 && slowest > 0, 'EMP mine: no accelerator: it slows hard, to a crawl (' + E.crawl + ' m/s), never a stop');
+    check(Math.abs(P.lat - latAt) < 0.3, 'EMP mine: no steering');
+    check(flying() === thrown, 'EMP mine: no throwing');
+    const v0 = P.speed;
+    g.run(1, () => { quiet(); });
+    const before = flying();
+    Packages.throwOne();
+    check(P.speed > v0 + 1 && Math.abs(P.lat - latAt) > 0.5 && flying() > before && !g.Message.sticky.some(h => h.path === 'events.emp'), 'EMP mine: after it, the accelerator, steering and throwing answer again, and the icon is gone');
+    start(emp.s - 40, 4, 30, { ghost: true });
+    g.run(3, () => { quiet(); return P.s > emp.s + 10; });
+    check(!(P.emp > 0) && !own('emp').gone, 'EMP mine: a ghost passes over it');
   }
 
   // ---- slippery road: ice and a burst main's water against the dry road (CONFIG.ice, CONFIG.waterMain), on

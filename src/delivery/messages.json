@@ -88,6 +88,7 @@
     "slipping": ["Losing grip: steering and braking are weak."],
     "oilSlick": ["Oil!"],
     "gluePile": ["Glue!"],
+    "emp": ["EMP! No controls."],
     "lowBridgeFits": ["Low bridge ahead: you fit under it."],
     "lowBridgeTall": ["LOW BRIDGE ahead: you're too tall! The exit goes round."],
     "lowBridgeHit": ["CLANG!! Too tall. There goes the roof rack."],
@@ -462,6 +463,7 @@
     "badGas": ["Bad gas"],
     "heavy": ["Heavy"],
     "butterfingers": ["Butterfingers: no throwing"],
+    "emp": ["EMP: no controls"],
     "infected": ["Infected: health ticking down"]
   },
   "mysteryNames": {

@@ -41,11 +41,11 @@ const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 21474836
 let attached = false;
 
 // ---- the player's own road hazards, laid flat on the road: oil slicks (a stretch of `length` m of one lane from s) and glue
-// piles (a mound `r` m round, at s). Each a list in the level ({ s, lane, road?, exit? }). They touch ONLY the player's car:
+// piles and EMP mines (a mound, a disc, `r` m round, at s). Each a list in the level ({ s, lane, road?, exit? }). They touch ONLY the player's car:
 // traffic drives over them untouched. A tank, a car just set down (its shield) and a car in the air ride over them too.
 // What each is: { kind, lane, from, to, s (its middle), half (m either side of its lane's middle), point (a mound, not a stretch) }
-export const PATCH_LISTS = { oilSlicks: 'oil', gluePiles: 'glue' };
-const PATCH_SIZE = { oil: () => ({ length: CONFIG.oilSlick.length, half: CONFIG.oilSlick.half }), glue: () => ({ r: CONFIG.gluePile.r }) };
+export const PATCH_LISTS = { oilSlicks: 'oil', gluePiles: 'glue', empMines: 'emp' };
+const PATCH_SIZE = { oil: () => ({ length: CONFIG.oilSlick.length, half: CONFIG.oilSlick.half }), glue: () => ({ r: CONFIG.gluePile.r }), emp: () => ({ r: CONFIG.empMine.r }) };
 export const patchesOf = (level) => {
   const out = [];
   for (const [list, kind] of Object.entries(PATCH_LISTS)) {
@@ -74,7 +74,7 @@ export const Hazards = {
   marathons: [], // { s0, lane, on, members: obstacles with run: { s0, off } }
   stampedes: [], // { from, to, on, animals: obstacles with charge: { s0, lat0, speed, phase } }
   tunnelJunctions: [], // { s, side, from, to (lat the train sets out from, and crosses to), state: 'idle' | 'warn' | 'cross' | 'done', t, train: obstacles (the tug first) }
-  patches: [],   // the player's own: oil slicks and glue piles (see patchesOf); a pile's `used` while the car is stuck on it
+  patches: [],   // the player's own: oil slicks, glue piles, EMP mines (see patchesOf); a pile's `used` while the car is stuck on it, a mine's `gone`
   jump: null,    // the player in the air off a drawbridge's leaf: { bridge, vy (m/s up), vx (along the road), over (been over the gap), sunk (into the far leaf's end) }
   lastS: 0,
 
@@ -514,7 +514,8 @@ export const Hazards = {
     }
 
     // ---- the player's own (see patchesOf): an oil slick puts the car on ice, far worse, for a moment; a glue pile holds it
-    // still for a moment, then lets it go at a share of the speed it came with (once a pass: free again `rearm` m off it)
+    // still for a moment, then lets it go at a share of the speed it came with (once a pass: free again `rearm` m off it);
+    // an EMP mine knocks out its electronics for a while (Player.emp), and is gone
     const free = Player.active && Player.shield <= 0 && Player.tank <= 0 && Player.air < 0.05 && !Player.busted;
     for (const p of this.patches) {
       if (p.used && Math.abs(Player.s - p.s) > CONFIG.gluePile.rearm) p.used = false;
@@ -522,6 +523,14 @@ export const Hazards = {
       if (p.kind === 'oil') {
         if (!(Player.oiled > 0)) { Message.say('events', 'oilSlick'); sfx('brake', 0.7); }
         Player.oiled = CONFIG.oilSlick.time;
+      } else if (p.kind === 'emp' && !p.gone && Player.ghost <= 0) { // (an EMP mine: gone off, and gone; a ghost passes over)
+        const E = CONFIG.empMine;
+        p.gone = true;
+        hurt(Player, E.damage);
+        Player.emp = E.time;
+        Game.shake = Math.max(Game.shake, 0.6);
+        Message.say('events', 'emp');
+        sfx('zap', 1);
       } else if (p.kind === 'glue' && !p.used && !(Player.glued > 0)) {
         const G = CONFIG.gluePile;
         p.used = true;

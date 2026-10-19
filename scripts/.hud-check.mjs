@@ -70,6 +70,7 @@ try {
     // (the car's own steps reset these two, so they are held with a getter while the check runs)
     'events.airborne': [() => { hold('air', 1); Message.say('events', 'airborne'); }, () => release('air')],
     'events.slipping': [() => { hold('gripLost', 0.7); Message.say('events', 'slipping'); }, () => release('gripLost')],
+    'events.emp': [() => { P.emp = g.CONFIG.empMine.time; Message.say('events', 'emp'); }, () => { P.emp = 0; }], // (an EMP mine's: hazards.js)
     'events.infected': [() => Radiation.infect(), () => { Radiation.infected = false; }], // (radiation.js: a full meter, or an infected car touched)
   };
   for (const path of Object.keys(T.sticky)) {

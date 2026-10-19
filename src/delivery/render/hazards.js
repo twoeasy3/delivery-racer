@@ -99,6 +99,7 @@ const smallBoard = (text, bg, fg, w, h) => {
   return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), side: THREE.DoubleSide }));
 };
 const BEACON_ON = 0xffb020, BEACON_OFF = 0x5a4010;
+const SPARKS = 9; // (line segments of the EMP's sparks)
 
 Game.onLoad.push(() => {
   clearGroup(group); // (freed, not only dropped: audit P7)
@@ -240,7 +241,8 @@ Game.onLoad.push(() => {
     standing = { rim, sheen, sheenBase: look.sheen ?? 0.35, rimBase: rimOpacity };
   }
   // ---- the player's own (../hazards.js patchesOf), flat on the road: an oil slick, a black pool with a sheen on it; a glue
-  // pile, a low pale mound with a few blobs splashed round it.
+  // pile, a low pale mound with a few blobs splashed round it; an EMP mine, a flat dark disc with a blue light flashing on it
+  // (all the mines' lights one material), gone once it has gone off.
   // Merged by material: a mesh or two for the level, whatever the count. (Textures: 192 x 192 canvases, two, only on a level with one)
   own = null;
   const patches = patchesOf(LEVEL);
@@ -255,7 +257,26 @@ Game.onLoad.push(() => {
       }
       if (p.kind === 'oil') oil.push(new THREE.PlaneGeometry(O.half * 2 + 0.9, O.length + 1.4).rotateX(-Math.PI / 2).rotateY(h).translate(tmp.x, tmp.y + 0.03, tmp.z));
     }
-    own = {};
+    own = { mines: [] };
+    const mineLamp = glow(0x16305a), mineHalo = flat(0x4aa8ff, -6, { transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+    const mineBody = lambert(0x2b2f38), mineRim = lambert(0x5a606a), EM = CONFIG.empMine;
+    for (const p of patches) {
+      if (p.kind !== 'emp') continue;
+      const mine = at(p.s, Track.laneOffset(p.lane, p.s));
+      add(mine, new THREE.CylinderGeometry(EM.r * 0.8, EM.r, 0.12, 14), mineBody, 0, 0.06, 0);
+      add(mine, new THREE.TorusGeometry(EM.r * 0.62, 0.04, 4, 14).rotateX(Math.PI / 2), mineRim, 0, 0.125, 0);
+      add(mine, new THREE.CylinderGeometry(0.16, 0.16, 0.08, 10), mineLamp, 0, 0.16, 0);
+      add(mine, new THREE.CircleGeometry(EM.r * 1.6, 18).rotateX(-Math.PI / 2), mineHalo, 0, 0.03, 0);
+      own.mines.push(mine);
+    }
+    own.mineLamp = mineLamp; own.mineHalo = mineHalo;
+    // (the EMP's sparks about the player's car while its electronics are out: one set of line segments, moved in place)
+    const sparkPos = new Float32Array(SPARKS * 6), sparkGeo = new THREE.BufferGeometry();
+    sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
+    own.sparks = new THREE.LineSegments(sparkGeo, new THREE.LineBasicMaterial({ color: 0xaee0ff, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending }));
+    own.sparks.frustumCulled = false;
+    own.sparks.visible = false;
+    if (own.mines.length) group.add(own.sparks);
     if (glue.length) { const merged = mergeGeometries(glue); glue.forEach(g => g.dispose()); group.add(new THREE.Mesh(merged, lambert(0xece4c2))); }
     if (oil.length) {
       const merged = mergeGeometries(oil);
@@ -409,6 +430,26 @@ export const syncHazards = (now) => {
     mesh.foam.opacity = (0.8 + 0.12 * Math.sin(t * 5 + k)) * shown;
     mesh.jet.userData.set(m.on ? Math.min(1, m.t / 0.5) : Math.max(0, 1 - m.t / 0.4), t, mesh.x, mesh.y, mesh.z, Game.paused || !close);
   });
+  if (own?.mines.length) {
+    const F = CONFIG.empMine.flash, lit = (t / F.period) % 1 < F.on;
+    own.mineLamp.color.setHex(lit ? 0x4aa8ff : 0x16305a);
+    own.mineHalo.opacity = lit ? 0.45 : 0;
+    let k = 0;
+    for (const p of Hazards.patches) if (p.kind === 'emp' && own.mines[k]) own.mines[k++].visible = !p.gone;
+    // (sparks crackling over the car, a fresh few each frame, while its electronics are out)
+    const on = Player.active && Player.emp > 0 && !Game.paused;
+    own.sparks.visible = on && Math.floor(now / 60) % 3 !== 0;
+    if (own.sparks.visible) {
+      const a = own.sparks.geometry.attributes.position, P = Player;
+      for (let i = 0; i < SPARKS; i++) {
+        const h = Track.toWorld(P.s + (Math.random() - 0.5) * 2 * P.hl, P.lat + (Math.random() - 0.5) * 2 * P.hw, tmp), y = tmp.y + P.air + 0.3 + Math.random() * P.height;
+        const dx = (Math.random() - 0.5) * 0.7, dy = (Math.random() - 0.3) * 0.6, dz = (Math.random() - 0.5) * 0.7;
+        a.setXYZ(i * 2, tmp.x, y, tmp.z);
+        a.setXYZ(i * 2 + 1, tmp.x + dx * Math.cos(h) + dz * Math.sin(h), y + dy, tmp.z + dz * Math.cos(h) - dx * Math.sin(h));
+      }
+      a.needsUpdate = true;
+    }
+  }
   if (own?.oilSheen) own.oilSheen.opacity = 0.32 + 0.12 * Math.sin(t * 1.7); // (the oil's rainbow sheen, shifting)
   if (standing) { standing.sheen.opacity = standing.sheenBase * (0.85 + 0.25 * Math.sin(t * 2.3)); standing.rim.opacity = standing.rimBase * (0.93 + 0.1 * Math.sin(t * 3.1)); } // (the light on standing water)
   Hazards.balloons.forEach((b, k) => {

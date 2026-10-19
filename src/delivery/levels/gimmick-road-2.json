@@ -67,6 +67,9 @@
   "gluePiles": [
     { "s": 2550, "lane": 4 }
   ],
+  "empMines": [
+    { "s": 2750, "lane": 4 }
+  ],
   "stampedes": [
     { "from": 600, "to": 760, "count": 8, "kind": "kangaroo", "road": "side" }
   ],

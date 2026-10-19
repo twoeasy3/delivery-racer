@@ -122,6 +122,7 @@ export const Packages = (() => {
   const throwOne = () => {
     if (!Player.active || Player.busted || cooldown > 0) return; // (no throwing while being busted)
     if (Player.butterfingers > 0) return; // (butterfingers: it slips through them)
+    if (Player.emp > 0) return; // (an EMP mine's: the electronics out)
     let gun = Player.tank > 0 ? null : CAR.cannon; // (the Battlefield's 8x8: a gun of its own, smaller)
     if (LEVEL.noPackages && !gun) return false; // (a level where nobody throws anything)
     // the 8x8's gun picks its target as a package does (the nearest, one behind counting as throwBehind
