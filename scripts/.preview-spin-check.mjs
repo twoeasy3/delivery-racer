@@ -69,7 +69,7 @@ try {
   check(users.every(f => /makeShowCar\(/.test(readFileSync(new URL('../src/delivery/render/' + f + '.js', import.meta.url), 'utf8'))), 'every vehicle preview builds its car with makeShowCar (on show): ' + users.join(', '));
   const { fingerprints } = await import('./logic-hash.mjs');
   const fp = fingerprints();
-  check(fp.logic === 'c0c2c73e68' && fp.legacy === '8c50a659a9', 'the replay fingerprint unchanged (since CHECKLIST 494, the ram cap, throw spread, tank shell and rickety floor: was 8dbc477d85 / bcc9df44d0; since CHECKLIST 476, the dead-end side rule, was 057a22806d; since CHECKLIST 470, no pickup in the air; was 33a0394c26 / dd565f56b3): ' + JSON.stringify(fp));
+  check(fp.logic === '51eeb6e567' && fp.legacy === '7f39b6494b', 'the replay fingerprint unchanged (since CHECKLIST 494 + 496-499, the ram cap, throw spread, tank shell, rickety floor and the oil / glue / EMP / magma hazards: was c0c2c73e68 / 8c50a659a9 after 494 alone, 8dbc477d85 / bcc9df44d0; since CHECKLIST 476, the dead-end side rule, was 057a22806d; since CHECKLIST 470, no pickup in the air; was 33a0394c26 / dd565f56b3): ' + JSON.stringify(fp));
 } catch (e) {
   failures++;
   console.log('  FAIL  ' + (g.fixStack ? g.fixStack(e.stack) : e.stack));
