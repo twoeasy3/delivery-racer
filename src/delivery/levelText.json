@@ -682,6 +682,14 @@
       "evil": "snakes"
     }
   },
+  "apron-run": {
+    "name": "Apron Run",
+    "description": {
+      "good": "A globe for the departures lounge. The service road runs past the stands: mind the jet blast and the bus convoys.",
+      "evil": "An angry goose for the cargo shed. Cut through the jet blast flat out and pass the crew buses on the wrong side."
+    },
+    "cargo": { "good": "globe", "evil": "goose" }
+  },
   "mall-dash": {
     "name": "Mall Dash",
     "description": {

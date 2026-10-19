@@ -719,6 +719,8 @@ import neonGrid from './levels/neon-grid.json';
 HIDDEN_LEVELS['neon-grid'] = neonGrid; // Neon Grid (the neon future city: boost strips and maglev pylons in the lanes): ?hidden=neon-grid, until the owner decides
 import metroRun from './levels/metro-run.json';
 HIDDEN_LEVELS['metro-run'] = metroRun; // Metro Run (a metro system: running tunnels, stations, an interchange, the depot: render/themes/metro.js): ?hidden=metro-run, until it is put in the career
+import apronRun from './levels/apron-run.json';
+HIDDEN_LEVELS['apron-run'] = apronRun; // Apron Run (the airport apron theme: a service road past the stands, jet blast across it): ?hidden=apron-run, until the owner decides
 import obstacleLab from './levels/obstacle-lab.json';
 HIDDEN_LEVELS['obstacle-lab'] = obstacleLab; // Obstacle Lab (a test track: every obstacle formation of OBSTACLE-STAGE-DESIGN.md once, barriers only): ?hidden=obstacle-lab, never on the menus
 import tutorial from './levels/tutorial.json';

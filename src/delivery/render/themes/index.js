@@ -47,6 +47,7 @@ const THEME_FILES = {
   alpinepass: () => import('./alpine.js'), // (the alpine theme's scenery; the snow theme's is 'snowpass', in road.js)
   nordic: () => import('./nordic.js'), // (the Nordic fjord)
   castle: () => import('./castle.js'),
+  apron: () => import('./apron.js'), // (the airport apron: not the 'airport' theme's perimeter road)
   // (batch E: Las Vegas strip, Alpine pass, Steelworks: new themes go above this line)
 };
 
