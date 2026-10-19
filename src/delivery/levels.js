@@ -717,6 +717,8 @@ import fjordRoad from './levels/fjord-road.json';
 HIDDEN_LEVELS['fjord-road'] = fjordRoad; // Fjord Road (the nordic theme: fjord, rock tunnels): ?hidden=fjord-road, until the owner decides
 import neonGrid from './levels/neon-grid.json';
 HIDDEN_LEVELS['neon-grid'] = neonGrid; // Neon Grid (the neon future city: boost strips and maglev pylons in the lanes): ?hidden=neon-grid, until the owner decides
+import oilPatch from './levels/oil-patch.json';
+HIDDEN_LEVELS['oil-patch'] = oilPatch; // Oil Patch (the oil field: spilt crude where the pipeline crosses, barrier formations round the leaks): ?hidden=oil-patch, until the owner decides
 import metroRun from './levels/metro-run.json';
 HIDDEN_LEVELS['metro-run'] = metroRun; // Metro Run (a metro system: running tunnels, stations, an interchange, the depot: render/themes/metro.js): ?hidden=metro-run, until it is put in the career
 import apronRun from './levels/apron-run.json';

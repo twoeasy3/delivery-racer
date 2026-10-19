@@ -46,6 +46,7 @@ export const STAGE_FILES = {
   // drawn as the suburb but keep their own stages)
   ...Object.fromEntries(TABLE_THEMES.map((name) => [name, () => import('./stages/table.js').then((m) => ({ stage: m.stageOf(name) }))])),
   apron: () => import('./stages/apron.js'),
+  oilfield: () => import('./stages/table.js').then((m) => ({ stage: m.stageOf('oilfield') })), // (a row of the table, outside TABLE_THEMES)
   // (new stages go above this line: one line each)
 };
 const loaded = {}, loading = {}, warned = new Set();

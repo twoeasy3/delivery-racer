@@ -60,6 +60,7 @@
     "waterMain": ["Burst water main! It's slippery while it sprays."],
     "standingWater": ["Standing water! Slippery, and wet tyres after."],
     "wetFloor": ["WET FLOOR!"],
+    "oilSpill": ["OIL SPILL!"],
     "tunnelJunction": ["Side tunnel ahead! Mind what comes out."],
     "trainAhead": ["TRAIN COMING!!! Off the left track!"],
     "trainBehind": ["TRAIN BEHIND!!! Off the right track!"],
