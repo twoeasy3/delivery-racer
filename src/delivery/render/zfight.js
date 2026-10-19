@@ -84,7 +84,8 @@ export const findZFights = (model, { gap: GAP = 0.004, minArea = 0.0001 } = {}) 
       if (A.node === B.node && A.p.some(q => B.p.some(r => q.distanceToSquared(r) < 1e-10))) continue; // (neighbours in one surface)
       const gap = Math.max(...B.p.map(q => dist(q, A)), ...A.p.map(q => dist(q, B)));
       if (gap > GAP) continue;
-      const same = colourOf(A.m) === colourOf(B.m) && !A.m?.map && !B.m?.map && A.m?.opacity === B.m?.opacity; // (the same flat colour: the flicker cannot be seen)
+      const same = colourOf(A.m) === colourOf(B.m) && A.m?.type === B.m?.type && !A.m?.map && !B.m?.map && A.m?.opacity === B.m?.opacity // (the same flat colour,
+        && (A.m?.type === 'MeshBasicMaterial' || dot > 0.9995);                    //  lit alike, vertex shading by height alike: the flicker cannot be seen)
       const area = overlapArea(A, B);
       if (area < 1e-6) continue;
       const key = Math.min(A.node.id, B.node.id) + '|' + Math.max(A.node.id, B.node.id) + '|' + (dot > 0 ? 's' : 'o') + (same ? 'c' : '');
