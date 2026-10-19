@@ -24,4 +24,14 @@ export const BATCH_M5_LAMPS = {
       { at: [0.88, 0.42, -1.848], size: [0.1, 0.1], round: true, mirror: true, shared: 'red stone' },
     ],
   },
+  // the Skip Lorry: square headlamps with amber indicators outboard of them in the front bumper; red tail lamps (each brakes
+  // whole) with amber indicators outboard in the light bar across the stabiliser legs' feet. (The roof beacon is left out.)
+  skiplorry: {
+    head: [{ at: [0.78, 0.64, 3.35], size: [0.24, 0.16], mirror: true }],
+    tail: [{ at: [0.86, 0.48, -3.275], size: [0.22, 0.1], mirror: true }],
+    blink: [
+      { at: [1.06, 0.64, 3.35], size: [0.14, 0.1], mirror: true },
+      { at: [1.08, 0.48, -3.275], size: [0.12, 0.1], mirror: true },
+    ],
+  },
 };

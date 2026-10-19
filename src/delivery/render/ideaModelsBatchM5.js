@@ -246,3 +246,102 @@ IDEA_MODELS_BATCH_M5.stonecar = (car) => {
   group.userData = { body, animate: () => {}, livery: (evil) => hide.color.setHex(evil ? 0x7a2e2a : 0xd9b26a) };
   return group;
 };
+
+// ---- the Skip Lorry (after a 1980s Leyland Roadrunner skip loader) -------------------------------------------------------
+// A tall flat-fronted day cab over the front wheels (a big upright windscreen, a black grille band, square headlamps and
+// amber indicators in a deep bumper, mirrors out on arms, an amber beacon on the roof: tagged 'roof'), an exhaust stack
+// behind it; the chassis rails running back to the stabiliser legs and the light bar; twin rear wheels under flat guards;
+// the two lift arms pivoted at the very back, raised forward over the skip and joined by a cross beam at their tips, each
+// pushed by a ram; four chains from the beam's ends down to the skip's lugs; the steel skip (sloped ends) heaped with
+// rubble and a few planks. The paint is the cab's and the skip's.
+// (a beam: a box `w` across and `d` deep standing from point a to point b ([x, y, z]))
+const beam = (w, d, a, b) => {
+  const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b), len = A.distanceTo(B);
+  const geo = new THREE.BoxGeometry(w, len, d);
+  geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize()));
+  return geo.translate((A.x + B.x) / 2, (A.y + B.y) / 2, (A.z + B.z) / 2);
+};
+const ARMS = keep(lambert(0x3a3d42)), RUBBLE = keep(new THREE.MeshLambertMaterial({ color: 0x6f665c, flatShading: true }));
+const PLANK = keep(lambert(0x9a7448)), CHAIN = keep(lambert(0x2b2b2e));
+IDEA_MODELS_BATCH_M5.skiplorry = (car) => {
+  const group = new THREE.Group();
+  const W = car.hw, L = car.hl;
+  const k = 'skiplorry' + [W, L].join(',');
+  const paint = new THREE.MeshLambertMaterial({ color: car.color, vertexColors: true });
+  const R = 0.5, FA = 2.15, RA = -1.55, BEV = 0.04, BW = 2 * W - 0.06, HALF = BW / 2;
+  const FACE = L - 0.12, BACKZ = 1.52, FOOT = 0.62;
+  // the cab, side on: the upright face, the windscreen raked a little up to the roof, the back; its foot cut round the front wheel
+  const SF = [FACE, 1.62], ST = [FACE - 0.14, 2.86], RB = [BACKZ, 2.86], BF = [BACKZ, FOOT];
+  const cab = [[FACE, FOOT], SF, ST, RB, BF, ['arc', FA, FOOT, R + 0.07]];
+  // the skip, side on: sloped ends, and a lip round its top a little wider than it
+  const SK = { y0: 1.02, y1: 1.98, zf0: 0.55, zf1: 1.18, zr0: -2.05, zr1: -2.68, half: 0.95 };
+  const skip = [[SK.zr0, SK.y0], [SK.zf0, SK.y0], [SK.zf1, SK.y1], [SK.zr1, SK.y1]];
+  const lip = [[SK.zr1 - 0.02, SK.y1 - 0.08], [SK.zf1 + 0.02, SK.y1 - 0.08], [SK.zf1 + 0.06, SK.y1 + 0.06], [SK.zr1 - 0.06, SK.y1 + 0.06]];
+  const body = place(group, shared(k + 'body', () => shadeBy(merge([
+    extrudeSide(cab, BW, BEV, null, 1, 0.08),
+    extrudeSide(skip, 2 * SK.half, 0.02, null, 1, 0.03),
+    extrudeSide(lip, 2 * SK.half + 0.06, 0.015, null, 1, 0.03),
+  ]), low(0.6, 1.6, [0.8, 0.78, 0.76]))), paint);
+  // the glass, all from the cab's own profile: the windscreen, a door window a side, a small window in the cab's back
+  const FROM = cab.indexOf(SF), TO = cab.indexOf(BF), BELT = 1.66;
+  const ARGS = { from: FROM, to: TO, half: HALF, grow: BEV, inset: { aPillar: 0.1, roof: 0.065, cPillar: 0.12, belt: 0.03 },
+    lift: BEV + 0.008, sideLift: 0.008, sideInset: 0.14, frontSideInset: 0.14 };
+  const glass = cabinGlass(cab, { ...ARGS, belt: BELT, windows: [[1.95, 9]] });
+  const back = cabinGlass(cab, { ...ARGS, belt: BELT, sideInset: 0.62 }).rear; // (a small window in the cab's back, over the skip)
+  glassParts(group, k + 'glass', GLASS, () => [...glass.sides, glass.front, back]);
+  // black: the grille band across the face, the deep bumper, the mirrors on their arms; the chassis rails; the rear guards
+  const FZ = FACE + BEV;
+  parts(group, k + 'black', TRIM, () => [
+    bx(BW - 0.3, 0.5, 0.03, 0, 1.2, FZ + 0.005),
+    bx(BW + 0.02, 0.36, 0.16, 0, 0.62, FZ + 0.04),
+    ...[-1, 1].flatMap(s => [bx(0.08, 0.5, 0.16, s * (HALF + 0.17), 2.25, FACE - 0.2), beam(0.04, 0.04, [s * (HALF - 0.02), 2.35, FACE - 0.16], [s * (HALF + 0.14), 2.35, FACE - 0.2])]),
+    ...[-1, 1].map(s => bx(0.2, 0.26, 6.1, s * 0.45, 0.88, -0.15)),
+    ...[-1, 1].flatMap(s => [bx(0.58, 0.04, 1.24, s * (W - 0.27), 1.13, RA), bx(0.58, 0.32, 0.04, s * (W - 0.27), 0.98, RA - 0.62)]),
+    bx(2 * W - 0.1, 0.2, 0.22, 0, 0.9, -3.0), // the rear cross member, under the arms' pivots
+    bx(2 * W - 0.1, 0.16, 0.2, 0, 0.9, -2.25), // the cross member under the rams' feet
+    bx(2 * W - 0.3, 0.1, 0.1, 0, 1.06, RA), // the bar the rear guards stand on
+    ...[-1, 1].map(s => bx(0.14, 0.62, 0.12, s * 0.7, 0.62, -3.12)), // the stabiliser legs (up)
+    bx(2 * W - 0.14, 0.16, 0.08, 0, 0.48, -3.22), // the light bar across their feet
+  ]);
+  // the exhaust stack behind the cab, and the fuel tank under it (silver)
+  parts(group, k + 'silver', SILVER, () => [
+    new THREE.CylinderGeometry(0.055, 0.055, 1.5, 8).translate(-1.0, 2.35, 1.43), // (against the cab's back)
+    bx(0.4, 0.42, 0.85, 0.74, 0.8, 0.95), // (hung on the rail)
+  ]);
+  // the lift arms: a box beam each side from its pivot at the back up to the tip over the skip, a ram under each, the cross
+  // beam between the tips; the chains from the beam's ends to the skip's four lugs
+  const AX = W - 0.15, P = [-3.0, 1.0], T = [-0.75, 2.95], at = (f) => [P[0] + (T[0] - P[0]) * f, P[1] + (T[1] - P[1]) * f];
+  const ram0 = [-2.25, 0.98], ram1 = at(0.42);
+  parts(group, k + 'arms', ARMS, () => [
+    ...[-1, 1].flatMap(s => [
+      beam(0.14, 0.22, [s * AX, P[1], P[0]], [s * AX, T[1], T[0]]),
+      bx(0.2, 0.34, 0.34, s * AX, P[1], P[0]), // the pivot bracket
+      log(0.075, [s * AX, ram0[1], ram0[0]], [s * AX, (ram0[1] + ram1[1]) / 2, (ram0[0] + ram1[0]) / 2], 8), // the ram's barrel
+      bx(0.2, 0.12, 0.3, s * AX, ram0[1] - 0.04, ram0[0]), // its foot on the chassis
+    ]),
+    log(0.07, [-AX - 0.08, T[1], T[0]], [AX + 0.08, T[1], T[0]], 8),
+  ]);
+  parts(group, k + 'rod', SILVER, () => [-1, 1].map(s => log(0.042, [s * AX, (ram0[1] + ram1[1]) / 2, (ram0[0] + ram1[0]) / 2], [s * AX, ram1[1], ram1[0]], 8)));
+  const LUGY = 1.84, lugs = [[SK.zf0 + (SK.zf1 - SK.zf0) * (LUGY - SK.y0) / (SK.y1 - SK.y0) - 0.12, LUGY], [SK.zr0 + (SK.zr1 - SK.zr0) * (LUGY - SK.y0) / (SK.y1 - SK.y0) + 0.12, LUGY]];
+  parts(group, k + 'chain', CHAIN, () => [
+    ...[-1, 1].flatMap(s => lugs.map(([z, y]) => log(0.02, [s * (AX - 0.05), T[1] - 0.04, T[0]], [s * (SK.half + 0.05), y, z], 4, false))),
+    ...[-1, 1].flatMap(s => lugs.map(([z, y]) => new THREE.CylinderGeometry(0.05, 0.05, 0.1, 8).rotateZ(Math.PI / 2).translate(s * (SK.half + 0.04), y, z))), // the lugs
+  ]);
+  // the load: a heap of rubble in the skip, a few planks sticking out of it (tagged 'cargo': a chosen load can stand in its place)
+  tag(parts(group, k + 'rubble', RUBBLE, () => [rock(7, 0.84, 0.36, 1.5, 0, SK.y1 + 0.1, -0.75, 0.2), rock(8, 0.3, 0.18, 0.35, 0.4, SK.y1 + 0.24, -0.2, 0.25, 0)]), 'cargo');
+  tag(parts(group, k + 'planks', PLANK, () => [bx(0.12, 0.04, 1.3, -0.35, SK.y1 + 0.32, -1.0, 0.25, 0.3), bx(0.1, 0.04, 0.9, 0.3, SK.y1 + 0.24, -1.6, -0.3, -0.2)]), 'cargo');
+  // the lamps: square headlamps and amber indicators in the bumper; red tail lamps and amber indicators in the light bar
+  parts(group, k + 'lamp', LAMP, () => [-1, 1].map(s => bx(0.26, 0.18, 0.02, s * 0.78, 0.64, FZ + 0.12)));
+  parts(group, k + 'amber', AMBER, () => [...[-1, 1].map(s => bx(0.16, 0.12, 0.02, s * 1.06, 0.64, FZ + 0.12)), ...[-1, 1].map(s => bx(0.14, 0.11, 0.02, s * 1.08, 0.48, -3.265))]);
+  parts(group, k + 'tail', TAIL, () => [-1, 1].map(s => bx(0.24, 0.11, 0.02, s * 0.86, 0.48, -3.265)));
+  // the beacon on the cab roof (a roof prop: tagged)
+  tag(parts(group, k + 'beacon', AMBER, () => [new THREE.CylinderGeometry(0.09, 0.1, 0.16, 10).translate(0, 2.98, 2.3)]), 'roof');
+  tag(parts(group, k + 'beaconfoot', TRIM, () => [bx(0.26, 0.04, 0.26, 0, 2.91, 2.3)]), 'roof');
+  // the wheels: single fronts in the cab's arches, wide twins at the back
+  for (const s of [-1, 1]) {
+    wheel(group, k + 'f', R, 0.3, s * (W - 0.16), FA, 0.24, SILVER);
+    wheel(group, k + 'r', R, 0.52, s * (W - 0.27), RA, 0.24, SILVER);
+  }
+  group.userData = { body, animate: () => {}, livery: () => {} };
+  return group;
+};

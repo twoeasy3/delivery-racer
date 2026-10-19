@@ -626,6 +626,25 @@
     "no": "a bike"
    }
   },
+  "skiplorry": {
+   "roof": {
+    "box": [2.07, 0, 3.418, 2.305],
+    "cyl": [1.89, 0, 3.373, 2.265],
+    "from": "roof",
+    "lim": "fit",
+    "existing": true
+   },
+   "cargo": {
+    "no": "a closed body: no load deck",
+    "existing": true
+   },
+   "wing": {
+    "box": [1.44, 0, 1.252, -3.075],
+    "cyl": [1.44, 0, 1.216, -3.075],
+    "from": "deck-edge",
+    "lim": "fit"
+   }
+  },
   "slantback": {
    "roof": {
     "box": [1.31, 0, 1.726, -0.19],
@@ -786,6 +805,14 @@
   }
  },
  "hand": {
+  "skiplorry": {
+   "cargo": {
+    "no": "the skip IS the load: it hangs on the lift arms' chains with the cross beam over it, so there is no free deck (its rubble is tagged cargo all the same)"
+   },
+   "wing": {
+    "no": "the lift arms pivot at the very back, over the only rear beam (the generator's place sat between them), and the cab roof is taken whole by the roof prop"
+   }
+  },
   "stonecar": {
    "cargo": {
     "no": "an open log frame: behind the back bench there is only the cross log, no load deck"
