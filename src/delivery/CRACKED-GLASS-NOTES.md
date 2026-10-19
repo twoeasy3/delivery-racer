@@ -1,8 +1,25 @@
 # Cracked glass on damage: exploration notes (16-Oct)
 
+**19-Oct, CHECKLIST 484 / 503: ON for every player** (branch `claude/cracked-all`). `?crack=off` or `?crack=0` turns it off, `?crack=<1-100>`
+still forces a share. What changed since the prototype (render/cracks.js only, plus one material tag on the Junker):
+
+- **Canopies** (the audit's 21 "ambiguous" cars: rotary, evsaloon, bubble, jetcar, rocketfin, solarracer, horseshoe, fishbowl, sixteen,
+  quadturbo, knifeedge, windsong, silvercomet, ufo / earned-ufo, centreseat, rallywedge, cigar, circuswagon, the supers): a tag could not help
+  without splitting the glass, so they get a canopy mapping instead (`canopyFacing`). Where no pane faces that way, the canopy's own triangles
+  facing front (or rear) are the window: not sideways, not the top (normal over 0.92 up), not under the rim (normal leaning down). The same
+  overlay, mapped on the plane of their mean normal, each triangle's outer face by its winding. A canopy also wins over a found pane 3x
+  smaller, or a smaller one 0.3 m under it (a lamp's glass: the Fishbowl's and the Classic GT's "windscreens" were their headlamp covers).
+  Tags: `userData.window = 'canopy'` (force canopy) and `'none'` (never crack), on the glass mesh or its material.
+- **The Glass-Hatch Brake's hatch** (glass outside every cabinGlass pane): measured as a pane of its own; it cracks now.
+- **Inner face fixed**: on a flat glass slab whose faces are wound inward, the overlay sat on the INNER face (hidden): Junker, Tow Truck, Woody,
+  Midsummer, Bug, Brick Estate, Game Viewer, Ambulance (12 vehicles with supers / traffic). The outer face is now the one further out along the
+  normal (flat panes only; canopies keep the winding rule).
+- **The Junker's bumpers** (grey 0x7d8794, read as glass) cracked as its rear window: their material is tagged `window: 'none'`.
+- Coverage (276 vehicles): BOTH windows 155 -> 174, ONE 79 -> 80, NONE 42 -> 22; 2,624 overlay triangles, 10 a car, at most 197 (the Bubble
+  Car); built once per car on first damage, about 4 ms headless. No per-frame work beyond the old material swap per stage.
+
 The owner: "Lets explore adding a cracked glass texture to the front and back windows on damage model." Then, on the first stills: "The cracks
-contrast too well." Branch `claude/cracked-glass` (from main v1.1.146), CHECKLIST 406. A PROTOTYPE, **off for every player**: nothing changes
-unless the address has `?crack`. The audit it stands on: `WINDSCREEN-AUDIT.md`.
+contrast too well." Branch `claude/cracked-glass` (from main v1.1.146), CHECKLIST 406. A PROTOTYPE then, **off for every player** (on since 484, above). The audit it stands on: `WINDSCREEN-AUDIT.md`.
 
 ## Try it
 

@@ -29,7 +29,8 @@ try {
   await apply.patchesReady;
   const { entries } = await buildAll(load);
   const now = {}, tally = { ws: {}, rw: {} }, cover = { both: 0, one: 0, none: 0 }, worse = [], bad = [];
-  let tris = 0, maxTris = 0, ms = 0, built = 0;
+  let tris = 0, maxTris = 0, ms = 0, built = 0, canopyHit = 0;
+  const canopyMiss = [];
   for (const e of entries) {
     let model; try { model = e.build(); } catch { continue; }
     if (!model) continue;
@@ -41,7 +42,9 @@ try {
     const m = e.build(); m.parent?.remove(m);
     const before = MP.extractParts(m);
     const t1 = Date.now(), mesh = K.crackOverlay(m, e.id); ms += Date.now() - t1; built++;
-    const sc = K.crackInfo(m).screens, n = (sc.windscreen.length ? 1 : 0) + (sc.rear.length ? 1 : 0);
+    const sc = K.crackInfo(m).screens;
+    for (const [w, k] of [['ws', 'windscreen'], ['rw', 'rear']]) if (a[w].status === 'ambiguous') { if (sc[k].length) canopyHit++; else canopyMiss.push(e.key + ' ' + k); }
+    const n = (sc.windscreen.length ? 1 : 0) + (sc.rear.length ? 1 : 0);
     cover[n === 2 ? 'both' : n === 1 ? 'one' : 'none']++;
     if (!mesh) { if (n) bad.push(e.key + ': windows found, no overlay'); continue; }
     const count = mesh.geometry.attributes.position.count / 3;
@@ -81,6 +84,12 @@ try {
   // ---- the cracks
   check(!bad.length, 'the crack overlay on ' + built + ' vehicles: one mesh, a child of the glass, not in the part list (ids and signature unchanged), front / rear glass only, never dented, shown at stage 3 for 85 % and hidden clean' + (bad.length ? '\n          ' + bad.slice(0, 12).join('\n          ') : ''));
   console.log('  ..    cracks on BOTH windows: ' + cover.both + ', ONE: ' + cover.one + ', NONE: ' + cover.none + ' of ' + built + '; overlay triangles ' + tris + ' in all, ' + (tris / Math.max(1, cover.both + cover.one)).toFixed(0) + ' a car, at most ' + maxTris + '; built in ' + (ms / Math.max(1, built)).toFixed(1) + ' ms a car (headless, with the pane search and the hidden-glass rays)');
+  // ---- on for every player (CHECKLIST 484): the address's ?crack read as on / off / forced
+  const P = K.crackParam, same = (q, on, force) => { const r = P(q); return r.on === on && r.force === force; };
+  check(K.CRACK.on && K.CRACK.force === null && same(null, true, null) && same('on', true, null) && same('off', false, null) && same('0', false, null) && same('40', true, 0.4) && same('100', true, 1) && same('250', true, 1),
+    'cracks ON by default (no ?crack: the real damage); ?crack=off and ?crack=0 turn them off; ?crack=40 forces 40 %');
+  // ---- the canopies (CHECKLIST 484): every vehicle the audit calls ambiguous gets a crack on the canopy that way
+  check(!canopyMiss.length, 'every canopy the audit calls ambiguous cracks that way (' + canopyHit + ' windows on canopies)' + (canopyMiss.length ? ': missed ' + canopyMiss.join(', ') : ''));
   // ---- render only
   const logic = logicFiles();
   check(!logic.some(x => /cracks|screens|modelpatch|dents|items|inspectmodel/.test(x)), 'render/cracks.js, render/screens.js and the files they hook into are not in the replay fingerprint (vite.config.js logicFiles: ' + logic.length + ' files)');
