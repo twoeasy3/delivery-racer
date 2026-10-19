@@ -66,6 +66,7 @@ import { IDEA_CARS_TOPUP_A } from './ideasTopupA.js'; // (the top-up's batch A: 
 import { IDEAS_TOPUP_B } from './ideasTopupB.js';
 
 import { IDEAS_TOPUP_C } from './ideasTopupC.js'; // (top-up batch C: three ideas, models in render/ideaModelsTopupC.js)
+import { IDEAS_BATCH_M4 } from './ideasBatchM4.js'; // (batch M4: the Log Truck, the Fuel Tanker, the Combine Harvester)
 import { IDEAS_COMMUTER_IDEAS } from './ideasCommuterIdeas.js'; // (three city hatchbacks, first drawn as Commuter drafts)
 import { IDEAS_BATCH_M1 } from './ideasBatchM1.js'; // (batch M1, working machines: a mining haul truck, a bulldozer and a gritter)
 import { IDEAS_BATCH_M2 } from './ideasBatchM2.js'; // (batch M2: idea cars, CHECKLIST 516)
@@ -207,5 +208,6 @@ export const IDEA_CARS = [
   ...IDEAS_COMMUTER_IDEAS,
   ...IDEAS_BATCH_M1,
   ...IDEAS_BATCH_M2,
+  ...IDEAS_BATCH_M4,
   // PLACEHOLDERS, every one: tierless (no `tier`: no stars), free (price 0), and flagged for the balancing pass
 ].map(car => ({ ...car, idea: true, placeholder: true, price: 0 }));
